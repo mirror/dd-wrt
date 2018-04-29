@@ -941,6 +941,7 @@ enable_phpdbg
 enable_phpdbg_webhelper
 enable_phpdbg_debug
 enable_cgi
+with_valgrind
 enable_gcov
 enable_debug
 with_layout
@@ -1751,6 +1752,7 @@ SAPI modules:
   --enable-phpdbg-webhelper  Build phpdbg web SAPI support
   --enable-phpdbg-debug      Build phpdbg in debug mode
   --disable-cgi           Disable building CGI version of PHP
+  --with-valgrind=DIR     Enable valgrind support
 
 General settings:
 
@@ -3653,7 +3655,7 @@ ac_config_headers="$ac_config_headers main/php_config.h"
 
 PHP_MAJOR_VERSION=7
 PHP_MINOR_VERSION=2
-PHP_RELEASE_VERSION=4
+PHP_RELEASE_VERSION=5
 PHP_EXTRA_VERSION=""
 PHP_VERSION="$PHP_MAJOR_VERSION.$PHP_MINOR_VERSION.$PHP_RELEASE_VERSION$PHP_EXTRA_VERSION"
 PHP_VERSION_ID=`expr $PHP_MAJOR_VERSION \* 10000 + $PHP_MINOR_VERSION \* 100 + $PHP_RELEASE_VERSION`
@@ -15666,10 +15668,40 @@ $as_echo "#define CRYPT_R_GNU_SOURCE 1" >>confdefs.h
 fi
 
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for valgrind" >&5
-$as_echo_n "checking for valgrind... " >&6; }
+php_with_valgrind=yes
 
-  SEARCH_PATH="/usr/local /usr"
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable valgrind support" >&5
+$as_echo_n "checking whether to enable valgrind support... " >&6; }
+
+# Check whether --with-valgrind was given.
+if test "${with_valgrind+set}" = set; then :
+  withval=$with_valgrind; PHP_VALGRIND=$withval
+else
+
+  PHP_VALGRIND=yes
+
+
+fi
+
+
+ext_output=$PHP_VALGRIND
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ext_output" >&5
+$as_echo "$ext_output" >&6; }
+
+
+
+
+if test "$PHP_VALGRIND" != "no"; then
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for valgrind header" >&5
+$as_echo_n "checking for valgrind header... " >&6; }
+
+  if test "$PHP_VALGRIND" = "yes"; then
+    SEARCH_PATH="/usr/local /usr"
+  else
+    SEARCH_PATH="$PHP_VALGRIND"
+  fi
+
   SEARCH_FOR="/include/valgrind/valgrind.h"
   for i in $SEARCH_PATH ; do
     if test -r $i/$SEARCH_FOR; then
@@ -15688,6 +15720,7 @@ $as_echo "#define HAVE_VALGRIND 1" >>confdefs.h
 
   fi
 
+fi
 
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: " >&5
@@ -45106,6 +45139,9 @@ $as_echo "found $icu_version_full" >&6; }
     esac
   done
 
+
+    ICU_CXXFLAGS=`$ICU_CONFIG --cxxflags`
+    ICU_CXXFLAGS="$ICU_CXXFLAGS -DU_USING_ICU_NAMESPACE=1"
   fi
 
 
@@ -45516,6 +45552,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
     php_cxx_done=yes
   fi
 
+  INTL_COMMON_FLAGS="$ICU_INCS -Wno-write-strings -D__STDC_LIMIT_MACROS -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1"
   if test "$icu_version" -ge "4002"; then
     icu_spoof_src=" spoofchecker/spoofchecker_class.c \
     spoofchecker/spoofchecker.c\
@@ -45529,7 +45566,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
   ext_srcdir=$abs_srcdir/ext/intl
   ext_dir=ext/intl
 
-  ac_extra=`echo "$ICU_INCS -Wno-write-strings -D__STDC_LIMIT_MACROS -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1"|$SED s#@ext_srcdir@#$ext_srcdir#g|$SED s#@ext_builddir@#$ext_builddir#g`
+  ac_extra=`echo "$INTL_COMMON_FLAGS"|$SED s#@ext_srcdir@#$ext_srcdir#g|$SED s#@ext_builddir@#$ext_builddir#g`
 
   if test "$ext_shared" != "shared" && test "$ext_shared" != "yes" && test "" != "cli"; then
     PHP_INTL_SHARED=no
@@ -45556,7 +45593,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
   for ac_src in php_intl.c \
     intl_error.c \
     intl_convert.c \
-	intl_convertcpp.cpp \
     collator/collator.c \
     collator/collator_class.c \
     collator/collator_sort.c \
@@ -45568,8 +45604,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
     collator/collator_is_numeric.c \
     collator/collator_error.c \
     common/common_error.c \
-	common/common_enum.cpp \
-	common/common_date.cpp \
     converter/converter.c \
     formatter/formatter.c \
     formatter/formatter_main.c \
@@ -45589,17 +45623,12 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
     dateformat/dateformat_attr.c \
     dateformat/dateformat_data.c \
     dateformat/dateformat_format.c \
-    dateformat/dateformat_format_object.cpp \
     dateformat/dateformat_parse.c \
-    dateformat/dateformat_create.cpp \
-    dateformat/dateformat_attrcpp.cpp \
-    dateformat/dateformat_helpers.cpp \
     msgformat/msgformat.c \
     msgformat/msgformat_attr.c \
     msgformat/msgformat_class.c \
     msgformat/msgformat_data.c  \
     msgformat/msgformat_format.c \
-    msgformat/msgformat_helpers.cpp \
     msgformat/msgformat_parse.c \
     grapheme/grapheme_string.c \
     grapheme/grapheme_util.c \
@@ -45609,17 +45638,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
     transliterator/transliterator.c \
     transliterator/transliterator_class.c \
     transliterator/transliterator_methods.c \
-    timezone/timezone_class.cpp \
-    timezone/timezone_methods.cpp \
-    calendar/calendar_class.cpp \
-    calendar/calendar_methods.cpp \
-    calendar/gregoriancalendar_methods.cpp \
-    breakiterator/breakiterator_class.cpp \
-    breakiterator/breakiterator_iterators.cpp \
-    breakiterator/breakiterator_methods.cpp \
-    breakiterator/rulebasedbreakiterator_methods.cpp \
-    breakiterator/codepointiterator_internal.cpp \
-    breakiterator/codepointiterator_methods.cpp \
     uchar/uchar.c \
     idn/idn.c \
     $icu_spoof_src; do
@@ -45674,7 +45692,6 @@ EOF
   for ac_src in php_intl.c \
     intl_error.c \
     intl_convert.c \
-	intl_convertcpp.cpp \
     collator/collator.c \
     collator/collator_class.c \
     collator/collator_sort.c \
@@ -45686,8 +45703,6 @@ EOF
     collator/collator_is_numeric.c \
     collator/collator_error.c \
     common/common_error.c \
-	common/common_enum.cpp \
-	common/common_date.cpp \
     converter/converter.c \
     formatter/formatter.c \
     formatter/formatter_main.c \
@@ -45707,17 +45722,12 @@ EOF
     dateformat/dateformat_attr.c \
     dateformat/dateformat_data.c \
     dateformat/dateformat_format.c \
-    dateformat/dateformat_format_object.cpp \
     dateformat/dateformat_parse.c \
-    dateformat/dateformat_create.cpp \
-    dateformat/dateformat_attrcpp.cpp \
-    dateformat/dateformat_helpers.cpp \
     msgformat/msgformat.c \
     msgformat/msgformat_attr.c \
     msgformat/msgformat_class.c \
     msgformat/msgformat_data.c  \
     msgformat/msgformat_format.c \
-    msgformat/msgformat_helpers.cpp \
     msgformat/msgformat_parse.c \
     grapheme/grapheme_string.c \
     grapheme/grapheme_util.c \
@@ -45727,17 +45737,6 @@ EOF
     transliterator/transliterator.c \
     transliterator/transliterator_class.c \
     transliterator/transliterator_methods.c \
-    timezone/timezone_class.cpp \
-    timezone/timezone_methods.cpp \
-    calendar/calendar_class.cpp \
-    calendar/calendar_methods.cpp \
-    calendar/gregoriancalendar_methods.cpp \
-    breakiterator/breakiterator_class.cpp \
-    breakiterator/breakiterator_iterators.cpp \
-    breakiterator/breakiterator_methods.cpp \
-    breakiterator/rulebasedbreakiterator_methods.cpp \
-    breakiterator/codepointiterator_internal.cpp \
-    breakiterator/codepointiterator_methods.cpp \
     uchar/uchar.c \
     idn/idn.c \
     $icu_spoof_src; do
@@ -45828,7 +45827,6 @@ _ACEOF
   for ac_src in php_intl.c \
     intl_error.c \
     intl_convert.c \
-	intl_convertcpp.cpp \
     collator/collator.c \
     collator/collator_class.c \
     collator/collator_sort.c \
@@ -45840,8 +45838,6 @@ _ACEOF
     collator/collator_is_numeric.c \
     collator/collator_error.c \
     common/common_error.c \
-	common/common_enum.cpp \
-	common/common_date.cpp \
     converter/converter.c \
     formatter/formatter.c \
     formatter/formatter_main.c \
@@ -45861,17 +45857,12 @@ _ACEOF
     dateformat/dateformat_attr.c \
     dateformat/dateformat_data.c \
     dateformat/dateformat_format.c \
-    dateformat/dateformat_format_object.cpp \
     dateformat/dateformat_parse.c \
-    dateformat/dateformat_create.cpp \
-    dateformat/dateformat_attrcpp.cpp \
-    dateformat/dateformat_helpers.cpp \
     msgformat/msgformat.c \
     msgformat/msgformat_attr.c \
     msgformat/msgformat_class.c \
     msgformat/msgformat_data.c  \
     msgformat/msgformat_format.c \
-    msgformat/msgformat_helpers.cpp \
     msgformat/msgformat_parse.c \
     grapheme/grapheme_string.c \
     grapheme/grapheme_util.c \
@@ -45881,17 +45872,6 @@ _ACEOF
     transliterator/transliterator.c \
     transliterator/transliterator_class.c \
     transliterator/transliterator_methods.c \
-    timezone/timezone_class.cpp \
-    timezone/timezone_methods.cpp \
-    calendar/calendar_class.cpp \
-    calendar/calendar_methods.cpp \
-    calendar/gregoriancalendar_methods.cpp \
-    breakiterator/breakiterator_class.cpp \
-    breakiterator/breakiterator_iterators.cpp \
-    breakiterator/breakiterator_methods.cpp \
-    breakiterator/rulebasedbreakiterator_methods.cpp \
-    breakiterator/codepointiterator_internal.cpp \
-    breakiterator/codepointiterator_methods.cpp \
     uchar/uchar.c \
     idn/idn.c \
     $icu_spoof_src; do
@@ -45943,7 +45923,6 @@ EOF
   for ac_src in php_intl.c \
     intl_error.c \
     intl_convert.c \
-	intl_convertcpp.cpp \
     collator/collator.c \
     collator/collator_class.c \
     collator/collator_sort.c \
@@ -45955,8 +45934,6 @@ EOF
     collator/collator_is_numeric.c \
     collator/collator_error.c \
     common/common_error.c \
-	common/common_enum.cpp \
-	common/common_date.cpp \
     converter/converter.c \
     formatter/formatter.c \
     formatter/formatter_main.c \
@@ -45976,17 +45953,12 @@ EOF
     dateformat/dateformat_attr.c \
     dateformat/dateformat_data.c \
     dateformat/dateformat_format.c \
-    dateformat/dateformat_format_object.cpp \
     dateformat/dateformat_parse.c \
-    dateformat/dateformat_create.cpp \
-    dateformat/dateformat_attrcpp.cpp \
-    dateformat/dateformat_helpers.cpp \
     msgformat/msgformat.c \
     msgformat/msgformat_attr.c \
     msgformat/msgformat_class.c \
     msgformat/msgformat_data.c  \
     msgformat/msgformat_format.c \
-    msgformat/msgformat_helpers.cpp \
     msgformat/msgformat_parse.c \
     grapheme/grapheme_string.c \
     grapheme/grapheme_util.c \
@@ -45996,17 +45968,6 @@ EOF
     transliterator/transliterator.c \
     transliterator/transliterator_class.c \
     transliterator/transliterator_methods.c \
-    timezone/timezone_class.cpp \
-    timezone/timezone_methods.cpp \
-    calendar/calendar_class.cpp \
-    calendar/calendar_methods.cpp \
-    calendar/gregoriancalendar_methods.cpp \
-    breakiterator/breakiterator_class.cpp \
-    breakiterator/breakiterator_iterators.cpp \
-    breakiterator/breakiterator_methods.cpp \
-    breakiterator/rulebasedbreakiterator_methods.cpp \
-    breakiterator/codepointiterator_internal.cpp \
-    breakiterator/codepointiterator_methods.cpp \
     uchar/uchar.c \
     idn/idn.c \
     $icu_spoof_src; do
@@ -46046,6 +46007,115 @@ EOF
     PHP_PECL_EXTENSION=intl
 
   PHP_VAR_SUBST="$PHP_VAR_SUBST PHP_PECL_EXTENSION"
+
+  fi
+
+
+  PHP_INTL_CXX_SOURCES="intl_convertcpp.cpp \
+    common/common_enum.cpp \
+    common/common_date.cpp \
+    dateformat/dateformat_format_object.cpp \
+    dateformat/dateformat_create.cpp \
+    dateformat/dateformat_attrcpp.cpp \
+    dateformat/dateformat_helpers.cpp \
+    msgformat/msgformat_helpers.cpp \
+    timezone/timezone_class.cpp \
+    timezone/timezone_methods.cpp \
+    calendar/calendar_class.cpp \
+    calendar/calendar_methods.cpp \
+    calendar/gregoriancalendar_methods.cpp \
+    breakiterator/breakiterator_class.cpp \
+    breakiterator/breakiterator_iterators.cpp \
+    breakiterator/breakiterator_methods.cpp \
+    breakiterator/rulebasedbreakiterator_methods.cpp \
+    breakiterator/codepointiterator_internal.cpp \
+    breakiterator/codepointiterator_methods.cpp"
+  PHP_INTL_CXX_FLAGS="$INTL_COMMON_FLAGS $ICU_CXXFLAGS"
+  if test "$ext_shared" = "no"; then
+
+
+  case ext/intl in
+  "") ac_srcdir="$abs_srcdir/"; unset ac_bdir; ac_inc="-I. -I$abs_srcdir" ;;
+  /*) ac_srcdir=`echo "ext/intl"|cut -c 2-`"/"; ac_bdir=$ac_srcdir; ac_inc="-I$ac_bdir -I$abs_srcdir/$ac_bdir" ;;
+  *) ac_srcdir="$abs_srcdir/ext/intl/"; ac_bdir="ext/intl/"; ac_inc="-I$ac_bdir -I$ac_srcdir" ;;
+  esac
+
+
+
+  b_c_pre=$php_c_pre
+  b_cxx_pre=$php_cxx_pre
+  b_c_meta=$php_c_meta
+  b_cxx_meta=$php_cxx_meta
+  b_c_post=$php_c_post
+  b_cxx_post=$php_cxx_post
+  b_lo=$php_lo
+
+
+  old_IFS=$IFS
+  for ac_src in $PHP_INTL_CXX_SOURCES; do
+
+      IFS=.
+      set $ac_src
+      ac_obj=$1
+      IFS=$old_IFS
+
+      PHP_GLOBAL_OBJS="$PHP_GLOBAL_OBJS $ac_bdir$ac_obj.lo"
+
+      case $ac_src in
+        *.c) ac_comp="$b_c_pre $PHP_INTL_CXX_FLAGS $ac_inc $b_c_meta -c $ac_srcdir$ac_src -o $ac_bdir$ac_obj.$b_lo $b_c_post" ;;
+        *.s) ac_comp="$b_c_pre $PHP_INTL_CXX_FLAGS $ac_inc $b_c_meta -c $ac_srcdir$ac_src -o $ac_bdir$ac_obj.$b_lo $b_c_post" ;;
+        *.S) ac_comp="$b_c_pre $PHP_INTL_CXX_FLAGS $ac_inc $b_c_meta -c $ac_srcdir$ac_src -o $ac_bdir$ac_obj.$b_lo $b_c_post" ;;
+        *.cpp|*.cc|*.cxx) ac_comp="$b_cxx_pre $PHP_INTL_CXX_FLAGS $ac_inc $b_cxx_meta -c $ac_srcdir$ac_src -o $ac_bdir$ac_obj.$b_lo $b_cxx_post" ;;
+      esac
+
+    cat >>Makefile.objects<<EOF
+$ac_bdir$ac_obj.lo: $ac_srcdir$ac_src
+	$ac_comp
+EOF
+  done
+
+
+  else
+
+  case ext/intl in
+  "") ac_srcdir="$abs_srcdir/"; unset ac_bdir; ac_inc="-I. -I$abs_srcdir" ;;
+  /*) ac_srcdir=`echo "ext/intl"|cut -c 2-`"/"; ac_bdir=$ac_srcdir; ac_inc="-I$ac_bdir -I$abs_srcdir/$ac_bdir" ;;
+  *) ac_srcdir="$abs_srcdir/ext/intl/"; ac_bdir="ext/intl/"; ac_inc="-I$ac_bdir -I$ac_srcdir" ;;
+  esac
+
+
+
+  b_c_pre=$shared_c_pre
+  b_cxx_pre=$shared_cxx_pre
+  b_c_meta=$shared_c_meta
+  b_cxx_meta=$shared_cxx_meta
+  b_c_post=$shared_c_post
+  b_cxx_post=$shared_cxx_post
+  b_lo=$shared_lo
+
+
+  old_IFS=$IFS
+  for ac_src in $PHP_INTL_CXX_SOURCES; do
+
+      IFS=.
+      set $ac_src
+      ac_obj=$1
+      IFS=$old_IFS
+
+      shared_objects_intl="$shared_objects_intl $ac_bdir$ac_obj.lo"
+
+      case $ac_src in
+        *.c) ac_comp="$b_c_pre $PHP_INTL_CXX_FLAGS $ac_inc $b_c_meta -c $ac_srcdir$ac_src -o $ac_bdir$ac_obj.$b_lo $b_c_post" ;;
+        *.s) ac_comp="$b_c_pre $PHP_INTL_CXX_FLAGS $ac_inc $b_c_meta -c $ac_srcdir$ac_src -o $ac_bdir$ac_obj.$b_lo $b_c_post" ;;
+        *.S) ac_comp="$b_c_pre $PHP_INTL_CXX_FLAGS $ac_inc $b_c_meta -c $ac_srcdir$ac_src -o $ac_bdir$ac_obj.$b_lo $b_c_post" ;;
+        *.cpp|*.cc|*.cxx) ac_comp="$b_cxx_pre $PHP_INTL_CXX_FLAGS $ac_inc $b_cxx_meta -c $ac_srcdir$ac_src -o $ac_bdir$ac_obj.$b_lo $b_cxx_post" ;;
+      esac
+
+    cat >>Makefile.objects<<EOF
+$ac_bdir$ac_obj.lo: $ac_srcdir$ac_src
+	$ac_comp
+EOF
+  done
 
   fi
 
@@ -95208,7 +95278,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 95211 "configure"
+#line 95281 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -97247,7 +97317,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 97250 "configure"' > conftest.$ac_ext
+  echo '#line 97320 "configure"' > conftest.$ac_ext
   if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -98645,7 +98715,7 @@ else
       LDFLAGS="$LDFLAGS -Wl,-exported_symbols_list,conftest.sym"
 
 cat > conftest.$ac_ext <<EOF
-#line 98648 "configure"
+#line 98718 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -98803,11 +98873,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:98806: $lt_compile\"" >&5)
+   (eval echo "\"configure:98876: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "configure:98810: \$? = $ac_status" >&5
+   echo "configure:98880: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -99101,11 +99171,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:99104: $lt_compile\"" >&5)
+   (eval echo "\"configure:99174: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "configure:99108: \$? = $ac_status" >&5
+   echo "configure:99178: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -99205,11 +99275,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:99208: $lt_compile\"" >&5)
+   (eval echo "\"configure:99278: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "configure:99212: \$? = $ac_status" >&5
+   echo "configure:99282: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -99669,7 +99739,7 @@ _LT_EOF
        # Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 99672 "configure"
+#line 99742 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -99711,7 +99781,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
 	 # Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 99714 "configure"
+#line 99784 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -101228,7 +101298,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 101231 "configure"
+#line 101301 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -101328,7 +101398,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 101331 "configure"
+#line 101401 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -102393,7 +102463,7 @@ case $host_os in
       # Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 102396 "configure"
+#line 102466 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -102436,7 +102506,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
 	# Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 102439 "configure"
+#line 102509 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -103688,11 +103758,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:103691: $lt_compile\"" >&5)
+   (eval echo "\"configure:103761: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "configure:103695: \$? = $ac_status" >&5
+   echo "configure:103765: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -103792,11 +103862,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:103795: $lt_compile\"" >&5)
+   (eval echo "\"configure:103865: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "configure:103799: \$? = $ac_status" >&5
+   echo "configure:103869: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
