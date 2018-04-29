@@ -73,6 +73,7 @@ VC_VERSIONS[1910] = 'MSVC15 (Visual C++ 2017)';
 VC_VERSIONS[1911] = 'MSVC15 (Visual C++ 2017)';
 VC_VERSIONS[1912] = 'MSVC15 (Visual C++ 2017)';
 VC_VERSIONS[1913] = 'MSVC15 (Visual C++ 2017)';
+VC_VERSIONS[1914] = 'MSVC15 (Visual C++ 2017)';
 
 var VC_VERSIONS_SHORT = new Array();
 VC_VERSIONS_SHORT[1700] = 'VC11';
@@ -82,6 +83,7 @@ VC_VERSIONS_SHORT[1910] = 'VC15';
 VC_VERSIONS_SHORT[1911] = 'VC15';
 VC_VERSIONS_SHORT[1912] = 'VC15';
 VC_VERSIONS_SHORT[1913] = 'VC15';
+VC_VERSIONS_SHORT[1914] = 'VC15';
 
 if (PROGRAM_FILES == null) {
 	PROGRAM_FILES = "C:\\Program Files";
@@ -1501,7 +1503,11 @@ function EXTENSION(extname, file_list, shared, cflags, dllname, obj_dir)
 	
 		DEFINE('CFLAGS_' + EXT + '_OBJ', '$(CFLAGS_PHP) $(CFLAGS_' + EXT + ')');
 	}
-	if (MODE_PHPIZE && FSO.FileExists(PHP_DIR + "/include/main/config.pickle.h")) {
+	if (MODE_PHPIZE) {
+		if (!FSO.FileExists(PHP_DIR + "/include/main/config.pickle.h")) {
+			var _tmp = FSO.CreateTextFile(PHP_DIR + "/include/main/config.pickle.h", true);
+			_tmp.Close();
+		}
 		cflags = "/FI main/config.pickle.h " + cflags;
 	}
 	ADD_FLAG("CFLAGS_" + EXT, cflags);
