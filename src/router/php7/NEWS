@@ -1,5 +1,63 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+26 Apr 2018, PHP 7.2.5
+
+- Core:
+  . Fixed bug #75722 (Convert valgrind detection to configure option).
+    (Michael Heimpold)
+
+- Date:
+  . Fixed bug #76131 (mismatch arginfo for date_create). (carusogabriel)
+
+- Exif:
+  . Fixed bug#76130 (Heap Buffer Overflow (READ: 1786) in exif_iif_add_value).
+    (Stas)
+
+- FPM:
+  . Fixed bug #68440 (ERROR: failed to reload: execvp() failed: Argument list
+    too long). (Jacob Hipps)
+  . Fixed incorrect write to getenv result in FPM reload. (Jakub Zelenka)
+
+- GD:
+  . Fixed bug #52070 (imagedashedline() - dashed line sometimes is not visible).
+    (cmb)
+
+- intl:
+  . Fixed bug #76153 (Intl compilation fails with icu4c 61.1). (Anatol)
+
+- iconv:
+  . Fixed bug #76249 (stream filter convert.iconv leads to infinite loop on
+    invalid sequence). (Stas)
+
+- ldap:
+  . Fixed bug #76248 (Malicious LDAP-Server Response causes Crash). (Stas)
+
+- mbstring:
+  . Fixed bug #75944 (Wrong cp1251 detection). (dmk001)
+  . Fixed bug #76113 (mbstring does not build with Oniguruma 6.8.1).
+    (chrullrich, cmb)
+
+- ODBC:
+  . Fixed bug #76088 (ODBC functions are not available by default on Windows).
+    (cmb)
+
+- Opcache:
+  . Fixed bug #76094 (Access violation when using opcache). (Laruence)
+
+- Phar:
+  . Fixed bug #76129 (fix for CVE-2018-5712 may not be complete). (Stas)
+
+- phpdbg:
+  . Fixed bug #76143 (Memory corruption: arbitrary NUL overwrite). (Laruence)
+
+- SPL:
+  . Fixed bug #76131 (mismatch arginfo for splarray constructor). 
+    (carusogabriel)
+
+- standard:
+  . Fixed bug #74139 (mail.add_x_header default inconsistent with docs). (cmb)
+  . Fixed bug #75996 (incorrect url in header for mt_rand). (tatarbj)
+
 29 Mar 2018, PHP 7.2.4
 
 - Core:
@@ -15,7 +73,7 @@ PHP                                                                        NEWS
 - FTP:
   . Fixed ftp_pasv arginfo. (carusogabriel)
 
-- GD:
+-GD:
   . Fixed bug #73957 (signed integer conversion in imagescale()). (cmb)
   . Fixed bug #76041 (null pointer access crashed php). (cmb)
   . Fixed imagesetinterpolation arginfo. (Gabriel Caruso)

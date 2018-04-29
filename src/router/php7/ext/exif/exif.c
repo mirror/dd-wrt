@@ -17,7 +17,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: d9c591496bd7a31e6bef0cdd9d931f438fa6126a $ */
+/* $Id: c4e34a636806e4d35db9d931edfef8a25d155e3d $ */
 
 /*  ToDos
  *
@@ -2112,7 +2112,7 @@ static void exif_iif_add_value(image_info_type *image_info, int section_index, c
 		case TAG_FMT_UNDEFINED:
 			if (value) {
 				if (tag == TAG_MAKER_NOTE) {
-					length = MIN(length, (int) strlen(value));
+					length = (int) php_strnlen(value, length);
 				}
 
 				/* do not recompute length here */

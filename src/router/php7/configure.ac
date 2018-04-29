@@ -107,7 +107,7 @@ int zend_sprintf(char *buffer, const char *format, ...);
 
 PHP_MAJOR_VERSION=7
 PHP_MINOR_VERSION=2
-PHP_RELEASE_VERSION=4
+PHP_RELEASE_VERSION=5
 PHP_EXTRA_VERSION=""
 PHP_VERSION="$PHP_MAJOR_VERSION.$PHP_MINOR_VERSION.$PHP_RELEASE_VERSION$PHP_EXTRA_VERSION"
 PHP_VERSION_ID=`expr [$]PHP_MAJOR_VERSION \* 10000 + [$]PHP_MINOR_VERSION \* 100 + [$]PHP_RELEASE_VERSION`
@@ -753,7 +753,35 @@ if test "x$php_crypt_r" = "x1"; then
   PHP_CRYPT_R_STYLE
 fi
 
-PHP_CHECK_VALGRIND
+dnl Check valgrind support
+PHP_ARG_WITH(valgrind, [whether to enable valgrind support],
+[  --with-valgrind=DIR     Enable valgrind support], yes, no)
+
+if test "$PHP_VALGRIND" != "no"; then
+
+  AC_MSG_CHECKING([for valgrind header])
+
+  if test "$PHP_VALGRIND" = "yes"; then
+    SEARCH_PATH="/usr/local /usr"
+  else
+    SEARCH_PATH="$PHP_VALGRIND"
+  fi
+
+  SEARCH_FOR="/include/valgrind/valgrind.h"
+  for i in $SEARCH_PATH ; do
+    if test -r $i/$SEARCH_FOR; then
+      VALGRIND_DIR=$i
+    fi
+  done
+
+  if test -z "$VALGRIND_DIR"; then
+    AC_MSG_RESULT([not found])
+  else
+    AC_MSG_RESULT(found in $VALGRIND_DIR)
+    AC_DEFINE(HAVE_VALGRIND, 1, [ ])
+  fi
+
+fi
 
 dnl General settings.
 dnl -------------------------------------------------------------------------
