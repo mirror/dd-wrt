@@ -6,7 +6,7 @@
  *
  * code common to EAP-SIM clients and to servers.
  *
- * Version:     $Id: 8f7fc395a387b70b7729ff53c9fa35245f33d367 $
+ * Version:     $Id: cf1e8a7dd924a5658c2afe894920c0cc829dc5f6 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@
  *
  */
 
-RCSID("$Id: 8f7fc395a387b70b7729ff53c9fa35245f33d367 $")
+RCSID("$Id: cf1e8a7dd924a5658c2afe894920c0cc829dc5f6 $")
 
 #include <freeradius-devel/libradius.h>
 #include "eap_types.h"
@@ -147,7 +147,7 @@ int map_eapsim_basictypes(RADIUS_PACKET *r, eap_packet_t *ep)
 		ep->type.length = 3;
 		ep->type.data = encodedmsg;
 
-		return 0;
+		return 1;
 	}
 
 

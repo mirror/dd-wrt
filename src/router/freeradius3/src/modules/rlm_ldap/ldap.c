@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 4cff1492974a7cd0bb9c1baeed1799374522d212 $
+ * $Id: 2959b6837cc4a6fe04e551c03a66ee8939f817db $
  * @file ldap.c
  * @brief LDAP module library functions.
  *
@@ -1550,6 +1550,10 @@ void *mod_conn_create(TALLOC_CTX *ctx, void *instance)
 		}
 	}
 #endif /* HAVE_LDAP_START_TLS_S */
+
+	if (inst->sasl_secprops) {
+		do_ldap_option(LDAP_OPT_X_SASL_SECPROPS, "SASL_SECPROPS", inst->sasl_secprops);
+	}
 
 	status = rlm_ldap_bind(inst, NULL, &conn, conn->inst->admin_identity, conn->inst->admin_password,
 			       &(conn->inst->admin_sasl), false);

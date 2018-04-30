@@ -2,7 +2,7 @@
  * event.c	Non-thread-safe event handling, specific to a RADIUS
  *		server.
  *
- * Version:	$Id: ba9e60cf1a6e0b6ad8c8ccfe2e549f0d9071c645 $
+ * Version:	$Id: 0c2976b3c96f90ffda165734431c24e0332ddea7 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -22,7 +22,7 @@
  *  Copyright 2007  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: ba9e60cf1a6e0b6ad8c8ccfe2e549f0d9071c645 $")
+RCSID("$Id: 0c2976b3c96f90ffda165734431c24e0332ddea7 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/heap.h>
@@ -43,7 +43,7 @@ typedef struct fr_event_fd_t {
 	void			*ctx;
 } fr_event_fd_t;
 
-#define FR_EV_MAX_FDS (256)
+#define FR_EV_MAX_FDS (512)
 
 #undef USEC
 #define USEC (1000000)

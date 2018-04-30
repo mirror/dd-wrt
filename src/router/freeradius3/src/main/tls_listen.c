@@ -1,7 +1,7 @@
 /*
  * tls.c
  *
- * Version:     $Id: 9ee475bcfdee34060d84de07f226a54dcbac00e8 $
+ * Version:     $Id: 40b26c0b1288b97cf7bfdb38e2fc0e545f0a372c $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 9ee475bcfdee34060d84de07f226a54dcbac00e8 $")
+RCSID("$Id: 40b26c0b1288b97cf7bfdb38e2fc0e545f0a372c $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -174,7 +174,7 @@ static int tls_socket_recv(rad_listen_t *listener)
 
 		SSL_set_ex_data(sock->ssn->ssl, FR_TLS_EX_INDEX_REQUEST, (void *)request);
 		SSL_set_ex_data(sock->ssn->ssl, fr_tls_ex_index_certs, (void *) &sock->certs);
-		SSL_set_ex_data(sock->ssn->ssl, FR_TLS_EX_INDEX_TALLOC, NULL);
+		SSL_set_ex_data(sock->ssn->ssl, FR_TLS_EX_INDEX_TALLOC, sock);
 
 		doing_init = true;
 	}

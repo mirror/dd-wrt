@@ -4,7 +4,7 @@
 #	Attributes and values defined in RFC 4679.
 #	http://www.ietf.org/rfc/rfc4679.txt
 #
-#	$Id: 6c6f1dc6e3fcc3966a2fc50b1b7954f158551869 $
+#	$Id: f5ae46b492f4bc7de1be40a39c1cc985e2cfcaf3 $
 #
 
 VENDOR		ADSL-Forum			3561
@@ -16,6 +16,10 @@ BEGIN-VENDOR	ADSL-Forum
 #  DHCP options.
 #
 ATTRIBUTE	ADSL-Forum-DHCP-Vendor-Specific		0	tlv
+ATTRIBUTE	ADSL-Forum-Device-Manufacturer-OUI	0.1	octets
+ATTRIBUTE	ADSL-Forum-Device-Serial-Number		0.2	string
+ATTRIBUTE	ADSL-Forum-Device-Product-Class		0.3	string
+ATTRIBUTE	ADSL-Forum-Gateway-Manufacturer-OUI	0.4	octets
 
 #
 #  The first two attributes are prefixed with "ADSL-" because of

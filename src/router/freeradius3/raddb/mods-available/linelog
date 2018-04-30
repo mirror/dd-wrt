@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id: c646da0a05cbdf6e984f79cea105de41de4b0528 $
+#  $Id: dc2a8195b3c1c2251fc37651ea4a598898c33d12 $
 
 #
 #  The "linelog" module will log one line of text to a file.
@@ -104,7 +104,7 @@ linelog {
 
 	#
 	#  Reference the Packet-Type (Access-Accept, etc.)  If it doesn't
-	#  exist, reference the "defaukt" entry.
+	#  exist, reference the "default" entry.
 	#
 	#  This is for "linelog" being used in the post-auth section
 	#  If you want to use it in "authorize", you need to change

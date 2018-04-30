@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: 4ca3dfd67a66be17f25c5850dd32eb68127074c4 $
+ * $Id: c825a9230b01e58b8d8b8f26d49a46b9de9990f9 $
  * @file rlm_files.c
  * @brief Process simple 'users' policy files.
  *
  * @copyright 2000,2006  The FreeRADIUS server project
  * @copyright 2000  Jeff Carneal <jeff@apex.net>
  */
-RCSID("$Id: 4ca3dfd67a66be17f25c5850dd32eb68127074c4 $")
+RCSID("$Id: c825a9230b01e58b8d8b8f26d49a46b9de9990f9 $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/modules.h>
@@ -345,7 +345,7 @@ static int mod_instantiate(UNUSED CONF_SECTION *conf, void *instance)
 static rlm_rcode_t file_common(rlm_files_t *inst, REQUEST *request, char const *filename, rbtree_t *tree,
 			       RADIUS_PACKET *request_packet, RADIUS_PACKET *reply_packet)
 {
-	char const	*name, *match;
+	char const	*name;
 	VALUE_PAIR	*check_tmp;
 	VALUE_PAIR	*reply_tmp;
 	PAIR_LIST const *user_pl, *default_pl;
@@ -387,25 +387,20 @@ static rlm_rcode_t file_common(rlm_files_t *inst, REQUEST *request, char const *
 		/*
 		 *	Figure out which entry to match on.
 		 */
-
 		if (!default_pl && user_pl) {
 			pl = user_pl;
-			match = name;
 			user_pl = user_pl->next;
 
 		} else if (!user_pl && default_pl) {
 			pl = default_pl;
-			match = "DEFAULT";
 			default_pl = default_pl->next;
 
-		} else if (user_pl->lineno < default_pl->lineno) {
+		} else if (user_pl->order < default_pl->order) {
 			pl = user_pl;
-			match = name;
 			user_pl = user_pl->next;
 
 		} else {
 			pl = default_pl;
-			match = "DEFAULT";
 			default_pl = default_pl->next;
 		}
 
@@ -421,7 +416,7 @@ static rlm_rcode_t file_common(rlm_files_t *inst, REQUEST *request, char const *
 		}
 
 		if (paircompare(request, request_packet->vps, check_tmp, &reply_packet->vps) == 0) {
-			RDEBUG2("%s: Matched entry %s at line %d", filename, match, pl->lineno);
+			RDEBUG2("%s: Matched entry %s at line %d", filename, pl->name, pl->lineno);
 			found = true;
 
 			/* ctx may be reply or proxy */

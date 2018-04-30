@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: b7ff8d11c097ff12826161b131aa9f67f30c7c09 $
+ * $Id: b5bbe002b050dd56401cca03934b52e89fb7c970 $
  *
  * @file xlat.c
  * @brief String expansion ("translation"). Implements %Attribute -> value
@@ -24,7 +24,7 @@
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: b7ff8d11c097ff12826161b131aa9f67f30c7c09 $")
+RCSID("$Id: b5bbe002b050dd56401cca03934b52e89fb7c970 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/parser.h>
@@ -67,11 +67,6 @@ struct xlat_exp {
 	vp_tmpl_t attr;	//!< An attribute template.
 	xlat_t const *xlat;	//!< The xlat expansion to expand format with.
 };
-
-typedef struct xlat_out {
-	char const *out;	//!< Output data.
-	size_t len;		//!< Length of the output string.
-} xlat_out_t;
 
 static rbtree_t *xlat_root = NULL;
 
@@ -484,6 +479,7 @@ static ssize_t xlat_debug_attr(UNUSED void *instance, REQUEST *request, char con
 			RINDENT();
 			RDEBUG2("as %s%*s: %s", type->name, pad, " ", value);
 			REXDENT();
+			talloc_free(value);
 
 		next_type:
 			talloc_free(dst);

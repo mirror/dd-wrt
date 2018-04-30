@@ -1,5 +1,5 @@
 /**
- * $Id: 49dca4a0f61539116d175f89289d81e8c221b30f $
+ * $Id: 896fa3b285fc2fb49ac407c8ee05932427ea5b2c $
  * @file decrypt.c
  * @brief Authentication for yubikey OTP tokens using the yubikey library.
  *
@@ -120,7 +120,7 @@ rlm_rcode_t rlm_yubikey_decrypt(rlm_yubikey_t *inst, REQUEST *request, char cons
 	/*
 	 *	Now we check for replay attacks
 	 */
-	vp = fr_pair_find_by_da(request->config, da, TAG_ANY);
+	vp = fr_pair_find_by_da(request->config, vp->da, TAG_ANY);
 	if (!vp) {
 		RWDEBUG("Yubikey-Counter not found in control list, skipping replay attack checks");
 		return RLM_MODULE_OK;

@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 90c39be69c1f7eea88811ef79cfb020543b88eef $
+ * $Id: 6032db47474448f934180cb7c2314dd964d79581 $
  *
  * @brief #VALUE_PAIR template functions
  * @file main/tmpl.c
@@ -24,7 +24,7 @@
  *
  * @copyright 2014-2015 The FreeRADIUS server project
  */
-RCSID("$Id: 90c39be69c1f7eea88811ef79cfb020543b88eef $")
+RCSID("$Id: 6032db47474448f934180cb7c2314dd964d79581 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -1220,6 +1220,13 @@ int tmpl_cast_to_vp(VALUE_PAIR **out, REQUEST *request,
 		talloc_free(data.ptr);
 		fr_pair_list_free(&vp);
 		return -1;
+	}
+
+	/*
+	 *	Copy over any additional fields needed...
+	 */
+	if ((vpt->type == TMPL_TYPE_ATTR) && vp->da->flags.has_tag) {
+		vp->tag = vpt->tmpl_tag;
 	}
 
 	*out = vp;
