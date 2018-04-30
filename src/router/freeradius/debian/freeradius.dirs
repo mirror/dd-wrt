@@ -1,5 +1,0 @@
-etc/freeradius/certs
-etc/freeradius/sites-enabled
-etc/freeradius/sites-available
-usr/lib/freeradius
-var/log/freeradius
