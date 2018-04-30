@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r4056 | brainslayer | 2018-04-30 03:01:35 +0200 (Mon, 30 Apr 2018) | 1 line
+
+introduce compression algorithm selection for tdma too
+------------------------------------------------------------------------
 r4055 | brainslayer | 2018-04-29 21:47:01 +0200 (Sun, 29 Apr 2018) | 1 line
 
 fix nss for chipsets with 1x1 only support
