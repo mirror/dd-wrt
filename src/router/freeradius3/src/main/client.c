@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 3c4feb7d5076b5e138f38d5e2674038ac7322a7e $
+ * $Id: 4b83f56ea1a3fb48163e2ceeecac35716a578855 $
  * @file main/client.c
  * @brief Manage clients allowed to communicate with the server.
  *
@@ -24,7 +24,7 @@
  * @copyright 2000 Alan DeKok <aland@ox.org>
  * @copyright 2000 Miquel van Smoorenburg <miquels@cistron.nl>
  */
-RCSID("$Id: 3c4feb7d5076b5e138f38d5e2674038ac7322a7e $")
+RCSID("$Id: 4b83f56ea1a3fb48163e2ceeecac35716a578855 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -1341,7 +1341,7 @@ RADCLIENT *client_afrom_request(RADCLIENT_LIST *clients, REQUEST *request)
 			 *	We could reuse the CONF_PAIR buff, this just keeps things
 			 *	consistent between client_afrom_cs, and client_afrom_query.
 			 */
-			*p = talloc_strdup(c, strvalue);
+			*p = talloc_strdup(c, vp->vp_strvalue);
 
 			/*
 			 *	This is fairly nasty... In order to figure out the CONF_PAIR

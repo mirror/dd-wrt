@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: 20843a4fe63f53be9b1cae1daa6e63ded2d2041c $
+ * $Id: 0eea1bbac7fb6c09fbcd79c7937055066b6e2d2f $
  * @file rlm_detail.c
  * @brief Write plaintext versions of packets to flatfiles.
  *
  * @copyright 2000,2006  The FreeRADIUS server project
  */
-RCSID("$Id: 20843a4fe63f53be9b1cae1daa6e63ded2d2041c $")
+RCSID("$Id: 0eea1bbac7fb6c09fbcd79c7937055066b6e2d2f $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -224,7 +224,7 @@ static int detail_write(FILE *out, rlm_detail_t *inst, REQUEST *request, RADIUS_
 	VALUE_PAIR *vp;
 	char timestamp[256];
 
-	if (!packet->vps) {
+	if ((packet->code == PW_CODE_ACCOUNTING_REQUEST) && !packet->vps) {
 		RWDEBUG("Skipping empty packet");
 		return 0;
 	}

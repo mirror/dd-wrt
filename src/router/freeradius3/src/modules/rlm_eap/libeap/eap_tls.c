@@ -1,7 +1,7 @@
 /*
  * eap_tls.c
  *
- * Version:     $Id: 082d0c84ef3361a34b3fc2aa989e68338fa1a167 $
+ * Version:     $Id: 5819a87cadaa57e24c0f1dc67a6fd2b71e7d0958 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@
  *
  */
 
-RCSID("$Id: 082d0c84ef3361a34b3fc2aa989e68338fa1a167 $")
+RCSID("$Id: 5819a87cadaa57e24c0f1dc67a6fd2b71e7d0958 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <assert.h>
@@ -96,7 +96,7 @@ tls_session_t *eaptls_session(eap_handler_t *handler, fr_tls_server_conf_t *tls_
 	SSL_set_ex_data(ssn->ssl, FR_TLS_EX_INDEX_STORE, (void *)tls_conf->ocsp_store);
 #endif
 	SSL_set_ex_data(ssn->ssl, FR_TLS_EX_INDEX_SSN, (void *)ssn);
-	SSL_set_ex_data(ssn->ssl, FR_TLS_EX_INDEX_TALLOC, NULL);
+	SSL_set_ex_data(ssn->ssl, FR_TLS_EX_INDEX_TALLOC, handler);
 
 	return talloc_steal(handler, ssn); /* ssn */
 }

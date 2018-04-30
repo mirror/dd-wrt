@@ -31,7 +31,7 @@
 #
 ######################################################################
 #
-#  $Id: daa2d58be47ba89a50cc8543df1fad88ab6918f0 $
+#  $Id: 0112c1033ea2550447e5f8ba33c86b34701a89e2 $
 #
 
 $begin_vendor = 0;
@@ -67,6 +67,12 @@ while (@ARGV) {
 	$blank = 0;
 
 	s/\s*$/\n/;
+
+	#
+	#  Suppress leading whitespace, so long as it's
+	#  not followed by a comment..
+	#
+	s/^\s*([^#])/$1/;
 
 	#
 	#  Remember the vendor

@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 4200a3defe5f1cbe14e18d5dc4df4a9e42999490 $
+ * $Id: 81913359742d276e5eea0af54a029c2325607eab $
  * @file rlm_eap.c
  * @brief Implements the EAP framework.
  *
@@ -23,7 +23,7 @@
  * @copyright 2001  hereUare Communications, Inc. <raghud@hereuare.com>
  * @copyright 2003  Alan DeKok <aland@freeradius.org>
  */
-RCSID("$Id: 4200a3defe5f1cbe14e18d5dc4df4a9e42999490 $")
+RCSID("$Id: 81913359742d276e5eea0af54a029c2325607eab $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -453,8 +453,14 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authenticate(void *instance, REQUEST *re
 		 */
 		vp = fr_pair_find_by_num(request->reply->vps, PW_USER_NAME, 0, TAG_ANY);
 		if (!vp) {
-			vp = fr_pair_copy(request->reply, request->username);
-			fr_pair_add(&request->reply->vps, vp);
+			vp = request->username;
+			if (vp->da->attr != PW_USER_NAME) {
+				vp = fr_pair_find_by_num(request->packet->vps, PW_USER_NAME, 0, TAG_ANY);
+			}
+			if (vp) {
+				vp = fr_pair_copy(request->reply, vp);
+				fr_pair_add(&request->reply->vps, vp);
+			}
 		}
 
 		/*
@@ -466,7 +472,7 @@ static rlm_rcode_t CC_HINT(nonnull) mod_authenticate(void *instance, REQUEST *re
 		 *	vp->vp_strvalue is still a NUL-terminated C
 		 *	string.
 		 */
-		if (inst->mod_accounting_username_bug) {
+		if (vp && inst->mod_accounting_username_bug) {
 			char const *old = vp->vp_strvalue;
 			char *new;
 

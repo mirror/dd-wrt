@@ -1,7 +1,7 @@
 /*
  * radiusd.c	Main loop of the radius server.
  *
- * Version:	$Id: 55a3bbca7cb5dabbf28b0026c5299633a3fd94ce $
+ * Version:	$Id: aac9263ffb851d7ded17b6bb56c94a47fa64d7eb $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  * Copyright 2000  Chad Miller <cmiller@surfsouth.com>
  */
 
-RCSID("$Id: 55a3bbca7cb5dabbf28b0026c5299633a3fd94ce $")
+RCSID("$Id: aac9263ffb851d7ded17b6bb56c94a47fa64d7eb $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -501,6 +501,7 @@ int main(int argc, char *argv[])
 
 	if ((fr_set_signal(SIGHUP, sig_hup) < 0) ||
 	    (fr_set_signal(SIGTERM, sig_fatal) < 0)) {
+	set_signal_error:
 		ERROR("%s", fr_strerror());
 		exit(EXIT_FAILURE);
 	}
@@ -510,16 +511,13 @@ int main(int argc, char *argv[])
 	 *  immediately.  Use SIGTERM to shut down the server cleanly in
 	 *  that case.
 	 */
-	if (main_config.debug_memory || (rad_debug_lvl == 0)) {
-		if ((fr_set_signal(SIGINT, sig_fatal) < 0)
+	if (fr_set_signal(SIGINT, sig_fatal) < 0) goto set_signal_error;
+
 #ifdef SIGQUIT
-		|| (fr_set_signal(SIGQUIT, sig_fatal) < 0)
-#endif
-		) {
-			ERROR("%s", fr_strerror());
-			exit(EXIT_FAILURE);
-		}
+	if (main_config.debug_memory || (rad_debug_lvl == 0)) {
+		if (fr_set_signal(SIGQUIT, sig_fatal) < 0) goto set_signal_error;
 	}
+#endif
 
 	/*
 	 *  Everything seems to have loaded OK, exit gracefully.

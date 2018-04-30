@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 4b19da17585c5aba2f4ec1059a2f564f5326dd7c $
+ * $Id: c6fbedf1ace4347a6ca0a0deef8cc0548e897bae $
  * @file rlm_ldap.c
  * @brief LDAP authorization and authentication module.
  *
@@ -27,7 +27,7 @@
  * @copyright 2012 Alan DeKok <aland@freeradius.org>
  * @copyright 1999-2013 The FreeRADIUS Server Project.
  */
-RCSID("$Id: 4b19da17585c5aba2f4ec1059a2f564f5326dd7c $")
+RCSID("$Id: c6fbedf1ace4347a6ca0a0deef8cc0548e897bae $")
 
 #include	<freeradius-devel/rad_assert.h>
 
@@ -187,6 +187,8 @@ static CONF_PARSER option_config[] = {
 	{ "chase_referrals", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_ldap_t, chase_referrals), NULL },
 
 	{ "rebind", FR_CONF_OFFSET(PW_TYPE_BOOLEAN, rlm_ldap_t, rebind), NULL },
+
+	{ "sasl_secprops", FR_CONF_OFFSET(PW_TYPE_STRING, rlm_ldap_t, sasl_secprops), NULL },
 
 #ifdef LDAP_OPT_NETWORK_TIMEOUT
 	/* timeout on network activity */
