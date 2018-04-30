@@ -15,13 +15,13 @@
  */
 
 /**
- * $Id: 60d602fc23003e915aa51eb456f98fcf2edd1238 $
+ * $Id: 7cd1b45fba23b5f819bf90ca100e64d6b74ebdc7 $
  * @file rlm_rest.c
  * @brief Integrate FreeRADIUS with RESTfull APIs
  *
  * @copyright 2012-2014  Arran Cudbard-Bell <arran.cudbardb@freeradius.org>
  */
-RCSID("$Id: 60d602fc23003e915aa51eb456f98fcf2edd1238 $")
+RCSID("$Id: 7cd1b45fba23b5f819bf90ca100e64d6b74ebdc7 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -36,6 +36,7 @@ RCSID("$Id: 60d602fc23003e915aa51eb456f98fcf2edd1238 $")
  */
 static CONF_PARSER tls_config[] = {
 	{ "ca_file", FR_CONF_OFFSET(PW_TYPE_FILE_INPUT, rlm_rest_section_t, tls_ca_file), NULL },
+	{ "ca_info_file", FR_CONF_OFFSET(PW_TYPE_FILE_INPUT, rlm_rest_section_t, tls_ca_info_file), NULL },
 	{ "ca_path", FR_CONF_OFFSET(PW_TYPE_FILE_INPUT, rlm_rest_section_t, tls_ca_path), NULL },
 	{ "certificate_file", FR_CONF_OFFSET(PW_TYPE_FILE_INPUT, rlm_rest_section_t, tls_certificate_file), NULL },
 	{ "private_key_file", FR_CONF_OFFSET(PW_TYPE_FILE_INPUT, rlm_rest_section_t, tls_private_key_file), NULL },

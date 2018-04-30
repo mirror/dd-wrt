@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: a9bb36d5150e612d9639c82cc77f1b6678b0017a $
+ * $Id: faa51869af7a6d50e8cf4a793050ca319c8ed155 $
  *
  * @brief Function prototypes and datatypes for the REST (HTTP) transport.
  * @file rest.h
@@ -23,7 +23,7 @@
  * @copyright 2012-2014  Arran Cudbard-Bell <a.cudbard-bell@freeradius.org>
  */
 
-RCSIDH(other_h, "$Id: a9bb36d5150e612d9639c82cc77f1b6678b0017a $")
+RCSIDH(other_h, "$Id: faa51869af7a6d50e8cf4a793050ca319c8ed155 $")
 
 #include <freeradius-devel/connection.h>
 #include "config.h"
@@ -131,6 +131,7 @@ typedef struct rlm_rest_section_t {
 	char const		*tls_private_key_file;
 	char const		*tls_private_key_password;
 	char const		*tls_ca_file;
+	char const		*tls_ca_info_file;
 	char const		*tls_ca_path;
 	char const		*tls_random_file;
 	bool			tls_check_cert;

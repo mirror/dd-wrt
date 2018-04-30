@@ -16,7 +16,7 @@
 #ifndef TMPL_H
 #define TMPL_H
 /**
- * $Id: 4392cd12064912ed93affaabda058aaa1ed8c043 $
+ * $Id: 92884b186bddef23432c4ad74bd1dc1d10c6466c $
  *
  * @file tmpl.h
  * @brief Structures and prototypes for templates
@@ -70,7 +70,7 @@
  * @copyright 2014-2015 The FreeRADIUS server project
  */
 
-RCSIDH(tmpl_h, "$Id: 4392cd12064912ed93affaabda058aaa1ed8c043 $")
+RCSIDH(tmpl_h, "$Id: 92884b186bddef23432c4ad74bd1dc1d10c6466c $")
 
 #include <freeradius-devel/xlat.h>
 
@@ -121,6 +121,7 @@ typedef struct pair_list {
 	char const		*name;
 	VALUE_PAIR		*check;
 	VALUE_PAIR		*reply;
+	int			order;		/* for ordering! */
 	int			lineno;
 	struct pair_list	*next;
 } PAIR_LIST;

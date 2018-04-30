@@ -1,7 +1,7 @@
 /*
  * parser.c	Parse various things
  *
- * Version:	$Id: 8b57725a1f151b2336416af85094401243a523cb $
+ * Version:	$Id: d83516b035eccd7c27e871039225ae2fd8a1f8e9 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright 2013  Alan DeKok <aland@freeradius.org>
  */
 
-RCSID("$Id: 8b57725a1f151b2336416af85094401243a523cb $")
+RCSID("$Id: d83516b035eccd7c27e871039225ae2fd8a1f8e9 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/parser.h>
@@ -1214,10 +1214,6 @@ static ssize_t condition_tokenize(TALLOC_CTX *ctx, CONF_ITEM *ci, char const *st
 
 						if (c->data.map->lhs->name[i] == '-') {
 							hyphens++;
-							if (hyphens > 1) {
-								may_be_attr = false;
-								break;
-							}
 						}
 					}
 

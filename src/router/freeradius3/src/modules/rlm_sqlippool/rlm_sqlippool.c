@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: eabe69d855cf859d4f3da41dbc90e978bfc62d47 $
+ * $Id: fe0bfb1deb658bf050a1a17eb52137227c75cf93 $
  * @file rlm_sqlippool.c
  * @brief Allocates an IP address / prefix from pools stored in SQL.
  *
@@ -23,7 +23,7 @@
  * @copyright 2006  The FreeRADIUS server project
  * @copyright 2006  Suntel Communications
  */
-RCSID("$Id: eabe69d855cf859d4f3da41dbc90e978bfc62d47 $")
+RCSID("$Id: fe0bfb1deb658bf050a1a17eb52137227c75cf93 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -331,8 +331,8 @@ static int sqlippool_command(char const *fmt, rlm_sql_handle_t **handle,
  *	Don't repeat yourself
  */
 #undef DO
-#define DO(_x) sqlippool_command(inst->_x, handle, inst, request, NULL, 0)
-#define DO_PART(_x) sqlippool_command(inst->_x, &handle, inst, request, NULL, 0)
+#define DO(_x) if (sqlippool_command(inst->_x, handle, inst, request, NULL, 0) < 0) return RLM_MODULE_FAIL
+#define DO_PART(_x) if (sqlippool_command(inst->_x, &handle, inst, request, NULL, 0) < 0) goto error
 
 /*
  * Query the database expecting a single result row
@@ -627,8 +627,12 @@ static rlm_rcode_t CC_HINT(nonnull) mod_post_auth(void *instance, REQUEST *reque
 	/*
 	 *	UPDATE
 	 */
-	sqlippool_command(inst->allocate_update, &handle, inst, request,
-			  allocation, allocation_len);
+	if (sqlippool_command(inst->allocate_update, &handle, inst, request,
+			      allocation, allocation_len) < 0) {
+	error:
+		fr_connection_release(inst->sql_inst->pool, handle);
+		return RLM_MODULE_FAIL;
+	}
 
 	DO_PART(allocate_commit);
 

@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 22723347c1f12e9ea2f1b3a2a0b9e541b4d111f3 $
+ * $Id: f47421bcd776122c019644f6c3922c5fa5657028 $
  *
  * @brief Functions and datatypes for the REST (HTTP) transport.
  * @file rest.c
@@ -23,7 +23,7 @@
  * @copyright 2012-2014  Arran Cudbard-Bell <a.cudbard-bell@freeradius.org>
  */
 
-RCSID("$Id: 22723347c1f12e9ea2f1b3a2a0b9e541b4d111f3 $")
+RCSID("$Id: f47421bcd776122c019644f6c3922c5fa5657028 $")
 
 #include <ctype.h>
 #include <string.h>
@@ -2146,6 +2146,10 @@ int rest_request_config(rlm_rest_t *instance, rlm_rest_section_t *section,
 
 	if (section->tls_ca_file) {
 		SET_OPTION(CURLOPT_ISSUERCERT, section->tls_ca_file);
+	}
+
+	if (section->tls_ca_info_file) {
+		SET_OPTION(CURLOPT_CAINFO, section->tls_ca_info_file);
 	}
 
 	if (section->tls_ca_path) {

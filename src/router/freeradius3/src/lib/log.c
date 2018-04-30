@@ -2,7 +2,7 @@
  * log.c	Functions in the library call radlib_log() which
  *		does internal logging.
  *
- * Version:	$Id: 3193270b80202c9b9c74d0389c832d3bacd0cd89 $
+ * Version:	$Id: c7e32564d7b1c3201f8c6ec650b683a575199d84 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -21,7 +21,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 3193270b80202c9b9c74d0389c832d3bacd0cd89 $")
+RCSID("$Id: c7e32564d7b1c3201f8c6ec650b683a575199d84 $")
 
 #include <freeradius-devel/libradius.h>
 
@@ -180,7 +180,7 @@ void fr_strerror_printf(char const *fmt, ...)
 
 		ret = fr_thread_local_set(fr_strerror_buffer, buffer);
 		if (ret != 0) {
-			fr_perror("Failed setting up TLS for libradius error buffer: %s", fr_syserror(ret));
+			fr_perror("Failed setting up thread-local storage for libradius error buffer: %s", fr_syserror(ret));
 			free(buffer);
 			return;
 		}
@@ -263,7 +263,7 @@ char const *fr_syserror(int num)
 
 		ret = fr_thread_local_set(fr_syserror_buffer, buffer);
 		if (ret != 0) {
-			fr_perror("Failed setting up TLS for system error buffer: %s", fr_syserror(ret));
+			fr_perror("Failed setting up thread-local storage for system error buffer");
 			free(buffer);
 			return NULL;
 		}

@@ -1,7 +1,7 @@
 /*
  * packet.c	Generic packet manipulation functions.
  *
- * Version:	$Id: c258c60ae4b1bf3a6fef675505fc94e8cf5064eb $
+ * Version:	$Id: 6d5a0e5fbdf09916fd3b97ca392fcaafcd605f6f $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2000-2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: c258c60ae4b1bf3a6fef675505fc94e8cf5064eb $")
+RCSID("$Id: 6d5a0e5fbdf09916fd3b97ca392fcaafcd605f6f $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -925,8 +925,25 @@ RADIUS_PACKET *fr_packet_list_recv(fr_packet_list_t *pl, fd_set *set)
 #ifdef WITH_TCP
 		if (pl->sockets[start].proto == IPPROTO_TCP) {
 			packet = fr_tcp_recv(pl->sockets[start].sockfd, 0);
+
+			/*
+			 *	We always know src/dst ip/port for TCP
+			 *	sockets.  So just fill them in.  Since
+			 *	we read the packet from the TCP
+			 *	socket, we invert src/dst.
+			 */
+			packet->dst_ipaddr = pl->sockets[start].src_ipaddr;
+			packet->dst_port = pl->sockets[start].src_port;
+			packet->src_ipaddr = pl->sockets[start].dst_ipaddr;
+			packet->src_port = pl->sockets[start].dst_port;
+
 		} else
 #endif
+
+		/*
+		 *	Rely on rad_recv() to fill in the required
+		 *	fields.
+		 */
 		packet = rad_recv(NULL, pl->sockets[start].sockfd, 0);
 		if (!packet) continue;
 

@@ -4,7 +4,7 @@
 #		NOTE: This top-level Makefile must not
 #		use GNU-make extensions. The lower ones can.
 #
-# Version:	$Id: 03de192a783c0ada6e489ab99aa49b7e98ac9234 $
+# Version:	$Id: bab88499db58253d148599ec5e8e872d30ba1cd1 $
 #
 
 #
@@ -302,6 +302,30 @@ dist-tag: freeradius-server-$(RADIUSD_VERSION_STRING).tar.gz freeradius-server-$
 	@echo "git tag release_`echo $(RADIUSD_VERSION_STRING) | tr .- __`"
 
 #
+#	Docker-related targets
+#
+.PHONY: docker
+docker:
+	docker build scripts/docker/ubuntu16 --build-arg=release=release_`echo $(RADIUSD_VERSION_STRING) | tr .- __` -t freeradius/freeradius-server:$(RADIUSD_VERSION_STRING)
+	docker build scripts/docker/alpine --build-arg=release=release_`echo $(RADIUSD_VERSION_STRING) | tr .- __` -t freeradius/freeradius-server:$(RADIUSD_VERSION_STRING)-alpine
+
+.PHONY: docker-push
+docker-push: docker
+	docker push freeradius/freeradius-server:$(RADIUSD_VERSION_STRING)
+	docker push freeradius/freeradius-server:$(RADIUSD_VERSION_STRING)-alpine
+
+.PHONY: docker-tag-latest
+docker-tag-latest: docker
+	docker tag freeradius/freeradius-server:$(RADIUSD_VERSION_STRING) freeradius/freeradius-server:latest
+
+.PHONY: docker-push-latest
+docker-push-latest: docker-push docker-tag-latest
+	docker push freeradius/freeradius-server:latest
+
+.PHONY: docker-publish
+docker-publish: docker-push-latest
+
+#
 #	Build a debian package
 #
 .PHONY: deb
@@ -311,7 +335,7 @@ deb:
 # Developer checks
 .PHONY: warnings
 warnings:
-	@(make clean all 2>&1) | egrep -v '^/|deprecated|^In file included|: In function|   from |^HEADER|^CC|^LINK' > warnings.txt
+	@(make clean all 2>&1) | egrep -v '^/|deprecated|^In file included|: In function|   from |^HEADER|^CC|^LN' > warnings.txt
 	@wc -l warnings.txt
 
 #

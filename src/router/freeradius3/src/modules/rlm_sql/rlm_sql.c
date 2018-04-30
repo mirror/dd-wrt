@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 3bf9be2fc393788f0a22b104410af0523d5bba25 $
+ * $Id: 1b8f826ad1f8eeb4505087172ee7d22bbfa52c4b $
  * @file rlm_sql.c
  * @brief Implements SQL 'users' file, and SQL accounting.
  *
@@ -24,7 +24,7 @@
  * @copyright 2000  Mike Machado <mike@innercite.com>
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id: 3bf9be2fc393788f0a22b104410af0523d5bba25 $")
+RCSID("$Id: 1b8f826ad1f8eeb4505087172ee7d22bbfa52c4b $")
 
 #include <ctype.h>
 
@@ -1439,7 +1439,6 @@ static int acct_redundant(rlm_sql_t *inst, REQUEST *request, sql_acct_section_t 
 		if (!*expanded) {
 			RDEBUG("Ignoring null query");
 			rcode = RLM_MODULE_NOOP;
-			talloc_free(expanded);
 
 			goto finish;
 		}

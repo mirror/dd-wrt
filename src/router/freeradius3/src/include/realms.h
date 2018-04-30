@@ -5,11 +5,11 @@
  * realms.h	Structures, prototypes and global variables
  *		for realms
  *
- * Version:	$Id: 8208b8f04cff3dce664433486b65cccb3a3f8c14 $
+ * Version:	$Id: dc49ef3f866016117df1a0a8f4c13609a59579aa $
  *
  */
 
-RCSIDH(realms_h, "$Id: 8208b8f04cff3dce664433486b65cccb3a3f8c14 $")
+RCSIDH(realms_h, "$Id: dc49ef3f866016117df1a0a8f4c13609a59579aa $")
 
 #ifdef __cplusplus
 extern "C" {
@@ -193,6 +193,7 @@ int		realm_realm_add( REALM *r, CONF_SECTION *cs);
 void		home_server_update_request(home_server_t *home, REQUEST *request);
 home_server_t	*home_server_ldb(char const *realmname, home_pool_t *pool, REQUEST *request);
 home_server_t	*home_server_find(fr_ipaddr_t *ipaddr, uint16_t port, int proto);
+home_server_t	*home_server_find_bysrc(fr_ipaddr_t *ipaddr, uint16_t port, int proto, fr_ipaddr_t *src_ipaddr);
 home_server_t	*home_server_afrom_cs(TALLOC_CTX *ctx, realm_config_t *rc, CONF_SECTION *cs);
 CONF_SECTION	*home_server_cs_afrom_client(CONF_SECTION *client);
 #ifdef WITH_COA

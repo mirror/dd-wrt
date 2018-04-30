@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: ce0147da326582973dbbc5986b7dfabb8e037822 $
+ * $Id: d54d8a69c1338904b69468f191ad2be781902374 $
  * @file udpfromto.c
  * @brief Like recvfrom, but also stores the destination IP address. Useful on multihomed hosts.
  *
  * @copyright 2007 Alan DeKok <aland@deployingradius.com>
  * @copyright 2002 Miquel van Smoorenburg
  */
-RCSID("$Id: ce0147da326582973dbbc5986b7dfabb8e037822 $")
+RCSID("$Id: d54d8a69c1338904b69468f191ad2be781902374 $")
 
 #include <freeradius-devel/udpfromto.h>
 
@@ -405,9 +405,8 @@ int sendfromto(int s, void *buf, size_t len, int flags,
 		pkt = (struct in_pktinfo *) CMSG_DATA(cmsg);
 		memset(pkt, 0, sizeof(*pkt));
 		pkt->ipi_spec_dst = s4->sin_addr;
-#  endif
 
-#  ifdef IP_SENDSRCADDR
+#  elif defined(IP_SENDSRCADDR)
 		struct cmsghdr *cmsg;
 		struct in_addr *in;
 

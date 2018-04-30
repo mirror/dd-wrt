@@ -2,7 +2,7 @@
  *  sql.c		rlm_sql - FreeRADIUS SQL Module
  *		Main code directly taken from ICRADIUS
  *
- * Version:	$Id: 76bbf2e96981888f55ebc309bcdbaa8d249d9567 $
+ * Version:	$Id: 3bda868f0c984100bc6c64749d6f58d0c94fe03b $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@
  * Copyright 2001  Chad Miller <cmiller@surfsouth.com>
  */
 
-RCSID("$Id: 76bbf2e96981888f55ebc309bcdbaa8d249d9567 $")
+RCSID("$Id: 3bda868f0c984100bc6c64749d6f58d0c94fe03b $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/rad_assert.h>
@@ -118,20 +118,19 @@ int sql_fr_pair_list_afrom_str(TALLOC_CTX *ctx, REQUEST *request, VALUE_PAIR **h
 		token = gettoken(&value, buf, sizeof(buf), false);
 		switch (token) {
 		/*
+		 *	Mark the pair to be allocated later.
+		 */
+		case T_BACK_QUOTED_STRING:
+			do_xlat = 1;
+			/* FALL-THROUGH */
+
+		/*
 		 *	Take the unquoted string.
 		 */
 		case T_SINGLE_QUOTED_STRING:
 		case T_DOUBLE_QUOTED_STRING:
 			value = buf;
 			break;
-
-		/*
-		 *	Mark the pair to be allocated later.
-		 */
-		case T_BACK_QUOTED_STRING:
-			do_xlat = 1;
-
-			/* FALL-THROUGH */
 
 		/*
 		 *	Keep the original string.

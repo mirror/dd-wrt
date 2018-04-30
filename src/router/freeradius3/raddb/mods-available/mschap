@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id: 18f600589b67177679b9521feb65b7fbb0200ac2 $
+#  $Id: 3220393f94cb7a58244fee4d358d2d7bef861fea $
 
 # Microsoft CHAP authentication
 #
@@ -54,6 +54,12 @@ mschap {
 	# In that case, the mschap module will look at the User-Name
 	# attribute, and do prefix/suffix checks in order to obtain
 	# the "best" user name for the request.
+	#
+	#  Depending on the AD / Samba configuration, you may also need to add:
+	#
+	#	--allow-mschapv2
+	#
+	#  to the list of command-line options.
 	#
 #	ntlm_auth = "/path/to/ntlm_auth --request-nt-key --username=%{%{Stripped-User-Name}:-%{%{User-Name}:-None}} --challenge=%{%{mschap:Challenge}:-00} --nt-response=%{%{mschap:NT-Response}:-00}"
 
