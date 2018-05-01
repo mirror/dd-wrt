@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r4058 | brainslayer | 2018-05-01 21:06:20 +0200 (Tue, 01 May 2018) | 1 line
+
+smaller variation of nss code
+------------------------------------------------------------------------
 r4057 | brainslayer | 2018-05-01 13:36:05 +0200 (Tue, 01 May 2018) | 1 line
 
 upgrade lzma code for better performance
