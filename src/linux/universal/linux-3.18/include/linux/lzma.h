@@ -43,7 +43,7 @@
 
 #define LZMA_BEST_DICT(n) (((int)((n) / 2)) * 2)
 
-static void *p_lzma_malloc(void *p, size_t size)
+static void *p_lzma_malloc(ISzAllocPtr p, size_t size)
 {
         if (size == 0)
                 return NULL;
@@ -51,7 +51,7 @@ static void *p_lzma_malloc(void *p, size_t size)
         return LZMA_MALLOC(size);
 }
 
-static void p_lzma_free(void *p, void *address)
+static void p_lzma_free(ISzAllocPtr p, void *address)
 {
         if (address != NULL)
                 LZMA_FREE(address);

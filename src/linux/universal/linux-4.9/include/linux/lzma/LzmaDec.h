@@ -1,24 +1,24 @@
 /* LzmaDec.h -- LZMA Decoder
-2009-02-07 : Igor Pavlov : Public domain */
+2018-04-21 : Igor Pavlov : Public domain */
 
 #ifndef __LZMA_DEC_H
 #define __LZMA_DEC_H
 
 #include "Types.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+EXTERN_C_BEGIN
 
 /* #define _LZMA_PROB32 */
 /* _LZMA_PROB32 can increase the speed on some CPUs,
    but memory usage for CLzmaDec::probs will be doubled in that case */
 
+typedef
 #ifdef _LZMA_PROB32
-#define CLzmaProb UInt32
+  UInt32
 #else
-#define CLzmaProb UInt16
+  UInt16
 #endif
+  CLzmaProb;
 
 
 /* ---------- LZMA Properties ---------- */
@@ -27,7 +27,10 @@ extern "C" {
 
 typedef struct _CLzmaProps
 {
-  unsigned lc, lp, pb;
+  Byte lc;
+  Byte lp;
+  Byte pb;
+  Byte _pad_;
   UInt32 dicSize;
 } CLzmaProps;
 
@@ -41,30 +44,32 @@ typedef struct _CLzmaProps
 
 typedef struct
 {
+  /* Don't change this structure. ASM code can use it. */
   CLzmaProps prop;
   CLzmaProb *probs;
+  CLzmaProb *probs_1664;
   Byte *dic;
-  const Byte *buf;
-  UInt32 range, code;
-  SizeT dicPos;
   SizeT dicBufSize;
+  SizeT dicPos;
+  const Byte *buf;
+  UInt32 range;
+  UInt32 code;
   UInt32 processedPos;
   UInt32 checkDicSize;
-  unsigned state;
   UInt32 reps[4];
-  unsigned remainLen;
-  int needFlush;
-  int needInitState;
+  UInt32 state;
+  UInt32 remainLen;
+
   UInt32 numProbs;
   unsigned tempBufSize;
   Byte tempBuf[LZMA_REQUIRED_INPUT_MAX];
 } CLzmaDec;
 
-#define LzmaDec_Construct(p) { (p)->dic = 0; (p)->probs = 0; }
+#define LzmaDec_Construct(p) { (p)->dic = NULL; (p)->probs = NULL; }
 
 /* There are two types of LZMA streams:
-     0) Stream with end mark. That end mark adds about 6 bytes to compressed size.
-     1) Stream without end mark. You must know exact uncompressed size to decompress such stream. */
+     - Stream with end mark. That end mark adds about 6 bytes to compressed size.
+     - Stream without end mark. You must know exact uncompressed size to decompress such stream. */
 
 typedef enum
 {
@@ -98,6 +103,19 @@ typedef enum
 
 /* ELzmaStatus is used only as output value for function call */
 
+
+/* ---------- Interfaces ---------- */
+
+/* There are 3 levels of interfaces:
+     1) Dictionary Interface
+     2) Buffer Interface
+     3) One Call Interface
+   You can select any of these interfaces, but don't mix functions from different
+   groups for same object. */
+
+
+
+
 /* ---------- One Call Interface ---------- */
 
 /* LzmaDecode
@@ -121,10 +139,8 @@ Returns:
 
 SRes LzmaDecode(Byte *dest, SizeT *destLen, const Byte *src, SizeT *srcLen,
     const Byte *propData, unsigned propSize, ELzmaFinishMode finishMode,
-    ELzmaStatus *status, ISzAlloc *alloc);
+    ELzmaStatus *status, ISzAllocPtr alloc);
 
-#ifdef __cplusplus
-}
-#endif
+EXTERN_C_END
 
 #endif
