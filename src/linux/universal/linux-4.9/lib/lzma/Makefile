@@ -1,4 +1,4 @@
-lzma_compress-objs := LzFind.o LzmaEnc.o
+lzma_compress-objs := LzmaEnc.o
 lzma_decompress-objs := LzmaDec.o
 
 obj-$(CONFIG_LZMA_COMPRESS) += lzma_compress.o
