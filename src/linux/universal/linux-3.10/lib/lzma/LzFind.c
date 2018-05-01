@@ -126,7 +126,7 @@ static void MatchFinder_SetDefaultSettings(CMatchFinder *p)
 
 #define kCrcPoly 0xEDB88320
 
-void MatchFinder_Construct(CMatchFinder *p)
+static void MatchFinder_Construct(CMatchFinder *p)
 {
   UInt32 i;
   p->bufferBase = NULL;
@@ -151,7 +151,7 @@ static void MatchFinder_FreeThisClassMemory(CMatchFinder *p, ISzAllocPtr alloc)
   p->hash = NULL;
 }
 
-void MatchFinder_Free(CMatchFinder *p, ISzAllocPtr alloc)
+static void MatchFinder_Free(CMatchFinder *p, ISzAllocPtr alloc)
 {
   MatchFinder_FreeThisClassMemory(p, alloc);
   LzInWindow_Free(p, alloc);
@@ -165,7 +165,7 @@ static CLzRef* AllocRefs(size_t num, ISzAllocPtr alloc)
   return (CLzRef *)ISzAlloc_Alloc(alloc, sizeInBytes);
 }
 
-int MatchFinder_Create(CMatchFinder *p, UInt32 historySize,
+static int MatchFinder_Create(CMatchFinder *p, UInt32 historySize,
     UInt32 keepAddBufferBefore, UInt32 matchMaxLen, UInt32 keepAddBufferAfter,
     ISzAllocPtr alloc)
 {
@@ -963,7 +963,7 @@ static void Hc5_MatchFinder_Skip(CMatchFinder *p, UInt32 num)
 }
 */
 
-void MatchFinder_CreateVTable(CMatchFinder *p, IMatchFinder *vTable)
+static void MatchFinder_CreateVTable(CMatchFinder *p, IMatchFinder *vTable)
 {
   vTable->Init = (Mf_Init_Func)MatchFinder_Init;
   vTable->GetNumAvailableBytes = (Mf_GetNumAvailableBytes_Func)MatchFinder_GetNumAvailableBytes;
