@@ -2,7 +2,7 @@
 2018-04-29 : Igor Pavlov : Public domain */
 
 #include <linux/module.h>
-
+#include "LzFind.c"
 #include <string.h>
 #define UNUSED_VAR(x) (void)x;
 
@@ -862,7 +862,7 @@ static void LenPriceEnc_UpdateTables(CLenPriceEnc *p, unsigned numPosStates,
   #endif
 */
   
-#define MOVE_POS(p, num) { \
+#define ENC_MOVE_POS(p, num) { \
     p->additionalOffset += (num); \
     p->matchFinder.Skip(p->matchFinderObj, (num)); }
 
@@ -1060,7 +1060,7 @@ static unsigned GetOptimum(CLzmaEnc *p, UInt32 position)
       unsigned len;
       p->backRes = repMaxIndex;
       len = repLens[repMaxIndex];
-      MOVE_POS(p, len - 1)
+      ENC_MOVE_POS(p, len - 1)
       return len;
     }
     
@@ -1069,7 +1069,7 @@ static unsigned GetOptimum(CLzmaEnc *p, UInt32 position)
     if (mainLen >= p->numFastBytes)
     {
       p->backRes = matches[(size_t)numPairs - 1] + LZMA_NUM_REPS;
-      MOVE_POS(p, mainLen - 1)
+      ENC_MOVE_POS(p, mainLen - 1)
       return mainLen;
     }
     
@@ -1695,7 +1695,7 @@ static unsigned GetOptimumFast(CLzmaEnc *p)
     if (len >= p->numFastBytes)
     {
       p->backRes = i;
-      MOVE_POS(p, len - 1)
+      ENC_MOVE_POS(p, len - 1)
       return len;
     }
     if (len > repLen)
@@ -1708,7 +1708,7 @@ static unsigned GetOptimumFast(CLzmaEnc *p)
   if (mainLen >= p->numFastBytes)
   {
     p->backRes = p->matches[(size_t)numPairs - 1] + LZMA_NUM_REPS;
-    MOVE_POS(p, mainLen - 1)
+    ENC_MOVE_POS(p, mainLen - 1)
     return mainLen;
   }
 
@@ -1739,7 +1739,7 @@ static unsigned GetOptimumFast(CLzmaEnc *p)
         || (repLen + 3 >= mainLen && mainDist >= (1 << 15)))
   {
     p->backRes = repIndex;
-    MOVE_POS(p, repLen - 1)
+    ENC_MOVE_POS(p, repLen - 1)
     return repLen;
   }
   
@@ -1782,7 +1782,7 @@ static unsigned GetOptimumFast(CLzmaEnc *p)
   p->backRes = mainDist + LZMA_NUM_REPS;
   if (mainLen != 2)
   {
-    MOVE_POS(p, mainLen - 2)
+    ENC_MOVE_POS(p, mainLen - 2)
   }
   return mainLen;
 }

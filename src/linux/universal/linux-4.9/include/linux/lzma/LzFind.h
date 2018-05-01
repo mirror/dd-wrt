@@ -60,23 +60,6 @@ typedef struct _CMatchFinder
         && (p)->streamPos == (p)->pos \
         && (!(p)->directInput || (p)->directInputRem == 0))
 
-void MatchFinder_Construct(CMatchFinder *p);
-
-/* Conditions:
-     historySize <= 3 GB
-     keepAddBufferBefore + matchMaxLen + keepAddBufferAfter < 511MB
-*/
-int MatchFinder_Create(CMatchFinder *p, UInt32 historySize,
-    UInt32 keepAddBufferBefore, UInt32 matchMaxLen, UInt32 keepAddBufferAfter,
-    ISzAllocPtr alloc);
-void MatchFinder_Free(CMatchFinder *p, ISzAllocPtr alloc);
-
-/*
-Conditions:
-  Mf_GetNumAvailableBytes_Func must be called before each Mf_GetMatchLen_Func.
-  Mf_GetPointerToCurrentPos_Func's result must be used only before any other function
-*/
-
 typedef void (*Mf_Init_Func)(void *object);
 typedef UInt32 (*Mf_GetNumAvailableBytes_Func)(void *object);
 typedef const Byte * (*Mf_GetPointerToCurrentPos_Func)(void *object);
@@ -92,7 +75,6 @@ typedef struct _IMatchFinder
   Mf_Skip_Func Skip;
 } IMatchFinder;
 
-void MatchFinder_CreateVTable(CMatchFinder *p, IMatchFinder *vTable);
 
 EXTERN_C_END
 
