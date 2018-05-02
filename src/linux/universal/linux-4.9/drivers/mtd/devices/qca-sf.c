@@ -10,6 +10,7 @@
 #include <linux/module.h>
 #include <linux/types.h>
 #include "qca-sf.h"
+static u32 flash_id;
 
 /* Use CS0 by default */
 static u32 qca_sf_cs_mask = QCA_SPI_SHIFT_CNT_CHNL_CS0_MASK;
@@ -75,21 +76,6 @@ static inline void qca_sf_write_di(void)
 	qca_sf_shift_out(SPI_FLASH_CMD_WRDI, 8, 1);
 }
 
-#ifdef CONFIG_UBNTFIX
-static inline void qca_mxc_unlock(void)
-{
-	qca_sf_spi_en();
-	qca_sf_shift_out(MXIC_EXSO, 8, 1);
-	qca_sf_spi_di();
-}
-
-static inline void qca_flash_unlock(void)
-{
-	qca_sf_spi_en();
-	qca_sf_shift_out(SPI_FLASH_CMD_WRSR << 8, 16, 1);
-	qca_sf_spi_di();
-}
-#endif
 /* Poll status register and wait till busy bit is cleared */
 static void qca_sf_busy_wait(void)
 {
@@ -106,6 +92,23 @@ static void qca_sf_busy_wait(void)
 	/* Disable CS chip */
 	qca_sf_shift_out(0x0, 0, 1);
 }
+#ifdef CONFIG_UBNTFIX
+static inline void qca_mxc_unlock(void)
+{
+	qca_sf_spi_en();
+	qca_sf_write_en();
+	qca_sf_shift_out(MXIC_EXSO, 8, 1);
+	qca_sf_busy_wait();
+}
+
+static inline void qca_flash_unlock(void)
+{
+	qca_sf_spi_en();
+	qca_sf_write_en();
+	qca_sf_shift_out(SPI_FLASH_CMD_WRSR << 8, 16, 1);
+	qca_sf_busy_wait();
+}
+#endif
 
 /* Returns flash configuration register that is accessible with command 'cmd' */
 u8 qca_sf_read_reg(u8 cmd)
@@ -394,6 +397,17 @@ int qca_sf_flash_erase(flash_info_t * info, u32 address, u32 length, u8 *buf)
 {
 	int ret;
 	int sector_size = info->size / info->sector_count;
+#ifdef CONFIG_UBNTFIX
+	switch ((flash_id >> 16) & 0xff) {
+	case MXIC_JEDEC_ID:
+		qca_mxc_unlock();
+	case ATMEL_JEDEC_ID:
+	case WINB_JEDEC_ID:
+	case INTEL_JEDEC_ID:
+	case SST_JEDEC_ID:
+		qca_flash_unlock();
+	}
+#endif
 
 	if (address % sector_size || length % sector_size) {
 		printk(KERN_ERR "SF: Erase offset/length not multiple of erase size\n");
@@ -420,6 +434,17 @@ int qca_sf_write_buf(flash_info_t * info, u32 bank, u32 address, u32 length, con
 	u32 dst;
 	int total = 0;
 	int len_this_lp, bytes_this_page;
+#ifdef CONFIG_UBNTFIX
+	switch ((flash_id >> 16) & 0xff) {
+	case MXIC_JEDEC_ID:
+		qca_mxc_unlock();
+	case ATMEL_JEDEC_ID:
+	case WINB_JEDEC_ID:
+	case INTEL_JEDEC_ID:
+	case SST_JEDEC_ID:
+		qca_flash_unlock();
+	}
+#endif
 
 	while (total < length) {
 		src = buf + total;
@@ -490,7 +515,6 @@ unsigned long flash_get_geom(flash_info_t * flash_info)
 	int ret;
 	u32 flash_size, sect_size;
 	u8 erase_cmd;
-	u32 flash_id;
 	ret = qca_sf_sfdp_info(0, &flash_size, &sect_size, &erase_cmd);
 	flash_id = qca_sf_jedec_id(0);
 
@@ -530,17 +554,6 @@ unsigned long flash_get_geom(flash_info_t * flash_info)
 		flash_info->sector_count = flash_info->size / CFG_DEFAULT_FLASH_SECTOR_SIZE;
 		flash_info->erase_cmd = ATH_SPI_CMD_SECTOR_ERASE;
 	}
-#ifdef CONFIG_UBNTFIX
-	switch ((flash_id >> 16) & 0xff) {
-	case MXIC_JEDEC_ID:
-		qca_mxc_unlock();
-	case ATMEL_JEDEC_ID:
-	case WINB_JEDEC_ID:
-	case INTEL_JEDEC_ID:
-	case SST_JEDEC_ID:
-		qca_flash_unlock();
-	}
-#endif
 	printk(KERN_INFO "flash size %dB, sector count = %d\n", flash_info->size, flash_info->sector_count);
 
 	return (flash_info->size);
