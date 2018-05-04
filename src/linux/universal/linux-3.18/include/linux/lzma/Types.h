@@ -8,7 +8,7 @@
 /* #include <windows.h> */
 #endif
 
-#include <stddef.h>
+//#include <stddef.h>
 
 #ifndef EXTERN_C_BEGIN
 #ifdef __cplusplus
