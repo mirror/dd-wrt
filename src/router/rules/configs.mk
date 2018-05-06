@@ -50,10 +50,8 @@ obj-$(CONFIG_UDHCPC) += udhcpd
 obj-$(CONFIG_UPNP) += upnp
 ifneq ($(ARCHITECTURE),broadcom)
 obj-$(CONFIG_MADWIFI) += madwifi relayd
-obj-$(CONFIG_MADWIFI_MIMO) += madwifi_mimo relayd
 else
 obj-$(CONFIG_MADWIFI) += madwifi
-obj-$(CONFIG_MADWIFI_MIMO) += madwifi_mimo
 endif
 obj-$(CONFIG_ETC) += etc
 #obj-$(CONFIG_VLAN) += vlan
