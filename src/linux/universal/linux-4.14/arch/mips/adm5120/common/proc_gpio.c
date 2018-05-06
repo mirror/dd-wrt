@@ -54,7 +54,7 @@ static ssize_t gpio_proc_read(struct file *file, char __user * buffer, size_t si
 	unsigned int *data = PDE_DATA(file_inode(file));
 	void __iomem **reg;
 	u32 t;
-	int ret;
+	int ret = 0;
 	char buf[2];
 
 	reg = GPIO_REG(SWITCH_REG_GPIO_CONF0);
