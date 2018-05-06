@@ -8,6 +8,14 @@ menuconfig LEDS_TRIGGERS
 
 if LEDS_TRIGGERS
 
+config LEDS_TRIGGER_ADM5120_SWITCH
+	tristate "LED ADM5120 Switch Port Status Trigger"
+	depends on LEDS_TRIGGERS && ADM5120
+	help
+	  This allows LEDs to be controlled by the port states of
+	  the ADM5120 built-in Ethernet Switch
+	  If unsure, say N.
+
 config LEDS_TRIGGER_TIMER
 	tristate "LED Timer Trigger"
 	depends on LEDS_TRIGGERS
