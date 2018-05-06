@@ -505,8 +505,6 @@ static void create_spec_forward(char *proto, char *src, char *wanaddr, char *fro
 	if (!strlen(wan_iface))
 		wan_iface = nvram_safe_get("wan_ifname2");
 #endif
-	fprintf(stderr," src len %d\n",strlen(src));
-	fprintf(stderr,"%s %s %s %s %s %s\n",proto,src,wanaddr,from,ip,to);
 	if (src && strlen(src) > 0) {
 		save2file("-A PREROUTING -p %s -m %s -s %s -d %s --dport %s -j DNAT --to-destination %s:%s", proto, proto, src, wanaddr, from, ip, to);
 #if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
