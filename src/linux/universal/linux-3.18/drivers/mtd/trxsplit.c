@@ -19,6 +19,7 @@
 #include <linux/mtd/partitions.h>
 
 #include <linux/byteorder/generic.h>
+#include <linux/squashfs_fs.h>
 
 #define PFX	"trxsplit: "
 
@@ -45,6 +46,7 @@ static unsigned long trx_offset;
 static struct mtd_info *trx_mtd;
 static struct mtd_partition trx_parts[TRX_MAX_OFFSET];
 static struct trx_header trx_hdr;
+static struct mtd_partition boot;
 
 static int trxsplit_refresh_partitions(struct mtd_info *mtd);
 
@@ -110,40 +112,83 @@ static void trxsplit_findtrx(struct mtd_info *mtd)
 	trx_offset = offset;
 }
 
+
 static void trxsplit_create_partitions(struct mtd_info *mtd)
 {
 	struct mtd_partition *part = trx_parts;
+	unsigned char buffer[32];
 	int err;
 	int i;
+	int retlen;
+	trx_parts[0].offset = 0x20000;
+	trx_parts[0].size = (mtd->size-mtd->erasesize) - trx_parts[0].offset;
+	int offset = 0;
 
-	for (i = 0; i < TRX_MAX_OFFSET; i++) {
-		part = &trx_parts[i];
-		if (trx_hdr.offsets[i] == 0)
-			continue;
-		part->offset = trx_offset + trx_hdr.offsets[i];
-		trx_nr_parts++;
-	}
+			    char *buf = &buffer[0];
+			    while((offset+mtd->erasesize)<mtd->size)
+			    {
+			    mtd_read(mtd, offset,32, &retlen, buf);
 
-	for (i = 0; i < trx_nr_parts-1; i++)
-		trx_parts[i].size = trx_parts[i+1].offset - trx_parts[i].offset;
-
-	trx_parts[i].size = mtd->size - trx_parts[i].offset;
-
+//			    printk(KERN_EMERG "scanning squashfs at %X\n",offset);
+			    if (*((__u32 *) buf) == SQUASHFS_MAGIC)
+				    {
+				    	printk(KERN_EMERG "\nfound squashfs at %X\n",offset);
+					trx_parts[1].offset=offset;					
+					break;
+				    } 
+//			    offset+=mtd->erasesize;
+//			    offset++;
+			    offset+=4096; //scan in smaller blocks
+			    }
+	trx_parts[1].size = (mtd->size-mtd->erasesize) - trx_parts[1].offset;
 	i = 0;
-	part = &trx_parts[i];
-	if (part->size < TRX_MIN_KERNEL_SIZE) {
-		part->name = "loader";
-		i++;
-	}
+
 
 	part = &trx_parts[i];
-	part->name = "kernel";
+	part->name = "linux";
 	i++;
 
 	part = &trx_parts[i];
 	part->name = "rootfs";
+	i++;
+	
 
-	err = mtd_device_register(mtd, trx_parts, trx_nr_parts);
+//	for (i=0;i<3;i++)
+//	    printk(KERN_EMERG "partition %s: offset %08X, size %08X\n",trx_parts[i].name,trx_parts[i].offset,trx_parts[i].size);
+	
+	/*
+	detect OSBridge 
+	*/
+	mtd_read(mtd, 0xff90-2,32, &retlen, (void *)&trx_hdr);
+	int bootmul=2;
+	if (strncmp(buf,"OSBRiDGE 5XLi",13)==0)
+	    {
+	    printk(KERN_EMERG "found osbridge 5XLi");
+	    bootmul=1;
+	    trx_parts[0].offset = 0x20000;
+	    trx_parts[0].size = (mtd->size-mtd->size-mtd->erasesize) - trx_parts[0].offset;
+	    }
+
+	part = &trx_parts[i];
+	part->name = "nvram";
+	part->offset = mtd->size-mtd->erasesize;
+	part->size = mtd->erasesize;
+	
+	trx_nr_parts++;
+
+
+	boot.name="boot";
+	boot.offset=0;
+#ifdef ADM5120_MACH_WP54
+	boot.size=0x10000;
+#else
+	boot.size=mtd->erasesize*bootmul;
+#endif
+	err = mtd_device_register(mtd, &boot, 1);
+//	for (i=0;i<3;i++)
+//	    printk(KERN_EMERG "partition %s: offset %08X, size %08X\n",trx_parts[i].name,trx_parts[i].offset,trx_parts[i].size);
+	
+	err = mtd_device_register(mtd, trx_parts, 3);
 	if (err) {
 		printk(KERN_ALERT PFX "adding TRX partitions failed\n");
 		return;
