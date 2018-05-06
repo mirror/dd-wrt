@@ -3,6 +3,6 @@
 #
 
 obj-y	:= adm5120.o setup.o prom.o irq.o memory.o clock.o \
-	   gpio.o platform.o
+	   gpio.o platform.o proc_gpio.o
 
 obj-$(CONFIG_EARLY_PRINTK)	+= early-printk.o
