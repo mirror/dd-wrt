@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/powerpc 3.18.105 Kernel Configuration
+# Linux/powerpc 3.18.108 Kernel Configuration
 #
 # CONFIG_PPC64 is not set
 
@@ -1996,16 +1996,10 @@ CONFIG_FS_MBCACHE=m
 # CONFIG_REISERFS_FS is not set
 # CONFIG_JFS_FS is not set
 # CONFIG_XFS_FS is not set
-# CONFIG_XFS_QUOTA is not set
-# CONFIG_XFS_POSIX_ACL is not set
-# CONFIG_XFS_RT is not set
-# CONFIG_XFS_WARN is not set
-# CONFIG_XFS_DEBUG is not set
 # CONFIG_GFS2_FS is not set
 # CONFIG_BTRFS_FS is not set
 # CONFIG_NILFS2_FS is not set
 # CONFIG_FS_POSIX_ACL is not set
-CONFIG_EXPORTFS=m
 CONFIG_FILE_LOCKING=y
 CONFIG_DIRECT_IO=y
 CONFIG_FSNOTIFY=y
@@ -2064,7 +2058,6 @@ CONFIG_MISC_FILESYSTEMS=y
 # CONFIG_AFFS_FS is not set
 # CONFIG_HFS_FS is not set
 # CONFIG_HFSPLUS_FS is not set
-# CONFIG_HFSPLUS_FS_POSIX_ACL is not set
 # CONFIG_BEFS_FS is not set
 # CONFIG_BFS_FS is not set
 # CONFIG_EFS_FS is not set
