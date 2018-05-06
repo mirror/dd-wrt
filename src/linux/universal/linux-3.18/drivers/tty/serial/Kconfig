@@ -25,9 +25,17 @@ config SERIAL_AMBA_PL010
 	help
 	  This selects the ARM(R) AMBA(R) PrimeCell PL010 UART.  If you have
 	  an Integrator/AP or Integrator/PP2 platform, or if you have a
-	  Cirrus Logic EP93xx CPU, say Y or M here.
+	  Cirrus Logic EP93xx CPU or an Infineon ADM5120 SOC, say Y or M here.
 
 	  If unsure, say N.
+
+config SERIAL_AMBA_PL010_NUMPORTS
+	int "Maximum number of AMBA PL010 serial ports"
+	depends on SERIAL_AMBA_PL010
+	default "8"
+	---help---
+	  Set this to the number of serial ports you want the AMBA PL010 driver
+	  to support.
 
 config SERIAL_AMBA_PL010_CONSOLE
 	bool "Support for console on AMBA serial port"
