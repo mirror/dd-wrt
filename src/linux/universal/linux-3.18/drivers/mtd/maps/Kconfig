@@ -445,4 +445,8 @@ config MTD_BCM947XX
 	depends on MTD_CFI && BCM47XX && MIPS_BRCM
 
 
+config MTD_ADM5120
+	tristate "Map driver for ADM5120 based boards"
+	depends on ADM5120
+
 endmenu
