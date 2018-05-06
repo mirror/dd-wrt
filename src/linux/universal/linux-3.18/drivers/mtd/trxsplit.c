@@ -97,7 +97,7 @@ static void trxsplit_findtrx(struct mtd_info *mtd)
 	printk(KERN_INFO PFX "searching TRX header in '%s'\n", mtd->name);
 
 	err = 0;
-	for (offset = 0; offset < mtd->size; offset += TRX_ALIGN) {
+	for (offset = 0; offset < mtd->size; offset ++) {
 		err = trxsplit_checktrx(mtd, offset);
 		if (err == 0)
 			break;
