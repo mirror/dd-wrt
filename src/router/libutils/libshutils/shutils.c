@@ -1034,7 +1034,7 @@ char *foreach_last(char *next, char *word, char *delimiters)
 	return next;
 }
 
-static char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters)
+char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters)
 {
 	char *next, word[128];
 	if (!list || !buf)
