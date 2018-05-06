@@ -21,7 +21,7 @@
 
 #include <linux/gpio.h>
 
-#include "leds.h"
+#include "../leds.h"
 
 #define DRV_NAME "port_state"
 #define DRV_DESC "LED ADM5120 Switch Port State Trigger"
