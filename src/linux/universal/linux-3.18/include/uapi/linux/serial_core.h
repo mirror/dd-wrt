@@ -247,4 +247,7 @@
 /* MESON */
 #define PORT_MESON	109
 
+/* ADMtek ADM5120 SoC */
+#define PORT_ADM5120	110
+
 #endif /* _UAPILINUX_SERIAL_CORE_H */

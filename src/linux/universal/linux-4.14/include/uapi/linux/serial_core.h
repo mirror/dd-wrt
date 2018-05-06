@@ -281,4 +281,7 @@
 /* MediaTek BTIF */
 #define PORT_MTK_BTIF	117
 
+/* ADMtek ADM5120 SoC */
+#define PORT_ADM5120	110
+
 #endif /* _UAPILINUX_SERIAL_CORE_H */

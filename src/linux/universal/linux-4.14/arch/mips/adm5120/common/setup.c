@@ -91,11 +91,10 @@ void __init plat_mem_setup(void)
 	adm5120_soc_init();
 	adm5120_mem_init();
 
-	sprintf(adm5120_sys_type, "ADM%04X%s rev %u, running at %lu.%03lu MHz",
+	sprintf(adm5120_sys_type, "ADM%04X%s rev %u",
 		adm5120_product_code,
 		adm5120_package_bga() ? "" : "P",
-		adm5120_revision,
-		(adm5120_speed / 1000000), (adm5120_speed / 1000) % 1000);
+		adm5120_revision);
 
 	adm5120_report();
 
