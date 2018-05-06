@@ -172,7 +172,6 @@ include rules/hostapd2.mk
 include rules/wpa_supplicant2.mk
 endif
 include rules/madwifi.mk
-include rules/madwifi_mimo.mk
 include rules/sputnik.mk
 include rules/openvpn.mk
 include rules/net-tools.mk
