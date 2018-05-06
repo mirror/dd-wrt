@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.18.105 Kernel Configuration
+# Linux/mips 3.18.108 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -8,6 +8,7 @@ CONFIG_MIPS=y
 # Machine selection
 #
 CONFIG_MIPS_BRCM=y
+# CONFIG_ADM5120 is not set
 # CONFIG_MIPS_ALCHEMY is not set
 # CONFIG_AR7 is not set
 # CONFIG_ATHEROS is not set
@@ -946,6 +947,7 @@ CONFIG_MTD_CFI_I2=y
 # CONFIG_MTD_CFI_I8 is not set
 CONFIG_MTD_CFI_INTELEXT=y
 CONFIG_MTD_CFI_AMDSTD=y
+# CONFIG_MTD_CFI_FIXUP_MACRONIX_BOOTLOC is not set
 # CONFIG_MTD_CFI_STAA is not set
 CONFIG_MTD_CFI_UTIL=y
 # CONFIG_MTD_RAM is not set

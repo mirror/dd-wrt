@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 3.18.105 Kernel Configuration
+# Linux/arm 3.18.108 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_SYS_SUPPORTS_APM_EMULATION=y
@@ -1072,6 +1072,7 @@ CONFIG_MTD_CFI_I2=y
 # CONFIG_MTD_CFI_I8 is not set
 CONFIG_MTD_CFI_INTELEXT=y
 CONFIG_MTD_CFI_AMDSTD=y
+# CONFIG_MTD_CFI_FIXUP_MACRONIX_BOOTLOC is not set
 # CONFIG_MTD_CFI_STAA is not set
 CONFIG_MTD_CFI_UTIL=y
 # CONFIG_MTD_RAM is not set
