@@ -74,3 +74,9 @@ void __init adm5120_soc_init(void)
 	if (clks & 2)
 		adm5120_speed += 50000000;
 }
+
+
+unsigned int getCPUClock(void)
+{
+		return adm5120_speed / 1000 / 1000;
+}

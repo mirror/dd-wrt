@@ -61,6 +61,11 @@ config MTD_TRXSPLIT
 	bool "Automatically find and split TRX partitions"
 	default n
 
+config MTD_TRXSPLIT
+	bool "Automatically find and split TRX partitions"
+	depends on ADM5120
+	default n
+
 config MTD_REDBOOT_PARTS
 	tristate "RedBoot partition table parsing"
 	---help---
