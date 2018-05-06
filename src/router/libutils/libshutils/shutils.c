@@ -1034,13 +1034,13 @@ char *foreach_last(char *next, char *word, char *delimiters)
 	return next;
 }
 
-char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters)
+static char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters_short, char *delimiters)
 {
 	char *next, word[128];
 	if (!list || !buf)
 		return NULL;
 	int count = 0;
-	foreach_delim(word, list, next, delimiters) {
+	foreach_delim(word, list, next, !count ? delimiters_short : delimiters) {
 		if (count == idx) {
 			strcpy(buf, word);
 			return buf;
@@ -1052,7 +1052,7 @@ char *getentrybyidx_d(char *buf, char *list, int idx, char *delimiters)
 
 char *getentrybyidx(char *buf, char *list, int idx)
 {
-	return getentrybyidx_d(buf, list, idx, "><:-,");
+	return getentrybyidx_d(buf, list, idx, "><:,", "><:-,");
 }
 
 #if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) || defined(HAVE_EROUTER) && !defined(HAVE_WDR4900)
