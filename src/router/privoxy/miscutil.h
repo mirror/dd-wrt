@@ -1,6 +1,6 @@
 #ifndef MISCUTIL_H_INCLUDED
 #define MISCUTIL_H_INCLUDED
-#define MISCUTIL_H_VERSION "$Id: miscutil.h,v 1.38 2016/02/26 12:29:17 fabiankeil Exp $"
+#define MISCUTIL_H_VERSION "$Id: miscutil.h,v 1.37 2012/11/24 13:58:17 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/miscutil.h,v $

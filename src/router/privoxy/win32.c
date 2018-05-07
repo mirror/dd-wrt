@@ -1,4 +1,4 @@
-const char win32_rcs[] = "$Id: win32.c,v 1.20 2015/08/12 10:39:16 fabiankeil Exp $";
+const char win32_rcs[] = "$Id: win32.c,v 1.19 2012/03/09 16:23:50 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/win32.c,v $

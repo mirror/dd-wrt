@@ -5,10 +5,10 @@
 <!entity p-intro SYSTEM "privoxy.sgml">
 <!entity history SYSTEM "history.sgml">
 <!entity seealso SYSTEM "seealso.sgml">
-<!entity p-version "3.0.26">
-<!entity p-status "stable">
-<!entity % p-not-stable "IGNORE">
-<!entity % p-stable "INCLUDE">
+<!entity p-version "3.0.27">
+<!entity p-status "UNRELEASED">
+<!entity % p-not-stable "INCLUDE">
+<!entity % p-stable "IGNORE">
 <!entity % p-text "IGNORE">        <!-- define we are not a text only doc -->
 <!entity % p-doc "INCLUDE">        <!-- and we are a formal doc           -->
 <!entity % seealso-extra "INCLUDE"> <!-- extra stuff from seealso.sgml    -->
@@ -21,7 +21,7 @@
                 This file belongs into
                 ijbswa.sourceforge.net:/home/groups/i/ij/ijbswa/htdocs/
 
- $Id: developer-manual.sgml,v 2.81 2016/08/26 12:32:19 fabiankeil Exp $
+ $Id: developer-manual.sgml,v 2.83 2017/06/08 13:08:39 fabiankeil Exp $
 
  Copyright (C) 2001-2016 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
@@ -49,7 +49,7 @@
     </pubdate>
 
 
-    <pubdate>$Id: developer-manual.sgml,v 2.81 2016/08/26 12:32:19 fabiankeil Exp $</pubdate>
+    <pubdate>$Id: developer-manual.sgml,v 2.83 2017/06/08 13:08:39 fabiankeil Exp $</pubdate>
 
 <!--
 
@@ -1835,7 +1835,7 @@ const char FILENAME_h_rcs[] = FILENAME_H_VERSION;
 </programlisting>
 
     <para><emphasis>Note:</emphasis> This declares the rcs variables that should be
-    added to the "show-proxy-args" page. If this is a brand new
+    added to the "show-version" page. If this is a brand new
     creation by you, you are free to change the "Copyright" section
     to represent the rights you wish to maintain.</para>
 
@@ -1975,6 +1975,70 @@ Install the rpm. Any error messages?
 </para>
     </sect2>
     <!-- XXX: Document how to write test reports and where to send them -->
+
+    <!--   ~~~~~       New section      ~~~~~     -->
+    <sect2 id="fuzzing"><title>Fuzzing Privoxy</title>
+     <para>
+       To make fuzzing more convenient, Privoxy can be configured
+       with --enable-fuzz which will result in the --fuzz option
+       becoming available.
+     </para>
+     <para>
+      Example (tested on ElectroBSD):
+     </para>
+     <programlisting>
+# Compile Privoxy with instrumentation for afl
+$ export CC=afl-clang
+$ export CFLAGS="-fsanitize=address -ggdb"
+$ export CPPFLAGS=-I/usr/local/include/
+$ export LDFLAGS="-fsanitize=address -L/usr/local/lib"
+$ export AFL_USE_ASAN=1
+$ export AFL_HARDEN=1
+$ ./configure --with-debug --enable-extended-host-patterns --enable-accept-filter --enable-no-gifs --enable-compression --enable-strptime-sanity-checks --enable-external-filters --enable-fuzz
+
+$ ./privoxy --fuzz
+Privoxy version 3.0.24 (http://www.privoxy.org/)
+Usage: ./privoxy [--config-test] [--chroot] [--help] [--no-daemon] [--pidfile pidfile] [--pre-chroot-nslookup hostname] [--user user[.group]] [--version] [configfile]
+       ./privoxy --fuzz fuzz-mode ./path/to/fuzzed/input [--stfu]
+
+Supported fuzz modes and the expected input:
+ action: Text to parse as action file.
+ client-request: Client request to parse. Currently incomplete
+ client-header: Client header to parse.
+ chunked-transfer-encoding: Chunk-encoded data to dechunk.
+ deflate: deflate-compressed data to decompress.
+ filter: Text to parse as filter file.
+ gif: gif to deanimate.
+ gzip: gzip-compressed data to decompress.
+ pcrs-substitute: A pcrs-substitute to compile. Not a whole pcrs job! Example: Bla $1 bla C $3 blah.
+ server-header: Server header to parse.
+ server-response: Server response to parse.
+
+The following fuzz modes read data from stdin if the 'file' is '-'
+ client-request
+ client-header
+ chunked-transfer-encoding
+ deflate
+ gif
+ gzip
+ pcrs-substitute
+ server-header
+ server-response
+
+Aborting
+
+$ export ASAN_OPTIONS='abort_on_error=1'
+$ mkdir input output
+$ echo '$1 bla fasel $2' > input/pcrs
+$ afl-fuzz -i input -o output -m none ~/git/privoxy/privoxy --fuzz pcrs-substitute - --stfu
+
+$ cat >input/pcrs.txt
+FILTER: bla fasel
+s@(.{1})[432](\d+)@$1$2$hostname@UgisT
+
+$ afl-fuzz -i input/ -o output/ -f bla.filter -m none privoxy --fuzz filter bla.filter --stfu
+</programlisting>
+    </sect2>
   </sect1>
 
   <!--   ~~~~~       New section      ~~~~~     -->

@@ -1,4 +1,4 @@
-const char filters_rcs[] = "$Id: filters.c,v 1.202 2016/05/25 10:50:55 fabiankeil Exp $";
+const char filters_rcs[] = "$Id: filters.c,v 1.206 2017/06/04 14:43:10 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/filters.c,v $
@@ -82,7 +82,6 @@ const char filters_h_rcs[] = FILTERS_H_VERSION;
 
 typedef char *(*filter_function_ptr)();
 static filter_function_ptr get_filter_function(const struct client_state *csp);
-static jb_err remove_chunked_transfer_coding(char *buffer, size_t *size);
 static jb_err prepare_for_filtering(struct client_state *csp);
 static void apply_url_actions(struct current_action_spec *action,
                               struct http_request *http,
@@ -106,17 +105,15 @@ static void apply_url_actions(struct current_action_spec *action,
  *          3  :  len  = length of IP address in octets
  *          4  :  port = port number in network order;
  *
- * Returns     :  0 = no errror; -1 otherwise.
+ * Returns     :  void
  *
  *********************************************************************/
-static int sockaddr_storage_to_ip(const struct sockaddr_storage *addr,
-                                  uint8_t **ip, unsigned int *len,
-                                  in_port_t **port)
+static void sockaddr_storage_to_ip(const struct sockaddr_storage *addr,
+                                   uint8_t **ip, unsigned int *len,
+                                   in_port_t **port)
 {
-   if (NULL == addr)
-   {
-      return(-1);
-   }
+   assert(NULL != addr);
+   assert(addr->ss_family == AF_INET || addr->ss_family == AF_INET6);
 
    switch (addr->ss_family)
    {
@@ -151,12 +148,7 @@ static int sockaddr_storage_to_ip(const struct sockaddr_storage *addr,
          }
          break;
 
-      default:
-         /* Unsupported address family */
-         return(-1);
    }
-
-   return(0);
 }
 
 
@@ -456,10 +448,7 @@ int acl_addr(const char *aspec, struct access_control_addr *aca)
    }
 
    aca->mask.ss_family = aca->addr.ss_family;
-   if (sockaddr_storage_to_ip(&aca->mask, &mask_data, &addr_len, &mask_port))
-   {
-      return(-1);
-   }
+   sockaddr_storage_to_ip(&aca->mask, &mask_data, &addr_len, &mask_port);
 
    if (p)
    {
@@ -1328,42 +1317,18 @@ struct http_response *redirect_url(struct client_state *csp)
  *
  * Function    :  is_imageurl
  *
- * Description :  Given a URL, decide whether it is an image or not,
- *                using either the info from a previous +image action
- *                or, #ifdef FEATURE_IMAGE_DETECT_MSIE, and the browser
- *                is MSIE and not on a Mac, tell from the browser's accept
- *                header.
+ * Description :  Given a URL, decide whether it should be treated
+ *                as image URL or not.
  *
  * Parameters  :
  *          1  :  csp = Current client state (buffers, headers, etc...)
  *
- * Returns     :  True (nonzero) if URL is an image, false (0)
+ * Returns     :  True (nonzero) if URL is an image URL, false (0)
  *                otherwise
  *
  *********************************************************************/
 int is_imageurl(const struct client_state *csp)
 {
-#ifdef FEATURE_IMAGE_DETECT_MSIE
-   char *tmp;
-
-   tmp = get_header_value(csp->headers, "User-Agent:");
-   if (tmp && strstr(tmp, "MSIE") && !strstr(tmp, "Mac_"))
-   {
-      tmp = get_header_value(csp->headers, "Accept:");
-      if (tmp && strstr(tmp, "image/gif"))
-      {
-         /* Client will accept HTML.  If this seems counterintuitive,
-          * blame Microsoft.
-          */
-         return(0);
-      }
-      else
-      {
-         return(1);
-      }
-   }
-#endif /* def FEATURE_IMAGE_DETECT_MSIE */
-
    return ((csp->action->flags & ACTION_IMAGE) != 0);
 
 }
@@ -1957,7 +1922,11 @@ static char *execute_external_filter(const struct client_state *csp,
  *                or NULL in case something went wrong.
  *
  *********************************************************************/
+#ifdef FUZZ
+char *gif_deanimate_response(struct client_state *csp)
+#else
 static char *gif_deanimate_response(struct client_state *csp)
+#endif
 {
    struct binbuffer *in, *out;
    char *p;
@@ -2055,12 +2024,22 @@ static filter_function_ptr get_filter_function(const struct client_state *csp)
  *                JB_ERR_PARSE otherwise
  *
  *********************************************************************/
+#ifdef FUZZ
+extern jb_err remove_chunked_transfer_coding(char *buffer, size_t *size)
+#else
 static jb_err remove_chunked_transfer_coding(char *buffer, size_t *size)
+#endif
 {
    size_t newsize = 0;
    unsigned int chunksize = 0;
    char *from_p, *to_p;
    const char *end_of_buffer = buffer + *size;
+
+   if (*size == 0)
+   {
+      log_error(LOG_LEVEL_FATAL, "Invalid chunked input. Buffer is empty.");
+      return JB_ERR_PARSE;
+   }
 
    assert(buffer);
    from_p = to_p = buffer;

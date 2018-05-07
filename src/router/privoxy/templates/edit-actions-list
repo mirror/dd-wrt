@@ -6,7 +6,7 @@
 #
 #
 # Copyright   :  Written by and Copyright (C) 2001-2009 the
-#                Privoxy team. http://www.privoxy.org/
+#                Privoxy team. https://www.privoxy.org/
 #
 #                Original Author: Copyright (C) 2001 Jonathan Foster
 #                http://www.jon-foster.co.uk/
@@ -201,7 +201,7 @@ function a_p(link,section)
         <!-- @if-default-action-then@ -->
         <p>
          This is the default action file. Updates for it are available from
-         <a href="http://www.privoxy.org/">Privoxy.org</a> from time to time.
+         <a href="https://www.privoxy.org/">Privoxy.org</a> from time to time.
          It is therefore <b>not recommended</b> that you add your private
          rules here, since they will be lost if you install an update in the future.
          Put your rules in a separate actions file, like <tt>user.action</tt> instead.
@@ -255,14 +255,6 @@ function a_p(link,section)
       </td>
     </tr>
 
-    <tr>
-      <td class="info">
-
-#include mod-support-and-service
-
-      </td>
-    </tr>
-
 <!-- @if-have-help-info-start -->
     <tr>
       <td class="info">
@@ -272,6 +264,14 @@ function a_p(link,section)
       </td>
     </tr>
 <!-- if-have-help-info-end@ -->
+
+    <tr>
+      <td class="info">
+
+#include mod-support-and-service
+
+      </td>
+    </tr>
 
   </table>
 </body>

@@ -1,4 +1,4 @@
-const char gateway_rcs[] = "$Id: gateway.c,v 1.96 2016/01/16 12:30:43 fabiankeil Exp $";
+const char gateway_rcs[] = "$Id: gateway.c,v 1.103 2017/07/01 18:34:07 ler762 Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/gateway.c,v $
@@ -7,7 +7,7 @@ const char gateway_rcs[] = "$Id: gateway.c,v 1.96 2016/01/16 12:30:43 fabiankeil
  *                using a "forwarder" (i.e. HTTP proxy and/or a SOCKS4
  *                or SOCKS5 proxy).
  *
- * Copyright   :  Written by and Copyright (C) 2001-2009 the
+ * Copyright   :  Written by and Copyright (C) 2001-2017 the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -134,7 +134,6 @@ static const char socks_userid[] = "anonymous";
 #ifdef FEATURE_CONNECTION_SHARING
 
 #define MAX_REUSABLE_CONNECTIONS 100
-static unsigned int keep_alive_timeout = DEFAULT_KEEP_ALIVE_TIMEOUT;
 
 static struct reusable_connection reusable_connection[MAX_REUSABLE_CONNECTIONS];
 static int mark_connection_unused(const struct reusable_connection *connection);
@@ -560,25 +559,6 @@ static int mark_connection_unused(const struct reusable_connection *connection)
    return socket_found;
 
 }
-
-
-/*********************************************************************
- *
- * Function    :  set_keep_alive_timeout
- *
- * Description :  Sets the timeout after which open
- *                connections will no longer be reused.
- *
- * Parameters  :
- *          1  :  timeout = The timeout in seconds.
- *
- * Returns     :  void
- *
- *********************************************************************/
-void set_keep_alive_timeout(unsigned int timeout)
-{
-   keep_alive_timeout = timeout;
-}
 #endif /* def FEATURE_CONNECTION_SHARING */
 
 
@@ -663,6 +643,51 @@ jb_socket forwarded_connect(const struct forward_spec * fwd,
 
 }
 
+
+#ifdef FUZZ
+/*********************************************************************
+ *
+ * Function    :  socks_fuzz
+ *
+ * Description :  Wrapper around socks[45]_connect() used for fuzzing.
+ *
+ * Parameters  :
+ *          1  :  csp = Current client state (buffers, headers, etc...)
+ *
+ * Returns     :  JB_ERR_OK or JB_ERR_PARSE
+ *
+ *********************************************************************/
+extern jb_err socks_fuzz(struct client_state *csp)
+{
+   jb_socket socket;
+   static struct forward_spec fwd;
+   char target_host[] = "fuzz.example.org";
+   int target_port = 12345;
+
+   fwd.gateway_host = strdup_or_die("fuzz.example.org");
+   fwd.gateway_port = 12345;
+
+   fwd.type = SOCKS_4A;
+   socket = socks4_connect(&fwd, target_host, target_port, csp);
+
+   if (JB_INVALID_SOCKET != socket)
+   {
+      fwd.type = SOCKS_5;
+      socket = socks5_connect(&fwd, target_host, target_port, csp);
+   }
+
+   if (JB_INVALID_SOCKET == socket)
+   {
+      log_error(LOG_LEVEL_ERROR, "%s", csp->error_message);
+      return JB_ERR_PARSE;
+   }
+
+   log_error(LOG_LEVEL_INFO, "Input looks like an acceptable socks response");
+
+   return JB_ERR_OK;
+
+}
+#endif
 
 /*********************************************************************
  *
@@ -794,6 +819,9 @@ static jb_socket socks4_connect(const struct forward_spec * fwd,
    c->dstip[2]    = (unsigned char)((web_server_addr   >>  8) & 0xff);
    c->dstip[3]    = (unsigned char)((web_server_addr        ) & 0xff);
 
+#ifdef FUZZ
+   sfd = 0;
+#else
    /* pass the request to the socks server */
    sfd = connect_to(fwd->gateway_host, fwd->gateway_port, csp);
 
@@ -823,7 +851,9 @@ static jb_socket socks4_connect(const struct forward_spec * fwd,
       err = 1;
       close_socket(sfd);
    }
-   else if (read_socket(sfd, buf, sizeof(buf)) != sizeof(*s))
+   else
+#endif
+       if (read_socket(sfd, buf, sizeof(buf)) != sizeof(*s))
    {
       errstr = "SOCKS4 negotiation read failed.";
       log_error(LOG_LEVEL_CONNECT, "socks4_connect: %s", errstr);
@@ -911,6 +941,7 @@ static const char *translate_socks5_error(int socks_error)
    }
 }
 
+
 /*********************************************************************
  *
  * Function    :  socks5_connect
@@ -935,9 +966,12 @@ static jb_socket socks5_connect(const struct forward_spec *fwd,
                                 int target_port,
                                 struct client_state *csp)
 {
+#define SIZE_SOCKS5_REPLY_IPV4 10
+#define SIZE_SOCKS5_REPLY_IPV6 22
+#define SOCKS5_REPLY_DIFFERENCE (SIZE_SOCKS5_REPLY_IPV6 - SIZE_SOCKS5_REPLY_IPV4)
    int err = 0;
    char cbuf[300];
-   char sbuf[10];
+   char sbuf[SIZE_SOCKS5_REPLY_IPV6];
    size_t client_pos = 0;
    int server_size = 0;
    size_t hostlen = 0;
@@ -986,6 +1020,10 @@ static jb_socket socks5_connect(const struct forward_spec *fwd,
       return(JB_INVALID_SOCKET);
    }
 
+#ifdef FUZZ
+   sfd = 0;
+   if (!err && read_socket(sfd, sbuf, 2) != 2)
+#else
    /* pass the request to the socks server */
    sfd = connect_to(fwd->gateway_host, fwd->gateway_port, csp);
 
@@ -1012,7 +1050,6 @@ static jb_socket socks5_connect(const struct forward_spec *fwd,
       close_socket(sfd);
       return(JB_INVALID_SOCKET);
    }
-
    if (!data_is_available(sfd, csp->config->socket_timeout))
    {
       if (socket_is_still_alive(sfd))
@@ -1027,6 +1064,7 @@ static jb_socket socks5_connect(const struct forward_spec *fwd,
    }
 
    if (!err && read_socket(sfd, sbuf, sizeof(sbuf)) != 2)
+#endif
    {
       errstr = "SOCKS5 negotiation read failed";
       err = 1;
@@ -1073,6 +1111,7 @@ static jb_socket socks5_connect(const struct forward_spec *fwd,
    cbuf[client_pos++] = (char)((target_port >> 8) & 0xff);
    cbuf[client_pos++] = (char)((target_port     ) & 0xff);
 
+#ifndef FUZZ
    if (write_socket(sfd, cbuf, client_pos))
    {
       errstr = "SOCKS5 negotiation write failed";
@@ -1120,22 +1159,23 @@ static jb_socket socks5_connect(const struct forward_spec *fwd,
          unsigned long long buffered_request_bytes =
             (unsigned long long)(csp->client_iob->eod - csp->client_iob->cur);
          log_error(LOG_LEVEL_CONNECT,
-            "Optimistically sending %d bytes of client body. Expected %d",
+            "Optimistically sending %llu bytes of client body. Expected %llu",
             csp->expected_client_content_length, buffered_request_bytes);
          assert(csp->expected_client_content_length == buffered_request_bytes);
          if (write_socket(sfd, csp->client_iob->cur, buffered_request_bytes))
          {
             log_error(LOG_LEVEL_CONNECT,
-               "optimistically writing %d bytes of client body to: %s failed: %E",
+               "optimistically writing %llu bytes of client body to: %s failed: %E",
                buffered_request_bytes, csp->http->hostport);
             return(JB_INVALID_SOCKET);
          }
          clear_iob(csp->client_iob);
       }
    }
+#endif
 
-   server_size = read_socket(sfd, sbuf, sizeof(sbuf));
-   if (server_size != sizeof(sbuf))
+   server_size = read_socket(sfd, sbuf, SIZE_SOCKS5_REPLY_IPV4);
+   if (server_size != SIZE_SOCKS5_REPLY_IPV4)
    {
       errstr = "SOCKS5 negotiation read failed";
    }
@@ -1155,7 +1195,28 @@ static jb_socket socks5_connect(const struct forward_spec *fwd,
       }
       else
       {
-         return(sfd);
+         if (sbuf[3] == '\x04')
+         {
+            /*
+             * The address field contains an IPv6 address
+             * which means we didn't get the whole reply
+             * yet. Read and discard the rest of it to make
+             * sure it isn't treated as HTTP data later on.
+             */
+            server_size = read_socket(sfd, sbuf, SOCKS5_REPLY_DIFFERENCE);
+            if (server_size != SOCKS5_REPLY_DIFFERENCE)
+            {
+               errstr = "SOCKS5 negotiation read failed (IPv6 address)";
+            }
+         }
+         else if (sbuf[3] != '\x01')
+         {
+             errstr = "SOCKS5 reply contains unsupported address type";
+         }
+         if (errstr == NULL)
+         {
+            return(sfd);
+         }
       }
    }
 

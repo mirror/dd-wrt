@@ -4,8 +4,8 @@
 #
 # Purpose     :  Template for Privoxy's show-url-info CGI page.
 #
-# Copyright   :  Written by and Copyright (C) 2001-2007 the SourceForge
-#                Privoxy team. http://www.privoxy.org/
+# Copyright   :  Written by and Copyright (C) 2001-2007 members of the
+#                Privoxy team. https://www.privoxy.org/
 #
 #                This program is free software; you can redistribute it
 #                and/or modify it under the terms of the GNU General
@@ -131,9 +131,9 @@
 
 <body>
 
-  <table summary="" cellpadding="20" cellspacing="0" border="0" width="100%">
+  <table summary="" cellpadding="20" cellspacing="10" border="0" width="100%">
     <tr>
-      <td class="title"><a id="logo" href="http://config.privoxy.org">P</a>
+      <td class="title">
 
 #include mod-title
 
@@ -252,7 +252,7 @@
         <h2>Look up the actions for a
 <!-- @if-url-given-start -->new<!-- if-url-given-end@ -->
           URL:</h2>
-        <form method="GET" action="@default-cgi@show-url-info" class="search">
+        <form method="GET" action="@default-cgi@show-url-info">
           <p>
             <input type="text" name="url" size="80" value="@url@" class="url">
             <input type="submit" value="Go">
@@ -268,14 +268,6 @@
       </td>
     </tr>
 
-    <tr>
-      <td class="info">
-
-#include mod-support-and-service
-
-      </td>
-    </tr>
-
 <!-- @if-have-help-info-start -->
     <tr>
       <td class="info">
@@ -285,6 +277,14 @@
       </td>
     </tr>
 <!-- if-have-help-info-end@ -->
+
+    <tr>
+      <td class="info">
+
+#include mod-support-and-service
+
+      </td>
+    </tr>
 
   </table>
 

@@ -16,7 +16,7 @@
  *                   `list_to_text', `parse_http_request', `sed',
  *                   and `server_set_cookie'.
  *
- * Copyright   :  Written by and Copyright (C) 2001 the SourceForge
+ * Copyright   :  Written by and Copyright (C) 2001 members of the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written

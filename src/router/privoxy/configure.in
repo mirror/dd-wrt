@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
 dnl
-dnl $Id: configure.in,v 1.203 2016/08/26 12:26:43 fabiankeil Exp $
+dnl $Id: configure.in,v 1.213 2017/05/25 11:17:11 fabiankeil Exp $
 dnl
-dnl Written by and Copyright (C) 2001-2016 the
+dnl Written by and Copyright (C) 2001-2017 the
 dnl Privoxy team. https://www.privoxy.org/
 dnl
 dnl Based on the Internet Junkbuster originally written
@@ -32,7 +32,7 @@ dnl =================================================================
 dnl AutoConf Initialization
 dnl =================================================================
 
-AC_REVISION($Revision: 1.203 $)
+AC_REVISION($Revision: 1.213 $)
 AC_INIT(jcc.c)
 
 if test ! -f config.h.in; then
@@ -78,8 +78,12 @@ dnl =================================================================
 
 VERSION_MAJOR=3
 VERSION_MINOR=0
-VERSION_POINT=26
-CODE_STATUS="stable"
+VERSION_POINT=27
+CODE_STATUS="UNRELEASED"
+
+dnl Timestamp (date +%s) used by the mtree-spec target.
+dnl Should be updated before releases but forgetting it isn't critical.
+SOURCE_DATE_EPOCH=1494070262
 
 dnl CODE_STATUS can be "alpha", "beta", "stable" or "UNRELEASED",
 dnl and will be used for CGI output. Increment version number and
@@ -94,6 +98,7 @@ AC_SUBST(VERSION_MAJOR)
 AC_SUBST(VERSION_MINOR)
 AC_SUBST(VERSION_POINT)
 AC_SUBST(CODE_STATUS)
+AC_SUBST(SOURCE_DATE_EPOCH)
 
 dnl
 AC_DEFINE_UNQUOTED(VERSION_MAJOR,${VERSION_MAJOR})
@@ -302,8 +307,8 @@ fi])
 if test $target_type = mingw; then
   WIN_ONLY=
   CFLAGS="$CFLAGS -DWINVER=0x501"
-  SPECIAL_CFLAGS="-mwindows -mno-cygwin"
-  PTHREAD_LIB=-lpthreadGC
+  SPECIAL_CFLAGS="-mwindows"
+  PTHREAD_LIB=-lpthread
   echo "Using mingw32 (Win32 GUI)"
 else
   WIN_ONLY=#
@@ -409,6 +414,10 @@ AC_ARG_ENABLE(large-file-support,
     CFLAGS="$CFLAGS -D_FILE_OFFSET_BITS=64 -D_LARGE_FILES -D_LARGEFILE_SOURCE=1"
 fi])
 
+AC_ARG_ENABLE(static-linking,
+[  --enable-static-linking         Use static linking instead of dynamic linking (ie. LDFLAGS=-static)],
+[ if test $enableval = yes; then LDFLAGS="$LDFLAGS -static"; fi ])
+
 dnl Save old CFLAGS so we can restore them later, then add SPECIAL_CFLAGS
 old_CFLAGS_nospecial=$CFLAGS
 CFLAGS="$CFLAGS $SPECIAL_CFLAGS"
@@ -471,9 +480,10 @@ dnl FD_SETSIZE, as a result Privoxy can't handle more than
 dnl approximately FD_SETSIZE/2 client connections.
 dnl On some platforms the value can be changed at compile time,
 dnl on others it's hardcoded and requires recompilation of the OS.
+dnl Only relevant if select() is actually being used.
 dnl =================================================================
 AC_ARG_WITH(fdsetsize,
- [  --with-fdsetsize=n  Optimistically redefine FD_SETSIZE with the intend to change the number of connections Privoxy can handle. Dangerous if the platform doesn't support this.],
+ [  --with-fdsetsize=n  Optimistically redefine FD_SETSIZE with the intend to change the number of connections Privoxy can handle. Dangerous if the platform doesn't support this. Pointless if Privoxy can use poll() instead of select().],
  [
    if test "x$withval" != "xyes"; then
      AC_DEFINE_UNQUOTED(FD_SETSIZE,$with_fdsetsize,[Relevant for select(). Not honoured by all OS.])
@@ -649,12 +659,16 @@ dnl =================================================================
 dnl Solaris problem, and others perhaps (socklen_t is undefined)
 dnl =================================================================
 
+if test $target_type != mingw; then
+# i686-w64-mingw32-gcc gets socklen_t define from ws2tcpip.h
+
 AC_MSG_CHECKING([for socklen_t])
 AC_EGREP_HEADER(socklen_t, sys/socket.h, AC_MSG_RESULT([yes]),
 	AC_MSG_RESULT([no])
 	AC_DEFINE(socklen_t,int,
 		[ Define to 'int' if <sys/socket.h> doesn't have it. ]))
 
+fi
 
 dnl =================================================================
 dnl OS/2 specific
@@ -766,7 +780,9 @@ AC_PROG_GCC_TRADITIONAL
 AC_TYPE_SIGNAL
 AC_CHECK_FUNCS([ \
  access \
+ arc4random \
  atexit \
+ calloc \
  getcwd \
  gethostbyaddr \
  gethostbyaddr_r \
@@ -814,6 +830,7 @@ elif test $target_type = mingw; then
   AC_MSG_CHECKING(getaddrinfo in ws2_32)
   AC_TRY_LINK(
     [
+      #include<winsock2.h>
       #include<windows.h>
       #include<ws2tcpip.h>
     ],
@@ -825,6 +842,7 @@ elif test $target_type = mingw; then
   AC_MSG_CHECKING(getnameinfo in ws2_32)
   AC_TRY_LINK(
     [
+      #include<winsock2.h>
       #include<windows.h>
       #include<ws2tcpip.h>
     ],
@@ -921,13 +939,6 @@ AC_ARG_ENABLE(stats,
   AC_DEFINE(FEATURE_STATISTICS)
 fi],AC_DEFINE(FEATURE_STATISTICS))
 
-AC_ARG_ENABLE(ie-images,
-[  --enable-ie-images              Enable a quick but not always reliable auto-detect whether requests from
-                                  MS Internet Explorer are for an image or not.],
-[if test $enableval = yes; then
-  AC_DEFINE(FEATURE_IMAGE_DETECT_MSIE)
-fi],)
-
 AC_ARG_ENABLE(image-blocking,
 [  --disable-image-blocking        Don't try to figure out whether a request is
                                   for an image or HTML - assume HTML.],
@@ -1016,6 +1027,15 @@ else
   FEATURE_CLIENT_TAGS_ONLY=""
 fi
 AC_SUBST(FEATURE_CLIENT_TAGS_ONLY)
+
+FUZZ_ONLY="#"
+AC_ARG_ENABLE(fuzz,
+[  --enable-fuzz                Enable code that makes fuzzing more convenient],
+[if test $enableval = yes; then
+  FUZZ_ONLY=""
+  AC_DEFINE(FUZZ,1,[Define to make fuzzing more convenient.])
+fi])
+AC_SUBST(FUZZ_ONLY)
 
 dnl pcre/pcrs is needed for CGI anyway, so
 dnl the choice is only between static and

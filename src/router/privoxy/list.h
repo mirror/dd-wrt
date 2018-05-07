@@ -9,7 +9,7 @@
  *                Functions declared include:
  *                   `destroy_list', `enlist' and `list_to_text'
  *
- * Copyright   :  Written by and Copyright (C) 2001-2007 the SourceForge
+ * Copyright   :  Written by and Copyright (C) 2001-2007 members of the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written

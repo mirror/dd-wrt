@@ -1,4 +1,4 @@
-const char deanimate_rcs[] = "$Id: deanimate.c,v 1.24 2016/02/26 12:29:38 fabiankeil Exp $";
+const char deanimate_rcs[] = "$Id: deanimate.c,v 1.23 2012/03/09 16:24:36 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/deanimate.c,v $

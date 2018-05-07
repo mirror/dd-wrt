@@ -31,7 +31,10 @@ sub main() {
 
         s/^1\. \@\@TITLE\@\@/     /i;
 
-        if (m/^(\d*\.){1,3}\s/) {
+        if ($hit_header) {
+            $header_len += length($_);
+            $_ = " " . $_;
+        } elsif (m/^(\d*\.){1,3}\s/) {
             # Remove the first digit as it's the
             # config file section in the User Manual.
             s/^(\d\.)//;
@@ -50,7 +53,8 @@ sub main() {
         } else {
             s/^/#  /;
         }
-        if ($unfolding_enabled and m/(\s+#)\s*$/) {
+        if ($unfolding_enabled and
+            (m/(\s+#)\s*$/ or m/forward-socks5 and$/)) {
             $unfold_mode = 1;
             chomp;
         }
@@ -72,12 +76,13 @@ sub main() {
 
         print unless (/^\s*$/);
 
-        if ($hit_header) {
+        if ($hit_header and !$unfold_mode) {
             # The previous line was a section
             # header so we better underline it.
             die "Invalid header length" unless defined $header_len;
             print "#  " . "=" x $header_len . "\n";
             $hit_header = 0;
+            $header_len = 0;
         };
     }
 }

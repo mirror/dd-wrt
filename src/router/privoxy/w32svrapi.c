@@ -1,4 +1,4 @@
-const char w32_svrapi_rcs[] = "$Id: w32svrapi.c,v 1.6 2016/07/22 12:12:33 ler762 Exp $";
+const char w32_svrapi_rcs[] = "$Id: w32svrapi.c,v 1.5 2011/09/04 11:10:56 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/w32svrapi.c,v $

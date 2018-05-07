@@ -70,7 +70,7 @@ stupid-server.example.com/
 .bild.de
 .bildstatic.de
 .smartadserver.com
-
+.acdn.adnxs.com
 # Here are some sites we wish to support, and we will allow their ads
 # through.
 #
@@ -113,6 +113,8 @@ stupid-server.example.com/
 .shorte.st
 .moatads.com
 .redbutton.de
+.tr
+.ru
 .adjug.com
 .adroll.com
 .adnet.de

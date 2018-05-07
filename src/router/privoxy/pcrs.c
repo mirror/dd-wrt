@@ -1,4 +1,4 @@
-const char pcrs_rcs[] = "$Id: pcrs.c,v 1.50 2016/05/25 10:50:28 fabiankeil Exp $";
+const char pcrs_rcs[] = "$Id: pcrs.c,v 1.52 2017/05/29 10:09:37 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/pcrs.c,v $
@@ -182,6 +182,38 @@ static int pcrs_parse_perl_options(const char *optstring, int *flags)
 }
 
 
+#ifdef FUZZ
+/*********************************************************************
+ *
+ * Function    :  pcrs_compile_fuzzed_replacement
+ *
+ * Description :  Wrapper around pcrs_compile_replacement() for
+ *                fuzzing purposes.
+ *
+ * Parameters  :
+ *          1  :  replacement = replacement part of s/// operator
+ *                              in perl syntax
+ *          2  :  errptr = pointer to an integer in which error
+ *                         conditions can be returned.
+ *
+ * Returns     :  pcrs_substitute data structure, or NULL if an
+ *                error is encountered. In that case, *errptr has
+ *                the reason.
+ *
+ *********************************************************************/
+extern pcrs_substitute *pcrs_compile_fuzzed_replacement(const char *replacement, int *errptr)
+{
+   int capturecount = PCRS_MAX_SUBMATCHES; /* XXX: fuzzworthy? */
+   int trivial_flag = 0; /* We don't want to fuzz strncpy() */
+
+   *errptr = 0; /* XXX: Should pcrs_compile_replacement() do this? */
+
+   return pcrs_compile_replacement(replacement, trivial_flag, capturecount, errptr);
+
+}
+#endif
+
+
 /*********************************************************************
  *
  * Function    :  pcrs_compile_replacement
@@ -209,10 +241,13 @@ static int pcrs_parse_perl_options(const char *optstring, int *flags)
 static pcrs_substitute *pcrs_compile_replacement(const char *replacement, int trivialflag, int capturecount, int *errptr)
 {
    int i, k, l, quoted;
-   size_t length;
    char *text;
    pcrs_substitute *r;
-
+#ifndef FUZZ
+   size_t length;
+#else
+   static size_t length;
+#endif
    i = k = l = quoted = 0;
 
    /*
@@ -375,7 +410,6 @@ static pcrs_substitute *pcrs_compile_replacement(const char *replacement, int tr
                goto plainchar;
             }
 
-            assert(l < PCRS_MAX_SUBMATCHES - 1);
             assert(r->backref[l] < PCRS_MAX_SUBMATCHES + 2);
             /* Valid and in range? -> record */
             if ((0 <= r->backref[l]) &&

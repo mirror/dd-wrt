@@ -4,7 +4,7 @@
  *
  * Purpose     :  Functions related to client-specific tags.
  *
- * Copyright   :  Copyright (C) 2016 Fabian Keil <fk@fabiankeil.de>
+ * Copyright   :  Copyright (C) 2016-2017 Fabian Keil <fk@fabiankeil.de>
  *
  *                This program is free software; you can redistribute it
  *                and/or modify it under the terms of the GNU General
@@ -254,6 +254,83 @@ void get_tag_list_for_client(struct list *tag_list,
 
 /*********************************************************************
  *
+ * Function    :  get_next_tag_timeout_for_client
+ *
+ * Description :  Figures out when the next temporarily enabled tag
+ *                for the client will have timed out.
+ *
+ * Parameters  :
+ *          1  :  client_address = Address of the client
+ *
+ * Returns     :  Lowest timeout in seconds
+ *
+ *********************************************************************/
+time_t get_next_tag_timeout_for_client(const char *client_address)
+{
+   struct client_specific_tag *enabled_tags;
+   time_t next_timeout = 0;
+   const time_t now = time(NULL);
+
+   privoxy_mutex_lock(&client_tags_mutex);
+
+   enabled_tags = get_tags_for_client(client_address);
+   while (enabled_tags != NULL)
+   {
+      log_error(LOG_LEVEL_CGI, "Evaluating tag '%s' for client %s. End of life %d",
+         enabled_tags->name, client_address, enabled_tags->end_of_life);
+      if (enabled_tags->end_of_life)
+      {
+          time_t time_left = enabled_tags->end_of_life - now;
+          /* Add a second to make sure the tag will have expired */
+          time_left++;
+          log_error(LOG_LEVEL_CGI, "%d > %d?", next_timeout, time_left);
+          if (next_timeout == 0 || next_timeout > time_left)
+          {
+             next_timeout = time_left;
+          }
+       }
+       enabled_tags = enabled_tags->next;
+   }
+
+   privoxy_mutex_unlock(&client_tags_mutex);
+
+   log_error(LOG_LEVEL_CGI, "Next timeout in %d seconds", next_timeout);
+
+   return next_timeout;
+
+}
+
+
+/*********************************************************************
+ *
+ * Function    :  create_client_specific_tag
+ *
+ * Description :  Allocates memory for a client specific tag
+ *                and populates it.
+ *
+ * Parameters  :
+ *          1  :  name = The name of the tag to create.
+ *          2  :  time_to_live = 0, or the number of seconds
+ *                               the tag remains activated.
+ *
+ * Returns     :  Pointer to populated tag
+ *
+ *********************************************************************/
+static struct client_specific_tag *create_client_specific_tag(const char *name,
+   const time_t time_to_live)
+{
+   struct client_specific_tag *tag;
+
+   tag = zalloc_or_die(sizeof(struct client_specific_tag));
+   tag->name = strdup_or_die(name);
+   tag->end_of_life = time_to_live ? (time(NULL) + time_to_live) : 0;
+
+   return tag;
+
+}
+
+/*********************************************************************
+ *
  * Function    :  add_tag_for_client
  *
  * Description :  Adds the tag for the client.
@@ -280,10 +357,7 @@ static void add_tag_for_client(const char *client_address,
       /* XXX: Code duplication. */
       requested_tags = zalloc_or_die(sizeof(struct requested_tags));
       requested_tags->client = strdup_or_die(client_address);
-      requested_tags->tags = zalloc_or_die(sizeof(struct client_specific_tag));
-      requested_tags->tags->name = strdup_or_die(tag);
-      requested_tags->tags->end_of_life = time_to_live ?
-         (time(NULL) + time_to_live) : 0;
+      requested_tags->tags = create_client_specific_tag(tag, time_to_live);
 
       validate_requested_tags();
       return;
@@ -306,10 +380,7 @@ static void add_tag_for_client(const char *client_address,
          clients_with_tags->next->prev = clients_with_tags;
          clients_with_tags = clients_with_tags->next;
          clients_with_tags->client = strdup_or_die(client_address);
-         clients_with_tags->tags = zalloc_or_die(sizeof(struct client_specific_tag));
-         clients_with_tags->tags->name = strdup_or_die(tag);
-         clients_with_tags->tags->end_of_life = time_to_live ?
-            (time(NULL) + time_to_live) : 0;
+         clients_with_tags->tags = create_client_specific_tag(tag, time_to_live);
 
          validate_requested_tags();
 
@@ -322,10 +393,7 @@ static void add_tag_for_client(const char *client_address,
    {
       if (enabled_tags->next == NULL)
       {
-         enabled_tags->next = zalloc_or_die(sizeof(struct client_specific_tag));
-         enabled_tags->next->name = strdup_or_die(tag);
-         clients_with_tags->tags->end_of_life = time_to_live ?
-            (time(NULL) + time_to_live) : 0;
+         enabled_tags->next = create_client_specific_tag(tag, time_to_live);
          enabled_tags->next->prev = enabled_tags;
          break;
       }
@@ -405,17 +473,16 @@ static void remove_tag_for_client(const char *client_address, const char *tag)
                /* Client has preceding client */
                clients_with_tags->prev->next = clients_with_tags->next;
             }
-            freez(clients_with_tags->client);
             if (clients_with_tags == requested_tags)
             {
-               /* Removing last tag */
-               freez(requested_tags);
-               clients_with_tags = requested_tags;
+               /*
+                * We're in the process of removing the last tag,
+                * mark the global list as empty.
+                */
+               requested_tags = NULL;
             }
-            else
-            {
-               freez(clients_with_tags);
-            }
+            freez(clients_with_tags->client);
+            freez(clients_with_tags);
          }
          freez(enabled_tags->name);
          freez(enabled_tags);

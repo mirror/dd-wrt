@@ -1,685 +1,476 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01
-Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
 <html>
-  <head>
-    <title>
-      What's New in this Release
-    </title>
-    <meta name="GENERATOR" content=
-    "Modular DocBook HTML Stylesheet Version 1.79">
-    <link rel="HOME" title="Privoxy 3.0.26 User Manual" href="index.html">
-    <link rel="PREVIOUS" title="Installation" href="installation.html">
-    <link rel="NEXT" title="Quickstart to Using Privoxy" href=
-    "quickstart.html">
-    <link rel="STYLESHEET" type="text/css" href="../p_doc.css">
-    <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
-    <link rel="STYLESHEET" type="text/css" href="p_doc.css">
-  </head>
-  <body class="SECT1" bgcolor="#EEEEEE" text="#000000" link="#0000FF" vlink=
-  "#840084" alink="#0000FF">
-    <div class="NAVHEADER">
-      <table summary="Header navigation table" width="100%" border="0"
-      cellpadding="0" cellspacing="0">
-        <tr>
-          <th colspan="3" align="center">
-            Privoxy 3.0.26 User Manual
-          </th>
-        </tr>
-        <tr>
-          <td width="10%" align="left" valign="bottom">
-            <a href="installation.html" accesskey="P">Prev</a>
-          </td>
-          <td width="80%" align="center" valign="bottom">
-          </td>
-          <td width="10%" align="right" valign="bottom">
-            <a href="quickstart.html" accesskey="N">Next</a>
-          </td>
-        </tr>
-      </table>
-      <hr align="LEFT" width="100%">
-    </div>
-    <div class="SECT1">
-      <h1 class="SECT1">
-        <a name="WHATSNEW">3. What's New in this Release</a>
-      </h1>
-      <p>
-        <span class="APPLICATION">Privoxy 3.0.26</span> stable is a bug-fix
-        release for the previously released 3.0.25 beta which introduced
-        client-specific tags and included a couple of minor improvements.
-      </p>
-      <p>
-      </p>
-      <ul>
-        <li>
-          <p>
-            Bug fixes:
-          </p>
-          <ul>
-            <li>
-              <p>
-                Fixed crashes with "listen-addr :8118" (SF Bug #902). The
-                regression was introduced in 3.0.25 beta and reported by
-                Marvin Renich in Debian bug #834941.
-              </p>
-            </li>
-          </ul>
-        </li>
-        <li>
-          <p>
-            General improvements:
-          </p>
-          <ul>
-            <li>
-              <p>
-                Log when privoxy is toggled on or off via cgi interface.
-              </p>
-            </li>
-            <li>
-              <p>
-                Highlight the "Info: Now toggled " on/off log message in the
-                Windows log viewer.
-              </p>
-            </li>
-            <li>
-              <p>
-                Highlight the loading actions/filter file log message in the
-                Windows log viewer.
-              </p>
-            </li>
-            <li>
-              <p>
-                Mention client-specific tags on the toggle page as a
-                potentionally more appropriate alternative.
-              </p>
-            </li>
-          </ul>
-        </li>
-        <li>
-          <p>
-            Documentation improvements:
-          </p>
-          <ul>
-            <li>
-              <p>
-                Update download section on the homepage. The downloads are
-                available from the website now.
-              </p>
-            </li>
-            <li>
-              <p>
-                Add sponsor FAQ.
-              </p>
-            </li>
-            <li>
-              <p>
-                Remove obsolete reference to mailing lists hosted at
-                SourceForge.
-              </p>
-            </li>
-            <li>
-              <p>
-                Update the "Before the Release" section of the developer
-                manual.
-              </p>
-            </li>
-          </ul>
-        </li>
-        <li>
-          <p>
-            Infrastructure improvements:
-          </p>
-          <ul>
-            <li>
-              <p>
-                Add perl script to generate an RSS feed for the packages
-                Submitted by "Unknown".
-              </p>
-            </li>
-          </ul>
-        </li>
-        <li>
-          <p>
-            Build system improvements:
-          </p>
-          <ul>
-            <li>
-              <p>
-                strptime.h: fix a compiler warning about ambiguous else.
-              </p>
-            </li>
-            <li>
-              <p>
-                configure.in: Check for Docbook goo on the BSDs as well.
-              </p>
-            </li>
-            <li>
-              <p>
-                GNUMakefile.in: Let the dok-user target remove temporary
-                files.
-              </p>
-            </li>
-          </ul>
-        </li>
-      </ul>
-
-      <p>
-        Changes between <span class="APPLICATION">Privoxy 3.0.25 beta</span>
-        and the previous release:
-      </p>
-      <p>
-      </p>
-      <ul>
-        <li>
-          <p>
-            Bug fixes:
-          </p>
-          <ul>
-            <li>
-              <p>
-                Always use the current toggle state for new requests.
-                Previously new requests on reused connections inherited the
-                toggle state from the previous request even though the toggle
-                state could have changed. Reported by Robert Klemme.
-              </p>
-            </li>
-            <li>
-              <p>
-                Fixed two buffer-overflows in the (deprecated) static pcre
-                code. These bugs are not considered security issues as the
-                input is trusted. Found with afl-fuzz and ASAN.
-              </p>
-            </li>
-          </ul>
-        </li>
-        <li>
-          <p>
-            General improvements:
-          </p>
-          <ul>
-            <li>
-              <p>
-                Added support for client-specific tags which allow Privoxy
-                admins to pre-define tags that are set for all requests from
-                clients that previously opted in through the CGI interface.
-                They are useful in multi-user setups where admins may want to
-                allow users to disable certain actions and filters for
-                themselves without affecting others. In single-user setups
-                they are useful to allow more fine-grained toggling. For
-                example to disable request blocking while still crunching
-                cookies, or to disable experimental filters only. This is an
-                experimental feature, the syntax and behaviour may change in
-                future versions. Sponsored by Robert Klemme.
-              </p>
-            </li>
-            <li>
-              <p>
-                Dynamic filters and taggers now support a $listen-address
-                variable which contains the address the request came in on.
-                For external filters the variable is called
-                $PRIVOXY_LISTEN_ADDRESS. Original patch contributed by
-                pursievro.
-              </p>
-            </li>
-            <li>
-              <p>
-                Add client-header-tagger 'listen-address'.
-              </p>
-            </li>
-            <li>
-              <p>
-                Include the listen-address in the log message when logging
-                new requests. Patch contributed by pursievro.
-              </p>
-            </li>
-            <li>
-              <p>
-                Turn invalid max-client-connections values into fatal errors.
-              </p>
-            </li>
-            <li>
-              <p>
-                The show-status page now shows whether or not dates before
-                1970 and after 2038 are expected to be handled properly. This
-                is mainly useful for Privoxy-Regression-Test but could also
-                come handy when dealing with time-related support requests.
-              </p>
-            </li>
-            <li>
-              <p>
-                On Mac OS X the thread id in log messages are more likely to
-                be unique now.
-              </p>
-            </li>
-            <li>
-              <p>
-                When complaining about missing filters, the filter type is
-                logged as well.
-              </p>
-            </li>
-            <li>
-              <p>
-                A couple of harmless coverity warnings were silenced (CID
-                #161202, CID #161203, CID #161211).
-              </p>
-            </li>
-          </ul>
-        </li>
-        <li>
-          <p>
-            Action file improvements:
-          </p>
-          <ul>
-            <li>
-              <p>
-                Filtering is disabled for Range requests to let download
-                resumption and Windows updates work with the default
-                configuration.
-              </p>
-            </li>
-            <li>
-              <p>
-                Unblock ".ardmediathek.de/". Reported by ThTomate in #932.
-              </p>
-            </li>
-          </ul>
-        </li>
-        <li>
-          <p>
-            Documentation improvements:
-          </p>
-          <ul>
-            <li>
-              <p>
-                Add FAQ entry for crashes caused by memory limits.
-              </p>
-            </li>
-            <li>
-              <p>
-                Remove obsolete FAQ entry about a bug in PHP 4.2.3.
-              </p>
-            </li>
-            <li>
-              <p>
-                Mention the new mailing lists were appropriate. As the
-                archives have not been migrated, continue to mention the
-                archives at SF in the contacting section for now.
-              </p>
-            </li>
-            <li>
-              <p>
-                Note that the templates should be adjusted if Privoxy is
-                running as intercepting proxy without getting all requests.
-              </p>
-            </li>
-            <li>
-              <p>
-                A bunch of links were converted to https://.
-              </p>
-            </li>
-            <li>
-              <p>
-                Rephrase onion service paragraph to make it more obvious that
-                Tor is involved and that the whole website (and not just the
-                homepage) is available as onion service.
-              </p>
-            </li>
-            <li>
-              <p>
-                Streamline the "More information" section on the homepage
-                further by additionally ditching the link to the 'See also'
-                section of the user manual. The section contains mostly links
-                that are directly reachable from the homepage already and the
-                rest is not significant enough to get a link from the
-                homepage.
-              </p>
-            </li>
-            <li>
-              <p>
-                Change the add-header{} example to set the DNT header and use
-                a complete section to make copy and pasting more convenient.
-                Add a comment to make it obvious that adding the header is
-                not recommended for obvious reasons. Using the DNT header as
-                example was suggested by Leo Wzukw.
-              </p>
-            </li>
-            <li>
-              <p>
-                Streamline the support-and-service template Instead of
-                linking to the various support trackers (whose URLs hopefully
-                change soon), link to the contact section of the user manual
-                to increase the chances that users actually read it.
-              </p>
-            </li>
-            <li>
-              <p>
-                Add a FAQ entry for tainted sockets.
-              </p>
-            </li>
-            <li>
-              <p>
-                More sections in the documentation have stable URLs now.
-              </p>
-            </li>
-            <li>
-              <p>
-                FAQ: Explain why 'ping config.privoxy.org' is not expected to
-                reach a local Privoxy installation.
-              </p>
-            </li>
-            <li>
-              <p>
-                Note that donations done through Zwiebelfreunde e.V.
-                currently can't be checked automatically.
-              </p>
-            </li>
-            <li>
-              <p>
-                Updated section regarding starting Privoxy under OS X.
-              </p>
-            </li>
-            <li>
-              <p>
-                Use dedicated start instructions for FreeBSD and ElectroBSD.
-              </p>
-            </li>
-            <li>
-              <p>
-                Removed release instructions for AIX. They haven't been
-                working for years and unsurprisingly nobody seems to care.
-              </p>
-            </li>
-            <li>
-              <p>
-                Removed obsolete reference to the solaris-dist target.
-              </p>
-            </li>
-            <li>
-              <p>
-                Updated the release instructions for FreeBSD.
-              </p>
-            </li>
-            <li>
-              <p>
-                Removed unfinished release instructions for Amiga OS and
-                HP-UX 11.
-              </p>
-            </li>
-            <li>
-              <p>
-                Added a pointer to the Cygwin Time Machine for getting the
-                last release of Cygwin version 1.5 to use for building
-                Privoxy on Windows.
-              </p>
-            </li>
-            <li>
-              <p>
-                Various typos have been fixed.
-              </p>
-            </li>
-          </ul>
-        </li>
-        <li>
-          <p>
-            Infrastructure improvements:
-          </p>
-          <ul>
-            <li>
-              <p>
-                The website is no longer hosted at SourceForge and can be
-                reached through https now.
-              </p>
-            </li>
-            <li>
-              <p>
-                The mailing lists at SourceForge have been deprecated, you
-                can subscribe to the new ones at: https://lists.privoxy.org/
-              </p>
-            </li>
-            <li>
-              <p>
-                Migrating the remaining services from SourceForge is work in
-                progress (TODO list item #53).
-              </p>
-            </li>
-          </ul>
-        </li>
-        <li>
-          <p>
-            Build system improvements:
-          </p>
-          <ul>
-            <li>
-              <p>
-                Add configure argument to optimistically redefine FD_SETSIZE
-                with the intent to change the maximum number of client
-                connections Privoxy can handle. Only works with some libcs.
-                Sponsored by Robert Klemme.
-              </p>
-            </li>
-            <li>
-              <p>
-                Let the tarball-dist target skip files in ".git".
-              </p>
-            </li>
-            <li>
-              <p>
-                Let the tarball-dist target work in cwds other than current.
-              </p>
-            </li>
-            <li>
-              <p>
-                Make the 'clean' target faster when run from a git
-                repository.
-              </p>
-            </li>
-            <li>
-              <p>
-                Include tools in the generic distribution.
-              </p>
-            </li>
-            <li>
-              <p>
-                Let the gen-dist target work in cwds other than current.
-              </p>
-            </li>
-            <li>
-              <p>
-                Sort find output that is used for distribution tarballs to
-                get reproducible results.
-              </p>
-            </li>
-            <li>
-              <p>
-                Don't add '-src' to the name of the tar ball generated by the
-                gen-dist target. The package isn't a source distribution but
-                a binary package. While at it, use a variable for the name to
-                reduce the chances that the various references get out of
-                sync and fix the gen-upload target which was looking in the
-                wrong directory.
-              </p>
-            </li>
-            <li>
-              <p>
-                Add regression-tests.action to the files that are
-                distributed.
-              </p>
-            </li>
-            <li>
-              <p>
-                The gen-dist target which was broken since 2002 (r1.92) has
-                been fixed.
-              </p>
-            </li>
-            <li>
-              <p>
-                Remove genclspec.sh which has been obsolete since 2009.
-              </p>
-            </li>
-            <li>
-              <p>
-                Remove obsolete reference to Redhat spec file.
-              </p>
-            </li>
-            <li>
-              <p>
-                Remove the obsolete announce target which has been commented
-                out years ago.
-              </p>
-            </li>
-            <li>
-              <p>
-                Let rsync skip files if the checksums match.
-              </p>
-            </li>
-          </ul>
-        </li>
-        <li>
-          <p>
-            Privoxy-Regression-Test:
-          </p>
-          <ul>
-            <li>
-              <p>
-                Add a "Default level offset" directive which can be used to
-                change the default level by a given value. This directive
-                affects all tests located after it until the end of the file
-                or a another "Default level offset" directive is reached. The
-                purpose of this directive is to make it more convenient to
-                skip similar tests in a given file without having to remove
-                or disable the tests completely.
-              </p>
-            </li>
-            <li>
-              <p>
-                Let test level 17 depend on FEATURE_64_BIT_TIME_T instead of
-                FEATURE_PTHREAD which has no direct connection to the time_t
-                size.
-              </p>
-            </li>
-            <li>
-              <p>
-                Fix indentation in perldoc examples.
-              </p>
-            </li>
-            <li>
-              <p>
-                Don't overlook directives in the first line of the action
-                file.
-              </p>
-            </li>
-            <li>
-              <p>
-                Bump version to 0.7.
-              </p>
-            </li>
-            <li>
-              <p>
-                Fix detection of the Privoxy version now that https:// is
-                used for the website.
-              </p>
-            </li>
-          </ul>
-        </li>
-      </ul>
-
-      <div class="SECT2">
-        <h2 class="SECT2">
-          <a name="UPGRADERSNOTE">3.1. Note to Upgraders</a>
-        </h2>
-        <p>
-          A quick list of things to be aware of before upgrading from earlier
-          versions of <span class="APPLICATION">Privoxy</span>:
-        </p>
-        <p>
-        </p>
+<head>
+  <title>What's New in this Release</title>
+  <meta name="GENERATOR" content=
+  "Modular DocBook HTML Stylesheet Version 1.79">
+  <link rel="HOME" title="Privoxy 3.0.27 User Manual" href="index.html">
+  <link rel="PREVIOUS" title="Installation" href="installation.html">
+  <link rel="NEXT" title="Quickstart to Using Privoxy" href=
+  "quickstart.html">
+  <link rel="STYLESHEET" type="text/css" href="../p_doc.css">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <link rel="STYLESHEET" type="text/css" href="p_doc.css">
+</head>
+<body class="SECT1" bgcolor="#EEEEEE" text="#000000" link="#0000FF" vlink=
+"#840084" alink="#0000FF">
+  <div class="NAVHEADER">
+    <table summary="Header navigation table" width="100%" border="0"
+    cellpadding="0" cellspacing="0">
+      <tr>
+        <th colspan="3" align="center">Privoxy 3.0.27 User Manual</th>
+      </tr>
+      <tr>
+        <td width="10%" align="left" valign="bottom"><a href=
+        "installation.html" accesskey="P">Prev</a></td>
+        <td width="80%" align="center" valign="bottom"></td>
+        <td width="10%" align="right" valign="bottom"><a href=
+        "quickstart.html" accesskey="N">Next</a></td>
+      </tr>
+    </table>
+    <hr align="left" width="100%">
+  </div>
+  <div class="SECT1">
+    <h1 class="SECT1"><a name="WHATSNEW" id="WHATSNEW">3. What's New in this
+    Release</a></h1>
+    <p><span class="APPLICATION">Privoxy 3.0.26</span> stable is a bug-fix
+    release for the previously released 3.0.25 beta which introduced
+    client-specific tags and included a couple of minor improvements.</p>
+    <ul>
+      <li>
+        <p>Bug fixes:</p>
         <ul>
           <li>
-            <p>
-              The recommended way to upgrade <span class=
-              "APPLICATION">Privoxy</span> is to backup your old
-              configuration files, install the new ones, verify that <span
-              class="APPLICATION">Privoxy</span> is working correctly and
-              finally merge back your changes using <span class=
-              "APPLICATION">diff</span> and maybe <span class=
-              "APPLICATION">patch</span>.
-            </p>
-            <p>
-              There are a number of new features in each <span class=
-              "APPLICATION">Privoxy</span> release and most of them have to
-              be explicitly enabled in the configuration files. Old
-              configuration files obviously don't do that and due to syntax
-              changes using old configuration files with a new <span class=
-              "APPLICATION">Privoxy</span> isn't always possible anyway.
-            </p>
-          </li>
-          <li>
-            <p>
-              Note that some installers remove earlier versions completely,
-              including configuration files, therefore you should really save
-              any important configuration files!
-            </p>
-          </li>
-          <li>
-            <p>
-              On the other hand, other installers don't overwrite existing
-              configuration files, thinking you will want to do that
-              yourself.
-            </p>
-          </li>
-          <li>
-            <p>
-              In the default configuration only fatal errors are logged now.
-              You can change that in the <a href="config.html#DEBUG">debug
-              section</a> of the configuration file. You may also want to
-              enable more verbose logging until you verified that the new
-              <span class="APPLICATION">Privoxy</span> version is working as
-              expected.
-            </p>
-          </li>
-          <li>
-            <p>
-              Three other config file settings are now off by default: <a
-              href=
-              "config.html#ENABLE-REMOTE-TOGGLE">enable-remote-toggle</a>, <a
-              href=
-              "config.html#ENABLE-REMOTE-HTTP-TOGGLE">enable-remote-http-toggle</a>,
-              and <a href=
-              "config.html#ENABLE-EDIT-ACTIONS">enable-edit-actions</a>. If
-              you use or want these, you will need to explicitly enable them,
-              and be aware of the security issues involved.
-            </p>
+            <p>Fixed crashes with "listen-addr :8118" (SF Bug #902). The
+            regression was introduced in 3.0.25 beta and reported by Marvin
+            Renich in Debian bug #834941.</p>
           </li>
         </ul>
-      </div>
+      </li>
+      <li>
+        <p>General improvements:</p>
+        <ul>
+          <li>
+            <p>Log when privoxy is toggled on or off via cgi interface.</p>
+          </li>
+          <li>
+            <p>Highlight the "Info: Now toggled " on/off log message in the
+            Windows log viewer.</p>
+          </li>
+          <li>
+            <p>Highlight the loading actions/filter file log message in the
+            Windows log viewer.</p>
+          </li>
+          <li>
+            <p>Mention client-specific tags on the toggle page as a
+            potentionally more appropriate alternative.</p>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p>Documentation improvements:</p>
+        <ul>
+          <li>
+            <p>Update download section on the homepage. The downloads are
+            available from the website now.</p>
+          </li>
+          <li>
+            <p>Add sponsor FAQ.</p>
+          </li>
+          <li>
+            <p>Remove obsolete reference to mailing lists hosted at
+            SourceForge.</p>
+          </li>
+          <li>
+            <p>Update the "Before the Release" section of the developer
+            manual.</p>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p>Infrastructure improvements:</p>
+        <ul>
+          <li>
+            <p>Add perl script to generate an RSS feed for the packages
+            Submitted by "Unknown".</p>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p>Build system improvements:</p>
+        <ul>
+          <li>
+            <p>strptime.h: fix a compiler warning about ambiguous else.</p>
+          </li>
+          <li>
+            <p>configure.in: Check for Docbook goo on the BSDs as well.</p>
+          </li>
+          <li>
+            <p>GNUMakefile.in: Let the dok-user target remove temporary
+            files.</p>
+          </li>
+        </ul>
+      </li>
+    </ul>
+    <p>Changes between <span class="APPLICATION">Privoxy 3.0.25 beta</span>
+    and the previous release:</p>
+    <ul>
+      <li>
+        <p>Bug fixes:</p>
+        <ul>
+          <li>
+            <p>Always use the current toggle state for new requests.
+            Previously new requests on reused connections inherited the
+            toggle state from the previous request even though the toggle
+            state could have changed. Reported by Robert Klemme.</p>
+          </li>
+          <li>
+            <p>Fixed two buffer-overflows in the (deprecated) static pcre
+            code. These bugs are not considered security issues as the input
+            is trusted. Found with afl-fuzz and ASAN.</p>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p>General improvements:</p>
+        <ul>
+          <li>
+            <p>Added support for client-specific tags which allow Privoxy
+            admins to pre-define tags that are set for all requests from
+            clients that previously opted in through the CGI interface. They
+            are useful in multi-user setups where admins may want to allow
+            users to disable certain actions and filters for themselves
+            without affecting others. In single-user setups they are useful
+            to allow more fine-grained toggling. For example to disable
+            request blocking while still crunching cookies, or to disable
+            experimental filters only. This is an experimental feature, the
+            syntax and behaviour may change in future versions. Sponsored by
+            Robert Klemme.</p>
+          </li>
+          <li>
+            <p>Dynamic filters and taggers now support a $listen-address
+            variable which contains the address the request came in on. For
+            external filters the variable is called $PRIVOXY_LISTEN_ADDRESS.
+            Original patch contributed by pursievro.</p>
+          </li>
+          <li>
+            <p>Add client-header-tagger 'listen-address'.</p>
+          </li>
+          <li>
+            <p>Include the listen-address in the log message when logging new
+            requests. Patch contributed by pursievro.</p>
+          </li>
+          <li>
+            <p>Turn invalid max-client-connections values into fatal
+            errors.</p>
+          </li>
+          <li>
+            <p>The show-status page now shows whether or not dates before
+            1970 and after 2038 are expected to be handled properly. This is
+            mainly useful for Privoxy-Regression-Test but could also come
+            handy when dealing with time-related support requests.</p>
+          </li>
+          <li>
+            <p>On Mac OS X the thread id in log messages are more likely to
+            be unique now.</p>
+          </li>
+          <li>
+            <p>When complaining about missing filters, the filter type is
+            logged as well.</p>
+          </li>
+          <li>
+            <p>A couple of harmless coverity warnings were silenced (CID
+            #161202, CID #161203, CID #161211).</p>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p>Action file improvements:</p>
+        <ul>
+          <li>
+            <p>Filtering is disabled for Range requests to let download
+            resumption and Windows updates work with the default
+            configuration.</p>
+          </li>
+          <li>
+            <p>Unblock ".ardmediathek.de/". Reported by ThTomate in #932.</p>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p>Documentation improvements:</p>
+        <ul>
+          <li>
+            <p>Add FAQ entry for crashes caused by memory limits.</p>
+          </li>
+          <li>
+            <p>Remove obsolete FAQ entry about a bug in PHP 4.2.3.</p>
+          </li>
+          <li>
+            <p>Mention the new mailing lists were appropriate. As the
+            archives have not been migrated, continue to mention the archives
+            at SF in the contacting section for now.</p>
+          </li>
+          <li>
+            <p>Note that the templates should be adjusted if Privoxy is
+            running as intercepting proxy without getting all requests.</p>
+          </li>
+          <li>
+            <p>A bunch of links were converted to https://.</p>
+          </li>
+          <li>
+            <p>Rephrase onion service paragraph to make it more obvious that
+            Tor is involved and that the whole website (and not just the
+            homepage) is available as onion service.</p>
+          </li>
+          <li>
+            <p>Streamline the "More information" section on the homepage
+            further by additionally ditching the link to the 'See also'
+            section of the user manual. The section contains mostly links
+            that are directly reachable from the homepage already and the
+            rest is not significant enough to get a link from the
+            homepage.</p>
+          </li>
+          <li>
+            <p>Change the add-header{} example to set the DNT header and use
+            a complete section to make copy and pasting more convenient. Add
+            a comment to make it obvious that adding the header is not
+            recommended for obvious reasons. Using the DNT header as example
+            was suggested by Leo Wzukw.</p>
+          </li>
+          <li>
+            <p>Streamline the support-and-service template Instead of linking
+            to the various support trackers (whose URLs hopefully change
+            soon), link to the contact section of the user manual to increase
+            the chances that users actually read it.</p>
+          </li>
+          <li>
+            <p>Add a FAQ entry for tainted sockets.</p>
+          </li>
+          <li>
+            <p>More sections in the documentation have stable URLs now.</p>
+          </li>
+          <li>
+            <p>FAQ: Explain why 'ping config.privoxy.org' is not expected to
+            reach a local Privoxy installation.</p>
+          </li>
+          <li>
+            <p>Note that donations done through Zwiebelfreunde e.V. currently
+            can't be checked automatically.</p>
+          </li>
+          <li>
+            <p>Updated section regarding starting Privoxy under OS X.</p>
+          </li>
+          <li>
+            <p>Use dedicated start instructions for FreeBSD and
+            ElectroBSD.</p>
+          </li>
+          <li>
+            <p>Removed release instructions for AIX. They haven't been
+            working for years and unsurprisingly nobody seems to care.</p>
+          </li>
+          <li>
+            <p>Removed obsolete reference to the solaris-dist target.</p>
+          </li>
+          <li>
+            <p>Updated the release instructions for FreeBSD.</p>
+          </li>
+          <li>
+            <p>Removed unfinished release instructions for Amiga OS and HP-UX
+            11.</p>
+          </li>
+          <li>
+            <p>Added a pointer to the Cygwin Time Machine for getting the
+            last release of Cygwin version 1.5 to use for building Privoxy on
+            Windows.</p>
+          </li>
+          <li>
+            <p>Various typos have been fixed.</p>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p>Infrastructure improvements:</p>
+        <ul>
+          <li>
+            <p>The website is no longer hosted at SourceForge and can be
+            reached through https now.</p>
+          </li>
+          <li>
+            <p>The mailing lists at SourceForge have been deprecated, you can
+            subscribe to the new ones at: https://lists.privoxy.org/</p>
+          </li>
+          <li>
+            <p>Migrating the remaining services from SourceForge is work in
+            progress (TODO list item #53).</p>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p>Build system improvements:</p>
+        <ul>
+          <li>
+            <p>Add configure argument to optimistically redefine FD_SETSIZE
+            with the intent to change the maximum number of client
+            connections Privoxy can handle. Only works with some libcs.
+            Sponsored by Robert Klemme.</p>
+          </li>
+          <li>
+            <p>Let the tarball-dist target skip files in ".git".</p>
+          </li>
+          <li>
+            <p>Let the tarball-dist target work in cwds other than
+            current.</p>
+          </li>
+          <li>
+            <p>Make the 'clean' target faster when run from a git
+            repository.</p>
+          </li>
+          <li>
+            <p>Include tools in the generic distribution.</p>
+          </li>
+          <li>
+            <p>Let the gen-dist target work in cwds other than current.</p>
+          </li>
+          <li>
+            <p>Sort find output that is used for distribution tarballs to get
+            reproducible results.</p>
+          </li>
+          <li>
+            <p>Don't add '-src' to the name of the tar ball generated by the
+            gen-dist target. The package isn't a source distribution but a
+            binary package. While at it, use a variable for the name to
+            reduce the chances that the various references get out of sync
+            and fix the gen-upload target which was looking in the wrong
+            directory.</p>
+          </li>
+          <li>
+            <p>Add regression-tests.action to the files that are
+            distributed.</p>
+          </li>
+          <li>
+            <p>The gen-dist target which was broken since 2002 (r1.92) has
+            been fixed.</p>
+          </li>
+          <li>
+            <p>Remove genclspec.sh which has been obsolete since 2009.</p>
+          </li>
+          <li>
+            <p>Remove obsolete reference to Redhat spec file.</p>
+          </li>
+          <li>
+            <p>Remove the obsolete announce target which has been commented
+            out years ago.</p>
+          </li>
+          <li>
+            <p>Let rsync skip files if the checksums match.</p>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <p>Privoxy-Regression-Test:</p>
+        <ul>
+          <li>
+            <p>Add a "Default level offset" directive which can be used to
+            change the default level by a given value. This directive affects
+            all tests located after it until the end of the file or a another
+            "Default level offset" directive is reached. The purpose of this
+            directive is to make it more convenient to skip similar tests in
+            a given file without having to remove or disable the tests
+            completely.</p>
+          </li>
+          <li>
+            <p>Let test level 17 depend on FEATURE_64_BIT_TIME_T instead of
+            FEATURE_PTHREAD which has no direct connection to the time_t
+            size.</p>
+          </li>
+          <li>
+            <p>Fix indentation in perldoc examples.</p>
+          </li>
+          <li>
+            <p>Don't overlook directives in the first line of the action
+            file.</p>
+          </li>
+          <li>
+            <p>Bump version to 0.7.</p>
+          </li>
+          <li>
+            <p>Fix detection of the Privoxy version now that https:// is used
+            for the website.</p>
+          </li>
+        </ul>
+      </li>
+    </ul>
+    <div class="SECT2">
+      <h2 class="SECT2"><a name="UPGRADERSNOTE" id="UPGRADERSNOTE">3.1. Note
+      to Upgraders</a></h2>
+      <p>A quick list of things to be aware of before upgrading from earlier
+      versions of <span class="APPLICATION">Privoxy</span>:</p>
+      <ul>
+        <li>
+          <p>The recommended way to upgrade <span class=
+          "APPLICATION">Privoxy</span> is to backup your old configuration
+          files, install the new ones, verify that <span class=
+          "APPLICATION">Privoxy</span> is working correctly and finally merge
+          back your changes using <span class="APPLICATION">diff</span> and
+          maybe <span class="APPLICATION">patch</span>.</p>
+          <p>There are a number of new features in each <span class=
+          "APPLICATION">Privoxy</span> release and most of them have to be
+          explicitly enabled in the configuration files. Old configuration
+          files obviously don't do that and due to syntax changes using old
+          configuration files with a new <span class=
+          "APPLICATION">Privoxy</span> isn't always possible anyway.</p>
+        </li>
+        <li>
+          <p>Note that some installers remove earlier versions completely,
+          including configuration files, therefore you should really save any
+          important configuration files!</p>
+        </li>
+        <li>
+          <p>On the other hand, other installers don't overwrite existing
+          configuration files, thinking you will want to do that
+          yourself.</p>
+        </li>
+        <li>
+          <p>In the default configuration only fatal errors are logged now.
+          You can change that in the <a href="config.html#DEBUG">debug
+          section</a> of the configuration file. You may also want to enable
+          more verbose logging until you verified that the new <span class=
+          "APPLICATION">Privoxy</span> version is working as expected.</p>
+        </li>
+        <li>
+          <p>Three other config file settings are now off by default:
+          <a href="config.html#ENABLE-REMOTE-TOGGLE">enable-remote-toggle</a>,
+          <a href=
+          "config.html#ENABLE-REMOTE-HTTP-TOGGLE">enable-remote-http-toggle</a>,
+          and <a href=
+          "config.html#ENABLE-EDIT-ACTIONS">enable-edit-actions</a>. If you
+          use or want these, you will need to explicitly enable them, and be
+          aware of the security issues involved.</p>
+        </li>
+      </ul>
     </div>
-    <div class="NAVFOOTER">
-      <hr align="LEFT" width="100%">
-      <table summary="Footer navigation table" width="100%" border="0"
-      cellpadding="0" cellspacing="0">
-        <tr>
-          <td width="33%" align="left" valign="top">
-            <a href="installation.html" accesskey="P">Prev</a>
-          </td>
-          <td width="34%" align="center" valign="top">
-            <a href="index.html" accesskey="H">Home</a>
-          </td>
-          <td width="33%" align="right" valign="top">
-            <a href="quickstart.html" accesskey="N">Next</a>
-          </td>
-        </tr>
-        <tr>
-          <td width="33%" align="left" valign="top">
-            Installation
-          </td>
-          <td width="34%" align="center" valign="top">
-            &nbsp;
-          </td>
-          <td width="33%" align="right" valign="top">
-            Quickstart to Using Privoxy
-          </td>
-        </tr>
-      </table>
-    </div>
-  </body>
+  </div>
+  <div class="NAVFOOTER">
+    <hr align="left" width="100%">
+    <table summary="Footer navigation table" width="100%" border="0"
+    cellpadding="0" cellspacing="0">
+      <tr>
+        <td width="33%" align="left" valign="top"><a href="installation.html"
+        accesskey="P">Prev</a></td>
+        <td width="34%" align="center" valign="top"><a href="index.html"
+        accesskey="H">Home</a></td>
+        <td width="33%" align="right" valign="top"><a href="quickstart.html"
+        accesskey="N">Next</a></td>
+      </tr>
+      <tr>
+        <td width="33%" align="left" valign="top">Installation</td>
+        <td width="34%" align="center" valign="top">&nbsp;</td>
+        <td width="33%" align="right" valign="top">Quickstart to Using
+        Privoxy</td>
+      </tr>
+    </table>
+  </div>
+</body>
 </html>
-

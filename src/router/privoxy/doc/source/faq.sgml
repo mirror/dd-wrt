@@ -8,10 +8,10 @@
 <!entity history SYSTEM "history.sgml">
 <!entity copyright SYSTEM "copyright.sgml">
 <!entity license SYSTEM "license.sgml">
-<!entity p-version "3.0.26">
-<!entity p-status "stable">
-<!entity % p-not-stable "IGNORE">
-<!entity % p-stable "INCLUDE">
+<!entity p-version "3.0.27">
+<!entity p-status "UNRELEASED">
+<!entity % p-not-stable "INCLUDE">
+<!entity % p-stable "IGNORE">
 <!entity % p-text "IGNORE">        <!-- define we are not a text only doc -->
 <!entity % p-doc "INCLUDE">        <!-- and we are a formal doc           -->
 <!entity % p-supp-userman "INCLUDE"> <!-- Include all from supported.sgml -->
@@ -27,7 +27,7 @@
                 This file belongs into
                 ijbswa.sourceforge.net:/home/groups/i/ij/ijbswa/htdocs/
 
- $Id: faq.sgml,v 2.131 2016/08/26 12:27:34 fabiankeil Exp $
+ $Id: faq.sgml,v 2.135 2017/03/27 10:22:27 fabiankeil Exp $
 
  Copyright (C) 2001-2014 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
@@ -78,7 +78,7 @@
  </subscript>
 </pubdate>
 
-<pubdate>$Id: faq.sgml,v 2.131 2016/08/26 12:27:34 fabiankeil Exp $</pubdate>
+<pubdate>$Id: faq.sgml,v 2.135 2017/03/27 10:22:27 fabiankeil Exp $</pubdate>
 
 <!--
 
@@ -509,11 +509,13 @@ warranty? Registration?</title>
 
 <para>
  <application>Privoxy</application> is an associated
- project of <ulink url="http://www.spi-inc.org/">Software
+ project of <ulink url="https://www.spi-inc.org/">Software
  in the Public Interest (SPI)</ulink>, which allows us to receive
- tax-deductible donations in the United States. If you want to donate through
- SPI, please use <ulink url="http://www.spi-inc.org/donations">SPI's donation page</ulink>
- to see what the options are.
+ tax-deductible donations in the United States.
+ You can <ulink url="https://www.spi-inc.org/projects/privoxy/">donate via Paypal</ulink>
+ and <ulink url="https://co.clickandpledge.com/advanced/default.aspx?wid=34115">Click & Pledge</ulink>.
+ For details, please have a look at
+ <ulink url="https://www.spi-inc.org/donations">SPI's general donation page</ulink>.
 </para>
 
 <para>
@@ -2124,7 +2126,7 @@ out of the picture?</title>
 <title>My logs show Privoxy <quote>crunches</quote>
 ads, but also its own internal CGI pages. What is a <quote>crunch</quote>?</title>
 <para>
- A <quote>crunch</quote> simply means <application>Privoxy</application> intercepted
+ A <quote>crunch</quote> means <application>Privoxy</application> intercepted
  <emphasis>something</emphasis>, nothing more. Often this is indeed ads or
  banners, but <application>Privoxy</application> uses the same mechanism for
  trapping requests for its own internal pages. For instance, a request for

@@ -44,8 +44,7 @@
 #    The development status of the proxy software: "alpha", "beta",
 #    or "stable".
 #  homepage:
-#    The URL of the SourceForge ijbswa project, who maintains this
-#    software.
+#    The URL of the Privoxy project, which maintains this software.
 #
 # CONDITIONAL SYMBOLS FOR THIS TEMPLATE AND THEIR DEPANDANT SYMBOLS:
 # ------------------------------------------------------------------

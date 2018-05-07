@@ -8,7 +8,7 @@
 #
 # https://www.fabiankeil.de/sourcecode/privoxy-log-parser/
 #
-# $Id: privoxy-log-parser.pl,v 1.163 2016/08/26 11:19:53 fabiankeil Exp $
+# $Id: privoxy-log-parser.pl,v 1.170 2017/03/03 17:43:35 fabiankeil Exp $
 #
 # TODO:
 #       - LOG_LEVEL_CGI, LOG_LEVEL_ERROR, LOG_LEVEL_WRITE content highlighting
@@ -25,7 +25,7 @@
 #         hash key as input.
 #       - Add --compress and --decompress options.
 #
-# Copyright (c) 2007-2013 Fabian Keil <fk@fabiankeil.de>
+# Copyright (c) 2007-2017 Fabian Keil <fk@fabiankeil.de>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -45,7 +45,7 @@ use warnings;
 use Getopt::Long;
 
 use constant {
-    PRIVOXY_LOG_PARSER_VERSION => '0.8',
+    PRIVOXY_LOG_PARSER_VERSION => '0.9',
     # Feel free to mess with these ...
     DEFAULT_BACKGROUND => 'black',  # Choose registered colour (like 'black')
     DEFAULT_TEXT_COLOUR => 'white', # Choose registered colour (like 'black')
@@ -2005,6 +2005,14 @@ sub gather_loglevel_crunch_stats ($$) {
     } elsif ($c =~ m/^Blocked:/) {
         # Blocked: blogger.googleusercontent.com:443
         $stats{'blocked'}++;
+
+    } elsif ($c =~ m/^Connection timeout:/) {
+        # Connection timeout: http://c.tile.openstreetmap.org/18/136116/87842.png
+        $stats{'connection-timeout'}++;
+
+    } elsif ($c =~ m/^Connection failure:/) {
+        # Connection failure: http://127.0.0.1:8080/
+        $stats{'connection-failure'}++;
     }
 }
 
@@ -2074,6 +2082,7 @@ sub gather_loglevel_header_stats ($$) {
 
     my ($c, $thread) = @_;
     our %stats;
+    our %cli_options;
 
     if ($c =~ m/^A HTTP\/1\.1 response without/ or
         $c =~ m/^Keeping the server header 'Connection: keep-alive' around./)
@@ -2086,10 +2095,13 @@ sub gather_loglevel_header_stats ($$) {
 
         # scan: HTTP/1.1 200 OK
         $stats{'method'}{$2}++;
-        $stats{'resource'}{$3}++;
+        if ($cli_options{'url-statistics-threshold'} != 0) {
+            $stats{'resource'}{$3}++;
+        }
         $stats{'http-version'}{$4}++;
 
-    } elsif ($c =~ m/^scan: Host: ([^\s]+)/) {
+    } elsif ($cli_options{'host-statistics-threshold'} != 0 and
+             $c =~ m/^scan: Host: ([^\s]+)/) {
 
         # scan: Host: p.p
         $stats{'hosts'}{$1}++;
@@ -2107,6 +2119,8 @@ sub init_stats () {
         'empty-responses-on-reused-connections' => 0,
         'fast-redirections' => 0,
         'blocked' => 0,
+        'connection-failure' => 0,
+        'connection-timeout' => 0,
         'reused-connections' => 0,
         'server-keep-alive' => 0,
         'closed-client-connections' => 0,
@@ -2149,6 +2163,10 @@ sub print_stats () {
         get_percentage($stats{requests}, $stats{'blocked'}) . ")\n";
     print "Fast redirections: " . $stats{'fast-redirections'} . " (" .
         get_percentage($stats{requests}, $stats{'fast-redirections'}) . ")\n";
+    print "Connection timeouts: " . $stats{'connection-timeout'} . " (" .
+        get_percentage($stats{requests}, $stats{'connection-timeout'}) . ")\n";
+    print "Connection failures: " . $stats{'connection-failure'} . " (" .
+        get_percentage($stats{requests}, $stats{'connection-failure'}) . ")\n";
     print "Outgoing requests: " . $outgoing_requests . " (" .
         get_percentage($stats{requests}, $outgoing_requests) . ")\n";
     print "Server keep-alive offers: " . $stats{'server-keep-alive'} . " (" .
@@ -2191,13 +2209,13 @@ sub print_stats () {
     # Due to log rotation we may not have a complete picture for all the requests
     printf "Improperly accounted requests: ~%d\n", abs($stats{requests} - $client_requests_checksum);
 
-    if ($stats{method} eq 0) {
-        print "No response lines parsed yet yet.\n";
-        return;
-    }
-    print "Method distribution:\n";
-    foreach my $method (sort {$stats{'method'}{$b} <=> $stats{'method'}{$a}} keys %{$stats{'method'}}) {
-        printf "%8d : %-8s\n", $stats{'method'}{$method}, $method;
+    if (exists $stats{method}) {
+        print "Method distribution:\n";
+        foreach my $method (sort {$stats{'method'}{$b} <=> $stats{'method'}{$a}} keys %{$stats{'method'}}) {
+            printf "%8d : %-8s\n", $stats{'method'}{$method}, $method;
+        }
+    } else {
+        print "Method distribution unknown. No response headers parsed yet. Is 'debug 8' enabled?\n";
     }
     print "Client HTTP versions:\n";
     foreach my $http_version (sort {$stats{'http-version'}{$b} <=> $stats{'http-version'}{$a}} keys %{$stats{'http-version'}}) {

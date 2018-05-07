@@ -3,7 +3,7 @@
 
  Purpose     :  Entity included in other project documents.
 
- $Id: contacting.sgml,v 2.45 2016/07/28 08:24:59 fabiankeil Exp $
+ $Id: contacting.sgml,v 2.46 2017/01/23 13:03:06 fabiankeil Exp $
 
  Copyright (C) 2001-2011 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
@@ -137,13 +137,14 @@ debug   256 # debug GIF de-animation
 debug   512 # Common Log Format
 debug  1024 # Log the destination for requests Privoxy didn't let through, and the reason why.
 debug  4096 # Startup banner and warnings.
-debug  8192 # Non-fatal errors</literallayout>
+debug  8192 # Non-fatal errors
+debug 65536 # Log applying actions</literallayout>
    </para>
    <para>
     If you are having trouble with a filter, please additionally enable
     <literallayout>debug    64 # debug regular expression filters</literallayout>
-    If you are using Privoxy 3.0.17 or later and suspect that it interprets the
-    request or the response incorrectly, please enable
+    If you suspect that Privoxy interprets the request or the response
+    incorrectly, please enable
     <literallayout>debug 32768 # log all data read from the network</literallayout>
    </para>
    <para>

@@ -624,11 +624,11 @@ static jb_err compile_pattern(const char *pattern, enum regex_anchoring anchorin
                               struct pattern_spec *url, regex_t **regex)
 {
    int errcode;
-   char rebuf[BUFFER_SIZE];
    const char *fmt = NULL;
+   char *rebuf;
+   size_t rebuf_size;
 
    assert(pattern);
-   assert(strlen(pattern) < sizeof(rebuf) - 2);
 
    if (pattern[0] == '\0')
    {
@@ -654,27 +654,30 @@ static jb_err compile_pattern(const char *pattern, enum regex_anchoring anchorin
          log_error(LOG_LEVEL_FATAL,
             "Invalid anchoring in compile_pattern %d", anchoring);
    }
-
+   rebuf_size = strlen(pattern) + strlen(fmt);
+   rebuf = malloc_or_die(rebuf_size);
    *regex = zalloc_or_die(sizeof(**regex));
 
-   snprintf(rebuf, sizeof(rebuf), fmt, pattern);
+   snprintf(rebuf, rebuf_size, fmt, pattern);
 
    errcode = regcomp(*regex, rebuf, (REG_EXTENDED|REG_NOSUB|REG_ICASE));
 
    if (errcode)
    {
-      size_t errlen = regerror(errcode, *regex, rebuf, sizeof(rebuf));
-      if (errlen > (sizeof(rebuf) - (size_t)1))
+      size_t errlen = regerror(errcode, *regex, rebuf, rebuf_size);
+      if (errlen > (rebuf_size - (size_t)1))
       {
-         errlen = sizeof(rebuf) - (size_t)1;
+         errlen = rebuf_size - (size_t)1;
       }
       rebuf[errlen] = '\0';
       log_error(LOG_LEVEL_ERROR, "error compiling %s from %s: %s",
          pattern, url->spec, rebuf);
       free_pattern_spec(url);
+      freez(rebuf);
 
       return JB_ERR_PARSE;
    }
+   freez(rebuf);
 
    return JB_ERR_OK;
 

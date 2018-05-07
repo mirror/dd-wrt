@@ -1,4 +1,4 @@
-const char cgiedit_rcs[] = "$Id: cgiedit.c,v 1.89 2016/07/23 17:23:43 ler762 Exp $";
+const char cgiedit_rcs[] = "$Id: cgiedit.c,v 1.88 2016/02/26 12:29:38 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/cgiedit.c,v $

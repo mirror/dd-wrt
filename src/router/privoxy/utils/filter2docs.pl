@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: filter2docs.pl,v 1.9 2013/03/02 14:38:51 fabiankeil Exp $
+# $Id: filter2docs.pl,v 1.8 2013/03/02 14:38:38 fabiankeil Exp $
 # $Source: /cvsroot/ijbswa/current/utils/filter2docs.pl,v $
 
 # Parse the filter names and descriptions from a filter file and

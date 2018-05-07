@@ -8,7 +8,7 @@
  *
  * Purpose     :  Amiga-specific declarations.
  *
- * Copyright   :  Written by and Copyright (C) 2001 the SourceForge
+ * Copyright   :  Written by and Copyright (C) 2001 members of the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                This program is free software; you can redistribute it
