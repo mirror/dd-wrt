@@ -9,7 +9,7 @@
  *                will bridge the gaps here.  Perhaps I should convert the
  *                latest SDK too?  Shudder, I think not.
  *
- * Copyright   :  Written by and Copyright (C) 2001 the SourceForge
+ * Copyright   :  Written by and Copyright (C) 2001 members of the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written

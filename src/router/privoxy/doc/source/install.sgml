@@ -1,10 +1,10 @@
 <!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V3.1//EN" [
 <!entity % dummy "IGNORE">
 <!entity buildsource SYSTEM "buildsource.sgml">
-<!entity p-version "3.0.26">
-<!entity p-status "stable">
-<!entity % p-stable "INCLUDE">
-<!entity % p-not-stable "IGNORE">
+<!entity p-version "3.0.27">
+<!entity p-status "UNRELEASED">
+<!entity % p-stable "IGNORE">
+<!entity % p-not-stable "INCLUDE">
 <!entity % p-alpha "IGNORE">
 <!entity % p-beta "IGNORE">
 <!entity % p-text "INCLUDE">       <!-- define we are a text only doc    -->

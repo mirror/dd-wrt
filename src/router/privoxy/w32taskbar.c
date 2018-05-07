@@ -1,4 +1,4 @@
-const char w32taskbar_rcs[] = "$Id: w32taskbar.c,v 1.14 2012/03/09 17:55:50 fabiankeil Exp $";
+const char w32taskbar_rcs[] = "$Id: w32taskbar.c,v 1.13 2012/03/09 16:23:50 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/w32taskbar.c,v $

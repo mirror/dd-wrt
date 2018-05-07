@@ -1,6 +1,6 @@
 #ifndef GATEWAY_H_INCLUDED
 #define GATEWAY_H_INCLUDED
-#define GATEWAY_H_VERSION "$Id: gateway.h,v 1.23 2013/11/24 14:23:28 fabiankeil Exp $"
+#define GATEWAY_H_VERSION "$Id: gateway.h,v 1.25 2017/06/04 14:42:13 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/gateway.h,v $
@@ -45,14 +45,7 @@ extern jb_socket forwarded_connect(const struct forward_spec * fwd,
                                    struct http_request *http,
                                    struct client_state *csp);
 
-/*
- * Default number of seconds after which an
- * open connection will no longer be reused.
- */
-#define DEFAULT_KEEP_ALIVE_TIMEOUT 180
-
 #ifdef FEATURE_CONNECTION_SHARING
-extern void set_keep_alive_timeout(unsigned int timeout);
 extern void initialize_reusable_connections(void);
 extern void forget_connection(jb_socket sfd);
 extern void remember_connection(const struct reusable_connection *connection);
@@ -65,6 +58,10 @@ extern int connection_destination_matches(const struct reusable_connection *conn
                                           const struct http_request *http,
                                           const struct forward_spec *fwd);
 #endif /* def FEATURE_CONNECTION_KEEP_ALIVE */
+
+#ifdef FUZZ
+extern jb_err socks_fuzz(struct client_state *csp);
+#endif
 
 /*
  * Revision control strings from this header and associated .c file

@@ -44,8 +44,7 @@
 #    The development status of the proxy software: "alpha", "beta",
 #    or "stable".
 #  homepage:
-#    The URL of the SourceForge ijbswa project, who maintains this
-#    software.
+#    The URL of the Privoxy project, which maintains this software.
 #  client-request:
 #    The request and headers that the client sent.
 #  processed-request:
@@ -81,6 +80,9 @@
   <meta name="robots" content="noindex,nofollow">
   <link rel="stylesheet" type="text/css" href="@default-cgi@send-stylesheet">
   <link rel="shortcut icon" href="@default-cgi@favicon.ico" type="image/x-icon">
+<!-- @if-tags-expire-start -->
+  <meta http-equiv="refresh" content="@refresh-delay@">
+<!-- if-tags-expire-end@ -->
 </head>
 
 <body>
@@ -128,14 +130,6 @@
       </td>
     </tr>
 
-    <tr>
-      <td class="info">
-
-#include mod-support-and-service
-
-      </td>
-    </tr>
-
 <!-- @if-have-help-info-start -->
     <tr>
       <td class="info">
@@ -145,6 +139,14 @@
       </td>
     </tr>
 <!-- if-have-help-info-end@ -->
+
+    <tr>
+      <td class="info">
+
+#include mod-support-and-service
+
+      </td>
+    </tr>
 
   </table>
 

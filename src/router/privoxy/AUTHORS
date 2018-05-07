@@ -42,6 +42,7 @@ patches, made suggestions, donated or contributed in some other way. These
 include (in alphabetical order):
 
  Rustam Abdullaev
+ Clint Adams
  Anatoly Arzhnikov
  Ken Arromdee
  Natxo Asenjo
@@ -73,6 +74,7 @@ include (in alphabetical order):
  Dean Gaudet
  Stephen Gildea
  John McGowan
+ Danny Goossen
  Lizik Grelier
  Daniel Griscom
  Felix Gröbert
@@ -80,12 +82,12 @@ include (in alphabetical order):
  Jeff H.
  Tim H.
  Aaron Hamid
- Basil Hussain
  Darel Henman
  Magnus Holmgren
  Eric M. Hopper
  Ralf Horstmann
  Stefan Huehner
+ Basil Hussain
  Peter Hyman
  Derek Jennings
  Andrew Jones
@@ -110,17 +112,18 @@ include (in alphabetical order):
  Angelina Matson
  Jonathan McKenzie
  David Mediavilla
- J. Momberger
  Raphael Moll
+ J. Momberger
  Mathew Murphy
  Amuro Namie
  Mark Nelson
+ Tobias Netzel
  Adam Piggott
  Petr Písar
  Dan Price
- Kai Raven
  Roberto Ragusa
  Félix Rauch
+ Kai Raven
  Marvin Renich
  Chris John Riley
  Maynard Riley
@@ -129,6 +132,7 @@ include (in alphabetical order):
  Gregory Seidman
  Atman Sense
  Chung-chieh Shan
+ Johan Sintorn
  Benjamin C. Wiley Sittler
  Simon South
  Dan Stahlke
@@ -136,6 +140,7 @@ include (in alphabetical order):
  Rick Sykes
  Spinor S.
  Peter Thoenen
+ Marc Thomas
  Martin Thomas
  Reuben Thomas
  Guybrush Threepwood
@@ -148,11 +153,12 @@ include (in alphabetical order):
  Jörg Weinmann
  Darren Wiebe
  Anduin Withers
+ Eduard Wulff
  Yang Xia
  Jarry Xu
  Oliver Yeoh
+ Yossi Zahn
  Jamie Zawinski
- Eduard Wulff
 
 Privoxy is based in part on code originally developed by Junkbusters Corp. and
 Anonymous Coders.

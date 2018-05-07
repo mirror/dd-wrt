@@ -117,6 +117,12 @@ int main(int argc, char **argv);
 extern const char jcc_rcs[];
 extern const char jcc_h_rcs[];
 
+#ifdef FUZZ
+extern int fuzz_client_request(struct client_state *csp, char *fuzz_input_file);
+extern int fuzz_server_response(struct client_state *csp, char *fuzz_input_file);
+extern int fuzz_chunked_transfer_encoding(struct client_state *csp, char *fuzz_input_file);
+#endif
+
 #endif /* ndef JCC_H_INCLUDED */
 
 /*

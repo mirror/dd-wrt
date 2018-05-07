@@ -1,4 +1,4 @@
-const char ssplit_rcs[] = "$Id: ssplit.c,v 1.20 2012/07/23 12:47:01 fabiankeil Exp $";
+const char ssplit_rcs[] = "$Id: ssplit.c,v 1.19 2012/07/23 12:46:40 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/ssplit.c,v $

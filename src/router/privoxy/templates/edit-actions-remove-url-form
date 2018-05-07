@@ -7,8 +7,8 @@
 #                don't support JavaScript.
 #
 #
-# Copyright   :  Written by and Copyright (C) 2001 the SourceForge
-#                Privoxy team. http://www.privoxy.org/
+# Copyright   :  Written by and Copyright (C) 2001 members of the
+#                Privoxy team. https://www.privoxy.org/
 #
 #                Original Author: Copyright (C) 2001 Jonathan Foster
 #                http://www.jon-foster.co.uk/
@@ -108,14 +108,6 @@
       </td>
     </tr>
 
-    <tr>
-      <td class="info">
-
-#include mod-support-and-service
-
-      </td>
-    </tr>
-
 <!-- @if-have-help-info-start -->
     <tr>
       <td class="info">
@@ -125,6 +117,14 @@
       </td>
     </tr>
 <!-- if-have-help-info-end@ -->
+
+    <tr>
+      <td class="info">
+
+#include mod-support-and-service
+
+      </td>
+    </tr>
 
   </table>
 </body>

@@ -13,11 +13,11 @@
 <!entity p-authors SYSTEM "p-authors.sgml">
 <!entity config SYSTEM "p-config.sgml">
 <!entity changelog SYSTEM "changelog.sgml">
-<!entity p-version "3.0.26">
-<!entity p-status "stable">
+<!entity p-version "3.0.27">
+<!entity p-status "UNRELEASED">
 <!entity % p-authors-formal "INCLUDE"> <!-- include additional text, etc  -->
-<!entity % p-not-stable "IGNORE">
-<!entity % p-stable "INCLUDE">
+<!entity % p-not-stable "INCLUDE">
+<!entity % p-stable "IGNORE">
 <!entity % p-text "IGNORE">        <!-- define we are not a text only doc -->
 <!entity % p-doc "INCLUDE">        <!-- and we are a formal doc           -->
 <!entity % p-readme "IGNORE">
@@ -36,9 +36,9 @@
                 This file belongs into
                 ijbswa.sourceforge.net:/home/groups/i/ij/ijbswa/htdocs/
 
- $Id: user-manual.sgml,v 2.216 2016/08/26 12:27:34 fabiankeil Exp $
+ $Id: user-manual.sgml,v 2.221 2017/05/20 09:27:54 fabiankeil Exp $
 
- Copyright (C) 2001-2016 Privoxy Developers https://www.privoxy.org/
+ Copyright (C) 2001-2017 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ========================================================================
@@ -57,12 +57,12 @@
  <subscript>
 <!-- Completely the wrong markup, but very little is allowed  -->
 <!-- in this part of an article. FIXME -->
- <link linkend="copyright">Copyright</link> &my-copy; 2001-2016 by
+ <link linkend="copyright">Copyright</link> &my-copy; 2001-2017 by
  <ulink url="https://www.privoxy.org/">Privoxy Developers</ulink>
  </subscript>
 </pubdate>
 
-<pubdate>$Id: user-manual.sgml,v 2.216 2016/08/26 12:27:34 fabiankeil Exp $</pubdate>
+<pubdate>$Id: user-manual.sgml,v 2.221 2017/05/20 09:27:54 fabiankeil Exp $</pubdate>
 
 <!--
 
@@ -2278,7 +2278,7 @@ for details.
     This regular expression is conditional so it will match any page
     named <quote>index.html</quote> regardless of path which in this case can
     have one or more <quote>/'s</quote>. And this one must contain exactly
-    <quote>.html</quote> (but does not have to end with that!).
+    <quote>.html</quote> (and end with that!).
    </para>
   </listitem>
  </varlistentry>
@@ -2290,6 +2290,7 @@ for details.
     that contains any of the words <quote>ads</quote>, <quote>banner</quote>,
     <quote>banners</quote> (because of the <quote>?</quote>) or <quote>junk</quote>.
     The path does not have to end in these words, just contain them.
+    The path has to contain at least two slashes (including the one at the beginning).
    </para>
   </listitem>
  </varlistentry>
@@ -3021,6 +3022,21 @@ TAG:^User-Agent: MPlayer/
 {-filter -deanimate-gifs}
 TAG:^RANGE-REQUEST$
     </screen>
+    </para>
+    <para>
+     <screen>
+# Tag all requests with the client IP address
+#
+# (Technically the client IP address isn't included in the
+# client headers but client-header taggers can set it anyway.
+# For details see the tagger in default.filter)
+{+client-header-tagger{client-ip-address}}
+/
+
+# Change forwarding settings for requests coming from address 10.0.0.1
+{+forward-override{forward-socks5 127.0.1.2:2222 .}}
+TAG:^IP-ADDRESS: 10\.0\.0\.1$
+     </screen>
     </para>
   </listitem>
  </varlistentry>
@@ -6170,7 +6186,7 @@ for-privoxy-version=3.0.11</screen>
  The first of our specialized sections is concerned with <quote>fragile</quote>
  sites, i.e. sites that require minimum interference, because they are either
  very complex or very keen on tracking you (and have mechanisms in place that
- make them unusable for people who avoid being tracked). We will simply use
+ make them unusable for people who avoid being tracked). We will use
  our pre-defined <literal>fragile</literal> alias instead of stating the list
  of actions explicitly:
 </para>
@@ -6320,7 +6336,7 @@ count*.
 <para>
  It's quite remarkable how many advertisers actually call their banner
  servers ads.<replaceable>company</replaceable>.com, or call the directory
- in which the banners are stored simply <quote>banners</quote>. So the above
+ in which the banners are stored literally <quote>banners</quote>. So the above
  generic patterns are surprisingly effective.
 </para>
 <para>

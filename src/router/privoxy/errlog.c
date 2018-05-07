@@ -1,4 +1,4 @@
-const char errlog_rcs[] = "$Id: errlog.c,v 1.126 2016/02/26 12:29:38 fabiankeil Exp $";
+const char errlog_rcs[] = "$Id: errlog.c,v 1.129 2017/05/29 10:06:57 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/errlog.c,v $
@@ -245,6 +245,17 @@ void init_log_module(void)
  *********************************************************************/
 void set_debug_level(int debug_level)
 {
+#ifdef FUZZ
+   if (LOG_LEVEL_STFU == debug_level)
+   {
+      debug = LOG_LEVEL_STFU;
+   }
+   if (LOG_LEVEL_STFU == debug)
+   {
+      return;
+   }
+#endif
+
    debug = debug_level | LOG_LEVEL_MINIMUM;
 }
 
@@ -663,19 +674,13 @@ static inline const char *get_log_level_string(int loglevel)
 void log_error(int loglevel, const char *fmt, ...)
 {
    va_list ap;
-   char *outbuf = NULL;
-   static char *outbuf_save = NULL;
+   char outbuf[LOG_BUFFER_SIZE+1];
    char tempbuf[LOG_BUFFER_SIZE];
    size_t length = 0;
    const char * src = fmt;
    long thread_id;
    char timestamp[30];
-   /*
-    * XXX: Make this a config option,
-    * why else do we allocate instead of using
-    * an array?
-    */
-   size_t log_buffer_size = LOG_BUFFER_SIZE;
+   const size_t log_buffer_size = LOG_BUFFER_SIZE;
 
 #if defined(_WIN32) && !defined(_WIN_CONSOLE)
    /*
@@ -700,6 +705,12 @@ void log_error(int loglevel, const char *fmt, ...)
 #endif
       )
    {
+#ifdef FUZZ
+      if (debug == LOG_LEVEL_STFU)
+      {
+         return;
+      }
+#endif
       if (loglevel == LOG_LEVEL_FATAL)
       {
          fatal_error("Fatal error. You're not supposed to"
@@ -711,20 +722,11 @@ void log_error(int loglevel, const char *fmt, ...)
    thread_id = get_thread_id();
    get_log_timestamp(timestamp, sizeof(timestamp));
 
-   /* protect the whole function because of the static buffer (outbuf) */
-   lock_logfile();
-
-   if (NULL == outbuf_save)
-   {
-      outbuf_save = zalloc_or_die(log_buffer_size + 1); /* +1 for paranoia */
-   }
-   outbuf = outbuf_save;
-
    /*
     * Memsetting the whole buffer to zero (in theory)
     * makes things easier later on.
     */
-   memset(outbuf, 0, log_buffer_size);
+   memset(outbuf, 0, sizeof(outbuf));
 
    /* Add prefix for everything but Common Log Format messages */
    if (loglevel != LOG_LEVEL_CLF)
@@ -938,19 +940,21 @@ void log_error(int loglevel, const char *fmt, ...)
    assert(NULL != logfp);
 #endif
 
+   lock_logfile();
+
    if (loglevel == LOG_LEVEL_FATAL)
    {
-      fatal_error(outbuf_save);
+      fatal_error(outbuf);
       /* Never get here */
    }
    if (logfp != NULL)
    {
-      fputs(outbuf_save, logfp);
+      fputs(outbuf, logfp);
    }
 
 #if defined(_WIN32) && !defined(_WIN_CONSOLE)
    /* Write to display */
-   LogPutString(outbuf_save);
+   LogPutString(outbuf);
 #endif /* defined(_WIN32) && !defined(_WIN_CONSOLE) */
 
    unlock_logfile();

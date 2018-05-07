@@ -1,8 +1,8 @@
 # Note:  GNUmakefile is built automatically from GNUmakefile.in
 #
-# $Id: GNUmakefile.in,v 1.252 2016/07/28 08:16:04 fabiankeil Exp $
+# $Id: GNUmakefile.in,v 1.263 2017/06/01 13:22:46 ler762 Exp $
 #
-# Written by and Copyright (C) 2001-2016 members of the
+# Written by and Copyright (C) 2001-2017 members of the
 # Privoxy team. https://www.privoxy.org/
 #
 # Based on the Internet Junkbuster originally written
@@ -44,6 +44,8 @@ CODE_STATUS   = @CODE_STATUS@
 VERSION       = $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_POINT)
 SNAPVERSION   = $(VERSION)-$(shell date "+%Y%m%d")
 
+SOURCE_DATE_EPOCH = @SOURCE_DATE_EPOCH@
+MTREE_SPEC_FILE = privoxy-$(VERSION)-$(CODE_STATUS).spec
 
 #############################################################################
 # "make install" directories and variables
@@ -144,7 +146,7 @@ DOC_DIR    = doc/source
 DOC_TMP    = $(DOC_DIR)/tmp
 DOC_STATUS = @DOC_STATUS@
 TIDY       = tidy -modify -indent -wrap 78 --tidy-mark no
-RSYNC	   = rsync -av -c
+RSYNC	   = rsync -av -c --chmod=D755,F644
 
 # Program to do LF->CRLF
 DOSFILTER  = $(PERL) -p -e 's/\n/\r\n/'
@@ -197,6 +199,9 @@ C_HDRS = $(C_SRC:.c=.h) project.h actionlist.h
 CLIENT_TAG_SRC = @FEATURE_CLIENT_TAGS_ONLY@client-tags.c
 CLIENT_TAG_OBJS = @FEATURE_CLIENT_TAGS_ONLY@client-tags.@OBJEXT@
 
+FUZZ_SRC = @FUZZ_ONLY@fuzz.c
+FUZZ_OBJS = @FUZZ_ONLY@fuzz.@OBJEXT@
+
 W32_SRC   = @WIN_ONLY@w32log.c w32taskbar.c win32.c w32svrapi.c
 W32_FILES = @WIN_ONLY@w32.res
 W32_OBJS  = @WIN_ONLY@$(W32_SRC:.c=.@OBJEXT@) $(W32_FILES)
@@ -228,8 +233,8 @@ SOCKET_LIB   = @SOCKET_LIB@
 # PThreads library, if needed.
 PTHREAD_LIB  = @PTHREAD_ONLY@@PTHREAD_LIB@
 
-SRCS         = $(C_SRC) $(CLIENT_TAG_SRC) $(W32_SRC)  $(PCRS_SRC)  $(PCRE_SRC)  $(REGEX_SRC)
-OBJS         = $(C_OBJS) $(CLIENT_TAG_OBJS) $(W32_OBJS) $(PCRS_OBJS) $(PCRE_OBJS) $(REGEX_OBJS)
+SRCS         = $(C_SRC) $(CLIENT_TAG_SRC) $(FUZZ_SRC) $(W32_SRC)  $(PCRS_SRC)  $(PCRE_SRC)  $(REGEX_SRC)
+OBJS         = $(C_OBJS) $(CLIENT_TAG_OBJS) $(FUZZ_OBJS) $(W32_OBJS) $(PCRS_OBJS) $(PCRE_OBJS) $(REGEX_OBJS)
 HDRS         = $(C_HDRS) $(W32_HDRS) $(PCRS_HDRS) $(PCRE_OBJS) $(REGEX_HDRS)
 LIBS         = @LIBS@ $(W32_LIB) $(SOCKET_LIB) $(PTHREAD_LIB)
 
@@ -416,6 +421,27 @@ tarball-dist: dist-check clean clobber
 	$(GZIP_PROG) ../privoxy-$(VERSION)-$(CODE_STATUS)-src.tar
 	@$(ECHO) Tarball distribution created.
 
+# Create a mtree spec file that can be used to get a reproducible tar ball
+mtree-spec:
+	$(LN) -s `pwd` ../privoxy-$(VERSION)-$(CODE_STATUS)
+	$(ECHO) "#mtree 2.0" > $(MTREE_SPEC_FILE)
+	for i in `find . -type f -a -not \( -path "*/CVS*" -o -name ".*" \
+	-o -path "*/debian/*" -o -path "*/actions/*" -o -name "*.php" -o \
+	-name "PACKAGERS" -o -path "*.git/*" -o -name "*.spec" \) | env -i sort`; do \
+	   $(ECHO) "privoxy-$(VERSION)-$(CODE_STATUS)/$$i time=$(SOURCE_DATE_EPOCH) type=file uname=privoxy gname=privoxy mode=0555"; \
+	done >> $(MTREE_SPEC_FILE)
+	$(RM) ../privoxy-$(VERSION)-$(CODE_STATUS)
+
+# Create a reproducible tarball.
+# Requires a tar implementation with mtree support.
+reproducible-tarball-dist: dist-check clean clobber mtree-spec
+	$(LN) -s `pwd` ../privoxy-$(VERSION)-$(CODE_STATUS)
+
+	$(TAR) cvhf privoxy-$(VERSION)-$(CODE_STATUS)-src.tar -C .. @privoxy-$(VERSION)-$(CODE_STATUS)/$(MTREE_SPEC_FILE)
+	$(GZIP_PROG) -n privoxy-$(VERSION)-$(CODE_STATUS)-src.tar
+	$(RM) ../privoxy-$(VERSION)-$(CODE_STATUS) $(MTREE_SPEC_FILE)
+	@$(ECHO) Reproducible tarball distribution created.
+
 # anonymously ncftps the tarball to sourceforge
 tarball-upload:
 	ncftpput -u anonymous -p ijbswa-developers@lists.sourceforge.net upload.sourceforge.net /incoming ../privoxy-$(VERSION)-$(CODE_STATUS)-src.tar.gz
@@ -481,8 +507,8 @@ man: dok-release
 	mkdir -p doc/source/temp && cd doc/source/temp && $(RM) * ;\
 	nsgmls ../privoxy-man-page.sgml  | sgmlspl ../../../utils/docbook2man/docbook2man-spec.pl &&\
 	perl -pi.bak -e 's/ <URL:.*>//; s/\[ /\[/g' $(MAN_PAGE) ;\
-	perl -pi.bak -e "s/\[ /\[/g;s/ï¿½/\\\\['a]/g;s/ï¿½/\\\\['e]/g" $(MAN_PAGE); \
-	perl -pi.bak -e "s/ï¿½/\\\\[:o]/g" $(MAN_PAGE); \
+	perl -pi.bak -e "s/\[ /\[/g;s/á/\\\\['a]/g;s/é/\\\\['e]/g" $(MAN_PAGE); \
+	perl -pi.bak -e "s/ö/\\\\[:o]/g" $(MAN_PAGE); \
 	perl -pi.bak -e 's/([ {])-([a-z])/$$1\\-$$2/g' $(MAN_PAGE); \
 	perl -pi.bak -e 's/ --([a-z])/ \\-\\-$$1/g' $(MAN_PAGE); \
 	perl -pi.bak -e 's/\\fB--/\\fB\\-\\-/g' $(MAN_PAGE); \
@@ -526,9 +552,7 @@ dok-webserver:
 	s/<\/HEAD/\n<meta name=\"description\" content=\"Privoxy helps users to protect their privacy.\"><\/HEAD/;\
 	s/\.\d\. //;\
 	s/__copy/&copy;/;\
-	s@(<SUB)@<p style="text-align: center">\1@; s@(</SUB)@\1></p@;\
-        s@ChameleonJohn@<br><a href="http://www.chameleonjohn.com/"><img align="middle"\
- src="images/sponsors/chameleonjohn.png" alt="ChameleonJohn Coupons"></a>@' \
+	s@(<SUB)@<p style="text-align: center">\1@; s@(</SUB)@\1></p@' \
      doc/webserver/index.html && $(RM) doc/webserver/*.bak
 
 # privoxy-index.html for local documentation:
@@ -541,7 +565,7 @@ dok-index:
      doc/webserver/privoxy-index.html && $(RM) doc/webserver/*.bak
 
 # Main documentation target.
-dok: dok-release dok-devel dok-user dok-faq dok-readme dok-webserver dok-authors dok-index
+dok: dok-release dok-devel dok-user dok-faq dok-readme dok-webserver dok-authors dok-index dok-tidy
 	@$(ECHO) Documentation created.
 
 ## Make AUTHORS file
@@ -623,27 +647,21 @@ webserver: clean-editor-files
           upload=`find . -type f -a -not \( -path "*/CVS*" -o -path "*/results*" \)`; \
           $(TAR) cf - $$upload | $(SSH) shell.sourceforge.net 'cd $(WWW_ROOT)/htdocs/; tar xvm 2>&1 | grep -v timestamp'
 
-	@$(ECHO) Fixing permissions
-	@$(SSH) shell.sourceforge.net 'chmod -R 775 $(WWW_ROOT)/htdocs 2>/dev/null; true'
-	@$(SSH) shell.sourceforge.net 'find $(WWW_ROOT)/htdocs/ -type f | xargs chmod 664 2>/dev/null; true'
-
 web-actions:
 	@$(ECHO) Updating the actions on the webserver ...
 	@$(RSYNC) doc/webserver/actions/*.php shell.sourceforge.net:$(WWW_ROOT)/htdocs/actions
-	@$(ECHO) Enforcing reasonable permissions ...
-	@$(SSH) shell.sourceforge.net 'find $(WWW_ROOT)/htdocs/actions/ -type f | xargs chmod 664 2>/dev/null'
+
+web-homepage:
+	@$(ECHO) "Updating the home page (index.html) only (be careful in case of version changes) ..."
+	@$(RSYNC) doc/webserver/index.html shell.sourceforge.net:$(WWW_ROOT)/htdocs/
 
 web-faq:
 	@$(ECHO) Updating the FAQ on the webserver ...
 	@$(RSYNC) doc/webserver/faq/*.html shell.sourceforge.net:$(WWW_ROOT)/htdocs/faq
-	@$(ECHO) Enforcing reasonable permissions ...
-	@$(SSH) shell.sourceforge.net 'find $(WWW_ROOT)/htdocs/faq/ -type f | xargs chmod 664 2>/dev/null'
 
 web-user-manual:
 	@$(ECHO) Updating the user manual on the webserver (do not use in case of version changes) ...
 	@$(RSYNC) doc/webserver/user-manual/*.html shell.sourceforge.net:$(WWW_ROOT)/htdocs/user-manual/
-	@$(ECHO) Enforcing reasonable permissions ...
-	@$(SSH) shell.sourceforge.net 'find $(WWW_ROOT)/htdocs/user-manual/ -type f | xargs chmod 664 2>/dev/null'
 
 #############################################################################
 #
@@ -684,6 +702,8 @@ miscutil.@OBJEXT@:  miscutil.c  miscutil.h  config.h
 parsers.@OBJEXT@:   parsers.c   parsers.h   config.h $(PROJECT_H_DEPS) errlog.h filters.h jbsockets.h jcc.h loadcfg.h loaders.h miscutil.h ssplit.h
 ssplit.@OBJEXT@:    ssplit.c    ssplit.h    config.h miscutil.h
 urlmatch.@OBJEXT@:  urlmatch.c  urlmatch.h  config.h $(PROJECT_H_DEPS) errlog.h miscutil.h ssplit.h
+client-tags.@OBJEXT@: client-tags.c client-tags.h config.h $(PROJECT_H_DEPS) errlog.h miscutil.h ssplit.h
+fuzz.@OBJEXT@: fuzz.c config.h $(PROJECT_H_DEPS) errlog.h miscutil.h ssplit.h
 
 # GNU regex
 gnu_regex.@OBJEXT@: gnu_regex.c gnu_regex.h config.h
@@ -712,7 +732,7 @@ w32taskbar.@OBJEXT@: w32taskbar.c config.h w32log.h w32taskbar.h
 win32.@OBJEXT@: win32.c config.h jcc.h loadcfg.h pcre/pcre.h pcre/pcreposix.h pcrs.h project.h w32log.h win32.h w32svrapi.h
 
 w32.res: w32.rc w32res.h icons/radar-01.ico icons/radar-02.ico icons/radar-03.ico icons/radar-04.ico icons/radar-05.ico icons/radar-06.ico icons/radar-07.ico icons/radar-08.ico icons/idle.ico icons/privoxy.ico config.h
-	windres -D__MINGW32__=0.2 -O coff -i $< -o $@
+	windres -F pe-i386 -D__MINGW32__=0.2 -O coff -i $< -o $@
 
 # AmigaOS
 @AMIGAOS_ONLY@OBJS += amiga.o

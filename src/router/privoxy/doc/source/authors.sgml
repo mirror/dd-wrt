@@ -26,10 +26,10 @@
 <!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V3.1//EN" [
 <!entity % dummy "IGNORE">
 <!entity authors SYSTEM "p-authors.sgml">
-<!entity p-version "3.0.26">
-<!entity p-status "stable">
-<!entity % p-not-stable "IGNORE">
-<!entity % p-stable "INCLUDE">
+<!entity p-version "3.0.27">
+<!entity p-status "UNRELEASED">
+<!entity % p-not-stable "INCLUDE">
+<!entity % p-stable "IGNORE">
 <!entity % p-text "INCLUDE">           <!-- define we are a text only doc -->
 <!entity % p-authors-formal "INCLUDE"> <!-- include additional text, etc  -->
 ]>

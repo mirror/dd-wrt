@@ -1,4 +1,4 @@
-const char loaders_rcs[] = "$Id: loaders.c,v 1.105 2016/05/25 10:50:55 fabiankeil Exp $";
+const char loaders_rcs[] = "$Id: loaders.c,v 1.108 2017/06/26 12:17:57 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/loaders.c,v $
@@ -74,13 +74,51 @@ const char loaders_h_rcs[] = LOADERS_H_VERSION;
 static struct file_list *current_trustfile      = NULL;
 #endif /* def FEATURE_TRUST */
 
+#ifndef FUZZ
 static int load_one_re_filterfile(struct client_state *csp, int fileid);
+#endif
 
 static struct file_list *current_re_filterfile[MAX_AF_FILES]  = {
    NULL, NULL, NULL, NULL, NULL,
    NULL, NULL, NULL, NULL, NULL
 };
 
+/*********************************************************************
+ *
+ * Function    :  free_csp_resources
+ *
+ * Description :  Frees memory referenced by the csp that isn't
+ *                shared with other csps.
+ *
+ * Parameters  :
+ *          1  :  csp = Current client state (buffers, headers, etc...)
+ *
+ * Returns     :  N/A
+ *
+ *********************************************************************/
+void free_csp_resources(struct client_state *csp)
+{
+   freez(csp->ip_addr_str);
+#ifdef FEATURE_CLIENT_TAGS
+   freez(csp->client_address);
+#endif
+   freez(csp->listen_addr_str);
+   freez(csp->client_iob->buf);
+   freez(csp->iob->buf);
+   freez(csp->error_message);
+
+   if (csp->action->flags & ACTION_FORWARD_OVERRIDE &&
+      NULL != csp->fwd)
+   {
+      unload_forward_spec(csp->fwd);
+   }
+   free_http_request(csp->http);
+
+   destroy_list(csp->headers);
+   destroy_list(csp->tags);
+
+   free_current_action(csp->action);
+}
 
 /*********************************************************************
  *
@@ -181,27 +219,6 @@ unsigned int sweep(void)
       {
          last_active->next = client_list->next;
 
-         freez(csp->ip_addr_str);
-#ifdef FEATURE_CLIENT_TAGS
-         freez(csp->client_address);
-#endif
-         freez(csp->listen_addr_str);
-         freez(csp->client_iob->buf);
-         freez(csp->iob->buf);
-         freez(csp->error_message);
-
-         if (csp->action->flags & ACTION_FORWARD_OVERRIDE &&
-             NULL != csp->fwd)
-         {
-            unload_forward_spec(csp->fwd);
-         }
-         free_http_request(csp->http);
-
-         destroy_list(csp->headers);
-         destroy_list(csp->tags);
-
-         free_current_action(csp->action);
-
 #ifdef FEATURE_STATISTICS
          urls_read++;
          if (csp->flags & CSP_FLAG_REJECTED)
@@ -296,12 +313,6 @@ int check_file_changed(const struct file_list * current,
    fs->filename = strdup_or_die(filename);
    fs->lastmodified = statbuf->st_mtime;
 
-   if (fs->filename == NULL)
-   {
-      /* Out of memory error */
-      freez (fs);
-      return 1;
-   }
    *newfl = fs;
    return 1;
 }
@@ -361,6 +372,7 @@ jb_err simple_read_line(FILE *fp, char **dest, int *newline)
    for (;;)
    {
       ch = getc(fp);
+
       if (ch == EOF)
       {
          if (len > 0)
@@ -417,6 +429,7 @@ jb_err simple_read_line(FILE *fp, char **dest, int *newline)
       }
       else if (ch == 0)
       {
+         /* XXX: Why do we allow this anyway? */
          *p = '\0';
          *dest = buf;
          return JB_ERR_OK;

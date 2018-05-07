@@ -1,12 +1,12 @@
 #ifndef JBSOCKETS_H_INCLUDED
 #define JBSOCKETS_H_INCLUDED
-#define JBSOCKETS_H_VERSION "$Id: jbsockets.h,v 1.24 2014/06/02 06:22:20 fabiankeil Exp $"
+#define JBSOCKETS_H_VERSION "$Id: jbsockets.h,v 1.25 2017/06/04 14:37:05 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/jbsockets.h,v $
  *
  * Purpose     :  Contains wrappers for system-specific sockets code,
- *                so that the rest of Junkbuster can be more
+ *                so that the rest of Privoxy can be more
  *                OS-independent.  Contains #ifdefs to make this work
  *                on many platforms.
  *
@@ -53,7 +53,7 @@ extern int data_is_available(jb_socket fd, int seconds_to_wait);
 extern void close_socket(jb_socket fd);
 extern void drain_and_close_socket(jb_socket fd);
 
-extern int bind_port(const char *hostnam, int portnum, jb_socket *pfd);
+extern int bind_port(const char *hostnam, int portnum, int backlog, jb_socket *pfd);
 extern int accept_connection(struct client_state * csp, jb_socket fds[]);
 extern void get_host_information(jb_socket afd, char **ip_address, char **port, char **hostname);
 

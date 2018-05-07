@@ -1,11 +1,11 @@
-const char parsers_rcs[] = "$Id: parsers.c,v 1.309 2016/04/30 10:28:36 fabiankeil Exp $";
+const char parsers_rcs[] = "$Id: parsers.c,v 1.313 2017/07/01 17:14:12 ler762 Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/parsers.c,v $
  *
  * Purpose     :  Declares functions to parse/crunch headers and pages.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2016 the
+ * Copyright   :  Written by and Copyright (C) 2001-2017 the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -421,8 +421,13 @@ jb_err decompress_iob(struct client_state *csp)
    int status;       /* return status of the inflate() call */
    z_stream zstr;    /* used by calls to zlib */
 
+#ifdef FUZZ
+   assert(csp->iob->cur - csp->iob->buf >= 0);
+   assert(csp->iob->eod - csp->iob->cur >= 0);
+#else
    assert(csp->iob->cur - csp->iob->buf > 0);
    assert(csp->iob->eod - csp->iob->cur > 0);
+#endif
 
    bufsize = csp->iob->size;
    skip_size = (size_t)(csp->iob->cur - csp->iob->buf);
@@ -718,7 +723,7 @@ jb_err decompress_iob(struct client_state *csp)
     * Make sure the new uncompressed iob obeys some minimal
     * consistency conditions.
     */
-   if ((csp->iob->buf <  csp->iob->cur)
+   if ((csp->iob->buf <=  csp->iob->cur)
     && (csp->iob->cur <= csp->iob->eod)
     && (csp->iob->eod <= csp->iob->buf + csp->iob->size))
    {
@@ -1811,7 +1816,9 @@ static jb_err client_keep_alive(struct client_state *csp, char **header)
 static jb_err get_content_length(const char *header_value, unsigned long long *length)
 {
 #ifdef _WIN32
-   assert(sizeof(unsigned long long) > 4);
+#if SIZEOF_LONG_LONG < 8
+#error sizeof(unsigned long long) too small
+#endif
    if (1 != sscanf(header_value, "%I64u", length))
 #else
    if (1 != sscanf(header_value, "%llu", length))
@@ -3800,7 +3807,8 @@ static jb_err server_proxy_connection_adder(struct client_state *csp)
  * Function    :  client_connection_header_adder
  *
  * Description :  Adds a proper "Connection:" header to csp->headers
- *                unless the header was already present. Called from `sed'.
+ *                unless the header was already present or it's a
+ *                CONNECT request. Called from `sed'.
  *
  * Parameters  :
  *          1  :  csp = Current client state (buffers, headers, etc...)
@@ -3819,10 +3827,20 @@ static jb_err client_connection_header_adder(struct client_state *csp)
       return JB_ERR_OK;
    }
 
+   /*
+    * In case of CONNECT requests "Connection: close" is implied,
+    * but actually setting the header has been reported to cause
+    * problems with some forwarding proxies that close the
+    * connection prematurely.
+    */
+   if (csp->http->ssl != 0)
+   {
+      return JB_ERR_OK;
+   }
+
 #ifdef FEATURE_CONNECTION_KEEP_ALIVE
    if ((csp->config->feature_flags & RUNTIME_FEATURE_CONNECTION_KEEP_ALIVE)
       && !(csp->flags & CSP_FLAG_SERVER_SOCKET_TAINTED)
-      && (csp->http->ssl == 0)
       && !strcmpic(csp->http->ver, "HTTP/1.1"))
    {
       csp->flags |= CSP_FLAG_CLIENT_CONNECTION_KEEP_ALIVE;
@@ -4628,7 +4646,14 @@ static jb_err handle_conditional_hide_referrer_parameter(char **header,
 static void create_content_length_header(unsigned long long content_length,
                                          char *header, size_t buffer_length)
 {
+#ifdef _WIN32
+#if SIZEOF_LONG_LONG < 8
+#error sizeof(unsigned long long) too small
+#endif
+   snprintf(header, buffer_length, "Content-Length: %I64u", content_length);
+#else
    snprintf(header, buffer_length, "Content-Length: %llu", content_length);
+#endif
 }
 
 

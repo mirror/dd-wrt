@@ -37,7 +37,7 @@ ChangeLog for Privoxy
   - configure.in: Check for Docbook goo on the BSDs as well.
   - GNUMakefile.in: Let the dok-user target remove temporary files.
 
-*** Version 3.0.20 beta ***
+*** Version 3.0.25 beta ***
 
 - Bug fixes:
   - Always use the current toggle state for new requests.

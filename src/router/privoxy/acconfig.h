@@ -109,42 +109,8 @@
 /*
  * Allow blocking using images as well as HTML.
  * If you do not define this then everything is blocked as HTML.
- *
- * Note that this is required if you want to use FEATURE_IMAGE_DETECT_MSIE.
  */
 #undef FEATURE_IMAGE_BLOCKING
-
-/*
- * Detect image requests automatically for MSIE.  Will fall back to
- * other image-detection methods (i.e. "+image" permission) for other
- * browsers.
- *
- * You must also define FEATURE_IMAGE_BLOCKING to use this feature.
- *
- * It detects the following header pair as an image request:
- *
- * User-Agent: Mozilla/4.0 (compatible; MSIE 5.5; Windows NT 5.0)
- * Accept: * / *
- *
- * And the following as a HTML request:
- *
- * User-Agent: Mozilla/4.0 (compatible; MSIE 5.5; Windows NT 5.0)
- * Accept: image/gif, image/x-xbitmap, image/jpeg, image/pjpeg, * / *
- *
- * And no, I haven't got that backwards - IE is being weird.
- *
- * Known limitations:
- * 1) If you press shift-reload on a blocked HTML page, you get
- *    the image "blocked" page, not the HTML "blocked" page.
- * 2) Once an image "blocked" page has been sent, viewing it
- *    in it's own browser window *should* bring up the HTML
- *    "blocked" page, but it doesn't.  You need to clear the
- *    browser cache to get the HTML version again.
- *
- * These limitations are due to IE making inconsistent choices
- * about which "Accept:" header to send.
- */
-#undef FEATURE_IMAGE_DETECT_MSIE
 
 /*
  * Use PNG instead of GIF for built-in images

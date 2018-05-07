@@ -44,8 +44,7 @@
 #    The development status of the proxy software: "alpha", "beta",
 #    or "stable".
 #  homepage:
-#    The URL of the SourceForge ijbswa project, who maintains this
-#    software.
+#    The URL of the Privoxy project, which maintains this software.
 #
 #  host:
 #    The host part of the request that lead to this problem
@@ -92,12 +91,12 @@
 
 <body>
 
-  <table summary="" cellpadding="20" cellspacing="0" border="0" width="100%">
+  <table summary="" cellpadding="20" cellspacing="10" border="0" width="100%">
     <tr>
       <td class="status">
         404
       </td>
-      <td class="title" style="width: 100%"><a id="logo" href="http://config.privoxy.org">P</a><a id="logo" href="http://config.privoxy.org">P</a>
+      <td class="title" style="width: 100%">
 
 #include mod-title
 
@@ -134,14 +133,6 @@
       </td>
     </tr>
 
-    <tr>
-      <td class="info" colspan="2">
-
-#include mod-support-and-service
-
-      </td>
-    </tr>
-
 <!-- @if-have-help-info-start -->
     <tr>
       <td class="info" colspan="2">
@@ -151,6 +142,14 @@
       </td>
     </tr>
 <!-- if-have-help-info-end@ -->
+
+    <tr>
+      <td class="info" colspan="2">
+
+#include mod-support-and-service
+
+      </td>
+    </tr>
 
   </table>
 
