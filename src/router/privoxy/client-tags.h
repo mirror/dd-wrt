@@ -33,6 +33,7 @@ extern int client_tag_match(const struct pattern_spec *pattern,
                             const struct list *tags);
 extern void get_tag_list_for_client(struct list *tag_list,
                                     const char *client_address);
+extern time_t get_next_tag_timeout_for_client(const char *client_address);
 extern jb_err disable_client_specific_tag(struct client_state *csp,
                                           const char *tag_name);
 extern jb_err enable_client_specific_tag(struct client_state *csp,

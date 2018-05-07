@@ -1,7 +1,7 @@
 #ifndef PROJECT_H_INCLUDED
 #define PROJECT_H_INCLUDED
 /** Version string. */
-#define PROJECT_H_VERSION "$Id: project.h,v 1.216 2016/05/25 10:50:55 fabiankeil Exp $"
+#define PROJECT_H_VERSION "$Id: project.h,v 1.223 2017/06/26 12:13:52 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/project.h,v $
@@ -53,7 +53,6 @@
 #    include <sys/socket.h>
 #  else
 #    include <stdint.h>
-#    include <winsock2.h>
 #    include <ws2tcpip.h>
      typedef unsigned short in_port_t;
 #  endif
@@ -498,7 +497,7 @@ struct iob
 #define ACTION_CRUNCH_CLIENT_HEADER                  0x00200000UL
 /** Action bitmap: Enable text mode by force */
 #define ACTION_FORCE_TEXT_MODE                       0x00400000UL
-/** Action bitmap: Enable text mode by force */
+/** Action bitmap: Remove the "If-None-Match" header. */
 #define ACTION_CRUNCH_IF_NONE_MATCH                  0x00800000UL
 /** Action bitmap: Enable content-disposition crunching */
 #define ACTION_HIDE_CONTENT_DISPOSITION              0x01000000UL
@@ -862,6 +861,12 @@ struct reusable_connection
  */
 #define CSP_FLAG_CRUNCHED                           0x04000000U
 
+#ifdef FUZZ
+/**
+ * Flag for csp->flags: Set if we are working with fuzzed input
+ */
+#define CSP_FLAG_FUZZED_INPUT                       0x08000000U
+#endif
 
 /*
  * Flags for use in return codes of child processes
@@ -947,6 +952,12 @@ struct client_state
 
    /** An I/O buffer used for buffering data read from the client */
    struct iob client_iob[1];
+
+   /** Buffer used to briefly store data read from the network
+    *  before forwarding or processing it.
+    */
+   char *receive_buffer;
+   size_t receive_buffer_size;
 
    /** List of all headers for this request */
    struct list headers[1];
@@ -1332,11 +1343,25 @@ struct configuration_spec
    /** IP addresses to bind to.  Defaults to HADDR_DEFAULT == 127.0.0.1. */
    const char *haddr[MAX_LISTENING_SOCKETS];
 
+   /** Trusted referring site that can be used to reach CGI
+     * pages that aren't marked as harmful.
+     */
+   const char *trusted_cgi_referrer;
+
    /** Ports to bind to.  Defaults to HADDR_PORT == 8118. */
    int         hport[MAX_LISTENING_SOCKETS];
 
    /** Size limit for IOB */
    size_t buffer_limit;
+
+   /** Size of the receive buffer */
+   size_t receive_buffer_size;
+
+   /** Use accf_http(4) if available */
+   int enable_accept_filter;
+
+   /** Backlog passed to listen() */
+   int listen_backlog;
 
 #ifdef FEATURE_TRUST
 

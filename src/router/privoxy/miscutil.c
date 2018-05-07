@@ -1,4 +1,4 @@
-const char miscutil_rcs[] = "$Id: miscutil.c,v 1.82 2016/07/23 23:05:15 ler762 Exp $";
+const char miscutil_rcs[] = "$Id: miscutil.c,v 1.85 2017/06/08 13:11:08 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/miscutil.c,v $
@@ -71,22 +71,28 @@ const char miscutil_h_rcs[] = MISCUTIL_H_VERSION;
  *
  * Function    :  zalloc
  *
- * Description :  Malloc some memory and set it to '\0'.
+ * Description :  Returns allocated memory that is initialized
+ *                with zeros.
  *
  * Parameters  :
  *          1  :  size = Size of memory chunk to return.
  *
- * Returns     :  Pointer to newly malloc'd memory chunk.
+ * Returns     :  Pointer to newly alloc'd memory chunk.
  *
  *********************************************************************/
 void *zalloc(size_t size)
 {
    void * ret;
 
+#ifdef HAVE_CALLOC
+   ret = calloc(1, size);
+#else
+#warning calloc appears to be unavailable. Your platform will become unsupported in the future
    if ((ret = (void *)malloc(size)) != NULL)
    {
       memset(ret, 0, size);
    }
+#endif
 
    return(ret);
 
@@ -212,7 +218,8 @@ void *malloc_or_die(size_t buffer_size)
  *
  * Function    :  write_pid_file
  *
- * Description :  Writes a pid file with the pid of the main process
+ * Description :  Writes a pid file with the pid of the main process.
+ *                Exits if the file can't be opened
  *
  * Parameters  :  None
  *
@@ -231,7 +238,7 @@ void write_pid_file(void)
 
    if ((fp = fopen(pidfile, "w")) == NULL)
    {
-      log_error(LOG_LEVEL_INFO, "can't open pidfile '%s': %E", pidfile);
+      log_error(LOG_LEVEL_FATAL, "can't open pidfile '%s': %E", pidfile);
    }
    else
    {
@@ -765,7 +772,9 @@ long int pick_from_range(long int range)
 
    if (range <= 0) return 0;
 
-#ifdef HAVE_RANDOM
+#ifdef HAVE_ARC4RANDOM
+   number = arc4random() % range + 1;
+#elif defined(HAVE_RANDOM)
    number = random() % range + 1;
 #elif defined(MUTEX_LOCKS_AVAILABLE)
    privoxy_mutex_lock(&rand_mutex);
@@ -789,7 +798,7 @@ long int pick_from_range(long int range)
       "might cause crashes, predictable results or even combine these fine options.");
    number = rand() % (long int)(range + 1);
 
-#endif /* (def HAVE_RANDOM) */
+#endif /* (def HAVE_ARC4RANDOM) */
 
    return number;
 }
@@ -945,7 +954,7 @@ time_t timegm(struct tm *tm)
 Author
 
    Mark Martinec <mark.martinec@ijs.si>, April 1999, June 2000
-   Copyright ï¿½ 1999, Mark Martinec
+   Copyright © 1999, Mark Martinec
 
  */
 

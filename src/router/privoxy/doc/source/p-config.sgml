@@ -3,9 +3,9 @@
 
  Purpose     :  Used with other docs and files only.
 
- $Id: p-config.sgml,v 2.123 2016/05/22 12:44:02 fabiankeil Exp $
+ $Id: p-config.sgml,v 2.127 2017/06/26 12:14:38 fabiankeil Exp $
 
- Copyright (C) 2001-2016 Privoxy Developers https://www.privoxy.org/
+ Copyright (C) 2001-2017 Privoxy Developers https://www.privoxy.org/
  See LICENSE.
 
  ========================================================================
@@ -97,10 +97,10 @@
  Sample Configuration File for Privoxy &p-version;
 </title>
 <para>
- $Id: p-config.sgml,v 2.123 2016/05/22 12:44:02 fabiankeil Exp $
+ $Id: p-config.sgml,v 2.127 2017/06/26 12:14:38 fabiankeil Exp $
 </para>
 <para>
-Copyright (C) 2001-2016 Privoxy Developers https://www.privoxy.org/
+Copyright (C) 2001-2017 Privoxy Developers https://www.privoxy.org/
 </para>
 
 <para>
@@ -1958,6 +1958,82 @@ ACLs: permit-access and deny-access</title>
 <![%config-file;[<literallayout>@@enable-proxy-authentication-forwarding 0</literallayout>]]>
 </sect3>
 
+<!--   ~~~~~       New section      ~~~~~     -->
+<sect3 renderas="sect4" id="trusted-cgi-referer"><title>trusted-cgi-referer</title>
+<variablelist>
+ <varlistentry>
+  <term>Specifies:</term>
+  <listitem>
+   <para>
+    A trusted website or webpage whose links can be followed to reach sensitive CGI pages
+   </para>
+  </listitem>
+ </varlistentry>
+ <varlistentry>
+  <term>Type of value:</term>
+  <listitem>
+   <para>URL or URL prefix</para>
+  </listitem>
+ </varlistentry>
+ <varlistentry>
+  <term>Default value:</term>
+  <listitem>
+   <para>Unset</para>
+  </listitem>
+ </varlistentry>
+ <varlistentry>
+  <term>Effect if unset:</term>
+  <listitem>
+   <para>
+    No external pages are considered trusted referers.
+   </para>
+  </listitem>
+ </varlistentry>
+ <varlistentry>
+  <term>Notes:</term>
+  <listitem>
+   <para>
+    Before &my-app; accepts configuration changes through CGI pages like
+    <link linkend="client-specific-tag">client-tags</link> or the
+    <link linkend="enable-remote-toggle">remote toggle</link>, it checks
+    the Referer header to see if the request comes from a trusted source.
+   </para>
+   <para>
+    By default only the webinterface domains
+    <ulink url="http://config.privoxy.org/">config.privoxy.org</ulink>
+    and
+    <ulink url="http://p.p/">p.p</ulink>
+    are considered trustworthy.
+    Requests originating from other domains are rejected to prevent
+    third-parties from modifiying Privoxy's state by e.g. embedding
+    images that result in CGI requests.
+   </para>
+   <para>
+    In some environments it may be desirable to embed links to CGI pages
+    on external pages, for example on an Intranet homepage the Privoxy admin
+    controls.
+   </para>
+   <para>
+    The <quote>trusted-cgi-referer</quote> option can be used to add that page,
+    or the whole domain, as trusted source so the resulting requests aren't
+    rejected.
+    Requests are accepted if the specified trusted-cgi-refer is the prefix
+    of the Referer.
+   </para>
+   <warning>
+    <para>
+     Declaring pages the admin doesn't control trustworthy may allow
+     malicious third parties to modify Privoxy's internal state against
+     the user's wishes and without the user's knowledge.
+   </para>
+   </warning>
+  </listitem>
+ </varlistentry>
+</variablelist>
+
+<![%config-file;[<literallayout>@@trusted-cgi-referer http://www.example.org/local-privoxy-control-page</literallayout>]]>
+</sect3>
+
 </sect2>
 
 <!--  ~  End section  ~  -->
@@ -3100,6 +3176,156 @@ forward-socks4, forward-socks4a, forward-socks5 and forward-socks5t</title>
 </sect3>
 
 
+<sect3 renderas="sect4" id="listen-backlog"><title>listen-backlog</title>
+<variablelist>
+ <varlistentry>
+  <term>Specifies:</term>
+  <listitem>
+   <para>
+    Connection queue length requested from the operating system.
+   </para>
+  </listitem>
+ </varlistentry>
+ <varlistentry>
+  <term>Type of value:</term>
+  <listitem>
+   <para>
+    <replaceable>Number.</replaceable>
+   </para>
+  </listitem>
+ </varlistentry>
+ <varlistentry>
+  <term>Default value:</term>
+  <listitem>
+   <para>128</para>
+  </listitem>
+ </varlistentry>
+ <varlistentry>
+  <term>Effect if unset:</term>
+  <listitem>
+   <para>
+    A connection queue length of 128 is requested from the operating system.
+   </para>
+  </listitem>
+ </varlistentry>
+ <varlistentry>
+  <term>Notes:</term>
+  <listitem>
+   <para>
+    Under high load incoming connection may queue up before Privoxy
+    gets around to serve them. The queue length is limitted by the
+    operating system. Once the queue is full, additional connections
+    are dropped before Privoxy can accept and serve them.
+   </para>
+   <para>
+    Increasing the queue length allows Privoxy to accept more
+    incomming connections that arrive roughly at the same time.
+   </para>
+   <para>
+    Note that Privoxy can only request a certain queue length,
+    whether or not the requested length is actually used depends
+    on the operating system which may use a different length instead.
+   </para>
+   <para>
+    On many operating systems a limit of -1 can be specified to
+    instruct the operating system to use the maximum queue length
+    allowed. Check the listen man page to see if your platform allows this.
+   </para>
+   <para>
+    On some platforms you can use "netstat -Lan -p tcp" to see the effective
+    queue length.
+   </para>
+   <para>
+    Effectively using a value above 128 usually requires changing
+    the system configuration as well. On FreeBSD-based system the
+    limit is controlled by the kern.ipc.soacceptqueue sysctl.
+   </para>
+  </listitem>
+ </varlistentry>
+ <varlistentry>
+  <term>Examples:</term>
+  <listitem>
+   <para>
+    listen-backlog 4096
+   </para>
+  </listitem>
+ </varlistentry>
+</variablelist>
+<![%config-file;[<literallayout>@@#listen-backlog -1</literallayout>]]>
+</sect3>
+
+
+<sect3 renderas="sect4" id="enable-accept-filter"><title>enable-accept-filter</title>
+<variablelist>
+ <varlistentry>
+  <term>Specifies:</term>
+  <listitem>
+   <para>
+    Whether or not Privoxy should use an accept filter
+   </para>
+  </listitem>
+ </varlistentry>
+ <varlistentry>
+  <term>Type of value:</term>
+  <listitem>
+   <para>
+    <replaceable>0 or 1</replaceable>
+   </para>
+  </listitem>
+ </varlistentry>
+ <varlistentry>
+  <term>Default value:</term>
+  <listitem>
+   <para>0</para>
+  </listitem>
+ </varlistentry>
+ <varlistentry>
+  <term>Effect if unset:</term>
+  <listitem>
+   <para>
+    No accept filter is enabled.
+   </para>
+  </listitem>
+ </varlistentry>
+ <varlistentry>
+  <term>Notes:</term>
+  <listitem>
+   <para>
+    Accept filters reduce the number of context switches by not
+    passing sockets for new connections to Privoxy until a complete
+    HTTP request is available.
+   </para>
+   <para>
+    As a result, Privoxy can process the whole request right away
+    without having to wait for additional data first.
+   </para>
+   <para>
+    For this option to work, Privoxy has to be compiled with
+    FEATURE_ACCEPT_FILTER and the operating system has to support
+    it (which may require loading a kernel module).
+   </para>
+   <para>
+    Currently accept filters are only supported on FreeBSD-based
+    systems. Check the
+    <ulink url="https://www.freebsd.org/cgi/man.cgi?query=accf_http">accf_http(9)
+     man page</ulink>
+    to learn how to enable the support in the operating system.
+   </para>
+  </listitem>
+ </varlistentry>
+ <varlistentry>
+  <term>Examples:</term>
+  <listitem>
+   <para>
+    enable-accept-filter 1
+   </para>
+  </listitem>
+ </varlistentry>
+</variablelist>
+<![%config-file;[<literallayout>@@#enable-accept-filter 1</literallayout>]]>
+</sect3>
+
+
 <sect3 renderas="sect4" id="handle-as-empty-doc-returns-ok"><title>handle-as-empty-doc-returns-ok</title>
 <variablelist>
  <varlistentry>
@@ -3581,9 +3807,83 @@ forward-socks4, forward-socks4a, forward-socks5 and forward-socks5t</title>
 </variablelist>
 </sect3>
 
-</sect2>
+<!--  ~  End section  ~  -->
+
+<!--   ~~~~~       New section      ~~~~~     -->
+
+<sect3 renderas="sect4" id="receive-buffer-size"><title>receive-buffer-size</title>
+<variablelist>
+ <varlistentry>
+  <term>Specifies:</term>
+  <listitem>
+   <para>
+    The size of the buffer Privoxy uses to receive data from the server.
+   </para>
+  </listitem>
+ </varlistentry>
+ <varlistentry>
+  <term>Type of value:</term>
+  <listitem>
+   <para>
+    <replaceable>Size in bytes</replaceable>
+   </para>
+  </listitem>
+ </varlistentry>
+ <varlistentry>
+  <term>Default value:</term>
+  <listitem>
+   <para>5000</para>
+  </listitem>
+ </varlistentry>
+ <varlistentry>
+  <term>Notes:</term>
+  <listitem>
+   <para>
+    Increasing the receive-buffer-size increases Privoxy's memory usage but
+    can lower the number of context switches and thereby reduce the
+    cpu usage and potentially increase the throughput.
+   </para>
+   <para>
+    This is mostly relevant for fast network connections and
+    large downloads that don't require filtering.
+   </para>
+   <para>
+    Reducing the buffer size reduces the amount of memory Privoxy
+    needs to handle the request but increases the number of systemcalls
+    and may reduce the throughput.
+   </para>
+   <para>
+    A dtrace command like:
+    <quote>sudo dtrace -n 'syscall::read:return /execname == "privoxy"/ { @[execname] = llquantize(arg0, 10, 0, 5, 20); @m = max(arg0)}'</quote>
+    can be used to properly tune the receive-buffer-size.
+    On systems without dtrace, strace or truss may be used as
+    less convenient alternatives.
+   </para>
+   <para>
+    If the buffer is too large it will increase Privoxy's memory
+    footprint without any benefit. As the memory is (currently)
+    cleared before using it, a buffer that is too large can
+    actually reduce the throughput.
+   </para>
+  </listitem>
+ </varlistentry>
+ <varlistentry>
+  <term>Examples:</term>
+  <listitem>
+   <para>
+    <screen>
+      # Increase the receive buffer size
+      receive-buffer-size 32768
+    </screen>
+   </para>
+  </listitem>
+ </varlistentry>
+</variablelist>
+</sect3>
 
 <!--  ~  End section  ~  -->
+
+</sect2>
 
 <!--   ~~~~~       New section      ~~~~~     -->
 

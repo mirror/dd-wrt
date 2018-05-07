@@ -1,6 +1,6 @@
 #ifndef CGISIMPLE_H_INCLUDED
 #define CGISIMPLE_H_INCLUDED
-#define CGISIMPLE_H_VERSION "$Id: cgisimple.h,v 1.20 2016/03/17 10:40:53 fabiankeil Exp $"
+#define CGISIMPLE_H_VERSION "$Id: cgisimple.h,v 1.22 2017/01/23 13:04:58 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/cgisimple.h,v $
@@ -11,7 +11,7 @@
  *                Functions declared include:
  *
  *
- * Copyright   :  Written by and Copyright (C) 2001-2007 the SourceForge
+ * Copyright   :  Written by and Copyright (C) 2001-2017 members of the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -72,6 +72,9 @@ extern jb_err cgi_show_request (struct client_state *csp,
 extern jb_err cgi_show_client_tags(struct client_state *csp,
                                    struct http_response *rsp,
                                    const struct map *parameters);
+extern jb_err cgi_toggle_client_tag(struct client_state *csp,
+                                    struct http_response *rsp,
+                                    const struct map *parameters);
 #endif
 extern jb_err cgi_transparent_image (struct client_state *csp,
                                      struct http_response *rsp,

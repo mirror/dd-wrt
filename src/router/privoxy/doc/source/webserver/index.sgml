@@ -5,10 +5,10 @@
 <!entity history SYSTEM "history.sgml">
 <!entity copyright SYSTEM "copyright.sgml">
 <!entity license SYSTEM "license.sgml">
-<!entity p-version "3.0.26">
-<!entity p-status "stable">
-<!entity % p-not-stable "IGNORE">
-<!entity % p-stable "INCLUDE">
+<!entity p-version "3.0.27">
+<!entity p-status "UNRELEASED">
+<!entity % p-not-stable "INCLUDE">
+<!entity % p-stable "IGNORE">
 <!entity  my-copy "&copy;">        <!-- kludge for docbook2man            -->
 <!entity % p-homepage "IGNORE">    <!-- toggle for webserver index.html   -->
 <!entity % p-index "IGNORE">       <!-- toggle for local doc index        -->
@@ -20,9 +20,9 @@
                 This file belongs into
                 ijbswa.sourceforge.net:/home/groups/i/ij/ijbswa/htdocs/
                 
- $Id: index.sgml,v 2.47 2016/08/26 12:27:34 fabiankeil Exp $
+ $Id: index.sgml,v 2.54 2017/03/27 10:20:52 fabiankeil Exp $
 
- Copyright (C) 2001-2016 Privoxy Developers <ijbswa-developers@lists.sourceforge.net>
+ Copyright (C) 2001-2017 Privoxy developers <privoxy-devel@lists.privoxy.org>
  See LICENSE.
 
  ========================================================================
@@ -80,6 +80,15 @@
  You can <ulink url="/sf-download-mirror/">download Privoxy here</ulink>,
  from <ulink url="http://www.silvester.org.uk/privoxy/">this mirror</ulink>,
  or from <ulink url="https://sourceforge.net/projects/ijbswa/files/">SourceForge</ulink>.
+</para>
+<para>
+ Note that the Privoxy project currently has no trusted build infrastructure.
+ Binary packages are built and uploaded by individual members of the Privoxy
+ project or external contributors. For details check the signatures.
+</para>
+<para>
+ Subscribe to the <ulink url="/feeds/privoxy-releases.xml">release feed</ulink>
+ to get informed when new releases are available.
 </para>
 </sect1>
 
@@ -167,20 +176,22 @@
 <!-- GNUMakefile is inserting this now -->
 <para>
  <subscript>
-  Copyright __copy 2001-2016 by Privoxy Developers
+  Copyright __copy 2001-2017 by Privoxy Developers
  </subscript>
 </para>
 
 <![%p-homepage;[
 <para>
- <!--
-   The markup for the sponsor logo gets inserted into the generated
-   HTML by the dok-webserver target because the logo uses the shiny
-   new PNG format which our awesome Docbook toolchain apparently does
-   not support yet.
-  -->
  <subscript>
-   Hosting sponsored by ChameleonJohn.
+   Hosting and development is funded in part by:
+ </subscript>
+ <subscript>
+   <ulink url="http://www.7binaryoptions.com/robot/">7binaryoptions.com</ulink>
+ </subscript>
+</para>
+<para>
+ <subscript>
+  <ulink url="/faq/general.html#SPONSOR">Become a sponsor</ulink>
  </subscript>
 </para>
 ]]>

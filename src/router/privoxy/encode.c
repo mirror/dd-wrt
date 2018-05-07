@@ -1,4 +1,4 @@
-const char encode_rcs[] = "$Id: encode.c,v 1.29 2013/02/19 11:14:05 fabiankeil Exp $";
+const char encode_rcs[] = "$Id: encode.c,v 1.28 2012/12/27 15:48:53 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/encode.c,v $

@@ -133,6 +133,10 @@ extern pcrs_job *pcrs_compile_dynamic_command(char *pcrs_command, const struct p
 #define PCRS_BUFFER_SIZE 4000
 #endif /* ndef PCRS_BUFFER_SIZE */
 
+#ifdef FUZZ
+extern pcrs_substitute *pcrs_compile_fuzzed_replacement(const char *replacement, int *errptr);
+#endif
+
 #endif /* ndef PCRS_H_INCLUDED */
 
 /*

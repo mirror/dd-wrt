@@ -49,8 +49,7 @@
 #    The development status of the proxy software: "alpha", "beta",
 #    or "stable".
 #  homepage:
-#    The URL of the SourceForge ijbswa project, who maintains this
-#    software.
+#    The URL of the Privoxy project, which maintains this software.
 #
 #  protocol:
 #    The request's protocol: http:// or https://
@@ -163,7 +162,7 @@
   else
   {
      document.write('\
-  <table cellpadding="20" cellspacing="0" border="0" width="100%">\
+  <table cellpadding="20" cellspacing="10" border="0" width="100%">\
     <tr> \
       <td class="status"> \
         BLOCKED \
@@ -211,24 +210,6 @@
       </td> \
     </tr> \
  \
-    <tr> \
-      <td class="info" colspan="2"> \
-        <big><b>Support and Service:</b></big> \
-        <p> \
-          The Privoxy Team values your feedback. \
-        </p> \
-        <p> \
-          Please have a look at the User Manual to learn how to \
-          <a title="Privoxy User Manual: Contacting the developers, Bug Reporting and Feature Requests" \
-           href="@user-manual@contact.html">get support or report problems</a>. \
-        <p> \
-          If you want to support the Privoxy Team, you can \
-          <a href="https://www.privoxy.org/faq/general.html#PARTICIPATE">participate</a> \
-          or <a href="https://www.privoxy.org/faq/general.html#DONATE">donate</a>. \
-        </p> \
-      </td> \
-    </tr> \
- \
 <!-- @if-have-help-info-start --> \
     <tr> \
       <td class="info" colspan="2"> \
@@ -247,6 +228,24 @@
       </td> \
     </tr> \
 <!-- if-have-help-info-end@ --> \
+ \
+    <tr> \
+      <td class="info" colspan="2"> \
+        <big><b>Support and Service:</b></big> \
+        <p> \
+          The Privoxy Team values your feedback. \
+        </p> \
+        <p> \
+          Please have a look at the User Manual to learn how to \
+          <a title="Privoxy User Manual: Contacting the developers, Bug Reporting and Feature Requests" \
+           href="@user-manual@contact.html">get support or report problems</a>. \
+        <p> \
+          If you want to support the Privoxy Team, you can \
+          <a href="https://www.privoxy.org/faq/general.html#PARTICIPATE">participate</a> \
+          or <a href="https://www.privoxy.org/faq/general.html#DONATE">donate</a>. \
+        </p> \
+      </td> \
+    </tr> \
  \
   </table> \
      ');

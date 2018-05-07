@@ -4,8 +4,8 @@
 #
 # Purpose     :  Style sheet for the web-based config interface.
 #
-# Copyright   :  Written by and Copyright (C) 2001 the SourceForge
-#                Privoxy team. http://www.privoxy.org/
+# Copyright   :  Written by and Copyright (C) 2001 members of the
+#                Privoxy team. https://www.privoxy.org/
 #
 #                Original Author: Copyright (C) 2001 Jonathan Foster
 #                http://www.jon-foster.co.uk/
@@ -33,7 +33,7 @@
 /*
  * CSS for Privoxy CGI and script output
  *
- * $Id: cgi-style.css,v 1.14 2011/09/04 11:09:40 fabiankeil Exp $
+ * $Id: cgi-style.css,v 1.15 2017/01/23 13:01:55 fabiankeil Exp $
  */
 
 /*

@@ -7,7 +7,7 @@
 # A regression test "framework" for Privoxy. For documentation see:
 # perldoc privoxy-regression-test.pl
 #
-# $Id: privoxy-regression-test.pl,v 1.99 2016/05/22 12:41:40 fabiankeil Exp $
+# $Id: privoxy-regression-test.pl,v 1.98 2016/05/12 08:43:12 fabiankeil Exp $
 #
 # Wish list:
 #

@@ -194,7 +194,7 @@ ChangeLog for Privoxy
   - When using socks5t, send the request body optimistically as well.
     Previously the request body wasn't guaranteed to be sent at all
     and the error message incorrectly blamed the server.
-    Fixes #1686 reported by Peter Mï¿½ller and G4JC.
+    Fixes #1686 reported by Peter Müller and G4JC.
   - Fixed buffer scaling in execute_external_filter() that could lead
     to crashes. Submitted by Yang Xia in #892.
   - Fixed crashes when executing external filters on platforms like
@@ -1832,7 +1832,7 @@ ChangeLog for Privoxy
   with external PCRE versions newer than Privoxy's internal
   one. (Reported by Chung-chieh Shan)
 - Fixed crashes with null bytes in PCRS replacement strings
-  (Patch provided by Felix Grï¿½bert).
+  (Patch provided by Felix Gröbert).
 - Fixed crashes with header time randomization on mingw32.
 - The CGI style sheet is no longer delivered if the referring
   page isn't a Privoxy CGI page. This prevents a JavaScript-based
@@ -2155,7 +2155,7 @@ image).
 - one case where there were both local and global "referrer" variables
 (yuck!) clarified by renaming the local one to "refer".
 - Fixed some places where close() was used instead of close_socket().
-Thanks to Jï¿½rg Strohmayer (joergs at users.sourceforge.net) for these.
+Thanks to Jörg Strohmayer (joergs at users.sourceforge.net) for these.
 - Temporary hack to get FORCE_LOAD to work with IE.  I just lowercased the
 FORCE_LOAD_PREFIX.  Needs fixing properly.
 - Most URLs hardcoded into Junkbuster were changed to go through a script
@@ -2187,7 +2187,7 @@ also has a higher name collision risk.
 - Filled in the function header templates for my functions in
 parsers.c (again). They obviously got lost in our current
 patch war ;-)
-- Cut the credit for the ï¿½-referrer-option from the config file,
+- Cut the credit for the §-referrer-option from the config file,
 that Stefan had placed there.
 - Improved the re_filterfile
 

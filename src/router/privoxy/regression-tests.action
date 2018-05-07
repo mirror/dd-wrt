@@ -1,5 +1,5 @@
 #############################################################################
-# $Id: regression-tests.action,v 1.61 2016/05/08 14:15:40 fabiankeil Exp $
+# $Id: regression-tests.action,v 1.69 2017/01/23 13:06:31 fabiankeil Exp $
 #############################################################################
 #
 # This is a configuration file for Privoxy-Regression-Test
@@ -10,7 +10,7 @@
 #
 #############################################################################
 #
-# Copyright (c) 2007-2014 Fabian Keil <fk@fabiankeil.de>
+# Copyright (c) 2007-2017 Fabian Keil <fk@fabiankeil.de>
 #
 # Permission to use, copy, modify, and distribute this software for any
 # purpose with or without fee is hereby granted, provided that the above
@@ -27,7 +27,7 @@
 #############################################################################
 
 {{settings}}
-for-privoxy-version=3.0.22
+for-privoxy-version=3.0.27
 
 # Some dependencies Privoxy-Regression-Test should know about:
 #
@@ -47,6 +47,7 @@ for-privoxy-version=3.0.22
 # Level 21 needs = feature status FEATURE_TOGGLE No
 # Level 22 needs = config line enable-proxy-authentication-forwarding\s+0
 # Level 23 needs = config line enable-proxy-authentication-forwarding\s+1
+# Level 24 needs = feature status FEATURE_CLIENT_TAGS Yes
 
 #######################################################
 # Enable taggers to activate the tests on demand
@@ -678,7 +679,7 @@ TAG:^Proxy-Authorization header forwarding$
 #
 # These are mainly useful for checking for memory leaks
 # with Valgrind or whether or not the user manual is installed
-# correctly and are unlikely to actually detect any
+# correctly.
 #
 # Note that if "Expect Status Code" is missing, 200 is implied.
 #
@@ -769,9 +770,19 @@ TAG:^Proxy-Authorization header forwarding$
 # Fetch Test = http://p.p/favicon.ico
 # Fetch Test = http://p.p/robots.txt
 # Fetch Test = http://p.p/send-banner
+# Trusted CGI Request = http://p.p/send-stylesheet
 # Fetch Test = http://p.p/send-stylesheet
+# Expect Status Code = 403
 # Fetch Test = http://p.p/t
 # Fetch Test = http://p.p/url-info-osd.xml
+# Fetch Test = http://p.p/client-tags
+# Level = 24
+# Trusted CGI Request = http://p.p/toggle-client-tag
+# Expect Status Code = 302
+# Level = 24
+# Fetch Test = http://p.p/toggle-client-tag
+# Expect Status Code = 403
+# Level = 24
 
 # Trusted CGI Request = http://p.p/edit-actions
 # Expect Status Code = 302

@@ -1,6 +1,6 @@
 #ifndef W32_SVRAPI_H_INCLUDED
 #define W32_SVRAPI_H_INCLUDED
-#define W32_SVRAPI_H_VERSION "$Id: w32svrapi.h,v 1.4 2013/11/24 14:23:28 fabiankeil Exp $"
+#define W32_SVRAPI_H_VERSION "$Id: w32svrapi.h,v 1.3 2011/09/04 11:10:56 fabiankeil Exp $"
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/w32svrapi.h,v $

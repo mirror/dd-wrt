@@ -1,9 +1,9 @@
 <!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V3.1//EN"[
 <!entity % dummy "IGNORE">
 <!entity config SYSTEM "p-config.sgml">
-<!entity p-version "3.0.26">
-<!entity p-status "stable">
-<!entity % p-not-stable "IGNORE">
+<!entity p-version "3.0.27">
+<!entity p-status "UNRELEASED">
+<!entity % p-not-stable "INCLUDE">
 <!entity % user-man "IGNORE">
 <!entity % config-file "IGNORE">
 <!entity  my-app "<application>Privoxy</application>">

@@ -2,7 +2,7 @@
 # Kong replacer example rule                                                           #                                   
 #################################################################################                                  
 FILTER: kong_filter replaces class"no-js" with class="kong"                                                 
-
+s@class="teaser_adliste"@class="none"@Ug
 s@class="no-js"@class="kong"@Ug   
 s|(<script.*)(.*</script>)||Usg
 

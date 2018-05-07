@@ -1,4 +1,4 @@
-const char jcc_rcs[] = "$Id: jcc.c,v 1.446 2016/05/25 10:54:01 fabiankeil Exp $";
+const char jcc_rcs[] = "$Id: jcc.c,v 1.469 2017/08/12 09:36:42 fabiankeil Exp $";
 /*********************************************************************
  *
  * File        :  $Source: /cvsroot/ijbswa/current/jcc.c,v $
@@ -6,7 +6,7 @@ const char jcc_rcs[] = "$Id: jcc.c,v 1.446 2016/05/25 10:54:01 fabiankeil Exp $"
  * Purpose     :  Main file.  Contains main() method, main loop, and
  *                the main connection-handling function.
  *
- * Copyright   :  Written by and Copyright (C) 2001-2016 the
+ * Copyright   :  Written by and Copyright (C) 2001-2017 the
  *                Privoxy team. http://www.privoxy.org/
  *
  *                Based on the Internet Junkbuster originally written
@@ -50,6 +50,7 @@ const char jcc_rcs[] = "$Id: jcc.c,v 1.446 2016/05/25 10:54:01 fabiankeil Exp $"
 #  ifndef STRICT
 #   define STRICT
 #  endif
+#  include <winsock2.h>
 #  include <windows.h>
 #  include <process.h>
 # endif /* ndef FEATURE_PTHREAD */
@@ -92,12 +93,20 @@ const char jcc_rcs[] = "$Id: jcc.c,v 1.446 2016/05/25 10:54:01 fabiankeil Exp $"
 # ifdef __OS2__
 #define INCL_DOS
 # include <os2.h>
-#define bzero(B,N) memset(B,0x00,n)
 # endif
 
+#ifdef HAVE_POLL
+#ifdef __GLIBC__
+#include <sys/poll.h>
+#else
+#include <poll.h>
+#endif /* def __GLIBC__ */
+#else
 # ifndef FD_ZERO
 #  include <select.h>
 # endif
+#warning poll() appears to be unavailable. Your platform will become unsupported in the future.
+#endif /* HAVE_POLL */
 
 #endif
 
@@ -154,7 +163,7 @@ static void serve(struct client_state *csp);
 static void usage(const char *myname);
 #endif
 static void initialize_mutexes(void);
-static jb_socket bind_port_helper(const char *haddr, int hport);
+static jb_socket bind_port_helper(const char *haddr, int hport, int backlog);
 static void bind_ports_helper(struct configuration_spec *config, jb_socket sockets[]);
 static void close_ports_helper(jb_socket sockets[]);
 static void listen_loop(void);
@@ -175,6 +184,11 @@ static int32 server_thread(void *data);
 
 #ifdef __OS2__
 #define sleep(N)  DosSleep(((N) * 100))
+#endif
+
+#ifdef FUZZ
+int process_fuzzed_input(char *fuzz_input_type, char *fuzz_input_file);
+void show_fuzz_usage(const char *name);
 #endif
 
 #ifdef MUTEX_LOCKS_AVAILABLE
@@ -204,9 +218,9 @@ privoxy_mutex_t gmtime_mutex;
 privoxy_mutex_t localtime_mutex;
 #endif /* ndef HAVE_GMTIME_R */
 
-#ifndef HAVE_RANDOM
+#if !defined(HAVE_ARC4RANDOM) && !defined(HAVE_RANDOM)
 privoxy_mutex_t rand_mutex;
-#endif /* ndef HAVE_RANDOM */
+#endif /* !defined(HAVE_ARC4RANDOM) && !defined(HAVE_RANDOM) */
 
 #endif /* def MUTEX_LOCKS_AVAILABLE */
 
@@ -1278,7 +1292,12 @@ static char *get_request_line(struct client_state *csp)
 
    do
    {
-      if (!data_is_available(csp->cfd, csp->config->socket_timeout))
+      if (
+#ifdef FUZZ
+          0 == (csp->flags & CSP_FLAG_FUZZED_INPUT) &&
+#endif
+          !data_is_available(csp->cfd, csp->config->socket_timeout)
+          )
       {
          if (socket_is_still_alive(csp->cfd))
          {
@@ -1424,7 +1443,7 @@ static jb_err receive_chunked_client_request_body(struct client_state *csp)
    enum chunk_status status;
 
    while (CHUNK_STATUS_MISSING_DATA ==
-      (status = chunked_body_is_complete(csp->client_iob,&body_length)))
+      (status = chunked_body_is_complete(csp->client_iob, &body_length)))
    {
       char buf[BUFFER_SIZE];
       int len;
@@ -1461,6 +1480,80 @@ static jb_err receive_chunked_client_request_body(struct client_state *csp)
    return JB_ERR_OK;
 
 }
+
+
+#ifdef FUZZ
+/*********************************************************************
+ *
+ * Function    :  fuzz_chunked_transfer_encoding
+ *
+ * Description :  Treat the fuzzed input as chunked transfer encoding
+ *                to check and dechunk.
+ *
+ * Parameters  :
+ *          1  :  csp      = Used to store the data.
+ *          2  :  fuzz_input_file = File to read the input from.
+ *
+ * Returns     : Result of dechunking
+ *
+ *********************************************************************/
+extern int fuzz_chunked_transfer_encoding(struct client_state *csp, char *fuzz_input_file)
+{
+   size_t length;
+   size_t size = (size_t)(csp->iob->eod - csp->iob->cur);
+   enum chunk_status status;
+
+   status = chunked_body_is_complete(csp->iob, &length);
+   if (CHUNK_STATUS_BODY_COMPLETE != status)
+   {
+      log_error(LOG_LEVEL_INFO, "Chunked body is incomplete or invalid");
+   }
+
+   return (JB_ERR_OK == remove_chunked_transfer_coding(csp->iob->cur, &size));
+
+}
+
+
+/*********************************************************************
+ *
+ * Function    : fuzz_client_request
+ *
+ * Description : Try to get a client request from the fuzzed input.
+ *
+ * Parameters  :
+ *          1  :  csp = Current client state (buffers, headers, etc...)
+ *          2  :  fuzz_input_file = File to read the input from.
+ *
+ * Returns     :  Result of fuzzing.
+ *
+ *********************************************************************/
+extern int fuzz_client_request(struct client_state *csp, char *fuzz_input_file)
+{
+   jb_err err;
+
+   csp->cfd = 0;
+   csp->ip_addr_str = "fuzzer";
+
+   if (strcmp(fuzz_input_file, "-") != 0)
+   {
+      log_error(LOG_LEVEL_FATAL,
+         "Fuzzed client requests can currenty only be read from stdin (-).");
+   }
+   err = receive_client_request(csp);
+   if (err != JB_ERR_OK)
+   {
+      return 1;
+   }
+   err = parse_client_request(csp);
+   if (err != JB_ERR_OK)
+   {
+      return 1;
+   }
+
+   return 0;
+
+}
+#endif  /* def FUZZ */
 
 
 #ifdef FEATURE_FORCE_LOAD
@@ -1760,6 +1853,10 @@ static jb_err parse_client_request(struct client_state *csp)
       }
       verify_request_length(csp);
    }
+   else
+   {
+      csp->flags |= CSP_FLAG_SERVER_SOCKET_TAINTED;
+   }
 #endif /* def FEATURE_CONNECTION_KEEP_ALIVE */
 
    err = sed(csp, FILTER_CLIENT_HEADERS);
@@ -1805,21 +1902,61 @@ static jb_err parse_client_request(struct client_state *csp)
 
 /*********************************************************************
  *
- * Function    :  chat
+ * Function    : send_http_request
  *
- * Description :  Once a connection from the client has been accepted,
- *                this function is called (via serve()) to handle the
- *                main business of the communication.  This function
- *                returns after dealing with a single request. It can
- *                be called multiple times with the same client socket
- *                if the client is keeping the connection alive.
+ * Description : Sends the HTTP headers from the client request
+ *               and all the body data that has already been received.
  *
- *                The decision whether or not a client connection will
- *                be kept alive is up to the caller which also must
- *                close the client socket when done.
+ * Parameters  :
+ *          1  :  csp = Current client state (buffers, headers, etc...)
  *
- *                FIXME: chat is nearly thousand lines long.
- *                Ridiculous.
+ * Returns     :  0 on success, anything else is na error.
+ *
+ *********************************************************************/
+static int send_http_request(struct client_state *csp)
+{
+   char *hdr;
+   int write_failure;
+
+   hdr = list_to_text(csp->headers);
+   if (hdr == NULL)
+   {
+      /* FIXME Should handle error properly */
+      log_error(LOG_LEVEL_FATAL, "Out of memory parsing client header");
+   }
+   list_remove_all(csp->headers);
+
+   /*
+    * Write the client's (modified) header to the server
+    * (along with anything else that may be in the buffer)
+    */
+   write_failure = 0 != write_socket(csp->server_connection.sfd, hdr, strlen(hdr));
+   freez(hdr);
+
+   if (write_failure)
+   {
+      log_error(LOG_LEVEL_CONNECT, "Failed sending request headers to: %s: %E",
+         csp->http->hostport);
+   }
+   else if (((csp->flags & CSP_FLAG_PIPELINED_REQUEST_WAITING) == 0)
+      && (flush_socket(csp->server_connection.sfd, csp->client_iob) < 0))
+   {
+      write_failure = 1;
+      log_error(LOG_LEVEL_CONNECT, "Failed sending request body to: %s: %E",
+         csp->http->hostport);
+   }
+
+   return write_failure;
+
+}
+
+
+/*********************************************************************
+ *
+ * Function    :  handle_established_connection
+ *
+ * Description :  Shuffle data between client and server once the
+ *                connection has been established.
  *
  * Parameters  :
  *          1  :  csp = Current client state (buffers, headers, etc...)
@@ -1827,283 +1964,48 @@ static jb_err parse_client_request(struct client_state *csp)
  * Returns     :  Nothing.
  *
  *********************************************************************/
-static void chat(struct client_state *csp)
+static void handle_established_connection(struct client_state *csp)
 {
-   char buf[BUFFER_SIZE];
    char *hdr;
    char *p;
-   fd_set rfds;
    int n;
+#ifdef HAVE_POLL
+   struct pollfd poll_fds[2];
+#else
+   fd_set rfds;
    jb_socket maxfd;
+   struct timeval timeout;
+#endif
    int server_body;
    int ms_iis5_hack = 0;
    unsigned long long byte_count = 0;
-   const struct forward_spec *fwd;
    struct http_request *http;
    long len = 0; /* for buffer sizes (and negative error codes) */
    int buffer_and_filter_content = 0;
 
    /* Skeleton for HTTP response, if we should intercept the request */
    struct http_response *rsp;
-   struct timeval timeout;
 #ifdef FEATURE_CONNECTION_KEEP_ALIVE
    int watch_client_socket;
 #endif
 
-   memset(buf, 0, sizeof(buf));
+   csp->receive_buffer_size = csp->config->receive_buffer_size;
+   csp->receive_buffer = zalloc(csp->receive_buffer_size + 1);
+   if (csp->receive_buffer == NULL)
+   {
+      log_error(LOG_LEVEL_ERROR,
+         "Out of memory. Failed to allocate the receive buffer.");
+      rsp = cgi_error_memory();
+      send_crunch_response(csp, rsp);
+      return;
+   }
 
    http = csp->http;
 
-   if (receive_client_request(csp) != JB_ERR_OK)
-   {
-      return;
-   }
-   if (parse_client_request(csp) != JB_ERR_OK)
-   {
-      return;
-   }
-
-   /* decide how to route the HTTP request */
-   fwd = forward_url(csp, http);
-   if (NULL == fwd)
-   {
-      log_error(LOG_LEVEL_FATAL, "gateway spec is NULL!?!?  This can't happen!");
-      /* Never get here - LOG_LEVEL_FATAL causes program exit */
-      return;
-   }
-
-   /*
-    * build the http request to send to the server
-    * we have to do one of the following:
-    *
-    * create = use the original HTTP request to create a new
-    *          HTTP request that has either the path component
-    *          without the http://domainspec (w/path) or the
-    *          full orininal URL (w/url)
-    *          Note that the path and/or the HTTP version may
-    *          have been altered by now.
-    *
-    * connect = Open a socket to the host:port of the server
-    *           and short-circuit server and client socket.
-    *
-    * pass =  Pass the request unchanged if forwarding a CONNECT
-    *         request to a parent proxy. Note that we'll be sending
-    *         the CFAIL message ourselves if connecting to the parent
-    *         fails, but we won't send a CSUCCEED message if it works,
-    *         since that would result in a double message (ours and the
-    *         parent's). After sending the request to the parent, we simply
-    *         tunnel.
-    *
-    * here's the matrix:
-    *                        SSL
-    *                    0        1
-    *                +--------+--------+
-    *                |        |        |
-    *             0  | create | connect|
-    *                | w/path |        |
-    *  Forwarding    +--------+--------+
-    *                |        |        |
-    *             1  | create | pass   |
-    *                | w/url  |        |
-    *                +--------+--------+
-    *
-    */
-
-   if (http->ssl && connect_port_is_forbidden(csp))
-   {
-      const char *acceptable_connect_ports =
-         csp->action->string[ACTION_STRING_LIMIT_CONNECT];
-      assert(NULL != acceptable_connect_ports);
-      log_error(LOG_LEVEL_INFO, "Request from %s marked for blocking. "
-         "limit-connect{%s} doesn't allow CONNECT requests to %s",
-         csp->ip_addr_str, acceptable_connect_ports, csp->http->hostport);
-      csp->action->flags |= ACTION_BLOCK;
-      http->ssl = 0;
-   }
-
-   if (http->ssl == 0)
-   {
-      freez(csp->headers->first->str);
-      build_request_line(csp, fwd, &csp->headers->first->str);
-   }
-
-   /*
-    * We have a request. Check if one of the crunchers wants it.
-    */
-   if (crunch_response_triggered(csp, crunchers_all))
-   {
-      /*
-       * Yes. The client got the crunch response and we're done here.
-       */
-      return;
-   }
-
-   log_applied_actions(csp->action);
-   log_error(LOG_LEVEL_GPC, "%s%s", http->hostport, http->path);
-
-   if (fwd->forward_host)
-   {
-      log_error(LOG_LEVEL_CONNECT, "via [%s]:%d to: %s",
-         fwd->forward_host, fwd->forward_port, http->hostport);
-   }
-   else
-   {
-      log_error(LOG_LEVEL_CONNECT, "to %s", http->hostport);
-   }
-
-   /* here we connect to the server, gateway, or the forwarder */
-
-#ifdef FEATURE_CONNECTION_KEEP_ALIVE
-   if ((csp->server_connection.sfd != JB_INVALID_SOCKET)
-      && socket_is_still_alive(csp->server_connection.sfd)
-      && connection_destination_matches(&csp->server_connection, http, fwd))
-   {
-      log_error(LOG_LEVEL_CONNECT,
-         "Reusing server socket %d connected to %s. Total requests: %u.",
-         csp->server_connection.sfd, csp->server_connection.host,
-         csp->server_connection.requests_sent_total);
-   }
-   else
-   {
-      if (csp->server_connection.sfd != JB_INVALID_SOCKET)
-      {
-#ifdef FEATURE_CONNECTION_SHARING
-         if (csp->config->feature_flags & RUNTIME_FEATURE_CONNECTION_SHARING)
-         {
-            remember_connection(&csp->server_connection);
-         }
-         else
-#endif /* def FEATURE_CONNECTION_SHARING */
-         {
-            log_error(LOG_LEVEL_CONNECT,
-               "Closing server socket %d connected to %s. Total requests: %u.",
-               csp->server_connection.sfd, csp->server_connection.host,
-               csp->server_connection.requests_sent_total);
-            close_socket(csp->server_connection.sfd);
-         }
-         mark_connection_closed(&csp->server_connection);
-      }
-#endif /* def FEATURE_CONNECTION_KEEP_ALIVE */
-
-      csp->server_connection.sfd = forwarded_connect(fwd, http, csp);
-
-      if (csp->server_connection.sfd == JB_INVALID_SOCKET)
-      {
-         if ((fwd->type != SOCKS_NONE) && (fwd->type != FORWARD_WEBSERVER))
-         {
-            /* Socks error. */
-            rsp = error_response(csp, "forwarding-failed");
-         }
-         else if (errno == EINVAL)
-         {
-            rsp = error_response(csp, "no-such-domain");
-         }
-         else
-         {
-            rsp = error_response(csp, "connect-failed");
-         }
-
-         /* Write the answer to the client */
-         if (rsp != NULL)
-         {
-            send_crunch_response(csp, rsp);
-         }
-
-         /*
-          * Temporary workaround to prevent already-read client
-          * bodies from being parsed as new requests. For now we
-          * err on the safe side and throw all the following
-          * requests under the bus, even if no client body has been
-          * buffered. A compliant client will repeat the dropped
-          * requests on an untainted connection.
-          *
-          * The proper fix is to discard the no longer needed
-          * client body in the buffer (if there is one) and to
-          * continue parsing the bytes that follow.
-          */
-         drain_and_close_socket(csp->cfd);
-         csp->cfd = JB_INVALID_SOCKET;
-
-         return;
-      }
-#ifdef FEATURE_CONNECTION_KEEP_ALIVE
-      save_connection_destination(csp->server_connection.sfd,
-         http, fwd, &csp->server_connection);
-      csp->server_connection.keep_alive_timeout =
-         (unsigned)csp->config->keep_alive_timeout;
-   }
-#endif /* def FEATURE_CONNECTION_KEEP_ALIVE */
-
-   csp->server_connection.requests_sent_total++;
-
-   if ((fwd->type == SOCKS_5T) && (NULL == csp->headers->first))
-   {
-      /* Client headers have been sent optimistically */
-      assert(csp->headers->last == NULL);
-   }
-   else if (fwd->forward_host || (http->ssl == 0))
-   {
-      int write_failure;
-      hdr = list_to_text(csp->headers);
-      if (hdr == NULL)
-      {
-         /* FIXME Should handle error properly */
-         log_error(LOG_LEVEL_FATAL, "Out of memory parsing client header");
-      }
-      list_remove_all(csp->headers);
-
-      /*
-       * Write the client's (modified) header to the server
-       * (along with anything else that may be in the buffer)
-       */
-      write_failure = 0 != write_socket(csp->server_connection.sfd, hdr, strlen(hdr));
-      freez(hdr);
-
-      if (write_failure)
-      {
-         log_error(LOG_LEVEL_CONNECT,
-            "Failed sending request headers to: %s: %E", http->hostport);
-      }
-      else if (((csp->flags & CSP_FLAG_PIPELINED_REQUEST_WAITING) == 0)
-         && (flush_socket(csp->server_connection.sfd, csp->client_iob) < 0))
-      {
-         write_failure = 1;
-         log_error(LOG_LEVEL_CONNECT,
-            "Failed sending request body to: %s: %E", http->hostport);
-      }
-
-      if (write_failure)
-      {
-         rsp = error_response(csp, "connect-failed");
-         if (rsp)
-         {
-            send_crunch_response(csp, rsp);
-         }
-         return;
-      }
-   }
-   else
-   {
-      /*
-       * We're running an SSL tunnel and we're not forwarding,
-       * so just ditch the client headers, send the "connect succeeded"
-       * message to the client, flush the rest, and get out of the way.
-       */
-      list_remove_all(csp->headers);
-      if (write_socket(csp->cfd, CSUCCEED, strlen(CSUCCEED)))
-      {
-         return;
-      }
-      clear_iob(csp->client_iob);
-   }
-
-   log_error(LOG_LEVEL_CONNECT, "to %s successful", http->hostport);
-
-   /* XXX: should the time start earlier for optimistically sent data? */
-   csp->server_connection.request_sent = time(NULL);
-
+#ifndef HAVE_POLL
    maxfd = (csp->cfd > csp->server_connection.sfd) ?
       csp->cfd : csp->server_connection.sfd;
+#endif
 
    /* pass data between the client and server
     * until one or the other shuts down the connection.
@@ -2117,6 +2019,7 @@ static void chat(struct client_state *csp)
 
    for (;;)
    {
+#ifndef HAVE_POLL
 #ifdef __OS2__
       /*
        * FD_ZERO here seems to point to an errant macro which crashes.
@@ -2138,6 +2041,7 @@ static void chat(struct client_state *csp)
       }
 
       FD_SET(csp->server_connection.sfd, &rfds);
+#endif /* ndef HAVE_POLL */
 
 #ifdef FEATURE_CONNECTION_KEEP_ALIVE
       if ((csp->flags & CSP_FLAG_CHUNKED)
@@ -2182,14 +2086,37 @@ static void chat(struct client_state *csp)
       }
 #endif  /* FEATURE_CONNECTION_KEEP_ALIVE */
 
+#ifdef HAVE_POLL
+      poll_fds[0].fd = csp->cfd;
+#ifdef FEATURE_CONNECTION_KEEP_ALIVE
+      if (!watch_client_socket)
+      {
+         /*
+          * Ignore incoming data, but still watch out
+          * for disconnects etc. These flags are always
+          * implied anyway but explicitly setting them
+          * doesn't hurt.
+          */
+         poll_fds[0].events = POLLERR|POLLHUP;
+      }
+      else
+#endif
+      {
+         poll_fds[0].events = POLLIN;
+      }
+      poll_fds[1].fd = csp->server_connection.sfd;
+      poll_fds[1].events = POLLIN;
+      n = poll(poll_fds, 2, csp->config->socket_timeout * 1000);
+#else
       timeout.tv_sec = csp->config->socket_timeout;
       timeout.tv_usec = 0;
       n = select((int)maxfd+1, &rfds, NULL, NULL, &timeout);
+#endif /* def HAVE_POLL */
 
       if (n == 0)
       {
-         log_error(LOG_LEVEL_ERROR,
-            "Didn't receive data in time: %s", http->url);
+         log_error(LOG_LEVEL_CONNECT, "Socket timeout %d reached: %s",
+            csp->config->socket_timeout, http->url);
          if ((byte_count == 0) && (http->ssl == 0))
          {
             send_crunch_response(csp, error_response(csp, "connection-timeout"));
@@ -2199,7 +2126,11 @@ static void chat(struct client_state *csp)
       }
       else if (n < 0)
       {
+#ifdef HAVE_POLL
+         log_error(LOG_LEVEL_ERROR, "poll() failed!: %E");
+#else
          log_error(LOG_LEVEL_ERROR, "select() failed!: %E");
+#endif
          mark_server_socket_tainted(csp);
          return;
       }
@@ -2211,9 +2142,23 @@ static void chat(struct client_state *csp)
        * XXX: Make sure the client doesn't use pipelining
        * behind Privoxy's back.
        */
-      if (FD_ISSET(csp->cfd, &rfds))
+#ifdef HAVE_POLL
+      if ((poll_fds[0].revents & (POLLERR|POLLHUP|POLLNVAL)) != 0)
       {
-         int max_bytes_to_read = sizeof(buf) - 1;
+         log_error(LOG_LEVEL_CONNECT,
+            "The client socket %d has become unusable while "
+            "the server socket %d is still open.",
+            csp->cfd, csp->server_connection.sfd);
+         mark_server_socket_tainted(csp);
+         break;
+      }
+
+      if (poll_fds[0].revents != 0)
+#else
+      if (FD_ISSET(csp->cfd, &rfds))
+#endif /* def HAVE_POLL*/
+      {
+         int max_bytes_to_read = (int)csp->receive_buffer_size;
 
 #ifdef FEATURE_CONNECTION_KEEP_ALIVE
          if ((csp->flags & CSP_FLAG_CLIENT_REQUEST_COMPLETELY_READ))
@@ -2247,7 +2192,7 @@ static void chat(struct client_state *csp)
          }
          if (csp->expected_client_content_length != 0)
          {
-            if (csp->expected_client_content_length < (sizeof(buf) - 1))
+            if (csp->expected_client_content_length < csp->receive_buffer_size)
             {
                max_bytes_to_read = (int)csp->expected_client_content_length;
             }
@@ -2255,10 +2200,10 @@ static void chat(struct client_state *csp)
                "Waiting for up to %d bytes from the client.",
                max_bytes_to_read);
          }
-         assert(max_bytes_to_read < sizeof(buf));
+         assert(max_bytes_to_read <= csp->receive_buffer_size);
 #endif /* def FEATURE_CONNECTION_KEEP_ALIVE */
 
-         len = read_socket(csp->cfd, buf, max_bytes_to_read);
+         len = read_socket(csp->cfd, csp->receive_buffer, max_bytes_to_read);
 
          if (len <= 0)
          {
@@ -2285,7 +2230,7 @@ static void chat(struct client_state *csp)
          }
 #endif /* def FEATURE_CONNECTION_KEEP_ALIVE */
 
-         if (write_socket(csp->server_connection.sfd, buf, (size_t)len))
+         if (write_socket(csp->server_connection.sfd, csp->receive_buffer, (size_t)len))
          {
             log_error(LOG_LEVEL_ERROR, "write to: %s failed: %E", http->host);
             mark_server_socket_tainted(csp);
@@ -2299,7 +2244,11 @@ static void chat(struct client_state *csp)
        * If `hdr' is null, then it's the header otherwise it's the body.
        * FIXME: Does `hdr' really mean `host'? No.
        */
+#ifdef HAVE_POLL
+      if (poll_fds[1].revents != 0)
+#else
       if (FD_ISSET(csp->server_connection.sfd, &rfds))
+#endif /* HAVE_POLL */
       {
 #ifdef FEATURE_CONNECTION_KEEP_ALIVE
          /*
@@ -2323,13 +2272,13 @@ static void chat(struct client_state *csp)
          }
 #endif /* def FEATURE_CONNECTION_KEEP_ALIVE */
 
-         len = read_socket(csp->server_connection.sfd, buf, sizeof(buf) - 1);
+         len = read_socket(csp->server_connection.sfd, csp->receive_buffer, (int)csp->receive_buffer_size);
 
          if (len < 0)
          {
             log_error(LOG_LEVEL_ERROR, "read from: %s failed: %E", http->host);
 
-            if (http->ssl && (fwd->forward_host == NULL))
+            if (http->ssl && (csp->fwd == NULL))
             {
                /*
                 * Just hang up. We already confirmed the client's CONNECT
@@ -2364,7 +2313,7 @@ static void chat(struct client_state *csp)
 #ifdef FEATURE_CONNECTION_KEEP_ALIVE
          if (csp->flags & CSP_FLAG_CHUNKED)
          {
-            if ((len >= 5) && !memcmp(buf+len-5, "0\r\n\r\n", 5))
+            if ((len >= 5) && !memcmp(csp->receive_buffer+len-5, "0\r\n\r\n", 5))
             {
                /* XXX: this is a temporary hack */
                log_error(LOG_LEVEL_CONNECT,
@@ -2378,10 +2327,22 @@ static void chat(struct client_state *csp)
 #endif  /* FEATURE_CONNECTION_KEEP_ALIVE */
 
          /*
+          * This is guaranteed by allocating with zalloc_or_die()
+          * and never (intentionally) writing to the last byte.
+          *
+          * csp->receive_buffer_size is the size of the part of the
+          * buffer we intentionally write to, but we actually
+          * allocated csp->receive_buffer_size+1 bytes so the assertion
+          * stays within the allocated range.
+          */
+         assert(csp->receive_buffer[csp->receive_buffer_size] == '\0');
+
+         /*
           * Add a trailing zero to let be able to use string operations.
           * XXX: do we still need this with filter_popups gone?
           */
-         buf[len] = '\0';
+         assert(len <= csp->receive_buffer_size);
+         csp->receive_buffer[len] = '\0';
 
          /*
           * Normally, this would indicate that we've read
@@ -2474,8 +2435,8 @@ static void chat(struct client_state *csp)
              * This is NOT the body, so
              * Let's pretend the server just sent us a blank line.
              */
-            snprintf(buf, sizeof(buf), "\r\n");
-            len = (int)strlen(buf);
+            snprintf(csp->receive_buffer, csp->receive_buffer_size, "\r\n");
+            len = (int)strlen(csp->receive_buffer);
 
             /*
              * Now, let the normal header parsing algorithm below do its
@@ -2499,7 +2460,7 @@ static void chat(struct client_state *csp)
                 * has been reached, switch to non-filtering mode, i.e. make & write the
                 * header, flush the iob and buf, and get out of the way.
                 */
-               if (add_to_iob(csp->iob, csp->config->buffer_limit, buf, len))
+               if (add_to_iob(csp->iob, csp->config->buffer_limit, csp->receive_buffer, len))
                {
                   size_t hdrlen;
                   long flushed;
@@ -2524,7 +2485,7 @@ static void chat(struct client_state *csp)
 
                   if (write_socket(csp->cfd, hdr, hdrlen)
                    || ((flushed = flush_socket(csp->cfd, csp->iob)) < 0)
-                   || (write_socket(csp->cfd, buf, (size_t)len)))
+                   || (write_socket(csp->cfd, csp->receive_buffer, (size_t)len)))
                   {
                      log_error(LOG_LEVEL_CONNECT,
                         "Flush header and buffers to client failed: %E");
@@ -2546,7 +2507,7 @@ static void chat(struct client_state *csp)
             }
             else
             {
-               if (write_socket(csp->cfd, buf, (size_t)len))
+               if (write_socket(csp->cfd, csp->receive_buffer, (size_t)len))
                {
                   log_error(LOG_LEVEL_ERROR, "write to client failed: %E");
                   mark_server_socket_tainted(csp);
@@ -2563,7 +2524,7 @@ static void chat(struct client_state *csp)
              * Buffer up the data we just read.  If that fails, there's
              * little we can do but send our static out-of-memory page.
              */
-            if (add_to_iob(csp->iob, csp->config->buffer_limit, buf, len))
+            if (add_to_iob(csp->iob, csp->config->buffer_limit, csp->receive_buffer, len))
             {
                log_error(LOG_LEVEL_ERROR, "Out of memory while looking for end of server headers.");
                rsp = cgi_error_memory();
@@ -2706,9 +2667,9 @@ static void chat(struct client_state *csp)
                 * delivered the crunch response to the client
                 * and are done here after cleaning up.
                 */
-                freez(hdr);
-                mark_server_socket_tainted(csp);
-                return;
+               freez(hdr);
+               mark_server_socket_tainted(csp);
+               return;
             }
             /* Buffer and pcrs filter this if appropriate. */
 
@@ -2796,6 +2757,325 @@ static void chat(struct client_state *csp)
 
    csp->server_connection.timestamp = time(NULL);
 }
+
+
+/*********************************************************************
+ *
+ * Function    :  chat
+ *
+ * Description :  Once a connection from the client has been accepted,
+ *                this function is called (via serve()) to handle the
+ *                main business of the communication.  This function
+ *                returns after dealing with a single request. It can
+ *                be called multiple times with the same client socket
+ *                if the client is keeping the connection alive.
+ *
+ *                The decision whether or not a client connection will
+ *                be kept alive is up to the caller which also must
+ *                close the client socket when done.
+ *
+ *                FIXME: chat is nearly thousand lines long.
+ *                Ridiculous.
+ *
+ * Parameters  :
+ *          1  :  csp = Current client state (buffers, headers, etc...)
+ *
+ * Returns     :  Nothing.
+ *
+ *********************************************************************/
+static void chat(struct client_state *csp)
+{
+   const struct forward_spec *fwd;
+   struct http_request *http;
+   /* Skeleton for HTTP response, if we should intercept the request */
+   struct http_response *rsp;
+
+   http = csp->http;
+
+   if (receive_client_request(csp) != JB_ERR_OK)
+   {
+      return;
+   }
+   if (parse_client_request(csp) != JB_ERR_OK)
+   {
+      return;
+   }
+
+   /* decide how to route the HTTP request */
+   fwd = forward_url(csp, http);
+   if (NULL == fwd)
+   {
+      log_error(LOG_LEVEL_FATAL, "gateway spec is NULL!?!?  This can't happen!");
+      /* Never get here - LOG_LEVEL_FATAL causes program exit */
+      return;
+   }
+
+   /*
+    * build the http request to send to the server
+    * we have to do one of the following:
+    *
+    * create = use the original HTTP request to create a new
+    *          HTTP request that has either the path component
+    *          without the http://domainspec (w/path) or the
+    *          full orininal URL (w/url)
+    *          Note that the path and/or the HTTP version may
+    *          have been altered by now.
+    *
+    * connect = Open a socket to the host:port of the server
+    *           and short-circuit server and client socket.
+    *
+    * pass =  Pass the request unchanged if forwarding a CONNECT
+    *         request to a parent proxy. Note that we'll be sending
+    *         the CFAIL message ourselves if connecting to the parent
+    *         fails, but we won't send a CSUCCEED message if it works,
+    *         since that would result in a double message (ours and the
+    *         parent's). After sending the request to the parent, we simply
+    *         tunnel.
+    *
+    * here's the matrix:
+    *                        SSL
+    *                    0        1
+    *                +--------+--------+
+    *                |        |        |
+    *             0  | create | connect|
+    *                | w/path |        |
+    *  Forwarding    +--------+--------+
+    *                |        |        |
+    *             1  | create | pass   |
+    *                | w/url  |        |
+    *                +--------+--------+
+    *
+    */
+
+   if (http->ssl && connect_port_is_forbidden(csp))
+   {
+      const char *acceptable_connect_ports =
+         csp->action->string[ACTION_STRING_LIMIT_CONNECT];
+      assert(NULL != acceptable_connect_ports);
+      log_error(LOG_LEVEL_INFO, "Request from %s marked for blocking. "
+         "limit-connect{%s} doesn't allow CONNECT requests to %s",
+         csp->ip_addr_str, acceptable_connect_ports, csp->http->hostport);
+      csp->action->flags |= ACTION_BLOCK;
+      http->ssl = 0;
+   }
+
+   if (http->ssl == 0)
+   {
+      freez(csp->headers->first->str);
+      build_request_line(csp, fwd, &csp->headers->first->str);
+   }
+
+   /*
+    * We have a request. Check if one of the crunchers wants it.
+    */
+   if (crunch_response_triggered(csp, crunchers_all))
+   {
+      /*
+       * Yes. The client got the crunch response and we're done here.
+       */
+      return;
+   }
+
+   log_applied_actions(csp->action);
+   log_error(LOG_LEVEL_GPC, "%s%s", http->hostport, http->path);
+
+   if (fwd->forward_host)
+   {
+      log_error(LOG_LEVEL_CONNECT, "via [%s]:%d to: %s",
+         fwd->forward_host, fwd->forward_port, http->hostport);
+   }
+   else
+   {
+      log_error(LOG_LEVEL_CONNECT, "to %s", http->hostport);
+   }
+
+   /* here we connect to the server, gateway, or the forwarder */
+
+#ifdef FEATURE_CONNECTION_KEEP_ALIVE
+   if ((csp->server_connection.sfd != JB_INVALID_SOCKET)
+      && socket_is_still_alive(csp->server_connection.sfd)
+      && connection_destination_matches(&csp->server_connection, http, fwd))
+   {
+      log_error(LOG_LEVEL_CONNECT,
+         "Reusing server socket %d connected to %s. Total requests: %u.",
+         csp->server_connection.sfd, csp->server_connection.host,
+         csp->server_connection.requests_sent_total);
+   }
+   else
+   {
+      if (csp->server_connection.sfd != JB_INVALID_SOCKET)
+      {
+#ifdef FEATURE_CONNECTION_SHARING
+         if (csp->config->feature_flags & RUNTIME_FEATURE_CONNECTION_SHARING)
+         {
+            remember_connection(&csp->server_connection);
+         }
+         else
+#endif /* def FEATURE_CONNECTION_SHARING */
+         {
+            log_error(LOG_LEVEL_CONNECT,
+               "Closing server socket %d connected to %s. Total requests: %u.",
+               csp->server_connection.sfd, csp->server_connection.host,
+               csp->server_connection.requests_sent_total);
+            close_socket(csp->server_connection.sfd);
+         }
+         mark_connection_closed(&csp->server_connection);
+      }
+#endif /* def FEATURE_CONNECTION_KEEP_ALIVE */
+
+      csp->server_connection.sfd = forwarded_connect(fwd, http, csp);
+
+      if (csp->server_connection.sfd == JB_INVALID_SOCKET)
+      {
+         if (fwd->type != SOCKS_NONE)
+         {
+            /* Socks error. */
+            rsp = error_response(csp, "forwarding-failed");
+         }
+         else if (errno == EINVAL)
+         {
+            rsp = error_response(csp, "no-such-domain");
+         }
+         else
+         {
+            rsp = error_response(csp, "connect-failed");
+         }
+
+         /* Write the answer to the client */
+         if (rsp != NULL)
+         {
+            send_crunch_response(csp, rsp);
+         }
+
+         /*
+          * Temporary workaround to prevent already-read client
+          * bodies from being parsed as new requests. For now we
+          * err on the safe side and throw all the following
+          * requests under the bus, even if no client body has been
+          * buffered. A compliant client will repeat the dropped
+          * requests on an untainted connection.
+          *
+          * The proper fix is to discard the no longer needed
+          * client body in the buffer (if there is one) and to
+          * continue parsing the bytes that follow.
+          */
+         drain_and_close_socket(csp->cfd);
+         csp->cfd = JB_INVALID_SOCKET;
+
+         return;
+      }
+#ifdef FEATURE_CONNECTION_KEEP_ALIVE
+      save_connection_destination(csp->server_connection.sfd,
+         http, fwd, &csp->server_connection);
+      csp->server_connection.keep_alive_timeout =
+         (unsigned)csp->config->keep_alive_timeout;
+   }
+#endif /* def FEATURE_CONNECTION_KEEP_ALIVE */
+
+   csp->server_connection.requests_sent_total++;
+
+   if ((fwd->type == SOCKS_5T) && (NULL == csp->headers->first))
+   {
+      /* Client headers have been sent optimistically */
+      assert(csp->headers->last == NULL);
+   }
+   else if (fwd->forward_host || (http->ssl == 0))
+   {
+      if (send_http_request(csp))
+      {
+         rsp = error_response(csp, "connect-failed");
+         if (rsp)
+         {
+            send_crunch_response(csp, rsp);
+         }
+         return;
+      }
+   }
+   else
+   {
+      /*
+       * We're running an SSL tunnel and we're not forwarding,
+       * so just ditch the client headers, send the "connect succeeded"
+       * message to the client, flush the rest, and get out of the way.
+       */
+      list_remove_all(csp->headers);
+      if (write_socket(csp->cfd, CSUCCEED, strlen(CSUCCEED)))
+      {
+         return;
+      }
+      clear_iob(csp->client_iob);
+   }
+
+   log_error(LOG_LEVEL_CONNECT, "to %s successful", http->hostport);
+
+   /* XXX: should the time start earlier for optimistically sent data? */
+   csp->server_connection.request_sent = time(NULL);
+
+   handle_established_connection(csp);
+   freez(csp->receive_buffer);
+}
+
+
+#ifdef FUZZ
+/*********************************************************************
+ *
+ * Function    :  fuzz_server_response
+ *
+ * Description :  Treat the input as a whole server response.
+ *
+ * Parameters  :
+ *          1  :  csp = Current client state (buffers, headers, etc...)
+ *          2  :  fuzz_input_file = File to read the input from.
+ *
+ * Returns     :  0
+ *
+ *********************************************************************/
+extern int fuzz_server_response(struct client_state *csp, char *fuzz_input_file)
+{
+   static struct forward_spec fwd; /* Zero'd due to being static */
+   csp->cfd = 0;
+
+   if (strcmp(fuzz_input_file, "-") == 0)
+   {
+      /* XXX: Doesn'T work yet. */
+      csp->server_connection.sfd = 0;
+   }
+   else
+   {
+      csp->server_connection.sfd = open(fuzz_input_file, O_RDONLY);
+      if (csp->server_connection.sfd == -1)
+      {
+         log_error(LOG_LEVEL_FATAL, "Failed to open %s: %E",
+            fuzz_input_file);
+      }
+   }
+   csp->fwd = &fwd;
+   csp->content_type |= CT_GIF;
+   csp->action->flags |= ACTION_DEANIMATE;
+   csp->action->string[ACTION_STRING_DEANIMATE] = "last";
+
+   csp->http->path = strdup_or_die("/");
+   csp->http->host = strdup_or_die("fuzz.example.org");
+   csp->http->hostport = strdup_or_die("fuzz.example.org:80");
+   /* Prevent client socket monitoring */
+   csp->flags |= CSP_FLAG_PIPELINED_REQUEST_WAITING;
+   csp->flags |= CSP_FLAG_CHUNKED;
+
+   csp->config->feature_flags |= RUNTIME_FEATURE_CONNECTION_KEEP_ALIVE;
+   csp->flags |= CSP_FLAG_CLIENT_CONNECTION_KEEP_ALIVE;
+
+   csp->content_type |= CT_DECLARED|CT_GIF;
+
+   csp->config->socket_timeout = 0;
+
+   cgi_init_error_messages();
+
+   handle_established_connection(csp);
+   freez(csp->receive_buffer);
+
+   return 0;
+}
+#endif
 
 
 #ifdef FEATURE_CONNECTION_KEEP_ALIVE
@@ -3089,6 +3369,8 @@ static void serve(struct client_state *csp)
       drain_and_close_socket(csp->cfd);
    }
 
+   free_csp_resources(csp);
+
    csp->flags &= ~CSP_FLAG_ACTIVE;
 
 }
@@ -3128,7 +3410,7 @@ static int32 server_thread(void *data)
  * Returns     :  No. ,-)
  *
  *********************************************************************/
-static void usage(const char *myname)
+static void usage(const char *name)
 {
    printf("Privoxy version " VERSION " (" HOME_PAGE_URL ")\n"
           "Usage: %s [--config-test] "
@@ -3139,8 +3421,14 @@ static void usage(const char *myname)
 #if defined(unix)
           "[--no-daemon] [--pidfile pidfile] [--pre-chroot-nslookup hostname] [--user user[.group]] "
 #endif /* defined(unix) */
-          "[--version] [configfile]\n"
-          "Aborting\n", myname);
+         "[--version] [configfile]\n",
+          name);
+
+#ifdef FUZZ
+   show_fuzz_usage(name);
+#endif
+
+   printf("Aborting\n");
 
    exit(2);
 
@@ -3289,13 +3577,12 @@ static void initialize_mutexes(void)
    privoxy_mutex_init(&localtime_mutex);
 #endif /* ndef HAVE_GMTIME_R */
 
-#ifndef HAVE_RANDOM
+#if !defined(HAVE_ARC4RANDOM) && !defined(HAVE_RANDOM)
    privoxy_mutex_init(&rand_mutex);
-#endif /* ndef HAVE_RANDOM */
+#endif /* !defined(HAVE_ARC4RANDOM) && !defined(HAVE_RANDOM) */
 
 #endif /* def MUTEX_LOCKS_AVAILABLE */
 }
-
 
 /*********************************************************************
  *
@@ -3328,12 +3615,18 @@ int main(int argc, char **argv)
 {
    int argc_pos = 0;
    int do_config_test = 0;
+#ifndef HAVE_ARC4RANDOM
    unsigned int random_seed;
+#endif
 #ifdef unix
    struct passwd *pw = NULL;
    struct group *grp = NULL;
    int do_chroot = 0;
    char *pre_chroot_nslookup_to_load_resolver = NULL;
+#endif
+#ifdef FUZZ
+   char *fuzz_input_type = NULL;
+   char *fuzz_input_file = NULL;
 #endif
 
    Argc = argc;
@@ -3462,7 +3755,20 @@ int main(int argc, char **argv)
       {
          do_config_test = 1;
       }
-
+#ifdef FUZZ
+      else if (strcmp(argv[argc_pos], "--fuzz") == 0)
+      {
+         argc_pos++;
+         if (argc < argc_pos + 2) usage(argv[0]);
+         fuzz_input_type = argv[argc_pos];
+         argc_pos++;
+         fuzz_input_file = argv[argc_pos];
+      }
+      else if (strcmp(argv[argc_pos], "--stfu") == 0)
+      {
+         set_debug_level(LOG_LEVEL_STFU);
+      }
+#endif
       else if (argc_pos + 1 != argc)
       {
          /*
@@ -3519,19 +3825,24 @@ int main(int argc, char **argv)
    InitWin32();
 #endif
 
+#ifndef HAVE_ARC4RANDOM
    random_seed = (unsigned int)time(NULL);
 #ifdef HAVE_RANDOM
    srandom(random_seed);
 #else
    srand(random_seed);
 #endif /* ifdef HAVE_RANDOM */
+#endif /* ifndef HAVE_ARC4RANDOM */
 
    /*
     * Unix signal handling
     *
     * Catch the abort, interrupt and terminate signals for a graceful exit
     * Catch the hangup signal so the errlog can be reopened.
-    * Ignore the broken pipe signals (FIXME: Why?)
+    *
+    * Ignore the broken pipe signal as connection failures
+    * are handled when and where they occur without relying
+    * on a signal.
     */
 #if !defined(_WIN32) && !defined(__OS2__) && !defined(AMIGA)
 {
@@ -3565,6 +3876,16 @@ int main(int argc, char **argv)
    printf("%s", win32_blurb);
 # endif /* def _WIN_CONSOLE */
 #endif /* def _WIN32 */
+
+#ifdef FUZZ
+   if (fuzz_input_type != NULL)
+   {
+      exit(process_fuzzed_input(fuzz_input_type, fuzz_input_file));
+   }
+   log_error(LOG_LEVEL_FATAL,
+      "When compiled with fuzzing support, Privoxy should only be used for fuzzing. "
+      "Various data structures are static which is unsafe when using threads.");
+#endif
 
    if (do_config_test)
    {
@@ -3784,16 +4105,17 @@ int main(int argc, char **argv)
  *          1  :  haddr = Host address to bind to. Use NULL to bind to
  *                        INADDR_ANY.
  *          2  :  hport = Specifies port to bind to.
+ *          3  :  backlog = Listen backlog.
  *
  * Returns     :  Port that was opened.
  *
  *********************************************************************/
-static jb_socket bind_port_helper(const char *haddr, int hport)
+static jb_socket bind_port_helper(const char *haddr, int hport, int backlog)
 {
    int result;
    jb_socket bfd;
 
-   result = bind_port(haddr, hport, &bfd);
+   result = bind_port(haddr, hport, backlog, &bfd);
 
    if (result < 0)
    {
@@ -3820,6 +4142,7 @@ static jb_socket bind_port_helper(const char *haddr, int hport)
       return JB_INVALID_SOCKET;
    }
 
+#ifndef HAVE_POLL
 #ifndef _WIN32
    if (bfd >= FD_SETSIZE)
    {
@@ -3827,6 +4150,7 @@ static jb_socket bind_port_helper(const char *haddr, int hport)
          "Bind socket number too high to use select(): %d >= %d",
          bfd, FD_SETSIZE);
    }
+#endif
 #endif
 
    if (haddr == NULL)
@@ -3871,7 +4195,22 @@ static void bind_ports_helper(struct configuration_spec * config,
    {
       if (config->hport[i])
       {
-         sockets[i] = bind_port_helper(config->haddr[i], config->hport[i]);
+         sockets[i] = bind_port_helper(config->haddr[i],
+            config->hport[i], config->listen_backlog);
+#if defined(FEATURE_ACCEPT_FILTER) && defined(SO_ACCEPTFILTER)
+         if (config->enable_accept_filter && sockets[i] != JB_INVALID_SOCKET)
+         {
+            struct accept_filter_arg af_options;
+            bzero(&af_options, sizeof(af_options));
+            strlcpy(af_options.af_name, "httpready", sizeof(af_options.af_name));
+            if (setsockopt(sockets[i], SOL_SOCKET, SO_ACCEPTFILTER, &af_options,
+                  sizeof(af_options)))
+            {
+               log_error(LOG_LEVEL_ERROR,
+                  "Enabling accept filter for socket %d failed: %E", sockets[i]);
+            }
+         }
+#endif
       }
       else
       {
@@ -3940,6 +4279,12 @@ static void listen_loop(void)
    jb_socket bfds[MAX_LISTENING_SOCKETS];
    struct configuration_spec *config;
    unsigned int active_threads = 0;
+#if defined(FEATURE_PTHREAD)
+   pthread_attr_t attrs;
+
+   pthread_attr_init(&attrs);
+   pthread_attr_setdetachstate(&attrs, PTHREAD_CREATE_DETACHED);
+#endif
 
    config = load_config();
 
@@ -4027,7 +4372,7 @@ static void listen_loop(void)
           * new one.
           *
           * Which-ever is correct, we will serve 1 more page via the
-          * old settings.  This should probably be a "show-proxy-args"
+          * old settings.  This should probably be a "show-status"
           * request.  This should not be a so common of an operation
           * that this will hurt people's feelings.
           */
@@ -4095,14 +4440,10 @@ static void listen_loop(void)
 #define SELECTED_ONE_OPTION
          {
             pthread_t the_thread;
-            pthread_attr_t attrs;
 
-            pthread_attr_init(&attrs);
-            pthread_attr_setdetachstate(&attrs, PTHREAD_CREATE_DETACHED);
             errno = pthread_create(&the_thread, &attrs,
                (void * (*)(void *))serve, csp);
             child_id = errno ? -1 : 0;
-            pthread_attr_destroy(&attrs);
          }
 #endif
 
@@ -4266,6 +4607,10 @@ static void listen_loop(void)
          serve(csp);
       }
    }
+
+#if defined(FEATURE_PTHREAD)
+   pthread_attr_destroy(&attrs);
+#endif
 
    /* NOTREACHED unless FEATURE_GRACEFUL_TERMINATION is defined */
 
