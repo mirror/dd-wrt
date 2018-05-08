@@ -1,0 +1,23 @@
+Changes in version 1.23:
+
+A bug has been fixed that sometimes marked the wrong block as
+non-scraped when running in reverse direction. (Bug introduced in 1.22).
+Thanks to Arthur Lesuisse for reporting this.
+
+The new option '--same-file' has been added. It allows infile and
+outfile to be the same file or device.
+
+The new option '--shift' has been added to ddrescuelog. It shifts the
+positions of all the blocks in 'mapfile' by the offset
+('--output-position' - '--input-position'), and writes the resulting
+mapfile to standard output.
+
+In fill mode, the location data is now written as one line without
+final newline to ease finding it with simple text search tools.
+
+Fill mode no longer requires a seekable infile. Commands like
+  ddrescue -F- <(printf "BAD-SECTOR ") outfile mapfile
+are now possible.
+
+The new chapter "Meaning of ddrescue's screen output" has been added to
+the manual.
