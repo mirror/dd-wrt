@@ -294,6 +294,8 @@ obj-$(CONFIG_BKM) += multisim
 obj-$(CONFIG_TMK) += multisim
 obj-$(CONFIG_ZFS) += util-linux spl zlib zfs
 obj-$(CONFIG_SCREEN) += ncurses screen
+obj-$(CONFIG_DDRESCUE) += ddrescue
+
 obj-y+=configs
 
 
