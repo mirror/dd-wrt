@@ -1,4 +1,44 @@
 ------------------------------------------------------------------------
+r4076 | brainslayer | 2018-05-11 11:54:24 +0200 (Fri, 11 May 2018) | 1 line
+
+signal average support in iw
+------------------------------------------------------------------------
+r4075 | brainslayer | 2018-05-11 11:42:55 +0200 (Fri, 11 May 2018) | 1 line
+
+allow to set txq parameters with iw
+------------------------------------------------------------------------
+r4074 | brainslayer | 2018-05-11 11:33:19 +0200 (Fri, 11 May 2018) | 1 line
+
+mac80211: ethtool: avoid 32 bit multiplication overflow
+------------------------------------------------------------------------
+r4073 | brainslayer | 2018-05-11 11:33:00 +0200 (Fri, 11 May 2018) | 1 line
+
+mac80211: Support the new cfg80211 TXQ stats API
+------------------------------------------------------------------------
+r4072 | brainslayer | 2018-05-11 11:32:01 +0200 (Fri, 11 May 2018) | 1 line
+
+cfg80211: Expose TXQ stats and parameters to userspace
+------------------------------------------------------------------------
+r4071 | brainslayer | 2018-05-11 11:24:51 +0200 (Fri, 11 May 2018) | 1 line
+
+mac80211: average ack rssi support for data frames
+------------------------------------------------------------------------
+r4070 | brainslayer | 2018-05-11 11:24:12 +0200 (Fri, 11 May 2018) | 1 line
+
+cfg80211: average ack rssi support for data frames
+------------------------------------------------------------------------
+r4069 | brainslayer | 2018-05-11 11:21:34 +0200 (Fri, 11 May 2018) | 1 line
+
+mac80211: remove pointless flags=0 assignment
+------------------------------------------------------------------------
+r4068 | brainslayer | 2018-05-11 11:21:14 +0200 (Fri, 11 May 2018) | 1 line
+
+mac80211: ethtool: memset the whole sinfo struct to 0
+------------------------------------------------------------------------
+r4067 | brainslayer | 2018-05-11 11:20:52 +0200 (Fri, 11 May 2018) | 1 line
+
+mac80211: clean up rate info bandwidth setting
+------------------------------------------------------------------------
 r4066 | brainslayer | 2018-05-07 01:36:09 +0200 (Mon, 07 May 2018) | 1 line
 
 fix musl
