@@ -59,7 +59,7 @@
 #include <shutils.h>
 #include <wlutils.h>
 
-#include "linux/nl80211.h"
+#include <nl80211.h>
 
 #include "mac80211site_survey.h"
 
