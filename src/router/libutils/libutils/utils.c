@@ -1023,7 +1023,7 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort)
 			ifname[ifcount++] = c;
 	}
       sort:;
-	if (!nosort && sort != NULL) {
+	if (!nosort && count && sort) { // if ifprefix doesnt match to any interface, sort might be NULL here, so check this condition
 		qsort(sort, count, sizeof(char *), ifcompare);
 	}
 	int i;
