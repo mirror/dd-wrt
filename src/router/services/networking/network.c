@@ -2192,6 +2192,9 @@ void start_lan(void)
 			}
 			eval("ifconfig", realname, "mtu", getMTU(realname));
 			eval("ifconfig", realname, "txqueuelen", getTXQ(realname));
+			if (!nvram_nmatch("", "%s_hwaddr", realname))
+				set_hwaddr(realname, nvram_nget("%s_hwaddr", realname));
+				
 			if (strncmp(realname, "ath", 3) != 0) {	// this is not an ethernet driver
 				eval("ifconfig", realname, "up");	//fixup for some ethernet drivers
 			}
