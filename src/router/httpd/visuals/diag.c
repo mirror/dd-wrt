@@ -80,15 +80,15 @@ void ej_dump_ping_log(webs_t wp, int argc, char_t ** argv)
 	 */
 
 	if ((fp = fopen(PING_TMP, "r")) != NULL) {	// show result
-		while (fgets(line, sizeof(line), fp) != NULL) {
-			line[strlen(line) - 1] = '\0';
+		while (fgets(line, sizeof(line), fp) != NULL) {			
 			if (!strcmp(line, ""))
 				continue;
 			int nc = 0;
 
-			for (i = 0; i < strlen(line) + 1; i++) {
+			for (i = 0; i < strlen(line); i++) {
 				if (line[i] == '"') {
-					memcpy(&newline[nc += 6], "&quot;", 6);
+					memcpy(&newline[nc], "&quot;", 6);
+					nc+=6;
 				} else
 					newline[nc++] = line[i];
 			}
@@ -99,7 +99,7 @@ void ej_dump_ping_log(webs_t wp, int argc, char_t ** argv)
 		fclose(fp);
 	}
 
-	unlink(PING_TMP);
+//	unlink(PING_TMP);
 
 	return;
 }
