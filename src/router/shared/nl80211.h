@@ -231,6 +231,7 @@
  * use in a FILS shared key connection with PMKSA caching.
  */
 
+
 /**
  * enum nl80211_commands - supported nl80211 commands
  *
@@ -1023,7 +1024,7 @@ enum nl80211_commands {
 /* don't change the order or add anything between, this is ABI! */
 	NL80211_CMD_UNSPEC,
 
-	NL80211_CMD_GET_WIPHY,	/* can dump */
+	NL80211_CMD_GET_WIPHY,		/* can dump */
 	NL80211_CMD_SET_WIPHY,
 	NL80211_CMD_NEW_WIPHY,
 	NL80211_CMD_DEL_WIPHY,
@@ -1063,7 +1064,7 @@ enum nl80211_commands {
 	NL80211_CMD_GET_MESH_CONFIG,
 	NL80211_CMD_SET_MESH_CONFIG,
 
-	NL80211_CMD_SET_MGMT_EXTRA_IE /* reserved; not used */ ,
+	NL80211_CMD_SET_MGMT_EXTRA_IE /* reserved; not used */,
 
 	NL80211_CMD_GET_REG,
 
@@ -1186,6 +1187,7 @@ enum nl80211_commands {
 	NL80211_CMD_VENDOR,
 
 	NL80211_CMD_SET_QOS_MAP,
+
 
 	NL80211_CMD_ADD_TX_TS,
 	NL80211_CMD_DEL_TX_TS,
@@ -2200,6 +2202,16 @@ enum nl80211_commands {
  * @NL80211_ATTR_NSS: Station's New/updated  RX_NSS value notified using this
  *	u8 attribute. This is used with %NL80211_CMD_STA_OPMODE_CHANGED.
  *
+ * @NL80211_ATTR_TXQ_STATS: TXQ statistics (nested attribute, see &enum
+ *      nl80211_txq_stats)
+ * @NL80211_ATTR_TXQ_LIMIT: Total packet limit for the TXQ queues for this phy.
+ *      The smaller of this and the memory limit is enforced.
+ * @NL80211_ATTR_TXQ_MEMORY_LIMIT: Total memory memory limit (in bytes) for the
+ *      TXQ queues for this phy. The smaller of this and the packet limit is
+ *      enforced.
+ * @NL80211_ATTR_TXQ_QUANTUM: TXQ scheduler quantum (bytes). Number of bytes
+ *      a flow is assigned on each round of the DRR scheduler.
+ *
  * @NUM_NL80211_ATTR: total number of nl80211_attrs available
  * @NL80211_ATTR_MAX: highest attribute number currently defined
  * @__NL80211_ATTR_AFTER_LAST: internal use
@@ -2272,7 +2284,7 @@ enum nl80211_attrs {
 
 	NL80211_ATTR_SCAN_FREQUENCIES,
 	NL80211_ATTR_SCAN_SSIDS,
-	NL80211_ATTR_GENERATION,	/* replaces old SCAN_GENERATION */
+	NL80211_ATTR_GENERATION, /* replaces old SCAN_GENERATION */
 	NL80211_ATTR_BSS,
 
 	NL80211_ATTR_REG_INITIATOR,
@@ -2294,6 +2306,7 @@ enum nl80211_attrs {
 	NL80211_ATTR_FREQ_AFTER,
 
 	NL80211_ATTR_FREQ_FIXED,
+
 
 	NL80211_ATTR_WIPHY_RETRY_SHORT,
 	NL80211_ATTR_WIPHY_RETRY_LONG,
@@ -2659,6 +2672,11 @@ enum nl80211_attrs {
 
 	NL80211_ATTR_TDMA_POLLING,
 
+	NL80211_ATTR_TXQ_STATS,
+	NL80211_ATTR_TXQ_LIMIT,
+	NL80211_ATTR_TXQ_MEMORY_LIMIT,
+	NL80211_ATTR_TXQ_QUANTUM,
+
 	/* add attributes here, update the policy in nl80211.c */
 
 	__NL80211_ATTR_AFTER_LAST,
@@ -2981,6 +2999,8 @@ enum nl80211_sta_bss_param {
  *	received from the station (u64, usec)
  * @NL80211_STA_INFO_PAD: attribute used for padding for 64-bit alignment
  * @NL80211_STA_INFO_ACK_SIGNAL: signal strength of the last ACK frame(u8, dBm)
+ * @NL80211_STA_INFO_DATA_ACK_SIGNAL_AVG: avg signal strength of (data)
+ *	ACK frame (s8, dBm)
  * @__NL80211_STA_INFO_AFTER_LAST: internal
  * @NL80211_STA_INFO_MAX: highest possible station info attribute
  */
@@ -3020,8 +3040,11 @@ enum nl80211_sta_info {
 	NL80211_STA_INFO_RX_DURATION,
 	NL80211_STA_INFO_PAD,
 	NL80211_STA_INFO_ACK_SIGNAL,
+	NL80211_STA_INFO_DATA_ACK_SIGNAL_AVG,
 	NL80211_STA_INFO_TX_COMPRESSED,
 	NL80211_STA_INFO_RX_COMPRESSED,
+	NL80211_STA_INFO_TX_COMPRESSED_BYTES64,
+	NL80211_STA_INFO_RX_COMPRESSED_BYTES64,
 
 	/* keep last */
 	__NL80211_STA_INFO_AFTER_LAST,
@@ -3039,6 +3062,7 @@ enum nl80211_sta_info {
  * @NL80211_TID_STATS_TX_MSDU_FAILED: number of failed transmitted
  *	MSDUs (u64)
  * @NL80211_TID_STATS_PAD: attribute used for padding for 64-bit alignment
+ * @NL80211_TID_STATS_TXQ_STATS: TXQ stats (nested attribute)
  * @NUM_NL80211_TID_STATS: number of attributes here
  * @NL80211_TID_STATS_MAX: highest numbered attribute here
  */
@@ -3049,10 +3073,49 @@ enum nl80211_tid_stats {
 	NL80211_TID_STATS_TX_MSDU_RETRIES,
 	NL80211_TID_STATS_TX_MSDU_FAILED,
 	NL80211_TID_STATS_PAD,
+	NL80211_TID_STATS_TXQ_STATS,
 
 	/* keep last */
 	NUM_NL80211_TID_STATS,
 	NL80211_TID_STATS_MAX = NUM_NL80211_TID_STATS - 1
+};
+
+/**
+ * enum nl80211_txq_stats - per TXQ statistics attributes
+ * @__NL80211_TXQ_STATS_INVALID: attribute number 0 is reserved
+ * @NUM_NL80211_TXQ_STATS: number of attributes here
+ * @NL80211_TXQ_STATS_BACKLOG_BYTES: number of bytes currently backlogged
+ * @NL80211_TXQ_STATS_BACKLOG_PACKETS: number of packets currently
+ *      backlogged
+ * @NL80211_TXQ_STATS_FLOWS: total number of new flows seen
+ * @NL80211_TXQ_STATS_DROPS: total number of packet drops
+ * @NL80211_TXQ_STATS_ECN_MARKS: total number of packet ECN marks
+ * @NL80211_TXQ_STATS_OVERLIMIT: number of drops due to queue space overflow
+ * @NL80211_TXQ_STATS_OVERMEMORY: number of drops due to memory limit overflow
+ *      (only for per-phy stats)
+ * @NL80211_TXQ_STATS_COLLISIONS: number of hash collisions
+ * @NL80211_TXQ_STATS_TX_BYTES: total number of bytes dequeued from TXQ
+ * @NL80211_TXQ_STATS_TX_PACKETS: total number of packets dequeued from TXQ
+ * @NL80211_TXQ_STATS_MAX_FLOWS: number of flow buckets for PHY
+ * @NL80211_TXQ_STATS_MAX: highest numbered attribute here
+ */
+enum nl80211_txq_stats {
+	__NL80211_TXQ_STATS_INVALID,
+	NL80211_TXQ_STATS_BACKLOG_BYTES,
+	NL80211_TXQ_STATS_BACKLOG_PACKETS,
+	NL80211_TXQ_STATS_FLOWS,
+	NL80211_TXQ_STATS_DROPS,
+	NL80211_TXQ_STATS_ECN_MARKS,
+	NL80211_TXQ_STATS_OVERLIMIT,
+	NL80211_TXQ_STATS_OVERMEMORY,
+	NL80211_TXQ_STATS_COLLISIONS,
+	NL80211_TXQ_STATS_TX_BYTES,
+	NL80211_TXQ_STATS_TX_PACKETS,
+	NL80211_TXQ_STATS_MAX_FLOWS,
+
+	/* keep last */
+	NUM_NL80211_TXQ_STATS,
+	NL80211_TXQ_STATS_MAX = NUM_NL80211_TXQ_STATS - 1
 };
 
 /**
@@ -3065,11 +3128,11 @@ enum nl80211_tid_stats {
  * @NL80211_MPATH_FLAG_RESOLVED: the mesh path discovery process succeeded
  */
 enum nl80211_mpath_flags {
-	NL80211_MPATH_FLAG_ACTIVE = 1 << 0,
-	NL80211_MPATH_FLAG_RESOLVING = 1 << 1,
-	NL80211_MPATH_FLAG_SN_VALID = 1 << 2,
-	NL80211_MPATH_FLAG_FIXED = 1 << 3,
-	NL80211_MPATH_FLAG_RESOLVED = 1 << 4,
+	NL80211_MPATH_FLAG_ACTIVE =	1<<0,
+	NL80211_MPATH_FLAG_RESOLVING =	1<<1,
+	NL80211_MPATH_FLAG_SN_VALID =	1<<2,
+	NL80211_MPATH_FLAG_FIXED =	1<<3,
+	NL80211_MPATH_FLAG_RESOLVED =	1<<4,
 };
 
 /**
@@ -3381,7 +3444,8 @@ enum nl80211_sched_scan_match_attr {
 
 	/* keep last */
 	__NL80211_SCHED_SCAN_MATCH_ATTR_AFTER_LAST,
-	NL80211_SCHED_SCAN_MATCH_ATTR_MAX = __NL80211_SCHED_SCAN_MATCH_ATTR_AFTER_LAST - 1
+	NL80211_SCHED_SCAN_MATCH_ATTR_MAX =
+		__NL80211_SCHED_SCAN_MATCH_ATTR_AFTER_LAST - 1
 };
 
 /* only for backward compatibility */
@@ -3410,21 +3474,21 @@ enum nl80211_sched_scan_match_attr {
  * @NL80211_RRF_NO_160MHZ: 160MHz operation not allowed
  */
 enum nl80211_reg_rule_flags {
-	NL80211_RRF_NO_OFDM = 1 << 0,
-	NL80211_RRF_NO_CCK = 1 << 1,
-	NL80211_RRF_NO_INDOOR = 1 << 2,
-	NL80211_RRF_NO_OUTDOOR = 1 << 3,
-	NL80211_RRF_DFS = 1 << 4,
-	NL80211_RRF_PTP_ONLY = 1 << 5,
-	NL80211_RRF_PTMP_ONLY = 1 << 6,
-	NL80211_RRF_NO_IR = 1 << 7,
-	__NL80211_RRF_NO_IBSS = 1 << 8,
-	NL80211_RRF_AUTO_BW = 1 << 11,
-	NL80211_RRF_IR_CONCURRENT = 1 << 12,
-	NL80211_RRF_NO_HT40MINUS = 1 << 13,
-	NL80211_RRF_NO_HT40PLUS = 1 << 14,
-	NL80211_RRF_NO_80MHZ = 1 << 15,
-	NL80211_RRF_NO_160MHZ = 1 << 16,
+	NL80211_RRF_NO_OFDM		= 1<<0,
+	NL80211_RRF_NO_CCK		= 1<<1,
+	NL80211_RRF_NO_INDOOR		= 1<<2,
+	NL80211_RRF_NO_OUTDOOR		= 1<<3,
+	NL80211_RRF_DFS			= 1<<4,
+	NL80211_RRF_PTP_ONLY		= 1<<5,
+	NL80211_RRF_PTMP_ONLY		= 1<<6,
+	NL80211_RRF_NO_IR		= 1<<7,
+	__NL80211_RRF_NO_IBSS		= 1<<8,
+	NL80211_RRF_AUTO_BW		= 1<<11,
+	NL80211_RRF_IR_CONCURRENT	= 1<<12,
+	NL80211_RRF_NO_HT40MINUS	= 1<<13,
+	NL80211_RRF_NO_HT40PLUS		= 1<<14,
+	NL80211_RRF_NO_80MHZ		= 1<<15,
+	NL80211_RRF_NO_160MHZ		= 1<<16,
 };
 
 #define NL80211_RRF_PASSIVE_SCAN	NL80211_RRF_NO_IR
@@ -3446,10 +3510,10 @@ enum nl80211_reg_rule_flags {
  * @NL80211_DFS_JP: Country follows DFS master rules from JP/MKK/Telec
  */
 enum nl80211_dfs_regions {
-	NL80211_DFS_UNSET = 0,
-	NL80211_DFS_FCC = 1,
-	NL80211_DFS_ETSI = 2,
-	NL80211_DFS_JP = 3,
+	NL80211_DFS_UNSET	= 0,
+	NL80211_DFS_FCC		= 1,
+	NL80211_DFS_ETSI	= 2,
+	NL80211_DFS_JP		= 3,
 };
 
 /**
@@ -3470,9 +3534,9 @@ enum nl80211_dfs_regions {
  *	platform is operating in an indoor environment.
  */
 enum nl80211_user_reg_hint_type {
-	NL80211_USER_REG_HINT_USER = 0,
+	NL80211_USER_REG_HINT_USER	= 0,
 	NL80211_USER_REG_HINT_CELL_BASE = 1,
-	NL80211_USER_REG_HINT_INDOOR = 2,
+	NL80211_USER_REG_HINT_INDOOR    = 2,
 };
 
 /**
@@ -3883,6 +3947,7 @@ enum nl80211_chan_width {
 	NL80211_CHAN_WIDTH_160,
 	NL80211_CHAN_WIDTH_5,
 	NL80211_CHAN_WIDTH_10,
+	NL80211_CHAN_WIDTH_3,
 };
 
 /**
@@ -4246,6 +4311,7 @@ enum nl80211_cqm_rssi_threshold_event {
 	NL80211_CQM_RSSI_THRESHOLD_EVENT_HIGH,
 	NL80211_CQM_RSSI_BEACON_LOSS_EVENT,
 };
+
 
 /**
  * enum nl80211_tx_power_setting - TX power adjustment
@@ -4678,6 +4744,7 @@ enum nl80211_if_combination_attrs {
 	MAX_NL80211_IFACE_COMB = NUM_NL80211_IFACE_COMB - 1
 };
 
+
 /**
  * enum nl80211_plink_state - state of a mesh peer link finite state machine
  *
@@ -4725,6 +4792,7 @@ enum plink_actions {
 
 	NUM_NL80211_PLINK_ACTIONS,
 };
+
 
 #define NL80211_KCK_LEN			16
 #define NL80211_KEK_LEN			16
@@ -4926,38 +4994,38 @@ enum nl80211_ap_sme_features {
  *	be set for scheduled scan and the MAC address mask/value will be used.
  */
 enum nl80211_feature_flags {
-	NL80211_FEATURE_SK_TX_STATUS = 1 << 0,
-	NL80211_FEATURE_HT_IBSS = 1 << 1,
-	NL80211_FEATURE_INACTIVITY_TIMER = 1 << 2,
-	NL80211_FEATURE_CELL_BASE_REG_HINTS = 1 << 3,
-	NL80211_FEATURE_P2P_DEVICE_NEEDS_CHANNEL = 1 << 4,
-	NL80211_FEATURE_SAE = 1 << 5,
-	NL80211_FEATURE_LOW_PRIORITY_SCAN = 1 << 6,
-	NL80211_FEATURE_SCAN_FLUSH = 1 << 7,
-	NL80211_FEATURE_AP_SCAN = 1 << 8,
-	NL80211_FEATURE_VIF_TXPOWER = 1 << 9,
-	NL80211_FEATURE_NEED_OBSS_SCAN = 1 << 10,
-	NL80211_FEATURE_P2P_GO_CTWIN = 1 << 11,
-	NL80211_FEATURE_P2P_GO_OPPPS = 1 << 12,
+	NL80211_FEATURE_SK_TX_STATUS			= 1 << 0,
+	NL80211_FEATURE_HT_IBSS				= 1 << 1,
+	NL80211_FEATURE_INACTIVITY_TIMER		= 1 << 2,
+	NL80211_FEATURE_CELL_BASE_REG_HINTS		= 1 << 3,
+	NL80211_FEATURE_P2P_DEVICE_NEEDS_CHANNEL	= 1 << 4,
+	NL80211_FEATURE_SAE				= 1 << 5,
+	NL80211_FEATURE_LOW_PRIORITY_SCAN		= 1 << 6,
+	NL80211_FEATURE_SCAN_FLUSH			= 1 << 7,
+	NL80211_FEATURE_AP_SCAN				= 1 << 8,
+	NL80211_FEATURE_VIF_TXPOWER			= 1 << 9,
+	NL80211_FEATURE_NEED_OBSS_SCAN			= 1 << 10,
+	NL80211_FEATURE_P2P_GO_CTWIN			= 1 << 11,
+	NL80211_FEATURE_P2P_GO_OPPPS			= 1 << 12,
 	/* bit 13 is reserved */
-	NL80211_FEATURE_ADVERTISE_CHAN_LIMITS = 1 << 14,
-	NL80211_FEATURE_FULL_AP_CLIENT_STATE = 1 << 15,
-	NL80211_FEATURE_USERSPACE_MPM = 1 << 16,
-	NL80211_FEATURE_ACTIVE_MONITOR = 1 << 17,
-	NL80211_FEATURE_AP_MODE_CHAN_WIDTH_CHANGE = 1 << 18,
-	NL80211_FEATURE_DS_PARAM_SET_IE_IN_PROBES = 1 << 19,
-	NL80211_FEATURE_WFA_TPC_IE_IN_PROBES = 1 << 20,
-	NL80211_FEATURE_QUIET = 1 << 21,
-	NL80211_FEATURE_TX_POWER_INSERTION = 1 << 22,
-	NL80211_FEATURE_ACKTO_ESTIMATION = 1 << 23,
-	NL80211_FEATURE_STATIC_SMPS = 1 << 24,
-	NL80211_FEATURE_DYNAMIC_SMPS = 1 << 25,
-	NL80211_FEATURE_SUPPORTS_WMM_ADMISSION = 1 << 26,
-	NL80211_FEATURE_MAC_ON_CREATE = 1 << 27,
-	NL80211_FEATURE_TDLS_CHANNEL_SWITCH = 1 << 28,
-	NL80211_FEATURE_SCAN_RANDOM_MAC_ADDR = 1 << 29,
-	NL80211_FEATURE_SCHED_SCAN_RANDOM_MAC_ADDR = 1 << 30,
-	NL80211_FEATURE_ND_RANDOM_MAC_ADDR = 1 << 31,
+	NL80211_FEATURE_ADVERTISE_CHAN_LIMITS		= 1 << 14,
+	NL80211_FEATURE_FULL_AP_CLIENT_STATE		= 1 << 15,
+	NL80211_FEATURE_USERSPACE_MPM			= 1 << 16,
+	NL80211_FEATURE_ACTIVE_MONITOR			= 1 << 17,
+	NL80211_FEATURE_AP_MODE_CHAN_WIDTH_CHANGE	= 1 << 18,
+	NL80211_FEATURE_DS_PARAM_SET_IE_IN_PROBES	= 1 << 19,
+	NL80211_FEATURE_WFA_TPC_IE_IN_PROBES		= 1 << 20,
+	NL80211_FEATURE_QUIET				= 1 << 21,
+	NL80211_FEATURE_TX_POWER_INSERTION		= 1 << 22,
+	NL80211_FEATURE_ACKTO_ESTIMATION		= 1 << 23,
+	NL80211_FEATURE_STATIC_SMPS			= 1 << 24,
+	NL80211_FEATURE_DYNAMIC_SMPS			= 1 << 25,
+	NL80211_FEATURE_SUPPORTS_WMM_ADMISSION		= 1 << 26,
+	NL80211_FEATURE_MAC_ON_CREATE			= 1 << 27,
+	NL80211_FEATURE_TDLS_CHANNEL_SWITCH		= 1 << 28,
+	NL80211_FEATURE_SCAN_RANDOM_MAC_ADDR		= 1 << 29,
+	NL80211_FEATURE_SCHED_SCAN_RANDOM_MAC_ADDR	= 1 << 30,
+	NL80211_FEATURE_ND_RANDOM_MAC_ADDR		= 1 << 31,
 };
 
 /**
@@ -5025,6 +5093,12 @@ enum nl80211_feature_flags {
  * @NL80211_EXT_FEATURE_LOW_SPAN_SCAN: Driver supports low span scan.
  * @NL80211_EXT_FEATURE_LOW_POWER_SCAN: Driver supports low power scan.
  * @NL80211_EXT_FEATURE_HIGH_ACCURACY_SCAN: Driver supports high accuracy scan.
+ * @NL80211_EXT_FEATURE_DFS_OFFLOAD: HW/driver will offload DFS actions.
+ *	Device or driver will do all DFS-related actions by itself,
+ *	informing user-space about CAC progress, radar detection event,
+ *	channel change triggered by radar detection event.
+ *	No need to start CAC from user-space, no need to react to
+ *	"radar detected" event.
  *
  * @NUM_NL80211_EXT_FEATURES: number of extended features.
  * @MAX_NL80211_EXT_FEATURES: highest extended feature index.
@@ -5055,6 +5129,9 @@ enum nl80211_ext_feature_index {
 	NL80211_EXT_FEATURE_LOW_SPAN_SCAN,
 	NL80211_EXT_FEATURE_LOW_POWER_SCAN,
 	NL80211_EXT_FEATURE_HIGH_ACCURACY_SCAN,
+	NL80211_EXT_FEATURE_DFS_OFFLOAD,
+	NL80211_EXT_FEATURE_DATA_ACK_SIGNAL_SUPPORT,
+	NL80211_EXT_FEATURE_TXQS,
 
 	/* add new features before the definition below */
 	NUM_NL80211_EXT_FEATURES,
@@ -5076,10 +5153,10 @@ enum nl80211_ext_feature_index {
  * @NL80211_PROBE_RESP_OFFLOAD_SUPPORT_80211U: Support for 802.11u
  */
 enum nl80211_probe_resp_offload_support_attr {
-	NL80211_PROBE_RESP_OFFLOAD_SUPPORT_WPS = 1 << 0,
-	NL80211_PROBE_RESP_OFFLOAD_SUPPORT_WPS2 = 1 << 1,
-	NL80211_PROBE_RESP_OFFLOAD_SUPPORT_P2P = 1 << 2,
-	NL80211_PROBE_RESP_OFFLOAD_SUPPORT_80211U = 1 << 3,
+	NL80211_PROBE_RESP_OFFLOAD_SUPPORT_WPS =	1<<0,
+	NL80211_PROBE_RESP_OFFLOAD_SUPPORT_WPS2 =	1<<1,
+	NL80211_PROBE_RESP_OFFLOAD_SUPPORT_P2P =	1<<2,
+	NL80211_PROBE_RESP_OFFLOAD_SUPPORT_80211U =	1<<3,
 };
 
 /**
@@ -5162,17 +5239,17 @@ enum nl80211_timeout_reason {
  *	Latency and power use may get impacted with this flag.
  */
 enum nl80211_scan_flags {
-	NL80211_SCAN_FLAG_LOW_PRIORITY = 1 << 0,
-	NL80211_SCAN_FLAG_FLUSH = 1 << 1,
-	NL80211_SCAN_FLAG_AP = 1 << 2,
-	NL80211_SCAN_FLAG_RANDOM_ADDR = 1 << 3,
-	NL80211_SCAN_FLAG_FILS_MAX_CHANNEL_TIME = 1 << 4,
-	NL80211_SCAN_FLAG_ACCEPT_BCAST_PROBE_RESP = 1 << 5,
-	NL80211_SCAN_FLAG_OCE_PROBE_REQ_HIGH_TX_RATE = 1 << 6,
-	NL80211_SCAN_FLAG_OCE_PROBE_REQ_DEFERRAL_SUPPRESSION = 1 << 7,
-	NL80211_SCAN_FLAG_LOW_SPAN = 1 << 8,
-	NL80211_SCAN_FLAG_LOW_POWER = 1 << 9,
-	NL80211_SCAN_FLAG_HIGH_ACCURACY = 1 << 10,
+	NL80211_SCAN_FLAG_LOW_PRIORITY				= 1<<0,
+	NL80211_SCAN_FLAG_FLUSH					= 1<<1,
+	NL80211_SCAN_FLAG_AP					= 1<<2,
+	NL80211_SCAN_FLAG_RANDOM_ADDR				= 1<<3,
+	NL80211_SCAN_FLAG_FILS_MAX_CHANNEL_TIME			= 1<<4,
+	NL80211_SCAN_FLAG_ACCEPT_BCAST_PROBE_RESP		= 1<<5,
+	NL80211_SCAN_FLAG_OCE_PROBE_REQ_HIGH_TX_RATE		= 1<<6,
+	NL80211_SCAN_FLAG_OCE_PROBE_REQ_DEFERRAL_SUPPRESSION	= 1<<7,
+	NL80211_SCAN_FLAG_LOW_SPAN				= 1<<8,
+	NL80211_SCAN_FLAG_LOW_POWER				= 1<<9,
+	NL80211_SCAN_FLAG_HIGH_ACCURACY				= 1<<10,
 };
 
 /**
@@ -5230,6 +5307,8 @@ enum nl80211_smps_mode {
  *	non-operating channel is expired and no longer valid. New CAC must
  *	be done on this channel before starting the operation. This is not
  *	applicable for ETSI dfs domain where pre-CAC is valid for ever.
+ * @NL80211_RADAR_CAC_STARTED: Channel Availability Check has been started,
+ *	should be generated by HW if NL80211_EXT_FEATURE_DFS_OFFLOAD is enabled.
  */
 enum nl80211_radar_event {
 	NL80211_RADAR_DETECTED,
@@ -5237,6 +5316,7 @@ enum nl80211_radar_event {
 	NL80211_RADAR_CAC_ABORTED,
 	NL80211_RADAR_NOP_FINISHED,
 	NL80211_RADAR_PRE_CAC_EXPIRED,
+	NL80211_RADAR_CAC_STARTED,
 };
 
 /**
@@ -5265,7 +5345,7 @@ enum nl80211_dfs_state {
  *	%NL80211_ATTR_WDEV.
  */
 enum nl80211_protocol_features {
-	NL80211_PROTOCOL_FEATURE_SPLIT_WIPHY_DUMP = 1 << 0,
+	NL80211_PROTOCOL_FEATURE_SPLIT_WIPHY_DUMP =	1 << 0,
 };
 
 /**
@@ -5287,7 +5367,7 @@ enum nl80211_crit_proto_id {
 };
 
 /* maximum duration for critical protocol measures */
-#define NL80211_CRIT_PROTO_MAX_DURATION		5000	/* msec */
+#define NL80211_CRIT_PROTO_MAX_DURATION		5000 /* msec */
 
 /**
  * enum nl80211_rxmgmt_flags - flags for received management frame.
@@ -5331,9 +5411,9 @@ struct nl80211_vendor_cmd_info {
  * @NL80211_TDLS_PEER_WMM: TDLS peer is WMM capable.
  */
 enum nl80211_tdls_peer_capability {
-	NL80211_TDLS_PEER_HT = 1 << 0,
-	NL80211_TDLS_PEER_VHT = 1 << 1,
-	NL80211_TDLS_PEER_WMM = 1 << 2,
+	NL80211_TDLS_PEER_HT = 1<<0,
+	NL80211_TDLS_PEER_VHT = 1<<1,
+	NL80211_TDLS_PEER_WMM = 1<<2,
 };
 
 /**
@@ -5356,7 +5436,8 @@ enum nl80211_sched_scan_plan {
 
 	/* keep last */
 	__NL80211_SCHED_SCAN_PLAN_AFTER_LAST,
-	NL80211_SCHED_SCAN_PLAN_MAX = __NL80211_SCHED_SCAN_PLAN_AFTER_LAST - 1
+	NL80211_SCHED_SCAN_PLAN_MAX =
+		__NL80211_SCHED_SCAN_PLAN_AFTER_LAST - 1
 };
 
 /**
@@ -5582,4 +5663,4 @@ enum nl80211_external_auth_action {
 	NL80211_EXTERNAL_AUTH_ABORT,
 };
 
-#endif				/* __LINUX_NL80211_H */
+#endif /* __LINUX_NL80211_H */
