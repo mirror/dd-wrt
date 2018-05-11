@@ -49,7 +49,6 @@ static int wfputs(char *buf, webs_t fp);
 
 static void send_authenticate(webs_t conn_fp);
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1217,15 +1216,22 @@ static void *handle_request(void *arg)
 			if (handler->output && file_found) {
 				handler->output(method_type, handler, file, conn_fp);
 			} else {
-				send_error(conn_fp, 404, "Not Found", NULL, "File not found.");
+				char *fname;
+				asprintf(&fname, "File %s not found.", file);
+				send_error(conn_fp, 404, "Not Found", NULL, fname);
+				free(fname);
 			}
 
 			break;
 
 		}
 
-		if (!handler || !handler->pattern)
-			send_error(conn_fp, 404, "Not Found", NULL, "File not found.");
+		if (!handler || !handler->pattern) {
+			char *fname;
+			asprintf(&fname, "File %s not found.", file);
+			send_error(conn_fp, 404, "Not Found", NULL, fname);
+			free(fname);
+		}
 	}
 
       out:;
@@ -1272,7 +1278,7 @@ static void *handle_request(void *arg)
 	return NULL;
 }
 
-static void				// add by honor 2003-04-16
+static void			// add by honor 2003-04-16
 get_client_ip_mac(int conn_fd, webs_t conn_fp)
 {
 	struct sockaddr_in sa;
@@ -1305,7 +1311,6 @@ static void handle_sigchld(int sig)
 {
 	while (waitpid(-1, NULL, WNOHANG) > 0) ;
 }
-
 
 #ifdef HAVE_OPENSSL
 #define SSLBUFFERSIZE 16384
