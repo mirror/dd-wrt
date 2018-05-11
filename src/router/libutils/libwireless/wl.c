@@ -150,7 +150,7 @@ int has_vht160(char *prefix)
 	char caps[WLC_IOCTL_MEDLEN];
 	char *next;
 	if (wl_iovar_get(prefix, "cap", (void *)caps, sizeof(caps)))
-		return 4;	//minimum is default
+		return 0;	// error
 	foreach(cap, caps, next) {
 		if (!strcmp(cap, "160")) {
 			return 1;
