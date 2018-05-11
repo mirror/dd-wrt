@@ -149,7 +149,9 @@ int has_vht160(char *prefix)
 	char cap[WLC_IOCTL_SMLEN];
 	char caps[WLC_IOCTL_MEDLEN];
 	char *next;
-	if (wl_iovar_get(prefix, "cap", (void *)caps, sizeof(caps)))
+	char *ifname = nvram_nget("%s_ifname", prefix);
+
+	if (wl_iovar_get(ifname, "cap", (void *)caps, sizeof(caps)))
 		return 0;	// error
 	foreach(cap, caps, next) {
 		if (!strcmp(cap, "160")) {
@@ -2016,7 +2018,7 @@ int getWifiInfo(char *ifname, unsigned char *mac, int field)
 		si = (struct ieee80211req_sta_info *)cp;
 		if (!memcmp(&si->isi_macaddr[0], mac, 6)) {
 			close(s);
-			
+
 			int result = 0;
 
 			char turbo[32];
@@ -3343,7 +3345,8 @@ int get_maxbssid(char *name)
 	char cap[WLC_IOCTL_SMLEN];
 	char caps[WLC_IOCTL_MEDLEN];
 	char *next;
-	if (wl_iovar_get(name, "cap", (void *)caps, sizeof(caps)))
+	char *ifname = nvram_nget("%s_ifname", prefix);
+	if (wl_iovar_get(ifname, "cap", (void *)caps, sizeof(caps)))
 		return 4;	//minimum is default
 	foreach(cap, caps, next) {
 		if (!strcmp(cap, "mbss16")) {
