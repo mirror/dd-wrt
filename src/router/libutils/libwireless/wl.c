@@ -3345,7 +3345,7 @@ int get_maxbssid(char *name)
 	char cap[WLC_IOCTL_SMLEN];
 	char caps[WLC_IOCTL_MEDLEN];
 	char *next;
-	char *ifname = nvram_nget("%s_ifname", prefix);
+	char *ifname = nvram_nget("%s_ifname", name);
 	if (wl_iovar_get(ifname, "cap", (void *)caps, sizeof(caps)))
 		return 4;	//minimum is default
 	foreach(cap, caps, next) {
