@@ -562,6 +562,8 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 	}
 	if (sinfo[NL80211_STA_INFO_DATA_ACK_SIGNAL_AVG]) {
 		mac80211_info->wci->signal_avg = (int8_t) nla_get_u8(sinfo[NL80211_STA_INFO_DATA_ACK_SIGNAL_AVG]);
+		if (mac80211_info->wci->signal_avg > 0)
+			mac80211_info->wci->signal_avg = -1;
 	} else {
 		mac80211_info->wci->signal_avg = -1;
 	}
