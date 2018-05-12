@@ -3292,6 +3292,8 @@ void start_wan(int status)
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	if (getWET()) {
 		dns_to_resolv();
+		stop_process_monitor();
+		start_process_monitor();
 		return;
 	}
 	if (isClient()) {
