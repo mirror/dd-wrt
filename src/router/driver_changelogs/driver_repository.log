@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r4079 | brainslayer | 2018-05-12 06:27:45 +0200 (Sat, 12 May 2018) | 1 line
+
+filter invalid rssi results for ack data within driver as well
+------------------------------------------------------------------------
 r4078 | brainslayer | 2018-05-12 05:18:13 +0200 (Sat, 12 May 2018) | 1 line
 
 fix ack signal for ath9k and avg signal support for ath9k and ath10k
