@@ -242,6 +242,7 @@ struct wifi_client_info {
 	uint16_t txrate;
 	uint32_t rxrate;
 	int8_t signal;
+	int8_t signal_avg;
 	uint32_t noise;
 	uint32_t snr;
 	int8_t mcs;
