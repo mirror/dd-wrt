@@ -1,4 +1,16 @@
 ------------------------------------------------------------------------
+r4083 | brainslayer | 2018-05-12 11:24:35 +0200 (Sat, 12 May 2018) | 1 line
+
+Configure channel dwell time from duration of the scan request
+------------------------------------------------------------------------
+r4082 | brainslayer | 2018-05-12 11:24:20 +0200 (Sat, 12 May 2018) | 1 line
+
+Configure channel dwell time from duration of the scan request
+------------------------------------------------------------------------
+r4081 | brainslayer | 2018-05-12 11:22:16 +0200 (Sat, 12 May 2018) | 1 line
+
+add arm64
+------------------------------------------------------------------------
 r4080 | brainslayer | 2018-05-12 07:32:11 +0200 (Sat, 12 May 2018) | 1 line
 
 new toolchains
