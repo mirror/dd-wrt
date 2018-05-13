@@ -1,5 +1,5 @@
 #CC = 
-CFLAGS = -Wall $(COPTS)
+CFLAGS = -Wall $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
 CFLAGS += -Wall -Werror -Wsign-compare 
 
 NSTXD_SRCS = nstxd.c nstx_encode.c nstx_pstack.c nstx_dns.c nstx_tuntap.c nstx_queue.c
