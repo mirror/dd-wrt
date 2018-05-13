@@ -547,6 +547,14 @@
 # http://www.isc.org/files/auth.html
 #dhcp-authoritative
 
+# Set the DHCP server to enable DHCPv4 Rapid Commit Option per RFC 4039.
+# In this mode it will respond to a DHCPDISCOVER message including a Rapid Commit
+# option with a DHCPACK including a Rapid Commit option and fully committed address
+# and configuration information. This must only be enabled if either the server is 
+# the only server for the subnet, or multiple servers are present and they each
+# commit a binding for all clients.
+#dhcp-rapid-commit
+
 # Run an executable when a DHCP lease is created or destroyed.
 # The arguments sent to the script are "add" or "del",
 # then the MAC address, the IP address and finally the hostname

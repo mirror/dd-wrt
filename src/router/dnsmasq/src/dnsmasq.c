@@ -768,7 +768,10 @@ int main (int argc, char **argv)
 	  _exit(0);
 	}
       
-      my_syslog(LOG_INFO, _("DNSSEC validation enabled"));
+      if (option_bool(OPT_DNSSEC_IGN_NS))
+	my_syslog(LOG_INFO, _("DNSSEC validation enabled but all unsigned answers are trusted"));
+      else
+	my_syslog(LOG_INFO, _("DNSSEC validation enabled"));
       
       daemon->dnssec_no_time_check = option_bool(OPT_DNSSEC_TIME);
       if (option_bool(OPT_DNSSEC_TIME) && !daemon->back_to_the_future)

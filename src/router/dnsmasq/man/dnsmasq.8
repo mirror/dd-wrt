@@ -712,10 +712,7 @@ permitted to reduce the cache size below the default when DNSSEC is
 enabled. The nameservers upstream of dnsmasq must be DNSSEC-capable,
 ie capable of returning DNSSEC records with data. If they are not,
 then dnsmasq will not be able to determine the trusted status of
-answers. In the default mode, this means that all replies will be
-marked as untrusted. If 
-.B --dnssec-check-unsigned
-is set and the upstream servers don't support DNSSEC, then DNS service will be entirely broken.
+answers and this means that DNS service will be entirely broken.
 .TP
 .B --trust-anchor=[<class>],<domain>,<key-tag>,<algorithm>,<digest-type>,<digest>
 Provide DS records to act a trust anchors for DNSSEC
@@ -724,17 +721,19 @@ key(s) (KSK) of the root zone,
 but trust anchors for limited domains are also possible. The current
 root-zone trust anchors may be downloaded from https://data.iana.org/root-anchors/root-anchors.xml 
 .TP
-.B --dnssec-check-unsigned
-As a default, dnsmasq does not check that unsigned DNS replies are
-legitimate: they are assumed to be valid and passed on (without the
+.B --dnssec-check-unsigned[=no]
+As a default, dnsmasq checks that unsigned DNS replies are
+legitimate: this entails possible extra queries even for the majority of DNS
+zones which are not, at the moment, signed. If
+.B --dnssec-check-unsigned=no
+appears in the configuration, then such replies they are assumed to be valid and passed on (without the
 "authentic data" bit set, of course). This does not protect against an
 attacker forging unsigned replies for signed DNS zones, but it is
-fast. If this flag is set, dnsmasq will check the zones of unsigned
-replies, to ensure that unsigned replies are allowed in those
-zones. The cost of this is more upstream queries and slower
-performance. See also the warning about upstream servers in the
-section on 
-.B --dnssec
+fast.
+
+Versions of dnsmasq prior to 2.80 defaulted to not checking unsigned replies, and used 
+.B --dnssec-check-unsigned
+to switch this on. Such configurations will continue to work as before, but those which used the default of no checking will need to be altered to explicitly select no checking. The new default is because switching off checking for unsigned replies is inherently dangerous. Not only does it open the possiblity of forged replies, but it allows everything to appear to be working even when the upstream namesevers do not support DNSSEC, and in this case no DNSSEC validation at all is occuring.
 .TP
 .B --dnssec-no-timecheck
 DNSSEC signatures are only valid for specified time windows, and should be rejected outside those windows. This generates an
@@ -1451,6 +1450,13 @@ to get a lease without a tedious timeout under all circumstances. It also
 allows dnsmasq to rebuild its lease database without each client needing to 
 reacquire a lease, if the database is lost. For DHCPv6 it sets the
 priority in replies to 255 (the maximum) instead of 0 (the minimum).
+.TP
+.B --dhcp-rapid-commit
+Enable DHCPv4 Rapid Commit Option specified in RFC 4039. When enabled, dnsmasq
+will respond to a DHCPDISCOVER message including a Rapid Commit
+option with a DHCPACK including a Rapid Commit option and fully committed
+address and configuration information. Should only be enabled if either the
+server is  the only server for the subnet, or multiple servers are present and they each commit a binding for all clients.
 .TP
 .B --dhcp-alternate-port[=<server port>[,<client port>]]
 (IPv4 only) Change the ports used for DHCP from the default. If this option is
