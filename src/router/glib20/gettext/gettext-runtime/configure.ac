@@ -1,5 +1,5 @@
 dnl Configuration for the gettext-runtime directory of GNU gettext
-dnl Copyright (C) 1995-1999, 2000-2010 Free Software Foundation, Inc.
+dnl Copyright (C) 1995-2010, 2015-2016 Free Software Foundation, Inc.
 dnl
 dnl This program is free software: you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -102,7 +102,7 @@ AH_BOTTOM([
 #endif
 
 /* Extra OS/2 (emx+gcc) defines.  */
-#ifdef __EMX__
+#if defined __EMX__ && !defined __KLIBC__
 # include "intl/os2compat.h"
 #endif
 ])

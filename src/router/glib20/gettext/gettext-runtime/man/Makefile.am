@@ -1,5 +1,6 @@
 ## Makefile for the gettext-runtime/man subdirectory of GNU gettext
-## Copyright (C) 2001-2003, 2006, 2009 Free Software Foundation, Inc.
+## Copyright (C) 2001-2003, 2006, 2009, 2015-2016 Free Software Foundation,
+## Inc.
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -171,7 +172,8 @@ textdomain.3.html: textdomain.3.in
 bindtextdomain.3.html: bindtextdomain.3.in
 bind_textdomain_codeset.3.html: bind_textdomain_codeset.3.in
 
-install-html: installdirs-html
+install-html-local:
+	$(MKDIR_P) $(DESTDIR)$(htmldir)
 	for file in $(man_HTML); do \
 	  if test -f $$file; then dir=.; else dir=$(srcdir); fi; \
 	  $(INSTALL_DATA) $$dir/$$file $(DESTDIR)$(htmldir)/$$file; \

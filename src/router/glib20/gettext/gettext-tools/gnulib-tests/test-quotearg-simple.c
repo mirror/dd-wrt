@@ -1,5 +1,5 @@
 /* Test of quotearg family of functions.
-   Copyright (C) 2008-2014 Free Software Foundation, Inc.
+   Copyright (C) 2008-2016 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -57,6 +57,28 @@ static struct result_groups results_g[] = {
       "'a\\b'", "'" LQ RQ "'", "'" LQ RQ "'" },
     { "''", "'1'", 3, "'simple'", "' \t\n'\\''\"\033?""?/\\'", "'a:b'",
       "'a\\b'", "'" LQ RQ "'", "'" LQ RQ "'" } },
+
+  /* shell_escape_quoting_style */
+  { { "''", "''$'\\0''1'$'\\0'", 15, "simple",
+      "' '$'\\t\\n'\\''\"'$'\\033''?""?/\\'", "a:b",
+      "'a\\b'", "''$'" LQ_ENC RQ_ENC "'", LQ RQ },
+    { "''", "''$'\\0''1'$'\\0'", 15, "simple",
+      "' '$'\\t\\n'\\''\"'$'\\033''?""?/\\'", "a:b",
+      "'a\\b'", "''$'" LQ_ENC RQ_ENC "'", LQ RQ },
+    { "''", "''$'\\0''1'$'\\0'", 15, "simple",
+      "' '$'\\t\\n'\\''\"'$'\\033''?""?/\\'", "'a:b'",
+      "'a\\b'", "''$'" LQ_ENC RQ_ENC "'", LQ RQ } },
+
+  /* shell_escape_always_quoting_style */
+  { { "''", "''$'\\0''1'$'\\0'", 15, "'simple'",
+      "' '$'\\t\\n'\\''\"'$'\\033''?""?/\\'", "'a:b'",
+      "'a\\b'", "''$'" LQ_ENC RQ_ENC "'", "'" LQ RQ "'" },
+    { "''", "''$'\\0''1'$'\\0'", 15, "'simple'",
+      "' '$'\\t\\n'\\''\"'$'\\033''?""?/\\'", "'a:b'",
+      "'a\\b'", "''$'" LQ_ENC RQ_ENC "'", "'" LQ RQ "'" },
+    { "''", "''$'\\0''1'$'\\0'", 15, "'simple'",
+      "' '$'\\t\\n'\\''\"'$'\\033''?""?/\\'", "'a:b'",
+      "'a\\b'", "''$'" LQ_ENC RQ_ENC "'", "'" LQ RQ "'" } },
 
   /* c_quoting_style */
   { { "\"\"", "\"\\0001\\0\"", 9, "\"simple\"",

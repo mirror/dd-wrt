@@ -1,8 +1,8 @@
 #!/bin/sh
 # Print a version string.
-scriptversion=2014-12-02.19; # UTC
+scriptversion=2016-05-08.18; # UTC
 
-# Copyright (C) 2007-2014 Free Software Foundation, Inc.
+# Copyright (C) 2007-2016 Free Software Foundation, Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -101,8 +101,8 @@ while test $# -gt 0; do
   case $1 in
     --help) echo "$usage"; exit 0;;
     --version) echo "$version"; exit 0;;
-    --prefix) shift; prefix="$1";;
-    --fallback) shift; fallback="$1";;
+    --prefix) shift; prefix=${1?};;
+    --fallback) shift; fallback=${1?};;
     -*)
       echo "$0: Unknown option '$1'." >&2
       echo "$0: Try '--help' for more information." >&2
@@ -221,6 +221,6 @@ printf %s "$v"
 # eval: (add-hook 'write-file-hooks 'time-stamp)
 # time-stamp-start: "scriptversion="
 # time-stamp-format: "%:y-%02m-%02d.%02H"
-# time-stamp-time-zone: "UTC"
+# time-stamp-time-zone: "UTC0"
 # time-stamp-end: "; # UTC"
 # End:
