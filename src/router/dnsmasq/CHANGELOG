@@ -1,3 +1,22 @@
+version 2.80
+	Add support for RFC 4039 DHCP rapid commit. Thanks to Ashram Method
+	for the initial patch and motivation.
+
+	Alter the default for dnssec-check-unsigned. Versions of
+	dnsmasq prior to 2.80 defaulted to not checking unsigned
+	replies, and used --dnssec-check-unsigned to switch
+        this on. Such configurations will continue to work as before,
+        but those which used the default of no checking will need to be
+        altered to explicitly select no checking. The new default is
+        because switching off checking for unsigned replies is
+	inherently dangerous. Not only does it open the possiblity of forged
+        replies, but it allows everything to appear to be working even
+        when the upstream namesevers do not support DNSSEC, and in this
+        case no DNSSEC validation at all is occuring.
+
+
+
+
 version 2.79
 	Fix parsing of CNAME arguments, which are confused by extra spaces.
 	Thanks to Diego Aguirre for spotting the bug.
