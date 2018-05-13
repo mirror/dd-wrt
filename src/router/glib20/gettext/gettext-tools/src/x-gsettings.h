@@ -1,5 +1,6 @@
 /* xgettext GSettings schema file backend.
-   Copyright (C) 2002-2003, 2006, 2013 Free Software Foundation, Inc.
+   Copyright (C) 2002-2003, 2006, 2013, 2015-2016 Free Software Foundation,
+   Inc.
    Written by Daiki Ueno <ueno@gnu.org>, 2013.
 
    This program is free software: you can redistribute it and/or modify
@@ -27,17 +28,13 @@ extern "C" {
 #endif
 
 
-#define EXTENSIONS_GSETTINGS \
-  { "gschema.xml", "gsettings" }, \
+/* The scanner is implemented as ITS rules, in its/gsettings.its.  */
+
+#define EXTENSIONS_GSETTINGS                    \
+  { "gschema.xml", NULL }, \
 
 #define SCANNERS_GSETTINGS \
-  { "gsettings", extract_gsettings, NULL, NULL, NULL, NULL }, \
-
-/* Scan a gsettings XML file and add its translatable strings to mdlp.  */
-extern void extract_gsettings (FILE *fp, const char *real_filename,
-                               const char *logical_filename,
-                               flag_context_list_table_ty *flag_table,
-                               msgdomain_list_ty *mdlp);
+  { "gsettings", NULL, NULL, NULL, NULL, NULL }, \
 
 
 #ifdef __cplusplus

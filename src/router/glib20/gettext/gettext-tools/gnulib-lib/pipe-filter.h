@@ -1,5 +1,5 @@
-/* Filtering of data through a subprocess.
-   Copyright (C) 2009-2014 Free Software Foundation, Inc.
+/* Filtering of data through a subprocess.  -*- coding: utf-8 -*-
+   Copyright (C) 2009-2016 Free Software Foundation, Inc.
    Written by Bruno Haible <haible@clisp.cons.org>, 2009,
    and Paolo Bonzini <bonzini@gnu.org>, 2009.
 

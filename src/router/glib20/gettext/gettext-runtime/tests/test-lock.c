@@ -1,5 +1,5 @@
 /* Test of locking in multithreaded situations.
-   Copyright (C) 2005, 2008-2012 Free Software Foundation, Inc.
+   Copyright (C) 2005, 2008-2016 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -81,7 +81,11 @@
 
 #if TEST_POSIX_THREADS
 # include <pthread.h>
-# include <sched.h>
+# ifndef __KLIBC__
+#  include <sched.h>
+# else
+#  define sched_yield() pthread_yield()
+# endif
 typedef pthread_t gl_thread_t;
 static inline gl_thread_t gl_thread_create (void * (*func) (void *), void *arg)
 {

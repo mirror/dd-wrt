@@ -1,5 +1,5 @@
 ## Makefile for the gettext-tools/libgettextpo subdirectory of GNU gettext
-## Copyright (C) 1995-1998, 2000-2011 Free Software Foundation, Inc.
+## Copyright (C) 1995-1998, 2000-2011, 2015-2016 Free Software Foundation, Inc.
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -39,6 +39,8 @@ AM_CPPFLAGS = \
   -I.. -I$(top_srcdir) \
   -I../src -I$(top_srcdir)/src \
   -I../intl -I$(top_srcdir)/../gettext-runtime/intl
+
+DEFS = -DIN_LIBGETTEXTPO=1 @DEFS@
 
 # libgettextpo contains the public API for PO files.
 libgettextpo_la_SOURCES = \
@@ -85,17 +87,19 @@ libgettextpo_la_AUXSOURCES = \
   ../src/format-qt.c \
   ../src/format-qt-plural.c \
   ../src/format-kde.c \
+  ../src/format-kde-kuit.c \
   ../src/format-boost.c \
   ../src/format-lua.c \
   ../src/format.c \
   ../src/plural-exp.c \
   ../src/plural-eval.c \
-  ../src/msgl-check.c
+  ../src/msgl-check.c \
+  ../src/sentence.c
 
 # Libtool's library version information for libgettextpo.
 # See the libtool documentation, section "Library interface versions".
 LTV_CURRENT=5
-LTV_REVISION=3
+LTV_REVISION=4
 LTV_AGE=5
 
 # How to build libgettextpo.la.
@@ -111,6 +115,11 @@ libgettextpo_la_LDFLAGS = \
 if WOE32DLL
 libgettextpo_la_SOURCES += ../woe32dll/gettextpo-exports.c
 libgettextpo_la_LDFLAGS += -Wl,--export-all-symbols
+endif
+
+# OS/2 does not support a DLL name longer than 8 characters.
+if OS2
+libgettextpo_la_LDFLAGS += -os2dllname gtpo
 endif
 
 # Version information according to Woe32 conventions.
@@ -151,7 +160,7 @@ config.h: $(BUILT_SOURCES)
 	          sf=`echo "$$f" | sed -e 's,\\.[^.]*$$,,'`.c; \
 	          test -f $$sf || sf=$(srcdir)/$$sf; \
 	          of=`echo "$$f" | sed -e 's,^.*/,,' -e 's,\\.[^.]*$$,,'`.$(OBJEXT); \
-	          $(COMPILE) -c $$sf || { rm -f config.h; exit 1; }; \
+	          $(COMPILE) $(DEFS) -c $$sf || { rm -f config.h; exit 1; }; \
 	          sh ./exported.sh $$of 1>&5; \
 	          rm -f $$of `echo "$$of" | sed -e 's,\\.$(OBJEXT)$$,.lo,'`; \
 	          ;; \
