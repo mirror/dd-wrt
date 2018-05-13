@@ -399,6 +399,9 @@ void start_dnsmasq(void)
 	if (nvram_matchi("dnssec_proxy", 1)) {
 		fprintf(fp, "proxy-dnssec\n");
 	}
+	if (nvram_matchi("dnsmasq_rc", 1)) {
+		fprintf(fp, "dhcp-rapid-commit\n");
+	}
 	/* stop dns rebinding for private addresses */
 	if (nvram_matchi("dnsmasq_no_dns_rebind", 1)) {
 		fprintf(fp, "stop-dns-rebind\n");
