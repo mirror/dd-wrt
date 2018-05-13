@@ -919,7 +919,7 @@ void reply_query(int fd, int family, time_t now)
 		    status = dnssec_validate_ds(now, header, n, daemon->namebuff, daemon->keyname, forward->class);
 		  else
 		    status = dnssec_validate_reply(now, header, n, daemon->namebuff, daemon->keyname, &forward->class, 
-						   option_bool(OPT_DNSSEC_NO_SIGN) && (server->flags & SERV_DO_DNSSEC),
+						   !option_bool(OPT_DNSSEC_IGN_NS) && (server->flags & SERV_DO_DNSSEC),
 						   NULL, NULL);
 		}
 	      
@@ -1504,7 +1504,7 @@ static int tcp_key_recurse(time_t now, int status, struct dns_header *header, si
 	new_status = dnssec_validate_ds(now, header, n, name, keyname, class);
       else 
 	new_status = dnssec_validate_reply(now, header, n, name, keyname, &class,
-					   option_bool(OPT_DNSSEC_NO_SIGN) && (server->flags & SERV_DO_DNSSEC),
+					   !option_bool(OPT_DNSSEC_IGN_NS) && (server->flags & SERV_DO_DNSSEC),
 					   NULL, NULL);
       
       if (new_status != STAT_NEED_DS && new_status != STAT_NEED_KEY)
