@@ -391,6 +391,8 @@ void start_dnsmasq(void)
 		}
 		if (nvram_matchi("dnssec_cu", 1)) {
 			fprintf(fp, "dnssec-check-unsigned\n");
+		} else {
+			fprintf(fp, "dnssec-check-unsigned=no\n");
 		}
 	}
 #endif
@@ -453,11 +455,10 @@ void stop_dnsmasq(void)
 }
 #endif
 
-
 #ifdef TEST
 int main(int argc, char *argv[])
 {
-    start_dnsmasq();
+	start_dnsmasq();
 
 }
 #endif
