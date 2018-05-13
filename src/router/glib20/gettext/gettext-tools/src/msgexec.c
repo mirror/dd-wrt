@@ -1,5 +1,5 @@
 /* Pass translations to a subprocess.
-   Copyright (C) 2001-2012 Free Software Foundation, Inc.
+   Copyright (C) 2001-2016 Free Software Foundation, Inc.
    Written by Bruno Haible <haible@clisp.cons.org>, 2001.
 
    This program is free software: you can redistribute it and/or modify
@@ -71,6 +71,8 @@ static const char *sub_path;
 static char **sub_argv;
 static int sub_argc;
 
+static bool newline;
+
 /* Maximum exit code encountered.  */
 static int exitcode;
 
@@ -80,6 +82,7 @@ static const struct option long_options[] =
   { "directory", required_argument, NULL, 'D' },
   { "help", no_argument, NULL, 'h' },
   { "input", required_argument, NULL, 'i' },
+  { "newline", no_argument, NULL, CHAR_MAX + 2 },
   { "properties-input", no_argument, NULL, 'P' },
   { "stringtable-input", no_argument, NULL, CHAR_MAX + 1 },
   { "version", no_argument, NULL, 'V' },
@@ -167,6 +170,10 @@ main (int argc, char **argv)
         input_syntax = &input_format_stringtable;
         break;
 
+      case CHAR_MAX + 2: /* --newline */
+        newline = true;
+        break;
+
       default:
         usage (EXIT_FAILURE);
         break;
@@ -182,7 +189,7 @@ License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n\
 This is free software: you are free to change and redistribute it.\n\
 There is NO WARRANTY, to the extent permitted by law.\n\
 "),
-              "2001-2010");
+              "2001-2016");
       printf (_("Written by %s.\n"), proper_name ("Bruno Haible"));
       exit (EXIT_SUCCESS);
     }
@@ -274,6 +281,11 @@ null byte.  The output of \"msgexec 0\" is suitable as input for \"xargs -0\".\n
 "));
       printf ("\n");
       printf (_("\
+Command input:\n"));
+      printf (_("\
+  --newline                   add newline at the end of input\n"));
+      printf ("\n");
+      printf (_("\
 Mandatory arguments to long options are mandatory for short options too.\n"));
       printf ("\n");
       printf (_("\
@@ -352,6 +364,7 @@ process_string (const message_ty *mp, const char *str, size_t len)
       int fd[1];
       void (*orig_sigpipe_handler)(int);
       int exitstatus;
+      char *newstr;
 
       /* Set environment variables for the subprocess.
          Note: These environment variables, especially MSGEXEC_MSGCTXT and
@@ -399,10 +412,22 @@ process_string (const message_ty *mp, const char *str, size_t len)
          successfully without having read all of the input that we feed it.  */
       orig_sigpipe_handler = signal (SIGPIPE, SIG_IGN);
 
-      if (full_write (fd[0], str, len) < len)
+      if (newline)
+        {
+          newstr = XNMALLOC (len + 1, char);
+          memcpy (newstr, str, len);
+          newstr[len++] = '\n';
+        }
+      else
+        newstr = (char *) str;
+
+      if (full_write (fd[0], newstr, len) < len)
         if (errno != EPIPE)
           error (EXIT_FAILURE, errno,
                  _("write to %s subprocess failed"), sub_name);
+
+      if (newstr != str)
+        free (newstr);
 
       close (fd[0]);
 

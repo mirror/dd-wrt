@@ -1,15 +1,18 @@
 # Swedish messages for gettext
-# Copyright © 1996, 1997, 1998, 2001, 2002, 2003, 2007, 2010, 2013 Free Software Foundation, Inc.
+# Copyright © 1996, 1997, 1998, 2001, 2002, 2003, 2007, 2010, 2013, 2016 Free Software Foundation, Inc.
 # This file is distributed under the same license as the gettext package.
-# Jan Djärv <jan.h.d@swipnet.se>, 1998, 2001, 2002, 2003, 2006, 2007, 2010, 2013
 #
+# Jan Djärv <jan.h.d@swipnet.se>, 1998, 2001, 2002, 2003, 2006, 2007, 2010, 2013
+# Göran Uddeborg <goeran@uddeborg.se>, 2016.
+#
+# $Revision: 1.2 $
 msgid ""
 msgstr ""
-"Project-Id-Version: gettext-runtime 0.18.2\n"
+"Project-Id-Version: gettext-runtime 0.19.4.73\n"
 "Report-Msgid-Bugs-To: bug-gnu-gettext@gnu.org\n"
-"POT-Creation-Date: 2014-12-24 16:27+0900\n"
-"PO-Revision-Date: 2013-03-10 16:05+0100\n"
-"Last-Translator: Jan Djärv <jan.h.d@swipnet.se>\n"
+"POT-Creation-Date: 2016-06-11 22:08+0900\n"
+"PO-Revision-Date: 2016-05-26 22:53+0200\n"
+"Last-Translator: Göran Uddeborg <goeran@uddeborg.se>\n"
 "Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
 "Language: sv\n"
 "MIME-Version: 1.0\n"
@@ -25,68 +28,73 @@ msgstr "skrivfel"
 msgid "Unknown system error"
 msgstr "Okänt systemfel"
 
-#: gnulib-lib/getopt.c:547 gnulib-lib/getopt.c:576
+#: gnulib-lib/getopt.c:575 gnulib-lib/getopt.c:604
 #, c-format
 msgid "%s: option '%s' is ambiguous; possibilities:"
-msgstr "%s: flaggan \"%s\" är tvetydig; alternativ:"
+msgstr "%s: flaggan ”%s” är tvetydig; alternativ:"
 
-#: gnulib-lib/getopt.c:624 gnulib-lib/getopt.c:628
+#: gnulib-lib/getopt.c:619
+#, c-format
+msgid "%s: option '%s' is ambiguous\n"
+msgstr "%s: flaggan ”%s” är tvetydig\n"
+
+#: gnulib-lib/getopt.c:654 gnulib-lib/getopt.c:658
 #, c-format
 msgid "%s: option '--%s' doesn't allow an argument\n"
-msgstr "%s: flaggan \"--%s\" tar inget argument\n"
+msgstr "%s: flaggan ”--%s” tar inget argument\n"
 
-#: gnulib-lib/getopt.c:637 gnulib-lib/getopt.c:642
+#: gnulib-lib/getopt.c:667 gnulib-lib/getopt.c:672
 #, c-format
 msgid "%s: option '%c%s' doesn't allow an argument\n"
-msgstr "%s: flaggan \"%c%s\" tar inget argument\n"
+msgstr "%s: flaggan ”%c%s” tar inget argument\n"
 
-#: gnulib-lib/getopt.c:685 gnulib-lib/getopt.c:704
+#: gnulib-lib/getopt.c:715 gnulib-lib/getopt.c:734
 #, c-format
 msgid "%s: option '--%s' requires an argument\n"
-msgstr "%s: flaggan \"%s\" kräver ett argument\n"
+msgstr "%s: flaggan ”%s” kräver ett argument\n"
 
-#: gnulib-lib/getopt.c:742 gnulib-lib/getopt.c:745
+#: gnulib-lib/getopt.c:772 gnulib-lib/getopt.c:775
 #, c-format
 msgid "%s: unrecognized option '--%s'\n"
-msgstr "%s: okänd flagga \"--%s\"\n"
+msgstr "%s: okänd flagga ”--%s”\n"
 
-#: gnulib-lib/getopt.c:753 gnulib-lib/getopt.c:756
+#: gnulib-lib/getopt.c:783 gnulib-lib/getopt.c:786
 #, c-format
 msgid "%s: unrecognized option '%c%s'\n"
-msgstr "%s: okänd flagga \"%c%s\"\n"
+msgstr "%s: okänd flagga ”%c%s”\n"
 
-#: gnulib-lib/getopt.c:805 gnulib-lib/getopt.c:808
+#: gnulib-lib/getopt.c:835 gnulib-lib/getopt.c:838
 #, c-format
 msgid "%s: invalid option -- '%c'\n"
-msgstr "%s: ogiltig flagga -- \"%c\"\n"
+msgstr "%s: ogiltig flagga -- ”%c”\n"
 
-#: gnulib-lib/getopt.c:861 gnulib-lib/getopt.c:878 gnulib-lib/getopt.c:1088
-#: gnulib-lib/getopt.c:1106
+#: gnulib-lib/getopt.c:891 gnulib-lib/getopt.c:908 gnulib-lib/getopt.c:1118
+#: gnulib-lib/getopt.c:1136
 #, c-format
 msgid "%s: option requires an argument -- '%c'\n"
-msgstr "%s: flaggan kräver ett argument -- \"%c\"\n"
+msgstr "%s: flaggan kräver ett argument -- ”%c”\n"
 
-#: gnulib-lib/getopt.c:934 gnulib-lib/getopt.c:950
+#: gnulib-lib/getopt.c:964 gnulib-lib/getopt.c:980
 #, c-format
 msgid "%s: option '-W %s' is ambiguous\n"
-msgstr "%s: flaggan \"-W %s\" är tvetydig\n"
+msgstr "%s: flaggan ”-W %s” är tvetydig\n"
 
-#: gnulib-lib/getopt.c:974 gnulib-lib/getopt.c:992
+#: gnulib-lib/getopt.c:1004 gnulib-lib/getopt.c:1022
 #, c-format
 msgid "%s: option '-W %s' doesn't allow an argument\n"
-msgstr "%s: flaggan \"-W %s\" tar inget argument\n"
+msgstr "%s: flaggan ”-W %s” tar inget argument\n"
 
-#: gnulib-lib/getopt.c:1013 gnulib-lib/getopt.c:1031
+#: gnulib-lib/getopt.c:1043 gnulib-lib/getopt.c:1061
 #, c-format
 msgid "%s: option '-W %s' requires an argument\n"
-msgstr "%s: flaggan \"-W %s\" kräver ett argument\n"
+msgstr "%s: flaggan ”-W %s” kräver ett argument\n"
 
-#: gnulib-lib/xmalloc.c:37
+#: gnulib-lib/xmalloc.c:38
 #, c-format
 msgid "memory exhausted"
 msgstr "minnet slut"
 
-#: src/envsubst.c:112 src/gettext.c:133 src/ngettext.c:123
+#: src/envsubst.c:112 src/gettext.c:134 src/ngettext.c:123
 #, c-format, no-wrap
 msgid ""
 "Copyright (C) %s Free Software Foundation, Inc.\n"
@@ -99,7 +107,7 @@ msgstr ""
 "Detta program är fri programvara.  Du kan modifiera och distribuera den.\n"
 "Det finns inte NÅGON SOM HELST GARANTI, till den grad som lagen tillåter.\n"
 
-#: src/envsubst.c:118 src/gettext.c:139 src/ngettext.c:129
+#: src/envsubst.c:118 src/gettext.c:140 src/ngettext.c:129
 #, c-format
 msgid "Written by %s.\n"
 msgstr "Skrivet av %s.\n"
@@ -109,20 +117,20 @@ msgstr "Skrivet av %s.\n"
 msgid "Bruno Haible"
 msgstr "Bruno Haible"
 
-#: src/envsubst.c:127 src/gettext.c:157 src/ngettext.c:141
+#: src/envsubst.c:127 src/gettext.c:158 src/ngettext.c:141
 #, c-format
 msgid "too many arguments"
 msgstr "för många argument"
 
-#: src/envsubst.c:138 src/gettext.c:167 src/ngettext.c:153
+#: src/envsubst.c:138 src/gettext.c:168 src/ngettext.c:153
 #, c-format
 msgid "missing arguments"
 msgstr "argument saknas"
 
-#: src/envsubst.c:171 src/gettext.c:238 src/ngettext.c:207
+#: src/envsubst.c:171 src/gettext.c:239 src/ngettext.c:207
 #, c-format
 msgid "Try '%s --help' for more information.\n"
-msgstr "Försök med \"%s --help\" för mer information.\n"
+msgstr "Försök med ”%s --help” för mer information.\n"
 
 #: src/envsubst.c:176
 #, c-format, no-wrap
@@ -188,7 +196,7 @@ msgstr ""
 #. for this package.  Please add _another line_ saying
 #. "Report translation bugs to <...>\n" with the address for translation
 #. bugs (typically your translation team's web or email address).
-#: src/envsubst.c:219 src/gettext.c:279 src/ngettext.c:245
+#: src/envsubst.c:219 src/gettext.c:280 src/ngettext.c:245
 msgid "Report bugs to <bug-gnu-gettext@gnu.org>.\n"
 msgstr ""
 "Rapportera fel till <bug-gnu-gettext@gnu.org>.\n"
@@ -198,18 +206,18 @@ msgstr ""
 #: src/envsubst.c:442
 #, c-format
 msgid "error while reading \"%s\""
-msgstr "fel uppstod då \"%s\" lästes"
+msgstr "fel uppstod då ”%s” lästes"
 
 #: src/envsubst.c:443
 msgid "standard input"
 msgstr "standard in"
 
 #. This is a proper name. See the gettext manual, section Names.
-#: src/gettext.c:139 src/ngettext.c:129
+#: src/gettext.c:140 src/ngettext.c:129
 msgid "Ulrich Drepper"
 msgstr "Ulrich Drepper"
 
-#: src/gettext.c:243
+#: src/gettext.c:244
 #, c-format, no-wrap
 msgid ""
 "Usage: %s [OPTION] [[TEXTDOMAIN] MSGID]\n"
@@ -218,12 +226,12 @@ msgstr ""
 "Användning: %s [FLAGGA] [[TEXTDOMÄN] MSGID]\n"
 "eller       %s [FLAGGA] -s [MSGID]...\n"
 
-#: src/gettext.c:249
+#: src/gettext.c:250
 #, c-format, no-wrap
 msgid "Display native language translation of a textual message.\n"
 msgstr "Visa lokala språkets översättning av textmeddelande.\n"
 
-#: src/gettext.c:253
+#: src/gettext.c:254
 #, c-format, no-wrap
 msgid ""
 "  -d, --domain=TEXTDOMAIN   retrieve translated messages from TEXTDOMAIN\n"
@@ -239,12 +247,12 @@ msgstr ""
 "  -e                        expandera några kontrollsekvenser\n"
 "  -E                        (ignorerad för bakåtkompatibilitet)\n"
 "  -h, --help                visa denna hjälptext och avsluta\n"
-"  -n                        skriv inte ut avslutande radframmatning\n"
+"  -n                        skriv inte ut avslutande nyrad\n"
 "  -V, --version             visa versionsinformation och avsluta\n"
 "  [TEXTDOMÄN] MSGID         hämta översatt meddelande som motsvarar\n"
 "                            MSGID från TEXTDOMÄN\n"
 
-#: src/gettext.c:264
+#: src/gettext.c:265
 #, c-format, no-wrap
 msgid ""
 "If the TEXTDOMAIN parameter is not given, the domain is determined from the\n"
@@ -259,7 +267,7 @@ msgstr ""
 "Om parametern TEXTDOMÄN utelämnas bestäms domänen av miljövariabeln\n"
 "TEXTDOMAIN. Om meddelandekatalogen inte hittas i den normala katalogen så\n"
 "kan en annan katalog anges med miljövariabeln TEXTDOMAINDIR.\n"
-"När flaggan -s ges uppträder programmet som kommandot \"echo\".\n"
+"När flaggan -s ges uppträder programmet som kommandot ”echo”.\n"
 "Men det kopierar inte enbart sina argument till standard ut. Istället\n"
 "översätts de argument som hittas i den valda meddelandekatalogen.\n"
 "Normal katalog för meddelandekataloger: %s\n"

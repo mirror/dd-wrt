@@ -1,16 +1,16 @@
-# intl.m4 serial 28 (gettext-0.19)
-dnl Copyright (C) 1995-2014 Free Software Foundation, Inc.
+# intl.m4 serial 29 (gettext-0.19)
+dnl Copyright (C) 1995-2014, 2016 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
 dnl
-dnl This file can can be used in projects which are not available under
+dnl This file can be used in projects which are not available under
 dnl the GNU General Public License or the GNU Library General Public
 dnl License but which still want to provide support for the GNU gettext
 dnl functionality.
 dnl Please note that the actual code of the GNU gettext library is covered
 dnl by the GNU Library General Public License, and the rest of the GNU
-dnl gettext package package is covered by the GNU General Public License.
+dnl gettext package is covered by the GNU General Public License.
 dnl They are *not* in the public domain.
 
 dnl Authors:
@@ -231,6 +231,12 @@ AC_DEFUN([gt_INTL_SUBDIR_CORE],
   AC_CHECK_FUNCS([getcwd getegid geteuid getgid getuid mempcpy munmap \
     stpcpy strcasecmp strdup strtoul tsearch uselocale argz_count \
     argz_stringify argz_next __fsetlocking])
+
+  dnl Solaris 12 provides getlocalename_l, while Illumos doesn't have
+  dnl it nor the equivalent.
+  if test $ac_cv_func_uselocale = yes; then
+    AC_CHECK_FUNCS([getlocalename_l])
+  fi
 
   dnl Use the *_unlocked functions only if they are declared.
   dnl (because some of them were defined without being declared in Solaris

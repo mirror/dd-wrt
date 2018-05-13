@@ -1,5 +1,5 @@
 /* OS dependent parts of libintl.
-   Copyright (C) 2001-2002, 2006 Free Software Foundation, Inc.
+   Copyright (C) 2001-2002, 2006, 2015-2016 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -16,7 +16,7 @@
 
 #if defined __CYGWIN__ || defined __MINGW32__
 # include "intl-exports.c"
-#elif defined __EMX__
+#elif defined __EMX__ && !defined __KLIBC__
 # include "os2compat.c"
 #else
 /* Avoid AIX compiler warning.  */

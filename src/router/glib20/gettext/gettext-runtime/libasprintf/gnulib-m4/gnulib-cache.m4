@@ -1,4 +1,4 @@
-# Copyright (C) 2002-2014 Free Software Foundation, Inc.
+# Copyright (C) 2002-2016 Free Software Foundation, Inc.
 #
 # This file is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 
 
 # Specification in the form of a command-line invocation:
-#   gnulib-tool --import --dir=gettext-runtime/libasprintf --local-dir=gnulib-local --lib=libgnu --source-base=. --m4-base=gnulib-m4 --doc-base=doc --tests-base=tests --aux-dir=../../build-aux --lgpl=2 --makefile-name=Makefile.gnulib --no-conditional-dependencies --libtool --macro-prefix=gl alloca errno verify xsize
+#   gnulib-tool --import --local-dir=gnulib-local --lib=libgnu --source-base=. --m4-base=gnulib-m4 --doc-base=doc --tests-base=tests --aux-dir=../../build-aux --lgpl=2 --makefile-name=Makefile.gnulib --no-conditional-dependencies --libtool --macro-prefix=gl alloca errno verify xsize
 
 # Specification in the form of a few gnulib-tool.m4 macro invocations:
 gl_LOCAL_DIR([../../gnulib-local])

@@ -1,6 +1,6 @@
 # source this file; set up for tests
 
-# Copyright (C) 2009-2014 Free Software Foundation, Inc.
+# Copyright (C) 2009-2016 Free Software Foundation, Inc.
 
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -93,6 +93,27 @@ skip_ () { warn_ "$ME_: skipped test: $@"; Exit 77; }
 fatal_ () { warn_ "$ME_: hard error: $@"; Exit 99; }
 framework_failure_ () { warn_ "$ME_: set-up failure: $@"; Exit 99; }
 
+# This is used to simplify checking of the return value
+# which is useful when ensuring a command fails as desired.
+# I.e., just doing `command ... &&fail=1` will not catch
+# a segfault in command for example.  With this helper you
+# instead check an explicit exit code like
+#   returns_ 1 command ... || fail
+returns_ () {
+  # Disable tracing so it doesn't interfere with stderr of the wrapped command
+  { set +x; } 2>/dev/null
+
+  local exp_exit="$1"
+  shift
+  "$@"
+  test $? -eq $exp_exit && ret_=0 || ret_=1
+
+  if test "$VERBOSE" = yes && test "$gl_set_x_corrupts_stderr_" = false; then
+    set -x
+  fi
+  { return $ret_; } 2>/dev/null
+}
+
 # Sanitize this shell to POSIX mode, if possible.
 DUALCASE=1; export DUALCASE
 if test -n "${ZSH_VERSION+set}" && (emulate sh) >/dev/null 2>&1; then
@@ -129,6 +150,7 @@ fi
 #  ? - not ok
 gl_shell_test_script_='
 test $(echo y) = y || exit 1
+f_local_() { local v=1; }; f_local_ || exit 1
 score_=10
 if test "$VERBOSE" = yes; then
   test -n "$( (exec 3>&1; set -x; P=1 true 2>&3) 2> /dev/null)" && score_=9
@@ -286,13 +308,19 @@ if diff_out_=`exec 2>/dev/null; diff -u "$0" "$0" < /dev/null` \
       fi
     }
   fi
-elif diff_out_=`exec 2>/dev/null; diff -c "$0" "$0" < /dev/null`; then
+elif
+  for diff_opt_ in -U3 -c '' no; do
+    test "$diff_opt_" = no && break
+    diff_out_=`exec 2>/dev/null; diff $diff_opt_ "$0" "$0" </dev/null` && break
+  done
+  test "$diff_opt_" != no
+then
   if test -z "$diff_out_"; then
-    compare_ () { diff -c "$@"; }
+    compare_ () { diff $diff_opt_ "$@"; }
   else
     compare_ ()
     {
-      if diff -c "$@" > diff.out; then
+      if diff $diff_opt_ "$@" > diff.out; then
         # No differences were found, but AIX and HP-UX 'diff' produce output
         # "No differences encountered" or "There are no differences between the
         # files.". Hide this output.
@@ -305,7 +333,7 @@ elif diff_out_=`exec 2>/dev/null; diff -c "$0" "$0" < /dev/null`; then
       fi
     }
   fi
-elif ( cmp --version < /dev/null 2>&1 | grep GNU ) > /dev/null 2>&1; then
+elif cmp -s /dev/null /dev/null 2>/dev/null; then
   compare_ () { cmp -s "$@"; }
 else
   compare_ () { cmp "$@"; }
@@ -444,7 +472,6 @@ setup_ ()
   fi
 
   initial_cwd_=$PWD
-  fail=0
 
   pfx_=`testdir_prefix_`
   test_dir_=`mktempd_ "$initial_cwd_" "$pfx_-$ME_.XXXX"` \
@@ -528,8 +555,9 @@ mktempd_ ()
   # Disallow any trailing slash on specified destdir:
   # it would subvert the post-mktemp "case"-based destdir test.
   case $destdir_ in
-  /) ;;
+  / | //) destdir_slash_=$destdir;;
   */) fail_ "invalid destination dir: remove trailing slash(es)";;
+  *) destdir_slash_=$destdir_/;;
   esac
 
   case $template_ in
@@ -539,20 +567,17 @@ mktempd_ ()
   esac
 
   # First, try to use mktemp.
-  d=`unset TMPDIR; { mktemp -d -t -p "$destdir_" "$template_"; } 2>/dev/null` \
-    || fail=1
+  d=`unset TMPDIR; { mktemp -d -t -p "$destdir_" "$template_"; } 2>/dev/null` &&
 
   # The resulting name must be in the specified directory.
-  case $d in "$destdir_"*);; *) fail=1;; esac
+  case $d in "$destdir_slash_"*) :;; *) false;; esac &&
 
   # It must have created the directory.
-  test -d "$d" || fail=1
+  test -d "$d" &&
 
   # It must have 0700 permissions.  Handle sticky "S" bits.
-  perms=`ls -dgo "$d" 2>/dev/null|tr S -` || fail=1
-  case $perms in drwx------*) ;; *) fail=1;; esac
-
-  test $fail = 0 && {
+  perms=`ls -dgo "$d" 2>/dev/null` &&
+  case $perms in drwx--[-S]---*) :;; *) false;; esac && {
     echo "$d"
     return
   }
@@ -571,7 +596,7 @@ mktempd_ ()
   i_=1
   while :; do
     X_=`rand_bytes_ $nx_`
-    candidate_dir_="$destdir_/$base_template_$X_"
+    candidate_dir_="$destdir_slash_$base_template_$X_"
     err_=`mkdir -m 0700 "$candidate_dir_" 2>&1` \
       && { echo "$candidate_dir_"; return; }
     test $MAX_TRIES_ -le $i_ && break;

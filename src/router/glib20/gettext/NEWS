@@ -1,3 +1,103 @@
+Version 0.19.8 - June 2016
+
+* Support for reproducible builds:
+  - msgfmt now produces little-endian .mo files by default.
+
+* Programming languages support:
+  - XML:
+    xgettext and msgfmt now look for .its files in directories
+    supplied through the GETTEXTDATADIRS or XDG_DATA_DIRS environment
+    variable.
+  - JavaScript:
+    xgettext and msgfmt now recognize numbered arguments in format
+    strings.
+
+* Portability:
+  - Improve OS/2 kLIBC support.
+  - Fix libintl compilation issue with pre-C99 compilers.  It was a
+    regression since 0.19.5.
+  - The AM_GNU_GETTEXT Autoconf macro can now detect musl-libc's
+    gettext as a compatible implementation.
+
+Version 0.19.7 - December 2015
+
+* Programming languages support:
+  - XML:
+    xgettext can now load custom string extraction rules supplied by
+    consumer projects.  The rules are written in XML, utilizing the
+    Internationalization Tag Set (ITS) standard.  All the existing
+    XML-based language scanners (Glade, GSettings, and AppData) are
+    rewritten using ITS.  In addition, msgfmt now has --xml option to
+    merge translations back to the original XML document.
+
+* Portability:
+  - Improve OS/2 kLIBC support (still not complete)
+  - Remove dependency on expat
+
+Version 0.19.6 - September 2015
+
+* Programming languages support:
+  - AppData:
+    xgettext now supports AppData file format, used by software center
+    applications (e.g., GNOME Software) to describe installable
+    applications.
+
+* A new macro AM_GNU_GETTEXT_REQUIRE_VERSION can be used to indicate
+  autopoint to pull the latest available infrastructure, instead of
+  the exact version specified with AM_GNU_GETTEXT_VERSION.  When
+  AM_GNU_GETTEXT_REQUIRE_VERSION is used, AM_GNU_GETTEXT_VERSION is
+  ignored.
+
+* po/Makefile.in.in can now insert the file $(DOMAIN).pot-header to
+  $(DOMAIN).pot, instead of the standard header comments.
+
+* Bug fixes:
+  - Fix mishandling of gettext version numbers for minor releases, in
+    po-mode.el and gettextize.
+  - Fix build with --enable-relocatable.
+
+Version 0.19.5 - July 2015
+
+* xgettext now has a feature to perform syntax checks on msgid, which
+  could enforce common styles of translatable strings, such as to
+  prefer Unicode characters to the corresponding ASCII characters.
+  They can be enabled with --check option or special "xgettext: "
+  comment in the source code.  By default, no syntax checks are
+  enabled.
+
+* msgfilter and msgexec now have an option --newline, which appends a
+  newline character to filter input and trims it from the filter
+  output.  This would allow filter programs to be more POSIX friendly.
+
+* The base Unicode standard is now updated to 8.0.0.  This
+  particularly improves "\N{...}" notation handling of xgettext for
+  Perl and Python.
+
+* msginit is now capable of generating "Plural-Forms:" from Unicode
+  CLDR.  This feature is still experimental, but you can try it by
+  setting the GETTEXTCLDRDIR environment variable pointing to the
+  directory where the CLDR archive is extracted.  The actual
+  conversion is done by a helper program 'cldr-plural', which can be
+  used as a generic converter and evaluator of CLDR plural forms.
+
+* Programming languages support:
+  - C++ with KDE: xgettext and msgfmt can now recognize KUIT (KDE User
+    Interface Text) markup.  See the documentation section "KUIT
+    Format Strings" for more info.
+  - C++ with KDE: xgettext now recognizes all default KDE keywords.
+    This removes the need for a long list of --keyword and --flag
+    options to perform a reasonable extraction.
+
+* Bug fixes:
+  - xgettext C++11 raw string recognition is now stricter and don't
+    accept unbalanced delimiters.
+  - Suppress baseless warnings which msgfmt emits when processing a
+    .desktop file.
+  - xgettext line wrapping behaviour is now consistent between comment
+    lines and non-comment lines.
+  - Fix msgfilter-7 test failure on some platforms.
+  - Fix VPATH build.
+
 Version 0.19.4 - December 2014
 
 * The --keyword option of xgettext now accepts same argument number
