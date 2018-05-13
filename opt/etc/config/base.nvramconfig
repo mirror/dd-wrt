@@ -97,6 +97,7 @@
  "dnssec"  "DNS sec"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "dnssec_proxy"  "DNS sec"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "dnssec_cu"  "DNS sec"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
+ "dnssec_rc"  "DNS Rapid Commit"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "dnsmasq_no_dns_rebind"  "DNSMasq no rebind"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "dnsmasq_strict"  "DNSMasq strict-order"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "dnsmasq_add_mac"  "DNSMasq add mac"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
