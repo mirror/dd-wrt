@@ -2172,6 +2172,7 @@ struct nvram_param srouter_defaults[] = {
 	{"local_dns", "0"},
 	{"dnsmasq_no_dns_rebind", "1"},
 	{"dnsmasq_strict", "1"},
+	{"dnsmasq_rc", "0"},
 	{"dnsmasq_add_mac", "0"},
 #ifdef HAVE_POWERNOC_WOAP54G
 	{"dnsmasq_enable", "0"},
