@@ -19,6 +19,8 @@ Exit status is 0
 tune2fs -I 256 -O metadata_csum test.img
 Setting inode size 256
 
+This operation requires a freshly checked filesystem.
+
 Please run e2fsck -fD on the filesystem.
 
 Exit status is 0

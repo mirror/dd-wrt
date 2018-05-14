@@ -165,8 +165,8 @@ if [ "$status" = 0 ] ; then
 else
 	echo "$test_name: $test_description: failed"
 	diff $DIFF_OPTS $EXP $OUT > $test_name.failed
-	rm -f $test_name.tmp
 fi
+rm -f $EXP
 
 unset IMAGE FSCK_OPT OUT EXP
 

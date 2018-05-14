@@ -98,6 +98,18 @@ errcode_t e2fsck_reset_context(e2fsck_t ctx)
 		ea_refcount_free(ctx->refcount_extra);
 		ctx->refcount_extra = 0;
 	}
+	if (ctx->ea_block_quota_blocks) {
+		ea_refcount_free(ctx->ea_block_quota_blocks);
+		ctx->ea_block_quota_blocks = 0;
+	}
+	if (ctx->ea_block_quota_inodes) {
+		ea_refcount_free(ctx->ea_block_quota_inodes);
+		ctx->ea_block_quota_inodes = 0;
+	}
+	if (ctx->ea_inode_refs) {
+		ea_refcount_free(ctx->ea_inode_refs);
+		ctx->ea_inode_refs = 0;
+	}
 	if (ctx->block_dup_map) {
 		ext2fs_free_block_bitmap(ctx->block_dup_map);
 		ctx->block_dup_map = 0;

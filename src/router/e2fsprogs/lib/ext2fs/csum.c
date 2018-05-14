@@ -34,7 +34,8 @@ void ext2fs_init_csum_seed(ext2_filsys fs)
 {
 	if (ext2fs_has_feature_csum_seed(fs->super))
 		fs->csum_seed = fs->super->s_checksum_seed;
-	else if (ext2fs_has_feature_metadata_csum(fs->super))
+	else if (ext2fs_has_feature_metadata_csum(fs->super) ||
+		 ext2fs_has_feature_ea_inode(fs->super))
 		fs->csum_seed = ext2fs_crc32c_le(~0, fs->super->s_uuid,
 						 sizeof(fs->super->s_uuid));
 }
@@ -632,7 +633,7 @@ static errcode_t ext2fs_inode_csum(ext2_filsys fs, ext2_ino_t inum,
 {
 	__u32 gen;
 	struct ext2_inode_large *desc = inode;
-	size_t size = fs->super->s_inode_size;
+	size_t size = EXT2_INODE_SIZE(fs->super);
 	__u16 old_lo;
 	__u16 old_hi = 0;
 

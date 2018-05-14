@@ -149,7 +149,7 @@ blkid_loff_t blkid_get_dev_size(int fd)
 		 * character) devices, so we need to check for S_ISCHR, too.
 		 */
 		if (fstat(fd, &st) >= 0 &&
-		    (S_ISBLK(st.st_mode) || S_ISCHR(st.st_mode)))
+		    blkidP_is_disk_device(st.st_mode))
 			part = st.st_rdev & 7;
 
 		if (part >= 0 && (ioctl(fd, DIOCGDINFO, (char *)&lab) >= 0)) {

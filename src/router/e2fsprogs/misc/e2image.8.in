@@ -11,7 +11,7 @@ e2image \- Save critical ext2/ext3/ext4 filesystem metadata to a file
 .B \-r|Q
 ]
 [
-.B \-fr
+.B \-f
 ]
 .I device
 .I image-file

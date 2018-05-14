@@ -578,7 +578,7 @@ static void insert_key_into_keyring(const char *keyring, struct salt *salt)
 	 * We need to do this instead of simply adding the key to
 	 * KEY_SPEC_SESSION_KEYRING since trying to add a key to a
 	 * session keyring that does not yet exist will cause the
-	 * kernel to create a session keyring --- which wil then get
+	 * kernel to create a session keyring --- which will then get
 	 * garbage collected as soon as e4crypt exits.
 	 *
 	 * The fact that the keyctl system call and the add_key system
@@ -641,7 +641,7 @@ static void do_help(int argc, char **argv, const struct cmd_desc *cmd);
 
 #define add_key_desc "adds a key to the user's keyring"
 #define add_key_help \
-"e4crypt add_key -S salt [ -k keyring ] [-v] [-q] [ path ... ]\n\n" \
+"e4crypt add_key -S salt [ -k keyring ] [-v] [-q] [ -p pad ] [ path ... ]\n\n" \
 "Prompts the user for a passphrase and inserts it into the specified\n" \
 "keyring.  If no keyring is specified, e4crypt will use the session\n" \
 "keyring if it exists or the user session keyring if it does not.\n\n" \
@@ -708,7 +708,7 @@ static void do_add_key(int argc, char **argv, const struct cmd_desc *cmd)
 
 #define set_policy_desc "sets a policy for directories"
 #define set_policy_help \
-"e4crypt set_policy policy path ... \n\n" \
+"e4crypt set_policy [ -p pad ] policy path ... \n\n" \
 "Sets the policy for the directories specified on the command line.\n" \
 "All directories must be empty to set the policy; if the directory\n" \
 "already has a policy established, e4crypt will validate that it the\n" \

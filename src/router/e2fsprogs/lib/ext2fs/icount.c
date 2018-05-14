@@ -61,6 +61,7 @@ struct ext2_icount {
 	char			*tdb_fn;
 	TDB_CONTEXT		*tdb;
 #endif
+	__u16			*fullmap;
 };
 
 /*
@@ -93,6 +94,9 @@ void ext2fs_free_icount(ext2_icount_t icount)
 	}
 #endif
 
+	if (icount->fullmap)
+		ext2fs_free_mem(&icount->fullmap);
+
 	ext2fs_free_mem(&icount);
 }
 
@@ -107,6 +111,21 @@ static errcode_t alloc_icount(ext2_filsys fs, int flags, ext2_icount_t *ret)
 	if (retval)
 		return retval;
 	memset(icount, 0, sizeof(struct ext2_icount));
+	icount->magic = EXT2_ET_MAGIC_ICOUNT;
+	icount->num_inodes = fs->super->s_inodes_count;
+
+	if ((flags & EXT2_ICOUNT_OPT_FULLMAP) &&
+	    (flags & EXT2_ICOUNT_OPT_INCREMENT)) {
+		unsigned sz = sizeof(*icount->fullmap) * icount->num_inodes;
+
+		retval = ext2fs_get_mem(sz, &icount->fullmap);
+		/* If we can't allocate, fall back */
+		if (!retval) {
+			memset(icount->fullmap, 0, sz);
+			*ret = icount;
+			return 0;
+		}
+	}
 
 	retval = ext2fs_allocate_inode_bitmap(fs, "icount", &icount->single);
 	if (retval)
@@ -119,9 +138,6 @@ static errcode_t alloc_icount(ext2_filsys fs, int flags, ext2_icount_t *ret)
 			goto errout;
 	} else
 		icount->multiple = 0;
-
-	icount->magic = EXT2_ET_MAGIC_ICOUNT;
-	icount->num_inodes = fs->super->s_inodes_count;
 
 	*ret = icount;
 	return 0;
@@ -256,6 +272,9 @@ errcode_t ext2fs_create_icount2(ext2_filsys fs, int flags, unsigned int size,
 	if (retval)
 		return retval;
 
+	if (icount->fullmap)
+		goto successout;
+
 	if (size) {
 		icount->size = size;
 	} else {
@@ -295,6 +314,7 @@ errcode_t ext2fs_create_icount2(ext2_filsys fs, int flags, unsigned int size,
 		icount->count = hint->count;
 	}
 
+successout:
 	*ret = icount;
 	return 0;
 
@@ -433,6 +453,11 @@ static errcode_t set_inode_count(ext2_icount_t icount, ext2_ino_t ino,
 		return 0;
 	}
 #endif
+	if (icount->fullmap) {
+		icount->fullmap[ino] = icount_16_xlate(count);
+		return 0;
+	}
+
 	el = get_icount_el(icount, ino, 1);
 	if (!el)
 		return EXT2_ET_NO_MEMORY;
@@ -463,6 +488,11 @@ static errcode_t get_inode_count(ext2_icount_t icount, ext2_ino_t ino,
 		return 0;
 	}
 #endif
+	if (icount->fullmap) {
+		*count = icount->fullmap[ino];
+		return 0;
+	}
+
 	el = get_icount_el(icount, ino, 0);
 	if (!el) {
 		*count = 0;
@@ -504,14 +534,16 @@ errcode_t ext2fs_icount_fetch(ext2_icount_t icount, ext2_ino_t ino, __u16 *ret)
 	if (!ino || (ino > icount->num_inodes))
 		return EXT2_ET_INVALID_ARGUMENT;
 
-	if (ext2fs_test_inode_bitmap2(icount->single, ino)) {
-		*ret = 1;
-		return 0;
-	}
-	if (icount->multiple &&
-	    !ext2fs_test_inode_bitmap2(icount->multiple, ino)) {
-		*ret = 0;
-		return 0;
+	if (!icount->fullmap) {
+		if (ext2fs_test_inode_bitmap2(icount->single, ino)) {
+			*ret = 1;
+			return 0;
+		}
+		if (icount->multiple &&
+			!ext2fs_test_inode_bitmap2(icount->multiple, ino)) {
+			*ret = 0;
+			return 0;
+		}
 	}
 	get_inode_count(icount, ino, &val);
 	*ret = icount_16_xlate(val);
@@ -528,7 +560,10 @@ errcode_t ext2fs_icount_increment(ext2_icount_t icount, ext2_ino_t ino,
 	if (!ino || (ino > icount->num_inodes))
 		return EXT2_ET_INVALID_ARGUMENT;
 
-	if (ext2fs_test_inode_bitmap2(icount->single, ino)) {
+	if (icount->fullmap) {
+		curr_value = icount_16_xlate(icount->fullmap[ino] + 1);
+		icount->fullmap[ino] = curr_value;
+	} else if (ext2fs_test_inode_bitmap2(icount->single, ino)) {
 		/*
 		 * If the existing count is 1, then we know there is
 		 * no entry in the list.
@@ -585,6 +620,16 @@ errcode_t ext2fs_icount_decrement(ext2_icount_t icount, ext2_ino_t ino,
 
 	EXT2_CHECK_MAGIC(icount, EXT2_ET_MAGIC_ICOUNT);
 
+	if (icount->fullmap) {
+		if (!icount->fullmap[ino])
+			return EXT2_ET_INVALID_ARGUMENT;
+
+		curr_value = --icount->fullmap[ino];
+		if (ret)
+			*ret = icount_16_xlate(curr_value);
+		return 0;
+	}
+
 	if (ext2fs_test_inode_bitmap2(icount->single, ino)) {
 		ext2fs_unmark_inode_bitmap2(icount->single, ino);
 		if (icount->multiple)
@@ -625,6 +670,9 @@ errcode_t ext2fs_icount_store(ext2_icount_t icount, ext2_ino_t ino,
 		return EXT2_ET_INVALID_ARGUMENT;
 
 	EXT2_CHECK_MAGIC(icount, EXT2_ET_MAGIC_ICOUNT);
+
+	if (icount->fullmap)
+		return set_inode_count(icount, ino, count);
 
 	if (count == 1) {
 		ext2fs_mark_inode_bitmap2(icount->single, ino);

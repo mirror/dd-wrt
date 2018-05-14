@@ -4,7 +4,7 @@
  * Copyright (C) 1997, 1998 by Theodore Ts'o and
  * 	PowerQuest, Inc.
  *
- * Copyright (C) 1999, 2000 by Theosore Ts'o
+ * Copyright (C) 1999, 2000 by Theodore Ts'o
  *
  * %Begin-Header%
  * This file may be redistributed under the terms of the GNU Public
@@ -80,7 +80,7 @@ static int is_inode_tb(ext2_filsys fs, unsigned int grp, blk64_t blk)
 		      fs->inode_blocks_per_group);
 }
 
-/* Some bigalloc helper macros which are more succint... */
+/* Some bigalloc helper macros which are more succinct... */
 #define B2C(x)	EXT2FS_B2C(fs, (x))
 #define C2B(x)	EXT2FS_C2B(fs, (x))
 #define EQ_CLSTR(x, y) (B2C(x) == B2C(y))
@@ -578,7 +578,7 @@ out:
 }
 
 /*
- * Clean up the bitmaps for unitialized bitmaps
+ * Clean up the bitmaps for uninitialized bitmaps
  */
 static void fix_uninit_block_bitmaps(ext2_filsys fs)
 {
@@ -932,7 +932,7 @@ retry:
 	/*
 	 * If we changed the number of block_group descriptor blocks,
 	 * we need to make sure they are all marked as reserved in the
-	 * file systems's block allocation map.
+	 * filesystem's block allocation map.
 	 */
 	for (i = 0; i < old_fs->group_desc_count; i++)
 		ext2fs_reserve_super_and_bgd(fs, i, fs->block_map);
@@ -1503,7 +1503,7 @@ static errcode_t blocks_to_move(ext2_resize_t rfs)
 
 		/*
 		 * For those structures that have changed, we need to
-		 * do bookkeepping.
+		 * do bookkeeping.
 		 */
 		if (ext2fs_block_bitmap_loc(old_fs, i) !=
 		    (blk = ext2fs_block_bitmap_loc(fs, i))) {
@@ -1986,6 +1986,145 @@ static void quiet_com_err_proc(const char *whoami EXT2FS_ATTR((unused)),
 {
 }
 
+static int fix_ea_entries(ext2_extent imap, struct ext2_ext_attr_entry *entry,
+			  struct ext2_ext_attr_entry *end, ext2_ino_t last_ino)
+{
+	int modified = 0;
+	ext2_ino_t new_ino;
+	errcode_t retval;
+
+	while (entry < end && !EXT2_EXT_IS_LAST_ENTRY(entry)) {
+		if (entry->e_value_inum > last_ino) {
+			new_ino = ext2fs_extent_translate(imap,
+							  entry->e_value_inum);
+			entry->e_value_inum = new_ino;
+			modified = 1;
+		}
+		entry = EXT2_EXT_ATTR_NEXT(entry);
+	}
+	return modified;
+}
+
+static int fix_ea_ibody_entries(ext2_extent imap,
+				struct ext2_inode_large *inode, int inode_size,
+				ext2_ino_t last_ino)
+{
+	struct ext2_ext_attr_entry *start, *end;
+	__u32 *ea_magic;
+
+	if (inode->i_extra_isize == 0)
+		return 0;
+
+	ea_magic = (__u32 *)((char *)inode + EXT2_GOOD_OLD_INODE_SIZE +
+				inode->i_extra_isize);
+	if (*ea_magic != EXT2_EXT_ATTR_MAGIC)
+		return 0;
+
+	start = (struct ext2_ext_attr_entry *)(ea_magic + 1);
+	end = (struct ext2_ext_attr_entry *)((char *)inode + inode_size);
+
+	return fix_ea_entries(imap, start, end, last_ino);
+}
+
+static int fix_ea_block_entries(ext2_extent imap, char *block_buf,
+				unsigned int blocksize, ext2_ino_t last_ino)
+{
+	struct ext2_ext_attr_header *header;
+	struct ext2_ext_attr_entry *start, *end;
+
+	header = (struct ext2_ext_attr_header *)block_buf;
+	start = (struct ext2_ext_attr_entry *)(header+1);
+	end = (struct ext2_ext_attr_entry *)(block_buf + blocksize);
+
+	return fix_ea_entries(imap, start, end, last_ino);
+}
+
+/* A simple LRU cache to check recently processed blocks. */
+struct blk_cache {
+	int cursor;
+	blk64_t blks[4];
+};
+
+#define BLK_IN_CACHE(b,c) ((b) == (c).blks[0] || (b) == (c).blks[1] || \
+			   (b) == (c).blks[2] || (b) == (c).blks[3])
+#define BLK_ADD_CACHE(b,c) { 			\
+	(c).blks[(c).cursor] = (b);		\
+	(c).cursor = ((c).cursor + 1) % 4;	\
+}
+
+static errcode_t fix_ea_inode_refs(ext2_resize_t rfs, struct ext2_inode *inode,
+				   char *block_buf, ext2_ino_t last_ino)
+{
+	ext2_filsys	fs = rfs->new_fs;
+	ext2_inode_scan	scan = NULL;
+	ext2_ino_t	ino;
+	int		inode_size = EXT2_INODE_SIZE(fs->super);
+	blk64_t		blk;
+	int		modified;
+	struct blk_cache blk_cache = { 0 };
+	struct ext2_ext_attr_header *header;
+	errcode_t		retval;
+
+	header = (struct ext2_ext_attr_header *)block_buf;
+
+	retval = ext2fs_open_inode_scan(fs, 0, &scan);
+	if (retval)
+		goto out;
+
+	while (1) {
+		retval = ext2fs_get_next_inode_full(scan, &ino, inode,
+						    inode_size);
+		if (retval)
+			goto out;
+		if (!ino)
+			break;
+
+		if (inode->i_links_count == 0 && ino != EXT2_RESIZE_INO)
+			continue; /* inode not in use */
+
+		if (inode_size != EXT2_GOOD_OLD_INODE_SIZE) {
+			modified = fix_ea_ibody_entries(rfs->imap,
+					(struct ext2_inode_large *)inode,
+					inode_size, last_ino);
+			if (modified) {
+				retval = ext2fs_write_inode_full(fs, ino, inode,
+								 inode_size);
+				if (retval)
+					goto out;
+			}
+		}
+
+		blk = ext2fs_file_acl_block(fs, inode);
+		if (blk && !BLK_IN_CACHE(blk, blk_cache)) {
+			retval = ext2fs_read_ext_attr3(fs, blk, block_buf, ino);
+			if (retval)
+				goto out;
+
+			modified = fix_ea_block_entries(rfs->imap, block_buf,
+							fs->blocksize,
+							last_ino);
+			if (modified) {
+				retval = ext2fs_write_ext_attr3(fs, blk,
+								block_buf, ino);
+				if (retval)
+					goto out;
+				/*
+				 * If refcount is greater than 1, we might see
+				 * the same block referenced by other inodes
+				 * later.
+				 */
+				if (header->h_refcount > 1)
+					BLK_ADD_CACHE(blk, blk_cache);
+			}
+		}
+	}
+	retval = 0;
+out:
+	if (scan)
+		ext2fs_close_inode_scan(scan);
+	return retval;
+
+}
 static errcode_t inode_scan_and_fix(ext2_resize_t rfs)
 {
 	struct process_block_struct	pb;
@@ -1996,6 +2135,7 @@ static errcode_t inode_scan_and_fix(ext2_resize_t rfs)
 	char			*block_buf = 0;
 	ext2_ino_t		start_to_move;
 	int			inode_size;
+	int			update_ea_inode_refs = 0;
 
 	if ((rfs->old_fs->group_desc_count <=
 	     rfs->new_fs->group_desc_count) &&
@@ -2068,7 +2208,15 @@ static errcode_t inode_scan_and_fix(ext2_resize_t rfs)
 
 		ext2fs_inode_alloc_stats2(rfs->new_fs, new_inode, +1,
 					  pb.is_dir);
-		inode->i_ctime = time(0);
+		/*
+		 * i_ctime field in xattr inodes contain a portion of the ref
+		 * count, do not overwrite.
+		 */
+		if (inode->i_flags & EXT4_EA_INODE_FL)
+			update_ea_inode_refs = 1;
+		else
+			inode->i_ctime = time(0);
+
 		retval = ext2fs_write_inode_full(rfs->old_fs, new_inode,
 						inode, inode_size);
 		if (retval)
@@ -2133,6 +2281,14 @@ remap_blocks:
 			if (retval)
 				goto errout;
 		}
+	}
+
+	if (update_ea_inode_refs &&
+	    ext2fs_has_feature_ea_inode(rfs->new_fs->super)) {
+		retval = fix_ea_inode_refs(rfs, inode, block_buf,
+					   start_to_move);
+		if (retval)
+			goto errout;
 	}
 	io_channel_flush(rfs->old_fs->io);
 
@@ -2783,7 +2939,7 @@ static int calc_group_overhead(ext2_filsys fs, blk64_t grp,
 
 
 /*
- * calcluate the minimum number of blocks the given fs can be resized to
+ * calculate the minimum number of blocks the given fs can be resized to
  */
 blk64_t calculate_minimum_resize_size(ext2_filsys fs, int flags)
 {
@@ -2876,7 +3032,7 @@ blk64_t calculate_minimum_resize_size(ext2_filsys fs, int flags)
 #endif
 
 	/*
-	 * if we need more group descriptors in order to accomodate our data
+	 * if we need more group descriptors in order to accommodate our data
 	 * then we need to add them here
 	 */
 	blks_needed = data_needed;

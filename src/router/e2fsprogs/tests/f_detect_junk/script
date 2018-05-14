@@ -6,7 +6,7 @@ FSCK_OPT=-fn
 IMAGE=$test_dir/image.bz2
 
 bzip2 -d < $IMAGE > $TMPFILE
-dd if=/dev/zero of=$TMPFILE conv=notrunc oflag=append bs=1024k count=16 > /dev/null 2>&1
+$DD if=/dev/zero of=$TMPFILE conv=notrunc oflag=append bs=1024k count=16 > /dev/null 2>&1
 
 # Run fsck to fix things?
 if [ -x $DEBUGFS_EXE ]; then

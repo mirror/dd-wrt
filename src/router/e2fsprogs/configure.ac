@@ -124,8 +124,8 @@ else
 fi
 AC_USE_SYSTEM_EXTENSIONS
 dnl
-dnl Set default values for library extentions.  Will be dealt with after
-dnl parsing configuration opions, which may modify these
+dnl Set default values for library extensions.  Will be dealt with after
+dnl parsing configuration options, which may modify these
 dnl
 LIB_EXT=.a
 STATIC_LIB_EXT=.a
@@ -918,8 +918,10 @@ AC_CHECK_HEADERS(m4_flatten([
 	attr/xattr.h
 	linux/falloc.h
 	linux/fd.h
+	linux/fsmap.h
 	linux/major.h
 	linux/loop.h
+	linux/types.h
 	net/if_dl.h
 	netinet/in.h
 	sys/acl.h
@@ -944,7 +946,27 @@ AC_CHECK_HEADERS(m4_flatten([
 	sys/types.h
 	sys/un.h
 	sys/wait.h
+	sys/xattr.h
 ]))
+dnl Check where to find a dd(1) that supports iflag=fullblock
+dnl and oflag=append
+AC_MSG_CHECKING([for a dd(1) program that supports iflag=fullblock])
+DD=
+for i in dd gdd ; do
+	if "$i" if=/dev/null of=/dev/null count=1 bs=10k 2>/dev/null iflag=fullblock oflag=append ; then
+		DD=$i
+		break
+	fi
+done
+if test -n "$DD" ; then
+	AC_MSG_RESULT([$DD])
+else
+	AC_MSG_RESULT([not found, using dd])
+	DD=dd
+	AC_MSG_WARN([No GNU-compatible dd(1) program found, expect some self-test failures.])
+fi
+AC_SUBST([DD])
+
 AC_CHECK_HEADERS(net/if.h,,,
 [[
 #if HAVE_SYS_TYPES_H
@@ -956,7 +978,7 @@ AC_CHECK_HEADERS(net/if.h,,,
 ]])
 AC_FUNC_VPRINTF
 dnl Check to see if dirent has member d_reclen. On cygwin those d_reclen
-dnl is not decleared.
+dnl is not declared.
 AC_CHECK_MEMBER(struct dirent.d_reclen,[AC_DEFINE(HAVE_RECLEN_DIRENT, 1,
 		       [Define to 1 if dirent has d_reclen])],,
 		[#include <dirent.h>])
@@ -1094,8 +1116,10 @@ AC_CHECK_FUNCS(m4_flatten([
 	fallocate
 	fallocate64
 	fchown
+	fcntl
 	fdatasync
 	fstat64
+	fsync
 	ftruncate64
 	futimes
 	getcwd

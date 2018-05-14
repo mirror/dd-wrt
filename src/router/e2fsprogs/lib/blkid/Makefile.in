@@ -135,8 +135,9 @@ test_probe: test_probe.in Makefile
 	$(Q) cat $(srcdir)/test_probe.in >> test_probe
 	$(Q) chmod +x test_probe
 
-check:: all tst_cache tst_dev tst_devname tst_devno tst_getsize tst_probe \
- tst_read tst_resolve tst_save tst_tag test_probe tst_types
+fullcheck check:: all tst_cache tst_dev tst_devname tst_devno \
+ tst_getsize tst_probe tst_read tst_resolve tst_save tst_tag \
+ test_probe tst_types
 	./test_probe
 	./tst_types
 

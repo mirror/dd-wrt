@@ -30,6 +30,7 @@ struct region_struct {
 	region_addr_t	min;
 	region_addr_t	max;
 	struct region_el *allocated;
+	struct region_el *last;
 };
 
 region_t region_create(region_addr_t min, region_addr_t max)
@@ -42,6 +43,7 @@ region_t region_create(region_addr_t min, region_addr_t max)
 	memset(region, 0, sizeof(struct region_struct));
 	region->min = min;
 	region->max = max;
+	region->last = NULL;
 	return region;
 }
 
@@ -68,9 +70,21 @@ int region_allocate(region_t region, region_addr_t start, int n)
 	if (n == 0)
 		return 1;
 
+	if (region->last && region->last->end == start &&
+	    !region->last->next) {
+		region->last->end = end;
+		return 0;
+	}
+	if (region->last && start > region->last->end &&
+	    !region->last->next) {
+		r = NULL;
+		prev = region->last;
+		goto append_to_list;
+	}
+
 	/*
 	 * Search through the linked list.  If we find that it
-	 * conflicts witih something that's already allocated, return
+	 * conflicts with something that's already allocated, return
 	 * 1; if we can find an existing region which we can grow, do
 	 * so.  Otherwise, stop when we find the appropriate place
 	 * insert a new region element into the linked list.
@@ -92,6 +106,8 @@ int region_allocate(region_t region, region_addr_t start, int n)
 					r->end = next->end;
 					r->next = next->next;
 					free(next);
+					if (!r->next)
+						region->last = r;
 					return 0;
 				}
 			}
@@ -104,12 +120,15 @@ int region_allocate(region_t region, region_addr_t start, int n)
 	/*
 	 * Insert a new region element structure into the linked list
 	 */
+append_to_list:
 	new_region = malloc(sizeof(struct region_el));
 	if (!new_region)
 		return -1;
 	new_region->start = start;
 	new_region->end = start + n;
 	new_region->next = r;
+	if (!new_region->next)
+		region->last = new_region;
 	if (prev)
 		prev->next = new_region;
 	else

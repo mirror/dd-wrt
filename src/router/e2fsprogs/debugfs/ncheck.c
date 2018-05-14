@@ -81,6 +81,7 @@ static int ncheck_proc(struct ext2_dir_entry *dirent,
 				}
 			}
 			putc('\n', stdout);
+			iw->inodes_left--;
 		}
 	}
 	if (!iw->inodes_left)
@@ -111,10 +112,8 @@ void do_ncheck(int argc, char **argv)
 			goto print_usage;
 		}
 	}
-	argc -= optind;
-	argv += optind;
 
-	if (argc < 1) {
+	if (argc <= 1) {
 	print_usage:
 		com_err(argv[0], 0, "Usage: ncheck [-c] <inode number> ...");
 		return;
@@ -122,6 +121,8 @@ void do_ncheck(int argc, char **argv)
 	if (check_fs_open(argv[0]))
 		return;
 
+	argc -= optind;
+	argv += optind;
 	iw.iarray = malloc(sizeof(ext2_ino_t) * argc);
 	if (!iw.iarray) {
 		com_err("ncheck", ENOMEM,
@@ -133,7 +134,7 @@ void do_ncheck(int argc, char **argv)
 	for (i=0; i < argc; i++) {
 		iw.iarray[i] = strtol(argv[i], &tmp, 0);
 		if (*tmp) {
-			com_err(argv[0], 0, "Bad inode - %s", argv[i]);
+			com_err("ncheck", 0, "Bad inode - %s", argv[i]);
 			goto error_out;
 		}
 	}

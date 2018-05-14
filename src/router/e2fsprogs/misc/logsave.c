@@ -52,7 +52,7 @@ static void usage(char *progname)
 
 /*
  * Helper function that does the right thing if write returns a
- * partial write, or an EGAIN/EINTR error.
+ * partial write, or an EAGAIN/EINTR error.
  */
 static int write_all(int fd, const char *buf, size_t count)
 {

@@ -7,7 +7,7 @@ ANDROID_GENERATED_FILES="lib/ext2fs/ext2_err.c lib/ext2fs/ext2_err.h \
 	lib/ext2fs/ext2_types.h lib/config.h lib/blkid/blkid.h \
 	lib/uuid/uuid.h lib/ext2fs/crc32c_table.h misc/default_profile.c \
 	lib/ss/std_rqs.c debugfs/debug_cmds.c debugfs/ro_debug_cmds.c \
-	debugfs/extent_cmds.c debugfs/e2freefrag.c debugfs/create_inode.c \
+	debugfs/extent_cmds.c debugfs/e2freefrag.c \
 	debugfs/recovery.c debugfs/revoke.c \
 	MODULE_LICENSE_GPL README.version"
 
@@ -41,7 +41,7 @@ cp util/android_types.h lib/ext2fs/ext2_types.h
 cp util/android_types.h lib/blkid/blkid_types.h
 cp util/android_types.h lib/uuid/uuid_types.h
 cp util/android_config.h lib/config.h
-cp misc/e2freefrag.c misc/create_inode.c debugfs/
+cp misc/e2freefrag.c debugfs/
 cp e2fsck/recovery.c e2fsck/revoke.c debugfs/
 
 gcc -o gen_crc32ctable lib/ext2fs/gen_crc32ctable.c

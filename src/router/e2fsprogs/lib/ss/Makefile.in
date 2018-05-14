@@ -163,7 +163,7 @@ test_ss: test_ss.o test_cmd.o $(DEPLIBSS) $(DEPLIBCOM_ERR)
 	$(Q) $(CC) -o $@ test_ss.o test_cmd.o $(ALL_CFLAGS) $(ALL_LDFLAGS) \
 		$(LIBSS) $(LIBCOM_ERR) $(SYSLIBS)
 
-check:: all test_ss
+fullcheck check:: all test_ss
 	$(E) "	RUN TEST test_ss"
 	-@($(TESTENV) ./test_ss -f $(srcdir)/test_script > test_out 2>&1; exit 0)
 	$(Q) if diff test_out $(srcdir)/test_script_expected > test.diff; then \

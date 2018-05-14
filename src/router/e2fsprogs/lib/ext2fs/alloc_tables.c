@@ -33,7 +33,7 @@
  * This routine searches for free blocks that can allocate a full
  * group of bitmaps or inode tables for a flexbg group.  Returns the
  * block number with a correct offset were the bitmaps and inode
- * tables can be allocated continously and in order.
+ * tables can be allocated continuously and in order.
  */
 static blk64_t flexbg_offset(ext2_filsys fs, dgrp_t group, blk64_t start_blk,
 			     ext2fs_block_bitmap bmap, int rem_grp,
@@ -107,7 +107,7 @@ errcode_t ext2fs_allocate_group_table(ext2_filsys fs, dgrp_t group,
 	/*
 	 * Allocate the block and inode bitmaps, if necessary
 	 */
-	if (fs->stride) {
+	if (fs->stride && !flexbg_size) {
 		retval = ext2fs_get_free_blocks2(fs, group_blk, last_blk,
 						 1, bmap, &start_blk);
 		if (retval)
@@ -222,12 +222,32 @@ errcode_t ext2fs_allocate_group_table(ext2_filsys fs, dgrp_t group,
 						bmap, &new_blk);
 		if (retval)
 			return retval;
-		if (flexbg_size)
-			ext2fs_block_alloc_stats_range(fs, new_blk,
-				       fs->inode_blocks_per_group, +1);
-		else
-			ext2fs_mark_block_bitmap_range2(fs->block_map,
-					new_blk, fs->inode_blocks_per_group);
+
+		ext2fs_mark_block_bitmap_range2(bmap,
+			new_blk, fs->inode_blocks_per_group);
+		if (flexbg_size) {
+			blk64_t num, blk;
+			num = fs->inode_blocks_per_group;
+			blk = new_blk;
+			while (num) {
+				int gr = ext2fs_group_of_blk2(fs, blk);
+				last_blk = ext2fs_group_last_block2(fs, gr);
+				blk64_t n = num;
+
+				if (blk + num > last_blk)
+					n = last_blk - blk + 1;
+
+				ext2fs_bg_free_blocks_count_set(fs, gr,
+					ext2fs_bg_free_blocks_count(fs, gr) -
+					n/EXT2FS_CLUSTER_RATIO(fs));
+				ext2fs_bg_flags_clear(fs, gr,
+					EXT2_BG_BLOCK_UNINIT);
+				ext2fs_group_desc_csum_set(fs, gr);
+				ext2fs_free_blocks_count_add(fs->super, -n);
+				blk += n;
+				num -= n;
+			}
+		}
 		ext2fs_inode_table_loc_set(fs, group, new_blk);
 	}
 	ext2fs_group_desc_csum_set(fs, group);

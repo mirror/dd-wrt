@@ -35,7 +35,7 @@ SRCS= debug_cmds.c $(srcdir)/debugfs.c $(srcdir)/util.c $(srcdir)/ls.c \
 	$(srcdir)/../e2fsck/recovery.c $(srcdir)/do_journal.c
 
 LIBS= $(LIBSUPPORT) $(LIBEXT2FS) $(LIBE2P) $(LIBSS) $(LIBCOM_ERR) $(LIBBLKID) \
-	$(LIBUUID) $(LIBMAGIC) $(SYSLIBS) ../intl/libintl.a
+	$(LIBUUID) $(LIBMAGIC) $(SYSLIBS)
 DEPLIBS= $(DEPLIBSUPPORT) $(LIBEXT2FS) $(LIBE2P) $(DEPLIBSS) $(DEPLIBCOM_ERR) \
 	$(DEPLIBBLKID) $(DEPLIBUUID)
 
@@ -46,7 +46,7 @@ STATIC_DEPLIBS= $(STATIC_LIBEXT2FS) $(DEPSTATIC_LIBSS) \
 		$(DEPSTATIC_LIBCOM_ERR) $(DEPSTATIC_LIBUUID) \
 		$(DEPSTATIC_LIBE2P)
 
-# This nastyness is needed because of jfs_user.h hackery; when we finally
+# This nastiness is needed because of jfs_user.h hackery; when we finally
 # clean up this mess, we should be able to drop it
 LOCAL_CFLAGS = -I$(srcdir)/../e2fsck -DDEBUGFS
 DEPEND_CFLAGS = -I$(srcdir)
@@ -164,7 +164,7 @@ tst_set_fields: set_fields.c util.c
 	$(Q) $(CC) $(ALL_CFLAGS) $(ALL_LDFLAGS) $(SYSLIBS) -DUNITTEST \
 		-o tst_set_fields $(srcdir)/set_fields.c $(srcdir)/util.c $(LIBS)
 
-check:: tst_set_fields
+fullcheck check:: tst_set_fields
 	$(TESTENV) ./tst_set_fields
 
 # +++ Dependency line eater +++

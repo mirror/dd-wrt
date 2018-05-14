@@ -23,13 +23,13 @@ echo Exit status is $status >> $OUT.new
 sed -f $cmd_dir/filter.sed -e "s;$TMPFILE;test.img;" $OUT.new >> $OUT
 rm -f $OUT.new
 
-for i in 30 70 500 1023 1024 1500; do
-	echo "debugfs -R \"symlink /l_$i /$(perl -e "print 'x' x $i;")\" test.img" >> $OUT
-	$DEBUGFS -w -R "symlink /l_$i /$(perl -e "print 'x' x $i;")" $TMPFILE \
+for i in 30 60 70 500 1023 1024 1500; do
+	echo "debugfs -R \"symlink /l_$i $(perl -e "print 'x' x $i;")\" test.img" >> $OUT
+	$DEBUGFS -w -R "symlink /l_$i $(perl -e "print 'x' x $i;")" $TMPFILE \
 		 2>&1 | sed -f $cmd_dir/filter.sed >> $OUT
 done
 
-for i in 30 70 500 1023 1024 1500; do
+for i in 30 60 70 500 1023 1024 1500; do
 	echo "debugfs -R \"stat /l_$i\" test.img" >> $OUT
 	$DEBUGFS -R "stat /l_$i" $TMPFILE 2>&1 | \
 		 sed -f $cmd_dir/filter.sed | grep -v "time: " >> $OUT

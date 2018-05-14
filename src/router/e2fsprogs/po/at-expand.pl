@@ -45,7 +45,7 @@ my @translator_help = (
  "#.	%IM	<inode> -> i_mtime\n",
  "#.	%IF	<inode> -> i_faddr\n",
  "#.	%If	<inode> -> i_file_acl\n",
- "#.	%Id	<inode> -> i_dir_acl\n",
+ "#.	%Id	<inode> -> i_size_high\n",
  "#.	%Iu	<inode> -> i_uid\n",
  "#.	%Ig	<inode> -> i_gid\n",
  "#.	%It	<str>			file type\n",

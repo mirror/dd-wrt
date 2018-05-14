@@ -35,11 +35,11 @@ INSTALL = @INSTALL@
 SPROGS=		mke2fs badblocks tune2fs dumpe2fs $(BLKID_PROG) logsave \
 			$(E2IMAGE_PROG) @FSCK_PROG@ e2undo
 USPROGS=	mklost+found filefrag e2freefrag $(UUIDD_PROG) \
-			$(E4CRYPT_PROG) $(FUSE_PROG)
+			$(E4DEFRAG_PROG) $(E4CRYPT_PROG) $(FUSE_PROG)
 SMANPAGES=	tune2fs.8 mklost+found.8 mke2fs.8 dumpe2fs.8 badblocks.8 \
 			e2label.8 $(FINDFS_MAN) $(BLKID_MAN) $(E2IMAGE_MAN) \
 			logsave.8 filefrag.8 e2freefrag.8 e2undo.8 \
-			$(UUIDD_MAN) $(E4CRYPT_MAN) @FSCK_MAN@
+			$(UUIDD_MAN) $(E4DEFRAG_MAN) $(E4CRYPT_MAN) @FSCK_MAN@
 FMANPAGES=	mke2fs.conf.5 ext4.5
 
 UPROGS=		chattr lsattr @UUID_CMT@ uuidgen
@@ -118,7 +118,7 @@ DEPLIBS_E2P= $(LIBE2P) $(DEPLIBCOM_ERR)
 
 COMPILE_ET=	_ET_DIR_OVERRIDE=$(srcdir)/../lib/et/et ../lib/et/compile_et
 
-# This nastyness is needed because of jfs_user.h hackery; when we finally
+# This nastiness is needed because of jfs_user.h hackery; when we finally
 # clean up this mess, we should be able to drop it
 JOURNAL_CFLAGS = -I$(srcdir)/../e2fsck $(ALL_CFLAGS) -DDEBUGFS
 DEPEND_CFLAGS = -I$(top_srcdir)/e2fsck
@@ -131,7 +131,7 @@ DEPEND_CFLAGS = -I$(top_srcdir)/e2fsck
 @PROFILE_CMT@	$(Q) $(CC) $(ALL_CFLAGS) -g -pg -o profiled/$*.o -c $<
 
 all:: profiled $(SPROGS) $(UPROGS) $(USPROGS) $(SMANPAGES) $(UMANPAGES) \
-	$(FMANPAGES) $(LPROGS) $(E4CRYPT_PROGS) e2fuzz
+	$(FMANPAGES) $(LPROGS) $(E4DEFRAG_PROG) $(E4CRYPT_PROGS) e2fuzz
 
 @PROFILE_CMT@all:: tune2fs.profiled blkid.profiled e2image.profiled \
 	e2undo.profiled mke2fs.profiled dumpe2fs.profiled fsck.profiled \
@@ -216,6 +216,12 @@ e2image.profiled: $(E2IMAGE_OBJS) $(PROFILED_DEPLIBS) $(DEPLIBBLKID)
 		$(PROFILED_E2IMAGE_OBJS) $(PROFILED_LIBS) $(LIBINTL) $(SYSLIBS) \
 		$(LIBBLKID) $(LIBMAGIC)
 
+e2image.static: $(E2IMAGE_OBJS) $(PROFILED_DEPLIBS) $(DEPLIBBLKID)
+	$(E) "	LD $@"
+	$(Q) $(CC) $(LDFLAGS_STATIC) -g -pg -o e2image.static \
+		$(E2IMAGE_OBJS) $(STATIC_LIBS) $(LIBINTL) $(SYSLIBS) \
+		$(STATIC_LIBBLKID) $(LIBMAGIC)
+
 e2undo: $(E2UNDO_OBJS) $(DEPLIBS)
 	$(E) "	LD $@"
 	$(Q) $(CC) $(ALL_LDFLAGS) -o e2undo $(E2UNDO_OBJS) $(LIBS) \
@@ -252,7 +258,7 @@ base_device: base_device.c
 	$(Q) $(CC) $(ALL_CFLAGS) $(ALL_LDFLAGS) $(srcdir)/base_device.c \
 		-DDEBUG -o base_device $(SYSLIBS)
 
-check:: base_device
+fullcheck check:: base_device
 	./base_device < $(srcdir)/base_device.tst > base_device.out
 	cmp $(srcdir)/base_device.tst base_device.out
 
@@ -329,6 +335,12 @@ dumpe2fs.profiled: $(DUMPE2FS_OBJS) $(PROFILED_DEPLIBS) \
 		$(PROFILED_LIBE2P) $(PROFILED_LIBUUID) $(LIBINTL) $(SYSLIBS) \
 		$(PROFILED_LIBBLKID) $(LIBMAGIC)
 
+dumpe2fs.static: $(DUMPE2FS_OBJS) $(DEPLIBS) $(DEPLIBS_E2P) $(DEPLIBUUID) $(DEPLIBBLKID)
+	$(E) "	LD $@"
+	$(Q) $(CC) $(LDFLAGS_STATIC) -o dumpe2fs.static $(DUMPE2FS_OBJS) \
+		$(STATIC_LIBS) $(STATIC_LIBE2P) $(STATIC_LIBUUID) \
+		$(LIBINTL) $(SYSLIBS) $(STATIC_LIBBLKID) $(LIBMAGIC)
+
 fsck: $(FSCK_OBJS) $(DEPLIBBLKID)
 	$(E) "	LD $@"
 	$(Q) $(CC) $(ALL_LDFLAGS) -o fsck $(FSCK_OBJS) $(LIBBLKID) \
@@ -392,19 +404,19 @@ fuse2fs: $(FUSE2FS_OBJS) $(DEPLIBS) $(DEPLIBBLKID) $(DEPLIBUUID) \
 		$(CLOCK_GETTIME_LIB) $(SYSLIBS)
 
 journal.o: $(srcdir)/../debugfs/journal.c
-	$(E) "	CC $@"
+	$(E) "	CC $<"
 	$(Q) $(CC) -c $(JOURNAL_CFLAGS) -I$(srcdir) \
 		$(srcdir)/../debugfs/journal.c -o $@
 @PROFILE_CMT@	$(Q) $(CC) $(JOURNAL_CFLAGS) -g -pg -o profiled/$*.o -c $<
 
 recovery.o: $(srcdir)/../e2fsck/recovery.c
-	$(E) "	CC $@"
+	$(E) "	CC $<"
 	$(Q) $(CC) -c $(JOURNAL_CFLAGS) -I$(srcdir) \
 		$(srcdir)/../e2fsck/recovery.c -o $@
 @PROFILE_CMT@	$(Q) $(CC) $(JOURNAL_CFLAGS) -g -pg -o profiled/$*.o -c $<
 
 revoke.o: $(srcdir)/../e2fsck/revoke.c
-	$(E) "	CC $@"
+	$(E) "	CC $<"
 	$(Q) $(CC) -c $(JOURNAL_CFLAGS) -I$(srcdir) \
 		$(srcdir)/../e2fsck/revoke.c -o $@
 @PROFILE_CMT@	$(Q) $(CC) $(JOURNAL_CFLAGS) -g -pg -o profiled/$*.o -c $<
@@ -671,6 +683,7 @@ clean::
 		uuidd e2image tune2fs.static tst_ismounted fsck.profiled \
 		blkid.profiled tune2fs.profiled e2image.profiled \
 		e2undo.profiled mke2fs.profiled dumpe2fs.profiled \
+		dumpe2fs.static e2image.static \
 		logsave.profiled filefrag.profiled uuidgen.profiled \
 		uuidd.profiled e2image.profiled e2fuzz mke2fs.conf \
 		profiled/*.o \#* *.s *.o *.a *~ core gmon.out

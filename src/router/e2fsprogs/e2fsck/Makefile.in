@@ -150,7 +150,7 @@ tst_region: region.c $(DEPLIBCOM_ERR)
 		$(ALL_CFLAGS) $(ALL_LDFLAGS) -DTEST_PROGRAM \
 		$(LIBCOM_ERR) $(SYSLIBS)
 
-check:: tst_refcount tst_region tst_problem
+fullcheck check:: tst_refcount tst_region tst_problem
 	$(TESTENV) ./tst_refcount
 	$(TESTENV) ./tst_region
 	$(TESTENV) ./tst_problem

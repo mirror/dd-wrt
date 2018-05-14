@@ -1,4 +1,4 @@
-test_description="convert fs to 64bit,metadata_csum and revert as one undo file"
+test_description="convert 64bit,mcsum and revert undo file"
 if test -x $RESIZE2FS_EXE -a -x $E2UNDO_EXE; then
 
 TDB_FILE=${TMPDIR:-/tmp}/resize2fs-$(basename $TMPFILE).e2undo

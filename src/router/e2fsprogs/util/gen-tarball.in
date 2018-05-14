@@ -12,7 +12,7 @@ GZIP=gzip
 
 #
 # This hack is needed because texi2dvi blows up horribly if there are 
-# any '~' chracters in the directory pathname.  So we kludge around it by
+# any '~' characters in the directory pathname.  So we kludge around it by
 # using a non-standard directory name for WIP releases.  dpkg-source
 # complains, but life goes on.
 #
@@ -34,6 +34,10 @@ case $1 in
 	;;
 esac
 
+if test -z "$SOURCE_DATE_EPOCH" ; then
+    export SOURCE_DATE_EPOCH=$(cd $top_srcdir; git log -1 --pretty=%ct)
+fi
+
 mv ../e2fsprogs.spec $top_srcdir/e2fsprogs.spec
 (cd $top_srcdir/.. ; find $base_e2fsprogs \( -name \*~ -o -name \*.orig \
 		-o -name CVS -o -name \*.rej -o -name Makefile.pq \
@@ -45,8 +49,10 @@ sed -e "s;^;$SRCROOT/;" < $srcdir/$list.exclude >> $exclude
 
 (cd $top_srcdir/.. ; rm -f $SRCROOT ; ln -sf $base_e2fsprogs $SRCROOT)
 
-(cd $top_srcdir/.. ; tar -c -h -v -f - -X $exclude $SRCROOT) \
-	 | $GZIP -9 -c > $SRCROOT.tar.gz
+(cd $top_srcdir/.. ; \
+ tar -c -h -f - -X $exclude --sort=name --owner=0 --group=0 \
+     --numeric-owner --mtime="@${SOURCE_DATE_EPOCH}" $SRCROOT) \
+    | $GZIP -9n -c > $SRCROOT.tar.gz
 $GZIP -l $SRCROOT.tar.gz
 
 (cd $top_srcdir/.. ; rm -f $SRCROOT)

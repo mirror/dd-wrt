@@ -9,6 +9,7 @@
  * %End-Header%
  */
 
+#include "config.h"
 #include <stdio.h>
 #include <string.h>
 #if HAVE_UNISTD_H
@@ -21,6 +22,9 @@
 #endif
 #if HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif
+#if HAVE_LINUX_TYPES_H
+#include <linux/types.h>
 #endif
 
 #include "ext2_fs.h"
@@ -551,7 +555,7 @@ static int rb_remove_extent(__u64 start, __u64 count,
 			retval = 1;
 			continue;
 		} else {
-			/* modify the last extent in reigon to be removed */
+			/* modify the last extent in region to be removed */
 			ext->count -= ((start + count) - ext->start);
 			ext->start = start + count;
 			retval = 1;

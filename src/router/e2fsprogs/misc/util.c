@@ -101,7 +101,7 @@ void proceed_question(int delay)
 			return;
 		}
 		signal(SIGALRM, alarm_signal);
-		printf(_("Proceed anyway (or wait %d seconds) ? (y,N) "),
+		printf(_("Proceed anyway (or wait %d seconds to proceed) ? (y,N) "),
 		       delay);
 		alarm(delay);
 	} else

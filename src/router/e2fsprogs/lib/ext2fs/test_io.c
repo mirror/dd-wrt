@@ -146,8 +146,10 @@ static void test_abort(io_channel channel, unsigned long block)
 
 static char *safe_getenv(const char *arg)
 {
+#if !defined(_WIN32)
 	if ((getuid() != geteuid()) || (getgid() != getegid()))
 		return NULL;
+#endif
 #if HAVE_PRCTL
 	if (prctl(PR_GET_DUMPABLE, 0, 0, 0, 0) == 0)
 		return NULL;

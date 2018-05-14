@@ -106,7 +106,7 @@ static void show_stats(e2fsck_t	ctx)
 	unsigned int dir_links;
 	unsigned int num_files, num_links;
 	__u32 *mask, m;
-	int frag_percent_file, frag_percent_dir, frag_percent_total;
+	int frag_percent_file = 0, frag_percent_dir = 0, frag_percent_total = 0;
 	int i, j, printed = 0;
 
 	dir_links = 2 * ctx->fs_directory_count - 1;
@@ -119,16 +119,18 @@ static void show_stats(e2fsck_t	ctx)
 	blocks_used = (ext2fs_blocks_count(fs->super) -
 		       ext2fs_free_blocks_count(fs->super));
 
-	frag_percent_file = (10000 * ctx->fs_fragmented) / inodes_used;
-	frag_percent_file = (frag_percent_file + 5) / 10;
+	if (inodes_used > 0) {
+		frag_percent_file = (10000 * ctx->fs_fragmented) / inodes_used;
+		frag_percent_file = (frag_percent_file + 5) / 10;
 
-	frag_percent_dir = (10000 * ctx->fs_fragmented_dir) / inodes_used;
-	frag_percent_dir = (frag_percent_dir + 5) / 10;
+		frag_percent_dir = (10000 * ctx->fs_fragmented_dir) / inodes_used;
+		frag_percent_dir = (frag_percent_dir + 5) / 10;
 
-	frag_percent_total = ((10000 * (ctx->fs_fragmented +
-					ctx->fs_fragmented_dir))
-			      / inodes_used);
-	frag_percent_total = (frag_percent_total + 5) / 10;
+		frag_percent_total = ((10000 * (ctx->fs_fragmented +
+						ctx->fs_fragmented_dir))
+				      / inodes_used);
+		frag_percent_total = (frag_percent_total + 5) / 10;
+	}
 
 	if (!verbose) {
 		log_out(ctx, _("%s: %u/%u files (%0d.%d%% non-contiguous), "
@@ -709,8 +711,17 @@ static void parse_extended_opts(e2fsck_t ctx, const char *opts)
 		} else if (strcmp(token, "nodiscard") == 0) {
 			ctx->options &= ~E2F_OPT_DISCARD;
 			continue;
+		} else if (strcmp(token, "optimize_extents") == 0) {
+			ctx->options &= ~E2F_OPT_NOOPT_EXTENTS;
+			continue;
 		} else if (strcmp(token, "no_optimize_extents") == 0) {
 			ctx->options |= E2F_OPT_NOOPT_EXTENTS;
+			continue;
+		} else if (strcmp(token, "inode_count_fullmap") == 0) {
+			ctx->options |= E2F_OPT_ICOUNT_FULLMAP;
+			continue;
+		} else if (strcmp(token, "no_inode_count_fullmap") == 0) {
+			ctx->options &= ~E2F_OPT_ICOUNT_FULLMAP;
 			continue;
 		} else if (strcmp(token, "log_filename") == 0) {
 			if (!arg)
@@ -733,17 +744,22 @@ static void parse_extended_opts(e2fsck_t ctx, const char *opts)
 	free(buf);
 
 	if (extended_usage) {
-		fputs(("\nExtended options are separated by commas, "
+		fputs(_("\nExtended options are separated by commas, "
 		       "and may take an argument which\n"
 		       "is set off by an equals ('=') sign.  "
-		       "Valid extended options are:\n"), stderr);
-		fputs(("\tea_ver=<ea_version (1 or 2)>\n"), stderr);
-		fputs(("\tfragcheck\n"), stderr);
-		fputs(("\tjournal_only\n"), stderr);
-		fputs(("\tdiscard\n"), stderr);
-		fputs(("\tnodiscard\n"), stderr);
-		fputs(("\treadahead_kb=<buffer size>\n"), stderr);
-		fputs(("\tbmap2extent\n"), stderr);
+		       "Valid extended options are:\n\n"), stderr);
+		fputs(_("\tea_ver=<ea_version (1 or 2)>\n"), stderr);
+		fputs("\tfragcheck\n", stderr);
+		fputs("\tjournal_only\n", stderr);
+		fputs("\tdiscard\n", stderr);
+		fputs("\tnodiscard\n", stderr);
+		fputs("\toptimize_extents\n", stderr);
+		fputs("\tno_optimize_extents\n", stderr);
+		fputs("\tinode_count_fullmap\n", stderr);
+		fputs("\tno_inode_count_fullmap\n", stderr);
+		fputs(_("\treadahead_kb=<buffer size>\n"), stderr);
+		fputs("\tbmap2extent\n", stderr);
+		fputs("\tfixes_only\n", stderr);
 		fputc('\n', stderr);
 		exit(1);
 	}
@@ -1015,6 +1031,11 @@ static errcode_t PRS(int argc, char *argv[], e2fsck_t *ret_ctx)
 	if (c)
 		ctx->options |= E2F_OPT_NOOPT_EXTENTS;
 
+	profile_get_boolean(ctx->profile, "options", "inode_count_fullmap",
+			    0, 0, &c);
+	if (c)
+		ctx->options |= E2F_OPT_ICOUNT_FULLMAP;
+
 	if (ctx->readahead_kb == ~0ULL) {
 		profile_get_integer(ctx->profile, "options",
 				    "readahead_mem_pct", 0, -1, &c);
@@ -1196,7 +1217,7 @@ static errcode_t e2fsck_check_mmp(ext2_filsys fs, e2fsck_t ctx)
 	if (retval)
 		goto check_error;
 
-	/* Print warning if e2fck will wait for more than 20 secs. */
+	/* Print warning if e2fsck will wait for more than 20 secs. */
 	if (verbose || wait_time > EXT4_MMP_MIN_CHECK_INTERVAL * 4) {
 		log_out(ctx, _("MMP interval is %u seconds and total wait "
 			       "time is %u seconds. Please wait...\n"),

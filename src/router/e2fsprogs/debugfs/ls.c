@@ -228,7 +228,7 @@ void do_list_dir(int argc, char *argv[])
 
 	if (argc > optind+1) {
 	print_usage:
-		com_err(0, 0, "Usage: ls [-l] [-d] [-p] file");
+		com_err(0, 0, "Usage: ls [-c] [-d] [-l] [-p] [-r] file");
 		return;
 	}
 

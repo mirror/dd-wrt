@@ -104,7 +104,7 @@ errcode_t ext2fs_create_resize_inode(ext2_filsys fs)
 	if (fs->blocksize == 1024 && sb_blk == 0)
 		sb_blk = 1;
 
-	/* Maximum possible file size (we donly use the dindirect blocks) */
+	/* Maximum possible file size (we only use double indirect blocks) */
 	apb = EXT2_ADDR_PER_BLOCK(sb);
 	if ((dindir_blk = inode.i_block[EXT2_DIND_BLOCK])) {
 #ifdef RES_GDT_DEBUG

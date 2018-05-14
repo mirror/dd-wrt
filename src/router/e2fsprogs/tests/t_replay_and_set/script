@@ -29,8 +29,8 @@ $DEBUGFS_EXE -w -f $TMPFILE.cmd $TMPFILE 2>> $OUT.new > /dev/null
 sed -f $cmd_dir/filter.sed < $OUT.new >> $OUT
 rm -rf $OUT.new
 
-echo "disable metadata_csum on a dirty-journal fs" >> $OUT
-$TUNE2FS -O ^metadata_csum $TMPFILE 2>&1 | sed -f $cmd_dir/filter.sed >> $OUT 2>&1
+echo "set the label on a dirty-journal fs" >> $OUT
+$TUNE2FS -L testing $TMPFILE 2>&1 | sed -f $cmd_dir/filter.sed >> $OUT 2>&1
 
 echo "fsck the whole mess" >> $OUT
 $FSCK -fy -N test_filesys $TMPFILE > $OUT.new 2>&1

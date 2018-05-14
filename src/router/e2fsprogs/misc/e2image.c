@@ -43,6 +43,7 @@ extern int optind;
 
 #include "ext2fs/ext2_fs.h"
 #include "ext2fs/ext2fs.h"
+#include "ext2fs/ext2fsP.h"
 #include "et/com_err.h"
 #include "uuid/uuid.h"
 #include "e2p/e2p.h"
@@ -103,7 +104,7 @@ static int get_bits_from_size(size_t size)
 
 static void usage(void)
 {
-	fprintf(stderr, _("Usage: %s [ -r|Q ] [ -fr ] device image-file\n"),
+	fprintf(stderr, _("Usage: %s [ -r|Q ] [ -f ] device image-file\n"),
 		program_name);
 	fprintf(stderr, _("       %s -I device image-file\n"), program_name);
 	fprintf(stderr, _("       %s -ra  [  -cfnp  ] [ -o src_offset ] "
@@ -1108,7 +1109,7 @@ static int update_refcount(int fd, struct ext2_qcow2_image *img,
 	/*
 	 * We are relying on the fact that we are creating the qcow2
 	 * image sequentially, hence we will always allocate refcount
-	 * block items sequentialy.
+	 * block items sequentially.
 	 */
 	ref->refcount_block[ref->refcount_block_index] = ext2fs_cpu_to_be16(1);
 	ref->refcount_block_index++;
@@ -1620,7 +1621,7 @@ skip_device:
 				_("Can not stat output\n"));
 			exit(1);
 		}
-		if (S_ISBLK(st.st_mode))
+		if (ext2fsP_is_disk_device(st.st_mode))
 			output_is_blk = 1;
 	}
 	if (flags & E2IMAGE_IS_QCOW2_FLAG) {

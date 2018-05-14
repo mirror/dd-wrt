@@ -603,6 +603,43 @@ static struct ext2_dx_entry *set_int_node(ext2_filsys fs, char *buf)
 	return (struct ext2_dx_entry *) limits;
 }
 
+static int alloc_blocks(ext2_filsys fs,
+			struct ext2_dx_countlimit **limit,
+			struct ext2_dx_entry **prev_ent,
+			struct ext2_dx_entry **next_ent,
+			int *prev_offset, int *next_offset,
+			struct out_dir *outdir, int i,
+			int *prev_count, int *next_count)
+{
+	errcode_t	retval;
+	char		*block_start;
+
+	if (*limit)
+		(*limit)->limit = (*limit)->count =
+			ext2fs_cpu_to_le16((*limit)->limit);
+	*prev_ent = (struct ext2_dx_entry *) (outdir->buf + *prev_offset);
+	(*prev_ent)->block = ext2fs_cpu_to_le32(outdir->num);
+
+	if (i != 1)
+		(*prev_ent)->hash =
+			ext2fs_cpu_to_le32(outdir->hashes[i]);
+
+	retval = get_next_block(fs, outdir, &block_start);
+	if (retval)
+		return retval;
+
+	*next_ent = set_int_node(fs, block_start);
+	*limit = (struct ext2_dx_countlimit *)(*next_ent);
+	if (next_offset)
+		*next_offset = ((char *) *next_ent - outdir->buf);
+
+	*next_count = (*limit)->limit;
+	(*prev_offset) += sizeof(struct ext2_dx_entry);
+	(*prev_count)--;
+
+	return 0;
+}
+
 /*
  * This function takes the leaf nodes which have been written in
  * outdir, and populates the root node and any necessary interior nodes.
@@ -612,13 +649,13 @@ static errcode_t calculate_tree(ext2_filsys fs,
 				ext2_ino_t ino,
 				ext2_ino_t parent)
 {
-	struct ext2_dx_root_info  	*root_info;
-	struct ext2_dx_entry 		*root, *dx_ent = 0;
-	struct ext2_dx_countlimit	*root_limit, *limit;
+	struct ext2_dx_root_info	*root_info;
+	struct ext2_dx_entry		*root, *int_ent, *dx_ent = 0;
+	struct ext2_dx_countlimit	*root_limit, *int_limit, *limit;
 	errcode_t			retval;
 	char				* block_start;
-	int				i, c1, c2, nblks;
-	int				limit_offset, root_offset;
+	int				i, c1, c2, c3, nblks;
+	int				limit_offset, int_offset, root_offset;
 
 	root_info = set_root_node(fs, outdir->buf, ino, parent);
 	root_offset = limit_offset = ((char *) root_info - outdir->buf) +
@@ -628,7 +665,7 @@ static errcode_t calculate_tree(ext2_filsys fs,
 	nblks = outdir->num;
 
 	/* Write out the pointer blocks */
-	if (nblks-1 <= c1) {
+	if (nblks - 1 <= c1) {
 		/* Just write out the root block, and we're done */
 		root = (struct ext2_dx_entry *) (outdir->buf + root_offset);
 		for (i=1; i < nblks; i++) {
@@ -639,31 +676,20 @@ static errcode_t calculate_tree(ext2_filsys fs,
 			root++;
 			c1--;
 		}
-	} else {
+	} else if (nblks - 1 <= ext2fs_htree_intnode_maxrecs(fs, c1)) {
 		c2 = 0;
-		limit = 0;
+		limit = NULL;
 		root_info->indirect_levels = 1;
 		for (i=1; i < nblks; i++) {
-			if (c1 == 0)
+			if (c2 == 0 && c1 == 0)
 				return ENOSPC;
 			if (c2 == 0) {
-				if (limit)
-					limit->limit = limit->count =
-		ext2fs_cpu_to_le16(limit->limit);
-				root = (struct ext2_dx_entry *)
-					(outdir->buf + root_offset);
-				root->block = ext2fs_cpu_to_le32(outdir->num);
-				if (i != 1)
-					root->hash =
-			ext2fs_cpu_to_le32(outdir->hashes[i]);
-				if ((retval =  get_next_block(fs, outdir,
-							      &block_start)))
+				retval = alloc_blocks(fs, &limit, &root,
+						      &dx_ent, &root_offset,
+						      NULL, outdir, i, &c1,
+						      &c2);
+				if (retval)
 					return retval;
-				dx_ent = set_int_node(fs, block_start);
-				limit = (struct ext2_dx_countlimit *) dx_ent;
-				c2 = limit->limit;
-				root_offset += sizeof(struct ext2_dx_entry);
-				c1--;
 			}
 			dx_ent->block = ext2fs_cpu_to_le32(i);
 			if (c2 != limit->limit)
@@ -674,6 +700,45 @@ static errcode_t calculate_tree(ext2_filsys fs,
 		}
 		limit->count = ext2fs_cpu_to_le16(limit->limit - c2);
 		limit->limit = ext2fs_cpu_to_le16(limit->limit);
+	} else {
+		c2 = 0;
+		c3 = 0;
+		limit = NULL;
+		int_limit = 0;
+		root_info->indirect_levels = 2;
+		for (i = 1; i < nblks; i++) {
+			if (c3 == 0 && c2 == 0 && c1 == 0)
+				return ENOSPC;
+			if (c3 == 0 && c2 == 0) {
+				retval = alloc_blocks(fs, &int_limit, &root,
+						      &int_ent, &root_offset,
+						      &int_offset, outdir, i,
+						      &c1, &c2);
+				if (retval)
+					return retval;
+			}
+			if (c3 == 0) {
+				retval = alloc_blocks(fs, &limit, &int_ent,
+						      &dx_ent, &int_offset,
+						      NULL, outdir, i, &c2,
+						      &c3);
+				if (retval)
+					return retval;
+
+			}
+			dx_ent->block = ext2fs_cpu_to_le32(i);
+			if (c3 != limit->limit)
+				dx_ent->hash =
+					ext2fs_cpu_to_le32(outdir->hashes[i]);
+			dx_ent++;
+			c3--;
+		}
+		int_limit->count = ext2fs_cpu_to_le16(limit->limit - c2);
+		int_limit->limit = ext2fs_cpu_to_le16(limit->limit);
+
+		limit->count = ext2fs_cpu_to_le16(limit->limit - c3);
+		limit->limit = ext2fs_cpu_to_le16(limit->limit);
+
 	}
 	root_limit = (struct ext2_dx_countlimit *) (outdir->buf + limit_offset);
 	root_limit->count = ext2fs_cpu_to_le16(root_limit->limit - c1);

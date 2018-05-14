@@ -101,21 +101,21 @@ Instead of using the normal superblock, use an alternative superblock
 specified by
 .IR superblock .
 This option is normally used when the primary superblock has been
-corrupted.  The location of the backup superblock is dependent on the
-filesystem's blocksize.  For filesystems with 1k blocksizes, a backup
-superblock can be found at block 8193; for filesystems with 2k
-blocksizes, at block 16384; and for 4k blocksizes, at block 32768.
+corrupted.  The location of backup superblocks is dependent on the
+filesystem's blocksize, the number of blocks per group, and features
+such as
+.BR sparse_super .
 .IP
 Additional backup superblocks can be determined by using the
 .B mke2fs
 program using the
 .B \-n
-option to print out where the superblocks were created.   The
-.B \-b
-option to
-.BR mke2fs ,
-which specifies blocksize of the filesystem must be specified in order
-for the superblock locations that are printed out to be accurate.
+option to print out where the superblocks exist, supposing
+.B mke2fs
+is supplied with arguments that are consistent with the filesystem's layout
+(e.g. blocksize, blocks per group,
+.BR sparse_super ,
+etc.).
 .IP
 If an alternative superblock is specified and
 the filesystem is not opened read-only, e2fsck will make sure that the
@@ -228,7 +228,29 @@ exactly the opposite of discard option. This is set as default.
 .TP
 .BI no_optimize_extents
 Do not offer to optimize the extent tree by eliminating unnecessary
-width or depth.
+width or depth.  This can also be enabled in the options section of
+.BR /etc/e2fsck.conf .
+.TP
+.BI optimize_extents
+Offer to optimize the extent tree by eliminating unnecessary
+width or depth.  This is the default unless otherwise specified in
+.BR /etc/e2fsck.conf .
+.TP
+.BI inode_count_fullmap
+Trade off using memory for speed when checking a file system with a
+large number of hard-linked files.  The amount of memory required is
+proportional to the number of inodes in the file system.  For large file
+systems, this can be gigabytes of memory.  (For example, a 40TB file system
+with 2.8 billion inodes will consume an additional 5.7 GB memory if this
+optimization is enabled.)  This optimization can also be enabled in the
+options section of
+.BR /etc/e2fsck.conf .
+.TP
+.BI no_inode_count_fullmap
+Disable the
+.B inode_count_fullmap
+optimization.  This is the default unless otherwise specified in
+.BR /etc/e2fsck.conf .
 .TP
 .BI readahead_kb
 Use this many KiB of memory to pre-fetch metadata in the hopes of reducing
@@ -450,6 +472,11 @@ man page for more details.
 Always include the full version string which
 .B e2fsck
 displays when it is run, so I know which version you are running.
+.SH ENVIRONMENT
+.TP
+.BI E2FSCK_CONFIG
+Determines the location of the configuration file (see
+.BR e2fsck.conf (5)).
 .SH AUTHOR
 This version of
 .B e2fsck

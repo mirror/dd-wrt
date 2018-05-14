@@ -79,7 +79,7 @@ clean::
 		../libsupport.a ../libsupport_p.a $(SMANPAGES) \
 		prof_err.c prof_err.h test_profile test_cstring
 
-#check:: tst_uuid
+#fullcheck check:: tst_uuid
 #	LD_LIBRARY_PATH=$(LIB) DYLD_LIBRARY_PATH=$(LIB) ./tst_uuid
 
 mostlyclean:: clean

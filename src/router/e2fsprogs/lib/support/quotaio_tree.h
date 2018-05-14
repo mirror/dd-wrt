@@ -42,7 +42,7 @@ struct qtree_fmt_operations {
 	int (*is_id)(void *disk, struct dquot *dquot);
 };
 
-/* Inmemory copy of version specific information */
+/* In-memory copy of version specific information */
 struct qtree_mem_dqinfo {
 	unsigned int dqi_blocks;	/* # of blocks in quota file */
 	unsigned int dqi_free_blk;	/* First block in list of free blocks */

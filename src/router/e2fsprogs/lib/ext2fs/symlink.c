@@ -28,6 +28,22 @@
 #include "ext2_fs.h"
 #include "ext2fs.h"
 
+#ifndef HAVE_STRNLEN
+/*
+ * Incredibly, libc5 doesn't appear to have strnlen.  So we have to
+ * provide our own.
+ */
+static int my_strnlen(const char * s, int count)
+{
+	const char *cp = s;
+
+	while (count-- && *cp)
+		cp++;
+	return cp - s;
+}
+#define strnlen(str, x) my_strnlen((str),(x))
+#endif
+
 errcode_t ext2fs_symlink(ext2_filsys fs, ext2_ino_t parent, ext2_ino_t ino,
 			 const char *name, const char *target)
 {
@@ -41,9 +57,12 @@ errcode_t ext2fs_symlink(ext2_filsys fs, ext2_ino_t parent, ext2_ino_t ino,
 
 	EXT2_CHECK_MAGIC(fs, EXT2_ET_MAGIC_EXT2FS_FILSYS);
 
-	/* The Linux kernel doesn't allow for links longer than a block */
+	/*
+	 * The Linux kernel doesn't allow for links longer than a block
+	 * (counting the NUL terminator)
+	 */
 	target_len = strnlen(target, fs->blocksize + 1);
-	if (target_len > fs->blocksize) {
+	if (target_len >= fs->blocksize) {
 		retval = EXT2_ET_INVALID_ARGUMENT;
 		goto cleanup;
 	}
@@ -51,10 +70,10 @@ errcode_t ext2fs_symlink(ext2_filsys fs, ext2_ino_t parent, ext2_ino_t ino,
 	/*
 	 * Allocate a data block for slow links
 	 */
-	retval = ext2fs_get_mem(fs->blocksize+1, &block_buf);
+	retval = ext2fs_get_mem(fs->blocksize, &block_buf);
 	if (retval)
 		goto cleanup;
-	memset(block_buf, 0, fs->blocksize+1);
+	memset(block_buf, 0, fs->blocksize);
 	strncpy(block_buf, target, fs->blocksize);
 
 	memset(&inode, 0, sizeof(struct ext2_inode));
@@ -87,9 +106,7 @@ errcode_t ext2fs_symlink(ext2_filsys fs, ext2_ino_t parent, ext2_ino_t ino,
 	ext2fs_inode_size_set(fs, &inode, target_len);
 	/* The time fields are set by ext2fs_write_new_inode() */
 
-	inlinelink = !fastlink &&
-		     ext2fs_has_feature_inline_data(fs->super) &&
-		     (target_len < fs->blocksize);
+	inlinelink = !fastlink && ext2fs_has_feature_inline_data(fs->super);
 	if (fastlink) {
 		/* Fast symlinks, target stored in inode */
 		strcpy((char *)&inode.i_block, target);
@@ -173,4 +190,15 @@ cleanup:
 	if (block_buf)
 		ext2fs_free_mem(&block_buf);
 	return retval;
+}
+
+/*
+ * Test whether an inode is a fast symlink.
+ *
+ * A fast symlink has its symlink data stored in inode->i_block.
+ */
+int ext2fs_is_fast_symlink(struct ext2_inode *inode)
+{
+	return LINUX_S_ISLNK(inode->i_mode) && EXT2_I_SIZE(inode) &&
+	       EXT2_I_SIZE(inode) < sizeof(inode->i_block);
 }

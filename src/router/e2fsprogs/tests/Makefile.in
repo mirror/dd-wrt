@@ -21,6 +21,7 @@ test_one: $(srcdir)/test_one.in Makefile mke2fs.conf
 	@echo "SRCDIR=@srcdir@" >> test_one
 	@echo "DIFF_OPTS=@UNI_DIFF_OPTS@" >> test_one
 	@echo "SIZEOF_TIME_T=@SIZEOF_TIME_T@" >> test_one
+	@echo "DD=@DD@" >>test_one
 	@cat $(srcdir)/test_one.in >> test_one
 	@chmod +x test_one
 
@@ -41,8 +42,10 @@ always_run:
 @ifGNUmake@TESTS=$(wildcard $(srcdir)/[a-z]_*)
 @ifNotGNUmake@TESTS != echo $(srcdir)/[a-z]_*
 
+SKIP_SLOW_TESTS=--skip-slow-tests
+
 $(TESTS):: test_one always_run
-	@./test_one $@
+	@./test_one $(SKIP_SLOW_TESTS) $@
 
 foo:
 	echo $(TESTS)
@@ -56,6 +59,9 @@ test_post: test_pre $(TESTS)
 	@$(srcdir)/test_post
 
 check:: test_pre test_post test_script
+
+fullcheck::
+	$(MAKE) SKIP_SLOW_TESTS= check
 
 check-failed: $(basename $(wildcard *.failed))
 	@$(srcdir)/test_post
@@ -87,7 +93,8 @@ testend: test_one ${TDIR}/image
 	@echo "If all is well, edit ${TDIR}/name and rename ${TDIR}."
 
 clean::
-	$(RM) -f *~ *.log *.new *.failed *.ok *.tmp test_one test_script mke2fs.conf
+	$(RM) -f *~ *.log *.new *.failed *.ok *.tmp *.slow
+	$(RM) -f test_one test_script mke2fs.conf
 
 distclean:: clean
 	$(RM) -f Makefile

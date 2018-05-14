@@ -13,7 +13,7 @@ dd if=/dev/zero of=$TMPFILE bs=1k count=512 > /dev/null 2>&1
 
 echo "mke2fs -Fq -b 1024 test.img 512" >> $OUT
 
-$MKE2FS -Fq $TMPFILE 512 > /dev/null 2>&1
+$MKE2FS -Fq -b 1024 $TMPFILE 512 > /dev/null 2>&1
 status=$?
 echo Exit status is $status >> $OUT
 

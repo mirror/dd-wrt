@@ -75,7 +75,7 @@ tst_feature: $(srcdir)/feature.c
 	$(Q) $(CC) -DTEST_PROGRAM -I$(top_srcdir)/lib -o tst_feature \
 		$(srcdir)/feature.c $(ALL_CFLAGS) $(ALL_LDFLAGS)
 
-check::	tst_ostype tst_feature
+fullcheck check::	tst_ostype tst_feature
 	./tst_ostype
 	./tst_feature
 

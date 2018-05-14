@@ -1016,7 +1016,7 @@ static int get_best_count(ext4_fsblk_t block_count)
 	int ret;
 	unsigned int flex_bg_num;
 
-	/* Calcuate best extents count */
+	/* Calculate best extents count */
 	if (feature_incompat & EXT4_FEATURE_INCOMPAT_FLEX_BG) {
 		flex_bg_num = 1 << log_groups_per_flex;
 		ret = ((block_count - 1) /
@@ -1580,7 +1580,7 @@ static int file_defrag(const char *file, const struct stat64 *buf,
 		goto out;
 	}
 
-	/* Calcuate donor inode's continuous physical region */
+	/* Calculate donor inode's continuous physical region */
 	donor_physical_cnt = get_physical_count(donor_list_physical);
 
 	/* Change donor extent list from physical to logical */

@@ -1,4 +1,4 @@
-test_description="change uuid on a metadata-csum with mcsum-seed"
+test_description="change meta-csum uuid with mcsum-seed"
 
 trap "rm -rf $TMPFILE $TMPFILE.conf" EXIT INT QUIT
 dd if=/dev/zero of=$TMPFILE bs=1k count=512 > /dev/null 2>&1

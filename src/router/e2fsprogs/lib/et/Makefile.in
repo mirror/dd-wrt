@@ -137,7 +137,7 @@ uninstall::
 		$(DESTDIR)$(pkgconfigdir)/com_err.pc
 	$(RM) -rf $(DESTDIR)$(includedir)/et $(DESTDIR)$(datadir)/et
 
-check:: compile_et
+fullcheck check:: compile_et
 	for i in $(srcdir)/test_cases/*.et ; do \
 		t=`basename $$i | sed -e 's/.et//'`; \
 		_ET_DIR_OVERRIDE=$(srcdir) ./compile_et $$i ; \
