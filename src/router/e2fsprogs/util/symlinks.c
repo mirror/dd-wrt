@@ -126,7 +126,7 @@ static int shorten_path (char *path, char *abspath)
 
 	/* get rid of unnecessary "../dir" sequences */
 	while (abspath && strlen(abspath) > 1 && (p = strstr(path,"../"))) {
-		/* find innermost occurance of "../dir", and save "dir" */
+		/* find innermost occurrence of "../dir", and save "dir" */
 		int slashes = 2;
 		char *a, *s, *d = dir;
 		while ((s = strstr(p+3, "../"))) {

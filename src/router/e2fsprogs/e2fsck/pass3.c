@@ -15,7 +15,7 @@
  * not, e2fsck will offer to create a new one.  It is then marked as
  * "done".
  *
- * Then, pass3 interates over all directory inodes; for each directory
+ * Then, pass3 iterates over all directory inodes; for each directory
  * it attempts to trace up the filesystem tree, using dirinfo.parent
  * until it reaches a directory which has been marked "done".  If it
  * can not do so, then the directory must be disconnected, and e2fsck

@@ -12,10 +12,10 @@ test_e2undo_mke2fs_off() {
 	rm -f "$TDB_FILE"
 	echo "testing e2undo and mke2fs with the -E offset=$OFF option" >> "$OUT"
 	# prepare $TMPFILE
-	yes a | dd of="$TMPFILE" bs="$OFF" count=1 iflag=fullblock \
+	yes a | $DD of="$TMPFILE" bs="$OFF" count=1 iflag=fullblock \
 		> /dev/null 2>>"$OUT"
-	yes b | dd bs=1k count=1024 iflag=fullblock >> "$TMPFILE" 2>>"$OUT"
-	yes c | dd bs=1k count=3 iflag=fullblock >> "$TMPFILE" 2>>"$OUT"
+	yes b | $DD bs=1k count=1024 iflag=fullblock >> "$TMPFILE" 2>>"$OUT"
+	yes c | $DD bs=1k count=3 iflag=fullblock >> "$TMPFILE" 2>>"$OUT"
 
 	crc_exp=`$CRCSUM "$TMPFILE"`
 	$MKE2FS -F -z "$TDB_FILE" -b 1024 -E offset="$OFF" "$TMPFILE" 1024 \
@@ -69,7 +69,7 @@ supplement_test_2048() {
 	# data again (this might be considered as a bug (for now,
 	# this testcase just documents this behavior))
 	SEEK_BLOCKS=$(((2048 + 1024 * 1024) / 1024))
-	yes d | dd of="$TMPFILE" bs=1k count=2 seek="$SEEK_BLOCKS" \
+	yes d | $DD of="$TMPFILE" bs=1k count=2 seek="$SEEK_BLOCKS" \
 		iflag=fullblock > /dev/null 2>>"$OUT"
 }
 

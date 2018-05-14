@@ -30,8 +30,8 @@ List all files in directories, including files that start with `.'.
 List directories like other files, rather than listing their contents.
 .TP
 .B \-l
-Print the options using a long names instead of a single
-character abbreviation.
+Print the options using long names instead of single
+character abbreviations.
 .TP
 .B \-p
 List the file's project number.

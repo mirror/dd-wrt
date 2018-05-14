@@ -28,6 +28,10 @@
 #include "ext2_fs.h"
 #include "ext2fs.h"
 
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
+
 #if defined(__linux__)    &&	defined(EXT2_OS_LINUX)
 #define CREATOR_OS EXT2_OS_LINUX
 #else
@@ -103,6 +107,7 @@ errcode_t ext2fs_initialize(const char *name, int flags,
 	char		*buf = 0;
 	char		c;
 	double		reserved_ratio;
+	char		*time_env;
 
 	if (!param || !ext2fs_blocks_count(param))
 		return EXT2_ET_INVALID_ARGUMENT;
@@ -119,11 +124,17 @@ errcode_t ext2fs_initialize(const char *name, int flags,
 #ifdef WORDS_BIGENDIAN
 	fs->flags |= EXT2_FLAG_SWAP_BYTES;
 #endif
+
+	time_env = getenv("E2FSPROGS_FAKE_TIME");
+	if (time_env)
+		fs->now = strtoul(time_env, NULL, 0);
+
 	io_flags = IO_FLAG_RW;
 	if (flags & EXT2_FLAG_EXCLUSIVE)
 		io_flags |= IO_FLAG_EXCLUSIVE;
 	if (flags & EXT2_FLAG_DIRECT_IO)
 		io_flags |= IO_FLAG_DIRECT_IO;
+	io_flags |= O_BINARY;
 	retval = manager->open(name, io_flags, &fs->io);
 	if (retval)
 		goto cleanup;

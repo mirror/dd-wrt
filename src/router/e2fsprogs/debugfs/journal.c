@@ -250,6 +250,12 @@ static void ext2fs_clear_recover(ext2_filsys fs, int error)
 	/* if we had an error doing journal recovery, we need a full fsck */
 	if (error)
 		fs->super->s_state &= ~EXT2_VALID_FS;
+	/*
+	 * If we replayed the journal by definition the file system
+	 * was mounted since the last time it was checked
+	 */
+	if (fs->super->s_lastcheck >= fs->super->s_mtime)
+		fs->super->s_lastcheck = fs->super->s_mtime - 1;
 	ext2fs_mark_super_dirty(fs);
 }
 
@@ -793,14 +799,14 @@ errcode_t ext2fs_run_ext3_journal(ext2_filsys *fsp)
 		kbytes_written = stats->bytes_written >> 10;
 
 	ext2fs_mmp_stop(fs);
-	fsname = strdup(fs->device_name);
+	fsname = fs->device_name;
+	fs->device_name = NULL;
 	fsflags = fs->flags;
 	fsblocksize = fs->blocksize;
 	ext2fs_free(fs);
-	retval = ext2fs_open(fsname, fsflags,
-			     0, fsblocksize, io_ptr,
-			     fsp);
-	free(fsname);
+	*fsp = NULL;
+	retval = ext2fs_open(fsname, fsflags, 0, fsblocksize, io_ptr, fsp);
+	ext2fs_free_mem(&fsname);
 	if (retval)
 		return retval;
 

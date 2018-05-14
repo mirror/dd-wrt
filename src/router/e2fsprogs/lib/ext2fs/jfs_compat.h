@@ -7,7 +7,11 @@
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
 #endif
+#ifdef HAVE_WINSOCK_H
+#include <winsock.h>
+#else
 #include <arpa/inet.h>
+#endif
 
 #define printk printf
 #define KERN_ERR ""

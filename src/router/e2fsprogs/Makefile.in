@@ -78,8 +78,9 @@ coverage.txt: coverage.txt-recursive
 
 check-recursive: all
 
-TAGS clean-recursive distclean-recursive depend-recursive check-recursive \
-  mostlyclean-recursive realclean-recursive coverage.txt-recursive:
+TAGS clean-recursive distclean-recursive depend-recursive fullcheck-recursive \
+  check-recursive mostlyclean-recursive realclean-recursive \
+  coverage.txt-recursive:
 	@for subdir in $(SUBDIRS); do \
 	  if test -d $$subdir ; then \
 	    target=`echo $@|$(SED) 's/-recursive//'`; \
@@ -151,3 +152,4 @@ realclean-local: distclean-local
 
 check::	all check-recursive
 
+fullcheck:: all fullcheck-recursive

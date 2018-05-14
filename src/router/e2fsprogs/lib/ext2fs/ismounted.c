@@ -55,6 +55,7 @@
 
 #include "ext2_fs.h"
 #include "ext2fs.h"
+#include "ext2fsP.h"
 
 #ifdef HAVE_SETMNTENT
 /*
@@ -66,7 +67,7 @@ static int check_loop_mounted(const char *mnt_fsname, dev_t mnt_rdev,
 				dev_t file_dev, ino_t file_ino)
 {
 #if defined(HAVE_LINUX_LOOP_H) && defined(HAVE_LINUX_MAJOR_H)
-	struct loop_info64 loopinfo;
+	struct loop_info64 loopinfo = {0, };
 	int loop_fd, ret;
 
 	if (major(mnt_rdev) == LOOP_MAJOR) {
@@ -115,7 +116,7 @@ static errcode_t check_mntent_file(const char *mtab_file, const char *file,
 		return errno;
 	}
 	if (stat(file, &st_buf) == 0) {
-		if (S_ISBLK(st_buf.st_mode)) {
+		if (ext2fsP_is_disk_device(st_buf.st_mode)) {
 #ifndef __GNU__ /* The GNU hurd is broken with respect to stat devices */
 			file_rdev = st_buf.st_rdev;
 #endif	/* __GNU__ */
@@ -130,7 +131,7 @@ static errcode_t check_mntent_file(const char *mtab_file, const char *file,
 		if (strcmp(file, mnt->mnt_fsname) == 0)
 			break;
 		if (stat(mnt->mnt_fsname, &st_buf) == 0) {
-			if (S_ISBLK(st_buf.st_mode)) {
+			if (ext2fsP_is_disk_device(st_buf.st_mode)) {
 #ifndef __GNU__
 				if (file_rdev && (file_rdev == st_buf.st_rdev))
 					break;
@@ -310,7 +311,7 @@ static int is_swap_device(const char *file)
 	file_dev = 0;
 #ifndef __GNU__ /* The GNU hurd is broken with respect to stat devices */
 	if ((stat(file, &st_buf) == 0) &&
-	    S_ISBLK(st_buf.st_mode))
+	    ext2fsP_is_disk_device(st_buf.st_mode))
 		file_dev = st_buf.st_rdev;
 #endif	/* __GNU__ */
 
@@ -337,7 +338,7 @@ valid_first_line:
 		}
 #ifndef __GNU__
 		if (file_dev && (stat(buf, &st_buf) == 0) &&
-		    S_ISBLK(st_buf.st_mode) &&
+		    ext2fsP_is_disk_device(st_buf.st_mode) &&
 		    file_dev == st_buf.st_rdev) {
 			ret++;
 			break;
@@ -404,7 +405,8 @@ errcode_t ext2fs_check_mount_point(const char *device, int *mount_flags,
 	{
 		struct stat st_buf;
 
-		if (stat(device, &st_buf) == 0 && S_ISBLK(st_buf.st_mode)) {
+		if (stat(device, &st_buf) == 0 &&
+		    ext2fsP_is_disk_device(st_buf.st_mode)) {
 			int fd = open(device, O_RDONLY | O_EXCL);
 
 			if (fd >= 0)

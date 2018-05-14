@@ -1,13 +1,14 @@
 /*
  * subst.c --- substitution program
  *
- * Subst is used as a quicky program to do @ substitutions
+ * Subst is used as a quickie program to do @ substitutions
  *
  */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #else
+#define HAVE_SYS_STAT_H
 #define HAVE_SYS_TIME_H
 #endif
 #include <stdio.h>

@@ -235,7 +235,6 @@ int main(int argc, char **argv)
 	int i;
 	int errors = 0;
 	unsigned char tmp[32];
-	struct hash_state md;
 
 	for (i = 0; i < (int)(sizeof(tests) / sizeof(tests[0])); i++) {
 		unsigned char *msg = (unsigned char *) tests[i].msg;

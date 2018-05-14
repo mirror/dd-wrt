@@ -11,6 +11,8 @@ Writing superblocks and filesystem accounting information:      done
 
 tune2fs -O metadata_csum test.img
 
+This operation requires a freshly checked filesystem.
+
 Please run e2fsck -f on the filesystem.
 
 Exit status is 1
@@ -35,15 +37,15 @@ Pass 5: Checking group summary information
 Exit status is 0
 tune2fs -O metadata_csum test.img
 Enabling checksums could take some time.
-Proceed anyway (or wait 5 seconds) ? (y,N) 
+Proceed anyway (or wait 5 seconds to proceed) ? (y,N) 
 Exit status is 1
 tune2fs -I 512 test.img
 Resizing inodes could take some time.
-Proceed anyway (or wait 5 seconds) ? (y,N) 
+Proceed anyway (or wait 5 seconds to proceed) ? (y,N) 
 Exit status is 1
 tune2fs -U random test.img
 Setting UUID on a checksummed filesystem could take some time.
-Proceed anyway (or wait 5 seconds) ? (y,N) 
+Proceed anyway (or wait 5 seconds to proceed) ? (y,N) 
 Exit status is 1
 
 Change in FS metadata:
@@ -56,7 +58,9 @@ Pass 5: Checking group summary information
 Exit status is 0
 tune2fs -O metadata_csum test.img
 Enabling checksums could take some time.
-Proceed anyway (or wait 5 seconds) ? (y,N) 
+Proceed anyway (or wait 5 seconds to proceed) ? (y,N) 
+This operation requires a freshly checked filesystem.
+
 Please run e2fsck -fD on the filesystem.
 
 Exit status is 0
@@ -72,11 +76,11 @@ Pass 5: Checking group summary information
 
 tune2fs -I 512 test.img
 Resizing inodes could take some time.
-Proceed anyway (or wait 5 seconds) ? (y,N) Setting inode size 512
+Proceed anyway (or wait 5 seconds to proceed) ? (y,N) Setting inode size 512
 Exit status is 0
 tune2fs -U f0f0f0f0-f0f0-f0f0-f0f0-f0f0f0f0f0f0 test.img
 Setting UUID on a checksummed filesystem could take some time.
-Proceed anyway (or wait 5 seconds) ? (y,N) Exit status is 0
+Proceed anyway (or wait 5 seconds to proceed) ? (y,N) Exit status is 0
 Backing up journal inode block information.
 
 

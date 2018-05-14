@@ -11,6 +11,7 @@
  * Pass 4 frees the following data structures:
  * 	- A bitmap of which inodes are in bad blocks.	(inode_bb_map)
  * 	- A bitmap of which inodes are imagic inodes.	(inode_imagic_map)
+ *	- Ref counts for ea_inodes.			(ea_inode_refs)
  */
 
 #include "config.h"
@@ -38,6 +39,7 @@ static int disconnect_inode(e2fsck_t ctx, ext2_ino_t i,
 			       "pass4: disconnect_inode");
 	if (EXT2_INODE_SIZE(fs->super) > EXT2_GOOD_OLD_INODE_SIZE)
 		extra_size = inode->i_extra_isize;
+
 	clear_problem_context(&pctx);
 	pctx.ino = i;
 	pctx.inode = EXT2_INODE(inode);
@@ -85,6 +87,52 @@ static int disconnect_inode(e2fsck_t ctx, ext2_ino_t i,
 	return 0;
 }
 
+static void check_ea_inode(e2fsck_t ctx, ext2_ino_t i,
+			   struct ext2_inode_large *inode, __u16 *link_counted)
+{
+	__u64 actual_refs = 0;
+	__u64 ref_count;
+
+	/*
+	 * This function is called when link_counted is zero. So this may not
+	 * be an xattr inode at all. Return immediately if EA_INODE flag is not
+	 * set.
+	 */
+	e2fsck_read_inode_full(ctx, i, EXT2_INODE(inode),
+			       EXT2_INODE_SIZE(ctx->fs->super),
+			       "pass4: check_ea_inode");
+	if (!(inode->i_flags & EXT4_EA_INODE_FL))
+		return;
+
+	if (ctx->ea_inode_refs)
+		ea_refcount_fetch(ctx->ea_inode_refs, i, &actual_refs);
+	if (!actual_refs)
+		return;
+
+	/*
+	 * There are some attribute references, link_counted is now considered
+	 * to be 1.
+	 */
+	*link_counted = 1;
+
+	ref_count = ext2fs_get_ea_inode_ref(EXT2_INODE(inode));
+
+	/* Old Lustre-style xattr inodes do not have a stored refcount.
+	 * However, their i_ctime and i_atime should be the same.
+	 */
+	if (ref_count != actual_refs && inode->i_ctime != inode->i_atime) {
+		struct problem_context pctx;
+
+		clear_problem_context(&pctx);
+		pctx.ino = i;
+		pctx.num = ref_count;
+		pctx.num2 = actual_refs;
+		if (fix_problem(ctx, PR_4_EA_INODE_REF_COUNT, &pctx)) {
+			ext2fs_set_ea_inode_ref(EXT2_INODE(inode), actual_refs);
+			e2fsck_write_inode(ctx, i, EXT2_INODE(inode), "pass4");
+		}
+	}
+}
 
 void e2fsck_pass4(e2fsck_t ctx)
 {
@@ -152,6 +200,16 @@ void e2fsck_pass4(e2fsck_t ctx)
 			continue;
 		ext2fs_icount_fetch(ctx->inode_link_info, i, &link_count);
 		ext2fs_icount_fetch(ctx->inode_count, i, &link_counted);
+
+		if (link_counted == 0) {
+			/*
+			 * link_counted is expected to be 0 for an ea_inode.
+			 * check_ea_inode() will update link_counted if
+			 * necessary.
+			 */
+			check_ea_inode(ctx, i, inode, &link_counted);
+		}
+
 		if (link_counted == 0) {
 			if (!buf)
 				buf = e2fsck_allocate_memory(ctx,
@@ -197,6 +255,8 @@ void e2fsck_pass4(e2fsck_t ctx)
 	ext2fs_free_icount(ctx->inode_count); ctx->inode_count = 0;
 	ext2fs_free_inode_bitmap(ctx->inode_bb_map);
 	ctx->inode_bb_map = 0;
+	ea_refcount_free(ctx->ea_inode_refs);
+	ctx->ea_inode_refs = 0;
 	ext2fs_free_inode_bitmap(ctx->inode_imagic_map);
 	ctx->inode_imagic_map = 0;
 errout:

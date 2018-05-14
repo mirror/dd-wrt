@@ -69,6 +69,12 @@ This stanza contains general configuration parameters for
 .BR e2fsck 's
 behavior.
 .TP
+.I [defaults]
+Contains relations which define the default parameters used by
+.BR e2fsck (8).
+In general, these defaults may be overridden by command-line options
+provided by the user.
+.TP
 .I [problems]
 This stanza allows the administrator to reconfigure how e2fsck handles
 various filesystem inconsistencies.
@@ -157,6 +163,15 @@ the average fill ratio of directories can be maintained at a
 higher, more efficient level.  This relation defaults to 20
 percent.
 .TP
+.I inode_count_fullmap
+If this boolean relation is true, trade off using memory for speed when
+checking a file system with a large number of hard-linked files.  The
+amount of memory required is proportional to the number of inodes in the
+file system.  For large file systems, this can be gigabytes of memory.
+(For example a 40TB file system with 2.8 billion inodes will consume an
+additional 5.7 GB memory if this optimization is enabled.)  This setting
+defaults to false.
+.TP
 .I log_dir
 If the
 .I log_filename
@@ -169,17 +184,17 @@ relation.
 This relation contains an alternate directory that will be used if the
 directory specified by
 .I log_dir
-is not available or is not writeable.
+is not available or is not writable.
 .TP
 .I log_dir_wait
 If this boolean relation is true, them if the directories specified by
 .I log_dir
 or
 .I log_dir_fallback
-are not available or are not yet writeable, e2fsck will save the output
+are not available or are not yet writable, e2fsck will save the output
 in a memory buffer, and a child process will periodically test to see if
 the log directory has become available after the boot sequence has
-mounted the requiste file system for reading/writing.  This implements the
+mounted the requested file system for reading/writing.  This implements the
 functionality provided by
 .BR logsave (8)
 for e2fsck log files.
@@ -206,8 +221,8 @@ of that type are squelched.  This can be useful if the console is slow
 end up delaying the boot process for a long time (potentially hours).
 .TP
 .I no_optimize_extents
-Do not offer to optimize the extent tree by eliminating unnecessary
-width or depth.
+If this boolean relation is true, do not offer to optimize the extent
+tree by reducing the tree's width or depth.  This setting defaults to false.
 .TP
 .I readahead_mem_pct
 Use this percentage of memory to try to read in metadata blocks ahead of the
@@ -241,6 +256,19 @@ If this boolean relation is true, e2fsck will run as if the option
 .B -v
 is always specified.  This will cause e2fsck to print some additional
 information at the end of each full file system check.
+.SH THE [defaults] STANZA
+The following relations are defined in the
+.I [defaults]
+stanza.
+.TP
+.I undo_dir
+This relation specifies the directory where the undo file should be
+stored.  It can be overridden via the
+.B E2FSPROGS_UNDO_DIR
+environment variable.  If the directory location is set to the value
+.IR none ,
+.B e2fsck
+will not create an undo file.
 .SH THE [problems] STANZA
 Each tag in the
 .I [problems]
@@ -327,7 +355,7 @@ data structure, such as pruning an extent tree.
 @TDB_MAN_COMMENT@.TP
 @TDB_MAN_COMMENT@.I numdirs_threshold
 @TDB_MAN_COMMENT@If this relation is set, then in-memory data structures
-@TDB_MAN_COMMENT@be used if the number of directories in the filesystem
+@TDB_MAN_COMMENT@will be used if the number of directories in the filesystem
 @TDB_MAN_COMMENT@are fewer than amount specified.
 @TDB_MAN_COMMENT@.TP
 @TDB_MAN_COMMENT@.I dirinfo
@@ -404,7 +432,7 @@ The name of the user running e2fsck.
 .B %U
 This percent expression does not expand to anything, but it signals that
 any following date or time expressions should be expressed in UTC time
-instead of the local timzeone.
+instead of the local timezone.
 .TP
 .B %y
 The last two digits of the current year (00..99)

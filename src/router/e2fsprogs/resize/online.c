@@ -201,7 +201,7 @@ errcode_t online_resize_fs(ext2_filsys fs, const char *mtpt,
 	}
 
 	/* The current method of adding one block group at a time to a
-	 * mounted filesystem means it is impossible to accomodate the
+	 * mounted filesystem means it is impossible to accommodate the
 	 * flex_bg allocation method of placing the metadata together
 	 * in a single block group.  For now we "fix" this issue by
 	 * using the traditional layout for new block groups, where

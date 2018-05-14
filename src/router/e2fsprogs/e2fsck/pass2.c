@@ -85,6 +85,39 @@ struct check_dir_struct {
 	unsigned long long next_ra_off;
 };
 
+static void update_parents(struct dx_dir_info *dx_dir, int type)
+{
+	struct dx_dirblock_info *dx_db, *dx_parent, *dx_previous;
+	int b;
+
+	for (b = 0, dx_db = dx_dir->dx_block;
+	     b < dx_dir->numblocks;
+	     b++, dx_db++) {
+		dx_parent = &dx_dir->dx_block[dx_db->parent];
+		if (dx_db->type != type)
+			continue;
+
+		/*
+		 * XXX Make sure dx_parent->min_hash > dx_db->min_hash
+		*/
+		if (dx_db->flags & DX_FLAG_FIRST) {
+			dx_parent->min_hash = dx_db->min_hash;
+			if (dx_parent->previous) {
+				dx_previous =
+					&dx_dir->dx_block[dx_parent->previous];
+				dx_previous->node_max_hash =
+					dx_parent->min_hash;
+			}
+		}
+		/*
+		 * XXX Make sure dx_parent->max_hash < dx_db->max_hash
+		 */
+		if (dx_db->flags & DX_FLAG_LAST) {
+			dx_parent->max_hash = dx_db->max_hash;
+		}
+	}
+}
+
 void e2fsck_pass2(e2fsck_t ctx)
 {
 	struct ext2_super_block *sb = ctx->fs->super;
@@ -182,24 +215,11 @@ void e2fsck_pass2(e2fsck_t ctx)
 		 * Find all of the first and last leaf blocks, and
 		 * update their parent's min and max hash values
 		 */
-		for (b=0, dx_db = dx_dir->dx_block;
-		     b < dx_dir->numblocks;
-		     b++, dx_db++) {
-			if ((dx_db->type != DX_DIRBLOCK_LEAF) ||
-			    !(dx_db->flags & (DX_FLAG_FIRST | DX_FLAG_LAST)))
-				continue;
-			dx_parent = &dx_dir->dx_block[dx_db->parent];
-			/*
-			 * XXX Make sure dx_parent->min_hash > dx_db->min_hash
-			 */
-			if (dx_db->flags & DX_FLAG_FIRST)
-				dx_parent->min_hash = dx_db->min_hash;
-			/*
-			 * XXX Make sure dx_parent->max_hash < dx_db->max_hash
-			 */
-			if (dx_db->flags & DX_FLAG_LAST)
-				dx_parent->max_hash = dx_db->max_hash;
-		}
+		update_parents(dx_dir, DX_DIRBLOCK_LEAF);
+
+		/* for 3 level htree: update 2 level parent's min
+		 * and max hash values */
+		update_parents(dx_dir, DX_DIRBLOCK_NODE);
 
 		for (b=0, dx_db = dx_dir->dx_block;
 		     b < dx_dir->numblocks;
@@ -623,7 +643,7 @@ static void parse_int_node(ext2_filsys fs,
 		printf("Entry #%d: Hash 0x%08x, block %u\n", i,
 		       hash, ext2fs_le32_to_cpu(ent[i].block));
 #endif
-		blk = ext2fs_le32_to_cpu(ent[i].block) & 0x0ffffff;
+		blk = ext2fs_le32_to_cpu(ent[i].block) & EXT4_DX_BLOCK_MASK;
 		/* Check to make sure the block is valid */
 		if (blk >= (blk_t) dx_dir->numblocks) {
 			cd->pctx.blk = blk;
@@ -642,6 +662,11 @@ static void parse_int_node(ext2_filsys fs,
 			dx_db->flags |= DX_FLAG_REFERENCED;
 			dx_db->parent = db->blockcnt;
 		}
+
+		dx_db->previous =
+			i ? (ext2fs_le32_to_cpu(ent[i-1].block) &
+			     EXT4_DX_BLOCK_MASK) : 0;
+
 		if (hash < min_hash)
 			min_hash = hash;
 		if (hash > max_hash)
@@ -949,6 +974,14 @@ static int check_dir_block(ext2_filsys fs,
 			return DIRENT_ABORT;
 	}
 
+	/* This will allow (at some point in the future) to punch out empty
+	 * directory blocks and reduce the space used by a directory that grows
+	 * very large and then the files are deleted. For now, all that is
+	 * needed is to avoid e2fsck filling in these holes as part of
+	 * feature flag. */
+	if (db->blk == 0 && ext2fs_has_feature_largedir(fs->super))
+		return 0;
+
 	if (db->blk == 0 && !inline_data_size) {
 		if (allocate_dir_block(ctx, db, buf, &cd->pctx))
 			return 0;
@@ -1058,11 +1091,12 @@ inline_read_fail:
 			dx_db->flags |= DX_FLAG_FIRST | DX_FLAG_LAST;
 			if ((root->reserved_zero ||
 			     root->info_length < 8 ||
-			     root->indirect_levels > 1) &&
+			     root->indirect_levels >=
+			     ext2_dir_htree_level(fs)) &&
 			    fix_problem(ctx, PR_2_HTREE_BAD_ROOT, &cd->pctx)) {
 				clear_htree(ctx, ino);
 				dx_dir->numblocks = 0;
-				dx_db = 0;
+				dx_db = NULL;
 			}
 			dx_dir->hashversion = root->hash_version;
 			if ((dx_dir->hashversion <= EXT2_HASH_TEA) &&
@@ -1074,9 +1108,10 @@ inline_read_fail:
 			   (ext2fs_dirent_name_len(dirent) == 0) &&
 			   (ext2fs_le16_to_cpu(limit->limit) ==
 			    ((fs->blocksize - (8 + dx_csum_size)) /
-			     sizeof(struct ext2_dx_entry))))
+			     sizeof(struct ext2_dx_entry)))) {
 			dx_db->type = DX_DIRBLOCK_NODE;
-		is_leaf = (dx_db->type == DX_DIRBLOCK_LEAF);
+		}
+		is_leaf = dx_db ? (dx_db->type == DX_DIRBLOCK_LEAF) : 0;
 	}
 out_htree:
 
@@ -1575,6 +1610,7 @@ abort_free_dict:
 struct del_block {
 	e2fsck_t	ctx;
 	e2_blkcnt_t	num;
+	blk64_t last_cluster;
 };
 
 /*
@@ -1589,20 +1625,26 @@ static int deallocate_inode_block(ext2_filsys fs,
 				  void *priv_data)
 {
 	struct del_block *p = priv_data;
+	blk64_t cluster = EXT2FS_B2C(fs, *block_nr);
 
 	if (*block_nr == 0)
 		return 0;
+
+	if (cluster == p->last_cluster)
+		return 0;
+
+	p->last_cluster = cluster;
 	if ((*block_nr < fs->super->s_first_data_block) ||
 	    (*block_nr >= ext2fs_blocks_count(fs->super)))
 		return 0;
-	if ((*block_nr % EXT2FS_CLUSTER_RATIO(fs)) == 0)
-		ext2fs_block_alloc_stats2(fs, *block_nr, -1);
+
+        ext2fs_block_alloc_stats2(fs, *block_nr, -1);
 	p->num++;
 	return 0;
 }
 
 /*
- * This fuction deallocates an inode
+ * This function deallocates an inode
  */
 static void deallocate_inode(e2fsck_t ctx, ext2_ino_t ino, char* block_buf)
 {
@@ -1657,6 +1699,7 @@ static void deallocate_inode(e2fsck_t ctx, ext2_ino_t ino, char* block_buf)
 
 	del_block.ctx = ctx;
 	del_block.num = 0;
+	del_block.last_cluster = 0;
 	pctx.errcode = ext2fs_block_iterate3(fs, ino, 0, block_buf,
 					     deallocate_inode_block,
 					     &del_block);
@@ -1672,7 +1715,7 @@ clear_inode:
 }
 
 /*
- * This fuction clears the htree flag on an inode
+ * This function clears the htree flag on an inode
  */
 static void clear_htree(e2fsck_t ctx, ext2_ino_t ino)
 {
@@ -1811,10 +1854,10 @@ int e2fsck_process_bad_inode(e2fsck_t ctx, ext2_ino_t dir,
 		} else
 			not_fixed++;
 	}
-	if (inode.i_dir_acl &&
+	if (inode.i_size_high && !ext2fs_has_feature_largedir(fs->super) &&
 	    LINUX_S_ISDIR(inode.i_mode)) {
-		if (fix_problem(ctx, PR_2_DIR_ACL_ZERO, &pctx)) {
-			inode.i_dir_acl = 0;
+		if (fix_problem(ctx, PR_2_DIR_SIZE_HIGH_ZERO, &pctx)) {
+			inode.i_size_high = 0;
 			inode_modified++;
 		} else
 			not_fixed++;

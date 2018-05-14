@@ -12,6 +12,8 @@
 #ifndef _EXT2FS_EXT2_IO_H
 #define _EXT2FS_EXT2_IO_H
 
+#include <ext2fs/ext2_types.h>
+
 /*
  * ext2_loff_t is defined here since unix_io.c needs it.
  */
@@ -140,6 +142,10 @@ extern errcode_t io_channel_cache_readahead(io_channel io,
 /* unix_io.c */
 extern io_manager unix_io_manager;
 extern io_manager unixfd_io_manager;
+
+/* sparse_io.c */
+extern io_manager sparse_io_manager;
+extern io_manager sparsefd_io_manager;
 
 /* undo_io.c */
 extern io_manager undo_io_manager;

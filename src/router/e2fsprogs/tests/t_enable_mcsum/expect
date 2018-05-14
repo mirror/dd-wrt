@@ -18,6 +18,8 @@ Pass 5: Checking group summary information
 Exit status is 0
 tune2fs -O metadata_csum test.img
 
+This operation requires a freshly checked filesystem.
+
 Please run e2fsck -fD on the filesystem.
 
 Exit status is 0

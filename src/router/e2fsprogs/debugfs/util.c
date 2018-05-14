@@ -210,7 +210,7 @@ char *time_to_string(__s64 cl)
 	const char	*tz;
 
 	if (do_gmt == -1) {
-		/* The diet libc doesn't respect the TZ environemnt variable */
+		/* The diet libc doesn't respect the TZ environment variable */
 		tz = ss_safe_getenv("TZ");
 		if (!tz)
 			tz = "";

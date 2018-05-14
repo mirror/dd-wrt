@@ -919,7 +919,7 @@ static errcode_t clone_file(e2fsck_t ctx, ext2_ino_t ino,
 					sizeof(dp->inode), "clone file EA");
 		/*
 		 * If we cloned the EA block, find all other inodes
-		 * which refered to that EA block, and modify
+		 * which referred to that EA block, and modify
 		 * them to point to the new EA block.
 		 */
 		n = dict_lookup(&clstr_dict,

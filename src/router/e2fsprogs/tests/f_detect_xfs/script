@@ -21,7 +21,7 @@ test -x $DEBUGFS_EXE && $DEBUGFS_EXE -R 'quit' $TMPFILE >> $OUT 2>&1
 echo "*** tune2fs" >> $OUT
 $TUNE2FS -i 0 $TMPFILE >> $OUT 2>&1
 echo "*** mke2fs" >> $OUT
-$MKE2FS -n $TMPFILE >> $OUT 2>&1
+$MKE2FS -n -b 1024 $TMPFILE >> $OUT 2>&1
 
 sed -f $cmd_dir/filter.sed -e "s|$TMPFILE|test.img|g" < $OUT > $OUT.new
 mv $OUT.new $OUT

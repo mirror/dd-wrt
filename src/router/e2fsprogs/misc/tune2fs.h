@@ -14,8 +14,8 @@
 extern "C" {
 #endif
 
-/* Takes exactly the same args as the tune2fs exectuable.
- * Is the entrypoint for libtune2fs.
+/* Takes exactly the same args as the tune2fs executable.
+ * Is the entry point for libtune2fs.
  */
 int tune2fs_main(int argc, char **argv);
 

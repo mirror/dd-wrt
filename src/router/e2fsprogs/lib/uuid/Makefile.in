@@ -171,7 +171,7 @@ clean::
 		../libuuid.a ../libuuid_p.a tst_uuid uuid_time \
 		uuid.pc uuid_types.h $(SMANPAGES)
 
-check:: tst_uuid
+fullcheck check:: tst_uuid
 	LD_LIBRARY_PATH=$(LIB) DYLD_LIBRARY_PATH=$(LIB) ./tst_uuid
 
 mostlyclean:: clean

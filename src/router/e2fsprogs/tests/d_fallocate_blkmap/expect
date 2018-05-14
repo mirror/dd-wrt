@@ -18,7 +18,7 @@ debugfs: stat /a
 Inode: 12   Type: regular    Mode:  0666   Flags: 0x0
 Generation: 0    Version: 0x00000000:00000000
 User:     0   Group:     0   Project:     0   Size: 40960
-File ACL: 0    Directory ACL: 0
+File ACL: 0
 Links: 1   Blockcount: 82
 Fragment:  Address: 0    Number: 0    Size: 0
 Size of extra inode fields: 32
@@ -30,7 +30,7 @@ debugfs: stat /b
 Inode: 13   Type: regular    Mode:  0666   Flags: 0x0
 Generation: 0    Version: 0x00000000:00000000
 User:     0   Group:     0   Project:     0   Size: 10240000
-File ACL: 0    Directory ACL: 0
+File ACL: 0
 Links: 1   Blockcount: 20082
 Fragment:  Address: 0    Number: 0    Size: 0
 Size of extra inode fields: 32

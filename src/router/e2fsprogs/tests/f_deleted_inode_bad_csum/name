@@ -1,1 +1,1 @@
-deleted inode with a bad csum that wasn't getting fixed (metadata_csum)
+deleted inode with bad metadata_csum wasn't fixed

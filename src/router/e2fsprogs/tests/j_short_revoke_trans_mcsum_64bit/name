@@ -1,1 +1,1 @@
-revoke blocks of transaction nuking the bitmaps on 64bit,metadata_csum
+revoke trans nuking bmap 64bit,meta_csum

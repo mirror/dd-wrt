@@ -1112,7 +1112,7 @@ errcode_t profile_create_node(const char *name, const char *value,
 }
 
 /*
- * This function verifies that all of the representation invarients of
+ * This function verifies that all of the representation invariants of
  * the profile are true.  If not, we have a programming bug somewhere,
  * probably in this file.
  */

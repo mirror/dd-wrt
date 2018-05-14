@@ -154,8 +154,6 @@ static void str2hashbuf(const char *msg, int len, __u32 *buf, int num,
 	if (len > num*4)
 		len = num * 4;
 	for (i=0; i < len; i++) {
-		if ((i % 4) == 0)
-			val = pad;
 		if (unsigned_flag)
 			c = (int) ucp[i];
 		else

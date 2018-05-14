@@ -179,7 +179,7 @@ cleanup_iterator:
 }
 
 /*
- * This function will return the list of the names of subections in the
+ * This function will return the list of the names of subsections in the
  * under the specified section name.
  */
 errcode_t

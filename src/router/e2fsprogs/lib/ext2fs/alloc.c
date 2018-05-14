@@ -144,27 +144,38 @@ errcode_t ext2fs_new_inode(ext2_filsys fs, ext2_ino_t dir,
  * Stupid algorithm --- we now just search forward starting from the
  * goal.  Should put in a smarter one someday....
  */
-errcode_t ext2fs_new_block2(ext2_filsys fs, blk64_t goal,
-			   ext2fs_block_bitmap map, blk64_t *ret)
+errcode_t ext2fs_new_block3(ext2_filsys fs, blk64_t goal,
+			    ext2fs_block_bitmap map, blk64_t *ret,
+			    struct blk_alloc_ctx *ctx)
 {
 	errcode_t retval;
 	blk64_t	b = 0;
 	errcode_t (*gab)(ext2_filsys fs, blk64_t goal, blk64_t *ret);
+	errcode_t (*gab2)(ext2_filsys, blk64_t, blk64_t *,
+			  struct blk_alloc_ctx *);
 
 	EXT2_CHECK_MAGIC(fs, EXT2_ET_MAGIC_EXT2FS_FILSYS);
 
-	if (!map && fs->get_alloc_block) {
+	if (!map) {
 		/*
 		 * In case there are clients out there whose get_alloc_block
 		 * handlers call ext2fs_new_block2 with a NULL block map,
 		 * temporarily swap out the function pointer so that we don't
 		 * end up in an infinite loop.
 		 */
-		gab = fs->get_alloc_block;
-		fs->get_alloc_block = NULL;
-		retval = gab(fs, goal, &b);
-		fs->get_alloc_block = gab;
-		goto allocated;
+		if (fs->get_alloc_block2) {
+			gab2 = fs->get_alloc_block2;
+			fs->get_alloc_block2 = NULL;
+			retval = gab2(fs, goal, &b, ctx);
+			fs->get_alloc_block2 = gab2;
+			goto allocated;
+		} else if (fs->get_alloc_block) {
+			gab = fs->get_alloc_block;
+			fs->get_alloc_block = NULL;
+			retval = gab(fs, goal, &b);
+			fs->get_alloc_block = gab;
+			goto allocated;
+		}
 	}
 	if (!map)
 		map = fs->block_map;
@@ -190,6 +201,12 @@ allocated:
 	return 0;
 }
 
+errcode_t ext2fs_new_block2(ext2_filsys fs, blk64_t goal,
+			   ext2fs_block_bitmap map, blk64_t *ret)
+{
+	return ext2fs_new_block3(fs, goal, map, ret, NULL);
+}
+
 errcode_t ext2fs_new_block(ext2_filsys fs, blk_t goal,
 			   ext2fs_block_bitmap map, blk_t *ret)
 {
@@ -205,13 +222,17 @@ errcode_t ext2fs_new_block(ext2_filsys fs, blk_t goal,
  * This function zeros out the allocated block, and updates all of the
  * appropriate filesystem records.
  */
-errcode_t ext2fs_alloc_block2(ext2_filsys fs, blk64_t goal,
-			     char *block_buf, blk64_t *ret)
+errcode_t ext2fs_alloc_block3(ext2_filsys fs, blk64_t goal, char *block_buf,
+			      blk64_t *ret, struct blk_alloc_ctx *ctx)
 {
 	errcode_t	retval;
 	blk64_t		block;
 
-	if (fs->get_alloc_block) {
+	if (fs->get_alloc_block2) {
+		retval = (fs->get_alloc_block2)(fs, goal, &block, ctx);
+		if (retval)
+			goto fail;
+	} else if (fs->get_alloc_block) {
 		retval = (fs->get_alloc_block)(fs, goal, &block);
 		if (retval)
 			goto fail;
@@ -222,7 +243,7 @@ errcode_t ext2fs_alloc_block2(ext2_filsys fs, blk64_t goal,
 				goto fail;
 		}
 
-		retval = ext2fs_new_block2(fs, goal, 0, &block);
+		retval = ext2fs_new_block3(fs, goal, 0, &block, ctx);
 		if (retval)
 			goto fail;
 	}
@@ -242,15 +263,21 @@ fail:
 	return retval;
 }
 
+errcode_t ext2fs_alloc_block2(ext2_filsys fs, blk64_t goal,
+			     char *block_buf, blk64_t *ret)
+{
+	return ext2fs_alloc_block3(fs, goal, block_buf, ret, NULL);
+}
+
 errcode_t ext2fs_alloc_block(ext2_filsys fs, blk_t goal,
 			     char *block_buf, blk_t *ret)
 {
 	errcode_t retval;
-	blk64_t	val;
-	retval = ext2fs_alloc_block2(fs, goal, block_buf, &val);
+	blk64_t ret64, goal64 = goal;
+	retval = ext2fs_alloc_block3(fs, goal64, block_buf, &ret64, NULL);
 	if (!retval)
-		*ret = (blk_t) val;
-	return retval;
+		*ret = (blk_t)ret64;
+        return retval;
 }
 
 errcode_t ext2fs_get_free_blocks2(ext2_filsys fs, blk64_t start, blk64_t finish,
@@ -326,10 +353,11 @@ blk64_t ext2fs_find_inode_goal(ext2_filsys fs, ext2_ino_t ino,
 	ext2_extent_handle_t	handle = NULL;
 	errcode_t		err;
 
-	if (inode == NULL || ext2fs_inode_data_blocks2(fs, inode) == 0)
-		goto no_blocks;
-
-	if (inode->i_flags & EXT4_INLINE_DATA_FL)
+	/* Make sure data stored in inode->i_block is neither fast symlink nor
+	 * inline data.
+	 */
+	if (inode == NULL || ext2fs_is_fast_symlink(inode) ||
+	    inode->i_flags & EXT4_INLINE_DATA_FL)
 		goto no_blocks;
 
 	if (inode->i_flags & EXT4_EXTENTS_FL) {
