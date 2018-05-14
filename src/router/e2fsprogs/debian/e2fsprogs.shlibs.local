@@ -1,0 +1,4 @@
+libcom_err 2 libcom-err2 (>= 1.42~WIP-2011-10-05-1)
+libss 2 libss2 (>= 1.34-1)
+libext2fs 2 libext2fs2 (= ${binary:Version})
+libe2p 2 libext2fs2 (= ${binary:Version})
