@@ -16,7 +16,7 @@ Pass 5: Checking group summary information
 test_filesys: 11/16384 files (0.0% non-contiguous), 5164/65536 blocks
 Exit status is 0
 debugfs write journal
-disable metadata_csum on a dirty-journal fs
+set the label on a dirty-journal fs
 Recovering journal.
 fsck the whole mess
 Pass 1: Checking inodes, blocks, and sizes

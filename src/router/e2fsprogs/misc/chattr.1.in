@@ -23,13 +23,13 @@ chattr \- change file attributes on a Linux file system
 .B chattr
 changes the file attributes on a Linux file system.
 .PP
-The format of a symbolic mode is +-=[aAcCdDeijsStTu].
+The format of a symbolic mode is +-=[aAcCdDeijPsStTu].
 .PP
 The operator '+' causes the selected attributes to be added to the
 existing attributes of the files; '-' causes them to be removed; and '='
 causes them to be the only attributes that the files have.
 .PP
-The letters 'aAcCdDeijsStTu' select the new attributes for the files:
+The letters 'aAcCdDeijPsStTu' select the new attributes for the files:
 append only (a),
 no atime updates (A),
 compressed (c),
@@ -49,12 +49,9 @@ and undeletable (u).
 The following attributes are read-only, and may be listed by
 .BR lsattr (1)
 but not modified by chattr:
-compression error (E),
-huge file (h),
+encrypted (E),
 indexed directory (I),
-inline data (N),
-compression raw access (X),
-and compressed dirty file (Z).
+and inline data (N).
 .PP
 Not all flags are supported or utilized by all filesystems; refer to
 filesystem-specific man pages such as
@@ -122,15 +119,9 @@ set or reset using
 although it can be displayed by
 .BR lsattr (1).
 .PP
-The 'h' attribute indicates the file is storing its blocks in units of the
-filesystem blocksize instead of in units of sectors, and means that the file
-is (or at one time was) larger than 2TB.  It may not be set or reset using
-.BR chattr (1),
-although it can be displayed by
-.BR lsattr (1).
-.PP
 A file with the 'i' attribute cannot be modified: it cannot be deleted or
-renamed, no link can be created to this file and no data can be written
+renamed, no link can be created to this file, most of the file's
+metadata can not be modified, and no data can be written
 to the file.  Only the superuser or a process possessing the
 CAP_LINUX_IMMUTABLE capability can set or clear this attribute.
 .PP
@@ -140,13 +131,13 @@ is being indexed using hashed trees.  It may not be set or reset using
 although it can be displayed by
 .BR lsattr (1).
 .PP
-A file with the 'j' attribute has all of its data written to the ext3
-or ext4 journal before being written to the file itself, if the filesystem
-is mounted with the "data=ordered" or "data=writeback" options.  When the
-filesystem is mounted with the "data=journal" option all file data
-is already journalled and this attribute has no effect.  Only
-the superuser or a process possessing the CAP_SYS_RESOURCE
-capability can set or clear this attribute.
+A file with the 'j' attribute has all of its data written to the ext3 or
+ext4 journal before being written to the file itself, if the file system
+is mounted with the "data=ordered" or "data=writeback" options and the
+file system has a journal.  When the filesystem is mounted with the
+"data=journal" option all file data is already journalled and this
+attribute has no effect.  Only the superuser or a process possessing the
+CAP_SYS_RESOURCE capability can set or clear this attribute.
 .PP
 A file with the 'N' attribute set indicates that the file has data
 stored inline, within the inode itself. It may not be set or reset using
@@ -156,7 +147,7 @@ although it can be displayed by
 .PP
 A directory with the 'P' attribute set will enforce a hierarchical
 structure for project id's.  This means that files and directory created
-in the directory will inhert the project id of the directory, rename
+in the directory will inherit the project id of the directory, rename
 operations are constrained so when a file or directory is moved into
 another directory, that the project id's much match.  In addition, a
 hard link to file can only be created when the project id for the file
@@ -192,19 +183,6 @@ saved.  This allows the user to ask for its undeletion.  Note: please
 make sure to read the bugs and limitations section at the end of this
 document.
 .PP
-The 'X' attribute is used by the experimental compression patches to
-indicate that the raw contents of a compressed file can be accessed
-directly.  It currently may not be set or reset using
-.BR chattr (1),
-although it can be displayed by
-.BR lsattr (1).
-.PP
-The 'Z' attribute is used by the experimental compression patches to
-indicate a compressed file is dirty.  It may not be set or reset using
-.BR chattr (1),
-although it can be displayed by
-.BR lsattr (1).
-.PP
 .SH AUTHOR
 .B chattr
 was written by Remy Card <Remy.Card@linux.org>.  It is currently being
@@ -214,7 +192,7 @@ The 'c', 's',  and 'u' attributes are not honored
 by the ext2, ext3, and ext4 filesystems as implemented in the current
 mainline Linux kernels.
 .PP
-The 'j' option is only useful if the filesystem is mounted as ext3 or ext4.
+The 'j' option is only useful for ext3 and ext4 file systems.
 .PP
 The 'D' option is only useful on Linux kernel 2.5.19 and later.
 .SH AVAILABILITY

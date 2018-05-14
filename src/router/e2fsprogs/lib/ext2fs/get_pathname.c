@@ -1,5 +1,5 @@
 /*
- * get_pathname.c --- do directry/inode -> name translation
+ * get_pathname.c --- do directory/inode -> name translation
  *
  * Copyright (C) 1993, 1994, 1995 Theodore Ts'o.
  *

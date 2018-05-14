@@ -23,6 +23,12 @@ cat > $CONF << ENDL
 	}
 ENDL
 
+if [ $(uname -s) = "Darwin" ]; then
+	# creates a 786MB filesystem
+	echo "$test_name: $DESCRIPTION: skipped for HFS+ (no sparse files)"
+	return 0
+fi
+
 echo "resize2fs test" > $OUT
 
 MKE2FS_CONFIG=$CONF $MKE2FS -F -T ext4h $TMPFILE 786432 >> $OUT 2>&1
@@ -36,7 +42,7 @@ echo Exit status is $status >> $OUT
 
 # convert it
 echo "resize2fs test.img" >> $OUT
-dd if=/dev/zero of=$TMPFILE conv=notrunc bs=1 count=1 seek=3221225471 2> /dev/null
+$DD if=/dev/zero of=$TMPFILE conv=notrunc bs=1 count=1 seek=3221225471 2> /dev/null
 $RESIZE2FS -f $TMPFILE 2>&1 >> $OUT 2>&1
 status=$?
 echo Exit status is $status >> $OUT

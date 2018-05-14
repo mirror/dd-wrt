@@ -712,7 +712,7 @@ int tdb_lockall_unmark(struct tdb_context *tdb)
 	return _tdb_unlockall(tdb, F_WRLCK | TDB_MARK_LOCK);
 }
 
-/* lock entire database with write lock - nonblocking varient */
+/* lock entire database with write lock - nonblocking variant */
 int tdb_lockall_nonblock(struct tdb_context *tdb)
 {
 	return _tdb_lockall(tdb, F_WRLCK, F_SETLK);
@@ -730,7 +730,7 @@ int tdb_lockall_read(struct tdb_context *tdb)
 	return _tdb_lockall(tdb, F_RDLCK, F_SETLKW);
 }
 
-/* lock entire database with read lock - nonblock varient */
+/* lock entire database with read lock - nonblock variant */
 int tdb_lockall_read_nonblock(struct tdb_context *tdb)
 {
 	return _tdb_lockall(tdb, F_RDLCK, F_SETLK);
@@ -1276,7 +1276,7 @@ void tdb_io_init(struct tdb_context *tdb)
     although once a transaction is started then an exclusive lock is
     gained until the transaction is committed or cancelled
 
-  - the commit stategy involves first saving away all modified data
+  - the commit strategy involves first saving away all modified data
     into a linearised buffer in the transaction recovery area, then
     marking the transaction recovery area with a magic value to
     indicate a valid recovery record. In total 4 fsync/msync calls are
@@ -2323,7 +2323,7 @@ static int update_tailer(struct tdb_context *tdb, tdb_off_t offset,
 }
 
 /* Add an element into the freelist. Merge adjacent records if
-   neccessary. */
+   necessary. */
 int tdb_free(struct tdb_context *tdb, tdb_off_t offset, struct list_struct *rec)
 {
 	tdb_off_t right, left;
@@ -2674,7 +2674,7 @@ static int tdb_next_lock(struct tdb_context *tdb, struct tdb_traverse_lock *tloc
 			   that we have done at least one fcntl lock at the
 			   start of a search to guarantee that memory is
 			   coherent on SMP systems. If records are added by
-			   others during the search then thats OK, and we
+			   others during the search then that's OK, and we
 			   could possibly miss those with this trick, but we
 			   could miss them anyway without this trick, so the
 			   semantics don't change.
@@ -2762,7 +2762,7 @@ static int tdb_traverse_internal(struct tdb_context *tdb,
 	struct list_struct rec;
 	int ret, count = 0;
 
-	/* This was in the initializaton, above, but the IRIX compiler
+	/* This was in the initialization, above, but the IRIX compiler
 	 * did not like it.  crh
 	 */
 	tl->next = tdb->travlocks.next;
@@ -4051,7 +4051,7 @@ int tdb_close(struct tdb_context *tdb)
 	return ret;
 }
 
-/* register a loging function */
+/* register a logging function */
 void tdb_set_logging_function(struct tdb_context *tdb,
                               const struct tdb_logging_context *log_ctx)
 {

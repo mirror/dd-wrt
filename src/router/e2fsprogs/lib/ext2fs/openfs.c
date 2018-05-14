@@ -122,11 +122,13 @@ errcode_t ext2fs_open2(const char *name, const char *io_options,
 	char		*dest, *cp;
 	int		group_zero_adjust = 0;
 	int		inode_size;
+	__u64		groups_cnt;
 #ifdef WORDS_BIGENDIAN
 	unsigned int	groups_per_block;
 	struct ext2_group_desc *gdp;
 	int		j;
 #endif
+	char		*time_env;
 
 	EXT2_CHECK_MAGIC(manager, EXT2_ET_MAGIC_IO_MANAGER);
 
@@ -140,6 +142,11 @@ errcode_t ext2fs_open2(const char *name, const char *io_options,
 	/* don't overwrite sb backups unless flag is explicitly cleared */
 	fs->flags |= EXT2_FLAG_MASTER_SB_ONLY;
 	fs->umask = 022;
+
+	time_env = getenv("E2FSPROGS_FAKE_TIME");
+	if (time_env)
+		fs->now = strtoul(time_env, NULL, 0);
+
 	retval = ext2fs_get_mem(strlen(name)+1, &fs->device_name);
 	if (retval)
 		goto cleanup;
@@ -371,9 +378,14 @@ errcode_t ext2fs_open2(const char *name, const char *io_options,
 		retval = EXT2_ET_CORRUPT_SUPERBLOCK;
 		goto cleanup;
 	}
-	fs->group_desc_count = ext2fs_div64_ceil(ext2fs_blocks_count(fs->super) -
-						 fs->super->s_first_data_block,
-						 blocks_per_group);
+	groups_cnt = ext2fs_div64_ceil(ext2fs_blocks_count(fs->super) -
+				       fs->super->s_first_data_block,
+				       blocks_per_group);
+	if (groups_cnt >> 32) {
+		retval = EXT2_ET_CORRUPT_SUPERBLOCK;
+		goto cleanup;
+	}
+	fs->group_desc_count = 	groups_cnt;
 	if (fs->group_desc_count * EXT2_INODES_PER_GROUP(fs->super) !=
 	    fs->super->s_inodes_count) {
 		retval = EXT2_ET_CORRUPT_SUPERBLOCK;
@@ -404,7 +416,8 @@ errcode_t ext2fs_open2(const char *name, const char *io_options,
 #ifdef WORDS_BIGENDIAN
 	groups_per_block = EXT2_DESC_PER_BLOCK(fs->super);
 #endif
-	if (ext2fs_has_feature_meta_bg(fs->super)) {
+	if (ext2fs_has_feature_meta_bg(fs->super) &&
+	    !(flags & EXT2_FLAG_IMAGE_FILE)) {
 		first_meta_bg = fs->super->s_first_meta_bg;
 		if (first_meta_bg > fs->desc_blocks)
 			first_meta_bg = fs->desc_blocks;

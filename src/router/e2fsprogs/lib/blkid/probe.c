@@ -41,7 +41,7 @@ static int figure_label_len(const unsigned char *label, int len)
 {
 	const unsigned char *end = label + len - 1;
 
-	while ((*end == ' ' || *end == 0) && end >= label)
+	while (end >= label && (*end == ' ' || *end == 0))
 		--end;
 	if (end >= label)
 		return end - label + 1;

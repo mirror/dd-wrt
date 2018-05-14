@@ -151,7 +151,7 @@ errcode_t ext2fs_open_inode_scan(ext2_filsys fs, int buffer_blocks,
 	 */
 	if (fs->badblocks == 0) {
 		/*
-		 * Temporarly save fs->get_blocks and set it to zero,
+		 * Temporarily save fs->get_blocks and set it to zero,
 		 * for compatibility with old e2fsck's.
 		 */
 		save_get_blocks = fs->get_blocks;

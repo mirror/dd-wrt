@@ -108,7 +108,7 @@ extern void ext2fs_unmark_block_bitmap_range(ext2fs_block_bitmap bitmap,
 extern int ext2fs_test_block_bitmap_range(ext2fs_block_bitmap bitmap,
 					  blk_t block, int num);
 extern int ext2fs_test_inode_bitmap_range(ext2fs_inode_bitmap bitmap,
-					  ino_t inode, int num);
+					  ext2_ino_t inode, int num);
 extern int ext2fs_mark_generic_bitmap(ext2fs_generic_bitmap bitmap,
 					 __u32 bitno);
 extern int ext2fs_unmark_generic_bitmap(ext2fs_generic_bitmap bitmap,

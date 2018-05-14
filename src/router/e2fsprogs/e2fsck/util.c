@@ -196,12 +196,15 @@ int ask_yn(e2fsck_t ctx, const char * string, int def)
 	const char	*short_yes = _("yY");
 	const char	*short_no = _("nN");
 	const char	*short_yesall = _("aA");
+	const char	*english_yes = "yY";
+	const char	*english_no = "nN";
+	const char	*english_yesall = "aA";
 	const char	*yesall_prompt = _(" ('a' enables 'yes' to all) ");
 	const char	*extra_prompt = "";
 	static int	yes_answers;
 
 #ifdef HAVE_TERMIOS_H
-	struct termios	termios, tmp;
+	struct termios	termios = {0, }, tmp;
 
 	tcgetattr (0, &termios);
 	tmp = termios;
@@ -244,19 +247,28 @@ int ask_yn(e2fsck_t ctx, const char * string, int def)
 			return 0;
 		}
 		if (strchr(short_yes, (char) c)) {
+		do_yes:
 			def = 1;
 			if (yes_answers >= 0)
 				yes_answers++;
 			break;
 		} else if (strchr(short_no, (char) c)) {
+		do_no:
 			def = 0;
 			yes_answers = -1;
 			break;
 		} else if (strchr(short_yesall, (char)c)) {
+		do_all:
 			def = 2;
 			yes_answers = -1;
 			ctx->options |= E2F_OPT_YES;
 			break;
+		} else if (strchr(english_yes, (char) c)) {
+			goto do_yes;
+		} else if (strchr(english_no, (char) c)) {
+			goto do_no;
+		} else if (strchr(english_yesall, (char) c)) {
+			goto do_all;
 		} else if ((c == 27 || c == ' ' || c == '\n') && (def != -1)) {
 			yes_answers = -1;
 			break;
@@ -723,7 +735,7 @@ int check_for_modules(const char *fs_name)
 
 /*
  * Helper function that does the right thing if write returns a
- * partial write, or an EGAIN/EINTR error.
+ * partial write, or an EAGAIN/EINTR error.
  */
 int write_all(int fd, char *buf, size_t count)
 {

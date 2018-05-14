@@ -21,8 +21,6 @@
 #include "e2fsck.h"
 #include "problem.h"
 
-#define DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))
-
 static void check_block_bitmaps(e2fsck_t ctx);
 static void check_inode_bitmaps(e2fsck_t ctx);
 static void check_inode_end(e2fsck_t ctx);
@@ -302,7 +300,7 @@ static void print_bitmap_problem(e2fsck_t ctx, problem_t problem,
 	pctx->ino = pctx->ino2 = 0;
 }
 
-/* Just to be more succint */
+/* Just to be more succinct */
 #define B2C(x)	EXT2FS_B2C(fs, (x))
 #define EQ_CLSTR(x, y) (B2C(x) == B2C(y))
 #define LE_CLSTR(x, y) (B2C(x) <= B2C(y))

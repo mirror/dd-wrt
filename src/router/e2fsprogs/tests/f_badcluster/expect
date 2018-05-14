@@ -13,8 +13,6 @@ Inode 17 logical block 0 (physical block 1186) violates cluster allocation rules
 Will fix in pass 1B.
 Inode 17 logical block 2 (physical block 1184) violates cluster allocation rules.
 Will fix in pass 1B.
-Inode 17, i_blocks is 32, should be 64.  Fix? yes
-
 Inode 18 logical block 3 (physical block 1201) violates cluster allocation rules.
 Will fix in pass 1B.
 Inode 18, i_blocks is 32, should be 64.  Fix? yes
@@ -86,8 +84,6 @@ Inode 12, i_blocks is 64, should be 32.  Fix? yes
 
 Inode 16, i_blocks is 64, should be 32.  Fix? yes
 
-Inode 17, i_blocks is 64, should be 32.  Fix? yes
-
 Inode 18, i_blocks is 64, should be 32.  Fix? yes
 
 Pass 2: Checking directory structure
@@ -116,7 +112,7 @@ debugfs: stat /a
 Inode: 12   Type: regular    Mode:  0644   Flags: 0x80000
 Generation: 1117152157    Version: 0x00000001
 User:     0   Group:     0   Size: 3072
-File ACL: 0    Directory ACL: 0
+File ACL: 0
 Links: 1   Blockcount: 32
 Fragment:  Address: 0    Number: 0    Size: 0
 ctime: 0x539ff5b2 -- Tue Jun 17 08:00:50 2014
@@ -128,7 +124,7 @@ debugfs: stat /b
 Inode: 13   Type: regular    Mode:  0644   Flags: 0x80000
 Generation: 1117152158    Version: 0x00000001
 User:     0   Group:     0   Size: 3072
-File ACL: 0    Directory ACL: 0
+File ACL: 0
 Links: 1   Blockcount: 32
 Fragment:  Address: 0    Number: 0    Size: 0
 ctime: 0x539ff5b2 -- Tue Jun 17 08:00:50 2014
@@ -140,7 +136,7 @@ debugfs: stat /c
 Inode: 14   Type: regular    Mode:  0644   Flags: 0x80000
 Generation: 1117152159    Version: 0x00000001
 User:     0   Group:     0   Size: 3072
-File ACL: 0    Directory ACL: 0
+File ACL: 0
 Links: 1   Blockcount: 32
 Fragment:  Address: 0    Number: 0    Size: 0
 ctime: 0x539ff5b2 -- Tue Jun 17 08:00:50 2014
@@ -152,7 +148,7 @@ debugfs: stat /d
 Inode: 15   Type: regular    Mode:  0644   Flags: 0x80000
 Generation: 1117152160    Version: 0x00000001
 User:     0   Group:     0   Size: 3072
-File ACL: 0    Directory ACL: 0
+File ACL: 0
 Links: 1   Blockcount: 0
 Fragment:  Address: 0    Number: 0    Size: 0
 ctime: 0x539ff5b2 -- Tue Jun 17 08:00:50 2014
@@ -163,7 +159,7 @@ debugfs: stat /e
 Inode: 16   Type: regular    Mode:  0644   Flags: 0x80000
 Generation: 1117152161    Version: 0x00000001
 User:     0   Group:     0   Size: 6144
-File ACL: 0    Directory ACL: 0
+File ACL: 0
 Links: 1   Blockcount: 32
 Fragment:  Address: 0    Number: 0    Size: 0
 ctime: 0x539ff5b2 -- Tue Jun 17 08:00:50 2014
@@ -175,7 +171,7 @@ debugfs: stat /f
 Inode: 17   Type: regular    Mode:  0644   Flags: 0x80000
 Generation: 1117152162    Version: 0x00000001
 User:     0   Group:     0   Size: 3072
-File ACL: 0    Directory ACL: 0
+File ACL: 0
 Links: 1   Blockcount: 32
 Fragment:  Address: 0    Number: 0    Size: 0
 ctime: 0x539ff5b2 -- Tue Jun 17 08:00:50 2014
@@ -187,7 +183,7 @@ debugfs: stat /g
 Inode: 18   Type: regular    Mode:  0644   Flags: 0x80000
 Generation: 1117152163    Version: 0x00000001
 User:     0   Group:     0   Size: 3072
-File ACL: 0    Directory ACL: 0
+File ACL: 0
 Links: 1   Blockcount: 32
 Fragment:  Address: 0    Number: 0    Size: 0
 ctime: 0x539ff5b2 -- Tue Jun 17 08:00:50 2014

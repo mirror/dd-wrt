@@ -119,7 +119,7 @@ void blkid__scan_dir(const char *dirname, dev_t devno, struct dir_list **list,
 		if (stat(path, &st) < 0)
 			continue;
 
-		if (S_ISBLK(st.st_mode) && st.st_rdev == devno) {
+		if (blkidP_is_disk_device(st.st_mode) && st.st_rdev == devno) {
 			*devname = blkid_strdup(path);
 			DBG(DEBUG_DEVNO,
 			    printf("found 0x%llx at %s (%p)\n", (long long)devno,

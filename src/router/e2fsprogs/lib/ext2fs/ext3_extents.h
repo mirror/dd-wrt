@@ -59,7 +59,7 @@ struct ext3_extent_header {
 	__le16	eh_magic;	/* probably will support different formats */
 	__le16	eh_entries;	/* number of valid entries */
 	__le16	eh_max;		/* capacity of store in entries */
-	__le16	eh_depth;	/* has tree real underlaying blocks? */
+	__le16	eh_depth;	/* has tree real underlying blocks? */
 	__le32	eh_generation;	/* generation of the tree */
 };
 

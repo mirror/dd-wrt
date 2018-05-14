@@ -174,7 +174,7 @@ static struct e2fsck_problem problem_table[] = {
 	  N_("Corruption found in @S.  (%s = %N).\n"),
 	  PROMPT_NONE, PR_AFTER_CODE, PR_0_SB_CORRUPT },
 
-	/* Error determing physical device size of filesystem */
+	/* Error determining physical device size of filesystem */
 	{ PR_0_GETSIZE_ERROR,
 	  N_("Error determining size of the physical @v: %m\n"),
 	  PROMPT_NONE, PR_FATAL },
@@ -1150,6 +1150,23 @@ static struct e2fsck_problem problem_table[] = {
 	  N_("Timestamp(s) on @i %i beyond 2310-04-04 are likely pre-1970.\n"),
 	  PROMPT_FIX, PR_PREEN_OK | PR_NO_OK },
 
+	/* Inode has illegal extended attribute value inode */
+	{ PR_1_ATTR_VALUE_EA_INODE,
+	  N_("@i %i has @I @a value @i %N.\n"),
+	  PROMPT_CLEAR, PR_PREEN_OK },
+
+	/* Inode has invalid extended attribute. EA inode missing
+	 * EA_INODE flag. */
+	{ PR_1_ATTR_NO_EA_INODE_FL,
+	  N_("@i %i has @n @a. EA @i %N missing EA_INODE flag.\n"),
+	  PROMPT_CLEAR, PR_PREEN_OK },
+
+	/* EA inode for parent inode missing EA_INODE flag. */
+	{ PR_1_ATTR_SET_EA_INODE_FL,
+	  N_("EA @i %N for parent @i %i missing EA_INODE flag.\n "),
+	  PROMPT_FIX, PR_PREEN_OK },
+
+
 	/* Pass 1b errors */
 
 	/* Pass 1B: Rescan for duplicate/bad blocks */
@@ -1311,7 +1328,7 @@ static struct e2fsck_problem problem_table[] = {
 	  N_("@E has @D/unused @i %Di.  "),
 	  PROMPT_CLEAR, PR_PREEN_OK },
 
-	/* Directry entry is link to '.' */
+	/* Directory entry is link to '.' */
 	{ PR_2_LINK_DOT,
 	  N_("@E @L to '.'  "),
 	  PROMPT_CLEAR, 0 },
@@ -1326,7 +1343,7 @@ static struct e2fsck_problem problem_table[] = {
 	  N_("@E @L to @d %P (%Di).\n"),
 	  PROMPT_CLEAR, 0 },
 
-	/* Directory entry contains a link to the root directry */
+	/* Directory entry contains a link to the root directory */
 	{ PR_2_LINK_ROOT,
 	  N_("@E @L to the @r.\n"),
 	  PROMPT_CLEAR, 0 },
@@ -1366,9 +1383,9 @@ static struct e2fsck_problem problem_table[] = {
 	  N_("i_file_acl @F %If, @s zero.\n"),
 	  PROMPT_CLEAR, 0 },
 
-	/* i_dir_acl should be zero */
-	{ PR_2_DIR_ACL_ZERO,
-	  N_("i_dir_acl @F %Id, @s zero.\n"),
+	/* i_size_high should be zero */
+	{ PR_2_DIR_SIZE_HIGH_ZERO,
+	  N_("i_size_high @F %Id, @s zero.\n"),
 	  PROMPT_CLEAR, 0 },
 
 	/* i_frag should be zero */
@@ -1856,6 +1873,10 @@ static struct e2fsck_problem problem_table[] = {
 	  "@i_link_info[%i] is %N, @i.i_links_count is %Il.  "
 	  "They @s the same!\n"),
 	  PROMPT_NONE, 0 },
+
+	{ PR_4_EA_INODE_REF_COUNT,
+	  N_("@a @i %i ref count is %N, @s %n. "),
+	  PROMPT_FIX, PR_PREEN_OK },
 
 	/* Pass 5 errors */
 

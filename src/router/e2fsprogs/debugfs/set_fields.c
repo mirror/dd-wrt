@@ -212,7 +212,6 @@ static struct field_set_info inode_fields[] = {
 	/* Special case: i_file_acl_high is 2 bytes */
 	{ "file_acl", &set_inode.i_file_acl, 
 		&set_inode.osd2.linux2.l_i_file_acl_high, 6, parse_uint },
-	{ "dir_acl", &set_inode.i_dir_acl, NULL, 4, parse_uint, FLAG_ALIAS },
 	{ "faddr", &set_inode.i_faddr, NULL, 4, parse_uint },
 	{ "frag", &set_inode.osd2.hurd2.h_i_frag, NULL, 1, parse_uint, FLAG_ALIAS },
 	{ "fsize", &set_inode.osd2.hurd2.h_i_fsize, NULL, 1, parse_uint },
@@ -430,7 +429,7 @@ static struct field_set_info *find_field(struct field_set_info *fields,
 
 /*
  * Note: info->size == 6 is special; this means a base size 4 bytes,
- * and secondiory (high) size of 2 bytes.  This is needed for the
+ * and secondary (high) size of 2 bytes.  This is needed for the
  * special case of i_blocks_high and i_file_acl_high.
  */
 static errcode_t parse_uint(struct field_set_info *info, char *field,
@@ -788,7 +787,7 @@ void do_set_inode(int argc, char *argv[])
 void do_set_block_group_descriptor(int argc, char *argv[])
 {
 	const char *usage = "<bg number> <field> <value>\n"
-		"\t\"set_block_group_descriptor -l\" will list the names of "
+		"\t\"set_block_group -l\" will list the names of "
 		"the fields in a block group descriptor\n\twhich can be set.";
 	struct field_set_info	*table;
 	struct field_set_info	*ss;
@@ -819,7 +818,7 @@ void do_set_block_group_descriptor(int argc, char *argv[])
 		return;
 	}
 
-	if (common_args_process(argc, argv, 4, 4, "set_block_group_descriptor",
+	if (common_args_process(argc, argv, 4, 4, "set_block_group",
 				usage, CHECK_FS_RW))
 		return;
 

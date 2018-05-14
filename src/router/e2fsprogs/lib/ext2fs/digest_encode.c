@@ -78,7 +78,7 @@ int ext2fs_digest_decode(const char *src, int len, char *dst)
 static const struct {
 	unsigned char d[32];
 	unsigned int len;
-	const unsigned char *ed;
+	const char *ed;
 } tests[] = {
 	{ { 0xe3, 0xb0, 0xc4, 0x42, 0x98, 0xfc, 0x1c, 0x14,
 	    0x9a, 0xfb, 0xf4, 0xc8, 0x99, 0x6f, 0xb9, 0x24,
@@ -126,9 +126,9 @@ static const struct {
 
 int main(int argc, char **argv)
 {
-	int i, ret, len, len2;
+	int i, ret, len;
 	int errors = 0;
-	unsigned char tmp[1024], tmp2[1024];
+	char tmp[1024], tmp2[1024];
 
 	if (argc == 3 && !strcmp(argv[1], "encode")) {
 		memset(tmp, 0, sizeof(tmp));
@@ -145,7 +145,8 @@ int main(int argc, char **argv)
 	}
 	for (i = 0; i < (int)(sizeof(tests) / sizeof(tests[0])); i++) {
 		memset(tmp, 0, sizeof(tmp));
-		ret = ext2fs_digest_encode(tests[i].d, tests[i].len, tmp);
+		ret = ext2fs_digest_encode((const char *) tests[i].d,
+					   tests[i].len, tmp);
 		len = strlen(tmp);
 		printf("Test Digest %d (returned %d): ", i, ret);
 		if (ret != len) {

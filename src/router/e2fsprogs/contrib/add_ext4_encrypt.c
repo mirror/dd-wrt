@@ -1,5 +1,5 @@
 /*
- * Basic progam to add ext4 encryption to a file system
+ * Basic program to add ext4 encryption to a file system
  *
  * Copyright 2015, Google, Inc.
  *

@@ -287,7 +287,8 @@ void do_htree_dump(int argc, char *argv[])
 	fprintf(pager, "\t Indirect levels: %d\n", rootnode->indirect_levels);
 	fprintf(pager, "\t Flags: %d\n", rootnode->unused_flags);
 
-	ent = (struct ext2_dx_entry *) (buf + 24 + rootnode->info_length);
+	ent = (struct ext2_dx_entry *)
+		((char *)rootnode + rootnode->info_length);
 
 	htree_dump_int_node(current_fs, ino, &inode, rootnode, ent,
 			    buf + current_fs->blocksize,
@@ -339,7 +340,7 @@ void do_dx_hash(int argc, char *argv[])
 	err = ext2fs_dirhash(hash_version, argv[optind], strlen(argv[optind]),
 			     hash_seed, &hash, &minor_hash);
 	if (err) {
-		com_err(argv[0], err, "while caclulating hash");
+		com_err(argv[0], err, "while calculating hash");
 		return;
 	}
 	printf("Hash of %s is 0x%0x (minor 0x%0x)\n", argv[optind],

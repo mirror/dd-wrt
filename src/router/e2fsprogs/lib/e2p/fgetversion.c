@@ -31,7 +31,9 @@
 #include <unistd.h>
 #endif
 #include <fcntl.h>
+#if HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
+#endif
 
 #include "e2p.h"
 

@@ -325,7 +325,7 @@ int journal_recover(journal_t *journal)
  * Locate any valid recovery information from the journal and set up the
  * journal structures in memory to ignore it (presumably because the
  * caller has evidence that it is out of date).
- * This function does'nt appear to be exorted..
+ * This function doesn't appear to be exported..
  *
  * We perform one pass over the journal to allow us to tell the user how
  * much recovery information is being erased, and to let us initialise
@@ -689,7 +689,7 @@ static int do_one_pass(journal_t *journal,
 			 *		| GO TO NEXT    "Journal Corruption"
 			 *		| TRANSACTION
 			 *		|
-			 * {(n+1)th transanction}
+			 * {(n+1)th transaction}
 			 *		|
 			 * 	 _______|______________
 			 * 	|	 	      |

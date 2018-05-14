@@ -94,7 +94,7 @@ uninstall:
 test_extent.out: test_extent $(srcdir)/test_extent.in
 	$(TESTENV) ./test_extent < $(srcdir)/test_extent.in > test_extent.out
 
-check:: test_extent.out
+fullcheck check:: test_extent.out
 	$(Q) if cmp -s test_extent.out $(srcdir)/test_extent.in ; then \
 		echo "Test succeeded." ; \
 	else \
@@ -111,35 +111,6 @@ mostlyclean: clean
 
 distclean: clean
 	$(RM) -f .depend Makefile $(srcdir)/TAGS $(srcdir)/Makefile.in.old
-
-#
-# Kludge to create a "special" e2fsprogs distribution file.
-#
-
-SRCROOT = `echo e2fsprogs-@E2FSPROGS_VERSION@ | sed -e 's/-WIP//' \
-			-e 's/pre-//' -e 's/-PLUS//'`
-TAR=tar
-
-$(top_srcdir)/.exclude-file:
-	a=$(SRCROOT); \
-	(cd $(top_srcdir)/.. ; find e2fsprogs \( -name \*~ -o -name \*.orig \
-		-o -name CVS -o -name \*.rej \) -print) \
-		| sed -e "s/e2fsprogs/$$a/" > $(top_srcdir)/.exclude-file
-	echo "$(SRCROOT)/build" >> $(top_srcdir)/.exclude-file
-	echo "$(SRCROOT)/rpm.log" >> $(top_srcdir)/.exclude-file
-	echo "$(SRCROOT)/powerquest" >> $(top_srcdir)/.exclude-file
-	echo "$(SRCROOT)/.exclude-file" >> $(top_srcdir)/.exclude-file
-	echo $(SRCROOT)/e2fsprogs-@E2FSPROGS_VERSION@.tar.gz \
-		>> $(top_srcdir)/.exclude-file
-	echo $(SRCROOT)/e2fsprogs-ALL-@E2FSPROGS_VERSION@.tar.gz \
-		>> $(top_srcdir)/.exclude-file
-
-source_tar_file: $(top_srcdir)/.exclude-file
-	(cd $(top_srcdir)/..; a=$(SRCROOT); rm -f $$a ; ln -sf e2fsprogs $$a ; \
-		$(TAR) -c -h -v -f - \
-			-X $$a/.exclude-file $$a | \
-		gzip -9 > e2fsprogs-ALL-@E2FSPROGS_VERSION@.tar.gz)
-	rm -f $(top_srcdir)/.exclude-file
 
 # +++ Dependency line eater +++
 # 

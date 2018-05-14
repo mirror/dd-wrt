@@ -122,6 +122,7 @@ struct dx_dirblock_info {
 	blk64_t		phys;
 	int		flags;
 	blk64_t		parent;
+	blk64_t		previous;
 	ext2_dirhash_t	min_hash;
 	ext2_dirhash_t	max_hash;
 	ext2_dirhash_t	node_min_hash;
@@ -170,6 +171,7 @@ struct resource_track {
 #define E2F_OPT_CONVERT_BMAP	0x4000 /* convert blockmap to extent */
 #define E2F_OPT_FIXES_ONLY	0x8000 /* skip all optimizations */
 #define E2F_OPT_NOOPT_EXTENTS	0x10000 /* don't optimize extents */
+#define E2F_OPT_ICOUNT_FULLMAP	0x20000 /* use an array for inode counts */
 
 /*
  * E2fsck flags
@@ -266,6 +268,17 @@ struct e2fsck_struct {
 
 	ext2_refcount_t	refcount;
 	ext2_refcount_t refcount_extra;
+
+	/*
+	 * Quota blocks and inodes to be charged for each ea block.
+	 */
+	ext2_refcount_t ea_block_quota_blocks;
+	ext2_refcount_t ea_block_quota_inodes;
+
+	/*
+	 * ea_inode references from attr entries.
+	 */
+	ext2_refcount_t ea_inode_refs;
 
 	/*
 	 * Array of flags indicating whether an inode bitmap, block
@@ -464,18 +477,23 @@ extern int e2fsck_get_num_dx_dirinfo(e2fsck_t ctx);
 extern struct dx_dir_info *e2fsck_dx_dir_info_iter(e2fsck_t ctx, int *control);
 
 /* ea_refcount.c */
-extern errcode_t ea_refcount_create(int size, ext2_refcount_t *ret);
+typedef __u64 ea_key_t;
+typedef __u64 ea_value_t;
+
+extern errcode_t ea_refcount_create(size_t size, ext2_refcount_t *ret);
 extern void ea_refcount_free(ext2_refcount_t refcount);
-extern errcode_t ea_refcount_fetch(ext2_refcount_t refcount, blk64_t blk, int *ret);
+extern errcode_t ea_refcount_fetch(ext2_refcount_t refcount, ea_key_t ea_key,
+				   ea_value_t *ret);
 extern errcode_t ea_refcount_increment(ext2_refcount_t refcount,
-				       blk64_t blk, int *ret);
+				       ea_key_t ea_key, ea_value_t *ret);
 extern errcode_t ea_refcount_decrement(ext2_refcount_t refcount,
-				       blk64_t blk, int *ret);
-extern errcode_t ea_refcount_store(ext2_refcount_t refcount,
-				   blk64_t blk, int count);
-extern blk_t ext2fs_get_refcount_size(ext2_refcount_t refcount);
+				       ea_key_t ea_key, ea_value_t *ret);
+extern errcode_t ea_refcount_store(ext2_refcount_t refcount, ea_key_t ea_key,
+				   ea_value_t count);
+extern size_t ext2fs_get_refcount_size(ext2_refcount_t refcount);
 extern void ea_refcount_intr_begin(ext2_refcount_t refcount);
-extern blk64_t ea_refcount_intr_next(ext2_refcount_t refcount, int *ret);
+extern ea_key_t ea_refcount_intr_next(ext2_refcount_t refcount,
+				      ea_value_t *ret);
 
 /* ehandler.c */
 extern const char *ehandler_operation(const char *op);
@@ -524,10 +542,6 @@ extern void e2fsck_intercept_block_allocations(e2fsck_t ctx);
 /* pass2.c */
 extern int e2fsck_process_bad_inode(e2fsck_t ctx, ext2_ino_t dir,
 				    ext2_ino_t ino, char *buf);
-extern int get_filename_hash(ext2_filsys fs, int encrypted, int version,
-			     const char *name, int len,
-			     ext2_dirhash_t *ret_hash,
-			     ext2_dirhash_t *ret_minor_hash);
 
 /* pass3.c */
 extern int e2fsck_reconnect_file(e2fsck_t ctx, ext2_ino_t inode);
@@ -648,4 +662,7 @@ unsigned long long get_memory_size(void);
 extern void e2fsck_clear_progbar(e2fsck_t ctx);
 extern int e2fsck_simple_progress(e2fsck_t ctx, const char *label,
 				  float percent, unsigned int dpynum);
+
+#define DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))
+
 #endif /* _E2FSCK_H */

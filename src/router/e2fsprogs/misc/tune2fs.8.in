@@ -45,16 +45,8 @@ tune2fs \- adjust tunable filesystem parameters on ext2/ext3/ext4 filesystems
 .RI [^]mount-options [,...]
 ]
 [
-.B \-p
-.I mmp_update_interval
-]
-[
 .B \-r
 .I reserved-blocks-count
-]
-[
-.B \-s
-.I sparse-super-flag
 ]
 [
 .B \-u
@@ -537,11 +529,21 @@ The following filesystem features can be set or cleared using
 .BR tune2fs :
 .RS 1.2i
 .TP
+.B 64bit
+Enable the file system to be larger than 2^32 blocks.
+.TP
 .B dir_index
 Use hashed b-trees to speed up lookups for large directories.
 .TP
 .B dir_nlink
 Allow more than 65000 subdirectories per directory.
+.TP
+.B ea_inode
+Allow the value of each extended attribute to be placed in the data blocks of a
+separate inode if necessary, increasing the limit on the size and number of
+extended attributes per file.
+.B Tune2fs
+currently only supports setting this filesystem feature.
 .TP
 .B encrypt
 Enable file system level encryption.
@@ -574,6 +576,11 @@ Setting the filesystem feature is equivalent to using the
 .B \-j
 option.
 .TP
+.B large_dir
+Increase the limit on the number of files per directory.
+.B Tune2fs
+currently only supports setting this filesystem feature.
+.TP
 .B huge_file
 Support files larger than 2 terabytes in size.
 .TP
@@ -582,6 +589,13 @@ Filesystem can contain files that are greater than 2GB.
 .TP
 .B metadata_csum
 Store a checksum to protect the contents in each metadata block.
+.TP
+.B metadata_csum_seed
+Allow the filesystem to store the metadata checksum seed in the
+superblock, enabling the administrator to change the UUID of a filesystem
+using the
+.B metadata_csum
+feature while it is mounted.
 .TP
 .B mmp
 Enable or disable multiple mount protection (MMP) feature.
@@ -639,9 +653,6 @@ mounted by kernels which do not support those features.  In particular, the
 and
 .BR flex_bg
 features are only supported by the ext4 filesystem.
-.TP
-.BI \-p " mmp_check_interval"
-Set the desired MMP check interval in seconds. It is 5 seconds by default.
 .TP
 .BI \-r " reserved-blocks-count"
 Set the number of reserved filesystem blocks.

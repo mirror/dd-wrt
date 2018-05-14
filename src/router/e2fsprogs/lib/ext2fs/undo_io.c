@@ -381,7 +381,7 @@ static errcode_t undo_write_tdb(io_channel channel,
 		 * Read one block using the backing I/O manager
 		 * The backing I/O manager block size may be
 		 * different from the tdb_data_size.
-		 * Also we need to recalcuate the block number with respect
+		 * Also we need to recalculate the block number with respect
 		 * to the backing I/O manager.
 		 */
 		offset = block_num * data->tdb_data_size +

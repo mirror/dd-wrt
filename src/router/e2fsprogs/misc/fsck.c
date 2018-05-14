@@ -408,7 +408,8 @@ static char *find_fsck(char *type)
   tpl = (strncmp(type, "fsck.", 5) ? "%s/fsck.%s" : "%s/%s");
 
   for(s = strtok(p, ":"); s; s = strtok(NULL, ":")) {
-	sprintf(prog, tpl, s, type);
+	if (snprintf(prog, sizeof(prog), tpl, s, type) >= sizeof(prog))
+		continue;
 	if (stat(prog, &st) == 0) break;
   }
   free(p);
@@ -435,17 +436,19 @@ static int progress_active(NOARGS)
 static int execute(const char *type, const char *device, const char *mntpt,
 		   int interactive)
 {
-	char *s, *argv[80], prog[80];
+	char *s, *argv[80], prog[256];
 	int  argc, i;
 	struct fsck_instance *inst, *p;
 	pid_t	pid;
+
+	if (snprintf(prog, sizeof(prog), "fsck.%s", type) >= sizeof(prog))
+		return EINVAL;
 
 	inst = malloc(sizeof(struct fsck_instance));
 	if (!inst)
 		return ENOMEM;
 	memset(inst, 0, sizeof(struct fsck_instance));
 
-	sprintf(prog, "fsck.%s", type);
 	argv[0] = string_copy(prog);
 	argc = 1;
 
@@ -997,7 +1000,7 @@ static int check_all(NOARGS)
 	}
 	/*
 	 * This is for the bone-headed user who enters the root
-	 * filesystem twice.  Skip root will skep all root entries.
+	 * filesystem twice.  Skip root will skip all root entries.
 	 */
 	if (skip_root)
 		for (fs = filesys_info; fs; fs = fs->next)

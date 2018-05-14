@@ -50,11 +50,13 @@ static void print_dquot(const char *desc, struct dquot *dq)
 {
 	if (desc)
 		fprintf(stderr, "%s: ", desc);
-	fprintf(stderr, "%u %ld:%ld:%ld %ld:%ld:%ld\n",
-		dq->dq_id, dq->dq_dqb.dqb_curspace,
-		dq->dq_dqb.dqb_bsoftlimit, dq->dq_dqb.dqb_bhardlimit,
-		dq->dq_dqb.dqb_curinodes,
-		dq->dq_dqb.dqb_isoftlimit, dq->dq_dqb.dqb_ihardlimit);
+	fprintf(stderr, "%u %lld:%lld:%lld %lld:%lld:%lld\n",
+		dq->dq_id, (long long) dq->dq_dqb.dqb_curspace,
+		(long long) dq->dq_dqb.dqb_bsoftlimit,
+		(long long) dq->dq_dqb.dqb_bhardlimit,
+		(long long) dq->dq_dqb.dqb_curinodes,
+		(long long) dq->dq_dqb.dqb_isoftlimit,
+		(long long) dq->dq_dqb.dqb_ihardlimit);
 }
 #else
 static void print_dquot(const char *desc EXT2FS_ATTR((unused)),
@@ -247,6 +249,11 @@ static int dict_uint_cmp(const void *a, const void *b)
 		return -1;
 }
 
+static inline int project_quota_valid(quota_ctx_t qctx)
+{
+	return (EXT2_INODE_SIZE(qctx->fs->super) > EXT2_GOOD_OLD_INODE_SIZE);
+}
+
 static inline qid_t get_qid(struct ext2_inode_large *inode, enum quota_type qtype)
 {
 	unsigned int inode_size;
@@ -390,6 +397,8 @@ void quota_data_add(quota_ctx_t qctx, struct ext2_inode_large *inode,
 			inode_uid(*inode),
 			inode_gid(*inode), space);
 	for (qtype = 0; qtype < MAXQUOTAS; qtype++) {
+		if (qtype == PRJQUOTA && !project_quota_valid(qctx))
+			continue;
 		dict = qctx->quota_dict[qtype];
 		if (dict) {
 			dq = get_dq(dict, get_qid(inode, qtype));
@@ -417,6 +426,8 @@ void quota_data_sub(quota_ctx_t qctx, struct ext2_inode_large *inode,
 			inode_uid(*inode),
 			inode_gid(*inode), space);
 	for (qtype = 0; qtype < MAXQUOTAS; qtype++) {
+		if (qtype == PRJQUOTA && !project_quota_valid(qctx))
+			continue;
 		dict = qctx->quota_dict[qtype];
 		if (dict) {
 			dq = get_dq(dict, get_qid(inode, qtype));
@@ -442,6 +453,8 @@ void quota_data_inodes(quota_ctx_t qctx, struct ext2_inode_large *inode,
 			inode_uid(*inode),
 			inode_gid(*inode), adjust);
 	for (qtype = 0; qtype < MAXQUOTAS; qtype++) {
+		if (qtype == PRJQUOTA && !project_quota_valid(qctx))
+			continue;
 		dict = qctx->quota_dict[qtype];
 		if (dict) {
 			dq = get_dq(dict, get_qid(inode, qtype));
@@ -524,11 +537,11 @@ static int scan_dquots_callback(struct dquot *dquot, void *cb_data)
 	    dq->dq_dqb.dqb_curinodes != dquot->dq_dqb.dqb_curinodes) {
 		scan_data->usage_is_inconsistent = 1;
 		fprintf(stderr, "[QUOTA WARNING] Usage inconsistent for ID %u:"
-			"actual (%ld, %ld) != expected (%ld, %ld)\n",
-			dq->dq_id, dq->dq_dqb.dqb_curspace,
-			dq->dq_dqb.dqb_curinodes,
-			dquot->dq_dqb.dqb_curspace,
-			dquot->dq_dqb.dqb_curinodes);
+			"actual (%lld, %lld) != expected (%lld, %lld)\n",
+			dq->dq_id, (long long) dq->dq_dqb.dqb_curspace,
+			(long long) dq->dq_dqb.dqb_curinodes,
+			(long long) dquot->dq_dqb.dqb_curspace,
+			(long long) dquot->dq_dqb.dqb_curinodes);
 	}
 
 	if (scan_data->update_limits) {

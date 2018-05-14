@@ -143,7 +143,7 @@ operation during an offline resize, so that the user can keep track
 of what the program is doing.
 .TP
 .B \-P
-Print an extimate of the number of file system blocks in the file system
+Print an estimate of the number of file system blocks in the file system
 if it is shrunk using
 .BR resize2fs 's
 .B \-M

@@ -564,7 +564,7 @@ int ext2fs_test_block_bitmap_range(ext2fs_block_bitmap bitmap,
 }
 
 int ext2fs_test_inode_bitmap_range(ext2fs_inode_bitmap bitmap,
-				   ino_t inode, int num)
+				   ext2_ino_t inode, int num)
 {
 	EXT2_CHECK_MAGIC(bitmap, EXT2_ET_MAGIC_INODE_BITMAP);
 	if ((inode < bitmap->start) || (inode+num-1 > bitmap->real_end)) {

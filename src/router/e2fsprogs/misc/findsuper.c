@@ -30,7 +30,7 @@
  *   findsuper /dev/hda
  *   findsuper /dev/hda 437760 1024   (my disk has cyls of 855*512)
  *
- * I suppose the next step is to figgure out a way to determine if
+ * I suppose the next step is to figure out a way to determine if
  * the block found is the first superblock somehow, and if so, build
  * a partition table from the superblocks found... but this is still
  * useful as is.
@@ -75,7 +75,7 @@
  * For new systems that have a block group number in the superblock it
  * is immediately clear which superblock is the first of a partition.
  * For old systems where no group numbers are given, the first
- * superblock can be recognised by the timestamp: all superblock
+ * superblock can be recognized by the timestamp: all superblock
  * copies have the creation time in s_mtime, except the first, which
  * has the last time e2fsck or tune2fs wrote to the filesystem.
  *

@@ -58,8 +58,10 @@ errcode_t ext2fs_sync_device(int fd, int flushb)
 	 * still is a race condition for those kernels, but this
 	 * reduces it greatly.)
 	 */
+#if defined(HAVE_FSYNC)
 	if (fsync (fd) == -1)
 		return errno;
+#endif
 
 	if (flushb) {
 		errcode_t	retval = 0;

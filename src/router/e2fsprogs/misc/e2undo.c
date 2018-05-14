@@ -115,7 +115,7 @@ static char *undo_file;
 static void usage(void)
 {
 	fprintf(stderr,
-		_("Usage: %s [-f] [-h] [-n] [-v] <transaction file> <filesystem>\n"), prg_name);
+		_("Usage: %s [-f] [-h] [-n] [-o offset] [-v] [-z undo_file] <transaction file> <filesystem>\n"), prg_name);
 	exit(1);
 }
 

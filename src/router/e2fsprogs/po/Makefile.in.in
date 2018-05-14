@@ -270,7 +270,7 @@ uninstall-data-yes:
 	  done; \
 	done
 
-check: all
+fullcheck check: all
 
 info dvi ps pdf html tags TAGS ctags CTAGS ID:
 

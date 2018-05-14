@@ -293,7 +293,7 @@ charset.alias: $(srcdir)/config.charset
 	$(Q) $(SHELL) $(srcdir)/config.charset '@host@' > t-$@
 	$(Q) mv t-$@ $@
 
-check: all
+fullcheck check: all
 
 # We must not install the libintl.h/libintl.a files if we are on a
 # system which has the GNU gettext() function in its C library or in a

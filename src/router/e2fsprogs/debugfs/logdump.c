@@ -1,7 +1,7 @@
 /*
  * logdump.c --- dump the contents of the journal out to a file
  *
- * Authro: Stephen C. Tweedie, 2001  <sct@redhat.com>
+ * Author: Stephen C. Tweedie, 2001  <sct@redhat.com>
  * Copyright (C) 2001 Red Hat, Inc.
  * Based on portions  Copyright (C) 1994 Theodore Ts'o.
  *
@@ -275,7 +275,7 @@ errout:
 	return;
 
 print_usage:
-	fprintf(stderr, "%s: Usage: logdump [-acsO] [-b<block>] [-i<filespec>]\n\t"
+	fprintf(stderr, "%s: Usage: logdump [-acsOS] [-b<block>] [-i<filespec>]\n\t"
 		"[-f<journal_file>] [output_file]\n", argv[0]);
 }
 

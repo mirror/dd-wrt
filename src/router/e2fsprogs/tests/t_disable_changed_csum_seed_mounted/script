@@ -1,4 +1,4 @@
-test_description="disable csum seed on mounted fs via tune2fs after changing uuid"
+test_description="mounted tune2fs disable csum+uuid"
 
 trap "rm -rf $TMPFILE $TMPFILE.conf" EXIT INT QUIT
 dd if=/dev/zero of=$TMPFILE bs=1k count=512 > /dev/null 2>&1

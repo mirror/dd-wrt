@@ -98,7 +98,8 @@ errcode_t ext2fs_image_inode_write(ext2_filsys fs, int fd, int flags)
 					blk++;
 					left--;
 					cp += fs->blocksize;
-					r = lseek(fd, fs->blocksize, SEEK_CUR);
+					r = ext2fs_llseek(fd, fs->blocksize,
+							  SEEK_CUR);
 					if (r < 0) {
 						retval = errno;
 						goto errout;
@@ -308,8 +309,8 @@ errcode_t ext2fs_image_bitmap_write(ext2_filsys fs, int fd, int flags)
 		}
 		bmap = fs->block_map;
 		itr = fs->super->s_first_data_block;
-		cnt = EXT2_GROUPS_TO_BLOCKS(fs->super, fs->group_desc_count);
-		size = EXT2_BLOCKS_PER_GROUP(fs->super) / 8;
+		cnt = EXT2_GROUPS_TO_CLUSTERS(fs->super, fs->group_desc_count);
+		size = EXT2_CLUSTERS_PER_GROUP(fs->super) / 8;
 	}
 	total_size = size * fs->group_desc_count;
 

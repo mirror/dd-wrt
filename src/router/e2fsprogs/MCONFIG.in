@@ -4,6 +4,8 @@ all::
 
 check::
 
+fullcheck::
+
 SHELL = /bin/sh
 
 COMPRESS_EXT = gz bz2 bz Z

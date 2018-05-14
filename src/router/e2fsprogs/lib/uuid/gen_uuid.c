@@ -60,7 +60,9 @@
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
+#ifdef HAVE_SYS_WAIT_H
 #include <sys/wait.h>
+#endif
 #include <sys/stat.h>
 #ifdef HAVE_SYS_FILE_H
 #include <sys/file.h>
@@ -113,6 +115,7 @@ THREAD_LOCAL unsigned short jrand_seed[3];
 #endif
 
 #ifdef _WIN32
+#ifndef USE_MINGW
 static void gettimeofday (struct timeval *tv, void *dummy)
 {
 	FILETIME	ftime;
@@ -129,11 +132,7 @@ static void gettimeofday (struct timeval *tv, void *dummy)
 	tv->tv_sec = n / 1000000;
 	tv->tv_usec = n % 1000000;
 }
-
-static int getuid (void)
-{
-	return 1;
-}
+#endif
 #endif
 
 static int get_random_fd(void)
@@ -154,7 +153,7 @@ static int get_random_fd(void)
 				fcntl(fd, F_SETFD, i | FD_CLOEXEC);
 		}
 #endif
-		srand((getpid() << 16) ^ getuid() ^ tv.tv_sec ^ tv.tv_usec);
+		srand(((unsigned)getpid() << 16) ^ getuid() ^ tv.tv_sec ^ tv.tv_usec);
 #ifdef DO_JRAND_MIX
 		jrand_seed[0] = getpid() ^ (tv.tv_sec & 0xFFFF);
 		jrand_seed[1] = getppid() ^ (tv.tv_usec & 0xFFFF);
@@ -317,7 +316,9 @@ static int get_clock(uint32_t *clock_high, uint32_t *clock_low,
 	THREAD_LOCAL FILE		*state_f;
 	THREAD_LOCAL uint16_t		clock_seq;
 	struct timeval 			tv;
+#ifndef _WIN32
 	struct flock			fl;
+#endif
 	uint64_t			clock_reg;
 	mode_t				save_umask;
 	int				len;
@@ -335,6 +336,7 @@ static int get_clock(uint32_t *clock_high, uint32_t *clock_low,
 			}
 		}
 	}
+#ifndef _WIN32
 	fl.l_type = F_WRLCK;
 	fl.l_whence = SEEK_SET;
 	fl.l_start = 0;
@@ -350,6 +352,7 @@ static int get_clock(uint32_t *clock_high, uint32_t *clock_low,
 			break;
 		}
 	}
+#endif
 	if (state_fd >= 0) {
 		unsigned int cl;
 		unsigned long tv1, tv2;
@@ -413,11 +416,13 @@ try_again:
 			fflush(state_f);
 		}
 		rewind(state_f);
+#ifndef _WIN32
 		fl.l_type = F_UNLCK;
 		if (fcntl(state_fd, F_SETLK, &fl) < 0) {
 			fclose(state_f);
 			state_fd = -1;
 		}
+#endif
 	}
 
 	*clock_high = clock_reg >> 32;
