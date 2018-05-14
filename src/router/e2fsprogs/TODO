@@ -1,0 +1,277 @@
+Need to process the bad block inode *before* doing the inode scan.
+
+Also check to see if the first block of the inode table is not on the
+bad block scan, and fix that.  We need to check for an inaccurate
+blocks, and fix them before we start doing anything else with the
+filesystem!
+
+---------------------------------------------------
+User request:
+
+BTW: Could you please add some sort of deleted and possibly corrupted file
+     and inode list to e2fsck report. There should be filenames deleted
+     from directory inodes, files with duplicate blocks e.t.c.
+     It's pretty annoying to filter this information from e2fsck output
+     by hand :-
+
+------------------------------------------
+
+Add a "answer Yes always to this class of question" response.
+
+----------------------------------
+
+ext2fs_flush() should return a different error message for primary
+versus backup superblock flushing, so that mke2fs can print an
+appropriate error message.
+
+---------------------------------
+Date: Mon, 08 Mar 1999 21:46:14 +0100
+From: Sergio Polini <s.polini@mclink.it>
+
+
+I'm reading the source code of e2fsck 1.14.
+In pass2.c, lines 352-357, I read:
+
+if ((dirent->name_len & 0xFF) > EXT2_NAME_LEN) {
+        if (fix_problem(ctx, PR_2_FILENAME_LONG, &cd->pctx)) {
+                dirent->name_len = EXT2_NAME_LEN;
+                dir_modified++;
+        }
+}
+
+I think that I'll never see any messages about too long filenames,
+because "whatever & 0xFF" can never be "> 0xFF".
+Am I wrong?
+--------------------------------------
+
+Add chmod command to debugfs.
+
+------------------------------------------
+
+Date: Tue, 18 Jan 2000 17:54:53 -0800 (PST)
+From: Alan Blanchard <alan@abraxas.to>
+To: tytso@MIT.EDU
+Subject: DEBUGFS - thanks and a feature idea
+Content-Type: TEXT/PLAIN; charset=US-ASCII
+
+Theodore:
+
+First, let me thank you for writing debugfs. Recently, my Linux box
+(RH 6.0, 400 MHz PIII, on a DSL line) was hacked into.  The intruder did
+an "rm -Rf" on a 34 GB drive with about 5GB of data on it.  I was able to
+restore essentially the entire thing with debugfs and a bit of C code and Perl.
+Actually, I could have done the entire thing with debugfs and Perl, but I
+thought it would be too slow.
+
+During this exercise, I noticed that one small feature was lacking that would
+have made my job a bit easier.  The length of a deleted directory is
+reported as 0, hence debugfs won't dump the contents of the directory to a
+file using the "dump" command.  The only thing that saved me was that the
+list of disk blocks is not zeroed out.  I was able to dump the contents of the
+directories by using debugfs to get the relevant block numbers, then
+using dd to get the actual data.
+
+If debugfs had a feature where it ignored the size of a directory reported by
+the inode and instead just dumped all the blocks, it would have facilitated
+things a bit. This seems like a very easy feature to add.
+
+Again, thanks for writing debugfs (and all the other Linux stuff you've written!).
+
+Cheers,
+Alan Blanchard
+alan@abraxas.to
+
+
+-------------------------------------------------------------------
+
+Date: Fri, 21 Jan 2000 14:07:12 -0800
+From: "H. Peter Anvin" <hpa@www.transmeta.com>
+Subject: mkfs -cc and fsck -c
+
+b) An option to mkfs to zero the partition.  Yes, it can be done with
+dd, but it would be a nicer way of doing it.
+
+------------------------------------------------------------------
+
+Add support for in ext2fs_block_iterate() for a returning the
+compressed flag blocks to block_iterate.  Change default to not return
+EXT2_COMPRESSED_BLKADDR.  Change e2fsck to pass this flag in.
+
+(The old compression patches did this by default all the time, which
+is bad, since it meant e2fsck never saw the EXT2_COMPRESSED_BLKADDR
+flagword.
+
+------------------------------------------------------------
+
+E2fsck should offer to clear all the blocks in an indirect block, not
+the entire inode, so there's better recovery for when an indirect
+block gets trashed.
+
+
+-------------------------------------------------------------
+
+From: Yann Dirson - LOGATIQUE <Yann.Dirson@France.Sun.COM>
+Date: Thu, 2 Mar 2000 13:52:13 +0100 (MET)
+
+During my experiments on the broken system, I noticed the following in
+the badblocks program (which I'm aware is not designed for IDE drives)
+- I'd probably have already fixed them if my home system was up :(
+
+* the syntax summary documents 2nd arg as blocks_count, which should
+probably read something like end_count.
+
+* testing past end of device is not detected, and lists those blocks
+as bad, whereas they simply do not exist.
+
+
+I think I'll probably add a "max count" option to findsuper(8), so
+that I do not have to wait for the whole disk to be scanned when the
+system had to be launched with "init=/bin/sh", in which case Ctrl-[CZ]
+and friends appear to be absolutely ignored.
+
+
+Somewhat unrelated, I just noticed the
+http://web.mit.edu/tytso/www/linux/ext2.html could be updated:
+
+- could mention SGI xfs (http://oss.sgi.com/projects/xfs/ - they just
+  release 0.03 snapshot)
+
+----------------------------------------------------------------
+
+Return-Path: <tytso@MIT.EDU>
+Date: Thu, 10 Feb 2000 13:20:14 -0500
+From: "Theodore Y. Ts'o" <tytso@MIT.EDU>
+To: R.E.Wolff@BitWizard.nl
+In-Reply-To: Rogier Wolff's message of Thu, 10 Feb 2000 08:46:30 +0100 (MET),
+	<200002100746.IAA24573@cave.bitwizard.nl>
+Subject: Re: e2fsck request for enhancement.
+Phone: (781) 391-3464
+
+   Date: Thu, 10 Feb 2000 08:46:30 +0100 (MET)
+   From: R.E.Wolff@BitWizard.nl (Rogier Wolff)
+
+   Lately, while trying to recover a broken disk, my system froze (twice,
+   until I tried something else) while copying the disk.
+
+   So I had a file of about 50Mb that was growing frantically at the
+   moment of the crash.
+
+   e2fsck, then finds an indirect block that is completely bogus. It
+   starts by asking me if it's ok to clear a few of the referenced
+   blocks. I say yes. Then it comes to the conclusion: 
+
+      too many invalid blocks. Clear inode?
+
+   and then I get the option to delete the whole file. Not to truncate
+   the file to a "working" size.
+
+
+   I'd MUCH rather have e2fsck say something like:
+
+      inode 1234 references an invalid block 134345454. Hmm.
+      inode 1234 references 567 out of 50176 invalid blocks, 
+			  all near the end. Truncate file to 49152 blocks?
+
+   Here you can see that of the 1024 blocks near the end of the file,
+   only 567 were detected as invalid. However now 48Mb of the file will
+   be recovered, instead of thrown away.
+
+That's a good point.  Actually, the right thing is for e2fsck to offer
+to clear all of the bad blocks in a particular indirect block.  I don't
+know how hard it would be to do that, but I'll put it on my e2fsprogs
+TODO list.
+
+							- Ted
+
+---------------------------------------------------------------
+From e2fsprogs Debian TODO file as of 1.10-13.
+
+* Maybe make -dbg packages. Look at how others do it.
+
+---------------------------------------------------------------
+
+Add --lba option to debian icheck command, and have ways of making it
+easier to translate LBA to filesystem block numbers.
+
+-------------------------------------------------------
+
+
+
+List of projects for e2fsprogs:
+
+
+1) Make debugfs's "ncheck <inode>" command list all of the pathnames
+to an inode, not just only the first link to the inode which is found.
+(A good "intro to libext2fs programming interfaces project)
+
+	Difficulty: Low		Priority: Low
+
+2) Use a code coverage tool such as Rational's PureCoverage to see
+what kind of code coverage we have for e2fsck, and try to add test
+cases to increase the code coverage for e2fsck.
+
+	Difficulty: Medium	Priorty: Low
+
+3) Use a code coverage tool such as Rational's PureCoverage to see
+what kind of code coverage we have for resize2fs, and try to add test
+cases to increase the code coverage for resize2fs.
+
+	Difficulty: Medium	Priorty: Medium
+
+4) Create a new I/O manager (i.e., test_io.c, unix_io.c, et.al.) which
+layers on top of an existing I/O manager which provides copy-on-write
+functionality.  This COW I/O manager takes will take two open I/O
+managers, call them "base" and "changed".  The "base" I/O manager is
+opened read/only, so any changes are written instead to the "changed"
+I/O manager, in a compact, non-sparse format containing the intended
+modification to the "base" filesystem.  
+
+This will allow resize2fs to figure out what changes need to made to
+extend a filesystem, or expand the size of inodes in the inode table,
+and the changes can be pushed the filesystem in one fell swoop.  (If
+the system crashes; the program which runs the "changed" file can be
+re-run, much like a journal replay.  My assumption is that the COW
+file will contain the filesystem UUID in a the COW superblock, and the
+COW file will be stored in some place such as /var/state/e2fsprogs,
+with an init.d file to automate the replay so we can recover cleanly
+from a crash during the resize2fs process.)
+
+	Difficulty: Medium	Priority: Medium
+
+5) Create a new I/O manager (i.e., test_io.c, unix_io.c, et.al.) which
+layers on top of an existing I/O manager which provides an "undo"
+functionality.  This undo I/O manager takes will take two open I/O
+managers, call them "base" and "undo".  The "base" I/O manager is be
+opened read/write, and when any writes are sent to the I/O manager,
+the I/O manager will check the "undo" I/O manager, using a file format
+identical to the one found in (5) above.  
+
+This is useful for allowing e2fsck to create an "undo" file, which
+would make things like "e2fsck -y" much safer.
+
+	Difficulty: Low (once 5 is done)  Priority: Low
+
+6) Modify resize2fs so that it can relocate and reorganize the
+filesystem in the following ways: (1) increase the inode size, so that
+an existing filesystem can use the EA-in-inode kernel patch, (2)
+reserve blocks in the resize inode to allow for on-line resizing.  Use
+the COW I/O manager described in (5) in order to provide robustness in
+case of a crash during the resize/reorganization operation.  
+
+	Difficulty: High	Priority: Medium
+
+7) Review the EA-in-inode patches to e2fsck for correctness/code
+cleanliness.  (I will probably have to do this myself -- Ted)
+
+	Difficulty: High	Priorty: Medium
+
+8) Add support for extent maps to e2fsprogs.  I need to review the
+extent maps first/in parallel. 
+
+	Difficulty: High	Priority: Medium
+
+----------------------------------
+
+Need to deal with the case where the resize inode overlaps with the
+bad blocks inode.
+

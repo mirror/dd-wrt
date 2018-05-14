@@ -1,0 +1,7 @@
+^autom4te.cache
+^build
+^FILES
+^core
+~$
+^.pc
+^patches
