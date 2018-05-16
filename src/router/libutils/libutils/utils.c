@@ -1888,6 +1888,7 @@ char *get_wan_face(void)
 			strncpy(localwanface, "wwan0", IFNAMSIZ);
 		} else if (nvram_match("3gdata", "sierradirectip")) {
 			strncpy(localwanface, "wwan0", IFNAMSIZ);
+		} else {
 			if (nvram_match("pppd_pppifname", ""))
 				strncpy(localwanface, "ppp0", IFNAMSIZ);
 			else
