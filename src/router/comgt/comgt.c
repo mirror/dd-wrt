@@ -226,6 +226,8 @@ void writecom(char *text) {
   int res;
   unsigned int a;
   char ch;
+  if (verbose)
+    fprintf(stderr, "write: %s\n",text);
  write(comfd,text,strlen(text));
 //    if(res!=strlen(text)) {
 //      serror("Could not write to COM device",1);
