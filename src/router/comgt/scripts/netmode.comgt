@@ -50,15 +50,15 @@ opengt
  print "Variant #2 Huawei\n"
  let $a=""
 # Auto 3G/2G
- if $env("COMGTNM") = "0" let $a="AT^SYSCFG=2,0,3FFFFFFF,2,4"
+ if $env("COMGTNM") = "0" let $a="AT\^SYSCFG=2,0,3FFFFFFF,2,4"
 # Force 3G
- if $env("COMGTNM") = "1" let $a="AT^SYSCFG=14,2,3FFFFFFF,2,4"
+ if $env("COMGTNM") = "1" let $a="AT\^SYSCFG=14,2,3FFFFFFF,2,4"
 # Force 2G
- if $env("COMGTNM") = "2" let $a="AT^SYSCFG=13,1,3FFFFFFF,2,4"
+ if $env("COMGTNM") = "2" let $a="AT\^SYSCFG=13,1,3FFFFFFF,2,4"
 # Prefer 3G
- if $env("COMGTNM") = "3" let $a="AT^SYSCFG=2,2,3FFFFFFF,2,4"
+ if $env("COMGTNM") = "3" let $a="AT\^SYSCFG=2,2,3FFFFFFF,2,4"
 # Prefer 2G
- if $env("COMGTNM") = "4" let $a="AT^SYSCFG=2,1,3FFFFFFF,2,4"
+ if $env("COMGTNM") = "4" let $a="AT\^SYSCFG=2,1,3FFFFFFF,2,4"
  if $a = "" goto unkownmode
  send $a
  send "^m"
