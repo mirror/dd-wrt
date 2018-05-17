@@ -326,6 +326,9 @@ else
 	echo "# CONFIG_FEATURE_IPV6 is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_PREFER_IPV4_ADDRESS is not set" >> busybox/.config
 endif
+ifeq ($(CONFIG_SPEEDCHECKER),y)
+	sed -i 's/\# CONFIG_FEATURE_TRACEROUTE_USE_ICMP is not set/CONFIG_FEATURE_TRACEROUTE_USE_ICMP=y/g' busybox/.config
+endif
 ifeq ($(CONFIG_USB_ADVANCED),y)
 	echo "CONFIG_HDPARM=y" >> busybox/.config
 	echo "CONFIG_FEATURE_HDPARM_GET_IDENTITY=y" >> busybox/.config
