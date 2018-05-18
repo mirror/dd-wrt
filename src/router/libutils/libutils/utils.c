@@ -1023,11 +1023,11 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort)
 			ifname[ifcount++] = c;
 	}
       sort:;
-	if (!nosort && count && sort) { // if ifprefix doesnt match to any interface, sort might be NULL here, so check this condition
+	if (!nosort && count && sort) {	// if ifprefix doesnt match to any interface, sort might be NULL here, so check this condition
 		qsort(sort, count, sizeof(char *), ifcompare);
 	}
 	int i;
-	if(sort){
+	if (sort) {
 		for (i = 0; i < count; i++) {
 			strcat(buffer, sort[i]);
 			strcat(buffer, " ");
@@ -1035,7 +1035,7 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort)
 		}
 		free(sort);
 	}
-	
+
 	if (count)
 		buffer[strlen(buffer) - 1] = 0;	// fixup last space
 	return count;
@@ -1929,7 +1929,7 @@ char *getBridgeSTPType(char *br, char *word)
 		GETENTRYBYIDX(stp, word, 1);
 		if (strcmp(bridge, br))
 			continue;
-		strcpy(word,stp);
+		strcpy(word, stp);
 		return word;
 	}
 	if (!strcmp(br, "br0"))
@@ -1978,9 +1978,9 @@ int set_ether_hwaddr(const char *name, unsigned char *hwaddr)
 	}
 
 	strncpy(ifr.ifr_name, name, IFNAMSIZ);
-	ioctl(s, SIOCGIFHWADDR, &ifr); // must read to update struct
+	ioctl(s, SIOCGIFHWADDR, &ifr);	// must read to update struct
 	memcpy(ifr.ifr_hwaddr.sa_data, hwaddr, ETHER_ADDR_LEN);
-	ioctl(s, SIOCSIFHWADDR, &ifr); // rewrite with updated mac
+	ioctl(s, SIOCSIFHWADDR, &ifr);	// rewrite with updated mac
 	close(s);
 	return ret;
 }
