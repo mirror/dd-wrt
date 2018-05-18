@@ -277,13 +277,13 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->diag_gpio = 0x00b;
 		cfg->power_gpio = 0x10b;
 #elif HAVE_LIMA
-//		cfg->disconnected_gpio = 0x00f;
-//		cfg->power_gpio = 0x105;
-//		cfg->diag_gpio = 0x005;
+//              cfg->disconnected_gpio = 0x00f;
+//              cfg->power_gpio = 0x105;
+//              cfg->diag_gpio = 0x005;
 #elif HAVE_RAMBUTAN
-//		cfg->disconnected_gpio = 0x00f;
-//		cfg->power_gpio = 0x105;
-//		cfg->diag_gpio = 0x005;
+//              cfg->disconnected_gpio = 0x00f;
+//              cfg->power_gpio = 0x105;
+//              cfg->diag_gpio = 0x005;
 #elif HAVE_WR940V4
 		cfg->disconnected_gpio = 0x00f;
 		cfg->power_gpio = 0x105;
@@ -678,7 +678,7 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->ses_gpio = 0x101;
 		cfg->sec0_gpio = 0x101;
 		cfg->usb_gpio = 0x107;
-                cfg->usb_power = 0x008;
+		cfg->usb_power = 0x008;
 
 		break;
 #elif HAVE_ARCHERC7V4
