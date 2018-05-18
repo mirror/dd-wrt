@@ -1685,6 +1685,8 @@ int internal_getRouterBrand()
 #define M365 (- (5540 - 3650))
 #define M35 (- (5540 - 3540))
 #define M10 (- (5540 - 10322))
+
+#define UNLOCK_UAPV2 16
 	struct UBNTDEV dev[] = {
 
 		{-1, "NanoBeam M2 XW", 0xe2c2, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10},	//
@@ -1781,8 +1783,8 @@ int internal_getRouterBrand()
 		{-1, "UniFi UAP-AC", 0xe902, 7, 7, 7, 7, ROUTER_BOARD_UNIFI, 0, 10},	//
 		{-1, "UniFi UAP-Outdoor+", 0xe562, 3, 3, 0, 0, ROUTER_BOARD_UNIFI, 0, 10},	//
 		{-1, "UniFi UAP-AC v2", 0xe912, 7, 7, 7, 7, ROUTER_BOARD_UNIFI, 0, 10},	//
-		{17, "UniFi UAP v2", 0xe572, 3, 3, 0, 0, ROUTER_BOARD_UNIFI, 0, 10},	//
-		{17, "UniFi UAP-LR v2", 0xe582, 3, 3, 0, 0, ROUTER_BOARD_UNIFI, 0, 10},	//
+		{UNLOCK_UAPV2, "UniFi UAP v2", 0xe572, 3, 3, 0, 0, ROUTER_BOARD_UNIFI, 0, 10},	//
+		{UNLOCK_UAPV2, "UniFi UAP-LR v2", 0xe582, 3, 3, 0, 0, ROUTER_BOARD_UNIFI, 0, 10},	//
 		{-1, "UniFi UAP-AC-Lite", 0xe517, 3, 3, 3, 3, ROUTER_UBNT_UAPAC, 0, 10},	//
 		{-1, "UniFi UAP-AC-LR", 0xe527, 7, 7, 3, 3, ROUTER_UBNT_UAPAC, 0, 10},	//
 		{-1, "UniFi UAP-AC-Pro-Gen2", 0xe537, 7, 7, 7, 7, ROUTER_UBNT_UAPAC, 0, 10},	//
@@ -1863,8 +1865,9 @@ int internal_getRouterBrand()
 			}
 			static char devicename[64];
 			sprintf(devicename, "Ubiquiti %s", dev[devcnt].devicename);
-			if (dev[devcnt].gpiolock != -1)
-				set_gpio(dev[devcnt].gpiolock, 0);
+			if (dev[devcnt].gpiolock != -1) {
+				set_gpio(devcnt].gpiolock, 0);	
+			}
 			setRouter(devicename);
 			return dev[devcnt].dddev;
 		}
