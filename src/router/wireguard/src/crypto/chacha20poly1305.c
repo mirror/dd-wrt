@@ -294,7 +294,7 @@ struct poly1305_ctx {
 	size_t num;
 } __aligned(8);
 
-#if !(defined(CONFIG_X86_64) || defined(CONFIG_ARM) || defined(CONFIG_ARM64) || (defined(CONFIG_MIPS) && defined(CONFIG_64BIT)))
+#if !(defined(CONFIG_X86_64) || defined(CONFIG_ARM) || defined(CONFIG_ARM64) || (defined(CONFIG_MIPS) && (defined(CONFIG_64BIT) || defined(CONFIG_CPU_MIPS32_R2))))
 struct poly1305_internal {
 	u32 h[5];
 	u32 r[4];
