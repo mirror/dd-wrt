@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0
  *
- * Copyright (C) 2015-2017 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+ * Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  */
 
 #include <arpa/inet.h>
@@ -224,8 +224,21 @@ static inline bool parse_endpoint(struct sockaddr *endpoint, const char *value)
 		if (!ret)
 			break;
 		timeout = timeout * 3 / 2;
-		/* The set of return codes that are "permanent failures". All other possibilities are potentially transient. */
-		if (ret == EAI_NONAME || ret == EAI_FAIL || ret == EAI_NODATA || timeout >= 90000000) {
+		/* The set of return codes that are "permanent failures". All other possibilities are potentially transient.
+		 *
+		 * This is according to https://sourceware.org/glibc/wiki/NameResolver which states:
+		 *	"From the perspective of the application that calls getaddrinfo() it perhaps
+		 *	 doesn't matter that much since EAI_FAIL, EAI_NONAME and EAI_NODATA are all
+		 *	 permanent failure codes and the causes are all permanent failures in the
+		 *	 sense that there is no point in retrying later."
+		 *
+		 * So this is what we do, except FreeBSD removed EAI_NODATA some time ago, so that's conditional.
+		 */
+		if (ret == EAI_NONAME || ret == EAI_FAIL ||
+			#ifdef EAI_NODATA
+				ret == EAI_NODATA ||
+			#endif
+				timeout >= 90000000) {
 			free(mutable);
 			fprintf(stderr, "%s: `%s'\n", ret == EAI_SYSTEM ? strerror(errno) : gai_strerror(ret), value);
 			return false;
@@ -306,6 +319,7 @@ static inline bool parse_allowedips(struct wgpeer *peer, struct wgallowedip **la
 		}
 
 		if (!parse_ip(new_allowedip, ip)) {
+			free(new_allowedip);
 			free(saved_entry);
 			free(mutable);
 			return false;
@@ -416,24 +430,29 @@ error:
 
 bool config_read_line(struct config_ctx *ctx, const char *input)
 {
-	size_t len = strlen(input), cleaned_len = 0;
-	char *line = calloc(len + 1, sizeof(char));
+	size_t len, cleaned_len = 0;
+	char *line, *comment;
 	bool ret = true;
 
+	/* This is what strchrnull is for, but that isn't portable. */
+	comment = strchr(input, COMMENT_CHAR);
+	if (comment)
+		len = comment - input;
+	else
+		len = strlen(input);
+
+	line = calloc(len + 1, sizeof(char));
 	if (!line) {
 		perror("calloc");
 		ret = false;
 		goto out;
 	}
-	if (!len)
-		goto out;
+
 	for (size_t i = 0; i < len; ++i) {
 		if (!isspace(input[i]))
 			line[cleaned_len++] = input[i];
 	}
 	if (!cleaned_len)
-		goto out;
-	if (line[0] == COMMENT_CHAR)
 		goto out;
 	ret = process_line(ctx, line);
 out:
