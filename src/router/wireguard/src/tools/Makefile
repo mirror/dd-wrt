@@ -45,12 +45,8 @@ CFLAGS += -DRUNSTATEDIR="\"$(RUNSTATEDIR)\""
 ifeq ($(DEBUG_TOOLS),y)
 CFLAGS += -g
 endif
-ifeq ($(PLATFORM),linux)
-LIBMNL_CFLAGS := $(shell $(PKG_CONFIG) --cflags libmnl 2>/dev/null)
-LIBMNL_LDLIBS := $(shell $(PKG_CONFIG) --libs libmnl 2>/dev/null || echo -lmnl)
 CFLAGS += $(LIBMNL_CFLAGS)
 LDLIBS += $(LIBMNL_LDLIBS)
-endif
 
 ifneq ($(V),1)
 BUILT_IN_LINK.o := $(LINK.o)
