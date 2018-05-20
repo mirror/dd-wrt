@@ -10,6 +10,11 @@ GNU_ATOMICS = yes
 LIB_ATOMIC=-latomic
 CONFIG_LIBATOMIC=y
 endif
+ifeq ($(ARCH),arm)
+GNU_ATOMICS = yes
+LIB_ATOMIC=-latomic
+CONFIG_LIBATOMIC=y
+endif
 squid-configure:
 	cd squid && ./bootstrap.sh
 	cd squid && ./configure --target=$(ARCH)-linux --host=$(ARCH)-linux --prefix=/usr --libdir=/usr/lib CFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl -lssl -lcrypto -pthread $(LIB_ATOMIC)" CPPFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -pthread -L$(TOP)/openssl -lcrypto -lssl $(LIB_ATOMIC)" CXXFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -pthread -L$(TOP)/openssl  $(LIB_ATOMIC)" \
