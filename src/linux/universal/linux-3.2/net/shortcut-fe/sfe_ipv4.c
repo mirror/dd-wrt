@@ -19,6 +19,7 @@
 #include <linux/sysfs.h>
 #include <linux/skbuff.h>
 #include <linux/icmp.h>
+#include <linux/prefetch.h>
 #include <net/tcp.h>
 #include <linux/etherdevice.h>
 #include <net/checksum.h>
