@@ -283,7 +283,11 @@ typedef unsigned long long uoff_t;
 /* While sizeof(off_t) == sizeof(int), off_t is typedef'ed to long anyway.
  * gcc will throw warnings on printf("%d", off_t). Crap... */
 #ifdef __UCLIBC__
+#ifdef __USE_FILE_OFFSET64
+typedef unsigned long long uoff_t;
+#else
 typedef unsigned long uoff_t;
+#endif
 #else
 typedef unsigned long long uoff_t;
 #endif
