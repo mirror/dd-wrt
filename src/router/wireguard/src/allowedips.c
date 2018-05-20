@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0
  *
- * Copyright (C) 2015-2017 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+ * Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  */
 
 #include "allowedips.h"
@@ -152,7 +152,8 @@ static __always_inline u8 common_bits(const struct allowedips_node *node, const 
 /* This could be much faster if it actually just compared the common bits properly,
  * by precomputing a mask bswap(~0 << (32 - cidr)), and the rest, but it turns out that
  * common_bits is already super fast on modern processors, even taking into account
- * the unfortunate bswap. So, we just inline it like this instead. */
+ * the unfortunate bswap. So, we just inline it like this instead.
+ */
 #define prefix_matches(node, key, bits) (common_bits(node, key, bits) >= node->cidr)
 
 static __always_inline struct allowedips_node *find_node(struct allowedips_node *trie, u8 bits, const u8 *key)
@@ -278,11 +279,12 @@ void allowedips_init(struct allowedips *table)
 
 void allowedips_free(struct allowedips *table, struct mutex *lock)
 {
+	struct allowedips_node __rcu *old4 = table->root4, *old6 = table->root6;
 	++table->seq;
-	free_root_node(table->root4, lock);
 	rcu_assign_pointer(table->root4, NULL);
-	free_root_node(table->root6, lock);
 	rcu_assign_pointer(table->root6, NULL);
+	free_root_node(old4, lock);
+	free_root_node(old6, lock);
 }
 
 int allowedips_insert_v4(struct allowedips *table, const struct in_addr *ip, u8 cidr, struct wireguard_peer *peer, struct mutex *lock)

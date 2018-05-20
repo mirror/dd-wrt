@@ -17,12 +17,6 @@
  * Timer for, if enabled, sending an empty authenticated packet every user-specified seconds
  */
 
-/* This rounds the time down to the closest power of two of the closest quarter second. */
-static inline unsigned long slack_time(unsigned long time)
-{
-	return time & ~(roundup_pow_of_two(HZ / 4) - 1);
-}
-
 #define peer_get_from_timer(timer_name) \
 	struct wireguard_peer *peer = peer_rcu_get(from_timer(peer, timer, timer_name)); \
 	if (unlikely(!peer)) \
@@ -109,20 +103,14 @@ static void expired_send_persistent_keepalive(struct timer_list *timer)
 {
 	peer_get_from_timer(timer_persistent_keepalive);
 
-	if (likely(peer->persistent_keepalive_interval)) {
-		if (likely(timers_active(peer)))
-			del_timer(&peer->timer_send_keepalive);
+	if (likely(peer->persistent_keepalive_interval))
 		packet_send_keepalive(peer);
-	}
 	peer_put(peer);
 }
 
 /* Should be called after an authenticated data packet is sent. */
 void timers_data_sent(struct wireguard_peer *peer)
 {
-	if (likely(timers_active(peer)))
-		del_timer(&peer->timer_send_keepalive);
-
 	if (likely(timers_active(peer)) && !timer_pending(&peer->timer_new_handshake))
 		mod_timer(&peer->timer_new_handshake, jiffies + KEEPALIVE_TIMEOUT + REKEY_TIMEOUT);
 }
@@ -138,7 +126,14 @@ void timers_data_received(struct wireguard_peer *peer)
 	}
 }
 
-/* Should be called after any type of authenticated packet is received -- keepalive or data. */
+/* Should be called after any type of authenticated packet is sent -- keepalive, data, or handshake. */
+void timers_any_authenticated_packet_sent(struct wireguard_peer *peer)
+{
+	if (likely(timers_active(peer)))
+		del_timer(&peer->timer_send_keepalive);
+}
+
+/* Should be called after any type of authenticated packet is received -- keepalive, data, or handshake. */
 void timers_any_authenticated_packet_received(struct wireguard_peer *peer)
 {
 	if (likely(timers_active(peer)))
@@ -148,10 +143,8 @@ void timers_any_authenticated_packet_received(struct wireguard_peer *peer)
 /* Should be called after a handshake initiation message is sent. */
 void timers_handshake_initiated(struct wireguard_peer *peer)
 {
-	if (likely(timers_active(peer))) {
-		del_timer(&peer->timer_send_keepalive);
-		mod_timer(&peer->timer_retransmit_handshake, slack_time(jiffies + REKEY_TIMEOUT + prandom_u32_max(REKEY_TIMEOUT_JITTER_MAX)));
-	}
+	if (likely(timers_active(peer)))
+		mod_timer(&peer->timer_retransmit_handshake, jiffies + REKEY_TIMEOUT + prandom_u32_max(REKEY_TIMEOUT_JITTER_MAX));
 }
 
 /* Should be called after a handshake response message is received and processed or when getting key confirmation via the first data message. */
@@ -171,11 +164,11 @@ void timers_session_derived(struct wireguard_peer *peer)
 		mod_timer(&peer->timer_zero_key_material, jiffies + (REJECT_AFTER_TIME * 3));
 }
 
-/* Should be called before a packet with authentication -- data, keepalive, either handshake -- is sent, or after one is received. */
+/* Should be called before a packet with authentication -- keepalive, data, or handshake -- is sent, or after one is received. */
 void timers_any_authenticated_packet_traversal(struct wireguard_peer *peer)
 {
 	if (peer->persistent_keepalive_interval && likely(timers_active(peer)))
-		mod_timer(&peer->timer_persistent_keepalive, slack_time(jiffies + peer->persistent_keepalive_interval));
+		mod_timer(&peer->timer_persistent_keepalive, jiffies + peer->persistent_keepalive_interval);
 }
 
 void timers_init(struct wireguard_peer *peer)
@@ -186,6 +179,9 @@ void timers_init(struct wireguard_peer *peer)
 	timer_setup(&peer->timer_zero_key_material, expired_zero_key_material, 0);
 	timer_setup(&peer->timer_persistent_keepalive, expired_send_persistent_keepalive, 0);
 	INIT_WORK(&peer->clear_peer_work, queued_expired_zero_key_material);
+	peer->timer_handshake_attempts = 0;
+	peer->sent_lastminute_handshake = false;
+	peer->timer_need_another_keepalive = false;
 }
 
 void timers_stop(struct wireguard_peer *peer)
