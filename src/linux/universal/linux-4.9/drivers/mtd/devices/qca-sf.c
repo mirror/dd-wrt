@@ -517,7 +517,7 @@ unsigned long flash_get_geom(flash_info_t * flash_info)
 	u8 erase_cmd;
 	ret = qca_sf_sfdp_info(0, &flash_size, &sect_size, &erase_cmd);
 	flash_id = qca_sf_jedec_id(0);
-
+	printk(KERN_INFO "jedec ID %X\n",flash_id);
 	flash_info->use_4byte_addr = 0;
 	flash_info->need_4byte_enable_op = 0;
 	flash_info->read_cmd = SPI_FLASH_CMD_READ;
