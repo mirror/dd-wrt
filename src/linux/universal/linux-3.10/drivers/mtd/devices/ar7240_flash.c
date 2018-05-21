@@ -526,6 +526,10 @@ static int __init ar7240_flash_init(void)
 				    inc = 0xc0;
 				}
 				sb = (struct squashfs_super_block *)buf;
+				if (le16_to_cpu(sb->compression) != 4) {
+					printk(KERN_EMERG "ignore compression type %d\n", le16_to_cpu(sb->compression));
+					continue;
+				}
 				dir_parts[2].offset = offset;
 
 				
