@@ -69,10 +69,16 @@ static int search_hit(char *search, char *line, char *ret)
 
 	for (i = 0; i < lineLen - searchLen; i++) {
 		if (!strncasecmp((char *)&line[i], search, searchLen))
-			break;	// we got hit
+			goto gotit;
 	}
-
-	for (j = i + searchLen; j < i + 15 + searchLen; j++) {
+	return 1;		// not found
+      gotit:;
+	int clamp = i + 15 + searchLen;
+	if (clamp > lineLen)
+		clamp = lineLen;	// out of bounds
+	if (i + searchLen > lineLen)
+		return 1;	// out of bounds
+	for (j = i + searchLen; j < clamp; j++) {
 		if (j >= lineLen)
 			break;	// end of line may be a delimiter too
 		// return(1); // incomplete data
@@ -161,7 +167,8 @@ void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<td align=\"right\">%d</td>", timeout);
 
 		// src
-		search_hit("src=", line, srcip);
+		if (search_hit("src=", line, srcip))
+			continue;
 		// char buf[200];
 		// getHostName (buf, srcip);
 		// websWrite (wp, "<td align=\"right\" onmouseover='DisplayDiv(this,
@@ -174,7 +181,8 @@ void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<td align=\"right\"><a title=\"Geotool\" href=\"javascript:openGeotool('%s')\">%s</a></td>", srcip, srcip);
 
 		// dst
-		search_hit("dst=", line, dstip);
+		if (search_hit("dst=", line, dstip))
+			continue;
 		// getHostName (buf, dstip);
 		// websWrite (wp, "<td align=\"right\" onmouseover='DisplayDiv(this,
 		// event, 15, 15, \"%s\")' onmouseout=\"unDisplayDiv()\">%s</td>",
@@ -184,13 +192,12 @@ void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<td align=\"right\">%s</td>", dstip);
 		else
 			websWrite(wp, "<td align=\"right\"><a title=\"Geotool\" href=\"javascript:openGeotool('%s')\">%s</a></td>", dstip, dstip);
-
 		// service
-		search_hit("dport=", line, dstport);
+		if (search_hit("dport=", line, dstport))
+			continue;
 		_dport = atoi(dstport);
 		servp = my_getservbyport(htons(_dport), protocol);
 		websWrite(wp, "<td align=\"right\">%s</td>", servp ? servp->s_name : dstport);
-
 		// State
 		if (string_search(line, "ESTABLISHED"))
 			sprintf(state, "ESTABLISHED");
@@ -210,11 +217,9 @@ void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 		}
 		websWrite(wp, "<td>%s</td>\n", state);
 		websWrite(wp, "</tr>\n");
-
 		ip_count++;
 	}
 
 	fclose(fp);
-
 	return;
 }
