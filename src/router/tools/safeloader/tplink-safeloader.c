@@ -718,6 +718,49 @@ static struct device_info boards[] = {
 		.first_sysupgrade_partition = "os-image",
 		.last_sysupgrade_partition = "file-system"
 	},
+	/** Firmware layout for the TL-WR1043 v5 */
+	{
+		.id     = "TLWR1043NV5",
+		.vendor = "",
+		.support_list =
+			"SupportList:\n"
+			"{product_name:TL-WR1043ND,product_ver:5.0.0,special_id:00000000}\n" // UNIVERSAL
+			"{product_name:TL-WR1043ND,product_ver:5.0.0,special_id:55530000}\n" //US 
+			"{product_name:TL-WR1043ND,product_ver:5.0.0,special_id:45550000}\n" //EU
+			"{product_name:TL-WR1043ND,product_ver:5.0.0,special_id:4B520000}\n" //KR
+			"{product_name:TL-WR1043ND,product_ver:5.0.0,special_id:42520000}\n" //BR
+			"{product_name:TL-WR1043ND,product_ver:5.0.0,special_id:4A500000}\n" //JP
+			"{product_name:TL-WR1043ND,product_ver:5.0.0,special_id:43410000}\n" //CA
+			"{product_name:TL-WR1043ND,product_ver:5.0.0,special_id:41550000}\n" //AU
+			"{product_name:TL-WR1043ND,product_ver:5.0.0,special_id:52550000}\n" //RU
+			"{product_name:TL-WR1043ND,product_ver:5.0.0,special_id:54570000}\n", // TW
+		.support_trail = '\x00',
+		.soft_ver = "soft_ver:1.0.0\n",
+		.partitions = {
+			{"factory-boot", 0x00000, 0x20000},
+			{"fs-uboot", 0x20000, 0x20000},
+			{"os-image", 0x40000, 0x120000},	/* Stock: base 0x30000 size 0x100000 */
+			{"file-system", 0x160000, 0xda0000},	/* Stock: base 0x130000 size 0x6a0000 */
+			{"default-mac", 0xf00000, 0x00200},
+			{"pin", 0xf00200, 0x00200},
+			{"device-id", 0xf00400, 0x00100},
+			{"product-info", 0xf00500, 0x0fb00},
+			{"soft-version", 0xf10000, 0x01000},
+			{"extra-para", 0xf11000, 0x01000},
+			{"support-list", 0xf12000, 0x0a000},
+			{"profile", 0xf1c000, 0x04000},
+			{"default-config", 0xf20000, 0x10000},
+			{"user-config", 0xf30000, 0x40000},
+			{"qos-db", 0xf70000, 0x40000},
+			{"certificate", 0xfb0000, 0x10000},
+			{"partition-table", 0xfc0000, 0x10000},
+			{"log", 0xfd0000, 0x20000},
+			{"radio", 0xff0000, 0x10000},
+			{NULL, 0, 0}
+		},
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system"
+	},
 
 	/** Firmware layout for the TL-WR1043 v4 */
 	{
@@ -745,8 +788,8 @@ static struct device_info boards[] = {
 		*/
 		.partitions = {
 			{"fs-uboot", 0x00000, 0x20000},
-			{"os-image", 0x20000, 0x180000},
-			{"file-system", 0x1a0000, 0xdb0000},
+			{"os-image", 0x20000, 0x140000},
+			{"file-system", 0x160000, 0xdf0000},
 			{"default-mac", 0xf50000, 0x00200},
 			{"pin", 0xf50200, 0x00200},
 			{"product-info", 0xf50400, 0x0fc00},
