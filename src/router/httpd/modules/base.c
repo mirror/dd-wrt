@@ -1696,7 +1696,7 @@ static int do_auth(webs_t wp, int (*auth_check) (webs_t conn_fp))
 #if defined(HAVE_ERC) || defined(HAVE_IPR)
 	strncpy(wp->auth_realm, "LOGIN", AUTH_MAX);
 	wp->userid = 0;
-	if (auth_check(wp, authorisation))
+	if (auth_check(wp))
 		return 1;
 	wp->userid = 1;
 	char passout[MD5_OUT_BUFSIZE];
@@ -1704,7 +1704,7 @@ static int do_auth(webs_t wp, int (*auth_check) (webs_t conn_fp))
 	strncpy(wp->auth_passwd, nvram_safe_get("newhttp_passwd"), AUTH_MAX);
 	if (auth_check(wp))
 		return 1;
-	userid = 0;
+	wp->userid = 0;
 #else
 	wp->userid = 0;
 	strncpy(wp->auth_realm, nvram_safe_get("router_name"), AUTH_MAX);
