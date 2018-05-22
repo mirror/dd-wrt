@@ -40,7 +40,7 @@
 #include "support/prof_err.h"
 
 #ifdef ENABLE_NLS
-#include <libintl.h>
+#include <libgnuintl.h>
 #include <locale.h>
 #define _(a) (gettext (a))
 #ifdef gettext_noop
