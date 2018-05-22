@@ -21,6 +21,8 @@ usbip-configure: util-linux
 usbip:
 	make -C util-linux
 	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
+	mkdir -p $(INSTALLDIR)/util-linux/usr/lib
+	-cp -urv $(INSTALLDIR)/util-linux/usr/tmp/* $(INSTALLDIR)/util-linux/usr/lib
 	$(MAKE) -C usbip 
 
 usbip-clean:
@@ -29,6 +31,14 @@ usbip-clean:
 	@true
 
 usbip-install:
+	make -C util-linux
+	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
+	mkdir -p $(INSTALLDIR)/util-linux/usr/lib
+	-cp -urv $(INSTALLDIR)/util-linux/usr/tmp/* $(INSTALLDIR)/util-linux/usr/lib
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.la
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.la
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.a
 	make -C usbip/eudev install DESTDIR=$(INSTALLDIR)/usbip
 	-mv $(INSTALLDIR)/usbip/usr/lib64 $(INSTALLDIR)/usbip/usr/lib
 	rm -rf $(INSTALLDIR)/usbip/usr/bin
@@ -40,6 +50,15 @@ usbip-install:
 	rm -rf $(INSTALLDIR)/usbip/usr/lib/udev
 	rm -rf $(INSTALLDIR)/usbip/usr/sbin
 	rm -rf $(INSTALLDIR)/usbip/usr/share/pkgconfig
+	rm -rf $(INSTALLDIR)/util-linux/usr/tmp 
+	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
+	rm -rf $(INSTALLDIR)/util-linux/usr/bin
+	rm -rf $(INSTALLDIR)/util-linux/bin
+	rm -rf $(INSTALLDIR)/util-linux/sbin
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.la
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.la
 	install -D usbip/src/.libs/usbip $(INSTALLDIR)/usbip/usr/sbin/usbip
 	install -D usbip/src/.libs/usbipd $(INSTALLDIR)/usbip/usr/sbin/usbipd
 	install -D usbip/libsrc/.libs/libusbip.so.0 $(INSTALLDIR)/usbip/usr/lib/libusbip.so.0
