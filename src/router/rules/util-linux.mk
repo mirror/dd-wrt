@@ -32,8 +32,8 @@ util-linux-install:
 	rm -rf $(INSTALLDIR)/util-linux/usr/bin
 	rm -rf $(INSTALLDIR)/util-linux/bin
 	rm -rf $(INSTALLDIR)/util-linux/sbin
-ifneq ($(CONFIG_ASTERISK),y)
 	rm -rf $(INSTALLDIR)/util-linux/usr/share
+ifneq ($(CONFIG_ASTERISK),y)
 	rm -rf $(INSTALLDIR)/util-linux/usr/include
 	rm -rf $(INSTALLDIR)/util-linux/usr/lib/pkgconfig
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libfdisk*
