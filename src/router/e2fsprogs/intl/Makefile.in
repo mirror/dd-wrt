@@ -499,7 +499,7 @@ coverage.txt::
 
 mostlyclean:
 	rm -f *.a *.la *.o *.obj *.lo core core.*
-	rm -f libgnuintl.h libintl.h charset.alias ref-add.sed ref-del.sed
+	rm -f charset.alias ref-add.sed ref-del.sed
 	rm -f -r .libs _libs
 
 clean:: mostlyclean
