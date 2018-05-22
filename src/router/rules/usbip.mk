@@ -55,6 +55,7 @@ usbip-install:
 	rm -rf $(INSTALLDIR)/util-linux/usr/bin
 	rm -rf $(INSTALLDIR)/util-linux/bin
 	rm -rf $(INSTALLDIR)/util-linux/sbin
+	rm -rf $(INSTALLDIR)/util-linux/usr/share
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.la
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.a
