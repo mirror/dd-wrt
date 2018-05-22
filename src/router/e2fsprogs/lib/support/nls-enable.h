@@ -1,5 +1,5 @@
 #if defined(ENABLE_NLS) && !defined(DEBUGFS)
-#include <libintl.h>
+#include <libgnuintl.h>
 #include <locale.h>
 #define _(a) (gettext (a))
 #ifdef gettext_noop

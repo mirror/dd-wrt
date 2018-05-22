@@ -11,8 +11,6 @@ INSTALL = @INSTALL@
 
 @MCONFIG@
 
-@DEFRAG_CMT@@LINUX_CMT@E4DEFRAG_PROG= e4defrag
-@DEFRAG_CMT@@LINUX_CMT@E4DEFRAG_MAN= e4defrag.8
 
 @LINUX_CMT@E4CRYPT_PROG = e4crypt
 @LINUX_CMT@E4CRYPT_MAN= e4crypt.8
@@ -35,11 +33,11 @@ INSTALL = @INSTALL@
 SPROGS=		mke2fs badblocks tune2fs dumpe2fs $(BLKID_PROG) logsave \
 			$(E2IMAGE_PROG) @FSCK_PROG@ e2undo
 USPROGS=	mklost+found filefrag e2freefrag $(UUIDD_PROG) \
-			$(E4DEFRAG_PROG) $(E4CRYPT_PROG) $(FUSE_PROG)
+			$(E4CRYPT_PROG) $(FUSE_PROG)
 SMANPAGES=	tune2fs.8 mklost+found.8 mke2fs.8 dumpe2fs.8 badblocks.8 \
 			e2label.8 $(FINDFS_MAN) $(BLKID_MAN) $(E2IMAGE_MAN) \
 			logsave.8 filefrag.8 e2freefrag.8 e2undo.8 \
-			$(UUIDD_MAN) $(E4DEFRAG_MAN) $(E4CRYPT_MAN) @FSCK_MAN@
+			$(UUIDD_MAN) $(E4CRYPT_MAN) @FSCK_MAN@
 FMANPAGES=	mke2fs.conf.5 ext4.5
 
 UPROGS=		chattr lsattr @UUID_CMT@ uuidgen
@@ -63,7 +61,6 @@ FSCK_OBJS=	fsck.o base_device.o ismounted.o
 BLKID_OBJS=	blkid.o
 FILEFRAG_OBJS=	filefrag.o
 E2UNDO_OBJS=  e2undo.o
-E4DEFRAG_OBJS=	e4defrag.o
 E4CRYPT_OBJS=   e4crypt.o
 E2FREEFRAG_OBJS= e2freefrag.o
 E2FUZZ_OBJS=	e2fuzz.o
@@ -89,7 +86,6 @@ PROFILED_BLKID_OBJS=	profiled/blkid.o
 PROFILED_FILEFRAG_OBJS=	profiled/filefrag.o
 PROFILED_E2FREEFRAG_OBJS= profiled/e2freefrag.o
 PROFILED_E2UNDO_OBJS=	profiled/e2undo.o
-PROFILED_E4DEFRAG_OBJS=	profiled/e4defrag.o
 PROFILED_E4CRYPT_OBJS=	profiled/e4crypt.o
 PROFILED_FUSE2FS_OJBS=	profiled/fuse2fs.o profiled/journal.o \
 			profiled/recovery.o profiled/revoke.o
@@ -131,12 +127,12 @@ DEPEND_CFLAGS = -I$(top_srcdir)/e2fsck
 @PROFILE_CMT@	$(Q) $(CC) $(ALL_CFLAGS) -g -pg -o profiled/$*.o -c $<
 
 all:: profiled $(SPROGS) $(UPROGS) $(USPROGS) $(SMANPAGES) $(UMANPAGES) \
-	$(FMANPAGES) $(LPROGS) $(E4DEFRAG_PROG) $(E4CRYPT_PROGS) e2fuzz
+	$(FMANPAGES) $(LPROGS) $(E4CRYPT_PROGS) e2fuzz
 
 @PROFILE_CMT@all:: tune2fs.profiled blkid.profiled e2image.profiled \
 	e2undo.profiled mke2fs.profiled dumpe2fs.profiled fsck.profiled \
 	logsave.profiled filefrag.profiled uuidgen.profiled $(UUIDD_PROFILED) \
-	e2image.profiled e4defrag.profiled e4crypt.profiled \
+	e2image.profiled e4crypt.profiled \
 	e2freefrag.profiled
 
 profiled:
@@ -232,20 +228,10 @@ e2undo.profiled: $(E2UNDO_OBJS) $(PROFILED_DEPLIBS)
 	$(Q) $(CC) $(ALL_LDFLAGS) -g -pg -o e2undo.profiled \
 		$(PROFILED_E2UNDO_OBJS) $(PROFILED_LIBS) $(LIBINTL) $(SYSLIBS)
 
-e4defrag: $(E4DEFRAG_OBJS) $(DEPLIBS)
-	$(E) "	LD $@"
-	$(Q) $(CC) $(ALL_LDFLAGS) -o e4defrag $(E4DEFRAG_OBJS) $(LIBS) \
-		$(SYSLIBS)
-
 e4crypt: $(E4CRYPT_OBJS) $(DEPLIBS) $(DEPSTATIC_LIBUUID)
 	$(E) "	LD $@"
 	$(Q) $(CC) $(ALL_LDFLAGS) -o e4crypt $(E4CRYPT_OBJS) \
 		$(LIBUUID) $(LIBS)
-
-e4defrag.profiled: $(E4DEFRAG_OBJS) $(PROFILED_DEPLIBS)
-	$(E) "	LD $@"
-	$(Q) $(CC) $(ALL_LDFLAGS) -g -pg -o e4defrag.profiled \
-		$(PROFILED_E4DEFRAG_OBJS) $(PROFILED_LIBS) $(SYSLIBS)
 
 e4crypt.profiled: $(E4CRYPT_OBJS) $(DEPPROFILED_LIBUUID) $(PROFILED_DEPLIBS)
 	$(E) "	LD $@"
@@ -463,9 +449,6 @@ e2image.8: $(DEP_SUBSTITUTE) $(srcdir)/e2image.8.in
 	$(E) "	SUBST $@"
 	$(Q) $(SUBSTITUTE_UPTIME) $(srcdir)/e2image.8.in e2image.8
 
-e4defrag.8: $(DEP_SUBSTITUTE) $(srcdir)/e4defrag.8.in
-	$(E) "	SUBST $@"
-	$(Q) $(SUBSTITUTE_UPTIME) $(srcdir)/e4defrag.8.in e4defrag.8
 
 e4crypt.8: $(DEP_SUBSTITUTE) $(srcdir)/e4crypt.8.in
 	$(E) "	SUBST $@"
