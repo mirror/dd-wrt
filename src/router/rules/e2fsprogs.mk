@@ -1,6 +1,6 @@
 e2fsprogs-configure:
 	touch e2fsprogs/intl/plural.c
-	cd e2fsprogs && ./configure --host=$(ARCH)-linux CC="$(CC) $(COPTS) $(MIPS16_OPT) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -D_GNU_SOURCE  -DNEED_PRINTF -std=gnu89" --disable-static --enable-shared --with-gnu-ld --disable-rpath --enable-elf-shlibs --enable-compression --enable-htree --enable-symlink-install --disable-tls --libdir=/lib root_prefix=$(INSTALLDIR)/e2fsprogs
+	cd e2fsprogs && ./configure --host=$(ARCH)-linux CC="$(CC) $(COPTS) $(MIPS16_OPT) -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -D_GNU_SOURCE  -DNEED_PRINTF -std=gnu89" LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections  -L$(TOP)/e2fsprogs/intl" --disable-static --enable-shared --with-gnu-ld --disable-rpath --enable-elf-shlibs --enable-compression --enable-htree --enable-symlink-install --disable-tls --libdir=/lib root_prefix=$(INSTALLDIR)/e2fsprogs
 	make -C e2fsprogs
 
 e2fsprogs:
