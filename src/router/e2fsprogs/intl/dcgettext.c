@@ -22,7 +22,7 @@
 
 #include "gettextP.h"
 #ifdef _LIBC
-# include <libintl.h>
+# include <libgnuintl.h>
 #else
 # include "libgnuintl.h"
 #endif
