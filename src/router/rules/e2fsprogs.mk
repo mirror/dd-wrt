@@ -4,10 +4,11 @@ e2fsprogs-configure:
 	make -C e2fsprogs
 
 e2fsprogs:
+	make -C e2fsprogs/intl libintl.a
 	make -C e2fsprogs
 
 e2fsprogs-clean:
-	make -C e2fsprogs clean
+	@true
 
 e2fsprogs-install:
 	-make -C e2fsprogs install DESTDIR=$(INSTALLDIR)/e2fsprogs
