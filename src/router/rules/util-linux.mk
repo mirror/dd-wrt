@@ -33,14 +33,12 @@ util-linux-install:
 	rm -rf $(INSTALLDIR)/util-linux/bin
 	rm -rf $(INSTALLDIR)/util-linux/sbin
 	rm -rf $(INSTALLDIR)/util-linux/usr/share
-ifneq ($(CONFIG_ASTERISK),y)
 	rm -rf $(INSTALLDIR)/util-linux/usr/include
 	rm -rf $(INSTALLDIR)/util-linux/usr/lib/pkgconfig
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libfdisk*
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libsmartcols*
 	rm -f $(INSTALLDIR)/util-linux/lib/libfdisk.so*
 	rm -f $(INSTALLDIR)/util-linux/lib/libsmartcols.so*
-endif
 ifneq ($(CONFIG_ASTERISK),y)
 ifneq ($(CONFIG_ZABBIX),y)
 ifneq ($(CONFIG_MC),y)
