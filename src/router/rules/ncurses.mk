@@ -27,4 +27,8 @@ ncurses-install:
 	rm -rf $(INSTALLDIR)/ncurses/usr/include
 	rm -rf $(INSTALLDIR)/ncurses/usr/bin
 	rm -f $(INSTALLDIR)/ncurses/usr/lib/*.a
+	rm -f $(INSTALLDIR)/ncurses/usr/lib/libmenu*
+ifneq ($(CONFIG_IPTRAF),y)
+	rm -f $(INSTALLDIR)/ncurses/usr/lib/libpanel*
+endif
 

@@ -56,10 +56,15 @@ usbip-install:
 	rm -rf $(INSTALLDIR)/util-linux/bin
 	rm -rf $(INSTALLDIR)/util-linux/sbin
 	rm -rf $(INSTALLDIR)/util-linux/usr/share
-	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
-	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.la
-	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.a
-	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.la
+	rm -rf $(INSTALLDIR)/util-linux/usr/include
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/*.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/*.la
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libfdisk*
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libsmartcols*
+	rm -f $(INSTALLDIR)/util-linux/lib/libfdisk.so*
+	rm -f $(INSTALLDIR)/util-linux/lib/libsmartcols.so*
+	rm -rf $(INSTALLDIR)/util-linux/usr/lib/pkgconfig
 	install -D usbip/src/.libs/usbip $(INSTALLDIR)/usbip/usr/sbin/usbip
 	install -D usbip/src/.libs/usbipd $(INSTALLDIR)/usbip/usr/sbin/usbipd
 	install -D usbip/libsrc/.libs/libusbip.so.0 $(INSTALLDIR)/usbip/usr/lib/libusbip.so.0
