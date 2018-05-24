@@ -459,7 +459,7 @@ static enum ssb_mitigation_cmd __init ssb_parse_cmdline(void)
 	int ret, i;
 
 	if (cmdline_find_option_bool(boot_command_line, "nospec_store_bypass_disable")) {
-		return SPEC_STORE_BYPASS_CMD_NONE;
+		return SPEC_STORE_BYPASS_CMD_AUTO;
 	} else {
 		ret = cmdline_find_option(boot_command_line, "spec_store_bypass_disable",
 					  arg, sizeof(arg));
