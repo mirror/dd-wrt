@@ -121,29 +121,29 @@
 #define DEBUG(format, args...)
 #endif
 
-#ifndef HAVE_MICRO
-static int pthread_mutex_on = 0;
-static pthread_mutex_t mutex_unl;
-static char *lastlock;
-static char *lastunlock;
-#define mutex_init() if (!pthread_mutex_on) {\
-			pthread_mutex_init(&mutex_unl,NULL); \
-		    } \
-		    pthread_mutex_on = 1;
-#define lock() pthread_mutex_lock(&mutex_unl)
-#define unlock() pthread_mutex_unlock(&mutex_unl)
+#ifndef HAVE_MICRO#define mutex_init()
+static void lock(void)
+{
+	FILE *fp;
+      retry:;
+	fp = fopen("/tmp/.ipt_lock", "rb");
+	if (fp) {
+		fclose(fp);
+		sleep(1);
+		goto retry;
+	}
+}
 
-/*#define unlock() { \
-	pthread_mutex_unlock(&mutex_unl); \
-	lastunlock = __func__; \
-}*/
+static void unlock(void)
+{
+	unlink("/tmo/.ipt_lock");
+}
+
 #else
 #define mutex_init()
 #define lock()
 #define unlock()
 #endif
-
-
 
 static char *suspense;
 static unsigned int count = 0;
