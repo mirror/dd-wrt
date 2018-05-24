@@ -122,7 +122,7 @@
 #endif
 
 #ifndef HAVE_MICRO
-static pthread_mutex_on = 0;
+static int pthread_mutex_on = 0;
 static pthread_mutex_t mutex_unl;
 static char *lastlock;
 static char *lastunlock;
