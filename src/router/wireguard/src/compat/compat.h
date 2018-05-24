@@ -118,8 +118,9 @@ static inline void skb_reset_tc(struct sk_buff *skb)
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
+#include <linux/random.h>
 #include <linux/siphash.h>
-static inline u32 get_random_u32(void)
+static inline u32 __wgcompat_get_random_u32(void)
 {
 	static siphash_key_t key;
 	static u32 counter = 0;
@@ -134,6 +135,7 @@ static inline u32 get_random_u32(void)
 #endif
 	return siphash_2u32(counter++, get_random_int(), &key);
 }
+#define get_random_u32 __wgcompat_get_random_u32
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0) && !defined(ISRHEL7)
