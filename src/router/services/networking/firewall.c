@@ -137,7 +137,7 @@ static void lock(void)
 
 static void unlock(void)
 {
-	unlink("/tmo/.ipt_lock");
+	unlink("/tmp/.ipt_lock");
 }
 
 #else
