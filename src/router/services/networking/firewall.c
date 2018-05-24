@@ -126,7 +126,7 @@ static int pthread_mutex_on = 0;
 static pthread_mutex_t mutex_unl;
 static char *lastlock;
 static char *lastunlock;
-#define mutex_init() if !(pthread_mutex_on) {\
+#define mutex_init() if (!pthread_mutex_on) {\
 			pthread_mutex_init(&mutex_unl,NULL); \
 		    } \
 		    pthread_mutex_on = 1;
