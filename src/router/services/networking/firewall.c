@@ -121,7 +121,8 @@
 #define DEBUG(format, args...)
 #endif
 
-#ifndef HAVE_MICRO#define mutex_init()
+#ifndef HAVE_MICRO
+#define mutex_init()
 static void lock(void)
 {
 	FILE *fp;
