@@ -121,6 +121,26 @@
 #define DEBUG(format, args...)
 #endif
 
+#ifndef HAVE_MICRO
+static pthread_mutex_t mutex_unl;
+static char *lastlock;
+static char *lastunlock;
+#define mutex_init() pthread_mutex_init(&mutex_unl,NULL)
+#define lock() pthread_mutex_lock(&mutex_unl)
+#define unlock() pthread_mutex_unlock(&mutex_unl)
+
+/*#define unlock() { \
+	pthread_mutex_unlock(&mutex_unl); \
+	lastunlock = __func__; \
+}*/
+#else
+#define mutex_init()
+#define lock()
+#define unlock()
+#endif
+
+
+
 static char *suspense;
 static unsigned int count = 0;
 static char log_accept[15];
@@ -2717,6 +2737,8 @@ void start_firewall(void)
 	char name[NAME_MAX];
 	struct stat statbuff;
 	int log_level = 0;
+	mutex_init();
+	lock();
 	start_loadfwmodules();
 	system("cat /proc/net/ip_conntrack_flush 2>&1");
 	system("cat /proc/sys/net/netfilter/nf_conntrack_flush 2>&1");
@@ -2986,7 +3008,7 @@ void start_firewall(void)
 		start_pppoeserver();
 	}
 #endif
-
+	unlock();
 	cprintf("ready");
 
 	cprintf("done\n");
@@ -3004,6 +3026,8 @@ void stop_firewall6(void)
 
 void stop_firewall(void)
 {
+	mutex_init();
+	lock();
 	eval("iptables", "-t", "raw", "-F");
 //      stop_anchorfree();
 	/*
@@ -3035,6 +3059,7 @@ void stop_firewall(void)
 #ifdef HAVE_IPV6
 	stop_firewall6();
 #endif
+	unlock();
 	return;
 }
 
