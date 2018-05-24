@@ -818,9 +818,6 @@ static void nat_postrouting(void)
 			save2file("-A POSTROUTING -o %s -j SNAT --to-source %s", wan_ifname_tun, inet_ntoa(ifaddr));
 		}
 */
-		if (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off")) {
-			save2file("-A POSTROUTING -m mark --mark %s -j MASQUERADE", get_NFServiceMark("FORWARD", 1));
-		}
 
 		char *next;
 		char dev[16];
@@ -845,6 +842,9 @@ static void nat_postrouting(void)
 
 				}
 			}
+		}
+		if (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off")) {
+			save2file("-A POSTROUTING -m mark --mark %s -j MASQUERADE", get_NFServiceMark("FORWARD", 1));
 		}
 		if (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))
 			writeprocsysnet("ipv4/conf/br0/loop", "1");
