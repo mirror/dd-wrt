@@ -122,10 +122,11 @@
 #endif
 
 #ifndef HAVE_MICRO
+static pthread_mutex_on = 0;
 static pthread_mutex_t mutex_unl;
 static char *lastlock;
 static char *lastunlock;
-#define mutex_init() pthread_mutex_init(&mutex_unl,NULL)
+#define mutex_init() if !(pthread_mutex_on) pthread_mutex_init(&mutex_unl,NULL); pthread_mutex_on = 1;
 #define lock() pthread_mutex_lock(&mutex_unl)
 #define unlock() pthread_mutex_unlock(&mutex_unl)
 
