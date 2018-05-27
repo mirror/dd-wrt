@@ -1,5 +1,5 @@
 snort-configure: daq-configure pcre-configure daq pcre
-
+	cd snort && autoreconf
 	export ac_cv_func_malloc_0_nonnull=yes  ; \
 	export have_inaddr_none=yes ; \
 	export lt_sys_lib_dlsearch_path_spec="$(ARCH)-uclibc" ; \
@@ -31,6 +31,10 @@ snort-configure: daq-configure pcre-configure daq pcre
 		--with-daq-includes="$(TOP)/daq/install/include" \
 		--with-daq-libraries="$(TOP)/daq/install/lib64" \
 		PATH=$(TOP)/daq/install/bin:$(PATH)
+	sed -i 's/\/usr\/include\/pcap/ /g' $(TOP)/snort/src/output-plugins/Makefile
+	sed -i 's/\/usr\/include\/pcap/ /g' $(TOP)/snort/src/Makefile
+	sed -i 's/\/usr\/include\/pcap/ /g' $(TOP)/snort/tools/u2boat/Makefile
+
 
 snort: pcre
 	$(MAKE) -C snort CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -I$(TOP)/librpc"
