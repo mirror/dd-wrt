@@ -794,7 +794,7 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_UNSAFE, NDPI_PROTOCOL_MAIL_SMTP, no_master, no_master, "SMTP", ndpi_build_default_ports(ports_a, 25, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
-	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_MAIL_SMTPS, no_master, no_master, "SMTPS", ndpi_build_default_ports(ports_a, 465, 0, 0, 0, 0) /* TCP */ ,
+	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_MAIL_SMTPS, no_master, no_master, "SMTPS", ndpi_build_default_ports(ports_a, 465, 587, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_UNSAFE, NDPI_PROTOCOL_MAIL_IMAP, no_master, no_master, "IMAP", ndpi_build_default_ports(ports_a, 143, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
@@ -867,10 +867,14 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_POTENTIALLY_DANGEROUS, NDPI_PROTOCOL_MANOLITO, no_master, no_master, "MANOLITO", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
+	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_NTOP, no_master, no_master, "ntop", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
+				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
 
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_VMWARE, no_master, no_master, "VMware", ndpi_build_default_ports(ports_a, 903, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 902, 903, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_POTENTIALLY_DANGEROUS, NDPI_PROTOCOL_FILETOPIA, no_master, no_master, "Filetopia", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
+				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
+	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_FBZERO, no_master, no_master, "FacebookZero", ndpi_build_default_ports(ports_a, 443, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_POTENTIALLY_DANGEROUS, NDPI_PROTOCOL_IMESH, no_master, no_master, "iMESH", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
@@ -888,6 +892,8 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_TEREDO, no_master, no_master, "Teredo", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 3544, 0, 0, 0, 0) /* UDP */ );
+	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_MUSICALLY, no_master, no_master, "Musical.ly", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
+				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_EPP, no_master, no_master, "EPP", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_FUN, NDPI_CONTENT_AVI, no_master, no_master, "AVI", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
@@ -998,6 +1004,10 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_WHATSAPP_VOICE, no_master, no_master, "WhatsAppVoice", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
+	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_WHATSAPP_FILES, no_master, no_master, "WhatsAppFiles", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
+				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
+	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_WHATSAPP, no_master, no_master, "WhatsApp", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
+				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
 
 	custom_master[0] = NDPI_PROTOCOL_SSL_NO_CERT, custom_master[1] = NDPI_PROTOCOL_UNKNOWN;
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_SSL, no_master, custom_master, "SSL", ndpi_build_default_ports(ports_a, 443, 3001 /* ntop */ , 0, 0, 0) /* TCP */ ,
@@ -1098,8 +1108,8 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 				ndpi_build_default_ports(ports_b, 17500, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_SPOTIFY, no_master, no_master, "Spotify", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
- 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_LISP, no_master, no_master, "LISP", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
- 				ndpi_build_default_ports(ports_b, 4342, 4341, 0, 0, 0) /* UDP */ );
+	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_LISP, no_master, no_master, "LISP", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
+				ndpi_build_default_ports(ports_b, 4342, 4341, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_EAQ, no_master, no_master, "EAQ", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 6000, 80, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_KAKAOTALK_VOICE, no_master, no_master, "KakaoTalk_Voice", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
@@ -1191,6 +1201,8 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_NINTENDO, no_master, no_master, "Nintendo", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_CSGO, no_master, no_master, "CSGO", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
+				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
+	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_AJP, no_master, no_master, "AJP", ndpi_build_default_ports(ports_a, 8009, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
 
 	ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0);
@@ -1893,6 +1905,8 @@ static void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_st
 	/* FILETOPIA */
 	init_filetopia_dissector(ndpi_struct, &a, detection_bitmask);
 
+	init_fbzero_dissector(ndpi_struct, &a, detection_bitmask);
+
 	/* VMWARE */
 	init_vmware_dissector(ndpi_struct, &a, detection_bitmask);
 
@@ -2282,6 +2296,9 @@ static void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_st
 	/* BITTORRENT */
 	init_bittorrent_dissector(ndpi_struct, &a, detection_bitmask);
 
+	/* WHATSAPP */
+	init_whatsapp_dissector(ndpi_struct, &a, detection_bitmask);
+
 	/* AMQP */
 	init_amqp_dissector(ndpi_struct, &a, detection_bitmask);
 
@@ -2290,6 +2307,9 @@ static void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_st
 
 	/* LISP */
 	init_lisp_dissector(ndpi_struct, &a, detection_bitmask);
+
+	/* AJP */
+	init_ajp_dissector(ndpi_struct, &a, detection_bitmask);
 
 	/* ----------------------------------------------------------------- */
 
@@ -2582,6 +2602,10 @@ static int ndpi_init_packet_header(struct ndpi_detection_module_struct *ndpi_str
 			 * idea: reset detection state if a connection is unknown
 			 */
 			if (flow && flow->packet.tcp->syn != 0 && flow->packet.tcp->ack == 0 && flow->init_finished != 0 && flow->detected_protocol_stack[0] == NDPI_PROTOCOL_UNKNOWN) {
+				if (flow->http.url)
+					ndpi_free(flow->http.url);
+				if (flow->http.content_type)
+					ndpi_free(flow->http.content_type);
 				memset(flow, 0, sizeof(*(flow)));
 
 				NDPI_LOG(NDPI_PROTOCOL_UNKNOWN, ndpi_struct, NDPI_LOG_DEBUG, "%s:%u: tcp syn packet for unknown protocol, reset detection state\n", __FUNCTION__, __LINE__);
@@ -2940,6 +2964,21 @@ ret_protocols:
 	return (ret);
 }
 
+static u_int16_t ndpi_guess_host_protocol_id(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
+{
+	u_int16_t ret = NDPI_PROTOCOL_UNKNOWN;
+
+	if (flow->packet.iph) {
+		/* guess host protocol */
+		ret = ndpi_network_ptree_match(ndpi_struct, (struct in_addr *)&flow->packet.iph->saddr);
+
+		if (ret == NDPI_PROTOCOL_UNKNOWN)
+			ret = ndpi_network_ptree_match(ndpi_struct, (struct in_addr *)&flow->packet.iph->daddr);
+	}
+
+	return (ret);
+}
+
 /* ********************************************************************************* */
 
 static ndpi_protocol ndpi_detection_giveup(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
@@ -3109,6 +3148,7 @@ static ndpi_protocol ndpi_detection_process_packet(struct ndpi_detection_module_
 			sport = dport = 0;
 
 		flow->guessed_protocol_id = (int16_t) ndpi_guess_protocol_id(ndpi_struct, protocol, sport, dport);
+		flow->guessed_host_protocol_id = ndpi_guess_host_protocol_id(ndpi_struct, flow);
 		if (flow->packet.iph) {
 			if ((flow->guessed_host_protocol_id = ndpi_network_ptree_match(ndpi_struct, (struct in_addr *)&flow->packet.iph->saddr)) == NDPI_PROTOCOL_UNKNOWN)
 				flow->guessed_host_protocol_id = ndpi_network_ptree_match(ndpi_struct, (struct in_addr *)&flow->packet.iph->daddr);

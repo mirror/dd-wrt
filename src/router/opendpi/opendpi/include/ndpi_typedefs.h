@@ -145,7 +145,6 @@ struct bt_announce {		// 192 bytes
 #endif
 
 #ifdef NDPI_PROTOCOL_TINC
-
 #define TINC_CACHE_MAX_SIZE 10
 
 PACK_ON struct tinc_cache_entry {
@@ -320,6 +319,7 @@ struct ndpi_flow_tcp_struct {
 	u_int8_t irc_stage;
 	u_int8_t irc_port;
 #endif
+  
 #ifdef NDPI_PROTOCOL_H323
 	u_int8_t h323_valid_packets;
 #endif
@@ -982,7 +982,7 @@ typedef struct ndpi_flow_struct {
 } ndpi_flow_struct_t;
 
 typedef struct {
-	char *string_to_match, *proto_name;
+	char *string_to_match, *string2_to_match, *pattern_to_match, *proto_name;
 	int protocol_id;
 	ndpi_protocol_category_t proto_category;
 	ndpi_protocol_breed_t protocol_breed;

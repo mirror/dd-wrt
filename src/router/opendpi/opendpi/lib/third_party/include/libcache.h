@@ -28,6 +28,10 @@ SOFTWARE.
 #define __DESELMO_LIBCACHE_H__
 
 
+typedef struct cache_entry *cache_entry;
+
+typedef struct cache_entry_map *cache_entry_map;
+
 /**
  * @brief Codes representing the result of some functions
  *
@@ -42,6 +46,8 @@ typedef enum cache_result {
 } cache_result;
 
 
+typedef struct cache *cache_t;
+
 
 /**
  * @brief Returns a new cache_t
@@ -50,7 +56,7 @@ typedef enum cache_result {
  * @return a new cache_t, or NULL if an error occurred
  *
  */
-static cache_t cache_new(uint32_t cache_max_size);
+cache_t cache_new(uint32_t cache_max_size);
 
 
 /**
@@ -62,7 +68,7 @@ static cache_t cache_new(uint32_t cache_max_size);
  * @return a code representing the result of the function
  *
  */
-static cache_result cache_add(cache_t cache, void *item, uint32_t item_size);
+cache_result cache_add(cache_t cache, void *item, uint32_t item_size);
 
 
 /**
@@ -74,7 +80,7 @@ static cache_result cache_add(cache_t cache, void *item, uint32_t item_size);
  * @return a code representing the result of the function
  *
  */
-static cache_result cache_contains(cache_t cache, void *item, uint32_t item_size);
+cache_result cache_contains(cache_t cache, void *item, uint32_t item_size);
 
 
 /**
@@ -86,7 +92,7 @@ static cache_result cache_contains(cache_t cache, void *item, uint32_t item_size
  * @return a code representing the result of the function
  *
  */
-static cache_result cache_remove(cache_t cache, void *item, uint32_t item_size);
+cache_result cache_remove(cache_t cache, void *item, uint32_t item_size);
 
 /**
  * @brief Free the specified cache_t
@@ -94,7 +100,9 @@ static cache_result cache_remove(cache_t cache, void *item, uint32_t item_size);
  * @par alist  = the cache
  *
  */
-static void cache_free(cache_t cache);
+void cache_free(cache_t cache);
 
+cache_entry cache_entry_new(void);
+cache_entry_map cache_entry_map_new(void);
 
 #endif
