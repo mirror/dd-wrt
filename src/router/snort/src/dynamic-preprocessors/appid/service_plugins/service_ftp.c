@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -26,6 +26,8 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 
+#include "appIdApi.h"
+#include "appInfoTable.h"
 #include "flow.h"
 #include "service_api.h"
 #include "service_util.h"
@@ -53,7 +55,8 @@ typedef enum
 typedef enum
 {
     FTP_CMD_NONE,
-    FTP_CMD_PORT
+    FTP_CMD_PORT_EPRT,
+    FTP_CMD_PASV_EPSV
 } FTPCmd;
 
 #define MAX_STRING_SIZE 64
@@ -65,7 +68,7 @@ typedef struct _SERVICE_FTP_DATA
     char vendor[MAX_STRING_SIZE];
     char version[MAX_STRING_SIZE];
     FTPCmd cmd;
-    uint32_t address;
+    sfaddr_t address;
     uint16_t port;
 } ServiceFTPData;
 
@@ -80,15 +83,16 @@ typedef struct _SERVICE_FTP_CODE
 #pragma pack()
 
 static int ftp_init(const InitServiceAPI * const init_api);
-MakeRNAServiceValidationPrototype(ftp_validate);
+static int ftp_validate(ServiceValidationArgs* args);
 
-static RNAServiceElement svc_element =
+static tRNAServiceElement svc_element =
 {
     .next = NULL,
     .validate = &ftp_validate,
     .detectorType = DETECTOR_TYPE_DECODER,
     .name = "ftp",
     .ref_count = 1,
+    .current_ref_count = 1,
 };
 
 static RNAServiceValidationPort pp[] =
@@ -97,11 +101,11 @@ static RNAServiceValidationPort pp[] =
     {NULL, 0, 0}
 };
 
-RNAServiceValidationModule ftp_service_mod =
+tRNAServiceValidationModule ftp_service_mod =
 {
-    .name = "FTP",
-    .init = &ftp_init,
-    .pp = pp,
+    "FTP",
+    &ftp_init,
+    pp
 };
 
 #define FTP_PATTERN1 "220 "
@@ -111,7 +115,10 @@ RNAServiceValidationModule ftp_service_mod =
 
 static tAppRegistryEntry appIdRegistry[] =
 {
-    {APP_ID_FTP_CONTROL, APPINFO_FLAG_SERVICE_ADDITIONAL}
+    {APP_ID_FTP_CONTROL, APPINFO_FLAG_SERVICE_ADDITIONAL},
+    {APP_ID_FTP_ACTIVE,  APPINFO_FLAG_SERVICE_ADDITIONAL},
+    {APP_ID_FTP_PASSIVE, APPINFO_FLAG_SERVICE_ADDITIONAL},
+    {APP_ID_FTPS,        APPINFO_FLAG_SERVICE_ADDITIONAL}
 };
 
 static int16_t ftp_data_app_id = 0;
@@ -120,17 +127,179 @@ static int ftp_init(const InitServiceAPI * const init_api)
 {
     ftp_data_app_id = init_api->dpd->addProtocolReference("ftp-data");
 
-    init_api->RegisterPattern(&ftp_validate, IPPROTO_TCP, (uint8_t *)FTP_PATTERN1, sizeof(FTP_PATTERN1)-1, 0, "ftp");
-    init_api->RegisterPattern(&ftp_validate, IPPROTO_TCP, (uint8_t *)FTP_PATTERN2, sizeof(FTP_PATTERN2)-1, 0, "ftp");
-    init_api->RegisterPattern(&ftp_validate, IPPROTO_TCP, (uint8_t *)FTP_PATTERN3, sizeof(FTP_PATTERN3)-1, -1, "ftp");
-    init_api->RegisterPattern(&ftp_validate, IPPROTO_TCP, (uint8_t *)FTP_PATTERN4, sizeof(FTP_PATTERN4)-1, -1, "ftp");
-	unsigned i;
-	for (i=0; i < sizeof(appIdRegistry)/sizeof(*appIdRegistry); i++)
-	{
-		_dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[i].appId);
-		init_api->RegisterAppId(&ftp_validate, appIdRegistry[i].appId, appIdRegistry[i].additionalInfo, NULL);
-	}
+    init_api->RegisterPattern(&ftp_validate, IPPROTO_TCP, (uint8_t *)FTP_PATTERN1, sizeof(FTP_PATTERN1)-1, 0, "ftp", init_api->pAppidConfig);
+    init_api->RegisterPattern(&ftp_validate, IPPROTO_TCP, (uint8_t *)FTP_PATTERN2, sizeof(FTP_PATTERN2)-1, 0, "ftp", init_api->pAppidConfig);
+    init_api->RegisterPattern(&ftp_validate, IPPROTO_TCP, (uint8_t *)FTP_PATTERN3, sizeof(FTP_PATTERN3)-1, -1, "ftp", init_api->pAppidConfig);
+    init_api->RegisterPattern(&ftp_validate, IPPROTO_TCP, (uint8_t *)FTP_PATTERN4, sizeof(FTP_PATTERN4)-1, -1, "ftp", init_api->pAppidConfig);
+    unsigned i;
+    for (i=0; i < sizeof(appIdRegistry)/sizeof(*appIdRegistry); i++)
+    {
+        _dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[i].appId);
+        init_api->RegisterAppId(&ftp_validate, appIdRegistry[i].appId, appIdRegistry[i].additionalInfo, init_api->pAppidConfig);
+    }
 
+    return 0;
+}
+
+static inline void CopyVendorString(ServiceFTPData *fd, const uint8_t *vendor, unsigned int vendorLen)
+{
+    unsigned int copyLen = vendorLen < sizeof(fd->vendor)-1 ? vendorLen : sizeof(fd->vendor)-1;
+    memcpy(fd->vendor, vendor, copyLen);
+    fd->vendor[copyLen] = '\0';
+}
+static inline void CopyVersionString(ServiceFTPData *fd, const uint8_t *version, unsigned int versionLen)
+{
+    unsigned int copyLen = versionLen < sizeof(fd->version)-1 ? versionLen : sizeof(fd->version)-1;
+    while (copyLen > 0 && !isalnum(version[copyLen-1]))
+    {
+        copyLen--;
+    }
+    memcpy(fd->version, version, copyLen);
+    fd->version[copyLen] = '\0';
+}
+
+typedef enum {
+    VVP_PARSE_HP = 1,
+    VVP_PARSE_FILEZILLA = 2,
+    VVP_PARSE_MS = 3,
+    VVP_PARSE_WU = 4,
+    VVP_PARSE_PRO_FTPD = 5,
+    VVP_PARSE_PURE_FTPD = 6,
+    VVP_PARSE_NC_FTPD = 7
+} VVP_PARSE_ENUM;
+
+static int VendorVersionParse(const uint8_t *data, uint16_t init_offset,
+                               uint16_t offset, ServiceFTPData *fd,
+                               const uint8_t *vendorCandidate, unsigned int vendorCandidateLen,
+                               const uint8_t *optionalVersion, unsigned int versionLen,
+                               VVP_PARSE_ENUM vvp_parse_type )
+{
+    const unsigned char *p;
+    const unsigned char *end;
+    const unsigned char *ver;
+    unsigned int verlen;
+    int ret = 0; // no match
+
+    p = &data[init_offset];
+    end = &data[offset-1];
+    /* Search for the vendorCandidate string */
+    if (vvp_parse_type == VVP_PARSE_WU)
+    {
+        /* Search for the version string */
+        if ((p = service_strstr(p, end-p, optionalVersion, versionLen)))
+        {
+            /* If we like the version we will just assign the vendor */
+            CopyVendorString(fd, vendorCandidate, vendorCandidateLen);
+            ret = 1;
+
+            /* Found the version string.  Move just past the version string */
+            ver = p + versionLen;
+            p = ver;
+            verlen = 0;
+            while (p < end && *p && *p != ' ' )
+                { p++; verlen++; }
+            CopyVersionString(fd, ver, verlen);
+        }
+    }
+    else if ((p=service_strstr(p, end-p, vendorCandidate, vendorCandidateLen)))
+    {
+        /* Found vendorCandidate string */
+        CopyVendorString(fd, vendorCandidate, vendorCandidateLen);
+        ret = 1;
+        /* Move just past the vendor string */
+        p += vendorCandidateLen;
+        if (optionalVersion)
+        {
+            /* Search for the version string */
+            if ((p = service_strstr(p, end-p, optionalVersion, versionLen)))
+            {
+                /* Found the version string.  Move just past the version string */
+                ver = p + versionLen;
+                p = ver;
+                verlen = 0;
+                switch (vvp_parse_type)
+                {
+                    case VVP_PARSE_HP:
+                        while (p < end && *p && (isalnum(*p) || *p == '.'))
+                            { p++; verlen++; }
+                        break;
+                    case VVP_PARSE_FILEZILLA:
+                        while (p < end && *p && (isalnum(*p) || *p == '.' || *p == ' '))
+                            { p++; verlen++; }
+                        break;
+                    case VVP_PARSE_MS:
+                        while (p < end && *p && *p != ')' )
+                            { p++; verlen++; }
+                        break;
+                    case VVP_PARSE_PRO_FTPD:
+                        while (p < end && *p && *p != ' ' )
+                            { p++; verlen++; }
+                        break;
+                    default:
+                        break;
+                }
+                CopyVersionString(fd, ver, verlen);
+            }
+        }
+    }
+    return ret;
+}
+static int CheckVendorVersion(const uint8_t *data, uint16_t init_offset,
+                               uint16_t offset, ServiceFTPData *fd, VVP_PARSE_ENUM vvp_parse_type )
+{
+    static const unsigned char ven_hp[] = "Hewlett-Packard FTP Print Server";
+    static const unsigned char ver_hp[] = "Version ";
+    static const unsigned char ven_fzilla[] = "FileZilla Server";
+    static const unsigned char ver_fzilla[] = "version ";
+    static const unsigned char ven_ms[] = "Microsoft FTP Service";
+    static const unsigned char ver_ms[] = "(Version ";
+    static const unsigned char ven_wu[] = "wu";
+    static const unsigned char ver_wu[] = "(Version wu-";
+    static const unsigned char ven_proftpd[] = "ProFTPD";
+    static const unsigned char ven_pureftpd[] = "Pure-FTPd";
+    static const unsigned char ven_ncftpd[] = "NcFTPd";
+
+    if (!data || init_offset >= offset)
+        return 0;
+
+    switch (vvp_parse_type)
+    {
+        case VVP_PARSE_HP:
+            return VendorVersionParse(data, init_offset, offset,fd,
+                       ven_hp, sizeof(ven_hp)-1,
+                       ver_hp, sizeof(ver_hp)-1,
+                       VVP_PARSE_HP);
+        case VVP_PARSE_FILEZILLA:
+            return VendorVersionParse(data, init_offset, offset,fd,
+                       ven_fzilla, sizeof(ven_fzilla)-1,
+                       ver_fzilla, sizeof(ver_fzilla)-1,
+                       VVP_PARSE_FILEZILLA);
+        case VVP_PARSE_MS:
+            return VendorVersionParse(data, init_offset, offset,fd,
+                       ven_ms, sizeof(ven_ms)-1,
+                       ver_ms, sizeof(ver_ms)-1,
+                       VVP_PARSE_MS);
+        case VVP_PARSE_WU:
+            return VendorVersionParse(data, init_offset, offset,fd,
+                       ven_wu, sizeof(ven_wu)-1,
+                       ver_wu, sizeof(ver_wu)-1,
+                       VVP_PARSE_WU);
+        case VVP_PARSE_PRO_FTPD:
+            return VendorVersionParse(data, init_offset, offset,fd,
+                       ven_proftpd, sizeof(ven_proftpd)-1,
+                       (unsigned char*)" ", sizeof(" ")-1,
+                       VVP_PARSE_PRO_FTPD);
+        case VVP_PARSE_PURE_FTPD:
+            return VendorVersionParse(data, init_offset, offset,fd,
+                       ven_pureftpd, sizeof(ven_pureftpd)-1,
+                       NULL, 0,
+                       VVP_PARSE_PURE_FTPD);
+        case VVP_PARSE_NC_FTPD:
+            return VendorVersionParse(data, init_offset, offset,fd,
+                       ven_ncftpd, sizeof(ven_ncftpd)-1,
+                       NULL, 0,
+                       VVP_PARSE_NC_FTPD);
+    }
     return 0;
 }
 
@@ -170,6 +339,56 @@ static int ftp_validate_reply(const uint8_t *data, uint16_t *offset,
 
             *offset += sizeof(ServiceFTPCode);
             tmp_state = fd->rstate;
+
+            if (!fd->vendor[0] && !fd->version[0])
+            {
+                if (fd->code == 220)
+                {
+                    // These vendor strings are present on the first "220" whether that is the "220-" or "220 "
+                    if (!CheckVendorVersion(data, *offset, size, fd, VVP_PARSE_MS ) &&
+                        !CheckVendorVersion(data, *offset, size, fd, VVP_PARSE_WU ) &&
+                        !CheckVendorVersion(data, *offset, size, fd, VVP_PARSE_PRO_FTPD ) &&
+                        !CheckVendorVersion(data, *offset, size, fd, VVP_PARSE_PURE_FTPD ) &&
+                        !CheckVendorVersion(data, *offset, size, fd, VVP_PARSE_NC_FTPD ) &&
+                        !CheckVendorVersion(data, *offset, size, fd, VVP_PARSE_FILEZILLA)
+                        )
+                    {
+                        /* Look for (Vendor Version:  or  (Vendor Version) */
+                        const unsigned char *end;
+                        const unsigned char *p;
+                        const unsigned char *ven;
+                        const unsigned char *ver;
+                        end = &data[size-1];
+                        for (p=&data[*offset]; p<end && *p && *p!='('; p++);
+                        if (p < end)
+                        {
+                            p++;
+                            ven = p;
+                            for (; p<end && *p && *p!=' '; p++);
+                            if (p < end && *p)
+                            {
+                                CopyVendorString(fd, ven, p-ven);
+                                ver = p + 1;
+                                for (p=ver; p<end && *p && *p!=':'; p++);
+                                if (p>=end || !(*p))
+                                {
+                                    for (p=ver; p<end && *p && *p!=')'; p++);
+                                }
+                                if (p < end && *p)
+                                {
+                                    CopyVersionString(fd, ver, p-ver);
+                                }
+                            }
+                        }
+                    }
+                }
+                else if (fd->code == 230)
+                {
+                    // These vendor strings are present on the first "230" whether that is the "230-" or "230 "
+                    CheckVendorVersion(data, *offset, size, fd, VVP_PARSE_HP);
+                }
+            }
+
             fd->rstate = FTP_REPLY_MID;
             for (; *offset < size; (*offset)++)
             {
@@ -191,7 +410,6 @@ static int ftp_validate_reply(const uint8_t *data, uint16_t *offset,
                     fd->rstate = tmp_state;
                     break;
                 }
-                else if (!isprint(data[*offset]) && data[*offset] != 0x09) return -1;
             }
             if (fd->rstate == FTP_REPLY_MID) return -1;
             break;
@@ -219,7 +437,6 @@ static int ftp_validate_reply(const uint8_t *data, uint16_t *offset,
                         fd->rstate = FTP_REPLY_MULTI;
                         break;
                     }
-                    if (!isprint(data[*offset]) && data[*offset] != 0x09) return -1;
                 }
                 if (fd->rstate == FTP_REPLY_MID) return -1;
             }
@@ -263,7 +480,6 @@ static int ftp_validate_reply(const uint8_t *data, uint16_t *offset,
                         fd->rstate = tmp_state;
                         break;
                     }
-                    if (!isprint(data[*offset]) && data[*offset] != 0x09) return -1;
                 }
                 if (fd->rstate == FTP_REPLY_MID) return -1;
             }
@@ -289,24 +505,55 @@ static int ftp_validate_reply(const uint8_t *data, uint16_t *offset,
     return 0;
 }
 
-static int ftp_decode_number(const uint8_t * *data, const uint8_t *end, uint8_t delimiter, uint32_t *number)
+static inline int _ftp_decode_number32(const uint8_t * *data, const uint8_t *end, uint8_t delimiter, uint32_t *number)
 {
-    *number = 0;
-    for (; *data < end && **data == ' '; (*data)++);
-    if (*data < end && **data == delimiter) return -1;
-    while (*data < end && **data != delimiter)
-    {
-        if (!isdigit(**data)) return -1;
-        *number *= 10;
-        *number += **data - '0';
-        (*data)++;
-    }
-    if (*data >= end || **data != delimiter || *number > 255)
+    const uint8_t *local_data;
+    uint32_t local_number = 0;
+    for (local_data = *data; local_data < end && *local_data == ' '; local_data++);
+    if (local_data < end && *local_data == delimiter)
     {
         *number = 0;
         return -1;
     }
-    (*data)++;
+    while (local_data < end && *local_data != delimiter)
+    {
+        if (!isdigit(*local_data))
+        {
+            *number = 0;
+            return -1;
+        }
+        local_number *= 10;
+        local_number += *local_data - '0';
+        local_data++;
+    }
+    if (local_data >= end || *local_data != delimiter)
+    {
+        *number = 0;
+        return -1;
+    }
+    *number = local_number;
+    *data = local_data+1;
+    return 0;
+}
+static int ftp_decode_octet(const uint8_t * *data, const uint8_t *end, uint8_t delimiter, uint32_t *number)
+{
+    if (_ftp_decode_number32(data, end, delimiter, number) == -1) return -1;
+    if (*number > 255)
+    {
+        *number = 0;
+        return -1;
+    }
+    return 0;
+}
+
+static int ftp_decode_port_number(const uint8_t * *data, const uint8_t *end, uint8_t delimiter, uint32_t *number)
+{
+    if (_ftp_decode_number32(data, end, delimiter, number) == -1) return -1;
+    if (*number > 65535)
+    {
+        *number = 0;
+        return -1;
+    }
     return 0;
 }
 
@@ -326,17 +573,17 @@ static int ftp_validate_pasv(const uint8_t *data, uint16_t size,
     data++;
     if (data >= end) return 1;
 
-    if (ftp_decode_number(&data, end, ',', &tmp)) return -1;
+    if (ftp_decode_octet(&data, end, ',', &tmp)) return -1;
     *address = tmp << 24;
-    if (ftp_decode_number(&data, end, ',', &tmp)) return -1;
+    if (ftp_decode_octet(&data, end, ',', &tmp)) return -1;
     *address += tmp << 16;
-    if (ftp_decode_number(&data, end, ',', &tmp)) return -1;
+    if (ftp_decode_octet(&data, end, ',', &tmp)) return -1;
     *address += tmp << 8;
-    if (ftp_decode_number(&data, end, ',', &tmp)) return -1;
+    if (ftp_decode_octet(&data, end, ',', &tmp)) return -1;
     *address += tmp;
-    if (ftp_decode_number(&data, end, ',', &tmp)) return -1;
+    if (ftp_decode_octet(&data, end, ',', &tmp)) return -1;
     *port = (uint16_t)(tmp << 8);
-    if (ftp_decode_number(&data, end, ')', &tmp)) return -1;
+    if (ftp_decode_octet(&data, end, ')', &tmp)) return -1;
     *port += tmp;
     return 0;
 }
@@ -345,6 +592,7 @@ static int ftp_validate_epsv(const uint8_t *data, uint16_t size,
                              uint16_t *port)
 {
     const uint8_t *end;
+    uint8_t delimiter;
 
     *port = 0;
 
@@ -352,22 +600,21 @@ static int ftp_validate_epsv(const uint8_t *data, uint16_t size,
     data += sizeof(ServiceFTPCode);
 
     for (; data<end && *data!='('; data++);
-	data++;
-	if (data >= end) return 1;
-
-	for (; data<end && *data!='|'; data++);
-	data++;
-	if (data >= end) return 1;
-
-	for (; data<end && *data!='|'; data++);
-	data++;
-	if (data >= end) return 1;
-
-	for (; data<end && *data!='|'; data++);
     data++;
     if (data >= end) return 1;
 
-	while (data < end && *data != '|')
+    delimiter = *data++;
+    if (data >= end) return 1;
+
+    for (; data<end && *data!=delimiter; data++);
+    data++;
+    if (data >= end) return 1;
+
+    for (; data<end && *data!=delimiter; data++);
+    data++;
+    if (data >= end) return 1;
+
+    while (data < end && *data != delimiter)
     {
         if (!isdigit(*data)) return -1;
         *port *= 10;
@@ -379,26 +626,31 @@ static int ftp_validate_epsv(const uint8_t *data, uint16_t size,
 }
 
 static int ftp_validate_port(const uint8_t *data, uint16_t size,
-                             uint32_t *address, uint16_t *port)
+                             sfaddr_t *address, uint16_t *port)
 {
     const uint8_t *end;
     const uint8_t *p;
     uint32_t tmp;
+    uint32_t addr;
+    uint32_t addr2;
 
-    *address = 0;
+    memset(address,0,sizeof(sfaddr_t));
     *port = 0;
 
     end = data + size;
 
-    if (ftp_decode_number(&data, end, ',', &tmp)) return -1;
-    *address = tmp << 24;
-    if (ftp_decode_number(&data, end, ',', &tmp)) return -1;
-    *address += tmp << 16;
-    if (ftp_decode_number(&data, end, ',', &tmp)) return -1;
-    *address += tmp << 8;
-    if (ftp_decode_number(&data, end, ',', &tmp)) return -1;
-    *address += tmp;
-    if (ftp_decode_number(&data, end, ',', &tmp)) return -1;
+    if (ftp_decode_octet(&data, end, ',', &tmp)) return -1;
+    addr = tmp << 24;
+    if (ftp_decode_octet(&data, end, ',', &tmp)) return -1;
+    addr += tmp << 16;
+    if (ftp_decode_octet(&data, end, ',', &tmp)) return -1;
+    addr += tmp << 8;
+    if (ftp_decode_octet(&data, end, ',', &tmp)) return -1;
+    addr += tmp;
+    addr2 = htonl(addr); // make it network order before calling sfip_set_raw()
+    sfip_set_raw(address, &addr2, AF_INET);
+
+    if (ftp_decode_octet(&data, end, ',', &tmp)) return -1;
     *port = (uint16_t)(tmp << 8);
     p = end - 1;
     if (p > data)
@@ -408,101 +660,153 @@ static int ftp_validate_port(const uint8_t *data, uint16_t size,
             p--;
             if (*p == 0x0d)
             {
-                if (ftp_decode_number(&data, end, 0x0d, &tmp)) return -1;
+                if (ftp_decode_octet(&data, end, 0x0d, &tmp)) return -1;
                 *port += tmp;
                 return 0;
             }
         }
     }
-    if (ftp_decode_number(&data, end, 0x0a, &tmp)) return -1;
+    if (ftp_decode_octet(&data, end, 0x0a, &tmp)) return -1;
     *port += tmp;
     return 0;
 }
-
-static void CheckVendorVersion(const uint8_t *data, uint16_t init_offset,
-                               uint16_t offset, ServiceFTPData *fd)
+/* RFC 2428 support */
+typedef struct addr_family_map_t
 {
-    static const unsigned char ven_hp[] = "Hewlett-Packard FTP Print Server";
-    static const unsigned char ver_hp[] = "Version ";
-    const unsigned char *p;
-    const unsigned char *end;
-    const unsigned char *ver;
-    char *v;
-    char *v_end;
+    uint16_t eprt_fam;
+    uint16_t sfaddr_fam;
+} addr_family_map;
 
-    p = &data[init_offset];
-    end = &data[offset-1];
-    /* Search for the HP vendor string */
-    if ((p=service_strstr(p, end-p, ven_hp, sizeof(ven_hp)-1)))
+static addr_family_map RFC2428_known_address_families[] =
+{   { 1, AF_INET },
+    { 2, AF_INET6 },
+    { 0, 0 }
+};
+
+static int ftp_validate_eprt(const uint8_t *data, uint16_t size,
+                             sfaddr_t *address, uint16_t *port)
+{
+    int index;
+    int addrFamilySupported = 0;
+    uint8_t delimiter;
+    const uint8_t *end;
+    uint32_t tmp;
+    char tmp_str[INET6_ADDRSTRLEN+1];
+
+    memset(address,0,sizeof(sfaddr_t));
+    *port = 0;
+
+    end = data + size;
+
+    delimiter = *data++; // all delimiters will match this one.
+    if (ftp_decode_octet(&data, end, delimiter, &tmp))
+        return -1;
+
+    // Look up the address family in the table.
+    for (index = 0; !addrFamilySupported && RFC2428_known_address_families[index].eprt_fam != 0; index++)
     {
-        /* Found HP vendor string */
-        strcpy(fd->vendor, (char *)ven_hp);
-        /* Move just past the vendor string */
-        p += sizeof(ven_hp) - 1;
-        /* Search for the version string */
-        if ((p = service_strstr(p, end-p, ver_hp, sizeof(ver_hp)-1)))
+        if ( RFC2428_known_address_families[index].eprt_fam == (uint16_t)tmp )
         {
-            /* Found the version string.  Move just past the version string */
-            ver = p + (sizeof(ver_hp) - 1);
-            p = ver;
-            v = fd->version;
-            v_end = v + (MAX_STRING_SIZE - 1);
-            while (p < end && *p && (isalnum(*p) || *p == '.'))
-            {
-                if (v < v_end)
-                {
-                    *v = *p;
-                    v++;
-                }
-                p++;
-            }
-            *v = 0;
-            /* Don't let the version end in . */
-            if (v != fd->version && *(v-1) == '.')
-            {
-                v--;
-                *v = 0;
-            }
+            addrFamilySupported = RFC2428_known_address_families[index].sfaddr_fam;
         }
+    }
+    if (!addrFamilySupported) // not an ipv4 or ipv6 address being provided.
+        return -1;
+
+    for (index = 0;
+        index < INET6_ADDRSTRLEN && data < end && *data != delimiter;
+        index++, data++ )
+    {
+        tmp_str[index] = *data;
+    }
+    tmp_str[index] = '\0'; // make the copied portion be nul terminated.
+
+    if (sfip_convert_ip_text_to_binary( addrFamilySupported, tmp_str, &address->ip ) != SFIP_SUCCESS)
+        return -1;
+
+    address->family = addrFamilySupported;
+
+    data++; // skip the delimiter at the end of the address substring.
+    if (ftp_decode_port_number(&data, end, delimiter, &tmp)) // an error is returned if port was greater than 65535
+        return -1;
+
+    *port = (uint16_t)tmp;
+    return 0;
+}
+
+static inline void WatchForCommandResult(ServiceFTPData *fd, tAppIdData *flowp, FTPCmd command)
+{
+    if (fd->state != FTP_STATE_MONITOR)
+    {
+        setAppIdFlag(flowp, APPID_SESSION_SERVICE_DETECTED | APPID_SESSION_CONTINUE);
+        fd->state = FTP_STATE_MONITOR;
+    }
+    fd->cmd = command;
+}
+
+static inline void CreateExpectedSession(tAppIdData *flowp, SFSnortPacket *ctrlPkt, sfaddr_t *cliIp, uint16_t cliPort,
+                sfaddr_t *srvIp, uint16_t srvPort, uint8_t proto, int flags, APPID_SESSION_DIRECTION dir)
+{
+    tAppIdData *fp;
+
+    fp = ftp_service_mod.api->flow_new(flowp, ctrlPkt, cliIp, cliPort, srvIp, srvPort, proto, ftp_data_app_id, flags);
+    if (fp) // initialize data session
+    {
+        unsigned encryptedFlag = getAppIdFlag(flowp, APPID_SESSION_ENCRYPTED | APPID_SESSION_DECRYPTED);
+        if (encryptedFlag == APPID_SESSION_ENCRYPTED)
+        {
+            fp->serviceAppId = APP_ID_FTPSDATA;
+        }
+        else
+        {
+            encryptedFlag = 0; // change (APPID_SESSION_ENCRYPTED | APPID_SESSION_DECRYPTED) case to zeroes.
+            fp->serviceAppId = APP_ID_FTP_DATA;
+        }
+        PopulateExpectedFlow(flowp, fp, APPID_SESSION_IGNORE_ID_FLAGS | encryptedFlag, dir);
     }
 }
 
-MakeRNAServiceValidationPrototype(ftp_validate)
+static int ftp_validate(ServiceValidationArgs* args)
 {
+    static const char FTP_PASV_CMD[] = "PASV";
+    static const char FTP_EPSV_CMD[] = "EPSV";
     static const char FTP_PORT_CMD[] = "PORT ";
-    static const unsigned char ven_ms[] = "Microsoft FTP Service";
-    static const unsigned char ver_ms[] = "(Version ";
-    static const unsigned char ven_wu[] = "(Version wu-";
-    static const unsigned char ven_proftpd[] = "ProFTPD";
-    static const unsigned char ven_pureftpd[] = "Pure-FTPd";
-    static const unsigned char ven_ncftpd[] = "NcFTPd";
+    static const char FTP_EPRT_CMD[] = "EPRT ";
     ServiceFTPData *fd;
     uint16_t offset;
     uint16_t init_offset;
-    const unsigned char *p;
-    const unsigned char *ven;
-    const unsigned char *ver;
     int code;
     int code_index;
     uint32_t address;
     uint16_t port;
-    FLOW *fp;
     int retval = SERVICE_INPROCESS;
-    char *v;
-    char *v_end;
-    const unsigned char *begin;
-    const unsigned char *end;
+    tAppIdData *flowp = args->flowp;
+    const uint8_t *data = args->data;
+    SFSnortPacket *pkt = args->pkt;
+    const int dir = args->dir;
+    uint16_t size = args->size;
 
     if (!size)
         goto inprocess;
 
-    fd = ftp_service_mod.api->data_get(flowp);
+    //ignore packets while encryption is on in explicit mode. In future, this will be changed
+    //to direct traffic to SSL detector to extract payload from certs. This will require manintaining
+    //two detector states at the same time.
+    if (getAppIdFlag(flowp, APPID_SESSION_ENCRYPTED))
+    {
+        if (!getAppIdFlag(flowp, APPID_SESSION_DECRYPTED))
+        {
+            goto inprocess;
+        }
+    }
+
+    fd = ftp_service_mod.api->data_get(flowp, ftp_service_mod.flow_data_index);
     if (!fd)
     {
         fd = calloc(1, sizeof(*fd));
         if (!fd)
             return SERVICE_ENOMEM;
-        if (ftp_service_mod.api->data_add(flowp, fd, &free))
+        if (ftp_service_mod.api->data_add(flowp, fd, ftp_service_mod.flow_data_index, &free))
         {
             free(fd);
             return SERVICE_ENOMEM;
@@ -514,48 +818,41 @@ MakeRNAServiceValidationPrototype(ftp_validate)
 
     if (dir != APP_ID_FROM_RESPONDER)
     {
+        if (data[size-1] != 0x0a) goto inprocess;
+
         if (size > sizeof(FTP_PORT_CMD)-1 &&
             strncasecmp((char *)data, FTP_PORT_CMD, sizeof(FTP_PORT_CMD)-1) == 0)
         {
-            if (data[size-1] != 0x0a) return SERVICE_INPROCESS;
             if (ftp_validate_port(data+(sizeof(FTP_PORT_CMD)-1),
                                   size-(sizeof(FTP_PORT_CMD)-1),
                                   &fd->address, &fd->port) == 0)
             {
-                if (fd->state != FTP_STATE_MONITOR)
-                {
-                    flow_mark(flowp, FLOW_SERVICEDETECTED | FLOW_CONTINUE);
-                    fd->state = FTP_STATE_MONITOR;
-                }
-#ifdef RNA_FTP_EXPECTED_ON_PORT
-                snort_ip ip;
-
-                ip.family = AF_INET;
-                ip.bits = 32;
-                ip.ip32[0] = htonl(fd->address);
-                ip.ip32[1] = 0;
-                ip.ip32[2] = 0;
-                ip.ip32[3] = 0;
-                fp = ftp_service_mod.api->flow_new(pkt, GET_DST_IP(pkt), 0,
-                                                   &ip, fd->port, flowp->proto, ftp_data_app_id);
-                if (fp)
-                {
-                    fp->serviceAppId = APP_ID_FTP_DATA;
-                    flow_mark(fp, FLOW_SERVICEDETECTED | FLOW_NOT_A_SERVICE | FLOW_PORT_SERVICE_DONE);
-                    fp->rnaServiceState = RNA_STATE_FINISHED;
-                    fp->rnaClientState = RNA_STATE_FINISHED;
-                }
-                fd->cmd = FTP_CMD_NONE;
-#else
-                fd->cmd = FTP_CMD_PORT;
-#endif
+                CreateExpectedSession(flowp, pkt, GET_DST_IP(pkt), 0, &fd->address, fd->port, flowp->proto,
+                                      APPID_EARLY_SESSION_FLAG_FW_RULE, APP_ID_FROM_RESPONDER);
+                WatchForCommandResult(fd, flowp, FTP_CMD_PORT_EPRT);
             }
+        }
+        else if (size > sizeof(FTP_EPRT_CMD)-1 &&
+            strncasecmp((char *)data, FTP_EPRT_CMD, sizeof(FTP_EPRT_CMD)-1) == 0)
+        {
+            if (ftp_validate_eprt(data+(sizeof(FTP_EPRT_CMD)-1),
+                                  size-(sizeof(FTP_EPRT_CMD)-1),
+                                  &fd->address, &fd->port) == 0)
+            {
+                CreateExpectedSession(flowp, pkt, GET_DST_IP(pkt), 0, &fd->address, fd->port, flowp->proto,
+                                      APPID_EARLY_SESSION_FLAG_FW_RULE, APP_ID_FROM_RESPONDER);
+                WatchForCommandResult(fd, flowp, FTP_CMD_PORT_EPRT);
+            }
+        }
+        else if ( size > sizeof(FTP_PASV_CMD)-1 &&
+                  ( strncasecmp((char *)data, FTP_PASV_CMD, sizeof(FTP_PASV_CMD)-1) == 0 ||
+                    strncasecmp((char *)data, FTP_EPSV_CMD, sizeof(FTP_EPSV_CMD)-1) == 0 )
+                )
+        {
+            WatchForCommandResult(fd, flowp, FTP_CMD_PASV_EPSV);
         }
         goto inprocess;
     }
-
-    v_end = fd->version;
-    v_end += MAX_STRING_SIZE - 1;
 
     offset = 0;
     while (offset < size)
@@ -573,157 +870,6 @@ MakeRNAServiceValidationPrototype(ftp_validate)
                 break;
             case 220: /*service ready for new user */
                 fd->state = FTP_STATE_LOGIN;
-                begin = &data[init_offset];
-                end = &data[offset-1];
-                if (service_strstr(begin, end-begin, ven_ms, sizeof(ven_ms)-1))
-                {
-                    strcpy(fd->vendor, (char *)ven_ms);
-                    if ((p = service_strstr(begin, end-begin, ver_ms, sizeof(ver_ms)-1)))
-                    {
-                        ver = p + (sizeof(ver_ms) - 1);
-                        v = fd->version;
-                        for (p=ver; p<end && *p && *p != ')'; p++)
-                        {
-                            if (v < v_end)
-                            {
-                                *v = *p;
-                                v++;
-                            }
-                        }
-                        *v = 0;
-                        if (p >= end || !(*p))
-                        {
-                            /* did not find a closing ), no version */
-                            fd->version[0] = 0;
-                        }
-                    }
-                }
-                else if ((p=service_strstr(begin, end-begin, ven_wu, sizeof(ven_wu)-1)))
-                {
-                    strcpy(fd->vendor, "wu");
-                    ver = p + (sizeof(ven_wu) - 1);
-                    v = fd->version;
-                    for (p=ver; p<end && *p && *p != ' '; p++)
-                    {
-                        if (v < v_end)
-                        {
-                            *v = *p;
-                            v++;
-                        }
-                    }
-                    *v = 0;
-                    if (p >= end || !(*p))
-                    {
-                        /* did not find a space, no version */
-                        fd->version[0] = 0;
-                    }
-                }
-                else if ((p=service_strstr(begin, end-begin, ven_proftpd, sizeof(ven_proftpd)-1)))
-                {
-                    strcpy(fd->vendor, (char *)ven_proftpd);
-                    ver = p + (sizeof(ven_proftpd) - 1);
-                    if (*ver == ' ')
-                    {
-                        ver++;
-                        v = fd->version;
-                        for (p=ver; p<end && *p && *p != ' '; p++)
-                        {
-                            if (v < v_end)
-                            {
-                                *v = *p;
-                                v++;
-                            }
-                        }
-                        *v = 0;
-                        if (p >= end || !(*p))
-                        {
-                            /* did not find a space, no version */
-                            fd->version[0] = 0;
-                        }
-                    }
-                }
-                else if (service_strstr(begin, end-begin, ven_pureftpd, sizeof(ven_pureftpd)-1))
-                {
-                    strcpy(fd->vendor, (char *)ven_pureftpd);
-                }
-                else if (service_strstr(begin, end-begin, ven_ncftpd, sizeof(ven_ncftpd)-1))
-                {
-                    strcpy(fd->vendor, (char *)ven_ncftpd);
-                }
-                else
-                {
-                    /* Look for (Vendor Version:  or  (Vendor Version) */
-                    for (p=begin; p<end && *p && *p!='('; p++);
-                    if (p < end)
-                    {
-                        p++;
-                        ven = p;
-                        for (; p<end && *p && *p!=' '; p++);
-                        if (p < end && *p)
-                        {
-                            const unsigned char *ven_end;
-                            const char *vendor_end;
-
-                            ven_end = p;
-                            ver = p + 1;
-                            v = fd->vendor;
-                            vendor_end = v + (MAX_STRING_SIZE - 1);
-                            for (p=ven; p<ven_end; p++)
-                            {
-                                if (!isprint(*p)) break;
-                                if (v < vendor_end)
-                                {
-                                    *v = *p;
-                                    v++;
-                                }
-                            }
-                            if (p >= ven_end)
-                            {
-                                *v = 0;
-                                for (p=ver; p<end && *p && *p!=':'; p++);
-                                if (p>=end || !(*p))
-                                {
-                                    for (p=ver; p<end && *p && *p!=')'; p++);
-                                }
-                                if (p < end && *p)
-                                {
-                                    const unsigned char *ver_end;
-                                    ver_end = p;
-                                    v = fd->version;
-                                    for (p=ver; p<ver_end; p++)
-                                    {
-                                        if (!isprint(*p)) break;
-                                        if (v < v_end)
-                                        {
-                                            *v = *p;
-                                            v++;
-                                        }
-                                    }
-                                    if (p >= ver_end)
-                                    {
-                                        *v = 0;
-                                    }
-                                    else
-                                    {
-                                        /* Non-printable characters.  No vendor or version */
-                                        fd->vendor[0] = 0;
-                                        fd->version[0] = 0;
-                                    }
-                                }
-                                else
-                                {
-                                    /* No : or ).  No vendor */
-                                    fd->vendor[0] = 0;
-                                }
-                            }
-                            else
-                            {
-                                /* Non-printable characters.  No vendor */
-                                fd->vendor[0] = 0;
-                            }
-                        }
-                    }
-                }
                 break;
             case 110: /* restart mark reply */
             case 125: /* connection is open start transferring file */
@@ -758,7 +904,7 @@ MakeRNAServiceValidationPrototype(ftp_validate)
             case 551: /*requested action aborted :page type unknown */
             case 552: /*requested action aborted */
             case 553: /*requested action not taken file name is not allowed */
-                flow_mark(flowp, FLOW_SERVICEDETECTED | FLOW_CONTINUE);
+                setAppIdFlag(flowp, APPID_SESSION_SERVICE_DETECTED | APPID_SESSION_CONTINUE);
                 fd->state = FTP_STATE_MONITOR;
                 break;
             case 221: /*good bye */
@@ -780,11 +926,25 @@ MakeRNAServiceValidationPrototype(ftp_validate)
                     fd->state = FTP_STATE_CONNECTION_ERROR;
                     break;
                 case 230:
-                    if (!fd->vendor[0] && !fd->version[0])
-                        CheckVendorVersion(data, init_offset, offset, fd);
-                    flow_mark(flowp, FLOW_CONTINUE);
+                    setAppIdFlag(flowp, APPID_SESSION_CONTINUE);
                     fd->state = FTP_STATE_MONITOR;
                     retval = SERVICE_SUCCESS;
+                    break;
+                case 234:
+                    {
+                        setAppIdFlag(flowp, APPID_SESSION_CONTINUE);
+                        retval = SERVICE_SUCCESS;
+                        /*
+                        // we do not set the state to FTP_STATE_MONITOR here because we don't know
+                        // if there will be SSL decryption to allow us to see what we are interested in.
+                        // Let the WatchForCommandResult() usage elsewhere take care of it.
+                        */
+                        setAppIdFlag(flowp,
+                                     APPID_SESSION_CONTINUE |
+                                     APPID_SESSION_ENCRYPTED |
+                                     APPID_SESSION_STICKY_SERVICE);
+                    }
+                    break;
                 default:
                     break;
                 }
@@ -832,9 +992,7 @@ MakeRNAServiceValidationPrototype(ftp_validate)
                     break;
                 case 202:
                 case 230:
-                    if (!fd->vendor[0] && !fd->version[0])
-                        CheckVendorVersion(data, init_offset, offset, fd);
-                    flow_mark(flowp, FLOW_CONTINUE);
+                    setAppIdFlag(flowp, APPID_SESSION_CONTINUE);
                     fd->state = FTP_STATE_MONITOR;
                     retval = SERVICE_SUCCESS;
                 default:
@@ -887,9 +1045,7 @@ MakeRNAServiceValidationPrototype(ftp_validate)
                 {
                 case 202:
                 case 230:
-                    if (!fd->vendor[0] && !fd->version[0])
-                        CheckVendorVersion(data, init_offset, offset, fd);
-                    flow_mark(flowp, FLOW_CONTINUE);
+                    setAppIdFlag(flowp, APPID_SESSION_CONTINUE);
                     fd->state = FTP_STATE_MONITOR;
                     retval = SERVICE_SUCCESS;
                 default:
@@ -933,108 +1089,75 @@ MakeRNAServiceValidationPrototype(ftp_validate)
                 goto fail;
             }
             break;
-        case FTP_STATE_MONITOR:
+        case FTP_STATE_MONITOR: // looking for the DATA channel info in the result
             switch (code)
             {
             case 227:
-                fd->cmd = FTP_CMD_NONE;
-                code = ftp_validate_pasv(data + init_offset,
-                                         (uint16_t)(offset-init_offset),
-                                         &address, &port);
-                if (!code)
                 {
-                    snort_ip ip;
-                    snort_ip *sip;
-                    snort_ip *dip;
+                    code = ftp_validate_pasv(data + init_offset,
+                                             (uint16_t)(offset-init_offset),
+                                             &address, &port);
+                    if (!code)
+                    {
+                        sfaddr_t ip;
+                        sfaddr_t *sip;
+                        sfaddr_t *dip;
+                        uint32_t addr;
 
-                    dip = GET_DST_IP(pkt);
-                    sip = GET_SRC_IP(pkt);
-                    ip.family = AF_INET;
-                    ip.bits = 32;
-                    ip.ip32[0] = htonl(address);
-                    ip.ip32[1] = 0;
-                    ip.ip32[2] = 0;
-                    ip.ip32[3] = 0;
-                    fp = ftp_service_mod.api->flow_new(pkt, dip, 0, &ip, port, flowp->proto, ftp_data_app_id);
-                    if (fp)
-                    {
-                        fp->serviceAppId = APP_ID_FTP_DATA;
-                        flow_mark(fp, FLOW_SERVICEDETECTED | FLOW_NOT_A_SERVICE | FLOW_PORT_SERVICE_DONE);
-                        fp->rnaServiceState = RNA_STATE_FINISHED;
-                        fp->rnaClientState = RNA_STATE_FINISHED;
-                    }
-                    if (!sfip_fast_equals_raw(&ip, sip))
-                    {
-                        fp = ftp_service_mod.api->flow_new(pkt, dip, 0, sip, port, flowp->proto, ftp_data_app_id);
-                        if (fp)
+                        dip = GET_DST_IP(pkt);
+                        sip = GET_SRC_IP(pkt);
+                        addr = htonl(address);
+                        sfip_set_raw(&ip, &addr, AF_INET);
+                        CreateExpectedSession(flowp, pkt, dip, 0, &ip, port, flowp->proto,
+                                              APPID_EARLY_SESSION_FLAG_FW_RULE, APP_ID_FROM_INITIATOR);
+
+                        if (!sfip_fast_eq6(&ip, sip))
                         {
-                            fp->serviceAppId = APP_ID_FTP_DATA;
-                            flow_mark(fp, FLOW_SERVICEDETECTED | FLOW_NOT_A_SERVICE | FLOW_PORT_SERVICE_DONE);
-                            fp->rnaServiceState = RNA_STATE_FINISHED;
-                            fp->rnaClientState = RNA_STATE_FINISHED;
+                            CreateExpectedSession(flowp, pkt, dip, 0, sip, port, flowp->proto,
+                                                  APPID_EARLY_SESSION_FLAG_FW_RULE, APP_ID_FROM_INITIATOR);
                         }
+                        ftp_service_mod.api->add_payload(flowp, APP_ID_FTP_PASSIVE); // Passive mode FTP is reported as a payload id
                     }
-                }
-                else if (code < 0)
-                {
-                    goto fail;
+                    else if (code < 0)
+                    {
+                        goto fail;
+                    }
                 }
                 break;
             case 229:
-                fd->cmd = FTP_CMD_NONE;
-                code = ftp_validate_epsv(data + init_offset,
-                                         (uint16_t)(offset-init_offset),
-                                         &port);
-
-                if (!code)
                 {
-                    snort_ip *sip;
-                    snort_ip *dip;
+                    code = ftp_validate_epsv(data + init_offset,
+                                             (uint16_t)(offset-init_offset),
+                                             &port);
 
-                    dip = GET_DST_IP(pkt);
-                    sip = GET_SRC_IP(pkt);
-                    fp = ftp_service_mod.api->flow_new(pkt, dip, 0, sip, port, flowp->proto, ftp_data_app_id);
-                    if (fp)
+                    if (!code)
                     {
-                        fp->serviceAppId = APP_ID_FTP_DATA;
-                        flow_mark(fp, FLOW_SERVICEDETECTED | FLOW_NOT_A_SERVICE | FLOW_PORT_SERVICE_DONE);
-                        fp->rnaServiceState = RNA_STATE_FINISHED;
-                        fp->rnaClientState = RNA_STATE_FINISHED;
+                        sfaddr_t *sip;
+                        sfaddr_t *dip;
+
+                        dip = GET_DST_IP(pkt);
+                        sip = GET_SRC_IP(pkt);
+                        CreateExpectedSession(flowp, pkt, dip, 0, sip, port, flowp->proto,
+                                              APPID_EARLY_SESSION_FLAG_FW_RULE, APP_ID_FROM_INITIATOR);
+                        ftp_service_mod.api->add_payload(flowp, APP_ID_FTP_PASSIVE); // Passive mode FTP is reported as a payload id
                     }
-                }
-                else if (code < 0)
-                {
-                    goto fail;
+                    else if (code < 0)
+                    {
+                        goto fail;
+                    }
                 }
                 break;
             case 200:
-                if (fd->cmd == FTP_CMD_PORT)
+                if (fd->cmd == FTP_CMD_PORT_EPRT)
                 {
-                    snort_ip ip;
-                    snort_ip *sip;
-
-                    sip = GET_SRC_IP(pkt);
-                    ip.family = AF_INET;
-                    ip.bits = 32;
-                    ip.ip32[0] = htonl(fd->address);
-                    ip.ip32[1] = 0;
-                    ip.ip32[2] = 0;
-                    ip.ip32[3] = 0;
-                    fp = ftp_service_mod.api->flow_new(pkt, sip, 0, &ip, fd->port, flowp->proto, ftp_data_app_id);
-                    if (fp)
-                    {
-                        fp->serviceAppId = APP_ID_FTP_DATA;
-                        flow_mark(fp, FLOW_SERVICEDETECTED | FLOW_NOT_A_SERVICE | FLOW_PORT_SERVICE_DONE);
-                        fp->rnaServiceState = RNA_STATE_FINISHED;
-                        fp->rnaClientState = RNA_STATE_FINISHED;
-                    }
+                    // Expected session is created on PORT/EPRT command
+                    ftp_service_mod.api->add_payload(flowp, APP_ID_FTP_ACTIVE); // Active mode FTP is reported as a payload id
                 }
-                fd->cmd = FTP_CMD_NONE;
                 break;
             default:
-                fd->cmd = FTP_CMD_NONE;
                 break;
             }
+            fd->cmd = FTP_CMD_NONE;
             break;
         case FTP_STATE_CONNECTION_ERROR:
         default:
@@ -1047,28 +1170,32 @@ MakeRNAServiceValidationPrototype(ftp_validate)
     default:
     case SERVICE_INPROCESS:
 inprocess:
-        if (!flow_checkflag(flowp, FLOW_SERVICEDETECTED))
+        if (!getAppIdFlag(flowp, APPID_SESSION_SERVICE_DETECTED))
         {
-            ftp_service_mod.api->service_inprocess(flowp, pkt, dir, &svc_element);
+            ftp_service_mod.api->service_inprocess(flowp, pkt, dir, &svc_element, NULL);
         }
         return SERVICE_INPROCESS;
 
     case SERVICE_SUCCESS:
-        if (!flow_checkflag(flowp, FLOW_SERVICEDETECTED))
+        if (!getAppIdFlag(flowp, APPID_SESSION_SERVICE_DETECTED))
         {
+            uint64_t encryptedFlag = getAppIdFlag(flowp, APPID_SESSION_ENCRYPTED | APPID_SESSION_DECRYPTED);
             ftp_service_mod.api->add_service(flowp, pkt, dir, &svc_element,
-                                             APP_ID_FTP_CONTROL, fd->vendor[0] ? fd->vendor:NULL,
-                                             fd->version[0] ? fd->version:NULL, NULL);
+                                             encryptedFlag == APPID_SESSION_ENCRYPTED ? // FTPS only when encrypted==1 decrypted==0
+                                                APP_ID_FTPS : APP_ID_FTP_CONTROL,
+                                             fd->vendor[0] ? fd->vendor:NULL,
+                                             fd->version[0] ? fd->version:NULL, NULL, NULL);
         }
         return SERVICE_SUCCESS;
 
     case SERVICE_NOMATCH:
 fail:
-        if (!flow_checkflag(flowp, FLOW_SERVICEDETECTED))
+        if (!getAppIdFlag(flowp, APPID_SESSION_SERVICE_DETECTED))
         {
-            ftp_service_mod.api->fail_service(flowp, pkt, dir, &svc_element);
+            ftp_service_mod.api->fail_service(flowp, pkt, dir, &svc_element,
+                                              ftp_service_mod.flow_data_index, args->pConfig, NULL);
         }
-        flow_clear(flowp, FLOW_CONTINUE);
+        clearAppIdFlag(flowp, APPID_SESSION_CONTINUE);
         return SERVICE_NOMATCH;
     }
 }

@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -103,13 +103,13 @@ typedef struct _LogTcpdumpData
 /* list of function prototypes for this preprocessor */
 static void LogTcpdumpInit(struct _SnortConfig *, char *);
 static LogTcpdumpData *ParseTcpdumpArgs(char *);
-static void LogTcpdump(Packet *, char *, void *, Event *);
+static void LogTcpdump(Packet *, const char *, void *, Event *);
 static void TcpdumpInitLogFileFinalize(struct _SnortConfig *sc, int unused, void *arg);
 static void TcpdumpInitLogFile(LogTcpdumpData *, int);
 static void TcpdumpRollLogFile(LogTcpdumpData*);
 static void SpoLogTcpdumpCleanExitFunc(int, void *);
-static void LogTcpdumpSingle(Packet *, char *, void *, Event *);
-static void LogTcpdumpStream(Packet *, char *, void *, Event *);
+static void LogTcpdumpSingle(Packet *, const char *, void *, Event *);
+static void LogTcpdumpStream(Packet *, const char *, void *, Event *);
 //static void DirectLogTcpdump(DAQ_PktHdr_t *, uint8_t *);
 
 /* If you need to instantiate the plugin's data structure, do it here */
@@ -258,7 +258,7 @@ static LogTcpdumpData *ParseTcpdumpArgs(char *args)
  *
  * Returns: void function
  */
-static void LogTcpdump(Packet *p, char *msg, void *arg, Event *event)
+static void LogTcpdump(Packet *p, const char *msg, void *arg, Event *event)
 {
 
     if(p)
@@ -288,7 +288,7 @@ static int SizeOfCallback(DAQ_PktHdr_t *pkth,
     return 0;
 }
 
-static void LogTcpdumpSingle(Packet *p, char *msg, void *arg, Event *event)
+static void LogTcpdumpSingle(Packet *p, const char *msg, void *arg, Event *event)
 {
     LogTcpdumpData *data = (LogTcpdumpData *)arg;
     size_t dumpSize = SizeOf(p->pkth);
@@ -322,7 +322,7 @@ static int LogTcpdumpStreamCallback(DAQ_PktHdr_t *pkth,
     return 0;
 }
 
-static void LogTcpdumpStream(Packet *p, char *msg, void *arg, Event *event)
+static void LogTcpdumpStream(Packet *p, const char *msg, void *arg, Event *event)
 {
     LogTcpdumpData *data = (LogTcpdumpData *)arg;
     size_t dumpSize = 0;

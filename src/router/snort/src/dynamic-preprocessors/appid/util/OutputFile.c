@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -39,8 +39,6 @@
 
 #include <errno.h>
 #include "sf_dynamic_preprocessor.h"
-
-static const char * const MODULE_NAME = "OutputFile";
 
 FILE *openOutputFile(const char * const filename, time_t tstamp)
 {

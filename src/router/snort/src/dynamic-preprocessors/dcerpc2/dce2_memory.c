@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -562,5 +562,10 @@ void * DCE2_ReAlloc(void *old_mem, uint32_t old_size, uint32_t new_size, DCE2_Me
 void DCE2_MemInit(void)
 {
     memset(&dce2_memory, 0, sizeof(dce2_memory));
+}
+
+size_t DCE2_MemInUse()
+{
+    return (size_t) dce2_memory.rtotal;
 }
 

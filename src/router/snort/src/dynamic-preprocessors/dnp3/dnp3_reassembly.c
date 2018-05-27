@@ -14,7 +14,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * Author: Ryan Jordan
@@ -35,6 +35,10 @@
 #include "dnp3_map.h"
 #include "dnp3_reassembly.h"
 #include "dnp3_roptions.h"
+
+#ifdef DUMP_BUFFER
+#include "dnp3_buffer_dump.h"
+#endif
 
 /* Minimum length of DNP3 "len" field in order to get a transport header. */
 #define DNP3_MIN_TRANSPORT_LEN 6
@@ -156,7 +160,7 @@ static int DNP3ReassembleTransport(dnp3_reassembly_data_t *rdata, char *buf, uin
                 rdata->state = DNP3_REASSEMBLY_STATE__DONE;
             else
                 rdata->state = DNP3_REASSEMBLY_STATE__ASSEMBLY;
-            
+
             break;
 
         case DNP3_REASSEMBLY_STATE__ASSEMBLY:
@@ -166,8 +170,7 @@ static int DNP3ReassembleTransport(dnp3_reassembly_data_t *rdata, char *buf, uin
                 DNP3ReassemblyReset(rdata);
                 DNP3QueueSegment(rdata, buf, buflen);
                 rdata->last_seq = DNP3_TRANSPORT_SEQ(trans_header->control);
-
-                if (DNP3_TRANSPORT_FIN(trans_header->control))
+               if (DNP3_TRANSPORT_FIN(trans_header->control))
                     rdata->state = DNP3_REASSEMBLY_STATE__DONE;
 
                 /* Raise an alert so it's clear the buffer was reset.
@@ -205,7 +208,6 @@ static int DNP3ReassembleTransport(dnp3_reassembly_data_t *rdata, char *buf, uin
                 else
                     rdata->state = DNP3_REASSEMBLY_STATE__ASSEMBLY;
             }
-            
             break;
 
         case DNP3_REASSEMBLY_STATE__DONE:
@@ -229,6 +231,7 @@ static int DNP3ReassembleTransport(dnp3_reassembly_data_t *rdata, char *buf, uin
 
         if (ret == SAFEMEM_SUCCESS)
             _dpd.SetAltDecode(alt_len);
+
     }
 
     return DNP3_OK;
@@ -239,7 +242,7 @@ static void DNP3CheckReservedFunction(dnp3_session_data_t *session)
 {
     if ( !(DNP3FuncIsDefined( (uint16_t)session->func)) )
     {
-        _dpd.alertAdd(GENERATOR_SPP_DNP3, DNP3_RESERVED_FUNCTION,
+       _dpd.alertAdd(GENERATOR_SPP_DNP3, DNP3_RESERVED_FUNCTION,
                         1, 0, 3, DNP3_RESERVED_FUNCTION_STR, 0);
     }
 }
@@ -264,7 +267,9 @@ static int DNP3ProcessApplication(dnp3_session_data_t *session)
             return DNP3_FAIL; /* TODO: Preprocessor Alert */
 
         request = (dnp3_app_request_header_t *)(rdata->buffer);
-        
+#ifdef DUMP_BUFFER
+        dumpBuffer(DNP3_CLINET_REQUEST_DUMP, (const uint8_t *) rdata->buffer,rdata->buflen);
+#endif
         session->func = request->function;
     }
     else if (session->direction == DNP3_SERVER)
@@ -276,7 +281,9 @@ static int DNP3ProcessApplication(dnp3_session_data_t *session)
             return DNP3_FAIL; /* TODO: Preprocessor Alert */
 
         response = (dnp3_app_response_header_t *)(rdata->buffer);
-
+#ifdef DUMP_BUFFER
+        dumpBuffer(DNP3_SERVER_RESPONSE_DUMP, (const uint8_t *) rdata->buffer,rdata->buflen);
+#endif
         session->func = response->function;
         session->indications = ntohs(response->indications);
     }
@@ -383,7 +390,7 @@ static int DNP3CheckReservedAddrs(dnp3_link_header_t *link)
 
     if (bad_addr)
     {
-        _dpd.alertAdd(GENERATOR_SPP_DNP3, DNP3_RESERVED_ADDRESS, 1, 0, 3,
+     _dpd.alertAdd(GENERATOR_SPP_DNP3, DNP3_RESERVED_ADDRESS, 1, 0, 3,
                         DNP3_RESERVED_ADDRESS_STR, 0);
         return DNP3_FAIL;
     }
@@ -419,13 +426,23 @@ int DNP3FullReassembly(dnp3_config_t *config, dnp3_session_data_t *session, SFSn
 
     /* Check reserved addresses */
     if ( DNP3CheckReservedAddrs(link) == DNP3_FAIL )
+    {
+#ifdef DUMP_BUFFER
+        dumpBuffer(DNP3_RESERVED_BAD_ADDR_DUMP,packet->payload,packet->payload_size);
+#endif
         return DNP3_FAIL;
+    }
 
     /* XXX: NEED TO TRACK SEPARATE DNP3 SESSIONS OVER SINGLE TCP SESSION */
 
     /* Step 2: Remove CRCs */
     if ( DNP3CheckRemoveCRC(config, pdu_start, pdu_length, buf, &buflen) == DNP3_FAIL )
+    {
+#ifdef DUMP_BUFFER
+        dumpBuffer(DNP3_BAD_CRC_DUMP,packet->payload,packet->payload_size);
+#endif
         return DNP3_FAIL;
+    }
 
     /* Step 3: Queue user data in frame for Transport-Layer reassembly */
     if (session->direction == DNP3_CLIENT)

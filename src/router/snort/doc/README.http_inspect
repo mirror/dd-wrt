@@ -167,6 +167,7 @@ cannot be combined with any other options except:
   - log_hostname
   - decompress_swf
   - decompress_pdf
+  - legacy_mode
 These options must be specified after the 'profile' option.
 
 Example:
@@ -747,6 +748,16 @@ generated. The maximum hostname length logged is 256.
 Please note, this is logged only with the unified2 output and is not logged 
 with console output (-A cmg). u2spewfoo can be used to read this data from 
 the unified2.
+
+##########################################
+# HTTP2 SUPPORT IS STILL EXPERIMENTAL!
+# DO NOT USE IN PRODUCTION ENVIRONMENTS.
+# Please send any issues to the Snort team
+##########################################
+* legacy_mode <yes/no>
+By default, HTTP2 traffic is not supported. You can use "legecy_mode no"
+to enable HTTP2 support.
+If http_legacy mode is configured, HTTP2 inspection is disabled.
 
 -- Profile Breakout --
 There are three profiles that users can select.  Only the configuration 

@@ -286,6 +286,7 @@
 120 || 15 || http_inspect: PDF FILE UNSUPPORTED COMPRESSION TYPES
 120 || 16 || http_inspect: PDF FILE CASCADED COMPRESSION
 120 || 17 || http_inspect: PDF FILE PARSE FAILURE
+120 || 18 || http_inspect: PROTOCOL-OTHER HTTP server response before client request
 121 || 1 || flow-portscan: Fixed Scale Scanner Limit Exceeded
 121 || 2 || flow-portscan: Sliding Scale Scanner Limit Exceeded
 121 || 3 || flow-portscan: Fixed Scale Talker Limit Exceeded
@@ -444,6 +445,8 @@
 133 || 55 || dcerpc2: SMB - Invalid setup count
 133 || 56 || dcerpc2: SMB - Client attempted multiple dialect negotiations on session
 133 || 57 || dcerpc2: SMB - Client attempted to create or set a file's attributes to readonly/hidden/system
+133 || 58 || dcerpc2: SMB - File offset provided is greater than file size specified
+133 || 59 || dcerpc2: SMB - Nextcommand specified in SMB2 header is beyond payload boundary
 134 || 1 || ppm: rule tree disabled
 134 || 2 || ppm: rule tree enabled
 134 || 3 || ppm: packet aborted
@@ -452,8 +455,8 @@
 135 || 3 || internal: session cleared
 136 || 1 || reputation: Packet is blacklisted
 136 || 2 || reputation: Packet is whitelisted
-137 || 1 || ssp_ssl: Invalid Client HELLO after Server HELLO Detected
-137 || 2 || ssp_ssl: Invalid Server HELLO without Client HELLO Detected
+137 || 1 || spp_ssl: Invalid Client HELLO after Server HELLO Detected
+137 || 2 || spp_ssl: Invalid Server HELLO without Client HELLO Detected
 137 || 3 || spp_ssl: Heartbeat Read Overrun Attempt Detected
 137 || 4 || spp_ssl: Large Heartbeat Response Detected
 138 || 2 || sensitive_data: sensitive data - Credit card numbers

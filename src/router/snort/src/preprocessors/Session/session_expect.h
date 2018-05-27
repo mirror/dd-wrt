@@ -1,7 +1,7 @@
 /* $Id$ */
 
 /*
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2004-2013 Sourcefire, Inc.
 ** AUTHOR: Steven Sturges
 **
@@ -40,26 +40,38 @@
 #define SESSION_EXPECT_H_
 
 #include "ipv6_port.h"
+#include "session_api.h"
 #include "session_common.h"
 #include "stream_common.h"
 #include "sfxhash.h"
 
-int StreamExpectAddChannel(const Packet *ctrlPkt, snort_ip_p cliIP, uint16_t cliPort,
-                           snort_ip_p srvIP, uint16_t srvPort, char direction, uint8_t flags,
-                           uint8_t protocol, uint32_t timeout, int16_t appId, uint32_t preprocId,
-                           void *appData, void (*appDataFreeFn)(void*));
+struct _ExpectNode;
 
-int StreamExpectAddChannelPreassignCallback(const Packet *ctrlPkt, snort_ip_p cliIP, uint16_t cliPort,
-                           snort_ip_p srvIP, uint16_t srvPort, char direction, uint8_t flags,
+int StreamExpectAddChannel(const Packet *ctrlPkt, sfaddr_t* cliIP, uint16_t cliPort,
+                           sfaddr_t* srvIP, uint16_t srvPort, char direction, uint8_t flags,
+                           uint8_t protocol, uint32_t timeout, int16_t appId, uint32_t preprocId,
+                           void *appData, void (*appDataFreeFn)(void*),
+                           struct _ExpectNode** packetExpectedNode);
+
+int StreamExpectAddChannelPreassignCallback(const Packet *ctrlPkt, sfaddr_t* cliIP, uint16_t cliPort,
+                           sfaddr_t* srvIP, uint16_t srvPort, char direction, uint8_t flags,
                            uint8_t protocol, uint32_t timeout, int16_t appId, uint32_t preprocId,
                            void *appData, void (*appDataFreeFn)(void*), unsigned cbId,
-                           Stream_Event se);
+                           Stream_Event se, struct _ExpectNode** packetExpectedNode);
 
 int StreamExpectIsExpected(Packet *p, SFXHASH_NODE **expected_hash_node);
 char StreamExpectProcessNode(Packet *p, SessionControlBlock* lws, SFXHASH_NODE *expected_hash_node);
 char StreamExpectCheck(Packet *, SessionControlBlock *);
 void StreamExpectInit(uint32_t maxExpectations);
 void StreamExpectCleanup(void);
+
+struct _ExpectNode* getNextExpectedNode(struct _ExpectNode* expectedNode);
+void* getApplicationDataFromExpectedNode(struct _ExpectNode* expectedNode, uint32_t preprocId);
+int addApplicationDataToExpectedNode(struct _ExpectNode* expectedNode, uint32_t preprocId,
+                                     void *appData, void (*appDataFreeFn)(void*));
+void registerMandatoryEarlySessionCreator(struct _SnortConfig *sc,
+                                          MandatoryEarlySessionCreatorFn callback);
+void FreeMandatoryEarlySessionCreators(struct _MandatoryEarlySessionCreator*);
 
 #endif /* SESSION_EXPECT_H */
 

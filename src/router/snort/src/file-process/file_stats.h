@@ -1,7 +1,7 @@
 /*
  **
  **
- **  Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ **  Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  **  Copyright (C) 2013-2013 Sourcefire, Inc.
  **
  **  This program is free software; you can redistribute it and/or modify
@@ -70,7 +70,7 @@ extern FileStats file_stats;
 #define FILE_DEBUG_MSGS(msg) DEBUG_WRAP(DebugMessage(DEBUG_FILE, msg);)
 
 #if defined(DEBUG_MSGS) || defined (REG_TEST)
-void printFileContext (FileContext* context);
+void printFileContext(FileContext* context);
 void DumpHexFile(FILE *fp, const uint8_t *data, unsigned int len);
 #endif
 

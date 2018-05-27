@@ -169,6 +169,9 @@ int ReadBookmarkData(SpoolFileIterator *iterator)
     memset(buffer, 0, sizeof(buffer));
     if((bytes_read = read(fd, buffer, sizeof(buffer) - 1)) == -1)
     {
+        if(fd != -1)
+           close(fd);
+        fd = -1;
         rval = errno;
         fprintf(stderr, "Failed to read from file '%s': %s\n",
                 iterator->bookmark_file, strerror(rval));

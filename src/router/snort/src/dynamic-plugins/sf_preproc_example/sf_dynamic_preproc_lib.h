@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 ** Author: Steven Sturges
 **
@@ -29,12 +29,12 @@
 #ifdef WIN32
 #ifdef SF_SNORT_PREPROC_DLL
 #define BUILDING_SO
-#define PREPROC_LINKAGE SO_PUBLIC
+#define PREPROC_LINKAGE SF_SO_PUBLIC
 #else
 #define PREPROC_LINKAGE
 #endif
 #else /* WIN32 */
-#define PREPROC_LINKAGE SO_PUBLIC
+#define PREPROC_LINKAGE SF_SO_PUBLIC
 #endif
 
 #endif  /* __SF_DYNAMIC_PREPROC_LIB_H_ */

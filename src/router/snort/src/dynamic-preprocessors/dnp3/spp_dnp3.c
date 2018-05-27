@@ -14,7 +14,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * Author: Ryan Jordan
@@ -50,6 +50,20 @@
 PreprocStats dnp3PerfStats;
 #endif
 
+#ifdef DUMP_BUFFER
+#include "dnp3_buffer_dump.h"
+void dumpBufferInit(void);
+#endif
+
+#ifdef SNORT_RELOAD
+#include "appdata_adjuster.h"
+static APPDATA_ADJUSTER *ada;
+#endif
+
+#ifdef REG_TEST
+#include "reg_test.h"
+#endif
+
 const int MAJOR_VERSION = 1;
 const int MINOR_VERSION = 1;
 const int BUILD_VERSION = 1;
@@ -74,6 +88,10 @@ static void DNP3Init(struct _SnortConfig *, char *);
 static inline void DNP3OneTimeInit(struct _SnortConfig *);
 static inline dnp3_config_t * DNP3PerPolicyInit(struct _SnortConfig *, tSfPolicyUserContextId);
 static void DNP3RegisterPerPolicyCallbacks(struct _SnortConfig *, dnp3_config_t *);
+static bool DNP3GlobalIsEnabled(tSfPolicyUserContextId context_id);
+static void DNP3InitializeMempool(tSfPolicyUserContextId context_id);
+static int DNP3IsEnabled(struct _SnortConfig *sc, tSfPolicyUserContextId context_id,
+            tSfPolicyId policy_id, void *data);
 
 static void ProcessDNP3(void *, void *);
 
@@ -82,6 +100,7 @@ static void DNP3Reload(struct _SnortConfig *, char *, void **);
 static int DNP3ReloadVerify(struct _SnortConfig *, void *);
 static void * DNP3ReloadSwap(struct _SnortConfig *, void *);
 static void DNP3ReloadSwapFree(void *);
+static bool DNP3ReloadAdjustFunc(bool idle, tSfPolicyId raPolicyId, void *userData);
 #endif
 
 static void _addPortsToStreamFilter(struct _SnortConfig *, dnp3_config_t *, tSfPolicyId);
@@ -100,6 +119,8 @@ static void PrintDNP3Config(dnp3_config_t *config);
 static int DNP3PortCheck(dnp3_config_t *config, SFSnortPacket *packet);
 static MemBucket * DNP3CreateSessionData(SFSnortPacket *);
 
+static size_t DNP3MemInUse();
+
 /* Default memcap is defined as MAX_TCP_SESSIONS * .05 * 20 bytes */
 #define DNP3_DEFAULT_MEMCAP (256 * 1024)
 
@@ -111,6 +132,9 @@ void SetupDNP3(void)
 #else
     _dpd.registerPreproc("dnp3", DNP3Init, DNP3Reload,
                          DNP3ReloadVerify, DNP3ReloadSwap, DNP3ReloadSwapFree);
+#endif
+#ifdef DUMP_BUFFER
+    _dpd.registerBufferTracer(getDNP3Buffers, DNP3_BUFFER_DUMP_FUNC);
 #endif
 }
 
@@ -139,9 +163,15 @@ static void DNP3Init(struct _SnortConfig *sc, char *argp)
 
     PrintDNP3Config(dnp3_policy);
 
+    DNP3InitializeMempool(dnp3_context_id);
+
     DNP3RegisterPortsWithSession( sc, dnp3_policy );
 
     DNP3RegisterPerPolicyCallbacks(sc, dnp3_policy);
+
+#ifdef DUMP_BUFFER
+        dumpBufferInit();
+#endif
 }
 
 static inline void DNP3OneTimeInit(struct _SnortConfig *sc)
@@ -165,7 +195,7 @@ static inline void DNP3OneTimeInit(struct _SnortConfig *sc)
     _dpd.addPreprocExit(DNP3CleanExit, NULL, PRIORITY_LAST, PP_DNP3);
 
 #ifdef PERF_PROFILING
-    _dpd.addPreprocProfileFunc("dnp3", (void *)&dnp3PerfStats, 0, _dpd.totalPerfStats);
+    _dpd.addPreprocProfileFunc("dnp3", (void *)&dnp3PerfStats, 0, _dpd.totalPerfStats, NULL);
 #endif
 
     /* Set up target-based app id */
@@ -175,7 +205,6 @@ static inline void DNP3OneTimeInit(struct _SnortConfig *sc)
         dnp3_app_id = _dpd.addProtocolReference("dnp3");
     // register with session to handle application
     _dpd.sessionAPI->register_service_handler( PP_DNP3, dnp3_app_id );
-
 #endif
 }
 
@@ -205,6 +234,57 @@ static inline dnp3_config_t * DNP3PerPolicyInit(struct _SnortConfig *sc, tSfPoli
     sfPolicyUserDataSetCurrent(context_id, dnp3_policy);
 
     return dnp3_policy;
+}
+
+static bool DNP3GlobalIsEnabled(tSfPolicyUserContextId context_id)
+{
+    return sfPolicyUserDataIterate(NULL, context_id, DNP3IsEnabled) != 0;
+}
+
+static void DNP3InitializeMempool(tSfPolicyUserContextId context_id)
+{
+    unsigned int max_sessions;
+    dnp3_config_t *default_config = (dnp3_config_t*)sfPolicyUserDataGetDefault(context_id);
+    if (default_config && DNP3GlobalIsEnabled(context_id))
+    {
+#ifdef SNORT_RELOAD
+#ifdef REG_TEST
+        if (REG_TEST_FLAG_RELOAD & getRegTestFlags())
+        {
+            printf("DNP3-reload init-before: %p %p\n", dnp3_mempool, ada);
+        }
+
+#endif
+#endif
+        if (dnp3_mempool == NULL)
+        {
+            max_sessions = default_config->memcap / sizeof(dnp3_session_data_t);
+
+            dnp3_mempool = (MemPool *)malloc(sizeof(MemPool));
+            //mempool is set to 0 in init
+            if (mempool_init(dnp3_mempool, max_sessions, sizeof(dnp3_session_data_t)))
+            {
+                DynamicPreprocessorFatalMessage("Unable to allocate DNP3 mempool.\n");
+            }
+        }
+
+#ifdef SNORT_RELOAD
+        if (ada == NULL)
+        {
+            ada = ada_init(DNP3MemInUse, PP_DNP3, (size_t) default_config->memcap);
+            if (ada == NULL)
+                DynamicPreprocessorFatalMessage("Unable to allocate DNP3 ada.\n");
+        }
+
+#ifdef REG_TEST
+        if (REG_TEST_FLAG_RELOAD & getRegTestFlags())
+        {
+            printf("DNP3-reload init-after: %p %p\n", dnp3_mempool, ada);
+        }
+
+#endif
+#endif
+    }
 }
 
 static void DNP3RegisterPerPolicyCallbacks(struct _SnortConfig *sc, dnp3_config_t *dnp3_policy)
@@ -612,6 +692,9 @@ static MemBucket * DNP3CreateSessionData(SFSnortPacket *packet)
     /* Attach to Stream session */
     _dpd.sessionAPI->set_application_data(packet->stream_session, PP_DNP3,
         tmp_bucket, FreeDNP3Data);
+#ifdef SNORT_RELOAD
+    ada_add(ada, tmp_bucket, packet->stream_session);
+#endif
 
     /* Not sure when this reference counting stuff got added to the old preprocs */
     data->policy_id = _dpd.getNapRuntimePolicy();
@@ -651,6 +734,8 @@ static void DNP3Reload(struct _SnortConfig *sc, char *args, void **new_config)
 
     ParseDNP3Args(sc, dnp3_policy, args);
 
+    DNP3InitializeMempool(dnp3_swap_context_id);
+
     PrintDNP3Config(dnp3_policy);
 
     DNP3RegisterPortsWithSession( sc, dnp3_policy );
@@ -684,13 +769,41 @@ static int DNP3ReloadVerify(struct _SnortConfig *sc, void *swap_config)
         return -1;
     }
 
-    /* Did memcap change? */
-    if (current_default_config->memcap != new_default_config->memcap)
+    //is DNP3 enabled?
+    bool wasEnabled = sfPolicyUserDataIterate(sc, dnp3_context_id, DNP3IsEnabled) != 0;
+    bool isEnabled  = sfPolicyUserDataIterate(sc, dnp3_swap_context_id, DNP3IsEnabled) != 0;
+    tSfPolicyId policy_id = _dpd.getParserPolicy(sc);
+    if (wasEnabled && isEnabled)
     {
-        _dpd.errMsg("DNP3 reload: Changing the DNP3 memcap "
-            "requires a restart.\n");
-        return -1;
+        if (new_default_config->memcap < current_default_config->memcap)
+        {
+            ada_set_new_cap(ada, (size_t) new_default_config->memcap);
+            _dpd.reloadAdjustRegister(sc, "DNP3", policy_id, DNP3ReloadAdjustFunc, (void *) ada, NULL);
+        }
+        else if (new_default_config->memcap > current_default_config->memcap)
+        {
+            unsigned int max_sessions = new_default_config->memcap / sizeof(dnp3_session_data_t);
+#ifdef REG_TEST
+            if (REG_TEST_FLAG_RELOAD & getRegTestFlags())
+            {
+                printf("DNP3-reload mempool-before: %zu %zu %zu\n", dnp3_mempool->max_memory, dnp3_mempool->used_memory, dnp3_mempool->free_memory);
+            }
+#endif
+            mempool_setObjectSize(dnp3_mempool, max_sessions, sizeof(dnp3_session_data_t));
+#ifdef REG_TEST
+            if (REG_TEST_FLAG_RELOAD & getRegTestFlags())
+            {
+                printf("DNP3-reload mempool-after: %zu %zu %zu\n", dnp3_mempool->max_memory, dnp3_mempool->used_memory, dnp3_mempool->free_memory);
+            }
+#endif
+        }
     }
+    else if (wasEnabled)
+    {
+        ada_set_new_cap(ada, 0);
+        _dpd.reloadAdjustRegister(sc, "DNP3", policy_id, DNP3ReloadAdjustFunc, (void *) ada, NULL);
+    }
+
 
     /* Did stream5 get turned off? */
     if (!_dpd.isPreprocEnabled(sc, PP_STREAM))
@@ -850,7 +963,6 @@ static int DNP3CheckPolicyConfig(
 static int DNP3CheckConfig(struct _SnortConfig *sc)
 {
     int rval;
-    unsigned int max_sessions;
 
     /* Get default configuration */
     dnp3_config_t *default_config =
@@ -866,18 +978,6 @@ static int DNP3CheckConfig(struct _SnortConfig *sc)
     if ((rval = sfPolicyUserDataIterate(sc, dnp3_context_id, DNP3CheckPolicyConfig)))
         return rval;
 
-    /* Set up MemPool, but only if a config exists that's not "disabled". */
-    if (sfPolicyUserDataIterate(sc, dnp3_context_id, DNP3IsEnabled) == 0)
-        return 0;
-
-    // FIXTHIS default_config is null when configured in target policy only
-    max_sessions = default_config->memcap / sizeof(dnp3_session_data_t);
-
-    dnp3_mempool = (MemPool *)calloc(1, sizeof(MemPool));
-    if (mempool_init(dnp3_mempool, max_sessions, sizeof(dnp3_session_data_t)) != 0)
-    {
-        DynamicPreprocessorFatalMessage("Unable to allocate DNP3 mempool.\n");
-    }
     return 0;
 }
 
@@ -894,6 +994,11 @@ static void DNP3CleanExit(int signal, void *data)
         free(dnp3_mempool);
         dnp3_mempool = 0;
     }
+
+#ifdef SNORT_RELOAD
+    ada_delete(ada);
+    ada = NULL;
+#endif
 }
 
 static void FreeDNP3Data(void *bucket)
@@ -929,5 +1034,82 @@ static void FreeDNP3Data(void *bucket)
         }
     }
 
+#ifdef SNORT_RELOAD
+    ada_appdata_freed(ada, bucket);//iff tmp_bucket/bucket is freed
+#endif
     mempool_free(dnp3_mempool, tmp_bucket);
 }
+
+static size_t DNP3MemInUse()
+{
+    return dnp3_mempool->used_memory;
+}
+
+#ifdef SNORT_RELOAD
+static bool DNP3ReloadAdjustFunc(bool idle, tSfPolicyId raPolicyId, void *userData)
+{
+    unsigned int max_sessions;
+    unsigned maxwork = idle ? 512 : 32;
+
+    if (ada_reload_adjust_func(idle, raPolicyId, userData))
+    {
+       //check if mempool is being deleted or just resized
+       if (DNP3GlobalIsEnabled(dnp3_context_id))
+       {
+#ifdef REG_TEST
+            if (REG_TEST_FLAG_RELOAD & getRegTestFlags())
+            {
+                printf("DNP3-reload mempool-before: %zu %zu %zu\n", dnp3_mempool->max_memory, dnp3_mempool->used_memory, dnp3_mempool->free_memory);
+            }
+#endif
+           //if it is being resized then change the mepool size
+            dnp3_config_t *default_config = (dnp3_config_t*)sfPolicyUserDataGetDefault(dnp3_context_id);
+            if (default_config == NULL)//shouldn't be possible
+                return false;
+            max_sessions = default_config->memcap / sizeof(dnp3_session_data_t);
+
+            maxwork = mempool_prune_freelist(dnp3_mempool, max_sessions * sizeof(dnp3_session_data_t), maxwork);
+            if (maxwork)
+                mempool_setObjectSize(dnp3_mempool, max_sessions, sizeof(dnp3_session_data_t));
+
+#ifdef REG_TEST
+        if (REG_TEST_FLAG_RELOAD & getRegTestFlags())
+        {
+            printf("DNP3-reload mempool-after: %zu %zu %zu\n", dnp3_mempool->max_memory, dnp3_mempool->used_memory, dnp3_mempool->free_memory);
+        }
+#endif
+       }
+       else
+       {
+           //otherwise make sure that the mempool is empty and then delete the mempool
+            maxwork = mempool_prune_freelist(dnp3_mempool, 0, maxwork);
+            if (maxwork)
+            {
+#ifdef REG_TEST
+                if (REG_TEST_FLAG_RELOAD & getRegTestFlags())
+                {
+                    printf("DNP3-reload before-destroy: %zu %zu %zu\n", dnp3_mempool->max_memory, dnp3_mempool->used_memory, dnp3_mempool->free_memory);
+                }
+#endif
+#ifdef REG_TEST
+                int retDestroy =
+#endif
+                mempool_destroy(dnp3_mempool);
+                dnp3_mempool = NULL;
+                ada_delete(ada);
+                ada = NULL;
+#ifdef REG_TEST
+                if (REG_TEST_FLAG_RELOAD & getRegTestFlags())
+                {
+                    printf("DNP3-reload after-destroy: %d %p %p\n", retDestroy, dnp3_mempool, ada);
+                }
+#endif
+            }
+       }
+
+       return maxwork;
+    }
+
+    return false;
+}
+#endif

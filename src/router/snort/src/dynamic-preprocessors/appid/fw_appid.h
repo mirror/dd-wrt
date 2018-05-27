@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -33,45 +33,76 @@
 #include "flow.h"
 #include "common_util.h"
 #include "sip_common.h"
+#include "appInfoTable.h"
+#include "thirdparty_appid_utils.h"
 
 #define PP_APP_ID   1
 
 #define MIN_SFTP_PACKET_COUNT   30
 #define MAX_SFTP_PACKET_COUNT   55
 
-#define SF_APPID_MAX    30000
-#define SF_APPID_DYNAMIC_MIN    1000000 
+/*#define  RNA_FULL_CLEANUP   1 */
 
-/* found this in the comp.lang.c FAQ */
-#define BIT_CHUNK 8
-#define BITMASK(b) (1 << ((b) % BIT_CHUNK))
-#define BITSLOT(b) ((b) / BIT_CHUNK)
-#define BITSET(a, b) ((a)[BITSLOT(b)] |= BITMASK(b))
-#define BITCLEAR(a, b) ((a)[BITSLOT(b)] &= ~BITMASK(b))
-#define BITTEST(a, b) ((a)[BITSLOT(b)] & BITMASK(b))
-#define BITNSLOTS(nb) ((nb + BIT_CHUNK-1) / BIT_CHUNK)
+typedef enum
+{
+    APPID_DEBUG_HOST_MONITOR0,
+    APPID_DEBUG_HOST_MONITOR1,
+    APPID_DEBUG_HOST_MONITOR2,
+    APPID_DEBUG_HOST_MONITOR3,
+    APPID_DEBUG_HOST_MONITOR4,
+    APPID_DEBUG_HOST_MONITOR5,
+    APPID_DEBUG_HOST_NOT_MONITORED,
+} AppIdDebugHostMonitorType;
 
-extern char SSLBitList[BITNSLOTS(SF_APPID_MAX)];
-extern char referredAppIdBitList[BITNSLOTS(SF_APPID_MAX)];
-extern char SSLSquelchBitList[BITNSLOTS(SF_APPID_MAX)];
+typedef struct
+{
+    struct in6_addr initiatorIp;
+    int family;
+    tAppIdData* session;
+    uint16_t initiatorPort;
+    APPID_SESSION_DIRECTION direction;
+    uint8_t protocol;
+    int monitorType;
+} AppIdDebugHostInfo_t;
 
-void fwAppIdFini(void);
+
+extern uint8_t  appIdPriorityArray[SF_APPID_MAX+1];
+extern AppIdDebugHostInfo_t AppIdDebugHostInfo;
+
+struct AppIdData * getAppIdData(void* lwssn);
+
+void fwAppIdInit(void);
+void fwAppIdFini(tAppIdConfig *pConfig);
 void fwAppIdSearch(SFSnortPacket *p);
 void httpHeaderCallback (SFSnortPacket *p, HttpParsedHeaders *const headers);
 void SipSessionSnortCallback (void *ssnptr, ServiceEventType eventType, void *eventData);
 
-void readRnaAppMappingTable(const char *path);
-tAppId appGetAppFromServiceId(uint32_t serviceId);
-tAppId appGetAppFromClientId(uint32_t clientId);
-tAppId appGetAppFromPayloadId(uint32_t payloadId);
+void readRnaAppMappingTable(const char *path, tAppIdConfig *pConfig);
+tAppId appGetAppFromServiceId(uint32_t serviceId, tAppIdConfig *pConfig);
+tAppId appGetAppFromClientId(uint32_t clientId, tAppIdConfig *pConfig);
+tAppId appGetAppFromPayloadId(uint32_t payloadId, tAppIdConfig *pConfig);
 void appSharedDataDelete(tAppIdData * sharedData);
-void AppIdAddUser(FLOW *flowp, const char *username, tAppId appId, int success);
-void AppIdAddPayload(FLOW *flow, tAppId payload_id);
-tAppIdData* appSharedDataAlloc(uint8_t proto, snort_ip *ip);
+void AppIdAddUser(tAppIdData *flowp, const char *username, tAppId appId, int success);
+void AppIdAddDnsQueryInfo(tAppIdData *flow,
+                          uint16_t id,
+                          const uint8_t *host, uint8_t host_len, uint16_t host_offset,
+                          uint16_t record_type);
+void AppIdAddDnsResponseInfo(tAppIdData *flow,
+                             uint16_t id,
+                             const uint8_t *host, uint8_t host_len, uint16_t host_offset,
+                             uint8_t response_type, uint32_t ttl);
+void AppIdResetDnsInfo(tAppIdData *flow);
+
+void AppIdAddPayload(tAppIdData *flow, tAppId payload_id);
+tAppIdData* appSharedDataAlloc(uint8_t proto, const struct in6_addr *ip, uint16_t initiator_port);
 tAppId getOpenAppId(void *ssnptr);
 
-void appSetServiceValidator(RNAServiceValidationFCN fcn, tAppId appId, unsigned extractsInfo, struct _Detector *data);
-void appSetClientValidator(RNAClientAppFCN fcn, tAppId appId, unsigned extractsInfo, struct _Detector *data);
+void appSetServiceValidator(RNAServiceValidationFCN fcn, tAppId appId, unsigned extractsInfo, tAppIdConfig *pConfig);
+void appSetLuaServiceValidator(RNAServiceValidationFCN fcn, tAppId appId, unsigned extractsInfo, struct _Detector *dat);
+void appSetClientValidator(RNAClientAppFCN fcn, tAppId appId, unsigned extractsInfo, tAppIdConfig *pConfig);
+void appSetLuaClientValidator(RNAClientAppFCN fcn, tAppId appId, unsigned extractsInfo, struct _Detector *data);
+int sslAppGroupIdLookup(void *ssnptr, const char * serverName, const char * commonName, tAppId *serviceAppId, tAppId *clientAppId, tAppId *payloadAppId);
+tAppId getAppId(void *ssnptr);
 
 #ifdef FW_TRACKER_DEBUG
 void logAppIdInfo(SFSnortPacket *p, char *message, tAppId id);
@@ -86,65 +117,121 @@ extern bool app_id_debug_session_flag;
 extern PreprocStats httpPerfStats;
 extern PreprocStats clientMatchPerfStats;
 extern PreprocStats serviceMatchPerfStats;
-extern PreprocStats luaClientPerfStats;
-extern PreprocStats luaServerPerfStats;
+extern PreprocStats luaDetectorsPerfStats;
+extern PreprocStats luaCiscoPerfStats;
+extern PreprocStats luaCustomPerfStats;
+extern PreprocStats tpPerfStats;
+extern PreprocStats tpLibPerfStats;
 #endif
 
 extern unsigned dhcp_fp_table_size;
 extern unsigned long app_id_raw_packet_count;
 extern unsigned long app_id_processed_packet_count;
 extern unsigned long app_id_ignored_packet_count;
-
-static inline void bitListAddApp (tAppId app_id)
+extern int app_id_debug;
+extern unsigned isIPv4HostMonitored(uint32_t ip4, int32_t zone);
+extern void checkSandboxDetection(tAppId appId);
+static inline void initializePriorityArray()
 {
-    if (app_id <= SF_APPID_MAX)
-        BITSET(SSLBitList, app_id);
+    int i;
+    for (i=0; i < SF_APPID_MAX; i++)
+        appIdPriorityArray[i] = 2;
 }
 
-static inline int bitListTestApp (tAppId app_id)
+static inline void setAppPriority (tAppId app_id, uint8_t  bit_val)
 {
-    if (BITTEST(SSLBitList, app_id))
-        return 1;
+    if (app_id < SF_APPID_MAX && bit_val <= APPID_MAX_PRIORITY )
+    appIdPriorityArray[app_id] = bit_val;
+}
+
+static inline int getAppPriority (tAppId app_id)
+{
+    if (app_id > APP_ID_NONE && app_id < SF_APPID_MAX)
+        return  appIdPriorityArray[app_id] ;
     else
-        return 0;
+        return -1;
 }
 
-static inline int testSSLAppIdForReinspect (tAppId app_id)
+static inline int ThirdPartyAppIDFoundProto(tAppId proto, tAppId* proto_list)
 {
-    if (app_id <= SF_APPID_MAX && (app_id == APP_ID_SSL || bitListTestApp(app_id)))
-        return 1;
+    unsigned int proto_cnt = 0;
+    while (proto_list[proto_cnt] != APP_ID_NONE)
+        if (proto_list[proto_cnt++] == proto)
+            return 1;    // found
+    return 0;            // not found
+}
+static inline int TPIsAppIdDone(void *tpSession)
+{
+    if (thirdparty_appid_module)
+    {
+        unsigned state;
+
+        if (tpSession)
+            state = thirdparty_appid_module->session_state_get(tpSession);
+        else
+            state = TP_STATE_INIT;
+        return (state  == TP_STATE_CLASSIFIED || state == TP_STATE_TERMINATED || state == TP_STATE_HA);
+    }
+    return true;
+}
+
+static inline int TPIsAppIdAvailable(void * tpSession)
+{
+    if (thirdparty_appid_module)
+    {
+        unsigned state;
+
+        if (tpSession)
+            state = thirdparty_appid_module->session_state_get(tpSession);
+        else
+            state = TP_STATE_INIT;
+        return (state == TP_STATE_CLASSIFIED || state == TP_STATE_TERMINATED || state == TP_STATE_MONITORING);
+    }
+    return true;
+}
+
+static inline int isTPProcessingDone(tAppIdData *flow)
+{
+    if (thirdparty_appid_module &&
+	!getAppIdFlag(flow, APPID_SESSION_NO_TPI) &&
+        (!TPIsAppIdDone(flow->tpsession) ||
+        getAppIdFlag(flow, APPID_SESSION_APP_REINSPECT | APPID_SESSION_APP_REINSPECT_SSL)))
+        return 0;
     else
-        return 0;
-}
-
-static inline void referredAppIdAddApp (tAppId app_id)
-{
-    if (app_id <= SF_APPID_MAX)
-        BITSET(referredAppIdBitList, app_id);
-}
-
-static inline int isReferredAppId (tAppId app_id)
-{
-    if (app_id <= SF_APPID_MAX && BITTEST(referredAppIdBitList, app_id))
         return 1;
-    else
-        return 0;
 }
-
 static inline tAppId isAppDetectionDone(tAppIdData *flow)
 {
-    return flow_checkflag(flow, FLOW_SERVICEDETECTED);
+    return getAppIdFlag(flow, APPID_SESSION_SERVICE_DETECTED);
 }
 
 static inline tAppId pickServiceAppId(tAppIdData *flow)
 {
     tAppId rval;
 
-    if (!flow || flow->common.fsf_type.flow_type != FLOW_TYPE_NORMAL)
+    if (!flow || flow->common.fsf_type.flow_type != APPID_SESSION_TYPE_NORMAL)
         return APP_ID_NONE;
 
-    if (flow_checkflag(flow, FLOW_SERVICEDETECTED) && flow->serviceAppId > APP_ID_NONE)
-        return flow->serviceAppId;
+    if (getAppIdFlag(flow, APPID_SESSION_SERVICE_DETECTED))
+    {
+        bool deferred = appInfoEntryFlagGet(flow->serviceAppId, APPINFO_FLAG_DEFER, appIdActiveConfigGet()) || appInfoEntryFlagGet(flow->tpAppId, APPINFO_FLAG_DEFER, appIdActiveConfigGet());
+
+        if (flow->serviceAppId > APP_ID_NONE && !deferred)
+            return flow->serviceAppId;
+        if (TPIsAppIdAvailable(flow->tpsession))
+        {
+            if (flow->tpAppId > APP_ID_NONE)
+                return flow->tpAppId;
+            else if (deferred)
+                return flow->serviceAppId;
+            else
+                rval = APP_ID_UNKNOWN_UI;
+        }
+        else
+            rval = flow->tpAppId;
+    }
+    else if (flow->tpAppId > APP_ID_NONE)
+        return flow->tpAppId;
     else
         rval = APP_ID_NONE;
 
@@ -159,10 +246,17 @@ static inline tAppId pickServiceAppId(tAppIdData *flow)
 
 static inline tAppId pickOnlyServiceAppId(tAppIdData *flow)
 {
-    if (!flow || flow->common.fsf_type.flow_type != FLOW_TYPE_NORMAL)
+    if (!flow || flow->common.fsf_type.flow_type != APPID_SESSION_TYPE_NORMAL)
         return APP_ID_NONE;
 
-    if (flow->serviceAppId > APP_ID_NONE)
+    bool deferred = appInfoEntryFlagGet(flow->serviceAppId, APPINFO_FLAG_DEFER, appIdActiveConfigGet()) || appInfoEntryFlagGet(flow->tpAppId, APPINFO_FLAG_DEFER, appIdActiveConfigGet());
+
+    if (flow->serviceAppId > APP_ID_NONE && !deferred)
+        return flow->serviceAppId;
+
+    if (TPIsAppIdAvailable(flow->tpsession) && flow->tpAppId > APP_ID_NONE)
+        return flow->tpAppId;
+    else if (deferred)
         return flow->serviceAppId;
 
     if (flow->serviceAppId < APP_ID_NONE)
@@ -173,7 +267,7 @@ static inline tAppId pickOnlyServiceAppId(tAppIdData *flow)
 
 static inline tAppId pickMiscAppId(tAppIdData *flow)
 {
-    if (!flow || flow->common.fsf_type.flow_type != FLOW_TYPE_NORMAL)
+    if (!flow || flow->common.fsf_type.flow_type != APPID_SESSION_TYPE_NORMAL)
         return APP_ID_NONE;
     if (flow->miscAppId > APP_ID_NONE)
         return flow->miscAppId;
@@ -182,7 +276,7 @@ static inline tAppId pickMiscAppId(tAppIdData *flow)
 
 static inline tAppId pickClientAppId(tAppIdData *flow)
 {
-    if (!flow || flow->common.fsf_type.flow_type != FLOW_TYPE_NORMAL)
+    if (!flow || flow->common.fsf_type.flow_type != APPID_SESSION_TYPE_NORMAL)
         return APP_ID_NONE;
     if (flow->clientAppId > APP_ID_NONE)
         return flow->clientAppId;
@@ -191,20 +285,70 @@ static inline tAppId pickClientAppId(tAppIdData *flow)
 
 static inline tAppId pickPayloadId(tAppIdData *flow)
 {
-    if (!flow || flow->common.fsf_type.flow_type != FLOW_TYPE_NORMAL)
+    if (!flow || flow->common.fsf_type.flow_type != APPID_SESSION_TYPE_NORMAL)
         return APP_ID_NONE;
-    if (flow->payloadAppId > APP_ID_NONE)
+
+    // if we have a deferred payload, just use it.
+    // we are not worried about the APP_ID_UNKNOWN case here
+    if (appInfoEntryFlagGet(flow->tpPayloadAppId, APPINFO_FLAG_DEFER_PAYLOAD, appIdActiveConfigGet()))
+        return flow->tpPayloadAppId;
+    else if (flow->payloadAppId > APP_ID_NONE)
         return flow->payloadAppId;
+    else if (flow->tpPayloadAppId > APP_ID_NONE)
+        return flow->tpPayloadAppId;
+
     return APP_ID_NONE;
 }
 
 static inline tAppId pickReferredPayloadId(tAppIdData *flow)
 {
-    if (!flow || flow->common.fsf_type.flow_type != FLOW_TYPE_NORMAL)
+    if (!flow || flow->common.fsf_type.flow_type != APPID_SESSION_TYPE_NORMAL)
         return APP_ID_NONE;
     if (flow->referredPayloadAppId > APP_ID_NONE)
         return flow->referredPayloadAppId;
     return APP_ID_NONE;
+}
+static inline tAppId fwPickServiceAppId(tAppIdData *session)
+{
+    tAppId appId;
+    appId = pickServiceAppId(session);
+    if (appId == APP_ID_NONE || appId== APP_ID_UNKNOWN_UI)
+        appId = session->encrypted.serviceAppId;
+    return appId;
+}
+
+static inline tAppId fwPickMiscAppId(tAppIdData *session)
+{
+    tAppId appId;
+    appId = pickMiscAppId(session);
+    if (appId == APP_ID_NONE)
+        appId = session->encrypted.miscAppId;
+    return appId;
+}
+
+static inline tAppId fwPickClientAppId(tAppIdData *session)
+{
+    tAppId appId;
+    appId = pickClientAppId(session);
+    return appId;
+}
+
+static inline tAppId fwPickPayloadAppId(tAppIdData *session)
+{
+    tAppId appId;
+    appId = pickPayloadId(session);
+    if (appId == APP_ID_NONE)
+        appId = session->encrypted.payloadAppId;
+    return appId;
+}
+
+static inline tAppId fwPickReferredPayloadAppId(tAppIdData *session)
+{
+    tAppId appId;
+    appId = pickReferredPayloadId(session);
+    if (appId == APP_ID_NONE)
+        appId = session->encrypted.referredAppId;
+    return appId;
 }
 
 static inline tAppIdData* appSharedGetData(const SFSnortPacket *p)
@@ -212,18 +356,15 @@ static inline tAppIdData* appSharedGetData(const SFSnortPacket *p)
     return _dpd.sessionAPI->get_application_data(p->stream_session, PP_APP_ID);
 }
 
-static inline void SSLSquelchAddApp (tAppId app_id)
+static inline unsigned int isFwSessionSslDecrypted(tAppIdData *session)
 {
-    if (app_id > APP_ID_NONE && app_id <= SF_APPID_MAX)
-        BITSET(SSLSquelchBitList, app_id);
+    return getAppIdFlag(session, APPID_SESSION_DECRYPTED);
 }
-
-static inline int SSLSquelch (tAppId app_id)
+static inline int testSSLAppIdForReinspect (tAppId app_id)
 {
-    if (app_id > APP_ID_NONE && app_id <= SF_APPID_MAX && BITTEST(SSLSquelchBitList, app_id))
+    if (app_id <= SF_APPID_MAX && (app_id == APP_ID_SSL || appInfoEntryFlagGet(app_id, APPINFO_FLAG_SSL_INSPECT, appIdActiveConfigGet())))
         return 1;
     else
         return 0;
 }
-
 #endif

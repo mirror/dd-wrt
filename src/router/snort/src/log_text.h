@@ -1,7 +1,7 @@
 
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -37,6 +37,9 @@
 #include "sfutil/sf_textlog.h"
 
 void LogPriorityData(TextLog*, bool doNewLine);
+#if defined(FEAT_OPEN_APPID)
+void LogAppID(TextLog*, const char* appName, bool doNewLine);
+#endif
 void LogXrefs(TextLog*, bool doNewLine);
 
 void LogIPPkt(TextLog*, int type, Packet*);
@@ -50,6 +53,10 @@ void LogTCPHeader(TextLog*, Packet*);
 void LogUDPHeader(TextLog*, Packet*);
 void LogICMPHeader(TextLog*, Packet*);
 void LogArpHeader(TextLog*, Packet*);
+
+#ifdef DUMP_BUFFER
+void LogBuffer(TextLog *, char *, char *, const int);
+#endif
 
 #if 0
 /* these are implemented in log_text.c but not public */

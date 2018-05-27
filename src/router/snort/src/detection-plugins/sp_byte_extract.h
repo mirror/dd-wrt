@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2010-2013 Sourcefire, Inc.
 ** Author: Ryan Jordan <ryan.jordan@sourcefire.com>
 **
@@ -32,6 +32,7 @@
 #define BYTE_EXTRACT_NO_VAR -1
 #define BYTE_EXTRACT_INVALID_ERR_FMT "Rule option %s uses an undefined byte_extract variable name (%s)." //format: rule name, variable name
 #define MAX_BYTES_TO_GRAB 4
+#define MAX_BYTES_TO_EXTRACT 10
 
 #define MIN_BYTE_EXTRACT_OFFSET -65535
 #define MAX_BYTE_EXTRACT_OFFSET 65535
@@ -51,6 +52,7 @@ typedef struct _ByteExtractData
     int8_t var_number;
     char *name;
     RuleOptByteOrderFunc byte_order_func;
+    uint32_t bitmask_val;
 } ByteExtractData;
 
 void SetupByteExtract(void);
@@ -59,11 +61,16 @@ int ByteExtractCompare(void *l, void *r);
 int DetectByteExtract(void *, Packet *);
 void ByteExtractFree(void *d);
 
+void isvalidstr(char *str,char *feature);
 int8_t GetVarByName(char *name);
 void ClearVarNames(OptFpList *fpl);
 int8_t AddVarNameToList(ByteExtractData *data);
 
 int GetByteExtractValue(uint32_t *dst, int8_t var_number);
 int SetByteExtractValue(uint32_t value, int8_t var_number);
+
+uint32_t getNumberTailingZerosInBitmask(uint32_t);
+int numBytesInBitmask(uint32_t );
+void RuleOptionBitmaskParse(uint32_t* , char *, uint32_t ,char* );
 
 #endif /* __SP_BYTE_EXTRACT_H__ */

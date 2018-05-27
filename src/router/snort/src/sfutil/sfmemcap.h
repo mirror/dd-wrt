@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -40,7 +40,6 @@ void     sfmemcap_delete( MEMCAP * mc );
 void   * sfmemcap_alloc(MEMCAP * mc, unsigned long nbytes);
 void     sfmemcap_showmem(MEMCAP * mc );
 void     sfmemcap_free( MEMCAP * mc, void * memory);
-char   * sfmemcap_strdup(MEMCAP * mc, const char *str);
 void   * sfmemcap_dupmem(MEMCAP * mc, void * src, unsigned long n );
 
 #endif

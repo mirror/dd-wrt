@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -26,7 +26,7 @@
 #include <inttypes.h>
 #include "httpCommon.h"
 
-int addMlmpPattern(void *mlpMatcher, const uint8_t *host_pattern, int host_pattern_size,
+int addMlmpPattern(void *mlpMatcher, HostUrlPatternsList **hostUrlPatternsList, const uint8_t *host_pattern, int host_pattern_size,
         const uint8_t *path_pattern, int path_pattern_size, const uint8_t *query_pattern, int query_pattern_size,
         tAppId appId, uint32_t payload_id, uint32_t service_id, uint32_t client_id, DHPSequence seq);
 void destroyHostUrlMatcher(void **mlpMatcher);
@@ -36,6 +36,7 @@ int matchQueryElements(tMlpPattern *packetData,
         size_t appVersionSize);
 
 uint32_t parseMultipleHTTPPatterns(const char *pattern, tMlmpPattern *parts, u_int32_t numPartLimit, int level);
+void destroyHostUrlPatternList(HostUrlPatternsList **pHostUrlPatternsList);
 
 #endif /*__HTTP_URL_PATTERNS_H__ */
 

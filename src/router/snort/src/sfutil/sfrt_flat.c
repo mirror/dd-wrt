@@ -1,5 +1,5 @@
 /*
- ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2011-2013 Sourcefire, Inc.
  **
  **
@@ -28,6 +28,7 @@
 #include "sf_types.h"
 #include "sfrt_flat.h"
 
+#define MINIMAL_TABLE_MEMORY    (1024*512)  /*Basic table cost is around 512k*/
 
 /* Create new lookup table
  * @param   table_flat_type Type of table. Uses the types enumeration in route.h
@@ -40,6 +41,7 @@ table_flat_t *sfrt_flat_new(char table_flat_type, char ip_type,  long data_size,
     table_flat_t *table;
     MEM_OFFSET table_ptr;
     uint8_t *base;
+    long data_size_max = 1;
 
     table_ptr = segment_malloc(sizeof(table_flat_t));
 
@@ -72,8 +74,15 @@ table_flat_t *sfrt_flat_new(char table_flat_type, char ip_type,  long data_size,
     /* mem_cap is specified in megabytes, but internally uses bytes. Convert */
     mem_cap *= 1024*1024;
 
+    /* Maximum allowable number of stored entries based on memcap */
+    if (mem_cap > MINIMAL_TABLE_MEMORY)
+        data_size_max = (mem_cap - MINIMAL_TABLE_MEMORY)/sizeof(INFO);
+
     /* Maximum allowable number of stored entries */
-    table->max_size = data_size;
+    if (data_size < data_size_max)
+        table->max_size = data_size;
+    else
+        table->max_size = data_size_max;
 
     table->data = (INFO)segment_calloc(sizeof(INFO) * table->max_size, 1);
 
@@ -137,9 +146,9 @@ table_flat_t *sfrt_flat_new(char table_flat_type, char ip_type,  long data_size,
         table->rt6 = sfrt_dir_flat_new(mem_cap, 8, 16,16,16,16,16,16,16,16);
         break;
     case DIR_8x16:
-        table->rt = sfrt_dir_flat_new( mem_cap, 4, 16,8,4,4);
+        table->rt = sfrt_dir_flat_new(mem_cap, 7, 16,4,4,2,2,2,2);
         table->rt6 = sfrt_dir_flat_new(mem_cap, 16,
-                8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8);
+            8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8);
         break;
     };
 
@@ -204,15 +213,16 @@ void sfrt_flat_free(TABLE_PTR table_ptr)
 }
 
 /* Perform a lookup on value contained in "ip" */
-GENERIC sfrt_flat_lookup(void *adr, table_flat_t *table)
+GENERIC sfrt_flat_lookup(sfaddr_t *ip, table_flat_t *table)
 {
     tuple_flat_t tuple;
+    uint32_t* adr;
+    int numAdrDwords;
     INFO *data;
-    sfip_t *ip;
-    TABLE_PTR rt = 0;
+    TABLE_PTR rt;
     uint8_t *base;
 
-    if(!adr)
+    if(!ip)
     {
         return NULL;
     }
@@ -222,22 +232,20 @@ GENERIC sfrt_flat_lookup(void *adr, table_flat_t *table)
         return NULL;
     }
 
-    ip = adr;
-    if (ip->family == AF_INET)
+    if (sfaddr_family(ip) == AF_INET)
     {
+        adr = sfaddr_get_ip4_ptr(ip);
+        numAdrDwords = 1;
         rt = table->rt;
     }
-    else if (ip->family == AF_INET6)
+    else
     {
+        adr = sfaddr_get_ip6_ptr(ip);
+        numAdrDwords = 4;
         rt = table->rt6;
     }
 
-    if (!rt)
-    {
-        return NULL;
-    }
-
-    tuple = sfrt_dir_flat_lookup(ip, rt);
+    tuple = sfrt_dir_flat_lookup(adr, numAdrDwords, rt);
 
     if(tuple.index >= table->num_ent)
     {
@@ -256,19 +264,20 @@ GENERIC sfrt_flat_lookup(void *adr, table_flat_t *table)
 
 /* Insert "ip", of length "len", into "table", and have it point to "ptr" */
 /* Insert "ip", of length "len", into "table", and have it point to "ptr" */
-int sfrt_flat_insert(void *adr, unsigned char len, INFO ptr,
+int sfrt_flat_insert(sfcidr_t *ip, unsigned char len, INFO ptr,
         int behavior, table_flat_t* table, updateEntryInfoFunc updateEntry)
 {
     int index;
     int res =  RT_SUCCESS;
     INFO *data;
-    sfip_t *ip;
     tuple_flat_t tuple;
-    TABLE_PTR rt = 0;
+    uint32_t* adr;
+    int numAdrDwords;
+    TABLE_PTR rt;
     uint8_t *base;
     int64_t bytesAllocated;
 
-    if(!adr )
+    if(!ip)
     {
         return RT_INSERT_FAILURE;
     }
@@ -282,29 +291,31 @@ int sfrt_flat_insert(void *adr, unsigned char len, INFO ptr,
         return RT_INSERT_FAILURE;
     }
 
-    if( (table->ip_type == IPv4 && len > 32) ||
-            (table->ip_type == IPv6 && len > 128) )
+    if(len > 128)
     {
         return RT_INSERT_FAILURE;
     }
 
-    ip = adr;
 
-
-    if (ip->family == AF_INET)
+    if (sfaddr_family(&ip->addr) == AF_INET)
     {
+        if (len < 96)
+        {
+            return RT_INSERT_FAILURE;
+        }
+        len -= 96;
+        adr = sfip_get_ip4_ptr(ip);
+        numAdrDwords = 1;
         rt = table->rt;
     }
-    else if (ip->family == AF_INET6)
+    else
     {
+        adr = sfip_get_ip6_ptr(ip);
+        numAdrDwords = 4;
         rt = table->rt6;
     }
-    if (!rt)
-    {
-        return RT_INSERT_FAILURE;
-    }
 
-    tuple = sfrt_dir_flat_lookup(ip, table->rt);
+    tuple = sfrt_dir_flat_lookup(adr, numAdrDwords, rt);
 
     base = (uint8_t *)segment_basePtr();
     data = (INFO *)(&base[table->data]);
@@ -339,7 +350,7 @@ int sfrt_flat_insert(void *adr, unsigned char len, INFO ptr,
 
     /* The actual value that is looked-up is an index
      * into the data table. */
-    res = sfrt_dir_flat_insert(ip, len, index, behavior, rt, updateEntry, data);
+    res = sfrt_dir_flat_insert(adr, numAdrDwords, len, index, behavior, rt, updateEntry, data);
 
     /* Check if we ran out of memory. If so, need to decrement
      * table->num_ent */

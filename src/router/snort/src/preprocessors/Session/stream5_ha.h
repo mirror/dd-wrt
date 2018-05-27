@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2004-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -65,9 +65,9 @@ typedef struct
 extern int ha_set_api(unsigned proto, const HA_Api *);
 
 // Used with StreamLWSession.ha_flags:
-#define HA_FLAG_STANDBY     0x01     // session is not active
-#define HA_FLAG_NEW         0x02     // flow has never been synchronized
-#define HA_FLAG_MODIFIED    0x04     // session HA state information has been modified
+#define HA_FLAG_STANDBY         0x01    // session is not active
+#define HA_FLAG_NEW             0x02    // flow has never been synchronized
+#define HA_FLAG_MODIFIED        0x04    // session HA state information has been modified
 #define HA_FLAG_MAJOR_CHANGE    0x08    // session HA state information has been modified in a major fashion
 #define HA_FLAG_CRITICAL_CHANGE 0x10    // session HA state information has been modified in a critical fashion
 #define HA_FLAG_DELETED         0x20    // flow deletion message has been sent
@@ -92,8 +92,15 @@ void SessionHAPostConfigInit(struct _SnortConfig *sc, int unused, void *arg);
 void SessionCleanHA(void);
 void SessionPrintHAStats(void);
 void SessionResetHAStats(void);
-void SessionProcessHA(void *ssnptr);
+void SessionProcessHA(void *ssnptr, const DAQ_PktHdr_t *pkthdr);
 void SessionHANotifyDeletion(SessionControlBlock *scb);
+#ifdef HAVE_DAQ_QUERYFLOW
+#ifdef REG_TEST
+int SessionHAQueryDAQState( DAQ_PktHdr_t *pkthdr);
+#else
+int SessionHAQueryDAQState(const  DAQ_PktHdr_t *pkthdr);
+#endif
+#endif
 
 #endif /* ENABLE_HA */
 

@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -30,6 +30,7 @@
 #include <ctype.h>
 #include <syslog.h>
 #include <limits.h>
+#include "appId.h"
 #include "appInfoTable.h"
 #include "Unified2_common.h"
 
@@ -39,66 +40,224 @@
 
 #define MAX_TABLE_LINE_LEN      1024
 #define CONF_SEPARATORS         "\t\n\r"
+#define MIN_MAX_TP_FLOW_DEPTH   1
+#define MAX_MAX_TP_FLOW_DEPTH   1000000
+#define MIN_HOST_PORT_APP_CACHE_LOOKUP_INTERVAL    1
+#define MAX_HOST_PORT_APP_CACHE_LOOKUP_INTERVAL    1000000
+#define MIN_HOST_PORT_APP_CACHE_LOOKUP_RANGE       1
+#define MAX_HOST_PORT_APP_CACHE_LOOKUP_RANGE       1000000
 
-typedef struct DynamicArray
+struct DynamicArray
 { 
     void **table;
+    size_t  indexStart;
+    size_t  indexCurrent;
     size_t  usedCount;
     size_t  allocatedCount;
     size_t  stepSize;
-} tDynamicArray;
+};
+typedef struct DynamicArray tDynamicArray;
 
-static AppInfoTableEntry *AppInfoList;
-static AppInfoTableEntry *AppInfoTable[SF_APPID_MAX];
-static AppInfoTableEntry *AppInfoTableByService[SF_APPID_MAX];
-static AppInfoTableEntry *AppInfoTableByClient[SF_APPID_MAX];
-static AppInfoTableEntry *AppInfoTableByPayload[SF_APPID_MAX];
-static void appIdConfLoad (const char *path);
-static tAppId appGetAppIdFromSnortId(int16_t snortId);
-
-tDynamicArray AppInfoTableDyn;
-
-AppInfoTableEntry* getAppInfoEntry(tAppId appId)
+static inline struct DynamicArray* dynamicArrayCreate(unsigned indexStart)
 {
-    if (appId > APP_ID_NONE && appId < SF_APPID_MAX)
-        return AppInfoTable[appId];
-    if (appId >= SF_APPID_DYNAMIC_MIN && appId < (SF_APPID_DYNAMIC_MIN + AppInfoTableDyn.usedCount))
-        return AppInfoTableDyn.table[appId - SF_APPID_DYNAMIC_MIN];
-    return NULL;
+    struct DynamicArray *array;
+
+    if ((array = calloc(1, sizeof(*array))))
+    {
+        array->stepSize = 1; 
+        array->indexStart = indexStart;
+    }
+    return array;
 }
 
-void appInfoTableFini(void)
+static inline void dynamicArrayDestroy(struct DynamicArray *array)
 {
+    unsigned i;
     AppInfoTableEntry *entry;
 
-    while ((entry = AppInfoList))
+    if (!array)
+        return;
+    for (i = 0; i < array->usedCount; i++)
     {
-        AppInfoList = entry->next;
-#ifdef DEBUG_APP_NAME
+        entry = array->table[i];
         free(entry->appName);
-#endif
         free(entry);
     }
 
-    unsigned i;
-    for (i = 0; i < AppInfoTableDyn.usedCount; i++)
-    {
-        entry = AppInfoTableDyn.table[i];
-#ifdef DEBUG_APP_NAME
-        free(entry->appName);
-#endif
-        free(entry);
-    }
-
-    free(AppInfoTableDyn.table);
-    memset(&AppInfoTableDyn, 0, sizeof(AppInfoTableDyn));
+    free(array->table);
+    free(array);
 }
 
-
-AppInfoTableEntry* createAppInfoEntry(const char *appName)
+static inline void dynamicArraySetIndex(struct DynamicArray *array, unsigned index, void* data)
 {
-    void **tmp;
-    int16_t snortId;
+    if (index >= array->indexStart && index < (array->indexStart + array->usedCount))
+        array->table[index - array->indexStart] = data;
+} 
+static inline void* dynamicArrayGetIndex(struct DynamicArray *array, unsigned index)
+{
+    if (index >= array->indexStart && index < (array->indexStart + array->usedCount))
+        return array->table[index - array->indexStart];
+    return NULL;
+} 
+static inline bool dynamicArrayCreateIndex(struct DynamicArray *array, unsigned *index)
+{
+    if (array->usedCount == array->allocatedCount)
+    {
+        void** tmp = realloc(array->table, (array->allocatedCount + array->stepSize)*sizeof(*tmp));
+        if (!tmp)
+        {
+            return false;
+        }
+        array->table = tmp;
+        array->allocatedCount += array->stepSize;
+    }
+    *index = array->indexStart + (array->usedCount++);
+    return true;
+} 
+
+static inline void* dynamicArrayGetFirst(struct DynamicArray *array)
+{
+    AppInfoTableEntry *entry;
+    for (array->indexCurrent = 0; array->indexCurrent < array->usedCount; array->indexCurrent++)
+    {
+        if ((entry = array->table[array->indexCurrent]))
+            return entry;
+    }
+    return NULL;
+}
+static inline void* dynamicArrayGetNext(struct DynamicArray *array)
+{
+    AppInfoTableEntry *entry;
+    for (array->indexCurrent++; array->indexCurrent < array->usedCount; array->indexCurrent++)
+    {
+        if ((entry = array->table[array->indexCurrent]))
+            return entry;
+    }
+    return NULL;
+}
+// End of Dynamic array
+SFGHASH*  appNameHashInit()
+{
+    SFGHASH  *appNameHash;
+    appNameHash = sfghash_new(65, 0, 0 /* alloc copies of lowercased keys */, NULL);
+    if (!appNameHash)
+    {
+        _dpd.fatalMsg("AppNameHash: Failed to Initialize\n");
+    }
+    return appNameHash;
+}
+void  appNameHashFini(SFGHASH *appNameHash)
+{
+    if (appNameHash)
+    {
+        sfghash_delete(appNameHash);
+    }
+}
+
+static inline char *strdupToLower(const char *source)
+{
+    int index;
+    char *dest = malloc(strlen(source)+1);
+    
+    if (dest) 
+    {
+        for(index = 0;; index++)
+        {
+            if (source[index])
+            {
+                dest[index] = tolower(source[index]);
+                continue;
+            }
+            else
+            {
+                dest[index] = '\0';
+                break;
+            }
+        }
+    }
+    return dest;
+}
+
+void appNameHashAdd(SFGHASH *appNameHash, const char *appName, void *data)
+{
+    char *searchName;
+    int errCode;
+
+    if (!appName || !appNameHash)
+        return;
+    
+    searchName = strdupToLower(appName);
+    if (!searchName)
+        return;
+        
+    if (SFGHASH_OK == (errCode = sfghash_add(appNameHash, searchName, data)))
+    {
+        DEBUG_WRAP(DebugMessage(DEBUG_APPID, "App name added for %s\n", appName););
+    }
+    else if (SFGHASH_INTABLE == errCode)
+    {
+        /* Note that, although this entry is not placed in the hash table, 
+           being a duplicate, it remains in the list of allocated entries
+           for cleanup by appInfoTableFini() */
+        
+        // Rediscover the existing, hashed entry for the purpose of a complete error message.
+        AppInfoTableEntry* tableEntry = (AppInfoTableEntry*)sfghash_find(appNameHash, searchName);
+
+        if (tableEntry)
+        {
+            _dpd.errMsg("App name, \"%s\", is a duplicate of \"%s\" and has been ignored.\n", 
+                appName, tableEntry->appName );
+        }
+        else
+        {
+            _dpd.errMsg("App name, \"%s\", has been ignored. Hash key \"%s\" is not unique.\n", 
+                appName, searchName );
+        }
+    }
+    free(searchName);
+}
+
+void* appNameHashFind(SFGHASH *appNameHash, const char *appName)
+{
+    void *data;
+    char *searchName;
+
+    if (!appName || !appNameHash)
+        return NULL;
+
+    searchName = strdupToLower(appName);
+    if (!searchName)
+        return NULL;
+        
+    data = sfghash_find(appNameHash, searchName);
+
+    free(searchName);
+
+    return data;
+}
+// End of appName hash
+
+static void appIdConfLoad (tAppidStaticConfig* appidSC, const char *path);
+
+static unsigned int getAppIdStaticIndex(tAppId appid)
+{
+    if (appid > 0 && appid < SF_APPID_BUILDIN_MAX) 
+        return appid;
+    if (appid >= SF_APPID_CSD_MIN && appid < SF_APPID_CSD_MIN+(SF_APPID_MAX-SF_APPID_BUILDIN_MAX))
+        return (SF_APPID_BUILDIN_MAX + appid - SF_APPID_CSD_MIN);
+    return 0;
+}
+
+AppInfoTableEntry* appInfoEntryGet(tAppId appId, const tAppIdConfig *pConfig)
+{
+    tAppId tmp;
+    if ((tmp = getAppIdStaticIndex(appId)))
+        return pConfig->AppInfoTable[tmp];
+    return dynamicArrayGetIndex(pConfig->AppInfoTableDyn, appId);
+}
+
+AppInfoTableEntry* appInfoEntryCreate(const char *appName, tAppIdConfig *pConfig)
+{
     tAppId appId;
     AppInfoTableEntry *entry;
    
@@ -108,50 +267,41 @@ AppInfoTableEntry* createAppInfoEntry(const char *appName)
         return NULL;
     }
 
-    snortId = _dpd.findProtocolReference(appName);
-    if (snortId == SFTARGET_UNKNOWN_PROTOCOL)
+    entry = appNameHashFind(pConfig->AppNameHash, appName);
+    if (!entry)
     {
-        if (AppInfoTableDyn.usedCount == AppInfoTableDyn.allocatedCount)
+        if (!dynamicArrayCreateIndex(pConfig->AppInfoTableDyn, (uint32_t *)&appId))
         {
-            tmp = realloc(AppInfoTableDyn.table, (AppInfoTableDyn.allocatedCount + AppInfoTableDyn.stepSize)*sizeof(*tmp));
-            if (!tmp)
-            {
-                return NULL;
-            }
-            AppInfoTableDyn.table = tmp;
-            AppInfoTableDyn.allocatedCount += AppInfoTableDyn.stepSize;
+            return NULL;
         }
 
         if ((entry = calloc(1, sizeof(*entry))))
         {
-            entry->snortId = _dpd.addProtocolReference(appName);
-            entry->appId = SF_APPID_DYNAMIC_MIN + (AppInfoTableDyn.usedCount);
+            entry->appId = appId;
             entry->serviceId = entry->appId;
             entry->clientId = entry->appId;
             entry->payloadId = entry->appId;
-#ifdef DEBUG_APP_NAME
             entry->appName = strdup(appName);
             if (!entry->appName)
+            {
                 _dpd.errMsg("failed to allocate appName");
-#endif
+                free(entry);
+                return NULL;
+            }
 
-            AppInfoTableDyn.table[AppInfoTableDyn.usedCount++] = entry;
+            dynamicArraySetIndex(pConfig->AppInfoTableDyn, appId, entry);
+            if (pConfig->AppNameHash != NULL)
+                appNameHashAdd(pConfig->AppNameHash, appName, entry);
         }
         else
         {
             _dpd.errMsg("calloc failure\n");
         }
     }
-    else
-    {
-        appId = appGetAppIdFromSnortId(snortId);
-        entry = getAppInfoEntry(appId); 
-    }
-
     return entry;
 }
 
-void appInfoTableInit(const char *path)
+void appInfoTableInit(tAppidStaticConfig* appidSC, tAppIdConfig* pConfig)
 {
     FILE *tableFile;
     const char *token;
@@ -161,24 +311,20 @@ void appInfoTableInit(const char *path)
     uint32_t clientId, serviceId, payloadId;
     char filepath[PATH_MAX];
     char *appName;
-    char *appKey;
+    char *snortName=NULL;
 
-    appInfoTableFini();
-    memset(AppInfoTable, 0, sizeof(AppInfoTable));
-    memset(AppInfoTableByService, 0, sizeof(AppInfoTableByService));
-    memset(AppInfoTableByClient, 0, sizeof(AppInfoTableByClient));
-    memset(AppInfoTableByPayload, 0, sizeof(AppInfoTableByPayload));
+    pConfig->AppInfoTableDyn = dynamicArrayCreate(SF_APPID_DYNAMIC_MIN);
 
-    snprintf(filepath, sizeof(filepath), "%s/odp/%s", path, APP_MAPPING_FILE);
+    snprintf(filepath, sizeof(filepath), "%s/odp/%s", appidSC->app_id_detector_path, APP_MAPPING_FILE);
 
     tableFile = fopen(filepath, "r");
     if (tableFile == NULL)
     {
-        _dpd.logMsg("Could not open RnaAppMapping Table file: %s\n", filepath);
+        _dpd.errMsg("Could not open RnaAppMapping Table file: %s\n", filepath);
         return;
     }
 
-    _dpd.logMsg("    AppInfo read from %s\n", filepath);
+    DEBUG_WRAP(DebugMessage(DEBUG_APPID, "    AppInfo read from %s\n", filepath););
 
     while (fgets(buf, sizeof(buf), tableFile))
     {
@@ -236,59 +382,98 @@ void appInfoTableInit(const char *path)
         payloadId = strtol(token, NULL, 10);
 
         /* snort service key, if it exists */
-        strtok(NULL, CONF_SEPARATORS);
-        appKey = strtok(NULL, CONF_SEPARATORS);
-        if (strlen(appKey) >= MAX_EVENT_APPNAME_LEN)
+        token = strtok(NULL, CONF_SEPARATORS);
+        if (token)
         {
-            appKey[MAX_EVENT_APPNAME_LEN-1] = 0;
-            _dpd.errMsg("appKey \'%s\' truncated to \'%s\'\n", token, appKey);
+            snortName = strdup(token);
+            if (!snortName)
+            {
+                _dpd.errMsg("malloc failure\n");
+                free(appName);
+                continue;
+            }
         }
 
-        if ((entry = calloc(1, sizeof(*entry))))
+
+        entry = calloc(1, sizeof(*entry));
+        if (!entry)
         {
-            entry->next = AppInfoList;
-            AppInfoList = entry;
-
-            entry->snortId = _dpd.addProtocolReference(appKey);
-
-#ifdef DEBUG_APP_NAME
-            entry->appName = appName;
-#else
+            _dpd.errMsg("AppInfoTable: Memory allocation failure\n");
             free(appName);
-#endif
-
-
-            entry->appId = appId;
-            entry->serviceId = serviceId;
-            entry->clientId = clientId;
-            entry->payloadId = payloadId;
-            if (entry->appId > 0 && entry->appId < SF_APPID_MAX)
-                AppInfoTable[entry->appId] = entry;
-            if (entry->serviceId > 0 && entry->serviceId < SF_APPID_MAX)
-                AppInfoTableByService[entry->serviceId] = entry;
-            if (entry->clientId > 0 && entry->clientId < SF_APPID_MAX)
-                AppInfoTableByClient[entry->clientId] = entry;
-            if (entry->payloadId > 0 && entry->payloadId < SF_APPID_MAX)
-                AppInfoTableByPayload[entry->payloadId] = entry;
+            free(snortName);
+            continue;
         }
+
+        entry->next = pConfig->AppInfoList;
+        pConfig->AppInfoList = entry;
+
+        if (snortName)
+        {
+            entry->snortId = _dpd.addProtocolReference(snortName);
+            free(snortName);
+            snortName = NULL;
+        }
+
+        entry->appName = appName;
+
+        entry->appId = appId;
+        entry->serviceId = serviceId;
+        entry->clientId = clientId;
+        entry->payloadId = payloadId;
+        entry->priority = APP_PRIORITY_DEFAULT;
+
+        if ((appId = getAppIdStaticIndex(entry->appId)))
+            pConfig->AppInfoTable[appId] = entry;
+        if ((appId = getAppIdStaticIndex(entry->serviceId)))
+            pConfig->AppInfoTableByService[appId] = entry;
+        if ((appId = getAppIdStaticIndex(entry->clientId)))
+            pConfig->AppInfoTableByClient[appId] = entry;
+        if ((appId = getAppIdStaticIndex(entry->payloadId)))
+            pConfig->AppInfoTableByPayload[appId] = entry;
+
+        if (!pConfig->AppNameHash)
+        {
+            pConfig->AppNameHash = appNameHashInit();
+        }
+        appNameHashAdd(pConfig->AppNameHash, appName, entry);
     }
     fclose(tableFile);
 
-    AppInfoTableDyn.table = NULL;
-    AppInfoTableDyn.usedCount = 0;
-    AppInfoTableDyn.allocatedCount = 0;
-    AppInfoTableDyn.stepSize = 1; /*TBD increase it to 100 after testing */
-
     /* Configuration defaults. */
-    appIdConfig.rtmp_max_packets = 15;
+    appidSC->rtmp_max_packets = 15;
+    appidSC->mdns_user_reporting = 1;
+    appidSC->dns_host_reporting = 1;
+    appidSC->max_tp_flow_depth = 5;
+    appidSC->http2_detection_enabled = 0;
+    appidSC->host_port_app_cache_lookup_interval = 10;
+    appidSC->host_port_app_cache_lookup_range = 100000;
+    appidSC->is_host_port_app_cache_runtime = 1;
+    appidSC->recheck_for_unknown_appid = 0;
 
-    snprintf(filepath, sizeof(filepath), "%s/odp/%s", path, APP_CONFIG_FILE);
-    appIdConfLoad (filepath);
-    snprintf(filepath, sizeof(filepath), "%s/custom/%s", path, USR_CONFIG_FILE);
-    appIdConfLoad (filepath);
+    snprintf(filepath, sizeof(filepath), "%s/odp/%s", appidSC->app_id_detector_path, APP_CONFIG_FILE);
+    appIdConfLoad (appidSC, filepath);
+    snprintf(filepath, sizeof(filepath), "%s/../%s", appidSC->app_id_detector_path, USR_CONFIG_FILE);
+    appIdConfLoad (appidSC, filepath);
 }
 
-void appInfoTableDump(void)
+void appInfoTableFini(tAppIdConfig *pConfig)
+{
+    AppInfoTableEntry *entry;
+
+    while ((entry = pConfig->AppInfoList))
+    {
+        pConfig->AppInfoList = entry->next;
+        free(entry->appName);
+        free(entry);
+    }
+
+    dynamicArrayDestroy(pConfig->AppInfoTableDyn);
+    pConfig->AppInfoTableDyn = NULL;
+
+    appNameHashFini(pConfig->AppNameHash);
+}
+
+void appInfoTableDump(tAppIdConfig *pConfig)
 {
     AppInfoTableEntry *entry;
     tAppId appId;
@@ -296,111 +481,90 @@ void appInfoTableDump(void)
     _dpd.errMsg("Cisco provided detectors:\n");
     for (appId = 1; appId < SF_APPID_MAX; appId++)
     {
-        entry = AppInfoTable[appId];
+        entry = pConfig->AppInfoTable[appId];
         if (entry)
-#ifdef DEBUG_APP_NAME
             _dpd.errMsg("%s\t%d\t%s\n", entry->appName, entry->appId, (entry->flags & APPINFO_FLAG_ACTIVE)? "active":"inactive");
-#else
-            _dpd.errMsg("%s\t%d\t%s\n", entry->appId, entry->appId, (entry->flags & APPINFO_FLAG_ACTIVE)? "active":"inactive");
-#endif
     }
     _dpd.errMsg("User provided detectors:\n");
-    for (appId = SF_APPID_DYNAMIC_MIN; appId < (SF_APPID_DYNAMIC_MIN + AppInfoTableDyn.usedCount); appId++)
+    for (entry = dynamicArrayGetFirst(pConfig->AppInfoTableDyn); entry; entry = dynamicArrayGetNext(pConfig->AppInfoTableDyn))
     {
-        entry = AppInfoTableDyn.table[appId - SF_APPID_DYNAMIC_MIN];
-        if (entry)
-#ifdef DEBUG_APP_NAME
-            _dpd.errMsg("%s\t%d\t%s\n", entry->appName, entry->appId, (entry->flags & APPINFO_FLAG_ACTIVE)? "active":"inactive");
-#else
-            _dpd.errMsg("%s\t%d\t%s\n", entry->appId, entry->appId, (entry->flags & APPINFO_FLAG_ACTIVE)? "active":"inactive");
-#endif
+        _dpd.errMsg("%s\t%d\t%s\n", entry->appName, entry->appId, (entry->flags & APPINFO_FLAG_ACTIVE)? "active":"inactive");
     }
 }
-tAppId appGetAppFromServiceId(uint32_t appId)
+tAppId appGetAppFromServiceId(uint32_t appId, tAppIdConfig *pConfig)
 {
     AppInfoTableEntry *entry;
+    tAppId tmp;
 
-    if (appId > APP_ID_NONE && appId < SF_APPID_MAX)
-        entry = AppInfoTableByService[appId];
-    else if (appId >= SF_APPID_DYNAMIC_MIN && appId < (SF_APPID_DYNAMIC_MIN + AppInfoTableDyn.usedCount))
-        entry = AppInfoTableDyn.table[appId - SF_APPID_DYNAMIC_MIN];
-    else
-        entry = NULL;
+    if ((tmp = getAppIdStaticIndex(appId)))
+        entry = pConfig->AppInfoTableByService[tmp];
+    else 
+        entry = dynamicArrayGetIndex(pConfig->AppInfoTableDyn, appId);
 
     return entry ? entry->appId : APP_ID_NONE;
 }
 
-tAppId appGetAppFromClientId(uint32_t appId)
+tAppId appGetAppFromClientId(uint32_t appId, tAppIdConfig *pConfig)
 {
     AppInfoTableEntry *entry;
+    tAppId tmp;
 
-    if (appId > APP_ID_NONE && appId < SF_APPID_MAX)
-        entry = AppInfoTableByClient[appId];
-    else if (appId >= SF_APPID_DYNAMIC_MIN && appId < (SF_APPID_DYNAMIC_MIN + AppInfoTableDyn.usedCount))
-        entry = AppInfoTableDyn.table[appId - SF_APPID_DYNAMIC_MIN];
-    else
-        entry = NULL;
+    if ((tmp = getAppIdStaticIndex(appId)))
+        entry = pConfig->AppInfoTableByClient[tmp];
+    else 
+        entry = dynamicArrayGetIndex(pConfig->AppInfoTableDyn, appId);
 
     return entry ? entry->appId : APP_ID_NONE;
 }
-tAppId appGetAppFromPayloadId(uint32_t appId)
+tAppId appGetAppFromPayloadId(uint32_t appId, tAppIdConfig *pConfig)
 {
     AppInfoTableEntry *entry;
+    tAppId tmp;
 
-    if (appId > APP_ID_NONE && appId < SF_APPID_MAX)
-        entry = AppInfoTableByPayload[appId];
-    else if (appId >= SF_APPID_DYNAMIC_MIN && appId < (SF_APPID_DYNAMIC_MIN + AppInfoTableDyn.usedCount))
-        entry = AppInfoTableDyn.table[appId - SF_APPID_DYNAMIC_MIN];
-    else
-        entry = NULL;
+    if ((tmp = getAppIdStaticIndex(appId)))
+        entry = pConfig->AppInfoTableByPayload[tmp];
+    else 
+        entry = dynamicArrayGetIndex(pConfig->AppInfoTableDyn, appId);
 
     return entry ? entry->appId : APP_ID_NONE;
 }
-
-tAppId appGetSnortIdFromAppId(tAppId appId)
+const char * appGetAppName(int32_t appId)
 {
     AppInfoTableEntry *entry;
+    tAppIdConfig *pConfig = appIdActiveConfigGet();
+    tAppId tmp;
 
-    if (appId > APP_ID_NONE && appId < SF_APPID_MAX)
-        entry = AppInfoTable[appId];
-    else if (appId >= SF_APPID_DYNAMIC_MIN && appId < (SF_APPID_DYNAMIC_MIN + AppInfoTableDyn.usedCount))
-        entry = AppInfoTableDyn.table[appId - SF_APPID_DYNAMIC_MIN];
-    else
-        entry = NULL;
+    if ((tmp = getAppIdStaticIndex(appId)))
+        entry = pConfig->AppInfoTable[tmp];
+    else 
+        entry = dynamicArrayGetIndex(pConfig->AppInfoTableDyn, appId);
 
-    return entry ? entry->snortId : 0;
+    return entry ? entry->appName : NULL;
 }
 
-/*inefficient but used only when user overrides cisco provided detector.  */
-static tAppId appGetAppIdFromSnortId(int16_t snortId)
+int32_t appGetAppId(const char *appName)
 {
-    tAppId i;
+    AppInfoTableEntry *entry;
+    tAppIdConfig *pConfig = appIdActiveConfigGet();
 
-    for (i = 1; i < SF_APPID_MAX; i++)
-        if (AppInfoTable[i] && AppInfoTable[i]->snortId == snortId)
-            return i;
-
-    for (i = SF_APPID_DYNAMIC_MIN; i < (SF_APPID_DYNAMIC_MIN + AppInfoTableDyn.usedCount); i++)
-    {
-        AppInfoTableEntry * entry = AppInfoTableDyn.table[i - SF_APPID_DYNAMIC_MIN];
-        if (entry && entry->snortId == snortId)
-            return i;
-    }
-
-    return APP_ID_NONE;
+    entry = appNameHashFind(pConfig->AppNameHash, appName);
+    return entry?entry->appId:0;
 }
 
 void appInfoSetActive(tAppId appId, bool active)
 {
     AppInfoTableEntry *entry = NULL;
+    tAppIdConfig *pConfig = appIdActiveConfigGet();
+    tAppId tmp;
 
     if (appId == APP_ID_NONE)
         return;
 
-    if (appId > APP_ID_NONE && appId < SF_APPID_MAX)
-        entry =  AppInfoTable[appId];
-    if (appId >= SF_APPID_DYNAMIC_MIN && appId < (SF_APPID_DYNAMIC_MIN + AppInfoTableDyn.usedCount))
-        entry =  AppInfoTableDyn.table[appId - SF_APPID_DYNAMIC_MIN];
+    if ((tmp = getAppIdStaticIndex(appId)))
+        entry =  pConfig->AppInfoTable[tmp];
+    else 
+        entry = dynamicArrayGetIndex(pConfig->AppInfoTableDyn, appId);
+
     if (entry)
     {
         if (active)
@@ -415,7 +579,7 @@ void appInfoSetActive(tAppId appId, bool active)
 }
 
 
-static void appIdConfLoad (const char *path)
+static void appIdConfLoad (tAppidStaticConfig* appidSC, const char *path)
 {
     FILE *config_file;
     char *token;
@@ -426,16 +590,19 @@ static void appIdConfLoad (const char *path)
     char *conf_key;
     char *conf_val;
     unsigned line = 0;
+    tAppIdConfig *pConfig = appIdNewConfigGet();
+    int max_tp_flow_depth;
+    int host_port_app_cache_lookup_interval;
+    int host_port_app_cache_lookup_range;
 
     config_file = fopen(path, "r");
     if (config_file == NULL)
     {
-        _dpd.logMsg("Could not read configuration file %s\n", path);
         return;
     }
     else
     {
-        _dpd.logMsg("Loading configuration file %s\n", path);
+        DEBUG_WRAP(DebugMessage(DEBUG_APPID, "Loading configuration file %s\n", path););
     }
 
     while (fgets(buf, sizeof(buf), config_file) != NULL)
@@ -468,41 +635,222 @@ static void appIdConfLoad (const char *path)
         /* APPID configurations are for anything else - currently we only have ssl_reinspect */ 
         if (!(strcasecmp(conf_type, "appid")))
         {
-            if (!(strcasecmp(conf_key, "ssl_reinspect")))
+            if (!(strcasecmp(conf_key, "max_tp_flow_depth")))
             {
-                _dpd.logMsg("AppId: adding app %d to list of SSL apps that get more granular inspection.\n", atoi(conf_val));
-                bitListAddApp(atoi(conf_val));
+                max_tp_flow_depth = atoi(conf_val);
+                if (max_tp_flow_depth < MIN_MAX_TP_FLOW_DEPTH || max_tp_flow_depth > MAX_MAX_TP_FLOW_DEPTH)
+                {
+                    DEBUG_WRAP(DebugMessage(DEBUG_APPID, "AppId: invalid max_tp_flow_depth %d, must be between %d and %d\n.", max_tp_flow_depth, MIN_MAX_TP_FLOW_DEPTH, MAX_MAX_TP_FLOW_DEPTH););
+                }
+                else
+                {
+                    DEBUG_WRAP(DebugMessage(DEBUG_APPID, "AppId: setting max thirdparty inspection flow depth to %d packets.\n", max_tp_flow_depth););
+                    appidSC->max_tp_flow_depth = max_tp_flow_depth;
+                }
+            }
+            else if (!(strcasecmp(conf_key, "host_port_app_cache_lookup_interval")))
+            {
+                host_port_app_cache_lookup_interval = atoi(conf_val);
+                if (host_port_app_cache_lookup_interval < MIN_HOST_PORT_APP_CACHE_LOOKUP_INTERVAL || host_port_app_cache_lookup_interval > MAX_HOST_PORT_APP_CACHE_LOOKUP_INTERVAL)
+                {
+                    DEBUG_WRAP(DebugMessage(DEBUG_APPID, "AppId: invalid host_port_app_cache_lookup_interval %d, must be between %d and %d\n.",
+                                            host_port_app_cache_lookup_interval, MIN_HOST_PORT_APP_CACHE_LOOKUP_INTERVAL, MAX_HOST_PORT_APP_CACHE_LOOKUP_INTERVAL););
+                }
+                else
+                {
+                    DEBUG_WRAP(DebugMessage(DEBUG_APPID, "AppId: hostPortCache lookup performed every %d packet(s).\n", host_port_app_cache_lookup_interval););
+                    appidSC->host_port_app_cache_lookup_interval = host_port_app_cache_lookup_interval;
+                }
+            }
+            else if (!(strcasecmp(conf_key, "host_port_app_cache_lookup_range")))
+            {
+                host_port_app_cache_lookup_range = atoi(conf_val);
+                if (host_port_app_cache_lookup_range < MIN_HOST_PORT_APP_CACHE_LOOKUP_RANGE || host_port_app_cache_lookup_range > MAX_HOST_PORT_APP_CACHE_LOOKUP_RANGE)
+                {
+                    DEBUG_WRAP(DebugMessage(DEBUG_APPID, "AppId: invalid host_port_app_cache_lookup_range %d, must be between %d and %d\n.",
+                                            host_port_app_cache_lookup_range, MIN_HOST_PORT_APP_CACHE_LOOKUP_RANGE, MAX_HOST_PORT_APP_CACHE_LOOKUP_RANGE););
+                }
+                else
+                {
+                    DEBUG_WRAP(DebugMessage(DEBUG_APPID, "AppId: hostPortCache lookup performed till maximum of %d packet(s) per session.\n", host_port_app_cache_lookup_range););
+                    appidSC->host_port_app_cache_lookup_range = host_port_app_cache_lookup_range;
+                }
+            }
+            else if (!(strcasecmp(conf_key, "is_host_port_app_cache_runtime")))
+            {
+                if (!(strcasecmp(conf_val, "disabled")))
+                {
+                    DEBUG_WRAP(DebugMessage(DEBUG_APPID, "AppId: hostPortCache not configured for runtime modification.\n"););
+                    appidSC->is_host_port_app_cache_runtime = 0;
+                }
+            }
+            else if (!(strcasecmp(conf_key, "recheck_for_unknown_appid")))
+            {
+                if (!(strcasecmp(conf_val, "enabled")))
+                {
+                    DEBUG_WRAP(DebugMessage(DEBUG_APPID, "AppId: Flows with unknown AppID's will not be ignored.\n"););
+                    appidSC->recheck_for_unknown_appid = 1;
+                }
+            }
+            else if (!(strcasecmp(conf_key, "tp_allow_probes")))
+            {
+                if (!(strcasecmp(conf_val, "enabled")))
+                {
+                    DEBUG_WRAP(DebugMessage(DEBUG_APPID, "AppId: TCP probes will be analyzed by NAVL.\n"););
+                    appidSC->tp_allow_probes = 1;
+                }
+            }
+            else if (!(strcasecmp(conf_key, "tp_client_app")))
+            {
+                DEBUG_WRAP(DebugMessage(DEBUG_APPID, "AppId: if thirdparty reports app %d, we will use it as a client.\n", atoi(conf_val)););
+                appInfoEntryFlagSet(atoi(conf_val), APPINFO_FLAG_TP_CLIENT, pConfig);
+            }
+            else if (!(strcasecmp(conf_key, "ssl_reinspect")))
+            {
+                DEBUG_WRAP(DebugMessage(DEBUG_APPID, "AppId: adding app %d to list of SSL apps that get more granular inspection.\n", atoi(conf_val)););
+                appInfoEntryFlagSet(atoi(conf_val), APPINFO_FLAG_SSL_INSPECT, pConfig);
+            }
+            else if (!(strcasecmp(conf_key, "disable_safe_search")))
+            {
+                if (!(strcasecmp(conf_val, "disabled")))
+                {
+                    DEBUG_WRAP(DebugMessage(DEBUG_APPID, "AppId: disabling safe search enforcement.\n"););
+                    appidSC->disable_safe_search = 1;
+                }
+            }
+            else if (!(strcasecmp(conf_key, "ssl_squelch")))
+            {
+                DEBUG_WRAP(DebugMessage(DEBUG_APPID, "AppId: adding app %d to list of SSL apps that may open a second SSL connection.\n", atoi(conf_val)););
+                appInfoEntryFlagSet(atoi(conf_val), APPINFO_FLAG_SSL_SQUELCH, pConfig);
+            }
+            else if (!(strcasecmp(conf_key, "defer_to_thirdparty")))
+            {
+                DEBUG_WRAP(DebugMessage(DEBUG_APPID, "AppId: adding app %d to list of apps where we should take thirdparty ID over the NDE's.\n", atoi(conf_val)););
+                appInfoEntryFlagSet(atoi(conf_val), APPINFO_FLAG_DEFER, pConfig);
+            }
+            else if (!(strcasecmp(conf_key, "defer_payload_to_thirdparty")))
+            {
+                DEBUG_WRAP(DebugMessage(DEBUG_APPID, "AppId: adding app %d to list of apps where we should take thirdparty payload ID over the NDE's.\n", atoi(conf_val)););
+                appInfoEntryFlagSet(atoi(conf_val), APPINFO_FLAG_DEFER_PAYLOAD, pConfig);
+            }
+            else if (!(strcasecmp(conf_key, "chp_userid")))
+            {
+                if (!(strcasecmp(conf_val, "disabled")))
+                {
+                    DEBUG_WRAP(DebugMessage(DEBUG_APPID, "AppId: HTTP UserID collection disabled.\n"););
+                    appidSC->chp_userid_disabled = 1;
+                    continue;
+                }
+            }
+            else if (!(strcasecmp(conf_key, "chp_body_collection")))
+            {
+                if (!(strcasecmp(conf_val, "disabled")))
+                {
+                    DEBUG_WRAP(DebugMessage(DEBUG_APPID, "AppId: HTTP Body header reading disabled.\n"););
+                    appidSC->chp_body_collection_disabled = 1;
+                    continue;
+                }
+            }
+            else if (!(strcasecmp(conf_key, "chp_fflow")))
+            {
+                if (!(strcasecmp(conf_val, "disabled")))
+                {
+                    DEBUG_WRAP(DebugMessage(DEBUG_APPID, "AppId: HTTP future flow creation disabled.\n"););
+                    appidSC->chp_fflow_disabled = 1;
+                    continue;
+                }
+            }
+            else if (!(strcasecmp(conf_key, "ftp_userid")))
+            {
+                if (!(strcasecmp(conf_val, "disabled")))
+                {
+                    DEBUG_WRAP(DebugMessage(DEBUG_APPID, "AppId: FTP userID disabled.\n"););
+                    appidSC->ftp_userid_disabled = 1;
+                    continue;
+                }
+            }
+            /* App Priority bit set*/
+            else if (!(strcasecmp(conf_key, "app_priority")))
+            {
+                int temp_appid;
+                temp_appid = strtol(conf_val, NULL, 10 );
+                token = strtok(NULL, CONF_SEPARATORS);
+                if (token == NULL)
+                {
+                    _dpd.errMsg("Could not read app_priority at line %u\n", line);
+                    continue;
+                }
+                conf_val = token;
+                uint8_t temp_val;
+                temp_val = strtol(conf_val, NULL, 10 );
+                appInfoEntryPrioritySet (temp_appid, temp_val, pConfig);
+                DEBUG_WRAP(DebugMessage(DEBUG_APPID,"AppId: %d Setting priority bit %d .\n", temp_appid, temp_val););
             }
             else if (!(strcasecmp(conf_key, "referred_appId")))
             {
 
                 if (!(strcasecmp(conf_val, "disabled")))
                 {
-                    appIdConfig.referred_appId_disabled = 1;
+                    appidSC->referred_appId_disabled = 1;
                     continue;
                 }
 
-                else if (!appIdConfig.referred_appId_disabled)
+                else if (!appidSC->referred_appId_disabled)
                 {
                     referred_app_index=0;
                     referred_app_index += sprintf(referred_app_list, "%d ", atoi(conf_val));
-                    referredAppIdAddApp(atoi(conf_val));
+                    appInfoEntryFlagSet(atoi(conf_val), APPINFO_FLAG_REFERRED, pConfig);
 
                     while ((token = strtok(NULL, CONF_SEPARATORS)) != NULL)
                     {
                         referred_app_index += sprintf(referred_app_list+referred_app_index, "%d ", atoi(token));
-                        referredAppIdAddApp(atoi(token));
+                        appInfoEntryFlagSet(atoi(token), APPINFO_FLAG_REFERRED, pConfig);
                     }
-                    _dpd.logMsg("AppId: adding appIds to list of referred web apps: %s\n", referred_app_list);
+                    DEBUG_WRAP(DebugMessage(DEBUG_APPID, "AppId: adding appIds to list of referred web apps: %s\n", referred_app_list););
                 }
             }
             else if (!(strcasecmp(conf_key, "rtmp_max_packets")))
             {
-                appIdConfig.rtmp_max_packets = atoi(conf_val);
+                appidSC->rtmp_max_packets = atoi(conf_val);
             }
-            else /*(!(strcasecmp(conf_key, "mdns_user_report"))) */
+            else if (!(strcasecmp(conf_key, "mdns_user_report")))
             {
-                appIdConfig.mdns_user_reporting = atoi(conf_val);
+                appidSC->mdns_user_reporting = atoi(conf_val);
+            }
+            else if (!(strcasecmp(conf_key, "dns_host_report")))
+            {
+                appidSC->dns_host_reporting = atoi(conf_val);
+            }
+            else if (!(strcasecmp(conf_key, "chp_body_max_bytes")))
+            {
+                appidSC->chp_body_collection_max = atoi(conf_val);
+            }
+            else if (!(strcasecmp(conf_key, "ignore_thirdparty_appid")))
+            {
+                _dpd.logMsg("AppId: adding app %d to list of ignore thirdparty apps.\n", atoi(conf_val));
+                appInfoEntryFlagSet(atoi(conf_val), APPINFO_FLAG_IGNORE, pConfig);
+            }
+            else if (!(strcasecmp(conf_key, "http2_detection")))
+            {
+                // This option will control our own HTTP/2 detection.  We can
+                // still be told externally, though, that it's HTTP/2 (either
+                // from HTTP Inspect or 3rd Party).  This is intended to be
+                // used to ask AppID to detect unencrypted HTTP/2 on non-std
+                // ports.
+                if (!(strcasecmp(conf_val, "disabled")))
+                {
+                    _dpd.logMsg("AppId: disabling internal HTTP/2 detection.\n");
+                    appidSC->http2_detection_enabled = 0;
+                }
+                else if (!(strcasecmp(conf_val, "enabled")))
+                {
+                    _dpd.logMsg("AppId: enabling internal HTTP/2 detection.\n");
+                    appidSC->http2_detection_enabled = 1;
+                }
+                else
+                {
+                    _dpd.logMsg("AppId: ignoring invalid option for http2_detection: %s\n", conf_val);
+                }
             }
         }
     }

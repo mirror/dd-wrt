@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -419,7 +419,8 @@ static int SIP_ignoreChannels( SIP_DialogData *dialog, SFSnortPacket *p)
     	else
     	{
     	    _dpd.sessionAPI->ignore_session(p, &mdataA->maddress, mdataA->mport, &mdataB->maddress,
-    	                            mdataB->mport, IPPROTO_UDP, PP_SIP, SSN_DIR_BOTH, 0 /* Not permanent */ );
+    	                            mdataB->mport, IPPROTO_UDP, PP_SIP, SSN_DIR_BOTH, 0 /* Not permanent */,
+                                    &p->expectedSession );
     	}
     	sip_stats.ignoreChannels++;
     	mdataA = mdataA->nextM;
@@ -504,30 +505,27 @@ static void SIP_updateMedias(SIP_MediaSession *mSession, SIP_MediaList *dList)
     // if this is a new session data, add to the list head
     if (NULL == currSession)
     {
-    	mSession->nextS = *dList;
-    	*dList = mSession;
-    	DEBUG_WRAP(DebugMessage(DEBUG_SIP, "Add Session id: %u\n",
-    			mSession->sessionID));
-        // Display the final media session
-    #ifdef DEBUG_MSGS
-        SIP_displayMedias(dList);
-    #endif
-    	return;
+        mSession->nextS = *dList;
+        *dList = mSession;
+        DEBUG_WRAP(DebugMessage(DEBUG_SIP, "Add Session id: %u\n",
+                mSession->sessionID));
     }
-   // if this session needs to be updated
-    DEBUG_WRAP(DebugMessage(DEBUG_SIP, "Insert Session id: %u\n",
-        			mSession->sessionID));
-    mSession->nextS = currSession->nextS;
-    // if this is the header, update the new header
-    if (NULL == preSession)
-    	*dList = mSession;
     else
-    	preSession->nextS = mSession;
+    {
+        // if this session needs to be updated
+        DEBUG_WRAP(DebugMessage(DEBUG_SIP, "Update Session id: %u\n",
+                mSession->sessionID));
+        mSession->nextS = currSession->nextS;
+        // if this is the header, update the new header
+        if (NULL == preSession)
+            *dList = mSession;
+        else
+            preSession->nextS = mSession;
 
-    // Clear the old session
-    currSession->nextS = NULL;
-    sip_freeMediaSession(currSession);
-
+        // Clear the old session
+        currSession->nextS = NULL;
+        sip_freeMediaSession(currSession);
+    }
     // Display the final media session
 #ifdef DEBUG_MSGS
     SIP_displayMedias(dList);
@@ -660,7 +658,7 @@ static int SIP_deleteDialog(SIP_DialogData *currDialog, SIP_DialogList *dList)
  *  None
  *
  *********************************************************************/
-static void sip_update_appid(const SFSnortPacket *p, const SIPMsg *sipMsg, const SIP_DialogData *dialog)
+static void sip_update_appid(SFSnortPacket *p, const SIPMsg *sipMsg, const SIP_DialogData *dialog)
 {
     SipHeaders hdrs;
     SipDialog        dlg;
@@ -680,7 +678,7 @@ static void sip_update_appid(const SFSnortPacket *p, const SIPMsg *sipMsg, const
     hdrs.fromLen= sipMsg->fromLen;
 
     sipEventData.headers = &hdrs;
-        
+
     if (dialog)
     {
         dlg.state = dialog->state;
@@ -689,7 +687,7 @@ static void sip_update_appid(const SFSnortPacket *p, const SIPMsg *sipMsg, const
         sipEventData.dialog = &dlg;
 
     }
-    else 
+    else
     {
         sipEventData.dialog = NULL;
     }
@@ -756,21 +754,21 @@ int SIP_updateDialog(SIPMsg *sipMsg, SIP_DialogList *dList, SFSnortPacket *p)
    	/*Update the  dialog information*/
 
    	if (sipMsg->status_code == 0)
-   		ret = SIP_processRequest(sipMsg, dialog, dList, p);
+   	    ret = SIP_processRequest(sipMsg, dialog, dList, p);
    	else if (sipMsg->status_code > 0)
-   		ret = SIP_processResponse(sipMsg, dialog, dList, p);
+   	    ret = SIP_processResponse(sipMsg, dialog, dList, p);
    	else
-   		ret = SIP_FAILURE;
+   	    ret = SIP_FAILURE;
 
-       for (dialog = dList->head;
-            dialog;
-             dialog = dialog->nextD)
-       {
-           if (sipMsg->dlgID.callIdHash == dialog->dlgID.callIdHash)
-               break;
-       }
+   	for (dialog = dList->head;
+   	        dialog;
+   	        dialog = dialog->nextD)
+   	{
+   	    if (sipMsg->dlgID.callIdHash == dialog->dlgID.callIdHash)
+   	        break;
+   	}
 
-    sip_update_appid(p, sipMsg, dialog);
+   	sip_update_appid(p, sipMsg, dialog);
 
 
 	return ret;

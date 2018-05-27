@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -24,11 +24,12 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 
-/*#define RNA_DEBUG_NETBIOS   1 */
-#ifdef RNA_DEBUG_NETBIOS
-#include <sflog.h>
+#ifdef HAVE_CONFIG_H
+#include "config.h"     /* for WORDS_BIGENDIAN */
 #endif
-
+/*#define RNA_DEBUG_NETBIOS   1 */
+#include "appIdApi.h"
+#include "appInfoTable.h"
 #include "flow.h"
 #include "service_api.h"
 #include "dcerpc.h"
@@ -84,7 +85,7 @@ typedef enum
 typedef struct _NBNS_HEADER
 {
     uint16_t id;
-#if __BYTE_ORDER == __BIG_ENDIAN
+#if defined(WORDS_BIGENDIAN)
     uint8_t  response:1,
               Opcode:4,
               auth:1,
@@ -94,7 +95,7 @@ typedef struct _NBNS_HEADER
               unused:2,
               broadcast:1,
               replycode:4;
-#elif __BYTE_ORDER == __LITTLE_ENDIAN
+#else
     uint8_t  RD:1,
               trunc:1,
               auth:1,
@@ -104,8 +105,6 @@ typedef struct _NBNS_HEADER
               broadcast:1,
               unused:2,
               RA:1;
-#else
-#error "Please fix <endian.h>"
 #endif
     uint16_t QCount;
     uint16_t ACount;
@@ -254,18 +253,16 @@ typedef struct _SERVICE_NBSS_DATA
 typedef struct _NBDGM_HEADER
 {
     uint8_t type;
-#if __BYTE_ORDER == __BIG_ENDIAN
+#if defined(WORDS_BIGENDIAN)
     uint8_t  zero:4,
               SNT:2,
               first:1,
               more:1;
-#elif __BYTE_ORDER == __LITTLE_ENDIAN
+#else
     uint8_t  more:1,
               first:1,
               SNT:2,
               zero:4;
-#else
-#error "Please fix <endian.h>"
 #endif
     uint16_t id;
     uint32_t src_ip;
@@ -280,33 +277,36 @@ typedef struct _NBDGM_ERROR
 #pragma pack()
 
 static int netbios_init(const InitServiceAPI * const init_api);
-MakeRNAServiceValidationPrototype(nbns_validate);
-MakeRNAServiceValidationPrototype(nbss_validate);
-MakeRNAServiceValidationPrototype(nbdgm_validate);
+static int nbns_validate(ServiceValidationArgs* args);
+static int nbss_validate(ServiceValidationArgs* args);
+static int nbdgm_validate(ServiceValidationArgs* args);
 
-static RNAServiceElement nbns_svc_element =
+static tRNAServiceElement nbns_svc_element =
 {
     .next = NULL,
     .validate = &nbns_validate,
     .detectorType = DETECTOR_TYPE_DECODER,
     .name = "nbns",
     .ref_count = 1,
+    .current_ref_count = 1,
 };
-static RNAServiceElement nbdgm_svc_element =
+static tRNAServiceElement nbdgm_svc_element =
 {
     .next = NULL,
     .validate = &nbdgm_validate,
     .detectorType = DETECTOR_TYPE_DECODER,
     .name = "nbdgm",
     .ref_count = 1,
+    .current_ref_count = 1,
 };
-static RNAServiceElement nbss_svc_element =
+static tRNAServiceElement nbss_svc_element =
 {
     .next = NULL,
     .validate = &nbss_validate,
     .detectorType = DETECTOR_TYPE_DECODER,
     .name = "nbss",
     .ref_count = 1,
+    .current_ref_count = 1,
 };
 
 static RNAServiceValidationPort pp[] =
@@ -320,7 +320,7 @@ static RNAServiceValidationPort pp[] =
     {NULL, 0, 0}
 };
 
-RNAServiceValidationModule netbios_service_mod =
+tRNAServiceValidationModule netbios_service_mod =
 {
     "NETBIOS",
     &netbios_init,
@@ -329,19 +329,19 @@ RNAServiceValidationModule netbios_service_mod =
 
 static int netbios_init(const InitServiceAPI * const init_api)
 {
-    init_api->RegisterPattern(&nbss_validate, IPPROTO_TCP, NB_SMB_BANNER, sizeof(NB_SMB_BANNER), -1, "netbios");
+    init_api->RegisterPattern(&nbss_validate, IPPROTO_TCP, NB_SMB_BANNER, sizeof(NB_SMB_BANNER), -1, "netbios", init_api->pAppidConfig);
 
     _dpd.debugMsg(DEBUG_LOG,"registering appId: %d for NetBIOS-ns\n",APP_ID_NETBIOS_NS);
-    init_api->RegisterAppId(&nbns_validate, APP_ID_NETBIOS_NS, APPINFO_FLAG_SERVICE_UDP_REVERSED, NULL);
+    init_api->RegisterAppId(&nbns_validate, APP_ID_NETBIOS_NS, APPINFO_FLAG_SERVICE_UDP_REVERSED, init_api->pAppidConfig);
 
     _dpd.debugMsg(DEBUG_LOG,"registering appId: %d for NetBIOS-dgm\n",APP_ID_NETBIOS_DGM);
-    init_api->RegisterAppId(&nbdgm_validate, APP_ID_NETBIOS_DGM, APPINFO_FLAG_SERVICE_ADDITIONAL, NULL);
+    init_api->RegisterAppId(&nbdgm_validate, APP_ID_NETBIOS_DGM, APPINFO_FLAG_SERVICE_ADDITIONAL, init_api->pAppidConfig);
 
     _dpd.debugMsg(DEBUG_LOG,"registering appId: %d for NetBIOS-ssn\n",APP_ID_NETBIOS_SSN);
-    init_api->RegisterAppId(&nbss_validate, APP_ID_NETBIOS_SSN, APPINFO_FLAG_SERVICE_ADDITIONAL, NULL);
+    init_api->RegisterAppId(&nbss_validate, APP_ID_NETBIOS_SSN, APPINFO_FLAG_SERVICE_ADDITIONAL, init_api->pAppidConfig);
 
     _dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",APP_ID_DCE_RPC);
-    init_api->RegisterAppId(&nbss_validate, APP_ID_DCE_RPC, 0, NULL);
+    init_api->RegisterAppId(&nbss_validate, APP_ID_DCE_RPC, 0, init_api->pAppidConfig);
 
     return 0;
 }
@@ -482,15 +482,18 @@ static int nbns_validate_answer(const uint8_t * *data, const uint8_t * const beg
     return ret;
 }
 
-MakeRNAServiceValidationPrototype(nbns_validate)
+static int nbns_validate(ServiceValidationArgs* args)
 {
     uint16_t i;
     uint16_t count;
     const NBNSHeader *hdr;
     const uint8_t *begin;
     const uint8_t *end;
+    tAppIdData *flowp = args->flowp;
+    const uint8_t *data = args->data;
+    const int dir = args->dir;
+    uint16_t size = args->size;
 
-    if (!data || !netbios_service_mod.api || !flowp || !pkt) return SERVICE_ENULL;
     if (!size) goto inprocess;
     if (size < sizeof(NBNSHeader)) goto fail;
     hdr = (NBNSHeader *)data;
@@ -512,7 +515,7 @@ MakeRNAServiceValidationPrototype(nbns_validate)
     {
         if (dir == APP_ID_FROM_RESPONDER)
         {
-            if (flow_checkflag(flowp, FLOW_UDP_REVERSED)) goto success;
+            if (getAppIdFlag(flowp, APPID_SESSION_UDP_REVERSED)) goto success;
             goto fail;
         }
         goto inprocess;
@@ -562,25 +565,29 @@ MakeRNAServiceValidationPrototype(nbns_validate)
 
     if (dir == APP_ID_FROM_INITIATOR)
     {
-        flow_mark(flowp, FLOW_UDP_REVERSED);
+        setAppIdFlag(flowp, APPID_SESSION_UDP_REVERSED);
         goto inprocess;
     }
 
 success:
-    netbios_service_mod.api->add_service(flowp, pkt, dir, &nbns_svc_element,
-                                         APP_ID_NETBIOS_NS, NULL, NULL, NULL);
+    netbios_service_mod.api->add_service(flowp, args->pkt, dir, &nbns_svc_element,
+                                         APP_ID_NETBIOS_NS, NULL, NULL, NULL, NULL);
     return SERVICE_SUCCESS;
 
 inprocess:
-    netbios_service_mod.api->service_inprocess(flowp, pkt, dir, &nbns_svc_element);
+    netbios_service_mod.api->service_inprocess(flowp, args->pkt, dir, &nbns_svc_element, NULL);
     return SERVICE_INPROCESS;
 
 fail:
-    netbios_service_mod.api->fail_service(flowp, pkt, dir, &nbns_svc_element);
+    netbios_service_mod.api->fail_service(flowp, args->pkt, dir, &nbns_svc_element,
+                                          netbios_service_mod.flow_data_index,
+                                          args->pConfig, NULL);
     return SERVICE_NOMATCH;
 
 not_compatible:
-    netbios_service_mod.api->incompatible_data(flowp, pkt, dir, &nbns_svc_element);
+    netbios_service_mod.api->incompatible_data(flowp, args->pkt, dir, &nbns_svc_element,
+                                               netbios_service_mod.flow_data_index,
+                                               args->pConfig, NULL);
     return SERVICE_NOT_COMPATIBLE;
 }
 
@@ -640,7 +647,7 @@ static inline void smb_domain_skip_string(const uint8_t * *data, uint16_t *size,
 }
 
 static inline void smb_find_domain(const uint8_t *data, uint16_t size, const int dir,
-                                   FLOW *flowp, const SFSnortPacket *pkt)
+                                   tAppIdData *flowp, const SFSnortPacket *pkt)
 {
     const ServiceSMBHeader *smb;
     const ServiceSMBAndXResponse *resp;
@@ -798,26 +805,31 @@ static inline void smb_find_domain(const uint8_t *data, uint16_t size, const int
     }
 }
 
-MakeRNAServiceValidationPrototype(nbss_validate)
+static int nbss_validate(ServiceValidationArgs* args)
 {
     ServiceNBSSData *nd;
     const NBSSHeader *hdr;
     const uint8_t *end;
     uint32_t tmp;
     int retval = -1;
+    tAppIdData *flowp = args->flowp;
+    SFSnortPacket *pkt = args->pkt; 
+    const uint8_t *data = args->data;
+    const int dir = args->dir;
+    uint16_t size = args->size;
 
     if (dir != APP_ID_FROM_RESPONDER)
         goto inprocess;
     if (!size)
         goto inprocess;
 
-    nd = netbios_service_mod.api->data_get(flowp);
+    nd = netbios_service_mod.api->data_get(flowp, netbios_service_mod.flow_data_index);
     if (!nd)
     {
         nd = calloc(1, sizeof(*nd));
         if (!nd)
             return SERVICE_ENOMEM;
-        if (netbios_service_mod.api->data_add(flowp, nd, &nbss_free_state))
+        if (netbios_service_mod.api->data_add(flowp, nd, netbios_service_mod.flow_data_index, &nbss_free_state))
         {
             free(nd);
             return SERVICE_ENOMEM;
@@ -986,10 +998,10 @@ MakeRNAServiceValidationPrototype(nbss_validate)
     }
     if (retval == -1) goto inprocess;
 
-    if (!flow_checkflag(flowp, FLOW_SERVICEDETECTED))
+    if (!getAppIdFlag(flowp, APPID_SESSION_SERVICE_DETECTED))
     {
         if(netbios_service_mod.api->add_service(flowp, pkt, dir, &nbss_svc_element,
-                             nd->serviceAppId, NULL, NULL, NULL) == SERVICE_SUCCESS)
+                             nd->serviceAppId, NULL, NULL, NULL, NULL) == SERVICE_SUCCESS)
         {
             netbios_service_mod.api->add_misc(flowp, nd->miscAppId);
         }
@@ -997,21 +1009,22 @@ MakeRNAServiceValidationPrototype(nbss_validate)
     return SERVICE_SUCCESS;
 
 inprocess:
-    if (!flow_checkflag(flowp, FLOW_SERVICEDETECTED))
+    if (!getAppIdFlag(flowp, APPID_SESSION_SERVICE_DETECTED))
     {
-        netbios_service_mod.api->service_inprocess(flowp, pkt, dir, &nbss_svc_element);
+        netbios_service_mod.api->service_inprocess(flowp, pkt, dir, &nbss_svc_element, NULL);
     }
     return SERVICE_INPROCESS;
 
 fail:
-    if (!flow_checkflag(flowp, FLOW_SERVICEDETECTED))
+    if (!getAppIdFlag(flowp, APPID_SESSION_SERVICE_DETECTED))
     {
-        netbios_service_mod.api->fail_service(flowp, pkt, dir, &nbss_svc_element);
+        netbios_service_mod.api->fail_service(flowp, pkt, dir, &nbss_svc_element,
+                                              netbios_service_mod.flow_data_index, args->pConfig, NULL);
     }
     return SERVICE_NOMATCH;
 }
 
-MakeRNAServiceValidationPrototype(nbdgm_validate)
+static int nbdgm_validate(ServiceValidationArgs* args)
 {
     const NBDgmHeader *hdr;
     const NBDgmError *err;
@@ -1024,12 +1037,17 @@ MakeRNAServiceValidationPrototype(nbdgm_validate)
     uint32_t server_type;
     tAppId serviceAppId = APP_ID_NETBIOS_DGM;
     tAppId miscAppId = APP_ID_NONE;
+    tAppIdData *flowp = args->flowp;
+    const uint8_t *data = args->data;
+    SFSnortPacket *pkt = args->pkt; 
+    const int dir = args->dir;
+    uint16_t size = args->size;
 
-    source_name[0] = 0;
-    if (!data || !netbios_service_mod.api || !flowp || !pkt) return SERVICE_ENULL;
     if (!size) goto inprocess;
     if (size < sizeof(NBDgmHeader)) goto fail;
     if (pkt->src_port != pkt->dst_port) goto fail;
+
+    source_name[0] = 0;
     end = data + size;
 
     hdr = (NBDgmHeader *)data;
@@ -1057,7 +1075,7 @@ MakeRNAServiceValidationPrototype(nbdgm_validate)
         if (end-data >= (int)sizeof(NB_SMB_BANNER) &&
             !memcmp(data, NB_SMB_BANNER, sizeof(NB_SMB_BANNER)))
         {
-            if (!flow_checkflag(flowp, FLOW_SERVICEDETECTED))
+            if (!getAppIdFlag(flowp, APPID_SESSION_SERVICE_DETECTED))
             {
                 serviceAppId = APP_ID_NETBIOS_DGM;
             }
@@ -1090,7 +1108,7 @@ MakeRNAServiceValidationPrototype(nbdgm_validate)
 not_mailslot:
         if (source_name[0])
             netbios_service_mod.api->add_host_info(flowp, SERVICE_HOST_INFO_NETBIOS_NAME, source_name);
-        flow_mark(flowp, FLOW_CONTINUE);
+        setAppIdFlag(flowp, APPID_SESSION_CONTINUE);
         goto success;
     case NBDGM_TYPE_ERROR:
         if (end-data < (int)sizeof(NBDgmError)) goto fail;
@@ -1108,20 +1126,22 @@ not_mailslot:
     }
 
 fail:
-    if (!flow_checkflag(flowp, FLOW_SERVICEDETECTED))
+    if (!getAppIdFlag(flowp, APPID_SESSION_SERVICE_DETECTED))
     {
-        netbios_service_mod.api->fail_service(flowp, pkt, dir, &nbdgm_svc_element);
+        netbios_service_mod.api->fail_service(flowp, pkt, dir, &nbdgm_svc_element,
+                                              netbios_service_mod.flow_data_index,
+                                              args->pConfig, NULL);
     }
-    flow_clear(flowp, FLOW_CONTINUE);
+    clearAppIdFlag(flowp, APPID_SESSION_CONTINUE);
     return SERVICE_NOMATCH;
 
 success:
-    if (!flow_checkflag(flowp, FLOW_SERVICEDETECTED))
+    if (!getAppIdFlag(flowp, APPID_SESSION_SERVICE_DETECTED))
     {
         if (dir == APP_ID_FROM_RESPONDER)
         {
             if(netbios_service_mod.api->add_service(flowp, pkt, dir, &nbdgm_svc_element,
-                                 serviceAppId, NULL, NULL, NULL) == SERVICE_SUCCESS)
+                                 serviceAppId, NULL, NULL, NULL, NULL) == SERVICE_SUCCESS)
             {
                 netbios_service_mod.api->add_misc(flowp, miscAppId);
             }
@@ -1130,9 +1150,9 @@ success:
     return SERVICE_SUCCESS;
 
 inprocess:
-    if (!flow_checkflag(flowp, FLOW_SERVICEDETECTED))
+    if (!getAppIdFlag(flowp, APPID_SESSION_SERVICE_DETECTED))
     {
-        netbios_service_mod.api->service_inprocess(flowp, pkt, dir, &nbdgm_svc_element);
+        netbios_service_mod.api->service_inprocess(flowp, pkt, dir, &nbdgm_svc_element, NULL);
     }
     return SERVICE_INPROCESS;
 }

@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -76,6 +76,13 @@ int popDetectCalled = 0;
 #include "snort_bounds.h"
 
 #include "file_api.h"
+#ifdef REG_TEST
+#include "reg_test.h"
+#endif
+
+#ifdef DUMP_BUFFER
+#include "pop_buffer_dump.h"
+#endif
 
 const int MAJOR_VERSION = 1;
 const int MINOR_VERSION = 0;
@@ -87,6 +94,7 @@ const char *PROTOCOL_NAME = "POP";
 
 MemPool *pop_mime_mempool = NULL;
 MemPool *pop_mempool = NULL;
+POP_Stats pop_stats;
 
 tSfPolicyUserContextId pop_config = NULL;
 POPConfig *pop_eval_config = NULL;
@@ -102,12 +110,18 @@ static void POPResetStatsFunction(int, void *);
 static void registerPortsForDispatch( struct _SnortConfig *sc, POPConfig *policy );
 static void registerPortsForReassembly( POPConfig *policy, int direction );
 static void _addPortsToStreamFilter(struct _SnortConfig *, POPConfig *, tSfPolicyId);
+static void POP_PrintStats(int);
 #ifdef TARGET_BASED
 static void _addServicesToStreamFilter(struct _SnortConfig *, tSfPolicyId);
 #endif
 static int POPCheckConfig(struct _SnortConfig *);
 
 #ifdef SNORT_RELOAD
+static int POPMempoolFreeUsedBucket(MemPool *memory_pool);
+static unsigned POPReloadMimeMempoolAdjust(unsigned popMaxWork);
+static unsigned POPReloadLogMempoolAdjust(unsigned popMaxWork);
+static bool POPMimeReloadAdjust(bool idle, tSfPolicyId raPolicyId, void* userData);
+static bool POPLogReloadAdjust(bool idle, tSfPolicyId raPolicyId, void* userData);
 static void POPReload(struct _SnortConfig *, char *, void **);
 static int POPReloadVerify(struct _SnortConfig *, void *);
 static void * POPReloadSwap(struct _SnortConfig *, void *);
@@ -136,6 +150,11 @@ void SetupPOP(void)
     _dpd.registerPreproc("pop", POPInit, POPReload,
                          POPReloadVerify, POPReloadSwap, POPReloadSwapFree);
 #endif
+#ifdef DUMP_BUFFER
+    _dpd.registerBufferTracer(getPOPBuffers, POP_BUFFER_DUMP_FUNC);
+#endif
+
+
 }
 
 
@@ -178,6 +197,7 @@ static void POPInit(struct _SnortConfig *sc, char *args)
         /* _dpd.addPreproc(POPDetect, PRIORITY_APPLICATION, PP_POP, PROTO_BIT__TCP);*/
         _dpd.addPreprocExit(POPCleanExitFunction, NULL, PRIORITY_LAST, PP_POP);
         _dpd.addPreprocReset(POPResetFunction, NULL, PRIORITY_LAST, PP_POP);
+        _dpd.registerPreprocStats(POP_PROTO_REF_STR, POP_PrintStats);
         _dpd.addPreprocResetStats(POPResetStatsFunction, NULL, PRIORITY_LAST, PP_POP);
         _dpd.addPreprocConfCheck(sc, POPCheckConfig);
 
@@ -194,7 +214,7 @@ static void POPInit(struct _SnortConfig *sc, char *args)
 #endif
 
 #ifdef PERF_PROFILING
-        _dpd.addPreprocProfileFunc("pop", (void*)&popPerfStats, 0, _dpd.totalPerfStats);
+        _dpd.addPreprocProfileFunc("pop", (void*)&popPerfStats, 0, _dpd.totalPerfStats, NULL);
 #endif
     }
 
@@ -405,7 +425,8 @@ static int CheckFilePolicyConfig(
 {
     POPConfig *context = (POPConfig *)pData;
 
-    context->decode_conf.file_depth = _dpd.fileAPI->get_max_file_depth();
+     /* Use new Snort config to get the max file depth */
+    context->decode_conf.file_depth = _dpd.fileAPI->get_max_file_depth(sc, true);
     if (context->decode_conf.file_depth > -1)
         context->log_config.log_filename = 1;
     updateMaxDepth(context->decode_conf.file_depth, &context->decode_conf.max_depth);
@@ -505,6 +526,29 @@ static int POPCheckConfig(struct _SnortConfig *sc)
     return 0;
 }
 
+static void POP_PrintStats(int exiting)
+{
+     _dpd.logMsg("POP Preprocessor Statistics\n");
+     _dpd.logMsg("  Total sessions                                    : " STDu64 "\n", pop_stats.sessions);
+     _dpd.logMsg("  Max concurrent sessions                           : " STDu64 "\n", pop_stats.max_conc_sessions);
+     if (pop_stats.sessions > 0)
+     {
+          _dpd.logMsg("  Base64 attachments decoded                        : " STDu64 "\n", pop_stats.mime_stats.attachments[DECODE_B64]);
+          _dpd.logMsg("  Total Base64 decoded bytes                        : " STDu64 "\n", pop_stats.mime_stats.decoded_bytes[DECODE_B64]);
+          _dpd.logMsg("  Quoted-Printable attachments decoded              : " STDu64 "\n", pop_stats.mime_stats.attachments[DECODE_QP]);
+          _dpd.logMsg("  Total Quoted decoded bytes                        : " STDu64 "\n", pop_stats.mime_stats.decoded_bytes[DECODE_QP]);
+          _dpd.logMsg("  UU attachments decoded                            : " STDu64 "\n", pop_stats.mime_stats.attachments[DECODE_UU]);
+          _dpd.logMsg("  Total UU decoded bytes                            : " STDu64 "\n", pop_stats.mime_stats.decoded_bytes[DECODE_UU]);
+          _dpd.logMsg("  Non-Encoded MIME attachments extracted            : " STDu64 "\n", pop_stats.mime_stats.attachments[DECODE_BITENC]);
+          _dpd.logMsg("  Total Non-Encoded MIME bytes extracted            : " STDu64 "\n", pop_stats.mime_stats.decoded_bytes[DECODE_BITENC]);
+          if ( pop_stats.mime_stats.memcap_exceeded )
+               _dpd.logMsg("  Sessions not decoded due to memory unavailability : " STDu64 "\n", pop_stats.mime_stats.memcap_exceeded);
+          if ( pop_stats.log_memcap_exceeded )
+            _dpd.logMsg("  POP Sessions fastpathed due to memcap exceeded: " STDu64 "\n", pop_stats.log_memcap_exceeded);
+     }
+
+}
+
 #ifdef SNORT_RELOAD
 static void POPReload(struct _SnortConfig *sc, char *args, void **new_config)
 {
@@ -586,12 +630,113 @@ static void POPReload(struct _SnortConfig *sc, char *args, void **new_config)
 #endif
 }
 
+static int POPMempoolFreeUsedBucket(MemPool *memory_pool)
+{
+   MemBucket *lru_bucket = NULL;
+
+   lru_bucket = mempool_get_lru_bucket(memory_pool);
+   if(lru_bucket)
+   {
+       /* Deleting least recently used POP session data here to adjust to new max_memory */
+       _dpd.sessionAPI->set_application_data(lru_bucket->scbPtr, PP_POP, NULL, NULL);
+       return 1;
+   }
+   return 0;
+}
+
+static unsigned POPReloadMimeMempoolAdjust(unsigned popMaxWork)
+{
+     int retVal;
+
+     /* deleting MemBucket from free list in POP Mime Mempool */
+     popMaxWork = mempool_prune_freelist(pop_mime_mempool, pop_mime_mempool->max_memory, popMaxWork);
+
+     if(!popMaxWork)
+        return 0;
+
+     for( ; popMaxWork && ((pop_mime_mempool->used_memory + pop_mime_mempool->free_memory) > pop_mime_mempool->max_memory); popMaxWork--)
+     {
+         /* deleting least recently used MemBucket from Used list in POP Mime Mempool */
+         retVal = POPMempoolFreeUsedBucket(pop_mime_mempool);
+         if(!retVal)
+            break;
+     }
+
+     return popMaxWork;
+}
+
+static unsigned POPReloadLogMempoolAdjust(unsigned popMaxWork)
+{
+    int retVal;
+
+     /* deleting MemBucket from free list in POP Log Mempool */
+     popMaxWork = mempool_prune_freelist(pop_mempool, pop_mempool->max_memory, popMaxWork);
+
+     if(!popMaxWork)
+        return 0;
+
+     for( ; popMaxWork && ((pop_mempool->used_memory + pop_mempool->free_memory) > pop_mempool->max_memory); popMaxWork--)
+     {
+         /* deleting least recently used MemBucket from Used list in POP Log Mempool */
+         retVal = POPMempoolFreeUsedBucket(pop_mempool);
+         if(!retVal)
+          break;
+     }
+
+     return popMaxWork;
+}
+
+static bool POPMimeReloadAdjust(bool idle, tSfPolicyId raPolicyId, void* userData)
+{
+    unsigned initialMaxWork = idle ? 512 : 5;
+    unsigned maxWork;
+
+    /* If new max_mime_mem is less than old configured max_mime_mem, need to adjust POP Mime Mempool.
+     * In order to adjust to new max_memory of mime mempool, delete buckets from free list.
+     * After deleting buckets from free list, still new max_memory is less than old value , delete buckets
+     * (least recently used i.e head node of used list )from used list till total memory reaches to new max_memory.
+     */
+    maxWork = POPReloadMimeMempoolAdjust(initialMaxWork);
+
+    if(maxWork == initialMaxWork)
+    {
+        pop_stats.max_conc_sessions = pop_stats.conc_sessions;
+        pop_stats.mime_stats.memcap_exceeded = 0;
+        return true;
+    }
+    else
+        return false;
+}
+
+static bool POPLogReloadAdjust(bool idle, tSfPolicyId raPolicyId, void* userData)
+{
+    unsigned initialMaxWork = idle ? 512 : 5;
+    unsigned maxWork;
+
+    /* If new memcap is less than old configured memcap, need to adjust POP Log Mempool.
+     * In order to adjust to new max_memory of log mempool, delete buckets from free list.
+     * After deleting buckets from free list, still new max_memory is less than old value , delete buckets
+     * (least recently used i.e head node of used list )from used list till total memory reaches to new max_memory.
+     */
+    maxWork = POPReloadLogMempoolAdjust(initialMaxWork);
+
+    if(maxWork == initialMaxWork)
+    {
+        pop_stats.max_conc_sessions = pop_stats.conc_sessions;
+        pop_stats.mime_stats.memcap_exceeded = 0;
+        return true;
+    }
+    else
+        return false;
+}
+
 static int POPReloadVerify(struct _SnortConfig *sc, void *swap_config)
 {
     int rval;
     tSfPolicyUserContextId pop_swap_config = (tSfPolicyUserContextId)swap_config;
     POPConfig *config = NULL;
     POPConfig *configNext = NULL;
+    tSfPolicyId policy_id = 0;
 
     if (pop_swap_config == NULL)
         return 0;
@@ -610,26 +755,26 @@ static int POPReloadVerify(struct _SnortConfig *sc, void *swap_config)
     if ((rval = sfPolicyUserDataIterate (sc, pop_swap_config, CheckFilePolicyConfig)))
         return rval;
 
+    policy_id = _dpd.getParserPolicy(sc);
+
     if (pop_mime_mempool != NULL)
     {
-        if(_dpd.fileAPI->is_decoding_conf_changed(&(configNext->decode_conf),
-                &(config->decode_conf), "POP"))
-        {
-            return -1;
-        }
+        /* If max_mime_mem changes, mime mempool need to be adjusted bcz mempool max_memory will be changed.
+         * Registering here to adjust Mime memory Pool when max_mime_mem changes.
+         */
+        if( configNext->decode_conf.max_mime_mem  < config->decode_conf.max_mime_mem )
+              _dpd.reloadAdjustRegister(sc, "POP-MIME-MEMPOOL", policy_id, &POPMimeReloadAdjust, NULL, NULL);
     }
 
     if (pop_mempool != NULL)
     {
-        if (configNext == NULL)
+        if(configNext)
         {
-            _dpd.errMsg("POP reload: Changing the memcap requires a restart.\n");
-            return -1;
-        }
-        if (configNext->memcap != config->memcap)
-        {
-            _dpd.errMsg("POP reload: Changing the memcap requires a restart.\n");
-            return -1;
+             /* If memcap cahnges, log mempool need to be adjusted bcz mempool max_mempory will be changed.
+              * Registering here to adjust Log memory Pool when memcap changes.
+              */
+             if (configNext->memcap < config->memcap)
+                   _dpd.reloadAdjustRegister(sc, "POP-LOG-MEMPOOL", policy_id, &POPLogReloadAdjust, NULL, NULL);
         }
     }
     else if(configNext != NULL)
@@ -673,6 +818,7 @@ static int POPReloadSwapPolicy(
 
 static void * POPReloadSwap(struct _SnortConfig *sc, void *swap_config)
 {
+    POPConfig *configNew = NULL, *configOld = NULL;
     tSfPolicyUserContextId pop_swap_config = (tSfPolicyUserContextId)swap_config;
     tSfPolicyUserContextId old_config = pop_config;
 
@@ -680,6 +826,41 @@ static void * POPReloadSwap(struct _SnortConfig *sc, void *swap_config)
         return NULL;
 
     pop_config = pop_swap_config;
+
+    configOld = (POPConfig *)sfPolicyUserDataGet(old_config, _dpd.getDefaultPolicy());
+    configNew = (POPConfig *)sfPolicyUserDataGet(pop_config, _dpd.getDefaultPolicy());
+
+    if(configNew && configOld)
+    {
+          if(pop_mime_mempool)
+          {
+              if((configOld->decode_conf.max_mime_mem != configNew->decode_conf.max_mime_mem) ||
+                 (configOld->decode_conf.max_depth != configNew->decode_conf.max_depth) )
+              {
+#ifdef REG_TEST
+                   _dpd.fileAPI->displayMimeMempool(pop_mime_mempool,&(configOld->decode_conf), &(configNew->decode_conf));
+#endif
+                   /* Update the pop_mime_mempool with new max_memmory and object size when max_mime_mem changes. */
+                   _dpd.fileAPI->update_mime_mempool(pop_mime_mempool, configNew->decode_conf.max_mime_mem, configNew->decode_conf.max_depth);
+              }
+          }
+          if(pop_mempool)
+          {
+              if(configOld->memcap != configNew->memcap )
+              {
+#ifdef REG_TEST
+                  _dpd.fileAPI->displayLogMempool(pop_mempool, configOld->memcap, configNew->memcap);
+#endif
+                  /* Update the pop_mempool with new max_memory and objest size when memcap changes. */
+                  _dpd.fileAPI->update_log_mempool(pop_mempool, configNew->memcap, 0);
+                  pop_stats.log_memcap_exceeded = 0;
+              }
+          }
+#ifdef REG_TEST
+          _dpd.fileAPI->displayDecodeDepth(&(configOld->decode_conf), &(configNew->decode_conf));
+#endif
+
+    }
 
     sfPolicyUserDataFreeIterate (old_config, POPReloadSwapPolicy);
 

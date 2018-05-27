@@ -3,7 +3,7 @@
 **
 ** perf-base.c
 **
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Dan Roelker <droelker@sourcefire.com>
 ** Marc Norton <mnorton@sourcefire.com>
@@ -50,6 +50,7 @@
 #endif
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 #include <sys/types.h>
 
 #ifdef HAVE_CONFIG_H
@@ -66,6 +67,7 @@
 #include "sf_types.h"
 #include "snort_bounds.h"
 
+
 static void GetPktDropStats(SFBASE *, SFBASE_STATS *);
 static void DisplayBasePerfStatsConsole(SFBASE_STATS *, int);
 static int CalculateBasePerfStats(SFBASE *, SFBASE_STATS *, int);
@@ -76,6 +78,19 @@ static int GetProcessingTime(SYSTIMES *, SFBASE *);
 static void GetEventsPerSecond(SFBASE *, SFBASE_STATS *, SYSTIMES *);
 static void GetuSecondsPerPacket(SFBASE *, SFBASE_STATS *, SYSTIMES *);
 static void GetCPUTime(SFBASE *, SFBASE_STATS *, SYSTIMES *);
+
+
+//We should never output NaN or Infitity
+static inline double zeroFpException(double in)
+{
+//FIXME WIN32 -vc++6 does NOT provide the function |isnan() |  nor |isinf()| - VJR 7/22/15 
+//  (see also:http://stackoverflow.com/questions/2249110/how-do-i-make-a-portable-isnan-isinf-function)
+#ifndef WIN32
+    if (isnan(in) || isinf(in))
+        return 0.0;
+#endif
+    return in;
+}
 
 /*
 **  NAME
@@ -444,13 +459,14 @@ int CloseStreamSession(SFBASE *sfBase, char flags)
 {
     if (flags & SESSION_CLOSED_NORMALLY)
         sfBase->iClosedSessions++;
-    else if (flags & SESSION_CLOSED_TIMEDOUT)
-        sfBase->iStreamTimeouts++;
-    else if (flags & SESSION_CLOSED_PRUNED)
-        sfBase->iPrunedSessions++;
-    else if (flags & SESSION_CLOSED_ASYNC)
-        sfBase->iDroppedAsyncSessions++;
-
+    else{
+        if (flags & SESSION_CLOSED_TIMEDOUT)
+            sfBase->iStreamTimeouts++;
+        if (flags & SESSION_CLOSED_PRUNED)
+            sfBase->iPrunedSessions++;
+        if (flags & SESSION_CLOSED_ASYNC)
+            sfBase->iDroppedAsyncSessions++;
+    }
     return 0;
 }
 
@@ -823,14 +839,17 @@ static void GetPacketsPerSecond(SFBASE *sfBase, SFBASE_STATS *sfBaseStats,
 static void GetuSecondsPerPacket(SFBASE *sfBase, SFBASE_STATS *sfBaseStats,
         SYSTIMES *Systimes)
 {
-    sfBaseStats->usecs_per_packet.usertime   = (Systimes->usertime * 1.0e6) /
-                                               (double)sfBase->total_packets;
-    sfBaseStats->usecs_per_packet.systemtime = (Systimes->systemtime * 1.0e6) /
-                                               (double)sfBase->total_packets;
-    sfBaseStats->usecs_per_packet.totaltime  = (Systimes->totaltime * 1.0e6) /
-                                               (double)sfBase->total_packets;
-    sfBaseStats->usecs_per_packet.realtime   = (Systimes->realtime * 1.0e6) /
-                                               (double)sfBase->total_packets;
+    if(sfBase->total_packets)
+    {
+        sfBaseStats->usecs_per_packet.usertime   = (Systimes->usertime * 1.0e6) /
+            (double)sfBase->total_packets;
+        sfBaseStats->usecs_per_packet.systemtime = (Systimes->systemtime * 1.0e6) /
+            (double)sfBase->total_packets;
+        sfBaseStats->usecs_per_packet.totaltime  = (Systimes->totaltime * 1.0e6) /
+            (double)sfBase->total_packets;
+        sfBaseStats->usecs_per_packet.realtime   = (Systimes->realtime * 1.0e6) /
+            (double)sfBase->total_packets;
+    }
 }
 
 static void GetMbitsPerSecond(SFBASE *sfBase, SFBASE_STATS *sfBaseStats,
@@ -1006,44 +1025,44 @@ static int CalculateBasePerfStats(SFBASE *sfBase, SFBASE_STATS *sfBaseStats, int
     **  Avg. bytes per Packet
     */
     if (sfBase->total_packets > 0)
-        sfBaseStats->avg_bytes_per_packet =
+        sfBaseStats->avg_bytes_per_packet = zeroFpException(
                 (int)((double)(sfBase->total_bytes) /
-                (double)(sfBase->total_packets));
+                (double)(sfBase->total_packets)));
     else
         sfBaseStats->avg_bytes_per_packet = 0;
 
     if (sfBase->total_wire_packets > 0)
-        sfBaseStats->avg_bytes_per_wire_packet =
+        sfBaseStats->avg_bytes_per_wire_packet = zeroFpException(
                 (int)((double)(sfBase->total_wire_bytes) /
-                (double)(sfBase->total_wire_packets));
+                (double)(sfBase->total_wire_packets)));
     else
         sfBaseStats->avg_bytes_per_wire_packet = 0;
 
     if (sfBase->total_ipfragmented_packets > 0)
-        sfBaseStats->avg_bytes_per_ipfrag_packet =
+        sfBaseStats->avg_bytes_per_ipfrag_packet = zeroFpException(
                 (int)((double)(sfBase->total_ipfragmented_bytes) /
-                (double)(sfBase->total_ipfragmented_packets));
+                (double)(sfBase->total_ipfragmented_packets)));
     else
         sfBaseStats->avg_bytes_per_ipfrag_packet = 0;
 
     if (sfBase->total_ipreassembled_packets > 0)
-        sfBaseStats->avg_bytes_per_ipreass_packet =
+        sfBaseStats->avg_bytes_per_ipreass_packet = zeroFpException(
                 (int)((double)(sfBase->total_ipreassembled_bytes) /
-                (double)(sfBase->total_ipreassembled_packets));
+                (double)(sfBase->total_ipreassembled_packets)));
     else
         sfBaseStats->avg_bytes_per_ipreass_packet = 0;
 
     if (sfBase->total_rebuilt_packets > 0)
-        sfBaseStats->avg_bytes_per_rebuilt_packet =
+        sfBaseStats->avg_bytes_per_rebuilt_packet = zeroFpException(
                 (int)((double)(sfBase->total_rebuilt_bytes) /
-                (double)(sfBase->total_rebuilt_packets));
+                (double)(sfBase->total_rebuilt_packets)));
     else
         sfBaseStats->avg_bytes_per_rebuilt_packet = 0;
 
     if (sfBase->total_mpls_packets > 0)
-        sfBaseStats->avg_bytes_per_mpls_packet =
+        sfBaseStats->avg_bytes_per_mpls_packet = zeroFpException(
                 (int)((double)(sfBase->total_mpls_bytes) /
-                (double)(sfBase->total_mpls_packets));
+                (double)(sfBase->total_mpls_packets)));
     else
         sfBaseStats->avg_bytes_per_mpls_packet = 0;
 
@@ -1065,8 +1084,8 @@ static int CalculateBasePerfStats(SFBASE *sfBase, SFBASE_STATS *sfBaseStats, int
     /*
     *   Pattern Matching Performance in Real and User time
     */
-    sfBaseStats->patmatch_percent = 100.0 * mpseGetPatByteCount() /
-                                    sfBase->total_wire_bytes;
+    sfBaseStats->patmatch_percent = zeroFpException(100.0 * mpseGetPatByteCount() /
+                                    sfBase->total_wire_bytes);
 
     mpseResetByteCount();
 
@@ -1180,8 +1199,8 @@ static void GetPktDropStats(SFBASE *sfBase, SFBASE_STATS *sfBaseStats)
         sfBaseStats->pkt_drop_percent = 0.0;
 
     else
-        sfBaseStats->pkt_drop_percent =
-            ((double)sfBaseStats->pkt_stats.pkts_drop / (double)sum) * 100.0;
+        sfBaseStats->pkt_drop_percent = zeroFpException(
+            ((double)sfBaseStats->pkt_stats.pkts_drop / (double)sum) * 100.0);
 
     /*
     **  Reset sfBase stats for next go round.
@@ -1856,4 +1875,5 @@ static void DisplayBasePerfStatsConsole(SFBASE_STATS *sfBaseStats, int max_stats
         LogMessage("Combined:    %.3f\n\n",sfBaseStats->kpackets_per_sec.totaltime);
     }
 }
+
 

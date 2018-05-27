@@ -1,5 +1,5 @@
 /*
- ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2002-2013 Sourcefire, Inc.
  ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
  **
@@ -90,7 +90,7 @@ typedef struct
 } HttpBuffer;
 
 typedef struct {
-    uint8_t *data;
+    const uint8_t *data;
     uint16_t len;
 } DataPointer;
 
@@ -174,7 +174,7 @@ static inline void SetHttpBuffer (HTTP_BUFFER b, const uint8_t* buf, unsigned le
  *
  */
 
-static inline void setFileDataPtr(uint8_t *ptr, uint16_t decode_size)
+static inline void setFileDataPtr(const uint8_t *ptr, uint16_t decode_size)
 {
     file_data_ptr.data = ptr;
     file_data_ptr.len = decode_size;
@@ -297,7 +297,7 @@ static inline int GetAltDetect(uint8_t **bufPtr, uint16_t *altLenPtr)
 {
     if ( Is_DetectFlag(FLAG_ALT_DETECT) )
     {
-        *bufPtr = DetectBuffer.data;
+        *bufPtr = (uint8_t*) DetectBuffer.data;
         *altLenPtr = DetectBuffer.len;
         return 1;
     }
@@ -305,7 +305,7 @@ static inline int GetAltDetect(uint8_t **bufPtr, uint16_t *altLenPtr)
     return 0;
 }
 
-static inline void SetAltDetect(uint8_t *buf, uint16_t altLen)
+static inline void SetAltDetect(const uint8_t *buf, uint16_t altLen)
 {
     DetectFlag_Enable(FLAG_ALT_DETECT);
     DetectBuffer.data = buf;
@@ -318,7 +318,7 @@ static inline void SetAltDecode(uint16_t altLen)
     DecodeBuffer.len = altLen;
 }
 
-static inline void DetectReset(uint8_t *buf, uint16_t altLen)
+static inline void DetectReset(const uint8_t *buf, uint16_t altLen)
 {
     DetectBuffer.data = buf;
     DetectBuffer.len = altLen;

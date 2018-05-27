@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -28,12 +28,36 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "appId.h"
+#include "appIdApi.h"
 #include "sf_snort_packet.h"
 
-void hostPortAppCacheInit(void);
-void hostPortAppCacheFini(void);
-tAppId hostPortAppCacheFind(const snort_ip *ip, uint16_t port, uint16_t proto);
-int hostPortAppCacheAdd(const struct in6_addr *ip, uint16_t port, uint16_t proto, unsigned type, tAppId appId);
-void hostPortAppCacheDump(void);
+// Forward declaration for AppId config. Cannot include appIdConfig.h because of
+// circular dependency
+struct appIdConfig_;
 
+typedef struct _tHostPortKey {
+    struct in6_addr ip;
+    uint16_t port;
+    uint16_t proto;
+} tHostPortKey;
+
+typedef struct _tHostPortVal {
+    tAppId appId;
+    APP_ID_TYPE type;
+} tHostPortVal;
+
+void hostPortAppCacheDynamicInit();
+void hostPortAppCacheDynamicFini();
+tHostPortVal *hostPortAppCacheDynamicFind(const sfaddr_t *ip, uint16_t port, uint16_t proto);
+int hostPortAppCacheDynamicAdd(const struct in6_addr *ip, uint16_t port, uint16_t proto, APP_ID_TYPE type, tAppId appId);
+void hostPortAppCacheDynamicDump();
+
+void hostPortAppCacheInit(struct appIdConfig_ *pConfig);
+void hostPortAppCacheFini(struct appIdConfig_ *pConfig);
+tHostPortVal *hostPortAppCacheFind(const sfaddr_t *ip, uint16_t port, uint16_t proto, const struct appIdConfig_ *pConfig);
+int hostPortAppCacheAdd(const struct in6_addr *ip, uint16_t port, uint16_t proto, APP_ID_TYPE type, tAppId appId, struct appIdConfig_ *pConfig);
+void hostPortAppCacheDump(const struct appIdConfig_ *pConfig);
+
+void updateHostCacheVersion(uint16_t *session_version);
+bool isHostCacheUpdated(uint16_t session_version);
 #endif

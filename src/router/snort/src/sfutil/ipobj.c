@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -114,7 +114,7 @@ void ipset_free( IPSET * ipc )
     }
 }
 
-int     ipset_add     ( IPSET * ipset, sfip_t *ip, void * vport, int notflag)
+int     ipset_add     ( IPSET * ipset, sfcidr_t *ip, void * vport, int notflag)
 {
     if( !ipset ) return -1;
 
@@ -134,7 +134,7 @@ int     ipset_add     ( IPSET * ipset, sfip_t *ip, void * vport, int notflag)
     return 0;
 }
 
-int ipset_contains( IPSET * ipc, sfip_t * ip, void *port)
+int ipset_contains( IPSET * ipc, sfaddr_t * ip, void *port)
 {
     PORTRANGE *pr;
     unsigned short portu;
@@ -191,7 +191,7 @@ int ipset_print( IPSET * ipc )
              p!=0;
              p =(IP_PORT*)sflist_next( &ipc->ip_list ) )
         {
-            SnortSnprintf(ip_str, 80, "%s", sfip_to_str(&p->ip));
+            SnortSnprintf(ip_str, 80, "%s", sfip_to_str(&p->ip.addr));
 
             printf("CIDR BLOCK: %c%s", p->notflag ? '!' : ' ', ip_str);
 
@@ -238,9 +238,9 @@ static int port_parse(char *portstr, PORTSET *portset)
     char *port1;
     char *port_begin;
     char *port_end;
-    char *port2 = '\0';
+    char *port2 = NULL;
 
-    port_begin = strdup(portstr);
+    port_begin = SnortStrdup(portstr);
 
     port1 = port_begin;
     port2 = strstr(port_begin, "-");
@@ -304,7 +304,7 @@ static int port_parse(char *portstr, PORTSET *portset)
     return 0;
 }
 
-static int ip_parse(char *ipstr, sfip_t *ip, char *not_flag, PORTSET *portset, char **endIP)
+static int ip_parse(char *ipstr, sfcidr_t *ip, char *not_flag, PORTSET *portset, char **endIP)
 {
     char *port_str;
     char *comma;
@@ -393,7 +393,7 @@ int ipset_parse(IPSET *ipset, char *ipstr)
     char set_not_flag = 0;
     char item_not_flag;
     char open_bracket = 0;
-    sfip_t ip;
+    sfcidr_t ip;
     PORTSET portset;
 
     copy = strdup(ipstr);

@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -35,6 +35,7 @@
 
 #include "sp_asn1_detect.h"
 #include "sp_byte_check.h"
+#include "sp_byte_math.h"
 #include "sp_byte_jump.h"
 #include "sp_byte_extract.h"
 #include "sp_clientserver.h"
@@ -60,6 +61,7 @@ extern int FlowBitsCheck(void *option_data, Packet *p);
 extern int CheckFlow(void *option_data, Packet *p);
 extern int Asn1Detect(void *option_data, Packet *p);
 extern int ByteTest(void *option_data, Packet *p);
+extern int ByteMath(void *option_data, Packet *p);
 extern int ByteJump(void *option_data, Packet *p);
 extern int IsDataAt(void *option_data, Packet *p);
 extern int FileDataEval(void *option_data, Packet *p);
@@ -78,6 +80,7 @@ static int ConvertAsn1Option(SnortConfig *, Rule *rule, int index, OptTreeNode *
 static int ConvertCursorOption(SnortConfig *, Rule *rule, int index, OptTreeNode *otn);
 static int ConvertHdrCheckOption(SnortConfig *, Rule *rule, int index, OptTreeNode *otn);
 static int ConvertByteTestOption(SnortConfig *, Rule *rule, int index, OptTreeNode *otn);
+static int ConvertByteMathOption(SnortConfig *, Rule *rule, int index, OptTreeNode *otn);
 static int ConvertByteJumpOption(SnortConfig *, Rule *rule, int index, OptTreeNode *otn);
 static int ConvertByteExtractOption(SnortConfig *, Rule *rule, int index, OptTreeNode *otn);
 static int ConvertSetCursorOption(SnortConfig *, Rule *rule, int index, OptTreeNode *otn);
@@ -112,7 +115,8 @@ static int (* OptionConverterArray[OPTION_TYPE_MAX])
     ConvertFileDataOption,
     ConvertPktDataOption,
     ConvertBase64DataOption,
-    ConvertBase64DecodeOption
+    ConvertBase64DecodeOption,
+    ConvertByteMathOption
 };
 
 /* Convert a dynamic rule to native rule structure. */
@@ -395,7 +399,6 @@ static int ConvertContentOption(SnortConfig *sc, Rule *rule, int index, OptTreeN
 
     if (pattern != (char *)content->pattern)
         free(pattern);
-
     return 1;
 }
 
@@ -767,9 +770,12 @@ static int ConvertByteTestOption(SnortConfig *sc, Rule *rule, int index, OptTree
 
     byte_test->bytes_to_compare = byte->bytes;
     byte_test->cmp_value = byte->value;
-    byte_test->cmp_value_var = GetVarByName(byte->value_refId);
+    byte_test->cmp_value_var = GetVarByName_check(byte->value_refId);
     byte_test->offset = byte->offset;
-    byte_test->offset_var = GetVarByName(byte->offset_refId);
+    byte_test->offset_var = GetVarByName_check(byte->offset_refId);
+
+    byte_test->bitmask_val = byte->bitmask_val;
+
     if (byte->flags & NOT_FLAG)
         byte_test->not_flag = 1;
 
@@ -823,9 +829,12 @@ static int ConvertByteJumpOption(SnortConfig *sc, Rule *rule, int index, OptTree
 
     byte_jump->bytes_to_grab = byte->bytes;
     byte_jump->offset = byte->offset;
-    byte_jump->offset_var = GetVarByName(byte->offset_refId);
+    byte_jump->offset_var = GetVarByName_check(byte->offset_refId);
     byte_jump->multiplier = byte->multiplier;
     byte_jump->post_offset = byte->post_offset;
+    byte_jump->postoffset_var = GetVarByName_check(byte->postoffset_refId);
+
+    byte_jump->bitmask_val = byte->bitmask_val;
 
     if (byte->flags & CONTENT_RELATIVE)
         byte_jump->relative_flag = 1;
@@ -833,6 +842,10 @@ static int ConvertByteJumpOption(SnortConfig *sc, Rule *rule, int index, OptTree
         byte_jump->data_string_convert_flag = 1;
     if (byte->flags & JUMP_FROM_BEGINNING)
         byte_jump->from_beginning_flag = 1;
+    if (byte->flags & JUMP_FROM_END)
+    {
+        byte_jump->from_end_flag = 1;
+    }
     if (byte->flags & JUMP_ALIGN)
         byte_jump->align_flag = 1;
     if (byte->flags & BYTE_BIG_ENDIAN)
@@ -876,7 +889,9 @@ static int ConvertByteExtractOption(SnortConfig *sc, Rule *rule, int index, OptT
     snort_byte->bytes_to_grab = so_byte->bytes;
     snort_byte->offset = so_byte->offset;
     snort_byte->align = so_byte->align;
-    snort_byte->name = strdup(so_byte->refId);
+    snort_byte->name = SnortStrdup(so_byte->refId);
+
+    snort_byte->bitmask_val = so_byte->bitmask_val;
 
     /* In an SO rule, setting multiplier to 0 means that the multiplier is
        ignored. This is not the case in the text rule version of byte_extract. */
@@ -1008,3 +1023,56 @@ static int ConvertBase64DecodeOption(SnortConfig *sc, Rule *rule, int index, Opt
         fpl->isRelative = 1;
     return 1;
 }
+
+static int ConvertByteMathOption(SnortConfig *sc, Rule *rule, int index, OptTreeNode *otn)
+{
+    ByteData *byte = rule->options[index]->option_u.byte;
+    ByteMathData *byte_math = (ByteMathData *) SnortAlloc(sizeof(ByteMathData));
+    OptFpList *fpl;
+    void *idx_dup;
+
+    ClearByteMathVarNames(otn->opt_func);
+    byte_math->bytes_to_extract = byte->bytes;
+    byte_math->rvalue = byte->value;
+    byte_math->rvalue_var = GetVarByName(byte->value_refId);
+    byte_math->offset = byte->offset;
+    byte_math->offset_var = GetVarByName(byte->offset_refId);
+    byte_math->operator = byte->op;
+    byte_math->bitmask_val = byte->bitmask_val;
+    byte_math->result_var = SnortStrdup(byte->refId);
+
+    if (byte->flags & CONTENT_RELATIVE)
+        byte_math->relative_flag = 1;
+    if (byte->flags & EXTRACT_AS_STRING)
+        byte_math->data_string_convert_flag = 1;
+
+    if (byte->flags & BYTE_BIG_ENDIAN)
+        byte_math->endianess = BIG;
+    else
+        byte_math->endianess = LITTLE;
+
+    if (byte->flags & EXTRACT_AS_DEC)
+        byte_math->base = 10;
+    if (byte->flags & EXTRACT_AS_OCT)
+        byte_math->base = 8;
+    if (byte->flags & EXTRACT_AS_HEX)
+        byte_math->base = 16;
+
+    AddVarName_Bytemath(byte_math);
+    fpl = AddOptFuncToList(ByteMath, otn);
+    fpl->type = RULE_OPTION_TYPE_BYTE_MATH;
+
+    if (add_detection_option(sc, RULE_OPTION_TYPE_BYTE_MATH, (void *)byte_math, &idx_dup) == DETECTION_OPTION_EQUAL)
+    {
+        free(byte_math->result_var);
+        free(byte_math);
+        byte_math = idx_dup;
+    }
+
+    fpl->context = (void *)byte_math;
+
+    if (byte_math->relative_flag == 1)
+        fpl->isRelative = 1;
+    return 1;
+}
+

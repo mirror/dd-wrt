@@ -16,6 +16,7 @@ perf.c perf.h \
 perf-base.c perf-base.h \
 perf-flow.c perf-flow.h \
 perf-event.c perf-event.h \
+perf_indicators.c perf_indicators.h \
 $(PROCPIDSTATS_SOURCE) \
 spp_httpinspect.c spp_httpinspect.h \
 snort_httpinspect.c snort_httpinspect.h \

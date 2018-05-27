@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -32,6 +32,114 @@
 #include "common_util.h"
 
 /*static const char * LuaLogLabel = "luaDetectorFlowApi"; */
+
+/* Lua flag bit/index to C flag value (0 for invalid). */
+static const uint64_t FLAGS_TABLE_LUA_TO_C[32] = {
+    0,                                /*  0 */
+    0,                                /*  1 */
+    0,                                /*  2 */
+    0,                                /*  3 */
+    0,                                /*  4 */
+    0,                                /*  5 */
+    0,                                /*  6 */
+    0,                                /*  7 */
+    0,                                /*  8 */
+    0,                                /*  9 */
+    0,                                /* 10 */
+    0,                                /* 11 */
+    0,                                /* 12 */
+    0,                                /* 13 */
+    0,                                /* 14 */
+    0,                                /* 15 */
+    0,                                /* 16 */
+    0,                                /* 17 */
+    0,                                /* 18 */
+    0,                                /* 19 */
+    0,                                /* 20 */
+    0,                                /* 21 */
+    APPID_SESSION_UDP_REVERSED,       /* 22: udpReversed */
+    APPID_SESSION_INCOMPATIBLE,       /* 23: incompatible */
+    APPID_SESSION_IGNORE_HOST,        /* 24: ignoreHost */
+    0,                                /* 25: ignoreTcpSeq -- OBSOLETE */
+    APPID_SESSION_CLIENT_DETECTED,    /* 26: clientAppDetected */
+    0,                                /* 27: gotBanner    -- OBSOLETE */
+    APPID_SESSION_NOT_A_SERVICE,      /* 28: notAService */
+    0,                                /* 29: logUnknown   -- OBSOLETE */
+    APPID_SESSION_CONTINUE,           /* 30: continue */
+    APPID_SESSION_SERVICE_DETECTED    /* 31: serviceDetected */
+};
+
+/* C flag bit/index to Lua flag value (0 for invalid). */
+static const uint64_t FLAGS_TABLE_C_TO_LUA[32] = {
+        0,             /*  0 */
+        0,             /*  1 */
+        0,             /*  2 */
+        0,             /*  3 */
+        0,             /*  4 */
+        0,             /*  5 */
+        0,             /*  6 */
+        0,             /*  7 */
+        0,             /*  8 */
+        0,             /*  9 */
+        0,             /* 10 */
+        0,             /* 11 */
+        0x00400000,    /* 12: APPID_SESSION_UDP_REVERSED */
+        0,             /* 13 */
+        0x80000000,    /* 14: APPID_SESSION_SERVICE_DETECTED */
+        0x04000000,    /* 15: APPID_SESSION_CLIENT_DETECTED */
+        0x10000000,    /* 16: APPID_SESSION_NOT_A_SERVICE */
+        0,             /* 17 */
+        0,             /* 18 */
+        0x40000000,    /* 19: APPID_SESSION_CONTINUE */
+        0x01000000,    /* 20: APPID_SESSION_IGNORE_HOST */
+        0x00800000,    /* 21: APPID_SESSION_INCOMPATIBLE */
+        0,             /* 22 */
+        0,             /* 23 */
+        0,             /* 24 */
+        0,             /* 25 */
+        0,             /* 26 */
+        0,             /* 27 */
+        0,             /* 28 */
+        0,             /* 29 */
+        0,             /* 30 */
+        0              /* 31 */
+};
+
+/* Convert flag bits used by the Lua code into what the C code uses. */
+static inline uint64_t ConvertFlagsLuaToC(uint64_t in)
+{
+    uint64_t out = 0;
+    unsigned i;
+    uint64_t msk;
+
+    msk = 1;
+    for (i = 0; i < 32; i++)
+    {
+        if (in & msk)
+            out |= FLAGS_TABLE_LUA_TO_C[i];
+        msk <<= 1;
+    }
+
+    return out;
+}
+
+/* Convert flag bits used by the C code into what the Lua code uses. */
+static inline uint64_t ConvertFlagsCToLua(uint64_t in)
+{
+    uint64_t out = 0;
+    unsigned i;
+    uint64_t msk;
+
+    msk = 1;
+    for (i = 0; i < 32; i++)
+    {
+        if (in & msk)
+            out |= FLAGS_TABLE_C_TO_LUA[i];
+        msk <<= 1;
+    }
+
+    return out;
+}
 
 static DetectorFlowUserData *toDetectorFlowUserData (lua_State *L, int index)
 {
@@ -115,8 +223,8 @@ DetectorFlowUserData *pushDetectorFlowUserData (lua_State *L)
 static int DetectorFlow_new (lua_State *L)
 {
     DetectorFlowUserData *pLuaData = NULL;
-    snort_ip saddr;
-    snort_ip daddr;
+    sfaddr_t saddr;
+    sfaddr_t daddr;
     uint8_t proto;
     uint16_t sport, dport;
     DetectorUserData *detectorUserData = NULL;
@@ -137,16 +245,13 @@ static int DetectorFlow_new (lua_State *L)
 
     if (patternLen == 16)
     {
-        saddr.family = AF_INET6;
-        saddr.bits = 128;
-	    memcpy(&saddr.ip8, pattern, patternLen);
+        if (sfip_set_raw(&saddr, pattern, AF_INET6) != SFIP_SUCCESS)
+            return 0;
     }
     else if (patternLen == 4)
     {
-        saddr.family = AF_INET;
-        saddr.bits = 32;
-	    memcpy(&saddr.ip32[0], pattern, patternLen);
-	    saddr.ip32[1] = saddr.ip32[2] = saddr.ip32[3] = 0;
+        if (sfip_set_raw(&saddr, pattern, AF_INET) != SFIP_SUCCESS)
+            return 0;
     }
     else
     {
@@ -157,16 +262,13 @@ static int DetectorFlow_new (lua_State *L)
 
     if (patternLen == 16)
     {
-        daddr.family = AF_INET6;
-        daddr.bits = 128;
-	    memcpy(&daddr.ip8, pattern, patternLen);
+        if (sfip_set_raw(&daddr, pattern, AF_INET6) != SFIP_SUCCESS)
+            return 0;
     }
     else if (patternLen == 4)
     {
-        daddr.family = AF_INET;
-        daddr.bits = 32;
-   	    memcpy(&daddr.ip32[0], pattern, patternLen);
-	    daddr.ip32[1] = daddr.ip32[2] = daddr.ip32[3] = 0;
+        if (sfip_set_raw(&daddr, pattern, AF_INET) != SFIP_SUCCESS)
+            return 0;
     }
     else
     {
@@ -186,8 +288,8 @@ static int DetectorFlow_new (lua_State *L)
 
     pDetectorFlow = pLuaData->pDetectorFlow;
 
-    pDetectorFlow->pFlow = AppIdEarlySessionCreate(detectorUserData->pDetector->validateParams.pkt,
-                                            &saddr, sport, &daddr, dport, proto, 0);
+    pDetectorFlow->pFlow = AppIdEarlySessionCreate((tAppIdData*) pDetectorFlow, detectorUserData->pDetector->validateParams.pkt,
+                                            &saddr, sport, &daddr, dport, proto, 0, 0);
     if (!pDetectorFlow->pFlow)
     {
         /*calloced buffer will be freed later after the current packet is processed. */
@@ -244,7 +346,7 @@ static int DetectorFlow_setFlowFlag(
         )
 {
     DetectorFlowUserData *pLuaData;
-    uint32_t flags;
+    uint64_t flags;
 
     pLuaData = checkDetectorFlowUserData(L, 1);
     if (!pLuaData || !pLuaData->pDetectorFlow)
@@ -253,8 +355,9 @@ static int DetectorFlow_setFlowFlag(
     }
 
     flags = lua_tonumber(L, 2);
+    flags = ConvertFlagsLuaToC(flags);
 
-    flow_mark(pLuaData->pDetectorFlow->pFlow, flags);
+    setAppIdFlag(pLuaData->pDetectorFlow->pFlow, flags);
 
     return 0;
 }
@@ -272,7 +375,8 @@ static int DetectorFlow_getFlowFlag(
         )
 {
     DetectorFlowUserData *pLuaData;
-    uint32_t flags;
+    uint64_t flags;
+    uint64_t ret;
 
     pLuaData = checkDetectorFlowUserData(L, 1);
     if (!pLuaData || !pLuaData->pDetectorFlow)
@@ -282,8 +386,11 @@ static int DetectorFlow_getFlowFlag(
     }
 
     flags = lua_tonumber(L, 2);
+    flags = ConvertFlagsLuaToC(flags);
 
-    lua_pushnumber(L, flow_checkflag(pLuaData->pDetectorFlow->pFlow, flags));
+    ret = getAppIdFlag(pLuaData->pDetectorFlow->pFlow, flags);
+    ret = ConvertFlagsCToLua(ret);
+    lua_pushnumber(L, ret);
 
     return 1;
 }
@@ -300,7 +407,7 @@ static int DetectorFlow_clearFlowFlag(
         )
 {
     DetectorFlowUserData *pLuaData;
-    uint32_t flags;
+    uint64_t flags;
 
     pLuaData = checkDetectorFlowUserData(L, 1);
     if (!pLuaData || !pLuaData->pDetectorFlow)
@@ -309,8 +416,9 @@ static int DetectorFlow_clearFlowFlag(
     }
 
     flags = lua_tonumber(L, 2);
+    flags = ConvertFlagsLuaToC(flags);
 
-    flow_clear(pLuaData->pDetectorFlow->pFlow, flags);
+    clearAppIdFlag(pLuaData->pDetectorFlow->pFlow, flags);
 
     return 0;
 }
@@ -368,7 +476,7 @@ static int DetectorFlow_setFlowClntAppType(
  * @param Lua_State* - Lua state variable.
  * @param detectorflow/stack - DetectorFlowUserData object
  * @return int - Number of elements on stack, which is 1 if successful, 0 otherwise.
- * @return flowKey/stack - A 4 byte flow key
+ * @return flowKey/stack - A 20 byte flow key
  */
 static int DetectorFlow_getFlowKey(
         lua_State *L
@@ -431,7 +539,7 @@ static int DetectorFlow_tostring (
         )
 {
   char buff[32];
-  sprintf(buff, "%p", toDetectorFlowUserData(L, 1));
+  snprintf(buff, sizeof(buff), "%p", toDetectorFlowUserData(L, 1));
   lua_pushfstring(L, "DetectorFlowUserData (%s)", buff);
   return 1;
 }

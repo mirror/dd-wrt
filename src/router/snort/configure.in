@@ -2,30 +2,22 @@
 AC_INIT
 AC_CONFIG_SRCDIR([src/snort.c])
 AC_PREREQ(2.50)
-#LT_PREREQ([2.2.6])
 AM_CONFIG_HEADER(config.h)
 # When changing the snort version, please also update the VERSION
 # definition in "src/win32/WIN32-Includes/config.h"
-AM_INIT_AUTOMAKE(snort,2.9.7.2)
+AM_INIT_AUTOMAKE(snort,2.9.11.1)
 
 NO_OPTIMIZE="no"
-ADD_WERROR="no"
 
-# Test for -Werror and sed it out for now since some of the auto tests,
-# for example AC_CHECK_LIB, will fail because of
-# warning: conflicting types for built-in function <func>
-if eval "echo $CFLAGS | grep -e -Werror"; then
-    CFLAGS=`echo $CFLAGS | sed -e "s/-Werror//g"`
-    ADD_WERROR="yes"
-fi
-
-# Disable annoying practice of recursively re-running the autotools
-AM_MAINTAINER_MODE
 AC_PROG_CC_STDC
 AC_PROG_CC
 AC_PROG_LIBTOOL
 AC_PROG_RANLIB
 AC_C_BIGENDIAN
+# AC_C_BIGENDIAN implicitly defines WORDS_BIGENDIAN, but the CCONFIGFLAGS also needs to be affected.
+if test "x$ac_cv_c_bigendian" = "xyes"; then
+    CCONFIGFLAGS="${CCONFIGFLAGS} -DSF_BIGENDIAN"
+fi
 AC_C_INLINE
 
 #AC_CANONICAL_HOST
@@ -83,7 +75,13 @@ case "$host" in
     ;;
   *-hpux10*|*-hpux11*)
     AC_DEFINE([HPUX],[1],[Define if HP-UX 10 or 11])
-    AC_DEFINE([WORDS_BIGENDIAN],[1],[Define if words are big endian])
+    if test "x$ac_cv_c_bigendian" = "xno"; then
+        # exception to AC_C_BIGENDIAN and test "x$ac_cv_c_bigendian" = "xyes" above 
+        # causes the need for next three lines.
+        AC_MSG_NOTICE([bigendian byte-order not detected but asserted for $host])
+        AC_DEFINE([WORDS_BIGENDIAN],[1],[Define if words are big endian])
+        CCONFIGFLAGS="${CCONFIGFLAGS} -DSF_BIGENDIAN"
+    fi
     AC_SUBST(extra_incl)
     extra_incl="-I/usr/local/include"
     ;;
@@ -132,7 +130,6 @@ if eval "echo $CC | grep icc > /dev/null" ; then
     #CFLAGS=`echo $CFLAGS | sed 's/-O2/-O3/'`
     CFLAGS="$CFLAGS -O3 -ip -w1"
     ICC=yes
-    GCC=
 fi
 AC_SUBST(XCCFLAGS)
 
@@ -285,7 +282,21 @@ AC_CHECK_TYPES([int8_t,int16_t,int32_t,int64_t])
 AC_CHECK_TYPES([boolean])
 
 # In case INADDR_NONE is not defined (like on Solaris)
-have_inaddr_none="yes"
+have_inaddr_none="no"
+AC_MSG_CHECKING([for INADDR_NONE])
+AC_RUN_IFELSE(
+[AC_LANG_PROGRAM(
+[[
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+]],
+[[
+	if (inet_addr("10,5,2") == INADDR_NONE);
+    return 0;
+]])],
+[have_inaddr_none="yes"],
+[have_inaddr_none="no"])
 AC_MSG_RESULT($have_inaddr_none)
 if test "x$have_inaddr_none" = "xno"; then
 	AC_DEFINE([INADDR_NONE],[-1],[For INADDR_NONE definition])
@@ -362,7 +373,6 @@ AC_ARG_WITH(daq_libraries,
 
 if test "x$with_daq_includes" != "xno"; then
    CPPFLAGS="${CPPFLAGS} -I${with_daq_includes}"
-   ICONFIGFLAGS="${ICONFIGFLAGS} -I${with_daq_includes}"
 fi
 
 if test "x$with_daq_libraries" != "xno"; then
@@ -419,7 +429,30 @@ if test "x$LPCAP" = "xno"; then
 fi
 
 AC_MSG_CHECKING([for pcap_lex_destroy])
-have_pcap_lib_version="yes"
+AC_RUN_IFELSE(
+[AC_LANG_PROGRAM(
+[[
+#include <pcap.h>
+]],
+[[
+   pcap_lex_destroy();
+]])],
+[have_pcap_lex_destroy="yes"],
+[have_pcap_lex_destroy="no"])
+AC_MSG_RESULT($have_pcap_lex_destroy)
+if test "x$have_pcap_lex_destroy" = "xyes"; then
+    AC_DEFINE([HAVE_PCAP_LEX_DESTROY],[1],[Can cleanup lex buffer stack created by pcap bpf filter])
+fi
+
+AC_MSG_CHECKING([for pcap_lib_version])
+AC_LINK_IFELSE(
+    [AC_LANG_PROGRAM(
+        [[#include <pcap.h>]],
+        [[pcap_lib_version();]]
+    )],
+    [have_pcap_lib_version="yes"],
+    [have_pcap_lib_version="no"]
+)
 AC_MSG_RESULT($have_pcap_lib_version)
 
 if test "x$have_pcap_lib_version" = "xyes"; then
@@ -562,10 +595,12 @@ AC_ARG_ENABLE(control_socket,
 [  --enable-control-socket  Enable the control socket],
        enable_control_socket="$enableval", enable_control_socket="no")
 if test "x$linux" != "xyes"; then
-    if test "x$enable_control_socket" = "xyes"; then
-        AC_MSG_WARN([[The control socket is only supported on Linux systems.]])
-        enable_control_socket="no"
-    fi
+    if test "$OSTYPE" != "FreeBSD"; then
+          if test "x$enable_control_socket" = "xyes"; then
+             AC_MSG_WARN([[The control socket is only supported on Linux or FreeBSD systems.]])
+             enable_control_socket="no"
+          fi
+     fi
 fi
 AM_CONDITIONAL(BUILD_CONTROL_SOCKET, test "x$enable_control_socket" = "xyes")
 if test "x$enable_control_socket" = "xyes"; then
@@ -576,9 +611,11 @@ AC_ARG_ENABLE(side_channel,
 [  --enable-side-channel    Enable the side channel (Experimental)],
        enable_side_channel="$enableval", enable_side_channel="no")
 if test "x$linux" != "xyes"; then
-    if test "x$enable_side_channel" = "xyes"; then
-        AC_MSG_WARN([[The side channel is only supported on Linux systems.]])
-        enable_side_channel="no"
+    if test "$OSTYPE" != "FreeBSD"; then
+       if test "x$enable_side_channel" = "xyes"; then
+           AC_MSG_WARN([[The side channel is only supported on Linux or FreeBSD systems.]])
+           enable_side_channel="no"
+       fi
     fi
 fi
 AM_CONDITIONAL(BUILD_SIDE_CHANNEL, test "x$enable_side_channel" = "xyes")
@@ -597,6 +634,7 @@ AC_ARG_WITH(dnet_libraries,
 
 if test "x$with_dnet_includes" != "xno"; then
     CPPFLAGS="${CPPFLAGS} -I${with_dnet_includes}"
+    ICONFIGFLAGS="${ICONFIGFLAGS} -I${with_dnet_includes}"
 else
     CPPFLAGS="${CPPFLAGS} `dnet-config --cflags 2>/dev/null`"
 fi
@@ -677,6 +715,31 @@ fi
 
 AC_CHECK_FUNCS([daq_hup_apply] [daq_acquire_with_meta] [daq_dp_add_dc])
 
+AC_MSG_CHECKING([for daq real addresses])
+AC_RUN_IFELSE(
+[AC_LANG_PROGRAM(
+[[
+#include <daq.h>
+]],
+[[
+   DAQ_PktHdr_t hdr;
+   hdr.n_real_dPort = 0;
+]])],
+[have_daq_real_addresses="yes"],
+[have_daq_real_addresses="no"])
+AC_MSG_RESULT($have_daq_real_addresses)
+if test "x$have_daq_real_addresses" = "xyes"; then
+    AC_DEFINE([HAVE_DAQ_REAL_ADDRESSES],[1],
+        [DAQ version supports real addresses in header.])
+fi
+
+AC_CHECK_DECL([DAQ_PKT_FLAG_DECRYPTED_SSL], [have_daq_decrypted_ssl="yes"],
+[have_daq_decrypted_ssl="no"], [#include <daq_common.h>])
+if test "x$have_daq_decrypted_ssl" = "xyes"; then
+    AC_DEFINE([HAVE_DAQ_DECRYPTED_SSL],[1],
+        [DAQ version supports decrypted ssl])
+fi
+
 if test "x$ac_cv_func_daq_dp_add_dc" = "xyes"; then
 
     AC_CHECK_MEMBER([struct _DAQ_DP_key_t.sa.src_ip4],[],[DAQ_C99_STRUCT="no"],[#include <daq_common.h>])
@@ -691,7 +754,17 @@ if test "x$ac_cv_func_daq_dp_add_dc" = "xyes"; then
 fi
 
 AC_MSG_CHECKING([for daq address space ID])
-have_daq_address_space_id="yes"
+AC_RUN_IFELSE(
+[AC_LANG_PROGRAM(
+[[
+#include <daq.h>
+]],
+[[
+   DAQ_PktHdr_t hdr;
+   hdr.address_space_id = 0;
+]])],
+[have_daq_address_space_id="yes"],
+[have_daq_address_space_id="no"])
 AC_MSG_RESULT($have_daq_address_space_id)
 if test "x$have_daq_address_space_id" = "xyes"; then
     AC_DEFINE([HAVE_DAQ_ADDRESS_SPACE_ID],[1],
@@ -699,19 +772,158 @@ if test "x$have_daq_address_space_id" = "xyes"; then
 fi
 
 AC_MSG_CHECKING([for daq flow ID])
-have_daq_flow_id="yes"
+AC_RUN_IFELSE(
+[AC_LANG_PROGRAM(
+[[
+#include <daq.h>
+]],
+[[
+   DAQ_PktHdr_t hdr;
+   hdr.flow_id = 0;
+]])],
+[have_daq_flow_id="yes"],
+[have_daq_flow_id="no"])
 AC_MSG_RESULT($have_daq_flow_id)
 if test "x$have_daq_flow_id" = "xyes"; then
     AC_DEFINE([HAVE_DAQ_FLOW_ID],[1],
         [DAQ version supports flow ID in header.])
 fi
 
+AC_MSG_CHECKING([for daq extended flow modifiers])
+AC_RUN_IFELSE(
+[AC_LANG_PROGRAM(
+[[
+#include <daq.h>
+]],
+[[
+   DAQ_ModFlow_t mod;
+   mod.type = 0;
+   mod.length = 0;
+   mod.value = NULL;
+]])],
+[have_daq_ext_modflow="yes"],
+[have_daq_ext_modflow="no"])
+AC_MSG_RESULT($have_daq_ext_modflow)
+if test "x$have_daq_ext_modflow" = "xyes"; then
+    CCONFIGFLAGS="${CCONFIGFLAGS} -DHAVE_DAQ_EXT_MODFLOW"
+    AC_DEFINE([HAVE_DAQ_EXT_MODFLOW],[1],
+        [DAQ version supports extended flow modifiers.])
+fi
+
+AC_MSG_CHECKING([for daq query flow])
+AC_RUN_IFELSE(
+[AC_LANG_PROGRAM(
+[[
+#include <daq.h>
+]],
+[[
+   DAQ_QueryFlow_t mod;
+   mod.type = 0;
+   mod.length = 0;
+   mod.value = NULL;
+]])],
+[have_daq_queryflow="yes"],
+[have_daq_queryflow="no"])
+AC_MSG_RESULT($have_daq_queryflow)
+if test "x$have_daq_queryflow" = "xyes"; then
+    CCONFIGFLAGS="${CCONFIGFLAGS} -DHAVE_DAQ_QUERYFLOW"
+    AC_DEFINE([HAVE_DAQ_QUERYFLOW],[1],
+        [DAQ version supports query flow.])
+fi
+
+AC_MSG_CHECKING([for daq data channel flags])
+AC_RUN_IFELSE(
+[AC_LANG_PROGRAM(
+[[
+#include <daq.h>
+]],
+[[
+   DAQ_Data_Channel_Params_t params;
+]])],
+[have_daq_data_channel_flags="yes"],
+[have_daq_data_channel_flags="no"])
+AC_MSG_RESULT($have_daq_data_channel_flags)
+if test "x$have_daq_data_channel_flags" = "xyes"; then
+    CCONFIGFLAGS="${CCONFIGFLAGS} -DHAVE_DAQ_DATA_CHANNEL_PARAMS"
+    AC_DEFINE([HAVE_DAQ_DATA_CHANNEL_PARAMS],[1],
+        [DAQ version supports data channel.])
+fi
+
+AC_MSG_CHECKING([for separate IP versions on pinhole endpoints])
+AC_RUN_IFELSE(
+[AC_LANG_PROGRAM(
+[[
+#include <daq.h>
+]],
+[[
+   DAQ_DP_key_t dpKey;
+   dpKey.src_af = 0;
+]])],
+[have_daq_data_channel_separate_ip_versions="yes"],
+[have_daq_data_channel_separate_ip_versions="no"])
+AC_MSG_RESULT($have_daq_data_channel_separate_ip_versions)
+if test "x$have_daq_data_channel_separate_ip_versions" = "xyes"; then
+    CCONFIGFLAGS="${CCONFIGFLAGS} -DHAVE_DAQ_DATA_CHANNEL_SEPARATE_IP_VERSIONS"
+    AC_DEFINE([HAVE_DAQ_DATA_CHANNEL_SEPARATE_IP_VERSIONS],[1],
+        [DAQ version supports separate IP versions on pinhole endpoints.])
+fi
+
 AC_MSG_CHECKING([for DAQ_VERDICT_RETRY])
-have_daq_verdict_retry="yes"
+AC_RUN_IFELSE(
+[AC_LANG_PROGRAM(
+[[
+#include <daq.h>
+]],
+[[
+   DAQ_Verdict verdict;
+   verdict = DAQ_VERDICT_RETRY;
+]])],
+[have_daq_verdict_retry="yes"],
+[have_daq_verdict_retry="no"])
 AC_MSG_RESULT($have_daq_verdict_retry)
 if test "x$have_daq_verdict_retry" = "xyes"; then
     AC_DEFINE([HAVE_DAQ_VERDICT_RETRY],[1],
         [DAQ version supports DAQ_VERDICT_RETRY in DAQ_Verdict.])
+fi
+
+AC_MSG_CHECKING([for daq packet trace])
+AC_RUN_IFELSE(
+[AC_LANG_PROGRAM(
+[[
+#include <daq.h>
+]],
+[[
+   DAQ_PktHdr_t hdr;
+   hdr.flags = DAQ_PKT_FLAG_TRACE_ENABLED;
+]])],
+[have_daq_packet_trace="yes"],
+[have_daq_packet_trace="no"])
+AC_MSG_RESULT($have_daq_packet_trace)
+if test "x$have_daq_packet_trace" = "xyes"; then
+    AC_DEFINE([HAVE_DAQ_PKT_TRACE],[1],
+        [DAQ version supports packet trace.])
+else
+    echo "DAQ version doesn't support packet trace."
+fi
+
+AC_MSG_CHECKING([for daq verdict reason])
+AC_RUN_IFELSE(
+[AC_LANG_PROGRAM(
+[[
+#include <daq.h>
+]],
+[[
+   DAQ_ModFlow_t fl;
+   fl.type = DAQ_MODFLOW_TYPE_VER_REASON;
+]])],
+[have_daq_verdict_reason="yes"],
+[have_daq_verdict_reason="no"])
+AC_MSG_RESULT($have_daq_verdict_reason)
+if test "x$have_daq_verdict_reason" = "xyes"; then
+    AC_DEFINE([HAVE_DAQ_VERDICT_REASON],[1],
+        [DAQ version supports tracing verdict reason.])
+else
+    echo "DAQ version doesn't support tracing verdict reason."
 fi
 
 # any sparc platform has to have this one defined.
@@ -772,7 +984,7 @@ AC_DEFUN([CC_VISIBILITY],
     AC_MSG_RESULT([$gl_cv_cc_visibility])
     CFLAGS="$gl_save_CFLAGS"
     if test "x$gl_cv_cc_visibility" = "xyes"; then
-        CCONFIGFLAGS="${CCONFIGFLAGS} -DSF_VISIBILITY -fvisibility=hidden"
+        CFLAGS="${CFLAGS} -DSF_VISIBILITY -fvisibility=hidden"
         AC_DEFINE([HAVE_VISIBILITY],[1],
             [Define if the compiler supports visibility declarations.])
     fi
@@ -831,7 +1043,7 @@ if test "x$enable_lzma" = "xyes"; then
     else
         AC_CHECK_HEADERS(lzma.h, LZMA_HEADERS="yes", LZMA_HEADERS="no")
     fi
-    
+
     if test "x$with_lzma_libraries" != "xno"; then
         LDFLAGS="${LDFLAGS} -L${with_lzma_libraries}"
         LZMA_LIB="yes"
@@ -1022,6 +1234,7 @@ AC_ARG_ENABLE(reload-error-restart,
 [  --disable-reload-error-restart   Disable restarting on reload error],
        enable_reload_error_restart="$enableval", enable_reload_error_restart="yes")
 
+AM_CONDITIONAL(BUILD_SNORT_RELOAD, test "x$enable_reload" = "xyes")
 if test "x$enable_reload" = "xyes"; then
     if test "x$enable_reload_error_restart" = "xyes"; then
         CONFIGFLAGS="$CONFIGFLAGS -DSNORT_RELOAD"
@@ -1040,6 +1253,16 @@ AM_CONDITIONAL(BUILD_HA, test "x$enable_ha" = "xyes")
 if test "x$enable_ha" = "xyes"; then
     CONFIGFLAGS="$CONFIGFLAGS -DENABLE_HA"
 fi
+
+AC_ARG_ENABLE(buffer-dump,
+[  --enable-buffer-dump    Enable Buffer dump utility to dump packet buffers],
+       enable_buffer_dump="$enableval", enable_buffer_dump="no")
+
+AM_CONDITIONAL(BUILD_BUFFER_DUMP, test "x$enable_buffer_dump" = "xyes")
+if test "x$enable_buffer_dump" = "xyes"; then
+    CONFIGFLAGS="$CONFIGFLAGS -DDUMP_BUFFER"
+fi
+
 
 # define NO_NON_ETHER_DECODERS by default
 AC_ARG_ENABLE(non-ether-decoders,
@@ -1139,7 +1362,7 @@ AM_CONDITIONAL(HAVE_SHARED_REP, test "x$enable_shared_rep" = "xyes")
 # Define PKG_CHECK_MODULES if it doesnt already exist.
 #file_ This prevents './configure' from erroring on machines that dont have
 # 'pkgconfig' installed.
-#m4_ifdef([PKG_CHECK_MODULES],[], [m4_define([PKG_CHECK_MODULES], 
+#m4_ifdef([PKG_CHECK_MODULES],[], [m4_define([PKG_CHECK_MODULES],
 #     [echo "PKG_CHECK_MODULES not defined"])])
 
 AC_ARG_ENABLE(large-pcap,
@@ -1202,7 +1425,35 @@ if test "x$enable_open_appid" = "xyes"; then
 fi
 
 ###### End OpenAppId
-# let's make some fixes..
+
+#include nghttp2 libs
+
+AC_ARG_WITH(libnghttp2_includes,
+       [  --with-libnghttp2-includes=DIR    libnghttp2 include directory],
+       [with_libnghttp2_includes="$withval"],[with_libnghttp2_includes="no"])
+
+AC_ARG_WITH(libnghttp2_libraries,
+       [  --with-libnghttp2-libraries=DIR   libnghttp2 library directory],
+       [with_libnghttp2_libraries="$withval"],[with_libnghttp2_libraries="no"])
+
+if test "x$with_libnghttp2_includes" != "xno"; then
+    CPPFLAGS="${CPPFLAGS} -I${with_libnghttp2_includes}"
+    ICONFIGFLAGS="${ICONFIGFLAGS} -I${with_libnghttp2_includes}"
+fi
+
+if test "x$with_libnghttp2_libraries" != "xno"; then
+    LDFLAGS="${LDFLAGS}  -L${with_libnghttp2_libraries}"
+fi
+
+# Verify that we have the library
+NGHTTP_L=""
+AC_CHECK_LIB(nghttp2, nghttp2_option_new, ,NGHTTP_L="no")
+if test "x$NGHTTP_L" = "xno"; then
+    echo
+    echo "   Libnghttp2 library not found."
+    echo "   Get it from https://nghttp2.org/"
+    echo
+fi
 
 CFLAGS="${CFLAGS} ${CCONFIGFLAGS}"
 CFLAGS=`echo $CFLAGS | sed -e 's/-I\/usr\/include //g'`
@@ -1290,18 +1541,15 @@ if test "x$NO_OPTIMIZE" = "xyes"; then
     fi
 fi
 
-if test "x$ADD_WERROR" = "xyes"; then
-    CFLAGS="$CFLAGS -Werror"
-fi
-
-if test -n "$GCC"; then
+# Question: Does ICC not support -Wall (VJR - Jan 14, 2015)
+if test "$ICC" = "no"; then
     CFLAGS="$CFLAGS -Wall"
 fi
 
 echo $CFLAGS > cflags.out
 echo $CPPFLAGS > cppflags.out
 
-INCLUDES='-I$(top_srcdir) -I$(top_srcdir)/src -I$(top_srcdir)/src/sfutil $(extra_incl) -I$(top_srcdir)/src/output-plugins -I$(top_srcdir)/src/detection-plugins -I$(top_srcdir)/src/dynamic-plugins -I$(top_srcdir)/src/preprocessors -I$(top_srcdir)/src/preprocessors/portscan -I$(top_srcdir)/src/preprocessors/HttpInspect/include -I$(top_srcdir)/src/preprocessors/Session -I$(top_srcdir)/src/preprocessors/Stream6 -I$(top_srcdir)/src/target-based -I$(top_srcdir)/src/control -I$(top_srcdir)/src/file-process -I$(top_srcdir)/src/file-process/libs -I$(top_srcdir)/src/side-channel -I$(top_srcdir)/src/side-channel/plugins'
+INCLUDES='-I$(top_srcdir) -I$(top_srcdir)/src -I$(top_srcdir)/src/sfutil $(extra_incl) -I$(top_srcdir)/src/output-plugins -I$(top_srcdir)/src/detection-plugins -I$(top_srcdir)/src/dynamic-plugins -I$(top_srcdir)/src/preprocessors -I$(top_srcdir)/src/preprocessors/portscan -I$(top_srcdir)/src/preprocessors/HttpInspect/include -I$(top_srcdir)/src/preprocessors/Session -I$(top_srcdir)/src/preprocessors/Stream6 -I$(top_srcdir)/src/target-based -I$(top_srcdir)/src/control -I$(top_srcdir)/src/file-process -I$(top_srcdir)/src/file-process/libs -I$(top_srcdir)/src/side-channel -I$(top_srcdir)/src/side-channel/plugins -I$(top_srcdir)/src/reload-adjust'
 
 AC_SUBST(INCLUDES)
 AC_SUBST(CONFIGFLAGS)
@@ -1319,43 +1567,43 @@ src/file-process/Makefile \
 src/file-process/libs/Makefile \
 src/side-channel/Makefile \
 src/side-channel/dynamic-plugins/Makefile \
-src/side-channel/dynamic-plugins/snort_side_channel.pc  \
+src/side-channel/dynamic-plugins/snort_side_channel.pc \
 src/side-channel/plugins/Makefile \
 src/detection-plugins/Makefile \
 src/dynamic-examples/Makefile \
 src/dynamic-examples/dynamic-preprocessor/Makefile \
 src/dynamic-examples/dynamic-rule/Makefile \
-src/dynamic-plugins/Makefile   \
-src/dynamic-plugins/sf_engine/Makefile   \
-src/dynamic-plugins/sf_engine/examples/Makefile   \
-src/dynamic-plugins/sf_preproc_example/Makefile   \
-src/dynamic-preprocessors/Makefile   \
-src/dynamic-preprocessors/libs/Makefile   \
-src/dynamic-preprocessors/libs/snort_preproc.pc  \
-src/dynamic-preprocessors/ftptelnet/Makefile   \
-src/dynamic-preprocessors/smtp/Makefile   \
-src/dynamic-preprocessors/ssh/Makefile   \
-src/dynamic-preprocessors/sip/Makefile   \
-src/dynamic-preprocessors/reputation/Makefile   \
-src/dynamic-preprocessors/gtp/Makefile   \
-src/dynamic-preprocessors/dcerpc2/Makefile   \
-src/dynamic-preprocessors/pop/Makefile   \
-src/dynamic-preprocessors/imap/Makefile   \
-src/dynamic-preprocessors/sdf/Makefile   \
-src/dynamic-preprocessors/dns/Makefile   \
-src/dynamic-preprocessors/ssl/Makefile   \
-src/dynamic-preprocessors/modbus/Makefile   \
-src/dynamic-preprocessors/dnp3/Makefile   \
-src/dynamic-preprocessors/file/Makefile   \
-src/dynamic-preprocessors/appid/Makefile   \
-src/dynamic-output/Makefile   \
-src/dynamic-output/plugins/Makefile   \
-src/dynamic-output/libs/Makefile   \
-src/dynamic-output/libs/snort_output.pc  \
-src/output-plugins/Makefile    \
-src/preprocessors/Makefile     \
-src/preprocessors/HttpInspect/Makefile    \
-src/preprocessors/HttpInspect/include/Makefile    \
+src/dynamic-plugins/Makefile \
+src/dynamic-plugins/sf_engine/Makefile \
+src/dynamic-plugins/sf_engine/examples/Makefile \
+src/dynamic-plugins/sf_preproc_example/Makefile \
+src/dynamic-preprocessors/Makefile \
+src/dynamic-preprocessors/libs/Makefile \
+src/dynamic-preprocessors/libs/snort_preproc.pc \
+src/dynamic-preprocessors/ftptelnet/Makefile \
+src/dynamic-preprocessors/smtp/Makefile \
+src/dynamic-preprocessors/ssh/Makefile \
+src/dynamic-preprocessors/sip/Makefile \
+src/dynamic-preprocessors/reputation/Makefile \
+src/dynamic-preprocessors/gtp/Makefile \
+src/dynamic-preprocessors/dcerpc2/Makefile \
+src/dynamic-preprocessors/pop/Makefile \
+src/dynamic-preprocessors/imap/Makefile \
+src/dynamic-preprocessors/sdf/Makefile \
+src/dynamic-preprocessors/dns/Makefile \
+src/dynamic-preprocessors/ssl/Makefile \
+src/dynamic-preprocessors/modbus/Makefile \
+src/dynamic-preprocessors/dnp3/Makefile \
+src/dynamic-preprocessors/file/Makefile \
+src/dynamic-preprocessors/appid/Makefile \
+src/dynamic-output/Makefile \
+src/dynamic-output/plugins/Makefile \
+src/dynamic-output/libs/Makefile \
+src/dynamic-output/libs/snort_output.pc \
+src/output-plugins/Makefile \
+src/preprocessors/Makefile \
+src/preprocessors/HttpInspect/Makefile \
+src/preprocessors/HttpInspect/include/Makefile \
 src/preprocessors/HttpInspect/utils/Makefile \
 src/preprocessors/HttpInspect/anomaly_detection/Makefile \
 src/preprocessors/HttpInspect/client/Makefile \
@@ -1383,5 +1631,7 @@ tools/u2spewfoo/Makefile \
 tools/u2openappid/Makefile \
 tools/u2streamer/Makefile \
 tools/file_server/Makefile \
-src/win32/Makefile])
+src/win32/Makefile \
+src/reload-adjust/Makefile])
+
 AC_OUTPUT

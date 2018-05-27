@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -34,15 +34,15 @@
 typedef struct _tPatternNode {
     tMlmpPattern     pattern;
     void         *userData;     /*client/service info */
-    
-    /**part number. Should start from 1. Ordering of parts does not matter in the sense 
+
+    /**part number. Should start from 1. Ordering of parts does not matter in the sense
      * part 1 may appear after part 2 in payload.*/
     uint32_t      partNum;
 
     /**Total number of parts.*/
     uint32_t      partTotal;
 
-    /**Uniq non-zero identifier to tie parts of a multi-part patterns together. */ 
+    /**Uniq non-zero identifier to tie parts of a multi-part patterns together. */
     uint32_t      patternId;
 
     struct _tPatternNode  *nextPattern;
@@ -51,7 +51,7 @@ typedef struct _tPatternNode {
 
 typedef struct _tPatternPrimaryNode {
     tPatternNode  patternNode;
-    
+
     struct _tPatternPrimaryNode *nextPrimaryNode;
 
     /*Tree node for next level. Present only in primary pattern node i.e.  */
@@ -63,7 +63,7 @@ typedef struct _tPatternPrimaryNode {
 typedef struct tMlmpTree {
     void         *patternTree;
     tPatternPrimaryNode *patternList;
-    uint32_t  level;  
+    uint32_t  level;
 
 } tTreeNode ;
 
@@ -81,6 +81,7 @@ static void destroyTreesRecursively(struct tMlmpTree *root);
 static void dumpTreesRecursively(struct tMlmpTree *root);
 static int addPatternRecursively(struct tMlmpTree *root, const tMlmpPattern *inputPatternList, void *metaData, uint32_t level);
 static tPatternNode* urlPatternSelector (const tMatchedPatternList *matchList, const uint8_t* payload);
+static tPatternNode* genericPatternSelector (const tMatchedPatternList *matchList, const uint8_t* payload);
 static void *mlmpMatchPatternCustom(struct tMlmpTree *root, tMlmpPattern *inputPatternList, tPatternNode* (*callback)(const tMatchedPatternList *, const uint8_t*));
 static int patternMatcherCallback (void *id, void *unused_tree, int index, void *data, void *unused_neg);
 
@@ -111,6 +112,11 @@ int mlmpProcessPatterns(struct tMlmpTree *root)
 void *mlmpMatchPatternUrl(struct tMlmpTree *root, tMlmpPattern *inputPatternList)
 {
     return mlmpMatchPatternCustom(root, inputPatternList, urlPatternSelector);
+}
+
+void *mlmpMatchPatternGeneric(struct tMlmpTree *root, tMlmpPattern *inputPatternList)
+{
+    return mlmpMatchPatternCustom(root, inputPatternList, genericPatternSelector);
 }
 
 static inline int matchDomainPattern(const tMatchedPatternList *mp, const uint8_t *pattern)
@@ -169,7 +175,7 @@ void mlmpDump(struct tMlmpTree *root)
 }
 
 /**tMlmpPattern comparator: compares patterns based on pattern, patternSize. This will
- * result in alphabatical order. Notice that patternId is ignored here. 
+ * result in alphabatical order. Notice that patternId is ignored here.
  */
 static int compareMlmpPatterns(const void *p1, const void *p2)
 {
@@ -216,7 +222,7 @@ static int createTreesRecusively(struct tMlmpTree *rootNode)
                     (void *)ddPatternNode->pattern.pattern,
                     ddPatternNode->pattern.patternSize,
                     ddPatternNode,
-                    STR_SEARCH_CASE_SENSITIVE);
+                    STR_SEARCH_CASE_INSENSITIVE);
         }
     }
 
@@ -230,7 +236,7 @@ static void destroyTreesRecursively(struct tMlmpTree *rootNode)
     tPatternPrimaryNode *primaryPatternNode;
     uint32_t partNum;
 
-    if (!rootNode) 
+    if (!rootNode)
         return;
 
     while ((primaryPatternNode = rootNode->patternList))
@@ -265,7 +271,7 @@ static void dumpTreesRecursively(struct tMlmpTree *rootNode)
     prefixSize = 4*(rootNode->level)+2;
     if (prefixSize > 40)
         prefixSize = 40;
-            
+
     memset(prefix, ' ', prefixSize);
     prefix[prefixSize] = '\0';
 
@@ -274,7 +280,7 @@ static void dumpTreesRecursively(struct tMlmpTree *rootNode)
             primaryPatternNode = primaryPatternNode->nextPrimaryNode)
     {
 
-        printf("%s%u. Primary id %u. partTotal %u, Data %p\n", prefix, 
+        printf("%s%u. Primary id %u. partTotal %u, Data %p\n", prefix,
                 rootNode->level+1,
                 primaryPatternNode->patternNode.patternId,
                 primaryPatternNode->patternNode.partTotal,
@@ -308,8 +314,7 @@ static int compareMlmpPatternList(const tPatternNode *p1, const tPatternNode *p2
     return (p1->partNum - p2->partNum);
 }
 
-/*must return pointer to a primary node (where pattern tree is present) */
-static  tPatternNode* urlPatternSelector (const tMatchedPatternList *patternMatchList, const uint8_t *payload)
+static  tPatternNode* patternSelector (const tMatchedPatternList *patternMatchList, const uint8_t *payload, bool domain)
 {
     tPatternNode* bestNode = NULL;
     tPatternNode* currentPrimaryNode = NULL;
@@ -324,7 +329,7 @@ static  tPatternNode* urlPatternSelector (const tMatchedPatternList *patternMatc
 #if  _MLMP_DEBUG
     tPatternNode *ddPatternNode;
     printf("\tMatches found -------------------\n"); for (tmpList = patternMatchList;
-            tmpList; 
+            tmpList;
             tmpList = tmpList->next)
     {
         ddPatternNode = tmpList->patternNode;
@@ -341,7 +346,7 @@ static  tPatternNode* urlPatternSelector (const tMatchedPatternList *patternMatc
 #endif
 
     for (tmpList = patternMatchList;
-            tmpList; 
+            tmpList;
             tmpList = tmpList->next)
     {
         if (tmpList->patternNode->patternId != patternId)
@@ -369,8 +374,8 @@ static  tPatternNode* urlPatternSelector (const tMatchedPatternList *patternMatc
             continue;
 
         /*backward compatibility */
-        if ((tmpList->patternNode->partTotal == 1) 
-            && matchDomainPattern(tmpList, payload))
+        if ((tmpList->patternNode->partTotal == 1)
+            && domain && matchDomainPattern(tmpList, payload))
             continue;
 
         /*last pattern part is seen in sequence */
@@ -386,7 +391,7 @@ static  tPatternNode* urlPatternSelector (const tMatchedPatternList *patternMatc
     {
         ddPatternNode = bestNode;
         {
-            printf("\t\tSELECTED Id %d, pattern %s, size %u, partNum %u, partTotal %u, userData %p\n", 
+            printf("\t\tSELECTED Id %d, pattern %s, size %u, partNum %u, partTotal %u, userData %p\n",
                     ddPatternNode->patternId,
                     ddPatternNode->pattern.pattern,
                     (u_int32_t)ddPatternNode->pattern.patternSize,
@@ -400,6 +405,15 @@ static  tPatternNode* urlPatternSelector (const tMatchedPatternList *patternMatc
     return bestNode;
 }
 
+static  tPatternNode* urlPatternSelector (const tMatchedPatternList *patternMatchList, const uint8_t *payload)
+{
+    return patternSelector (patternMatchList, payload, true);
+}
+static  tPatternNode* genericPatternSelector (const tMatchedPatternList *patternMatchList, const uint8_t *payload)
+{
+    return patternSelector (patternMatchList, payload, false);
+}
+
 static int patternMatcherCallback (void *id, void *unused_tree, int index, void *data, void *unused_neg)
 {
     tPatternNode *target = (tPatternNode *)id;
@@ -410,7 +424,7 @@ static int patternMatcherCallback (void *id, void *unused_tree, int index, void 
     int cmp;
 
     /*sort matches by patternId, and then by partId or pattern// */
-    
+
 #if _MLMP_DEBUG
     printf("\tCallback id %d, Pattern %s, size %u, partNum %u, partTotal %u, userData %p\n",
             target->patternId,
@@ -422,7 +436,7 @@ static int patternMatcherCallback (void *id, void *unused_tree, int index, void 
 #endif
 
     for (prevNode = NULL, tmpList = *matchList;
-            tmpList; 
+            tmpList;
             prevNode = tmpList, tmpList = tmpList->next)
     {
             cmp = compareMlmpPatternList (target, tmpList->patternNode);
@@ -435,7 +449,7 @@ static int patternMatcherCallback (void *id, void *unused_tree, int index, void 
     newNode = calloc(1,sizeof(*newNode));
     if (!newNode)
     {
-        /*terminate search: TBD check */
+        /*terminate search */
         return 1;
     }
     newNode->index = index;
@@ -447,12 +461,12 @@ static int patternMatcherCallback (void *id, void *unused_tree, int index, void 
         newNode->next = *matchList;
         *matchList = newNode;
     }
-    else 
+    else
     {
         newNode->next = prevNode->next;
         prevNode->next = newNode;
-    } 
-    
+    }
+
     return 0;
 }
 
@@ -503,7 +517,7 @@ static tPatternPrimaryNode * findMatchPattern(struct tMlmpTree* rootNode, const 
 
 /**
  * @Note
- * a. Patterns in each patternList must be unique. Multipart patterns should be unique i.e. no two multi-part patterns 
+ * a. Patterns in each patternList must be unique. Multipart patterns should be unique i.e. no two multi-part patterns
  * should have same ordered sub-parts.
  * b. Patterns are add in alphabetical ordering of primary nodes.
  */
@@ -578,10 +592,10 @@ static int addPatternRecursively(struct tMlmpTree *rootNode, const tMlmpPattern 
             tmpPrimaryNode->nextPrimaryNode = rootNode->patternList;
             rootNode->patternList = tmpPrimaryNode;;
         }
-        
+
         i++;
         patterns = inputPatternList + i;
-        
+
         /*create list of remaining nodes  */
         for (partNum = 2;
                 partNum <= partTotal;
@@ -610,8 +624,8 @@ static int addPatternRecursively(struct tMlmpTree *rootNode, const tMlmpPattern 
             free((void*)(inputPatternList+i)->pattern);
 
     }
-    
-    if (primaryNode) 
+
+    if (primaryNode)
     {
         /*move down the new node */
         nextPattern = inputPatternList + partTotal;

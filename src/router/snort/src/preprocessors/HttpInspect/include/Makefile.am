@@ -9,6 +9,8 @@ hi_eo_events.h \
 hi_eo.h \
 hi_eo_log.h \
 hi_paf.h \
+h2_common.h \
+h2_paf.h \
 hi_include.h \
 hi_mi.h \
 hi_norm.h \
@@ -27,6 +29,12 @@ hi_util.h \
 hi_util_hbm.h \
 hi_util_kmap.h \
 hi_util_xmalloc.h \
+hi_buffer_dump.h \
 file_decomp.h \
 file_decomp_PDF.h \
 file_decomp_SWF.h
+
+#if BUILD_BUFFER_DUMP
+#EXTRA_DIST += \
+#hi_buffer_dump.h
+#endif

@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -78,6 +78,7 @@ bool TextLog_Putc(TextLog*, char);
 bool TextLog_Quote(TextLog*, const char*);
 bool TextLog_Write(TextLog*, const char*, int len);
 bool TextLog_Print(TextLog*, const char* format, ...);
+bool TextLog_PrintUnicode(TextLog*, uint8_t *, uint32_t, uint8_t);
 
 bool TextLog_Flush(TextLog*);
 

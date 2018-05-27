@@ -189,6 +189,7 @@ Option syntax
     reassemble_threshold    <re-thresh>           NO      OFF
     disabled                NONE                  NO      OFF
     smb_fingerprint_policy  <fp-policy>           NO      OFF
+    smb_legacy_mode         NONE                  NO      OFF
 
     memcap           = 1024-4194303 (kilobytes)
     max-frag-len     = 1514-65535
@@ -244,7 +245,9 @@ Option explanations
         contain OS and version information that can allow the preprocessor to
         dynamically set the policy for a session which allows for better
         protection against Windows and Samba specific evasions.
-        
+    smb_legacy_mode
+        By default, SMBv1, SMBv2, and SMBv3 files are inspected. 
+        If smb_legacy mode is configured, only SMBv1 file inspection is enabled. 
 
 Option examples
      memcap 30000
@@ -259,6 +262,7 @@ Option examples
      reassemble_threshold 500
      smb_fingerprint_policy both
      smb_fingerprint_policy client
+     smb_legacy_mode
 
 Configuration examples
      preprocessor dcerpc2
@@ -406,7 +410,8 @@ Option explanations
         "file-depth" disables setting the pointer for "file_data", effectively
         disabling SMB file inspection in rules.  An argument of 0 to
         "file-depth" means unlimited.  Default is "off", i.e. no SMB file
-        inspection is done in the preprocessor.
+        inspection is done in the preprocessor. SMBv1, SMBv2, and SMBv3 are
+        supported.
 
 Option examples
    net 192.168.0.10
@@ -505,9 +510,7 @@ SMB events
        Response (only from server) and Keep Alive.
    3   An SMB message type was specified in the header. Either a request was
        made by the server or a response was given by the client.
-   4   The SMB id does not equal "\xffSMB". Note that since the preprocessor
-       does not yet support SMB2, id of "\xfeSMB" is turned away before an
-       eventable point is reached.
+   4   The SMB id does not equal "\xffSMB" or "\xfeSMB".
    5   The word count of the command header is invalid. SMB commands have
        pretty specific word counts and if the preprocessor sees a command with
        a word count that doesn't jive with that command, the preprocessor will
@@ -659,6 +662,9 @@ SMB events
        and the default folder options in Windows is not to display Hidden files.
        The preprocessor will alert if it detects a client attempt to set a
        file's attributes to ReadOnly/Hidden/System.
+  58   File offset provided is greater than file size specified. This is applied
+       to read/write requests for file.
+  59   Nextcommand specified in SMBv2 or SMBv3 header is beyond payload boundary
 
 Connection-oriented DCE/RPC events
  SID   Description 

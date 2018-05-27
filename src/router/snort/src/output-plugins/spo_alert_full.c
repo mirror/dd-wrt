@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 ** Copyright (C) 2000,2001 Andrew R. Baker <andrewb@uab.edu>
@@ -70,7 +70,7 @@ typedef struct _SpoAlertFullData
 
 static void AlertFullInit(struct _SnortConfig *sc, char *);
 static SpoAlertFullData *ParseAlertFullArgs(struct _SnortConfig *, char *);
-static void AlertFull(Packet *, char *, void *, Event *);
+static void AlertFull(Packet *, const char *, void *, Event *);
 static void AlertFullCleanExit(int, void *);
 
 /*
@@ -128,7 +128,7 @@ static void AlertFullInit(struct _SnortConfig *sc, char *args)
     AddFuncToCleanExitList(AlertFullCleanExit, data);
 }
 
-static void AlertFull(Packet *p, char *msg, void *arg, Event *event)
+static void AlertFull(Packet *p, const char *msg, void *arg, Event *event)
 {
     SpoAlertFullData *data = (SpoAlertFullData *)arg;
 
@@ -163,6 +163,9 @@ static void AlertFull(Packet *p, char *msg, void *arg, Event *event)
     if(p && IPH_IS_VALID(p))
     {
         LogPriorityData(data->log, TRUE);
+#if defined(FEAT_OPEN_APPID)
+        LogAppID(data->log, event->app_name, TRUE);
+#endif
     }
 
     DEBUG_WRAP(DebugMessage(DEBUG_LOG, "Logging Alert data!\n"););

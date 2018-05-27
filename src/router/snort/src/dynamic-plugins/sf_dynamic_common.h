@@ -14,7 +14,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  */
@@ -43,6 +43,7 @@ typedef uint32_t (*GetSnortInstance)(void);
 
 #ifndef DECODE_BLEN
 #define DECODE_BLEN 65535
+#define MAX_URI 8192
 /* must be defined the same as in detection_util.h */
 typedef enum
 {
@@ -61,8 +62,40 @@ typedef enum
 } HTTP_BUFFER;
 #endif
 
+/* Reasons for packet verdict indicating snort/preprocessor module that blocks a packet.
+ * Any change here should also be reflected in pkt_trace.c file. */
+typedef enum {
+    VERDICT_REASON_INFO,         /* Not blocking packet; used by module to send packet information to tracer */
+    VERDICT_REASON_SSNSTR,       /* Not blocking packet; used to update session debug info */
+    VERDICT_REASON_NO_BLOCK,     /* Not blocking packet; all enum defined after this indicates blocking */
+    VERDICT_REASON_UNKNOWN,      /* Module blocking the packet is not known or traced */
+    VERDICT_REASON_DAQRETRY,     /* Wait for another re-transmitted packet from DAQ */
+    VERDICT_REASON_SNORT,
+    VERDICT_REASON_APPID,
+    VERDICT_REASON_SFSSL,
+    VERDICT_REASON_FIREWALL,
+    VERDICT_REASON_CPORTAL,
+    VERDICT_REASON_SAFESEARCH,
+    VERDICT_REASON_SI,
+    VERDICT_REASON_PREFILTER,
+    VERDICT_REASON_FTP,
+    VERDICT_REASON_STREAM,
+    VERDICT_REASON_SESSION,
+    VERDICT_REASON_DEFRAG,
+    VERDICT_REASON_REACT,
+    VERDICT_REASON_RESPONSE,
+    VERDICT_REASON_REPUTATION,
+    VERDICT_REASON_XLINK2STATE,
+    VERDICT_REASON_BO,
+    VERDICT_REASON_SMB,
+    VERDICT_REASON_FILE,
+    VERDICT_REASON_IPS,
+
+    MAX_VERDICT_REASON
+} Verdict_Reason;
+
 typedef struct {
-    uint8_t *data;
+    const uint8_t *data;
     uint16_t len;
 } SFDataPointer;
 

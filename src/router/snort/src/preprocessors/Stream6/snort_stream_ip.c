@@ -1,6 +1,6 @@
 /****************************************************************************
 *
-* Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+* Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 *  Copyright (C) 2005-2013 Sourcefire, Inc.
 *
 *  This program is free software; you can redistribute it and/or modify
@@ -41,6 +41,7 @@
 #include "sf_types.h"
 #include "snort_debug.h"
 
+#include "spp_session.h"
 #include "session_api.h"
 #include "snort_session.h"
 
@@ -49,10 +50,13 @@
 #include "stream5_ha.h"
 #include "util.h"
 
+#include "reg_test.h"
+
 #ifdef PERF_PROFILING
 PreprocStats s5IpPerfStats;
 #endif
 
+static SessionCache* ip_lws_cache = NULL;
 
 //-------------------------------------------------------------------------
 // private methods
@@ -314,6 +318,10 @@ static inline int BlockedSession (Packet* p, SessionControlBlock *scb)
 #ifdef ACTIVE_RESPONSE
         StreamActiveResponse(p, scb);
 #endif
+        if (pkt_trace_enabled)
+            addPktTraceData(VERDICT_REASON_STREAM, snprintf(trace_line, MAX_TRACE_LINE,
+                "Stream: session was already blocked, %s\n", getPktTraceActMsg()));
+        else addPktTraceData(VERDICT_REASON_STREAM, 0);
         return 1;
     }
     return 0;
@@ -336,6 +344,7 @@ static inline int IgnoreSession (Packet* p, SessionControlBlock *scb)
     return 0;
 }
 
+#ifdef ENABLE_EXPECTED_IP
 static inline int CheckExpectedSession (Packet* p, SessionControlBlock *scb)
 {
     int ignore;
@@ -355,6 +364,7 @@ static inline int CheckExpectedSession (Packet* p, SessionControlBlock *scb)
 
     return 0;
 }
+#endif
 
 static inline void UpdateSession (Packet* p, SessionControlBlock* scb)
 {
@@ -470,3 +480,25 @@ int StreamProcessIp( Packet *p, SessionControlBlock *scb, SessionKey *skey )
 
     return 0;
 }
+
+#ifdef SNORT_RELOAD
+void SessionIPReload(uint32_t max_sessions, uint16_t pruningTimeout, uint16_t nominalTimeout)
+{
+    SessionReload(ip_lws_cache, max_sessions, pruningTimeout, nominalTimeout
+#ifdef REG_TEST
+                  , "IP"
+#endif
+                  );
+}
+
+unsigned SessionIPReloadAdjust(unsigned maxWork)
+{
+    return SessionProtocolReloadAdjust(ip_lws_cache, session_configuration->max_ip_sessions, 
+                                       maxWork, 0
+#ifdef REG_TEST
+                                       , "IP"
+#endif
+                                       );
+}
+#endif
+

@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -48,7 +48,7 @@ void PayloadReplaceInit(struct _SnortConfig *sc, char *data, OptTreeNode * otn, 
     static int warned = 0;
     PatternMatchData *idx;
 
-    if( !ScIpsInlineMode() )
+    if( !ScIpsInlineModeNewConf(sc) )
         return;
 
     if ( !DAQ_CanReplace() )

@@ -14,7 +14,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * Author: Ryan Jordan
@@ -50,10 +50,10 @@ void ModbusAddPortsToPaf(struct _SnortConfig *sc, modbus_config_t *config, tSfPo
 int ModbusPafRegisterPort(struct _SnortConfig *sc, uint16_t port, tSfPolicyId policy_id);
 int ModbusAddServiceToPaf(struct _SnortConfig *sc, uint16_t service, tSfPolicyId policy_id);
 PAF_Status ModbusPaf(void *ssn, void **user, const uint8_t *data,
-                     uint32_t len, uint32_t flags, uint32_t *fp);
+                     uint32_t len, uint64_t *flags, uint32_t *fp, uint32_t *fp_eoh);
 static inline bool ModbusIsPafActive(const SFSnortPacket *p)
 {
-    bool to_server = (p->flags && FLAG_FROM_CLIENT)? true:false;
+    bool to_server = (p->flags & FLAG_FROM_CLIENT)? true:false;
     if ((p->stream_session_ptr)
             && _dpd.streamAPI->is_paf_active(p->stream_session_ptr, to_server))
         return true;

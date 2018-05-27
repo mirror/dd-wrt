@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -34,6 +34,7 @@
 #include <arpa/inet.h>
 
 #include "profiler.h"
+#include "appIdApi.h"
 #include "client_app_base.h"
 #include "str_search.h"
 
@@ -41,7 +42,6 @@
 #include "client_app_api.h"
 #include "client_app_base.h"
 
-#include "client_app_smtp.h"
 #include "client_app_msn.h"
 #include "client_app_aim.h"
 #include "client_app_ym.h"
@@ -52,24 +52,21 @@
 #include "fw_appid.h"
 #include "service_ssl.h"
 #include "appIdConfig.h"
+#include "detector_dns.h"
+#include "detector_pattern.h"
 
 /*#define CLIENT_APP_DEBUG    1 */
 
 #define BUFSIZE         512
 
-typedef struct _RNA_CLIENT_APP_CONFIG
-{
-    int enabled;
-    SF_LIST module_configs;
-} RNA_CLIENT_APP_CONFIG;
+/* If this is greater than 1, more than 1 client detector can be searched for
+ * and tried per flow based on pattern (if a valid detector doesn't
+ * already exist). */
+#define MAX_CANDIDATE_CLIENTS 10
 
-static RNAClientAppRecord *tcp_client_app_list = NULL;
-static RNAClientAppRecord *udp_client_app_list = NULL;
-
-static void *client_app_flowdata_get(tAppIdData *flowp);
-static int client_app_flowdata_add(tAppIdData *flowp, void *data, AppIdFreeFCN fcn);
-static void AppIdAddClientApp(FLOW *flowp, tAppId service_id, tAppId id, const char *version);
-static void AppIdAddClientAppInfo(FLOW *flowp, const char *info);
+static void *client_app_flowdata_get(tAppIdData *flowp, unsigned client_id);
+static int client_app_flowdata_add(tAppIdData *flowp, void *data, unsigned client_id, AppIdFreeFCN fcn);
+static void AppIdAddClientAppInfo(tAppIdData *flowp, const char *info);
 
 static const ClientAppApi client_app_api =
 {
@@ -81,24 +78,18 @@ static const ClientAppApi client_app_api =
     .add_payload = &AppIdAddPayload
 };
 
-static void *tcp_patterns;
-static int tcp_pattern_count;
-static void *udp_patterns;
-static int udp_pattern_count;
-
-static RNA_CLIENT_APP_CONFIG ca_config;
 
 static void LuaClientAppRegisterPattern(RNAClientAppFCN fcn, uint8_t proto,
                                         const uint8_t * const pattern, unsigned size,
                                         int position, struct _Detector *userData);
 static void CClientAppRegisterPattern(RNAClientAppFCN fcn, uint8_t proto,
-                                     const uint8_t * const pattern, unsigned size,
-                                     int position);
+                                      const uint8_t * const pattern, unsigned size,
+                                      int position, tAppIdConfig *pConfig);
 static void CClientAppRegisterPatternNoCase(RNAClientAppFCN fcn, uint8_t proto,
                                             const uint8_t * const pattern, unsigned size,
-                                            int position);
+                                            int position, tAppIdConfig *pConfig);
 
-static InitClientAppAPI init_api =
+static InitClientAppAPI client_init_api =
 {
     .RegisterPattern = &CClientAppRegisterPattern,
     .RegisterPatternEx = &LuaClientAppRegisterPattern,
@@ -114,27 +105,19 @@ static FinalizeClientAppAPI finalize_api =
 {
 };
 
-typedef struct _PATTERN_DATA
+extern tRNAClientAppModule bit_client_mod;
+extern tRNAClientAppModule bit_tracker_client_mod;
+extern tRNAClientAppModule rtp_client_mod;
+extern tRNAClientAppModule ssh_client_mod;
+extern tRNAClientAppModule timbuktu_client_mod;
+extern tRNAClientAppModule tns_client_mod;
+extern tRNAClientAppModule vnc_client_mod;
+extern tRNAClientAppModule pattern_udp_client_mod;
+extern tRNAClientAppModule pattern_tcp_client_mod;
+extern tRNAClientAppModule http_client_mod;
+
+static tRNAClientAppModule *static_client_list[] =
 {
-    struct _PATTERN_DATA *next;
-    int position;
-    const RNAClientAppModule *ca;
-} PatternData;
-
-static PatternData *pattern_data_list;
-
-extern RNAClientAppModule bit_client_mod;
-extern RNAClientAppModule bit_tracker_client_mod;
-extern RNAClientAppModule rtp_client_mod;
-extern RNAClientAppModule ssh_client_mod;
-extern RNAClientAppModule timbuktu_client_mod;
-extern RNAClientAppModule tns_client_mod;
-extern RNAClientAppModule vnc_client_mod;
-
-
-static RNAClientAppModule *static_client_list[] =
-{
-    &smtp_client_mod,
     &msn_client_mod,
     &aim_client_mod,
     &ym_client_mod,
@@ -146,7 +129,12 @@ static RNAClientAppModule *static_client_list[] =
     &ssh_client_mod,
     &timbuktu_client_mod,
     &tns_client_mod,
-    &vnc_client_mod
+    &vnc_client_mod,
+    &pattern_udp_client_mod,
+    &pattern_tcp_client_mod,
+    &dns_udp_client_mod,
+    &dns_tcp_client_mod,
+    &http_client_mod
 };
 
 /*static const char * const MODULE_NAME = "ClientApp"; */
@@ -156,29 +144,30 @@ const ClientAppApi *getClientApi(void)
     return &client_app_api;
 }
 
-RNAClientAppModuleConfig *getClientAppModuleConfig(const char *moduleName)
+RNAClientAppModuleConfig *getClientAppModuleConfig(const char *moduleName, tClientAppConfig *pClientAppConfig)
 {
     RNAClientAppModuleConfig *mod_config;
 
-    for (mod_config = (RNAClientAppModuleConfig *)sflist_first(&ca_config.module_configs);
+    for (mod_config = (RNAClientAppModuleConfig *)sflist_first(&pClientAppConfig->module_configs);
          mod_config;
-         mod_config = (RNAClientAppModuleConfig *)sflist_next(&ca_config.module_configs))
+         mod_config = (RNAClientAppModuleConfig *)sflist_next(&pClientAppConfig->module_configs))
     {
         if (strcasecmp(mod_config->name, moduleName) == 0) break;
     }
     return mod_config;
 }
 
-const RNAClientAppModule *ClientAppGetClientAppModule(RNAClientAppFCN fcn, struct _Detector *userdata)
+const tRNAClientAppModule *ClientAppGetClientAppModule(RNAClientAppFCN fcn, struct _Detector *userdata,
+                                                      tClientAppConfig *pClientAppConfig)
 {
     RNAClientAppRecord *li;
 
-    for (li=tcp_client_app_list; li; li=li->next)
+    for (li=pClientAppConfig->tcp_client_app_list; li; li=li->next)
     {
         if ((li->module->validate == fcn) && (li->module->userData == userdata))
             return li->module;
     }
-    for (li=udp_client_app_list; li; li=li->next)
+    for (li=pClientAppConfig->udp_client_app_list; li; li=li->next)
     {
         if ((li->module->validate == fcn) && (li->module->userData == userdata))
             return li->module;
@@ -186,14 +175,14 @@ const RNAClientAppModule *ClientAppGetClientAppModule(RNAClientAppFCN fcn, struc
     return NULL;
 }
 
-void clientCreatePattern(RNAClientAppFCN fcn, uint8_t proto,
+static void clientCreatePattern(RNAClientAppFCN fcn, uint8_t proto,
                          const uint8_t * const pattern, unsigned size,
                          int position, unsigned nocase, struct _Detector *userData,
-                         const RNAClientAppModule *li)
+                         const tRNAClientAppModule *li, tClientAppConfig *pClientAppConfig)
 {
     void **patterns;
     int *count;
-    PatternData *pd;
+    tClientPatternData *pd;
 
     if (!li)
     {
@@ -203,13 +192,13 @@ void clientCreatePattern(RNAClientAppFCN fcn, uint8_t proto,
 
     if (proto == IPPROTO_TCP)
     {
-        patterns = &tcp_patterns;
-        count = &tcp_pattern_count;
+        patterns = &pClientAppConfig->tcp_patterns;
+        count = &pClientAppConfig->tcp_pattern_count;
     }
     else if (proto == IPPROTO_UDP)
     {
-        patterns = &udp_patterns;
-        count = &udp_pattern_count;
+        patterns = &pClientAppConfig->udp_patterns;
+        count = &pClientAppConfig->udp_pattern_count;
     }
     else
     {
@@ -233,8 +222,8 @@ void clientCreatePattern(RNAClientAppFCN fcn, uint8_t proto,
         pd->ca = li;
         pd->position = position;
         (*count)++;
-        pd->next = pattern_data_list;
-        pattern_data_list = pd;
+        pd->next = pClientAppConfig->pattern_data_list;
+        pClientAppConfig->pattern_data_list = pd;
         _dpd.searchAPI->search_instance_add_ex(*patterns, (const char *)pattern, size, pd, nocase);
     }
     else _dpd.errMsg( "Error allocating pattern data");
@@ -242,36 +231,37 @@ void clientCreatePattern(RNAClientAppFCN fcn, uint8_t proto,
 
 static void CClientAppRegisterPattern(RNAClientAppFCN fcn, uint8_t proto,
                                      const uint8_t * const pattern, unsigned size,
-                                     int position)
+                                     int position, tAppIdConfig *pConfig)
 {
-    ClientAppRegisterPattern(fcn, proto, pattern, size, position, 0, NULL);
+    ClientAppRegisterPattern(fcn, proto, pattern, size, position, 0, NULL, &pConfig->clientAppConfig);
 }
 
 static void CClientAppRegisterPatternNoCase(RNAClientAppFCN fcn, uint8_t proto,
                                             const uint8_t * const pattern, unsigned size,
-                                            int position)
+                                            int position, tAppIdConfig *pConfig)
 {
-    ClientAppRegisterPattern(fcn, proto, pattern, size, position, 1, NULL);
+    ClientAppRegisterPattern(fcn, proto, pattern, size, position, 1, NULL, &pConfig->clientAppConfig);
 }
 
 static void LuaClientAppRegisterPattern(RNAClientAppFCN fcn, uint8_t proto,
                                         const uint8_t * const pattern, unsigned size,
                                         int position, struct _Detector *userData)
 {
-    ClientAppRegisterPattern(fcn, proto, pattern, size, position, 0, userData);
+    ClientAppRegisterPattern(fcn, proto, pattern, size, position, 0, userData, &userData->pAppidNewConfig->clientAppConfig);
 }
 
 void ClientAppRegisterPattern(RNAClientAppFCN fcn, uint8_t proto,
-                                     const uint8_t * const pattern, unsigned size,
-                                     int position, unsigned nocase, struct _Detector *userData)
+                              const uint8_t * const pattern, unsigned size,
+                              int position, unsigned nocase, struct _Detector *userData,
+                              tClientAppConfig *pClientAppConfig)
 {
     RNAClientAppRecord *list;
     RNAClientAppRecord *li;
 
     if (proto == IPPROTO_TCP)
-        list = tcp_client_app_list;
+        list = pClientAppConfig->tcp_client_app_list;
     else if (proto == IPPROTO_UDP)
-        list = udp_client_app_list;
+        list = pClientAppConfig->udp_client_app_list;
     else
     {
         _dpd.errMsg("Invalid protocol when registering a pattern: %u\n",(unsigned)proto);
@@ -282,26 +272,34 @@ void ClientAppRegisterPattern(RNAClientAppFCN fcn, uint8_t proto,
     {
         if ((li->module->validate == fcn) && (li->module->userData == userData))
         {
-            clientCreatePattern(fcn, proto, pattern, size, position, nocase, userData, li->module);
+            clientCreatePattern(fcn, proto, pattern, size, position, nocase, userData, li->module, pClientAppConfig);
             break;
         }
     }
 }
 
-int clientAppLoadCallback(void *symbol)
+int clientAppLoadForConfigCallback(void *symbol, tClientAppConfig *pClientAppConfig)
 {
-    RNAClientAppModule *cam = (RNAClientAppModule *)symbol;
+    static unsigned client_module_index = 0;
+    tRNAClientAppModule *cam = (tRNAClientAppModule *)symbol;
     RNAClientAppRecord * *list = NULL;
     RNAClientAppRecord *li;
 
     _dpd.debugMsg(DEBUG_LOG,"Adding client %s for protocol %u\n",cam->name, (unsigned)cam->proto);
+
+    if (client_module_index >= 65536)
+    {
+        _dpd.errMsg( "Maximum number of client modules exceeded");
+        return -1;
+    }
+
     if (cam->proto == IPPROTO_TCP)
     {
-        list = &tcp_client_app_list;
+        list = &pClientAppConfig->tcp_client_app_list;
     }
     else if (cam->proto == IPPROTO_UDP)
     {
-        list = &udp_client_app_list;
+        list = &pClientAppConfig->udp_client_app_list;
     }
     else
     {
@@ -327,34 +325,41 @@ int clientAppLoadCallback(void *symbol)
         li->module = cam;
 
         cam->api = &client_app_api;
+
+        cam->flow_data_index = client_module_index | APPID_SESSION_DATA_CLIENT_MODSTATE_BIT;
+        client_module_index++;
     }
     /*Can't set cam->userData to NULL because Lua detectors use it although C detectors don't */
     /*cam->userData = NULL; */
     return 0;
 }
 
+int clientAppLoadCallback(void *symbol)
+{
+    return clientAppLoadForConfigCallback(symbol, &pAppidActiveConfig->clientAppConfig);
+}
 
-int LoadClientAppModules(const char **dir_list)
+int LoadClientAppModules(const char **dir_list, tAppIdConfig *pConfig)
 {
     unsigned i;
 
     for (i=0; i<sizeof(static_client_list)/sizeof(*static_client_list); i++)
     {
-        if (clientAppLoadCallback(static_client_list[i]))
+        if (clientAppLoadForConfigCallback(static_client_list[i], &pConfig->clientAppConfig))
             return -1;
     }
 
     return 0;
 }
 
-static void AddModuleConfigItem(char *module_name, char *item_name, char *item_value)
+static void AddModuleConfigItem(char *module_name, char *item_name, char *item_value, tClientAppConfig *config)
 {
     RNAClientAppModuleConfig *mod_config;
     RNAClientAppModuleConfigItem *item;
 
-    for (mod_config = (RNAClientAppModuleConfig *)sflist_first(&ca_config.module_configs);
+    for (mod_config = (RNAClientAppModuleConfig *)sflist_first(&config->module_configs);
          mod_config;
-         mod_config = (RNAClientAppModuleConfig *)sflist_next(&ca_config.module_configs))
+         mod_config = (RNAClientAppModuleConfig *)sflist_next(&config->module_configs))
     {
         if (strcasecmp(mod_config->name, module_name) == 0) break;
     }
@@ -373,7 +378,7 @@ static void AddModuleConfigItem(char *module_name, char *item_name, char *item_v
             exit(-1);
         }
         sflist_init(&mod_config->items);
-        if (sflist_add_tail(&ca_config.module_configs, mod_config))
+        if (sflist_add_tail(&config->module_configs, mod_config))
         {
             _dpd.fatalMsg( "Failed to add a module configuration");
             exit(-1);
@@ -421,7 +426,7 @@ static void AddModuleConfigItem(char *module_name, char *item_name, char *item_v
     }
 }
 
-static void ClientAppParseOption(RNA_CLIENT_APP_CONFIG *config,
+static void ClientAppParseOption(tClientAppConfig *config,
                                  char *key, char *value)
 {
     char *p;
@@ -433,7 +438,7 @@ static void ClientAppParseOption(RNA_CLIENT_APP_CONFIG *config,
     else if ((p = strchr(key, ':')) && p[1])
     {
         *p = 0;
-        AddModuleConfigItem(key, &p[1], value);
+        AddModuleConfigItem(key, &p[1], value, config);
         *p = ':';
     }
     else
@@ -443,7 +448,7 @@ static void ClientAppParseOption(RNA_CLIENT_APP_CONFIG *config,
     }
 }
 
-static int ClientAppParseArgs(RNA_CLIENT_APP_CONFIG *config, SF_LIST *args)
+static int ClientAppParseArgs(tClientAppConfig *config, SF_LIST *args)
 {
     ConfigItem *ci;
 
@@ -458,7 +463,7 @@ static int ClientAppParseArgs(RNA_CLIENT_APP_CONFIG *config, SF_LIST *args)
 }
 
 #define MAX_DISPLAY_SIZE   65536
-static void DisplayClientAppConfig(RNA_CLIENT_APP_CONFIG *config)
+static void DisplayClientAppConfig(tClientAppConfig *config)
 {
     static char buffer[MAX_DISPLAY_SIZE];
     int position = 0;
@@ -476,9 +481,9 @@ static void DisplayClientAppConfig(RNA_CLIENT_APP_CONFIG *config)
     if (tmp >= MAX_DISPLAY_SIZE-position) position = MAX_DISPLAY_SIZE;
     else if (tmp > 0) position += tmp;
 
-    for (mod_config = (RNAClientAppModuleConfig *)sflist_first(&ca_config.module_configs);
+    for (mod_config = (RNAClientAppModuleConfig *)sflist_first(&config->module_configs);
          mod_config;
-         mod_config = (RNAClientAppModuleConfig *)sflist_next(&ca_config.module_configs))
+         mod_config = (RNAClientAppModuleConfig *)sflist_next(&config->module_configs))
     {
         tmp = snprintf(&buffer[position], MAX_DISPLAY_SIZE-position,
                        "%s\n", mod_config->name);
@@ -528,18 +533,18 @@ static void free_module_config(void *module_config)
     }
 }
 
-static void initialize_module(RNAClientAppRecord *li)
+static void initialize_module(RNAClientAppRecord *li, tClientAppConfig *pClientAppConfig)
 {
     RNAClientAppModuleConfig *mod_config;
     int rval;
 
-    for (mod_config = (RNAClientAppModuleConfig *)sflist_first(&ca_config.module_configs);
+    for (mod_config = (RNAClientAppModuleConfig *)sflist_first(&pClientAppConfig->module_configs);
          mod_config;
-         mod_config = (RNAClientAppModuleConfig *)sflist_next(&ca_config.module_configs))
+         mod_config = (RNAClientAppModuleConfig *)sflist_next(&pClientAppConfig->module_configs))
     {
         if (strcasecmp(mod_config->name, li->module->name) == 0) break;
     }
-    if (li->module->init && (rval=li->module->init(&init_api, mod_config ? &mod_config->items:NULL)) != CLIENT_APP_SUCCESS)
+    if (li->module->init && (rval=li->module->init(&client_init_api, mod_config ? &mod_config->items:NULL)) != CLIENT_APP_SUCCESS)
     {
         _dpd.fatalMsg("Could not initialize the %s client app element: %d\n",li->module->name, rval);
         exit(-1);
@@ -564,92 +569,101 @@ static void clean_module(RNAClientAppRecord *li)
 }
 
 
-/**
- * Reconfigure the protocol id module
- *
- * @param args arguments
- */
-void ReconfigureClientApp(void)
+void UnconfigureClientApp(tAppIdConfig *pConfig)
 {
+    tClientPatternData *pd;
     RNAClientAppRecord *li;
-    PatternData *pd;
 
-    if (tcp_patterns) {
-        _dpd.searchAPI->search_instance_free(tcp_patterns);
-        tcp_patterns = NULL;
-    }
-    if (udp_patterns) {
-        _dpd.searchAPI->search_instance_free(udp_patterns);
-        udp_patterns = NULL;
-    }
+    clean_api.pAppidConfig = pConfig;
+    for (li = pConfig->clientAppConfig.tcp_client_app_list; li; li = li->next)
+        clean_module(li);
+    for (li = pConfig->clientAppConfig.udp_client_app_list; li; li = li->next)
+        clean_module(li);
 
-    while (pattern_data_list)
+    if (pConfig->clientAppConfig.tcp_patterns)
     {
-        pd = pattern_data_list;
-        pattern_data_list = pd->next;
+        _dpd.searchAPI->search_instance_free(pConfig->clientAppConfig.tcp_patterns);
+        pConfig->clientAppConfig.tcp_patterns = NULL;
+    }
+
+    if (pConfig->clientAppConfig.udp_patterns)
+    {
+        _dpd.searchAPI->search_instance_free(pConfig->clientAppConfig.udp_patterns);
+        pConfig->clientAppConfig.udp_patterns = NULL;
+    }
+
+    while (pConfig->clientAppConfig.pattern_data_list)
+    {
+        pd = pConfig->clientAppConfig.pattern_data_list;
+        pConfig->clientAppConfig.pattern_data_list = pd->next;
         free((void *)pd);
     }
 
-    for (li = tcp_client_app_list; li; li = li->next)
-        clean_module(li);
-    for (li = udp_client_app_list; li; li = li->next)
-        clean_module(li);
+    CleanHttpPatternLists(pConfig);
+    ssl_detector_free_patterns(&pConfig->serviceSslConfig);
+    dns_detector_free_patterns(&pConfig->serviceDnsConfig);
+    CleanClientPortPatternList(pConfig);
 
-    CleanHttpPatternLists(0);
-    ssl_detector_free_patterns();
-
-    ca_config.enabled = 1;
-
-    sflist_static_free_all(&ca_config.module_configs, &free_module_config);
-
-    ClientAppParseArgs(&ca_config, &appIdConfig.client_app_args);
-    DisplayClientAppConfig(&ca_config);
-
-    if (ca_config.enabled)
-    {
-        init_api.debug = appIdCommandConfig->app_id_debug;
-
-        for (li = tcp_client_app_list; li; li = li->next)
-            initialize_module(li);
-        for (li = udp_client_app_list; li; li = li->next)
-            initialize_module(li);
-
-        luaModuleInitAllClients();
-
-        for (li = tcp_client_app_list; li; li = li->next)
-            finalize_module(li);
-        for (li = udp_client_app_list; li; li = li->next)
-            finalize_module(li);
-
-        if (tcp_patterns)
-        {
-            _dpd.searchAPI->search_instance_prep(tcp_patterns);
-        }
-        if (udp_patterns)
-        {
-            _dpd.searchAPI->search_instance_prep(udp_patterns);
-        }
-    }
+    sflist_static_free_all(&pConfig->clientAppConfig.module_configs, &free_module_config);
 }
-
 
 /**
  * Initialize the configuration of the client app module
  *
  * @param args
  */
-void ClientAppInit(void)
+void ClientAppInit(tAppidStaticConfig* appidSC, tAppIdConfig *pConfig)
 {
-    sflist_init(&ca_config.module_configs);
-    ReconfigureClientApp();
+    RNAClientAppRecord *li;
+
+    sflist_init(&pConfig->clientAppConfig.module_configs);
+    pConfig->clientAppConfig.enabled = 1;
+
+    ClientAppParseArgs(&pConfig->clientAppConfig, &pConfig->client_app_args);
+    DisplayClientAppConfig(&pConfig->clientAppConfig);
+
+    if (pConfig->clientAppConfig.enabled)
+    {
+        client_init_api.debug = app_id_debug;
+        client_init_api.pAppidConfig = pConfig;
+        client_init_api.instance_id = appidSC->instance_id;
+
+        for (li = pConfig->clientAppConfig.tcp_client_app_list; li; li = li->next)
+            initialize_module(li, &pConfig->clientAppConfig);
+        for (li = pConfig->clientAppConfig.udp_client_app_list; li; li = li->next)
+            initialize_module(li, &pConfig->clientAppConfig);
+
+        luaModuleInitAllClients();
+
+        for (li = pConfig->clientAppConfig.tcp_client_app_list; li; li = li->next)
+             finalize_module(li);
+
+        for (li = pConfig->clientAppConfig.udp_client_app_list; li; li = li->next)
+            finalize_module(li);
+
+    }
 }
 
+void ClientAppFinalize(tAppIdConfig *pConfig)
+{
+    if (pConfig->clientAppConfig.enabled)
+    {
+        if (pConfig->clientAppConfig.tcp_patterns)
+        {
+            _dpd.searchAPI->search_instance_prep(pConfig->clientAppConfig.tcp_patterns);
+        }
+        if (pConfig->clientAppConfig.udp_patterns)
+        {
+            _dpd.searchAPI->search_instance_prep(pConfig->clientAppConfig.udp_patterns);
+        }
+    }
+}
 
 typedef struct _CLIENT_APP_MATCH
 {
     struct _CLIENT_APP_MATCH *next;
     unsigned count;
-    const RNAClientAppModule *ca;
+    const tRNAClientAppModule *ca;
 } ClientAppMatch;
 
 static ClientAppMatch *match_free_list;
@@ -657,39 +671,38 @@ static ClientAppMatch *match_free_list;
 /**
  * Clean up the configuration of the client app module
  */
-void CleanupClientApp(void)
+void CleanupClientApp(tAppIdConfig *pConfig)
 {
 #ifdef RNA_FULL_CLEANUP
     ClientAppMatch *match;
-    PatternData *pd;
+    tClientPatternData *pd;
     RNAClientAppRecord *li;
-#endif
 
-#ifdef RNA_FULL_CLEANUP
-    if (tcp_patterns) {
-        search_instance_free(tcp_patterns);
-        tcp_patterns = NULL;
+    clean_api.pAppidConfig = pConfig;
+    if (pConfig->clientAppConfig.tcp_patterns) {
+         _dpd.searchAPI->search_instance_free(pConfig->clientAppConfig.tcp_patterns);
+        pConfig->clientAppConfig.tcp_patterns = NULL;
     }
-    if (udp_patterns) {
-        search_instance_free(udp_patterns);
-        udp_patterns = NULL;
+    if (pConfig->clientAppConfig.udp_patterns) {
+         _dpd.searchAPI->search_instance_free(pConfig->clientAppConfig.udp_patterns);
+        pConfig->clientAppConfig.udp_patterns = NULL;
     }
-    while ((pd = pattern_data_list) != NULL)
+    while ((pd = pConfig->clientAppConfig.pattern_data_list) != NULL)
     {
-        pattern_data_list = pd->next;
+        pConfig->clientAppConfig.pattern_data_list = pd->next;
         free(pd);
     }
 
-    while ((li=tcp_client_app_list) != NULL)
+    while ((li=pConfig->clientAppConfig.tcp_client_app_list) != NULL)
     {
-        tcp_client_app_list = li->next;
+        pConfig->clientAppConfig.tcp_client_app_list = li->next;
         if (li->module->clean)
             li->module->clean(&clean_api);
         free(li);
     }
-    while ((li=udp_client_app_list) != NULL)
+    while ((li=pConfig->clientAppConfig.udp_client_app_list) != NULL)
     {
-        udp_client_app_list = li->next;
+        pConfig->clientAppConfig.udp_client_app_list = li->next;
         if (li->module->clean)
             li->module->clean(&clean_api);
         free(li);
@@ -697,10 +710,12 @@ void CleanupClientApp(void)
 
     luaModuleCleanAllClients();
 
-    CleanHttpPatternLists(1);
-    ssl_detector_free_patterns();
+    CleanHttpPatternLists(pConfig);
+    ssl_detector_free_patterns(&pConfig->serviceSslConfig);
+    dns_detector_free_patterns(&pConfig->serviceDnsConfig);
+    CleanClientPortPatternList(pConfig);
 
-    sflist_static_free_all(&ca_config.module_configs, &free_module_config);
+    sflist_static_free_all(&pConfig->clientAppConfig.module_configs, &free_module_config);
     while ((match=match_free_list) != NULL)
     {
         match_free_list = match->next;
@@ -722,7 +737,7 @@ void CleanupClientApp(void)
 static int pattern_match(void* id, void *unused_tree, int index, void* data, void *unused_neg)
 {
     ClientAppMatch * *matches = (ClientAppMatch **)data;
-    PatternData *pd = (PatternData *)id;
+    tClientPatternData *pd = (tClientPatternData *)id;
     ClientAppMatch *cam;
 
     if (pd->position >= 0 && pd->position != index)
@@ -762,7 +777,7 @@ static int pattern_match(void* id, void *unused_tree, int index, void* data, voi
     return 0;
 }
 
-static void AppIdAddClientApp(FLOW *flowp, tAppId service_id, tAppId id, const char *version)
+void AppIdAddClientApp(tAppIdData *flowp, tAppId service_id, tAppId id, const char *version)
 {
     if (version)
     {
@@ -784,37 +799,36 @@ static void AppIdAddClientApp(FLOW *flowp, tAppId service_id, tAppId id, const c
         }
     }
 
+    setAppIdFlag(flowp, APPID_SESSION_CLIENT_DETECTED);
     flowp->clientServiceAppId = service_id;
     flowp->clientAppId = id;
+    checkSandboxDetection(id);
 }
 
-static void AppIdAddClientAppInfo(FLOW *flowp, const char *info)
+static void AppIdAddClientAppInfo(tAppIdData *flowp, const char *info)
 {
-    if (flowp->url)
-        return;
-    flowp->url = strdup(info);
-    if (!flowp->url)
-        _dpd.errMsg("failed to allocate url");
+    if (flowp->hsession && !flowp->hsession->url)
+    {
+        flowp->hsession->url = strdup(info);
+        if (!flowp->hsession->url)
+            _dpd.errMsg("failed to allocate url");
+    }
 }
 
-static void getAppidByClientPattern(const SFSnortPacket *pkt, uint32_t protocol, const RNAClientAppModule **rnaData)
+static ClientAppMatch *BuildClientPatternList(const SFSnortPacket *pkt,
+                                              uint32_t protocol,
+                                              const tClientAppConfig *pClientAppConfig)
 {
     ClientAppMatch *match_list = NULL;
     void *patterns;
-    ClientAppMatch *cam;
-    ClientAppMatch *tmp;
-    unsigned max_count;
-    unsigned max_precedence;
-
-    *rnaData = NULL;
 
     if (protocol == IPPROTO_TCP)
-        patterns = tcp_patterns;
+        patterns = pClientAppConfig->tcp_patterns;
     else
-        patterns = udp_patterns;
+        patterns = pClientAppConfig->udp_patterns;
 
     if (!patterns)
-        return;
+        return NULL;
 
     _dpd.searchAPI->search_instance_find_all(patterns,
             (char *)pkt->payload,
@@ -822,24 +836,71 @@ static void getAppidByClientPattern(const SFSnortPacket *pkt, uint32_t protocol,
             0,
             &pattern_match, (void*)&match_list
             );
-    cam = match_list;
+
+    return match_list;
+}
+
+static const tRNAClientAppModule *GetNextFromClientPatternList(ClientAppMatch **match_list)
+{
+    ClientAppMatch *curr = NULL;
+    ClientAppMatch *prev = NULL;
+    ClientAppMatch *max_curr = NULL;
+    ClientAppMatch *max_prev = NULL;
+    unsigned max_count;
+    unsigned max_precedence;
+
+    curr = *match_list;
     max_count = 0;
     max_precedence = 0;
+    while (curr)
+    {
+        if (curr->count >= curr->ca->minimum_matches
+                && ((curr->count > max_count)
+                    || (curr->count == max_count && curr->ca->precedence > max_precedence)))
+        {
+            max_count = curr->count;
+            max_precedence = curr->ca->precedence;
+            max_curr = curr;
+            max_prev = prev;
+        }
+        prev = curr;
+        curr = curr->next;
+    }
+
+    if (max_curr != NULL)
+    {
+        if (max_prev == NULL)
+        {
+            *match_list = (*match_list)->next;
+        }
+        else
+        {
+            max_prev->next = max_curr->next;
+        }
+        max_curr->next = match_free_list;
+        match_free_list = max_curr;
+        return max_curr->ca;
+    }
+    else
+    {
+        return NULL;
+    }
+}
+
+static void FreeClientPatternList(ClientAppMatch **match_list)
+{
+    ClientAppMatch *cam;
+    ClientAppMatch *tmp;
+
+    cam = *match_list;
     while (cam)
     {
-        if (cam->count >= cam->ca->minimum_matches
-                && ((cam->count > max_count)
-                    || (cam->count == max_count && cam->ca->precedence > max_precedence)))
-        {
-            max_count = cam->count;
-            max_precedence = cam->ca->precedence;
-            *rnaData = cam->ca;
-        }
         tmp = cam;
         cam = tmp->next;
         tmp->next = match_free_list;
         match_free_list = tmp;
     }
+    *match_list = NULL;
 }
 
 /**
@@ -847,10 +908,10 @@ static void getAppidByClientPattern(const SFSnortPacket *pkt, uint32_t protocol,
  *
  * @param p packet to process
  */
-static void ClientAppID(const SFSnortPacket *p, const int dir, FLOW *flowp)
+static void ClientAppID(SFSnortPacket *p, const int dir, tAppIdData *flowp, const tAppIdConfig *pConfig)
 {
-    const RNAClientAppModule *client = NULL;
-    CLIENT_APP_RETCODE ret;
+    const tRNAClientAppModule *client = NULL;
+    ClientAppMatch *match_list;
 
 #ifdef CLIENT_APP_DEBUG
     _dpd.logMsg( "Client");
@@ -859,66 +920,82 @@ static void ClientAppID(const SFSnortPacket *p, const int dir, FLOW *flowp)
     if (!p->payload_size)
         return;
 
-    if ((client = flowp->clientData))
+    if (flowp->clientData != NULL)
+        return;
+
+    if (flowp->candidate_client_list != NULL)
     {
-#ifdef CLIENT_APP_DEBUG
-        _dpd.logMsg("Using %s from flow state", client ? client->name:\n",ULL");
-#endif
+        if (flowp->num_candidate_clients_tried > 0)
+            return;
     }
     else
     {
-        getAppidByClientPattern(p, flowp->proto, &client);
-        flowp->clientData = client;
-#ifdef CLIENT_APP_DEBUG
-        _dpd.logMsg("Using %s from pattern match", client ? client->name:\n",ULL");
-#endif
+        if (!(flowp->candidate_client_list = malloc(sizeof(SF_LIST))))
+        {
+            _dpd.errMsg("Could not allocate a candidate client list.");
+            return;
+        }
+        sflist_init(flowp->candidate_client_list);
+        flowp->num_candidate_clients_tried = 0;
     }
 
-    if (client)
+    match_list = BuildClientPatternList(p, flowp->proto, &pConfig->clientAppConfig);
+    while (flowp->num_candidate_clients_tried < MAX_CANDIDATE_CLIENTS)
     {
-        ret = client->validate((uint8_t *)p->payload,
-                                       p->payload_size, dir,
-                                       flowp, p, client->userData);
-        if (app_id_debug_session_flag)
-            _dpd.logMsg("AppIdDbg %s %s client detector returned %d\n", app_id_debug_session,
-                        client->name ? client->name:"UNKNOWN", ret);
-        if (ret < 0)
-            flow_mark(flowp, FLOW_CLIENTAPPDETECTED);
+        const tRNAClientAppModule *tmp = GetNextFromClientPatternList(&match_list);
+        if (tmp != NULL)
+        {
+            client = sflist_first(flowp->candidate_client_list);
+            while (client && (client != tmp))
+                client = sflist_next(flowp->candidate_client_list);
+            if (client == NULL)
+            {
+                sflist_add_tail(flowp->candidate_client_list, (void*)tmp);
+                flowp->num_candidate_clients_tried++;
+#ifdef CLIENT_APP_DEBUG
+                _dpd.logMsg("Using %s from pattern match", tmp ? tmp->name:\n",ULL");
+#endif
+            }
+        }
+        else
+        {
+            break;
+        }
     }
-    else
-        flow_mark(flowp, FLOW_CLIENTAPPDETECTED);
+    FreeClientPatternList(&match_list);
+
 }
 
-int AppIdDiscoverClientApp(const SFSnortPacket *p, int direction, tAppIdData *rnaData)
+int AppIdDiscoverClientApp(SFSnortPacket *p, int direction, tAppIdData *rnaData, const tAppIdConfig *pConfig)
 {
-    if (!ca_config.enabled)
-        return FLOW_SUCCESS;
+    if (!pConfig->clientAppConfig.enabled)
+        return APPID_SESSION_SUCCESS;
 
     if (direction == APP_ID_FROM_INITIATOR)
     {
         /* get out if we've already tried to validate a client app */
-        if (!flow_checkflag(rnaData, FLOW_CLIENTAPPDETECTED))
-            ClientAppID(p, direction, rnaData);
+        if (!getAppIdFlag(rnaData, APPID_SESSION_CLIENT_DETECTED))
+            ClientAppID(p, direction, rnaData, pConfig);
     }
-    else if (rnaData->rnaServiceState != RNA_STATE_STATEFUL && flow_checkflag(rnaData, FLOW_CLIENT_GETS_SERVER_PACKETS))
-        ClientAppID(p, direction, rnaData);
+    else if (rnaData->rnaServiceState != RNA_STATE_STATEFUL && getAppIdFlag(rnaData, APPID_SESSION_CLIENT_GETS_SERVER_PACKETS))
+        ClientAppID(p, direction, rnaData, pConfig);
 
-    return FLOW_SUCCESS;
+    return APPID_SESSION_SUCCESS;
 }
 
-DetectorAppUrlList *getAppUrlList(void)
+DetectorAppUrlList *getAppUrlList(tAppIdConfig *pConfig)
 {
-    HttpPatternLists* patternLists = &httpPatternLists;
+    HttpPatternLists* patternLists = &pConfig->httpPatternLists;
     return (&patternLists->appUrlList);
 }
 
-static void *client_app_flowdata_get(tAppIdData *flowp)
+static void *client_app_flowdata_get(tAppIdData *flowp, unsigned client_id)
 {
-    return AppIdFlowdataGet(flowp, FLOW_DATA_CLIENT_APP_MODSTATE);
+    return AppIdFlowdataGet(flowp, client_id);
 }
 
-static int client_app_flowdata_add(tAppIdData *flowp, void *data, AppIdFreeFCN fcn)
+static int client_app_flowdata_add(tAppIdData *flowp, void *data, unsigned client_id, AppIdFreeFCN fcn)
 {
-    return AppIdFlowdataAdd(flowp, data, FLOW_DATA_CLIENT_APP_MODSTATE, fcn);
+    return AppIdFlowdataAdd(flowp, data, client_id, fcn);
 }
 

@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -230,6 +230,7 @@ typedef struct _DCE2_GlobalConfig
     int max_frag_len;
     uint16_t reassemble_threshold;
     int smb_fingerprint_policy;
+    bool legacy_mode;
 
 } DCE2_GlobalConfig;
 
@@ -354,7 +355,7 @@ int DCE2_ScIsNoAutoPortSet(const DCE2_ServerConfig *, const uint16_t);
 DCE2_Ret DCE2_ParseValue(char **, char *, void *, DCE2_IntType);
 DCE2_Ret DCE2_GetValue(char *, char *, void *, int, DCE2_IntType, uint8_t);
 DCE2_Ret DCE2_ParseIpList(char **, char *, DCE2_Queue *);
-DCE2_Ret DCE2_ParseIp(char **, char *, sfip_t *);
+DCE2_Ret DCE2_ParseIp(char **, char *, sfcidr_t *);
 DCE2_Ret DCE2_ParsePortList(char **, char *, uint8_t *);
 void DCE2_FreeConfigs(tSfPolicyUserContextId config);
 void DCE2_FreeConfig(DCE2_Config *);
@@ -543,6 +544,22 @@ static inline bool DCE2_GcSmbFingerprintServer(void)
 {
     return dce2_eval_config->gconfig->smb_fingerprint_policy
         & DCE2_SMB_FINGERPRINT__SERVER ? true : false;
+}
+
+/********************************************************************
+ * Function: DCE2_GcIsLegacyMode()
+ *
+ * Convenience function for getting whether it is in the legacy mode
+ *
+ * Arguments: None
+ *
+ * Returns:  true:  legacy mode
+ *           false: normal mode
+ *
+ ********************************************************************/
+static inline bool DCE2_GcIsLegacyMode(void)
+{
+	return dce2_eval_config->gconfig->legacy_mode;
 }
 
 /********************************************************************

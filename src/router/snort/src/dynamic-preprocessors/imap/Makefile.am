@@ -39,6 +39,13 @@ snort_imap.h \
 spp_imap.c \
 spp_imap.h 
 
+if BUILD_BUFFER_DUMP
+libsf_imap_preproc_la_SOURCES += \
+imap_buffer_dump.c \
+imap_buffer_dump.h
+endif
+
+
 EXTRA_DIST = \
 sf_imap.dsp
 

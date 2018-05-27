@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -26,6 +26,7 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 
+#include "appInfoTable.h"
 #include "flow.h"
 #include "service_api.h"
 
@@ -48,15 +49,16 @@ typedef struct _SERVICE_MYSQL_HEADER
 #pragma pack()
 
 static int svc_mysql_init(const InitServiceAPI * const init_api);
-MakeRNAServiceValidationPrototype(svc_mysql_validate);
+static int svc_mysql_validate(ServiceValidationArgs* args);
 
-static RNAServiceElement svc_element =
+static tRNAServiceElement svc_element =
 {
     .next = NULL,
     .validate = &svc_mysql_validate,
     .detectorType = DETECTOR_TYPE_DECODER,
     .name = "mysql",
     .ref_count = 1,
+    .current_ref_count = 1,
 };
 
 static RNAServiceValidationPort pp[] =
@@ -65,7 +67,7 @@ static RNAServiceValidationPort pp[] =
     {NULL, 0, 0}
 };
 
-RNAServiceValidationModule mysql_service_mod =
+tRNAServiceValidationModule mysql_service_mod =
 {
     "MYSQL",
     &svc_mysql_init,
@@ -83,22 +85,24 @@ static int svc_mysql_init(const InitServiceAPI * const init_api)
 	for (i=0; i < sizeof(appIdRegistry)/sizeof(*appIdRegistry); i++)
 	{
 		_dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[i].appId);
-		init_api->RegisterAppId(&svc_mysql_validate, appIdRegistry[i].appId, appIdRegistry[i].additionalInfo, NULL);
+		init_api->RegisterAppId(&svc_mysql_validate, appIdRegistry[i].appId, appIdRegistry[i].additionalInfo, init_api->pAppidConfig);
 	}
 
     return 0;
 }
 
-MakeRNAServiceValidationPrototype(svc_mysql_validate)
+static int svc_mysql_validate(ServiceValidationArgs* args)
 {
+    const uint8_t *data = args->data;
     const ServiceMYSQLHdr *hdr = (const ServiceMYSQLHdr *)data;
     uint32_t len;
     const uint8_t *end;
     const uint8_t *p = NULL;
+    tAppIdData *flowp = args->flowp;
+    uint16_t size = args->size;
 
-    if (!data || !mysql_service_mod.api || !flowp || !pkt) return SERVICE_ENULL;
     if (!size) goto inprocess;
-    if (dir != APP_ID_FROM_RESPONDER) goto inprocess;
+    if (args->dir != APP_ID_FROM_RESPONDER) goto inprocess;
     if (size < sizeof(ServiceMYSQLHdr)) goto fail;
 
     len = hdr->l.p.len[0];
@@ -126,15 +130,17 @@ MakeRNAServiceValidationPrototype(svc_mysql_validate)
     }
     data += 6;
     if (data >= end) goto fail;
-    mysql_service_mod.api->add_service(flowp, pkt, dir, &svc_element, APP_ID_MYSQL, NULL, (char *)p, NULL);
+    mysql_service_mod.api->add_service(flowp, args->pkt, args->dir, &svc_element,
+                                       APP_ID_MYSQL, NULL, (char *)p, NULL, NULL);
     return SERVICE_SUCCESS;
 
 inprocess:
-    mysql_service_mod.api->service_inprocess(flowp, pkt, dir, &svc_element);
+    mysql_service_mod.api->service_inprocess(flowp, args->pkt, args->dir, &svc_element, NULL);
     return SERVICE_INPROCESS;
 
 fail:
-    mysql_service_mod.api->fail_service(flowp, pkt, dir, &svc_element);
+    mysql_service_mod.api->fail_service(flowp, args->pkt, args->dir, &svc_element,
+                                        mysql_service_mod.flow_data_index, args->pConfig, NULL);
     return SERVICE_NOMATCH;
 
 }

@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -376,8 +376,8 @@ void sfPolicyIdDeleteBinding(tSfPolicyConfig *config, int parsedPolicyId)
 tSfPolicyId sfGetApplicablePolicyId(
         tSfPolicyConfig *config,
         int vlanId,
-        snort_ip_p     srcIp,
-        snort_ip_p     dstIp
+        sfaddr_t* srcIp,
+        sfaddr_t* dstIp
         )
 {
     tSfPolicyId dst_id;
@@ -404,7 +404,7 @@ tSfPolicyId sfGetApplicablePolicyId(
  */
 int sfNetworkAddBinding(
         tSfPolicyConfig *config,
-        sfip_t* Ip,
+        sfcidr_t* Ip,
         char *fileName
         )
 {
@@ -442,7 +442,7 @@ int sfNetworkAddBinding(
 
 unsigned int sfNetworkGetBinding(
         tSfPolicyConfig *config,
-        snort_ip_p ip
+        sfaddr_t* ip
         )
 {
     tSfPolicyId *policyId = NULL;
@@ -462,7 +462,7 @@ unsigned int sfNetworkGetBinding(
 
 void sfNetworkDeleteBinding(
         tSfPolicyConfig *config,
-        snort_ip_p ip
+        sfaddr_t* ip
         )
 {
     tSfPolicyId *policyId;

@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
- ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2005-2013 Sourcefire, Inc.
  ** Author: Steven Sturges
  **
@@ -126,7 +126,7 @@ void SetupFTPBounce(void)
     RegisterRuleOption("ftpbounce", FTPBounceInit, NULL, OPT_TYPE_DETECTION, NULL);
 
 #ifdef PERF_PROFILING
-    RegisterPreprocessorProfile("ftpbounce", &ftpBouncePerfStats, 3, &ruleOTNEvalPerfStats);
+    RegisterPreprocessorProfile("ftpbounce", &ftpBouncePerfStats, 3, &ruleOTNEvalPerfStats, NULL);
 #endif
 
     DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN,"Plugin: FTPBounce Setup\n"););
@@ -317,7 +317,7 @@ int FTPBounce(void *option_data, Packet *p)
         return DETECTION_OPTION_NO_MATCH;
     }
 
-    if ( ip != ntohl(GET_SRC_IP(p)->ip32[0]) )
+    if ( ip != ntohl(sfaddr_get_ip4_value(GET_SRC_IP(p))) )
     {
         PREPROC_PROFILE_END(ftpBouncePerfStats);
         return DETECTION_OPTION_MATCH;

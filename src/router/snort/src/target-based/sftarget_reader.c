@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2006-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -266,10 +266,10 @@ void PrintAttributeData(char *prefix, AttributeData *data)
 #endif
 }
 
-int SFAT_SetHostIp(char *ip)
+int SFAT_SetHostIp(const char *ip)
 {
     static HostAttributeEntry *tmp_host = NULL;
-    sfip_t ipAddr;
+    sfcidr_t ipAddr;
     tTargetBasedPolicyConfig *pConfig = &targetBasedPolicyConfig;
     SFAT_CHECKHOST;
 
@@ -278,10 +278,10 @@ int SFAT_SetHostIp(char *ip)
         return SFAT_ERROR;
     }
 
-    tmp_host = sfrt_lookup(&ipAddr, pConfig->next.lookupTable);
+    tmp_host = sfrt_lookup(&ipAddr.addr, pConfig->next.lookupTable);
 
     if (tmp_host &&
-        sfip_equals(tmp_host->ipAddr, ipAddr))
+        sfip_equals(tmp_host->ipAddr.addr, ipAddr.addr))
     {
         /* Exact match. */
         FreeHostEntry(current_host);
@@ -349,7 +349,7 @@ int SFAT_AddApplicationData(void)
         {
             FatalError("%s(%d): Missing required field in Service attribute table for host %s\n",
                 file_name, file_line,
-                sfip_to_str(&current_host->ipAddr)
+                sfip_to_str(&current_host->ipAddr.addr)
                 );
         }
 
@@ -363,7 +363,7 @@ int SFAT_AddApplicationData(void)
         {
             FatalError("%s(%d): Missing required field in Client attribute table for host %s\n",
                 file_name, file_line,
-                sfip_to_str(&current_host->ipAddr)
+                sfip_to_str(&current_host->ipAddr.addr)
                 );
         }
 
@@ -431,8 +431,8 @@ void PrintHostAttributeEntry(HostAttributeEntry *host)
         return;
 
     DebugMessage(DEBUG_ATTRIBUTE, "Host IP: %s/%d\n",
-            sfip_to_str(&host->ipAddr),
-            host->ipAddr.bits
+            sfip_to_str(&host->ipAddr.addr),
+            (sfip_family(&host->ipAddr) == AF_INET) ? ((host->ipAddr.bits >= 96) ? (host->ipAddr.bits - 96) : -1) : host->ipAddr.bits
             );
     DebugMessage(DEBUG_ATTRIBUTE, "\tPolicy Information: frag:%s (%s %u) stream: %s (%s %u)\n",
             host->hostInfo.fragPolicyName, host->hostInfo.fragPolicySet ? "set":"unset", host->hostInfo.fragPolicy,
@@ -470,7 +470,7 @@ int SFAT_AddHostEntryToMap(void)
 {
     HostAttributeEntry *host = current_host;
     int ret;
-    sfip_t *ipAddr;
+    sfcidr_t *ipAddr;
     tTargetBasedPolicyConfig *pConfig = &targetBasedPolicyConfig;
 
     SFAT_CHECKHOST;
@@ -491,8 +491,8 @@ int SFAT_AddHostEntryToMap(void)
                 SnortSnprintf(sfat_error_message, STD_BUF,
                     "AttributeTable insertion failed: %d Insufficient "
                     "space in attribute table, only configured to store %d hosts\n",
-                    ret, ScMaxAttrHosts());
-                sfat_grammar_error_printed = 1;
+                    ret, ScMaxAttrHosts(snort_conf));
+               sfat_grammar_error_printed = 1;
                 sfat_insufficient_space_logged = 1;
                 sfat_fatal_error = 0;
             }
@@ -515,7 +515,7 @@ int SFAT_AddHostEntryToMap(void)
     return ret == RT_SUCCESS ? SFAT_OK : SFAT_ERROR;
 }
 
-HostAttributeEntry *SFAT_LookupHostEntryByIP(sfip_t *ipAddr)
+HostAttributeEntry *SFAT_LookupHostEntryByIP(sfaddr_t *ipAddr)
 {
     tTargetBasedPolicyConfig *pConfig = NULL;
     tSfPolicyId policyId = getNapRuntimePolicy();
@@ -625,6 +625,24 @@ void SFAT_CleanupCallback(void *host_attr_ent)
     FreeHostEntry(host_entry);
 }
 
+void SFAT_CleanPrevConfig(void)
+{
+    tTargetBasedPolicyConfig *pConfig = &targetBasedPolicyConfig;
+
+    if (pConfig->prev.mapTable)
+    {
+        sfxhash_delete(pConfig->prev.mapTable);
+	pConfig->prev.mapTable = NULL;
+    }
+    if (pConfig->prev.lookupTable)
+    {
+        sfrt_cleanup(pConfig->prev.lookupTable, SFAT_CleanupCallback);
+        sfrt_free(pConfig->prev.lookupTable);
+	pConfig->prev.lookupTable = NULL;
+    }
+    reload_attribute_table_flags = 0;
+}
+
 void SFAT_Cleanup(void)
 {
     GetPolicyIdsCallbackList *list_entry, *tmp_list_entry = NULL;
@@ -634,37 +652,41 @@ void SFAT_Cleanup(void)
     if (pConfig->curr.mapTable)
     {
         sfxhash_delete(pConfig->curr.mapTable);
+	pConfig->curr.mapTable = NULL;
     }
 
     if (pConfig->prev.mapTable)
     {
         sfxhash_delete(pConfig->prev.mapTable);
+	pConfig->prev.mapTable = NULL;
     }
 
     if (pConfig->next.mapTable)
     {
         sfxhash_delete(pConfig->next.mapTable);
+	pConfig->next.mapTable = NULL;
     }
 
     if (pConfig->curr.lookupTable)
     {
         sfrt_cleanup(pConfig->curr.lookupTable, SFAT_CleanupCallback);
         sfrt_free(pConfig->curr.lookupTable);
+	pConfig->curr.lookupTable = NULL;
     }
 
     if (pConfig->prev.lookupTable)
     {
         sfrt_cleanup(pConfig->prev.lookupTable, SFAT_CleanupCallback);
         sfrt_free(pConfig->prev.lookupTable);
+	pConfig->prev.lookupTable = NULL;
     }
 
     if (pConfig->next.lookupTable)
     {
         sfrt_cleanup(pConfig->next.lookupTable, SFAT_CleanupCallback);
         sfrt_free(pConfig->next.lookupTable);
+	pConfig->next.lookupTable = NULL;
     }
-
-    FreeProtoocolReferenceTable();
 
     if (sfat_saved_file)
     {
@@ -694,7 +716,7 @@ void SFAT_Cleanup(void)
 #define check_attribute_table_flag(flag) \
     (reload_attribute_table_flags & flag)
 
-static void SigAttributeTableReloadHandler(int signal)
+void SigAttributeTableReloadHandler(int signal)
 {
     /* If we're already reloading, don't do anything. */
     if (check_attribute_table_flag(ATTRIBUTE_TABLE_RELOADING_FLAG))
@@ -737,6 +759,7 @@ void *SFAT_ReloadAttributeTableThread(void *arg)
     pthread_sigmask(SIG_UNBLOCK, &mtmask, NULL);
 
     attribute_reload_thread_running = 1;
+    attribute_reload_thread_stop = 0;
 
     /* Checks the flag and terminates the attribute reload thread.
      *
@@ -794,8 +817,8 @@ void *SFAT_ReloadAttributeTableThread(void *arg)
                     /* Add 1 to max for table purposes
                      * We use max_hosts to limit memcap, assume 16k per entry costs*/
                     pConfig->next.lookupTable =
-                        sfrt_new(DIR_8x16, IPv6, ScMaxAttrHosts() + 1,
-                                ((ScMaxAttrHosts())>>6) + 1);
+                        sfrt_new(DIR_8x16, IPv6, ScMaxAttrHosts(snort_conf) + 1,
+                                ((ScMaxAttrHosts(snort_conf))>>6) + 1);
                     if (!pConfig->next.lookupTable)
                     {
                         SnortSnprintf(sfat_error_message, STD_BUF,
@@ -911,7 +934,7 @@ void AttributeTableReloadCheck(void)
 }
 
 /**called once during initialization. Reads attribute table for the first time.*/
-int SFAT_ParseAttributeTable(char *args)
+int SFAT_ParseAttributeTable(char *args, SnortConfig *sc)
 {
     char **toks;
     int num_toks;
@@ -927,14 +950,13 @@ int SFAT_ParseAttributeTable(char *args)
         /* Add 1 to max for table purposes
          * We use max_hosts to limit memcap, assume 16k per entry costs*/
         pConfig->next.lookupTable =
-            sfrt_new(DIR_8x16, IPv6, ScMaxAttrHosts() + 1,
-                    ((ScMaxAttrHosts())>>6)+ 1);
+            sfrt_new(DIR_8x16, IPv6, ScMaxAttrHosts(sc) + 1,
+                    ((ScMaxAttrHosts(sc))>>6)+ 1);
         if (!pConfig->next.lookupTable)
         {
             FatalError("Failed to initialize attribute table memory\n");
         }
     }
-
 
     /* Parse filename */
     toks = mSplit(args, " \t", 0, &num_toks, 0);
@@ -983,15 +1005,6 @@ int SFAT_ParseAttributeTable(char *args)
     /* Set up the head (empty) node in the policy callback list to
      * pass to thread.*/
     updatePolicyCallbackList = (GetPolicyIdsCallbackList *)SnortAlloc(sizeof(GetPolicyIdsCallbackList));
-#ifndef WIN32
-    if (!ScDisableAttrReload())
-    {
-        /* Register signal handler for attribute table. */
-        SnortAddSignal(SIGNAL_SNORT_READ_ATTR_TBL,SigAttributeTableReloadHandler,0);
-        if(errno != 0)
-            errno = 0;
-    }
-#endif
 
     return SFAT_OK;
 }
@@ -999,8 +1012,6 @@ int SFAT_ParseAttributeTable(char *args)
 void SFAT_StartReloadThread(void)
 {
 #ifndef WIN32
-    if (!IsAdaptiveConfigured() || ScDisableAttrReload())
-        return;
 
     LogMessage("Attribute Table Reload Thread Starting...\n");
 
@@ -1065,7 +1076,7 @@ int IsAdaptiveConfiguredForSnortConfig(struct _SnortConfig *sc)
     return 1;
 }
 
-void SFAT_UpdateApplicationProtocol(sfip_t *ipAddr, uint16_t port, uint16_t protocol, uint16_t id)
+void SFAT_UpdateApplicationProtocol(sfaddr_t *ipAddr, uint16_t port, uint16_t protocol, uint16_t id)
 {
     HostAttributeEntry *host_entry;
     ApplicationEntry *service;
@@ -1081,11 +1092,12 @@ void SFAT_UpdateApplicationProtocol(sfip_t *ipAddr, uint16_t port, uint16_t prot
     {
         GetPolicyIdsCallbackList *list_entry;
 
-        if (sfrt_num_entries(pConfig->curr.lookupTable) >= ScMaxAttrHosts())
+        if (sfrt_num_entries(pConfig->curr.lookupTable) >= ScMaxAttrHosts(snort_conf))
             return;
 
         host_entry = SnortAlloc(sizeof(*host_entry));
-        sfip_set_ip(&host_entry->ipAddr, ipAddr);
+        sfip_set_ip(&host_entry->ipAddr.addr, ipAddr);
+        host_entry->ipAddr.bits = 128;
         if ((rval = sfrt_insert(&host_entry->ipAddr, (unsigned char)host_entry->ipAddr.bits, host_entry,
                                 RT_FAVOR_SPECIFIC, pConfig->curr.lookupTable)) != RT_SUCCESS)
         {
@@ -1127,6 +1139,55 @@ void SFAT_UpdateApplicationProtocol(sfip_t *ipAddr, uint16_t port, uint16_t prot
         service->protocol = id;
     }
 }
+
+#ifdef SNORT_RELOAD
+void SFAT_ReloadCheck(SnortConfig *sc)
+{
+   /* Adaptive profile has changed from  OFF  ->  ON */
+    if(!IsAdaptiveConfiguredForSnortConfig(snort_conf) && IsAdaptiveConfiguredForSnortConfig(sc))
+    {
+        tSfPolicyId defaultPolicyId = sfGetDefaultPolicy(sc->policy_config);
+        TargetBasedConfig *tbc = &sc->targeted_policies[defaultPolicyId]->target_based_config;
+
+        if (tbc && tbc->args)
+        {
+            SFAT_ParseAttributeTable(tbc->args, sc);
+        }
+
+        if(!(sc->run_flags & RUN_FLAG__DISABLE_ATTRIBUTE_RELOAD_THREAD))
+            SFAT_StartReloadThread();
+#ifdef REG_TEST
+        if(REG_TEST_FLAG_RELOAD & getRegTestFlags())
+        {
+            printf("Adaptive profile enabled, started attribute reload thread.\n");
+        }
+#endif
+    }
+    /* Adaptive profile already ON, enabled profile updates */
+    else if(IsAdaptiveConfiguredForSnortConfig(snort_conf) && IsAdaptiveConfiguredForSnortConfig(sc))
+    {
+        if((snort_conf->run_flags & RUN_FLAG__DISABLE_ATTRIBUTE_RELOAD_THREAD) &&
+                !(sc->run_flags & RUN_FLAG__DISABLE_ATTRIBUTE_RELOAD_THREAD))
+        {
+            SFAT_StartReloadThread();
+        }
+    }
+}
+
+void ReloadAttributeThreadStop(void)
+{
+    // Stop the attribute reload thread
+    if (attribute_reload_thread_running)
+    {
+        /* Doing same stuff that is done in SnortCleanup()
+         */
+        LogMessage("Terminating attribute reload thread\n");
+        attribute_reload_thread_stop = 1;
+        pthread_kill(attribute_reload_thread_id, SIGVTALRM);
+        pthread_join(attribute_reload_thread_id, NULL);
+    }
+}
+#endif
 
 #endif /* TARGET_BASED */
 

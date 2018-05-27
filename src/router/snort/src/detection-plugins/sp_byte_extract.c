@@ -1,5 +1,5 @@
 /*
- ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2010-2013 Sourcefire, Inc.
  ** Author: Ryan Jordan <ryan.jordan@sourcefire.com>
  **
@@ -41,6 +41,7 @@
 #include "byte_extract.h"
 
 #include "sp_byte_extract.h"
+#include "sp_byte_math.h"
 
 #ifdef PERF_PROFILING
 PreprocStats byteExtractPerfStats;
@@ -49,6 +50,8 @@ extern PreprocStats ruleOTNEvalPerfStats;
 
 extern int file_line;
 extern char *file_name;
+
+uint32_t Byte_Extract_Offset_Var;
 
 /* Storage for extracted variables */
 static uint32_t extracted_values[NUM_BYTE_EXTRACT_VARS];
@@ -65,7 +68,7 @@ void SetupByteExtract(void)
     AddFuncToCleanExitList(ByteExtractCleanup, NULL);
 
 #ifdef PERF_PROFILING
-    RegisterPreprocessorProfile("byte_extract", &byteExtractPerfStats, 3, &ruleOTNEvalPerfStats);
+    RegisterPreprocessorProfile("byte_extract", &byteExtractPerfStats, 3, &ruleOTNEvalPerfStats, NULL);
 #endif
 }
 
@@ -90,7 +93,7 @@ void PrintByteExtract(ByteExtractData *data)
     DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN,
            "bytes_to_grab = %d, offset = %d, relative = %d, convert = %d, "
            "align = %d, endianess = %d, base = %d, "
-           "multiplier = %d, var_num = %d, name = %s\n",
+           "multiplier = %d, var_num = %d, name = %s,  bitmask_val = 0x%x\n",
            data->bytes_to_grab,
            data->offset,
            data->relative_flag,
@@ -100,7 +103,8 @@ void PrintByteExtract(ByteExtractData *data)
            data->base,
            data->multiplier,
            data->var_number,
-           data->name););
+           data->name,
+           data->bitmask_val););
 }
 #endif
 
@@ -121,11 +125,15 @@ uint32_t ByteExtractHash(void *d)
           data->align << 8 |
           data->endianess);
     b += data->multiplier;
-    c += data->var_number;
+    c += data->bitmask_val;
 
     mix(a,b,c);
 
     a += RULE_OPTION_TYPE_BYTE_EXTRACT;
+    b += data->var_number;
+
+    mix(a,b,c);
+
 #if (defined(__ia64) || defined(__amd64) || defined(_LP64))
     {
         /* Cleanup warning because of cast from 64bit ptr to 32bit int
@@ -133,11 +141,11 @@ uint32_t ByteExtractHash(void *d)
         uint64_t ptr; /* Addresses are 64bits */
 
         ptr = (uint64_t) data->byte_order_func;
-        b += (ptr >> 32);
-        c += (ptr & 0xFFFFFFFF);
+        a += (ptr >> 32);
+        b += (ptr & 0xFFFFFFFF);
     }
 #else
-    b += (uint32_t)data->byte_order_func;
+    a += (uint32_t)data->byte_order_func;
 #endif
 
     final(a,b,c);
@@ -162,7 +170,8 @@ int ByteExtractCompare(void *l, void *r)
         (left->base == right->base) &&
         (left->multiplier == right->multiplier) &&
         (left->var_number == right->var_number) &&
-        (left->byte_order_func == right->byte_order_func))
+        (left->byte_order_func == right->byte_order_func) &&
+        (left->bitmask_val == right->bitmask_val))
     {
         return DETECTION_OPTION_EQUAL;
     }
@@ -192,11 +201,14 @@ static int ByteExtractVerify(ByteExtractData *data)
                    "string extraction.",  PARSELEN);
     }
 
-    if (data->offset < MIN_BYTE_EXTRACT_OFFSET || data->offset > MAX_BYTE_EXTRACT_OFFSET)
+    if (Byte_Extract_Offset_Var != BYTE_MATH_VAR_INDEX )
     {
-        ParseError("byte_extract rule option has invalid offset. "
+         if (data->offset < MIN_BYTE_EXTRACT_OFFSET || data->offset > MAX_BYTE_EXTRACT_OFFSET)
+         {
+              ParseError("byte_extract rule option has invalid offset. "
                    "Valid offsets are between %d and %d.",
                      MIN_BYTE_EXTRACT_OFFSET, MAX_BYTE_EXTRACT_OFFSET);
+         }
     }
 
     if (data->multiplier < MIN_BYTE_EXTRACT_MULTIPLIER || data->multiplier > MAX_BYTE_EXTRACT_MULTIPLIER)
@@ -234,6 +246,72 @@ static int ByteExtractVerify(ByteExtractData *data)
     return BYTE_EXTRACT_SUCCESS;
 }
 
+
+int numBytesInBitmask(uint32_t bitmask_value)
+{
+   int num_bytes;
+   if( bitmask_value <= 0xFF )
+       num_bytes = 1;
+   else if ( bitmask_value <= 0xFFFF )
+       num_bytes = 2;
+   else if ( bitmask_value <= 0xFFFFFF )
+       num_bytes = 3;
+   else
+       num_bytes = 4;
+
+   return num_bytes;
+}
+
+void RuleOptionBitmaskParse(uint32_t* bitmask_val, char *cptr, uint32_t bytes_to_extract,char* ruleOptionName)
+{
+     char* endp = NULL;
+     char* startp = (cptr + 8);
+     uint32_t bitmask_value;
+     uint32_t num_bytes=0;
+
+     if(*bitmask_val == 0 )
+     {
+          if(SnortStrToU32(startp,&endp,&bitmask_value,16) == -1 )
+               ParseError("%s :: Invalid input value for \"bitmask\" rule option.\n", ruleOptionName);
+          else if( errno == ERANGE )
+               ParseError("%s :: \"bitmask\" value is OUT OF RANGE.\n", ruleOptionName);
+          else if (bitmask_value == 0 )
+               ParseError("%s :: \"bitmask\" value is ZERO.\n", ruleOptionName);
+          else if (*endp != '\0')
+                ParseError("%s :: Rule option has invalid argument to \"bitmask\".\n", ruleOptionName);
+          else
+          {
+               num_bytes = numBytesInBitmask(bitmask_value);
+               if (bytes_to_extract  <= MAX_BYTES_TO_EXTRACT)
+               {
+                   if(bytes_to_extract >= num_bytes )
+                   {
+                       *bitmask_val = bitmask_value;
+                   }
+                   else
+                       ParseError("%s :: Number of bytes in \"bitmask\" value is greater than  bytes_to_grab.\n", ruleOptionName);
+               }
+               else
+                    ParseError("%s :: Number of extracted bytes from packet are more than MAX_BYTES_TO_GRAB.\n", ruleOptionName);
+          }
+     }
+     else
+          ParseError("%s :: Rule option includes the \"bitmask\" argument twice.\n",ruleOptionName);
+}
+
+/* String Validation for all special characters in the varaibale name */
+void isvalidstr(char *str,char *feature)
+{
+   int cnt=0,pos=0;
+   for (;str[pos]!='\0';pos++)
+   {
+      if (!((str[pos] >= 'a' && str[pos] <= 'z') || (str[pos] >= 'A' && str[pos] <= 'Z') || (str[pos] >= '0' && str[pos] <='9')))
+           cnt++;
+   }
+   if (pos == cnt)
+           ParseError("%s input %s.Complete string with special characters are not allowed in variable name field",feature,str);
+}
+
 /* Parsing function. */
 static int ByteExtractParse(ByteExtractData *data, char *args)
 {
@@ -259,23 +337,47 @@ static int ByteExtractParse(ByteExtractData *data, char *args)
     /* second: offset */
     if (token)
     {
-        data->offset = SnortStrtoul(token, &endptr, 10);
-        if (*endptr != '\0')
-            ParseError("byte_extract rule option has non-digits in the "
-                    "\"offset\" field.");
+        if (isdigit(token[0]) || token[0] == '-')
+        {
+             data->offset = SnortStrtoul(token, &endptr, 10);
+             if (*endptr != '\0')
+                 ParseError("byte_extract rule option has non-digits in the "
+                        "\"offset\" field.");
+        }
+        else
+        {
+            if ( bytemath_variable_name  && (!strcmp(bytemath_variable_name,token)))
+            {
+                    data->offset = (int32_t) bytemath_variable;
+                    Byte_Extract_Offset_Var = BYTE_MATH_VAR_INDEX;
+            }
+            else
+            {
+                  ParseError("byte_extract rule option has invalid Variable name in the "
+                        "\"offset\" field.");
+            }
+        }
         token = strtok_r(NULL, ",", &saveptr);
     }
 
     /* third: variable name */
     if (token)
     {
-        data->name = SnortStrdup(token);
-        token = strtok_r(NULL, ",", &saveptr);
+         if( bytemath_variable_name && (strcmp(bytemath_variable_name, token) == 0) )
+         {
+              ParseError("byte_extract : variable name is already used in byte_math rule \n");
+         }
+         else
+             data->name = SnortStrdup(token);
+
+         isvalidstr(token,"byte_extract");
+         token = strtok_r(NULL, ",", &saveptr);
     }
 
     /* optional arguments */
     while (token)
     {
+        while(isspace((int)*token)) {token++;}
         if (strcmp(token, "relative") == 0)
         {
             data->relative_flag = 1;
@@ -388,6 +490,11 @@ static int ByteExtractParse(ByteExtractData *data, char *args)
                         "byte order twice. Use only one of \"big\", \"little\", "
                         "or \"dce\".");
             }
+        }
+
+        else if(strncasecmp(token,"bitmask ",8) == 0)
+        {
+            RuleOptionBitmaskParse(&(data->bitmask_val) , token, data->bytes_to_grab, "BYTE_EXTRACT" );
         }
 
         else
@@ -521,6 +628,42 @@ static void ByteExtractInit(struct _SnortConfig *sc, char *data, OptTreeNode *ot
         fpl->isRelative = 1;
 }
 
+uint32_t getNumberTailingZerosInBitmask(uint32_t bitmask)
+{
+   unsigned int num_tailing_zeros;
+
+   if (bitmask & 0x1)
+   {
+       num_tailing_zeros = 0;
+   }
+   else
+   {
+       num_tailing_zeros = 1;
+       if ((bitmask & 0xffff) == 0)
+       {
+            bitmask >>= 16;
+            num_tailing_zeros += 16;
+       }
+       if ((bitmask & 0xff) == 0)
+       {
+            bitmask >>= 8;
+            num_tailing_zeros += 8;
+       }
+       if ((bitmask & 0xf) == 0)
+       {
+             bitmask >>= 4;
+             num_tailing_zeros += 4;
+       }
+       if ((bitmask & 0x3) == 0)
+       {
+             bitmask >>= 2;
+             num_tailing_zeros += 2;
+       }
+       num_tailing_zeros -= bitmask & 0x1;
+   }
+
+   return num_tailing_zeros;
+}
 
 /* Main detection callback */
 int DetectByteExtract(void *option_data, Packet *p)
@@ -593,7 +736,6 @@ int DetectByteExtract(void *option_data, Packet *p)
         return DETECTION_OPTION_NO_MATCH;
     }
 
-    /* do the extraction */
     if (data->data_string_convert_flag == 0)
     {
         ret = byte_extract(data->endianess, data->bytes_to_grab, ptr, start, end, value);
@@ -609,10 +751,20 @@ int DetectByteExtract(void *option_data, Packet *p)
         ret = string_extract(data->bytes_to_grab, data->base, ptr, start, end, value);
         if (ret < 0)
         {
-            PREPROC_PROFILE_END(byteExtractPerfStats);
-            return DETECTION_OPTION_NO_MATCH;
+             PREPROC_PROFILE_END(byteExtractPerfStats);
+             return DETECTION_OPTION_NO_MATCH;
         }
         bytes_read = ret;
+    }
+
+    if(data->bitmask_val != 0 )
+    {
+        int num_tailing_zeros_bitmask = getNumberTailingZerosInBitmask(data->bitmask_val);
+        *value = (*value) & data->bitmask_val ;
+         if ( (*value) && num_tailing_zeros_bitmask )
+         {
+            *value = (*value) >> num_tailing_zeros_bitmask;
+         }
     }
 
     /* mulitply */
@@ -643,7 +795,6 @@ int GetByteExtractValue(uint32_t *dst, int8_t var_number)
         return BYTE_EXTRACT_NO_VAR;
 
     *dst = extracted_values[var_number];
-
     return 0;
 }
 

@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -58,7 +58,7 @@
 
 /* list of function prototypes for this output plugin */
 static void LogNullInit(struct _SnortConfig *, char *);
-static void LogNull(Packet *, char *, void *, Event *);
+static void LogNull(Packet *, const char *, void *, Event *);
 static void LogNullCleanExitFunc(int, void *);
 
 void LogNullSetup(void)
@@ -82,7 +82,7 @@ static void LogNullInit(struct _SnortConfig *sc, char *args)
 
 
 
-static void LogNull(Packet *p, char *msg, void *arg, Event *event)
+static void LogNull(Packet *p, const char *msg, void *arg, Event *event)
 {
     return;
 }

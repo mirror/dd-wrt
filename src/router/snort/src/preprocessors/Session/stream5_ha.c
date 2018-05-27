@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2012-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -39,6 +39,7 @@
 #include <unistd.h>
 #include <assert.h>
 
+#include "active.h"
 #include "mstring.h"
 #include "packet_time.h"
 #include "parser.h"
@@ -126,18 +127,23 @@ typedef struct
 
 typedef struct _HADebugSessionConstraints
 {
-    sfip_t sip;
-    sfip_t dip;
+    int sip_flag;
+    struct in6_addr sip;
+    int dip_flag;
+    struct in6_addr dip;
     uint16_t sport;
     uint16_t dport;
     uint8_t protocol;
 } HADebugSessionConstraints;
 
 #define MAX_STREAM_HA_FUNCS 8  // depends on sizeof(SessionControlBlock.ha_pending_mask)
-#define HA_MESSAGE_VERSION  0x81
+#define HA_MESSAGE_VERSION  0x82
 static StreamHAFuncsNode *stream_ha_funcs[MAX_STREAM_HA_FUNCS];
 static int n_stream_ha_funcs = 0;
 static int runtime_output_fd = -1;
+#ifdef REG_TEST
+static int  runtime_input_fd = -1;
+#endif
 static uint8_t file_io_buffer[UINT16_MAX];
 static StreamHAStats s5ha_stats;
 
@@ -148,13 +154,15 @@ static volatile int s5_ha_debug_flag = 0;
 static char s5_ha_debug_session[HA_DEBUG_SESSION_ID_SIZE];
 
 #define IP6_SESSION_KEY_SIZE sizeof(SessionKey)
-#define IP4_SESSION_KEY_SIZE (IP6_SESSION_KEY_SIZE - 24) 
+#define IP4_SESSION_KEY_SIZE (IP6_SESSION_KEY_SIZE - 24)
 
 #ifdef PERF_PROFILING
 PreprocStats sessionHAPerfStats;
 PreprocStats sessionHAConsumePerfStats;
 PreprocStats sessionHAProducePerfStats;
 #endif
+
+static int ConsumeHAMessage(const uint8_t *msg, uint32_t msglen);
 
 //--------------------------------------------------------------------
 //  Runtime debugging support.
@@ -167,28 +175,31 @@ static inline bool StreamHADebugCheck(const SessionKey *key, volatile int debug_
     {
         if ((!info->protocol || info->protocol == key->protocol) &&
                 (((!info->sport || info->sport == key->port_l) &&
-                  (!sfip_is_set(&info->sip) || memcmp(&info->sip.ip, key->ip_l, sizeof(info->sip.ip)) == 0) &&
+                  (!info->sip_flag || memcmp(&info->sip, key->ip_l, sizeof(info->sip)) == 0) &&
                   (!info->dport || info->dport == key->port_h) &&
-                  (!sfip_is_set(&info->dip) || memcmp(&info->dip.ip, key->ip_h, sizeof(info->dip.ip)) == 0)) ||
+                  (!info->dip_flag || memcmp(&info->dip, key->ip_h, sizeof(info->dip)) == 0)) ||
                  ((!info->sport || info->sport == key->port_h) &&
-                  (!sfip_is_set(&info->sip) || memcmp(&info->sip.ip, key->ip_h, sizeof(info->sip.ip)) == 0) &&
+                  (!info->sip_flag || memcmp(&info->sip, key->ip_h, sizeof(info->sip)) == 0) &&
                   (!info->dport || info->dport == key->port_l) &&
-                  (!sfip_is_set(&info->dip) || memcmp(&info->dip.ip, key->ip_l, sizeof(info->dip.ip)) == 0))))
+                  (!info->dip_flag || memcmp(&info->dip, key->ip_l, sizeof(info->dip)) == 0))))
         {
 #endif
-            int af;
             char lipstr[INET6_ADDRSTRLEN];
             char hipstr[INET6_ADDRSTRLEN];
 
-            if (!key->ip_l[1] && !key->ip_l[2] && !key->ip_l[3] && !key->ip_h[1] && !key->ip_h[2] && !key->ip_h[3])
-                af = AF_INET;
-            else
-                af = AF_INET6;
-
             lipstr[0] = '\0';
-            sfip_raw_ntop(af, key->ip_l, lipstr, sizeof(lipstr));
             hipstr[0] = '\0';
-            sfip_raw_ntop(af, key->ip_h, hipstr, sizeof(hipstr));
+            if (key->ip_l[0] || key->ip_l[1] || key->ip_l[2] != htonl(0xFFFF) ||
+                key->ip_h[0] || key->ip_h[1] || key->ip_h[2] != htonl(0xFFFF))
+            {
+                inet_ntop(AF_INET6, key->ip_l, lipstr, sizeof(lipstr));
+                inet_ntop(AF_INET6, key->ip_h, hipstr, sizeof(hipstr));
+            }
+            else
+            {
+                inet_ntop(AF_INET, &key->ip_l[3], lipstr, sizeof(lipstr));
+                inet_ntop(AF_INET, &key->ip_h[3], hipstr, sizeof(hipstr));
+            }
             snprintf(debug_session, debug_session_len, "%s:%hu <-> %s:%hu %hhu",
                     lipstr, key->port_l, hipstr, key->port_h, key->protocol);
             return true;
@@ -216,17 +227,25 @@ static void StreamHADebugParse(const char *desc, const uint8_t *data, uint32_t l
         else
             break;
 
-        if (length >= sizeof(info->sip.ip))
+        if (length >= sizeof(info->sip))
         {
-            if (memcmp(data + 4, info->sip.ip8 + 4, 12) == 0)
+            if (memcmp(data + 4, info->sip.s6_addr + 4, 12) == 0)
             {
-                if (memcmp(data, info->sip.ip8, 4) != 0)
-                    sfip_set_raw(&info->sip, (void *) data, AF_INET);
+                if (memcmp(data, info->sip.s6_addr, 4) != 0)
+                {
+                    info->dip_flag = 1;
+                    info->sip.s6_addr32[0] = info->sip.s6_addr32[1] = info->sip.s6_addr16[4] = 0;
+                    info->sip.s6_addr16[5] = 0xFFFF;
+                    info->sip.s6_addr32[3] = *(uint32_t*)data;
+                }
             }
-            else
-                sfip_set_raw(&info->sip, (void *) data, AF_INET6);
-            length -= sizeof(info->sip.ip);
-            data += sizeof(info->sip.ip);
+            else if (memcmp(data, info->sip.s6_addr, 4) != 0)
+            {
+                info->dip_flag = 1;
+                memcpy(&info->sip, data, sizeof(info->sip));
+            }
+            length -= sizeof(info->sip);
+            data += sizeof(info->sip);
         }
         else
             break;
@@ -240,17 +259,25 @@ static void StreamHADebugParse(const char *desc, const uint8_t *data, uint32_t l
         else
             break;
 
-        if (length >= sizeof(info->dip.ip))
+        if (length >= sizeof(info->dip))
         {
-            if (memcmp(data + 4, info->dip.ip8 + 4, 12) == 0)
+            if (memcmp(data + 4, info->dip.s6_addr + 4, 12) == 0)
             {
-                if (memcmp(data, info->dip.ip8, 4) != 0)
-                    sfip_set_raw(&info->dip, (void *) data, AF_INET);
+                if (memcmp(data, info->dip.s6_addr, 4) != 0)
+                {
+                    info->dip_flag = 1;
+                    info->dip.s6_addr32[0] = info->dip.s6_addr32[1] = info->dip.s6_addr16[4] = 0;
+                    info->dip.s6_addr16[5] = 0xFFFF;
+                    info->dip.s6_addr32[3] = *(uint32_t*)data;
+                }
             }
-            else
-                sfip_set_raw(&info->dip, (void *) data, AF_INET6);
-            length -= sizeof(info->dip.ip);
-            data += sizeof(info->dip.ip);
+            else if (memcmp(data, info->dip.s6_addr, 4) != 0)
+            {
+                info->dip_flag = 1;
+                memcpy(&info->dip, data, sizeof(info->dip));
+            }
+            length -= sizeof(info->dip);
+            data += sizeof(info->dip);
         }
         else
             break;
@@ -265,20 +292,20 @@ static void StreamHADebugParse(const char *desc, const uint8_t *data, uint32_t l
             break;
     } while (0);
 
-    if (info->protocol || sfip_is_set(&info->sip) || info->sport || sfip_is_set(&info->dip) || info->dport)
+    if (info->protocol || info->sip_flag || info->sport || info->dip_flag || info->dport)
     {
         char sipstr[INET6_ADDRSTRLEN];
         char dipstr[INET6_ADDRSTRLEN];
 
         sipstr[0] = '\0';
-        if (sfip_is_set(&info->sip))
-            sfip_ntop(&info->sip, sipstr, sizeof(sipstr));
+        if (info->sip_flag)
+            inet_ntop(AF_INET6, &info->sip, sipstr, sizeof(sipstr));
         else
             snprintf(sipstr, sizeof(sipstr), "any");
 
         dipstr[0] = '\0';
-        if (sfip_is_set(&info->dip))
-            sfip_ntop(&info->dip, dipstr, sizeof(dipstr));
+        if (info->dip_flag)
+            inet_ntop(AF_INET6, &info->dip, dipstr, sizeof(dipstr));
         else
             snprintf(dipstr, sizeof(dipstr), "any");
 
@@ -387,7 +414,7 @@ int RegisterSessionHAFuncs(uint32_t preproc_id, uint8_t subcode, uint8_t size,
             if (preproc_id == node->preproc_id && subcode == node->subcode)
             {
                 FatalError("Duplicate Stream HA registration attempt for preprocessor %hu with subcode %hu\n",
-                           node->preproc_id, node->subcode);
+                           (unsigned short)node->preproc_id, (unsigned short)node->subcode);
             }
         }
         else if (idx == n_stream_ha_funcs)
@@ -585,6 +612,15 @@ static void StreamParseHAArgs(SnortConfig *sc, SessionHAConfig *config, char *ar
             FatalError("%s(%d) => Snort has been compiled without Side Channel support.\n", file_name, file_line);
 #endif
         }
+        else if (!strcmp(stoks[0], "use_daq"))
+        {
+#ifdef HAVE_DAQ_EXT_MODFLOW
+            config->use_daq = 1;
+#else
+            FatalError("%s(%d) => Snort has been compiled against a LibDAQ version without extended flow modifier support.\n",
+                        file_name, file_line);
+#endif
+        }
         else
         {
             FatalError("%s(%d) => Invalid Stream HA config option '%s'\n",
@@ -608,6 +644,12 @@ static void StreamParseHAArgs(SnortConfig *sc, SessionHAConfig *config, char *ar
             free(config->startup_input_file);
         config->startup_input_file = SnortStrdup(sc->ha_in);
     }
+   if(sc->ha_pdts_in)
+   {
+       if(config->runtime_input_file)
+           free(config->runtime_input_file);
+       config->runtime_input_file = SnortStrdup(sc->ha_pdts_in);
+   }
 #endif
 
 }
@@ -628,6 +670,10 @@ static void StreamPrintHAConfig(SessionHAConfig *config)
         LogMessage("    Runtime Output File:   %s\n", config->runtime_output_file);
     if (config->shutdown_output_file)
         LogMessage("    Shutdown Output File:  %s\n", config->shutdown_output_file);
+#ifdef SIDE_CHANNEL
+    LogMessage("    Using Side Channel:    %s\n", config->use_side_channel ? "Yes" : "No");
+#endif
+    LogMessage("    Using DAQ:             %s\n", config->use_daq ? "Yes" : "No");
 #ifdef REG_TEST
     LogMessage("    Stream LWS HA Data Size: %zu\n", sizeof(StreamHASession));
 #endif
@@ -661,6 +707,55 @@ void SessionResetHAStats(void)
     memset(&s5ha_stats, 0, sizeof(s5ha_stats));
 }
 
+#ifdef HAVE_DAQ_EXT_MODFLOW
+static void SessionHAMetaEval(int type, const uint8_t *data)
+{
+    DAQ_HA_State_Data_t *daqState;
+
+    if (type != DAQ_METAHDR_TYPE_HA_STATE)
+        return;
+
+    daqState = (DAQ_HA_State_Data_t *) data;
+
+    if (daqState->length == 0 || daqState->length >= UINT16_MAX || !daqState->data)
+        return;
+
+    /* Ignore the return value from consuming the message - it will print out
+        errors and there's nothing we can do about it. */
+    ConsumeHAMessage(daqState->data, daqState->length);
+}
+#endif
+
+#ifdef HAVE_DAQ_QUERYFLOW
+#ifdef REG_TEST
+int SessionHAQueryDAQState( DAQ_PktHdr_t *pkthdr)
+#else
+int SessionHAQueryDAQState(const DAQ_PktHdr_t *pkthdr)
+#endif
+{
+    DAQ_QueryFlow_t query;
+    DAQ_HA_State_Data_t daqHAState;
+    int rval;
+
+    query.type = DAQ_QUERYFLOW_TYPE_HA_STATE;
+    query.length = sizeof(daqHAState);
+    query.value = &daqHAState;
+
+#ifdef REG_TEST
+    pkthdr->priv_ptr = &runtime_input_fd;
+#endif
+
+    if ((rval = DAQ_QueryFlow(pkthdr, &query)) == DAQ_SUCCESS)
+    {
+        if (daqHAState.length == 0 || daqHAState.length >= UINT16_MAX || !daqHAState.data)
+            return -EINVAL;
+        rval = ConsumeHAMessage(daqHAState.data, daqHAState.length);
+    }
+
+    return rval;
+}
+#endif
+
 void SessionHAInit( struct _SnortConfig *sc, char *args )
 {
     if( session_configuration == NULL )
@@ -677,12 +772,17 @@ void SessionHAInit( struct _SnortConfig *sc, char *args )
     StreamParseHAArgs(sc, session_configuration->ha_config, args);
 
 #ifdef PERF_PROFILING
-    RegisterPreprocessorProfile("sessionHAProduce", &sessionHAProducePerfStats, 2, &sessionHAPerfStats);
-    RegisterPreprocessorProfile("sessionHAConsume", &sessionHAConsumePerfStats, 0, &totalPerfStats);
+    RegisterPreprocessorProfile("sessionHAProduce", &sessionHAProducePerfStats, 2, &sessionHAPerfStats, NULL);
+    RegisterPreprocessorProfile("sessionHAConsume", &sessionHAConsumePerfStats, 0, &totalPerfStats, NULL);
 #endif
 
     ControlSocketRegisterHandler(CS_TYPE_DEBUG_STREAM_HA, StreamDebugHA, NULL, NULL);
     LogMessage("Registered StreamHA Debug control socket message type (0x%x)\n", CS_TYPE_DEBUG_STREAM_HA);
+
+#ifdef HAVE_DAQ_EXT_MODFLOW
+    if (session_configuration->ha_config->use_daq)
+        AddFuncToPreprocMetaEvalList(sc, SessionHAMetaEval, PP_SESSION_PRIORITY, PP_SESSION);
+#endif
 
     StreamPrintHAConfig(session_configuration->ha_config);
 }
@@ -705,11 +805,11 @@ void SessionHAReload(struct _SnortConfig *sc, char *args, void **new_config)
         session_ha_config = ( SessionHAConfig * ) SnortAlloc( sizeof( SessionHAConfig ) );
         if ( session_ha_config == NULL )
             FatalError("Failed to allocate storage for Session HA configuration.\n");
-        
+
         StreamParseHAArgs( sc, session_ha_config, args );
         StreamPrintHAConfig( session_ha_config );
        *new_config = session_ha_config;
- 
+
     }
     else
     {
@@ -728,7 +828,7 @@ int SessionVerifyHAConfig(struct _SnortConfig *sc, void *swap_config)
 
 void *SessionHASwapReload( struct _SnortConfig *sc, void *data )
 {
-    session_configuration->ha_config = ( SessionHAConfig * ) data; 
+    session_configuration->ha_config = ( SessionHAConfig * ) data;
     return NULL;
 }
 
@@ -748,31 +848,18 @@ void SessionHAConfigFree( void *data )
 
     if (config->shutdown_output_file)
         free(config->shutdown_output_file);
+#ifdef REG_TEST
+    if (config->runtime_input_file)
+        free(config->runtime_input_file);
+#endif
 
     free(config);
 }
 
 // This MUST have the exact same logic as createSessionKeyFromPktHeader()
-static inline bool IsClientLower(const sfip_t *cltIP, uint16_t cltPort,
-                                 const sfip_t *srvIP, uint16_t srvPort, char proto)
+static inline bool IsClientLower(const sfaddr_t *cltIP, uint16_t cltPort,
+                                 const sfaddr_t *srvIP, uint16_t srvPort, char proto)
 {
-    if (IS_IP4(cltIP))
-    {
-        if (cltIP->ip32 < srvIP->ip32)
-            return true;
-
-        if (cltIP->ip32 > srvIP->ip32)
-            return false;
-
-        switch (proto)
-        {
-            case IPPROTO_TCP:
-            case IPPROTO_UDP:
-                if (cltPort < srvPort)
-                    return true;
-        }
-        return false;
-    }
     if (sfip_fast_lt6(cltIP, srvIP))
         return true;
 
@@ -804,6 +891,7 @@ static SessionControlBlock *DeserializeHASession(const SessionKey *key,
         retSsn = api->create_session(key);
 
         retSsn->ha_flags &= ~HA_FLAG_NEW;
+        retSsn->ha_flags |= HA_FLAG_STANDBY;
 
         family = (has->flags & HA_SESSION_FLAG_IP6) ? AF_INET6 : AF_INET;
         if (has->flags & HA_SESSION_FLAG_LOW)
@@ -904,12 +992,14 @@ static int ConsumeHAMessage(const uint8_t *msg, uint32_t msglen)
     if (msg_hdr->key_size == IP4_SESSION_KEY_SIZE) /* IPv4, miniature key */
     {
         /* Lower IPv4 address */
-        memcpy(&key.ip_l, msg + offset, 4);
-        key.ip_l[1] = key.ip_l[2] = key.ip_l[3] = 0;
+        memcpy(&key.ip_l[3], msg + offset, 4);
+        key.ip_l[0] = key.ip_l[1] = 0;
+        key.ip_l[2] = htonl(0xFFFF);
         offset += 4;
         /* Higher IPv4 address */
-        memcpy(&key.ip_h, msg + offset, 4);
-        key.ip_h[1] = key.ip_h[2] = key.ip_h[3] = 0;
+        memcpy(&key.ip_h[3], msg + offset, 4);
+        key.ip_h[0] = key.ip_h[1] = 0;
+        key.ip_h[2] = htonl(0xFFFF);
         offset += 4;
         /* The remainder of the key */
         memcpy(((uint8_t *) &key) + 32, msg + offset, IP4_SESSION_KEY_SIZE - 8);
@@ -1003,6 +1093,15 @@ static int ConsumeHAMessage(const uint8_t *msg, uint32_t msglen)
                                 has->ha_state.direction, has->ha_state.ignore_direction);
 #endif
                 }
+                if(!scb)
+                {
+                    if (has->ha_state.session_flags & SSNFLAG_COUNTED_CLOSING)
+                        sfBase.iSessionsClosing++;
+                    else if (has->ha_state.session_flags & SSNFLAG_COUNTED_ESTABLISH)
+                        sfBase.iSessionsEstablished++;
+                    else if (has->ha_state.session_flags & SSNFLAG_COUNTED_INITIALIZE)
+                        sfBase.iSessionsInitializing++;
+                }
                 scb = DeserializeHASession(&key, has, scb);
                 scb->session_established = true;
                 break;
@@ -1030,7 +1129,7 @@ static int ConsumeHAMessage(const uint8_t *msg, uint32_t msglen)
                 }
                 if (debug_flag)
                 {
-                    LogMessage("SFHADbg Consuming %hhu byte preprocessor data record for %s with PPID=%hhu and SC=%hhu\n",
+                    LogMessage("S5HADbg Consuming %hhu byte preprocessor data record for %s with PPID=%hhu and SC=%hhu\n",
                                 rec_hdr->length, s5_ha_debug_session, psd_hdr->preproc_id, psd_hdr->subcode);
                 }
                 if (DeserializePreprocData(msg_hdr->event, scb, psd_hdr->preproc_id, psd_hdr->subcode,
@@ -1177,7 +1276,8 @@ static uint32_t WriteHAMessageHeader(uint8_t event, uint16_t msglen, const Sessi
     msg_hdr->total_length = msglen;
     msg_hdr->key_type = HA_TYPE_KEY;
 
-    if (key->ip_l[1] || key->ip_l[2] || key->ip_l[3] || key->ip_h[1] || key->ip_h[2] || key->ip_h[3])
+    if (key->ip_l[0] || key->ip_l[1] || key->ip_l[2] != htonl(0xFFFF) ||
+        key->ip_h[0] || key->ip_h[1] || key->ip_h[2] != htonl(0xFFFF))
     {
         msg_hdr->key_size = IP6_SESSION_KEY_SIZE;
         memcpy(msg + offset, key, IP6_SESSION_KEY_SIZE);
@@ -1186,10 +1286,10 @@ static uint32_t WriteHAMessageHeader(uint8_t event, uint16_t msglen, const Sessi
     else
     {
         msg_hdr->key_size = IP4_SESSION_KEY_SIZE;
-        memcpy(msg + offset, &key->ip_l[0], sizeof(key->ip_l[0]));
-        offset += sizeof(key->ip_l[0]);
-        memcpy(msg + offset, &key->ip_h[0], sizeof(key->ip_h[0]));
-        offset += sizeof(key->ip_h[0]);
+        memcpy(msg + offset, &key->ip_l[3], sizeof(key->ip_l[3]));
+        offset += sizeof(key->ip_l[3]);
+        memcpy(msg + offset, &key->ip_h[3], sizeof(key->ip_h[3]));
+        offset += sizeof(key->ip_h[3]);
         memcpy(msg + offset, ((uint8_t *) key) + 32, IP4_SESSION_KEY_SIZE - 8);
         offset += IP4_SESSION_KEY_SIZE - 8;
     }
@@ -1222,13 +1322,12 @@ static uint32_t WriteHASession(SessionControlBlock *scb, uint8_t *msg)
     if (!IsClientLower(&scb->client_ip, scb->client_port, &scb->server_ip, scb->server_port, scb->key->protocol))
         has->flags |= HA_SESSION_FLAG_LOW;
 
-    if (scb->client_ip.family == AF_INET6)
-        has->flags |= HA_SESSION_FLAG_IP6;
+    has->flags |= HA_SESSION_FLAG_IP6;
 
     return offset;
 }
 
-static uint32_t WritePreprocDataRecord(SessionControlBlock *scb, StreamHAFuncsNode *node, uint8_t *msg)
+static uint32_t WritePreprocDataRecord(SessionControlBlock *scb, StreamHAFuncsNode *node, uint8_t *msg, bool forced)
 {
     RecordHeader *rec_hdr;
     PreprocDataHeader *psd_hdr;
@@ -1244,6 +1343,11 @@ static uint32_t WritePreprocDataRecord(SessionControlBlock *scb, StreamHAFuncsNo
     psd_hdr->subcode = node->subcode;
 
     rec_hdr->length = node->produce(scb, msg + offset);
+    /* If this was a forced record generation (the preprocessor did not indicate pending HA state data), as in the case
+        of a full HA record generation for session pickling, return a 0 offset if there is no data so that space is not
+        wasted on the PSD header. */
+    if (rec_hdr->length == 0 && forced)
+        return 0;
     offset += rec_hdr->length;
     node->produced++;
 
@@ -1261,7 +1365,8 @@ static uint32_t CalculateHAMessageSize(uint8_t event, SessionControlBlock *scb)
 
     /* Header (including the key).  IPv4 keys are miniaturized. */
     msg_size = sizeof(MsgHeader);
-    if (key->ip_l[1] || key->ip_l[2] || key->ip_l[3] || key->ip_h[1] || key->ip_h[2] || key->ip_h[3])
+    if (key->ip_l[0] || key->ip_l[1] || key->ip_l[2] != htonl(0xFFFF) ||
+        key->ip_h[0] || key->ip_h[1] || key->ip_h[2] != htonl(0xFFFF))
         msg_size += IP6_SESSION_KEY_SIZE;
     else
         msg_size += IP4_SESSION_KEY_SIZE;
@@ -1285,6 +1390,10 @@ static uint32_t CalculateHAMessageSize(uint8_t event, SessionControlBlock *scb)
         }
     }
 
+#ifdef DEBUG_HA_PRINT
+    printf("Calculated msg_size = %u (%zu, %zu, %zu, %zu, %zu, %zu, %zu)\n", msg_size, IP4_SESSION_KEY_SIZE, IP6_SESSION_KEY_SIZE,
+            sizeof(MsgHeader), sizeof(RecordHeader), sizeof(StreamHASession), sizeof(StreamHAState), sizeof(bool));
+#endif
     return msg_size;
 }
 
@@ -1387,7 +1496,7 @@ void SessionHANotifyDeletion(SessionControlBlock *scb)
     PREPROC_PROFILE_END(sessionHAPerfStats);
 }
 
-static uint32_t GenerateHAUpdateMessage(uint8_t *msg, uint32_t msg_size, SessionControlBlock *scb)
+static uint32_t GenerateHAUpdateMessage(uint8_t *msg, SessionControlBlock *scb, bool full)
 {
     StreamHAFuncsNode *node;
     uint32_t offset;
@@ -1396,33 +1505,43 @@ static uint32_t GenerateHAUpdateMessage(uint8_t *msg, uint32_t msg_size, Session
 
     PREPROC_PROFILE_START(sessionHAProducePerfStats);
 
-    offset = WriteHAMessageHeader(HA_EVENT_UPDATE, msg_size, scb->key, msg);
+    /* Write HA message header with a length of 0.  It will be updated at the end. */
+    offset = WriteHAMessageHeader(HA_EVENT_UPDATE, 0, scb->key, msg);
     offset += WriteHASession(scb, msg + offset);
     for (idx = 0; idx < n_stream_ha_funcs; idx++)
     {
-        if (scb->ha_pending_mask & (1 << idx))
+        /* If this is the generation of a full message, try to generate state from all registered nodes. */
+        if ((scb->ha_pending_mask & (1 << idx)) || full)
         {
             node = stream_ha_funcs[idx];
             if (!node)
                 continue;
-            offset += WritePreprocDataRecord(scb, node, msg + offset);
+            offset += WritePreprocDataRecord(scb, node, msg + offset, (scb->ha_pending_mask & (1 << idx)) ? false : true);
         }
     }
-    /* Update the message header length since it might be shorter than originally anticipated. */
+    /* Update the message header's length field with the final message size. */
     UpdateHAMessageHeaderLength(msg, offset);
 
     PREPROC_PROFILE_END(sessionHAProducePerfStats);
 
+#ifdef DEBUG_HA_PRINT
+    printf("Generated msg_size = %u (%zu, %zu, %zu, %zu, %zu, %zu, %zu)\n", offset, IP4_SESSION_KEY_SIZE, IP6_SESSION_KEY_SIZE,
+            sizeof(MsgHeader), sizeof(RecordHeader), sizeof(StreamHASession), sizeof(StreamHAState), sizeof(bool));
+#endif
     return offset;
 }
 
 #ifdef SIDE_CHANNEL
-static void SendSCUpdateMessage(SessionControlBlock *scb, uint32_t msg_size)
+static void SendSCUpdateMessage(SessionControlBlock *scb)
 {
     SCMsgHdr *schdr;
     void *msg_handle;
+    uint32_t msg_size;
     uint8_t *msg;
     int rval;
+
+    /* Calculate the maximum size of the update message for preallocation. */
+    msg_size = CalculateHAMessageSize(HA_EVENT_UPDATE, scb);
 
     /* Allocate space for the message. */
     if ((rval = SideChannelPreallocMessageTX(msg_size, &schdr, &msg, &msg_handle)) != 0)
@@ -1432,7 +1551,7 @@ static void SendSCUpdateMessage(SessionControlBlock *scb, uint32_t msg_size)
     }
 
     /* Gnerate the message. */
-    msg_size = GenerateHAUpdateMessage(msg, msg_size, scb);
+    msg_size = GenerateHAUpdateMessage(msg, scb, false);
 
     /* Send the message. */
     schdr->type = SC_MSG_TYPE_FLOW_STATE_TRACKING;
@@ -1441,18 +1560,17 @@ static void SendSCUpdateMessage(SessionControlBlock *scb, uint32_t msg_size)
 }
 #endif
 
-static inline uint8_t getHaStateDiff( SessionKey *key, const StreamHAState *old_state, StreamHAState *cur_state )
+static inline uint8_t getHaStateDiff(SessionKey *key, const StreamHAState *old_state, StreamHAState *cur_state, bool new_session)
 {
     uint32_t session_flags_diff;
     uint8_t ha_flags = 0;
 
     /* Session creation for non-TCP sessions is a major change.  TCP sessions
      * hold off until they are established. */
-    if( cur_state->new_session )
+    if (new_session)
     {
-        cur_state->new_session = false;
         ha_flags |= HA_FLAG_MODIFIED;
-        if( key->protocol != IPPROTO_TCP )
+        if (key->protocol != IPPROTO_TCP)
             ha_flags |= HA_FLAG_MAJOR_CHANGE;
         return ha_flags;
     }
@@ -1492,31 +1610,32 @@ static inline uint8_t getHaStateDiff( SessionKey *key, const StreamHAState *old_
     return ha_flags;
 }
 
-void SessionProcessHA( void *ssnptr )
+void SessionProcessHA(void *ssnptr, const DAQ_PktHdr_t *pkthdr)
 {
     struct timeval pkt_time;
-    SessionControlBlock *scb = ( SessionControlBlock * )ssnptr;
+    SessionControlBlock *scb = (SessionControlBlock *) ssnptr;
     uint32_t msg_size;
     bool debug_flag;
     PROFILE_VARS;
 
-    PREPROC_PROFILE_START( sessionHAPerfStats );
+    PREPROC_PROFILE_START(sessionHAPerfStats);
 
-    if( ( scb == NULL ) || !session_configuration->enable_ha ) 
+    if (!scb || !session_configuration->enable_ha)
     {
-        PREPROC_PROFILE_END( sessionHAPerfStats );
+        PREPROC_PROFILE_END(sessionHAPerfStats);
         return;
     }
 
-    scb->ha_flags |= getHaStateDiff( scb->key, &scb->cached_ha_state, &scb->ha_state );
+    scb->ha_flags |= getHaStateDiff(scb->key, &scb->cached_ha_state, &scb->ha_state, scb->new_session);
     /*  Receiving traffic on a session that's in standby is a major change. */
     if (scb->ha_flags & HA_FLAG_STANDBY)
     {
         scb->ha_flags |= HA_FLAG_MODIFIED | HA_FLAG_MAJOR_CHANGE;
         scb->ha_flags &= ~HA_FLAG_STANDBY;
     }
+    scb->new_session = false;
 
-    if( ( !scb->ha_pending_mask && !( scb->ha_flags & HA_FLAG_MODIFIED ) ) )
+    if (!scb->ha_pending_mask && !(scb->ha_flags & HA_FLAG_MODIFIED))
     {
         PREPROC_PROFILE_END( sessionHAPerfStats );
         return;
@@ -1527,22 +1646,22 @@ void SessionProcessHA( void *ssnptr )
         (a) major and critical changes or
         (b) preprocessor changes on already synchronized sessions.
     */
-    if( !( scb->ha_flags & (HA_FLAG_MAJOR_CHANGE | HA_FLAG_CRITICAL_CHANGE ) ) &&
-         ( !scb->ha_pending_mask || ( scb->ha_flags & HA_FLAG_NEW ) ) )
+    if (!(scb->ha_flags & (HA_FLAG_MAJOR_CHANGE | HA_FLAG_CRITICAL_CHANGE)) &&
+         (!scb->ha_pending_mask || (scb->ha_flags & HA_FLAG_NEW)))
     {
-        PREPROC_PROFILE_END( sessionHAPerfStats );
+        PREPROC_PROFILE_END(sessionHAPerfStats);
         return;
     }
 
     /* Ensure that a new flow has lived long enough for anyone to care about it
         and that we're not overrunning the synchronization threshold. */
     packet_gettimeofday(&pkt_time);
-    if( ( pkt_time.tv_sec < scb->ha_next_update.tv_sec ) ||
-        ( ( pkt_time.tv_sec == scb->ha_next_update.tv_sec ) && 
-          ( pkt_time.tv_usec < scb->ha_next_update.tv_usec ) ) )
+    if ((pkt_time.tv_sec < scb->ha_next_update.tv_sec) ||
+        ((pkt_time.tv_sec == scb->ha_next_update.tv_sec) &&
+          (pkt_time.tv_usec < scb->ha_next_update.tv_usec)))
     {
         /* Critical changes will be allowed to bypass the message timing restrictions. */
-        if ( !( scb->ha_flags & HA_FLAG_CRITICAL_CHANGE ) )
+        if (!(scb->ha_flags & HA_FLAG_CRITICAL_CHANGE))
         {
             PREPROC_PROFILE_END( sessionHAPerfStats );
             return;
@@ -1552,15 +1671,15 @@ void SessionProcessHA( void *ssnptr )
     else
         s5ha_stats.update_messages_sent_normally++;
 
-    debug_flag = StreamHADebugCheck( scb->key, s5_ha_debug_flag, &s5_ha_debug_info,
-                                      s5_ha_debug_session, sizeof( s5_ha_debug_session ) );
-    if( debug_flag )
+    debug_flag = StreamHADebugCheck(scb->key, s5_ha_debug_flag, &s5_ha_debug_info,
+                                      s5_ha_debug_session, sizeof(s5_ha_debug_session));
+    if (debug_flag)
 #ifdef TARGET_BASED
-        LogMessage( "S5HADbg Producing update message for %s - " 
+        LogMessage("S5HADbg Producing update message for %s - "
                     "SF=0x%x IPP=0x%hx AP=0x%hx DIR=%hhu IDIR=%hhu HPM=0x%hhx HF=0x%hhx\n",
                     s5_ha_debug_session, scb->ha_state.session_flags, scb->ha_state.ipprotocol,
                     scb->ha_state.application_protocol, scb->ha_state.direction,
-                    scb->ha_state.ignore_direction, scb->ha_pending_mask, scb->ha_flags );
+                    scb->ha_state.ignore_direction, scb->ha_pending_mask, scb->ha_flags);
 #else
         LogMessage("S5HADbg Producing update message for %s - SF=0x%x DIR=%hhu IDIR=%hhu HPM=0x%hhx HF=0x%hhx\n",
                     s5_ha_debug_session, scb->ha_state.session_flags,
@@ -1568,23 +1687,37 @@ void SessionProcessHA( void *ssnptr )
                     scb->ha_pending_mask, scb->ha_flags);
 #endif
 
-    /* Calculate the size of the update message. */
-    msg_size = CalculateHAMessageSize( HA_EVENT_UPDATE, scb );
-
-    if( runtime_output_fd >= 0 )
+    /* Write out to the runtime output file. */
+    if (runtime_output_fd >= 0)
     {
-        msg_size = GenerateHAUpdateMessage( file_io_buffer, msg_size, scb );
-        if( Write( runtime_output_fd, file_io_buffer, msg_size ) == -1 )
+        /* Generate the incremental update message. */
+        msg_size = GenerateHAUpdateMessage(file_io_buffer, scb, false);
+        if (Write(runtime_output_fd, file_io_buffer, msg_size) == -1)
         {
             /* TODO: Error stuff here. */
-            WarningMessage( "(%s)(%d) Error writing HA message not handled\n", __FILE__, __LINE__ );
+            WarningMessage("(%s)(%d) Error writing HA message not handled\n", __FILE__, __LINE__);
         }
     }
 
-#ifdef SIDE_CHANNEL
-    if( session_configuration->ha_config->use_side_channel )
+#ifdef HAVE_DAQ_EXT_MODFLOW
+    /*
+        Store via DAQ module (requires full message generation).
+        Assume that if we are not setting binding DAQ verdicts because of external encapsulation-induced
+          confusion that we also cannot safely set the HA state associated with this flow in the DAQ.
+    */
+    if (session_configuration->ha_config->use_daq && !Active_GetTunnelBypass())
     {
-        SendSCUpdateMessage( scb, msg_size );
+        /* Generate the full message. */
+        msg_size = GenerateHAUpdateMessage(file_io_buffer, scb, true);
+        DAQ_ModifyFlowHAState(pkthdr, file_io_buffer, msg_size);
+    }
+#endif
+
+#ifdef SIDE_CHANNEL
+    /* Send an update message over the side channel. */
+    if (session_configuration->ha_config->use_side_channel)
+    {
+        SendSCUpdateMessage(scb);
     }
 #endif
 
@@ -1598,10 +1731,10 @@ void SessionProcessHA( void *ssnptr )
     scb->ha_next_update.tv_sec += session_configuration->ha_config->min_session_lifetime.tv_sec;
 
     /* Clear the modified/new flags and pending preprocessor updates. */
-    scb->ha_flags &= ~( HA_FLAG_NEW | HA_FLAG_MODIFIED | HA_FLAG_MAJOR_CHANGE | HA_FLAG_CRITICAL_CHANGE );
+    scb->ha_flags &= ~(HA_FLAG_NEW | HA_FLAG_MODIFIED | HA_FLAG_MAJOR_CHANGE | HA_FLAG_CRITICAL_CHANGE);
     scb->ha_pending_mask = 0;
 
-    PREPROC_PROFILE_END( sessionHAPerfStats );
+    PREPROC_PROFILE_END(sessionHAPerfStats);
 }
 
 #ifdef SIDE_CHANNEL
@@ -1629,7 +1762,7 @@ void SessionHAPostConfigInit( struct _SnortConfig *sc, int unused, void *arg )
 
     if( session_configuration->ha_config->startup_input_file )
     {
-        rval = ReadHAMessagesFromFile( session_configuration->ha_config->startup_input_file); 
+        rval = ReadHAMessagesFromFile( session_configuration->ha_config->startup_input_file);
         if( rval != 0 )
         {
             ErrorMessage( "Errors were encountered while reading HA messages from file!" );
@@ -1647,6 +1780,19 @@ void SessionHAPostConfigInit( struct _SnortConfig *sc, int unused, void *arg )
         }
     }
 
+#ifdef REG_TEST
+    if( session_configuration->ha_config->runtime_input_file )
+    {
+        runtime_input_fd = open( session_configuration->ha_config->runtime_input_file,
+                                  O_RDONLY, 0664 );
+        if( runtime_input_fd < 0 )
+        {
+            FatalError( "Could not open %s for writing HA messages to: %s (%d)\n",
+                        session_configuration->ha_config->runtime_input_file, strerror( errno ), errno );
+        }
+    }
+#endif
+
 #ifdef SIDE_CHANNEL
     if( session_configuration->ha_config->use_side_channel )
     {
@@ -1654,7 +1800,7 @@ void SessionHAPostConfigInit( struct _SnortConfig *sc, int unused, void *arg )
         if( rval != 0 )
         {
             /* TODO: Fatal error here or something. */
-            ErrorMessage( "(%s)(%d) Errors were encountered registering Rx Side Channel Handler\n", 
+            ErrorMessage( "(%s)(%d) Errors were encountered registering Rx Side Channel Handler\n",
                     __FILE__, __LINE__ );
          }
     }
@@ -1678,4 +1824,12 @@ void SessionCleanHA( void )
         close(runtime_output_fd);
         runtime_output_fd = -1;
     }
+#ifdef REG_TEST
+    if (runtime_input_fd >= 0)
+    {
+        close(runtime_input_fd);
+        runtime_input_fd = -1;
+    }
+#endif
+
 }

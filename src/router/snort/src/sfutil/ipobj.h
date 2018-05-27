@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -19,7 +19,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
- 
+
 /*
 
 	ipobj.h
@@ -57,7 +57,7 @@ typedef struct {
 }PORTSET;
 
 typedef struct {
-    sfip_t ip;
+    sfcidr_t ip;
     PORTSET portset;
     char notflag;
 } IP_PORT;
@@ -71,30 +71,30 @@ typedef struct {
 
   IP ADDRESS SET OBJECTS
 
-   
+
    Snort Accepts:
 
 	IP-Address		192.168.1.1
 	IP-Address/MaskBits	192.168.1.0/24
 	IP-Address/Mask		192.168.1.0/255.255.255.0
 
-   
+
    These can all be handled via the CIDR block notation : IP/MaskBits
 
    We use collections (lists) of cidr blocks to represent address blocks
-   and indivdual addresses.    
+   and indivdual addresses.
 
    For a single IPAddress the implied Mask is 32 bits,or
    255.255.255.255, or 0xffffffff, or -1.
 */
 IPSET * ipset_new     (void);
-int     ipset_add     ( IPSET * ipset, sfip_t *ip, void * port, int notflag);
-int     ipset_contains( IPSET * ipset, sfip_t *ip, void * port);
+int     ipset_add     ( IPSET * ipset, sfcidr_t *ip, void * port, int notflag);
+int     ipset_contains( IPSET * ipset, sfaddr_t *ip, void * port);
 IPSET * ipset_copy    ( IPSET * ipset );
 void    ipset_free    ( IPSET * ipset );
 int     ipset_print   ( IPSET * ipset );
 
-/* helper functions -- all the sets work in host order   
+/* helper functions -- all the sets work in host order
 */
 int      ipset_parse(IPSET * ipset, char *ipstr);
 

@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -47,15 +47,16 @@ typedef struct _SERVICE_DATA
 } tServiceData;
 
 static int battle_field_init(const InitServiceAPI * const init_api);
-MakeRNAServiceValidationPrototype(battle_field_validate);
+static int battle_field_validate(ServiceValidationArgs* args);
 
-static RNAServiceElement svc_element =
+static tRNAServiceElement svc_element =
 {
     .next = NULL,
     .validate = &battle_field_validate,
     .detectorType = DETECTOR_TYPE_DECODER,
     .name = "battle_field",
     .ref_count = 1,
+    .current_ref_count = 1,
 };
 
 static RNAServiceValidationPort pp[] =
@@ -80,7 +81,7 @@ static RNAServiceValidationPort pp[] =
 #define PATTERN_6     "\xfe\xfd\x09\x00\x00\x00\x00"
 
 
-RNAServiceValidationModule battlefield_service_mod =
+tRNAServiceValidationModule battlefield_service_mod =
 {
     "BattleField",
     &battle_field_init,
@@ -91,42 +92,44 @@ static tAppRegistryEntry appIdRegistry[] = {{APP_ID_BATTLEFIELD, 0}};
 
 static int battle_field_init(const InitServiceAPI * const init_api)
 {
-    init_api->RegisterPattern(&battle_field_validate, IPPROTO_TCP, (uint8_t *)PATTERN_HELLO, sizeof(PATTERN_HELLO)-1,  5, "battle_field");
-    init_api->RegisterPattern(&battle_field_validate, IPPROTO_TCP, (uint8_t *)PATTERN_2, sizeof(PATTERN_2)-1,  0, "battle_field");
-    init_api->RegisterPattern(&battle_field_validate, IPPROTO_TCP, (uint8_t *)PATTERN_3, sizeof(PATTERN_3)-1,  0, "battle_field");
-    init_api->RegisterPattern(&battle_field_validate, IPPROTO_TCP, (uint8_t *)PATTERN_4, sizeof(PATTERN_4)-1,  0, "battle_field");
-    init_api->RegisterPattern(&battle_field_validate, IPPROTO_TCP, (uint8_t *)PATTERN_5, sizeof(PATTERN_5)-1,  0, "battle_field");
-    init_api->RegisterPattern(&battle_field_validate, IPPROTO_TCP, (uint8_t *)PATTERN_6, sizeof(PATTERN_6)-1,  0, "battle_field");
+    init_api->RegisterPattern(&battle_field_validate, IPPROTO_TCP, (uint8_t *)PATTERN_HELLO, sizeof(PATTERN_HELLO)-1,  5, "battle_field", init_api->pAppidConfig);
+    init_api->RegisterPattern(&battle_field_validate, IPPROTO_TCP, (uint8_t *)PATTERN_2, sizeof(PATTERN_2)-1,  0, "battle_field", init_api->pAppidConfig);
+    init_api->RegisterPattern(&battle_field_validate, IPPROTO_TCP, (uint8_t *)PATTERN_3, sizeof(PATTERN_3)-1,  0, "battle_field", init_api->pAppidConfig);
+    init_api->RegisterPattern(&battle_field_validate, IPPROTO_TCP, (uint8_t *)PATTERN_4, sizeof(PATTERN_4)-1,  0, "battle_field", init_api->pAppidConfig);
+    init_api->RegisterPattern(&battle_field_validate, IPPROTO_TCP, (uint8_t *)PATTERN_5, sizeof(PATTERN_5)-1,  0, "battle_field", init_api->pAppidConfig);
+    init_api->RegisterPattern(&battle_field_validate, IPPROTO_TCP, (uint8_t *)PATTERN_6, sizeof(PATTERN_6)-1,  0, "battle_field", init_api->pAppidConfig);
 
 	unsigned i;
 	for (i=0; i < sizeof(appIdRegistry)/sizeof(*appIdRegistry); i++)
 	{
 		_dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[i].appId);
-		init_api->RegisterAppId(&battle_field_validate, appIdRegistry[i].appId, appIdRegistry[i].additionalInfo, NULL);
+		init_api->RegisterAppId(&battle_field_validate, appIdRegistry[i].appId, appIdRegistry[i].additionalInfo, init_api->pAppidConfig);
 	}
 
     return 0;
 }
 
 
-/*static int battle_field_validate(const uint8_t *data, uint16_t size, const int dir,  */
-/*        FLOW *flowp, const SFSnortPacket *pkt, struct _Detector *userdata) */
-MakeRNAServiceValidationPrototype(battle_field_validate)
+static int battle_field_validate(ServiceValidationArgs* args)
 {
     tServiceData *fd;
+    tAppIdData *flowp = args->flowp;
+    const uint8_t *data = args->data;
+    SFSnortPacket *pkt = args->pkt; 
+    uint16_t size = args->size;
 
     if (!size)
     {
         goto inprocess_nofd;
     }
 
-    fd = battlefield_service_mod.api->data_get(flowp);
+    fd = battlefield_service_mod.api->data_get(flowp, battlefield_service_mod.flow_data_index);
     if (!fd)
     {
         fd = calloc(1, sizeof(*fd));
         if (!fd)
             return SERVICE_ENOMEM;
-        if (battlefield_service_mod.api->data_add(flowp, fd, &free))
+        if (battlefield_service_mod.api->data_add(flowp, fd, battlefield_service_mod.flow_data_index, &free))
         {
             free(fd);
             return SERVICE_ENOMEM;
@@ -192,7 +195,9 @@ MakeRNAServiceValidationPrototype(battle_field_validate)
     }
 
     
-    battlefield_service_mod.api->fail_service(flowp, pkt, dir, &svc_element);
+    battlefield_service_mod.api->fail_service(flowp, pkt, args->dir, &svc_element,
+                                              battlefield_service_mod.flow_data_index,
+                                              args->pConfig, NULL);
     return SERVICE_NOMATCH;
 
 inprocess:
@@ -200,22 +205,24 @@ inprocess:
     if (fd->packetCount >= MAX_PACKET_INSPECTION_COUNT)
         goto fail;
 inprocess_nofd:
-    battlefield_service_mod.api->service_inprocess(flowp, pkt, dir, &svc_element);
+    battlefield_service_mod.api->service_inprocess(flowp, pkt, args->dir, &svc_element, NULL);
     return SERVICE_INPROCESS;
 
 success:
-    if (dir != APP_ID_FROM_RESPONDER)
+    if (args->dir != APP_ID_FROM_RESPONDER)
     {
         fd->state = CONN_STATE_SERVICE_DETECTED;
         goto inprocess;
     }
 
-    battlefield_service_mod.api->add_service(flowp, pkt, dir, &svc_element,
-                                      APP_ID_BATTLEFIELD, NULL, NULL, NULL);
+    battlefield_service_mod.api->add_service(flowp, pkt, args->dir, &svc_element,
+                                      APP_ID_BATTLEFIELD, NULL, NULL, NULL, NULL);
     return SERVICE_SUCCESS;
 
 fail:
-    battlefield_service_mod.api->fail_service(flowp, pkt, dir, &svc_element);
+    battlefield_service_mod.api->fail_service(flowp, pkt, args->dir, &svc_element,
+                                              battlefield_service_mod.flow_data_index,
+                                              args->pConfig, NULL);
     return SERVICE_NOMATCH;
 
 }

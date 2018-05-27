@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2012-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -90,8 +90,8 @@ typedef struct
 
 typedef struct _HADebugSessionConstraints
 {
-    sfip_t sip;
-    sfip_t dip;
+    sfcidr_t sip;
+    sfcidr_t dip;
     uint16_t sport;
     uint16_t dport;
     uint8_t protocol;
@@ -184,6 +184,10 @@ int RegisterSSLHAFuncs(uint32_t preproc_id, uint8_t subcode, uint32_t size,
         n_ssl_ha_funcs++;
 
     node = (SSLHAFuncsNode *)calloc(1, sizeof(SSLHAFuncsNode));
+    if (!node)
+    {
+        DynamicPreprocessorFatalMessage("SSLHA: Failed to allocate memory for new node\n");
+    }
     node->id = idx;
     node->mask = (1 << idx);
     node->preproc_id = (uint8_t) preproc_id;
@@ -288,6 +292,10 @@ static void SSLParseHAArgs(struct _SnortConfig *sc, SSLHAConfig *config, char *a
                 DynamicPreprocessorFatalMessage("%s(%d) => '%s' specified multiple times\n", __FILE__, __LINE__, stoks[0]);
             }
             config->startup_input_file = strdup(stoks[1]);
+            if (!config->startup_input_file)
+            {
+                DynamicPreprocessorFatalMessage("%s(%d) => Memory allocation failure.\n", __FILE__, __LINE__);
+            }
         }
         else if (!strcmp(stoks[0], "runtime_output_file"))
         {
@@ -300,6 +308,11 @@ static void SSLParseHAArgs(struct _SnortConfig *sc, SSLHAConfig *config, char *a
                 DynamicPreprocessorFatalMessage("%s(%d) => '%s' specified multiple times\n", __FILE__, __LINE__, stoks[0]);
             }
             config->runtime_output_file = strdup(stoks[1]);
+            if (!config->runtime_output_file)
+            {
+                DynamicPreprocessorFatalMessage("%s(%d) => Memory allocation failure.\n", __FILE__, __LINE__);
+            }
+
         }
         else if (!strcmp(stoks[0], "shutdown_output_file"))
         {
@@ -312,6 +325,10 @@ static void SSLParseHAArgs(struct _SnortConfig *sc, SSLHAConfig *config, char *a
                 DynamicPreprocessorFatalMessage("%s(%d) => '%s' specified multiple times\n", __FILE__, __LINE__, stoks[0]);
             }
             config->shutdown_output_file = strdup(stoks[1]);
+            if (!config->shutdown_output_file)
+            {
+                DynamicPreprocessorFatalMessage("%s(%d) => Memory allocation failure.\n", __FILE__, __LINE__);
+            }
         }
         else if (!strcmp(stoks[0], "use_side_channel"))
         {
@@ -408,12 +425,17 @@ void SSLHAInit(struct _SnortConfig *sc, char *args)
     }
 
     pDefaultPolicyConfig->ssl_ha_config = (SSLHAConfig*)calloc(1, sizeof( SSLHAConfig ));
+    if (!pDefaultPolicyConfig->ssl_ha_config)
+    {
+        DynamicPreprocessorFatalMessage("Failed to allocate storage for Session HA configuration.\n");
+    }
+
 
     SSLParseHAArgs(sc, pDefaultPolicyConfig->ssl_ha_config, args);
 
 #ifdef PERF_PROFILING
-    _dpd.addPreprocProfileFunc("sslHAProduce", &sslHAProducePerfStats, 2, &sslHAPerfStats);
-    _dpd.addPreprocProfileFunc("sslHAConsume", &sslHAConsumePerfStats, 0, _dpd.totalPerfStats);
+    _dpd.addPreprocProfileFunc("sslHAProduce", &sslHAProducePerfStats, 2, &sslHAPerfStats, NULL);
+    _dpd.addPreprocProfileFunc("sslHAConsume", &sslHAConsumePerfStats, 0, _dpd.totalPerfStats, NULL);
 #endif
 
     SSLPrintHAConfig(pDefaultPolicyConfig->ssl_ha_config);
@@ -437,7 +459,7 @@ void SSLHAReload(struct _SnortConfig *sc, char *args, void **new_config)
     {
         ssl_ha_config = (SSLHAConfig *)calloc(1, sizeof(SSLHAConfig));
         if ( ssl_ha_config == NULL )
-            DynamicPreprocessorFatalMessage("Failed to allocate storage for Session HA configuration.\n");
+            DynamicPreprocessorFatalMessage("Failed to allocate new storage for Session HA configuration.\n");
         *new_config = ssl_ha_config;
     }
     else
@@ -459,7 +481,7 @@ int SSLVerifyHAConfig(struct _SnortConfig *sc, void *config)
 }
 
 void *SSLHASwapReload( struct _SnortConfig *sc, void *data )
-{           
+{
     SSLPP_config_t *config;
 
     config = (SSLPP_config_t *)sfPolicyUserDataGet(ssl_config, _dpd.getDefaultPolicy());

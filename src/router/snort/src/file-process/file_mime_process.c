@@ -1,5 +1,5 @@
 /*
- ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2012-2013 Sourcefire, Inc.
  **
  ** This program is free software; you can redistribute it and/or modify
@@ -39,6 +39,7 @@
 #include "detection_util.h"
 
 #include "stream_api.h"
+#include "reg_test.h"
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
 #endif
@@ -110,6 +111,7 @@ void *mime_hdr_search_mpse = NULL;
 MIMESearch mime_hdr_search[HDR_LAST];
 MIMESearch *mime_current_search = NULL;
 static const char *boundary_str = "boundary=";
+static char *preprocessor = NULL;
 
 /* Extract the filename from the header */
 static inline int extract_file_name(const char **start, int length, bool *disp_cont)
@@ -180,8 +182,20 @@ static inline int extract_file_name(const char **start, int length, bool *disp_c
 
 }
 
-/* accumulate MIME attachment filenames. The filenames are appended by commas */
-int log_file_name(const uint8_t *start, int length, FILE_LogState *log_state, bool *disp_cont)
+/* accumulate MIME attachment filenames. The filenames are appended by commas
+ * start - If extract_fname is true,start is ptr in MIME header
+ *         to extract file names from. Else, if extract_fname
+ *         is false, start is the filename
+ *  length - If extract_fname is false , length is the strlen of
+ *          filename contained in start
+ *
+ * log_state - file log state
+ * disp_cont
+ * extract_fname - false, when filename is already extracted
+ *                        and passed to the first argument
+ */
+
+int log_file_name(const uint8_t *start, int length, FILE_LogState *log_state, bool *disp_cont, bool extract_fname)
 {
     uint8_t *alt_buf;
     int alt_size;
@@ -190,17 +204,27 @@ int log_file_name(const uint8_t *start, int length, FILE_LogState *log_state, bo
     int cont =0;
     int log_avail = 0;
 
-
-    if(!start || (length <= 0))
+    if ( extract_fname )
     {
-        *disp_cont = false;
-        return -1;
+        if(!start || (length <= 0))
+        {
+            *disp_cont = false;
+            return -1;
+        }
+
+        if(*disp_cont)
+            cont = 1;
+
+        ret = extract_file_name((const char **)(&start), length, disp_cont);
     }
-
-    if(*disp_cont)
-        cont = 1;
-
-    ret = extract_file_name((const char **)(&start), length, disp_cont);
+    else
+    {
+        if(*disp_cont)
+            cont = 1;
+         /* Since the file name is already passed as parameter and the length as well,
+          * just set ret here*/
+         ret = length;
+    }
 
     if (ret == -1)
         return ret;
@@ -252,14 +276,14 @@ static void set_file_name_from_log(FILE_LogState *log_state, void *ssn)
     {
         if (log_state->file_current > log_state->file_name)
             file_api->set_file_name(ssn, log_state->filenames + log_state->file_name,
-                    log_state->file_current -log_state->file_name - 1);
+                    log_state->file_current -log_state->file_name - 1, false);
         else
             file_api->set_file_name(ssn, log_state->filenames + log_state->file_current,
-                    log_state->file_logged -log_state->file_current);
+                    log_state->file_logged -log_state->file_current, false);
     }
     else
     {
-        file_api->set_file_name(ssn, NULL, 0);
+        file_api->set_file_name(ssn, NULL, 0, false);
     }
 }
 /*
@@ -267,7 +291,7 @@ static void set_file_name_from_log(FILE_LogState *log_state, void *ssn)
  *         -1: fail
  *
  */
-int set_log_buffers(MAIL_LogState **log_state, MAIL_LogConfig *conf, void *mempool)
+int set_log_buffers(MAIL_LogState **log_state, MAIL_LogConfig *conf, void *mempool, void* scbPtr)
 {
     MemPool *log_mempool = (MemPool *)mempool;
 
@@ -283,6 +307,7 @@ int set_log_buffers(MAIL_LogState **log_state, MAIL_LogConfig *conf, void *mempo
         *log_state = (MAIL_LogState *)calloc(1, sizeof(MAIL_LogState));
         if((*log_state) != NULL)
         {
+            bkt->scbPtr = scbPtr;
             (*log_state)->log_hdrs_bkt = bkt;
             (*log_state)->log_depth = conf->email_hdrs_log_depth;
             (*log_state)->recipients = (uint8_t *)bkt->data;
@@ -300,14 +325,14 @@ int set_log_buffers(MAIL_LogState **log_state, MAIL_LogConfig *conf, void *mempo
         {
             /*free bkt if calloc fails*/
             mempool_free(log_mempool, bkt);
-            return -1;
+            return -2;
         }
 
     }
     return 0;
 }
 
-static void set_mime_buffers(MimeState *ssn)
+static void set_mime_buffers(MimeState *ssn, void* scbPtr)
 {
     if ((ssn != NULL) && (ssn->decode_state == NULL))
     {
@@ -319,6 +344,7 @@ static void set_mime_buffers(MimeState *ssn)
             ssn->decode_state = calloc(1, sizeof(Email_DecodeState));
             if((ssn->decode_state) != NULL )
             {
+                bkt->scbPtr = scbPtr;
                 ssn->decode_bkt = bkt;
                 SetEmailDecodeState((Email_DecodeState *)(ssn->decode_state), bkt->data, conf->max_depth,
                         conf->b64_depth, conf->qp_depth,
@@ -334,8 +360,12 @@ static void set_mime_buffers(MimeState *ssn)
         else
         {
             if (ssn->mime_stats)
+            {
+                if(((MimeStats *)ssn->mime_stats)->memcap_exceeded % 10000 == 0 && preprocessor )
+                    LogMessage("WARNING: %s max_mime_mem exceeded",preprocessor);
                 ((MimeStats *)ssn->mime_stats)->memcap_exceeded++;
-            DEBUG_WRAP(DebugMessage(DEBUG_FILE, "No memory available for decoding. Memcap exceeded \n"););
+            }
+            DEBUG_WRAP(DebugMessage(DEBUG_FILE, "No memory available for decoding. Memcap exceeded: %s preprocessor \n", preprocessor););
         }
     }
 }
@@ -523,12 +553,12 @@ static inline void process_decode_type(const char *start, int length, bool cnt_x
     return;
 }
 
-static inline void setup_decode(const char *data, int size, bool cnt_xf, MimeState *mime_ssn)
+static inline void setup_decode(const char *data, int size, bool cnt_xf, MimeState *mime_ssn, void* scbPtr)
 {
     /* Check for Encoding Type */
     if( file_api->is_decoding_enabled(mime_ssn->decode_conf) && !mime_ssn->decode_conf->ignore_data)
     {
-        set_mime_buffers(mime_ssn);
+        set_mime_buffers(mime_ssn, scbPtr);
         if(mime_ssn->decode_state != NULL)
         {
             ResetBytesRead((Email_DecodeState *)(mime_ssn->decode_state));
@@ -590,11 +620,13 @@ static const uint8_t * process_mime_header(Packet *p, const uint8_t *ptr,
 
             mime_ssn->data_state = STATE_DATA_BODY;
 
-            /* if no headers, treat as data */
+            /* no header seen */
             if (ptr == start_hdr)
-                return eolm;
-            else
-                return eol;
+            {
+                setup_decode((const char *)ptr, eolm  - (const uint8_t *)NULL, false, mime_ssn, p->ssnptr);
+            }
+
+            return eol;
         }
 
         /* if we're not folding, see if we should interpret line as a data line
@@ -737,7 +769,7 @@ static const uint8_t * process_mime_header(Packet *p, const uint8_t *ptr,
         {
             if ((mime_ssn->data_state == STATE_MIME_HEADER) && !(mime_ssn->state_flags & MIME_FLAG_EMAIL_ATTACH))
             {
-                setup_decode((const char *)content_type_ptr, (eolm - content_type_ptr), false, mime_ssn );
+                setup_decode((const char *)content_type_ptr, (eolm - content_type_ptr), false, mime_ssn, p->ssnptr);
             }
 
             mime_ssn->state_flags &= ~MIME_FLAG_IN_CONTENT_TYPE;
@@ -746,7 +778,7 @@ static const uint8_t * process_mime_header(Packet *p, const uint8_t *ptr,
         else if ((mime_ssn->state_flags &
                 (MIME_FLAG_IN_CONT_TRANS_ENC | MIME_FLAG_FOLDING)) == MIME_FLAG_IN_CONT_TRANS_ENC)
         {
-            setup_decode((const char *)cont_trans_enc, (eolm - cont_trans_enc), true, mime_ssn );
+            setup_decode((const char *)cont_trans_enc, (eolm - cont_trans_enc), true, mime_ssn, p->ssnptr);
 
             mime_ssn->state_flags &= ~MIME_FLAG_IN_CONT_TRANS_ENC;
 
@@ -759,8 +791,11 @@ static const uint8_t * process_mime_header(Packet *p, const uint8_t *ptr,
             if(mime_ssn->log_config->log_filename && mime_ssn->log_state )
             {
                 if(!log_file_name(cont_disp, eolm - cont_disp,
-                        &(mime_ssn->log_state->file_log), &disp_cont) )
+                        &(mime_ssn->log_state->file_log), &disp_cont, true) )
+                {
                     mime_ssn->log_flags |= FLAG_FILENAME_PRESENT;
+                }
+                mime_ssn->log_flags |= FLAG_FILENAME_IN_HEADER;
             }
             if (disp_cont)
             {
@@ -768,11 +803,25 @@ static const uint8_t * process_mime_header(Packet *p, const uint8_t *ptr,
             }
             else
             {
+                if ((mime_ssn->data_state == STATE_MIME_HEADER) && !(mime_ssn->state_flags & MIME_FLAG_EMAIL_ATTACH))
+                {
+                    // setting up decode assuming possible file data after content-disposition header
+                    setup_decode(NULL, eolm - (const uint8_t *)NULL, false, mime_ssn, p->ssnptr);
+                }
                 mime_ssn->state_flags &= ~MIME_FLAG_IN_CONT_DISP;
                 mime_ssn->state_flags &= ~MIME_FLAG_IN_CONT_DISP_CONT;
             }
 
             cont_disp = NULL;
+        }
+        else
+        {
+            // unknown header
+            if ((mime_ssn->data_state == STATE_MIME_HEADER) && !(mime_ssn->state_flags & MIME_FLAG_EMAIL_ATTACH))
+            {
+                // setting up decode assuming possible file data after unknown header
+                setup_decode(NULL, eolm - (const uint8_t *)NULL, false, mime_ssn, p->ssnptr);
+            }
         }
 
         /* if state was unknown, at this point assume we know */
@@ -839,6 +888,8 @@ static const uint8_t * process_mime_body(Packet *p, const uint8_t *ptr,
     {
         const uint8_t *attach_start = ptr;
         const uint8_t *attach_end;
+        uint8_t filename[MAX_UNICODE_FILE_NAME] ;
+        uint32_t file_name_size = 0;
 
         if (is_data_end )
         {
@@ -851,14 +902,29 @@ static const uint8_t * process_mime_body(Packet *p, const uint8_t *ptr,
 
         if( attach_start < attach_end )
         {
-            if(EmailDecode( attach_start, attach_end, decode_state) < DECODE_SUCCESS )
+            bool filename_in_mime_header = (mime_ssn->log_flags & FLAG_FILENAME_IN_HEADER) ? true: false;
+            if(EmailDecode( attach_start, attach_end, decode_state, filename, &file_name_size, filename_in_mime_header ) < DECODE_SUCCESS )
             {
                 if (mime_ssn->methods && mime_ssn->methods->decode_alert)
                     mime_ssn->methods->decode_alert(mime_ssn->decode_state);
             }
+            else
+            {
+               if ( !filename_in_mime_header && (decode_state->decode_type == DECODE_UU) && file_name_size && mime_ssn->log_state)
+              {
+                    bool disp_cont = (mime_ssn->state_flags & MIME_FLAG_IN_CONT_DISP_CONT)? true: false;
+                    if ( !log_file_name((const uint8_t *) filename, \
+                                                 file_name_size , \
+                                                 &(mime_ssn->log_state->file_log), &disp_cont, false) )
+                    {
+                         mime_ssn->log_flags |= FLAG_FILENAME_PRESENT;
+                    }
+                }
+            }
         }
     }
 
+    mime_ssn->log_flags &= ~FLAG_FILENAME_IN_HEADER;
     if (is_data_end)
     {
         mime_ssn->data_state = STATE_MIME_HEADER;
@@ -940,7 +1006,7 @@ const uint8_t * process_mime_data_paf(void *packet, const uint8_t *start, const 
     }
 
     if ( mime_ssn->decode_conf && !mime_ssn->decode_conf->ignore_data)
-        setFileDataPtr((uint8_t*)start, (uint16_t)(end - start));
+        setFileDataPtr(start, (uint16_t)(end - start));
 
     if ((mime_ssn->data_state == STATE_DATA_HEADER) ||
             (mime_ssn->data_state == STATE_DATA_UNKNOWN))
@@ -983,6 +1049,7 @@ const uint8_t * process_mime_data_paf(void *packet, const uint8_t *start, const 
         case STATE_DATA_BODY:
             DEBUG_WRAP(DebugMessage(DEBUG_FILE, "DATA BODY STATE ~~~~~~~~~~~~~~~~~~~~~~~~\n"););
             start = process_mime_body(p, start, end, mime_ssn, isFileEnd(position) );
+            update_file_name(mime_ssn->log_state);
             break;
         }
     }
@@ -998,11 +1065,11 @@ const uint8_t * process_mime_data_paf(void *packet, const uint8_t *start, const 
         {
             int detection_size = getDetectionSize(conf->b64_depth, conf->qp_depth,
                     conf->uu_depth, conf->bitenc_depth, ds );
-            setFileDataPtr(ds->decodePtr, (uint16_t)detection_size);
+            setFileDataPtr((const uint8_t*)ds->decodePtr, (uint16_t)detection_size);
         }
 
         if (file_api->file_process(p,(uint8_t *)ds->decodePtr,
-                (uint16_t)ds->decoded_bytes, position, upload, false)
+                (uint16_t)ds->decoded_bytes, position, upload, false, false)
                 && (isFileStart(position))&& mime_ssn->log_state)
         {
             set_file_name_from_log(&(mime_ssn->log_state->file_log), p->ssnptr);
@@ -1030,12 +1097,13 @@ const uint8_t * process_mime_data_paf(void *packet, const uint8_t *start, const 
  * This should be called when mime data is available
  */
 const uint8_t * process_mime_data(void *packet, const uint8_t *start,
-        const uint8_t *data_end_marker, MimeState *mime_ssn, bool upload, bool paf_enabled)
+        const uint8_t *data_end_marker, MimeState *mime_ssn, bool upload, bool paf_enabled, char *preproc_name)
 {
     const uint8_t *attach_start = start;
     const uint8_t *attach_end;
     Packet *p = (Packet *)packet;
     FilePosition position = SNORT_FILE_START;
+    preprocessor = preproc_name;
 
     if (paf_enabled)
     {
@@ -1069,6 +1137,7 @@ const uint8_t * process_mime_data(void *packet, const uint8_t *start,
         process_mime_data_paf(packet, attach_start, data_end_marker,
                 mime_ssn, upload, position);
     }
+    preprocessor = 0;
 
     return data_end_marker;
 }
@@ -1155,7 +1224,7 @@ static inline bool store_boundary(MimeDataPafInfo *data_info,  uint8_t val)
         return 0;
     }
 
-    if ((*(data_info->boundary_search) == '='))
+    if (*(data_info->boundary_search) == '=')
     {
         /*Skip spaces for the end of boundary*/
         if (val == '=')
@@ -1344,3 +1413,131 @@ bool check_data_end(void *data_end_state,  uint8_t val)
     *((DataEndState *)data_end_state) = state;
     return 0;
 }
+
+#ifdef SNORT_RELOAD
+void update_mime_mempool(void *mempool, int new_max_memory, int encode_depth)
+{
+     size_t obj_size = 0;
+     unsigned num_objects = 0;
+     MemPool *memory_pool = (MemPool*)mempool;
+
+     if (encode_depth & 7)
+          encode_depth += (8 - (encode_depth & 7));
+
+     if(encode_depth)
+     {
+         obj_size = (2*encode_depth);
+         num_objects = new_max_memory / obj_size;
+     }
+
+#ifdef REG_TEST
+     if (REG_TEST_EMAIL_FLAG_MIME_MEMPOOL_ADJUST & getRegTestFlagsForEmail())
+     {
+         printf("\n========== START# NEW MIME MEMPOOL VALUES ==============================\n");
+         printf("Mime mempool object size: NEW VALUE # %zu \n", obj_size);
+         printf("Mime mempool max memory : NEW VALUE # (%u * %zu = %zu) \n", num_objects,obj_size,(num_objects * obj_size));
+         printf("Mime mempool total number of buckets: NEW VALUE # %u \n", num_objects);
+         printf("========== END# NEW MIME MEMPOOL VALUES ==============================\n");
+         fflush(stdout);
+     }
+#endif
+
+     mempool_setObjectSize(memory_pool, num_objects, obj_size );
+}
+
+void update_log_mempool(void *mempool, int new_max_memory , int email_hdrs_log_depth)
+{
+    size_t obj_size = 0;
+    unsigned num_objects = 0;
+    MemPool *memory_pool = (MemPool*)mempool;
+
+    if(email_hdrs_log_depth)
+    {
+         if (email_hdrs_log_depth & 7)
+               email_hdrs_log_depth += (8 - (email_hdrs_log_depth & 7));
+    }
+
+    obj_size = ((2* MAX_EMAIL) + MAX_FILE + email_hdrs_log_depth);
+    num_objects = new_max_memory / obj_size;
+
+#ifdef REG_TEST
+    if (REG_TEST_EMAIL_FLAG_LOG_MEMPOOL_ADJUST & getRegTestFlagsForEmail())
+    {
+         printf("\n========== START# NEW LOG MEMPOOL VALUES ==============================\n");
+         printf("Log mempool object size: NEW VALUE # %zu \n", obj_size);
+         printf("Log mempool max memory : NEW VALUE # (%u * %zu = %zu) \n",num_objects, obj_size, (num_objects * obj_size));
+         printf("Log mempool total number of buckets: NEW VALUE # %u \n",num_objects);
+         printf("========== END# NEW LOG MEMPOOL VALUES ==============================\n");
+        fflush(stdout);
+    }
+#endif
+
+    mempool_setObjectSize(memory_pool, num_objects, obj_size );
+}
+
+#ifdef REG_TEST
+void displayMimeMempool(void *mempool, DecodeConfig *decode_conf_old, DecodeConfig *decode_conf_new)
+{
+    MemPool *memory_pool = (MemPool*)mempool;
+
+    if (REG_TEST_EMAIL_FLAG_MIME_MEMPOOL_ADJUST & getRegTestFlagsForEmail())
+    {
+          printf("\nmax_mime_mem is : OLD VALUE # %u \n",decode_conf_old->max_mime_mem);
+          printf("max_depth is# OLD VALUE %u\n",decode_conf_old->max_depth);
+          printf("\n=========START# OLD MIME MEMPOOL VALUES ===============================\n");
+          printf("Mime mempool object size: OLD VALUE # %zu \n",memory_pool->obj_size);
+          printf("Mime mempool max memory : OLD VALUE # %zu \n",memory_pool->max_memory);
+          printf("Mime mempool total number of buckets: OLD VALUE # %u \n",mempool_numTotalBuckets(memory_pool));
+          printf("=========END# OLD MIME MEMPOOL VALUES ===================================== \n");
+          printf("\nSetting max_mime_mem to # ( NEW VALUE ) %u \n",decode_conf_new->max_mime_mem);
+          printf("Setting max_depth to # ( NEW VALUE )%u\n",decode_conf_new->max_depth);
+          fflush(stdout);
+    }
+}
+
+void displayLogMempool(void *mempool, unsigned memcap_old, unsigned memcap_new)
+{
+    MemPool *memory_pool = (MemPool*)mempool;
+
+    if (REG_TEST_EMAIL_FLAG_LOG_MEMPOOL_ADJUST & getRegTestFlagsForEmail())
+    {
+          printf("\nmemcap is : OLD VALUE # %u \n", memcap_old);
+          printf("\n=========START# OLD LOG MEMPOOL VALUES ==================================\n ");
+          printf("Log mempool object size: OLD VALUE # %zu \n",memory_pool->obj_size);
+          printf("Log mempool max memory : OLD VALUE # %zu \n",memory_pool->max_memory);
+          printf("Log mempool total number of buckets: OLD VALUE # %u \n",mempool_numTotalBuckets(memory_pool));
+          printf("=========END# OLD LOG MEMPOOL VALUES ================================== \n");
+          printf("\nSetting memcap to# (NEW VALUE ) %u \n", memcap_new);
+          fflush(stdout);
+    }
+}
+
+void displayDecodeDepth(DecodeConfig *decode_conf_old, DecodeConfig *decode_conf_new)
+{
+     if(REG_TEST_EMAIL_FLAG_DECODE_DEPTH_ADJUST & getRegTestFlagsForEmail())
+     {
+          if(decode_conf_old->b64_depth != decode_conf_new->b64_depth )
+          {
+               printf("\nBase64 decode depth: OLD VALUE # %d",decode_conf_old->b64_depth);
+               printf("\nSetting Base64 decoding depth to # (new value)%d \n\n", decode_conf_new->b64_depth);
+          }
+          if(decode_conf_old->qp_depth != decode_conf_new->qp_depth )
+          {
+               printf("\nQuoted-Printable decoding depth: OLD VALUE # %d",decode_conf_old->qp_depth);
+               printf("\nSetting Quoted-Printable decoding depth to # (new value)%d \n\n",decode_conf_new->qp_depth);
+          }
+          if(decode_conf_old->bitenc_depth != decode_conf_new->bitenc_depth )
+          {
+               printf("\nNon-encoded MIME extraction depth (bitec_depth): OLD VALUE # %d",decode_conf_old->bitenc_depth);
+               printf("\nSetting bitenc decoding depth to # (new value)%d \n\n", decode_conf_new->bitenc_depth);
+          }
+          if(decode_conf_old->uu_depth != decode_conf_new->uu_depth )
+          {
+               printf("\nUnix-to-Unix decoding depth: OLD VALUE # %d",decode_conf_old->uu_depth);
+               printf("\nSetting Unix-to-Unix decoding depth depth to # (new value)%d \n\n", decode_conf_new->uu_depth);
+          }
+     }
+}
+#endif
+
+#endif

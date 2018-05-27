@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -69,13 +69,17 @@
 #include "hi_cmd_lookup.h"
 #include "detection_util.h"
 
+#if defined(FEAT_OPEN_APPID)
+#include "spp_stream6.h"
+#endif /* defined(FEAT_OPEN_APPID) */
+
 #define HEADER_NAME__COOKIE "Cookie"
 #define HEADER_LENGTH__COOKIE 6
 #define HEADER_NAME__CONTENT_LENGTH "Content-length"
 #define HEADER_LENGTH__CONTENT_LENGTH 14
-#define HEADER_NAME__XFF HI_UI_CONFIG_XFF_FIELD_NAME
+#define HEADER_NAME__XFF HTTP_XFF_FIELD_X_FORWARDED_FOR
 #define HEADER_LENGTH__XFF (sizeof(HEADER_NAME__XFF)-1)
-#define HEADER_NAME__TRUE_IP HI_UI_CONFIG_TCI_FIELD_NAME
+#define HEADER_NAME__TRUE_IP HTTP_XFF_FIELD_TRUE_CLIENT_IP
 #define HEADER_LENGTH__TRUE_IP (sizeof(HEADER_NAME__TRUE_IP)-1)
 #define HEADER_NAME__HOSTNAME "Host"
 #define HEADER_LENGTH__HOSTNAME 4
@@ -83,6 +87,8 @@
 #define HEADER_LENGTH__TRANSFER_ENCODING 17
 #define HEADER_NAME__CONTENT_TYPE "Content-Type"
 #define HEADER_LENGTH__CONTENT_TYPE 12
+#define HEADER_NAME__CONTENT_DISP "Content-Disposition"
+#define HEADER_LENGTH__CONTENT_DISP 19
 #if defined(FEAT_OPEN_APPID)
 #define HEADER_NAME__USER_AGENT "User-Agent"
 #define HEADER_LENGTH__USER_AGENT sizeof(HEADER_NAME__USER_AGENT)-1
@@ -122,9 +128,9 @@ int NextNonWhiteSpace(HI_SESSION *Session, const u_char *start,
         const u_char *end, const u_char **ptr, URI_PTR *uri_ptr);
 extern const u_char *extract_http_transfer_encoding(HI_SESSION *, HttpSessionData *,
         const u_char *, const u_char *, const u_char *, HEADER_PTR *, int);
-#if defined(FEAT_OPEN_APPID)
-extern void CallHttpHeaderProcessors (Packet* p, HttpParsedHeaders *headers);
-#endif /* defined(FEAT_OPEN_APPID) */
+
+extern void CheckSkipAlertMultipleColon(HI_SESSION *Session, const u_char *start,
+        const u_char *end, const u_char **ptr, int iInspectMode);
 
 char **hi_client_get_field_names() { return( (char **)g_field_names ); }
 
@@ -169,13 +175,18 @@ int CheckChunkEncoding(HI_SESSION *Session, const u_char *start, const u_char *e
     uint32_t iDataLen = 0;
     uint32_t chunkBytesCopied = 0;
     uint8_t stateless_chunk_count = 0;
+    uint8_t iChunkLenState = CHUNK_LEN_DEFAULT;
+    bool iChunkRemainder = false;
 
     if(!start || !end)
         return HI_INVALID_ARG;
 
     ptr = start;
 
-    if(chunk_remainder)
+    if (hsd)
+        iChunkLenState = hsd->resp_state.chunk_len_state;
+
+    if(chunk_remainder && iChunkLenState == CHUNK_LEN_DEFAULT)
     {
         iDataLen = end - ptr;
 
@@ -186,6 +197,7 @@ int CheckChunkEncoding(HI_SESSION *Session, const u_char *start, const u_char *e
                 if(updated_chunk_remainder)
                     *updated_chunk_remainder = chunk_remainder - iDataLen ;
                 chunk_remainder = iDataLen;
+                iChunkRemainder = true;
             }
         }
         else
@@ -195,6 +207,7 @@ int CheckChunkEncoding(HI_SESSION *Session, const u_char *start, const u_char *e
                 if(updated_chunk_remainder)
                     *updated_chunk_remainder = chunk_remainder - max_size ;
                 chunk_remainder = max_size;
+                iChunkRemainder = true;
             }
         }
 
@@ -210,6 +223,11 @@ int CheckChunkEncoding(HI_SESSION *Session, const u_char *start, const u_char *e
             }
             ptr = jump_ptr + 1;
         }
+    }
+    else if(iChunkLenState == CHUNK_LEN_INCOMPLETE)
+    {
+        /* Chunk length incompletely read previously, continue to read the remaining bytes */
+        iChunkLen = chunk_remainder;
     }
 
     while(hi_util_in_bounds(start, end, ptr))
@@ -287,10 +305,13 @@ int CheckChunkEncoding(HI_SESSION *Session, const u_char *start, const u_char *e
                 if(*ptr == '\n')
                     ptr++;
 
+                iChunkLenState = CHUNK_LEN_DEFAULT;
+
                 if(!hi_util_in_bounds(start, end, ptr))
                 {
                     if(updated_chunk_remainder)
                         *updated_chunk_remainder = iChunkLen;
+                    iChunkRemainder = true;
                     break;
                 }
 
@@ -300,6 +321,7 @@ int CheckChunkEncoding(HI_SESSION *Session, const u_char *start, const u_char *e
                 {
                     if(updated_chunk_remainder)
                         *updated_chunk_remainder = iChunkLen - iDataLen;
+                    iChunkRemainder = true;
                     iChunkLen = iDataLen;
                 }
 
@@ -354,6 +376,7 @@ int CheckChunkEncoding(HI_SESSION *Session, const u_char *start, const u_char *e
                 iCheckChunk = 1;
                 iChunkLen   = 0;
                 iChunkChars = 0;
+                iChunkLenState = CHUNK_LEN_DEFAULT;
             }
 
             ptr++;
@@ -366,7 +389,10 @@ int CheckChunkEncoding(HI_SESSION *Session, const u_char *start, const u_char *e
             {
                 if(*ptr == '\r')
                 {
-                    ptr++;
+                    while((hi_util_in_bounds(start, end, ptr)) && (*ptr == '\r'))
+                    {
+                        ptr++;
+                    }
 
                     if(!hi_util_in_bounds(start, end, ptr))
                         break;
@@ -384,6 +410,7 @@ int CheckChunkEncoding(HI_SESSION *Session, const u_char *start, const u_char *e
                     if(ptr == NULL)
                     {
                         ptr = end;
+                        iChunkLenState = CHUNK_LEN_DEFAULT;
                         break;
                     }
                     else
@@ -394,6 +421,7 @@ int CheckChunkEncoding(HI_SESSION *Session, const u_char *start, const u_char *e
                 iCheckChunk = 0;
                 iChunkLen   = 0;
                 iChunkChars = 0;
+                iChunkLenState = CHUNK_LEN_DEFAULT;
             }
             else
             {
@@ -411,18 +439,41 @@ int CheckChunkEncoding(HI_SESSION *Session, const u_char *start, const u_char *e
                     iCheckChunk = 0;
                     iChunkLen   = 0;
                     iChunkChars = 0;
+                    iChunkLenState = CHUNK_LEN_DEFAULT;
                 }
                 else
                 {
                     iChunkLen <<= 4;
                     iChunkLen |= (unsigned int)(hex_lookup[*ptr]);
                     iChunkChars++;
+                    /*
+                    ** Chunk length incompletely read i.e CRLF not found yet
+                    ** Storing the bytes of chunk length, read till now
+                    ** (to handle the split of chunk length itself across different packets)
+                    */
+                    iChunkLenState = CHUNK_LEN_INCOMPLETE;
+                    if(updated_chunk_remainder)
+                        *updated_chunk_remainder = iChunkLen;
                 }
             }
         }
 
         ptr++;
     }
+
+    /*
+    ** If we neither have Chunk data split across packets (or)
+    ** Chunk length itself split across packets then clear
+    */
+    if(!( iChunkRemainder || (iChunkLenState == CHUNK_LEN_INCOMPLETE) ))
+    {
+        if(updated_chunk_remainder)
+            *updated_chunk_remainder = 0;
+    }
+
+    if (hsd)
+        hsd->resp_state.chunk_len_state = iChunkLenState;
+
     if (chunkPresent )
     {
         if(post_end)
@@ -1552,7 +1603,7 @@ static inline int HTTP_CopyExtraDataToSession(const uint8_t *start, int length, 
     return 0;
 }
 
-static inline void HTTP_CopyUri(HTTPINSPECT_CONF *ServerConf, const u_char *start, const u_char *end, HttpSessionData *hsd, int stream_ins)
+static inline void HTTP_CopyUri(HTTPINSPECT_CONF *ServerConf, const u_char *start, const u_char *end, HttpSessionData *hsd, int stream_ins, void* ssnptr)
 {
     int iRet = 0;
     const u_char *cur_ptr;
@@ -1568,7 +1619,7 @@ static inline void HTTP_CopyUri(HTTPINSPECT_CONF *ServerConf, const u_char *star
         SkipBlankSpace(start,end,&cur_ptr);
 
         start = cur_ptr;
-        if(!SetLogBuffers(hsd))
+        if(!SetLogBuffers(hsd, ssnptr))
         {
             iRet = HTTP_CopyExtraDataToSession((uint8_t *)start, (end - start), COPY_URI, hsd->log_state);
             if(!iRet)
@@ -1578,7 +1629,7 @@ static inline void HTTP_CopyUri(HTTPINSPECT_CONF *ServerConf, const u_char *star
 }
 
 
-static inline int unfold_http_uri(HTTPINSPECT_CONF *ServerConf, const u_char *end, URI_PTR *uri_ptr, HttpSessionData *hsd, int stream_ins)
+static inline int unfold_http_uri(HTTPINSPECT_CONF *ServerConf, const u_char *end, URI_PTR *uri_ptr, HttpSessionData *hsd, int stream_ins, void* ssnptr)
 {
     uint8_t unfold_buf[DECODE_BLEN];
     uint32_t unfold_size =0;
@@ -1594,7 +1645,7 @@ static inline int unfold_http_uri(HTTPINSPECT_CONF *ServerConf, const u_char *en
 
     if( !folded)
     {
-        HTTP_CopyUri(ServerConf, uri_ptr->uri , uri_ptr->uri_end, hsd, stream_ins);
+        HTTP_CopyUri(ServerConf, uri_ptr->uri , uri_ptr->uri_end, hsd, stream_ins, ssnptr);
         return iRet;
     }
 
@@ -1609,7 +1660,7 @@ static inline int unfold_http_uri(HTTPINSPECT_CONF *ServerConf, const u_char *en
     p = p + unfold_size;
     uri_ptr->uri_end = p;
 
-    HTTP_CopyUri(ServerConf, unfold_buf, unfold_buf + unfold_size, hsd, stream_ins);
+    HTTP_CopyUri(ServerConf, unfold_buf, unfold_buf + unfold_size, hsd, stream_ins, ssnptr);
 
     return iRet;
 }
@@ -1618,7 +1669,7 @@ static inline int unfold_http_uri(HTTPINSPECT_CONF *ServerConf, const u_char *en
 static inline int hi_client_extract_uri(
     HI_SESSION *Session, HTTPINSPECT_CONF *ServerConf,
     HI_CLIENT * Client, const u_char *start, const u_char *end,
-    const u_char *ptr, URI_PTR *uri_ptr, HttpSessionData *hsd, int stream_ins)
+    const u_char *ptr, URI_PTR *uri_ptr, HttpSessionData *hsd, int stream_ins, void* ssnptr)
 {
     int iRet = HI_SUCCESS;
     const u_char *tmp;
@@ -1657,7 +1708,7 @@ static inline int hi_client_extract_uri(
 
                 if(!uri_copied)
                 {
-                    HTTP_CopyUri(ServerConf, uri_ptr->uri , uri_ptr->uri_end, hsd, stream_ins);
+                    HTTP_CopyUri(ServerConf, uri_ptr->uri , uri_ptr->uri_end, hsd, stream_ins, ssnptr);
                 }
                 break;
             }
@@ -1682,7 +1733,7 @@ static inline int hi_client_extract_uri(
                     if((*(uri_ptr->uri_end) == '\n') || (*(uri_ptr->uri_end) == '\r') )
                     {
                         uri_copied = 1;
-                        if(!unfold_http_uri(ServerConf, end, uri_ptr, hsd, stream_ins ))
+                        if(!unfold_http_uri(ServerConf, end, uri_ptr, hsd, stream_ins, ssnptr ))
                         {
                             SkipCRLF(start,end, &ptr);
                             continue;
@@ -1690,7 +1741,7 @@ static inline int hi_client_extract_uri(
                     }
                     else if(!uri_copied)
                     {
-                        HTTP_CopyUri(ServerConf, uri_ptr->uri , uri_ptr->uri_end, hsd, stream_ins);
+                        HTTP_CopyUri(ServerConf, uri_ptr->uri , uri_ptr->uri_end, hsd, stream_ins, ssnptr);
                     }
                     /*
                     **  You found a URI, let's break and check it out.
@@ -1819,26 +1870,46 @@ const u_char *extract_http_cookie(const u_char *p, const u_char *end, HEADER_PTR
     return p;
 }
 
+Transaction* createNode_tList(sfaddr_t *tmp, uint8_t req_id)
+{
+    Transaction *tList_node = (Transaction*)SnortAlloc(sizeof(Transaction));
+    tList_node->true_ip = tmp;
+    tList_node->tID = req_id;
+    tList_node->next = NULL;
+    return tList_node;
+}
+
+void insertNode_tList(HttpSessionData* hsd, sfaddr_t *tmp)
+{
+   Transaction *tList_node = createNode_tList(tmp,hsd->http_req_id);
+   if( hsd->tList_start == NULL && hsd->tList_end == NULL )
+   {
+       hsd->tList_start = tList_node;
+       hsd->tList_end = tList_node;
+   }
+   else if ( (hsd->tList_end != NULL) && ( hsd->tList_end->tID != hsd->http_req_id ) )
+   {
+      hsd->tList_end->next = tList_node;
+       hsd->tList_end = tList_node;
+   }
+   else
+       freeTransactionNode(tList_node);
+}
 
 const u_char *extract_http_xff(HI_SESSION *Session, const u_char *p, const u_char *start,
         const u_char *end, HI_CLIENT_HDR_ARGS *hdrs_args)
 {
     int num_spaces = 0;
     SFIP_RET status;
-    sfip_t *tmp;
+    sfaddr_t *tmp;
     char *ipAddr = NULL;
     uint8_t unfold_buf[DECODE_BLEN];
     uint32_t unfold_size =0;
     const u_char *start_ptr, *end_ptr, *cur_ptr;
     const u_char *port;
     HEADER_PTR *header_ptr;
-    sfip_t **true_ip;
 
     header_ptr = hdrs_args->hdr_ptr;
-    true_ip = &(hdrs_args->sd->true_ip);
-
-    if(!true_ip)
-        return p;
 
     if( (hdrs_args->true_clnt_xff & (HDRS_BOTH | XFF_HEADERS)) == HDRS_BOTH)
     {
@@ -1854,6 +1925,8 @@ const u_char *extract_http_xff(HI_SESSION *Session, const u_char *p, const u_cha
     if(hi_util_in_bounds(start, end, p) && *p == ':')
     {
         p++;
+        CheckSkipAlertMultipleColon(Session, start, end, &p, HI_SI_CLIENT_MODE);
+
         if(hi_util_in_bounds(start, end, p))
             sf_unfold_header(p, end-p, unfold_buf, sizeof(unfold_buf), &unfold_size, 0 , &num_spaces);
 
@@ -1894,7 +1967,7 @@ const u_char *extract_http_xff(HI_SESSION *Session, const u_char *p, const u_cha
         }
         if(ipAddr)
         {
-            if( (tmp = sfip_alloc(ipAddr, &status)) == NULL )
+            if( (tmp = sfaddr_alloc(ipAddr, &status)) == NULL )
             {
                 port = (u_char *)SnortStrnStr((const char *)start_ptr, (cur_ptr - start_ptr), ":");
                 if(port)
@@ -1905,7 +1978,7 @@ const u_char *extract_http_xff(HI_SESSION *Session, const u_char *p, const u_cha
                     {
                         return p;
                     }
-                    if( (tmp = sfip_alloc(ipAddr, &status)) == NULL )
+                    if( (tmp = sfaddr_alloc(ipAddr, &status)) == NULL )
                     {
                         if((status != SFIP_ARG_ERR) && (status !=SFIP_ALLOC_ERR))
                         {
@@ -1936,7 +2009,7 @@ const u_char *extract_http_xff(HI_SESSION *Session, const u_char *p, const u_cha
                 if( (hdrs_args->top_precedence > 0) &&
                     (hdrs_args->new_precedence >= hdrs_args->top_precedence) )
                     {
-                        sfip_free( tmp );
+                        sfaddr_free( tmp );
                         free( ipAddr );
                         return( p );
                     }
@@ -1949,28 +2022,36 @@ const u_char *extract_http_xff(HI_SESSION *Session, const u_char *p, const u_cha
                     hdrs_args->true_clnt_xff &= (~XFF_HEADERS_ACTIVE);
             }
 
-            /* If we have already set a 'true_ip' for the session, look to see if the
-               new IP differs from the current IP.  If so, replace it and post an alert. */
-            if(*true_ip)
+            /*** If Count reaches to Max limit, we are not store XFF data for further requests in the session.
+             */
+            if( ( hdrs_args->sd->tList_count != XFF_MAX_PIPELINE_REQ ) && (hdrs_args->sd->tList_count != 0 ) )
             {
-                if(!IP_EQUALITY(*true_ip, tmp))
+                /* Check if true-IP for this request is added to the List or not. If not, add this new IP to the List.
+                   If already added true-IP , then check new Ip and current IP is same or not.*/
+                if ( (hdrs_args->sd->tList_end != NULL) && ( hdrs_args->sd->tList_end->tID == hdrs_args->sd->http_req_id ) )
                 {
-                    sfip_free(*true_ip);
-                    *true_ip = tmp;
-
-                    //alert
-                    if( ((hdrs_args->true_clnt_xff & XFF_HEADERS) == 0) &&
-                        hi_eo_generate_event(Session, HI_EO_CLIENT_MULTIPLE_TRUEIP_IN_SESSION))
-                    {
-                        hi_eo_client_event_log(Session, HI_EO_CLIENT_MULTIPLE_TRUEIP_IN_SESSION, NULL, NULL);
-                    }
+                     /* If we have already added a true_ip to the List for the currect request,
+                        see if the current IP differs from other XFF Headers IP.
+                        If so , replace it and post an alert saying multiple true IPs in same session.
+                     */
+                     if (!IP_EQUALITY(hdrs_args->sd->tList_end->true_ip, tmp))
+                     {
+                          sfaddr_free(hdrs_args->sd->tList_end->true_ip);
+                          hdrs_args->sd->tList_end->true_ip = tmp;
+                          // alert
+                          if( ((hdrs_args->true_clnt_xff & XFF_HEADERS) == 0) &&
+                              hi_eo_generate_event(Session, HI_EO_CLIENT_MULTIPLE_TRUEIP_IN_SESSION))
+                                 hi_eo_client_event_log(Session, HI_EO_CLIENT_MULTIPLE_TRUEIP_IN_SESSION, NULL, NULL);
+                     }
+                     else
+                       sfaddr_free(tmp);
                 }
                 else
-                    sfip_free(tmp);
-
+                   insertNode_tList(hdrs_args->sd, tmp);
             }
             else
-                *true_ip = tmp;
+                sfaddr_free(tmp);
+
             free(ipAddr);
         }
 
@@ -1992,13 +2073,15 @@ static const u_char *extract_http_client_header(HI_SESSION *Session, const u_cha
     int num_spaces = 0;
     uint8_t unfold_buf[DECODE_BLEN];
     uint32_t unfold_size =0;
-    const u_char *start_ptr, *end_ptr, *cur_ptr;
+    const u_char *end_ptr, *cur_ptr;
 
     SkipBlankSpace(start,end,&p);
 
     if(hi_util_in_bounds(start, end, p) && *p == ':')
     {
         p++;
+        CheckSkipAlertMultipleColon(Session, start, end, &p, HI_SI_CLIENT_MODE);
+
         if(hi_util_in_bounds(start, end, p))
             sf_unfold_header(p, end-p, unfold_buf, sizeof(unfold_buf), &unfold_size, 0 , &num_spaces);
 
@@ -2018,17 +2101,24 @@ static const u_char *extract_http_client_header(HI_SESSION *Session, const u_cha
 
         p = p + unfold_size;
 
-        start_ptr = unfold_buf;
         cur_ptr = unfold_buf;
         end_ptr = unfold_buf + unfold_size;
-        SkipBlankSpace(start_ptr,end_ptr,&cur_ptr);
+        SkipBlankSpace(unfold_buf,end_ptr,&cur_ptr);
 
-        start_ptr = cur_ptr;
-
-        if(end_ptr - start_ptr)
         {
-            headerLoc->len = end_ptr - start_ptr;
-            headerLoc->start = (u_char *)strndup((const char *)start_ptr, headerLoc->len);
+            unsigned field_strlen = (unsigned)(end_ptr - cur_ptr); 
+            if (field_strlen)
+            {
+                headerLoc->start = (u_char *)strndup((const char *)cur_ptr, field_strlen);
+                if (NULL == headerLoc->start)
+                {
+                    /* treat this out-of-memory error as a parse failure */
+                    header_ptr->header.uri_end = end;
+                    return end;
+                }
+                /* now that we have the memory, fill in len. */
+                headerLoc->len = field_strlen;
+            }
         }
     }
     else
@@ -2058,6 +2148,8 @@ const u_char *extract_http_hostname(HI_SESSION *Session, const u_char *p, const 
     if(hi_util_in_bounds(start, end, p) && *p == ':')
     {
         p++;
+        CheckSkipAlertMultipleColon(Session, start, end, &p, HI_SI_CLIENT_MODE);
+
         if(hi_util_in_bounds(start, end, p))
             sf_unfold_header(p, end-p, unfold_buf, sizeof(unfold_buf), &unfold_size, 0, &num_spaces);
 
@@ -2110,19 +2202,28 @@ const u_char *extract_http_hostname(HI_SESSION *Session, const u_char *p, const 
 
 const u_char *extract_http_content_length(HI_SESSION *Session,
         HTTPINSPECT_CONF *ServerConf, const u_char *p, const u_char *start,
-        const u_char *end, HEADER_PTR *header_ptr, HEADER_FIELD_PTR *header_field_ptr)
+        const u_char *end, HEADER_PTR *header_ptr, HEADER_FIELD_PTR *header_field_ptr, int iInspectMode)
 {
     int num_spaces = 0;
     const u_char *crlf;
     int space_present = 0;
     if (header_ptr->content_len.cont_len_start)
     {
-        if(hi_eo_generate_event(Session, HI_EO_CLIENT_MULTIPLE_CONTLEN))
+        if(iInspectMode == HI_SI_SERVER_MODE)
         {
-            hi_eo_client_event_log(Session, HI_EO_CLIENT_MULTIPLE_CONTLEN, NULL, NULL);
+            if(hi_eo_generate_event(Session, HI_EO_SERVER_MULTIPLE_CONTLEN))
+            {
+                hi_eo_server_event_log(Session, HI_EO_SERVER_MULTIPLE_CONTLEN, NULL, NULL);
+            }
+        }
+        else if(iInspectMode == HI_SI_CLIENT_MODE)
+        {
+            if(hi_eo_generate_event(Session, HI_EO_CLIENT_MULTIPLE_CONTLEN))
+            {
+                hi_eo_client_event_log(Session, HI_EO_CLIENT_MULTIPLE_CONTLEN, NULL, NULL);
+            }
         }
         header_ptr->header.uri_end = p;
-        header_ptr->content_len.len = 0;
         return p;
     }
     else
@@ -2136,6 +2237,8 @@ const u_char *extract_http_content_length(HI_SESSION *Session,
     if(hi_util_in_bounds(start, end, p) && *p == ':')
     {
         p++;
+        CheckSkipAlertMultipleColon(Session, start, end, &p, iInspectMode);
+
         if (  hi_util_in_bounds(start, end, p) )
         {
             if ( ServerConf->profile == HI_APACHE || ServerConf->profile == HI_ALL)
@@ -2338,7 +2441,7 @@ static inline bool IsXFFFieldName( HI_CLIENT_HDR_ARGS *hdrs_args,
     {
         /* If we run off the end of the active table, or table is truncated then
            we can stop.  We didn't locate a match. */
-        if( (i >= (HI_UI_CONFIG_MAX_XFF_FIELD_NAMES)) || (Field_Names[i] == NULL) )
+        if( (i >= (HTTP_MAX_XFF_FIELDS)) || (Field_Names[i] == NULL) )
             break;
 
         if( field_ptr == NULL )  // didn't start to match any entry
@@ -2395,7 +2498,7 @@ static inline bool IsXFFFieldName( HI_CLIENT_HDR_ARGS *hdrs_args,
 
 static inline const u_char *extractHeaderFieldValues(HI_SESSION *Session,
         HTTPINSPECT_CONF *ServerConf, const u_char *p, const u_char *offset,
-        const u_char *start, const u_char *end, HI_CLIENT_HDR_ARGS *hdrs_args)
+        const u_char *start, const u_char *end, HI_CLIENT_HDR_ARGS *hdrs_args, void* ssnptr)
 {
     HttpSessionData *hsd;
 
@@ -2418,11 +2521,15 @@ static inline const u_char *extractHeaderFieldValues(HI_SESSION *Session,
         else if ( IsHeaderFieldName(p, end, HEADER_NAME__CONTENT_LENGTH, HEADER_LENGTH__CONTENT_LENGTH) )
         {
             p = extract_http_content_length(Session, ServerConf, p, start,
-                    end, hdrs_args->hdr_ptr, hdrs_args->hdr_field_ptr );
+                    end, hdrs_args->hdr_ptr, hdrs_args->hdr_field_ptr,HI_SI_CLIENT_MODE);
         }
         else if ( IsHeaderFieldName(p, end, HEADER_NAME__CONTENT_TYPE, HEADER_LENGTH__CONTENT_TYPE) )
         {
             Session->client.request.content_type = p;
+        }
+        else if ( IsHeaderFieldName(p, end, HEADER_NAME__CONTENT_DISP, HEADER_LENGTH__CONTENT_DISP) )
+        {
+            Session->client.request.content_disp = p;
         }
     }
     else if (((p - offset) == 0) && ((*p == 'x') || (*p == 'X') || (*p == 't') || (*p == 'T')))
@@ -2502,12 +2609,12 @@ static inline const u_char *extractHeaderFieldValues(HI_SESSION *Session,
             {
                 hdrs_args->hst_name_hdr = 1;
 #if defined(FEAT_OPEN_APPID)
-                if ( hsd && !(hdrs_args->strm_ins) && (ServerConf->log_hostname || ServerConf->appid_enabled))
+                if ( hsd && (ServerConf->log_hostname || ServerConf->appid_enabled))
 #else
                 if ( hsd && !(hdrs_args->strm_ins) && (ServerConf->log_hostname))
 #endif /* defined(FEAT_OPEN_APPID) */
                 {
-                    if(!SetLogBuffers(hsd))
+                    if(!SetLogBuffers(hsd, ssnptr))
                     {
                         p = p + HEADER_LENGTH__HOSTNAME;
                         p = extract_http_hostname(Session, p, start, end, hdrs_args->hdr_ptr, hsd);
@@ -2551,7 +2658,7 @@ static inline const u_char *extractHeaderFieldValues(HI_SESSION *Session,
 static inline const u_char *hi_client_extract_header(
     HI_SESSION *Session, HTTPINSPECT_CONF *ServerConf,
     HEADER_PTR *header_ptr, const u_char *start,
-    const u_char *end, HttpSessionData *hsd, int stream_ins)
+    const u_char *end, HttpSessionData *hsd, int stream_ins, void* ssnptr)
 {
     int iRet = HI_SUCCESS;
     const u_char *p;
@@ -2683,6 +2790,22 @@ static inline const u_char *hi_client_extract_header(
         }
     }
 
+    /******* If  xff is enabled , then only we are storing original client IP data */
+     if( ServerConf->enable_xff )
+     {
+         if( ScPafEnabled() )
+         {
+             if (hsd->http_req_id == XFF_MAX_PIPELINE_REQ )
+                hsd->http_req_id = 0;
+
+             hsd->http_req_id++;
+             hsd->is_response = 0;
+
+             if( hsd->tList_count != XFF_MAX_PIPELINE_REQ )
+                 hsd->tList_count++;
+         }
+     }
+
     offset = (u_char*)p;
 
     header_ptr->header.uri = p;
@@ -2755,14 +2878,14 @@ static inline const u_char *hi_client_extract_header(
                     return p;
                 }
             }
-            else if ( (p = extractHeaderFieldValues(Session, ServerConf, p, offset, start, end, &hdrs_args)) == end)
+            else if ( (p = extractHeaderFieldValues(Session, ServerConf, p, offset, start, end, &hdrs_args, ssnptr)) == end)
             {
                 return end;
             }
 
         }
         else if( (p == header_ptr->header.uri) &&
-                (p = extractHeaderFieldValues(Session, ServerConf, p, offset, start, end, &hdrs_args)) == end)
+                (p = extractHeaderFieldValues(Session, ServerConf, p, offset, start, end, &hdrs_args, ssnptr)) == end)
         {
             return end;
         }
@@ -2883,6 +3006,10 @@ int StatelessInspection(Packet *p, HI_SESSION *Session, HttpSessionData *hsd, in
     char sans_uri = 0;
     const unsigned char *data = p->data;
     int dsize = p->dsize;
+    bool http_post_hdr_flush = false;
+
+    if(stream_api->get_preproc_flags(p->ssnptr) & PP_HTTPINSPECT_PAF_FLUSH_POST_HDR)
+        http_post_hdr_flush = true;
 
     if ( ScPafEnabled() )
     {
@@ -2991,7 +3118,8 @@ int StatelessInspection(Packet *p, HI_SESSION *Session, HttpSessionData *hsd, in
      * just do a strcmp here and skip the characters below. */
     if(method_len == 4 && !strncasecmp("POST", (const char *)method_ptr.uri, 4))
     {
-        hi_stats.post++;
+        if(!http_post_hdr_flush)
+            hi_stats.post++;
         Client->request.method = HI_POST_METHOD;
     }
     else if(method_len == 3 && !strncasecmp("GET", (const char *)method_ptr.uri, 3))
@@ -3006,7 +3134,7 @@ int StatelessInspection(Packet *p, HI_SESSION *Session, HttpSessionData *hsd, in
 
         if(iRet == -1 || (CmdConf == NULL))
         {
-            if(hi_eo_generate_event(Session, HI_EO_CLIENT_UNKNOWN_METHOD))
+            if(!stream_ins && hi_eo_generate_event(Session, HI_EO_CLIENT_UNKNOWN_METHOD))
             {
                 hi_eo_client_event_log(Session, HI_EO_CLIENT_UNKNOWN_METHOD, NULL, NULL);
             }
@@ -3037,13 +3165,13 @@ int StatelessInspection(Packet *p, HI_SESSION *Session, HttpSessionData *hsd, in
 
     if (!sans_uri )
     {
-        uri_ptr.uri = method_ptr.uri_end; 
+        uri_ptr.uri = method_ptr.uri_end;
         uri_ptr.uri_end = end;
 
         /* This will set up the URI pointers - effectively extracting
          * the URI. */
         iRet = hi_client_extract_uri(
-             Session, ServerConf, Client, start, end, uri_ptr.uri, &uri_ptr, hsd, stream_ins);
+             Session, ServerConf, Client, start, end, uri_ptr.uri, &uri_ptr, hsd, stream_ins, p->ssnptr);
     }
 
     /* Check if the URI exceeds the max header field length */
@@ -3072,7 +3200,7 @@ int StatelessInspection(Packet *p, HI_SESSION *Session, HttpSessionData *hsd, in
         //
         // uri_ptr.end points to end of URI & HTTP version identifier.
         if (hi_util_in_bounds(start, end, uri_ptr.uri_end + 1))
-            ptr = hi_client_extract_header(Session, ServerConf, &header_ptr, uri_ptr.uri_end+1, end, hsd, stream_ins);
+            ptr = hi_client_extract_header(Session, ServerConf, &header_ptr, uri_ptr.uri_end+1, end, hsd, stream_ins, p->ssnptr);
 
         if (header_ptr.header.uri)
         {
@@ -3084,11 +3212,13 @@ int StatelessInspection(Packet *p, HI_SESSION *Session, HttpSessionData *hsd, in
             }
             else
             {
-                hi_stats.req_headers++;
+                if(!http_post_hdr_flush)
+                    hi_stats.req_headers++;
                 Client->request.header_norm = header_ptr.header.uri;
                 if (header_ptr.cookie.cookie)
                 {
-                    hi_stats.req_cookies++;
+                    if(!http_post_hdr_flush)
+                        hi_stats.req_cookies++;
                     Client->request.cookie.cookie = header_ptr.cookie.cookie;
                     Client->request.cookie.cookie_end = header_ptr.cookie.cookie_end;
                     Client->request.cookie.next = header_ptr.cookie.next;
@@ -3123,7 +3253,8 @@ int StatelessInspection(Packet *p, HI_SESSION *Session, HttpSessionData *hsd, in
                        Session, ServerConf, ptr, end, &post_ptr,
                        header_ptr.content_len.len, header_ptr.is_chunked, hsd )))
                 {
-                    hi_stats.post_params++;
+                    if(!http_post_hdr_flush)
+                        hi_stats.post_params++;
                     Client->request.post_raw = post_ptr.uri;
                     Client->request.post_raw_size = post_ptr.uri_end - post_ptr.uri;
                     Client->request.post_norm = post_ptr.norm;
@@ -3201,7 +3332,7 @@ int StatelessInspection(Packet *p, HI_SESSION *Session, HttpSessionData *hsd, in
             headers.method.len = Client->request.method_size;
         }
 
-        headers.userAgent = header_ptr.userAgent; 
+        headers.userAgent = header_ptr.userAgent;
         headers.referer = header_ptr.referer;
         headers.via = header_ptr.via;
 

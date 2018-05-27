@@ -1,4 +1,5 @@
 ## $Id
+EXTRA_DIST=detection_leaf_node.c
 AUTOMAKE_OPTIONS=foreign no-dependencies
 
 noinst_LIBRARIES = libspd.a
@@ -20,6 +21,7 @@ sp_asn1_detect.c sp_asn1_detect.h \
 sp_byte_check.c sp_byte_check.h \
 sp_byte_jump.c sp_byte_jump.h \
 sp_byte_extract.c sp_byte_extract.h \
+sp_byte_math.c sp_byte_math.h \
 sp_clientserver.c sp_clientserver.h \
 sp_cvs.c sp_cvs.h \
 sp_dsize_check.c sp_dsize_check.h \

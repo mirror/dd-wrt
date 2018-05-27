@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2007-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -105,7 +105,7 @@ typedef struct _SpoAlertTestData
 void AlertTestInit(struct _SnortConfig *, char *);
 SpoAlertTestData *ParseAlertTestArgs(struct _SnortConfig *, char *);
 void AlertTestCleanExitFunc(int, void *);
-void AlertTest(Packet *, char *, void *, Event *);
+void AlertTest(Packet *, const char *, void *, Event *);
 
 extern PacketCount pc;
 
@@ -158,7 +158,7 @@ void AlertTestInit(struct _SnortConfig *sc, char *args)
     AddFuncToCleanExitList(AlertTestCleanExitFunc, data);
 }
 
-void AlertTest(Packet *p, char *msg, void *arg, Event *event)
+void AlertTest(Packet *p, const char *msg, void *arg, Event *event)
 {
     SpoAlertTestData *data;
 

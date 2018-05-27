@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -39,46 +39,110 @@
 #include "service_base.h"
 
 /*#define DEBUG_SERVICE_STATE 1 */
+//#define DEBUG_APPID_MEMCAP_PRUNING 1
 
-static SFXHASH *serviceStateCache4;
-static SFXHASH *serviceStateCache6;
+STATIC SFXHASH *serviceStateCache4;
+STATIC SFXHASH *serviceStateCache6;
 
-#define SERVICE_STATE_CACHE_ROWS    65537
+#define SERVICE_STATE_CACHE_ROWS    65536
 
-static int AppIdServiceStateFree(void *key, void *data)
+bool AppIdServiceStateReloadAdjust(bool idle, unsigned long memcap)
 {
-    AppIdServiceIDState* id_state = (AppIdServiceIDState*)data;
-    if (id_state->serviceList)
+    unsigned max_work = idle ? 512 : 8;
+    static bool adjustStart = true;
+    static unsigned numIpv4Entries = 0;
+    static unsigned numIpv6Entries = 0;
+    static unsigned numIpv4EntriesPruned = 0;
+    static unsigned numIpv6EntriesPruned = 0;
+    static unsigned ipv4MemUsed = 0;
+    static unsigned ipv6MemUsed = 0;
+    unsigned target = max_work;
+
+    memcap >>= 1;
+
+    if (adjustStart)
     {
-        AppIdFreeServiceMatchList(id_state->serviceList);
-        id_state->serviceList = NULL;
+        adjustStart = false;
+        numIpv4Entries = sfxhash_count(serviceStateCache4);
+        numIpv4EntriesPruned = 0;
+        ipv4MemUsed = serviceStateCache4->mc.memused;
+        numIpv6Entries = sfxhash_count(serviceStateCache6);
+        numIpv6EntriesPruned = 0;
+        ipv6MemUsed = serviceStateCache6->mc.memused;
     }
 
-    return 0;
+#ifdef DEBUG_APPID_MEMCAP_PRUNING
+    if (memcap < serviceStateCache4->mc.memused)
+    {
+        unsigned count = sfxhash_count(serviceStateCache4);
+        _dpd.logMsg("AppId: IPv4 cache mem used = %u, num entries = %u, pruning up to %u entries\n",
+                    serviceStateCache4->mc.memused, count, (max_work < count) ? max_work : count);
+    }
+#endif // DEBUG_APPID_MEMCAP_PRUNING
+
+    if (SFXHASH_OK != sfxhash_change_memcap(serviceStateCache4, memcap, &max_work))
+    {
+        numIpv4EntriesPruned += (target - max_work);
+        return false;
+    }
+
+    numIpv4EntriesPruned += (target - max_work);
+    if (target != max_work)
+    {
+        _dpd.logMsg("AppId: IPv4 cache pruning done - initial mem used = %u, initial entries = %u, pruned %u entries, current mem used = %u\n",
+                    ipv4MemUsed, numIpv4Entries, numIpv4EntriesPruned, serviceStateCache4->mc.memused);
+        target = max_work;
+    }
+
+#ifdef DEBUG_APPID_MEMCAP_PRUNING
+    if (memcap < serviceStateCache6->mc.memused)
+    {
+        unsigned count = sfxhash_count(serviceStateCache6);
+        _dpd.logMsg("AppId: IPv6 cache mem used = %u, num entries = %u, pruning up to %u entries\n",
+                    serviceStateCache6->mc.memused, count, (max_work < count) ? max_work : count);
+    }
+#endif // DEBUG_APPID_MEMCAP_PRUNING
+
+    if (SFXHASH_OK != sfxhash_change_memcap(serviceStateCache6, memcap, &max_work))
+    {
+        numIpv6EntriesPruned += (target - max_work);
+        return false;
+    }
+
+    numIpv6EntriesPruned += (target - max_work);
+
+    if (numIpv4EntriesPruned == 0)
+        _dpd.logMsg("AppId: IPv4 cache pruning done - initial mem used = %u, initial entries = %u, pruned %u entries, current mem used = %u\n",
+                    ipv4MemUsed, numIpv4Entries, numIpv4EntriesPruned, serviceStateCache4->mc.memused);
+    _dpd.logMsg("AppId: IPv6 cache pruning done - initial mem used = %u, initial entries = %u, pruned %u entries, current mem used = %u\n",
+                ipv6MemUsed, numIpv6Entries, numIpv6EntriesPruned, serviceStateCache6->mc.memused);
+
+    adjustStart = true;
+    return true;
 }
 
 int AppIdServiceStateInit(unsigned long memcap)
 {
-    serviceStateCache4 = sfxhash_new(-SERVICE_STATE_CACHE_ROWS,
+    serviceStateCache4 = sfxhash_new(SERVICE_STATE_CACHE_ROWS,
                              sizeof(AppIdServiceStateKey4),
                              sizeof(AppIdServiceIDState),
                              memcap >> 1,
                              1,
-                             &AppIdServiceStateFree,
-                             &AppIdServiceStateFree,
+                             NULL,
+                             NULL,
                              1);
     if (!serviceStateCache4)
     {
         _dpd.errMsg( "Failed to allocate a hash table");
         return -1;
     }
-    serviceStateCache6 = sfxhash_new(-SERVICE_STATE_CACHE_ROWS,
+    serviceStateCache6 = sfxhash_new(SERVICE_STATE_CACHE_ROWS,
                              sizeof(AppIdServiceStateKey6),
                              sizeof(AppIdServiceIDState),
                              memcap >> 1,
                              1,
-                             &AppIdServiceStateFree,
-                             &AppIdServiceStateFree,
+                             NULL,
+                             NULL,
                              1);
     if (!serviceStateCache6)
     {
@@ -102,23 +166,25 @@ void AppIdServiceStateCleanup(void)
     }
 }
 
-void AppIdRemoveServiceIDState(snort_ip *ip, uint16_t proto, uint16_t port)
+void AppIdRemoveServiceIDState(sfaddr_t *ip, uint16_t proto, uint16_t port, uint32_t level)
 {
     AppIdServiceStateKey k;
     SFXHASH *cache;
 
-    if (ip->family == AF_INET6)
+    if (sfaddr_family(ip) == AF_INET6)
     {
         k.key6.proto = proto;
         k.key6.port = port;
-        memcpy(k.key6.ip, ip->ip8, sizeof(k.key6.ip));
+        memcpy(k.key6.ip, sfaddr_get_ip6_ptr(ip), sizeof(k.key6.ip));
+        k.key6.level = level;
         cache = serviceStateCache6;
     }
     else
     {
         k.key4.proto = proto;
         k.key4.port = port;
-        k.key4.ip = ip->ip32[0];
+        k.key4.ip = sfaddr_get_ip4_value(ip);
+        k.key4.level = level;
         cache = serviceStateCache4;
     }
     if (sfxhash_remove(cache, &k) != SFXHASH_OK)
@@ -126,29 +192,31 @@ void AppIdRemoveServiceIDState(snort_ip *ip, uint16_t proto, uint16_t port)
         char ipstr[INET6_ADDRSTRLEN];
 
         ipstr[0] = 0;
-        inet_ntop(ip->family, (void *)ip->ip32, ipstr, sizeof(ipstr));
+        inet_ntop(sfaddr_family(ip), (void *)sfaddr_get_ptr(ip), ipstr, sizeof(ipstr));
         _dpd.errMsg("Failed to remove from hash: %s:%u:%u\n",ipstr, (unsigned)proto, (unsigned)port);
     }
 }
 
-AppIdServiceIDState* AppIdGetServiceIDState(snort_ip *ip, uint16_t proto, uint16_t port)
+AppIdServiceIDState* AppIdGetServiceIDState(sfaddr_t *ip, uint16_t proto, uint16_t port, uint32_t level)
 {
     AppIdServiceStateKey k;
     SFXHASH *cache;
     AppIdServiceIDState* ss;
 
-    if (ip->family == AF_INET6)
+    if (sfaddr_family(ip) == AF_INET6)
     {
         k.key6.proto = proto;
         k.key6.port = port;
-        memcpy(k.key6.ip, ip->ip8, sizeof(k.key6.ip));
+        memcpy(k.key6.ip, sfaddr_get_ip6_ptr(ip), sizeof(k.key6.ip));
+        k.key6.level = level;
         cache = serviceStateCache6;
     }
     else
     {
         k.key4.proto = proto;
         k.key4.port = port;
-        k.key4.ip = ip->ip32[0];
+        k.key4.ip = sfaddr_get_ip4_value(ip);
+        k.key4.level = level;
         cache = serviceStateCache4;
     }
     ss = sfxhash_find(cache, &k);
@@ -157,8 +225,8 @@ AppIdServiceIDState* AppIdGetServiceIDState(snort_ip *ip, uint16_t proto, uint16
     char ipstr[INET6_ADDRSTRLEN];
 
     ipstr[0] = 0;
-    inet_ntop(ip->family, (void *)ip->ip32, ipstr, sizeof(ipstr));
-    _dpd.logMsg("Read from hash: %s:%u:%u %p %u %p\n",ipstr, (unsigned)proto, (unsigned)port, ss, ss ? ss->state:0, ss ? ss->svc:NULL);
+    inet_ntop(sfaddr_family(ip), (void *)sfaddr_get_ptr(ip), ipstr, sizeof(ipstr));
+    _dpd.logMsg("ServiceState: Read from hash: %s:%u:%u:%u %p %u %p\n",ipstr, (unsigned)proto, (unsigned)port, level, ss, ss ? ss->state:0, ss ? ss->svc:NULL);
 #endif
 
     if (ss && ss->svc && !ss->svc->ref_count)
@@ -170,41 +238,45 @@ AppIdServiceIDState* AppIdGetServiceIDState(snort_ip *ip, uint16_t proto, uint16
     return ss;
 }
 
-AppIdServiceIDState* AppIdAddServiceIDState(snort_ip *ip, uint16_t proto, uint16_t port)
+AppIdServiceIDState* AppIdAddServiceIDState(sfaddr_t *ip, uint16_t proto, uint16_t port, uint32_t level)
 {
     AppIdServiceStateKey k;
-    AppIdServiceIDState *ss;
+    AppIdServiceIDState *ss = NULL;
     SFXHASH *cache;
     char ipstr[INET6_ADDRSTRLEN];
 
-    if (ip->family == AF_INET6)
+    if (sfaddr_family(ip) == AF_INET6)
     {
         k.key6.proto = proto;
         k.key6.port = port;
-        memcpy(k.key6.ip, ip->ip8, sizeof(k.key6.ip));
+        memcpy(k.key6.ip, sfaddr_get_ip6_ptr(ip), sizeof(k.key6.ip));
+        k.key6.level = level;
         cache = serviceStateCache6;
     }
     else
     {
         k.key4.proto = proto;
         k.key4.port = port;
-        k.key4.ip = ip->ip32[0];
+        k.key4.ip = sfaddr_get_ip4_value(ip);
+        k.key4.level = level;
         cache = serviceStateCache4;
     }
 #ifdef DEBUG_SERVICE_STATE
     ipstr[0] = 0;
-    inet_ntop(ip->family, (void *)ip->ip32, ipstr, sizeof(ipstr));
+    inet_ntop(sfaddr_family(ip), (void *)sfaddr_get_ptr(ip), ipstr, sizeof(ipstr));
 #endif
-    if (sfxhash_add_return_data_ptr(cache, &k, (void **)&ss))
+    if ((sfxhash_add_return_data_ptr(cache, &k, (void **)&ss) < 0) || !ss)
     {
         ipstr[0] = 0;
-        inet_ntop(ip->family, (void *)ip->ip32, ipstr, sizeof(ipstr));
-        _dpd.errMsg("Failed to add to hash: %s:%u:%u\n",ipstr, (unsigned)proto, (unsigned)port);
+        inet_ntop(sfaddr_family(ip), (void *)sfaddr_get_ptr(ip), ipstr, sizeof(ipstr));
+        _dpd.errMsg("ServiceState: Failed to add to hash: %s:%u:%u:%u\n",ipstr, (unsigned)proto, (unsigned)port, level);
         return NULL;
     }
 #ifdef DEBUG_SERVICE_STATE
-    _dpd.logMsg("Added to hash: %s:%u:%u %p\n",ipstr, (unsigned)proto, (unsigned)port, ss);
+    _dpd.logMsg("ServiceState: Added to hash: %s:%u:%u:%u %p\n",ipstr, (unsigned)proto, (unsigned)port, level, ss);
 #endif
+    if (ss)
+        memset(ss, 0, sizeof(*ss));
     return ss;
 }
 

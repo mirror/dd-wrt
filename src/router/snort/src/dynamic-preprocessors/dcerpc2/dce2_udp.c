@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -32,6 +32,10 @@
 #include "dce2_memory.h"
 #include "dce2_stats.h"
 #include "sf_types.h"
+
+#ifdef DUMP_BUFFER
+#include "dcerpc2_buffer_dump.h"
+#endif
 
 /********************************************************************
  * Function:
@@ -71,6 +75,11 @@ DCE2_UdpSsnData * DCE2_UdpSsnInit(void)
  ********************************************************************/
 void DCE2_UdpProcess(DCE2_UdpSsnData *usd)
 {
+
+#ifdef DUMP_BUFFER
+    dumpBuffer(DCERPC_UDP_DUMP,usd->sd.wire_pkt->payload,usd->sd.wire_pkt->payload_size);
+#endif
+
     dce2_stats.udp_pkts++;
     DCE2_ClProcess(&usd->sd, &usd->cl_tracker);
 }

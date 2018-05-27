@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
- ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2010-2013 Sourcefire, Inc.
  **
  ** This program is free software; you can redistribute it and/or modify
@@ -105,12 +105,17 @@ void SetupNormalizer (void)
 
 #define PROTO_BITS (PROTO_BIT__IP|PROTO_BIT__ICMP|PROTO_BIT__TCP)
 
+static inline int ScNapPassiveModeNewConf(SnortConfig* sc)
+{
+    return (((sc->targeted_policies[getParserPolicy(sc)])->nap_policy_mode) == POLICY_MODE__PASSIVE );
+}
+
 static NormalizerContext* Init_GetContext (struct _SnortConfig *sc)
 {
     NormalizerContext* pc = NULL;
     tSfPolicyId policy_id = getParserPolicy(NULL);
 
-    if ( ScNapPassiveMode() )
+    if ( ScNapPassiveModeNewConf(sc) )
         return NULL;
 
     if ( !base_set )
@@ -118,6 +123,9 @@ static NormalizerContext* Init_GetContext (struct _SnortConfig *sc)
         base_set = sfPolicyConfigCreate();
         Preproc_Install(sc);
     }
+
+    sc->normalizer_set  = true;
+
     sfPolicyUserPolicySet(base_set, policy_id);
     pc = sfPolicyUserDataGetCurrent(base_set);
 
@@ -604,7 +612,7 @@ static void Preproc_Install (struct _SnortConfig *sc)
 {
 #ifdef PERF_PROFILING
     RegisterPreprocessorProfile(
-        "normalize", &norm_perf_stats, 0, &totalPerfStats);
+        "normalize", &norm_perf_stats, 0, &totalPerfStats, NULL);
 #endif
     AddFuncToPreprocCleanExitList(
         Preproc_CleanExit, NULL, PRIORITY_LAST, PP_NORMALIZE);
@@ -680,8 +688,10 @@ static void Preproc_Execute (Packet *p, void *context)
 
     PREPROC_PROFILE_START(norm_perf_stats);
 
-    if ( !Active_PacketWasDropped() )
-        Norm_Packet(pc, p);
+    if ( DAQ_GetInterfaceMode(p->pkth) == DAQ_MODE_INLINE )
+        if ( !Active_PacketWasDropped() )
+            if ( pc->normMode == NORM_MODE_ON || pc->normMode == NORM_MODE_WOULDA )
+                Norm_Packet(pc, p);
 
     PREPROC_PROFILE_END(norm_perf_stats);
     return;
@@ -753,7 +763,7 @@ static NormalizerContext* Reload_GetContext (struct _SnortConfig *sc, void **new
     NormalizerContext* pc = NULL;
     tSfPolicyId policy_id = getParserPolicy(sc);
 
-    if ( ScNapPassiveMode() )
+    if ( ScNapPassiveModeNewConf(sc) )
         return NULL;
 
     if (!(swap_set = (tSfPolicyUserContextId)*new_config))
@@ -768,6 +778,9 @@ static NormalizerContext* Reload_GetContext (struct _SnortConfig *sc, void **new
         swap_set = sfPolicyConfigCreate();
         *new_config = (void *)swap_set;
     }
+
+    sc->normalizer_set  = true;
+
     sfPolicyUserPolicySet(swap_set, policy_id);
     pc = sfPolicyUserDataGetCurrent(swap_set);
 
@@ -928,6 +941,10 @@ NormMode Normalize_GetMode (const SnortConfig* sc, NormFlags nf)
 
     if ( !base_set )
         return NORM_MODE_OFF;
+
+    if (!sc->normalizer_set)
+        return NORM_MODE_OFF;
+
     pid = getNapRuntimePolicy();
     pc = sfPolicyUserDataGet(base_set, pid);
 

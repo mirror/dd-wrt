@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2004-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -73,6 +73,12 @@
 #include "portscan.h"
 
 #include "profiler.h"
+#include "reload.h"
+
+#ifdef REG_TEST
+#include "reg_test.h"
+#endif
+
 
 #define DELIMITERS " \t\n"
 #define TOKEN_ARG_BEGIN "{"
@@ -175,7 +181,7 @@ static void PortscanResetStatsFunction(int signal, void *foo)
 static int MakeProtoInfo(PS_PROTO *proto, u_char *buffer, u_int *total_size)
 {
     int             dsize;
-    sfip_t          *ip1, *ip2;
+    sfaddr_t        *ip1, *ip2;
 
 
     if(!total_size || !buffer)
@@ -255,12 +261,12 @@ static int MakeProtoInfo(PS_PROTO *proto, u_char *buffer, u_int *total_size)
     return 0;
 }
 
-static int LogPortscanAlert(Packet *p, char *msg, uint32_t event_id,
+static int LogPortscanAlert(Packet *p, const char *msg, uint32_t event_id,
         uint32_t event_ref, uint32_t gen_id, uint32_t sig_id)
 {
     char timebuf[TIMEBUF_SIZE];
-    snort_ip_p src_addr;
-    snort_ip_p dst_addr;
+    sfaddr_t* src_addr;
+    sfaddr_t* dst_addr;
 
     if(!p->iph_api)
         return -1;
@@ -293,7 +299,7 @@ static int LogPortscanAlert(Packet *p, char *msg, uint32_t event_id,
 }
 
 static int GeneratePSSnortEvent(Packet *p,uint32_t gen_id,uint32_t sig_id,
-        uint32_t sig_rev, uint32_t class, uint32_t priority, char *msg)
+        uint32_t sig_rev, uint32_t class, uint32_t priority, const char *msg)
 {
     unsigned int event_id;
 
@@ -319,7 +325,7 @@ static int GeneratePSSnortEvent(Packet *p,uint32_t gen_id,uint32_t sig_id,
 */
 static int GenerateOpenPortEvent(Packet *p, uint32_t gen_id, uint32_t sig_id,
         uint32_t sig_rev, uint32_t class, uint32_t pri,
-        uint32_t event_ref, struct timeval *event_time, char *msg)
+        uint32_t event_ref, struct timeval *event_time, const char *msg)
 {
     Event event;
 
@@ -476,13 +482,13 @@ static int MakePortscanPkt(PS_PKT *ps_pkt, PS_PROTO *proto, int proto_type,
         case PS_PROTO_UDP:
         case PS_PROTO_ICMP:
         case PS_PROTO_IP:
-            if(MakeProtoInfo(proto, (u_char *)g_tmp_pkt->data, &ip_size))
+            if(MakeProtoInfo(proto, (u_char*)g_tmp_pkt->data, &ip_size))
                 return -1;
 
             break;
 
         case PS_PROTO_OPEN_PORT:
-            if(MakeOpenPortInfo(proto, (u_char *)g_tmp_pkt->data, &ip_size, user))
+            if(MakeOpenPortInfo(proto, (u_char*)g_tmp_pkt->data, &ip_size, user))
                 return -1;
 
             break;
@@ -1015,16 +1021,16 @@ static void PrintIPPortSet(IP_PORT *p)
     char ip_str[80], output_str[80];
     PORTRANGE *pr;
 
-    SnortSnprintf(ip_str, sizeof(ip_str), "%s", sfip_to_str(&p->ip));
+    SnortSnprintf(ip_str, sizeof(ip_str), "%s", sfip_to_str(&p->ip.addr));
 
     if(p->notflag)
         SnortSnprintf(output_str, sizeof(output_str), "        !%s", ip_str);
     else
         SnortSnprintf(output_str, sizeof(output_str), "        %s", ip_str);
 
-    if (((p->ip.family == AF_INET6) && (p->ip.bits != 128)) ||
-        ((p->ip.family == AF_INET ) && (p->ip.bits != 32 )))
-        SnortSnprintfAppend(output_str, sizeof(output_str), "/%d", p->ip.bits);
+    if (p->ip.bits != 128)
+        SnortSnprintfAppend(output_str, sizeof(output_str), "/%d",
+                            (sfaddr_family(&p->ip.addr) == AF_INET) ? ((p->ip.bits >= 96) ? p->ip.bits - 96 : -1) : p->ip.bits);
 
     pr=(PORTRANGE*)sflist_first(&p->portset.port_list);
     if ( pr && pr->port_lo != 0 )
@@ -1188,7 +1194,7 @@ static void PortscanInit(struct _SnortConfig *sc, char *args)
         AddFuncToPreprocPostConfigList(sc, PortscanOpenLogFile, NULL);
 
 #ifdef PERF_PROFILING
-        RegisterPreprocessorProfile("sfportscan", &sfpsPerfStats, 0, &totalPerfStats);
+        RegisterPreprocessorProfile("sfportscan", &sfpsPerfStats, 0, &totalPerfStats, NULL);
 #endif
     }
 
@@ -1233,7 +1239,7 @@ static void PortscanInit(struct _SnortConfig *sc, char *args)
         AddFuncToPreprocList(sc, PortscanDetect, PRIORITY_SCANNER, PP_SFPORTSCAN,
                              PortscanGetProtoBits(pPolicyConfig->detect_scans));
         session_api->enable_preproc_all_ports( sc,
-                                               PP_SFPORTSCAN, 
+                                               PP_SFPORTSCAN,
                                                PortscanGetProtoBits(pPolicyConfig->detect_scans) );
     }
 }
@@ -1519,39 +1525,51 @@ static void PortscanReload(struct _SnortConfig *sc, char *args, void **new_confi
         AddFuncToPreprocList(sc, PortscanDetect, PRIORITY_SCANNER, PP_SFPORTSCAN,
                              PortscanGetProtoBits(pPolicyConfig->detect_scans));
         session_api->enable_preproc_all_ports( sc,
-                                              PP_SFPORTSCAN, 
+                                              PP_SFPORTSCAN,
                                               PortscanGetProtoBits(pPolicyConfig->detect_scans) );
     }
+}
+
+static bool PortscanReloadAdjust(bool idle, tSfPolicyId raPolicyId, void* userData)
+{
+    unsigned max_work = idle ? 512 : 32;
+    unsigned long memcap = *(unsigned long *)userData;
+    return ps_reload_adjust(memcap, max_work);
 }
 
 static int PortscanReloadVerify(struct _SnortConfig *sc, void *swap_config)
 {
     tSfPolicyUserContextId portscan_swap_config = (tSfPolicyUserContextId)swap_config;
+    static unsigned long new_memcap;
+    unsigned long old_memcap = ((PortscanConfig *)sfPolicyUserDataGetDefault(portscan_config))->memcap;
+    new_memcap = ((PortscanConfig *)sfPolicyUserDataGetDefault(portscan_swap_config))->memcap;
+    tSfPolicyId policy_id = getParserPolicy(sc);
+
     if ((portscan_swap_config == NULL) || (((PortscanConfig *)sfPolicyUserDataGetDefault(portscan_swap_config)) == NULL) ||
         (portscan_config == NULL) || (((PortscanConfig *)sfPolicyUserDataGetDefault(portscan_config)) == NULL))
     {
         return 0;
     }
 
-    if (((PortscanConfig *)sfPolicyUserDataGetDefault(portscan_swap_config))->memcap != ((PortscanConfig *)sfPolicyUserDataGetDefault(portscan_config))->memcap)
+    if (old_memcap != new_memcap)
     {
-        return -1;
-    }
-
-    if ((((PortscanConfig *)sfPolicyUserDataGetDefault(portscan_swap_config))->logfile != NULL) &&
-        (((PortscanConfig *)sfPolicyUserDataGetDefault(portscan_config))->logfile != NULL))
-    {
-        if (strcasecmp(((PortscanConfig *)sfPolicyUserDataGetDefault(portscan_swap_config))->logfile,
-                       ((PortscanConfig *)sfPolicyUserDataGetDefault(portscan_config))->logfile) != 0)
+#ifdef REG_TEST
+        if (REG_TEST_FLAG_PORTSCAN_RELOAD & getRegTestFlags())
         {
+            printf("portscan memcap old conf : %lu new conf : %lu\n",old_memcap,new_memcap);
+        }
+#endif
+        /* If memcap is less than  hash overhead bytes, restart is needed */
+        if( new_memcap > ps_hash_overhead_bytes())
+        {
+            ReloadAdjustRegister(sc, "PortscanReload", policy_id, &PortscanReloadAdjust, &new_memcap, NULL);
+        }
+        else
+        {
+            ErrorMessage("Portscan Reload: New memcap %lu s lower than  minimum memory needed for hash table %u, and it requires a restart.\n", new_memcap, ps_hash_overhead_bytes());
             return -1;
         }
     }
-    else if (((PortscanConfig *)sfPolicyUserDataGetDefault(portscan_swap_config))->logfile != ((PortscanConfig *)sfPolicyUserDataGetDefault(portscan_config))->logfile)
-    {
-        return -1;
-    }
-
     return 0;
 }
 
@@ -1559,12 +1577,52 @@ static void * PortscanReloadSwap(struct _SnortConfig *sc, void  *swap_config)
 {
     tSfPolicyUserContextId portscan_swap_config = (tSfPolicyUserContextId)swap_config;
     tSfPolicyUserContextId old_config = portscan_config;
+    bool log_file_swap = false;
 
     if (portscan_swap_config == NULL)
         return NULL;
 
-    portscan_config = portscan_swap_config;
+    if ((((PortscanConfig *)sfPolicyUserDataGetDefault(portscan_swap_config))->logfile != NULL) &&
+        (((PortscanConfig *)sfPolicyUserDataGetDefault(portscan_config))->logfile != NULL))
+    {
+        if (strcasecmp(((PortscanConfig *)sfPolicyUserDataGetDefault(portscan_swap_config))->logfile,
+                       ((PortscanConfig *)sfPolicyUserDataGetDefault(portscan_config))->logfile) != 0)
+        {
+            log_file_swap = true;
+        }
+    }
+    else if (((PortscanConfig *)sfPolicyUserDataGetDefault(portscan_swap_config))->logfile != ((PortscanConfig *)sfPolicyUserDataGetDefault(portscan_config))->logfile)
+    {
+        log_file_swap = true;
+    }
 
+    if(log_file_swap)
+    {
+        char *new_logfile = ((PortscanConfig *)sfPolicyUserDataGetDefault(portscan_swap_config))->logfile;
+#ifdef REG_TEST
+        char *old_logfile = ((PortscanConfig *)sfPolicyUserDataGetDefault(portscan_config))->logfile;
+        if (REG_TEST_FLAG_PORTSCAN_RELOAD & getRegTestFlags())
+        {
+            printf("portscan Logfile  old: %s , new: %s \n", old_logfile?old_logfile:"NULL", new_logfile?new_logfile:"NULL");
+        }
+#endif
+        if(g_logfile)
+        {
+            fclose(g_logfile);
+            g_logfile = NULL;
+        }
+        if(new_logfile)
+        {
+            g_logfile = fopen(new_logfile, "a");
+            if (g_logfile == NULL)
+            {
+                FatalError("Portscan log file '%s' could not be opened: %s.\n",
+                        new_logfile, strerror(errno));
+            }
+        }
+    }
+
+    portscan_config = portscan_swap_config;
     return (void *)old_config;
 }
 

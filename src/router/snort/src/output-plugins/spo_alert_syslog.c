@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -85,7 +85,7 @@ typedef struct _SyslogData
 
 static void AlertSyslogInit(struct _SnortConfig *, char *);
 static SyslogData *ParseSyslogArgs(struct _SnortConfig *, char *);
-static void AlertSyslog(Packet *, char *, void *, Event *);
+static void AlertSyslog(Packet *, const char *, void *, Event *);
 static void AlertSyslogCleanExit(int, void *);
 
 
@@ -147,7 +147,7 @@ static void AlertSyslogInit(struct _SnortConfig *sc, char *args)
 /*
  * Function: ParseSyslogArgs(struct _SnortConfig *, char *)
  *
- * Purpose: Process the preprocessor arguements from the rules file and
+ * Purpose: Process the preprocessor arguments from the rules file and
  *          initialize the preprocessor's data struct.  This function doesn't
  *          have to exist if it makes sense to parse the args in the init
  *          function.
@@ -513,7 +513,7 @@ static SyslogData *ParseSyslogArgs(struct _SnortConfig *sc, char *args)
  * Returns: void function
  *
  */
-static void AlertSyslog(Packet *p, char *msg, void *arg, Event *event)
+static void AlertSyslog(Packet *p, const char *msg, void *arg, Event *event)
 {
     SyslogData *data = (SyslogData *)arg;
     char event_string[STD_BUF];

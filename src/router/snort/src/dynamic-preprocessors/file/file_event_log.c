@@ -1,5 +1,5 @@
 /*
- ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2013-2013 Sourcefire, Inc.
  **
  ** This program is free software; you can redistribute it and/or modify
@@ -156,9 +156,9 @@ static void file_log_exec(void* packet, char* msg, void* arg, void* eventInfo)
     SFSnortPacket *p = (SFSnortPacket*)packet;
     Event *event = (Event *)eventInfo;
 
-    char filename[STD_BUF];
+    uint8_t filename[STD_BUF];
     uint8_t *file_name;
-    uint32_t name_size;
+    uint32_t file_name_len = 0;
 
     if ( !event || ((event->sig_generator != GENERATOR_FILE_TYPE)
             && (event->sig_generator != GENERATOR_FILE_SIGNATURE)))
@@ -167,15 +167,39 @@ static void file_log_exec(void* packet, char* msg, void* arg, void* eventInfo)
     _dod.logTimeStamp(data->log, p);
 
     /*Get the file name captured*/
-    if ( _dpd.fileAPI->get_file_name(p->stream_session, &file_name, &name_size))
+    if(_dpd.fileAPI->get_file_name(p->stream_session, &file_name, &file_name_len))
     {
-        if (name_size > sizeof(filename))
-            name_size = sizeof(filename) - 1;
-        memcpy(filename, file_name, name_size);
-        filename[name_size] = '\0';
-        _dod.textLog_Puts(data->log, " [**] ");
-        _dod.textLog_Print(data->log, " [File: %s, size: %d bytes]", filename,
-                _dpd.fileAPI->get_file_size(p->stream_session));
+        FileCharEncoding encoding = SNORT_CHAR_ENCODING_ASCII;
+        if(file_name_len > 0)
+            encoding = _dpd.fileAPI->get_character_encoding(file_name, file_name_len);
+        if(SNORT_CHAR_ENCODING_ASCII == encoding)
+        {
+            if (file_name_len >= sizeof(filename))
+                file_name_len = sizeof(filename) - 1;
+            memcpy(filename, file_name, file_name_len);
+            filename[file_name_len] = '\0';
+            _dod.textLog_Puts(data->log, " [**] ");
+            _dod.textLog_Print(data->log, " [File: %s, size: %d bytes]", filename,
+                    _dpd.fileAPI->get_file_size(p->stream_session));
+        }
+        else if(SNORT_CHAR_ENCODING_UTF_16LE == encoding)
+        {
+            if(file_name_len > (sizeof(filename) - 2))
+                file_name_len = sizeof(filename) - 2;//Last 2 bytes reserved for NULL termination
+            memcpy(filename, file_name, file_name_len);
+            filename[file_name_len] = '\0';
+            filename[file_name_len + 1] = '\0';
+            _dod.textLog_Puts(data->log, " [**]  [File: ");
+            _dod.textLog_Flush(data->log);
+            _dod.textLog_PrintUnicode(data->log, filename + UTF_16_LE_BOM_LEN, file_name_len, true);
+            _dod.textLog_Print(data->log, ", size: %d bytes]", _dpd.fileAPI->get_file_size(p->stream_session));
+        }
+        else
+        {
+            _dod.textLog_Puts(data->log, " [**] ");
+            _dod.textLog_Print(data->log, " [File: %s, size: %d bytes]", "<<Filename Encoding not supported>>",
+                    _dpd.fileAPI->get_file_size(p->stream_session));
+        }
     }
 
     if (event->sig_generator == GENERATOR_FILE_SIGNATURE)

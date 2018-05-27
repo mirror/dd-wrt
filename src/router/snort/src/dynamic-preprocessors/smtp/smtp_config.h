@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -82,6 +82,7 @@
 #define CONF_BDATA_CMDS                  "binary_data_cmds"
 #define CONF_START_LIST "{"
 #define CONF_END_LIST   "}"
+#define CONF_MAX_AUTH_COMMAND_LINE_LEN   "max_auth_command_line_len"
 
 #define NORMALIZE_NONE 0
 #define NORMALIZE_CMDS 1
@@ -94,6 +95,7 @@
 #define DEFAULT_MAX_COMMAND_LINE_LEN    0
 #define DEFAULT_MAX_HEADER_LINE_LEN     0
 #define DEFAULT_MAX_RESPONSE_LINE_LEN   0
+#define DEFAULT_AUTH_MAX_COMMAND_LINE_LEN    1000
 
 /*These are temporary values*/
 #define MAX_DEPTH                     65535 
@@ -182,6 +184,7 @@ typedef struct _SMTPConfig
     uint32_t xtra_mfrom_id;
     uint32_t xtra_rcptto_id;
     uint32_t xtra_ehdrs_id;
+    int max_auth_command_line_len;
 
 } SMTPConfig;
 
@@ -190,6 +193,7 @@ typedef struct _SMTP_Stats
     uint64_t sessions;
     uint64_t conc_sessions;
     uint64_t max_conc_sessions;
+    uint64_t log_memcap_exceeded;
     MimeStats mime_stats;
 
 } SMTP_Stats;

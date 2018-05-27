@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -26,12 +26,14 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 
+#include "appIdApi.h"
+#include "appInfoTable.h"
 #include "flow.h"
 #include "service_api.h"
 
 #define TFTP_PORT   69
 
-#define TFTP_COUNT_THRESHOLD 2
+#define TFTP_COUNT_THRESHOLD 1
 #define TFTP_MAX_PACKET_SIZE 512
 
 typedef enum
@@ -66,15 +68,16 @@ typedef struct _SERVICE_TFTP_HEADER
 #pragma pack()
 
 static int tftp_init(const InitServiceAPI * const api);
-MakeRNAServiceValidationPrototype(tftp_validate);
+static int tftp_validate(ServiceValidationArgs* args);
 
-static RNAServiceElement svc_element =
+static tRNAServiceElement svc_element =
 {
     .next = NULL,
     .validate = &tftp_validate,
     .detectorType = DETECTOR_TYPE_DECODER,
     .name = "tftp",
     .ref_count = 1,
+    .current_ref_count = 1,
 };
 
 static RNAServiceValidationPort pp[] =
@@ -83,28 +86,28 @@ static RNAServiceValidationPort pp[] =
     {NULL, 0, 0}
 };
 
-RNAServiceValidationModule tftp_service_mod =
+tRNAServiceValidationModule tftp_service_mod =
 {
     "TFTP",
     &tftp_init,
     pp
 };
 
-static tAppRegistryEntry appIdRegistry[] = {{APP_ID_TFTP, 0}};
+static tAppRegistryEntry appIdRegistry[] = {{APP_ID_TFTP, APPINFO_FLAG_SERVICE_ADDITIONAL}};
 
 static int16_t app_id;
 
 static int tftp_init(const InitServiceAPI * const init_api)
 {
-	unsigned i;
+    unsigned i;
 
     app_id = init_api->dpd->addProtocolReference("tftp");
 
-	for (i=0; i < sizeof(appIdRegistry)/sizeof(*appIdRegistry); i++)
-	{
-		_dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[i].appId);
-		init_api->RegisterAppId(&tftp_validate, appIdRegistry[i].appId, appIdRegistry[i].additionalInfo, NULL);
-	}
+    for (i=0; i < sizeof(appIdRegistry)/sizeof(*appIdRegistry); i++)
+    {
+        _dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[i].appId);
+        init_api->RegisterAppId(&tftp_validate, appIdRegistry[i].appId, appIdRegistry[i].additionalInfo, init_api->pAppidConfig);
+    }
 
     return 0;
 }
@@ -137,33 +140,41 @@ static int tftp_verify_header(const uint8_t *data, uint16_t size,
     }
 }
 
-MakeRNAServiceValidationPrototype(tftp_validate)
+static int tftp_validate(ServiceValidationArgs* args)
 {
     ServiceTFTPData *td;
     ServiceTFTPData *tmp_td;
     int mode;
     uint16_t block = 0;
     uint16_t tmp;
-    FLOW *pf;
-    snort_ip *sip;
-    snort_ip *dip;
+    tAppIdData *pf;
+    sfaddr_t *sip;
+    sfaddr_t *dip;
+    tAppIdData *flowp = args->flowp;
+    const uint8_t *data = args->data;
+    SFSnortPacket *pkt = args->pkt;
+    const int dir = args->dir;
+    uint16_t size = args->size;
+    char* app_id_debug_session = args->app_id_debug_session;
 
     if (!size)
         goto inprocess;
 
-    td = tftp_service_mod.api->data_get(flowp);
+    td = tftp_service_mod.api->data_get(flowp, tftp_service_mod.flow_data_index);
     if (!td)
     {
         td = calloc(1, sizeof(*td));
         if (!td)
             return SERVICE_ENOMEM;
-        if (tftp_service_mod.api->data_add(flowp, td, &free))
+        if (tftp_service_mod.api->data_add(flowp, td, tftp_service_mod.flow_data_index, &free))
         {
             free(td);
             return SERVICE_ENOMEM;
         }
         td->state = TFTP_STATE_CONNECTION;
     }
+    if (args->app_id_debug_session_flag)
+        _dpd.logMsg("AppIdDbg %s tftp state %d\n", app_id_debug_session, td->state);
 
     if (td->state == TFTP_STATE_CONNECTION && dir == APP_ID_FROM_RESPONDER)
         goto fail;
@@ -199,21 +210,25 @@ MakeRNAServiceValidationPrototype(tftp_validate)
 
         dip = GET_DST_IP(pkt);
         sip = GET_SRC_IP(pkt);
-        pf = tftp_service_mod.api->flow_new(pkt, sip, pkt->src_port, dip, 0, flowp->proto, app_id);
+        pf = tftp_service_mod.api->flow_new(flowp, pkt, dip, 0, sip, pkt->src_port, flowp->proto, app_id, APPID_EARLY_SESSION_FLAG_FW_RULE);
         if (pf)
         {
-            if (tftp_service_mod.api->data_add(pf, tmp_td, &free))
+            if (tftp_service_mod.api->data_add(pf, tmp_td, tftp_service_mod.flow_data_index, &free))
             {
                 free(tmp_td);
                 return SERVICE_ENOMEM;
             }
             if (tftp_service_mod.api->data_add_id(pf, pkt->dst_port, &svc_element))
             {
-                flow_mark(pf, FLOW_SERVICEDETECTED);
-                flow_clear(pf, FLOW_CONTINUE);
+                setAppIdFlag(pf, APPID_SESSION_SERVICE_DETECTED);
+                clearAppIdFlag(pf, APPID_SESSION_CONTINUE);
                 tmp_td->state = TFTP_STATE_ERROR;
                 return SERVICE_ENOMEM;
             }
+            PopulateExpectedFlow(flowp, pf, APPID_SESSION_EXPECTED_EVALUATE, APP_ID_FROM_RESPONDER);
+            sfaddr_copy_to_raw(&pf->common.initiator_ip, sip);
+            pf->rnaServiceState = RNA_STATE_STATEFUL;
+            pf->scan_flags |= SCAN_HOST_PORT_FLAG;
         }
         else
         {
@@ -224,7 +239,14 @@ MakeRNAServiceValidationPrototype(tftp_validate)
         break;
     case TFTP_STATE_TRANSFER:
         if ((mode=tftp_verify_header(data, size, &block)) < 0)
+        {
+            if (args->app_id_debug_session_flag)
+                _dpd.logMsg("AppIdDbg %s tftp failed to verify\n", app_id_debug_session);
             goto fail;
+        }
+        if (args->app_id_debug_session_flag)
+            _dpd.logMsg("AppIdDbg %s tftp mode %d and block %u\n", app_id_debug_session,
+                        mode, (unsigned)block);
         if (mode == TFTP_STATE_ACK)
         {
             if (block != 0)
@@ -257,15 +279,26 @@ MakeRNAServiceValidationPrototype(tftp_validate)
         if ((mode=tftp_verify_header(data, size, &block)) < 0)
         {
             if (dir == APP_ID_FROM_RESPONDER) goto fail;
-            else goto bail;
+            else
+            {
+                if (args->app_id_debug_session_flag)
+                    _dpd.logMsg("AppIdDbg %s tftp failed to verify\n", app_id_debug_session);
+                goto bail;
+            }
         }
+        if (args->app_id_debug_session_flag)
+            _dpd.logMsg("AppIdDbg %s tftp mode %d\n", app_id_debug_session, mode);
         if (mode == TFTP_STATE_ERROR)
         {
             td->state = TFTP_STATE_TRANSFER;
             break;
         }
         if (dir == APP_ID_FROM_INITIATOR && mode != TFTP_STATE_DATA)
+        {
+            if (args->app_id_debug_session_flag)
+                _dpd.logMsg("AppIdDbg %s tftp bad mode\n", app_id_debug_session);
             goto bail;
+        }
         if (dir == APP_ID_FROM_RESPONDER && mode != TFTP_STATE_ACK)
             goto fail;
         if (dir == APP_ID_FROM_INITIATOR)
@@ -305,20 +338,24 @@ MakeRNAServiceValidationPrototype(tftp_validate)
     }
 
 inprocess:
-    tftp_service_mod.api->service_inprocess(flowp, pkt, dir, &svc_element);
+    tftp_service_mod.api->service_inprocess(flowp, pkt, dir, &svc_element, NULL);
     return SERVICE_INPROCESS;
 
 success:
+    if (args->app_id_debug_session_flag)
+        _dpd.logMsg("AppIdDbg %s tftp success\n", app_id_debug_session);
     tftp_service_mod.api->add_service(flowp, pkt, dir, &svc_element,
-                                      APP_ID_TFTP, NULL, NULL, NULL);
+                                      APP_ID_TFTP, NULL, NULL, NULL, NULL);
     return SERVICE_SUCCESS;
 
 bail:
-    tftp_service_mod.api->incompatible_data(flowp, pkt, dir, &svc_element);
+    tftp_service_mod.api->incompatible_data(flowp, pkt, dir, &svc_element,
+                                            tftp_service_mod.flow_data_index, args->pConfig, NULL);
     return SERVICE_NOT_COMPATIBLE;
 
 fail:
-    tftp_service_mod.api->fail_service(flowp, pkt, dir, &svc_element);
+    tftp_service_mod.api->fail_service(flowp, pkt, dir, &svc_element,
+                                       tftp_service_mod.flow_data_index, args->pConfig, NULL);
     return SERVICE_NOMATCH;
 }
 

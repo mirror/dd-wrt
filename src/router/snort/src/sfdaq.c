@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -63,8 +63,46 @@ static int loaded = 0;
 static int s_error = DAQ_SUCCESS;
 static DAQ_Stats_t daq_stats, tot_stats;
 
+uint8_t file_io_buffer1[UINT16_MAX];
+
 static void DAQ_Accumulate(void);
 
+typedef struct _MsgHeader_test
+{
+           uint8_t event;
+           uint8_t version;
+           uint16_t total_length;
+           uint8_t key_type;
+           uint8_t key_size;
+} MsgHeader_test;
+
+#ifdef HAVE_DAQ_QUERYFLOW
+static inline ssize_t Read_test(int fd, void *buf, size_t count)
+{
+       ssize_t n;
+       errno = 0;
+
+       while ((n = read(fd, buf, count)) <= (ssize_t) count)
+       {
+               if (n == (ssize_t) count)
+                       return 0;
+
+               if (n > 0)
+               {
+                       buf = (uint8_t *) buf + n;
+                       count -= n;
+               }
+               else if (n == 0)
+                       break;
+               else if (errno != EINTR)
+               {
+                       ErrorMessage("Error reading from Stream HA message file: %s (%d)\n", strerror(errno), errno);
+                       break;
+               }
+       }
+       return -1;
+}
+#endif
 //--------------------------------------------------------------------
 
 void DAQ_Load (const SnortConfig* sc)
@@ -215,6 +253,61 @@ static int DAQ_ValidateInstance ()
     return 1;
 }
 
+void DAQ_UpdateTunnelBypass(SnortConfig* sc)
+{
+#ifdef HAVE_DAQ_REAL_ADDRESSES
+
+    if (daq_mod && daq_hand)
+    {
+        uint32_t caps = daq_get_capabilities(daq_mod, daq_hand);
+
+        if (caps & DAQ_CAPA_DECODE_GTP)
+        {
+            sc->tunnel_mask |= TUNNEL_GTP;
+            LogMessage("DAQ tracking internal GTP sessions.\n");
+        }
+        if (caps & DAQ_CAPA_DECODE_TEREDO)
+        {
+            sc->tunnel_mask |= TUNNEL_TEREDO;
+            LogMessage("DAQ tracking internal TEREDO sessions.\n");
+        }
+        if (caps & DAQ_CAPA_DECODE_GRE)
+        {
+            sc->tunnel_mask |= TUNNEL_GRE;
+            LogMessage("DAQ tracking internal GRE sessions.\n");
+        }
+        if (caps & DAQ_CAPA_DECODE_4IN4)
+        {
+            sc->tunnel_mask |= TUNNEL_4IN4;
+            LogMessage("DAQ tracking internal IPv4 within IPv4 sessions.\n");
+        }
+        if (caps & DAQ_CAPA_DECODE_6IN4)
+        {
+            sc->tunnel_mask |= TUNNEL_6IN4;
+            LogMessage("DAQ tracking internal IPv6 within IPv4 sessions.\n");
+        }
+        if (caps & DAQ_CAPA_DECODE_4IN6)
+        {
+            sc->tunnel_mask |= TUNNEL_4IN6;
+            LogMessage("DAQ tracking internal IPv4 within IPv6 sessions.\n");
+        }
+        if (caps & DAQ_CAPA_DECODE_6IN6)
+        {
+            sc->tunnel_mask |= TUNNEL_6IN6;
+            LogMessage("DAQ tracking internal IPv6 within IPv6 sessions.\n");
+        }
+#ifdef DAQ_CAPA_DECODE_MPLS
+        if (caps & DAQ_CAPA_DECODE_MPLS)
+        {
+            sc->tunnel_mask |= TUNNEL_MPLS;
+            LogMessage("DAQ tracking internal MPLS sessions.\n");
+        }
+#endif
+    }
+
+#endif
+}
+
 //--------------------------------------------------------------------
 
 #if HAVE_DAQ_HUP_APPLY
@@ -356,6 +449,14 @@ int DAQ_CanWhitelist (void)
 #endif
 }
 
+int DAQ_CanRetry (void)
+{
+#ifdef HAVE_DAQ_VERDICT_RETRY
+    return ( daq_get_capabilities(daq_mod, daq_hand) & DAQ_CAPA_RETRY );
+#else
+    return 0;
+#endif
+}
 
 int DAQ_RawInjection (void)
 {
@@ -618,40 +719,148 @@ const DAQ_Stats_t* DAQ_GetStats (void)
 
 //--------------------------------------------------------------------
 
-int DAQ_ModifyFlow(const void* h, uint32_t id)
+#ifdef HAVE_DAQ_EXT_MODFLOW
+int DAQ_ModifyFlowOpaque(const DAQ_PktHdr_t *hdr, uint32_t opaque)
 {
-#ifdef HAVE_DAQ_ACQUIRE_WITH_META
-    const DAQ_PktHdr_t *hdr = (DAQ_PktHdr_t*) h;
     DAQ_ModFlow_t mod;
 
-    mod.opaque = id;
+    mod.type = DAQ_MODFLOW_TYPE_OPAQUE;
+    mod.length = sizeof(opaque);
+    mod.value = &opaque;
+
     return daq_modify_flow(daq_mod, daq_hand, hdr, &mod);
+}
+
+int DAQ_ModifyFlowHAState(const DAQ_PktHdr_t *hdr, const void *data, uint32_t length)
+{
+#ifdef REG_TEST
+    return 0;
 #else
-    return -1;
+    DAQ_ModFlow_t mod;
+
+    mod.type = DAQ_MODFLOW_TYPE_HA_STATE;
+    mod.length = length;
+    mod.value = data;
+    return daq_modify_flow(daq_mod, daq_hand, hdr, &mod);
 #endif
 }
+
+int DAQ_ModifyFlow(const DAQ_PktHdr_t *hdr, const DAQ_ModFlow_t* mod)
+{
+    return daq_modify_flow(daq_mod, daq_hand, hdr, mod);
+}
+#else
+int DAQ_ModifyFlowOpaque(const DAQ_PktHdr_t *hdr, uint32_t opaque)
+{
+#ifdef HAVE_DAQ_ACQUIRE_WITH_META
+    DAQ_ModFlow_t mod;
+
+    mod.opaque = opaque;
+    return daq_modify_flow(daq_mod, daq_hand, hdr, &mod);
+#else
+    return DAQ_ERROR_NOTSUP;
+#endif
+}
+#endif
+
+#ifdef HAVE_DAQ_QUERYFLOW
+#ifndef REG_TEST
+int DAQ_QueryFlow(const DAQ_PktHdr_t *hdr, DAQ_QueryFlow_t* query)
+{
+    return daq_query_flow(daq_mod, daq_hand, hdr, query);
+}
+#else
+int DAQ_QueryFlow(DAQ_PktHdr_t *hdr, DAQ_QueryFlow_t* query)
+{
+    int rval,fd;
+    MsgHeader_test *msg_header;
+    uint8_t *msg;
+
+    fd = * ((int * )hdr->priv_ptr);
+    if (fd < 0)
+    {
+       return -1;
+    }
+
+    msg = file_io_buffer1;
+    while ((rval = Read_test(fd, msg, sizeof(*msg_header))) == 0)
+    {
+        msg_header = (MsgHeader_test *) msg;
+        if (msg_header->total_length < sizeof(*msg_header))
+        {
+            ErrorMessage("Stream HA Message total length (%hu) is way too short!\n", msg_header->total_length);
+            close(fd);
+            return -1;
+        }
+        else if (msg_header->total_length > (UINT16_MAX - sizeof(*msg_header)))
+        {
+            ErrorMessage("Stream HA Message total length (%hu) is too long!\n", msg_header->total_length);
+            close(fd);
+            return -1;
+        }
+        else if (msg_header->total_length > sizeof(*msg_header) && (query->type == DAQ_QUERYFLOW_TYPE_HA_STATE))
+        {
+           if ((rval = Read_test(fd, msg + sizeof(*msg_header), msg_header->total_length - sizeof(*msg_header))) != 0)
+            {
+                ErrorMessage("Error reading the remaining %zu bytes of an HA message from file: %s (%d)\n",
+                    msg_header->total_length - sizeof(*msg_header), strerror(errno), errno);
+                close(fd);
+                return rval;
+            }
+            DAQ_HA_State_Data_t *haState;
+   	    haState = (DAQ_HA_State_Data_t *)query->value;
+            haState->length = msg_header->total_length;
+            haState->data = msg_header;
+            return 0;
+        }
+    }
+    return 0;
+}
+#endif
+#endif
 #ifdef HAVE_DAQ_DP_ADD_DC
 /*
  * Initialize key for dynamic channel and call daq api method to notify firmware
- * of the expected dynamic channel. 
+ * of the expected dynamic channel.
  */
-void DAQ_Add_Dynamic_Protocol_Channel(const Packet *ctrlPkt, snort_ip_p cliIP, uint16_t cliPort,
-                                    snort_ip_p srvIP, uint16_t srvPort, uint8_t protocol )
+void DAQ_Add_Dynamic_Protocol_Channel(const Packet *ctrlPkt, sfaddr_t* cliIP, uint16_t cliPort,
+                                      sfaddr_t* srvIP, uint16_t srvPort, uint8_t protocol,
+                                      DAQ_DC_Params* params)
 {
 
     DAQ_DP_key_t dp_key;
-
-    dp_key.af = cliIP->family;
-    if( dp_key.af == AF_INET )
+#ifdef HAVE_DAQ_DATA_CHANNEL_SEPARATE_IP_VERSIONS
+    dp_key.src_af = sfaddr_family(cliIP);
+    if (AF_INET == dp_key.src_af)
     {
-        memcpy( &dp_key.sa.src_ip4, &cliIP->ip32[0], 4 );
-        memcpy( &dp_key.da.dst_ip4, &srvIP->ip32[0], 4 );
+        dp_key.sa.src_ip4.s_addr = sfaddr_get_ip4_value(cliIP);
     }
     else
     {
-        memcpy( &dp_key.sa.src_ip6, &cliIP->ip32[0], sizeof( u_int32_t ) * 4 );
-        memcpy( &dp_key.da.dst_ip6, &srvIP->ip32[0], sizeof( u_int32_t ) * 4 );
+        memcpy(&dp_key.sa.src_ip6, sfaddr_get_ip6_ptr(cliIP), sizeof(dp_key.sa.src_ip6));
     }
+    dp_key.dst_af = sfaddr_family(srvIP);
+    if (AF_INET == dp_key.dst_af)
+    {
+        dp_key.da.dst_ip4.s_addr = sfaddr_get_ip4_value(srvIP);
+    }
+    else
+    {
+        memcpy(&dp_key.da.dst_ip6, sfaddr_get_ip6_ptr(srvIP), sizeof(dp_key.da.dst_ip6));
+    }
+#else
+    dp_key.af = sfaddr_family(cliIP);
+    if( dp_key.af == AF_INET )
+    {
+        dp_key.sa.src_ip4.s_addr = sfaddr_get_ip4_value(cliIP);
+        dp_key.da.dst_ip4.s_addr = sfaddr_get_ip4_value(srvIP);
+    }
+    else
+    {
+        memcpy( &dp_key.sa.src_ip6, sfaddr_get_ip6_ptr(cliIP), sizeof( dp_key.sa.src_ip6 ) );
+        memcpy( &dp_key.da.dst_ip6, sfaddr_get_ip6_ptr(srvIP), sizeof( dp_key.da.dst_ip6 ) );
+    }
+#endif
 
     dp_key.protocol = protocol;
     dp_key.src_port = cliPort;
@@ -664,12 +873,33 @@ void DAQ_Add_Dynamic_Protocol_Channel(const Packet *ctrlPkt, snort_ip_p cliIP, u
 
     if( ctrlPkt->GTPencapsulated )
         dp_key.tunnel_type = DAQ_DP_TUNNEL_TYPE_GTP_TUNNEL;
+#ifdef DAQ_DP_TUNNEL_TYPE_MPLS_TUNNEL
+    else if ( ctrlPkt->mpls )
+        dp_key.tunnel_type = DAQ_DP_TUNNEL_TYPE_MPLS_TUNNEL;
+#endif
     else if ( ctrlPkt->encapsulated )
         dp_key.tunnel_type = DAQ_DP_TUNNEL_TYPE_OTHER_TUNNEL;
     else
         dp_key.tunnel_type = DAQ_DP_TUNNEL_TYPE_NON_TUNNEL;
 
     // notify the firmware to add expected flow for this dynamic channel
+#ifdef HAVE_DAQ_DATA_CHANNEL_PARAMS
+    {
+        DAQ_Data_Channel_Params_t daq_params;
+
+        memset(&daq_params, 0, sizeof(daq_params));
+        daq_params.timeout_ms = params->timeout_ms;
+        if (params->flags & DAQ_DC_FLOAT)
+            daq_params.flags |= DAQ_DATA_CHANNEL_FLOAT; 
+        if (params->flags & DAQ_DC_ALLOW_MULTIPLE)
+            daq_params.flags |= DAQ_DATA_CHANNEL_ALLOW_MULTIPLE;
+        if (params->flags & DAQ_DC_PERSIST)
+            daq_params.flags |= DAQ_DATA_CHANNEL_PERSIST;
+        daq_dp_add_dc(daq_mod, daq_hand, ctrlPkt->pkth, &dp_key, ctrlPkt->pkt,
+                      &daq_params);
+    }
+#else
     daq_dp_add_dc( daq_mod, daq_hand, ctrlPkt->pkth, &dp_key, ctrlPkt->pkt );
+#endif
 }
 #endif

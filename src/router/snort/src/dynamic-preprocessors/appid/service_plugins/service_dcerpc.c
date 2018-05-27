@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -38,24 +38,26 @@ typedef struct _SERVICE_DCERPC_DATA
 } ServiceDCERPCData;
 
 static int dcerpc_init(const InitServiceAPI * const init_api);
-MakeRNAServiceValidationPrototype(dcerpc_tcp_validate);
-MakeRNAServiceValidationPrototype(dcerpc_udp_validate);
+static int dcerpc_tcp_validate(ServiceValidationArgs* args);
+static int dcerpc_udp_validate(ServiceValidationArgs* args);
 
-static RNAServiceElement tcp_svc_element =
+static tRNAServiceElement tcp_svc_element =
 {
     .next = NULL,
     .validate = &dcerpc_tcp_validate,
     .detectorType = DETECTOR_TYPE_DECODER,
     .name = "dcerpc",
     .ref_count = 1,
+    .current_ref_count = 1,
 };
-static RNAServiceElement udp_svc_element =
+static tRNAServiceElement udp_svc_element =
 {
     .next = NULL,
     .validate = &dcerpc_udp_validate,
     .detectorType = DETECTOR_TYPE_DECODER,
     .name = "udp dcerpc",
     .ref_count = 1,
+    .current_ref_count = 1,
 };
 
 static RNAServiceValidationPort pp[] =
@@ -65,7 +67,7 @@ static RNAServiceValidationPort pp[] =
     {NULL, 0, 0}
 };
 
-RNAServiceValidationModule dcerpc_service_mod =
+tRNAServiceValidationModule dcerpc_service_mod =
 {
     "DCERPC",
     &dcerpc_init,
@@ -80,30 +82,33 @@ static int dcerpc_init(const InitServiceAPI * const init_api)
 	for (i=0; i < sizeof(appIdRegistry)/sizeof(*appIdRegistry); i++)
 	{
 		_dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[i].appId);
-		init_api->RegisterAppId(&dcerpc_udp_validate, appIdRegistry[i].appId, appIdRegistry[i].additionalInfo, NULL);
+		init_api->RegisterAppId(&dcerpc_udp_validate, appIdRegistry[i].appId, appIdRegistry[i].additionalInfo, init_api->pAppidConfig);
 	}
 
     return 0;
 }
 
-MakeRNAServiceValidationPrototype(dcerpc_tcp_validate)
+static int dcerpc_tcp_validate(ServiceValidationArgs* args)
 {
     ServiceDCERPCData *dd;
     int retval = SERVICE_INPROCESS;
     int length;
+    tAppIdData *flowp = args->flowp;
+    const uint8_t *data = args->data;
+    uint16_t size = args->size;
 
-    if (dir != APP_ID_FROM_RESPONDER)
+    if (args->dir != APP_ID_FROM_RESPONDER)
         goto inprocess;
     if (!size)
         goto inprocess;
 
-    dd = dcerpc_service_mod.api->data_get(flowp);
+    dd = dcerpc_service_mod.api->data_get(flowp, dcerpc_service_mod.flow_data_index);
     if (!dd)
     {
         dd = calloc(1, sizeof(*dd));
         if (!dd)
             return SERVICE_ENOMEM;
-        if (dcerpc_service_mod.api->data_add(flowp, dd, &free))
+        if (dcerpc_service_mod.api->data_add(flowp, dd, dcerpc_service_mod.flow_data_index, &free))
         {
             free(dd);
             return SERVICE_ENOMEM;
@@ -122,38 +127,42 @@ MakeRNAServiceValidationPrototype(dcerpc_tcp_validate)
     }
     if (retval == SERVICE_SUCCESS)
     {
-        dcerpc_service_mod.api->add_service(flowp, pkt, dir, &tcp_svc_element,
-                                            APP_ID_DCE_RPC, NULL, NULL, NULL);
+        dcerpc_service_mod.api->add_service(flowp, args->pkt, args->dir, &tcp_svc_element,
+                                            APP_ID_DCE_RPC, NULL, NULL, NULL, NULL);
         return SERVICE_SUCCESS;
     }
 
 inprocess:
-    dcerpc_service_mod.api->service_inprocess(flowp, pkt, dir, &tcp_svc_element);
+    dcerpc_service_mod.api->service_inprocess(flowp, args->pkt, args->dir, &tcp_svc_element, NULL);
     return SERVICE_INPROCESS;
 
 fail:
-    dcerpc_service_mod.api->fail_service(flowp, pkt, dir, &tcp_svc_element);
+    dcerpc_service_mod.api->fail_service(flowp, args->pkt, args->dir, &tcp_svc_element,
+                                         dcerpc_service_mod.flow_data_index, args->pConfig, NULL);
     return SERVICE_NOMATCH;
 }
 
-MakeRNAServiceValidationPrototype(dcerpc_udp_validate)
+static int dcerpc_udp_validate(ServiceValidationArgs* args)
 {
     ServiceDCERPCData *dd;
     int retval = SERVICE_NOMATCH;
     int length;
+    tAppIdData *flowp = args->flowp;
+    const uint8_t *data = args->data;
+    uint16_t size = args->size;
 
-    if (dir != APP_ID_FROM_RESPONDER)
+    if (args->dir != APP_ID_FROM_RESPONDER)
         goto inprocess;
     if (!size)
         goto inprocess;
 
-    dd = dcerpc_service_mod.api->data_get(flowp);
+    dd = dcerpc_service_mod.api->data_get(flowp, dcerpc_service_mod.flow_data_index);
     if (!dd)
     {
         dd = calloc(1, sizeof(*dd));
         if (!dd)
             return SERVICE_ENOMEM;
-        if (dcerpc_service_mod.api->data_add(flowp, dd, &free))
+        if (dcerpc_service_mod.api->data_add(flowp, dd, dcerpc_service_mod.flow_data_index, &free))
         {
             free(dd);
             return SERVICE_ENOMEM;
@@ -172,17 +181,18 @@ MakeRNAServiceValidationPrototype(dcerpc_udp_validate)
     }
     if (retval == SERVICE_SUCCESS)
     {
-        dcerpc_service_mod.api->add_service(flowp, pkt, dir, &udp_svc_element,
-                                            APP_ID_DCE_RPC, NULL, NULL, NULL);
+        dcerpc_service_mod.api->add_service(flowp, args->pkt, args->dir, &udp_svc_element,
+                                            APP_ID_DCE_RPC, NULL, NULL, NULL, NULL);
         return SERVICE_SUCCESS;
     }
 
 inprocess:
-    dcerpc_service_mod.api->service_inprocess(flowp, pkt, dir, &udp_svc_element);
+    dcerpc_service_mod.api->service_inprocess(flowp, args->pkt, args->dir, &udp_svc_element, NULL);
     return SERVICE_INPROCESS;
 
 fail:
-    dcerpc_service_mod.api->fail_service(flowp, pkt, dir, &udp_svc_element);
+    dcerpc_service_mod.api->fail_service(flowp, args->pkt, args->dir, &udp_svc_element,
+                                         dcerpc_service_mod.flow_data_index, args->pConfig, NULL);
     return SERVICE_NOMATCH;
 }
 

@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2007-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -153,17 +153,17 @@ static void Unified2Init(struct _SnortConfig *, char *);
 static void Unified2PostConfig(struct _SnortConfig *, int, void *);
 static void Unified2InitFile(Unified2Config *);
 static inline void Unified2RotateFile(Unified2Config *);
-static void Unified2LogAlert(Packet *, char *, void *, Event *);
-static void _AlertIP4(Packet *, char *, Unified2Config *, Event *);
-static void _AlertIP6(Packet *, char *, Unified2Config *, Event *);
-static void Unified2LogPacketAlert(Packet *, char *, void *, Event *);
-static void _Unified2LogPacketAlert(Packet *, char *, Unified2Config *, Event *);
-static void _Unified2LogStreamAlert(Packet *, char *, Unified2Config *, Event *);
+static void Unified2LogAlert(Packet *, const char *, void *, Event *);
+static void _AlertIP4(Packet *, const char *, Unified2Config *, Event *);
+static void _AlertIP6(Packet *, const char *, Unified2Config *, Event *);
+static void Unified2LogPacketAlert(Packet *, const char *, void *, Event *);
+static void _Unified2LogPacketAlert(Packet *, const char *, Unified2Config *, Event *);
+static void _Unified2LogStreamAlert(Packet *, const char *, Unified2Config *, Event *);
 static int Unified2LogStreamCallback(DAQ_PktHdr_t *, uint8_t *, void *);
 static void Unified2Write(uint8_t *, uint32_t, Unified2Config *);
 
-static void _AlertIP4_v2(Packet *, char *, Unified2Config *, Event *);
-static void _AlertIP6_v2(Packet *, char *, Unified2Config *, Event *);
+static void _AlertIP4_v2(Packet *, const char *, Unified2Config *, Event *);
+static void _AlertIP6_v2(Packet *, const char *, Unified2Config *, Event *);
 
 /* Unified2 Alert functions (deprecated) */
 static void Unified2AlertInit(struct _SnortConfig *, char *);
@@ -367,7 +367,7 @@ static int s_blocked_flag[] =
 static int GetU2Flags(const Packet* p, uint8_t* pimpact)
 {
     tActiveDrop dispos = Active_GetDisposition();
-    
+
     if ( dispos >= ACTIVE_DROP )
     {
         *pimpact = U2_FLAG_BLOCKED;
@@ -376,7 +376,7 @@ static int GetU2Flags(const Packet* p, uint8_t* pimpact)
     return s_blocked_flag[dispos];
 }
 
-static void _AlertIP4(Packet *p, char *msg, Unified2Config *config, Event *event)
+static void _AlertIP4(Packet *p, const char *msg, Unified2Config *config, Event *event)
 {
     Serial_Unified2_Header hdr;
     Serial_Unified2IDSEvent_legacy alertdata;
@@ -442,7 +442,7 @@ static void _AlertIP4(Packet *p, char *msg, Unified2Config *config, Event *event
     Unified2Write(write_pkt_buffer, write_len, config);
 }
 
-static void _AlertIP4_v2(Packet *p, char *msg, Unified2Config *config, Event *event)
+static void _AlertIP4_v2(Packet *p, const char *msg, Unified2Config *config, Event *event)
 {
     Serial_Unified2_Header hdr;
     Unified2IDSEvent alertdata;
@@ -538,7 +538,7 @@ static void _AlertIP4_v2(Packet *p, char *msg, Unified2Config *config, Event *ev
     Unified2Write(write_pkt_buffer_v2, write_len, config);
 }
 
-static void _AlertIP6(Packet *p, char *msg, Unified2Config *config, Event *event)
+static void _AlertIP6(Packet *p, const char *msg, Unified2Config *config, Event *event)
 {
     Serial_Unified2_Header hdr;
     Serial_Unified2IDSEventIPv6_legacy alertdata;
@@ -561,13 +561,13 @@ static void _AlertIP6(Packet *p, char *msg, Unified2Config *config, Event *event
 
         if(IPH_IS_VALID(p))
         {
-            snort_ip_p ip;
+            sfaddr_t* ip;
 
             ip = GET_SRC_IP(p);
-            alertdata.ip_source = *(struct in6_addr*)ip->ip32;
+            alertdata.ip_source = *(struct in6_addr*)sfaddr_get_ip6_ptr(ip);
 
             ip = GET_DST_IP(p);
-            alertdata.ip_destination = *(struct in6_addr*)ip->ip32;
+            alertdata.ip_destination = *(struct in6_addr*)sfaddr_get_ip6_ptr(ip);
 
             alertdata.protocol = GetEventProto(p);
 
@@ -610,7 +610,7 @@ static void _AlertIP6(Packet *p, char *msg, Unified2Config *config, Event *event
     Unified2Write(write_pkt_buffer, write_len, config);
 }
 
-static void _AlertIP6_v2(Packet *p, char *msg, Unified2Config *config, Event *event)
+static void _AlertIP6_v2(Packet *p, const char *msg, Unified2Config *config, Event *event)
 {
     Serial_Unified2_Header hdr;
     Unified2IDSEventIPv6 alertdata;
@@ -626,6 +626,9 @@ static void _AlertIP6_v2(Packet *p, char *msg, Unified2Config *config, Event *ev
     alertdata.signature_revision = htonl(event->sig_rev);
     alertdata.classification_id = htonl(event->classification);
     alertdata.priority_id = htonl(event->priority);
+#if defined(FEAT_OPEN_APPID)
+    memcpy(alertdata.app_name, event->app_name, sizeof(alertdata.app_name));
+#endif /* defined(FEAT_OPEN_APPID) */
 
     if(p)
     {
@@ -633,13 +636,13 @@ static void _AlertIP6_v2(Packet *p, char *msg, Unified2Config *config, Event *ev
 
         if(IPH_IS_VALID(p))
         {
-            snort_ip_p ip;
+            sfaddr_t* ip;
 
             ip = GET_SRC_IP(p);
-            alertdata.ip_source = *(struct in6_addr*)ip->ip32;
+            alertdata.ip_source = *(struct in6_addr*)sfaddr_get_ip6_ptr(ip);
 
             ip = GET_DST_IP(p);
-            alertdata.ip_destination = *(struct in6_addr*)ip->ip32;
+            alertdata.ip_destination = *(struct in6_addr*)sfaddr_get_ip6_ptr(ip);
 
             alertdata.protocol = GetEventProto(p);
 
@@ -683,7 +686,11 @@ static void _AlertIP6_v2(Packet *p, char *msg, Unified2Config *config, Event *ev
         Unified2RotateFile(config);
 
     hdr.length = htonl(sizeof(Unified2IDSEventIPv6));
+#if !defined(FEAT_OPEN_APPID)
     hdr.type = htonl(UNIFIED2_IDS_EVENT_IPV6_VLAN);
+#else
+    hdr.type = htonl(UNIFIED2_IDS_EVENT_APPID_IPV6);
+#endif
 
     if (SafeMemcpy(write_pkt_buffer_v2, &hdr, sizeof(Serial_Unified2_Header),
                    write_pkt_buffer_v2, write_pkt_end_v2) != SAFEMEM_SUCCESS)
@@ -816,7 +823,7 @@ static void AlertExtraData(
     }
 }
 
-static void Unified2LogAlert(Packet *p, char *msg, void *arg, Event *event)
+static void Unified2LogAlert(Packet *p, const char *msg, void *arg, Event *event)
 {
     Unified2Config *config = (Unified2Config *)arg;
 
@@ -869,12 +876,12 @@ static void Unified2LogAlert(Packet *p, char *msg, void *arg, Event *event)
 
         if(ScLogIPv6Extra() && IS_IP6(p))
         {
-            snort_ip_p ip = GET_SRC_IP(p);
+            sfaddr_t* ip = GET_SRC_IP(p);
             _WriteExtraData(config, event->event_id, event->ref_time.tv_sec,
-                &ip->ip8[0], sizeof(struct in6_addr),  EVENT_INFO_IPV6_SRC);
+                (uint8_t*)sfaddr_get_ip6_ptr(ip), sizeof(struct in6_addr),  EVENT_INFO_IPV6_SRC);
             ip = GET_DST_IP(p);
             _WriteExtraData(config, event->event_id, event->ref_time.tv_sec,
-                &ip->ip8[0], sizeof(struct in6_addr),  EVENT_INFO_IPV6_DST);
+                (uint8_t*)sfaddr_get_ip6_ptr(ip), sizeof(struct in6_addr),  EVENT_INFO_IPV6_DST);
         }
     }
 
@@ -897,7 +904,7 @@ static void Unified2LogAlert(Packet *p, char *msg, void *arg, Event *event)
     return;
 }
 
-static void Unified2LogPacketAlert(Packet *p, char *msg, void *arg, Event *event)
+static void Unified2LogPacketAlert(Packet *p, const char *msg, void *arg, Event *event)
 {
     Unified2Config *config = (Unified2Config *)arg;
 
@@ -920,7 +927,7 @@ static void Unified2LogPacketAlert(Packet *p, char *msg, void *arg, Event *event
    }
 }
 
-static void _Unified2LogPacketAlert(Packet *p, char *msg,
+static void _Unified2LogPacketAlert(Packet *p, const char *msg,
                                     Unified2Config *config, Event *event)
 {
     Serial_Unified2_Header hdr;
@@ -1190,7 +1197,7 @@ static ObRet Unified2LogObfuscationCallback(const DAQ_PktHdr_t *pkth,
  * Log a set of packets stored in the stream reassembler
  *
  */
-static void _Unified2LogStreamAlert(Packet *p, char *msg, Unified2Config *config, Event *event)
+static void _Unified2LogStreamAlert(Packet *p, const char *msg, Unified2Config *config, Event *event)
 {
     Unified2LogCallbackData unifiedData;
     Serial_Unified2Packet logheader;
@@ -1241,7 +1248,7 @@ static void _Unified2LogStreamAlert(Packet *p, char *msg, Unified2Config *config
 /*
  * Function: Unified2ParseArgs(char *)
  *
- * Purpose: Process the preprocessor arguements from the rules file and
+ * Purpose: Process the preprocessor arguments from the rules file and
  *          initialize the preprocessor's data struct.  This function doesn't
  *          have to exist if it makes sense to parse the args in the init
  *          function.

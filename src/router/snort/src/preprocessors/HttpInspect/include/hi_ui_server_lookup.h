@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -27,11 +27,11 @@
 #include "hi_ui_config.h"
 
 int hi_ui_server_lookup_init(SERVER_LOOKUP **ServerLookup);
-int hi_ui_server_lookup_add(SERVER_LOOKUP *ServerLookup, sfip_t *Ip,
+int hi_ui_server_lookup_add(SERVER_LOOKUP *ServerLookup, sfcidr_t *Ip,
                             HTTPINSPECT_CONF *ServerConf);
 
 HTTPINSPECT_CONF *hi_ui_server_lookup_find(SERVER_LOOKUP *ServerLookup,
-                                            snort_ip_p Ip, int *iError);
+                                            sfaddr_t* Ip, int *iError);
 HTTPINSPECT_CONF *hi_ui_server_lookup_first(SERVER_LOOKUP *ServerLookup,
                                             int *iError);
 HTTPINSPECT_CONF *hi_ui_server_lookup_next(SERVER_LOOKUP *ServerLookup,

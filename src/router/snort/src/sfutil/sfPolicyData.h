@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -22,10 +22,12 @@
 #ifndef _SF_POLICY_DATA_H_
 #define _SF_POLICY_DATA_H_
 
+#include "generators.h"
 #include "sfPolicy.h"
 
 extern tSfPolicyId napRuntimePolicyId;
 extern tSfPolicyId ipsRuntimePolicyId;
+extern uint8_t iprep_current_update_counter;
 
 static inline tSfPolicyId getNapRuntimePolicy(void)
 {
@@ -35,6 +37,14 @@ static inline tSfPolicyId getNapRuntimePolicy(void)
 static inline tSfPolicyId getIpsRuntimePolicy(void)
 {
     return ipsRuntimePolicyId;
+}
+
+static inline tSfPolicyId getApplicableRuntimePolicy(uint32_t gid)
+{
+    if (gid == GENERATOR_INTERNAL)
+        return getNapRuntimePolicy();
+    else
+        return getIpsRuntimePolicy();
 }
 
 static inline void setNapRuntimePolicy(tSfPolicyId id)
@@ -75,5 +85,14 @@ static inline int isParserPolicyDefault(SnortConfig *sc)
     return ( ( sc ? sc->parserPolicyId : snort_conf->parserPolicyId ) == SF_DEFAULT_POLICY_ID );
 }
 
+static inline void setIPRepUpdateCount(uint8_t count)
+{
+   iprep_current_update_counter = count;
+}
+
+static inline uint8_t getIPRepUpdateCount(void)
+{
+   return iprep_current_update_counter;
+}
 #endif
 

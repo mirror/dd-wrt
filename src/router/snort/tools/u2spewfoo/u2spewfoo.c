@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2002-2013 Sourcefire, Inc.
  * Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
  * Author: Adam Keeton
@@ -25,10 +25,11 @@
 #include "config.h"
 #endif
 
+#include <stdio.h>
+
 #ifndef WIN32
 #include <ctype.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include <errno.h>
 
@@ -682,16 +683,6 @@ static void appid_dump(u2record *record) {
 }
 
 #endif /* defined(FEAT_OPEN_APPID) */
-static inline void print_uuid (const char* label, uint8_t* data)
-{
-#ifdef HAVE_LIBUUID
-    char buf[37];
-    uuid_unparse(data, buf);
-    printf("%s: %s\n", label, buf);
-#else
-    printf("%s: %.*s\n", label, 16, data);
-#endif
-}
 
 #define LOG_CHARS 16
 
@@ -801,7 +792,7 @@ static int u2dump(char *file) {
 
 int main(int argc, char **argv) {
     if(argc != 2) {
-        puts("usage: u2eventdump <file>");
+        printf("usage: %s <file>\n",argv[0]);
         return 1;
     }
 

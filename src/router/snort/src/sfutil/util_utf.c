@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2010-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -272,7 +272,13 @@ static int DecodeUTF32BE(char *src, unsigned int src_len, char *dst, unsigned in
 /* Wrapper function for DecodeUTF{16,32}{LE,BE} */
 int DecodeUTF(char *src, unsigned int src_len, char *dst, unsigned int dst_len, int *bytes_copied, decode_utf_state_t *dstate)
 {
-    if (src == NULL || dst == NULL || bytes_copied == NULL || dstate == NULL || src_len == 0 || dst_len == 0)
+    if (!bytes_copied)
+        return DECODE_UTF_FAILURE;
+
+    *bytes_copied = 0;
+
+    // FIXIT-L Should make this an assert since it should never happen
+    if (src == NULL || dst == NULL || dstate == NULL || src_len == 0 || dst_len == 0)
         return DECODE_UTF_FAILURE;
 
     switch (dstate->charset)
@@ -288,6 +294,5 @@ int DecodeUTF(char *src, unsigned int src_len, char *dst, unsigned int dst_len, 
     }
 
     /* In case the function is called with a bad charset. */
-    *bytes_copied = 0;
     return DECODE_UTF_FAILURE;
 }

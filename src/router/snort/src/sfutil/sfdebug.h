@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2006-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -25,6 +25,7 @@
 
 #include <stdio.h>
 
+/* ANY CHANGES MADE HERE SHOULD BE DUPLICATED TO toos/sfcontrol/sfcontrol.c */
 static inline void DumpHex(FILE *fp, const uint8_t *data, unsigned len)
 {
     char str[18];
@@ -55,7 +56,6 @@ static inline void DumpHex(FILE *fp, const uint8_t *data, unsigned len)
     }
     if (pos)
     {
-        str[pos] = 0;
         for (; pos < 17; pos++)
         {
             if (pos == 8)
@@ -68,7 +68,9 @@ static inline void DumpHex(FILE *fp, const uint8_t *data, unsigned len)
             {
                 fprintf(fp, "%s", "   ");
             }
+            str[pos] = 0;
         }
+        str[pos] = 0;
         fprintf(fp, "  %s\n", str);
     }
 }

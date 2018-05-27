@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2006-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -50,7 +50,7 @@ typedef struct
     /** number of entries filled including chidren sub_tables. This is used
      * for freeing sub_tables when all entried are freed by delete operation.
      */
-    int filledEntries;    
+    int filledEntries;
 } dir_sub_table_t;
 
 /* Master data structure for the DIR-n-m derivative */
@@ -75,12 +75,12 @@ typedef struct
 /* DIR-n-m functions, these are not intended to be called directly */
 dir_table_t *  sfrt_dir_new(uint32_t mem_cap, int count,...);
 void           sfrt_dir_free(void *);
-tuple_t        sfrt_dir_lookup(IP ip, void *table);
-int            sfrt_dir_insert(IP ip, int len, word data_index,
+tuple_t        sfrt_dir_lookup(uint32_t* adr, int numAdrDwords, void *table);
+int            sfrt_dir_insert(uint32_t* adr, int numAdrDwords, int len, word data_index,
                                int behavior, void *table);
 uint32_t      sfrt_dir_usage(void *table);
 void          sfrt_dir_print(void *table);
-word sfrt_dir_remove(IP ip, int len, int behavior, void *table);
+word sfrt_dir_remove(uint32_t* adr, int numAdrDwords, int len, int behavior, void *table);
 
 #endif /* SFRT_DIR_H_ */
 

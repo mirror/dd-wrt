@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2004-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -125,3 +125,14 @@ void registerFlushStreamCallback( bool client_to_server, flush_stream_cb cb_func
     else
         pfunks->flush_server_stream = cb_func;
 }
+
+#ifdef SNORT_RELOAD
+void register_no_ref_policy_callback(SessionConfiguration *session_conf, NoRefCallback callback, void *data)
+{
+    if( session_conf )
+    {
+        session_conf->no_ref_cb = callback;
+        session_conf->no_ref_cb_data = data;
+    }
+}
+#endif

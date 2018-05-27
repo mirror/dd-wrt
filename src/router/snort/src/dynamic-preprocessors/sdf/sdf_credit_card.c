@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2009-2013 Sourcefire, Inc.
 **
 **
@@ -72,9 +72,19 @@ int SDFLuhnAlgorithm(char *buf, uint32_t buflen, struct _SDFConfig *config)
     if (buf == NULL || buflen < MIN_CC_BUF_LEN)
         return 0;
 
-    /* The buffer has two non-digits, one on either side. Strip these out. */
-    buf++;
-    buflen -= 2;
+    /* Generally, the buffer has two non-digits, one on either side. Sometimes,
+     * when the buffer is pointing to the first line of the data, it might
+     * start with a digit, instead of a non-digit. Strip the non-digits
+     * only.
+     */
+    if (isdigit((int)buf[0]))
+        buflen -= 1;
+
+    else
+    {
+        buf++;
+        buflen -= 2;
+    }
 
     /* If the first digit is greater than 6, this isn't one of the major
        credit cards. */

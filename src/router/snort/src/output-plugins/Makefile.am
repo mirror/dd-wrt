@@ -15,4 +15,9 @@ spo_log_ascii.c spo_log_ascii.h \
 spo_alert_sf_socket.h spo_alert_sf_socket.c \
 spo_alert_test.c spo_alert_test.h
 
+if BUILD_BUFFER_DUMP
+libspo_a_SOURCES += \
+spo_log_buffer_dump.c spo_log_buffer_dump.h
+endif
+
 INCLUDES = @INCLUDES@

@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -311,12 +311,12 @@ void PrintNetData(FILE * fp, const u_char * start, const int len, Packet *p)
  *
  * Returns: void function
  */
-void PrintCharData(FILE * fp, char *data, int data_len)
+void PrintCharData(FILE * fp, const char *data, int data_len)
 {
     int bytes_processed;    /* count of bytes in the data buffer
                  * processed so far */
     int linecount = 0;      /* number of lines in this dump */
-    char *index;        /* index pointer into the data buffer */
+    const char *index;        /* index pointer into the data buffer */
     char *ddb_ptr;      /* index pointer into the data_dump_buffer */
     int size;
 
@@ -554,12 +554,12 @@ void PrintIPPkt(FILE * fp, int type, Packet * p)
             if(!IsJSNormData(p->ssnptr))
             {
                 fprintf(fp, "%s\n", "Normalized JavaScript for this packet");
-                PrintCharData(fp, (char *)file_data_ptr.data, file_data_ptr.len);
+                PrintCharData(fp, (const char*)file_data_ptr.data, file_data_ptr.len);
             }
             else if(!IsGzipData(p->ssnptr))
             {
                 fprintf(fp, "%s\n", "Decompressed Data for this packet");
-                PrintCharData(fp, (char *)file_data_ptr.data, file_data_ptr.len);
+                PrintCharData(fp, (const char*)file_data_ptr.data, file_data_ptr.len);
             }
         }
         else
@@ -1342,8 +1342,8 @@ void PrintICMPHeader(FILE * fp, Packet * p)
             }
 
 /* written this way since inet_ntoa was typedef'ed to use sfip_ntoa
- * which requires sfip_t instead of inaddr's.  This call to inet_ntoa
- * is a rare case that doesn't use sfip_t's. */
+ * which requires sfcidr_t instead of inaddr's.  This call to inet_ntoa
+ * is a rare case that doesn't use sfcidr_t's. */
 
 // XXX-IPv6 NOT YET IMPLEMENTED - IPV6 addresses technically not supported - need to change ICMP header
 

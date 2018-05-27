@@ -2,7 +2,7 @@
 **
 **  spp_perfmonitor.c
 **
-**  Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+**  Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 **  Copyright (C) 2002-2013 Sourcefire, Inc.
 **  Marc Norton <mnorton@sourcefire.com>
 **  Dan Roelker <droelker@sourcefire.com>
@@ -52,6 +52,12 @@
 #include "perf-base.h"
 #include "profiler.h"
 #include "session_api.h"
+#include "reload.h"
+#ifdef SNORT_RELOAD
+#ifdef REG_TEST
+#include "reg_test.h"
+#endif
+#endif
 
 // Performance statistic types
 //#define PERFMON_ARG__BASE          "base"
@@ -109,6 +115,8 @@ static void PerfMonitorReload(struct _SnortConfig *, char *, void **);
 static int PerfmonReloadVerify(struct _SnortConfig *, void *);
 static void * PerfMonitorReloadSwap(struct _SnortConfig *, void *);
 static void PerfMonitorReloadSwapFree(void *);
+
+static bool PerfmonitorReloadAdjustFunc(bool idle, tSfPolicyId raPolicyId, void* userData);
 #endif
 
 #ifdef PERF_PROFILING
@@ -175,6 +183,7 @@ static void PerfMonitorInit(struct _SnortConfig *sc, char *args)
     /* parse the argument list from the rules file */
     ParsePerfMonitorArgs(sc, perfmon_config, args);
     InitPerfStats(perfmon_config);
+
 #ifndef WIN32
     PerfMonitorChangeLogFilesPermission();
 #endif
@@ -187,14 +196,14 @@ static void PerfMonitorInit(struct _SnortConfig *sc, char *args)
     AddFuncToPreprocPostConfigList(sc, PerfMonitorOpenLogFiles, NULL);
 
 #ifdef PERF_PROFILING
-    RegisterPreprocessorProfile("perfmon", &perfmonStats, 0, &totalPerfStats);
+    RegisterPreprocessorProfile("perfmon", &perfmonStats, 0, &totalPerfStats, NULL);
 #endif
 }
 
 /*
  * Function: ParsePerfMonitorArgs(struct _SnortConfig *, char *)
  *
- * Purpose: Process the preprocessor arguements from the rules file and
+ * Purpose: Process the preprocessor arguments from the rules file and
  *          initialize the preprocessor's data struct.  This function doesn't
  *          have to exist if it makes sense to parse the args in the init
  *          function.
@@ -366,7 +375,7 @@ static void ParsePerfMonitorArgs(struct _SnortConfig *sc, SFPERF *pconfig, char 
                     || *endptr || (errno == ERANGE))
             {
                 ParseError("Perfmonitor:  Invalid argument to \"%s\".  The "
-                        "value must be an integer between 0 and %d.",
+                        "value must be an integer between 0 and %u.",
                         PERFMON_ARG__PKT_COUNT, UINT32_MAX);
             }
 
@@ -597,8 +606,6 @@ static void ProcessPerfMonitor(Packet *p, void *context)
             sfBase.pkt_stats.pkts_drop = ps->hw_packets_dropped;
         }
 
-        SetSampleTime(perfmon_config, p);
-
         first = false;
     }
 
@@ -628,6 +635,7 @@ static void PerfMonitorCleanExit(int signal, void *foo)
     sfCloseFlowStatsFile(perfmon_config);
     sfCloseFlowIPStatsFile(perfmon_config);
     FreeFlowStats(&sfFlow);
+    FreeFlowIPStats(&sfFlow);
 #ifdef LINUX_SMP
     FreeProcPidStats(&sfBase.sfProcPidStats);
 #endif
@@ -801,6 +809,7 @@ static void PerfMonitorOpenLogFiles(struct _SnortConfig *sc, void *data)
 }
 
 #ifdef SNORT_RELOAD
+
 static void PerfMonitorReload(struct _SnortConfig *sc, char *args, void **new_config)
 {
     SFPERF *perfmon_swap_config = (SFPERF *)*new_config;
@@ -828,52 +837,32 @@ static int PerfmonReloadVerify(struct _SnortConfig *sc, void *swap_config)
 {
     SFPERF *perfmon_swap_config = (SFPERF *)swap_config;
 
-    if ((perfmon_config == NULL) || (perfmon_swap_config == NULL))
+    if (perfmon_config == NULL && perfmon_swap_config == NULL)
+        return 0;
+    //start from scratch
+    if (perfmon_config == NULL && perfmon_swap_config !=NULL)
+    {
+        initializePerfmonForDispatch( sc );
+        return 0;
+    }
+    //keep perfmon_config
+    if (perfmon_config != NULL && perfmon_swap_config ==NULL)
         return 0;
 
-    if ((perfmon_config->file != NULL) && (perfmon_swap_config->file != NULL))
+    //the only way to prevent this would be to change the number of rows in the
+    //sfFlow.ipMap hash table. That solution seems extreme, plus as it stands
+    //snort wouldn't function on fresh start with a flowip_memcap that low becuase the hash table
+    //rows are hard coded in InitFlowIPStats in preprocessors/perf-flow.c
+    if (perfmon_config->perf_flags & SFPERF_FLOWIP && perfmon_swap_config->perf_flags & SFPERF_FLOWIP
+            && sfxhash_overhead_bytes(sfFlow.ipMap) > perfmon_swap_config->flowip_memcap)
     {
-        /* File - don't do case insensitive compare */
-        if (strcmp(perfmon_config->file, perfmon_swap_config->file) != 0)
-        {
-            ErrorMessage("Perfmonitor Reload: Changing the log file requires a restart.\n");
-            return -1;
-        }
-    }
-    else if (perfmon_config->file != perfmon_swap_config->file)
-    {
-        ErrorMessage("Perfmonitor Reload: Changing the log file requires a restart.\n");
+        ErrorMessage("Perfmonitor Reload: flowip_memcap is too low.\n");
         return -1;
     }
 
-    if ((perfmon_config->flow_file != NULL) && (perfmon_swap_config->flow_file != NULL))
-    {
-        /* File - don't do case insensitive compare */
-        if (strcmp(perfmon_config->flow_file, perfmon_swap_config->flow_file) != 0)
-        {
-            ErrorMessage("Perfmonitor Reload: Changing the flow file requires a restart.\n");
-            return -1;
-        }
-    }
-    else if (perfmon_config->flow_file != perfmon_swap_config->flow_file)
-    {
-        ErrorMessage("Perfmonitor Reload: Changing the flow file requires a restart.\n");
-        return -1;
-    }
-
-    if ((perfmon_config->flowip_file != NULL) && (perfmon_swap_config->flowip_file != NULL))
-    {
-        if (strcmp(perfmon_config->flowip_file, perfmon_swap_config->flowip_file) != 0)
-        {
-            ErrorMessage("Perfmonitor Reload: Changing the FlowIP log file requires a restart.\n");
-            return -1;
-        }
-    }
-    else if (perfmon_config->flowip_file != perfmon_swap_config->flowip_file)
-    {
-        ErrorMessage("Perfmonitor Reload: Changing the FlowIP log file requires a restart.\n");
-        return -1;
-    }
+    perfmon_reload_status = PERF_RELOAD_VERIFY;
+    syncAllStats(perfmon_config, perfmon_swap_config);
+    perfmon_reload_status = PERF_NOT_RELOADING;
 
     // register perfmon callback with policy and session
     initializePerfmonForDispatch( sc );
@@ -889,19 +878,25 @@ static void * PerfMonitorReloadSwap(struct _SnortConfig *sc, void *swap_config)
     if (perfmon_swap_config == NULL)
         return NULL;
 
-    /* Since the file isn't opened again, copy the file handle from the
-     * current configuration.  Verification will be done on file name to
-     * ensure it didn't change. */
-    if (perfmon_config->fh != NULL)
-        perfmon_swap_config->fh = perfmon_config->fh;
+    //start from scratch
+    if (perfmon_config == NULL)
+    {
+        InitPerfStats(perfmon_swap_config);
+        perfmon_config = perfmon_swap_config;
+        return NULL;
+    }
 
-    /* Same goes for the FlowIP log file. */
-    if (perfmon_config->flowip_fh != NULL)
-        perfmon_swap_config->flowip_fh = perfmon_config->flowip_fh;
+    perfmon_reload_status = PERF_RELOAD_SWAP;
+    syncAllStats(perfmon_config, perfmon_swap_config);
+    perfmon_reload_status = PERF_NOT_RELOADING;
 
-    /* And flow stats file */
-    if (perfmon_config->flow_fh != NULL)
-        perfmon_swap_config->flow_fh = perfmon_config->flow_fh;
+    if (perfmon_swap_config->perf_flags & SFPERF_FLOWIP && perfmon_config->perf_flags & SFPERF_FLOWIP)
+    {
+        //this is mainly intended for when FLOWIP is in summary mode and we may have to free objects
+        //in use, but it's also used in other situations to decrase the size of an empty table
+        tSfPolicyId policy_id = getParserPolicy(sc);
+        ReloadAdjustRegister(sc,"perfmon", policy_id, &PerfmonitorReloadAdjustFunc, NULL, NULL);
+    }
 
     perfmon_config = perfmon_swap_config;
 
@@ -913,7 +908,27 @@ static void PerfMonitorReloadSwapFree(void *data)
     if (data == NULL)
         return;
 
+    perfmon_reload_status = PERF_RELOAD_SWAP_FREE;
+    syncAllStats((SFPERF *) data, perfmon_config);
+    perfmon_reload_status = PERF_NOT_RELOADING;
+
     PerfMonitorFreeConfig((SFPERF *)data);
 }
+
+
+static bool PerfmonitorReloadAdjustFunc(bool idle, tSfPolicyId raPolicyId, void* userData)
+{
+    unsigned max_work = idle ? 512 : 32;
+    int ret = sfxhash_change_memcap(sfFlow.ipMap, perfmon_config->flowip_memcap, &max_work);
+#ifdef REG_TEST
+    if (REG_TEST_FLAG_PERFMON_RELOAD & getRegTestFlags())
+    {
+        printf("memused:%lu\n",sfFlow.ipMap->mc.memused);
+        printf("memcap:%lu\n",sfFlow.ipMap->mc.memcap);
+    }
+#endif
+    return ret == SFXHASH_OK;
+}
+
 #endif
 

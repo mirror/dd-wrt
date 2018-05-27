@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -27,6 +27,10 @@
 /********************************************************************
  * Externs
  ********************************************************************/
+#ifdef SNORT_RELOAD
+#include "dce2_memory.h"
+#endif
+
 #ifdef PERF_PROFILING
 #include "profiler.h"
 extern PreprocStats dce2_pstat_main;

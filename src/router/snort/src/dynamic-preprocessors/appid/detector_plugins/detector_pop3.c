@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -25,6 +25,8 @@
 #include <stddef.h>
 #include <sys/types.h>
 #include <netinet/in.h>
+#include "appIdApi.h"
+#include "appInfoTable.h"
 #include "detector_api.h"
 
 /*#define DEBUG_POP3  1 */
@@ -36,8 +38,9 @@ typedef struct _POP3_CLIENT_APP_CONFIG
 
 typedef enum
 {
-    POP3_CLIENT_STATE_AUTH,
-    POP3_CLIENT_STATE_TRANS,
+    POP3_CLIENT_STATE_AUTH,     // POP3 - AUTHORIZATION state
+    POP3_CLIENT_STATE_TRANS,    // POP3 - TRANSACTION state
+    POP3_CLIENT_STATE_STLS_CMD  // POP3 - AUTHORIZATION hybrid state (probable POP3S)
 } POP3ClientState;
 
 typedef struct _CLIENT_POP3_DATA
@@ -58,9 +61,10 @@ static POP3_CLIENT_APP_CONFIG pop3_config;
 static CLIENT_APP_RETCODE pop3_ca_init(const InitClientAppAPI * const init_api, SF_LIST *config);
 static void pop3_ca_clean(const CleanClientAppAPI * const clean_api);
 static CLIENT_APP_RETCODE pop3_ca_validate(const uint8_t *data, uint16_t size, const int dir,
-                                           FLOW *flowp, const SFSnortPacket *pkt, struct _Detector *userData);
+                                           tAppIdData *flowp, SFSnortPacket *pkt, struct _Detector *userData,
+                                           const tAppIdConfig *pConfig);
 
-static RNAClientAppModule client_app_mod =
+static tRNAClientAppModule client_app_mod =
 {
     .name = "POP3",
     .proto = IPPROTO_TCP,
@@ -102,18 +106,40 @@ static const uint8_t CAPA2[] = "CAPA\x00a";
 static const uint8_t AUTH[] = "AUTH ";
 static const uint8_t AUTHEOC[] = "AUTH\x00d\x00a";
 static const uint8_t AUTHEOC2[] = "AUTH\x00a";
+static const uint8_t AUTHEOC3[] = "AUTH \x00d\x00a";
+static const uint8_t AUTHEOC4[] = "AUTH \x00a";
+static const uint8_t STLSEOC[] = "STLS\x00d\x00a";
+static const uint8_t STLSEOC2[] = "STLS\x00a";
+
+typedef enum
+{
+    /* order MUST correspond to that in the array, patterns[], below */
+    PATTERN_USER,
+    PATTERN_PASS,
+    PATTERN_APOP,
+    PATTERN_AUTH,
+    PATTERN_AUTHEOC,
+    PATTERN_AUTHEOC2,
+    PATTERN_AUTHEOC3,
+    PATTERN_AUTHEOC4,
+    PATTERN_STLSEOC,
+    PATTERN_STLSEOC2,
+    PATTERN_POP3_OTHER // always last
+} Client_App_Pattern_Index;
 
 static Client_App_Pattern patterns[] =
 {
-    /* USER must be first */
     {USER, sizeof(USER)-1, 0},
-    /* AUTH must be second */
-    {AUTH, sizeof(AUTH)-1, 0},
-    /* PASS must be third */
     {PASS, sizeof(PASS)-1, 0},
+    {APOP, sizeof(APOP)-1, 0},
+    {AUTH, sizeof(AUTH)-1, 0},
     {AUTHEOC, sizeof(AUTHEOC)-1, 1},
     {AUTHEOC2, sizeof(AUTHEOC2)-1, 1},
-    {APOP, sizeof(APOP)-1, 0},
+    {AUTHEOC3, sizeof(AUTHEOC3)-1, 1},
+    {AUTHEOC4, sizeof(AUTHEOC4)-1, 1},
+    {STLSEOC, sizeof(STLSEOC)-1, 1},
+    {STLSEOC2, sizeof(STLSEOC2)-1, 1},
+    /* These are represented by index >= PATTERN_POP3_OTHER */
     {DELE, sizeof(DELE)-1, 0},
     {LISTC, sizeof(LISTC)-1, 0},
     {LISTEOC, sizeof(LISTEOC)-1, 1},
@@ -135,8 +161,6 @@ static Client_App_Pattern patterns[] =
     {CAPA2, sizeof(CAPA2)-1, 1},
 };
 
-static int once;
-static void *cmd_matcher;
 static size_t longest_pattern;
 
 #define POP3_PORT   110
@@ -166,15 +190,16 @@ typedef struct _SERVICE_POP3_DATA
 } ServicePOP3Data;
 
 static int pop3_init(const InitServiceAPI * const init_api);
-MakeRNAServiceValidationPrototype(pop3_validate);
+static int pop3_validate(ServiceValidationArgs* args);
 
-static RNAServiceElement svc_element =
+static tRNAServiceElement svc_element =
 {
     .next = NULL,
     .validate = &pop3_validate,
     .detectorType = DETECTOR_TYPE_DECODER,
     .name = "pop3",
     .ref_count = 1,
+    .current_ref_count = 1,
 };
 
 static RNAServiceValidationPort pp[] =
@@ -183,7 +208,7 @@ static RNAServiceValidationPort pp[] =
     {NULL, 0, 0}
 };
 
-static RNAServiceValidationModule service_mod =
+static tRNAServiceValidationModule service_mod =
 {
     .name = "POP3",
     .init = &pop3_init,
@@ -198,7 +223,7 @@ typedef struct _POP3_DETECTOR_DATA
     int need_continue;
 } POP3DetectorData;
 
-SO_PUBLIC RNADetectorValidationModule pop3_detector_mod =
+SF_SO_PUBLIC RNADetectorValidationModule pop3_detector_mod =
 {
     .service = &service_mod,
     .client = &client_app_mod,
@@ -206,47 +231,42 @@ SO_PUBLIC RNADetectorValidationModule pop3_detector_mod =
 
 static tAppRegistryEntry appIdRegistry[] =
 {
-    {APP_ID_POP3, APPINFO_FLAG_SERVICE_ADDITIONAL | APPINFO_FLAG_CLIENT_USER}
+    {APP_ID_POP3, APPINFO_FLAG_SERVICE_ADDITIONAL | APPINFO_FLAG_CLIENT_USER},
+    {APP_ID_POP3S, APPINFO_FLAG_SERVICE_ADDITIONAL | APPINFO_FLAG_CLIENT_USER}
 };
 
 static CLIENT_APP_RETCODE pop3_ca_init(const InitClientAppAPI * const init_api, SF_LIST *config)
 {
     unsigned i;
     RNAClientAppModuleConfigItem *item;
+    void *cmd_matcher;
 
-    if (!once)
+    if (!(cmd_matcher = _dpd.searchAPI->search_instance_new_ex(MPSE_ACF)))
+        return CLIENT_APP_EINVALID;
+
+    for (i=0; i < sizeof(patterns)/sizeof(*patterns); i++)
     {
-        once = 1;
+        _dpd.searchAPI->search_instance_add_ex(cmd_matcher,
+                (char *)patterns[i].pattern,
+                patterns[i].length,
+                &patterns[i],
+                STR_SEARCH_CASE_INSENSITIVE
+                );
+        if (patterns[i].length > longest_pattern)
+            longest_pattern = patterns[i].length;
     }
+    _dpd.searchAPI->search_instance_prep(cmd_matcher);
 
-    if (!cmd_matcher)
-    {
-        if (!(cmd_matcher = _dpd.searchAPI->search_instance_new_ex(MPSE_ACF)))
-            return CLIENT_APP_EINVALID;
-
-        for (i=0; i < sizeof(patterns)/sizeof(*patterns); i++)
-        {
-            _dpd.searchAPI->search_instance_add_ex(cmd_matcher,
-                               (char *)patterns[i].pattern,
-                               patterns[i].length,
-                               &patterns[i],
-                               STR_SEARCH_CASE_INSENSITIVE
-                               );
-            if (patterns[i].length > longest_pattern)
-                longest_pattern = patterns[i].length;
-        }
-        _dpd.searchAPI->search_instance_prep(cmd_matcher);
-    }
+    AppIdAddGenericConfigItem(init_api->pAppidConfig, client_app_mod.name, cmd_matcher);
 
     pop3_config.enabled = 1;
 
     if (config)
     {
         for (item = (RNAClientAppModuleConfigItem *)sflist_first(config);
-             item;
-             item = (RNAClientAppModuleConfigItem *)sflist_next(config))
-        {
-            _dpd.debugMsg(DEBUG_LOG,"Processing %s: %s\n",item->name, item->value);
+                item;
+                item = (RNAClientAppModuleConfigItem *)sflist_next(config))
+        { _dpd.debugMsg(DEBUG_LOG,"Processing %s: %s\n",item->name, item->value);
             if (strcasecmp(item->name, "enabled") == 0)
             {
                 pop3_config.enabled = atoi(item->value);
@@ -260,48 +280,45 @@ static CLIENT_APP_RETCODE pop3_ca_init(const InitClientAppAPI * const init_api, 
         {
             _dpd.debugMsg(DEBUG_LOG,"registering pattern: %s\n",(const char *)patterns[i].pattern);
             init_api->RegisterPatternNoCase(&pop3_ca_validate, IPPROTO_TCP, patterns[i].pattern,
-                                            patterns[i].length, 0);
+                    patterns[i].length, 0, init_api->pAppidConfig);
         }
 
     }
 
 
-	unsigned j;
-	for (j=0; j < sizeof(appIdRegistry)/sizeof(*appIdRegistry); j++)
-	{
-		_dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[j].appId);
-		init_api->RegisterAppId(&pop3_ca_validate, appIdRegistry[j].appId, appIdRegistry[j].additionalInfo, NULL);
-	}
+    unsigned j;
+    for (j=0; j < sizeof(appIdRegistry)/sizeof(*appIdRegistry); j++)
+    {
+        _dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[j].appId);
+        init_api->RegisterAppId(&pop3_ca_validate, appIdRegistry[j].appId, appIdRegistry[j].additionalInfo, init_api->pAppidConfig);
+    }
 
     return CLIENT_APP_SUCCESS;
 }
 
 static int pop3_init(const InitServiceAPI * const init_api)
 {
-    if (!once)
-    {
-        once = 1;
-    }
-
-    init_api->RegisterPatternUser(&pop3_validate, IPPROTO_TCP, (uint8_t *)POP3_OK, sizeof(POP3_OK)-1, 0, "pop3");
-    init_api->RegisterPatternUser(&pop3_validate, IPPROTO_TCP, (uint8_t *)POP3_ERR, sizeof(POP3_ERR)-1, 0, "pop3");
+    init_api->RegisterPatternUser(&pop3_validate, IPPROTO_TCP, (uint8_t *)POP3_OK, sizeof(POP3_OK)-1, 0, "pop3", init_api->pAppidConfig);
+    init_api->RegisterPatternUser(&pop3_validate, IPPROTO_TCP, (uint8_t *)POP3_ERR, sizeof(POP3_ERR)-1, 0, "pop3", init_api->pAppidConfig);
 
 	unsigned j;
 	for (j=0; j < sizeof(appIdRegistry)/sizeof(*appIdRegistry); j++)
 	{
 		_dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[j].appId);
-		init_api->RegisterAppId(&pop3_validate, appIdRegistry[j].appId, appIdRegistry[j].additionalInfo, NULL);
+		init_api->RegisterAppId(&pop3_validate, appIdRegistry[j].appId, appIdRegistry[j].additionalInfo, init_api->pAppidConfig);
 	}
     return 0;
 }
 
 static void pop3_ca_clean(const CleanClientAppAPI * const clean_api)
 {
+    void    *cmd_matcher = AppIdFindGenericConfigItem(clean_api->pAppidConfig, client_app_mod.name);
     if (cmd_matcher)
     {
         _dpd.searchAPI->search_instance_free(cmd_matcher);
         cmd_matcher = NULL;
     }
+    AppIdRemoveGenericConfigItem(clean_api->pAppidConfig, client_app_mod.name);
 }
 
 static int pop3_pattern_match(void* id, void *unused_tree, int index, void* data, void *unused_neg)
@@ -362,7 +379,7 @@ static int pop3_check_line(const uint8_t * *data, const uint8_t *end)
     return 1;
 }
 
-static int pop3_server_vaildate(POP3DetectorData *dd, const uint8_t *data, uint16_t size, FLOW *flowp, int server)
+static int pop3_server_validate(POP3DetectorData *dd, const uint8_t *data, uint16_t size, tAppIdData *flowp, int server)
 {
     static const char ven_cppop[] = "cppop";
     static const char ven_cc[] = "Cubic Circle";
@@ -422,7 +439,22 @@ static int pop3_server_vaildate(POP3DetectorData *dd, const uint8_t *data, uint1
             return -1;
         if (pop3_check_line(&data, end) < 0)
             return -1;
-        if (dd->client.username)
+        if (dd->client.state == POP3_CLIENT_STATE_STLS_CMD)
+        {
+            if (pd->error)
+            {
+                /* We failed to transition to POP3S - fall back to normal POP3 state, AUTHORIZATION */
+                dd->client.state = POP3_CLIENT_STATE_AUTH;
+            }
+            else
+            {
+                setAppIdFlag(flowp, APPID_SESSION_ENCRYPTED);
+                clearAppIdFlag(flowp, APPID_SESSION_CLIENT_GETS_SERVER_PACKETS);
+                /* we are potentially overriding the APP_ID_POP3 assessment that was made earlier. */
+                client_app_mod.api->add_app(flowp, APP_ID_POP3S, APP_ID_POP3S, NULL); // sets APPID_SESSION_CLIENT_DETECTED
+            }
+        }
+        else if (dd->client.username) // possible only with non-TLS authentication therefor: APP_ID_POP3
         {
             if (pd->error)
             {
@@ -436,10 +468,10 @@ static int pop3_server_vaildate(POP3DetectorData *dd, const uint8_t *data, uint1
                 free(dd->client.username);
                 dd->client.username = NULL;
                 dd->need_continue = 0;
-                flow_clear(flowp, FLOW_CLIENT_GETS_SERVER_PACKETS);
+                clearAppIdFlag(flowp, APPID_SESSION_CLIENT_GETS_SERVER_PACKETS);
                 dd->client.got_user = 1;
                 if (dd->client.detected)
-                    flow_mark(flowp, FLOW_CLIENTAPPDETECTED);
+                    setAppIdFlag(flowp, APPID_SESSION_CLIENT_DETECTED);
             }
         }
         if (server && begin)
@@ -620,7 +652,8 @@ ven_ver_done:;
 }
 
 static CLIENT_APP_RETCODE pop3_ca_validate(const uint8_t *data, uint16_t size, const int dir,
-                                           FLOW *flowp, const SFSnortPacket *pkt, struct _Detector *userData)
+                                           tAppIdData *flowp, SFSnortPacket *pkt, struct _Detector *userData,
+                                           const tAppIdConfig *pConfig)
 {
     const uint8_t *s = data;
     const uint8_t *end = (data + size);
@@ -633,7 +666,7 @@ static CLIENT_APP_RETCODE pop3_ca_validate(const uint8_t *data, uint16_t size, c
         return CLIENT_APP_INPROCESS;
 
 #ifdef APP_ID_USES_REASSEMBLED
-    pop3_detector_mod.streamAPI->response_flush_stream((SFSnortPacket *)pkt);
+    pop3_detector_mod.streamAPI->response_flush_stream(pkt);
 #endif
 
     dd = pop3_detector_mod.api->data_get(flowp, pop3_detector_mod.flow_data_index);
@@ -657,7 +690,7 @@ static CLIENT_APP_RETCODE pop3_ca_validate(const uint8_t *data, uint16_t size, c
     {
         dd->need_continue = 1;
         fd->set_flags = 1;
-        flow_mark(flowp, FLOW_CLIENT_GETS_SERVER_PACKETS);
+        setAppIdFlag(flowp, APPID_SESSION_CLIENT_GETS_SERVER_PACKETS);
     }
 
     if (dir == APP_ID_FROM_RESPONDER)
@@ -667,8 +700,8 @@ static CLIENT_APP_RETCODE pop3_ca_validate(const uint8_t *data, uint16_t size, c
         DumpHex(SF_DEBUG_FILE, data, size);
 #endif
 
-        if (pop3_server_vaildate(dd, data, size, flowp, 0))
-            flow_clear(flowp, FLOW_CLIENT_GETS_SERVER_PACKETS);
+        if (pop3_server_validate(dd, data, size, flowp, 0))
+            clearAppIdFlag(flowp, APPID_SESSION_CLIENT_GETS_SERVER_PACKETS);
         return CLIENT_APP_INPROCESS;
     }
 
@@ -679,6 +712,9 @@ static CLIENT_APP_RETCODE pop3_ca_validate(const uint8_t *data, uint16_t size, c
 
     while ((length = (end - s)))
     {
+        unsigned pattern_index;
+        void *cmd_matcher = AppIdFindGenericConfigItem((tAppIdConfig *)pConfig, client_app_mod.name);
+
         cmd = NULL;
         _dpd.searchAPI->search_instance_find_all(cmd_matcher,
                    (char *)s,
@@ -688,89 +724,124 @@ static CLIENT_APP_RETCODE pop3_ca_validate(const uint8_t *data, uint16_t size, c
         if (!cmd)
         {
             dd->need_continue = 0;
-            flow_mark(flowp, FLOW_CLIENTAPPDETECTED);
+            setAppIdFlag(flowp, APPID_SESSION_CLIENT_DETECTED);
             return CLIENT_APP_SUCCESS;
         }
         s += cmd->length;
 
+        pattern_index = cmd - patterns; // diff of ptr into array and its base addr is the corresponding index.
         switch (fd->state)
         {
+        case POP3_CLIENT_STATE_STLS_CMD:
+            /* We failed to transition to POP3S - fall back to normal POP3 AUTHORIZATION state */
+            fd->state = POP3_CLIENT_STATE_AUTH;
+            // fall through
+
         case POP3_CLIENT_STATE_AUTH:
-
-            if (cmd == &patterns[0])
+            switch (pattern_index)
             {
-                char username[((255 - (sizeof(USER) - 1)) - 2) + 1];
-                char *p = username;
-                char *p_end = p + sizeof(username) - 1;
-                int found_tick = 0;
-
-                for (; s < end && p < p_end; s++)
+            case PATTERN_STLSEOC:
+            case PATTERN_STLSEOC2:
                 {
-                    if (isalnum(*s) || *s == '.' || *s == '@' || *s == '-' || *s == '_')
-                    {
-                        if (!found_tick)
-                        {
-                            *p = *s;
-                            p++;
-                        }
-                    }
-                    else if (*s == '`')
-                        found_tick = 1;
-                    else if (*s == '\r' || *s == '\n')
-                    {
-                        *p = 0;
-                        if (username[0])
-                        {
-                            if (fd->username)
-                                free(fd->username);
-                            fd->username = strdup(username);
-                            if (!fd->username)
-                                _dpd.errMsg("failed to allocate user name");
-                        }
-                        break;
-                    }
-                    else
-                        break;
+                    /* If the STLS command succeeds we will be in a TLS negotiation state.
+                       Wait for the "+OK" from the server using this STLS hybrid state. */
+                    fd->state = POP3_CLIENT_STATE_STLS_CMD;
+                    /* skip extra CRLFs */
+                    for (; (s < end) && (*s == '\r' || *s == '\n'); s++);
                 }
-                for (; (s < end) && *s != '\r' && *s != '\n'; s++);
-                for (; (s < end) && (*s == '\r' || *s == '\n'); s++);
-            }
-            /* APOP or AUTH */
-            else if ((cmd == &patterns[1]) || (cmd == &patterns[3]) || (cmd == &patterns[4]) || (cmd == &patterns[5]))
-            {
-                fd->state = POP3_CLIENT_STATE_TRANS;
-                if (!cmd->eoc)
-                    for (; (s < end) && *s != '\r' && *s != '\n'; s++);
-                for (; (s < end) && (*s == '\r' || *s == '\n'); s++);
-            }
-            /* PASS */
-            else if (cmd == &patterns[2] && fd->got_user)
-            {
-                fd->state = POP3_CLIENT_STATE_TRANS;
-                for (; (s < end) && *s != '\r' && *s != '\n'; s++);
-                for (; (s < end) && (*s == '\r' || *s == '\n'); s++);
-            }
-            else
-            {
-                if (!cmd->eoc)
-                    for (; (s < end) && *s != '\r' && *s != '\n'; s++);
-                for (; (s < end) && (*s == '\r' || *s == '\n'); s++);
-            }
+                break;
+            case PATTERN_APOP:
+            case PATTERN_USER:
+                {
+                    char username[((255 - (sizeof(USER) - 1)) - 2) + 1];
+                    char *p = username;
+                    char *p_end = p + sizeof(username) - 1;
+                    int found_tick = 0;
 
+                    for (; s < end && p < p_end; s++)
+                    {
+                        if (isalnum(*s) || *s == '.' || *s == '@' || *s == '-' || *s == '_')
+                        {
+                            if (!found_tick)
+                            {
+                                *p = *s;
+                                p++;
+                            }
+                        }
+                        else if (*s == '`')
+                            found_tick = 1;
+                        else if (*s == '\r' || *s == '\n' || *s == ' ') // test for space for APOP case
+                        {
+                            *p = 0;
+                            if (username[0])
+                            {
+                                if (fd->username)
+                                    free(fd->username);
+                                fd->username = strdup(username);
+                                if (!fd->username)
+                                    _dpd.errMsg("failed to allocate user name");
+                            }
+                            break;
+                        }
+                        else
+                            break;
+                    }
+                    if (pattern_index == PATTERN_APOP)
+                    {
+                        /* the APOP command contains the user AND the equivalent of a password. */
+                        fd->state = POP3_CLIENT_STATE_TRANS;
+                    }
+                    for (; (s < end) && *s != '\r' && *s != '\n'; s++);
+                    for (; (s < end) && (*s == '\r' || *s == '\n'); s++);
+                }
+                break;
+
+            case PATTERN_AUTH:
+                /* the AUTH<space> command, containing a parameter implies non-TLS security negotiation */
+                fd->state = POP3_CLIENT_STATE_TRANS; // look ahead for normal POP3 commands
+                for (; (s < end) && *s != '\r' && *s != '\n'; s++);
+                // having skipped to the end of the line, fall through for the empty-line skip
+
+            case PATTERN_AUTHEOC:  // used with subsequent CAPA; no state change;
+            case PATTERN_AUTHEOC2:
+            case PATTERN_AUTHEOC3: // AUTH<space> with nothing after, Mircosoft ext., is query-only behavior; no state change;
+            case PATTERN_AUTHEOC4:
+                for (; (s < end) && (*s == '\r' || *s == '\n'); s++);
+                break;
+
+            case PATTERN_PASS:
+                if (fd->got_user)
+                {
+                    fd->state = POP3_CLIENT_STATE_TRANS;
+                    for (; (s < end) && *s != '\r' && *s != '\n'; s++);
+                    for (; (s < end) && (*s == '\r' || *s == '\n'); s++);
+                    break;
+                }
+                // fall through because we are not changing to TRANSACTION state, yet
+            default:
+                {
+                    if (!cmd->eoc)
+                        for (; (s < end) && *s != '\r' && *s != '\n'; s++);
+                    for (; (s < end) && (*s == '\r' || *s == '\n'); s++);
+                }
+                break;
+            } // end of switch(pattern_index)
             break;
 
         case POP3_CLIENT_STATE_TRANS:
-            if (cmd != &patterns[0] && cmd != &patterns[1] && cmd != &patterns[2] && cmd != &patterns[3] && cmd != &patterns[4] && cmd != &patterns[5])
+            if (pattern_index >= PATTERN_POP3_OTHER)
             {
-                client_app_mod.api->add_app(flowp, APP_ID_POP3, APP_ID_POP3, NULL);
+                /* We stayed in non-secure mode and received a TRANSACTION-state command: POP3 found */
+                client_app_mod.api->add_app(flowp, APP_ID_POP3, APP_ID_POP3, NULL); // sets APPID_SESSION_CLIENT_DETECTED
                 fd->detected = 1;
-                if (fd->got_user)
-                    flow_mark(flowp, FLOW_CLIENTAPPDETECTED);
+            }
+            else
+            {
+                ; // ignore AUTHORIZATION-state commands while in TRANSACTION state
             }
             if (!cmd->eoc)
                 for (; (s < end) && *s != '\r' && *s != '\n'; s++);
             for (; (s < end) && (*s == '\r' || *s == '\n'); s++);
-
             break;
         }
 
@@ -778,16 +849,21 @@ static CLIENT_APP_RETCODE pop3_ca_validate(const uint8_t *data, uint16_t size, c
     return CLIENT_APP_INPROCESS;
 }
 
-MakeRNAServiceValidationPrototype(pop3_validate)
+static int pop3_validate(ServiceValidationArgs* args)
 {
     POP3DetectorData *dd;
     ServicePOP3Data *pd;
+    tAppIdData *flowp = args->flowp;
+    const uint8_t *data = args->data;
+    SFSnortPacket *pkt = args->pkt; 
+    const int dir = args->dir; 
+    uint16_t size = args->size;
 
     if (!size)
         goto inprocess;
 
 #ifdef APP_ID_USES_REASSEMBLED
-    pop3_detector_mod.streamAPI->response_flush_stream((SFSnortPacket *)pkt);
+    pop3_detector_mod.streamAPI->response_flush_stream(pkt);
 #endif
 
     if (dir != APP_ID_FROM_RESPONDER)
@@ -817,38 +893,40 @@ MakeRNAServiceValidationPrototype(pop3_validate)
         pd = &dd->server;
 
     if (dd->need_continue)
-        flow_mark(flowp, FLOW_CONTINUE);
+        setAppIdFlag(flowp, APPID_SESSION_CONTINUE);
     else
     {
-        flow_clear(flowp, FLOW_CONTINUE);
-        if (flow_checkflag(flowp, FLOW_SERVICEDETECTED))
+        clearAppIdFlag(flowp, APPID_SESSION_CONTINUE);
+        if (getAppIdFlag(flowp, APPID_SESSION_SERVICE_DETECTED))
             return SERVICE_SUCCESS;
     }
 
-    if (!pop3_server_vaildate(dd, data, size, flowp, 1))
+    if (!pop3_server_validate(dd, data, size, flowp, 1))
     {
-        if (pd->count >= POP3_COUNT_THRESHOLD && !flow_checkflag(flowp, FLOW_SERVICEDETECTED))
+        if (pd->count >= POP3_COUNT_THRESHOLD && !getAppIdFlag(flowp, APPID_SESSION_SERVICE_DETECTED))
         {
             service_mod.api->add_service_consume_subtype(flowp, pkt, dir, &svc_element,
-                                                         APP_ID_POP3, pd->vendor,
-                                                         pd->version[0] ? pd->version:NULL, pd->subtype);
+                                                         dd->client.state == POP3_CLIENT_STATE_STLS_CMD ? APP_ID_POP3S : APP_ID_POP3,
+                                                         pd->vendor,
+                                                         pd->version[0] ? pd->version:NULL, pd->subtype, NULL);
             pd->subtype = NULL;
             return SERVICE_SUCCESS;
         }
     }
-    else if (!flow_checkflag(flowp, FLOW_SERVICEDETECTED))
+    else if (!getAppIdFlag(flowp, APPID_SESSION_SERVICE_DETECTED))
     {
-        service_mod.api->fail_service(flowp, pkt, dir, &svc_element);
+        service_mod.api->fail_service(flowp, pkt, dir, &svc_element,
+                                      service_mod.flow_data_index, args->pConfig, NULL);
         return SERVICE_NOMATCH;
     }
     else
     {
-        flow_clear(flowp, FLOW_CONTINUE);
+        clearAppIdFlag(flowp, APPID_SESSION_CONTINUE);
         return SERVICE_SUCCESS;
     }
 
 inprocess:;
-    service_mod.api->service_inprocess(flowp, pkt, dir, &svc_element);
+    service_mod.api->service_inprocess(flowp, pkt, dir, &svc_element, NULL);
     return SERVICE_INPROCESS;
 }
 

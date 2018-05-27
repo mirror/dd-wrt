@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -76,6 +76,13 @@ int imapDetectCalled = 0;
 #include "snort_bounds.h"
 
 #include "file_api.h"
+#ifdef REG_TEST
+#include "reg_test.h"
+#endif
+
+#ifdef DUMP_BUFFER
+#include "imap_buffer_dump.h"
+#endif
 
 const int MAJOR_VERSION = 1;
 const int MINOR_VERSION = 0;
@@ -87,6 +94,8 @@ const char *PROTOCOL_NAME = "IMAP";
 
 MemPool *imap_mempool = NULL;
 MemPool *imap_mime_mempool = NULL;
+
+IMAP_Stats imap_stats;
 
 tSfPolicyUserContextId imap_config = NULL;
 IMAPConfig *imap_eval_config = NULL;
@@ -101,12 +110,18 @@ static void IMAPResetStatsFunction(int, void *);
 static void registerPortsForDispatch( struct _SnortConfig *sc, IMAPConfig *policy );
 static void registerPortsForReassembly( IMAPConfig *policy, int direction );
 static void _addPortsToStreamFilter(struct _SnortConfig *, IMAPConfig *, tSfPolicyId);
+static void IMAP_PrintStats(int);
 #ifdef TARGET_BASED
 static void _addServicesToStreamFilter(struct _SnortConfig *, tSfPolicyId);
 #endif
 static int IMAPCheckConfig(struct _SnortConfig *);
 
 #ifdef SNORT_RELOAD
+static int IMAPMempoolFreeUsedBucket(MemPool *memory_pool);
+static unsigned IMAPReloadMimeMempoolAdjust(unsigned imapMaxWork);
+static unsigned IMAPReloadLogMempoolAdjust(unsigned imapMaxWork);
+static bool IMAPMimeReloadAdjust(bool idle, tSfPolicyId raPolicyId, void* userData);
+static bool IMAPLogReloadAdjust(bool idle, tSfPolicyId raPolicyId, void* userData);
 static void IMAPReload(struct _SnortConfig *, char *, void **);
 static int IMAPReloadVerify(struct _SnortConfig *, void *);
 static void * IMAPReloadSwap(struct _SnortConfig *, void *);
@@ -135,6 +150,10 @@ void SetupIMAP(void)
     _dpd.registerPreproc("imap", IMAPInit, IMAPReload,
                          IMAPReloadVerify, IMAPReloadSwap, IMAPReloadSwapFree);
 #endif
+#ifdef DUMP_BUFFER
+    _dpd.registerBufferTracer(getIMAPBuffers, IMAP_BUFFER_DUMP_FUNC);
+#endif
+
 }
 
 
@@ -173,6 +192,7 @@ static void IMAPInit(struct _SnortConfig *sc, char *args)
         /* _dpd.addPreproc(IMAPDetect, PRIORITY_APPLICATION, PP_IMAP, PROTO_BIT__TCP);*/
         _dpd.addPreprocExit(IMAPCleanExitFunction, NULL, PRIORITY_LAST, PP_IMAP);
         _dpd.addPreprocReset(IMAPResetFunction, NULL, PRIORITY_LAST, PP_IMAP);
+        _dpd.registerPreprocStats(IMAP_PROTO_REF_STR, IMAP_PrintStats);
         _dpd.addPreprocResetStats(IMAPResetStatsFunction, NULL, PRIORITY_LAST, PP_IMAP);
         _dpd.addPreprocConfCheck(sc, IMAPCheckConfig);
 
@@ -189,7 +209,7 @@ static void IMAPInit(struct _SnortConfig *sc, char *args)
 #endif
 
 #ifdef PERF_PROFILING
-        _dpd.addPreprocProfileFunc("imap", (void*)&imapPerfStats, 0, _dpd.totalPerfStats);
+        _dpd.addPreprocProfileFunc("imap", (void*)&imapPerfStats, 0, _dpd.totalPerfStats, NULL);
 #endif
     }
 
@@ -349,7 +369,7 @@ static void registerPortsForDispatch( struct _SnortConfig *sc, IMAPConfig *polic
     for ( port = 0; port < MAXPORTS; port++ )
     {
         if( isPortEnabled( policy->ports, port ) )
-            _dpd.sessionAPI->enable_preproc_for_port( sc, PP_IMAP, PROTO_BIT__TCP, port ); 
+            _dpd.sessionAPI->enable_preproc_for_port( sc, PP_IMAP, PROTO_BIT__TCP, port );
     }
 }
 
@@ -400,7 +420,8 @@ static int CheckFilePolicyConfig(
 {
     IMAPConfig *context = (IMAPConfig *)pData;
 
-    context->decode_conf.file_depth = _dpd.fileAPI->get_max_file_depth();
+     /* Use new Snort config to get the max file depth */
+    context->decode_conf.file_depth = _dpd.fileAPI->get_max_file_depth(sc, true);
     if (context->decode_conf.file_depth > -1)
         context->log_config.log_filename = 1;
     updateMaxDepth(context->decode_conf.file_depth, &context->decode_conf.max_depth);
@@ -510,6 +531,29 @@ static int IMAPCheckConfig(struct _SnortConfig *sc)
     return 0;
 }
 
+static void IMAP_PrintStats(int exiting)
+{
+    _dpd.logMsg("IMAP Preprocessor Statistics\n");
+    _dpd.logMsg("  Total sessions                                    : " STDu64 "\n", imap_stats.sessions);
+    _dpd.logMsg("  Max concurrent sessions                           : " STDu64 "\n", imap_stats.max_conc_sessions);
+    if (imap_stats.sessions > 0)
+    {
+        _dpd.logMsg("  Base64 attachments decoded                        : " STDu64 "\n", imap_stats.mime_stats.attachments[DECODE_B64]);
+        _dpd.logMsg("  Total Base64 decoded bytes                        : " STDu64 "\n", imap_stats.mime_stats.decoded_bytes[DECODE_B64]);
+        _dpd.logMsg("  Quoted-Printable attachments decoded              : " STDu64 "\n", imap_stats.mime_stats.attachments[DECODE_QP]);
+        _dpd.logMsg("  Total Quoted decoded bytes                        : " STDu64 "\n", imap_stats.mime_stats.decoded_bytes[DECODE_QP]);
+        _dpd.logMsg("  UU attachments decoded                            : " STDu64 "\n", imap_stats.mime_stats.attachments[DECODE_UU]);
+        _dpd.logMsg("  Total UU decoded bytes                            : " STDu64 "\n", imap_stats.mime_stats.decoded_bytes[DECODE_UU]);
+        _dpd.logMsg("  Non-Encoded MIME attachments extracted            : " STDu64 "\n", imap_stats.mime_stats.attachments[DECODE_BITENC]);
+        _dpd.logMsg("  Total Non-Encoded MIME bytes extracted            : " STDu64 "\n", imap_stats.mime_stats.decoded_bytes[DECODE_BITENC]);
+        if ( imap_stats.mime_stats.memcap_exceeded )
+            _dpd.logMsg("  Sessions not decoded due to memory unavailability : " STDu64 "\n", imap_stats.mime_stats.memcap_exceeded);
+        if ( imap_stats.log_memcap_exceeded )
+            _dpd.logMsg("  IMAP sessions fastpathed due to memcap exceeded: " STDu64 "\n", imap_stats.log_memcap_exceeded);
+    }
+
+}
+
 #ifdef SNORT_RELOAD
 static void IMAPReload(struct _SnortConfig *sc, char *args, void **new_config)
 {
@@ -591,11 +635,112 @@ static void IMAPReload(struct _SnortConfig *sc, char *args, void **new_config)
 #endif
 }
 
+static int IMAPMempoolFreeUsedBucket(MemPool *memory_pool)
+{
+   MemBucket *lru_bucket = NULL;
+
+   lru_bucket = mempool_get_lru_bucket(memory_pool);
+   if(lru_bucket)
+   {
+       /* Deleting least recently used IMAP session data here to adjust to new max_memory */
+       _dpd.sessionAPI->set_application_data(lru_bucket->scbPtr, PP_IMAP, NULL, NULL);
+       return 1;
+   }
+   return 0;
+}
+
+static unsigned IMAPReloadMimeMempoolAdjust(unsigned imapMaxWork)
+{
+     int retVal;
+
+     /* deleting MemBucket from free list in IMAP Mime Mempool */
+     imapMaxWork = mempool_prune_freelist(imap_mime_mempool, imap_mime_mempool->max_memory, imapMaxWork);
+
+     if(!imapMaxWork)
+        return 0;
+
+     for( ; imapMaxWork && ((imap_mime_mempool->used_memory + imap_mime_mempool->free_memory) > imap_mime_mempool->max_memory); imapMaxWork--)
+     {
+         /* deleting least recently used MemBucket from Used list in IMAP Mime Mempool */
+         retVal = IMAPMempoolFreeUsedBucket(imap_mime_mempool);
+         if(!retVal)
+            break;
+     }
+
+     return imapMaxWork;
+}
+
+static unsigned IMAPReloadLogMempoolAdjust(unsigned imapMaxWork)
+{
+     int retVal;
+
+     /* deleting MemBucket from free list in IMAP Log Mempool */
+     imapMaxWork = mempool_prune_freelist(imap_mempool, imap_mempool->max_memory, imapMaxWork);
+
+     if(!imapMaxWork)
+        return 0;
+
+     for( ; imapMaxWork && ((imap_mempool->used_memory + imap_mempool->free_memory) > imap_mempool->max_memory); imapMaxWork--)
+     {
+         /* deleting least recently used MemBucket from Used list in IMAP Log Mempool */
+         retVal = IMAPMempoolFreeUsedBucket(imap_mempool);
+         if(!retVal)
+          break;
+     }
+
+     return imapMaxWork;
+}
+
+static bool IMAPMimeReloadAdjust(bool idle, tSfPolicyId raPolicyId, void* userData)
+{
+    unsigned initialMaxWork = idle ? 512 : 5;
+    unsigned maxWork;
+
+    /* If new max_mime_mem is less than old configured max_mime_mem, need to adjust IMAP Mime Mempool.
+     * In order to adjust to new max_memory of mime mempool, delete buckets from free list.
+     * After deleting buckets from free list, still new max_memory is less than old value , delete buckets
+     * (least recently used i.e head node of used list )from used list till total memory reaches to new max_memory.
+     */
+    maxWork = IMAPReloadMimeMempoolAdjust(initialMaxWork);
+
+    if(maxWork == initialMaxWork)
+    {
+        imap_stats.max_conc_sessions = imap_stats.conc_sessions;
+        imap_stats.mime_stats.memcap_exceeded = 0;
+        return true;
+    }
+    else
+        return false;
+}
+
+static bool IMAPLogReloadAdjust(bool idle, tSfPolicyId raPolicyId, void* userData)
+{
+    unsigned initialMaxWork = idle ? 512 : 5;
+    unsigned maxWork;
+
+    /* If new memcap is less than old configured memcap, need to adjust IMAP Log Mempool.
+     * In order to adjust to new max_memory of log mempool, delete buckets from free list.
+     * After deleting buckets from free list, still new max_memory is less than old value , delete buckets
+     * (least recently used i.e head node of used list )from used list till total memory reaches to new max_memory.
+     */
+    maxWork = IMAPReloadLogMempoolAdjust(initialMaxWork);
+
+    if (maxWork == initialMaxWork)
+    {
+        imap_stats.max_conc_sessions = imap_stats.conc_sessions;
+        imap_stats.mime_stats.memcap_exceeded = 0;
+        return true;
+    }
+    else
+        return false;
+}
+
 static int IMAPReloadVerify(struct _SnortConfig *sc, void *swap_config)
 {
     tSfPolicyUserContextId imap_swap_config = (tSfPolicyUserContextId)swap_config;
     IMAPConfig *config = NULL;
     IMAPConfig *configNext = NULL;
+    tSfPolicyId policy_id = 0;
     int rval;
 
     if (imap_swap_config == NULL)
@@ -612,30 +757,27 @@ static int IMAPReloadVerify(struct _SnortConfig *sc, void *swap_config)
     if ((rval = sfPolicyUserDataIterate( sc, imap_swap_config, IMAPCheckPolicyConfig )))
         return rval;
 
-    if ( rval = sfPolicyUserDataIterate( sc, imap_swap_config, CheckFilePolicyConfig ) )
+    if ((rval = sfPolicyUserDataIterate( sc, imap_swap_config, CheckFilePolicyConfig )))
         return rval;
+
+    policy_id = _dpd.getParserPolicy(sc);
 
     if (imap_mime_mempool != NULL)
     {
-        if(_dpd.fileAPI->is_decoding_conf_changed(&(configNext->decode_conf),
-                &(config->decode_conf), "IMAP"))
-        {
-            return -1;
-        }
-
+        /* If max_mime_mem changes, mime mempool need to be adjusted bcz mempool max_memory will be changed.
+           Registering here to adjust Mime memory Pool when max_mime_mem changes. */
+        if( configNext->decode_conf.max_mime_mem  < config->decode_conf.max_mime_mem )
+              _dpd.reloadAdjustRegister(sc, "IMAP-MIME-MEMPOOL", policy_id, &IMAPMimeReloadAdjust, NULL, NULL);
     }
 
     if (imap_mempool != NULL)
     {
-        if (configNext == NULL)
+        if(configNext)
         {
-            _dpd.errMsg("IMAP reload: Changing the memcap requires a restart.\n");
-            return -1;
-        }
-        if (configNext->memcap != config->memcap)
-        {
-            _dpd.errMsg("IMAP reload: Changing the memcap requires a restart.\n");
-            return -1;
+             /* If memcap cahnges, log mempool need to be adjusted bcz mempool max_mempory will be changed.
+                Registering here to adjust Log memory Pool when memcap changes. */
+             if (configNext->memcap < config->memcap)
+                   _dpd.reloadAdjustRegister(sc, "IMAP-LOG-MEMPOOL", policy_id, &IMAPLogReloadAdjust, NULL, NULL);
         }
 
     }
@@ -685,6 +827,7 @@ static int IMAPReloadSwapPolicy(
 
 static void * IMAPReloadSwap(struct _SnortConfig *sc, void *swap_config)
 {
+    IMAPConfig *configNew = NULL, *configOld = NULL;
     tSfPolicyUserContextId imap_swap_config = (tSfPolicyUserContextId)swap_config;
     tSfPolicyUserContextId old_config = imap_config;
 
@@ -692,6 +835,41 @@ static void * IMAPReloadSwap(struct _SnortConfig *sc, void *swap_config)
         return NULL;
 
     imap_config = imap_swap_config;
+
+    configOld = (IMAPConfig *)sfPolicyUserDataGet(old_config, _dpd.getDefaultPolicy());
+    configNew = (IMAPConfig *)sfPolicyUserDataGet(imap_config, _dpd.getDefaultPolicy());
+
+    if(configNew)
+    {
+          if(imap_mime_mempool)
+          {
+              if((configOld->decode_conf.max_mime_mem != configNew->decode_conf.max_mime_mem) ||
+                 (configOld->decode_conf.max_depth != configNew->decode_conf.max_depth) )
+              {
+#ifdef REG_TEST
+                   _dpd.fileAPI->displayMimeMempool(imap_mime_mempool,&(configOld->decode_conf), &(configNew->decode_conf));
+#endif
+                   /* Update the imap_mime_mempool with new max_memmory and object size when max_mime_mem changes. */
+                   _dpd.fileAPI->update_mime_mempool(imap_mime_mempool, configNew->decode_conf.max_mime_mem, configNew->decode_conf.max_depth);
+              }
+          }
+          if(imap_mempool)
+          {
+              if(configOld->memcap != configNew->memcap)
+              {
+#ifdef REG_TEST
+                  _dpd.fileAPI->displayLogMempool(imap_mempool, configOld->memcap, configNew->memcap);
+#endif
+                  /* Update the imap_mempool with new max_memory and objest size when memcap changes. */
+                  _dpd.fileAPI->update_log_mempool(imap_mempool, configNew->memcap, 0);
+                  imap_stats.log_memcap_exceeded = 0;
+              }
+          }
+#ifdef REG_TEST
+          _dpd.fileAPI->displayDecodeDepth(&(configOld->decode_conf), &(configNew->decode_conf));
+#endif
+
+    }
 
     sfPolicyUserDataFreeIterate (old_config, IMAPReloadSwapPolicy);
 

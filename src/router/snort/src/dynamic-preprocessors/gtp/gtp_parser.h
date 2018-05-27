@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -25,7 +25,7 @@
  ****************************************************************************/
 
 #ifndef _GTP_PARSER_H_
-#define _GTP_PARSE_H_
+#define _GTP_PARSER_H_
 
 #include "sfPolicyUserData.h"
 #include "snort_bounds.h"

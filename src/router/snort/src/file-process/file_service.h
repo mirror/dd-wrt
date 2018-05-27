@@ -1,7 +1,7 @@
 /*
  **
  **
- **  Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ **  Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  **  Copyright (C) 2012-2013 Sourcefire, Inc.
  **
  **  This program is free software; you can redistribute it and/or modify
@@ -31,13 +31,26 @@
 #include "file_service_config.h"
 #include "file_lib.h"
 
+typedef struct _FileServiceConfig
+{
+    File_policy_callback_func file_policy_cb;
+    File_type_callback_func  file_type_cb;
+    File_signature_callback_func file_signature_cb;
+    Log_file_action_func log_file_action;
+    bool file_type_id_enabled;
+    bool file_signature_enabled;
+    bool file_capture_enabled;
+}FileServiceConfig;
+
 /* Initialize file API, this must be called when snort restarts */
 void init_fileAPI(void);
 
 /* Free file configuration, this must be called when snort reloads/restarts*/
 void free_file_config(void*);
 
-void FileAPIPostInit(void);
+/* Swap the new config with current config */
+void FileServiceInstall(void);
+
 /* Close file API, this must be called when snort exits */
 void close_fileAPI(void);
 

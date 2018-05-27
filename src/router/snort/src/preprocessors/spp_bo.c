@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2005 Martin Roesch <roesch@sourcefire.com>
 **
@@ -259,7 +259,7 @@ static void BoInit(struct _SnortConfig *sc, char *args)
         AddFuncToPreprocCleanExitList(BoCleanExit, NULL, PRIORITY_LAST, PP_BO);
 
 #ifdef PERF_PROFILING
-        RegisterPreprocessorProfile("backorifice", &boPerfStats, 0, &totalPerfStats);
+        RegisterPreprocessorProfile("backorifice", &boPerfStats, 0, &totalPerfStats, NULL);
 #endif
     }
 
@@ -554,6 +554,7 @@ static void BoFind(Packet *p, void *context)
     char plaintext;
     int i;
     int bo_direction = 0;
+    uint32_t sid = 0;
     BoConfig *bo = NULL;
     PROFILE_VARS;
 
@@ -642,6 +643,7 @@ static void BoFind(Packet *p, void *context)
                 if ( (bo->drop_flags & BO_ALERT_CLIENT) )
                 {
                     Active_DropSession(p);
+                    sid = BO_CLIENT_TRAFFIC_DETECT;
                 }
                 DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN, "Client packet\n"););
             }
@@ -655,6 +657,7 @@ static void BoFind(Packet *p, void *context)
                 if ( (bo->drop_flags & BO_ALERT_SERVER) )
                 {
                     Active_DropSession(p);
+                    sid = BO_SERVER_TRAFFIC_DETECT;
                 }
                 DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN, "Server packet\n"););
             }
@@ -668,9 +671,17 @@ static void BoFind(Packet *p, void *context)
                 if ( (bo->drop_flags & BO_ALERT_GENERAL) )
                 {
                     Active_DropSession(p);
+                    sid = BO_TRAFFIC_DETECT;
                 }
             }
         }
+    }
+    if (Active_PacketWasDropped() || Active_PacketWouldBeDropped())
+    {
+        if (pkt_trace_enabled)
+            addPktTraceData(VERDICT_REASON_BO, snprintf(trace_line, MAX_TRACE_LINE,
+                "Back Orifice: gid %u, sid %u, %s\n", GENERATOR_SPP_BO, sid, getPktTraceActMsg()));
+        else addPktTraceData(VERDICT_REASON_BO, 0);
     }
 
     PREPROC_PROFILE_END(boPerfStats);

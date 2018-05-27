@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -26,38 +26,44 @@
 #include "commonAppMatcher.h"
 #include "httpCommon.h"
 #include "flow.h"
+#include "appIdConfig.h"
 
-void ClientAppInit(void);
-void ReconfigureClientApp(void);
-void CleanupClientApp(void);
+#define GENERIC_APP_OFFSET 2000000000
+
+void ClientAppInit(tAppidStaticConfig* appidSC, tAppIdConfig *pConfig);
+void ClientAppFinalize(tAppIdConfig *pConfig);
+void UnconfigureClientApp(tAppIdConfig *pConfig);
+void CleanupClientApp(tAppIdConfig *pConfig);
 int clientAppLoadCallback(void *symbol);
-int LoadClientAppModules(const char **dir_list);
-void clientCreatePattern(RNAClientAppFCN fcn, uint8_t proto,
-                         const uint8_t * const pattern, unsigned size,
-                         int position, unsigned nocase, struct _Detector *userData,
-                         const RNAClientAppModule *li);
+int clientAppLoadForConfigCallback(void *symbol, tClientAppConfig *pConfig);
+int LoadClientAppModules(const char **dir_list, tAppIdConfig *pConfig);
 void ClientAppRegisterPattern(RNAClientAppFCN fcn, uint8_t proto,
-                                     const uint8_t * const pattern, unsigned size,
-                                     int position, unsigned nocase, struct _Detector *userData);
+                              const uint8_t * const pattern, unsigned size,
+                              int position, unsigned nocase, struct _Detector *userData, tClientAppConfig *pConfig);
 const ClientAppApi *getClientApi(void);
-RNAClientAppModuleConfig * getClientAppModuleConfig(const char *moduleName);
-int AppIdDiscoverClientApp(const SFSnortPacket *p, int direction, tAppIdData *rnaData);
+RNAClientAppModuleConfig * getClientAppModuleConfig(const char *moduleName, tClientAppConfig *pConfig);
+int AppIdDiscoverClientApp(SFSnortPacket *p, int direction, tAppIdData *rnaData, const tAppIdConfig *pConfig);
+void AppIdAddClientApp(tAppIdData *flowp, tAppId service_id, tAppId id, const char *version);
 
-DetectorAppUrlList *getAppUrlList(void);
-const RNAClientAppModule *ClientAppGetClientAppModule(RNAClientAppFCN fcn, struct _Detector *userdata);
+DetectorAppUrlList *getAppUrlList(tAppIdConfig *pConfig);
+const tRNAClientAppModule *ClientAppGetClientAppModule(RNAClientAppFCN fcn, struct _Detector *userdata,
+                                                      tClientAppConfig *pConfig);
 
 int sipUaPatternAdd( 
         tAppId clientAppId,
         const char* clientVersion,
-        const char* uaPattern
+        const char* uaPattern,
+        tDetectorSipConfig *pSipConfig
         );
 int sipServerPatternAdd( 
         tAppId clientAppId,
         const char* clientVersion,
-        const char* uaPattern
+        const char* uaPattern,
+        tDetectorSipConfig *pSipConfig
         );
-int sipUaFinalize(void);
+int sipUaFinalize(tDetectorSipConfig *pSipConfig);
 int sipServerFinalize(void);
+int portPatternFinalize(tAppIdConfig *pConfig);
 
 #endif /* __CLIENT_APP_BASE_H__ */
 

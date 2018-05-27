@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -44,6 +44,7 @@ typedef enum _DCE2_SsnFlag
     DCE2_SSN_FLAG__AUTODETECTED       = 0x0010,
     DCE2_SSN_FLAG__PAF_ABORT          = 0x0020,
     DCE2_SSN_FLAG__NO_INSPECT         = 0x0040,
+    DCE2_SSN_FLAG__SMB2               = 0x0080,
     DCE2_SSN_FLAG__ALL                = 0xffff
 
 } DCE2_SsnFlag;
@@ -241,7 +242,7 @@ static inline void DCE2_SsnSetReassembly(const SFSnortPacket *p)
  ********************************************************************/
 static inline int DCE2_SsnIsRebuilt(const SFSnortPacket *p)
 {
-    return PacketHasFullPDU(p) || (p->flags & FLAG_REBUILT_STREAM);
+    return (PacketHasPAFPayload(p));
 }
 
 /********************************************************************

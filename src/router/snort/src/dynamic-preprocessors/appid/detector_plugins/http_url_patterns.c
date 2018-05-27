@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -28,14 +28,6 @@
 #define FP_OPERATION_AND   "%&%"
 #define PATTERN_PART_MAX 10
 
-typedef struct _HostUrlPatternsList
-{
-    HostUrlDetectorPattern *head;
-    HostUrlDetectorPattern *tail;
-} HostUrlPatternsList;
-
-static HostUrlPatternsList *hostUrlPatternsList = NULL;
-
 static void destroyHostUrlDetectorPattern(HostUrlDetectorPattern *pattern)
 {
     if (!pattern)
@@ -52,40 +44,40 @@ static void destroyHostUrlDetectorPattern(HostUrlDetectorPattern *pattern)
     free(pattern);
 }
 
-static void destroyHostUrlPatternList(void)
-{
-    if (!hostUrlPatternsList)
-        return;
-
-    destroyHostUrlDetectorPattern(hostUrlPatternsList->head);
-    free(hostUrlPatternsList);
-    hostUrlPatternsList = NULL;
-}
-
-
-static int addHostUrlPatternToList(HostUrlDetectorPattern *detector)
+static int addHostUrlPatternToList(HostUrlDetectorPattern *detector, HostUrlPatternsList **hostUrlPatternsList)
 {
     if (!detector)
         return -1;
 
-    if (!hostUrlPatternsList)
+    if (!(*hostUrlPatternsList))
     {
-        if ((hostUrlPatternsList = malloc(sizeof(*hostUrlPatternsList))) == NULL)
+        if ((*hostUrlPatternsList = malloc(sizeof(HostUrlPatternsList))) == NULL)
                 return -1;
 
-        hostUrlPatternsList->head = detector;
-        hostUrlPatternsList->tail = detector;
+        (*hostUrlPatternsList)->head = detector;
+        (*hostUrlPatternsList)->tail = detector;
     }
     else
     {
-        hostUrlPatternsList->tail->next = detector;
-        hostUrlPatternsList->tail = detector;
+        (*hostUrlPatternsList)->tail->next = detector;
+        (*hostUrlPatternsList)->tail = detector;
     }
 
     return 0;
 }
 
-int addMlmpPattern(void *hostUrlMatcher, const uint8_t *host_pattern, int host_pattern_size,
+void destroyHostUrlPatternList(HostUrlPatternsList **pHostUrlPatternsList)
+{
+    if (!(*pHostUrlPatternsList))
+        return;
+
+    destroyHostUrlDetectorPattern((*pHostUrlPatternsList)->head);
+    free(*pHostUrlPatternsList);
+    *pHostUrlPatternsList = NULL;
+}
+
+int addMlmpPattern(void *hostUrlMatcher, HostUrlPatternsList **hostUrlPatternsList,
+        const uint8_t *host_pattern, int host_pattern_size,
         const uint8_t *path_pattern, int path_pattern_size, const uint8_t *query_pattern, int query_pattern_size,
         tAppId appId, uint32_t payload_id, uint32_t service_id, uint32_t client_id, DHPSequence seq)
 {
@@ -164,7 +156,7 @@ int addMlmpPattern(void *hostUrlMatcher, const uint8_t *host_pattern, int host_p
 
     patterns[num_patterns].pattern = NULL;
 
-    if (addHostUrlPatternToList(detector))
+    if (addHostUrlPatternToList(detector, hostUrlPatternsList))
         return -1;
 
     return mlmpAddPattern(hostUrlMatcher, patterns, detector);
@@ -227,7 +219,6 @@ void destroyHostUrlMatcher(void **hostUrlMatcher)
         mlmpDestroy(*hostUrlMatcher);
         *hostUrlMatcher = NULL;
     }
-    destroyHostUrlPatternList();
 }
 
 int matchQueryElements(

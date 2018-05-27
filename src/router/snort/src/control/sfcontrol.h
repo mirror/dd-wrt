@@ -1,8 +1,8 @@
 /*
 **
-**  sfcontrol.c
+**  sfcontrol.h
 **
-**  Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+**  Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 **  Copyright (C) 2002-2013 Sourcefire, Inc.
 **  Author(s):  Ron Dempster <rdempster@sourcefire.com>
 **
@@ -40,6 +40,9 @@
 #define CS_HEADER_SUCCESS       0x0000
 #define CS_HEADER_ERROR         0x0001
 #define CS_HEADER_DATA          0x0009
+#ifdef REG_TEST
+#define CS_CONFIG_SWAP          0x000A
+#endif
 
 #pragma pack(1)
 typedef struct _CS_MESSAGE_DATA_HEADER

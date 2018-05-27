@@ -6,7 +6,7 @@
 **
 ** Aho-Corasick State Machine -  uses a Deterministic Finite Automata - DFA
 **
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Marc Norton
 **
@@ -821,8 +821,10 @@ static void Print_DFA( ACSM_STRUCT * acsm )
 
 int acsmPrintDetailInfo(ACSM_STRUCT * p)
 {
+#ifdef WIN32
     if(p)
         p = p;
+#endif
     return 0;
 }
 

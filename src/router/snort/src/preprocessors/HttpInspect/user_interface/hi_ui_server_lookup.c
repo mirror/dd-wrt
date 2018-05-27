@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -106,7 +106,7 @@ int hi_ui_server_lookup_init(SERVER_LOOKUP **ServerLookup)
 **  @retval HI_NONFATAL_ERR   key is already in table, don't overwrite
 **                            configuration.
 */
-int hi_ui_server_lookup_add(SERVER_LOOKUP *ServerLookup, sfip_t *Ip,
+int hi_ui_server_lookup_add(SERVER_LOOKUP *ServerLookup, sfcidr_t *Ip,
                             HTTPINSPECT_CONF *ServerConf)
 {
     int iRet;
@@ -146,7 +146,7 @@ int hi_ui_server_lookup_add(SERVER_LOOKUP *ServerLookup, sfip_t *Ip,
 **  @retval HI_NOT_FOUND IP not found
 */
 HTTPINSPECT_CONF  *hi_ui_server_lookup_find(SERVER_LOOKUP *ServerLookup,
-                                            snort_ip_p Ip, int *iError)
+                                            sfaddr_t* Ip, int *iError)
 {
     HTTPINSPECT_CONF *ServerConf;
 
@@ -288,12 +288,22 @@ void  hi_ui_server_lookup_destroy(SERVER_LOOKUP *ServerLookup)
 static void serverConfFree(void *pData)
 {
     HTTPINSPECT_CONF *ServerConf = (HTTPINSPECT_CONF *)pData;
+    int i;
 
     if (ServerConf)
     {
         ServerConf->referenceCount--;
         if (ServerConf->referenceCount == 0)
         {
+            for (i = 0; i < HTTP_MAX_XFF_FIELDS; i++)
+            {
+                if (ServerConf->xff_headers[i] != NULL)
+                {
+                    free(ServerConf->xff_headers[i]);
+                    ServerConf->xff_headers[i] = NULL;
+                }
+            }
+
             http_cmd_lookup_cleanup(&ServerConf->cmd_lookup);
             if (ServerConf->iis_unicode_map_filename)
             {

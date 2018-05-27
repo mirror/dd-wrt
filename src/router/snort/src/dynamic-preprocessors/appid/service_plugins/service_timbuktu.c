@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -62,15 +62,16 @@ typedef struct _SERVICE_TIMBUKTU_MSG
 #pragma pack()
 
 static int timbuktu_init(const InitServiceAPI * const init_api);
-MakeRNAServiceValidationPrototype(timbuktu_validate);
+static int timbuktu_validate(ServiceValidationArgs* args);
 
-static RNAServiceElement svc_element =
+static tRNAServiceElement svc_element =
 {
     .next = NULL,
     .validate = &timbuktu_validate,
     .detectorType = DETECTOR_TYPE_DECODER,
     .name = "timbuktu",
     .ref_count = 1,
+    .current_ref_count = 1,
 };
 static RNAServiceValidationPort pp[] =
 {
@@ -78,7 +79,7 @@ static RNAServiceValidationPort pp[] =
     {NULL, 0, 0}
 };
 
-SO_PUBLIC RNAServiceValidationModule timbuktu_service_mod =
+SF_SO_PUBLIC tRNAServiceValidationModule timbuktu_service_mod =
 {
     svc_name,
     &timbuktu_init,
@@ -89,34 +90,37 @@ static tAppRegistryEntry appIdRegistry[] = {{APP_ID_TIMBUKTU, 0}};
 
 static int timbuktu_init(const InitServiceAPI * const init_api)
 {
-    init_api->RegisterPattern(&timbuktu_validate, IPPROTO_TCP, (const u_int8_t *) TIMBUKTU_BANNER, sizeof(TIMBUKTU_BANNER)-1, 0, svc_name);
+    init_api->RegisterPattern(&timbuktu_validate, IPPROTO_TCP, (const u_int8_t *) TIMBUKTU_BANNER, sizeof(TIMBUKTU_BANNER)-1, 0, svc_name, init_api->pAppidConfig);
 	unsigned i;
 	for (i=0; i < sizeof(appIdRegistry)/sizeof(*appIdRegistry); i++)
 	{
 		_dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[i].appId);
-		init_api->RegisterAppId(&timbuktu_validate, appIdRegistry[i].appId, appIdRegistry[i].additionalInfo, NULL);
+		init_api->RegisterAppId(&timbuktu_validate, appIdRegistry[i].appId, appIdRegistry[i].additionalInfo, init_api->pAppidConfig);
 	}
 
     return 0;
 }
 
-MakeRNAServiceValidationPrototype(timbuktu_validate)
+static int timbuktu_validate(ServiceValidationArgs* args)
 {
     ServiceTIMBUKTUData *ss;
+    tAppIdData *flowp = args->flowp;
+    const uint8_t *data = args->data;
+    uint16_t size = args->size;
     uint16_t offset=0;
 
     if (!size)
         goto inprocess;
-    if (dir != APP_ID_FROM_RESPONDER)
+    if (args->dir != APP_ID_FROM_RESPONDER)
         goto inprocess;
 
-    ss = timbuktu_service_mod.api->data_get(flowp);
+    ss = timbuktu_service_mod.api->data_get(flowp, timbuktu_service_mod.flow_data_index);
     if (!ss)
     {
         ss = calloc(1, sizeof(*ss));
         if (!ss)
             return SERVICE_ENOMEM;
-        if (timbuktu_service_mod.api->data_add(flowp, ss, &free))
+        if (timbuktu_service_mod.api->data_add(flowp, ss, timbuktu_service_mod.flow_data_index, &free))
         {
             free(ss);
             return SERVICE_ENOMEM;
@@ -172,15 +176,18 @@ MakeRNAServiceValidationPrototype(timbuktu_validate)
     }
 
 inprocess:
-        timbuktu_service_mod.api->service_inprocess(flowp, pkt, dir, &svc_element);
+        timbuktu_service_mod.api->service_inprocess(flowp, args->pkt, args->dir, &svc_element, NULL);
         return SERVICE_INPROCESS;
 
 success:
-        timbuktu_service_mod.api->add_service(flowp, pkt, dir, &svc_element, APP_ID_TIMBUKTU, NULL, NULL, NULL);
+        timbuktu_service_mod.api->add_service(flowp, args->pkt, args->dir, &svc_element,
+                                              APP_ID_TIMBUKTU, NULL, NULL, NULL, NULL);
         return SERVICE_SUCCESS;
 
 fail:
-        timbuktu_service_mod.api->fail_service(flowp, pkt, dir, &svc_element);
+        timbuktu_service_mod.api->fail_service(flowp, args->pkt, args->dir, &svc_element,
+                                               timbuktu_service_mod.flow_data_index,
+                                               args->pConfig, NULL);
         return SERVICE_NOMATCH;
 
 }

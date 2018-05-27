@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -59,7 +59,8 @@ extern const char *smb_com_strings[SMB_MAX_NUM_COMS];
 extern const char *smb_transaction_sub_command_strings[TRANS_SUBCOM_MAX];
 extern const char *smb_transaction2_sub_command_strings[TRANS2_SUBCOM_MAX];
 extern const char *smb_nt_transact_sub_command_strings[NT_TRANSACT_SUBCOM_MAX];
-extern char smb_file_name[DCE2_SMB_MAX_PATH_LEN+1];
+extern uint8_t smb_file_name[2*DCE2_SMB_MAX_PATH_LEN + UTF_16_LE_BOM_LEN + 2];
+extern uint16_t smb_file_name_len;
 
 /********************************************************************
  * Enums
@@ -116,12 +117,26 @@ typedef struct _DCE2_SmbFileChunk
 
 typedef struct _DCE2_SmbFileTracker
 {
-    int fid;   // A signed integer so it can be set to sentinel
-    uint16_t uid;
-    uint16_t tid;
-    bool is_ipc;
-    char *file_name;
+    union
+    {
+        struct
+        {
+            int file_id;   // A signed integer so it can be set to sentinel
+            uint16_t u_id;
+            uint16_t tree_id;
+        } id_smb1;
 
+        struct
+        {
+            uint64_t file_id;
+        } id_smb2;
+
+    } file_key;
+
+    bool is_ipc;
+    bool is_smb2;
+    uint8_t *file_name;
+    uint16_t file_name_len;
     union
     {
         struct
@@ -155,10 +170,14 @@ typedef struct _DCE2_SmbFileTracker
 
     } tracker;
 
-#define fp_byte_mode   tracker.nmpipe.byte_mode
-#define fp_used        tracker.nmpipe.used
-#define fp_writex_raw  tracker.nmpipe.writex_raw
-#define fp_co_tracker  tracker.nmpipe.co_tracker
+#define fid_v1                file_key.id_smb1.file_id
+#define uid_v1                file_key.id_smb1.u_id
+#define tid_v1                file_key.id_smb1.tree_id
+#define fid_v2                file_key.id_smb2.file_id
+#define fp_byte_mode          tracker.nmpipe.byte_mode
+#define fp_used               tracker.nmpipe.used
+#define fp_writex_raw         tracker.nmpipe.writex_raw
+#define fp_co_tracker         tracker.nmpipe.co_tracker
 #define ff_file_size          tracker.file.file_size
 #define ff_file_offset        tracker.file.file_offset
 #define ff_bytes_processed    tracker.file.bytes_processed
@@ -168,6 +187,22 @@ typedef struct _DCE2_SmbFileTracker
 #define ff_sequential_only    tracker.file.sequential_only
 
 } DCE2_SmbFileTracker;
+
+typedef enum _DCE2_SmbVersion
+{
+    DCE2_SMB_VERISON_NULL,
+    DCE2_SMB_VERISON_1,
+    DCE2_SMB_VERISON_2
+} DCE2_SmbVersion;
+
+typedef struct _Smb2Request
+{
+    uint64_t message_id;   /* identifies a message uniquely on connection */
+	uint64_t offset;       /* data offset */
+	uint64_t file_id;      /* file id */
+	struct _Smb2Request *next;
+	struct _Smb2Request *previous;
+} Smb2Request;
 
 typedef struct _DCE2_SmbTransactionTracker
 {
@@ -212,7 +247,8 @@ typedef struct _DCE2_SmbRequestTracker
 
     // Used for requests to cache data that will ultimately end up in
     // the file tracker upon response.
-    char *file_name;
+    uint8_t *file_name;
+    uint16_t file_name_len;
     uint64_t file_size;
     uint64_t file_offset;
     bool sequential_only;
@@ -266,11 +302,14 @@ typedef struct _DCE2_SmbSsnData
     // This is a reference to a file tracker so shouldn't be freed.
     DCE2_SmbFileTracker *fapi_ftracker;
 
+    Smb2Request *smb2_requests;
+
 #ifdef ACTIVE_RESPONSE
     DCE2_SmbFileTracker *fb_ftracker;
     bool block_pdus;
 #endif
 
+    bool smbfound;
     // Maximum file depth as returned from file API
     int64_t max_file_depth;
 

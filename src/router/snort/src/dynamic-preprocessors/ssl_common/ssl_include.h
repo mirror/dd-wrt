@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2013-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -59,7 +59,7 @@ typedef struct _ssl_callback_interface
 {
 
     int (*policy_initialize)(void *, bool);
-    void (*policy_free)(void **, void *);
+    void (*policy_free)(void **, bool);
     void (*session_initialize)(SFSnortPacket* p, void *app_data, PP_Set_Flow_Id_Callback_Func pp_callback);
     void (*session_free)(uint32_t fid);
     bool (*is_session_ssl)(SFSnortPacket* p);

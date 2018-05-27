@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2007-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -27,9 +27,6 @@
 /* IPv6 and IPv4 */
 
 #include "sf_ip.h"
-
-typedef sfip_t snort_ip;
-typedef sfip_t *snort_ip_p;
 
 #define IpAddrNode sfip_node_t
 #define IpAddrSet sfip_var_t
@@ -78,7 +75,7 @@ typedef sfip_t *snort_ip_p;
 /* XXX make sure these aren't getting confused with sfip_is_valid within the code */
 #define IPH_IS_VALID(p) iph_is_valid(p)
 
-#define IP_CLEAR(x) (x).bits = (x).family = 0; (x).ip32[0] = (x).ip32[1] = (x).ip32[2] = (x).ip32[3] = 0;
+#define IP_CLEAR(x) (x).family = (x).ia32[0] = (x).ia32[1] = (x).ia32[2] = (x).ia32[3] = 0;
 
 #define IP_IS_SET(x) sfip_is_set(&x)
 
@@ -90,15 +87,7 @@ typedef sfip_t *snort_ip_p;
  * If the macro is instead enclosed in braces, then having a semicolon
  * trailing the macro causes compile breakage.
  * So: use loop. */
-#define IP_COPY_VALUE(x,y) \
-        do {  \
-                (x).bits = (y)->bits; \
-                (x).family = (y)->family; \
-                (x).ip32[0] = (y)->ip32[0]; \
-                (x).ip32[1] = (y)->ip32[1]; \
-                (x).ip32[2] = (y)->ip32[2]; \
-                (x).ip32[3] = (y)->ip32[3]; \
-        } while(0)
+#define IP_COPY_VALUE(dst, src)  sfip_set_ip(&(dst), src)
 
 #define GET_IPH_HLEN(p) ((p)->iph_api->iph_ret_hlen(p))
 #define SET_IPH_HLEN(p, val)
@@ -109,28 +98,17 @@ typedef sfip_t *snort_ip_p;
 #define IP_ARG(ipt)  (&ipt)
 #define IP_PTR(ipp)  (ipp)
 #define IP_VAL(ipt)  (*ipt)
-#define IP_SIZE(ipp) (sfip_size(ipp))
 
-#define GET_INNER_SRC_IP(p)  (IS_IP6(p) ? (&((p)->inner_ip6h.ip_src)):(&((p)->inner_ip4h.ip_src)))
-#define GET_INNER_DST_IP(p)  (IS_IP6(p) ? (&((p)->inner_ip6h.ip_dst)):(&((p)->inner_ip4h.ip_dst)))
-#define GET_OUTER_SRC_IP(p)  (IS_OUTER_IP6(p) ? (&((p)->outer_ip6h.ip_src)):(&((p)->outer_ip4h.ip_src)))
-#define GET_OUTER_DST_IP(p)  (IS_OUTER_IP6(p) ? (&((p)->outer_ip6h.ip_dst)):(&((p)->outer_ip4h.ip_dst)))
-static inline int sfip_equal (snort_ip* ip1, snort_ip* ip2)
+#define GET_INNER_SRC_IP(p)  (IS_IP6(p) ? (&((p)->inner_ip6h.ip_addrs->ip_src)):(&((p)->inner_ip4h.ip_addrs->ip_src)))
+#define GET_INNER_DST_IP(p)  (IS_IP6(p) ? (&((p)->inner_ip6h.ip_addrs->ip_dst)):(&((p)->inner_ip4h.ip_addrs->ip_dst)))
+#define GET_OUTER_SRC_IP(p)  (IS_OUTER_IP6(p) ? (&((p)->outer_ip6h.ip_addrs->ip_src)):(&((p)->outer_ip4h.ip_addrs->ip_src)))
+#define GET_OUTER_DST_IP(p)  (IS_OUTER_IP6(p) ? (&((p)->outer_ip6h.ip_addrs->ip_dst)):(&((p)->outer_ip4h.ip_addrs->ip_dst)))
+#if 0
+static inline int sfip_equal (sfaddr_t* ip1, sfaddr_t* ip2)
 {
-    if ( ip1->family != ip2->family )
-    {
-        return 0;
-    }
-    if ( ip1->family == AF_INET )
-    {
-        return _ip4_cmp(ip1->ip32[0], ip2->ip32[0]) == SFIP_EQUAL;
-    }
-    if ( ip1->family == AF_INET6 )
-    {
-        return _ip6_cmp(ip1, ip2) == SFIP_EQUAL;
-    }
-    return 0;
+    return _ip6_cmp(ip1, ip2) == SFIP_EQUAL;
 }
+#endif
 
 
 #if !defined(IPPROTO_IPIP) && defined(WIN32)  /* Needed for some Win32 */

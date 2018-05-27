@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2004-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -35,7 +35,7 @@ void StreamUdpPolicyInit(StreamUdpConfig *, char *);
 int StreamVerifyUdpConfig(struct _SnortConfig *, StreamUdpConfig *, tSfPolicyId);
 int StreamProcessUdp(Packet *, SessionControlBlock *, StreamUdpPolicy *, SessionKey *);
 void UdpUpdateDirection(SessionControlBlock *ssn, char dir,
-                        snort_ip_p ip, uint16_t port);
+                        sfaddr_t* ip, uint16_t port);
 SessionControlBlock *GetLWUdpSession(const SessionKey *key);
 void s5UdpSetPortFilterStatus(
         struct _SnortConfig *sc,
@@ -62,5 +62,8 @@ void StreamUdpConfigFree(StreamUdpConfig *);
 uint32_t StreamGetUdpPrunes(void);
 void StreamResetUdpPrunes(void);
 void UdpSessionCleanup(void *scb);
+
+void SessionUDPReload(uint32_t max_sessions, uint16_t pruningTimeout, uint16_t nominalTimeout);
+unsigned SessionUDPReloadAdjust(unsigned maxWork);
 
 #endif /* STREAM_UDP_H_ */

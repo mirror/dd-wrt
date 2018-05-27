@@ -1,7 +1,7 @@
 /* $Id */
 
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2006-2013 Sourcefire, Inc.
 **
 **
@@ -68,6 +68,10 @@ PreprocStats dnsPerfStats;
 #include "sfPolicy.h"
 #include "sfPolicyUserData.h"
 #include "snort_bounds.h"
+
+#ifdef DUMP_BUFFER
+#include "dns_buffer_dump.h"
+#endif
 
 #ifdef TARGET_BASED
 int16_t dns_app_id = SFTARGET_UNKNOWN_PROTOCOL;
@@ -147,6 +151,10 @@ void SetupDNS(void)
     _dpd.registerPreproc("dns", DNSInit, DNSReload,
                          DNSReloadVerify, DNSReloadSwap, DNSReloadSwapFree);
 #endif
+
+#ifdef DUMP_BUFFER
+    _dpd.registerBufferTracer(getDNSBuffers, DNS_BUFFER_DUMP_FUNC);
+#endif
 }
 
 /* Initializes the DNS preprocessor module and registers
@@ -187,7 +195,7 @@ static void DNSInit( struct _SnortConfig *sc, char* argp )
         _dpd.addPreprocExit(DNSCleanExit, NULL, PRIORITY_LAST, PP_DNS);
 
 #ifdef PERF_PROFILING
-        _dpd.addPreprocProfileFunc("dns", (void *)&dnsPerfStats, 0, _dpd.totalPerfStats);
+        _dpd.addPreprocProfileFunc("dns", (void *)&dnsPerfStats, 0, _dpd.totalPerfStats, NULL);
 #endif
 
 #ifdef TARGET_BASED
@@ -279,7 +287,7 @@ static void ParseDNSArgs(DNSConfig *config, u_char* argp)
             if (( !cur_tokenp ) || ( strcmp(cur_tokenp, "{" )))
             {
                 DynamicPreprocessorFatalMessage("%s(%d) Bad value specified for %s.  Must start "
-                                                "with '{' and be space seperated.\n",
+                                                "with '{' and be space separated.\n",
                                                 *(_dpd.config_file), *(_dpd.config_line),
                                                 DNS_PORTS_KEYWORD);
                 //free(argcpyp);
@@ -757,6 +765,9 @@ static uint16_t ParseDNSQuestion(const unsigned char *data,
         new_bytes_unused = ParseDNSName(data, bytes_unused, dnsSessionData);
         bytes_used = bytes_unused - new_bytes_unused;
 
+#ifdef DUMP_BUFFER
+        dumpBuffer(DNS_QUESTION_DUMP,data,bytes_used);
+#endif
         if (dnsSessionData->curr_txt.name_state == DNS_RESP_STATE_NAME_COMPLETE)
         {
             dnsSessionData->curr_rec_state = DNS_RESP_STATE_Q_TYPE;
@@ -845,6 +856,9 @@ uint16_t ParseDNSAnswer(const unsigned char *data,
         new_bytes_unused = ParseDNSName(data, bytes_unused, dnsSessionData);
         bytes_used = bytes_unused - new_bytes_unused;
 
+#ifdef DUMP_BUFFER
+        dumpBuffer(DNS_ANSWER_DUMP,data,bytes_used);
+#endif
         if (dnsSessionData->curr_txt.name_state == DNS_RESP_STATE_NAME_COMPLETE)
         {
             dnsSessionData->curr_rec_state = DNS_RESP_STATE_RR_TYPE;
@@ -982,7 +996,9 @@ uint16_t CheckRRTypeTXTVuln(const unsigned char *data,
             dnsSessionData->curr_rec_state = DNS_RESP_STATE_RR_COMPLETE;
             return bytes_unused;
         }
-
+#ifdef DUMP_BUFFER
+        dumpBuffer(DNS_RR_TYPE_TXT_VULN_DUMP,data,bytes_unused);
+#endif
         if (bytes_unused == 0)
         {
             return bytes_unused;
@@ -1106,6 +1122,9 @@ uint16_t ParseDNSRData(SFSnortPacket *p,
             DNS_ALERT(DNS_EVENT_OBSOLETE_TYPES, DNS_EVENT_OBSOLETE_TYPES_STR);
         }
         bytes_unused = SkipDNSRData(data, bytes_unused, dnsSessionData);
+#ifdef DUMP_BUFFER
+        dumpBuffer(DNS_OBSOLETE_TYPES_DUMP,data,bytes_unused);
+#endif
         break;
 
     case DNS_RR_TYPE_MB:
@@ -1119,6 +1138,9 @@ uint16_t ParseDNSRData(SFSnortPacket *p,
             DNS_ALERT(DNS_EVENT_EXPERIMENTAL_TYPES, DNS_EVENT_EXPERIMENTAL_TYPES_STR);
         }
         bytes_unused = SkipDNSRData(data, bytes_unused, dnsSessionData);
+#ifdef DUMP_BUFFER
+        dumpBuffer(DNS_EXPERIMENTAL_TYPES_DUMP,data,bytes_unused);
+#endif
         break;
     case DNS_RR_TYPE_A:
     case DNS_RR_TYPE_NS:
@@ -1129,6 +1151,9 @@ uint16_t ParseDNSRData(SFSnortPacket *p,
     case DNS_RR_TYPE_HINFO:
     case DNS_RR_TYPE_MX:
         bytes_unused = SkipDNSRData(data, bytes_unused, dnsSessionData);
+#ifdef DUMP_BUFFER
+        dumpBuffer(DNS_SKIP_RDATA_DUMP,data,bytes_unused);
+#endif
         break;
     default:
         /* Not one of the known types.  Stop looking at this session
@@ -1159,7 +1184,6 @@ void ParseDNSResponseMessage(SFSnortPacket *p, DNSSessionData *dnsSessionData)
             {
                 dnsSessionData->state = DNS_RESP_STATE_HDR_ID;
             }
-
             bytes_unused = ParseDNSHeader(data, bytes_unused, dnsSessionData);
             if (bytes_unused > 0)
             {
@@ -1239,7 +1263,9 @@ void ParseDNSResponseMessage(SFSnortPacket *p, DNSSessionData *dnsSessionData)
             {
                 bytes_unused = ParseDNSAnswer(data, p->payload_size,
                                                 bytes_unused, dnsSessionData);
-
+#ifdef DUMP_BUFFER
+                dumpBuffer(DNS_RESP_STATE_ANS_RR_DUMP,data,bytes_unused);
+#endif
                 if (bytes_unused == 0)
                 {
                     /* No more data */
@@ -1295,7 +1321,9 @@ void ParseDNSResponseMessage(SFSnortPacket *p, DNSSessionData *dnsSessionData)
             {
                 bytes_unused = ParseDNSAnswer(data, p->payload_size,
                                                 bytes_unused, dnsSessionData);
-
+#ifdef DUMP_BUFFER
+                dumpBuffer(DNS_RESP_STATE_AUTH_RR_DUMP,data,bytes_unused);
+#endif
                 if (bytes_unused == 0)
                 {
                     /* No more data */
@@ -1351,7 +1379,9 @@ void ParseDNSResponseMessage(SFSnortPacket *p, DNSSessionData *dnsSessionData)
             {
                 bytes_unused = ParseDNSAnswer(data, p->payload_size,
                                                 bytes_unused, dnsSessionData);
-
+#ifdef DUMP_BUFFER
+                dumpBuffer(DNS_RESP_STATE_ADD_RR_DUMP,data,bytes_unused);
+#endif
                 if (bytes_unused == 0)
                 {
                     /* No more data */
@@ -1438,6 +1468,10 @@ static void ProcessDNS( void* packetPtr, void* context )
     if (config == NULL)
         return;
 
+#ifdef DUMP_BUFFER
+    dumpBufferInit();
+#endif
+
     dns_eval_config = config;
 
     p = (SFSnortPacket*) packetPtr;
@@ -1449,6 +1483,10 @@ static void ProcessDNS( void* packetPtr, void* context )
      * allocate and register one with the stream layer. */
     dnsSessionData = _dpd.sessionAPI->get_application_data(
         p->stream_session, PP_DNS );
+
+#ifdef DUMP_BUFFER
+    dumpBuffer(DNS_PAYLOAD_DUMP,p->payload,p->payload_size);
+#endif
 
     if (dnsSessionData == NULL)
     {

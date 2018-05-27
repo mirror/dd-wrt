@@ -14,7 +14,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * Author: Ryan Jordan
@@ -70,13 +70,14 @@ int ModbusAddServiceToPaf (struct _SnortConfig *sc, uint16_t service, tSfPolicyI
      uint32_t - length of payload data
      uint32_t - flags to check whether client or server
      uint32_t * - pointer to set flush point
+     uint32_t * - pointer to set header flush point
 
    Returns:
     PAF_Status - PAF_FLUSH if flush point found, PAF_SEARCH otherwise
 */
 
 PAF_Status ModbusPaf(void *ssn, void **user, const uint8_t *data,
-                     uint32_t len, uint32_t flags, uint32_t *fp)
+                     uint32_t len, uint64_t *flags, uint32_t *fp, uint32_t *fp_eoh)
 {
     modbus_paf_data_t *pafdata = *(modbus_paf_data_t **)user;
     uint32_t bytes_processed = 0;

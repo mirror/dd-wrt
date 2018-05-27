@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -76,7 +76,7 @@ extern OptTreeNode *otn_tmp;
 
 /* internal functions */
 static void LogAsciiInit(struct _SnortConfig *, char *args);
-static void LogAscii(Packet *p, char *msg, void *arg, Event *event);
+static void LogAscii(Packet *p, const char *msg, void *arg, Event *event);
 static void LogAsciiCleanExit(int signal, void *arg);
 static char *IcmpFileName(Packet * p);
 static FILE *OpenLogFile(int mode, Packet * p);
@@ -106,7 +106,7 @@ static void LogAsciiInit(struct _SnortConfig *sc, char *args)
     AddFuncToCleanExitList(LogAsciiCleanExit, NULL);
 }
 
-static void LogAscii(Packet *p, char *msg, void *arg, Event *event)
+static void LogAscii(Packet *p, const char *msg, void *arg, Event *event)
 {
     FILE *log_ptr = NULL;
     DEBUG_WRAP(DebugMessage(DEBUG_LOG, "LogPkt started\n"););
@@ -181,7 +181,7 @@ static FILE *OpenLogFile(int mode, Packet * p)
     char proto[5];      /* logged packet protocol */
     char suffix[5];     /* filename suffix */
     FILE *log_ptr = NULL;
-    snort_ip_p ip;
+    sfaddr_t* ip;
 
 #ifdef WIN32
     SnortStrncpy(suffix, ".ids", sizeof(suffix));

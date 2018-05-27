@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -27,6 +27,10 @@
 
 struct _Detector;
 
+// Forward declaration for AppId config. Cannot include appIdConfig.h because of
+// circular dependency
+struct appIdConfig_;
+
 typedef enum {
     CLIENT_APP_SUCCESS = 0,
     CLIENT_APP_INPROCESS = 10,
@@ -48,23 +52,28 @@ typedef struct
 } RNAClientAppModuleConfigItem;
 
 typedef CLIENT_APP_RETCODE (*RNAClientAppFCN)(const uint8_t *, uint16_t, const int,
-                                              tAppIdData *session, const SFSnortPacket *pkt, struct _Detector *userData);
+                                              tAppIdData *session, SFSnortPacket *pkt, struct _Detector *userData,
+                                              const struct appIdConfig_ *pConfig);
 
 typedef struct _INIT_CLIENT_API
 {
     void (*RegisterPattern)(RNAClientAppFCN fcn, uint8_t proto,
-                            const uint8_t * const pattern, unsigned size, int position);
+                            const uint8_t * const pattern, unsigned size, int position, struct appIdConfig_ *pConfig);
     void (*RegisterPatternEx)(RNAClientAppFCN fcn, uint8_t proto,
                             const uint8_t * const pattern, unsigned size, int position,
-                            struct _Detector *userdata);
+			      struct _Detector *userdata);
     void (*RegisterPatternNoCase)(RNAClientAppFCN fcn, uint8_t proto,
-                                  const uint8_t * const pattern, unsigned size, int position);
-    void (*RegisterAppId)(RNAClientAppFCN fcn, tAppId appId, uint32_t additionalInfo, struct _Detector *userData);
+                                  const uint8_t * const pattern, unsigned size, int position,
+                                  struct appIdConfig_ *pConfig);
+    void (*RegisterAppId)(RNAClientAppFCN fcn, tAppId appId, uint32_t additionalInfo, struct appIdConfig_ *pConfig);
     int debug;
+    uint32_t instance_id;
+    struct appIdConfig_ *pAppidConfig;  ///< AppId context for which this API should be used
 } InitClientAppAPI;
 
 typedef struct _CLEAN_CLIENT_API
 {
+    struct appIdConfig_ *pAppidConfig;  ///< AppId context for which this API should be used
 } CleanClientAppAPI;
 
 
@@ -77,12 +86,12 @@ typedef CLIENT_APP_RETCODE (*RNAClientAppInitFCN)(const InitClientAppAPI * const
 typedef CLIENT_APP_RETCODE (*RNAClientAppFinalizeFCN)(const FinalizeClientAppAPI * const);
 typedef void (*RNAClientAppCleanFCN)(const CleanClientAppAPI * const);
 
-typedef void *(*ClientAppFlowdataGet)(FLOW *);
-typedef int (*ClientAppFlowdataAdd)(FLOW *, void *, AppIdFreeFCN);
-typedef void (*ClientAppAddApp)(FLOW *, tAppId, tAppId, const char *);
-typedef void (*ClientAppAddInfo)(FLOW *, const char *);
-typedef void (*ClientAppAddUser)(FLOW *, const char *, tAppId, int);
-typedef void (*ClientAppAddPayload) (FLOW *, tAppId);
+typedef void *(*ClientAppFlowdataGet)(tAppIdData *, unsigned);
+typedef int (*ClientAppFlowdataAdd)(tAppIdData *, void *, unsigned, AppIdFreeFCN);
+typedef void (*ClientAppAddApp)(tAppIdData *, tAppId, tAppId, const char *);
+typedef void (*ClientAppAddInfo)(tAppIdData *, const char *);
+typedef void (*ClientAppAddUser)(tAppIdData *, const char *, tAppId, int);
+typedef void (*ClientAppAddPayload) (tAppIdData *, tAppId);
 
 typedef struct _CLIENT_APP_API
 {
@@ -94,15 +103,13 @@ typedef struct _CLIENT_APP_API
     ClientAppAddPayload add_payload;
 } ClientAppApi;
 
-struct _RNA_CLIENT_APP_MODULE;
-
-typedef struct _RNA_CLIENT_APP_RECORD
+typedef struct RNAClientAppRecord_
 {
-    struct _RNA_CLIENT_APP_RECORD *next;
-    const struct _RNA_CLIENT_APP_MODULE *module;
+    struct RNAClientAppRecord_ *next;
+    const struct RNAClientAppModule *module;
 } RNAClientAppRecord;
 
-typedef struct _RNA_CLIENT_APP_MODULE
+typedef struct RNAClientAppModule
 {
     const char *name;
     uint8_t proto;
@@ -118,12 +125,13 @@ typedef struct _RNA_CLIENT_APP_MODULE
     RNAClientAppFinalizeFCN finalize;
 
     int provides_user;
-} RNAClientAppModule;
+    unsigned flow_data_index;
+} tRNAClientAppModule;
 
-typedef struct _RNA_CLIENT_APP_FLOW_STATE
+typedef struct _RNA_CLIENT_APP_APPID_SESSION_STATE
 {
-    struct _RNA_CLIENT_APP_FLOW_STATE *next;
-    const RNAClientAppModule *ca;
+    struct _RNA_CLIENT_APP_APPID_SESSION_STATE *next;
+    const tRNAClientAppModule *ca;
 } RNAClientAppFlowState;
 
 #endif /* __CLIENT_APP_API_H__ */

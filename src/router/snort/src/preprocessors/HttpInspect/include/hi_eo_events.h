@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -65,6 +65,7 @@ typedef enum _HI_CLI_EVENTS
     HI_EO_CLIENT_SIMPLE_REQUEST,
     HI_EO_CLIENT_UNESCAPED_SPACE_URI,
     HI_EO_CLIENT_PIPELINE_MAX,
+    HI_EO_CLIENT_MULTIPLE_COLON_BETN_KEY_VALUE,
     HI_EO_CLIENT_EVENT_NUM
 } HI_CLI_EVENTS;
 
@@ -87,6 +88,10 @@ typedef enum _HI_EVENTS
     HI_EO_SERVER_PDF_UNSUP_COMP_TYPE,
     HI_EO_SERVER_PDF_CASC_COMP,
     HI_EO_SERVER_PDF_PARSE_FAILURE,
+    HI_EO_SERVER_PROTOCOL_OTHER,
+    HI_EO_SERVER_MULTIPLE_CONTLEN,
+    HI_EO_SERVER_MULTIPLE_CONTENT_ENCODING,
+    HI_EO_SERVER_MULTIPLE_COLON_BETN_KEY_VALUE,
     HI_EO_SERVER_EVENT_NUM
 }HI_EVENTS;
 
@@ -162,6 +167,8 @@ typedef enum _HI_EVENTS
     "(http_inspect) UNESCAPED SPACE IN HTTP URI"
 #define HI_EO_CLIENT_PIPELINE_MAX_STR                   \
     "(http_inspect) TOO MANY PIPELINED REQUESTS"
+#define HI_EO_CLIENT_MULTIPLE_COLON_BETN_KEY_VALUE_STR  \
+    "(http_inspect) MULTIPLE COLON BETWEEN KEY AND VALUE IN HTTP REQUEST HEADER"
 
 /*
 **  Server Events
@@ -201,7 +208,15 @@ typedef enum _HI_EVENTS
     "(http_inspect) HTTP_RESPONSE PDF FILE CASCADED COMPRESSION"
 #define HI_EO_SERVER_PDF_PARSE_FAILURE_STR              \
     "(http_inspect) HTTP_RESPONSE PDF FILE PARSE FAILURE"
- 
+#define HI_EO_SERVER_PROTOCOL_OTHER_STR			\
+    "(http_inspect) PROTOCOL-OTHER HTTP server response before client request "
+#define HI_EO_SERVER_MULTIPLE_CONTLEN_STR               \
+    "(http_inspect) MULTIPLE CONTENT LENGTH IN HTTP RESPONSE"
+#define HI_EO_SERVER_MULTIPLE_CONTENT_ENCODING_STR      \
+    "(http_inspect) MULTIPLE CONTENT ENCODING IN HTTP RESPONSE"
+#define HI_EO_SERVER_MULTIPLE_COLON_BETN_KEY_VALUE_STR  \
+    "(http_inspect) MULTIPLE COLON BETWEEN KEY AND VALUE IN HTTP RESPONSE HEADER"
+
 /*
 **  Event Priorities
 */

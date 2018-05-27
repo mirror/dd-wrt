@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -19,18 +19,18 @@
 */
 
 
-#ifndef _FLOW_ERROR_H
-#define _FLOW_ERROR_H
+#ifndef _APPID_SESSION_ERROR_H
+#define _APPID_SESSION_ERROR_H
 
-#define FLOW_SUCCESS  0
-#define FLOW_ENULL    1
-#define FLOW_EINVALID 2
-#define FLOW_ENOMEM   3
-#define FLOW_NOTFOUND 4
-#define FLOW_BADJUJU  5
-#define FLOW_DISABLED 6
-#define FLOW_EUNSUPPORTED 7
-#define FLOW_STOP_PROCESSING 8
-#define FLOW_EEXISTS  9
+#define APPID_SESSION_SUCCESS  0
+#define APPID_SESSION_ENULL    1
+#define APPID_SESSION_EINVALID 2
+#define APPID_SESSION_ENOMEM   3
+#define APPID_SESSION_NOTFOUND 4
+#define APPID_SESSION_BADJUJU  5
+#define APPID_SESSION_DISABLED 6
+#define APPID_SESSION_EUNSUPPORTED 7
+#define APPID_SESSION_STOP_PROCESSING 8
+#define APPID_SESSION_EEXISTS  9
 
-#endif /* _FLOW_ERROR_H */
+#endif /* _APPID_SESSION_ERROR_H */

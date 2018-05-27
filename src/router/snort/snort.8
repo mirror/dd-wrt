@@ -286,7 +286,8 @@ the file is created plus "snort.log".
 Set the file mode creation mask to
 .I umask
 .IP "-M"
-Log console messages to syslog when not running daemon mode.  This switch
+Log console messages to syslog when not running daemon mode. Using both -D and -M 
+will send all messages to syslog including e.g. SIGUSR1 dump packet stats. This switch 
 has no impact on logging of alerts.
 .IP "-n packet-count"
 Process
@@ -307,7 +308,8 @@ Set the packet snaplen to
 .I snap-length.
 By default, this is set to 1514.
 .IP "-q"
-Quiet operation.  Don't display banner and initialization information.
+Quiet operation. Don't display banner and initialization information. In daemon mode,
+banner and initialization information is not logged to syslog.
 .IP "-Q"
 Enable inline mode operation.
 .IP "-r tcpdump-file"
