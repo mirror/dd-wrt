@@ -30,6 +30,8 @@ snort-configure: daq-configure pcre-configure daq pcre
 		--with-dnet-libraries="$(TOP)/libdnet/src/.libs" \
 		--with-daq-includes="$(TOP)/daq/install/include" \
 		--with-daq-libraries="$(TOP)/daq/install/lib64" \
+		--with-lzma-includes="$(TOP)/xz/src/liblzma/api" \
+		--with-lzma-libraries="$(TOP)/xz/src/liblzma/.libs" \
 		PATH=$(TOP)/daq/install/bin:$(PATH)
 	sed -i 's/\/usr\/include\/pcap/ /g' $(TOP)/snort/src/output-plugins/Makefile
 	sed -i 's/\/usr\/include\/pcap/ /g' $(TOP)/snort/src/Makefile
