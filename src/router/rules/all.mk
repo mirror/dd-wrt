@@ -305,6 +305,7 @@ include rules/screen.mk
 include rules/aircrack-ng.mk
 include rules/ddrescue.mk
 include rules/xz.mk
+include rules/zstd.mk
 
 #
 # Generic rules
