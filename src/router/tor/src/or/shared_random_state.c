@@ -271,12 +271,15 @@ commit_add_to_state(sr_commit_t *commit, sr_state_t *state)
 static void
 commit_free_(void *p)
 {
-  sr_commit_free(p);
+  sr_commit_free_(p);
 }
+
+#define state_free(val) \
+  FREE_AND_NULL(sr_state_t, state_free_, (val))
 
 /* Free a state that was allocated with state_new(). */
 static void
-state_free(sr_state_t *state)
+state_free_(sr_state_t *state)
 {
   if (state == NULL) {
     return;
@@ -318,9 +321,12 @@ state_set(sr_state_t *state)
   sr_state = state;
 }
 
+#define disk_state_free(val) \
+  FREE_AND_NULL(sr_disk_state_t, disk_state_free_, (val))
+
 /* Free an allocated disk state. */
 static void
-disk_state_free(sr_disk_state_t *state)
+disk_state_free_(sr_disk_state_t *state)
 {
   if (state == NULL) {
     return;
@@ -1095,7 +1101,7 @@ sr_state_get_previous_srv(void)
 }
 
 /* Set the current SRV value from our state. Value CAN be NULL. The srv
- * object ownership is transfered to the state object. */
+ * object ownership is transferred to the state object. */
 void
 sr_state_set_previous_srv(const sr_srv_t *srv)
 {
@@ -1114,7 +1120,7 @@ sr_state_get_current_srv(void)
 }
 
 /* Set the current SRV value from our state. Value CAN be NULL. The srv
- * object ownership is transfered to the state object. */
+ * object ownership is transferred to the state object. */
 void
 sr_state_set_current_srv(const sr_srv_t *srv)
 {
@@ -1219,7 +1225,7 @@ sr_state_get_commit(const char *rsa_identity)
 }
 
 /* Add <b>commit</b> to the permanent state. The commit object ownership is
- * transfered to the state so the caller MUST not free it. */
+ * transferred to the state so the caller MUST not free it. */
 void
 sr_state_add_commit(sr_commit_t *commit)
 {
@@ -1286,7 +1292,7 @@ sr_state_srv_is_fresh(void)
 
 /* Cleanup and free our disk and memory state. */
 void
-sr_state_free(void)
+sr_state_free_all(void)
 {
   state_free(sr_state);
   disk_state_free(sr_disk_state);

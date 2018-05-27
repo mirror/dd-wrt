@@ -69,7 +69,7 @@ suppress_libevent_log_msg(const char *msg)
 
 /* Wrapper for event_free() that tolerates tor_event_free(NULL) */
 void
-tor_event_free(struct event *ev)
+tor_event_free_(struct event *ev)
 {
   if (ev == NULL)
     return;
@@ -126,7 +126,7 @@ tor_libevent_initialize(tor_libevent_cfg *torcfg)
   if (!the_event_base) {
     /* LCOV_EXCL_START */
     log_err(LD_GENERAL, "Unable to initialize Libevent: cannot continue.");
-    exit(1);
+    exit(1); // exit ok: libevent is broken.
     /* LCOV_EXCL_STOP */
   }
 
@@ -213,7 +213,7 @@ periodic_timer_new(struct event_base *base,
 
 /** Stop and free a periodic timer */
 void
-periodic_timer_free(periodic_timer_t *timer)
+periodic_timer_free_(periodic_timer_t *timer)
 {
   if (!timer)
     return;
@@ -235,6 +235,17 @@ tor_init_libevent_rng(void)
 #endif
   evutil_secure_rng_get_bytes(buf, sizeof(buf));
   return rv;
+}
+
+/**
+ * Un-initialize libevent in preparation for an exit
+ */
+void
+tor_libevent_free_all(void)
+{
+  if (the_event_base)
+    event_base_free(the_event_base);
+  the_event_base = NULL;
 }
 
 #if defined(LIBEVENT_VERSION_NUMBER) &&         \

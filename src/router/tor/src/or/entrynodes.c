@@ -1094,7 +1094,11 @@ select_and_add_guard_item_for_sample(guard_selection_t *gs,
   return added_guard;
 }
 
-/** Return true iff we need a consensus to maintain our  */
+/**
+ * Return true iff we need a consensus to update our guards, but we don't
+ * have one. (We can return 0 here either if the consensus is _not_ missing,
+ * or if we don't need a consensus because we're using bridges.)
+ */
 static int
 live_consensus_is_missing(const guard_selection_t *gs)
 {
@@ -2196,7 +2200,7 @@ entry_guard_has_higher_priority(entry_guard_t *a, entry_guard_t *b)
 
 /** Release all storage held in <b>restriction</b> */
 STATIC void
-entry_guard_restriction_free(entry_guard_restriction_t *rst)
+entry_guard_restriction_free_(entry_guard_restriction_t *rst)
 {
   tor_free(rst);
 }
@@ -2205,7 +2209,7 @@ entry_guard_restriction_free(entry_guard_restriction_t *rst)
  * Release all storage held in <b>state</b>.
  */
 void
-circuit_guard_state_free(circuit_guard_state_t *state)
+circuit_guard_state_free_(circuit_guard_state_t *state)
 {
   if (!state)
     return;
@@ -2216,9 +2220,9 @@ circuit_guard_state_free(circuit_guard_state_t *state)
 
 /** Allocate and return a new circuit_guard_state_t to track the result
  * of using <b>guard</b> for a given operation. */
-static circuit_guard_state_t *
-circuit_guard_state_new(entry_guard_t *guard, unsigned state,
-                        entry_guard_restriction_t *rst)
+MOCK_IMPL(STATIC circuit_guard_state_t *,
+circuit_guard_state_new,(entry_guard_t *guard, unsigned state,
+                         entry_guard_restriction_t *rst))
 {
   circuit_guard_state_t *result;
 
@@ -3108,7 +3112,7 @@ get_guard_state_for_bridge_desc_fetch(const char *digest)
 
 /** Release all storage held by <b>e</b>. */
 STATIC void
-entry_guard_free(entry_guard_t *e)
+entry_guard_free_(entry_guard_t *e)
 {
   if (!e)
     return;
@@ -3301,6 +3305,22 @@ entry_guards_update_state(or_state_t *state)
   if (!get_options()->AvoidDiskWrites)
     or_state_mark_dirty(get_or_state(), 0);
   entry_guards_dirty = 0;
+}
+
+/** Return true iff the circuit's guard can succeed that is can be used. */
+int
+entry_guard_could_succeed(const circuit_guard_state_t *guard_state)
+{
+  if (!guard_state) {
+    return 0;
+  }
+
+  entry_guard_t *guard = entry_guard_handle_get(guard_state->guard);
+  if (!guard || BUG(guard->in_selection == NULL)) {
+    return 0;
+  }
+
+  return 1;
 }
 
 /**
@@ -3615,7 +3635,7 @@ entry_guards_get_err_str_if_dir_info_missing(int using_mds,
 
 /** Free one guard selection context */
 STATIC void
-guard_selection_free(guard_selection_t *gs)
+guard_selection_free_(guard_selection_t *gs)
 {
   if (!gs) return;
 

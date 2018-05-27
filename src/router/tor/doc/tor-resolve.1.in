@@ -2,12 +2,12 @@
 .\"     Title: tor-resolve
 .\"    Author: Peter Palfrader
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 01/09/2018
+.\"      Date: 03/01/2018
 .\"    Manual: Tor Manual
 .\"    Source: Tor
 .\"  Language: English
 .\"
-.TH "TOR\-RESOLVE" "1" "01/09/2018" "Tor" "Tor Manual"
+.TH "TOR\-RESOLVE" "1" "03/01/2018" "Tor" "Tor Manual"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------

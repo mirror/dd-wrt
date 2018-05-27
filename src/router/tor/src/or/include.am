@@ -52,6 +52,7 @@ LIBTOR_A_SOURCES = \
 	src/or/geoip.c					\
 	src/or/entrynodes.c				\
 	src/or/ext_orport.c				\
+	src/or/git_revision.c				\
 	src/or/hibernate.c				\
 	src/or/hs_cache.c				\
 	src/or/hs_cell.c				\
@@ -60,11 +61,13 @@ LIBTOR_A_SOURCES = \
 	src/or/hs_client.c				\
 	src/or/hs_common.c				\
 	src/or/hs_config.c				\
+	src/or/hs_control.c				\
 	src/or/hs_descriptor.c				\
 	src/or/hs_ident.c				\
 	src/or/hs_intropoint.c				\
 	src/or/hs_ntor.c				\
 	src/or/hs_service.c				\
+	src/or/hs_stats.c				\
 	src/or/keypin.c					\
 	src/or/main.c					\
 	src/or/microdesc.c				\
@@ -79,6 +82,7 @@ LIBTOR_A_SOURCES = \
 	src/or/parsecommon.c			\
 	src/or/periodic.c				\
 	src/or/protover.c				\
+	src/or/protover_rust.c				\
 	src/or/proto_cell.c				\
 	src/or/proto_control0.c				\
 	src/or/proto_ext_or.c				\
@@ -105,6 +109,7 @@ LIBTOR_A_SOURCES = \
 	src/or/statefile.c				\
 	src/or/status.c					\
 	src/or/torcert.c				\
+	src/or/tor_api.c				\
 	src/or/onion_ntor.c				\
 	$(tor_platform_source)
 
@@ -156,6 +161,7 @@ endif
 
 ORHEADERS = \
 	src/or/addressmap.h				\
+	src/or/auth_dirs.inc				\
 	src/or/bridges.h				\
 	src/or/channel.h				\
 	src/or/channelpadding.h				\
@@ -191,18 +197,21 @@ ORHEADERS = \
 	src/or/fp_pair.h				\
 	src/or/geoip.h					\
 	src/or/entrynodes.h				\
+	src/or/git_revision.h				\
 	src/or/hibernate.h				\
 	src/or/hs_cache.h				\
 	src/or/hs_cell.h				\
-	src/or/hs_config.h				\
 	src/or/hs_circuit.h				\
 	src/or/hs_circuitmap.h				\
 	src/or/hs_client.h				\
 	src/or/hs_common.h				\
+	src/or/hs_config.h				\
+	src/or/hs_control.h				\
 	src/or/hs_descriptor.h				\
 	src/or/hs_ident.h				\
 	src/or/hs_intropoint.h				\
 	src/or/hs_ntor.h				\
+	src/or/hs_stats.h				\
 	src/or/hs_service.h				\
 	src/or/keypin.h					\
 	src/or/main.h					\
@@ -245,9 +254,13 @@ ORHEADERS = \
 	src/or/scheduler.h				\
 	src/or/statefile.h				\
 	src/or/status.h					\
-	src/or/torcert.h
+	src/or/torcert.h				\
+	src/or/tor_api_internal.h
 
-noinst_HEADERS+= $(ORHEADERS) micro-revision.i
+# This may someday want to be an installed file?
+noinst_HEADERS += src/or/tor_api.h
+
+noinst_HEADERS += $(ORHEADERS) micro-revision.i
 
 micro-revision.i: FORCE
 	$(AM_V_at)rm -f micro-revision.tmp; \

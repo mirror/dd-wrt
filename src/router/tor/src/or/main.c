@@ -60,7 +60,6 @@
 #include "circuitlist.h"
 #include "circuituse.h"
 #include "command.h"
-#include "compat_rust.h"
 #include "compress.h"
 #include "config.h"
 #include "confparse.h"
@@ -107,6 +106,8 @@
 #include "shared_random.h"
 #include "statefile.h"
 #include "status.h"
+#include "tor_api.h"
+#include "tor_api_internal.h"
 #include "util_process.h"
 #include "ext_orport.h"
 #ifdef USE_DMALLOC
@@ -129,6 +130,12 @@
 
 void evdns_shutdown(int);
 
+#ifdef HAVE_RUST
+// helper function defined in Rust to output a log message indicating if tor is
+// running with Rust enabled. See src/rust/tor_util
+char *rust_welcome_string(void);
+#endif
+
 /********* PROTOTYPES **********/
 
 static void dumpmemusage(int severity);
@@ -141,6 +148,8 @@ static void connection_start_reading_from_linked_conn(connection_t *conn);
 static int connection_should_read_from_linked_conn(connection_t *conn);
 static int run_main_loop_until_done(void);
 static void process_signal(int sig);
+static void shutdown_did_not_work_callback(evutil_socket_t fd, short event,
+                                           void *arg) ATTR_NORETURN;
 
 /********* START VARIABLES **********/
 int global_read_bucket; /**< Max number of bytes I can read this second. */
@@ -171,6 +180,12 @@ static uint64_t stats_n_bytes_written = 0;
 time_t time_of_process_start = 0;
 /** How many seconds have we been running? */
 long stats_n_seconds_working = 0;
+/** How many times have we returned from the main loop successfully? */
+static uint64_t stats_n_main_loop_successes = 0;
+/** How many times have we received an error from the main loop? */
+static uint64_t stats_n_main_loop_errors = 0;
+/** How many times have we returned from the main loop with no events. */
+static uint64_t stats_n_main_loop_idle = 0;
 
 /** How often will we honor SIGNEWNYM requests? */
 #define MAX_SIGNEWNYM_RATE 10
@@ -193,6 +208,14 @@ static smartlist_t *active_linked_connection_lst = NULL;
  * <b>loop_once</b>. If so, there's no need to trigger a loopexit in order
  * to handle linked connections. */
 static int called_loop_once = 0;
+/** Flag: if true, it's time to shut down, so the main loop should exit as
+ * soon as possible.
+ */
+static int main_loop_should_exit = 0;
+/** The return value that the main loop should yield when it exits, if
+ * main_loop_should_exit is true.
+ */
+static int main_loop_exit_value = 0;
 
 /** We set this to 1 when we've opened a circuit, so we can print a log
  * entry to inform the user that Tor is working.  We set it to 0 when
@@ -319,7 +342,7 @@ connection_remove(connection_t *conn)
             smartlist_len(connection_array));
 
   if (conn->type == CONN_TYPE_AP && conn->socket_family == AF_UNIX) {
-    log_info(LD_NET, "Closing SOCKS SocksSocket connection");
+    log_info(LD_NET, "Closing SOCKS Unix socket connection");
   }
 
   control_event_conn_bandwidth(conn);
@@ -475,6 +498,57 @@ connection_is_reading(connection_t *conn)
 
   return conn->reading_from_linked_conn ||
     (conn->read_event && event_pending(conn->read_event, EV_READ, NULL));
+}
+
+/** Reset our main loop counters. */
+void
+reset_main_loop_counters(void)
+{
+  stats_n_main_loop_successes = 0;
+  stats_n_main_loop_errors = 0;
+  stats_n_main_loop_idle = 0;
+}
+
+/** Increment the main loop success counter. */
+static void
+increment_main_loop_success_count(void)
+{
+  ++stats_n_main_loop_successes;
+}
+
+/** Get the main loop success counter. */
+uint64_t
+get_main_loop_success_count(void)
+{
+  return stats_n_main_loop_successes;
+}
+
+/** Increment the main loop error counter. */
+static void
+increment_main_loop_error_count(void)
+{
+  ++stats_n_main_loop_errors;
+}
+
+/** Get the main loop error counter. */
+uint64_t
+get_main_loop_error_count(void)
+{
+  return stats_n_main_loop_errors;
+}
+
+/** Increment the main loop idle counter. */
+static void
+increment_main_loop_idle_count(void)
+{
+  ++stats_n_main_loop_idle;
+}
+
+/** Get the main loop idle counter. */
+uint64_t
+get_main_loop_idle_count(void)
+{
+  return stats_n_main_loop_idle;
 }
 
 /** Check whether <b>conn</b> is correct in having (or not having) a
@@ -638,15 +712,82 @@ connection_should_read_from_linked_conn(connection_t *conn)
 
 /** If we called event_base_loop() and told it to never stop until it
  * runs out of events, now we've changed our mind: tell it we want it to
- * finish. */
+ * exit once the current round of callbacks is done, so that we can
+ * run external code, and then return to the main loop. */
 void
-tell_event_loop_to_finish(void)
+tell_event_loop_to_run_external_code(void)
 {
   if (!called_loop_once) {
     struct timeval tv = { 0, 0 };
     tor_event_base_loopexit(tor_libevent_get_base(), &tv);
     called_loop_once = 1; /* hack to avoid adding more exit events */
   }
+}
+
+/** Event to run 'shutdown did not work callback'. */
+static struct event *shutdown_did_not_work_event = NULL;
+
+/** Failsafe measure that should never actually be necessary: If
+ * tor_shutdown_event_loop_and_exit() somehow doesn't successfully exit the
+ * event loop, then this callback will kill Tor with an assertion failure
+ * seconds later
+ */
+static void
+shutdown_did_not_work_callback(evutil_socket_t fd, short event, void *arg)
+{
+  // LCOV_EXCL_START
+  (void) fd;
+  (void) event;
+  (void) arg;
+  tor_assert_unreached();
+  // LCOV_EXCL_STOP
+}
+
+#ifdef ENABLE_RESTART_DEBUGGING
+static struct event *tor_shutdown_event_loop_for_restart_event = NULL;
+static void
+tor_shutdown_event_loop_for_restart_cb(
+                      evutil_socket_t fd, short event, void *arg)
+{
+  (void)fd;
+  (void)event;
+  (void)arg;
+  tor_event_free(tor_shutdown_event_loop_for_restart_event);
+  tor_shutdown_event_loop_and_exit(0);
+}
+#endif
+
+/**
+ * After finishing the current callback (if any), shut down the main loop,
+ * clean up the process, and exit with <b>exitcode</b>.
+ */
+void
+tor_shutdown_event_loop_and_exit(int exitcode)
+{
+  if (main_loop_should_exit)
+    return; /* Ignore multiple calls to this function. */
+
+  main_loop_should_exit = 1;
+  main_loop_exit_value = exitcode;
+
+  /* Die with an assertion failure in ten seconds, if for some reason we don't
+   * exit normally. */
+  /* XXXX We should consider this code if it's never used. */
+  struct timeval ten_seconds = { 10, 0 };
+  shutdown_did_not_work_event = tor_evtimer_new(
+                  tor_libevent_get_base(),
+                  shutdown_did_not_work_callback, NULL);
+  event_add(shutdown_did_not_work_event, &ten_seconds);
+
+  /* Unlike loopexit, loopbreak prevents other callbacks from running. */
+  tor_event_base_loopbreak(tor_libevent_get_base());
+}
+
+/** Return true iff tor_shutdown_event_loop_and_exit() has been called. */
+int
+tor_event_loop_shutdown_is_pending(void)
+{
+  return main_loop_should_exit;
 }
 
 /** Helper: Tell the main loop to begin reading bytes into <b>conn</b> from
@@ -664,7 +805,7 @@ connection_start_reading_from_linked_conn(connection_t *conn)
     /* make sure that the event_base_loop() function exits at
      * the end of its run through the current connections, so we can
      * activate read events for linked connections. */
-    tell_event_loop_to_finish();
+    tell_event_loop_to_run_external_code();
   } else {
     tor_assert(smartlist_contains(active_linked_connection_lst, conn));
   }
@@ -1056,7 +1197,7 @@ run_connection_housekeeping(int i, time_t now)
   if (!connection_speaks_cells(conn))
     return; /* we're all done here, the rest is just for OR conns */
 
-  /* If we haven't written to an OR connection for a while, then either nuke
+  /* If we haven't flushed to an OR connection for a while, then either nuke
      the connection or send a keepalive, depending. */
 
   or_conn = TO_OR_CONN(conn);
@@ -1276,6 +1417,9 @@ find_periodic_event(const char *name)
   return NULL;
 }
 
+/** Event to run initialize_periodic_events_cb */
+static struct event *initialize_periodic_events_event = NULL;
+
 /** Helper, run one second after setup:
  * Initializes all members of periodic_events and starts them running.
  *
@@ -1287,6 +1431,7 @@ initialize_periodic_events_cb(evutil_socket_t fd, short events, void *data)
   (void) fd;
   (void) events;
   (void) data;
+  tor_event_free(initialize_periodic_events_event);
   int i;
   for (i = 0; periodic_events[i].name; ++i) {
     periodic_event_launch(&periodic_events[i]);
@@ -1315,9 +1460,10 @@ initialize_periodic_events(void)
   NAMED_CALLBACK(check_dns_honesty);
 
   struct timeval one_second = { 1, 0 };
-  event_base_once(tor_libevent_get_base(), -1, EV_TIMEOUT,
-                  initialize_periodic_events_cb, NULL,
-                  &one_second);
+  initialize_periodic_events_event = tor_evtimer_new(
+                  tor_libevent_get_base(),
+                  initialize_periodic_events_cb, NULL);
+  event_add(initialize_periodic_events_event, &one_second);
 }
 
 STATIC void
@@ -1406,7 +1552,9 @@ run_scheduled_events(time_t now)
   /* Maybe enough time elapsed for us to reconsider a circuit. */
   circuit_upgrade_circuits_from_guard_wait();
 
-  if (options->UseBridges && !options->DisableNetwork) {
+  if (options->UseBridges && !net_is_disabled()) {
+    /* Note: this check uses net_is_disabled(), not should_delay_dir_fetches()
+     * -- the latter is only for fetching consensus-derived directory info. */
     fetch_bridge_descriptors(options, now);
   }
 
@@ -1512,7 +1660,7 @@ rotate_onion_key_callback(time_t now, const or_options_t *options)
     if (router_rebuild_descriptor(1)<0) {
       log_info(LD_CONFIG, "Couldn't rebuild router descriptor");
     }
-    if (advertised_server_mode() && !options->DisableNetwork)
+    if (advertised_server_mode() && !net_is_disabled())
       router_upload_dir_desc_to_dirservers(0);
     return ONION_KEY_CONSENSUS_CHECK_INTERVAL;
   }
@@ -1555,8 +1703,7 @@ check_ed_keys_callback(time_t now, const or_options_t *options)
       if (new_signing_key < 0 ||
           generate_ed_link_cert(options, now, new_signing_key > 0)) {
         log_err(LD_OR, "Unable to update Ed25519 keys!  Exiting.");
-        tor_cleanup();
-        exit(1);
+        tor_shutdown_event_loop_and_exit(1);
       }
     }
     return 30;
@@ -1878,9 +2025,11 @@ check_descriptor_callback(time_t now, const or_options_t *options)
  * address has changed. */
 #define CHECK_DESCRIPTOR_INTERVAL (60)
 
+  (void)options;
+
   /* 2b. Once per minute, regenerate and upload the descriptor if the old
    * one is inaccurate. */
-  if (!options->DisableNetwork) {
+  if (!net_is_disabled()) {
     check_descriptor_bandwidth_changed(now);
     check_descriptor_ipaddress_changed(now);
     mark_my_descriptor_dirty_if_too_old(now);
@@ -1912,7 +2061,7 @@ check_for_reachability_bw_callback(time_t now, const or_options_t *options)
    * 20 minutes of our uptime. */
   if (server_mode(options) &&
       (have_completed_a_circuit() || !any_predicted_circuits(now)) &&
-      !we_are_hibernating()) {
+      !net_is_disabled()) {
     if (stats_n_seconds_working < TIMEOUT_UNTIL_UNREACHABILITY_COMPLAINT) {
       consider_testing_reachability(1, dirport_reachability_count==0);
       if (++dirport_reachability_count > 5)
@@ -2367,10 +2516,18 @@ do_hup(void)
   /* first, reload config variables, in case they've changed */
   if (options->ReloadTorrcOnSIGHUP) {
     /* no need to provide argc/v, they've been cached in init_from_config */
-    if (options_init_from_torrc(0, NULL) < 0) {
+    int init_rv = options_init_from_torrc(0, NULL);
+    if (init_rv < 0) {
       log_err(LD_CONFIG,"Reading config failed--see warnings above. "
               "For usage, try -h.");
       return -1;
+    } else if (BUG(init_rv > 0)) {
+      // LCOV_EXCL_START
+      /* This should be impossible: the only "return 1" cases in
+       * options_init_from_torrc are ones caused by command-line arguments;
+       * but they can't change while Tor is running. */
+      return -1;
+      // LCOV_EXCL_STOP
     }
     options = get_options(); /* they have changed now */
     /* Logs are only truncated the first time they are opened, but were
@@ -2406,7 +2563,7 @@ do_hup(void)
   /* retry appropriate downloads */
   router_reset_status_download_failures();
   router_reset_descriptor_download_failures();
-  if (!options->DisableNetwork)
+  if (!net_is_disabled())
     update_networkstatus_downloads(time(NULL));
 
   /* We'll retry routerstatus downloads in about 10 seconds; no need to
@@ -2454,7 +2611,7 @@ do_main_loop(void)
     }
   }
 
-  handle_signals(1);
+  handle_signals();
   monotime_init();
   timers_initialize();
 
@@ -2520,7 +2677,7 @@ do_main_loop(void)
   now = time(NULL);
   directory_info_has_arrived(now, 1, 0);
 
-  if (server_mode(get_options())) {
+  if (server_mode(get_options()) || dir_server_mode(get_options())) {
     /* launch cpuworkers. Need to do this *after* we've read the onion key. */
     cpu_init();
   }
@@ -2596,6 +2753,34 @@ do_main_loop(void)
   }
 #endif /* defined(HAVE_SYSTEMD) */
 
+  main_loop_should_exit = 0;
+  main_loop_exit_value = 0;
+
+#ifdef ENABLE_RESTART_DEBUGGING
+  {
+    static int first_time = 1;
+
+    if (first_time && getenv("TOR_DEBUG_RESTART")) {
+      first_time = 0;
+      const char *sec_str = getenv("TOR_DEBUG_RESTART_AFTER_SECONDS");
+      long sec;
+      int sec_ok=0;
+      if (sec_str &&
+          (sec = tor_parse_long(sec_str, 10, 0, INT_MAX, &sec_ok, NULL)) &&
+          sec_ok) {
+        /* Okay, we parsed the seconds. */
+      } else {
+        sec = 5;
+      }
+      struct timeval restart_after = { (time_t) sec, 0 };
+      tor_shutdown_event_loop_for_restart_event =
+        tor_evtimer_new(tor_libevent_get_base(),
+                        tor_shutdown_event_loop_for_restart_cb, NULL);
+      event_add(tor_shutdown_event_loop_for_restart_event, &restart_after);
+    }
+  }
+#endif
+
   return run_main_loop_until_done();
 }
 
@@ -2611,6 +2796,9 @@ run_main_loop_once(void)
   if (nt_service_is_stopping())
     return 0;
 
+  if (main_loop_should_exit)
+    return 0;
+
 #ifndef _WIN32
   /* Make it easier to tell whether libevent failure is our fault or not. */
   errno = 0;
@@ -2620,7 +2808,14 @@ run_main_loop_once(void)
    * so that libevent knows to run their callbacks. */
   SMARTLIST_FOREACH(active_linked_connection_lst, connection_t *, conn,
                     event_active(conn->read_event, EV_READ, 1));
-  called_loop_once = smartlist_len(active_linked_connection_lst) ? 1 : 0;
+
+  if (get_options()->MainloopStats) {
+    /* We always enforce that EVLOOP_ONCE is passed to event_base_loop() if we
+     * are collecting main loop statistics. */
+    called_loop_once = 1;
+  } else {
+    called_loop_once = smartlist_len(active_linked_connection_lst) ? 1 : 0;
+  }
 
   /* Make sure we know (about) what time it is. */
   update_approx_time(time(NULL));
@@ -2631,6 +2826,21 @@ run_main_loop_once(void)
    * of these happens, then run all the appropriate callbacks. */
   loop_result = event_base_loop(tor_libevent_get_base(),
                                 called_loop_once ? EVLOOP_ONCE : 0);
+
+  if (get_options()->MainloopStats) {
+    /* Update our main loop counters. */
+    if (loop_result == 0) {
+      // The call was successful.
+      increment_main_loop_success_count();
+    } else if (loop_result == -1) {
+      // The call was erroneous.
+      increment_main_loop_error_count();
+    } else if (loop_result == 1) {
+      // The call didn't have any active or pending events
+      // to handle.
+      increment_main_loop_idle_count();
+    }
+  }
 
   /* Oh, the loop failed.  That might be an error that we need to
    * catch, but more likely, it's just an interrupted poll() call or something,
@@ -2656,6 +2866,9 @@ run_main_loop_once(void)
       return 1;
     }
   }
+
+  if (main_loop_should_exit)
+    return 0;
 
   /* And here is where we put callbacks that happen "every time the event loop
    * runs."  They must be very fast, or else the whole Tor process will get
@@ -2685,7 +2898,11 @@ run_main_loop_until_done(void)
   do {
     loop_result = run_main_loop_once();
   } while (loop_result == 1);
-  return loop_result;
+
+  if (main_loop_should_exit)
+    return main_loop_exit_value;
+  else
+    return loop_result;
 }
 
 /** Libevent callback: invoked when we get a signal.
@@ -2709,14 +2926,13 @@ process_signal(int sig)
     {
     case SIGTERM:
       log_notice(LD_GENERAL,"Catching signal TERM, exiting cleanly.");
-      tor_cleanup();
-      exit(0);
+      tor_shutdown_event_loop_and_exit(0);
       break;
     case SIGINT:
       if (!server_mode(get_options())) { /* do it now */
         log_notice(LD_GENERAL,"Interrupt: exiting cleanly.");
-        tor_cleanup();
-        exit(0);
+        tor_shutdown_event_loop_and_exit(0);
+        return;
       }
 #ifdef HAVE_SYSTEMD
       sd_notify(0, "STOPPING=1");
@@ -2745,8 +2961,8 @@ process_signal(int sig)
 #endif
       if (do_hup() < 0) {
         log_warn(LD_CONFIG,"Restart failed (config error?). Exiting.");
-        tor_cleanup();
-        exit(1);
+        tor_shutdown_event_loop_and_exit(1);
+        return;
       }
 #ifdef HAVE_SYSTEMD
       sd_notify(0, "READY=1");
@@ -2928,9 +3144,15 @@ exit_function(void)
 #else
 #define UNIX_ONLY 1
 #endif
+
 static struct {
+  /** A numeric code for this signal. Must match the signal value if
+   * try_to_register is true. */
   int signal_value;
+  /** True if we should try to register this signal with libevent and catch
+   * corresponding posix signals. False otherwise. */
   int try_to_register;
+  /** Pointer to hold the event object constructed for this signal. */
   struct event *signal_event;
 } signal_handlers[] = {
 #ifdef SIGINT
@@ -2964,50 +3186,40 @@ static struct {
   { -1, -1, NULL }
 };
 
-/** Set up the signal handlers for either parent or child process */
+/** Set up the signal handler events for this process, and register them
+ * with libevent if appropriate. */
 void
-handle_signals(int is_parent)
+handle_signals(void)
 {
   int i;
-  if (is_parent) {
-    for (i = 0; signal_handlers[i].signal_value >= 0; ++i) {
-      if (signal_handlers[i].try_to_register) {
-        signal_handlers[i].signal_event =
-          tor_evsignal_new(tor_libevent_get_base(),
-                           signal_handlers[i].signal_value,
-                           signal_callback,
-                           &signal_handlers[i].signal_value);
-        if (event_add(signal_handlers[i].signal_event, NULL))
-          log_warn(LD_BUG, "Error from libevent when adding "
-                   "event for signal %d",
-                   signal_handlers[i].signal_value);
-      } else {
-        signal_handlers[i].signal_event =
-          tor_event_new(tor_libevent_get_base(), -1,
-                        EV_SIGNAL, signal_callback,
-                        &signal_handlers[i].signal_value);
-      }
+  const int enabled = !get_options()->DisableSignalHandlers;
+
+  for (i = 0; signal_handlers[i].signal_value >= 0; ++i) {
+    /* Signal handlers are only registered with libevent if they need to catch
+     * real POSIX signals.  We construct these signal handler events in either
+     * case, though, so that controllers can activate them with the SIGNAL
+     * command.
+     */
+    if (enabled && signal_handlers[i].try_to_register) {
+      signal_handlers[i].signal_event =
+        tor_evsignal_new(tor_libevent_get_base(),
+                         signal_handlers[i].signal_value,
+                         signal_callback,
+                         &signal_handlers[i].signal_value);
+      if (event_add(signal_handlers[i].signal_event, NULL))
+        log_warn(LD_BUG, "Error from libevent when adding "
+                 "event for signal %d",
+                 signal_handlers[i].signal_value);
+    } else {
+      signal_handlers[i].signal_event =
+        tor_event_new(tor_libevent_get_base(), -1,
+                      EV_SIGNAL, signal_callback,
+                      &signal_handlers[i].signal_value);
     }
-  } else {
-#ifndef _WIN32
-    struct sigaction action;
-    action.sa_flags = 0;
-    sigemptyset(&action.sa_mask);
-    action.sa_handler = SIG_IGN;
-    sigaction(SIGINT,  &action, NULL);
-    sigaction(SIGTERM, &action, NULL);
-    sigaction(SIGPIPE, &action, NULL);
-    sigaction(SIGUSR1, &action, NULL);
-    sigaction(SIGUSR2, &action, NULL);
-    sigaction(SIGHUP,  &action, NULL);
-#ifdef SIGXFSZ
-    sigaction(SIGXFSZ, &action, NULL);
-#endif
-#endif /* !defined(_WIN32) */
   }
 }
 
-/* Make sure the signal handler for signal_num will be called. */
+/* Cause the signal handler for signal_num to be called in the event loop. */
 void
 activate_signal(int signal_num)
 {
@@ -3020,7 +3232,8 @@ activate_signal(int signal_num)
   }
 }
 
-/** Main entry point for the Tor command-line client.
+/** Main entry point for the Tor command-line client.  Return 0 on "success",
+ * negative on "failure", and positive on "success and exit".
  */
 int
 tor_init(int argc, char *argv[])
@@ -3112,14 +3325,13 @@ tor_init(int argc, char *argv[])
                  "Expect more bugs than usual.");
   }
 
-  {
-    rust_str_t rust_str = rust_welcome_string();
-    const char *s = rust_str_get(rust_str);
-    if (strlen(s) > 0) {
-      log_notice(LD_GENERAL, "%s", s);
-    }
-    rust_str_free(rust_str);
+#ifdef HAVE_RUST
+  char *rust_str = rust_welcome_string();
+  if (rust_str != NULL && strlen(rust_str) > 0) {
+    log_notice(LD_GENERAL, "%s", rust_str);
   }
+  tor_free(rust_str);
+#endif /* defined(HAVE_RUST) */
 
   if (network_init()<0) {
     log_err(LD_BUG,"Error initializing network; exiting.");
@@ -3127,9 +3339,14 @@ tor_init(int argc, char *argv[])
   }
   atexit(exit_function);
 
-  if (options_init_from_torrc(argc,argv) < 0) {
+  int init_rv = options_init_from_torrc(argc,argv);
+  if (init_rv < 0) {
     log_err(LD_CONFIG,"Reading config failed--see warnings above.");
     return -1;
+  } else if (init_rv > 0) {
+    // We succeeded, and should exit anyway -- probably the user just said
+    // "--version" or something like that.
+    return 1;
   }
 
   /* The options are now initialised */
@@ -3159,7 +3376,7 @@ tor_init(int argc, char *argv[])
     log_warn(LD_NET, "Problem initializing libevent RNG.");
   }
 
-  /* Scan/clean unparseable descroptors; after reading config */
+  /* Scan/clean unparseable descriptors; after reading config */
   routerparse_init();
 
   return 0;
@@ -3181,7 +3398,7 @@ try_locking(const or_options_t *options, int err_if_locked)
   if (lockfile)
     return 0;
   else {
-    char *fname = options_get_datadir_fname2_suffix(options, "lock",NULL,NULL);
+    char *fname = options_get_datadir_fname(options, "lock");
     int already_locked = 0;
     tor_lockfile_t *lf = tor_lockfile_lock(fname, 0, &already_locked);
     tor_free(fname);
@@ -3199,7 +3416,7 @@ try_locking(const or_options_t *options, int err_if_locked)
         r = try_locking(options, 0);
         if (r<0) {
           log_err(LD_GENERAL, "No, it's still there.  Exiting.");
-          exit(1);
+          return -1;
         }
         return r;
       }
@@ -3292,16 +3509,32 @@ tor_free_all(int postfork)
   periodic_timer_free(second_timer);
   teardown_periodic_events();
   periodic_timer_free(refill_timer);
+  tor_event_free(shutdown_did_not_work_event);
+  tor_event_free(initialize_periodic_events_event);
 
   if (!postfork) {
     release_lockfile();
   }
+  tor_libevent_free_all();
   /* Stuff in util.c and address.c*/
   if (!postfork) {
     escaped(NULL);
     esc_router_info(NULL);
     clean_up_backtrace_handler();
     logs_free_all(); /* free log strings. do this last so logs keep working. */
+  }
+}
+
+/**
+ * Remove the specified file, and log a warning if the operation fails for
+ * any reason other than the file not existing. Ignores NULL filenames.
+ */
+void
+tor_remove_file(const char *filename)
+{
+  if (filename && tor_unlink(filename) != 0 && errno != ENOENT) {
+    log_warn(LD_FS, "Couldn't unlink %s: %s",
+               filename, strerror(errno));
   }
 }
 
@@ -3314,18 +3547,20 @@ tor_cleanup(void)
     time_t now = time(NULL);
     /* Remove our pid file. We don't care if there was an error when we
      * unlink, nothing we could do about it anyways. */
-    if (options->PidFile) {
-      if (unlink(options->PidFile) != 0) {
-        log_warn(LD_FS, "Couldn't unlink pid file %s: %s",
-                 options->PidFile, strerror(errno));
-      }
+    tor_remove_file(options->PidFile);
+    /* Remove control port file */
+    tor_remove_file(options->ControlPortWriteToFile);
+    /* Remove cookie authentication file */
+    {
+      char *cookie_fname = get_controller_cookie_file_name();
+      tor_remove_file(cookie_fname);
+      tor_free(cookie_fname);
     }
-    if (options->ControlPortWriteToFile) {
-      if (unlink(options->ControlPortWriteToFile) != 0) {
-        log_warn(LD_FS, "Couldn't unlink control port file %s: %s",
-                 options->ControlPortWriteToFile,
-                 strerror(errno));
-      }
+    /* Remove Extended ORPort cookie authentication file */
+    {
+      char *cookie_fname = get_ext_or_auth_cookie_file_name();
+      tor_remove_file(cookie_fname);
+      tor_free(cookie_fname);
     }
     if (accounting_is_enabled(options))
       accounting_record_bandwidth_usage(now, get_or_state());
@@ -3458,7 +3693,7 @@ sandbox_init_filter(void)
   int i;
 
   sandbox_cfg_allow_openat_filename(&cfg,
-      get_datadir_fname("cached-status"));
+      get_cachedir_fname("cached-status"));
 
 #define OPEN(name)                              \
   sandbox_cfg_allow_open_filename(&cfg, tor_strdup(name))
@@ -3479,21 +3714,38 @@ sandbox_init_filter(void)
     OPEN_DATADIR2(name, name2 suffix);                  \
   } while (0)
 
+#define OPEN_KEY_DIRECTORY() \
+  sandbox_cfg_allow_open_filename(&cfg, tor_strdup(options->KeyDirectory))
+#define OPEN_CACHEDIR(name)                      \
+  sandbox_cfg_allow_open_filename(&cfg, get_cachedir_fname(name))
+#define OPEN_CACHEDIR_SUFFIX(name, suffix) do {  \
+    OPEN_CACHEDIR(name);                         \
+    OPEN_CACHEDIR(name suffix);                  \
+  } while (0)
+#define OPEN_KEYDIR(name)                      \
+  sandbox_cfg_allow_open_filename(&cfg, get_keydir_fname(name))
+#define OPEN_KEYDIR_SUFFIX(name, suffix) do {    \
+    OPEN_KEYDIR(name);                           \
+    OPEN_KEYDIR(name suffix);                    \
+  } while (0)
+
   OPEN(options->DataDirectory);
-  OPEN_DATADIR("keys");
-  OPEN_DATADIR_SUFFIX("cached-certs", ".tmp");
-  OPEN_DATADIR_SUFFIX("cached-consensus", ".tmp");
-  OPEN_DATADIR_SUFFIX("unverified-consensus", ".tmp");
-  OPEN_DATADIR_SUFFIX("unverified-microdesc-consensus", ".tmp");
-  OPEN_DATADIR_SUFFIX("cached-microdesc-consensus", ".tmp");
-  OPEN_DATADIR_SUFFIX("cached-microdescs", ".tmp");
-  OPEN_DATADIR_SUFFIX("cached-microdescs.new", ".tmp");
-  OPEN_DATADIR_SUFFIX("cached-descriptors", ".tmp");
-  OPEN_DATADIR_SUFFIX("cached-descriptors.new", ".tmp");
-  OPEN_DATADIR("cached-descriptors.tmp.tmp");
-  OPEN_DATADIR_SUFFIX("cached-extrainfo", ".tmp");
-  OPEN_DATADIR_SUFFIX("cached-extrainfo.new", ".tmp");
-  OPEN_DATADIR("cached-extrainfo.tmp.tmp");
+  OPEN_KEY_DIRECTORY();
+
+  OPEN_CACHEDIR_SUFFIX("cached-certs", ".tmp");
+  OPEN_CACHEDIR_SUFFIX("cached-consensus", ".tmp");
+  OPEN_CACHEDIR_SUFFIX("unverified-consensus", ".tmp");
+  OPEN_CACHEDIR_SUFFIX("unverified-microdesc-consensus", ".tmp");
+  OPEN_CACHEDIR_SUFFIX("cached-microdesc-consensus", ".tmp");
+  OPEN_CACHEDIR_SUFFIX("cached-microdescs", ".tmp");
+  OPEN_CACHEDIR_SUFFIX("cached-microdescs.new", ".tmp");
+  OPEN_CACHEDIR_SUFFIX("cached-descriptors", ".tmp");
+  OPEN_CACHEDIR_SUFFIX("cached-descriptors.new", ".tmp");
+  OPEN_CACHEDIR("cached-descriptors.tmp.tmp");
+  OPEN_CACHEDIR_SUFFIX("cached-extrainfo", ".tmp");
+  OPEN_CACHEDIR_SUFFIX("cached-extrainfo.new", ".tmp");
+  OPEN_CACHEDIR("cached-extrainfo.tmp.tmp");
+
   OPEN_DATADIR_SUFFIX("state", ".tmp");
   OPEN_DATADIR_SUFFIX("sr-state", ".tmp");
   OPEN_DATADIR_SUFFIX("unparseable-desc", ".tmp");
@@ -3523,6 +3775,10 @@ sandbox_init_filter(void)
     }
   }
 
+  SMARTLIST_FOREACH(options->FilesOpenedByIncludes, char *, f, {
+    OPEN(f);
+  });
+
 #define RENAME_SUFFIX(name, suffix)        \
   sandbox_cfg_allow_rename(&cfg,           \
       get_datadir_fname(name suffix),      \
@@ -3533,20 +3789,31 @@ sandbox_init_filter(void)
                            get_datadir_fname2(prefix, name suffix),     \
                            get_datadir_fname2(prefix, name))
 
-  RENAME_SUFFIX("cached-certs", ".tmp");
-  RENAME_SUFFIX("cached-consensus", ".tmp");
-  RENAME_SUFFIX("unverified-consensus", ".tmp");
-  RENAME_SUFFIX("unverified-microdesc-consensus", ".tmp");
-  RENAME_SUFFIX("cached-microdesc-consensus", ".tmp");
-  RENAME_SUFFIX("cached-microdescs", ".tmp");
-  RENAME_SUFFIX("cached-microdescs", ".new");
-  RENAME_SUFFIX("cached-microdescs.new", ".tmp");
-  RENAME_SUFFIX("cached-descriptors", ".tmp");
-  RENAME_SUFFIX("cached-descriptors", ".new");
-  RENAME_SUFFIX("cached-descriptors.new", ".tmp");
-  RENAME_SUFFIX("cached-extrainfo", ".tmp");
-  RENAME_SUFFIX("cached-extrainfo", ".new");
-  RENAME_SUFFIX("cached-extrainfo.new", ".tmp");
+#define RENAME_CACHEDIR_SUFFIX(name, suffix)        \
+  sandbox_cfg_allow_rename(&cfg,           \
+      get_cachedir_fname(name suffix),      \
+      get_cachedir_fname(name))
+
+#define RENAME_KEYDIR_SUFFIX(name, suffix)    \
+  sandbox_cfg_allow_rename(&cfg,           \
+      get_keydir_fname(name suffix),      \
+      get_keydir_fname(name))
+
+  RENAME_CACHEDIR_SUFFIX("cached-certs", ".tmp");
+  RENAME_CACHEDIR_SUFFIX("cached-consensus", ".tmp");
+  RENAME_CACHEDIR_SUFFIX("unverified-consensus", ".tmp");
+  RENAME_CACHEDIR_SUFFIX("unverified-microdesc-consensus", ".tmp");
+  RENAME_CACHEDIR_SUFFIX("cached-microdesc-consensus", ".tmp");
+  RENAME_CACHEDIR_SUFFIX("cached-microdescs", ".tmp");
+  RENAME_CACHEDIR_SUFFIX("cached-microdescs", ".new");
+  RENAME_CACHEDIR_SUFFIX("cached-microdescs.new", ".tmp");
+  RENAME_CACHEDIR_SUFFIX("cached-descriptors", ".tmp");
+  RENAME_CACHEDIR_SUFFIX("cached-descriptors", ".new");
+  RENAME_CACHEDIR_SUFFIX("cached-descriptors.new", ".tmp");
+  RENAME_CACHEDIR_SUFFIX("cached-extrainfo", ".tmp");
+  RENAME_CACHEDIR_SUFFIX("cached-extrainfo", ".new");
+  RENAME_CACHEDIR_SUFFIX("cached-extrainfo.new", ".tmp");
+
   RENAME_SUFFIX("state", ".tmp");
   RENAME_SUFFIX("sr-state", ".tmp");
   RENAME_SUFFIX("unparseable-desc", ".tmp");
@@ -3558,14 +3825,21 @@ sandbox_init_filter(void)
 #define STAT_DATADIR(name)                      \
   sandbox_cfg_allow_stat_filename(&cfg, get_datadir_fname(name))
 
+#define STAT_CACHEDIR(name)                                             \
+  sandbox_cfg_allow_stat_filename(&cfg, get_cachedir_fname(name))
+
 #define STAT_DATADIR2(name, name2)                                      \
   sandbox_cfg_allow_stat_filename(&cfg, get_datadir_fname2((name), (name2)))
+
+#define STAT_KEY_DIRECTORY() \
+  sandbox_cfg_allow_stat_filename(&cfg, tor_strdup(options->KeyDirectory))
 
   STAT_DATADIR(NULL);
   STAT_DATADIR("lock");
   STAT_DATADIR("state");
   STAT_DATADIR("router-stability");
-  STAT_DATADIR("cached-extrainfo.new");
+
+  STAT_CACHEDIR("cached-extrainfo.new");
 
   {
     smartlist_t *files = smartlist_new();
@@ -3630,22 +3904,20 @@ sandbox_init_filter(void)
   // orport
   if (server_mode(get_options())) {
 
-    OPEN_DATADIR2_SUFFIX("keys", "secret_id_key", ".tmp");
-    OPEN_DATADIR2_SUFFIX("keys", "secret_onion_key", ".tmp");
-    OPEN_DATADIR2_SUFFIX("keys", "secret_onion_key_ntor", ".tmp");
-    OPEN_DATADIR2("keys", "secret_id_key.old");
-    OPEN_DATADIR2("keys", "secret_onion_key.old");
-    OPEN_DATADIR2("keys", "secret_onion_key_ntor.old");
+    OPEN_KEYDIR_SUFFIX("secret_id_key", ".tmp");
+    OPEN_KEYDIR_SUFFIX("secret_onion_key", ".tmp");
+    OPEN_KEYDIR_SUFFIX("secret_onion_key_ntor", ".tmp");
+    OPEN_KEYDIR("secret_id_key.old");
+    OPEN_KEYDIR("secret_onion_key.old");
+    OPEN_KEYDIR("secret_onion_key_ntor.old");
 
-    OPEN_DATADIR2_SUFFIX("keys", "ed25519_master_id_secret_key", ".tmp");
-    OPEN_DATADIR2_SUFFIX("keys", "ed25519_master_id_secret_key_encrypted",
-                         ".tmp");
-    OPEN_DATADIR2_SUFFIX("keys", "ed25519_master_id_public_key", ".tmp");
-    OPEN_DATADIR2_SUFFIX("keys", "ed25519_signing_secret_key", ".tmp");
-    OPEN_DATADIR2_SUFFIX("keys", "ed25519_signing_secret_key_encrypted",
-                         ".tmp");
-    OPEN_DATADIR2_SUFFIX("keys", "ed25519_signing_public_key", ".tmp");
-    OPEN_DATADIR2_SUFFIX("keys", "ed25519_signing_cert", ".tmp");
+    OPEN_KEYDIR_SUFFIX("ed25519_master_id_secret_key", ".tmp");
+    OPEN_KEYDIR_SUFFIX("ed25519_master_id_secret_key_encrypted", ".tmp");
+    OPEN_KEYDIR_SUFFIX("ed25519_master_id_public_key", ".tmp");
+    OPEN_KEYDIR_SUFFIX("ed25519_signing_secret_key", ".tmp");
+    OPEN_KEYDIR_SUFFIX("ed25519_signing_secret_key_encrypted", ".tmp");
+    OPEN_KEYDIR_SUFFIX("ed25519_signing_public_key", ".tmp");
+    OPEN_KEYDIR_SUFFIX("ed25519_signing_cert", ".tmp");
 
     OPEN_DATADIR2_SUFFIX("stats", "bridge-stats", ".tmp");
     OPEN_DATADIR2_SUFFIX("stats", "dirreq-stats", ".tmp");
@@ -3664,11 +3936,13 @@ sandbox_init_filter(void)
     OPEN("/etc/resolv.conf");
 
     RENAME_SUFFIX("fingerprint", ".tmp");
-    RENAME_SUFFIX2("keys", "secret_onion_key_ntor", ".tmp");
-    RENAME_SUFFIX2("keys", "secret_id_key", ".tmp");
-    RENAME_SUFFIX2("keys", "secret_id_key.old", ".tmp");
-    RENAME_SUFFIX2("keys", "secret_onion_key", ".tmp");
-    RENAME_SUFFIX2("keys", "secret_onion_key.old", ".tmp");
+    RENAME_KEYDIR_SUFFIX("secret_onion_key_ntor", ".tmp");
+
+    RENAME_KEYDIR_SUFFIX("secret_id_key", ".tmp");
+    RENAME_KEYDIR_SUFFIX("secret_id_key.old", ".tmp");
+    RENAME_KEYDIR_SUFFIX("secret_onion_key", ".tmp");
+    RENAME_KEYDIR_SUFFIX("secret_onion_key.old", ".tmp");
+
     RENAME_SUFFIX2("stats", "bridge-stats", ".tmp");
     RENAME_SUFFIX2("stats", "dirreq-stats", ".tmp");
     RENAME_SUFFIX2("stats", "entry-stats", ".tmp");
@@ -3679,20 +3953,20 @@ sandbox_init_filter(void)
     RENAME_SUFFIX("hashed-fingerprint", ".tmp");
     RENAME_SUFFIX("router-stability", ".tmp");
 
-    RENAME_SUFFIX2("keys", "ed25519_master_id_secret_key", ".tmp");
-    RENAME_SUFFIX2("keys", "ed25519_master_id_secret_key_encrypted", ".tmp");
-    RENAME_SUFFIX2("keys", "ed25519_master_id_public_key", ".tmp");
-    RENAME_SUFFIX2("keys", "ed25519_signing_secret_key", ".tmp");
-    RENAME_SUFFIX2("keys", "ed25519_signing_cert", ".tmp");
+    RENAME_KEYDIR_SUFFIX("ed25519_master_id_secret_key", ".tmp");
+    RENAME_KEYDIR_SUFFIX("ed25519_master_id_secret_key_encrypted", ".tmp");
+    RENAME_KEYDIR_SUFFIX("ed25519_master_id_public_key", ".tmp");
+    RENAME_KEYDIR_SUFFIX("ed25519_signing_secret_key", ".tmp");
+    RENAME_KEYDIR_SUFFIX("ed25519_signing_cert", ".tmp");
 
     sandbox_cfg_allow_rename(&cfg,
-             get_datadir_fname2("keys", "secret_onion_key"),
-             get_datadir_fname2("keys", "secret_onion_key.old"));
+             get_keydir_fname("secret_onion_key"),
+             get_keydir_fname("secret_onion_key.old"));
     sandbox_cfg_allow_rename(&cfg,
-             get_datadir_fname2("keys", "secret_onion_key_ntor"),
-             get_datadir_fname2("keys", "secret_onion_key_ntor.old"));
+             get_keydir_fname("secret_onion_key_ntor"),
+             get_keydir_fname("secret_onion_key_ntor.old"));
 
-    STAT_DATADIR("keys");
+    STAT_KEY_DIRECTORY();
     OPEN_DATADIR("stats");
     STAT_DATADIR("stats");
     STAT_DATADIR2("stats", "dirreq-stats");
@@ -3705,13 +3979,15 @@ sandbox_init_filter(void)
   return cfg;
 }
 
-/** Main entry point for the Tor process.  Called from main(). */
-/* This function is distinct from main() only so we can link main.c into
- * the unittest binary without conflicting with the unittests' main. */
+/* Main entry point for the Tor process.  Called from tor_main(), and by
+ * anybody embedding Tor. */
 int
-tor_main(int argc, char *argv[])
+tor_run_main(const tor_main_configuration_t *tor_cfg)
 {
   int result = 0;
+
+  int argc = tor_cfg->argc;
+  char **argv = tor_cfg->argv;
 
 #ifdef _WIN32
 #ifndef HeapEnableTerminationOnCorruption
@@ -3735,6 +4011,7 @@ tor_main(int argc, char *argv[])
 #endif /* defined(_WIN32) */
 
   configure_backtrace_handler(get_version());
+  init_protocol_warning_severity_level();
 
   update_approx_time(time(NULL));
   tor_threads_init();
@@ -3756,8 +4033,13 @@ tor_main(int argc, char *argv[])
      if (done) return result;
   }
 #endif /* defined(NT_SERVICE) */
-  if (tor_init(argc, argv)<0)
-    return -1;
+  {
+    int init_rv = tor_init(argc, argv);
+    if (init_rv < 0)
+      return -1;
+    else if (init_rv > 0)
+      return 0;
+  }
 
   if (get_options()->Sandbox && get_options()->command == CMD_RUN_TOR) {
     sandbox_cfg_t* cfg = sandbox_init_filter();

@@ -99,9 +99,6 @@ static void adjust_exit_policy_from_exitpolicy_failure(origin_circuit_t *circ,
                                                   entry_connection_t *conn,
                                                   node_t *node,
                                                   const tor_addr_t *addr);
-#if 0
-static int get_max_middle_cells(void);
-#endif
 
 /** Stop reading on edge connections when we have this many cells
  * waiting on the appropriate queue. */
@@ -118,6 +115,9 @@ uint64_t stats_n_relay_cells_relayed = 0;
  * hop?
  */
 uint64_t stats_n_relay_cells_delivered = 0;
+/** Stats: how many circuits have we closed due to the cell queue limit being
+ * reached (see append_cell_to_circuit_queue()) */
+uint64_t stats_n_circ_max_cell_reached = 0;
 
 /** Used to tell which stream to read from first on a circuit. */
 static tor_weak_rng_t stream_choice_rng = TOR_WEAK_RNG_INIT;
@@ -1158,7 +1158,7 @@ connected_cell_parse(const relay_header_t *rh, const cell_t *cell,
 
 /** Drop all storage held by <b>addr</b>. */
 STATIC void
-address_ttl_free(address_ttl_t *addr)
+address_ttl_free_(address_ttl_t *addr)
 {
   if (!addr)
     return;
@@ -1455,6 +1455,7 @@ connection_edge_process_relay_cell_not_open(
              "Got a badly formatted connected cell. Closing.");
       connection_edge_end(conn, END_STREAM_REASON_TORPROTOCOL);
       connection_mark_unattached_ap(entry_conn, END_STREAM_REASON_TORPROTOCOL);
+      return 0;
     }
     if (tor_addr_family(&addr) != AF_UNSPEC) {
       const sa_family_t family = tor_addr_family(&addr);
@@ -2425,7 +2426,7 @@ packed_cell_new(void)
 
 /** Return a packed cell used outside by channel_t lower layer */
 void
-packed_cell_free(packed_cell_t *cell)
+packed_cell_free_(packed_cell_t *cell)
 {
   if (!cell)
     return;
@@ -2482,7 +2483,7 @@ cell_queue_append_packed_copy(circuit_t *circ, cell_queue_t *queue,
   (void)exitward;
   (void)use_stats;
 
-  copy->inserted_time = (uint32_t) monotime_coarse_absolute_msec();
+  copy->inserted_timestamp = monotime_coarse_get_stamp();
 
   cell_queue_append(queue, copy);
 }
@@ -2565,7 +2566,7 @@ destroy_cell_queue_append(destroy_cell_queue_t *queue,
   cell->circid = circid;
   cell->reason = reason;
   /* Not yet used, but will be required for OOM handling. */
-  cell->inserted_time = (uint32_t) monotime_coarse_absolute_msec();
+  cell->inserted_timestamp = monotime_coarse_get_stamp();
 
   TOR_SIMPLEQ_INSERT_TAIL(&queue->head, cell, next);
   ++queue->n;
@@ -2596,7 +2597,7 @@ packed_cell_mem_cost(void)
 }
 
 /* DOCDOC */
-STATIC size_t
+size_t
 cell_queues_get_total_allocation(void)
 {
   return total_cells_allocated * packed_cell_mem_cost();
@@ -2631,7 +2632,7 @@ cell_queues_check_size(void)
       if (rend_cache_total > get_options()->MaxMemInQueues / 5) {
         const size_t bytes_to_remove =
           rend_cache_total - (size_t)(get_options()->MaxMemInQueues / 10);
-        alloc -= hs_cache_handle_oom(time(NULL), bytes_to_remove);
+        alloc -= hs_cache_handle_oom(now, bytes_to_remove);
       }
       if (geoip_client_cache_total > get_options()->MaxMemInQueues / 5) {
         const size_t bytes_to_remove =
@@ -2830,8 +2831,13 @@ channel_flush_from_first_active_circuit, (channel_t *chan, int max))
       tor_assert(dcell);
       /* frees dcell */
       cell = destroy_cell_to_packed_cell(dcell, chan->wide_circ_ids);
-      /* frees cell */
-      channel_write_packed_cell(chan, cell);
+      /* Send the DESTROY cell. It is very unlikely that this fails but just
+       * in case, get rid of the channel. */
+      if (channel_write_packed_cell(chan, cell) < 0) {
+        /* The cell has been freed. */
+        channel_mark_for_close(chan);
+        continue;
+      }
       /* Update the cmux destroy counter */
       circuitmux_notify_xmit_destroy(cmux);
       cell = NULL;
@@ -2874,9 +2880,10 @@ channel_flush_from_first_active_circuit, (channel_t *chan, int max))
     /* Calculate the exact time that this cell has spent in the queue. */
     if (get_options()->CellStatistics ||
         get_options()->TestingEnableCellStatsEvent) {
-      uint32_t msec_waiting;
-      uint32_t msec_now = (uint32_t)monotime_coarse_absolute_msec();
-      msec_waiting = msec_now - cell->inserted_time;
+      uint32_t timestamp_now = monotime_coarse_get_stamp();
+      uint32_t msec_waiting =
+        (uint32_t) monotime_coarse_stamp_units_to_approx_msec(
+                         timestamp_now - cell->inserted_timestamp);
 
       if (get_options()->CellStatistics && !CIRCUIT_IS_ORIGIN(circ)) {
         or_circ = TO_OR_CIRCUIT(circ);
@@ -2907,8 +2914,13 @@ channel_flush_from_first_active_circuit, (channel_t *chan, int max))
                                 DIRREQ_TUNNELED,
                                 DIRREQ_CIRC_QUEUE_FLUSHED);
 
-    /* Now send the cell */
-    channel_write_packed_cell(chan, cell);
+    /* Now send the cell. It is very unlikely that this fails but just in
+     * case, get rid of the channel. */
+    if (channel_write_packed_cell(chan, cell) < 0) {
+      /* The cell has been freed at this point. */
+      channel_mark_for_close(chan);
+      continue;
+    }
     cell = NULL;
 
     /*
@@ -2943,22 +2955,67 @@ channel_flush_from_first_active_circuit, (channel_t *chan, int max))
   return n_flushed;
 }
 
-#if 0
-/** Indicate the current preferred cap for middle circuits; zero disables
- * the cap.  Right now it's just a constant, ORCIRC_MAX_MIDDLE_CELLS, but
- * the logic in append_cell_to_circuit_queue() is written to be correct
- * if we want to base it on a consensus param or something that might change
- * in the future.
- */
-static int
-get_max_middle_cells(void)
+/* Minimum value is the maximum circuit window size.
+ *
+ * SENDME cells makes it that we can control how many cells can be inflight on
+ * a circuit from end to end. This logic makes it that on any circuit cell
+ * queue, we have a maximum of cells possible.
+ *
+ * Because the Tor protocol allows for a client to exit at any hop in a
+ * circuit and a circuit can be of a maximum of 8 hops, so in theory the
+ * normal worst case will be the circuit window start value times the maximum
+ * number of hops (8). Having more cells then that means something is wrong.
+ *
+ * However, because padding cells aren't counted in the package window, we set
+ * the maximum size to a reasonably large size for which we expect that we'll
+ * never reach in theory. And if we ever do because of future changes, we'll
+ * be able to control it with a consensus parameter.
+ *
+ * XXX: Unfortunately, END cells aren't accounted for in the circuit window
+ * which means that for instance if a client opens 8001 streams, the 8001
+ * following END cells will queue up in the circuit which will get closed if
+ * the max limit is 8000. Which is sad because it is allowed by the Tor
+ * protocol. But, we need an upper bound on circuit queue in order to avoid
+ * DoS memory pressure so the default size is a middle ground between not
+ * having any limit and having a very restricted one. This is why we can also
+ * control it through a consensus parameter. */
+#define RELAY_CIRC_CELL_QUEUE_SIZE_MIN CIRCWINDOW_START_MAX
+/* We can't have a consensus parameter above this value. */
+#define RELAY_CIRC_CELL_QUEUE_SIZE_MAX INT32_MAX
+/* Default value is set to a large value so we can handle padding cells
+ * properly which aren't accounted for in the SENDME window. Default is 50000
+ * allowed cells in the queue resulting in ~25MB. */
+#define RELAY_CIRC_CELL_QUEUE_SIZE_DEFAULT \
+  (50 * RELAY_CIRC_CELL_QUEUE_SIZE_MIN)
+
+/* The maximum number of cell a circuit queue can contain. This is updated at
+ * every new consensus and controlled by a parameter. */
+static int32_t max_circuit_cell_queue_size =
+  RELAY_CIRC_CELL_QUEUE_SIZE_DEFAULT;
+
+/* Called when the consensus has changed. At this stage, the global consensus
+ * object has NOT been updated. It is called from
+ * notify_before_networkstatus_changes(). */
+void
+relay_consensus_has_changed(const networkstatus_t *ns)
 {
-  return ORCIRC_MAX_MIDDLE_CELLS;
+  tor_assert(ns);
+
+  /* Update the circuit max cell queue size from the consensus. */
+  max_circuit_cell_queue_size =
+    networkstatus_get_param(ns, "circ_max_cell_queue_size",
+                            RELAY_CIRC_CELL_QUEUE_SIZE_DEFAULT,
+                            RELAY_CIRC_CELL_QUEUE_SIZE_MIN,
+                            RELAY_CIRC_CELL_QUEUE_SIZE_MAX);
 }
-#endif /* 0 */
 
 /** Add <b>cell</b> to the queue of <b>circ</b> writing to <b>chan</b>
- * transmitting in <b>direction</b>. */
+ * transmitting in <b>direction</b>.
+ *
+ * The given <b>cell</b> is copied over the circuit queue so the caller must
+ * cleanup the memory.
+ *
+ * This function is part of the fast path. */
 void
 append_cell_to_circuit_queue(circuit_t *circ, channel_t *chan,
                              cell_t *cell, cell_direction_t direction,
@@ -2967,10 +3024,6 @@ append_cell_to_circuit_queue(circuit_t *circ, channel_t *chan,
   or_circuit_t *orcirc = NULL;
   cell_queue_t *queue;
   int streams_blocked;
-#if 0
-  uint32_t tgt_max_middle_cells, p_len, n_len, tmp, hard_max_middle_cells;
-#endif
-
   int exitward;
   if (circ->marked_for_close)
     return;
@@ -2985,93 +3038,25 @@ append_cell_to_circuit_queue(circuit_t *circ, channel_t *chan,
     streams_blocked = circ->streams_blocked_on_p_chan;
   }
 
-  /*
-   * Disabling this for now because of a possible guard discovery attack
-   */
-#if 0
-  /* Are we a middle circuit about to exceed ORCIRC_MAX_MIDDLE_CELLS? */
-  if ((circ->n_chan != NULL) && CIRCUIT_IS_ORCIRC(circ)) {
-    orcirc = TO_OR_CIRCUIT(circ);
-    if (orcirc->p_chan) {
-      /* We are a middle circuit if we have both n_chan and p_chan */
-      /* We'll need to know the current preferred maximum */
-      tgt_max_middle_cells = get_max_middle_cells();
-      if (tgt_max_middle_cells > 0) {
-        /* Do we need to initialize middle_max_cells? */
-        if (orcirc->max_middle_cells == 0) {
-          orcirc->max_middle_cells = tgt_max_middle_cells;
-        } else {
-          if (tgt_max_middle_cells > orcirc->max_middle_cells) {
-            /* If we want to increase the cap, we can do so right away */
-            orcirc->max_middle_cells = tgt_max_middle_cells;
-          } else if (tgt_max_middle_cells < orcirc->max_middle_cells) {
-            /*
-             * If we're shrinking the cap, we can't shrink past either queue;
-             * compare tgt_max_middle_cells rather than tgt_max_middle_cells *
-             * ORCIRC_MAX_MIDDLE_KILL_THRESH so the queues don't shrink enough
-             * to generate spurious warnings, either.
-             */
-            n_len = circ->n_chan_cells.n;
-            p_len = orcirc->p_chan_cells.n;
-            tmp = tgt_max_middle_cells;
-            if (tmp < n_len) tmp = n_len;
-            if (tmp < p_len) tmp = p_len;
-            orcirc->max_middle_cells = tmp;
-          }
-          /* else no change */
-        }
-      } else {
-        /* tgt_max_middle_cells == 0 indicates we should disable the cap */
-        orcirc->max_middle_cells = 0;
-      }
-
-      /* Now we know orcirc->max_middle_cells is set correctly */
-      if (orcirc->max_middle_cells > 0) {
-        hard_max_middle_cells =
-          (uint32_t)(((double)orcirc->max_middle_cells) *
-                     ORCIRC_MAX_MIDDLE_KILL_THRESH);
-
-        if ((unsigned)queue->n + 1 >= hard_max_middle_cells) {
-          /* Queueing this cell would put queue over the kill theshold */
-          log_warn(LD_CIRC,
-                   "Got a cell exceeding the hard cap of %u in the "
-                   "%s direction on middle circ ID %u on chan ID "
-                   U64_FORMAT "; killing the circuit.",
-                   hard_max_middle_cells,
-                   (direction == CELL_DIRECTION_OUT) ? "n" : "p",
-                   (direction == CELL_DIRECTION_OUT) ?
-                     circ->n_circ_id : orcirc->p_circ_id,
-                   U64_PRINTF_ARG(
-                     (direction == CELL_DIRECTION_OUT) ?
-                        circ->n_chan->global_identifier :
-                        orcirc->p_chan->global_identifier));
-          circuit_mark_for_close(circ, END_CIRC_REASON_RESOURCELIMIT);
-          return;
-        } else if ((unsigned)queue->n + 1 == orcirc->max_middle_cells) {
-          /* Only use ==, not >= for this test so we don't spam the log */
-          log_warn(LD_CIRC,
-                   "While trying to queue a cell, reached the soft cap of %u "
-                   "in the %s direction on middle circ ID %u "
-                   "on chan ID " U64_FORMAT ".",
-                   orcirc->max_middle_cells,
-                   (direction == CELL_DIRECTION_OUT) ? "n" : "p",
-                   (direction == CELL_DIRECTION_OUT) ?
-                     circ->n_circ_id : orcirc->p_circ_id,
-                   U64_PRINTF_ARG(
-                     (direction == CELL_DIRECTION_OUT) ?
-                        circ->n_chan->global_identifier :
-                        orcirc->p_chan->global_identifier));
-        }
-      }
-    }
+  if (PREDICT_UNLIKELY(queue->n >= max_circuit_cell_queue_size)) {
+    log_fn(LOG_PROTOCOL_WARN, LD_PROTOCOL,
+           "%s circuit has %d cells in its queue, maximum allowed is %d. "
+           "Closing circuit for safety reasons.",
+           (exitward) ? "Outbound" : "Inbound", queue->n,
+           max_circuit_cell_queue_size);
+    circuit_mark_for_close(circ, END_CIRC_REASON_RESOURCELIMIT);
+    stats_n_circ_max_cell_reached++;
+    return;
   }
-#endif /* 0 */
 
+  /* Very important that we copy to the circuit queue because all calls to
+   * this function use the stack for the cell memory. */
   cell_queue_append_packed_copy(circ, queue, exitward, cell,
                                 chan->wide_circ_ids, 1);
 
+  /* Check and run the OOM if needed. */
   if (PREDICT_UNLIKELY(cell_queues_check_size())) {
-    /* We ran the OOM handler */
+    /* We ran the OOM handler which might have closed this circuit. */
     if (circ->marked_for_close)
       return;
   }

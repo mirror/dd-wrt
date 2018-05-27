@@ -102,11 +102,6 @@ LIBOR_A_SRC = \
   $(threads_impl_source)				\
   $(readpassphrase_source)
 
-if USE_RUST
-else
-LIBOR_A_SRC += src/common/compat_rust.c
-endif
-
 src/common/src_common_libor_testing_a-log.$(OBJEXT) \
   src/common/log.$(OBJEXT): micro-revision.i
 
@@ -119,6 +114,8 @@ LIBOR_CRYPTO_A_SRC = \
   src/common/compress_zlib.c	\
   src/common/compress_zstd.c	\
   src/common/crypto.c		\
+  src/common/crypto_rsa.c     \
+  src/common/crypto_openssl_mgt.c    \
   src/common/crypto_pwbox.c     \
   src/common/crypto_s2k.c	\
   src/common/crypto_format.c	\
@@ -158,7 +155,6 @@ COMMONHEADERS = \
   src/common/compat.h				\
   src/common/compat_libevent.h			\
   src/common/compat_openssl.h			\
-  src/common/compat_rust.h			\
   src/common/compat_threads.h			\
   src/common/compat_time.h			\
   src/common/compress.h				\
@@ -172,6 +168,8 @@ COMMONHEADERS = \
   src/common/crypto_curve25519.h		\
   src/common/crypto_ed25519.h			\
   src/common/crypto_format.h			\
+  src/common/crypto_openssl_mgt.h         \
+  src/common/crypto_rsa.h           \
   src/common/crypto_pwbox.h			\
   src/common/crypto_s2k.h			\
   src/common/di_ops.h				\

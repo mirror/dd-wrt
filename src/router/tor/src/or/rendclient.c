@@ -459,7 +459,8 @@ directory_get_from_hs_dir(const char *desc_id,
     hs_dir = hs_pick_hsdir(responsible_dirs, desc_id_base32);
     if (!hs_dir) {
       /* No suitable hs dir can be found, stop right now. */
-      control_event_hs_descriptor_failed(rend_query, NULL, "QUERY_NO_HSDIR");
+      control_event_hsv2_descriptor_failed(rend_query, NULL,
+                                           "QUERY_NO_HSDIR");
       control_event_hs_descriptor_content(rend_data_get_address(rend_query),
                                           desc_id_base32, NULL, NULL);
       return 0;
@@ -482,7 +483,7 @@ directory_get_from_hs_dir(const char *desc_id,
                       REND_DESC_COOKIE_LEN,
                       0)<0) {
       log_warn(LD_BUG, "Could not base64-encode descriptor cookie.");
-      control_event_hs_descriptor_failed(rend_query, hsdir_fp, "BAD_DESC");
+      control_event_hsv2_descriptor_failed(rend_query, hsdir_fp, "BAD_DESC");
       control_event_hs_descriptor_content(rend_data_get_address(rend_query),
                                           desc_id_base32, hsdir_fp, NULL);
       return 0;
@@ -515,9 +516,10 @@ directory_get_from_hs_dir(const char *desc_id,
            (rend_data->auth_type == REND_NO_AUTH ? "[none]" :
             escaped_safe_str_client(descriptor_cookie_base64)),
            routerstatus_describe(hs_dir));
-  control_event_hs_descriptor_requested(rend_query,
+  control_event_hs_descriptor_requested(rend_data->onion_address,
+                                        rend_data->auth_type,
                                         hs_dir->identity_digest,
-                                        desc_id_base32);
+                                        desc_id_base32, NULL);
   return 1;
 }
 
@@ -569,7 +571,7 @@ fetch_v2_desc_by_descid(const char *desc_id,
 
 /** Fetch a v2 descriptor using the onion address in the given query object.
  * This will compute the descriptor id for each replicas and fetch it on the
- * given hsdir(s) if any or the responsible ones that are choosen
+ * given hsdir(s) if any or the responsible ones that are chosen
  * automatically.
  *
  * On success, 1 is returned. If no hidden service is left to ask, return 0.
@@ -1102,18 +1104,22 @@ rend_client_lookup_service_authorization(const char *onion_address)
   return strmap_get(auth_hid_servs, onion_address);
 }
 
+#define rend_service_authorization_free(val)                    \
+  FREE_AND_NULL(rend_service_authorization_t,                   \
+                rend_service_authorization_free_, (val))
+
 /** Helper: Free storage held by rend_service_authorization_t. */
 static void
-rend_service_authorization_free(rend_service_authorization_t *auth)
+rend_service_authorization_free_(rend_service_authorization_t *auth)
 {
   tor_free(auth);
 }
 
 /** Helper for strmap_free. */
 static void
-rend_service_authorization_strmap_item_free(void *service_auth)
+rend_service_authorization_free_void(void *service_auth)
 {
-  rend_service_authorization_free(service_auth);
+  rend_service_authorization_free_(service_auth);
 }
 
 /** Release all the storage held in auth_hid_servs.
@@ -1124,7 +1130,7 @@ rend_service_authorization_free_all(void)
   if (!auth_hid_servs) {
     return;
   }
-  strmap_free(auth_hid_servs, rend_service_authorization_strmap_item_free);
+  strmap_free(auth_hid_servs, rend_service_authorization_free_void);
   auth_hid_servs = NULL;
 }
 
@@ -1199,7 +1205,7 @@ rend_parse_service_authorization(const or_options_t *options,
     rend_service_authorization_free_all();
     auth_hid_servs = parsed;
   } else {
-    strmap_free(parsed, rend_service_authorization_strmap_item_free);
+    strmap_free(parsed, rend_service_authorization_free_void);
   }
   return res;
 }

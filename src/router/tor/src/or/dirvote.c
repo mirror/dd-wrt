@@ -278,7 +278,9 @@ format_networkstatus_vote(crypto_pk_t *private_signing_key,
     vote_microdesc_hash_t *h;
     rsf = routerstatus_format_entry(&vrs->status,
                                     vrs->version, vrs->protocols,
-                                    NS_V3_VOTE, vrs);
+                                    NS_V3_VOTE,
+                                    ROUTERSTATUS_FORMAT_NO_CONSENSUS_METHOD,
+                                    vrs);
     if (rsf)
       smartlist_add(chunks, rsf);
 
@@ -519,7 +521,7 @@ compute_routerstatus_consensus(smartlist_t *votes, int consensus_method,
 
   /* compare_vote_rs_() sorts the items by identity digest (all the same),
    * then by SD digest.  That way, if we have a tie that the published_on
-   * date cannot tie, we use the descriptor with the smaller digest.
+   * date cannot break, we use the descriptor with the smaller digest.
    */
   smartlist_sort(votes, compare_vote_rs_);
   SMARTLIST_FOREACH_BEGIN(votes, vote_routerstatus_t *, rs) {
@@ -663,7 +665,7 @@ static int
 consensus_method_is_supported(int method)
 {
   if (method == MIN_METHOD_FOR_ED25519_ID_IN_MD) {
-    /* This method was broken due to buggy code accidently left in
+    /* This method was broken due to buggy code accidentally left in
      * dircollate.c; do not actually use it.
      */
     return 0;
@@ -795,6 +797,9 @@ dirvote_compute_params(smartlist_t *votes, int method, int total_authorities)
   output = smartlist_new();
 
   SMARTLIST_FOREACH_BEGIN(param_list, const char *, param) {
+    /* resolve spurious clang shallow analysis null pointer errors */
+    tor_assert(param);
+
     const char *next_param;
     int ok=0;
     eq = strchr(param, '=');
@@ -807,8 +812,7 @@ dirvote_compute_params(smartlist_t *votes, int method, int total_authorities)
       next_param = NULL;
     else
       next_param = smartlist_get(param_list, param_sl_idx+1);
-    /* resolve spurious clang shallow analysis null pointer errors */
-    tor_assert(param);
+
     if (!next_param || strncmp(next_param, param, cur_param_len)) {
       /* We've reached the end of a series. */
       /* Make sure enough authorities voted on this param, unless the
@@ -1315,8 +1319,9 @@ compute_nth_protocol_set(int n, int n_voters, const smartlist_t *votes)
 /** Given a list of vote networkstatus_t in <b>votes</b>, our public
  * authority <b>identity_key</b>, our private authority <b>signing_key</b>,
  * and the number of <b>total_authorities</b> that we believe exist in our
- * voting quorum, generate the text of a new v3 consensus vote, and return the
- * value in a newly allocated string.
+ * voting quorum, generate the text of a new v3 consensus or microdescriptor
+ * consensus (depending on <b>flavor</b>), and return the value in a newly
+ * allocated string.
  *
  * Note: this function DOES NOT check whether the votes are from
  * recognized authorities.   (dirvote_add_vote does that.)
@@ -2099,7 +2104,8 @@ networkstatus_compute_consensus(smartlist_t *votes,
         char *buf;
         /* Okay!! Now we can write the descriptor... */
         /*     First line goes into "buf". */
-        buf = routerstatus_format_entry(&rs_out, NULL, NULL, rs_format, NULL);
+        buf = routerstatus_format_entry(&rs_out, NULL, NULL,
+                                        rs_format, consensus_method, NULL);
         if (buf)
           smartlist_add(chunks, buf);
       }
@@ -2685,7 +2691,7 @@ get_detached_signatures_from_pending_consensuses(pending_consensus_t *pending,
 
 /** Release all storage held in <b>s</b>. */
 void
-ns_detached_signatures_free(ns_detached_signatures_t *s)
+ns_detached_signatures_free_(ns_detached_signatures_t *s)
 {
   if (!s)
     return;
@@ -2843,10 +2849,13 @@ get_voting_schedule(const or_options_t *options, time_t now, int severity)
   return new_voting_schedule;
 }
 
+#define voting_schedule_free(s) \
+  FREE_AND_NULL(voting_schedule_t, voting_schedule_free_, (s))
+
 /** Frees a voting_schedule_t. This should be used instead of the generic
  * tor_free. */
 static void
-voting_schedule_free(voting_schedule_t *voting_schedule_to_free)
+voting_schedule_free_(voting_schedule_t *voting_schedule_to_free)
 {
   if (!voting_schedule_to_free)
     return;
@@ -3551,7 +3560,13 @@ dirvote_add_signatures_to_pending_consensus(
   }
   r = networkstatus_add_detached_signatures(pc->consensus, sigs,
                                             source, severity, msg_out);
-  log_info(LD_DIR,"Added %d signatures to consensus.", r);
+  if (r >= 0) {
+    log_info(LD_DIR,"Added %d signatures to consensus.", r);
+  } else {
+    log_fn(LOG_PROTOCOL_WARN, LD_DIR,
+           "Unable to add signatures to consensus: %s",
+           *msg_out ? *msg_out : "(unknown)");
+  }
 
   if (r >= 1) {
     char *new_signatures =
@@ -3829,7 +3844,10 @@ dirvote_create_microdescriptor(const routerinfo_t *ri, int consensus_method)
     smartlist_add_asprintf(chunks, "ntor-onion-key %s", kbuf);
   }
 
+  /* We originally put a lines in the micrdescriptors, but then we worked out
+   * that we needed them in the microdesc consensus. See #20916. */
   if (consensus_method >= MIN_METHOD_FOR_A_LINES &&
+      consensus_method < MIN_METHOD_FOR_NO_A_LINES_IN_MICRODESC &&
       !tor_addr_is_null(&ri->ipv6_addr) && ri->ipv6_orport)
     smartlist_add_asprintf(chunks, "a %s\n",
                            fmt_addrport(&ri->ipv6_addr, ri->ipv6_orport));
@@ -3938,7 +3956,9 @@ static const struct consensus_method_range_t {
   {MIN_METHOD_FOR_P6_LINES, MIN_METHOD_FOR_NTOR_KEY - 1},
   {MIN_METHOD_FOR_NTOR_KEY, MIN_METHOD_FOR_ID_HASH_IN_MD - 1},
   {MIN_METHOD_FOR_ID_HASH_IN_MD, MIN_METHOD_FOR_ED25519_ID_IN_MD - 1},
-  {MIN_METHOD_FOR_ED25519_ID_IN_MD, MAX_SUPPORTED_CONSENSUS_METHOD},
+  {MIN_METHOD_FOR_ED25519_ID_IN_MD,
+    MIN_METHOD_FOR_NO_A_LINES_IN_MICRODESC - 1},
+  {MIN_METHOD_FOR_NO_A_LINES_IN_MICRODESC, MAX_SUPPORTED_CONSENSUS_METHOD},
   {-1, -1}
 };
 

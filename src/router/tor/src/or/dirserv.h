@@ -123,7 +123,7 @@ void dirserv_set_cached_consensus_networkstatus(const char *consensus,
 void dirserv_clear_old_networkstatuses(time_t cutoff);
 int dirserv_get_routerdesc_spool(smartlist_t *spools_out, const char *key,
                                  dir_spool_source_t source,
-                                 int conn_is_encrytped,
+                                 int conn_is_encrypted,
                                  const char **msg_out);
 int dirserv_get_routerdescs(smartlist_t *descs_out, const char *key,
                             const char **msg);
@@ -150,6 +150,7 @@ char *routerstatus_format_entry(
                               const char *version,
                               const char *protocols,
                               routerstatus_format_type_t format,
+                              int consensus_method,
                               const vote_routerstatus_t *vrs);
 void dirserv_free_all(void);
 void cached_dir_decref(cached_dir_t *d);
@@ -195,7 +196,9 @@ spooled_resource_t *spooled_resource_new(dir_spool_source_t source,
                                          size_t digestlen);
 spooled_resource_t *spooled_resource_new_from_cache_entry(
                                       struct consensus_cache_entry_t *entry);
-void spooled_resource_free(spooled_resource_t *spooled);
+void spooled_resource_free_(spooled_resource_t *spooled);
+#define spooled_resource_free(sp) \
+  FREE_AND_NULL(spooled_resource_t, spooled_resource_free_, (sp))
 void dirserv_spool_remove_missing_and_guess_size(dir_connection_t *conn,
                                                  time_t cutoff,
                                                  int compression,

@@ -210,7 +210,7 @@ hs_check_service_private_dir(const char *username, const char *path,
   return 0;
 }
 
-/* Default, minimum and maximum values for the maximum rendezvous failures
+/* Default, minimum, and maximum values for the maximum rendezvous failures
  * consensus parameter. */
 #define MAX_REND_FAILURES_DEFAULT 2
 #define MAX_REND_FAILURES_MIN 1
@@ -347,7 +347,7 @@ rend_data_alloc(uint32_t version)
 
 /** Free all storage associated with <b>data</b> */
 void
-rend_data_free(rend_data_t *data)
+rend_data_free_(rend_data_t *data)
 {
   if (!data) {
     return;

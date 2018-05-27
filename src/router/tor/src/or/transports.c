@@ -154,7 +154,7 @@ transport_new(const tor_addr_t *addr, uint16_t port,
 
 /** Free the pluggable transport struct <b>transport</b>. */
 void
-transport_free(transport_t *transport)
+transport_free_(transport_t *transport)
 {
   if (!transport)
     return;
@@ -590,7 +590,7 @@ pt_configure_remaining_proxies(void)
     }
 
     /* If the proxy is not fully configured, try to configure it
-       futher. */
+       further. */
     if (!proxy_configuration_finished(mp))
       if (configure_proxy(mp) == 1)
         at_least_a_proxy_config_finished = 1;

@@ -79,13 +79,28 @@ extern int dmalloc_free(const char *file, const int line, void *pnt,
  *
  * This is a macro.  If you need a function pointer to release memory from
  * tor_malloc(), use tor_free_().
+ *
+ * Note that this macro takes the address of the pointer it is going to
+ * free and clear.  If that pointer is stored with a nonstandard
+ * alignment (eg because of a "packed" pragma) it is not correct to use
+ * tor_free().
  */
+#ifdef __GNUC__
+#define tor_free(p) STMT_BEGIN                                 \
+    typeof(&(p)) tor_free__tmpvar = &(p);                      \
+    if (PREDICT_LIKELY((*tor_free__tmpvar)!=NULL)) {           \
+      raw_free(*tor_free__tmpvar);                             \
+      *tor_free__tmpvar=NULL;                                  \
+    }                                                          \
+  STMT_END
+#else
 #define tor_free(p) STMT_BEGIN                                 \
     if (PREDICT_LIKELY((p)!=NULL)) {                           \
       raw_free(p);                                             \
       (p)=NULL;                                                \
     }                                                          \
   STMT_END
+#endif
 #endif /* defined(USE_DMALLOC) */
 
 #define tor_malloc(size)       tor_malloc_(size DMALLOC_ARGS)
@@ -108,6 +123,17 @@ extern int dmalloc_free(const char *file, const int line, void *pnt,
 #define raw_strdup  strdup
 
 void tor_log_mallinfo(int severity);
+
+/* Helper macro: free a variable of type 'typename' using freefn, and
+ * set the variable to NULL.
+ */
+#define FREE_AND_NULL(typename, freefn, var)                            \
+  do {                                                                  \
+    /* only evaluate (var) once. */                                     \
+    typename **tmp__free__ptr ## freefn = &(var);                       \
+    freefn(*tmp__free__ptr ## freefn);                                  \
+    (*tmp__free__ptr ## freefn) = NULL;                                 \
+  } while (0)
 
 /** Macro: yield a pointer to the field at position <b>off</b> within the
  * structure <b>st</b>.  Example:
@@ -207,7 +233,8 @@ const char *find_str_at_start_of_line(const char *haystack,
                                       const char *needle);
 int string_is_C_identifier(const char *string);
 int string_is_key_value(int severity, const char *string);
-int string_is_valid_hostname(const char *string);
+int string_is_valid_dest(const char *string);
+int string_is_valid_nonrfc_hostname(const char *string);
 int string_is_valid_ipv4_address(const char *string);
 int string_is_valid_ipv6_address(const char *string);
 
@@ -423,7 +450,9 @@ struct process_environment_t {
 };
 
 process_environment_t *process_environment_make(struct smartlist_t *env_vars);
-void process_environment_free(process_environment_t *env);
+void process_environment_free_(process_environment_t *env);
+#define process_environment_free(env) \
+  FREE_AND_NULL(process_environment_t, process_environment_free_, (env))
 
 struct smartlist_t *get_current_process_environment_variables(void);
 

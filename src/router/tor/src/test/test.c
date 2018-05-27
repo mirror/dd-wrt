@@ -62,7 +62,6 @@ double fabs(double x);
 #include "routerparse.h"
 #include "statefile.h"
 #include "crypto_curve25519.h"
-#include "onion_ntor.h"
 
 /** Run unit tests for the onion handshake code. */
 static void
@@ -174,7 +173,7 @@ test_bad_onion_handshake(void *arg)
                                             s_buf, s_keys, 40));
   c_buf[64] ^= 33;
 
-  /* (Let the server procede) */
+  /* (Let the server proceed) */
   tt_int_op(0, OP_EQ,
             onion_skin_TAP_server_handshake(c_buf, pk, NULL,
                                             s_buf, s_keys, 40));
@@ -345,8 +344,8 @@ test_onion_queues(void *arg)
   tt_int_op(0,OP_EQ, onion_num_pending(ONION_HANDSHAKE_TYPE_NTOR));
 
  done:
-  circuit_free(TO_CIRCUIT(circ1));
-  circuit_free(TO_CIRCUIT(circ2));
+  circuit_free_(TO_CIRCUIT(circ1));
+  circuit_free_(TO_CIRCUIT(circ2));
   tor_free(create1);
   tor_free(create2);
   tor_free(onionskin);
@@ -616,7 +615,7 @@ test_rend_fns(void *arg)
  done:
   if (descs) {
     for (i = 0; i < smartlist_len(descs); i++)
-      rend_encoded_v2_service_descriptor_free(smartlist_get(descs, i));
+      rend_encoded_v2_service_descriptor_free_(smartlist_get(descs, i));
     smartlist_free(descs);
   }
   if (parsed)
@@ -1197,6 +1196,7 @@ struct testgroup_t testgroups[] = {
   { "circuitlist/", circuitlist_tests },
   { "circuitmux/", circuitmux_tests },
   { "circuituse/", circuituse_tests },
+  { "circuitstats/", circuitstats_tests },
   { "compat/libevent/", compat_libevent_tests },
   { "config/", config_tests },
   { "connection/", connection_tests },
@@ -1208,10 +1208,10 @@ struct testgroup_t testgroups[] = {
   { "control/event/", controller_event_tests },
   { "crypto/", crypto_tests },
   { "crypto/openssl/", crypto_openssl_tests },
-  { "dos/", dos_tests },
   { "dir/", dir_tests },
   { "dir_handle_get/", dir_handle_get_tests },
   { "dir/md/", microdesc_tests },
+  { "dos/", dos_tests },
   { "entryconn/", entryconn_tests },
   { "entrynodes/", entrynodes_tests },
   { "guardfraction/", guardfraction_tests },
@@ -1221,6 +1221,7 @@ struct testgroup_t testgroups[] = {
   { "hs_cell/", hs_cell_tests },
   { "hs_common/", hs_common_tests },
   { "hs_config/", hs_config_tests },
+  { "hs_control/", hs_control_tests },
   { "hs_descriptor/", hs_descriptor },
   { "hs_ntor/", hs_ntor_tests },
   { "hs_service/", hs_service_tests },
@@ -1247,7 +1248,6 @@ struct testgroup_t testgroups[] = {
   { "routerkeys/", routerkeys_tests },
   { "routerlist/", routerlist_tests },
   { "routerset/" , routerset_tests },
-  { "rust/", rust_tests },
   { "scheduler/", scheduler_tests },
   { "socks/", socks_tests },
   { "shared-random/", sr_tests },

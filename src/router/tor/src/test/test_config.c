@@ -323,7 +323,7 @@ test_config_write_to_data_subdir(void *arg)
   tt_int_op(mkdir(options->DataDirectory, 0700), OP_EQ, 0);
 #endif
 
-  // Write attempt shoudl fail, if subdirectory doesn't exist.
+  // Write attempt should fail, if subdirectory doesn't exist.
   tt_assert(write_to_data_subdir(subdir, fname, str, NULL));
   tt_assert(! check_or_create_data_subdir(subdir));
 
@@ -583,6 +583,22 @@ test_config_parse_transport_options_line(void *arg)
     SMARTLIST_FOREACH(sl_tmp, char *, s, tor_free(s));
     smartlist_free(sl_tmp);
   }
+}
+
+/* Mocks needed for the compute_max_mem_in_queues test */
+static int get_total_system_memory_mock(size_t *mem_out);
+
+static size_t total_system_memory_output = 0;
+static int total_system_memory_return = 0;
+
+static int
+get_total_system_memory_mock(size_t *mem_out)
+{
+  if (! mem_out)
+    return -1;
+
+  *mem_out = total_system_memory_output;
+  return total_system_memory_return;
 }
 
 /* Mocks needed for the transport plugin line test */
@@ -1391,7 +1407,7 @@ test_config_resolve_my_address(void *arg)
    *      if running on.
    *   3. Hostname from previous step cannot be converted to
    *      address by using tor_inet_aton() function.
-   *   4. However, tor_lookup_hostname() succeds in resolving the
+   *   4. However, tor_lookup_hostname() succeeds in resolving the
    *      hostname from step 2.
    *   5. Unfortunately, tor_addr_is_internal() deems this address
    *      to be internal.
@@ -4833,7 +4849,7 @@ test_config_include_limit(void *data)
                torrc_path);
   tt_int_op(write_str_to_file(torrc_path, torrc_contents, 0), OP_EQ, 0);
 
-  tt_int_op(config_get_lines_include(torrc_contents, &result, 0, NULL),
+  tt_int_op(config_get_lines_include(torrc_contents, &result, 0, NULL, NULL),
             OP_EQ, -1);
 
  done:
@@ -4863,7 +4879,7 @@ test_config_include_does_not_exist(void *data)
   tor_snprintf(torrc_contents, sizeof(torrc_contents), "%%include %s",
                missing_path);
 
-  tt_int_op(config_get_lines_include(torrc_contents, &result, 0, NULL),
+  tt_int_op(config_get_lines_include(torrc_contents, &result, 0, NULL, NULL),
             OP_EQ, -1);
 
  done:
@@ -4895,7 +4911,7 @@ test_config_include_error_in_included_file(void *data)
   tor_snprintf(torrc_contents, sizeof(torrc_contents), "%%include %s",
                invalid_path);
 
-  tt_int_op(config_get_lines_include(torrc_contents, &result, 0, NULL),
+  tt_int_op(config_get_lines_include(torrc_contents, &result, 0, NULL, NULL),
             OP_EQ, -1);
 
  done:
@@ -4937,8 +4953,8 @@ test_config_include_empty_file_folder(void *data)
                folder_path, file_path);
 
   int include_used;
-  tt_int_op(config_get_lines_include(torrc_contents, &result, 0,&include_used),
-            OP_EQ, 0);
+  tt_int_op(config_get_lines_include(torrc_contents, &result, 0,&include_used,
+            NULL), OP_EQ, 0);
   tt_ptr_op(result, OP_EQ, NULL);
   tt_int_op(include_used, OP_EQ, 1);
 
@@ -4975,7 +4991,8 @@ test_config_include_no_permission(void *data)
                folder_path);
 
   int include_used;
-  tt_int_op(config_get_lines_include(torrc_contents, &result, 0,&include_used),
+  tt_int_op(config_get_lines_include(torrc_contents, &result, 0,
+                                     &include_used, NULL),
             OP_EQ, -1);
   tt_ptr_op(result, OP_EQ, NULL);
 
@@ -5031,8 +5048,8 @@ test_config_include_recursion_before_after(void *data)
   }
 
   int include_used;
-  tt_int_op(config_get_lines_include(file_contents, &result, 0, &include_used),
-            OP_EQ, 0);
+  tt_int_op(config_get_lines_include(file_contents, &result, 0, &include_used,
+            NULL), OP_EQ, 0);
   tt_ptr_op(result, OP_NE, NULL);
   tt_int_op(include_used, OP_EQ, 1);
 
@@ -5096,8 +5113,8 @@ test_config_include_recursion_after_only(void *data)
   }
 
   int include_used;
-  tt_int_op(config_get_lines_include(file_contents, &result, 0, &include_used),
-            OP_EQ, 0);
+  tt_int_op(config_get_lines_include(file_contents, &result, 0, &include_used,
+            NULL), OP_EQ, 0);
   tt_ptr_op(result, OP_NE, NULL);
   tt_int_op(include_used, OP_EQ, 1);
 
@@ -5185,8 +5202,8 @@ test_config_include_folder_order(void *data)
                torrcd);
 
   int include_used;
-  tt_int_op(config_get_lines_include(torrc_contents, &result, 0,&include_used),
-            OP_EQ, 0);
+  tt_int_op(config_get_lines_include(torrc_contents, &result, 0, &include_used,
+            NULL), OP_EQ, 0);
   tt_ptr_op(result, OP_NE, NULL);
   tt_int_op(include_used, OP_EQ, 1);
 
@@ -5239,8 +5256,8 @@ test_config_include_path_syntax(void *data)
                esc_dir_with_pathsep);
 
   int include_used;
-  tt_int_op(config_get_lines_include(torrc_contents, &result, 0,&include_used),
-            OP_EQ, 0);
+  tt_int_op(config_get_lines_include(torrc_contents, &result, 0,&include_used,
+            NULL), OP_EQ, 0);
   tt_ptr_op(result, OP_EQ, NULL);
   tt_int_op(include_used, OP_EQ, 1);
 
@@ -5294,14 +5311,14 @@ test_config_include_has_include(void *data)
   char torrc_contents[1000] = "Test 1\n";
   int include_used;
 
-  tt_int_op(config_get_lines_include(torrc_contents, &result, 0,&include_used),
-            OP_EQ, 0);
+  tt_int_op(config_get_lines_include(torrc_contents, &result, 0,&include_used,
+            NULL), OP_EQ, 0);
   tt_int_op(include_used, OP_EQ, 0);
   config_free_lines(result);
 
   tor_snprintf(torrc_contents, sizeof(torrc_contents), "%%include %s\n", dir);
-  tt_int_op(config_get_lines_include(torrc_contents, &result, 0,&include_used),
-            OP_EQ, 0);
+  tt_int_op(config_get_lines_include(torrc_contents, &result, 0,&include_used,
+            NULL), OP_EQ, 0);
   tt_int_op(include_used, OP_EQ, 1);
 
  done:
@@ -5516,6 +5533,153 @@ test_config_check_bridge_distribution_setting_unrecognised(void *arg)
   return;
 }
 
+static void
+test_config_include_opened_file_list(void *data)
+{
+  (void)data;
+
+  config_line_t *result = NULL;
+  smartlist_t *opened_files = smartlist_new();
+  char *dir = tor_strdup(get_fname("test_include_opened_file_list"));
+  tt_ptr_op(dir, OP_NE, NULL);
+
+#ifdef _WIN32
+  tt_int_op(mkdir(dir), OP_EQ, 0);
+#else
+  tt_int_op(mkdir(dir, 0700), OP_EQ, 0);
+#endif
+
+  char torrcd[PATH_MAX+1];
+  tor_snprintf(torrcd, sizeof(torrcd), "%s"PATH_SEPARATOR"%s", dir, "torrc.d");
+
+#ifdef _WIN32
+  tt_int_op(mkdir(torrcd), OP_EQ, 0);
+#else
+  tt_int_op(mkdir(torrcd, 0700), OP_EQ, 0);
+#endif
+
+  char subfolder[PATH_MAX+1];
+  tor_snprintf(subfolder, sizeof(subfolder), "%s"PATH_SEPARATOR"%s", torrcd,
+               "subfolder");
+
+#ifdef _WIN32
+  tt_int_op(mkdir(subfolder), OP_EQ, 0);
+#else
+  tt_int_op(mkdir(subfolder, 0700), OP_EQ, 0);
+#endif
+
+  char path[PATH_MAX+1];
+  tor_snprintf(path, sizeof(path), "%s"PATH_SEPARATOR"%s", subfolder,
+               "01_file_in_subfolder");
+  tt_int_op(write_str_to_file(path, "Test 1\n", 0), OP_EQ, 0);
+
+  char empty[PATH_MAX+1];
+  tor_snprintf(empty, sizeof(empty), "%s"PATH_SEPARATOR"%s", torrcd, "empty");
+  tt_int_op(write_str_to_file(empty, "", 0), OP_EQ, 0);
+
+  char file[PATH_MAX+1];
+  tor_snprintf(file, sizeof(file), "%s"PATH_SEPARATOR"%s", torrcd, "file");
+  tt_int_op(write_str_to_file(file, "Test 2\n", 0), OP_EQ, 0);
+
+  char dot[PATH_MAX+1];
+  tor_snprintf(dot, sizeof(dot), "%s"PATH_SEPARATOR"%s", torrcd, ".dot");
+  tt_int_op(write_str_to_file(dot, "Test 3\n", 0), OP_EQ, 0);
+
+  char torrc_contents[1000];
+  tor_snprintf(torrc_contents, sizeof(torrc_contents),
+               "%%include %s\n",
+               torrcd);
+
+  int include_used;
+  tt_int_op(config_get_lines_include(torrc_contents, &result, 0, &include_used,
+            opened_files), OP_EQ, 0);
+  tt_ptr_op(result, OP_NE, NULL);
+  tt_int_op(include_used, OP_EQ, 1);
+
+  tt_int_op(smartlist_len(opened_files), OP_EQ, 4);
+  tt_int_op(smartlist_contains_string(opened_files, torrcd), OP_EQ, 1);
+  tt_int_op(smartlist_contains_string(opened_files, subfolder), OP_EQ, 1);
+  // files inside subfolders are not opended, only the subfolder is opened
+  tt_int_op(smartlist_contains_string(opened_files, empty), OP_EQ, 1);
+  tt_int_op(smartlist_contains_string(opened_files, file), OP_EQ, 1);
+  // dot files are not opened as we ignore them when we get their name from
+  // their parent folder
+
+ done:
+  SMARTLIST_FOREACH(opened_files, char *, f, tor_free(f));
+  smartlist_free(opened_files);
+  config_free_lines(result);
+  tor_free(dir);
+}
+
+static void
+test_config_compute_max_mem_in_queues(void *data)
+{
+#define GIGABYTE(x) (U64_LITERAL(x) << 30)
+#define MEGABYTE(x) (U64_LITERAL(x) << 20)
+  (void)data;
+  MOCK(get_total_system_memory, get_total_system_memory_mock);
+
+  /* We are unable to detect the amount of memory on the system. Tor will try
+   * to use some sensible default values for 64-bit and 32-bit systems. */
+  total_system_memory_return = -1;
+
+#if SIZEOF_VOID_P >= 8
+  /* We are on a 64-bit system. */
+  tt_u64_op(compute_real_max_mem_in_queues(0, 0), OP_EQ, GIGABYTE(8));
+#else
+  /* We are on a 32-bit system. */
+  tt_u64_op(compute_real_max_mem_in_queues(0, 0), OP_EQ, GIGABYTE(1));
+#endif
+
+  /* We are able to detect the amount of RAM on the system. */
+  total_system_memory_return = 0;
+
+  /* We are running on a system with one gigabyte of RAM. */
+  total_system_memory_output = GIGABYTE(1);
+
+  /* We have 0.75 * RAM available. */
+  tt_u64_op(compute_real_max_mem_in_queues(0, 0), OP_EQ,
+            3 * (GIGABYTE(1) / 4));
+
+  /* We are running on a tiny machine with 256 MB of RAM. */
+  total_system_memory_output = MEGABYTE(256);
+
+  /* We will now enforce a minimum of 256 MB of RAM available for the
+   * MaxMemInQueues here, even though we should only have had 0.75 * 256 = 192
+   * MB available. */
+  tt_u64_op(compute_real_max_mem_in_queues(0, 0), OP_EQ, MEGABYTE(256));
+
+#if SIZEOF_SIZE_T > 4
+  /* We are running on a machine with 8 GB of RAM. */
+  total_system_memory_output = GIGABYTE(8);
+
+  /* We will have 0.4 * RAM available. */
+  tt_u64_op(compute_real_max_mem_in_queues(0, 0), OP_EQ,
+            2 * (GIGABYTE(8) / 5));
+
+  /* We are running on a machine with 16 GB of RAM. */
+  total_system_memory_output = GIGABYTE(16);
+
+  /* We will have 0.4 * RAM available. */
+  tt_u64_op(compute_real_max_mem_in_queues(0, 0), OP_EQ,
+            2 * (GIGABYTE(16) / 5));
+
+  /* We are running on a machine with 32 GB of RAM. */
+  total_system_memory_output = GIGABYTE(32);
+
+  /* We will at maximum get MAX_DEFAULT_MEMORY_QUEUE_SIZE here. */
+  tt_u64_op(compute_real_max_mem_in_queues(0, 0), OP_EQ,
+            MAX_DEFAULT_MEMORY_QUEUE_SIZE);
+#endif
+
+ done:
+  UNMOCK(get_total_system_memory);
+
+#undef GIGABYTE
+#undef MEGABYTE
+}
+
 #define CONFIG_TEST(name, flags)                          \
   { #name, test_config_ ## name, flags, NULL, NULL }
 
@@ -5563,6 +5727,8 @@ struct testcase_t config_tests[] = {
   CONFIG_TEST(check_bridge_distribution_setting_valid, 0),
   CONFIG_TEST(check_bridge_distribution_setting_invalid, 0),
   CONFIG_TEST(check_bridge_distribution_setting_unrecognised, 0),
+  CONFIG_TEST(include_opened_file_list, 0),
+  CONFIG_TEST(compute_max_mem_in_queues, 0),
   END_OF_TESTCASES
 };
 

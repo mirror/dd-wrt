@@ -16,7 +16,7 @@
     tor_assert((n)->ri || (n)->rs);                             \
   } STMT_END
 
-node_t *node_get_mutable_by_id(const char *identity_digest);
+MOCK_DECL(node_t *, node_get_mutable_by_id,(const char *identity_digest));
 MOCK_DECL(const node_t *, node_get_by_id, (const char *identity_digest));
 node_t *node_get_mutable_by_ed25519_id(const ed25519_public_key_t *ed_id);
 MOCK_DECL(const node_t *, node_get_by_ed25519_id,
@@ -35,8 +35,6 @@ void nodelist_remove_microdesc(const char *identity_digest, microdesc_t *md);
 void nodelist_remove_routerinfo(routerinfo_t *ri);
 void nodelist_purge(void);
 smartlist_t *nodelist_find_nodes_with_microdesc(const microdesc_t *md);
-
-void nodelist_recompute_all_hsdir_indices(void);
 
 void nodelist_free_all(void);
 void nodelist_assert_ok(void);
@@ -66,7 +64,8 @@ const smartlist_t *node_get_declared_family(const node_t *node);
 const ed25519_public_key_t *node_get_ed25519_id(const node_t *node);
 int node_ed25519_id_matches(const node_t *node,
                             const ed25519_public_key_t *id);
-int node_supports_ed25519_link_authentication(const node_t *node);
+int node_supports_ed25519_link_authentication(const node_t *node,
+                                              int compatible_with_us);
 int node_supports_v3_hsdir(const node_t *node);
 int node_supports_ed25519_hs_intro(const node_t *node);
 int node_supports_v3_rendezvous_point(const node_t *node);
@@ -86,6 +85,8 @@ int node_get_prim_dirport(const node_t *node, tor_addr_port_t *ap_out);
 void node_get_pref_dirport(const node_t *node, tor_addr_port_t *ap_out);
 void node_get_pref_ipv6_dirport(const node_t *node, tor_addr_port_t *ap_out);
 int node_has_curve25519_onion_key(const node_t *node);
+const curve25519_public_key_t *node_get_curve25519_onion_key(
+                                  const node_t *node);
 
 MOCK_DECL(smartlist_t *, nodelist_get_list, (void));
 

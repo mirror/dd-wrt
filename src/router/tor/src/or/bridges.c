@@ -53,7 +53,10 @@ struct bridge_info_t {
   smartlist_t *socks_args;
 };
 
-static void bridge_free(bridge_info_t *bridge);
+#define bridge_free(bridge) \
+  FREE_AND_NULL(bridge_info_t, bridge_free_, (bridge))
+
+static void bridge_free_(bridge_info_t *bridge);
 static void rewrite_node_address_for_bridge(const bridge_info_t *bridge,
                                             node_t *node);
 
@@ -101,7 +104,7 @@ clear_bridge_list(void)
 
 /** Free the bridge <b>bridge</b>. */
 static void
-bridge_free(bridge_info_t *bridge)
+bridge_free_(bridge_info_t *bridge)
 {
   if (!bridge)
     return;
@@ -353,7 +356,7 @@ bridge_resolve_conflicts(const tor_addr_t *addr, uint16_t port,
 {
   /* Iterate the already-registered bridge list:
 
-     If you find a bridge with the same adress and port, mark it for
+     If you find a bridge with the same address and port, mark it for
      removal. It doesn't make sense to have two active bridges with
      the same IP:PORT. If the bridge in question has a different
      digest or transport than <b>digest</b>/<b>transport_name</b>,
@@ -455,7 +458,6 @@ bridge_add_from_config(bridge_line_t *bridge_line)
   if (bridge_line->transport_name)
     b->transport_name = bridge_line->transport_name;
   b->fetch_status.schedule = DL_SCHED_BRIDGE;
-  b->fetch_status.backoff = DL_SCHED_RANDOM_EXPONENTIAL;
   b->fetch_status.increment_on = DL_SCHED_INCREMENT_ATTEMPT;
   /* We can't reset the bridge's download status here, because UseBridges
    * might be 0 now, and it might be changed to 1 much later. */
@@ -634,8 +636,7 @@ fetch_bridge_descriptors(const or_options_t *options, time_t now)
   SMARTLIST_FOREACH_BEGIN(bridge_list, bridge_info_t *, bridge)
     {
       /* This resets the download status on first use */
-      if (!download_status_is_ready(&bridge->fetch_status, now,
-                                    IMPOSSIBLE_TO_DOWNLOAD))
+      if (!download_status_is_ready(&bridge->fetch_status, now))
         continue; /* don't bother, no need to retry yet */
       if (routerset_contains_bridge(options->ExcludeNodes, bridge)) {
         download_status_mark_impossible(&bridge->fetch_status);
@@ -716,7 +717,6 @@ rewrite_node_address_for_bridge(const bridge_info_t *bridge, node_t *node)
   if (node->ri) {
     routerinfo_t *ri = node->ri;
     tor_addr_from_ipv4h(&addr, ri->addr);
-
     if ((!tor_addr_compare(&bridge->addr, &addr, CMP_EXACT) &&
          bridge->port == ri->or_port) ||
         (!tor_addr_compare(&bridge->addr, &ri->ipv6_addr, CMP_EXACT) &&
@@ -774,16 +774,58 @@ rewrite_node_address_for_bridge(const bridge_info_t *bridge, node_t *node)
     routerstatus_t *rs = node->rs;
     tor_addr_from_ipv4h(&addr, rs->addr);
 
-    if (!tor_addr_compare(&bridge->addr, &addr, CMP_EXACT) &&
-        bridge->port == rs->or_port) {
+    if ((!tor_addr_compare(&bridge->addr, &addr, CMP_EXACT) &&
+        bridge->port == rs->or_port) ||
+       (!tor_addr_compare(&bridge->addr, &rs->ipv6_addr, CMP_EXACT) &&
+        bridge->port == rs->ipv6_orport)) {
       /* they match, so no need to do anything */
     } else {
-      rs->addr = tor_addr_to_ipv4h(&bridge->addr);
-      rs->or_port = bridge->port;
-      log_info(LD_DIR,
-               "Adjusted bridge routerstatus for '%s' to match "
-               "configured address %s.",
-               rs->nickname, fmt_addrport(&bridge->addr, rs->or_port));
+      if (tor_addr_family(&bridge->addr) == AF_INET) {
+        rs->addr = tor_addr_to_ipv4h(&bridge->addr);
+        rs->or_port = bridge->port;
+        log_info(LD_DIR,
+                 "Adjusted bridge routerstatus for '%s' to match "
+                 "configured address %s.",
+                 rs->nickname, fmt_addrport(&bridge->addr, rs->or_port));
+      /* set IPv6 preferences even if there is no ri */
+      } else if (tor_addr_family(&bridge->addr) == AF_INET6) {
+        tor_addr_copy(&rs->ipv6_addr, &bridge->addr);
+        rs->ipv6_orport = bridge->port;
+        log_info(LD_DIR,
+                 "Adjusted bridge routerstatus for '%s' to match configured"
+                 " address %s.",
+                 rs->nickname, fmt_addrport(&rs->ipv6_addr, rs->ipv6_orport));
+      } else {
+        log_err(LD_BUG, "Address family not supported: %d.",
+                tor_addr_family(&bridge->addr));
+        return;
+      }
+    }
+
+    if (options->ClientPreferIPv6ORPort == -1) {
+      /* Mark which address to use based on which bridge_t we got. */
+      node->ipv6_preferred = (tor_addr_family(&bridge->addr) == AF_INET6 &&
+                              !tor_addr_is_null(&node->rs->ipv6_addr));
+    } else {
+      /* Mark which address to use based on user preference */
+      node->ipv6_preferred = (fascist_firewall_prefer_ipv6_orport(options) &&
+                              !tor_addr_is_null(&node->rs->ipv6_addr));
+    }
+
+    /* XXXipv6 we lack support for falling back to another address for
+    the same relay, warn the user */
+    if (!tor_addr_is_null(&rs->ipv6_addr)) {
+      tor_addr_port_t ap;
+      node_get_pref_orport(node, &ap);
+      log_notice(LD_CONFIG,
+                 "Bridge '%s' has both an IPv4 and an IPv6 address.  "
+                 "Will prefer using its %s address (%s) based on %s.",
+                 rs->nickname,
+                 node->ipv6_preferred ? "IPv6" : "IPv4",
+                 fmt_addrport(&ap.addr, ap.port),
+                 options->ClientPreferIPv6ORPort == -1 ?
+                 "the configured Bridge address" :
+                 "ClientPreferIPv6ORPort");
     }
   }
 }

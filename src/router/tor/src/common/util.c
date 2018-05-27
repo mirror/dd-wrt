@@ -156,7 +156,7 @@ tor_malloc_(size_t size DMALLOC_PARAMS)
     /* If these functions die within a worker process, they won't call
      * spawn_exit, but that's ok, since the parent will run out of memory soon
      * anyway. */
-    exit(1);
+    exit(1); // exit ok: alloc failed.
     /* LCOV_EXCL_STOP */
   }
   return result;
@@ -244,7 +244,7 @@ tor_realloc_(void *ptr, size_t size DMALLOC_PARAMS)
   if (PREDICT_UNLIKELY(result == NULL)) {
     /* LCOV_EXCL_START */
     log_err(LD_MM,"Out of memory on realloc(). Dying.");
-    exit(1);
+    exit(1); // exit ok: alloc failed.
     /* LCOV_EXCL_STOP */
   }
   return result;
@@ -282,7 +282,7 @@ tor_strdup_(const char *s DMALLOC_PARAMS)
   if (PREDICT_UNLIKELY(duplicate == NULL)) {
     /* LCOV_EXCL_START */
     log_err(LD_MM,"Out of memory on strdup(). Dying.");
-    exit(1);
+    exit(1); // exit ok: alloc failed.
     /* LCOV_EXCL_STOP */
   }
   return duplicate;
@@ -1071,6 +1071,36 @@ string_is_valid_ipv6_address(const char *string)
   return (tor_inet_pton(AF_INET6,string,&addr) == 1);
 }
 
+/** Return true iff <b>string</b> is a valid destination address,
+ * i.e. either a DNS hostname or IPv4/IPv6 address string.
+ */
+int
+string_is_valid_dest(const char *string)
+{
+  char *tmp = NULL;
+  int retval;
+  size_t len;
+
+  if (string == NULL)
+    return 0;
+
+  len = strlen(string);
+
+  if (len == 0)
+    return 0;
+
+  if (string[0] == '[' && string[len - 1] == ']')
+    string = tmp = tor_strndup(string + 1, len - 2);
+
+  retval = string_is_valid_ipv4_address(string) ||
+    string_is_valid_ipv6_address(string) ||
+    string_is_valid_nonrfc_hostname(string);
+
+  tor_free(tmp);
+
+  return retval;
+}
+
 /** Return true iff <b>string</b> matches a pattern of DNS names
  * that we allow Tor clients to connect to.
  *
@@ -1078,14 +1108,36 @@ string_is_valid_ipv6_address(const char *string)
  * with misconfigured zones that have been encountered in the wild.
  */
 int
-string_is_valid_hostname(const char *string)
+string_is_valid_nonrfc_hostname(const char *string)
 {
   int result = 1;
+  int has_trailing_dot;
+  char *last_label;
   smartlist_t *components;
+
+  if (!string || strlen(string) == 0)
+    return 0;
+
+  if (string_is_valid_ipv4_address(string))
+    return 0;
 
   components = smartlist_new();
 
   smartlist_split_string(components,string,".",0,0);
+
+  if (BUG(smartlist_len(components) == 0))
+    return 0; // LCOV_EXCL_LINE should be impossible given the earlier checks.
+
+  /* Allow a single terminating '.' used rarely to indicate domains
+   * are FQDNs rather than relative. */
+  last_label = (char *)smartlist_get(components,
+                                     smartlist_len(components) - 1);
+  has_trailing_dot = (last_label[0] == '\0');
+  if (has_trailing_dot) {
+    smartlist_pop_last(components);
+    tor_free(last_label);
+    last_label = NULL;
+  }
 
   SMARTLIST_FOREACH_BEGIN(components, char *, c) {
     if ((c[0] == '-') || (*c == '_')) {
@@ -1093,22 +1145,14 @@ string_is_valid_hostname(const char *string)
       break;
     }
 
-    /* Allow a single terminating '.' used rarely to indicate domains
-     * are FQDNs rather than relative. */
-    if ((c_sl_idx > 0) && (c_sl_idx + 1 == c_sl_len) && !*c) {
-      continue;
-    }
-
     do {
-      if ((*c >= 'a' && *c <= 'z') ||
-          (*c >= 'A' && *c <= 'Z') ||
-          (*c >= '0' && *c <= '9') ||
-          (*c == '-') || (*c == '_'))
-        c++;
-      else
-        result = 0;
+      result = (TOR_ISALNUM(*c) || (*c == '-') || (*c == '_'));
+      c++;
     } while (result && *c);
 
+    if (result == 0) {
+      break;
+    }
   } SMARTLIST_FOREACH_END(c);
 
   SMARTLIST_FOREACH_BEGIN(components, char *, c) {
@@ -3047,7 +3091,7 @@ unescape_string(const char *s, char **result, size_t *size_out)
 
 /** Removes enclosing quotes from <b>path</b> and unescapes quotes between the
  * enclosing quotes. Backslashes are not unescaped. Return the unquoted
- * <b>path</b> on sucess or 0 if <b>path</b> is not quoted correctly. */
+ * <b>path</b> on success or 0 if <b>path</b> is not quoted correctly. */
 char *
 get_unquoted_path(const char *path)
 {
@@ -3590,14 +3634,14 @@ start_daemon(void)
   if (pipe(daemon_filedes)) {
     /* LCOV_EXCL_START */
     log_err(LD_GENERAL,"pipe failed; exiting. Error was %s", strerror(errno));
-    exit(1);
+    exit(1); // exit ok: during daemonize, pipe failed.
     /* LCOV_EXCL_STOP */
   }
   pid = fork();
   if (pid < 0) {
     /* LCOV_EXCL_START */
     log_err(LD_GENERAL,"fork failed. Exiting.");
-    exit(1);
+    exit(1); // exit ok: during daemonize, fork failed
     /* LCOV_EXCL_STOP */
   }
   if (pid) {  /* Parent */
@@ -3612,9 +3656,9 @@ start_daemon(void)
     }
     fflush(stdout);
     if (ok == 1)
-      exit(0);
+      exit(0); // exit ok: during daemonize, daemonizing.
     else
-      exit(1); /* child reported error */
+      exit(1); /* child reported error. exit ok: daemonize failed. */
   } else { /* Child */
     close(daemon_filedes[0]); /* we only write */
 
@@ -3626,7 +3670,7 @@ start_daemon(void)
      * _Advanced Programming in the Unix Environment_.
      */
     if (fork() != 0) {
-      exit(0);
+      exit(0); // exit ok: during daemonize, fork failed (2)
     }
     set_main_thread(); /* We are now the main thread. */
 
@@ -3655,14 +3699,14 @@ finish_daemon(const char *desired_cwd)
    /* Don't hold the wrong FS mounted */
   if (chdir(desired_cwd) < 0) {
     log_err(LD_GENERAL,"chdir to \"%s\" failed. Exiting.",desired_cwd);
-    exit(1);
+    exit(1); // exit ok: during daemonize, chdir failed.
   }
 
   nullfd = tor_open_cloexec("/dev/null", O_RDWR, 0);
   if (nullfd < 0) {
     /* LCOV_EXCL_START */
     log_err(LD_GENERAL,"/dev/null can't be opened. Exiting.");
-    exit(1);
+    exit(1); // exit ok: during daemonize, couldn't open /dev/null
     /* LCOV_EXCL_STOP */
   }
   /* close fds linking to invoking terminal, but
@@ -3674,7 +3718,7 @@ finish_daemon(const char *desired_cwd)
       dup2(nullfd,2) < 0) {
     /* LCOV_EXCL_START */
     log_err(LD_GENERAL,"dup2 failed. Exiting.");
-    exit(1);
+    exit(1); // exit ok: during daemonize, dup2 failed.
     /* LCOV_EXCL_STOP */
   }
   if (nullfd > 2)
@@ -3898,7 +3942,7 @@ format_number_sigsafe(unsigned long x, char *buf, int buf_len,
  * call it with a signed int and an unsigned char, and since the C standard
  * does not guarantee that an int is wider than a char (an int must be at
  * least 16 bits but it is permitted for a char to be that wide as well), we
- * can't assume a signed int is sufficient to accomodate an unsigned char.
+ * can't assume a signed int is sufficient to accommodate an unsigned char.
  * Thus, format_helper_exit_status() will still need to emit any require '-'
  * on its own.
  *
@@ -3928,7 +3972,7 @@ format_dec_number_sigsafe(unsigned long x, char *buf, int buf_len)
  *
  * The format of <b>hex_errno</b> is: "CHILD_STATE/ERRNO\n", left-padded
  * with spaces. CHILD_STATE indicates where
- * in the processs of starting the child process did the failure occur (see
+ * in the process of starting the child process did the failure occur (see
  * CHILD_STATE_* macros for definition), and SAVED_ERRNO is the value of
  * errno when the failure occurred.
  *
@@ -4474,7 +4518,7 @@ tor_spawn_background(const char *const filename, const char **argv,
         err += (nbytes < 0);
       }
 
-      _exit(err?254:255);
+      _exit(err?254:255); // exit ok: in child.
     }
 
     /* Never reached, but avoids compiler warning */
@@ -4713,7 +4757,7 @@ environment_variable_names_equal(const char *s1, const char *s2)
 /** Free <b>env</b> (assuming it was produced by
  * process_environment_make). */
 void
-process_environment_free(process_environment_t *env)
+process_environment_free_(process_environment_t *env)
 {
   if (env == NULL) return;
 
