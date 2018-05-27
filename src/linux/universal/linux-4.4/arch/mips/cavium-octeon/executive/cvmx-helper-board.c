@@ -216,6 +216,7 @@ int cvmx_helper_board_get_mii_address(int ipd_port)
 			return -1;
 
 	case CVMX_BOARD_TYPE_UBNT_E200:
+	case CVMX_BOARD_TYPE_UBNT_E220:
 		return -1;
 	}
 
@@ -326,6 +327,8 @@ cvmx_helper_link_info_t __cvmx_helper_board_link_get(int ipd_port)
 			return result;
 		}
 		break;
+        case CVMX_BOARD_TYPE_UBNT_E120:
+            break;
 	}
 
 	phy_addr = cvmx_helper_board_get_mii_address(ipd_port);
