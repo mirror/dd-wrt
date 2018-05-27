@@ -2,11 +2,11 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.62)
-AC_INIT([daq], [2.0.4], [snort-team@sourcefire.com])
-AM_INIT_AUTOMAKE([daq], [2.0.4])
+AC_INIT([daq], [2.0.6], [snort-team@sourcefire.com])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([sfbpf/gencode.h])
 AC_CONFIG_HEADERS([config.h])
+AM_INIT_AUTOMAKE
 
 # Checks for programs.
 AC_PROG_CC
@@ -200,7 +200,17 @@ AC_ARG_ENABLE(netmap-module,
               AC_HELP_STRING([--disable-netmap-module],[don't build the bundled netmap module]),
               [enable_netmap_module="$enableval"], [enable_netmap_module="$DEFAULT_ENABLE"])
 if test "$enable_netmap_module" = yes; then
-    AC_CHECK_HEADER([net/netmap_user.h], [], [enable_netmap_module=no])
+    AC_CHECK_HEADERS([net/netmap.h net/netmap_user.h], [], [enable_netmap_module=no], [
+                      #include <stdint.h>
+                      #include <sys/socket.h>
+                      #include <net/if.h>
+                      ])
+    AC_CHECK_DECL([NETMAP_API], [], [enable_netmap_module=no], [
+                   #include <stdint.h>
+                   #include <sys/socket.h>
+                   #include <net/if.h>
+                   #include <net/netmap.h>
+                   ])
     if test "$enable_netmap_module" = yes; then
         STATIC_LIBS="${STATIC_LIBS} -lsfbpf"
     fi
@@ -296,5 +306,5 @@ echo "Build IPFW DAQ module...... : $enable_ipfw_module"
 echo "Build IPQ DAQ module....... : $enable_ipq_module"
 echo "Build NFQ DAQ module....... : $enable_nfq_module"
 echo "Build PCAP DAQ module...... : $enable_pcap_module"
-echo "Build netmap DAQ module...... : $enable_netmap_module"
+echo "Build netmap DAQ module.... : $enable_netmap_module"
 echo

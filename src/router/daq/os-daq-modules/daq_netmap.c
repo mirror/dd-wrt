@@ -39,7 +39,7 @@
 #include <net/netmap.h>
 #include <net/netmap_user.h>
 
-#define DAQ_NETMAP_VERSION      2
+#define DAQ_NETMAP_VERSION      3
 
 /* Hi! I'm completely arbitrary! */
 #define NETMAP_MAX_INTERFACES       32
@@ -255,11 +255,32 @@ static int start_instance(Netmap_Context_t *nmc, NetmapInstance *instance)
 
     if (nmc->debug)
     {
+        struct netmap_ring *ring;
+        int i;
+
         printf("[%s]\n", instance->req.nr_name);
         printf("  nr_tx_slots: %u\n", instance->req.nr_tx_slots);
         printf("  nr_rx_slots: %u\n", instance->req.nr_rx_slots);
         printf("  nr_tx_rings: %hu\n", instance->req.nr_tx_rings);
+        for (i = instance->first_tx_ring; i <= instance->last_tx_ring; i++)
+        {
+            ring = NETMAP_TXRING(instance->nifp, i);
+            printf("  [TX Ring %d]\n", i);
+            printf("    buf_ofs = %zu\n", ring->buf_ofs);
+            printf("    num_slots = %u\n", ring->num_slots);
+            printf("    nr_buf_size = %u\n", ring->nr_buf_size);
+            printf("    flags = 0x%x\n", ring->flags);
+        }
         printf("  nr_rx_rings: %hu\n", instance->req.nr_rx_rings);
+        for (i = instance->first_rx_ring; i <= instance->last_rx_ring; i++)
+        {
+            ring = NETMAP_RXRING(instance->nifp, i);
+            printf("  [RX Ring %d]\n", i);
+            printf("    buf_ofs = %zu\n", ring->buf_ofs);
+            printf("    num_slots = %u\n", ring->num_slots);
+            printf("    nr_buf_size = %u\n", ring->nr_buf_size);
+            printf("    flags = 0x%x\n", ring->flags);
+        }
         printf("  memsize:     %u\n", instance->memsize);
         printf("  index:       %d\n", instance->index);
     }

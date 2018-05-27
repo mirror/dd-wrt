@@ -98,7 +98,7 @@ endif
     libdaq_static_modules_la_CFLAGS += -DBUILD_NETMAP_MODULE
 endif
 
-INCLUDES = -I$(top_srcdir)/api -I$(top_srcdir)/sfbpf -I$(top_builddir)/sfbpf
+AM_CPPFLAGS = -I$(top_srcdir)/api -I$(top_srcdir)/sfbpf -I$(top_builddir)/sfbpf
 
 EXTRA_DIST = daq-modules-config.in
 
