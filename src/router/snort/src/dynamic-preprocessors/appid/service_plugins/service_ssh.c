@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -26,6 +26,7 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 
+#include "appInfoTable.h"
 #include "flow.h"
 #include "service_base.h"
 
@@ -130,15 +131,16 @@ typedef struct _SERVICE_SSH_KEY_EXCHANGE_FINAL
 #pragma pack()
 
 static int ssh_init(const InitServiceAPI * const init_api);
-MakeRNAServiceValidationPrototype(ssh_validate);
+static int ssh_validate(ServiceValidationArgs* args);
 
-static RNAServiceElement svc_element =
+static tRNAServiceElement svc_element =
 {
     .next = NULL,
     .validate = &ssh_validate,
     .detectorType = DETECTOR_TYPE_DECODER,
     .name = "ssh",
     .ref_count = 1,
+    .current_ref_count = 1,
 };
 
 static RNAServiceValidationPort pp[] =
@@ -147,7 +149,7 @@ static RNAServiceValidationPort pp[] =
     {NULL, 0, 0}
 };
 
-RNAServiceValidationModule ssh_service_mod =
+tRNAServiceValidationModule ssh_service_mod =
 {
     "SSH",
     &ssh_init,
@@ -161,12 +163,12 @@ static tAppRegistryEntry appIdRegistry[] =
 
 static int ssh_init(const InitServiceAPI * const init_api)
 {
-    init_api->RegisterPattern(&ssh_validate, IPPROTO_TCP, (uint8_t *)SSH_BANNER, sizeof(SSH_BANNER)-1, 0, "ssh");
+    init_api->RegisterPattern(&ssh_validate, IPPROTO_TCP, (uint8_t *)SSH_BANNER, sizeof(SSH_BANNER)-1, 0, "ssh", init_api->pAppidConfig);
 	unsigned i;
 	for (i=0; i < sizeof(appIdRegistry)/sizeof(*appIdRegistry); i++)
 	{
 		_dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[i].appId);
-		init_api->RegisterAppId(&ssh_validate, appIdRegistry[i].appId, appIdRegistry[i].additionalInfo, NULL);
+		init_api->RegisterAppId(&ssh_validate, appIdRegistry[i].appId, appIdRegistry[i].additionalInfo, init_api->pAppidConfig);
 	}
 
     return 0;
@@ -377,7 +379,7 @@ static void ssh_free_state(void *data)
     }
 }
 
-MakeRNAServiceValidationPrototype(ssh_validate)
+static int ssh_validate(ServiceValidationArgs* args)
 {
     ServiceSSHData *ss;
     uint16_t offset;
@@ -387,17 +389,20 @@ MakeRNAServiceValidationPrototype(ssh_validate)
     const char *end;
     unsigned len;
     int client_major;
+    tAppIdData *flowp = args->flowp;
+    const uint8_t *data = args->data;
+    uint16_t size = args->size;
 
     if (!size)
         goto inprocess;
 
-    ss = ssh_service_mod.api->data_get(flowp);
+    ss = ssh_service_mod.api->data_get(flowp, ssh_service_mod.flow_data_index);
     if (!ss)
     {
         ss = calloc(1, sizeof(*ss));
         if (!ss)
             return SERVICE_ENOMEM;
-        if (ssh_service_mod.api->data_add(flowp, ss, &ssh_free_state))
+        if (ssh_service_mod.api->data_add(flowp, ss, ssh_service_mod.flow_data_index, &ssh_free_state))
         {
             free(ss);
             return SERVICE_ENOMEM;
@@ -407,7 +412,7 @@ MakeRNAServiceValidationPrototype(ssh_validate)
         ss->oldhstate = OLD_SSH_HEADER_BEGIN;
     }
 
-    if (dir != APP_ID_FROM_RESPONDER)
+    if (args->dir != APP_ID_FROM_RESPONDER)
     {
         if (!ss->ssh_version)
         {
@@ -558,21 +563,23 @@ done:
     {
     case SERVICE_INPROCESS:
 inprocess:
-        ssh_service_mod.api->service_inprocess(flowp, pkt, dir, &svc_element);
+        ssh_service_mod.api->service_inprocess(flowp, args->pkt, args->dir, &svc_element, NULL);
         return SERVICE_INPROCESS;
 
     case SERVICE_SUCCESS:
-        ssh_service_mod.api->add_service(flowp, pkt, dir, &svc_element,
-                                         APP_ID_SSH, ss->vendor, ss->version, NULL);
+        ssh_service_mod.api->add_service(flowp, args->pkt, args->dir, &svc_element,
+                                         APP_ID_SSH, ss->vendor, ss->version, NULL, NULL);
         return SERVICE_SUCCESS;
 
     case SERVICE_NOMATCH:
 fail:
-        ssh_service_mod.api->fail_service(flowp, pkt, dir, &svc_element);
+        ssh_service_mod.api->fail_service(flowp, args->pkt, args->dir, &svc_element,
+                                          ssh_service_mod.flow_data_index, args->pConfig, NULL);
         return SERVICE_NOMATCH;
 
 not_compatible:
-        ssh_service_mod.api->incompatible_data(flowp, pkt, dir, &svc_element);
+        ssh_service_mod.api->incompatible_data(flowp, args->pkt, args->dir, &svc_element,
+                                               ssh_service_mod.flow_data_index, args->pConfig, NULL);
         return SERVICE_NOT_COMPATIBLE;
 
     default:

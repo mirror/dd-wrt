@@ -3,7 +3,7 @@
 **
 ** pcrm.h
 **
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Marc Norton <mnorton@sourcefire.com>
 ** Dan Roelker <droelker@sourcefire.com>
@@ -36,7 +36,7 @@
 
 typedef void * RULE_PTR;
 
-#define ANYPORT   -1
+#define ANYPORT   (-1)
 
 
 /*
@@ -129,13 +129,25 @@ typedef struct {
   int        prmNumDstRules;
   int        prmNumSrcRules;
   int        prmNumGenericRules;
+#ifdef TARGET_BASED
+  int        prmNumNoServiceDstRules;
+  int        prmNumNoServiceSrcRules;
+#endif
   
   int        prmNumDstGroups;
   int        prmNumSrcGroups;
+#ifdef TARGET_BASED
+  int        prmNumNoServiceDstGroups;
+  int        prmNumNoServiceSrcGroups;
+#endif
 
-  PORT_GROUP *prmSrcPort[MAX_PORTS];
   PORT_GROUP *prmDstPort[MAX_PORTS];
+  PORT_GROUP *prmSrcPort[MAX_PORTS];
   /* char       prmConflicts[MAX_PORTS]; */
+#ifdef TARGET_BASED
+  PORT_GROUP *prmNoServiceDstPort[MAX_PORTS];
+  PORT_GROUP *prmNoServiceSrcPort[MAX_PORTS];
+#endif
   PORT_GROUP *prmGeneric;
 
 } PORT_RULE_MAP ;
@@ -192,9 +204,37 @@ RULE_PTR prmGetFirstRuleNC( PORT_GROUP * pg );
 RULE_PTR prmGetNextRuleNC( PORT_GROUP * pg );
 
 
-int prmFindRuleGroup( PORT_RULE_MAP * p, int dport, int sport, PORT_GROUP ** src, PORT_GROUP **dst , PORT_GROUP ** gen);
-int prmFindGenericRuleGroup(PORT_RULE_MAP *prm, PORT_GROUP ** gen);
+#ifdef TARGET_BASED
+// Get all the port groups
+int prmFindRuleGroup(
+        PORT_RULE_MAP*,
+        int dest_port,
+        int source_port,
+        PORT_GROUP** source,
+        PORT_GROUP** dest,
+        PORT_GROUP** source_noservice,
+        PORT_GROUP** dest_noservice,
+        PORT_GROUP** anyany);
+// Return only the noservice port groups
+int prmFindNoServiceRuleGroup(
+        PORT_RULE_MAP*,
+        int dest_port,
+        int source_port,
+        PORT_GROUP** source_noservice,
+        PORT_GROUP** dest_noservice,
+        PORT_GROUP** anyany);
+#else
+// Get all the port groups
+int prmFindRuleGroup(
+        PORT_RULE_MAP * p,
+        int dest_port,
+        int source_port,
+        PORT_GROUP** src,
+        PORT_GROUP** dst,
+        PORT_GROUP** gen);
+#endif
 int prmFindByteRuleGroup( BYTE_RULE_MAP * p, int dport, PORT_GROUP **dst , PORT_GROUP ** gen);
+int prmFindGenericRuleGroup(PORT_RULE_MAP *prm, PORT_GROUP ** gen);
 
 PORT_GROUP * prmFindDstRuleGroup( PORT_RULE_MAP * p, int port );
 PORT_GROUP * prmFindSrcRuleGroup( PORT_RULE_MAP * p, int port );

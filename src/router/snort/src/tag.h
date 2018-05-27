@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -48,7 +48,7 @@
 void InitTag(void);
 void CleanupTag(void);
 int CheckTagList(Packet *, Event *, void**);
-void SetTags(Packet *, OptTreeNode *, uint16_t);
+void SetTags(Packet *, OptTreeNode *, RuleTreeNode *, uint16_t);
 void TagCacheReset(void);
 
 #endif /* __TAG_H__ */

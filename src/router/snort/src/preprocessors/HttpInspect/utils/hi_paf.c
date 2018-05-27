@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -67,6 +67,7 @@
 #include "snort.h"
 #include "stream_api.h"
 #include "snort_debug.h"
+#include "snort_httpinspect.h"
 
 #ifdef DEBUG_MSGS
 #define HI_TRACE     // define for state trace
@@ -85,6 +86,18 @@
 #define HIF_GET 0x0400  // post (requires content-length or chunks)
 #define HIF_PST 0x0800  // post (requires content-length or chunks)
 #define HIF_EOL 0x1000  // already saw at least one eol (for v09)
+#define HIF_ECD 0x2000  // Content Encoding 
+#define HIF_UPG 0x4000  // Http/2 Upgrade:h2c
+
+enum FlowDepthState
+{
+    HI_FLOW_DEPTH_STATE_NONE = 0,       //start 
+    HI_FLOW_DEPTH_STATE_CONT_LEN,       //content length start
+    HI_FLOW_DEPTH_STATE_CHUNK_START,    //chunked encoding start
+    HI_FLOW_DEPTH_STATE_CHUNK_DISC_SKIP,//chunked encoding discard skip after flow depth
+    HI_FLOW_DEPTH_STATE_CHUNK_DISC_CONT,//chunked encoding discard continue till end of PDU
+};
+
 
 typedef struct {
     uint32_t len;
@@ -92,6 +105,10 @@ typedef struct {
     uint8_t msg;
     uint8_t fsm;
     uint32_t pipe;
+    int flow_depth;
+    uint8_t flow_depth_state;
+    bool eoh;
+    uint32_t paf_bytes;
 } Hi5State;
 
 // config stuff
@@ -101,6 +118,12 @@ static uint32_t hi_cap = 0;
 static uint32_t hi_paf_calls = 0;
 static uint32_t hi_paf_bytes = 0;
 
+//Reset flow depth if required ( for chunked transfer encoding )
+static bool flow_depth_reset = false;
+
+static uint8_t hi_paf_id = 0;
+
+
 //--------------------------------------------------------------------
 // char classification stuff per RFC 2616
 //--------------------------------------------------------------------
@@ -109,6 +132,7 @@ static uint32_t hi_paf_bytes = 0;
 #define CLASS_ANY 0x01
 #define CLASS_CHR 0x02
 #define CLASS_TOK 0x04
+#define CLASS_CRT 0X08
 #define CLASS_LWS 0x10
 #define CLASS_SEP 0x20
 #define CLASS_EOL 0x40
@@ -117,13 +141,13 @@ static uint32_t hi_paf_bytes = 0;
 static const uint8_t class_map[256] =
 {
 //                                                         tab    lf                cr
-    0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x33, 0x43, 0x03, 0x03, 0x03, 0x03, 0x03,
+    0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x33, 0x43, 0x03, 0x03, 0x0B, 0x03, 0x03,
     0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03, 0x03,
 //
-//   ' ',  '!',  '"',  '#',  '$',  '%',  '&',  ''',  '(',  ')',  '*',  '+',  ',',  '-',  '.',  '/' 
+//   ' ',  '!',  '"',  '#',  '$',  '%',  '&',  ''',  '(',  ')',  '*',  '+',  ',',  '-',  '.',  '/'
     0x33, 0x07, 0x23, 0x07, 0x07, 0x07, 0x07, 0x07, 0x23, 0x23, 0x07, 0x07, 0x23, 0x07, 0x07, 0x23,
 //
-//   '0',  '1',  '2',  '3',  '4',  '5',  '6',  '7',  '8',  '9',  ':',  ';',  '<',  '=',  '>',  '?' 
+//   '0',  '1',  '2',  '3',  '4',  '5',  '6',  '7',  '8',  '9',  ':',  ';',  '<',  '=',  '>',  '?'
     0x87, 0x87, 0x87, 0x87, 0x87, 0x87, 0x87, 0x87, 0x87, 0x87, 0x23, 0x23, 0x23, 0x23, 0x23, 0x23,
 //
 //   '@',  'A',  'B',  'C',  'D',  'E',  'F',  'G',  'H',  'I',  'J',  'K',  'L',  'M',  'N',  'O' 
@@ -158,6 +182,12 @@ static const uint8_t class_map[256] =
 #define SEPS "\5"  // matches SEP
 #define CHRS "\6"  // matches CHAR
 #define DIGS "\7"  // matches DIGIT
+#define CRET "\10" // matches CR
+
+static inline bool is_lwspace(const char c)
+{
+    return (c == ' ' || c == '\t');
+}
 
 static uint8_t Classify (const char* s)
 {
@@ -169,6 +199,9 @@ static uint8_t Classify (const char* s)
 
     if ( !strcmp(s, TOKS) )
         return CLASS_TOK;
+
+    if ( !strcmp(s, CRET) )
+        return CLASS_CRT;
 
     if ( !strcmp(s, LWSS) )
         return CLASS_LWS;
@@ -195,8 +228,9 @@ typedef enum {
     ACT_V09, ACT_V10, ACT_V11,
     ACT_SRL, ACT_REQ, ACT_RSP,
     ACT_SHI, ACT_SHX,
-    ACT_LNB, ACT_LNC, ACT_LN0,
-    ACT_CHK, ACT_CK0, ACT_HDR
+    ACT_LNB, ACT_LNC, ACT_LN0, ACT_ECD,
+    ACT_CHK, ACT_CK0, ACT_HDR,
+    ACT_H2, ACT_UPG
 } Action;
 
 typedef struct {
@@ -231,25 +265,27 @@ typedef struct {
 #define P3 (P2+3)
 
 #define Q0 (P3+3)
-#define Q1 (Q0+12)
+#define Q1 (Q0+15)
 #define Q2 (Q1+6)
-#define Q3 (Q2+8)
+#define Q3 (Q2+9)
 
 #define R2 (Q3+3)
-#define R3 (R2+5)
+#define R3 (R2+7)
 #define R4 (R3+5)
-#define R5 (R4+1)
-#define R6 (R5+2)
-#define R7 (R6+2)
+#define R5 (R4+5)
+#define R6 (R5+1)
+#define R7 (R6+4)
 #define R8 (R7+2)
+#define R9 (R8+2)
+#define R10 (R9+1)
 
-#define MAX_STATE        (R8+2)
+#define MAX_STATE        (R10+4)
 #define RSP_START_STATE  (P0)
 #define REQ_START_STATE  (Q0)
 #define REQ_V09_STATE_1  (Q1+3)
 #define REQ_V09_STATE_2  (Q2)
-#define MSG_CHUNK_STATE  (R6)
-#define MSG_EOL_STATE    (R8)
+#define MSG_CHUNK_STATE  (R7)
+#define MSG_EOL_STATE    (R10)
 #define RSP_ABORT_STATE  (P3)
 #define REQ_ABORT_STATE  (Q3)
 
@@ -311,35 +347,39 @@ static HiRule hi_rule[] =
     { Q0+ 4, Q0+ 5, Q0+10, ACT_NOP, "EAD" },
     { Q0+ 5, Q1+ 0, Q0+10, ACT_NOB, LWSS },
     // post method must have content-length or chunks
-    { Q0+ 6, Q0+ 7, Q0+ 9, ACT_SRL, "P"  },
-    { Q0+ 7, Q0+ 8, Q0+10, ACT_NOP, "OST" },
-    { Q0+ 8, Q1+ 0, Q0+10, ACT_PST, LWSS },
-    // other method
-    { Q0+ 9, Q0+10, Q3+ 0, ACT_SRL, TOKS },
-    { Q0+10, Q0+10, Q0+11, ACT_NOP, TOKS },
-    { Q0+11, Q1+ 0, Q3+ 2, ACT_NOP, LWSS },
+    { Q0+ 6, Q0+ 7, Q0+12, ACT_SRL, "P"  },
+    { Q0+ 7, Q0+ 8, Q0+10, ACT_NOP, "O" },
+    { Q0+ 8, Q0+ 9, Q0+13, ACT_NOP, "ST" },
+    { Q0+ 9, Q1+ 0, Q0+13, ACT_PST, LWSS },
 
-    // check tokens before eol to determine version
-    // 2 tokens is a 0.9 SimpleRequest (1 line header)
-    // this gets URI
-    { Q1+ 0, R8+ 0, Q1+ 1, ACT_NOP, EOLS },
+    { Q0+ 10, Q0+ 11, Q0+ 13, ACT_NOP, "R"  },
+    { Q0+ 11, R8+ 1, Q0+ 13, ACT_H2, "I * HTTP/2.0"  }, // R8+0 or R8+1
+
+    // other method
+    { Q0+ 12, Q0+13, Q3+ 0, ACT_SRL, TOKS },
+    { Q0+ 13, Q0+13, Q0+14, ACT_NOP, TOKS },
+    { Q0+ 14, Q1+ 0, Q3+ 2, ACT_NOP, LWSS },
+
+    // this gets required URI / next token
+    { Q1+ 0, R10+ 0, Q1+ 1, ACT_NOP, EOLS },
     { Q1+ 1, Q1+ 0, Q1+ 2, ACT_NOP, LWSS },
     { Q1+ 2, Q1+ 3, Q1+ 3, ACT_NOP, ANYS },
-    { Q1+ 3, R8+ 0, Q1+ 4, ACT_V09, EOLS },
+    { Q1+ 3, R10+ 0, Q1+ 4, ACT_V09, EOLS },
     { Q1+ 4, Q2+ 0, Q1+ 5, ACT_NOP, LWSS },
     { Q1+ 5, Q1+ 3, Q1+ 3, ACT_NOP, ANYS },
 
-    // 3 tokens is >= 1.0 (1 or more header lines)
-    // this gets version
-    { Q2+ 0, R8+ 0, Q2+ 1, ACT_V09, EOLS },
+    // this gets version, allowing extra tokens
+    // if start line doesn't end with version,
+    // assume 0.9 SimpleRequest (1 line header)
+    { Q2+ 0, R10+ 0, Q2+ 1, ACT_V09, EOLS },
     { Q2+ 1, Q2+ 0, Q2+ 2, ACT_NOP, LWSS },
-    // TBD allow unescaped space in URI; alert later
-    { Q2+ 2, Q2+ 3, Q3+ 0, ACT_NOP, "H"  },
-    { Q2+ 3, Q2+ 4, Q3+ 2, ACT_NOP, "TTP/1." },
+    { Q2+ 2, Q2+ 3, Q2+ 8, ACT_NOP, "H"  },
+    { Q2+ 3, Q2+ 4, Q2+ 8, ACT_NOP, "TTP/1." },
     { Q2+ 4, Q2+ 6, Q2+ 5, ACT_V10, "0"  },
-    { Q2+ 5, Q2+ 6, Q3+ 2, ACT_V11, "1"  },
+    { Q2+ 5, Q2+ 6, Q2+ 8, ACT_V11, "1"  },
     { Q2+ 6, R2+ 0, Q2+ 7, ACT_REQ, EOLS },
-    { Q2+ 7, Q2+ 6, Q3+ 2, ACT_NOP, LWSS },
+    { Q2+ 7, Q2+ 6, Q2+ 8, ACT_NOP, LWSS },
+    { Q2+ 8, Q2+ 0, Q2+ 0, ACT_NOP, ANYS },
 
     // resync state
     { Q3+ 0, Q0   , Q3+ 1, ACT_NOP, LWSS },
@@ -351,37 +391,54 @@ static HiRule hi_rule[] =
     // direction of transfer (eg cookie only from client).
     // content-length is optional
     { R2+ 0, R2+ 1, R3   , ACT_HDR, "C"  },
-    { R2+ 1, R2+ 2, R8   , ACT_NOP, "ONTENT-LENGTH"  },
-    { R2+ 2, R2+ 2, R2+ 3, ACT_NOP, LWSS },
-    { R2+ 3, R2+ 4, R8   , ACT_NOP, ":"  },
-    { R2+ 4, R2+ 4, R5   , ACT_LN0, LWSS },
+    { R2+ 1, R2+ 2, R10  , ACT_NOP, "ONTENT-"   },
+    { R2+ 2, R2+ 4, R2+3 , ACT_NOP, "LENGTH"    },
+    { R2+ 3, R2+ 4, R10  , ACT_ECD, "ENCODING"  },
+    { R2+ 4, R2+ 4, R2+5 , ACT_NOP, LWSS },
+    { R2+ 5, R2+ 6, R10   , ACT_NOP, ":"  },
+    { R2+ 6, R2+ 6, R6   , ACT_LN0, LWSS }, 
+    // Upgrade parameter
+    { R3+ 0, R3+ 1, R4   , ACT_HDR, "U"  },
+    { R3+ 1, R3+ 2, R10   , ACT_NOP, "PGRADE"  },
+    { R3+ 2, R3+ 2, R3+ 3, ACT_NOP, LWSS },
+    { R3+ 3, R3+ 4, R10   , ACT_NOP, ":"  },
+    { R3+ 4, R3+ 4, R9   , ACT_NOP, LWSS },
 
     // transfer-encoding required for chunks
-    { R3+ 0, R3+ 1, R8   , ACT_HDR, "T"  },
-    { R3+ 1, R3+ 2, R8   , ACT_NOP, "RANSFER-ENCODING"  },
-    { R3+ 2, R3+ 2, R3+ 3, ACT_NOP, LWSS },
-    { R3+ 3, R3+ 4, R8   , ACT_NOP, ":"  },
-    { R3+ 4, R3+ 4, R4   , ACT_NOP, LWSS },
+    { R4+ 0, R4+ 1, R10   , ACT_HDR, "T"  },
+    { R4+ 1, R4+ 2, R10   , ACT_NOP, "RANSFER-ENCODING"  },
+    { R4+ 2, R4+ 2, R4+ 3, ACT_NOP, LWSS },
+    { R4+ 3, R4+ 4, R10   , ACT_NOP, ":"  },
+    { R4+ 4, R4+ 4, R5   , ACT_NOP, LWSS },
 
     // only recognized encoding
-    { R4+ 0, R8   , R8   , ACT_CHK, "CHUNKED" },
+    { R5+ 0, R10   , R10   , ACT_CHK, "CHUNKED" },
 
     // extract decimal content length
-    { R5+ 0, R2   , R5+ 1, ACT_LNB, EOLS },
-    { R5+ 1, R5   , R5   , ACT_SHI, ANYS },
+    { R6+ 0, R2   , R6+ 1, ACT_LNB, EOLS },
+    { R6+ 1, R6   , R6+ 2, ACT_SHI, DIGS },
+    { R6+ 2, R6   , R6+ 3, ACT_SHI, LWSS },
+    { R6+ 3, R10   , R10   , ACT_SHI, ANYS },
 
     // extract hex chunk length
-    { R6+ 0, R7   , R6+ 1, ACT_LNC, EOLS },
-    { R6+ 1, R6   , R6   , ACT_SHX, ANYS },
+    { R7+ 0, R8   , R7+ 1, ACT_LNC, EOLS },
+    { R7+ 1, R7   , R7   , ACT_SHX, ANYS },
 
     // skip to end of line after chunk data
-    { R7+ 0, R6   , R7+ 1, ACT_LN0, EOLS },
-    { R7+ 1, R7   , R7   , ACT_NOP, ANYS },
+    { R8+ 0, R7   , R8+ 1, ACT_LN0, EOLS },
+    { R8+ 1, R8   , R8   , ACT_NOP, ANYS },
+
+    { R9+ 0, R10   , R10   , ACT_UPG, "h2c" },
 
     // skip to end of line
-    { R8+ 0, R2   , R8+ 1, ACT_NOP, EOLS },
-    { R8+ 1, R8   , R8   , ACT_NOP, ANYS },
+    { R10+ 0, R2    , R10+1  , ACT_NOP, EOLS },
+    { R10+ 1, R10+3 , R10+2  , ACT_NOP, CRET },
+    { R10+ 2, R10   , R10    , ACT_NOP, ANYS },
+    { R10+ 3, R2    , R10+2  , ACT_NOP, EOLS },
 };
+static void hi_update_flow_depth_state(Hi5State *hip, uint32_t* fp, PAF_Status *paf );
+static void get_flow_depth(void *ssn, uint64_t flags, Hi5State *hip);
+
 
 //--------------------------------------------------------------------
 // trace stuff
@@ -474,7 +531,6 @@ static void hi_fsm_dump ()
 static void hi_load (State* state, int event, HiRule* rule)
 {
     //assert(state->cell[event].next == TBD);
-
     state->cell[event].action = rule->action;
     state->cell[event].next = rule->match;
 }
@@ -646,7 +702,7 @@ static inline void hi_paf_event_pipe ()
         HI_EO_CLIENT_PIPELINE_MAX_STR, NULL);
 }
 
-static inline PAF_Status hi_exec (Hi5State* s, Action a, int c)
+static inline PAF_Status hi_exec (Hi5State* s, Action a, int c, void* ssn)
 {
     switch ( a )
     {
@@ -684,8 +740,10 @@ static inline PAF_Status hi_exec (Hi5State* s, Action a, int c)
             if ( s->flags & HIF_ERR )
                 break;
             if ( isdigit(c) && (s->len < 429496728) )
+            {
                 s->len = (10 * s->len) + dton(c);
-            else
+            }
+            else if (!is_lwspace(c))
             {
                 hi_paf_event_msg_size();
                 s->flags |= HIF_ERR;
@@ -708,12 +766,17 @@ static inline PAF_Status hi_exec (Hi5State* s, Action a, int c)
             DEBUG_WRAP(DebugMessage(DEBUG_STREAM_PAF,
                 "%s: lnb=%u\n", __FUNCTION__, s->len);)
             break;
+        case ACT_ECD:
+           s->flags |=HIF_ECD;
+           break;
         case ACT_LNC:
             s->flags |= HIF_LEN;
             DEBUG_WRAP(DebugMessage(DEBUG_STREAM_PAF,
                 "%s: lnc=%u\n", __FUNCTION__, s->len);)
             if ( s->len )
                 return PAF_SKIP;
+            if( s->flags & HIF_NOF )
+                flow_depth_reset = true;
             s->flags &= ~HIF_NOF;
             s->msg = 3;
             break;
@@ -723,6 +786,16 @@ static inline PAF_Status hi_exec (Hi5State* s, Action a, int c)
         case ACT_CHK:
             s->flags |= HIF_CHK;
             break;
+        case ACT_UPG:
+            DEBUG_WRAP(DebugMessage(DEBUG_STREAM_PAF,
+            "%s: Http/1 Connection upgrade possible to Http/2\n", __FUNCTION__);)
+            s->flags |= HIF_UPG;
+            break;
+        case ACT_H2:
+            DEBUG_WRAP(DebugMessage(DEBUG_STREAM_PAF,
+            "%s: Http/2 Connection preface received\n", __FUNCTION__);)
+            stream_api->set_session_http2(ssn);
+            return PAF_ABORT;
         case ACT_CK0:
             s->flags |= HIF_NOF;
             s->flags &= ~HIF_CHK;
@@ -769,7 +842,7 @@ static void hi_pipe_pop (Hi5State* s_rsp, void* ssn)
     Hi5State* s_req;
     uint32_t nreq, pipe;
 
-    void** pv = stream_api->get_paf_user_data(ssn, 1);
+    void** pv = stream_api->get_paf_user_data(ssn, 1, hi_paf_id);
 
     if ( !*pv )
         return;
@@ -816,7 +889,7 @@ static inline bool paf_abort (Hi5State* s)
 
 // this is the 2nd step of stateful scanning, which executes
 // the fsm.
-static PAF_Status hi_scan_fsm (Hi5State* s, int c)
+static PAF_Status hi_scan_fsm (Hi5State* s, int c, void* ssn)
 {
     PAF_Status status;
     State* m = hi_fsm + s->fsm;
@@ -838,7 +911,7 @@ static PAF_Status hi_scan_fsm (Hi5State* s, int c)
         cell->action, after, s->fsm);)
 #endif
 
-    status = hi_exec(s, cell->action, c);
+    status = hi_exec(s, cell->action, c, ssn);
 
     return status;
 }
@@ -847,6 +920,8 @@ static PAF_Status hi_eoh (Hi5State* s, void* ssn)
 {
     DEBUG_WRAP(DebugMessage(DEBUG_STREAM_PAF,
         "%s: flags=0x%X, len=%u\n", __FUNCTION__, s->flags, s->len);)
+
+    s->eoh = true;
 
     if ( (s->flags & HIF_REQ) )
         hi_pipe_push(s, ssn);
@@ -865,23 +940,28 @@ static PAF_Status hi_eoh (Hi5State* s, void* ssn)
         if ( s->flags & HIF_V09 )
             hi_paf_event_simple();
 
-        hi_exec(s, ACT_LN0, 0);
+        hi_exec(s, ACT_LN0, 0, ssn);
         return PAF_FLUSH;
     }
     if ( s->flags & HIF_CHK )
     {
-        hi_exec(s, ACT_CK0, 0);
-        return PAF_SEARCH;
+        uint32_t fp;
+        PAF_Status paf = PAF_SEARCH;
+        hi_exec(s, ACT_CK0, 0, ssn);
+        hi_update_flow_depth_state(s, &fp, &paf );
+        return paf;
     }
     if ( (s->flags & (HIF_REQ|HIF_LEN)) )
         return PAF_FLUSH;
 
     if ( (s->flags & HIF_V11) && (s->flags & HIF_RSP) )
     {
-        hi_exec(s, ACT_LN0, 0);
+        hi_exec(s, ACT_LN0, 0, ssn);
         hi_paf_event_msg_size();
         return PAF_FLUSH;
     }
+    if ( (s->flags & HIF_V10) && (s->flags & HIF_ECD) && !(s->flags & HIF_LEN))
+        return PAF_FLUSH; 
     return PAF_ABORT;
 }
 
@@ -899,11 +979,12 @@ static inline PAF_Status hi_scan_msg (
     DEBUG_WRAP(DebugMessage(DEBUG_STREAM_PAF,
         "%s[%d]: 0x%2X, '%c'\n", __FUNCTION__, s->msg, c, isgraph(c) ? c : '.');)
 
-    if ( c == '\r' )
+    if ( c == '\r' && s->msg != 1 && s->msg!=5 )
     {
         *fp = 0;
         return paf;
     }
+
     switch ( s->msg )
     {
     case 0:
@@ -915,61 +996,102 @@ static inline PAF_Status hi_scan_msg (
 
                 if ( simple_allowed(s) )
                 {
-                    hi_scan_fsm(s, EOL);
+                    hi_scan_fsm(s, EOL, ssn);
                     paf = hi_eoh(s, ssn);
                 }
                 else
                     s->msg = 1;
             }
             else if ( s->flags & HIF_NOF )
-                paf = hi_scan_fsm(s, EOL);
+                paf = hi_scan_fsm(s, EOL, ssn);
             else
                 s->msg = 1;
         }
         else
-            paf = hi_scan_fsm(s, c);
+            paf = hi_scan_fsm(s, c, ssn);
         break;
 
     case 1:
         if ( c == '\n' )
         {
-            hi_scan_fsm(s, EOL);
+            hi_scan_fsm(s, EOL, ssn);
 
             if ( have_pdu(s) )
                 paf = hi_eoh(s, ssn);
+            s->msg = 0;
         }
         else if ( c == ' ' || c == '\t' )
         {
             // folding, just continue
-            paf = hi_scan_fsm(s, LWS);
+            paf = hi_scan_fsm(s, LWS, ssn);
+            s->msg = 0;
+        }
+        else if ( c == '\r')
+        {
+            if(s->fsm == MSG_EOL_STATE)
+            {
+               hi_scan_fsm(s, '\r', ssn);
+               s->msg = 5;
+            }
+            else
+            {
+               *fp = 0;
+               return paf;
+            }
         }
         else
         {
-            paf = hi_scan_fsm(s, EOL);
+            paf = hi_scan_fsm(s, EOL, ssn);
 
             if ( paf == PAF_SEARCH )
-                paf = hi_scan_fsm(s, c);
+                paf = hi_scan_fsm(s, c, ssn);
+            s->msg = 0;
         }
-        s->msg = 0;
         break;
 
     case 3:
         if ( c == '\n' )
             paf = hi_eoh(s, ssn);
         else
+        {
             s->msg = 4;
+        }
         break;
 
     case 4:
         if ( c == '\n' )
+        {
             s->msg = 3;
-        break; }
+        }
+        break;
+    case 5:
+        if ( c == '\n' )
+        {
+            hi_scan_fsm(s, EOL, ssn);
+
+            if ( have_pdu(s) )
+                paf = hi_eoh(s, ssn);
+            s->msg = 0;
+        }
+        else
+        {
+            s->msg = 0;
+            hi_scan_fsm(s, c, ssn);
+        }
+        break;
+
+    }
 
     if ( paf_abort(s) )
         paf = PAF_ABORT;
 
     else if ( paf != PAF_SEARCH )
         *fp = s->len;
+
+    if( paf != PAF_SEARCH && paf != PAF_ABORT )
+    {
+        hi_update_flow_depth_state(s, fp, &paf );
+    }
 
     return paf;
 }
@@ -978,7 +1100,7 @@ static inline PAF_Status hi_scan_msg (
 // utility
 //--------------------------------------------------------------------
 
-static void hi_reset (Hi5State* s, uint32_t flags)
+static void hi_reset (Hi5State* s, uint64_t flags, void *ssn)
 {
     s->len = s->msg = 0;
 
@@ -991,6 +1113,13 @@ static void hi_reset (Hi5State* s, uint32_t flags)
         s->fsm = RSP_START_STATE;
     }
     s->flags = 0;
+    s->flow_depth_state = HI_FLOW_DEPTH_STATE_NONE;
+
+    if( flow_depth_reset )
+    {
+        get_flow_depth(ssn, flags, s);
+        flow_depth_reset = false;
+    }
 
     DEBUG_WRAP(DebugMessage(DEBUG_STREAM_PAF,
         "%s: fsm=%u, flags=0x%X\n", __FUNCTION__, s->fsm, s->flags);)
@@ -1002,7 +1131,7 @@ static void hi_reset (Hi5State* s, uint32_t flags)
 
 static PAF_Status hi_paf (
     void* ssn, void** pv, const uint8_t* data, uint32_t len,
-    uint32_t flags, uint32_t* fp)
+    uint64_t *flags, uint32_t* fp, uint32_t *fp_eoh)
 {
     Hi5State* hip = *pv;
     PAF_Status paf = PAF_SEARCH;
@@ -1017,25 +1146,50 @@ static PAF_Status hi_paf (
         hip = calloc(1, sizeof(Hi5State));
 
         if ( !hip )
+        {
+            *flags |= PKT_H1_ABORT;
             return PAF_ABORT;
-
+        }
         *pv = hip;
 
-        hi_reset(hip, flags);
+        flow_depth_reset = true;
+
+        hi_reset(hip, *flags, ssn );
     }
+
+    hip->eoh = false;
 
     DEBUG_WRAP(DebugMessage(DEBUG_STREAM_PAF,
         "%s: len=%u\n", __FUNCTION__, len);)
 
     if ( hip->flags & HIF_ERR )
     {
+        *flags |= PKT_H1_ABORT;
         return PAF_ABORT;
     }
 
     if ( hi_cap && (hi_paf_bytes > hi_cap) )
     {
+        *flags |= PKT_H1_ABORT;
         return PAF_ABORT;
     }
+
+    hi_update_flow_depth_state(hip, fp, &paf);
+
+    if( paf != PAF_SEARCH )
+    {
+        hi_paf_calls++;
+
+        if ( paf == PAF_DISCARD_END )
+            hi_reset(hip, *flags, ssn);
+
+        hi_paf_bytes += *fp;
+        
+        if (paf == PAF_ABORT)
+            *flags |= PKT_H1_ABORT;
+        return paf;
+    }
+
 
     while ( n < len )
     {
@@ -1051,7 +1205,19 @@ static PAF_Status hi_paf (
             n += (lf - (data + n));
         }
         paf = hi_scan_msg(hip, data[n++], fp, ssn);
-
+        
+        if ( hip->flags & HIF_UPG)
+        {
+            *flags |= PKT_UPGRADE_PROTO;
+            //Before a client preface is received server can start
+            //sending messages. From next packet h2_paf will take over.
+            if (*flags & PKT_FROM_SERVER)
+            {
+                stream_api->set_session_http2(ssn);
+                stream_api->set_session_http2_upg(ssn);
+            }            
+        }
+        
         if ( paf != PAF_SEARCH )
         {
             if ( hip->flags & HIF_ERR )
@@ -1059,18 +1225,29 @@ static PAF_Status hi_paf (
                 *fp = len;
                 break;
             }
-            *fp += n;
 
-            if ( paf != PAF_SKIP )
-                hi_reset(hip, flags);
+            *fp += n;
+            if( hip->eoh && (( hip->flags & HIF_PST ))){
+                *fp_eoh = n;
+                if(*fp <= len )
+                    *fp_eoh = 0;
+            }
+
+            if ( paf != PAF_SKIP && paf != PAF_DISCARD_START )
+                hi_reset(hip, *flags, ssn);
             break;
         }
     }
+
     DEBUG_WRAP(DebugMessage(DEBUG_STREAM_PAF,
         "%s: paf=%d, rfp=%u\n", __FUNCTION__, paf, *fp);)
 
     hi_paf_calls++;
     hi_paf_bytes += n;
+
+    hip->paf_bytes += n;
+    if ( paf == PAF_ABORT)
+        *flags |= PKT_H1_ABORT;
 
     return paf;
 }
@@ -1092,10 +1269,10 @@ int hi_paf_register_port (
         return -1;
 
     if ( client )
-        stream_api->register_paf_port(sc, pid, port, true, hi_paf, auto_on);
+        hi_paf_id = stream_api->register_paf_port(sc, pid, port, true, hi_paf, auto_on);
 
     if ( server )
-        stream_api->register_paf_port(sc, pid, port, false, hi_paf, auto_on);
+        hi_paf_id = stream_api->register_paf_port(sc, pid, port, false, hi_paf, auto_on);
 
     return 0;
 }
@@ -1113,10 +1290,10 @@ int hi_paf_register_service (
         return -1;
 
     if ( client )
-        stream_api->register_paf_service(sc, pid, service, true, hi_paf, auto_on);
+        hi_paf_id = stream_api->register_paf_service(sc, pid, service, true, hi_paf, auto_on);
 
     if ( server )
-        stream_api->register_paf_service(sc, pid, service, false, hi_paf, auto_on);
+        hi_paf_id = stream_api->register_paf_service(sc, pid, service, false, hi_paf, auto_on);
 
     return 0;
 }
@@ -1157,7 +1334,7 @@ bool hi_paf_simple_request (void* ssn)
 {
     if ( ssn )
     {
-        Hi5State** s = (Hi5State **)stream_api->get_paf_user_data(ssn, 1);
+        Hi5State** s = (Hi5State **)stream_api->get_paf_user_data(ssn, 1, hi_paf_id);
 
         if ( s && *s )
             return ( (*s)->flags & HIF_V09 );
@@ -1165,3 +1342,138 @@ bool hi_paf_simple_request (void* ssn)
     return false;
 }
 
+static void  get_flow_depth(void *ssn, uint64_t flags, Hi5State *hip)
+{
+    hip->flow_depth = GetHttpFlowDepth(ssn, flags);
+}
+
+static void hi_update_flow_depth_state(Hi5State *hip, uint32_t* fp, PAF_Status *paf )
+{
+    //sanity check
+    assert( hip );
+
+    if( !hip->flow_depth )
+        return;
+
+    if ( (hip->flags & HIF_ERR) ||
+            ((hip->flags & HIF_NOB) ))
+        return;
+
+    if( hip->flags & HIF_V09 )
+        return;
+
+    //Apply flow depth for POST in case of request
+    if( (hip->flags & HIF_REQ ) &&
+            !(hip->flags & HIF_PST) )
+        return;
+
+    switch( hip->flow_depth_state )
+    {
+        case HI_FLOW_DEPTH_STATE_NONE:
+            if( hip->flags & HIF_LEN )
+            {
+                if( hip->len > 0 )
+                {
+                    if( hip->flow_depth == -1 )
+                    {
+                        *paf = PAF_DISCARD_START;
+                        *fp = 0;
+                        hip->flow_depth_state = HI_FLOW_DEPTH_STATE_CONT_LEN;
+                    }
+                    else if( hip->flow_depth > 0 )
+                    {
+                        if( hip->len > hip->flow_depth )
+                        {
+                            *paf = PAF_DISCARD_START;
+                            *fp = hip->flow_depth;
+                            hip->flow_depth_state = HI_FLOW_DEPTH_STATE_CONT_LEN;
+                        }
+                    }
+                }
+            }
+            else if( hip->flags & HIF_NOF )
+            {
+                if( hip->flow_depth == -1 )
+                {
+                    *paf = PAF_DISCARD_START;
+                    *fp = 0;
+                    hip->flow_depth_state = HI_FLOW_DEPTH_STATE_CHUNK_DISC_CONT;
+                }
+                else if( hip->flow_depth > 0 )
+                {
+                    hip->flow_depth_state = HI_FLOW_DEPTH_STATE_CHUNK_START;
+                }
+
+            }
+            break;
+
+        case HI_FLOW_DEPTH_STATE_CONT_LEN:
+            *paf = PAF_DISCARD_END;
+            if( hip->flow_depth > 0 )
+                *fp = hip->len - hip->flow_depth;
+            else
+                *fp = hip->len;
+            break;
+
+        case HI_FLOW_DEPTH_STATE_CHUNK_START:
+            if( ( *paf == PAF_SKIP ) && ( hip->flow_depth <= hip->len ) )
+            {
+                *paf = PAF_DISCARD_START;
+                *fp = hip->flow_depth;
+                if( hip->flow_depth == hip->len )
+                    hip->flow_depth_state = HI_FLOW_DEPTH_STATE_CHUNK_DISC_CONT;
+                else
+                    hip->flow_depth_state = HI_FLOW_DEPTH_STATE_CHUNK_DISC_SKIP;
+                hip->len -= hip->flow_depth;
+            }
+            else if( *paf == PAF_SKIP )
+            {
+                hip->flow_depth -= hip->len;
+            }
+            break;
+
+        case HI_FLOW_DEPTH_STATE_CHUNK_DISC_SKIP:
+            if( hip->len )
+            {
+                *paf = PAF_SKIP;
+                *fp = hip->len;
+                hip->len = 0;
+            }
+            hip->flow_depth_state = HI_FLOW_DEPTH_STATE_CHUNK_DISC_CONT;
+            break;
+
+        case HI_FLOW_DEPTH_STATE_CHUNK_DISC_CONT:
+            if( !( hip->flags & HIF_NOF) )
+            {
+                *paf = PAF_DISCARD_END;
+            }
+            break;
+
+        default:
+            break;
+    }
+}
+
+bool hi_paf_resp_eoh(void* ssn)
+{
+    if ( ssn )
+    {
+        Hi5State** s = (Hi5State **)stream_api->get_paf_user_data(ssn, 0, hi_paf_id);
+
+        if ( s && *s )
+            return ( (*s)->eoh );
+    }
+    return false;
+}
+
+uint32_t hi_paf_resp_bytes_processed(void* ssn)
+{
+    if ( ssn )
+    {
+        Hi5State** s = (Hi5State **)stream_api->get_paf_user_data(ssn, 0, hi_paf_id);
+
+        if ( s && *s )
+            return ( (*s)->paf_bytes );
+    }
+    return 0;
+}

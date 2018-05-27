@@ -1,7 +1,7 @@
 /* $Id */
 
 /*
- ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2013-2013 Sourcefire, Inc.
  **
  **
@@ -240,6 +240,7 @@ static void file_config_signature(char *filename, FileSigInfo *sig_info,
             sha_table_add(config->sig_table, sha256, sig_info);
         }
     }
+    fclose(fp);
 }
 
 /* Display the configuration for the File preprocessor.

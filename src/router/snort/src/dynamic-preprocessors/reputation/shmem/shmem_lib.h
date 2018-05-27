@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -28,8 +28,9 @@
 #define _SHMEMLIB_H_
 
 #include <stdint.h>
+#include <sys/types.h>
 
-int   ShmemExists(const char *shmemName);
+int   ShmemExists(const char *shmemName, off_t *size);
 void* ShmemMap(const char* segment_name, uint32_t size, int mode);
 void  ShmemUnlink(const char *shmemName);
 void  ShmemDestroy(const char *shmemName);

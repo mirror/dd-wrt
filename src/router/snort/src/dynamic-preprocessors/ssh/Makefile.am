@@ -20,6 +20,12 @@ libsf_ssh_preproc_la_SOURCES = \
 spp_ssh.c \
 spp_ssh.h
 
+if BUILD_BUFFER_DUMP
+libsf_ssh_preproc_la_SOURCES += \
+ssh_buffer_dump.c \
+ssh_buffer_dump.h
+endif
+
 EXTRA_DIST = \
 sf_ssh.dsp
 

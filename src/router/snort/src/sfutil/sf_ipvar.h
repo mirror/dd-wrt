@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 1998-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -42,10 +42,9 @@ typedef enum _modes {
     SFIP_TABLE
 } MODES;
 
-/* Used by the "list" mode.  A doubly linked list of sfip_t objects. */
+/* Used by the "list" mode.  A doubly linked list of sfcidr_t objects. */
 typedef struct _ip_node {
-    sfip_t *ip;
-#define ip_addr ip;   /* To ease porting Snort */
+    sfcidr_t *ip;
     struct _ip_node *next;
     int flags;
                     // XXX
@@ -72,6 +71,8 @@ typedef struct _var_t {
     /* Linked list of IP variables for the variable table */
     struct _var_t *next;
 
+    uint16_t head_count;
+    uint16_t neg_head_count;
     uint32_t id;
     char *name;
     char *value;
@@ -125,7 +126,7 @@ void sfvar_free(sfip_var_t *var);
 
 /* Returns non-zero if ip is contained in 'var', 0 otherwise */
 /* If either argument is NULL, 0 is returned. */
-int sfvar_ip_in(sfip_var_t *var, sfip_t *ip);
+int sfvar_ip_in(sfip_var_t *var, sfaddr_t *ip);
 
 /* Prints the variable "var" to the file descriptor 'f' */
 void sfvar_print(const char *prefix, sfip_var_t *var);

@@ -1,10 +1,10 @@
 /* $Id$ */
 
 /*
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2004-2013 Sourcefire, Inc.
 **
-** Author: davis mcpherson 
+** Author: davis mcpherson
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License Version 2 as
@@ -30,5 +30,17 @@
 
 /* list of function prototypes for this preprocessor */
 void SetupSessionManager(void);
+void SessionReload(struct _SessionCache* lws_cache, uint32_t max_sessions,
+                   uint32_t aggressiveTimeout, uint32_t nominalTimeout
+#ifdef REG_TEST
+                   , const char* name
+#endif
+                   );
+unsigned SessionProtocolReloadAdjust(struct _SessionCache* lws_cache, uint32_t max_sessions,
+                                     unsigned maxWork, uint32_t memcap
+#ifdef REG_TEST
+                                     , const char* name
+#endif
+                                     );
 
 #endif  /* __SPP_SESSION_H__ */

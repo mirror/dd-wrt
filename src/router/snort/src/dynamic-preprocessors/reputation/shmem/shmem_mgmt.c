@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -56,7 +56,7 @@ static void SetShmemMgmtVariables(int value, uint32_t instance_num)
     }
 
     mgmt_ptr->instance[instance_num].active                    = value;
-    mgmt_ptr->instance[instance_num].version                   =  0;
+    mgmt_ptr->instance[instance_num].version                   = 0;
     mgmt_ptr->instance[instance_num].activeSegment             = NO_DATASEG;
     mgmt_ptr->instance[instance_num].prevSegment               = NO_DATASEG;
     mgmt_ptr->instance[instance_num].updateTime                = time(NULL);
@@ -72,50 +72,95 @@ static void SetShmemMgmtVariables(int value, uint32_t instance_num)
 static void UnsetGoInactive()
 {
     int i;
-    for(i=0; i<MAX_INSTANCES; i++)
-    {
+
+    for (i = 0; i < mgmt_ptr->maxInstances; i++)
         mgmt_ptr->instance[i].goInactive = 0;
-    }
 }
 
-
-static void InitShmemDataSegmentMgmtVariables()
+static int MapShmemMgmt(unsigned int max_instances)
 {
-    int i;
-    mgmt_ptr->activeSegment = NO_DATASEG;
+    size_t nBytes = sizeof(ShmemMgmtData) + sizeof(shmemInstance) * max_instances;
+    off_t shmSize;
+    int mgmtExists, i;
 
-    for (i=0; i<MAX_SEGMENTS; i++)
+    mgmtExists = ShmemExists(shmusr_ptr->mgmtSeg, &shmSize);
+    if (mgmtExists)
     {
-        mgmt_ptr->segment[i].version =  0;
-        mgmt_ptr->segment[i].active  =  0;
-        mgmt_ptr->segment[i].size    =  0;
+        if (shmSize == nBytes)
+        {
+            mgmt_ptr = (ShmemMgmtData *) ShmemMap(shmusr_ptr->mgmtSeg, nBytes, shmusr_ptr->instance_type);
+            if (!mgmt_ptr)
+                return SF_EINVAL;
+            /* Simple sanity check: If the segment is the expected size, it *should* have the same instance count. */
+            if (mgmt_ptr->maxInstances == max_instances)
+            {
+                _dpd.logMsg("Mapped shared management region of size %zu as a %s.\n", nBytes,
+                        (shmusr_ptr->instance_type == READ) ? "reader" : "writer");
+                return SF_SUCCESS;
+            }
+            else if (shmusr_ptr->instance_type == READ)
+            {
+                _dpd.errMsg("%s: Expected instance count does not match that of the management segment (%u vs %u).  "
+                        "Please remove the segment and try again.\n",
+                        MODULE_NAME, max_instances, mgmt_ptr->maxInstances);
+                munmap(mgmt_ptr, nBytes);
+                mgmt_ptr = NULL;
+                return SF_EINVAL;
+            }
+            else /* Writer */
+            {
+                _dpd.errMsg("%s: Expected instance count does not match that of the management segment (%u vs %u).  "
+                        "Unlinking and recreating it.\n",
+                        MODULE_NAME, max_instances, mgmt_ptr->maxInstances);
+                munmap(mgmt_ptr, nBytes);
+                mgmt_ptr = NULL;
+                ShmemUnlink(shmusr_ptr->mgmtSeg);
+                mgmtExists = 0;
+            }
+        }
+        else if (shmusr_ptr->instance_type == READ)
+        {
+            _dpd.errMsg("%s: Management segment shared memory size does not match the expected size (%u vs %u).  "
+                    "Refusing to use it.\n",
+                    MODULE_NAME, shmSize, nBytes);
+            return SF_EINVAL;
+        }
+        else /* Writer */
+        {
+            _dpd.logMsg("%s: Management segment shared memory size does not match the expected size (%u vs %u).  "
+                    "Unlinking and recreating it.\n",
+                    MODULE_NAME, shmSize, nBytes);
+            ShmemUnlink(shmusr_ptr->mgmtSeg);
+            mgmtExists = 0;
+        }
     }
-    UnsetGoInactive();
-}
 
-int MapShmemMgmt()
-{
-    uint32_t nBytes = sizeof(ShmemMgmtData);
-    int mgmtExists;
-
-    if (!(mgmtExists = ShmemExists(shmusr_ptr->mgmtSeg)))
+    /* This can become false in the wrong size as a writer scenario. */
+    if (!mgmtExists)
     {
-        DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION,
-            "No Shmem mgmt segment present\n"););
+        DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION, "No Shmem mgmt segment present\n"););
+        /* Readers must give up if there is no existing management segment. */
         if (shmusr_ptr->instance_type == READ)
             return SF_EINVAL;
-    }
 
-    if ((mgmt_ptr = (ShmemMgmtData *)
-        ShmemMap(shmusr_ptr->mgmtSeg,nBytes,shmusr_ptr->instance_type)) == NULL)
-    {
-        DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION,
-            "Failed to create shmem mgmt segment\n"););
-        return SF_EINVAL;
-    }
+        /* On the other hand, writers create a new management segment and initialize its values. */
+        mgmt_ptr = (ShmemMgmtData *) ShmemMap(shmusr_ptr->mgmtSeg, nBytes, shmusr_ptr->instance_type);
+        if (!mgmt_ptr)
+        {
+            DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION, "Failed to create shmem mgmt segment\n"););
+            return SF_EINVAL;
+        }
 
-    if (shmusr_ptr->instance_type == WRITE && !mgmtExists)
-        InitShmemDataSegmentMgmtVariables();
+        mgmt_ptr->activeSegment = NO_DATASEG;
+        mgmt_ptr->maxInstances = max_instances;
+        for (i = 0; i < MAX_SEGMENTS; i++)
+        {
+            mgmt_ptr->segment[i].version =  0;
+            mgmt_ptr->segment[i].active  =  0;
+            mgmt_ptr->segment[i].size    =  0;
+        }
+        UnsetGoInactive();
+    }
 
     return SF_SUCCESS;
 }
@@ -130,7 +175,7 @@ static void DoHeartbeat()
     return;
 }
 
-void ForceShutdown()
+static void ForceShutdown()
 {
     int currActiveSegment;
     _dpd.logMsg("    Reputation Preprocessor: Shared memory is disabled. \n");
@@ -149,7 +194,7 @@ void ForceShutdown()
 }
 
 //client side calls for shared memory
-int CheckForSharedMemSegment()
+int CheckForSharedMemSegment(unsigned int max_instances)
 {
     void *shmem_ptr = NULL;
     int currActive  = NO_DATASEG, newSegment = NO_DATASEG;
@@ -157,7 +202,7 @@ int CheckForSharedMemSegment()
 
     if (!mgmt_ptr)
     {
-        if (MapShmemMgmt())
+        if (MapShmemMgmt(max_instances))
             return newSegment;
 
         SetShmemMgmtVariables(ACTIVE,shmusr_ptr->instance_num);
@@ -212,10 +257,10 @@ exit:
 int InitShmemReader (
     uint32_t instance_num, int dataset, int group_id,
     int numa_node, const char* path, void*** data_ptr,
-    uint32_t instance_polltime)
+    uint32_t instance_polltime, unsigned int max_instances)
 {
     int segment_number = NO_ZEROSEG;
-    if (InitShmemUser(instance_num,READ,dataset,group_id,numa_node,path,instance_polltime))
+    if (InitShmemUser(instance_num,READ,dataset,group_id,numa_node,path,instance_polltime,max_instances))
     {
         DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION,
             "Could not initialize config data \n"););
@@ -233,7 +278,7 @@ int InitShmemReader (
     DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION,
         "Address of zero segment is %p\n",zeroseg_ptr););
 
-    if ((segment_number = CheckForSharedMemSegment() ) >=0)
+    if ((segment_number = CheckForSharedMemSegment(max_instances)) >=0)
     {
         SwitchToActiveSegment(segment_number,data_ptr);
         DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION,
@@ -376,7 +421,6 @@ exit:
 int LoadSharedMemDataSegmentForWriter(int startup)
 {
     int segment_num = NO_DATASEG;
-    int rval;
     uint32_t size;
     uint32_t disk_version, shmem_version;
 
@@ -429,33 +473,29 @@ exit:
 int InitShmemWriter(
     uint32_t instance_num, int dataset, int group_id,
     int numa_node, const char* path, void*** data_ptr,
-    uint32_t instance_polltime)
+    uint32_t instance_polltime, unsigned int max_instances)
 {
     int segment_number = NO_ZEROSEG;
 
-    if (InitShmemUser(instance_num,WRITE,dataset,group_id,numa_node,path,instance_polltime))
+    if (InitShmemUser(instance_num,WRITE,dataset,group_id,numa_node,path,instance_polltime,max_instances))
     {
-        DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION,
-            "Could not initialize shmem writer config\n"););
+        DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION, "Could not initialize shmem writer config\n"););
         goto exit;
     }
 
     if (dmfunc_ptr->CreatePerProcessZeroSegment(data_ptr))
     {
-        DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION,
-            "Could not initialize zero segment\n"););
+        DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION, "Could not initialize zero segment\n"););
         goto cleanup_exit;
     }
 
     zeroseg_ptr = **data_ptr;
 
-    DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION,
-        "Address of zero segment is %p\n",zeroseg_ptr););
+    DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION, "Address of zero segment is %p\n",zeroseg_ptr););
 
-    if (MapShmemMgmt())
+    if (MapShmemMgmt(max_instances))
     {
-        DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION,
-            "Could not initialize shared memory management segment\n"););
+        DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION, "Could not initialize shared memory management segment\n"););
         FreeShmemDataFileList();
         goto cleanup_exit;
     }
@@ -546,17 +586,17 @@ static void ExpireTimedoutInstances()
     if (max_timeout > UINT32_MAX)
         max_timeout = UINT32_MAX;
 
-    for(i=0; i<MAX_INSTANCES; i++)
+    for(i = 0; i < mgmt_ptr->maxInstances; i++)
     {
-        if (mgmt_ptr && mgmt_ptr->instance[i].active)
+        if (!mgmt_ptr->instance[i].active)
+            continue;
+
+        if ((int64_t)current_time >  mgmt_ptr->instance[i].updateTime + max_timeout)
         {
-            if ((int64_t)current_time >  mgmt_ptr->instance[i].updateTime + max_timeout)
-            {
-                DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION,
-                    "Instance %d has expired, last update %jd and current time is %jd\n",
-                    i,(intmax_t)mgmt_ptr->instance[i].updateTime,(intmax_t)current_time););
-                SetShmemMgmtVariables(GO_INACTIVE,i);
-            }
+            DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION,
+                        "Instance %d has expired, last update %jd and current time is %jd\n",
+                        i,(intmax_t)mgmt_ptr->instance[i].updateTime,(intmax_t)current_time););
+            SetShmemMgmtVariables(GO_INACTIVE, i);
         }
     }
     return;
@@ -565,37 +605,38 @@ static void ExpireTimedoutInstances()
 //WRITER only
 void ManageUnusedSegments()
 {
-    uint32_t j,in_use = 0;
-    int i;
+    int s, i, in_use;
+
+    if (!mgmt_ptr)
+        return;
+
     DoHeartbeat();    //writer heartbeat
 
     if (UNUSED_TIMEOUT != -1)
         ExpireTimedoutInstances();
 
-    for (i=0; i<MAX_SEGMENTS; i++)
+    for (s = 0; s < MAX_SEGMENTS; s++)
     {
-        for(j=0; j<MAX_INSTANCES; j++)
+        if (!mgmt_ptr->segment[s].active || (mgmt_ptr->activeSegment == s))
+            continue;
+
+        in_use = 0;
+        for (i = 0; i < mgmt_ptr->maxInstances; i++)
         {
-            if (mgmt_ptr && mgmt_ptr->instance[j].active && !mgmt_ptr->instance[j].goInactive)
+            if (mgmt_ptr->instance[i].active &&
+                    !mgmt_ptr->instance[i].goInactive &&
+                    mgmt_ptr->instance[i].shmemSegActiveFlag[s])
             {
-                 if (mgmt_ptr->instance[j].shmemSegActiveFlag[i])
-                 {
-                     DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION,
-                         "Instance %u is still using segment %d\n",j,i););
-                     in_use++;
-                 }
+                DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION,
+                            "Instance %u is still using segment %d\n", i, s););
+                in_use++;
             }
         }
         if (!in_use)
         {
-            if (mgmt_ptr && mgmt_ptr->segment[i].active && (mgmt_ptr->activeSegment != i))
-            {
-                DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION,
-                    "Shutting down segment %d\n",i););
-                ShutdownSegment(i);
-            }
+            DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION, "Shutting down segment %d\n", s););
+            ShutdownSegment(s);
         }
-        in_use = 0;
     }
     if (UNUSED_TIMEOUT != -1)
         UnsetGoInactive();
@@ -620,10 +661,10 @@ void ShmemMgmtInfo(char *buf, int bufLen)
     int len = bufLen -1;
     char *index = buf;
 
-    if ( !mgmt_ptr )
+    if (!mgmt_ptr)
         return;
 
-    for (i=0; i<MAX_INSTANCES; i++)
+    for (i = 0; i < mgmt_ptr->maxInstances; i++)
     {
         shmemInstance *shmem_info = (shmemInstance *) &(mgmt_ptr->instance[i]);
         if (shmem_info->shmemCurrPtr)
@@ -678,10 +719,10 @@ void PrintShmemMgmtInfo()
 {
     uint32_t i;
 
-    if ( !mgmt_ptr )
+    if (!mgmt_ptr)
         return;
 
-    for (i=0; i<MAX_INSTANCES; i++)
+    for (i = 0; i < mgmt_ptr->maxInstances; i++)
     {
         shmemInstance *shmem_info = (shmemInstance *) &(mgmt_ptr->instance[i]);
         if (shmem_info->shmemCurrPtr)
@@ -702,7 +743,7 @@ void PrintShmemMgmtInfo()
     }
     for (i=0; i<MAX_SEGMENTS; i++)
     {
-        shmemSegment *shmem_seg = &(mgmt_ptr->segment[i]);
+        DEBUG_WRAP(shmemSegment *shmem_seg = &(mgmt_ptr->segment[i]););
         DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION,
             "segment:%u active:%d version:%u\n",
             i,(int)shmem_seg->active,(uint32_t)shmem_seg->version););

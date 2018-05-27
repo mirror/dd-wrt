@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -51,6 +51,7 @@ int DAQ_UnprivilegedStart(void);
 int DAQ_CanReplace(void);
 int DAQ_CanInject(void);
 int DAQ_CanWhitelist(void);
+int DAQ_CanRetry (void);
 int DAQ_RawInjection(void);
 
 const char* DAQ_GetInterfaceSpec(void);
@@ -60,6 +61,7 @@ int DAQ_SetFilter(const char*);
 
 // total stats are accumulated when daq is deleted
 int DAQ_New(const struct _SnortConfig*, const char* intf);
+void DAQ_UpdateTunnelBypass(struct _SnortConfig*);
 int DAQ_Delete(void);
 
 int DAQ_Start(void);
@@ -76,10 +78,31 @@ void DAQ_Set_MetaCallback(DAQ_Meta_Func_t meta_callback);
 #endif
 DAQ_Mode DAQ_GetInterfaceMode(const DAQ_PktHdr_t *h);
 
-int DAQ_ModifyFlow(const void* h, uint32_t id);
+int DAQ_ModifyFlowOpaque(const DAQ_PktHdr_t *hdr, uint32_t opaque);
+#ifdef HAVE_DAQ_EXT_MODFLOW
+int DAQ_ModifyFlowHAState(const DAQ_PktHdr_t *hdr, const void *data, uint32_t length);
+int DAQ_ModifyFlow(const DAQ_PktHdr_t *hdr, const DAQ_ModFlow_t* mod);
+#endif
+#ifdef HAVE_DAQ_QUERYFLOW
+#ifdef REG_TEST
+int DAQ_QueryFlow( DAQ_PktHdr_t *hdr, DAQ_QueryFlow_t* query);
+#else
+int DAQ_QueryFlow(const DAQ_PktHdr_t *hdr, DAQ_QueryFlow_t* query);
+#endif
+#endif
 #ifdef HAVE_DAQ_DP_ADD_DC
-void DAQ_Add_Dynamic_Protocol_Channel(const Packet *ctrlPkt, snort_ip_p cliIP, uint16_t cliPort,
-                                    snort_ip_p srvIP, uint16_t srvPort, uint8_t protocol );
+
+typedef struct _DAQ_DC_Params
+{
+    unsigned flags;
+    unsigned timeout_ms;
+} DAQ_DC_Params;
+#define DAQ_DC_FLOAT            0x01
+#define DAQ_DC_ALLOW_MULTIPLE   0x02
+#define DAQ_DC_PERSIST          0x04
+void DAQ_Add_Dynamic_Protocol_Channel(const Packet *ctrlPkt, sfaddr_t* cliIP, uint16_t cliPort,
+                                      sfaddr_t* srvIP, uint16_t srvPort, uint8_t protocol,
+                                      DAQ_DC_Params* params);
 #endif
 
 #ifdef HAVE_DAQ_ADDRESS_SPACE_ID

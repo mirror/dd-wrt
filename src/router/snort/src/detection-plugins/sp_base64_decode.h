@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2003-2013 Sourcefire, Inc.
 ** 
 **
@@ -23,6 +23,7 @@
 #ifndef __SP_BASE64_DECODE_H__
 #define __SP_BASE64_DECODE_H__
 
+#include "sp_pattern_match.h"
 
 #define BASE64DECODE_RELATIVE_FLAG 0x01
 
@@ -31,6 +32,7 @@ typedef struct _Base64DecodeData
     uint32_t bytes_to_decode;
     uint32_t offset;
     uint8_t  flags;
+    HTTP_BUFFER buffer_type;
 }Base64DecodeData;
 
 int Base64DecodeCompare(void *, void *);

@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -29,6 +29,7 @@ typedef uint8_t IpProto;
 typedef enum {
     PROTO_ETH,        /* DecodeEthPkt */
     PROTO_FPATH,      /* FabricPath - handled by DecodeEthPkt */
+    PROTO_CISCO_META, /* Cisco Metadata - handled by DecodeEthPkt */
 
     PROTO_IP4,        /* DecodeIP */
                       /* DecodeIPOptions - handled with IP4 */

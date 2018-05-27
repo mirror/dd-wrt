@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -26,6 +26,7 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 
+#include "appInfoTable.h"
 #include "flow.h"
 #include "service_api.h"
 
@@ -89,15 +90,16 @@ typedef struct _SERVICE_TNS_MSG
 #pragma pack()
 
 static int tns_init(const InitServiceAPI * const init_api);
-MakeRNAServiceValidationPrototype(tns_validate);
+static int tns_validate(ServiceValidationArgs* args);
 
-static RNAServiceElement svc_element =
+static tRNAServiceElement svc_element =
 {
     .next = NULL,
     .validate = &tns_validate,
     .detectorType = DETECTOR_TYPE_DECODER,
     .name = "tns",
     .ref_count = 1,
+    .current_ref_count = 1,
 };
 
 static RNAServiceValidationPort pp[] =
@@ -106,7 +108,7 @@ static RNAServiceValidationPort pp[] =
     {NULL, 0, 0}
 };
 
-SO_PUBLIC RNAServiceValidationModule tns_service_mod =
+SF_SO_PUBLIC tRNAServiceValidationModule tns_service_mod =
 {
     svc_name,
     &tns_init,
@@ -120,34 +122,37 @@ static tAppRegistryEntry appIdRegistry[] =
 
 static int tns_init(const InitServiceAPI * const init_api)
 {
-    init_api->RegisterPattern(&tns_validate, IPPROTO_TCP, (const uint8_t *) TNS_BANNER, TNS_BANNER_LEN, 2, svc_name);
-	unsigned i;
-	for (i=0; i < sizeof(appIdRegistry)/sizeof(*appIdRegistry); i++)
-	{
-		_dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[i].appId);
-		init_api->RegisterAppId(&tns_validate, appIdRegistry[i].appId, appIdRegistry[i].additionalInfo, NULL);
-	}
+    init_api->RegisterPattern(&tns_validate, IPPROTO_TCP, (const uint8_t *) TNS_BANNER, TNS_BANNER_LEN, 2, svc_name, init_api->pAppidConfig);
+    unsigned i;
+    for (i=0; i < sizeof(appIdRegistry)/sizeof(*appIdRegistry); i++)
+    {
+        _dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[i].appId);
+        init_api->RegisterAppId(&tns_validate, appIdRegistry[i].appId, appIdRegistry[i].additionalInfo, init_api->pAppidConfig);
+    }
 
     return 0;
 }
 
-MakeRNAServiceValidationPrototype(tns_validate)
+static int tns_validate(ServiceValidationArgs* args)
 {
     ServiceTNSData *ss;
     uint16_t offset;
+    tAppIdData *flowp = args->flowp;
+    const uint8_t *data = args->data;
+    uint16_t size = args->size;
 
     if (!size)
         goto inprocess;
-    if (dir != APP_ID_FROM_RESPONDER)
+    if (args->dir != APP_ID_FROM_RESPONDER)
         goto inprocess;
 
-    ss = tns_service_mod.api->data_get(flowp);
+    ss = tns_service_mod.api->data_get(flowp, tns_service_mod.flow_data_index);
     if (!ss)
     {
         ss = calloc(1, sizeof(*ss));
         if (!ss)
             return SERVICE_ENOMEM;
-        if (tns_service_mod.api->data_add(flowp, ss, &free))
+        if (tns_service_mod.api->data_add(flowp, ss, tns_service_mod.flow_data_index, &free))
         {
             free(ss);
             return SERVICE_ENOMEM;
@@ -295,17 +300,17 @@ MakeRNAServiceValidationPrototype(tns_validate)
     }
 
 inprocess:
-        tns_service_mod.api->service_inprocess(flowp, pkt, dir, &svc_element);
-        return SERVICE_INPROCESS;
+    tns_service_mod.api->service_inprocess(flowp, args->pkt, args->dir, &svc_element, NULL);
+    return SERVICE_INPROCESS;
 
 success:
-        tns_service_mod.api->add_service(flowp, pkt, dir, &svc_element, APP_ID_ORACLE_TNS,
-                                     NULL, ss->version ? ss->version:NULL, NULL);
-        return SERVICE_SUCCESS;
+    tns_service_mod.api->add_service(flowp, args->pkt, args->dir, &svc_element, APP_ID_ORACLE_TNS,
+                                     NULL, ss->version ? ss->version:NULL, NULL, NULL);
+    return SERVICE_SUCCESS;
 
 fail:
-        tns_service_mod.api->fail_service(flowp, pkt, dir, &svc_element);
-        return SERVICE_NOMATCH;
-
+    tns_service_mod.api->fail_service(flowp, args->pkt, args->dir, &svc_element,
+                                      tns_service_mod.flow_data_index, args->pConfig, NULL);
+    return SERVICE_NOMATCH;
 }
 

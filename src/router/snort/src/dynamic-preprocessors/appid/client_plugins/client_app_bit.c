@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -77,9 +77,10 @@ static BIT_CLIENT_APP_CONFIG bit_config;
 
 static CLIENT_APP_RETCODE bit_init(const InitClientAppAPI * const init_api, SF_LIST *config);
 static CLIENT_APP_RETCODE bit_validate(const uint8_t *data, uint16_t size, const int dir,
-                                        FLOW *flowp, const SFSnortPacket *pkt, struct _Detector *userData);
+                                        tAppIdData *flowp, SFSnortPacket *pkt, struct _Detector *userData,
+                                        const struct appIdConfig_ *pConfig);
 
-SO_PUBLIC RNAClientAppModule bit_client_mod =
+SF_SO_PUBLIC tRNAClientAppModule bit_client_mod =
 {
     .name = "BIT",
     .proto = IPPROTO_TCP,
@@ -108,7 +109,7 @@ static CLIENT_APP_RETCODE bit_init(const InitClientAppAPI * const init_api, SF_L
     unsigned i;
     RNAClientAppModuleConfigItem *item;
 
-	bit_config.enabled = 1;
+    bit_config.enabled = 1;
 
     if (config)
     {
@@ -129,7 +130,7 @@ static CLIENT_APP_RETCODE bit_init(const InitClientAppAPI * const init_api, SF_L
         for (i=0; i < sizeof(patterns)/sizeof(*patterns); i++)
         {
             _dpd.debugMsg(DEBUG_LOG,"registering patterns: %s: %d\n",(const char *)patterns[i].pattern, patterns[i].index);
-            init_api->RegisterPattern(&bit_validate, IPPROTO_TCP, patterns[i].pattern, patterns[i].length, patterns[i].index);
+            init_api->RegisterPattern(&bit_validate, IPPROTO_TCP, patterns[i].pattern, patterns[i].length, patterns[i].index, init_api->pAppidConfig);
         }
     }
 
@@ -137,14 +138,15 @@ static CLIENT_APP_RETCODE bit_init(const InitClientAppAPI * const init_api, SF_L
 	for (j=0; j < sizeof(appIdRegistry)/sizeof(*appIdRegistry); j++)
 	{
 		_dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[j].appId);
-		init_api->RegisterAppId(&bit_validate, appIdRegistry[j].appId, appIdRegistry[j].additionalInfo, NULL);
+		init_api->RegisterAppId(&bit_validate, appIdRegistry[j].appId, appIdRegistry[j].additionalInfo, init_api->pAppidConfig);
 	}
 
     return CLIENT_APP_SUCCESS;
 }
 
 static CLIENT_APP_RETCODE bit_validate(const uint8_t *data, uint16_t size, const int dir,
-                                       FLOW *flowp, const SFSnortPacket *pkt, struct _Detector *userData)
+                                       tAppIdData *flowp, SFSnortPacket *pkt, struct _Detector *userData,
+                                       const struct appIdConfig_ *pConfig)
 {
     ClientBITData *fd;
     uint16_t offset;
@@ -152,13 +154,13 @@ static CLIENT_APP_RETCODE bit_validate(const uint8_t *data, uint16_t size, const
     if (dir != APP_ID_FROM_INITIATOR)
         return CLIENT_APP_INPROCESS;
 
-    fd = bit_client_mod.api->data_get(flowp);
+    fd = bit_client_mod.api->data_get(flowp, bit_client_mod.flow_data_index);
     if (!fd)
     {
         fd = calloc(1, sizeof(*fd));
         if (!fd)
             return CLIENT_APP_ENOMEM;
-        if (bit_client_mod.api->data_add(flowp, fd, &free))
+        if (bit_client_mod.api->data_add(flowp, fd, bit_client_mod.flow_data_index, &free))
         {
             free(fd);
             return CLIENT_APP_ENOMEM;
@@ -174,12 +176,12 @@ static CLIENT_APP_RETCODE bit_validate(const uint8_t *data, uint16_t size, const
         case BIT_STATE_BANNER:
             if(data[offset] != BIT_BANNER[fd->pos])
                 return CLIENT_APP_EINVALID;
-	    if(fd->pos == BIT_BANNER_LEN-1)
+        if(fd->pos == BIT_BANNER_LEN-1)
                 fd->state = BIT_STATE_BANNER_DC;
             fd->pos++;
             break;
         case BIT_STATE_BANNER_DC:
-	    if(fd->pos == LAST_BANNER_OFFSET)
+        if(fd->pos == LAST_BANNER_OFFSET)
             {
                 fd->pos = 0;
                 fd->state = BIT_STATE_MESSAGE_LEN;
@@ -187,7 +189,6 @@ static CLIENT_APP_RETCODE bit_validate(const uint8_t *data, uint16_t size, const
             }
             fd->pos++;
             break;
-
         case BIT_STATE_MESSAGE_LEN:
             fd->l.raw_len[fd->pos] = data[offset];
             fd->pos++;
@@ -196,11 +197,11 @@ static CLIENT_APP_RETCODE bit_validate(const uint8_t *data, uint16_t size, const
                 fd->stringlen = ntohl(fd->l.len) ;
                 fd->state = BIT_STATE_MESSAGE_DATA;
                 if(!fd->stringlen)
-		{
+                {
                     if(offset == size-1)
                         goto done;
                     return CLIENT_APP_EINVALID;
-		}
+                }
                 fd->pos = 0;
             }
             break;
@@ -211,16 +212,16 @@ static CLIENT_APP_RETCODE bit_validate(const uint8_t *data, uint16_t size, const
                 goto done;
             break;
         default:
-	    goto inprocess;
+            goto inprocess;
         }
-	offset++;
+    offset++;
     }
 inprocess:
     return CLIENT_APP_INPROCESS;
 
 done:
     bit_client_mod.api->add_app(flowp, APP_ID_BITTORRENT, APP_ID_BITTORRENT, NULL);
-    flow_mark(flowp, FLOW_CLIENTAPPDETECTED);
+    setAppIdFlag(flowp, APPID_SESSION_CLIENT_DETECTED);
     return CLIENT_APP_SUCCESS;
 }
 

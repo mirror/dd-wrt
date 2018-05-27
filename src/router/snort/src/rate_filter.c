@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2009-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -137,9 +137,9 @@ int RateFilter_Test(
     unsigned gid = otn->event_data.sig_generator;
     unsigned sid = otn->event_data.sig_id;
 
-    snort_ip_p sip;
-    snort_ip_p dip;
-    snort_ip cleared;
+    sfaddr_t* sip;
+    sfaddr_t* dip;
+    sfaddr_t cleared;
 
     if ( IPH_IS_VALID(p) )
     {

@@ -2,7 +2,7 @@
 /*
 ** file_decomp_SWF.c
 **
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License Version 2 as
@@ -48,7 +48,6 @@ static fd_status_t File_Decomp_Process_LZMA_Header( fd_session_p_t SessionPtr )
 {
     uint8_t LZMA_Header[LZMA_HEADER_LEN];
     uint8_t *SWF_Header = SessionPtr->Decomp_State.SWF.Header_Bytes;
-    uint64_t LZMA_Uncomp_Len;
     uint32_t SWF_Uncomp_Len;
     int idx;
 
@@ -67,14 +66,8 @@ static fd_status_t File_Decomp_Process_LZMA_Header( fd_session_p_t SessionPtr )
         return( File_Decomp_DecompError );
     }
     
-    LZMA_Uncomp_Len = (uint64_t)(SWF_Uncomp_Len - (SWF_HDR_LEN));
-
-    /* Write little-endian from value */
-    for( idx=0; idx<8; idx++ )
-        *(LZMA_Header + LZMA_UCL_OFFSET + idx) =
-            (uint8_t)(LZMA_Uncomp_Len & (0xff << idx));
-
-    LZMA_Uncomp_Len = (uint64_t)(SWF_Uncomp_Len - (SWF_HDR_LEN));
+    /* Set to -1 and let liblzma calculate the size automatically */
+    *((uint64_t*)(LZMA_Header + LZMA_UCL_OFFSET)) = 0xFFFFFFFFFFFFFFFF;
 
     /* Move the LZMA Properties */
     for( idx=0; idx<SWF_LZMA_PRP_LEN; idx++ )

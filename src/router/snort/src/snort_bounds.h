@@ -1,7 +1,7 @@
 #ifndef _BOUNDS_H
 #define _BOUNDS_H
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2003-2013 Sourcefire, Inc.
 **               Chris Green <cmg@sourcefire.com>
 **
@@ -237,7 +237,7 @@ static inline size_t SafeSnprintf(char *str, size_t size, const char *format, ..
     ret = vsnprintf(str, size, format, ap);
     va_end(ap);
 
-    if (ret < 0 || (size_t)ret > size)
+    if (ret < 0 || (size_t)ret >= size)
         return 0;
 
     return (size_t)ret;

@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2005 Martin Roesch <roesch@sourcefire.com>
 **
@@ -39,7 +39,7 @@
 #include "sfdaq.h"
 #include "sf_types.h"
 #include "sfutil/sflsq.h"
-#include "sfutil//sfActionQueue.h"
+#include "sfutil/sfActionQueue.h"
 #include "profiler.h"
 #include "rules.h"
 #include "treenodes.h"
@@ -58,8 +58,10 @@
 #include "ppm.h"
 #include "sfutil/sfrf.h"
 #include "sfutil/sfPolicy.h"
+#include "pkt_tracer.h"
 #include "detection_filter.h"
 #include "generators.h"
+#include "preprocids.h"
 #include <signal.h>
 #if defined(INLINE_FAILOPEN) || \
     defined(TARGET_BASED) || defined(SNORT_RELOAD)
@@ -298,8 +300,14 @@ typedef enum _GetOptLongIds
     ARG_HA_PEER,
     ARG_HA_OUT,
     ARG_HA_IN,
+    ARG_HA_PDTS_IN,
 
     SUPPRESS_CONFIG_LOG,
+
+#ifdef DUMP_BUFFER
+    BUFFER_DUMP,
+    BUFFER_DUMP_ALERT,
+#endif
 
     GET_OPT_LONG_IDS_MAX
 
@@ -575,7 +583,11 @@ typedef enum {
     TUNNEL_GTP    = 0x01,
     TUNNEL_TEREDO = 0x02,
     TUNNEL_6IN4   = 0x04,
-    TUNNEL_4IN6   = 0x08
+    TUNNEL_4IN6   = 0x08,
+    TUNNEL_4IN4   = 0x10,
+    TUNNEL_6IN6   = 0x20,
+    TUNNEL_GRE    = 0x40,
+    TUNNEL_MPLS   = 0x80
 } TunnelFlags;
 
 typedef struct _VarNode
@@ -596,8 +608,6 @@ typedef struct _TargetBasedConfig
 
 } TargetBasedConfig;
 #endif
-
-typedef uint32_t PreprocEnableMask;
 
 typedef struct _SnortPolicy
 {
@@ -627,8 +637,8 @@ typedef struct _SnortPolicy
     uint32_t policy_flags;
 
     /* mask of preprocessors that have registered runtime process functions */
-    int preproc_bit_mask;
-    int preproc_meta_bit_mask;
+    PreprocEnableMask preproc_bit_mask;
+    PreprocEnableMask preproc_meta_bit_mask;
 
     int num_detects;
     //int detect_bit_mask;
@@ -665,6 +675,11 @@ typedef struct _SnortPolicy
 #ifdef INTEL_SOFT_CPM
 struct _IntelPmHandles;
 #endif
+struct _MandatoryEarlySessionCreator;
+#ifdef SNORT_RELOAD
+struct _ReloadAdjustEntry;
+#endif
+struct _fileConfig;
 typedef struct _SnortConfig
 {
     RunMode run_mode;
@@ -716,8 +731,8 @@ typedef struct _SnortConfig
 #endif
 
     /* -h and -B */
-    sfip_t homenet;
-    sfip_t obfuscation_net;
+    sfcidr_t homenet;
+    sfcidr_t obfuscation_net;
 
     /* config disable_decode_alerts
      * config enable_decode_oversized_alerts
@@ -930,10 +945,11 @@ typedef struct _SnortConfig
     bool ha_peer;
     char *ha_out;
     char *ha_in;
+    char *ha_pdts_in;
     char *output_dir;
-    void *file_config;
+    struct _fileConfig *file_config;
     int disable_all_policies;
-    uint32_t reenabled_preprocessor_bits; /* flags for preprocessors to check, if all policies are disabled */
+    PreprocEnableMask reenabled_preprocessor_bits; /* flags for preprocessors to check, if all policies are disabled */
 #ifdef SIDE_CHANNEL
     SideChannelConfig side_channel_config;
 #endif
@@ -962,6 +978,21 @@ typedef struct _SnortConfig
 
     int internal_log_level;
     int suppress_config_log;
+    uint8_t disable_replace_opt;
+
+    struct _MandatoryEarlySessionCreator* mandatoryESCreators;
+    bool normalizer_set;
+
+#ifdef DUMP_BUFFER
+    char *buffer_dump_file;
+#endif
+
+#ifdef SNORT_RELOAD
+    struct _ReloadAdjustEntry* raSessionEntry;
+    struct _ReloadAdjustEntry* volatile raEntry;
+    struct _ReloadAdjustEntry* raCurrentEntry;
+    time_t raLastLog;
+#endif
 } SnortConfig;
 
 /* struct to collect packet statistics */
@@ -1096,6 +1127,9 @@ typedef struct _PacketCount
     uint64_t internal_blacklist;
     uint64_t internal_whitelist;
 
+    uint64_t syn_rate_limit_events;
+    uint64_t syn_rate_limit_drops;
+
 } PacketCount;
 
 typedef struct _PcapReadObject
@@ -1111,7 +1145,20 @@ typedef void (*grinder_t)(Packet *, const DAQ_PktHdr_t*, const uint8_t *);
 
 
 /*  E X T E R N S  ************************************************************/
+extern const struct timespec thread_sleep;
+extern volatile bool snort_initializing;
+extern volatile int snort_exiting;
+#ifdef SNORT_RELOAD
+typedef uint32_t snort_reload_t;
+extern volatile snort_reload_t reload_signal;
+extern snort_reload_t reload_total;
+#endif
+#if defined(SNORT_RELOAD) && !defined(WIN32)
+extern volatile int snort_reload_thread_created;
+extern pid_t snort_reload_thread_pid;
+#endif
 extern SnortConfig *snort_conf;
+extern SnortConfig *snort_cmd_line_conf;
 extern int internal_log_level;
 
 #include "sfutil/sfPolicyData.h"
@@ -1131,6 +1178,15 @@ extern OutputFuncNode *AlertList;
 extern OutputFuncNode *LogList;
 extern tSfActionQueueId decoderActionQ;
 
+#if defined(SNORT_RELOAD) && !defined(WIN32)
+extern volatile int snort_reload;
+#endif
+
+#ifdef SNORT_RELOAD
+extern PostConfigFuncNode *plugin_reload_funcs;
+#endif
+extern PeriodicCheckFuncNode *periodic_check_funcs;
+
 /*  P R O T O T Y P E S  ******************************************************/
 int SnortMain(int argc, char *argv[]);
 DAQ_Verdict ProcessPacket(Packet*, const DAQ_PktHdr_t*, const uint8_t*, void*);
@@ -1148,9 +1204,15 @@ SnortConfig * SnortConfNew(void);
 void SnortConfFree(SnortConfig *);
 void CleanupPreprocessors(SnortConfig *);
 void CleanupPlugins(SnortConfig *);
+void CleanExit(int);
+SnortConfig * MergeSnortConfs(SnortConfig *, SnortConfig *);
 
 typedef void (*sighandler_t)(int);
 int SnortAddSignal(int sig, sighandler_t handler, int);
+
+#ifdef TARGET_BASED
+void SigNoAttributeTableHandler(int);
+#endif
 
 static inline int ScTestMode(void)
 {
@@ -1381,6 +1443,20 @@ static inline long int ScMplsStackDepth(void)
     return snort_conf->mpls_stack_depth;
 }
 
+#ifdef MPLS_RFC4023_SUPPORT
+static inline long int ScMplsPayloadCheck(uint8_t ih1, long int iRet)
+{
+    // IPv4
+    if (((ih1 & 0xF0) >> 4) == 4)
+        return MPLS_PAYLOADTYPE_IPV4;
+    // IPv6
+    else if (((ih1 & 0xF0) >> 4) == 6)
+        return MPLS_PAYLOADTYPE_IPV6;
+    else
+        return iRet;
+}
+#endif
+
 static inline long int ScMplsPayloadType(void)
 {
     return snort_conf->mpls_payload_type;
@@ -1528,6 +1604,27 @@ static inline int ScIpsInlineTestMode(void)
     return (((snort_conf->targeted_policies[getIpsRuntimePolicy()])->ips_policy_mode) == POLICY_MODE__INLINE_TEST );
 }
 
+static inline int ScIpsInlineModeNewConf( SnortConfig * sc)
+{
+    return (((sc->targeted_policies[getParserPolicy(sc)])->ips_policy_mode) == POLICY_MODE__INLINE );
+}
+static inline int ScAdapterInlineModeNewConf(SnortConfig * sc)
+{
+    return sc->run_flags & RUN_FLAG__INLINE;
+}
+static inline int ScTreatDropAsIgnoreNewConf(SnortConfig * sc)
+{
+    return sc->run_flags & RUN_FLAG__TREAT_DROP_AS_IGNORE;
+}
+static inline int ScIpsInlineTestModeNewConf(SnortConfig * sc)
+{
+    return (((sc->targeted_policies[getParserPolicy(sc)])->ips_policy_mode) == POLICY_MODE__INLINE_TEST );
+}
+static inline int ScAdapterInlineTestModeNewConf(SnortConfig * sc)
+{
+    return sc->run_flags & RUN_FLAG__INLINE_TEST;
+}
+
 static inline int ScAdapterInlineTestMode(void)
 {
     return snort_conf->run_flags & RUN_FLAG__INLINE_TEST;
@@ -1643,9 +1740,9 @@ static inline int ScOutputWifiMgmt(void)
 #endif
 
 #ifdef TARGET_BASED
-static inline uint32_t ScMaxAttrHosts(void)
+static inline uint32_t ScMaxAttrHosts(SnortConfig *sc)
 {
-    return snort_conf->max_attribute_hosts;
+    return sc->max_attribute_hosts;
 }
 
 static inline uint32_t ScMaxAttrServicesPerHost(void)
@@ -1653,9 +1750,9 @@ static inline uint32_t ScMaxAttrServicesPerHost(void)
     return snort_conf->max_attribute_services_per_host;
 }
 
-static inline int ScDisableAttrReload(void)
+static inline int ScDisableAttrReload(SnortConfig *sc)
 {
-    return snort_conf->run_flags & RUN_FLAG__DISABLE_ATTRIBUTE_RELOAD_THREAD;
+    return sc->run_flags & RUN_FLAG__DISABLE_ATTRIBUTE_RELOAD_THREAD;
 }
 #endif
 
@@ -1758,7 +1855,7 @@ static inline int ScIsPreprocEnabled(uint32_t preproc_id, tSfPolicyId policy_id)
     if (policy == NULL)
         return 0;
 
-    if (policy->preproc_bit_mask & (1 << preproc_id))
+    if (policy->preproc_bit_mask & (UINT64_C(1) << preproc_id))
         return 1;
 
     return 0;
@@ -1819,5 +1916,9 @@ static inline int ScSuppressConfigLog(void)
     return snort_conf->suppress_config_log;
 }
 
+static inline int ScDisableReplaceOpt(void)
+{
+    return snort_conf->disable_replace_opt;
+}
 #endif  /* __SNORT_H__ */
 

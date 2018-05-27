@@ -3,7 +3,7 @@
 **
 **  fpcreate.h
 **
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Dan Roelker <droelker@sourcefire.com>
 ** Marc Norton <mnorton@sourcefire.com>
@@ -42,8 +42,6 @@
 //#include "parser.h"
 #include "pcrm.h"
 
-struct _SnortConfig;
-
 /*
  *  Max Number of Protocols Supported by Rules in fpcreate.c
  *  for tcp,udp,icmp,ip ... this is an array dimesnion used to
@@ -52,6 +50,7 @@ struct _SnortConfig;
 /* This is now defined in sftarget_protocol_refererence.h"
  * #define MAX_PROTOCOL_ORDINAL 8192 */
 #include "sftarget_protocol_reference.h"
+
 
 /*
  *  This controls how many fast pattern match contents may be
@@ -166,10 +165,16 @@ void FastPatternConfigFree(FastPatternConfig *);
 **  Functions that allow the detection routins to
 **  find the right classification for a given packet.
 */
-int prmFindRuleGroupTcp(PORT_RULE_MAP *, int, int, PORT_GROUP **, PORT_GROUP **, PORT_GROUP **);
-int prmFindRuleGroupUdp(PORT_RULE_MAP *, int, int, PORT_GROUP **, PORT_GROUP **, PORT_GROUP **);
 int prmFindRuleGroupIp(PORT_RULE_MAP *, int, PORT_GROUP **, PORT_GROUP **);
 int prmFindRuleGroupIcmp(PORT_RULE_MAP *, int, PORT_GROUP **, PORT_GROUP **);
+
+#ifdef TARGET_BASED
+int prmFindRuleGroupTcp(PORT_RULE_MAP *prm, int dport, int sport, PORT_GROUP ** src, PORT_GROUP **dst, PORT_GROUP **nssrc, PORT_GROUP **nsdst, PORT_GROUP ** gen);
+int prmFindRuleGroupUdp(PORT_RULE_MAP *prm, int dport, int sport, PORT_GROUP ** src, PORT_GROUP ** dst, PORT_GROUP **nssrc, PORT_GROUP **nsdst, PORT_GROUP ** gen);
+#else
+int prmFindRuleGroupTcp(PORT_RULE_MAP *, int, int, PORT_GROUP **, PORT_GROUP **, PORT_GROUP **);
+int prmFindRuleGroupUdp(PORT_RULE_MAP *, int, int, PORT_GROUP **, PORT_GROUP **, PORT_GROUP **);
+#endif
 
 int fpSetDetectSearchMethod(FastPatternConfig *, char *);
 void fpSetDetectSearchOpt(FastPatternConfig *, int flag);

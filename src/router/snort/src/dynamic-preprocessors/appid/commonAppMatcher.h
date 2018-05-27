@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -32,6 +32,10 @@
 #include "service_state.h"
 #include "flow.h"
 #include "appId.h"
+#include "NetworkSet.h"
+
+struct AppIdData;
+struct AppidStaticConfig;
 
 typedef struct _appRegistryEntry
 {
@@ -39,39 +43,48 @@ typedef struct _appRegistryEntry
     uint32_t  additionalInfo;
 } tAppRegistryEntry;
 
-#define APP_ID_MAX_DIRS 16
-#define MAX_ZONES   1024
-#define APP_ID_PORT_ARRAY_SIZE  65536
-
-typedef struct _port_ex
-{
-    int family;
-    struct in6_addr ip;
-    struct in6_addr netmask;
-} PortExclusion;
-
-typedef struct APP_ID_CONFIG
-{
-    unsigned mdns_user_reporting;
-    unsigned referred_appId_disabled;
-    unsigned rtmp_max_packets;
-    const char *appid_directory;  
-    tAppId tcp_port_only[65536];      /* Service IDs for port-only TCP services */
-    tAppId udp_port_only[65536];      /* Service IDs for port-only UDP services */
-    tAppId ip_protocol[255];          /* Service IDs for non-TCP / UDP protocol services */
-
-    SF_LIST client_app_args;            /* List of Client App arguments */
-} tAppIdConfig;
-
 extern unsigned appIdPolicyId;
-extern tAppIdConfig appIdConfig;
+extern uint32_t app_id_netmasks[];
 
 int appMatcherIsAppDetected(void *appSet, tAppId app);
-int AppIdCommonInit(unsigned long memcap);
+int AppIdCommonInit(struct AppidStaticConfig *config);
 int AppIdCommonFini(void);
-int AppIdCommonReload(void);
 
-void *AppIDFlowdataGet(FLOW *flowp, unsigned id);
+/**
+ * \brief Reload AppId configuration
+ *
+ * This function reloads AppId configuration. It is used both in the cases of Snort reload
+ * and AppId reconfiguration.
+ *
+ * @param rnaConf - RNA configuration file name with full path
+ * @param new_context - return reference that points to new AppId configuration
+ * @return 0 on success, -1 on failure
+ */
+int AppIdCommonReload(struct AppidStaticConfig* appidSC, void **new_context);
+
+/**
+ * \brief Swap AppId configuration
+ *
+ * This function swaps AppId configuration. This function is called after AppIdCommonReload().
+ *
+ * @param swap_config - Pointer to new configuration. This pointer is returned by AppIdCommonReload().
+ * @return Pointer to old configuration
+ */
+void *AppIdCommonReloadSwap(void *new_context);
+
+/**
+ * \brief Clean up AppId configuration
+ *
+ * This function cleans up all the data structures in an AppId configuration. It does not clean up
+ * any global data structures that are used by AppId and are outside the configuration. This
+ * function is called after AppIdCommonReloadSwap().
+ *
+ * @param old_context - Pointer to old configuration. This pointer is returned by AppIdCommonReloadSwap().
+ * @return None
+ */
+void AppIdCommonUnload(void *old_context);
+
+void *AppIDFlowdataGet(struct AppIdData *flow, unsigned id);
 
 #endif  /* __COMMON_APP_MATCHER_H__ */
 

@@ -1,5 +1,5 @@
 /*
- ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2012-2013 Sourcefire, Inc.
  **
  ** This program is free software; you can redistribute it and/or modify
@@ -37,19 +37,20 @@
 #include "decode.h"
 #include "active.h"
 #include "sf_sechash.h"
+#include "file_config.h"
+#include "file_service.h"
 
 /* The hash table of expected files */
 static SFXHASH *fileHash = NULL;
-extern Log_file_action_func log_file_action;
-extern File_type_callback_func  file_type_cb;
-extern File_signature_callback_func file_signature_cb;
+extern FileServiceConfig cur_config;
+extern FileContext* get_main_file_context(void *ssnptr);
 
 static FileState sig_file_state = { FILE_CAPTURE_SUCCESS, FILE_SIG_DONE };
 
 typedef struct _FileHashKey
 {
-    snort_ip sip;
-    snort_ip dip;
+    struct in6_addr sip;
+    struct in6_addr dip;
     uint32_t file_sig;
 } FileHashKey;
 
@@ -65,11 +66,15 @@ typedef struct _FileNode
 
 void file_resume_block_init(void)
 {
-    fileHash = sfxhash_new(MAX_FILES_TRACKED, sizeof(FileHashKey), sizeof(FileNode), 0, 1,
-            NULL, NULL, 1);
+    /* number of entries * overhead per entry */
+    unsigned long maxmem = sfxhash_calc_maxmem(MAX_FILES_TRACKED,
+			sizeof(FileHashKey) + sizeof(FileNode));
+
+    fileHash = sfxhash_new(MAX_FILES_TRACKED, sizeof(FileHashKey), sizeof(FileNode),
+			maxmem, 1, NULL, NULL, 1);
+
     if (!fileHash)
         FatalError("Failed to create the expected channel hash table.\n");
-
 }
 
 void file_resume_block_cleanup(void)
@@ -91,6 +96,7 @@ static inline void updateFileNode(FileNode *node, File_Verdict verdict,
         memcpy(node->sha256, signature, SHA256_HASH_SIZE);
     }
 }
+
 /** *
  * @param sip - source IP address
  * @param dip - destination IP address
@@ -99,22 +105,57 @@ static inline void updateFileNode(FileNode *node, File_Verdict verdict,
  * @param expiry - session expiry in seconds.
  */
 int file_resume_block_add_file(void *pkt, uint32_t file_sig, uint32_t timeout,
-        File_Verdict verdict, uint32_t file_type_id, uint8_t *signature)
+        File_Verdict verdict, uint32_t file_type_id, uint8_t *signature, uint16_t cli_port, uint16_t srv_port, bool create_pinhole)
 {
     FileHashKey hashKey;
     SFXHASH_NODE *hash_node = NULL;
     FileNode *node;
     FileNode new_node;
-    snort_ip_p srcIP;
-    snort_ip_p dstIP;
-    Packet *p = (Packet *)pkt;
+#ifdef HAVE_DAQ_DP_ADD_DC
+    bool use_other_port = false;
+#endif
+    sfaddr_t* srcIP;
+    sfaddr_t* dstIP;
+    Packet *p = (Packet*)pkt;
     time_t now = p->pkth->ts.tv_sec;
 
     srcIP = GET_SRC_IP(p);
     dstIP = GET_DST_IP(p);
-    IP_COPY_VALUE(hashKey.dip, dstIP);
-    IP_COPY_VALUE(hashKey.sip, srcIP);
+    sfaddr_copy_to_raw(&hashKey.dip, dstIP);
+    sfaddr_copy_to_raw(&hashKey.sip, srcIP);
     hashKey.file_sig = file_sig;
+    if ( timeout == 0  && verdict == 0 && file_type_id == 0)
+    {
+        FileConfig *file_config;
+        FileContext *context;
+        file_config =  (FileConfig *)(snort_conf->file_config);
+        context = get_main_file_context(p->ssnptr);
+        if (!context)
+            return -1;
+        timeout = (uint32_t)file_config->file_block_timeout;
+        verdict = context->verdict;
+        file_type_id = context->file_type_id;
+        signature = context->sha256;
+#ifdef HAVE_DAQ_DP_ADD_DC
+        use_other_port = true;
+#endif
+    }
+#ifdef HAVE_DAQ_DP_ADD_DC
+    if (create_pinhole)
+    {
+        DAQ_DC_Params params;
+
+        memset(&params, 0, sizeof(params));
+        params.flags = DAQ_DC_ALLOW_MULTIPLE | DAQ_DC_PERSIST;
+        params.timeout_ms = 5 * 60 * 1000; /* 5 minutes */
+        if (p->packet_flags & PKT_FROM_CLIENT)
+            DAQ_Add_Dynamic_Protocol_Channel(p, srcIP, 0, dstIP, use_other_port ? srv_port : p->dp, GET_IPH_PROTO(p),
+                &params);
+        else if (p->packet_flags & PKT_FROM_SERVER)
+             DAQ_Add_Dynamic_Protocol_Channel(p, dstIP, 0, srcIP, use_other_port ? cli_port : p->sp, GET_IPH_PROTO(p),
+                   &params);
+    }
+#endif
 
     hash_node = sfxhash_find_node(fileHash, &hashKey);
     if (hash_node)
@@ -166,18 +207,18 @@ static inline File_Verdict checkVerdict(Packet *p, FileNode *node, SFXHASH_NODE 
 
     /*Query the file policy in case verdict has been changed*/
     /*Check file type first*/
-    if (file_type_cb)
+    if (cur_config.file_type_cb)
     {
-        verdict = file_type_cb(p, p->ssnptr, node->file_type_id, 0,
+        verdict = cur_config.file_type_cb(p, p->ssnptr, node->file_type_id, 0,
                 DEFAULT_FILE_ID);
     }
 
     if ((verdict == FILE_VERDICT_UNKNOWN) ||
             (verdict == FILE_VERDICT_STOP_CAPTURE))
     {
-        if (file_signature_cb)
+        if (cur_config.file_signature_cb)
         {
-            verdict = file_signature_cb(p, p->ssnptr, node->sha256, 0,
+            verdict = cur_config.file_signature_cb(p, p->ssnptr, node->sha256, 0,
                     &sig_file_state, 0, DEFAULT_FILE_ID);
         }
     }
@@ -191,18 +232,18 @@ static inline File_Verdict checkVerdict(Packet *p, FileNode *node, SFXHASH_NODE 
     if (verdict == FILE_VERDICT_LOG)
     {
         sfxhash_free_node(fileHash, hash_node);
-        if (log_file_action)
+        if (cur_config.log_file_action)
         {
-            log_file_action(p->ssnptr, FILE_RESUME_LOG);
+            cur_config.log_file_action(p->ssnptr, FILE_RESUME_LOG);
         }
     }
     else if (verdict == FILE_VERDICT_BLOCK)
     {
         Active_ForceDropPacket();
         Active_DropSession(p);
-        if (log_file_action)
+        if (cur_config.log_file_action)
         {
-            log_file_action(p->ssnptr, FILE_RESUME_BLOCK);
+            cur_config.log_file_action(p->ssnptr, FILE_RESUME_BLOCK);
         }
         node->verdict = verdict;
     }
@@ -213,9 +254,9 @@ static inline File_Verdict checkVerdict(Packet *p, FileNode *node, SFXHASH_NODE 
 #ifdef ACTIVE_RESPONSE
         Active_QueueReject();
 #endif
-        if (log_file_action)
+        if (cur_config.log_file_action)
         {
-            log_file_action(p->ssnptr, FILE_RESUME_BLOCK);
+            cur_config.log_file_action(p->ssnptr, FILE_RESUME_BLOCK);
         }
         node->verdict = verdict;
     }
@@ -228,9 +269,9 @@ static inline File_Verdict checkVerdict(Packet *p, FileNode *node, SFXHASH_NODE 
         if (FILE_VERDICT_REJECT == node->verdict)
             Active_QueueReject();
 #endif
-        if (log_file_action)
+        if (cur_config.log_file_action)
         {
-            log_file_action(p->ssnptr, FILE_RESUME_BLOCK);
+            cur_config.log_file_action(p->ssnptr, FILE_RESUME_BLOCK);
         }
         verdict = node->verdict;
     }
@@ -241,23 +282,24 @@ static inline File_Verdict checkVerdict(Packet *p, FileNode *node, SFXHASH_NODE 
 File_Verdict file_resume_block_check(void *pkt, uint32_t file_sig)
 {
     File_Verdict verdict = FILE_VERDICT_UNKNOWN;
-    snort_ip_p srcIP;
-    snort_ip_p dstIP;
+    sfaddr_t* srcIP;
+    sfaddr_t* dstIP;
     SFXHASH_NODE *hash_node;
     FileHashKey hashKey;
     FileNode *node;
-    Packet *p = (Packet *)pkt;
+    Packet *p = (Packet*)pkt;
 
     /* No hash table, or its empty?  Get out of dodge.  */
-    if ((!fileHash) || (!sfxhash_count(fileHash)))
+    if (!fileHash || !sfxhash_count(fileHash))
     {
         DEBUG_WRAP(DebugMessage(DEBUG_FILE, "No expected sessions\n"););
         return verdict;
     }
+
     srcIP = GET_SRC_IP(p);
     dstIP = GET_DST_IP(p);
-    IP_COPY_VALUE(hashKey.dip, dstIP);
-    IP_COPY_VALUE(hashKey.sip, srcIP);
+    sfaddr_copy_to_raw(&hashKey.dip, dstIP);
+    sfaddr_copy_to_raw(&hashKey.sip, srcIP);
     hashKey.file_sig = file_sig;
 
     hash_node = sfxhash_find_node(fileHash, &hashKey);
@@ -281,6 +323,13 @@ File_Verdict file_resume_block_check(void *pkt, uint32_t file_sig)
         }
         /*Query the file policy in case verdict has been changed*/
         verdict = checkVerdict(p, node, hash_node);
+    }
+    if (verdict == FILE_VERDICT_BLOCK || verdict == FILE_VERDICT_REJECT || verdict == FILE_VERDICT_PENDING)
+    {
+        if (pkt_trace_enabled)
+            addPktTraceData(VERDICT_REASON_FILE, snprintf(trace_line, MAX_TRACE_LINE,
+                "File Process: file not resumed, %s\n", getPktTraceActMsg()));
+        else addPktTraceData(VERDICT_REASON_FILE, 0);
     }
     return verdict;
 }

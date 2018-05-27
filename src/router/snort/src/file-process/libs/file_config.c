@@ -1,7 +1,7 @@
 /*
  **
  **
- **  Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ **  Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  **  Copyright (C) 2012-2013 Sourcefire, Inc.
  **
  **  This program is free software; you can redistribute it and/or modify
@@ -557,10 +557,9 @@ __add_id_to_list( uint32_t **list, uint32_t *list_size, const uint32_t id )
     (*list)[(*list_size)-1] = id;
 }
 
-bool get_ids_from_type(const void *conf, const char *type, uint32_t **ids,
+bool get_ids_from_type(const FileConfig* file_config, const char *type, uint32_t **ids,
         uint32_t *count)
 {
-    const FileConfig *file_config = (FileConfig *)conf;
     bool status = false;
     int i;
 
@@ -584,10 +583,9 @@ bool get_ids_from_type(const void *conf, const char *type, uint32_t **ids,
     return status;
 }
 
-bool get_ids_from_type_version(const void *conf, const char *type,
+bool get_ids_from_type_version(const FileConfig* file_config, const char *type,
         const char *version, uint32_t **ids, uint32_t *count)
 {
-    const FileConfig *file_config = (FileConfig *)conf;
     bool status = false;
     int i;
 
@@ -615,10 +613,9 @@ bool get_ids_from_type_version(const void *conf, const char *type,
     return status;
 }
 
-bool get_ids_from_group(const void *conf, const char *group, uint32_t **ids,
+bool get_ids_from_group(const FileConfig* file_config, const char *group, uint32_t **ids,
         uint32_t *count)
 {
-    const FileConfig *file_config = (FileConfig*)conf;
     bool status = false;
     int i;
 
@@ -653,14 +650,13 @@ bool get_ids_from_group(const void *conf, const char *group, uint32_t **ids,
 }
 
 /*The main function for parsing rule option*/
-void file_rule_parse(char *args, void *config)
+void file_rule_parse(char *args, FileConfig* file_config)
 {
     char **toks;
     int num_toks;
     int i;
     char configured[sizeof(file_options) / sizeof(FileOptFunc)];
     RuleInfo *rule;
-    FileConfig *file_config = (FileConfig *)config;
 
     if (!file_config)
     {
@@ -715,11 +711,10 @@ void file_rule_parse(char *args, void *config)
     mSplitFree(&toks, num_toks);
 }
 
-RuleInfo *file_rule_get(void *conf, uint32_t id)
+RuleInfo *file_rule_get(FileConfig* file_config, uint32_t id)
 {
-    if (conf)
+    if (file_config)
     {
-        FileConfig *file_config = (FileConfig *)conf;
         return (file_config->FileRules[id]);
     }
 
@@ -759,10 +754,9 @@ static void _free_file_rule(RuleInfo *rule)
     free(rule);
 }
 
-void file_rule_free(void *conf)
+void file_rule_free(FileConfig* file_config)
 {
     int id;
-    FileConfig *file_config = (FileConfig *)conf;
 
     if (!file_config)
         return;

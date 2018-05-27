@@ -1,6 +1,6 @@
 /*
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 **               Chris Green <cmg@sourcefire.com>
 **
@@ -63,8 +63,8 @@
  */
 typedef struct _tagSessionKey
 {
-    snort_ip sip;  ///source IP address
-    snort_ip dip;  ///destination IP address
+    struct in6_addr sip;  ///source IP address
+    struct in6_addr dip;  ///destination IP address
 
     /* ports */
     uint16_t sp; ///source port
@@ -157,7 +157,7 @@ static inline unsigned int memory_per_node(
     }
     else if (hash == host_tag_cache_ptr)
     {
-        return sizeof(snort_ip)+sizeof(SFXHASH_NODE)+sizeof(TagNode);
+        return sizeof(sfaddr_t)+sizeof(SFXHASH_NODE)+sizeof(TagNode);
     }
 
     return 0;
@@ -274,25 +274,28 @@ void TagCacheReset(void)
  */
 static void PrintTagNode(TagNode *np)
 {
+    char sipstr[INET6_ADDRSTRLEN];
+    char dipstr[INET6_ADDRSTRLEN];
+
     if(!DebugThis(DEBUG_FLOW))
     {
         return;
     }
+
+    sfip_raw_ntop(AF_INET6, &np->key.sip, sipstr, sizeof(sipstr));
+    sfip_raw_ntop(AF_INET6, &np->key.dip, dipstr, sizeof(dipstr));
 
     printf("+--------------------------------------------------------------\n");
     printf("| Ssn Counts: %d, Host Counts: %d\n",
            ssn_tag_cache_ptr->count,
            host_tag_cache_ptr->count);
 
-    printf("| (%u) %s:%d -> ",
-            np->proto,
-           inet_ntoa(&np->key.sip), np->key.sp
-        );
-
-    printf("%s:%d Metric: %u "
+    printf("| (%u) %s:%d -> %s:%d Metric: %u "
            "LastAccess: %u, event_id: %u mode: %u event_time.tv_sec: %"PRIu64"\n"
            "| Packets: %d, Bytes: %d, Seconds: %d\n",
-           inet_ntoa(&np->key.dip), np->key.dp,
+           np->proto,
+           sipstr, np->key.sp,
+           dipstr, np->key.dp,
            np->metric,
            np->last_access,
            np->event_id,
@@ -314,7 +317,7 @@ static void PrintTagNode(TagNode *np)
  */
 static inline void SwapTag(TagNode *np)
 {
-    snort_ip tip;
+    struct in6_addr tip;
     uint16_t tport;
 
     tip = np->key.sip;
@@ -342,7 +345,7 @@ void InitTag(void)
 
     host_tag_cache_ptr = sfxhash_new(
                 hashTableSize,       /* number of hash buckets */
-                sizeof(snort_ip),    /* size of the key we're going to use */
+                sizeof(struct in6_addr), /* size of the key we're going to use */
                 0,                   /* size of the storage node */
                 0,                   /* disable memcap*/
                 0,                   /* use auto node recovery */
@@ -435,8 +438,8 @@ static void AddTagNode(Packet *p, TagData *tag, int mode, uint32_t now,
         return;
     }
 
-    IP_COPY_VALUE(idx->key.sip, GET_SRC_IP(p));
-    IP_COPY_VALUE(idx->key.dip, GET_DST_IP(p));
+    sfaddr_copy_to_raw(&idx->key.sip, GET_SRC_IP(p));
+    sfaddr_copy_to_raw(&idx->key.dip, GET_DST_IP(p));
     idx->key.sp = p->sp;
     idx->key.dp = p->dp;
     idx->proto = GET_IPH_PROTO(p);
@@ -543,8 +546,8 @@ int CheckTagList(Packet *p, Event *event, void** log_list)
 
     DEBUG_WRAP(DebugMessage(DEBUG_FLOW, "[*] Checking session tag list (forward)...\n"););
 
-    IP_COPY_VALUE(idx.key.sip, GET_SRC_IP(p));
-    IP_COPY_VALUE(idx.key.dip, GET_DST_IP(p));
+    sfaddr_copy_to_raw(&idx.key.sip, GET_SRC_IP(p));
+    sfaddr_copy_to_raw(&idx.key.dip, GET_DST_IP(p));
     idx.key.sp = p->sp;
     idx.key.dp = p->dp;
 
@@ -553,8 +556,8 @@ int CheckTagList(Packet *p, Event *event, void** log_list)
 
     if(returned == NULL)
     {
-        IP_COPY_VALUE(idx.key.dip, GET_SRC_IP(p));
-        IP_COPY_VALUE(idx.key.sip, GET_DST_IP(p));
+        sfaddr_copy_to_raw(&idx.key.dip, GET_SRC_IP(p));
+        sfaddr_copy_to_raw(&idx.key.sip, GET_DST_IP(p));
         idx.key.dp = p->sp;
         idx.key.sp = p->dp;
 
@@ -574,7 +577,7 @@ int CheckTagList(Packet *p, Event *event, void** log_list)
                 **  Only switch sip, because that's all we check for
                 **  the host tags.
                 */
-                IP_COPY_VALUE(idx.key.sip, GET_SRC_IP(p));
+                sfaddr_copy_to_raw(&idx.key.sip, GET_SRC_IP(p));
 
                 returned = (TagNode *) sfxhash_find(host_tag_cache_ptr, &idx);
             }
@@ -756,7 +759,7 @@ static int PruneTime(SFXHASH* tree, uint32_t thetime)
     return pruned;
 }
 
-void SetTags(Packet *p, OptTreeNode *otn, uint16_t event_id)
+void SetTags(Packet *p, OptTreeNode *otn, RuleTreeNode *rtn, uint16_t event_id)
 {
    DEBUG_WRAP(DebugMessage(DEBUG_FLOW, "Setting tags\n"););
 
@@ -764,7 +767,6 @@ void SetTags(Packet *p, OptTreeNode *otn, uint16_t event_id)
     {
         if (otn->tag->tag_type != 0)
         {
-            RuleTreeNode* rtn = getRuntimeRtnFromOtn(otn);
             void* log_list = rtn ? rtn->listhead : NULL;
 
             switch(otn->tag->tag_type)

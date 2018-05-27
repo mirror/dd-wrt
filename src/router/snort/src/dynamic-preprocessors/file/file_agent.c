@@ -1,5 +1,5 @@
 /*
- ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2013-2013 Sourcefire, Inc.
  **
  ** This program is free software; you can redistribute it and/or modify
@@ -167,7 +167,7 @@ static void file_agent_send_data(int socket_fd, const uint8_t *resp,
 
 /* Process all the files in the file queue*/
 static inline void file_agent_process_files(CircularBuffer *file_list,
-        FileInspectConf* conf )
+        char *capture_dir, char *hostname)
 {
     while (!cbuffer_is_empty(file_list))
     {
@@ -177,10 +177,10 @@ static inline void file_agent_process_files(CircularBuffer *file_list,
         if (file && file->sha256)
         {
             /* Save to disk */
-            if (conf->capture_dir)
-                file_agent_save_file(file, conf->capture_dir);
+            if (capture_dir)
+                file_agent_save_file(file, capture_dir);
             /* Send to other host */
-            if (conf->hostname)
+            if (hostname)
                 file_agent_send_file(file);
             /* Default, memory only */
         }
@@ -200,6 +200,8 @@ static inline void file_agent_process_files(CircularBuffer *file_list,
 static void* FileCaptureThread(void *arg)
 {
     FileInspectConf* conf = (FileInspectConf*) arg;
+    char *capture_dir = NULL;
+    char *hostname = NULL;
 
 #if defined(LINUX) && defined(SYS_gettid)
     capture_thread_pid =  syscall(SYS_gettid);
@@ -211,9 +213,14 @@ static void* FileCaptureThread(void *arg)
 
     capture_disk_avaiable = conf->capture_disk_size<<20;
 
+    if (conf->capture_dir)
+        capture_dir = strdup(conf->capture_dir);
+    if (conf->hostname)
+        hostname = strdup(conf->hostname);
+
     while(1)
     {
-        file_agent_process_files(file_list, conf);
+        file_agent_process_files(file_list, capture_dir, hostname);
 
         if (stop_file_capturing)
             break;
@@ -224,42 +231,53 @@ static void* FileCaptureThread(void *arg)
         pthread_mutex_unlock(&file_list_mutex);
     }
 
+    if (conf->capture_dir)
+        free(capture_dir);
+    if (conf->hostname)
+        free(hostname);
     capture_thread_running = false;
     return NULL;
 }
 
-/* Add another thread for file capture to disk or network
- * When settings are changed, snort must be restarted to get it applied
- */
-void file_agent_init(FileInspectConf* conf)
+void file_agent_init(struct _SnortConfig *sc, void *config)
 {
-    int rval;
-    const struct timespec thread_sleep = { 0, 100 };
-    sigset_t mask;
+    FileInspectConf* conf = (FileInspectConf *)config;
 
     /*Need to check configuration to decide whether to enable them*/
 
     if (conf->file_type_enabled)
     {
-        _dpd.fileAPI->enable_file_type(file_agent_type_callback);
+        _dpd.fileAPI->enable_file_type(sc, file_agent_type_callback);
         file_type_enabled = true;
     }
     if (conf->file_signature_enabled)
     {
-        _dpd.fileAPI->enable_file_signature(file_agent_signature_callback);
+        _dpd.fileAPI->enable_file_signature(sc, file_agent_signature_callback);
         file_signature_enabled = true;
     }
 
     if (conf->file_capture_enabled)
     {
-        _dpd.fileAPI->enable_file_capture(file_agent_signature_callback);
+        _dpd.fileAPI->enable_file_capture(sc, file_agent_signature_callback);
         file_capture_enabled = true;
     }
 
-    if (conf->hostname)
+    if (!sockfd && conf->hostname)
     {
         file_agent_init_socket(conf->hostname, conf->portno);
     }
+}
+
+/* Add another thread for file capture to disk or network
+ * When settings are changed, snort must be restarted to get it applied
+ */
+void file_agent_thread_init(struct _SnortConfig *sc, void *config)
+{
+    int rval;
+    const struct timespec thread_sleep = { 0, 100 };
+    sigset_t mask;
+    FileInspectConf* conf = (FileInspectConf *)config;
+
     /* Spin off the file capture handler thread. */
     sigemptyset(&mask);
     sigaddset(&mask, SIGTERM);
@@ -326,6 +344,7 @@ static int file_agent_queue_file(void* ssnptr, void *file_mem)
 
     if (!sha256)
     {
+	free(finfo);
         return -1;
     }
 

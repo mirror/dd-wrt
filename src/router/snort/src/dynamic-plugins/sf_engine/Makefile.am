@@ -33,6 +33,7 @@ sf_iph.h \
 snort_debug.h \
 sf_types.h \
 sf_protocols.h \
+preprocids.h \
 sf_sechash.h \
 sf_sechash.c \
 $(OPENSSL_MD5) \
@@ -52,6 +53,7 @@ sf_iph.h \
 snort_debug.h \
 sf_types.h \
 sf_protocols.h \
+preprocids.h \
 sf_sechash.h \
 sf_sechash.c \
 $(OPENSSL_MD5) \
@@ -190,6 +192,9 @@ sf_types.h: ../../sf_types.h
 sf_protocols.h: ../../sf_protocols.h
 	@src_file=$?; dst_file=$@; $(copy_files)
 
+preprocids.h: ../../preprocids.h
+	@src_file=$?; dst_file=$@; $(copy_files)
+
 sf_sechash.h: ../../sfutil/sf_sechash.h
 	@src_file=$?; dst_file=$@; $(copy_files)
 
@@ -211,4 +216,4 @@ sha2.c: ../../sfutil/sha2.c
 SUBDIRS = examples
 
 clean-local:
-	rm -rf sfhashfcn.c sfhashfcn.c.new sfghash.c sfprimetable.c sf_ip.c sf_ip.h sf_iph.h ipv6_port.h snort_debug.h snort_debug.h.new sfprimetable.h sfghash.h ipv6_port.h.new sfhashfcn.h sf_types.h sf_protocols.h sf_sechash.h sf_sechash.c md5.h md5.c sha2.h sha2.c
+	rm -rf sfhashfcn.c sfhashfcn.c.new sfghash.c sfprimetable.c sf_ip.c sf_ip.h sf_iph.h ipv6_port.h snort_debug.h snort_debug.h.new sfprimetable.h sfghash.h ipv6_port.h.new sfhashfcn.h sf_types.h sf_protocols.h preprocids.h sf_sechash.h sf_sechash.c md5.h md5.c sha2.h sha2.c

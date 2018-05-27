@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2009-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -52,6 +52,7 @@
 #include "util.h"
 #include "sfPolicyData.h"
 #include "sfPolicyUserData.h"
+#include "session_common.h"
 
 // Number of hash rows for gid 1 (rules)
 #define SFRF_GEN_ID_1_ROWS 4096
@@ -77,7 +78,7 @@ typedef struct
      * whether dos threshold is tracking by source or destination IP address. For tracking
      * by rule, it is cleared out (all 0s).
      */
-    snort_ip ip;
+    struct in6_addr ip;
 
 } tSFRFTrackingNodeKey ;
 
@@ -112,6 +113,8 @@ typedef struct
 
 SFXHASH *rf_hash = NULL;
 
+static int internal_syn_rate_limit_act;
+
 // private methods ...
 static int _checkThreshold(
     tSFRFConfigNode*,
@@ -126,7 +129,7 @@ static int _checkSamplingPeriod(
 );
 
 static tSFRFTrackingNode *_getSFRFTrackingNode(
-    snort_ip_p,
+    sfaddr_t*,
     unsigned tid,
     time_t curTime
 );
@@ -135,8 +138,8 @@ static void _updateDependentThresholds(
     RateFilterConfig *config,
     unsigned gid,
     unsigned sid,
-    snort_ip_p sip,
-    snort_ip_p dip,
+    sfaddr_t* sip,
+    sfaddr_t* dip,
     time_t curTime
 );
 
@@ -363,7 +366,7 @@ int SFRF_ConfigAdd(SnortConfig *sc, RateFilterConfig *rf_config, tSFRFConfigNode
 
 
 #ifdef SFRF_DEBUG
-static char* get_netip(snort_ip_p ip)
+static char* get_netip(sfaddr_t* ip)
 {
     return sfip_ntoa(ip);
 }
@@ -387,7 +390,7 @@ static char* get_netip(snort_ip_p ip)
  */
 static int SFRF_TestObject(
     tSFRFConfigNode* cfgNode,
-    snort_ip_p ip,
+    sfaddr_t* ip,
     time_t curTime,
     SFRF_COUNT_OPERATION op
 ) {
@@ -452,7 +455,7 @@ static int SFRF_TestObject(
     return retValue;
 }
 
-static inline int SFRF_AppliesTo(tSFRFConfigNode* pCfg, snort_ip_p ip)
+static inline int SFRF_AppliesTo(tSFRFConfigNode* pCfg, sfaddr_t* ip)
 {
     return ( !pCfg->applyTo || IpAddrSetContains(pCfg->applyTo, ip) );
 }
@@ -476,8 +479,8 @@ int SFRF_TestThreshold(
     RateFilterConfig *config,
     unsigned gid,
     unsigned sid,
-    snort_ip_p sip,
-    snort_ip_p dip,
+    sfaddr_t* sip,
+    sfaddr_t* dip,
     time_t curTime,
     SFRF_COUNT_OPERATION op
 ) {
@@ -487,7 +490,6 @@ int SFRF_TestThreshold(
     int newStatus = -1;
     int status = -1;
     tSFRFGenHashKey key;
-    tSfPolicyId policy_id = getIpsRuntimePolicy();
 
 #ifdef SFRF_DEBUG
     printf("--%d-%d-%d: %s() entering\n", 0, gid, sid, __func__);
@@ -497,6 +499,12 @@ int SFRF_TestThreshold(
     if ( gid >= SFRF_MAX_GENID )
         return status; /* bogus gid */
 
+    if(EventIsInternal(gid) &&
+            sid == INTERNAL_EVENT_SYN_RECEIVED )
+    {
+        if( internal_syn_rate_limit_act >= -1 )
+            return internal_syn_rate_limit_act;
+    }
     // Some events (like 'TCP connection closed' raised by preprocessor may
     // not have any configured threshold but may impact thresholds for other
     // events (like 'TCP connection opened'
@@ -519,7 +527,7 @@ int SFRF_TestThreshold(
      * Check for any Permanent sid objects for this gid
      */
     key.sid = sid;
-    key.policyId = policy_id;
+    key.policyId = getApplicableRuntimePolicy(gid);
 
     pSidNode = (tSFRFSidNode*)sfghash_find( genHash, (void*)&key );
     if ( !pSidNode )
@@ -567,7 +575,7 @@ int SFRF_TestThreshold(
 
             case SFRF_TRACK_BY_RULE:
                 {
-                    snort_ip cleared;
+                    sfaddr_t cleared;
                     IP_CLEAR(cleared);
                     newStatus = SFRF_TestObject(cfgNode, IP_ARG(cleared), curTime, op);
                 }
@@ -780,8 +788,8 @@ static void _updateDependentThresholds(
     RateFilterConfig *config,
     unsigned gid,
     unsigned sid,
-    snort_ip_p sip,
-    snort_ip_p dip,
+    sfaddr_t* sip,
+    sfaddr_t* dip,
     time_t curTime
 ) {
     if ( gid == GENERATOR_INTERNAL &&
@@ -801,7 +809,7 @@ static void _updateDependentThresholds(
 }
 
 static tSFRFTrackingNode* _getSFRFTrackingNode(
-    snort_ip_p ip,
+    sfaddr_t* ip,
     unsigned tid,
     time_t curTime
 ) {
@@ -810,7 +818,7 @@ static tSFRFTrackingNode* _getSFRFTrackingNode(
     SFXHASH_NODE * hnode = NULL;
 
     /* Setup key */
-    key.ip = *(IP_PTR(ip));
+    sfaddr_copy_to_raw(&key.ip, ip);
     key.tid = tid;
     key.policyId = getNapRuntimePolicy();  // TBD-EDM should this be NAP or IPS?
 
@@ -834,5 +842,57 @@ static tSFRFTrackingNode* _getSFRFTrackingNode(
     }
     return dynNode;
 }
+int SFRF_InternalSynRecdEvent(Packet* p)
+{
+    sfaddr_t* sip = NULL, *dip = NULL;
+    internal_syn_rate_limit_act = -2;
+
+    if ( IPH_IS_VALID(p) )
+    {
+        sip = GET_SRC_IP(p);
+        dip = GET_DST_IP(p);
+
+        getSessionPlugins()->select_session_nap( p, true );
+
+        internal_syn_rate_limit_act = SFRF_TestThreshold(
+                snort_conf->rate_filter_config,
+                GENERATOR_INTERNAL,
+                INTERNAL_EVENT_SYN_RECEIVED,
+                sip, dip,
+                p->pkth->ts.tv_sec,
+                SFRF_COUNT_INCREMENT);
+
+        if(internal_syn_rate_limit_act > 0)
+        {
+            SnortEventqAdd(
+                    GENERATOR_INTERNAL,             /* GID */
+                    INTERNAL_EVENT_SYN_RECEIVED,   /* SID */
+                    1,                              /* rev */
+                    0,                              /* class */
+                    3,                              /* priority */
+                    "",                             /* event msg*/
+                    NULL                            /* rule info ptr */
+                    );
+            pc.syn_rate_limit_events++;
+        }
+
+        if( ScNapInlineMode()  &&
+                ( DAQ_GetInterfaceMode(p->pkth) == DAQ_MODE_INLINE ))
+        {
+            int action = internal_syn_rate_limit_act;
+            if (internal_syn_rate_limit_act >= RULE_TYPE__MAX)
+                action = internal_syn_rate_limit_act - RULE_TYPE__MAX;
+            if( (action == RULE_TYPE__DROP) ||
+                    (action == RULE_TYPE__SDROP) ||
+                    (action == RULE_TYPE__REJECT) )
+            {
+                p->error_flags |= PKT_ERR_SYN_RL_DROP;
+            }
+        }
+    }
+
+    return 1;
+}
+
 /*@}*/
 

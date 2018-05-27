@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -91,6 +91,30 @@ void AppIdFlowdataDelete(tAppIdData *flowp, unsigned id)
     }
 }
 
+void AppIdFlowdataDeleteAllByMask(tAppIdData *flowp, unsigned mask)
+{
+    AppIdFlowData **pfd;
+    AppIdFlowData *fd;
+
+    pfd = &flowp->flowData;
+    while (*pfd)
+    {
+        if ((*pfd)->fd_id & mask)
+        {
+            fd = *pfd;
+            *pfd = fd->next;
+            if (fd->fd_data && fd->fd_free)
+                fd->fd_free(fd->fd_data);
+            fd->next = fd_free_list;
+            fd_free_list = fd;
+        }
+        else
+        {
+            pfd = &(*pfd)->next;
+        }
+    }
+}
+
 int AppIdFlowdataAdd(tAppIdData *flowp, void *data, unsigned id, AppIdFreeFCN fcn)
 {
     AppIdFlowData *tmp_fd;
@@ -110,7 +134,7 @@ int AppIdFlowdataAdd(tAppIdData *flowp, void *data, unsigned id, AppIdFreeFCN fc
     return 0;
 }
 
-int AppIdFlowdataAddId(tAppIdData *flowp, uint16_t port, const RNAServiceElement *svc_element)
+int AppIdFlowdataAddId(tAppIdData *flowp, uint16_t port, const tRNAServiceElement *svc_element)
 {
     if (flowp->serviceData)
         return -1;
@@ -127,51 +151,45 @@ static void flowAppSharedDataDelete(tAppIdData *sharedData)
 }
 #endif
 
-tAppIdData *AppIdEarlySessionCreate(const SFSnortPacket *ctrlPkt, snort_ip *cliIp, uint16_t cliPort,
-                          snort_ip *srvIp, uint16_t srvPort, uint8_t proto, int16_t app_id)
+tAppIdData *AppIdEarlySessionCreate(tAppIdData *flowp, SFSnortPacket *ctrlPkt, sfaddr_t *cliIp, uint16_t cliPort,
+                          sfaddr_t *srvIp, uint16_t srvPort, uint8_t proto, int16_t app_id, int flags)
 {
+    char src_ip[INET6_ADDRSTRLEN];
+    char dst_ip[INET6_ADDRSTRLEN];
+    struct _ExpectNode** node;
     tAppIdData *data;
 
-    data = appSharedDataAlloc(proto, cliIp);
-#ifdef RNA_DEBUG_EXPECTED_FLOWS
-    _dpd.errMsg("Allocated %p\n",data);
-#endif
+    if (app_id_debug_session_flag)
+    {
+        inet_ntop(sfaddr_family(cliIp), (void *)sfaddr_get_ptr(cliIp), src_ip, sizeof(src_ip));
+        inet_ntop(sfaddr_family(srvIp), (void *)sfaddr_get_ptr(srvIp), dst_ip, sizeof(dst_ip));
+    }
+
+    data = appSharedDataAlloc(proto, (struct in6_addr*)sfaddr_get_ip6_ptr(cliIp), 0);
+    if (data)
+        data->common.policyId = appIdPolicyId;
+
+    node = (flags & APPID_EARLY_SESSION_FLAG_FW_RULE) ? &ctrlPkt->expectedSession : NULL;
 
     if (_dpd.sessionAPI->set_application_protocol_id_expected(ctrlPkt, cliIp, cliPort, srvIp, srvPort,
-                                                             proto, app_id, PP_APP_ID, data,
+                                                              proto, app_id, PP_APP_ID, data,
 #ifdef RNA_DEBUG_EXPECTED_FLOWS
-                                                             (void (*)(void *))flowAppSharedDataDelete)
+                                                              (void (*)(void *))flowAppSharedDataDelete
 #else
-                                                             (void (*)(void *))appSharedDataDelete)
+                                                              (void (*)(void *))appSharedDataDelete
 #endif
-        )
+                                                              , node) )
     {
-#ifdef RNA_DEBUG_EXPECTED_FLOWS
-        char src_ip[INET6_ADDRSTRLEN];
-        char dst_ip[INET6_ADDRSTRLEN];
-
-        inet_ntop(cliIp->family, (void *)cliIp->ip32, src_ip, sizeof(src_ip));
-        inet_ntop(srvIp->family, (void *)srvIp->ip32, dst_ip, sizeof(dst_ip));
-        _dpd.errMsg( "Could not create an expected flow for %s-%u -> %s-%u %u", src_ip,
-               (unsigned)cliPort, dst_ip, (unsigned)srvPort, (unsigned)proto);
-        flowAppSharedDataDelete(data);
-#else
+        if (app_id_debug_session_flag)
+            _dpd.logMsg("AppIdDbg %s failed to create a related flow for %s-%u -> %s-%u %u\n", app_id_debug_session,
+                        src_ip, (unsigned)cliPort, dst_ip, (unsigned)srvPort, (unsigned)proto);
         appSharedDataDelete(data);
-#endif
         return NULL;
     }
-#ifdef RNA_DEBUG_EXPECTED_FLOWS
-    else
-    {
-        char src_ip[INET6_ADDRSTRLEN];
-        char dst_ip[INET6_ADDRSTRLEN];
+    else if (app_id_debug_session_flag)
+        _dpd.logMsg("AppIdDbg %s created a related flow for %s-%u -> %s-%u %u\n", app_id_debug_session,
+                    src_ip, (unsigned)cliPort, dst_ip, (unsigned)srvPort, (unsigned)proto);
 
-        inet_ntop(cliIp->family, (void *)cliIp->ip32, src_ip, sizeof(src_ip));
-        inet_ntop(srvIp->family, (void *)srvIp->ip32, dst_ip, sizeof(dst_ip));
-        _dpd.errMsg( "created an expected flow for %s-%u -> %s-%u %u", src_ip,
-               (unsigned)cliPort, dst_ip, (unsigned)srvPort, (unsigned)proto);
-    }
-#endif
     return data;
 }
 

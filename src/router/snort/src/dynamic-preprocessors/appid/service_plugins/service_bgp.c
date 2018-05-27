@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -91,15 +91,16 @@ typedef struct _SERVICE_BGP_V1_OPEN
 #pragma pack()
 
 static int bgp_init(const InitServiceAPI * const init_api);
-MakeRNAServiceValidationPrototype(bgp_validate);
+static int bgp_validate(ServiceValidationArgs* args);
 
-static RNAServiceElement svc_element =
+static tRNAServiceElement svc_element =
 {
     .next = NULL,
     .validate = &bgp_validate,
     .detectorType = DETECTOR_TYPE_DECODER,
     .name = "bgp",
     .ref_count = 1,
+    .current_ref_count = 1,
 };
 
 static RNAServiceValidationPort pp[] =
@@ -108,7 +109,7 @@ static RNAServiceValidationPort pp[] =
     {NULL, 0, 0}
 };
 
-RNAServiceValidationModule bgp_service_mod =
+tRNAServiceValidationModule bgp_service_mod =
 {
     "BGP",
     &bgp_init,
@@ -125,38 +126,41 @@ static tAppRegistryEntry appIdRegistry[] = {{APP_ID_BGP, 0}};
 
 static int bgp_init(const InitServiceAPI * const init_api)
 {
-    init_api->RegisterPattern(&bgp_validate, IPPROTO_TCP, BGP_PATTERN, sizeof(BGP_PATTERN), 0, "bgp");
+    init_api->RegisterPattern(&bgp_validate, IPPROTO_TCP, BGP_PATTERN, sizeof(BGP_PATTERN), 0, "bgp", init_api->pAppidConfig);
 	unsigned i;
 	for (i=0; i < sizeof(appIdRegistry)/sizeof(*appIdRegistry); i++)
 	{
 		_dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[i].appId);
-		init_api->RegisterAppId(&bgp_validate, appIdRegistry[i].appId, appIdRegistry[i].additionalInfo, NULL);
+		init_api->RegisterAppId(&bgp_validate, appIdRegistry[i].appId, appIdRegistry[i].additionalInfo, init_api->pAppidConfig);
 	}
 
     return 0;
 }
 
-MakeRNAServiceValidationPrototype(bgp_validate)
+static int bgp_validate(ServiceValidationArgs* args)
 {
     ServiceBGPData *bd;
     const ServiceBGPHeader *bh;
+    tAppIdData *flowp = args->flowp;
+    const uint8_t *data = args->data;
+    uint16_t size = args->size;
     uint16_t len;
 
     if (!size)
         goto inprocess;
-    if (dir != APP_ID_FROM_RESPONDER)
+    if (args->dir != APP_ID_FROM_RESPONDER)
         goto inprocess;
 
     if (size < sizeof(ServiceBGPHeader))
         goto fail;
 
-    bd = bgp_service_mod.api->data_get(flowp);
+    bd = bgp_service_mod.api->data_get(flowp, bgp_service_mod.flow_data_index);
     if (!bd)
     {
         bd = calloc(1, sizeof(*bd));
         if (!bd)
             return SERVICE_ENOMEM;
-        if (bgp_service_mod.api->data_add(flowp, bd, &free))
+        if (bgp_service_mod.api->data_add(flowp, bd, bgp_service_mod.flow_data_index, &free))
         {
             free(bd);
             return SERVICE_ENOMEM;
@@ -229,16 +233,17 @@ MakeRNAServiceValidationPrototype(bgp_validate)
     }
 
 inprocess:
-    bgp_service_mod.api->service_inprocess(flowp, pkt, dir, &svc_element);
+    bgp_service_mod.api->service_inprocess(flowp, args->pkt, args->dir, &svc_element, NULL);
     return SERVICE_INPROCESS;
 
 fail:
-    bgp_service_mod.api->fail_service(flowp, pkt, dir, &svc_element);
+    bgp_service_mod.api->fail_service(flowp, args->pkt, args->dir, &svc_element,
+                                      bgp_service_mod.flow_data_index, args->pConfig, NULL);
     return SERVICE_NOMATCH;
 
 success:
-    bgp_service_mod.api->add_service(flowp, pkt, dir, &svc_element,
-                                     APP_ID_BGP, NULL, NULL, NULL);
+    bgp_service_mod.api->add_service(flowp, args->pkt, args->dir, &svc_element,
+                                     APP_ID_BGP, NULL, NULL, NULL, NULL);
     return SERVICE_SUCCESS;
 }
 

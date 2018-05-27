@@ -1,7 +1,7 @@
 /*
  **
  **
- **  Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ **  Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  **  Copyright (C) 2013-2013 Sourcefire, Inc.
  **
  **  This program is free software; you can redistribute it and/or modify
@@ -42,7 +42,7 @@
 
 #define FREE_MAGIC    0x2525252525252525
 typedef uint64_t      MagicType;
-#ifdef DEBUG
+#ifdef DEBUG_MSGS
 
 static inline void safe_mempool_verify(SafeMemPool *mempool)
 {
@@ -159,7 +159,7 @@ int safe_mempool_init(SafeMemPool *mempool, uint64_t num_objects, size_t obj_siz
             safe_mempool_free_pools(mempool);
             return SAFE_MEM_FAIL;
         }
-        *(MagicType *)data = FREE_MAGIC;
+        *(MagicType *)data = (uint64_t)FREE_MAGIC;
          mempool->total++;
     }
 
@@ -216,7 +216,7 @@ void *safe_mempool_alloc(SafeMemPool *mempool)
         }
     }
 
-    if (*(MagicType *)b != FREE_MAGIC)
+    if (*(MagicType *)b != ((uint64_t)FREE_MAGIC))
     {
         ErrorMessage("%s(%d) safe_mempool_alloc(): Allocation errors! \n",
                 __FILE__, __LINE__);
@@ -249,14 +249,14 @@ static inline int _safe__mempool_remove(CircularBuffer *cb, void *obj)
         return SAFE_MEM_FAIL;
     }
 
-    if (*(MagicType *)obj == FREE_MAGIC)
+    if (*(MagicType *)obj == ((uint64_t)FREE_MAGIC))
     {
         DEBUG_WRAP(ErrorMessage("%s(%d) safe_mempool_remove(): Double free! \n",
                 __FILE__, __LINE__););
         return SAFE_MEM_FAIL;
     }
 
-    *(MagicType *)obj = FREE_MAGIC;
+    *(MagicType *)obj = (uint64_t)FREE_MAGIC;
 
     return SAFE_MEM_SUCCESS;
 }

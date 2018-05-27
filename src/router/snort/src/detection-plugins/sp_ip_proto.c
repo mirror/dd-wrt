@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -140,7 +140,7 @@ void SetupIpProto(void)
     /* map the keyword to an initialization/processing function */
     RegisterRuleOption("ip_proto", IpProtoInit, NULL, OPT_TYPE_DETECTION, NULL);
 #ifdef PERF_PROFILING
-    RegisterPreprocessorProfile("ip_proto", &ipProtoPerfStats, 3, &ruleOTNEvalPerfStats);
+    RegisterPreprocessorProfile("ip_proto", &ipProtoPerfStats, 3, &ruleOTNEvalPerfStats, NULL);
 #endif
     DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN,"Plugin: IpProto Setup\n"););
 }

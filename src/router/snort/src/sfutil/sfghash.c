@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -166,7 +166,8 @@ SFGHASH * sfghash_new( int nrows, int keysize, int userkeys, void (*userfree)(vo
 */
 void sfghash_splaymode( SFGHASH * t, int n )
 {
-   t->splay = n;
+  if ( t )
+     t->splay = n;
 }
 
 /*
@@ -214,6 +215,7 @@ void sfghash_delete( SFGHASH * h )
 */
 int sfghash_count( SFGHASH * t )
 {
+  if( !t ) return 0;
   return t->count;
 }
 
@@ -363,12 +365,13 @@ static void movetofront( SFGHASH *t , int index, SFGHASH_NODE * n )
 /*
 *  Find a Node based on the key, return users data.
 */
-static SFGHASH_NODE * sfghash_find_node( SFGHASH * t, const void * const key)
+SFGHASH_NODE * sfghash_find_node( SFGHASH * t, const void * const key)
 {
     unsigned    hashkey;
     int         index, klen;
     SFGHASH_NODE  *hnode;
 
+    if ( !t ) return NULL;
     if( t->keysize  )
     {
 	klen = t->keysize;
@@ -415,6 +418,7 @@ static SFGHASH_NODE * sfghash_find_node( SFGHASH * t, const void * const key)
 void * sfghash_find( SFGHASH * t, const void * const key)
 {
     SFGHASH_NODE * hnode;
+    if ( !t ) return NULL;
 
     hnode = sfghash_find_node( t, key );
 
@@ -487,6 +491,8 @@ int sfghash_remove( SFGHASH * t, const void * const key)
     int klen;
     unsigned hashkey, index;
 
+    if ( !t ) return 0;
+
     if( t->keysize > 0 )
     {
        klen = t->keysize;
@@ -526,6 +532,7 @@ int sfghash_remove( SFGHASH * t, const void * const key)
 */
 SFGHASH_NODE * sfghash_findfirst1( SFGHASH * t )
 {
+    if ( !t ) return NULL;
     /* Start with 1st row */
     for( t->crow=0; t->crow < t->nrows; t->crow++ )
     {
@@ -542,6 +549,7 @@ SFGHASH_NODE * sfghash_findfirst1( SFGHASH * t )
 */
 SFGHASH_NODE * sfghash_findnext1( SFGHASH * t )
 {
+    if ( !t ) return NULL;
     if( t->cnode ) /* get next in this list */
     {
        /* Next node in current node list */
@@ -568,6 +576,7 @@ SFGHASH_NODE * sfghash_findnext1( SFGHASH * t )
 /* Internal use only */
 static void sfghash_next( SFGHASH * t )
 {
+    if ( !t ) return;
     if( !t->cnode )
         return ;
 
@@ -596,6 +605,8 @@ SFGHASH_NODE * sfghash_findfirst( SFGHASH * t )
 {
     SFGHASH_NODE * n;
 
+    if ( !t ) return NULL;
+
     /* Start with 1st row */
     for( t->crow=0; t->crow < t->nrows; t->crow++ )
     {
@@ -620,6 +631,8 @@ SFGHASH_NODE * sfghash_findfirst( SFGHASH * t )
 SFGHASH_NODE * sfghash_findnext( SFGHASH * t )
 {
     SFGHASH_NODE * n;
+
+    if ( !t ) return NULL;
 
     n = t->cnode;
 

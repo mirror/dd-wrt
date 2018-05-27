@@ -1,5 +1,5 @@
 /*
- ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2013-2013 Sourcefire, Inc.
  **
  ** This program is free software; you can redistribute it and/or modify
@@ -52,7 +52,7 @@ File_Capture_Stats file_capture_stats;
  * This is used for debug purpose
  */
 
-#ifdef DEBUG
+#ifdef DEBUG_MSGS
 static void verify_file_capture_info(FileContext* context,
         FileCaptureInfo *fileInfo)
 {
@@ -159,8 +159,9 @@ void file_capture_init_mempool(int64_t max_file_mem, int64_t block_size)
 {
     int64_t metadata_size = sizeof (FileCaptureInfo);
 
-    file_mempool = _init_file_mempool(max_file_mem,
-            block_size + metadata_size);
+    if(!file_mempool)
+        file_mempool = _init_file_mempool(max_file_mem,
+                block_size + metadata_size);
 
 }
 
@@ -545,7 +546,7 @@ FileCaptureState file_capture_reserve(void *ssnptr, FileCaptureInfo **file_mem)
  */
 void* file_capture_read(FileCaptureInfo *fileInfo, uint8_t **buff, int *size)
 {
-    if (!fileInfo|!buff||!size)
+    if (!fileInfo || !buff || !size)
     {
         return NULL;
     }

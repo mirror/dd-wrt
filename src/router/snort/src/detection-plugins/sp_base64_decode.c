@@ -1,5 +1,5 @@
 /*
- ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 1998-2013 Sourcefire, Inc.
  **
  ** This program is free software; you can redistribute it and/or modify
@@ -120,7 +120,7 @@ void SetupBase64Decode(void)
     /* map the keyword to an initialization/processing function */
     RegisterRuleOption("base64_decode", Base64DecodeInit, NULL, OPT_TYPE_DETECTION, NULL);
 #ifdef PERF_PROFILING
-    RegisterPreprocessorProfile("base64_decode", &base64DecodePerfStats, 3, &ruleOTNEvalPerfStats);
+    RegisterPreprocessorProfile("base64_decode", &base64DecodePerfStats, 3, &ruleOTNEvalPerfStats, NULL);
 #endif
 
     DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN,"Plugin: base64_decode Setup\n"););
@@ -281,6 +281,16 @@ void Base64DecodeParse(char *data, Base64DecodeData *idx, OptTreeNode *otn)
     }
 
     mSplitFree(&toks,num_toks);
+
+    if (otn && otn->ds_list[PLUGIN_PATTERN_MATCH_URI])
+    {
+        PatternMatchData *pmd = (PatternMatchData *)(otn->ds_list[PLUGIN_PATTERN_MATCH_URI]);
+        idx->buffer_type = pmd->http_buffer;
+    }
+    else
+    {
+        idx->buffer_type = HTTP_BUFFER_NONE;
+    }
     return;
 
 }
@@ -329,31 +339,64 @@ int Base64DecodeEval(void *option_data, Packet *p)
         return rval;
     }
 
-    if(idx->flags & BASE64DECODE_RELATIVE_FLAG)
+    if ((idx->flags & BASE64DECODE_RELATIVE_FLAG) && doe_ptr)
     {
-        if(!doe_ptr)
+        int dsize;
+        const uint8_t *doe_start;
+        if (Is_DetectFlag(FLAG_ALT_DETECT))
         {
-            start_ptr = p->data;
-            start_ptr = start_ptr + idx->offset;
+            dsize = DetectBuffer.len;
+            doe_start = DetectBuffer.data;
+        }
+        else if(Is_DetectFlag(FLAG_ALT_DECODE))
+        {
+            dsize = DecodeBuffer.len;
+            doe_start = (uint8_t *)DecodeBuffer.data;
+        }
+        else if (doe_buf_flags & DOE_BUF_URI)
+        {
+            const HttpBuffer* hb = GetHttpBuffer(idx->buffer_type);
+            if (!hb)
+            {
+                PREPROC_PROFILE_END(base64DecodePerfStats);
+                return rval;
+            }
+
+            doe_start = hb->buf;
+            dsize = hb->length;
+
         }
         else
         {
-            start_ptr = doe_ptr;
-            start_ptr = start_ptr + idx->offset;
+            if(IsLimitedDetect(p))
+                dsize = p->alt_dsize;
+            else
+                dsize = p->dsize;
+            doe_start = (uint8_t *) p->data;
         }
+
+        start_ptr = doe_ptr + idx->offset;
+
+        if(start_ptr >= (doe_start + dsize) || (doe_ptr < doe_start))
+        {
+            PREPROC_PROFILE_END(base64DecodePerfStats);
+            return rval;
+        }
+
+        buff_size = doe_start + dsize - start_ptr;
     }
     else
     {
         start_ptr = p->data + idx->offset;
-    }
 
-    if(start_ptr >= (p->data + p->dsize) )
-    {
-        PREPROC_PROFILE_END(base64DecodePerfStats);
-        return rval;
-    }
+        if(start_ptr >= (p->data + p->dsize) )
+        {
+            PREPROC_PROFILE_END(base64DecodePerfStats);
+            return rval;
+        }
 
-    buff_size = p->data + p->dsize - start_ptr;
+        buff_size = p->data + p->dsize - start_ptr;
+    }
 
     if(sf_unfold_header(start_ptr, buff_size, base64_buf, sizeof(base64_buf), &base64_size, 0, 0) != 0)
     {

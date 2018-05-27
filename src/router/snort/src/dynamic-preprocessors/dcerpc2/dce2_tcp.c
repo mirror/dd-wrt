@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -33,6 +33,11 @@
 #include "dce2_stats.h"
 #include "sf_snort_packet.h"
 #include "sf_dynamic_preprocessor.h"
+
+#ifdef DUMP_BUFFER
+#include "dcerpc2_buffer_dump.h"
+#endif
+
 
 /********************************************************************
  * Function:
@@ -74,6 +79,10 @@ void DCE2_TcpProcess(DCE2_TcpSsnData *tsd)
     const SFSnortPacket *p = tsd->sd.wire_pkt;
     const uint8_t *data_ptr = p->payload;
     uint16_t data_len = p->payload_size;
+
+#ifdef DUMP_BUFFER
+    dumpBuffer(DCERPC_TCP_DUMP,data_ptr,data_len);
+#endif
 
     DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Processing TCP packet.\n"));
     dce2_stats.tcp_pkts++;

@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2003-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -84,12 +84,12 @@ static AlertSFSocketGidSid *sid_list = NULL;
 static void AlertSFSocket_Init(struct _SnortConfig *, char *args);
 static void AlertSFSocketSid_Init(struct _SnortConfig *, char *args);
 void AlertSFSocketSid_InitFinalize(struct _SnortConfig *sc, int unused, void *also_unused);
-void AlertSFSocket(Packet *packet, char *msg, void *arg, Event *event);
+void AlertSFSocket(Packet *packet, const char *msg, void *arg, Event *event);
 
 static int AlertSFSocket_Connect(void);
 static OptTreeNode *OptTreeNode_Search(uint32_t gid, uint32_t sid);
 static int SignatureAddOutputFunc(uint32_t gid, uint32_t sid,
-        void (*outputFunc)(Packet *, char *, void *, Event *),
+        void (*outputFunc)(Packet *, const char *, void *, Event *),
         void *args);
 int String2ULong(char *string, unsigned long *result);
 
@@ -316,7 +316,7 @@ static int AlertSFSocket_Connect(void)
 
 static SnortActionRequest sar;
 
-void AlertSFSocket(Packet *packet, char *msg, void *arg, Event *event)
+void AlertSFSocket(Packet *packet, const char *msg, void *arg, Event *event)
 {
     int tries = 0;
 
@@ -341,8 +341,8 @@ void AlertSFSocket(Packet *packet, char *msg, void *arg, Event *event)
     //   can be determined by reading 1 byte
     // * addresses could be moved to end of struct in uint8_t[32]
     //   and only 1st 8 used for ip4
-    sar.src_ip =  ntohl(GET_SRC_IP(packet)->ip32[0]);
-    sar.dest_ip = ntohl(GET_DST_IP(packet)->ip32[0]);
+    sar.src_ip =  ntohl(sfaddr_get_ip4_value(GET_SRC_IP(packet)));
+    sar.dest_ip = ntohl(sfaddr_get_ip4_value(GET_DST_IP(packet)));
     sar.protocol = GET_IPH_PROTO(packet);
 
     if(sar.protocol == IPPROTO_UDP || sar.protocol == IPPROTO_TCP)
@@ -412,7 +412,7 @@ void AlertSFSocket(Packet *packet, char *msg, void *arg, Event *event)
 }
 
 static int SignatureAddOutputFunc( uint32_t gid, uint32_t sid,
-        void (*outputFunc)(Packet *, char *, void *, Event *),
+        void (*outputFunc)(Packet *, const char *, void *, Event *),
         void *args)
 {
     OptTreeNode *optTreeNode = NULL;

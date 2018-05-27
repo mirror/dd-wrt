@@ -26,6 +26,12 @@ modbus_roptions.h \
 modbus_paf.c \
 modbus_paf.h
 
+if BUILD_BUFFER_DUMP
+libsf_modbus_preproc_la_SOURCES += \
+modbus_buffer_dump.c \
+modbus_buffer_dump.h
+endif
+
 EXTRA_DIST = \
 sf_modbus.dsp
 

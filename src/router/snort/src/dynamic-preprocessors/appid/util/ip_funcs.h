@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -18,23 +18,42 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-
 #ifndef __IP_FUNCS_H__
 #define __IP_FUNCS_H__
 
 #include <stdint.h>
-#include <stdbool.h>
-#include <string.h>
-#include "sf_snort_packet.h"
-#include "sf_dynamic_preprocessor.h"
-#include "sf_snort_plugin_api.h"
-#include "profiler.h"
+#include <NetworkSet.h>
+#include <ipv6_port.h>
 
-#if  !defined(s6_addr32)
-#define s6_addr8  __u6_addr.__u6_addr8
-#define s6_addr16 __u6_addr.__u6_addr16
-#define s6_addr32 __u6_addr.__u6_addr32
-#endif
+#define IPFUNCS_EXCEPT_IP       0x01
+#define IPFUNCS_SECONDARY_IP    0x02
+#define IPFUNCS_APPID_SESSION_EXCLUDE_IP 0x04
+#define IPFUNCS_USER_IP         0x08
+#define IPFUNCS_HOSTS_IP        0x10
+#define IPFUNCS_APPLICATION     0x20
+#define IPFUNCS_CHECKED         0x80000000
+
+typedef struct _RNAIpAddrSet
+{
+    uint32_t range_min;
+    uint32_t range_max;
+    uint32_t addr_flags;
+    unsigned netmask;
+    uint32_t netmask_mask;
+} RNAIpAddrSet;
+
+RNAIpAddrSet *ParseIpCidr(char *, uint32_t *);
+
+typedef struct _RNAIpv6AddrSet
+{
+    NSIPv6Addr range_min;
+    NSIPv6Addr range_max;
+    uint32_t addr_flags;
+    unsigned netmask;
+    NSIPv6Addr netmask_mask;
+} RNAIpv6AddrSet;
+
+RNAIpv6AddrSet *ParseIpv6Cidr(char *);
 
 static inline void copyIpv4ToIpv6Network(struct in6_addr *keyIp, const uint32_t ip)
 {
@@ -46,22 +65,15 @@ static inline void copyIpv4ToIpv6Network(struct in6_addr *keyIp, const uint32_t 
 
 //these functions are needed since snort does not store IPv4 address in highest 4 bytes
 //of 16 byte ip.
-static inline void copySnortIpToIpv6Network(struct in6_addr *keyIp, const snort_ip *snortIp)
+static inline void copySnortIpToIpv6Network(struct in6_addr *keyIp, const sfaddr_t *snortIp)
 {
-    if (IS_IP4(snortIp))
-        copyIpv4ToIpv6Network(keyIp, snortIp->ip32[0]);
-    else
-        memcpy(keyIp, snortIp->ip8, sizeof(*keyIp));
+    memcpy(keyIp, sfaddr_get_ip6_ptr(snortIp), sizeof(*keyIp));
 }
 
-static inline int cmpSnortIpToHostKey(struct in6_addr *keyIp, const snort_ip *snortIp)
+static inline int cmpSnortIpToHostKey(struct in6_addr *keyIp, const sfaddr_t *snortIp)
 {
-    if (IS_IP4(snortIp))
-    {
-        return keyIp->s6_addr32[3] - snortIp->ip32[0];
-    }
-    else
-        return memcmp(keyIp, snortIp->ip8, sizeof(*keyIp));
+    return memcmp(keyIp, sfaddr_get_ip6_ptr(snortIp), sizeof(*keyIp));
 }
+
 #endif  /* __IP_FUNCS_H__ */
 

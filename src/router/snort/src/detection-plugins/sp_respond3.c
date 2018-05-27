@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify it
@@ -149,7 +149,7 @@ void SetupRespond(void)
 {
     RegisterRuleOption("resp", Resp3_Init, NULL, OPT_TYPE_ACTION, NULL);
 #ifdef PERF_PROFILING
-    RegisterPreprocessorProfile("resp3", &resp3PerfStats, 3, &ruleOTNEvalPerfStats);
+    RegisterPreprocessorProfile("resp3", &resp3PerfStats, 3, &ruleOTNEvalPerfStats, NULL);
 #endif
 }
 
@@ -311,6 +311,11 @@ static void Resp3_Send (Packet* p, void* pv)
 
     if ( rd->flags & RESP_UNR_PORT )
         Active_SendUnreach(p, ENC_UNR_PORT);
+
+    if (pkt_trace_enabled)
+        addPktTraceData(VERDICT_REASON_RESPONSE, snprintf(trace_line, MAX_TRACE_LINE,
+            "Snort Response: ignoring session, %s\n", getPktTraceActMsg()));
+    else addPktTraceData(VERDICT_REASON_RESPONSE, 0);
 
     PREPROC_PROFILE_END(resp3PerfStats);
 }

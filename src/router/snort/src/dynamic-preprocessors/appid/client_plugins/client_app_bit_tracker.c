@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -72,9 +72,10 @@ static BIT_CLIENT_APP_CONFIG bit_config;
 
 static CLIENT_APP_RETCODE udp_bit_init(const InitClientAppAPI * const init_api, SF_LIST *config);
 static CLIENT_APP_RETCODE udp_bit_validate(const uint8_t *data, uint16_t size, const int dir,
-                                        FLOW *flowp, const SFSnortPacket *pkt, struct _Detector *userData);
+                                        tAppIdData *flowp, SFSnortPacket *pkt, struct _Detector *userData,
+                                        const struct appIdConfig_ *pConfig);
 
-SO_PUBLIC RNAClientAppModule bit_tracker_client_mod =
+SF_SO_PUBLIC tRNAClientAppModule bit_tracker_client_mod =
 {
     .name = "BIT-UDP",
     .proto = IPPROTO_UDP,
@@ -104,7 +105,7 @@ static CLIENT_APP_RETCODE udp_bit_init(const InitClientAppAPI * const init_api, 
     unsigned i;
     RNAClientAppModuleConfigItem *item;
 
-	bit_config.enabled = 1;
+    bit_config.enabled = 1;
 
     if (config)
     {
@@ -125,7 +126,7 @@ static CLIENT_APP_RETCODE udp_bit_init(const InitClientAppAPI * const init_api, 
         for (i=0; i < sizeof(udp_patterns)/sizeof(*udp_patterns); i++)
         {
             _dpd.debugMsg(DEBUG_LOG,"registering patterns: %s: %d\n",(const char *)udp_patterns[i].pattern, udp_patterns[i].index);
-            init_api->RegisterPattern(&udp_bit_validate, IPPROTO_UDP, udp_patterns[i].pattern, udp_patterns[i].length, udp_patterns[i].index);
+            init_api->RegisterPattern(&udp_bit_validate, IPPROTO_UDP, udp_patterns[i].pattern, udp_patterns[i].length, udp_patterns[i].index, init_api->pAppidConfig);
         }
     }
 
@@ -133,14 +134,15 @@ static CLIENT_APP_RETCODE udp_bit_init(const InitClientAppAPI * const init_api, 
 	for (j=0; j < sizeof(appIdRegistry)/sizeof(*appIdRegistry); j++)
 	{
 		_dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[j].appId);
-		init_api->RegisterAppId(&udp_bit_validate, appIdRegistry[j].appId, appIdRegistry[j].additionalInfo, NULL);
+		init_api->RegisterAppId(&udp_bit_validate, appIdRegistry[j].appId, appIdRegistry[j].additionalInfo, init_api->pAppidConfig);
 	}
 
     return CLIENT_APP_SUCCESS;
 }
 
 static CLIENT_APP_RETCODE udp_bit_validate(const uint8_t *data, uint16_t size, const int dir,
-                                        FLOW *flowp, const SFSnortPacket *pkt, struct _Detector *userData)
+                                        tAppIdData *flowp, SFSnortPacket *pkt, struct _Detector *userData,
+                                        const struct appIdConfig_ *pConfig)
 {
     ClientBITData *fd;
     uint16_t offset;
@@ -148,13 +150,13 @@ static CLIENT_APP_RETCODE udp_bit_validate(const uint8_t *data, uint16_t size, c
     if (size < (UDP_BIT_FIRST_LEN + UDP_BIT_END_LEN + 3))
         return CLIENT_APP_EINVALID;
 
-    fd = bit_tracker_client_mod.api->data_get(flowp);
+    fd = bit_tracker_client_mod.api->data_get(flowp, bit_tracker_client_mod.flow_data_index);
     if (!fd)
     {
         fd = calloc(1, sizeof(*fd));
         if (!fd)
             return CLIENT_APP_ENOMEM;
-        if (bit_tracker_client_mod.api->data_add(flowp, fd, &free))
+        if (bit_tracker_client_mod.api->data_add(flowp, fd, bit_tracker_client_mod.flow_data_index, &free))
         {
             free(fd);
             return CLIENT_APP_ENOMEM;
@@ -256,6 +258,6 @@ inprocess:
 
 done:
     bit_tracker_client_mod.api->add_app(flowp, APP_ID_BITTORRENT, APP_ID_BITTRACKER_CLIENT, NULL);
-    flow_mark(flowp, FLOW_CLIENTAPPDETECTED);
+    setAppIdFlag(flowp, APPID_SESSION_CLIENT_DETECTED);
     return CLIENT_APP_SUCCESS;
 }

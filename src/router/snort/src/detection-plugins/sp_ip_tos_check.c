@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -114,7 +114,7 @@ void SetupIpTosCheck(void)
     /* map the keyword to an initialization/processing function */
     RegisterRuleOption("tos", IpTosCheckInit, NULL, OPT_TYPE_DETECTION, NULL);
 #ifdef PERF_PROFILING
-    RegisterPreprocessorProfile("tos", &ipTosPerfStats, 3, &ruleOTNEvalPerfStats);
+    RegisterPreprocessorProfile("tos", &ipTosPerfStats, 3, &ruleOTNEvalPerfStats, NULL);
 #endif
     DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN, "Plugin: IpTosCheck Initialized\n"););
 }

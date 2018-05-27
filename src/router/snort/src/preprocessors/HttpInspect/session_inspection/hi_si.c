@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -117,7 +117,7 @@ static int IsServer(HTTPINSPECT_CONF *ServerConf, unsigned short port)
 static int InitServerConf(HTTPINSPECT_GLOBAL_CONF *GlobalConf,
                           HTTPINSPECT_CONF **ServerConf,
                           HTTPINSPECT_CONF **ClientConf,
-                          HI_SI_INPUT *SiInput, int *piInspectMode, Packet *p)
+                          HI_SI_INPUT *SiInput, int *piInspectMode, void *ssnptr)
 {
     HTTPINSPECT_CONF *ServerConfSip;
     HTTPINSPECT_CONF *ServerConfDip;
@@ -128,8 +128,8 @@ static int InitServerConf(HTTPINSPECT_GLOBAL_CONF *GlobalConf,
     int16_t app_id = SFTARGET_UNKNOWN_PROTOCOL;
     int http_id_found = 0;
 #endif
-    snort_ip sip;
-    snort_ip dip;
+    sfaddr_t sip;
+    sfaddr_t dip;
 
     //structure copy
     sip = SiInput->sip;
@@ -175,12 +175,12 @@ static int InitServerConf(HTTPINSPECT_GLOBAL_CONF *GlobalConf,
 #ifdef TARGET_BASED
     if (session_api)
     {
-        app_id = session_api->get_application_protocol_id(p->ssnptr);
+        app_id = session_api->get_application_protocol_id(ssnptr);
         if (app_id == hi_app_protocol_id)
         {
             http_id_found = 1;
         }
-        if (app_id && !http_id_found)
+        if (app_id > 0 && !http_id_found)
         {
             /* This packet was identified as something else. Forget it. */
             iServerSip = 0;
@@ -327,7 +327,7 @@ static int StatelessSessionInspection(HTTPINSPECT_GLOBAL_CONF *GlobalConf,
 
     ResetSession(&StaticSession);
 
-    iRet = InitServerConf(GlobalConf, &ServerConf, &ClientConf, SiInput, piInspectMode, p);
+    iRet = InitServerConf(GlobalConf, &ServerConf, &ClientConf, SiInput, piInspectMode, p->ssnptr);
     if (iRet)
     {
         return iRet;
@@ -398,3 +398,32 @@ int hi_si_session_inspection(HTTPINSPECT_GLOBAL_CONF *GlobalConf,
 
     return HI_SUCCESS;
 }
+
+/*
+**  NAME
+**    GetHttpConf::
+*/
+/**
+**  A wrapper over InitServerConf for getting server/client conf
+**
+**
+**  @param GlobalConf     pointer to the global configuration
+**  @param ServerConf     pointer to the address of the server config so we can
+**                        set it.
+**  @param SiInput        pointer to the packet info (sip,dip,sport,dport)
+**  @param piInspectMode  pointer so we can set the inspection mode
+**
+**  @return integer
+**
+**  @retval HI_SUCCESS  function successful
+*/
+
+int GetHttpConf(
+        HTTPINSPECT_GLOBAL_CONF *GlobalConf,
+        HTTPINSPECT_CONF **ServerConf,
+        HTTPINSPECT_CONF **ClientConf,
+        HI_SI_INPUT *SiInput, int *piInspectMode, void *ssnptr)
+{
+    return  InitServerConf(GlobalConf, ServerConf, ClientConf, SiInput, piInspectMode, ssnptr);
+}
+

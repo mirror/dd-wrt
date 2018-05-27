@@ -131,6 +131,10 @@ is not bound to an IP address or network.
 
 - Preprocessor name: stream5_tcp
 - Options:
+    log_asymmetric_traffic <yes|no>
+                            - Provides an option to log the messages for
+                              asymmetric traffic. The default is set
+                              to "no".
     bind_to <ip_addr>       - IP address for this policy.  The default is set
                               to any.
     timeout <number (secs)> - Session timeout.  The default is "30", the

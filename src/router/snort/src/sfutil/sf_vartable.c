@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 1998-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -374,7 +374,7 @@ int main()
 {
     vartable_t *table;
     sfip_var_t *var;
-    sfip_t *ip;
+    sfcidr_t *ip;
 
     puts("********************************************************************");
     puts("Testing variable table parsing:");

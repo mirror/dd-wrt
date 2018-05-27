@@ -16,7 +16,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * Author: Steve Sturges
@@ -32,69 +32,153 @@
 #endif
 
 #include <stdlib.h>
-
 #include "sf_dynamic_define.h"
 #include "sf_snort_packet.h"
 #include "sf_snort_plugin_api.h"
 #include "sfghash.h"
 #include "sf_snort_detection_engine.h"
+#include<string.h>
 
+static uint32_t getNumberTailingZerosInBitmask(uint32_t bitmask);
 extern int checkCursorSimple(const uint8_t *cursor, int flags, const uint8_t *start, const uint8_t *end, int offset);
 extern int setCursorInternal(void *p, int flags, int offset, const uint8_t **cursor);
 static int byteTestInternal(void *, ByteData *, const uint8_t *);
+static int byteMathInternal(void *, ByteData *, const uint8_t *);
 static int byteJumpInternal(void *, ByteData *, const uint8_t **);
-
+static int byte_math_var_check;
+static char *bm_variable_name;
+static int extracted_data_bytemath;
+static void byte_math_var_free(ByteData *);
 #define BYTE_STRING_LEN     11
 
 
 int ByteDataInitialize(Rule *rule, ByteData *byte)
 {
-    void *memoryLocation;
+    void *memoryLocation=NULL;
+    unsigned int ii, byte_math_flag=0;
+    RuleOption *option;
+
+    for(ii=0;rule->options[ii] != NULL; ii++)
+    {
+        option = rule->options[ii];
+        if(option->optionType==OPTION_TYPE_BYTE_MATH)
+            byte_math_flag=1;
+    }
 
     /* Initialize byte_extract pointers */
     if (byte->offset_refId)
     {
-        if (!rule->ruleData)
+        if (!rule->ruleData && !byte_math_var_check)
         {
-            DynamicEngineFatalMessage("ByteExtract variable '%s' in rule [%d:%d] is used before it is defined.\n",
+            DynamicEngineFatalMessage("ByteExtract or byte_math variable '%s' in rule [%d:%d] is used before it is defined.\n",
                                        byte->offset_refId, rule->info.genID, rule->info.sigID);
         }
 
-        memoryLocation = sfghash_find((SFGHASH*)rule->ruleData, byte->offset_refId);
+        if (rule->ruleData)
+             memoryLocation = sfghash_find((SFGHASH*)rule->ruleData, byte->offset_refId);
+
         if (memoryLocation)
         {
             byte->offset_location = memoryLocation;
         }
         else
         {
-            DynamicEngineFatalMessage("ByteExtract variable '%s' in rule [%d:%d] is used before it is defined.\n",
+            if (!byte_math_var_check && (strcmp(bm_variable_name,byte->offset_refId)))
+            {
+
+                 DynamicEngineFatalMessage("ByteExtract or byte_math variable '%s' in rule [%d:%d] is used before it is defined.\n",
                                        byte->offset_refId, rule->info.genID, rule->info.sigID);
+            }
         }
     }
 
+
     if (byte->value_refId)
     {
-        if (!rule->ruleData)
+        if (!rule->ruleData && !byte_math_var_check)
         {
-            DynamicEngineFatalMessage("ByteExtract variable '%s' in rule [%d:%d] is used before it is defined.\n",
+            DynamicEngineFatalMessage("ByteExtract or byte_math variable '%s' in rule [%d:%d] is used before it is defined.\n",
                                        byte->value_refId, rule->info.genID, rule->info.sigID);
         }
 
-        memoryLocation = sfghash_find((SFGHASH*)rule->ruleData, byte->value_refId);
+        if (rule->ruleData)
+             memoryLocation = sfghash_find((SFGHASH*)rule->ruleData, byte->value_refId);
+
         if (memoryLocation)
         {
             byte->value_location = memoryLocation;
         }
         else
         {
-            DynamicEngineFatalMessage("ByteExtract variable '%s' in rule [%d:%d] is used before it is defined.\n",
-                                       byte->value_refId, rule->info.genID, rule->info.sigID);
+            if (!byte_math_var_check && (strcmp(bm_variable_name,byte->value_refId)))
+            {
+               DynamicEngineFatalMessage("ByteExtract or byte_math variable '%s' in rule [%d:%d] is used before it is defined.\n",
+                        byte->value_refId, rule->info.genID, rule->info.sigID);
+            }
         }
     }
 
+    if (byte_math_flag && byte->refId && byte_math_var_check )
+    {
+	DynamicEngineFatalMessage("refId field should be NULL for other than Byte_Math options\n");
+    }
+
+    if (byte_math_flag && byte->refId)
+    {
+       if (bm_variable_name)
+		free(bm_variable_name);
+       bm_variable_name = strdup(byte->refId);
+       if (bm_variable_name)
+                byte_math_var_check=1;
+    }
+    byte_math_var_free(byte);
     return 0;
 }
+void byte_math_var_free(ByteData *byte)
+{
+	if (byte_math_var_check && bm_variable_name && (!byte->refId))
+        {
+	    free(bm_variable_name);
+            bm_variable_name=NULL;
+            byte_math_var_check=0;
+        }
+}
+static uint32_t getNumberTailingZerosInBitmask(uint32_t bitmask)
+{
+   unsigned int num_tailing_zeros;
 
+   if (bitmask & 0x1)
+   {
+       num_tailing_zeros = 0;
+   }
+   else
+   {
+       num_tailing_zeros = 1;
+       if ((bitmask & 0xffff) == 0)
+       {
+            bitmask >>= 16;
+            num_tailing_zeros += 16;
+       }
+       if ((bitmask & 0xff) == 0)
+       {
+            bitmask >>= 8;
+            num_tailing_zeros += 8;
+       }
+       if ((bitmask & 0xf) == 0)
+       {
+             bitmask >>= 4;
+             num_tailing_zeros += 4;
+       }
+       if ((bitmask & 0x3) == 0)
+       {
+             bitmask >>= 2;
+             num_tailing_zeros += 2;
+       }
+       num_tailing_zeros -= bitmask & 0x1;
+   }
+
+   return num_tailing_zeros;
+}
 /*
  * extract byte value from data
  *
@@ -127,7 +211,10 @@ int extractValueInternal(void *p, ByteData *byteData, uint32_t *value, const uin
     }
     if (byteData->value_location)
     {
-        byteData->value = *byteData->value_location;
+        if (byte_math_var_check)
+           byteData->value = extracted_data_bytemath;
+        else
+           byteData->value = *byteData->value_location;
     }
 
     /* Check the start location */
@@ -144,14 +231,21 @@ int extractValueInternal(void *p, ByteData *byteData, uint32_t *value, const uin
         cursor = start;
     }
 
+    /* Extract can be from end of buffer */
+    if (byteData->flags & JUMP_FROM_END)
+    {
+        cursor = end;
+    }
+
     if (byteData->flags & EXTRACT_AS_BYTE)
     {
-        if ( byteData->bytes != 1 && byteData->bytes != 2 && byteData->bytes != 4 )
+        if ( (byteData->bytes != 1) && (byteData->bytes != 2) && (byteData->bytes != 4) && (!(byteData->flags & JUMP_FROM_END)) )
         {
-            return -5;  /* We only support 1, 2, or 4 bytes */
+            return -5;  /* We only support 1, 2, or 4 bytes if from_end is not set*/
         }
 
-        if (byteData->bytes < 1 || byteData->bytes > 4)
+        /* Greater than 4 requires 'string' option */
+        if (byteData->bytes > 4)
             return -2;
 
         if ( byteData->flags & BYTE_BIG_ENDIAN )
@@ -191,7 +285,11 @@ int extractValueInternal(void *p, ByteData *byteData, uint32_t *value, const uin
 
         // If all spaces or a negative sign is found, return error.
         if ((space_ptr == (cursor + byteData->offset + byteData->bytes))
-                || (*space_ptr == '-'))
+                || ((*space_ptr == '-') && (!(byteData->flags & JUMP_FROM_END))))
+            return -2;
+
+        // If Two flags are set in a rule as in below,return error.
+        if ((byteData->flags & EXTRACT_AS_DEC) && (byteData->flags & JUMP_FROM_END))
             return -2;
 
         if (byteData->flags & EXTRACT_AS_DEC)
@@ -237,6 +335,9 @@ ENGINE_LINKAGE int extractValue(void *p, ByteExtract *byteExtract, const uint8_t
     byteData.flags = byteExtract->flags;
     byteData.multiplier = byteExtract->multiplier;
     byteData.offset = byteExtract->offset;
+
+    if(byteExtract->bitmask_val)
+       byteData.bitmask_val = byteExtract->bitmask_val;
 
     /* The following fields are not used, but must be zeroed out. */
     byteData.op = 0;
@@ -317,13 +418,55 @@ ENGINE_LINKAGE int checkValue(void *p, ByteData *byteData, uint32_t value, const
     return 0;
 }
 
+/*
+ * Check byteData->value against value
+ *
+ * Return 1 if check is true (e.g. value > byteData.value)
+ * Return 0 if check is not true.
+ */
+ENGINE_LINKAGE int checkValue_Bytemath(void *p, ByteData *byteData, uint32_t value, const uint8_t *cursor)
+{
+    if (!value)
+       return 0;
+
+    switch (byteData->op)
+    {
+        case CHECK_ADD:
+             extracted_data_bytemath = (value + byteData->value);
+             return 1;
+        case CHECK_SUB:
+            extracted_data_bytemath= (value - byteData->value);
+            return 1;
+        case CHECK_MUL:
+            extracted_data_bytemath = (value * byteData->value);
+            return 1;
+        case CHECK_DIV:
+            extracted_data_bytemath = (value/byteData->value);
+            return 1;
+        case CHECK_LS:
+            extracted_data_bytemath = (value << byteData->value);
+            return 1;
+        case CHECK_RS:
+            extracted_data_bytemath = (value >> byteData->value);
+            return 1;
+     }
+
+    return 0;
+}
+
+
 ENGINE_LINKAGE int byteTest(void *p, ByteData *byteData, const uint8_t *cursor)
 {
     if (byteData->flags & NOT_FLAG)
         return invertMatchResult(byteTestInternal(p, byteData, cursor));
     return byteTestInternal(p, byteData, cursor);
 }
-
+ENGINE_LINKAGE int byteMath(void *p, ByteData *byteData, const uint8_t *cursor)
+{
+    if (byteData->flags & NOT_FLAG)
+        return invertMatchResult(byteMathInternal(p, byteData, cursor));
+    return byteMathInternal(p, byteData, cursor);
+}
 /*
  * Check byteData->value against extracted value from data
  *
@@ -341,8 +484,50 @@ static int byteTestInternal(void *p, ByteData *byteData, const uint8_t *cursor)
     if ( ret < 0 )
         return 0;
 
+    if(byteData->bitmask_val)
+    {
+         int num_tailing_zeros_bitmask = getNumberTailingZerosInBitmask(byteData->bitmask_val);
+         value = value & byteData->bitmask_val;
+         if ( value && num_tailing_zeros_bitmask )
+         {
+            value = value >> num_tailing_zeros_bitmask;
+         }
+    }
+
     ret = checkValue(sp, byteData, value, cursor);
 
+    return ret;
+}
+
+/*
+ * Check byteData->value against extracted value from data
+ *
+ * Return 1 if check is true (e.g. value > byteData.value)
+ * Return 0 if check is not true.
+ */
+
+static int byteMathInternal(void *p, ByteData *byteData, const uint8_t *cursor)
+{
+    int       ret;
+    uint32_t value;
+    SFSnortPacket *sp = (SFSnortPacket *) p;
+
+    ret = extractValueInternal(sp, byteData, &value, cursor);
+
+    if ( ret < 0 )
+        return 0;
+
+    if(byteData->bitmask_val)
+    {
+         int num_tailing_zeros_bitmask = getNumberTailingZerosInBitmask(byteData->bitmask_val);
+         value = value & byteData->bitmask_val;
+         if ( value && num_tailing_zeros_bitmask )
+         {
+            value = value >> num_tailing_zeros_bitmask;
+         }
+    }
+
+    ret = checkValue_Bytemath(sp, byteData, value, cursor);
     return ret;
 }
 
@@ -371,6 +556,16 @@ static int byteJumpInternal(void *p, ByteData *byteData, const uint8_t **cursor)
 
     if ( ret < 0 )
         return ret;
+
+    if(byteData->bitmask_val)
+    {
+          int num_tailing_zeros_bitmask = getNumberTailingZerosInBitmask(byteData->bitmask_val);
+          readValue = readValue & byteData->bitmask_val;
+          if ( readValue && num_tailing_zeros_bitmask )
+          {
+             readValue = readValue >> num_tailing_zeros_bitmask;
+          }
+    }
 
     if (byteData->multiplier)
         jumpValue = readValue * byteData->multiplier;

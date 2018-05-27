@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
- ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2002-2013 Sourcefire, Inc.
  ** Author: Martin Roesch
  **
@@ -116,6 +116,7 @@
 #include "sfhashfcn.h"
 #include "sp_byte_check.h"
 #include "sp_byte_extract.h"
+#include "sp_byte_math.h"
 
 #define PARSELEN 10
 #define TEXTLEN  (PARSELEN + 2)
@@ -130,6 +131,7 @@
 PreprocStats byteTestPerfStats;
 extern PreprocStats ruleOTNEvalPerfStats;
 #endif
+
 
 typedef struct _ByteTestOverrideData
 {
@@ -172,9 +174,10 @@ uint32_t ByteTestHash(void *d)
 
     mix(a,b,c);
 
-    a += RULE_OPTION_TYPE_BYTE_TEST;
-    b += data->cmp_value_var;
-    c += data->offset_var;
+    a += data->bitmask_val;
+    b += RULE_OPTION_TYPE_BYTE_TEST;
+    c += (data->cmp_value_var << 8 |
+          data->offset_var );
 
     mix(a,b,c);
 
@@ -216,7 +219,8 @@ int ByteTestCompare(void *l, void *r)
         ( left->base == right->base) &&
         ( left->cmp_value_var == right->cmp_value_var) &&
         ( left->offset_var == right->offset_var) &&
-        ( left->byte_order_func == right->byte_order_func))
+        ( left->byte_order_func == right->byte_order_func) &&
+        ( left->bitmask_val == right->bitmask_val))
     {
         return DETECTION_OPTION_EQUAL;
     }
@@ -276,7 +280,7 @@ void SetupByteTest(void)
     AddFuncToRuleOptParseCleanupList(ByteTestOverrideFuncsFree);
 
 #ifdef PERF_PROFILING
-    RegisterPreprocessorProfile("byte_test", &byteTestPerfStats, 3, &ruleOTNEvalPerfStats);
+    RegisterPreprocessorProfile("byte_test", &byteTestPerfStats, 3, &ruleOTNEvalPerfStats, NULL);
 #endif
     DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN,"Plugin: ByteTest Setup\n"););
 }
@@ -331,8 +335,8 @@ static void ByteTestInit(struct _SnortConfig *sc, char *data, OptTreeNode *otn, 
     if (add_detection_option(sc, RULE_OPTION_TYPE_BYTE_TEST, (void *)idx, &idx_dup) == DETECTION_OPTION_EQUAL)
     {
 #ifdef DEBUG_RULE_OPTION_TREE
-        LogMessage("Duplicate ByteCheck:\n%d %d %d %d %c %c %c %c %d\n"
-            "%d %d %d %d %c %c %c %c %d\n\n",
+        LogMessage("Duplicate ByteCheck:\n%d %d %d %d %c %c %c %c %d 0x%x\n"
+            "%d %d %d %d %c %c %c %c %d 0x%x\n\n",
             idx->bytes_to_compare,
             idx->cmp_value,
             idx->operator,
@@ -340,13 +344,15 @@ static void ByteTestInit(struct _SnortConfig *sc, char *data, OptTreeNode *otn, 
             idx->not_flag, idx->relative_flag,
             idx->data_string_convert_flag,
             idx->endianess, idx->base,
+            idx->bitmask_val,
             ((ByteTestData *)idx_dup)->bytes_to_compare,
             ((ByteTestData *)idx_dup)->cmp_value,
             ((ByteTestData *)idx_dup)->operator,
             ((ByteTestData *)idx_dup)->offset,
             ((ByteTestData *)idx_dup)->not_flag, ((ByteTestData *)idx_dup)->relative_flag,
             ((ByteTestData *)idx_dup)->data_string_convert_flag,
-            ((ByteTestData *)idx_dup)->endianess, ((ByteTestData *)idx_dup)->base);
+            ((ByteTestData *)idx_dup)->endianess, ((ByteTestData *)idx_dup)->base,
+            ((ByteTestData *)idx_dup)->bitmask_val);
 #endif
         free(idx);
         idx = idx_dup;
@@ -384,19 +390,17 @@ static ByteTestOverrideData * ByteTestParse(char *data, ByteTestData *idx, OptTr
     int i =0;
     RuleOptByteOrderFunc tmp_byte_order_func;
 
-    toks = mSplit(data, ",", 12, &num_toks, 0);
+    toks = mSplit(data, ",", 13, &num_toks, 0);
 
     if(num_toks < 4)
-        FatalError("%s (%d): Bad arguments to byte_test: %s\n", file_name,
-                file_line, data);
+        ParseError(" Bad arguments to byte_test: %s\n",data);
 
     /* set how many bytes to process from the packet */
     idx->bytes_to_compare = strtol(toks[0], &endp, 10);
 
     if(toks[0] == endp)
     {
-        FatalError("%s(%d): Unable to parse as byte value %s\n",
-                   file_name, file_line, toks[0]);
+        ParseError(" Unable to parse as byte value %s\n",toks[0]);
     }
 
     if(*endp != '\0')
@@ -406,8 +410,8 @@ static ByteTestOverrideData * ByteTestParse(char *data, ByteTestData *idx, OptTr
 
     if(idx->bytes_to_compare > PARSELEN || idx->bytes_to_compare == 0)
     {
-        FatalError("%s(%d): byte_test can't process more than "
-                "10 bytes!\n", file_name, file_line);
+        ParseError(" byte_test can't process more than "
+                "10 bytes!\n");
     }
 
     cptr = toks[1];
@@ -456,8 +460,8 @@ static ByteTestOverrideData * ByteTestParse(char *data, ByteTestData *idx, OptTr
             case '^': idx->operator = BT_XOR;
                       break;
 
-            default: FatalError("%s(%d): byte_test unknown "
-                             "operator ('%c, %s')\n", file_name, file_line,
+            default: ParseError(" byte_test unknown "
+                             "operator ('%c, %s')\n",
                              *cptr, toks[1]);
         }
     }
@@ -466,13 +470,20 @@ static ByteTestOverrideData * ByteTestParse(char *data, ByteTestData *idx, OptTr
     /* set the value to test against */
     if (isdigit(toks[2][0]) || toks[2][0] == '-')
     {
-        idx->cmp_value = SnortStrtoul(toks[2], &endp, 0);
+        int64_t rval = SnortStrtoul(toks[2], &endp,0);
+        if (rval > MAX_RVAL)
+        {
+            ParseError("byte_test rule option has invalid rvalue."
+                 "Valid rvalue range %u-%u.",
+                  MIN_RVAL-1,MAX_RVAL);
+        }
+        idx->cmp_value=rval;
         idx->cmp_value_var = -1;
 
         if(toks[2] == endp)
         {
-            FatalError("%s(%d): Unable to parse as comparison value %s\n",
-                       file_name, file_line, toks[2]);
+            ParseError(" Unable to parse as comparison value %s\n",
+                       toks[2]);
         }
 
         if(*endp != '\0')
@@ -482,15 +493,20 @@ static ByteTestOverrideData * ByteTestParse(char *data, ByteTestData *idx, OptTr
 
         if(errno == ERANGE)
         {
-            printf("Bad range: %s\n", toks[2]);
+            ParseError("Bad range: %s\n", toks[2]);
         }
     }
     else
     {
-        idx->cmp_value_var = GetVarByName(toks[2]);
-        if (idx->cmp_value_var == BYTE_EXTRACT_NO_VAR)
+        if ( bytemath_variable_name && (strcmp(bytemath_variable_name,toks[2]) == 0) )
         {
-            ParseError(BYTE_EXTRACT_INVALID_ERR_FMT, "byte_test", toks[2]);
+              idx->cmp_value_var= BYTE_MATH_VAR_INDEX;  // 2
+        }
+        else
+        {
+              idx->cmp_value_var = GetVarByName(toks[2]);
+              if ( idx->cmp_value_var == BYTE_EXTRACT_NO_VAR)
+                   ParseError(BYTE_TEST_INVALID_ERR_FMT, "byte_test : value", toks[2]);
         }
     }
 
@@ -502,8 +518,8 @@ static ByteTestOverrideData * ByteTestParse(char *data, ByteTestData *idx, OptTr
 
         if(toks[3] == endp)
         {
-            FatalError("%s(%d): Unable to parse as offset value %s\n",
-                       file_name, file_line, toks[3]);
+            ParseError(" Unable to parse as offset value %s\n",
+                        toks[3]);
         }
 
         if(*endp != '\0')
@@ -513,10 +529,15 @@ static ByteTestOverrideData * ByteTestParse(char *data, ByteTestData *idx, OptTr
     }
     else
     {
-        idx->offset_var = GetVarByName(toks[3]);
-        if (idx->offset_var == BYTE_EXTRACT_NO_VAR)
+        if ( bytemath_variable_name && (strcmp(bytemath_variable_name,toks[3]) == 0) )
         {
-            ParseError(BYTE_EXTRACT_INVALID_ERR_FMT, "byte_test", toks[3]);
+              idx->offset_var= BYTE_MATH_VAR_INDEX;  // 2
+        }
+        else
+        {
+              idx->offset_var = GetVarByName(toks[3]);
+              if ( idx->offset_var == BYTE_EXTRACT_NO_VAR)
+                   ParseError(BYTE_TEST_INVALID_ERR_FMT, "byte_test : offset", toks[3]);
         }
     }
 
@@ -569,6 +590,10 @@ static ByteTestOverrideData * ByteTestParse(char *data, ByteTestData *idx, OptTr
             {
                 idx->byte_order_func = tmp_byte_order_func;
             }
+            else if(strncasecmp(cptr,"bitmask ",8) == 0)
+            {
+                RuleOptionBitmaskParse(&(idx->bitmask_val), cptr, idx->bytes_to_compare, "BYTE_TEST");
+            }
             else
             {
                 ByteTestOverrideData *override = byteTestOverrideFuncs;
@@ -584,21 +609,30 @@ static ByteTestOverrideData * ByteTestParse(char *data, ByteTestData *idx, OptTr
                     override = override->next;
                 }
 
-                FatalError("%s(%d): unknown modifier \"%s\"\n",
-                           file_name, file_line, cptr);
+                ParseError("unknown modifier \"%s\"\n",cptr);
             }
 
             i++;
         }
     }
 
+    if (idx->bytes_to_compare > MAX_BYTES_TO_GRAB && !idx->data_string_convert_flag)
+    {
+        ParseError("byte_test rule option cannot extract more than %d bytes without valid string prefix.",
+                     MAX_BYTES_TO_GRAB);
+    }
     /* idx->base is only set if the parameter is specified */
     if(!idx->data_string_convert_flag && idx->base)
     {
-        FatalError("%s(%d): hex, dec and oct modifiers must be used in conjunction \n"
-                   "        with the 'string' modifier\n", file_name,file_line);
+        ParseError("hex, dec and oct modifiers must be used in conjunction \n"
+                   "        with the 'string' modifier\n");
     }
-
+    if (idx->offset < MIN_BYTE_EXTRACT_OFFSET || idx->offset > MAX_BYTE_EXTRACT_OFFSET)
+    {
+        ParseError("byte_test rule option has invalid offset. "
+              "Valid offsets are between %d and %d.",
+               MIN_BYTE_EXTRACT_OFFSET, MAX_BYTE_EXTRACT_OFFSET);
+    }
     mSplitFree(&toks, num_toks);
     return NULL;
 }
@@ -638,7 +672,7 @@ int ByteTest(void *option_data, Packet *p)
     if (Is_DetectFlag(FLAG_ALT_DETECT))
     {
         dsize = DetectBuffer.len;
-        start_ptr = (char *)DetectBuffer.data;
+        start_ptr = (const char*)DetectBuffer.data;
         DEBUG_WRAP(DebugMessage(DEBUG_PATTERN_MATCH,
                 "Using Alternative Detect buffer!\n"););
     }
@@ -666,15 +700,38 @@ int ByteTest(void *option_data, Packet *p)
 
 
     /* Get values from byte_extract variables, if present. */
-    if (btd->cmp_value_var >= 0 && btd->cmp_value_var < NUM_BYTE_EXTRACT_VARS)
+    if (btd->cmp_value_var >= 0 )
     {
-        GetByteExtractValue(&extract_cmp_value, btd->cmp_value_var);
-        btd->cmp_value = (int32_t) extract_cmp_value;
+
+        if(btd->cmp_value_var == BYTE_MATH_VAR_INDEX )
+        {
+            btd->cmp_value = (int32_t) bytemath_variable;
+        }
+        else
+        {
+            if (btd->cmp_value_var < NUM_BYTE_EXTRACT_VARS)
+            {
+                GetByteExtractValue(&extract_cmp_value, btd->cmp_value_var);
+                btd->cmp_value = (int32_t) extract_cmp_value;
+            }
+        }
+
     }
-    if (btd->offset_var >= 0 && btd->offset_var < NUM_BYTE_EXTRACT_VARS)
+    if (btd->offset_var >= 0 )
     {
-        GetByteExtractValue(&extract_offset, btd->offset_var);
-        btd->offset = (int32_t) extract_offset;
+        if(btd->offset_var == BYTE_MATH_VAR_INDEX )
+        {
+            btd->offset = (int32_t) bytemath_variable;
+        }
+        else
+        {
+            if (btd->offset_var < NUM_BYTE_EXTRACT_VARS)
+            {
+                GetByteExtractValue(&extract_offset, btd->offset_var);
+                btd->offset = (int32_t) extract_offset;
+            }
+        }
+
     }
 
 
@@ -765,9 +822,19 @@ int ByteTest(void *option_data, Packet *p)
 
     }
 
+    if(btd->bitmask_val != 0 )
+    {
+        int num_tailing_zeros_bitmask = getNumberTailingZerosInBitmask(btd->bitmask_val);
+        value = value & btd->bitmask_val ;
+        if ( value && num_tailing_zeros_bitmask )
+        {
+            value = value >> num_tailing_zeros_bitmask;
+        }
+    }
+
     DEBUG_WRAP(DebugMessage(DEBUG_PATTERN_MATCH,
-        "Grabbed %d bytes at offset %d, value = 0x%08X(%u)\n",
-        payload_bytes_grabbed, btd->offset, value, value); );
+        "Grabbed %d bytes at offset %d cmp_value = 0x%08X(%u) value = 0x%08X(%u)\n",
+        payload_bytes_grabbed, btd->offset, btd->cmp_value,btd->cmp_value,value, value); );
 
     switch(btd->operator)
     {

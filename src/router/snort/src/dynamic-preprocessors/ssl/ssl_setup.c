@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2007-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -20,6 +20,10 @@
 
 #include "ssl_setup.h"
 
+#ifdef DUMP_BUFFER
+#include "ssl_buffer_dump.h"
+#endif
+
 #define SetupSSLPP DYNAMIC_PREPROC_SETUP
 const int MAJOR_VERSION = 1;
 const int MINOR_VERSION = 1;
@@ -34,6 +38,11 @@ void SetupSSLPP(void)
     _dpd.registerPreproc("ssl", SSLPP_init, SSLReload,
              SSLReloadVerify, SSLReloadSwap, SSLReloadSwapFree);
 #endif
+#ifdef DUMP_BUFFER
+    _dpd.registerBufferTracer(getSSLBuffers, SSL_BUFFER_DUMP_FUNC);
+    dumpBufferInit();
+#endif
+
 }
 
 

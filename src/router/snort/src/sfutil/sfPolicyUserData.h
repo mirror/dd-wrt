@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -85,10 +85,8 @@ int sfPolicyUserDataSet ( tSfPolicyUserContextId pContext, tSfPolicyId policyId,
 
 static inline void * sfPolicyUserDataGet ( tSfPolicyUserContextId pContext, tSfPolicyId policyId )
 {
-    if ((pContext != NULL) && (policyId < pContext->numAllocatedPolicies))
-    {
+    if (pContext && policyId < pContext->numAllocatedPolicies)
         return pContext->userConfig[policyId];
-    }
 
     return NULL;
 }

@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -82,31 +82,6 @@
 #define SIZEOF_LONG_INT 4
 #endif
 
-/* Version number of package */
-#ifdef ENABLE_ODBC
-    #define VERSION_ENABLE_ODBC "-ODBC"
-#else
-    #define VERSION_ENABLE_ODBC
-#endif
-
-#ifdef ENABLE_MYSQL
-    #define VERSION_ENABLE_MYSQL "-MySQL"
-#else
-    #define VERSION_ENABLE_MYSQL
-#endif
-
-#ifdef ENABLE_MSSQL
-    #define VERSION_ENABLE_MSSQL "-MSSQL"
-#else
-    #define VERSION_ENABLE_MSSQL
-#endif
-
-#ifdef ENABLE_ORACLE
-    #define VERSION_ENABLE_ORACLE "-ORACLE"
-#else
-    #define VERSION_ENABLE_ORACLE
-#endif
-
 #ifdef ENABLE_RESPONSE
     #define VERSION_ENABLE_RESPONSE "-FlexRESP"
 #else
@@ -126,15 +101,21 @@
  * should both match the ones specified in the
  * AM_INIT_AUTOMAKE() macro of configure.in
  */
-#define VERSION "2.9.7.2"VERSION_ENABLE_ODBC""VERSION_ENABLE_MYSQL""VERSION_ENABLE_MSSQL""VERSION_ENABLE_ORACLE""VERSION_ENABLE_RESPONSE"-WIN32"VERSION_DEBUG
+#define VERSION "2.9.11.1"VERSION_ENABLE_RESPONSE"-WIN32"VERSION_DEBUG
 #define PACKAGE "snort"
 
 #define IFNAMSIZ   255
 
+/* _WIN32_WINNT has been modified to support SetDllDirectory API introduced in
+ * Windows Server 2003 with SP1 and Windows XP with SP2 for Windows DLL Load Vulnerability.
+ * As per documentation available on support forum, the macro corresponding to 0x0502 is _WIN32_WINNT_WS03.
+ * However, Visual studio 6.0 on Win XP SP3 reports this as an undeclared identifier.
+ * So, we decided to use numerical value instead of macro.
+ */
 #undef _WIN32_WINNT
-#define _WIN32_WINNT _WIN32_WINNT_WIN2K
+#define _WIN32_WINNT 0x0502
 #undef NTDDI_VERSION
-#define NTDDI_VERSION NTDDI_WIN2K
+#define NTDDI_VERSION 0x05020000
 
 /* Abuse header guards to prevent winscard.h from being included.
    This was needed to prevent conflict with sqlfront.h */

@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -28,6 +28,7 @@
 
 #include "client_app_api.h"
 #include "client_app_ym.h"
+#include "appInfoTable.h"
 
 typedef struct _YM_CLIENT_APP_CONFIG
 {
@@ -40,9 +41,10 @@ static YM_CLIENT_APP_CONFIG ym_config;
 
 static CLIENT_APP_RETCODE ym_init(const InitClientAppAPI * const init_api, SF_LIST *config);
 static CLIENT_APP_RETCODE ym_validate(const uint8_t *data, uint16_t size, const int dir,
-                                        FLOW *flowp, const SFSnortPacket *pkt, struct _Detector *userData);
+                                        tAppIdData *flowp, SFSnortPacket *pkt, struct _Detector *userData,
+                                        const struct appIdConfig_ *pConfig);
 
-RNAClientAppModule ym_client_mod =
+tRNAClientAppModule ym_client_mod =
 {
     .name = "YM",
     .proto = IPPROTO_TCP,
@@ -98,7 +100,7 @@ static CLIENT_APP_RETCODE ym_init(const InitClientAppAPI * const init_api, SF_LI
         {
 			_dpd.debugMsg(DEBUG_LOG,"registering patterns: %s: %d\n",(const char*)patterns[i].pattern,
                     patterns[i].index);
-            init_api->RegisterPattern(&ym_validate, IPPROTO_TCP, patterns[i].pattern, patterns[i].length, patterns[i].index);
+            init_api->RegisterPattern(&ym_validate, IPPROTO_TCP, patterns[i].pattern, patterns[i].length, patterns[i].index, init_api->pAppidConfig);
         }
     }
 
@@ -106,7 +108,7 @@ static CLIENT_APP_RETCODE ym_init(const InitClientAppAPI * const init_api, SF_LI
 	for (j=0; j < sizeof(appIdRegistry)/sizeof(*appIdRegistry); j++)
 	{
 		_dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[j].appId);
-		init_api->RegisterAppId(&ym_validate, appIdRegistry[j].appId, appIdRegistry[j].additionalInfo, NULL);
+		init_api->RegisterAppId(&ym_validate, appIdRegistry[j].appId, appIdRegistry[j].additionalInfo, init_api->pAppidConfig);
 	}
 
     return CLIENT_APP_SUCCESS;
@@ -128,7 +130,8 @@ static const uint8_t * skip_separator(const uint8_t *data, const uint8_t *end)
 }
 
 static CLIENT_APP_RETCODE ym_validate(const uint8_t *data, uint16_t size, const int dir,
-                                        FLOW *flowp, const SFSnortPacket *pkt, struct _Detector *userData)
+                                        tAppIdData *flowp, SFSnortPacket *pkt, struct _Detector *userData,
+                                        const struct appIdConfig_ *pConfig)
 {
 #define HEADERSIZE 20
 #define VERSIONID "135"
@@ -205,8 +208,8 @@ static CLIENT_APP_RETCODE ym_validate(const uint8_t *data, uint16_t size, const 
 	return CLIENT_APP_INPROCESS;
 
 done:
-	ym_client_mod.api->add_app(flowp, APP_ID_YAHOO, product_id, (char *)version);
-    flow_mark(flowp, FLOW_CLIENTAPPDETECTED);
+    ym_client_mod.api->add_app(flowp, APP_ID_YAHOO, product_id, (char *)version);
+    setAppIdFlag(flowp, APPID_SESSION_CLIENT_DETECTED);
     return CLIENT_APP_SUCCESS;
 }
 

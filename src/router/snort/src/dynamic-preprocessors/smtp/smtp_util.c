@@ -16,7 +16,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * Author: Andy  Mullican
@@ -223,6 +223,8 @@ int SMTP_CopyEmailID(const uint8_t *start, int length, int command_type, MAIL_Lo
     {
         alt_buf[*alt_len] = ',';
         *alt_len = *alt_len + 1;
+        if(log_avail == length)
+            length--;
     }
 
     ret = SafeMemcpy(alt_buf + *alt_len, start, length, alt_buf, alt_buf + alt_size);

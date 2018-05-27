@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -68,6 +68,10 @@
 #include "file_api.h"
 #ifdef DEBUG_MSGS
 #include "sf_types.h"
+#endif
+
+#ifdef DUMP_BUFFER
+#include "imap_buffer_dump.h"
 #endif
 
 #include "imap_paf.h"
@@ -316,6 +320,7 @@ static IMAP * IMAP_GetNewSession(SFSnortPacket *p, tSfPolicyId policy_id)
 {
     IMAP *ssn;
     IMAPConfig *pPolicyConfig = NULL;
+    int ret = 0;
 
     pPolicyConfig = (IMAPConfig *)sfPolicyUserDataGetCurrent(imap_config);
 
@@ -334,10 +339,19 @@ static IMAP * IMAP_GetNewSession(SFSnortPacket *p, tSfPolicyId policy_id)
     imap_ssn->mime_ssn.decode_conf = &(imap_eval_config->decode_conf);
     imap_ssn->mime_ssn.mime_mempool = imap_mime_mempool;
     imap_ssn->mime_ssn.log_mempool = imap_mempool;
+    imap_ssn->mime_ssn.mime_stats = &(imap_stats.mime_stats);
     imap_ssn->mime_ssn.methods = &(mime_methods);
 
-    if (_dpd.fileAPI->set_log_buffers(&(imap_ssn->mime_ssn.log_state), &(pPolicyConfig->log_config), imap_mempool) < 0)
+    if (( ret = _dpd.fileAPI->set_log_buffers(&(imap_ssn->mime_ssn.log_state), &(pPolicyConfig->log_config),imap_mempool, p->stream_session)) < 0)
     {
+        if( ret == -1 )
+        {
+            if(imap_stats.log_memcap_exceeded % 10000 == 0)
+            {
+                _dpd.logMsg("WARNING: IMAP memcap exceeded.\n");
+            }
+            imap_stats.log_memcap_exceeded++;
+        }
         free(ssn);
         return NULL;
     }
@@ -377,6 +391,10 @@ static IMAP * IMAP_GetNewSession(SFSnortPacket *p, tSfPolicyId policy_id)
     ssn->config = imap_config;
     ssn->flow_id = 0;
     pPolicyConfig->ref_count++;
+    imap_stats.sessions++;
+    imap_stats.conc_sessions++;
+    if(imap_stats.max_conc_sessions < imap_stats.conc_sessions)
+       imap_stats.max_conc_sessions = imap_stats.conc_sessions;
 
     return ssn;
 }
@@ -542,6 +560,8 @@ static void IMAP_SessionFree(void *session_data)
         ssl_cb->session_free(imap->flow_id);
 
     free(imap);
+    if(imap_stats.conc_sessions)
+       imap_stats.conc_sessions--;
 }
 
 static int IMAP_FreeConfigsPolicy(
@@ -705,6 +725,11 @@ static const uint8_t * IMAP_HandleCommand(SFSnortPacket *p, const uint8_t *ptr, 
     }
     else
     {
+
+#ifdef DUMP_BUFFER
+        dumpBuffer(IMAP_CLIENT_CMD_DUMP,ptr,eolm-ptr);
+#endif
+
         if (imap_ssn->state == STATE_UNKNOWN)
             imap_ssn->state = STATE_COMMAND;
     }
@@ -733,6 +758,10 @@ static void IMAP_ProcessClientPacket(SFSnortPacket *p)
 {
     const uint8_t *ptr = p->payload;
     const uint8_t *end = p->payload + p->payload_size;
+
+#ifdef DUMP_BUFFER
+    dumpBuffer(IMAP_CLIENT_DUMP,p->payload,p->payload_size);
+#endif
 
     ptr = IMAP_HandleCommand(p, ptr, end);
 
@@ -763,6 +792,11 @@ static void IMAP_ProcessServerPacket(SFSnortPacket *p)
 
     body_start = body_end = NULL;
 
+#ifdef DUMP_BUFFER
+    dumpBuffer(IMAP_SERVER_DUMP,p->payload,p->payload_size);
+#endif
+
+
     ptr = p->payload;
     end = p->payload + p->payload_size;
 
@@ -783,7 +817,11 @@ static void IMAP_ProcessServerPacket(SFSnortPacket *p)
                 else
                     data_end = ptr + len;
 
-                ptr = _dpd.fileAPI->process_mime_data(p, ptr, end, &(imap_ssn->mime_ssn), 0, true);
+#ifdef DUMP_BUFFER
+                dumpBuffer(IMAP_SERVER_BODY_DATA_DUMP,ptr,len);
+#endif
+
+                ptr = _dpd.fileAPI->process_mime_data(p, ptr, end, &(imap_ssn->mime_ssn), 0, true, "IMAP");
 
                 if( ptr < data_end)
                     len = len - (data_end - ptr);
@@ -973,6 +1011,11 @@ void SnortIMAP(SFSnortPacket *p)
     int pkt_dir;
     tSfPolicyId policy_id = _dpd.getNapRuntimePolicy();
     ssl_callback_interface_t *ssl_cb = (ssl_callback_interface_t *)_dpd.getSSLCallback();
+
+#ifdef DUMP_BUFFER
+    dumpBufferInit();
+#endif
+
 
     PROFILE_VARS;
 

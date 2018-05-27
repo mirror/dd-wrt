@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -72,9 +72,10 @@ static TIMBUKTU_CLIENT_APP_CONFIG timbuktu_config;
 
 static CLIENT_APP_RETCODE timbuktu_init(const InitClientAppAPI * const init_api, SF_LIST *config);
 static CLIENT_APP_RETCODE timbuktu_validate(const uint8_t *data, uint16_t size, const int dir,
-                                        FLOW *flowp, const SFSnortPacket *pkt, struct _Detector *userData);
+                                        tAppIdData *flowp, SFSnortPacket *pkt, struct _Detector *userData,
+                                        const struct appIdConfig_ *pConfig);
 
-SO_PUBLIC RNAClientAppModule timbuktu_client_mod =
+SF_SO_PUBLIC tRNAClientAppModule timbuktu_client_mod =
 {
     .name = "TIMBUKTU",
     .proto = IPPROTO_TCP,
@@ -123,7 +124,7 @@ static CLIENT_APP_RETCODE timbuktu_init(const InitClientAppAPI * const init_api,
         for (i=0; i < sizeof(patterns)/sizeof(*patterns); i++)
         {
             _dpd.debugMsg(DEBUG_LOG,"registering patterns: %s: %d\n",(const char *)patterns[i].pattern, patterns[i].index);
-            init_api->RegisterPattern(&timbuktu_validate, IPPROTO_TCP, patterns[i].pattern, patterns[i].length, patterns[i].index);
+            init_api->RegisterPattern(&timbuktu_validate, IPPROTO_TCP, patterns[i].pattern, patterns[i].length, patterns[i].index, init_api->pAppidConfig);
         }
     }
 
@@ -131,14 +132,15 @@ static CLIENT_APP_RETCODE timbuktu_init(const InitClientAppAPI * const init_api,
 	for (j=0; j < sizeof(appIdRegistry)/sizeof(*appIdRegistry); j++)
 	{
 		_dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[j].appId);
-		init_api->RegisterAppId(&timbuktu_validate, appIdRegistry[j].appId, appIdRegistry[j].additionalInfo, NULL);
+		init_api->RegisterAppId(&timbuktu_validate, appIdRegistry[j].appId, appIdRegistry[j].additionalInfo, init_api->pAppidConfig);
 	}
 
     return CLIENT_APP_SUCCESS;
 }
 
 static CLIENT_APP_RETCODE timbuktu_validate(const uint8_t *data, uint16_t size, const int dir,
-                                        FLOW *flowp, const SFSnortPacket *pkt, struct _Detector *userData)
+                                        tAppIdData *flowp, SFSnortPacket *pkt, struct _Detector *userData,
+                                        const struct appIdConfig_ *pConfig)
 {
     ClientTIMBUKTUData *fd;
     uint16_t offset;
@@ -146,13 +148,13 @@ static CLIENT_APP_RETCODE timbuktu_validate(const uint8_t *data, uint16_t size, 
     if (dir != APP_ID_FROM_INITIATOR)
         return CLIENT_APP_INPROCESS;
 
-    fd = timbuktu_client_mod.api->data_get(flowp);
+    fd = timbuktu_client_mod.api->data_get(flowp, timbuktu_client_mod.flow_data_index);
     if (!fd)
     {
         fd = calloc(1, sizeof(*fd));
         if (!fd)
             return CLIENT_APP_ENOMEM;
-        if (timbuktu_client_mod.api->data_add(flowp, fd, &free))
+        if (timbuktu_client_mod.api->data_add(flowp, fd, timbuktu_client_mod.flow_data_index, &free))
         {
             free(fd);
             return CLIENT_APP_ENOMEM;
@@ -226,7 +228,7 @@ inprocess:
 
 done:
     timbuktu_client_mod.api->add_app(flowp, APP_ID_TIMBUKTU, APP_ID_TIMBUKTU, NULL);
-    flow_mark(flowp, FLOW_CLIENTAPPDETECTED);
+    setAppIdFlag(flowp, APPID_SESSION_CLIENT_DETECTED);
     return CLIENT_APP_SUCCESS;
 }
 

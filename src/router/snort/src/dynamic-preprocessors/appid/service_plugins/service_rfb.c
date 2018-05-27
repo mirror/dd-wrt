@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -26,6 +26,7 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 
+#include "appInfoTable.h"
 #include "flow.h"
 #include "service_api.h"
 
@@ -34,15 +35,16 @@
 #define RFB_BANNER "RFB "
 
 static int rfb_init(const InitServiceAPI * const init_api);
-MakeRNAServiceValidationPrototype(rfb_validate);
+static int rfb_validate(ServiceValidationArgs* args);
 
-static RNAServiceElement svc_element =
+static tRNAServiceElement svc_element =
 {
     .next = NULL,
     .validate = &rfb_validate,
     .detectorType = DETECTOR_TYPE_DECODER,
     .name = "rfb",
     .ref_count = 1,
+    .current_ref_count = 1,
 };
 
 static RNAServiceValidationPort pp[] =
@@ -58,7 +60,7 @@ static RNAServiceValidationPort pp[] =
     {NULL, 0, 0}
 };
 
-RNAServiceValidationModule rfb_service_mod =
+tRNAServiceValidationModule rfb_service_mod =
 {
     "RFB",
     &rfb_init,
@@ -73,27 +75,29 @@ static tAppRegistryEntry appIdRegistry[] =
 
 static int rfb_init(const InitServiceAPI * const init_api)
 {
-    init_api->RegisterPattern(&rfb_validate, IPPROTO_TCP, (uint8_t *)RFB_BANNER, sizeof(RFB_BANNER)-1, 0, "rfb");
+    init_api->RegisterPattern(&rfb_validate, IPPROTO_TCP, (uint8_t *)RFB_BANNER, sizeof(RFB_BANNER)-1, 0, "rfb", init_api->pAppidConfig);
 	unsigned i;
 	for (i=0; i < sizeof(appIdRegistry)/sizeof(*appIdRegistry); i++)
 	{
 		_dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[i].appId);
-		init_api->RegisterAppId(&rfb_validate, appIdRegistry[i].appId, appIdRegistry[i].additionalInfo, NULL);
+		init_api->RegisterAppId(&rfb_validate, appIdRegistry[i].appId, appIdRegistry[i].additionalInfo, init_api->pAppidConfig);
 	}
 
     return 0;
 }
 
-MakeRNAServiceValidationPrototype(rfb_validate)
+static int rfb_validate(ServiceValidationArgs* args)
 {
     char version[RFB_BANNER_SIZE-4];
     unsigned i;
     char *v;
     const unsigned char *p;
+    tAppIdData *flowp = args->flowp;
+    const uint8_t *data = args->data;
+    uint16_t size = args->size;
 
-    if (!data || !rfb_service_mod.api || !flowp || !pkt) return SERVICE_ENULL;
     if (!size) goto inprocess;
-    if (dir != APP_ID_FROM_RESPONDER) goto inprocess;
+    if (args->dir != APP_ID_FROM_RESPONDER) goto inprocess;
 
     if (size != RFB_BANNER_SIZE) goto fail;
     if (strncmp(RFB_BANNER, (char *)data, sizeof(RFB_BANNER)-1)) goto fail;
@@ -112,16 +116,17 @@ MakeRNAServiceValidationPrototype(rfb_validate)
         p++;
     }
     *v = 0;
-    rfb_service_mod.api->add_service(flowp, pkt, dir, &svc_element,
-                                     APP_ID_VNC_RFB, NULL, version, NULL);
+    rfb_service_mod.api->add_service(flowp, args->pkt, args->dir, &svc_element,
+                                     APP_ID_VNC_RFB, NULL, version, NULL, NULL);
     return SERVICE_SUCCESS;
 
 inprocess:
-    rfb_service_mod.api->service_inprocess(flowp, pkt, dir, &svc_element);
+    rfb_service_mod.api->service_inprocess(flowp, args->pkt, args->dir, &svc_element, NULL);
     return SERVICE_INPROCESS;
 
 fail:
-    rfb_service_mod.api->fail_service(flowp, pkt, dir, &svc_element);
+    rfb_service_mod.api->fail_service(flowp, args->pkt, args->dir, &svc_element,
+                                      rfb_service_mod.flow_data_index, args->pConfig, NULL);
     return SERVICE_NOMATCH;
 }
 

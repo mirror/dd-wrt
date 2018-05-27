@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2004-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -47,7 +47,7 @@ int StreamFlushTalker(Packet *p, SessionControlBlock *scb);
 int StreamFlushClient(Packet *p, SessionControlBlock *scb);
 int StreamFlushServer(Packet *p, SessionControlBlock *scb);
 void TcpUpdateDirection(SessionControlBlock *ssn, char dir,
-        snort_ip_p ip, uint16_t port);
+        sfaddr_t* ip, uint16_t port);
 void StreamTcpSessionClear(Packet *p);
 SessionControlBlock *GetLWTcpSession(const SessionKey *key);
 int GetTcpRebuiltPackets(Packet *p, SessionControlBlock *ssn,
@@ -67,15 +67,15 @@ char StreamGetReassemblyFlushPolicyTcp(SessionControlBlock *scb, char dir);
 char StreamIsStreamSequencedTcp(SessionControlBlock *scb, char dir);
 int StreamMissingInReassembledTcp(SessionControlBlock *scb, char dir);
 char StreamPacketsMissingTcp(SessionControlBlock *scb, char dir);
-void s5TcpSetPortFilterStatus(struct _SnortConfig *sc, 
+void s5TcpSetPortFilterStatus(struct _SnortConfig *sc,
         unsigned short port, uint16_t status, tSfPolicyId policyId, int parsing );
-void s5TcpUnsetPortFilterStatus( struct _SnortConfig *sc, unsigned short port, uint16_t status, 
+void s5TcpUnsetPortFilterStatus( struct _SnortConfig *sc, unsigned short port, uint16_t status,
         tSfPolicyId policyId, int parsing );
 int s5TcpGetPortFilterStatus( struct _SnortConfig *sc, unsigned short port, tSfPolicyId policyId, int parsing );
 void s5TcpSetSynSessionStatus(struct _SnortConfig *sc, uint16_t status, tSfPolicyId policyId, int parsing);
 void s5TcpUnsetSynSessionStatus(struct _SnortConfig *sc, uint16_t status, tSfPolicyId policyId, int parsing);
 void StreamTcpConfigFree(StreamTcpConfig *);
-void **StreamGetPAFUserDataTcp(SessionControlBlock*, bool to_server);
+void **StreamGetPAFUserDataTcp(SessionControlBlock*, bool to_server, uint8_t id);
 bool StreamIsPafActiveTcp(SessionControlBlock*, bool to_server);
 bool StreamActivatePafTcp (SessionControlBlock *scb, int dir, int16_t service_port, uint8_t type);
 void StreamResetPolicyTcp(SessionControlBlock*, int dir, uint16_t policy, uint16_t mss);
@@ -85,6 +85,7 @@ bool StreamIsSessionDecryptedTcp( SessionControlBlock *scb );
 uint32_t StreamGetTcpPrunes(void);
 void StreamResetTcpPrunes(void);
 void enableRegisteredPortsForReassembly( struct _SnortConfig *sc );
+uint32_t StreamGetPreprocFlagsTcp(SessionControlBlock *scb);
 
 #ifdef NORMALIZER
 void Stream_PrintNormalizationStats(void);
@@ -95,5 +96,14 @@ void StreamPostConfigTcp(struct _SnortConfig *sc, void*);
 
 void registerPortForReassembly( char *network, uint16_t port, int reassembly_direction );
 void unregisterPortForReassembly( char *network, uint16_t port, int reassembly_direction );
+Packet* getWirePacketTcp();
+uint8_t getFlushPolicyDirTcp();
+bool StreamIsSessionHttp2Tcp( SessionControlBlock *scb );
+void StreamSetSessionHttp2Tcp( SessionControlBlock *scb );
+bool StreamIsSessionHttp2UpgTcp( SessionControlBlock *scb );
+void StreamSetSessionHttp2UpgTcp( SessionControlBlock *scb );
+
+void SessionTCPReload(uint32_t max_sessions, uint16_t pruningTimeout, uint16_t nominalTimeout);
+unsigned SessionTCPReloadAdjust(unsigned maxWork);
 
 #endif /* STREAM_TCP_H_ */

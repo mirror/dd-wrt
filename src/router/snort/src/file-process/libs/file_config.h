@@ -1,7 +1,7 @@
 /*
 **
 **
-**  Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+**  Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 **  Copyright (C) 2012-2013 Sourcefire, Inc.
 **
 **  This program is free software; you can redistribute it and/or modify
@@ -60,14 +60,14 @@ typedef struct _fileConfig
 } FileConfig;
 
 /* Return all rule id's that match a a given "type" string.  */
-bool get_ids_from_type( const void * conf, const char * type, uint32_t ** ids, uint32_t * count );
+bool get_ids_from_type( const FileConfig* conf, const char * type, uint32_t ** ids, uint32_t * count );
 
 /* Return all rule id's that match a a given "type" and "version" strings.  */
-bool get_ids_from_type_version( const void * conf, const char * type, const char * version,
+bool get_ids_from_type_version( const FileConfig* conf, const char * type, const char * version,
         uint32_t ** ids, uint32_t * count );
 
 /* Return all rule id's in a given file rule group. */
-bool get_ids_from_group( const void * conf, const char * group, uint32_t ** ids, uint32_t * count );
+bool get_ids_from_group( const FileConfig* conf, const char * group, uint32_t ** ids, uint32_t * count );
 
 /*
  * Parse file magic rule
@@ -76,7 +76,7 @@ bool get_ids_from_group( const void * conf, const char * group, uint32_t ** ids,
  *   char *args: file magic rule string
  *   void *file_config: pointer to file config
  */
-void file_rule_parse(char *args, void *file_config);
+void file_rule_parse(char *args, FileConfig* file_config);
 
 /*
  * Get rule information
@@ -85,13 +85,13 @@ void file_rule_parse(char *args, void *file_config);
  *   void *file_config: pointer to file config
  *   uint32_t rule_id: file rule ID
  */
-RuleInfo *file_rule_get(void *conf, uint32_t rule_id);
+RuleInfo *file_rule_get(FileConfig* conf, uint32_t rule_id);
 
 /* Free resource used by file rules
  *
  * Args:
  *   void *file_config: pointer to file config
  */
-void file_rule_free(void* conf);
+void file_rule_free(FileConfig* conf);
 #endif
 

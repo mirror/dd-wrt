@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -244,7 +244,7 @@ void SetupReact(void)
 {
     RegisterRuleOption("react", React_Init, NULL, OPT_TYPE_ACTION, NULL);
 #ifdef PERF_PROFILING
-    RegisterPreprocessorProfile("react", &reactPerfStats, 3, &ruleOTNEvalPerfStats);
+    RegisterPreprocessorProfile("react", &reactPerfStats, 3, &ruleOTNEvalPerfStats, NULL);
 #endif
 }
 
@@ -447,6 +447,16 @@ static int React_Queue (Packet* p, void* pv)
         Active_QueueResponse(React_Send, rd);
 
     Active_DropSession(p);
+    if (pkt_trace_enabled)
+    {
+        if (rd && rd->otn)
+            addPktTraceData(VERDICT_REASON_REACT, snprintf(trace_line, MAX_TRACE_LINE,
+                "Snort React: web page %s, gid %u, sid %u, %s\n", Active_IsRSTCandidate(p)? "is sent" : "isn't sent",
+                rd->otn->sigInfo.generator, rd->otn->sigInfo.id, getPktTraceActMsg()));
+        else addPktTraceData(VERDICT_REASON_REACT, snprintf(trace_line, MAX_TRACE_LINE,
+                "Snort React: web page %s, %s\n", Active_IsRSTCandidate(p)? "is sent" : "isn't sent", getPktTraceActMsg()));
+    }
+    else addPktTraceData(VERDICT_REASON_REACT, 0);
 
     PREPROC_PROFILE_END(reactPerfStats);
     return 0;
@@ -458,16 +468,23 @@ static void React_Send (Packet* p,  void* pv)
 {
     ReactData* rd = (ReactData*)pv;
     EncodeFlags df = (p->packet_flags & PKT_FROM_SERVER) ? ENC_FLAG_FWD : 0;
-    EncodeFlags rf = ENC_FLAG_SEQ | (ENC_FLAG_VAL & rd->buf_len);
+    EncodeFlags sent = rd->buf_len;
+    EncodeFlags rf;
     PROFILE_VARS;
 
     PREPROC_PROFILE_START(reactPerfStats);
     Active_IgnoreSession(p);
 
     if (p->packet_flags & PKT_STREAM_EST)
+    {
         Active_SendData(p, df, (uint8_t*)rd->resp_buf, rd->buf_len);
+        // Active_SendData sends a FIN, so need to bump seq by 1.
+        sent++;
+    }
+    rf = df ^ ENC_FLAG_FWD;
+    df |= ENC_FLAG_SEQ | (ENC_FLAG_VAL & sent);
+    Active_SendReset(p, df);
     Active_SendReset(p, rf);
-    Active_SendReset(p, ENC_FLAG_FWD);
 
     PREPROC_PROFILE_END(reactPerfStats);
 }

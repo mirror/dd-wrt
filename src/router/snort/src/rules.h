@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -138,18 +138,6 @@ typedef struct _ActivateListNode
 
 } ActivateListNode;
  
-
-#if 0 /* RELOCATED to parser/IpAddrSet.h */
-typedef struct _IpAddrSet
-{
-    uint32_t ip_addr;   /* IP addr */
-    uint32_t netmask;   /* netmask */
-    uint8_t  addr_flags; /* flag for normal/exception processing */
-
-    struct _IpAddrSet *next;
-} IpAddrSet;
-#endif /* RELOCATED to parser/IpAddrSet.h */
-
 struct _RuleListNode;
 
 typedef struct _ListHead

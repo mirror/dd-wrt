@@ -2,7 +2,7 @@
 /*
 ** file_decomp.h
 **
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License Version 2 as
@@ -28,6 +28,7 @@
 
 //#include <stdint.h>
 #include <string.h>
+#include "sf_types.h"
 #include "mempool.h"
 
 /* File_Decomp global typedefs (used in child objects) */
@@ -101,7 +102,7 @@ typedef struct fd_config_s
 
 struct fd_session_s
 {
-    uint8_t *Next_In;   /* next input byte */
+    const uint8_t *Next_In;   /* next input byte */
     uint32_t Avail_In;  /* number of bytes available at next_in */
     uint32_t Total_In;  /* total number of input bytes read so far */
 
@@ -148,7 +149,7 @@ struct fd_session_s
 
 #ifndef SYNC_IN
 #define SYNC_IN(dest) \
-    dest->next_in = SessionPtr->Next_In; \
+    dest->next_in = (uint8_t*)SessionPtr->Next_In; \
     dest->avail_in = SessionPtr->Avail_In; \
     dest->total_in = SessionPtr->Total_In; \
     dest->next_out = SessionPtr->Next_Out; \
@@ -158,7 +159,7 @@ struct fd_session_s
 
 #ifndef SYNC_OUT
 #define SYNC_OUT(src) \
-    SessionPtr->Next_In = (uint8_t *)src->next_in; \
+    SessionPtr->Next_In = src->next_in; \
     SessionPtr->Avail_In = src->avail_in; \
     SessionPtr->Total_In = src->total_in; \
     SessionPtr->Next_Out = (uint8_t *)src->next_out; \
@@ -193,7 +194,7 @@ static inline bool Get_1( fd_session_p_t SessionPtr, uint8_t *c )
         return( false );
 }
 
-static inline bool Get_N( fd_session_p_t SessionPtr, uint8_t **c, uint16_t N )
+static inline bool Get_N( fd_session_p_t SessionPtr, const uint8_t **c, uint16_t N )
 {
     if( (SessionPtr->Next_In != NULL) && (SessionPtr->Avail_In >= N) )
     {
@@ -254,7 +255,7 @@ static inline bool Move_1( fd_session_p_t SessionPtr )
 
 static inline bool Move_N( fd_session_p_t SessionPtr, uint16_t N )
 {
-    if( (SessionPtr->Next_Out != NULL) && (SessionPtr->Avail_Out >= N) && 
+    if( (SessionPtr->Next_Out != NULL) && (SessionPtr->Avail_Out >= N) &&
         (SessionPtr->Next_In != NULL) && (SessionPtr->Avail_In >= N) )
     {
         strncpy( (char *)SessionPtr->Next_Out, (const char *)SessionPtr->Next_In, N);
@@ -277,8 +278,8 @@ fd_status_t File_Decomp_OneTimeInit();
 fd_status_t File_Decomp_CleanExit();
 
 fd_status_t File_Decomp_Config( fd_config_p_t ConfigPtr );
- 
-fd_session_p_t File_Decomp_New();
+
+fd_session_p_t File_Decomp_New(void* ssnptr);
 
 fd_status_t File_Decomp_Init( fd_session_p_t SessionPtr );
 

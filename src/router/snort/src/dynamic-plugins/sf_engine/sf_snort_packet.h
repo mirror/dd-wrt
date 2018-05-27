@@ -16,7 +16,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * Author: Steve Sturges
@@ -44,6 +44,7 @@
 
 #include "sf_ip.h"
 #include "sf_protocols.h"
+#include "preprocids.h"
 
 #define VLAN_HDR_LEN  4
 
@@ -70,6 +71,26 @@ typedef struct _VlanHeader
 #define ETHERNET_TYPE_IP    0x0800
 #define ETHERNET_TYPE_IPV6  0x86dd
 #define ETHERNET_TYPE_8021Q 0x8100
+/*
+ * Cisco MetaData header
+ */
+
+typedef struct _CiscoMetaHdr
+{
+    uint8_t version; // This must be 1
+    uint8_t length; //This is the header size in bytes / 8
+} CiscoMetaHdr;
+
+/*
+ * Cisco MetaData header options
+ */
+
+typedef struct _CiscoMetaOpt
+{
+    uint16_t opt_len_type;  /* 3-bit length + 13-bit type. Length of 0 = 4. Type must be 1. */
+    uint16_t sgt;           /* Can be any value except 0xFFFF */
+} CiscoMetaOpt;
+
 
 typedef struct _EtherHeader
 {
@@ -321,6 +342,12 @@ typedef struct _IPv6Extension
     const uint8_t *option_data;
 } IP6Extension;
 
+typedef struct _IPAddresses
+{
+    sfaddr_t ip_src;       /* source IP */
+    sfaddr_t ip_dst;       /* dest IP */
+} IPAddresses;
+
 typedef struct _IPv4Hdr
 {
     uint8_t ip_verhl;      /* version & header length */
@@ -331,8 +358,7 @@ typedef struct _IPv4Hdr
     uint8_t ip_ttl;        /* time to live field */
     uint8_t ip_proto;      /* datagram protocol */
     uint16_t ip_csum;      /* checksum */
-    sfip_t ip_src;          /* source IP */
-    sfip_t ip_dst;          /* dest IP */
+    IPAddresses* ip_addrs; /* IP addresses*/
 } IP4Hdr;
 
 typedef struct _IP6RawHdr
@@ -360,8 +386,7 @@ typedef struct _IPv6Hdr
                          * Uses the same flags as
                          * the IPv4 protocol field */
     uint8_t  hop_lmt;  /* hop limit */
-    sfip_t ip_src;
-    sfip_t ip_dst;
+    IPAddresses* ip_addrs; /* IP addresses*/
 } IP6Hdr;
 
 typedef struct _IP6FragHdr
@@ -394,8 +419,8 @@ struct _SFSnortPacket;
 
 typedef struct _IPH_API
 {
-    sfip_t *    (*iph_ret_src)(const struct _SFSnortPacket *);
-    sfip_t *    (*iph_ret_dst)(const struct _SFSnortPacket *);
+    sfaddr_t * (*iph_ret_src)(const struct _SFSnortPacket *);
+    sfaddr_t * (*iph_ret_dst)(const struct _SFSnortPacket *);
     uint16_t   (*iph_ret_tos)(const struct _SFSnortPacket *);
     uint8_t    (*iph_ret_ttl)(const struct _SFSnortPacket *);
     uint16_t   (*iph_ret_len)(const struct _SFSnortPacket *);
@@ -405,8 +430,8 @@ typedef struct _IPH_API
     uint8_t    (*iph_ret_ver)(const struct _SFSnortPacket *);
     uint8_t    (*iph_ret_hlen)(const struct _SFSnortPacket *);
 
-    sfip_t *    (*orig_iph_ret_src)(const struct _SFSnortPacket *);
-    sfip_t *    (*orig_iph_ret_dst)(const struct _SFSnortPacket *);
+    sfaddr_t * (*orig_iph_ret_src)(const struct _SFSnortPacket *);
+    sfaddr_t * (*orig_iph_ret_dst)(const struct _SFSnortPacket *);
     uint16_t   (*orig_iph_ret_tos)(const struct _SFSnortPacket *);
     uint8_t    (*orig_iph_ret_ttl)(const struct _SFSnortPacket *);
     uint16_t   (*orig_iph_ret_len)(const struct _SFSnortPacket *);
@@ -455,6 +480,23 @@ typedef struct _MplsHdr
     uint8_t  ttl;
 } MplsHdr;
 
+typedef struct _H2PriSpec
+{
+    uint32_t stream_id;
+    uint32_t weight;
+    uint8_t  exclusive;
+} H2PriSpec;
+
+typedef struct _H2Hdr
+{
+    uint32_t length;
+    uint32_t stream_id;
+    uint8_t  type;
+    uint8_t  flags;
+    uint8_t  reserved;
+    H2PriSpec pri;
+} H2Hdr;
+
 #define MAX_PROTO_LAYERS 32
 
 typedef struct {
@@ -466,6 +508,12 @@ typedef struct {
 // for backwards compatibility with VRT .so rules
 #define stream_session_ptr stream_session
 
+// forward declaration for snort list management type
+struct sfSDList;
+
+// forward declaration for snort expected session created due to this packet.
+struct _ExpectNode;
+
 typedef struct _SFSnortPacket
 {
     const SFDAQ_PktHdr_t *pkt_header; /* Is this GPF'd? */
@@ -473,12 +521,13 @@ typedef struct _SFSnortPacket
 
     void *ether_arp_header;
     const EtherHeader *ether_header;
-    const void *vlan_tag_header;
+    const VlanHeader *vlan_tag_header;
     void *ether_header_llc;
     void *ether_header_other;
     const void *ppp_over_ether_header;
     const void *gre_header;
     uint32_t *mpls;
+    const CiscoMetaHdr *cmdh;                /* Cisco Metadata Header */
 
     const IPV4Header *ip4_header, *orig_ip4_header;
     const IPV4Header *inner_ip4_header;
@@ -509,10 +558,9 @@ typedef struct _SFSnortPacket
     int orig_family;
     int outer_family;
 
-    uint32_t preprocessor_bit_mask;
-    uint32_t preproc_reassembly_pkt_bit_mask;
+    PreprocEnableMask preprocessor_bit_mask;
 
-    uint32_t flags;
+    uint64_t flags;
 
     uint32_t xtradata_mask;
 
@@ -582,6 +630,7 @@ typedef struct _SFSnortPacket
     IPOptions ip_options[MAX_IP_OPTIONS];
     TCPOptions tcp_options[MAX_TCP_OPTIONS];
     IP6Extension *ip6_extensions;
+    CiscoMetaOpt *cmd_options;    /* Cisco Metadata header options */
 
     const uint8_t *ip_frag_start;
     const uint8_t *ip4_options_data;
@@ -590,12 +639,15 @@ typedef struct _SFSnortPacket
     const IP6RawHdr* raw_ip6_header;
     ProtoLayer proto_layers[MAX_PROTO_LAYERS];
 
+    IPAddresses inner_ips, inner_orig_ips;
     IP4Hdr inner_ip4h, inner_orig_ip4h;
     IP6Hdr inner_ip6h, inner_orig_ip6h;
+    IPAddresses outer_ips, outer_orig_ips;
     IP4Hdr outer_ip4h, outer_orig_ip4h;
     IP6Hdr outer_ip6h, outer_orig_ip6h;
 
     MplsHdr mplsHdr;
+    H2Hdr   *h2Hdr;
 
     PseudoPacketType pseudo_type;
     uint16_t max_payload;
@@ -610,8 +662,11 @@ typedef struct _SFSnortPacket
 
     uint8_t ps_proto;  /* Used for portscan and unified2 logging */
 
-    uint8_t ips_os_selected; 
+    uint8_t ips_os_selected;
     void    *cur_pp;
+
+    // Expected session created due to this packet.
+    struct _ExpectNode* expectedSession;
 } SFSnortPacket;
 
 #define IP_INNER_LAYER   1
@@ -694,7 +749,10 @@ typedef struct _SFSnortPacket
 #define FLAG_IPREP_SOURCE_TRIGGERED  0x08000000
 #define FLAG_IPREP_DATA_SET          0x10000000
 #define FLAG_FILE_EVENT_SET          0x20000000
-/* 0x40000000 are available */
+#define FLAG_EARLY_REASSEMBLY 0x40000000  /* this packet. part of the expected stream, should have stream reassembly set */
+#define FLAG_RETRANSMIT       0x80000000  /* this packet is identified as re-transmitted one */
+#define FLAG_PURGE            0x0100000000 /* Stream will not flush the data */
+
 
 #define FLAG_PDU_FULL (FLAG_PDU_HEAD | FLAG_PDU_TAIL)
 
@@ -731,7 +789,7 @@ static inline int PacketHasStartOfPDU (const SFSnortPacket* p)
 
 static inline int PacketHasPAFPayload (const SFSnortPacket* p)
 {
-    return ( (p->flags & FLAG_REBUILT_STREAM) || PacketHasFullPDU(p) );
+    return ( (p->flags & FLAG_REBUILT_STREAM) || (p->flags & FLAG_PDU_TAIL) );
 }
 
 static inline void SetExtraData (SFSnortPacket* p, uint32_t xid)

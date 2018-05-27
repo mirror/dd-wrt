@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -45,15 +45,16 @@ typedef struct _SERVICE_RLOGIN_DATA
 } ServiceRLOGINData;
 
 static int rlogin_init(const InitServiceAPI * const init_api);
-MakeRNAServiceValidationPrototype(rlogin_validate);
+static int rlogin_validate(ServiceValidationArgs* args);
 
-static RNAServiceElement svc_element =
+static tRNAServiceElement svc_element =
 {
     .next = NULL,
     .validate = &rlogin_validate,
     .detectorType = DETECTOR_TYPE_DECODER,
     .name = "rlogin",
     .ref_count = 1,
+    .current_ref_count = 1,
 };
 
 static RNAServiceValidationPort pp[] =
@@ -62,7 +63,7 @@ static RNAServiceValidationPort pp[] =
     {NULL, 0, 0}
 };
 
-RNAServiceValidationModule rlogin_service_mod =
+tRNAServiceValidationModule rlogin_service_mod =
 {
     "RLOGIN",
     &rlogin_init,
@@ -77,28 +78,32 @@ static int rlogin_init(const InitServiceAPI * const init_api)
 	for (i=0; i < sizeof(appIdRegistry)/sizeof(*appIdRegistry); i++)
 	{
 		_dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[i].appId);
-		init_api->RegisterAppId(&rlogin_validate, appIdRegistry[i].appId, appIdRegistry[i].additionalInfo, NULL);
+		init_api->RegisterAppId(&rlogin_validate, appIdRegistry[i].appId, appIdRegistry[i].additionalInfo, init_api->pAppidConfig);
 	}
 
     return 0;
 }
 
-MakeRNAServiceValidationPrototype(rlogin_validate)
+static int rlogin_validate(ServiceValidationArgs* args)
 {
     ServiceRLOGINData *rd;
+    tAppIdData *flowp = args->flowp;
+    SFSnortPacket *pkt = args->pkt; 
+    const uint8_t *data = args->data;
+    uint16_t size = args->size;
 
     if (!size)
         goto inprocess;
-    if (dir != APP_ID_FROM_RESPONDER)
+    if (args->dir != APP_ID_FROM_RESPONDER)
         goto inprocess;
 
-    rd = rlogin_service_mod.api->data_get(flowp);
+    rd = rlogin_service_mod.api->data_get(flowp, rlogin_service_mod.flow_data_index);
     if (!rd)
     {
         rd = calloc(1, sizeof(*rd));
         if (!rd)
             return SERVICE_ENOMEM;
-        if (rlogin_service_mod.api->data_add(flowp, rd, &free))
+        if (rlogin_service_mod.api->data_add(flowp, rd, rlogin_service_mod.flow_data_index, &free))
         {
             free(rd);
             return SERVICE_ENOMEM;
@@ -142,16 +147,17 @@ MakeRNAServiceValidationPrototype(rlogin_validate)
     }
 
 inprocess:
-    rlogin_service_mod.api->service_inprocess(flowp, pkt, dir, &svc_element);
+    rlogin_service_mod.api->service_inprocess(flowp, pkt, args->dir, &svc_element, NULL);
     return SERVICE_INPROCESS;
 
 success:
-    rlogin_service_mod.api->add_service(flowp, pkt, dir, &svc_element,
-                                        APP_ID_RLOGIN, NULL, NULL, NULL);
+    rlogin_service_mod.api->add_service(flowp, pkt, args->dir, &svc_element,
+                                        APP_ID_RLOGIN, NULL, NULL, NULL, NULL);
     return SERVICE_SUCCESS;
 
 fail:
-    rlogin_service_mod.api->fail_service(flowp, pkt, dir, &svc_element);
+    rlogin_service_mod.api->fail_service(flowp, pkt, args->dir, &svc_element,
+                                         rlogin_service_mod.flow_data_index, args->pConfig, NULL);
     return SERVICE_NOMATCH;
 }
 

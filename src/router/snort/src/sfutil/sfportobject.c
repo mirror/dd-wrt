@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -216,7 +216,9 @@
 static
 int PortObject_keycmp( const void *a , const void *b, size_t n )
 {
+#ifdef WIN32
     n = n;
+#endif
     return !PortObjectEqual( *(PortObject**)a, *(PortObject**)b );
 }
 
@@ -281,7 +283,9 @@ unsigned plx_hash( SFHASHFCN * p, unsigned char *d, int n )
     int i;
     plx_t* plx;
 
+#ifdef WIN32
     n = n;  /* To silence a Win32 warning */
+#endif
 
     plx = *(plx_t**)d;
 
@@ -325,7 +329,9 @@ int plx_keycmp( const void *a , const void *b, size_t n )
     plx_t * pla = *(plx_t**)a;
     plx_t * plb = *(plx_t**)b;
 
+#ifdef WIN32
     n = n;  /* To silence a Win32 warning */
+#endif
 
     if( pla->n < plb->n ) return -1;
 
@@ -736,7 +742,7 @@ PortObject2 * PortObject2Dup( PortObject * po )
 
     if( !ponew->name )
     {
-        free( ponew );
+        PortObject2Free(ponew);
         return NULL;
     }
 
@@ -749,7 +755,10 @@ PortObject2 * PortObject2Dup( PortObject * po )
       {
         poinew = PortObjectItemDup( poi );
         if(!poinew)
+        {
+              PortObject2Free(ponew);
               return 0;
+        }
 
         PortObjectAddItem( (PortObject*)ponew, poinew, NULL );
       }
@@ -765,6 +774,7 @@ PortObject2 * PortObject2Dup( PortObject * po )
               prule = calloc(1,sizeof(int));
               if(!prule)
               {
+                 PortObject2Free(ponew);
                  return NULL;
               }
               *prule = *prid;
@@ -1779,7 +1789,9 @@ unsigned PortObject_hash( SFHASHFCN * p, unsigned char *d, int n )
     PortObject     * po;
     SF_LNODE       * pos;
 
+#ifdef WIN32
     n = n; /* This quiets a Win32 warning */
+#endif
 
     po = *(PortObject**) d;
 
@@ -3674,7 +3686,7 @@ char * PortObjectParseError( POParser * pop )
     {
     case POPERR_NO_NAME:            return "no name";
     case POPERR_NO_ENDLIST_BRACKET: return "no end of list bracket."
-                                           " Elements must be comma seperated,"
+                                           " Elements must be comma separated,"
                                            " and no spaces may appear between"
                                            " brackets.";
     case POPERR_NOT_A_NUMBER:       return "not a number";
@@ -3853,7 +3865,7 @@ int main( int argc, char ** argv )
         //LogMessage("PortObject : '%s' \n",portlist);
 
         /*
-        This is seperate fom PortVar's since some rules may declare these inline
+        This is separate from PortVar's since some rules may declare these inline
         */
         po = PortObjectParseString ( pvTable, &pop, argv[i], PORTLISTS, names/* bool 0/1 - name required in parse */);
         if( !po )

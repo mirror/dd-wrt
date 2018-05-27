@@ -1,7 +1,7 @@
 /* $Id */
 
 /*
- ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2011-2013 Sourcefire, Inc.
  **
  **
@@ -84,14 +84,12 @@ static void ReputationMain( void*, void* );
 static void ReputationFreeConfig(tSfPolicyUserContextId);
 static void ReputationPrintStats(int);
 static void ReputationCleanExit(int, void *);
-static inline IPrepInfo*  ReputationLookup(snort_ip_p ip);
+static inline IPrepInfo*  ReputationLookup(sfaddr_t* ip);
 static inline IPdecision GetReputation(IPrepInfo *, SFSnortPacket *, uint32_t *);
-
 #ifdef SHARED_REP
-Swith_State switch_state = NO_SWITCH;
-int available_segment = NO_DATASEG;
 static void ReputationMaintenanceCheck(int, void *);
 #endif
+
 /********************************************************************
  * Global variables
  ********************************************************************/
@@ -100,10 +98,15 @@ Reputation_Stats reputation_stats;
 ReputationConfig *reputation_eval_config;
 tSfPolicyUserContextId reputation_config;
 ReputationConfig *pDefaultPolicyConfig = NULL;
+#ifdef SHARED_REP
+Swith_State switch_state = NO_SWITCH;
+int available_segment = NO_DATASEG;
+#endif
+static uint8_t reputation_update_count;
 
 #ifdef SNORT_RELOAD
 static void ReputationReload(struct _SnortConfig *, char *, void **);
-static void * ReputationReloadSwap(struct _SnortConfig *, void *);
+static void *ReputationReloadSwap(struct _SnortConfig *, void *);
 static void ReputationReloadSwapFree(void *);
 static int ReputationReloadVerify(struct _SnortConfig *, void *);
 #endif
@@ -141,7 +144,7 @@ static int Reputation_MgmtInfo(uint16_t type, const uint8_t *data,
 static int Reputation_Lookup(uint16_t type, const uint8_t *data, uint32_t length, void **new_config,
         char *statusBuf, int statusBufLen)
 {
-    snort_ip addr;
+    sfaddr_t addr;
     IPrepInfo *repInfo = NULL;
     char *tokstr, *save, *data_copy;
     CSMessageDataHeader *msg_hdr = (CSMessageDataHeader *)data;
@@ -175,14 +178,14 @@ static int Reputation_Lookup(uint16_t type, const uint8_t *data, uint32_t length
     }
 
     /* Convert tokstr to sfip type */
-    if (sfip_pton(tokstr, IP_ARG(addr)))
+    if (sfaddr_pton(tokstr, &addr) != SFIP_SUCCESS)
     {
         free(data_copy);
         return -1;
     }
 
     /* Get the reputation info */
-    repInfo = ReputationLookup(IP_ARG(addr));
+    repInfo = ReputationLookup(&addr);
     if (!repInfo)
     {
         snprintf(statusBuf, statusBufLen,
@@ -335,7 +338,7 @@ static int Reputation_Control(uint16_t type, void *new_config, void **old_config
     }
     if (switch_state == NO_SWITCH)
         return 0;
-    
+
     switch_state = NO_SWITCH;
     return -1;
 }
@@ -369,6 +372,7 @@ static void ReputationMaintenanceCheck(int signal, void *data)
 {
     DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION, "Reputation Preprocessor Maintenance!\n"););
     PrintShmemMgmtInfo();
+    reputation_eval_config = sfPolicyUserDataGetDefault(reputation_config);
     if (SHMEM_SERVER_ID == _dpd.getSnortInstance())
     {
         ManageUnusedSegments();
@@ -378,13 +382,17 @@ static void ReputationMaintenanceCheck(int signal, void *data)
         {
             _dpd.logMsg("    Reputation Preprocessor: Instance %d switched to segment_version %d\n",
                     _dpd.getSnortInstance(), available_segment);
+            // Increment iprep update counter
+            reputation_update_count++;
+            // set snort's iprep counter
+            _dpd.setIPRepUpdateCount(reputation_update_count);
             UnmapInactiveSegments();
             switch_state = NO_SWITCH;
         }
     }
     else
     {
-        if ((NO_SWITCH == switch_state)&&((available_segment = CheckForSharedMemSegment()) >= 0))
+        if ((NO_SWITCH == switch_state)&&((available_segment = CheckForSharedMemSegment(reputation_eval_config->sharedMem.maxInstances)) >= 0))
         {
             DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION,"***Switched to segment_version %d ",available_segment););
             SwitchToActiveSegment(available_segment, &IPtables);
@@ -397,6 +405,9 @@ static void ReputationMaintenanceCheck(int signal, void *data)
         {
             _dpd.logMsg("    Reputation Preprocessor: Instance %d switched to segment_version %d\n",
                     _dpd.getSnortInstance(), available_segment);
+            // Increment iprep counter
+            reputation_update_count++;
+	    _dpd.setIPRepUpdateCount (reputation_update_count);
             UnmapInactiveSegments();
             switch_state = NO_SWITCH;
         }
@@ -464,7 +475,7 @@ static void ReputationInit(struct _SnortConfig *sc, char *argp)
         _dpd.addPreprocExit(ReputationCleanExit, NULL, PRIORITY_LAST, PP_REPUTATION);
 
 #ifdef PERF_PROFILING
-        _dpd.addPreprocProfileFunc("reputation", (void *)&reputationPerfStats, 0, _dpd.totalPerfStats);
+        _dpd.addPreprocProfileFunc("reputation", (void *)&reputationPerfStats, 0, _dpd.totalPerfStats, NULL);
 #endif
 
     }
@@ -509,7 +520,7 @@ static void ReputationInit(struct _SnortConfig *sc, char *argp)
         IPtables = &pPolicyConfig->localSegment;
 
 #ifdef SHARED_REP
-    if (pPolicyConfig->sharedMem.path)
+    if (pPolicyConfig->sharedMem.path && (!_dpd.isTestMode()))
         _dpd.addPostConfigFunc(sc, initShareMemory, pPolicyConfig);
 #endif
 
@@ -611,14 +622,14 @@ static inline IPdecision GetReputation(  IPrepInfo * repInfo,
  * Lookup the iplist table.
  *
  * Arguments:
- *  snort_ip_p  - ip to be searched
+ *  sfaddr_t*  - ip to be searched
  *
  * Returns:
  *
  *   IPrepInfo * - The reputation information in the table
  *
  *********************************************************************/
-static inline IPrepInfo*  ReputationLookup(snort_ip_p ip)
+static inline IPrepInfo*  ReputationLookup(sfaddr_t* ip)
 {
     IPrepInfo * result;
 
@@ -634,7 +645,7 @@ static inline IPrepInfo*  ReputationLookup(snort_ip_p ip)
     }
 
 
-    result = (IPrepInfo *) sfrt_flat_dir8x_lookup((void *)ip, reputation_eval_config->iplist );
+    result = (IPrepInfo *) sfrt_flat_dir8x_lookup(ip, reputation_eval_config->iplist );
 
 
     return (result);
@@ -658,7 +669,7 @@ static inline IPrepInfo*  ReputationLookup(snort_ip_p ip)
  *********************************************************************/
 static inline IPdecision ReputationDecision(SFSnortPacket *p)
 {
-    snort_ip_p ip;
+    sfaddr_t* ip;
     IPdecision decision;
     IPdecision decision_final = DECISION_NULL;
     IPrepInfo *result;
@@ -758,13 +769,18 @@ static inline void ReputationProcess(SFSnortPacket *p)
     }
     else if (BLACKLISTED == decision)
     {
+        uint32_t flags = SSNFLAG_DETECTION_DISABLED;
         ALERT(REPUTATION_EVENT_BLACKLIST,REPUTATION_EVENT_BLACKLIST_STR);
 #ifdef POLICY_BY_ID_ONLY
-        _dpd.inlineForceDropPacket(p);
+        _dpd.inlineForceDropSession(p);
+        flags |= SSNFLAG_FORCE_BLOCK;
+        if (*_dpd.pkt_tracer_enabled)
+            _dpd.addPktTrace(VERDICT_REASON_REPUTATION, snprintf(_dpd.trace, _dpd.traceMax, "Reputation: packet blacklisted, drop\n"));
+        else _dpd.addPktTrace(VERDICT_REASON_REPUTATION, 0);
 #endif
         // disable all preproc analysis and detection for this packet
         _dpd.disablePacketAnalysis(p);
-        _dpd.sessionAPI->set_session_flags( p->stream_session, SSNFLAG_DETECTION_DISABLED );
+        _dpd.sessionAPI->set_session_flags( p->stream_session, flags );
         reputation_stats.blacklisted++;
     }
     else if (MONITORED == decision)
@@ -813,12 +829,15 @@ static void ReputationMain( void* ipacketp, void* contextp )
 
     PREPROC_PROFILE_START(reputationPerfStats);
     ReputationProcess((SFSnortPacket*) ipacketp);
+    // Update the reputation update counter in scb of the packet  with the current iprep update counter
+     _dpd.sessionAPI->set_reputation_update_counter ( ((( SFSnortPacket * ) ipacketp)->stream_session ), reputation_update_count);
 
     // Reputation has processed a packet for this session, no need to process
     // subsequent packets so we turn ourselves off for remainder of session if
     // all detection not already disabled
-    if( ( _dpd.sessionAPI->get_session_flags( ( ( SFSnortPacket * ) ipacketp)->stream_session ) & SSNFLAG_DETECTION_DISABLED ) != SSNFLAG_DETECTION_DISABLED )
+    if( ( _dpd.sessionAPI->get_session_flags( ( ( SFSnortPacket * ) ipacketp)->stream_session ) & SSNFLAG_DETECTION_DISABLED ) != SSNFLAG_DETECTION_DISABLED ) {
         _dpd.sessionAPI->disable_preproc_for_session( ( ( SFSnortPacket * ) ipacketp)->stream_session, PP_REPUTATION );
+    }
 
     DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION, "%s\n", REPUTATION_DEBUG__END_MSG));
 

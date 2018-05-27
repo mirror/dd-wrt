@@ -1,7 +1,7 @@
 /*
  * ftpp_si.c
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2004-2013 Sourcefire, Inc.
  * Steven A. Sturges <ssturges@sourcefire.com>
  * Daniel J. Roelker <droelker@sourcefire.com>
@@ -61,6 +61,7 @@
 #include "snort_ftptelnet.h"
 #include "sfPolicyUserData.h"
 #include "ssl_include.h"
+#include "sfmemcap.h"
 
 #ifndef WIN32
 # include <ctype.h>
@@ -444,8 +445,8 @@ static int FTPInitConf(SFSnortPacket *p, FTPTELNET_GLOBAL_CONF *GlobalConf,
 #ifdef TARGET_BASED
     int16_t app_id = 0;
 #endif
-    snort_ip sip;
-    snort_ip dip;
+    sfaddr_t sip;
+    sfaddr_t dip;
 
     //structure copy
     sip = SiInput->sip;
@@ -668,6 +669,13 @@ static void FTPFreeSession(void *preproc_session)
 
     if (pPolicyConfig != NULL)
     {
+        if (ssn->path)
+        {
+            sfmemcap_free(&pPolicyConfig->mc,ssn->path);
+        }
+        if (ssn->cwd_path)
+            sfmemcap_free(&pPolicyConfig->mc,ssn->cwd_path);
+
         pPolicyConfig->ref_count--;
         if ((pPolicyConfig->ref_count == 0) &&
             (ssn->global_conf != ftp_telnet_config))
@@ -688,6 +696,10 @@ static void FTPFreeSession(void *preproc_session)
 
     if ( ssl_cb )
         ssl_cb->session_free(ssn->flow_id);
+
+    FTP_DATA_SESSION *datassn = ssn->datassn;
+    if(datassn && (ssn == datassn->ftpssn))
+        datassn->ftpssn = NULL;
     free(ssn);
 }
 
@@ -704,6 +716,7 @@ FTP_DATA_SESSION * FTPDataSessionNew(SFSnortPacket *p)
         return NULL;
 
     ftpdata->ft_ssn.proto = FTPP_SI_PROTO_FTP_DATA;
+    ftpdata->flow_id = 0;
 
     /* Get the ftp-ctrl session key */
     ftpdata->ftp_key = _dpd.sessionAPI->get_session_key(p);
@@ -725,9 +738,14 @@ FTP_DATA_SESSION * FTPDataSessionNew(SFSnortPacket *p)
 void FTPDataSessionFree(void *p_ssn)
 {
     FTP_DATA_SESSION *ssn = (FTP_DATA_SESSION *)p_ssn;
+    ssl_callback_interface_t *ssl_cb = (ssl_callback_interface_t *)_dpd.getSSLCallback();
 
     if (!ssn)
         return;
+
+    FTP_SESSION * ftpssn = ssn->ftpssn;
+    if(ftpssn && (ssn == ftpssn->datassn))
+        ftpssn->datassn = NULL;
 
     /* ftp-data key shouldn't exist without this but */
     if (ssn->ftp_key)
@@ -739,6 +757,9 @@ void FTPDataSessionFree(void *p_ssn)
     {
         free(ssn->filename);
     }
+
+    if ( ssl_cb )
+        ssl_cb->session_free(ssn->flow_id);
 
     free(ssn);
 }
@@ -798,9 +819,15 @@ static inline int FTPResetSession(FTP_SESSION *FtpSession)
     IP_CLEAR(FtpSession->serverIP);
     FtpSession->serverPort = 0;
     FtpSession->data_chan_state = NO_STATE;
-    FtpSession->data_chan_index = -1;
-    FtpSession->data_xfer_index = -1;
+    FtpSession->data_chan_index = 0;
+    FtpSession->data_xfer_index = 0;
+    FtpSession->ftp_cmd_pipe_index = 1;
 
+    FtpSession->path_hash = 0;
+    FtpSession->path = NULL;
+    FtpSession->cwd_path = NULL;
+    FtpSession->path_memory_alloc = 0;
+    FtpSession->cwd_memory_alloc = 0;
     FtpSession->event_list.stack_count = 0;
 
     return FTPP_SUCCESS;

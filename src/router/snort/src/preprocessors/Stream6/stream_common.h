@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -204,6 +204,7 @@ typedef struct _StreamTcpPolicy
     uint32_t   max_consec_small_segs;
     uint32_t   max_consec_small_seg_size;
     char       small_seg_ignore[MAX_PORTS/8];
+    bool       log_asymmetric_traffic;
 
 } StreamTcpPolicy;
 
@@ -348,6 +349,7 @@ StreamConfig *getStreamPolicyConfig( tSfPolicyId policy_id, bool parsing );
 void StreamFreeConfig(StreamConfig *);
 void StreamFreeConfigs(tSfPolicyUserContextId);
 void StreamCallHandler(Packet*, unsigned id);
+void CallFTPFlushProcessor(Packet *);
 
 static inline void StreamResetFlowBits( SessionControlBlock *scb )
 {
@@ -367,12 +369,6 @@ int StreamAnyAnyFlow( uint16_t *portList, OptTreeNode *otn, RuleTreeNode *rtn, i
                       IgnoredRuleList **ppIgnoredRuleList, int ignoreAnyAnyRules );
 void s5PrintPortFilter( uint16_t portList[] );
 int StreamSetRuntimeConfiguration( SessionControlBlock *scb, uint8_t protocol );
-
-// per protocol session cache handles
-void *tcp_lws_cache;
-void *udp_lws_cache;
-void *icmp_lws_cache;
-void *ip_lws_cache;
 
 // shared stream state
 extern StreamStats s5stats;

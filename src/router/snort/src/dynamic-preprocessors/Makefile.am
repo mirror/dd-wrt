@@ -31,6 +31,7 @@ include/sfPolicyUserData.c \
 include/util_unfold.c \
 include/sf_base64decode.c \
 include/sf_email_attach_decode.c \
+include/reg_test.c \
 libs/sfparser.c
 
 preprocdir=$(pkgincludedir)/dynamic_preproc
@@ -83,20 +84,34 @@ include/sfcontrol.h \
 include/sidechannel_define.h \
 include/idle_processing.h \
 include/sf_seqnums.h \
-include/file_api.h \
-include/file_mail_common.h \
+include/perf_indicators.h \
 include/mpse_methods.h \
-include/sfdebug.h \
-include/sip_common.h \
-include/appId.h
+include/file_api.h \
+include/reload_api.h \
+include/reg_test.h
+
+preproclib_LTLIBRARIES += libsf_dynamic_utils.la
+
+libsf_dynamic_utils_la_CFLAGS = -fPIC -DPIC -DDYNAMIC_PREPROC_CONTEXT
+libsf_dynamic_utils_la_LDFLAGS = -static
 
 if FEAT_OPEN_APPID
-nodist_libsf_dynamic_preproc_la_SOURCES += include/sfprimetable.c include/sfxhash.c include/sfmemcap.c include/sfghash.c \
-						  include/sfhashfcn.c include/sflsq.c include/md5.c
+nodist_libsf_dynamic_utils_la_SOURCES = include/sfprimetable.c include/sfxhash.c include/sfmemcap.c include/sfmemcap.h \
+						  include/sfghash.c include/sfhashfcn.c include/sflsq.c include/md5.c
 
-nodist_preproc_HEADERS += include/sfprimetable.h include/sfxhash.h include/sfmemcap.h include/sfghash.h \
-						  include/sfhashfcn.h include/sflsq.h include/md5.h
+nodist_preproc_HEADERS += include/appId.h include/appIdApi.h include/thirdparty_appid_types.h \
+						  include/thirdparty_appid_api.h include/dns_defs.h
+else
+nodist_libsf_dynamic_utils_la_SOURCES = include/sfmemcap.c include/sfmemcap.h
 endif
+
+if BUILD_SNORT_RELOAD
+#appdata_adjuster
+nodist_libsf_dynamic_utils_la_SOURCES += include/appdata_adjuster.c include/sfxhash.c include/sfhashfcn.c include/sfmemcap.c include/sfprimetable.c include/reg_test.h include/reg_test.c
+
+nodist_preproc_HEADERS += include/appdata_adjuster.h
+endif
+
 all-local: $(LTLIBRARIES)
 	$(MAKE) DESTDIR=`pwd`/build install-preproclibLTLIBRARIES
 
@@ -147,6 +162,8 @@ BUILT_SOURCES = \
 	include/segment_mem.c \
 	include/mempool.h \
 	include/mempool.c \
+	include/sfmemcap.h \
+	include/sfmemcap.c \
 	include/sf_sdlist.h \
 	include/sf_sdlist_types.h \
 	include/sf_sdlist.c \
@@ -171,12 +188,15 @@ BUILT_SOURCES = \
 	include/sidechannel_define.h \
 	include/idle_processing.h \
 	include/sf_seqnums.h \
+	include/perf_indicators.h \
 	include/file_api.h \
 	include/file_mail_common.h \
 	include/mpse_methods.h \
 	include/sfdebug.h \
 	include/sip_common.h \
-	include/appId.h \
+	include/reload_api.h \
+	include/reg_test.h \
+	include/reg_test.c \
 	ssl_common/ssl.h \
 	ssl_common/ssl.c \
 	ssl_common/ssl_include.h \
@@ -191,10 +211,28 @@ BUILT_SOURCES = \
 	libs/sfcommon.h
 
 if FEAT_OPEN_APPID
-BUILT_SOURCES += include/sfprimetable.h include/sfprimetable.c include/sfxhash.h include/sfxhash.c include/sfmemcap.h include/sfmemcap.c \
+BUILT_SOURCES += include/appId.h  include/appIdApi.h include/thirdparty_appid_types.h \
+				 include/thirdparty_appid_api.h \
+				 include/sfprimetable.h include/sfprimetable.c include/sfxhash.h \
+				 include/sfxhash.c \
 				 include/sfghash.c include/sfhashfcn.c include/sflsq.h include/sflsq.c \
-				 include/md5.h include/md5.c 
+				 include/md5.h include/md5.c \
+				 include/dns_defs.h
 endif
+
+if BUILD_SNORT_RELOAD
+BUILT_SOURCES += include/sfprimetable.h \
+        include/sfprimetable.c \
+        include/sfmemcap.h \
+        include/sfmemcap.c \
+        include/sfhashfcn.h \
+        include/sfhashfcn.c \
+        include/sfxhash.h \
+        include/sfxhash.c \
+        include/appdata_adjuster.h \
+        include/appdata_adjuster.c
+endif
+
 sed_ipv6_headers = \
 	sed -e "s/->iph->ip_src/->ip4_header->source/" \
 	    -e "s/->iph->ip_dst/->ip4_header->destination/" \
@@ -285,7 +323,13 @@ copy_error_message = \
                 mv $$dst_header.new $$dst_header; \
         fi
 
-
+copy_no_static_hash = \
+        if test -f $$dst_header; then \
+                echo "Updating " $$dst_header; \
+                sed -e "s/\#ifndef MODULUS_HASH/\#ifdef STATIC_HASH/" \
+                        $$dst_header > $$dst_header.new; \
+                mv $$dst_header.new $$dst_header; \
+        fi
 
 replace_policy_globals = \
 	if test -f $$dst_header; then \
@@ -295,6 +339,8 @@ replace_policy_globals = \
 		    -e "s/getDefaultPolicy()/_dpd.getDefaultPolicy()/" \
 		    -e "s/SnortStrnStr/_dpd.SnortStrnStr/" \
 		    -e "s/SnortStrncpy/_dpd.SnortStrncpy/" \
+		    -e "s/ReloadAdjustRegister/_dpd.reloadAdjustRegister/" \
+		    -e "s/session_api/_dpd.sessionAPI/" \
 		        $$dst_header > $$dst_header.new; \
 		mv $$dst_header.new $$dst_header; \
 	fi
@@ -371,6 +417,15 @@ include/event.h: $(srcdir)/../event.h
 
 include/sidechannel_define.h: $(srcdir)/../side-channel/sidechannel_define.h
 	@src_header=$?; dst_header=$@; $(massage_headers)
+
+include/reload_api.h: $(srcdir)/../reload_api.h
+	@src_header=$?; dst_header=$@; $(massage_headers)
+
+include/reg_test.h: $(srcdir)/../reg_test.h
+	@src_header=$?; dst_header=$@; $(copy_headers)
+
+include/reg_test.c: $(srcdir)/../reg_test.c
+	@src_header=$?; dst_header=$@; $(copy_headers)
 
 # From dynamic-plugins
 include/sf_dynamic_common.h: $(srcdir)/../dynamic-plugins/sf_dynamic_common.h
@@ -455,6 +510,12 @@ include/mempool.h: $(srcdir)/../mempool.h
 
 include/mempool.c: $(srcdir)/../mempool.c
 	@src_header=$?; dst_header=$@; $(copy_headers); $(copy_error_message); $(replace_policy_globals)
+
+include/sfmemcap.h: $(srcdir)/../sfutil/sfmemcap.h
+	    @src_header=$?; dst_header=$@; $(copy_headers); $(copy_error_message); $(replace_policy_globals)
+
+include/sfmemcap.c: $(srcdir)/../sfutil/sfmemcap.c
+	    @src_header=$?; dst_header=$@; $(copy_headers); $(copy_error_message); $(replace_policy_globals)
 
 include/sf_sdlist.h: $(srcdir)/../sf_sdlist.h
 	@src_header=$?; dst_header=$@; $(copy_headers); $(copy_error_message); $(replace_policy_globals)
@@ -544,6 +605,9 @@ include/idle_processing.h: $(top_srcdir)/src/idle_processing.h
 include/sf_seqnums.h: $(top_srcdir)/src/sfutil/sf_seqnums.h
 	@src_header=$?; dst_header=$@; $(copy_headers)
 
+include/perf_indicators.h: $(srcdir)/../preprocessors/perf_indicators.h
+	@src_header=$?; dst_header=$@; $(copy_headers)
+
 include/file_api.h: $(top_srcdir)/src/file-process/file_api.h
 	@src_header=$?; dst_header=$@; $(copy_headers)
 
@@ -563,6 +627,18 @@ include/appId.h: $(srcdir)/appid/appId.h
 	@src_header=$?; dst_header=$@; $(copy_headers)
 
 if FEAT_OPEN_APPID
+include/appIdApi.h: $(srcdir)/../appIdApi.h
+	@src_header=$?; dst_header=$@; $(copy_headers)
+
+include/thirdparty_appid_types.h: $(srcdir)/appid/thirdparty_appid_types.h
+	@src_header=$?; dst_header=$@; $(copy_headers)
+
+include/thirdparty_appid_api.h: $(srcdir)/appid/thirdparty_appid_api.h
+	@src_header=$?; dst_header=$@; $(copy_headers)
+
+include/dns_defs.h: $(srcdir)/appid/dns_defs.h
+	@src_header=$?; dst_header=$@; $(copy_headers)
+
 include/md5.c: $(srcdir)/../sfutil/md5.c
 	@src_header=$?; dst_header=$@; $(copy_headers)
 
@@ -584,21 +660,39 @@ include/sfxhash.c: $(srcdir)/../sfutil/sfxhash.c
 include/sfghash.c: $(srcdir)/../sfutil/sfghash.c
 	@src_header=$?; dst_header=$@; $(copy_headers); $(copy_error_message); $(replace_policy_globals)
 
-include/sfmemcap.h: $(srcdir)/../sfutil/sfmemcap.h
-	@src_header=$?; dst_header=$@; $(copy_headers);  $(copy_error_message); $(replace_policy_globals)
-
-include/sfmemcap.c: $(srcdir)/../sfutil/sfmemcap.c
-	@src_header=$?; dst_header=$@; $(copy_headers); $(copy_error_message); $(replace_policy_globals)
-
 include/sfhashfcn.c: $(srcdir)/../sfutil/sfhashfcn.c
-	@src_header=$?; dst_header=$@; $(copy_headers); $(copy_error_message); $(replace_policy_globals)
+	@src_header=$?; dst_header=$@; $(copy_headers); $(copy_error_message); $(replace_policy_globals); $(copy_no_static_hash)
 
 include/sflsq.h: $(srcdir)/../sfutil/sflsq.h
 	@src_header=$?; dst_header=$@; $(copy_headers); $(copy_error_message); $(replace_policy_globals)
 
 include/sflsq.c: $(srcdir)/../sfutil/sflsq.c
 	@src_header=$?; dst_header=$@; $(copy_headers); $(copy_error_message); $(replace_policy_globals)
+else
+if BUILD_SNORT_RELOAD
+include/sfxhash.h: $(srcdir)/../sfutil/sfxhash.h
+	@src_header=$?; dst_header=$@; $(copy_headers); $(copy_error_message); $(replace_policy_globals)
 
+include/sfxhash.c: $(srcdir)/../sfutil/sfxhash.c
+	@src_header=$?; dst_header=$@; $(copy_headers); $(copy_error_message); $(replace_policy_globals)
+
+include/sfprimetable.h: $(srcdir)/../sfutil/sfprimetable.h
+	@src_header=$?; dst_header=$@; $(copy_headers); $(copy_error_message); $(replace_policy_globals)
+
+include/sfprimetable.c: $(srcdir)/../sfutil/sfprimetable.c
+	@src_header=$?; dst_header=$@; $(copy_headers); $(copy_error_message); $(replace_policy_globals)
+
+include/sfhashfcn.c: $(srcdir)/../sfutil/sfhashfcn.c
+	@src_header=$?; dst_header=$@; $(copy_headers); $(copy_error_message); $(replace_policy_globals); $(copy_no_static_hash)
+endif
+endif
+
+if BUILD_SNORT_RELOAD
+include/appdata_adjuster.c: $(srcdir)/../reload-adjust/appdata_adjuster.c
+	@src_header=$?; dst_header=$@; $(copy_headers); $(copy_error_message); $(replace_policy_globals)
+
+include/appdata_adjuster.h: $(srcdir)/../reload-adjust/appdata_adjuster.h
+	@src_header=$?; dst_header=$@; $(copy_headers)
 endif
 
 if FEAT_FILE_INSPECT
@@ -644,6 +738,7 @@ include/snort_debug.h \
 include/profiler.h \
 include/sfghash.h \
 include/sfhashfcn.h \
+include/sfmemcap.h \
 include/bitop.h \
 include/preprocids.h \
 include/sfPolicyUserData.h \
@@ -665,12 +760,15 @@ include/Unified2_common.h \
 include/sfcontrol.h \
 include/idle_processing.h \
 include/sf_seqnums.h \
+include/perf_indicators.h \
 include/file_api.h \
 include/file_mail_common.h \
 include/mpse_methods.h \
 include/sfdebug.h \
 include/sip_common.h \
-include/appId.h \
+include/reload_api.h \
+include/reg_test.h \
+include/reg_test.c \
 ssl_common/ssl.h \
 ssl_common/ssl.c \
 ssl_common/ssl_include.h \
@@ -681,11 +779,27 @@ ssl_common/ssl_inspect.h \
 ssl_common/ssl_inspect.c \
 ssl_common/ssl_ha.h \
 ssl_common/ssl_ha.c \
-libs/sfparser.c 
+libs/sfparser.c
 
 if FEAT_OPEN_APPID
-exported_files += include/sfprimetable.h include/sfxhash.h include/sfmemcap.h include/sfhashfcn.h \
-				  include/md5.h 
+exported_files += include/appId.h include/appIdApi.h include/thirdparty_appid_types.h \
+				  include/thirdparty_appid_api.h \
+				  include/sfprimetable.h include/sfxhash.h include/sfhashfcn.h \
+				  include/md5.h \
+				  include/dns_defs.h
+endif
+
+if BUILD_SNORT_RELOAD
+exported_files += include/sfprimetable.h \
+include/sfprimetable.c \
+include/sfmemcap.h \
+include/sfmemcap.c \
+include/sfhashfcn.h \
+include/sfhashfcn.c \
+include/sfxhash.h \
+include/sfxhash.c \
+include/appdata_adjuster.h \
+include/appdata_adjuster.c
 endif
 
 install-data-local:

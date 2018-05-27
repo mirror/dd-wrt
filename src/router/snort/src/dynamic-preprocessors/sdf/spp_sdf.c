@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2009-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -162,7 +162,7 @@ void SDFInit(struct _SnortConfig *sc, char *args)
         _dpd.addPreprocExit(SDFCleanExit, NULL, PRIORITY_LAST, PP_SDF);
 
 #ifdef PERF_PROFILING
-        _dpd.addPreprocProfileFunc("sensitive_data", (void *)&sdfPerfStats, 0, _dpd.totalPerfStats);
+        _dpd.addPreprocProfileFunc("sensitive_data", (void *)&sdfPerfStats, 0, _dpd.totalPerfStats, NULL);
 #endif
     }
 
@@ -264,9 +264,18 @@ static SDFSessionData * NewSDFSession(SDFConfig *config, SFSnortPacket *packet)
     return session;
 }
 
+static inline bool isBufferInPayload(char *begin, char *end, SFSnortPacket *packet)
+{
+    if ((end <= (char *) packet->payload + packet->payload_size)
+        && (begin >= (char *) packet->payload))
+        return true;
+    else
+        return false;
+}
+
 static void SDFSearchRecursively(SDFConfig *config, SFSnortPacket *packet,
                       SDFSessionData *session, sdf_tree_node *matched_node, 
-                      char **position, uint16_t *buflen, uint16_t match_length)
+                      char **position, uint16_t *buflen, uint16_t match_length, bool *ob_failed)
 {
     /* Iterate through the SDFOptionData that matches this pattern. */
     uint16_t i;
@@ -322,26 +331,39 @@ static void SDFSearchRecursively(SDFConfig *config, SFSnortPacket *packet,
                 session->counters[found_pattern->counter_index]++;
 
                 /* Obfuscate the data.
-                   We do this even if it's not time to alert, to obfuscate each match. */
-                if (config->mask_output)
+                   We do this even if it's not time to alert, to obfuscate each match.
+                   Only obfuscate built-in patterns */
+                if (config->mask_output && found_pattern->validate_func)
                 {
-
-                    /* Only obfuscate built-in patterns */
-                    if (found_pattern->validate_func)
+                    if (isBufferInPayload(*position, *position + match_length, packet))
                     {
                         uint16_t offset, ob_length = 0;
+
                         offset = (uint16_t) ((*position) - (char *)packet->payload);
 
                         if (match_length > SDF_OBFUSCATION_DIGITS_SHOWN)
                             ob_length = match_length - SDF_OBFUSCATION_DIGITS_SHOWN;
 
-                        /* The CC# and SS# patterns now contain non-digits on either
-                           side of the actual number. Adjust the mask to match. */
-                        offset = offset + 1;
-                        ob_length = ob_length - 2;
+                        /* Generally, the CC# and SS# patterns contain non-digits on either
+                         * side of the actual number. Sometimes, for the patterns from the
+                         * first line of the data might start  with a digit, instead of a
+                         * non-digit. Adjust the mask to match.
+                         */
+                        if (isdigit((int)*position[0]))
+                            ob_length = ob_length - 1;
+
+                        else
+                        {
+                            offset = offset + 1;
+                            ob_length = ob_length - 2;
+                        }
 
                         _dpd.obApi->addObfuscationEntry(packet, offset, ob_length,
                                                         SDF_OBFUSCATION_CHAR);
+                    }
+                    else
+                    {
+                        *ob_failed = true;
                     }
                 }
 
@@ -377,8 +399,11 @@ static void SDFSearchRecursively(SDFConfig *config, SFSnortPacket *packet,
     }
 
     /* Update position */
-    (*position) += match_length;
-    (*buflen) -= match_length;
+    if (match_length > 1)
+    {
+        (*position) += match_length - 1;
+        (*buflen) -= match_length - 1;
+    }
 }
 
 /* Search a buffer for PII. Generates alerts when enough PII is found.
@@ -386,7 +411,7 @@ static void SDFSearchRecursively(SDFConfig *config, SFSnortPacket *packet,
 */
 static void SDFSearch(SDFConfig *config, SFSnortPacket *packet,
                       SDFSessionData *session, char *position, char *end,
-                      uint16_t buflen)
+                      uint16_t buflen, bool *ob_failed)
 {
     uint16_t match_length = 0;
     sdf_tree_node *matched_node = NULL;
@@ -415,7 +440,7 @@ static void SDFSearch(SDFConfig *config, SFSnortPacket *packet,
 
             /* only when matched update the position ptr. FindPiiRecursively only checks one node unlike FindPii */
             if (matched_node)
-                SDFSearchRecursively(config, packet, session, matched_node, &position, &buflen, match_length);
+                SDFSearchRecursively(config, packet, session, matched_node, &position, &buflen, match_length, ob_failed);
             else if (*partial_index)
             {
                 position += match_length;
@@ -438,7 +463,7 @@ static void SDFSearch(SDFConfig *config, SFSnortPacket *packet,
                                buflen, config, session);
 
         if (matched_node)
-            SDFSearchRecursively(config, packet, session, matched_node, &position, &buflen, match_length);
+            SDFSearchRecursively(config, packet, session, matched_node, &position, &buflen, match_length, ob_failed);
         else if (*partial_index)
         {
             position += match_length;
@@ -471,6 +496,9 @@ static void ProcessSDF(void *p, void *context)
     SDFSessionData *session;
     char *begin, *end;
     uint16_t buflen;
+    bool payload_checked = false;
+    bool ob_failed = false;
+
     PROFILE_VARS;
 
     // preconditions - what we registered for
@@ -478,7 +506,7 @@ static void ProcessSDF(void *p, void *context)
         packet->payload && packet->payload_size);
 
     /* Check if we should be working on this packet */
-    if ( packet->flags & FLAG_STREAM_INSERT && !PacketHasFullPDU(p) )
+    if ( packet->flags & FLAG_STREAM_INSERT && (!(packet->flags & FLAG_PDU_TAIL)) )
         return;  // Waiting on stream reassembly
 
     /* Retrieve the corresponding config for this packet */
@@ -490,6 +518,7 @@ static void ProcessSDF(void *p, void *context)
     session = _dpd.sessionAPI->get_application_data(packet->stream_session, PP_SDF);
     if (session == NULL)
     {
+        char pseudo_start = 0;
         /* Do port checks */
         if (SDFCheckPorts(config, packet) == 0)
         {
@@ -508,6 +537,13 @@ static void ProcessSDF(void *p, void *context)
         }
         else
             session = NewSDFSession(config, packet);
+
+        /* Add one byte to support sensitive data starts with first byte */
+        begin = &pseudo_start;
+        buflen = 1;
+        end = begin + buflen;
+        SDFSearch(config, packet, session, begin, end, buflen, &ob_failed);
+
     }
     else if( session->config_num != config->config_num )
     {
@@ -527,7 +563,7 @@ static void ProcessSDF(void *p, void *context)
         buflen = _dpd.fileDataBuf->len;
         end = begin + buflen;
 
-        SDFSearch(config, packet, session, begin, end, buflen);
+        SDFSearch(config, packet, session, begin, end, buflen, &ob_failed);
     }
     else if ( PacketHasPAFPayload(packet) )
     {
@@ -538,7 +574,8 @@ static void ProcessSDF(void *p, void *context)
         buflen = packet->payload_size;
         end = begin + buflen;
 
-        SDFSearch(config, packet, session, begin, end, buflen);
+        SDFSearch(config, packet, session, begin, end, buflen, &ob_failed);
+        payload_checked = true;
     }
 
     /* If this packet is HTTP, inspect the URI and Client Body while ignoring
@@ -552,7 +589,8 @@ static void ProcessSDF(void *p, void *context)
         {
             buflen = (uint16_t)len;
             end = begin + buflen;
-            SDFSearch(config, packet, session, begin, end, buflen);
+            if (!payload_checked || !isBufferInPayload(begin, end, packet))
+                SDFSearch(config, packet, session, begin, end, buflen, &ob_failed);
         }
         begin = (char*)_dpd.getHttpBuffer(HTTP_BUFFER_CLIENT_BODY, &len);
 
@@ -560,9 +598,22 @@ static void ProcessSDF(void *p, void *context)
         {
             buflen = (uint16_t)len;
             end = begin + buflen;
-            SDFSearch(config, packet, session, begin, end, buflen);
+            if (!payload_checked || !isBufferInPayload(begin, end, packet))
+                SDFSearch(config, packet, session, begin, end, buflen, &ob_failed);
         }
     }
+
+    /* Found match but not in payload, recheck to mask the rebuilt packet */
+    if ( !payload_checked && ob_failed && PacketHasPAFPayload(packet) )
+    {
+        begin = (char *)packet->payload;
+        buflen = packet->payload_size;
+        end = begin + buflen;
+
+        SDFSearch(config, packet, session, begin, end, buflen, &ob_failed);
+        payload_checked = true;
+    }
+
     /* End. */
     PREPROC_PROFILE_END(sdfPerfStats);
     return;
@@ -668,6 +719,12 @@ static void ParseSDFArgs(SDFConfig *config, char *args)
                 DynamicPreprocessorFatalMessage("Error parsing Social Security "
                         "group data from file: %s", cur_tokenp);
             }
+        }
+
+        else
+        {
+                DynamicPreprocessorFatalMessage("%s(%d) => Unknown SDF configuration option %s\n",
+                                            *(_dpd.config_file), *(_dpd.config_line), cur_tokenp);
         }
 
         cur_tokenp = strtok(NULL, " ");
@@ -837,46 +894,6 @@ static void SDFReloadSwapFree(void *data)
 }
 #endif
 
-/*
-*  checksum IP  - header=20+ bytes
-*
-*  w - short words of data
-*  blen - byte length
-*
-*/
-static inline unsigned short in_chksum_ip(  unsigned short * w, int blen )
-{
-   unsigned int cksum;
-
-   /* IP must be >= 20 bytes */
-   cksum  = w[0];
-   cksum += w[1];
-   cksum += w[2];
-   cksum += w[3];
-   cksum += w[4];
-   cksum += w[5];
-   cksum += w[6];
-   cksum += w[7];
-   cksum += w[8];
-   cksum += w[9];
-
-   blen  -= 20;
-   w     += 10;
-
-   while( blen ) /* IP-hdr must be an integral number of 4 byte words */
-   {
-     cksum += w[0];
-     cksum += w[1];
-     w     += 2;
-     blen  -= 4;
-   }
-
-   cksum  = (cksum >> 16) + (cksum & 0x0000ffff);
-   cksum += (cksum >> 16);
-
-   return (unsigned short) (~cksum);
-}
-
 static void SDFPrintPseudoPacket(SDFConfig *config, SDFSessionData *session,
                                  SFSnortPacket *real_packet)
 {
@@ -945,7 +962,7 @@ static void SDFFillPacket(sdf_tree_node *node, SDFSessionData *session,
             if (counter > 0)
             {
                 /* Print line */
-                char *sigmessage = option_data->otn->sigInfo.message;
+                const char *sigmessage = option_data->otn->sigInfo.message;
                 uint8_t *dest = (uint8_t*)p->payload + *dlen;
                 size_t siglen = strlen(sigmessage);
                 uint16_t space_left = p->max_payload - *dlen;

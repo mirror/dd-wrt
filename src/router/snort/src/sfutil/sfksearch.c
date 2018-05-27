@@ -11,7 +11,7 @@
 *
 *
 **  Copyright (C) 2001 Marc Norton
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2003-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -952,42 +952,6 @@ int KTrieSearchQ( KTRIE_STRUCT * ks, unsigned char * T, int n,
 
     return 0;
 }
-
-static
-inline
-int KTrieSearchQBC( KTRIE_STRUCT * ks, unsigned char * T, int n,
-                    int(*match)(void * id, void *tree, int index, void *data, void *neg_list),
-                    void * data )
-{
-    int             tshift;
-    unsigned char  *Tend;
-    short          *bcShift = (short*)ks->bcShift;
-    int             bcSize  = ks->bcSize;
-
-    _init_queue(&ks->q);
-
-    Tend = T + n - bcSize;
-
-    bcSize--;
-
-    for( ;T <= Tend; n--, T++ )
-    {
-        while( (tshift = bcShift[ T[bcSize] ]) > 0 )
-        {
-            T  += tshift;
-            if( T > Tend )
-                return 0;
-        }
-
-        if( KTriePrefixMatchQ( ks, T, n, match, data ) )
-            return 0;
-    }
-
-    _process_queue(&ks->q,match,data);
-
-    return 0;
-}
-
 
 /*
 *

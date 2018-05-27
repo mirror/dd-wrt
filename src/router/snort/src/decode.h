@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -55,6 +55,8 @@
 #include "sf_protocols.h"
 #include "util.h"
 #include "sf_types.h"
+#include "sf_sdlist_types.h"
+#include "preprocids.h"
 
 struct _SnortConfig;
 
@@ -70,12 +72,16 @@ struct _SnortConfig;
 #define ETHERNET_TYPE_PPPoE_DISC      0x8863 /* discovery stage */
 #define ETHERNET_TYPE_PPPoE_SESS      0x8864 /* session stage */
 #define ETHERNET_TYPE_8021Q           0x8100
+#define ETHERNET_TYPE_8021AD          0x88a8
+#define ETHERNET_TYPE_QINQ_NS1        0x9100 /* Q-in-Q non standard */
+#define ETHERNET_TYPE_QINQ_NS2        0x9200 /* Q-in-Q non standard */
 #define ETHERNET_TYPE_LOOP            0x9000
 #define ETHERNET_TYPE_MPLS_UNICAST    0x8847
 #define ETHERNET_TYPE_MPLS_MULTICAST  0x8848
 #define ETHERNET_TYPE_ERSPAN_TYPE2    0x88be
 #define ETHERNET_TYPE_ERSPAN_TYPE3    0x22eb
 #define ETHERNET_TYPE_FPATH           0x8903
+#define ETHERNET_TYPE_CISCO_META      0x8909
 
 #define ETH_DSAP_SNA                  0x08    /* SNA */
 #define ETH_SSAP_SNA                  0x00    /* SNA */
@@ -90,6 +96,14 @@ struct _SnortConfig;
 #define FABRICPATH_HEADER_LEN           16
 #define ETHERNET_HEADER_LEN             14
 #define ETHERNET_MAX_LEN_ENCAP          1518    /* 802.3 (+LLC) or ether II ? */
+#define FABRICPATH_HEADER_LEN           16
+
+#define CISCO_META_PREHEADER_LEN        2
+#define CISCO_META_VALID_OPT_LEN        4       /* length of valid options */
+#define CISCO_META_OPT_LEN_SHIFT        13      /* right shift opt_len_type to get option length */
+#define CISCO_META_OPT_TYPE_MASK        0x1FFF  /* mask opt_len_type to get option type */
+#define CISCO_META_OPT_TYPE_SGT         1
+
 #define PPPOE_HEADER_LEN                6
 
 #define VLAN_HEADER_LEN                  4
@@ -635,7 +649,6 @@ struct enc_header {
 #ifdef NORMALIZER
 #define PKT_RESIZED          0x00800000  /* packet has new size; must set modified too */
 #endif
-#define PKT_EARLY_REASSEMBLY 0x01000000  /* this packet. part of the expected stream, shoudl have stream reassembly set */ 
 
 // neither of these flags will be set for (full) retransmissions or non-data segments
 // a partial overlap results in out of sequence condition
@@ -647,7 +660,11 @@ struct enc_header {
 #define PKT_IPREP_SOURCE_TRIGGERED  0x08000000
 #define PKT_IPREP_DATA_SET          0x10000000
 #define PKT_FILE_EVENT_SET          0x20000000
-// 0x40000000 are available
+#define PKT_EARLY_REASSEMBLY 0x40000000  /* this packet. part of the expected stream, should have stream reassembly set */
+#define PKT_RETRANSMIT       0x80000000  /* this packet is identified as re-transmitted one */
+#define PKT_PURGE            0x0100000000  /* Stream will not flush the data */
+#define PKT_H1_ABORT         0x0200000000  /* Used by H1 and H2 paf */
+#define PKT_UPGRADE_PROTO    0x0400000000  /* Used by H1 paf */
 
 #define PKT_PDU_FULL (PKT_PDU_HEAD | PKT_PDU_TAIL)
 
@@ -674,6 +691,7 @@ typedef enum {
 #define PKT_ERR_CKSUM_IGMP   0x10
 #define PKT_ERR_CKSUM_ANY    0x1F
 #define PKT_ERR_BAD_TTL      0x20
+#define PKT_ERR_SYN_RL_DROP  0x40
 
 /*  D A T A  S T R U C T U R E S  *********************************************/
 typedef int (*LogFunction)(void *ssnptr, uint8_t **buf, uint32_t *len, uint32_t *type);
@@ -978,15 +996,31 @@ typedef struct _EthLlcOther
 /*
  * Cisco FabricPath / Data Center Ethernet header
  */
- 
- typedef struct _FPathHdr
- {
-     uint8_t fpath_dst[6];
-     uint8_t fpath_src[6];
-     uint16_t fpath_type;
-     uint16_t fptag_extra; /* 10-bit FTag + 6-bit TTL */
- } FPathHdr;
- 
+
+typedef struct _FPathHdr
+{
+    uint8_t fpath_dst[6];
+    uint8_t fpath_src[6];
+    uint16_t fpath_type;
+    uint16_t fptag_extra; /* 10-bit FTag + 6-bit TTL */
+} FPathHdr;
+
+typedef struct _CiscoMetaHdr
+{
+    uint8_t version; // This must be 1
+    uint8_t length; //This is the header size in bytes / 8
+} CiscoMetaHdr;
+
+/*
+ * Cisco MetaData header options
+ */
+
+typedef struct _CiscoMetaOpt
+{
+    uint16_t opt_len_type;  /* 3-bit length + 13-bit type. Length of 0 = 4. Type must be 1. */
+    uint16_t sgt;           /* Can be any value except 0xFFFF */
+} CiscoMetaOpt;
+
 /*
  * Ethernet header
  */
@@ -1070,6 +1104,12 @@ typedef struct _IPHdr
     struct in_addr ip_dst;  /* dest IP */
 } IPHdr;
 
+typedef struct _IPAddresses
+{
+    sfaddr_t ip_src;       /* source IP */
+    sfaddr_t ip_dst;       /* dest IP */
+} IPAddresses;
+
 typedef struct _IPv4Hdr
 {
     uint8_t ip_verhl;      /* version & header length */
@@ -1080,8 +1120,7 @@ typedef struct _IPv4Hdr
     uint8_t ip_ttl;        /* time to live field */
     uint8_t ip_proto;      /* datagram protocol */
     uint16_t ip_csum;      /* checksum */
-    sfip_t ip_src;          /* source IP */
-    sfip_t ip_dst;          /* dest IP */
+    IPAddresses* ip_addrs; /* IP addresses*/
 } IP4Hdr;
 
 typedef struct _IPv6Hdr
@@ -1092,8 +1131,7 @@ typedef struct _IPv6Hdr
                          * Uses the same flags as
                          * the IPv4 protocol field */
     uint8_t  hop_lmt;  /* hop limit */
-    sfip_t ip_src;
-    sfip_t ip_dst;
+    IPAddresses* ip_addrs; /* IP addresses*/
 } IP6Hdr;
 
 /* IPv6 address */
@@ -1565,6 +1603,9 @@ typedef struct _PPPoE_Tag
 
 #define MPLS_HEADER_LEN    4
 #define NUM_RESERVED_LABELS    16
+#ifdef MPLS_RFC4023_SUPPORT
+#define IPPROTO_MPLS    137
+#endif
 
 typedef struct _MplsHdr
 {
@@ -1573,6 +1614,23 @@ typedef struct _MplsHdr
     uint8_t  bos;
     uint8_t  ttl;
 } MplsHdr;
+
+typedef struct _H2PriSpec
+{
+    uint32_t stream_id;
+    uint32_t weight;
+    uint8_t  exclusive;
+} H2PriSpec;
+
+typedef struct _H2Hdr
+{
+    uint32_t length;
+    uint32_t stream_id;
+    uint8_t  type;
+    uint8_t  flags;
+    uint8_t  reserved;
+    H2PriSpec pri;
+} H2Hdr;
 
 #define PGM_NAK_ERR -1
 #define PGM_NAK_OK 0
@@ -1621,6 +1679,9 @@ typedef struct _GTPHdr
 
 #define LAYER_MAX  32
 
+// forward declaration for snort expected session created due to this packet.
+struct _ExpectNode;
+
 // REMEMBER match any changes you make here in:
 // dynamic-plugins/sf_engine/sf_snort_packet.h
 typedef struct _Packet
@@ -1641,6 +1702,7 @@ typedef struct _Packet
     const PPPoEHdr *pppoeh;     /* Encapsulated PPP of Ether header */
     const GREHdr *greh;
     uint32_t *mpls;
+    const CiscoMetaHdr *cmdh;                /* Cisco Metadata Header */
 
     const IPHdr *iph, *orig_iph;/* and orig. headers for ICMP_*_UNREACH family */
     const IPHdr *inner_iph;     /* if IP-in-IP, this will be the inner IP header */
@@ -1674,10 +1736,9 @@ typedef struct _Packet
     int outer_family;
     //^^^-----------------------------
 
-    uint32_t preprocessor_bits; /* flags for preprocessors to check */
-    uint32_t preproc_reassembly_pkt_bits;
+    PreprocEnableMask preprocessor_bits; /* flags for preprocessors to check */
 
-    uint32_t packet_flags;      /* special flags for the packet */
+    uint64_t packet_flags;      /* special flags for the packet */
 
     uint32_t xtradata_mask;
 
@@ -1753,6 +1814,7 @@ typedef struct _Packet
     Options ip_options[IP_OPTMAX];         /* ip options decode structure */
     Options tcp_options[TCP_OPTLENMAX];    /* tcp options decode struct */
     IP6Option *ip6_extensions;  /* IPv6 Extension References */
+    CiscoMetaOpt *cmd_options;    /* Cisco Metadata header options */
 
     const uint8_t *ip_frag_start;
     const uint8_t *ip_options_data;
@@ -1761,12 +1823,15 @@ typedef struct _Packet
     const IP6RawHdr* raw_ip6h;  // innermost raw ip6 header
     Layer layers[LAYER_MAX];    /* decoded encapsulations */
 
+    IPAddresses inner_ips, inner_orig_ips;
     IP4Hdr inner_ip4h, inner_orig_ip4h;
     IP6Hdr inner_ip6h, inner_orig_ip6h;
+    IPAddresses outer_ips, outer_orig_ips;
     IP4Hdr outer_ip4h, outer_orig_ip4h;
     IP6Hdr outer_ip6h, outer_orig_ip6h;
 
     MplsHdr mplsHdr;
+    H2Hdr   *h2Hdr;
 
     PseudoPacketType pseudo_type;    // valid only when PKT_PSEUDO is set
     uint16_t max_dsize;
@@ -1781,8 +1846,11 @@ typedef struct _Packet
 
     uint8_t ps_proto;  // Used for portscan and unified2 logging
 
-    uint8_t ips_os_selected; 
+    uint8_t ips_os_selected;
     void    *cur_pp;
+
+    // Expected session created due to this packet.
+    struct _ExpectNode* expectedSession;
 } Packet;
 
 #define PKT_ZERO_LEN offsetof(Packet, ip_options)
@@ -1940,6 +2008,8 @@ typedef struct _PortList
 
 void InitSynToMulticastDstIp( struct _SnortConfig * );
 void SynToMulticastDstIpDestroy( void );
+void InitMulticastReservedIp( struct _SnortConfig * );
+void MulticastReservedIpDestroy( void );
 
 #define SFTARGET_UNKNOWN_PROTOCOL -1
 
@@ -1972,7 +2042,7 @@ static inline bool PacketHasStartOfPDU (const Packet* p)
 
 static inline bool PacketHasPAFPayload (const Packet* p)
 {
-    return ( (p->packet_flags & PKT_REBUILT_STREAM) || PacketHasFullPDU(p) );
+    return ( (p->packet_flags & PKT_REBUILT_STREAM) || (p->packet_flags & PKT_PDU_TAIL) );
 }
 
 static inline bool PacketIsRebuilt (const Packet* p)

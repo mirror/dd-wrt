@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -27,8 +27,8 @@
 #include "client_app_base.h"
 #include "service_base.h"
 
-typedef void *(*DetectorFlowdataGet)(FLOW *, unsigned);
-typedef int (*DetectorFlowdataAdd)(FLOW *, void *, unsigned, AppIdFreeFCN);
+typedef void *(*DetectorFlowdataGet)(tAppIdData *, unsigned);
+typedef int (*DetectorFlowdataAdd)(tAppIdData *, void *, unsigned, AppIdFreeFCN);
 
 typedef struct _DETECTOR_API
 {
@@ -41,10 +41,10 @@ typedef struct _DETECTOR_API
 typedef struct _RNA_DETECTOR_VALIDATION_MODULE
 {
     /**service side.*/
-    RNAServiceValidationModule *service;
+    tRNAServiceValidationModule *service;
 
     /**client side.*/
-    RNAClientAppModule *client;
+    tRNAClientAppModule *client;
 
     const DetectorApi *api;
     unsigned flow_data_index;

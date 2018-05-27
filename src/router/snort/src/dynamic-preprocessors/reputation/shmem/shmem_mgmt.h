@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -51,20 +51,23 @@ typedef struct _shmemSegment {
 } shmemSegment;
 
 typedef struct _shmemMgmtData {
-    shmemInstance   instance[MAX_INSTANCES];
     shmemSegment    segment[MAX_SEGMENTS];
     int             activeSegment;
+    unsigned int    maxInstances;
+    shmemInstance   instance[];
 } ShmemMgmtData;
 
 extern void *zeroseg_ptr;
 
 //reader
 int   InitShmemReader(uint32_t instance_num, int dataset, int group_id, int numa_node,
-                      const char* path, void*** data_ptr, uint32_t instance_polltime);
-int   CheckForSharedMemSegment(void);
+                      const char* path, void*** data_ptr, uint32_t instance_polltime,
+                      unsigned int max_instances);
+int   CheckForSharedMemSegment(unsigned int max_instances);
 //writer
 int   InitShmemWriter(uint32_t instance_num, int dataset, int group_id, int numa_node,
-                      const char* path, void*** data_ptr, uint32_t instance_polltime);
+                      const char* path, void*** data_ptr, uint32_t instance_polltime,
+                      unsigned int max_instances);
 int   LoadSharedMemDataSegmentForWriter(int startup);
 void  SwitchToActiveSegment(int segment_num,void*** data_ptr);
 void  UnmapInactiveSegments(void);

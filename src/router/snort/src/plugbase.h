@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -32,6 +32,7 @@
 #include "treenodes.h"
 #include "sf_types.h"
 #include "snort_debug.h"
+#include "preprocids.h"
 
 #ifndef WIN32
 # include <sys/ioctl.h>
@@ -169,6 +170,12 @@ void RegisterByteOrderKeyword(char *, RuleOptByteOrderFunc);
 RuleOptByteOrderFunc GetByteOrderFunc(char *);
 void FreeRuleOptByteOrderFuncs(RuleOptByteOrderFuncNode *);
 
+/***************************** Buffer Dump API ********************************/
+
+#ifdef DUMP_BUFFER
+void RegisterBufferTracer(TraceBuffer * (*)(), BUFFER_DUMP_FUNC);
+#endif
+
 /***************************** Non Rule Detection API *************************/
 typedef void (*DetectionEvalFunc)(Packet *, void *);
 typedef struct _DetectionEvalFuncNode
@@ -256,7 +263,7 @@ typedef struct _PreprocEvalFuncNode
     void *context;
     uint16_t priority;
     uint32_t preproc_id;
-    uint32_t preproc_bit;
+    PreprocEnableMask preproc_bit;
     uint32_t proto_mask;
     union
     {
@@ -271,7 +278,7 @@ typedef struct _PreprocMetaEvalFuncNode
 {
     uint16_t priority;
     uint32_t preproc_id;
-    uint32_t preproc_bit;
+    PreprocEnableMask preproc_bit;
     union
     {
         PreprocMetaEvalFunc fptr;
@@ -394,18 +401,18 @@ static inline void DisableAllPreprocessors( Packet *p )
 
 static inline int EnablePreprocessor(Packet *p, unsigned int preproc_id)
 {
-    p->preprocessor_bits |= (1 << preproc_id);
+    p->preprocessor_bits |= (UINT64_C(1) << preproc_id);
     return 0;
 }
 
-static inline void EnablePreprocessors(Packet *p, uint32_t enabled_pps)
+static inline void EnablePreprocessors(Packet *p, PreprocEnableMask enabled_pps)
 {
     p->preprocessor_bits = enabled_pps;
 }
 
-static inline int IsPreprocessorEnabled(Packet *p, unsigned int preproc_bit)
+static inline int IsPreprocessorEnabled(Packet *p, PreprocEnableMask preproc_bit)
 {
-    return ( p->preprocessor_bits & preproc_bit );
+    return ( ( p->preprocessor_bits & preproc_bit ) != 0 );
 }
 
 void DisableAllPolicies(struct _SnortConfig *);
@@ -448,5 +455,9 @@ void AddFuncToSignalList(PluginSignalFunc, void *, PluginSignalFuncNode **);
 void PostConfigInitPlugins(struct _SnortConfig *, PostConfigFuncNode *);
 void FreePluginSigFuncs(PluginSignalFuncNode *);
 void FreePluginPostConfigFuncs(PostConfigFuncNode *);
+
+typedef char** (*GetHttpXffFieldsFunc)(int* nFields);
+char** GetHttpXffFields(int* nFields);
+void RegisterGetHttpXffFields(GetHttpXffFieldsFunc fn);
 
 #endif /* __PLUGBASE_H__ */

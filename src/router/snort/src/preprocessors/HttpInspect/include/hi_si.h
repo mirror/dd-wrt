@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -19,7 +19,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  ****************************************************************************/
- 
+
 /**
 **  @file       hi_si.h
 **
@@ -58,21 +58,21 @@
 
 /**
 **  The HI_SESSION structure contains the complete HTTP session, both the
-**  client and the server constructs.  This structure is the structure that 
-**  is saved per session in the Stream Interface Module.  This structure 
-**  gets sent through the detection engine process (Normalization, 
+**  client and the server constructs.  This structure is the structure that
+**  is saved per session in the Stream Interface Module.  This structure
+**  gets sent through the detection engine process (Normalization,
 **  Detection).
 */
 typedef struct s_HI_SESSION
 {
     /*
-    **  The client construct contains all the info associated with a 
+    **  The client construct contains all the info associated with a
     **  client request.
     */
     HI_CLIENT client;
 
     /*
-    **  The server construct contains all the info associated with a 
+    **  The server construct contains all the info associated with a
     **  server response.
     */
     HI_SERVER server;
@@ -103,7 +103,7 @@ typedef struct s_HI_SESSION
 
 } HI_SESSION;
 
-#define HI_BODY 1 
+#define HI_BODY 1
 
 /**
 **  The HI_SI_INPUT structure holds the information that the Session
@@ -111,14 +111,14 @@ typedef struct s_HI_SESSION
 **  (client, server, neither) and to retrieve the appropriate server
 **  configuration.
 **
-**  The input is the source and destination IP addresses, and the 
+**  The input is the source and destination IP addresses, and the
 **  source and destination ports (since this should always be a
 **  TCP packet).
 */
 typedef struct s_HI_SI_INPUT
 {
-    snort_ip sip;
-    snort_ip dip;
+    sfaddr_t sip;
+    sfaddr_t dip;
     unsigned short sport;
     unsigned short dport;
     unsigned char pdir;
@@ -128,6 +128,8 @@ typedef struct s_HI_SI_INPUT
 int hi_si_session_inspection(HTTPINSPECT_GLOBAL_CONF *GlobalConf,
         HI_SESSION **Session, HI_SI_INPUT *SiInput, int *piInspectMode,
         Packet *p);
+int GetHttpConf(HTTPINSPECT_GLOBAL_CONF *GlobalConf,HTTPINSPECT_CONF **ServerConf,
+        HTTPINSPECT_CONF **ClientConf,HI_SI_INPUT *SiInput, int *piInspectMode, void *ssnptr);
 
 #endif
 

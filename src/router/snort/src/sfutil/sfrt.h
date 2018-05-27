@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2006-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -103,7 +103,7 @@
 #include "snort_debug.h"
 #include "ipv6_port.h"
 
-typedef sfip_t *IP;
+typedef sfcidr_t *IP;
 typedef void* GENERIC;   /* To be replaced with a pointer to a policy */
 typedef struct
 {
@@ -180,20 +180,20 @@ typedef struct
     void *rt;            /* Actual "routing" table */
     void *rt6;            /* Actual "routing" table */
 
-    tuple_t (*lookup)(IP ip, GENERIC tbl);
-    int (*insert)(IP ip, int len, word index, int behavior, GENERIC tbl);
+    tuple_t (*lookup)(uint32_t* adr, int numAdrDwords, GENERIC tbl);
+    int (*insert)(uint32_t* adr, int numAdrDwords, int len, word index, int behavior, GENERIC tbl);
     void (*free)(GENERIC tbl);
     uint32_t (*usage)(GENERIC tbl);
     void     (*print)(GENERIC tbl);
-    word (*remove)(IP ip, int len, int behavior, GENERIC tbl);
+    word (*remove)(uint32_t* adr, int numAdrDwords, int len, int behavior, GENERIC tbl);
 } table_t;
 /*******************************************************************/
 
 /* Abstracted routing table API */
 table_t * sfrt_new(char type, char ip_type, long data_size, uint32_t mem_cap);
 void      sfrt_free(table_t *table);
-GENERIC sfrt_lookup(sfip_t* ip, table_t* table);
-GENERIC sfrt_search(sfip_t* ip, unsigned char len, table_t *table);
+GENERIC sfrt_lookup(sfaddr_t* ip, table_t* table);
+GENERIC sfrt_search(sfaddr_t* ip, table_t *table);
 typedef void (*sfrt_iterator_callback)(void *);
 struct _SnortConfig;
 typedef void (*sfrt_sc_iterator_callback)(struct _SnortConfig *, void *);
@@ -206,9 +206,9 @@ int     sfrt_iterate2(table_t* table, sfrt_iterator_callback3 userfunc);
 int     sfrt_iterate2_with_snort_config(struct _SnortConfig *sc, table_t* table, sfrt_sc_iterator_callback3 userfunc);
 void    sfrt_cleanup(table_t* table, sfrt_iterator_callback userfunc);
 void    sfrt_cleanup2(table_t*, sfrt_iterator_callback2, void *);
-int     sfrt_insert(sfip_t* ip, unsigned char len, GENERIC ptr,
+int     sfrt_insert(sfcidr_t* ip, unsigned char len, GENERIC ptr,
                         int behavior, table_t *table);
-int     sfrt_remove(sfip_t* ip, unsigned char len, GENERIC *ptr,
+int     sfrt_remove(sfcidr_t* ip, unsigned char len, GENERIC *ptr,
                         int behavior, table_t *table);
 uint32_t     sfrt_usage(table_t *table);
 void    sfrt_print(table_t *table);
@@ -217,21 +217,19 @@ uint32_t     sfrt_num_entries(table_t *table);
 /* Perform a lookup on value contained in "ip"
  * For performance reason, we use this simplified version instead of sfrt_lookup
  * Note: this only applied to table setting: DIR_8x16 (DIR_16_8_4x2 for IPV4), DIR_8x4*/
-static inline GENERIC sfrt_dir8x_lookup(void *adr, table_t* table)
+static inline GENERIC sfrt_dir8x_lookup(sfaddr_t *ip, table_t* table)
 {
     dir_sub_table_t *subtable;
     int i;
-    sfip_t *ip;
     void *rt = NULL;
     int index;
 
-    ip = adr;
-    if (ip->family == AF_INET)
+    if (sfaddr_family(ip) == AF_INET)
     {
         rt =  table->rt;
         subtable = ((dir_table_t *)rt)->sub_table;
          /* 16 bits*/
-        index = ntohs(ip->ip16[0]);
+        index = ntohs(ip->ia16[6]);
         if( !subtable->entries[index] || subtable->lengths[index] )
         {
             return table->data[subtable->entries[index]];
@@ -239,7 +237,7 @@ static inline GENERIC sfrt_dir8x_lookup(void *adr, table_t* table)
         subtable = (dir_sub_table_t *) subtable->entries[index];
 
         /* 8 bits*/
-        index = ip->ip8[2];
+        index = ip->ia8[14];
         if( !subtable->entries[index] || subtable->lengths[index] )
         {
             return table->data[subtable->entries[index]];
@@ -247,7 +245,7 @@ static inline GENERIC sfrt_dir8x_lookup(void *adr, table_t* table)
         subtable = (dir_sub_table_t *) subtable->entries[index];
 
         /* 4 bits */
-        index = ip->ip8[3] >> 4;
+        index = ip->ia8[15] >> 4;
         if( !subtable->entries[index] || subtable->lengths[index] )
         {
             return table->data[subtable->entries[index]];
@@ -255,20 +253,20 @@ static inline GENERIC sfrt_dir8x_lookup(void *adr, table_t* table)
         subtable = (dir_sub_table_t *) subtable->entries[index];
 
         /* 4 bits */
-        index = ip->ip8[3] & 0xF;
+        index = ip->ia8[15] & 0xF;
         if( !subtable->entries[index] || subtable->lengths[index] )
         {
             return table->data[subtable->entries[index]];
         }
     }
-    else if (ip->family == AF_INET6)
+    else
     {
 
         rt =  table->rt6;
         subtable = ((dir_table_t *)rt)->sub_table;
         for (i = 0; i < 16; i++)
         {
-            index = ip->ip8[i];
+            index = ip->ia8[i];
             if( !subtable->entries[index] || subtable->lengths[index] )
             {
                 return table->data[subtable->entries[index]];
@@ -279,5 +277,6 @@ static inline GENERIC sfrt_dir8x_lookup(void *adr, table_t* table)
     return NULL;
 
 }
+
 #endif
 

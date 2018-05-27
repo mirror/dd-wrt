@@ -1,7 +1,7 @@
 /* $Id$ */
 
 /*
- ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2005-2013 Sourcefire, Inc.
  ** AUTHOR: Steven Sturges
  **
@@ -65,8 +65,8 @@
 #include "sfdaq.h"
 #include "stream5_ha.h"
 
-/* Reasonably small, and prime */
-#define EXPECT_HASH_SIZE 1021
+/* Reasonably small, and power of 2 */
+#define EXPECT_HASH_SIZE 1024
 
 /* Number of unique ExpectSessionData stored in each hash entry. */
 #define NUM_SESSION_DATA_MAX 8
@@ -94,8 +94,8 @@ typedef struct _ExpectedSessionDataList
 
 typedef struct _ExpectHashKey
 {
-    snort_ip ip1;
-    snort_ip ip2;
+    struct in6_addr ip1;
+    struct in6_addr ip2;
     uint16_t port1;
     uint16_t port2;
     uint32_t protocol;
@@ -103,14 +103,21 @@ typedef struct _ExpectHashKey
 
 typedef struct _ExpectNode
 {
-    int reversed_key;
     time_t expires;
-    int direction;
     unsigned data_list_count;
     int16_t appId;
+    char reversed_key;
+    char direction;
     ExpectedSessionDataList *data_list;
     ExpectedSessionDataList *data_list_tail;
+    struct _ExpectNode* manditory_next;
 } ExpectNode;
+
+typedef struct _MandatoryEarlySessionCreator
+{
+    struct _MandatoryEarlySessionCreator* next;
+    MandatoryEarlySessionCreatorFn callback;
+} MandatoryEarlySessionCreator;
 
 /* The hash table of expected channels */
 static SFXHASH *channelHash = NULL;
@@ -148,7 +155,7 @@ static int freeHashNode(void *k, void *p)
     return 0;
 }
 
-static snort_ip zeroed;
+static sfaddr_t zeroed;
 
 /**Either expect or expect future session.
  *
@@ -166,35 +173,35 @@ static snort_ip zeroed;
  * @param cliIP - client IP address. All preprocessors must have consistent view of client side of a session.
  * @param cliPort - client port number
  * @param srvIP - server IP address. All preprocessors must have consisten view of server side of a session.
- * @param srcPort - server port number
+ * @param srvPort - server port number
  * @param protocol - IPPROTO_TCP or IPPROTO_UDP.
  * @param direction - direction of session. Assumed that direction value for session being expected or expected will
  * remain same across different calls to this function.
  * @param expiry - session expiry in seconds.
  */
-int StreamExpectAddChannel(const Packet *ctrlPkt, snort_ip_p cliIP, uint16_t cliPort,
-        snort_ip_p srvIP, uint16_t srvPort, char direction, uint8_t flags,
+int StreamExpectAddChannel(const Packet *ctrlPkt, sfaddr_t* cliIP, uint16_t cliPort,
+        sfaddr_t* srvIP, uint16_t srvPort, char direction, uint8_t flags,
         uint8_t protocol, uint32_t timeout, int16_t appId, uint32_t preprocId,
-        void *appData, void (*appDataFreeFn)(void*))
+        void *appData, void (*appDataFreeFn)(void*), ExpectNode** packetExpectedNode)
 {
-    return StreamExpectAddChannelPreassignCallback(ctrlPkt, cliIP, cliPort, srvIP, srvPort, 
+    return StreamExpectAddChannelPreassignCallback(ctrlPkt, cliIP, cliPort, srvIP, srvPort,
             direction, flags, protocol, timeout, appId, preprocId,
-            appData, appDataFreeFn, INVALIDCBID, SE_REXMIT);
+            appData, appDataFreeFn, INVALIDCBID, SE_REXMIT, packetExpectedNode);
 }
 
-int StreamExpectAddChannelPreassignCallback(const Packet *ctrlPkt, snort_ip_p cliIP, uint16_t cliPort,
-        snort_ip_p srvIP, uint16_t srvPort, char direction, uint8_t flags,
+int StreamExpectAddChannelPreassignCallback(const Packet *ctrlPkt, sfaddr_t* cliIP, uint16_t cliPort,
+        sfaddr_t* srvIP, uint16_t srvPort, char direction, uint8_t flags,
         uint8_t protocol, uint32_t timeout, int16_t appId, uint32_t preprocId,
         void *appData, void (*appDataFreeFn)(void*), unsigned cbId,
-        Stream_Event se)
-{ 
+        Stream_Event se, ExpectNode** packetExpectedNode)
+{
     ExpectHashKey hashKey;
     SFXHASH_NODE *hash_node;
     ExpectNode new_node;
     ExpectNode *node;
     ExpectedSessionDataList *data_list;
     ExpectedSessionData *data;
-    int reversed_key;
+    char reversed_key;
     SFIP_RET rval;
     time_t now =  ctrlPkt->pkth->ts.tv_sec;
 
@@ -220,15 +227,26 @@ int StreamExpectAddChannelPreassignCallback(const Packet *ctrlPkt, snort_ip_p cl
     if ((cliPort == UNKNOWN_PORT) && (srvPort == UNKNOWN_PORT))
         return -1;
 
-    if (cliIP->family == AF_INET)
+    if (sfaddr_family(cliIP) == AF_INET)
     {
-        if (!cliIP->ip.u6_addr32[0] || cliIP->ip.u6_addr32[0] == 0xFFFFFFFF ||
-                !srvIP->ip.u6_addr32[0] || srvIP->ip.u6_addr32[0] == 0xFFFFFFFF)
+        if (!sfaddr_get_ip4_value(cliIP) || sfaddr_get_ip4_value(cliIP) == 0xFFFFFFFF)
         {
             return -1;
         }
     }
-    else if (sfip_fast_eq6(cliIP, IP_ARG(zeroed)) || sfip_fast_eq6(srvIP, IP_ARG(zeroed)))
+    else if (sfip_fast_eq6(cliIP, IP_ARG(zeroed)))
+    {
+        return -1;
+    }
+
+    if (sfaddr_family(srvIP) == AF_INET)
+    {
+        if (!sfaddr_get_ip4_value(srvIP) || sfaddr_get_ip4_value(srvIP) == 0xFFFFFFFF)
+        {
+            return -1;
+        }
+    }
+    else if (sfip_fast_eq6(srvIP, IP_ARG(zeroed)))
     {
         return -1;
     }
@@ -236,17 +254,17 @@ int StreamExpectAddChannelPreassignCallback(const Packet *ctrlPkt, snort_ip_p cl
     rval = sfip_compare(cliIP, srvIP);
     if (rval == SFIP_LESSER || (rval == SFIP_EQUAL && cliPort < srvPort))
     {
-        IP_COPY_VALUE(hashKey.ip1, cliIP);
+        sfaddr_copy_to_raw(&hashKey.ip1, cliIP);
         hashKey.port1 = cliPort;
-        IP_COPY_VALUE(hashKey.ip2, srvIP);
+        sfaddr_copy_to_raw(&hashKey.ip2, srvIP);
         hashKey.port2 = srvPort;
         reversed_key = 0;
     }
     else
     {
-        IP_COPY_VALUE(hashKey.ip1, srvIP);
+        sfaddr_copy_to_raw(&hashKey.ip1, srvIP);
         hashKey.port1 = srvPort;
-        IP_COPY_VALUE(hashKey.ip2, cliIP);
+        sfaddr_copy_to_raw(&hashKey.ip2, cliIP);
         hashKey.port2 = cliPort;
         reversed_key = 1;
         DEBUG_WRAP(DebugMessage(DEBUG_STREAM, "reversed\n"););
@@ -298,7 +316,7 @@ int StreamExpectAddChannelPreassignCallback(const Packet *ctrlPkt, snort_ip_p cl
         {
             if( node->appId && appId )
             {
-                DEBUG_WRAP(DebugMessage(DEBUG_STREAM, "expected session has different appId %d != %d\n", 
+                DEBUG_WRAP(DebugMessage(DEBUG_STREAM, "expected session has different appId %d != %d\n",
                             node->appId, appId););
                 return -1;
             }
@@ -407,6 +425,7 @@ int StreamExpectAddChannelPreassignCallback(const Packet *ctrlPkt, snort_ip_p cl
         data->preprocId = preprocId;
         data->next = NULL;
         data_list = malloc( sizeof( *data_list ) );
+
         if( !data_list )
         {
             free( data );
@@ -432,31 +451,146 @@ int StreamExpectAddChannelPreassignCallback(const Packet *ctrlPkt, snort_ip_p cl
             free( data );
             return -1;
         }
+        node = (ExpectNode*)sfxhash_mru(channelHash);
 
 #ifdef HAVE_DAQ_DP_ADD_DC
+        DEBUG_WRAP(DebugMessage(DEBUG_STREAM,
+                    "Adding expected to DAQ\n"););
         // when adding expected channel send expected flow parameters to the DAQ
         // for forwarding to firmware...
-        if( cliPort == UNKNOWN_PORT )
-           DAQ_Add_Dynamic_Protocol_Channel( ctrlPkt, cliIP, cliPort, srvIP, srvPort, protocol );
-        else
-           DAQ_Add_Dynamic_Protocol_Channel( ctrlPkt, srvIP, srvPort, cliIP, cliPort, protocol );
+        {
+            DAQ_DC_Params params;
+
+            memset(&params, 0, sizeof(params));
+            params.flags = 0;
+            params.timeout_ms = 1 * 1000; // 1 second
+            if( cliPort == UNKNOWN_PORT )
+               DAQ_Add_Dynamic_Protocol_Channel( ctrlPkt, cliIP, cliPort, srvIP, srvPort, protocol, &params );
+            else
+               DAQ_Add_Dynamic_Protocol_Channel( ctrlPkt, srvIP, srvPort, cliIP, cliPort, protocol, &params );
+        }
 #endif
 
+    }
+
+    if (packetExpectedNode && snort_conf->mandatoryESCreators && node)
+    {
+        ExpectNode* expectedNode;
+        MandatoryEarlySessionCreator* creator;
+
+        for (expectedNode = *packetExpectedNode;
+             expectedNode && node != expectedNode;
+             expectedNode = expectedNode->manditory_next);
+
+        if (!expectedNode)
+        {
+            node->manditory_next = *packetExpectedNode;
+            *packetExpectedNode = node;
+        }
+        DEBUG_WRAP(DebugMessage(DEBUG_STREAM, "Using expected node %p with packet expected %p\n", node, *packetExpectedNode););
+        for (creator = snort_conf->mandatoryESCreators; creator; creator = creator->next)
+            creator->callback(ctrlPkt->ssnptr, node);
     }
 
     return 0;
 }
 
+ExpectNode* getNextExpectedNode(ExpectNode* expectedNode)
+{
+    if (expectedNode)
+        return expectedNode->manditory_next;
+    return NULL;
+}
+
+void* getApplicationDataFromExpectedNode(ExpectNode* expectedNode, uint32_t preprocId)
+{
+    ExpectedSessionData *data;
+
+    if (!expectedNode->data_list_tail)
+        return NULL;
+
+    for (data = expectedNode->data_list_tail->data;
+         data && data->preprocId != preprocId;
+         data = data->next);
+    return data ? data->appData : NULL;
+}
+
+int addApplicationDataToExpectedNode(ExpectNode* expectedNode, uint32_t preprocId,
+                                     void *appData, void (*appDataFreeFn)(void*))
+{
+    ExpectedSessionData *data;
+
+    if (!expectedNode->data_list_tail)
+        return -1;
+
+    if (expectedNode->data_list_count >= NUM_SESSION_DATA_MAX)
+    {
+        DEBUG_WRAP(DebugMessage(DEBUG_STREAM, "expected session has maximum data slots used\n"););
+        return -1;
+    }
+
+    data = malloc( sizeof( *data ) );
+    if( !data )
+    {
+        DEBUG_WRAP(DebugMessage(DEBUG_STREAM, "Memory alloc error\n"););
+        return -1;
+    }
+    data->appData = appData;
+    data->cbId = INVALIDCBID;
+    data->se = SE_REXMIT;
+    data->appDataFreeFn = appDataFreeFn;
+    data->preprocId = preprocId;
+    data->next = expectedNode->data_list_tail->data;
+    expectedNode->data_list_tail->data = data;
+    expectedNode->data_list_count++;
+
+    return 0;
+
+}
+
+void registerMandatoryEarlySessionCreator(struct _SnortConfig *sc,
+                                          MandatoryEarlySessionCreatorFn callback)
+{
+    MandatoryEarlySessionCreator* mandatoryESCreator;
+
+    for (mandatoryESCreator = sc->mandatoryESCreators;
+         mandatoryESCreator && mandatoryESCreator->callback != callback;
+         mandatoryESCreator = mandatoryESCreator->next);
+
+    if (mandatoryESCreator)
+    {
+        WarningMessage("Mandatory early session creator callback function is already registered");
+        return;
+    }
+
+    mandatoryESCreator = (MandatoryEarlySessionCreator*)SnortAlloc(sizeof(*mandatoryESCreator));
+    mandatoryESCreator->callback = callback;
+    mandatoryESCreator->next = sc->mandatoryESCreators;
+    sc->mandatoryESCreators = mandatoryESCreator;
+}
+
+void FreeMandatoryEarlySessionCreators(MandatoryEarlySessionCreator* mandatoryESCreators)
+{
+    MandatoryEarlySessionCreator* mandatoryESCreator;
+
+    while ((mandatoryESCreator = mandatoryESCreators))
+    {
+        mandatoryESCreators = mandatoryESCreator->next;
+        free(mandatoryESCreator);
+    }
+}
+
 int StreamExpectIsExpected(Packet *p, SFXHASH_NODE **expected_hash_node)
 {
-    snort_ip_p srcIP, dstIP;
+    sfaddr_t* srcIP;
+    sfaddr_t* dstIP;
     SFXHASH_NODE *hash_node;
     ExpectHashKey hashKey;
     ExpectNode *node;
     SFIP_RET rval;
     uint16_t port1;
     uint16_t port2;
-    int reversed_key;
+    char reversed_key;
 
     /* No hash table, or its empty?  Get out of dodge.  */
     if (!sfxhash_count(channelHash))
@@ -483,8 +617,8 @@ int StreamExpectIsExpected(Packet *p, SFXHASH_NODE **expected_hash_node)
     rval = sfip_compare(dstIP, srcIP);
     if (rval == SFIP_LESSER || (rval == SFIP_EQUAL && p->dp < p->sp))
     {
-        IP_COPY_VALUE(hashKey.ip1, dstIP);
-        IP_COPY_VALUE(hashKey.ip2, srcIP);
+        sfaddr_copy_to_raw(&hashKey.ip1, dstIP);
+        sfaddr_copy_to_raw(&hashKey.ip2, srcIP);
         hashKey.port1 = p->dp;
         hashKey.port2 = 0;
         port1 = 0;
@@ -494,8 +628,8 @@ int StreamExpectIsExpected(Packet *p, SFXHASH_NODE **expected_hash_node)
     }
     else
     {
-        IP_COPY_VALUE(hashKey.ip1, srcIP);
-        IP_COPY_VALUE(hashKey.ip2, dstIP);
+        sfaddr_copy_to_raw(&hashKey.ip1, srcIP);
+        sfaddr_copy_to_raw(&hashKey.ip2, dstIP);
         hashKey.port1 = 0;
         hashKey.port2 = p->dp;
         port1 = p->sp;
@@ -582,7 +716,7 @@ char StreamExpectProcessNode(Packet *p, SessionControlBlock* lws, SFXHASH_NODE *
     while ((data = data_list->data))
     {
         data_list->data = data->next;
-        if (data->appData && 
+        if (data->appData &&
                 session_api->set_application_data(lws, data->preprocId, data->appData, data->appDataFreeFn)
                 && data->appDataFreeFn)
         {
@@ -615,7 +749,8 @@ char StreamExpectProcessNode(Packet *p, SessionControlBlock* lws, SFXHASH_NODE *
 
 #if defined(DEBUG_MSGS)
     {
-        snort_ip_p srcIP, dstIP;
+        sfaddr_t* srcIP;
+        sfaddr_t* dstIP;
         char src_ip[INET6_ADDRSTRLEN];
         char dst_ip[INET6_ADDRSTRLEN];
 
@@ -670,19 +805,22 @@ char StreamExpectCheck(Packet *p, SessionControlBlock* lws)
 
 void StreamExpectInit (uint32_t max)
 {
-    // number of entries * overhead per entry
-    max *= (sizeof(SFXHASH_NODE) + sizeof(long) + 
-            sizeof(ExpectHashKey) + sizeof(ExpectNode));
-
-    // add in fixed cost of hash table
-    max += (sizeof(SFXHASH_NODE**) * EXPECT_HASH_SIZE) + sizeof(long);
-
-    channelHash = sfxhash_new(
-            -EXPECT_HASH_SIZE, sizeof(ExpectHashKey), 
-            sizeof(ExpectNode), max, 1, freeHashNode, freeHashNode, 1);
-
     if (!channelHash)
-        FatalError("Failed to create the expected channel hash table.\n");
+    {
+        // number of entries * overhead per entry
+        max *= (sizeof(SFXHASH_NODE) + sizeof(long) +
+                sizeof(ExpectHashKey) + sizeof(ExpectNode));
+
+        // add in fixed cost of hash table
+        max += (sizeof(SFXHASH_NODE**) * EXPECT_HASH_SIZE) + sizeof(long);
+
+        channelHash = sfxhash_new(
+                EXPECT_HASH_SIZE, sizeof(ExpectHashKey),
+                sizeof(ExpectNode), max, 1, freeHashNode, freeHashNode, 1);
+
+        if (!channelHash)
+            FatalError("Failed to create the expected channel hash table.\n");
+    }
 
     memset(&zeroed, 0, sizeof(zeroed));
 }

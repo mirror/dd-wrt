@@ -1,5 +1,5 @@
 /*
- ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2012-2013 Sourcefire, Inc.
  **
  ** This program is free software; you can redistribute it and/or modify
@@ -32,13 +32,13 @@
 #include "sfPolicy.h"
 #include "file_mail_common.h"
 
-int set_log_buffers(MAIL_LogState **log_state, MAIL_LogConfig *conf, void *mempool);
+int set_log_buffers(MAIL_LogState **log_state, MAIL_LogConfig *conf, void *mempool, void* scbPtr);
 void* init_mime_mempool(int max_mime_mem, int max_depth, void *mempool, const char *preproc_name);
 void* init_log_mempool(uint32_t email_hdrs_log_depth, uint32_t memcap,  void *mempool, const char *preproc_name);
 void init_mime(void);
 void free_mime(void);
 const uint8_t* process_mime_data(void *packet, const uint8_t *start, const uint8_t *end,
-        MimeState *mime_ssn, bool upload, bool paf_enabled);
+        MimeState *mime_ssn, bool upload, bool paf_enabled, char *preproc_name);
 void free_mime_session(MimeState *mime_ssn);
 void finalize_mime_position(void *ssnptr, void *decode_state, FilePosition *position);
 
@@ -47,4 +47,15 @@ void reset_mime_paf_state(MimeDataPafInfo *data_info);
 /*  Process data boundary and flush each file based on boundary*/
 bool process_mime_paf_data(MimeDataPafInfo *data_info,  uint8_t val);
 bool check_data_end(void *end_state,  uint8_t val);
-#endif 
+
+#ifdef SNORT_RELOAD
+void update_mime_mempool(void*, int, int);
+void update_log_mempool(void*, int, int);
+#ifdef REG_TEST
+void displayMimeMempool(void *memory_pool, DecodeConfig *decode_conf_old, DecodeConfig *decode_conf_new);
+void displayLogMempool(void *memory_pool, unsigned memcap_old, unsigned memcap_new);
+void displayDecodeDepth(DecodeConfig *decode_conf_old, DecodeConfig *decode_conf_new);
+#endif
+#endif
+
+#endif

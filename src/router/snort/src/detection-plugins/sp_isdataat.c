@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
- ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 1998-2013 Sourcefire, Inc.
  **
  ** This program is free software; you can redistribute it and/or modify
@@ -63,6 +63,7 @@
 #include "profiler.h"
 #include "sp_isdataat.h"
 #include "sp_byte_extract.h"
+#include "sp_byte_math.h"
 #ifdef PERF_PROFILING
 PreprocStats isDataAtPerfStats;
 extern PreprocStats ruleOTNEvalPerfStats;
@@ -134,7 +135,7 @@ void SetupIsDataAt(void)
     /* map the keyword to an initialization/processing function */
     RegisterRuleOption("isdataat", IsDataAtInit, NULL, OPT_TYPE_DETECTION, NULL);
 #ifdef PERF_PROFILING
-    RegisterPreprocessorProfile("isdataat", &isDataAtPerfStats, 3, &ruleOTNEvalPerfStats);
+    RegisterPreprocessorProfile("isdataat", &isDataAtPerfStats, 3, &ruleOTNEvalPerfStats, NULL);
 #endif
 
     DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN,"Plugin: IsDataAt Setup\n"););
@@ -252,10 +253,13 @@ void IsDataAtParse(char *data, IsDataAtData *idx, OptTreeNode *otn)
     }
     else
     {
-        idx->offset_var = GetVarByName(offset);
-        if (idx->offset_var == BYTE_EXTRACT_NO_VAR)
+        if (bytemath_variable_name && (strcmp(bytemath_variable_name,offset) == 0))
+              idx->offset_var= BYTE_MATH_VAR_INDEX;
+        else
         {
-            ParseError(BYTE_EXTRACT_INVALID_ERR_FMT, "isdataat", toks[0]);
+           idx->offset_var = GetVarByName(offset);
+           if (idx->offset_var == BYTE_EXTRACT_NO_VAR)
+              ParseError(BYTE_EXTRACT_INVALID_ERR_FMT, "isdataat", toks[0]);
         }
     }
 
@@ -318,11 +322,18 @@ int IsDataAt(void *option_data, Packet *p)
         return rval;
     }
 
-    /* Get values from byte_extract variables, if present. */
-    if (isdata->offset_var >= 0 && isdata->offset_var < NUM_BYTE_EXTRACT_VARS)
+    /* Get values from byte_math/byte_extract variables, if present. */
+    if (isdata->offset_var >= 0 )
     {
-        GetByteExtractValue(&(isdata->offset), isdata->offset_var);
+        if(isdata->offset_var == BYTE_MATH_VAR_INDEX )
+             isdata->offset = (int32_t) bytemath_variable;
+        else
+        {
+            if (isdata->offset_var < NUM_BYTE_EXTRACT_VARS)
+               GetByteExtractValue(&(isdata->offset), isdata->offset_var);
+        }
     }
+
 
     if (isdata->flags & ISDATAAT_RAWBYTES_FLAG)
     {

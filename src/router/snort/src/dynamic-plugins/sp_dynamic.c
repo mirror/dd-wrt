@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * Author: Steven Sturges
@@ -184,7 +184,7 @@ void SetupDynamic(void)
     RegisterRuleOption("dynamic", DynamicInit, NULL, OPT_TYPE_DETECTION, NULL);
 
 #ifdef PERF_PROFILING
-    RegisterPreprocessorProfile("dynamic_rule", &dynamicRuleEvalPerfStats, 3, &ruleOTNEvalPerfStats);
+    RegisterPreprocessorProfile("dynamic_rule", &dynamicRuleEvalPerfStats, 3, &ruleOTNEvalPerfStats, NULL);
 #endif
     DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN,"Plugin: Dynamic Setup\n"););
 }
@@ -469,7 +469,7 @@ int ReloadDynamicRules(SnortConfig *sc)
     {
         int i;
 
-        if (node->rule == NULL)
+        if (node->rule == NULL || (!node->rule->initialized) || node->rule->options == NULL)
             continue;
 
         for (i = 0; node->rule->options[i] != NULL; i++)
@@ -754,6 +754,11 @@ int DynamicHasContent(OptTreeNode *otn)
 int DynamicHasByteTest(OptTreeNode *otn)
 {
     return DynamicHasOption(otn, OPTION_TYPE_BYTE_TEST, 0);
+}
+
+int DynamicHasByteMath(OptTreeNode *otn)
+{
+    return DynamicHasOption(otn, OPTION_TYPE_BYTE_MATH, 0);
 }
 
 int DynamicHasPCRE(OptTreeNode *otn)

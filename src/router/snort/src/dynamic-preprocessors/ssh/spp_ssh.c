@@ -1,7 +1,7 @@
 /* $Id */
 
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 **
@@ -46,9 +46,9 @@
 #include "snort_debug.h"
 
 #include "preprocids.h"
-#ifdef FEAT_OPEN_APPID
+#if defined(FEAT_OPEN_APPID)
 #include "appId.h"
-#endif
+#endif /* defined(FEAT_OPEN_APPID) */
 #include "spp_ssh.h"
 #include "sf_preproc_info.h"
 
@@ -69,6 +69,10 @@ PreprocStats sshPerfStats;
 #endif
 
 #include "sf_types.h"
+
+#ifdef DUMP_BUFFER
+#include "ssh_buffer_dump.h"
+#endif
 
 const int MAJOR_VERSION = 1;
 const int MINOR_VERSION = 1;
@@ -149,6 +153,10 @@ void SetupSSH(void)
     _dpd.registerPreproc("ssh", SSHInit, SSHReload,
                          SSHReloadVerify, SSHReloadSwap, SSHReloadSwapFree);
 #endif
+
+#ifdef DUMP_BUFFER
+    _dpd.registerBufferTracer(getSSHBuffers, SSH_BUFFER_DUMP_FUNC);
+#endif
 }
 
 /* Initializes the SSH preprocessor module and registers
@@ -185,7 +193,7 @@ static void SSHInit(struct _SnortConfig *sc, char *argp)
         _dpd.addPreprocExit(SSHCleanExit, NULL, PRIORITY_LAST, PP_SSH);
 
 #ifdef PERF_PROFILING
-        _dpd.addPreprocProfileFunc("ssh", (void *)&sshPerfStats, 0, _dpd.totalPerfStats);
+        _dpd.addPreprocProfileFunc("ssh", (void *)&sshPerfStats, 0, _dpd.totalPerfStats, NULL);
 #endif
 
 #ifdef TARGET_BASED
@@ -560,6 +568,11 @@ ProcessSSH( void* ipacketp, void* contextp )
 #ifdef TARGET_BASED
     int16_t app_id = SFTARGET_UNKNOWN_PROTOCOL;
 #endif
+
+#ifdef DUMP_BUFFER
+    dumpBufferInit();
+#endif
+
     uint32_t search_dir_ver, search_dir_keyinit;
     char flags = STREAM_FLPOLICY_SET_ABSOLUTE;
     tSfPolicyId policy_id = _dpd.getNapRuntimePolicy();
@@ -575,6 +588,10 @@ ProcessSSH( void* ipacketp, void* contextp )
     PREPROC_PROFILE_START(sshPerfStats);
 
     ssh_eval_config = sfPolicyUserDataGetCurrent(ssh_config);
+
+#ifdef DUMP_BUFFER
+    dumpBuffer(SSH_PAYLOAD_DUMP,packetp->payload,packetp->payload_size);
+#endif
 
     /* Attempt to get a previously allocated SSH block. */
 	sessp = _dpd.sessionAPI->get_application_data(packetp->stream_session, PP_SSH);
@@ -783,10 +800,11 @@ ProcessSSH( void* ipacketp, void* contextp )
                     sessp->num_client_bytes += (packetp->payload_size - offset);
                 }
 
-                if ( sessp->num_client_bytes >= ssh_eval_config->MaxClientBytes )
-#ifdef FEAT_OPEN_APPID
-                if ((_dpd.getAppId(packetp->stream_session) != APP_ID_SFTP))
-#endif
+                if ( (sessp->num_client_bytes >= ssh_eval_config->MaxClientBytes)
+#if defined(FEAT_OPEN_APPID)
+                     && (_dpd.getAppId(packetp->stream_session) != APP_ID_SFTP)
+#endif /* defined(FEAT_OPEN_APPID) */
+                   )
                 {
                     /* Probable exploit in progress.*/
                     if (sessp->version == SSH_VERSION_1)
@@ -1007,6 +1025,10 @@ ProcessSSHProtocolVersionExchange( SSHData* sessionp, SFSnortPacket* packetp,
     uint8_t version;
     char *version_end;
 
+#ifdef DUMP_BUFFER
+    dumpBuffer(SSH_PAYLOAD_DUMP,packetp->payload,packetp->payload_size);
+#endif
+
     /* Get the version. */
     if ( packetp->payload_size >= 6 &&
          !strncasecmp( version_stringp, "SSH-1.", 6))
@@ -1169,6 +1191,9 @@ ProcessSSHKeyInitExchange( SSHData* sessionp, SFSnortPacket* packetp,
         switch( message_type )
         {
             case SSH_MSG_V1_SMSG_PUBLIC_KEY:
+#ifdef DUMP_BUFFER
+    dumpBuffer(SSH_MSG_V1_SMSG_PUBLIC_KEY_DUMP,payload,payload_size);
+#endif
                 if ( direction == SSH_DIR_FROM_SERVER )
                 {
                     sessionp->state_flags |=
@@ -1182,6 +1207,9 @@ ProcessSSHKeyInitExchange( SSHData* sessionp, SFSnortPacket* packetp,
                 }
                 break;
             case SSH_MSG_V1_CMSG_SESSION_KEY:
+#ifdef DUMP_BUFFER
+    dumpBuffer(SSH_MSG_V1_CMSG_SESSION_KEY_DUMP,payload,payload_size);
+#endif
                 if ( direction == SSH_DIR_FROM_CLIENT )
                 {
                     sessionp->state_flags |=
@@ -1195,6 +1223,9 @@ ProcessSSHKeyInitExchange( SSHData* sessionp, SFSnortPacket* packetp,
                 }
                 break;
             default:
+#ifdef DUMP_BUFFER
+    dumpBuffer(SSH_MSG_TYPE_INVALID_DUMP,payload,payload_size);
+#endif
                 /* Invalid msg type*/
                 break;
         }
@@ -1262,7 +1293,6 @@ ProcessSSHKeyInitExchange( SSHData* sessionp, SFSnortPacket* packetp,
     else
         return 0;
 }
-
 /* Called to process SSH2 key exchange msgs (key exch init msgs already
  * processed earlier). On failure, inspection will be continued, but the
  * packet will be alerted on, and ignored.
@@ -1292,10 +1322,12 @@ ProcessSSHKeyExchange( SSHData* sessionp, SFSnortPacket* packetp,
     {
         return 0;
     }
-    
     payload_size -= offset;
     payload += offset;
 
+#ifdef DUMP_DUFFER
+dumpBuffer(SSH_KEY_DUMP,payload,payload_size);
+#endif
     while(next_packet)
     {
         ssh2packetp = (SSH2Packet*) (payload + npacket_offset);
@@ -1319,6 +1351,9 @@ ProcessSSHKeyExchange( SSHData* sessionp, SFSnortPacket* packetp,
         switch(payload[npacket_offset + SSH2_HEADERLEN] )
         {
             case SSH_MSG_KEXDH_INIT:
+#ifdef DUMP_BUFFER
+    dumpBuffer(SSH_MSG_KEXDH_INIT_DUMP,(const uint8_t *)ssh2packetp,ssh_length);
+#endif
                 if ( direction == SSH_DIR_FROM_CLIENT )
                 {
                     sessionp->state_flags |=
@@ -1332,6 +1367,9 @@ ProcessSSHKeyExchange( SSHData* sessionp, SFSnortPacket* packetp,
                 }
                 break;
             case SSH_MSG_KEXDH_REPLY:
+#ifdef DUMP_BUFFER
+    dumpBuffer(SSH_MSG_KEXDH_REPLY_DUMP,(const uint8_t *)ssh2packetp,ssh_length);
+#endif
                 if ( direction == SSH_DIR_FROM_SERVER )
                 {
                     /* KEXDH_REPLY has the same msg
@@ -1350,6 +1388,9 @@ ProcessSSHKeyExchange( SSHData* sessionp, SFSnortPacket* packetp,
                 }
                 break;
             case SSH_MSG_KEXDH_GEX_REQ:
+#ifdef DUMP_BUFFER
+    dumpBuffer(SSH_MSG_KEXDH_GEX_REQ_DUMP,(const uint8_t *)ssh2packetp,ssh_length);
+#endif
                 if ( direction == SSH_DIR_FROM_CLIENT )
                 {
                     sessionp->state_flags |=
@@ -1363,6 +1404,9 @@ ProcessSSHKeyExchange( SSHData* sessionp, SFSnortPacket* packetp,
                 }
                 break;
             case SSH_MSG_KEXDH_GEX_GRP:
+#ifdef DUMP_BUFFER
+    dumpBuffer(SSH_MSG_KEXDH_GEX_GRP_DUMP,(const uint8_t *)ssh2packetp,ssh_length);
+#endif
                 if ( direction == SSH_DIR_FROM_SERVER )
                 {
                     sessionp->state_flags |=
@@ -1376,6 +1420,9 @@ ProcessSSHKeyExchange( SSHData* sessionp, SFSnortPacket* packetp,
                 }
                 break;
             case SSH_MSG_KEXDH_GEX_INIT:
+#ifdef DUMP_BUFFER
+    dumpBuffer(SSH_MSG_KEXDH_GEX_INIT_DUMP,(const uint8_t *)ssh2packetp,ssh_length);
+#endif
                 if ( direction == SSH_DIR_FROM_CLIENT )
                 {
                     sessionp->state_flags |=
@@ -1396,6 +1443,9 @@ ProcessSSHKeyExchange( SSHData* sessionp, SFSnortPacket* packetp,
                  * actually send this message. So receving a new
                  * keys msg from the client is sufficient.
                  */
+#ifdef DUMP_BUFFER
+    dumpBuffer(SSH_MSG_NEWKEYS_DUMP,(const uint8_t *)ssh2packetp,ssh_length);
+#endif
                 if ( direction == SSH_DIR_FROM_CLIENT )
                 {
                     sessionp->state_flags |= SSH_FLG_NEWKEYS_SEEN;

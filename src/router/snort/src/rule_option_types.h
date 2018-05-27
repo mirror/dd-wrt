@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -75,6 +75,7 @@ typedef enum _option_type_t
     RULE_OPTION_TYPE_DYNAMIC,
     RULE_OPTION_TYPE_APPID
 #endif /* defined(FEAT_OPEN_APPID) */
+    ,RULE_OPTION_TYPE_BYTE_MATH
 
 } option_type_t;
 

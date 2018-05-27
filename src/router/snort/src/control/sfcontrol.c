@@ -2,7 +2,7 @@
  **
  **  sfcontrol.c
  **
- **  Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ **  Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  **  Copyright (C) 2002-2013 Sourcefire, Inc.
  **  Author(s):  Ron Dempster <rdempster@sourcefire.com>
  **
@@ -36,6 +36,9 @@
 #include "snort.h"
 #include "sfcontrol_funcs.h"
 #include "sfcontrol.h"
+#ifdef REG_TEST
+#include "reg_test.h"
+#endif
 
 #ifdef CONTROL_SOCKET
 
@@ -451,6 +454,21 @@ static void *ControlSocketProcessThread(void *arg)
                         work_queue = handler;
                     s_work_to_do++;
                     pthread_mutex_unlock(&work_mutex);
+#ifdef REG_TEST
+                    if (REG_TEST_FLAG_SESSION_FORCE_RELOAD & getRegTestFlags())
+                    {
+                        char responseTempStr[] = "--== Reloading Snort: new config ready ==--";
+                        memset(response.msg, 0, sizeof(response.msg));
+                        len = snprintf(response.msg, sizeof(response.msg), "%s", responseTempStr);
+                        response.hdr.type = htons(CS_HEADER_DATA);
+                        response.msg_hdr.code = 0;
+                        len = strlen(response.msg);
+                        response.msg_hdr.length = htons(len);
+                        len += sizeof(response.msg_hdr);
+                        response.hdr.length = htonl(len);
+                        SendResponse(t, &response, len);
+                    }
+#endif
                     DEBUG_WRAP( DebugMessage(DEBUG_CONTROL, "Control Socket %d: Waiting for ibcontrol\n", t->socket_fd););
                     while (!handler->handled && !t->stop_processing)
                         usleep(100000);
@@ -465,6 +483,21 @@ static void *ControlSocketProcessThread(void *arg)
                             DEBUG_WRAP( DebugMessage(DEBUG_CONTROL, "Control Socket %d: ibcontrol failed %d\n", t->socket_fd, handler->ib_rval););
                             goto next;
                         }
+#ifdef REG_TEST
+                        else if (REG_TEST_FLAG_SESSION_FORCE_RELOAD & getRegTestFlags())
+                        {
+                            char responseStr[] = "--== Reloading Snort: config swap completed ==--";
+                            memset(response.msg, 0, sizeof(response.msg));
+                            len = snprintf(response.msg, sizeof(response.msg), "%s", responseStr);
+                            response.hdr.type = htons(CS_CONFIG_SWAP);
+                            response.msg_hdr.code = 0;
+                            len = strlen(response.msg);
+                            response.msg_hdr.length = htons(len);
+                            len += sizeof(response.msg_hdr);
+                            response.hdr.length = htonl(len);
+                            SendResponse(t, &response, len);
+                        }
+#endif
                     }
                     else
                     {

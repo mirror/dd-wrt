@@ -352,6 +352,6 @@ read_again:
     }
 
     /* We should never get here */
-    return -1;
+    return SF_EINVAL;
 }
 

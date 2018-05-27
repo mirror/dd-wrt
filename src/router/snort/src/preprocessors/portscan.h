@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2004-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -67,9 +67,9 @@ typedef struct s_PS_PROTO
     unsigned short low_p;
     unsigned short u_ports;
 
-    snort_ip           high_ip;
-    snort_ip           low_ip;
-    snort_ip           u_ips;
+    sfaddr_t           high_ip;
+    sfaddr_t           low_ip;
+    sfaddr_t           u_ips;
 
     unsigned short open_ports[PS_OPEN_PORTS];
     unsigned char  open_ports_cnt;
@@ -141,6 +141,10 @@ void ps_tracker_print(PS_TRACKER *tracker);
 
 int ps_get_protocols(struct _SnortConfig *sc, tSfPolicyId policyId);
 void ps_init_hash(unsigned long);
+#ifdef SNORT_RELOAD
+bool ps_reload_adjust(unsigned long memcap, unsigned max_work);
+unsigned int ps_hash_overhead_bytes();
+#endif
 
 #endif
 

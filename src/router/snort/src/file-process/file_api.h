@@ -1,5 +1,5 @@
 /*
- ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * ** Copyright (C) 2012-2013 Sourcefire, Inc.
  * ** AUTHOR: Hui Cao
  * **
@@ -48,6 +48,7 @@
 #define FILE_ALL_OFF                        0x00000000
 #define MAX_FILE                            1024
 #define MAX_EMAIL                           1024
+#define MAX_UNICODE_FILE_NAME               1024
 
 #define FILE_RESUME_BLOCK                   0x01
 #define FILE_RESUME_LOG                     0x02
@@ -61,6 +62,12 @@
 
 #define FILE_SIGNATURE_SHA256       1
 #define FILE_SIGNATURE_SHA256_STR   "(file) malware detected"
+
+#define UTF_16_BE_BOM "\xFE\xFF"
+#define UTF_16_LE_BOM "\xFF\xFE"
+
+#define UTF_16_BE_BOM_LEN 2
+#define UTF_16_LE_BOM_LEN 2
 
 typedef enum _File_Verdict
 {
@@ -96,6 +103,7 @@ typedef enum _FileSigState
 {
     FILE_SIG_PROCESSING = 0,
     FILE_SIG_DEPTH_FAIL,              /*larger than file signature depth*/
+    FILE_SIG_FLUSH,
     FILE_SIG_DONE
 } FileSigState;
 
@@ -106,11 +114,25 @@ typedef enum _FileProcessType
     SNORT_FILE_CAPTURE
 } FileProcessType;
 
+typedef enum _FileCharEncoding
+{
+    SNORT_CHAR_ENCODING_ASCII = 0,
+    SNORT_CHAR_ENCODING_UTF_16LE,
+    SNORT_CHAR_ENCODING_UTF_16BE,
+}FileCharEncoding;
+
 typedef struct _FileState
 {
     FileCaptureState capture_state;
     FileSigState     sig_state;
 } FileState;
+
+typedef struct _FileCacheStatus
+{
+    uint64_t prunes;  /* number of file entries pruned due to memcap*/
+    uint64_t segment_mem_in_use; /* memory used currently */
+    uint64_t segment_mem_in_use_max; /* Maximal memory usage */
+} FileCacheStatus;
 
 struct s_MAIL_LogState;
 struct _DecodeConfig;
@@ -122,6 +144,20 @@ struct _FileCaptureInfo;
 typedef struct _FileCaptureInfo FileCaptureInfo;
 struct _SnortConfig;
 struct _FileContext;
+struct _FileCache;
+
+struct _MemPool;
+
+typedef struct _FileSession
+{
+    struct _FileContext *current_context;
+    struct _FileContext *main_context;
+    struct _FileContext *pending_context;
+    uint32_t  max_file_id;
+    struct _FileCache *file_cache;
+    uint64_t file_id;
+
+} FileSession;
 
 #define FILE_API_VERSION   4
 
@@ -136,29 +172,37 @@ typedef File_Verdict (*File_signature_callback_func) (void* p, void* ssnptr,
 typedef void (*Log_file_action_func) (void* ssnptr, int action);
 
 typedef int (*File_process_func)( void* p, uint8_t* file_data, int data_size, FilePosition position,
-        bool upload, bool suspend_block_verdict);
+        bool upload, bool suspend_block_verdict, bool do_flush);
 typedef int (*Get_file_name_func) (void* ssnptr, uint8_t **file_name, uint32_t *name_len);
 typedef uint64_t (*Get_file_size_func) (void* ssnptr);
 typedef bool (*Get_file_direction_func) (void* ssnptr);
 typedef uint8_t *(*Get_file_sig_sha256_func) (void* ssnptr);
 
-typedef void (*Set_file_name_func) (void* ssnptr, uint8_t *, uint32_t);
+typedef void (*Set_file_name_func) (void* ssnptr, uint8_t *, uint32_t, bool);
 typedef void (*Set_file_direction_func) (void* ssnptr, bool);
 
-typedef int64_t (*Get_file_depth_func) (void);
+typedef int64_t (*Get_file_depth_func) (struct _SnortConfig *snort_conf, bool next);
+typedef bool (*Is_file_signature_enabled_func) (void);
 
 typedef void (*Set_file_policy_func)(File_policy_callback_func);
-typedef void (*Enable_file_type_func)(File_type_callback_func);
-typedef void (*Enable_file_signature_func)(File_signature_callback_func);
-typedef void (*Enable_file_capture_func)(File_signature_callback_func);
+typedef void (*Enable_file_type_func)(struct _SnortConfig* sc, File_type_callback_func);
+typedef void (*Enable_file_signature_func)(struct _SnortConfig* sc, File_signature_callback_func);
+typedef void (*Enable_file_capture_func)(struct _SnortConfig* sc, File_signature_callback_func);
 typedef void (*Set_file_action_log_func)(Log_file_action_func);
+typedef void (*Install_file_service_func)(void);
 
-typedef int (*Set_log_buffers_func)(struct s_MAIL_LogState **log_state, struct s_MAIL_LogConfig *conf, void *mempool);
+typedef int (*Set_log_buffers_func)(struct s_MAIL_LogState **log_state, struct s_MAIL_LogConfig *conf, void *mempool, void* scbPtr);
+typedef void (*Update_mime_mempool_func)(void*, int, int);
+typedef void (*Update_log_mempool_func)(void*, int, int);
+typedef void (*Display_mime_mempool_func)(void *memory_pool, struct _DecodeConfig *decode_conf_old, struct _DecodeConfig *decode_conf_new);
+typedef void (*Display_log_mempool_func)(void *memory_pool, unsigned memcap_old, unsigned memcap_new);
+typedef void (*Display_decode_depth_func)(struct _DecodeConfig *decode_conf_old, struct _DecodeConfig *decode_conf_new);
 typedef void* (*Init_mime_mempool_func)(int max_mime_mem, int max_depth, void *mempool, const char *preproc_name);
 typedef void* (*Init_log_mempool_func)(uint32_t email_hdrs_log_depth, uint32_t memcap,  void *mempool, const char *preproc_name);
 
 typedef int (*File_resume_block_add_file_func)(void *pkt, uint32_t file_sig,
-        uint32_t timeout, File_Verdict verdict, uint32_t file_type_id, uint8_t *signature);
+        uint32_t timeout, File_Verdict verdict, uint32_t file_type_id, uint8_t *signature,
+        uint16_t cli_port, uint16_t srv_port, bool create_pinhole);
 typedef File_Verdict (*File_resume_block_check_func)(void *pkt, uint32_t file_sig);
 typedef uint32_t (*Str_to_hash_func)(uint8_t *str, int length );
 typedef void (*File_signature_lookup_func)(void* p, bool is_retransmit);
@@ -166,10 +210,9 @@ typedef void (*Set_mime_decode_config_defaults_func)(struct _DecodeConfig *decod
 typedef void (*Set_mime_log_config_defaults_func)(struct s_MAIL_LogConfig *log_config);
 typedef int (*Parse_mime_decode_args_func)(struct _DecodeConfig *decode_conf, char *arg, const char *preproc_name);
 typedef const uint8_t * (*Process_mime_data_func)(void *packet, const uint8_t *start, const uint8_t *end,
-        struct _MimeState *mime_ssn, bool upload, bool paf_enabled);
+        struct _MimeState *mime_ssn, bool upload, bool paf_enabled, char *protocol);
 typedef void (*Free_mime_session_func)(struct _MimeState *mime_ssn);
 typedef bool (*Is_decoding_enabled_func)(struct _DecodeConfig *decode_conf);
-typedef bool (*Is_decoding_conf_changed_func)(struct _DecodeConfig *configNext, struct _DecodeConfig *config, const char *preproc_name);
 typedef bool (*Check_decoding_conf_func)(struct _DecodeConfig *configNext, struct _DecodeConfig *config, const char *preproc_name);
 typedef bool (*Is_mime_log_enabled_func)(struct s_MAIL_LogConfig *log_config);
 typedef void (*Finalize_mime_position_func)(void *ssnptr, void *decode_state, FilePosition *position);
@@ -193,12 +236,25 @@ typedef uint32_t (*Get_new_file_instance)(void *);
 
 /*Context based file process functions*/
 typedef struct _FileContext* (*Create_file_context_func)(void *ssnptr);
+typedef void (*Init_file_context_func)(void *ssnptr, bool upload, struct _FileContext  *ctx);
 typedef struct _FileContext* (*Get_file_context_func)(void *ssnptr);
 typedef bool (*Set_file_context_func)(void *ssnptr, struct _FileContext *ctx);
 typedef int (*Process_file_func)( struct _FileContext *ctx, void *p,
         uint8_t *file_data, int data_size, FilePosition position,
         bool suspend_block_verdict);
+typedef void *(*File_cache_update_entry_func) (struct _FileCache *fileCache, void* p, uint64_t file_id,
+        uint8_t *file_name, uint32_t file_name_size,  uint64_t file_size);
+typedef int (*File_segment_process_func)( struct _FileCache *fileCache, void* p, uint64_t file_id,
+        uint64_t file_size, const uint8_t* file_data, int data_size, uint64_t offset,
+        bool upload);
+typedef struct _FileCache * (*File_cache_create_func)(uint64_t memcap, uint32_t cleanup_files);
+typedef void (*File_cache_free_func)(struct _FileCache *fileCache);
+typedef FileCacheStatus * (*File_cache_status_func)(struct _FileCache *fileCache);
 typedef int64_t (*Get_max_file_capture_size)(void *ssn);
+typedef bool (*File_config_malware_check)(void *ssn, uint16_t app_id);
+typedef FileCharEncoding (*Get_character_encoding)(uint8_t *, uint32_t);
+typedef bool (*File_cache_mem_adjust_func)(struct _FileCache *fileCache, uint8_t *pWork);
+typedef void (*File_cache_mem_set_func)(struct _FileCache *fileCache, uint64_t memcap);
 
 typedef struct _file_api
 {
@@ -299,6 +355,8 @@ typedef struct _file_api
      *    void* ssnptr: session pointer
      *    uint8_t *file_name: file name to be saved
      *    uint32_t name_len: file name length
+     *    bool save_in_context: true if file name is saved in context
+     *                          instead of session
      * Returns
      *    None
      */
@@ -378,6 +436,17 @@ typedef struct _file_api
      */
     Set_file_action_log_func set_file_action_log_callback;
 
+    /* Install file service.
+     * This must be called in band with packets.
+     * It makes the functions set in the other enable calls active.
+     *
+     * Arguments:
+     *    None
+     * Returns
+     *    None
+     */
+    Install_file_service_func install_file_service;
+
     /*--------------File configurations-------------*/
 
     /* Get file depth required for all file processings enabled
@@ -390,8 +459,24 @@ typedef struct _file_api
      */
     Get_file_depth_func get_max_file_depth;
 
+    /* Is file signature enabled
+     *
+     * Arguments:
+     *    None
+     *
+     * Returns:
+     *    bool: true if file_signature_enabled is set
+     */
+    Is_file_signature_enabled_func is_file_signature_enabled;
+
+
     /*--------------Common functions used for MIME processing-------------*/
     Set_log_buffers_func set_log_buffers;
+    Update_mime_mempool_func update_mime_mempool;
+    Update_log_mempool_func update_log_mempool;
+    Display_mime_mempool_func displayMimeMempool;
+    Display_log_mempool_func displayLogMempool;
+    Display_decode_depth_func displayDecodeDepth;
     Init_mime_mempool_func init_mime_mempool;
     Init_log_mempool_func init_log_mempool;
     Set_mime_decode_config_defaults_func set_mime_decode_config_defauts;
@@ -400,7 +485,6 @@ typedef struct _file_api
     Process_mime_data_func process_mime_data;
     Free_mime_session_func free_mime_session;
     Is_decoding_enabled_func is_decoding_enabled;
-    Is_decoding_conf_changed_func is_decoding_conf_changed;
     Check_decoding_conf_func check_decoding_conf;
     Is_mime_log_enabled_func is_mime_log_enabled;
     Finalize_mime_position_func finalize_mime_position;
@@ -495,6 +579,15 @@ typedef struct _file_api
      */
     Create_file_context_func create_file_context;
 
+    /* Intialize a file context
+     *
+     * Arguments:
+     *    void* ssnptr: session pointer
+     * Returns:
+     *    FileContext *: file context.
+     */
+    Init_file_context_func init_file_context;
+
     /* Set file context to be the current
      *
      * Arguments:
@@ -539,6 +632,65 @@ typedef struct _file_api
      */
     Process_file_func process_file;
 
+    /* Create the file cache that store file segments and properties.
+     *
+     * Arguments:
+     *    uint64_t: total memory available for file cache, including file contexts
+     *    uint32_t: maximal number of files pruned when memcap is reached
+     * Returns:
+     *    struct _FileCache *: file cache pointer
+     */
+    File_cache_create_func file_cache_create;
+
+    /* Free the file cache that store file segments and properties.
+     *
+     * Arguments:
+     *    struct _FileCache *: file cache pointer
+     * Returns:
+     *    None
+     */
+    File_cache_free_func file_cache_free;
+
+    /* Get the status of file cache for troubleshooting.
+     *
+     * Arguments:
+     *    struct _FileCache *: file cache pointer
+     * Returns:
+     *    FileCacheStatus *: status of file cache
+     */
+    File_cache_status_func file_cache_status;
+
+    /* Get a new file entry in the file cache, if already exists, update file name
+     *
+     * Arguments:
+     *    struct _FileCache *: file cache that stores file segments
+     *    void* : packet pointer
+     *    uint64_t: file id that is unique
+     *    uint8_t *: file name
+     *    uint32_t:  file name size
+     * Returns:
+     *    None
+     */
+    File_cache_update_entry_func file_cache_update_entry;
+
+    /* Process file segment, when file segment is in order, file data will be
+     * processed; otherwise it is stored.
+     *
+     * Arguments:
+     *    struct _FileCache *: file cache that stores file segments
+     *    void* : packet pointer
+     *    uint64_t: file id that is unique
+     *    uint64_t: total file size,
+     *    const uint8_t*: file data
+     *    int: file data size
+     *    uint64_t: file data offset in the file
+     *    bool: true for upload, false for download
+     * Returns:
+     *    1: continue processing/log/block this file
+     *    0: ignore this file (no further processing needed)
+     */
+    File_segment_process_func file_segment_process;
+
     /* Return a unique file instance number
      *
      * Arguments:
@@ -551,6 +703,21 @@ typedef struct _file_api
     GetFilePosition get_file_position;
 
     Get_max_file_capture_size get_max_file_capture_size;
+    File_config_malware_check  file_config_malware_check;
+    /* Return the character encoding of a buffer
+     * Arguments:
+     *   uint8 *: input buffer
+     *   uint32 : input buffer length
+     * Returns:
+     *     FileCharEncoding
+               SNORT_CHAR_ENCODING_ASCII = 0,
+               SNORT_CHAR_ENCODING_UTF_16LE,
+               SNORT_CHAR_ENCODING_UTF_16BE
+     */
+    Get_character_encoding get_character_encoding;
+
+    File_cache_mem_adjust_func file_cache_shrink_to_memcap;
+    File_cache_mem_set_func    file_cache_set_memcap;
 
 } FileAPI;
 

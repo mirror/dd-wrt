@@ -19,7 +19,8 @@ sp_dynamic.h \
 sp_preprocopt.c \
 sp_preprocopt.h \
 sf_convert_dynamic.c \
-sf_convert_dynamic.h
+sf_convert_dynamic.h \
+so_rule_mem_adjust.h
 
 INCLUDES = @INCLUDES@
 

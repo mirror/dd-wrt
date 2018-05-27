@@ -14,7 +14,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * Author: Ryan Jordan
@@ -51,6 +51,9 @@ PreprocStats modbusPerfStats;
 #include "modbus_roptions.h"
 #include "modbus_paf.h"
 
+#ifdef DUMP_BUFFER
+#include "modbus_buffer_dump.h"
+#endif
 const int MAJOR_VERSION = 1;
 const int MINOR_VERSION = 1;
 const int BUILD_VERSION = 1;
@@ -110,6 +113,9 @@ void SetupModbus(void)
                          ModbusReloadVerify, ModbusReloadSwap,
                          ModbusReloadSwapFree);
 #endif
+#ifdef DUMP_BUFFER
+    _dpd.registerBufferTracer(getMODBUSBuffers, MODBUS_BUFFER_DUMP_FUNC);
+#endif
 }
 
 /* Allocate memory for preprocessor config, parse the args, set up callbacks */
@@ -136,6 +142,9 @@ static void ModbusInit(struct _SnortConfig *sc, char *argp)
     registerPortsForReassembly( modbus_policy, SSN_DIR_FROM_SERVER | SSN_DIR_FROM_CLIENT );
 
     ModbusPrintConfig(modbus_policy);
+#ifdef DUMP_BUFFER
+        dumpBufferInit();
+#endif
 }
 
 static inline void ModbusOneTimeInit(struct _SnortConfig *sc)
@@ -159,7 +168,7 @@ static inline void ModbusOneTimeInit(struct _SnortConfig *sc)
     _dpd.addPreprocExit(ModbusCleanExit, NULL, PRIORITY_LAST, PP_MODBUS);
 
 #ifdef PERF_PROFILING
-    _dpd.addPreprocProfileFunc("modbus", (void *)&modbusPerfStats, 0, _dpd.totalPerfStats);
+    _dpd.addPreprocProfileFunc("modbus", (void *)&modbusPerfStats, 0, _dpd.totalPerfStats, NULL);
 #endif
 
     /* Set up target-based app id */
@@ -337,7 +346,6 @@ static void ProcessModbus(void *ipacketp, void *contextp)
     SFSnortPacket *packetp = (SFSnortPacket *)ipacketp;
     modbus_session_data_t *sessp;
     PROFILE_VARS;
-
     // preconditions - what we registered for
     assert(IsTCP(packetp) && packetp->payload && packetp->payload_size);
 

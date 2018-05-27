@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -33,8 +33,7 @@
 #include "pcap_pkthdr32.h"
 
 #if defined(FEAT_OPEN_APPID)
-#define MAX_EVENT_APPNAME_LEN  16
-
+#define MAX_EVENT_APPNAME_LEN  64
 #endif /* defined(FEAT_OPEN_APPID) */
 typedef struct _Event
 {

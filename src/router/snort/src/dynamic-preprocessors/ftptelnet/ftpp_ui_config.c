@@ -1,7 +1,7 @@
 /*
  * ftpp_ui_config.c
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2004-2013 Sourcefire, Inc.
  * Steven A. Sturges <ssturges@sourcefire.com>
  * Daniel J. Roelker <droelker@sourcefire.com>
@@ -332,7 +332,7 @@ int ftpp_ui_config_reset_ftp_server(FTP_SERVER_PROTO_CONF *ServerConf,
  *
  */
 int ftpp_ui_config_add_ftp_server(FTPTELNET_GLOBAL_CONF *GlobalConf,
-                            sfip_t * ServerIP, FTP_SERVER_PROTO_CONF *ServerConf)
+                            sfcidr_t * ServerIP, FTP_SERVER_PROTO_CONF *ServerConf)
 {
     int iRet;
 
@@ -405,7 +405,7 @@ int ftpp_ui_config_reset_ftp_client(FTP_CLIENT_PROTO_CONF *ClientConf,
  *
  */
 int ftpp_ui_config_add_ftp_client(FTPTELNET_GLOBAL_CONF *GlobalConf,
-                            sfip_t * ClientIP, FTP_CLIENT_PROTO_CONF *ClientConf)
+                            sfcidr_t * ClientIP, FTP_CLIENT_PROTO_CONF *ClientConf)
 {
     int iRet;
 

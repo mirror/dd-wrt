@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2009-2013 Sourcefire, Inc.
 **
 **
@@ -131,6 +131,12 @@ int SDFOptionInit(struct _SnortConfig *sc, char *name, char *args, void **data)
     {
         sdf_data->pii = strdup(token);
         sdf_data->validate_func = NULL;
+    }
+    if (!sdf_data->pii)
+    {
+        free(sdf_data);
+        DynamicPreprocessorFatalMessage("%s(%d) Failed to allocate memory for "
+                "SDF pattern data.", __FILE__, __LINE__);
     }
 
     *data = (void *)sdf_data;

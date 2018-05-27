@@ -2,7 +2,7 @@
 /*
 ** file_decomp.c
 **
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License Version 2 as
@@ -57,7 +57,7 @@ static const char SWF_Uncomp_Sig[3] = { 'F', 'W', 'S' };
 
 static struct sig_map_s
 {
-    char *Sig;
+    const char *Sig;
     size_t Sig_Length;
     bool Enabled;
     file_type_t File_Type;
@@ -93,7 +93,7 @@ static uint8_t File_Decomp_Buffer[DECODE_BLEN];
    Do NOT beyond the current location (initial Next_In). */
 static fd_status_t Locate_Sig_Here( fd_session_p_t SessionPtr )
 {
-    int Sig_Index, Char_Index;
+    unsigned int Sig_Index, Char_Index;
 
     /* If there's no new input, we don't change state */
     if( (SessionPtr->Avail_In == 0) ||
@@ -127,7 +127,7 @@ static fd_status_t Locate_Sig_Here( fd_session_p_t SessionPtr )
         return( File_Decomp_BlockIn );
 
     /* NOTE:  The following code block makes the assumption that there are
-              at least MAX_SIG_LENGTH bytes in the output buffer.  This assumption 
+              at least MAX_SIG_LENGTH bytes in the output buffer.  This assumption
               is valid for the current implementation where the signature only
               occurs at the beginning of the file.  For the generic case of the sig
               begin embedded with the file, the seach will need to modified.*/
@@ -141,7 +141,7 @@ static fd_status_t Locate_Sig_Here( fd_session_p_t SessionPtr )
         /* Get next char and see if it matches next char in sig */
         if( (Signature_Map[Sig_Index].Enabled) &&
             (*(SessionPtr->Next_In+Char_Index) == *(Signature_Map[Sig_Index].Sig+Char_Index)) )
-        { 
+        {
             /* Check to see if we are at the end of the sig string. */
             if( Char_Index == (Signature_Map[Sig_Index].Sig_Length-1) )
             {
@@ -165,7 +165,7 @@ static fd_status_t Locate_Sig_Here( fd_session_p_t SessionPtr )
                 SessionPtr->Total_In += Len;
                 return( File_Decomp_OK );
             }
-                
+
             /* check for more available input bytes */
             if( Char_Index < SessionPtr->Avail_In )
             {
@@ -281,7 +281,7 @@ fd_status_t File_Decomp_CleanExit()
 /* The caller provides the memory size in the config struct. */
 fd_status_t File_Decomp_Config( fd_config_p_t ConfigPtr )
 {
-    PoolCount Max_Sessions;
+    unsigned Max_Sessions;
 
     if( ConfigPtr == NULL )
         return( File_Decomp_Error );
@@ -326,7 +326,7 @@ fd_status_t File_Decomp_Init( fd_session_p_t SessionPtr )
             (Signature_Map[Sig].File_Compression_Type == FILE_COMPRESSION_TYPE_ZLIB) &&
             ((SessionPtr->Modes & FILE_SWF_ZLIB_BIT) != 0) )
             Signature_Map[Sig].Enabled = true;
- 
+
 #ifdef LZMA
         if( (Signature_Map[Sig].File_Type == FILE_TYPE_SWF ) &&
             (Signature_Map[Sig].File_Compression_Type == FILE_COMPRESSION_TYPE_LZMA) &&
@@ -334,7 +334,7 @@ fd_status_t File_Decomp_Init( fd_session_p_t SessionPtr )
             Signature_Map[Sig].Enabled = true;
 #endif
 #endif
- 
+
     }
 
     return( File_Decomp_OK );
@@ -387,7 +387,7 @@ fd_status_t File_Decomp_SetBuf( fd_session_p_t SessionPtr )
 }
 
 /* Returns a new session object from the MemPool */
-fd_session_p_t File_Decomp_New()
+fd_session_p_t File_Decomp_New(void* scbPtr)
 {
     fd_session_p_t New_Session;
     MemBucket *bkt;
@@ -405,6 +405,7 @@ fd_session_p_t File_Decomp_New()
     }
     else
     {
+        bkt->scbPtr = scbPtr;
         New_Session = bkt->data;
         New_Session->bkt = bkt;
         New_Session->State = STATE_NEW;
@@ -421,7 +422,7 @@ fd_session_p_t File_Decomp_New()
 }
 
 /* Process Decompression.  The session Next_In, Avail_In, Next_Out, Avail_Out MUST have been
-   set by caller. 
+   set by caller.
 */
 fd_status_t File_Decomp( fd_session_p_t SessionPtr )
 {
@@ -460,7 +461,7 @@ fd_status_t File_Decomp( fd_session_p_t SessionPtr )
 
 fd_status_t File_Decomp_End( fd_session_p_t SessionPtr )
 {
-    if( SessionPtr == NULL ) 
+    if( SessionPtr == NULL )
         return( File_Decomp_Error );
 
     switch( SessionPtr->File_Type )

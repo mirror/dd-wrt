@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -60,7 +60,10 @@ typedef enum {
     FT_SFP,  // abort paf
     FT_PAF,  // flush to paf pt when len >= paf
     FT_LIMIT, // flush to paf. flags are not updated
-    FT_MAX   // flush len when len >= mfp
+    FT_MAX,   // flush len when len >= mfp
+    FT_DISC_S,// start of discard
+    FT_DISC_E, // End of discard
+    FT_PAF_HDR
 } FlushType;
 
 typedef struct {
@@ -84,6 +87,7 @@ typedef struct {
 #define MAX_CB 16  // depends on sizeof(PAF_Map.cb_mask)
 static PAF_Callback s5_cb[MAX_CB];
 static uint8_t s5_cb_idx = 0;
+static PAF_Free_Callback s5_free_cb[MAX_CB];
 
 // s5_len and s5_idx are used only during the
 // lifetime of s5_paf_check()
@@ -93,7 +97,7 @@ static uint32_t s5_idx;  // offset from start of queued bytes
 //--------------------------------------------------------------------
 
 static uint32_t s5_paf_flush (
-    PAF_Config* pc, PAF_State* ps, FlushType ft, uint32_t* flags)
+    PAF_Config* pc, PAF_State* ps, FlushType ft, uint64_t* flags)
 {
     uint32_t at = 0;
     *flags &= ~(PKT_PDU_HEAD | PKT_PDU_TAIL);
@@ -104,6 +108,10 @@ static uint32_t s5_paf_flush (
 
     switch ( ft )
     {
+    case FT_PAF_HDR:
+        at = ps->fpt_eoh;
+        *flags |= PKT_PDU_TAIL;
+        break;
     case FT_NOP:
         return 0;
 
@@ -116,6 +124,21 @@ static uint32_t s5_paf_flush (
         *flags |= PKT_PDU_TAIL;
         break;
 
+    case FT_DISC_S:
+        at = s5_len;
+        ps->mode = FLUSH_MODE_DISCARD;
+        if ( ps->fpt > s5_len )
+            ps->fpt -= s5_len;
+        else
+            ps->fpt = 0;
+        break;
+
+    case FT_DISC_E:
+        at = ps->fpt;
+        ps->mode = FLUSH_MODE_NORMAL;
+        *flags |= PKT_IGNORE | PKT_PDU_TAIL; //overloading existing flag
+        break;
+
     case FT_LIMIT:
         if (ps->fpt > s5_len)
         {
@@ -126,7 +149,7 @@ static uint32_t s5_paf_flush (
         {
             at = ps->fpt;
             ps->fpt = s5_len - ps->fpt; // number of characters scanned but not flushing
-        } 
+        }
         break;
 
     // use of s5_len is suboptimal here because the actual amount
@@ -136,6 +159,8 @@ static uint32_t s5_paf_flush (
     // now we try to circumvent such cases so we track correctly.
     case FT_MAX:
         at = s5_len;
+        if( ps->mode == FLUSH_MODE_DISCARD )
+            *flags |= PKT_IGNORE;
         if ( ps->fpt > s5_len )
             ps->fpt -= s5_len;
         else
@@ -158,21 +183,53 @@ static uint32_t s5_paf_flush (
     else
         ps->tot += at;
 
-    ps->pos += at;
-    ps->seq = ps->pos;
+    if(!ps->fpt_eoh)
+    {
+        ps->pos += at;
+        ps->seq = ps->pos;
+    }
     return at;
 }
 
 //--------------------------------------------------------------------
+static inline int8_t s5_paf_user_data_index(PAF_State* ps, uint8_t id)
+{
+    int8_t i;
+   //use id and iterate over ps.cb_id[]. compare. if matching return index
+    for( i = 0; i < MAX_PAF_USER; i++ )
+    {
+      // Check ch_id[i] against (id+1)
+      if( ps->cb_id[i] == (id + 1) )
+          return i;
+    }
+
+   //if id doesnt match and user slot is available, this is new PAF call
+   //use the free slot and return its index
+    for( i = 0; i < MAX_PAF_USER; i++ )
+    {
+        if(ps->user[i] == NULL)
+          return i;
+    }
+
+    return -1;
+}
+
+//--------------------------------------------------------------------
+int8_t s5_paf_get_user_data_index(PAF_State* ps, uint8_t id)
+{
+   return s5_paf_user_data_index(ps, id-1);
+}
+//--------------------------------------------------------------------
 
 static bool s5_paf_callback (
     PAF_State* ps, void* ssn,
-    const uint8_t* data, uint32_t len, uint32_t flags) 
+    const uint8_t* data, uint32_t len, uint64_t *flags)
 {
-    PAF_Status paf;
+    PAF_Status paf = PAF_ABORT;
     uint16_t mask = ps->cb_mask;
     bool update = false;
     int i = 0;
+    int8_t udata_idx;
 
     while ( mask )
     {
@@ -181,18 +238,32 @@ static bool s5_paf_callback (
         {
             DEBUG_WRAP(DebugMessage(DEBUG_STREAM_PAF,
                 "%s: mask=%d, i=%u\n", __FUNCTION__, mask, i);)
+            udata_idx = s5_paf_user_data_index(ps, i);
 
-            paf = s5_cb[i](ssn, &ps->user, data, len, flags, &ps->fpt);
+            if(udata_idx == -1)
+            {
+                if ( ++i == MAX_CB )
+                    break;
+                else
+                    continue;
+            }
+
+
+           // Assign (id+1) to cb_id[i] to ensure cb_id[i] = 0 indicates only unintialized value
+            ps->cb_id[udata_idx] = ( i + 1 ) ;
+            paf = s5_cb[i](ssn, &ps->user[udata_idx], data, len, flags, &ps->fpt, &ps->fpt_eoh);
 
             if ( paf == PAF_ABORT )
             {
                 // this one bailed out
                 ps->cb_mask ^= bit;
             }
-            else if ( paf != PAF_SEARCH )
+            else if (paf != PAF_SEARCH)
             {
                 // this one selected
-                ps->cb_mask = bit;
+                if (!(*flags & PKT_UPGRADE_PROTO))
+                    ps->cb_mask = bit;
+
                 update = true;
                 break;
             }
@@ -219,6 +290,10 @@ static bool s5_paf_callback (
             s5_idx = ps->fpt;
             return true;
         }
+        if(ps->fpt_eoh && (paf != PAF_SKIP)){
+            ps->fpt_eoh += s5_idx;
+            return true;
+        }
     }
     s5_idx = s5_len;
     return false;
@@ -227,8 +302,8 @@ static bool s5_paf_callback (
 //--------------------------------------------------------------------
 
 static inline bool s5_paf_eval (
-    PAF_Config* pc, PAF_State* ps, void* ssn, 
-    uint16_t port, uint32_t flags, uint32_t fuzz,
+    PAF_Config* pc, PAF_State* ps, void* ssn,
+    uint16_t port, uint64_t *flags, uint32_t fuzz,
     const uint8_t* data, uint32_t len, FlushType* ft)
 {
     DEBUG_WRAP(DebugMessage(DEBUG_STREAM_PAF,
@@ -255,6 +330,11 @@ static inline bool s5_paf_eval (
         {
             *ft = FT_MAX;
             return false;
+        }
+        if(ps->fpt_eoh){
+            *ft = FT_PAF_HDR;
+            ps->paf = PAF_FLUSH;
+            return true;
         }
         return false;
 
@@ -292,8 +372,67 @@ static inline bool s5_paf_eval (
         ps->fpt = 0;
         return true;
 
+    case PAF_DISCARD_START:
+        /*
+         * We can flush at this point,
+         * but this will result in splitting of segments
+         * so we will try flushing at s5_len if PDU end
+         * doesnt come before.
+         */
+        if( s5_len ==  ps->fpt )
+        {
+            *ft = FT_DISC_S;
+            ps->paf = PAF_SEARCH;
+            return true;
+        }
+        else if( s5_len > ps->fpt )
+        {
+            ps->mode = FLUSH_MODE_PRE_DISCARD;
+            ps->paf = PAF_SEARCH;
+            s5_idx = ps->fpt;
+            return true;
+        }
+
+        if ( s5_len >= pc->mfp + fuzz )
+        {
+            *ft = FT_MAX;
+            return false;
+        }
+        return false;
+    case PAF_DISCARD_END:
+        if( s5_len >= ps->fpt )
+        {
+            if( ps->mode != FLUSH_MODE_DISCARD )
+            {
+                ps->mode = FLUSH_MODE_NORMAL;
+                *ft = FT_PAF;
+            }
+            else
+                *ft = FT_DISC_E;
+            ps->paf = PAF_SEARCH;
+            return true;
+        }
+        if ( s5_len >= pc->mfp + fuzz )
+        {
+            /*
+             * If mode is set to PRE_DISCARD,
+             * we will anyway flush at s5_len
+             * so no need to set to FT_MAX
+             */
+            if( ps->mode != FLUSH_MODE_PRE_DISCARD )
+            {
+                *ft = FT_MAX;
+                return false;
+            }
+        }
+        return false;
+    case PAF_IGNORE:
+    {
+        return false;
+    }
     default:
         // PAF_ABORT || PAF_START
+        ps->mode = FLUSH_MODE_NORMAL;
         break;
     }
 
@@ -345,16 +484,27 @@ void s5_paf_setup (PAF_State* ps, uint16_t mask)
     //memset(ps, 0, sizeof(*ps));
     ps->paf = PAF_START;
     ps->cb_mask = mask;
+    ps->mode = FLUSH_MODE_NORMAL;
 }
 
 void s5_paf_clear (PAF_State* ps)
 {
-    // either require pp to manage in other session state
-    // or provide user free func?
-    if ( ps->user )
+    int i;
+
+    for(i = 0; i < MAX_PAF_USER; i++)
     {
-        free(ps->user);
-        ps->user = NULL;
+        if ( ps->user[i] )
+        {
+            if (s5_free_cb[ps->cb_id[i]])
+            {
+                s5_free_cb[ps->cb_id[i]](ps->user[i]);
+            }
+            else
+            {
+                free(ps->user[i]);
+            }
+            ps->user[i] = NULL;
+        }
     }
     ps->paf = PAF_ABORT;
 }
@@ -364,7 +514,7 @@ void s5_paf_clear (PAF_State* ps)
 uint32_t s5_paf_check (
     void* pv, PAF_State* ps, void* ssn,
     const uint8_t* data, uint32_t len, uint32_t total,
-    uint32_t seq, uint16_t port, uint32_t* flags, uint32_t fuzz)
+    uint32_t seq, uint16_t port, uint64_t* flags, uint32_t fuzz)
 {
     PAF_Config* pc = pv;
 
@@ -400,6 +550,7 @@ uint32_t s5_paf_check (
         data += shift;
         len -= shift;
     }
+    ps->fpt_eoh = 0;
     ps->seq += len;
 
     pc->prep_calls++;
@@ -408,37 +559,42 @@ uint32_t s5_paf_check (
     s5_idx = total - len;
 
     // if 'total' is greater than the maximum paf_max AND 'total' is greater
-    // than paf_max bytes + fuzz (i.e. after we have finished analyzing the 
-    // current segment, total bytes analyzed will be greater than the 
-    // configured (fuzz + paf_max) == (pc->mfp + fuzz), we must ensure a flush 
-    // occurs at the paf_max byte.  So, we manually set the data's length and 
+    // than paf_max bytes + fuzz (i.e. after we have finished analyzing the
+    // current segment, total bytes analyzed will be greater than the
+    // configured (fuzz + paf_max) == (pc->mfp + fuzz), we must ensure a flush
+    // occurs at the paf_max byte.  So, we manually set the data's length and
     // total queued bytes (s5_len) to guarantee that at most paf_max bytes will
     // be analyzed and flushed since the last flush point.  It should also be
     // noted that we perform the check here rather in in s5_paf_flush() to
-    // avoid scanning the same data twice. The first scan would analyze the 
+    // avoid scanning the same data twice. The first scan would analyze the
     // entire segment and the second scan would analyze this segments
-    // unflushed data. 
-    if ( total >= MAXIMUM_PAF_MAX && total > pc->mfp + fuzz )
+    // unflushed data.
+    if ( ps->mode == FLUSH_MODE_NORMAL &&
+            total >= MAXIMUM_PAF_MAX && total > pc->mfp + fuzz )
     {
         s5_len = MAXIMUM_PAF_MAX + fuzz;
-        len = len + s5_len - total;
+        len = (len > ( total - s5_len )) ? len + s5_len - total : 0;
+        if( !len )
+            return 0;
     }
     else
     {
         s5_len = total;
     }
 
-
     do {
         FlushType ft = FT_NOP;
         uint32_t idx = s5_idx;
         uint32_t shift;
 
-        bool cont = s5_paf_eval(pc, ps, ssn, port, *flags, fuzz, data, len, &ft);
+        bool cont = s5_paf_eval(pc, ps, ssn, port, flags, fuzz, data, len, &ft);
+
+        if (ps->paf == PAF_IGNORE)
+            break;
 
         if ( ft != FT_NOP )
             return s5_paf_flush(pc, ps, ft, flags);
-        
+
         if ( !cont )
             break;
 
@@ -453,7 +609,17 @@ uint32_t s5_paf_check (
 
     } while ( 1 );
 
-    if ( (ps->paf != PAF_FLUSH) && (s5_len >= pc->mfp+fuzz) )
+    //Added for Http/2
+    if (ps->paf == PAF_IGNORE)
+    {
+        *flags |= PKT_PURGE;
+        ps->paf = PAF_SEARCH;
+        return 0;
+    }
+    //start discarding from now on
+    if(ps->mode == FLUSH_MODE_PRE_DISCARD)
+        return s5_paf_flush(pc, ps, FT_DISC_S, flags);
+    else if ( (s5_len >= pc->mfp+fuzz) )
         return s5_paf_flush(pc, ps, FT_MAX, flags);
 
     return 0;
@@ -462,26 +628,26 @@ uint32_t s5_paf_check (
 //--------------------------------------------------------------------
 // port registration foo
 
-bool s5_paf_register_port (struct _SnortConfig *sc,
+uint8_t s5_paf_register_port (struct _SnortConfig *sc,
     tSfPolicyId pid, uint16_t port, bool c2s, PAF_Callback cb, bool auto_on)
 {
     PAF_Config* pc = get_config(sc, pid);
     int i, dir = c2s ? 1 : 0;
 
     if ( !pc )
-        return false;
+        return 0;
 
     i = install_callback(cb);
 
     if ( i < 0 )
-        return false;
+        return 0;
 
     pc->port_map[port][dir].cb_mask |= (1<<i);
 
     if ( !pc->port_map[port][dir].auto_on )
         pc->port_map[port][dir].auto_on = (uint8_t)auto_on;
 
-    return true;
+    return i+1;
 }
 
 uint16_t s5_paf_port_registration (void* pv, uint16_t port, bool c2s, bool flush)
@@ -524,19 +690,19 @@ uint16_t s5_paf_port_registration_all (void* pv, uint16_t port, bool c2s, bool f
 //--------------------------------------------------------------------
 // service registration foo
 
-bool s5_paf_register_service (struct _SnortConfig *sc,
+uint8_t s5_paf_register_service (struct _SnortConfig *sc,
     tSfPolicyId pid, uint16_t service, bool c2s, PAF_Callback cb, bool auto_on)
 {
     PAF_Config* pc = get_config(sc, pid);
     int i, dir = c2s ? 1 : 0;
 
     if ( !pc )
-        return false;
+        return 0;
 
     i = install_callback(cb);
 
     if ( i < 0 )
-        return false;
+        return 0;
 
     pc->service_map[service][dir].cb_mask |= (1<<i);
     global_mask |= (1<<i);
@@ -544,7 +710,7 @@ bool s5_paf_register_service (struct _SnortConfig *sc,
     if ( !pc->service_map[service][dir].auto_on )
         pc->service_map[service][dir].auto_on = (uint8_t)auto_on;
 
-    return true;
+    return i+1;
 }
 
 uint16_t s5_paf_service_registration (void* pv, uint16_t service, bool c2s, bool flush)
@@ -597,3 +763,7 @@ void s5_paf_delete (void* pv)
     free(pc);
 }
 
+void s5_paf_register_free (uint8_t id, PAF_Free_Callback cb)
+{
+    s5_free_cb[id] = cb;
+}

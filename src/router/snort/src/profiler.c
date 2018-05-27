@@ -3,7 +3,7 @@
 **
 **  profiler.c
 **
-**  Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+**  Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 **  Copyright (C) 2005-2013 Sourcefire, Inc.
 **  Steven Sturges <ssturges@sourcefire.com>
 **
@@ -521,7 +521,7 @@ void ShowRuleProfiles(void)
 /* The preprocessor profile list is only accessed for printing stats when
  * Snort shuts down, so adding new nodes during a reload shouldn't be a
  * problem. */
-void RegisterPreprocessorProfile(const char *keyword, PreprocStats *stats, int layer, PreprocStats *parent)
+void RegisterPreprocessorProfile(const char *keyword, PreprocStats *stats, int layer, PreprocStats *parent, StatsNodeFreeFunc freefn)
 {
     PreprocStatsNode *node;
 
@@ -563,6 +563,7 @@ void RegisterPreprocessorProfile(const char *keyword, PreprocStats *stats, int l
     node->stats = stats;  /* Set the stats reference */
     node->parent = parent;
     node->layer = layer;
+    node->freefn = freefn;
 
     if (layer > max_layers)
         max_layers = layer;
@@ -665,6 +666,8 @@ void CleanupPreprocStatsNodeList(void)
     while (node)
     {
         nxt = node->next;
+        if (node->freefn)
+            node->freefn(node->stats);
         free(node->name);
         free(node);
         node = nxt;

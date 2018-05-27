@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -527,7 +527,7 @@ int main( int argc, char ** argv )
     for(i=1;i<=n;i++)
     {
         SnortSnprintf(str, sizeof(str), "KeyWord%d",i);
-        KMapAdd( km, str, 0 /* strlen(str) */, strupr(strdup(str)) );
+        KMapAdd( km, str, 0 /* strlen(str) */, strupr(SnortStrdup(str)) );
         printf("Adding Key=%s\n",str);
     }
     printf("xmem: %u bytes, %d chars\n",xmalloc_bytes(),km->nchars);

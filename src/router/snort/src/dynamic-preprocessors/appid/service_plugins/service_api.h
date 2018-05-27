@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -24,11 +24,18 @@
 
 #include <stdbool.h>
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"     /* for WORDS_BIGENDIAN */
+#endif
 #include "sf_dynamic_preprocessor.h"
+#include "appIdApi.h"
 #include "service_util.h"
 #include "commonAppMatcher.h"
 #include "flow.h"
 
+
+// Forward declaration
+struct appIdConfig_;
 struct _Detector;
 
 typedef enum {
@@ -44,48 +51,49 @@ typedef enum {
     SERVICE_ENOMEM = -12
 } SERVICE_RETCODE;
 
-typedef enum {
-    SERVICE_HOST_INFO_NETBIOS_NAME = 1
-} SERVICE_HOST_INFO_CODE;
-
-typedef struct _RNAServiceSubtype
+typedef struct _ServiceValidationArgs
 {
-    struct _RNAServiceSubtype *next;
-    const char *service;
-    const char *vendor;
-    const char *version;
-} RNAServiceSubtype;
-
-
-typedef int (*RNAServiceValidationFCN)(const uint8_t *, uint16_t, const int,
-                                       tAppIdData *, const SFSnortPacket *, struct _Detector *);
-#define MakeRNAServiceValidationPrototype(name) static int name(const uint8_t *data, uint16_t size, const int dir, \
-                                                                FLOW *flowp, const SFSnortPacket *pkt, \
-                                                                struct _Detector *userdata)
+    const uint8_t *data;
+    uint16_t size;
+    int dir;
+    tAppIdData *flowp;
+    SFSnortPacket *pkt;
+    struct _Detector *userdata;
+    const struct appIdConfig_ *pConfig;
+    bool app_id_debug_session_flag;
+    char *app_id_debug_session;
+} ServiceValidationArgs;
+typedef int (*RNAServiceValidationFCN)(ServiceValidationArgs*);
+#define MakeRNAServiceValidationPrototype(name) static int name(ServiceValidationArgs* args)
 
 struct _INIT_SERVICE_API;
+
+typedef struct
+{
+    struct appIdConfig_ *pAppidConfig;  ///< AppId context for which this API should be used
+} CleanServiceAPI;
+
 typedef int (*RNAServiceValidationInitFCN)(const struct _INIT_SERVICE_API * const);
-typedef void (*RNAServiceValidationCleanFCN)(void);
+typedef void (*RNAServiceValidationCleanFCN)(const CleanServiceAPI *const);
 
 struct _RNA_SERVICE_VALIDATION_PP;
-struct _RNA_SERVICE_VALIDATION_MODULE;
+struct RNAServiceValidationModule;
 
 typedef struct _INIT_SERVICE_API
 {
     void (*RegisterPattern)(RNAServiceValidationFCN fcn, uint8_t proto,
                             const uint8_t *pattern, unsigned size, int position,
-                            const char *name);
-    int (*AddPort)(struct _RNA_SERVICE_VALIDATION_PP *pp, struct _RNA_SERVICE_VALIDATION_MODULE *svm);
-    void (*RemovePorts)(RNAServiceValidationFCN validate);
+                            const char *name, struct appIdConfig_ *pConfig);
+    int (*AddPort)(struct _RNA_SERVICE_VALIDATION_PP *pp, struct RNAServiceValidationModule *svm, struct appIdConfig_ *pConfig);
+    void (*RemovePorts)(RNAServiceValidationFCN validate, struct appIdConfig_ *pConfig);
     void (*RegisterPatternUser)(RNAServiceValidationFCN fcn, uint8_t proto,
                                 const uint8_t *pattern, unsigned size, int position,
-                                const char *name);
-    void (*RegisterAppId)(RNAServiceValidationFCN fcn, tAppId appId, uint32_t additionalInfo, struct _Detector *userdata);
+                                const char *name, struct appIdConfig_ *pConfig);
+    void (*RegisterAppId)(RNAServiceValidationFCN fcn, tAppId appId, uint32_t additionalInfo, struct appIdConfig_ *pConfig);
     int debug;
     uint32_t instance_id;
-    tAppId *service_instance;
-    const char *csd_path;
     DynamicPreprocessorData *dpd;
+    struct appIdConfig_ *pAppidConfig;  ///< AppId context for which this API should be used
 } InitServiceAPI;
 
 typedef struct _RNA_SERVICE_PERF
@@ -95,9 +103,9 @@ typedef struct _RNA_SERVICE_PERF
 } RNAServicePerf;
 
 
-typedef struct _RNA_SERVICE_ELEMENT
+struct RNAServiceElement
 {
-    struct _RNA_SERVICE_ELEMENT *next;
+    struct RNAServiceElement *next;
     RNAServiceValidationFCN validate;
     /**pointer to user data. Value of userdata pointer and validate pointer forms key for comparison.
      */
@@ -108,40 +116,52 @@ typedef struct _RNA_SERVICE_ELEMENT
 
     /**Number of resources registered */
     unsigned ref_count;
+    unsigned current_ref_count;
 
     int provides_user;
 
     const char *name;
-} RNAServiceElement;
+};
+typedef struct RNAServiceElement tRNAServiceElement;
 
-typedef void *(*ServiceFlowdataGet)(FLOW *);
-typedef int (*ServiceFlowdataAdd)(FLOW *, void *, AppIdFreeFCN);
-typedef int (*ServiceFlowdataAddId)(FLOW *, uint16_t, const RNAServiceElement * const);
-typedef int (*ServiceFlowdataAddDHCP)(FLOW *, unsigned, const uint8_t *, unsigned, const uint8_t *, const uint8_t *);
-typedef FLOW *(*ServiceCreateNewFlow)( const SFSnortPacket *, snort_ip *, uint16_t,
-                                       snort_ip *, uint16_t, uint8_t, int16_t);
-typedef void (*ServiceDhcpNewLease)(FLOW *flow, const uint8_t *mac, uint32_t ip, int32_t zone,
+typedef void *(*ServiceFlowdataGet)(tAppIdData *, unsigned);
+typedef int (*ServiceFlowdataAdd)(tAppIdData *, void *, unsigned, AppIdFreeFCN);
+typedef int (*ServiceFlowdataAddId)(tAppIdData *, uint16_t, const tRNAServiceElement * const);
+typedef int (*ServiceFlowdataAddDHCP)(tAppIdData *, unsigned, const uint8_t *, unsigned, const uint8_t *, const uint8_t *);
+#define APPID_EARLY_SESSION_FLAG_FW_RULE    1
+typedef tAppIdData *(*ServiceCreateNewFlow)( tAppIdData *flowp, SFSnortPacket *, sfaddr_t *, uint16_t,
+                                       sfaddr_t *, uint16_t, uint8_t, int16_t, int flags);
+typedef void (*ServiceDhcpNewLease)(tAppIdData *flow, const uint8_t *mac, uint32_t ip, int32_t zone,
                                       uint32_t subnetmask, uint32_t leaseSecs, uint32_t router);
-typedef void (*ServiceAnalyzeFP)(FLOW *, unsigned, unsigned, uint32_t);
+typedef void (*ServiceAnalyzeFP)(tAppIdData *, unsigned, unsigned, uint32_t);
 
-typedef int (*AddService)(FLOW *flow, const SFSnortPacket *pkt, int dir,
-                          const RNAServiceElement *svc_element,
+typedef int (*AddService)(tAppIdData *flow, const SFSnortPacket *pkt, int dir,
+                          const tRNAServiceElement *svc_element,
                           tAppId service, const char *vendor, const char *version,
-                          const RNAServiceSubtype *subtype);
-typedef int (*AddServiceConsumeSubtype)(FLOW *flow, const SFSnortPacket *pkt, int dir,
-                                        const RNAServiceElement *svc_element,
+                          const RNAServiceSubtype *subtype, AppIdServiceIDState *id_state);
+typedef int (*AddServiceConsumeSubtype)(tAppIdData *flow, const SFSnortPacket *pkt, int dir,
+                                        const tRNAServiceElement *svc_element,
                                         tAppId service, const char *vendor, const char *version,
-                                        RNAServiceSubtype *subtype);
-typedef int (*ServiceInProcess)(FLOW *flow, const SFSnortPacket *pkt, int dir,
-                                const RNAServiceElement *svc_element);
-typedef int (*FailService)(FLOW *flow, const SFSnortPacket *pkt, int dir,
-                           const RNAServiceElement *svc_element);
-typedef int (*IncompatibleData)(FLOW *flow, const SFSnortPacket *pkt, int dir,
-                                const RNAServiceElement *svc_element);
-typedef void (*AddHostInfo)(FLOW *flow, SERVICE_HOST_INFO_CODE code, const void *info);
-typedef void (*AddPayload)(FLOW *, tAppId);
-typedef void (*AddUser)(FLOW *, const char *, tAppId, int);
-typedef void (*AddMisc)(FLOW *, tAppId);
+                                        RNAServiceSubtype *subtype, AppIdServiceIDState *id_state);
+typedef int (*ServiceInProcess)(tAppIdData *flow, const SFSnortPacket *pkt, int dir,
+                                const tRNAServiceElement *svc_element, AppIdServiceIDState *id_state);
+typedef int (*FailService)(tAppIdData *flow, const SFSnortPacket *pkt, int dir,
+                           const tRNAServiceElement *svc_element, unsigned flow_data_index, const struct appIdConfig_ *pConfig, AppIdServiceIDState *id_state);
+typedef int (*IncompatibleData)(tAppIdData *flow, const SFSnortPacket *pkt, int dir,
+                                const tRNAServiceElement *svc_element, unsigned flow_data_index, const struct appIdConfig_ *pConfig, AppIdServiceIDState *id_state);
+typedef void (*AddHostInfo)(tAppIdData *flow, SERVICE_HOST_INFO_CODE code, const void *info);
+typedef void (*AddPayload)(tAppIdData *, tAppId);
+typedef void (*AddUser)(tAppIdData *, const char *, tAppId, int);
+typedef void (*AddMisc)(tAppIdData *, tAppId);
+typedef void (*AddDnsQueryInfo)(tAppIdData *flow,
+                                uint16_t id,
+                                const uint8_t *host, uint8_t host_len, uint16_t host_offset,
+                                uint16_t record_type);
+typedef void (*AddDnsResponseInfo)(tAppIdData *flow,
+                                   uint16_t id,
+                                   const uint8_t *host, uint8_t host_len, uint16_t host_offset,
+                                   uint8_t response_type, uint32_t ttl);
+typedef void (*ResetDnsInfo)(tAppIdData *flow);
 
 typedef struct _SERVICE_API
 {
@@ -161,12 +181,15 @@ typedef struct _SERVICE_API
     AddUser add_user;
     AddServiceConsumeSubtype add_service_consume_subtype;
     AddMisc add_misc;
+    AddDnsQueryInfo add_dns_query_info;
+    AddDnsResponseInfo add_dns_response_info;
+    ResetDnsInfo reset_dns_info;
 } ServiceApi;
 
-typedef struct _RNA_FLOW_STATE
+typedef struct _RNA_tAppIdData_STATE
 {
-    struct _RNA_FLOW_STATE *next;
-    const RNAServiceElement *svc;
+    struct _RNA_tAppIdData_STATE *next;
+    const tRNAServiceElement *svc;
     uint16_t port;
 } RNAFlowState;
 
@@ -178,25 +201,26 @@ typedef struct _RNA_SERVICE_VALIDATION_PP
     uint8_t reversed_validation;
 } RNAServiceValidationPort;
 
-typedef struct _RNA_SERVICE_VALIDATION_MODULE
+struct RNAServiceValidationModule
 {
     const char * name;
     RNAServiceValidationInitFCN init;
     RNAServiceValidationPort *pp;
     const ServiceApi *api;
-    int is_custom;
-    struct _RNA_SERVICE_VALIDATION_MODULE *next;
+    struct RNAServiceValidationModule *next;
     int provides_user;
     RNAServiceValidationCleanFCN clean;
-} RNAServiceValidationModule;
+    unsigned flow_data_index;
+};
 
-#if __BYTE_ORDER == __LITTLE_ENDIAN
+typedef struct RNAServiceValidationModule tRNAServiceValidationModule;
+
+#if defined(WORDS_BIGENDIAN)
+#define LETOHS(p)   BYTE_SWAP_16(*((uint16_t *)(p)))
+#define LETOHL(p)   BYTE_SWAP_32(*((uint32_t *)(p)))
+#else
 #define LETOHS(p)   (*((uint16_t *)(p)))
 #define LETOHL(p)   (*((uint32_t *)(p)))
-#else
-#include <byteswap.h>
-#define LETOHS(p)   bswap_16(*((uint16_t *)(p)))
-#define LETOHL(p)   bswap_32(*((uint32_t *)(p)))
 #endif
 
 #endif /* __SERVICE_API_H__ */

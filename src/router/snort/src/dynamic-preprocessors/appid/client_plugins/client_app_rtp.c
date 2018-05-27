@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -26,7 +26,11 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"     /* for WORDS_BIGENDIAN */
+#endif
 #include "client_app_api.h"
+#include "client_app_rtp.h"
 
 typedef enum
 {
@@ -36,46 +40,23 @@ typedef enum
 
 #define MAX_REMOTE_SIZE    128
 #define NUMBER_OF_PACKETS  3
+#define MAX_SSRC_SWITCHES  2
+
+typedef struct
+{
+    RTPState state;
+    uint16_t seq;
+    uint8_t count;
+    uint32_t timestamp;
+    uint32_t ssrc;
+    uint8_t numSsrcSwitches;
+} ClientRTPDirData;
 
 typedef struct _CLIENT_RTP_DATA
 {
-    RTPState state;
-    uint8_t  pos;
-    uint16_t init_seq;
-    uint16_t resp_seq;
-    uint8_t init_count;
-    uint8_t resp_count;
-    uint32_t init_timestamp;
-    uint32_t resp_timestamp;
-    uint32_t init_ssrc;
-    uint32_t resp_ssrc;
+    ClientRTPDirData initiatorData;
+    ClientRTPDirData responderData;
 } ClientRTPData;
-
-#pragma pack(1)
-typedef struct _CLIENT_RTP_MSG
-{
-#if __BYTE_ORDER == __BIG_ENDIAN
-    uint8_t vers:2,
-             padding:1,
-             extension:1,
-             count:4;
-    uint8_t marker:1,
-             payloadtype:7;
-#elif __BYTE_ORDER == __LITTLE_ENDIAN
-    uint8_t count:4,
-             extension:1,
-             padding:1,
-             vers:2;
-    uint8_t payloadtype:7,
-             marker:1;
-#else
-#error "Please fix <endian.h>"
-#endif
-    uint16_t seq;
-    uint32_t timestamp;
-    uint32_t ssrc;
-} ClientRTPMsg;
-#pragma pack()
 
 typedef struct _RTP_CLIENT_APP_CONFIG
 {
@@ -86,10 +67,11 @@ static RTP_CLIENT_APP_CONFIG rtp_config;
 
 
 static CLIENT_APP_RETCODE rtp_init(const InitClientAppAPI * const init_api, SF_LIST *config);
-static CLIENT_APP_RETCODE rtp_validate(const uint8_t *data, uint16_t size, const int dir,
-                                        FLOW *flowp, const SFSnortPacket *pkt, struct _Detector *userData);
+STATIC CLIENT_APP_RETCODE rtp_validate(const uint8_t *data, uint16_t size, const int dir,
+                                        tAppIdData *flowp, SFSnortPacket *pkt, struct _Detector *userData,
+                                        const struct appIdConfig_ *pConfig);
 
-SO_PUBLIC RNAClientAppModule rtp_client_mod =
+SF_SO_PUBLIC tRNAClientAppModule rtp_client_mod =
 {
     .name = "RTP",
     .proto = IPPROTO_UDP,
@@ -249,96 +231,99 @@ static CLIENT_APP_RETCODE rtp_init(const InitClientAppAPI * const init_api, SF_L
         for (i=0; i < sizeof(patterns)/sizeof(*patterns); i++)
         {
             _dpd.debugMsg(DEBUG_LOG,"registering patterns: %s: %d\n",(const char *)patterns[i].pattern, patterns[i].index);
-            init_api->RegisterPattern(&rtp_validate, IPPROTO_UDP, patterns[i].pattern, patterns[i].length, patterns[i].index);
+            init_api->RegisterPattern(&rtp_validate, IPPROTO_UDP, patterns[i].pattern, patterns[i].length, patterns[i].index, init_api->pAppidConfig);
         }
     }
 
-	unsigned j;
-	for (j=0; j < sizeof(appIdRegistry)/sizeof(*appIdRegistry); j++)
-	{
-		_dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[j].appId);
-		init_api->RegisterAppId(&rtp_validate, appIdRegistry[j].appId, appIdRegistry[j].additionalInfo, NULL);
-	}
+    unsigned j;
+    for (j=0; j < sizeof(appIdRegistry)/sizeof(*appIdRegistry); j++)
+    {
+        _dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[j].appId);
+        init_api->RegisterAppId(&rtp_validate, appIdRegistry[j].appId, appIdRegistry[j].additionalInfo, init_api->pAppidConfig);
+    }
 
     return CLIENT_APP_SUCCESS;
 }
 
-static CLIENT_APP_RETCODE rtp_validate(const uint8_t *data, uint16_t size, const int dir,
-                                        FLOW *flowp, const SFSnortPacket *pkt, struct _Detector *userData)
+static inline void rtpInitDirData(ClientRTPDirData* dirData, ClientRTPMsg* hdr)
+{
+    dirData->seq = ntohs(hdr->seq);
+    dirData->timestamp = ntohl(hdr->timestamp);
+    dirData->ssrc = ntohl(hdr->ssrc);
+    dirData->count = 1;
+}
+
+static inline CLIENT_APP_RETCODE rtpValidateDirData(ClientRTPDirData* dirData, ClientRTPMsg* hdr)
+{
+    if ((ntohs(hdr->seq) != ++dirData->seq) ||
+        (ntohl(hdr->timestamp) < dirData->timestamp))
+        return CLIENT_APP_EINVALID;
+
+    if (ntohl(hdr->ssrc) != dirData->ssrc)
+    {
+        if (++dirData->numSsrcSwitches > MAX_SSRC_SWITCHES)
+            return CLIENT_APP_EINVALID;
+
+        rtpInitDirData(dirData, hdr);
+        return CLIENT_APP_INPROCESS;
+    }
+
+    dirData->timestamp = ntohl(hdr->timestamp);
+    if (++dirData->count < NUMBER_OF_PACKETS)
+        return CLIENT_APP_INPROCESS;
+
+    return CLIENT_APP_SUCCESS;
+}
+
+STATIC CLIENT_APP_RETCODE rtp_validate(const uint8_t *data, uint16_t size, const int dir,
+                                        tAppIdData *flowp, SFSnortPacket *pkt, struct _Detector *userData,
+                                        const struct appIdConfig_ *pConfig)
 {
     ClientRTPData *fd;
     ClientRTPMsg *hdr;
+    RTPState *state;
 
     if (!size)
         return CLIENT_APP_INPROCESS;
+    if (size < sizeof(ClientRTPMsg))
+        return CLIENT_APP_EINVALID;
+    hdr = (ClientRTPMsg *)data;
+    if (hdr->vers > 2 || hdr->payloadtype > 34)
+        return CLIENT_APP_EINVALID;
 
-    fd = rtp_client_mod.api->data_get(flowp);
+    fd = rtp_client_mod.api->data_get(flowp, rtp_client_mod.flow_data_index);
     if (!fd)
     {
         fd = calloc(1, sizeof(*fd));
         if (!fd)
             return CLIENT_APP_ENOMEM;
-        if (rtp_client_mod.api->data_add(flowp, fd, &free))
+        if (rtp_client_mod.api->data_add(flowp, fd, rtp_client_mod.flow_data_index, &free))
         {
             free(fd);
             return CLIENT_APP_ENOMEM;
         }
-        fd->state = RTP_STATE_CONNECTION;
+        fd->initiatorData.state = RTP_STATE_CONNECTION;
+        fd->responderData.state = RTP_STATE_CONNECTION;
     }
 
-    switch (fd->state)
+    state = (dir == APP_ID_FROM_INITIATOR ? &fd->initiatorData.state : &fd->responderData.state); 
+
+    switch (*state)
     {
+    CLIENT_APP_RETCODE retVal;
+
     case RTP_STATE_CONNECTION:
-        if (size < sizeof(ClientRTPMsg))
-            return CLIENT_APP_EINVALID;
-        hdr = (ClientRTPMsg *)data;
-        if (hdr->vers > 2 || hdr->payloadtype > 34)
-            return CLIENT_APP_EINVALID;
-        if (dir == APP_ID_FROM_INITIATOR)
-        {
-            fd->init_seq = ntohs(hdr->seq);
-            fd->init_timestamp = ntohl(hdr->timestamp);
-            fd->init_ssrc = ntohl(hdr->ssrc);
-            fd->init_count++;
-        }
-        else
-        {
-            fd->resp_seq = ntohs(hdr->seq);
-            fd->resp_timestamp = ntohl(hdr->timestamp);
-            fd->resp_ssrc = ntohl(hdr->ssrc);
-            fd->resp_count++;
-        }
-        fd->state = RTP_STATE_CONTINUE;
+        if (dir == APP_ID_FROM_INITIATOR) rtpInitDirData(&fd->initiatorData, hdr);
+        else rtpInitDirData(&fd->responderData, hdr);
+
+        *state = RTP_STATE_CONTINUE;
         return CLIENT_APP_INPROCESS;
 
     case RTP_STATE_CONTINUE:
-        if (size < sizeof(ClientRTPMsg))
-            return CLIENT_APP_EINVALID;
-        hdr = (ClientRTPMsg *)data;
-        if (hdr->vers > 2)
-            return CLIENT_APP_EINVALID;
-        if (hdr->payloadtype > 34)
-            return CLIENT_APP_EINVALID;
-        if (dir == APP_ID_FROM_INITIATOR)
-        {
-            if ((ntohs(hdr->seq) != ++fd->init_seq) ||
-                (ntohl(hdr->ssrc) != fd->init_ssrc) ||
-                (ntohl(hdr->timestamp) < fd->init_timestamp))
-                return CLIENT_APP_EINVALID;
-            fd->init_timestamp = ntohl(hdr->timestamp);
-            if (++fd->init_count < NUMBER_OF_PACKETS)
-                return CLIENT_APP_INPROCESS;
-        }
-        else
-        {
-            if ((ntohs(hdr->seq) != ++fd->resp_seq) ||
-                (ntohl(hdr->ssrc) != fd->resp_ssrc) ||
-                (ntohl(hdr->timestamp) < fd->resp_timestamp))
-                return CLIENT_APP_EINVALID;
-            fd->resp_timestamp = ntohl(hdr->timestamp);
-            if (++fd->resp_count < NUMBER_OF_PACKETS)
-                return CLIENT_APP_INPROCESS;
-        }
+        if (dir == APP_ID_FROM_INITIATOR) retVal = rtpValidateDirData(&fd->initiatorData, hdr);
+        else retVal = rtpValidateDirData(&fd->responderData, hdr);
+
+        if (retVal != CLIENT_APP_SUCCESS) return retVal;
         break;
 
     default:
@@ -346,7 +331,7 @@ static CLIENT_APP_RETCODE rtp_validate(const uint8_t *data, uint16_t size, const
     }
 
     rtp_client_mod.api->add_app(flowp, APP_ID_RTP, APP_ID_RTP, NULL);
-    flow_mark(flowp, FLOW_CLIENTAPPDETECTED);
+    setAppIdFlag(flowp, APPID_SESSION_CLIENT_DETECTED);
     return CLIENT_APP_SUCCESS;
 }
 

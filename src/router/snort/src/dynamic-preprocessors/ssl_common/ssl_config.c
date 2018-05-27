@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2007-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -46,7 +46,7 @@ PreprocStats sslpp_perf_stats;
 
 tSfPolicyUserContextId ssl_config = NULL;
 
-static void SSLFreeConfig(tSfPolicyUserContextId config);
+static void SSLFreeConfig(tSfPolicyUserContextId config, bool full_cleanup);
 static void SSLCleanExit(int, void *);
 static void SSLResetStats(int, void *);
 static int SSLPP_CheckConfig(struct _SnortConfig *);
@@ -351,6 +351,11 @@ static void SSLPP_config(SSLPP_config_t *config, char *conf)
             }
             UpdatePathToDir(full_path_dirname, PATH_MAX, tmpChar);
             config->pki_dir = strdup(full_path_dirname);
+            if (!config->pki_dir)
+            {
+                DynamicPreprocessorFatalMessage("%s(%d) Failed to allocate memory for "
+                    "option in SSL preprocessor\n", __FILE__, __LINE__);
+            }
         }
         else if(!strcasecmp(space_tok, "ssl_rules_dir"))
         {
@@ -365,6 +370,11 @@ static void SSLPP_config(SSLPP_config_t *config, char *conf)
             }
             UpdatePathToDir(full_path_dirname, PATH_MAX, tmpChar);
             config->ssl_rules_dir = strdup(full_path_dirname);
+            if (!config->ssl_rules_dir)
+            {
+                DynamicPreprocessorFatalMessage("%s(%d) Failed to allocate memory for "
+                    "option in SSL preprocessor\n", __FILE__, __LINE__);
+            }
         }
         else if(!strcasecmp(space_tok, "memcap"))
         {
@@ -547,7 +557,7 @@ static void SSLPP_print_config(SSLPP_config_t *config)
         _dpd.logMsg("    SSL HA enabled     : %s\n", config->enable_ssl_ha ? "YES" : "NO" );
 #endif
     _dpd.logMsg("    Maximum SSL Heartbeat length: %d\n", config->max_heartbeat_len);
-        
+
 }
 
 static inline void SSLSetPort(SSLPP_config_t *config, int port)
@@ -668,7 +678,7 @@ void SSLPP_init(struct _SnortConfig *sc, char *args)
         _dpd.addPreprocResetStats(SSLResetStats, NULL, PRIORITY_LAST, PP_SSL);
 
 #ifdef PERF_PROFILING
-        _dpd.addPreprocProfileFunc("ssl", (void *)&sslpp_perf_stats, 0, _dpd.totalPerfStats);
+        _dpd.addPreprocProfileFunc("ssl", (void *)&sslpp_perf_stats, 0, _dpd.totalPerfStats, NULL);
 #endif
 
 #ifdef ENABLE_HA
@@ -720,6 +730,7 @@ void SSLPP_init(struct _SnortConfig *sc, char *args)
 #ifdef TARGET_BASED
     _addServicesToStream5Filter(sc, policy_id);
 #endif
+
 }
 
 static int SSLFreeConfigPolicy(
@@ -741,11 +752,11 @@ static int SSLFreeConfigPolicy(
 
 
     free(pPolicyConfig);
-        
+
     return 0;
 }
 
-static void SSLFreeConfig(tSfPolicyUserContextId config)
+static void SSLFreeConfig(tSfPolicyUserContextId config, bool full_cleanup)
 {
     SSLPP_config_t *defaultConfig;
     ssl_callback_interface_t *ssl_cb = (ssl_callback_interface_t *)_dpd.getSSLCallback();
@@ -756,13 +767,11 @@ static void SSLFreeConfig(tSfPolicyUserContextId config)
 
     if(defaultConfig && ssl_cb)
     {
-        ssl_cb->policy_free(&(defaultConfig->current_handle), defaultConfig->reload_handle);
-        defaultConfig->reload_handle = NULL;
+        ssl_cb->policy_free(&(defaultConfig->current_handle), full_cleanup);
 #ifdef ENABLE_HA
         if(defaultConfig->ssl_ha_config)
         {
             SSLHAConfigFree(defaultConfig->ssl_ha_config);
-            defaultConfig->ssl_ha_config = NULL;
         }
 #endif
     }
@@ -778,7 +787,7 @@ static void SSLCleanExit(int signal, void *data)
 #ifdef ENABLE_HA
         SSLCleanHA();
 #endif
-        SSLFreeConfig(ssl_config);
+        SSLFreeConfig(ssl_config, true);
         ssl_config = NULL;
     }
 }
@@ -850,6 +859,25 @@ static int SSLPP_CheckPolicyConfig(
     return 0;
 }
 
+
+//  Enable SSL preproc for any policies that have inspection turned on.
+static int SSLPP_CheckPolicyEnabled(
+        struct _SnortConfig *sc,
+        tSfPolicyUserContextId config,
+        tSfPolicyId policyId,
+        void* pData
+        )
+{
+    if(_dpd.isSSLPolicyEnabled(sc))
+    {
+        //  Send packets to SSL preproc even when only doing Network Discovery.
+        _dpd.reenablePreprocBit(sc, PP_SSL);
+    }
+
+    return 0;
+}
+
+
 static int SSLPP_CheckConfig(struct _SnortConfig *sc)
 {
 #ifdef ENABLE_HA
@@ -880,6 +908,9 @@ static int SSLPP_CheckConfig(struct _SnortConfig *sc)
         }
 #endif
     }
+
+    if ((rval = sfPolicyUserDataIterate (sc, ssl_config, SSLPP_CheckPolicyEnabled)))
+        return rval;
 
     return 0;
 }
@@ -1014,6 +1045,6 @@ void SSLReloadSwapFree(void *data)
     if (data == NULL)
         return;
 
-    SSLFreeConfig((tSfPolicyUserContextId)data);
+    SSLFreeConfig((tSfPolicyUserContextId)data, false);
 }
 #endif

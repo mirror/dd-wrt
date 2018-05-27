@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -25,6 +25,8 @@
 #include <stddef.h>
 #include <sys/types.h>
 #include <netinet/in.h>
+#include "appIdApi.h"
+#include "appInfoTable.h"
 #include "detector_api.h"
 
 /*#define DEBUG_KERBEROS  1 */
@@ -116,9 +118,10 @@ static KRB_CLIENT_APP_CONFIG krb_client_config;
 
 static CLIENT_APP_RETCODE krb_client_init(const InitClientAppAPI * const init_api, SF_LIST *config);
 static CLIENT_APP_RETCODE krb_client_validate(const uint8_t *data, uint16_t size, const int dir,
-                                              FLOW *flowp, const SFSnortPacket *pkt, struct _Detector *userData);
+                                              tAppIdData *flowp, SFSnortPacket *pkt, struct _Detector *userData,
+                                              const tAppIdConfig *pConfig);
 
-static RNAClientAppModule client_app_mod =
+static tRNAClientAppModule client_app_mod =
 {
     .name = "KERBEROS",
     .proto = IPPROTO_UDP,
@@ -147,15 +150,16 @@ static Detector_Pattern client_patterns[] =
 };
 
 static int krb_server_init(const InitServiceAPI * const init_api);
-MakeRNAServiceValidationPrototype(krb_server_validate);
+static int krb_server_validate(ServiceValidationArgs* args);
 
-static RNAServiceElement svc_element =
+static tRNAServiceElement svc_element =
 {
     .next = NULL,
     .validate = &krb_server_validate,
     .detectorType = DETECTOR_TYPE_DECODER,
     .name = "kerberos",
     .ref_count = 1,
+    .current_ref_count = 1,
 };
 
 static RNAServiceValidationPort pp[] =
@@ -165,7 +169,7 @@ static RNAServiceValidationPort pp[] =
     {NULL, 0, 0}
 };
 
-static RNAServiceValidationModule service_mod =
+static tRNAServiceValidationModule service_mod =
 {
     .name = "KRB",
     .init = &krb_server_init,
@@ -186,7 +190,7 @@ static Detector_Pattern service_patterns[] =
     {TGS_REP_4, sizeof(TGS_REP_4)-1},
 };
 
-SO_PUBLIC RNADetectorValidationModule kerberos_detector_mod =
+SF_SO_PUBLIC RNADetectorValidationModule kerberos_detector_mod =
 {
     .service = &service_mod,
     .client = &client_app_mod,
@@ -228,18 +232,16 @@ static CLIENT_APP_RETCODE krb_client_init(const InitClientAppAPI * const init_ap
         for (i=0; i < sizeof(client_patterns)/sizeof(*client_patterns); i++)
         {
             _dpd.debugMsg(DEBUG_LOG,"registering pattern with length %u\n",client_patterns[i].length);
-            init_api->RegisterPattern(&krb_client_validate, IPPROTO_UDP, client_patterns[i].pattern, client_patterns[i].length, -1);
-            init_api->RegisterPattern(&krb_client_validate, IPPROTO_TCP, client_patterns[i].pattern, client_patterns[i].length, -1);
+            init_api->RegisterPattern(&krb_client_validate, IPPROTO_UDP, client_patterns[i].pattern, client_patterns[i].length, -1, init_api->pAppidConfig);
+            init_api->RegisterPattern(&krb_client_validate, IPPROTO_TCP, client_patterns[i].pattern, client_patterns[i].length, -1, init_api->pAppidConfig);
         }
-
     }
-
 
 	unsigned j;
 	for (j=0; j < sizeof(appIdRegistry)/sizeof(*appIdRegistry); j++)
 	{
 		_dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[j].appId);
-		init_api->RegisterAppId(&krb_client_validate, appIdRegistry[j].appId, appIdRegistry[j].additionalInfo, NULL);
+		init_api->RegisterAppId(&krb_client_validate, appIdRegistry[j].appId, appIdRegistry[j].additionalInfo, init_api->pAppidConfig);
 	}
 
     return CLIENT_APP_SUCCESS;
@@ -253,16 +255,16 @@ static int krb_server_init(const InitServiceAPI * const init_api)
     {
         _dpd.debugMsg(DEBUG_LOG,"registering pattern with length %u\n",service_patterns[i].length);
         init_api->RegisterPatternUser(&krb_server_validate, IPPROTO_UDP, service_patterns[i].pattern,
-                                      service_patterns[i].length, -1, "kerberos");
+                                      service_patterns[i].length, -1, "kerberos", init_api->pAppidConfig);
         init_api->RegisterPatternUser(&krb_server_validate, IPPROTO_TCP, service_patterns[i].pattern,
-                                      service_patterns[i].length, -1, "kerberos");
+                                      service_patterns[i].length, -1, "kerberos", init_api->pAppidConfig);
     }
 
 	unsigned j;
 	for (j=0; j < sizeof(appIdRegistry)/sizeof(*appIdRegistry); j++)
 	{
 		_dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[j].appId);
-		init_api->RegisterAppId(&krb_server_validate, appIdRegistry[j].appId, appIdRegistry[j].additionalInfo, NULL);
+		init_api->RegisterAppId(&krb_server_validate, appIdRegistry[j].appId, appIdRegistry[j].additionalInfo, init_api->pAppidConfig);
 	}
 
     return 0;
@@ -278,7 +280,7 @@ static int krb_server_init(const InitServiceAPI * const init_api)
 #define ERROR_MSG_TYPE      0x1e
 
 static KRB_RETCODE krb_walk_client_packet(KRBState *krbs, const uint8_t *s, const uint8_t *end,
-                                          FLOW *flowp, const SFSnortPacket *pkt)
+                                          tAppIdData *flowp, SFSnortPacket *pkt)
 {
     static const uint8_t KRB_CLIENT_VERSION[] = "\x0a1\x003\x002\x001";
     static const uint8_t KRB_CLIENT_TYPE[] = "\x0a2\x003\x002\x001";
@@ -606,7 +608,7 @@ static KRB_RETCODE krb_walk_client_packet(KRBState *krbs, const uint8_t *s, cons
 }
 
 static KRB_RETCODE krb_walk_server_packet(KRBState *krbs, const uint8_t *s, const uint8_t *end,
-                                          FLOW *flowp, const SFSnortPacket *pkt, const int dir,
+                                          tAppIdData *flowp, SFSnortPacket *pkt, const int dir,
                                           const char * reqCname)
 {
     static const uint8_t KRB_SERVER_VERSION[] = "\x0a0\x003\x002\x001";
@@ -921,11 +923,11 @@ static KRB_RETCODE krb_walk_server_packet(KRBState *krbs, const uint8_t *s, cons
 #endif
         if (krbs->flags & KRB_FLAG_SERVICE_DETECTED)
         {
-            if (!flow_checkflag(flowp, FLOW_SERVICEDETECTED) && pkt)
+            if (!getAppIdFlag(flowp, APPID_SESSION_SERVICE_DETECTED) && pkt)
             {
                 service_mod.api->add_service(flowp, pkt, dir, &svc_element, APP_ID_KERBEROS,
-                        NULL, krbs->ver, NULL);
-                flow_mark(flowp, FLOW_SERVICEDETECTED);
+                        NULL, krbs->ver, NULL, NULL);
+                setAppIdFlag(flowp, APPID_SESSION_SERVICE_DETECTED);
             }
 
         }
@@ -952,7 +954,8 @@ static KRB_RETCODE krb_walk_server_packet(KRBState *krbs, const uint8_t *s, cons
 }
 
 static CLIENT_APP_RETCODE krb_client_validate(const uint8_t *data, uint16_t size, const int dir,
-                                              FLOW *flowp, const SFSnortPacket *pkt, struct _Detector *userData)
+                                              tAppIdData *flowp, SFSnortPacket *pkt, struct _Detector *userData,
+                                              const tAppIdConfig *pConfig)
 {
     const uint8_t *s = data;
     const uint8_t *end = (data + size);
@@ -964,7 +967,7 @@ static CLIENT_APP_RETCODE krb_client_validate(const uint8_t *data, uint16_t size
 #endif
 
 #ifdef APP_ID_USES_REASSEMBLED
-    kerberos_detector_mod.streamAPI->response_flush_stream((SFSnortPacket *)pkt);
+    kerberos_detector_mod.streamAPI->response_flush_stream(pkt);
 #endif
 
     if (!size)
@@ -1000,7 +1003,7 @@ static CLIENT_APP_RETCODE krb_client_validate(const uint8_t *data, uint16_t size
     {
         fd->need_continue = 1;
         fd->set_flags = 1;
-        flow_mark(flowp, FLOW_CLIENT_GETS_SERVER_PACKETS);
+        setAppIdFlag(flowp, APPID_SESSION_CLIENT_GETS_SERVER_PACKETS);
     }
 
     if (dir == APP_ID_FROM_INITIATOR)
@@ -1010,8 +1013,8 @@ static CLIENT_APP_RETCODE krb_client_validate(const uint8_t *data, uint16_t size
 #ifdef DEBUG_KERBEROS
             _dpd.debugMsg(DEBUG_LOG,"%p Failed\n",flowp);
 #endif
-            flow_mark(flowp, FLOW_CLIENTAPPDETECTED);
-            flow_clear(flowp, FLOW_CLIENT_GETS_SERVER_PACKETS);
+            setAppIdFlag(flowp, APPID_SESSION_CLIENT_DETECTED);
+            clearAppIdFlag(flowp, APPID_SESSION_CLIENT_GETS_SERVER_PACKETS);
             return CLIENT_APP_SUCCESS;
         }
     }
@@ -1020,16 +1023,21 @@ static CLIENT_APP_RETCODE krb_client_validate(const uint8_t *data, uint16_t size
 #ifdef DEBUG_KERBEROS
         _dpd.debugMsg(DEBUG_LOG,"%p Server Failed\n",flowp);
 #endif
-        flow_clear(flowp, FLOW_CLIENT_GETS_SERVER_PACKETS);
+        clearAppIdFlag(flowp, APPID_SESSION_CLIENT_GETS_SERVER_PACKETS);
     }
     return CLIENT_APP_INPROCESS;
 }
 
-MakeRNAServiceValidationPrototype(krb_server_validate)
+static int krb_server_validate(ServiceValidationArgs* args)
 {
+    DetectorData *fd;
+    tAppIdData *flowp = args->flowp;
+    const uint8_t *data = args->data;
+    SFSnortPacket *pkt = args->pkt; 
+    const int dir = args->dir;
+    uint16_t size = args->size;
     const uint8_t *s = data;
     const uint8_t *end = (data + size);
-    DetectorData *fd;
 
 #ifdef DEBUG_KERBEROS
     _dpd.debugMsg(DEBUG_LOG, "%p Processing %u %u->%u %u %d", flowp, flowp->proto, pkt->src_port,
@@ -1040,7 +1048,7 @@ MakeRNAServiceValidationPrototype(krb_server_validate)
         goto inprocess;
 
 #ifdef APP_ID_USES_REASSEMBLED
-    kerberos_detector_mod.streamAPI->response_flush_stream((SFSnortPacket *)pkt);
+    kerberos_detector_mod.streamAPI->response_flush_stream(pkt);
 #endif
 
     if (!size)
@@ -1073,11 +1081,11 @@ MakeRNAServiceValidationPrototype(krb_server_validate)
     }
 
     if (fd->need_continue)
-        flow_mark(flowp, FLOW_CONTINUE);
+        setAppIdFlag(flowp, APPID_SESSION_CONTINUE);
     else
     {
-        flow_clear(flowp, FLOW_CONTINUE);
-        if (flow_checkflag(flowp, FLOW_SERVICEDETECTED))
+        clearAppIdFlag(flowp, APPID_SESSION_CONTINUE);
+        if (getAppIdFlag(flowp, APPID_SESSION_SERVICE_DETECTED))
             return SERVICE_SUCCESS;
     }
 
@@ -1086,17 +1094,18 @@ MakeRNAServiceValidationPrototype(krb_server_validate)
 #ifdef DEBUG_KERBEROS
         _dpd.debugMsg(DEBUG_LOG,"%p Failed\n",flowp);
 #endif
-        if (!flow_checkflag(flowp, FLOW_SERVICEDETECTED))
+        if (!getAppIdFlag(flowp, APPID_SESSION_SERVICE_DETECTED))
         {
-            service_mod.api->fail_service(flowp, pkt, dir, &svc_element);
+            service_mod.api->fail_service(flowp, pkt, dir, &svc_element,
+                                          service_mod.flow_data_index, args->pConfig, NULL);
             return SERVICE_NOMATCH;
         }
-        flow_clear(flowp, FLOW_CONTINUE);
+        clearAppIdFlag(flowp, APPID_SESSION_CONTINUE);
         return SERVICE_SUCCESS;
     }
 
 inprocess:
-    service_mod.api->service_inprocess(flowp, pkt, dir, &svc_element);
+    service_mod.api->service_inprocess(flowp, pkt, dir, &svc_element, NULL);
     return SERVICE_INPROCESS;
 
 }

@@ -37,14 +37,38 @@
 /* DAQ version supports address space ID in header. */
 #undef HAVE_DAQ_ADDRESS_SPACE_ID
 
+/* DAQ version supports data channel. */
+#undef HAVE_DAQ_DATA_CHANNEL_PARAMS
+
+/* DAQ version supports separate IP versions on pinhole endpoints. */
+#undef HAVE_DAQ_DATA_CHANNEL_SEPARATE_IP_VERSIONS
+
+/* DAQ version supports decrypted ssl */
+#undef HAVE_DAQ_DECRYPTED_SSL
+
 /* Define to 1 if you have the `daq_dp_add_dc' function. */
 #undef HAVE_DAQ_DP_ADD_DC
+
+/* DAQ version supports extended flow modifiers. */
+#undef HAVE_DAQ_EXT_MODFLOW
 
 /* DAQ version supports flow ID in header. */
 #undef HAVE_DAQ_FLOW_ID
 
 /* Define to 1 if you have the `daq_hup_apply' function. */
 #undef HAVE_DAQ_HUP_APPLY
+
+/* DAQ version supports packet trace. */
+#undef HAVE_DAQ_PKT_TRACE
+
+/* DAQ version supports query flow. */
+#undef HAVE_DAQ_QUERYFLOW
+
+/* DAQ version supports real addresses in header. */
+#undef HAVE_DAQ_REAL_ADDRESSES
+
+/* DAQ version supports tracing verdict reason. */
+#undef HAVE_DAQ_VERDICT_REASON
 
 /* DAQ version supports DAQ_VERDICT_RETRY in DAQ_Verdict. */
 #undef HAVE_DAQ_VERDICT_RETRY
@@ -84,6 +108,9 @@
 
 /* Define to 1 if you have the `m' library (-lm). */
 #undef HAVE_LIBM
+
+/* Define to 1 if you have the `nghttp2' library (-lnghttp2). */
+#undef HAVE_LIBNGHTTP2
 
 /* Define to 1 if you have the `nsl' library (-lnsl). */
 #undef HAVE_LIBNSL
@@ -265,8 +292,7 @@
 /* Define if Linux */
 #undef LINUX
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
 /* Define if MacOS */

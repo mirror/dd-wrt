@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -26,6 +26,7 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 
+#include "appInfoTable.h"
 #include "flow.h"
 #include "service_api.h"
 
@@ -46,15 +47,16 @@ typedef struct _SERVICE_RSYNC_DATA
 } ServiceRSYNCData;
 
 static int rsync_init(const InitServiceAPI * const init_api);
-MakeRNAServiceValidationPrototype(rsync_validate);
+static int rsync_validate(ServiceValidationArgs* args);
 
-static RNAServiceElement svc_element =
+static tRNAServiceElement svc_element =
 {
     .next = NULL,
     .validate = &rsync_validate,
     .detectorType = DETECTOR_TYPE_DECODER,
     .name = "rsync",
     .ref_count = 1,
+    .current_ref_count = 1,
 };
 
 static RNAServiceValidationPort pp[] =
@@ -63,45 +65,48 @@ static RNAServiceValidationPort pp[] =
     {NULL, 0, 0}
 };
 
-RNAServiceValidationModule rsync_service_mod =
+tRNAServiceValidationModule rsync_service_mod =
 {
     "RSYNC",
     &rsync_init,
     pp
 };
 
-static tAppRegistryEntry appIdRegistry[] = {{APP_ID_RSYNC, 0}};
+static tAppRegistryEntry appIdRegistry[] = {{APP_ID_RSYNC, APPINFO_FLAG_SERVICE_ADDITIONAL}};
 
 static int rsync_init(const InitServiceAPI * const init_api)
 {
-    init_api->RegisterPattern(&rsync_validate, IPPROTO_TCP, (uint8_t *)RSYNC_BANNER, sizeof(RSYNC_BANNER)-1, 0, "rsync");
+    init_api->RegisterPattern(&rsync_validate, IPPROTO_TCP, (uint8_t *)RSYNC_BANNER, sizeof(RSYNC_BANNER)-1, 0, "rsync", init_api->pAppidConfig);
 	unsigned i;
 	for (i=0; i < sizeof(appIdRegistry)/sizeof(*appIdRegistry); i++)
 	{
 		_dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[i].appId);
-		init_api->RegisterAppId(&rsync_validate, appIdRegistry[i].appId, appIdRegistry[i].additionalInfo, NULL);
+		init_api->RegisterAppId(&rsync_validate, appIdRegistry[i].appId, appIdRegistry[i].additionalInfo, init_api->pAppidConfig);
 	}
 
     return 0;
 }
 
-MakeRNAServiceValidationPrototype(rsync_validate)
+static int rsync_validate(ServiceValidationArgs* args)
 {
     ServiceRSYNCData *rd;
     int i;
+    tAppIdData *flowp = args->flowp;
+    const uint8_t *data = args->data;
+    uint16_t size = args->size;
 
     if (!size)
         goto inprocess;
-    if (dir != APP_ID_FROM_RESPONDER)
+    if (args->dir != APP_ID_FROM_RESPONDER)
         goto inprocess;
 
-    rd = rsync_service_mod.api->data_get(flowp);
+    rd = rsync_service_mod.api->data_get(flowp, rsync_service_mod.flow_data_index);
     if (!rd)
     {
         rd = calloc(1, sizeof(*rd));
         if (!rd)
             return SERVICE_ENOMEM;
-        if (rsync_service_mod.api->data_add(flowp, rd, &free))
+        if (rsync_service_mod.api->data_add(flowp, rd, rsync_service_mod.flow_data_index, &free))
         {
             free(rd);
             return SERVICE_ENOMEM;
@@ -133,16 +138,17 @@ MakeRNAServiceValidationPrototype(rsync_validate)
     }
 
 inprocess:
-    rsync_service_mod.api->service_inprocess(flowp, pkt, dir, &svc_element);
+    rsync_service_mod.api->service_inprocess(flowp, args->pkt, args->dir, &svc_element, NULL);
     return SERVICE_INPROCESS;
 
 success:
-    rsync_service_mod.api->add_service(flowp, pkt, dir, &svc_element,
-                                       APP_ID_RSYNC, NULL, NULL, NULL);
+    rsync_service_mod.api->add_service(flowp, args->pkt, args->dir, &svc_element,
+                                       APP_ID_RSYNC, NULL, NULL, NULL, NULL);
     return SERVICE_SUCCESS;
 
 fail:
-    rsync_service_mod.api->fail_service(flowp, pkt, dir, &svc_element);
+    rsync_service_mod.api->fail_service(flowp, args->pkt, args->dir, &svc_element,
+                                        rsync_service_mod.flow_data_index, args->pConfig, NULL);
     return SERVICE_NOMATCH;
 }
 

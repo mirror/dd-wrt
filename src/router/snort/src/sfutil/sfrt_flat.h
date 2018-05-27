@@ -1,5 +1,5 @@
 /*
- ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2011-2013 Sourcefire, Inc.
  **
  **
@@ -78,8 +78,8 @@ typedef struct {
 table_flat_t * sfrt_flat_new(char table_flat_type, char ip_type,
         long data_size, uint32_t mem_cap);
 void sfrt_flat_free(TABLE_PTR table);
-GENERIC sfrt_flat_lookup(void *adr, table_flat_t *table);
-int sfrt_flat_insert(void *adr, unsigned char len, INFO ptr, int behavior,
+GENERIC sfrt_flat_lookup(sfaddr_t *ip, table_flat_t *table);
+int sfrt_flat_insert(sfcidr_t *ip, unsigned char len, INFO ptr, int behavior,
         table_flat_t *table, updateEntryInfoFunc updateEntry);
 uint32_t sfrt_flat_usage(table_flat_t *table);
 uint32_t sfrt_flat_num_entries(table_flat_t *table);
@@ -87,91 +87,132 @@ uint32_t sfrt_flat_num_entries(table_flat_t *table);
 /* Perform a lookup on value contained in "ip"
  * For performance reason, we use this simplified version instead of sfrt_lookup
  * Note: this only applied to table setting: DIR_8x16 (DIR_16_8_4x2 for IPV4), DIR_8x4*/
-static inline GENERIC sfrt_flat_dir8x_lookup(void *adr, table_flat_t* table) {
+static inline GENERIC sfrt_flat_dir8x_lookup(sfaddr_t *ip, table_flat_t* table) {
     dir_sub_table_flat_t *subtable;
-    DIR_Entry *entry;
+    Entry_Value *entries_value;
+    Entry_Len *entries_length;
     uint8_t *base = (uint8_t *) table;
     int i;
-    sfip_t *ip;
     dir_table_flat_t *rt = NULL;
     int index;
     INFO *data = (INFO *) (&base[table->data]);
 
-    ip = adr;
-    if (ip->family == AF_INET)
+    if (sfaddr_family(ip) == AF_INET)
     {
         rt = (dir_table_flat_t *)(&base[table->rt]);
         subtable = (dir_sub_table_flat_t *)(&base[rt->sub_table]);
-        /* 16 bits*/
-        index = ntohs(ip->ip16[0]);
-        entry = (DIR_Entry *)(&base[subtable->entries]);
-        if( !entry[index].value || entry[index].length)
+        /* 16 bits */
+        index = ntohs(ip->ia16[6]);
+        entries_value = (Entry_Value *)(&base[subtable->entries_value]);
+        entries_length = (Entry_Len *)(&base[subtable->entries_length]);
+        if( !entries_value[index] || entries_length[index] )
         {
-            if (data[entry[index].value])
-                return (GENERIC) &base[data[entry[index].value]];
+            if (data[entries_value[index]])
+                return (GENERIC) &base[data[entries_value[index]]];
             else
                 return NULL;
         }
-        subtable = (dir_sub_table_flat_t *)(&base[entry[index].value]);
-
-        /* 8 bits*/
-        index = ip->ip8[2];
-        entry = (DIR_Entry *)(&base[subtable->entries]);
-        if( !entry[index].value || entry[index].length)
-        {
-            if (data[entry[index].value])
-                return (GENERIC) &base[data[entry[index].value]];
-            else
-                return NULL;
-        }
-        subtable = (dir_sub_table_flat_t *)(&base[entry[index].value]);
+        subtable = (dir_sub_table_flat_t *)(&base[entries_value[index]]);
 
         /* 4 bits */
-        index = ip->ip8[3] >> 4;
-        entry = (DIR_Entry *)(&base[subtable->entries]);
-        if( !entry[index].value || entry[index].length)
+        index = ip->ia8[14] >> 4;
+        entries_value = (Entry_Value *)(&base[subtable->entries_value]);
+        entries_length = (Entry_Len *)(&base[subtable->entries_length]);
+        if ( !entries_value[index] || entries_length[index] )
         {
-            if (data[entry[index].value])
-                return (GENERIC) &base[data[entry[index].value]];
+            if ( data[entries_value[index]] )
+                return (GENERIC) &base[data[entries_value[index]]];
             else
                 return NULL;
         }
-        subtable = (dir_sub_table_flat_t *)(&base[entry[index].value]);
+        subtable = (dir_sub_table_flat_t *)(&base[entries_value[index]]);
 
         /* 4 bits */
-        index = ip->ip8[3] & 0xF;
-        entry = (DIR_Entry *)(&base[subtable->entries]);
-        if( !entry[index].value || entry[index].length)
+        index = ip->ia8[14] & 0xF;
+        entries_value = (Entry_Value *)(&base[subtable->entries_value]);
+        entries_length = (Entry_Len *)(&base[subtable->entries_length]);
+        if( !entries_value[index] || entries_length[index] )
         {
-            if (data[entry[index].value])
-                return (GENERIC) &base[data[entry[index].value]];
+            if ( data[entries_value[index]] )
+                return (GENERIC) &base[data[entries_value[index]]];
             else
                 return NULL;
         }
-        subtable = (dir_sub_table_flat_t *)(&base[entry[index].value]);
+        subtable = (dir_sub_table_flat_t *)(&base[entries_value[index]]);
 
+        /* 2 bits */
+        index = ip->ia8[15] >> 6;
+        entries_value = (Entry_Value *)(&base[subtable->entries_value]);
+        entries_length = (Entry_Len *)(&base[subtable->entries_length]);
+        if( !entries_value[index] || entries_length[index] )
+        {
+            if ( data[entries_value[index]] )
+                return (GENERIC) &base[data[entries_value[index]]];
+            else
+                return NULL;
+        }
+        subtable = (dir_sub_table_flat_t *)(&base[entries_value[index]]);
+
+        /* 2 bits */
+        index = (ip->ia8[15] >> 4) & 0x3;
+        entries_value = (Entry_Value *)(&base[subtable->entries_value]);
+        entries_length = (Entry_Len *)(&base[subtable->entries_length]);
+        if( !entries_value[index] || entries_length[index] )
+        {
+            if ( data[entries_value[index]] )
+                return (GENERIC) &base[data[entries_value[index]]];
+            else
+                return NULL;
+        }
+        subtable = (dir_sub_table_flat_t *)(&base[entries_value[index]]);
+
+        /* 2 bits */
+        index = (ip->ia8[15] >> 2) & 0x3;
+        entries_value = (Entry_Value *)(&base[subtable->entries_value]);
+        entries_length = (Entry_Len *)(&base[subtable->entries_length]);
+        if( !entries_value[index] || entries_length[index] )
+        {
+            if ( data[entries_value[index]] )
+                return (GENERIC) &base[data[entries_value[index]]];
+            else
+                return NULL;
+        }
+        subtable = (dir_sub_table_flat_t *)(&base[entries_value[index]]);
+
+        /* 2 bits */
+        index = ip->ia8[15] & 0x3;
+        entries_value = (Entry_Value *)(&base[subtable->entries_value]);
+        entries_length = (Entry_Len *)(&base[subtable->entries_length]);
+        if( !entries_value[index] || entries_length[index] )
+        {
+            if ( data[entries_value[index]] )
+                return (GENERIC) &base[data[entries_value[index]]];
+            else
+                return NULL;
+        }
     }
-    else if (ip->family == AF_INET6)
+    else
     {
 
         rt = (dir_table_flat_t *)(&base[table->rt6]);
         subtable = (dir_sub_table_flat_t *)(&base[rt->sub_table]);
         for (i = 0; i < 16; i++)
         {
-            index = ip->ip8[i];
-            entry = (DIR_Entry *)(&base[subtable->entries]);
-            if( !entry[index].value || entry[index].length)
+            index = ip->ia8[i];
+            entries_value = (Entry_Value *)(&base[subtable->entries_value]);
+            entries_length = (Entry_Len *)(&base[subtable->entries_length]);
+            if( !entries_value[index] || entries_length[index] )
             {
-                if (data[entry[index].value])
-                    return (GENERIC) &base[data[entry[index].value]];
+                if ( data[entries_value[index]] )
+                    return (GENERIC) &base[data[entries_value[index]]];
                 else
                     return NULL;
             }
-            subtable = (dir_sub_table_flat_t *)(&base[entry[index].value]);
+            subtable = (dir_sub_table_flat_t *)(&base[entries_value[index]]);
         }
     }
-return NULL;
 
+    return NULL;
 }
 #endif
 

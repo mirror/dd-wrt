@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 ** Copyright (C) 2000,2001 Andrew R. Baker <andrewb@uab.edu>
@@ -97,7 +97,7 @@ typedef struct _SpoAlertFastData
 static void AlertFastInit(struct _SnortConfig *, char *);
 static SpoAlertFastData *ParseAlertFastArgs(struct _SnortConfig *, char *);
 static void AlertFastCleanExitFunc(int, void *);
-static void AlertFast(Packet *, char *, void *, Event *);
+static void AlertFast(Packet *, const char *, void *, Event *);
 
 /*
  * Function: SetupAlertFast()
@@ -149,7 +149,7 @@ static void AlertFastInit(struct _SnortConfig *sc, char *args)
 
 static const char* s_dispos[] = { " [Allow]", " [CDrop]", " [WDrop]", " [Drop]", " [FDrop]" };
 
-static void AlertFast(Packet *p, char *msg, void *arg, Event *event)
+static void AlertFast(Packet *p, const char *msg, void *arg, Event *event)
 {
     SpoAlertFastData *data = (SpoAlertFastData *)arg;
     tActiveDrop dispos = Active_GetDisposition();
@@ -204,6 +204,9 @@ static void AlertFast(Packet *p, char *msg, void *arg, Event *event)
     if ((p != NULL) && IPH_IS_VALID(p))
     {
         LogPriorityData(data->log, 0);
+#if defined(FEAT_OPEN_APPID)
+        LogAppID(data->log, event->app_name, 0);
+#endif
         TextLog_Print(data->log, "{%s} ", protocol_names[GET_IPH_PROTO(p)]);
         LogIpAddrs(data->log, p);
     }

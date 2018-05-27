@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
- ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2002-2013 Sourcefire, Inc.
  ** Author: Daniel Roelker
  **
@@ -341,7 +341,7 @@ void SetupAsn1(void)
     RegisterRuleOption("asn1", Asn1Init, NULL, OPT_TYPE_DETECTION, NULL);
 
 #ifdef PERF_PROFILING
-    RegisterPreprocessorProfile("asn1", &asn1PerfStats, 3, &ruleOTNEvalPerfStats);
+    RegisterPreprocessorProfile("asn1", &asn1PerfStats, 3, &ruleOTNEvalPerfStats, NULL);
 #endif
 
     DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN,"Plugin: ASN1 Setup\n"););
