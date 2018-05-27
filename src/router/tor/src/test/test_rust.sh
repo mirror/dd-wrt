@@ -1,13 +1,15 @@
 #!/bin/sh
-# Test all the Rust crates we're using
+# Test all Rust crates
 
-crates=tor_util
+set -e
 
-exitcode=0
+CARGO_TARGET_DIR="${abs_top_builddir:-../../..}/src/rust/target" \
+    CARGO_HOME="${abs_top_builddir:-../../..}/src/rust" \
+    find "${abs_top_srcdir:-../../..}/src/rust" \
+    -mindepth 2 -maxdepth 2 \
+    -type f -name 'Cargo.toml' \
+    -exec "${CARGO:-cargo}" test --all-features ${CARGO_ONLINE-"--frozen"} \
+    --manifest-path '{}' \;
 
-for crate in $crates; do
-    cd "${abs_top_srcdir:-.}/src/rust/${crate}"
-    CARGO_TARGET_DIR="${abs_top_builddir}/src/rust/target" CARGO_HOME="${abs_top_builddir}/src/rust" "${CARGO:-cargo}" test ${CARGO_ONLINE-"--frozen"} || exitcode=1
-done
+exit $?
 
-exit $exitcode

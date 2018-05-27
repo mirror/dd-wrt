@@ -1073,7 +1073,9 @@ forward slash (/) in the configuration file and on the command line.</p></div>
     usage for _relayed traffic_ on this node to the specified number of bytes
     per second, and the average outgoing bandwidth usage to that same value.
     Relayed traffic currently is calculated to include answers to directory
-    requests, but that may change in future versions. (Default: 0)
+    requests, but that may change in future versions. They do not include directory
+    fetches by the relay (from authority or other relays), because that is considered
+    "client" activity.  (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1083,7 +1085,8 @@ forward slash (/) in the configuration file and on the command line.</p></div>
 <p>
     If not 0, limit the maximum token bucket size (also known as the burst) for
     _relayed traffic_ to the given number of bytes in each direction.
-    (Default: 0)
+    They do not include directory fetches by the relay (from authority
+    or other relays), because that is considered "client" activity. (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1091,9 +1094,9 @@ forward slash (/) in the configuration file and on the command line.</p></div>
 </dt>
 <dd>
 <p>
-    If set, do separate rate limiting for each connection from a non-relay.
-    You should never need to change this value, since a network-wide value is
-    published in the consensus and your relay will use that value. (Default: 0)
+    If this option is set manually, or via the "perconnbwrate" consensus
+    field, Tor will use it for separate rate limiting for each connection
+    from a non-relay. (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1101,9 +1104,9 @@ forward slash (/) in the configuration file and on the command line.</p></div>
 </dt>
 <dd>
 <p>
-    If set, do separate rate limiting for each connection from a non-relay.
-    You should never need to change this value, since a network-wide value is
-    published in the consensus and your relay will use that value. (Default: 0)
+    If this option is set manually, or via the "perconnbwburst" consensus
+    field, Tor will use it for separate rate limiting for each connection
+    from a non-relay. (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1406,6 +1409,26 @@ forward slash (/) in the configuration file and on the command line.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
+<a id="CacheDirectory"></a> <strong>CacheDirectory</strong> <em>DIR</em>
+</dt>
+<dd>
+<p>
+    Store cached directory data in DIR. Can not be changed while tor is
+    running.
+    (Default: uses the value of DataDirectory.)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="CacheDirectoryGroupReadable"></a> <strong>CacheDirectoryGroupReadable</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    If this option is set to 0, don&#8217;t allow the filesystem group to read the
+    CacheDirectory. If the option is set to 1, make the CacheDirectory readable
+    by the default GID. (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
 <a id="FallbackDir"></a> <strong>FallbackDir</strong> <em>ipv4address</em>:<em>port</em> orport=<em>port</em> id=<em>fingerprint</em> [weight=<em>num</em>] [ipv6=<strong>[</strong><em>ipv6address</em><strong>]</strong>:<em>orport</em>]
 </dt>
 <dd>
@@ -1577,13 +1600,21 @@ forward slash (/) in the configuration file and on the command line.</p></div>
 </dt>
 <dd>
 <p>
-    If set to 1, Tor will fetch every consensus flavor, descriptor, and
-    certificate that it hears about. Otherwise, it will avoid fetching useless
-    descriptors: flavors that it is not using to build circuits, and authority
-    certificates it does not trust. This option is useful if you&#8217;re using a
+    If set to 1, Tor will fetch every consensus flavor, and all server
+    descriptors and authority certificates referenced by those consensuses,
+    except for extra info descriptors. When this option is 1, Tor will also
+    keep fetching descriptors, even when idle.
+    If set to 0, Tor will avoid fetching useless descriptors: flavors that it
+    is not using to build circuits, and authority certificates it does not
+    trust. When Tor hasn&#8217;t built any application circuits, it will go idle,
+    and stop fetching descriptors. This option is useful if you&#8217;re using a
     tor client with an external parser that uses a full consensus.
-    This option fetches all documents, <strong>DirCache</strong> fetches and serves
-    all documents. (Default: 0)
+    This option fetches all documents except extrainfo descriptors,
+    <strong>DirCache</strong> fetches and serves all documents except extrainfo
+    descriptors, <strong>DownloadExtraInfo</strong>* fetches extrainfo documents, and serves
+    them if <strong>DirCache</strong> is on, and <strong>UseMicrodescriptors</strong> changes the
+    flavour of consensues and descriptors that is fetched and used for
+    building circuits. (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1688,13 +1719,13 @@ forward slash (/) in the configuration file and on the command line.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="SocksSocketsGroupWritable"></a> <strong>SocksSocketsGroupWritable</strong> <strong>0</strong>|<strong>1</strong>
+<a id="UnixSocksGroupWritable"></a> <strong>UnixSocksGroupWritable</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
     If this option is set to 0, don&#8217;t allow the filesystem group to read and
-    write unix sockets (e.g. SocksSocket). If the option is set to 1, make
-    the SocksSocket socket readable and writable by the default GID. (Default: 0)
+    write unix sockets (e.g. SocksPort unix:). If the option is set to 1, make
+    the Unix socket readable and writable by the default GID. (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1754,7 +1785,8 @@ forward slash (/) in the configuration file and on the command line.</p></div>
 <br />
     The currently recognized domains are: general, crypto, net, config, fs,
     protocol, mm, http, app, control, circ, rend, bug, dir, dirserv, or, edge,
-    acct, hist, and handshake.  Domain names are case-insensitive.<br />
+    acct, hist, handshake, heartbeat, channel, sched, guard, consdiff, and dos.
+    Domain names are case-insensitive.<br />
 <br />
     For example, "<code>Log [handshake]debug [~net,~mm]info notice stdout</code>" sends
     to stdout: all handshake messages of any severity, all info-and-higher
@@ -1795,7 +1827,7 @@ forward slash (/) in the configuration file and on the command line.</p></div>
     be used twice, once with an IPv4 address and once with an IPv6 address.
     IPv6 addresses should be wrapped in square brackets.
     This setting will be ignored for connections to the loopback addresses
-    (127.0.0.0/8 and ::1).
+    (127.0.0.0/8 and ::1), and is not used for DNS requests as well.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1886,6 +1918,16 @@ forward slash (/) in the configuration file and on the command line.</p></div>
     When logging to syslog, adds a tag to the syslog identity such that
     log entries are marked with "Tor-<em>tag</em>". Can not be changed while tor is
     running. (Default: none)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="AndroidIdentityTag"></a> <strong>AndroidIdentityTag</strong> <em>tag</em>
+</dt>
+<dd>
+<p>
+    When logging to Android&#8217;s logging subsystem, adds a tag to the log identity
+    such that log entries are marked with "Tor-<em>tag</em>". Can not be changed while
+    tor is running. (Default: none)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -2632,6 +2674,8 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </dd>
 </dl></div>
 </dd>
+</dl></div>
+<div class="dlist"><dl>
 <dt class="hdlist1">
 <a id="OtherSocksPortFlags"></a>
 </dt>
@@ -2703,7 +2747,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 <dd>
 <p>
         Tells the client to remember IPv4 DNS answers we receive from exit
-        nodes via this connection. (On by default.)
+        nodes via this connection.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -2748,8 +2792,8 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 <dd>
 <p>
         Tells the client to use any cached IPv4 DNS answers we have when making
-        requests via this connection. (NOTE: This option, along UseIPv6Cache
-        and UseDNSCache, can harm your anonymity, and probably
+        requests via this connection. (NOTE: This option, or UseIPv6Cache
+        or UseDNSCache, can harm your anonymity, and probably
         won&#8217;t help performance as much as you might expect. Use with care!)
 </p>
 </dd>
@@ -2799,6 +2843,8 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </dd>
 </dl></div>
 </dd>
+</dl></div>
+<div class="dlist"><dl>
 <dt class="hdlist1">
 <a id="SocksPortFlagsMisc"></a>
 </dt>
@@ -3237,6 +3283,110 @@ is preferable since it reduces the chances for an attacker to guess the
 </p>
 </dd>
 <dt class="hdlist1">
+<a id="HSLayer2Nodes"></a> <strong>HSLayer2Nodes</strong> <em>node</em>,<em>node</em>,<em>&#8230;</em>
+</dt>
+<dd>
+<p>
+    A list of identity fingerprints, nicknames, country codes, and
+    address patterns of nodes that are allowed to be used as the
+    second hop in all client or service-side Onion Service circuits.
+    This option mitigates attacks where the adversary runs middle nodes
+    and induces your client or service to create many circuits, in order
+    to discover your primary guard node.
+    (Default: Any node in the network may be used in the second hop.)
+<br />
+    (Example:
+    HSLayer2Nodes ABCD1234CDEF5678ABCD1234CDEF5678ABCD1234, {cc}, 255.254.0.0/8)<br />
+<br />
+    When this is set, the resulting hidden service paths will
+    look like:
+<br />
+        C - G - L2 - M - Rend<br />
+        C - G - L2 - M - HSDir<br />
+        C - G - L2 - M - Intro<br />
+        S - G - L2 - M - Rend<br />
+        S - G - L2 - M - HSDir<br />
+        S - G - L2 - M - Intro<br />
+<br />
+    where C is this client, S is the service, G is the Guard node,
+    L2 is a node from this option, and M is a random middle node.
+    Rend, HSDir, and Intro point selection is not affected by this
+    option.
+<br />
+    This option may be combined with HSLayer3Nodes to create
+    paths of the form:
+<br />
+        C - G - L2 - L3 - Rend<br />
+        C - G - L2 - L3 - M - HSDir<br />
+        C - G - L2 - L3 - M - Intro<br />
+        S - G - L2 - L3 - M - Rend<br />
+        S - G - L2 - L3 - HSDir<br />
+        S - G - L2 - L3 - Intro<br />
+<br />
+    ExcludeNodes have higher priority than HSLayer2Nodes,
+    which means that nodes specified in ExcludeNodes will not be
+    picked.
+<br />
+    This option is meant to be managed by a Tor controller such as
+    <a href="https://github.com/mikeperry-tor/vanguards">https://github.com/mikeperry-tor/vanguards</a> that selects and
+    updates this set of nodes for you. Hence it does not do load
+    balancing if fewer than 20 nodes are selected, and if no nodes in
+    HSLayer2Nodes are currently available for use, Tor will not work.
+    Please use extreme care if you are setting this option manually.
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="HSLayer3Nodes"></a> <strong>HSLayer3Nodes</strong> <em>node</em>,<em>node</em>,<em>&#8230;</em>
+</dt>
+<dd>
+<p>
+    A list of identity fingerprints, nicknames, country codes, and
+    address patterns of nodes that are allowed to be used as the
+    third hop in all client and service-side Onion Service circuits.
+    This option mitigates attacks where the adversary runs middle nodes
+    and induces your client or service to create many circuits, in order
+    to discover your primary or Layer2 guard nodes.
+    (Default: Any node in the network may be used in the third hop.)
+<br />
+    (Example:
+    HSLayer3Nodes ABCD1234CDEF5678ABCD1234CDEF5678ABCD1234, {cc}, 255.254.0.0/8)<br />
+<br />
+    When this is set by itself, the resulting hidden service paths
+    will look like:<br />
+        C - G - M - L3 - Rend<br />
+        C - G - M - L3 - M - HSDir<br />
+        C - G - M - L3 - M - Intro<br />
+        S - G - M - L3 - M - Rend<br />
+        S - G - M - L3 - HSDir<br />
+        S - G - M - L3 - Intro<br />
+    where C is this client, S is the service, G is the Guard node,
+    L2 is a node from this option, and M is a random middle node.
+    Rend, HSDir, and Intro point selection is not affected by this
+    option.
+<br />
+    While it is possible to use this option by itself, it should be
+    combined with HSLayer2Nodes to create paths of the form:
+<br />
+        C - G - L2 - L3 - Rend<br />
+        C - G - L2 - L3 - M - HSDir<br />
+        C - G - L2 - L3 - M - Intro<br />
+        S - G - L2 - L3 - M - Rend<br />
+        S - G - L2 - L3 - HSDir<br />
+        S - G - L2 - L3 - Intro<br />
+<br />
+    ExcludeNodes have higher priority than HSLayer3Nodes,
+    which means that nodes specified in ExcludeNodes will not be
+    picked.
+ <br />
+    This option is meant to be managed by a Tor controller such as
+    <a href="https://github.com/mikeperry-tor/vanguards">https://github.com/mikeperry-tor/vanguards</a> that selects and
+    updates this set of nodes for you. Hence it does not do load
+    balancing if fewer than 20 nodes are selected, and if no nodes in
+    HSLayer3Nodes are currently available for use, Tor will not work.
+    Please use extreme care if you are setting this option manually.
+</p>
+</dd>
+<dt class="hdlist1">
 <a id="UseMicrodescriptors"></a> <strong>UseMicrodescriptors</strong> <strong>0</strong>|<strong>1</strong>|<strong>auto</strong>
 </dt>
 <dd>
@@ -3245,9 +3395,8 @@ is preferable since it reduces the chances for an attacker to guess the
     in order to build its circuits.  Using microdescriptors makes Tor clients
     download less directory information, thus saving bandwidth.  Directory
     caches need to fetch regular descriptors and microdescriptors, so this
-    option doesn&#8217;t save any bandwidth for them.  If this option is set to
-    "auto" (recommended) then it is on for all clients that do not set
-    FetchUselessDescriptors. (Default: auto)
+    option doesn&#8217;t save any bandwidth for them.  For legacy reasons, auto is
+    accepted, but it has the same effect as 1. (Default: auto)
 </p>
 </dd>
 </dl></div>
@@ -3420,24 +3569,6 @@ is preferable since it reduces the chances for an attacker to guess the
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="ClientBootstrapConsensusMaxDownloadTries"></a> <strong>ClientBootstrapConsensusMaxDownloadTries</strong> <em>NUM</em>
-</dt>
-<dd>
-<p>
-    Try this many times to download a consensus while bootstrapping using
-    fallback directory mirrors before giving up. (Default: 7)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="ClientBootstrapConsensusAuthorityOnlyMaxDownloadTries"></a> <strong>ClientBootstrapConsensusAuthorityOnlyMaxDownloadTries</strong> <em>NUM</em>
-</dt>
-<dd>
-<p>
-    Try this many times to download a consensus while bootstrapping using
-    authorities before giving up. (Default: 4)
-</p>
-</dd>
-<dt class="hdlist1">
 <a id="ClientBootstrapConsensusMaxInProgressTries"></a> <strong>ClientBootstrapConsensusMaxInProgressTries</strong> <em>NUM</em>
 </dt>
 <dd>
@@ -3553,8 +3684,8 @@ is non-zero):</p></div>
     "<strong>accept[6]</strong>|<strong>reject[6]</strong>  <em>ADDR</em>[/<em>MASK</em>][:<em>PORT</em>]". If /<em>MASK</em> is
     omitted then this policy just applies to the host given. Instead of giving
     a host or network you can also use "*" to denote the universe (0.0.0.0/0
-    and ::/128), or *4 to denote all IPv4 addresses, and *6 to denote all
-    IPv6 addresses.
+    and ::/0), or *4 to denote all IPv4 addresses, and *6 to denote all IPv6
+    addresses.
     <em>PORT</em> can be a single port number, an interval of ports
     "<em>FROM_PORT</em>-<em>TO_PORT</em>", or "*". If <em>PORT</em> is omitted, that means
     "*".<br />
@@ -3602,8 +3733,15 @@ is non-zero):</p></div>
     write your IPv6 rules using accept6/reject6 *6, and your IPv4 rules using
     accept/reject *4. If you want to _replace_ the default exit policy, end
     your exit policy with either a reject *:* or an accept *:*. Otherwise,
-    you&#8217;re _augmenting_ (prepending to) the default exit policy. The default
-    exit policy is:<br />
+    you&#8217;re _augmenting_ (prepending to) the default exit policy.<br />
+<br />
+    If you want to use a reduced exit policy rather than the default exit
+    policy, set "ReducedExitPolicy 1". If you want to <em>replace</em> the default
+    exit policy with your custom exit policy, end your exit policy with either
+    a reject <strong>:</strong> or an accept <strong>:</strong>. Otherwise, you’re <em>augmenting</em> (prepending
+    to) the default or reduced exit policy.<br />
+<br />
+    The default exit policy is:
 </p>
 <div class="literalblock">
 <div class="content">
@@ -3620,6 +3758,8 @@ reject *:6881-6999
 accept *:*</code></pre>
 </div></div>
 </dd>
+</dl></div>
+<div class="dlist"><dl>
 <dt class="hdlist1">
 <a id="ExitPolicyDefault"></a>
 </dt>
@@ -3656,6 +3796,108 @@ accept *:*</code></pre>
     to disclose.
     (Default: 0)
 </p>
+</dd>
+<dt class="hdlist1">
+<a id="ReducedExitPolicy"></a> <strong>ReducedExitPolicy</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    If set, use a reduced exit policy rather than the default one.<br />
+<br />
+    The reduced exit policy is an alternative to the default exit policy. It
+    allows as many Internet services as possible while still blocking the
+    majority of TCP ports. Currently, the policy allows approximately 65 ports.
+    This reduces the odds that your node will be used for peer-to-peer
+    applications.<br />
+<br />
+    The reduced exit policy is:
+</p>
+<div class="literalblock">
+<div class="content">
+<pre><code>accept *:20-21
+accept *:22
+accept *:23
+accept *:43
+accept *:53
+accept *:79
+accept *:80-81
+accept *:88
+accept *:110
+accept *:143
+accept *:194
+accept *:220
+accept *:389
+accept *:443
+accept *:464
+accept *:465
+accept *:531
+accept *:543-544
+accept *:554
+accept *:563
+accept *:587
+accept *:636
+accept *:706
+accept *:749
+accept *:873
+accept *:902-904
+accept *:981
+accept *:989-990
+accept *:991
+accept *:992
+accept *:993
+accept *:994
+accept *:995
+accept *:1194
+accept *:1220
+accept *:1293
+accept *:1500
+accept *:1533
+accept *:1677
+accept *:1723
+accept *:1755
+accept *:1863
+accept *:2082
+accept *:2083
+accept *:2086-2087
+accept *:2095-2096
+accept *:2102-2104
+accept *:3128
+accept *:3389
+accept *:3690
+accept *:4321
+accept *:4643
+accept *:5050
+accept *:5190
+accept *:5222-5223
+accept *:5228
+accept *:5900
+accept *:6660-6669
+accept *:6679
+accept *:6697
+accept *:8000
+accept *:8008
+accept *:8074
+accept *:8080
+accept *:8082
+accept *:8087-8088
+accept *:8232-8233
+accept *:8332-8333
+accept *:8443
+accept *:8888
+accept *:9418
+accept *:9999
+accept *:10000
+accept *:11371
+accept *:19294
+accept *:19638
+accept *:50002
+accept *:64738
+reject *:*</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>(Default: 0)</code></pre>
+</div></div>
 </dd>
 <dt class="hdlist1">
 <a id="IPv6Exit"></a> <strong>IPv6Exit</strong> <strong>0</strong>|<strong>1</strong>
@@ -3773,6 +4015,8 @@ accept *:*</code></pre>
 </dd>
 </dl></div>
 </dd>
+</dl></div>
+<div class="dlist"><dl>
 <dt class="hdlist1">
 <a id="ORPortFlagsExclusive"></a>
 </dt>
@@ -3858,6 +4102,16 @@ accept *:*</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
+<a id="MainloopStats"></a> <strong>MainloopStats</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    Log main loop statistics every <strong>HeartbeatPeriod</strong> seconds. This is a log
+    level <em>notice</em> message designed to help developers instrumenting Tor&#8217;s
+    main event loop. (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
 <a id="AccountingMax"></a> <strong>AccountingMax</strong> <em>N</em> <strong>bytes</strong>|<strong>KBytes</strong>|<strong>MBytes</strong>|<strong>GBytes</strong>|<strong>TBytes</strong>|<strong>KBits</strong>|<strong>MBits</strong>|<strong>GBits</strong>|<strong>TBits</strong>
 </dt>
 <dd>
@@ -3901,15 +4155,16 @@ accept *:*</code></pre>
 </dt>
 <dd>
 <p>
-    Specify how long accounting periods last. If <strong>month</strong> is given, each
-    accounting period runs from the time <em>HH:MM</em> on the <em>dayth</em> day of one
-    month to the same day and time of the next. (The day must be between 1 and
-    28.) If <strong>week</strong> is given, each accounting period runs from the time <em>HH:MM</em>
-    of the <em>dayth</em> day of one week to the same day and time of the next week,
-    with Monday as day 1 and Sunday as day 7. If <strong>day</strong> is given, each
-    accounting period runs from the time <em>HH:MM</em> each day to the same time on
-    the next day. All times are local, and given in 24-hour time. (Default:
-    "month 1 0:00")
+    Specify how long accounting periods last. If <strong>month</strong> is given,
+    each accounting period runs from the time <em>HH:MM</em> on the <em>dayth</em> day of one
+    month to the same day and time of the next. The relay will go at full speed,
+    use all the quota you specify, then hibernate for the rest of the period. (The
+    day must be between 1 and 28.) If <strong>week</strong> is given, each accounting period
+    runs from the time <em>HH:MM</em> of the <em>dayth</em> day of one week to the same day
+    and time of the next week, with Monday as day 1 and Sunday as day 7. If <strong>day</strong>
+    is given, each accounting period runs from the time <em>HH:MM</em> each day to the
+    same time on the next day. All times are local, and given in 24-hour time.
+    (Default: "month 1 0:00")
 </p>
 </dd>
 <dt class="hdlist1">
@@ -4205,6 +4460,26 @@ accept *:*</code></pre>
     signing keys and certificates. (Default: 0)
 </p>
 </dd>
+<dt class="hdlist1">
+<a id="KeyDirectory"></a> <strong>KeyDirectory</strong> <em>DIR</em>
+</dt>
+<dd>
+<p>
+    Store secret keys in DIR. Can not be changed while tor is
+    running.
+    (Default: the "keys" subdirectory of DataDirectory.)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="KeyDirectoryGroupReadable"></a> <strong>KeyDirectoryGroupReadable</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    If this option is set to 0, don&#8217;t allow the filesystem group to read the
+    KeywDirectory. If the option is set to 1, make the KeyDirectory readable
+    by the default GID. (Default: 0)
+</p>
+</dd>
 </dl></div>
 </div>
 </div>
@@ -4255,10 +4530,12 @@ details.)</p></div>
 </dt>
 <dd>
 <p>
-    When this option is set, Tor caches all current directory documents and
-    accepts client requests for them. Setting DirPort is not required for this,
-    because clients connect via the ORPort by default. Setting either DirPort
-    or BridgeRelay and setting DirCache to 0 is not supported.  (Default: 1)
+    When this option is set, Tor caches all current directory documents except
+    extra info documents, and accepts client requests for them. If
+    <strong>DownloadExtraInfo</strong> is set, cached extra info documents are also cached.
+    Setting <strong>DirPort</strong> is not required for <strong>DirCache</strong>, because clients
+    connect via the ORPort by default. Setting either DirPort or BridgeRelay
+    and setting DirCache to 0 is not supported.  (Default: 1)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -4274,6 +4551,189 @@ details.)</p></div>
     If you need to set it, keeping it above 3 or 4 hours will help clients
     much more than setting it to zero.
     (Default: 0)
+</p>
+</dd>
+</dl></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_denial_of_service_mitigation_options">DENIAL OF SERVICE MITIGATION OPTIONS</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Tor has three built-in mitigation options that can be individually
+enabled/disabled and fine-tuned, but by default Tor directory authorities will
+define reasonable values for relays and no explicit configuration is required
+to make use of these protections. The mitigations take place at relays,
+and are as follows:</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+If a single client address makes too many concurrent connections (this is
+     configurable via DoSConnectionMaxConcurrentCount), hang up on further
+     connections.
+<br />
+</p>
+</li>
+<li>
+<p>
+If a single client IP address (v4 or v6) makes circuits too quickly
+     (default values are more than 3 per second, with an allowed burst of 90,
+     see DoSCircuitCreationRate and DoSCircuitCreationBurst) while also having
+     too many connections open (default is 3, see
+     DoSCircuitCreationMinConnections), tor will refuse any new circuit (CREATE
+     cells) for the next while (random value between 1 and 2 hours).
+<br />
+</p>
+</li>
+<li>
+<p>
+If a client asks to establish a rendezvous point to you directly (ex:
+     Tor2Web client), ignore the request.
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>These defenses can be manually controlled by torrc options, but relays will
+also take guidance from consensus parameters using these same names, so there&#8217;s
+no need to configure anything manually. In doubt, do not change those values.</p></div>
+<div class="paragraph"><p>The values set by the consensus, if any, can be found here:
+<a href="https://consensus-health.torproject.org/#consensusparams">https://consensus-health.torproject.org/#consensusparams</a></p></div>
+<div class="paragraph"><p>If any of the DoS mitigations are enabled, a heartbeat message will appear in
+your log at NOTICE level which looks like:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>DoS mitigation since startup: 429042 circuits rejected, 17 marked addresses.
+2238 connections closed. 8052 single hop clients refused.</code></pre>
+</div></div>
+<div class="paragraph"><p>The following options are useful only for a public relay. They control the
+Denial of Service mitigation subsystem described above.</p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<a id="DoSCircuitCreationEnabled"></a> <strong>DoSCircuitCreationEnabled</strong> <strong>0</strong>|<strong>1</strong>|<strong>auto</strong>
+</dt>
+<dd>
+<p>
+    Enable circuit creation DoS mitigation. If set to 1 (enabled), tor will
+    cache client IPs along with statistics in order to detect circuit DoS
+    attacks. If an address is positively identified, tor will activate
+    defenses against the address. See the DoSCircuitCreationDefenseType option
+    for more details.  This is a client to relay detection only. "auto" means
+    use the consensus parameter. If not defined in the consensus, the value is 0.
+    (Default: auto)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="DoSCircuitCreationMinConnections"></a> <strong>DoSCircuitCreationMinConnections</strong> <em>NUM</em>
+</dt>
+<dd>
+<p>
+    Minimum threshold of concurrent connections before a client address can be
+    flagged as executing a circuit creation DoS. In other words, once a client
+    address reaches the circuit rate and has a minimum of NUM concurrent
+    connections, a detection is positive. "0" means use the consensus
+    parameter. If not defined in the consensus, the value is 3.
+    (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="DoSCircuitCreationRate"></a> <strong>DoSCircuitCreationRate</strong> <em>NUM</em>
+</dt>
+<dd>
+<p>
+    The allowed circuit creation rate per second applied per client IP
+    address. If this option is 0, it obeys a consensus parameter. If not
+    defined in the consensus, the value is 3.
+    (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="DoSCircuitCreationBurst"></a> <strong>DoSCircuitCreationBurst</strong> <em>NUM</em>
+</dt>
+<dd>
+<p>
+    The allowed circuit creation burst per client IP address. If the circuit
+    rate and the burst are reached, a client is marked as executing a circuit
+    creation DoS. "0" means use the consensus parameter. If not defined in the
+    consensus, the value is 90.
+    (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="DoSCircuitCreationDefenseType"></a> <strong>DoSCircuitCreationDefenseType</strong> <em>NUM</em>
+</dt>
+<dd>
+<p>
+    This is the type of defense applied to a detected client address. The
+    possible values are:
+<br />
+      1: No defense.
+<br />
+      2: Refuse circuit creation for the DoSCircuitCreationDefenseTimePeriod period of time.
+<br />
+    "0" means use the consensus parameter. If not defined in the consensus, the value is 2.
+    (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="DoSCircuitCreationDefenseTimePeriod"></a> <strong>DoSCircuitCreationDefenseTimePeriod</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>
+</dt>
+<dd>
+<p>
+    The base time period in seconds that the DoS defense is activated for. The
+    actual value is selected randomly for each activation from N+1 to 3/2 * N.
+    "0" means use the consensus parameter. If not defined in the consensus,
+    the value is 3600 seconds (1 hour).
+    (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="DoSConnectionEnabled"></a> <strong>DoSConnectionEnabled</strong> <strong>0</strong>|<strong>1</strong>|<strong>auto</strong>
+</dt>
+<dd>
+<p>
+    Enable the connection DoS mitigation. If set to 1 (enabled), for client
+    address only, this allows tor to mitigate against large number of
+    concurrent connections made by a single IP address. "auto" means use the
+    consensus parameter. If not defined in the consensus, the value is 0.
+    (Default: auto)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="DoSConnectionMaxConcurrentCount"></a> <strong>DoSConnectionMaxConcurrentCount</strong> <em>NUM</em>
+</dt>
+<dd>
+<p>
+    The maximum threshold of concurrent connection from a client IP address.
+    Above this limit, a defense selected by DoSConnectionDefenseType is
+    applied. "0" means use the consensus parameter. If not defined in the
+    consensus, the value is 100.
+    (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="DoSConnectionDefenseType"></a> <strong>DoSConnectionDefenseType</strong> <em>NUM</em>
+</dt>
+<dd>
+<p>
+    This is the type of defense applied to a detected client address for the
+    connection mitigation. The possible values are:
+<br />
+      1: No defense.
+<br />
+      2: Immediately close new connections.
+<br />
+    "0" means use the consensus parameter. If not defined in the consensus, the value is 2.
+    (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="DoSRefuseSingleHopClientRendezvous"></a> <strong>DoSRefuseSingleHopClientRendezvous</strong> <strong>0</strong>|<strong>1</strong>|<strong>auto</strong>
+</dt>
+<dd>
+<p>
+    Refuse establishment of rendezvous points for single hop clients. In other
+    words, if a client directly connects to the relay and sends an
+    ESTABLISH_RENDEZVOUS cell, it is silently dropped. "auto" means use the
+    consensus parameter. If not defined in the consensus, the value is 0.
+    (Default: auto)
 </p>
 </dd>
 </dl></div>
@@ -4632,10 +5092,38 @@ on the public Tor network.</p></div>
 <dd>
 <p>
     Authoritative directories only. When set to 0, OR ports with an
-    IPv6 address are being accepted without reachability testing.
-    When set to 1, IPv6 OR ports are being tested just like IPv4 OR
-    ports. (Default: 0)
+    IPv6 address are not included in the authority&#8217;s votes. When set to 1,
+    IPv6 OR ports are tested for reachability like IPv4 OR ports. If the
+    reachability test succeeds, the authority votes for the IPv6 ORPort, and
+    votes Running for the relay. If the reachability test fails, the authority
+    does not vote for the IPv6 ORPort, and does not vote Running (Default: 0) <br />
 </p>
+<div class="literalblock">
+<div class="content">
+<pre><code>The content of the consensus depends on the number of voting authorities
+that set AuthDirHasIPv6Connectivity:</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>If no authorities set AuthDirHasIPv6Connectivity 1, there will be no
+IPv6 ORPorts in the consensus.</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>If a minority of authorities set AuthDirHasIPv6Connectivity 1,
+unreachable IPv6 ORPorts will be removed from the consensus. But the
+majority of IPv4-only authorities will still vote the relay as Running.
+Reachable IPv6 ORPort lines will be included in the consensus</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>If a majority of voting authorities set AuthDirHasIPv6Connectivity 1,
+relays with unreachable IPv6 ORPorts will not be listed as Running.
+Reachable IPv6 ORPort lines will be included in the consensus
+(To ensure that any valid majority will vote relays with unreachable
+IPv6 ORPorts not Running, 75% of authorities must set
+AuthDirHasIPv6Connectivity 1.)</code></pre>
+</div></div>
 </dd>
 <dt class="hdlist1">
 <a id="MinMeasuredBWsForAuthToIgnoreAdvertised"></a> <strong>MinMeasuredBWsForAuthToIgnoreAdvertised</strong> <em>N</em>
@@ -4700,7 +5188,7 @@ on the public Tor network.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="HiddenServiceVersion"></a> <strong>HiddenServiceVersion</strong> <em>version</em>,<em>version</em>,<em>&#8230;</em>
+<a id="HiddenServiceVersion"></a> <strong>HiddenServiceVersion</strong> <strong>2</strong>|<strong>3</strong>
 </dt>
 <dd>
 <p>
@@ -4722,7 +5210,8 @@ on the public Tor network.</p></div>
     spaces). If this option is set, the hidden service is not accessible for
     clients without authorization any more. Generated authorization data can be
     found in the hostname file. Clients need to put this authorization data in
-    their configuration file using <strong>HidServAuth</strong>.
+    their configuration file using <strong>HidServAuth</strong>. This option is only for v2
+    services.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -4743,7 +5232,7 @@ on the public Tor network.</p></div>
 <p>
    The maximum number of simultaneous streams (connections) per rendezvous
    circuit. The maximum value allowed is 65535. (Setting this to 0 will allow
-   an unlimited number of simultanous streams.) (Default: 0)
+   an unlimited number of simultaneous streams.) (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -4764,7 +5253,8 @@ on the public Tor network.</p></div>
     Every time the specified period elapses, Tor uploads any rendezvous
     service descriptors to the directory servers. This information is also
     uploaded whenever it changes. Minimum value allowed is 10 minutes and
-    maximum is 3.5 days. (Default: 1 hour)
+    maximum is 3.5 days. This option is only for v2 services.
+    (Default: 1 hour)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -4835,152 +5325,6 @@ on the public Tor network.</p></div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_denial_of_service_mitigation_options">DENIAL OF SERVICE MITIGATION OPTIONS</h2>
-<div class="sectionbody">
-<div class="paragraph"><p>The following options are useful only for a public relay. They control the
-Denial of Service mitigation subsystem.</p></div>
-<div class="dlist"><dl>
-<dt class="hdlist1">
-<a id="DoSCircuitCreationEnabled"></a> <strong>DoSCircuitCreationEnabled</strong> <strong>0</strong>|<strong>1</strong>|<strong>auto</strong>
-</dt>
-<dd>
-<p>
-    Enable circuit creation DoS mitigation. If enabled, tor will cache client
-    IPs along with statistics in order to detect circuit DoS attacks. If an
-    address is positively identified, tor will activate defenses against the
-    address. See the DoSCircuitCreationDefenseType option for more details.
-    This is a client to relay detection only. "auto" means use the consensus
-    parameter. If not defined in the consensus, the value is 0.
-    (Default: auto)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="DoSCircuitCreationMinConnections"></a> <strong>DoSCircuitCreationMinConnections</strong> <em>NUM</em>
-</dt>
-<dd>
-<p>
-    Minimum threshold of concurrent connections before a client address can be
-    flagged as executing a circuit creation DoS. In other words, once a client
-    address reaches the circuit rate and has a minimum of NUM concurrent
-    connections, a detection is positive. "0" means use the consensus
-    parameter. If not defined in the consensus, the value is 3.
-    (Default: 0)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="DoSCircuitCreationRate"></a> <strong>DoSCircuitCreationRate</strong> <em>NUM</em>
-</dt>
-<dd>
-<p>
-    The allowed circuit creation rate per second applied per client IP
-    address. If this option is 0, it obeys a consensus parameter. If not
-    defined in the consensus, the value is 3.
-    (Default: 0)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="DoSCircuitCreationBurst"></a> <strong>DoSCircuitCreationBurst</strong> <em>NUM</em>
-</dt>
-<dd>
-<p>
-    The allowed circuit creation burst per client IP address. If the circuit
-    rate and the burst are reached, a client is marked as executing a circuit
-    creation DoS. "0" means use the consensus parameter. If not defined in the
-    consensus, the value is 90.
-    (Default: 0)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="DoSCircuitCreationDefenseType"></a> <strong>DoSCircuitCreationDefenseType</strong> <em>NUM</em>
-</dt>
-<dd>
-<p>
-    This is the type of defense applied to a detected client address. The
-    possible values are:
-</p>
-<div class="literalblock">
-<div class="content">
-<pre><code>1: No defense.
-2: Refuse circuit creation for the DoSCircuitCreationDefenseTimePeriod period of time.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>"0" means use the consensus parameter. If not defined in the consensus,
-the value is 2.
-(Default: 0)</code></pre>
-</div></div>
-</dd>
-<dt class="hdlist1">
-<a id="DoSCircuitCreationDefenseTimePeriod"></a> <strong>DoSCircuitCreationDefenseTimePeriod</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>
-</dt>
-<dd>
-<p>
-    The base time period in seconds that the DoS defense is activated for. The
-    actual value is selected randomly for each activation from N+1 to 3/2 * N.
-    "0" means use the consensus parameter. If not defined in the consensus,
-    the value is 3600 seconds (1 hour).  (Default: 0)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="DoSConnectionEnabled"></a> <strong>DoSConnectionEnabled</strong> <strong>0</strong>|<strong>1</strong>|<strong>auto</strong>
-</dt>
-<dd>
-<p>
-    Enable the connection DoS mitigation. For client address only, this allows
-    tor to mitigate against large number of concurrent connections made by a
-    single IP address. "auto" means use the consensus parameter. If not
-    defined in the consensus, the value is 0.
-    (Default: auto)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="DoSConnectionMaxConcurrentCount"></a> <strong>DoSConnectionMaxConcurrentCount</strong> <em>NUM</em>
-</dt>
-<dd>
-<p>
-    The maximum threshold of concurrent connection from a client IP address.
-    Above this limit, a defense selected by DoSConnectionDefenseType is
-    applied. "0" means use the consensus parameter. If not defined in the
-    consensus, the value is 100.
-    (Default: 0)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="DoSConnectionDefenseType"></a> <strong>DoSConnectionDefenseType</strong> <em>NUM</em>
-</dt>
-<dd>
-<p>
-    This is the type of defense applied to a detected client address for the
-    connection mitigation. The possible values are:
-</p>
-<div class="literalblock">
-<div class="content">
-<pre><code>1: No defense.
-2: Immediately close new connections.</code></pre>
-</div></div>
-<div class="literalblock">
-<div class="content">
-<pre><code>"0" means use the consensus parameter. If not defined in the consensus,
-the value is 2.
-(Default: 0)</code></pre>
-</div></div>
-</dd>
-<dt class="hdlist1">
-<a id="DoSRefuseSingleHopClientRendezvous"></a> <strong>DoSRefuseSingleHopClientRendezvous</strong> <strong>0</strong>|<strong>1</strong>|<strong>auto</strong>
-</dt>
-<dd>
-<p>
-    Refuse establishment of rendezvous points for single hop clients. In other
-    words, if a client directly connects to the relay and sends an
-    ESTABLISH_RENDEZVOUS cell, it is silently dropped. "auto" means use the
-    consensus parameter. If not defined in the consensus, the value is 0.
-    (Default: auto)
-</p>
-</dd>
-</dl></div>
-</div>
-</div>
-<div class="sect1">
 <h2 id="_testing_network_options">TESTING NETWORK OPTIONS</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>The following options are used for running a testing Tor network.</p></div>
@@ -5010,8 +5354,6 @@ ClientBootstrapConsensusFallbackDownloadSchedule 0, 1,
    4 (for 40 seconds), 8, 16, 32, 60
 ClientBootstrapConsensusAuthorityOnlyDownloadSchedule 0, 1,
    4 (for 40 seconds), 8, 16, 32, 60
-ClientBootstrapConsensusMaxDownloadTries 80
-ClientBootstrapConsensusAuthorityOnlyMaxDownloadTries 80
 ClientDNSRejectInternalAddresses 0
 ClientRejectInternalAddresses 0
 CountPrivateBandwidth 1
@@ -5034,10 +5376,6 @@ TestingBridgeDownloadSchedule 10, 30, 60
 TestingBridgeBootstrapDownloadSchedule 0, 0, 5, 10, 15, 20, 30, 60
 TestingClientMaxIntervalWithoutRequest 5 seconds
 TestingDirConnectionMaxStall 30 seconds
-TestingConsensusMaxDownloadTries 80
-TestingDescriptorMaxDownloadTries 80
-TestingMicrodescMaxDownloadTries 80
-TestingCertMaxDownloadTries 80
 TestingEnableConnBwEvent 1
 TestingEnableCellStatsEvent 1
 TestingEnableTbEmptyEvent 1</code></pre>
@@ -5192,42 +5530,6 @@ TestingEnableTbEmptyEvent 1</code></pre>
     Let a directory connection stall this long before expiring it.
     Changing this requires that <strong>TestingTorNetwork</strong> is set. (Default:
     5 minutes)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="TestingConsensusMaxDownloadTries"></a> <strong>TestingConsensusMaxDownloadTries</strong> <em>NUM</em>
-</dt>
-<dd>
-<p>
-    Try this many times to download a consensus before giving up. Changing
-    this requires that <strong>TestingTorNetwork</strong> is set. (Default: 8)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="TestingDescriptorMaxDownloadTries"></a> <strong>TestingDescriptorMaxDownloadTries</strong> <em>NUM</em>
-</dt>
-<dd>
-<p>
-    Try this often to download a server descriptor before giving up.
-    Changing this requires that <strong>TestingTorNetwork</strong> is set. (Default: 8)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="TestingMicrodescMaxDownloadTries"></a> <strong>TestingMicrodescMaxDownloadTries</strong> <em>NUM</em>
-</dt>
-<dd>
-<p>
-    Try this often to download a microdesc descriptor before giving up.
-    Changing this requires that <strong>TestingTorNetwork</strong> is set. (Default: 8)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="TestingCertMaxDownloadTries"></a> <strong>TestingCertMaxDownloadTries</strong> <em>NUM</em>
-</dt>
-<dd>
-<p>
-    Try this often to download a v3 authority certificate before giving up.
-    Changing this requires that <strong>TestingTorNetwork</strong> is set. (Default: 8)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -5513,18 +5815,7 @@ section 5.4. End-users should mostly ignore them.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<em>DataDirectory</em><strong>/cached-status/</strong>
-</dt>
-<dd>
-<p>
-    The most recently downloaded network status document for each authority.
-    Each file holds one such document; the filenames are the hexadecimal
-    identity key fingerprints of the directory authorities.  Obsolete;
-    no longer in use.
-</p>
-</dd>
-<dt class="hdlist1">
-<em>DataDirectory</em><strong>/cached-certs</strong>
+<em>CacheDirectory</em><strong>/cached-certs</strong>
 </dt>
 <dd>
 <p>
@@ -5533,7 +5824,7 @@ section 5.4. End-users should mostly ignore them.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<em>DataDirectory</em><strong>/cached-consensus</strong> and/or <strong>cached-microdesc-consensus</strong>
+<em>CacheDirectory</em><strong>/cached-consensus</strong> and/or <strong>cached-microdesc-consensus</strong>
 </dt>
 <dd>
 <p>
@@ -5541,7 +5832,7 @@ section 5.4. End-users should mostly ignore them.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<em>DataDirectory</em><strong>/cached-descriptors</strong> and <strong>cached-descriptors.new</strong>
+<em>CacheDirectory</em><strong>/cached-descriptors</strong> and <strong>cached-descriptors.new</strong>
 </dt>
 <dd>
 <p>
@@ -5553,7 +5844,7 @@ section 5.4. End-users should mostly ignore them.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<em>DataDirectory</em><strong>/cached-extrainfo</strong> and <strong>cached-extrainfo.new</strong>
+<em>CacheDirectory</em><strong>/cached-extrainfo</strong> and <strong>cached-extrainfo.new</strong>
 </dt>
 <dd>
 <p>
@@ -5565,7 +5856,7 @@ section 5.4. End-users should mostly ignore them.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<em>DataDirectory</em><strong>/cached-microdescs</strong> and <strong>cached-microdescs.new</strong>
+<em>CacheDirectory</em><strong>/cached-microdescs</strong> and <strong>cached-microdescs.new</strong>
 </dt>
 <dd>
 <p>
@@ -5576,7 +5867,7 @@ section 5.4. End-users should mostly ignore them.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<em>DataDirectory</em><strong>/cached-routers</strong> and <strong>cached-routers.new</strong>
+<em>CacheDirectory</em><strong>/cached-routers</strong> and <strong>cached-routers.new</strong>
 </dt>
 <dd>
 <p>
@@ -5631,14 +5922,14 @@ A short history of bandwidth usage, as produced in the server
 </p>
 </dd>
 <dt class="hdlist1">
-<em>DataDirectory</em><strong>/diff-cache</strong>
+<em>CacheDirectory</em><strong>/diff-cache</strong>
 </dt>
 <dd>
 <p>
     Directory cache only. Holds older consensuses, and diffs from older
     consensuses to the most recent consensus of each type, compressed
     in various ways. Each file contains a set of key-value arguments
-    decribing its contents, followed by a single NUL byte, followed by the
+    describing its contents, followed by a single NUL byte, followed by the
     main file contents.
 </p>
 </dd>
@@ -5686,15 +5977,7 @@ A short history of bandwidth usage, as produced in the server
 </p>
 </dd>
 <dt class="hdlist1">
-<em>DataDirectory</em><strong>/keys/</strong>*
-</dt>
-<dd>
-<p>
-    Only used by servers. Holds identity keys and onion keys.
-</p>
-</dd>
-<dt class="hdlist1">
-<em>DataDirectory</em><strong>/keys/authority_identity_key</strong>
+<em>KeyDirectory</em><strong>/authority_identity_key</strong>
 </dt>
 <dd>
 <p>
@@ -5705,7 +5988,7 @@ A short history of bandwidth usage, as produced in the server
 </p>
 </dd>
 <dt class="hdlist1">
-<em>DataDirectory</em><strong>/keys/authority_certificate</strong>
+<em>KeyDirectory</em><strong>/authority_certificate</strong>
 </dt>
 <dd>
 <p>
@@ -5715,7 +5998,7 @@ A short history of bandwidth usage, as produced in the server
 </p>
 </dd>
 <dt class="hdlist1">
-<em>DataDirectory</em><strong>/keys/authority_signing_key</strong>
+<em>KeyDirectory</em><strong>/authority_signing_key</strong>
 </dt>
 <dd>
 <p>
@@ -5725,7 +6008,7 @@ A short history of bandwidth usage, as produced in the server
 </p>
 </dd>
 <dt class="hdlist1">
-<em>DataDirectory</em><strong>/keys/legacy_certificate</strong>
+<em>KeyDirectory</em><strong>/legacy_certificate</strong>
 </dt>
 <dd>
 <p>
@@ -5734,7 +6017,7 @@ A short history of bandwidth usage, as produced in the server
 </p>
 </dd>
 <dt class="hdlist1">
-<em>DataDirectory</em><strong>/keys/legacy_signing_key</strong>
+<em>KeyDirectory</em><strong>/legacy_signing_key</strong>
 </dt>
 <dd>
 <p>
@@ -5743,7 +6026,7 @@ A short history of bandwidth usage, as produced in the server
 </p>
 </dd>
 <dt class="hdlist1">
-<em>DataDirectory</em><strong>/keys/secret_id_key</strong>
+<em>KeyDirectory</em><strong>/secret_id_key</strong>
 </dt>
 <dd>
 <p>
@@ -5752,7 +6035,7 @@ A short history of bandwidth usage, as produced in the server
 </p>
 </dd>
 <dt class="hdlist1">
-<em>DataDirectory</em><strong>/keys/ed25519_master_id_public_key</strong>
+<em>KeyDirectory</em><strong>/ed25519_master_id_public_key</strong>
 </dt>
 <dd>
 <p>
@@ -5760,7 +6043,7 @@ A short history of bandwidth usage, as produced in the server
 </p>
 </dd>
 <dt class="hdlist1">
-<em>DataDirectory</em><strong>/keys/ed25519_master_id_secret_key</strong>
+<em>KeyDirectory</em><strong>/ed25519_master_id_secret_key</strong>
 </dt>
 <dd>
 <p>
@@ -5772,7 +6055,7 @@ A short history of bandwidth usage, as produced in the server
 </p>
 </dd>
 <dt class="hdlist1">
-<em>DataDirectory</em><strong>/keys/ed25519_signing_secret_key</strong>
+<em>KeyDirectory</em><strong>/ed25519_signing_secret_key</strong>
 </dt>
 <dd>
 <p>
@@ -5782,7 +6065,7 @@ A short history of bandwidth usage, as produced in the server
 </p>
 </dd>
 <dt class="hdlist1">
-<em>DataDirectory</em><strong>/keys/ed25519_signing_cert</strong>
+<em>KeyDirectory</em><strong>/ed25519_signing_cert</strong>
 </dt>
 <dd>
 <p>
@@ -5791,7 +6074,7 @@ A short history of bandwidth usage, as produced in the server
 </p>
 </dd>
 <dt class="hdlist1">
-<em>DataDirectory</em><strong>/keys/secret_onion_key</strong> and <strong>secret_onion_key.old</strong>
+<em>KeyDirectory</em><strong>/secret_onion_key</strong> and <strong>secret_onion_key.old</strong>
 </dt>
 <dd>
 <p>
@@ -5802,7 +6085,7 @@ A short history of bandwidth usage, as produced in the server
 </p>
 </dd>
 <dt class="hdlist1">
-<em>DataDirectory</em><strong>/keys/secret_onion_key_ntor</strong> and <strong>secret_onion_key_ntor.old</strong>
+<em>KeyDirectory</em><strong>/secret_onion_key_ntor</strong> and <strong>secret_onion_key_ntor.old</strong>
 </dt>
 <dd>
 <p>
@@ -5854,7 +6137,7 @@ A short history of bandwidth usage, as produced in the server
 </p>
 </dd>
 <dt class="hdlist1">
-<em>DataDirectory</em><strong>/unverified-consensus</strong>
+<em>CacheDirectory</em><strong>/unverified-consensus</strong>
 </dt>
 <dd>
 <p>
@@ -5863,7 +6146,7 @@ A short history of bandwidth usage, as produced in the server
 </p>
 </dd>
 <dt class="hdlist1">
-<em>DataDirectory</em><strong>/unverified-microdesc-consensus</strong>
+<em>CacheDirectory</em><strong>/unverified-microdesc-consensus</strong>
 </dt>
 <dd>
 <p>
@@ -6042,7 +6325,7 @@ A short history of bandwidth usage, as produced in the server
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-02-16 14:55:59 UTC
+Last updated 2018-05-09 12:25:52 UTC
 </div>
 </div>
 </body>

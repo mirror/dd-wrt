@@ -10,6 +10,9 @@
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#ifndef SIO_IDEAL_SEND_BACKLOG_QUERY
+#define SIO_IDEAL_SEND_BACKLOG_QUERY 0x4004747b
+#endif
 #endif
 #include "torint.h"
 #include "testsupport.h"
@@ -483,6 +486,7 @@ typedef int socklen_t;
 
 int tor_close_socket_simple(tor_socket_t s);
 MOCK_DECL(int, tor_close_socket, (tor_socket_t s));
+void tor_take_socket_ownership(tor_socket_t s);
 tor_socket_t tor_open_socket_with_extensions(
                                            int domain, int type, int protocol,
                                            int cloexec, int nonblock);
@@ -695,7 +699,7 @@ char *make_path_absolute(char *fname);
 
 char **get_environment(void);
 
-int get_total_system_memory(size_t *mem_out);
+MOCK_DECL(int, get_total_system_memory, (size_t *mem_out));
 
 int compute_num_cpus(void);
 

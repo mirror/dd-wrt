@@ -65,6 +65,9 @@ typedef struct monotime_t {
 typedef struct monotime_coarse_t {
   uint64_t tick_count_;
 } monotime_coarse_t;
+#elif defined(__APPLE__) && defined(HAVE_MACH_APPROXIMATE_TIME)
+#define MONOTIME_COARSE_FN_IS_DIFFERENT
+#define monotime_coarse_t monotime_t
 #else
 #define monotime_coarse_t monotime_t
 #endif /* defined(CLOCK_MONOTONIC_COARSE) && ... || ... */
@@ -102,6 +105,21 @@ uint64_t monotime_absolute_usec(void);
  */
 uint64_t monotime_absolute_msec(void);
 
+/**
+ * Set <b>out</b> to zero.
+ */
+void monotime_zero(monotime_t *out);
+/**
+ * Return true iff <b>out</b> is zero
+ */
+int monotime_is_zero(const monotime_t *out);
+
+/**
+ * Set <b>out</b> to N milliseconds after <b>val</b>.
+ */
+/* XXXX We should add a more generic function here if we ever need to */
+void monotime_add_msec(monotime_t *out, const monotime_t *val, uint32_t msec);
+
 #if defined(MONOTIME_COARSE_FN_IS_DIFFERENT)
 /**
  * Set <b>out</b> to the current coarse time.
@@ -117,6 +135,23 @@ uint64_t monotime_coarse_absolute_msec(void);
 #define monotime_coarse_absolute_msec monotime_absolute_msec
 #endif /* defined(MONOTIME_COARSE_FN_IS_DIFFERENT) */
 
+/**
+ * Return a "timestamp" approximation for a coarse monotonic timer.
+ * This timestamp is meant to be fast to calculate and easy to
+ * compare, and have a unit of something roughly around 1 msec.
+ *
+ * It will wrap over from time to time.
+ *
+ * It has no defined zero point.
+ */
+uint32_t monotime_coarse_to_stamp(const monotime_coarse_t *t);
+/**
+ * Convert a difference, expressed in the units of monotime_coarse_to_stamp,
+ * into an approximate number of milliseconds.
+ */
+uint64_t monotime_coarse_stamp_units_to_approx_msec(uint64_t units);
+uint32_t monotime_coarse_get_stamp(void);
+
 #if defined(MONOTIME_COARSE_TYPE_IS_DIFFERENT)
 int64_t monotime_coarse_diff_nsec(const monotime_coarse_t *start,
     const monotime_coarse_t *end);
@@ -124,10 +159,17 @@ int64_t monotime_coarse_diff_usec(const monotime_coarse_t *start,
     const monotime_coarse_t *end);
 int64_t monotime_coarse_diff_msec(const monotime_coarse_t *start,
     const monotime_coarse_t *end);
+void monotime_coarse_zero(monotime_coarse_t *out);
+int monotime_coarse_is_zero(const monotime_coarse_t *val);
+void monotime_coarse_add_msec(monotime_coarse_t *out,
+                              const monotime_coarse_t *val, uint32_t msec);
 #else /* !(defined(MONOTIME_COARSE_TYPE_IS_DIFFERENT)) */
 #define monotime_coarse_diff_nsec monotime_diff_nsec
 #define monotime_coarse_diff_usec monotime_diff_usec
 #define monotime_coarse_diff_msec monotime_diff_msec
+#define monotime_coarse_zero monotime_zero
+#define monotime_coarse_is_zero monotime_is_zero
+#define monotime_coarse_add_msec monotime_add_msec
 #endif /* defined(MONOTIME_COARSE_TYPE_IS_DIFFERENT) */
 
 void tor_gettimeofday(struct timeval *timeval);

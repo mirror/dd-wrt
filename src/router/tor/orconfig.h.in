@@ -21,6 +21,9 @@
 /* Defined if we default to host local appdata paths on Windows */
 #undef ENABLE_LOCAL_APPDATA
 
+/* Defined if we're building with support for in-process restart debugging. */
+#undef ENABLE_RESTART_DEBUGGING
+
 /* Define if enum is always signed */
 #undef ENUM_VALS_ARE_SIGNED
 
@@ -35,6 +38,9 @@
 
 /* Define to 1 if you have the `accept4' function. */
 #undef HAVE_ACCEPT4
+
+/* Define to 1 if you have the <android/log.h> header file. */
+#undef HAVE_ANDROID_LOG_H
 
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #undef HAVE_ARPA_INET_H
@@ -250,6 +256,9 @@
 /* Define to 1 if you have the <machine/limits.h> header file. */
 #undef HAVE_MACHINE_LIMITS_H
 
+/* Define to 1 if you have the `mach_approximate_time' function. */
+#undef HAVE_MACH_APPROXIMATE_TIME
+
 /* Defined if the compiler supports __FUNCTION__ */
 #undef HAVE_MACRO__FUNCTION__
 
@@ -382,6 +391,9 @@
 
 /* Define to 1 if you have the `statvfs' function. */
 #undef HAVE_STATVFS
+
+/* Define to 1 if you have the <stdatomic.h> header file. */
+#undef HAVE_STDATOMIC_H
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
@@ -683,6 +695,9 @@
 
 /* Compile the event tracing instrumentation */
 #undef TOR_EVENT_TRACING_ENABLED
+
+/* Compile with Android specific features enabled */
+#undef USE_ANDROID
 
 /* Defined if we should use an internal curve25519_donna{,_c64} implementation
    */

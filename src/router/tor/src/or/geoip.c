@@ -30,6 +30,7 @@
 #define GEOIP_PRIVATE
 #include "or.h"
 #include "ht.h"
+#include "buffers.h"
 #include "config.h"
 #include "control.h"
 #include "dnsserv.h"
@@ -541,6 +542,9 @@ HT_PROTOTYPE(clientmap, clientmap_entry_t, node, clientmap_entry_hash,
 HT_GENERATE2(clientmap, clientmap_entry_t, node, clientmap_entry_hash,
              clientmap_entries_eq, 0.6, tor_reallocarray_, tor_free_)
 
+#define clientmap_entry_free(ent) \
+  FREE_AND_NULL(clientmap_entry_t, clientmap_entry_free_, ent)
+
 /** Return the size of a client map entry. */
 static inline size_t
 clientmap_entry_size(const clientmap_entry_t *ent)
@@ -552,7 +556,7 @@ clientmap_entry_size(const clientmap_entry_t *ent)
 
 /** Free all storage held by <b>ent</b>. */
 static void
-clientmap_entry_free(clientmap_entry_t *ent)
+clientmap_entry_free_(clientmap_entry_t *ent)
 {
   if (!ent)
     return;
@@ -1067,9 +1071,9 @@ static char *
 geoip_get_dirreq_history(dirreq_type_t type)
 {
   char *result = NULL;
+  buf_t *buf = NULL;
   smartlist_t *dirreq_completed = NULL;
   uint32_t complete = 0, timeouts = 0, running = 0;
-  int bufsize = 1024, written;
   dirreq_map_entry_t **ptr, **next;
   struct timeval now;
 
@@ -1102,13 +1106,9 @@ geoip_get_dirreq_history(dirreq_type_t type)
                                               DIR_REQ_GRANULARITY);
   running = round_uint32_to_next_multiple_of(running,
                                              DIR_REQ_GRANULARITY);
-  result = tor_malloc_zero(bufsize);
-  written = tor_snprintf(result, bufsize, "complete=%u,timeout=%u,"
-                         "running=%u", complete, timeouts, running);
-  if (written < 0) {
-    tor_free(result);
-    goto done;
-  }
+  buf = buf_new_with_capacity(1024);
+  buf_add_printf(buf, "complete=%u,timeout=%u,"
+                 "running=%u", complete, timeouts, running);
 
 #define MIN_DIR_REQ_RESPONSES 16
   if (complete >= MIN_DIR_REQ_RESPONSES) {
@@ -1129,7 +1129,7 @@ geoip_get_dirreq_history(dirreq_type_t type)
       dltimes[ent_sl_idx] = bytes_per_second;
     } SMARTLIST_FOREACH_END(ent);
     median_uint32(dltimes, complete); /* sorts as a side effect. */
-    written = tor_snprintf(result + written, bufsize - written,
+    buf_add_printf(buf,
                            ",min=%u,d1=%u,d2=%u,q1=%u,d3=%u,d4=%u,md=%u,"
                            "d6=%u,d7=%u,q3=%u,d8=%u,d9=%u,max=%u",
                            dltimes[0],
@@ -1145,14 +1145,15 @@ geoip_get_dirreq_history(dirreq_type_t type)
                            dltimes[8*complete/10-1],
                            dltimes[9*complete/10-1],
                            dltimes[complete-1]);
-    if (written<0)
-      tor_free(result);
     tor_free(dltimes);
   }
- done:
+
+  result = buf_extract(buf, NULL);
+
   SMARTLIST_FOREACH(dirreq_completed, dirreq_map_entry_t *, ent,
                     tor_free(ent));
   smartlist_free(dirreq_completed);
+  buf_free(buf);
   return result;
 }
 

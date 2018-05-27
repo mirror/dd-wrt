@@ -1125,7 +1125,7 @@ tor_addr_compare_masked(const tor_addr_t *addr1, const tor_addr_t *addr2,
       case AF_UNIX:
         /* HACKHACKHACKHACKHACK:
          * tor_addr_t doesn't contain a copy of sun_path, so it's not
-         * possible to comapre this at all.
+         * possible to compare this at all.
          *
          * Since the only time we currently actually should be comparing
          * 2 AF_UNIX addresses is when dealing with ISO_CLIENTADDR (which
@@ -1225,7 +1225,7 @@ tor_addr_keyed_hash(const struct sipkey *key, const tor_addr_t *addr)
     /* LCOV_EXCL_START */
     tor_fragile_assert();
     return 0;
-    /* LCOV_EXCL_END */
+    /* LCOV_EXCL_STOP */
   }
 }
 
@@ -1540,6 +1540,18 @@ get_interface_addresses_win32(int severity, sa_family_t family)
 #define _SIZEOF_ADDR_IFREQ sizeof
 #endif
 
+/* Free ifc->ifc_buf safely. */
+static void
+ifconf_free_ifc_buf(struct ifconf *ifc)
+{
+  /* On macOS, tor_free() takes the address of ifc.ifc_buf, which leads to
+   * undefined behaviour, because pointer-to-pointers are expected to be
+   * aligned at 8-bytes, but the ifconf structure is packed.  So we use
+   * raw_free() instead. */
+  raw_free(ifc->ifc_buf);
+  ifc->ifc_buf = NULL;
+}
+
 /** Convert <b>*buf</b>, an ifreq structure array of size <b>buflen</b>,
  * into smartlist of <b>tor_addr_t</b> structures.
  */
@@ -1626,7 +1638,7 @@ get_interface_addresses_ioctl(int severity, sa_family_t family)
  done:
   if (fd >= 0)
     close(fd);
-  tor_free(ifc.ifc_buf);
+  ifconf_free_ifc_buf(&ifc);
   return result;
 }
 #endif /* defined(HAVE_IFCONF_TO_SMARTLIST) */
@@ -1784,14 +1796,14 @@ get_interface_address6,(int severity, sa_family_t family, tor_addr_t *addr))
       break;
   } SMARTLIST_FOREACH_END(a);
 
-  free_interface_address6_list(addrs);
+  interface_address6_list_free(addrs);
   return rv;
 }
 
 /** Free a smartlist of IP addresses returned by get_interface_address6_list.
  */
 void
-free_interface_address6_list(smartlist_t *addrs)
+interface_address6_list_free_(smartlist_t *addrs)
 {
   if (addrs != NULL) {
     SMARTLIST_FOREACH(addrs, tor_addr_t *, a, tor_free(a));
@@ -1806,7 +1818,7 @@ free_interface_address6_list(smartlist_t *addrs)
  * An empty smartlist means that there are no addresses of the selected type
  * matching these criteria.
  * Returns NULL on failure.
- * Use free_interface_address6_list to free the returned list.
+ * Use interface_address6_list_free to free the returned list.
  */
 MOCK_IMPL(smartlist_t *,
 get_interface_address6_list,(int severity,

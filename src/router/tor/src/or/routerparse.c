@@ -1895,12 +1895,19 @@ router_parse_entry_from_string(const char *s, const char *end,
     }
   }
 
-  if ((tok = find_opt_by_keyword(tokens, K_PLATFORM))) {
-    router->platform = tor_strdup(tok->args[0]);
-  }
+  {
+    const char *version = NULL, *protocols = NULL;
+    if ((tok = find_opt_by_keyword(tokens, K_PLATFORM))) {
+      router->platform = tor_strdup(tok->args[0]);
+      version = tok->args[0];
+    }
 
-  if ((tok = find_opt_by_keyword(tokens, K_PROTO))) {
-    router->protocol_list = tor_strdup(tok->args[0]);
+    if ((tok = find_opt_by_keyword(tokens, K_PROTO))) {
+      router->protocol_list = tor_strdup(tok->args[0]);
+      protocols = tok->args[0];
+    }
+
+    summarize_protover_flags(&router->pv, protocols, version);
   }
 
   if ((tok = find_opt_by_keyword(tokens, K_CONTACT))) {
@@ -2530,6 +2537,50 @@ routerstatus_parse_guardfraction(const char *guardfraction_str,
   return 0;
 }
 
+/** Summarize the protocols listed in <b>protocols</b> into <b>out</b>,
+ * falling back or correcting them based on <b>version</b> as appropriate.
+ */
+STATIC void
+summarize_protover_flags(protover_summary_flags_t *out,
+                         const char *protocols,
+                         const char *version)
+{
+  tor_assert(out);
+  memset(out, 0, sizeof(*out));
+  if (protocols) {
+    out->protocols_known = 1;
+    out->supports_extend2_cells =
+      protocol_list_supports_protocol(protocols, PRT_RELAY, 2);
+    out->supports_ed25519_link_handshake_compat =
+      protocol_list_supports_protocol(protocols, PRT_LINKAUTH, 3);
+    out->supports_ed25519_link_handshake_any =
+      protocol_list_supports_protocol_or_later(protocols, PRT_LINKAUTH, 3);
+    out->supports_ed25519_hs_intro =
+      protocol_list_supports_protocol(protocols, PRT_HSINTRO, 4);
+    out->supports_v3_hsdir =
+      protocol_list_supports_protocol(protocols, PRT_HSDIR,
+                                      PROTOVER_HSDIR_V3);
+    out->supports_v3_rendezvous_point =
+      protocol_list_supports_protocol(protocols, PRT_HSREND,
+                                      PROTOVER_HS_RENDEZVOUS_POINT_V3);
+  }
+  if (version && !strcmpstart(version, "Tor ")) {
+    if (!out->protocols_known) {
+      /* The version is a "Tor" version, and where there is no
+       * list of protocol versions that we should be looking at instead. */
+
+      out->supports_extend2_cells =
+        tor_version_as_new_as(version, "0.2.4.8-alpha");
+      out->protocols_known = 1;
+    } else {
+      /* Bug #22447 forces us to filter on this version. */
+      if (!tor_version_as_new_as(version, "0.3.0.8")) {
+        out->supports_v3_hsdir = 0;
+      }
+    }
+  }
+}
+
 /** Given a string at *<b>s</b>, containing a routerstatus object, and an
  * empty smartlist at <b>tokens</b>, parse and return the first router status
  * object in the string, and advance *<b>s</b> to just after the end of the
@@ -2695,42 +2746,21 @@ routerstatus_parse_entry_from_string(memarea_t *area,
     if (consensus_method >= MIN_METHOD_FOR_EXCLUDING_INVALID_NODES)
       rs->is_valid = 1;
   }
-  int found_protocol_list = 0;
-  if ((tok = find_opt_by_keyword(tokens, K_PROTO))) {
-    found_protocol_list = 1;
-    rs->protocols_known = 1;
-    rs->supports_extend2_cells =
-      protocol_list_supports_protocol(tok->args[0], PRT_RELAY, 2);
-    rs->supports_ed25519_link_handshake =
-      protocol_list_supports_protocol(tok->args[0], PRT_LINKAUTH, 3);
-    rs->supports_ed25519_hs_intro =
-      protocol_list_supports_protocol(tok->args[0], PRT_HSINTRO, 4);
-    rs->supports_v3_hsdir =
-      protocol_list_supports_protocol(tok->args[0], PRT_HSDIR,
-                                      PROTOVER_HSDIR_V3);
-    rs->supports_v3_rendezvous_point =
-      protocol_list_supports_protocol(tok->args[0], PRT_HSREND,
-                                      PROTOVER_HS_RENDEZVOUS_POINT_V3);
-  }
-  if ((tok = find_opt_by_keyword(tokens, K_V))) {
-    tor_assert(tok->n_args == 1);
-    if (!strcmpstart(tok->args[0], "Tor ") && !found_protocol_list) {
-      /* We only do version checks like this in the case where
-       * the version is a "Tor" version, and where there is no
-       * list of protocol versions that we should be looking at instead. */
-      rs->supports_extend2_cells =
-        tor_version_as_new_as(tok->args[0], "0.2.4.8-alpha");
-      rs->protocols_known = 1;
+  {
+    const char *protocols = NULL, *version = NULL;
+    if ((tok = find_opt_by_keyword(tokens, K_PROTO))) {
+      tor_assert(tok->n_args == 1);
+      protocols = tok->args[0];
     }
-    if (!strcmpstart(tok->args[0], "Tor ") && found_protocol_list) {
-      /* Bug #22447 forces us to filter on this version. */
-      if (!tor_version_as_new_as(tok->args[0], "0.3.0.8")) {
-        rs->supports_v3_hsdir = 0;
+    if ((tok = find_opt_by_keyword(tokens, K_V))) {
+      tor_assert(tok->n_args == 1);
+      version = tok->args[0];
+      if (vote_rs) {
+        vote_rs->version = tor_strdup(tok->args[0]);
       }
     }
-    if (vote_rs) {
-      vote_rs->version = tor_strdup(tok->args[0]);
-    }
+
+    summarize_protover_flags(&rs->pv, protocols, version);
   }
 
   /* handle weighting/bandwidth info */
@@ -3779,7 +3809,6 @@ networkstatus_parse_vote_from_string(const char *s, const char **eos_out,
                                                      ns->consensus_method,
                                                      flav))) {
         /* Use exponential-backoff scheduling when downloading microdescs */
-        rs->dl_status.backoff = DL_SCHED_RANDOM_EXPONENTIAL;
         smartlist_add(ns->routerstatus_list, rs);
       }
     }
@@ -4027,7 +4056,7 @@ networkstatus_parse_vote_from_string(const char *s, const char **eos_out,
 /** Return the common_digests_t that holds the digests of the
  * <b>flavor_name</b>-flavored networkstatus according to the detached
  * signatures document <b>sigs</b>, allocating a new common_digests_t as
- * neeeded. */
+ * needed. */
 static common_digests_t *
 detached_get_digests(ns_detached_signatures_t *sigs, const char *flavor_name)
 {
@@ -4041,7 +4070,7 @@ detached_get_digests(ns_detached_signatures_t *sigs, const char *flavor_name)
 
 /** Return the list of signatures of the <b>flavor_name</b>-flavored
  * networkstatus according to the detached signatures document <b>sigs</b>,
- * allocating a new common_digests_t as neeeded. */
+ * allocating a new common_digests_t as needed. */
 static smartlist_t *
 detached_get_signatures(ns_detached_signatures_t *sigs,
                         const char *flavor_name)

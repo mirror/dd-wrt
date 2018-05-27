@@ -1186,7 +1186,7 @@ mark_socket_open(tor_socket_t s)
   bitarray_set(open_sockets, s);
 }
 #else /* !(defined(DEBUG_SOCKET_COUNTING)) */
-#define mark_socket_open(s) STMT_NIL
+#define mark_socket_open(s) ((void) (s))
 #endif /* defined(DEBUG_SOCKET_COUNTING) */
 /** @} */
 
@@ -1273,11 +1273,22 @@ tor_open_socket_with_extensions(int domain, int type, int protocol,
   goto socket_ok; /* So that socket_ok will not be unused. */
 
  socket_ok:
+  tor_take_socket_ownership(s);
+  return s;
+}
+
+/**
+ * For socket accounting: remember that we are the owner of the socket
+ * <b>s</b>. This will prevent us from overallocating sockets, and prevent us
+ * from asserting later when we close the socket <b>s</b>.
+ */
+void
+tor_take_socket_ownership(tor_socket_t s)
+{
   socket_accounting_lock();
   ++n_sockets_open;
   mark_socket_open(s);
   socket_accounting_unlock();
-  return s;
 }
 
 /** As accept(), but counts the number of open sockets. */
@@ -1358,10 +1369,7 @@ tor_accept_socket_with_extensions(tor_socket_t sockfd, struct sockaddr *addr,
   goto socket_ok; /* So that socket_ok will not be unused. */
 
  socket_ok:
-  socket_accounting_lock();
-  ++n_sockets_open;
-  mark_socket_open(s);
-  socket_accounting_unlock();
+  tor_take_socket_ownership(s);
   return s;
 }
 
@@ -1897,9 +1905,12 @@ tor_passwd_dup(const struct passwd *pw)
   return new_pw;
 }
 
+#define tor_passwd_free(pw) \
+  FREE_AND_NULL(struct passwd, tor_passwd_free_, (pw))
+
 /** Helper: free one of our cached 'struct passwd' values. */
 static void
-tor_passwd_free(struct passwd *pw)
+tor_passwd_free_(struct passwd *pw)
 {
   if (!pw)
     return;
@@ -2444,7 +2455,7 @@ get_environment(void)
 
 /** Get name of current host and write it to <b>name</b> array, whose
  * length is specified by <b>namelen</b> argument. Return 0 upon
- * successfull completion; otherwise return return -1. (Currently,
+ * successful completion; otherwise return return -1. (Currently,
  * this function is merely a mockable wrapper for POSIX gethostname().)
  */
 MOCK_IMPL(int,
@@ -2879,7 +2890,7 @@ compute_num_cpus(void)
 /** Helper: Deal with confused or out-of-bounds values from localtime_r and
  * friends.  (On some platforms, they can give out-of-bounds values or can
  * return NULL.)  If <b>islocal</b>, this is a localtime result; otherwise
- * it's from gmtime.  The function returned <b>r</b>, when given <b>timep</b>
+ * it's from gmtime.  The function returns <b>r</b>, when given <b>timep</b>
  * as its input. If we need to store new results, store them in
  * <b>resultbuf</b>. */
 static struct tm *
@@ -3398,8 +3409,8 @@ get_total_system_memory_impl(void)
  * Try to find out how much physical memory the system has. On success,
  * return 0 and set *<b>mem_out</b> to that value. On failure, return -1.
  */
-int
-get_total_system_memory(size_t *mem_out)
+MOCK_IMPL(int,
+get_total_system_memory, (size_t *mem_out))
 {
   static size_t mem_cached=0;
   uint64_t m = get_total_system_memory_impl();

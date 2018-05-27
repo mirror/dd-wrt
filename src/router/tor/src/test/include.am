@@ -99,6 +99,7 @@ src_test_test_SOURCES = \
 	src/test/test_circuitmux.c \
 	src/test/test_circuitbuild.c \
 	src/test/test_circuituse.c \
+	src/test/test_circuitstats.c \
 	src/test/test_compat_libevent.c \
 	src/test/test_config.c \
 	src/test/test_connection.c \
@@ -110,11 +111,11 @@ src_test_test_SOURCES = \
 	src/test/test_controller_events.c \
 	src/test/test_crypto.c \
 	src/test/test_crypto_openssl.c \
-	src/test/test_dos.c \
 	src/test/test_data.c \
 	src/test/test_dir.c \
 	src/test/test_dir_common.c \
 	src/test/test_dir_handle_get.c \
+	src/test/test_dos.c \
 	src/test/test_entryconn.c \
 	src/test/test_entrynodes.c \
 	src/test/test_guardfraction.c \
@@ -127,6 +128,7 @@ src_test_test_SOURCES = \
 	src/test/test_hs_service.c \
 	src/test/test_hs_client.c  \
 	src/test/test_hs_intropoint.c \
+	src/test/test_hs_control.c \
 	src/test/test_handles.c \
 	src/test/test_hs_cache.c \
 	src/test/test_hs_descriptor.c \
@@ -154,7 +156,6 @@ src_test_test_SOURCES = \
 	src/test/test_routerkeys.c \
 	src/test/test_routerlist.c \
 	src/test/test_routerset.c \
-	src/test/test_rust.c \
 	src/test/test_scheduler.c \
 	src/test/test_shared_random.c \
 	src/test/test_socks.c \
@@ -358,3 +359,5 @@ EXTRA_DIST += \
 	src/test/test_workqueue_pipe2.sh \
 	src/test/test_workqueue_socketpair.sh
 
+test-rust:
+	$(TESTS_ENVIRONMENT) "$(abs_top_srcdir)/src/test/test_rust.sh"

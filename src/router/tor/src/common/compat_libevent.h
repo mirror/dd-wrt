@@ -19,7 +19,9 @@ void suppress_libevent_log_msg(const char *msg);
   evdns_add_server_port_with_base(tor_libevent_get_base(), \
   (sock),(tcp),(cb),(data));
 
-void tor_event_free(struct event *ev);
+void tor_event_free_(struct event *ev);
+#define tor_event_free(ev) \
+  FREE_AND_NULL(struct event, tor_event_free_, (ev))
 
 typedef struct periodic_timer_t periodic_timer_t;
 
@@ -27,9 +29,12 @@ periodic_timer_t *periodic_timer_new(struct event_base *base,
              const struct timeval *tv,
              void (*cb)(periodic_timer_t *timer, void *data),
              void *data);
-void periodic_timer_free(periodic_timer_t *);
+void periodic_timer_free_(periodic_timer_t *);
+#define periodic_timer_free(t) \
+  FREE_AND_NULL(periodic_timer_t, periodic_timer_free_, (t))
 
 #define tor_event_base_loopexit event_base_loopexit
+#define tor_event_base_loopbreak event_base_loopbreak
 
 /** Defines a configuration for using libevent with Tor: passed as an argument
  * to tor_libevent_initialize() to describe how we want to set up. */
@@ -47,6 +52,7 @@ const char *tor_libevent_get_method(void);
 void tor_check_libevent_header_compatibility(void);
 const char *tor_libevent_get_version_str(void);
 const char *tor_libevent_get_header_version_str(void);
+void tor_libevent_free_all(void);
 
 int tor_init_libevent_rng(void);
 
