@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r4096 | brainslayer | 2018-05-28 00:18:14 +0200 (Mon, 28 May 2018) | 1 line
+
+fix mem leak in tpc_config
+------------------------------------------------------------------------
 r4095 | brainslayer | 2018-05-26 10:54:13 +0200 (Sat, 26 May 2018) | 1 line
 
 add short range devices for france regulatory
