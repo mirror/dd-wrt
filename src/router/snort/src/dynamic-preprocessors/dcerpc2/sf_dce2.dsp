@@ -138,6 +138,10 @@ SOURCE=.\dce2_smb.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\dce2_smb2.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\dce2_stats.c
 # End Source File
 # Begin Source File
@@ -243,6 +247,10 @@ SOURCE=.\dce2_session.h
 # Begin Source File
 
 SOURCE=.\dce2_smb.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\dce2_smb2.h
 # End Source File
 # Begin Source File
 

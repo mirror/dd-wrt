@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -74,6 +74,10 @@
 #include "sf_types.h"
 #endif
 #include "smtp_paf.h"
+
+#ifdef DUMP_BUFFER
+#include "smtp_buffer_dump.h"
+#endif
 
 /**************************************************************************/
 
@@ -352,6 +356,7 @@ static SMTP * SMTP_GetNewSession(SFSnortPacket *p, tSfPolicyId policy_id)
 {
     SMTP *ssn;
     SMTPConfig *pPolicyConfig = NULL;
+    int ret = 0;
 
     pPolicyConfig = (SMTPConfig *)sfPolicyUserDataGetCurrent(smtp_config);
 
@@ -369,6 +374,13 @@ static SMTP * SMTP_GetNewSession(SFSnortPacket *p, tSfPolicyId policy_id)
         ssn = &smtp_no_session;
         ssn->session_flags |= SMTP_FLAG_CHECK_SSL;
 
+        ssn->mime_ssn.log_config = &(smtp_eval_config->log_config);
+        ssn->mime_ssn.decode_conf = &(smtp_eval_config->decode_conf);
+        ssn->mime_ssn.mime_mempool = smtp_mime_mempool;
+        ssn->mime_ssn.log_mempool = smtp_mempool;
+        ssn->mime_ssn.mime_stats = &(smtp_stats.mime_stats);
+        ssn->mime_ssn.methods = &(mime_methods);
+        ssn->state = STATE_UNKNOWN;
         return ssn;
     }
 
@@ -388,8 +400,16 @@ static SMTP * SMTP_GetNewSession(SFSnortPacket *p, tSfPolicyId policy_id)
     smtp_ssn->mime_ssn.mime_stats = &(smtp_stats.mime_stats);
     smtp_ssn->mime_ssn.methods = &(mime_methods);
 
-    if (_dpd.fileAPI->set_log_buffers(&(smtp_ssn->mime_ssn.log_state), &(pPolicyConfig->log_config),smtp_mempool) < 0)
+    if ((ret=_dpd.fileAPI->set_log_buffers(&(smtp_ssn->mime_ssn.log_state), &(pPolicyConfig->log_config),smtp_mempool, p->stream_session)) < 0)
     {
+        if( ret == -1 )
+        {
+            if(smtp_stats.log_memcap_exceeded % 10000 == 0)
+            {
+                _dpd.logMsg("WARNING: SMTP memcap exceeded.\n");
+            }
+            smtp_stats.log_memcap_exceeded++;
+        }
         free(ssn);
         return NULL;
     }
@@ -1188,6 +1208,7 @@ static int SMTP_HandleHeaderLine(void *pkt, const uint8_t *ptr, const uint8_t *e
     return 0;
 }
 
+
 /*
  * Process client packet
  *
@@ -1212,27 +1233,50 @@ static void SMTP_ProcessClientPacket(SFSnortPacket *p)
             case STATE_COMMAND:
                 DEBUG_WRAP(DebugMessage(DEBUG_SMTP, "COMMAND STATE ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"););
                 ptr = SMTP_HandleCommand(p, ptr, end);
+#ifdef DUMP_BUFFER
+                dumpBuffer(STATE_COMMAND_DUMP,p->payload,p->payload_size);
+#endif
                 break;
             case STATE_DATA:
+#ifdef DUMP_BUFFER
+                dumpBuffer(STATE_DATA_DUMP,p->payload,p->payload_size);
+#endif
             case STATE_BDATA:
                 DEBUG_WRAP(DebugMessage(DEBUG_SMTP, "DATA STATE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"););
-                ptr = _dpd.fileAPI->process_mime_data(p, ptr, end, &(smtp_ssn->mime_ssn), 1, true);
+                ptr = _dpd.fileAPI->process_mime_data(p, ptr, end, &(smtp_ssn->mime_ssn), 1, true, "SMTP");
                 //ptr = SMTP_HandleData(p, ptr, end, &(smtp_ssn->mime_ssn));
+#ifdef DUMP_BUFFER
+                dumpBuffer(STATE_BDATA_DUMP,p->payload,p->payload_size);
+#endif
                 break;
             case STATE_XEXCH50:
+#ifdef DUMP_BUFFER
+                dumpBuffer(STATE_XEXCH50_DUMP,p->payload,p->payload_size);
+#endif
                 if (smtp_normalizing)
+		{
                     SMTP_CopyToAltBuffer(p, ptr, end - ptr);
+#ifdef DUMP_BUFFER
+		    dumpBuffer(STATE_XEXCH50_DUMP,_dpd.altBuffer->data,_dpd.altBuffer->len);
+#endif
+		}
                 if (is_data_end (p->stream_session))
                     smtp_ssn->state = STATE_COMMAND;
                 return;
             case STATE_AUTH:
                 ptr = SMTP_HandleCommand(p, ptr, end);
+#ifdef DUMP_BUFFER
+                dumpBuffer(STATE_AUTH_DUMP,p->payload,p->payload_size);
+#endif
                 break;
             case STATE_UNKNOWN:
                 DEBUG_WRAP(DebugMessage(DEBUG_SMTP, "UNKNOWN STATE ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"););
                 /* If state is unknown try command state to see if we can
                  * regain our bearings */
                 ptr = SMTP_HandleCommand(p, ptr, end);
+#ifdef DUMP_BUFFER
+                dumpBuffer(STATE_UNKNOWN_DUMP,p->payload,p->payload_size);
+#endif
                 break;
             default:
                 DEBUG_WRAP(DebugMessage(DEBUG_SMTP, "Bad SMTP state\n"););
@@ -1271,6 +1315,10 @@ static void SMTP_ProcessServerPacket(SFSnortPacket *p, int *next_state)
 
     ptr = p->payload;
     end = p->payload + p->payload_size;
+
+#ifdef DUMP_BUFFER
+                dumpBuffer(STATE_RESP_DUMP,p->payload,p->payload_size);
+#endif
 
     if (smtp_ssn->state == STATE_TLS_SERVER_PEND)
     {
@@ -1467,6 +1515,8 @@ static int SMTP_Inspect(SFSnortPacket *p)
  *
  * @return  none
  */
+
+
 void SnortSMTP(SFSnortPacket *p)
 {
     int detected = 0;
@@ -1476,6 +1526,9 @@ void SnortSMTP(SFSnortPacket *p)
 
     PROFILE_VARS;
 
+#ifdef DUMP_BUFFER
+    dumpBufferInit();
+#endif
 
     smtp_ssn = (SMTP *)_dpd.sessionAPI->get_application_data(p->stream_session, PP_SMTP);
     if (smtp_ssn != NULL)
@@ -1620,6 +1673,29 @@ void SnortSMTP(SFSnortPacket *p)
 #endif
 
     PREPROC_PROFILE_END(smtpDetectPerfStats);
+
+    if( &smtp_no_session == smtp_ssn )
+    {
+         if(smtp_ssn->mime_ssn.decode_state != NULL)
+         {
+             mempool_free(smtp_mime_mempool, smtp_ssn->mime_ssn.decode_bkt);
+             free(smtp_ssn->mime_ssn.decode_state);
+             smtp_ssn->mime_ssn.decode_state = NULL;
+         }
+
+         if(smtp_ssn->mime_ssn.log_state != NULL)
+         {
+             mempool_free(smtp_mempool, smtp_ssn->mime_ssn.log_state->log_hdrs_bkt);
+             free(smtp_ssn->mime_ssn.log_state);
+             smtp_ssn->mime_ssn.log_state = NULL;
+         }
+
+         if(smtp_ssn->auth_name != NULL)
+         {
+             free(smtp_ssn->auth_name);
+             smtp_ssn->auth_name = NULL;
+         }
+    }
 
     /* Turn off detection since we've already done it. */
     SMTP_DisableDetect(p);

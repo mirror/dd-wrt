@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2010-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -53,7 +53,7 @@ typedef enum {
     NORM_TCP_TRIM_RST    = 0x00800000, // strip data from rst
     NORM_TCP_TRIM_WIN    = 0x01000000, // trim to window
     NORM_TCP_TRIM_MSS    = 0x02000000, // trim to mss
-    NORM_ALL             = 0x03FFFFFF  // all normalizations on
+    NORM_ALL             = 0x07FFFFFF  // all normalizations on
 } NormFlags;
 
 // if this != 0, tcp normalizer should be enabled

@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -59,6 +59,7 @@
 #include "sfhashfcn.h"
 #include "detection_options.h"
 #include "sp_byte_extract.h"
+#include "sp_byte_math.h"
 #include "detection_util.h"
 #include "sf_sechash.h"
 
@@ -187,8 +188,8 @@ void SetupPatternMatch(void)
 #endif
 
 #ifdef PERF_PROFILING
-    RegisterPreprocessorProfile("content", &contentPerfStats, 3, &ruleOTNEvalPerfStats);
-    RegisterPreprocessorProfile("uricontent", &uricontentPerfStats, 3, &ruleOTNEvalPerfStats);
+    RegisterPreprocessorProfile("content", &contentPerfStats, 3, &ruleOTNEvalPerfStats, NULL);
+    RegisterPreprocessorProfile("uricontent", &uricontentPerfStats, 3, &ruleOTNEvalPerfStats, NULL);
 #endif
     DEBUG_WRAP(DebugMessage(DEBUG_PATTERN_MATCH,
                 "Plugin: PatternMatch Initialized!\n"););
@@ -583,11 +584,14 @@ static void PayloadSearchOffset(struct _SnortConfig *sc, char *data, OptTreeNode
     }
     else
     {
-        pmd->offset_var = GetVarByName(data);
-        if (pmd->offset_var == BYTE_EXTRACT_NO_VAR)
+        if (bytemath_variable_name && (strcmp(bytemath_variable_name,data) == 0))
+              pmd->offset_var= BYTE_MATH_VAR_INDEX;
+        else
         {
-            ParseError(BYTE_EXTRACT_INVALID_ERR_FMT, "offset", data);
-        }
+            pmd->offset_var = GetVarByName(data);
+            if (pmd->offset_var == BYTE_EXTRACT_NO_VAR)
+                  ParseError(BYTE_EXTRACT_INVALID_ERR_FMT, "offset", data);
+       }
     }
 
     DEBUG_WRAP(DebugMessage(DEBUG_PARSER, "Pattern offset = %d\n",
@@ -617,10 +621,13 @@ static void PayloadSearchDepth(struct _SnortConfig *sc, char *data, OptTreeNode 
     }
     else
     {
-        pmd->depth_var = GetVarByName(data);
-        if (pmd->depth_var == BYTE_EXTRACT_NO_VAR)
+        if (bytemath_variable_name && (strcmp(bytemath_variable_name,data) == 0))
+              pmd->depth_var= BYTE_MATH_VAR_INDEX;
+        else
         {
-            ParseError(BYTE_EXTRACT_INVALID_ERR_FMT, "depth", data);
+           pmd->depth_var = GetVarByName(data);
+           if (pmd->depth_var == BYTE_EXTRACT_NO_VAR)
+              ParseError(BYTE_EXTRACT_INVALID_ERR_FMT, "depth", data);
         }
     }
 
@@ -644,10 +651,13 @@ static void PayloadSearchDistance(struct _SnortConfig *sc, char *data, OptTreeNo
     }
     else
     {
-        pmd->distance_var = GetVarByName(data);
-        if (pmd->distance_var == BYTE_EXTRACT_NO_VAR)
+        if (bytemath_variable_name && (strcmp(bytemath_variable_name,data) == 0))
+              pmd->distance_var= BYTE_MATH_VAR_INDEX;
+        else
         {
-            ParseError(BYTE_EXTRACT_INVALID_ERR_FMT, "distance", data);
+           pmd->distance_var = GetVarByName(data);
+           if (pmd->distance_var == BYTE_EXTRACT_NO_VAR)
+              ParseError(BYTE_EXTRACT_INVALID_ERR_FMT, "distance", data);
         }
     }
 
@@ -681,10 +691,13 @@ static void PayloadSearchWithin(struct _SnortConfig *sc, char *data, OptTreeNode
     }
     else
     {
-        pmd->within_var = GetVarByName(data);
-        if (pmd->within_var == BYTE_EXTRACT_NO_VAR)
+        if (bytemath_variable_name && (strcmp(bytemath_variable_name,data) == 0))
+              pmd->within_var= BYTE_MATH_VAR_INDEX;
+        else
         {
-            ParseError(BYTE_EXTRACT_INVALID_ERR_FMT, "within", data);
+           pmd->within_var = GetVarByName(data);
+           if (pmd->within_var == BYTE_EXTRACT_NO_VAR)
+              ParseError(BYTE_EXTRACT_INVALID_ERR_FMT, "within", data);
         }
     }
 
@@ -2045,16 +2058,32 @@ static int uniSearchHash(const char *data, int dlen, PatternMatchData *pmd)
         UpdateDoePtr(NULL, 0); /* get rid of all our pattern match state */
     }
 
-    /* Get byte_extract variables */
-    if (pmd->offset_var >= 0 && pmd->offset_var < NUM_BYTE_EXTRACT_VARS)
+    /* Get byte_math/byte_extract variables */
+    if (pmd->offset_var >= 0 )
     {
-        GetByteExtractValue(&extract_offset, pmd->offset_var);
-        pmd->offset = (int) extract_offset;
+        if(pmd->offset_var == BYTE_MATH_VAR_INDEX )
+             pmd->offset = (int32_t) bytemath_variable;
+        else
+        {
+            if (pmd->offset_var < NUM_BYTE_EXTRACT_VARS)
+            {
+               GetByteExtractValue(&extract_offset, pmd->offset_var);
+               pmd->offset = (int32_t) extract_offset;
+            }
+        }
     }
-    if (pmd->distance_var >= 0 && pmd->distance_var < NUM_BYTE_EXTRACT_VARS)
+    if (pmd->distance_var >= 0 )
     {
-        GetByteExtractValue(&extract_distance, pmd->distance_var);
-        pmd->distance = (int) extract_distance;
+        if(pmd->distance_var == BYTE_MATH_VAR_INDEX )
+             pmd->distance = (int32_t) bytemath_variable;
+        else
+        {
+            if (pmd->distance_var < NUM_BYTE_EXTRACT_VARS)
+            {
+               GetByteExtractValue(&extract_distance, pmd->distance_var);
+               pmd->distance = (int32_t) extract_distance;
+            }
+        }
     }
 
     // Set our initial starting point
@@ -2246,26 +2275,58 @@ static int uniSearchReal(const char *data, int dlen, PatternMatchData *pmd, int 
         UpdateDoePtr(NULL, 0); /* get rid of all our pattern match state */
     }
 
-    /* Get byte_extract variables */
-    if (pmd->offset_var >= 0 && pmd->offset_var < NUM_BYTE_EXTRACT_VARS)
-    {
-        GetByteExtractValue(&extract_offset, pmd->offset_var);
-        pmd->offset = (int) extract_offset;
+    /* Get byte_math/byte_extract variables */
+   if (pmd->offset_var >= 0 )
+   {
+        if(pmd->offset_var == BYTE_MATH_VAR_INDEX )
+             pmd->offset = (int32_t) bytemath_variable;
+        else
+        {
+            if (pmd->offset_var < NUM_BYTE_EXTRACT_VARS)
+            {
+               GetByteExtractValue(&extract_offset, pmd->offset_var);
+               pmd->offset = (int32_t) extract_offset;
+            }
+        }
     }
-    if (pmd->depth_var >= 0 && pmd->depth_var < NUM_BYTE_EXTRACT_VARS)
+    if (pmd->depth_var >= 0 )
     {
-        GetByteExtractValue(&extract_depth, pmd->depth_var);
-        pmd->depth = (int) extract_depth;
+        if(pmd->depth_var == BYTE_MATH_VAR_INDEX )
+             pmd->depth = (int32_t) bytemath_variable;
+        else
+        {
+            if (pmd->depth_var < NUM_BYTE_EXTRACT_VARS)
+            {
+               GetByteExtractValue(&extract_depth, pmd->depth_var);
+               pmd->depth = (int32_t) extract_depth;
+            }
+        }
     }
-    if (pmd->distance_var >= 0 && pmd->distance_var < NUM_BYTE_EXTRACT_VARS)
+    if (pmd->distance_var >= 0 )
     {
-        GetByteExtractValue(&extract_distance, pmd->distance_var);
-        pmd->distance = (int) extract_distance;
+        if(pmd->distance_var == BYTE_MATH_VAR_INDEX )
+             pmd->distance = (int32_t) bytemath_variable;
+        else
+        {
+            if (pmd->distance_var < NUM_BYTE_EXTRACT_VARS)
+            {
+               GetByteExtractValue(&extract_distance, pmd->distance_var);
+               pmd->distance = (int32_t) extract_distance;
+            }
+        }
     }
-    if (pmd->within_var >= 0 && pmd->within_var < NUM_BYTE_EXTRACT_VARS)
+    if (pmd->within_var >= 0 )
     {
-        GetByteExtractValue(&extract_within, pmd->within_var);
-        pmd->within = (u_int) extract_within;
+        if(pmd->within_var == BYTE_MATH_VAR_INDEX )
+             pmd->within = (int32_t) bytemath_variable;
+        else
+        {
+            if (pmd->within_var < NUM_BYTE_EXTRACT_VARS)
+            {
+               GetByteExtractValue(&extract_within, pmd->within_var);
+               pmd->within = (int32_t) extract_within;
+            }
+        }
     }
 
     // Set our initial starting point
@@ -2367,7 +2428,7 @@ static int uniSearchReal(const char *data, int dlen, PatternMatchData *pmd, int 
     // case where the match is inverted and there is at least some data.
     if ((int)pmd->pattern_size > depth)
     {
-        if (pmd->exception_flag && (depth > 0))
+        if (pmd->exception_flag && (depth >= 0))
             return 0;
 
         return -1;
@@ -2421,9 +2482,9 @@ static int uniSearchReal(const char *data, int dlen, PatternMatchData *pmd, int 
 int CheckANDPatternMatch(void *option_data, Packet *p)
 {
     int rval = DETECTION_OPTION_NO_MATCH;
-    int found = 0;
+    int found = -1;
     int dsize;
-    char *dp;
+    const char *dp = NULL;
 #if 0
     int origUseDoe;
     char *orig_doe;
@@ -2445,14 +2506,14 @@ int CheckANDPatternMatch(void *option_data, Packet *p)
         if(Is_DetectFlag(FLAG_ALT_DETECT))
         {
             dsize = DetectBuffer.len;
-            dp = (char *) DetectBuffer.data;
+            dp = (const char*) DetectBuffer.data;
             DEBUG_WRAP(DebugMessage(DEBUG_PATTERN_MATCH,
                         "Using Alternative Detect buffer!\n"););
         }
         else if(Is_DetectFlag(FLAG_ALT_DECODE))
         {
             dsize = DecodeBuffer.len;
-            dp = (char *) DecodeBuffer.data;
+            dp = (const char *) DecodeBuffer.data;
             DEBUG_WRAP(DebugMessage(DEBUG_PATTERN_MATCH,
                         "Using Alternative Decode buffer!\n"););
         }
@@ -2470,13 +2531,13 @@ int CheckANDPatternMatch(void *option_data, Packet *p)
                 DEBUG_WRAP(DebugMessage(DEBUG_PATTERN_MATCH,
                     "Using Full Packet Data!\n"););
             }
-            dp = (char *) p->data;
+            dp = (const char *) p->data;
         }
     }
     else
     {
         dsize = p->dsize;
-        dp = (char *) p->data;
+        dp = (const char *) p->data;
         DEBUG_WRAP(DebugMessage(DEBUG_PATTERN_MATCH,
             "Using Full Packet Data!\n"););
     }
@@ -2493,7 +2554,10 @@ int CheckANDPatternMatch(void *option_data, Packet *p)
     doe_buf_flags = DOE_BUF_STD;
 
 #ifndef NO_FOUND_ERROR
-    found = idx->search(dp, dsize, idx);
+    if( p->dsize != 0 )
+    {
+         found = idx->search(dp, dsize, idx);
+    }
     if ( found == -1 )
     {
         /* On error, mark as not found.  This is necessary to handle !content

@@ -1,5 +1,5 @@
 /*
- ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2012-2013 Sourcefire, Inc.
  **
  ** This program is free software; you can redistribute it and/or modify
@@ -185,52 +185,6 @@ bool is_mime_log_enabled(MAIL_LogConfig *log_config)
     if(log_config->log_email_hdrs || log_config->log_filename ||
             log_config->log_mailfrom || log_config->log_rcptto)
         return true;
-    return false;
-}
-
-bool is_decoding_conf_changed(DecodeConfig *configNext, DecodeConfig *config, const char *preproc_name)
-{
-    if (configNext == NULL)
-    {
-        ErrorMessage("%s reload: Changing the %s configuration requires a restart.\n", preproc_name, preproc_name);
-        return true;
-    }
-    if (configNext->max_mime_mem != config->max_mime_mem)
-    {
-        ErrorMessage("%s reload: Changing the memcap requires a restart.\n", preproc_name);
-
-        return true;
-    }
-    if(configNext->b64_depth != config->b64_depth)
-    {
-        ErrorMessage("%s reload: Changing the b64_decode_depth requires a restart.\n", preproc_name);
-
-        return true;
-    }
-    if(configNext->qp_depth != config->qp_depth)
-    {
-        ErrorMessage("%s reload: Changing the qp_decode_depth requires a restart.\n", preproc_name);
-
-        return true;
-    }
-    if(configNext->bitenc_depth != config->bitenc_depth)
-    {
-        ErrorMessage("%s reload: Changing the bitenc_decode_depth requires a restart.\n", preproc_name);
-
-        return true;
-    }
-    if(configNext->uu_depth != config->uu_depth)
-    {
-        ErrorMessage("%s reload: Changing the uu_decode_depth requires a restart.\n", preproc_name);
-
-        return true;
-    }
-    if(configNext->file_depth != config->file_depth)
-    {
-        ErrorMessage("%s reload: Changing the file_depth requires a restart.\n", preproc_name);
-
-        return true;
-    }
     return false;
 }
 

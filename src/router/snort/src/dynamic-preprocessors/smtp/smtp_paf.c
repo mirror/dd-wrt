@@ -1,6 +1,6 @@
 /****************************************************************************
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
- * Copyright (C) 2014-2014 Sourcefire, Inc.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -26,6 +26,11 @@
 #include "stream_api.h"
 #include "snort_smtp.h"
 #include "file_api.h"
+#include "smtp_log.h"
+
+static uint8_t smtp_paf_id = 0;
+
+extern tSfPolicyUserContextId smtp_config;
 
 /* State tracker for MIME PAF */
 typedef enum _SmtpDataCMD
@@ -33,7 +38,8 @@ typedef enum _SmtpDataCMD
     SMTP_PAF_BDAT_CMD,
     SMTP_PAF_DATA_CMD,
     SMTP_PAF_XEXCH50_CMD,
-    SMTP_PAF_STRARTTLS_CMD
+    SMTP_PAF_STRARTTLS_CMD,
+    SMTP_PAF_AUTH_CMD
 } SmtpDataCMD;
 
 typedef struct _PAFToken
@@ -50,6 +56,7 @@ const SmtpPAFToken smtp_paf_tokens[] =
         {"DATA",         4, SMTP_PAF_DATA_CMD, true},
         {"XEXCH50",      7, SMTP_PAF_XEXCH50_CMD, true},
         {"STRARTTLS",    9, SMTP_PAF_STRARTTLS_CMD, false},
+        {"AUTH",         4, SMTP_PAF_AUTH_CMD, false},
         {NULL,           0, 0, false}
 };
 
@@ -86,6 +93,7 @@ typedef struct _SmtpPafData
     SmtpCmdSearchInfo cmd_info;
     MimeDataPafInfo data_info;
     bool end_of_data;
+    bool alert_generated;
 } SmtpPafData;
 
 /* State tracker for SMTP PAF */
@@ -141,6 +149,12 @@ static inline char* init_cmd_search(SmtpCmdSearchInfo *search_info,  uint8_t ch)
         search_info->search_state = &smtp_paf_tokens[SMTP_PAF_STRARTTLS_CMD].name[1];
         search_info->search_id = SMTP_PAF_STRARTTLS_CMD;
         break;
+    case 'a':
+    case 'A':
+        search_info->search_state = &smtp_paf_tokens[SMTP_PAF_AUTH_CMD].name[1];
+        search_info->search_id = SMTP_PAF_AUTH_CMD;
+        break;
+
     default:
         search_info->search_state = NULL;
         break;
@@ -311,6 +325,8 @@ static inline PAF_Status smtp_paf_client(SmtpPafData *pfdata,
 {
     uint32_t i;
     uint32_t boundary_start = 0;
+    tSfPolicyId policy_id = _dpd.getNapRuntimePolicy();
+    SMTPConfig* smtp_current_config = (SMTPConfig *)sfPolicyUserDataGet(smtp_config, policy_id);
 
     DEBUG_WRAP(DebugMessage(DEBUG_SMTP, "From client: %s \n", data););
     for (i = 0; i < len; i++)
@@ -327,7 +343,31 @@ static inline PAF_Status smtp_paf_client(SmtpPafData *pfdata,
             }
             break;
         case SMTP_PAF_DATA_STATE:
-            if (process_data(pfdata, ch))
+            if (pfdata->cmd_info.search_id == SMTP_PAF_AUTH_CMD)
+            {
+                if ( smtp_current_config && (smtp_current_config->max_auth_command_line_len != 0) &&
+                    (i + pfdata->data_info.boundary_len) > smtp_current_config->max_auth_command_line_len &&
+                    !pfdata->alert_generated)
+                {
+                    if( !smtp_current_config->no_alerts )
+                    {
+                        _dpd.alertAdd(GENERATOR_SMTP, SMTP_AUTH_COMMAND_OVERFLOW, 1, 0, 3,
+                                SMTP_AUTH_COMMAND_OVERFLOW_STR, 0);
+                        pfdata->alert_generated = true;
+                    }
+                }
+                if (ch == '\n')
+                {
+                    pfdata->smtp_state = SMTP_PAF_CMD_STATE;
+                    pfdata->end_of_data = true;
+                    reset_data_states(pfdata);
+                    *fp = i + 1;
+                    return PAF_FLUSH;
+                }
+                else if (i == len-1)
+                    pfdata->data_info.boundary_len += len;
+            }
+            else if (process_data(pfdata, ch))
             {
                 DEBUG_WRAP(DebugMessage(DEBUG_SMTP, "Flush data!\n"););
                 *fp = i + 1;
@@ -351,7 +391,7 @@ static inline PAF_Status smtp_paf_client(SmtpPafData *pfdata,
 
 /* Main PAF function*/
 static PAF_Status smtp_paf_eval(void* ssn, void** ps, const uint8_t* data,
-        uint32_t len, uint32_t flags, uint32_t* fp)
+        uint32_t len, uint64_t *flags, uint32_t* fp, uint32_t* fp_eoh)
 {
     SmtpPafData *pfdata = *(SmtpPafData **)ps;
 
@@ -369,10 +409,11 @@ static PAF_Status smtp_paf_eval(void* ssn, void** ps, const uint8_t* data,
         *ps = pfdata;
         pfdata->data_end_state = PAF_DATA_END_UNKNOWN;
         pfdata->smtp_state = SMTP_PAF_CMD_STATE;
+        pfdata->alert_generated = false;
     }
 
     /*From server side (responses)*/
-    if (flags & FLAG_FROM_SERVER)
+    if (*flags & FLAG_FROM_SERVER)
     {
         DEBUG_WRAP(DebugMessage(DEBUG_SMTP, "From server!\n"););
         return smtp_paf_server(pfdata, data, len, fp);
@@ -390,7 +431,7 @@ bool is_data_end (void* ssn)
 {
     if ( ssn )
     {
-        SmtpPafData** s = (SmtpPafData **)_dpd.streamAPI->get_paf_user_data(ssn, 1);
+        SmtpPafData** s = (SmtpPafData **)_dpd.streamAPI->get_paf_user_data(ssn, 1, smtp_paf_id);
 
         if ( s && (*s) )
             return ((*s)->end_of_data);
@@ -404,8 +445,8 @@ void register_smtp_paf_service (struct _SnortConfig *sc, int16_t app, tSfPolicyI
 {
     if (_dpd.isPafEnabled())
     {
-        _dpd.streamAPI->register_paf_service(sc, policy, app, true, smtp_paf_eval, true);
-        _dpd.streamAPI->register_paf_service(sc, policy, app, false,smtp_paf_eval, true);
+        smtp_paf_id = _dpd.streamAPI->register_paf_service(sc, policy, app, true, smtp_paf_eval, true);
+        smtp_paf_id = _dpd.streamAPI->register_paf_service(sc, policy, app, false,smtp_paf_eval, true);
     }
 }
 #endif
@@ -414,8 +455,8 @@ void register_smtp_paf_port(struct _SnortConfig *sc, unsigned int i, tSfPolicyId
 {
     if (_dpd.isPafEnabled())
     {
-        _dpd.streamAPI->register_paf_port(sc, policy, (uint16_t)i, true, smtp_paf_eval, true);
-        _dpd.streamAPI->register_paf_port(sc, policy, (uint16_t)i, false, smtp_paf_eval, true);
+        smtp_paf_id = _dpd.streamAPI->register_paf_port(sc, policy, (uint16_t)i, true, smtp_paf_eval, true);
+        smtp_paf_id = _dpd.streamAPI->register_paf_port(sc, policy, (uint16_t)i, false, smtp_paf_eval, true);
     }
 }
 

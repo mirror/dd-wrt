@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2004-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -64,10 +64,12 @@
 #define MAX_APP_PROTOCOL_ID  4
 #endif /* defined(FEAT_OPEN_APPID) */
 
-/*  Control Socket types */                                                            
-#define CS_TYPE_DEBUG_STREAM_HA     ((PP_STREAM << 7) + 0)     // 0x680 / 1664           
+/*  Control Socket types */
+#define CS_TYPE_DEBUG_STREAM_HA     ((PP_STREAM << 7) + 0)     // 0x680 / 1664
 
 /*  D A T A   S T R U C T U R E S  **********************************/
+
+typedef void (*NoRefCallback)( void *data );
 
 #ifdef ENABLE_HA
 typedef struct _SessionHAConfig
@@ -77,9 +79,13 @@ typedef struct _SessionHAConfig
     char *startup_input_file;
     char *runtime_output_file;
     char *shutdown_output_file;
+#ifdef REG_TEST
+    char *runtime_input_file;
+# endif
 # ifdef SIDE_CHANNEL
     uint8_t use_side_channel;
 # endif
+    uint8_t use_daq;
 } SessionHAConfig;
 #endif
 
@@ -93,6 +99,7 @@ typedef struct _SessionConfiguration
 #ifdef ENABLE_HA
     char       enable_ha;
 #endif
+    uint32_t   max_sessions;
     uint32_t   max_tcp_sessions;
     uint32_t   max_udp_sessions;
     uint32_t   max_icmp_sessions;
@@ -115,7 +122,19 @@ typedef struct _SessionConfiguration
 #endif
     uint32_t  numSnortPolicies;
     uint32_t  *policy_ref_count;
+#ifdef SNORT_RELOAD
+    NoRefCallback no_ref_cb;
+    void         *no_ref_cb_data;
+#endif
 } SessionConfiguration;
+
+#ifdef MPLS
+typedef struct _MPLS_Hdr
+{
+    uint16_t length;
+    uint8_t* start;
+}MPLS_Hdr;
+#endif
 
 // this struct is organized by member size for compactness
 typedef struct _SessionControlBlock
@@ -132,23 +151,23 @@ typedef struct _SessionControlBlock
 
     tSfPolicyId napPolicyId;
     tSfPolicyId ipsPolicyId;
-    bool    ips_os_selected;
     SessionConfiguration *session_config;
     void *stream_config;
     void *proto_policy;
 
-    PreprocEnableMask enabled_pps; 
     PreprocEvalFuncNode *initial_pp;
+    PreprocEnableMask enabled_pps;
 
     uint16_t    session_state;
     uint8_t     handler[SE_MAX];
 
-    snort_ip    client_ip; // FIXTHIS family and bits should be changed to uint16_t
-    snort_ip    server_ip; // or uint8_t to reduce sizeof from 24 to 20
+    sfaddr_t    client_ip; // FIXTHIS family and bits should be changed to uint16_t
+    sfaddr_t    server_ip; // or uint8_t to reduce sizeof from 24 to 20
 
     uint16_t    client_port;
     uint16_t    server_port;
     bool        port_guess;
+    bool        stream_config_stale;
 
     uint8_t     protocol;
 
@@ -170,17 +189,25 @@ typedef struct _SessionControlBlock
     uint8_t         ha_flags;
 #endif
 
-    bool     session_established;
+    bool    ips_os_selected;
+    bool    session_established;
+    bool    new_session;
+    bool    in_oneway_list;
+    bool    is_session_deletion_delayed;
+    uint8_t iprep_update_counter;
 
     // pointers for linking into list of oneway sessions
     struct _SessionControlBlock *ows_prev;
     struct _SessionControlBlock *ows_next;
-    bool in_oneway_list;
 
 #if defined(FEAT_OPEN_APPID)
     int16_t     app_protocol_id[MAX_APP_PROTOCOL_ID];
 #endif /* defined(FEAT_OPEN_APPID) */
 
+#ifdef MPLS
+   MPLS_Hdr *clientMplsHeader;
+   MPLS_Hdr *serverMplsHeader;
+#endif
 } SessionControlBlock;
 
 
@@ -230,6 +257,10 @@ typedef int ( *flush_stream_cb )( Packet *p, SessionControlBlock *scb );
 void registerDirectionPortCallback( uint8_t proto, set_dir_ports_cb cb_func );
 void registerFlushStreamCallback( bool client_to_server, flush_stream_cb cb_func );
 
+#ifdef SNORT_RELOAD
+void register_no_ref_policy_callback(SessionConfiguration *session_conf, NoRefCallback cb, void *data);
+#endif
+
 struct session_plugins
 {
     set_dir_ports_cb set_tcp_dir_ports;
@@ -245,7 +276,6 @@ void freeSessionPlugins( void );
 // shared session state
 extern SessionStatistics session_stats;
 extern uint32_t firstPacketTime;
-extern MemPool sessionFlowMempool;
 extern SessionConfiguration *session_configuration;
 
 extern uint32_t session_mem_in_use;

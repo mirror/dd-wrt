@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -75,6 +75,7 @@ static char dce2_config_error[1024];
 #define DCE2_GOPT__MAX_FRAG_LEN    "max_frag_len"
 #define DCE2_GOPT__REASSEMBLE_THRESHOLD  "reassemble_threshold"
 #define DCE2_GOPT__DISABLED        "disabled"
+#define DCE2_GOPT__LEGACY_MODE     "smb_legacy_mode"
 
 #define DCE2_GOPT__EVENTS         "events"
 #define DCE2_GARG__EVENTS_NONE    "none"
@@ -169,7 +170,8 @@ typedef enum _DCE2_GcOptFlag
     DCE2_GC_OPT_FLAG__EVENTS = 0x0010,
     DCE2_GC_OPT_FLAG__REASSEMBLE_THRESHOLD = 0x0020,
     DCE2_GC_OPT_FLAG__DISABLED = 0x0040,
-    DCE2_GC_OPT_FLAG__SMB_FINGERPRINT = 0x0080
+    DCE2_GC_OPT_FLAG__SMB_FINGERPRINT = 0x0080,
+	DCE2_GC_OPT_FLAG__LEGACY_MODE = 0x0100
 
 } DCE2_GcOptFlag;
 
@@ -250,7 +252,6 @@ static DCE2_Ret DCE2_GcParseMemcap(DCE2_GlobalConfig *, char **, char *);
 static DCE2_Ret DCE2_GcParseMaxFrag(DCE2_GlobalConfig *, char **, char *);
 static DCE2_Ret DCE2_GcParseEvents(DCE2_GlobalConfig *, char **, char *);
 static inline void DCE2_GcSetEvent(DCE2_GlobalConfig *, DCE2_EventFlag);
-static inline void DCE2_GcClearEvent(DCE2_GlobalConfig *, DCE2_EventFlag);
 static inline void DCE2_GcClearAllEvents(DCE2_GlobalConfig *);
 static inline DCE2_EventFlag DCE2_GcParseEvent(char *, char *, int *);
 static DCE2_Ret DCE2_GcParseReassembleThreshold(DCE2_GlobalConfig *, char **, char *);
@@ -273,7 +274,6 @@ static DCE2_Ret DCE2_ScParseValidSmbVersions(DCE2_ServerConfig *, char **, char 
 static DCE2_Ret DCE2_ScParseSmbFileInspection(DCE2_ServerConfig *, char **, char *);
 static inline DCE2_ValidSmbVersionFlag DCE2_ScParseValidSmbVersion(char *, char *, int *);
 static inline void DCE2_ScSetValidSmbVersion(DCE2_ServerConfig *, DCE2_ValidSmbVersionFlag);
-static inline void DCE2_ScClearValidSmbVersion(DCE2_ServerConfig *, DCE2_ValidSmbVersionFlag);
 static inline void DCE2_ScClearAllValidSmbVersionFlags(DCE2_ServerConfig *);
 static DCE2_Ret DCE2_ScAddToRoutingTable(DCE2_Config *, DCE2_ServerConfig *, DCE2_Queue *);
 static int DCE2_ScSmbShareCompare(const void *, const void *);
@@ -458,6 +458,10 @@ static DCE2_Ret DCE2_GcParseConfig(DCE2_GlobalConfig *gc, char *args)
                                 return DCE2_RET__ERROR;
                             break;
 
+                        case DCE2_GC_OPT_FLAG__LEGACY_MODE:
+                            gc->legacy_mode = true;
+                            break;
+
                         default:
                             return DCE2_RET__ERROR;
                     }
@@ -561,6 +565,11 @@ static inline DCE2_GcOptFlag DCE2_GcParseOption(char *opt_start, char *opt_end, 
              strncasecmp(DCE2_GOPT__SMB_FINGERPRINT, opt_start, opt_len) == 0)
     {
         opt_flag = DCE2_GC_OPT_FLAG__SMB_FINGERPRINT;
+    }
+    else if (opt_len == strlen(DCE2_GOPT__LEGACY_MODE) &&
+             strncasecmp(DCE2_GOPT__LEGACY_MODE, opt_start, opt_len) == 0)
+    {
+        opt_flag = DCE2_GC_OPT_FLAG__LEGACY_MODE;
     }
     else
     {
@@ -936,26 +945,6 @@ static inline DCE2_EventFlag DCE2_GcParseEvent(char *start, char *end, int *emas
 static inline void DCE2_GcSetEvent(DCE2_GlobalConfig *gc, DCE2_EventFlag eflag)
 {
     gc->event_mask |= eflag;
-}
-
-/*********************************************************************
- * Function: DCE2_GcClearEvent()
- *
- * Clears the bit associated with the event type flag passed in for
- * the global configuration event mask.
- *
- * Arguments:
- *  DCE2_GlobalConfig *
- *      Pointer to global config structure.
- *  DCE2_EventFlag
- *      The event type flag to clear.
- *
- * Returns: None
- *
- *********************************************************************/
-static inline void DCE2_GcClearEvent(DCE2_GlobalConfig *gc, DCE2_EventFlag eflag)
-{
-    gc->event_mask &= ~eflag;
 }
 
 /*********************************************************************
@@ -2905,27 +2894,6 @@ static inline void DCE2_ScSetValidSmbVersion(DCE2_ServerConfig *sc,
 }
 
 /*********************************************************************
- * Function: DCE2_ScClearValidSmbVersion()
- *
- * Sets the bit associated with the smb version flag passed in for
- * the server configuration valid smb versions mask.
- *
- * Arguments:
- *  DCE2_ServerConfig *
- *      Pointer to server config structure.
- *  DCE2_ValidSmbVersionFlag
- *      The smb version flag to clear.
- *
- * Returns: None
- *
- *********************************************************************/
-static inline void DCE2_ScClearValidSmbVersion(DCE2_ServerConfig *sc,
-        DCE2_ValidSmbVersionFlag vflag)
-{
-    sc->valid_smb_versions_mask &= ~vflag;
-}
-
-/*********************************************************************
  * Function: DCE2_ScClearAllValidSmbVersionFlags()
  *
  * Clears all of the bits in the server configuration smb
@@ -3215,7 +3183,7 @@ static DCE2_Ret DCE2_ScParseSmbFileInspection(DCE2_ServerConfig *sc, char **ptr,
  * Function: DCE2_ScAddToRoutingTable()
  *
  * Adds the server configuration to the appropriate routing table
- * (IPv4 or IPv6) based on the ip addresses and nets (as sfip_t)
+ * (IPv4 or IPv6) based on the ip addresses and nets (as sfcidr_t)
  * from the passed in queue.  A pointer to the server configuration
  * is saved in the routing table for each ip set.
  *
@@ -3239,14 +3207,14 @@ static DCE2_Ret DCE2_ScParseSmbFileInspection(DCE2_ServerConfig *sc, char **ptr,
 static DCE2_Ret DCE2_ScAddToRoutingTable(DCE2_Config *config,
                                          DCE2_ServerConfig *sc, DCE2_Queue *ip_queue)
 {
-    sfip_t *ip;
+    sfcidr_t *ip;
 
     if ((config == NULL) || (sc == NULL) || (ip_queue == NULL))
         return DCE2_RET__ERROR;
 
-    for (ip = (sfip_t *)DCE2_QueueFirst(ip_queue);
+    for (ip = (sfcidr_t *)DCE2_QueueFirst(ip_queue);
          ip != NULL;
-         ip = (sfip_t *)DCE2_QueueNext(ip_queue))
+         ip = (sfcidr_t *)DCE2_QueueNext(ip_queue))
     {
         int rt_status;
 
@@ -3265,7 +3233,7 @@ static DCE2_Ret DCE2_ScAddToRoutingTable(DCE2_Config *config,
         {
             DCE2_ServerConfig *conf;
 
-            conf = (DCE2_ServerConfig *)sfrt_search(ip, (unsigned char)ip->bits, config->sconfigs);
+            conf = (DCE2_ServerConfig *)sfrt_search(&ip->addr, config->sconfigs);
 
             if (conf != NULL)
             {
@@ -3297,11 +3265,11 @@ static DCE2_Ret DCE2_ScAddToRoutingTable(DCE2_Config *config,
 /*********************************************************************
  * Function: DCE2_ScIpListDataFree()
  *
- * Callback given to the queue for storing sfip_t structures.
+ * Callback given to the queue for storing sfcidr_t structures.
  *
  * Arguments:
  *  void *
- *      The sfip_t structure to free.
+ *      The sfcidr_t structure to free.
  *
  * Returns: None
  *
@@ -3311,7 +3279,7 @@ static void DCE2_ScIpListDataFree(void *data)
     if (data == NULL)
         return;
 
-    DCE2_Free(data, sizeof(sfip_t), DCE2_MEM_TYPE__CONFIG);
+    DCE2_Free(data, sizeof(sfcidr_t), DCE2_MEM_TYPE__CONFIG);
 }
 
 /********************************************************************
@@ -3336,7 +3304,7 @@ static void DCE2_ScIpListDataFree(void *data)
 const DCE2_ServerConfig * DCE2_ScGetConfig(const SFSnortPacket *p)
 {
     const DCE2_ServerConfig *sc = NULL;
-    snort_ip_p ip;
+    sfaddr_t* ip;
 
     if (dce2_eval_config == NULL)
         return NULL;
@@ -3538,14 +3506,14 @@ static void DCE2_ScPrintConfig(const DCE2_ServerConfig *sc, DCE2_Queue *net_queu
         {
             char *ip_addr;
             uint8_t prefix;
-            sfip_t *ip;
+            sfcidr_t *ip;
             char tmp_net[INET6_ADDRSTRLEN + 5];  /* Enough for IPv4 plus netmask or full IPv6 plus prefix */
 
-            ip = (sfip_t *)DCE2_QueueDequeue(net_queue);
-            ip_addr = sfip_to_str(ip);
+            ip = (sfcidr_t *)DCE2_QueueDequeue(net_queue);
+            ip_addr = sfip_to_str(&ip->addr);
             prefix = (uint8_t)ip->bits;
 
-            DCE2_Free((void *)ip, sizeof(sfip_t), DCE2_MEM_TYPE__CONFIG);
+            DCE2_Free((void *)ip, sizeof(sfcidr_t), DCE2_MEM_TYPE__CONFIG);
             snprintf(tmp_net, sizeof(tmp_net), "%s/%u ", ip_addr, prefix);
             tmp_net[sizeof(tmp_net) - 1] = '\0';
 
@@ -4076,7 +4044,7 @@ static void DCE2_AddPortsToStreamFilter(struct _SnortConfig *snortConf, DCE2_Ser
 /********************************************************************
  * Function: DCE2_ParseIpList()
  *
- * Parses an IP list, creates sfip_t for each IP address/net and
+ * Parses an IP list, creates sfcidr_t for each IP address/net and
  * adds to a queue.
  *
  * Arguments:
@@ -4087,7 +4055,7 @@ static void DCE2_AddPortsToStreamFilter(struct _SnortConfig *snortConf, DCE2_Ser
  *  char *
  *      Pointer to the end of the string.
  *  DCE2_Queue *
- *      Queue to store the sfip_t structures.
+ *      Queue to store the sfcidr_t structures.
  *
  * Returns:
  *  DCE2_Ret
@@ -4099,7 +4067,7 @@ static void DCE2_AddPortsToStreamFilter(struct _SnortConfig *snortConf, DCE2_Ser
 DCE2_Ret DCE2_ParseIpList(char **ptr, char *end, DCE2_Queue *ip_queue)
 {
     DCE2_IpListState state = DCE2_IP_LIST_STATE__START;
-    sfip_t ip;
+    sfcidr_t ip;
 
     while (*ptr < end)
     {
@@ -4114,12 +4082,12 @@ DCE2_Ret DCE2_ParseIpList(char **ptr, char *end, DCE2_Queue *ip_queue)
                 if (DCE2_IsIpChar(c))
                 {
                     DCE2_Ret status = DCE2_ParseIp(ptr, end, &ip);
-                    sfip_t *ip_copy;
+                    sfcidr_t *ip_copy;
 
                     if (status != DCE2_RET__SUCCESS)
                         return DCE2_RET__ERROR;
 
-                    ip_copy = (sfip_t *)DCE2_Alloc(sizeof(sfip_t), DCE2_MEM_TYPE__CONFIG);
+                    ip_copy = (sfcidr_t *)DCE2_Alloc(sizeof(sfcidr_t), DCE2_MEM_TYPE__CONFIG);
                     if (ip_copy == NULL)
                     {
                         DCE2_Log(DCE2_LOG_TYPE__ERROR,
@@ -4128,12 +4096,12 @@ DCE2_Ret DCE2_ParseIpList(char **ptr, char *end, DCE2_Queue *ip_queue)
                         return DCE2_RET__ERROR;
                     }
 
-                    memcpy((void *)ip_copy, (void *)&ip, sizeof(sfip_t));
+                    memcpy((void *)ip_copy, (void *)&ip, sizeof(sfcidr_t));
 
                     status = DCE2_QueueEnqueue(ip_queue, ip_copy);
                     if (status != DCE2_RET__SUCCESS)
                     {
-                        DCE2_Free((void *)ip_copy, sizeof(sfip_t), DCE2_MEM_TYPE__CONFIG);
+                        DCE2_Free((void *)ip_copy, sizeof(sfcidr_t), DCE2_MEM_TYPE__CONFIG);
                         DCE2_Log(DCE2_LOG_TYPE__ERROR,
                                  "%s(%d) Failed to queue an IP structure.",
                                  __FILE__, __LINE__);
@@ -4158,12 +4126,12 @@ DCE2_Ret DCE2_ParseIpList(char **ptr, char *end, DCE2_Queue *ip_queue)
                 if (DCE2_IsIpChar(c))
                 {
                     DCE2_Ret status = DCE2_ParseIp(ptr, end, &ip);
-                    sfip_t *ip_copy;
+                    sfcidr_t *ip_copy;
 
                     if (status != DCE2_RET__SUCCESS)
                         return DCE2_RET__ERROR;
 
-                    ip_copy = (sfip_t *)DCE2_Alloc(sizeof(sfip_t), DCE2_MEM_TYPE__CONFIG);
+                    ip_copy = (sfcidr_t *)DCE2_Alloc(sizeof(sfcidr_t), DCE2_MEM_TYPE__CONFIG);
                     if (ip_copy == NULL)
                     {
                         DCE2_Log(DCE2_LOG_TYPE__ERROR,
@@ -4172,12 +4140,12 @@ DCE2_Ret DCE2_ParseIpList(char **ptr, char *end, DCE2_Queue *ip_queue)
                         return DCE2_RET__ERROR;
                     }
 
-                    memcpy((void *)ip_copy, (void *)&ip, sizeof(sfip_t));
+                    memcpy((void *)ip_copy, (void *)&ip, sizeof(sfcidr_t));
 
                     status = DCE2_QueueEnqueue(ip_queue, ip_copy);
                     if (status != DCE2_RET__SUCCESS)
                     {
-                        DCE2_Free((void *)ip_copy, sizeof(sfip_t), DCE2_MEM_TYPE__CONFIG);
+                        DCE2_Free((void *)ip_copy, sizeof(sfcidr_t), DCE2_MEM_TYPE__CONFIG);
                         DCE2_Log(DCE2_LOG_TYPE__ERROR,
                                  "%s(%d) Failed to queue an IP structure.",
                                  __FILE__, __LINE__);
@@ -4244,8 +4212,8 @@ DCE2_Ret DCE2_ParseIpList(char **ptr, char *end, DCE2_Queue *ip_queue)
  *      after parsing the IP.
  *  char *
  *      Pointer to the end of the string.
- *  sfip_t *
- *      Pointer to an sfip_t structure that should be filled in
+ *  sfcidr_t *
+ *      Pointer to an sfcidr_t structure that should be filled in
  *      based on the IP or net parsed.
  *
  * Returns:
@@ -4256,7 +4224,7 @@ DCE2_Ret DCE2_ParseIpList(char **ptr, char *end, DCE2_Queue *ip_queue)
  *          address or net.
  *
  ********************************************************************/
-DCE2_Ret DCE2_ParseIp(char **ptr, char *end, sfip_t *ip)
+DCE2_Ret DCE2_ParseIp(char **ptr, char *end, sfcidr_t *ip)
 {
     DCE2_IpState state = DCE2_IP_STATE__START;
     char *ip_start = NULL;
@@ -4307,7 +4275,7 @@ DCE2_Ret DCE2_ParseIp(char **ptr, char *end, sfip_t *ip)
                     }
 
                     /* Don't allow a zero bit mask */
-                    if (ip->bits == 0)
+                    if ((sfaddr_family(&ip->addr) == AF_INET && ip->bits == 96) || ip->bits == 0)
                     {
                         DCE2_ScError("Invalid IP address with zero bit "
                                      "prefix: \"%.*s\"", copy_len, ip_start);

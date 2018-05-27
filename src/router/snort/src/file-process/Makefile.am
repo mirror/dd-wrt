@@ -18,6 +18,8 @@ libfileAPI_a_SOURCES = \
 	file_capture.h \
 	file_stats.c \
 	file_stats.h \
+    file_segment_process.c \
+	file_segment_process.h \
 	circular_buffer.c \
 	circular_buffer.h \
 	file_mempool.c \

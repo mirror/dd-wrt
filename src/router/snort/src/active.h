@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -54,6 +54,7 @@ void Active_SendReset(Packet*, EncodeFlags);
 void Active_SendUnreach(Packet*, EncodeType);
 bool Active_SendData(Packet*, EncodeFlags, const uint8_t* buf, uint32_t len);
 void Active_InjectData(Packet*, EncodeFlags, const uint8_t* buf, uint32_t len);
+void Active_UDPInjectData(Packet*, EncodeFlags, const uint8_t* buf, uint32_t len);
 
 int Active_IsRSTCandidate(const Packet*);
 int Active_IsUNRCandidate(const Packet*);
@@ -68,13 +69,14 @@ typedef enum {
     ACTIVE_CANT_DROP,   // can't drop
     ACTIVE_WOULD_DROP,  // would drop
     ACTIVE_DROP,        // should drop
-    ACTIVE_FORCE_DROP   // must drop
+    ACTIVE_FORCE_DROP,  // must drop
+    ACTIVE_RETRY        // queue for retry
 } tActiveDrop;
 
 typedef enum {
     ACTIVE_SSN_ALLOW,       // don't drop
     ACTIVE_SSN_DROP,        // can drop and reset
-    ACTIVE_SSN_DROP_WITHOUT_RESET,  // can drop but without reset
+    ACTIVE_SSN_DROP_WITHOUT_RESET  // can drop but without reset
 } tActiveSsnDrop;
 
 extern tActiveDrop active_drop_pkt;
@@ -127,16 +129,15 @@ static inline void Active_CantDrop(void)
 #endif
 }
 
-static inline void Active_ForceDropPacket (void)
+static inline void Active_ForceDropPacket( void )
 {
     if ( Active_Suspended() )
         Active_CantDrop();
-
     else
         active_drop_pkt = ACTIVE_FORCE_DROP;
 }
 
-static inline void Active_NapDropPacket (const Packet* p)
+static inline void Active_NapDropPacket( const Packet* p )
 {
     if ( Active_Suspended() )
     {
@@ -158,7 +159,7 @@ static inline void Active_NapDropPacket (const Packet* p)
     }
 }
 
-static inline void Active_DropPacket (const Packet* p)
+static inline void Active_DropPacket( const Packet* p )
 {
     if ( Active_Suspended() )
     {
@@ -178,6 +179,22 @@ static inline void Active_DropPacket (const Packet* p)
             active_drop_pkt = ACTIVE_WOULD_DROP;
         }
     }
+}
+
+static inline bool Active_DAQRetryPacket( const Packet *p )
+{
+    bool retry_queued = false;
+
+    if( ( active_drop_pkt == ACTIVE_ALLOW ) && DAQ_CanRetry( ) )
+    {
+        if ( DAQ_GetInterfaceMode(p->pkth) == DAQ_MODE_INLINE )
+        {
+            active_drop_pkt = ACTIVE_RETRY;
+            retry_queued = true;
+        }
+    }
+
+    return retry_queued;
 }
 
 static inline void Active_DAQDropPacket(const Packet *p)
@@ -250,6 +267,11 @@ static inline int Active_PacketForceDropped (void)
 static inline int Active_PacketWasDropped (void)
 {
     return ( active_drop_pkt >= ACTIVE_DROP );
+}
+
+static inline int Active_RetryIsPending (void)
+{
+    return ( active_drop_pkt == ACTIVE_RETRY );
 }
 
 static inline int Active_SessionWasDropped (void)

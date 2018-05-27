@@ -1,67 +1,24 @@
-2014-11-24 - Snort 2.9.7.2
-[*] New additions
-* Application Identification Preprocessor, when used in conjunction with
-  open app ID detector content, that will identify application protocol,
-  client, server, and web applications (including those using SSL) and
-  include the info in Snort alert data. In addition, a new rule option
-  keyword 'appid' that can be used to constrain Snort rules based on one
-  or more applications that are identified for the connection.
-  See README.appid for details.
+2017-12-06 - Snort 2.9.11.1
+  
+[*] New Additions
 
-* A new protected_content rule option that is used to match against a content
-  that is hashed.  It can be used to obscure the full context of the rule from
-  the administrator.
+ * Added support to block portscan. In addition to tracking the scanning packets, action(drop/sdrop/reject) will be taken for all the packets, which means snort will block the packet and generate logs.
 
-* Protocol Aware Flushing (PAF) improvements for SMTP, POP, and IMAP to
-  more accurately process different portions of email messages and file
-  attachments.
-
-* Added ability to test normalization behavior without modifying network traffic.
-  When configured using na_policy_mode:inline-test, statistics will be gathered
-  on packet normalizations that would have occurred, allowing less disruptive
-  testing of inline deployments.
-
-* The HTTP Inspection preprocessor now has the ability to decompress
-  DEFLATE and LZMA compressed flash content and DEFLATE compressed PDF
-  content from http responses when configured with the new decompress_swf
-  and decompress_pdf options. This enhancement can be used with existing rule
-  options that already match against decompressed equivalents.
-
-* Added improved XFF support to HttpInspect. It is now possible to specify custom
-  HTTP headers to use in place of 'X-Fowarded-For'. In situations where traffic may
-  contain multiple XFF-like headers, it is possible to specify which headers hold
-  precedence.
-
-* Added control socket command to dump packets.
-
-* The Stream5 preprocessor functionality is now split between the new Session and Stream preprocessors.
-
-* Added decoding capaiblity for Cisco FabricPath
+ * Added support to re-evaluate reputation after reputation update for all flows except those that have already been blacklisted.
 
 [*] Improvements
-* Update active response to allow for responses of 1500+ bytes that span
-  multiple TCP packets.
 
-* Check limits of multiple configurations to not exceed a maximum ID of 4095.
+ * Fixed issue to detect RTP upto two SSRC switches in each traffic direction.
 
-* Updated the error output of byte_test, byte_jump, byte_extract to
-  including details on offending options for a given rule.
+ * Fixed issues related to HTTP POST header flushing, calling file processing directly if it is not a multipart header and changes to avoid expensive copy of segment data by not splitting them when flushing headers.
 
-* Update build and install scripts to install preprocessor and engine libraries
-  into user specified libdir.
+ * Fixed issue of triggering protocol sweep alert when there are multiple destinations from single source ip protocol scan.
 
-* Improved performance of IP Reputation preprocessor.
+ * Added changes to fix IP portscan for protocol other than ICMP and fixed issue of bad fragment size event not being generated for oversized packets.
 
-* The control socket will now report success when reloading empty IP Reputation whitelists/blacklists.
+ * Added changes to use raw data in case of PDF and SWF files during file processing for SHA calculation and Malware Cloud Lookup.
 
-* All TCP normalizations can now be enabled individually. See README.normalize for details on using
-  the new options. For consistency with other options, the "urp" tcp normalization keyword now
-  enables the normalization instead of disabling it.
+ * Fixed issue of correct session matching for TCP SYN packets without window scale option so that FTP data channels match the same rule as FTP control channels.
 
-* Lowered memory demand of Unicode -> ASCII mapping in HttpInspect.
+ * Fixed issue of applying new configuration in file inspection after snort reload.
 
-* Updated profiler output to remove duplicate results when using multiple configurations.
-
-* Improved performance of FTP reassembly.
-
-* Improved compatibility with Mac OSX 10.9 (Mavericks), OpenBSD, FreeBSD, and DragonFlyBSD

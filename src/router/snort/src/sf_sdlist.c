@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -29,7 +29,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "util.h"
 
 /* Function: int sf_sdlist_init(sfSDlist *list, void (*destroy)(void *data))
  *
@@ -119,7 +118,7 @@ int sf_sdlist_insert_next(sfSDList *list, SDListItem *item, void *data,
     {
         new->next->prev = new;
     }
-    
+
     list->size++;
     return 0;
 }
@@ -248,11 +247,11 @@ int sf_sdlist_ins_next(sfSDList *list, SDListItem *item, const void *data)
     // Do not allow a NULL item unless the list is empty.
     if (item == NULL && sf_sdlist_size(list) != 0)
          return -1;
-  
+
     // Allocate storage for the item.
     if ((new_item = ( SDListItem * ) malloc( sizeof(SDListItem) )) == NULL)
         return -1;
- 
+
     // Insert the new item into the list.
     new_item->data = (void *)data;
 
@@ -269,12 +268,12 @@ int sf_sdlist_ins_next(sfSDList *list, SDListItem *item, const void *data)
         // Handle insertion when the list is not empty.
         new_item->next = item->next;
         new_item->prev = item;
-       
+
         if (item->next == NULL)
            list->tail = new_item;
         else
            item->next->prev = new_item;
-           
+
         item->next = new_item;
     }
 
@@ -291,11 +290,11 @@ int sf_sdlist_ins_prev(sfSDList *list, SDListItem *item, const void *data)
     // Do not allow a NULL item unless the list is empty.
     if (item == NULL && sf_sdlist_size(list) != 0)
         return -1;
-  
+
     // Allocate storage to be managed by the abstract datatype.
     if ((new_item = (SDListItem *) malloc( sizeof(SDListItem) )) == NULL)
         return -1;
- 
+
     // Insert the new item into the list.
     new_item->data = (void *)data;
 
@@ -306,19 +305,19 @@ int sf_sdlist_ins_prev(sfSDList *list, SDListItem *item, const void *data)
         list->head->prev = NULL;
         list->head->next = NULL;
         list->tail = new_item;
-           
+
     }
     else
     {
         // Handle insertion when the list is not empty.
-        new_item->next = item; 
+        new_item->next = item;
         new_item->prev = item->prev;
-       
+
         if (item->prev == NULL)
             list->head = new_item;
         else
             item->prev->next = new_item;
-           
+
         item->prev = new_item;
     }
 
@@ -333,25 +332,25 @@ int sf_sdlist_rem_item(sfSDList *list, SDListItem *item, void **data)
     // Do not allow a NULL item or removal from an empty list.
     if (item == NULL || sf_sdlist_size(list) == 0)
         return -1;
-  
+
     *data = item->data;
- 
+
     if (item == list->head)
     {
         // Handle removal from the head of the list.
         list->head = item->next;
-      
+
         if (list->head == NULL)
             list->tail = NULL;
         else
             item->next->prev = NULL;
-          
+
     }
     else
     {
         // Handle removal from other than the head of the list.
         item->prev->next = item->next;
-      
+
         if (item->next == NULL)
             list->tail = item->prev;
         else
@@ -370,8 +369,8 @@ int sf_sdlist_rem_item(sfSDList *list, SDListItem *item, void **data)
 /* Function: int sf_sdlist_purge(sfSDList *list)
  *
  * Purpose: remove every item of a list, free all
- * allocated container memory 
- * 
+ * allocated container memory
+ *
  * Args: list -> pointer to a dlist structure
  *
  * Returns: 1 on failure , 0 on success

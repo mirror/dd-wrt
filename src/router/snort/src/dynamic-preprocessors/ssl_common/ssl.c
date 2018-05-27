@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 1998-2013 Sourcefire, Inc.
  * 
  * This program is free software; you can redistribute it and/or modify
@@ -37,19 +37,18 @@
 #include "sf_snort_packet.h"
 #include "ssl.h"
 #include "sf_types.h"
-
 #define THREE_BYTE_LEN(x) (x[2] | x[1] << 8 | x[0] << 16)
 
-static uint32_t SSL_decode_version_v3(uint8_t major, uint8_t minor) 
+static uint32_t SSL_decode_version_v3(uint8_t major, uint8_t minor)
 {
     /* Should only be called internally and by functions which have previously
      * validated their arguments */
 
-    if(major == 3) 
+    if(major == 3)
     {
         /* Minor version */
         switch(minor) {
-            case 0: 
+            case 0:
                     return SSL_VER_SSLV3_FLAG;
                     break;
             case 1:
@@ -199,8 +198,7 @@ static uint32_t SSL_decode_handshake_v3(const uint8_t *pkt , int size,
 
     if (size < 0)
         retval |= SSL_TRUNCATED_FLAG;
-
-    return retval;
+   return retval;
 }
 
 static uint32_t SSL_decode_v3(const uint8_t *pkt, int size, uint32_t pkt_flags, uint8_t *alert_flags, uint16_t *partial_rec_len, int max_hb_len)
@@ -212,7 +210,6 @@ static uint32_t SSL_decode_v3(const uint8_t *pkt, int size, uint32_t pkt_flags, 
     int ccs = 0;   /* Set if we see a Change Cipher Spec and reset after the next record */
     SSL_heartbeat *heartbeat;
     uint16_t psize = 0;
-
 
     if( size && partial_rec_len && *partial_rec_len > 0)
     {
@@ -268,7 +265,7 @@ static uint32_t SSL_decode_v3(const uint8_t *pkt, int size, uint32_t pkt_flags, 
             case SSL_HEARTBEAT_REC:
                 retval |= SSL_HEARTBEAT_SEEN;
                 ccs = 0;
-                if((size < sizeof(SSL_heartbeat)) || !max_hb_len || !alert_flags)
+                if((size < 0) || ((unsigned int)size < sizeof(SSL_heartbeat)) || !max_hb_len || !alert_flags)
                     break;
                 heartbeat = (SSL_heartbeat*)pkt;
                 if((heartbeat->type) == SSL_HEARTBEAT_REQUEST)
@@ -434,7 +431,7 @@ static uint32_t SSL_decode_v2(const uint8_t *pkt, int size, uint32_t pkt_flags)
     if (size < 0)
         retval |= SSL_TRUNCATED_FLAG;
 
-    return retval | SSL_VER_SSLV2_FLAG;
+   return retval | SSL_VER_SSLV2_FLAG;
 }
 
 uint32_t SSL_decode(const uint8_t *pkt, int size, uint32_t pkt_flags, uint32_t prev_flags, uint8_t *alert_flags, uint16_t *partial_rec_len, int max_hb_len)

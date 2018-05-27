@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -49,7 +49,7 @@ typedef enum _OutputTypeFlag
 
 /***************************** Output Plugin API  *****************************/
 typedef void (*OutputConfigFunc)(struct _SnortConfig *, char *);
-typedef void (*OutputFunc)(Packet *, char *, void *, Event *);
+typedef void (*OutputFunc)(Packet *, const char *, void *, Event *);
 
 typedef struct _OutputConfigFuncNode
 {
@@ -70,6 +70,13 @@ typedef struct _OutputFuncNode
         OutputFunc fptr;
         void *vfptr;
     } fptr;
+#ifdef DUMP_BUFFER
+    /*A function pointer to point LogBufferDump function.
+    This is used only for BufferDump output plugin. For other plugins,
+    this would point to NULL. This would help in identifying the BufferDump
+    output plugin while traversing the Loglist linked list*/
+    OutputFunc bdfptr;
+#endif
     struct _OutputFuncNode *next;
 
 } OutputFuncNode;
@@ -81,6 +88,9 @@ void RemoveOutputPlugin(char *);
 int GetOutputTypeFlags(char *);
 void DumpOutputPlugins(void);
 void AddFuncToOutputList(struct _SnortConfig *, OutputFunc, OutputType, void *);
+#ifdef DUMP_BUFFER
+void AddBDFuncToOutputList(struct _SnortConfig *, OutputFunc, OutputType, void *);
+#endif
 void FreeOutputConfigFuncs(void);
 void FreeOutputList(OutputFuncNode *);
 

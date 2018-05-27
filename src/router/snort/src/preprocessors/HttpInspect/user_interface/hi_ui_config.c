@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -192,7 +192,7 @@ int hi_ui_config_reset_server(HTTPINSPECT_CONF *ServerConf)
 {
     int i;
 
-    for( i=0; i<HI_UI_CONFIG_MAX_XFF_FIELD_NAMES; i++ )
+    for( i=0; i<HTTP_MAX_XFF_FIELDS; i++ )
         if( ServerConf->xff_headers[i] != NULL )
         {
             free( ServerConf->xff_headers[i] );
@@ -503,7 +503,7 @@ int hi_ui_config_set_profile_all(HTTPINSPECT_CONF *ServerConf,
 **  @retval HI_NON_FATAL_ERR server has already been added
 */
 int hi_ui_config_add_server(HTTPINSPECT_GLOBAL_CONF *GlobalConf,
-                            sfip_t *ServerIP, HTTPINSPECT_CONF *ServerConf)
+                            sfcidr_t *ServerIP, HTTPINSPECT_CONF *ServerConf)
 {
     int iRet;
 

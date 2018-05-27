@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 1998-2013 Sourcefire, Inc.
  * 
  * This program is free software; you can redistribute it and/or modify
@@ -33,6 +33,8 @@
 
 #define SSL_NO_FLAG             0x00000000
 
+// IMP: Changes to these flags will require updates to NSE's snort flow flags as well.
+
 /* SSL record type flags */
 #define SSL_CHANGE_CIPHER_FLAG  0x00000001
 #define SSL_ALERT_FLAG          0x00000002
@@ -48,16 +50,16 @@
 #define SSL_CAPP_FLAG           0x00000800
 #define SSL_HS_SDONE_FLAG       0x00001000
 #define SSL_HEARTBEAT_SEEN      0x00002000
+#define SSL_VER_SSLV2_FLAG      0x00004000
+#define SSL_VER_SSLV3_FLAG      0x00008000
+#define SSL_VER_TLS10_FLAG      0x00010000
+#define SSL_VER_TLS11_FLAG      0x00020000
+#define SSL_VER_TLS12_FLAG      0x00040000
 
 /* Misc state flag */
-#define SSL_POSSIBLY_ENC_FLAG   0x00004000
+#define SSL_POSSIBLY_ENC_FLAG   0x00080000
 
 /* Version flags */
-#define SSL_VER_SSLV2_FLAG      0x00008000
-#define SSL_VER_SSLV3_FLAG      0x00010000
-#define SSL_VER_TLS10_FLAG      0x00020000
-#define SSL_VER_TLS11_FLAG      0x00040000
-#define SSL_VER_TLS12_FLAG      0x00080000
 
 #define SSL_VERFLAGS (SSL_VER_SSLV2_FLAG | SSL_VER_SSLV3_FLAG | \
                      SSL_VER_TLS10_FLAG | SSL_VER_TLS11_FLAG | \
@@ -72,16 +74,16 @@
 #define SSL_CUR_SERVER_HELLO_FLAG   0x00200000
 #define SSL_CUR_SERVER_KEYX_FLAG    0x00400000
 #define SSL_CUR_CLIENT_KEYX_FLAG    0x00800000
-#define SSL_ENCRYPTED_FLAG          0x01000000 /* Provided for external use */
-#define SSL_UNKNOWN_FLAG            0x02000000 /* Set when we decoded mostly garbage */
+#define SSL_UNKNOWN_FLAG            0x01000000 /* Set when we decoded mostly garbage */
+// Flag set when a client uses SSLv3/TLS backward compatibility and sends a
+// SSLv2 Hello specifying an SSLv3/TLS version.
+#define SSL_V3_BACK_COMPAT_V2       0x02000000
+#define SSL_ENCRYPTED_FLAG          0x04000000 /* Provided for external use */
 
 #define SSL_STATEFLAGS (SSL_CUR_CLIENT_HELLO_FLAG | SSL_CUR_SERVER_HELLO_FLAG | \
                         SSL_CUR_SERVER_KEYX_FLAG | SSL_CUR_CLIENT_KEYX_FLAG | \
                         SSL_UNKNOWN_FLAG)
 
-// Flag set when a client uses SSLv3/TLS backward compatibility and sends a
-// SSLv2 Hello specifying an SSLv3/TLS version.
-#define SSL_V3_BACK_COMPAT_V2   0x04000000
 
 /* Error flags */
 #define SSL_BOGUS_HS_DIR_FLAG   0x08000000 /* Record type disagrees with direction */

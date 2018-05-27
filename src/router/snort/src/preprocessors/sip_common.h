@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
- ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * ** Copyright (C) 2005-2013 Sourcefire, Inc.
  * ** AUTHOR: Steven Sturges
  * **
@@ -89,7 +89,7 @@ typedef enum _SIP_DialogState
 
 typedef struct _SIP_MediaData
 {
-	sfip_t maddress;  // media IP
+	sfaddr_t maddress;  // media IP
 	uint16_t mport;   // media port
 	uint8_t numPort;   // number of media ports
 	struct _SIP_MediaData *nextM;
@@ -102,7 +102,7 @@ typedef struct _SIP_MediaSession
 	uint32_t sessionID; // a hash value of the session
 	int savedFlag;      // whether this data has been saved by a dialog,
 	                    // if savedFlag = 1, this session will be deleted after sip message is processed.
-	sfip_t maddress_default;  //Default media IP
+	sfaddr_t maddress_default;  //Default media IP
 	SIP_MediaDataList medias; //Media list in the session
 	struct _SIP_MediaSession *nextS; // Next media session
 } SIP_MediaSession;
@@ -118,7 +118,7 @@ typedef struct _SipDialog
 
 typedef struct _SipEventData
 {
-    const SFSnortPacket *packet;
+    SFSnortPacket *packet;
     const SipHeaders *headers;
     const SipDialog  *dialog;
 } SipEventData;

@@ -1,7 +1,7 @@
 /*
  **
  **
- **  Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ **  Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  **  Copyright (C) 2012-2013 Sourcefire, Inc.
  **
  **  This program is free software; you can redistribute it and/or modify
@@ -71,6 +71,7 @@ typedef struct _FileContext
     bool file_signature_enabled;
     uint8_t    *file_name;
     uint32_t   file_name_size;
+    bool       file_name_saved;
     uint64_t   file_size;
     bool       upload;
     uint64_t   processed_bytes;
@@ -101,7 +102,7 @@ FileContext *file_context_create(void);
 void file_context_reset(FileContext *context);
 void file_context_free(void *context);
 /*File properties*/
-void file_name_set (FileContext *context, uint8_t *file_name, uint32_t name_size);
+void file_name_set (FileContext *context, uint8_t *file_name, uint32_t name_size, bool save_in_context);
 int file_name_get (FileContext *context, uint8_t **file_name, uint32_t *name_size);
 void file_size_set (FileContext *context, uint64_t file_size);
 uint64_t file_size_get (FileContext *context);

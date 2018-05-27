@@ -138,6 +138,10 @@ SOURCE=.\spp_sip.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\sip_paf.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\include\strtok_r.c
 # End Source File
 # End Group
@@ -175,6 +179,10 @@ SOURCE=.\sip_utils.h
 # Begin Source File
 
 SOURCE=.\spp_sip.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\sip_paf.h
 # End Source File
 # Begin Source File
 

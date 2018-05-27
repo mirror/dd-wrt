@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -227,6 +227,10 @@ enum {
     DECODE_AUTH_HDR_TRUNC,
     DECODE_AUTH_HDR_BAD_LEN,
     DECODE_FPATH_HDR_TRUNC,
+    DECODE_CISCO_META_HDR_TRUNC,
+    DECODE_CISCO_META_HDR_OPT_LEN,
+    DECODE_CISCO_META_HDR_OPT_TYPE,
+    DECODE_CISCO_META_HDR_SGT,
     DECODE_INDEX_MAX
 };
 
@@ -495,6 +499,8 @@ enum {
 #define     DCE2_EVENT__SMB_INVALID_SETUP_COUNT      55
 #define     DCE2_EVENT__SMB_MULTIPLE_NEGOTIATIONS    56
 #define     DCE2_EVENT__SMB_EVASIVE_FILE_ATTRS       57
+#define     DCE2_EVENT__SMB_INVALID_FILE_OFFSET      58
+#define     DCE2_EVENT__SMB_BAD_NEXT_COMMAND_OFFSET  59
 
 #define GENERATOR_PPM                               134
 #define     PPM_EVENT_RULE_TREE_DISABLED              1
@@ -760,6 +766,10 @@ enum {
 #define DECODE_AUTH_HDR_TRUNC_STR "(snort_decoder) WARNING: truncated authentication header"
 #define DECODE_AUTH_HDR_BAD_LEN_STR "(snort_decoder) WARNING: authentication header bad length"
 #define DECODE_FPATH_HDR_TRUNC_STR "(snort_decoder) WARNING: truncated FabricPath header"
+#define DECODE_CISCO_META_HDR_TRUNC_STR "(snort_decoder) WARNING: truncated Cisco Metadata header"
+#define DECODE_CISCO_META_HDR_OPT_LEN_STR "(snort_decoder) WARNING: Invalid Cisco Metadata option length"
+#define DECODE_CISCO_META_HDR_OPT_TYPE_STR "(snort_decoder) WARNING: Invalid Cisco Metadata option type"
+#define DECODE_CISCO_META_HDR_SGT_STR "(snort_decoder) WARNING: Invalid Cisco Metadata SGT"
 
 /*  RPC decode preprocessor strings */
 #define RPC_FRAG_TRAFFIC_STR "(spp_rpc_decode) Fragmented RPC Records"

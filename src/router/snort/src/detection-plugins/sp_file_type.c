@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2013-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -68,7 +68,7 @@ extern PreprocStats ruleOTNEvalPerfStats;
 // qsort() callback 
 static int Compare_Ids(const void *p1, const void *p2)
 {
-    return (*(uint32_t * const)p1 - *(uint32_t * const)p2);
+    return (*(const uint32_t *)p1 - *(const uint32_t *)p2);
 }
 
 // Sort the rule option file id's 
@@ -163,7 +163,7 @@ void SetupFileType(void)
 
 #if defined(PERF_PROFILING)
     RegisterPreprocessorProfile("file_type", &_sp_file_type_perf_stats,
-            3, &ruleOTNEvalPerfStats);
+            3, &ruleOTNEvalPerfStats, NULL);
 #endif // PERF_PROFILING
 }
 
@@ -176,7 +176,7 @@ static void Rule_Init(struct _SnortConfig *conf, OptTreeNode *otn, void *option)
    
     // Auto-magically enable file-type detection when no explicit
     // configuration exists.
-    file_api->enable_file_type(NULL);
+    file_api->enable_file_type(conf, NULL);
 
     fpl = AddOptFuncToList(FileType_Check, otn); 
     fpl->type = RULE_OPTION_TYPE_FILE_TYPE;
@@ -377,7 +377,7 @@ static int FileType_Check(void *option, Packet *p)
     PREPROC_PROFILE_START(_sp_file_type_perf_stats);
 
     assert( file_api->is_file_service_enabled() );
-    assert( file_api->get_max_file_depth() >= 0 );
+    assert( file_api->get_max_file_depth(NULL, false) >= 0 );
 
     assert( opt->ids );
     assert( opt->count > 0 );

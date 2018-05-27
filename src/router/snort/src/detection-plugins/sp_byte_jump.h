@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -27,6 +27,8 @@
 #include "decode.h"
 #include "plugbase.h"
 
+#define BYTE_JUMP_INVALID_ERR_FMT "Rule option %s uses an undefined byte_extract/byte_math variable name (%s)."
+
 typedef struct _ByteJumpData
 {
     uint32_t bytes_to_grab; /* number of bytes to compare */
@@ -41,6 +43,9 @@ typedef struct _ByteJumpData
     int32_t post_offset;
     int8_t offset_var;
     RuleOptByteOrderFunc byte_order_func;
+    uint8_t from_end_flag;
+    int8_t postoffset_var;
+    uint32_t bitmask_val;
 } ByteJumpData;
 
 void SetupByteJump(void);

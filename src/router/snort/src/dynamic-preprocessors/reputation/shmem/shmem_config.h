@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -35,7 +35,6 @@
 #define SHMEM_MGMT   "SFShmemMgmt"
 
 #define MAX_SEGMENTS    2
-#define MAX_INSTANCES  50
 
 #define WRITE           0 
 #define READ            1
@@ -101,9 +100,8 @@ extern ShmemUserInfo *shmusr_ptr;
 
 void PrintConfig(void);
 
-int InitShmemUser(
-   uint32_t instance_num, int instance_type, int dataset, int group_id,
-   int numa_node, const char* path, uint32_t instance_polltime);
+int InitShmemUser(uint32_t instance_num, int instance_type, int dataset, int group_id,
+   int numa_node, const char* path, uint32_t instance_polltime, uint16_t max_instances);
 
 int InitShmemDataMgmtFunctions(
     CreateMallocZero create_malloc_zero, GetDataSize get_data_size,

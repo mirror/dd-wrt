@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2007-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -25,6 +25,7 @@
 #define _SF_PREFIX "I64"
 #define PRIu64 _SF_PREFIX "u"
 #define PRIi64 _SF_PREFIX "i"
+#define PRIx64 _SF_PREFIX "x"
 #endif
 
 #endif  /* __INTTYPES_H__ */

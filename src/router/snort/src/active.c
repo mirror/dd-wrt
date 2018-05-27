@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -288,31 +288,41 @@ bool Active_SendData (
         if ( seg )
             s_send(p->pkth, !(tmp_flags & ENC_FLAG_FWD), seg, plen);
     }
-    flags |= ENC_FLAG_SEQ;
 
+    flags |= ENC_FLAG_SEQ;
     sent = 0;
     maxPayload = Encode_GetMaxPayload(p);
 
-    if(!maxPayload)
+    if(maxPayload)
+    {
+        do{
+            plen = 0;
+            toSend = blen > maxPayload ? maxPayload : blen;
+            flags = (flags & ~ENC_FLAG_VAL) | sent;
+            seg = Encode_Response(ENC_TCP_PUSH, flags, p, &plen, buf, toSend);
+
+            if ( !seg )
+                return false;
+
+            s_send(p->pkth, !(flags & ENC_FLAG_FWD), seg, plen);
+
+            buf += toSend;
+            sent += toSend;
+        } while(blen -= toSend);
+    }
+
+    plen = 0;
+    flags = (flags & ~ENC_FLAG_VAL) | sent;
+    seg = Encode_Response(ENC_TCP_FIN, flags, p, &plen, NULL, 0);
+
+    if ( !seg )
         return false;
 
-    do{
-        plen = 0;
-        toSend = blen > maxPayload ? maxPayload : blen;
-        flags = (flags & ~ENC_FLAG_VAL) | sent;
-        seg = Encode_Response(ENC_TCP_PUSH, flags, p, &plen, buf, toSend);
-
-        if ( !seg )
-            return false;
-
-        s_send(p->pkth, !(flags & ENC_FLAG_FWD), seg, plen);
-
-        buf += toSend;
-        sent += toSend;
-    } while(blen -= toSend);
+    s_send(p->pkth, !(flags & ENC_FLAG_FWD), seg, plen);
 
     if (flags & ENC_FLAG_RST_CLNT)
     {
+        sent++;
         plen = 0;
         flags = (flags & ~ENC_FLAG_VAL) | sent;
         seg = Encode_Response(ENC_TCP_RST, flags, p, &plen, NULL, 0);
@@ -343,6 +353,23 @@ void Active_InjectData (
     s_send(p->pkth, !(flags & ENC_FLAG_FWD), seg, plen);
 }
 
+void Active_UDPInjectData (
+    Packet* p, EncodeFlags flags, const uint8_t* buf, uint32_t blen)
+{
+    uint32_t plen = 0;
+    const uint8_t* seg;
+
+    if ( !s_attempts )
+        return;
+
+    flags |= GetFlags();
+
+    seg = Encode_Response(ENC_UDP, flags, p, &plen, buf, blen);
+    if ( !seg )
+        return;
+
+    s_send(p->pkth, !(flags & ENC_FLAG_FWD ), seg , plen);
+}
 //--------------------------------------------------------------------
 
 int Active_IsRSTCandidate(const Packet* p)

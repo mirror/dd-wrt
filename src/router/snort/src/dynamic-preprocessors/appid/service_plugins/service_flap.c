@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -77,15 +77,16 @@ typedef struct _FLAP_HEADER
 #pragma pack()
 
 static int flap_init(const InitServiceAPI * const init_api);
-MakeRNAServiceValidationPrototype(flap_validate);
+static int flap_validate(ServiceValidationArgs* args);
 
-static RNAServiceElement svc_element =
+static tRNAServiceElement svc_element =
 {
     .next = NULL,
     .validate = &flap_validate,
     .detectorType = DETECTOR_TYPE_DECODER,
     .name = "flap",
     .ref_count = 1,
+    .current_ref_count = 1,
 };
 
 static RNAServiceValidationPort pp[] =
@@ -96,7 +97,7 @@ static RNAServiceValidationPort pp[] =
     {NULL, 0, 0}
 };
 
-RNAServiceValidationModule flap_service_mod =
+tRNAServiceValidationModule flap_service_mod =
 {
     "FLAP",
     &flap_init,
@@ -110,37 +111,40 @@ static tAppRegistryEntry appIdRegistry[] = {{APP_ID_AOL_INSTANT_MESSENGER, 0}};
 
 static int flap_init(const InitServiceAPI * const init_api)
 {
-    init_api->RegisterPattern(&flap_validate, IPPROTO_TCP, FLAP_PATTERN, sizeof(FLAP_PATTERN), 0, "flap");
+    init_api->RegisterPattern(&flap_validate, IPPROTO_TCP, FLAP_PATTERN, sizeof(FLAP_PATTERN), 0, "flap", init_api->pAppidConfig);
 	unsigned i;
 	for (i=0; i < sizeof(appIdRegistry)/sizeof(*appIdRegistry); i++)
 	{
 		_dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[i].appId);
-		init_api->RegisterAppId(&flap_validate, appIdRegistry[i].appId, appIdRegistry[i].additionalInfo, NULL);
+		init_api->RegisterAppId(&flap_validate, appIdRegistry[i].appId, appIdRegistry[i].additionalInfo, init_api->pAppidConfig);
 	}
 
     return 0;
 }
 
-MakeRNAServiceValidationPrototype(flap_validate)
+static int flap_validate(ServiceValidationArgs* args)
 {
     ServiceFLAPData *sf;
-    const FLAPHeader *hdr = (const FLAPHeader *)data;
+    const uint8_t *data = args->data;
+    const FLAPHeader *hdr = (const FLAPHeader *)args->data;
     const FLAPFNAC *ff;
     const FLAPTLV *tlv;
+    tAppIdData *flowp = args->flowp;
+    uint16_t size = args->size;
     uint16_t len;
 
     if (!size)
         goto inprocess;
-    if (dir != APP_ID_FROM_RESPONDER)
+    if (args->dir != APP_ID_FROM_RESPONDER)
         goto inprocess;
 
-    sf = flap_service_mod.api->data_get(flowp);
+    sf = flap_service_mod.api->data_get(flowp, flap_service_mod.flow_data_index);
     if (!sf)
     {
         sf = calloc(1, sizeof(*sf));
         if (!sf)
             return SERVICE_ENOMEM;
-        if (flap_service_mod.api->data_add(flowp, sf, &free))
+        if (flap_service_mod.api->data_add(flowp, sf, flap_service_mod.flow_data_index, &free))
         {
             free(sf);
             return SERVICE_ENOMEM;
@@ -210,16 +214,17 @@ MakeRNAServiceValidationPrototype(flap_validate)
     }
 
 fail:
-    flap_service_mod.api->fail_service(flowp, pkt, dir, &svc_element);
+    flap_service_mod.api->fail_service(flowp, args->pkt, args->dir, &svc_element,
+                                       flap_service_mod.flow_data_index, args->pConfig, NULL);
     return SERVICE_NOMATCH;
 
 success:
-    flap_service_mod.api->add_service(flowp, pkt, dir, &svc_element,
-                                      APP_ID_AOL_INSTANT_MESSENGER, NULL, NULL, NULL);
+    flap_service_mod.api->add_service(flowp, args->pkt, args->dir, &svc_element,
+                                      APP_ID_AOL_INSTANT_MESSENGER, NULL, NULL, NULL, NULL);
     return SERVICE_SUCCESS;
 
 inprocess:
-    flap_service_mod.api->service_inprocess(flowp, pkt, dir, &svc_element);
+    flap_service_mod.api->service_inprocess(flowp, args->pkt, args->dir, &svc_element, NULL);
     return SERVICE_INPROCESS;
 }
 

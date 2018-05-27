@@ -9,7 +9,7 @@ dynamicpreprocessor_LTLIBRARIES = libsf_ftptelnet_preproc.la
 
 libsf_ftptelnet_preproc_la_LDFLAGS = -export-dynamic -module @XCCFLAGS@
 if SO_WITH_STATIC_LIB
-libsf_ftptelnet_preproc_la_LIBADD = ../libsf_dynamic_preproc.la
+libsf_ftptelnet_preproc_la_LIBADD = ../libsf_dynamic_preproc.la ../libsf_dynamic_utils.la
 else
 nodist_libsf_ftptelnet_preproc_la_SOURCES = \
 ../include/sf_dynamic_preproc_lib.c \
@@ -17,6 +17,7 @@ nodist_libsf_ftptelnet_preproc_la_SOURCES = \
 ../include/sfrt.c \
 ../include/sfrt_dir.c \
 ../include/sfPolicyUserData.c \
+../include/sfmemcap.c \
 ../ssl_common/ssl.c \
 ../ssl_common/ssl_config.c \
 ../ssl_common/ssl_inspect.c \
@@ -56,6 +57,13 @@ snort_ftptelnet.c \
 snort_ftptelnet.h \
 spp_ftptelnet.c \
 spp_ftptelnet.h
+
+if BUILD_BUFFER_DUMP
+libsf_ftptelnet_preproc_la_SOURCES += \
+ftptelnet_buffer_dump.c \
+ftptelnet_buffer_dump.h
+endif
+
 
 EXTRA_DIST = \
 sf_ftptelnet.dsp

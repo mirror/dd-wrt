@@ -51,7 +51,8 @@ BUILT_SOURCES = \
 	include/sidechannel_define.h \
 	include/idle_processing.h \
 	include/file_api.h \
-	include/mpse_methods.h 
+	include/mpse_methods.h \
+	include/reload_api.h
 
 sed_ipv6_headers = \
 	sed -e "s/->iph->ip_src/->ip4_header->source/" \
@@ -219,6 +220,9 @@ include/sidechannel_define.h: $(srcdir)/../side-channel/sidechannel_define.h
 
 include/idle_processing.h: $(srcdir)/../idle_processing.h
 	@src_header=$?; dst_header=$@; $(copy_headers)
+
+include/reload_api.h: $(srcdir)/../reload_api.h
+	@src_header=$?; dst_header=$@; $(massage_headers)
 
 # From dynamic-plugins
 include/sf_dynamic_common.h: $(srcdir)/../dynamic-plugins/sf_dynamic_common.h

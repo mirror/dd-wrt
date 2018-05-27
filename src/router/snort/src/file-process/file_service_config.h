@@ -1,5 +1,5 @@
 /*
-**  Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+**  Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 **  Copyright (C) 2012-2013 Sourcefire, Inc.
 **
 **  This program is free software; you can redistribute it and/or modify
@@ -32,17 +32,20 @@
 /* configure file services
  *
  * Args:
+ *   struct _SnortConfig* sc: the snort configuration
  *   char *args: configuration string
  *   void *file_config: pointer to file config
  */
-void file_service_config(char *args, void *file_config);
+struct _SnortConfig;
+void file_service_config(struct _SnortConfig* sc, char *args, void *file_config);
 
 /* Create file service configuration and set default values
  *
  * Return:
  *   void *: pointer to file configuration
  */
-void* file_service_config_create(void);
+struct _fileConfig;
+struct _fileConfig* file_service_config_create(void);
 
 # ifdef SNORT_RELOAD
 /* Verify whether file configuration is valid
@@ -54,14 +57,6 @@ void* file_service_config_create(void);
  *   -1: invalid
  */
 int  file_sevice_config_verify(SnortConfig *old, SnortConfig *new);
-
-/* Force reconfigure file service
- *
- * Args:
- *    true: reconfigure file service
- *    false: no change
- */
-void  file_sevice_reconfig_set(bool reconfigured);
 
 # endif /* ifdef SNORT_RELOAD */
 #endif /* #ifndef __FILE_SERVICE_CONFIG_H__ */

@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -26,6 +26,7 @@
 
 #ifndef SIP_UTILS_H_
 #define SIP_UTILS_H_
+#include "sf_snort_packet.h"
 #include "sip_config.h"
 #include "sfhashfcn.h"
 

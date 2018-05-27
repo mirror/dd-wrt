@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Author(s):   Andrew R. Baker <andrewb@sourcefire.com>
 **
@@ -101,6 +101,13 @@ typedef struct _ServiceInfo
     char *service;
     int16_t service_ordinal;
 } ServiceInfo;
+
+typedef enum _ServiceOverride {
+    ServiceOverride_ElsePorts = 0,
+    ServiceOverride_AndPorts,
+    ServiceOverride_OrPorts,
+    ServiceOverride_Nil
+} ServiceOverride;
 #endif
 
 typedef struct _SigInfo
@@ -111,7 +118,7 @@ typedef struct _SigInfo
     uint32_t   class_id;
     ClassType   *classType;
     uint32_t   priority;
-    char        *message;
+    const char        *message;
     ReferenceNode *refs;
     char          shared; /* shared object rule */
     char          dup_opt_func; /* has soid, and refers to another shared object rule */
@@ -121,10 +128,9 @@ typedef struct _SigInfo
 #ifdef TARGET_BASED
     unsigned int num_services;
     ServiceInfo *services;
-#if 0
-    char          *os;
+    ServiceOverride service_override;
 #endif
-#endif
+
 #if defined(FEAT_OPEN_APPID)
     unsigned int num_appid;
 #endif /* defined(FEAT_OPEN_APPID) */

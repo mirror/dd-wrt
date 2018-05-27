@@ -3,7 +3,7 @@
 **
 ** perf-base.h
 **
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Dan Roelker (droelker@sourcefire.com)
 ** Marc Norton (mnorton@sourcefire.com)
@@ -143,10 +143,6 @@ typedef struct _SFBASE
     uint64_t   iPegs[PERF_COUNT_MAX][NORM_MODE_MAX];
 #endif
 
-#ifdef LINUX_SMP
-    SFPROCPIDSTATS sfProcPidStats;
-#endif
-
     uint64_t   iTotalUDPSessions;
     uint64_t   iNewUDPSessions;
     uint64_t   iDeletedUDPSessions;
@@ -177,6 +173,10 @@ typedef struct _SFBASE
     uint64_t   frag3_mem_in_use;
     uint64_t   stream5_mem_in_use;
     uint64_t   total_iAlerts;
+
+#ifdef LINUX_SMP
+    SFPROCPIDSTATS sfProcPidStats;
+#endif
 }  SFBASE;
 
 typedef struct _SYSTIMES {

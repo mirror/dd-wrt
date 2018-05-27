@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -31,6 +31,7 @@
 #include "service_base.h"
 #include "service_ssl.h"
 #include "fw_appid.h"
+#include "serviceConfig.h"
 
 #define SSL_PORT    443
 
@@ -58,29 +59,11 @@ typedef enum
 /* Extension types. */
 #define SSL_EXT_SERVER_NAME 0
 
-typedef struct {
-    uint8_t type;
-    tAppId  appId;
-    uint8_t *pattern;
-    int     pattern_size;
-} SSLCertPattern;
-
 typedef struct _MatchedSSLPatterns {
     SSLCertPattern *mpattern;
     int index;
     struct _MatchedSSLPatterns *next;
 } MatchedSSLPatterns;
-
-typedef struct _DetectorSSLCertPattern
-{
-    SSLCertPattern *dpattern;
-    struct _DetectorSSLCertPattern *next;
-} DetectorSSLCertPattern;
-
-static DetectorSSLCertPattern *DetectorSSLCertPatternList;
-static DetectorSSLCertPattern *DetectorSSLCnamePatternList;
-static void *ssl_host_matcher;
-static void *ssl_cname_matcher;
 
 typedef enum
 {
@@ -242,7 +225,7 @@ static int ssl_detector_create_matcher(void **matcher, DetectorSSLCertPattern *l
                 (char *)element->dpattern->pattern,
                 element->dpattern->pattern_size,
                 element->dpattern,
-                STR_SEARCH_CASE_SENSITIVE);
+                STR_SEARCH_CASE_INSENSITIVE);
         (*patternIndex)++;
     }
 
@@ -250,26 +233,27 @@ static int ssl_detector_create_matcher(void **matcher, DetectorSSLCertPattern *l
 
     return 1;
 }
-int ssl_detector_process_patterns(void)
+int ssl_detector_process_patterns(tServiceSslConfig *pSslConfig)
 {
     int retVal = 1;
-    if (!ssl_detector_create_matcher(&ssl_host_matcher, DetectorSSLCertPatternList))
+    if (!ssl_detector_create_matcher(&pSslConfig->ssl_host_matcher, pSslConfig->DetectorSSLCertPatternList))
         retVal = 0;
-    if (!ssl_detector_create_matcher(&ssl_cname_matcher, DetectorSSLCnamePatternList))
+    if (!ssl_detector_create_matcher(&pSslConfig->ssl_cname_matcher, pSslConfig->DetectorSSLCnamePatternList))
         retVal = 0;
     return retVal;
 }
 
 static int ssl_init(const InitServiceAPI * const api);
-MakeRNAServiceValidationPrototype(ssl_validate);
+static int ssl_validate(ServiceValidationArgs* args);
 
-static RNAServiceElement svc_element =
+static tRNAServiceElement svc_element =
 {
     .next = NULL,
     .validate = &ssl_validate,
     .detectorType = DETECTOR_TYPE_DECODER,
     .name = "ssl",
     .ref_count = 1,
+    .current_ref_count = 1,
 };
 
 static RNAServiceValidationPort pp[] =
@@ -303,7 +287,7 @@ static RNAServiceValidationPort pp[] =
     {NULL, 0, 0}
 };
 
-RNAServiceValidationModule ssl_service_mod =
+tRNAServiceValidationModule ssl_service_mod =
 {
     "ssl",
     &ssl_init,
@@ -323,16 +307,16 @@ static tAppRegistryEntry appIdRegistry[] =
 
 static int ssl_init(const InitServiceAPI * const init_api)
 {
-    init_api->RegisterPattern(&ssl_validate, IPPROTO_TCP, SSL_PATTERN_PCT, sizeof(SSL_PATTERN_PCT), 2, "ssl");
-    init_api->RegisterPattern(&ssl_validate, IPPROTO_TCP, SSL_PATTERN3_0, sizeof(SSL_PATTERN3_0), 0, "ssl");
-    init_api->RegisterPattern(&ssl_validate, IPPROTO_TCP, SSL_PATTERN3_1, sizeof(SSL_PATTERN3_1), 0, "ssl");
-    init_api->RegisterPattern(&ssl_validate, IPPROTO_TCP, SSL_PATTERN3_2, sizeof(SSL_PATTERN3_2), 0, "ssl");
-    init_api->RegisterPattern(&ssl_validate, IPPROTO_TCP, SSL_PATTERN3_3, sizeof(SSL_PATTERN3_3), 0, "ssl");
+    init_api->RegisterPattern(&ssl_validate, IPPROTO_TCP, SSL_PATTERN_PCT, sizeof(SSL_PATTERN_PCT), 2, "ssl", init_api->pAppidConfig);
+    init_api->RegisterPattern(&ssl_validate, IPPROTO_TCP, SSL_PATTERN3_0, sizeof(SSL_PATTERN3_0), 0, "ssl", init_api->pAppidConfig);
+    init_api->RegisterPattern(&ssl_validate, IPPROTO_TCP, SSL_PATTERN3_1, sizeof(SSL_PATTERN3_1), 0, "ssl", init_api->pAppidConfig);
+    init_api->RegisterPattern(&ssl_validate, IPPROTO_TCP, SSL_PATTERN3_2, sizeof(SSL_PATTERN3_2), 0, "ssl", init_api->pAppidConfig);
+    init_api->RegisterPattern(&ssl_validate, IPPROTO_TCP, SSL_PATTERN3_3, sizeof(SSL_PATTERN3_3), 0, "ssl", init_api->pAppidConfig);
 	unsigned i;
 	for (i=0; i < sizeof(appIdRegistry)/sizeof(*appIdRegistry); i++)
 	{
 		_dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[i].appId);
-		init_api->RegisterAppId(&ssl_validate, appIdRegistry[i].appId, appIdRegistry[i].additionalInfo, NULL);
+		init_api->RegisterAppId(&ssl_validate, appIdRegistry[i].appId, appIdRegistry[i].additionalInfo, init_api->pAppidConfig);
 	}
 
     return 0;
@@ -356,10 +340,10 @@ void parse_client_initiation(const uint8_t *data, uint16_t size, ServiceSSLData 
     uint16_t ver;
 
     /* Sanity check header stuff. */
+    if (size < sizeof(ServiceSSLV3Hdr)) return;
     hdr3 = (ServiceSSLV3Hdr *)data;
     ver = ntohs(hdr3->version);
-    if (size < sizeof(ServiceSSLV3Hdr) ||
-        hdr3->type != SSL_HANDSHAKE ||
+    if (hdr3->type != SSL_HANDSHAKE ||
         (ver != 0x0300 &&
          ver != 0x0301 &&
          ver != 0x0302 &&
@@ -369,10 +353,11 @@ void parse_client_initiation(const uint8_t *data, uint16_t size, ServiceSSLData 
     }
     data += sizeof(ServiceSSLV3Hdr);
     size -= sizeof(ServiceSSLV3Hdr);
+
+    if (size < sizeof(ServiceSSLV3Record)) return;
     rec = (ServiceSSLV3Record *)data;
     ver = ntohs(rec->version);
-    if (size < sizeof(ServiceSSLV3Record) ||
-        rec->type != SSL_CLIENT_HELLO ||
+    if (rec->type != SSL_CLIENT_HELLO ||
         (ver != 0x0300 &&
          ver != 0x0301 &&
          ver != 0x0302 &&
@@ -387,31 +372,45 @@ void parse_client_initiation(const uint8_t *data, uint16_t size, ServiceSSLData 
     size -= sizeof(ServiceSSLV3Record);
 
     /* Session ID (1-byte length). */
+    if (size < 1) return;
     length = *((uint8_t*)data);
     data += length + 1;
+    if (size < (length + 1)) return;
     size -= length + 1;
 
     /* Cipher Suites (2-byte length). */
+    if (size < 2) return;
     length = ntohs(*((uint16_t*)data));
     data += length + 2;
+    if (size < (length + 2)) return;
     size -= length + 2;
 
     /* Compression Methods (1-byte length). */
+    if (size < 1) return;
     length = *((uint8_t*)data);
     data += length + 1;
+    if (size < (length + 1)) return;
     size -= length + 1;
 
     /* Extensions (2-byte length) */
+    if (size < 2) return;
     length = ntohs(*((uint16_t*)data));
     data += 2;
     size -= 2;
-    while (length > 0)
+    if (size < length) return;
+
+    // We need at least type (2 bytes) and length (2 bytes) fields in the extension
+    while (length >= 4)
     {
         ServiceSSLV3ExtensionServerName *ext = (ServiceSSLV3ExtensionServerName*)data;
         if (ntohs(ext->type) == SSL_EXT_SERVER_NAME)
         {
             /* Found server host name. */
+            if (length < sizeof(ServiceSSLV3ExtensionServerName)) return;
+
             int len = ntohs(ext->string_length);
+            if ((length - sizeof(ServiceSSLV3ExtensionServerName)) < len) return;
+
             const uint8_t *str =   data
                                  + offsetof(ServiceSSLV3ExtensionServerName, string_length)
                                  + sizeof(ext->string_length);
@@ -610,7 +609,7 @@ parse_certificates_clean:
     return success;    /* 1 is OK; 0 is fail. */
 }
 
-MakeRNAServiceValidationPrototype(ssl_validate)
+static int ssl_validate(ServiceValidationArgs* args)
 {
     ServiceSSLData *ss;
     const ServiceSSLPCTHdr *pct;
@@ -619,29 +618,32 @@ MakeRNAServiceValidationPrototype(ssl_validate)
     const ServiceSSLV3Record *rec;
     const ServiceSSLV3CertsRecord *certs_rec;
     uint16_t ver;
+    tAppIdData *flowp = args->flowp;
+    const uint8_t *data = args->data;
+    const int dir = args->dir;
+    uint16_t size = args->size;
 
     if (!size)
         goto inprocess;
 
-    ss = ssl_service_mod.api->data_get(flowp);
+    ss = ssl_service_mod.api->data_get(flowp, ssl_service_mod.flow_data_index);
     if (!ss)
     {
         ss = calloc(1, sizeof(*ss));
         if (!ss)
             return SERVICE_ENOMEM;
-        if (ssl_service_mod.api->data_add(flowp, ss, &ssl_free))
+        if (ssl_service_mod.api->data_add(flowp, ss, ssl_service_mod.flow_data_index, &ssl_free))
         {
             free(ss);
             return SERVICE_ENOMEM;
         }
         ss->state = SSL_STATE_INITIATE;
     }
-
     /* Start off with a Client Hello from client to server. */
     if (ss->state == SSL_STATE_INITIATE)
     {
         ss->state = SSL_STATE_CONNECTION;
-        
+
         if (dir == APP_ID_FROM_INITIATOR)
         {
             parse_client_initiation(data, size, ss);
@@ -674,7 +676,6 @@ MakeRNAServiceValidationPrototype(ssl_validate)
             case 0x0002:
             case 0x0300:
             case 0x0301:
-            case 0x0302:
             case 0x0303:
                 break;
             default:
@@ -685,26 +686,24 @@ MakeRNAServiceValidationPrototype(ssl_validate)
             goto success;
 not_v2:;
         }
-        ver = ntohs(hdr3->version);
         if (size < sizeof(ServiceSSLV3Hdr) ||
             hdr3->type != SSL_HANDSHAKE ||
-            (ver != 0x0300 &&
-             ver != 0x0301 &&
-             ver != 0x0302 &&
-             ver != 0x0303))
+            (ntohs(hdr3->version) != 0x0300 &&
+             ntohs(hdr3->version) != 0x0301 && 
+             ntohs(hdr3->version) != 0x0302 && 
+             ntohs(hdr3->version) != 0x0303)) 
         {
             goto fail;
         }
         data += sizeof(ServiceSSLV3Hdr);
         size -= sizeof(ServiceSSLV3Hdr);
         rec = (ServiceSSLV3Record *)data;
-        ver = ntohs(rec->version);
         if (size < sizeof(ServiceSSLV3Record) ||
             rec->type != SSL_SERVER_HELLO ||
-            (ver != 0x0300 &&
-             ver != 0x0301 &&
-             ver != 0x0302 &&
-             ver != 0x0303) ||
+            (ntohs(rec->version) != 0x0300 &&
+             ntohs(rec->version) != 0x0301 && 
+             ntohs(rec->version) != 0x0302 && 
+             ntohs(rec->version) != 0x0303) ||
             rec->length_msb)
         {
             goto fail;
@@ -852,7 +851,7 @@ not_v2:;
     }
 
 inprocess:
-    ssl_service_mod.api->service_inprocess(flowp, pkt, dir, &svc_element);
+    ssl_service_mod.api->service_inprocess(flowp, args->pkt, dir, &svc_element, NULL);
     return SERVICE_INPROCESS;
 
 fail:
@@ -862,7 +861,8 @@ fail:
     free(ss->org_name);
     ss->certs_data = NULL;
     ss->host_name = ss->common_name = ss->org_name = NULL;
-    ssl_service_mod.api->fail_service(flowp, pkt, dir, &svc_element);
+    ssl_service_mod.api->fail_service(flowp, args->pkt, dir, &svc_element,
+                                      ssl_service_mod.flow_data_index, args->pConfig, NULL);
     return SERVICE_NOMATCH;
 
 success:
@@ -873,27 +873,61 @@ success:
             goto fail;
         }
     }
-    flow_mark(flowp, FLOW_SSL_SESSION);
+    setAppIdFlag(flowp, APPID_SESSION_SSL_SESSION);
     if (ss->host_name || ss->common_name || ss->org_name)
     {
-        if (!(flowp->tsession = calloc(1, sizeof(*flowp->tsession))))
+        if (!flowp->tsession)
         {
-            goto fail;
+            if (!(flowp->tsession = calloc(1, sizeof(*flowp->tsession))))
+            {
+                goto fail;
+            }
         }
+
+        /* TLS Host */
         if (ss->host_name)
         {
+            if (flowp->tsession->tls_host)
+                free(flowp->tsession->tls_host);
+            flowp->tsession->tls_host = ss->host_name;
+            flowp->tsession->tls_host_strlen = ss->host_name_strlen;
             flowp->scan_flags |= SCAN_SSL_HOST_FLAG;
         }
-        flowp->tsession->tls_host           = ss->host_name;
-        flowp->tsession->tls_host_strlen    = ss->host_name_strlen;
-        flowp->tsession->tls_cname          = ss->common_name;
-        flowp->tsession->tls_cname_strlen   = ss->common_name_strlen;
-        flowp->tsession->tls_orgUnit        = ss->org_name;
-        flowp->tsession->tls_orgUnit_strlen = ss->org_name_strlen;
+        else if (ss->common_name)    // use common name (from server) if we didn't see host name (from client)
+        {
+            char *common_name = strdup(ss->common_name);
+            if (common_name)
+            {
+                if (flowp->tsession->tls_host)
+                    free(flowp->tsession->tls_host);
+                flowp->tsession->tls_host = common_name;
+                flowp->tsession->tls_host_strlen = ss->common_name_strlen;
+                flowp->scan_flags |= SCAN_SSL_HOST_FLAG;
+            }
+        }
+
+        /* TLS Common Name */
+        if (ss->common_name)
+        {
+            if (flowp->tsession->tls_cname)
+                free(flowp->tsession->tls_cname);
+            flowp->tsession->tls_cname = ss->common_name;
+            flowp->tsession->tls_cname_strlen = ss->common_name_strlen;
+        }
+
+        /* TLS Org Unit */
+        if (ss->org_name)
+        {
+            if (flowp->tsession->tls_orgUnit)
+                free(flowp->tsession->tls_orgUnit);
+            flowp->tsession->tls_orgUnit = ss->org_name;
+            flowp->tsession->tls_orgUnit_strlen = ss->org_name_strlen;
+        }
+
         ss->host_name = ss->common_name = ss->org_name = NULL;
     }
-    ssl_service_mod.api->add_service(flowp, pkt, dir, &svc_element,
-                                     getSslServiceAppId(pkt->src_port), NULL, NULL, NULL);
+    ssl_service_mod.api->add_service(flowp, args->pkt, dir, &svc_element,
+                                     getSslServiceAppId(args->pkt->src_port), NULL, NULL, NULL, NULL);
     return SERVICE_SUCCESS;
 }
 
@@ -937,6 +971,32 @@ tAppId getSslServiceAppId( short srcPort)
     }
 }
 
+bool isSslServiceAppId(tAppId appId)
+{
+    switch (appId)
+    {
+    case APP_ID_NSIIOPS:
+    case APP_ID_HTTPS:
+    case APP_ID_DDM_SSL:
+    case APP_ID_SMTPS:
+    case APP_ID_NNTPS:
+    case APP_ID_IMAPS:
+    case APP_ID_SSHELL:
+    case APP_ID_LDAPS:
+    case APP_ID_FTPSDATA:
+    case APP_ID_FTPS:
+    case APP_ID_TELNETS:
+    case APP_ID_IRCS:
+    case APP_ID_POP3S:
+    case APP_ID_MSFT_GC_SSL:
+    case APP_ID_SF_APPLIANCE_MGMT:
+    case APP_ID_SSL:
+        return true;
+    }
+
+    return false;
+}
+
 static int ssl_scan_patterns(void * matcher, const u_int8_t *pattern, size_t size, tAppId *clientAppId, tAppId *payloadId)
 {
     MatchedSSLPatterns *mp = NULL;
@@ -952,19 +1012,23 @@ static int ssl_scan_patterns(void * matcher, const u_int8_t *pattern, size_t siz
 
     if (!mp) return 0;
 
-    best_match = mp->mpattern;
-    tmpMp = mp->next;
-    free(mp);
-
-    while ((mp = tmpMp))
+    best_match = NULL;
+    while (mp)
     {
-        tmpMp = mp->next;
-        if (mp->mpattern->pattern_size > best_match->pattern_size)
+        //only patterns that match start of payload, or patterns starting with '.' or patterns folowing '.' in payload
+        //are considered a match.
+        if (mp->index == 0 || *mp->mpattern->pattern == '.' || pattern[mp->index-1] == '.')
         {
-            best_match = mp->mpattern;
-        }
-        free(mp);
+            if (!best_match || mp->mpattern->pattern_size > best_match->pattern_size)
+            {
+                best_match = mp->mpattern;
+            }
+        } 
+        tmpMp = mp;
+        mp = mp->next;
+        free (tmpMp);
     }
+    if (!best_match) return 0;
 
     switch (best_match->type)
     {
@@ -985,27 +1049,27 @@ static int ssl_scan_patterns(void * matcher, const u_int8_t *pattern, size_t siz
     return 1;
 }
 
-int ssl_scan_hostname(const u_int8_t *pattern, size_t size, tAppId *clientAppId, tAppId *payloadId)
+int ssl_scan_hostname(const u_int8_t *pattern, size_t size, tAppId *clientAppId, tAppId *payloadId, tServiceSslConfig *pSslConfig)
 {
-    return ssl_scan_patterns(ssl_host_matcher, pattern, size, clientAppId, payloadId);
+    return ssl_scan_patterns(pSslConfig->ssl_host_matcher, pattern, size, clientAppId, payloadId);
 }
 
-int ssl_scan_cname(const u_int8_t *pattern, size_t size, tAppId *clientAppId, tAppId *payloadId)
+int ssl_scan_cname(const u_int8_t *pattern, size_t size, tAppId *clientAppId, tAppId *payloadId, tServiceSslConfig *pSslConfig)
 {
-    return ssl_scan_patterns(ssl_cname_matcher, pattern, size, clientAppId, payloadId);
+    return ssl_scan_patterns(pSslConfig->ssl_cname_matcher, pattern, size, clientAppId, payloadId);
 }
 
-void service_ssl_clean(void)
+void service_ssl_clean(tServiceSslConfig *pSslConfig)
 {
-    if (ssl_host_matcher)
+    if (pSslConfig->ssl_host_matcher)
     {
-        _dpd.searchAPI->search_instance_free(ssl_host_matcher);
-        ssl_host_matcher = NULL;
+        _dpd.searchAPI->search_instance_free(pSslConfig->ssl_host_matcher);
+        pSslConfig->ssl_host_matcher = NULL;
     }
-    if (ssl_cname_matcher)
+    if (pSslConfig->ssl_cname_matcher)
     {
-        _dpd.searchAPI->search_instance_free(ssl_cname_matcher);
-        ssl_cname_matcher = NULL;
+        _dpd.searchAPI->search_instance_free(pSslConfig->ssl_cname_matcher);
+        pSslConfig->ssl_cname_matcher = NULL;
     }
 }
 
@@ -1035,13 +1099,13 @@ static int ssl_add_pattern(DetectorSSLCertPattern **list, uint8_t *pattern_str, 
 
     return 1;
 }
-int ssl_add_cert_pattern(uint8_t *pattern_str, size_t pattern_size, uint8_t type, tAppId app_id)
+int ssl_add_cert_pattern(uint8_t *pattern_str, size_t pattern_size, uint8_t type, tAppId app_id, tServiceSslConfig *pSslConfig)
 {
-    return ssl_add_pattern(&DetectorSSLCertPatternList, pattern_str, pattern_size, type, app_id);
+    return ssl_add_pattern(&pSslConfig->DetectorSSLCertPatternList, pattern_str, pattern_size, type, app_id);
 }
-int ssl_add_cname_pattern(uint8_t *pattern_str, size_t pattern_size, uint8_t type, tAppId app_id)
+int ssl_add_cname_pattern(uint8_t *pattern_str, size_t pattern_size, uint8_t type, tAppId app_id, tServiceSslConfig *pSslConfig)
 {
-    return ssl_add_pattern(&DetectorSSLCnamePatternList, pattern_str, pattern_size, type, app_id);
+    return ssl_add_pattern(&pSslConfig->DetectorSSLCnamePatternList, pattern_str, pattern_size, type, app_id);
 }
 
 static void ssl_patterns_free(DetectorSSLCertPattern **list)
@@ -1061,25 +1125,25 @@ static void ssl_patterns_free(DetectorSSLCertPattern **list)
     }
 }
 
-void ssl_detector_free_patterns(void)
+void ssl_detector_free_patterns(tServiceSslConfig *pSslConfig)
 {
-    ssl_patterns_free(&DetectorSSLCertPatternList);
-    ssl_patterns_free(&DetectorSSLCnamePatternList);
+    ssl_patterns_free(&pSslConfig->DetectorSSLCertPatternList);
+    ssl_patterns_free(&pSslConfig->DetectorSSLCnamePatternList);
 }
 
 int setSSLSquelch(SFSnortPacket *p, int type, tAppId appId)
 {
-    snort_ip *sip, *dip;
-    FLOW *f;
+    sfaddr_t *sip, *dip;
+    tAppIdData *f;
 
-    if (!SSLSquelch(appId))
+    if (!appInfoEntryFlagGet(appId, APPINFO_FLAG_SSL_SQUELCH, appIdActiveConfigGet()))
         return 0;
 
     dip = GET_DST_IP(p);
     sip = GET_SRC_IP(p);
 
-    if (!(f = AppIdEarlySessionCreate(p, sip, 0, dip, p->dst_port,
-                                       IPPROTO_TCP, appId)))
+    if (!(f = AppIdEarlySessionCreate(NULL, p, sip, 0, dip, p->dst_port,
+                                       IPPROTO_TCP, appId, 0)))
         return 0;
 
     switch (type)

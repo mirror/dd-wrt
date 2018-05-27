@@ -1,5 +1,6 @@
 /* 
- * Copyright (C) 2003-2005 Sourcefire, Inc.     All Rights Reserved
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2003-2013 Sourcefire, Inc.     All Rights Reserved
  * Test program for streaming a unified log file 
  */
 

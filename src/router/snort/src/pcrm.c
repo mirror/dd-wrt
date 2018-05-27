@@ -3,7 +3,7 @@
 **
 **  pcrm.c
 **
-**  Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+**  Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 **  Copyright (C) 2002-2013 Sourcefire, Inc.
 **  Marc Norton <mnorton@sourcefire.com>
 **  Dan Roelker <droelker@sourcefire.com>
@@ -1143,40 +1143,103 @@ prmFindRuleGroup(
         int sport,
         PORT_GROUP **src,
         PORT_GROUP **dst,
+#ifdef TARGET_BASED
+        PORT_GROUP **ns_src,
+        PORT_GROUP **ns_dst,
+#endif
         PORT_GROUP **gen
         )
 {
-    if ((p == NULL) || (src == NULL)
-            || (dst == NULL) || (gen == NULL))
-    {
+    if (!p || !src || !dst || !gen)
         return 0;
-    }
 
     *src = NULL;
     *dst = NULL;
     *gen = NULL;
 
-    if ((dport != ANYPORT) && (dport < MAX_PORTS))
-        *dst = p->prmDstPort[dport];
+#ifdef TARGET_BASED
+    if ( !ns_src || !ns_dst )
+        return 0;
 
-    if ((sport != ANYPORT) && (sport < MAX_PORTS))
+    *ns_src = NULL;
+    *ns_dst = NULL;
+#endif
+
+    if (dport != ANYPORT && dport < MAX_PORTS)
+    {
+        *dst = p->prmDstPort[dport];
+#ifdef TARGET_BASED
+        *ns_dst = p->prmNoServiceDstPort[dport];
+#endif
+    }
+
+    if (sport != ANYPORT && sport < MAX_PORTS)
+    {
         *src = p->prmSrcPort[sport];
+#ifdef TARGET_BASED
+        *ns_src = p->prmNoServiceSrcPort[sport];
+#endif
+
+    }
 
     /* If no Src/Dst rules - use the generic set, if any exist  */
-    if ((p->prmGeneric != NULL) && (p->prmGeneric->pgCount > 0)) 
+    if (p->prmGeneric != NULL && p->prmGeneric->pgCount > 0) 
     {
-        if (fpDetectSplitAnyAny(snort_conf->fast_pattern_config)
-                || ((*src == NULL) && (*dst == NULL)))
+        if (fpDetectSplitAnyAny(snort_conf->fast_pattern_config) || (!*src && !*dst))
         {
             *gen = p->prmGeneric;
         }
     }
 
-    if ((*src == NULL) && (*dst == NULL) && (*gen == NULL))
-        return 0;
+    if (*src == NULL && *dst == NULL && *gen == NULL)
+    {
+#ifdef TARGET_BASED
+        if (*ns_src == NULL && *ns_dst == NULL)
+#endif
+        {
+            return 0;
+        }
+    }
 
     return 1;
 }
+
+#ifdef TARGET_BASED
+int prmFindNoServiceRuleGroup (
+        PORT_RULE_MAP *p,
+        int dport,
+        int sport,
+        PORT_GROUP ** src,
+        PORT_GROUP ** dst, 
+        PORT_GROUP ** gen )
+{
+    if (!p || !src || !dst)
+        return 0;
+
+    *src = NULL;
+    *dst = NULL;
+    *gen = NULL;
+
+    if (dport != ANYPORT && dport < MAX_PORTS)
+        *dst = p->prmNoServiceDstPort[dport];
+
+    if (sport != ANYPORT && sport < MAX_PORTS)
+        *src = p->prmNoServiceSrcPort[sport];
+
+    if (p->prmGeneric != NULL && p->prmGeneric->pgCount > 0) 
+    {
+        if (fpDetectSplitAnyAny(snort_conf->fast_pattern_config) || (!*src && !*dst))
+        {
+            *gen = p->prmGeneric;
+        }
+    }
+
+    if (*src || *dst || *gen)
+        return 1;
+
+    return 0;
+}
+#endif
 
 int prmFindGenericRuleGroup(PORT_RULE_MAP *p, PORT_GROUP ** gen)
 {
@@ -1367,6 +1430,33 @@ int prmCompileGroups( PORT_RULE_MAP * p )
            prule = prmGetNextRuleNC( pgGen );
         }
      }
+
+#ifdef TARGET_BASED
+     if(p->prmNoServiceDstPort[i])
+     {
+         pgDst = p->prmNoServiceDstPort [i];
+
+         for (prule = prmGetFirstRule (pgGen); prule; prule = prmGetNextRule (pgGen))
+             prmxAddPortRule (pgDst, prule);
+         for (prule = prmGetFirstRuleUri (pgGen); prule; prule = prmGetNextRuleUri (pgGen))
+             prmxAddPortRuleUri (pgDst, prule);
+         for (prule = prmGetFirstRuleNC (pgGen); prule; prule = prmGetNextRuleNC (pgGen))
+             prmxAddPortRuleNC (pgDst, prule);
+     }
+
+     if(p->prmNoServiceSrcPort[i])
+     {
+         pgSrc = p->prmNoServiceSrcPort [i];
+
+         for (prule = prmGetFirstRule (pgGen); prule; prule = prmGetNextRule (pgGen))
+             prmxAddPortRule (pgSrc, prule);
+         for (prule = prmGetFirstRuleUri (pgGen); prule; prule = prmGetNextRuleUri (pgGen))
+             prmxAddPortRuleUri (pgSrc, prule);
+         for (prule = prmGetFirstRuleNC (pgGen); prule; prule = prmGetNextRuleNC (pgGen))
+             prmxAddPortRuleNC (pgSrc, prule);
+     }
+#endif // TARGET_BASED
+
      
    }
 

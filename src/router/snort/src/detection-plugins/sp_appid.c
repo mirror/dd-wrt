@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  **
  ** This program is free software; you can redistribute it and/or modify
  ** it under the terms of the GNU General Public License Version 2 as
@@ -46,18 +46,20 @@
 #include "snort.h"
 #include "profiler.h"
 #include "sp_appid.h"
+#include "appIdApi.h"
 #include "preprocessors/stream_api.h"
 #ifdef PERF_PROFILING
 PreprocStats appIdPerfStats;
 extern PreprocStats ruleOTNEvalPerfStats;
 #endif
 
-#define CONF_SEPARATORS         ", \t\n\r"
+#define CONF_SEPARATORS         ",\t\n\r"
 
 #include "detection_options.h"
 #include "detection_util.h"
 #include "sftarget_protocol_reference.h" 
 #include "sp_appid.h" 
+//#include "sf_dynamic_preprocessor.h"
 
 extern char *file_name;  /* this is the file name from rules.c, generally used
                             for error messages */
@@ -66,6 +68,7 @@ extern int file_line;    /* this is the file line number from rules.c that is
                             used to indicate file lines for error messages */
 
 
+#define NUM_APPID_IN_RULE_STEP 5
 #define MAX_NUM_APPID_IN_RULE 10
 
 static void ParseAppIdData(struct _SnortConfig *sc, char *data, OptTreeNode *otn);
@@ -73,7 +76,7 @@ static void AppIdInit(struct _SnortConfig *sc, char *data, OptTreeNode *otn, int
 static int CheckAppId (void *option_data, Packet *p);
 AppIdOptionData* createOptionData(void);
 void optAppIdFree(AppIdOptionData *optData);
-
+extern int32_t getApplicationId(const char * appName);
 
 /****************************************************************************
  *
@@ -91,7 +94,7 @@ void SetupAppId(void)
     /* map the keyword to an initialization/processing function */
     RegisterRuleOption("appid", AppIdInit, NULL, OPT_TYPE_DETECTION, NULL);
 #ifdef PERF_PROFILING
-    RegisterPreprocessorProfile("appid", &appIdPerfStats, 3, &ruleOTNEvalPerfStats);
+    RegisterPreprocessorProfile("appid", &appIdPerfStats, 3, &ruleOTNEvalPerfStats, NULL);
 #endif
 
     DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN,"Plugin: appid Setup\n"););
@@ -100,7 +103,8 @@ void SetupAppId(void)
 AppIdOptionData* optionAppIdCreate()
 {
     AppIdOptionData *optData = (AppIdOptionData *) SnortAlloc(sizeof(AppIdOptionData));
-    optData->appid_table = SnortAlloc(sizeof(AppIdInfo) * MAX_NUM_APPID_IN_RULE);
+    optData->appid_table = SnortAlloc(sizeof(AppIdInfo) * NUM_APPID_IN_RULE_STEP);
+    optData->num_appid_allocated = NUM_APPID_IN_RULE_STEP;
     return optData;
 }
 
@@ -232,8 +236,9 @@ static void ParseAppIdData(struct _SnortConfig *sc, char *data, OptTreeNode *otn
     char * appName;
     boolean noapp = true;
     boolean found = false;
-    int16_t ordinal;
+    int32_t ordinal;
     unsigned i;
+    char  *appNameEnd;
 
     /* set the ds pointer to make it easier to reference the option's
     particular data struct */
@@ -251,12 +256,35 @@ static void ParseAppIdData(struct _SnortConfig *sc, char *data, OptTreeNode *otn
             appName;
             appName = strtok(NULL, CONF_SEPARATORS))
     {
-        if (ds_ptr->num_appid == MAX_NUM_APPID_IN_RULE)
+        //strip spaces at beging and end.
+        while (*appName == ' ')
+            appName++;
+
+        //strip spaces at the end
+        appNameEnd = appName + strlen(appName);
+        
+        while(isspace(*--appNameEnd) && appNameEnd > appName); 
+
+        *(appNameEnd+1) = '\0'; 
+
+        if (ds_ptr->num_appid == ds_ptr->num_appid_allocated)
         {
-            ParseWarning("too many appids in rule. Max allowed %u\n", MAX_NUM_APPID_IN_RULE);
-            break;
+            AppIdInfo* tmp = realloc(ds_ptr->appid_table, (ds_ptr->num_appid_allocated + NUM_APPID_IN_RULE_STEP)*sizeof(*tmp));
+            if (!tmp)
+            {
+                ParseWarning("Malloc failure, too many appids in ruled %u\n");
+                break;
+            }
+            ds_ptr->appid_table = tmp;
+            ds_ptr->num_appid_allocated += NUM_APPID_IN_RULE_STEP;
         }
-        ordinal = AddProtocolReference(appName);
+
+        ordinal = appIdApi.getApplicationId(appName);
+        if (!ordinal)
+        {
+            ParseWarning(" appid metadata \"%s\" unknown.\n", appName);
+            return;
+        }
 
         for (i=0; i < ds_ptr->num_appid; i++)
         {
@@ -331,7 +359,7 @@ static int CheckAppId (void *option_data, Packet *p)
         {
             matchedProtoId = matchRuleProtoId(serviceProtoId, app_data);
             if (!matchedProtoId)
-                matchRuleProtoId(clientProtoId, app_data);
+                matchedProtoId = matchRuleProtoId(clientProtoId, app_data);
         }
     }
 

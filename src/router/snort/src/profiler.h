@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 ** Author: Steven Sturges <ssturges@sourcefire.com>
 **
@@ -102,6 +102,14 @@
     }
 #define PREPROC_PROFILE_START(ppstat) PREPROC_PROFILE_START_NAMED(snort, ppstat)
 
+#define PREPROC_PROFILE_START_NAMED_PI(name, ppstat) \
+    { \
+        ppstat.checks++; \
+        PROFILE_START_NAMED(name); \
+        ppstat.ticks_start = name##_ticks_start; \
+    }
+#define PREPROC_PROFILE_START_PI(ppstat) PREPROC_PROFILE_START_NAMED_PI(snort, ppstat)
+
 #define PREPROC_PROFILE_REENTER_START_NAMED(name, ppstat) \
     if (PROFILING_PREPROCS) { \
         PROFILE_START_NAMED(name); \
@@ -123,6 +131,14 @@
         ppstat.ticks += name##_ticks_end - ppstat.ticks_start; \
     }
 #define PREPROC_PROFILE_END(ppstat) PREPROC_PROFILE_END_NAMED(snort, ppstat)
+
+#define PREPROC_PROFILE_END_NAMED_PI(name, ppstat) \
+    { \
+        PROFILE_END_NAMED(name); \
+        ppstat.exits++; \
+        ppstat.ticks += name##_ticks_end - ppstat.ticks_start; \
+    }
+#define PREPROC_PROFILE_END_PI(ppstat) PREPROC_PROFILE_END_NAMED_PI(snort, ppstat)
 
 #define PREPROC_PROFILE_REENTER_END_NAMED(name, ppstat) \
     if (PROFILING_PREPROCS) { \
@@ -149,12 +165,16 @@ typedef struct _PreprocStats
     uint64_t exits;
 } PreprocStats;
 
+typedef void (*FreeFunc)(PreprocStats *stats);
+
 typedef struct _PreprocStatsNode
 {
     PreprocStats *stats;
     char *name;
     int layer;
+    FreeFunc     freefn;
     PreprocStats *parent;
+    
     struct _PreprocStatsNode *next;
 } PreprocStatsNode;
 
@@ -167,7 +187,8 @@ typedef struct _ProfileConfig
 
 } ProfileConfig;
 
-void RegisterPreprocessorProfile(const char *keyword, PreprocStats *stats, int layer, PreprocStats *parent);
+typedef void (*StatsNodeFreeFunc)(PreprocStats *stats);
+void RegisterPreprocessorProfile(const char *keyword, PreprocStats *stats, int layer, PreprocStats *parent, StatsNodeFreeFunc freefn);
 void ShowPreprocProfiles(void);
 void ResetRuleProfiling(void);
 void ResetPreprocProfiling(void);
@@ -185,12 +206,14 @@ extern PreprocStats totalPerfStats;
 #define OTN_PROFILE_ALERT(otn)
 #define PREPROC_PROFILE_START(ppstat)
 #define PREPROC_PROFILE_START_NAMED(name, ppstat)
+#define PREPROC_PROFILE_START_PI(ppstat)
 #define PREPROC_PROFILE_REENTER_START(ppstat)
 #define PREPROC_PROFILE_REENTER_START_NAMED(name, ppstat)
 #define PREPROC_PROFILE_TMPSTART(ppstat)
 #define PREPROC_PROFILE_TMPSTART_NAMED(name, ppstat)
 #define PREPROC_PROFILE_END(ppstat)
 #define PREPROC_PROFILE_END_NAMED(name, ppstat)
+#define PREPROC_PROFILE_END_PI(ppstat)
 #define PREPROC_PROFILE_REENTER_END(ppstat)
 #define PREPROC_PROFILE_REENTER_END_NAMED(name, ppstat)
 #define PREPROC_PROFILE_TMPEND(ppstat)

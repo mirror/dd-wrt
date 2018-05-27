@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -101,6 +101,7 @@ void SMTP_ParseArgs(SMTPConfig *config, char *args)
     config->alert_xlink2state = 1;
     config->print_cmds = 1;
     config->enable_mime_decoding = 0;
+    config->max_auth_command_line_len = DEFAULT_AUTH_MAX_COMMAND_LINE_LEN;
     _dpd.fileAPI->set_mime_decode_config_defauts(&(config->decode_conf));
     _dpd.fileAPI->set_mime_log_config_defauts(&(config->log_config));
     config->log_config.email_hdrs_log_depth = DEFAULT_LOG_DEPTH;
@@ -179,6 +180,17 @@ void SMTP_ParseArgs(SMTPConfig *config, char *args)
 
             config->max_command_line_len = strtol(value, &endptr, 10);
         }
+        else if ( !strcasecmp(CONF_MAX_AUTH_COMMAND_LINE_LEN, arg) )
+        {
+            char *endptr;
+
+            value = strtok(NULL, CONF_SEPARATORS);
+            if ( value == NULL )
+                return;
+
+            config->max_auth_command_line_len = strtol(value, &endptr, 10);
+        }
+
         else if ( !strcasecmp(CONF_MAX_HEADER_LINE_LEN, arg) )
         {
             char *endptr;
@@ -489,6 +501,11 @@ void SMTP_PrintConfig(SMTPConfig *config)
             _dpd.printfappend(buf, sizeof(buf) - 1, "Unlimited");
         else
             _dpd.printfappend(buf, sizeof(buf) - 1, "%d", config->max_command_line_len);
+        _dpd.logMsg("%s\n", buf);
+
+        snprintf(buf, sizeof(buf) - 1, "    Max auth Command Line Length: ");
+
+        _dpd.printfappend(buf, sizeof(buf) - 1, "%d", config->max_auth_command_line_len);
 
         _dpd.logMsg("%s\n", buf);
 

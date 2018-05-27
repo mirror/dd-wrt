@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -27,7 +27,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include <sys/types.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 
@@ -87,12 +86,20 @@ static void *ShmemMMap (int fd, uint32_t size)
     return shmem_ptr;
 }
 
-int ShmemExists(const char *shmemName)
+int ShmemExists(const char *shmemName, off_t *size)
 {
+    struct stat sb;
     int fd;
 
     if ((fd = shm_open(shmemName,(O_RDWR),(S_IRUSR))) < 0 )
         return 0;
+
+    if (size)
+    {
+        if (fstat(fd, &sb))
+            return 0;
+        *size = sb.st_size;
+    }
 
     close(fd);
     return SF_EEXIST;
@@ -117,7 +124,7 @@ void* ShmemMap(const char* segment_name, uint32_t size, int mode)
     int fd = 0;
     void *shmem_ptr = NULL;
 
-    if ((mode == WRITE) && ShmemExists(segment_name))
+    if ((mode == WRITE) && ShmemExists(segment_name, NULL))
     {
         DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION,
             "Cannot create shared memory segment %s, already exists\n",

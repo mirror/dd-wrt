@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -118,7 +118,6 @@ static inline DCE2_Ret DCE2_CoHandleSegmentation(DCE2_CoSeg *, const uint8_t *,
         uint16_t, uint16_t, uint16_t *);
 static void DCE2_CoReassemble(DCE2_SsnData *, DCE2_CoTracker *, DCE2_CoRpktType);
 static inline void DCE2_CoFragReassemble(DCE2_SsnData *, DCE2_CoTracker *);
-static inline void DCE2_CoSegReassemble(DCE2_SsnData *, DCE2_CoTracker *);
 static DCE2_Ret DCE2_CoSetIface(DCE2_SsnData *, DCE2_CoTracker *, uint16_t);
 static int DCE2_CoCtxCompare(const void *, const void *);
 static void DCE2_CoCtxFree(void *);
@@ -1825,27 +1824,6 @@ static void DCE2_CoHandleFrag(DCE2_SsnData *sd, DCE2_CoTracker *cot,
 static inline void DCE2_CoFragReassemble(DCE2_SsnData *sd, DCE2_CoTracker *cot)
 {
     DCE2_CoReassemble(sd, cot, DCE2_CO_RPKT_TYPE__FRAG);
-}
-
-/********************************************************************
- * Function: DCE2_CoSegReassemble()
- *
- * Wrapper for the generic reassembly function.  Calls generic
- * reassembly function specifying that we want to do segmentation
- * reassembly.
- *
- * Arguments:
- *  DCE2_SsnData *
- *      Pointer to the session data structure.
- *  DCE2_CoTracker *
- *      Pointer to the relevant connection-oriented tracker.
- *
- * Returns: None
- *
- ********************************************************************/
-static inline void DCE2_CoSegReassemble(DCE2_SsnData *sd, DCE2_CoTracker *cot)
-{
-    DCE2_CoReassemble(sd, cot, DCE2_CO_RPKT_TYPE__SEG);
 }
 
 /********************************************************************

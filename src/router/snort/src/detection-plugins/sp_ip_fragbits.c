@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -195,7 +195,7 @@ void SetupFragBits(void)
     /* map the keyword to an initialization/processing function */
     RegisterRuleOption("fragbits", FragBitsInit, NULL, OPT_TYPE_DETECTION, NULL);
 #ifdef PERF_PROFILING
-    RegisterPreprocessorProfile("fragbits", &fragBitsPerfStats, 3, &ruleOTNEvalPerfStats);
+    RegisterPreprocessorProfile("fragbits", &fragBitsPerfStats, 3, &ruleOTNEvalPerfStats, NULL);
 #endif
 
     DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN, "Plugin: FragBits Setup\n"););
@@ -452,7 +452,7 @@ void SetupFragOffset(void)
     RegisterRuleOption("fragoffset", FragOffsetInit, NULL, OPT_TYPE_DETECTION, NULL);
 
 #ifdef PERF_PROFILING
-    RegisterPreprocessorProfile("fragoffset", &fragOffsetPerfStats, 3, &ruleOTNEvalPerfStats);
+    RegisterPreprocessorProfile("fragoffset", &fragOffsetPerfStats, 3, &ruleOTNEvalPerfStats, NULL);
 #endif
     DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN, "Plugin: FragOffset Setup\n"););
 }

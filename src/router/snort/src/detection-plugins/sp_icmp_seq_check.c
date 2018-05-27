@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -130,7 +130,7 @@ void SetupIcmpSeqCheck(void)
     RegisterRuleOption("icmp_seq", IcmpSeqCheckInit, NULL, OPT_TYPE_DETECTION, NULL);
 
 #ifdef PERF_PROFILING
-    RegisterPreprocessorProfile("icmp_seq", &icmpSeqPerfStats, 3, &ruleOTNEvalPerfStats);
+    RegisterPreprocessorProfile("icmp_seq", &icmpSeqPerfStats, 3, &ruleOTNEvalPerfStats, NULL);
 #endif
     DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN, "Plugin: IcmpSeqCheck Setup\n"););
 }

@@ -37,7 +37,14 @@ pop_util.h \
 snort_pop.c \
 snort_pop.h \
 spp_pop.c \
-spp_pop.h 
+spp_pop.h
+
+if BUILD_BUFFER_DUMP
+libsf_pop_preproc_la_SOURCES += \
+pop_buffer_dump.c \
+pop_buffer_dump.h
+endif
+
 
 EXTRA_DIST = \
 sf_pop.dsp

@@ -1,5 +1,5 @@
 /*
- ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 1998-2013 Sourcefire, Inc.
  **
  ** Writen by Bhagyashree Bantwal <bbantwal@cisco.com>
@@ -27,6 +27,8 @@
 #include "util_unfold.h"
 #include "sf_base64decode.h"
 #include "snort_bounds.h"
+#include "file_mail_common.h"
+#include "file_api.h"
 
 #define MAX_BUF 65535
 #define DECODE_SUCCESS  0
@@ -100,7 +102,7 @@ typedef struct _MimeStats
 } MimeStats;
 
 // end :: start + length
-int EmailDecode(const uint8_t *start, const uint8_t *end, Email_DecodeState *);
+int EmailDecode(const uint8_t *start, const uint8_t *end, Email_DecodeState *, uint8_t *fname, uint32_t *fname_size, bool filename_present);
 
 
 static inline int getCodeDepth(int code_depth, int64_t file_depth)

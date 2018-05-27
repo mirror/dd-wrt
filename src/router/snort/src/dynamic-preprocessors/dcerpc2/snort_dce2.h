@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -30,11 +30,19 @@
 #include "sf_types.h"
 #include "snort_debug.h"
 
+#ifdef SNORT_RELOAD
+#include "appdata_adjuster.h"
+#endif
+
 /********************************************************************
  * Macros
  ********************************************************************/
 #define DCE2_PROTO_REF_STR__NBSS    "netbios-ssn"   /* Essentially SMB */
 #define DCE2_PROTO_REF_STR__DCERPC  "dcerpc"
+
+#ifdef SNORT_RELOAD
+extern APPDATA_ADJUSTER *ada;
+#endif
 
 /********************************************************************
  * Enumerations
@@ -89,6 +97,7 @@ void DCE2_SetNoInspect(DCE2_SsnData *);
  ********************************************************************/
 static inline void DCE2_ResetRopts(DCE2_Roptions *);
 static inline void DCE2_DisableDetect(SFSnortPacket *);
+static inline void DCE2_EnableDetect(void);
 
 /********************************************************************
  * Function:
@@ -124,5 +133,9 @@ static inline void DCE2_DisableDetect(SFSnortPacket *p)
     _dpd.disableAllDetect(p);
 }
 
+static inline void DCE2_EnableDetect(void)
+{
+    _dpd.enableContentDetect();
+}
 #endif  /* _SNORT_DCE2_H_ */
 

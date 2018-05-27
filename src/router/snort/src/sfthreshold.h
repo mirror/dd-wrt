@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -38,7 +38,7 @@ ThresholdConfig * ThresholdConfigNew(void);
 void ThresholdConfigFree(ThresholdConfig *);
 void sfthreshold_reset(void);
 int sfthreshold_create(struct _SnortConfig *, ThresholdConfig *, THDX_STRUCT *);
-int sfthreshold_test(unsigned int, unsigned int, snort_ip_p, snort_ip_p, long curtime);
+int sfthreshold_test(unsigned int, unsigned int, sfaddr_t*, sfaddr_t*, long curtime);
 void print_thresholding(ThresholdConfig*, unsigned shutdown);
 void sfthreshold_reset_active(void);
 void sfthreshold_free(void);

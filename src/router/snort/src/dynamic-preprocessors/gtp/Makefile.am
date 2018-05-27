@@ -27,6 +27,12 @@ gtp_roptions.c \
 gtp_roptions.h \
 gtp_debug.h
 
+if BUILD_BUFFER_DUMP
+libsf_gtp_preproc_la_SOURCES += \
+gtp_buffer_dump.h \
+gtp_buffer_dump.c
+endif
+
 EXTRA_DIST = \
 sf_gtp.dsp
 

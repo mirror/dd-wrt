@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -119,7 +119,7 @@ static void ExampleInit(struct _SnortConfig *sc, char *args)
     _dpd.addPreproc(sc, ExampleProcess, PRIORITY_TRANSPORT, 10000, PROTO_BIT__TCP | PROTO_BIT__UDP);
 
 #ifdef PERF_PROFILING
-    _dpd.addPreprocProfileFunc("example", (void *)&examplePerfStats, 0, _dpd.totalPerfStats);
+    _dpd.addPreprocProfileFunc("example", (void *)&examplePerfStats, 0, _dpd.totalPerfStats, NULL);
 #endif
 
     DEBUG_WRAP(DebugMessage(DEBUG_PLUGIN, "Preprocessor: Example is initialized\n"););

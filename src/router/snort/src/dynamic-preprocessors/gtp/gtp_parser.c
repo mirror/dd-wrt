@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -37,6 +37,10 @@
 #include "gtp_parser.h"
 #include "spp_gtp.h"
 #include "gtp_config.h"
+
+#ifdef DUMP_BUFFER
+#include "gtp_buffer_dump.h"
+#endif
 
 
 #ifdef WIN32
@@ -185,6 +189,10 @@ static int gtp_processInfoElements(GTPMsg *msg, const uint8_t *buff, uint16_t le
     DEBUG_WRAP(DebugMessage(DEBUG_GTP, "Information elements: length: %d\n",
            len););
 
+#ifdef DUMP_BUFFER
+    dumpBuffer(INFO_ELEMENTS_DUMP,buff,len);
+#endif
+
     start = (uint8_t *)buff;
     previous_type = (uint8_t) *start;
     unprocessed_len = len;
@@ -303,9 +311,17 @@ static int gtp_parse_v0(GTPMsg *msg, const uint8_t *buff, uint16_t gtp_len)
 
     DEBUG_WRAP(DebugMessage(DEBUG_GTP, "This is a GTP v0 packet.\n"););
 
+#ifdef DUMP_BUFFER
+    dumpBuffer(GTP_v0_DUMP,buff,gtp_len);
+#endif
+
     hdr = (GTP_C_Hdr *) buff;
 
     msg->header_len = GTP_HEADER_LEN_V0;
+
+#ifdef DUMP_BUFFER
+    dumpBuffer(GTP_HEADER_DUMP,msg->gtp_header,msg->header_len);
+#endif
 
     /*Check the length field. */
     if (gtp_len != ((unsigned int)ntohs(hdr->length) + GTP_LENGTH_OFFSET_V0))
@@ -353,6 +369,10 @@ static int gtp_parse_v1(GTPMsg *msg, const uint8_t *buff, uint16_t gtp_len)
     GTP_C_Hdr *hdr;
 
     DEBUG_WRAP(DebugMessage(DEBUG_GTP, "This ia a GTP v1 packet.\n"););
+
+#ifdef DUMP_BUFFER
+    dumpBuffer(GTP_v1_DUMP,buff,gtp_len);
+#endif
 
     hdr = (GTP_C_Hdr *) buff;
 
@@ -405,6 +425,10 @@ static int gtp_parse_v1(GTPMsg *msg, const uint8_t *buff, uint16_t gtp_len)
     else
         msg->header_len = GTP_HEADER_LEN_V1;
 
+#ifdef DUMP_BUFFER
+    dumpBuffer(GTP_HEADER_DUMP,msg->gtp_header,msg->header_len);
+#endif
+
     /*Check the length field. */
     if (gtp_len != ((unsigned int)ntohs(hdr->length) + GTP_LENGTH_OFFSET_V1))
     {
@@ -448,12 +472,20 @@ static int gtp_parse_v2(GTPMsg *msg, const uint8_t *buff, uint16_t gtp_len)
 
     DEBUG_WRAP(DebugMessage(DEBUG_GTP, "This ia a GTP v2 packet.\n"););
 
+#ifdef DUMP_BUFFER
+    dumpBuffer(GTP_v2_DUMP,buff,gtp_len);
+#endif
+
     hdr = (GTP_C_Hdr *) buff;
 
     if (hdr->flag & 0x8)
         msg->header_len = GTP_HEADER_LEN_EPC_V2;
     else
         msg->header_len = GTP_HEADER_LEN_V2;
+
+#ifdef DUMP_BUFFER
+    dumpBuffer(GTP_HEADER_DUMP,msg->gtp_header,msg->header_len);
+#endif
 
     /*Check the length field. */
     if (gtp_len != ((unsigned int)ntohs(hdr->length) + GTP_LENGTH_OFFSET_V2))

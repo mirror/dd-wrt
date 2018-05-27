@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -78,7 +78,7 @@ uint64_t GetDebugLevel(void)
     return debug_level;
 }
 
-void DebugMessageFunc(uint64_t level, char *fmt, ...)
+void DebugMessageFunc(uint64_t level, const char *fmt, ...)
 {
     va_list ap;
 
@@ -87,7 +87,7 @@ void DebugMessageFunc(uint64_t level, char *fmt, ...)
 
     va_start(ap, fmt);
 
-    if ((snort_conf != NULL) && ScDaemonMode())
+    if ((snort_conf != NULL) && (ScDaemonMode() || ScLogSyslog()))
     {
         char buf[STD_BUF];
         int buf_len = sizeof(buf);
@@ -118,7 +118,7 @@ void DebugMessageFunc(uint64_t level, char *fmt, ...)
 }
 
 #ifdef SF_WCHAR
-void DebugWideMessageFunc(uint64_t level, wchar_t *fmt, ...)
+void DebugWideMessageFunc(uint64_t level, const wchar_t *fmt, ...)
 {
     va_list ap;
     wchar_t buf[STD_BUF+1];
@@ -158,11 +158,11 @@ void DebugWideMessageFunc(uint64_t level, wchar_t *fmt, ...)
 }
 #endif
 #else /* DEBUG_MSGS */
-void DebugMessageFunc(uint64_t level, char *fmt, ...)
+void DebugMessageFunc(uint64_t level, const char *fmt, ...)
 {
 }
 #ifdef SF_WCHAR
-void DebugWideMessageFunc(uint64_t level, wchar_t *fmt, ...)
+void DebugWideMessageFunc(uint64_t level, const wchar_t *fmt, ...)
 {
 }
 #endif

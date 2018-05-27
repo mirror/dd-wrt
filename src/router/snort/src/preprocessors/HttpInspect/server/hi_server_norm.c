@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -226,8 +226,48 @@ int hi_server_norm(HI_SESSION *Session, HttpSessionData *hsd)
                         charset = CHARSET_UTF16LE;
                         size = 2;
                     }
+
+                    //  BOM (Byte Order Mark) was missing. Try to guess
+                    //  the encoding.
+                    else if (ServerResp->body[0]  == '\0' &&
+                        ServerResp->body[2]  == '\0' &&
+                        ServerResp->body[3])
+                    {
+                        if (ServerResp->body[1])
+                            charset = CHARSET_UTF16BE;  // \0C\0C
+                        else
+                            charset = CHARSET_UTF32BE;  // \0\0\0C
+                    }
+                    else if (ServerResp->body[0] &&
+                        ServerResp->body[1] == '\0' &&
+                        ServerResp->body[3] == '\0')
+                    {
+                        if (ServerResp->body[2])
+                            charset = CHARSET_UTF16LE;  // C\0C\0
+                        else
+                            charset = CHARSET_UTF32LE;  // C\0\0\0
+                    }
                     else
+                    {
+                        //  NOTE: The UTF-8 BOM (Byte Order Mark) does not
+                        //  match the above cases, so we end up here when
+                        //  parsing UTF-8. That works out for the moment
+                        //  because the first 128 characters of UTF-8 are
+                        //  identical to ASCII. We may want to handle
+                        //  other UTF-8 characters beyond 0x7f in the future.
+
                         charset = CHARSET_DEFAULT; // ensure we don't try again
+                    }
+
+                    // FIXIT-M We are not currently handling the case
+                    // where some characters are not ASCII and
+                    // some are ASCII. This is a problem because some
+                    // UTF-16 characters have no NUL bytes (so won't
+                    // be identified as UTF-16.)
+
+                    // FIXIT-L We also do not handle multiple levels
+                    // of encoding (where unicode becomes %u0020 for
+                    // example).
 
                     ServerResp->body += size;
                     ServerResp->body_size -= size;

@@ -1,7 +1,7 @@
 /*
  * snort_ftptelnet.h
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2004-2013 Sourcefire, Inc.
  * Steven A. Sturges <ssturges@sourcefire.com>
  * Daniel J. Roelker <droelker@sourcefire.com>
@@ -68,6 +68,7 @@ void FTPTelnetFreeConfig(FTPTELNET_GLOBAL_CONF *GlobalConf);
 int SnortFTPTelnet(SFSnortPacket *p);
 #ifdef TARGET_BASED
 void SnortFTPData_EOF(SFSnortPacket *p);
+void SnortFTPData_Flush(SFSnortPacket *p);
 int SnortFTPData(SFSnortPacket *p);
 #endif
 int FTPConfigCheck(struct _SnortConfig *);

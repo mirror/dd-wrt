@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -42,6 +42,7 @@
 #define BIG    0
 #define LITTLE 1
 
+#define BYTE_TEST_INVALID_ERR_FMT "Rule option %s uses an undefined byte_extract/byte_math variable name (%s)." //format: rule name, variable name
 
 typedef struct _ByteTestData
 {
@@ -57,6 +58,7 @@ typedef struct _ByteTestData
     int8_t cmp_value_var;
     int8_t offset_var;
     RuleOptByteOrderFunc byte_order_func;
+    uint32_t bitmask_val;
 } ByteTestData;
 
 void SetupByteTest(void);

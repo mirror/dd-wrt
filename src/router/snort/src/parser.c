@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 ** Copyright (C) 2000,2001 Andrew R. Baker <andrewb@uab.edu>
@@ -109,6 +109,7 @@
 #ifdef TARGET_BASED
 # include "sftarget_reader.h"
 #endif
+
 
 /* Macros *********************************************************************/
 #define ENABLE_ALL_RULES    1
@@ -747,9 +748,14 @@ static const ConfigFunc config_opts[] =
     { CONFIG_OPT__FILE, 1, 1, 1, ConfigFile },
     { CONFIG_OPT__TUNNEL_BYPASS, 1, 1, 1, ConfigTunnelVerdicts },
 #ifdef SIDE_CHANNEL
-    { CONFIG_OPT__SIDE_CHANNEL, 1, 1, 1, ConfigSideChannel },
+    { CONFIG_OPT__SIDE_CHANNEL, 0, 1, 1, ConfigSideChannel },
 #endif
     { CONFIG_OPT__MAX_IP6_EXTENSIONS, 1, 1, 1, ConfigMaxIP6Extensions },
+    { CONFIG_OPT__DISABLE_REPLACE, 0, 1, 0, ConfigDisableReplace },
+#ifdef DUMP_BUFFER
+    { CONFIG_OPT__BUFFER_DUMP, 1, 1, 1, ConfigBufferDump },
+    { CONFIG_OPT__BUFFER_DUMP_ALERT, 1, 1, 1, ConfigBufferDump },
+#endif
     { NULL, 0, 0, 0, NULL }   /* Marks end of array */
 };
 
@@ -856,14 +862,14 @@ static RuleTreeNode * findHeadNode(SnortConfig *, RuleTreeNode *, tSfPolicyId);
 // or we are going to just alert instead of drop,
 // or we are going to ignore session data instead of drop.
 // the alert case is tested for separately with ScTreatDropAsAlert().
-static inline int ScKeepDropRules (void)
+static inline int ScKeepDropRules (SnortConfig * sc)
 {
-    return ( ScIpsInlineMode() || ScAdapterInlineMode() || ScTreatDropAsIgnore() );
+    return ( ScIpsInlineModeNewConf(sc) || ScAdapterInlineModeNewConf(sc) || ScTreatDropAsIgnoreNewConf(sc) );
 }
 
-static inline int ScLoadAsDropRules (void)
+static inline int ScLoadAsDropRules (SnortConfig * sc)
 {
-    return ( ScIpsInlineTestMode() || ScAdapterInlineTestMode() );
+    return ( ScIpsInlineTestModeNewConf(sc) || ScAdapterInlineTestModeNewConf(sc) );
 }
 
 /****************************************************************************
@@ -1157,7 +1163,7 @@ static int ParseNetworkBindingLine(
     for (i = 0; i < num_toks; i++)
     {
         SFIP_RET status;
-        sfip_t *sfip;
+        sfcidr_t *sfip;
 
         if( (sfip = sfip_alloc(toks[i], &status)) == NULL )
         {
@@ -1276,9 +1282,24 @@ static int FinishPortListRule(rule_port_tables_t *port_tables, RuleTreeNode *rtn
     int rim_index;
     PortTable *dstTable;
     PortTable *srcTable;
+#ifdef TARGET_BASED
+    PortTable *dstTable_noservice;
+    PortTable *srcTable_noservice;
+#endif
     PortObject *aaObject;
     rule_count_t *prc;
 
+#ifdef TARGET_BASED
+    ServiceOverride service_override = otn->sigInfo.service_override;
+    int num_services = otn->sigInfo.num_services;
+
+    if ( !IsAdaptiveConfigured() )
+        otn->sigInfo.service_override = ServiceOverride_ElsePorts;
+    else if ( service_override == ServiceOverride_Nil && num_services )
+        otn->sigInfo.service_override = ServiceOverride_ElsePorts;
+    else if ( service_override == ServiceOverride_Nil && !num_services )
+        otn->sigInfo.service_override = ServiceOverride_OrPorts;
+#endif
     /* Select the Target PortTable for this rule, based on protocol, src/dst
      * dir, and if there is rule content */
     if (proto == IPPROTO_TCP)
@@ -1287,6 +1308,10 @@ static int FinishPortListRule(rule_port_tables_t *port_tables, RuleTreeNode *rtn
         srcTable = port_tables->tcp_src;
         aaObject = port_tables->tcp_anyany;
         prc = &tcpCnt;
+#ifdef TARGET_BASED
+        dstTable_noservice = port_tables->ns_tcp_dst;
+        srcTable_noservice = port_tables->ns_tcp_src;
+#endif
     }
     else if (proto == IPPROTO_UDP)
     {
@@ -1294,6 +1319,10 @@ static int FinishPortListRule(rule_port_tables_t *port_tables, RuleTreeNode *rtn
         srcTable = port_tables->udp_src;
         aaObject = port_tables->udp_anyany;
         prc = &udpCnt;
+#ifdef TARGET_BASED
+        dstTable_noservice = port_tables->ns_udp_dst;
+        srcTable_noservice = port_tables->ns_udp_src;
+#endif
     }
     else if (proto == IPPROTO_ICMP)
     {
@@ -1301,6 +1330,10 @@ static int FinishPortListRule(rule_port_tables_t *port_tables, RuleTreeNode *rtn
         srcTable = port_tables->icmp_src;
         aaObject = port_tables->icmp_anyany;
         prc = &icmpCnt;
+#ifdef TARGET_BASED
+        dstTable_noservice = port_tables->ns_icmp_dst;
+        srcTable_noservice = port_tables->ns_icmp_src;
+#endif
     }
     else if (proto == ETHERNET_TYPE_IP)
     {
@@ -1308,6 +1341,10 @@ static int FinishPortListRule(rule_port_tables_t *port_tables, RuleTreeNode *rtn
         srcTable = port_tables->ip_src;
         aaObject = port_tables->ip_anyany;
         prc = &ipCnt;
+#ifdef TARGET_BASED
+        dstTable_noservice = port_tables->ns_ip_dst;
+        srcTable_noservice = port_tables->ns_ip_src;
+#endif
     }
     else
     {
@@ -1480,6 +1517,29 @@ static int FinishPortListRule(rule_port_tables_t *port_tables, RuleTreeNode *rtn
 
             PortObjectAddRule(pox, rim_index);
         }
+#ifdef TARGET_BASED
+        // Add to the NOSERVICE group
+        if (IsAdaptiveConfigured()
+          && (otn->sigInfo.num_services == 0 || otn->sigInfo.service_override == ServiceOverride_OrPorts))
+        {
+
+            if ( otn->sigInfo.service_override == ServiceOverride_AndPorts )
+                ParseError("Service override \"and-ports\" specified on a port only rule.");
+
+            pox = PortTableFindInputPortObjectPorts(dstTable_noservice, rtn->dst_portobject);
+            if (pox == NULL)
+            {
+                pox = PortObjectDupPorts(rtn->dst_portobject);
+
+                if (pox == NULL)
+                    ParseError("Could not dup a port object - out of memory!");
+
+                PortTableAddObject(dstTable_noservice, pox);
+            }
+
+            PortObjectAddRule(pox, rim_index);
+        }
+#endif // TARGET_BASED
     }
 
     /* add rule index to src table if we have a specific src port or port list */
@@ -1521,6 +1581,30 @@ static int FinishPortListRule(rule_port_tables_t *port_tables, RuleTreeNode *rtn
 
             PortObjectAddRule(pox, rim_index);
         }
+
+#ifdef TARGET_BASED
+        // Add to the NOSERVICE group
+       if (IsAdaptiveConfigured()
+        && (otn->sigInfo.num_services == 0 || otn->sigInfo.service_override == ServiceOverride_OrPorts))
+        {
+            if ( otn->sigInfo.service_override == ServiceOverride_AndPorts )
+                ParseError("Service override \"and-ports\" specified on a port only rule.");
+
+            /* find the proper port object */
+            pox = PortTableFindInputPortObjectPorts(srcTable_noservice, rtn->src_portobject);
+            if (pox == NULL)
+            {
+                pox = PortObjectDupPorts(rtn->src_portobject);
+
+                if (pox == NULL)
+                    ParseError("Could not dup a port object - out of memory!\n");
+
+                PortTableAddObject(srcTable_noservice, pox);
+            }
+
+            PortObjectAddRule(pox, rim_index);
+        }
+#endif // TARGET_BASED
     }
 
     return 0;
@@ -2060,8 +2144,6 @@ void ConfigurePreprocessors(SnortConfig *sc, int configure_dynamic)
 
         if (sc->targeted_policies[i] == NULL)
             continue;
-
-        setParserPolicy(sc, i);
 
         config = sc->targeted_policies[i]->preproc_configs;
 
@@ -2939,6 +3021,7 @@ OptTreeNode * ParseRuleOptions(SnortConfig *sc, RuleTreeNode *rtn,
     otn->sigInfo.generator        = GENERATOR_SNORT_ENGINE;
     otn->sigInfo.rule_type        = SI_RULE_TYPE_DETECT; /* standard rule */
     otn->sigInfo.rule_flushing    = SI_RULE_FLUSHING_ON; /* usually just standard rules cause a flush*/
+    otn->sigInfo.service_override = ServiceOverride_Nil;
 
     /* Set the default rule state */
     otn->rule_state = ScDefaultRuleState();
@@ -3581,7 +3664,7 @@ static void XferHeader(RuleTreeNode *test_node, RuleTreeNode *rtn)
  ***************************************************************************/
 int CompareIPNodes(IpAddrNode *one, IpAddrNode *two)
 {
-     if( (sfip_compare(one->ip, two->ip) != SFIP_EQUAL) ||
+     if( (sfip_compare(&one->ip->addr, &two->ip->addr) != SFIP_EQUAL) ||
          (sfip_bits(one->ip) != sfip_bits(two->ip)) ||
          (sfvar_flags(one) != sfvar_flags(two)) )
          return 0;
@@ -3662,8 +3745,19 @@ static int PortVarDefine(SnortConfig *sc, char *name, char *s)
     char *errstr="unknown";
     int   rstat;
     PortVarTable *portVarTable = sc->targeted_policies[getParserPolicy(sc)]->portVarTable;
+    char *end;
+    bool invalidvar = true;
 
     DisallowCrossTableDuplicateVars(sc, name, VAR_TYPE__PORTVAR);
+
+    for(end = name; *end && !isspace((int)*end) && *end != '\\'; end++)
+    {
+       if(isalpha((int)*end))
+               invalidvar = false;
+    }
+
+    if(invalidvar)
+	ParseError("Can not define variable name - %s. Use different name", name);
 
     if( SnortStrcasestr(s,strlen(s),"any") ) /* this allows 'any' or '[any]' */
     {
@@ -4516,7 +4610,7 @@ char * ProcessFileOption(SnortConfig *sc, const char *filespec)
 
     if(filespec == NULL)
     {
-        ParseError("no arguement in this file option, remove extra ':' at the end of the alert option\n");
+        ParseError("no argument in this file option, remove extra ':' at the end of the alert option\n");
     }
 
     /* look for ".." in the string and complain and exit if it is found */
@@ -4574,10 +4668,14 @@ static void ParseAttributeTable(SnortConfig *sc, SnortPolicy *p, char *args)
                    "filename must be the same across policies.");
     }
 
+    if(p->target_based_config.args) 
+        free(p->target_based_config.args);
     p->target_based_config.args = SnortStrdup(args);
 
     if (file_name != NULL)
     {
+        if(p->target_based_config.file_name)
+            free(p->target_based_config.file_name);
         p->target_based_config.file_name = SnortStrdup(file_name);
         p->target_based_config.file_line = file_line;
     }
@@ -4631,17 +4729,17 @@ static void ParseConfig(SnortConfig *sc, SnortPolicy *p, char *args)
     {
         if (strcasecmp(toks[0], config_opts[i].name) == 0)
         {
-	        if ((getParserPolicy(sc) != getDefaultPolicy()) &&
+                if ((getParserPolicy(sc) != getDefaultPolicy()) &&
                 config_opts[i].default_policy_only)
-	        {
-	        	/* Config option configurable on by the default policy*/
+                {
+                        /* Config option configurable on by the default policy*/
                 /**Dont raise parse error, ignore any config that is not allowed in non-default
                  * policy.
                  */
                 DEBUG_WRAP(DebugMessage(DEBUG_INIT, "Config option \"%s\" "
                     "configurable only by default policy. Ignoring it\n", toks[0]));
                 break;
-	        }
+                }
 
             if (config_opts[i].only_once && config_opt_configured[i])
             {
@@ -6065,15 +6163,15 @@ static void ParseConfigFile(SnortConfig *sc, SnortPolicy *p, char *fname)
                     if ( ScTreatDropAsAlert() )
                         ParseRule(sc, p, args, RULE_TYPE__ALERT, node->RuleList);
 
-                    else if ( ScKeepDropRules() ||  ScLoadAsDropRules() )
+                    else if ( ScKeepDropRules(sc) ||  ScLoadAsDropRules(sc) )
                         ParseRule(sc, p, args, node->mode, node->RuleList);
                 }
                 else if ( node->mode == RULE_TYPE__SDROP )
                 {
-                    if ( ScKeepDropRules() && !ScTreatDropAsAlert() )
+                    if ( ScKeepDropRules(sc) && !ScTreatDropAsAlert() )
                         ParseRule(sc, p, args, node->mode, node->RuleList);
 
-                    else if ( ScLoadAsDropRules() )
+                    else if ( ScLoadAsDropRules(sc) )
                         ParseRule(sc, p, args, RULE_TYPE__DROP, node->RuleList);
                 }
                 else
@@ -8303,6 +8401,7 @@ void ConfigProtectedContent(SnortConfig *sc, char *args)
 
     mSplitFree(&toks, num_toks);
 }
+
 #ifdef PPM_MGR
 /*
  * config ppm: feature, feature, feature,..
@@ -9118,7 +9217,7 @@ void ConfigFile(SnortConfig *sc, char *args)
     {
         if (!sc->file_config)
             sc->file_config = file_service_config_create();
-        file_service_config(args, sc->file_config);
+        file_service_config(sc, args, sc->file_config);
     }
 }
 
@@ -9140,11 +9239,23 @@ void ConfigTunnelVerdicts ( SnortConfig *sc, char *args )
         else if ( !strcasecmp(tok, "teredo") )
             sc->tunnel_mask |= TUNNEL_TEREDO;
 
+        else if ( !strcasecmp(tok, "gre") )
+            sc->tunnel_mask |= TUNNEL_GRE;
+
         else if ( !strcasecmp(tok, "6in4") )
             sc->tunnel_mask |= TUNNEL_6IN4;
 
         else if ( !strcasecmp(tok, "4in6") )
             sc->tunnel_mask |= TUNNEL_4IN6;
+
+        else if ( !strcasecmp(tok, "4in4") )
+            sc->tunnel_mask |= TUNNEL_4IN4;
+
+        else if ( !strcasecmp(tok, "6in6") )
+            sc->tunnel_mask |= TUNNEL_6IN6;
+
+        else if ( !strcasecmp(tok, "mpls") )
+            sc->tunnel_mask |= TUNNEL_MPLS;
 
         else
             ParseError("Unknown tunnel bypass protocol");
@@ -9169,7 +9280,7 @@ void ConfigMaxIP6Extensions(SnortConfig *sc, char *args)
 {
     char *endptr;
     unsigned long parsed_value;
-    
+
     if ((sc == NULL) || (args == NULL))
         return;
 
@@ -9177,11 +9288,41 @@ void ConfigMaxIP6Extensions(SnortConfig *sc, char *args)
 
     if ((*endptr != '\0') || (parsed_value > UINT8_MAX))
     {
-	ParseError("Max IP6 extension count must be a value between 0 and %d (inclusive), not: '%s'.", UINT8_MAX, args);
+        ParseError("Max IP6 extension count must be a value between 0 and %d (inclusive), not: '%s'.", UINT8_MAX, args);
     }
 
     sc->max_ip6_extensions = (uint8_t) parsed_value;
 }
+
+void ConfigDisableReplace(SnortConfig *sc, char *args)
+{
+    if(sc == NULL)
+        return;
+    sc->disable_replace_opt = 1;
+}
+
+#ifdef DUMP_BUFFER
+void ConfigBufferDump(SnortConfig *sc, char *args)
+{
+    if ( !sc )
+        return;
+
+    sc->no_log = 0;
+
+    if (!args)
+        return;
+
+    if ( !sc->buffer_dump_file )
+    {
+        sc->buffer_dump_file = StringVector_New();
+
+        if ( !sc->buffer_dump_file )
+            ParseError("can't allocate memory for buffer_dump_file '%s'.", args);
+    }
+    if ( !StringVector_Add(sc->buffer_dump_file, args) )
+        ParseError("can't allocate memory for buffer_dump '%s'.", args);
+}
+#endif
 
 /****************************************************************************
  *
@@ -9530,7 +9671,7 @@ static void ParseDrop(SnortConfig *sc, SnortPolicy *p, char *args)
     if (ScTreatDropAsAlert())
         ParseRule(sc, p, args, RULE_TYPE__ALERT, &sc->Alert);
 
-    else if ( ScKeepDropRules() || ScLoadAsDropRules() )
+    else if ( ScKeepDropRules(sc) || ScLoadAsDropRules(sc) )
         ParseRule(sc, p, args, RULE_TYPE__DROP, &sc->Drop);
 }
 
@@ -9565,7 +9706,7 @@ static void ParseSdrop(SnortConfig *sc, SnortPolicy *p, char *args)
 {
     DEBUG_WRAP(DebugMessage(DEBUG_CONFIGRULES, "SDrop\n"););
 
-    if ( ScKeepDropRules() && !ScTreatDropAsAlert() )
+    if ( ScKeepDropRules(sc) && !ScTreatDropAsAlert() )
         ParseRule(sc, p, args, RULE_TYPE__SDROP, &sc->SDrop);
 }
 
@@ -9661,6 +9802,11 @@ static void ParseIpVar(SnortConfig *sc, SnortPolicy *p, char *args)
             case SFIP_NOT_ANY:
                 ParseError("!any is not allowed in %s.", toks[0]);
                 break;
+
+	    case SFIP_INVALID_VAR:
+		ParseError("Variable name should contain minimum 1 alphabetic character."
+			   " Following variable name is not allowed: %s.", toks[0]);
+		break;
 
             default:
                 ParseError("Failed to parse the IP address: %s.", toks[1]);
@@ -10458,7 +10604,6 @@ static void ParseOtnMessage(SnortConfig *sc, RuleTreeNode *rtn,
  * rule-type
  * soid
  * service
- * os
  */
 static void ParseOtnMetadata(SnortConfig *sc, RuleTreeNode *rtn,
                              OptTreeNode *otn, RuleType rtype, char *args)
@@ -10466,6 +10611,10 @@ static void ParseOtnMetadata(SnortConfig *sc, RuleTreeNode *rtn,
     char **metadata_toks;
     int num_metadata_toks;
     int i;
+
+    char **key_value_toks = NULL;
+    int num_key_value_toks = 0;
+
 
     if (args == NULL)
         ParseError("Metadata rule option requires an argument.");
@@ -10476,23 +10625,24 @@ static void ParseOtnMetadata(SnortConfig *sc, RuleTreeNode *rtn,
 
     for (i = 0; i < num_metadata_toks; i++)
     {
-        char **key_value_toks;
-        int num_key_value_toks;
         char *key = NULL;
         char *value = NULL;
 
-        /* Split on space or equals */
+        // After the first loop iteration, free the |key_value_toks|
+        if (key_value_toks != NULL) {
+            mSplitFree(&key_value_toks, num_key_value_toks);
+            key_value_toks     = NULL;
+            num_key_value_toks = 0;
+        }
+
         key_value_toks = mSplit(metadata_toks[i], "= ", 2, &num_key_value_toks, 0);
+
         key = key_value_toks[0];
         if (num_key_value_toks == 2)
             value = key_value_toks[1];
 
-        DEBUG_WRAP(
-                   DebugMessage(DEBUG_CONFIGRULES, "metadata: key=%s", key);
-                   if (value != NULL)
-                       DebugMessage(DEBUG_CONFIGRULES, " value=%s", value);
-                   DebugMessage(DEBUG_CONFIGRULES, "\n");
-                  );
+        DEBUG_WRAP( DebugMessage(DEBUG_CONFIGRULES, "metadata: key=%s\n", key);
+          if(value) DebugMessage(DEBUG_CONFIGRULES, " value=%s\n", value); );
 
         /* process key/value pairs */
         if (strcasecmp(key, METADATA_KEY__ENGINE) == 0)
@@ -10500,15 +10650,10 @@ static void ParseOtnMetadata(SnortConfig *sc, RuleTreeNode *rtn,
             if (value == NULL)
                 ParseError("Metadata key '%s' requires a value", key);
 
-            if (strcasecmp(value, METADATA_VALUE__SHARED) == 0)
-            {
-                otn->sigInfo.shared = 1;
-            }
-            else
-            {
-                ParseError("Metadata key '%s', passed an invalid value '%s'.",
-                           key, value);
-            }
+            if (strcasecmp(value, METADATA_VALUE__SHARED) != 0)
+                ParseError("Metadata key '%s', passed an invalid value '%s'.", key, value);
+
+            otn->sigInfo.shared = 1;
         }
         /* this should follow 'rule-type' since it changes rule_flusing defaults set by rule-type */
         else if (strcasecmp(key, METADATA_KEY__RULE_FLUSHING) == 0)
@@ -10605,72 +10750,88 @@ static void ParseOtnMetadata(SnortConfig *sc, RuleTreeNode *rtn,
         else if (strcasecmp(key, METADATA_KEY__SERVICE) == 0 )
         {
             // metadata: service http, ... ;
+            unsigned j, svc_count = otn->sigInfo.num_services;
+            int16_t ordinal = 0;
+            bool found = false;
+
             if (value == NULL)
+            {
                 ParseError("Metadata key '%s' requires a value.", key);
+            }
 
             if (otn->sigInfo.num_services >= sc->max_metadata_services)
             {
-                FatalError("%s(%d)=> Too many service's specified for rule.\n",
-                    file_name, file_line);
+                ParseError("Too many service's specified for rule.");
+            }
+
+            if (otn->sigInfo.services == NULL)
+            {
+                otn->sigInfo.services = SnortAlloc(sizeof(ServiceInfo) * sc->max_metadata_services);
+            }
+
+            // Service Override(s)
+            if ( strcmp(value, "and-ports") == 0 )
+            {
+                if (otn->sigInfo.service_override != ServiceOverride_Nil)
+                    ParseWarning("Multiple service overrides specified: using '%s'", value);
+
+                otn->sigInfo.service_override = ServiceOverride_AndPorts;
+                continue;
+            }
+            else if ( strcmp(value, "or-ports") == 0 )
+            {
+                if (otn->sigInfo.service_override != ServiceOverride_Nil)
+                    ParseWarning("Multiple service overrides specified: using '%s'", value);
+
+                otn->sigInfo.service_override = ServiceOverride_OrPorts;
+                continue;
+            }
+            else if ( strcmp(value, "else-ports") == 0 )
+            {
+                if (otn->sigInfo.service_override != ServiceOverride_Nil)
+                    ParseWarning("Multiple service overrides specified: using '%s'", value);
+
+                otn->sigInfo.service_override = ServiceOverride_ElsePorts;
+                continue;
+            }
+            else if ( strcmp(value, "unknown") == 0 )
+            {
+                if (otn->sigInfo.service_override != ServiceOverride_Nil)
+                    ParseWarning("Multiple service overrides specified: using '%s'", value);
+
+                // "Unknown" is a convenient synonym for "else-ports".
+                // It emulates pre-Snort 2.9.8 behavior on "port-only" rules.
+                otn->sigInfo.service_override = ServiceOverride_ElsePorts;
+                continue;
             }
             else
             {
-                unsigned int i, svc_count = otn->sigInfo.num_services;
-                int16_t ordinal;
-                bool found = false;
-
-                if (otn->sigInfo.services == NULL)
-                {
-                    otn->sigInfo.services = SnortAlloc(sizeof(ServiceInfo) * sc->max_metadata_services);
-                }
-
                 ordinal = FindProtocolReference(value);
                 if (ordinal == SFTARGET_UNKNOWN_PROTOCOL)
-                {
                     ordinal = AddProtocolReference(value);
-                }
+            }
 
-                for (i=0;i<svc_count;i++)
+            for ( j = 0; j < svc_count; j++ )
+            {
+                if (otn->sigInfo.services[j].service_ordinal == ordinal)
                 {
-                    if (otn->sigInfo.services[i].service_ordinal == ordinal)
-                    {
-                        found = true;
-                        ParseWarning("Duplicate service metadata \"%s\" found.\n", value);
-                        break;
-                    }
-                }
-
-                if (!found)
-                {
-                    otn->sigInfo.services[svc_count].service = SnortStrdup(value);
-                    otn->sigInfo.services[svc_count].service_ordinal = ordinal;
-                    otn->sigInfo.num_services++;
+                    ParseWarning("Duplicate service metadata \"%s\" found.", value);
+                    found = true;
+                    break;
                 }
             }
-        }
-        /* track all of the rules for each os */
-#if 0
-        else if (strcasecmp(key, METADATA_KEY__OS) == 0 )
-        {
-            // metadata: os = Linux
-            //
-            if (value == NULL)
-                ParseError("Metadata key '%s' requires a value.", key);
 
-            otn->sigInfo.os = SnortStrdup(value);
+            if ( !found )
+            {
+                otn->sigInfo.services[svc_count].service = SnortStrdup(value);
+                otn->sigInfo.services[svc_count].service_ordinal = ordinal;
+                otn->sigInfo.num_services++;
+            }
         }
-#endif
-#endif
-        else
-        {
-            /* ignore metadata that a user might include that Snort doesn't
-             * use directly. */
-            //ParseMessage("Ignoring Metadata : %s = %s", key, value);
-        }
-
-        mSplitFree(&key_value_toks, num_key_value_toks);
+#endif // TARGET_BASED
     }
 
+    mSplitFree(&key_value_toks, num_key_value_toks);
     mSplitFree(&metadata_toks, num_metadata_toks);
 }
 
@@ -11305,80 +11466,80 @@ static rule_port_tables_t * PortTablesNew(void)
     /* No content rule objects */
     rpt->tcp_nocontent = PortObjectNew();
     if (rpt->tcp_nocontent == NULL)
-        ParseError("ParseRulesFile nocontent PortObjectNew() failed\n");
+        ParseError("ParseRulesFile nocontent PortObjectNew() failed");
     PortObjectAddPortAny(rpt->tcp_nocontent);
 
     rpt->udp_nocontent = PortObjectNew();
     if (rpt->udp_nocontent == NULL)
-        ParseError("ParseRulesFile nocontent PortObjectNew() failed\n");
+        ParseError("ParseRulesFile nocontent PortObjectNew() failed");
     PortObjectAddPortAny(rpt->udp_nocontent);
 
     rpt->icmp_nocontent = PortObjectNew();
     if (rpt->icmp_nocontent == NULL)
-        ParseError("ParseRulesFile nocontent PortObjectNew() failed\n");
+        ParseError("ParseRulesFile nocontent PortObjectNew() failed");
     PortObjectAddPortAny(rpt->icmp_nocontent);
 
     rpt->ip_nocontent = PortObjectNew();
     if (rpt->ip_nocontent == NULL)
-        ParseError("ParseRulesFile nocontent PortObjectNew() failed\n");
+        ParseError("ParseRulesFile nocontent PortObjectNew() failed");
     PortObjectAddPortAny(rpt->ip_nocontent);
 
     /* Create the Any-Any Port Objects for each protocol */
     rpt->tcp_anyany = PortObjectNew();
     if (rpt->tcp_anyany == NULL)
-        ParseError("ParseRulesFile tcp any-any PortObjectNew() failed\n");
+        ParseError("ParseRulesFile tcp any-any PortObjectNew() failed");
     PortObjectAddPortAny(rpt->tcp_anyany);
 
     rpt->udp_anyany = PortObjectNew();
     if (rpt->udp_anyany == NULL)
-        ParseError("ParseRulesFile udp any-any PortObjectNew() failed\n");
+        ParseError("ParseRulesFile udp any-any PortObjectNew() failed");
     PortObjectAddPortAny(rpt->udp_anyany);
 
     rpt->icmp_anyany = PortObjectNew();
     if (rpt->icmp_anyany == NULL)
-        ParseError("ParseRulesFile icmp any-any PortObjectNew() failed\n");
+        ParseError("ParseRulesFile icmp any-any PortObjectNew() failed");
     PortObjectAddPortAny(rpt->icmp_anyany);
 
     rpt->ip_anyany = PortObjectNew();
     if (rpt->ip_anyany == NULL)
-        ParseError("ParseRulesFile ip PortObjectNew() failed\n");
+        ParseError("ParseRulesFile ip PortObjectNew() failed");
     PortObjectAddPortAny(rpt->ip_anyany);
 
     /* Create the tcp Rules PortTables */
     rpt->tcp_src = PortTableNew();
     if (rpt->tcp_src == NULL)
-        ParseError("ParseRulesFile tcp-src PortTableNew() failed\n");
+        ParseError("ParseRulesFile tcp-src PortTableNew() failed");
 
     rpt->tcp_dst = PortTableNew();
     if (rpt->tcp_dst == NULL)
-        ParseError("ParseRulesFile tcp-dst PortTableNew() failed\n");
+        ParseError("ParseRulesFile tcp-dst PortTableNew() failed");
 
     /* Create the udp Rules PortTables */
     rpt->udp_src = PortTableNew();
     if (rpt->udp_src == NULL)
-        ParseError("ParseRulesFile udp-src PortTableNew() failed\n");
+        ParseError("ParseRulesFile udp-src PortTableNew() failed");
 
     rpt->udp_dst = PortTableNew();
     if (rpt->udp_dst == NULL)
-        ParseError("ParseRulesFile udp-dst PortTableNew() failed\n");
+        ParseError("ParseRulesFile udp-dst PortTableNew() failed");
 
     /* Create the icmp Rules PortTables */
     rpt->icmp_src = PortTableNew();
     if (rpt->icmp_src == NULL)
-        ParseError("ParseRulesFile icmp-src PortTableNew() failed\n");
+        ParseError("ParseRulesFile icmp-src PortTableNew() failed");
 
     rpt->icmp_dst = PortTableNew();
     if (rpt->icmp_dst == NULL)
-        ParseError("ParseRulesFile icmp-dst PortTableNew() failed\n");
+        ParseError("ParseRulesFile icmp-dst PortTableNew() failed");
 
     /* Create the ip Rules PortTables */
     rpt->ip_src = PortTableNew();
     if (rpt->ip_src == NULL)
-        ParseError("ParseRulesFile ip-src PortTableNew() failed\n");
+        ParseError("ParseRulesFile ip-src PortTableNew() failed");
 
     rpt->ip_dst = PortTableNew();
     if (rpt->ip_dst == NULL)
-        ParseError("ParseRulesFile ip-dst PortTableNew() failed\n");
+        ParseError("ParseRulesFile ip-dst PortTableNew() failed");
 
     /*
      * someday these could be read from snort.conf, something like...
@@ -11392,6 +11553,66 @@ static rule_port_tables_t * PortTablesNew(void)
     rpt->icmp_dst->pt_lrc= DEFAULT_LARGE_RULE_GROUP;
     rpt->ip_src->pt_lrc  = DEFAULT_LARGE_RULE_GROUP;
     rpt->ip_dst->pt_lrc  = DEFAULT_LARGE_RULE_GROUP;
+
+#ifndef TARGET_BASED
+    // if TARGET_BASED is not enabled, ensure that these
+    // port tables are NULL.
+    rpt->ns_tcp_src = NULL;
+    rpt->ns_tcp_dst = NULL;
+    rpt->ns_udp_src = NULL;
+    rpt->ns_udp_dst = NULL;
+    rpt->ns_icmp_src = NULL;
+    rpt->ns_icmp_dst = NULL;
+    rpt->ns_ip_src = NULL;
+    rpt->ns_ip_dst = NULL;
+#endif
+
+#ifdef TARGET_BASED
+    // Create NOSERVICE port tables
+    rpt->ns_tcp_src = PortTableNew();
+    if (rpt->ns_tcp_src == NULL)
+        ParseError("ParseRulesFile tcp-src PortTableNew() failed");
+
+    rpt->ns_tcp_dst = PortTableNew();
+    if (rpt->ns_tcp_dst == NULL)
+        ParseError("ParseRulesFile tcp-dst PortTableNew() failed");
+
+    /* Create the udp Rules PortTables */
+    rpt->ns_udp_src = PortTableNew();
+    if (rpt->ns_udp_src == NULL)
+        ParseError("ParseRulesFile udp-src PortTableNew() failed");
+
+    rpt->ns_udp_dst = PortTableNew();
+    if (rpt->ns_udp_dst == NULL)
+        ParseError("ParseRulesFile udp-dst PortTableNew() failed");
+
+    /* Create the icmp Rules PortTables */
+    rpt->ns_icmp_src = PortTableNew();
+    if (rpt->ns_icmp_src == NULL)
+        ParseError("ParseRulesFile icmp-src PortTableNew() failed");
+
+    rpt->ns_icmp_dst = PortTableNew();
+    if (rpt->ns_icmp_dst == NULL)
+        ParseError("ParseRulesFile icmp-dst PortTableNew() failed");
+
+    /* Create the ip Rules PortTables */
+    rpt->ns_ip_src = PortTableNew();
+    if (rpt->ns_ip_src == NULL)
+        ParseError("ParseRulesFile ip-src PortTableNew() failed");
+
+    rpt->ns_ip_dst = PortTableNew();
+    if (rpt->ns_ip_dst == NULL)
+        ParseError("ParseRulesFile ip-dst PortTableNew() failed");
+
+    rpt->ns_tcp_src->pt_lrc  = DEFAULT_LARGE_RULE_GROUP;
+    rpt->ns_tcp_dst->pt_lrc  = DEFAULT_LARGE_RULE_GROUP;
+    rpt->ns_udp_src->pt_lrc  = DEFAULT_LARGE_RULE_GROUP;
+    rpt->ns_udp_dst->pt_lrc  = DEFAULT_LARGE_RULE_GROUP;
+    rpt->ns_icmp_src->pt_lrc = DEFAULT_LARGE_RULE_GROUP;
+    rpt->ns_icmp_dst->pt_lrc = DEFAULT_LARGE_RULE_GROUP;
+    rpt->ns_ip_src->pt_lrc   = DEFAULT_LARGE_RULE_GROUP;
+    rpt->ns_ip_dst->pt_lrc   = DEFAULT_LARGE_RULE_GROUP;
+#endif // TARGET_BASED
 
     return rpt;
 }
@@ -11441,6 +11662,21 @@ static void PortTablesFinish(rule_port_tables_t *port_tables, FastPatternConfig 
 
     finish_portlist_table(fp, "ip src", port_tables->ip_src);
     finish_portlist_table(fp, "ip dst", port_tables->ip_dst);
+
+#ifdef TARGET_BASED
+    // NOSERVICE Port Tables
+    finish_portlist_table(fp, "tcp src noservice", port_tables->ns_tcp_src);
+    finish_portlist_table(fp, "tcp dst noservice", port_tables->ns_tcp_dst);
+
+    finish_portlist_table(fp, "udp src noservice", port_tables->ns_udp_src);
+    finish_portlist_table(fp, "udp dst noservice", port_tables->ns_udp_dst);
+
+    finish_portlist_table(fp, "icmp src noservice", port_tables->ns_icmp_src);
+    finish_portlist_table(fp, "icmp dst noservice", port_tables->ns_icmp_dst);
+
+    finish_portlist_table(fp, "ip src noservice", port_tables->ns_ip_src);
+    finish_portlist_table(fp, "ip dst noservice", port_tables->ns_ip_dst);
+#endif // TARGET_BASED
 
     RuleListSortUniq(port_tables->tcp_anyany->rule_list);
     RuleListSortUniq(port_tables->udp_anyany->rule_list);
@@ -11531,6 +11767,28 @@ void PortTablesFree(rule_port_tables_t *port_tables)
         PortObjectFree(port_tables->icmp_nocontent);
     if (port_tables->ip_nocontent)
         PortObjectFree(port_tables->ip_nocontent);
+
+#ifdef TARGET_BASED
+    if (port_tables->ns_tcp_src)
+        PortTableFree(port_tables->ns_tcp_src);
+    if (port_tables->ns_tcp_dst)
+        PortTableFree(port_tables->ns_tcp_dst);
+
+    if (port_tables->ns_udp_src)
+        PortTableFree(port_tables->ns_udp_src);
+    if (port_tables->ns_udp_dst)
+        PortTableFree(port_tables->ns_udp_dst);
+
+    if (port_tables->ns_icmp_src)
+        PortTableFree(port_tables->ns_icmp_src);
+    if (port_tables->ns_icmp_dst)
+        PortTableFree(port_tables->ns_icmp_dst);
+
+    if (port_tables->ns_ip_src)
+        PortTableFree(port_tables->ns_ip_src);
+    if (port_tables->ns_ip_dst)
+        PortTableFree(port_tables->ns_ip_dst);
+#endif
 
     free(port_tables);
 }

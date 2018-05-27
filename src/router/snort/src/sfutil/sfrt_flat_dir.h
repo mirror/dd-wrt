@@ -1,5 +1,5 @@
 /*
- ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2011-2013 Sourcefire, Inc.
  **
  **
@@ -28,13 +28,8 @@
 
 typedef MEM_OFFSET SUB_TABLE_PTR;
 typedef MEM_OFFSET ENTRIES_PTR;
-
-typedef struct
-{
-    MEM_OFFSET value;
-    uint8_t length;
-
-}DIR_Entry;
+typedef uint8_t Entry_Len;
+typedef MEM_OFFSET Entry_Value;
 
 /*******************************************************************/
 /* DIR-n-m data structures
@@ -42,14 +37,9 @@ typedef struct
  * dir_sub_table_t.  They are managed by a dir_table_t. */
 typedef struct
 {
-    int num_entries; /* Number of entries in this table */
-    int width;       /* width of this table. */
-                     /* While one determines the other, this way fewer
-                      * calculations are needed at runtime, since both
-                      * are used. */
-    int cur_num;     /* Present number of used nodes */
-
-    ENTRIES_PTR entries;
+    int16_t width;   /* width of this table. */
+    ENTRIES_PTR entries_value;
+    ENTRIES_PTR entries_length;
 
 } dir_sub_table_flat_t;
 
@@ -75,8 +65,8 @@ typedef struct
 /* DIR-n-m functions, these are not intended to be called directly */
 TABLE_PTR sfrt_dir_flat_new(uint32_t mem_cap, int count,...);
 void         sfrt_dir_flat_free(TABLE_PTR);
-tuple_flat_t  sfrt_dir_flat_lookup(snort_ip_p ip, TABLE_PTR table);
-int           sfrt_dir_flat_insert(snort_ip_p ip, int len, word data_index,
+tuple_flat_t  sfrt_dir_flat_lookup(uint32_t* adr, int numAdrDwords, TABLE_PTR table);
+int           sfrt_dir_flat_insert(uint32_t* adr, int numAdrDwords, int len, word data_index,
                                int behavior, TABLE_PTR, updateEntryInfoFunc updateEntry, INFO *data);
 uint32_t      sfrt_dir_flat_usage(TABLE_PTR);
 

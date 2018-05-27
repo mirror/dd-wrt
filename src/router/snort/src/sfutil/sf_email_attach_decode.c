@@ -1,5 +1,5 @@
 /*
- ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 1998-2013 Sourcefire, Inc.
  **
  ** Author: Bhagyashree Bantwal <bbantwal@cisco.com>
@@ -97,7 +97,7 @@ int sf_qpdecode(char *src, uint32_t slen, char *dst, uint32_t dlen, uint32_t *by
                 return 0;
             }
         }
-        else if (isprint(ch) || isblank(ch))
+        else if (isprint(ch) || isblank(ch) || ch == '\r' || ch == '\n' )
         {
             dst[*bytes_copied] = ch;
             *bytes_copied +=1;
@@ -107,11 +107,15 @@ int sf_qpdecode(char *src, uint32_t slen, char *dst, uint32_t dlen, uint32_t *by
     return 0;
 
 }
-int sf_uudecode(uint8_t *src, uint32_t slen, uint8_t *dst, uint32_t dlen, uint32_t *bytes_read, uint32_t *bytes_copied, uint8_t *begin_found, uint8_t *end_found)
+
+int sf_uudecode(uint8_t *src, uint32_t slen, uint8_t *dst, uint32_t dlen, uint32_t *bytes_read, uint32_t *bytes_copied, uint8_t *begin_found, uint8_t *end_found, uint8_t *file_name, uint32_t *fname_len, bool fname_present_already)
 {
     uint8_t *sod;
     int sol = 1, length = 0;
-    uint8_t *ptr, *end, *dptr, *dend;
+    uint8_t *ptr, *end, *dptr, *dend, *tptr = NULL;
+    uint8_t *filename = NULL, *space = NULL;
+    uint32_t  tlen = 0, fname_length = 0;
+
 
     if(!src || !slen || !dst || !dlen ||  !bytes_read || !bytes_copied || !begin_found || !end_found )
         return -1;
@@ -136,6 +140,45 @@ int sf_uudecode(uint8_t *src, uint32_t slen, uint8_t *dst, uint32_t dlen, uint32
             if(sod)
             {
                 *begin_found = 1;
+                 /* If NULL pointers are passed, or file name is alreayd in header
+                  * skip the file name parsing */
+                 if  (  !fname_present_already && file_name && fname_len )
+                 {
+                     /* Initialize file and length */
+                      *fname_len = 0;
+                     /* filename for uuencoded is present in mime body as
+                      * begin mode filename\r\n , extract the file name after
+                      * begin is found */
+
+                     tptr = (uint8_t *) memchr( (const char *)sod, '\r', (end - sod) );
+                     if ( !tptr )
+                     {
+                         /* On some implementation its a just new line char \n */
+                         tptr = (uint8_t *) memchr( (const char *)sod, '\n', (end - sod) );
+                     }
+                     if ( tptr )
+                     {
+                         tlen = (tptr - sod)  ;
+                         space = (uint8_t *) memchr ( sod , ' ', tlen );
+                         if ( space )
+		          {
+                             ++space; //skip past the space
+                             filename = (uint8_t *) memchr ( space , ' ', ( ( sod + tlen) - space ) );
+                             if ( filename )
+                             {
+                                 ++filename; // skip past the space
+		                 /*filename now points to the  file name */
+                                 fname_length = ( sod +  tlen ) - (uint8_t *)(filename);
+                                 if ( fname_length  <= MAX_UNICODE_FILE_NAME )
+                                 {
+                                     memcpy ( file_name, (uint8_t *) filename, fname_length );
+                                     *fname_len = fname_length;
+                                 }
+                             }
+	                  }
+                       }
+                    }
+
                 /*begin str found. Move to the actual data*/
                 ptr = (uint8_t *)SnortStrnStr((const char *)(sod), (end - sod), "\n");
                 if( !ptr )
@@ -420,7 +463,7 @@ int QPDecode(const uint8_t *start, const uint8_t *end, Email_DecodeState *ds)
 }
 
 
-int UUDecode(const uint8_t *start, const uint8_t *end, Email_DecodeState *ds)
+int UUDecode(const uint8_t *start, const uint8_t *end, Email_DecodeState *ds, uint8_t *filename, uint32_t *fname_length, bool fname_present)
 {
     uint32_t encode_avail = 0, decode_avail = 0 ;
     uint8_t *encode_buf, *decode_buf;
@@ -496,8 +539,8 @@ int UUDecode(const uint8_t *start, const uint8_t *end, Email_DecodeState *ds)
     act_encode_size = act_encode_size + prev_bytes;
 
 
-    if(sf_uudecode(encode_buf, act_encode_size, decode_buf, decode_avail, &bytes_read, &act_decode_size, 
-                &(ds->uu_state.begin_found), &(ds->uu_state.end_found)) != 0)
+    if(sf_uudecode(encode_buf, act_encode_size, decode_buf, decode_avail, &bytes_read, &act_decode_size,
+                &(ds->uu_state.begin_found), &(ds->uu_state.end_found), filename, fname_length, fname_present ) != 0)
     {
         ResetEmailDecodeState(ds);
         return DECODE_FAIL;
@@ -583,7 +626,7 @@ int BitEncExtract(const uint8_t *start, const uint8_t *end, Email_DecodeState *d
     return DECODE_SUCCESS;
 }
 
-int EmailDecode(const uint8_t *start, const uint8_t *end, Email_DecodeState *ds)
+int EmailDecode(const uint8_t *start, const uint8_t *end, Email_DecodeState *ds,  uint8_t *filename, uint32_t *fname_size, bool filename_present)
 {
     int iRet = DECODE_FAIL;
 
@@ -593,15 +636,15 @@ int EmailDecode(const uint8_t *start, const uint8_t *end, Email_DecodeState *ds)
             iRet = Base64Decode(start, end, ds);
             break;
         case DECODE_QP:
-            iRet = QPDecode(start, end, ds);
+            iRet = QPDecode(start, end, ds );
             break;
         case DECODE_UU:
-            iRet = UUDecode(start, end, ds);
+            iRet = UUDecode(start, end, ds, filename, fname_size, filename_present);
             break;
         case DECODE_BITENC:
             iRet = BitEncExtract(start, end, ds);
             break;
-        default: 
+        default:
             break;
     }
 

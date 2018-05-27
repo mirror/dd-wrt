@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -58,6 +58,10 @@ DCE2_ProtoIds dce2_proto_ids;
 static SFSnortPacket* dce2_rpkt[DCE2_RPKT_TYPE__MAX] = {
     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL
 };
+
+#ifdef SNORT_RELOAD
+APPDATA_ADJUSTER *ada;
+#endif
 
 static int dce2_detected = 0;
 
@@ -151,6 +155,9 @@ static DCE2_SsnData * DCE2_NewSession(SFSnortPacket *p, tSfPolicyId policy_id)
     }
 
     DCE2_SsnSetAppData(p, (void *)sd, DCE2_SsnFree);
+#ifdef SNORT_RELOAD
+    ada_add( ada, (void *) sd, p->stream_session );
+#endif
 
     dce2_stats.sessions++;
     DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__MAIN, "Created (%p)\n", (void *)sd));
@@ -1294,6 +1301,7 @@ static void DCE2_SsnFree(void *data)
         return;
 
 #ifdef SNORT_RELOAD
+    ada_appdata_freed( ada, data );
     config = sd->config;
     policy_id = sd->policy_id;
 #endif

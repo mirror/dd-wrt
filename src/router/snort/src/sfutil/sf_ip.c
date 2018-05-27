@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 1998-2013 Sourcefire, Inc.
 ** Adam Keeton
 ** Kevin Liu <kliu@sourcefire.com>
@@ -49,16 +49,6 @@
 #include <arpa/inet.h>
 #endif  /* WIN32 */
 
-#if 0
-/* Support function .. but could see some external uses */
-static inline int sfip_length(sfip_t *ip) {
-    ARG_CHECK1(ip, 0);
-
-    if(sfip_family(ip) == AF_INET) return 4;
-    return 16;
-}
-#endif
-
 /* Support function */
 // note that an ip6 address may have a trailing dotted quad form
 // but that it always has at least 2 ':'s; furthermore there is
@@ -75,100 +65,10 @@ static inline int sfip_str_to_fam(const char *str) {
 }
 
 /* Place-holder allocation incase we want to do something more indepth later */
-static inline sfip_t *_sfip_alloc() {
+static inline sfcidr_t *_sfip_alloc() {
     /* Note: using calloc here instead of SnortAlloc since the dynamic libs
      * can't presently resolve SnortAlloc */
-    return (sfip_t*)calloc(sizeof(sfip_t), 1);
-}
-
-/* Masks off 'val' bits from the IP contained within 'ip' */
-static inline int sfip_cidr_mask(sfip_t *ip, int val) {
-    int i;
-    unsigned int mask = 0;
-    unsigned int *p;
-    int index = (int)ceil(val / 32.0) - 1;
-
-    ARG_CHECK1(ip, SFIP_ARG_ERR);
-
-    p = ip->ip32;
-
-    if( val < 0 ||
-        ((sfip_family(ip) == AF_INET6) && val > 128) ||
-        ((sfip_family(ip) == AF_INET) && val > 32) ) {
-        return SFIP_ARG_ERR;
-    }
-
-    /* Build the netmask by converting "val" into
-     * the corresponding number of bits that are set */
-    for(i = 0; i < 32- (val - (index * 32)); i++)
-        mask = (mask<<1) + 1;
-
-    p[index] = htonl((ntohl(p[index]) & ~mask));
-
-    index++;
-
-    /* 0 off the rest of the IP */
-    for( ; index<4; index++) p[index] = 0;
-
-    return SFIP_SUCCESS;
-}
-
-/* Allocate IP address from a character array describing the IP */
-sfip_t *sfip_alloc(const char *ip, SFIP_RET *status) {
-    SFIP_RET tmp;
-    sfip_t *ret;
-
-    if(!ip) {
-        if(status)
-            *status = SFIP_ARG_ERR;
-        return NULL;
-    }
-
-    if((ret = _sfip_alloc()) == NULL) {
-        if(status)
-            *status = SFIP_ALLOC_ERR;
-        return NULL;
-    }
-
-    if( (tmp = sfip_pton(ip, ret)) != SFIP_SUCCESS) {
-        if(status)
-            *status = tmp;
-
-        sfip_free(ret);
-        return NULL;
-    }
-
-    if(status)
-        *status = SFIP_SUCCESS;
-
-    return ret;
-}
-
-/* Allocate IP address from an array of 8 byte integers */
-sfip_t *sfip_alloc_raw(void *ip, int family, SFIP_RET *status) {
-    sfip_t *ret;
-
-    if(!ip) {
-        if(status)
-            *status = SFIP_ARG_ERR;
-        return NULL;
-    }
-
-    if((ret = _sfip_alloc()) == NULL) {
-        if(status)
-            *status = SFIP_ALLOC_ERR;
-        return NULL;
-    }
-
-    ret->bits = (family==AF_INET?32:128);
-    ret->family = family;
-    /* XXX Replace with appropriate "high speed" copy */
-    memcpy(ret->ip8, ip, ret->bits/8);
-
-    if(status)
-        *status = SFIP_SUCCESS;
-
-    return ret;
+    return (sfcidr_t*)calloc(sizeof(sfcidr_t), 1);
 }
 
 /* Support function for _netmask_str_to_bit_count */
@@ -226,50 +126,50 @@ static inline int _netmask_str_to_bit_count(char *mask, int family) {
     return bits;
 }
 
-/* Converts string IP format to an array of values. Also checks IP address format.
-   Specifically look for issues that inet_pton either overlooks or is inconsistent
-   about.  */
-SFIP_RET sfip_convert_ip_text_to_binary( const int family, char *ip, void *dst)
-{
-    char *my_ip;
+/* Masks off 'val' bits from the IP contained within 'ip' */
+static inline int sfip_cidr_mask(sfaddr_t *ip, int val) {
+    uint32_t *p;
+    int index = (int)ceil(val / 32.0) - 1;
+    int bits;
 
-    my_ip = ip;
+    ARG_CHECK1(ip, SFIP_ARG_ERR);
 
-    if( my_ip == NULL )
-        return( SFIP_FAILURE );
+    p = sfaddr_get_ip6_ptr(ip);
 
-    /* Across platforms, inet_pton() is inconsistent about leading 0's in
-       AF_INET (ie IPv4 addresses. */
-    if( family == AF_INET ) {
-        char chr;
-        bool new_octet;
+    if( val < 0 || val > 128)
+        return SFIP_ARG_ERR;
 
-        new_octet = true;
-        while( (chr = *my_ip++) != '\0') {
+    if (val == 128)
+        return SFIP_SUCCESS;
 
-        /* If we are at the first char of a new octet, look for a leading zero
-           followed by another digit */
-        if( new_octet && (chr == '0') && isdigit(*my_ip))
-            return( SFIP_INET_PARSE_ERR );
+    /* Build the netmask by converting "val" into
+     * the corresponding number of bits that are set */
+    bits = 32 - (val - (index * 32));
+    if (bits)
+    {
+        unsigned int mask;
 
-        /* when we see an octet separator, set the flag to start looking for a
-           leading zero. */
-        new_octet = (chr == '.');
-        }
+        mask = ~0;
+        mask >>= bits;
+        mask <<= bits;
+        p[index] &= htonl(mask);
     }
 
-    if( inet_pton(family, ip, dst) < 1 )
-        return( SFIP_INET_PARSE_ERR );
+    index++;
 
-    return( SFIP_SUCCESS );  /* Otherwise, ip is OK */
+    /* 0 off the rest of the IP */
+    for( ; index<4; index++) p[index] = 0;
+
+    return SFIP_SUCCESS;
 }
 
 /* Parses "src" and stores results in "dst" */
-SFIP_RET sfip_pton(const char *src, sfip_t *dst) {
+static SFIP_RET _sfip_pton(const char *src, sfaddr_t *dst, uint16_t *srcBits) {
     char *mask;
     char *sfip_buf;
     char *ip;
     int bits;
+    int family;
 
     if(!dst || !src)
         return SFIP_ARG_ERR;
@@ -278,7 +178,7 @@ SFIP_RET sfip_pton(const char *src, sfip_t *dst) {
         return SFIP_ALLOC_ERR;
 
     ip = sfip_buf;
-    dst->family = sfip_str_to_fam(src);
+    family = sfip_str_to_fam(src);
 
     /* skip whitespace or opening bracket */
     while(isspace((int)*ip) || (*ip == '[')) ip++;
@@ -294,8 +194,8 @@ SFIP_RET sfip_pton(const char *src, sfip_t *dst) {
         while(isspace((int)*mask)) mask++;
 
         /* verify a leading digit */
-        if(((dst->family == AF_INET6) && !isxdigit((int)*mask)) ||
-           ((dst->family == AF_INET) && !isdigit((int)*mask))) {
+        if(((family == AF_INET6) && !isxdigit((int)*mask)) ||
+           ((family == AF_INET) && !isdigit((int)*mask))) {
             free(sfip_buf);
             return SFIP_CIDR_ERR;
         }
@@ -308,7 +208,7 @@ SFIP_RET sfip_pton(const char *src, sfip_t *dst) {
     }
     else if(
             /* If this is IPv4, ia ':' may used specified to indicate a netmask */
-            ((dst->family == AF_INET) && (mask = strchr(ip, (int)':')) != NULL) ||
+            ((family == AF_INET) && (mask = strchr(ip, (int)':')) != NULL) ||
 
             /* We've already skipped the leading whitespace, if there is more
              * whitespace, then there's probably a netmask specified after it. */
@@ -323,29 +223,30 @@ SFIP_RET sfip_pton(const char *src, sfip_t *dst) {
 
         /* Make sure we're either looking at a valid digit, or a leading
          * colon, such as can be the case with IPv6 */
-        if(((dst->family == AF_INET) && isdigit((int)*mask)) ||
-           ((dst->family == AF_INET6) && (isxdigit((int)*mask) || *mask == ':'))) {
+        if(((family == AF_INET) && isdigit((int)*mask)) ||
+           ((family == AF_INET6) && (isxdigit((int)*mask) || *mask == ':'))) {
             bits = _netmask_str_to_bit_count(mask, sfip_str_to_fam(mask));
         }
         /* No netmask */
         else {
-            if(dst->family == AF_INET) bits = 32;
+            if(family == AF_INET) bits = 32;
             else bits = 128;
         }
     }
     /* No netmask */
     else {
-        if(dst->family == AF_INET) bits = 32;
+        if(family == AF_INET) bits = 32;
         else bits = 128;
     }
 
-    if(sfip_convert_ip_text_to_binary(dst->family, ip, dst->ip8) != SFIP_SUCCESS) {
+    if(sfip_convert_ip_text_to_binary(family, ip, sfaddr_get_ip6_ptr(dst)) != SFIP_SUCCESS) {
         free(sfip_buf);
         return SFIP_INET_PARSE_ERR;
     }
+    dst->family = family;
 
     /* Store mask */
-    dst->bits = bits;
+    bits += (family == AF_INET && bits >= 0) ? 96 : 0;
 
     /* Apply mask */
     if(sfip_cidr_mask(dst, bits) != SFIP_SUCCESS) {
@@ -353,24 +254,176 @@ SFIP_RET sfip_pton(const char *src, sfip_t *dst) {
         return SFIP_INVALID_MASK;
     }
 
+    *srcBits = bits;
     free(sfip_buf);
     return SFIP_SUCCESS;
 }
 
-/* Sets existing IP, "dst", to be source IP, "src" */
-SFIP_RET sfip_set_raw(sfip_t *dst, void *src, int family) {
+/* Allocate IP address from a character array describing the IP */
+sfcidr_t *sfip_alloc(const char *ip, SFIP_RET *status) {
+    SFIP_RET tmp;
+    sfcidr_t *ret;
 
-    ARG_CHECK3(dst, src, dst->ip32, SFIP_ARG_ERR);
+    if(!ip) {
+        if(status)
+            *status = SFIP_ARG_ERR;
+        return NULL;
+    }
+
+    if((ret = _sfip_alloc()) == NULL) {
+        if(status)
+            *status = SFIP_ALLOC_ERR;
+        return NULL;
+    }
+
+    if( (tmp = sfip_pton(ip, ret)) != SFIP_SUCCESS) {
+        if(status)
+            *status = tmp;
+
+        sfip_free(ret);
+        return NULL;
+    }
+
+    if(status)
+        *status = SFIP_SUCCESS;
+
+    return ret;
+}
+
+/* Allocate IP address from a character array describing the IP */
+sfaddr_t *sfaddr_alloc(const char *ip, SFIP_RET *status) {
+    SFIP_RET tmp;
+    sfaddr_t *ret;
+    uint16_t bits;
+
+    if(!ip) {
+        if(status)
+            *status = SFIP_ARG_ERR;
+        return NULL;
+    }
+
+    if((ret = (sfaddr_t*)calloc(sizeof(sfaddr_t), 1)) == NULL) {
+        if(status)
+            *status = SFIP_ALLOC_ERR;
+        return NULL;
+    }
+
+    if( (tmp = _sfip_pton(ip, ret, &bits)) != SFIP_SUCCESS ) {
+        if(status)
+            *status = tmp;
+
+        sfaddr_free(ret);
+        return NULL;
+    }
+    if (bits != 128)
+    {
+        if(status)
+            *status = SFIP_INET_PARSE_ERR;
+
+        sfaddr_free(ret);
+        return NULL;
+    }
+
+    if(status)
+        *status = SFIP_SUCCESS;
+
+    return ret;
+}
+
+/* Allocate IP address from an array of 8 byte integers */
+sfaddr_t *sfip_alloc_raw(void *ip, int family, SFIP_RET *status) {
+    sfaddr_t *ret;
+
+    if(!ip) {
+        if(status)
+            *status = SFIP_ARG_ERR;
+        return NULL;
+    }
+
+    if((ret = (sfaddr_t*)calloc(sizeof(sfaddr_t), 1)) == NULL) {
+        if(status)
+            *status = SFIP_ALLOC_ERR;
+        return NULL;
+    }
+
+    sfip_set_raw(ret, ip, family);
+
+    if(status)
+        *status = SFIP_SUCCESS;
+
+    return ret;
+}
+
+/* Converts string IP format to an array of values. Also checks IP address format.
+   Specifically look for issues that inet_pton either overlooks or is inconsistent
+   about.  */
+SFIP_RET sfip_convert_ip_text_to_binary( const int family, const char *ip, void *dst)
+{
+    const char *my_ip;
+    sfaddr_t* addr;
+
+    my_ip = ip;
+
+    if( my_ip == NULL )
+        return( SFIP_FAILURE );
+
+    /* Across platforms, inet_pton() is inconsistent about leading 0's in
+       AF_INET (ie IPv4 addresses. */
+    if( family == AF_INET ) {
+        char chr;
+        bool new_octet;
+
+        new_octet = true;
+        while( (chr = *my_ip++) != '\0') {
+
+            /* If we are at the first char of a new octet, look for a leading zero
+               followed by another digit */
+            if( new_octet && (chr == '0') && isdigit(*my_ip))
+                return( SFIP_INET_PARSE_ERR );
+
+            /* when we see an octet separator, set the flag to start looking for a
+               leading zero. */
+            new_octet = (chr == '.');
+        }
+        addr = (sfaddr_t*)dst;
+        addr->ia32[0] = addr->ia32[1] = addr->ia16[4] = 0;
+        addr->ia16[5] = 0xFFFF;
+        dst = &addr->ia32[3];
+    }
+
+    if( inet_pton(family, ip, dst) < 1 )
+        return( SFIP_INET_PARSE_ERR );
+
+    return( SFIP_SUCCESS );  /* Otherwise, ip is OK */
+}
+
+SFIP_RET sfaddr_pton(const char *src, sfaddr_t *dst) {
+    SFIP_RET ret;
+    uint16_t bits;
+
+    ret = _sfip_pton(src, dst, &bits);
+    if (ret == SFIP_SUCCESS && bits != 128)
+        return SFIP_INET_PARSE_ERR;
+
+    return ret;
+}
+
+SFIP_RET sfip_pton(const char *src, sfcidr_t *dst) {
+    return _sfip_pton(src, &dst->addr, &dst->bits);
+}
+
+/* Sets existing IP, "dst", to be source IP, "src" */
+SFIP_RET sfip_set_raw(sfaddr_t *dst, const void *src, int family) {
+
+    ARG_CHECK3(dst, src, sfaddr_get_ip6_ptr(dst), SFIP_ARG_ERR);
 
     dst->family = family;
-
     if(family == AF_INET) {
-        dst->ip32[0] = *(uint32_t*)src;
-        memset(&dst->ip32[1], 0, 12);
-        dst->bits = 32;
+        dst->ia32[0] = dst->ia32[1] = dst->ia16[4] = 0;
+        dst->ia16[5] = 0xFFFF;
+        dst->ia32[3] = *(uint32_t*)src;
     } else if(family == AF_INET6) {
-        memcpy(dst->ip8, src, 16);
-        dst->bits = 128;
+        memcpy(sfaddr_get_ip6_ptr(dst), src, 16);
     } else {
         return SFIP_ARG_ERR;
     }
@@ -378,32 +431,18 @@ SFIP_RET sfip_set_raw(sfip_t *dst, void *src, int family) {
     return SFIP_SUCCESS;
 }
 
-/* Sets existing IP, "dst", to be source IP, "src" */
-SFIP_RET sfip_set_ip(sfip_t *dst, const sfip_t *src) {
-    ARG_CHECK2(dst, src, SFIP_ARG_ERR);
-
-    dst->family = src->family;
-    dst->bits = src->bits;
-    dst->ip32[0] = src->ip32[0];
-    dst->ip32[1] = src->ip32[1];
-    dst->ip32[2] = src->ip32[2];
-    dst->ip32[3] = src->ip32[3];
-
-    return SFIP_SUCCESS;
-}
-
 /* Obfuscates an IP
  * Makes 'ip': ob | (ip & mask) */
-void sfip_obfuscate(sfip_t *ob, sfip_t *ip) {
-    unsigned int *ob_p, *ip_p;
+void sfip_obfuscate(sfcidr_t *ob, sfaddr_t *ip) {
+    uint32_t *ob_p, *ip_p;
     int index, i;
     unsigned int mask = 0;
 
     if(!ob || !ip)
         return;
 
-    ob_p = ob->ip32;
-    ip_p = ip->ip32;
+    ob_p = sfip_get_ip6_ptr(ob);
+    ip_p = sfaddr_get_ip6_ptr(ip);
 
     /* Build the netmask by converting "val" into
      * the corresponding number of bits that are set */
@@ -433,43 +472,21 @@ void sfip_obfuscate(sfip_t *ob, sfip_t *ip) {
  * XXX sfip_contains assumes that "ip" is
  *      not less-specific than "net" XXX
 */
-SFIP_RET sfip_contains(const sfip_t *net, const sfip_t *ip) {
+SFIP_RET sfip_contains(const sfcidr_t *net, const sfaddr_t *ip) {
     unsigned int bits, mask, temp, i;
-    int net_fam, ip_fam;
-    const unsigned int *p1, *p2;
+    const uint32_t *p1, *p2;
 
     /* SFIP_CONTAINS is returned here due to how IpAddrSetContains
      * handles zero'ed IPs" */
     ARG_CHECK2(net, ip, SFIP_CONTAINS);
 
     bits = sfip_bits(net);
-    net_fam = sfip_family(net);
-    ip_fam = sfip_family(ip);
 
-    /* If the families are mismatched, check if we're really comparing
-     * an IPv4 with a mapped IPv4 (in IPv6) address. */
-    if(net_fam != ip_fam) {
-        if((net_fam != AF_INET) || !sfip_ismapped(ip))
-            return SFIP_ARG_ERR;
-
-        /* Both are really IPv4.  Only compare last 4 bytes of 'ip'*/
-        p1 = net->ip32;
-        p2 = &ip->ip32[3];
-
-        /* Mask off bits */
-        bits = 32 - bits;
-        temp = (ntohl(*p2) >> bits) << bits;
-
-        if(ntohl(*p1) == temp) return SFIP_CONTAINS;
-
-        return SFIP_NOT_CONTAINS;
-    }
-
-    p1 = net->ip32;
-    p2 = ip->ip32;
+    p1 = sfip_get_ip6_ptr(net);
+    p2 = sfaddr_get_ip6_ptr(ip);
 
     /* Iterate over each 32 bit segment */
-    for(i=0; i < bits/32 && i < 3; i++, p1++, p2++) {
+    for(i=0; i < bits/32; i++, p1++, p2++) {
         if(*p1 != *p2)
             return SFIP_NOT_CONTAINS;
     }
@@ -557,19 +574,21 @@ void sfip_raw_ntop(int family, const void *ip_raw, char *buf, int bufsize)
 #endif
 }
 
-void sfip_ntop(const sfip_t *ip, char *buf, int bufsize)
+void sfip_ntop(const sfaddr_t *ip, char *buf, int bufsize)
 {
+    int family;
     if(!ip)
     {
         if(buf && bufsize > 0) buf[0] = 0;
         return;
     }
 
-    sfip_raw_ntop(sfip_family(ip), ip->ip32, buf, bufsize);
+    family = sfaddr_family(ip);
+    sfip_raw_ntop(family, sfaddr_get_ptr(ip), buf, bufsize);
 }
 
 /* Uses a static buffer to return a string representation of the IP */
-char *sfip_to_str(const sfip_t *ip)
+char *sfip_to_str(const sfaddr_t *ip)
 {
     static char buf[INET6_ADDRSTRLEN];
 
@@ -578,53 +597,37 @@ char *sfip_to_str(const sfip_t *ip)
     return buf;
 }
 
-void sfip_free(sfip_t *ip) {
+void sfip_free(sfcidr_t *ip) {
+    if(ip) free(ip);
+}
+
+void sfaddr_free(sfaddr_t *ip) {
     if(ip) free(ip);
 }
 
 /* Returns 1 if the IP is non-zero. 0 otherwise */
-int sfip_is_loopback(const sfip_t *ip) {
-    const unsigned int *p;
+int sfip_is_loopback(const sfaddr_t *ip) {
 
     ARG_CHECK1(ip, 0);
 
-    if(sfip_family(ip) == AF_INET) {
-        // 127.0.0.0/8 is IPv4 loopback
-        return (ip->ip8[0] == 0x7f);
-    }
-
-    p = ip->ip32;
-
-    /* Check the first 64 bits in an IPv6 address, and */
+    /* Check the first 80 bits in an IPv6 address, and */
     /* verify they're zero.  If not, it's not a loopback */
-    if(p[0] || p[1]) return 0;
-
-    /* Check if the 3rd 32-bit int is zero */
-    if ( p[2] == 0 ) {
-        /* ::7f00:0/104 is ipv4 compatible ipv6 */
-        /* ::1 is the IPv6 loopback */
-        return ( (ip->ip8[12] == 0x7f) || (ntohl(p[3]) == 0x1) );
-    }
-    /* Check the 3rd 32-bit int for a mapped IPv4 address */
-    if ( ntohl(p[2]) == 0xffff ) {
-        /* ::ffff:127.0.0.0/104 is IPv4 loopback mapped over IPv6 */
-        return ( ip->ip8[12] == 0x7f );
-    }
-    return 0;
-}
-
-int sfip_ismapped(const sfip_t *ip) {
-    const unsigned int *p;
-
-    ARG_CHECK1(ip, 0);
-
-    if(sfip_family(ip) == AF_INET)
+    if(ip->ia32[0] || ip->ia32[1] || ip->ia16[4])
         return 0;
 
-    p = ip->ip32;
+    if(ip->ia16[5] == 0xFFFF)
+    {
+        /* ::ffff:7f00:0/104 is ipv4 compatible ipv6 */
+        return (ip->ia8[12] == 0x7f);
+    }
 
-    if(p[0] || p[1] || (ntohl(p[2]) != 0xffff && p[2] != 0)) return 0;
+    if(!ip->ia16[5])
+    {
+        /* ::7f00:0/104 is ipv4 compatible ipv6 */
+        /* ::1 is the IPv6 loopback */
+        return (ip->ia32[3] == htonl(0x1) || ip->ia8[12] == 0x7f);
+    }
 
-    return 1;
+    return 0;
 }
 

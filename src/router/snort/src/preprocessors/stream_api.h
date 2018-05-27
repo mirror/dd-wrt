@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
- ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * ** Copyright (C) 2005-2013 Sourcefire, Inc.
  * ** AUTHOR: Steven Sturges
  * **
@@ -69,11 +69,19 @@ typedef enum {
 #endif
     STREAM_FLPOLICY_FOOTPRINT_NOACK,    /* protocol aware ips */
     STREAM_FLPOLICY_PROTOCOL_NOACK,    /* protocol aware ips */
+#ifdef NORMALIZER
+    STREAM_FLPOLICY_FOOTPRINT_IPS_FTP,   /* protocol agnostic ips for FTP*/
+#endif
 
     STREAM_FLPOLICY_DISABLED,       /* reassembly disabled for this traffic */
 
     STREAM_FLPOLICY_MAX
 } FlushPolicy;
+
+typedef enum _PreprocessorFlags{
+    PP_FTPTELNET_FTPS                      = 0x00000001,
+    PP_HTTPINSPECT_PAF_FLUSH_POST_HDR      = 0x00000002,
+}PreprocessorFlags;
 
 typedef enum {
     PAF_TYPE_SERVICE,
@@ -108,7 +116,10 @@ typedef enum {
     PAF_FLUSH,   /* flush at given offset */
     PAF_LIMIT,   /* if paf_max is reached, flush up to given offset*/
     PAF_SKIP,    /* skip ahead to given offset */
-    PAF_PERFORMED_LMT_FLUSH /* previously performed PAF_LIMIT  */
+    PAF_PERFORMED_LMT_FLUSH, /* previously performed PAF_LIMIT  */
+    PAF_DISCARD_START, /*start of the discard point */
+    PAF_DISCARD_END, /*end of the discard point */
+    PAF_IGNORE,  /* Used for HTTP2.0*/
 } PAF_Status;
 
 typedef PAF_Status (*PAF_Callback)(  /* return your scan state */
@@ -116,9 +127,15 @@ typedef PAF_Status (*PAF_Callback)(  /* return your scan state */
     void** user,           /* arbitrary user data hook */
     const uint8_t* data,   /* in order segment data as it arrives */
     uint32_t len,          /* length of data */
-    uint32_t flags,        /* packet flags indicating direction of data */
-    uint32_t* fp           /* flush point (offset) relative to data */
+    uint64_t *flags,       /* packet flags indicating direction of data */
+    uint32_t* fp,          /* flush point (offset) relative to data */
+    uint32_t * fp_eoh      /* flush point (offset) at end-of-header */
 );
+
+typedef void (*PAF_Free_Callback)(
+    void* user            /* arbitrary user data hook */
+);
+
 #if defined(FEAT_OPEN_APPID)
 typedef struct s_HEADER_LOCATION {
     const uint8_t *start;
@@ -149,6 +166,9 @@ typedef void (*ServiceEventNotifierFunc)(void *ssnptr, ServiceEventType eventTyp
 
 typedef void (*Stream_Callback)(Packet *);
 
+typedef void (*FTP_Processor_Flush_Callback)(Packet *p);
+
+struct _ExpectNode;
 typedef struct _stream_api
 {
     int version;
@@ -280,7 +300,7 @@ typedef struct _stream_api
      *     IP
      *     Port
      */
-    void (*update_direction)(void *, char, snort_ip_p, uint16_t );
+    void (*update_direction)(void *, char, sfaddr_t*, uint16_t );
 
     /* Get reassembly direction for given session
      *
@@ -371,11 +391,11 @@ typedef struct _stream_api
 
     // register for stateful scanning of in-order payload to determine flush points
     // autoEnable allows PAF regardless of s5 ports config
-    bool (*register_paf_port)( struct _SnortConfig *sc, tSfPolicyId, uint16_t server_port, bool toServer,
+    uint8_t (*register_paf_port)( struct _SnortConfig *sc, tSfPolicyId, uint16_t server_port, bool toServer,
         PAF_Callback, bool autoEnable);
 
     // get any paf user data stored for this session
-    void** (*get_paf_user_data)(void* ssnptr, bool toServer);
+    void** (*get_paf_user_data)(void* ssnptr, bool toServer, uint8_t id);
 
     bool (*is_paf_active)(void* ssn, bool toServer);
     bool (*activate_paf)(void* ssn, int dir, int16_t service, uint8_t type);
@@ -407,7 +427,7 @@ typedef struct _stream_api
 
     // register for stateful scanning of in-order payload to determine flush points
     // autoEnable allows PAF regardless of s5 ports config
-    bool (*register_paf_service)(
+    uint8_t (*register_paf_service)(
         struct _SnortConfig *sc, tSfPolicyId, uint16_t service, bool toServer,
         PAF_Callback, bool autoEnable);
 
@@ -486,8 +506,9 @@ typedef struct _stream_api
      *     0 on success
      *     -1 on failure
      */
-    int (*set_application_protocol_id_expected_preassign_callback)(const Packet *, snort_ip_p, uint16_t,
-                snort_ip_p, uint16_t, uint8_t, int16_t, uint32_t, void*, void (*)(void*), unsigned, Stream_Event);
+    int (*set_application_protocol_id_expected_preassign_callback)(const Packet *, sfaddr_t*, uint16_t,
+                sfaddr_t*, uint16_t, uint8_t, int16_t, uint32_t, void*, void (*)(void*), unsigned, Stream_Event,
+                struct _ExpectNode**);
 
     // print and reset normalization statistics
     void (*print_normalization_stats)(void);
@@ -498,10 +519,10 @@ typedef struct _stream_api
      *
      * Parameters
      *      Session Ptr
-     *      Snort Protocol Id for service application    
-     *      Snort Protocol Id for client application    
-     *      Snort Protocol Id for payload application    
-     *      Snort Protocol Id for misc application    
+     *      Snort Protocol Id for service application
+     *      Snort Protocol Id for client application
+     *      Snort Protocol Id for payload application
+     *      Snort Protocol Id for misc application
      */
     void (*set_application_id)(void* ssnptr, int16_t serviceAppid, int16_t clientAppid, int16_t payloadAppId, int16_t miscAppid);
 
@@ -509,10 +530,10 @@ typedef struct _stream_api
      *
      * Parameters
      *      Session Ptr
-     *      Snort Protocol Id for service application    
-     *      Snort Protocol Id for client application    
-     *      Snort Protocol Id for payload application    
-     *      Snort Protocol Id for misc application    
+     *      Snort Protocol Id for service application
+     *      Snort Protocol Id for client application
+     *      Snort Protocol Id for payload application
+     *      Snort Protocol Id for misc application
      */
     void (*get_application_id)(void* ssnptr, int16_t *serviceAppid, int16_t *clientAppid, int16_t *payloadAppId, int16_t *miscAppid);
 
@@ -543,6 +564,71 @@ typedef struct _stream_api
      *      Callback function pointer
      */
     bool (*service_event_subscribe)(unsigned int preprocId, ServiceEventType eventType, ServiceEventNotifierFunc cb);
+
+    /* function to register for customized free function
+     *
+     * Parameters
+     *      id - registered paf identifier
+     *      Callback function pointer
+     */
+    void (*register_paf_free)(uint8_t id, PAF_Free_Callback);
+
+    /* function to return the wire packet 
+     *
+     * Parameters
+     *      None
+     */
+    Packet *(*get_wire_packet)(void);
+    
+    /* function which returns the forward dir or reverse dir to h2_paf 
+     *
+     * Parameter
+     *      None
+     */
+    uint8_t (*get_flush_policy_dir)(void);
+    
+    /* function returns if its a http/2 session
+     *
+     * Parameters
+     *      Session Pointer
+     */
+    bool (*is_session_http2)(void *ssn);
+
+     /* function sets http/2 session flag
+     *
+     * Parameters
+     *      Session Pointer
+     */
+    void (*set_session_http2)(void *ssn);
+
+    bool (*is_show_rebuilt_packets_enabled)();
+    /* function returns if its a http/2 session Upgrade
+     *
+     * Parameters
+     *      Session Pointer
+     */
+    bool (*is_session_http2_upg)(void *ssn);
+
+     /* function sets http/2 session Upgrade flag
+     *
+     * Parameters
+     *      Session Pointer
+     */
+    void (*set_session_http2_upg)(void *ssn);
+
+    /* Gets the proto_flags for a session
+     *
+     * Parameters
+     *    ssnptr - sesssion pointer
+     */
+    uint32_t (*get_preproc_flags)(void *ssnptr);
+
+    /* Register the FTP Flush callback
+     *
+     * Parameters
+     *   ssnptr - sesssion pointer
+     */
+    int (*register_ftp_flush_cb)(FTP_Processor_Flush_Callback);
 
 } StreamAPI;
 /* To be set by Stream */

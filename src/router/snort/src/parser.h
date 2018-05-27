@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 ** Copyright (C) 2000-2001 Andrew R. Baker <andrewb@uab.edu>
@@ -37,6 +37,7 @@
 #include "sflsq.h"
 #include "snort.h"
 #include "util.h"
+
 
 /* Macros *********************************************************************/
 /* Rule keywords */
@@ -216,9 +217,14 @@
 #define CONFIG_OPT__FILE                            "file"
 #define CONFIG_OPT__TUNNEL_BYPASS                   "tunnel_verdicts"
 #ifdef SIDE_CHANNEL
-# define CONFIG_OPT__SIDE_CHANNEL                    "sidechannel"
+# define CONFIG_OPT__SIDE_CHANNEL                   "sidechannel"
 #endif
-#define CONFIG_OPT__MAX_IP6_EXTENSIONS              "max_ip6_extensions"             
+#define CONFIG_OPT__MAX_IP6_EXTENSIONS              "max_ip6_extensions"
+#define CONFIG_OPT__DISABLE_REPLACE                 "disable_replace"
+#ifdef DUMP_BUFFER
+#define CONFIG_OPT__BUFFER_DUMP                     "buffer_dump"
+#define CONFIG_OPT__BUFFER_DUMP_ALERT               "buffer_dump_alert"
+#endif
 /* exported values */
 extern char *file_name;
 extern int file_line;
@@ -396,6 +402,10 @@ void ConfigControlSocketDirectory(SnortConfig *, char *);
 void ConfigFile(SnortConfig *, char *);
 void ConfigTunnelVerdicts(SnortConfig*, char*);
 void ConfigMaxIP6Extensions(SnortConfig *, char*);
+void ConfigDisableReplace(SnortConfig *, char*);
+#ifdef DUMP_BUFFER
+void ConfigBufferDump(SnortConfig *, char *);
+#endif
 
 int addRtnToOtn(
         OptTreeNode *otn,

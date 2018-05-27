@@ -1,6 +1,6 @@
 /***************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -275,7 +275,14 @@ int ParseXLink2State(SFSnortPacket *p, const uint8_t *ptr)
          * (outside of whether its thresholded). */
         if (smtp_eval_config->drop_xlink2state)
         {
-            _dpd.inlineDropAndReset(p);
+            _dpd.inlineDropSessionAndReset(p);
+            if (*_dpd.pkt_tracer_enabled)
+            {
+                _dpd.addPktTrace(VERDICT_REASON_XLINK2STATE, snprintf(_dpd.trace, _dpd.traceMax,
+                    "X-Link2State: buffer overflow vulnerability detected in SMTP, gid %u, sid %u, drop\n",
+                    GENERATOR_SMTP, SMTP_XLINK2STATE_OVERFLOW));
+            }
+            else _dpd.addPktTrace(VERDICT_REASON_XLINK2STATE, 0);
         }
 
         SMTP_GenerateAlert(SMTP_XLINK2STATE_OVERFLOW, "%s", SMTP_XLINK2STATE_OVERFLOW_STR);

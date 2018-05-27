@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -33,6 +33,7 @@
 
 #include "sfPolicyUserData.h"
 #include "file_mail_common.h"
+#include "sf_email_attach_decode.h"
 
 #define CONF_SEPARATORS                  " \t\n\r"
 #define CONF_PORTS                       "ports"
@@ -97,6 +98,18 @@ typedef struct _IMAPConfig
     int ref_count;
 
 } IMAPConfig;
+
+typedef struct _IMAP_Stats
+{
+    uint64_t sessions;
+    uint64_t conc_sessions;
+    uint64_t max_conc_sessions;
+    uint64_t log_memcap_exceeded;
+    MimeStats mime_stats;
+
+} IMAP_Stats;
+
+extern IMAP_Stats imap_stats;
 
 /* Function prototypes  */
 void IMAP_ParseArgs(IMAPConfig *, char *);

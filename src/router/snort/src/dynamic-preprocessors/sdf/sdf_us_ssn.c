@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2009-2013 Sourcefire, Inc.
 **
 **
@@ -48,9 +48,19 @@ int SDFSocialCheck(char *buf, uint32_t buflen, struct _SDFConfig *config)
     if (buf == NULL || buflen > 13 || buflen < 9)
         return 0;
 
-    /* The string will have a non-digit byte on each side. Truncate these. */
-    buflen -= 2;
-    buf++;
+    /* Generally, the string will have a non-digit byte on each side.
+     * Sometimes, when the string is pointing to the first line of the
+     * data, it might start with a digit, instead of a non-digit.
+     * Strip the non-digits only.
+     */
+    if (isdigit((int)buf[0]))
+        buflen -= 1;
+
+    else
+    {
+        buf++;
+        buflen -= 2;
+    }
 
     /* Check that the string is made of digits, and strip hyphens. */
     digits = 0;
@@ -198,7 +208,8 @@ int ParseSSNGroups(char *filename, struct _SDFConfig *config)
         _dpd.logMsg("Sensitive Data preprocessor: Failed read contents of "
                 "SSN groups file \"%s\".\n", filename);
 
-        fclose(ssn_file);
+        free(contents);
+	fclose(ssn_file);
         return -1;
     }
 

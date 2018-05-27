@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -41,6 +41,12 @@ extern MemPool *mime_log_mempool;
 
 extern DataBuffer HttpDecodeBuf;
 
+#ifdef PERF_PROFILING
+extern PreprocStats hi2PerfStats;
+extern PreprocStats hi2InitPerfStats;
+extern PreprocStats hi2PayloadPerfStats;
+extern PreprocStats hi2PseudoPerfStats;
+#endif
 /**
 **  The definition of the configuration separators in the snort.conf
 **  configure line.
@@ -75,6 +81,7 @@ extern DataBuffer HttpDecodeBuf;
 #define DEFLATE_WBITS   15
 #define GZIP_WBITS      31
 
+#define XFF_MAX_PIPELINE_REQ 255
 
 typedef enum _HttpRespCompressType
 {
@@ -82,6 +89,13 @@ typedef enum _HttpRespCompressType
     HTTP_RESP_COMPRESS_TYPE__DEFLATE  = 0x00000002
 
 } _HttpRespCompressType;
+
+typedef enum _DecompressStage
+{
+    HTTP_DECOMP_START,
+    HTTP_DECOMP_MID,
+    HTTP_DECOMP_FIN
+} DecompressStage;
 
 typedef struct s_DECOMPRESS_STATE
 {
@@ -95,8 +109,14 @@ typedef struct s_DECOMPRESS_STATE
     z_stream d_stream;
     MemBucket *bkt;
     bool deflate_initialized;
-
+    DecompressStage stage;
 } DECOMPRESS_STATE;
+
+typedef enum _ChunkLenState
+{
+    CHUNK_LEN_DEFAULT = 0,
+    CHUNK_LEN_INCOMPLETE
+} ChunkLenState;
 
 typedef struct s_HTTP_RESP_STATE
 {
@@ -109,6 +129,9 @@ typedef struct s_HTTP_RESP_STATE
     int data_extracted;
     uint32_t max_seq;
     bool flow_depth_excd;
+    bool eoh_found;
+    bool look_for_partial_content;
+    uint8_t chunk_len_state;
 }HTTP_RESP_STATE;
 
 typedef struct s_HTTP_LOG_STATE
@@ -120,19 +143,31 @@ typedef struct s_HTTP_LOG_STATE
     uint8_t *hostname_extracted;
 }HTTP_LOG_STATE;
 
+typedef struct _Transaction
+{
+   uint8_t tID;
+   sfaddr_t *true_ip;
+   struct _Transaction *next;
+}Transaction;
+
 typedef struct _HttpSessionData
 {
     uint64_t event_flags;
     HTTP_RESP_STATE resp_state;
     DECOMPRESS_STATE *decomp_state;
     HTTP_LOG_STATE *log_state;
-    sfip_t *true_ip;
     decode_utf_state_t utf_state;
     uint8_t log_flags;
     uint8_t cli_small_chunk_count;
     uint8_t srv_small_chunk_count;
     MimeState *mime_ssn;
     fd_session_p_t fd_state;
+    uint8_t http_req_id;
+    uint8_t http_resp_id;
+    uint8_t is_response;
+    uint8_t tList_count;
+    Transaction *tList_start;
+    Transaction *tList_end;
 } HttpSessionData;
 
 typedef struct _HISearch
@@ -142,8 +177,8 @@ typedef struct _HISearch
 
 } HISearch;
 
-typedef struct _HiSearchToken               
-{   
+typedef struct _HiSearchToken
+{
     char *name;
     int   name_len;
     int   search_id;
@@ -205,6 +240,8 @@ int GetHttpHostnameData(void *data, uint8_t **buf, uint32_t *len, uint32_t *type
 void HI_SearchInit(void);
 void HI_SearchFree(void);
 int HI_SearchStrFound(void *, void *, int , void *, void *);
+int GetHttpFlowDepth(void *, uint32_t);
+bool isHttpRespPartialCont(void *data);
 
 static inline HttpSessionData * GetHttpSessionData(Packet *p)
 {
@@ -213,7 +250,23 @@ static inline HttpSessionData * GetHttpSessionData(Packet *p)
     return (HttpSessionData *)session_api->get_application_data(p->ssnptr, PP_HTTPINSPECT);
 }
 
-static inline sfip_t *GetTrueIPForSession(void *data)
+static inline void freeTransactionNode(Transaction *tPtr)
+{
+    if(tPtr->true_ip)
+        sfaddr_free(tPtr->true_ip);
+    free(tPtr);
+}
+
+static inline void deleteNode_tList(HttpSessionData *hsd)
+{
+    Transaction *tmp = hsd->tList_start;
+    hsd->tList_start = hsd->tList_start->next;
+    if( hsd->tList_start == NULL )
+         hsd->tList_end = NULL;
+    freeTransactionNode(tmp);
+}
+
+static inline sfaddr_t *GetTrueIPForSession(void *data)
 {
     HttpSessionData *hsd = NULL;
 
@@ -224,8 +277,15 @@ static inline sfip_t *GetTrueIPForSession(void *data)
     if(hsd == NULL)
         return NULL;
 
-    return hsd->true_ip;
+    if( hsd->tList_start != NULL )
+    {
+        if ((hsd->is_response == 0) && ( hsd->http_req_id == hsd->tList_end->tID ) )
+           return hsd->tList_end->true_ip;
+        else if ( (hsd->is_response == 1) && (hsd->http_resp_id == hsd->tList_start->tID ) )
+           return hsd->tList_start->true_ip;
+    }
 
+    return NULL;
 }
 
 static inline void ResetGzipState(DECOMPRESS_STATE *ds)
@@ -240,6 +300,7 @@ static inline void ResetGzipState(DECOMPRESS_STATE *ds)
     ds->decompr_bytes_read = 0;
     ds->compress_fmt = 0;
     ds->decompress_data = 0;
+    ds->stage = HTTP_DECOMP_START;
 }
 
 static inline void ResetRespState(HTTP_RESP_STATE *ds)
@@ -256,7 +317,7 @@ static inline void ResetRespState(HTTP_RESP_STATE *ds)
     ds->max_seq = 0;
 }
 
-static inline int SetLogBuffers(HttpSessionData *hsd)
+static inline int SetLogBuffers(HttpSessionData *hsd, void* scbPtr)
 {
     int iRet = 0;
     if (hsd->log_state == NULL)
@@ -268,6 +329,7 @@ static inline int SetLogBuffers(HttpSessionData *hsd)
             hsd->log_state = (HTTP_LOG_STATE *)calloc(1, sizeof(HTTP_LOG_STATE));
             if( hsd->log_state != NULL )
             {
+                bkt->scbPtr = scbPtr;
                 hsd->log_state->log_bucket = bkt;
                 hsd->log_state->uri_bytes = 0;
                 hsd->log_state->hostname_bytes = 0;

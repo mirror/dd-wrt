@@ -1,5 +1,5 @@
 /*
- ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * ** Copyright (C) 2012-2013 Sourcefire, Inc.
  * ** AUTHOR: Hui Cao
  * **
@@ -62,6 +62,7 @@ typedef struct s_MAIL_LogState
 #define FLAG_RCPT_TO_PRESENT                 0x00000002
 #define FLAG_FILENAME_PRESENT                0x00000004
 #define FLAG_EMAIL_HDRS_PRESENT              0x00000008
+#define FLAG_FILENAME_IN_HEADER              0x00000010
 
 typedef struct s_MAIL_LogConfig
 {

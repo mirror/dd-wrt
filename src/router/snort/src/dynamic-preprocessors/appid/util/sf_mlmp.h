@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -44,6 +44,7 @@ struct tMlmpTree* mlmpCreate(void);
 int   mlmpAddPattern(struct tMlmpTree* root, const tMlmpPattern *patterns, void *metaData);
 int   mlmpProcessPatterns(struct tMlmpTree* root);
 void *mlmpMatchPatternUrl(struct tMlmpTree* root, tMlmpPattern *inputPatternList);
+void *mlmpMatchPatternGeneric(struct tMlmpTree* root, tMlmpPattern *inputPatternList);
 void  mlmpDestroy(struct tMlmpTree* root);
 void  mlmpDump(struct tMlmpTree* root);
 

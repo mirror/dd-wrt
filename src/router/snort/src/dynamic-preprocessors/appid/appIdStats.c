@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -250,7 +250,7 @@ void appIdStatsInit(char* appFileName, time_t statsPeriod, size_t rolloverSize, 
     size_t pathLength;
     char *path;
 
-    if (!appFileName[0])
+    if (!appFileName || !*appFileName)
     {
         enableAppStats = false;
         return;
@@ -445,10 +445,10 @@ static void dumpStats2(void)
                     app_id -= 2000000000;
                 }
 
-                AppInfoTableEntry* entry = getAppInfoEntry(app_id);
+                AppInfoTableEntry* entry = appInfoEntryGet(app_id, appIdActiveConfigGet());
                 if (entry)
                 {
-                    appName = _dpd.findProtocolName(entry->snortId);
+                    appName = entry->appName;
                     if (cooked_client)
                     {
 
@@ -463,8 +463,17 @@ static void dumpStats2(void)
                     appName = "__none";
                 else
                 {
-                    _dpd.errMsg("invalid appid in appStatRecord (%d)\n", record->app_id);
-                    appName = "__error";
+                    _dpd.errMsg("invalid appid in appStatRecord (%u)\n", record->app_id);
+                    if (cooked_client)
+                    {
+                        snprintf(tmpBuff, MAX_EVENT_APPNAME_LEN, "_err_cl_%u",app_id);
+                    }
+                    else
+                    {
+                        snprintf(tmpBuff, MAX_EVENT_APPNAME_LEN, "_err_%u",app_id); // ODP out of sync?
+                    }
+                    tmpBuff[MAX_EVENT_APPNAME_LEN-1] = 0;
+                    appName = tmpBuff;
                 }
 
                 memcpy(recBuffPtr->appName, appName, MAX_EVENT_APPNAME_LEN);

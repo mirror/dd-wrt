@@ -14,7 +14,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2005-2013 Sourcefire, Inc.
  *
  * Author: Steven Sturges
@@ -27,11 +27,11 @@
 
 /* Required version and name of the engine */
 #ifndef REQ_ENGINE_LIB_MAJOR
-#define REQ_ENGINE_LIB_MAJOR 2
+#define REQ_ENGINE_LIB_MAJOR 3
 #endif
 #ifndef REQ_ENGINE_LIB_MINOR
 /* FIXTHIS need to update dynamic-plugins/sf_engine/examples/sfsnort_dynamic_detection_lib.c */
-#define REQ_ENGINE_LIB_MINOR 4
+#define REQ_ENGINE_LIB_MINOR 0
 #endif
 #define REQ_ENGINE_LIB_NAME "SF_SNORT_DETECTION_ENGINE"
 

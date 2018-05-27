@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -123,7 +123,9 @@ static HI_EVENT_INFO client_event_info[HI_EO_CLIENT_EVENT_NUM] = {
     {HI_EO_CLIENT_UNESCAPED_SPACE_URI, HI_EO_MED_PRIORITY,
             HI_EO_CLIENT_UNESCAPED_SPACE_URI_STR},
     {HI_EO_CLIENT_PIPELINE_MAX, HI_EO_MED_PRIORITY,
-        HI_EO_CLIENT_PIPELINE_MAX_STR}
+        HI_EO_CLIENT_PIPELINE_MAX_STR},
+    {HI_EO_CLIENT_MULTIPLE_COLON_BETN_KEY_VALUE, HI_EO_HIGH_PRIORITY,
+        HI_EO_CLIENT_MULTIPLE_COLON_BETN_KEY_VALUE_STR}
 };
 
 static HI_EVENT_INFO server_event_info[HI_EO_SERVER_EVENT_NUM] = {
@@ -159,7 +161,15 @@ static HI_EVENT_INFO server_event_info[HI_EO_SERVER_EVENT_NUM] = {
     {HI_EO_SERVER_PDF_CASC_COMP, HI_EO_MED_PRIORITY,
         HI_EO_SERVER_PDF_CASC_COMP_STR},
     {HI_EO_SERVER_PDF_PARSE_FAILURE, HI_EO_MED_PRIORITY,
-        HI_EO_SERVER_PDF_PARSE_FAILURE_STR}
+        HI_EO_SERVER_PDF_PARSE_FAILURE_STR},
+    {HI_EO_SERVER_PROTOCOL_OTHER, HI_EO_MED_PRIORITY,
+        HI_EO_SERVER_PROTOCOL_OTHER_STR},
+    {HI_EO_SERVER_MULTIPLE_CONTLEN, HI_EO_HIGH_PRIORITY,
+        HI_EO_SERVER_MULTIPLE_CONTLEN_STR},
+    {HI_EO_SERVER_MULTIPLE_CONTENT_ENCODING, HI_EO_HIGH_PRIORITY,
+        HI_EO_SERVER_MULTIPLE_CONTENT_ENCODING_STR},
+    {HI_EO_SERVER_MULTIPLE_COLON_BETN_KEY_VALUE, HI_EO_HIGH_PRIORITY,
+        HI_EO_SERVER_MULTIPLE_COLON_BETN_KEY_VALUE_STR}
 };
 
 /*

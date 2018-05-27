@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -23,8 +23,9 @@
 #define __APP_ID_H__
 
 #include <stdint.h>
-
-typedef int32_t tAppId;
+#include <stdbool.h>
+#include "thirdparty_appid_types.h"
+#include "sf_dynamic_preprocessor.h"
 
 typedef enum
 {
@@ -247,8 +248,6 @@ typedef enum
     APP_ID_ICAP=216,
     APP_ID_ICA=217,
     APP_ID_ICESHARE=218,
-    APP_ID_ICMP=219,
-    APP_ID_ICMPV6=220,
     APP_ID_ICP=221,
     APP_ID_ICQ2GO=222,
     APP_ID_IDP=223,
@@ -988,11 +987,59 @@ typedef enum
     APP_ID_ASPROXY=1145,
     APP_ID_OPERA=1288,
     APP_ID_SSL_CLIENT=1296,
+    APP_ID_AOL=1419,
     APP_ID_MDNS=1755,
     APP_ID_APPLE_CORE_MEDIA=2253,
-
+    APP_ID_HTTP_TUNNEL=2296,
+    APP_ID_RTP_AUDIO=2475,
+    APP_ID_RTP_VIDEO=2476,
+    APP_ID_ULTRASURF=2634,
+    APP_ID_LYCOS=2775,
+    APP_ID_DOGPILE=2804,
+    APP_ID_SPDY=2886,
+    APP_ID_HTTP2=2889,    // only used for some quick bookkeeping -- treat as HTTP
+    APP_ID_ANYCONNECT=2921,
+    APP_ID_ANYCONNECT_SSL_CLIENT=2922,
+    APP_ID_ANYCONNECT_IPSEC_CLIENT=2923,
+    APP_ID_ICMP=3501,
+    APP_ID_ICMPV6=3558,
+    APP_ID_HTTP_SSL_TUNNEL=3860,
+    APP_ID_FTP_ACTIVE=4002,
+    APP_ID_FTP_PASSIVE=4003,
     APP_ID_UNKNOWN_UI = 65535  /*This causes the UI to render Unknown instead of pending or blank */
 } appIdEnum;
 
-#endif  /* __APP_ID_H__ */
+typedef enum
+{
+    APP_ID_TYPE_SERVICE,
+    APP_ID_TYPE_CLIENT,
+    APP_ID_TYPE_PAYLOAD,
+    APP_ID_TYPE_MAX
+} APP_ID_TYPE;
 
+#define SF_APPID_MAX            40000
+#define SF_APPID_BUILDIN_MAX    30000
+#define APPID_MAX_PRIORITY  3
+#define SF_APPID_CSD_MIN        1000000
+#define SF_APPID_DYNAMIC_MIN    2000000
+#define NUMBER_OF_PTYPES    9
+#define RESPONSE_CODE_PACKET_THRESHHOLD 0
+
+//Additional stuff
+typedef enum {
+    APP_ID_FROM_INITIATOR,
+    APP_ID_FROM_RESPONDER,
+    APP_ID_APPID_SESSION_DIRECTION_MAX /* Maximum value of a direction (must be last in the list */
+} APPID_SESSION_DIRECTION;
+
+typedef enum {
+    SERVICE_HOST_INFO_NETBIOS_NAME = 1
+} SERVICE_HOST_INFO_CODE;
+
+#define DHCP_OPTION55_LEN_MAX 255
+
+#define FINGERPRINT_UDP_FLAGS_XENIX 0x00000800
+#define FINGERPRINT_UDP_FLAGS_NT    0x00001000
+#define FINGERPRINT_UDP_FLAGS_MASK  (FINGERPRINT_UDP_FLAGS_XENIX | FINGERPRINT_UDP_FLAGS_NT)
+
+#endif  /* __APP_ID_H__ */

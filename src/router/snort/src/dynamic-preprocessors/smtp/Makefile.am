@@ -43,7 +43,13 @@ smtp_paf.h \
 snort_smtp.c \
 snort_smtp.h \
 spp_smtp.c \
-spp_smtp.h 
+spp_smtp.h
+
+if BUILD_BUFFER_DUMP
+libsf_smtp_preproc_la_SOURCES += \
+smtp_buffer_dump.c \
+smtp_buffer_dump.h
+endif
 
 EXTRA_DIST = \
 sf_smtp.dsp

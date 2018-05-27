@@ -1,7 +1,7 @@
 /*
  * ftp_bounce_lookup.c
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2004-2013 Sourcefire, Inc.
  * Steven A. Sturges <ssturges@sourcefire.com>
  * Daniel J. Roelker <droelker@sourcefire.com>
@@ -124,7 +124,7 @@ int ftp_bounce_lookup_cleanup(BOUNCE_LOOKUP **BounceLookup)
  *
  */
 int ftp_bounce_lookup_add(BOUNCE_LOOKUP *BounceLookup,
-		snort_ip_p Ip, FTP_BOUNCE_TO *BounceTo)
+		sfcidr_t* Ip, FTP_BOUNCE_TO *BounceTo)
 {
     int iRet;
 
@@ -133,7 +133,7 @@ int ftp_bounce_lookup_add(BOUNCE_LOOKUP *BounceLookup,
         return FTPP_INVALID_ARG;
     }
 
-    iRet = KMapAdd(BounceLookup, (void*)IP_PTR(Ip), IP_SIZE(Ip), (void*)BounceTo);
+    iRet = KMapAdd(BounceLookup, (void*)&Ip->addr, sizeof(Ip->addr), (void*)BounceTo);
 
     if (iRet)
     {
@@ -155,7 +155,7 @@ int ftp_bounce_lookup_add(BOUNCE_LOOKUP *BounceLookup,
 
 /*
  * Function: ftp_bounce_lookup_find(BOUNCE_LOOKUP *BounceLookup,
- *                                  snort_ip_p ip, int *iError)
+ *                                  sfaddr_t ip, int *iError)
  *
  * Purpose: Find a bounce configuration given a IP.
  *          We look up a bounce configuration given an IP and
@@ -172,7 +172,7 @@ int ftp_bounce_lookup_add(BOUNCE_LOOKUP *BounceLookup,
  *
  */
 FTP_BOUNCE_TO  *ftp_bounce_lookup_find(
-        BOUNCE_LOOKUP *BounceLookup, snort_ip_p Ip, int *iError )
+        BOUNCE_LOOKUP *BounceLookup, sfaddr_t* Ip, int *iError )
 {
     FTP_BOUNCE_TO *BounceTo = NULL;
 
@@ -189,7 +189,7 @@ FTP_BOUNCE_TO  *ftp_bounce_lookup_find(
 
     *iError = FTPP_SUCCESS;
 
-    BounceTo = (FTP_BOUNCE_TO *)KMapFind(BounceLookup, (void*)IP_PTR(Ip), IP_SIZE(Ip));
+    BounceTo = (FTP_BOUNCE_TO *)KMapFind(BounceLookup, (void*)Ip, sizeof(*Ip));
     if (!BounceTo)
     {
         *iError = FTPP_NOT_FOUND;

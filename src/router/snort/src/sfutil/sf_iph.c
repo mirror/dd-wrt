@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2007-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -27,6 +27,7 @@
 #endif
 
 #include "decode.h"
+#include "reg_test.h"
 
 #define FAILURE -1
 #define SUCCESS 0
@@ -50,33 +51,33 @@
 #define VALIDATE(x,y)
 #endif
 
-sfip_t *ip6_ret_src(const Packet *p)
+sfaddr_t *ip6_ret_src(const Packet *p)
 {
     VALIDATE(p, 1);
 
-    return &p->ip6h->ip_src;
+    return &p->ip6h->ip_addrs->ip_src;
 }
 
-sfip_t *orig_ip6_ret_src(const Packet *p)
+sfaddr_t *orig_ip6_ret_src(const Packet *p)
 {
     VALIDATE(p, 1);
 
-    return &p->orig_ip6h->ip_src;
+    return &p->orig_ip6h->ip_addrs->ip_src;
 }
 
-sfip_t *ip6_ret_dst(const Packet *p)
+sfaddr_t *ip6_ret_dst(const Packet *p)
 {
     VALIDATE(p, 1);
 
-    return &p->ip6h->ip_dst;
+    return &p->ip6h->ip_addrs->ip_dst;
 }
 
 
-sfip_t *orig_ip6_ret_dst(const Packet *p)
+sfaddr_t *orig_ip6_ret_dst(const Packet *p)
 {
     VALIDATE(p, 1);
 
-    return &p->orig_ip6h->ip_dst;
+    return &p->orig_ip6h->ip_addrs->ip_dst;
 }
 
 uint16_t ip6_ret_toc(const Packet *p)
@@ -185,28 +186,28 @@ uint8_t orig_ip6_ret_ver(const Packet *p)
     return (uint8_t)IP6_VER(p->orig_ip6h->vcl);
 }
 
-sfip_t *ip4_ret_dst(const Packet *p)
+sfaddr_t *ip4_ret_dst(const Packet *p)
 {
     VALIDATE(p,1);
-    return &p->ip4h->ip_dst;
+    return &p->ip4h->ip_addrs->ip_dst;
 }
 
-sfip_t *orig_ip4_ret_dst(const Packet *p)
+sfaddr_t *orig_ip4_ret_dst(const Packet *p)
 {
     VALIDATE(p,1);
-    return &p->orig_ip4h->ip_dst;
+    return &p->orig_ip4h->ip_addrs->ip_dst;
 }
 
-sfip_t *ip4_ret_src(const Packet *p)
+sfaddr_t *ip4_ret_src(const Packet *p)
 {
     VALIDATE(p,1);
-    return &p->ip4h->ip_src;
+    return &p->ip4h->ip_addrs->ip_src;
 }
 
-sfip_t *orig_ip4_ret_src(const Packet *p)
+sfaddr_t *orig_ip4_ret_src(const Packet *p)
 {
     VALIDATE(p,1);
-    return &p->orig_ip4h->ip_src;
+    return &p->orig_ip4h->ip_addrs->ip_src;
 }
 
 uint16_t ip4_ret_tos(const Packet *p)
@@ -413,10 +414,17 @@ void sfiph_build(Packet *p, const void *hdr, int family)
      * That means this is a nested IP.  */
     if (p->family != NO_IP)
     {
+        memcpy(&p->outer_ips, &p->inner_ips, sizeof(p->outer_ips));
         if (p->iph_api->ver == IPH_API_V4)
-            memcpy(&p->outer_ip4h, &p->inner_ip4h, sizeof(IP4Hdr));
+        {
+            memcpy(&p->outer_ip4h, &p->inner_ip4h, sizeof(p->outer_ip4h) - sizeof(p->outer_ip4h.ip_addrs));
+            p->outer_ip4h.ip_addrs = &p->outer_ips;
+        }
         else if (p->iph_api->ver == IPH_API_V6)
-            memcpy(&p->outer_ip6h, &p->inner_ip6h, sizeof(IP6Hdr));
+        {
+            memcpy(&p->outer_ip6h, &p->inner_ip6h, sizeof(p->outer_ip6h) - sizeof(p->outer_ip6h.ip_addrs));
+            p->outer_ip6h.ip_addrs = &p->outer_ips;
+        }
 
         p->outer_iph_api = p->iph_api;
         p->outer_family = p->family;
@@ -428,12 +436,25 @@ void sfiph_build(Packet *p, const void *hdr, int family)
     {
         hdr4 = (IPHdr*)hdr;
 
-        /* The struct Snort uses is identical to the actual IP6 struct,
+        /* The struct Snort uses is identical to the actual IP4 struct,
          * with the exception of the IP addresses. Copy over everything but
          * the IPs */
         memcpy(&p->inner_ip4h, hdr4, sizeof(IPHdr) - 8);
-        sfip_set_raw(&p->inner_ip4h.ip_src, &hdr4->ip_src, family);
-        sfip_set_raw(&p->inner_ip4h.ip_dst, &hdr4->ip_dst, family);
+#ifdef HAVE_DAQ_REAL_ADDRESSES
+        if (p->outer_family != NO_IP || !(p->pkth->flags & DAQ_PKT_FLAG_REAL_ADDRESSES))
+        {
+#endif
+            sfip_set_raw(&p->inner_ips.ip_src, &hdr4->ip_src, AF_INET);
+            sfip_set_raw(&p->inner_ips.ip_dst, &hdr4->ip_dst, AF_INET);
+#ifdef HAVE_DAQ_REAL_ADDRESSES
+        }
+        else
+        {
+            sfip_set_raw(&p->inner_ips.ip_src, p->pkth->real_sIP.s6_addr, (p->pkth->flags & DAQ_PKT_FLAG_REAL_SIP_V6) ? AF_INET6 : AF_INET);
+            sfip_set_raw(&p->inner_ips.ip_dst, p->pkth->real_dIP.s6_addr, (p->pkth->flags & DAQ_PKT_FLAG_REAL_DIP_V6) ? AF_INET6 : AF_INET);
+        }
+#endif
+        p->inner_ip4h.ip_addrs = &p->inner_ips;
         p->actual_ip_len = ntohs(p->inner_ip4h.ip_len);
         p->ip4h = &p->inner_ip4h;
     }
@@ -445,11 +466,34 @@ void sfiph_build(Packet *p, const void *hdr, int family)
          * with the exception of the IP addresses. Copy over everything but
          * the IPs*/
         memcpy(&p->inner_ip6h, hdr6, sizeof(IP6RawHdr) - 32);
-        sfip_set_raw(&p->inner_ip6h.ip_src, &hdr6->ip6_src, family);
-        sfip_set_raw(&p->inner_ip6h.ip_dst, &hdr6->ip6_dst, family);
+#ifdef HAVE_DAQ_REAL_ADDRESSES
+        if (p->outer_family != NO_IP || !(p->pkth->flags & DAQ_PKT_FLAG_REAL_ADDRESSES))
+        {
+#endif
+            sfip_set_raw(&p->inner_ips.ip_src, &hdr6->ip6_src, family);
+            sfip_set_raw(&p->inner_ips.ip_dst, &hdr6->ip6_dst, family);
+#ifdef HAVE_DAQ_REAL_ADDRESSES
+        }
+        else
+        {
+            sfip_set_raw(&p->inner_ips.ip_src, p->pkth->real_sIP.s6_addr, (p->pkth->flags & DAQ_PKT_FLAG_REAL_SIP_V6) ? AF_INET6 : AF_INET);
+            sfip_set_raw(&p->inner_ips.ip_dst, p->pkth->real_dIP.s6_addr, (p->pkth->flags & DAQ_PKT_FLAG_REAL_DIP_V6) ? AF_INET6 : AF_INET);
+        }
+#endif
+        p->inner_ip6h.ip_addrs = &p->inner_ips;
         p->actual_ip_len = ntohs(p->inner_ip6h.len) + IP6_HDR_LEN;
         p->ip6h = &p->inner_ip6h;
     }
+#ifdef REG_TEST
+    if (rt_ip_increment)
+    {
+        uint32_t* addr;
+        addr = sfaddr_get_ip4_ptr(&p->inner_ips.ip_src);
+        *addr = htonl(ntohl(*addr) + rt_ip_increment);
+        addr = sfaddr_get_ip4_ptr(&p->inner_ips.ip_dst);
+        *addr = htonl(ntohl(*addr) + rt_ip_increment);
+    }
+#endif
 }
 
 void sfiph_orig_build(Packet *p, const void *hdr, int family)
@@ -462,15 +506,23 @@ void sfiph_orig_build(Packet *p, const void *hdr, int family)
 
     /* If iph_api is already set, we've been here before.
      * That means this is a nested IP.  */
-    if (p->orig_iph_api && (p->orig_iph_api->ver == IPH_API_V4))
+    if (p->orig_iph_api)
     {
-        memcpy(&p->outer_orig_ip4h, &p->inner_orig_ip4h, sizeof(IP4Hdr));
-        p->outer_orig_iph_api = p->orig_iph_api;
-    }
-    else if (p->orig_iph_api && (p->orig_iph_api->ver == IPH_API_V6))
-    {
-        memcpy(&p->outer_orig_ip6h, &p->inner_orig_ip6h, sizeof(IP6Hdr));
-        p->outer_orig_iph_api = p->orig_iph_api;
+        memcpy(&p->outer_orig_ips, &p->inner_orig_ips, sizeof(p->outer_orig_ips));
+        if (p->orig_iph_api->ver == IPH_API_V4)
+        {
+            memcpy(&p->outer_orig_ip4h, &p->inner_orig_ip4h,
+                   sizeof(p->outer_orig_ip4h) - sizeof(p->outer_orig_ip4h.ip_addrs));
+            p->outer_orig_ip4h.ip_addrs = &p->outer_orig_ips;
+            p->outer_orig_iph_api = p->orig_iph_api;
+        }
+        else if (p->orig_iph_api->ver == IPH_API_V6)
+        {
+            memcpy(&p->outer_orig_ip6h, &p->inner_orig_ip6h,
+                   sizeof(p->outer_orig_ip6h) - sizeof(p->outer_orig_ip6h.ip_addrs));
+            p->outer_orig_ip6h.ip_addrs = &p->outer_orig_ips;
+            p->outer_orig_iph_api = p->orig_iph_api;
+        }
     }
 
     _set_callbacks(p, family, CALLBACK_ICMP_ORIG);
@@ -483,8 +535,9 @@ void sfiph_orig_build(Packet *p, const void *hdr, int family)
          * with the exception of the IP addresses. Copy over everything but
          * the IPs */
         memcpy(&p->inner_orig_ip4h, hdr4, sizeof(IPHdr) - 8);
-        sfip_set_raw(&p->inner_orig_ip4h.ip_src, &hdr4->ip_src, family);
-        sfip_set_raw(&p->inner_orig_ip4h.ip_dst, &hdr4->ip_dst, family);
+        sfip_set_raw(&p->inner_orig_ips.ip_src, &hdr4->ip_src, family);
+        sfip_set_raw(&p->inner_orig_ips.ip_dst, &hdr4->ip_dst, family);
+        p->inner_orig_ip4h.ip_addrs = &p->inner_orig_ips;
         p->actual_ip_len = ntohs(p->inner_orig_ip4h.ip_len);
         p->orig_ip4h = &p->inner_orig_ip4h;
     }
@@ -496,8 +549,9 @@ void sfiph_orig_build(Packet *p, const void *hdr, int family)
          * with the exception of the IP addresses. Copy over everything but
          * the IPs*/
         memcpy(&p->inner_orig_ip6h, hdr6, sizeof(IP6RawHdr) - 32);
-        sfip_set_raw(&p->inner_orig_ip6h.ip_src, &hdr6->ip6_src, family);
-        sfip_set_raw(&p->inner_orig_ip6h.ip_dst, &hdr6->ip6_dst, family);
+        sfip_set_raw(&p->inner_orig_ips.ip_src, &hdr6->ip6_src, family);
+        sfip_set_raw(&p->inner_orig_ips.ip_dst, &hdr6->ip6_dst, family);
+        p->inner_orig_ip6h.ip_addrs = &p->inner_orig_ips;
         p->actual_ip_len = ntohs(p->inner_orig_ip6h.len) + IP6_HDR_LEN;
         p->orig_ip6h = &p->inner_orig_ip6h;
     }

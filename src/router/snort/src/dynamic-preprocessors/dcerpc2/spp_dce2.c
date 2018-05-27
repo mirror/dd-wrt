@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -26,6 +26,7 @@
 #endif
 
 #include <assert.h>
+#include <stddef.h>
 
 #include "sf_types.h"
 #include "spp_dce2.h"
@@ -39,6 +40,7 @@
 #include "dce2_event.h"
 #include "dce2_paf.h"
 #include "dce2_smb.h"
+#include "dce2_smb2.h"
 #include "snort_dce2.h"
 #include "preprocids.h"
 #include "profiler.h"
@@ -49,8 +51,20 @@
 #include "sfPolicy.h"
 #include "sfPolicyUserData.h"
 
+#ifdef SNORT_RELOAD
+#include "appdata_adjuster.h"
+#include "dce2_session.h"
+#ifdef REG_TEST
+#include "reg_test.h"
+#endif
+#endif
+
 #ifdef DCE2_LOG_EXTRA_DATA
 #include "Unified2_common.h"
+#endif
+
+#ifdef DUMP_BUFFER
+#include "dcerpc2_buffer_dump.h"
 #endif
 
 /********************************************************************
@@ -137,12 +151,22 @@ static int DCE2_LogSmbFileName(void *, uint8_t **, uint32_t *, uint32_t *);
 static void DCE2_ReloadGlobal(struct _SnortConfig *, char *, void **);
 static void DCE2_ReloadServer(struct _SnortConfig *, char *, void **);
 static int DCE2_ReloadVerify(struct _SnortConfig *, void *);
+static bool DCE2_ReloadAdjust(bool, tSfPolicyId, void *);
 static void * DCE2_ReloadSwap(struct _SnortConfig *, void *);
 static void DCE2_ReloadSwapFree(void *);
 #endif
 
 static void DCE2_AddPortsToPaf(struct _SnortConfig *, DCE2_Config *, tSfPolicyId);
 static void DCE2_ScAddPortsToPaf(struct _SnortConfig *, void *);
+static uint32_t max(uint32_t a, uint32_t b);
+static uint32_t DCE2_GetReloadSafeMemcap();
+
+static bool dce2_file_cache_is_enabled = false;
+static bool dce2_file_cache_was_enabled = false;
+#ifdef SNORT_RELOAD
+static bool dce2_ada_was_enabled = false;
+static bool dce2_ada_is_enabled = false;
+#endif
 
 /********************************************************************
  * Function: DCE2_RegisterPreprocessor()
@@ -166,6 +190,10 @@ void DCE2_RegisterPreprocessor(void)
     _dpd.registerPreproc(DCE2_SNAME, DCE2_InitServer,
                          DCE2_ReloadServer, NULL, NULL, NULL);
 #endif
+#ifdef DUMP_BUFFER
+    _dpd.registerBufferTracer(getDCERPC2Buffers, DCERPC2_BUFFER_DUMP_FUNC);
+#endif
+
 }
 
 /*********************************************************************
@@ -194,6 +222,12 @@ static void DCE2_InitGlobal(struct _SnortConfig *sc, char *args)
     if (dce2_config == NULL)
     {
         dce2_config = sfPolicyConfigCreate();
+        dce2_file_cache_is_enabled = false;
+        dce2_file_cache_was_enabled = false;
+#ifdef SNORT_RELOAD
+        dce2_ada_was_enabled = false;
+        dce2_ada_is_enabled = false;
+#endif
         if (dce2_config == NULL)
         {
             DCE2_Die("%s(%d) \"%s\" configuration: Could not allocate memory "
@@ -222,29 +256,29 @@ static void DCE2_InitGlobal(struct _SnortConfig *sc, char *args)
         _dpd.addPreprocExit(DCE2_CleanExit, NULL, PRIORITY_LAST, PP_DCE2);
 
 #ifdef PERF_PROFILING
-        _dpd.addPreprocProfileFunc(DCE2_PSTAT__MAIN, &dce2_pstat_main, 0, _dpd.totalPerfStats);
-        _dpd.addPreprocProfileFunc(DCE2_PSTAT__SESSION, &dce2_pstat_session, 1, &dce2_pstat_main);
-        _dpd.addPreprocProfileFunc(DCE2_PSTAT__NEW_SESSION, &dce2_pstat_new_session, 2, &dce2_pstat_session);
-        _dpd.addPreprocProfileFunc(DCE2_PSTAT__SSN_STATE, &dce2_pstat_session_state, 2, &dce2_pstat_session);
-        _dpd.addPreprocProfileFunc(DCE2_PSTAT__LOG, &dce2_pstat_log, 1, &dce2_pstat_main);
-        _dpd.addPreprocProfileFunc(DCE2_PSTAT__DETECT, &dce2_pstat_detect, 1, &dce2_pstat_main);
-        _dpd.addPreprocProfileFunc(DCE2_PSTAT__SMB_SEG, &dce2_pstat_smb_seg, 1, &dce2_pstat_main);
-        _dpd.addPreprocProfileFunc(DCE2_PSTAT__SMB_REQ, &dce2_pstat_smb_req, 1, &dce2_pstat_main);
-        _dpd.addPreprocProfileFunc(DCE2_PSTAT__SMB_UID, &dce2_pstat_smb_uid, 1, &dce2_pstat_main);
-        _dpd.addPreprocProfileFunc(DCE2_PSTAT__SMB_TID, &dce2_pstat_smb_tid, 1, &dce2_pstat_main);
-        _dpd.addPreprocProfileFunc(DCE2_PSTAT__SMB_FID, &dce2_pstat_smb_fid, 1, &dce2_pstat_main);
-        _dpd.addPreprocProfileFunc(DCE2_PSTAT__SMB_FILE, &dce2_pstat_smb_file, 1, &dce2_pstat_main);
-        _dpd.addPreprocProfileFunc(DCE2_PSTAT__SMB_FILE_DETECT, &dce2_pstat_smb_file_detect, 2, &dce2_pstat_smb_file);
-        _dpd.addPreprocProfileFunc(DCE2_PSTAT__SMB_FILE_API, &dce2_pstat_smb_file_api, 2, &dce2_pstat_smb_file);
-        _dpd.addPreprocProfileFunc(DCE2_PSTAT__SMB_FP, &dce2_pstat_smb_fingerprint, 1, &dce2_pstat_main);
-        _dpd.addPreprocProfileFunc(DCE2_PSTAT__SMB_NEG, &dce2_pstat_smb_negotiate, 1, &dce2_pstat_main);
-        _dpd.addPreprocProfileFunc(DCE2_PSTAT__CO_SEG, &dce2_pstat_co_seg, 1, &dce2_pstat_main);
-        _dpd.addPreprocProfileFunc(DCE2_PSTAT__CO_FRAG, &dce2_pstat_co_frag, 1, &dce2_pstat_main);
-        _dpd.addPreprocProfileFunc(DCE2_PSTAT__CO_REASS, &dce2_pstat_co_reass, 1, &dce2_pstat_main);
-        _dpd.addPreprocProfileFunc(DCE2_PSTAT__CO_CTX, &dce2_pstat_co_ctx, 1, &dce2_pstat_main);
-        _dpd.addPreprocProfileFunc(DCE2_PSTAT__CL_ACTS, &dce2_pstat_cl_acts, 1, &dce2_pstat_main);
-        _dpd.addPreprocProfileFunc(DCE2_PSTAT__CL_FRAG, &dce2_pstat_cl_frag, 1, &dce2_pstat_main);
-        _dpd.addPreprocProfileFunc(DCE2_PSTAT__CL_REASS, &dce2_pstat_cl_reass, 1, &dce2_pstat_main);
+        _dpd.addPreprocProfileFunc(DCE2_PSTAT__MAIN, &dce2_pstat_main, 0, _dpd.totalPerfStats, NULL);
+        _dpd.addPreprocProfileFunc(DCE2_PSTAT__SESSION, &dce2_pstat_session, 1, &dce2_pstat_main, NULL);
+        _dpd.addPreprocProfileFunc(DCE2_PSTAT__NEW_SESSION, &dce2_pstat_new_session, 2, &dce2_pstat_session, NULL);
+        _dpd.addPreprocProfileFunc(DCE2_PSTAT__SSN_STATE, &dce2_pstat_session_state, 2, &dce2_pstat_session, NULL);
+        _dpd.addPreprocProfileFunc(DCE2_PSTAT__LOG, &dce2_pstat_log, 1, &dce2_pstat_main, NULL);
+        _dpd.addPreprocProfileFunc(DCE2_PSTAT__DETECT, &dce2_pstat_detect, 1, &dce2_pstat_main, NULL);
+        _dpd.addPreprocProfileFunc(DCE2_PSTAT__SMB_SEG, &dce2_pstat_smb_seg, 1, &dce2_pstat_main, NULL);
+        _dpd.addPreprocProfileFunc(DCE2_PSTAT__SMB_REQ, &dce2_pstat_smb_req, 1, &dce2_pstat_main, NULL);
+        _dpd.addPreprocProfileFunc(DCE2_PSTAT__SMB_UID, &dce2_pstat_smb_uid, 1, &dce2_pstat_main, NULL);
+        _dpd.addPreprocProfileFunc(DCE2_PSTAT__SMB_TID, &dce2_pstat_smb_tid, 1, &dce2_pstat_main, NULL);
+        _dpd.addPreprocProfileFunc(DCE2_PSTAT__SMB_FID, &dce2_pstat_smb_fid, 1, &dce2_pstat_main, NULL);
+        _dpd.addPreprocProfileFunc(DCE2_PSTAT__SMB_FILE, &dce2_pstat_smb_file, 1, &dce2_pstat_main, NULL);
+        _dpd.addPreprocProfileFunc(DCE2_PSTAT__SMB_FILE_DETECT, &dce2_pstat_smb_file_detect, 2, &dce2_pstat_smb_file, NULL);
+        _dpd.addPreprocProfileFunc(DCE2_PSTAT__SMB_FILE_API, &dce2_pstat_smb_file_api, 2, &dce2_pstat_smb_file, NULL);
+        _dpd.addPreprocProfileFunc(DCE2_PSTAT__SMB_FP, &dce2_pstat_smb_fingerprint, 1, &dce2_pstat_main, NULL);
+        _dpd.addPreprocProfileFunc(DCE2_PSTAT__SMB_NEG, &dce2_pstat_smb_negotiate, 1, &dce2_pstat_main, NULL);
+        _dpd.addPreprocProfileFunc(DCE2_PSTAT__CO_SEG, &dce2_pstat_co_seg, 1, &dce2_pstat_main, NULL);
+        _dpd.addPreprocProfileFunc(DCE2_PSTAT__CO_FRAG, &dce2_pstat_co_frag, 1, &dce2_pstat_main, NULL);
+        _dpd.addPreprocProfileFunc(DCE2_PSTAT__CO_REASS, &dce2_pstat_co_reass, 1, &dce2_pstat_main, NULL);
+        _dpd.addPreprocProfileFunc(DCE2_PSTAT__CO_CTX, &dce2_pstat_co_ctx, 1, &dce2_pstat_main, NULL);
+        _dpd.addPreprocProfileFunc(DCE2_PSTAT__CL_ACTS, &dce2_pstat_cl_acts, 1, &dce2_pstat_main, NULL);
+        _dpd.addPreprocProfileFunc(DCE2_PSTAT__CL_FRAG, &dce2_pstat_cl_frag, 1, &dce2_pstat_main, NULL);
+        _dpd.addPreprocProfileFunc(DCE2_PSTAT__CL_REASS, &dce2_pstat_cl_reass, 1, &dce2_pstat_main, NULL);
 #endif
 
 #ifdef TARGET_BASED
@@ -304,6 +338,17 @@ static void DCE2_InitGlobal(struct _SnortConfig *sc, char *args)
 
     _dpd.streamAPI->set_service_filter_status
         (sc, dce2_proto_ids.nbss, PORT_MONITOR_SESSION, policy_id, 1);
+#endif
+
+#ifdef SNORT_RELOAD
+    if (!ada)
+    {
+        size_t memcap = DCE2_GetReloadSafeMemcap(dce2_config);
+        ada = ada_init(DCE2_MemInUse, PP_DCE2, memcap);
+        if (!ada)
+            _dpd.fatalMsg("Failed to initialize DCE ADA session cache.\n");
+    }
+    dce2_ada_is_enabled = true;
 #endif
 }
 
@@ -397,6 +442,12 @@ static int DCE2_CheckConfigPolicy(
     if (pPolicyConfig->sconfigs != NULL)
         DCE2_RegMem(sfrt_usage(pPolicyConfig->sconfigs), DCE2_MEM_TYPE__RT);
 
+    if (!pPolicyConfig->gconfig->legacy_mode)
+    {
+        DCE2_Smb2Init(pPolicyConfig->gconfig->memcap);
+        dce2_file_cache_is_enabled = true;
+    }
+
     return 0;
 }
 
@@ -441,6 +492,10 @@ static void DCE2_Main(void *pkt, void *context)
     DEBUG_WRAP(DCE2_DebugMsg(DCE2_DEBUG__ALL, "%s\n", DCE2_DEBUG__START_MSG));
 
     sfPolicyUserPolicySet (dce2_config, _dpd.getNapRuntimePolicy());
+
+#ifdef DUMP_BUFFER
+    dumpBufferInit();
+#endif
 
 #ifdef DEBUG_MSGS
     if (DCE2_SsnFromServer(p))
@@ -511,11 +566,11 @@ static void DCE2_Main(void *pkt, void *context)
 static int DCE2_LogSmbFileName(void *ssn_ptr, uint8_t **buf, uint32_t *len, uint32_t *type)
 {
     if ((_dpd.streamAPI->get_application_data(ssn_ptr, PP_DCE2) == NULL)
-            || (strlen(smb_file_name) == 0))
+            || (smb_file_name_len == 0))
         return 0;
 
-    *buf = (uint8_t *)smb_file_name; 
-    *len = strlen(smb_file_name);
+    *buf = (uint8_t *)smb_file_name;
+    *len = smb_file_name_len;
     *type = EVENT_INFO_SMB_FILENAME;
 
     return 1;
@@ -704,6 +759,23 @@ static void DCE2_PrintStats(int exiting)
             _dpd.logMsg("        Current request tracking: %u\n", dce2_memory.smb_req);
             _dpd.logMsg("        Maximum request tracking: %u\n", dce2_memory.smb_req_max);
 #endif
+            /* SMB2 stats */
+            if (!exiting)
+            {
+            	DCE2_Smb2UpdateStats();
+            }
+            _dpd.logMsg("    SMB2\n");
+            _dpd.logMsg("      Smb2 prunes: "STDu64"\n", dce2_stats.smb2_prunes);
+            _dpd.logMsg("      Memory used for smb2 processing: "STDu64"\n", dce2_stats.smb2_memory_in_use);
+            _dpd.logMsg("      Maximum memory used for smb2 processing: "STDu64"\n", dce2_stats.smb2_memory_in_use_max);
+            _dpd.logMsg("      SMB2 command requests/responses processed\n");
+            _dpd.logMsg("        smb2 create         : "STDu64"\n", dce2_stats.smb2_create);
+            _dpd.logMsg("        smb2 write          : "STDu64"\n", dce2_stats.smb2_write);
+            _dpd.logMsg("        smb2 read           : "STDu64"\n", dce2_stats.smb2_read);
+            _dpd.logMsg("        smb2 set info       : "STDu64"\n", dce2_stats.smb2_set_info);
+            _dpd.logMsg("        smb2 tree connect   : "STDu64"\n", dce2_stats.smb2_tree_connect);
+            _dpd.logMsg("        smb2 tree disconnect: "STDu64"\n", dce2_stats.smb2_tree_disconnect);
+            _dpd.logMsg("        smb2 close          : "STDu64"\n", dce2_stats.smb2_close);
         }
 
         if (dce2_stats.tcp_sessions > 0)
@@ -960,8 +1032,13 @@ static void DCE2_CleanExit(int signal, void *data)
 {
     DCE2_FreeConfigs(dce2_config);
     dce2_config = NULL;
+#ifdef SNORT_RELOAD
+    ada_delete( ada );
+    ada = NULL;
+#endif
 
     DCE2_FreeGlobals();
+    DCE2_Smb2Close();
 }
 
 #ifdef SNORT_RELOAD
@@ -993,7 +1070,10 @@ static void DCE2_ReloadGlobal(struct _SnortConfig *sc, char *args, void **new_co
     {
         //create a context
         dce2_swap_config = sfPolicyConfigCreate();
-
+        dce2_file_cache_was_enabled = !DCE2_IsFileCache(NULL);
+        dce2_file_cache_is_enabled = false;
+        dce2_ada_is_enabled = false;
+        dce2_ada_was_enabled = ada != NULL;
         if (dce2_swap_config == NULL)
         {
             DCE2_Die("%s(%d) \"%s\" configuration: Could not allocate memory "
@@ -1047,6 +1127,15 @@ static void DCE2_ReloadGlobal(struct _SnortConfig *sc, char *args, void **new_co
 
     if (policy_id != 0)
         pCurrentPolicyConfig->gconfig->memcap = pDefaultPolicyConfig->gconfig->memcap;
+
+    if (!ada)
+    {
+        size_t memcap = DCE2_GetReloadSafeMemcap(dce2_swap_config);
+        ada = ada_init(DCE2_MemInUse, PP_DCE2, memcap);
+        if (!ada)
+            _dpd.fatalMsg("Failed to initialize DCE ADA session cache.\n");
+    }
+    dce2_ada_is_enabled = true;
 }
 
 /*********************************************************************
@@ -1141,19 +1230,22 @@ static int DCE2_ReloadVerifyPolicy(
     if (swap_config->sconfigs != NULL)
         DCE2_RegMem(sfrt_usage(swap_config->sconfigs), DCE2_MEM_TYPE__RT);
 
+    if (!swap_config->gconfig->legacy_mode)
+    {
+        DCE2_Smb2Init(swap_config->gconfig->memcap);
+        dce2_file_cache_is_enabled = true;
+    }
+
     if (current_config == NULL)
         return 0;
 
-    if (swap_config->gconfig->memcap != current_config->gconfig->memcap)
-    {
-        _dpd.errMsg("dcerpc2 reload:  Changing the memcap requires a restart.\n");
-        return -1;
-    }
-
     return 0;
 }
+
 /*********************************************************************
  * Function: DCE2_ReloadVerify()
+ * WARNING This runs in a thread that is Asynchronous with the
+ * packet loop thread
  *
  * Purpose: Verifies a reloaded DCE/RPC preprocessor configuration
  *
@@ -1177,7 +1269,68 @@ static int DCE2_ReloadVerify(struct _SnortConfig *sc, void *swap_config)
         return -1;
     }
 
+    tSfPolicyId policy_id = _dpd.getParserPolicy(sc);
+    /* Look in DCE2_InitGlobal and DCE2_ReloadGlobal to find that DefaultPolicy can't be NULL
+    *  You'll also find that all memcaps are synched to DefaultPolicy as the memcap is global
+    *  to all policies
+    *  Here we are setting up the work that needs to be done to adjust to the new configuration
+    */
+    uint32_t current_memcap     = DCE2_GetReloadSafeMemcap(dce2_config);
+    uint32_t new_memcap         = DCE2_GetReloadSafeMemcap(dce2_swap_config);
+
+    if (dce2_ada_was_enabled && !dce2_ada_is_enabled)
+    {
+        ada_set_new_cap(ada, 0);
+        _dpd.reloadAdjustRegister(sc, "dce2-mem-reloader", policy_id, DCE2_ReloadAdjust, NULL, NULL);
+    }
+    else if (new_memcap != current_memcap ||
+        (dce2_file_cache_was_enabled && !dce2_file_cache_is_enabled))
+    {
+        ada_set_new_cap(ada, (size_t)(new_memcap));
+        _dpd.reloadAdjustRegister(sc, "dce2-mem-reloader", policy_id, DCE2_ReloadAdjust, NULL, NULL);
+    }
+
     return 0;
+}
+
+/*********************************************************************
+ * Function: DCE2_ReloadAdjust
+ *
+ * Purpose: After reloading with a different configuration that
+ * that requres work to adapt, this function will perform the
+ * work in small bursts.
+ *
+ * Arguments:   idle - if snort is idling (low packets) do more work
+ *              raPolicyId - identifies which policy the config is for
+ *              userData - data needed by this function
+ *
+ * Returns:
+ *  bool
+ *      return false if it needs to work more
+ *      return true if there is no work left
+ *
+ *********************************************************************/
+static bool DCE2_ReloadAdjust(bool idle, tSfPolicyId raPolicyId, void *userData)
+{
+    /* delete files until the file cache memcaps are met
+     * delete file cache if not needed
+     * delete dce session data from sessions until dce global memcap is met
+     * delete ada cache if not needed
+     * return true when completed successfully, else false
+    */
+    int maxWork = idle ? 512 : 32;
+    bool memcaps_satisfied =    DCE2_Smb2AdjustFileCache(maxWork, dce2_file_cache_is_enabled) &&
+                                ada_reload_adjust_func(idle, raPolicyId, (void *) ada);
+    if (memcaps_satisfied && dce2_ada_was_enabled && !dce2_ada_is_enabled)
+    {
+        ada_delete(ada);
+        ada = NULL;
+    }
+#ifdef REG_TEST
+    if (memcaps_satisfied && REG_TEST_FLAG_RELOAD & getRegTestFlags())
+        printf("dcerpc2-reload reload-adjust %d %d \n", ada != NULL, !DCE2_IsFileCache(NULL));
+#endif
+    return memcaps_satisfied;
 }
 
 static int DCE2_ReloadSwapPolicy(
@@ -1209,16 +1362,34 @@ static int DCE2_ReloadSwapPolicy(
  *********************************************************************/
 static void * DCE2_ReloadSwap(struct _SnortConfig *sc, void *swap_config)
 {
-    tSfPolicyUserContextId dce2_swap_config = (tSfPolicyUserContextId)swap_config;
-    tSfPolicyUserContextId old_config = dce2_config;
+    tSfPolicyUserContextId dce2_swap_config = (tSfPolicyUserContextId)  swap_config;
+    tSfPolicyUserContextId old_config       =                           dce2_config;
 
     if (dce2_swap_config == NULL)
         return NULL;
 
+    /* Set file cache's new memcaps so it doesn't misbehave
+    *  Ensure that the correct amount of memory is registered
+    *  See DCE2_Smb2Init for inspiration
+    */
+    uint32_t current_memcap = 0;
+    if (dce2_file_cache_was_enabled)
+        current_memcap = DCE2_GetReloadSafeMemcap(dce2_config);
+    uint32_t swap_memcap = 0;
+    if (dce2_file_cache_is_enabled)
+        swap_memcap    = DCE2_GetReloadSafeMemcap(dce2_swap_config);
+
+    DCE2_SetSmbMemcap((uint64_t) swap_memcap >> 1);
+
+    if (dce2_file_cache_was_enabled)
+    {
+        DCE2_UnRegMem(current_memcap >> 1, DCE2_MEM_TYPE__SMB_SSN);
+        if (dce2_file_cache_is_enabled)
+            DCE2_RegMem(swap_memcap >> 1, DCE2_MEM_TYPE__SMB_SSN);
+    }
+
     dce2_config = dce2_swap_config;
-
     sfPolicyUserDataFreeIterate (old_config, DCE2_ReloadSwapPolicy);
-
     if (sfPolicyUserPolicyGetActive(old_config) == 0)
         return (void *)old_config;
 
@@ -1309,3 +1480,46 @@ static void DCE2_ScAddPortsToPaf(struct _SnortConfig *snortConf, void *data)
     }
 }
 
+static uint32_t max(uint32_t a, uint32_t b)
+{
+    if (a >= b)
+        return a;
+    return b;
+}
+
+/*********************************************************************
+ * Function: DCE2_GetReloadSafeMemcap
+ *
+ * Purpose: Provide a safe memcap that can be used durring
+ * packet processing.
+ * This is based on how the memcaps are set in InitGlobal and
+ * ReloadGlobal
+ *
+ * The memcap in the config for the policyId currently running is
+ * what is used as a memcap, according to DCE2_Process calling 
+ * DCE2_GcMemcap.
+ *
+ * Based on InitGlobal and ReloadGlobal all memcaps are equal to
+ * the memcap in the default policy except for policy_id 0
+ *
+ * So to be safe we'll just return the max of the two.
+ *
+ * This function also helps to prevent segmentation faults caused
+ * by accessing null pointers.
+ *
+ * Arguments: pConfig - mapping between policyIDs and configs
+ *
+ * Returns: A safe memcap
+ *
+ *********************************************************************/
+static uint32_t DCE2_GetReloadSafeMemcap(tSfPolicyUserContextId pConfig)
+{
+  DCE2_Config *pDefaultPolicyConfig = sfPolicyUserDataGetDefault(pConfig);
+  DCE2_Config *pPolicyConfig        = sfPolicyUserDataGet(pConfig, 0);
+  uint32_t defaultMem = pDefaultPolicyConfig == NULL ?
+                        0 : pDefaultPolicyConfig->gconfig->memcap;
+  uint32_t policyMem  = pPolicyConfig == NULL ?
+                        0 : pPolicyConfig->gconfig->memcap;
+
+  return max(defaultMem,policyMem);
+}

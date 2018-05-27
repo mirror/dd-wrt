@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 ** Copyright (C) 2001 Brian Caswell <bmc@mitre.org>
@@ -94,10 +94,10 @@ typedef struct _AlertCSVData
 /* list of function prototypes for this preprocessor */
 static void AlertCSVInit(struct _SnortConfig *, char *);
 static AlertCSVData *AlertCSVParseArgs(struct _SnortConfig *, char *);
-static void AlertCSV(Packet *, char *, void *, Event *);
+static void AlertCSV(Packet *, const char *, void *, Event *);
 static void AlertCSVCleanExit(int, void *);
 static void RealAlertCSV(
-    Packet*, char* msg, char **args, int numargs, Event*, TextLog*
+    Packet*, const char* msg, char **args, int numargs, Event*, TextLog*
 );
 
 /*
@@ -220,7 +220,7 @@ static AlertCSVData *AlertCSVParseArgs(struct _SnortConfig *sc, char *args)
                 break;
         }
     }
-    if ( !data->csvargs ) data->csvargs = strdup(DEFAULT_CSV);
+    if ( !data->csvargs ) data->csvargs = SnortStrdup(DEFAULT_CSV);
     if ( !filename ) filename = ProcessFileOption(sc, DEFAULT_FILE);
 
     mSplitFree(&toks, num_toks);
@@ -259,7 +259,7 @@ static void AlertCSVCleanExit(int signal, void *arg)
     AlertCSVCleanup(signal, arg, "AlertCSVCleanExit");
 }
 
-static void AlertCSV(Packet *p, char *msg, void *arg, Event *event)
+static void AlertCSV(Packet *p, const char *msg, void *arg, Event *event)
 {
     AlertCSVData *data = (AlertCSVData *)arg;
     RealAlertCSV(p, msg, data->args, data->numargs, event, data->log);
@@ -273,13 +273,13 @@ static void AlertCSV(Packet *p, char *msg, void *arg, Event *event)
  *
  * Arguments:     p => packet. (could be NULL)
  *              msg => the message to send
- *             args => CSV output arguements
- *          numargs => number of arguements
+ *             args => CSV output arguments
+ *          numargs => number of arguments
  *             log => Log
  * Returns: void function
  *
  */
-static void RealAlertCSV(Packet * p, char *msg, char **args,
+static void RealAlertCSV(Packet * p, const char *msg, char **args,
         int numargs, Event *event, TextLog* log)
 {
     int num;

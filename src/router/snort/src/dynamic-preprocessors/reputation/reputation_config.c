@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2011-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -56,8 +56,9 @@ enum
 /*
  * Default values for configurable parameters.
  */
-#define REPUTATION_DEFAULT_MEMCAP          500 /*Mega bytes*/
-#define REPUTATION_DEFAULT_REFRESH_PERIOD  60  /*60 seconds*/
+#define REPUTATION_DEFAULT_MEMCAP               500 /*Mega bytes*/
+#define REPUTATION_DEFAULT_REFRESH_PERIOD       60  /*60 seconds*/
+#define REPUTATION_DEFAULT_SHARED_MEM_INSTANCES 50
 
 
 /*
@@ -67,22 +68,25 @@ enum
 #define MAX_MEMCAP 4095
 #define MIN_SHARED_MEM_REFRESH_PERIOD 1
 #define MAX_SHARED_MEM_REFRESH_PERIOD UINT32_MAX
+#define MIN_SHARED_MEM_INSTANCES    2
+#define MAX_SHARED_MEM_INSTANCES    256
 
 #define MAX_ADDR_LINE_LENGTH    8192
 
 /*
  * Keyword strings for parsing configuration options.
  */
-#define REPUTATION_MEMCAP_KEYWORD        "memcap"
-#define REPUTATION_SCANLOCAL_KEYWORD     "scan_local"
-#define REPUTATION_BLACKLIST_KEYWORD     "blacklist"
-#define REPUTATION_WHITELIST_KEYWORD     "whitelist"
-#define REPUTATION_MONITORLIST_KEYWORD   "monitorlist"
-#define REPUTATION_PRIORITY_KEYWORD      "priority"
-#define REPUTATION_NESTEDIP_KEYWORD      "nested_ip"
-#define REPUTATION_SHAREMEM_KEYWORD      "shared_mem"
-#define REPUTATION_SHAREDREFRESH_KEYWORD "shared_refresh"
-#define REPUTATION_WHITEACTION_KEYWORD   "white"
+#define REPUTATION_MEMCAP_KEYWORD               "memcap"
+#define REPUTATION_SCANLOCAL_KEYWORD            "scan_local"
+#define REPUTATION_BLACKLIST_KEYWORD            "blacklist"
+#define REPUTATION_WHITELIST_KEYWORD            "whitelist"
+#define REPUTATION_MONITORLIST_KEYWORD          "monitorlist"
+#define REPUTATION_PRIORITY_KEYWORD             "priority"
+#define REPUTATION_NESTEDIP_KEYWORD             "nested_ip"
+#define REPUTATION_SHARED_MEM_KEYWORD           "shared_mem"
+#define REPUTATION_SHARED_REFRESH_KEYWORD       "shared_refresh"
+#define REPUTATION_SHARED_MAX_INSTANCES_KEYWORD "shared_max_instances"
+#define REPUTATION_WHITEACTION_KEYWORD          "white"
 
 #define REPUTATION_CONFIG_SECTION_SEPERATORS     ",;"
 #define REPUTATION_CONFIG_VALUE_SEPERATORS       " "
@@ -235,7 +239,8 @@ int LoadFileIntoShmem(void* ptrSegment, ShmemDataFileList** file_list, int num_f
     table = sfrt_flat_new(DIR_8x16, IPv6, reputation_shmem_config->numEntries, reputation_shmem_config->memcap);
     if (table == NULL)
     {
-        DynamicPreprocessorFatalMessage("Reputation preprocessor: Failed to create IP list.\n");
+        _dpd.errMsg("Reputation preprocessor: Failed to create IP list.\n");
+        return -1;
     }
 
     reputation_shmem_config->iplist = table;
@@ -246,7 +251,8 @@ int LoadFileIntoShmem(void* ptrSegment, ShmemDataFileList** file_list, int num_f
 
     if (list_ptr == 0)
     {
-        DynamicPreprocessorFatalMessage("Reputation preprocessor:: Failed to create IP list table.\n");
+        _dpd.errMsg("Reputation preprocessor:: Failed to create IP list table.\n");
+        return -1;
     }
 
     listInfo = (ListInfo *)&base[list_ptr];
@@ -410,27 +416,26 @@ void initShareMemory(struct _SnortConfig *sc, void *conf)
             GetSegmentSizeFromFileList,LoadFileIntoShmem))
     {
         DynamicPreprocessorFatalMessage("Unable to initialize DataManagement functions\n");
-
     }
     /*use snort instance ID to designate server (writer)*/
     snortID = _dpd.getSnortInstance();
     if (SHMEM_SERVER_ID == snortID)
     {
-        if ((available_segment = InitShmemWriter(snortID,IPREP,GROUP_0,NUMA_0,
-                config->sharedMem.path, &IPtables,config->sharedMem.updateInterval)) == NO_ZEROSEG)
+        if ((available_segment = InitShmemWriter(snortID, IPREP, GROUP_0, NUMA_0,
+                config->sharedMem.path, &IPtables, config->sharedMem.updateInterval,
+                config->sharedMem.maxInstances)) == NO_ZEROSEG)
         {
             DynamicPreprocessorFatalMessage("Unable to init share memory writer\n");
-
         }
         switch_state = SWITCHED;
     }
     else
     {
-        if ((available_segment = InitShmemReader(snortID,IPREP,GROUP_0,NUMA_0,
-                config->sharedMem.path, &IPtables,config->sharedMem.updateInterval)) == NO_ZEROSEG)
+        if ((available_segment = InitShmemReader(snortID, IPREP,GROUP_0, NUMA_0,
+                config->sharedMem.path, &IPtables, config->sharedMem.updateInterval,
+                config->sharedMem.maxInstances)) == NO_ZEROSEG)
         {
             DynamicPreprocessorFatalMessage("Unable to init share memory reader\n");
-
         }
         switch_state = SWITCHED;
     }
@@ -481,7 +486,7 @@ static void DisplayReputationConfig(ReputationConfig *config)
     _dpd.logMsg("    Scan local network: %s\n",
             config->scanlocal ? "ENABLED":"DISABLED (Default)");
     _dpd.logMsg("    Reputation priority:  %s \n",
-            config->priority ==  WHITELISTED_TRUST?
+            ((config->priority ==  WHITELISTED_TRUST) || (config->priority ==  WHITELISTED_UNBLACK))?
                     REPUTATION_WHITELIST_KEYWORD "(Default)" : REPUTATION_BLACKLIST_KEYWORD );
     _dpd.logMsg("    Nested IP: %s %s \n",
             NestedIPKeyword[config->nestedIP],
@@ -497,6 +502,7 @@ static void DisplayReputationConfig(ReputationConfig *config)
                 config->sharedMem.updateInterval,
                 config->sharedMem.updateInterval == REPUTATION_DEFAULT_REFRESH_PERIOD ?
                         "(Default) seconds" : "seconds" );
+        _dpd.logMsg("    Shared memory max instances: %u\n", config->sharedMem.maxInstances);
     }
     else
     {
@@ -547,12 +553,11 @@ static void IpListInit(uint32_t maxEntries, ReputationConfig *config)
          *Use  DIR_16x7_4x4 worst case IPV4 500, IPV6 2.5M
          */
         config->iplist = sfrt_flat_new(DIR_8x16, IPv6, maxEntries, config->memcap);
-        if (config->iplist == NULL)
+        if (config->iplist == NULL ||
+            !(list_ptr = segment_calloc((size_t)DECISION_MAX, sizeof(ListInfo))))
         {
             DynamicPreprocessorFatalMessage("%s(%d): Failed to create IP list.\n", *(_dpd.config_file), *(_dpd.config_line));
         }
-
-        list_ptr = segment_calloc((size_t)DECISION_MAX, sizeof(ListInfo));
         config->iplist->list_info = list_ptr;
 
         config->local_black_ptr = list_ptr + BLACKLISTED * sizeof(ListInfo);
@@ -802,7 +807,7 @@ static int64_t updateEntryInfo (INFO *current, INFO new, SaveDest saveDest, uint
  * Add ip address to config file
  *
  * Arguments:
- *  sfip_t *: ip address
+ *  sfcidr_t *: ip address
  *  void *: information about the file.
  *  ReputationConfig *:      The configuration to be update.
  *
@@ -813,7 +818,7 @@ static int64_t updateEntryInfo (INFO *current, INFO new, SaveDest saveDest, uint
  *
  ********************************************************************/
 
-static int AddIPtoList(sfip_t *ipAddr,INFO ipInfo_ptr, ReputationConfig *config)
+static int AddIPtoList(sfcidr_t *ipAddr,INFO ipInfo_ptr, ReputationConfig *config)
 {
     int iRet;
     int iFinalRet = IP_INSERT_SUCCESS;
@@ -823,40 +828,29 @@ static int AddIPtoList(sfip_t *ipAddr,INFO ipInfo_ptr, ReputationConfig *config)
     uint32_t usageBeforeAdd;
     uint32_t usageAfterAdd;
 
-    if (ipAddr->family == AF_INET)
-    {
-        ipAddr->ip32[0] = ntohl(ipAddr->ip32[0]);
-    }
-    else if (ipAddr->family == AF_INET6)
-    {
-        int i;
-        for(i = 0; i < 4 ; i++)
-            ipAddr->ip32[i] = ntohl(ipAddr->ip32[i]);
-    }
-
 #ifdef DEBUG_MSGS
-    if (NULL != sfrt_flat_lookup((void *)ipAddr, config->iplist))
+    if (NULL != sfrt_flat_lookup(&ipAddr->addr, config->iplist))
     {
-        DebugMessage(DEBUG_REPUTATION, 
-                "Find address before insert: %s\n", sfip_to_str(ipAddr) );
+        DebugMessage(DEBUG_REPUTATION,
+                "Find address before insert: %s\n", sfip_to_str(&ipAddr->addr) );
 
     }
     else
     {
         DebugMessage(DEBUG_REPUTATION,
-                "Can't find address before insert: %s\n", sfip_to_str(ipAddr) );
+                "Can't find address before insert: %s\n", sfip_to_str(&ipAddr->addr) );
     }
 #endif
 
     usageBeforeAdd =  sfrt_flat_usage(config->iplist);
 
     /*Check whether the same or more generic address is already in the table*/
-    if (NULL != sfrt_flat_lookup((void *)ipAddr, config->iplist))
+    if (NULL != sfrt_flat_lookup(&ipAddr->addr, config->iplist))
     {
         iFinalRet = IP_INSERT_DUPLICATE;
     }
 
-    iRet = sfrt_flat_insert((void *)ipAddr, (unsigned char)ipAddr->bits, ipInfo_ptr, RT_FAVOR_ALL, config->iplist, &updateEntryInfo);
+    iRet = sfrt_flat_insert(ipAddr, (unsigned char)ipAddr->bits, ipInfo_ptr, RT_FAVOR_ALL, config->iplist, &updateEntryInfo);
     DEBUG_WRAP(DebugMessage(DEBUG_REPUTATION, "Unused memory: %d \n",segment_unusedmem()););
 
 
@@ -867,10 +861,10 @@ static int AddIPtoList(sfip_t *ipAddr,INFO ipInfo_ptr, ReputationConfig *config)
         DebugMessage(DEBUG_REPUTATION, "Number of entries input: %d, in table: %d \n",
                 totalNumEntries,sfrt_flat_num_entries(config->iplist) );
         DebugMessage(DEBUG_REPUTATION, "Memory allocated: %d \n",sfrt_flat_usage(config->iplist) );
-        result = sfrt_flat_lookup((void *)ipAddr, config->iplist);
+        result = sfrt_flat_lookup(&ipAddr->addr, config->iplist);
         if (NULL != result)
         {
-            DebugMessage(DEBUG_REPUTATION, "Find address after insert: %s \n",sfip_to_str(ipAddr) );
+            DebugMessage(DEBUG_REPUTATION, "Find address after insert: %s \n",sfip_to_str(&ipAddr->addr) );
             DEBUG_WRAP(ReputationPrintRepInfo(result, (uint8_t *)config->iplist););
         }
 #endif
@@ -879,12 +873,12 @@ static int AddIPtoList(sfip_t *ipAddr,INFO ipInfo_ptr, ReputationConfig *config)
     else if (MEM_ALLOC_FAILURE == iRet)
     {
         iFinalRet = IP_MEM_ALLOC_FAILURE;
-        DEBUG_WRAP( DebugMessage(DEBUG_REPUTATION, "Insert error: %d for address: %s \n",iRet, sfip_to_str(ipAddr) ););
+        DEBUG_WRAP( DebugMessage(DEBUG_REPUTATION, "Insert error: %d for address: %s \n",iRet, sfip_to_str(&ipAddr->addr) ););
     }
     else
     {
         iFinalRet = IP_INSERT_FAILURE;
-        DEBUG_WRAP( DebugMessage(DEBUG_REPUTATION, "Insert error: %d for address: %s \n",iRet, sfip_to_str(ipAddr) ););
+        DEBUG_WRAP( DebugMessage(DEBUG_REPUTATION, "Insert error: %d for address: %s \n",iRet, sfip_to_str(&ipAddr->addr) ););
 
     }
 
@@ -904,36 +898,33 @@ static int AddIPtoList(sfip_t *ipAddr,INFO ipInfo_ptr, ReputationConfig *config)
 
 }
 
-static int snort_pton__address( char const *src, sfip_t *dest )
+static int snort_pton__address( char const *src, sfcidr_t *dest )
 {
     unsigned char _temp[sizeof(struct in6_addr)];
 
     if ( inet_pton(AF_INET, src, _temp) == 1 )
     {
-        dest->family = AF_INET;
-        dest->bits = 32;
+        sfip_set_raw(&dest->addr, _temp, AF_INET);
     }
     else if ( inet_pton(AF_INET6, src, _temp) == 1 )
     {
-        dest->family = AF_INET6;
-        dest->bits = 128;
+        sfip_set_raw(&dest->addr, _temp, AF_INET6);
     }
     else
     {
         return 0;
     }
-
-    memcpy(&dest->ip, _temp, sizeof(_temp));
+    dest->bits = 128;
 
     return 1;
 }
 
 #define isident(x) (isxdigit((x)) || (x) == ':' || (x) == '.')
-static int snort_pton( char const * src, sfip_t * dest )
+static int snort_pton( char const * src, sfcidr_t * dest )
 {
     char ipbuf[INET6_ADDRSTRLEN];
     char cidrbuf[sizeof("128")];
-    char *out;
+    char *out = ipbuf;
     enum {
         BEGIN, IP, CIDR1, CIDR2, END, INVALID
     } state;
@@ -956,8 +947,7 @@ static int snort_pton( char const * src, sfip_t * dest )
         case BEGIN:
             if ( isident((int)ch) )
             {
-                // Set the first ipbuff byte and change state 
-                out = ipbuf;
+                // Set the first ipbuff byte and change state
                 *out++ = ch;
                 state = IP;
             }
@@ -988,7 +978,7 @@ static int snort_pton( char const * src, sfip_t * dest )
             }
             break;
 
-        // First cidr digit 
+        // First cidr digit
         case CIDR1:
             if ( !isdigit((int)ch) )
             {
@@ -1047,7 +1037,10 @@ static int snort_pton( char const * src, sfip_t * dest )
         if ( value > dest->bits || value <= 0 || errno == ERANGE )
             return 0;
 
-        dest->bits = value;
+        if (sfaddr_family(&dest->addr) == AF_INET && value <= 32)
+            dest->bits = value + 96;
+        else
+            dest->bits = value;
     }
 
     return 1;
@@ -1071,7 +1064,7 @@ static int snort_pton( char const * src, sfip_t * dest )
  ********************************************************************/
 static int ProcessLine(char *line, INFO info, ReputationConfig *config)
 {
-    sfip_t address;
+    sfcidr_t address;
 
     if ( !line || *line == '\0' )
         return IP_INSERT_SUCCESS;
@@ -1399,7 +1392,7 @@ void Reputation_FreeConfig (ReputationConfig *config)
  *
  * RETURNS:     int. estimated number of Entries based on number of lines
  *********************************************************************/
-int EstimateNumEntries(ReputationConfig *config, u_char* argp)
+static int EstimateNumEntries(ReputationConfig *config, u_char* argp)
 {
     char* cur_sectionp = NULL;
     char* next_sectionp = NULL;
@@ -1532,14 +1525,14 @@ int EstimateNumEntries(ReputationConfig *config, u_char* argp)
 
         }
 #ifdef SHARED_REP
-        else if ( !strcasecmp( cur_tokenp, REPUTATION_SHAREMEM_KEYWORD ))
+        else if ( !strcasecmp( cur_tokenp, REPUTATION_SHARED_MEM_KEYWORD ))
         {
 
             if (Reputation_IsEmptyStr(next_tokenp))
             {
                 DynamicPreprocessorFatalMessage(" %s(%d) => Missing argument for %s,"
                         " please specify a path\n",
-                        *(_dpd.config_file), *(_dpd.config_line), REPUTATION_SHAREMEM_KEYWORD);
+                        *(_dpd.config_file), *(_dpd.config_line), REPUTATION_SHARED_MEM_KEYWORD);
             }
 
             if (!CheckIPlistDir(next_tokenp))
@@ -1587,6 +1580,9 @@ void ParseReputationArgs(ReputationConfig *config, u_char* argp)
     char* cur_sectionp = NULL;
     char* next_sectionp = NULL;
     char* argcpyp = NULL;
+#ifdef SHARED_REP
+    long nprocs;
+#endif
 
     if (config == NULL)
         return;
@@ -1598,10 +1594,29 @@ void ParseReputationArgs(ReputationConfig *config, u_char* argp)
     config->priority = WHITELISTED_TRUST;
     config->nestedIP = INNER;
     config->whiteAction = UNBLACK;
-    config->localSegment = NULL;
     config->emptySegment = NULL;
+    config->localSegment = NULL;
     config->memsize = 0;
     config->memCapReached = false;
+#ifdef SHARED_REP
+    nprocs = sysconf(_SC_NPROCESSORS_CONF);
+    if (nprocs < 1)
+    {
+        _dpd.logMsg("WARNING: Could not determine the number of CPUs on the system, "
+                "defaulting to a max of %d concurrent shared memory users.\n",
+                REPUTATION_DEFAULT_SHARED_MEM_INSTANCES);
+        config->sharedMem.maxInstances = REPUTATION_DEFAULT_SHARED_MEM_INSTANCES;
+    }
+    else if (nprocs < MIN_SHARED_MEM_INSTANCES)
+    {
+        _dpd.logMsg("WARNING: Fewer CPUs found than the minimum number of "
+                "concurrent shared memory users, defaulting to a max of %d.\n",
+                MIN_SHARED_MEM_INSTANCES);
+        config->sharedMem.maxInstances = MIN_SHARED_MEM_INSTANCES;
+    }
+    else
+        config->sharedMem.maxInstances = nprocs;
+#endif
 
     /* Sanity check(s) */
     if ( !argp )
@@ -1780,13 +1795,13 @@ void ParseReputationArgs(ReputationConfig *config, u_char* argp)
 
         }
 #ifdef SHARED_REP
-        else if ( !strcasecmp( cur_tokenp, REPUTATION_SHAREMEM_KEYWORD ))
+        else if ( !strcasecmp( cur_tokenp, REPUTATION_SHARED_MEM_KEYWORD ))
         {
             cur_sectionp = strtok_r( next_sectionp, REPUTATION_CONFIG_SECTION_SEPERATORS, &next_sectionp);
             continue;
             /* processed before */
         }
-        else if ( !strcasecmp( cur_tokenp, REPUTATION_SHAREDREFRESH_KEYWORD ))
+        else if ( !strcasecmp( cur_tokenp, REPUTATION_SHARED_REFRESH_KEYWORD ))
         {
             unsigned long value;
             char *endStr = NULL;
@@ -1795,14 +1810,14 @@ void ParseReputationArgs(ReputationConfig *config, u_char* argp)
             {
                 DynamicPreprocessorFatalMessage(" %s(%d) => Specify option '%s' when using option '%s'.\n",
                         *(_dpd.config_file), *(_dpd.config_line),
-                        REPUTATION_SHAREMEM_KEYWORD, REPUTATION_SHAREDREFRESH_KEYWORD);
+                        REPUTATION_SHARED_MEM_KEYWORD, REPUTATION_SHARED_REFRESH_KEYWORD);
             }
             cur_tokenp = strtok(NULL, REPUTATION_CONFIG_VALUE_SEPERATORS);
 
             if ( !cur_tokenp )
             {
                 DynamicPreprocessorFatalMessage(" %s(%d) => No option to '%s'.\n",
-                        *(_dpd.config_file), *(_dpd.config_line), REPUTATION_SHAREDREFRESH_KEYWORD);
+                        *(_dpd.config_file), *(_dpd.config_line), REPUTATION_SHARED_REFRESH_KEYWORD);
             }
 
             value = _dpd.SnortStrtoul( cur_tokenp, &endStr, 10);
@@ -1812,7 +1827,7 @@ void ParseReputationArgs(ReputationConfig *config, u_char* argp)
                 DynamicPreprocessorFatalMessage(" %s(%d) => Bad value specified for %s. "
                         "Please specify an integer between %u and %u.\n",
                         *(_dpd.config_file), *(_dpd.config_line),
-                        REPUTATION_SHAREDREFRESH_KEYWORD,
+                        REPUTATION_SHARED_REFRESH_KEYWORD,
                         MIN_SHARED_MEM_REFRESH_PERIOD, MAX_SHARED_MEM_REFRESH_PERIOD);
             }
 
@@ -1822,11 +1837,35 @@ void ParseReputationArgs(ReputationConfig *config, u_char* argp)
                 DynamicPreprocessorFatalMessage(" %s(%d) => Value specified for %s is out of "
                         "bounds.  Please specify an integer between %u and %u.\n",
                         *(_dpd.config_file), *(_dpd.config_line),
-                        REPUTATION_SHAREDREFRESH_KEYWORD, MIN_SHARED_MEM_REFRESH_PERIOD,
+                        REPUTATION_SHARED_REFRESH_KEYWORD, MIN_SHARED_MEM_REFRESH_PERIOD,
                         MAX_SHARED_MEM_REFRESH_PERIOD);
             }
             config->sharedMem.updateInterval = (uint32_t) value;
 
+        }
+        else if (!strcasecmp(cur_tokenp, REPUTATION_SHARED_MAX_INSTANCES_KEYWORD))
+        {
+            unsigned long value;
+            char *endStr = NULL;
+
+            cur_tokenp = strtok(NULL, REPUTATION_CONFIG_VALUE_SEPERATORS);
+            if (!cur_tokenp)
+            {
+                DynamicPreprocessorFatalMessage(" %s(%d) => No option to '%s'.\n",
+                        *(_dpd.config_file), *(_dpd.config_line), REPUTATION_SHARED_MAX_INSTANCES_KEYWORD);
+            }
+
+            value = _dpd.SnortStrtoul( cur_tokenp, &endStr, 10);
+
+            if (*endStr || (errno == ERANGE) || value < MIN_SHARED_MEM_INSTANCES || value > MAX_SHARED_MEM_INSTANCES)
+            {
+                DynamicPreprocessorFatalMessage(" %s(%d) => Bad value specified for %s. "
+                        "Please specify an integer between %u and %u.\n",
+                        *(_dpd.config_file), *(_dpd.config_line),
+                        REPUTATION_SHARED_MAX_INSTANCES_KEYWORD,
+                        MIN_SHARED_MEM_INSTANCES, MAX_SHARED_MEM_INSTANCES);
+            }
+            config->sharedMem.maxInstances = value;
         }
 #endif
         else

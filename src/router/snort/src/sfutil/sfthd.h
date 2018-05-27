@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -34,6 +34,7 @@
 #include "sfxhash.h"
 #include "sfPolicy.h"
 #include "sfPolicyUserData.h"
+#include "treenodes.h"
 
 /*!
     Max GEN_ID value - Set this to the Max Used by Snort, this is used for the
@@ -103,7 +104,7 @@ typedef struct {
 typedef struct{
 
     int thd_id;
-    snort_ip ip;
+    struct in6_addr ip;
     tSfPolicyId policyId;
 
 } THD_IP_NODE_KEY ;
@@ -112,7 +113,7 @@ typedef struct{
 
     unsigned gen_id;
     unsigned sig_id;
-    snort_ip ip;
+    struct in6_addr ip;
     tSfPolicyId policyId;
 
 } THD_IP_GNODE_KEY ;
@@ -232,7 +233,8 @@ ThresholdObjects * sfthd_objs_new(void);
 void sfthd_objs_free(ThresholdObjects *);
 
 int sfthd_test_rule(SFXHASH *rule_hash, THD_NODE *sfthd_node,
-                    snort_ip_p sip, snort_ip_p dip, long curtime);
+                    sfaddr_t* sip, sfaddr_t* dip, long curtime,
+                    detection_option_eval_data_t *eval_data, OptTreeNode *otn);
 
 void * sfthd_create_rule_threshold(
    int id,
@@ -264,8 +266,8 @@ int sfthd_test_threshold(
     THD_STRUCT *,
     unsigned     gen_id,
     unsigned     sig_id,
-    snort_ip_p   sip,
-    snort_ip_p   dip,
+    sfaddr_t*    sip,
+    sfaddr_t*    dip,
     long         curtime ) ;
 
 
@@ -274,9 +276,11 @@ SFXHASH * sfthd_new_hash(unsigned, size_t, size_t);
 int sfthd_test_local(
     SFXHASH *local_hash,
     THD_NODE   * sfthd_node,
-    snort_ip_p   sip,
-    snort_ip_p   dip,
-    time_t       curtime );
+    sfaddr_t*    sip,
+    sfaddr_t*    dip,
+    time_t       curtime,
+    detection_option_eval_data_t *eval_data,
+    OptTreeNode *otn);
 
 #ifdef THD_DEBUG
 int sfthd_show_objects( THD_STRUCT * thd );

@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -26,6 +26,7 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 
+#include "appInfoTable.h"
 #include "client_app_api.h"
 #include <commonAppMatcher.h>
 
@@ -156,10 +157,11 @@ static SSH_CLIENT_CONFIG ssh_client_config;
 static CLIENT_APP_RETCODE ssh_client_init(const InitClientAppAPI * const init_api,
                                           SF_LIST *config);
 static CLIENT_APP_RETCODE ssh_client_validate(const uint8_t *data, uint16_t size,
-                                              const int dir, FLOW *flowp,
-                                              const SFSnortPacket *pkt, struct _Detector *userData);
+                                              const int dir, tAppIdData *flowp,
+                                              SFSnortPacket *pkt, struct _Detector *userData,
+                                              const struct appIdConfig_ *pConfig);
 
-SO_PUBLIC RNAClientAppModule ssh_client_mod =
+SF_SO_PUBLIC tRNAClientAppModule ssh_client_mod =
 {
     .name = "SSH",
     .proto = IPPROTO_TCP,
@@ -220,7 +222,7 @@ static CLIENT_APP_RETCODE ssh_client_init(const InitClientAppAPI * const init_ap
         {
             _dpd.debugMsg(DEBUG_LOG, "registering patterns: %s: %d",
                     (const char *)patterns[i].pattern, patterns[i].index);
-            init_api->RegisterPattern(&ssh_client_validate, IPPROTO_TCP, patterns[i].pattern, patterns[i].length, patterns[i].index);
+            init_api->RegisterPattern(&ssh_client_validate, IPPROTO_TCP, patterns[i].pattern, patterns[i].length, patterns[i].index, init_api->pAppidConfig);
         }
     }
 
@@ -229,7 +231,7 @@ static CLIENT_APP_RETCODE ssh_client_init(const InitClientAppAPI * const init_ap
 	for (j=0; j < sizeof(appIdRegistry)/sizeof(*appIdRegistry); j++)
 	{
 		_dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[j].appId);
-		init_api->RegisterAppId(&ssh_client_validate, appIdRegistry[j].appId, appIdRegistry[j].additionalInfo, NULL);
+		init_api->RegisterAppId(&ssh_client_validate, appIdRegistry[j].appId, appIdRegistry[j].additionalInfo, init_api->pAppidConfig);
 	}
 
     return CLIENT_APP_SUCCESS;
@@ -587,7 +589,8 @@ static inline CLIENT_APP_RETCODE ssh_client_sm(const uint8_t *data, uint16_t siz
 }
 
 static CLIENT_APP_RETCODE ssh_client_validate(const uint8_t *data, uint16_t size, const int dir,
-                                        FLOW *flowp, const SFSnortPacket *pkt, struct _Detector *userData)
+                                        tAppIdData *flowp, SFSnortPacket *pkt, struct _Detector *userData,
+                                        const struct appIdConfig_ *pConfig)
 {
     ClientSSHData *fd;
     CLIENT_APP_RETCODE sm_ret;
@@ -595,13 +598,13 @@ static CLIENT_APP_RETCODE ssh_client_validate(const uint8_t *data, uint16_t size
     if (!size || dir != APP_ID_FROM_INITIATOR)
         return CLIENT_APP_INPROCESS;
 
-    fd = ssh_client_mod.api->data_get(flowp);
+    fd = ssh_client_mod.api->data_get(flowp, ssh_client_mod.flow_data_index);
     if (!fd)
     {
         fd = calloc(1, sizeof(*fd));
         if (!fd)
             return CLIENT_APP_ENOMEM;
-        if (ssh_client_mod.api->data_add(flowp, fd, &free))
+        if (ssh_client_mod.api->data_add(flowp, fd, ssh_client_mod.flow_data_index, &free))
         {
             free(fd);
             return CLIENT_APP_ENOMEM;
@@ -616,6 +619,6 @@ static CLIENT_APP_RETCODE ssh_client_validate(const uint8_t *data, uint16_t size
         return sm_ret;
 
     ssh_client_mod.api->add_app(flowp, APP_ID_SSH, fd->client_id, (const char *)fd->version);
-    flow_mark(flowp, FLOW_CLIENTAPPDETECTED);
+    setAppIdFlag(flowp, APPID_SESSION_CLIENT_DETECTED);
     return CLIENT_APP_SUCCESS;
 }

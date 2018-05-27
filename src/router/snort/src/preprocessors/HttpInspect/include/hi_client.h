@@ -1,7 +1,7 @@
 /* $Id$ */
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -178,6 +178,7 @@ typedef struct s_HI_CLIENT_REQ
     uint16_t cookie_encode_type;
     uint16_t post_encode_type;
     const u_char *content_type;
+    const u_char *content_disp;
 
 }  HI_CLIENT_REQ;
 

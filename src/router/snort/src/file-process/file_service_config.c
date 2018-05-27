@@ -1,7 +1,7 @@
 /*
  **
  **
- **  Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ **  Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  **  Copyright (C) 2012-2013 Sourcefire, Inc.
  **
  **  This program is free software; you can redistribute it and/or modify
@@ -87,10 +87,6 @@
 #include "file_api.h"
 #endif
 
-#ifdef SNORT_RELOAD
-bool file_service_reconfigured = false;
-#endif
-
 /*Set default values for file config*/
 static inline void file_service_config_defaults(FileConfig *file_config)
 {
@@ -110,7 +106,7 @@ static inline void file_service_config_defaults(FileConfig *file_config)
     file_config->file_capture_block_size = DEFAULT_FILE_CAPTURE_BLOCK_SIZE;
 }
 
-void* file_service_config_create(void)
+FileConfig* file_service_config_create(void)
 {
     FileConfig *file_config = SnortAlloc(sizeof(*file_config));
 
@@ -119,17 +115,6 @@ void* file_service_config_create(void)
 }
 
 #ifdef SNORT_RELOAD
-/* Force reconfigure file service
- *
- * Args:
- *    true: reconfigure file service
- *    false: no change
- */
-void  file_sevice_reconfig_set(bool reconfigured)
-{
-    file_service_reconfigured = reconfigured;
-}
-
 /* Verify the file service configuration, changing memory settings and depth
  * settings requires snort restart
  */
@@ -156,15 +141,6 @@ int file_sevice_config_verify(SnortConfig *old, SnortConfig *new)
         file_service_config_defaults(next);
     }
 
-    /* Enable file type, file signature or file capture requires a restart*/
-    if (file_service_reconfigured)
-    {
-        ErrorMessage("File service: enable/disable file service"
-                " requires a restart.\n");
-        file_service_reconfigured = false;
-        return -1;
-    }
-
     /* check configurations */
     if (curr->file_capture_memcap != next->file_capture_memcap)
     {
@@ -173,31 +149,9 @@ int file_sevice_config_verify(SnortConfig *old, SnortConfig *new)
         return -1;
     }
 
-    if (curr->file_capture_max_size != next->file_capture_max_size)
-    {
-        ErrorMessage("File service: Changing file capture max size"
-                " requires a restart.\n");
-        return -1;
-    }
-
     if (curr->file_capture_block_size != next->file_capture_block_size)
     {
         ErrorMessage("File service: Changing file capture block size"
-                " requires a restart.\n");
-        return -1;
-    }
-
-    /*Change depth requires restart*/
-    if (curr->file_signature_depth != next->file_signature_depth)
-    {
-        ErrorMessage("File service: Changing file signature depth"
-                " requires a restart.\n");
-        return -1;
-    }
-
-    if (curr->file_type_depth != next->file_type_depth)
-    {
-        ErrorMessage("File service: Changing file type depth"
                 " requires a restart.\n");
         return -1;
     }
@@ -269,7 +223,7 @@ static void file_service_display_conf(FileConfig *config)
 }
 
 /*The main function for parsing rule option*/
-void file_service_config(char *args, void *conf)
+void file_service_config(struct _SnortConfig* sc, char *args, void *conf)
 {
     char **toks;
     int num_toks;
@@ -415,9 +369,9 @@ void file_service_config(char *args, void *conf)
 
 #if defined(DEBUG_MSGS) || defined (REG_TEST)
     if (file_type_enabled)
-        file_api->enable_file_type(NULL);
+        file_api->enable_file_type(sc, NULL);
     if (file_signature_enabled)
-        file_api->enable_file_signature(NULL);
+        file_api->enable_file_signature(sc, NULL);
 #endif
     /* file capture memcap should not be larger file capture block size*/
     if (file_config->file_capture_block_size >

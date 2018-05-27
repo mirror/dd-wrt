@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2008-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -36,6 +36,10 @@
 #include "dce2_stats.h"
 #include "sf_snort_packet.h"
 #include "sf_dynamic_preprocessor.h"
+
+#ifdef DUMP_BUFFER
+#include "dcerpc2_buffer_dump.h"
+#endif
 
 /********************************************************************
  * Private function prototypes
@@ -202,10 +206,16 @@ static void DCE2_HttpProcess(DCE2_HttpSsnData *hsd)
     switch (hsd->state)
     {
         case DCE2_HTTP_STATE__INIT_CLIENT:
+#ifdef DUMP_BUFFER
+            dumpBuffer(DCERPC_HTTP_STATE_CLIENT_DUMP,data_ptr,data_len);
+#endif
             hsd->state = DCE2_HTTP_STATE__INIT_SERVER;
             break;
 
         case DCE2_HTTP_STATE__INIT_SERVER:
+#ifdef DUMP_BUFFER
+            dumpBuffer(DCERPC_HTTP_STATE_SERVER_DUMP,data_ptr,data_len);
+#endif
             /* Don't really need to look at server response, since if the client
              * RPC_CONNECT request was bad, the TCP session is terminated by
              * the server */
@@ -213,6 +223,9 @@ static void DCE2_HttpProcess(DCE2_HttpSsnData *hsd)
             break;
 
         case DCE2_HTTP_STATE__RPC_DATA:
+#ifdef DUMP_BUFFER
+            dumpBuffer(DCERPC_HTTP_STATE_RPC_DATA_DUMP,data_ptr,data_len);
+#endif
             DCE2_CoProcess(&hsd->sd, &hsd->co_tracker, data_ptr, data_len);
             break;
 

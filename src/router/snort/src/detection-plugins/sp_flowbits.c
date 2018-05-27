@@ -1,7 +1,7 @@
 /*
  ** $Id$
 
- ** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ ** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  ** Copyright (C) 2003-2013 Sourcefire, Inc.
  **
  ** This program is free software; you can redistribute it and/or modify
@@ -262,7 +262,7 @@ void SetupFlowBits(void)
     RegisterRuleOption("flowbits", FlowBitsInit, NULL, OPT_TYPE_DETECTION, NULL);
 
 #ifdef PERF_PROFILING
-    RegisterPreprocessorProfile("flowbits", &flowBitsPerfStats, 3, &ruleOTNEvalPerfStats);
+    RegisterPreprocessorProfile("flowbits", &flowBitsPerfStats, 3, &ruleOTNEvalPerfStats, NULL);
 #endif
 
     AddFuncToCleanExitList(FlowBitsCleanExit, NULL);

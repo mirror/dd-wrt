@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -45,12 +45,12 @@ extern uint16_t event_id;
 
 /* rule match action functions */
 int PassAction(void);
-int ActivateAction(Packet *, OptTreeNode *, Event *);
-int AlertAction(Packet *, OptTreeNode *, Event *);
-int DropAction(Packet *, OptTreeNode *, Event *);
+int ActivateAction(Packet *, OptTreeNode *, RuleTreeNode *, Event *);
+int AlertAction(Packet *, OptTreeNode *, RuleTreeNode *, Event *);
+int DropAction(Packet *, OptTreeNode *, RuleTreeNode *, Event *);
 int SDropAction(Packet *, OptTreeNode *, Event *);
-int DynamicAction(Packet *, OptTreeNode *, Event *);
-int LogAction(Packet *, OptTreeNode *, Event *);
+int DynamicAction(Packet *, OptTreeNode *, RuleTreeNode *, Event *);
+int LogAction(Packet *, OptTreeNode *, RuleTreeNode *, Event *);
 
 /* detection/manipulation funcs */
 int Preprocess(Packet *);
@@ -77,10 +77,10 @@ int CheckDstPortNotEq(Packet *, struct _RuleTreeNode *, RuleFpList *, int);
 int RuleListEnd(Packet *, struct _RuleTreeNode *, RuleFpList *, int);
 int OptListEnd(void *option_data, Packet *p);
 
-void CallLogPlugins(Packet *, char *, Event *);
-void CallAlertPlugins(Packet *, char *, Event *);
-void CallLogFuncs(Packet *, char *, ListHead *, Event *);
-void CallAlertFuncs(Packet *, char *, ListHead *, Event *);
+void CallLogPlugins(Packet *, const char *, Event *);
+void CallAlertPlugins(Packet *, const char *, Event *);
+void CallLogFuncs(Packet *, const char *, ListHead *, Event *);
+void CallAlertFuncs(Packet *, const char *, ListHead *, Event *);
 
 static inline void DisableDetect( Packet *p )
 {
@@ -92,6 +92,11 @@ static inline void DisableAllDetect( Packet *p )
 {
     DisableAppPreprocessors( p );
     do_detect = do_detect_content = 0;
+}
+
+static inline void EnableContentDetect( void )
+{
+    do_detect_content = 1;
 }
 
 static inline void DisablePacketAnalysis( Packet *p )

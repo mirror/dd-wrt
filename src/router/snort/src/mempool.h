@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -24,59 +24,79 @@
 #ifndef _MEMPOOL_H
 #define _MEMPOOL_H
 
-#include "sf_sdlist_types.h"
-#include "sf_types.h"
-#include "snort_debug.h"
-
-typedef unsigned int PoolCount;
-
 typedef struct _MemBucket
 {
-    SDListItem *key;
-    int used;
+    struct _MemBucket* next;
+    struct _MemBucket* prev;
     void *data;
+    size_t obj_size;
+    void *scbPtr;
 } MemBucket;
 
 typedef struct _MemPool
 {
-    void **datapool; /* memory buffer for MemBucket->data */
-
-    MemBucket *bucketpool; /* memory buffer */
-
-    SDListItem *listpool; /* list of things to use for memory bufs */
-
-    PoolCount total;
-
-    sfSDList free_list;
-    sfSDList used_list;
+    MemBucket* used_list_head;
+    MemBucket* used_list_tail;
+    MemBucket* free_list;
 
     size_t obj_size;
+    size_t max_memory;
+    size_t used_memory;
+    size_t free_memory;
 } MemPool;
 
-int mempool_init(MemPool *mempool, PoolCount num_objects, size_t obj_size);
+MemBucket* mempool_get_lru_bucket(MemPool *memory_pool);
+unsigned mempool_prune_freelist(MemPool *memory_pool, size_t new_max_memory, unsigned maxWork);
+
+int mempool_init(MemPool *mempool, unsigned num_objects, size_t obj_size);
+int mempool_init_optional_prealloc(MemPool *mempool, unsigned num_objects, size_t obj_size,
+                                   int prealloc);
 int mempool_destroy(MemPool *mempool);
 MemBucket *mempool_alloc(MemPool *mempool);
+MemBucket *mempool_force_alloc(MemPool *mempool);
 void mempool_free(MemPool *mempool, MemBucket *obj);
+int mempool_free_bucket(MemPool *mempool);
 int mempool_clean(MemPool *mempool);
 
 static inline MemBucket* mempool_oldestUsedBucket(
         MemPool *mempool
         )
 {
-    SDListItem *li = mempool->used_list.head;
-
-    if (li)
-    {
-        return li->data;
-    }
-
-    return NULL;
+    return mempool->used_list_head;
 }
-static inline unsigned int mempool_numUsedBucket(
+static inline unsigned int mempool_numUsedBuckets(
         MemPool *mempool
         )
 {
-    return mempool->used_list.size;
+    return (unsigned int)((mempool->used_memory + mempool->obj_size - 1) / mempool->obj_size);
+}
+
+static inline unsigned int mempool_numFreeBuckets(
+        MemPool *mempool
+        )
+{
+    return (unsigned int)((mempool->free_memory + mempool->obj_size - 1) / mempool->obj_size);
+}
+static inline unsigned int mempool_numTotalBuckets(
+        MemPool *mempool
+        )
+{
+    return (unsigned int)((mempool->used_memory + mempool->free_memory + mempool->obj_size - 1) / mempool->obj_size);
+}
+
+static inline void mempool_setNumObjects(
+        MemPool *mempool, unsigned num_objects
+        )
+{
+    mempool->max_memory = num_objects * mempool->obj_size; 
+}
+
+static inline void mempool_setObjectSize(
+        MemPool *mempool, unsigned num_objects, size_t obj_size
+        )
+{
+    mempool->obj_size = obj_size; 
+    mempool->max_memory = num_objects * obj_size; 
 }
 
 #endif /* _MEMPOOL_H */

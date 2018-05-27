@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2002-2013 Sourcefire, Inc.
 ** Copyright (C) 1998-2002 Martin Roesch <roesch@sourcefire.com>
 **
@@ -52,7 +52,6 @@
 #include <string.h>
 #include <setjmp.h>
 #include <signal.h>
-#include <sys/stat.h>
 #include <time.h>
 #include <pcap.h>
 #ifdef HAVE_MALLOC_TRIM
@@ -131,6 +130,10 @@
 #include "sfcontrol_funcs.h"
 #include "idle_processing_funcs.h"
 #include "file_service.h"
+#include "pkt_tracer.h"
+#include "session_expect.h"
+#include "reload.h"
+#include "reg_test.h"
 #ifdef SIDE_CHANNEL
 # include "sidechannel.h"
 #endif
@@ -164,6 +167,10 @@
 
 #ifdef CONTROL_SOCKET
 #include "dump.h"
+#endif
+
+#ifdef PERF_PROFILING
+#include "perf_indicators.h"
 #endif
 
 /* Macros *********************************************************************/
@@ -200,6 +207,16 @@
 
 #define DEFAULT_PAF_MAX  16384
 
+/* Instead of 16k as Flowcount, We should use a smaller number for idle pruning in SnortIdle() to avoid AAB.
+ * Now in snort Idle case, we will prune the sessions with in AAB timeout (Miminum configurable AAB value).
+ * Tested and found out, on an average 0.2 ms is taking to prune one session.
+ * FlowCount = (AAB timeout / time to prune onesession ) / 3  (tcp+udp+ip)
+ */
+
+#define AAB_THRESHOLD 250
+#define TIME_TO_PRUNE_ONE_SESSION 0.2
+const uint32_t FLOW_COUNT = (AAB_THRESHOLD/TIME_TO_PRUNE_ONE_SESSION) / 3;
+
 /* Data types *****************************************************************/
 
 typedef enum _GetOptArgType
@@ -229,6 +246,7 @@ extern int optopt;
 
 extern ListHead *head_tmp;
 
+
 /* Globals/Public *************************************************************/
 PacketCount pc;  /* packet count information */
 uint32_t *netmasks = NULL;   /* precalculated netmask array */
@@ -238,11 +256,6 @@ char *snort_conf_dir = NULL;
 
 SnortConfig *snort_cmd_line_conf = NULL;
 SnortConfig *snort_conf = NULL;
-
-#if defined(SNORT_RELOAD) && !defined(WIN32)
-SnortConfig *snort_conf_new = NULL;
-SnortConfig *snort_conf_old = NULL;
-#endif
 
 int internal_log_level = INTERNAL_LOG_LEVEL__MESSAGE;
 
@@ -260,21 +273,17 @@ int reload_attribute_table_flags = 0;
 #endif
 
 volatile bool snort_initializing = true;
-static volatile int snort_exiting = 0;
+volatile int snort_exiting = 0;
 static pid_t snort_main_thread_pid = 0;
 #ifndef WIN32
 static pthread_t snort_main_thread_id = 0;
 #endif
 
 #if defined(SNORT_RELOAD) && !defined(WIN32)
-static volatile int snort_reload = 0;
-static volatile int snort_swapped = 0;
-static volatile int snort_reload_thread_created = 0;
+volatile int snort_reload = 0;
 static pthread_t snort_reload_thread_id;
-static pid_t snort_reload_thread_pid;
-#ifdef CONTROL_SOCKET
-static volatile int reloadInProgress = 0;
-#endif
+volatile int snort_reload_thread_created = 0;
+pid_t snort_reload_thread_pid;
 #endif
 
 const struct timespec thread_sleep = { 0, 100 };
@@ -316,6 +325,7 @@ grinder_t grinder;
 pthread_mutex_t snort_process_lock;
 static bool snort_process_lock_held = false;
 #endif
+uint8_t iprep_current_update_counter;
 
 /* Locals/Private ************************************************************/
 static long int pcap_loop_count = 0;
@@ -348,9 +358,8 @@ static volatile bool reload_signal = false;
  * test between reload_signal and reload_total fails (which means we got a new
  *  SIGNAL_SNORT_RELOAD).  They need to be the same type and size to do this
  *  comparison.  See ReloadConfigThread() */
-typedef uint32_t snort_reload_t;
-static volatile snort_reload_t reload_signal = 0;
-static snort_reload_t reload_total = 0;
+volatile snort_reload_t reload_signal = 0;
+snort_reload_t reload_total = 0;
 #endif
 
 static int done_processing = 0;
@@ -472,11 +481,25 @@ static struct option long_options[] =
    {"ha-peer", LONGOPT_ARG_NONE, NULL, ARG_HA_PEER},
    {"ha-out", LONGOPT_ARG_REQUIRED, NULL, ARG_HA_OUT},
    {"ha-in", LONGOPT_ARG_REQUIRED, NULL, ARG_HA_IN},
+   {"ha-pdts-in", LONGOPT_ARG_REQUIRED, NULL, ARG_HA_PDTS_IN},
 
    {"suppress-config-log", LONGOPT_ARG_NONE, NULL, SUPPRESS_CONFIG_LOG},
 
+#ifdef DUMP_BUFFER
+   {"buffer-dump", LONGOPT_ARG_OPTIONAL, NULL, BUFFER_DUMP},
+   {"buffer-dump-alert", LONGOPT_ARG_OPTIONAL, NULL, BUFFER_DUMP_ALERT},
+#endif
+
    {0, 0, 0, 0}
 };
+
+#ifdef DUMP_BUFFER
+bool dump_alert_only;
+bool dumped_state;
+bool dump_enabled;
+TraceBuffer *(*getBuffers[MAX_BUFFER_DUMP_FUNC])(void);
+BufferDumpEnableMask bdmask;
+#endif
 
 typedef void (*log_func_t)(Packet*);
 static void LogPacket (Packet* p)
@@ -492,7 +515,6 @@ static void InitNetmasks(void);
 static void InitProtoNames(void);
 static const char* GetPacketSource(char**);
 
-static void CleanExit(int);
 static void SnortInit(int, char **);
 static void InitPidChrootAndPrivs(pid_t);
 static void ParseCmdLine(int, char **);
@@ -500,7 +522,6 @@ static int ShowUsage(char *);
 static void PrintVersion(void);
 static void SetSnortConfDir(void);
 static void InitGlobals(void);
-static SnortConfig * MergeSnortConfs(SnortConfig *, SnortConfig *);
 static void InitSignals(void);
 #if defined(NOCOREFILE) && !defined(WIN32)
 static void SetNoCores(void);
@@ -548,17 +569,6 @@ static void SigPipeHandler(int);
 #endif
 static void SigOopsHandler(int);
 
-#ifdef TARGET_BASED
-static void SigNoAttributeTableHandler(int);
-#endif
-
-#if defined(SNORT_RELOAD) && !defined(WIN32)
-static SnortConfig * ReloadConfig(void);
-static void * ReloadConfigThread(void *);
-static int VerifyReload(SnortConfig *);
-static int VerifyOutputs(SnortConfig *, SnortConfig *);
-static int VerifyLibInfos(DynamicLibInfo *, DynamicLibInfo *);
-#endif  /* SNORT_RELOAD */
 
 int InMainThread ()
 {
@@ -573,7 +583,11 @@ int InMainThread ()
 
 bool SnortIsInitializing( )
 {
+#if defined(INLINE_FAILOPEN) && !defined(WIN32)
+    return snort_initializing && !inline_failopen_initialized;
+#else
     return snort_initializing;
+#endif
 }
 
 static int IsProcessingPackets(uint16_t type, const uint8_t *data, uint32_t length, void **new_config,
@@ -582,140 +596,17 @@ static int IsProcessingPackets(uint16_t type, const uint8_t *data, uint32_t leng
     return (!snort_initializing && !snort_exiting && !exit_signal) ? 0 : -1;
 }
 
-#if defined(SNORT_RELOAD) && !defined(WIN32) && defined(CONTROL_SOCKET)
-
-static pthread_mutex_t reload_mutex = PTHREAD_MUTEX_INITIALIZER;
-
-static int ControlSocketReloadConfig(uint16_t type, const uint8_t *data, uint32_t length, void **new_config,
-                                     char *statusBuf, int statusBuf_len)
-{
-    SnortConfig *new_sc;
-
-    pthread_mutex_lock(&reload_mutex);
-    while (reloadInProgress)
-    {
-        sleep(1);
-    }
-    reloadInProgress = 1;
-    pthread_mutex_unlock(&reload_mutex);
-
-    LogMessage("\n");
-    LogMessage("        --== Reloading Snort ==--\n");
-    LogMessage("\n");
-
-    new_sc = ReloadConfig();
-    if (new_sc == NULL)
-    {
-        reloadInProgress = 0;
-        return -1;
-    }
-    *new_config = (void *)new_sc;
-    return 0;
-}
-
-static int ControlSocketReloadSwap(uint16_t type, void *new_config, void **old_config)
-{
-    PostConfigFuncNode *idxPlugin = NULL;
-
-    *old_config = (void *)snort_conf;
-    snort_conf = (SnortConfig *)new_config;
-    SwapPreprocConfigurations(snort_conf);
-
-#ifdef INTEL_SOFT_CPM
-    if (snort_conf->fast_pattern_config->search_method == MPSE_INTEL_CPM)
-        IntelPmActivate(snort_conf);
-#endif
-
-    /* Do any reload for plugin data */
-    idxPlugin = plugin_reload_funcs;
-    while(idxPlugin)
-    {
-        idxPlugin->func(snort_conf, SIGHUP, idxPlugin->arg);
-        idxPlugin = idxPlugin->next;
-    }
-    return 0;
-}
-
-static void ControlSocketReloadFree(uint16_t type, void *old_config, struct _THREAD_ELEMENT *te, ControlDataSendFunc f)
-{
-    SnortConfig *old_sc = (SnortConfig *)old_config;
-
-    FreeSwappedPreprocConfigurations(snort_conf);
-
-    SnortConfFree(old_sc);
-
-#ifdef INTEL_SOFT_CPM
-    if (snort_conf->fast_pattern_config->search_method != MPSE_INTEL_CPM)
-        IntelPmStopInstance();
-#endif
-
-    LogMessage("\n");
-    LogMessage("        --== Reload Complete ==--\n");
-    LogMessage("\n");
-
-    reloadInProgress = 0;
-}
-#endif
-
-static inline void CheckForReload(void)
-{
-#if defined(SNORT_RELOAD) && !defined(WIN32)
-
-    /* Check for a new configuration */
-    if (snort_reload)
-    {
-        PostConfigFuncNode *idxPlugin = NULL;
-        snort_reload = 0;
-
-        /* There was an error reloading.  A non-reloadable configuration
-         * option changed */
-        if (snort_conf_new == NULL)
-        {
-#ifdef RELOAD_ERROR_FATAL
-            CleanExit(1);
-#else
-            Restart();
-#endif
-        }
-
-        snort_conf_old = snort_conf;
-        snort_conf = snort_conf_new;
-        snort_conf_new = NULL;
-
-        ScRestoreInternalLogLevel();
-
-        SwapPreprocConfigurations(snort_conf);
-
-        /* Need to do this here because there is potentially outstanding
-         * state data pointing to the previous configuration.  A race
-         * condition is created if these are free'd in the reload thread
-         * where a double free could occur. */
-        FreeSwappedPreprocConfigurations(snort_conf);
-
-#ifdef INTEL_SOFT_CPM
-        if (snort_conf->fast_pattern_config->search_method == MPSE_INTEL_CPM)
-            IntelPmActivate(snort_conf);
-#endif
-
-        snort_swapped = 1;
-
-        /* Do any reload for plugin data */
-        idxPlugin = plugin_reload_funcs;
-        while(idxPlugin)
-        {
-            idxPlugin->func(snort_conf, SIGHUP, idxPlugin->arg);
-            idxPlugin = idxPlugin->next;
-        }
-
-    }
-#endif
-}
-
 /*  F U N C T I O N   D E F I N I T I O N S  **********************************/
+
+#define INLINE_FAIL_OPEN_NOT_USED 0
+#define INLINE_FAIL_OPEN_COMPLETE 1
+#define INLINE_FAIL_OPEN_ERROR    2
 
 static int InlineFailOpen (void)
 {
 #if defined(INLINE_FAILOPEN) && !defined(WIN32)
+    int error = 0;
+
     if (ScAdapterInlineMode() &&
         !ScReadMode() && !ScDisableInlineFailopen())
     {
@@ -756,7 +647,7 @@ static int InlineFailOpen (void)
              * (linuxthreads) */
             while (snort_initializing)
             {
-                int error = DAQ_Acquire(1, IgnoreCallback, NULL);
+                error = DAQ_Acquire(1, IgnoreCallback, NULL);
 
                 if (error)
                     break;
@@ -768,11 +659,14 @@ static int InlineFailOpen (void)
             LogMessage("Fail Open Thread terminated, passed %d packets.\n",
                        inline_failopen_pass_pkt_cnt);
 
-            return 1;
+            if(error)
+                return INLINE_FAIL_OPEN_ERROR;
+            else
+                return INLINE_FAIL_OPEN_COMPLETE;
         }
     }
 #endif
-    return 0;
+    return INLINE_FAIL_OPEN_NOT_USED;
 }
 
 /*
@@ -853,6 +747,7 @@ int SnortMain(int argc, char *argv[])
     {
         DAQ_Init(snort_conf);
         DAQ_New(snort_conf, intf);
+        DAQ_UpdateTunnelBypass(snort_conf);
     }
     if ( tmp_ptr )
         free(tmp_ptr);
@@ -879,18 +774,15 @@ int SnortMain(int argc, char *argv[])
     SnortStartThreads();
 #endif
 
-#if defined(SNORT_RELOAD) && !defined(WIN32) && defined(CONTROL_SOCKET)
-    if (ControlSocketRegisterHandler(CS_TYPE_RELOAD, &ControlSocketReloadConfig, &ControlSocketReloadSwap, &ControlSocketReloadFree))
-    {
-        LogMessage("Failed to register the reload control handler.\n");
-    }
-#endif
-
+    ReloadControlSocketRegister();
     if (ControlSocketRegisterHandler(CS_TYPE_IS_PROCESSING, &IsProcessingPackets, NULL, NULL))
     {
         LogMessage("Failed to register the is processing control handler.\n");
     }
-
+    if (ControlSocketRegisterHandler(CS_TYPE_PKT_TRACER, &DebugPktTracer, NULL, NULL))
+    {
+        LogMessage("Failed to register the packet tracer control handler.\n");
+    }
 #ifdef CONTROL_SOCKET
     if (ControlSocketRegisterHandler(CS_TYPE_DUMP_PACKETS, &PacketDumpCommand, NULL, NULL))
     {
@@ -910,14 +802,26 @@ int SnortMain(int argc, char *argv[])
         SetPktProcessor();
         DAQ_Start();
     }
-    else if ( !InlineFailOpen() )
+    else
     {
-        DAQ_Start();
-        SetPktProcessor();
-        SnortUnprivilegedInit();
+        switch(InlineFailOpen())
+        {
+            case INLINE_FAIL_OPEN_COMPLETE:
+                break;
+            case INLINE_FAIL_OPEN_NOT_USED:
+                DAQ_Start();
+                SetPktProcessor();
+                SnortUnprivilegedInit();
+                break;
+            case INLINE_FAIL_OPEN_ERROR:
+            default:
+                CleanExit(1);
+                return 0;
+        }
     }
 
-    PacketLoop();
+    if(!exit_signal)
+        PacketLoop();
 
     // DAQ is shutdown in CleanExit() since we don't always return here
     CleanExit(0);
@@ -931,7 +835,7 @@ int SnortMain(int argc, char *argv[])
  * The child does not "inherit" threads created in the parent. */
 static void SnortStartThreads(void)
 {
-    
+
     ControlSocketInit();
 
 #ifdef SIDE_CHANNEL
@@ -957,7 +861,8 @@ static void SnortStartThreads(void)
 # endif
 
 # ifdef TARGET_BASED
-    SFAT_StartReloadThread();
+    if(IsAdaptiveConfigured() && !ScDisableAttrReload(snort_conf))
+	SFAT_StartReloadThread();
 # endif
 }
 #else   /* WIN32 */
@@ -1020,7 +925,7 @@ static void PrintAllInterfaces (void)
         if (dev->addresses)
         {
             struct sockaddr_in* saddr = (struct sockaddr_in*)dev->addresses->addr;
-            sfip_t dev_ip;
+            sfcidr_t dev_ip;
             if ((saddr->sin_family == AF_INET) || (saddr->sin_family == AF_INET6))
             {
                 sfip_set_raw(&dev_ip, &saddr->sin_addr, saddr->sin_family);
@@ -1253,8 +1158,6 @@ static int PQ_Next (void)
         PQ_Show(pcap);
         SetPktProcessor();
 
-        SetSampleTime(perfmon_config, NULL);
-
 #if defined(SNORT_RELOAD) && !defined(WIN32)
         if ( snort_conf->run_flags & RUN_FLAG__PCAP_RELOAD && ScIdsMode())
         {
@@ -1344,23 +1247,21 @@ static const char* GetPacketSource (char** sptr)
 
 static void InitPidChrootAndPrivs(pid_t pid)
 {
-    /* create the PID file */
-    if ( !ScReadMode() &&
-        (ScDaemonMode() || *snort_conf->pidfile_suffix || ScCreatePidFile()))
-    {
-        CreatePidFile(DAQ_GetInterfaceSpec(), pid);
-    }
 
 #ifndef WIN32
     /* Drop the Chrooted Settings */
     if (snort_conf->chroot_dir)
         SetChroot(snort_conf->chroot_dir, &snort_conf->log_dir);
-#endif
 
-#ifndef WIN32
     /* Drop privileges if requested, when initialization is done */
     SetUidGid(ScUid(), ScGid());
 #endif
+    /* create the PID file */
+    if ( !ScReadMode() &&
+       (ScDaemonMode() || *snort_conf->pidfile_suffix || ScCreatePidFile()))
+    {
+       CreatePidFile(DAQ_GetInterfaceSpec(), pid);
+    }
 }
 
 static void LoadDynamicPlugins(SnortConfig *sc)
@@ -1519,8 +1420,18 @@ static void PrintVersion(void)
 {
     DisplayBanner();
 
-    //  Get and print out library versions
+/*  Get and print out library versions.
+ *  This information would be printed only for one Snort instance which doesn't
+ *  have --suppress-config-log option. For Snort instances with --supress-config-log,
+ *  we print only banner to provide some info about Snort process being started/reloaded.
+ *  This change is done to avoid duplicate logging of plugin information.
+ */
+    if (ScSuppressConfigLog())
+        ScSetInternalLogLevel(INTERNAL_LOG_LEVEL__ERROR);
+
     DisplayDynamicPluginVersions();
+
+    ScRestoreInternalLogLevel();
 }
 
 static void PrintDaqModules (SnortConfig* sc, char* dir)
@@ -1619,6 +1530,9 @@ static int MetaCallback(
     }
 #endif
 
+#ifdef SNORT_RELOAD
+    ReloadAdjust(false, 0);
+#endif
     ControlSocketDoWork(0);
 #ifdef SIDE_CHANNEL
     SideChannelDrainRX(0);
@@ -1645,9 +1559,10 @@ static DAQ_Verdict PacketCallback(
 {
     int inject = 0;
     DAQ_Verdict verdict = DAQ_VERDICT_PASS;
+    verdict_reason = VERDICT_REASON_NO_BLOCK;
     PROFILE_VARS;
 
-    PREPROC_PROFILE_START(totalPerfStats);
+    PREPROC_PROFILE_START_PI(totalPerfStats);
 
 #ifdef SIDE_CHANNEL
     if (ScSideChannelEnabled() && !snort_process_lock_held)
@@ -1667,7 +1582,7 @@ static DAQ_Verdict PacketCallback(
     {
 #ifndef SNORT_RELOAD
         /* Got SIGNAL_SNORT_RELOAD */
-        PREPROC_PROFILE_END(totalPerfStats);
+        PREPROC_PROFILE_END_PI(totalPerfStats);
         Restart();
 #endif
     }
@@ -1690,7 +1605,7 @@ static DAQ_Verdict PacketCallback(
 #ifdef REG_TEST
     if ( snort_conf->pkt_skip && pc.total_from_daq <= snort_conf->pkt_skip )
     {
-        PREPROC_PROFILE_END(totalPerfStats);
+        PREPROC_PROFILE_END_PI(totalPerfStats);
         return verdict;
     }
 #endif
@@ -1698,7 +1613,7 @@ static DAQ_Verdict PacketCallback(
 #if defined(WIN32) && defined(ENABLE_WIN32_SERVICE)
     if (ScTerminateService() || ScPauseService())
     {
-        PREPROC_PROFILE_END(totalPerfStats);
+        PREPROC_PROFILE_END_PI(totalPerfStats);
         return verdict;  // time to go
     }
 #endif
@@ -1722,22 +1637,19 @@ static DAQ_Verdict PacketCallback(
         Active_SendResponses(&s_packet);
     }
 #endif
+
     if ( Active_PacketWasDropped() )
     {
-        if ( verdict == DAQ_VERDICT_PASS ) 
+        if ( verdict == DAQ_VERDICT_PASS )
         {
 #ifdef HAVE_DAQ_VERDICT_RETRY
-            FileContext *file_context = get_current_file_context(s_packet.ssnptr);
-            if(file_context && file_context->verdict == FILE_VERDICT_PENDING) 
-            {
-                //  File module is waiting for a response from the cloud.
+            if ( Active_RetryIsPending() && !(s_packet.packet_flags & PKT_RETRANSMIT) )
                 verdict = DAQ_VERDICT_RETRY;
-            }
             else
-#endif
-            {
                 verdict = DAQ_VERDICT_BLOCK;
-            }
+#else
+            verdict = DAQ_VERDICT_BLOCK;
+#endif
         }
     }
     else
@@ -1790,10 +1702,11 @@ static DAQ_Verdict PacketCallback(
             }
         }
     }
+
 #ifdef ENABLE_HA
     /* This needs to be called here since the session could have been updated anywhere up to this point. :( */
     if (session_api)
-        session_api->process_ha(s_packet.ssnptr);
+        session_api->process_ha(s_packet.ssnptr, pkthdr);
 #endif
 
     /* Collect some "on the wire" stats about packet size, etc */
@@ -1803,14 +1716,30 @@ static DAQ_Verdict PacketCallback(
 
     if( session_api )
         session_api->check_session_timeout(4, pkthdr->ts.tv_sec);
+#ifdef SNORT_RELOAD
+    ReloadAdjust(false, pkthdr->ts.tv_sec);
+#endif
     ControlSocketDoWork(0);
 #ifdef SIDE_CHANNEL
     SideChannelDrainRX(0);
 #endif
 
+    if ((verdict == DAQ_VERDICT_BLOCK || verdict == DAQ_VERDICT_BLACKLIST) && (verdict_reason == VERDICT_REASON_NO_BLOCK))
+        verdict_reason = VERDICT_REASON_UNKNOWN;
+#ifdef HAVE_DAQ_VERDICT_RETRY
+    if (verdict == DAQ_VERDICT_RETRY && verdict_reason == VERDICT_REASON_NO_BLOCK)
+        verdict_reason = VERDICT_REASON_DAQRETRY;
+#endif
+    if (pkt_trace_enabled)
+        writePktTraceData(verdict, getNapRuntimePolicy(), getIpsRuntimePolicy(), &s_packet);
+#if defined(HAVE_DAQ_EXT_MODFLOW) && defined(HAVE_DAQ_VERDICT_REASON)
+    if (verdict_reason != VERDICT_REASON_NO_BLOCK)
+        sendReason(&s_packet);
+#endif
+
     s_packet.pkth = NULL;  // no longer avail on segv
 
-    PREPROC_PROFILE_END(totalPerfStats);
+    PREPROC_PROFILE_END_PI(totalPerfStats);
     return verdict;
 }
 
@@ -1866,6 +1795,23 @@ DAQ_Verdict ProcessPacket(
     /***** Policy specific decoding should into this function *****/
     p->configPolicyId = snort_conf->targeted_policies[ getNapRuntimePolicy() ]->configPolicyId;
 
+#if defined(HAVE_DAQ_EXT_MODFLOW) && defined(HAVE_DAQ_PKT_TRACE)
+    if (pkt_trace_cli_flag || (pkthdr->flags & DAQ_PKT_FLAG_TRACE_ENABLED))
+#else
+    if (pkt_trace_cli_flag)
+#endif
+    {
+        pkt_trace_enabled = pktTracerDebugCheck(p);
+        if (pkt_trace_enabled)
+        {
+            addPktTraceInfo(p);
+            if (p->packet_flags & PKT_IGNORE)
+                addPktTraceData(VERDICT_REASON_SNORT, snprintf(trace_line, MAX_TRACE_LINE, "Snort: packet ignored\n"));
+        }
+    }
+    else
+        pkt_trace_enabled = false;
+
     /* just throw away the packet if we are configured to ignore this port */
     if ( !(p->packet_flags & PKT_IGNORE) )
     {
@@ -1873,6 +1819,8 @@ DAQ_Verdict ProcessPacket(
         Preprocess(p);
         log_func(p);
     }
+    else if (!pkt_trace_enabled) // ignored packet
+        addPktTraceData(VERDICT_REASON_SNORT, 0);
 
     if ( Active_SessionWasDropped() )
     {
@@ -1882,13 +1830,11 @@ DAQ_Verdict ProcessPacket(
             Active_ForceDropAction(p);
 
         if ( Active_GetTunnelBypass() )
-        {
             pc.internal_blacklist++;
-            return verdict;
-        }
-
-        if ( ScIpsInlineMode() || Active_PacketForceDropped() )
+        else if ( ScIpsInlineMode() || Active_PacketForceDropped() )
+	{
             verdict = DAQ_VERDICT_BLACKLIST;
+	}
         else
             verdict = DAQ_VERDICT_IGNORE;
     }
@@ -2102,6 +2048,10 @@ static int ShowUsage(char *program_name)
     FPUTS_BOTH ("   --ha-out <file>                 Write high-availability events to this file.\n");
     FPUTS_BOTH ("   --ha-in <file>                  Read high-availability events from this file on startup (warm-start).\n");
     FPUTS_BOTH ("   --suppress-config-log           Suppress configuration information output.\n");
+#ifdef DUMP_BUFFER
+    FPUTS_BOTH ("   --buffer-dump=<file>            Dump buffers for all packets\n");
+    FPUTS_BOTH ("   --buffer-dump-alert=<file>            Dump buffers when a rule triggers\n");
+#endif
 #undef FPUTS_WIN32
 #undef FPUTS_UNIX
 #undef FPUTS_BOTH
@@ -2911,11 +2861,30 @@ static void ParseCmdLine(int argc, char **argv)
             case ARG_HA_IN:
                 sc->ha_in = SnortStrdup(optarg);
                 break;
+            case ARG_HA_PDTS_IN:
+                sc->ha_pdts_in = SnortStrdup(optarg);
+                break;
 #endif
 
             case SUPPRESS_CONFIG_LOG:
                 sc->suppress_config_log = 1;
                 break;
+
+#ifdef DUMP_BUFFER
+            case BUFFER_DUMP:
+                dump_alert_only = false;
+                dump_enabled = true;
+                ConfigBufferDump(sc, optarg);
+		ParseOutput(sc, NULL, "log_buffer_dump");
+                break;
+
+            case BUFFER_DUMP_ALERT:
+                dump_alert_only = true;
+                dump_enabled = true;
+                ConfigBufferDump(sc, optarg);
+                ParseOutput(sc, NULL, "log_buffer_dump");
+                break;
+#endif
 
             case '?':  /* show help and exit with 1 */
                 PrintVersion();
@@ -3243,12 +3212,19 @@ static void SnortIdle(void)
         ClearRotatePerfFileFlag();
     }
 #ifdef OPENBSD
+#ifdef SNORT_RELOAD
     else if (reload_signal != reload_total)
         nanosleep(&packet_sleep, NULL);
 #endif
+#endif
 
+#ifndef REG_TEST
     if( session_api )
-        session_api->check_session_timeout(16384, time(NULL));
+        session_api->check_session_timeout(FLOW_COUNT, time(NULL));
+#ifdef SNORT_RELOAD
+    ReloadAdjust(true, time(NULL));
+#endif
+#endif
     ControlSocketDoWork(1);
 #ifdef SIDE_CHANNEL
     SideChannelDrainRX(0);
@@ -3258,9 +3234,12 @@ static void SnortIdle(void)
 
 void PacketLoop (void)
 {
-    int error;
+    int error = 0;
     int pkts_to_read = (int)snort_conf->pkt_cnt;
+    time_t curr_time, last_time;
 
+    curr_time = time(NULL);
+    last_time = curr_time;
     TimeStart();
 
     while ( !exit_logged )
@@ -3283,11 +3262,19 @@ void PacketLoop (void)
 
         if ( error )
         {
+            //Update the time tracker
+            curr_time = packet_time();
+            last_time = curr_time;
+
             if ( !ScReadMode() || !PQ_Next() )
             {
                 /* If not read-mode or no next pcap, we're done */
                 break;
             }
+#ifdef REG_TEST
+            else
+                regTestCheckIPIncrement();
+#endif
         }
         /* Check for any pending signals when no packets are read*/
         else
@@ -3297,6 +3284,16 @@ void PacketLoop (void)
             // so either move SnortIdle() to SignalCheck() or directly
             // set the flag in the signal handler (and then clear it
             // in SnortIdle()).
+
+            if ( !ScReadMode() )
+            {
+                time_t new_time = time(NULL);
+                curr_time += new_time - last_time;
+                last_time = new_time;
+
+                // Check if its time to dump perf data
+                sfPerformanceStatsOOB(perfmon_config, curr_time);
+            }
 
             // check for signals
             if ( SignalCheck() )
@@ -3465,12 +3462,7 @@ static void SigExitHandler(int signal)
 {
     if (exit_signal != 0)
         return;
-
-    /* Don't want to have to wait to start processing packets before
-     * getting out of dodge */
-    if (snort_initializing)
-        _exit(0);
-
+    
     exit_signal = signal;
 }
 
@@ -3500,7 +3492,7 @@ static void SigPipeHandler(int signal)
 #endif
 
 #ifdef TARGET_BASED
-static void SigNoAttributeTableHandler(int signal)
+void SigNoAttributeTableHandler(int signal)
 {
    no_attr_table_signal = true;
 }
@@ -3554,7 +3546,7 @@ static void PrintStatistics (void)
  * Returns: void function
  *
  ****************************************************************************/
-static void CleanExit(int exit_val)
+void CleanExit(int exit_val)
 {
     SnortConfig tmp;
 
@@ -3618,6 +3610,11 @@ static void SnortCleanup(int exit_val)
 
     Active_Suspend();  // rules that fire now can't actually block
 
+#if defined(INLINE_FAILOPEN) && !defined(WIN32)
+    if (inline_failopen_thread_running)
+        pthread_kill(inline_failopen_thread_id, SIGKILL);
+#endif
+
     if ( DAQ_WasStarted() )
     {
 #ifdef EXIT_CHECK
@@ -3647,11 +3644,6 @@ static void SnortCleanup(int exit_val)
      * of it's loop and exit */
     if (snort_reload_thread_created)
         pthread_join(snort_reload_thread_id, NULL);
-#endif
-
-#if defined(INLINE_FAILOPEN) && !defined(WIN32)
-    if (inline_failopen_thread_running)
-        pthread_kill(inline_failopen_thread_id, SIGKILL);
 #endif
 
 #if defined(TARGET_BASED) && !defined(WIN32)
@@ -3734,6 +3726,7 @@ static void SnortCleanup(int exit_val)
 
 #ifdef TARGET_BASED
     SFAT_Cleanup();
+    FreeProtoocolReferenceTable();
 #endif
 
     PQ_CleanUp();
@@ -4145,9 +4138,7 @@ SnortConfig * SnortConfNew(void)
     sc->targeted_policies = NULL;
     sc->num_policies_allocated = 0;
 
-#ifndef REG_TEST
     sc->paf_max = DEFAULT_PAF_MAX;
-#endif
 
     /* Default secure hash pattern type */
     sc->Default_Protected_Content_Hash_Type = SECHASH_NONE;
@@ -4317,6 +4308,10 @@ void SnortConfFree(SnortConfig *sc)
 
     if(sc->ha_in)
         free(sc->ha_in);
+
+    if(sc->ha_pdts_in)
+        free(sc->ha_pdts_in);
+
 #endif
 
     free_file_config(sc->file_config);
@@ -4326,13 +4321,21 @@ void SnortConfFree(SnortConfig *sc)
         free(sc->side_channel_config.opts);
 #endif
 
+#ifdef DUMP_BUFFER
+    if (sc->buffer_dump_file)
+        StringVector_Delete(sc->buffer_dump_file);
+#endif
+
 #ifdef INTEL_SOFT_CPM
     IntelPmRelease(sc->ipm_handles);
 #endif
 
 #ifdef SNORT_RELOAD
     FreePreprocessorReloadData(sc);
+    ReloadFreeAdjusters(sc);
 #endif
+
+    FreeMandatoryEarlySessionCreators(sc->mandatoryESCreators);
 
     free(sc);
 #ifdef HAVE_MALLOC_TRIM
@@ -4530,7 +4533,7 @@ static void FreePreprocessors(SnortConfig *sc)
     sc->preproc_post_config_funcs = NULL;
 }
 
-static SnortConfig * MergeSnortConfs(SnortConfig *cmd_line, SnortConfig *config_file)
+SnortConfig * MergeSnortConfs(SnortConfig *cmd_line, SnortConfig *config_file)
 {
     unsigned int i;
 
@@ -4638,11 +4641,11 @@ static SnortConfig * MergeSnortConfs(SnortConfig *cmd_line, SnortConfig *config_
     if (cmd_line->fast_pattern_config != NULL)
         config_file->fast_pattern_config->search_method = cmd_line->fast_pattern_config->search_method;
 
-    if (cmd_line->obfuscation_net.family != 0)
-        memcpy(&config_file->obfuscation_net, &cmd_line->obfuscation_net, sizeof(sfip_t));
+    if (sfip_is_set(&cmd_line->obfuscation_net))
+        memcpy(&config_file->obfuscation_net, &cmd_line->obfuscation_net, sizeof(sfcidr_t));
 
-    if (cmd_line->homenet.family != 0)
-        memcpy(&config_file->homenet, &cmd_line->homenet, sizeof(sfip_t));
+    if (sfip_is_set(&cmd_line->homenet))
+        memcpy(&config_file->homenet, &cmd_line->homenet, sizeof(sfcidr_t));
 
     if (cmd_line->interface != NULL)
     {
@@ -4808,6 +4811,22 @@ static SnortConfig * MergeSnortConfs(SnortConfig *cmd_line, SnortConfig *config_
             free(config_file->ha_in);
         config_file->ha_in = strdup(cmd_line->ha_in);
     }
+    if ( cmd_line->ha_pdts_in )
+    {
+        if(config_file->ha_pdts_in != NULL)
+            free(config_file->ha_pdts_in);
+        config_file->ha_pdts_in = strdup(cmd_line->ha_pdts_in);
+    }
+
+#endif
+
+#ifdef DUMP_BUFFER
+    /* Command line overwrites daq_dirs */
+    if (config_file->buffer_dump_file)
+        StringVector_Delete(config_file->buffer_dump_file);
+
+    config_file->buffer_dump_file = StringVector_New();
+    StringVector_AddVector(config_file->buffer_dump_file, cmd_line->buffer_dump_file);
 #endif
 
     return config_file;
@@ -4909,6 +4928,9 @@ void FreeVarList(VarNode *head)
 
 void SnortInit(int argc, char **argv)
 {
+#ifdef WIN32
+    char dllSearchPath[PATH_MAX];
+#endif
     InitSignals();
 
 #if defined(NOCOREFILE) && !defined(WIN32)
@@ -4918,6 +4940,15 @@ void SnortInit(int argc, char **argv)
 #endif
 
 #ifdef WIN32
+    if(GetSystemDirectory(dllSearchPath, PATH_MAX))
+    {
+        LogMessage("System directory is: %s\n", dllSearchPath);
+        if (!SetDllDirectory(dllSearchPath))
+            FatalError("Failed to set Windows DLL search path.\n");
+    }
+    else
+        FatalError("Could not find the Windows System directory.\n");
+
     if (!init_winsock()) // TBD moves to windows daq
         FatalError("Could not Initialize Winsock!\n");
 #endif
@@ -4996,16 +5027,19 @@ void SnortInit(int argc, char **argv)
 
 #ifdef PERF_PROFILING
         /* Register the main high level perf stats */
-        RegisterPreprocessorProfile("detect", &detectPerfStats, 0, &totalPerfStats);
-        RegisterPreprocessorProfile("mpse", &mpsePerfStats, 1, &detectPerfStats);
-        RegisterPreprocessorProfile("rule eval", &rulePerfStats, 1, &detectPerfStats);
-        RegisterPreprocessorProfile("rtn eval", &ruleRTNEvalPerfStats, 2, &rulePerfStats);
-        RegisterPreprocessorProfile("rule tree eval", &ruleOTNEvalPerfStats, 2, &rulePerfStats);
-        RegisterPreprocessorProfile("preproc_rule_options", &preprocRuleOptionPerfStats, 3, &ruleOTNEvalPerfStats);
-        RegisterPreprocessorProfile("decode", &decodePerfStats, 0, &totalPerfStats);
-        RegisterPreprocessorProfile("eventq", &eventqPerfStats, 0, &totalPerfStats);
-        RegisterPreprocessorProfile("total", &totalPerfStats, 0, NULL);
-        RegisterPreprocessorProfile("daq meta", &metaPerfStats, 0, NULL);
+        RegisterPreprocessorProfile("detect", &detectPerfStats, 0, &totalPerfStats, NULL);
+        RegisterPreprocessorProfile("mpse", &mpsePerfStats, 1, &detectPerfStats, NULL);
+        RegisterPreprocessorProfile("rule eval", &rulePerfStats, 1, &detectPerfStats, NULL);
+        RegisterPreprocessorProfile("rtn eval", &ruleRTNEvalPerfStats, 2, &rulePerfStats, NULL);
+        RegisterPreprocessorProfile("rule tree eval", &ruleOTNEvalPerfStats, 2, &rulePerfStats, NULL);
+        RegisterPreprocessorProfile("preproc_rule_options", &preprocRuleOptionPerfStats, 3, &ruleOTNEvalPerfStats, NULL);
+        RegisterPreprocessorProfile("decode", &decodePerfStats, 0, &totalPerfStats, NULL);
+        RegisterPreprocessorProfile("eventq", &eventqPerfStats, 0, &totalPerfStats, NULL);
+        RegisterPreprocessorProfile("total", &totalPerfStats, 0, NULL, NULL);
+        RegisterPreprocessorProfile("daq meta", &metaPerfStats, 0, NULL, NULL);
+        (void)PerfIndicator_RegisterPreprocStat( &totalPerfStats,
+                                                 Perf_Indicator_Type_Packet_Latency );
+
 #endif
 
         LogMessage("Parsing Rules file \"%s\"\n", snort_conf_file);
@@ -5038,8 +5072,17 @@ void SnortInit(int argc, char **argv)
                 file_name = tbc->file_name;
                 file_line = tbc->file_line;
 
-                SFAT_ParseAttributeTable(tbc->args);
-
+                SFAT_ParseAttributeTable(tbc->args, snort_conf);
+#ifndef WIN32
+		if (!ScDisableAttrReload(snort_conf))
+		{
+			/* Register signal handler for attribute table. */
+			SnortAddSignal(SIGNAL_SNORT_READ_ATTR_TBL,SigAttributeTableReloadHandler,0);
+			
+			if(errno != 0)
+				errno = 0;
+		}
+#endif
                 file_name = saved_file_name;
                 file_line = saved_file_line;
             }
@@ -5103,7 +5146,7 @@ void SnortInit(int argc, char **argv)
     /* Allocate an array for IP6 extensions for the main Packet struct */
     // Make sure this memory is freed on exit.
     s_packet.ip6_extensions = SnortAlloc(sizeof(*s_packet.ip6_extensions) * ScMaxIP6Extensions());
-    
+
     /* Finish up the pcap list and put in the queues */
     PQ_SetUp();
 
@@ -5239,6 +5282,8 @@ void SnortInit(int argc, char **argv)
     SideChannelInit();
 #endif
 
+    FileServiceInstall();
+
     // If we suppressed output at the beginning of SnortInit(),
     // then restore it now.
     ScRestoreInternalLogLevel();
@@ -5323,8 +5368,6 @@ static void SnortUnprivilegedInit(void)
     // user specified -u (we dropped privileges) and the log defaults
     // to /var/log/snort.  in this case they must override log path.
     PostConfigInitPlugins(snort_conf, snort_conf->plugin_post_config_funcs);
-
-    FileAPIPostInit();
 
 #ifdef SIDE_CHANNEL
     SideChannelPostInit();
@@ -5581,775 +5624,4 @@ static void FreeReferences(ReferenceSystemNode *head)
         free(tmp);
     }
 }
-
-#if defined(SNORT_RELOAD) && !defined(WIN32)
-static void updatePeriodicCheck()
-{
-    PeriodicCheckFuncNode *checkFunc;
-
-    /* reset preprocessors */
-    checkFunc = periodic_check_funcs;
-    while (checkFunc != NULL)
-    {
-        if ( 0 == checkFunc->time_left )
-        {
-            checkFunc->func(-1, checkFunc->arg);
-            checkFunc->time_left = checkFunc->period;
-            //LogMessage("        --== Share Memory! ==--\n");
-        }
-        else
-            checkFunc->time_left--;
-
-        checkFunc = checkFunc->next;
-    }
-
-}
-
-static void * ReloadConfigThread(void *data)
-{
-    sigset_t mtmask;
-
-    /* Don't handle any signals here */
-    sigfillset(&mtmask);
-    pthread_sigmask(SIG_BLOCK, &mtmask, NULL);
-
-    snort_reload_thread_pid = gettid();
-    snort_reload_thread_created = 1;
-
-    while (snort_initializing)
-        nanosleep(&thread_sleep, NULL);
-
-    while (!snort_exiting)
-    {
-        if (reload_signal != reload_total)
-        {
-            int reload_failed = 0;
-
-#ifdef CONTROL_SOCKET
-            pthread_mutex_lock(&reload_mutex);
-            if (!reloadInProgress)
-            {
-                reloadInProgress = 1;
-                pthread_mutex_unlock(&reload_mutex);
-#endif
-                reload_total++;
-
-                LogMessage("\n");
-                LogMessage("        --== Reloading Snort ==--\n");
-                LogMessage("\n");
-
-                snort_conf_new = ReloadConfig();
-
-                // Restore Log level if we suppressed it earlier
-
-                if (snort_conf_new == NULL)
-                    reload_failed = 1;
-                snort_reload = 1;
-
-                while (!snort_swapped && !snort_exiting)
-                    nanosleep(&thread_sleep, NULL);
-
-                snort_swapped = 0;
-
-                SnortConfFree(snort_conf_old);
-                snort_conf_old = NULL;
-
-#ifdef INTEL_SOFT_CPM
-                if (snort_conf->fast_pattern_config->search_method != MPSE_INTEL_CPM)
-                    IntelPmStopInstance();
-#endif
-
-                if (snort_exiting && !reload_failed)
-                {
-                    /* This will load the new preprocessor configurations and
-                     * free the old ones, so any preprocessor cleanup that
-                     * requires a configuration will be using the new one
-                     * unless it relies on old configurations that are still
-                     * attached to existing sessions. */
-                    SwapPreprocConfigurations(snort_conf);
-                    FreeSwappedPreprocConfigurations(snort_conf);
-
-#ifdef CONTROL_SOCKET
-                    reloadInProgress = 0;
-#endif
-                    /* Get out of the loop and exit */
-                    break;
-                }
-
-                if (!reload_failed)
-                {
-                    LogMessage("\n");
-                    LogMessage("        --== Reload Complete ==--\n");
-                    LogMessage("\n");
-                }
-#ifdef CONTROL_SOCKET
-                reloadInProgress = 0;
-            }
-            else
-                pthread_mutex_unlock(&reload_mutex);
-#endif
-        }
-        /* Use the maintenance thread for periodic check*/
-        updatePeriodicCheck();
-
-        sleep(1);
-    }
-
-    pthread_exit((void *)0);
-}
-
-static SnortConfig * ReloadConfig(void)
-{
-    SnortConfig *sc;
-
-    if (ScSuppressConfigLog())
-        ScSetInternalLogLevel(INTERNAL_LOG_LEVEL__ERROR);
-
-#ifdef HAVE_MALLOC_TRIM
-    malloc_trim(0);
-#endif
-
-    sc = ParseSnortConf();
-
-    sc = MergeSnortConfs(snort_cmd_line_conf, sc);
-
-    sc->reloadPolicyFlag = 1;
-
-#ifdef PERF_PROFILING
-    /* Parse profiling here because of file option and potential
-     * dependence on log directory */
-    {
-        char *opts = NULL;
-        int in_table;
-
-        in_table = sfghash_find2(sc->config_table,
-                                 CONFIG_OPT__PROFILE_PREPROCS, (void *)&opts);
-        if (in_table)
-            ConfigProfilePreprocs(sc, opts);
-
-        in_table = sfghash_find2(sc->config_table,
-                                 CONFIG_OPT__PROFILE_RULES, (void *)&opts);
-        if (in_table)
-            ConfigProfileRules(sc, opts);
-    }
-#endif
-
-    if (VerifyReload(sc) == -1)
-    {
-        SnortConfFree(sc);
-        return NULL;
-    }
-
-    if (sc->output_flags & OUTPUT_FLAG__USE_UTC)
-        sc->thiszone = 0;
-    else
-        sc->thiszone = gmt2local(0);
-
-    /* Preprocessors will have a reload callback */
-    ConfigurePreprocessors(sc, 1);
-
-    FlowbitResetCounts();
-    ParseRules(sc);
-    RuleOptParseCleanup();
-
-    ReloadDynamicRules(sc);
-
-    /* Handles Fatal Errors itself. */
-    SnortEventqNew(sc->event_queue_config, sc->event_queue);
-
-    detection_filter_print_config(sc->detection_filter_config);
-    RateFilter_PrintConfig(sc->rate_filter_config);
-    print_thresholding(sc->threshold_config, 0);
-    PrintRuleOrder(sc->rule_lists);
-
-    SetRuleStates(sc);
-
-    if (file_sevice_config_verify(snort_conf, sc) == -1)
-    {
-        SnortConfFree(sc);
-        return NULL;
-    }
-
-    if (VerifyReloadedPreprocessors(sc))
-    {
-        SnortConfFree(sc);
-        return NULL;
-    }
-
-    if (CheckPreprocessorsConfig(sc))
-    {
-        SnortConfFree(sc);
-        return NULL;
-    }
-
-    FilterConfigPreprocessors(sc);
-    PostConfigPreprocessors(sc);
-
-    /* Need to do this after dynamic detection stuff is initialized, too */
-    FlowBitsVerify();
-
-    if ((sc->file_mask != 0) && (sc->file_mask != snort_conf->file_mask))
-        umask(sc->file_mask);
-
-    /* Transfer any user defined rule type outputs to the new rule list */
-    {
-        RuleListNode *cur = snort_conf->rule_lists;
-
-        for (; cur != NULL; cur = cur->next)
-        {
-            RuleListNode *new = sc->rule_lists;
-
-            for (; new != NULL; new = new->next)
-            {
-                if (strcasecmp(cur->name, new->name) == 0)
-                {
-                    OutputFuncNode *alert_list = cur->RuleList->AlertList;
-                    OutputFuncNode *log_list = cur->RuleList->LogList;
-
-                    sc->head_tmp = new->RuleList;
-
-                    for (; alert_list != NULL; alert_list = alert_list->next)
-                    {
-                        AddFuncToOutputList(sc, alert_list->func,
-                                            OUTPUT_TYPE__ALERT, alert_list->arg);
-                    }
-
-                    for (; log_list != NULL; log_list = log_list->next)
-                    {
-                        AddFuncToOutputList(sc, log_list->func,
-                                            OUTPUT_TYPE__LOG, log_list->arg);
-                    }
-
-                    sc->head_tmp = NULL;
-                    break;
-                }
-            }
-        }
-    }
-
-    /* XXX XXX Can't do any output plugins */
-    //PostConfigInitPlugins(sc->plugin_post_config_funcs);
-
-    fpCreateFastPacketDetection(sc);
-
-#ifdef PPM_MGR
-    PPM_PRINT_CFG(&sc->ppm_cfg);
-#endif
-
-    // Restores the configured logging level, if it was suppressed earlier
-    ScRestoreInternalLogLevel();
-
-    return sc;
-}
-
-static int VerifyReload(SnortConfig *sc)
-{
-    if (sc == NULL)
-        return -1;
-
-#ifdef TARGET_BASED
-    {
-        SnortPolicy *p1 = sc->targeted_policies[getDefaultPolicy()];
-        SnortPolicy *p2 = snort_conf->targeted_policies[getDefaultPolicy()];
-
-        if ((p1->target_based_config.args != NULL) &&
-            (p2->target_based_config.args != NULL))
-        {
-            if (strcasecmp(p1->target_based_config.args,
-                           p2->target_based_config.args) != 0)
-            {
-                ErrorMessage("Snort Reload: Changing the attribute table "
-                             "configuration requires a restart.\n");
-                return -1;
-            }
-        }
-        else if (p1->target_based_config.args !=
-                 p2->target_based_config.args)
-        {
-            /* Covers one being NULL and not the other */
-            ErrorMessage("Snort Reload: Changing the attribute table "
-                         "configuration requires a restart.\n");
-            return -1;
-        }
-    }
-#endif
-
-    if ((snort_conf->alert_file != NULL) && (sc->alert_file != NULL))
-    {
-        if (strcasecmp(snort_conf->alert_file, sc->alert_file) != 0)
-        {
-            ErrorMessage("Snort Reload: Changing the alert file "
-                         "configuration requires a restart.\n");
-            return -1;
-        }
-    }
-    else if (snort_conf->alert_file != sc->alert_file)
-    {
-        ErrorMessage("Snort Reload: Changing the alert file "
-                     "configuration requires a restart.\n");
-        return -1;
-    }
-
-    if (snort_conf->asn1_mem != sc->asn1_mem)
-    {
-        ErrorMessage("Snort Reload: Changing the asn1 memory configuration "
-                     "requires a restart.\n");
-        return -1;
-    }
-
-    if ((sc->bpf_filter == NULL) && (sc->bpf_file != NULL))
-        sc->bpf_filter = read_infile(sc->bpf_file);
-
-    if ((sc->bpf_filter != NULL) && (snort_conf->bpf_filter != NULL))
-    {
-        if (strcasecmp(snort_conf->bpf_filter, sc->bpf_filter) != 0)
-        {
-            ErrorMessage("Snort Reload: Changing the bpf filter configuration "
-                         "requires a restart.\n");
-            return -1;
-        }
-    }
-    else if (sc->bpf_filter != snort_conf->bpf_filter)
-    {
-        ErrorMessage("Snort Reload: Changing the bpf filter configuration "
-                     "requires a restart.\n");
-        return -1;
-    }
-
-#ifdef ACTIVE_RESPONSE
-    if ( sc->respond_attempts != snort_conf->respond_attempts ||
-         sc->respond_device != snort_conf->respond_device )
-    {
-        ErrorMessage("Snort Reload: Changing config response "
-                     "requires a restart.\n");
-        return -1;
-    }
-#endif
-
-    if ((snort_conf->chroot_dir != NULL) &&
-        (sc->chroot_dir != NULL))
-    {
-        if (strcasecmp(snort_conf->chroot_dir, sc->chroot_dir) != 0)
-        {
-            ErrorMessage("Snort Reload: Changing the chroot directory "
-                         "configuration requires a restart.\n");
-            return -1;
-        }
-    }
-    else if (snort_conf->chroot_dir != sc->chroot_dir)
-    {
-        ErrorMessage("Snort Reload: Changing the chroot directory "
-                     "configuration requires a restart.\n");
-        return -1;
-    }
-
-    if ((snort_conf->run_flags & RUN_FLAG__DAEMON) !=
-        (sc->run_flags & RUN_FLAG__DAEMON))
-    {
-        ErrorMessage("Snort Reload: Changing to or from daemon mode "
-                     "requires a restart.\n");
-        return -1;
-    }
-
-    if ((snort_conf->interface != NULL) && (sc->interface != NULL))
-    {
-        if (strcasecmp(snort_conf->interface, sc->interface) != 0)
-        {
-            ErrorMessage("Snort Reload: Changing the interface "
-                         "configuration requires a restart.\n");
-            return -1;
-        }
-    }
-    else if (snort_conf->interface != sc->interface)
-    {
-        ErrorMessage("Snort Reload: Changing the interface "
-                     "configuration requires a restart.\n");
-        return -1;
-    }
-
-    /* Orig log dir because a chroot might have changed it */
-    if ((snort_conf->orig_log_dir != NULL) &&
-        (sc->orig_log_dir != NULL))
-    {
-        if (strcasecmp(snort_conf->orig_log_dir, sc->orig_log_dir) != 0)
-        {
-            ErrorMessage("Snort Reload: Changing the log directory "
-                         "configuration requires a restart.\n");
-            return -1;
-        }
-    }
-    else if (snort_conf->orig_log_dir != sc->orig_log_dir)
-    {
-        ErrorMessage("Snort Reload: Changing the log directory "
-                     "configuration requires a restart.\n");
-        return -1;
-    }
-
-#ifdef TARGET_BASED
-    if (snort_conf->max_attribute_hosts != sc->max_attribute_hosts)
-    {
-        ErrorMessage("Snort Reload: Changing max_attribute_hosts "
-                     "configuration requires a restart.\n");
-        return -1;
-    }
-    if (snort_conf->max_attribute_services_per_host != sc->max_attribute_services_per_host)
-    {
-        ErrorMessage("Snort Reload: Changing max_attribute_services_per_host "
-                     "configuration requires a restart.\n");
-        return -1;
-    }
-#endif
-
-    if (snort_conf->no_log != sc->no_log)
-    {
-        ErrorMessage("Snort Reload: Changing from log to no log or vice "
-                     "versa requires a restart.\n");
-        return -1;
-    }
-
-    if ((snort_conf->run_flags & RUN_FLAG__NO_PROMISCUOUS) !=
-        (sc->run_flags & RUN_FLAG__NO_PROMISCUOUS))
-    {
-        ErrorMessage("Snort Reload: Changing to or from promiscuous mode "
-                     "requires a restart.\n");
-        return -1;
-    }
-
-#ifdef PPM_MGR
-    /* XXX XXX Not really sure we need to disallow this */
-    if (snort_conf->ppm_cfg.rule_log != sc->ppm_cfg.rule_log)
-    {
-        ErrorMessage("Snort Reload: Changing the ppm rule_log "
-                     "configuration requires a restart.\n");
-        return -1;
-    }
-#endif
-
-#ifdef PERF_PROFILING
-    if ((snort_conf->profile_rules.num != sc->profile_rules.num) ||
-        (snort_conf->profile_rules.sort != sc->profile_rules.sort) ||
-        (snort_conf->profile_rules.append != sc->profile_rules.append))
-    {
-        ErrorMessage("Snort Reload: Changing rule profiling number, sort "
-                     "or append configuration requires a restart.\n");
-        return -1;
-    }
-
-    if ((snort_conf->profile_rules.filename != NULL) &&
-        (sc->profile_rules.filename != NULL))
-    {
-        if (strcasecmp(snort_conf->profile_rules.filename,
-                       sc->profile_rules.filename) != 0)
-        {
-            ErrorMessage("Snort Reload: Changing the rule profiling filename "
-                         "configuration requires a restart.\n");
-            return -1;
-        }
-    }
-    else if (snort_conf->profile_rules.filename !=
-             sc->profile_rules.filename)
-    {
-        ErrorMessage("Snort Reload: Changing the rule profiling filename "
-                     "configuration requires a restart.\n");
-        return -1;
-    }
-
-    if ((snort_conf->profile_preprocs.num !=  sc->profile_preprocs.num) ||
-        (snort_conf->profile_preprocs.sort != sc->profile_preprocs.sort) ||
-        (snort_conf->profile_preprocs.append != sc->profile_preprocs.append))
-    {
-        ErrorMessage("Snort Reload: Changing preprocessor profiling number, "
-                     "sort or append configuration requires a restart.\n");
-        return -1;
-    }
-
-    if ((snort_conf->profile_preprocs.filename != NULL) &&
-        (sc->profile_preprocs.filename != NULL))
-    {
-        if (strcasecmp(snort_conf->profile_preprocs.filename,
-                       sc->profile_preprocs.filename) != 0)
-        {
-            ErrorMessage("Snort Reload: Changing the preprocessor profiling "
-                         "filename configuration requires a restart.\n");
-            return -1;
-        }
-    }
-    else if (snort_conf->profile_preprocs.filename !=
-             sc->profile_preprocs.filename)
-    {
-        ErrorMessage("Snort Reload: Changing the preprocessor profiling "
-                     "filename configuration requires a restart.\n");
-        return -1;
-    }
-#endif
-
-    if (snort_conf->group_id != sc->group_id)
-    {
-        ErrorMessage("Snort Reload: Changing the group id "
-                     "configuration requires a restart.\n");
-        return -1;
-    }
-
-    if (snort_conf->user_id != sc->user_id)
-    {
-        ErrorMessage("Snort Reload: Changing the user id "
-                     "configuration requires a restart.\n");
-        return -1;
-    }
-
-    if (snort_conf->pkt_snaplen != sc->pkt_snaplen)
-    {
-        ErrorMessage("Snort Reload: Changing the packet snaplen "
-                     "configuration requires a restart.\n");
-        return -1;
-    }
-
-    if (snort_conf->threshold_config->memcap !=
-        sc->threshold_config->memcap)
-    {
-        ErrorMessage("Snort Reload: Changing the threshold memcap "
-                     "configuration requires a restart.\n");
-        return -1;
-    }
-
-    if (snort_conf->rate_filter_config->memcap !=
-        sc->rate_filter_config->memcap)
-    {
-        ErrorMessage("Snort Reload: Changing the rate filter memcap "
-                     "configuration requires a restart.\n");
-        return -1;
-    }
-
-    if (snort_conf->detection_filter_config->memcap !=
-        sc->detection_filter_config->memcap)
-    {
-        ErrorMessage("Snort Reload: Changing the detection filter memcap "
-                     "configuration requires a restart.\n");
-        return -1;
-    }
-
-    if (VerifyLibInfos(snort_conf->dyn_engines, sc->dyn_engines) == -1)
-    {
-        ErrorMessage("Snort Reload: Any change to the dynamic engine "
-                     "configuration requires a restart.\n");
-        return -1;
-    }
-
-    if (VerifyLibInfos(snort_conf->dyn_rules, sc->dyn_rules) == -1)
-    {
-        ErrorMessage("Snort Reload: Any change to the dynamic detection "
-                     "configuration requires a restart.\n");
-        return -1;
-    }
-
-    if (VerifyLibInfos(snort_conf->dyn_preprocs, sc->dyn_preprocs) == -1)
-    {
-        ErrorMessage("Snort Reload: Any change to the dynamic preprocessor "
-                     "configuration requires a restart.\n");
-        return -1;
-    }
-
-    if (snort_conf->so_rule_memcap != sc->so_rule_memcap)
-    {
-        ErrorMessage("Snort Reload: Changing the so rule memcap "
-                     "configuration requires a restart.\n");
-        return -1;
-    }
-
-    if (VerifyOutputs(snort_conf, sc) == -1)
-        return -1;
-
-#ifdef SIDE_CHANNEL
-    if (SideChannelVerifyConfig(sc) != 0)
-    {
-        ErrorMessage("Snort Reload: Changing the side channel configuration requires a restart.\n");
-        return -1;
-    }
-#endif
-
-    if (ScMaxIP6Extensions() != sc->max_ip6_extensions)
-    {
-	ErrorMessage("Snort Reload: Changing Max IP6 extensions "
-		     "configuration requires a restart.\n");
-	return -1;
-    }
-
-    return 0;
-}
-
-static int VerifyOutputs(SnortConfig *old_config, SnortConfig *new_config)
-{
-    OutputConfig *old_output_config, *new_output_config;
-    int old_outputs = 0, new_outputs = 0;
-
-    /* Get from output_configs to see if output has changed */
-    for (old_output_config = old_config->output_configs;
-         old_output_config != NULL;
-         old_output_config = old_output_config->next)
-    {
-        old_outputs++;
-    }
-
-    for (new_output_config = new_config->output_configs;
-         new_output_config != NULL;
-         new_output_config = new_output_config->next)
-    {
-        new_outputs++;
-    }
-
-    if (new_outputs != old_outputs)
-    {
-        ErrorMessage("Snort Reload: Any change to any output "
-                     "configurations requires a restart.\n");
-        return -1;
-    }
-
-    for (old_output_config = old_config->output_configs;
-         old_output_config != NULL;
-         old_output_config = old_output_config->next)
-    {
-
-        for (new_output_config = new_config->output_configs;
-                new_output_config != NULL;
-                new_output_config = new_output_config->next)
-        {
-            if (strcasecmp(old_output_config->keyword, new_output_config->keyword) == 0)
-            {
-                if ((old_output_config->opts != NULL) &&
-                        (new_output_config->opts != NULL) &&
-                        (strcasecmp(old_output_config->opts, new_output_config->opts) == 0))
-                {
-                    new_outputs++;
-                    break;
-                }
-                else if (old_output_config->opts == NULL &&
-                        new_output_config->opts == NULL)
-                {
-                    new_outputs++;
-                    break;
-                }
-            }
-
-        }
-
-        old_outputs++;
-    }
-
-    if (new_outputs != old_outputs)
-    {
-        ErrorMessage("Snort Reload: Any change to any output "
-                     "configurations requires a restart.\n");
-        return -1;
-    }
-
-    /* Check user defined rule type outputs */
-    for (old_output_config = old_config->rule_type_output_configs;
-         old_output_config != NULL;
-         old_output_config = old_output_config->next)
-    {
-        old_outputs++;
-    }
-
-    for (new_output_config = new_config->rule_type_output_configs;
-         new_output_config != NULL;
-         new_output_config = new_output_config->next)
-    {
-        new_outputs++;
-    }
-
-    if (new_outputs != old_outputs)
-    {
-        ErrorMessage("Snort Reload: Any change to any output "
-                     "configurations requires a restart.\n");
-        return -1;
-    }
-
-    /* Do user defined rule type outputs as well */
-    for (old_output_config = old_config->rule_type_output_configs;
-         old_output_config != NULL;
-         old_output_config = old_output_config->next)
-    {
-        for (new_output_config = new_config->rule_type_output_configs;
-             new_output_config != NULL;
-             new_output_config = new_output_config->next)
-        {
-            if (strcasecmp(old_output_config->keyword,
-                           new_output_config->keyword) == 0)
-            {
-                if (old_output_config->opts && new_output_config->opts)
-                {
-                    if (strcasecmp(old_output_config->opts,
-                                   new_output_config->opts) == 0)
-                    {
-                        new_outputs++;
-                        break;
-                    }
-                }
-                if (!old_output_config->opts && !new_output_config->opts)
-                {
-                    new_outputs++;
-                    break;
-                }
-            }
-        }
-
-        old_outputs++;
-    }
-
-    if (new_outputs != old_outputs)
-    {
-        ErrorMessage("Snort Reload: Any change to any output "
-                     "configurations requires a restart.\n");
-        return -1;
-    }
-
-    return 0;
-}
-
-static int VerifyLibInfos(DynamicLibInfo *old_info, DynamicLibInfo *new_info)
-{
-    if ((old_info != NULL) && (new_info != NULL))
-    {
-        unsigned i;
-
-        if (old_info->type != new_info->type)
-        {
-            FatalError("%s(%d) Incompatible library types.\n",
-                       __FILE__, __LINE__);
-        }
-
-        if (old_info->count != new_info->count)
-            return -1;
-
-        for (i = 0; i < old_info->count; i++)
-        {
-            unsigned j;
-            DynamicLibPath *old_path = old_info->lib_paths[i];
-
-            for (j = 0; j < new_info->count; j++)
-            {
-                DynamicLibPath *new_path = new_info->lib_paths[j];
-
-                if ((strcmp(old_path->path, new_path->path) == 0) &&
-                    (old_path->ptype == new_path->ptype))
-                {
-                    if (old_path->last_mod_time != new_path->last_mod_time)
-                        return -1;
-
-                    break;
-                }
-            }
-
-            if (j == new_info->count)
-                return -1;
-        }
-    }
-    else if (old_info != new_info)
-    {
-        return -1;
-    }
-
-    return 0;
-}
-#endif  /* SNORT_RELOAD */
 

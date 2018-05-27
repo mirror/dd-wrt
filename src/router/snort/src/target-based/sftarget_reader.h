@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2006-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -27,6 +27,9 @@
 #define SF_TARGET_READER_H_
 
 #include "snort.h"
+#ifdef REG_TEST
+#include "reg_test.h"
+#endif
 
 #define SFAT_OK 0
 #define SFAT_ERROR -1
@@ -35,6 +38,8 @@
     if (!current_host) return SFAT_ERROR;
 #define SFAT_CHECKAPP \
     if (!current_app) return SFAT_ERROR;
+
+void SigAttributeTableReloadHandler(int signal);
 
 typedef enum
 {
@@ -110,7 +115,7 @@ typedef struct _HostInfo
 #define SFAT_CLIENT 2
 typedef struct _HostAttributeEntry
 {
-    sfip_t ipAddr;
+    sfcidr_t ipAddr;
 
     HostInfo hostInfo;
     ApplicationList *services;
@@ -122,7 +127,7 @@ int SFAT_AddMapEntry(MapEntry *);
 char *SFAT_LookupAttributeNameById(int id);
 HostAttributeEntry * SFAT_CreateHostEntry(void);
 int SFAT_AddHostEntryToMap(void);
-int SFAT_SetHostIp(char *);
+int SFAT_SetHostIp(const char *);
 int SFAT_SetOSAttribute(AttributeData *data, int attribute);
 int SFAT_SetOSPolicy(char *policy_name, int attribute);
 ApplicationEntry * SFAT_CreateApplicationEntry(void);
@@ -144,7 +149,7 @@ void SFAT_Cleanup(void);
 void FreeHostEntry(HostAttributeEntry *host);
 
 /* Parsing Functions -- to be called by Snort parser */
-int SFAT_ParseAttributeTable(char *args);
+int SFAT_ParseAttributeTable(char *args, SnortConfig *sc);
 
 /* Function to swap out new table */
 void AttributeTableReloadCheck(void);
@@ -153,10 +158,10 @@ void AttributeTableReloadCheck(void);
 uint32_t SFAT_NumberOfHosts(void);
 
 /* API Lookup functions, to be called by Stream & Frag */
-HostAttributeEntry *SFAT_LookupHostEntryByIP(sfip_t *ipAddr);
+HostAttributeEntry *SFAT_LookupHostEntryByIP(sfaddr_t *ipAddr);
 HostAttributeEntry *SFAT_LookupHostEntryBySrc(Packet *p);
 HostAttributeEntry *SFAT_LookupHostEntryByDst(Packet *p);
-void SFAT_UpdateApplicationProtocol(sfip_t *ipAddr, uint16_t port, uint16_t protocol, uint16_t id);
+void SFAT_UpdateApplicationProtocol(sfaddr_t *ipAddr, uint16_t port, uint16_t protocol, uint16_t id);
 
 /* Returns whether this has been configured */
 int IsAdaptiveConfigured( void );
@@ -167,4 +172,11 @@ void SFAT_StartReloadThread(void);
 void SFLAT_init(void);
 void SFLAT_fini(void);
 int  SFLAT_isEnabled(tSfPolicyId id, int parsing);
+
+#ifdef SNORT_RELOAD
+void SFAT_ReloadCheck(struct _SnortConfig *);
+void ReloadAttributeThreadStop(void);
+void SFAT_CleanPrevConfig(void);
+#endif
+
 #endif /* SF_TARGET_READER_H_ */

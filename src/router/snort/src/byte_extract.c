@@ -1,6 +1,6 @@
 /* $Id$ */
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2003-2013 Sourcefire, Inc.
 **               Chris Green <cmg@sourcefire.com>
 **
@@ -78,7 +78,6 @@ int byte_extract(int endianess, int bytes_to_grab, const uint8_t *ptr,
     {
         return -3;
     }
-
     /*
      * We only support grabbing 1, 2, or 4 bytes of binary data.
      * And now, due to popular demand, 3 bytes!
@@ -134,7 +133,6 @@ int byte_extract(int endianess, int bytes_to_grab, const uint8_t *ptr,
             /* unknown type */
             return -1;
     }
-
     return 0;
 }
 

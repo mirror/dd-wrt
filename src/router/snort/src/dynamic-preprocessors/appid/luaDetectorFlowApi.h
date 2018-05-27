@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -19,8 +19,8 @@
 */
 
 
-#ifndef _LUA_DETECTOR_FLOW_API_H_
-#define  _LUA_DETECTOR_FLOW_API_H_
+#ifndef _LUA_DETECTOR_APPID_SESSION_API_H_
+#define  _LUA_DETECTOR_APPID_SESSION_API_H_
 
 #include "flow.h"
 #include "luaDetectorApi.h"
@@ -31,7 +31,7 @@ typedef struct {
 
     /**Pointer to flow created by a validator.
      */
-    FLOW *pFlow;
+    tAppIdData *pFlow;
 
     /**Reference to lua userdata. This is a key into LUA_REGISTRYINDEX */
     int userDataRef;

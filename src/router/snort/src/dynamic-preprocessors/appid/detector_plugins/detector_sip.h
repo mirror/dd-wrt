@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -24,10 +24,38 @@
 
 #include "client_app_api.h"
 #include "service_api.h"
+#include "sf_multi_mpse.h"
+#include "sf_mlmp.h"
 
-extern RNAClientAppModule sip_udp_client_mod;
-extern RNAClientAppModule sip_tcp_client_mod;
-extern RNAServiceValidationModule sip_service_mod;
+struct RNAServiceValidationModule;
+
+typedef struct
+{
+    tAppId clientAppId;
+    char* clientVersion;
+} tSipUaUserData;
+
+typedef struct _tDetectorAppSipPattern
+{
+    tMlpPattern pattern;
+
+    tSipUaUserData userData;
+
+    struct _tDetectorAppSipPattern *next;
+
+} tDetectorAppSipPattern;
+
+typedef struct
+{
+    void                    *sipUaMatcher;
+    tDetectorAppSipPattern  *appSipUaList;
+    void                    *sipServerMatcher;
+    tDetectorAppSipPattern  *appSipServerList;
+} tDetectorSipConfig;
+
+extern struct RNAClientAppModule sip_udp_client_mod;
+extern struct RNAClientAppModule sip_tcp_client_mod;
+extern struct RNAServiceValidationModule sip_service_mod;
 
 #endif  /* __DETECTOR_SIP_H__ */
 

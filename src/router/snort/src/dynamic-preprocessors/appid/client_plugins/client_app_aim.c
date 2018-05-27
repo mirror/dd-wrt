@@ -1,5 +1,5 @@
 /*
-** Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+** Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
 ** Copyright (C) 2005-2013 Sourcefire, Inc.
 **
 ** This program is free software; you can redistribute it and/or modify
@@ -27,6 +27,7 @@
 #include <netinet/in.h>
 #include <stdint.h>
 
+#include "appInfoTable.h"
 #include "client_app_api.h"
 #include "client_app_aim.h"
 
@@ -72,9 +73,10 @@ static AIM_CLIENT_APP_CONFIG aim_config;
 
 static CLIENT_APP_RETCODE aim_init(const InitClientAppAPI * const init_api, SF_LIST *config);
 static CLIENT_APP_RETCODE aim_validate(const uint8_t *data, uint16_t size, const int dir,
-                                       FLOW *flowp, const SFSnortPacket *pkt, struct _Detector *userData);
+                                       tAppIdData *flowp, SFSnortPacket *pkt, struct _Detector *userData,
+                                       const struct appIdConfig_ *pConfig);
 
-RNAClientAppModule aim_client_mod =
+tRNAClientAppModule aim_client_mod =
 {
     .name = "AIM",
     .proto = IPPROTO_TCP,
@@ -140,7 +142,7 @@ static CLIENT_APP_RETCODE aim_init(const InitClientAppAPI * const init_api, SF_L
         {
             _dpd.debugMsg(DEBUG_LOG,"registering pattern length %u at %d\n",patterns[i].length, patterns[i].index);
             init_api->RegisterPattern(&aim_validate, IPPROTO_TCP, patterns[i].pattern,
-                                      patterns[i].length, patterns[i].index);
+                                      patterns[i].length, patterns[i].index, init_api->pAppidConfig);
         }
     }
 
@@ -148,14 +150,15 @@ static CLIENT_APP_RETCODE aim_init(const InitClientAppAPI * const init_api, SF_L
 	for (j=0; j < sizeof(appIdRegistry)/sizeof(*appIdRegistry); j++)
 	{
 		_dpd.debugMsg(DEBUG_LOG,"registering appId: %d\n",appIdRegistry[j].appId);
-		init_api->RegisterAppId(&aim_validate, appIdRegistry[j].appId, appIdRegistry[j].additionalInfo, NULL);
+		init_api->RegisterAppId(&aim_validate, appIdRegistry[j].appId, appIdRegistry[j].additionalInfo, init_api->pAppidConfig);
 	}
 
     return CLIENT_APP_SUCCESS;
 }
 
 static CLIENT_APP_RETCODE aim_validate(const uint8_t *data, uint16_t size, const int dir,
-                                        FLOW *flowp, const SFSnortPacket *pkt, struct _Detector *userData)
+                                        tAppIdData *flowp, SFSnortPacket *pkt, struct _Detector *userData,
+                                        const struct appIdConfig_ *pConfig)
 {
 
     const uint8_t *end;
@@ -307,7 +310,7 @@ static CLIENT_APP_RETCODE aim_validate(const uint8_t *data, uint16_t size, const
     return CLIENT_APP_INPROCESS;
 
 bail:
-    flow_mark(flowp, FLOW_CLIENTAPPDETECTED);
+    setAppIdFlag(flowp, APPID_SESSION_CLIENT_DETECTED);
     return CLIENT_APP_SUCCESS;
 }
 

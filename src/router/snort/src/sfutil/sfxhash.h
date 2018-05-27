@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -47,6 +47,7 @@
 #define SFXHASH_ERR      -1
 #define SFXHASH_OK        0
 #define SFXHASH_INTABLE   1
+#define SFXHASH_PENDING   2
 
 /**
 *   HASH NODE
@@ -99,6 +100,7 @@ typedef struct _sfxhash
   unsigned        anr_tries;
   unsigned        anr_count; /// # ANR ops performaed
   int             anr_flag;  /// 0=off, !0=on
+  unsigned        free_count; /// total # nodes in table
 
   SFXHASH_FREE_FCN anrfree;
   SFXHASH_FREE_FCN usrfree;
@@ -109,7 +111,7 @@ typedef struct _sfxhash
 *   HASH PROTOTYPES
 */
 int             sfxhash_calcrows(int num);
-SFXHASH       * sfxhash_new( int nrows, int keysize, int datasize, unsigned long memcap,
+SFXHASH       * sfxhash_new( unsigned nrows, int keysize, int datasize, unsigned long memcap,
                              int anr_flag,
                              SFXHASH_FREE_FCN anrfunc,
                              SFXHASH_FREE_FCN usrfunc,
@@ -133,6 +135,17 @@ int             sfxhash_remove( SFXHASH * h, void * key );
 static inline unsigned sfxhash_count( SFXHASH * t )
 {
     return t->count;
+}
+
+/*!
+ *  Get the # of Nodes in HASH the table
+ *
+ * @param t SFXHASH table pointer
+ *
+ */
+static inline unsigned sfxhash_total_count( SFXHASH * t )
+{
+    return t->count + t->anr_count; 
 }
 
 /*!
@@ -221,6 +234,10 @@ void            sfxhash_splaymode( SFXHASH * h, int mode );
 void          * sfxhash_alloc( SFXHASH * t, unsigned nbytes );
 void            sfxhash_free( SFXHASH * t, void * p );
 int             sfxhash_free_node(SFXHASH *t, SFXHASH_NODE *node);
+/* sfxhash_free_anr_lru frees a node from the free list or the LRU node */
+int             sfxhash_free_anr_lru(SFXHASH *t);
+/* sfxhash_free_anr frees a node from the free list */
+int             sfxhash_free_anr(SFXHASH *t);
 
 unsigned        sfxhash_maxdepth( SFXHASH * t );
 
@@ -237,5 +254,7 @@ int sfxhash_set_keyops( SFXHASH *h ,
 SFXHASH_NODE *sfxhash_gfindfirst( SFXHASH * t );
 SFXHASH_NODE *sfxhash_gfindnext( SFXHASH * t );
 int sfxhash_add_return_data_ptr( SFXHASH * t, const void * key, void **data );
+unsigned sfxhash_calc_maxmem(unsigned num_entries, unsigned entry_cost);
+int sfxhash_change_memcap( SFXHASH * t, unsigned long new_memcap, unsigned *max_work );
 #endif
 

@@ -162,6 +162,26 @@ InputName=md5
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\preprocids.h
+
+!IF  "$(CFG)" == "sf_engine_initialize - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "sf_engine_initialize - Win32 Debug"
+
+# Begin Custom Build
+InputPath=..\..\preprocids.h
+InputName=preprocids
+
+"..\..\dynamic-plugins\sf_engine\$(InputName).c" : $(SOURCE) "$(INTDIR)" "$(OUTDIR)"
+       copy $(InputPath) ..\..\dynamic-plugins\sf_engine
+
+# End Custom Build
+
+!ENDIF
+
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\sfutil\sf_ip.c
 
 !IF  "$(CFG)" == "sf_engine_initialize - Win32 Release"

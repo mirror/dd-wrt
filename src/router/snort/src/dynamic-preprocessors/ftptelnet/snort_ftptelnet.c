@@ -1,7 +1,7 @@
 /*
  * snort_ftptelnet.c
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2004-2013 Sourcefire, Inc.
  * Steven A. Sturges <ssturges@sourcefire.com>
  * Daniel J. Roelker <droelker@sourcefire.com>
@@ -95,6 +95,11 @@
 #include "sf_snort_plugin_api.h"
 #include "Unified2_common.h"
 #include "ssl_include.h"
+#include <daq_common.h>
+
+#ifdef DUMP_BUFFER
+#include "ftptelnet_buffer_dump.h"
+#endif
 
 #ifdef PERF_PROFILING
 extern PreprocStats ftpPerfStats;
@@ -105,6 +110,7 @@ int ftppDetectCalled = 0;
 
 #ifdef TARGET_BASED
 unsigned s_ftpdata_eof_cb_id = 0;
+unsigned s_ftpdata_flush_cb_id = 0;
 #endif
 
 extern tSfPolicyUserContextId ftp_telnet_config;
@@ -117,7 +123,7 @@ extern tSfPolicyUserContextId ftp_telnet_config;
 #define INSPECT_TYPE      "inspection_type"
 #define INSPECT_TYPE_STATELESS "stateless"
 #define INSPECT_TYPE_STATEFUL  "stateful"
-
+#define FTP_MEMCAP       "memcap"
 /*
  * Protocol subkeywords.
  */
@@ -143,6 +149,7 @@ extern tSfPolicyUserContextId ftp_telnet_config;
 #define IGNORE_TELNET_CMDS "ignore_telnet_erase_cmds"
 #define DATA_CHAN_CMD     "data_chan_cmds"
 #define DATA_XFER_CMD     "data_xfer_cmds"
+#define DATA_REST_CMD     "data_rest_cmds"
 #define FILE_PUT_CMD      "file_put_cmds"
 #define FILE_GET_CMD      "file_get_cmds"
 #define DATA_CHAN         "data_chan"
@@ -174,6 +181,8 @@ extern tSfPolicyUserContextId ftp_telnet_config;
 #define F_LONG_HOST_PORT    "long_host_port"
 #define F_EXTD_HOST_PORT    "extd_host_port"
 
+#define MIN_FTP_MEMCAP     4096U    /*this size is PATH_MAX * 1 sessions*/
+#define MAX_FTP_MEMCAP     4294967295U  /*this size is UINT MAX   */
 /*
  * Optional parameter delimiters
  */
@@ -305,6 +314,7 @@ static const char* DEFAULT_FTP_CONF[] = {
 
     "data_chan_cmds { PORT PASV LPRT LPSV EPRT EPSV } "
         "data_xfer_cmds { RETR STOR STOU APPE LIST NLST } "
+        "data_rest_cmds { REST } "
         "file_put_cmds { STOR STOU } "
         "file_get_cmds { RETR } "
         "login_cmds { USER PASS } "
@@ -313,6 +323,8 @@ static const char* DEFAULT_FTP_CONF[] = {
 };
 
 #define CONF_CHUNKS (sizeof(DEFAULT_FTP_CONF)/sizeof(DEFAULT_FTP_CONF[0]))
+
+static uint8_t ftp_paf_id = 0;
 
 static char* DefaultConf (size_t* pn) {
     unsigned i;
@@ -349,6 +361,7 @@ static void _FTPTelnetAddPortsOfInterest(struct _SnortConfig *, FTPTELNET_GLOBAL
 static void _FTPTelnetAddService(struct _SnortConfig *, int16_t, tSfPolicyId);
 #endif
 void FTP_Set_flow_id( void *app_data, uint32_t fid );
+void FTPData_Set_flow_id( void *app_data, uint32_t fid );
 
 char* mystrtok (char* s, const char* delim)
 {
@@ -506,6 +519,52 @@ static int ProcessInspectType(FTPTELNET_GLOBAL_CONF *GlobalConf,
 
     return FTPP_SUCCESS;
 }
+#ifdef TARGET_BASED
+static inline unsigned StrtolRange(const char *nptr, char **endptr, int base, unsigned lo, unsigned hi)
+{
+    unsigned long iRet = strtoul(nptr, endptr, base);
+    if ((iRet > hi) || (iRet < lo))
+        *endptr = (char *)nptr;
+
+    return (unsigned)iRet;
+}
+static int ProcessFtpMemcap(FTPTELNET_GLOBAL_CONF *GlobalConf,
+                            char *ErrorString, int ErrStrLen)
+{
+    char *pcToken, *pcEnd;
+    int memcap;
+
+    pcToken = strtok(NULL, CONF_SEPARATORS);
+    if(pcToken == NULL)
+    {
+        snprintf(ErrorString, ErrStrLen,
+                 "No argument to '%s' token.", FTP_MEMCAP);
+        return -1;
+    }
+
+    memcap = StrtolRange(pcToken, &pcEnd, 10, MIN_FTP_MEMCAP , MAX_FTP_MEMCAP);
+    if(*pcEnd)
+    {
+        snprintf(ErrorString, ErrStrLen,
+                 "Invalid argument to '%s'.", FTP_MEMCAP);
+
+        return -1;
+    }
+
+    if(memcap < MIN_FTP_MEMCAP || memcap > MAX_FTP_MEMCAP)
+    {
+        snprintf(ErrorString, ErrStrLen,
+                 "Invalid argument to '%s'.  Must be between %u and "
+                 "%u.", FTP_MEMCAP, MIN_FTP_MEMCAP, MAX_FTP_MEMCAP);
+
+        return -1;
+    }
+
+    GlobalConf->mc.memcap = memcap;
+
+    return 0;
+}
+#endif
 
 /*
  * Function: ProcessFTPGlobalConf(FTPTELNET_GLOBAL_CONF *GlobalConf,
@@ -575,6 +634,14 @@ int ProcessFTPGlobalConf(FTPTELNET_GLOBAL_CONF *GlobalConf,
                 return iRet;
             }
         }
+#ifdef TARGET_BASED
+        else if (!strcmp(FTP_MEMCAP, pcToken))
+        {
+                iRet = ProcessFtpMemcap(GlobalConf, ErrorString, ErrStrLen);
+                if(iRet)
+                    return iRet;
+        }
+#endif
         else
         {
             snprintf(ErrorString, ErrStrLen,
@@ -940,7 +1007,7 @@ int ProcessTelnetConf(FTPTELNET_GLOBAL_CONF *GlobalConf,
  *                     >0 = non-fatal error, <0 = fatal error)
  *
  */
-static int GetIPAddr(char *addrString, snort_ip *ipAddr,
+static int GetIPAddr(char *addrString, sfaddr_t *ipAddr,
         char *ErrorString, int ErrStrLen)
 {
     if(sfip_pton(addrString, ipAddr) != SFIP_SUCCESS)
@@ -1213,6 +1280,8 @@ static int ProcessFTPDataChanCmdsList(FTP_SERVER_PROTO_CONF *ServerConf,
             FTPCmd->data_chan_cmd = 1;
         else if (!strcmp(confOption, DATA_XFER_CMD))
             FTPCmd->data_xfer_cmd = 1;
+        else if (!strcmp(confOption, DATA_REST_CMD))
+            FTPCmd->data_rest_cmd = 1;
         else if (!strcmp(confOption, FILE_PUT_CMD))
         {
             FTPCmd->data_xfer_cmd = 1;
@@ -1888,6 +1957,14 @@ int DoNextFormat(FTP_PARAM_FMT *ThisFmt, int allocated,
     else if (!strcmp(fmt, F_CHAR))
     {
         char *chars_allowed = NextToken(CONF_SEPARATORS);
+        if(!chars_allowed)
+        {
+            snprintf(ErrorString, ErrStrLen,
+                    "Illegal format '' for token '%s'.",
+                     CMD_VALIDITY);
+            return FTPP_INVALID_ARG;
+        }
+
         NextFmt->type = e_char;
         NextFmt->format.chars_allowed = 0;
         while (*chars_allowed != 0)
@@ -2275,7 +2352,7 @@ int ParseBounceTo(char* token, FTP_BOUNCE_TO* bounce)
     int num_toks;
     long int port_lo;
     char *endptr = NULL;
-    sfip_t tmp_ip;
+    sfcidr_t tmp_ip;
 
     toks = _dpd.tokenSplit(token, ",", 3, &num_toks, 0);
     if (num_toks < 2)
@@ -2287,7 +2364,7 @@ int ParseBounceTo(char* token, FTP_BOUNCE_TO* bounce)
         return FTPP_INVALID_ARG;
     }
 
-    memcpy(&bounce->ip, &tmp_ip, sizeof(sfip_t));
+    memcpy(&bounce->ip, &tmp_ip, sizeof(sfcidr_t));
 
     port_lo = _dpd.SnortStrtol(toks[1], &endptr, 10);
     if ((errno == ERANGE) || (*endptr != '\0') ||
@@ -2402,7 +2479,7 @@ static int ProcessFTPAllowBounce(FTP_CLIENT_PROTO_CONF *ClientConf,
         }
 
         iRet = ftp_bounce_lookup_add(
-                ClientConf->bounce_lookup, IP_ARG(newBounce->ip), newBounce
+                ClientConf->bounce_lookup, &newBounce->ip, newBounce
                 );
         if (iRet)
         {
@@ -2481,15 +2558,15 @@ static int PrintFTPClientConf(char * client, FTP_CLIENT_PROTO_CONF *ClientConf)
         {
             char *addr_str;
             char bits_str[5];
-            uint8_t bits;
+            int bits;
             bits_str[0] = '\0';
 
-            addr_str = sfip_to_str(&FTPBounce->ip);
-            bits = (uint8_t)FTPBounce->ip.bits;
-            if (((FTPBounce->ip.family == AF_INET) && (bits != 32)) ||
-                    ((FTPBounce->ip.family == AF_INET6) && (bits != 128)))
+            addr_str = sfip_to_str(&FTPBounce->ip.addr);
+            bits = (int)FTPBounce->ip.bits;
+            if (bits != 128)
             {
-                snprintf(bits_str, sizeof(bits_str), "/%u", bits);
+                snprintf(bits_str, sizeof(bits_str), "/%d",
+                         (sfaddr_family(&FTPBounce->ip.addr) == AF_INET) ? ((bits >= 96) ? (bits - 96) : -1) : bits);
             }
             if (FTPBounce->porthi)
             {
@@ -2656,7 +2733,7 @@ int ProcessFTPClientConf(struct _SnortConfig *sc, FTPTELNET_GLOBAL_CONF *GlobalC
     int  retVal = 0;
     char *client;
     char client_list[STD_BUF];
-    sfip_t ipAddr;
+    sfcidr_t ipAddr;
     char *pIpAddressList = NULL;
     char *pIpAddressList2 = NULL;
     char *brkt = NULL;
@@ -3031,6 +3108,14 @@ int ProcessFTPServerOptions(FTP_SERVER_PROTO_CONF *ServerConf,
                 return iRet;
             }
         }
+        else if (!strcmp(DATA_REST_CMD, pcToken))
+        {
+           iRet = ProcessFTPDataChanCmdsList(ServerConf, pcToken, ErrorString, ErrStrLen);
+           if (iRet)
+           {
+               return iRet;
+           }
+        }
         else if (!strcmp(FILE_PUT_CMD, pcToken))
         {
             iRet = ProcessFTPDataChanCmdsList(ServerConf, pcToken, ErrorString, ErrStrLen);
@@ -3247,7 +3332,7 @@ int ProcessFTPServerConf( struct _SnortConfig *sc, FTPTELNET_GLOBAL_CONF *Global
     int  retVal = 0;
     char *server;
     char server_list[STD_BUF];
-    sfip_t ipAddr;
+    sfcidr_t ipAddr;
     char *pIpAddressList = NULL;
     char *pIpAddressList2 = NULL;
     char *brkt = NULL;
@@ -3394,6 +3479,12 @@ int ProcessFTPServerConf( struct _SnortConfig *sc, FTPTELNET_GLOBAL_CONF *Global
         ftp_conf = GlobalConf->default_ftp_server;
         ConfigParseResumePtr = server+strlen(server);
         GlobalConf->default_ftp_server->serverAddr = strdup("default");
+        if (GlobalConf->default_ftp_server->serverAddr == NULL)
+        {
+            free(GlobalConf->default_ftp_server);
+            DynamicPreprocessorFatalMessage("Out of memory trying to create "
+                    "default ftp server configuration.\n");
+        }
         iRet = parseFtpServerConfigStr( ftp_conf, ConfigParseResumePtr, ip_list, ErrorString, ErrStrLen );
         if (iRet)
         {
@@ -3442,6 +3533,9 @@ int PrintFTPGlobalConf(FTPTELNET_GLOBAL_CONF *GlobalConf)
     _dpd.logMsg("FTPTelnet Config:\n");
 
     _dpd.logMsg("    GLOBAL CONFIG\n");
+#ifdef TARGET_BASED
+    _dpd.logMsg("      Memcap %u\n",GlobalConf->mc.memcap);
+#endif
     _dpd.logMsg("      Inspection Type: %s\n",
             GlobalConf->inspection_type == FTPP_UI_CONFIG_STATELESS ?
             "stateless" : "stateful");
@@ -3679,10 +3773,11 @@ int FTPTelnetCheckConfigs(struct _SnortConfig *sc, void* pData, tSfPolicyId poli
 
     /* Add FTPTelnet into the preprocessor list */
 #ifdef TARGET_BASED
-    if ( _dpd.fileAPI->get_max_file_depth() >= 0 )
+    if ( _dpd.fileAPI->get_max_file_depth(sc, true) >= 0 )
     {
         _dpd.addPreproc(sc, FTPDataTelnetChecks, PRIORITY_APPLICATION, PP_FTPTELNET, PROTO_BIT__TCP);
         s_ftpdata_eof_cb_id = _dpd.streamAPI->register_event_handler(SnortFTPData_EOF);
+        s_ftpdata_flush_cb_id = _dpd.streamAPI->register_ftp_flush_cb(SnortFTPData_Flush);
     }
     else
 #endif
@@ -4026,6 +4121,10 @@ int SnortTelnet(FTPTELNET_GLOBAL_CONF *GlobalConf, TELNET_SESSION *TelnetSession
     int iRet;
     PROFILE_VARS;
 
+#ifdef DUMP_BUFFER
+    dumpBuffer(TELNET_DUMP,(const char *)p->payload,p->payload_size);
+#endif
+
     if (!TelnetSession)
     {
         if (GlobalConf->inspection_type == FTPP_UI_CONFIG_STATEFUL)
@@ -4215,6 +4314,10 @@ int SnortFTPTelnet(SFSnortPacket *p)
     tSfPolicyId policy_id = _dpd.getNapRuntimePolicy();
     FTPTELNET_GLOBAL_CONF *GlobalConf = NULL;
 
+#ifdef DUMP_BUFFER
+    dumpBufferInit();
+#endif
+
     sfPolicyUserPolicySet (ftp_telnet_config, policy_id);
     GlobalConf = (FTPTELNET_GLOBAL_CONF *)sfPolicyUserDataGetCurrent(ftp_telnet_config);
 
@@ -4346,14 +4449,25 @@ static void FTPDataProcess(SFSnortPacket *p, FTP_DATA_SESSION *data_ssn,
 
     _dpd.setFileDataPtr((uint8_t *)p->payload, (uint16_t)p->payload_size);
 
+
+
     status = _dpd.fileAPI->file_process(p, (uint8_t *)file_data,
-            data_length, data_ssn->position, data_ssn->direction, false);
+            data_length, data_ssn->position, data_ssn->direction, false, (data_ssn->flags & FTPDATA_FLG_FLUSH) ? true : false);
+
+        FTP_SESSION *ft_ssn = (FTP_SESSION *) _dpd.sessionAPI->get_application_data_from_key(data_ssn->ftp_key, PP_FTPTELNET);
+        if(ft_ssn && (ft_ssn->flags & FTP_FLG_MALWARE_ENABLED) && _dpd.active_PacketWasDropped())
+           {
+                  _dpd.fileAPI->file_resume_block_add_file(p, data_ssn->path_hash, 0, 0, 0, NULL, ft_ssn->control_clientPort,
+		       			                      ft_ssn->control_serverPort, (ft_ssn->flags & FTP_FLG_MALWARE) ? false : true );
+            ft_ssn->flags |= FTP_FLG_MALWARE;
+    }
+
 
     /* Filename needs to be set AFTER the first call to file_process( ) */
     if (data_ssn->filename && !(data_ssn->flags & FTPDATA_FLG_FILENAME_SET))
     {
         _dpd.fileAPI->set_file_name(p->stream_session,
-                (uint8_t *)data_ssn->filename, data_ssn->file_xfer_info);
+                (uint8_t *)data_ssn->filename, data_ssn->file_xfer_info, false);
         data_ssn->flags |= FTPDATA_FLG_FILENAME_SET;
     }
 
@@ -4371,13 +4485,19 @@ void SnortFTPData_EOF(SFSnortPacket *p)
     FTP_DATA_SESSION *data_ssn = (FTP_DATA_SESSION *)
                 _dpd.sessionAPI->get_application_data(p->stream_session, PP_FTPTELNET);
 
-    initFilePosition(&data_ssn->position, _dpd.fileAPI->get_file_processed_size(p->stream_session));
-    finalFilePosition(&data_ssn->position);
-
     if (!PROTO_IS_FTP_DATA(data_ssn) || !FTPDataDirection(p, data_ssn))
         return;
 
+    initFilePosition(&data_ssn->position, _dpd.fileAPI->get_file_processed_size(p->stream_session));
+    finalFilePosition(&data_ssn->position);
+
     _dpd.streamAPI->request_flush_stream(p);
+    if (data_ssn->flags & FTPDATA_FLG_REST)
+    {
+        _dpd.fileAPI->file_resume_block_check(p, data_ssn->path_hash);
+        data_ssn->flags &= ~FTPDATA_FLG_REST;
+        return ;
+    }
     if (!(data_ssn->flags & FTPDATA_FLG_STOP))
     {
         data_ssn->flags |= FTPDATA_FLG_STOP;
@@ -4387,8 +4507,26 @@ void SnortFTPData_EOF(SFSnortPacket *p)
     }
 }
 
+void SnortFTPData_Flush(SFSnortPacket *p)
+{
+    FTP_DATA_SESSION *data_ssn = (FTP_DATA_SESSION *)
+                _dpd.sessionAPI->get_application_data(p->stream_session, PP_FTPTELNET);
+
+    if (!PROTO_IS_FTP_DATA(data_ssn) || !FTPDataDirection(p, data_ssn))
+        return;
+
+    initFilePosition(&data_ssn->position, _dpd.fileAPI->get_file_processed_size(p->stream_session));
+    data_ssn->flags |= FTPDATA_FLG_FLUSH;
+
+    _dpd.streamAPI->request_flush_stream(p);
+
+    data_ssn->flags &= ~FTPDATA_FLG_FLUSH;
+    return;
+}
+
 int SnortFTPData(SFSnortPacket *p)
 {
+    FTP_SESSION *ftp_ssn;
     FTP_DATA_SESSION *data_ssn;
 
     if (!p->stream_session)
@@ -4403,18 +4541,54 @@ int SnortFTPData(SFSnortPacket *p)
     if (data_ssn->flags & FTPDATA_FLG_STOP)
         return 0;
 
+    /* FTP-Data Session is in limbo, we need to lookup the control session
+     * to figure out what to do. */
+     ftp_ssn = (FTP_SESSION *) _dpd.sessionAPI->get_application_data_from_key(data_ssn->ftp_key, PP_FTPTELNET);
+     if(!ftp_ssn)
+         return -3;
+
+#ifdef DAQ_PKT_FLAG_SSL_DETECTED
+    //  Set up the flow context when an SSL client hello is detected and
+    //  ignore packets until the flow is decrypted.
+    if(p->pkt_header->flags & DAQ_PKT_FLAG_SSL_DETECTED)
+    {
+        ssl_callback_interface_t *ssl_cb;
+        ssl_cb = (ssl_callback_interface_t *)_dpd.getSSLCallback();
+        if(ssl_cb)
+        {
+            ftp_ssn->data_chan_state |= DATA_CHAN_CLIENT_HELLO_SEEN;
+            ssl_cb->session_initialize(p, data_ssn, FTPData_Set_flow_id);
+        }
+        return 0;  //  Ignore SSL client hello.
+    }
+    else if(ftp_ssn->data_chan_state & DATA_CHAN_CLIENT_HELLO_SEEN)
+    {
+        if( _dpd.streamAPI->is_session_decrypted(p->stream_session))
+        {
+            //  Done handling SSL handshake.
+            ftp_ssn->data_chan_state &= ~DATA_CHAN_CLIENT_HELLO_SEEN;
+        }
+        else
+        {
+            return 0;   //  Ignore packet.
+        }
+    }
+#endif
+    if (data_ssn->flags & FTPDATA_FLG_REST)
+    {
+        File_Verdict verdict;
+        verdict = _dpd.fileAPI->file_resume_block_check(p, data_ssn->path_hash);
+	data_ssn->flags &= ~FTPDATA_FLG_REST;
+	if((verdict == FILE_VERDICT_BLOCK) || (verdict == FILE_VERDICT_REJECT))
+	    data_ssn->flags |= FTPDATA_FLG_STOP;
+	return 0 ;
+    }
     //  bail if we have not rebuilt the stream yet.
-    if (!(p->flags & FLAG_REBUILT_STREAM))
+    if (!_dpd.readyForProcess(p))
         return 0;
 
     if (data_ssn->file_xfer_info == FTPP_FILE_UNKNOWN)
     {
-        /* FTP-Data Session is in limbo, we need to lookup the control session
-         * to figure out what to do. */
-
-        FTP_SESSION *ftp_ssn = (FTP_SESSION *)
-            _dpd.sessionAPI->get_application_data_from_key(data_ssn->ftp_key, PP_FTPTELNET);
-
         if (!PROTO_IS_FTP(ftp_ssn))
         {
             DEBUG_WRAP(DebugMessage(DEBUG_FTPTELNET,
@@ -4460,6 +4634,8 @@ int SnortFTPData(SFSnortPacket *p)
     {
         initFilePosition(&data_ssn->position,
                 _dpd.fileAPI->get_file_processed_size(p->stream_session));
+        if (p->tcp_header && (p->tcp_header->flags & TCPHEADER_FIN))
+            finalFilePosition(&data_ssn->position);
     }
 
     FTPDataProcess(p, data_ssn, (uint8_t *)p->payload, (uint16_t)p->payload_size);
@@ -4520,14 +4696,14 @@ int FTPPBounceEval(void *pkt, const uint8_t **cursor, void *dataPtr)
     if(_dpd.Is_DetectFlag(SF_FLAG_ALT_DETECT))
     {
         dsize = _dpd.altDetect->len;
-        start_ptr = (char *) _dpd.altDetect->data;
+        start_ptr = (const char*) _dpd.altDetect->data;
         DEBUG_WRAP(DebugMessage(DEBUG_PATTERN_MATCH,
                     "Using Alternative Detect buffer!\n"););
     }
     else if(_dpd.Is_DetectFlag(SF_FLAG_ALT_DECODE))
     {
         dsize = _dpd.altBuffer->len;
-        start_ptr = (char *) _dpd.altBuffer->data;
+        start_ptr = (const char *) _dpd.altBuffer->data;
         DEBUG_WRAP(DebugMessage(DEBUG_PATTERN_MATCH,
                     "Using Alternative Decode buffer!\n"););
 
@@ -4643,7 +4819,7 @@ static int _addFtpServerConfPortsToStream(struct _SnortConfig *sc, void *pData)
 // preproc will deal with any pipelined commands
 static PAF_Status ftp_paf (
         void* ssn, void** pv, const uint8_t* data, uint32_t len,
-        uint32_t flags, uint32_t* fp)
+        uint64_t *flags, uint32_t* fp, uint32_t* fp_eoh)
 {
 #ifdef HAVE_MEMRCHR
     uint8_t* lf =  memrchr(data, '\n', len);
@@ -4673,8 +4849,8 @@ static void _FTPTelnetAddService (struct _SnortConfig *sc, int16_t app, tSfPolic
 {
     if ( _dpd.isPafEnabled() )
     {
-        _dpd.streamAPI->register_paf_service(sc, policy, app, true, ftp_paf, false);
-        _dpd.streamAPI->register_paf_service(sc, policy, app, false, ftp_paf, false);
+       ftp_paf_id = _dpd.streamAPI->register_paf_service(sc, policy, app, true, ftp_paf, false);
+       ftp_paf_id = _dpd.streamAPI->register_paf_service(sc, policy, app, false, ftp_paf, false);
     }
 }
 #endif
@@ -4693,8 +4869,8 @@ static void _addPortsToStream(struct _SnortConfig *sc, char *ports, tSfPolicyId 
 
             if ( ftp && _dpd.isPafEnabled() )
             {
-                _dpd.streamAPI->register_paf_port(sc, policy_id, (uint16_t)i, true, ftp_paf, false);
-                _dpd.streamAPI->register_paf_port(sc, policy_id, (uint16_t)i, false, ftp_paf, false);
+                ftp_paf_id = _dpd.streamAPI->register_paf_port(sc, policy_id, (uint16_t)i, true, ftp_paf, false);
+                ftp_paf_id = _dpd.streamAPI->register_paf_port(sc, policy_id, (uint16_t)i, false, ftp_paf, false);
             }
         }
     }
@@ -4727,6 +4903,13 @@ int FtpTelnetInitGlobalConfig(FTPTELNET_GLOBAL_CONF *config,
 void FTP_Set_flow_id( void *app_data, uint32_t fid )
 {
     FTP_SESSION *ssn = (FTP_SESSION *)app_data;
+    if( ssn )
+        ssn->flow_id = fid;
+}
+
+void FTPData_Set_flow_id( void *app_data, uint32_t fid )
+{
+    FTP_DATA_SESSION *ssn = (FTP_DATA_SESSION *)app_data;
     if( ssn )
         ssn->flow_id = fid;
 }

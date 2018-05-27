@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2003-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -46,6 +46,7 @@
 #include "file_mail_common.h"
 #include "file_api.h"
 #include "file_decomp.h"
+#include "session_api.h"
 
 /*
 **  Defines
@@ -53,9 +54,7 @@
 
 #define HI_UI_CONFIG_MAX_HDR_DEFAULT 0
 #define HI_UI_CONFIG_MAX_HEADERS_DEFAULT 0
-#define HI_UI_CONFIG_MAX_SPACES_DEFAULT 200 
-
-#define HI_UI_CONFIG_MAX_XFF_FIELD_NAMES 8
+#define HI_UI_CONFIG_MAX_SPACES_DEFAULT 200
 
 /*
 **  Special characters treated as whitespace before or after URI
@@ -149,20 +148,14 @@ typedef struct s_HTTPINSPECT_CONF
     char enable_cookie;
     char inspect_response;
     char enable_xff;
-    uint8_t *xff_headers[HI_UI_CONFIG_MAX_XFF_FIELD_NAMES];
-    uint8_t xff_header_lengths[HI_UI_CONFIG_MAX_XFF_FIELD_NAMES];
+    uint8_t *xff_headers[HTTP_MAX_XFF_FIELDS];
+    uint8_t xff_header_lengths[HTTP_MAX_XFF_FIELDS];
     char log_uri;
     char log_hostname;
 
     char unlimited_decompress;
     char extract_gzip;
     unsigned long file_decomp_modes;
-
-/* NOTE:  The XFF_BUILTING_NAMES value must match the code in snort_httpinspect.c that
-          adds the builtin names to the list. */
-#define HI_UI_CONFIG_XFF_FIELD_NAME  "X-Forwarded-For"
-#define HI_UI_CONFIG_TCI_FIELD_NAME  "True-Client-IP"
-#define XFF_BUILTIN_NAMES            (2)
 
    /* Support Extended ascii codes in the URI */
     char extended_ascii_uri;
@@ -205,7 +198,7 @@ typedef struct s_HTTPINSPECT_CONF
     char normalize_utf;
 
     /*
-     * Normalize Javascripts in HTTP server responses 
+     * Normalize Javascripts in HTTP server responses
      */
     char normalize_javascript;
 
@@ -251,6 +244,8 @@ typedef struct s_HTTPINSPECT_CONF
 #if defined(FEAT_OPEN_APPID)
     char appid_enabled;
 #endif /* defined(FEAT_OPEN_APPID) */
+    uint8_t file_policy;
+    bool h2_mode;
 
 }  HTTPINSPECT_CONF;
 
@@ -279,7 +274,7 @@ typedef struct s_HTTPINSPECT_GLOBAL_CONF
 
 
     int max_gzip_sessions;
-    int max_gzip_mem;
+    unsigned int max_gzip_mem;
     int compr_depth;
     int decompr_depth;
     int memcap;
@@ -305,7 +300,7 @@ int hi_ui_config_reset_server(HTTPINSPECT_CONF *ServerConf);
 void hi_ui_config_reset_http_methods(HTTPINSPECT_CONF *ServerConf);
 
 int hi_ui_config_add_server(HTTPINSPECT_GLOBAL_CONF *GlobalConf,
-                            sfip_t *ServerIP,
+                            sfcidr_t *ServerIP,
                             HTTPINSPECT_CONF *ServerConf);
 
 int hi_ui_config_set_profile_apache(HTTPINSPECT_CONF *GlobalConf);

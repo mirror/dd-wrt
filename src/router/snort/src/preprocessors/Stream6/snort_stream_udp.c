@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright (C) 2014 Cisco and/or its affiliates. All rights reserved.
+ * Copyright (C) 2014-2017 Cisco and/or its affiliates. All rights reserved.
  * Copyright (C) 2004-2013 Sourcefire, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -33,6 +33,7 @@
 #include "util.h"
 #include "decode.h"
 
+#include "spp_session.h"
 #include "session_api.h"
 #include "snort_session.h"
 
@@ -54,6 +55,8 @@
 #include "profiler.h"
 #include "sfPolicy.h"
 #include "stream5_ha.h"
+
+#include "reg_test.h"
 
 #ifdef PERF_PROFILING
 PreprocStats s5UdpPerfStats;
@@ -81,8 +84,8 @@ typedef struct _UdpSession
 
 } UdpSession;
 
-
 /*  G L O B A L S  **************************************************/
+static SessionCache* udp_lws_cache = NULL;
 
 /*  P R O T O T Y P E S  ********************************************/
 static void StreamParseUdpArgs(StreamUdpConfig *, char *, StreamUdpPolicy *);
@@ -195,7 +198,7 @@ void StreamUdpPolicyInit(StreamUdpConfig *config, char *args)
     StreamPrintUdpConfig(s5UdpPolicy);
 
 #ifdef REG_TEST
-    LogMessage("    UDP Session Size: %lu\n",sizeof(UdpSession));
+    LogMessage("    UDP Session Size: %lu\n", (long unsigned int)sizeof(UdpSession));
 #endif
 }
 
@@ -389,7 +392,7 @@ void UdpSessionCleanup(void *ssn)
         /* Huh? */
         return;
     }
- 
+
     /* Cleanup the proto specific data */
     session_api->free_protocol_session_pool( SESSION_PROTO_UDP, scb );
     scb->proto_specific_data = NULL;
@@ -428,7 +431,7 @@ void StreamResetUdp(void)
 void StreamCleanUdp(void)
 {
     if ( udp_lws_cache )
-        s5stats.udp_prunes = session_api->get_session_prune_count( SESSION_PROTO_UDP ); 
+        s5stats.udp_prunes = session_api->get_session_prune_count( SESSION_PROTO_UDP );
 
     /* Clean up session cache */
     session_api->delete_session_cache( SESSION_PROTO_UDP );
@@ -495,7 +498,7 @@ int StreamProcessUdp( Packet *p, SessionControlBlock *scb,
     if( s5UdpPolicy == NULL )
     {
         int policyIndex;
-        StreamUdpConfig *udp_config = ( ( StreamConfig * ) scb->stream_config )->udp_config; 
+        StreamUdpConfig *udp_config = ( ( StreamConfig * ) scb->stream_config )->udp_config;
         if( udp_config == NULL )
         {
             DEBUG_WRAP(DebugMessage(DEBUG_STREAM,
@@ -504,7 +507,7 @@ int StreamProcessUdp( Packet *p, SessionControlBlock *scb,
             PREPROC_PROFILE_END( s5UdpPerfStats );
             return 0;
         }
- 
+
         /* Find an Udp policy for this packet */
         for( policyIndex = 0; policyIndex < udp_config->num_policies; policyIndex++ )
         {
@@ -549,7 +552,7 @@ int StreamProcessUdp( Packet *p, SessionControlBlock *scb,
             PREPROC_PROFILE_END(s5UdpPerfStats);
             return 0;
         }
-    
+
         scb->session_established = true;
         scb->proto_policy = s5UdpPolicy;
         s5stats.total_udp_sessions++;
@@ -636,6 +639,10 @@ static int ProcessUdp( SessionControlBlock *scb, Packet *p, StreamUdpPolicy *s5U
 #ifdef ACTIVE_RESPONSE
             StreamActiveResponse(p, scb);
 #endif
+            if (pkt_trace_enabled)
+                addPktTraceData(VERDICT_REASON_STREAM, snprintf(trace_line, MAX_TRACE_LINE,
+                    "Stream: session was already blocked, %s\n", getPktTraceActMsg()));
+            else addPktTraceData(VERDICT_REASON_STREAM, 0);
             return ACTION_NOTHING;
         }
     }
@@ -714,10 +721,10 @@ static int ProcessUdp( SessionControlBlock *scb, Packet *p, StreamUdpPolicy *s5U
     return ACTION_NOTHING;
 }
 
-void UdpUpdateDirection(SessionControlBlock *ssn, char dir, snort_ip_p ip, uint16_t port)
+void UdpUpdateDirection(SessionControlBlock *ssn, char dir, sfaddr_t* ip, uint16_t port)
 {
     UdpSession *udpssn = (UdpSession *)ssn->proto_specific_data->data;
-    snort_ip tmpIp;
+    sfaddr_t tmpIp;
     uint16_t tmpPort;
 
     if (IP_EQUALITY(&udpssn->udp_sender_ip, ip) && (udpssn->udp_sender_port == port))
@@ -795,4 +802,25 @@ void StreamUdpConfigFree(StreamUdpConfig *config)
     free(config->policy_list);
     free(config);
 }
+
+#ifdef SNORT_RELOAD
+void SessionUDPReload(uint32_t max_sessions, uint16_t pruningTimeout, uint16_t nominalTimeout)
+{
+    SessionReload(udp_lws_cache, max_sessions, pruningTimeout, nominalTimeout
+#ifdef REG_TEST
+                  , "UDP"
+#endif
+                  );
+}
+
+unsigned SessionUDPReloadAdjust(unsigned maxWork)
+{
+    return SessionProtocolReloadAdjust(udp_lws_cache, session_configuration->max_udp_sessions,
+                                       maxWork, 0
+#ifdef REG_TEST
+                                       , "UDP"
+#endif
+                                       );
+}
+#endif
 

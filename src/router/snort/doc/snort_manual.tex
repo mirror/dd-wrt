@@ -101,7 +101,7 @@
 
 \begin{document}
 
-\title{SNORT\textsuperscript{\textregistered} Users Manual\\2.9.7}
+\title{SNORT\textsuperscript{\textregistered} Users Manual\\2.9.11.1}
 
 \author{The Snort Project}
 
@@ -115,7 +115,7 @@ Copyright \copyright 2001-2003 Chris Green
 
 Copyright \copyright 2003-2013 Sourcefire, Inc.
 
-Copyright \copyright 2014 Cisco and/or its affiliates. All rights reserved.
+Copyright \copyright 2014-2017 Cisco and/or its affiliates. All rights reserved.
 
 \tableofcontents{}
 
@@ -1510,7 +1510,7 @@ during snort initialization. If a signal handler cannot be installed a warning
 will be logged and that has to be fixed, otherwise the functionality will be lost.
 
 \texttt{Signals used in snort}
-
+\label{signalactions}
 \begin{tabular}{|l|l|l|}
 \hline
 Signal name & Default value & Action \\
@@ -1615,6 +1615,10 @@ IPs may be specified individually, in a list, as a CIDR block, or any
 combination of the three.  IP variables should be specified using 'ipvar'
 instead of 'var'.  Using 'var' for an IP variable is still allowed for backward
 compatibility, but it will be deprecated in a future release.
+
+IP variable name can begin with an alphanumeric character [A-Za-z0-9] or '\_'
+and should be followed by characters and numbers. Only numbers are not
+accepted as variable names.
 
 IPs, IP lists, and CIDR blocks may be negated with '!'.  Negation is handled
 differently compared with Snort versions 2.7.x and earlier.  Previously, each
@@ -2435,6 +2439,10 @@ the default is off.  \\
 \texttt{config policy\_mode: tap|inline|inline\_test} & Sets the policy
 mode to either \texttt{passive}, \texttt{inline} or \texttt{inline\_test}. \\
 
+\hline
+\texttt{config disable\_replace} & Disables content replace option. Default
+behaviour is to replace content. \\
+
 \hline \texttt{config tunnel\_verdicts: gtp|teredo|6in4|4in6} & By default, whitelist
 and blacklist verdicts are handled internally by Snort for GTP, Teredo, 6in4 and 4in6
 encapsulated traffic.  This means Snort actually gives the DAQ a pass or block
@@ -2987,6 +2995,7 @@ address or network.
 
 \begin{verbatim}
     preprocessor stream5_tcp: \
+        [log_asymmetric_traffic <yes|no>], \
         [bind_to <ip_addr>], \
         [timeout <number secs>], [policy <policy_id>], \
         [overlap_limit <number>], [max_window <number>], \
@@ -3034,7 +3043,7 @@ Policy Name & Operating Systems.\\
 Favor first overlapped segment.\\
 
 \hline
-\texttt{last} & Favor first overlapped segment.\\
+\texttt{last} & Favor last overlapped segment.\\
 
 \hline
 \texttt{bsd} & FresBSD 4.x and newer, NetBSD 2.x and newer, OpenBSD 3.x and newer\\
@@ -3392,7 +3401,7 @@ encompasses many, if not all, of the current portscanning techniques.
 sfPortscan was designed to be able to detect the different types of scans Nmap
 can produce.
 
-sfPortscan will currently alert for the following types of Nmap scans:
+sfPortscan will currently alert/block for the following types of Nmap scans:
 
 \begin{itemize}
 \item TCP Portscan
@@ -3405,7 +3414,7 @@ types of scans; one host scans multiple ports on another host. Most of the port
 queries will be negative, since most hosts have relatively few services
 available.
 
-sfPortscan also alerts for the following types of decoy portscans:
+sfPortscan also alerts/blocks for the following types of decoy portscans:
 
 \begin{itemize}
 \item TCP Decoy Portscan
@@ -3417,7 +3426,7 @@ Decoy portscans are much like the Nmap portscans described above, only the
 attacker has a spoofed source address inter-mixed with the real scanning
 address. This tactic helps hide the true identity of the attacker.
 
-sfPortscan alerts for the following types of distributed portscans:
+sfPortscan alerts/blocks for the following types of distributed portscans:
 
 \begin{itemize}
 \item TCP Distributed Portscan
@@ -3436,7 +3445,7 @@ type of scan through the scanned host.
 
 \end{note}
 
-sfPortscan alerts for the following types of portsweeps:
+sfPortscan alerts/blocks for the following types of portsweeps:
 
 \begin{itemize}
 \item TCP Portsweep
@@ -3457,7 +3466,7 @@ will most likely not see many negative responses.
 
 \end{note}
 
-sfPortscan alerts on the following filtered portscans and portsweeps:
+sfPortscan alerts/blocks on the following filtered portscans and portsweeps:
 
 \begin{itemize}
 \item TCP Filtered Portscan
@@ -3486,6 +3495,9 @@ they can send out many connection attempts within a very small amount of time.
 A filtered alert may go off before responses from the remote hosts are
 received.
 
+sfPortscan has the capability to detect and block portscan. If the intrusion rule
+action is alert, then snort will act as a portscan detector. If the intrusion
+rule action is drop/sdrop/reject, then snort will act as a portscan blocker.
 sfPortscan only generates one alert for each host pair in question during the
 time window (more on windows below). On TCP scan alerts, sfPortscan will also
 display any open ports that were scanned. On TCP sweep alerts however,
@@ -4603,6 +4615,7 @@ with any other options except:
 \item \texttt{small\_chunk\_length}
 \item \texttt{decompress\_swf}
 \item \texttt{decompress\_pdf}
+\item \texttt{legacy\_mode}
 \end{itemize}
 
 These options must be specified after the \texttt{profile} option.
@@ -5317,6 +5330,19 @@ with console output (-A cmg). \texttt{u2spewfoo} can be used to read this data f
 the unified2.
 
 \end{note}
+
+\begin{verbatim}
+##########################################
+# HTTP2 SUPPORT IS STILL EXPERIMENTAL!
+# DO NOT USE IN PRODUCTION ENVIRONMENTS.
+# Please send any issues to the Snort team
+##########################################
+\end{verbatim}
+
+\item \texttt{legacy\_mode}
+By default, HTTP2 traffic is not supported. You can use "legacy\_mode no"
+to enable HTTP2 support.
+If http\_legacy mode is configured, HTTP2 inspection is disabled.
 
 \end{slist}
 
@@ -7314,6 +7340,8 @@ Option & Argument & Required & Default\\
 \hline
 \texttt{smb\_fingerprint\_policy} & \texttt{<fp-policy>} & NO & OFF\\
 \hline
+\texttt{smb\_legacy\_mode} & NONE & NO & OFF\\
+\hline
 \end{tabular}
 \end{itemize}
 
@@ -7425,6 +7453,15 @@ Default is disabled.
 \item[] \texttt{smb\_fingerprint\_policy}
 \begin{itemize}
 
+\item[]  By default, SMBv1, SMBv2, and SMBv3 files are inspected. 
+        If legacy mode is configured, only SMBv1 file inspection is enabled. 
+
+
+\end{itemize}
+
+\item[] \texttt{legacy\_mode}
+\begin{itemize}
+
 \item[] In the initial phase of an SMB session, the client needs to authenticate
 with a SessionSetupAndX.  Both the request and response to this command
 contain OS and version information that can allow the preprocessor to
@@ -7449,6 +7486,7 @@ protection against Windows and Samba specific evasions.
     reassemble_threshold 500
     smb_fingerprint_policy both
     smb_fingerprint_policy client
+    smb_legacy_mode
 \end{verbatim}
 \normalsize
 
@@ -7684,7 +7722,9 @@ arguments, the default file depth is 16384 bytes.  An argument of -1 to
 \texttt{file-depth} disables setting the pointer for \texttt{file\_data}, effectively
 disabling SMB file inspection in rules.  An argument of 0 to
 \texttt{file-depth} means unlimited.  Default is \texttt{off}, i.e. no SMB file
-inspection is done in the preprocessor.
+inspection is done in the preprocessor. SMBv1, SMBv2, and SMBv3 are
+ supported.
+
 
 \end{itemize}
 
@@ -7836,10 +7876,8 @@ SID & Description\\
   3 & An SMB message type was specified in the header. Either a request was
       made by the server or a response was given by the client.\\
 \hline
-  4 & The SMB id does not equal \texttt{\textbackslash xffSMB}. Note that since
-      the preprocessor does not yet support SMB2, id of
-      \texttt{\textbackslash xfeSMB} is turned away before an eventable point is
-      reached.\\
+  4 & The SMB id does not equal \texttt{\textbackslash xffSMB} or
+      \texttt{\textbackslash xfeSMB}.\\
 \hline
   5 & The word count of the command header is invalid. SMB commands have
       pretty specific word counts and if the preprocessor sees a command with
@@ -8026,6 +8064,11 @@ SID & Description\\
       and the default folder options in Windows is not to display Hidden files.
       The preprocessor will alert if it detects a client attempt to set a
       file's attributes to ReadOnly/Hidden/System.\\
+\hline
+ 58 & File offset provided is greater than file size specified. This is applied
+      to read / write requests for file.\\
+\hline
+ 59 & Nextcommand specified in SMBv2 or SMBv3 header is beyond payload boundary.\\
 \hline
 \end{longtable}
 \end{itemize}
@@ -9827,7 +9870,7 @@ Option & Argument & Required & Default\\
 \item[] \texttt{ports}
 \begin{itemize}
 \item[]  This specifies on what ports to check for GTP messages. Typically, 
-     this will include 5060, 5061.
+     this will include 2123, 3386.
 \item[] \textit{Syntax}
 \begin{verbatim}
     ports { <port> [<port>< ... >] }
@@ -13100,13 +13143,13 @@ log_rcptto
 \end{verbatim}
 
 This option enables SMTP preprocessor to parse and log the
-recipients email address extracted from the "RCPT FROM" command
+recipients email address extracted from the "RCPT TO" command
 along with all the generated events for that session.
 
 See section \ref{SMTP} for more information
 
 \begin{verbatim}
-log_rcptto
+log_filename
 \end{verbatim}
 
 This option enables SMTP preprocessor to parse and log the MIME
@@ -13232,45 +13275,51 @@ Rollover will occur at most once per second so if limit is too small for
 logging rate, limit will be exceeded.  Rollover works correctly if snort is
 stopped/restarted.
 
+%==============================================================================
+%                           HOST ATTRIBUTE TABLE
+%==============================================================================
 \section{Host Attribute Table}
 \label{targetbased}
 
-Starting with version 2.8.1, Snort has the capability to use information from
-an outside source to determine both the protocol for use with Snort rules, and
-IP-Frag policy (see section \ref{frag3 section}) and TCP Stream reassembly
-policies (see section \ref{stream5 section}).  This information is stored in an
-attribute table, which is loaded at startup.  The table is re-read during run
-time upon receipt of signal number 30.
-
-Snort associates a given packet with its attribute data from the table, if
-applicable.
-
-For rule evaluation, service information is used instead of the ports when the
-protocol metadata in the rule matches the service corresponding to the traffic.
-If the rule doesn't have protocol metadata, or the traffic doesn't have any
-matching service information, the rule relies on the port information.
+Snort can use information from an external source(s) to more accurately inspect
+network traffic. This information saved to a file is known as a host attributes
+table. Host attributes are used in IPS rule evalution, IP fragment (see section
+\ref{frag3 section})/TCP stream (see section \ref{stream5 section}) reassembly
+policy selection, and by the application preprocessors. Host attribute table is
+loaded during initialization and supports runtime reloads; Snort reloads the
+host attributes table when it receives the signal SIGNAL\_SNORT\_READ\_ATTR\_TBL
+(See \ref{signalactions} to learn more).
 
 \begin{note}
-
-To use a host attribute table, Snort must be configured with the
---enable-targetbased flag.
-
+To use a host attribute table and service information, Snort must be configured
+with the --enable-targetbased flag.
 \end{note}
 
-\subsection{Configuration Format}
+%===============================
+\subsection{Rule evaluation}
+
+In rule evaluation, service information can be used instead of the ports when the
+metadata service(s) in the rule matches the service corresponding to the traffic.
+If the rule does not have metadata service(s), or the packet service was not
+matched then the port checks are used exclusively.
+
+%===============================
+\subsection{Snort Configuration}
 
 \begin{verbatim}
-    attribute_table filename <path to file>
+attribute_table filename <PATH/TO/HOSTS.XML>
 \end{verbatim}
 
-\subsection{Attribute Table File Format}
+%===============================
+\subsection{Host Attribute Table File Format}
 
 The attribute table uses an XML format and consists of two sections, a mapping
 section, used to reduce the size of the file for common data elements, and the
 host attribute section.  The mapping section is optional.
 
-An example of the file format is shown below.
+Provided below is an example attribute table
 
+%===============================
 \begin{verbatim}
 <SNORT_ATTRIBUTES>
     <ATTRIBUTE_MAP>
@@ -13369,16 +13418,6 @@ An example of the file format is shown below.
 </SNORT_ATTRIBUTES>
 \end{verbatim}
 
-\begin{note}
-
-With Snort 2.8.1, for a given host entry, the stream and IP frag information
-are both used.  Of the service attributes, only the IP protocol (tcp, udp,
-etc), port, and protocol (http, ssh, etc) are used.  The application and
-version for a given service attribute, and any client attributes are ignored.
-They may be used in a future release.
-
-\end{note}
-
 A DTD for verification of the Host Attribute Table XML file is provided with
 the snort packages.
 
@@ -13386,18 +13425,33 @@ The confidence metric may be used to indicate the validity of a given service
 or client application and its respective elements.  That field is not
 currently used by Snort, but may be in future releases.
 
+\begin{note}
+
+    Snort requires that the file be a properly formatted schema of the
+    format defined above. Empty or incorrectly formatted files will likely
+    cause a Fatal Error.
+
+\end{note}
+
+%===============================
+%
+%===============================
 \subsection{Attribute Table Example}
 
 In the example above, a host running Red Hat 2.6 is described. This host has
 an IP address of 192.168.1.234.  On that host, TCP port 22 is ssh (running
 Open SSH), and TCP port 2300 is telnet.
 
-The IP stack fragmentation and stream reassembly is mimicked by the "linux"
+The IP fragmentation and TCP stream reassembly is mimicked by the "linux"
 configuration (see sections \ref{frag3 section} and \ref{stream5 section}).
 
-\subsubsection{Attribute Table Affect on preprocessors}
+%===============================
+%
+%===============================
+\subsection{Attribute Table Affect on preprocessors}
 
 \begin{itemize}
+
 \item{Network Layer Preprocessors}
 
 Each of the network layer preprocessors (frag3 and stream5) make use of the
@@ -13406,17 +13460,19 @@ how data is handled for reassembly for packets being received by that host.
 
 \item{Application Layer Preprocessors}
 
-The application layer preprocessors (HTTP, SMTP, FTP, Telnet, etc) make
-use of the \texttt{SERVICE} information for connections destined to that
-host on that port.  
+The application layer preprocessors (HTTP, SMTP, FTP, Telnet, etc) make use of
+the \texttt{SERVICE} information for connections destined to that host on that
+port.
 
-For example, even if the telnet portion of the FTP/Telnet preprocessor is
-only configured to inspect port 23, Snort will inspect packets for a connection
-to 192.168.1.234 port 2300 as telnet.
+For example, even if the telnet portion of the FTP/Telnet preprocessor is only
+configured to inspect port 23, Snort will inspect packets for a connection to
+192.168.1.234 port 2300 as telnet.
 
-Conversely, if, for example, HTTP Inspect is configured to inspect traffic
-on port 2300, HTTP Inspect will NOT process the packets on a connection
-to 192.168.1.234 port 2300 because it is identified as telnet.
+Conversely, if, for example, HTTP Inspect is configured to inspect traffic on
+port 2300, HTTP Inspect will NOT process the packets on a connection to
+192.168.1.234 port 2300 because it is identified as telnet.
+
+\end{itemize}
 
 Below is a list of the common services used by Snort's application layer
 preprocessors and Snort rules (see below).
@@ -13437,86 +13493,67 @@ imap & pop2 & pop3 & snmp & & & \\
 \end{tabular}
 \end{center}
 \end{table}
-\end{itemize}
 
 \subsubsection{Attribute Table Affect on rules}
 
-Similar to the application layer preprocessors, rules configured for specific
-ports that have a service metadata will be processed based on the service
-identified by the attribute table.
+Snort uses service information in two ways; initialization of detection engine 
+and as a detection criteria. To take advantage of this, Snort rules must
+contain the \texttt{metadata: service SERVICE} convention specified. During rule 
+evaluation the default behavior will check first that the packet has been matched
+to a service, and then check that the packet's service matches the service(s)
+specified in the rule; if both these checks passed then Snort will disable
+source and destination port checks for the rule.
 
-When both service metadata is present in the rule and in the connection, Snort uses
-the service rather than the port.  If there are rules that use the service
-and other rules that do not but the port matches, Snort will ONLY inspect the rules
-that have the service that matches the connection.
+Snort 2.9.8 provides new functionality to control how rules use service
+information known as "service overrides". Service overrides are specified in
+the same way that services are specified in the rule, or more simply as a
+"reserved" \texttt{SERVICE}. The table below defines the new reserved service
+override names.
 
-The following few scenarios identify whether a rule will be inspected or not.
+\begin{longtable}{| p{1.5in} | p{4.5in} |}
+\hline
+{\bf Metadata} & {\bf Description}\\
+\hline
+
+\hline
+\textbf{service and-ports} &
+\begin{itemize}
+\item{Packet service must be set.}
+\item{Packet service must match one of the rule services.}
+\item{Packet must match the ports specified in the rule header.}
+\end{itemize} \\
+
+\hline
+\textbf{service or-ports} &
+\begin{itemize}
+\item{Packet service is set and it matches one of the rule services (skipping port checks).}
+\item{Packet service is set but it DOES NOT match one of the rule services; packet must match the ports specified in the rule header.}
+\item{Packet service is NOT set, only perform port checks.}
+\end{itemize} \\
+
+\hline
+\textbf{service else-ports} &
+\begin{itemize}
+\item{Packet service is set, packet must match one of the rule services.}
+\item{Packet service is NOT set; then packet must match the ports specified in the rule header.}
+\end{itemize}
+
+This is the default behavior of a rule containing metadata service information. \\
+
+\hline
+\textbf{service unknown} &
+
+The keyword "unknown" is an alias for "service else-ports" above. It is intended
+for use in rules that do not contain metadata service information (port only
+rules). When used in a rule that doesn't otherwise contain metadata (rule only
+specifies ports), the evaluation is:
 
 \begin{itemize}
-\item{Alert: Rule Has Service Metadata, Connection Service Matches}
+\item{Packet service must NOT be set; then match ports.}
+\end{itemize} \\
 
-The following rule will be inspected and alert on traffic to host 192.168.1.234
-port 2300 because it is identified as telnet.
-
-\begin{verbatim}
-alert tcp any any -> any 23 (msg:"Telnet traffic"; flow:to_server,established;
-sid:10000001; metadata: service telnet;)
-\end{verbatim}
-
-\item{Alert: Rule Has Multiple Service Metadata, Connection Service Matches One of them}
-
-The following rule will be inspected and alert on traffic to host 192.168.1.234
-port 2300 because it is identified as telnet.
-
-\begin{verbatim}
-alert tcp any any -> any 23 (msg:"Telnet traffic"; flow:to_server,established;
-sid:10000002; metadata: service telnet, service smtp;)
-\end{verbatim}
-
-\item{No Alert: Rule Has Service Metadata, Connection Service Does Not Match, Port Matches}
-
-The following rule will NOT be inspected and NOT alert on traffic to host 192.168.1.234
-port 2300 because that traffic is identified as telnet, but the service is ssh.
-
-\begin{verbatim}
-alert tcp any any -> any 2300 (msg:"SSH traffic"; flow:to_server,established;
-sid:10000003; metadata: service ssh;)
-\end{verbatim}
-
-\item{Alert: Rule Has No Service Metadata, Port Matches}
-
-The following rule will be inspected and alert on traffic to host 192.168.1.234
-port 2300 because the port matches.
-
-\begin{verbatim}
-alert tcp any any -> any 2300 (msg:"Port 2300 traffic"; flow:to_server,established;
-sid:10000004;)
-\end{verbatim}
-
-\item{Alert: Rule Has No Service Metadata, Packet has service + other rules with service}
-
-The first rule will NOT be inspected and NOT alert on traffic to host 192.168.1.234
-port 2300 because the service is identified as telnet and there are other rules with
-that service.
-
-\begin{verbatim}
-alert tcp any any -> any 2300 (msg:"Port 2300 traffic"; flow:to_server,established;
-sid:10000005;)
-alert tcp any any -> any 2300 (msg:"Port 2300 traffic"; flow:to_server,established;
-sid:10000006; metadata: service telnet;)
-\end{verbatim}
-
-\item{No Alert: Rule Has No Service Metadata, Port Does Not Match}
-
-The following rule will NOT be inspected and NOT alert on traffic to host 192.168.1.234
-port 2300 because the port does not match.
-
-\begin{verbatim}
-alert tcp any any -> any 23 (msg:"Port 23 traffic"; flow:to_server,established;
-sid:10000007;)
-\end{verbatim}
-
-\end{itemize}
+\hline
+\end{longtable}
 
 \section{Dynamic Modules}
 
@@ -14809,10 +14846,7 @@ Target-Based Service Identifier & "http" \\
 \begin{note}
 
 The \texttt{service} Metadata Key is only meaningful when a Host Attribute
-Table is provided.  When the value exactly matches the service ID as specified
-in the table, the rule is applied to that packet, otherwise, the rule is not
-applied (even if the ports specified in the rule match).  See Section
-\ref{targetbased} for details on the Host Attribute Table.
+Table is provided. See Section \ref{targetbased} for details on the Host Attribute Table.
 
 \end{note}.
 
@@ -15242,7 +15276,7 @@ The value can also be set to a string value referencing a variable extracted by 
 
 \subsubsection{Example}
 
-The rule below maps to a regular expression of /ABC.\{1\}DEF/.
+The rule below maps to a regular expression of /ABC.\{1,\}DEF/.
 
 \begin{verbatim}
     alert tcp any any -> any any (content:"ABC"; content:"DEF"; distance:1;)
@@ -15721,6 +15755,10 @@ those contents are not modified with \texttt{offset}, \texttt{depth},
 \texttt{distance} or \texttt{within}.
 \end{note}
 
+\begin{note}
+The fast pattern matcher is always case insensitive.
+\end{note}
+
 \subsubsection{Format}
 The \texttt{fast\_pattern} option can be used alone or optionally take arguments.
 When used alone, the meaning is simply to use the specified content as the
@@ -16190,12 +16228,13 @@ This option sets the cursor used for detection to one of the following buffers:
 	c. Non-Encoded MIME attachment (when \texttt{bitenc\_decode\_depth} is greater than -1)
 	d. Quoted-Printable decoded MIME attachment (when \texttt{qp\_decode\_depth} is greater than -1) 
 	e. Unix-to-Unix decoded attachment (when \texttt{uu\_decode\_depth} is greater than -1)
+3. If it is not set by 1 and 2, it will be set to the payload.
 
 Any relative or absolute content matches (without HTTP modifiers or rawbytes) and payload detecting
 rule options that follow \texttt{file\_data} in a rule will apply to this buffer until explicitly reset 
 by other rule options.
 
-This rule option can be used several time in a rule.
+This rule option can be used several time in a rule. 
 
 The argument \texttt{mime} to \texttt{file\_data} is deprecated. The rule options \texttt{file\_data} will 
 itself point to the decoded MIME attachment.
@@ -16336,13 +16375,15 @@ values}.
 
 \footnotesize
 \begin{verbatim}
-    byte_test:<bytes to convert>, [!]<operator>, <value>, <offset>  \
-        [, relative][, <endian>][, string, <number type>][, dce];
+    byte_test:<bytes to convert>, [!]<operator>, <value>, <offset> \
+        [, relative][, <endian>][, string, <number type>][, dce] \
+        [, bitmask <bitmask_value>];
 
-    bytes      = 1 - 10
-    operator   = '<' | '=' | '>' | '<=' | '>=' | '&' | '^'
-    value      = 0 - 4294967295
-    offset     = -65535 to 65535
+    bytes            = 1 - 10
+    operator         = '<' | '=' | '>' | '<=' | '>=' | '&' | '^'
+    value            = 0 - 4294967295
+    offset           = -65535 to 65535
+    bitmask_value    = 1 to 4 byte hexadecimal value
 \end{verbatim}
 \normalsize
 
@@ -16397,6 +16438,11 @@ converted.  See section \ref{sub:dcerpc2} for a description and examples
 (\ref{dcerpc2:byte_test_jump} for quick reference).\\
 
 \hline
+\texttt{bitmask} &
+Applies the AND operator on the bytes converted. The result will be
+right-shifted by the number of bits equal to the number of trailing zeros
+in the mask.\\
+\hline
 \end{tabular}
 
 Any of the operators can also include \emph{!} to check if the operator is not
@@ -16441,10 +16487,14 @@ operator is used, then it would be the same as using \emph{if (data \& value)
     alert udp any any -> any 1237 \
         (byte_test:10, =, 1234567890, 0, string, dec; \
         msg:"got 1234567890!";)
-    
+ 
     alert udp any any -> any 1238 \
         (byte_test:8, =, 0xdeadbeef, 0, string, hex; \
         msg:"got DEADBEEF!";)
+
+    alert tcp any any -> any any \
+        (byte_test:2, =, 568, 0, bitmask 0x3FF0; \
+        msg:"got 568 after applying bitmask 0x3FF0 on 2 bytes extracted";)
 \end{verbatim}
 
 \subsection{byte\_jump}
@@ -16467,15 +16517,16 @@ values}.
 \subsubsection{Format}
 
 \begin{verbatim}
-    byte_jump:<bytes_to_convert>, <offset> \
-        [, relative][, multiplier <mult_value>][, <endian>][, string, <number_type>]\
-        [, align][, from_beginning][, post_offset <adjustment value>][, dce];
+    byte_jump:<bytes_to_convert>, <offset> [, relative][, multiplier <mult_value>] \
+        [, <endian>][, string, <number_type>][, align][, from_beginning][, from_end] \ 
+        [, post_offset <adjustment value>][, dce][, bitmask <bitmask_value>];
 
-    bytes       = 1 - 10
-    offset      = -65535 to 65535
-    mult_value  = 0 - 65535
-    post_offset = -65535 to 65535
-    
+    bytes             = 1 - 10
+    offset            = -65535 to 65535
+    mult_value        = 0 - 65535
+    post_offset       = -65535 to 65535
+    bitmask_value     = 1 to 4 bytes hexadecimal value
+ 
 \end{verbatim}
 
 \begin{tabular}{| l | p{4.5in} |}
@@ -16486,8 +16537,10 @@ values}.
 \texttt{bytes\_to\_convert} &
 
 Number of bytes to pick up from the packet. The allowed values are 1 to 10 when
-used without \texttt{dce}. If used with \texttt{dce} allowed values are 1, 2 and 4.\\
+used without \texttt{dce}. If used with \texttt{dce} allowed values are 1, 2 and 4.
 
+If used with \texttt{from\_end} argument, bytes\_to\_convert can be 0. If 
+bytes\_to\_convert is 0, the extracted value is 0.\\
 \hline
 \texttt{offset} & Number of bytes into the payload to start processing\\
 \hline
@@ -16513,13 +16566,20 @@ used without \texttt{dce}. If used with \texttt{dce} allowed values are 1, 2 and
 \texttt{from\_beginning} & Skip forward from the beginning of the packet
 payload instead of from the current position in the packet.\\
 \hline
+\texttt{from\_end} & The jump will originate from the end of payload\\
+\hline
 \texttt{post\_offset $<$value$>$} & Skip forward or backwards (positive of
 negative value) \texttt{by $<$value$>$} number of bytes after the other jump
 options have been applied.\\
 \hline
 \texttt{dce} & Let the DCE/RPC 2 preprocessor determine the byte order of the
 value to be converted.  See section \ref{sub:dcerpc2} for a description and
-examples (\ref{dcerpc2:byte_test_jump} for quick reference).\\ \hline
+examples (\ref{dcerpc2:byte_test_jump} for quick reference).\\
+\hline
+\texttt{bitmask} & Applies the AND operator on the \texttt{bytes\_to\_convert} 
+argument. The result will be right-shifted by the number of bits equal to the  
+number of trailing zeros in the mask.\\
+\hline
 \end{tabular}
 
 \subsubsection{Example}
@@ -16530,6 +16590,21 @@ examples (\ref{dcerpc2:byte_test_jump} for quick reference).\\ \hline
         byte_jump:4, 12, relative, align; \
         byte_test:4, >, 900, 20, relative; \
         msg:"statd format string buffer overflow";)
+
+    alert tcp any any -> any any (content:"Begin"; \
+        byte_jump:0, 0, from_end, post_offset -6; \
+        content:"end.."; distance:0; within:5; \
+        msg:"Content match from end of the payload";)
+
+    alert tcp any any -> any any (content:"catalog"; \
+        byte_jump:2, 1, relative, post_offset 2, bitmask 0x03f0; \
+        byte_test:2, =, 968, 0, relative; \
+        msg:"Bitmask applied on the 2 bytes extracted for byte_jump";)
+
+    alert tcp any any -> any any (content:"catalog"; \
+        byte_jump:1, 2, from_end, post_offset -5, bitmask 0x3c; \
+        byte_test:1, =, 106, 0, relative; \
+        msg:"Byte jump calculated from end of payload after bitmask applied";)
 \end{verbatim}
 
 \subsection{byte\_extract}
@@ -16550,9 +16625,15 @@ re-used in the same rule any number of times.
 \subsubsection{Format}
 
 \begin{verbatim}
-    byte_extract:<bytes_to_extract>, <offset>, <name> \
-        [, relative][, multiplier <multiplier value>][, <endian>]\ 
-        [, string][, hex][, dec][, oct][, align <align value>][, dce]
+    byte_extract:<bytes_to_extract>, <offset>, <name> [, relative] \
+        [, multiplier <multiplier value>][, <endian>][, string][, hex][, dec][, oct] \
+        [, align <align value>][, dce][, bitmask <bitmask>];
+
+    bytes_to_extract = 1 - 10
+    operator         = '<' | '=' | '>' | '<=' | '>=' | '&' | '^'
+    value            = 0 - 4294967295
+    offset           = -65535 to 65535
+    bitmask_value    = 1 to 4 byte hexadecimal value
 \end{verbatim}
 
 \begin{tabular}{| l | p{4.5in} |}
@@ -16560,7 +16641,7 @@ re-used in the same rule any number of times.
 {\bf Option} & {\bf Description}\\
 \hline
 \hline
-\texttt{bytes\_to\_convert} & Number of bytes to pick up from the packet\\
+\texttt{bytes\_to\_extract} & Number of bytes to pick up from the packet\\
 \hline
 \texttt{offset} & Number of bytes into the payload to start processing\\
 \hline
@@ -16590,6 +16671,10 @@ The DCE/RPC 2 preprocessor must be enabled for this option to work.\\
 \texttt{align $<$value$>$} & Round the number of converted bytes up to the next
 \texttt{$<$value$>$-byte} boundary. \texttt{$<$value$>$} may be \texttt{2} or
 \texttt{4}.\\
+\hline
+\texttt{bitmask} & Applies the AND operator on the value of \texttt{bytes\_to\_extract} 
+argument. The result will be right-shifted by the number of bits equal to the 
+number of trailing zeros in the mask.\\
 \hline
 \end{tabular}
 
@@ -16629,6 +16714,137 @@ This example uses two variables to:
         byte_extract:1, 1, str_depth; \
         content:"bad stuff"; offset:str_offset; depth:str_depth; \
         msg:"Bad Stuff detected within field";)
+
+    alert tcp any any -> any any (content:"|04 63 34 35|"; offset:4; depth:4; \
+        byte_extract: 2, 0, var_match, relative, bitmask 0x03ff; \
+        byte_test: 2, =, var_match, 2, relative; \
+        msg:"Byte test value matches bitmask applied on bytes extracted";)
+\end{verbatim}
+
+\subsection{byte\_math}
+\label{sub:byte_math}
+
+Perform a mathematical operation on an extracted value and a specified value 
+or existing variable, and store the outcome in a new resulting variable. 
+These resulting variables can be referenced later in the rule, 
+instead of using hard-coded values.
+
+\subsubsection{Format}
+
+\footnotesize
+\begin{verbatim}
+    byte_math:bytes <bytes_to_extract>, offset <offset_value>, oper <operator>, 
+        rvalue <r_value>, result <result_variable> [, relative] 
+        [, endian <endian>] [, string <number type>][, dce] 
+        [, bitmask <bitmask_value>];
+
+    bytes_to_extract = 1 - 10
+    operator         = '+' | '-' | '*' | '/' | '<<' | '>>'
+    r_value          = 0 - 4294967295 | byte extract variable
+    offset_value     = -65535 to 65535
+    bitmask_value    = 1 to 4 byte hexadecimal value
+    result_variable  = Result Variable name
+\end{verbatim}
+\normalsize
+
+\begin{tabular}{| l | p{4.5in} |}
+\hline
+{\bf Option} & {\bf Description}\\
+\hline
+\hline
+\texttt{bytes\_to\_extract} &
+
+Number of bytes to pick up from the packet. The allowed values are 1 to 10 when
+used without \texttt{dce}. If used with \texttt{dce} allowed values are 1, 2 and 4.
+If used with $<<$ or $>>$ operator, allowed values are 1 to 4.\\
+
+\hline
+\texttt{oper} & Mathematical Operation to perform on the extracted value
+Operations allowed: +, -, *, /, $<<$, $>>$\\
+\hline
+\texttt{rvalue} & Value to use mathematical operation against\\
+\hline
+\texttt{offset} & Number of bytes into the payload to start processing\\
+\hline
+\texttt{relative} & Use an offset relative to last pattern match\\
+\hline
+\texttt{endian} & Endian type of the number being read:
+\begin{itemize}
+\item \texttt{big} - Process data as big endian (default)
+\item \texttt{little} - Process data as little endian
+\end{itemize}\\
+\hline
+\texttt{string} & Data is stored in string format in packet\\
+\hline
+\texttt{number type} & Type of number being read:
+\begin{itemize}
+\item \texttt{hex} - Converted string data is represented in hexadecimal
+\item \texttt{dec} - Converted string data is represented in decimal
+\item \texttt{oct} - Converted string data is represented in octal
+\end{itemize}\\
+\hline
+\texttt{dce} &
+
+Let the DCE/RPC 2 preprocessor determine the byte order of the value to be
+converted.  See section \ref{sub:dcerpc2} for a description and examples
+(\ref{dcerpc2:byte_test_jump} for quick reference).\\
+
+\hline
+\texttt{bitmask} &
+Applies the AND operator on the bytes extracted. The result will be
+right-shifted by the number of bits equal to the number of trailing zeros
+in the mask.\\
+\hline
+\end{tabular}
+
+\subsubsection{Other rule options which use byte\_math result variable}
+
+\begin{tabular}{| l | p{4.5in} |}
+\hline
+{\bf Rule Option} & {\bf Arguments that take result variable}\\
+\hline
+\hline
+\texttt{content} & \texttt{offset}, \texttt{depth},
+\texttt{distance}, \texttt{within}\\
+\hline
+\texttt{byte\_test} & \texttt{offset}, \texttt{value}\\
+\hline
+\texttt{byte\_jump} & \texttt{offset}\\
+\hline
+\texttt{isdataat} & \texttt{offset}\\
+\hline
+\end{tabular}
+
+
+\subsubsection{Examples}
+
+\begin{verbatim}
+    alert udp $EXTERNAL_NET any -> $HOME_NET any \
+        (msg:"Perform Arithmetic Operation on the extracted bytes"; \
+        content:"|00 04 93 F3|"; \
+        content:"|00 00 00 07|"; distance:4; within:4; \
+        byte_math:bytes 4, offset 0, oper +, rvalue 248, result var, relative; \
+        byte_test:4, >, var, 2, relative;)
+
+    alert tcp $EXTERNAL_NET any -> $HOME_NET any \
+        (msg:"Bitwise shift operator"; \
+        content:"|00 00 00 07|"; distance:4; within:4; \
+        byte_extract: 1, 0, extracted_val, relative; \
+        byte_math: bytes 1, offset 2, oper >>, rvalue extracted_val, result var, relative; \
+        byte_test:2, =, var, 0, relative;)
+
+    alert udp any any -> any 1234 \
+        (content: "Packets start"; \
+        byte_math: bytes 2, offset 0, oper -, rvalue 100, result var, relative, bitmask 0x7FF0; \
+        content: "Packets end"; distance: 2; within var; \
+        msg:"Content match with bitmask applied to the bytes extracted";)
+
+    alert udp any any -> any 1235 \
+        (byte_extract: 4, 3,  extracted_val, relative; \
+        byte_math: bytes 5, offset 0, oper +, rvalue extracted_val, result var, string hex; \
+        byte_test:5, =, var, 4, string, hex; \
+        msg:"String operator used with math rule option";)
+
 \end{verbatim}
 
 \subsection{ftpbounce}
@@ -19994,12 +20210,13 @@ options.
   Serial Unified2 Header or EOF.
 
 \subsection{Unified2 Packet}
-    
+ 
 \begin{verbatim}
     sensor id               4 bytes
     event id                4 bytes
     event seconds           4 bytes
-    event microseconds      4 bytes
+    packet seconds          4 bytes
+    packet microseconds     4 bytes
     linktype                4 bytes
     packet length           4 bytes
     packet data             <variable length>
@@ -20323,6 +20540,59 @@ obtained when a drop rule fires while pruning sessions or during shutdown.
     boundary.
 \end{itemize}
 
+\section{Buffer dump utility}
+
+Buffer dump option will dump the buffers used by snort during different stages of packet processing path.
+
+\begin{verbatim}
+    ./configure --enable-buffer-dump / -DDUMP_BUFFER
+\end{verbatim}
+
+Two options are provided to dump buffers. '--buffer-dump-alert' will dump buffers only when there is an alert.
+
+'--buffer-dump' will dump buffers for every packet.
+
+\begin{verbatim}
+   ./snort -A cmg -k none -Q --daq-dir=<dir> --daq dump -r <pcap> -c snort.conf --buffer-dump-alert=<file>
+     or
+   ./snort -A cmg -k none -Q --daq-dir=<dir> --daq dump -r <pcap> -c snort.conf --buffer-dump=<file>
+
+Note: If <file> parameter is not used, buffers are dumped on the console
+\end{verbatim}
+
+\subsection{Example Buffer Dump output}
+
+\begin{verbatim}
+METHOD_DUMP, 3
+
+00000000  47 45 54                                          |GET             |
+
+URI_DUMP, 340
+
+00000000  2F 70 68 70 42 42 33 2F  76 69 65 77 74 6F 70 69  |/phpBB3/viewtopi|
+00000010  63 2E 70 68 70 3F 70 3D  39 30 30 32 26 73 69 64  |c.php?p=9002&sid|
+00000020  3D 66 35 33 39 39 61 32  64 32 34 33 63 65 61 64  |=f5399a2d243cead|
+00000030  33 61 35 65 61 37 61 64  66 31 35 62 66 63 38 37  |3a5ea7adf15bfc87|
+00000040  32 26 68 69 67 68 6C 69  67 68 74 3D 27 2E 66 77  |2&highlight='.fw|
+00000050  72 69 74 65 28 66 6F 70  65 6E 28 63 68 72 28 31  |rite(fopen(chr(1|
+00000060  30 39 29 2E 63 68 72 28  34 39 29 2E 63 68 72 28  |09).chr(49).chr(|
+00000070  31 30 34 29 2E 63 68 72  28 31 31 31 29 2E 63 68  |104).chr(111).ch|
+00000080  72 28 35 30 29 2E 63 68  72 28 31 31 31 29 2E 63  |r(50).chr(111).c|
+00000090  68 72 28 31 30 32 29 2C  63 68 72 28 39 37 29 29  |hr(102),chr(97))|
+000000a0  2C 63 68 72 28 33 35 29  2E 63 68 72 28 33 33 29  |,chr(35).chr(33)|
+000000b0  2E 63 68 72 28 34 37 29  2E 63 68 72 28 31 31 37  |.chr(47).chr(117|
+000000c0  29 2E 63 68 72 28 31 31  35 29 2E 63 68 72 28 31  |).chr(115).chr(1|
+000000d0  31 34 29 2E 63 68 72 28  34 37 29 2E 63 68 72 28  |14).chr(47).chr(|
+000000e0  39 38 29 2E 63 68 72 28  31 30 35 29 2E 63 68 72  |98).chr(105).chr|
+000000f0  28 31 31 30 29 2E 63 68  72 28 34 37 29 2E 63 68  |(110).chr(47).ch|
+00000100  72 28 31 31 32 29 2E 63  68 72 28 31 30 31 29 2E  |r(112).chr(101).|
+00000110  63 68 72 28 31 31 34 29  2E 63 68 72 28 31 30 38  |chr(114).chr(108|
+00000120  29 2E 63 68 72 28 31 30  29 2E 63 68 72 28 31 31  |).chr(10).chr(11|
+00000130  37 29 2E 63 68 72 28 31  31 35 29 2E 63 68 72 28  |7).chr(115).chr(|
+00000140  31 30 31 29 2E 63 68 72  28 33 32 29 29 2C 65 78  |101).chr(32)),ex|
+00000150  69 74 2E FF                                       |it..            |
+\end{verbatim}
+
 \section{The Snort Team}
 
 \begin{tabular}{p{3in} p{3in}}
@@ -20341,6 +20611,10 @@ obtained when a drop rule fires while pruning sessions or during shutdown.
 & Josh Rosenbaum\\
 & Carter Waxman\\
 & Tom Peters\\
+& A V K Nageswara Rao (ANR)\\
+& Rahul Burman\\
+& Seshaiah Erugu\\
+& Krishnakanth K\\
 \\
 \textbf{Snort QA Team}
 & Chris Spencer\\
@@ -20384,6 +20658,9 @@ obtained when a drop rule fires while pruning sessions or during shutdown.
 & Yves Younan\\
 & Alain Zidouemba\\ 
 \\
+\end{tabular}
+
+\begin{tabular}{p{3in} p{3in}}
 \textbf{Win32 Maintainer}
 & Snort Team\\
 \\
@@ -20394,9 +20671,6 @@ obtained when a drop rule fires while pruning sessions or during shutdown.
 & Aaron Norling\\
 & Mike Verbeck\\
 \\
-\end{tabular}
-
-\begin{tabular}{p{3in} p{3in}}
 \textbf{Major Contributors}
 & Erek Adams\\
 & Michael Altizer\\
