@@ -26,9 +26,12 @@ entry_connection_t *entry_connection_new(int type, int socket_family);
 control_connection_t *control_connection_new(int socket_family);
 listener_connection_t *listener_connection_new(int type, int socket_family);
 connection_t *connection_new(int type, int socket_family);
-
+int connection_init_accepted_conn(connection_t *conn,
+                                  const listener_connection_t *listener);
 void connection_link_connections(connection_t *conn_a, connection_t *conn_b);
-MOCK_DECL(void,connection_free,(connection_t *conn));
+MOCK_DECL(void,connection_free_,(connection_t *conn));
+#define connection_free(conn) \
+  FREE_AND_NULL(connection_t, connection_free_, (conn))
 void connection_free_all(void);
 void connection_about_to_close_connection(connection_t *conn);
 void connection_close_immediate(connection_t *conn);
@@ -155,6 +158,7 @@ connection_buf_add_compress(const char *string, size_t len,
 {
   connection_write_to_buf_impl_(string, len, TO_CONN(conn), done ? -1 : 1);
 }
+void connection_buf_add_buf(connection_t *conn, buf_t *buf);
 
 /* DOCDOC connection_get_inbuf_len */
 static size_t connection_get_inbuf_len(connection_t *conn);
@@ -243,7 +247,6 @@ char *alloc_http_authenticator(const char *authenticator);
 void assert_connection_ok(connection_t *conn, time_t now);
 int connection_or_nonopen_was_started_here(or_connection_t *conn);
 void connection_dump_buffer_mem_stats(int severity);
-void remove_file_if_very_old(const char *fname, time_t now);
 
 void clock_skew_warning(const connection_t *conn, long apparent_skew,
                         int trusted, log_domain_mask_t domain,
@@ -266,7 +269,7 @@ connection_is_moribund(connection_t *conn)
 void connection_check_oos(int n_socks, int failed);
 
 #ifdef CONNECTION_PRIVATE
-STATIC void connection_free_(connection_t *conn);
+STATIC void connection_free_minimal(connection_t *conn);
 
 /* Used only by connection.c and test*.c */
 uint32_t bucket_millis_empty(int tokens_before, uint32_t last_empty_time,

@@ -12,11 +12,11 @@
 #ifndef TOR_CIRCUITBUILD_H
 #define TOR_CIRCUITBUILD_H
 
+int route_len_for_purpose(uint8_t purpose, extend_info_t *exit_ei);
 char *circuit_list_path(origin_circuit_t *circ, int verbose);
 char *circuit_list_path_for_controller(origin_circuit_t *circ);
 void circuit_log_path(int severity, unsigned int domain,
                       origin_circuit_t *circ);
-void circuit_rep_hist_note_result(origin_circuit_t *circ);
 origin_circuit_t *origin_circuit_init(uint8_t purpose, int flags);
 origin_circuit_t *circuit_establish_circuit(uint8_t purpose,
                                             extend_info_t *exit,
@@ -27,7 +27,7 @@ int circuit_handle_first_hop(origin_circuit_t *circ);
 void circuit_n_chan_done(channel_t *chan, int status,
                          int close_origin_circuits);
 int inform_testing_reachability(void);
-int circuit_timeout_want_to_count_circ(origin_circuit_t *circ);
+int circuit_timeout_want_to_count_circ(const origin_circuit_t *circ);
 int circuit_send_next_onion_skin(origin_circuit_t *circ);
 void circuit_note_clock_jumped(int seconds_elapsed);
 int circuit_extend(cell_t *cell, circuit_t *circ);
@@ -58,7 +58,9 @@ extend_info_t *extend_info_new(const char *nickname,
                                const tor_addr_t *addr, uint16_t port);
 extend_info_t *extend_info_from_node(const node_t *r, int for_direct_connect);
 extend_info_t *extend_info_dup(extend_info_t *info);
-void extend_info_free(extend_info_t *info);
+void extend_info_free_(extend_info_t *info);
+#define extend_info_free(info) \
+  FREE_AND_NULL(extend_info_t, extend_info_free_, (info))
 int extend_info_addr_is_allowed(const tor_addr_t *addr);
 int extend_info_supports_tap(const extend_info_t* ei);
 int extend_info_supports_ntor(const extend_info_t* ei);

@@ -669,7 +669,7 @@ static const char CLIENT_CIPHER_LIST[] =
 
 /** Free all storage held in <b>cert</b> */
 void
-tor_x509_cert_free(tor_x509_cert_t *cert)
+tor_x509_cert_free_(tor_x509_cert_t *cert)
 {
   if (! cert)
     return;
@@ -1817,7 +1817,7 @@ tor_tls_is_server(tor_tls_t *tls)
  * underlying file descriptor.
  */
 void
-tor_tls_free(tor_tls_t *tls)
+tor_tls_free_(tor_tls_t *tls)
 {
   if (!tls)
     return;
@@ -1964,7 +1964,7 @@ tor_tls_handshake(tor_tls_t *tls)
   return r;
 }
 
-/** Perform the final part of the intial TLS handshake on <b>tls</b>.  This
+/** Perform the final part of the initial TLS handshake on <b>tls</b>.  This
  * should be called for the first handshake only: it determines whether the v1
  * or the v2 handshake was used, and adjusts things for the renegotiation
  * handshake as appropriate.

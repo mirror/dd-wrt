@@ -3,12 +3,6 @@
  * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
-extern const char tor_git_revision[];
-
-/* Ordinarily defined in tor_main.c; this bit is just here to provide one
- * since we're not linking to tor_main.c */
-const char tor_git_revision[] = "";
-
 /**
  * \file test_common.c
  * \brief Common pieces to implement unit tests.
@@ -284,6 +278,7 @@ main(int c, const char **v)
     s.masks[LOG_WARN-LOG_ERR] |= LD_BUG;
     add_stream_log(&s, "", fileno(stdout));
   }
+  init_protocol_warning_severity_level();
 
   options->command = CMD_RUN_UNITTESTS;
   if (crypto_global_init(accel_crypto, NULL, NULL)) {
@@ -299,6 +294,9 @@ main(int c, const char **v)
   setup_directory();
   options_init(options);
   options->DataDirectory = tor_strdup(temp_dir);
+  tor_asprintf(&options->KeyDirectory, "%s"PATH_SEPARATOR"keys",
+               options->DataDirectory);
+  options->CacheDirectory = tor_strdup(temp_dir);
   options->EntryStatistics = 1;
   if (set_options(options, &errmsg) < 0) {
     printf("Failed to set initial options: %s\n", errmsg);

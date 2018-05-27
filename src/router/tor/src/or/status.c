@@ -27,6 +27,8 @@
 #include "hibernate.h"
 #include "rephist.h"
 #include "statefile.h"
+#include "hs_stats.h"
+#include "hs_service.h"
 #include "dos.h"
 
 static void log_accounting(const time_t now, const or_options_t *options);
@@ -40,7 +42,7 @@ count_circuits(void)
 }
 
 /** Take seconds <b>secs</b> and return a newly allocated human-readable
- * uptime string */
+ * uptime string. */
 STATIC char *
 secs_to_uptime(long secs)
 {
@@ -84,6 +86,26 @@ bytes_to_usage(uint64_t bytes)
   }
 
   return bw_string;
+}
+
+/** Log some usage info about our hidden service */
+static void
+log_onion_service_stats(void)
+{
+  unsigned int num_services = hs_service_get_num_services();
+
+  /* If there are no active hidden services, no need to print logs */
+  if (num_services == 0) {
+    return;
+  }
+
+  log_notice(LD_HEARTBEAT,
+             "Our hidden service%s received %u v2 and %u v3 INTRODUCE2 cells "
+             "and attempted to launch %d rendezvous circuits.",
+             num_services == 1 ? "" : "s",
+             hs_stats_get_n_introduce2_v2_cells(),
+             hs_stats_get_n_introduce2_v3_cells(),
+             hs_stats_get_n_rendezvous_launches());
 }
 
 /** Log a "heartbeat" message describing Tor's status and history so that the
@@ -158,6 +180,23 @@ log_heartbeat(time_t now)
       log_notice(LD_HEARTBEAT, "%s", msg);
     tor_free(msg);
   }
+
+  if (options->MainloopStats) {
+    const uint64_t main_loop_success_count = get_main_loop_success_count();
+    const uint64_t main_loop_error_count = get_main_loop_error_count();
+    const uint64_t main_loop_idle_count = get_main_loop_idle_count();
+
+    log_fn(LOG_NOTICE, LD_HEARTBEAT, "Main event loop statistics: "
+         U64_FORMAT " successful returns, "
+         U64_FORMAT " erroneous returns, and "
+         U64_FORMAT " idle returns.",
+         U64_PRINTF_ARG(main_loop_success_count),
+         U64_PRINTF_ARG(main_loop_error_count),
+         U64_PRINTF_ARG(main_loop_idle_count));
+  }
+
+  /** Now, if we are an HS service, log some stats about our usage */
+  log_onion_service_stats();
 
   tor_free(uptime);
   tor_free(bw_sent);

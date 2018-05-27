@@ -45,7 +45,9 @@ int connection_is_writing(connection_t *conn);
 MOCK_DECL(void,connection_stop_writing,(connection_t *conn));
 MOCK_DECL(void,connection_start_writing,(connection_t *conn));
 
-void tell_event_loop_to_finish(void);
+void tell_event_loop_to_run_external_code(void);
+void tor_shutdown_event_loop_and_exit(int exitcode);
+int tor_event_loop_shutdown_is_pending(void);
 
 void connection_stop_reading_from_linked_conn(connection_t *conn);
 
@@ -64,20 +66,25 @@ MOCK_DECL(long,get_uptime,(void));
 
 unsigned get_signewnym_epoch(void);
 
-void handle_signals(int is_parent);
+void handle_signals(void);
 void activate_signal(int signal_num);
 
 int try_locking(const or_options_t *options, int err_if_locked);
 int have_lockfile(void);
 void release_lockfile(void);
 
+void tor_remove_file(const char *filename);
+
 void tor_cleanup(void);
 void tor_free_all(int postfork);
 
-int tor_main(int argc, char *argv[]);
-
 int do_main_loop(void);
 int tor_init(int argc, char **argv);
+
+void reset_main_loop_counters(void);
+uint64_t get_main_loop_success_count(void);
+uint64_t get_main_loop_error_count(void);
+uint64_t get_main_loop_idle_count(void);
 
 extern time_t time_of_process_start;
 extern long stats_n_seconds_working;

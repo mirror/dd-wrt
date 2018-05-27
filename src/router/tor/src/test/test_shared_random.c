@@ -1,3 +1,6 @@
+/* Copyright (c) 2016-2017, The Tor Project, Inc. */
+/* See LICENSE for licensing information */
+
 #define SHARED_RANDOM_PRIVATE
 #define SHARED_RANDOM_STATE_PRIVATE
 #define CONFIG_PRIVATE
@@ -399,7 +402,7 @@ test_sr_commit(void *arg)
                                sizeof(our_commit->hashed_reveal)));
     /* Do we have a valid encoded commit and reveal. Note the following only
      * tests if the generated values are correct. Their could be a bug in
-     * the decode function but we test them seperately. */
+     * the decode function but we test them separately. */
     tt_int_op(0, OP_EQ, reveal_decode(our_commit->encoded_reveal,
                                    &test_commit));
     tt_int_op(0, OP_EQ, commit_decode(our_commit->encoded_commit,
@@ -609,7 +612,7 @@ test_vote(void *arg)
     ret = smartlist_split_string(chunks, lines, "\n", SPLIT_IGNORE_BLANK, 0);
     tt_int_op(ret, OP_EQ, 4);
     tt_str_op(smartlist_get(chunks, 0), OP_EQ, "shared-rand-participate");
-    /* Get our commitment line and will validate it agains our commit. The
+    /* Get our commitment line and will validate it against our commit. The
      * format is as follow:
      * "shared-rand-commitment" SP version SP algname SP identity
      *                          SP COMMIT [SP REVEAL] NL
@@ -1348,7 +1351,7 @@ test_state_update(void *arg)
   tt_assert(state->current_srv);
 
  done:
-  sr_state_free();
+  sr_state_free_all();
   UNMOCK(get_my_v3_authority_cert);
 }
 

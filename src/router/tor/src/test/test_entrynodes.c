@@ -2024,7 +2024,7 @@ test_entry_guard_select_for_circuit_highlevel_primary(void *arg)
   tt_mem_op(g->identity, OP_NE, g_prev->identity, DIGEST_LEN);
   tt_int_op(g->is_primary, OP_EQ, 1);
   tt_i64_op(g->last_tried_to_connect, OP_EQ, start+60);
-  tt_int_op(g->confirmed_idx, OP_EQ, -1); // not confirmd now.
+  tt_int_op(g->confirmed_idx, OP_EQ, -1); // not confirmed now.
 
   /* Call this one up; watch it get confirmed. */
   update_approx_time(start+90);
@@ -2372,8 +2372,8 @@ upgrade_circuits_cleanup(const struct testcase_t *testcase, void *ptr)
   // circuit_guard_state_free(data->guard2_state); // held in circ2
   guard_selection_free(data->gs);
   smartlist_free(data->all_origin_circuits);
-  circuit_free(TO_CIRCUIT(data->circ1));
-  circuit_free(TO_CIRCUIT(data->circ2));
+  circuit_free_(TO_CIRCUIT(data->circ1));
+  circuit_free_(TO_CIRCUIT(data->circ2));
   tor_free(data);
   return big_fake_network_cleanup(testcase, NULL);
 }

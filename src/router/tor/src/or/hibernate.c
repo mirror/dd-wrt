@@ -34,6 +34,7 @@ hibernating, phase 2:
 #include "config.h"
 #include "connection.h"
 #include "connection_edge.h"
+#include "connection_or.h"
 #include "control.h"
 #include "hibernate.h"
 #include "main.h"
@@ -818,8 +819,8 @@ hibernate_begin(hibernate_state_t new_state, time_t now)
     log_notice(LD_GENERAL,"SIGINT received %s; exiting now.",
                hibernate_state == HIBERNATE_STATE_EXITING ?
                "a second time" : "while hibernating");
-    tor_cleanup();
-    exit(0);
+    tor_shutdown_event_loop_and_exit(0);
+    return;
   }
 
   if (new_state == HIBERNATE_STATE_LOWBANDWIDTH &&
@@ -906,20 +907,23 @@ hibernate_go_dormant(time_t now)
   while ((conn = connection_get_by_type(CONN_TYPE_OR)) ||
          (conn = connection_get_by_type(CONN_TYPE_AP)) ||
          (conn = connection_get_by_type(CONN_TYPE_EXIT))) {
-    if (CONN_IS_EDGE(conn))
+    if (CONN_IS_EDGE(conn)) {
       connection_edge_end(TO_EDGE_CONN(conn), END_STREAM_REASON_HIBERNATING);
+    }
     log_info(LD_NET,"Closing conn type %d", conn->type);
-    if (conn->type == CONN_TYPE_AP) /* send socks failure if needed */
+    if (conn->type == CONN_TYPE_AP) {
+      /* send socks failure if needed */
       connection_mark_unattached_ap(TO_ENTRY_CONN(conn),
                                     END_STREAM_REASON_HIBERNATING);
-    else if (conn->type == CONN_TYPE_OR) {
+    } else if (conn->type == CONN_TYPE_OR) {
       if (TO_OR_CONN(conn)->chan) {
-        channel_mark_for_close(TLS_CHAN_TO_BASE(TO_OR_CONN(conn)->chan));
+        connection_or_close_normally(TO_OR_CONN(conn), 0);
       } else {
          connection_mark_for_close(conn);
       }
-    } else
+    } else {
       connection_mark_for_close(conn);
+    }
   }
 
   if (now < interval_wakeup_time)
@@ -980,8 +984,7 @@ consider_hibernation(time_t now)
     tor_assert(shutdown_time);
     if (shutdown_time <= now) {
       log_notice(LD_GENERAL, "Clean shutdown finished. Exiting.");
-      tor_cleanup();
-      exit(0);
+      tor_shutdown_event_loop_and_exit(0);
     }
     return; /* if exiting soon, don't worry about bandwidth limits */
   }

@@ -384,7 +384,7 @@ commit_encode(const sr_commit_t *commit, char *dst, size_t len)
 static void
 sr_cleanup(void)
 {
-  sr_state_free();
+  sr_state_free_all();
 }
 
 /* Using <b>commit</b>, return a newly allocated string containing the commit
@@ -897,7 +897,7 @@ sr_srv_encode(char *dst, size_t dst_len, const sr_srv_t *srv)
 
 /* Free a commit object. */
 void
-sr_commit_free(sr_commit_t *commit)
+sr_commit_free_(sr_commit_t *commit)
 {
   if (commit == NULL) {
     return;
@@ -1071,7 +1071,7 @@ sr_parse_srv(const smartlist_t *args)
 
   srv = tor_malloc_zero(sizeof(*srv));
   srv->num_reveals = num_reveals;
-  /* We substract one byte from the srclen because the function ignores the
+  /* We subtract one byte from the srclen because the function ignores the
    * '=' character in the given buffer. This is broken but it's a documented
    * behavior of the implementation. */
   ret = base64_decode((char *) srv->value, sizeof(srv->value), value,

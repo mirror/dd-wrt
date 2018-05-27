@@ -339,6 +339,10 @@ relay_send_end_cell_from_edge(streamid_t stream_id, circuit_t *circ,
 
   payload[0] = (char) reason;
 
+  /* Note: we have to use relay_send_command_from_edge here, not
+   * connection_edge_end or connection_edge_send_command, since those require
+   * that we have a stream connected to a circuit, and we don't connect to a
+   * circuit until we have a pending/successful resolve. */
   return relay_send_command_from_edge(stream_id, circ, RELAY_COMMAND_END,
                                       payload, 1, cpath_layer);
 }
@@ -788,7 +792,10 @@ connection_ap_expire_beginning(void)
       }
       continue;
     }
+
     if (circ->purpose != CIRCUIT_PURPOSE_C_GENERAL &&
+        circ->purpose != CIRCUIT_PURPOSE_C_HSDIR_GET &&
+        circ->purpose != CIRCUIT_PURPOSE_S_HSDIR_POST &&
         circ->purpose != CIRCUIT_PURPOSE_C_MEASURE_TIMEOUT &&
         circ->purpose != CIRCUIT_PURPOSE_PATH_BIAS_TESTING) {
       log_warn(LD_BUG, "circuit->purpose == CIRCUIT_PURPOSE_C_GENERAL failed. "
@@ -999,7 +1006,7 @@ connection_ap_mark_as_pending_circuit_(entry_connection_t *entry_conn,
    * So the fix is to tell it right now that it ought to finish its loop at
    * its next available opportunity.
    */
-  tell_event_loop_to_finish();
+  tell_event_loop_to_run_external_code();
 }
 
 /** Mark <b>entry_conn</b> as no longer waiting for a circuit. */
@@ -2588,6 +2595,8 @@ connection_ap_supports_optimistic_data(const entry_connection_t *conn)
   if (edge_conn->on_circuit == NULL ||
       edge_conn->on_circuit->state != CIRCUIT_STATE_OPEN ||
       (edge_conn->on_circuit->purpose != CIRCUIT_PURPOSE_C_GENERAL &&
+       edge_conn->on_circuit->purpose != CIRCUIT_PURPOSE_C_HSDIR_GET &&
+       edge_conn->on_circuit->purpose != CIRCUIT_PURPOSE_S_HSDIR_POST &&
        edge_conn->on_circuit->purpose != CIRCUIT_PURPOSE_C_REND_JOINED))
     return 0;
 
@@ -3327,7 +3336,7 @@ handle_hs_exit_conn(circuit_t *circ, edge_connection_t *conn)
     relay_send_end_cell_from_edge(conn->stream_id, circ,
                                   END_STREAM_REASON_DONE,
                                   origin_circ->cpath->prev);
-    connection_free(TO_CONN(conn));
+    connection_free_(TO_CONN(conn));
 
     /* Drop the circuit here since it might be someone deliberately
      * scanning the hidden service ports. Note that this mitigates port
@@ -3404,11 +3413,6 @@ connection_exit_begin_conn(cell_t *cell, circuit_t *circ)
   relay_header_unpack(&rh, cell->payload);
   if (rh.length > RELAY_PAYLOAD_SIZE)
     return -END_CIRC_REASON_TORPROTOCOL;
-
-  /* Note: we have to use relay_send_command_from_edge here, not
-   * connection_edge_end or connection_edge_send_command, since those require
-   * that we have a stream connected to a circuit, and we don't connect to a
-   * circuit until we have a pending/successful resolve. */
 
   if (!server_mode(options) &&
       circ->purpose != CIRCUIT_PURPOSE_S_REND_JOINED) {
@@ -3524,7 +3528,7 @@ connection_exit_begin_conn(cell_t *cell, circuit_t *circ)
   if (we_are_hibernating()) {
     relay_send_end_cell_from_edge(rh.stream_id, circ,
                                   END_STREAM_REASON_HIBERNATING, NULL);
-    connection_free(TO_CONN(n_stream));
+    connection_free_(TO_CONN(n_stream));
     return 0;
   }
 
@@ -3602,7 +3606,7 @@ connection_exit_begin_resolve(cell_t *cell, or_circuit_t *circ)
       return 0;
     case 1: /* The result was cached; a resolved cell was sent. */
       if (!dummy_conn->base_.marked_for_close)
-        connection_free(TO_CONN(dummy_conn));
+        connection_free_(TO_CONN(dummy_conn));
       return 0;
     case 0: /* resolve added to pending list */
       assert_circuit_ok(TO_CIRCUIT(circ));
@@ -3775,8 +3779,8 @@ connection_exit_connect_dir(edge_connection_t *exitconn)
 
   if (connection_add(TO_CONN(exitconn))<0) {
     connection_edge_end(exitconn, END_STREAM_REASON_RESOURCELIMIT);
-    connection_free(TO_CONN(exitconn));
-    connection_free(TO_CONN(dirconn));
+    connection_free_(TO_CONN(exitconn));
+    connection_free_(TO_CONN(dirconn));
     return 0;
   }
 
@@ -3788,7 +3792,7 @@ connection_exit_connect_dir(edge_connection_t *exitconn)
     connection_edge_end(exitconn, END_STREAM_REASON_RESOURCELIMIT);
     connection_close_immediate(TO_CONN(exitconn));
     connection_mark_for_close(TO_CONN(exitconn));
-    connection_free(TO_CONN(dirconn));
+    connection_free_(TO_CONN(dirconn));
     return 0;
   }
 

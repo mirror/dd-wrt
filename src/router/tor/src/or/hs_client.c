@@ -21,6 +21,7 @@
 #include "config.h"
 #include "directory.h"
 #include "hs_client.h"
+#include "hs_control.h"
 #include "router.h"
 #include "routerset.h"
 #include "circuitlist.h"
@@ -348,6 +349,10 @@ directory_launch_v3_desc_fetch(const ed25519_public_key_t *onion_identity_pk,
            safe_str_client(ed25519_fmt(onion_identity_pk)),
            safe_str_client(base64_blinded_pubkey),
            safe_str_client(routerstatus_describe(hsdir)));
+
+  /* Fire a REQUESTED event on the control port. */
+  hs_control_desc_event_requested(onion_identity_pk, base64_blinded_pubkey,
+                                  hsdir);
 
   /* Cleanup memory. */
   memwipe(&blinded_pubkey, 0, sizeof(blinded_pubkey));
@@ -711,7 +716,7 @@ desc_intro_point_to_extend_info(const hs_desc_intro_point_t *ip)
     smartlist_add(lspecs, lspec);
   } SMARTLIST_FOREACH_END(desc_lspec);
 
-  /* Explicitely put the direct connection option to 0 because this is client
+  /* Explicitly put the direct connection option to 0 because this is client
    * side and there is no such thing as a non anonymous client. */
   ei = hs_get_extend_info_from_lspecs(lspecs, &ip->onion_key, 0);
 
@@ -940,7 +945,8 @@ handle_introduce_ack_success(origin_circuit_t *intro_circ)
 
   /* Get the rendezvous circuit for this rendezvous cookie. */
   uint8_t *rendezvous_cookie = intro_circ->hs_ident->rendezvous_cookie;
-  rend_circ = hs_circuitmap_get_rend_circ_client_side(rendezvous_cookie);
+  rend_circ =
+  hs_circuitmap_get_established_rend_circ_client_side(rendezvous_cookie);
   if (rend_circ == NULL) {
     log_warn(LD_REND, "Can't find any rendezvous circuit. Stopping");
     goto end;
