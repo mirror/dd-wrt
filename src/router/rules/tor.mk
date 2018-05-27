@@ -14,18 +14,20 @@ miniupnpc-install:
 	rm -rf $(INSTALLDIR)/miniupnpc/usr/share
 	rm -f $(INSTALLDIR)/miniupnpc/usr/lib/*.a
 
-tor-configure: libevent
+tor-configure: xz zstd libevent
 	cd tor && libtoolize -ci --force 
 	cd tor && autoreconf -fi 
 	cd tor && ./configure  --prefix=/usr ac_cv_host=$(ARCH)-uclibc-linux --target=$(ARCH)-linux --disable-systemd --host=$(ARCH) CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	--disable-asciidoc \
-	--disable-lzma \
-	--disable-zstd \
+	--enable-lzma \
+	--enable-zstd \
 	--disable-tool-name-check \
 	--disable-gcc-hardening \
-	CFLAGS="$(COPTS) $(MIPS16_OPT) -std=gnu99 -ffunction-sections -fdata-sections -Wl,--gc-sections  -I$(TOP)/zlib -I$(TOP) -I$(TOP)/openssl/include -I$(TOP)/libevent -I$(TOP)/libevent/include" \
-	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -std=gnu99 -ffunction-sections -fdata-sections -Wl,--gc-sections  -I$(TOP)/zlib -I$(TOP) -I$(TOP)/openssl/include -I$(TOP)/libevent  -I$(TOP)/libevent/include" \
-	LDFLAGS="$(COPTS) $(MIPS16_OPT) -std=gnu99  -L$(TOP)/zlib   -L$(TOP)/openssl -L$(TOP)/libevent/.libs" 
+	CFLAGS="$(COPTS) $(MIPS16_OPT) -std=gnu99 -ffunction-sections -fdata-sections -Wl,--gc-sections  -I$(TOP)/zlib -I$(TOP) -I$(TOP)/openssl/include -I$(TOP)/libevent -I$(TOP)/libevent/include -I$(TOP)/xz/src/liblzma/api -I$(TOP)/zstd/lib" \
+	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -std=gnu99 -ffunction-sections -fdata-sections -Wl,--gc-sections  -I$(TOP)/zlib -I$(TOP) -I$(TOP)/openssl/include -I$(TOP)/libevent  -I$(TOP)/libevent/include -I$(TOP)/xz/src/liblzma/api -I$(TOP)/zstd/lib" \
+	LDFLAGS="$(COPTS) $(MIPS16_OPT) -std=gnu99  -L$(TOP)/zlib   -L$(TOP)/openssl -L$(TOP)/libevent/.libs -L$(TOP)/xz/src/liblzma/.libs -L$(TOP)/zstd/lib" \
+	ZSTD_CFLAGS="-I$(TOP)/zstd/lib" \
+	ZSTD_LIBS="-I$(TOP)/zstd/lib -lzstd"
 
 tor: libevent
 	make -C tor
