@@ -602,7 +602,7 @@ static struct phy_driver broadcom_drivers[] = {
 	.ack_interrupt	= bcm_phy_ack_intr,
 	.config_intr	= bcm_phy_config_intr,
 	.driver		= { .owner = THIS_MODULE },
-{
+}, {
 	.phy_id		= PHY_ID_BCM50280,
 	.phy_id_mask	= 0xfffffff0,
 	.name		= "Broadcom BCM50280",
