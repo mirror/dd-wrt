@@ -51,7 +51,7 @@ static void ndpi_search_ssh_tcp(struct ndpi_detection_module_struct *ndpi_struct
 	//      struct ndpi_id_struct         *dst=ndpi_struct->dst;
 
 	if (flow->l4.tcp.ssh_stage == 0) {
-		if (packet->payload_packet_len > 7 && packet->payload_packet_len < 100 && memcmp(packet->payload, "SSH-", 4) == 0) {
+		if (packet->payload_packet_len > 7 && packet->payload_packet_len < 500 && memcmp(packet->payload, "SSH-", 4) == 0) {
 			int len = ndpi_min(sizeof(flow->protos.ssh.client_signature) - 1, packet->payload_packet_len);
 			strncpy(flow->protos.ssh.client_signature, (const char *)packet->payload, len);
 			flow->protos.ssh.client_signature[len] = '\0';

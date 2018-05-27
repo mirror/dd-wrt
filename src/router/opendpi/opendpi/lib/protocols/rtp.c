@@ -75,7 +75,6 @@ static void ndpi_rtp_search(struct ndpi_detection_module_struct *ndpi_struct, st
 		return;
 	//struct ndpi_packet_struct *packet = &flow->packet;
 	u_int8_t payloadType, payload_type = payload[1] & 0x7F;
-	u_int32_t *ssid = (u_int32_t *)&payload[8];
 
 	/* Check whether this is an RTP flow */
 	if ((payload_len >= 12)
@@ -85,7 +84,6 @@ static void ndpi_rtp_search(struct ndpi_detection_module_struct *ndpi_struct, st
 		|| ((payload_type >= 96) && (payload_type <= 127))
 		/* http://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml */
 	    )
-	    && (*ssid != 0)
 	    ) {
 		NDPI_LOG(NDPI_PROTOCOL_RTP, ndpi_struct, NDPI_LOG_DEBUG, "Found RTP.\n");
 		ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_RTP, NDPI_PROTOCOL_UNKNOWN);
@@ -113,7 +111,7 @@ static void ndpi_search_rtp(struct ndpi_detection_module_struct *ndpi_struct, st
 	struct ndpi_packet_struct *packet = &flow->packet;
 
 	if ((packet->udp != NULL)
-	    && (ntohs(packet->udp->source) > 1023)
+/*	    && (ntohs(packet->udp->source) > 1023)*/
 	    && (ntohs(packet->udp->dest) > 1023))
 		ndpi_rtp_search(ndpi_struct, flow, packet->payload, packet->payload_packet_len);
 }

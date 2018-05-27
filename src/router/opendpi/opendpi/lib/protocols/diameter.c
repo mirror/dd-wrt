@@ -111,4 +111,6 @@ static void init_diameter_dissector(struct ndpi_detection_module_struct *ndpi_st
 	*id += 1;
 }
 
+#undef NDPI_CURRENT_PROTO
+
 #endif				/* NDPI_PROTOCOL_DIAMETER */

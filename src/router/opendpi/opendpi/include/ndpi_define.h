@@ -225,7 +225,7 @@
   ((((u_int64_t *)(x))[0]) < (((u_int64_t *)(y))[0]) || ( (((u_int64_t *)(x))[0]) == (((u_int64_t *)(y))[0]) && (((u_int64_t *)(x))[1]) < (((u_int64_t *)(y))[1])) )
 
 //#if !defined(__KERNEL__) && !defined(NDPI_IPTABLES_EXT)
-#define NDPI_NUM_BITS              272
+#define NDPI_NUM_BITS              512
 //#else
 /* custom protocols not supported */
 //#define NDPI_NUM_BITS              192
