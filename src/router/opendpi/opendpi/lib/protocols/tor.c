@@ -26,7 +26,7 @@ static int ndpi_is_ssl_tor(struct ndpi_detection_module_struct *ndpi_struct, str
 		len = strlen(certificate);
 
 	/* Check if it ends in .com or .net */
-	if (strcmp(&certificate[len - 4], ".com") && strcmp(&certificate[len - 4], ".net"))
+	if (len >= 4 && strcmp(&certificate[len - 4], ".com") && strcmp(&certificate[len - 4], ".net"))
 		return (0);
 
 	if ((len < 6)

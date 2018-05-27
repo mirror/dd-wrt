@@ -165,3 +165,6 @@
 #include "protocols/checkmk.c"
 #include "protocols/apple_push.c"
 #include "protocols/diameter.c"
+#include "protocols/whatsapp.c"
+#include "protocols/ajp.c"
+#include "protocols/fbzero.c"

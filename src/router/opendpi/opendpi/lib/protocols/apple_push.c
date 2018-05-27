@@ -71,4 +71,6 @@ static void init_apple_push_dissector(struct ndpi_detection_module_struct *ndpi_
 	*id += 1;
 }
 
+#undef NDPI_CURRENT_PROTO
+
 #endif
