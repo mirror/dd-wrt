@@ -608,12 +608,10 @@ static struct phy_driver broadcom_drivers[] = {
 	.name		= "Broadcom BCM50280",
 	.features	= PHY_GBIT_FEATURES |
 			  SUPPORTED_Pause | SUPPORTED_Asym_Pause,
-	.flags		= PHY_HAS_MAGICANEG | PHY_HAS_INTERRUPT,
+	.flags		= 0,
 	.config_init	= bcm50280_config_init,
 	.config_aneg	= genphy_config_aneg,
 	.read_status	= genphy_read_status,
-	.ack_interrupt	= bcm_phy_ack_intr,
-	.config_intr	= bcm_phy_config_intr,
 	.driver		= { .owner = THIS_MODULE },
 }, {
 	.phy_id		= PHY_ID_BCM5421,
