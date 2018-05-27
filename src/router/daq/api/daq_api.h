@@ -90,7 +90,7 @@ struct _daq_module
     int (*hup_post) (void *handle, void *old_config);
     /** DAQ API to program a FST/EFT entry for dynamic protocol data channel
      *
-     * @param [in] handle      NFE context
+     * @param [in] handle      DAQ module handle
      * @param [in] hdr         DAQ packet header of the control channel packet.
      * @param [in] dp_key      Key structure of the data channel flow
      * @param [in] packet_data Packet of the companion control channel packet.

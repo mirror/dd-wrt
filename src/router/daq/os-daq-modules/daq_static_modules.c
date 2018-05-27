@@ -41,5 +41,8 @@ const DAQ_Module_t *static_modules[] =
 #ifdef BUILD_PCAP_MODULE
     &pcap_daq_module_data,
 #endif
+#ifdef BUILD_NETMAP_MODULE
+    &netmap_daq_module_data,
+#endif
 };
 const int num_static_modules = sizeof(static_modules) / sizeof(static_modules[0]);

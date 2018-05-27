@@ -70,6 +70,12 @@
 /* Define to 1 if you have the <netinet/in.h> header file. */
 #undef HAVE_NETINET_IN_H
 
+/* Define to 1 if you have the <net/netmap.h> header file. */
+#undef HAVE_NET_NETMAP_H
+
+/* Define to 1 if you have the <net/netmap_user.h> header file. */
+#undef HAVE_NET_NETMAP_USER_H
+
 /* Define to 1 if you have the `socket' function. */
 #undef HAVE_SOCKET
 
@@ -133,8 +139,7 @@
 /* System IPv6 support */
 #undef INET6
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
 /* Name of package */

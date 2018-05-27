@@ -29,7 +29,7 @@
 #include "daq.h"
 #include "daq_api.h"
 
-#define DAQ_MOD_VERSION 2
+#define DAQ_MOD_VERSION 3
 
 #define DAQ_NAME "dump"
 #define DAQ_TYPE (DAQ_TYPE_FILE_CAPABLE | DAQ_TYPE_INTF_CAPABLE | \
@@ -208,7 +208,7 @@ static int dump_daq_start (void* handle)
     const char* name = impl->name ? impl->name : DAQ_DUMP_FILE;
     pcap_t* pcap;
     int dlt;
-    uint16_t snap;
+    int snap;
 
     int ret = impl->module->start(impl->handle);
 
@@ -361,5 +361,6 @@ DAQ_Module_t dump_daq_module_data =
     .hup_prep = NULL,
     .hup_apply = NULL,
     .hup_post = NULL,
+    .dp_add_dc = NULL,
 };
 
