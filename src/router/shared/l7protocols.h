@@ -37,7 +37,9 @@ l7filters filters_list[] = {
 #endif
 	{"aimwebcontent", L7_ONLY},
 #ifdef HAVE_OPENDPI
+	{"ajp", NDPI_ONLY},
 	{"amazon", NDPI_ONLY},
+	{"amazon_video", NDPI_ONLY},
 	{"amqp", NDPI_ONLY},
 	{"apple", NDPI_ONLY},
 	{"apple_icloud", NDPI_ONLY},
@@ -128,6 +130,8 @@ l7filters filters_list[] = {
 	{"exe", L7_ONLY},
 #ifdef HAVE_OPENDPI
 	{"facebook", NDPI_ONLY},
+	{"facebook_messenger", NDPI_ONLY},
+	{"facebook_zero", NDPI_ONLY},
 #endif
 	{"fasttrack", DPI},
 #ifdef HAVE_OPENDPI
@@ -168,6 +172,7 @@ l7filters filters_list[] = {
 	{"gogobox", L7_ONLY},
 #ifdef HAVE_OPENDPI
 	{"google", NDPI_ONLY},
+	{"google_docs", NDPI_ONLY},
 	{"google_drive", NDPI_ONLY},
 	{"google_maps", NDPI_ONLY},
 	{"google_plus", NDPI_ONLY},
@@ -318,6 +323,7 @@ l7filters filters_list[] = {
 	{"msnmessenger", L7_ONLY},
 #ifdef HAVE_OPENDPI
 	{"mssql", NDPI_ONLY},
+	{"musically", NDPI_ONLY},
 #endif
 	{"mute", PDPI_ONLY},
 #ifdef HAVE_OPENDPI
@@ -339,6 +345,9 @@ l7filters filters_list[] = {
 	{"nntp", L7_ONLY},
 #ifdef HAVE_OPENDPI
 	{"noe", NDPI_ONLY},
+#endif
+#ifdef HAVE_OPENDPI
+	{"ntop", NDPI_ONLY},
 #endif
 	{"ntp", DPI},
 #ifdef HAVE_OPENDPI
@@ -584,6 +593,7 @@ l7filters filters_list[] = {
 	{"wechat", NDPI_ONLY},
 	{"whatOAsapp", NDPI_ONLY},
 	{"whatsapp", NDPI_ONLY},
+	{"whatsapp_files", NDPI_ONLY},
 	{"whatsapp_voice", NDPI_ONLY},
 #endif
 	{"whois", L7_ONLY},
