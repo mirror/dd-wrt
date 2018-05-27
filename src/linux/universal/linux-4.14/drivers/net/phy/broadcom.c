@@ -265,6 +265,7 @@ static int bcm50280_config_init(struct phy_device *phydev)
 {
 	bcm_phy_write_shadow(phydev, 0xf , 0xf);
 	bcm_phy_write_shadow(phydev, 9 , 0x10);
+	return 0;
 }
 
 
