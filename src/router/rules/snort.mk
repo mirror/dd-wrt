@@ -22,6 +22,7 @@ snort-configure: daq-configure pcre-configure daq pcre
 		--enable-react \
 		--enable-active-response \
 		--enable-flexresp3 \
+		--enable-fast-install=yes \
 		--with-libpcre-includes="$(TOP)/pcre" \
 		--with-libpcre_libraries="$(TOP)/pcre/.libs" \
 		--with-libpcap-includes="$(TOP)/libpcap" \
@@ -29,13 +30,15 @@ snort-configure: daq-configure pcre-configure daq pcre
 		--with-dnet-includes="$(TOP)/libdnet/include" \
 		--with-dnet-libraries="$(TOP)/libdnet/src/.libs" \
 		--with-daq-includes="$(TOP)/daq/install/include" \
-		--with-daq-libraries="$(TOP)/daq/install/lib64" \
+		--with-daq-libraries="$(TOP)/daq/install/lib" \
 		--with-lzma-includes="$(TOP)/xz/src/liblzma/api" \
 		--with-lzma-libraries="$(TOP)/xz/src/liblzma/.libs" \
 		PATH=$(TOP)/daq/install/bin:$(PATH)
 	sed -i 's/\/usr\/include\/pcap/ /g' $(TOP)/snort/src/output-plugins/Makefile
 	sed -i 's/\/usr\/include\/pcap/ /g' $(TOP)/snort/src/Makefile
 	sed -i 's/\/usr\/include\/pcap/ /g' $(TOP)/snort/tools/u2boat/Makefile
+	sed -i 's/need_relink=yes/need_relink=no/g' $(TOP)/snort/ltmain.sh
+	sed -i 's/need_relink=yes/need_relink=no/g' $(TOP)/snort/libtool
 
 
 snort: pcre
