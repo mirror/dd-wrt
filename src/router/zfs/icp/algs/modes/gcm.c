@@ -724,10 +724,6 @@ intel_pclmulqdq_instruction_present(void)
 		    : "=a" (eax), "=b" (ebx), "=c" (ecx), "=d" (edx)
 		    : "a"(func), "c"(subfunc));
 
-//		if (memcmp((char *)(&ebx), "Genu", 4) == 0 &&
-//		    memcmp((char *)(&edx), "ineI", 4) == 0 &&
-//		    memcmp((char *)(&ecx), "ntel", 4) == 0) 
-		    {
 			func = 1;
 			subfunc = 0;
 
@@ -738,9 +734,6 @@ intel_pclmulqdq_instruction_present(void)
 			    : "a"(func), "c"(subfunc));
 
 			cached_result = !!(ecx & INTEL_PCLMULQDQ_FLAG);
-		} else {
-			cached_result = 0;
-		}
 	}
 
 	return (cached_result);
