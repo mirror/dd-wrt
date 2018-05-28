@@ -1,0 +1,28 @@
+# Copyright 2001-2018 Sourcefire, Inc. All Rights Reserved.
+#
+# This file contains (i) proprietary rules that were created, tested and certified by
+# Sourcefire, Inc. (the "VRT Certified Rules") that are distributed under the VRT
+# Certified Rules License Agreement (v 2.0), and (ii) rules that were created by
+# Sourcefire and other third parties (the "GPL Rules") that are distributed under the
+# GNU General Public License (GPL), v2.
+# 
+# The VRT Certified Rules are owned by Sourcefire, Inc. The GPL Rules were created
+# by Sourcefire and other third parties. The GPL Rules created by Sourcefire are
+# owned by Sourcefire, Inc., and the GPL Rules not created by Sourcefire are owned by
+# their respective creators. Please see http://www.snort.org/snort/snort-team/ for a
+# list of third party owners and their respective copyrights.
+# 
+# In order to determine what rules are VRT Certified Rules or GPL Rules, please refer
+# to the VRT Certified Rules License Agreement (v2.0).
+#
+#-------------------------
+# POLICY-MULTIMEDIA RULES
+#-------------------------
+
+# alert tcp $HOME_NET any -> $EXTERNAL_NET $HTTP_PORTS (msg:"POLICY-MULTIMEDIA Apple Quicktime User Agent access"; flow:to_server,established; content:"User-Agent|3A| Quicktime"; fast_pattern:only; metadata:ruleset community, service http; classtype:policy-violation; sid:1436; rev:12;)
+# alert tcp $HOME_NET any -> 64.245.58.0/23 any (msg:"POLICY-MULTIMEDIA audio galaxy keepalive"; flow:established; content:"E_|00 03 05|"; depth:5; metadata:ruleset community; classtype:misc-activity; sid:1428; rev:8;)
+# alert tcp $HOME_NET any -> $EXTERNAL_NET $HTTP_PORTS (msg:"POLICY-MULTIMEDIA Youtube video player file request"; flow:to_server,established; content:"/get_video?video_id"; fast_pattern; nocase; http_uri; content:"youtube.com"; nocase; metadata:service http; classtype:policy-violation; sid:12436; rev:9;)
+# alert tcp $EXTERNAL_NET $HTTP_PORTS -> $HOME_NET any (msg:"POLICY-MULTIMEDIA Shoutcast playlist redirection"; flow:to_client,established; content:"Content-type|3A|"; nocase; http_header; content:"audio/x-scpls"; within:50; fast_pattern; nocase; http_header; metadata:ruleset community, service http; classtype:policy-violation; sid:1439; rev:17;)
+# alert tcp $EXTERNAL_NET $HTTP_PORTS -> $HOME_NET any (msg:"POLICY-MULTIMEDIA Icecast playlist redirection"; flow:to_client,established; content:"Content-type|3A|"; nocase; http_header; content:"audio/x-mpegurl"; within:50; fast_pattern; nocase; http_header; metadata:ruleset community, service http; classtype:policy-violation; sid:1440; rev:17;)
+# alert tcp $HOME_NET any -> $EXTERNAL_NET $HTTP_PORTS (msg:"POLICY-MULTIMEDIA Google video player request"; flow:to_server,established; content:"/googleplayer.swf"; nocase; http_uri; metadata:service http; classtype:policy-violation; sid:12437; rev:9;)
+# alert tcp $EXTERNAL_NET any -> $HOME_NET 5800:5802 (msg:"POLICY-MULTIMEDIA vncviewer Java applet download attempt"; flow:to_server,established; content:"/vncviewer.jar"; metadata:ruleset community; reference:nessus,10758; classtype:misc-activity; sid:1846; rev:7;)
