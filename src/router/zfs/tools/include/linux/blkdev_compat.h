@@ -434,6 +434,10 @@ bio_set_bi_error(struct bio *bio, int error)
 #endif /* HAVE_BDEV_LOGICAL_BLOCK_SIZE */
 #endif /* HAVE_BDEV_PHYSICAL_BLOCK_SIZE */
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
+#define HAVE_BIO_SET_OP_ATTRS 1
+#endif
+
 #ifndef HAVE_BIO_SET_OP_ATTRS
 /*
  * Kernels without bio_set_op_attrs use bi_rw for the bio flags.
