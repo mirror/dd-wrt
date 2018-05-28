@@ -16,7 +16,7 @@ RANDSTRING=e57509e0e8702d1794fd29f0741f74e0d649aff186ffc1aa0dab1d6817e3ea35ee615
 
 MYCFLAGS = $(CFLAGS) -I$(ENGINEDIR) -I$(PLUGINDIR) -I$(DAQ) -fPIC -I$(PCREINC) -L$(PCRELIB) -lpcre -DVRT_RAND_STRING=\"$(RANDSTRING)\" -Wall
 
-MYCFLAGS += -Wno-unused-variable -std=c99 -pedantic -Wformat -Wuninitialized -Wno-strict-aliasing -D_GNU_SOURCE
+MYCFLAGS += -Wno-unused-variable -std=c99 -pedantic -Wformat -Wuninitialized -Wno-strict-aliasing -D_GNU_SOURCE -DNEED_PRINTF
 
 # comment the following line out if you want to enable all of the previously
 # "Deleted" so rules
