@@ -43,12 +43,20 @@ snort-configure: daq-configure pcre-configure daq pcre
 
 snort: pcre
 	$(MAKE) -C snort CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -I$(TOP)/librpc"
+	$(MAKE) -C snort/so_rules/src
 
 snort-clean:
 	$(MAKE) -C snort clean CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -I$(TOP)/librpc"
 
 snort-install:
 	$(MAKE) -C snort install DESTDIR=$(INSTALLDIR)/snort CFLAGS="$(COPTS) -DNEED_PRINTF -I$(TOP)/librpc"
+	mkdir -p $(INSTALLDIR)/snort/etc/snort/so_rules
+	mkdir -p $(INSTALLDIR)/snort/etc/snort/rules
+	cp snort/so_rules/src/*.so $(INSTALLDIR)/snort/etc/snort/so_rules
+	cp snort/so_rules/*.rules $(INSTALLDIR)/snort/etc/snort/so_rules
+	cp snort/rules/*.rules $(INSTALLDIR)/snort/etc/snort/rules
+	cp snort/etc/* $(INSTALLDIR)/snort/etc/snort/
+	rm -f $(INSTALLDIR)/snort/etc/snort/Makefile*
 	rm -rf $(INSTALLDIR)/snort/usr/src
 	rm -rf $(INSTALLDIR)/snort/usr/share
 	rm -rf $(INSTALLDIR)/snort/usr/include
