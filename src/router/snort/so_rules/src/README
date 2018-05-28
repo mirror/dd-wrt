@@ -1,0 +1,98 @@
+Overview
+--------
+Due to contract terms with some 3rd party research organizations, 
+a number of VRT certified rules will only be delivered as binaries.
+
+This applies only to shared object (SO) rules. Non-shared object rules
+WILL NOT be affected. Additionally, because of this change and to better
+serve the Snort community the VRT will pre-compile the "SO" rules so
+they are easier to use on the various platforms utilized by the snort
+community and the VRT subscribers.
+
+Directory Structure
+-------------------
+The structure of the "so_rules" directory inside the rule is as follows:
+
+so_rules/
+	src/
+	precompiled/
+               <distro>/
+                        <platform>/
+                                   <snort-version>
+
+Where:
+<distro> is one of the following values:
+  a. FreeBSD 8.1
+  b. FreeBSD 7.3
+  c. OpenBSD 4.8
+  d. Debian 6.0
+  e. Debian 5.0
+  f. Fedora Core 14
+  g. Fedora Core 12
+  h. RHEL 6.0
+  i. RHEL 5.5
+  j. Ubuntu 12.4
+  k. Ubuntu 10.4
+  l. CentOS 5.4
+  m. CentOS 4.8
+  n. OpenSUSE 12.1
+  o. OpenSUSE 11.4
+  p. Slackware 13.1
+
+<platform> is one of the following values:
+  a. i386 (EXCEPT for Slackware 13.1)
+  b. x86-64 (EXCEPT for CentOS 4.8)
+
+<snort-version> is one of the following values
+  a. 2.9.1.2
+  b. 2.9.2.3
+  c. 2.9.3.0
+  d. 2.9.3.1
+
+If your platform/distribution is not currently listed above this does
+not mean these shared objects won't work on your platform.  Numerous
+Linux distributions share common libc versions and it is possible that
+one of the above distributions and platforms will work on your system.
+If none of the above combinations work on your platform, please send a
+note to the snort-sigs mailing list so we can determine the need for
+additional platforms and distributions to be added to the list of
+supported platforms.
+
+WARNING
+-------
+Sourcefire VRT rule packs often utilize enhancements made to Snort.
+Operators should upgrade to the latest revision or patch level for Snort
+to ensure these enhancements are available before using these rules.
+
+USE
+---
+To use the shared object rules, the rule stub files must be generated.
+To do this, follow these instructions:
+
+ 1. Make sure the dynamic preprocessor and dynamic engine paths are
+    defined in snort.conf, for example:
+
+ dynamicpreprocessor directory /usr/local/lib/snort_dynamicpreprocessor
+ dynamicengine /usr/local/lib/snort_dynamicengine/libsf_engine.so
+
+ 2. Make sure the path to the location of the shared object rules is
+    also defined in snort.conf, for example:
+
+ dynamicdetection directory /usr/local/lib/snort_dynamicrule
+
+ 3. Dump the stub rules by issuing the command:
+
+ snort -c /usr/local/etc/snort/snort.conf --dump-dynamic-rules=/usr/local/etc/snort/so_rules
+
+ 4. Use a variable to define the path to the stub rules, for example:
+
+ var SO_RULE_PATH /usr/local/etc/snort/so_rules
+
+ 5. Include the generated stub rule files in snort.conf in the same way
+    the regular rules are included, for example:
+
+ include $SO_RULE_PATH/netbios.rules
+
+ 6. Test the installation by issuing the command:
+
+ snort -c /usr/local/etc/snort/snort.conf -T
