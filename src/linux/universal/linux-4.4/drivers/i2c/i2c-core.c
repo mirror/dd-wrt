@@ -2461,9 +2461,11 @@ static int i2c_detect(struct i2c_adapter *adapter, struct i2c_driver *driver)
 		return 0;
 	}
 
+#ifndef CONFIG_CAVIUM_OCTEON_SOC	
 	/* Stop here if the classes do not match */
 	if (!(adapter->class & driver->class))
 		return 0;
+#endif
 
 	/* Set up a temporary client to help detect callback */
 	temp_client = kzalloc(sizeof(struct i2c_client), GFP_KERNEL);

@@ -328,7 +328,11 @@ static int tmp421_probe(struct i2c_client *client,
 }
 
 static struct i2c_driver tmp421_driver = {
+#ifdef CONFIG_CAVIUM_OCTEON_SOC	
+	.class = 0, //I2C_CLASS_HWMON,
+#else
 	.class = I2C_CLASS_HWMON,
+#endif
 	.driver = {
 		.name	= "tmp421",
 		.of_match_table = of_match_ptr(tmp421_of_match),
