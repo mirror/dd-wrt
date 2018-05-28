@@ -3,7 +3,6 @@ xz-configure:
 	--libdir=/usr/lib \
 	--enable-small \
 	--enable-assume-ram=4 \
-	--disable-assembler \
 	--disable-werror
 
 xz:
