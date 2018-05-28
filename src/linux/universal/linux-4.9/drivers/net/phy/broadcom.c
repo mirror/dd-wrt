@@ -245,6 +245,7 @@ static void bcm54xx_adjust_rxrefclk(struct phy_device *phydev)
 
 static int bcm50280_config_init(struct phy_device *phydev)
 {
+	/* enable phy leds. for ubnt edgepro routers. this is reverse engineered. stupid vendor behaviour, not to release such simple things but hiding them im propertiery drivers */
 	bcm_phy_write_shadow(phydev, 0xf , 0xf);
 	bcm_phy_write_shadow(phydev, 9 , 0x10);
 	return 0;
