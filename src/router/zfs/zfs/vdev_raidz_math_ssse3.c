@@ -24,7 +24,7 @@
 
 #include <sys/isa_defs.h>
 
-#if defined(__x86_64) && defined(HAVE_SSSE3)
+#if defined(__x86_64) //&& defined(HAVE_SSSE3)
 
 #include <sys/types.h>
 #include <linux/simd_x86.h>
