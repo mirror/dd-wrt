@@ -395,10 +395,12 @@ static int bcm5482_read_status(struct phy_device *phydev)
 
 static int bcm5481_config_init(struct phy_device *phydev)
 {
+#ifdef CONFIG_ARCH_CNS3XXX
+    u16 reg;
+#endif
     bcm54xx_config_init(phydev);
 #ifdef CONFIG_ARCH_CNS3XXX
     printk(KERN_INFO "fixup laguna phy\n");
-		u16 reg;
 		printk(KERN_EMERG "workaround for laguna\n");
 		reg = phy_read(phydev, 0); // reset phy
 		reg |= (1 << 15);
@@ -595,7 +597,6 @@ static struct phy_driver broadcom_drivers[] = {
 	.config_init	= bcm50280_config_init,
 	.config_aneg	= genphy_config_aneg,
 	.read_status	= genphy_read_status,
-	.driver		= { .owner = THIS_MODULE },
 }, {
 	.phy_id		= PHY_ID_BCM5421,
 	.phy_id_mask	= 0xfffffff0,
