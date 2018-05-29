@@ -17,7 +17,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: c4e34a636806e4d35db9d931edfef8a25d155e3d $ */
+/* $Id: f5b0d4009fe18daf931a2a073882dc517a560012 $ */
 
 /*  ToDos
  *
@@ -4457,13 +4457,11 @@ PHP_FUNCTION(exif_read_data)
 #ifdef EXIF_DEBUG
 		sections_str = exif_get_sectionlist(sections_needed);
 		if (!sections_str) {
-			zend_string_release(z_sections_needed);
 			RETURN_FALSE;
 		}
 		exif_error_docref(NULL EXIFERR_CC, &ImageInfo, E_NOTICE, "Sections needed: %s", sections_str[0] ? sections_str : "None");
 		EFREE_IF(sections_str);
 #endif
-		zend_string_release(z_sections_needed);
 	}
 
 	if (Z_TYPE_P(stream) == IS_RESOURCE) {

@@ -16,7 +16,7 @@
   |         Ilia Alshanetsky <ilia@prohost.org>                          |
   +----------------------------------------------------------------------+
 
-  $Id: cdf5eb1fec22ded06277a68d085a10637d2e5ef2 $
+  $Id: 24343b1598c9d96caf2ee8ea0fc956004fdcd69c $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -719,7 +719,7 @@ PHP_FUNCTION(enchant_dict_quick_check)
 	}
 
 	if (sugg) {
-		zval_dtor(sugg);
+		zval_ptr_dtor(sugg);
 		array_init(sugg);
 	}
 
