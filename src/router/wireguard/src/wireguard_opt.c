@@ -13,7 +13,9 @@
 #include "ratelimiter.c" 
 #include "cookie.c" 
 #include "netlink.c"
+#include "crypto/chacha20.c" 
 #include "crypto/curve25519.c" 
+#include "crypto/poly1305.c" 
 #include "crypto/chacha20poly1305.c" 
 #include "crypto/blake2s.c"
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0)
