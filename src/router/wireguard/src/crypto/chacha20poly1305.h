@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0
  *
- * Copyright (C) 2015-2017 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+ * Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  */
 
 #ifndef _WG_CHACHA20POLY1305_H
@@ -15,8 +15,6 @@ enum chacha20poly1305_lengths {
 	CHACHA20POLY1305_KEYLEN = 32,
 	CHACHA20POLY1305_AUTHTAGLEN = 16
 };
-
-static void chacha20poly1305_fpu_init(void);
 
 static void chacha20poly1305_encrypt(u8 *dst, const u8 *src, const size_t src_len,
 			      const u8 *ad, const size_t ad_len,
@@ -49,7 +47,7 @@ static bool __must_check xchacha20poly1305_decrypt(u8 *dst, const u8 *src, const
 #if defined(CONFIG_X86_64)
 #include <linux/version.h>
 #include <asm/fpu/api.h>
-//#include <asm/simd.h>
+#include <asm/simd.h>
 #elif IS_ENABLED(CONFIG_KERNEL_MODE_NEON)
 #include <asm/neon.h>
 #include <asm/simd.h>
@@ -86,7 +84,7 @@ static inline void chacha20poly1305_deinit_simd(bool was_on)
 }
 
 #ifdef DEBUG
-static bool chacha20poly1305_selftest(void);
+bool chacha20poly1305_selftest(void);
 #endif
 
 #endif /* _WG_CHACHA20POLY1305_H */

@@ -1,18 +1,28 @@
 /* SPDX-License-Identifier: GPL-2.0
  *
- * Copyright (C) 2015-2017 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+ * Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  */
 
 #ifdef DEBUG
 
 #ifdef DEBUG_PRINT_TRIE_GRAPHVIZ
 #include <linux/siphash.h>
+
+static __init void swap_endian_and_apply_cidr(u8 *dst, const u8 *src, u8 bits, u8 cidr)
+{
+	swap_endian(dst, src, bits);
+	memset(dst + (cidr + 7) / 8, 0, bits / 8 - (cidr + 7) / 8);
+	if (cidr)
+		dst[(cidr + 7) / 8 - 1] &= ~0U << ((8 - (cidr % 8)) % 8);
+}
+
 static __init void print_node(struct allowedips_node *node, u8 bits)
 {
 	u32 color = 0;
 	char *style = "dotted";
 	char *fmt_connection = KERN_DEBUG "\t\"%p/%d\" -> \"%p/%d\";\n";
 	char *fmt_declaration = KERN_DEBUG "\t\"%p/%d\"[style=%s, color=\"#%06x\"];\n";
+	u8 ip1[16], ip2[16];
 	if (bits == 32) {
 		fmt_connection = KERN_DEBUG "\t\"%pI4/%d\" -> \"%pI4/%d\";\n";
 		fmt_declaration = KERN_DEBUG "\t\"%pI4/%d\"[style=%s, color=\"#%06x\"];\n";
@@ -26,13 +36,16 @@ static __init void print_node(struct allowedips_node *node, u8 bits)
 		color = hsiphash_1u32(0xdeadbeef, &key) % 200 << 16 | hsiphash_1u32(0xbabecafe, &key) % 200 << 8 | hsiphash_1u32(0xabad1dea, &key) % 200;
 		style = "bold";
 	}
-	printk(fmt_declaration, node->bits, node->cidr, style, color);
+	swap_endian_and_apply_cidr(ip1, node->bits, bits, node->cidr);
+	printk(fmt_declaration, ip1, node->cidr, style, color);
 	if (node->bit[0]) {
-		printk(fmt_connection, node->bits, node->cidr, node->bit[0]->bits, node->bit[0]->cidr);
+		swap_endian_and_apply_cidr(ip2, node->bit[0]->bits, bits, node->cidr);
+		printk(fmt_connection, ip1, node->cidr, ip2, node->bit[0]->cidr);
 		print_node(node->bit[0], bits);
 	}
 	if (node->bit[1]) {
-		printk(fmt_connection, node->bits, node->cidr, node->bit[1]->bits, node->bit[1]->cidr);
+		swap_endian_and_apply_cidr(ip2, node->bit[1]->bits, bits, node->cidr);
+		printk(fmt_connection, ip1, node->cidr, ip2, node->bit[1]->cidr);
 		print_node(node->bit[1], bits);
 	}
 }
@@ -199,6 +212,8 @@ static __init bool randomized_test(void)
 	struct horrible_allowedips h;
 	u8 ip[16], mutate_mask[16], mutated[16];
 
+	mutex_init(&mutex);
+
 	allowedips_init(&t);
 	horrible_allowedips_init(&h);
 
@@ -215,6 +230,8 @@ static __init bool randomized_test(void)
 		}
 		kref_init(&peers[i]->refcount);
 	}
+
+	mutex_lock(&mutex);
 
 	for (i = 0; i < NUM_RAND_ROUTES; ++i) {
 		prandom_bytes(ip, 4);
@@ -288,6 +305,8 @@ static __init bool randomized_test(void)
 		}
 	}
 
+	mutex_unlock(&mutex);
+
 #ifdef DEBUG_PRINT_TRIE_GRAPHVIZ
 	print_tree(t.root4, 32);
 	print_tree(t.root6, 128);
@@ -311,7 +330,9 @@ static __init bool randomized_test(void)
 	ret = true;
 
 free:
+	mutex_lock(&mutex);
 	allowedips_free(&t, &mutex);
+	mutex_unlock(&mutex);
 	horrible_allowedips_free(&h);
 	if (peers) {
 		for (i = 0; i < NUM_PEERS; ++i)
@@ -343,6 +364,34 @@ static __init inline struct in6_addr *ip6(u32 a, u32 b, u32 c, u32 d)
 	return &ip;
 }
 
+struct walk_ctx {
+	int count;
+	bool found_a, found_b, found_c, found_d, found_e;
+	bool found_other;
+};
+
+static __init int walk_callback(void *ctx, const u8 *ip, u8 cidr, int family)
+{
+	struct walk_ctx *wctx = ctx;
+
+	wctx->count++;
+
+	if (cidr == 27 && !memcmp(ip, ip4(192, 95, 5, 64), sizeof(struct in_addr)))
+		wctx->found_a = true;
+	else if (cidr == 128 && !memcmp(ip, ip6(0x26075300, 0x60006b00, 0, 0xc05f0543), sizeof(struct in6_addr)))
+		wctx->found_b = true;
+	else if (cidr == 29 && !memcmp(ip, ip4(10, 1, 0, 16), sizeof(struct in_addr)))
+		wctx->found_c = true;
+	else if (cidr == 83 && !memcmp(ip, ip6(0x26075300, 0x6d8a6bf8, 0xdab1e000, 0), sizeof(struct in6_addr)))
+		wctx->found_d = true;
+	else if (cidr == 21 && !memcmp(ip, ip6(0x26075000, 0, 0, 0), sizeof(struct in6_addr)))
+		wctx->found_e = true;
+	else
+		wctx->found_other = true;
+
+	return 0;
+}
+
 #define init_peer(name) do { \
 	name = kzalloc(sizeof(struct wireguard_peer), GFP_KERNEL); \
 	if (!name) { \
@@ -372,10 +421,17 @@ static __init inline struct in6_addr *ip6(u32 a, u32 b, u32 c, u32 d)
 	maybe_fail \
 } while (0)
 
+#define test_boolean(cond) do { \
+	bool _s = (cond); \
+	maybe_fail \
+} while (0)
+
 bool __init allowedips_selftest(void)
 {
 	DEFINE_MUTEX(mutex);
 	struct allowedips t;
+	struct walk_ctx wctx = { 0 };
+	struct allowedips_cursor cursor = { 0 };
 	struct wireguard_peer *a = NULL, *b = NULL, *c = NULL, *d = NULL, *e = NULL, *f = NULL, *g = NULL, *h = NULL;
 	size_t i = 0;
 	bool success = false;
@@ -383,7 +439,6 @@ bool __init allowedips_selftest(void)
 	__be64 part;
 
 	mutex_init(&mutex);
-
 	mutex_lock(&mutex);
 
 	allowedips_init(&t);
@@ -482,6 +537,23 @@ bool __init allowedips_selftest(void)
 		memcpy((u8 *)&ip + (i < 64) * 8, &part, 8);
 		allowedips_insert_v6(&t, &ip, 128, a, &mutex);
 	}
+
+	allowedips_free(&t, &mutex);
+
+	allowedips_init(&t);
+	insert(4, a, 192, 95, 5, 93, 27);
+	insert(6, a, 0x26075300, 0x60006b00, 0, 0xc05f0543, 128);
+	insert(4, a, 10, 1, 0, 20, 29);
+	insert(6, a, 0x26075300, 0x6d8a6bf8, 0xdab1f1df, 0xc05f1523, 83);
+	insert(6, a, 0x26075300, 0x6d8a6bf8, 0xdab1f1df, 0xc05f1523, 21);
+	allowedips_walk_by_peer(&t, &cursor, a, walk_callback, &wctx, &mutex);
+	test_boolean(wctx.count == 5);
+	test_boolean(wctx.found_a);
+	test_boolean(wctx.found_b);
+	test_boolean(wctx.found_c);
+	test_boolean(wctx.found_d);
+	test_boolean(wctx.found_e);
+	test_boolean(!wctx.found_other);
 
 #ifdef DEBUG_RANDOM_TRIE
 	if (success)
