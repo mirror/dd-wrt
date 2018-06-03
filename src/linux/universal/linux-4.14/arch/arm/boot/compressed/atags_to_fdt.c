@@ -117,7 +117,16 @@ static char *append_rootblock(char *dest, const char *str, int len, void *fdt)
 			memcpy(dest, ptr, i);
 			dest += i;
 		}
+	} 
+#ifdef CONFIG_ARCH_MVEBU
+	else {
+		len = strlen(str);
+		if (len + 1 < COMMAND_LINE_SIZE) {
+			memcpy(dest, str, len);
+			dest += len;
+		}
 	}
+#endif
 	return dest;
 }
 #endif
@@ -156,7 +165,7 @@ static void merge_fdt_bootargs(void *fdt, const char *fdt_cmdline)
 			ptr += len;
 		}
 #endif
-	}
+}
 	*ptr = '\0';
 
 	setprop_string(fdt, "/chosen", "bootargs", cmdline);
