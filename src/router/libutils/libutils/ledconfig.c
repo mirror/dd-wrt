@@ -1449,6 +1449,7 @@ static void getledconfig(struct ledconfig *cfg)
 		//cfg->usb_power = 0x000;    // usb enable
 		break;
 	case ROUTER_NETGEAR_R6400:
+	case ROUTER_NETGEAR_R6400V2:
 		cfg->power_gpio = 0x101;	// 
 		cfg->connected_gpio = 0x107;	//
 		cfg->usb_power = 0x000;	//

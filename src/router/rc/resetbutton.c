@@ -1523,6 +1523,7 @@ static void resetbtn_period_check(int sig)
 		sesgpio = 0x104;
 		break;
 	case ROUTER_NETGEAR_R6400:
+	case ROUTER_NETGEAR_R6400V2:
 		sesgpio = 0x103;
 		wifi24gpio = 0x104;
 		break;
