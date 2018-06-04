@@ -294,6 +294,8 @@ static char *filter[] = {
 	"nocountrysel",
 	"nvram_min_ver",
 	"board_id", //netgear specific
+	"hwrev",
+	"hwver",
 	NULL
 };
 
