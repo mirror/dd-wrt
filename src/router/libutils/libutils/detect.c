@@ -592,12 +592,15 @@ int internal_getRouterBrand()
 			setRouter("Netgear R7000P");
 			return ROUTER_NETGEAR_R7000P;
 		} else {
-			setRouter("Netgear R6400");
+			if (nvram_match("board_id", "U12H332T20"))
+				setRouter("Netgear R6400 v2");
+			else
+				setRouter("Netgear R6400 v1");
 			return ROUTER_NETGEAR_R6400;
 		}
 
 	}
-
+	
 	if (boardnum == 32 && nvram_match("boardtype", "0x0665")
 	    && nvram_match("boardrev", "0x1101")) {
 		setRouter("Netgear R8000");
