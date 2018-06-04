@@ -690,6 +690,7 @@ static struct nvram_param r6400v2_pci_1_1_params[] = {
 	{"venid", "0x14e4"},
 	{"watchdog", "3000"},
 	{"xtalfreq", "20000"},
+	{0, 0}
 };
 
 static struct nvram_param r6400v2_pci_2_1_params[] = {
@@ -791,6 +792,7 @@ static struct nvram_param r6400v2_pci_2_1_params[] = {
 	{"venid", "0x14e4"},
 	{"watchdog", "3000"},
 	{"xtalfreq", "65535"},
+	{0, 0}
 };
 
 static struct nvram_param r6400_pci_1_1_params[] = {
@@ -5351,7 +5353,6 @@ void start_sysinit(void)
 		break;
 	case ROUTER_NETGEAR_R6400:
 	case ROUTER_NETGEAR_R6400V2:
-
 		if (nvram_get("pci/1/1/ddwrt") == NULL) {
 			if (!sv_valid_hwaddr(nvram_safe_get("pci/1/1/macaddr"))
 			    || startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
