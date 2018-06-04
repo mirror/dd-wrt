@@ -695,6 +695,7 @@ ifneq ($(CONFIG_NVRAM_128K),y)
 	./netgear/packet -k $(ARCH)-uclibc/netgear.trx -f netgear/emptyfile -b netgear/comp-r7000.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-r7000.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/K3_R7000.chk
 else
 	./netgear/packet -k $(ARCH)-uclibc/netgear.trx -f netgear/emptyfile -b netgear/comp-r6400.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-r6400.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/K3_R6400.chk
+	./netgear/packet -k $(ARCH)-uclibc/netgear.trx -f netgear/emptyfile -b netgear/comp-r6400v2.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-r6400v2.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/K3_R6400V2.chk
 endif
 endif	
 	-$(MAKE) -f Makefile.northstar validate MAXIMUM_SIZE=7470000 EX_PATH=$(ARCH)-uclibc/K3_EX6200.chk
