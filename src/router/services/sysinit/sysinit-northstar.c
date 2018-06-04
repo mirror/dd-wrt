@@ -5350,6 +5350,7 @@ void start_sysinit(void)
 		set_gpio(5, 1);	//wifi
 		break;
 	case ROUTER_NETGEAR_R6400:
+	case ROUTER_NETGEAR_R6400V2:
 
 		if (nvram_get("pci/1/1/ddwrt") == NULL) {
 			if (!sv_valid_hwaddr(nvram_safe_get("pci/1/1/macaddr"))

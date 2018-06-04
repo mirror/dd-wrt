@@ -2658,6 +2658,7 @@ void start_restore_defaults(void)
 		}
 		break;
 	case ROUTER_NETGEAR_R6400:
+	case ROUTER_NETGEAR_R6400V2:
 	case ROUTER_NETGEAR_R7000:
 	case ROUTER_NETGEAR_R7000P:
 		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
@@ -2722,6 +2723,7 @@ void start_restore_defaults(void)
 			case ROUTER_NETGEAR_R6300:
 			case ROUTER_NETGEAR_R6300V2:
 			case ROUTER_NETGEAR_R6400:
+			case ROUTER_NETGEAR_R6400V2:
 			case ROUTER_NETGEAR_R7000:
 			case ROUTER_NETGEAR_R7000P:
 			case ROUTER_NETGEAR_R8000:
@@ -2787,6 +2789,7 @@ void start_restore_defaults(void)
 				nvram_set("vlan2ports", "4 5u");
 				break;
 			case ROUTER_NETGEAR_R6400:
+			case ROUTER_NETGEAR_R6400V2:
 			case ROUTER_NETGEAR_R7000:
 			case ROUTER_NETGEAR_R7000P:
 				nvram_set("vlan2ports", "0 5u");
