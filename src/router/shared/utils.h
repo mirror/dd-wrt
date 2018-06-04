@@ -765,6 +765,8 @@
 
 #define ROUTER_LINKSYS_EA9500 0x10410f
 
+#define ROUTER_NETGEAR_R6400V2 0x105105
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 
