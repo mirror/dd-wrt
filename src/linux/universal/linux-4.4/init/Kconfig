@@ -1330,6 +1330,7 @@ config CC_OPTIMIZE_FOR_SIZE
 	  your compiler resulting in a smaller kernel.
 
 	  If unsure, say N.
+endchoice
 
 config OPTIMIZE_INLINING
 	bool "Allow gcc to uninline functions marked 'inline'"
@@ -1345,7 +1346,6 @@ config OPTIMIZE_INLINING
 
 	  If unsure, say N.
 
-endchoice
 
 config SYSCTL
 	bool
