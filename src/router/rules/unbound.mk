@@ -2,6 +2,8 @@ unbound-configure:
 	cd unbound && ./configure --disable-ecdsa \
 		--disable-gost \
 		--enable-allsymbols \
+		--enable-tfo-client \
+		--enable-tfo-server \
 		--with-chroot-dir=/tmp \
 		--with-ssl="$(TOP)/openssl" \
 		--without-pthreads \
