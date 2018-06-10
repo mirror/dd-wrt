@@ -1138,7 +1138,7 @@ CONFIG_BONDING=m
 # CONFIG_IFB is not set
 # CONFIG_NET_TEAM is not set
 # CONFIG_MACVLAN is not set
-CONFIG_IPVLAN=m
+# CONFIG_IPVLAN is not set
 # CONFIG_VXLAN is not set
 # CONFIG_GENEVE is not set
 # CONFIG_NETCONSOLE is not set

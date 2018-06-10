@@ -967,7 +967,7 @@ CONFIG_BONDING=m
 CONFIG_MII=y
 # CONFIG_IFB is not set
 # CONFIG_NET_TEAM is not set
-CONFIG_MACVLAN=y
+# CONFIG_MACVLAN is not set
 # CONFIG_MACVTAP is not set
 # CONFIG_VXLAN is not set
 # CONFIG_NETCONSOLE is not set
