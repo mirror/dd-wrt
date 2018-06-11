@@ -910,8 +910,9 @@ wlconf_get_bsscfgs(char* ifname, char* prefix)
 	if (nvram_default_match(strcat_r(prefix, "mode", tmp),"ap","ap") || nvram_match(strcat_r(prefix, "mode", tmp),"apsta") || nvram_match(strcat_r(prefix, "mode", tmp),"apstawet"))
 	{
 	foreach(var, nvram_safe_get(strcat_r(prefix, "vifs", tmp)), next) {
+		fprintf(stderr, "construct %s\n", var);
 		if (bclist->count == WL_MAXBSSCFG) {
-			WLCONF_DBG("wlconf(%s): exceeded max number of BSS Configs (%d)"
+			fprintf(stderr, "wlconf(%s): exceeded max number of BSS Configs (%d)"
 			           "in nvram %s\n"
 			           "while configuring interface \"%s\"\n",
 			           ifname, WL_MAXBSSCFG, strcat_r(prefix, "vifs", tmp), var);
@@ -919,7 +920,7 @@ wlconf_get_bsscfgs(char* ifname, char* prefix)
 		}
 		bsscfg = &bclist->bsscfgs[bclist->count];
 		if (get_ifname_unit(var, NULL, &bsscfg->idx) != 0) {
-			WLCONF_DBG("wlconfg(%s): unable to parse unit.subunit in interface "
+			fprintf(stderr, "wlconfg(%s): unable to parse unit.subunit in interface "
 			           "name \"%s\"\n",
 			           ifname, var);
 			continue;
@@ -929,6 +930,7 @@ wlconf_get_bsscfgs(char* ifname, char* prefix)
 		bclist->count++;
 	}
 	}
+	fprintf(stderr, "total count %d\n", bclist->count);
 
 	return bclist;
 }
