@@ -50,16 +50,14 @@ void config_macs(char *wlifname)	// reconfigure macs which
 	char var[80];
 
 	if (!strcmp(mbss, "0") || nvram_nmatch("apsta", "wl%d_mode", unit) || nvram_nmatch("ap", "wl%d_mode", unit)) {
-		if (vifs != NULL) {
-			foreach(var, vifs, next) {
-				eval("ifconfig", var, "down");
-				eval("wl", "-i", var, "down");
-				eval("wl", "-i", var, "cur_etheraddr", nvram_nget("%s_hwaddr", var));
-				fprintf(stderr, "Setting %s BSSID:  %s \n", var, nvram_nget("%s_hwaddr", var));
-				eval("wl", "-i", var, "bssid", nvram_nget("%s_hwaddr", var));
-				eval("wl", "-i", var, "up");
-				eval("ifconfig", var, "up");
-			}
+		foreach(var, vifs, next) {
+			eval("ifconfig", var, "down");
+			eval("wl", "-i", var, "down");
+			eval("wl", "-i", var, "cur_etheraddr", nvram_nget("%s_hwaddr", var));
+			fprintf(stderr, "Setting %s BSSID:  %s \n", var, nvram_nget("%s_hwaddr", var));
+			eval("wl", "-i", var, "bssid", nvram_nget("%s_hwaddr", var));
+			eval("wl", "-i", var, "up");
+			eval("ifconfig", var, "up");
 		}
 	}
 }
@@ -67,59 +65,37 @@ void config_macs(char *wlifname)	// reconfigure macs which
 void do_mssid(char *wlifname)
 {
 	// bridge the virtual interfaces too
-	struct ifreq ifr;
-	int s;
 	char *next;
 	char var[80];
 	char *vifs = nvram_nget("wl%d_vifs", get_wl_instance(wlifname));
 	char tmp[256];
-	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
-		return;
-	if (vifs != NULL)
-		foreach(var, vifs, next) {
-		ether_atoe(nvram_nget("%s_hwaddr", var), ifr.ifr_hwaddr.sa_data);
-		strncpy(ifr.ifr_name, var, IFNAMSIZ);
-		ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+	foreach(var, vifs, next) {
+		char *mac = nvram_nget("%s_hwaddr", var);
+		eval("ifconfig", var, "down");
+		set_hwaddr(var, mac);
+		eval("ifconfig", var, "up");
 		if (!nvram_nmatch("0", "%s_bridged", var)) {
-			// ifconfig (var, IFUP, NULL, NULL);
-			eval("ifconfig", var, "down");
-			ioctl(s, SIOCSIFHWADDR, &ifr);
-			eval("ifconfig", var, "up");
 			br_add_interface(getBridge(var, tmp), var);
 		} else {
-			eval("ifconfig", var, "down");
-			ioctl(s, SIOCSIFHWADDR, &ifr);
-			eval("ifconfig", var, "up");
 			ifconfig(var, IFUP, nvram_nget("%s_ipaddr", var), nvram_nget("%s_netmask", var));
 		}
-		}
-	close(s);
+	}
 }
 
 #if !defined(HAVE_RT2880) && !defined(HAVE_RT61) && !defined(HAVE_MADWIFI)
 
 void set_vifsmac(char *base)	// corrects hwaddr and bssid assignment
 {
-	struct ifreq ifr;
-	int s;
 	char *next;
 	char var[80];
 	char mac[80];
 	char *vifs = nvram_nget("%s_vifs", base);
 
-	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
-		return;
-	if (vifs != NULL) {
-		foreach(var, vifs, next) {
-			eval("ifconfig", var, "down");
-			wl_getbssid(var, mac);
-			ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
-			ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-			strncpy(ifr.ifr_name, var, IFNAMSIZ);
-			ioctl(s, SIOCSIFHWADDR, &ifr);
-		}
+	foreach(var, vifs, next) {
+		eval("ifconfig", var, "down");
+		wl_getbssid(var, mac);
+		set_hwaddr(var, mac);
 	}
-	close(s);
 }
 
 void start_vifsmac(void)
