@@ -906,6 +906,8 @@ int getifcount(const char *ifprefix)
 
 static void skipline(FILE * in)
 {
+	if (!in)
+		return;
 	while (1) {
 		int c = getc(in);
 
@@ -953,6 +955,8 @@ static int ifcompare(const void *a, const void *b)
 int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort)
 {
 	FILE *in = fopen("/proc/net/dev", "rb");
+	if (!in)
+		return 0;
 	char ifname[32];
 
 	// skip the first 2 lines
