@@ -307,6 +307,7 @@ static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** ar
 	struct timeval before, after, r;
 
 	if (nvram_matchi("console_debug", 1)) {
+		dd_syslog(LOG_INFO, "%s:%s",__func__,name);
 		fprintf(stderr, "call_ej %s", name);
 		int i = 0;
 		for (i = 0; i < argc; i++)
