@@ -910,7 +910,6 @@ wlconf_get_bsscfgs(char* ifname, char* prefix)
 	if (nvram_default_match(strcat_r(prefix, "mode", tmp),"ap","ap") || nvram_match(strcat_r(prefix, "mode", tmp),"apsta") || nvram_match(strcat_r(prefix, "mode", tmp),"apstawet"))
 	{
 	foreach(var, nvram_safe_get(strcat_r(prefix, "vifs", tmp)), next) {
-		fprintf(stderr, "construct %s\n", var);
 		if (bclist->count == WL_MAXBSSCFG) {
 			fprintf(stderr, "wlconf(%s): exceeded max number of BSS Configs (%d)"
 			           "in nvram %s\n"
@@ -930,7 +929,7 @@ wlconf_get_bsscfgs(char* ifname, char* prefix)
 		bclist->count++;
 	}
 	}
-	fprintf(stderr, "total count %d\n", bclist->count);
+	fprintf(stderr, "total vif count %d\n", bclist->count);
 
 	return bclist;
 }
@@ -1860,11 +1859,9 @@ cprintf("disable bss %s\n",name);
 		for (i = 1; i < bclist->count; i++) {
 			snprintf(tmp, sizeof(tmp), "wl%d.%d_hwaddr", unit, i);
 			addr = nvram_safe_get(tmp);
-			if (!strcmp(addr, "")) {
 				vif_addr[5] = (vif_addr[5] & ~(max_no_vifs-i)) | ((max_no_vifs-i) & (vif_addr[5]+i));
 				fprintf(stderr,"set new addr %s\n",ether_etoa((uchar *)vif_addr, eaddr));
 				nvram_set(tmp, ether_etoa((uchar *)vif_addr, eaddr));
-			}
 		}
 
 		for (i = 0; i < bclist->count; i++) {
