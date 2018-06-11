@@ -2467,6 +2467,8 @@ static void ttraff_backup(unsigned char method, struct mime_handler *handler, ch
 	FILE *out = fopen("/tmp/traffdata.bak", "wb");
 	fprintf(out, "TRAFF-DATA\n");
 	FILE *fp = popen("nvram show | grep traff-", "rb");
+	if (!fp)
+	    return;
 	while (!feof(fp))
 		putc(getc(fp), out);
 	pclose(fp);

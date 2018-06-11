@@ -1113,9 +1113,13 @@ void ping_wol(webs_t wp)
 #endif
 	FILE *fp = popen(wol_cmd, "rb");
 	FILE *out = fopen(PING_TMP, "wb");
-	while (!feof(fp))
-		putc(getc(fp), out);
-	fclose(out);
+	if (!fp)
+		return;
+	if (out) {
+		while (!feof(fp))
+			putc(getc(fp), out);
+		fclose(out);
+	}
 	pclose(fp);
 }
 
@@ -1139,6 +1143,8 @@ void diag_ping_start(webs_t wp)
 	//FORK(system(cmd));
 
 	FILE *fp = popen(cmd, "rb");
+	if (!fp)
+		return;
 	while (!feof(fp))
 		getc(fp);
 	pclose(fp);
@@ -3156,9 +3162,9 @@ void save_networking(webs_t wp)
 		sprintf(var, "bridgeifstp%d", i);
 		stp = websGetVar(wp, var, "On");
 		if (!strcmp(stp, "On"))
-		    stp = "1";
-		else 
-		    stp = "0";
+			stp = "1";
+		else
+			stp = "0";
 		sprintf(var, "bridgeifprio%d", i);
 		prio = websGetVar(wp, var, "112");
 		if (strlen(prio) == 0)
@@ -3174,7 +3180,6 @@ void save_networking(webs_t wp)
 		cost = websGetVar(wp, var, "100");
 		if (strlen(cost) == 0)
 			prio = "100";
-
 
 		strcat(buffer, ifname);
 		strcat(buffer, ">");
