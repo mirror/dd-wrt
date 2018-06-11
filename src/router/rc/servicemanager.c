@@ -78,8 +78,9 @@ static int _STOPPED(const char *method, const char *name)
 				stops_running[0]--;
 		}
 #else
-		if (nvram_matchi("service_debug", 1))
+		if (nvram_matchi("service_debug", 1)) {
 			fprintf(stderr, "calling %s_%s not required!\n", method, name);
+		}
 		if (!strcmp(method, "stop")) {
 			if (stops_running)
 				stops_running[0]--;
@@ -118,8 +119,10 @@ static int handle_service(const char *method, const char *name)
 		STOPPED();
 	}
 #if (!defined(HAVE_X86) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)
-	if (nvram_matchi("service_debug", 1))
+	if (nvram_matchi("service_debug", 1)) {
+		dd_syslog(LOG_INFO, "%s:%s_%s", __func__, method, name);
 		fprintf(stderr, "calling %s_%s\n", method, name);
+	}
 #endif
 	// lcdmessaged("Starting Service",name);
 	char service[64];
