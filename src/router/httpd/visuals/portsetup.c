@@ -80,7 +80,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		unsigned char mac[20];
 		char *r = get_hwaddr(var, mac);
 		char *nvmac = nvram_nget("%s_hwaddr", var);
-		if (r && !strlen(nvmac))
+		if (r && !strlen(nvmac) && strncmp(var, "wl", 2))
 			nvram_nset(r, "%s_hwaddr", var);
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(share.mac)</script></div>\n");
 		websWrite(wp, "<input class=\"num\" maxlength=\"17\" size=\"16\" name=\"%s_hwaddr\" value=\"%s\" /></div>\n", var, nvram_nget("%s_hwaddr", var));
