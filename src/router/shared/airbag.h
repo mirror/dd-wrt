@@ -49,10 +49,9 @@ extern "C" {
 /** Registers crash handlers to output to the file descriptor.
  * @return 0 iff registered; else errno is set.
  */
-	int airbag_init_name(char *initiator);
+	int airbag_init(void);
 
 
- #define airbag_init() airbag_init_name(__FILE__);
 
 /** Names the current thread.
  * @return 0 iff name is set; else errno is set.
