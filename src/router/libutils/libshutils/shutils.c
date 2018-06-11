@@ -128,6 +128,7 @@ int system2(char *command)
 
 	if (nvram_matchi("console_debug", 1)) {
 		fprintf(stderr, "%s\n", command);
+		dd_syslog(LOG_INFO, "%s:%s",__func__,command);
 		flog("%s\n", command);
 	}
 
@@ -207,7 +208,8 @@ int _evalpid(char *const argv[], char *path, int timeout, int *ppid)
 
 	if (nvram_matchi("console_debug", 1)) {
 		int i = 0;
-
+		if (argv[i])
+			dd_syslog(LOG_INFO, "%s:%s",__func__,argv[i]);
 		while (argv[i] != NULL) {
 			fprintf(stderr, "%s ", argv[i++]);
 			flog("%s ", argv[i - 1]);
