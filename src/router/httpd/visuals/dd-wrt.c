@@ -449,26 +449,30 @@ void ej_active_wireless2(webs_t wp, int argc, char_t ** argv)
 				sprintf(rssicmd, "%s \"%s\"", RSSI_CMD, mac);
 
 			fp2 = popen(rssicmd, "r");
-			if (fgets(line, sizeof(line), fp2) != NULL) {
+			if (fp2) {
+				if (fgets(line, sizeof(line), fp2) != NULL) {
 
-				// get rssi
-				if (sscanf(line, "%s %s %d", list[0], list[1], &rssi) != 3)
-					continue;
+					// get rssi
+					if (sscanf(line, "%s %s %d", list[0], list[1], &rssi) != 3)
+						continue;
 
-				pclose(fp2);
+					pclose(fp2);
+				}
 			}
 			// get noise value if not ap mode
 			if (strcmp(mode, "ap"))
 				sprintf(rssicmd, "%s", NOISE_CMD);
 
 			fp2 = popen(rssicmd, "r");
-			if (fgets(line, sizeof(line), fp2) != NULL) {
+			if (fp2) {
+				if (fgets(line, sizeof(line), fp2) != NULL) {
 
-				// get noise for client/wet mode
-				if (strcmp(mode, "ap") && fgets(line, sizeof(line), fp2) != NULL && sscanf(line, "%s %s %d", list[0], list[1], &noise) != 3)
-					continue;
+					// get noise for client/wet mode
+					if (strcmp(mode, "ap") && fgets(line, sizeof(line), fp2) != NULL && sscanf(line, "%s %s %d", list[0], list[1], &noise) != 3)
+						continue;
 
-				pclose(fp2);
+					pclose(fp2);
+				}
 			}
 
 			if (nvram_matchi("maskmac", 1)) {
