@@ -23,7 +23,7 @@
 #if defined(HAVE_SYSLOG) && !defined(HAVE_MICRO)
 
 //#ifdef __ANDROID__
-#define AIRBAG_NO_BACKTRACE
+//#define AIRBAG_NO_BACKTRACE
 //#endif
 
 #ifndef _BSD_SOURCE
@@ -61,9 +61,6 @@
 #ifdef __linux__
 #include <sys/prctl.h>
 #include <sys/syscall.h>
-#endif
-#if !defined(AIRBAG_NO_BACKTRACE)
-#include <execinfo.h>
 #endif
 #if !defined(AIRBAG_NO_PTHREAD)
 #if defined(__FreeBSD__)
@@ -165,6 +162,7 @@ static const char *_strsignal(int sigNum)
 }
 
 #if defined(__x86_64__)
+#include "sysdeps/generic_backtrace.c"
 #define NMCTXREGS NGREG
 #define MCTXREG(uc, i) (uc->uc_mcontext.gregs[i])
 #define MCTX_PC(uc) MCTXREG(uc, 16)
@@ -176,6 +174,7 @@ static const char *mctxRegNames[NMCTXREGS] = {
 #define FMTLEN "07"
 #define FMTBIT "016"
 #elif defined(__i386__)
+#include "sysdeps/x86_backtrace.c"
 #define NMCTXREGS NGREG
 #define MCTXREG(uc, i) (uc->uc_mcontext.gregs[i])
 #define MCTX_PC(uc) MCTXREG(uc, 14)
@@ -187,6 +186,7 @@ static const char *mctxRegNames[NMCTXREGS] = {
 #define FMTLEN "06"
 #define FMTBIT "08"
 #elif defined(__aarch64__)
+#include "sysdeps/generic_backtrace.c"
 #define NMCTXREGS 31
 #define MCTXREG(uc, i) (uc->uc_mcontext.regs[i])
 #define MCTX_PC(uc) (uc->uc_mcontext.pc)
@@ -200,6 +200,7 @@ static const char *mctxRegNames[NMCTXREGS] = {
 #define FMTLEN "03"
 #define FMTBIT "016"
 #elif defined(__arm__)
+#include "sysdeps/arm_backtrace.c"
 #define NMCTXREGS 21
 #define MCTXREG(uc, i) (((unsigned long *)(&uc->uc_mcontext))[i])
 #define MCTX_PC(uc) MCTXREG(uc, 18)
@@ -212,6 +213,7 @@ static const char *mctxRegNames[NMCTXREGS] = {
 #define FMTBIT "08"
 static const int gregOffset = 3;
 #elif defined(__mips__)
+#include "sysdeps/generic_backtrace.c"
 #define NMCTXREGS NGREG
 #if (defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)) || defined(HAVE_ADM5120)
 #define MCTXREG(uc, i) (uc->uc_mcontext.gpregs[i])
@@ -238,6 +240,7 @@ static const char *mctxRegNames[NMCTXREGS] = {
 #define FMTBIT "08"
 #endif
 #elif defined(__powerpc__)
+#include "sysdeps/generic_backtrace.c"
 #define NMCTXREGS 45
 #ifdef __UCLIBC__
 #define MCTX_PC(uc)    (uc->uc_mcontext.uc_regs->gregs[32])
@@ -827,7 +830,9 @@ backward:
 	 * Not preferred, because no way to explicitly start at failing PC, doesn't handle
 	 * bad PC, doesn't handle blown stack, etc.
 	 */
-	return backtrace(buffer, size);
+	int res = backtrace(buffer, size);
+	backtrace_release();
+	return ret;
 #else
 	return 0;
 #endif
