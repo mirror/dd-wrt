@@ -144,7 +144,7 @@ static int image_check(FILE * imagefp, const char *mtd)
 
 	systype = SYSTYPE_UNKNOWN;
 	f = fopen("/proc/cpuinfo", "r");
-	while (!feof(f) && (fgets(buf, BUFSIZE - 1, f) != NULL)) {
+	while (f && !feof(f) && (fgets(buf, BUFSIZE - 1, f) != NULL)) {
 		if ((strncmp(buf, "system type", 11) == 0)
 		    && (c = strchr(buf, ':'))) {
 			c += 2;
