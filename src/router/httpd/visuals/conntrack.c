@@ -117,7 +117,7 @@ void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 {
 	FILE *fp;
 	int ip_count = 1;
-	char line[512];
+	char *line;
 	char protocol[32] = "";
 	int timeout = 0;
 	char srcip[32] = "";
@@ -139,8 +139,8 @@ void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 	}
 	if (fp == NULL)
 		return;
-
-	while (fgets(line, sizeof(line), fp) != NULL) {
+	line = malloc(512);
+	while (!feof(fp) && fgets(line, 511, fp) != NULL) {
 
 		websWrite(wp, "<tr>\n");
 
@@ -219,6 +219,7 @@ void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</tr>\n");
 		ip_count++;
 	}
+	free(line);
 
 	fclose(fp);
 	return;
