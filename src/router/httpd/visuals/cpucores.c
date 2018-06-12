@@ -337,6 +337,8 @@ void ej_show_cpufeatures(webs_t wp, int argc, char_t ** argv)
 	char *next = NULL;
 	char *result = NULL;
 	FILE *fp = fopen("/proc/cpuinfo", "rb");
+	if (!fp)
+		return;
 	char *line = malloc(1024);
 	while (fgets(line, 1024, fp)) {
 		int i;
