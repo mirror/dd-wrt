@@ -40,6 +40,10 @@ install: gsp_updater i2cset i2cget i2cdump
 	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_52xx_v50.txt $(INSTALLDIR)/etc/gsc_52xx_v50.txt
 	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_53xx_v50.txt $(INSTALLDIR)/etc/gsc_53xx_v50.txt
 	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_54xx_v50.txt $(INSTALLDIR)/etc/gsc_54xx_v50.txt
+	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_551x_v50.txt $(INSTALLDIR)/etc/gsc_551x_v50.txt
+	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_552x_v50.txt $(INSTALLDIR)/etc/gsc_552x_v50.txt
+	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_553x_v50.txt $(INSTALLDIR)/etc/gsc_553x_v50.txt
+	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_630x_v52.txt $(INSTALLDIR)/etc/gsc_630x_v52.txt
 
 clean:
 	rm -f gsp_updater i2cset *.o core
