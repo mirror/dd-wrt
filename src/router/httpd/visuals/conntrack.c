@@ -22,29 +22,42 @@
 /*
  * Added by Botho 03.April.06 
  */
+
+#ifndef HAVE_MICRO
+#include <pthread.h>
+static pthread_mutex_t mutex_contr = PTHREAD_MUTEX_INITIALIZER;
+static char *lastlock;
+static char *lastunlock;
+#define lock() pthread_mutex_lock(&mutex_contr)
+#define unlock() pthread_mutex_unlock(&mutex_contr)
+#else
+#define mutex_init()
+#define lock()
+#define unlock()
+#endif
+
 void ej_dumpip_conntrack(webs_t wp, int argc, char_t ** argv)
 {
 	int ip_count = 0;
 	FILE *fp;
 	int c;
-
+	lock();
 	fp = fopen("/proc/net/ip_conntrack", "rb");
 	if (fp == NULL) {
 		fp = fopen("/proc/net/nf_conntrack", "rb");
 	}
-	if (fp == NULL)
+	if (fp == NULL) {
+		unlock();
 		return;
-	while (!feof(fp)) {
-		c = getc(fp);
-		if (c == EOF)
-			break;
+	}
+	while ((c = getc(fp)) != EOF) {
 		if (c == 0xa)
 			ip_count++;
 	}
+	fclose(fp);
+	unlock();
 
 	websWrite(wp, "%d", ip_count);
-
-	fclose(fp);
 
 	return;
 }
@@ -131,14 +144,16 @@ void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 	int nf = 0;
 	char *lanip = nvram_get("lan_ipaddr");
 	char buf[128];
-
+	lock();
 	fp = fopen("/proc/net/ip_conntrack", "rb");
 	if (fp == NULL) {
 		fp = fopen("/proc/net/nf_conntrack", "rb");
 		nf = 1;
 	}
-	if (fp == NULL)
+	if (fp == NULL) {
+		unlock();
 		return;
+	}
 	line = malloc(512);
 	while (!feof(fp) && fgets(line, 511, fp) != NULL) {
 
@@ -222,5 +237,6 @@ void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 	free(line);
 
 	fclose(fp);
+	unlock();
 	return;
 }
