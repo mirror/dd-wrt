@@ -796,7 +796,7 @@ void reset_hwaddr(char *ifname)
 			char *def = nvram_get("et0macaddr_safe");
 			if (!def)
 				def = nvram_safe_get("lan_hwaddr");
-#if defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_VENTANA) || defined(HAVE_RB600) || defined(HAVE_FONERA) || \
+#if defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) || defined(HAVE_FONERA) || \
     defined(HAVE_RT2880) || defined(HAVE_LS2) || defined(HAVE_LS5) || defined(HAVE_SOLO51) || defined(HAVE_WHRAG108) || defined(HAVE_PB42) || \
     defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_OPENRISC) || defined(HAVE_ADM5120) || defined(HAVE_TW6600) || \
     defined(HAVE_CA8) || defined(HAVE_EROUTER)
@@ -1821,7 +1821,17 @@ void start_lan(void)
 		nvram_set("et0macaddr", get_hwaddr("vlan1", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #endif
-#ifdef HAVE_LAGUNA
+#ifdef defined(HAVE_NEWPORT)
+	nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5 ath6");
+	if (getSTA() || getWET() || CANBRIDGE()) {
+		PORTSETUPWAN("");
+	} else {
+		PORTSETUPWAN("eth0");
+	}
+	if (nvram_match("et0macaddr", ""))
+		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
+	strcpy(mac, nvram_safe_get("et0macaddr"));
+#elif defined(HAVE_LAGUNA)
 	nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3");
 	if (getSTA() || getWET() || CANBRIDGE()) {
 		PORTSETUPWAN("");
@@ -1831,8 +1841,7 @@ void start_lan(void)
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("eth0", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
-#endif
-#ifdef HAVE_VENTANA
+#elif defined(HAVE_VENTANA)
 	nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5 ath6");
 	if (getSTA() || getWET() || CANBRIDGE()) {
 		PORTSETUPWAN("");
@@ -2170,7 +2179,7 @@ void start_lan(void)
 #endif
 			if (nvram_match("wan_ifname", name))
 				continue;
-#if defined(HAVE_MADWIFI) && !defined(HAVE_RB500) && !defined(HAVE_XSCALE) && !defined(HAVE_LAGUNA) && !defined(HAVE_VENTANA)   && !defined(HAVE_MAGICBOX) && !defined(HAVE_RB600) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_X86) && !defined(HAVE_LS2) && !defined(HAVE_LS5) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_PB42) && !defined(HAVE_LSX) && !defined(HAVE_DANUBE) && !defined(HAVE_STORM) && !defined(HAVE_OPENRISC) && !defined(HAVE_ADM5120) && !defined(HAVE_RT2880) && !defined(HAVE_SOLO51) && !defined(HAVE_EROUTER) && !defined(HAVE_IPQ806X) && !defined(HAVE_R9000)
+#if defined(HAVE_MADWIFI) && !defined(HAVE_RB500) && !defined(HAVE_XSCALE) && !defined(HAVE_LAGUNA) && !defined(HAVE_VENTANA) && !defined(HAVE_NEWPORT) && !defined(HAVE_MAGICBOX) && !defined(HAVE_RB600) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_X86) && !defined(HAVE_LS2) && !defined(HAVE_LS5) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_PB42) && !defined(HAVE_LSX) && !defined(HAVE_DANUBE) && !defined(HAVE_STORM) && !defined(HAVE_OPENRISC) && !defined(HAVE_ADM5120) && !defined(HAVE_RT2880) && !defined(HAVE_SOLO51) && !defined(HAVE_EROUTER) && !defined(HAVE_IPQ806X) && !defined(HAVE_R9000)
 			if (!strcmp(name, "eth2")) {
 				strcpy(realname, "ath0");
 			} else
@@ -2673,6 +2682,9 @@ void start_lan(void)
 #ifdef HAVE_VENTANA
 #define HAVE_RB500
 #endif
+#ifdef HAVE_NEWPORT
+#define HAVE_RB500
+#endif
 #ifdef HAVE_EROUTER
 #define HAVE_RB500
 #endif
@@ -3013,6 +3025,9 @@ void start_wan(int status)
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ? nvram_safe_get("pppoe_wan_ifname") : "vlan2";
 #elif HAVE_LAGUNA
+	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
+#elif HAVE_NEWPORT
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
 #elif HAVE_VENTANA

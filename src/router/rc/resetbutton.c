@@ -1079,6 +1079,7 @@ static void resetbtn_period_check(int sig)
 		break;
 	case ROUTER_BOARD_GW2380:
 	case ROUTER_BOARD_GW2388:
+	case ROUTER_BOARD_GW6400:
 		val = get_gpio(240);
 		break;
 	default:

@@ -349,6 +349,7 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->connected_gpio = 0x102;
 		break;
 	case ROUTER_BOARD_GW2388:
+	case ROUTER_BOARD_GW6400:
 	case ROUTER_BOARD_GW2380:
 #ifdef HAVE_NEWPORT
 
