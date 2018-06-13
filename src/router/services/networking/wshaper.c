@@ -101,6 +101,7 @@ static void svqos_reset_ports(void)
 #ifndef HAVE_STORM
 #ifndef HAVE_LAGUNA
 #ifndef HAVE_VENTANA
+#ifndef HAVE_NEWPORT
 #ifndef HAVE_EROUTER
 #ifndef HAVE_OPENRISC
 #ifndef HAVE_ADM5120
@@ -130,6 +131,7 @@ static void svqos_reset_ports(void)
 #endif
 #endif
 #endif
+#endir
 #endif
 #endif
 #endif
@@ -164,6 +166,7 @@ static int svqos_set_ports(void)
 #ifndef HAVE_X86
 #ifndef HAVE_LAGUNA
 #ifndef HAVE_VENTANA
+#ifndef HAVE_NEWPORT
 #ifndef HAVE_EROUTER
 #ifndef HAVE_TW6600
 #ifndef HAVE_PB42
@@ -195,6 +198,7 @@ static int svqos_set_ports(void)
 			writevaproc(lvl, "/proc/switch/eth0/port/%d/prio", loop);
 		}
 	}
+#endif
 #endif
 #endif
 #endif

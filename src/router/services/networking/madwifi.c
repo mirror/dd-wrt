@@ -2545,6 +2545,10 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	char eabuf[32];
 	nvram_set("wl0_hwaddr", get_hwaddr("ath0", eabuf));
 #endif
+#ifdef HAVE_NEWPORT
+	char eabuf[32];
+	nvram_set("wl0_hwaddr", get_hwaddr("ath0", eabuf));
+#endif
 #ifdef HAVE_EROUTER
 	char eabuf[32];
 	nvram_set("wl0_hwaddr", get_hwaddr("ath0", eabuf));
