@@ -767,6 +767,8 @@
 
 #define ROUTER_NETGEAR_R6400V2 0x105105
 
+#define ROUTER_BOARD_GW6400 0x106000
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 
