@@ -497,17 +497,11 @@ static void airbag_symbol(void *pc)
 }
 
 #if defined(USE_GCC_UNWIND) && !defined(__mips__) && !defined(__arm__)
-struct trace_arg {
-	void **array;
-	int cnt;
-	int size;
-	ucontext_t const *uc;
-};
 
 typedef _Unwind_Ptr(*Unwind_GetIP_T) (struct _Unwind_Context *);
 typedef _Unwind_Reason_Code(*Unwind_Backtrace_T) (_Unwind_Trace_Fn, void *);
 static Unwind_GetIP_T _unwind_GetIP;
-static _Unwind_Reason_Code backtrace_helper(struct _Unwind_Context *ctx, void *a)
+static _Unwind_Reason_Code airbag_backtrace_helper(struct _Unwind_Context *ctx, void *a)
 {
 	struct trace_arg *arg = (struct trace_arg *)a;
 
@@ -819,7 +813,7 @@ backward:
 			if (size >= 1) {
 				/* TODO: setjmp, catch SIGSEGV to longjmp back here, to more gracefully handle
 				 * corrupted stack. */
-				_unwind_Backtrace(backtrace_helper, &arg);
+				_unwind_Backtrace(airbag_backtrace_helper, &arg);
 			}
 			return arg.cnt != -1 ? arg.cnt : 0;
 		}
