@@ -107,6 +107,7 @@ void start_sysinit(void)
 	eval("i2cset", "-f", "-y", "0", "0x20", "0", "0x0");
 	eval("i2cset", "-f", "-y", "0", "0x20", "11", "0x10");
 
+	char *board = nvram_safe_get("DD_BOARD");
 	if (!strncmp(board, "Gateworks Newport GW63", 22))
 		eval("gsp_updater", "-f", "/etc/gsc_630x_v52.txt", "52");
 
