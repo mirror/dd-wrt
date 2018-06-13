@@ -149,6 +149,15 @@ void start_sysinit(void)
 	if (!strncmp(board, "Gateworks Ventana GW51", 22))
 		eval("gsp_updater", "-f", "/etc/gsc_51xx_v50.txt", "50");
 
+	if (!strncmp(board, "Gateworks Ventana GW551", 23))
+		eval("gsp_updater", "-f", "/etc/gsc_551x_v50.txt", "50");
+
+	if (!strncmp(board, "Gateworks Ventana GW552", 23))
+		eval("gsp_updater", "-f", "/etc/gsc_552x_v50.txt", "50");
+
+	if (!strncmp(board, "Gateworks Ventana GW553", 23))
+		eval("gsp_updater", "-f", "/etc/gsc_553x_v50.txt", "50");
+
 	sysprintf("echo ondemand > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
 
 	return;
