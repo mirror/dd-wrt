@@ -85,33 +85,12 @@ typedef uint32_t u32;
 #define VHT_CAP_TX_ANTENNA_PATTERN                  ((u32) BIT(29))
 
 #ifndef HAVE_MICRO
-static pthread_mutex_t mutex_unl;
+static pthread_mutex_t mutex_unl = PTHREAD_MUTEX_INITIALIZER;
 static char *lastlock;
 static char *lastunlock;
-#define mutex_init() pthread_mutex_init(&mutex_unl,NULL)
-/*#define lock() { \
-		    int m_result; \
-		    int m_cnt=0; \
-		while ((m_result=pthread_mutex_trylock(&mutex_unl)) ==EBUSY) { \
-			m_cnt++; \
-			usleep(100 * 1000); \
-			if (m_cnt==10) { \
-			    dd_syslog(LOG_INFO, "lock failed at %s, lastlock = %s lastunlock = %s\n",__func__,lastlock?lastlock:"none", lastunlock?lastunlock:"none"); \
-			    break; \
-			} \
-		} \
-		lastlock = __func__; \
-}*/
-
 #define lock() pthread_mutex_lock(&mutex_unl)
 #define unlock() pthread_mutex_unlock(&mutex_unl)
-
-/*#define unlock() { \
-	pthread_mutex_unlock(&mutex_unl); \
-	lastunlock = __func__; \
-}*/
 #else
-#define mutex_init()
 #define lock()
 #define unlock()
 #endif
@@ -126,7 +105,6 @@ static int mac80211_cb_survey(struct nl_msg *msg, void *data);
 
 static void __attribute__((constructor)) mac80211_init(void)
 {
-	mutex_init();
 	if (!bunl) {
 		int ret = unl_genl_init(&unl, "nl80211");
 		bunl = 1;
