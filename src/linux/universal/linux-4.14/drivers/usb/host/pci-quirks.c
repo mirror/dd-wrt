@@ -532,7 +532,6 @@ EXPORT_SYMBOL_GPL(usb_amd_dev_put);
 
 #endif /* CONFIG_PCI_DISABLE_COMMON_QUIRKS */
 
-#if IS_ENABLED(CONFIG_USB_UHCI_HCD)
 
 /*
  * Check if port is disabled in BIOS on AMD Promontory host.
@@ -626,6 +625,7 @@ bool usb_amd_pt_check_port(struct device *device, int port)
 }
 EXPORT_SYMBOL_GPL(usb_amd_pt_check_port);
 
+#if IS_ENABLED(CONFIG_USB_UHCI_HCD)
 /*
  * Make sure the controller is completely inactive, unable to
  * generate interrupts or do DMA.
