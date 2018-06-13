@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Gateworks Corporation
+ * Copyright 2018 Gateworks Corporation
  *
  * This file is dual-licensed: you can use it either under the terms
  * of the GPL or the X11 license, at your option. Note that this dual
@@ -48,6 +48,10 @@
 /include/ "cn81xx-linux.dtsi"
 
 / {
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
 	clocks {
 		compatible = "simple-bus";
 		#address-cells = <1>;
@@ -114,7 +118,7 @@
 		/* Bi-Color LED */
 		led0: user1 {
 			label = "user1"; /* GREEN */
-			gpios = <&gpio_6_0 13 0>;
+			gpios = <&gpio_6_0 31 0>;
 			default-state = "on";
 			linux,default-trigger = "heartbeat";
 		};
@@ -148,11 +152,25 @@
 		};
 		/* MDIO1 */
 		mdio1@87e005003880 {
-			sgmii00: sgmii@0 {
-				qlm-mode = "0x000,sgmii";
-				reg = <0>; /* phy address */
-				compatible = "ti,dp83867", "ethernet-phy-ieee802.3-c22";
-				ti,fifo-depth = <3>; /* 0=3 1=4 2=6 3=8 */
+			qsgmii00: qsgmii00 {
+				qlm-mode = "0x000,qsgmii";
+				reg = <0x0>; /* phy address */
+				compatible = "vitesse,vsc8574", "ethernet-phy-ieee802.3-c22";
+			};
+			qsgmii01: qsgmii01 {
+				qlm-mode = "0x001,qsgmii";
+				reg = <0x1>; /* phy address */
+				compatible = "vitesse,vsc8574", "ethernet-phy-ieee802.3-c22";
+			};
+			qsgmii02: qsgmii02 {
+				qlm-mode = "0x002,qsgmii";
+				reg = <0x2>; /* phy address */
+				compatible = "vitesse,vsc8574", "ethernet-phy-ieee802.3-c22";
+			};
+			qsgmii03: qsgmii03 {
+				qlm-mode = "0x003,qsgmii";
+				reg = <0x3>; /* phy address */
+				compatible = "vitesse,vsc8574", "ethernet-phy-ieee802.3-c22";
 			};
 		};
 	};
@@ -165,14 +183,31 @@
 		};
 	};
 
-	/* DLM1 => SGMII (dp83867) */
+	/* DLM1 => QSGMII (vsc8574) */
 	bgx0 {
-		/* BGX0.0 */
-		sgmii@0 {
+		qsgmii00 {
 			reg = <0>;
-			qlm-mode = "0x000,sgmii";
+			qlm-mode = "0x000,qsgmii";
 			local-mac-address = [00 00 00 00 00 00];
-			phy-handle = <&sgmii00>;
+			phy-handle = <&qsgmii00>;
+		};
+		qsgmii01 {
+			reg = <1>;
+			qlm-mode = "0x001,qsgmii";
+			local-mac-address = [00 00 00 00 00 00];
+			phy-handle = <&qsgmii01>;
+		};
+		qsgmii02 {
+			reg = <2>;
+			qlm-mode = "0x002,qsgmii";
+			local-mac-address = [00 00 00 00 00 00];
+			phy-handle = <&qsgmii02>;
+		};
+		qsgmii03 {
+			reg = <3>;
+			qlm-mode = "0x003,qsgmii";
+			local-mac-address = [00 00 00 00 00 00];
+			phy-handle = <&qsgmii03>;
 		};
 	};
 };
