@@ -238,6 +238,7 @@ obj-$(CONFIG_USBIP) += ncurses util-linux usbip
 obj-$(CONFIG_SNORT) += xz libnfnetlink libnetfilter_queue libdnet daq pcre snort
 obj-$(CONFIG_LAGUNA) += gsp_updater
 obj-$(CONFIG_VENTANA) += gsp_updater
+obj-$(CONFIG_NEWPORT) += gsp_updater
 obj-$(CONFIG_POLARSSL) += polarssl
 #obj-$(CONFIG_UHTTPD) += cyassl uhttpd pcre lighttpd
 obj-$(CONFIG_MSTP) += mstp
