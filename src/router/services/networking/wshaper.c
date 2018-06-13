@@ -131,7 +131,7 @@ static void svqos_reset_ports(void)
 #endif
 #endif
 #endif
-#endir
+#endif
 #endif
 #endif
 #endif
