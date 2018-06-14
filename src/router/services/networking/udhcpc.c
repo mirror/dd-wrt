@@ -310,15 +310,15 @@ static int bound(void)
 		stop_udhcpd();
 		start_udhcpd();
 #endif
-#ifdef HAVE_UNBOUND
-		stop_unbound();
-		start_unbound();
-#endif
 		start_firewall();
 		stop_wland();
 		start_wshaper();
 		start_wland();
 		start_heartbeat_boot();
+#ifdef HAVE_UNBOUND
+		stop_unbound();
+		start_unbound();
+#endif
 	}
 #else
 	if (0) {
