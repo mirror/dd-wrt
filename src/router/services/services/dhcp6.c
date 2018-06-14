@@ -237,8 +237,10 @@ int dhcp6c_state_main(int argc, char **argv)
 
 	dns_to_resolv();
 
+#ifdef HAVE_RADVD
 	stop_radvd();
 	start_radvd();
+#endif
 	stop_dhcp6s();
 	start_dhcp6s();
 	return 0;
