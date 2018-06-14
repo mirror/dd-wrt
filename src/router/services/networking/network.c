@@ -4774,10 +4774,6 @@ void start_wan_done(char *wan_ifname)
 	stop_udhcpd();
 	start_udhcpd();
 #endif
-#ifdef HAVE_UNBOUND
-	stop_unbound();
-	start_unbound();
-#endif
 #ifdef HAVE_IPV6
 	start_wan6_done(wan_ifname);
 #endif
@@ -4991,6 +4987,10 @@ void start_wan_done(char *wan_ifname)
 #ifdef HAVE_SPEEDCHECKER
 	stop_speedchecker();
 	start_speedchecker();
+#endif
+#ifdef HAVE_UNBOUND
+	stop_unbound();
+	start_unbound();
 #endif
 
 #ifdef HAVE_MICRO
