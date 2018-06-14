@@ -4988,6 +4988,10 @@ void start_wan_done(char *wan_ifname)
 	stop_speedchecker();
 	start_speedchecker();
 #endif
+#ifdef HAVE_RADVD
+	stop_radvd();
+	start_radvd();
+#endif
 #ifdef HAVE_UNBOUND
 	stop_unbound();
 	start_unbound();
