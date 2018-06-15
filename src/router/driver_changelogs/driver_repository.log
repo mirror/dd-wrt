@@ -1,4 +1,28 @@
 ------------------------------------------------------------------------
+r4111 | brainslayer | 2018-06-15 07:08:51 +0200 (Fri, 15 Jun 2018) | 1 line
+
+fix mwlwifi driver for older chipsets
+------------------------------------------------------------------------
+r4110 | brainslayer | 2018-06-15 07:07:30 +0200 (Fri, 15 Jun 2018) | 1 line
+
+fix mwlwifi driver for older chipsets
+------------------------------------------------------------------------
+r4109 | brainslayer | 2018-06-15 07:07:21 +0200 (Fri, 15 Jun 2018) | 1 line
+
+fix mwlwifi driver for older chipsets
+------------------------------------------------------------------------
+r4108 | brainslayer | 2018-06-15 07:06:30 +0200 (Fri, 15 Jun 2018) | 1 line
+
+fix mwlwifi driver for older chipsets
+------------------------------------------------------------------------
+r4107 | brainslayer | 2018-06-15 07:03:02 +0200 (Fri, 15 Jun 2018) | 1 line
+
+fix mwlwifi driver for older chipsets
+------------------------------------------------------------------------
+r4106 | brainslayer | 2018-06-15 05:00:53 +0200 (Fri, 15 Jun 2018) | 1 line
+
+fix wrong rx mcs mask for chipsets with 3 or more chains
+------------------------------------------------------------------------
 r4105 | brainslayer | 2018-06-14 16:17:39 +0200 (Thu, 14 Jun 2018) | 1 line
 
 update mwlwifi drivers
