@@ -32,6 +32,7 @@
 
 #define MIN_BUF_SIZE    4096
 #define CODE_PATTERN_ERROR 9999
+#define HAVE_NEW_UPGRADE
 
 static void
 // do_upgrade_cgi(char *url, FILE *stream)
@@ -40,13 +41,17 @@ do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, we
 {
 #ifndef ANTI_FLASH
 	fprintf(stderr, "do post\n");
+#ifndef HAVE_NEW_UPGRADE
 	if (stream->upgrade_ret)
 		do_ej(METHOD_GET, handler, "Fail_u_s.asp", stream);
 	else
 		do_ej(METHOD_GET, handler, "Success_u_s.asp", stream);
+#endif
 	fprintf(stderr, "websdone\n");
 
+#ifndef HAVE_NEW_UPGRADE
 	websDone(stream, 200);
+#endif
 	fprintf(stderr, "reboot\n");
 
 	/*
@@ -125,7 +130,6 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	/*
 	 * Feed write from a temporary FIFO 
 	 */
-#define HAVE_NEW_UPGRADE
 #ifdef HAVE_NEW_UPGRADE
 	char *write_argv_buf[8];
 	eval("mkdir", "-p", "/tmp/new_root");
