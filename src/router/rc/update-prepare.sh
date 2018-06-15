@@ -70,11 +70,11 @@ for i in etc bin lib usr/lib sbin proc dev sys usr/sbin oldroot
 do
 	mkdir -p ${R}/$i
 done
-for i in /bin/busybox /bin/sh /bin/mount /bin/umount /bin/sync /bin/ls /bin/cat /bin/ps /bin/cp /bin/mv /sbin/reboot \
+for i in /bin/busybox /bin/sh /bin/mount /bin/umount /bin/sync /bin/ls /bin/cat /bin/ps /bin/cp /bin/login /bin/mv /sbin/reboot \
 		/sbin/pivot_root /usr/sbin/chroot /bin/dd \
 	/sbin/mtd \
 	/sbin/rc /sbin/event /sbin/startservice /sbin/stopservice /sbin/write /sbin/ledtool \
-	/usr/sbin/httpd /lib/services.so /usr/lib/validate.so /usr/lib/visuals.so 
+	/usr/sbin/httpd /etc/www /etc/passwd /lib/services.so /usr/lib/validate.so /usr/lib/visuals.so 
 	
 do
 	cp -a $i $R/$i
