@@ -171,7 +171,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 
 #ifndef ANTI_FLASH
 #ifdef HAVE_VENTANA
-#define HAVE_VENTANA_NEW_UPGRADE
+//#define HAVE_VENTANA_NEW_UPGRADE
 #endif
 #ifdef HAVE_VENTANA_NEW_UPGRADE
 	char upload_fifo[] = "/tmp/new_root/tmp/uploadXXXXXX";
