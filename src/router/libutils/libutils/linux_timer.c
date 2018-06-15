@@ -205,6 +205,8 @@ int dd_timer_create(clockid_t clock_id,	/* clock ID (always CLOCK_REALTIME) */
 	event = event_freelist;
 	if (event == NULL) {
 		print_event_queue();
+		dd_syslog(LOG_INFO, "eventlist is full\n");
+		return -1;
 	}
 	assert(event != NULL);
 
