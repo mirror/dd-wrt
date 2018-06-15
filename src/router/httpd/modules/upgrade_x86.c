@@ -125,7 +125,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	/*
 	 * Feed write from a temporary FIFO 
 	 */
-#define HAVE_NEW_UPGRADE
+//#define HAVE_NEW_UPGRADE
 #ifdef HAVE_NEW_UPGRADE
 	char *write_argv_buf[8];
 	eval("mkdir", "-p", "/tmp/new_root");
