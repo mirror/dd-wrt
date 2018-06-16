@@ -1,7 +1,7 @@
 #!/bin/bash
 # SPDX-License-Identifier: GPL-2.0
 #
-# Copyright (C) 2015-2017 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+# Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
 
 set -e
 shopt -s nocasematch
@@ -9,8 +9,8 @@ shopt -s extglob
 export LC_ALL=C
 
 CONFIG_FILE="$1"
-[[ $CONFIG_FILE =~ ^[a-zA-Z0-9_=+.-]{1,16}$ ]] && CONFIG_FILE="/etc/wireguard/$CONFIG_FILE.conf"
-[[ $CONFIG_FILE =~ /?([a-zA-Z0-9_=+.-]{1,16})\.conf$ ]]
+[[ $CONFIG_FILE =~ ^[a-zA-Z0-9_=+.-]{1,15}$ ]] && CONFIG_FILE="/etc/wireguard/$CONFIG_FILE.conf"
+[[ $CONFIG_FILE =~ /?([a-zA-Z0-9_=+.-]{1,15})\.conf$ ]]
 INTERFACE="${BASH_REMATCH[1]}"
 
 process_peer() {
@@ -29,8 +29,9 @@ reset_peer_section() {
 
 reset_peer_section
 while read -r line || [[ -n $line ]]; do
-	key="${line%%=*}"; key="${key##*([[:space:]])}"; key="${key%%*([[:space:]])}"
-	value="${line#*=}"; value="${value##*([[:space:]])}"; value="${value%%*([[:space:]])}"
+	stripped="${line%%\#*}"
+	key="${stripped%%=*}"; key="${key##*([[:space:]])}"; key="${key%%*([[:space:]])}"
+	value="${stripped#*=}"; value="${value##*([[:space:]])}"; value="${value%%*([[:space:]])}"
 	[[ $key == "["* ]] && { process_peer; reset_peer_section; }
 	[[ $key == "[Peer]" ]] && PEER_SECTION=1
 	if [[ $PEER_SECTION -eq 1 ]]; then
