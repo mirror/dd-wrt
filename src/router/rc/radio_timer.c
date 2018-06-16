@@ -24,7 +24,11 @@ static int radio_timer_main(int argc, char **argv)
 {
 
 	unsigned int *radiotime;	// 4 byte int number (24 bits from gui + 1 bit for midnight)
+#ifdef HAVE_MADWIFI
 	int cnt = getdevicecount();
+#else
+	int cnt = get_wl_instances();
+#endif
 	unsigned char *firsttime, *needchange;
 	radiotime = malloc(sizeof(unsigned int *) * cnt);
 	needchange = malloc(cnt);
@@ -38,7 +42,6 @@ static int radio_timer_main(int argc, char **argv)
 	do {
 		time(&tloc);	// get time in seconds since epoch
 		currtime = localtime(&tloc);	// convert seconds to date structure
-
 		if (currtime->tm_year > 100)	// ntp time must be set
 		{
 			char radio_timer_enable[32];
@@ -69,7 +72,6 @@ static int radio_timer_main(int argc, char **argv)
 
 				if (nvram_matchi(radio_timer_enable, 0))
 					radiotime[i] = 0;
-
 				/* change when min = 0  or firstime */
 				if (((needchange[i]) && currtime->tm_min == 0) || (firsttime[i])) {
 					switch (radiotime[i]) {
