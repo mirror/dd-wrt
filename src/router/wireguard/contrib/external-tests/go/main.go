@@ -1,4 +1,4 @@
-/* Copyright (C) 2015-2017 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved. */
+/* Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved. */
 
 package main
 
@@ -40,7 +40,7 @@ func main() {
 	theirPublic, _ := base64.StdEncoding.DecodeString("qRCwZSKInrMAq5sepfCdaCsRJaoLe5jhtzfiw7CjbwM=")
 	preshared, _ := base64.StdEncoding.DecodeString("FpCyhws9cxwWoV4xELtfJvjJN+zQVRPISllRWgeopVE=")
 	cs := noise.NewCipherSuite(noise.DH25519, noise.CipherChaChaPoly, noise.HashBLAKE2s)
-	hs := noise.NewHandshakeState(noise.Config{
+	hs, _ := noise.NewHandshakeState(noise.Config{
 		CipherSuite:           cs,
 		Random:                rand.Reader,
 		Pattern:               noise.HandshakeIK,
@@ -68,7 +68,7 @@ func main() {
 	initiationPacket[2] = 0                                 // Reserved
 	initiationPacket[3] = 0                                 // Reserved
 	binary.LittleEndian.PutUint32(initiationPacket[4:], 28) // Sender index: 28 (arbitrary)
-	initiationPacket, _, _ = hs.WriteMessage(initiationPacket, tai64n)
+	initiationPacket, _, _, _ = hs.WriteMessage(initiationPacket, tai64n)
 	hasher, _ := blake2s.New256(nil)
 	hasher.Write([]byte("mac1----"))
 	hasher.Write(theirPublic)
