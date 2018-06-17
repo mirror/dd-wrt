@@ -5263,19 +5263,14 @@ void start_sysinit(void)
 		break;
 	case ROUTER_NETGEAR_R6250:
 
-		if (nvram_get("pci/1/1/venid") == NULL) {
-			if (!sv_valid_hwaddr(nvram_safe_get("pci/1/1/macaddr"))
-			    || startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
-			    || !sv_valid_hwaddr(nvram_safe_get("pci/2/1/macaddr"))
-			    || startswith(nvram_safe_get("pci/2/1/macaddr"), "00:90:4C")) {
-				char mac[20];
-				strcpy(mac, nvram_safe_get("et0macaddr"));
-				MAC_ADD(mac);
-				MAC_ADD(mac);
-				nvram_set("pci/1/1/macaddr", mac);
-				MAC_ADD(mac);
-				nvram_set("pci/2/1/macaddr", mac);
-			}
+		if (nvram_get("pci/1/1/ddwrt") == NULL) {
+			char mac[20];
+			strcpy(mac, nvram_safe_get("et0macaddr"));
+			MAC_ADD(mac);
+			MAC_ADD(mac);
+			nvram_set("pci/1/1/macaddr", mac);
+			MAC_ADD(mac);
+			nvram_set("pci/2/1/macaddr", mac);
 			/*
 			 * set router's extra parameters 
 			 */
@@ -5293,7 +5288,7 @@ void start_sysinit(void)
 				nvram_nset(extra_params->value, "pci/2/1/%s", extra_params->name);
 				extra_params++;
 			}
-			nvram_set("pci/1/1/venid", "0x14E4");
+			nvram_seti("pci/1/1/ddwrt", 1);
 			nvram_commit();
 		}
 		setcaldata();
