@@ -1848,6 +1848,7 @@ cprintf("disable bss %s\n",name);
 			WL_BSSIOVAR_SET(name, "ssid", bsscfg->idx, &ssid, sizeof(ssid));
 		}
 	}
+#define MBSS_UC_IDX_MASK		(51 - 1)
 
 	fprintf(stderr,"base addr %s\n",ether_etoa((uchar *)vif_addr, eaddr));
 	if (!ure_enab) {
@@ -1859,8 +1860,8 @@ cprintf("disable bss %s\n",name);
 		for (i = 1; i < bclist->count; i++) {
 			snprintf(tmp, sizeof(tmp), "wl%d.%d_hwaddr", unit, i);
 			addr = nvram_safe_get(tmp);
-				vif_addr[5] = (vif_addr[5] & ~(max_no_vifs-i)) | ((max_no_vifs-i) & (vif_addr[5]+i));
-				fprintf(stderr,"set new addr %s\n",ether_etoa((uchar *)vif_addr, eaddr));
+				vif_addr[5] = (vif_addr[5] & ~MBSS_UC_IDX_MASK) | (MBSS_UC_IDX_MASK & (vif_addr[5]+i));
+				fprintf(stderr,"set new addr %s mask %d\n",ether_etoa((uchar *)vif_addr, eaddr), MBSS_UC_IDX_MASK);
 				nvram_set(tmp, ether_etoa((uchar *)vif_addr, eaddr));
 		}
 
