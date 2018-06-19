@@ -3022,7 +3022,7 @@ void radio_off(int idx)
 		led_control(LED_WLAN2, LED_OFF);
 	}
 	//fix ticket 2991
-	eval("startservice", "nas", "-f");
+	eval("startservice_f", "nas", "-f");
 
 }
 
@@ -3059,7 +3059,7 @@ void radio_on(int idx)
 		led_control(LED_WLAN1, LED_ON);
 		led_control(LED_WLAN2, LED_ON);
 	}
-	eval("startservice", "nas", "-f");
+	eval("startservice_f", "nas", "-f");
 	eval("startservice", "guest_nas", "-f");
 }
 

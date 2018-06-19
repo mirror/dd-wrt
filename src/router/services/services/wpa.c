@@ -345,7 +345,13 @@ extern void setupSupplicant(char *prefix);
 void start_nas(void)
 {
 	unlink("/tmp/.nas");
-
+	FILE *check = fopen("/tmp/.startnas","rb");
+	    if (check) {
+		fclose(check);
+		return;
+	    }
+	eval("touch","/tmp/.startnas");
+	sleep(3);
 	int cnt = get_wl_instances();
 	int c;
 	int deadcount;
@@ -404,7 +410,7 @@ void start_nas(void)
 
 		}
 	}
-
+	unlink("/tmp/.startnas");
 	return;
 }
 
@@ -581,6 +587,11 @@ void stop_nas(void)
 {
 	int ret = 0;
 	char name[80], *next;
+	FILE *check = fopen("/tmp/.startnas","rb");
+	    if (check) {
+		fclose(check);
+		return;
+	    }
 
 	unlink("/tmp/.nas");
 
