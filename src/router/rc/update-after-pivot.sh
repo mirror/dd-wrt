@@ -22,7 +22,12 @@ umount -l /oldroot
 cd /tmp
 if [ x$4 = x1 ]
 then
-	dd if=${FIFO} of=${MTDPART} bs=65536 conv=fsync
+	dd if=${FIFO} of=${MTDPART} bs=65536
+busybox sync
+	dd if=${FIFO} of=${MTDPART} bs=65536
+busybox sync
+	dd if=${FIFO} of=${MTDPART} bs=65536
+busybox sync
 else
 	write ${FIFO} ${MTDPART}
 fi
