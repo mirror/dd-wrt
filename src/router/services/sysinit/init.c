@@ -338,6 +338,10 @@ void start_init_start(void)
 	start_bridging();
 #endif
 	start_lan();
+#ifdef HAVE_SYSLOG
+	stop_syslog();
+	start_syslog();
+#endif
 #ifdef HAVE_IPVS
 	start_ipvs();
 #endif
@@ -362,6 +366,7 @@ void start_init_start(void)
 	start_wan_boot();
 	start_ttraff();
 
+
 	cprintf("diag STOP LED\n");
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	diag_led(DIAG, STOP_LED);
@@ -377,9 +382,7 @@ void start_init_start(void)
 	} else
 #endif
 	{
-		start_radio_off();
 		start_radio_on();
-
 	}
 	start_radio_timer();
 #ifdef HAVE_EMF
@@ -392,10 +395,6 @@ void start_init_start(void)
 	start_wifidog();
 #endif
 	cprintf("start syslog\n");
-#ifdef HAVE_SYSLOG
-	stop_syslog();
-	start_syslog();
-#endif
 	system("/etc/postinit&");
 	start_httpd();
 	led_control(LED_DIAG, LED_OFF);
