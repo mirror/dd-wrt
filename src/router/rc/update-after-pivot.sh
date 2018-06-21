@@ -1,4 +1,5 @@
-#!/bin/sh -x
+#!/bin/sh
+
 if [ x$1 = x ]
 then
 	echo "No file/fifo given, exit"
@@ -22,12 +23,18 @@ umount -l /oldroot
 cd /tmp
 if [ x$4 = x1 ]
 then
+	echo "write first time"
 	dd if=${FIFO} of=${MTDPART} bs=65536
-busybox sync
+	echo "sync"
+	busybox sync
+	echo "write second time"
 	dd if=${FIFO} of=${MTDPART} bs=65536
-busybox sync
+	echo "sync"
+	busybox sync
+	echo "write third time"
 	dd if=${FIFO} of=${MTDPART} bs=65536
-busybox sync
+	echo "sync"
+	busybox sync
 else
 	write ${FIFO} ${MTDPART}
 fi
