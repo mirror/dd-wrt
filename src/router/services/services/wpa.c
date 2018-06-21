@@ -300,16 +300,20 @@ char *getKey(char *prefix)
 void start_nas_lan(int c)
 {
 	char wlname[32];
+	char *next;
+	char var[80];
+	char vifname[32];
 
 	sprintf(wlname, "wl%d", c);
 	start_radius(wlname);	// quick fix, should be vif capable in future
+	dd_syslog(LOG_INFO, "start nas for %s\n", wlname);
 	start_nas_single("lan", wlname);
 
-	char *next;
-	char var[80];
-	char *vifs = nvram_nget("wl%d_vifs", c);
+	sprintf(vifname, "wl%d_vifs", c);
+	char *vifs = nvram_safe_get(vifname);
 
 	foreach(var, vifs, next) {
+		dd_syslog(LOG_INFO, "start nas for %s\n", var);
 		start_nas_single("lan", var);
 	}
 }
@@ -345,12 +349,12 @@ extern void setupSupplicant(char *prefix);
 void start_nas(void)
 {
 	unlink("/tmp/.nas");
-	FILE *check = fopen("/tmp/.startnas","rb");
-	    if (check) {
+	FILE *check = fopen("/tmp/.startnas", "rb");
+	if (check) {
 		fclose(check);
 		return;
-	    }
-	eval("touch","/tmp/.startnas");
+	}
+	eval("touch", "/tmp/.startnas");
 	sleep(3);
 	int cnt = get_wl_instances();
 	int c;
@@ -392,7 +396,7 @@ void start_nas(void)
 				start_nas_wan(c);
 
 		} else {
-			cprintf("start nas lan\n");
+			dd_syslog(LOG_INFO, "start nas lan\n");
 			start_nas_lan(c);
 
 			int s;
@@ -445,6 +449,7 @@ void start_nas_single(char *type, char *prefix)
 
 	sprintf(apmode, "%s_mode", prefix);
 	if (!strcmp(type, "wan") && nvram_match(apmode, "ap")) {
+		dd_syslog(LOG_INFO, "type is wan but if is ap, ignore nas\n");
 		return;
 	}
 	// if (!strcmp (type, "lan"))
@@ -478,8 +483,12 @@ void start_nas_single(char *type, char *prefix)
 			led_control(LED_SEC1, LED_ON);
 	}
 
-	if (auth_mode == NULL)
+	if (auth_mode == NULL) {
+		dd_syslog(LOG_INFO, "punching vif %s\n", iface);
+		eval("wl", "-i", iface, "bss", "down");
+		eval("wl", "-i", iface, "bss", "up");
 		return;		// no nas required
+	}
 	if (strcmp(nvram_safe_get(apmode), "sta")
 	    && strcmp(nvram_safe_get(apmode), "wet")
 	    && strcmp(nvram_safe_get(apmode), "apstawet")
@@ -587,11 +596,11 @@ void stop_nas(void)
 {
 	int ret = 0;
 	char name[80], *next;
-	FILE *check = fopen("/tmp/.startnas","rb");
-	    if (check) {
+	FILE *check = fopen("/tmp/.startnas", "rb");
+	if (check) {
 		fclose(check);
 		return;
-	    }
+	}
 
 	unlink("/tmp/.nas");
 
