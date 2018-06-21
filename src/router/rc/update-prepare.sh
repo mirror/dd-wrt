@@ -74,7 +74,7 @@ for i in /bin/busybox /bin/sh /bin/mount /bin/umount /bin/sync /bin/ls /bin/cat 
 		/sbin/pivot_root /usr/sbin/chroot /bin/dd \
 	/sbin/mtd \
 	/sbin/rc /sbin/event /sbin/startservice /sbin/stopservice /sbin/write /sbin/ledtool \
-	/usr/sbin/httpd /etc/passwd /lib/services.so /usr/lib/validate.so /usr/lib/visuals.so 
+	/usr/sbin/httpd /lib/services.so /usr/lib/validate.so /usr/lib/visuals.so 
 	
 do
 	cp -a $i $R/$i
