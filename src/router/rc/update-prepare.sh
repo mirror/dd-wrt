@@ -1,4 +1,4 @@
-#!/bin/sh -x
+#!/bin/sh
 #
 # Working update script vor Ventana for use with web and file
 # for now only for MUSL
