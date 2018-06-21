@@ -3035,7 +3035,6 @@ void radio_on(int idx)
 
 		if (!nvram_nmatch("disabled", "wl%d_net_mode", idx)) {
 			fprintf(stderr, "radio_on(%d) interface: %s \n", idx, get_wl_instance_name(idx));
-			eval("wl", "-i", get_wl_instance_name(idx), "radio", "off");
 			eval("wl", "-i", get_wl_instance_name(idx), "radio", "on");
 		}
 
@@ -3051,7 +3050,6 @@ void radio_on(int idx)
 		int ii;
 		for (ii = 0; ii < cc; ii++) {
 			if (!nvram_nmatch("disabled", "wl%d_net_mode", ii)) {
-				eval("wl", "-i", get_wl_instance_name(ii), "radio", "off");
 				eval("wl", "-i", get_wl_instance_name(ii), "radio", "on");
 			}
 		}
