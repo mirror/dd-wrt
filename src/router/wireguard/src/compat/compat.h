@@ -585,7 +585,7 @@ static inline void *skb_put_data(struct sk_buff *skb, const void *data, unsigned
 }
 #endif
 
-/* https://lkml.org/lkml/2017/6/23/790 */
+/* https://lkml.kernel.org/r/20170624021727.17835-1-Jason@zx2c4.com */
 #if IS_ENABLED(CONFIG_NF_CONNTRACK)
 #include <linux/ip.h>
 #include <linux/icmpv6.h>
@@ -615,6 +615,59 @@ static inline void new_icmpv6_send(struct sk_buff *skb, u8 type, u8 code, __u32 
 }
 #define icmp_send(a,b,c,d) new_icmp_send(a,b,c,d)
 #define icmpv6_send(a,b,c,d) new_icmpv6_send(a,b,c,d)
+#endif
+
+/* https://lkml.kernel.org/r/20180618234347.13282-1-Jason@zx2c4.com */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 2, 0)
+#include <linux/random.h>
+#include <linux/slab.h>
+struct rng_is_initialized_callback {
+	struct random_ready_callback cb;
+	atomic_t *rng_state;
+};
+static inline void rng_is_initialized_callback(struct random_ready_callback *cb)
+{
+	struct rng_is_initialized_callback *rdy = container_of(cb, struct rng_is_initialized_callback, cb);
+	atomic_set(rdy->rng_state, 2);
+	kfree(rdy);
+}
+static inline bool rng_is_initialized(void)
+{
+	static atomic_t rng_state = ATOMIC_INIT(0);
+
+	if (atomic_read(&rng_state) == 2)
+		return true;
+
+	if (atomic_cmpxchg(&rng_state, 0, 1) == 0) {
+		int ret;
+		struct rng_is_initialized_callback *rdy = kmalloc(sizeof(*rdy), GFP_ATOMIC);
+		if (!rdy) {
+			atomic_set(&rng_state, 0);
+			return false;
+		}
+		rdy->cb.owner = THIS_MODULE;
+		rdy->cb.func = rng_is_initialized_callback;
+		rdy->rng_state = &rng_state;
+		ret = add_random_ready_callback(&rdy->cb);
+		if (ret)
+			kfree(rdy);
+		if (ret == -EALREADY) {
+			atomic_set(&rng_state, 2);
+			return true;
+		} else if (ret)
+			atomic_set(&rng_state, 0);
+		return false;
+	}
+	return false;
+}
+#else
+/* This is a disaster. Without this API, we really have no way of
+ * knowing if it's initialized. We just return that it has and hope
+ * for the best... */
+static inline bool rng_is_initialized(void)
+{
+	return true;
+}
 #endif
 
 /* PaX compatibility */
