@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0
 #
-# Copyright (C) 2015-2017 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+# Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
 
 PWD := $(shell pwd)
 
@@ -14,18 +14,16 @@ endif
 ARCH := $(firstword $(subst -, ,$(CBUILD)))
 
 # Set these from the environment to override
-KERNEL_VERSION ?= 4.14.2
+KERNEL_VERSION ?= 4.17.2
 BUILD_PATH ?= $(PWD)/../../../qemu-build/$(ARCH)
 DISTFILES_PATH ?= $(PWD)/distfiles
 DEBUG_KERNEL ?= no
 NR_CPUS ?= 4
 
-DOWNLOAD := wget -O
-# DOWNLOAD := curl -f -o
 MIRROR := https://download.wireguard.com/qemu-test/distfiles/
 
 WIREGUARD_SOURCES := $(wildcard ../../*.c ../../*.h ../../selftest/*.h ../../crypto/*.c ../../crypto/*.h ../../crypto/*.S ../../compat/*.h)
-TOOLS_SOURCES := $(wildcard ../../tools/*.c ../../tools/*.h ../../uapi/*.h)
+TOOLS_SOURCES := $(wildcard ../../tools/*.c ../../tools/*.h ../../uapi/*.h ../../crypto/curve25519-hacl64.h ../../crypto/curve25519-fiat32.h)
 
 default: qemu
 
@@ -41,7 +39,7 @@ endef
 define file_download =
 $(DISTFILES_PATH)/$(1):
 	mkdir -p $(DISTFILES_PATH)
-	flock -x $$@.lock -c '[ -f $$@ ] && exit 0; $(DOWNLOAD) $$@ $(MIRROR)$(1) || $(DOWNLOAD) $$@ $(2)$(1) || rm -f $$@'
+	flock -x $$@.lock -c '[ -f $$@ ] && exit 0; wget -O $$@ $(MIRROR)$(1) || wget -t inf --retry-on-http-error=404 -O $$@ $(2)$(1) || rm -f $$@'
 endef
 
 ifeq ($(findstring -rc,$(KERNEL_VERSION)),)
@@ -54,7 +52,7 @@ $(eval $(call tar_download,KERNEL,linux,$(KERNEL_VERSION),.tar.gz,$(KERNEL_URL_D
 $(eval $(call tar_download,MUSL,musl,1.1.16,.tar.gz,https://www.musl-libc.org/releases/))
 $(eval $(call tar_download,LIBMNL,libmnl,1.0.4,.tar.bz2,https://www.netfilter.org/projects/libmnl/files/))
 $(eval $(call tar_download,IPERF,iperf,3.1.7,.tar.gz,http://downloads.es.net/pub/iperf/))
-$(eval $(call tar_download,BASH,bash,4.4.12,.tar.gz,https://ftp.gnu.org/gnu/bash/))
+$(eval $(call tar_download,BASH,bash,4.4.18,.tar.gz,https://ftp.gnu.org/gnu/bash/))
 $(eval $(call tar_download,IPROUTE2,iproute2,4.13.0,.tar.gz,https://www.kernel.org/pub/linux/utils/net/iproute2/))
 $(eval $(call tar_download,IPTABLES,iptables,1.6.1,.tar.bz2,https://www.netfilter.org/projects/iptables/files/))
 $(eval $(call tar_download,NMAP,nmap,7.60,.tar.bz2,https://nmap.org/dist/))
@@ -65,12 +63,16 @@ export CPPFLAGS := -I$(BUILD_PATH)/include
 
 ifeq ($(CHOST),$(CBUILD))
 CROSS_COMPILE_FLAG := --host=$(CHOST)
+NOPIE_GCC := gcc -fno-PIE
 CFLAGS += -march=native
+OMIT_AVX512 := $(shell gcc -march=native -Q --help=target | sed -n 's/.*\-m\(avx512[^ ]*\).*\[enabled\].*/-mno-\1/p')
+CFLAGS += $(OMIT_AVX512)
 STRIP := strip
 else
 $(info Cross compilation: building for $(CBUILD) using $(CHOST))
 CROSS_COMPILE_FLAG := --build=$(CBUILD) --host=$(CHOST)
 export CROSS_COMPILE=$(CBUILD)-
+NOPIE_GCC := $(CBUILD)-gcc -fno-PIE
 STRIP := $(CBUILD)-strip
 endif
 ifeq ($(ARCH),aarch64)
@@ -157,8 +159,18 @@ else
 QEMU_MACHINE := -cpu 24Kf -machine malta -smp 1
 CFLAGS += -march=mips32r2 -EL
 endif
+else ifeq ($(ARCH),powerpc)
+QEMU_ARCH := ppc
+KERNEL_ARCH := powerpc
+KERNEL_BZIMAGE := $(KERNEL_PATH)/arch/powerpc/boot/uImage
+ifeq ($(CHOST),$(CBUILD))
+QEMU_MACHINE := -cpu host,accel=kvm -machine ppce500
 else
-$(error I only build: x86_64, i686, arm, aarch64, mips, mipsel, mips64, mips64el)
+QEMU_MACHINE := -machine ppce500
+endif
+CFLAGS += -mcpu=powerpc -mlong-double-64 -msecure-plt
+else
+$(error I only build: x86_64, i686, arm, aarch64, mips, mipsel, mips64, mips64el, powerpc)
 endif
 
 REAL_CC := $(CBUILD)-gcc
@@ -220,7 +232,7 @@ $(KERNEL_PATH)/.config: kernel.config arch/$(QEMU_ARCH).config | $(KERNEL_PATH)/
 	[ "$(DEBUG_KERNEL)" != "yes" ] || ( export ARCH=$(KERNEL_ARCH); cd $(KERNEL_PATH) && scripts/kconfig/merge_config.sh -n .config $(PWD)/debug.config )
 
 $(KERNEL_BZIMAGE): $(KERNEL_PATH)/.config $(BUILD_PATH)/init-cpio-spec.txt $(MUSL_PATH)/lib/libc.so $(IPERF_PATH)/src/iperf3 $(BUILD_PATH)/tools/wg $(IPUTILS_PATH)/ping $(BASH_PATH)/bash $(IPROUTE2_PATH)/misc/ss $(IPROUTE2_PATH)/ip/ip $(IPTABLES_PATH)/iptables/xtables-multi $(NMAP_PATH)/ncat/ncat $(BUILD_PATH)/init ../netns.sh $(WIREGUARD_SOURCES) $(TOOLS_SOURCES)
-	LOCALVERSION="" $(MAKE) -C $(KERNEL_PATH) ARCH=$(KERNEL_ARCH) CROSS_COMPILE=$(CROSS_COMPILE)
+	LOCALVERSION="" $(MAKE) -C $(KERNEL_PATH) ARCH=$(KERNEL_ARCH) CROSS_COMPILE=$(CROSS_COMPILE) CC="$(NOPIE_GCC)"
 
 $(BUILD_PATH)/include/linux/.installed: | $(KERNEL_PATH)/.config
 	LOCALVERSION="" $(MAKE) -C $(KERNEL_PATH) INSTALL_HDR_PATH=$(BUILD_PATH) ARCH=$(KERNEL_ARCH) CROSS_COMPILE=$(CROSS_COMPILE) headers_install
@@ -265,7 +277,7 @@ $(LIBMNL_PATH)/src/.libs/libmnl.a: | $(LIBMNL_PATH)/.installed $(USERSPACE_DEPS)
 
 $(BUILD_PATH)/tools/wg: $(TOOLS_SOURCES) | $(LIBMNL_PATH)/src/.libs/libmnl.a $(USERSPACE_DEPS)
 	mkdir -p $(BUILD_PATH)
-	cp -pr ../../uapi ../../tools $(BUILD_PATH)/
+	cp -pr ../../uapi ../../crypto ../../tools $(BUILD_PATH)/
 	$(MAKE) -C $(BUILD_PATH)/tools clean
 	LDFLAGS="$(LDFLAGS) -L$(LIBMNL_PATH)/src/.libs" $(MAKE) -C $(BUILD_PATH)/tools LIBMNL_CFLAGS="-I$(LIBMNL_PATH)/include" LIBMNL_LDLIBS="-lmnl" wg
 	$(STRIP) -s $@
