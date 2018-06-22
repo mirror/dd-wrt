@@ -1,7 +1,7 @@
 #!/bin/bash
 # SPDX-License-Identifier: GPL-2.0
 #
-# Copyright (C) 2015-2017 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+# Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
 #
 # This script tests the below topology:
 #
@@ -441,7 +441,7 @@ ip0 link del wg0
 
 ! n0 wg show doesnotexist || false
 
-n0 ip link add wg0 type wireguard
+ip0 link add wg0 type wireguard
 n0 wg set wg0 private-key <(echo "$key1") peer "$pub2" preshared-key <(echo "$psk")
 [[ $(n0 wg show wg0 private-key) == "$key1" ]]
 [[ $(n0 wg show wg0 preshared-keys) == "$pub2	$psk" ]]
@@ -457,7 +457,7 @@ n0 wg set wg0 peer "$pub2"
 n0 wg set wg0 private-key <(echo "$key1")
 n0 wg set wg0 peer "$pub2"
 [[ $(n0 wg show wg0 peers) == "$pub2" ]]
-n0 ip link del wg0
+ip0 link del wg0
 
 declare -A objects
 while read -t 0.1 -r line 2>/dev/null || [[ $? -ne 142 ]]; do
