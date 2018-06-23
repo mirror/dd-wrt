@@ -64,8 +64,7 @@
 
 // tofu
 
-static void
-do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, webs_t stream);
+static void do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, webs_t stream);
 static int start_validator(char *name, webs_t wp, char *value, struct variable *v);
 static char *websGetVar(webs_t wp, char *var, char *d);
 static int websGetVari(webs_t wp, char *var, int d);
@@ -1531,11 +1530,11 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 		killall("udhcpc", SIGKILL);
 #ifdef HAVE_TMK
 #ifdef HAVE_CAMBRIA
-	eval("/sbin/kmtdefaults.sh", "noreboot");
-	do_ej(METHOD_GET, NULL, "Reboot.asp", wp);
-	websDone(wp, 200);
-	eval("reboot");
-	eval("event", "5", "1", "15");
+		eval("/sbin/kmtdefaults.sh", "noreboot");
+		do_ej(METHOD_GET, NULL, "Reboot.asp", wp);
+		websDone(wp, 200);
+		eval("reboot");
+		eval("event", "5", "1", "15");
 #endif
 #endif
 #ifdef HAVE_X86
@@ -1749,7 +1748,7 @@ char ezc_version[128];
 
 // #endif
 
-static void				// support GET and POST 2003-08-22
+static void			// support GET and POST 2003-08-22
 do_apply_post(char *url, webs_t stream, int len, char *boundary)
 {
 	int count;
@@ -2468,7 +2467,7 @@ static void ttraff_backup(unsigned char method, struct mime_handler *handler, ch
 	fprintf(out, "TRAFF-DATA\n");
 	FILE *fp = popen("nvram show | grep traff-", "rb");
 	if (!fp)
-	    return;
+		return;
 	while (!feof(fp))
 		putc(getc(fp), out);
 	pclose(fp);
