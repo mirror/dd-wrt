@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0
  *
- * Copyright (C) 2015-2017 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+ * Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  */
 
 #ifndef _WG_BLAKE2S_H
@@ -66,7 +66,7 @@ static inline void blake2s_final(struct blake2s_state *state, u8 *out, size_t ou
 }
 
 
-static inline void blake2s(u8 *out, const u8 *in, const u8 *key, const size_t outlen, size_t inlen, const size_t keylen)
+static inline void blake2s(u8 *out, const u8 *in, const u8 *key, const size_t outlen, const size_t inlen, const size_t keylen)
 {
 	struct blake2s_state state;
 
