@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0
  *
- * Copyright (C) 2015-2017 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+ * Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  */
 
 #include "netlink.h"
@@ -435,12 +435,14 @@ static int set_device(struct sk_buff *skb, struct genl_info *info)
 			}
 		}
 
+		down_write(&wg->static_identity.lock);
 		noise_set_static_identity_private_key(&wg->static_identity, private_key);
 		list_for_each_entry_safe(peer, temp, &wg->peer_list, peer_list) {
 			if (!noise_precompute_static_static(peer))
 				peer_remove(peer);
 		}
 		cookie_checker_precompute_device_keys(&wg->cookie_checker);
+		up_write(&wg->static_identity.lock);
 	}
 
 	if (info->attrs[WGDEVICE_A_PEERS]) {

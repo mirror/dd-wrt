@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0
  *
- * Copyright (C) 2015-2017 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+ * Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  *
  * Original author: Samuel Neves <sneves@dei.uc.pt>
  */
@@ -108,8 +108,8 @@ void blake2s_init_key(struct blake2s_state *state, const size_t outlen, const vo
 #include <asm/processor.h>
 #include <asm/fpu/api.h>
 //#include <asm/simd.h>
-static bool blake2s_use_avx __read_mostly;
-static bool blake2s_use_avx512 __read_mostly;
+static bool blake2s_use_avx __ro_after_init;
+static bool blake2s_use_avx512 __ro_after_init;
 void __init blake2s_fpu_init(void)
 {
 #ifndef CONFIG_UML
@@ -120,16 +120,16 @@ void __init blake2s_fpu_init(void)
 #endif
 }
 #ifdef CONFIG_AS_AVX
-asmlinkage void blake2s_compress_avx(struct blake2s_state *state, const u8 *block, size_t nblocks, u32 inc);
+asmlinkage void blake2s_compress_avx(struct blake2s_state *state, const u8 *block, const size_t nblocks, const u32 inc);
 #endif
 #ifdef CONFIG_AS_AVX512
-asmlinkage void blake2s_compress_avx512(struct blake2s_state *state, const u8 *block, size_t nblocks, u32 inc);
+asmlinkage void blake2s_compress_avx512(struct blake2s_state *state, const u8 *block, const size_t nblocks, const u32 inc);
 #endif
 #else
 void __init blake2s_fpu_init(void) { }
 #endif
 
-static inline void blake2s_compress(struct blake2s_state *state, const u8 *block, size_t nblocks, u32 inc)
+static inline void blake2s_compress(struct blake2s_state *state, const u8 *block, size_t nblocks, const u32 inc)
 {
 	u32 m[16];
 	u32 v[16];

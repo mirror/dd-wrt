@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0
  *
- * Copyright (C) 2015-2017 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+ * Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  */
 
 #include "noise.h"
@@ -42,17 +42,16 @@ void __init noise_init(void)
 	blake2s_final(&blake, handshake_init_hash, NOISE_HASH_LEN);
 }
 
+/* Must hold peer->handshake.static_identity->lock */
 bool noise_precompute_static_static(struct wireguard_peer *peer)
 {
 	bool ret = true;
-	down_read(&peer->handshake.static_identity->lock);
 	down_write(&peer->handshake.lock);
 	if (peer->handshake.static_identity->has_identity)
 		ret = curve25519(peer->handshake.precomputed_static_static, peer->handshake.static_identity->static_private, peer->handshake.remote_static);
 	else
 		memset(peer->handshake.precomputed_static_static, 0, NOISE_PUBLIC_KEY_LEN);
 	up_write(&peer->handshake.lock);
-	up_read(&peer->handshake.static_identity->lock);
 	return ret;
 }
 
@@ -227,12 +226,11 @@ bool noise_received_with_keypair(struct noise_keypairs *keypairs, struct noise_k
 	return true;
 }
 
+/* Must hold static_identity->lock */
 void noise_set_static_identity_private_key(struct noise_static_identity *static_identity, const u8 private_key[NOISE_PUBLIC_KEY_LEN])
 {
-	down_write(&static_identity->lock);
 	memcpy(static_identity->static_private, private_key, NOISE_PUBLIC_KEY_LEN);
 	static_identity->has_identity = curve25519_generate_public(static_identity->static_public, private_key);
-	up_write(&static_identity->lock);
 }
 
 /* This is Hugo Krawczyk's HKDF:
@@ -372,6 +370,11 @@ bool noise_handshake_create_initiation(struct message_handshake_initiation *dst,
 	u8 key[NOISE_SYMMETRIC_KEY_LEN];
 	bool ret = false;
 
+	/* We need to wait for crng _before_ taking any locks, since curve25519_generate_secret
+	 * uses get_random_bytes_wait.
+	 */
+	wait_for_random_bytes();
+
 	down_read(&handshake->static_identity->lock);
 	down_write(&handshake->lock);
 
@@ -489,6 +492,11 @@ bool noise_handshake_create_response(struct message_handshake_response *dst, str
 {
 	bool ret = false;
 	u8 key[NOISE_SYMMETRIC_KEY_LEN];
+
+	/* We need to wait for crng _before_ taking any locks, since curve25519_generate_secret
+	 * uses get_random_bytes_wait.
+	 */
+	wait_for_random_bytes();
 
 	down_read(&handshake->static_identity->lock);
 	down_write(&handshake->lock);
