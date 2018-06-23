@@ -110,6 +110,7 @@ static void checknas(void)	// for broadcom v24 only
 	{
 		eval("stopservice", "nas");
 		eval("startservice", "nas", "-f");
+		eval("startservice", "wlconf", "-f");
 	}
 
 	return;
