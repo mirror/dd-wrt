@@ -995,7 +995,8 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	}
 
 	if (vapid > 0) {
-		if (getRouterBrand() == ROUTER_WRT_3200ACM) {
+		int brand = getRouterBrand();
+		if (brand == ROUTER_WRT_3200ACM || brand == ROUTER_WRT_32X) {
 			hwbuff[0] |= 0x2;
 			hwbuff[5] += vapid & 0xf;
 		} else {
