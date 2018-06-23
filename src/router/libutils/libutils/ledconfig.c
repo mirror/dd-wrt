@@ -1425,7 +1425,7 @@ static void getledconfig(struct ledconfig *cfg)
 		//cfg->diag_gpio = 0x103;    // power led orange
 		cfg->diag_gpio = 0x001;	// Netgear logo
 		//emblem0_gpio = 0x001; // NETGEAR Emblem       
-		cfg->connected_gpio = 0x10f;       // wan led green
+		cfg->connected_gpio = 0x10f;	// wan led green
 		cfg->wlan0_gpio = 0x10b;	// radio led blue
 		cfg->usb_gpio = 0x108;	// usb led green
 		//cfg->usb_power = 0x000;    // usb enable

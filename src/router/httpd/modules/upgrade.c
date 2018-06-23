@@ -53,8 +53,7 @@ static void set_upgrade_ret(webs_t stream, int result)
 	}
 }
 
-static void
-do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)	// jimmy, https,
+static void do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)	// jimmy, https,
 							// 8/6/2003
 {
 #ifndef ANTI_FLASH

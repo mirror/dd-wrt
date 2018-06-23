@@ -1321,15 +1321,13 @@ int route_manip(int cmd, char *name, int metric, char *dst, char *gateway, char 
 
 int route_add(char *name, int metric, char *dst, char *gateway, char *genmask)
 {
-	if (nvram_matchi("console_debug", 1))
-		fprintf(stderr, "route_add: if:%s dst:%s gw: %s mask: %s \n", name, dst, gateway, genmask);
+	dd_debug(DEBUG_CONSOLE, "route_add: if:%s dst:%s gw: %s mask: %s \n", name, dst, gateway, genmask);
 	return route_manip(SIOCADDRT, name, metric, dst, gateway, genmask);
 }
 
 int route_del(char *name, int metric, char *dst, char *gateway, char *genmask)
 {
-	if (nvram_matchi("console_debug", 1))
-		fprintf(stderr, "route_del: if:%s dst:%s gw: %s mask: %s \n", name, dst, gateway, genmask);
+	dd_debug(DEBUG_CONSOLE, "route_del: if:%s dst:%s gw: %s mask: %s \n", name, dst, gateway, genmask);
 	return route_manip(SIOCDELRT, name, metric, dst, gateway, genmask);
 }
 

@@ -602,7 +602,7 @@ int internal_getRouterBrand()
 		}
 
 	}
-	
+
 	if (boardnum == 32 && nvram_match("boardtype", "0x0665")
 	    && nvram_match("boardrev", "0x1101")) {
 		setRouter("Netgear R8000");
@@ -1881,7 +1881,7 @@ int internal_getRouterBrand()
 			static char devicename[64];
 			sprintf(devicename, "Ubiquiti %s", dev[devcnt].devicename);
 			if (dev[devcnt].gpiolock != -1) {
-				set_gpio(dev[devcnt].gpiolock, 0);	
+				set_gpio(dev[devcnt].gpiolock, 0);
 			}
 			setRouter(devicename);
 			return dev[devcnt].dddev;
