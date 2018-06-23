@@ -128,7 +128,7 @@ int system2(char *command)
 
 	if (nvram_matchi("console_debug", 1)) {
 		fprintf(stderr, "%s\n", command);
-		dd_syslog(LOG_INFO, "%s:%s",__func__,command);
+		dd_syslog(LOG_INFO, "%s:%s", __func__, command);
 		flog("%s\n", command);
 	}
 
@@ -208,14 +208,14 @@ int _evalpid(char *const argv[], char *path, int timeout, int *ppid)
 
 	if (nvram_matchi("console_debug", 1)) {
 		int i = 0;
-		char buf[1024]={0};
+		char buf[256] = { 0 };
 		if (argv[i])
-		while (argv[i] != NULL) {
-			fprintf(stderr, "%s ", argv[i]);
-			dd_sprintf(buf,"%s%s ",buf, argv[i++]);
-			flog("%s ", argv[i - 1]);
-		}
-		dd_syslog(LOG_INFO, "%s:%s",__func__,buf);
+			while (argv[i] != NULL) {
+				fprintf(stderr, "%s ", argv[i]);
+				dd_snprintf(buf, sizeof(buf), "%s%s ", buf, argv[i++]);
+				flog("%s ", argv[i - 1]);
+			}
+		dd_syslog(LOG_INFO, "%s:%s", __func__, buf);
 		fprintf(stderr, "\n");
 		flog("\n");
 	}
