@@ -354,6 +354,7 @@ void start_nas(void)
 		fclose(check);
 		return;
 	}
+	char *iface;
 	eval("touch", "/tmp/.startnas");
 	sleep(3);
 	int cnt = get_wl_instances();
@@ -414,6 +415,9 @@ void start_nas(void)
 
 		}
 	}
+//	iface = get_wl_instance_name(c);
+//	wlconf_up(iface);	// double tip
+//	}
 	unlink("/tmp/.startnas");
 	return;
 }
@@ -484,9 +488,6 @@ void start_nas_single(char *type, char *prefix)
 	}
 
 	if (auth_mode == NULL) {
-		dd_syslog(LOG_INFO, "punching vif %s\n", iface);
-		eval("wl", "-i", iface, "bss", "down");
-		eval("wl", "-i", iface, "bss", "up");
 		return;		// no nas required
 	}
 	if (strcmp(nvram_safe_get(apmode), "sta")
@@ -584,9 +585,6 @@ void start_nas_single(char *type, char *prefix)
 
 	cprintf("done\n");
 
-	if (!strcmp(nvram_safe_get(apmode), "wet")) {
-		wlconf_up(iface);	// touble tip
-	}
 
 	return;
 
