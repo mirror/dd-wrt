@@ -73,7 +73,7 @@ fail:
 	return NULL;
 }
 
-struct dst_entry *dst_cache_get(struct dst_cache *dst_cache)
+static struct dst_entry *dst_cache_get(struct dst_cache *dst_cache)
 {
 	if (!dst_cache->cache)
 		return NULL;
@@ -81,7 +81,7 @@ struct dst_entry *dst_cache_get(struct dst_cache *dst_cache)
 	return dst_cache_per_cpu_get(dst_cache, this_cpu_ptr(dst_cache->cache));
 }
 
-struct rtable *dst_cache_get_ip4(struct dst_cache *dst_cache, __be32 *saddr)
+static struct rtable *dst_cache_get_ip4(struct dst_cache *dst_cache, __be32 *saddr)
 {
 	struct dst_cache_pcpu *idst;
 	struct dst_entry *dst;
@@ -98,7 +98,7 @@ struct rtable *dst_cache_get_ip4(struct dst_cache *dst_cache, __be32 *saddr)
 	return container_of(dst, struct rtable, dst);
 }
 
-void dst_cache_set_ip4(struct dst_cache *dst_cache, struct dst_entry *dst,
+static void dst_cache_set_ip4(struct dst_cache *dst_cache, struct dst_entry *dst,
 		       __be32 saddr)
 {
 	struct dst_cache_pcpu *idst;
@@ -112,7 +112,7 @@ void dst_cache_set_ip4(struct dst_cache *dst_cache, struct dst_entry *dst,
 }
 
 #if IS_ENABLED(CONFIG_IPV6)
-void dst_cache_set_ip6(struct dst_cache *dst_cache, struct dst_entry *dst,
+static void dst_cache_set_ip6(struct dst_cache *dst_cache, struct dst_entry *dst,
 		       const struct in6_addr *addr)
 {
 	struct dst_cache_pcpu *idst;
@@ -126,7 +126,7 @@ void dst_cache_set_ip6(struct dst_cache *dst_cache, struct dst_entry *dst,
 	idst->in6_saddr = *addr;
 }
 
-struct dst_entry *dst_cache_get_ip6(struct dst_cache *dst_cache,
+static struct dst_entry *dst_cache_get_ip6(struct dst_cache *dst_cache,
 				    struct in6_addr *saddr)
 {
 	struct dst_cache_pcpu *idst;
@@ -145,7 +145,7 @@ struct dst_entry *dst_cache_get_ip6(struct dst_cache *dst_cache,
 }
 #endif
 
-int dst_cache_init(struct dst_cache *dst_cache, gfp_t gfp)
+static int dst_cache_init(struct dst_cache *dst_cache, gfp_t gfp)
 {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
 	BUG_ON(gfp & GFP_ATOMIC);
@@ -161,7 +161,7 @@ int dst_cache_init(struct dst_cache *dst_cache, gfp_t gfp)
 	return 0;
 }
 
-void dst_cache_destroy(struct dst_cache *dst_cache)
+static void dst_cache_destroy(struct dst_cache *dst_cache)
 {
 	int i;
 
