@@ -125,6 +125,7 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->ses_gpio = 0x009;
 		break;
 	case ROUTER_WRT_3200ACM:
+	case ROUTER_WRT_32X:
 //              cfg->usb_power = 0x02f;
 		cfg->power_gpio = 0x000;
 		cfg->diag_gpio = 0x100;

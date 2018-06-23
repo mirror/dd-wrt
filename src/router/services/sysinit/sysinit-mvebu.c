@@ -178,6 +178,9 @@ void start_sysinit(void)
 	if (brand == ROUTER_WRT_3200ACM) {
 		sysprintf("echo disk-activity > /sys/class/leds/rango\\:white\\:sata/brightness");
 	}
+	if (brand == ROUTER_WRT_32X) {
+		sysprintf("echo disk-activity > /sys/class/leds/venom\\:white\\:sata/brightness");
+	}
 
 	return;
 }
