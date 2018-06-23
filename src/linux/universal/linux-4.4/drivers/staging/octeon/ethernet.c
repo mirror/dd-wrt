@@ -760,9 +760,8 @@ static int cvm_oct_probe(struct platform_device *pdev)
 		int port_index;
 
 		interface = i;
-		if (cvmx_sysinfo_get()->board_type == CVMX_BOARD_TYPE_UBNT_E200 || cvmx_sysinfo_get()->board_type == CVMX_BOARD_TYPE_UBNT_E220)
+		if (cvmx_sysinfo_get()->board_type == CVMX_BOARD_TYPE_UBNT_E200)
 			interface = num_interfaces - (i + 1);
-
 		num_ports = cvmx_helper_ports_on_interface(interface);
 		imode = cvmx_helper_interface_get_mode(interface);
 		for (port_index = 0,
