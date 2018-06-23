@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0
  *
- * Copyright (C) 2015-2017 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+ * Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  */
 
 #include "queueing.h"
@@ -179,7 +179,7 @@ void packet_handshake_receive_worker(struct work_struct *work)
 	}
 }
 
-static inline void receive_keep_key_fresh(struct wireguard_peer *peer)
+static inline void rcv_keep_key_fresh(struct wireguard_peer *peer)
 {
 	struct noise_keypair *keypair;
 	bool send = false;
@@ -295,7 +295,7 @@ static void packet_consume_data_done(struct sk_buff *skb, struct endpoint *endpo
 		packet_send_staged_packets(peer);
 	}
 
-	receive_keep_key_fresh(peer);
+	rcv_keep_key_fresh(peer);
 
 	timers_any_authenticated_packet_received(peer);
 	timers_any_authenticated_packet_traversal(peer);

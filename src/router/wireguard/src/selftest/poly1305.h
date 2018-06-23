@@ -7,6 +7,7 @@
 #ifdef DEBUG
 
 #include "../crypto/chacha20poly1305.h"
+#include "../crypto/simd.h"
 
 struct poly1305_testdata {
 	size_t size;
