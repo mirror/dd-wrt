@@ -469,7 +469,7 @@ static void handle_index(void)
 	start_service("emf");	//
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-	start_service_f("nas");
+	start_service("nas");
 	start_service("guest_nas");
 #endif
 #if defined(HAVE_TMK) || defined(HAVE_BKM)
@@ -587,7 +587,7 @@ static void handle_hotspot(void)
 	start_service("emf");	//
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-	start_service_f("nas");
+	start_service("nas");
 	start_service("guest_nas");
 #endif
 	start_service_f("radio_timer");
@@ -844,7 +844,7 @@ static void handle_management(void)
 	restart_f("wol");
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-	start_service_f("nas");
+	start_service("nas");
 	start_service("guest_nas");
 #endif
 //      start_service_f("anchorfreednat");
@@ -907,7 +907,7 @@ static void handle_pppoe(void)
 	start_service("emf");	//
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-	start_service_f("nas");
+	start_service("nas");
 	start_service("guest_nas");
 #endif
 	start_service_f("radio_timer");
@@ -1191,7 +1191,7 @@ static void handle_wireless(void)
 	start_service("emf");	//
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-	start_service_f("nas");
+	start_service("nas");
 	start_service("guest_nas");
 #endif
 	start_service_f("radio_timer");
@@ -1307,7 +1307,7 @@ static void handle_wireless_2(void)
 	start_service("emf");	//
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-	start_service_f("nas");
+	start_service("nas");
 	start_service("guest_nas");
 #endif
 	start_service_f("radio_timer");
