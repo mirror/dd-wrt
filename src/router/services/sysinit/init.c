@@ -366,7 +366,6 @@ void start_init_start(void)
 	start_wan_boot();
 	start_ttraff();
 
-
 	cprintf("diag STOP LED\n");
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	diag_led(DIAG, STOP_LED);
@@ -435,6 +434,13 @@ void start_init_start(void)
 		start_run_rc_startup();
 	}
 #endif
+	int c;
+	int cnt = get_wl_instances();
+	for (c = 0; c < cnt; c++) {
+		char *iface = get_wl_instance_name(c);
+		wlconf_up(iface);	// touble tip
+	}
+
 }
 
 void restart_dns_main(int argc, char argv[])
