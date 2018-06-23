@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r4115 | brainslayer | 2018-06-23 10:31:55 +0200 (Sat, 23 Jun 2018) | 1 line
+
+mac80211: drop 355-ath9k-limit-retries-for-powersave-response-frames.patch, thx @john
+------------------------------------------------------------------------
 r4114 | brainslayer | 2018-06-17 21:02:12 +0200 (Sun, 17 Jun 2018) | 1 line
 
 sync ath10k from git
