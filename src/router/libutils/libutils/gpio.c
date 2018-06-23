@@ -369,6 +369,42 @@ void set_gpio(int gpio, int value)
 
 	}
 
+	if (brand == ROUTER_WRT_32X) {
+		switch (gpio) {
+		case 0:	// power
+			writeint("/sys/class/leds/venom:white:power/brightness", value);
+			break;
+		case 3:
+			writeint("/sys/class/leds/venom:white:sata/brightness", value);
+			break;
+		case 4:
+			writeint("/sys/class/leds/pca963x:venom:white:usb3_1/brightness", value);
+			break;
+		case 5:	// 5G
+			writeint("/sys/class/leds/pca963x:venom:white:usb2/brightness", value);
+			break;
+		case 6:	// power
+			writeint("/sys/class/leds/pca963x:venom:white:wan/brightness", value);
+			break;
+		case 7:	// power
+			writeint("/sys/class/leds/pca963x:venom:amber:wan/brightness", value);
+			break;
+		case 8:
+			writeint("/sys/class/leds/pca963x:venom:white:usb3_2/brightness", value);
+			break;
+		case 9:
+			writeint("/sys/class/leds/pca963x:venom:white:wps/brightness", value);
+			break;
+		case 10:
+			writeint("/sys/class/leds/pca963x:venom:amber:wps/brightness", value);
+			break;
+		default:
+			set_linux_gpio(gpio, value);
+			break;
+		}
+
+	}
+
 }
 #elif HAVE_ALPINE
 

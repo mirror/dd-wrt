@@ -769,6 +769,8 @@
 
 #define ROUTER_BOARD_GW6400 0x106000
 
+#define ROUTER_WRT_32X 0x102101
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 

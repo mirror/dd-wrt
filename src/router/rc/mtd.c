@@ -287,6 +287,7 @@ static int write_main(int argc, char *argv[])
 	case ROUTER_WRT_1900ACV2:
 	case ROUTER_WRT_1900ACS:
 	case ROUTER_WRT_3200ACM:
+	case ROUTER_WRT_32X:
 	case ROUTER_LINKSYS_EA8500:
 		part = getUEnv("boot_part");
 		if (part) {

@@ -1258,7 +1258,7 @@ int internal_getRouterBrand()
 	}
 	if (!strcmp(modelstr, "WRT32X")) {
 		setRouter("Linksys WRT32X");
-		return ROUTER_WRT_3200ACM;
+		return ROUTER_WRT_32X;
 	}
 	setRouter("Linksys WRTXXXXACM");
 	return ROUTER_WRT_3200ACM;
