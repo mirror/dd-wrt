@@ -698,7 +698,7 @@ char *copytonv(webs_t wp, const char *fmt, ...)
 	va_end(args);
 
 	char *wl = websGetVar(wp, varbuf, NULL);
-	if (nvram_match("console_debug", "1"))
+	if (nvram_match("httpd_debug", "1"))
 		fprintf(stderr, "save %s with value %s\n", varbuf, wl);
 	if (wl)
 		nvram_set(varbuf, wl);
