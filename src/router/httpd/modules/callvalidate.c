@@ -112,11 +112,10 @@ static void *load_visual_service(char *name)
 {
 	cprintf("load service %s\n", name);
 	void *handle = dlopen(VISSERVICEALT_MODULE, RTLD_LAZY | RTLD_GLOBAL);
-	if (!handle && nvram_match("httpd_debug", "1"))
-		fprintf(stderr, "cannot load %s\n", name);
-	if (!handle)
+	if (!handle) {
+		dd_debug(DEBUG_HTTPD, "cannot load %s\n", name);
 		handle = dlopen(VISSERVICE_MODULE, RTLD_LAZY | RTLD_GLOBAL);
-
+	}
 	cprintf("done()\n");
 	if (handle == NULL && name != NULL) {
 		cprintf("not found, try to load alternate\n");
@@ -220,8 +219,8 @@ static void start_gozila(char *name, webs_t wp)
 	fptr = (int (*)(webs_t wp))dlsym(s_service, service);
 	if (fptr)
 		(*fptr) (wp);
-	else if (nvram_matchi("httpd_debug", 1))
-		fprintf(stderr, "function %s not found \n", service);
+	else
+		dd_debug(DEBUG_HTTPD, "function %s not found \n", service);
 #ifndef MEMLEAK_OVERRIDE
 	dlclose(s_service);
 	s_service = NULL;
@@ -257,8 +256,8 @@ static int start_validator(char *name, webs_t wp, char *value, struct variable *
 	    dlsym(s_service, service);
 	if (fptr)
 		ret = (*fptr) (wp, value, v);
-	else if (nvram_matchi("httpd_debug", 1))
-		fprintf(stderr, "function %s not found \n", service);
+	else
+		dd_debug(DEBUG_HTTPD, "function %s not found \n", service);
 #ifndef MEMLEAK_OVERRIDE
 	dlclose(s_service);
 	s_service = NULL;
@@ -296,8 +295,8 @@ static void *start_validator_nofree(char *name, void *handle, webs_t wp, char *v
 	cprintf("found. pointer is %p\n", fptr);
 	if (fptr)
 		(*fptr) (wp, value, v);
-	else if (nvram_matchi("httpd_debug", 1))
-		fprintf(stderr, "function %s not found \n", service);
+	else
+		dd_debug(DEBUG_HTTPD, "function %s not found \n", service);
 	cprintf("start_sevice_nofree done()\n");
 	return handle;
 }
@@ -307,7 +306,7 @@ static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** ar
 	struct timeval before, after, r;
 
 	if (nvram_matchi("httpd_debug", 1)) {
-		dd_syslog(LOG_INFO, "%s:%s",__func__,name);
+		dd_syslog(LOG_INFO, "%s:%s", __func__, name);
 		fprintf(stderr, "call_ej %s", name);
 		int i = 0;
 		for (i = 0; i < argc; i++)
@@ -354,12 +353,10 @@ static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** ar
 			(*fptr) (wp, argc, argv);
 			gettimeofday(&after, NULL);
 			timersub(&after, &before, &r);
-			if (nvram_matchi("httpd_debug", 1)) {
-				fprintf(stderr, " %s duration %ld.%06ld\n", service, (long int)r.tv_sec, (long int)r.tv_usec);
-			}
+			dd_debug(DEBUG_HTTPD, " %s duration %ld.%06ld\n", service, (long int)r.tv_sec, (long int)r.tv_usec);
 
-		} else if (nvram_matchi("httpd_debug", 1))
-			fprintf(stderr, " function %s not found \n", service);
+		} else
+			dd_debug(DEBUG_HTTPD, " function %s not found \n", service);
 		memdebug_leave_info(service);
 	}
 	cprintf("start_sevice_nofree done()\n");

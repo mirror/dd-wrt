@@ -126,12 +126,7 @@ int system2(char *command)
 
 #if (!defined(HAVE_X86) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)	//we must disable this on x86 since nvram is not available at startup
 
-	if (nvram_matchi("console_debug", 1)) {
-		fprintf(stderr, "%s\n", command);
-		dd_syslog(LOG_INFO, "%s:%s", __func__, command);
-		flog("%s\n", command);
-	}
-
+	dd_debug(DEBUG_CONSOLE, "%s:%s", __func__, command);
 	if (nvram_match("debug_delay", "1")) {
 		sleep(1);
 	}
@@ -154,6 +149,26 @@ int sysprintf(const char *fmt, ...)
 	int ret = system2(varbuf);
 	free(varbuf);
 	return ret;
+}
+
+void dd_debug(int target, const char *fmt, ...)
+{
+	char *varbuf;
+	va_list args;
+	if (target == DEBUG_CONSOLE && !nvram_match("console_debug", "1"))
+		return;
+	if (target == DEBUG_HTTPD && !nvram_match("httpd_debug", "1"))
+		return;
+	if (target == DEBUG_SERVICE && !nvram_match("service_debug", "1"))
+		return;
+
+	va_start(args, (char *)fmt);
+	vasprintf(&varbuf, fmt, args);
+	va_end(args);
+	dd_syslog(LOG_DEBUG, varbuf);
+	fprintf(stderr, varbuf);
+	free(varbuf);
+	return;
 }
 
 int eval_va(const char *cmd, ...)

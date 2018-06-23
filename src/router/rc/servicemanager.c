@@ -78,9 +78,8 @@ static int _STOPPED(const char *method, const char *name)
 				stops_running[0]--;
 		}
 #else
-		if (nvram_matchi("service_debug", 1)) {
-			fprintf(stderr, "calling %s_%s not required!\n", method, name);
-		}
+		dd_debug(DEBUG_SERVICE, "calling %s_%s not required!\n", method, name);
+
 		if (!strcmp(method, "stop")) {
 			if (stops_running)
 				stops_running[0]--;
@@ -119,10 +118,7 @@ static int handle_service(const char *method, const char *name)
 		STOPPED();
 	}
 #if (!defined(HAVE_X86) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)
-	if (nvram_matchi("service_debug", 1)) {
-		dd_syslog(LOG_INFO, "%s:%s_%s", __func__, method, name);
-		fprintf(stderr, "calling %s_%s\n", method, name);
-	}
+	dd_debug(DEBUG_SERVICE, "%s:%s_%s", __func__, method, name);
 #endif
 	// lcdmessaged("Starting Service",name);
 	char service[64];
@@ -146,9 +142,8 @@ static int handle_service(const char *method, const char *name)
 	if (fptr)
 		(*fptr) ();
 	else {
-		if (nvram_matchi("service_debug", 1)) {
-			fprintf(stderr, "function %s not found \n", service);
-		}
+		dd_debug(DEBUG_SERVICE, "function %s not found \n", service);
+
 		ret = -1;
 	}
 	dlclose(handle);
@@ -157,12 +152,10 @@ static int handle_service(const char *method, const char *name)
 			stops_running[0]--;
 	}
 #if (!defined(HAVE_X86) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)
-	if (nvram_matchi("service_debug", 1)) {
-		if (stops_running)
-			fprintf(stderr, "calling done %s_%s (pending stops %d)\n", method, name, stops_running[0]);
-		else
-			fprintf(stderr, "calling done %s_%s\n", method, name);
-	}
+	if (stops_running)
+		dd_debug(DEBUG_SERVICE, "calling done %s_%s (pending stops %d)\n", method, name, stops_running[0]);
+	else
+		dd_debug(DEBUG_SERVICE, "calling done %s_%s\n", method, name);
 #endif
 	return ret;
 }
