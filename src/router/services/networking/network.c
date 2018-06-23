@@ -481,6 +481,9 @@ int wlconf_up(char *name)
 {
 
 	int phytype, gmode, val, ret;
+	char ifinst[32];
+	char *next;
+	char var[80];
 
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
 	return -1;
@@ -555,6 +558,9 @@ int wlconf_up(char *name)
 	setRegulationDomain(nvram_safe_get("wl_regdomain"));
 #endif
 
+	ret = eval("wlconf", name, "up");
+	sprintf(ifinst, "wl%d", instance);
+	set_vifsmac(ifinst);
 	ret = eval("wlconf", name, "up");
 	/*
 	 * eval("wl","radio","off"); eval("wl","atten","0","0","60");
@@ -671,15 +677,7 @@ int wlconf_up(char *name)
 		eval("wl", "-i", name, "infra", "0");
 		eval("wl", "-i", name, "ssid", nvram_nget("wl%d_ssid", instance));
 	}
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	eval("wl", "-i", name, "vlan_mode", "0");
-	char ifinst[32];
-
-	sprintf(ifinst, "wl%d", instance);
-	set_vifsmac(ifinst);
-
-	char *next;
-	char var[80];
 	char *vifs = nvram_nget("%s_vifs", ifinst);
 	if (vifs != NULL) {
 		foreach(var, vifs, next) {
@@ -697,7 +695,6 @@ int wlconf_up(char *name)
 			eval("wl", "-i", name, "up");
 		}
 	}
-#endif
 	eval("ifconfig", name, "up");
 	return ret;
 }
