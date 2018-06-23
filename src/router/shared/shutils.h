@@ -19,6 +19,14 @@
 
 #define MAX_NVPARSE 256
 
+
+
+#define DEBUG_CONSOLE 0
+#define DEBUG_HTTPD 1
+#define DEBUG_SERVICE 2
+
+extern void dd_debug(int target, const char *fmt, ...);
+
 /*
  * Reads file and returns contents
  * @param       path    path to file
