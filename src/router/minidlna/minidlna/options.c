@@ -69,6 +69,8 @@ static const struct {
 	{ WIDE_LINKS, "wide_links" },
 	{ TIVO_DISCOVERY, "tivo_discovery" },
 	{ ENABLE_SUBTITLES, "enable_subtitles" },
+	{ META_KEEP, "keep_metadata" },
+	{ META_KEEP_MEDIA, "keep_metadata_with_media" },
 };
 
 int
