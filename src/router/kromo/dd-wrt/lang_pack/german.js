@@ -758,6 +758,7 @@ nas.dlna_thumb="Titelbilder einbinden";
 nas.dlna_subtitles="Verwende Untertitel";
 nas.dlna_dir="DLNA Verzeichnis";
 nas.dlna_cleandb="Datenbank jetzt leeren";
+nas.dlna_metadata="Metadatan Behalten";
 
 //** Privoxy.asp **//
 privoxy.titl="Werbefilter";
