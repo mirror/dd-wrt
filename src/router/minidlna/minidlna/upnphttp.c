@@ -102,6 +102,7 @@ static void SendResp_caption(struct upnphttp *, char * url);
 static void SendResp_resizedimg(struct upnphttp *, char * url);
 static void SendResp_thumbnail(struct upnphttp *, char * url);
 static void SendResp_dlnafile(struct upnphttp *, char * url);
+static void SendResp_favicon(struct upnphttp * h);
 static void Process_upnphttp(struct event *ev);
 
 struct upnphttp * 
@@ -1034,6 +1035,10 @@ ProcessHttpQuery_upnphttp(struct upnphttp * h)
 			SendResp_presentation(h);
 			#endif
 		}
+		else if(strcmp(HttpUrl, "/favicon.ico") == 0)
+		{
+			SendResp_favicon(h);
+		}
 		else
 		{
 			DPRINTF(E_WARN, L_HTTP, "%s not found, responding ERROR 404\n", HttpUrl);
@@ -1392,6 +1397,37 @@ _open_file(const char *orig_path)
 		DPRINTF(E_ERROR, L_HTTP, "Error opening %s\n", path);
 
 	return fd;
+}
+
+static void
+SendResp_favicon(struct upnphttp * h)
+{
+	char header[512], date[30], *data, *mime = "image/x-icon";
+	int size;
+	struct string_s str;
+	time_t now;
+
+	data = (char *)favicon;
+	size = sizeof(favicon)-1;
+
+	INIT_STR(str, header);
+
+	now = time(NULL);
+	strftime(date, sizeof(date),"%a, %d %b %Y %H:%M:%S GMT" , gmtime(&now));
+	strcatf(&str, "HTTP/1.1 200 OK\r\n"
+	             "Connection: close\r\n"
+	             "Date: %s\r\n"
+	             "Server: " MINIDLNA_SERVER_STRING "\r\n"
+	             "Content-Type: %s\r\n"
+	             "Content-Length: %d\r\n\r\n",
+	             date, mime, size);
+
+	if( send_data(h, str.data, str.off, MSG_MORE) == 0 )
+	{
+		if( h->req_command != EHead )
+			send_data(h, data, size, 0);
+	}
+	CloseSocket_upnphttp(h);
 }
 
 static void
