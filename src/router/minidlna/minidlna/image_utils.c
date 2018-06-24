@@ -459,7 +459,7 @@ image_new_from_jpeg(const char *path, int is_file, const uint8_t *buf, int size,
 	cinfo.dct_method = JDCT_IFAST;
 	cinfo.two_pass_quantize = FALSE;
 	cinfo.dither_mode = JDITHER_ORDERED;
-+	cinfo.scale_num = 1;
+	cinfo.scale_num = 1;
 	jpeg_start_decompress(&cinfo);
 	w = cinfo.output_width;
 	h = cinfo.output_height;
