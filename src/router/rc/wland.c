@@ -61,7 +61,7 @@ static int do_ap_watchdog(void)
 	if (s.st_size <= 0 && time(NULL) - last > interval && nvram_matchi("apwatchdog_enable", 1) && nvram_invmatch("wl_net_mode", "disabled")) {
 		time(&last);
 		cprintf("resetting ap radio\n");
-		eval("wlconf", get_wdev(), "down");
+		wlconf_down(get_wdev());
 
 		val = nvram_geti("wl0_channel") + 1;
 		if (val <= 2 || val >= 14)
@@ -70,9 +70,8 @@ static int do_ap_watchdog(void)
 		wl_ioctl(get_wdev(), WLC_SET_CHANNEL, &val, sizeof(val));
 		wl_ioctl(get_wdev(), WLC_UP, NULL, 0);
 
-		eval("wlconf", get_wdev(), "down");
-		eval("startservice", "wlconf");
-		// wlconf_up (get_wdev ());
+		wlconf_down(get_wdev());
+		wlconf_up(get_wdev());
 
 	}
 

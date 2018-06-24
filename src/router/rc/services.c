@@ -523,9 +523,9 @@ static void handle_hotspot(void)
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	stop_service_f("nas");
-	eval("wlconf", nvram_safe_get("wl0_ifname"), "down");
-	eval("wlconf", nvram_safe_get("wl1_ifname"), "down");
-	eval("wlconf", nvram_safe_get("wl2_ifname"), "down");
+	wlconf_down(nvram_safe_get("wl0_ifname"));
+	wlconf_down(nvram_safe_get("wl1_ifname"));
+	wlconf_down(nvram_safe_get("wl2_ifname"));
 #endif
 #ifdef HAVE_MADWIFI
 	stop_service_f("stabridge");
@@ -1132,9 +1132,9 @@ static void handle_wireless(void)
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	stop_service_f("nas");
-	eval("wlconf", nvram_safe_get("wl0_ifname"), "down");
-	eval("wlconf", nvram_safe_get("wl1_ifname"), "down");
-	eval("wlconf", nvram_safe_get("wl2_ifname"), "down");
+	wlconf_down(nvram_safe_get("wl0_ifname"));
+	wlconf_down(nvram_safe_get("wl1_ifname"));
+	wlconf_down(nvram_safe_get("wl2_ifname"));
 #endif
 #ifdef HAVE_MADWIFI
 	stop_service_f("stabridge");
@@ -1248,9 +1248,9 @@ static void handle_wireless_2(void)
 #endif
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	stop_service_f("nas");
-	eval("wlconf", nvram_safe_get("wl0_ifname"), "down");
-	eval("wlconf", nvram_safe_get("wl1_ifname"), "down");
-	eval("wlconf", nvram_safe_get("wl2_ifname"), "down");
+	wlconf_down(nvram_safe_get("wl0_ifname"));
+	wlconf_down(nvram_safe_get("wl1_ifname"));
+	wlconf_down(nvram_safe_get("wl2_ifname"));
 #endif
 #ifdef HAVE_MADWIFI
 	stop_service_f("stabridge");
