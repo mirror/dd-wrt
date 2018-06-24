@@ -759,7 +759,7 @@ nas.dlna_subtitles="Verwende Untertitel";
 nas.dlna_dir="DLNA Verzeichnis";
 nas.dlna_cleandb="Datenbank jetzt leeren";
 nas.dlna_metadata="Metadatan Behalten";
-
+nas.dlna_rescan="Zyklisches neu Scannen";
 //** Privoxy.asp **//
 privoxy.titl="Werbefilter";
 privoxy.server="Privoxy";
