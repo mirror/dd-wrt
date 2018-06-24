@@ -457,6 +457,9 @@ image_new_from_jpeg(const char *path, int is_file, const uint8_t *buf, int size,
 	cinfo.do_fancy_upsampling = FALSE;
 	cinfo.do_block_smoothing = FALSE;
 	cinfo.dct_method = JDCT_IFAST;
+	cinfo.two_pass_quantize = FALSE;
+	cinfo.dither_mode = JDITHER_ORDERED;
++	cinfo.scale_num = 1;
 	jpeg_start_decompress(&cinfo);
 	w = cinfo.output_width;
 	h = cinfo.output_height;
@@ -780,6 +783,59 @@ image_downsize(image_s * pdest, image_s * psrc, int32_t width, int32_t height)
 	}
 }
 
+/***************************************************/
+/* Redimentionne l'image psrc et place le resultat */
+/* a la postion (0,0) dans pdest. On determine les */
+/* points par interpolation bilinaire.             */
+void image_resize_bilinear(image_s *pdest, image_s *psrc,
+  int32_t width, int32_t height)
+{ int32_t vx,vy;
+  pix   vcol,vcol1,vcol2,vcol3,vcol4;
+  float rx,ry;
+  float width_scale, height_scale;
+  float x_dist, y_dist;
+
+  width_scale  = (float)psrc->width  / (float)width;
+  height_scale = (float)psrc->height / (float)height;
+
+  for(vy = 0;vy < height; vy++)  
+  {
+    for(vx = 0;vx < width; vx++)
+    {
+      rx = vx * width_scale;
+      ry = vy * height_scale;
+      vcol1 = get_pix(psrc, (int32_t)rx, (int32_t)ry);
+      vcol2 = get_pix(psrc, ((int32_t)rx)+1, (int32_t)ry);
+
+      vcol3 = get_pix(psrc, (int32_t)rx, ((int32_t)ry)+1);
+      vcol4 = get_pix(psrc, ((int32_t)rx)+1, ((int32_t)ry)+1);
+
+      x_dist = rx - ((float)((int32_t)rx));
+      y_dist = ry - ((float)((int32_t)ry));
+      vcol = COL_FULL(
+        (uint8_t)((COL_RED(vcol1)*(1.0-x_dist)
+          + COL_RED(vcol2)*(x_dist))*(1.0-y_dist)
+          + (COL_RED(vcol3)*(1.0-x_dist)
+          + COL_RED(vcol4)*(x_dist))*(y_dist)),
+        (uint8_t)((COL_GREEN(vcol1)*(1.0-x_dist)
+          + COL_GREEN(vcol2)*(x_dist))*(1.0-y_dist)
+          + (COL_GREEN(vcol3)*(1.0-x_dist)
+          + COL_GREEN(vcol4)*(x_dist))*(y_dist)),
+        (uint8_t)((COL_BLUE(vcol1)*(1.0-x_dist)
+          + COL_BLUE(vcol2)*(x_dist))*(1.0-y_dist)
+          + (COL_BLUE(vcol3)*(1.0-x_dist)
+          + COL_BLUE(vcol4)*(x_dist))*(y_dist)),
+        (uint8_t)((COL_ALPHA(vcol1)*(1.0-x_dist)
+          + COL_ALPHA(vcol2)*(x_dist))*(1.0-y_dist)
+          + (COL_ALPHA(vcol3)*(1.0-x_dist)
+          + COL_ALPHA(vcol4)*(x_dist))*(y_dist))
+      );
+      put_pix_alpha_replace(pdest, vx, vy, vcol);
+    }
+  }
+}
+/***************************************************/
+
 image_s *
 image_resize(image_s * src_image, int32_t width, int32_t height)
 {
@@ -790,12 +846,12 @@ image_resize(image_s * src_image, int32_t width, int32_t height)
 		return NULL;
 	if( (src_image->width < width) || (src_image->height < height) )
 		image_upsize(dst_image, src_image, width, height);
-	else
-		image_downsize(dst_image, src_image, width, height);
-
+    else
+		image_resize_bilinear(dst_image, src_image, width, height);
+//		image_downsize(dst_image, src_image, width, height);
+    
 	return dst_image;
 }
-
 
 unsigned char *
 image_save_to_jpeg_buf(image_s * pimage, int * size)
