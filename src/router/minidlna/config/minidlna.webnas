@@ -23,6 +23,11 @@
 					<input class="spaceradio" type="radio" name="dlna_merge" value="0" <% nvram_checked("dlna_merge", "0"); %> /><% tran("share.disable"); %>
 				</div>
 				<div class="setting">
+				<div class="label"><% tran("nas.dlna_metadata"); %></div>
+					<input class="spaceradio" type="radio" name="dlna_metadata" value="1" <% nvram_checked("dlna_metadata", "1"); %> /><% tran("share.enable"); %>&nbsp;
+					<input class="spaceradio" type="radio" name="dlna_metadata" value="0" <% nvram_checked("dlna_metadata", "0"); %> /><% tran("share.disable"); %>
+				</div>
+				<div class="setting">
 				<div class="label"><% tran("nas.dlna_cleandb"); %></div>
 					<input class="spaceradio" type="radio" name="dlna_cleandb" value="1" <% nvram_checked("dlna_cleandb", "1"); %> /><% tran("share.enable"); %>&nbsp;
 					<input class="spaceradio" type="radio" name="dlna_cleandb" value="0" <% nvram_checked("dlna_cleandb", "0"); %> /><% tran("share.disable"); %>
