@@ -3412,6 +3412,8 @@ struct nvram_param srouter_defaults[] = {
 	{"dlna_merge", "0"},
 	{"dlna_subtitles", "0"},
 	{"dlna_cleandb", "0"},
+	{"dlna_metadata", "0"},
+	{"dlna_rescan", "0"},
 #endif
 #ifdef HAVE_VNCREPEATER
 	{"vncr_enable", "0"},
