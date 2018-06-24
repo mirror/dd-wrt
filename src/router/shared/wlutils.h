@@ -166,6 +166,9 @@ typedef struct STAINFO {
 
 extern STAINFO *getRaStaInfo(char *ifname);
 
+int wlconf_down(char *name);
+int wlconf_up(char *name);
+
 #if defined(HAVE_MADWIFI) || defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 #include <stdint.h>
 
