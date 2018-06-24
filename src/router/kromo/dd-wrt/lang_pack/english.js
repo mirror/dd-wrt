@@ -841,6 +841,7 @@ nas.dlna_thumb="Include Cover Artwork";
 nas.dlna_dir="Files Directory";
 nas.dlna_cleandb="Clean Database now";
 nas.dlna_metadata="Keep Metadata on Storage";
+nas.dlna_rescan="Cyclic Rescan of Folders";
 // ** Common **
 nas.shareadd="Add Share";
 nas.sharedel="Remove";
