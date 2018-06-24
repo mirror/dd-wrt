@@ -2993,6 +2993,20 @@ void setRegulationDomain(char *reg)
 }
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
+void set_vifsmac(char *base)	// corrects hwaddr and bssid assignment
+{
+	char *next;
+	char var[80];
+	char mac[80];
+	char *vifs = nvram_nget("%s_vifs", base);
+
+	foreach(var, vifs, next) {
+		eval("ifconfig", var, "down");
+		wl_getbssid(var, mac);
+		set_hwaddr(var, mac);
+	}
+}
+
 int wlconf_up(char *name)
 {
 
@@ -3217,9 +3231,8 @@ int wlconf_up(char *name)
 
 int wlconf_down(char *name)
 {
-    eval("wlconf",name,"down");
+	eval("wlconf", name, "down");
 }
-
 
 void radio_off(int idx)
 {
