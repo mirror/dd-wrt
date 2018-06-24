@@ -390,6 +390,31 @@ mime_to_ext(const char * mime)
 	return "dat";
 }
 
+double
+normalize_to_sec(const char * hms_or_sec)
+{
+	unsigned int hours, min, sec, msec;
+	if ( sscanf(hms_or_sec, "%d:%02d:%02d.%03d", &hours, &min, &sec, &msec) >= 3 )
+	{
+		return hours*3600 + min*60 + sec + ((double)msec)/1000;
+	}
+	else if ( sscanf(hms_or_sec, "%d.%03d", &sec, &msec) >= 1 )
+	{
+		return sec + ((double)msec)/1000;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+int
+is_hms_format(const char * hms_or_sec)
+{
+	unsigned int hours, min, sec, msec;
+	return sscanf(hms_or_sec, "%d:%02d:%02d.%03d", &hours, &min, &sec, &msec) >= 3;
+}
+
 int
 is_video(const char * file)
 {
