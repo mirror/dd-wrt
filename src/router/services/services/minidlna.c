@@ -122,6 +122,12 @@ void start_dlna(void)
 	return;
 }
 
+void start_dlna_rescan(void)
+{
+	if (nvram_match("dlna_enable", "1") && nvram_match("dlna_rescan", "1"))
+		eval("minidlna", "-U");
+}
+
 void stop_dlna(void)
 {
 	stop_process("minidlna", "DLNA Media Server");
