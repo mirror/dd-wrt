@@ -2993,6 +2993,233 @@ void setRegulationDomain(char *reg)
 }
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
+int wlconf_up(char *name)
+{
+
+	int phytype, gmode, val, ret;
+	char ifinst[32];
+	char *next;
+	char var[80];
+
+#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
+	return -1;
+#endif
+	if (!strncmp(name, "vlan", 4))
+		return -1;
+	if (!strncmp(name, "br", 2))
+		return -1;
+#ifdef HAVE_ONLYCLIENT
+	if (nvram_match("wl_mode", "ap")) {
+		cprintf("this version does only support the client mode\n");
+		nvram_set("wl_mode", "sta");
+		nvram_commit();
+	}
+#endif
+	int instance = get_wl_instance(name);
+
+	if (instance == -1)
+		return -1;	// no wireless device
+
+	if (nvram_nmatch("disabled", "wl%d_net_mode", instance))
+		return -2;
+
+	char prefix[16];
+	sprintf(prefix, "wl%d", instance);
+	if (nvram_nmatch("infra", "wl%d_mode", instance)) {
+		nvram_nset("0", "wl%d_infra", instance);
+	} else {
+		nvram_nset("1", "wl%d_infra", instance);
+	}
+#ifdef HAVE_80211AC
+	if (has_beamforming(prefix)) {
+		if (nvram_nmatch("1", "wl%d_txbf", instance)) {
+			nvram_nset("1", "wl%d_txbf_bfr_cap", instance);
+			nvram_nset("1", "wl%d_txbf_bfe_cap", instance);
+		} else {
+			nvram_nset("0", "wl%d_txbf_bfr_cap", instance);
+			nvram_nset("0", "wl%d_txbf_bfe_cap", instance);
+		}
+		if (nvram_nmatch("1", "wl%d_itxbf", instance))
+			eval("wl", "-i", name, "txbf_imp", "1");
+		else
+			eval("wl", "-i", name, "txbf_imp", "0");
+
+	}
+	if (has_ac(prefix)) {
+		if (nvram_nmatch("1", "wl%d_nband", instance)) {
+			if (nvram_nmatch("1", "wl%d_nitro_qam", instance))
+				eval("wl", "-i", name, "vht_features", "4");	// nitro qam
+			else
+				eval("wl", "-i", name, "vht_features", "0");
+		}
+		if (nvram_nmatch("2", "wl%d_nband", instance)) {
+			if (nvram_nmatch("1", "wl%d_nitro_qam", instance))
+				eval("wl", "-i", name, "vht_features", "7");	// nitro qam
+			else if (nvram_nmatch("1", "wl%d_turbo_qam", instance))
+				eval("wl", "-i", name, "vht_features", "3");
+			else
+				eval("wl", "-i", name, "vht_features", "0");
+		}
+		if (has_2ghz(prefix)) {
+			if (nvram_nmatch("1", "wl%d_turbo_qam", instance))
+				eval("wl", "-i", name, "vhtmode", "1");
+			else
+				eval("wl", "-i", name, "vhtmode", "0");
+		} else {
+			eval("wl", "-i", name, "vhtmode", "1");
+		}
+	}
+#endif
+#if (defined(HAVE_NORTHSTAR) || defined(HAVE_80211AC)) && !defined(HAVE_BUFFALO)
+	setRegulationDomain(nvram_safe_get("wl_regdomain"));
+#endif
+
+	ret = eval("wlconf", name, "up");
+	sprintf(ifinst, "wl%d", instance);
+	set_vifsmac(ifinst);
+	ret = eval("wlconf", name, "up");
+	/*
+	 * eval("wl","radio","off"); eval("wl","atten","0","0","60");
+	 * eval("wl","lrl","16"); eval("wl","srl","16");
+	 * eval("wl","interference","0"); eval("wl","radio","on");
+	 */
+	gmode = nvram_ngeti("wl%d_gmode", instance);
+
+	/*
+	 * Get current phy type 
+	 */
+	WL_IOCTL(name, WLC_GET_PHYTYPE, &phytype, sizeof(phytype));
+
+	// set preamble type for b cards
+	if (phytype == PHY_TYPE_B || gmode == 0) {
+		if (nvram_nmatch("long", "wl%d_plcphdr", instance))
+			val = WLC_PLCP_LONG;
+		else if (nvram_nmatch("short", "wl%d_plcphdr", instance))
+			val = WLC_PLCP_SHORT;
+		else
+			val = WLC_PLCP_AUTO;
+		WL_IOCTL(name, WLC_SET_PLCPHDR, &val, sizeof(val));
+	}
+	// adjust txpwr and txant
+	val = nvram_ngeti("wl%d_txpwr", instance);
+	if (val < 1 || val > TXPWR_MAX)
+		val = TXPWR_DEFAULT;
+	char pwr[8];
+	sprintf(pwr, "%d", val);
+#ifdef HAVE_TXPWRFIXED
+//      eval("wl", "-i", name, "txpwr1", "-m");
+#else
+	eval("wl", "-i", name, "txpwr1", "-m", "-o", pwr);
+#endif
+#ifdef HAVE_80211AC
+	val = nvram_ngeti("wl%d_txpwrusr", instance);
+	if (val == 1)
+		eval("wl", "-i", name, "txpwr1", "-1");
+#endif
+	eval("wl", "-i", name, "roam_delta", nvram_default_get("roam_delta", "15"));
+
+	/*
+	 * Set txant 
+	 */
+	val = nvram_ngeti("wl%d_txant", instance);
+	if (val < 0 || val > 3 || val == 2)
+		val = 3;
+	WL_IOCTL(name, WLC_SET_TXANT, &val, sizeof(val));
+
+	/*
+	 * if (nvram_match ("boardtype", "bcm94710dev")) { if (val == 0) val = 1;
+	 * if (val == 1) val = 0; } 
+	 */
+	val = nvram_ngeti("wl%d_antdiv", instance);
+	WL_IOCTL(name, WLC_SET_ANTDIV, &val, sizeof(val));
+
+	/*
+	 * search for "afterburner" string 
+	 */
+	char *afterburner = nvram_nget("wl%d_afterburner", instance);
+
+	if (!strcmp(afterburner, "on"))
+		eval("wl", "-i", name, "afterburner_override", "1");
+	else if (!strcmp(afterburner, "off"))
+		eval("wl", "-i", name, "afterburner_override", "0");
+	else			// auto
+		eval("wl", "-i", name, "afterburner_override", "-1");
+
+	char *shortslot = nvram_nget("wl%d_shortslot", instance);
+
+	if (!strcmp(shortslot, "long"))
+		eval("wl", "-i", name, "shortslot_override", "0");
+	else if (!strcmp(shortslot, "short"))
+		eval("wl", "-i", name, "shortslot_override", "1");
+	else			// auto
+		eval("wl", "-i", name, "shortslot_override", "-1");
+
+	// Set ACK Timing. Thx to Nbd
+	char *v;
+#if defined(HAVE_ACK)
+
+	if ((v = nvram_nget("wl%d_distance", instance))) {
+		rw_reg_t reg;
+		uint32 shm;
+
+		val = atoi(v);
+		if (val == 0) {
+			eval("wl", "-i", name, "noack", "1");
+			// wlc_noack (0);
+		} else {
+			eval("wl", "-i", name, "noack", "0");
+			// wlc_noack (1);
+		}
+
+		if (val) {
+			val = 9 + (val / 150) + ((val % 150) ? 1 : 0);
+			char strv[32];
+
+			sprintf(strv, "%d", val);
+			eval("wl", "-i", name, "acktiming", strv);
+		}
+	}
+#endif
+
+	/*
+	 * if (nvram_match("wl0_mode","sta") || nvram_match("wl0_mode","infra"))
+	 * { val = 0; WL_IOCTL(name, WLC_SET_WET, &val, sizeof(val)); if
+	 * (nvram_match("wl_mode", "infra")){ val = 0; WL_IOCTL(name,
+	 * WLC_SET_INFRA, &val, sizeof(val)); } else{ val = 1; WL_IOCTL(name,
+	 * WLC_SET_INFRA, &val, sizeof(val)); } } 
+	 */
+
+	if (nvram_nmatch("infra", "wl%d_mode", instance)) {
+		eval("wl", "-i", name, "infra", "0");
+		eval("wl", "-i", name, "ssid", nvram_nget("wl%d_ssid", instance));
+	}
+	eval("wl", "-i", name, "vlan_mode", "0");
+	char *vifs = nvram_nget("%s_vifs", ifinst);
+	if (vifs != NULL) {
+		foreach(var, vifs, next) {
+			eval("ifconfig", var, "up");
+		}
+		if (nvram_nmatch("apstawet", "wl%d_mode", instance)) {
+			foreach(var, vifs, next) {
+				eval("wl", "-i", var, "down");
+				eval("wl", "-i", var, "apsta", "0");
+				eval("wl", "-i", var, "up");
+			}
+			eval("wl", "-i", name, "down");
+			eval("wl", "-i", name, "apsta", "1");
+			eval("wl", "-i", name, "wet", "1");
+			eval("wl", "-i", name, "up");
+		}
+	}
+	eval("ifconfig", name, "up");
+	return ret;
+}
+
+int wlconf_down(char *name)
+{
+    eval("wlconf",name,"down");
+}
+
 
 void radio_off(int idx)
 {
