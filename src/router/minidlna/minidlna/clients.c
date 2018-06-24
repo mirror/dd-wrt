@@ -80,6 +80,12 @@ struct client_type_s client_types[] =
 	  "SEC_HHP_BD",
 	  EUserAgent
 	},
+	{ ESamsungSeriesQ,
+	  FLAG_SAMSUNG | FLAG_DLNA | FLAG_CAPTION_RES,
+	  "Samsung Series [Q]",
+	  "SEC_HHP_[TV] Samsung 7",
+	  EUserAgent
+	},
 
 	/* User-Agent: DLNADOC/1.50 SEC_HHP_[TV]UE40D7000/1.0 */
 	/* User-Agent: DLNADOC/1.50 SEC_HHP_ Family TV/1.0 */
