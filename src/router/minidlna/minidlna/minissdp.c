@@ -423,8 +423,6 @@ close:
 	{
 		int i;
 		DPRINTF(E_DEBUG, L_SSDP, "Model: %s\n", model);
-		fprintf(stderr, "model %s\n",model);
-		fprintf(stderr, "name %s\n",name);
 		for (i = 0; client_types[i].name; i++)
 		{
 			if (client_types[i].match_type != EModelName)
