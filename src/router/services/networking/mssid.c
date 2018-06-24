@@ -81,32 +81,3 @@ void do_mssid(char *wlifname)
 		}
 	}
 }
-
-#if !defined(HAVE_RT2880) && !defined(HAVE_RT61) && !defined(HAVE_MADWIFI)
-
-void set_vifsmac(char *base)	// corrects hwaddr and bssid assignment
-{
-	char *next;
-	char var[80];
-	char mac[80];
-	char *vifs = nvram_nget("%s_vifs", base);
-
-	foreach(var, vifs, next) {
-		eval("ifconfig", var, "down");
-		wl_getbssid(var, mac);
-		set_hwaddr(var, mac);
-	}
-}
-
-void start_vifsmac(void)
-{
-	int cnt = get_wl_instances();
-	int c;
-	char name[32];
-
-	for (c = 0; c < cnt; c++) {
-		sprintf(name, "wl%d", c);
-		set_vifsmac(name);
-	}
-}
-#endif
