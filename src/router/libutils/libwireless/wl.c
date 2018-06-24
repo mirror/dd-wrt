@@ -3007,6 +3007,16 @@ void set_vifsmac(char *base)	// corrects hwaddr and bssid assignment
 	}
 }
 
+#define	PHY_TYPE_A		0
+#define	PHY_TYPE_B		1
+#define	PHY_TYPE_G		2
+#define	PHY_TYPE_NULL		0xf
+
+#define WL_IOCTL(name, cmd, buf, len) (wl_ioctl((name), (cmd), (buf), (len)))
+
+#define TXPWR_MAX 1000
+#define TXPWR_DEFAULT 70
+
 int wlconf_up(char *name)
 {
 
