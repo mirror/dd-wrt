@@ -125,7 +125,7 @@ void start_dlna(void)
 void start_dlna_rescan(void)
 {
 	if (nvram_match("dlna_enable", "1") && nvram_match("dlna_rescan", "1"))
-		eval("minidlna", "-U");
+		eval("minidlna", "-P", "/var/run/minidlna/minidlna.pid", "-U");
 }
 
 void stop_dlna(void)
