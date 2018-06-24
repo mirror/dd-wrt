@@ -994,11 +994,23 @@ static void handle_ses(void)
 
 }
 
+#define start_service_force_f(a) eval("startservice_f",a,"-f");
+
 static void resetbtn_period_check(int sig)
 {
 	FILE *fp;
 	unsigned int val = 0;
 
+#ifdef HAVE_MINIDLNA
+	static dlna_counter = 0;
+	if (nvram_match("dlna_enable", "1") && nvram_match("dlna_rescan", "1")) {
+		dlna_counter++;
+
+		if (dlna_counter % 3600 == 0) {
+			start_service_force_f("dlna_rescan");
+		}
+	}
+#endif
 #ifdef HAVE_RADIOOFF
 	if (initses == 1 && nvram_matchi("radiooff_boot_off", 1)
 	    && nvram_matchi("radiooff_button", 1)) {
