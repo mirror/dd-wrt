@@ -470,7 +470,7 @@ insert_file(const char *name, const char *path, const char *parentID, int object
 	{
 		strcpy(base, VIDEO_DIR_ID);
 		class = "item.videoItem";
-		detailID = GetVideoMetadata(path, name);
+		detailID = GetVideoMetadataLite(path, name);
 	}
 	else if( mtype == TYPE_PLAYLIST && (types & TYPE_PLAYLIST) )
 	{
