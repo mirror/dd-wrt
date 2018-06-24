@@ -124,7 +124,8 @@ static int __init bcm47xx_cpu_fixes(void)
 
 	if (c->cputype == CPU_74K) {
 		printk(KERN_INFO "enable BCMA BUS Errata\n");
-		cpu_wait = NULL;
+		if (CHIPID(sih->chip) == BCM4706_CHIP_ID)
+			cpu_wait = NULL;
 		set_c0_config7(MIPS_CONF7_ES);
 	}
 }
