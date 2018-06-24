@@ -87,9 +87,20 @@ void start_dlna(void)
 	}
 	if (nvram_matchi("dlna_merge", 1)) {
 		fprintf(fp, "merge_media_dirs=yes\n");
+	} else {
+		fprintf(fp, "merge_media_dirs=no\n");
 	}
 	if (nvram_matchi("dlna_subtitles", 1)) {
 		fprintf(fp, "enable_subtitles=yes\n");
+	} else {
+		fprintf(fp, "enable_subtitles=no\n");
+	}
+	if (nvram_matchi("dlna_metadata", 1)) {
+		fprintf(fp, "keep_metadata=yes\n");
+		fprintf(fp, "keep_metadata_with_media=yes\n");
+	} else {
+		fprintf(fp, "keep_metadata=no\n");
+		fprintf(fp, "keep_metadata_with_media=no\n");
 	}
 	fprintf(fp, "inotify=yes\n");
 	fprintf(fp, "enable_tivo=no\n");
