@@ -117,7 +117,6 @@ EXPORT_SYMBOL( hnd_jtagm_init );
 EXPORT_SYMBOL( hnd_jtagm_disable );
 EXPORT_SYMBOL( jtag_scan );
 
-{
 static int __init bcm47xx_cpu_fixes(void)
 {
 	struct cpuinfo_mips *c = &current_cpu_data;
