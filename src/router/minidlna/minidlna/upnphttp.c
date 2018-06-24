@@ -352,6 +352,21 @@ ParseHttpHeaders(struct upnphttp * h)
 			else if(strncasecmp(line, "TimeSeekRange.dlna.org", 22)==0)
 			{
 				h->reqflags |= FLAG_TIMESEEK;
+				p = colon + 1;
+				while(isspace(*p))
+					p++;
+				if(strncasecmp(p, "npt=", 4)==0) {
+					h->req_TimeSeekStart = p+=4;
+					n = 0;
+					while(p[n] != '-')
+						n++;
+					h->req_TimeSeekStartLen = n;
+					h->req_TimeSeekEnd = p += n + 1;
+					n = 0;
+					while(p[n] != '\r')
+						n++;
+					h->req_TimeSeekEndLen = n;
+				}
 			}
 			else if(strncasecmp(line, "PlaySpeed.dlna.org", 18)==0)
 			{
@@ -906,11 +921,9 @@ ProcessHttpQuery_upnphttp(struct upnphttp * h)
 			return;
 		}
 		/* 7.3.33.4 */
-		else if( (h->reqflags & (FLAG_TIMESEEK|FLAG_PLAYSPEED)) &&
-		         !(h->reqflags & FLAG_RANGE) )
+		else if( (h->reqflags & FLAG_PLAYSPEED) && !(h->reqflags & FLAG_RANGE) )
 		{
-			DPRINTF(E_WARN, L_HTTP, "DLNA %s requested, responding ERROR 406\n",
-				h->reqflags&FLAG_TIMESEEK ? "TimeSeek" : "PlaySpeed");
+			DPRINTF(E_WARN, L_HTTP, "DLNA PlaySpeed requested, responding ERROR 406\n");
 			Send406(h);
 			return;
 		}
@@ -1849,6 +1862,9 @@ SendResp_dlnafile(struct upnphttp *h, char *object)
 	off_t total, offset, size;
 	int64_t id;
 	int sendfh;
+	char *duration;
+	double duration_in_sec, cur_sec, end_sec;
+	char duration_in_sec_str[10];
 	uint32_t dlna_flags = DLNA_FLAG_DLNA_V1_5|DLNA_FLAG_HTTP_STALLING|DLNA_FLAG_TM_B;
 	uint32_t cflags = h->req_client ? h->req_client->type->flags : 0;
 	const char *tmode;
@@ -2022,6 +2038,26 @@ SendResp_dlnafile(struct upnphttp *h, char *object)
 		              "Content-Range: bytes %jd-%jd/%jd\r\n",
 		              (intmax_t)total, (intmax_t)h->req_RangeStart,
 		              (intmax_t)h->req_RangeEnd, (intmax_t)size);
+	}
+	else if ( h->reqflags & FLAG_TIMESEEK )
+	{
+		if( ( duration = sql_get_text_field(db, "SELECT DURATION from DETAILS where ID = '%lld'", id) ) )
+		{
+			duration_in_sec = normalize_to_sec(duration);
+			sprintf(duration_in_sec_str, "%.3lf", duration_in_sec);
+			cur_sec = normalize_to_sec(h->req_TimeSeekStart);
+			offset = (off_t)(cur_sec * size / duration_in_sec);
+			end_sec = normalize_to_sec(h->req_TimeSeekEnd);
+			h->req_RangeEnd = (off_t)(end_sec ? end_sec * size / duration_in_sec : size - 1);
+			total = h->req_RangeEnd - offset;
+			strcatf(&str, "TimeSeekRange.dlna.org: npt=%.*s-%.*s/%s"
+				      " bytes %jd-%jd/%jd\r\n",
+				      h->req_TimeSeekStartLen, h->req_TimeSeekStart,
+				      h->req_TimeSeekEndLen, h->req_TimeSeekEnd,
+				      is_hms_format(h->req_TimeSeekStart) ? duration : duration_in_sec_str,
+				      offset, (intmax_t)h->req_RangeEnd, (intmax_t)size);
+			strcatf(&str, "Content-Length: %jd\r\n", (intmax_t)total);
+		}
 	}
 	else
 	{

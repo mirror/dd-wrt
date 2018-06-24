@@ -98,6 +98,10 @@ struct upnphttp {
 	int req_SIDLen;
 	off_t req_RangeStart;
 	off_t req_RangeEnd;
+	const char * req_TimeSeekStart;
+	int req_TimeSeekStartLen;
+	const char * req_TimeSeekEnd;
+	int req_TimeSeekEndLen;
 	long int req_chunklen;
 	uint32_t reqflags;
 	/* response */

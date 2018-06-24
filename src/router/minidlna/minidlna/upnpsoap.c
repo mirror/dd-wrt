@@ -1155,6 +1155,17 @@ callback(void *args, int argc, char **argv, char **azColName)
 						        resolution, dlna_buf, mime, detailID, ext, passed_args);
 					}
 					break;
+				case EPanasonic:
+					/* Panasonic UN-JS### series TVs recognize MPEG_TS_HD variants only if it was vnd.dlna.mpeg-tts, but
+ 			 		   require profile to be removed for time-based seek */
+					if ( dlna_pn && ( strncmp(dlna_pn, "MPEG_TS_HD", 7) == 0) && (strcmp(mime+6, "vnd.dlna.mpeg-tts") != 0))
+					{
+						strcpy(mime+6, "vnd.dlna.mpeg-tts");
+						sprintf(dlna_buf, "DLNA.ORG_OP=11;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=01500000000000000000000000000000");
+						add_res(size, duration, bitrate, sampleFrequency, nrAudioChannels,
+							resolution, dlna_buf, mime, detailID, ext, passed_args);
+					}
+					break;
 				case ESamsungSeriesCDE:
 				case ESamsungSeriesQ:
 				case ELGDevice:
