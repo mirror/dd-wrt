@@ -70,6 +70,7 @@ enum client_types {
 	ESamsungSeriesB,
 	ESamsungSeriesCDEBDP,
 	ESamsungSeriesCDE,
+	ESamsungSeriesQ,
 	ESamsungBDJ5500,
 	ESonyBDP,
 	ESonyBravia,

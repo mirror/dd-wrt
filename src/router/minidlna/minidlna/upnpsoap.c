@@ -1156,6 +1156,7 @@ callback(void *args, int argc, char **argv, char **azColName)
 					}
 					break;
 				case ESamsungSeriesCDE:
+				case ESamsungSeriesQ:
 				case ELGDevice:
 				case ELGNetCastDevice:
 				case EAsusOPlay:
@@ -1185,7 +1186,7 @@ callback(void *args, int argc, char **argv, char **azColName)
 				                   "http://%s:%d/AlbumArt/%s-%s.jpg"
 				                   "&lt;/res&gt;",
 				                   lan_addr[passed_args->iface].str, runtime_vars.port, album_art, detailID);
-				if (passed_args->client == ESamsungSeriesCDE ) {
+				if (passed_args->client == ESamsungSeriesCDE || passed_args->client == ESamsungSeriesQ) {
 					ret = strcatf(str, "&lt;res dlna:profileID=\"JPEG_SM\" xmlns:dlna=\"urn:schemas-dlna-org:metadata-1-0/\""
 							   " protocolInfo=\"http-get:*:image/jpeg:DLNA.ORG_PN=JPEG_SM;"
 							   "DLNA.ORG_OP=01;DLNA.ORG_CI=1;DLNA.ORG_FLAGS=%08X%024X\" resolution=\"320x320\"&gt;"
