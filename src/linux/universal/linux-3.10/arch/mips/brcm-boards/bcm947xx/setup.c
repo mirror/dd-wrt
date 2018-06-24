@@ -70,6 +70,7 @@
 #include "nflash.h"
 #endif
 #include "bcmdevs.h"
+#include <asm/idle.h>
 
 extern void bcm947xx_time_init(void);
 extern void bcm947xx_timer_setup(struct irqaction *irq);
