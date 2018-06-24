@@ -949,7 +949,7 @@ static int __ip6_tnl_rcv(struct ip6_tnl *tunnel, struct sk_buff *skb,
 	skb_reset_network_header(skb);
 	memset(skb->cb, 0, sizeof(struct inet6_skb_parm));
 
-	if (tpi->proto == htons(ETH_P_IP) &&
+	if (tpi->proto == htons(ETH_P_IP) && tunnel->parms.fmrs &&
 		!ipv6_addr_equal(&ipv6h->saddr, &tunnel->parms.raddr)) {
 			/* Packet didn't come from BR, so lookup FMR */
 			struct __ip6_tnl_fmr *fmr;
