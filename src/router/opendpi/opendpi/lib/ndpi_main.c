@@ -1172,8 +1172,8 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 				ndpi_build_default_ports(ports_b, 10001, 0, 0, 0, 0));	/* UDP */
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_MS_LYNC, no_master, no_master, "Lync", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0),	/* TCP */
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0));	/* UDP */
-	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_VIBER, no_master, no_master, "Viber", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0),	/* TCP */
-				ndpi_build_default_ports(ports_b, 7985, 7987, 0, 0, 0));	/* UDP */
+	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_VIBER, no_master, no_master, "Viber", ndpi_build_default_ports(ports_a, 7985, 5242, 5243, 4244, 0),	/* TCP */
+				ndpi_build_default_ports(ports_b, 7985, 7987, 5242, 5243, 4244));	/* UDP */
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_SAFE, NDPI_PROTOCOL_COAP, no_master, no_master, "COAP", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0),	/* TCP */
 				ndpi_build_default_ports(ports_b, 5683, 5684, 0, 0, 0));	/* UDP */
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_MQTT, no_master, no_master, "MQTT", ndpi_build_default_ports(ports_a, 1883, 8883, 0, 0, 0),	/* TCP */

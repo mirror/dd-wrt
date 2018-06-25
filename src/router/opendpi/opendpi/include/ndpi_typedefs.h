@@ -80,7 +80,7 @@ struct ndpi_ipv6hdr {
 #elif defined(__BIG_ENDIAN__)
 	u_int8_t version:4, priority:4;
 #else
-# error "Byte order must be defined"
+#error "Byte order must be defined"
 #endif
 
 	u_int8_t flow_lbl[3];
@@ -319,7 +319,7 @@ struct ndpi_flow_tcp_struct {
 	u_int8_t irc_stage;
 	u_int8_t irc_port;
 #endif
-  
+
 #ifdef NDPI_PROTOCOL_H323
 	u_int8_t h323_valid_packets;
 #endif
@@ -604,7 +604,7 @@ typedef enum {
 	NDPI_PROTOCOL_FUN,	/* Pure fun protocol */
 	NDPI_PROTOCOL_UNSAFE,	/* Protocol with a safe version existing  what should be used instead */
 	NDPI_PROTOCOL_POTENTIALLY_DANGEROUS,	/* Be prepared to troubles */
-	NDPI_PROTOCOL_TRACKER_ADS,           /* Trackers, Advertisements... */
+	NDPI_PROTOCOL_TRACKER_ADS,	/* Trackers, Advertisements... */
 	NDPI_PROTOCOL_UNRATED	/* No idea */
 } ndpi_protocol_breed_t;
 
@@ -629,7 +629,7 @@ typedef enum {
 	NDPI_PROTOCOL_CATEGORY_NETWORK,	/* Network infrastructure protocols */
 	NDPI_PROTOCOL_CATEGORY_COLLABORATIVE,	/* Software for collaborative development, including Webmail */
 	NDPI_PROTOCOL_CATEGORY_RPC,	/* High level network communication protocols */
-	NDPI_PROTOCOL_CATEGORY_STREAMING,         /* Streaming protocols */
+	NDPI_PROTOCOL_CATEGORY_STREAMING,	/* Streaming protocols */
 	NDPI_PROTOCOL_CATEGORY_SYSTEM_OS,	/* System/Operating System level applications */
 	NDPI_PROTOCOL_CATEGORY_SW_UPDATE,	/* Software update */
 	/* See #define NUM_CUSTOM_CATEGORIES */
@@ -844,8 +844,16 @@ typedef struct ndpi_flow_struct {
 		} ntp;
 
 		struct {
-			char client_certificate[48], server_certificate[48];
-		} ssl;
+			struct {
+				char client_certificate[48], server_certificate[48];
+			} ssl;
+
+			struct {
+				u_int8_t num_udp_pkts, num_processed_pkts, num_binding_requests, is_skype;
+			} stun;
+
+			/* We can have STUN over SSL thus they need to live together */
+		} stun_ssl;
 
 		struct {
 			char client_signature[48], server_signature[48];
