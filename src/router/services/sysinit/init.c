@@ -402,7 +402,7 @@ void start_init_start(void)
 	stop_resetbutton();
 	start_resetbutton();
 #endif
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	int c;
 	int cnt = get_wl_instances();
 	for (c = 0; c < cnt; c++) {

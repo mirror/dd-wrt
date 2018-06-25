@@ -488,6 +488,7 @@ int isClient(void)
 
 void stop_wlconf(void)
 {
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	int cnt = get_wl_instances();
 	int c;
 #ifdef HAVE_QTN
@@ -496,23 +497,24 @@ void stop_wlconf(void)
 	for (c = 0; c < cnt; c++) {
 		wlconf_down(get_wl_instance_name(c));
 	}
+#endif
 }
 
 void start_wlconf(void)
 {
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	int cnt = get_wl_instances();
 	int c;
 #ifdef HAVE_QTN
 	cnt = 1;
 #endif
 	for (c = 0; c < cnt; c++) {
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 		if (cnt > 1)
 			eval("wl", "-i", get_wl_instance_name(c), "interference", "0");
-#endif
 		if (!nvram_nmatch("disabled", "wl%d_net_mode", c))
 			wlconf_up(get_wl_instance_name(c));
 	}
+#endif
 }
 
 // #ifdef HAVE_PORTSETUP
