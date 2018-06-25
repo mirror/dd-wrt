@@ -423,6 +423,9 @@ l7filters filters_list[] = {
 	{"radius", NDPI_ONLY},
 #endif
 	{"radmin", L7_ONLY},
+#ifdef HAVE_OPENDPI
+	{"rapidvideo", NDPI_ONLY},
+#endif
 	{"rar", L7_ONLY},
 	{"rdp", DPI},
 #ifdef HAVE_OPENDPI
@@ -564,6 +567,7 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{"vevo", NDPI_ONLY},
 	{"vhua", NDPI_ONLY},
+	{"vidto", NDPI_ONLY},
 	{"viber", NDPI_ONLY},
 	{"vmware", NDPI_ONLY},
 #endif
