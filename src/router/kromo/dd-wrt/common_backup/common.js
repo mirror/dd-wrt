@@ -1323,6 +1323,7 @@ function SortableTable (tableEl) {
 	this.thead = tableEl.getElementsByTagName('tbody');
  
 	this.getInnerText = function (el) {
+		if (e1 == null) return '';
 		if (typeof(el.textContent) != 'undefined') return el.textContent;
 		if (typeof(el.innerText) != 'undefined') return el.innerText;
 		if (typeof(el.innerHTML) == 'string') return el.innerHTML.replace(/<[^<>]+>/g,'');
