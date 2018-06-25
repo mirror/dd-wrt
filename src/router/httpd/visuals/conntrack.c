@@ -131,7 +131,7 @@ void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 	FILE *fp;
 	int ip_count = 1;
 	char *line;
-	char protocol[32] = "";
+	char *protocol;
 	int timeout = 0;
 	char srcip[32] = "";
 	char dstip[32] = "";
@@ -164,13 +164,13 @@ void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 
 		// Proto
 		if (string_search(line, "tcp"))
-			sprintf(protocol, "TCP");
+			protocol = "TCP";
 		else if (string_search(line, "udp"))
-			sprintf(protocol, "UDP");
+			protocol = "UDP";
 		else if (string_search(line, "icmp"))
-			sprintf(protocol, "ICMP");
+			protocol = "ICMP";
 		else
-			sprintf(protocol, tran_string(buf, "share.unknown"));
+			protocol = tran_string(buf, "share.unknown");
 		websWrite(wp, "<td>%s</td>", protocol);
 
 		// Timeout
