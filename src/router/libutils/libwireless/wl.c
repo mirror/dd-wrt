@@ -372,7 +372,7 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 	return interface;
 }
 
-#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
+#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
 int wifi_getchannel(char *ifname)
 {
 	struct wifi_interface *interface = wifi_getfreq(ifname);
@@ -1659,7 +1659,7 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 	return interface;
 }
 
-#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880)
+#if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
 
 int wifi_getchannel(char *ifname)
 {
