@@ -68,6 +68,8 @@ struct iperf_stream;
 #define OPT_SERVER_AUTHORIZED_USERS 15
 #define OPT_PACING_TIMER 16
 #define OPT_CONNECT_TIMEOUT 17
+#define OPT_REPEATING_PAYLOAD 18
+#define OPT_EXTRA_DATA 19
 
 /* states */
 #define TEST_START 1
@@ -115,6 +117,8 @@ int	iperf_get_test_get_server_output( struct iperf_test* ipt );
 char*	iperf_get_test_bind_address ( struct iperf_test* ipt );
 int	iperf_get_test_udp_counters_64bit( struct iperf_test* ipt );
 int	iperf_get_test_one_off( struct iperf_test* ipt );
+int iperf_get_test_tos( struct iperf_test* ipt );
+char*	iperf_get_extra_data( struct iperf_test* ipt );
 
 /* Setter routines for some fields inside iperf_test. */
 void	iperf_set_verbose( struct iperf_test* ipt, int verbose );
@@ -141,6 +145,14 @@ void	iperf_set_test_get_server_output( struct iperf_test* ipt, int get_server_ou
 void	iperf_set_test_bind_address( struct iperf_test* ipt, char *bind_address );
 void	iperf_set_test_udp_counters_64bit( struct iperf_test* ipt, int udp_counters_64bit );
 void	iperf_set_test_one_off( struct iperf_test* ipt, int one_off );
+void    iperf_set_test_tos( struct iperf_test* ipt, int tos );
+void	iperf_set_extra_data( struct iperf_test* ipt, char *dat);
+
+#if defined(HAVE_SSL)
+void    iperf_set_test_client_username(struct iperf_test *ipt, char *client_username);
+void    iperf_set_test_client_password(struct iperf_test *ipt, char *client_password);
+void    iperf_set_test_client_rsa_pubkey(struct iperf_test *ipt, char *client_rsa_pubkey_base64);
+#endif // HAVE_SSL
 
 /**
  * exchange_parameters - handles the param_Exchange part for client
