@@ -221,7 +221,9 @@ endif
 ifeq ($(CONFIG_AC722),y)
   CFLAGS += -DHAVE_AC722
 endif
-
+ifeq ($(CONFIG_RT61),y)
+  CFLAGS += -DHAVE_RT61
+endif
 ifeq ($(CONFIG_WZR450HP2),y)
 CFLAGS += -DHAVE_WZR450HP2
 endif
