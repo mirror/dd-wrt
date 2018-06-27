@@ -1607,7 +1607,7 @@ void start_lan(void)
 		nvram_set("et0macaddr", get_hwaddr("vlan1", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #endif
-#ifdef defined(HAVE_NEWPORT)
+#if defined(HAVE_NEWPORT)
 	nvram_setz(lan_ifnames, "eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5 ath6");
 	if (getSTA() || getWET() || CANBRIDGE()) {
 		PORTSETUPWAN("");
