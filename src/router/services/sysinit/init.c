@@ -244,10 +244,10 @@ void start_init_restart(void)
 #endif
 #endif
 
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	int c;
 	for (c = 0; c < cnt; c++) {
-		eval("wlconf", get_wl_instance_name(c), "down");
+		wlconf_down(get_wl_instance_name(c));
 		char *next;
 		char var[80];
 		char *vifs = nvram_nget("wl%d_vifs", c);
@@ -272,13 +272,13 @@ void start_init_stop(void)
 
 	stop_services();
 	stop_radio_timer();
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	stop_nas();
 #endif
 	cprintf("STOP WAN\n");
 	stop_ttraff();
 	stop_wan();
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	stop_wlconf();
 #endif
 	cprintf("STOP LAN\n");
@@ -331,7 +331,7 @@ void start_init_start(void)
 	start_resetbutton();
 #endif
 	start_setup_vlans();
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 //                      start_wlconf(); // doesnt make any sense. its already triggered by start lan
 #endif
 #ifdef HAVE_VLANTAGGING
@@ -367,7 +367,7 @@ void start_init_start(void)
 	start_ttraff();
 
 	cprintf("diag STOP LED\n");
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	diag_led(DIAG, STOP_LED);
 #endif
 	cprintf("set led release wan control\n");
