@@ -521,7 +521,7 @@ static void handle_hotspot(void)
 #ifdef HAVE_EMF
 	stop_service_f("emf");	//
 #endif
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	stop_service_f("nas");
 	wlconf_down(nvram_safe_get("wl0_ifname"));
 	wlconf_down(nvram_safe_get("wl1_ifname"));
@@ -1130,7 +1130,7 @@ static void handle_wireless(void)
 #ifdef HAVE_EMF
 	stop_service_f("emf");	//
 #endif
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	stop_service_f("nas");
 	wlconf_down(nvram_safe_get("wl0_ifname"));
 	wlconf_down(nvram_safe_get("wl1_ifname"));
@@ -1246,7 +1246,7 @@ static void handle_wireless_2(void)
 #ifdef HAVE_EMF
 	stop_service_f("emf");	//
 #endif
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	stop_service_f("nas");
 	wlconf_down(nvram_safe_get("wl0_ifname"));
 	wlconf_down(nvram_safe_get("wl1_ifname"));
