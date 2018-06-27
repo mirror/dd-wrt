@@ -1865,7 +1865,7 @@ void start_lan(void)
 	deconfigure_wifi();
 #endif
 #else
-	eval("wlconf", wl_face, "down");
+	wlconf_down(wl_face);
 #endif
 #ifdef HAVE_WAVESAT
 	deconfigure_wimax();
@@ -2696,7 +2696,7 @@ void stop_lan(void)
 			if (!ifexists(name))
 				continue;
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
-			eval("wlconf", name, "down");
+			wlconf_down(name);
 #endif
 			ifconfig(name, 0, NULL, NULL);
 			br_del_interface(lan_ifname, name);
@@ -2708,7 +2708,7 @@ void stop_lan(void)
 	 */
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 	else if (strcmp(lan_ifname, ""))
-		eval("wlconf", lan_ifname, "down");
+		wlconf_down(lan_ifname);
 #endif
 #ifdef HAVE_MICRO
 	br_shutdown();
