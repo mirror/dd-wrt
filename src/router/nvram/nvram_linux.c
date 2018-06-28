@@ -70,6 +70,10 @@ err:
 
 char *nvram_get(const char *name)
 {
+	if (!name) {
+		fprintf(stderr, "error in %s: name is NULL\n", __func__);
+		return -ENOMEM;
+	}
 	size_t count = strlen(name) + 1;
 	char *value = NULL;
 	unsigned long *off;
@@ -108,6 +112,10 @@ char *nvram_get(const char *name)
 int nvram_getall(char *buf, int count)
 {
 	int ret;
+	if (!buf) {
+		fprintf(stderr, "error in %s: buf is NULL\n", __func__);
+		return -ENOMEM;
+	}
 #if defined(HAVE_X86) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
 	FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
 	if (in == NULL) {
@@ -142,6 +150,10 @@ void nvram_close(void)		//dummy
 
 static int _nvram_set(const char *name, const char *value)
 {
+	if (!name) {
+		fprintf(stderr, "error in %s: name is NULL\n", __func__);
+		return -ENOMEM;
+	}
 	size_t count = strlen(name) + 1;
 	char *buf;
 	int ret = -1;
@@ -181,6 +193,10 @@ int nvram_set(const char *name, const char *value)
 	extern struct nvram_convert nvram_converts[];
 	struct nvram_convert *v;
 	int ret;
+	if (!name) {
+		fprintf(stderr, "error in %s: name is NULL\n", __func__);
+		return -ENOMEM;
+	}
 #ifdef HAVE_NOWIFI
 	if (!strcmp(name, "ip_conntrack_max") && value != NULL) {
 		int val = atoi(value);
