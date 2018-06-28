@@ -404,7 +404,7 @@ extpci_write_config(si_t *sih, uint bus, uint dev, uint func, uint off, void *bu
 	} else {
 		W_REG(osh, reg, val);
 
-		if ((CHIPID(sih->chip) == BCM4716_CHIP_ID) || (CHIPID(sih->chip) == BCM4706_CHIP_ID) || 
+		if ((CHIPID(sih->chip) == BCM4716_CHIP_ID) ||
 		    (CHIPID(sih->chip) == BCM4748_CHIP_ID))
 			(void)R_REG(osh, reg);
 	}
