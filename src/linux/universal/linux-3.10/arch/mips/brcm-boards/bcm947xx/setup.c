@@ -70,7 +70,6 @@
 #include "nflash.h"
 #endif
 #include "bcmdevs.h"
-#include <asm/idle.h>
 
 extern void bcm947xx_time_init(void);
 extern void bcm947xx_timer_setup(struct irqaction *irq);
@@ -117,21 +116,6 @@ EXPORT_SYMBOL( si_router_coma );	/* for loadable modules */
 EXPORT_SYMBOL( hnd_jtagm_init );
 EXPORT_SYMBOL( hnd_jtagm_disable );
 EXPORT_SYMBOL( jtag_scan );
-
-static int __init bcm47xx_cpu_fixes(void)
-{
-	struct cpuinfo_mips *c = &current_cpu_data;
-
-	if (c->cputype == CPU_74K) {
-		printk(KERN_INFO "enable BCMA BUS Errata\n");
-		if (CHIPID(sih->chip) == BCM4706_CHIP_ID)
-			cpu_wait = NULL;
-		set_c0_config7(MIPS_CONF7_ES);
-	}
-}
-arch_initcall(bcm47xx_cpu_fixes);
-
-
 
 static void
 bcm947xx_reboot_handler(void)
