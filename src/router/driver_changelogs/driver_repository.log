@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r4121 | brainslayer | 2018-06-28 18:09:47 +0200 (Thu, 28 Jun 2018) | 1 line
+
+rollback crap which may have caused hangs on some brcm cpus
+------------------------------------------------------------------------
 r4120 | brainslayer | 2018-06-28 06:27:00 +0200 (Thu, 28 Jun 2018) | 1 line
 
 update hungary regdomain
