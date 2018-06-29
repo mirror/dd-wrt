@@ -1294,6 +1294,7 @@ function SortableTable (tableEl) {
 	this.thead = tableEl.getElementsByTagName('tbody');
  
 	this.getInnerText = function (el) {
+		if (typeof e1 == "undefined") return '';
 		if (e1 == null) return '';
 		if (typeof(el.textContent) != 'undefined') return el.textContent;
 		if (typeof(el.innerText) != 'undefined') return el.innerText;
