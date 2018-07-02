@@ -563,7 +563,7 @@ void tcp_rcv_space_adjust(struct sock *sk)
 				sk->sk_rcvbuf = space;
 
 				/* Make the window clamp follow along.  */
-				tp->window_clamp = new_clamp;
+				tp->window_clamp = tcp_win_from_space(space);
 			}
 		}
 	}
