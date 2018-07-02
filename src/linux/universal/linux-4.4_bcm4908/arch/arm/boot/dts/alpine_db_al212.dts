@@ -1,0 +1,700 @@
+/*
+ * Copyright 2013 Annapurna Labs Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms and conditions of the GNU General Public License,
+ * version 2, as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+/dts-v1/;
+
+/include/ "alpine.dtsi"
+
+/ {
+	version = "2.5";
+	model = "Annapurna Labs Alpine Dev Board";
+
+	hypervisor {
+	};
+
+	soc {
+		board-cfg {
+			id = "alpine_db (AL-212)";
+
+			/* U-Boot offset in boot source [bytes] */
+			u-boot-offset = <0x20000>;
+
+			/*
+			 * Some of the PBS bus controllers have dedicated pins,
+			 * however most of the pins are Multi-usage I/Os (MUIO),
+			 * thus enabling flexible usage.
+			 * Refer to the specific chip datasheet for further details.
+			 *
+			 * Choose which interfaces are to be multiplexed:
+			 * - &if_nand_8 - NAND
+			 * - &if_nand_cs_0, ..., &if_nand_cs_3 - NAND CS 0..3
+			 * - &if_nand_wp - NAND WP
+			 * - &if_sata_0_leds, &if_sata_1_leds - SATA leds
+			 * - &if_eth_leds - Ethernet leds
+			 * - &if_uart_1, ..., &if_uart_3 - UART 1..3
+			 * - &if_i2c_gen - secondary I2C conrtoller
+			 * - &if_ulpi_0_rst_n - ULPI reset
+			 * - &if_pci_ep_int_a - PCIe EP interrupt
+			 * - &if_pci_ep_reset_out - PCIe EP reset out
+			 * - &if_spim_a_ss_1, ..., &if_spim_a_ss_3 - SPI CS 1..3
+			 */
+			pinctrl_init {
+				pinctrl-0 = <
+					&if_nand_8
+					&if_nand_cs_0
+					&if_sata_1_leds
+					&if_eth_leds
+					&if_uart_1>;
+			};
+
+			/*
+			 * Initial GPIO configuration - which pins are input,
+			 * which are output, and what is the initial value for
+			 * output pins.
+			 * By default, GPIO pins that are not listed below are
+			 * input pins.
+			 * GPIO pins which are listed below are automatically
+			 * multiplexed and should not conflict with the
+			 * multiplexed interfaces listed in 'pinctrl_init'
+			 * above.
+			 */
+			gpio_init {
+				/* <
+				 * GPIO num 1, is output, output value
+				 * GPIO num 2, is output, output value
+				 * ...
+				 * GPIO num N, is output, output value
+				 * >
+				 */
+				gpio-list = <
+					/* Inputs */
+					0 0 0 /* UART 1,2,3 module inserted */
+					32 0 0 /* PCIE0 present */
+					33 0 0 /* PCIE1_present */
+					34 0 0 /* PCIE2SATA not present */
+					35 0 0 /* SFP 0,1 absent */
+					36 0 0 /* SFP 2,3 absent */
+					37 0 0 /* External ETH PHY interrupt */
+
+					/* Outputs */
+					1 1 0 /* Debug led 0 */
+					2 1 1 /* Debug led 1 */
+					3 1 1 /* ULPI 0 RST_N */
+					5 1 0 /* Preloader EEPROM enable */
+					38 1 1 /* PCI RSTN */
+					39 1 1 /* SFP ON */
+					40 1 0 /* External ETH PHY A reset */
+					41 1 0 /* External ETH PHY B reset */
+					42 1 1 /* VDD DRAM 1: 1.5V, 0: 1.35V */
+					43 1 0 /* VTT OFF */
+				>;
+			};
+
+			/* SerDes initialization configuration */
+			serdes {
+				/*
+				 * 'ref-clock' can be any of the following:
+				 * - "100Mhz-internal" - 100 Mhz internal clock
+				 * - "100Mhz" - 100 Mhz on-board clock
+				 * - "156.25Mhz" - 156.25 Mhz on-board clock
+				 * - "right" - Clock is routed from right group
+				 *             - assuming the right group has
+				 *               on-board clock
+				 *             - assuming 3 <> 2 <> 1 <> 0
+				 * - "left" - Clock is routed from left group
+				 *            - assuming the left group has
+				 *              on-board clock
+				 *            - assuming 3 <> 2 <> 1 <> 0
+				 *
+				 * 'active-lanes' selects which lanes are active
+				 * e.g. <0 1 2 3>, <0 1>, etc.
+				 *
+				 * 'inv-tx-lanes' selects which lanes have their
+				 * Tx polarity inverted (+/-)
+				 * e.g. <0 1 2 3>, <0 1>, etc.
+				 *
+				 * 'inv-rx-lanes' selects which lanes have their
+				 * Rx polarity inverted (+/-)
+				 * e.g. <0 1 2 3>, <0 1>, etc.
+				 *
+				 * 'ssc' - SSC (spread spectrum clock)
+				 * - "enabled" or "disabled"
+				 * - Relevant only for 'interface' = 'sata'
+				 *
+				 * group 0:
+				 * 'interface' can be any of the following:
+				 * - "off" - no interface on this group
+				 * - "off_bp" - no interface on this group, but
+				 *              r2l/l2r clocks are bypassed
+				 * - "pcie_g2x2_usb" - PCIe gen 2 x2 + USB
+				 * - "pcie_g2x2_pcie_g2x2" - 2xPCIe gen 2 x2
+				 * - "pcie_g3x4" - PCIe gen 3 x4
+				 *
+				 * group 1:
+				 * 'interface' can be any of the following:
+				 * - "off" - no interface on this group
+				 * - "off_bp" - no interface on this group, but
+				 *              r2l/l2r clocks are bypassed
+				 * - "pcie_g3x4" - PCIe gen 3 x4
+				 * - "sata" - SATA (up to 4 ports)
+				 *
+				 * group 2:
+				 * 'interface' can be any of the following:
+				 * - "off" - no interface on this group
+				 * - "off_bp" - no interface on this group, but
+				 *              r2l/l2r clocks are bypassed
+				 * - "pcie_g3x4" - PCIe gen 3 x4
+				 * - "sata" - SATA (up to 4 ports)
+				 *
+				 * group 3:
+				 * 'interface' can be any of the following:
+				 * - "off" - no interface on this group
+				 * - "off_bp" - no interface on this group, but
+				 *              r2l/l2r clocks are bypassed
+				 * - "pcie_g2x2_usb" - PCIe gen 2 x2 + USB
+				 * - "sgmii" - SGMII (up to 4 ports)
+				 * - "sgmii-2.5g" - SGMII 2.5G (up to 4 ports)
+				 * - "10gbe" - 10GbE (up to 4 ports)
+				 */
+
+				group0 {
+					interface = "pcie_g2x4";
+					ref-clock = "100Mhz";
+					active-lanes = <0>;
+					inv-tx-lanes = <>;
+					inv-rx-lanes = <>;
+					ssc = "disabled";
+
+					lane_0_params {
+						rx { override = "disabled"; };
+						tx { override = "disabled"; };
+					};
+					lane_1_params {
+						rx { override = "disabled"; };
+						tx { override = "disabled"; };
+					};
+					lane_2_params {
+						rx { override = "disabled"; };
+						tx { override = "disabled"; };
+					};
+					lane_3_params {
+						rx { override = "disabled"; };
+						tx { override = "disabled"; };
+					};
+				};
+
+				group1 {
+					interface = "off";
+					ref-clock = "100Mhz";
+					active-lanes = <0 1 2 3>;
+					inv-tx-lanes = <>;
+					inv-rx-lanes = <>;
+					ssc = "disabled";
+
+					lane_0_params {
+						rx { override = "disabled"; };
+						tx { override = "disabled"; };
+					};
+					lane_1_params {
+						rx { override = "disabled"; };
+						tx { override = "disabled"; };
+					};
+					lane_2_params {
+						rx { override = "disabled"; };
+						tx { override = "disabled"; };
+					};
+					lane_3_params {
+						rx { override = "disabled"; };
+						tx { override = "disabled"; };
+					};
+				};
+
+				group2 {
+					interface = "sata";
+					ref-clock = "100Mhz";
+					active-lanes = <0 1 2 3>;
+					inv-tx-lanes = <>;
+					inv-rx-lanes = <>;
+					ssc = "disabled";
+
+					lane_0_params {
+						rx {
+							override = "enabled";
+							dcgain = <0x0>;
+							dfe_3db_freq = <0x7>;
+							dfe_gain = <0x0>;
+							dfe_1st_tap_ctrl = <0x0>;
+							dfe_2nd_tap_ctrl = <0x8>;
+							dfe_3rd_tap_ctrl = <0x0>;
+							dfe_4th_tap_ctrl = <0x8>;
+							low_freq_agc_gain = <0x7>;
+							high_freq_agc_boost = <0x0>;
+							precal_code_sel = <0x0>;
+						};
+
+						tx {
+							override = "enabled";
+							amp = <1>;
+							total_driver_units = <19>;
+							post_emph = <2>;
+							pre_emph = <0>;
+							slew_rate = <0>;
+						};
+					};
+					lane_1_params {
+						rx {
+							override = "enabled";
+							dcgain = <0x0>;
+							dfe_3db_freq = <0x7>;
+							dfe_gain = <0x0>;
+							dfe_1st_tap_ctrl = <0x0>;
+							dfe_2nd_tap_ctrl = <0x8>;
+							dfe_3rd_tap_ctrl = <0x0>;
+							dfe_4th_tap_ctrl = <0x8>;
+							low_freq_agc_gain = <0x7>;
+							high_freq_agc_boost = <0x0>;
+							precal_code_sel = <0x0>;
+						};
+
+						tx {
+							override = "enabled";
+							amp = <1>;
+							total_driver_units = <19>;
+							post_emph = <2>;
+							pre_emph = <0>;
+							slew_rate = <0>;
+						};
+					};
+					lane_2_params {
+						rx {
+							override = "enabled";
+							dcgain = <0x0>;
+							dfe_3db_freq = <0x7>;
+							dfe_gain = <0x0>;
+							dfe_1st_tap_ctrl = <0x0>;
+							dfe_2nd_tap_ctrl = <0x8>;
+							dfe_3rd_tap_ctrl = <0x0>;
+							dfe_4th_tap_ctrl = <0x8>;
+							low_freq_agc_gain = <0x7>;
+							high_freq_agc_boost = <0x0>;
+							precal_code_sel = <0x0>;
+						};
+
+						tx {
+							override = "enabled";
+							amp = <1>;
+							total_driver_units = <19>;
+							post_emph = <2>;
+							pre_emph = <0>;
+							slew_rate = <0>;
+						};
+					};
+					lane_3_params {
+						rx {
+							override = "enabled";
+							dcgain = <0x0>;
+							dfe_3db_freq = <0x7>;
+							dfe_gain = <0x0>;
+							dfe_1st_tap_ctrl = <0x0>;
+							dfe_2nd_tap_ctrl = <0x8>;
+							dfe_3rd_tap_ctrl = <0x0>;
+							dfe_4th_tap_ctrl = <0x8>;
+							low_freq_agc_gain = <0x7>;
+							high_freq_agc_boost = <0x0>;
+							precal_code_sel = <0x0>;
+						};
+
+						tx {
+							override = "enabled";
+							amp = <1>;
+							total_driver_units = <19>;
+							post_emph = <2>;
+							pre_emph = <0>;
+							slew_rate = <0>;
+						};
+					};
+				};
+
+				group3 {
+					interface = "10gbe";
+					ref-clock = "156.25Mhz";
+					active-lanes = <3>;
+					inv-tx-lanes = <>;
+					inv-rx-lanes = <>;
+					ssc = "disabled";
+
+					lane_0_params {
+						rx { override = "disabled"; };
+						tx { override = "disabled"; };
+					};
+					lane_1_params {
+						rx { override = "disabled"; };
+						tx { override = "disabled"; };
+					};
+					lane_2_params {
+						rx { override = "disabled"; };
+						tx { override = "disabled"; };
+					};
+					lane_3_params {
+						rx { override = "disabled"; };
+						tx { override = "disabled"; };
+					};
+				};
+			};
+
+			/* Ethernet port configuration */
+			ethernet {
+				port0 {
+					status = "enabled";
+
+					/*
+					 * MAC mode (rgmii, sgmii, sgmii-2.5g, 1g-serial, 10g-serial, auto-detect, auto-detect-auto-speed)
+					 * - auto-detect mode is relevant when SFP exists. in this mode
+					 * SFP EEPROM will be read to detect what SFP inserted
+					 * - auto-detect-auto-speed mode is relevant when SFP exists and
+					 * the SerDes reference clock frequency is 156.25Mhz. In this
+					 * mode SFP EEPROM will be read to detect what SFP inserted while
+					 * 10G serial and 1G serial SFP modeuls can be exchanged on-the-fly
+					 * as long as all active SerDes based Ethernet ports use the same
+					 * mode.
+					 */
+					mode = "auto-detect-auto-speed";
+
+					/*
+					 * I2C bus ID as shows in Linux I2C bus enumeration:
+					 * When using I2C_A and I2C Mux is connected to I2C_A, Linux enumerates multiple I2C buses:
+					 * - I2C bus 0 is the physical bus
+					 * - I2C bus 1 is channel 0 of the mux
+					 * - I2C bus 2 is channel 1 of the mux
+					 * - ...
+					 * Relevant when MAC mode is auto-detect or when phy_type is i2c
+					 */
+					i2c-id = <1>; /* I2C Mux Channel 0 */
+
+					10g-serial {
+						/*
+						 * in case of 10g-serial mode indicate
+						 * if passive DAC (direct attached cable) are used
+						 * and what is the length (in meters) of it.
+						 * in case of active DAC the parameter should be
+						 * set to disable.
+						 * in auto-detect mode will be the default value
+						 * in case the SFP EEPROM can't be accessed
+						 */
+						dac = "enabled";
+						dac-length = <3>;
+						auto-neg = "disabled";
+						link-training = "disabled";
+						fec = "disabled";
+					};
+
+					retimer {
+						exist = "disabled";
+						/*
+						* I2C bus ID of the retimer as shows in Linux I2C bus enumeration:
+						* When using I2C_A and I2C Mux is connected to I2C_A,
+						* Linux enumerates multiple I2C buses:
+						* - I2C bus 0 is the physical bus
+						* - I2C bus 1 is channel 0 of the mux
+						* - I2C bus 2 is channel 1 of the mux
+						* - ...
+						*/
+						i2c-bus = <0>;
+						i2c-addr = <97>;
+						channel = "B";
+					};
+
+				};
+
+				port1 {
+					status = "enabled";
+
+					/*
+					 * MAC mode (rgmii, sgmii, sgmii-2.5g, 1g-serial, 10g-serial, auto-detect, auto-detect-auto-speed)
+					 * - auto-detect mode is relevant when SFP exists. in this mode
+					 * SFP EEPROM will be read to detect what SFP inserted
+					 * - auto-detect-auto-speed mode is relevant when SFP exists and
+					 * the SerDes reference clock frequency is 156.25Mhz. In this
+					 * mode SFP EEPROM will be read to detect what SFP inserted while
+					 * 10G serial and 1G serial SFP modeuls can be exchanged on-the-fly
+					 * as long as all active SerDes based Ethernet ports use the same
+					 * mode.
+					 */
+					mode = "rgmii";
+
+					ext_phy {
+						/* PHY management interface type (mdc-mdio, xmdc-xmdio, i2c) */
+						phy_mgmt_if = "mdc-mdio";
+						/* in case the interface is i2c phy-addr is the
+						 * 5 lowest bits of the i2c address*/
+						phy-addr = <4>;
+						/*
+						 * MDC-MDIO frequency:
+						 * - "2.5Mhz"
+						 * - "1.0Mhz"
+						 */
+						mdc-mdio-freq = "1.0Mhz";
+						/* auto negotiation (in-band, out-of-band)*/
+						auto-neg-mode="out-of-band";
+					};
+				};
+
+				port2 {
+					status = "disabled";
+
+					/*
+					 * MAC mode (rgmii, sgmii, sgmii-2.5g, 1g-serial, 10g-serial, auto-detect, auto-detect-auto-speed)
+					 * - auto-detect mode is relevant when SFP exists. in this mode
+					 * SFP EEPROM will be read to detect what SFP inserted
+					 * - auto-detect-auto-speed mode is relevant when SFP exists and
+					 * the SerDes reference clock frequency is 156.25Mhz. In this
+					 * mode SFP EEPROM will be read to detect what SFP inserted while
+					 * 10G serial and 1G serial SFP modeuls can be exchanged on-the-fly
+					 * as long as all active SerDes based Ethernet ports use the same
+					 * mode.
+					 */
+					mode = "auto-detect-auto-speed";
+
+					/*
+					 * I2C bus ID as shows in Linux I2C bus enumeration:
+					 * When using I2C_A and I2C Mux is connected to I2C_A, Linux enumerates multiple I2C buses:
+					 * - I2C bus 0 is the physical bus
+					 * - I2C bus 1 is channel 0 of the mux
+					 * - I2C bus 2 is channel 1 of the mux
+					 * - ...
+					 * Relevant when MAC mode is auto-detect or when phy_type is i2c
+					 */
+					i2c-id = <3>; /* I2C Mux Channel 2 */
+
+					10g-serial {
+						/*
+						 * in case of 10g-serial mode indicate
+						 * if passive DAC (direct attached cable) are used
+						 * and what is the length (in meters) of it.
+						 * in case of active DAC the parameter should be
+						 * set to disable.
+						 * in auto-detect mode will be the default value
+						 * in case the SFP EEPROM can't be accessed
+						 */
+						dac = "enabled";
+						dac-length = <3>;
+						auto-neg = "disabled";
+						link-training = "disabled";
+						fec = "disabled";
+					};
+
+					retimer {
+						exist = "disabled";
+						/*
+						* I2C bus ID of the retimer as shows in Linux I2C bus enumeration:
+						* When using I2C_A and I2C Mux is connected to I2C_A,
+						* Linux enumerates multiple I2C buses:
+						* - I2C bus 0 is the physical bus
+						* - I2C bus 1 is channel 0 of the mux
+						* - I2C bus 2 is channel 1 of the mux
+						* - ...
+						*/
+						i2c-bus = <0>;
+						i2c-addr = <97>;
+						channel = "B";
+					};
+				};
+
+				port3 {
+					status = "enabled";
+
+					/*
+					 * MAC mode (rgmii, sgmii, sgmii-2.5g, 1g-serial, 10g-serial, auto-detect, auto-detect-auto-speed)
+					 * - auto-detect mode is relevant when SFP exists. in this mode
+					 * SFP EEPROM will be read to detect what SFP inserted
+					 * - auto-detect-auto-speed mode is relevant when SFP exists and
+					 * the SerDes reference clock frequency is 156.25Mhz. In this
+					 * mode SFP EEPROM will be read to detect what SFP inserted while
+					 * 10G serial and 1G serial SFP modeuls can be exchanged on-the-fly
+					 * as long as all active SerDes based Ethernet ports use the same
+					 * mode.
+					 */
+					mode = "rgmii";
+					ext_phy {
+						/* PHY management interface type (mdc-mdio, xmdc-xmdio, i2c) */
+						phy_mgmt_if = "mdc-mdio";
+						/* in case the interface is i2c phy-addr is the
+						 * 5 lowest bits of the i2c address*/
+						phy-addr = <5>;
+						/*
+						 * MDC-MDIO frequency:
+						 * - "2.5Mhz"
+						 * - "1.0Mhz"
+						 */
+						mdc-mdio-freq = "1.0Mhz";
+						/* auto negotiation (in-band, out-of-band)*/
+						auto-neg-mode="out-of-band";
+					};
+				};
+			};
+
+			/* PCIe port configuration */
+			pcie {
+				/*
+				 * Selects which ports are used as end-point
+				 * ports, e.g. <0>.
+				 */
+				ep-ports = <>;
+
+				/* Port 0 status, speed, and number of lanes */
+				port0 {
+					status = "enabled";
+					gen = <2>;
+					width = <1>;
+				};
+
+				/* Port 1 status, speed, and number of lanes */
+				port1 {
+					status = "disabled";
+					gen = <2>;
+					width = <1>;
+				};
+
+				/* Port 2 status, speed, and number of lanes */
+				port2 {
+					status = "disabled";
+					gen = <2>;
+					width = <1>;
+				};
+			};
+		};
+
+		/* pmu { status = "disabled"; }; */
+		arch-timer { compatible = "disabled"; };
+		/* timer0 { status = "disabled"; }; */
+		/* timer1 { status = "disabled"; }; */
+		timer2 { status = "disabled"; };
+		timer3 { status = "disabled"; };
+		wdt1 { status = "disabled"; };
+		wdt2 { status = "disabled"; };
+		wdt3 { status = "disabled"; };
+		/* i2c-pld  { status = "disabled"; }; */
+		/* spi { status = "disabled"; }; */
+		i2c-gen  { status = "disabled"; };
+		/* gpio0 { status = "disabled"; }; */
+		/* gpio1 { status = "disabled"; }; */
+		/* gpio2 { status = "disabled"; }; */
+		/* gpio3 { status = "disabled"; }; */
+		/* gpio4 { status = "disabled"; }; */
+		/* gpio5 { status = "disabled"; }; */
+		/*uart0 { status = "disabled"; };*/
+		/*uart1 { status = "disabled"; };*/
+		uart2 { status = "disabled"; };
+		uart3 { status = "disabled"; };
+		nor_flash { status = "disabled"; };
+		/* nand-flash { status = "disabled"; }; */
+		/* al-fabric { status = "disabled"; }; */
+		/* pcie-internal { status = "disabled"; }; */
+		/* pcie-external0 { status = "disabled"; }; */
+		/* pcie-external1 { status = "disabled"; }; */
+		/* pcie-external2 { status = "disabled"; }; */
+		nand-flash {
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			max-onfi-timing-mode = <1>;
+
+			partition@0 {
+				label = "al_boot";
+				reg = <0x00000000 0x00200000>;
+			};
+			partition@1 {
+				label = "device_tree";
+				reg = <0x00200000 0x00100000>;
+			};
+			partition@2 {
+				label = "linux_kernel";
+				reg = <0x00300000 0x00d00000>;
+			};
+			partition@3 {
+				label = "ubifs";
+				reg = <0x01000000 0x03f000000>;
+			};
+		};
+
+		i2c-pld  {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			bq32k@68 {
+				compatible = "bq32000";
+				reg = <0x68>;
+			};
+
+			i2c_mux@70 {
+				compatible = "pca9548";
+				reg = <0x70>;
+			};
+		};
+
+		spi {
+			/* cs-gpios = <&gpio0 4 0>; */
+
+			spiflash@0 {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "spi_flash_jedec_detection";
+				spi-max-frequency = <37500000>; /* 37.5MHz */
+				reg = <0>;
+
+				partition@0 {
+					reg = <0x0 0x00200000>; /* 2MB */
+					label = "spi_part0";
+				};
+
+				partition@1 {
+					reg = <0x00200000 0x00200000>; /* 2MB */
+					label = "spi_part1";
+				};
+
+				partition@2 {
+					reg = <0x00400000 0x00C00000>; /* 12MB */
+					label = "spi_part2";
+				};
+			};
+		};
+
+		/* SATA SW controlled leds, use gpio 1 for port 0 host 1, and gpio 2 for port 1 host 1 */
+		/* host 1 pci address is domain 0, bus 0, device (slot) 9 */
+		/* uncomment the below node in order to enable */
+		/*
+		sata_sw_leds {
+			compatible = "annapurna-labs,al-sata-sw-leds";
+			led@0 {
+				label = "host 1, port 0 activity&presence led";
+				pci_domain = <0>;
+				pci_bus = <0>;
+				pci_dev = <9>;
+				port = <0>;
+				gpios =<&gpio0 1 0>;
+			};
+			led@1 {
+				label = "host 1, port 1 activity&presence led";
+				pci_domain = <0>;
+				pci_bus = <0>;
+				pci_dev = <9>;
+				port = <1>;
+				gpios =<&gpio0 2 0>;
+			};
+		};
+		*/
+	};
+};
