@@ -20,6 +20,7 @@ obj-$(CONFIG_ARM64) += bdmf/
 obj-$(CONFIG_ARM64) += rdd/
 obj-$(CONFIG_ARM64) += rdpa/
 obj-$(CONFIG_ARM64) += mcast/
+obj-$(CONFIG_ARM64) += serial/
 
 
 obj-$(CONFIG_ARM64) += bcm_legacy_io_map.o

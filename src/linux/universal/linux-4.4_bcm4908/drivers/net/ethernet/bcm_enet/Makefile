@@ -171,7 +171,7 @@ EXTRA_CFLAGS += -I$(KERNEL_DIR)/net/core
 
 ifneq ($(strip $(CONFIG_BCM_WLAN)),)
 EXTRA_CFLAGS += -I$(srctree)/drivers/net/wireless/wl/bcm94908/include
-EXTRA_CFLAGS += -I$(srctree)/drivers/net/wireless/wl/bcm94908/main/src/include
+EXTRA_CFLAGS += -I$(srctree)/arch/arm64/brcm/include
 EXTRA_CFLAGS += -I$(srctree)/drivers/net/wireless/wl/shared/impl1
 EXTRA_CFLAGS += -DDSLCPE -DBCMDRIVER -DPKTC
 endif
