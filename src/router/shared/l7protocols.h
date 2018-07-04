@@ -455,6 +455,7 @@ l7filters filters_list[] = {
 #endif
 	{"shoutcast", DPI},
 #ifdef HAVE_OPENDPI
+	{"showmax", NDPI_ONLY},
 	{"simet", NDPI_ONLY},
 	{"sina", NDPI_ONLY},
 #endif
