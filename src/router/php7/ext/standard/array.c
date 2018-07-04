@@ -2533,7 +2533,13 @@ PHP_FUNCTION(extract)
 				count = php_extract_if_exists(Z_ARRVAL_P(var_array_param), symbol_table);
 				break;
 			case EXTR_OVERWRITE:
-				count = php_extract_overwrite(Z_ARRVAL_P(var_array_param), symbol_table);
+				{
+					zval zv;
+					/* The array might be stored in a local variable that will be overwritten */
+					ZVAL_COPY(&zv, var_array_param);
+					count = php_extract_overwrite(Z_ARRVAL(zv), symbol_table);
+					zval_ptr_dtor(&zv);
+				}
 				break;
 			case EXTR_PREFIX_IF_EXISTS:
 				count = php_extract_prefix_if_exists(Z_ARRVAL_P(var_array_param), symbol_table, prefix);
@@ -2769,10 +2775,18 @@ PHP_FUNCTION(range)
 	ZEND_PARSE_PARAMETERS_END_EX(RETURN_FALSE);
 
 	if (zstep) {
-		if (Z_TYPE_P(zstep) == IS_DOUBLE ||
-			(Z_TYPE_P(zstep) == IS_STRING && is_numeric_string(Z_STRVAL_P(zstep), Z_STRLEN_P(zstep), NULL, NULL, 0) == IS_DOUBLE)
-		) {
+		if (Z_TYPE_P(zstep) == IS_DOUBLE) {
 			is_step_double = 1;
+		} else if (Z_TYPE_P(zstep) == IS_STRING) {
+			int type = is_numeric_string(Z_STRVAL_P(zstep), Z_STRLEN_P(zstep), NULL, NULL, 0);
+			if (type == IS_DOUBLE) {
+				is_step_double = 1;
+			}
+			if (type == 0) {
+				/* bad number */
+				php_error_docref(NULL, E_WARNING, "Invalid range string - must be numeric");
+				RETURN_FALSE;
+			}
 		}
 
 		step = zval_get_double(zstep);
@@ -2900,6 +2914,10 @@ long_str:
 		}
 
 		lstep = step;
+		if (step <= 0) {
+			err = 1;
+			goto err;
+		}
 
 		Z_TYPE_INFO(tmp) = IS_LONG;
 		if (low > high) { 		/* Negative steps */
@@ -6080,7 +6098,7 @@ PHP_FUNCTION(array_map)
 
 		array_init_size(return_value, maxlen);
 
-		ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL(arrays[0]), num_key, str_key, zv) {
+		ZEND_HASH_FOREACH_KEY_VAL_IND(Z_ARRVAL(arrays[0]), num_key, str_key, zv) {
 			fci.retval = &result;
 			fci.param_count = 1;
 			fci.params = &arg;
