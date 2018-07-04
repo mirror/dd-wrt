@@ -3400,10 +3400,9 @@ cprintf("set enable bss %s\n",name);
 		setbuf.enable = 1;
 
 		/* NAS runs if we have an AKM or radius authentication */
-		nas_will_run = wlconf_akm_options(bclist->bsscfgs[i].prefix) ||
-		        nvram_default_match(strcat_r(bclist->bsscfgs[i].prefix, "auth_mode", tmp),
-		                    "radius","disabled");
-
+//		nas_will_run = wlconf_akm_options(bclist->bsscfgs[i].prefix) ||
+//		        nvram_default_match(strcat_r(bclist->bsscfgs[i].prefix, "auth_mode", tmp),
+//		                    "radius","disabled");
 	fprintf(stderr,"enable bss %s %d (%d)\n",name,i,nas_will_run);
 		
 		if (((ap || apsta) && !nas_will_run) || sta || (wet && !apsta)) {
