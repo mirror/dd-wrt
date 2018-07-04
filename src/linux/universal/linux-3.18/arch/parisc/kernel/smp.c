@@ -422,7 +422,8 @@ int __cpu_up(unsigned int cpu, struct task_struct *tidle)
 }
 
 #ifdef CONFIG_PROC_FS
-int setup_profiling_timer(unsigned int multiplier)
+int __init
+setup_profiling_timer(unsigned int multiplier)
 {
 	return -EINVAL;
 }
