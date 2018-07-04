@@ -88,10 +88,10 @@ struct xt_ndpi_tginfo {
 "coap", "applestore", "opendns", "git", "drda", "playstore", "someip", "fix", "playstation", "pastebin", "linkedin", "soundcloud", "csgo", "lisp", \
 "nintendo", "dnscrypt", "1kxun", "iqiyi", "wechat", "github", "sina", "slack", "iflix", "hotmail", "google_drive", "ookla", \
 "hangout", "bjnp", "smpp", "tinc", "amqp", "google_plus", "diameter", "apple_push", "google_services", "amazon_video", "google_docs", "whatsapp_files", \
-"ajp", "ntop", "facebook_messenger", "musically", "facebook_zero", "vidto", "rapidvideo"
+"ajp", "ntop", "facebook_messenger", "musically", "facebook_zero", "vidto", "rapidvideo", "showmax"
 
 
-#define NDPI_PROTOCOL_MAXNUM 276
+#define NDPI_PROTOCOL_MAXNUM 277
 #endif
 
 #endif				/* _LINUX_NETFILTER_XT_NDPI_H */
