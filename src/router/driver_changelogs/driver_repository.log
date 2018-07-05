@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r4126 | brainslayer | 2018-07-05 09:50:18 +0200 (Thu, 05 Jul 2018) | 1 line
+
+change ath9k getrawmonotic handling for kernels below 3.18
+------------------------------------------------------------------------
 r4125 | brainslayer | 2018-07-04 14:06:48 +0200 (Wed, 04 Jul 2018) | 1 line
 
 simplify mask handling
