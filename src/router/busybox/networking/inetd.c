@@ -246,7 +246,11 @@
 #if ENABLE_FEATURE_INETD_RPC
 # if defined(__UCLIBC__) && ! defined(__UCLIBC_HAS_RPC__)
 #  warning "You probably need to build uClibc with UCLIBC_HAS_RPC for NFS support"
-   /* not #error, since user may be using e.g. libtirpc instead */
+   /* not #error, since user may be using e.g. libtirpc instead.
+    * This might work:
+    * CONFIG_EXTRA_CFLAGS="-I/usr/include/tirpc"
+    * CONFIG_EXTRA_LDLIBS="tirpc"
+    */
 # endif
 # include <rpc/rpc.h>
 # include <rpc/pmap_clnt.h>
@@ -497,10 +501,9 @@ static void register_rpc(servtab_t *sep)
 {
 	int n;
 	struct sockaddr_in ir_sin;
-	socklen_t size;
 
-	size = sizeof(ir_sin);
-	if (getsockname(sep->se_fd, (struct sockaddr *) &ir_sin, &size) < 0) {
+	if (bb_getsockname(sep->se_fd, (struct sockaddr *) &ir_sin, sizeof(ir_sin)) < 0) {
+//TODO: verify that such failure is even possible in Linux kernel
 		bb_perror_msg("getsockname");
 		return;
 	}

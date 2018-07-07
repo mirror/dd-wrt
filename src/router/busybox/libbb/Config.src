@@ -1,6 +1,6 @@
 #
 # For a description of the syntax of this configuration file,
-# see scripts/kbuild/config-language.txt.
+# see docs/Kconfig-language.txt.
 #
 
 comment "Library Tuning"
@@ -76,6 +76,18 @@ config FEATURE_ETC_NETWORKS
 	a rarely used feature which allows you to use names
 	instead of IP/mask pairs in route command.
 
+config FEATURE_ETC_SERVICES
+	bool "Consult /etc/services even for well-known ports"
+	default n
+	help
+	Look up e.g. "telnet" and "http" in /etc/services file
+	instead of assuming ports 23 and 80.
+	This is almost never necessary (everybody uses standard ports),
+	and it makes sense to avoid reading this file.
+	If you disable this option, in the cases where port is explicitly
+	specified as a service name (e.g. "telnet HOST PORTNAME"),
+	it will still be looked up in /etc/services.
+
 config FEATURE_EDITING
 	bool "Command line editing"
 	default y
@@ -148,6 +160,11 @@ config FEATURE_EDITING_FANCY_PROMPT
 	help
 	Setting this option allows for prompts to use things like \w and
 	\$ and escape codes.
+
+config FEATURE_EDITING_WINCH
+	bool "Enable automatic tracking of window size changes"
+	default y
+	depends on FEATURE_EDITING
 
 config FEATURE_EDITING_ASK_TERMINAL
 	bool "Query cursor position from terminal"

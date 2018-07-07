@@ -1,6 +1,6 @@
 #
 # For a description of the syntax of this configuration file,
-# see scripts/kbuild/config-language.txt.
+# see docs/Kconfig-language.txt.
 #
 
 config UDHCPD
@@ -94,7 +94,7 @@ config FEATURE_UDHCPC_SANITIZEOPT
 config UDHCPC_DEFAULT_SCRIPT
 	string "Absolute path to config script"
 	default "/usr/share/udhcpc/default.script"
-	depends on UDHCPC
+	depends on UDHCPC || UDHCPC6
 	help
 	This script is called after udhcpc receives an answer. See
 	examples/udhcp for a working example. Normally it is safe

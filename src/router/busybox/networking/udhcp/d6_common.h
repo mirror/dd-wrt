@@ -128,11 +128,15 @@ struct d6_option {
 #define D6_OPT_TZ_POSIX      41
 #define D6_OPT_TZ_NAME       42
 
+#define D6_OPT_BOOT_URL      59
+#define D6_OPT_BOOT_PARAM    60
+
 /*** Other shared functions ***/
 
 struct client6_data_t {
 	struct d6_option *server_id;
 	struct d6_option *ia_na;
+	struct d6_option *ia_pd;
 	char **env_ptr;
 	unsigned env_idx;
 	/* link-local IPv6 address */

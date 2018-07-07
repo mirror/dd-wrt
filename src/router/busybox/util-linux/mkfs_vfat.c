@@ -210,11 +210,11 @@ void BUG_unsupported_field_size(void);
 #define STORE_LE(field, value) \
 do { \
 	if (sizeof(field) == 4) \
-		field = SWAP_LE32(value); \
+		field = SWAP_LE32((uint32_t)(value)); \
 	else if (sizeof(field) == 2) \
-		field = SWAP_LE16(value); \
+		field = SWAP_LE16((uint16_t)(value)); \
 	else if (sizeof(field) == 1) \
-		field = (value); \
+		field = (uint8_t)(value); \
 	else \
 		BUG_unsupported_field_size(); \
 } while (0)
@@ -522,7 +522,7 @@ int mkfs_vfat_main(int argc UNUSED_PARAM, char **argv)
 		//STORE_LE(boot_blk->reserved2[3], 0,0,0);
 		STORE_LE(boot_blk->vi.ext_boot_sign, 0x29);
 		STORE_LE(boot_blk->vi.volume_id32, volume_id);
-		strncpy(boot_blk->vi.fs_type, "FAT32   ", sizeof(boot_blk->vi.fs_type));
+		memcpy(boot_blk->vi.fs_type, "FAT32   ", sizeof(boot_blk->vi.fs_type));
 		strncpy(boot_blk->vi.volume_label, volume_label, sizeof(boot_blk->vi.volume_label));
 		memcpy(boot_blk->boot_code, boot_code, sizeof(boot_code));
 		STORE_LE(boot_blk->boot_sign, BOOT_SIGN);

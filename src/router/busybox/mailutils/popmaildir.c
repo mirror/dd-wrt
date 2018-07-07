@@ -45,8 +45,8 @@
 //usage:     "\n	-k		Keep retrieved messages on the server"
 //usage:     "\n	-t SEC		Network timeout"
 //usage:	IF_FEATURE_POPMAILDIR_DELIVERY(
-//usage:     "\n	-F \"PROG ARGS\"	Filter program (may be repeated)"
-//usage:     "\n	-M \"PROG ARGS\"	Delivery program"
+//usage:     "\n	-F 'PROG ARGS'	Filter program (may be repeated)"
+//usage:     "\n	-M 'PROG ARGS'	Delivery program"
 //usage:	)
 //usage:     "\n"
 //usage:     "\nFetch from plain POP3 server:"
@@ -265,7 +265,7 @@ int popmaildir_main(int argc UNUSED_PARAM, char **argv)
 
 		// atomically move message to ./new/
 		target = xstrdup(filename);
-		strncpy(target, "new", 3);
+		memcpy(target, "new", 3);
 		// ... or just stop receiving on failure
 		if (rename_or_warn(filename, target))
 			break;

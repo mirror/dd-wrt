@@ -336,7 +336,9 @@ static void unzip_create_leading_dirs(const char *fn)
 {
 	/* Create all leading directories */
 	char *name = xstrdup(fn);
-	if (bb_make_directory(dirname(name), 0777, FILEUTILS_RECUR)) {
+
+	/* mode of -1: set mode according to umask */
+	if (bb_make_directory(dirname(name), -1, FILEUTILS_RECUR)) {
 		xfunc_die(); /* bb_make_directory is noisy */
 	}
 	free(name);
@@ -370,9 +372,10 @@ static void unzip_extract_symlink(llist_t **symlink_placeholders,
 		target[xstate.mem_output_size] = '\0';
 #endif
 	}
-	create_or_remember_symlink(symlink_placeholders,
+	create_or_remember_link(symlink_placeholders,
 			target,
-			dst_fn);
+			dst_fn,
+			0);
 	free(target);
 }
 #endif
@@ -988,7 +991,7 @@ int unzip_main(int argc, char **argv)
 	}
 
 #if ENABLE_FEATURE_UNZIP_CDF
-	create_symlinks_from_list(symlink_placeholders);
+	create_links_from_list(symlink_placeholders);
 #endif
 
 	if ((opts & OPT_l) && quiet <= 1) {

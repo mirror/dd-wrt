@@ -45,7 +45,7 @@
 #include "dhcpd.h"
 
 /* globals */
-struct dyn_lease *g_leases;
+#define g_leases ((struct dyn_lease*)ptr_to_globals)
 /* struct server_config_t server_config is in bb_common_bufsiz1 */
 
 /* Takes the address of the pointer to the static_leases linked list,
@@ -362,7 +362,10 @@ static int FAST_FUNC read_staticlease(const char *const_line, void *arg)
 }
 
 static int FAST_FUNC read_optset(const char *line, void *arg) {
-	return udhcp_str2optset(line, arg, dhcp_optflags, dhcp_option_strings);
+	return udhcp_str2optset(line, arg,
+			dhcp_optflags, dhcp_option_strings,
+			/*dhcpv6:*/ 0
+	);
 }
 
 struct config_keyword {
@@ -588,9 +591,7 @@ static void send_packet_to_relay(struct dhcp_packet *dhcp_pkt)
 
 	udhcp_send_kernel_packet(dhcp_pkt,
 			server_config.server_nip, SERVER_PORT,
-			dhcp_pkt->gateway_nip, SERVER_PORT,
-			/*send_flags:*/ 0
-	);
+			dhcp_pkt->gateway_nip, SERVER_PORT);
 }
 
 static void send_packet(struct dhcp_packet *dhcp_pkt, int force_broadcast)
@@ -859,8 +860,6 @@ int udhcpd_main(int argc UNUSED_PARAM, char **argv)
 
 	/* Make sure fd 0,1,2 are open */
 	bb_sanitize_stdio();
-	/* Equivalent of doing a fflush after every \n */
-	setlinebuf(stdout);
 
 	/* Create pidfile */
 	write_pidfile(server_config.pidfile);
@@ -883,7 +882,9 @@ int udhcpd_main(int argc UNUSED_PARAM, char **argv)
 		server_config.max_leases = num_ips;
 	}
 
-	g_leases = xzalloc(server_config.max_leases * sizeof(g_leases[0]));
+	/* this sets g_leases */
+	SET_PTR_TO_GLOBALS(xzalloc(server_config.max_leases * sizeof(g_leases[0])));
+
 	read_leases(server_config.lease_file);
 
 	if (udhcp_read_interface(server_config.interface,
