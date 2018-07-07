@@ -378,34 +378,30 @@ int FAST_FUNC udhcp_str2nip(const char *str, void *arg)
  * Called to parse "udhcpc -x OPTNAME:OPTVAL"
  * and to parse udhcpd.conf's "opt OPTNAME OPTVAL" directives.
  */
-/* helper for the helper */
-static char *allocate_tempopt_if_needed(
+/* helper: add an option to the opt_list */
+#if !ENABLE_UDHCPC6
+#define attach_option(opt_list, optflag, buffer, length, dhcpv6) \
+	attach_option(opt_list, optflag, buffer, length)
+#endif
+static NOINLINE void attach_option(
+		struct option_set **opt_list,
 		const struct dhcp_optflag *optflag,
 		char *buffer,
-		int *length_p)
+		int length,
+		bool dhcpv6)
 {
+	IF_NOT_UDHCPC6(bool dhcpv6 = 0;)
+	struct option_set *existing;
 	char *allocated = NULL;
+
 	if ((optflag->flags & OPTION_TYPE_MASK) == OPTION_BIN) {
 		const char *end;
 		allocated = xstrdup(buffer); /* more than enough */
 		end = hex2bin(allocated, buffer, 255);
 		if (errno)
 			bb_error_msg_and_die("malformed hex string '%s'", buffer);
-		*length_p = end - allocated;
+		length = end - allocated;
 	}
-	return allocated;
-}
-/* helper: add an option to the opt_list */
-static NOINLINE void attach_option(
-		struct option_set **opt_list,
-		const struct dhcp_optflag *optflag,
-		char *buffer,
-		int length)
-{
-	struct option_set *existing;
-	char *allocated;
-
-	allocated = allocate_tempopt_if_needed(optflag, buffer, &length);
 #if ENABLE_FEATURE_UDHCP_RFC3397
 	if ((optflag->flags & OPTION_TYPE_MASK) == OPTION_DNS_STRING) {
 		/* reuse buffer and length for RFC1035-formatted string */
@@ -420,10 +416,21 @@ static NOINLINE void attach_option(
 		/* make a new option */
 		log2("attaching option %02x to list", optflag->code);
 		new = xmalloc(sizeof(*new));
-		new->data = xmalloc(length + OPT_DATA);
-		new->data[OPT_CODE] = optflag->code;
-		new->data[OPT_LEN] = length;
-		memcpy(new->data + OPT_DATA, (allocated ? allocated : buffer), length);
+		if (!dhcpv6) {
+			new->data = xmalloc(length + OPT_DATA);
+			new->data[OPT_CODE] = optflag->code;
+			new->data[OPT_LEN] = length;
+			memcpy(new->data + OPT_DATA, (allocated ? allocated : buffer),
+					length);
+		} else {
+			new->data = xmalloc(length + D6_OPT_DATA);
+			new->data[D6_OPT_CODE] = optflag->code >> 8;
+			new->data[D6_OPT_CODE + 1] = optflag->code & 0xff;
+			new->data[D6_OPT_LEN] = length >> 8;
+			new->data[D6_OPT_LEN + 1] = length & 0xff;
+			memcpy(new->data + D6_OPT_DATA, (allocated ? allocated : buffer),
+					length);
+		}
 
 		curr = opt_list;
 		while (*curr && (*curr)->data[OPT_CODE] < optflag->code)
@@ -460,15 +467,17 @@ static NOINLINE void attach_option(
 	free(allocated);
 }
 
-int FAST_FUNC udhcp_str2optset(const char *const_str, void *arg, const struct dhcp_optflag *optflags, const char *option_strings)
+int FAST_FUNC udhcp_str2optset(const char *const_str, void *arg,
+		const struct dhcp_optflag *optflags, const char *option_strings,
+		bool dhcpv6)
 {
 	struct option_set **opt_list = arg;
-	char *opt, *val;
+	char *opt;
 	char *str;
 	const struct dhcp_optflag *optflag;
-	struct dhcp_optflag bin_optflag;
+	struct dhcp_optflag userdef_optflag;
 	unsigned optcode;
-	int retval, length;
+	int retval;
 	/* IP_PAIR needs 8 bytes, STATIC_ROUTES needs 9 max */
 	char buffer[9] ALIGNED(4);
 	uint16_t *result_u16 = (uint16_t *) buffer;
@@ -476,28 +485,41 @@ int FAST_FUNC udhcp_str2optset(const char *const_str, void *arg, const struct dh
 
 	/* Cheat, the only *const* str possible is "" */
 	str = (char *) const_str;
-	opt = strtok(str, " \t=");
+	opt = strtok(str, " \t=:");
 	if (!opt)
 		return 0;
 
 	optcode = bb_strtou(opt, NULL, 0);
 	if (!errno && optcode < 255) {
-		/* Raw (numeric) option code */
-		bin_optflag.flags = OPTION_BIN;
-		bin_optflag.code = optcode;
-		optflag = &bin_optflag;
+		/* Raw (numeric) option code.
+		 * Initially assume binary (hex-str), but if "str" or 'str'
+		 * is seen later, switch to STRING.
+		 */
+		userdef_optflag.flags = OPTION_BIN;
+		userdef_optflag.code = optcode;
+		optflag = &userdef_optflag;
 	} else {
 		optflag = &optflags[udhcp_option_idx(opt, option_strings)];
 	}
 
+	/* Loop to handle OPTION_LIST case, else execute just once */
 	retval = 0;
 	do {
-		val = strtok(NULL, ", \t");
+		int length;
+		char *val;
+
+		if (optflag->flags == OPTION_BIN) {
+			val = strtok(NULL, ""); /* do not split "'q w e'" */
+			trim(val);
+		} else
+			val = strtok(NULL, ", \t");
 		if (!val)
 			break;
+
 		length = dhcp_option_lengths[optflag->flags & OPTION_TYPE_MASK];
 		retval = 0;
 		opt = buffer; /* new meaning for variable opt */
+
 		switch (optflag->flags & OPTION_TYPE_MASK) {
 		case OPTION_IP:
 			retval = udhcp_str2nip(val, buffer);
@@ -510,6 +532,7 @@ int FAST_FUNC udhcp_str2optset(const char *const_str, void *arg, const struct dh
 			if (retval)
 				retval = udhcp_str2nip(val, buffer + 4);
 			break;
+case_OPTION_STRING:
 		case OPTION_STRING:
 		case OPTION_STRING_HOST:
 #if ENABLE_FEATURE_UDHCP_RFC3397
@@ -577,14 +600,28 @@ int FAST_FUNC udhcp_str2optset(const char *const_str, void *arg, const struct dh
 			}
 			break;
 		}
-		case OPTION_BIN: /* handled in attach_option() */
+		case OPTION_BIN:
+			/* Raw (numeric) option code. Is it a string? */
+			if (val[0] == '"' || val[0] == '\'') {
+				char delim = val[0];
+				char *end = last_char_is(val + 1, delim);
+				if (end) {
+					*end = '\0';
+					val++;
+					userdef_optflag.flags = OPTION_STRING;
+					goto case_OPTION_STRING;
+				}
+			}
+			/* No: hex-str option, handled in attach_option() */
 			opt = val;
 			retval = 1;
+			break;
 		default:
 			break;
 		}
+
 		if (retval)
-			attach_option(opt_list, optflag, opt, length);
+			attach_option(opt_list, optflag, opt, length, dhcpv6);
 	} while (retval && (optflag->flags & OPTION_LIST));
 
 	return retval;

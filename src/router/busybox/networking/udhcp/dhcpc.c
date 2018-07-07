@@ -704,16 +704,10 @@ static int raw_bcast_from_client_config_ifindex(struct dhcp_packet *packet, uint
 
 static int bcast_or_ucast(struct dhcp_packet *packet, uint32_t ciaddr, uint32_t server)
 {
-	if (server) {
-		/* Without MSG_DONTROUTE, the packet was seen routed over
-		 * _other interface_ if server ID is bogus (example: 1.1.1.1).
-		 */
+	if (server)
 		return udhcp_send_kernel_packet(packet,
 			ciaddr, CLIENT_PORT,
-			server, SERVER_PORT,
-			/*send_flags: "to hosts only on directly connected networks" */ MSG_DONTROUTE
-		);
-	}
+			server, SERVER_PORT);
 	return raw_bcast_from_client_config_ifindex(packet, ciaddr);
 }
 
@@ -1236,6 +1230,7 @@ static void client_background(void)
 //usage:     "\n			-x hostname:bbox - option 12"
 //usage:     "\n			-x lease:3600 - option 51 (lease time)"
 //usage:     "\n			-x 0x3d:0100BEEFC0FFEE - option 61 (client id)"
+//usage:     "\n			-x 14:'\"dumpfile\"' - option 14 (shell-quoted)"
 //usage:     "\n	-F NAME		Ask server to update DNS mapping for NAME"
 //usage:     "\n	-V VENDOR	Vendor identifier (default 'udhcp VERSION')"
 //usage:     "\n	-C		Don't send MAC as client identifier"
@@ -1347,15 +1342,12 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 		}
 	}
 	while (list_x) {
-		char *optstr = llist_pop(&list_x);
-		char *colon = strchr(optstr, ':');
-		if (colon)
-			*colon = ' ';
-		/* now it looks similar to udhcpd's config file line:
-		 * "optname optval", using the common routine: */
-		udhcp_str2optset(optstr, &client_config.options, dhcp_optflags, dhcp_option_strings);
-		if (colon)
-			*colon = ':'; /* restore it for NOMMU reexec */
+		char *optstr = xstrdup(llist_pop(&list_x));
+		udhcp_str2optset(optstr, &client_config.options,
+				dhcp_optflags, dhcp_option_strings,
+				/*dhcpv6:*/ 0
+		);
+		free(optstr);
 	}
 
 	if (udhcp_read_interface(client_config.interface,
@@ -1398,8 +1390,6 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 
 	/* Make sure fd 0,1,2 are open */
 	bb_sanitize_stdio();
-	/* Equivalent of doing a fflush after every \n */
-	setlinebuf(stdout);
 	/* Create pidfile */
 	write_pidfile(client_config.pidfile);
 	/* Goes to stdout (unless NOMMU) and possibly syslog */
@@ -1749,8 +1739,10 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 					/* paranoia: must not be too small and not prone to overflows */
 					if (lease_seconds < 0x10)
 						lease_seconds = 0x10;
-					if (lease_seconds > 0x7fffffff / 1000)
-						lease_seconds = 0x7fffffff / 1000;
+					//if (lease_seconds > 0x7fffffff)
+					//	lease_seconds = 0x7fffffff;
+					//^^^not necessary since "timeout = lease_seconds / 2"
+					//does not overflow even for 0xffffffff.
 				}
 #if ENABLE_FEATURE_UDHCPC_ARPING
 				if (opt & OPT_a) {

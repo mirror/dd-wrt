@@ -806,8 +806,6 @@ static int tls_xread_record(tls_state_t *tls, const char *expected)
 			 || xhdr->proto_min != TLS_MIN
 			) {
 				sz = total < target ? total : target;
-				if (sz > 24)
-					sz = 24; /* don't flood */
 				bad_record_die(tls, expected, sz);
 			}
 			dbg("xhdr type:%d ver:%d.%d len:%d\n",
@@ -1084,6 +1082,8 @@ static void find_key_in_der_cert(tls_state_t *tls, uint8_t *der, int len)
  * We need Certificate.tbsCertificate.subjectPublicKeyInfo.publicKey
  */
 	uint8_t *end = der + len;
+	uint8_t tag_class, pc, tag_number;
+	int version_present;
 
 	/* enter "Certificate" item: [der, end) will be only Cert */
 	der = enter_der_item(der, &end);
@@ -1091,8 +1091,24 @@ static void find_key_in_der_cert(tls_state_t *tls, uint8_t *der, int len)
 	/* enter "tbsCertificate" item: [der, end) will be only tbsCert */
 	der = enter_der_item(der, &end);
 
+	/*
+	 * Skip version field only if it is present. For a v1 certificate, the
+	 * version field won't be present since v1 is the default value for the
+	 * version field and fields with default values should be omitted (see
+	 * RFC 5280 sections 4.1 and 4.1.2.1). If the version field is present
+	 * it will have a tag class of 2 (context-specific), bit 6 as 1
+	 * (constructed), and a tag number of 0 (see ITU-T X.690 sections 8.1.2
+	 * and 8.14).
+	 */
+	tag_class = der[0] >> 6; /* bits 8-7 */
+	pc = (der[0] & 32) >> 5; /* bit 6 */
+	tag_number = der[0] & 31; /* bits 5-1 */
+	version_present = tag_class == 2 && pc == 1 && tag_number == 0;
+	if (version_present) {
+		der = skip_der_item(der, end); /* version */
+	}
+
 	/* skip up to subjectPublicKeyInfo */
-	der = skip_der_item(der, end); /* version */
 	der = skip_der_item(der, end); /* serialNumber */
 	der = skip_der_item(der, end); /* signatureAlgo */
 	der = skip_der_item(der, end); /* issuer */
@@ -1727,7 +1743,7 @@ static void tls_xwrite(tls_state_t *tls, int len)
 // openssl s_server -key key.pem -cert server.pem -debug -tls1_2 -no_tls1 -no_tls1_1 -cipher NULL
 // openssl s_client -connect 127.0.0.1:4433 -debug -tls1_2 -no_tls1 -no_tls1_1 -cipher NULL-SHA256
 
-void FAST_FUNC tls_run_copy_loop(tls_state_t *tls)
+void FAST_FUNC tls_run_copy_loop(tls_state_t *tls, unsigned flags)
 {
 	int inbuf_size;
 	const int INBUF_STEP = 4 * 1024;
@@ -1762,6 +1778,8 @@ void FAST_FUNC tls_run_copy_loop(tls_state_t *tls)
 				 */
 				pfds[0].fd = -1;
 				tls_free_outbuf(tls); /* mem usage optimization */
+				if (flags & TLSLOOP_EXIT_ON_LOCAL_EOF)
+					break;
 			} else {
 				if (nread == inbuf_size) {
 					/* TLS has per record overhead, if input comes fast,
