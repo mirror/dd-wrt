@@ -261,6 +261,25 @@ end d
 " \
 	"" ""
 
+prg='
+BEGIN{
+cnt = 0
+a[cnt] = "zeroth"
+a[++cnt] = "first"
+delete a[cnt--]
+print cnt
+print "[0]:" a[0]
+print "[1]:" a[1]
+}'
+testing "awk 'delete a[v--]' evaluates v-- once" \
+	"awk '$prg'" \
+	"\
+0
+[0]:zeroth
+[1]:
+" \
+	"" ""
+
 testing "awk handles empty ()" \
 	"awk 'BEGIN {print()}' 2>&1" "awk: cmd. line:1: Empty sequence\n" "" ""
 
@@ -320,5 +339,11 @@ testing "awk handles invalid for loop" \
     "awk '{ for() }' 2>&1" "awk: cmd. line:1: Unexpected token\n" "" ""
 
 # testing "description" "command" "result" "infile" "stdin"
+testing 'awk negative field access' \
+	'awk 2>&1 -- '\''{ $(-1) }'\' \
+	"awk: cmd. line:1: Access to negative field\n" \
+	'' \
+	'anything'
+
 
 exit $FAILCOUNT
