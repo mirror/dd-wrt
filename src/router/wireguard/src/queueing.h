@@ -27,7 +27,8 @@ static struct multicore_worker __percpu *packet_alloc_percpu_multicore_worker(wo
 static void packet_receive(struct wireguard_device *wg, struct sk_buff *skb);
 static void packet_handshake_receive_worker(struct work_struct *work);
 /* Workqueue workers: */
-static void packet_rx_worker(struct work_struct *work);
+/* NAPI poll function: */
+static int packet_rx_poll(struct napi_struct *napi, int budget);
 static void packet_decrypt_worker(struct work_struct *work);
 
 /* send.c APIs: */
@@ -135,6 +136,15 @@ static inline void queue_enqueue_per_peer(struct crypt_queue *queue, struct sk_b
 
 	atomic_set(&PACKET_CB(skb)->state, state);
 	queue_work_on(cpumask_choose_online(&peer->serial_work_cpu, peer->internal_id), peer->device->packet_crypt_wq, &queue->work);
+	peer_put(peer);
+}
+
+static inline void queue_enqueue_per_peer_napi(struct crypt_queue *queue, struct sk_buff *skb, enum packet_state state)
+{
+	struct wireguard_peer *peer = peer_rcu_get(PACKET_PEER(skb));
+
+	atomic_set(&PACKET_CB(skb)->state, state);
+	napi_schedule(&peer->napi);
 	peer_put(peer);
 }
 
