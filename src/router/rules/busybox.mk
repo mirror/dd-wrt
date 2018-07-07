@@ -537,7 +537,15 @@ endif
 	echo "# CONFIG_SETFATTR is not set" >> busybox/.config
 	echo "# CONFIG_NETCAT is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_SH_READ_FRAC is not set" >> busybox/.config
-
+	echo "CONFIG_STACK_OPTIMIZATION_386=y" >> busybox/.config
+	echo "# CONFIG_FEATURE_ETC_SERVICES is not set" >> busybox/.config
+	echo "CONFIG_FEATURE_EDITING_WINCH=y" >> busybox/.config
+	echo "# CONFIG_FEATURE_WAIT_FOR_INIT is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_NSLOOKUP_BIG is not set" >> busybox/.config
+	echo "# CONFIG_TC is not set" >> busybox/.config
+	echo "# CONFIG_SVOK is not set" >> busybox/.config
+	echo "CONFIG_ASH_BASH_SOURCE_CURDIR=y" >> busybox/.config
+	echo "# CONFIG_ASH_BASH_NOT_FOUND_HOOK is not set" >> busybox/.config
 
 	cd busybox && make oldconfig
 	
