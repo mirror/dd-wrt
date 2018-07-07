@@ -1308,7 +1308,7 @@ void xfunc_die(void) NORETURN FAST_FUNC;
 #define bb_perror_nomsg()
 #define bb_info_msg(fmt, arg...)
 #define bb_die_memory_exhausted() exit(-1)
-//#define bb_verror_msg(a1, a2, a3) 
+#define bb_verror_msg(a1, a2, a3) 
 #else
 void xfunc_die(void) NORETURN FAST_FUNC;
 void bb_show_usage(void) NORETURN FAST_FUNC;
@@ -1323,8 +1323,8 @@ void bb_herror_msg_and_die(const char *s, ...) __attribute__ ((noreturn, format 
 void bb_perror_nomsg_and_die(void) NORETURN FAST_FUNC;
 void bb_perror_nomsg(void) FAST_FUNC;
 void bb_die_memory_exhausted(void) NORETURN FAST_FUNC;
-#endif
 void bb_verror_msg(const char *s, va_list p, const char *strerr) FAST_FUNC;
+#endif
 void bb_logenv_override(void) FAST_FUNC;
 
 /* We need to export XXX_main from libbusybox
