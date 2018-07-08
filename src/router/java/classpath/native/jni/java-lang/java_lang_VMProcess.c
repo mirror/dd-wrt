@@ -209,7 +209,7 @@ Java_java_lang_VMProcess_nativeSpawn (JNIEnv * env, jobject this,
   err = cpproc_forkAndExec(strings, newEnviron, fds, pipe_count, &pid, dir);
   if (err != 0)
     {
-      strncpy(errbuf, cpnative_getErrorString (err), sizeof(errbuf));
+      strncpy(errbuf, cpnative_getErrorString (err), sizeof(errbuf) - 1);
       goto system_error;
     }
 
