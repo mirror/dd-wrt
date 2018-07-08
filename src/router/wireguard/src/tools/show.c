@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 #include <time.h>
 #include <netdb.h>
 
@@ -399,7 +400,9 @@ int show_main(int argc, char *argv[])
 			struct wgdevice *device = NULL;
 
 			if (ipc_get_device(&device, interface) < 0) {
-				perror("Unable to access interface");
+				fprintf(stderr, "Unable to access interface %s: %s\n", interface, strerror(errno));
+				if (ret >= 0)
+					ret = 1;
 				continue;
 			}
 			if (argc == 3) {
@@ -413,8 +416,11 @@ int show_main(int argc, char *argv[])
 				if (strlen(interface + len + 1))
 					printf("\n");
 			}
+			ret = -1;
 			free_wgdevice(device);
 		}
+		if (ret == -1)
+			ret = 0;
 		free(interfaces);
 	} else if (!strcmp(argv[1], "interfaces")) {
 		char *interfaces, *interface;
