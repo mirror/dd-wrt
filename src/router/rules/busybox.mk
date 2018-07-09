@@ -540,6 +540,7 @@ endif
 	echo "CONFIG_STACK_OPTIMIZATION_386=y" >> busybox/.config
 	echo "# CONFIG_FEATURE_ETC_SERVICES is not set" >> busybox/.config
 	echo "CONFIG_FEATURE_EDITING_WINCH=y" >> busybox/.config
+	echo "CONFIG_FEATURE_SORT_OPTIMIZE_MEMORY=y" >> busybox/.config
 	echo "# CONFIG_FEATURE_WAIT_FOR_INIT is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_NSLOOKUP_BIG is not set" >> busybox/.config
 	echo "# CONFIG_TC is not set" >> busybox/.config
