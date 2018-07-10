@@ -833,6 +833,10 @@ init(int argc, char **argv)
 			if (strtobool(ary_options[i].value))
 				SETFLAG(META_MEDIA_MASK);
 			break;
+		case NO_ALBUM_ART:
+			if (strtobool(ary_options[i].value))
+				SETFLAG(NO_ALBUM_ART_MASK);
+			break;
 		default:
 			DPRINTF(E_ERROR, L_GENERAL, "Unknown option in file %s\n",
 				optionsfile);

@@ -164,7 +164,7 @@ update_if_album_art(const char *path)
 	closedir(dh);
 }
 
-char *
+static char *
 check_embedded_art(const char *path, uint8_t *image_data, int image_size)
 {
 	int width = 0, height = 0;
@@ -358,6 +358,8 @@ find_album_art(const char *path, uint8_t *image_data, int image_size)
 {
 	char *album_art = NULL;
 	int64_t ret = 0;
+	if (GETFLAG(META_MEDIA_MASK))
+		return -1;
 
 	if( (image_size && (album_art = check_embedded_art(path, image_data, image_size))) ||
 	    (album_art = check_for_album_file(path)) )
