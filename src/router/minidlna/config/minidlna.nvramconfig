@@ -5,3 +5,4 @@
  "dlna_metadata" "dlna cover art" "CHOICE" "2" "0" "1"  "FALSE" "0"
  "dlna_cleandb" "dlna keep metadata" "CHOICE" "2" "0" "1"  "FALSE" "0"
  "dlna_rescan" "dlna cyclic rescan" "CHOICE" "2" "0" "1"  "FALSE" "0"
+ "dlna_no_art" "no album art" "CHOICE" "2" "0" "1"  "FALSE" "0"
