@@ -547,6 +547,7 @@ endif
 	echo "# CONFIG_SVOK is not set" >> busybox/.config
 	echo "CONFIG_ASH_BASH_SOURCE_CURDIR=y" >> busybox/.config
 	echo "# CONFIG_ASH_BASH_NOT_FOUND_HOOK is not set" >> busybox/.config
+	echo "CONFIG_BZIP2_SMALL=9" >> busybox/.config
 
 	cd busybox && make oldconfig
 	
