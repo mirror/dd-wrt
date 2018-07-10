@@ -836,6 +836,7 @@ nas.samba3="Samba Server";
 nas.dlna_legend="DLNA Server";
 nas.dlna_srv="MiniDLNA";
 nas.dlna_merge="Merge Media Dirs";
+nas.dlna_no_art="Ignore Album Art";
 nas.dlna_subtitles="Enable Subtitles";
 nas.dlna_thumb="Include Cover Artwork";
 nas.dlna_dir="Files Directory";
