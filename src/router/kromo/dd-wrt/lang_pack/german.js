@@ -754,6 +754,7 @@ nas.samba3="Samba Server";
 nas.dlna_legend="DLNA Server";
 nas.dlna_srv="MiniDLNA";
 nas.dlna_merge="Verzeichnisse Zusammenf&uuml;hren";
+nas.dlna_no_art="Ignoriere Album Grafik";
 nas.dlna_thumb="Titelbilder einbinden";
 nas.dlna_subtitles="Verwende Untertitel";
 nas.dlna_dir="DLNA Verzeichnis";
