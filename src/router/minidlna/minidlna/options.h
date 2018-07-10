@@ -64,6 +64,7 @@ enum upnpconfigoptions {
 	ENABLE_SUBTITLES,		/* Enable generic subtitle support for all clients by default */
 	META_KEEP,			/* keep metadata for fast rebuilding of the database */
 	META_KEEP_MEDIA, 		/* keep the metadata with the media in a .meta folder */
+	NO_ALBUM_ART, 			/* do not scan or store album art */
 };
 
 /* readoptionsfile()

@@ -71,6 +71,7 @@ static const struct {
 	{ ENABLE_SUBTITLES, "enable_subtitles" },
 	{ META_KEEP, "keep_metadata" },
 	{ META_KEEP_MEDIA, "keep_metadata_with_media" },
+	{ NO_ALBUM_ART, "no_album_art" },
 };
 
 int
