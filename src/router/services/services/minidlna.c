@@ -95,6 +95,8 @@ void start_dlna(void)
 	} else {
 		fprintf(fp, "enable_subtitles=no\n");
 	}
+	if (nvram_matchi("dlna_no_art", 1))
+		fprintf(fp, "no_album_art=yes\n");
 	if (nvram_matchi("dlna_metadata", 1)) {
 		fprintf(fp, "keep_metadata=yes\n");
 		fprintf(fp, "keep_metadata_with_media=yes\n");
