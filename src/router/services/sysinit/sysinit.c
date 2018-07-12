@@ -3185,9 +3185,9 @@ void start_drivers(void)
 	}
 
 	if (brand == ROUTER_WRT_32X) {
-		set_led_usbport("pca963x\\:venom\\:white\\:usb3_2", "usb2-port1");
-		set_led_usbport("pca963x\\:venom\\:white\\:usb3_1", "usb2-port1 usb1-port1");
-		set_led_usbport("pca963x\\:venom\\:white\\:usb2", "usb3-port1");
+		set_led_usbport("pca963x\\:venom\\:blue\\:usb3_2", "usb2-port1");
+		set_led_usbport("pca963x\\:venom\\:blue\\:usb3_1", "usb2-port1 usb1-port1");
+		set_led_usbport("pca963x\\:venom\\:blue\\:usb2", "usb3-port1");
 
 	}
 #endif
