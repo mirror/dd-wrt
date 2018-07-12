@@ -771,6 +771,8 @@
 
 #define ROUTER_WRT_32X 0x102101
 
+#define ROUTER_TPLINK_ARCHERC3200 0x103111
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 
