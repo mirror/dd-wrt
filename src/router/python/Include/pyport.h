@@ -753,7 +753,7 @@ extern char * _getpty(int *, int, mode_t, int);
 #define PY_LITTLE_ENDIAN 1
 #endif
 
-#if defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_BUILTIN)
+#if 1 // defined(Py_BUILD_CORE) || defined(Py_BUILD_CORE_BUILTIN)
 /*
  * Macros to protect CRT calls against instant termination when passed an
  * invalid parameter (issue23524).

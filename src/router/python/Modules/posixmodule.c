@@ -25,6 +25,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "pyport.h"
 #include "pythread.h"
 #include "structmember.h"
 #ifndef MS_WINDOWS
