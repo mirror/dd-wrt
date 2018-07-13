@@ -1,6 +1,6 @@
 #ifndef Py_ATOMIC_H
 #define Py_ATOMIC_H
-#ifdef Py_BUILD_CORE
+#if 1//def Py_BUILD_CORE
 
 #include "dynamic_annotations.h"
 
