@@ -1,5 +1,6 @@
 
 #include "Python.h"
+#include "pyatomic.h"
 #include "internal/mem.h"
 #include "internal/pystate.h"
 #include "structmember.h"
