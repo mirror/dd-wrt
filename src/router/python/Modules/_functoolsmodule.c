@@ -1,5 +1,7 @@
 
 #include "Python.h"
+#include "internal/mem.h"
+#include "internal/pystate.h"
 #include "structmember.h"
 
 /* _functools module written and maintained
@@ -18,6 +20,7 @@ typedef struct {
     PyObject *kw;
     PyObject *dict;
     PyObject *weakreflist; /* List of weak references */
+    int use_fastcall;
 } partialobject;
 
 static PyTypeObject partial_type;
@@ -65,26 +68,20 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         Py_DECREF(pto);
         return NULL;
     }
-    if (pargs == NULL || PyTuple_GET_SIZE(pargs) == 0) {
+    if (pargs == NULL) {
         pto->args = nargs;
-        Py_INCREF(nargs);
-    }
-    else if (PyTuple_GET_SIZE(nargs) == 0) {
-        pto->args = pargs;
-        Py_INCREF(pargs);
     }
     else {
         pto->args = PySequence_Concat(pargs, nargs);
+        Py_DECREF(nargs);
         if (pto->args == NULL) {
-            Py_DECREF(nargs);
             Py_DECREF(pto);
             return NULL;
         }
         assert(PyTuple_Check(pto->args));
     }
-    Py_DECREF(nargs);
 
-    if (pkw == NULL || PyDict_Size(pkw) == 0) {
+    if (pkw == NULL || PyDict_GET_SIZE(pkw) == 0) {
         if (kw == NULL) {
             pto->kw = PyDict_New();
         }
@@ -110,6 +107,8 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
 
+    pto->use_fastcall = _PyObject_HasFastCall(func);
+
     return (PyObject *)pto;
 }
 
@@ -128,66 +127,110 @@ partial_dealloc(partialobject *pto)
 }
 
 static PyObject *
-partial_call(partialobject *pto, PyObject *args, PyObject *kw)
+partial_fastcall(partialobject *pto, PyObject **args, Py_ssize_t nargs,
+                 PyObject *kwargs)
 {
+    PyObject *small_stack[_PY_FASTCALL_SMALL_STACK];
     PyObject *ret;
-    PyObject *argappl, *kwappl;
-    PyObject **stack;
-    Py_ssize_t nargs;
+    PyObject **stack, **stack_buf = NULL;
+    Py_ssize_t nargs2, pto_nargs;
+
+    pto_nargs = PyTuple_GET_SIZE(pto->args);
+    nargs2 = pto_nargs + nargs;
+
+    if (pto_nargs == 0) {
+        stack = args;
+    }
+    else if (nargs == 0) {
+        stack = &PyTuple_GET_ITEM(pto->args, 0);
+    }
+    else {
+        if (nargs2 <= (Py_ssize_t)Py_ARRAY_LENGTH(small_stack)) {
+            stack = small_stack;
+        }
+        else {
+            stack_buf = PyMem_Malloc(nargs2 * sizeof(PyObject *));
+            if (stack_buf == NULL) {
+                PyErr_NoMemory();
+                return NULL;
+            }
+            stack = stack_buf;
+        }
+
+        /* use borrowed references */
+        memcpy(stack,
+               &PyTuple_GET_ITEM(pto->args, 0),
+               pto_nargs * sizeof(PyObject*));
+        memcpy(&stack[pto_nargs],
+               args,
+               nargs * sizeof(PyObject*));
+    }
+
+    ret = _PyObject_FastCallDict(pto->fn, stack, nargs2, kwargs);
+    PyMem_Free(stack_buf);
+    return ret;
+}
+
+static PyObject *
+partial_call_impl(partialobject *pto, PyObject *args, PyObject *kwargs)
+{
+    PyObject *ret, *args2;
+
+    /* Note: tupleconcat() is optimized for empty tuples */
+    args2 = PySequence_Concat(pto->args, args);
+    if (args2 == NULL) {
+        return NULL;
+    }
+    assert(PyTuple_Check(args2));
+
+    ret = PyObject_Call(pto->fn, args2, kwargs);
+    Py_DECREF(args2);
+    return ret;
+}
+
+static PyObject *
+partial_call(partialobject *pto, PyObject *args, PyObject *kwargs)
+{
+    PyObject *kwargs2, *res;
 
     assert (PyCallable_Check(pto->fn));
     assert (PyTuple_Check(pto->args));
     assert (PyDict_Check(pto->kw));
 
-    if (PyTuple_GET_SIZE(pto->args) == 0) {
-        stack = &PyTuple_GET_ITEM(args, 0);
-        nargs = PyTuple_GET_SIZE(args);
-        argappl = NULL;
-    }
-    else if (PyTuple_GET_SIZE(args) == 0) {
-        stack = &PyTuple_GET_ITEM(pto->args, 0);
-        nargs = PyTuple_GET_SIZE(pto->args);
-        argappl = NULL;
+    if (PyDict_GET_SIZE(pto->kw) == 0) {
+        /* kwargs can be NULL */
+        kwargs2 = kwargs;
+        Py_XINCREF(kwargs2);
     }
     else {
-        stack = NULL;
-        argappl = PySequence_Concat(pto->args, args);
-        if (argappl == NULL) {
+        /* bpo-27840, bpo-29318: dictionary of keyword parameters must be
+           copied, because a function using "**kwargs" can modify the
+           dictionary. */
+        kwargs2 = PyDict_Copy(pto->kw);
+        if (kwargs2 == NULL) {
             return NULL;
         }
 
-        assert(PyTuple_Check(argappl));
-    }
-
-    if (PyDict_Size(pto->kw) == 0) {
-        kwappl = kw;
-        Py_XINCREF(kwappl);
-    }
-    else {
-        kwappl = PyDict_Copy(pto->kw);
-        if (kwappl == NULL) {
-            Py_XDECREF(argappl);
-            return NULL;
-        }
-
-        if (kw != NULL) {
-            if (PyDict_Merge(kwappl, kw, 1) != 0) {
-                Py_XDECREF(argappl);
-                Py_DECREF(kwappl);
+        if (kwargs != NULL) {
+            if (PyDict_Merge(kwargs2, kwargs, 1) != 0) {
+                Py_DECREF(kwargs2);
                 return NULL;
             }
         }
     }
 
-    if (stack) {
-        ret = _PyObject_FastCallDict(pto->fn, stack, nargs, kwappl);
+
+    if (pto->use_fastcall) {
+        res = partial_fastcall(pto,
+                               &PyTuple_GET_ITEM(args, 0),
+                               PyTuple_GET_SIZE(args),
+                               kwargs2);
     }
     else {
-        ret = PyObject_Call(pto->fn, argappl, kwappl);
-        Py_DECREF(argappl);
+        res = partial_call_impl(pto, args, kwargs2);
     }
-    Py_XDECREF(kwappl);
-    return ret;
+    Py_XDECREF(kwargs2);
+    return res;
 }
 
 static int
@@ -316,12 +359,13 @@ partial_setstate(partialobject *pto, PyObject *state)
         return NULL;
     }
 
-    Py_INCREF(fn);
     if (dict == Py_None)
         dict = NULL;
     else
         Py_INCREF(dict);
 
+    Py_INCREF(fn);
+    pto->use_fastcall = _PyObject_HasFastCall(fn);
     Py_SETREF(pto->fn, fn);
     Py_SETREF(pto->args, fnargs);
     Py_SETREF(pto->kw, kw);
@@ -488,14 +532,7 @@ keyobject_richcompare(PyObject *ko, PyObject *other, int op)
     PyObject *y;
     PyObject *compare;
     PyObject *answer;
-    static PyObject *zero;
     PyObject* stack[2];
-
-    if (zero == NULL) {
-        zero = PyLong_FromLong(0);
-        if (!zero)
-            return NULL;
-    }
 
     if (Py_TYPE(other) != &keyobject_type){
         PyErr_Format(PyExc_TypeError, "other argument must be K instance");
@@ -520,7 +557,7 @@ keyobject_richcompare(PyObject *ko, PyObject *other, int op)
         return NULL;
     }
 
-    answer = PyObject_RichCompare(res, zero, op);
+    answer = PyObject_RichCompare(res, _PyLong_Zero, op);
     Py_DECREF(res);
     return answer;
 }
@@ -640,26 +677,9 @@ typedef struct lru_list_elem {
 static void
 lru_list_elem_dealloc(lru_list_elem *link)
 {
-    _PyObject_GC_UNTRACK(link);
     Py_XDECREF(link->key);
     Py_XDECREF(link->result);
-    PyObject_GC_Del(link);
-}
-
-static int
-lru_list_elem_traverse(lru_list_elem *link, visitproc visit, void *arg)
-{
-    Py_VISIT(link->key);
-    Py_VISIT(link->result);
-    return 0;
-}
-
-static int
-lru_list_elem_clear(lru_list_elem *link)
-{
-    Py_CLEAR(link->key);
-    Py_CLEAR(link->result);
-    return 0;
+    PyObject_Del(link);
 }
 
 static PyTypeObject lru_list_elem_type = {
@@ -683,10 +703,7 @@ static PyTypeObject lru_list_elem_type = {
     0,                                  /* tp_getattro */
     0,                                  /* tp_setattro */
     0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,  /* tp_flags */
-    0,                                  /* tp_doc */
-    (traverseproc)lru_list_elem_traverse,  /* tp_traverse */
-    (inquiry)lru_list_elem_clear,       /* tp_clear */
+    Py_TPFLAGS_DEFAULT,                 /* tp_flags */
 };
 
 
@@ -720,7 +737,7 @@ lru_cache_make_key(PyObject *args, PyObject *kwds, int typed)
         return args;
     }
 
-    kwds_size = kwds ? PyDict_Size(kwds) : 0;
+    kwds_size = kwds ? PyDict_GET_SIZE(kwds) : 0;
     assert(kwds_size >= 0);
 
     key_size = PyTuple_GET_SIZE(args);
@@ -922,8 +939,8 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         }
     } else {
         /* Put result in a new link at the front of the queue. */
-        link = (lru_list_elem *)PyObject_GC_New(lru_list_elem,
-                                                &lru_list_elem_type);
+        link = (lru_list_elem *)PyObject_New(lru_list_elem,
+                                             &lru_list_elem_type);
         if (link == NULL) {
             Py_DECREF(key);
             Py_DECREF(result);
@@ -933,7 +950,6 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         link->hash = hash;
         link->key = key;
         link->result = result;
-        _PyObject_GC_TRACK(link);
         if (_PyDict_SetItem_KnownHash(self->cache, key, (PyObject *)link,
                                       hash) < 0) {
             Py_DECREF(link);
@@ -941,7 +957,7 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         }
         lru_cache_append_link(self, link);
         Py_INCREF(result); /* for return */
-        self->full = (PyDict_Size(self->cache) >= self->maxsize);
+        self->full = (PyDict_GET_SIZE(self->cache) >= self->maxsize);
     }
     self->misses++;
     return result;
@@ -1074,7 +1090,7 @@ lru_cache_cache_info(lru_cache_object *self, PyObject *unused)
 {
     return PyObject_CallFunction(self->cache_info_type, "nnOn",
                                  self->hits, self->misses, self->maxsize_O,
-                                 PyDict_Size(self->cache));
+                                 PyDict_GET_SIZE(self->cache));
 }
 
 static PyObject *
@@ -1114,7 +1130,8 @@ lru_cache_tp_traverse(lru_cache_object *self, visitproc visit, void *arg)
     lru_list_elem *link = self->root.next;
     while (link != &self->root) {
         lru_list_elem *next = link->next;
-        Py_VISIT(link);
+        Py_VISIT(link->key);
+        Py_VISIT(link->result);
         link = next;
     }
     Py_VISIT(self->maxsize_O);
@@ -1247,7 +1264,7 @@ PyInit__functools(void)
 {
     int i;
     PyObject *m;
-    char *name;
+    const char *name;
     PyTypeObject *typelist[] = {
         &partial_type,
         &lru_cache_type,
@@ -1258,7 +1275,7 @@ PyInit__functools(void)
     if (m == NULL)
         return NULL;
 
-    kwd_mark = PyObject_CallObject((PyObject *)&PyBaseObject_Type, NULL);
+    kwd_mark = _PyObject_CallNoArg((PyObject *)&PyBaseObject_Type);
     if (!kwd_mark) {
         Py_DECREF(m);
         return NULL;
@@ -1269,10 +1286,9 @@ PyInit__functools(void)
             Py_DECREF(m);
             return NULL;
         }
-        name = strchr(typelist[i]->tp_name, '.');
-        assert (name != NULL);
+        name = _PyType_Name(typelist[i]);
         Py_INCREF(typelist[i]);
-        PyModule_AddObject(m, name+1, (PyObject *)typelist[i]);
+        PyModule_AddObject(m, name, (PyObject *)typelist[i]);
     }
     return m;
 }

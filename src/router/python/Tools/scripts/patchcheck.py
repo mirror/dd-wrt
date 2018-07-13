@@ -13,8 +13,7 @@ import untabify
 
 # Excluded directories which are copies of external libraries:
 # don't check their coding style
-EXCLUDE_DIRS = [os.path.join('Modules', '_ctypes', 'libffi'),
-                os.path.join('Modules', '_ctypes', 'libffi_osx'),
+EXCLUDE_DIRS = [os.path.join('Modules', '_ctypes', 'libffi_osx'),
                 os.path.join('Modules', '_ctypes', 'libffi_msvc'),
                 os.path.join('Modules', '_decimal', 'libmpdec'),
                 os.path.join('Modules', 'expat'),
@@ -43,16 +42,6 @@ def status(message, modal=False, info=None):
             return result
         return call_fxn
     return decorated_fxn
-
-
-def mq_patches_applied():
-    """Check if there are any applied MQ patches."""
-    cmd = 'hg qapplied'
-    with subprocess.Popen(cmd.split(),
-                          stdout=subprocess.PIPE,
-                          stderr=subprocess.PIPE) as st:
-        bstdout, _ = st.communicate()
-        return st.returncode == 0 and bstdout
 
 
 def get_git_branch():
@@ -99,16 +88,8 @@ def get_base_branch():
 @status("Getting the list of files that have been added/changed",
         info=lambda x: n_files_str(len(x)))
 def changed_files(base_branch=None):
-    """Get the list of changed or added files from Mercurial or git."""
-    if os.path.isdir(os.path.join(SRCDIR, '.hg')):
-        if base_branch is not None:
-            sys.exit('need a git checkout to check PR status')
-        cmd = 'hg status --added --modified --no-status'
-        if mq_patches_applied():
-            cmd += ' --rev qparent'
-        with subprocess.Popen(cmd.split(), stdout=subprocess.PIPE) as st:
-            filenames = [x.decode().rstrip() for x in st.stdout]
-    elif os.path.exists(os.path.join(SRCDIR, '.git')):
+    """Get the list of changed or added files from git."""
+    if os.path.exists(os.path.join(SRCDIR, '.git')):
         # We just use an existence check here as:
         #  directory = normal git checkout/clone
         #  file = git worktree directory
@@ -130,7 +111,7 @@ def changed_files(base_branch=None):
                     filename = filename.split(' -> ', 2)[1].strip()
                 filenames.append(filename)
     else:
-        sys.exit('need a Mercurial or git checkout to get modified files')
+        sys.exit('need a git checkout to get modified files')
 
     filenames2 = []
     for filename in filenames:

@@ -53,8 +53,9 @@ code.
 .. class:: Bytecode(x, *, first_line=None, current_offset=None)
 
 
-   Analyse the bytecode corresponding to a function, generator, method, string
-   of source code, or a code object (as returned by :func:`compile`).
+   Analyse the bytecode corresponding to a function, generator, asynchronous
+   generator, coroutine, method, string of source code, or a code object (as
+   returned by :func:`compile`).
 
    This is a convenience wrapper around many of the functions listed below, most
    notably :func:`get_instructions`, as iterating over a :class:`Bytecode`
@@ -92,6 +93,9 @@ code.
       Return a formatted multi-line string with detailed information about the
       code object, like :func:`code_info`.
 
+   .. versionchanged:: 3.7
+      This can now handle coroutine and asynchronous generator objects.
+
 Example::
 
     >>> bytecode = dis.Bytecode(myfunc)
@@ -114,13 +118,17 @@ operation is being performed, so the intermediate analysis object isn't useful:
 .. function:: code_info(x)
 
    Return a formatted multi-line string with detailed code object information
-   for the supplied function, generator, method, source code string or code object.
+   for the supplied function, generator, asynchronous generator, coroutine,
+   method, source code string or code object.
 
    Note that the exact contents of code info strings are highly implementation
    dependent and they may change arbitrarily across Python VMs or Python
    releases.
 
    .. versionadded:: 3.2
+
+   .. versionchanged:: 3.7
+      This can now handle coroutine and asynchronous generator objects.
 
 
 .. function:: show_code(x, *, file=None)
@@ -138,22 +146,35 @@ operation is being performed, so the intermediate analysis object isn't useful:
       Added *file* parameter.
 
 
-.. function:: dis(x=None, *, file=None)
+.. function:: dis(x=None, *, file=None, depth=None)
 
    Disassemble the *x* object.  *x* can denote either a module, a class, a
-   method, a function, a generator, a code object, a string of source code or
-   a byte sequence of raw bytecode.  For a module, it disassembles all functions.
-   For a class, it disassembles all methods (including class and static methods).
-   For a code object or sequence of raw bytecode, it prints one line per bytecode
-   instruction.  Strings are first compiled to code objects with the :func:`compile`
+   method, a function, a generator, an asynchronous generator, a couroutine,
+   a code object, a string of source code or a byte sequence of raw bytecode.
+   For a module, it disassembles all functions. For a class, it disassembles
+   all methods (including class and static methods). For a code object or
+   sequence of raw bytecode, it prints one line per bytecode instruction.
+   It also recursively disassembles nested code objects (the code of
+   comprehensions, generator expressions and nested functions, and the code
+   used for building nested classes).
+   Strings are first compiled to code objects with the :func:`compile`
    built-in function before being disassembled.  If no object is provided, this
    function disassembles the last traceback.
 
    The disassembly is written as text to the supplied *file* argument if
    provided and to ``sys.stdout`` otherwise.
 
+   The maximal depth of recursion is limited by *depth* unless it is ``None``.
+   ``depth=0`` means no recursion.
+
    .. versionchanged:: 3.4
       Added *file* parameter.
+
+   .. versionchanged:: 3.7
+      Implemented recursive disassembling and added *depth* parameter.
+
+   .. versionchanged:: 3.7
+      This can now handle coroutine and asynchronous generator objects.
 
 
 .. function:: distb(tb=None, *, file=None)
@@ -543,10 +564,12 @@ the original TOS1.
 
 .. opcode:: GET_AITER
 
-   Implements ``TOS = get_awaitable(TOS.__aiter__())``.  See ``GET_AWAITABLE``
-   for details about ``get_awaitable``
+   Implements ``TOS = TOS.__aiter__()``.
 
    .. versionadded:: 3.5
+   .. versionchanged:: 3.7
+      Returning awaitable objects from ``__aiter__`` is no longer
+      supported.
 
 
 .. opcode:: GET_ANEXT
@@ -997,13 +1020,6 @@ All of the following opcodes use their arguments.
    Deletes local ``co_varnames[var_num]``.
 
 
-.. opcode:: STORE_ANNOTATION (namei)
-
-   Stores TOS as ``locals()['__annotations__'][co_names[namei]] = TOS``.
-
-   .. versionadded:: 3.6
-
-
 .. opcode:: LOAD_CLOSURE (i)
 
    Pushes a reference to the cell contained in slot *i* of the cell and free
@@ -1089,6 +1105,28 @@ All of the following opcodes use their arguments.
    :opcode:`BUILD_MAP_UNPACK_WITH_CALL`.
 
    .. versionadded:: 3.6
+
+
+.. opcode:: LOAD_METHOD (namei)
+
+   Loads a method named ``co_names[namei]`` from TOS object. TOS is popped and
+   method and TOS are pushed when interpreter can call unbound method directly.
+   TOS will be used as the first argument (``self``) by :opcode:`CALL_METHOD`.
+   Otherwise, ``NULL`` and  method is pushed (method is bound method or
+   something else).
+
+   .. versionadded:: 3.7
+
+
+.. opcode:: CALL_METHOD (argc)
+
+   Calls a method.  *argc* is number of positional arguments.
+   Keyword arguments are not supported.  This opcode is designed to be used
+   with :opcode:`LOAD_METHOD`.  Positional arguments are on top of the stack.
+   Below them, two items described in :opcode:`LOAD_METHOD` on the stack.
+   All of them are popped and return value is pushed.
+
+   .. versionadded:: 3.7
 
 
 .. opcode:: MAKE_FUNCTION (argc)

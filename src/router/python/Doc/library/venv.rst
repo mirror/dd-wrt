@@ -109,8 +109,7 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
     * ``symlinks`` -- a Boolean value indicating whether to attempt to symlink the
       Python binary (and any necessary DLLs or other binaries,
-      e.g. ``pythonw.exe``), rather than copying. Defaults to ``True`` on Linux and
-      Unix systems, but ``False`` on Windows.
+      e.g. ``pythonw.exe``), rather than copying.
 
     * ``upgrade`` -- a Boolean value which, if true, will upgrade an existing
       environment with the running Python - for use when that Python has been
@@ -458,4 +457,4 @@ subclass which installs setuptools and pip into a created virtual environment::
 
 
 This script is also available for download `online
-<https://gist.github.com/4673395>`_.
+<https://gist.github.com/vsajip/4673395>`_.

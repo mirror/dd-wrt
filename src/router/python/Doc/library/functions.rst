@@ -7,24 +7,24 @@ Built-in Functions
 The Python interpreter has a number of functions and types built into it that
 are always available.  They are listed here in alphabetical order.
 
-===================  =================  ==================  ================  ====================
-..                   ..                 Built-in Functions  ..                ..
-===================  =================  ==================  ================  ====================
-:func:`abs`          |func-dict|_       :func:`help`        :func:`min`       :func:`setattr`
-:func:`all`          :func:`dir`        :func:`hex`         :func:`next`      :func:`slice`
-:func:`any`          :func:`divmod`     :func:`id`          :func:`object`    :func:`sorted`
-:func:`ascii`        :func:`enumerate`  :func:`input`       :func:`oct`       :func:`staticmethod`
-:func:`bin`          :func:`eval`       :func:`int`         :func:`open`      |func-str|_
-:func:`bool`         :func:`exec`       :func:`isinstance`  :func:`ord`       :func:`sum`
-|func-bytearray|_    :func:`filter`     :func:`issubclass`  :func:`pow`       :func:`super`
-|func-bytes|_        :func:`float`      :func:`iter`        :func:`print`     |func-tuple|_
-:func:`callable`     :func:`format`     :func:`len`         :func:`property`  :func:`type`
-:func:`chr`          |func-frozenset|_  |func-list|_        |func-range|_     :func:`vars`
-:func:`classmethod`  :func:`getattr`    :func:`locals`      :func:`repr`      :func:`zip`
-:func:`compile`      :func:`globals`    :func:`map`         :func:`reversed`  :func:`__import__`
+===================  =================  ==================  ==================  ====================
+..                   ..                 Built-in Functions  ..                  ..
+===================  =================  ==================  ==================  ====================
+:func:`abs`          :func:`delattr`    :func:`hash`        |func-memoryview|_  |func-set|_
+:func:`all`          |func-dict|_       :func:`help`        :func:`min`         :func:`setattr`
+:func:`any`          :func:`dir`        :func:`hex`         :func:`next`        :func:`slice`
+:func:`ascii`        :func:`divmod`     :func:`id`          :func:`object`      :func:`sorted`
+:func:`bin`          :func:`enumerate`  :func:`input`       :func:`oct`         :func:`staticmethod`
+:func:`bool`         :func:`eval`       :func:`int`         :func:`open`        |func-str|_
+:func:`breakpoint`   :func:`exec`       :func:`isinstance`  :func:`ord`         :func:`sum`
+|func-bytearray|_    :func:`filter`     :func:`issubclass`  :func:`pow`         :func:`super`
+|func-bytes|_        :func:`float`      :func:`iter`        :func:`print`       |func-tuple|_
+:func:`callable`     :func:`format`     :func:`len`         :func:`property`    :func:`type`
+:func:`chr`          |func-frozenset|_  |func-list|_        |func-range|_       :func:`vars`
+:func:`classmethod`  :func:`getattr`    :func:`locals`      :func:`repr`        :func:`zip`
+:func:`compile`      :func:`globals`    :func:`map`         :func:`reversed`    :func:`__import__`
 :func:`complex`      :func:`hasattr`    :func:`max`         :func:`round`
-:func:`delattr`      :func:`hash`       |func-memoryview|_  |func-set|_
-===================  =================  ==================  ================  ====================
+===================  =================  ==================  ==================  ====================
 
 .. using :func:`dict` would create a link to another page, so local targets are
    used, with replacement texts to make the output in the table consistent
@@ -112,6 +112,20 @@ are always available.  They are listed here in alphabetical order.
 
    .. index:: pair: Boolean; type
 
+
+.. function:: breakpoint(*args, **kws)
+
+   This function drops you into the debugger at the call site.  Specifically,
+   it calls :func:`sys.breakpointhook`, passing ``args`` and ``kws`` straight
+   through.  By default, ``sys.breakpointhook()`` calls
+   :func:`pdb.set_trace()` expecting no arguments.  In this case, it is
+   purely a convenience function so you don't have to explicitly import
+   :mod:`pdb` or type as much code to enter the debugger.  However,
+   :func:`sys.breakpointhook` can be set to some other function and
+   :func:`breakpoint` will automatically call that, allowing you to drop into
+   the debugger of choice.
+
+   .. versionadded:: 3.7
 
 .. _func-bytearray:
 .. class:: bytearray([source[, encoding[, errors]]])
@@ -352,7 +366,7 @@ are always available.  They are listed here in alphabetical order.
    The resulting list is sorted alphabetically.  For example:
 
       >>> import struct
-      >>> dir()   # show the names in the module namespace
+      >>> dir()   # show the names in the module namespace  # doctest: +SKIP
       ['__builtins__', '__name__', 'struct']
       >>> dir(struct)   # show the names in the struct module # doctest: +SKIP
       ['Struct', '__all__', '__builtins__', '__cached__', '__doc__', '__file__',
@@ -657,8 +671,8 @@ are always available.  They are listed here in alphabetical order.
 .. function:: hex(x)
 
    Convert an integer number to a lowercase hexadecimal string prefixed with
-   "0x". If x is not a Python :class:`int` object, it has to define an
-   __index__() method that returns an integer. Some examples:
+   "0x". If *x* is not a Python :class:`int` object, it has to define an
+   :meth:`__index__` method that returns an integer. Some examples:
 
       >>> hex(255)
       '0xff'
@@ -716,12 +730,10 @@ are always available.  They are listed here in alphabetical order.
            int(x, base=10)
 
    Return an integer object constructed from a number or string *x*, or return
-   ``0`` if no arguments are given.  If *x* is a number, return
-   :meth:`x.__int__() <object.__int__>`. If *x* defines
-   :meth:`x.__trunc__() <object.__trunc__>` but not
-   :meth:`x.__int__() <object.__int__>`, then return
-   if :meth:`x.__trunc__() <object.__trunc__>`.  For floating point numbers,
-   this truncates towards zero.
+   ``0`` if no arguments are given.  If *x* defines :meth:`__int__`,
+   ``int(x)`` returns ``x.__int__()``.  If *x* defines :meth:`__trunc__`,
+   it returns ``x.__trunc__()``.
+   For floating point numbers, this truncates towards zero.
 
    If *x* is not a number or if *base* is given, then *x* must be a string,
    :class:`bytes`, or :class:`bytearray` instance representing an :ref:`integer
@@ -1317,11 +1329,12 @@ are always available.  They are listed here in alphabetical order.
    equally close, rounding is done toward the even choice (so, for example,
    both ``round(0.5)`` and ``round(-0.5)`` are ``0``, and ``round(1.5)`` is
    ``2``).  Any integer value is valid for *ndigits* (positive, zero, or
-   negative).  The return value is an integer if called with one argument,
-   otherwise of the same type as *number*.
+   negative).  The return value is an integer if *ndigits* is omitted or
+   ``None``.
+   Otherwise the return value has the same type as *number*.
 
-   For a general Python object ``number``, ``round(number, ndigits)`` delegates to
-   ``number.__round__(ndigits)``.
+   For a general Python object ``number``, ``round`` delegates to
+   ``number.__round__``.
 
    .. note::
 

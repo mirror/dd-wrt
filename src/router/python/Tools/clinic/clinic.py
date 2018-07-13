@@ -7,7 +7,6 @@
 
 import abc
 import ast
-import atexit
 import collections
 import contextlib
 import copy
@@ -27,7 +26,6 @@ import tempfile
 import textwrap
 import traceback
 import types
-import uuid
 
 from types import *
 NoneType = type(None)
@@ -705,14 +703,19 @@ class CLanguage(Language):
             {c_basename}({self_type}{self_name}, PyObject *args, PyObject *kwargs)
             """)
 
-        parser_prototype_fastcall = normalize_snippet("""
-            static PyObject *
-            {c_basename}({self_type}{self_name}, PyObject **args, Py_ssize_t nargs, PyObject *kwnames)
-            """)
-
         parser_prototype_varargs = normalize_snippet("""
             static PyObject *
             {c_basename}({self_type}{self_name}, PyObject *args)
+            """)
+
+        parser_prototype_fastcall = normalize_snippet("""
+            static PyObject *
+            {c_basename}({self_type}{self_name}, PyObject *const *args, Py_ssize_t nargs)
+            """)
+
+        parser_prototype_fastcall_keywords = normalize_snippet("""
+            static PyObject *
+            {c_basename}({self_type}{self_name}, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
             """)
 
         # parser_body_fields remembers the fields passed in to the
@@ -825,38 +828,64 @@ class CLanguage(Language):
             # and nothing but normal objects:
             # PyArg_UnpackTuple!
 
-            flags = "METH_VARARGS"
-            parser_prototype = parser_prototype_varargs
+            if not new_or_init:
+                flags = "METH_FASTCALL"
+                parser_prototype = parser_prototype_fastcall
 
-            parser_definition = parser_body(parser_prototype, normalize_snippet("""
-                if (!PyArg_UnpackTuple(args, "{name}",
-                    {unpack_min}, {unpack_max},
-                    {parse_arguments})) {{
-                    goto exit;
-                }}
-                """, indent=4))
+                parser_definition = parser_body(parser_prototype, normalize_snippet("""
+                    if (!_PyArg_UnpackStack(args, nargs, "{name}",
+                        {unpack_min}, {unpack_max},
+                        {parse_arguments})) {{
+                        goto exit;
+                    }}
+                    """, indent=4))
+            else:
+                flags = "METH_VARARGS"
+                parser_prototype = parser_prototype_varargs
+
+                parser_definition = parser_body(parser_prototype, normalize_snippet("""
+                    if (!PyArg_UnpackTuple(args, "{name}",
+                        {unpack_min}, {unpack_max},
+                        {parse_arguments})) {{
+                        goto exit;
+                    }}
+                    """, indent=4))
 
         elif positional:
-            # positional-only, but no option groups
-            # we only need one call to PyArg_ParseTuple
+            if not new_or_init:
+                # positional-only, but no option groups
+                # we only need one call to _PyArg_ParseStack
 
-            flags = "METH_VARARGS"
-            parser_prototype = parser_prototype_varargs
+                flags = "METH_FASTCALL"
+                parser_prototype = parser_prototype_fastcall
 
-            parser_definition = parser_body(parser_prototype, normalize_snippet("""
-                if (!PyArg_ParseTuple(args, "{format_units}:{name}",
-                    {parse_arguments})) {{
-                    goto exit;
-                }}
-                """, indent=4))
+                parser_definition = parser_body(parser_prototype, normalize_snippet("""
+                    if (!_PyArg_ParseStack(args, nargs, "{format_units}:{name}",
+                        {parse_arguments})) {{
+                        goto exit;
+                    }}
+                    """, indent=4))
+            else:
+                # positional-only, but no option groups
+                # we only need one call to PyArg_ParseTuple
+
+                flags = "METH_VARARGS"
+                parser_prototype = parser_prototype_varargs
+
+                parser_definition = parser_body(parser_prototype, normalize_snippet("""
+                    if (!PyArg_ParseTuple(args, "{format_units}:{name}",
+                        {parse_arguments})) {{
+                        goto exit;
+                    }}
+                    """, indent=4))
 
         elif not new_or_init:
-            flags = "METH_FASTCALL"
+            flags = "METH_FASTCALL|METH_KEYWORDS"
 
-            parser_prototype = parser_prototype_fastcall
+            parser_prototype = parser_prototype_fastcall_keywords
 
             body = normalize_snippet("""
-                if (!_PyArg_ParseStack(args, nargs, kwnames, &_parser,
+                if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
                     {parse_arguments})) {{
                     goto exit;
                 }}
@@ -2008,7 +2037,6 @@ __rmatmul__
 __rmod__
 __rmul__
 __ror__
-__round__
 __rpow__
 __rrshift__
 __rshift__
@@ -2513,7 +2541,11 @@ class bool_converter(CConverter):
     format_unit = 'p'
     c_ignored_default = '0'
 
-    def converter_init(self):
+    def converter_init(self, *, accept={object}):
+        if accept == {int}:
+            self.format_unit = 'i'
+        elif accept != {object}:
+            fail("bool_converter: illegal 'accept' argument " + repr(accept))
         if self.default is not unspecified:
             self.default = bool(self.default)
             self.c_default = str(int(self.default))
@@ -2615,11 +2647,31 @@ class unsigned_long_long_converter(CConverter):
         if not bitwise:
             fail("Unsigned long long must be bitwise (for now).")
 
+
 class Py_ssize_t_converter(CConverter):
     type = 'Py_ssize_t'
-    default_type = int
-    format_unit = 'n'
     c_ignored_default = "0"
+
+    def converter_init(self, *, accept={int}):
+        if accept == {int}:
+            self.format_unit = 'n'
+            self.default_type = int
+        elif accept == {int, NoneType}:
+            self.converter = '_Py_convert_optional_to_ssize_t'
+        else:
+            fail("Py_ssize_t_converter: illegal 'accept' argument " + repr(accept))
+
+
+class slice_index_converter(CConverter):
+    type = 'Py_ssize_t'
+
+    def converter_init(self, *, accept={int, NoneType}):
+        if accept == {int}:
+            self.converter = '_PyEval_SliceIndexNotNone'
+        elif accept == {int, NoneType}:
+            self.converter = '_PyEval_SliceIndex'
+        else:
+            fail("slice_index_converter: illegal 'accept' argument " + repr(accept))
 
 
 class float_converter(CConverter):
@@ -4280,7 +4332,10 @@ def main(argv):
     cmdline.add_argument("-o", "--output", type=str)
     cmdline.add_argument("-v", "--verbose", action='store_true')
     cmdline.add_argument("--converters", action='store_true')
-    cmdline.add_argument("--make", action='store_true')
+    cmdline.add_argument("--make", action='store_true',
+                         help="Walk --srcdir to run over all relevant files.")
+    cmdline.add_argument("--srcdir", type=str, default=os.curdir,
+                         help="The directory tree to walk in --make mode.")
     cmdline.add_argument("filename", type=str, nargs="*")
     ns = cmdline.parse_args(argv)
 
@@ -4351,7 +4406,12 @@ def main(argv):
             print()
             cmdline.print_usage()
             sys.exit(-1)
-        for root, dirs, files in os.walk('.'):
+        if not ns.srcdir:
+            print("Usage error: --srcdir must not be empty with --make.")
+            print()
+            cmdline.print_usage()
+            sys.exit(-1)
+        for root, dirs, files in os.walk(ns.srcdir):
             for rcs_dir in ('.svn', '.git', '.hg', 'build', 'externals'):
                 if rcs_dir in dirs:
                     dirs.remove(rcs_dir)

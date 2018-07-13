@@ -382,8 +382,7 @@ random_setstate(RandomObject *self, PyObject *state)
     for (i = 0; i < N; i++)
         self->state[i] = new_state[i];
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -439,7 +438,7 @@ random_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     RandomObject *self;
     PyObject *tmp;
 
-    if (type == &Random_Type && !_PyArg_NoKeywords("Random()", kwds))
+    if (type == &Random_Type && !_PyArg_NoKeywords("Random", kwds))
         return NULL;
 
     self = (RandomObject *)type->tp_alloc(type, 0);

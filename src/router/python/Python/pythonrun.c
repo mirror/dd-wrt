@@ -1,10 +1,18 @@
 
-/* Python interpreter top-level routines, including init/exit */
+/* Top level execution of Python code (including in __main__) */
+
+/* To help control the interfaces between the startup, execution and
+ * shutdown code, the phases are split across separate modules (boostrap,
+ * pythonrun, shutdown)
+ */
+
+/* TODO: Cull includes following phase split */
 
 #include "Python.h"
 
 #include "Python-ast.h"
 #undef Yield /* undefine macro conflicting with winbase.h */
+#include "internal/pystate.h"
 #include "grammar.h"
 #include "node.h"
 #include "token.h"
@@ -23,10 +31,6 @@
 
 #ifdef MS_WINDOWS
 #include "malloc.h" /* for alloca */
-#endif
-
-#ifdef HAVE_LANGINFO_H
-#include <langinfo.h>
 #endif
 
 #ifdef MS_WINDOWS
@@ -64,7 +68,6 @@ static void err_free(perrdetail *);
 static int PyRun_InteractiveOneObjectEx(FILE *, PyObject *, PyCompilerFlags *);
 
 /* Parse input from a file and execute it */
-
 int
 PyRun_AnyFileExFlags(FILE *fp, const char *filename, int closeit,
                      PyCompilerFlags *flags)
@@ -88,6 +91,9 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
     int ret, err;
     PyCompilerFlags local_flags;
     int nomem_count = 0;
+#ifdef Py_REF_DEBUG
+    int show_ref_count = PyThreadState_GET()->interp->core_config.show_ref_count;
+#endif
 
     filename = PyUnicode_DecodeFSDefault(filename_str);
     if (filename == NULL) {
@@ -130,7 +136,11 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
         } else {
             nomem_count = 0;
         }
-        _PY_DEBUG_PRINT_TOTAL_REFS();
+#ifdef Py_REF_DEBUG
+        if (show_ref_count) {
+            _PyDebug_PrintTotalRefs();
+        }
+#endif
     } while (ret != E_EOF);
     Py_DECREF(filename);
     return err;
@@ -169,7 +179,7 @@ PyRun_InteractiveOneObjectEx(FILE *fp, PyObject *filename,
     PyObject *m, *d, *v, *w, *oenc = NULL, *mod_name;
     mod_ty mod;
     PyArena *arena;
-    char *ps1 = "", *ps2 = "", *enc = NULL;
+    const char *ps1 = "", *ps2 = "", *enc = NULL;
     int errcode = 0;
     _Py_IDENTIFIER(encoding);
     _Py_IDENTIFIER(__main__);
@@ -535,8 +545,8 @@ PyErr_Print(void)
 static void
 print_error_text(PyObject *f, int offset, PyObject *text_obj)
 {
-    char *text;
-    char *nl;
+    const char *text;
+    const char *nl;
 
     text = PyUnicode_AsUTF8(text_obj);
     if (text == NULL)
@@ -1043,7 +1053,8 @@ run_pyc_file(FILE *fp, const char *filename, PyObject *globals,
                        "Bad magic number in .pyc file");
         return NULL;
     }
-    /* Skip mtime and size */
+    /* Skip the rest of the header. */
+    (void) PyMarshal_ReadLongFromFile(fp);
     (void) PyMarshal_ReadLongFromFile(fp);
     (void) PyMarshal_ReadLongFromFile(fp);
     if (PyErr_Occurred())
@@ -1318,7 +1329,7 @@ err_input(perrdetail *err)
 {
     PyObject *v, *w, *errtype, *errtext;
     PyObject *msg_obj = NULL;
-    char *msg = NULL;
+    const char *msg = NULL;
     int offset = err->offset;
 
     errtype = PyExc_SyntaxError;

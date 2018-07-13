@@ -548,13 +548,8 @@ SHA512Type_update(SHAobject *self, PyObject *obj)
     sha512_update(self, buf.buf, buf.len);
 
     PyBuffer_Release(&buf);
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
-/*[clinic input]
-dump buffer
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=524ce2e021e4eba6]*/
 
 static PyMethodDef SHA_methods[] = {
     SHA512TYPE_COPY_METHODDEF
@@ -747,11 +742,6 @@ _sha512_sha384_impl(PyObject *module, PyObject *string)
     return (PyObject *)new;
 }
 
-
-/*[clinic input]
-dump buffer
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=524ce2e021e4eba6]*/
 
 /* List of functions exported by this module */
 

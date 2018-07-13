@@ -137,9 +137,7 @@ static void _CallPythonObject(void *mem,
     Py_ssize_t nArgs;
     PyObject *error_object = NULL;
     int *space;
-#ifdef WITH_THREAD
     PyGILState_STATE state = PyGILState_Ensure();
-#endif
 
     nArgs = PySequence_Length(converters);
     /* Hm. What to return in case of error?
@@ -181,7 +179,7 @@ static void _CallPythonObject(void *mem,
             */
         } else if (dict) {
             /* Hm, shouldn't we use PyCData_AtAddress() or something like that instead? */
-            CDataObject *obj = (CDataObject *)PyObject_CallFunctionObjArgs(cnv, NULL);
+            CDataObject *obj = (CDataObject *)_PyObject_CallNoArg(cnv);
             if (!obj) {
                 PrintError("create argument %d:\n", i);
                 Py_DECREF(cnv);
@@ -281,9 +279,7 @@ if (x == NULL) _PyTraceback_Add(what, "_ctypes/callbacks.c", __LINE__ - 1), PyEr
     Py_XDECREF(result);
   Done:
     Py_XDECREF(arglist);
-#ifdef WITH_THREAD
     PyGILState_Release(state);
-#endif
 }
 
 static void closure_fcn(ffi_cif *cif,
@@ -347,7 +343,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
     assert(CThunk_CheckExact((PyObject *)p));
 
     p->pcl_write = ffi_closure_alloc(sizeof(ffi_closure),
-									 &p->pcl_exec);
+                                                                         &p->pcl_exec);
     if (p->pcl_write == NULL) {
         PyErr_NoMemory();
         goto error;
@@ -397,8 +393,8 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
     result = ffi_prep_closure(p->pcl_write, &p->cif, closure_fcn, p);
 #else
     result = ffi_prep_closure_loc(p->pcl_write, &p->cif, closure_fcn,
-				  p,
-				  p->pcl_exec);
+                                  p,
+                                  p->pcl_exec);
 #endif
     if (result != FFI_OK) {
         PyErr_Format(PyExc_RuntimeError,
@@ -422,9 +418,7 @@ CThunkObject *_ctypes_alloc_callback(PyObject *callable,
 static void LoadPython(void)
 {
     if (!Py_IsInitialized()) {
-#ifdef WITH_THREAD
         PyEval_InitThreads();
-#endif
         Py_Initialize();
     }
 }
@@ -495,18 +489,12 @@ STDAPI DllGetClassObject(REFCLSID rclsid,
                          LPVOID *ppv)
 {
     long result;
-#ifdef WITH_THREAD
     PyGILState_STATE state;
-#endif
 
     LoadPython();
-#ifdef WITH_THREAD
     state = PyGILState_Ensure();
-#endif
     result = Call_GetClassObject(rclsid, riid, ppv);
-#ifdef WITH_THREAD
     PyGILState_Release(state);
-#endif
     return result;
 }
 
@@ -535,7 +523,7 @@ long Call_CanUnloadNow(void)
         return E_FAIL;
     }
 
-    result = PyObject_CallFunction(func, NULL);
+    result = _PyObject_CallNoArg(func);
     Py_DECREF(func);
     if (!result) {
         PyErr_WriteUnraisable(context ? context : Py_None);
@@ -558,13 +546,9 @@ long Call_CanUnloadNow(void)
 STDAPI DllCanUnloadNow(void)
 {
     long result;
-#ifdef WITH_THREAD
     PyGILState_STATE state = PyGILState_Ensure();
-#endif
     result = Call_CanUnloadNow();
-#ifdef WITH_THREAD
     PyGILState_Release(state);
-#endif
     return result;
 }
 

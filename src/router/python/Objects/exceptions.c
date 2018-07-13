@@ -6,6 +6,8 @@
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+#include "internal/mem.h"
+#include "internal/pystate.h"
 #include "structmember.h"
 #include "osdefs.h"
 
@@ -114,14 +116,12 @@ BaseException_str(PyBaseExceptionObject *self)
 static PyObject *
 BaseException_repr(PyBaseExceptionObject *self)
 {
-    const char *name;
-    const char *dot;
-
-    name = Py_TYPE(self)->tp_name;
-    dot = (const char *) strrchr(name, '.');
-    if (dot != NULL) name = dot+1;
-
-    return PyUnicode_FromFormat("%s%R", name, self->args);
+    const char *name = _PyType_Name(Py_TYPE(self));
+    if (PyTuple_GET_SIZE(self->args) == 1)
+        return PyUnicode_FromFormat("%s(%R)", name,
+                                    PyTuple_GET_ITEM(self->args, 0));
+    else
+        return PyUnicode_FromFormat("%s%R", name, self->args);
 }
 
 /* Pickling support */
@@ -184,8 +184,7 @@ static PyObject *
 BaseException_get_args(PyBaseExceptionObject *self)
 {
     if (self->args == NULL) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
     Py_INCREF(self->args);
     return self->args;
@@ -210,8 +209,7 @@ static PyObject *
 BaseException_get_tb(PyBaseExceptionObject *self)
 {
     if (self->traceback == NULL) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
     Py_INCREF(self->traceback);
     return self->traceback;
@@ -631,19 +629,17 @@ ImportError_init(PyImportErrorObject *self, PyObject *args, PyObject *kwds)
     }
     Py_DECREF(empty_tuple);
 
-    if (name) {
-        Py_INCREF(name);
-        Py_XSETREF(self->name, name);
-    }
-    if (path) {
-        Py_INCREF(path);
-        Py_XSETREF(self->path, path);
-    }
+    Py_XINCREF(name);
+    Py_XSETREF(self->name, name);
+
+    Py_XINCREF(path);
+    Py_XSETREF(self->path, path);
+
     if (PyTuple_GET_SIZE(args) == 1) {
         msg = PyTuple_GET_ITEM(args, 0);
         Py_INCREF(msg);
-        Py_XSETREF(self->msg, msg);
     }
+    Py_XSETREF(self->msg, msg);
 
     return 0;
 }
@@ -1875,18 +1871,10 @@ UnicodeEncodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
     Py_CLEAR(err->object);
     Py_CLEAR(err->reason);
 
-    if (!PyArg_ParseTuple(args, "O!O!nnO!",
-        &PyUnicode_Type, &err->encoding,
-        &PyUnicode_Type, &err->object,
-        &err->start,
-        &err->end,
-        &PyUnicode_Type, &err->reason)) {
-          err->encoding = err->object = err->reason = NULL;
-          return -1;
-    }
-
-    if (PyUnicode_READY(err->object) < -1) {
-        err->encoding = NULL;
+    if (!PyArg_ParseTuple(args, "UUnnU",
+                          &err->encoding, &err->object,
+                          &err->start, &err->end, &err->reason)) {
+        err->encoding = err->object = err->reason = NULL;
         return -1;
     }
 
@@ -1990,12 +1978,9 @@ UnicodeDecodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
     Py_CLEAR(ude->object);
     Py_CLEAR(ude->reason);
 
-    if (!PyArg_ParseTuple(args, "O!OnnO!",
-         &PyUnicode_Type, &ude->encoding,
-         &ude->object,
-         &ude->start,
-         &ude->end,
-         &PyUnicode_Type, &ude->reason)) {
+    if (!PyArg_ParseTuple(args, "UOnnU",
+                          &ude->encoding, &ude->object,
+                          &ude->start, &ude->end, &ude->reason)) {
              ude->encoding = ude->object = ude->reason = NULL;
              return -1;
     }
@@ -2105,11 +2090,9 @@ UnicodeTranslateError_init(PyUnicodeErrorObject *self, PyObject *args,
     Py_CLEAR(self->object);
     Py_CLEAR(self->reason);
 
-    if (!PyArg_ParseTuple(args, "O!nnO!",
-        &PyUnicode_Type, &self->object,
-        &self->start,
-        &self->end,
-        &PyUnicode_Type, &self->reason)) {
+    if (!PyArg_ParseTuple(args, "UnnU",
+                          &self->object,
+                          &self->start, &self->end, &self->reason)) {
         self->object = self->reason = NULL;
         return -1;
     }
@@ -2552,7 +2535,6 @@ _PyExc_Init(PyObject *bltinmod)
     PRE_INIT(ZeroDivisionError)
     PRE_INIT(SystemError)
     PRE_INIT(ReferenceError)
-    PRE_INIT(BufferError)
     PRE_INIT(MemoryError)
     PRE_INIT(BufferError)
     PRE_INIT(Warning)
@@ -2568,22 +2550,22 @@ _PyExc_Init(PyObject *bltinmod)
     PRE_INIT(ResourceWarning)
 
     /* OSError subclasses */
-    PRE_INIT(ConnectionError);
+    PRE_INIT(ConnectionError)
 
-    PRE_INIT(BlockingIOError);
-    PRE_INIT(BrokenPipeError);
-    PRE_INIT(ChildProcessError);
-    PRE_INIT(ConnectionAbortedError);
-    PRE_INIT(ConnectionRefusedError);
-    PRE_INIT(ConnectionResetError);
-    PRE_INIT(FileExistsError);
-    PRE_INIT(FileNotFoundError);
-    PRE_INIT(IsADirectoryError);
-    PRE_INIT(NotADirectoryError);
-    PRE_INIT(InterruptedError);
-    PRE_INIT(PermissionError);
-    PRE_INIT(ProcessLookupError);
-    PRE_INIT(TimeoutError);
+    PRE_INIT(BlockingIOError)
+    PRE_INIT(BrokenPipeError)
+    PRE_INIT(ChildProcessError)
+    PRE_INIT(ConnectionAbortedError)
+    PRE_INIT(ConnectionRefusedError)
+    PRE_INIT(ConnectionResetError)
+    PRE_INIT(FileExistsError)
+    PRE_INIT(FileNotFoundError)
+    PRE_INIT(IsADirectoryError)
+    PRE_INIT(NotADirectoryError)
+    PRE_INIT(InterruptedError)
+    PRE_INIT(PermissionError)
+    PRE_INIT(ProcessLookupError)
+    PRE_INIT(TimeoutError)
 
     bdict = PyModule_GetDict(bltinmod);
     if (bdict == NULL)
@@ -2630,7 +2612,6 @@ _PyExc_Init(PyObject *bltinmod)
     POST_INIT(ZeroDivisionError)
     POST_INIT(SystemError)
     POST_INIT(ReferenceError)
-    POST_INIT(BufferError)
     POST_INIT(MemoryError)
     POST_INIT(BufferError)
     POST_INIT(Warning)
@@ -2652,43 +2633,43 @@ _PyExc_Init(PyObject *bltinmod)
     }
 
     /* OSError subclasses */
-    POST_INIT(ConnectionError);
+    POST_INIT(ConnectionError)
 
-    POST_INIT(BlockingIOError);
-    ADD_ERRNO(BlockingIOError, EAGAIN);
-    ADD_ERRNO(BlockingIOError, EALREADY);
-    ADD_ERRNO(BlockingIOError, EINPROGRESS);
-    ADD_ERRNO(BlockingIOError, EWOULDBLOCK);
-    POST_INIT(BrokenPipeError);
-    ADD_ERRNO(BrokenPipeError, EPIPE);
+    POST_INIT(BlockingIOError)
+    ADD_ERRNO(BlockingIOError, EAGAIN)
+    ADD_ERRNO(BlockingIOError, EALREADY)
+    ADD_ERRNO(BlockingIOError, EINPROGRESS)
+    ADD_ERRNO(BlockingIOError, EWOULDBLOCK)
+    POST_INIT(BrokenPipeError)
+    ADD_ERRNO(BrokenPipeError, EPIPE)
 #ifdef ESHUTDOWN
-    ADD_ERRNO(BrokenPipeError, ESHUTDOWN);
+    ADD_ERRNO(BrokenPipeError, ESHUTDOWN)
 #endif
-    POST_INIT(ChildProcessError);
-    ADD_ERRNO(ChildProcessError, ECHILD);
-    POST_INIT(ConnectionAbortedError);
-    ADD_ERRNO(ConnectionAbortedError, ECONNABORTED);
-    POST_INIT(ConnectionRefusedError);
-    ADD_ERRNO(ConnectionRefusedError, ECONNREFUSED);
-    POST_INIT(ConnectionResetError);
-    ADD_ERRNO(ConnectionResetError, ECONNRESET);
-    POST_INIT(FileExistsError);
-    ADD_ERRNO(FileExistsError, EEXIST);
-    POST_INIT(FileNotFoundError);
-    ADD_ERRNO(FileNotFoundError, ENOENT);
-    POST_INIT(IsADirectoryError);
-    ADD_ERRNO(IsADirectoryError, EISDIR);
-    POST_INIT(NotADirectoryError);
-    ADD_ERRNO(NotADirectoryError, ENOTDIR);
-    POST_INIT(InterruptedError);
-    ADD_ERRNO(InterruptedError, EINTR);
-    POST_INIT(PermissionError);
-    ADD_ERRNO(PermissionError, EACCES);
-    ADD_ERRNO(PermissionError, EPERM);
-    POST_INIT(ProcessLookupError);
-    ADD_ERRNO(ProcessLookupError, ESRCH);
-    POST_INIT(TimeoutError);
-    ADD_ERRNO(TimeoutError, ETIMEDOUT);
+    POST_INIT(ChildProcessError)
+    ADD_ERRNO(ChildProcessError, ECHILD)
+    POST_INIT(ConnectionAbortedError)
+    ADD_ERRNO(ConnectionAbortedError, ECONNABORTED)
+    POST_INIT(ConnectionRefusedError)
+    ADD_ERRNO(ConnectionRefusedError, ECONNREFUSED)
+    POST_INIT(ConnectionResetError)
+    ADD_ERRNO(ConnectionResetError, ECONNRESET)
+    POST_INIT(FileExistsError)
+    ADD_ERRNO(FileExistsError, EEXIST)
+    POST_INIT(FileNotFoundError)
+    ADD_ERRNO(FileNotFoundError, ENOENT)
+    POST_INIT(IsADirectoryError)
+    ADD_ERRNO(IsADirectoryError, EISDIR)
+    POST_INIT(NotADirectoryError)
+    ADD_ERRNO(NotADirectoryError, ENOTDIR)
+    POST_INIT(InterruptedError)
+    ADD_ERRNO(InterruptedError, EINTR)
+    POST_INIT(PermissionError)
+    ADD_ERRNO(PermissionError, EACCES)
+    ADD_ERRNO(PermissionError, EPERM)
+    POST_INIT(ProcessLookupError)
+    ADD_ERRNO(ProcessLookupError, ESRCH)
+    POST_INIT(TimeoutError)
+    ADD_ERRNO(TimeoutError, ETIMEDOUT)
 
     preallocate_memerrors();
 }
@@ -2782,7 +2763,7 @@ _PyErr_TrySetFromCause(const char *format, ...)
     /* Ensure the instance dict is also empty */
     dictptr = _PyObject_GetDictPtr(val);
     if (dictptr != NULL && *dictptr != NULL &&
-        PyObject_Length(*dictptr) > 0) {
+        PyDict_GET_SIZE(*dictptr) > 0) {
         /* While we could potentially copy a non-empty instance dictionary
          * to the replacement exception, for now we take the more
          * conservative path of leaving exceptions with attributes set

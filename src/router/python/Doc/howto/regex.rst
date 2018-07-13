@@ -371,7 +371,7 @@ for a complete listing.
 |                  | returns them as an :term:`iterator`.          |
 +------------------+-----------------------------------------------+
 
-:meth:`~re.pattern.match` and :meth:`~re.pattern.search` return ``None`` if no match can be found.  If
+:meth:`~re.Pattern.match` and :meth:`~re.Pattern.search` return ``None`` if no match can be found.  If
 they're successful, a :ref:`match object <match-objects>` instance is returned,
 containing information about the match: where it starts and ends, the substring
 it matched, and more.
@@ -393,7 +393,7 @@ Python interpreter, import the :mod:`re` module, and compile a RE::
 
 Now, you can try matching various strings against the RE ``[a-z]+``.  An empty
 string shouldn't match at all, since ``+`` means 'one or more repetitions'.
-:meth:`~re.pattern.match` should return ``None`` in this case, which will cause the
+:meth:`~re.Pattern.match` should return ``None`` in this case, which will cause the
 interpreter to print no output.  You can explicitly print the result of
 :meth:`!match` to make this clear. ::
 
@@ -402,12 +402,12 @@ interpreter to print no output.  You can explicitly print the result of
    None
 
 Now, let's try it on a string that it should match, such as ``tempo``.  In this
-case, :meth:`~re.pattern.match` will return a :ref:`match object <match-objects>`, so you
+case, :meth:`~re.Pattern.match` will return a :ref:`match object <match-objects>`, so you
 should store the result in a variable for later use. ::
 
    >>> m = p.match('tempo')
    >>> m
-   <_sre.SRE_Match object; span=(0, 5), match='tempo'>
+   <re.Match object; span=(0, 5), match='tempo'>
 
 Now you can query the :ref:`match object <match-objects>` for information
 about the matching string.  Match object instances
@@ -435,18 +435,18 @@ Trying these methods will soon clarify their meaning::
    >>> m.span()
    (0, 5)
 
-:meth:`~re.match.group` returns the substring that was matched by the RE.  :meth:`~re.match.start`
-and :meth:`~re.match.end` return the starting and ending index of the match. :meth:`~re.match.span`
-returns both start and end indexes in a single tuple.  Since the :meth:`~re.pattern.match`
+:meth:`~re.Match.group` returns the substring that was matched by the RE.  :meth:`~re.Match.start`
+and :meth:`~re.Match.end` return the starting and ending index of the match. :meth:`~re.Match.span`
+returns both start and end indexes in a single tuple.  Since the :meth:`~re.Pattern.match`
 method only checks if the RE matches at the start of a string, :meth:`!start`
-will always be zero.  However, the :meth:`~re.pattern.search` method of patterns
+will always be zero.  However, the :meth:`~re.Pattern.search` method of patterns
 scans through the string, so  the match may not start at zero in that
 case. ::
 
    >>> print(p.match('::: message'))
    None
    >>> m = p.search('::: message'); print(m)
-   <_sre.SRE_Match object; span=(4, 11), match='message'>
+   <re.Match object; span=(4, 11), match='message'>
    >>> m.group()
    'message'
    >>> m.span()
@@ -464,7 +464,7 @@ In actual programs, the most common style is to store the
        print('No match')
 
 Two pattern methods return all of the matches for a pattern.
-:meth:`~re.pattern.findall` returns a list of matching strings::
+:meth:`~re.Pattern.findall` returns a list of matching strings::
 
    >>> p = re.compile(r'\d+')
    >>> p.findall('12 drummers drumming, 11 pipers piping, 10 lords a-leaping')
@@ -504,7 +504,7 @@ the RE string added as the first argument, and still return either ``None`` or a
    >>> print(re.match(r'From\s+', 'Fromage amk'))
    None
    >>> re.match(r'From\s+', 'From amk Thu May 14 19:12:10 1998')  #doctest: +ELLIPSIS
-   <_sre.SRE_Match object; span=(0, 5), match='From '>
+   <re.Match object; span=(0, 5), match='From '>
 
 Under the hood, these functions simply create a pattern object for you
 and call the appropriate method on it.  They also store the compiled
@@ -710,7 +710,7 @@ given location, they can obviously be matched an infinite number of times.
    line, the RE to use is ``^From``. ::
 
       >>> print(re.search('^From', 'From Here to Eternity'))  #doctest: +ELLIPSIS
-      <_sre.SRE_Match object; span=(0, 4), match='From'>
+      <re.Match object; span=(0, 4), match='From'>
       >>> print(re.search('^From', 'Reciting From Memory'))
       None
 
@@ -721,11 +721,11 @@ given location, they can obviously be matched an infinite number of times.
    or any location followed by a newline character.     ::
 
       >>> print(re.search('}$', '{block}'))  #doctest: +ELLIPSIS
-      <_sre.SRE_Match object; span=(6, 7), match='}'>
+      <re.Match object; span=(6, 7), match='}'>
       >>> print(re.search('}$', '{block} '))
       None
       >>> print(re.search('}$', '{block}\n'))  #doctest: +ELLIPSIS
-      <_sre.SRE_Match object; span=(6, 7), match='}'>
+      <re.Match object; span=(6, 7), match='}'>
 
    To match a literal ``'$'``, use ``\$`` or enclose it inside a character class,
    as in  ``[$]``.
@@ -750,7 +750,7 @@ given location, they can obviously be matched an infinite number of times.
 
       >>> p = re.compile(r'\bclass\b')
       >>> print(p.search('no class at all'))
-      <_sre.SRE_Match object; span=(3, 8), match='class'>
+      <re.Match object; span=(3, 8), match='class'>
       >>> print(p.search('the declassified algorithm'))
       None
       >>> print(p.search('one subclass is'))
@@ -768,7 +768,7 @@ given location, they can obviously be matched an infinite number of times.
       >>> print(p.search('no class at all'))
       None
       >>> print(p.search('\b' + 'class' + '\b'))
-      <_sre.SRE_Match object; span=(0, 7), match='\x08class\x08'>
+      <re.Match object; span=(0, 7), match='\x08class\x08'>
 
    Second, inside a character class, where there's no use for this assertion,
    ``\b`` represents the backspace character, for compatibility with Python's
@@ -786,7 +786,9 @@ Frequently you need to obtain more information than just whether the RE matched
 or not.  Regular expressions are often used to dissect strings by writing a RE
 divided into several subgroups which match different components of interest.
 For example, an RFC-822 header line is divided into a header name and a value,
-separated by a ``':'``, like this::
+separated by a ``':'``, like this:
+
+.. code-block:: none
 
    From: author@example.com
    User-Agent: Thunderbird 1.5.0.9 (X11/20061227)
@@ -810,8 +812,8 @@ of a group with a repeating qualifier, such as ``*``, ``+``, ``?``, or
 
 Groups indicated with ``'('``, ``')'`` also capture the starting and ending
 index of the text that they match; this can be retrieved by passing an argument
-to :meth:`~re.match.group`, :meth:`~re.match.start`, :meth:`~re.match.end`, and
-:meth:`~re.match.span`.  Groups are
+to :meth:`~re.Match.group`, :meth:`~re.Match.start`, :meth:`~re.Match.end`, and
+:meth:`~re.Match.span`.  Groups are
 numbered starting with 0.  Group 0 is always present; it's the whole RE, so
 :ref:`match object <match-objects>` methods all have group 0 as their default
 argument.  Later we'll see how to express groups that don't capture the span
@@ -837,13 +839,13 @@ from left to right. ::
    >>> m.group(2)
    'b'
 
-:meth:`~re.match.group` can be passed multiple group numbers at a time, in which case it
+:meth:`~re.Match.group` can be passed multiple group numbers at a time, in which case it
 will return a tuple containing the corresponding values for those groups. ::
 
    >>> m.group(2,1,2)
    ('b', 'abc', 'b')
 
-The :meth:`~re.match.groups` method returns a tuple containing the strings for all the
+The :meth:`~re.Match.groups` method returns a tuple containing the strings for all the
 subgroups, from 1 up to however many there are. ::
 
    >>> m.groups()
@@ -1068,7 +1070,7 @@ using the following pattern methods:
 Splitting Strings
 -----------------
 
-The :meth:`~re.pattern.split` method of a pattern splits a string apart
+The :meth:`~re.Pattern.split` method of a pattern splits a string apart
 wherever the RE matches, returning a list of the pieces. It's similar to the
 :meth:`~str.split` method of strings but provides much more generality in the
 delimiters that you can split by; string :meth:`!split` only supports splitting by
@@ -1123,7 +1125,7 @@ Search and Replace
 ------------------
 
 Another common task is to find all the matches for a pattern, and replace them
-with a different string.  The :meth:`~re.pattern.sub` method takes a replacement value,
+with a different string.  The :meth:`~re.Pattern.sub` method takes a replacement value,
 which can be either a string or a function, and the string to be processed.
 
 .. method:: .sub(replacement, string[, count=0])
@@ -1137,7 +1139,7 @@ which can be either a string or a function, and the string to be processed.
    replaced; *count* must be a non-negative integer.  The default value of 0 means
    to replace all occurrences.
 
-Here's a simple example of using the :meth:`~re.pattern.sub` method.  It replaces colour
+Here's a simple example of using the :meth:`~re.Pattern.sub` method.  It replaces colour
 names with the word ``colour``::
 
    >>> p = re.compile('(blue|white|red)')
@@ -1146,7 +1148,7 @@ names with the word ``colour``::
    >>> p.sub('colour', 'blue socks and red shoes', count=1)
    'colour socks and red shoes'
 
-The :meth:`~re.pattern.subn` method does the same work, but returns a 2-tuple containing the
+The :meth:`~re.Pattern.subn` method does the same work, but returns a 2-tuple containing the
 new string value and the number of replacements  that were performed::
 
    >>> p = re.compile('(blue|white|red)')
@@ -1155,12 +1157,12 @@ new string value and the number of replacements  that were performed::
    >>> p.subn('colour', 'no colours at all')
    ('no colours at all', 0)
 
-Empty matches are replaced only when they're not adjacent to a previous match.
+Empty matches are replaced only when they're not adjacent to a previous empty match.
 ::
 
    >>> p = re.compile('x*')
    >>> p.sub('-', 'abxd')
-   '-a-b-d-'
+   '-a-b--d-'
 
 If *replacement* is a string, any backslash escapes in it are processed.  That
 is, ``\n`` is converted to a single newline character, ``\r`` is converted to a

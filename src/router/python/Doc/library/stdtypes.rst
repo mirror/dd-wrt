@@ -349,7 +349,7 @@ Notes:
    The numeric literals accepted include the digits ``0`` to ``9`` or any
    Unicode equivalent (code points with the ``Nd`` property).
 
-   See http://www.unicode.org/Public/9.0.0/ucd/extracted/DerivedNumericType.txt
+   See http://www.unicode.org/Public/10.0.0/ucd/extracted/DerivedNumericType.txt
    for a complete list of code points with the ``Nd`` property.
 
 
@@ -1081,7 +1081,7 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 |                              | also removes it from *s*       |                     |
 +------------------------------+--------------------------------+---------------------+
 | ``s.remove(x)``              | remove the first item from *s* | \(3)                |
-|                              | where ``s[i] == x``            |                     |
+|                              | where ``s[i]`` is equal to *x* |                     |
 +------------------------------+--------------------------------+---------------------+
 | ``s.reverse()``              | reverses the items of *s* in   | \(4)                |
 |                              | place                          |                     |
@@ -1608,7 +1608,7 @@ expression support in the :mod:`re` module).
       ``LC_NUMERIC`` locale is different than the ``LC_CTYPE`` locale. This
       temporary change affects other threads.
 
-   .. versionchanged:: 3.6.5
+   .. versionchanged:: 3.7
       When formatting a number with the ``n`` type, the function sets
       temporarily the ``LC_CTYPE`` locale to the ``LC_NUMERIC`` locale in some
       cases.
@@ -1651,6 +1651,15 @@ expression support in the :mod:`re` module).
    in the Unicode character database as "Letter", i.e., those with general category
    property being one of "Lm", "Lt", "Lu", "Ll", or "Lo".  Note that this is different
    from the "Alphabetic" property defined in the Unicode Standard.
+
+
+.. method:: str.isascii()
+
+   Return true if the string is empty or all characters in the string are ASCII,
+   false otherwise.
+   ASCII characters have code points in the range U+0000-U+007F.
+
+   .. versionadded:: 3.7
 
 
 .. method:: str.isdecimal()
@@ -2087,10 +2096,11 @@ expression support in the :mod:`re` module).
 
    The formatting operations described here exhibit a variety of quirks that
    lead to a number of common errors (such as failing to display tuples and
-   dictionaries correctly).  Using the newer :ref:`formatted
-   string literals <f-strings>` or the :meth:`str.format` interface
-   helps avoid these errors.  These alternatives also provide more powerful,
-   flexible and extensible approaches to formatting text.
+   dictionaries correctly).  Using the newer :ref:`formatted string literals
+   <f-strings>`, the :meth:`str.format` interface, or :ref:`template strings
+   <template-strings>` may help avoid these errors.  Each of these
+   alternatives provides their own trade-offs and benefits of simplicity,
+   flexibility, and/or extensibility.
 
 String objects have one unique built-in operation: the ``%`` operator (modulo).
 This is also known as the string *formatting* or *interpolation* operator.
@@ -2334,6 +2344,10 @@ data and are closely related to string objects in a variety of other ways.
       >>> bytes.fromhex('2Ef0 F1f2  ')
       b'.\xf0\xf1\xf2'
 
+      .. versionchanged:: 3.7
+         :meth:`bytes.fromhex` now skips all ASCII whitespace in the string,
+         not just spaces.
+
    A reverse conversion function exists to transform a bytes object into its
    hexadecimal representation.
 
@@ -2405,6 +2419,10 @@ objects.
 
       >>> bytearray.fromhex('2Ef0 F1f2  ')
       bytearray(b'.\xf0\xf1\xf2')
+
+      .. versionchanged:: 3.7
+         :meth:`bytearray.fromhex` now skips all ASCII whitespace in the string,
+         not just spaces.
 
    A reverse conversion function exists to transform a bytearray object into its
    hexadecimal representation.
@@ -2930,6 +2948,16 @@ place, and instead produce new objects.
       True
       >>> b'ABCabc1'.isalpha()
       False
+
+
+.. method:: bytes.isascii()
+            bytearray.isascii()
+
+   Return true if the sequence is empty or all bytes in the sequence are ASCII,
+   false otherwise.
+   ASCII bytes are in the range 0-0x7F.
+
+   .. versionadded:: 3.7
 
 
 .. method:: bytes.isdigit()
@@ -4201,6 +4229,28 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
    value)`` pairs. Order comparisons ('<', '<=', '>=', '>') raise
    :exc:`TypeError`.
 
+   Dictionaries preserve insertion order.  Note that updating a key does not
+   affect the order.  Keys added after deletion are inserted at the end. ::
+
+      >>> d = {"one": 1, "two": 2, "three": 3, "four": 4}
+      >>> d
+      {'one': 1, 'two': 2, 'three': 3, 'four': 4}
+      >>> list(d)
+      ['one', 'two', 'three', 'four']
+      >>> list(d.values())
+      [1, 2, 3, 4]
+      >>> d["one"] = 42
+      >>> d
+      {'one': 42, 'two': 2, 'three': 3, 'four': 4}
+      >>> del d["two"]
+      >>> d["two"] = None
+      >>> d
+      {'one': 42, 'three': 3, 'four': 4, 'two': None}
+
+   .. versionchanged:: 3.7
+      Dictionary order is guaranteed to be insertion order.  This behavior was
+      implementation detail of CPython from 3.6.
+
 .. seealso::
    :class:`types.MappingProxyType` can be used to create a read-only view
    of a :class:`dict`.
@@ -4228,16 +4278,16 @@ support membership tests:
    Return an iterator over the keys, values or items (represented as tuples of
    ``(key, value)``) in the dictionary.
 
-   Keys and values are iterated over in an arbitrary order which is non-random,
-   varies across Python implementations, and depends on the dictionary's history
-   of insertions and deletions. If keys, values and items views are iterated
-   over with no intervening modifications to the dictionary, the order of items
-   will directly correspond.  This allows the creation of ``(value, key)`` pairs
+   Keys and values are iterated over in insertion order.
+   This allows the creation of ``(value, key)`` pairs
    using :func:`zip`: ``pairs = zip(d.values(), d.keys())``.  Another way to
    create the same list is ``pairs = [(v, k) for (k, v) in d.items()]``.
 
    Iterating views while adding or deleting entries in the dictionary may raise
    a :exc:`RuntimeError` or fail to iterate over all entries.
+
+   .. versionchanged:: 3.7
+      Dictionary order is guaranteed to be insertion order.
 
 .. describe:: x in dictview
 
@@ -4265,9 +4315,9 @@ An example of dictionary view usage::
    >>> print(n)
    504
 
-   >>> # keys and values are iterated over in the same order
+   >>> # keys and values are iterated over in the same order (insertion order)
    >>> list(keys)
-   ['eggs', 'bacon', 'sausage', 'spam']
+   ['eggs', 'sausage', 'bacon', 'spam']
    >>> list(values)
    [2, 1, 1, 500]
 
@@ -4275,7 +4325,7 @@ An example of dictionary view usage::
    >>> del dishes['eggs']
    >>> del dishes['sausage']
    >>> list(keys)
-   ['spam', 'bacon']
+   ['bacon', 'spam']
 
    >>> # set operations
    >>> keys & {'eggs', 'bacon', 'salad'}
@@ -4651,3 +4701,4 @@ types, where they are relevant.  Some of these are not reported by the
 
 .. [5] To format only a tuple you should therefore provide a singleton tuple whose only
    element is the tuple to be formatted.
+

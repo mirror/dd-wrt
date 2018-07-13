@@ -135,7 +135,7 @@ start a *semaphore tracker* process which tracks the unlinked named
 semaphores created by processes of the program.  When all processes
 have exited the semaphore tracker unlinks any remaining semaphores.
 Usually there should be none, but if a process was killed by a signal
-there may some "leaked" semaphores.  (Unlinking the named semaphores
+there may be some "leaked" semaphores.  (Unlinking the named semaphores
 is a serious matter since the system allows only a limited number, and
 they will not be automatically unlinked until the next reboot.)
 
@@ -179,7 +179,7 @@ program. ::
 
 Note that objects related to one context may not be compatible with
 processes for a different context.  In particular, locks created using
-the *fork* context cannot be passed to a processes started using the
+the *fork* context cannot be passed to processes started using the
 *spawn* or *forkserver* start methods.
 
 A library which wants to use a particular start method should probably
@@ -598,6 +598,22 @@ The :mod:`multiprocessing` package mostly replicates the API of the
          acquired a lock or semaphore etc. then terminating it is liable to
          cause other processes to deadlock.
 
+   .. method:: kill()
+
+      Same as :meth:`terminate()` but using the ``SIGKILL`` signal on Unix.
+
+      .. versionadded:: 3.7
+
+   .. method:: close()
+
+      Close the :class:`Process` object, releasing all resources associated
+      with it.  :exc:`ValueError` is raised if the underlying process
+      is still running.  Once :meth:`close` returns successfully, most
+      other methods and attributes of the :class:`Process` object will
+      raise :exc:`ValueError`.
+
+      .. versionadded:: 3.7
+
    Note that the :meth:`start`, :meth:`join`, :meth:`is_alive`,
    :meth:`terminate` and :attr:`exitcode` methods should only be called by
    the process that created the process object.
@@ -719,8 +735,9 @@ For an example of the usage of queues for interprocess communication see
 
 .. function:: Pipe([duplex])
 
-   Returns a pair ``(conn1, conn2)`` of :class:`Connection` objects representing
-   the ends of a pipe.
+   Returns a pair ``(conn1, conn2)`` of
+   :class:`~multiprocessing.connection.Connection` objects representing the
+   ends of a pipe.
 
    If *duplex* is ``True`` (the default) then the pipe is bidirectional.  If
    *duplex* is ``False`` then the pipe is unidirectional: ``conn1`` can only be
@@ -1005,10 +1022,13 @@ Miscellaneous
 Connection Objects
 ~~~~~~~~~~~~~~~~~~
 
+.. currentmodule:: multiprocessing.connection
+
 Connection objects allow the sending and receiving of picklable objects or
 strings.  They can be thought of as message oriented connected sockets.
 
-Connection objects are usually created using :func:`Pipe` -- see also
+Connection objects are usually created using
+:func:`Pipe <multiprocessing.Pipe>` -- see also
 :ref:`multiprocessing-listeners-clients`.
 
 .. class:: Connection
@@ -1018,7 +1038,7 @@ Connection objects are usually created using :func:`Pipe` -- see also
       Send an object to the other end of the connection which should be read
       using :meth:`recv`.
 
-      The object must be picklable.  Very large pickles (approximately 32 MB+,
+      The object must be picklable.  Very large pickles (approximately 32 MiB+,
       though it depends on the OS) may raise a :exc:`ValueError` exception.
 
    .. method:: recv()
@@ -1055,7 +1075,7 @@ Connection objects are usually created using :func:`Pipe` -- see also
 
       If *offset* is given then data is read from that position in *buffer*.  If
       *size* is given then that many bytes will be read from buffer.  Very large
-      buffers (approximately 32 MB+, though it depends on the OS) may raise a
+      buffers (approximately 32 MiB+, though it depends on the OS) may raise a
       :exc:`ValueError` exception
 
    .. method:: recv_bytes([maxlength])
@@ -1142,6 +1162,8 @@ For example:
 
 Synchronization primitives
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. currentmodule:: multiprocessing
 
 Generally synchronization primitives are not as necessary in a multiprocess
 program as they are in a multithreaded program.  See the documentation for
@@ -2253,7 +2275,7 @@ Listeners and Clients
    :synopsis: API for dealing with sockets.
 
 Usually message passing between processes is done using queues or by using
-:class:`~multiprocessing.Connection` objects returned by
+:class:`~Connection` objects returned by
 :func:`~multiprocessing.Pipe`.
 
 However, the :mod:`multiprocessing.connection` module allows some extra
@@ -2283,7 +2305,7 @@ multiple connections at the same time.
 .. function:: Client(address[, family[, authkey]])
 
    Attempt to set up a connection to the listener which is using address
-   *address*, returning a :class:`~multiprocessing.Connection`.
+   *address*, returning a :class:`~Connection`.
 
    The type of the connection is determined by *family* argument, but this can
    generally be omitted since it can usually be inferred from the format of
@@ -2333,8 +2355,8 @@ multiple connections at the same time.
    .. method:: accept()
 
       Accept a connection on the bound socket or named pipe of the listener
-      object and return a :class:`~multiprocessing.Connection` object.  If
-      authentication is attempted and fails, then
+      object and return a :class:`~Connection` object.
+      If authentication is attempted and fails, then
       :exc:`~multiprocessing.AuthenticationError` is raised.
 
    .. method:: close()
@@ -2370,7 +2392,7 @@ multiple connections at the same time.
    For both Unix and Windows, an object can appear in *object_list* if
    it is
 
-   * a readable :class:`~multiprocessing.Connection` object;
+   * a readable :class:`~multiprocessing.connection.Connection` object;
    * a connected and readable :class:`socket.socket` object; or
    * the :attr:`~multiprocessing.Process.sentinel` attribute of a
      :class:`~multiprocessing.Process` object.
@@ -2493,10 +2515,10 @@ an ``'AF_PIPE'`` address rather than an ``'AF_UNIX'`` address.
 Authentication keys
 ~~~~~~~~~~~~~~~~~~~
 
-When one uses :meth:`Connection.recv <multiprocessing.Connection.recv>`, the
+When one uses :meth:`Connection.recv <Connection.recv>`, the
 data received is automatically
-unpickled.  Unfortunately unpickling data from an untrusted source is a security
-risk.  Therefore :class:`Listener` and :func:`Client` use the :mod:`hmac` module
+unpickled. Unfortunately unpickling data from an untrusted source is a security
+risk. Therefore :class:`Listener` and :func:`Client` use the :mod:`hmac` module
 to provide digest authentication.
 
 An authentication key is a byte string which can be thought of as a

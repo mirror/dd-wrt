@@ -685,6 +685,12 @@ the following methods and attributes:
    character previously painter at that location.  By default, the character
    position and attributes are the current settings for the window object.
 
+   .. note::
+
+      Writing outside the window, subwindow, or pad raises a :exc:`curses.error`.
+      Attempting to write to the lower right corner of a window, subwindow,
+      or pad will cause an exception to be raised after the character is printed.
+
 
 .. method:: window.addnstr(str, n[, attr])
             window.addnstr(y, x, str, n[, attr])
@@ -699,6 +705,12 @@ the following methods and attributes:
 
    Paint the character string *str* at ``(y, x)`` with attributes
    *attr*, overwriting anything previously on the display.
+
+   .. note::
+
+      Writing outside the window, subwindow, or pad raises :exc:`curses.error`.
+      Attempting to write to the lower right corner of a window, subwindow,
+      or pad will cause an exception to be raised after the string is printed.
 
 
 .. method:: window.attroff(attr)
@@ -1295,6 +1307,8 @@ The exact constants available are system dependent.
 +------------------+-------------------------------+
 | ``A_INVIS``      | Invisible or blank mode       |
 +------------------+-------------------------------+
+| ``A_ITALIC``     | Italic mode                   |
++------------------+-------------------------------+
 | ``A_NORMAL``     | Normal attribute              |
 +------------------+-------------------------------+
 | ``A_PROTECT``    | Protected mode                |
@@ -1321,6 +1335,9 @@ The exact constants available are system dependent.
 | ``A_CHARTEXT``   | Bit-mask to extract a         |
 |                  | character                     |
 +------------------+-------------------------------+
+
+.. versionadded:: 3.7
+   ``A_ITALIC`` was added.
 
 Several constants are available to extract corresponding attributes returned
 by some methods.

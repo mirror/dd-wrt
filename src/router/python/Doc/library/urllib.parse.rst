@@ -64,6 +64,9 @@ or on combining URL components into a URL string.
    input is presumed to be a relative URL and thus to start with
    a path component.
 
+   .. doctest::
+      :options: +NORMALIZE_WHITESPACE
+
        >>> from urllib.parse import urlparse
        >>> urlparse('//www.cwi.nl:80/%7Eguido/Python.html')
        ParseResult(scheme='', netloc='www.cwi.nl:80', path='/%7Eguido/Python.html',
@@ -457,12 +460,16 @@ task isn't already covered by the URL parsing functions above.
 .. function:: quote(string, safe='/', encoding=None, errors=None)
 
    Replace special characters in *string* using the ``%xx`` escape. Letters,
-   digits, and the characters ``'_.-'`` are never quoted. By default, this
+   digits, and the characters ``'_.-~'`` are never quoted. By default, this
    function is intended for quoting the path section of URL. The optional *safe*
    parameter specifies additional ASCII characters that should not be quoted
    --- its default value is ``'/'``.
 
    *string* may be either a :class:`str` or a :class:`bytes`.
+
+   .. versionchanged:: 3.7
+      Moved from :rfc:`2396` to :rfc:`3986` for quoting URL strings. "~" is now
+      included in the set of reserved characters.
 
    The optional *encoding* and *errors* parameters specify how to deal with
    non-ASCII characters, as accepted by the :meth:`str.encode` method.
