@@ -17,7 +17,9 @@ python-configure: libffi-configure libffi libffi-install
 		CC="$(ARCH)-linux-uclibc-gcc $(COPTS)" \
 		LIBFFI_INCLUDEDIR="$(INSTALLDIR)/libffi/usr/lib/libffi-3.2.1/include" \
 		ac_cv_file__dev_ptmx=yes \
-		ac_cv_file__dev_ptc=no
+		ac_cv_file__dev_ptc=no \
+		ac_cv_buggy_getaddrinfo=no \
+		ac_cv_header_uuid_h=yes
 
 
 
