@@ -401,13 +401,14 @@ loops that truncate the stream.
           def __iter__(self):
               return self
           def __next__(self):
+              self.id = object()
               while self.currkey == self.tgtkey:
                   self.currvalue = next(self.it)    # Exit on StopIteration
                   self.currkey = self.keyfunc(self.currvalue)
               self.tgtkey = self.currkey
-              return (self.currkey, self._grouper(self.tgtkey))
-          def _grouper(self, tgtkey):
-              while self.currkey == tgtkey:
+              return (self.currkey, self._grouper(self.tgtkey, self.id))
+          def _grouper(self, tgtkey, id):
+              while self.id is id and self.currkey == tgtkey:
                   yield self.currvalue
                   try:
                       self.currvalue = next(self.it)
@@ -435,15 +436,24 @@ loops that truncate the stream.
           # islice('ABCDEFG', 2, None) --> C D E F G
           # islice('ABCDEFG', 0, None, 2) --> A C E G
           s = slice(*args)
-          it = iter(range(s.start or 0, s.stop or sys.maxsize, s.step or 1))
+          start, stop, step = s.start or 0, s.stop or sys.maxsize, s.step or 1
+          it = iter(range(start, stop, step))
           try:
               nexti = next(it)
           except StopIteration:
+              # Consume *iterable* up to the *start* position.
+              for i, element in zip(range(start), iterable):
+                  pass
               return
-          for i, element in enumerate(iterable):
-              if i == nexti:
-                  yield element
-                  nexti = next(it)
+          try:
+              for i, element in enumerate(iterable):
+                  if i == nexti:
+                      yield element
+                      nexti = next(it)
+          except StopIteration:
+              # Consume to *stop*.
+              for i, element in zip(range(i + 1, stop), iterable):
+                  pass
 
    If *start* is ``None``, then iteration starts at zero. If *step* is ``None``,
    then the step defaults to one.
@@ -630,26 +640,25 @@ loops that truncate the stream.
    iterables are of uneven length, missing values are filled-in with *fillvalue*.
    Iteration continues until the longest iterable is exhausted.  Roughly equivalent to::
 
-      class ZipExhausted(Exception):
-          pass
-
-      def zip_longest(*args, **kwds):
+      def zip_longest(*args, fillvalue=None):
           # zip_longest('ABCD', 'xy', fillvalue='-') --> Ax By C- D-
-          fillvalue = kwds.get('fillvalue')
-          counter = len(args) - 1
-          def sentinel():
-              nonlocal counter
-              if not counter:
-                  raise ZipExhausted
-              counter -= 1
-              yield fillvalue
-          fillers = repeat(fillvalue)
-          iterators = [chain(it, sentinel(), fillers) for it in args]
-          try:
-              while iterators:
-                  yield tuple(map(next, iterators))
-          except ZipExhausted:
-              pass
+          iterators = [iter(it) for it in args]
+          num_active = len(iterators)
+          if not num_active:
+              return
+          while True:
+              values = []
+              for i, it in enumerate(iterators):
+                  try:
+                      value = next(it)
+                  except StopIteration:
+                      num_active -= 1
+                      if not num_active:
+                          return
+                      iterators[i] = repeat(fillvalue)
+                      value = fillvalue
+                  values.append(value)
+              yield tuple(values)
 
    If one of the iterables is potentially infinite, then the :func:`zip_longest`
    function should be wrapped with something that limits the number of calls
@@ -679,6 +688,11 @@ which incur interpreter overhead.
        "Return first n items of the iterable as a list"
        return list(islice(iterable, n))
 
+   def prepend(value, iterator):
+       "Prepend a single value in front of an iterator"
+       # prepend(1, [2, 3, 4]) -> 1 2 3 4
+       return chain([value], iterator)
+
    def tabulate(function, start=0):
        "Return function(0), function(1), ..."
        return map(function, count(start))
@@ -688,8 +702,8 @@ which incur interpreter overhead.
        # tail(3, 'ABCDEFG') --> E F G
        return iter(collections.deque(iterable, maxlen=n))
 
-   def consume(iterator, n):
-       "Advance the iterator n-steps ahead. If n is none, consume entirely."
+   def consume(iterator, n=None):
+       "Advance the iterator n-steps ahead. If n is None, consume entirely."
        # Use functions that consume iterators at C speed.
        if n is None:
            # feed the entire iterator into a zero-length deque

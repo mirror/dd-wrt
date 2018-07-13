@@ -2,6 +2,8 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "internal/mem.h"
+#include "internal/pystate.h"
 #include "structmember.h"
 #include "bytes_methods.h"
 #include "bytesobject.h"
@@ -910,11 +912,12 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 bytearray_repr(PyByteArrayObject *self)
 {
-    const char *quote_prefix = "bytearray(b";
+    const char *className = _PyType_Name(Py_TYPE(self));
+    const char *quote_prefix = "(b";
     const char *quote_postfix = ")";
     Py_ssize_t length = Py_SIZE(self);
-    /* 15 == strlen(quote_prefix) + 2 + strlen(quote_postfix) + 1 */
-    size_t newsize;
+    /* 6 == strlen(quote_prefix) + 2 + strlen(quote_postfix) + 1 */
+    Py_ssize_t newsize;
     PyObject *v;
     Py_ssize_t i;
     char *bytes;
@@ -924,13 +927,14 @@ bytearray_repr(PyByteArrayObject *self)
     char *test, *start;
     char *buffer;
 
-    if (length > (PY_SSIZE_T_MAX - 15) / 4) {
+    newsize = strlen(className);
+    if (length > (PY_SSIZE_T_MAX - 6 - newsize) / 4) {
         PyErr_SetString(PyExc_OverflowError,
             "bytearray object is too large to make repr");
         return NULL;
     }
 
-    newsize = 15 + length * 4;
+    newsize += 6 + length * 4;
     buffer = PyObject_Malloc(newsize);
     if (buffer == NULL) {
         PyErr_NoMemory();
@@ -950,6 +954,8 @@ bytearray_repr(PyByteArrayObject *self)
     }
 
     p = buffer;
+    while (*className)
+        *p++ = *className++;
     while (*quote_prefix)
         *p++ = *quote_prefix++;
     *p++ = quote;
@@ -985,7 +991,7 @@ bytearray_repr(PyByteArrayObject *self)
        *p++ = *quote_postfix++;
     }
 
-    v = PyUnicode_DecodeASCII(buffer, p - buffer, NULL);
+    v = PyUnicode_FromStringAndSize(buffer, p - buffer);
     PyObject_Free(buffer);
     return v;
 }
@@ -1006,8 +1012,6 @@ bytearray_richcompare(PyObject *self, PyObject *other, int op)
 {
     Py_ssize_t self_size, other_size;
     Py_buffer self_bytes, other_bytes;
-    PyObject *res;
-    Py_ssize_t minsize;
     int cmp, rc;
 
     /* Bytes can be compared to anything that supports the (binary)
@@ -1043,38 +1047,25 @@ bytearray_richcompare(PyObject *self, PyObject *other, int op)
 
     if (self_size != other_size && (op == Py_EQ || op == Py_NE)) {
         /* Shortcut: if the lengths differ, the objects differ */
-        cmp = (op == Py_NE);
+        PyBuffer_Release(&self_bytes);
+        PyBuffer_Release(&other_bytes);
+        return PyBool_FromLong((op == Py_NE));
     }
     else {
-        minsize = self_size;
-        if (other_size < minsize)
-            minsize = other_size;
-
-        cmp = memcmp(self_bytes.buf, other_bytes.buf, minsize);
+        cmp = memcmp(self_bytes.buf, other_bytes.buf,
+                     Py_MIN(self_size, other_size));
         /* In ISO C, memcmp() guarantees to use unsigned bytes! */
 
-        if (cmp == 0) {
-            if (self_size < other_size)
-                cmp = -1;
-            else if (self_size > other_size)
-                cmp = 1;
+        PyBuffer_Release(&self_bytes);
+        PyBuffer_Release(&other_bytes);
+
+        if (cmp != 0) {
+            Py_RETURN_RICHCOMPARE(cmp, 0, op);
         }
 
-        switch (op) {
-        case Py_LT: cmp = cmp <  0; break;
-        case Py_LE: cmp = cmp <= 0; break;
-        case Py_EQ: cmp = cmp == 0; break;
-        case Py_NE: cmp = cmp != 0; break;
-        case Py_GT: cmp = cmp >  0; break;
-        case Py_GE: cmp = cmp >= 0; break;
-        }
+        Py_RETURN_RICHCOMPARE(self_size, other_size, op);
     }
 
-    res = cmp ? Py_True : Py_False;
-    PyBuffer_Release(&self_bytes);
-    PyBuffer_Release(&other_bytes);
-    Py_INCREF(res);
-    return res;
 }
 
 static void
@@ -1815,7 +1806,8 @@ bytearray_strip_impl(PyByteArrayObject *self, PyObject *bytes)
 /*[clinic end generated code: output=760412661a34ad5a input=ef7bb59b09c21d62]*/
 {
     Py_ssize_t left, right, mysize, byteslen;
-    char *myptr, *bytesptr;
+    char *myptr;
+    const char *bytesptr;
     Py_buffer vbytes;
 
     if (bytes == Py_None) {
@@ -1825,7 +1817,7 @@ bytearray_strip_impl(PyByteArrayObject *self, PyObject *bytes)
     else {
         if (PyObject_GetBuffer(bytes, &vbytes, PyBUF_SIMPLE) != 0)
             return NULL;
-        bytesptr = (char *) vbytes.buf;
+        bytesptr = (const char *) vbytes.buf;
         byteslen = vbytes.len;
     }
     myptr = PyByteArray_AS_STRING(self);
@@ -1856,7 +1848,8 @@ bytearray_lstrip_impl(PyByteArrayObject *self, PyObject *bytes)
 /*[clinic end generated code: output=d005c9d0ab909e66 input=80843f975dd7c480]*/
 {
     Py_ssize_t left, right, mysize, byteslen;
-    char *myptr, *bytesptr;
+    char *myptr;
+    const char *bytesptr;
     Py_buffer vbytes;
 
     if (bytes == Py_None) {
@@ -1866,7 +1859,7 @@ bytearray_lstrip_impl(PyByteArrayObject *self, PyObject *bytes)
     else {
         if (PyObject_GetBuffer(bytes, &vbytes, PyBUF_SIMPLE) != 0)
             return NULL;
-        bytesptr = (char *) vbytes.buf;
+        bytesptr = (const char *) vbytes.buf;
         byteslen = vbytes.len;
     }
     myptr = PyByteArray_AS_STRING(self);
@@ -1894,7 +1887,8 @@ bytearray_rstrip_impl(PyByteArrayObject *self, PyObject *bytes)
 /*[clinic end generated code: output=030e2fbd2f7276bd input=e728b994954cfd91]*/
 {
     Py_ssize_t right, mysize, byteslen;
-    char *myptr, *bytesptr;
+    char *myptr;
+    const char *bytesptr;
     Py_buffer vbytes;
 
     if (bytes == Py_None) {
@@ -1904,7 +1898,7 @@ bytearray_rstrip_impl(PyByteArrayObject *self, PyObject *bytes)
     else {
         if (PyObject_GetBuffer(bytes, &vbytes, PyBUF_SIMPLE) != 0)
             return NULL;
-        bytesptr = (char *) vbytes.buf;
+        bytesptr = (const char *) vbytes.buf;
         byteslen = vbytes.len;
     }
     myptr = PyByteArray_AS_STRING(self);
@@ -1974,7 +1968,7 @@ bytearray_join(PyByteArrayObject *self, PyObject *iterable_of_bytes)
 /*[clinic input]
 bytearray.splitlines
 
-    keepends: int(c_default="0") = False
+    keepends: bool(accept={int}) = False
 
 Return a list of the lines in the bytearray, breaking at line boundaries.
 
@@ -1984,7 +1978,7 @@ true.
 
 static PyObject *
 bytearray_splitlines_impl(PyByteArrayObject *self, int keepends)
-/*[clinic end generated code: output=4223c94b895f6ad9 input=8ccade941e5ea0bd]*/
+/*[clinic end generated code: output=4223c94b895f6ad9 input=99a27ad959b9cf6b]*/
 {
     return stringlib_splitlines(
         (PyObject*) self, PyByteArray_AS_STRING(self),
@@ -2165,6 +2159,8 @@ bytearray_methods[] = {
      _Py_isalnum__doc__},
     {"isalpha", (PyCFunction)stringlib_isalpha, METH_NOARGS,
      _Py_isalpha__doc__},
+    {"isascii", (PyCFunction)stringlib_isascii, METH_NOARGS,
+     _Py_isascii__doc__},
     {"isdigit", (PyCFunction)stringlib_isdigit, METH_NOARGS,
      _Py_isdigit__doc__},
     {"islower", (PyCFunction)stringlib_islower, METH_NOARGS,
@@ -2350,10 +2346,7 @@ bytearrayiter_reduce(bytesiterobject *it)
         return Py_BuildValue("N(O)n", _PyObject_GetBuiltin("iter"),
                              it->it_seq, it->it_index);
     } else {
-        PyObject *u = PyUnicode_FromUnicode(NULL, 0);
-        if (u == NULL)
-            return NULL;
-        return Py_BuildValue("N(N)", _PyObject_GetBuiltin("iter"), u);
+        return Py_BuildValue("N(())", _PyObject_GetBuiltin("iter"));
     }
 }
 

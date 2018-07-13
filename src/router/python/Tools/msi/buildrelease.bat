@@ -28,7 +28,7 @@ rem     {msi}           MSI filename        core.msi
 set DOWNLOAD_URL=https://www.python.org/ftp/python/{version}/{arch}{releasename}/{msi}
 
 set D=%~dp0
-set PCBUILD=%D%..\..\PCBuild\
+set PCBUILD=%D%..\..\PCbuild\
 if "%Py_OutDir%"=="" set Py_OutDir=%PCBUILD%
 set EXTERNALS=%D%..\..\externals\windows-installer\
 
@@ -83,7 +83,7 @@ if errorlevel 1 goto :eof
 
 where dlltool /q && goto skipdlltoolsearch
 set _DLLTOOL_PATH=
-where /R "%EXTERNALS%\" dlltool > "%TEMP%\dlltool.loc" 2> nul && set /P _DLLTOOL_PATH= < "%TEMP%\dlltool.loc" & del "%TEMP%\dlltool.loc" 
+where /R "%EXTERNALS%\" dlltool > "%TEMP%\dlltool.loc" 2> nul && set /P _DLLTOOL_PATH= < "%TEMP%\dlltool.loc" & del "%TEMP%\dlltool.loc"
 if not exist "%_DLLTOOL_PATH%" echo Cannot find binutils on PATH or in external && exit /B 1
 for %%f in (%_DLLTOOL_PATH%) do set PATH=%PATH%;%%~dpf
 set _DLLTOOL_PATH=

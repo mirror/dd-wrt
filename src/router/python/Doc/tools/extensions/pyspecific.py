@@ -10,7 +10,7 @@
 """
 
 import re
-import codecs
+import io
 from os import path
 from time import asctime
 from pprint import pformat
@@ -23,9 +23,10 @@ from docutils import nodes, utils
 from sphinx import addnodes
 from sphinx.builders import Builder
 from sphinx.locale import translators
+from sphinx.util import status_iterator
 from sphinx.util.nodes import split_explicit_title
 from sphinx.writers.html import HTMLTranslator
-from sphinx.writers.text import TextWriter
+from sphinx.writers.text import TextWriter, TextTranslator
 from sphinx.writers.latex import LaTeXTranslator
 from sphinx.domains.python import PyModulelevel, PyClassmember
 
@@ -35,7 +36,7 @@ import suspicious
 
 
 ISSUE_URI = 'https://bugs.python.org/issue%s'
-SOURCE_URI = 'https://github.com/python/cpython/tree/3.6/%s'
+SOURCE_URI = 'https://github.com/python/cpython/tree/3.7/%s'
 
 # monkey-patch reST parser to disable alphabetic and roman enumerated lists
 from docutils.parsers.rst.states import Body
@@ -256,11 +257,8 @@ class MiscNews(Directive):
         fpath = path.join(source_dir, fname)
         self.state.document.settings.record_dependencies.add(fpath)
         try:
-            fp = codecs.open(fpath, encoding='utf-8')
-            try:
+            with io.open(fpath, encoding='utf-8') as fp:
                 content = fp.read()
-            finally:
-                fp.close()
         except Exception:
             text = 'The NEWS file is not available.'
             node = nodes.strong(text, text)
@@ -277,9 +275,9 @@ class MiscNews(Directive):
 # Support for building "topic help" for pydoc
 
 pydoc_topic_labels = [
-    'assert', 'assignment', 'atom-identifiers', 'atom-literals',
-    'attribute-access', 'attribute-references', 'augassign', 'binary',
-    'bitwise', 'bltin-code-objects', 'bltin-ellipsis-object',
+    'assert', 'assignment', 'async', 'atom-identifiers', 'atom-literals',
+    'attribute-access', 'attribute-references', 'augassign', 'await',
+    'binary', 'bitwise', 'bltin-code-objects', 'bltin-ellipsis-object',
     'bltin-null-object', 'bltin-type-objects', 'booleans',
     'break', 'callable-types', 'calls', 'class', 'comparisons', 'compound',
     'context-managers', 'continue', 'conversions', 'customization', 'debugger',
@@ -298,8 +296,11 @@ pydoc_topic_labels = [
 class PydocTopicsBuilder(Builder):
     name = 'pydoc-topics'
 
+    default_translator_class = TextTranslator
+
     def init(self):
         self.topics = {}
+        self.secnumbers = {}
 
     def get_outdated_docs(self):
         return 'all pydoc topics'
@@ -309,9 +310,9 @@ class PydocTopicsBuilder(Builder):
 
     def write(self, *ignored):
         writer = TextWriter(self)
-        for label in self.status_iterator(pydoc_topic_labels,
-                                          'building topics... ',
-                                          length=len(pydoc_topic_labels)):
+        for label in status_iterator(pydoc_topic_labels,
+                                     'building topics... ',
+                                     length=len(pydoc_topic_labels)):
             if label not in self.env.domaindata['std']['labels']:
                 self.warn('label %r not in documentation' % label)
                 continue

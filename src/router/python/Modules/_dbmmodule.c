@@ -187,8 +187,7 @@ _dbm_dbm_close_impl(dbmobject *self)
     if (self->di_dbm)
         dbm_close(self->di_dbm);
     self->di_dbm = NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -239,7 +238,7 @@ dbm_contains(PyObject *self, PyObject *arg)
          return -1;
     }
     if (PyUnicode_Check(arg)) {
-        key.dptr = PyUnicode_AsUTF8AndSize(arg, &size);
+        key.dptr = (char *)PyUnicode_AsUTF8AndSize(arg, &size);
         key.dsize = size;
         if (key.dptr == NULL)
             return -1;
@@ -275,7 +274,7 @@ static PySequenceMethods dbm_as_sequence = {
 _dbm.dbm.get
 
     key: str(accept={str, robuffer}, zeroes=True)
-    default: object(c_default="NULL") = b''
+    default: object = None
     /
 
 Return the value for key if present, otherwise default.
@@ -284,7 +283,7 @@ Return the value for key if present, otherwise default.
 static PyObject *
 _dbm_dbm_get_impl(dbmobject *self, const char *key,
                   Py_ssize_clean_t key_length, PyObject *default_value)
-/*[clinic end generated code: output=b44f95eba8203d93 input=a3a279957f85eb6d]*/
+/*[clinic end generated code: output=b44f95eba8203d93 input=b788eba0ffad2e91]*/
 /*[clinic end generated code: output=4f5c0e523eaf1251 input=9402c0af8582dc69]*/
 {
     datum dbm_key, val;
@@ -497,7 +496,7 @@ PyInit__dbm(void) {
     d = PyModule_GetDict(m);
     if (DbmError == NULL)
         DbmError = PyErr_NewException("_dbm.error",
-                                      PyExc_IOError, NULL);
+                                      PyExc_OSError, NULL);
     s = PyUnicode_FromString(which_dbm);
     if (s != NULL) {
         PyDict_SetItemString(d, "library", s);

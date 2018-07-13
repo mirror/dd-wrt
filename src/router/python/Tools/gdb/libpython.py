@@ -730,7 +730,7 @@ class PyDictObjectPtr(PyObjectPtr):
         else:
             offset = 8 * dk_size
 
-        ent_addr = keys['dk_indices']['as_1'].address
+        ent_addr = keys['dk_indices'].address
         ent_addr = ent_addr.cast(_type_unsigned_char_ptr()) + offset
         ent_ptr_t = gdb.lookup_type('PyDictKeyEntry').pointer()
         ent_addr = ent_addr.cast(ent_ptr_t)
@@ -1099,8 +1099,8 @@ class PyTupleObjectPtr(PyObjectPtr):
             return ProxyAlreadyVisited('(...)')
         visited.add(self.as_address())
 
-        result = tuple([PyObjectPtr.from_pyobject_ptr(self[i]).proxyval(visited)
-                        for i in safe_range(int_from_int(self.field('ob_size')))])
+        result = tuple(PyObjectPtr.from_pyobject_ptr(self[i]).proxyval(visited)
+                       for i in safe_range(int_from_int(self.field('ob_size'))))
         return result
 
     def write_repr(self, out, visited):
@@ -1540,7 +1540,9 @@ class Frame(object):
         if not caller:
             return False
 
-        if caller == 'PyCFunction_Call':
+        if caller in ('_PyCFunction_FastCallDict',
+                      '_PyCFunction_FastCallKeywords'):
+            arg_name = 'func'
             # Within that frame:
             #   "func" is the local containing the PyObject* of the
             # PyCFunctionObject instance
@@ -1548,17 +1550,10 @@ class Frame(object):
             #   "self" is the (PyObject*) of the 'self'
             try:
                 # Use the prettyprinter for the func:
-                func = frame.read_var('func')
+                func = frame.read_var(arg_name)
                 return str(func)
             except RuntimeError:
-                return 'PyCFunction invocation (unable to read "func")'
-
-        elif caller == '_PyCFunction_FastCallDict':
-            try:
-                func = frame.read_var('func_obj')
-                return str(func)
-            except RuntimeError:
-                return 'PyCFunction invocation (unable to read "func_obj")'
+                return 'PyCFunction invocation (unable to read %s)' % arg_name
 
         if caller == 'wrapper_call':
             try:

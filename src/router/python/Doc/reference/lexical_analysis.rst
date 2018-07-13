@@ -47,11 +47,12 @@ Physical lines
 --------------
 
 A physical line is a sequence of characters terminated by an end-of-line
-sequence.  In source files, any of the standard platform line termination
-sequences can be used - the Unix form using ASCII LF (linefeed), the Windows
-form using the ASCII sequence CR LF (return followed by linefeed), or the old
-Macintosh form using the ASCII CR (return) character.  All of these forms can be
-used equally, regardless of platform.
+sequence.  In source files and strings, any of the standard platform line
+termination sequences can be used - the Unix form using ASCII LF (linefeed),
+the Windows form using the ASCII sequence CR LF (return followed by linefeed),
+or the old Macintosh form using the ASCII CR (return) character.  All of these
+forms can be used equally, regardless of platform. The end of input also serves
+as an implicit terminator for the final physical line.
 
 When embedding Python, source code strings should be passed to Python APIs using
 the standard C conventions for newline characters (the ``\n`` character,
@@ -313,7 +314,7 @@ The Unicode category codes mentioned above stand for:
 * *Nd* - decimal numbers
 * *Pc* - connector punctuations
 * *Other_ID_Start* - explicit list of characters in `PropList.txt
-  <http://www.unicode.org/Public/9.0.0/ucd/PropList.txt>`_ to support backwards
+  <http://www.unicode.org/Public/11.0.0/ucd/PropList.txt>`_ to support backwards
   compatibility
 * *Other_ID_Continue* - likewise
 
@@ -340,13 +341,13 @@ exactly as written here:
 
 .. sourcecode:: text
 
-   False      class      finally    is         return
-   None       continue   for        lambda     try
-   True       def        from       nonlocal   while
-   and        del        global     not        with
-   as         elif       if         or         yield
-   assert     else       import     pass
-   break      except     in         raise
+   False      await      else       import     pass
+   None       break      except     in         raise
+   True       class      finally    is         return
+   and        continue   for        lambda     try
+   as         def        from       nonlocal   while
+   assert     del        global     not        with
+   async      elif       if         or         yield
 
 .. _id-classes:
 
@@ -876,4 +877,4 @@ occurrence outside string literals and comments is an unconditional error:
 
 .. rubric:: Footnotes
 
-.. [#] http://www.unicode.org/Public/9.0.0/ucd/NameAliases.txt
+.. [#] http://www.unicode.org/Public/11.0.0/ucd/NameAliases.txt
