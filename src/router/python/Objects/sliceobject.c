@@ -14,12 +14,14 @@ this type and there is exactly one in existence.
 */
 
 #include "Python.h"
+#include "internal/mem.h"
+#include "internal/pystate.h"
 #include "structmember.h"
 
 static PyObject *
 ellipsis_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    if (PyTuple_GET_SIZE(args) || (kwargs && PyDict_Size(kwargs))) {
+    if (PyTuple_GET_SIZE(args) || (kwargs && PyDict_GET_SIZE(kwargs))) {
         PyErr_SetString(PyExc_TypeError, "EllipsisType takes no arguments");
         return NULL;
     }
@@ -297,7 +299,7 @@ slice_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
     start = stop = step = NULL;
 
-    if (!_PyArg_NoKeywords("slice()", kw))
+    if (!_PyArg_NoKeywords("slice", kw))
         return NULL;
 
     if (!PyArg_UnpackTuple(args, "slice", 1, 3, &start, &stop, &step))
@@ -376,9 +378,8 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
 
     /* Convert step to an integer; raise for zero step. */
     if (self->step == Py_None) {
-        step = PyLong_FromLong(1L);
-        if (step == NULL)
-            goto error;
+        step = _PyLong_One;
+        Py_INCREF(step);
         step_is_negative = 0;
     }
     else {
@@ -406,10 +407,8 @@ _PySlice_GetLongIndices(PySliceObject *self, PyObject *length,
             goto error;
     }
     else {
-        lower = PyLong_FromLong(0L);
-        if (lower == NULL)
-            goto error;
-
+        lower = _PyLong_Zero;
+        Py_INCREF(lower);
         upper = length;
         Py_INCREF(upper);
     }

@@ -480,13 +480,16 @@ I/O Base Classes
       A :exc:`BlockingIOError` is raised if the underlying raw stream is in
       non blocking-mode, and has no data available at the moment.
 
-   .. method:: read1(size=-1)
+   .. method:: read1([size])
 
       Read and return up to *size* bytes, with at most one call to the
       underlying raw stream's :meth:`~RawIOBase.read` (or
       :meth:`~RawIOBase.readinto`) method.  This can be useful if you are
       implementing your own buffering on top of a :class:`BufferedIOBase`
       object.
+
+      If *size* is ``-1`` (the default), an arbitrary number of bytes are
+      returned (more than zero unless EOF is reached).
 
    .. method:: readinto(b)
 
@@ -631,13 +634,16 @@ than raw I/O does.
       Return :class:`bytes` containing the entire contents of the buffer.
 
 
-   .. method:: read1()
+   .. method:: read1([size])
 
-      In :class:`BytesIO`, this is the same as :meth:`read`.
+      In :class:`BytesIO`, this is the same as :meth:`~BufferedIOBase.read`.
 
-   .. method:: readinto1()
+      .. versionchanged:: 3.7
+         The *size* argument is now optional.
 
-      In :class:`BytesIO`, this is the same as :meth:`readinto`.
+   .. method:: readinto1(b)
+
+      In :class:`BytesIO`, this is the same as :meth:`~BufferedIOBase.readinto`.
 
       .. versionadded:: 3.5
 
@@ -667,11 +673,14 @@ than raw I/O does.
       Read and return *size* bytes, or if *size* is not given or negative, until
       EOF or if the read call would block in non-blocking mode.
 
-   .. method:: read1(size)
+   .. method:: read1([size])
 
       Read and return up to *size* bytes with only one call on the raw stream.
       If at least one byte is buffered, only buffered bytes are returned.
       Otherwise, one raw stream read call is made.
+
+      .. versionchanged:: 3.7
+         The *size* argument is now optional.
 
 
 .. class:: BufferedWriter(raw, buffer_size=DEFAULT_BUFFER_SIZE)
@@ -880,7 +889,7 @@ Text I/O
      characters written are translated to the given string.
 
    If *line_buffering* is ``True``, :meth:`flush` is implied when a call to
-   write contains a newline character.
+   write contains a newline character or a carriage return.
 
    If *write_through* is ``True``, calls to :meth:`write` are guaranteed
    not to be buffered: any data written on the :class:`TextIOWrapper`
@@ -895,12 +904,38 @@ Text I/O
       locale encoding using :func:`locale.setlocale`, use the current locale
       encoding instead of the user preferred encoding.
 
-   :class:`TextIOWrapper` provides one attribute in addition to those of
+   :class:`TextIOWrapper` provides these members in addition to those of
    :class:`TextIOBase` and its parents:
 
    .. attribute:: line_buffering
 
       Whether line buffering is enabled.
+
+   .. attribute:: write_through
+
+      Whether writes are passed immediately to the underlying binary
+      buffer.
+
+      .. versionadded:: 3.7
+
+   .. method:: reconfigure(*[, encoding][, errors][, newline][, \
+                           line_buffering][, write_through])
+
+      Reconfigure this text stream using new settings for *encoding*,
+      *errors*, *newline*, *line_buffering* and *write_through*.
+
+      Parameters not specified keep current settings, except
+      ``errors='strict`` is used when *encoding* is specified but
+      *errors* is not specified.
+
+      It is not possible to change the encoding or newline if some data
+      has already been read from the stream. On the other hand, changing
+      encoding after write is possible.
+
+      This method does an implicit stream flush before setting the
+      new parameters.
+
+      .. versionadded:: 3.7
 
 
 .. class:: StringIO(initial_value='', newline='\\n')

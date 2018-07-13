@@ -152,8 +152,7 @@ static PyObject *
 get_nullchar_as_None(Py_UCS4 c)
 {
     if (c == '\0') {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
     else
         return PyUnicode_FromOrdinal(c);
@@ -209,23 +208,17 @@ _set_int(const char *name, int *target, PyObject *src, int dflt)
     if (src == NULL)
         *target = dflt;
     else {
-        long value;
+        int value;
         if (!PyLong_CheckExact(src)) {
             PyErr_Format(PyExc_TypeError,
                          "\"%s\" must be an integer", name);
             return -1;
         }
-        value = PyLong_AsLong(src);
-        if (value == -1 && PyErr_Occurred())
-            return -1;
-#if SIZEOF_LONG > SIZEOF_INT
-        if (value > INT_MAX || value < INT_MIN) {
-            PyErr_Format(PyExc_ValueError,
-                         "integer out of range for \"%s\"", name);
+        value = _PyLong_AsInt(src);
+        if (value == -1 && PyErr_Occurred()) {
             return -1;
         }
-#endif
-        *target = (int)value;
+        *target = value;
     }
     return 0;
 }
@@ -372,14 +365,14 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             Py_INCREF(dialect);
         /* Can we reuse this instance? */
         if (PyObject_TypeCheck(dialect, &Dialect_Type) &&
-            delimiter == 0 &&
-            doublequote == 0 &&
-            escapechar == 0 &&
-            lineterminator == 0 &&
-            quotechar == 0 &&
-            quoting == 0 &&
-            skipinitialspace == 0 &&
-            strict == 0)
+            delimiter == NULL &&
+            doublequote == NULL &&
+            escapechar == NULL &&
+            lineterminator == NULL &&
+            quotechar == NULL &&
+            quoting == NULL &&
+            skipinitialspace == NULL &&
+            strict == NULL)
             return dialect;
     }
 
@@ -1300,8 +1293,7 @@ csv_writerows(WriterObj *self, PyObject *seqseq)
     Py_DECREF(row_iter);
     if (PyErr_Occurred())
         return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static struct PyMethodDef Writer_methods[] = {
@@ -1456,8 +1448,7 @@ csv_register_dialect(PyObject *module, PyObject *args, PyObject *kwargs)
         return NULL;
     }
     Py_DECREF(dialect);
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -1465,8 +1456,7 @@ csv_unregister_dialect(PyObject *module, PyObject *name_obj)
 {
     if (PyDict_DelItem(_csvstate_global->dialects, name_obj) < 0)
         return PyErr_Format(_csvstate_global->error_obj, "unknown dialect");
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *

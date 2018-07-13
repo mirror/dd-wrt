@@ -712,7 +712,7 @@ be positional::
    Namespace(bar='BAR', foo='FOO')
    >>> parser.parse_args(['--foo', 'FOO'])
    usage: PROG [-h] [-f FOO] bar
-   PROG: error: too few arguments
+   PROG: error: the following arguments are required: bar
 
 
 action
@@ -898,7 +898,7 @@ values are:
      Namespace(foo=['a', 'b'])
      >>> parser.parse_args([])
      usage: PROG [-h] foo [foo ...]
-     PROG: error: too few arguments
+     PROG: error: the following arguments are required: foo
 
 .. _`argparse.REMAINDER`:
 
@@ -981,7 +981,7 @@ is used when no command-line argument was present::
 
 
 Providing ``default=argparse.SUPPRESS`` causes no attribute to be added if the
-command-line argument was not present.::
+command-line argument was not present::
 
    >>> parser = argparse.ArgumentParser()
    >>> parser.add_argument('--foo', default=argparse.SUPPRESS)
@@ -1539,8 +1539,8 @@ Sub-commands
 
 .. method:: ArgumentParser.add_subparsers([title], [description], [prog], \
                                           [parser_class], [action], \
-                                          [option_string], [dest], [help], \
-                                          [metavar])
+                                          [option_string], [dest], [required] \
+                                          [help], [metavar])
 
    Many programs split up their functionality into a number of sub-commands,
    for example, the ``svn`` program can invoke sub-commands like ``svn
@@ -1575,6 +1575,9 @@ Sub-commands
 
    * dest_ - name of the attribute under which sub-command name will be
      stored; by default ``None`` and no value is stored
+
+   * required_ - Whether or not a subcommand must be provided, by default
+     ``False``.
 
    * help_ - help for sub-parser group in help output, by default ``None``
 
@@ -1987,6 +1990,45 @@ Exiting methods
    This method prints a usage message including the *message* to the
    standard error and terminates the program with a status code of 2.
 
+
+Intermixed parsing
+^^^^^^^^^^^^^^^^^^
+
+.. method:: ArgumentParser.parse_intermixed_args(args=None, namespace=None)
+.. method:: ArgumentParser.parse_known_intermixed_args(args=None, namespace=None)
+
+A number of Unix commands allow the user to intermix optional arguments with
+positional arguments.  The :meth:`~ArgumentParser.parse_intermixed_args`
+and :meth:`~ArgumentParser.parse_known_intermixed_args` methods
+support this parsing style.
+
+These parsers do not support all the argparse features, and will raise
+exceptions if unsupported features are used.  In particular, subparsers,
+``argparse.REMAINDER``, and mutually exclusive groups that include both
+optionals and positionals are not supported.
+
+The following example shows the difference between
+:meth:`~ArgumentParser.parse_known_args` and
+:meth:`~ArgumentParser.parse_intermixed_args`: the former returns ``['2',
+'3']`` as unparsed arguments, while the latter collects all the positionals
+into ``rest``.  ::
+
+   >>> parser = argparse.ArgumentParser()
+   >>> parser.add_argument('--foo')
+   >>> parser.add_argument('cmd')
+   >>> parser.add_argument('rest', nargs='*', type=int)
+   >>> parser.parse_known_args('doit 1 --foo bar 2 3'.split())
+   (Namespace(cmd='doit', foo='bar', rest=[1]), ['2', '3'])
+   >>> parser.parse_intermixed_args('doit 1 --foo bar 2 3'.split())
+   Namespace(cmd='doit', foo='bar', rest=[1, 2, 3])
+
+:meth:`~ArgumentParser.parse_known_intermixed_args` returns a two item tuple
+containing the populated namespace and the list of remaining argument strings.
+:meth:`~ArgumentParser.parse_intermixed_args` raises an error if there are any
+remaining unparsed argument strings.
+
+.. versionadded:: 3.7
+
 .. _upgrading-optparse-code:
 
 Upgrading optparse code
@@ -2020,9 +2062,8 @@ A partial upgrade path from :mod:`optparse` to :mod:`argparse`:
   called ``options``, now in the :mod:`argparse` context is called ``args``.
 
 * Replace :meth:`optparse.OptionParser.disable_interspersed_args`
-  by setting ``nargs`` of a positional argument to `argparse.REMAINDER`_, or
-  use :meth:`~ArgumentParser.parse_known_args` to collect unparsed argument
-  strings in a separate list.
+  by using :meth:`~ArgumentParser.parse_intermixed_args` instead of
+  :meth:`~ArgumentParser.parse_args`.
 
 * Replace callback actions and the ``callback_*`` keyword arguments with
   ``type`` or ``action`` arguments.

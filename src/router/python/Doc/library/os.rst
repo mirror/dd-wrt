@@ -736,12 +736,16 @@ as internal buffering of data.
 
 .. function:: dup2(fd, fd2, inheritable=True)
 
-   Duplicate file descriptor *fd* to *fd2*, closing the latter first if necessary.
-   The file descriptor *fd2* is :ref:`inheritable <fd_inheritance>` by default,
-   or non-inheritable if *inheritable* is ``False``.
+   Duplicate file descriptor *fd* to *fd2*, closing the latter first if
+   necessary. Return *fd2*. The new file descriptor is :ref:`inheritable
+   <fd_inheritance>` by default or non-inheritable if *inheritable*
+   is ``False``.
 
    .. versionchanged:: 3.4
       Add the optional *inheritable* parameter.
+
+   .. versionchanged:: 3.7
+      Return *fd2* on success. Previously, ``None`` was always returned.
 
 
 .. function:: fchmod(fd, mode)
@@ -1078,31 +1082,140 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.3
 
 
-.. function:: pread(fd, buffersize, offset)
+.. function:: pread(fd, n, offset)
 
-   Read from a file descriptor, *fd*, at a position of *offset*. It will read up
-   to *buffersize* number of bytes. The file offset remains unchanged.
+   Read at most *n* bytes from file descriptor *fd* at a position of *offset*,
+   leaving the file offset unchanged.
+
+   Return a bytestring containing the bytes read. If the end of the file
+   referred to by *fd* has been reached, an empty bytes object is returned.
 
    Availability: Unix.
 
    .. versionadded:: 3.3
+
+
+.. function:: preadv(fd, buffers, offset, flags=0)
+
+   Read from a file descriptor *fd* at a position of *offset* into mutable
+   :term:`bytes-like objects <bytes-like object>` *buffers*, leaving the file
+   offset unchanged.  Transfer data into each buffer until it is full and then
+   move on to the next buffer in the sequence to hold the rest of the data.
+
+   The flags argument contains a bitwise OR of zero or more of the following
+   flags:
+
+   - :data:`RWF_HIPRI`
+   - :data:`RWF_NOWAIT`
+
+   Return the total number of bytes actually read which can be less than the
+   total capacity of all the objects.
+
+   The operating system may set a limit (:func:`sysconf` value
+   ``'SC_IOV_MAX'``) on the number of buffers that can be used.
+
+   Combine the functionality of :func:`os.readv` and :func:`os.pread`.
+
+   Availability: Linux 2.6.30 and newer, FreeBSD 6.0 and newer,
+   OpenBSD 2.7 and newer. Using flags requires Linux 4.6 or newer.
+
+   .. versionadded:: 3.7
+
+
+.. data:: RWF_NOWAIT
+
+   Do not wait for data which is not immediately available. If this flag is
+   specified, the system call will return instantly if it would have to read
+   data from the backing storage or wait for a lock.
+
+   If some data was successfully read, it will return the number of bytes read.
+   If no bytes were read, it will return ``-1`` and set errno to
+   :data:`errno.EAGAIN`.
+
+   Availability: Linux 4.14 and newer.
+
+   .. versionadded:: 3.7
+
+
+.. data:: RWF_HIPRI
+
+   High priority read/write. Allows block-based filesystems to use polling
+   of the device, which provides lower latency, but may use additional
+   resources.
+
+   Currently, on Linux, this feature is usable only on a file descriptor opened
+   using the :data:`O_DIRECT` flag.
+
+   Availability: Linux 4.6 and newer.
+
+   .. versionadded:: 3.7
 
 
 .. function:: pwrite(fd, str, offset)
 
-   Write *bytestring* to a file descriptor, *fd*, from *offset*,
-   leaving the file offset unchanged.
+   Write the bytestring in *str* to file descriptor *fd* at position of
+   *offset*, leaving the file offset unchanged.
+
+   Return the number of bytes actually written.
 
    Availability: Unix.
 
    .. versionadded:: 3.3
 
 
+.. function:: pwritev(fd, buffers, offset, flags=0)
+
+   Write the *buffers* contents to file descriptor *fd* at a offset *offset*,
+   leaving the file offset unchanged.  *buffers* must be a sequence of
+   :term:`bytes-like objects <bytes-like object>`. Buffers are processed in
+   array order. Entire contents of the first buffer is written before
+   proceeding to the second, and so on.
+
+   The flags argument contains a bitwise OR of zero or more of the following
+   flags:
+
+   - :data:`RWF_DSYNC`
+   - :data:`RWF_SYNC`
+
+   Return the total number of bytes actually written.
+
+   The operating system may set a limit (:func:`sysconf` value
+   ``'SC_IOV_MAX'``) on the number of buffers that can be used.
+
+   Combine the functionality of :func:`os.writev` and :func:`os.pwrite`.
+
+   Availability: Linux 2.6.30 and newer, FreeBSD 6.0 and newer,
+   OpenBSD 2.7 and newer. Using flags requires Linux 4.7 or newer.
+
+   .. versionadded:: 3.7
+
+
+.. data:: RWF_DSYNC
+
+   Provide a per-write equivalent of the :data:`O_DSYNC` ``open(2)`` flag. This
+   flag effect applies only to the data range written by the system call.
+
+   Availability: Linux 4.7 and newer.
+
+   .. versionadded:: 3.7
+
+
+.. data:: RWF_SYNC
+
+   Provide a per-write equivalent of the :data:`O_SYNC` ``open(2)`` flag. This
+   flag effect applies only to the data range written by the system call.
+
+   Availability: Linux 4.7 and newer.
+
+   .. versionadded:: 3.7
+
+
 .. function:: read(fd, n)
 
-   Read at most *n* bytes from file descriptor *fd*. Return a bytestring containing the
-   bytes read.  If the end of the file referred to by *fd* has been reached, an
-   empty bytes object is returned.
+   Read at most *n* bytes from file descriptor *fd*.
+
+   Return a bytestring containing the bytes read. If the end of the file
+   referred to by *fd* has been reached, an empty bytes object is returned.
 
    .. note::
 
@@ -1181,11 +1294,15 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 .. function:: readv(fd, buffers)
 
    Read from a file descriptor *fd* into a number of mutable :term:`bytes-like
-   objects <bytes-like object>` *buffers*. :func:`~os.readv` will transfer data
-   into each buffer until it is full and then move on to the next buffer in the
-   sequence to hold the rest of the data. :func:`~os.readv` returns the total
-   number of bytes read (which may be less than the total capacity of all the
-   objects).
+   objects <bytes-like object>` *buffers*. Transfer data into each buffer until
+   it is full and then move on to the next buffer in the sequence to hold the
+   rest of the data.
+
+   Return the total number of bytes actually read which can be less than the
+   total capacity of all the objects.
+
+   The operating system may set a limit (:func:`sysconf` value
+   ``'SC_IOV_MAX'``) on the number of buffers that can be used.
 
    Availability: Unix.
 
@@ -1219,8 +1336,9 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. function:: write(fd, str)
 
-   Write the bytestring in *str* to file descriptor *fd*. Return the number of
-   bytes actually written.
+   Write the bytestring in *str* to file descriptor *fd*.
+
+   Return the number of bytes actually written.
 
    .. note::
 
@@ -1238,14 +1356,15 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. function:: writev(fd, buffers)
 
-   Write the contents of *buffers* to file descriptor *fd*. *buffers* must be a
-   sequence of :term:`bytes-like objects <bytes-like object>`. Buffers are
-   processed in array order. Entire contents of first buffer is written before
-   proceeding to second, and so on. The operating system may set a limit
-   (sysconf() value SC_IOV_MAX) on the number of buffers that can be used.
+   Write the contents of *buffers* to file descriptor *fd*. *buffers* must be
+   a sequence of :term:`bytes-like objects <bytes-like object>`. Buffers are
+   processed in array order. Entire contents of the first buffer is written
+   before proceeding to the second, and so on.
 
-   :func:`~os.writev` writes the contents of each object to the file descriptor
-   and returns the total number of bytes written.
+   Returns the total number of bytes actually written.
+
+   The operating system may set a limit (:func:`sysconf` value
+   ``'SC_IOV_MAX'``) on the number of buffers that can be used.
 
    Availability: Unix.
 
@@ -1742,8 +1861,11 @@ features:
    Recursive directory creation function.  Like :func:`mkdir`, but makes all
    intermediate-level directories needed to contain the leaf directory.
 
-   The *mode* parameter is passed to :func:`mkdir`; see :ref:`the mkdir()
-   description <mkdir_modebits>` for how it is interpreted.
+   The *mode* parameter is passed to :func:`mkdir` for creating the leaf
+   directory; see :ref:`the mkdir() description <mkdir_modebits>` for how it
+   is interpreted.  To set the file permission bits of any newly-created parent
+   directories you can set the umask before invoking :func:`makedirs`.  The
+   file permission bits of existing parent directories are not changed.
 
    If *exist_ok* is ``False`` (the default), an :exc:`OSError` is raised if the
    target directory already exists.
@@ -1767,6 +1889,10 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.7
+      The *mode* argument no longer affects the file permission bits of
+      newly-created intermediate-level directories.
 
 
 .. function:: mkfifo(path, mode=0o666, *, dir_fd=None)
@@ -2023,6 +2149,9 @@ features:
    attributes of each :class:`os.DirEntry` will be ``bytes``; in all other
    circumstances, they will be of type ``str``.
 
+   This function can also support :ref:`specifying a file descriptor
+   <path_fd>`; the file descriptor must refer to a directory.
+
    The :func:`scandir` iterator supports the :term:`context manager` protocol
    and has the following method:
 
@@ -2069,6 +2198,9 @@ features:
 
       The function accepts a :term:`path-like object`.
 
+   .. versionchanged:: 3.7
+      Added support for :ref:`file descriptors <path_fd>` on Unix.
+
 
 .. class:: DirEntry
 
@@ -2108,7 +2240,9 @@ features:
       The entry's full path name: equivalent to ``os.path.join(scandir_path,
       entry.name)`` where *scandir_path* is the :func:`scandir` *path*
       argument.  The path is only absolute if the :func:`scandir` *path*
-      argument was absolute.
+      argument was absolute.  If the :func:`scandir` *path*
+      argument was a :ref:`file descriptor <path_fd>`, the :attr:`path`
+      attribute is the same as the :attr:`name` attribute.
 
       The :attr:`path` attribute will be ``bytes`` if the :func:`scandir`
       *path* argument is of type ``bytes`` and ``str`` otherwise.  Use
@@ -2263,7 +2397,13 @@ features:
 
    .. attribute:: st_ino
 
-      Inode number.
+      Platform dependent, but if non-zero, uniquely identifies the
+      file for a given value of ``st_dev``. Typically:
+
+      * the inode number on Unix,
+      * the `file index
+        <https://msdn.microsoft.com/en-us/library/aa363788>`_ on
+        Windows
 
    .. attribute:: st_dev
 
@@ -2321,8 +2461,6 @@ features:
       * the time of creation on Windows, expressed in nanoseconds as an
         integer.
 
-   See also the :func:`stat_float_times` function.
-
    .. note::
 
       The exact meaning and resolution of the :attr:`st_atime`,
@@ -2373,6 +2511,14 @@ features:
 
       Time of file creation.
 
+   On Solaris and derivatives, the following attributes may also be
+   available:
+
+   .. attribute:: st_fstype
+
+      String that uniquely identifies the type of the filesystem that
+      contains the file.
+
    On Mac OS systems, the following attributes may also be available:
 
    .. attribute:: st_rsize
@@ -2416,33 +2562,12 @@ features:
    .. versionadded:: 3.5
       Added the :attr:`st_file_attributes` member on Windows.
 
+   .. versionchanged:: 3.5
+      Windows now returns the file index as :attr:`st_ino` when
+      available.
 
-.. function:: stat_float_times([newvalue])
-
-   Determine whether :class:`stat_result` represents time stamps as float objects.
-   If *newvalue* is ``True``, future calls to :func:`~os.stat` return floats, if it is
-   ``False``, future calls return ints. If *newvalue* is omitted, return the
-   current setting.
-
-   For compatibility with older Python versions, accessing :class:`stat_result` as
-   a tuple always returns integers.
-
-   Python now returns float values by default. Applications which do not work
-   correctly with floating point time stamps can use this function to restore the
-   old behaviour.
-
-   The resolution of the timestamps (that is the smallest possible fraction)
-   depends on the system. Some systems only support second resolution; on these
-   systems, the fraction will always be zero.
-
-   It is recommended that this setting is only changed at program startup time in
-   the *__main__* module; libraries should never change this setting. If an
-   application uses a library that works incorrectly if floating point time stamps
-   are processed, this application should turn the feature off until the library
-   has been corrected.
-
-   .. deprecated:: 3.3
-
+   .. versionadded:: 3.7
+      Added the :attr:`st_fstype` member to Solaris/derivatives.
 
 .. function:: statvfs(path)
 
@@ -2451,7 +2576,7 @@ features:
    correspond to the members of the :c:type:`statvfs` structure, namely:
    :attr:`f_bsize`, :attr:`f_frsize`, :attr:`f_blocks`, :attr:`f_bfree`,
    :attr:`f_bavail`, :attr:`f_files`, :attr:`f_ffree`, :attr:`f_favail`,
-   :attr:`f_flag`, :attr:`f_namemax`.
+   :attr:`f_flag`, :attr:`f_namemax`, :attr:`f_fsid`.
 
    Two module-level constants are defined for the :attr:`f_flag` attribute's
    bit-flags: if :const:`ST_RDONLY` is set, the filesystem is mounted
@@ -2485,6 +2610,9 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionadded:: 3.7
+      Added :attr:`f_fsid`.
 
 
 .. data:: supports_dir_fd
@@ -2725,7 +2853,7 @@ features:
    no effect on the behavior of the walk, because in bottom-up mode the directories
    in *dirnames* are generated before *dirpath* itself is generated.
 
-   By default, errors from the :func:`listdir` call are ignored.  If optional
+   By default, errors from the :func:`scandir` call are ignored.  If optional
    argument *onerror* is specified, it should be a function; it will be called with
    one argument, an :exc:`OSError` instance.  It can report the error to continue
    with the walk, or raise the exception to abort the walk.  Note that the filename
@@ -2840,6 +2968,9 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.7
+      Added support for :class:`bytes` paths.
 
 
 Linux extended attributes
@@ -3261,6 +3392,39 @@ written in Python, such as a mail server's external command delivery program.
    This is implemented using :class:`subprocess.Popen`; see that class's
    documentation for more powerful ways to manage and communicate with
    subprocesses.
+
+
+.. function:: register_at_fork(*, before=None, after_in_parent=None, \
+                               after_in_child=None)
+
+   Register callables to be executed when a new child process is forked
+   using :func:`os.fork` or similar process cloning APIs.
+   The parameters are optional and keyword-only.
+   Each specifies a different call point.
+
+   * *before* is a function called before forking a child process.
+   * *after_in_parent* is a function called from the parent process
+     after forking a child process.
+   * *after_in_child* is a function called from the child process.
+
+   These calls are only made if control is expected to return to the
+   Python interpreter.  A typical :mod:`subprocess` launch will not
+   trigger them as the child is not going to re-enter the interpreter.
+
+   Functions registered for execution before forking are called in
+   reverse registration order.  Functions registered for execution
+   after forking (either in the parent or in the child) are called
+   in registration order.
+
+   Note that :c:func:`fork` calls made by third-party C code may not
+   call those functions, unless it explicitly calls :c:func:`PyOS_BeforeFork`,
+   :c:func:`PyOS_AfterFork_Parent` and :c:func:`PyOS_AfterFork_Child`.
+
+   There is no way to unregister a function.
+
+   Availability: Unix.
+
+   .. versionadded:: 3.7
 
 
 .. function:: spawnl(mode, path, ...)

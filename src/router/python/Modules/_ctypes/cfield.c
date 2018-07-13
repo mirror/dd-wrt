@@ -506,7 +506,7 @@ get_ulonglong(PyObject *v, unsigned long long *p)
 #ifdef _CTYPES_DEBUG_KEEP
 #define _RET(x) Py_INCREF(x); return x
 #else
-#define _RET(X) Py_INCREF(Py_None); return Py_None
+#define _RET(X) Py_RETURN_NONE
 #endif
 
 /*****************************************************************
@@ -1345,8 +1345,7 @@ z_get(void *ptr, Py_ssize_t size)
         return PyBytes_FromStringAndSize(*(char **)ptr,
                                          strlen(*(char **)ptr));
     } else {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
 }
 
@@ -1368,8 +1367,7 @@ Z_set(void *ptr, PyObject *value, Py_ssize_t size)
 #else
         *(wchar_t **)ptr = (wchar_t *)PyLong_AsUnsignedLongMask(value);
 #endif
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
     if (!PyUnicode_Check(value)) {
         PyErr_Format(PyExc_TypeError,
@@ -1380,7 +1378,7 @@ Z_set(void *ptr, PyObject *value, Py_ssize_t size)
 
     /* We must create a wchar_t* buffer from the unicode object,
        and keep it alive */
-    buffer = _PyUnicode_AsWideCharString(value);
+    buffer = PyUnicode_AsWideCharString(value, NULL);
     if (!buffer)
         return NULL;
     keep = PyCapsule_New(buffer, CTYPES_CFIELD_CAPSULE_NAME_PYMEM, pymem_destructor);
@@ -1400,8 +1398,7 @@ Z_get(void *ptr, Py_ssize_t size)
     if (p) {
         return PyUnicode_FromWideChar(p, wcslen(p));
     } else {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
 }
 #endif
@@ -1460,8 +1457,7 @@ BSTR_get(void *ptr, Py_ssize_t size)
         /* Hm, it seems NULL pointer and zero length string are the
            same in BSTR, see Don Box, p 81
         */
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
 }
 #endif
@@ -1501,8 +1497,7 @@ static PyObject *
 P_get(void *ptr, Py_ssize_t size)
 {
     if (*(void **)ptr == NULL) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
     return PyLong_FromVoidPtr(*(void **)ptr);
 }

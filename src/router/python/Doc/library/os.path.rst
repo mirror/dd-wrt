@@ -192,22 +192,16 @@ the :mod:`glob` module.)
 
 .. function:: getatime(path)
 
-   Return the time of last access of *path*.  The return value is a number giving
+   Return the time of last access of *path*.  The return value is a floating point number giving
    the number of seconds since the epoch (see the  :mod:`time` module).  Raise
    :exc:`OSError` if the file does not exist or is inaccessible.
-
-   If :func:`os.stat_float_times` returns ``True``, the result is a floating point
-   number.
 
 
 .. function:: getmtime(path)
 
-   Return the time of last modification of *path*.  The return value is a number
+   Return the time of last modification of *path*.  The return value is a floating point number
    giving the number of seconds since the epoch (see the  :mod:`time` module).
    Raise :exc:`OSError` if the file does not exist or is inaccessible.
-
-   If :func:`os.stat_float_times` returns ``True``, the result is a floating point
-   number.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -454,19 +448,6 @@ the :mod:`glob` module.)
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
-
-
-.. function:: splitunc(path)
-
-   .. deprecated:: 3.1
-      Use *splitdrive* instead.
-
-   Split the pathname *path* into a pair ``(unc, rest)`` so that *unc* is the UNC
-   mount point (such as ``r'\\host\mount'``), if present, and *rest* the rest of
-   the path (such as  ``r'\path\file.ext'``).  For paths containing drive letters,
-   *unc* will always be the empty string.
-
-   Availability:  Windows.
 
 
 .. data:: supports_unicode_filenames

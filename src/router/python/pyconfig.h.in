@@ -213,6 +213,10 @@
    don't. */
 #undef HAVE_DECL_RTLD_LOCAL
 
+/* Define to 1 if you have the declaration of `RTLD_MEMBER', and to 0 if you
+   don't. */
+#undef HAVE_DECL_RTLD_MEMBER
+
 /* Define to 1 if you have the declaration of `RTLD_NODELETE', and to 0 if you
    don't. */
 #undef HAVE_DECL_RTLD_NODELETE
@@ -499,7 +503,7 @@
 /* Define to 1 if you have the <ieeefp.h> header file. */
 #undef HAVE_IEEEFP_H
 
-/* Define to 1 if you have the 'if_nameindex' function. */
+/* Define to 1 if you have the `if_nameindex' function. */
 #undef HAVE_IF_NAMEINDEX
 
 /* Define if you have the 'inet_aton' function. */
@@ -601,7 +605,10 @@
 /* Define to 1 if you have the <linux/tipc.h> header file. */
 #undef HAVE_LINUX_TIPC_H
 
-/* Define to 1 if you have the 'lockf' function and the F_LOCK macro. */
+/* Define to 1 if you have the <linux/vm_sockets.h> header file. */
+#undef HAVE_LINUX_VM_SOCKETS_H
+
+/* Define to 1 if you have the `lockf' function. */
 #undef HAVE_LOCKF
 
 /* Define to 1 if you have the `log1p' function. */
@@ -624,9 +631,6 @@
 
 /* Define to 1 if you have the `mbrtowc' function. */
 #undef HAVE_MBRTOWC
-
-/* Define to 1 if you have the `memmove' function. */
-#undef HAVE_MEMMOVE
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
@@ -703,8 +707,17 @@
 /* Define to 1 if you have the `posix_fallocate' function. */
 #undef HAVE_POSIX_FALLOCATE
 
+/* Define to 1 if you have the `posix_spawn' function. */
+#undef HAVE_POSIX_SPAWN
+
 /* Define to 1 if you have the `pread' function. */
 #undef HAVE_PREAD
+
+/* Define to 1 if you have the `preadv' function. */
+#undef HAVE_PREADV
+
+/* Define to 1 if you have the `preadv2' function. */
+#undef HAVE_PREADV2
 
 /* Define if you have the 'prlimit' functions. */
 #undef HAVE_PRLIMIT
@@ -715,11 +728,11 @@
 /* Define if your compiler supports function prototype */
 #undef HAVE_PROTOTYPES
 
-/* Define to 1 if you have the `pthread_atfork' function. */
-#undef HAVE_PTHREAD_ATFORK
-
 /* Defined for Solaris 2.6 bug in pthread header. */
 #undef HAVE_PTHREAD_DESTRUCTOR
+
+/* Define to 1 if you have the `pthread_getcpuclockid' function. */
+#undef HAVE_PTHREAD_GETCPUCLOCKID
 
 /* Define to 1 if you have the <pthread.h> header file. */
 #undef HAVE_PTHREAD_H
@@ -742,6 +755,12 @@
 /* Define to 1 if you have the `pwrite' function. */
 #undef HAVE_PWRITE
 
+/* Define to 1 if you have the `pwritev' function. */
+#undef HAVE_PWRITEV
+
+/* Define to 1 if you have the `pwritev2' function. */
+#undef HAVE_PWRITEV2
+
 /* Define to 1 if you have the `readlink' function. */
 #undef HAVE_READLINK
 
@@ -759,9 +778,6 @@
 
 /* Define if readline supports append_history */
 #undef HAVE_RL_APPEND_HISTORY
-
-/* Define if you have readline 2.1 */
-#undef HAVE_RL_CALLBACK
 
 /* Define if you can turn off readline's signal handling. */
 #undef HAVE_RL_CATCH_SIGNAL
@@ -804,9 +820,6 @@
 
 /* Define to 1 if you have the `sched_setscheduler' function. */
 #undef HAVE_SCHED_SETSCHEDULER
-
-/* Define to 1 if you have the `select' function. */
-#undef HAVE_SELECT
 
 /* Define to 1 if you have the `sem_getvalue' function. */
 #undef HAVE_SEM_GETVALUE
@@ -882,6 +895,9 @@
 
 /* Define to 1 if you have the `sigaltstack' function. */
 #undef HAVE_SIGALTSTACK
+
+/* Define to 1 if `si_band' is a member of `siginfo_t'. */
+#undef HAVE_SIGINFO_T_SI_BAND
 
 /* Define to 1 if you have the `siginterrupt' function. */
 #undef HAVE_SIGINTERRUPT
@@ -1193,6 +1209,21 @@
 /* Define to 1 if you have the <utime.h> header file. */
 #undef HAVE_UTIME_H
 
+/* Define if uuid_create() exists. */
+#undef HAVE_UUID_CREATE
+
+/* Define if uuid_enc_be() exists. */
+#undef HAVE_UUID_ENC_BE
+
+/* Define if uuid_generate_time_safe() exists. */
+#undef HAVE_UUID_GENERATE_TIME_SAFE
+
+/* Define to 1 if you have the <uuid.h> header file. */
+#undef HAVE_UUID_H
+
+/* Define to 1 if you have the <uuid/uuid.h> header file. */
+#undef HAVE_UUID_UUID_H
+
 /* Define to 1 if you have the `wait3' function. */
 #undef HAVE_WAIT3
 
@@ -1226,6 +1257,9 @@
 
 /* Define to 1 if you have the `writev' function. */
 #undef HAVE_WRITEV
+
+/* Define if libssl has X509_VERIFY_PARAM_set1_host and related function */
+#undef HAVE_X509_VERIFY_PARAM_SET1_HOST
 
 /* Define if the zlib library has inflateCopy */
 #undef HAVE_ZLIB_COPY
@@ -1268,14 +1302,30 @@
 /* Define if POSIX semaphores aren't enabled on your system */
 #undef POSIX_SEMAPHORES_NOT_ENABLED
 
+/* Define if pthread_key_t is compatible with int. */
+#undef PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT
+
 /* Defined if PTHREAD_SCOPE_SYSTEM supported. */
 #undef PTHREAD_SYSTEM_SCHED_SUPPORTED
 
 /* Define as the preferred size in bits of long digits */
 #undef PYLONG_BITS_IN_DIGIT
 
+/* Define if you want to coerce the C locale to a UTF-8 based locale */
+#undef PY_COERCE_C_LOCALE
+
 /* Define to printf format modifier for Py_ssize_t */
 #undef PY_FORMAT_SIZE_T
+
+/* Default cipher suites list for ssl module. 1: Python's preferred selection,
+   2: leave OpenSSL defaults untouched, 0: custom string */
+#undef PY_SSL_DEFAULT_CIPHERS
+
+/* Cipher suite string for PY_SSL_DEFAULT_CIPHERS=0 */
+#undef PY_SSL_DEFAULT_CIPHER_STRING
+
+/* Define to emit a locale compatibility warning in the C locale */
+#undef PY_WARN_ON_C_LOCALE
 
 /* Define if you want to build an interpreter with many run-time checks. */
 #undef Py_DEBUG
@@ -1323,6 +1373,9 @@
 /* The size of `pid_t', as computed by sizeof. */
 #undef SIZEOF_PID_T
 
+/* The size of `pthread_key_t', as computed by sizeof. */
+#undef SIZEOF_PTHREAD_KEY_T
+
 /* The size of `pthread_t', as computed by sizeof. */
 #undef SIZEOF_PTHREAD_T
 
@@ -1369,9 +1422,6 @@
 /* Define if you want to use computed gotos in ceval.c. */
 #undef USE_COMPUTED_GOTOS
 
-/* Define to use the C99 inline keyword. */
-#undef USE_INLINE
-
 /* Enable extensions on AIX 3, Interix.  */
 #ifndef _ALL_SOURCE
 # undef _ALL_SOURCE
@@ -1393,9 +1443,6 @@
 # undef __EXTENSIONS__
 #endif
 
-
-/* Define if you want SIGFPE handled (see Include/pyfpe.h). */
-#undef WANT_SIGFPE_HANDLER
 
 /* Define if WINDOW in curses.h offers a field _flags. */
 #undef WINDOW_HAS_FLAGS
@@ -1421,9 +1468,6 @@
 /* Define if you want to compile in Python-specific mallocs */
 #undef WITH_PYMALLOC
 
-/* Define if you want to compile in rudimentary thread support */
-#undef WITH_THREAD
-
 /* Define if you want pymalloc to be disabled when running under valgrind */
 #undef WITH_VALGRIND
 
@@ -1444,9 +1488,6 @@
 
 /* Define on OpenBSD to activate all library features */
 #undef _BSD_SOURCE
-
-/* Define on Irix to enable u_int */
-#undef _BSD_TYPES
 
 /* Define on Darwin to activate all library features */
 #undef _DARWIN_C_SOURCE
@@ -1485,6 +1526,9 @@
 /* Define if you have POSIX threads, and your system does not define that. */
 #undef _POSIX_THREADS
 
+/* framework name */
+#undef _PYTHONFRAMEWORK
+
 /* Define to force use of thread-safe errno, h_errno, and other functions */
 #undef _REENTRANT
 
@@ -1511,12 +1555,6 @@
 /* Define to `int' if <sys/types.h> doesn't define. */
 #undef gid_t
 
-/* Define to `__inline__' or `__inline' if that's what the C compiler
-   calls it, or to nothing if 'inline' is not supported under any name.  */
-#ifndef __cplusplus
-#undef inline
-#endif
-
 /* Define to `int' if <sys/types.h> does not define. */
 #undef mode_t
 
@@ -1537,9 +1575,6 @@
 
 /* Define to `int' if <sys/types.h> doesn't define. */
 #undef uid_t
-
-/* Define to empty if the keyword does not work. */
-#undef volatile
 
 
 /* Define the macros needed if on a UnixWare 7.x system. */

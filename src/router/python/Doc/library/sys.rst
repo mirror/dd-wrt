@@ -109,6 +109,40 @@ always available.
    This function should be used for internal and specialized purposes only.
 
 
+.. function:: breakpointhook()
+
+   This hook function is called by built-in :func:`breakpoint`.  By default,
+   it drops you into the :mod:`pdb` debugger, but it can be set to any other
+   function so that you can choose which debugger gets used.
+
+   The signature of this function is dependent on what it calls.  For example,
+   the default binding (e.g. ``pdb.set_trace()``) expects no arguments, but
+   you might bind it to a function that expects additional arguments
+   (positional and/or keyword).  The built-in ``breakpoint()`` function passes
+   its ``*args`` and ``**kws`` straight through.  Whatever
+   ``breakpointhooks()`` returns is returned from ``breakpoint()``.
+
+   The default implementation first consults the environment variable
+   :envvar:`PYTHONBREAKPOINT`.  If that is set to ``"0"`` then this function
+   returns immediately; i.e. it is a no-op.  If the environment variable is
+   not set, or is set to the empty string, ``pdb.set_trace()`` is called.
+   Otherwise this variable should name a function to run, using Python's
+   dotted-import nomenclature, e.g. ``package.subpackage.module.function``.
+   In this case, ``package.subpackage.module`` would be imported and the
+   resulting module must have a callable named ``function()``.  This is run,
+   passing in ``*args`` and ``**kws``, and whatever ``function()`` returns,
+   ``sys.breakpointhook()`` returns to the built-in :func:`breakpoint`
+   function.
+
+   Note that if anything goes wrong while importing the callable named by
+   :envvar:`PYTHONBREAKPOINT`, a :exc:`RuntimeWarning` is reported and the
+   breakpoint is ignored.
+
+   Also note that if ``sys.breakpointhook()`` is overridden programmatically,
+   :envvar:`PYTHONBREAKPOINT` is *not* consulted.
+
+   .. versionadded:: 3.7
+
 .. function:: _debugmallocstats()
 
    Print low-level information to stderr about the state of CPython's memory
@@ -187,13 +221,18 @@ always available.
    customized by assigning another three-argument function to ``sys.excepthook``.
 
 
-.. data:: __displayhook__
+.. data:: __breakpointhook__
+          __displayhook__
           __excepthook__
 
-   These objects contain the original values of ``displayhook`` and ``excepthook``
-   at the start of the program.  They are saved so that ``displayhook`` and
-   ``excepthook`` can be restored in case they happen to get replaced with broken
+   These objects contain the original values of ``breakpointhook``,
+   ``displayhook``, and ``excepthook`` at the start of the program.  They are
+   saved so that ``breakpointhook``, ``displayhook`` and ``excepthook`` can be
+   restored in case they happen to get replaced with broken or alternative
    objects.
+
+   .. versionadded:: 3.7
+      __breakpointhook__
 
 
 .. function:: exc_info()
@@ -274,6 +313,9 @@ always available.
       has caught :exc:`SystemExit` (such as an error flushing buffered data
       in the standard streams), the exit status is changed to 120.
 
+   .. versionchanged:: 3.7
+      Added ``utf8_mode`` attribute for the new :option:`-X` ``utf8`` flag.
+
 
 .. data:: flags
 
@@ -295,6 +337,8 @@ always available.
    :const:`bytes_warning`        :option:`-b`
    :const:`quiet`                :option:`-q`
    :const:`hash_randomization`   :option:`-R`
+   :const:`dev_mode`             :option:`-X` ``dev``
+   :const:`utf8_mode`            :option:`-X` ``utf8``
    ============================= =============================
 
    .. versionchanged:: 3.2
@@ -305,6 +349,10 @@ always available.
 
    .. versionchanged:: 3.3
       Removed obsolete ``division_warning`` attribute.
+
+   .. versionchanged:: 3.7
+      Added ``dev_mode`` attribute for the new :option:`-X` ``dev`` flag
+      and ``utf8_mode`` attribute for the new  :option:`-X` ``utf8`` flag.
 
 
 .. data:: float_info
@@ -404,6 +452,15 @@ always available.
    .. versionadded:: 3.4
 
 
+.. function:: getandroidapilevel()
+
+   Return the build time API version of Android as an integer.
+
+   Availability: Android.
+
+   .. versionadded:: 3.7
+
+
 .. function:: getcheckinterval()
 
    Return the interpreter's "check interval"; see :func:`setcheckinterval`.
@@ -440,6 +497,8 @@ always available.
    :func:`os.fsencode` and :func:`os.fsdecode` should be used to ensure that
    the correct encoding and errors mode are used.
 
+   * In the UTF-8 mode, the encoding is ``utf-8`` on any platform.
+
    * On Mac OS X, the encoding is ``'utf-8'``.
 
    * On Unix, the encoding is the locale encoding.
@@ -453,6 +512,10 @@ always available.
    .. versionchanged:: 3.6
       Windows is no longer guaranteed to return ``'mbcs'``. See :pep:`529`
       and :func:`_enablelegacywindowsfsencoding` for more information.
+
+   .. versionchanged:: 3.7
+      Return 'utf-8' in the UTF-8 mode.
+
 
 .. function:: getfilesystemencodeerrors()
 
@@ -601,7 +664,7 @@ always available.
    :class:`~collections.namedtuple` of the form `(firstiter, finalizer)`,
    where *firstiter* and *finalizer* are expected to be either ``None`` or
    functions which take an :term:`asynchronous generator iterator` as an
-   argument, and are used to schedule finalization of an asychronous
+   argument, and are used to schedule finalization of an asynchronous
    generator by an event loop.
 
    .. versionadded:: 3.6
@@ -610,6 +673,18 @@ always available.
    .. note::
       This function has been added on a provisional basis (see :pep:`411`
       for details.)
+
+
+.. function:: get_coroutine_origin_tracking_depth()
+
+   Get the current coroutine origin tracking depth, as set by
+   func:`set_coroutine_origin_tracking_depth`.
+
+   .. versionadded:: 3.7
+
+   .. note::
+      This function has been added on a provisional basis (see :pep:`411`
+      for details.)  Use it only for debugging purposes.
 
 
 .. function:: get_coroutine_wrapper()
@@ -622,6 +697,10 @@ always available.
    .. note::
       This function has been added on a provisional basis (see :pep:`411`
       for details.)  Use it only for debugging purposes.
+
+   .. deprecated:: 3.7
+      The coroutine wrapper functionality has been deprecated, and
+      will be removed in 3.8. See :issue:`32591` for details.
 
 
 .. data:: hash_info
@@ -1010,7 +1089,8 @@ always available.
    but the return event is reported even when an exception has been set). The function is
    thread-specific, but there is no way for the profiler to know about context switches between
    threads, so it does not make sense to use this in the presence of multiple threads. Also,
-   its return value is not used, so it can simply return ``None``.
+   its return value is not used, so it can simply return ``None``.  Error in the profile
+   function will cause itself unset.
 
    Profile functions should have three arguments: *frame*, *event*, and
    *arg*. *frame* is the current stack frame.  *event* is a string: ``'call'``,
@@ -1083,7 +1163,7 @@ always available.
 
    Trace functions should have three arguments: *frame*, *event*, and
    *arg*. *frame* is the current stack frame.  *event* is a string: ``'call'``,
-   ``'line'``, ``'return'`` or ``'exception'``.  *arg* depends on
+   ``'line'``, ``'return'``, ``'exception'`` or ``'opcode'``.  *arg* depends on
    the event type.
 
    The trace function is invoked (with *event* set to ``'call'``) whenever a new
@@ -1093,6 +1173,9 @@ always available.
    The local trace function should return a reference to itself (or to another
    function for further tracing in that scope), or ``None`` to turn off tracing
    in that scope.
+
+   If there is any error occurred in the trace function, it will be unset, just
+   like ``settrace(None)`` is called.
 
    The events have the following meaning:
 
@@ -1107,6 +1190,8 @@ always available.
       ``None``; the return value specifies the new local trace function.  See
       :file:`Objects/lnotab_notes.txt` for a detailed explanation of how this
       works.
+      Per-line events may be disabled for a frame by setting
+      :attr:`f_trace_lines` to :const:`False` on that frame.
 
    ``'return'``
       A function (or other code block) is about to return.  The local trace
@@ -1119,6 +1204,14 @@ always available.
       tuple ``(exception, value, traceback)``; the return value specifies the
       new local trace function.
 
+   ``'opcode'``
+      The interpreter is about to execute a new opcode (see :mod:`dis` for
+      opcode details).  The local trace function is called; *arg* is
+      ``None``; the return value specifies the new local trace function.
+      Per-opcode events are not emitted by default: they must be explicitly
+      requested by setting :attr:`f_trace_opcodes` to :const:`True` on the
+      frame.
+
    Note that as an exception is propagated down the chain of callers, an
    ``'exception'`` event is generated at each level.
 
@@ -1130,6 +1223,11 @@ always available.
       profilers, coverage tools and the like.  Its behavior is part of the
       implementation platform, rather than part of the language definition, and
       thus may not be available in all Python implementations.
+
+   .. versionchanged:: 3.7
+
+      ``'opcode'`` event type added; :attr:`f_trace_lines` and
+      :attr:`f_trace_opcodes` attributes added to frames
 
 .. function:: set_asyncgen_hooks(firstiter, finalizer)
 
@@ -1149,6 +1247,26 @@ always available.
       This function has been added on a provisional basis (see :pep:`411`
       for details.)
 
+.. function:: set_coroutine_origin_tracking_depth(depth)
+
+   Allows enabling or disabling coroutine origin tracking. When
+   enabled, the ``cr_origin`` attribute on coroutine objects will
+   contain a tuple of (filename, line number, function name) tuples
+   describing the traceback where the coroutine object was created,
+   with the most recent call first. When disabled, ``cr_origin`` will
+   be None.
+
+   To enable, pass a *depth* value greater than zero; this sets the
+   number of frames whose information will be captured. To disable,
+   pass set *depth* to zero.
+
+   This setting is thread-specific.
+
+   .. versionadded:: 3.7
+
+   .. note::
+      This function has been added on a provisional basis (see :pep:`411`
+      for details.)  Use it only for debugging purposes.
 
 .. function:: set_coroutine_wrapper(wrapper)
 
@@ -1189,6 +1307,10 @@ always available.
       This function has been added on a provisional basis (see :pep:`411`
       for details.)  Use it only for debugging purposes.
 
+   .. deprecated:: 3.7
+      The coroutine wrapper functionality has been deprecated, and
+      will be removed in 3.8. See :issue:`32591` for details.
+
 .. function:: _enablelegacywindowsfsencoding()
 
    Changes the default filesystem encoding and errors mode to 'mbcs' and
@@ -1227,9 +1349,9 @@ always available.
      Under all platforms though, you can override this value by setting the
      :envvar:`PYTHONIOENCODING` environment variable before starting Python.
 
-   * When interactive, standard streams are line-buffered.  Otherwise, they
-     are block-buffered like regular text files.  You can override this
-     value with the :option:`-u` command-line option.
+   * When interactive, ``stdout`` and ``stderr`` streams are line-buffered.
+     Otherwise, they are block-buffered like regular text files.  You can
+     override this value with the :option:`-u` command-line option.
 
    .. note::
 
@@ -1288,7 +1410,7 @@ always available.
    |                  |  * ``None`` if this information is unknown              |
    +------------------+---------------------------------------------------------+
    | :const:`version` | Name and version of the thread library. It is a string, |
-   |                  | or ``None`` if these informations are unknown.          |
+   |                  | or ``None`` if this information is unknown.             |
    +------------------+---------------------------------------------------------+
 
    .. versionadded:: 3.3

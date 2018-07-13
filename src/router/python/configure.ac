@@ -3,11 +3,13 @@ dnl * Please run autoreconf to test your changes! *
 dnl ***********************************************
 
 # Set VERSION so we only need to edit in one place (i.e., here)
-m4_define(PYTHON_VERSION, 3.6)
+m4_define(PYTHON_VERSION, 3.7)
 
 AC_PREREQ(2.65)
 
 AC_INIT(python, PYTHON_VERSION, https://bugs.python.org/)
+
+AC_CONFIG_MACRO_DIR(m4)
 
 AC_SUBST(BASECPPFLAGS)
 if test "$srcdir" != . -a "$srcdir" != "$(pwd)"; then
@@ -134,10 +136,6 @@ AC_DEFINE(_NETBSD_SOURCE, 1, [Define on NetBSD to activate all library features]
 AC_DEFINE(__BSD_VISIBLE, 1, [Define on FreeBSD to activate all library features])
 
 # The later defininition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
-# u_int on Irix 5.3. Defining _BSD_TYPES brings it back.
-AC_DEFINE(_BSD_TYPES, 1, [Define on Irix to enable u_int])
-
-# The later defininition of _XOPEN_SOURCE and _POSIX_C_SOURCE disables
 # certain features on Mac OS X, so we need _DARWIN_C_SOURCE to re-enable
 # them.
 AC_DEFINE(_DARWIN_C_SOURCE, 1, [Define on Darwin to activate all library features])
@@ -155,7 +153,7 @@ AC_ARG_ENABLE(universalsdk,
 [
 	case $enableval in
 	yes)
-		# Locate the best usable SDK, see Mac/README.txt for more
+		# Locate the best usable SDK, see Mac/README for more
 		# information
 		enableval="`/usr/bin/xcodebuild -version -sdk macosx Path 2>/dev/null`"
 		if ! ( echo $enableval | grep -E '\.sdk' 1>/dev/null )
@@ -355,6 +353,8 @@ AC_SUBST(FRAMEWORKPYTHONW)
 AC_SUBST(FRAMEWORKUNIXTOOLSPREFIX)
 AC_SUBST(FRAMEWORKINSTALLAPPSPREFIX)
 
+AC_DEFINE_UNQUOTED(_PYTHONFRAMEWORK, "${PYTHONFRAMEWORK}", [framework name])
+
 ##AC_ARG_WITH(dyld,
 ##            AS_HELP_STRING([--with-dyld],
 ##                           [Use (OpenStep|Rhapsody) dynamic linker]))
@@ -404,7 +404,6 @@ then
 	linux*) MACHDEP="linux";;
 	cygwin*) MACHDEP="cygwin";;
 	darwin*) MACHDEP="darwin";;
-	irix646) MACHDEP="irix6";;
 	'')	MACHDEP="unknown";;
     esac
 fi
@@ -482,10 +481,6 @@ case $ac_sys_system/$ac_sys_release in
   # but used in struct sockaddr.sa_family. Reported by Tim Rice.
   SCO_SV/3.2)
     define_xopen_source=no;;
-  # On FreeBSD 4, the math functions C89 does not cover are never defined
-  # with _XOPEN_SOURCE and __BSD_VISIBLE does not re-enable them.
-  FreeBSD/4.*)
-    define_xopen_source=no;;
   # On MacOS X 10.2, a bug in ncurses.h means that it craps out if
   # _XOPEN_EXTENDED_SOURCE is defined. Apparently, this is fixed in 10.3, which
   # identifies itself as Darwin/7.*
@@ -543,24 +538,6 @@ if test $define_stdc_a1 = yes
 then
   AC_DEFINE(_INCLUDE__STDC_A1_SOURCE, 1, Define to include mbstate_t for mbrtowc)
 fi
-
-#
-# SGI compilers allow the specification of the both the ABI and the
-# ISA on the command line.  Depending on the values of these switches,
-# different and often incompatible code will be generated.
-#
-# The SGI_ABI variable can be used to modify the CC and LDFLAGS and
-# thus supply support for various ABI/ISA combinations.  The MACHDEP
-# variable is also adjusted.
-#
-AC_SUBST(SGI_ABI)
-if test ! -z "$SGI_ABI"
-then
-        CC="cc $SGI_ABI"
-        LDFLAGS="$SGI_ABI $LDFLAGS"
-        MACHDEP=`echo "${MACHDEP}${SGI_ABI}" | sed 's/ *//g'`
-fi
-AC_MSG_RESULT($MACHDEP)
 
 # Record the configure-time value of MACOSX_DEPLOYMENT_TARGET,
 # it may influence the way we can build extensions, so distutils
@@ -632,7 +609,7 @@ fi
 if test "$ac_sys_system" = "Darwin"
 then
 	# Compiler selection on MacOSX is more complicated than
-	# AC_PROG_CC can handle, see Mac/README.txt for more
+	# AC_PROG_CC can handle, see Mac/README for more
 	# information
 	if test -z "${CC}"
 	then
@@ -804,6 +781,26 @@ cat >> conftest.c <<EOF
         ia64-linux-gnu
 # elif defined(__m68k__) && !defined(__mcoldfire__)
         m68k-linux-gnu
+# elif defined(__mips_hard_float) && defined(__mips_isa_rev) && (__mips_isa_rev >=6) && defined(_MIPSEL)
+#  if _MIPS_SIM == _ABIO32
+        mipsisa32r6el-linux-gnu
+#  elif _MIPS_SIM == _ABIN32
+        mipsisa64r6el-linux-gnuabin32
+#  elif _MIPS_SIM == _ABI64
+        mipsisa64r6el-linux-gnuabi64
+#  else
+#   error unknown platform triplet
+#  endif
+# elif defined(__mips_hard_float) && defined(__mips_isa_rev) && (__mips_isa_rev >=6)
+#  if _MIPS_SIM == _ABIO32
+        mipsisa32r6-linux-gnu
+#  elif _MIPS_SIM == _ABIN32
+        mipsisa64r6-linux-gnuabin32
+#  elif _MIPS_SIM == _ABI64
+        mipsisa64r6-linux-gnuabi64
+#  else
+#   error unknown platform triplet
+#  endif
 # elif defined(__mips_hard_float) && defined(_MIPSEL)
 #  if _MIPS_SIM == _ABIO32
         mipsel-linux-gnu
@@ -846,6 +843,14 @@ cat >> conftest.c <<EOF
         sparc64-linux-gnu
 # elif defined(__sparc__)
         sparc-linux-gnu
+# elif defined(__riscv)
+#  if __riscv_xlen == 32
+        riscv32-linux-gnu
+#  elif __riscv_xlen == 64
+        riscv64-linux-gnu
+#  else
+#   error unknown platform triplet
+#  endif
 # else
 #   error unknown platform triplet
 # endif
@@ -906,7 +911,6 @@ AC_USE_SYSTEM_EXTENSIONS
 AC_MSG_CHECKING([for the Android API level])
 cat >> conftest.c <<EOF
 #ifdef __ANDROID__
-#include <android/api-level.h>
 android_api = __ANDROID_API__
 arm_arch = __ARM_ARCH
 #else
@@ -918,6 +922,10 @@ if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
   ANDROID_API_LEVEL=`sed -n -e '/__ANDROID_API__/d' -e 's/^android_api = //p' conftest.out`
   _arm_arch=`sed -n -e '/__ARM_ARCH/d' -e 's/^arm_arch = //p' conftest.out`
   AC_MSG_RESULT([$ANDROID_API_LEVEL])
+  if test -z "$ANDROID_API_LEVEL"; then
+    echo 'Fatal: you must define __ANDROID_API__'
+    exit 1
+  fi
   AC_DEFINE_UNQUOTED(ANDROID_API_LEVEL, $ANDROID_API_LEVEL, [The Android API level.])
 
   AC_MSG_CHECKING([for the Android arm ABI])
@@ -968,13 +976,6 @@ else
 	BUILDEXEEXT=$EXEEXT
 fi
 rmdir CaseSensitiveTestDir
-
-case $MACHDEP in
-bsdos*)
-    case $CC in
-    gcc) CC="$CC -D_HAVE_BSDI";;
-    esac;;
-esac
 
 case $ac_sys_system in
 hp*|HP*)
@@ -1068,13 +1069,6 @@ case `"$ac_prog" -V 2>&1 < /dev/null` in
           GNULD=no;;
 esac
 AC_MSG_RESULT($GNULD)
-
-AC_C_INLINE
-if test "$ac_cv_c_inline" != no ; then
-        AC_DEFINE(USE_INLINE, 1, [Define to use the C99 inline keyword.])
-        AC_SUBST(USE_INLINE)
-fi
-
 
 AC_MSG_CHECKING(for --enable-shared)
 AC_ARG_ENABLE(shared,
@@ -1196,7 +1190,6 @@ fi
 
 AC_MSG_RESULT($LDLIBRARY)
 
-AC_PROG_RANLIB
 AC_SUBST(AR)
 AC_CHECK_TOOLS(AR, ar aal, ar)
 
@@ -1204,7 +1197,7 @@ AC_CHECK_TOOLS(AR, ar aal, ar)
 AC_SUBST(ARFLAGS)
 if test -z "$ARFLAGS"
 then
-        ARFLAGS="rc"
+        ARFLAGS="rcs"
 fi
 
 AC_CHECK_TOOLS([READELF], [readelf], [:])
@@ -1219,8 +1212,8 @@ AC_SUBST(READELF)
 
 
 case $MACHDEP in
-bsdos*|hp*|HP*)
-	# install -d does not work on BSDI or HP-UX
+hp*|HP*)
+	# install -d does not work on HP-UX
 	if test -z "$INSTALL"
 	then
 		INSTALL="${srcdir}/install-sh -c"
@@ -1310,9 +1303,8 @@ else
 fi
 
 # Enable LTO flags
-AC_SUBST(LTOFLAGS)
 AC_MSG_CHECKING(for --with-lto)
-AC_ARG_WITH(lto, AS_HELP_STRING([--with-lto], [Enable Link Time Optimization in PGO builds. Disabled by default.]),
+AC_ARG_WITH(lto, AS_HELP_STRING([--with-lto], [Enable Link Time Optimization in any build. Disabled by default.]),
 [
 if test "$withval" != no
 then
@@ -1347,6 +1339,8 @@ if test "$Py_LTO" = 'true' ; then
       esac
       ;;
   esac
+  CFLAGS="$CFLAGS $LTOFLAGS"
+  LDFLAGS="$LDFLAGS $LTOFLAGS"
 fi
 
 # Enable PGO flags.
@@ -1464,9 +1458,6 @@ if test "${OPT-unset}" = "unset"
 then
     case $GCC in
     yes)
-        if test "$CC" != 'g++' ; then
-	    STRICT_PROTO="-Wstrict-prototypes"
-	fi
         # For gcc 4.x we need to use -fwrapv so lets check if its supported
         if "$CC" -v --help 2>/dev/null |grep -- -fwrapv > /dev/null; then
            WRAP="-fwrapv"
@@ -1512,8 +1503,6 @@ then
 	    OPT="-O3 -Wall"
 	    ;;
 	esac
-
-	OPT="$OPT $STRICT_PROTO"
 
 	case $ac_sys_system in
 	    SCO_SV*) OPT="$OPT -m486 -DSCO5"
@@ -1666,6 +1655,26 @@ yes)
       CFLAGS_NODIST="$CFLAGS_NODIST -Wno-missing-field-initializers"
     fi
 
+    AC_MSG_CHECKING(if we can turn off $CC invalid function cast warning)
+     ac_save_cc="$CC"
+     CC="$CC -Wcast-function-type -Werror"
+     AC_CACHE_VAL(ac_cv_disable_cast_function_type,
+       AC_COMPILE_IFELSE(
+         [
+           AC_LANG_PROGRAM([[]], [[]])
+         ],[
+           ac_cv_disable_cast_function_type=yes
+         ],[
+           ac_cv_disable_cast_function_type=no
+         ]))
+     CC="$ac_save_cc"
+    AC_MSG_RESULT($ac_cv_disable_cast_function_type)
+
+    if test $ac_cv_disable_cast_function_type = yes
+    then
+      CFLAGS_NODIST="$CFLAGS_NODIST -Wno-cast-function-type"
+    fi
+
     AC_MSG_CHECKING(if we can turn on $CC mixed sign comparison warning)
      ac_save_cc="$CC"
      CC="$CC -Wsign-compare"
@@ -1720,6 +1729,46 @@ yes)
       ac_cv_enable_unreachable_code_warning=no
     fi
     AC_MSG_RESULT($ac_cv_enable_unreachable_code_warning)
+
+    AC_MSG_CHECKING(if we can turn on $CC strict-prototypes warning)
+     ac_save_cc="$CC"
+     CC="$CC -Werror -Wstrict-prototypes"
+     AC_CACHE_VAL(ac_cv_enable_enable_strict_prototypes_warning,
+       AC_COMPILE_IFELSE(
+         [
+       AC_LANG_PROGRAM([[]], [[]])
+     ],[
+       ac_cv_enable_strict_prototypes_warning=yes
+     ],[
+       ac_cv_enable_strict_prototypes_warning=no
+     ]))
+     CC="$ac_save_cc"
+    AC_MSG_RESULT($ac_cv_enable_strict_prototypes_warning)
+
+    if test $ac_cv_enable_strict_prototypes_warning = yes
+    then
+      CFLAGS_NODIST="$CFLAGS_NODIST -Wstrict-prototypes"
+    fi
+
+    AC_MSG_CHECKING(if we can make implicit function declaration an error in $CC)
+     ac_save_cc="$CC"
+     CC="$CC -Werror=implicit-function-declaration"
+     AC_CACHE_VAL(ac_cv_enable_implicit_function_declaration_error,
+       AC_COMPILE_IFELSE(
+         [
+	   AC_LANG_PROGRAM([[]], [[]])
+	 ],[
+           ac_cv_enable_implicit_function_declaration_error=yes
+	 ],[
+           ac_cv_enable_implicit_function_declaration_error=no
+	 ]))
+     CC="$ac_save_cc"
+    AC_MSG_RESULT($ac_cv_enable_implicit_function_declaration_error)
+
+    if test $ac_cv_enable_implicit_function_declaration_error = yes
+    then
+      CFLAGS_NODIST="$CFLAGS_NODIST -Werror=implicit-function-declaration"
+    fi
 
     # if using gcc on alpha, use -mieee to get (near) full IEEE 754
     # support.  Without this, treatment of subnormals doesn't follow
@@ -2113,6 +2162,12 @@ AC_CHECK_HEADERS(linux/netlink.h,,,[
 #endif
 ])
 
+AC_CHECK_HEADERS(linux/vm_sockets.h,,,[
+#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+])
+
 # On Linux, can.h and can/raw.h require sys/socket.h
 AC_CHECK_HEADERS(linux/can.h linux/can/raw.h linux/can/bcm.h,,,[
 #ifdef HAVE_SYS_SOCKET_H
@@ -2161,25 +2216,7 @@ if test "$ac_cv_has_le64toh" = "yes"; then
     AC_DEFINE(HAVE_HTOLE64, 1, [Define this if you have le64toh()])
 fi
 
-# Enabling LFS on Solaris (2.6 to 9) with gcc 2.95 triggers a bug in
-# the system headers: If _XOPEN_SOURCE and _LARGEFILE_SOURCE are
-# defined, but the compiler does not support pragma redefine_extname,
-# and _LARGEFILE64_SOURCE is not defined, the headers refer to 64-bit
-# structures (such as rlimit64) without declaring them. As a
-# work-around, disable LFS on such configurations
-
 use_lfs=yes
-AC_MSG_CHECKING(Solaris LFS bug)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#define _LARGEFILE_SOURCE 1
-#define _FILE_OFFSET_BITS 64
-#include <sys/resource.h>
-]], [[struct rlimit foo;]])],[sol_lfs_bug=no],[sol_lfs_bug=yes])
-AC_MSG_RESULT($sol_lfs_bug)
-if test "$sol_lfs_bug" = "yes"; then
-  use_lfs=no
-fi
-
 # Don't use largefile support for GNU/Hurd
 case $ac_sys_system in GNU*)
   use_lfs=no
@@ -2297,6 +2334,25 @@ if test "$have_pthread_t" = yes ; then
 #include <pthread.h>
 #endif
   ])
+fi
+
+# Issue #25658: POSIX hasn't defined that pthread_key_t is compatible with int.
+# This checking will be unnecessary after removing deprecated TLS API.
+AC_CHECK_SIZEOF(pthread_key_t, [], [[#include <pthread.h>]])
+AC_MSG_CHECKING(whether pthread_key_t is compatible with int)
+if test "$ac_cv_sizeof_pthread_key_t" -eq "$ac_cv_sizeof_int" ; then
+  AC_COMPILE_IFELSE(
+    [AC_LANG_PROGRAM([[#include <pthread.h>]], [[pthread_key_t k; k * 1;]])],
+    [ac_pthread_key_t_is_arithmetic_type=yes],
+    [ac_pthread_key_t_is_arithmetic_type=no]
+  )
+  AC_MSG_RESULT($ac_pthread_key_t_is_arithmetic_type)
+  if test "$ac_pthread_key_t_is_arithmetic_type" = yes ; then
+    AC_DEFINE(PTHREAD_KEY_T_IS_COMPATIBLE_WITH_INT, 1,
+              [Define if pthread_key_t is compatible with int.])
+  fi
+else
+  AC_MSG_RESULT(no)
 fi
 CC="$ac_save_cc"
 
@@ -2431,7 +2487,7 @@ fi
 AC_MSG_RESULT($SHLIB_SUFFIX)
 
 # LDSHARED is the ld *command* used to create shared library
-# -- "cc -G" on SunOS 5.x, "ld -shared" on IRIX 5
+# -- "cc -G" on SunOS 5.x.
 # (Shared libraries in this instance are shared modules to be loaded into
 # Python, as opposed to building Python itself as a shared library.)
 AC_MSG_CHECKING(LDSHARED)
@@ -2442,8 +2498,6 @@ then
 		BLDSHARED="Modules/ld_so_aix \$(CC) -bI:Modules/python.exp"
 		LDSHARED="\$(LIBPL)/ld_so_aix \$(CC) -bI:\$(LIBPL)/python.exp"
 		;;
-	IRIX/5*) LDSHARED="ld -shared";;
-	IRIX*/6*) LDSHARED="ld ${SGI_ABI} -shared -all";;
 	SunOS/5*)
 		if test "$GCC" = "yes" ; then
 			LDSHARED='$(CC) -shared'
@@ -2457,7 +2511,8 @@ then
 			LDSHARED='$(CC) -shared'
 			LDCXXSHARED='$(CXX) -shared'
 		else
-			LDSHARED='ld -b'
+			LDSHARED='$(CC) -b'
+			LDCXXSHARED='$(CXX) -b'
 		fi ;;
 	Darwin/1.3*)
 		LDSHARED='$(CC) -bundle'
@@ -2521,9 +2576,6 @@ then
 	Linux*|GNU*|QNX*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
-	BSD/OS*/4*)
-		LDSHARED="gcc -shared"
-		LDCXXSHARED="g++ -shared";;
 	FreeBSD*)
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
@@ -2589,7 +2641,6 @@ then
 		 fi;;
 	Linux-android*) ;;
 	Linux*|GNU*) CCSHARED="-fPIC";;
-	BSD/OS*/4*) CCSHARED="-fpic";;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*) CCSHARED="-fPIC";;
 	OpenUNIX*|UnixWare*)
 		if test "$GCC" = "yes"
@@ -2601,10 +2652,6 @@ then
 		then CCSHARED="-fPIC"
 		else CCSHARED="-Kpic -belf"
 		fi;;
-	IRIX*/6*)  case $CC in
-		   *gcc*) CCSHARED="-shared";;
-		   *) CCSHARED="";;
-		   esac;;
 	esac
 fi
 AC_MSG_RESULT($CCSHARED)
@@ -2618,7 +2665,6 @@ then
 	hp*|HP*)
 	    LINKFORSHARED="-Wl,-E -Wl,+s";;
 #	    LINKFORSHARED="-Wl,-E -Wl,+s -Wl,+b\$(BINLIBDEST)/lib-dynload";;
-	BSD/OS/4*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	Linux-android*) LINKFORSHARED="-pie -Xlinker -export-dynamic";;
 	Linux*|GNU*) LINKFORSHARED="-Xlinker -export-dynamic";;
 	# -u libsys_s pulls in all symbols in libsys
@@ -2704,12 +2750,50 @@ AC_CHECK_LIB(sendfile, sendfile)
 AC_CHECK_LIB(dl, dlopen)	# Dynamic linking for SunOS/Solaris and SYSV
 AC_CHECK_LIB(dld, shl_load)	# Dynamic linking for HP-UX
 
-# only check for sem_init if thread support is requested
-if test "$with_threads" = "yes" -o -z "$with_threads"; then
-    AC_SEARCH_LIBS(sem_init, pthread rt posix4) # 'Real Time' functions on Solaris
-						# posix4 on Solaris 2.6
-						# pthread (first!) on Linux
-fi
+# checks for uuid.h location
+AC_CHECK_HEADERS([uuid/uuid.h uuid.h])
+
+AC_MSG_CHECKING(for uuid_generate_time_safe)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <uuid/uuid.h>]], [[
+#ifndef uuid_generate_time_safe
+void *x = uuid_generate_time_safe
+#endif
+]])],
+  [AC_DEFINE(HAVE_UUID_GENERATE_TIME_SAFE, 1, Define if uuid_generate_time_safe() exists.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+# AIX provides support for RFC4122 (uuid) in libc.a starting with AIX 6.1 (anno 2007)
+# FreeBSD and OpenBSD provides support as well
+AC_MSG_CHECKING(for uuid_create)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <uuid.h>]], [[
+#ifndef uuid_create
+void *x = uuid_create
+#endif
+]])],
+  [AC_DEFINE(HAVE_UUID_CREATE, 1, Define if uuid_create() exists.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+# Little-endian FreeBSD, OpenBSD and NetBSD needs encoding into an octet
+# stream in big-endian byte-order
+AC_MSG_CHECKING(for uuid_enc_be)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <uuid.h>]], [[
+#ifndef uuid_enc_be
+void *x = uuid_enc_be
+#endif
+]])],
+  [AC_DEFINE(HAVE_UUID_ENC_BE, 1, Define if uuid_enc_be() exists.)
+   AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)]
+)
+
+# 'Real Time' functions on Solaris
+# posix4 on Solaris 2.6
+# pthread (first!) on Linux
+AC_SEARCH_LIBS(sem_init, pthread rt posix4)
 
 # check if we need libintl for locale functions
 AC_CHECK_LIB(intl, textdomain,
@@ -2830,8 +2914,6 @@ else
 fi
 AC_SUBST(LIBFFI_INCLUDEDIR)
 
-AC_MSG_RESULT($with_system_ffi)
-
 # Check for use of the system libmpdec library
 AC_MSG_CHECKING(for --with-system-libmpdec)
 AC_ARG_WITH(system_libmpdec,
@@ -2896,77 +2978,40 @@ else
 fi])
 AC_MSG_RESULT($with_dbmliborder)
 
-# This is used to generate Setup.config
-AC_SUBST(USE_THREAD_MODULE)
-USE_THREAD_MODULE=""
-
 AC_SUBST(LDLAST)
 
 # Templates for things AC_DEFINEd more than once.
 # For a single AC_DEFINE, no template is needed.
 AH_TEMPLATE(_REENTRANT,
   [Define to force use of thread-safe errno, h_errno, and other functions])
-AH_TEMPLATE(WITH_THREAD,
-  [Define if you want to compile in rudimentary thread support])
 
-AC_MSG_CHECKING(for --with-threads)
-dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
-AC_ARG_WITH(threads,
-            AS_HELP_STRING([--with(out)-threads@<:@=DIRECTORY@:>@], [disable/enable thread support]))
-
-# --with-thread is deprecated, but check for it anyway
-dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
-AC_ARG_WITH(thread,
-            AS_HELP_STRING([--with(out)-thread@<:@=DIRECTORY@:>@], [deprecated; use --with(out)-threads]),
-            [with_threads=$with_thread])
-
-if test -z "$with_threads"
-then with_threads="yes"
-fi
-AC_MSG_RESULT($with_threads)
-
-AC_SUBST(THREADOBJ)
-if test "$with_threads" = "no"
+if test "$ac_cv_pthread_is_default" = yes
 then
-    USE_THREAD_MODULE="#"
-elif test "$ac_cv_pthread_is_default" = yes
-then
-    AC_DEFINE(WITH_THREAD)
     # Defining _REENTRANT on system with POSIX threads should not hurt.
     AC_DEFINE(_REENTRANT)
     posix_threads=yes
-    THREADOBJ="Python/thread.o"
 elif test "$ac_cv_kpthread" = "yes"
 then
     CC="$CC -Kpthread"
     if test "$ac_cv_cxx_thread" = "yes"; then
         CXX="$CXX -Kpthread"
     fi
-    AC_DEFINE(WITH_THREAD)
     posix_threads=yes
-    THREADOBJ="Python/thread.o"
 elif test "$ac_cv_kthread" = "yes"
 then
     CC="$CC -Kthread"
     if test "$ac_cv_cxx_thread" = "yes"; then
         CXX="$CXX -Kthread"
     fi
-    AC_DEFINE(WITH_THREAD)
     posix_threads=yes
-    THREADOBJ="Python/thread.o"
 elif test "$ac_cv_pthread" = "yes"
 then
     CC="$CC -pthread"
     if test "$ac_cv_cxx_thread" = "yes"; then
         CXX="$CXX -pthread"
     fi
-    AC_DEFINE(WITH_THREAD)
     posix_threads=yes
-    THREADOBJ="Python/thread.o"
 else
-    if test ! -z "$with_threads" -a -d "$with_threads"
-    then LDFLAGS="$LDFLAGS -L$with_threads"
-    fi
     if test ! -z "$withval" -a -d "$withval"
     then LDFLAGS="$LDFLAGS -L$withval"
     fi
@@ -2998,43 +3043,36 @@ yes
 void * start_routine (void *arg) { exit (0); }]], [[
 pthread_create (NULL, NULL, start_routine, NULL)]])],[
     AC_MSG_RESULT(yes)
-    AC_DEFINE(WITH_THREAD)
     posix_threads=yes
-    THREADOBJ="Python/thread.o"],[
+    ],[
     LIBS=$_libs
-    AC_CHECK_FUNC(pthread_detach, [AC_DEFINE(WITH_THREAD)
+    AC_CHECK_FUNC(pthread_detach, [
     posix_threads=yes
-    THREADOBJ="Python/thread.o"],[
-    AC_CHECK_LIB(pthreads, pthread_create, [AC_DEFINE(WITH_THREAD)
+    ],[
+    AC_CHECK_LIB(pthreads, pthread_create, [
     posix_threads=yes
     LIBS="$LIBS -lpthreads"
-    THREADOBJ="Python/thread.o"], [
-    AC_CHECK_LIB(c_r, pthread_create, [AC_DEFINE(WITH_THREAD)
+    ], [
+    AC_CHECK_LIB(c_r, pthread_create, [
     posix_threads=yes
     LIBS="$LIBS -lc_r"
-    THREADOBJ="Python/thread.o"], [
-    AC_CHECK_LIB(pthread, __pthread_create_system, [AC_DEFINE(WITH_THREAD)
+    ], [
+    AC_CHECK_LIB(pthread, __pthread_create_system, [
     posix_threads=yes
     LIBS="$LIBS -lpthread"
-    THREADOBJ="Python/thread.o"], [
-    AC_CHECK_LIB(cma, pthread_create, [AC_DEFINE(WITH_THREAD)
+    ], [
+    AC_CHECK_LIB(cma, pthread_create, [
     posix_threads=yes
     LIBS="$LIBS -lcma"
-    THREADOBJ="Python/thread.o"],[
-    USE_THREAD_MODULE="#"])
+    ],[
+    AC_MSG_ERROR([could not find pthreads on your system])
+    ])
     ])])])])])
 
-    AC_CHECK_LIB(mpc, usconfig, [AC_DEFINE(WITH_THREAD)
+    AC_CHECK_LIB(mpc, usconfig, [
     LIBS="$LIBS -lmpc"
-    THREADOBJ="Python/thread.o"
-    USE_THREAD_MODULE=""])
+    ])
 
-    if test "$posix_threads" != "yes"; then
-      AC_CHECK_LIB(thread, thr_create, [AC_DEFINE(WITH_THREAD)
-      LIBS="$LIBS -lthread"
-      THREADOBJ="Python/thread.o"
-      USE_THREAD_MODULE=""])
-    fi
 fi
 
 if test "$posix_threads" = "yes"; then
@@ -3088,7 +3126,7 @@ if test "$posix_threads" = "yes"; then
             [Define if pthread_sigmask() does not work on your system.])
             ;;
         esac])
-      AC_CHECK_FUNCS(pthread_atfork)
+      AC_CHECK_FUNCS(pthread_getcpuclockid)
 fi
 
 
@@ -3297,6 +3335,40 @@ then
 fi
 AC_MSG_RESULT($with_pymalloc)
 
+# Check for --with-c-locale-coercion
+AC_MSG_CHECKING(for --with-c-locale-coercion)
+AC_ARG_WITH(c-locale-coercion,
+            AS_HELP_STRING([--with(out)-c-locale-coercion],
+              [disable/enable C locale coercion to a UTF-8 based locale]))
+
+if test -z "$with_c_locale_coercion"
+then
+    with_c_locale_coercion="yes"
+fi
+if test "$with_c_locale_coercion" != "no"
+then
+    AC_DEFINE(PY_COERCE_C_LOCALE, 1,
+      [Define if you want to coerce the C locale to a UTF-8 based locale])
+fi
+AC_MSG_RESULT($with_c_locale_coercion)
+
+# Check for --with-c-locale-warning
+AC_MSG_CHECKING(for --with-c-locale-warning)
+AC_ARG_WITH(c-locale-warning,
+            AS_HELP_STRING([--with(out)-c-locale-warning],
+              [disable/enable locale compatibility warning in the C locale]))
+
+if test -z "$with_c_locale_warning"
+then
+    with_c_locale_warning="yes"
+fi
+if test "$with_c_locale_warning" != "no"
+then
+    AC_DEFINE(PY_WARN_ON_C_LOCALE, 1,
+      [Define to emit a locale compatibility warning in the C locale])
+fi
+AC_MSG_RESULT($with_c_locale_warning)
+
 # Check for Valgrind support
 AC_MSG_CHECKING([for --with-valgrind])
 AC_ARG_WITH([valgrind],
@@ -3374,8 +3446,6 @@ then
 	fi
 	;;
 	hp*|HP*) DYNLOADFILE="dynload_hpux.o";;
-	# Use dynload_next.c only on 10.2 and below, which don't have native dlopen()
-	Darwin/@<:@0156@:>@\..*) DYNLOADFILE="dynload_next.o";;
 	*)
 	# use dynload_shlib.c and dlopen() if we have it; otherwise stub
 	# out any dynamic loading
@@ -3416,12 +3486,13 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  futimens futimes gai_strerror getentropy \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getspnam getspent getsid getwd \
- initgroups kill killpg lchmod lchown linkat lstat lutimes mmap \
+ if_nameindex \
+ initgroups kill killpg lchmod lchown lockf linkat lstat lutimes mmap \
  memrchr mbrtowc mkdirat mkfifo \
  mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
- posix_fallocate posix_fadvise pread \
- pthread_init pthread_kill putenv pwrite readlink readlinkat readv realpath renameat \
- select sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid seteuid \
+ posix_fallocate posix_fadvise posix_spawn pread preadv preadv2 \
+ pthread_init pthread_kill putenv pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
+ sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid seteuid \
  setgid sethostname \
  setlocale setregid setreuid setresuid setresgid setsid setpgid setpgrp setpriority setuid setvbuf \
  sched_get_priority_max sched_setaffinity sched_setscheduler sched_setparam \
@@ -3701,9 +3772,6 @@ AC_CHECK_FUNCS(forkpty,,
    )
 )
 
-# Stuff for expat.
-AC_CHECK_FUNCS(memmove)
-
 # check for long file support functions
 AC_CHECK_FUNCS(fseek64 fseeko fstatvfs ftell64 ftello statvfs)
 
@@ -3766,40 +3834,6 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
   AC_MSG_RESULT(yes)
 ],[
   AC_MSG_RESULT(no)
-])
-
-# On Android API level 24 with android-ndk-r13, if_nameindex() is available,
-# but the if_nameindex structure is not defined.
-AC_MSG_CHECKING(for if_nameindex)
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-#include <stdio.h>
-#ifdef STDC_HEADERS
-# include <stdlib.h>
-# include <stddef.h>
-#else
-# ifdef HAVE_STDLIB_H
-#  include <stdlib.h>
-# endif
-#endif
-#ifdef HAVE_SYS_SOCKET_H
-# include <sys/socket.h>
-#endif
-#ifdef HAVE_NET_IF_H
-# include <net/if.h>
-#endif
-]], [[struct if_nameindex *ni = if_nameindex(); int x = ni[0].if_index;]])],
-  [AC_DEFINE(HAVE_IF_NAMEINDEX, 1, Define to 1 if you have the 'if_nameindex' function.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)
-])
-
-# Issue #28762: lockf() is available on Android API level 24, but the F_LOCK
-# macro is not defined in android-ndk-r13.
-AC_MSG_CHECKING(for lockf)
-AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <unistd.h> ]],[[lockf(0, F_LOCK, 0);]])],
-  [AC_DEFINE(HAVE_LOCKF, 1, Define to 1 if you have the 'lockf' function and the F_LOCK macro.)
-   AC_MSG_RESULT(yes)],
-  [AC_MSG_RESULT(no)
 ])
 
 # On OSF/1 V5.1, getaddrinfo is available, but a define
@@ -3948,6 +3982,8 @@ AC_CHECK_MEMBERS([struct passwd.pw_gecos, struct passwd.pw_passwd], [], [], [[
   #include <sys/types.h>
   #include <pwd.h>
 ]])
+# Issue #21085: In Cygwin, siginfo_t does not have si_band field.
+AC_CHECK_MEMBERS([siginfo_t.si_band], [], [], [[#include <signal.h>]])
 
 AC_MSG_CHECKING(for time.h that defines altzone)
 AC_CACHE_VAL(ac_cv_header_time_altzone,[
@@ -4013,14 +4049,6 @@ fi
 
 AC_C_CHAR_UNSIGNED
 AC_C_CONST
-
-works=no
-AC_MSG_CHECKING(for working volatile)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[volatile int x; x = 0;]])],
-  [works=yes],
-  [AC_DEFINE(volatile, , [Define to empty if the keyword does not work.])]
-)
-AC_MSG_RESULT($works)
 
 works=no
 AC_MSG_CHECKING(for working signed char)
@@ -4164,20 +4192,6 @@ AC_CHECK_FUNC(__fpu_control,
   [],
   [AC_CHECK_LIB(ieee, __fpu_control)
 ])
-
-# Check for --with-fpectl
-AC_MSG_CHECKING(for --with-fpectl)
-AC_ARG_WITH(fpectl,
-            AS_HELP_STRING([--with-fpectl], [enable SIGFPE catching]),
-[
-if test "$withval" != no
-then
-  AC_DEFINE(WANT_SIGFPE_HANDLER, 1,
-  [Define if you want SIGFPE handled (see Include/pyfpe.h).])
-  AC_MSG_RESULT(yes)
-else AC_MSG_RESULT(no)
-fi],
-[AC_MSG_RESULT(no)])
 
 # check for --with-libm=...
 AC_SUBST(LIBM)
@@ -4523,7 +4537,7 @@ then
   [define to 1 if your sem_getvalue is broken.])
 fi
 
-AC_CHECK_DECLS([RTLD_LAZY, RTLD_NOW, RTLD_GLOBAL, RTLD_LOCAL, RTLD_NODELETE, RTLD_NOLOAD, RTLD_DEEPBIND], [], [], [[#include <dlfcn.h>]])
+AC_CHECK_DECLS([RTLD_LAZY, RTLD_NOW, RTLD_GLOBAL, RTLD_LOCAL, RTLD_NODELETE, RTLD_NOLOAD, RTLD_DEEPBIND, RTLD_MEMBER], [], [], [[#include <dlfcn.h>]])
 
 # determine what size digit to use for Python's longs
 AC_MSG_CHECKING([digit size for Python's longs])
@@ -4719,11 +4733,6 @@ else
   AC_DEFINE(HAVE_LIBREADLINE, 1,
     [Define if you have the readline library (-lreadline).])
 fi
-
-# check for readline 2.1
-AC_CHECK_LIB(readline, rl_callback_handler_install,
-	AC_DEFINE(HAVE_RL_CALLBACK, 1,
-        [Define if you have readline 2.1]), ,$READLINE_LIBS)
 
 # check for readline 2.2
 AC_PREPROC_IFELSE([AC_LANG_SOURCE([[#include <readline/readline.h>]])],
@@ -5508,8 +5517,84 @@ if test "$have_getrandom" = yes; then
               [Define to 1 if the getrandom() function is available])
 fi
 
+# Check for usable OpenSSL
+AX_CHECK_OPENSSL([have_openssl=yes],[have_openssl=no])
+
+if test "$have_openssl" = yes; then
+    AC_MSG_CHECKING([for X509_VERIFY_PARAM_set1_host in libssl])
+
+    save_LIBS="$LIBS"
+    save_LDFLAGS="$LDFLAGS"
+    save_CPPFLAGS="$CPPFLAGS"
+    LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
+    LIBS="$OPENSSL_LIBS $LIBS"
+    CPPFLAGS="$OPENSSL_INCLUDES $CPPFLAGS"
+
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([
+        [#include <openssl/x509_vfy.h>]
+    ], [
+        [X509_VERIFY_PARAM *p = X509_VERIFY_PARAM_new();]
+        [X509_VERIFY_PARAM_set1_host(p, "localhost", 0);]
+        [X509_VERIFY_PARAM_set1_ip_asc(p, "127.0.0.1");]
+        [X509_VERIFY_PARAM_set_hostflags(p, 0);]
+    ])
+    ],
+    [
+        ac_cv_has_x509_verify_param_set1_host=yes
+    ],
+    [
+        ac_cv_has_x509_verify_param_set1_host=no
+    ])
+    AC_MSG_RESULT($ac_cv_has_x509_verify_param_set1_host)
+    if test "$ac_cv_has_x509_verify_param_set1_host" = "yes"; then
+        AC_DEFINE(HAVE_X509_VERIFY_PARAM_SET1_HOST, 1,
+        [Define if libssl has X509_VERIFY_PARAM_set1_host and related function])
+    fi
+
+    CPPFLAGS="$save_CPPFLAGS"
+    LDFLAGS="$save_LDFLAGS"
+    LIBS="$save_LIBS"
+fi
+
+# ssl module default cipher suite string
+AH_TEMPLATE(PY_SSL_DEFAULT_CIPHERS,
+  [Default cipher suites list for ssl module.
+   1: Python's preferred selection, 2: leave OpenSSL defaults untouched, 0: custom string])
+AH_TEMPLATE(PY_SSL_DEFAULT_CIPHER_STRING,
+  [Cipher suite string for PY_SSL_DEFAULT_CIPHERS=0]
+)
+
+AC_MSG_CHECKING(for --with-ssl-default-suites)
+AC_ARG_WITH(ssl-default-suites,
+            AS_HELP_STRING([--with-ssl-default-suites=@<:@python|openssl|STRING@:>@],
+                           [Override default cipher suites string,
+                            python: use Python's preferred selection (default),
+                            openssl: leave OpenSSL's defaults untouched,
+                            STRING: use a custom string,
+                            PROTOCOL_SSLv2 ignores the setting]),
+[
+AC_MSG_RESULT($withval)
+case "$withval" in
+    python)
+        AC_DEFINE(PY_SSL_DEFAULT_CIPHERS, 1)
+        ;;
+    openssl)
+        AC_DEFINE(PY_SSL_DEFAULT_CIPHERS, 2)
+        ;;
+    *)
+        AC_DEFINE(PY_SSL_DEFAULT_CIPHERS, 0)
+        AC_DEFINE_UNQUOTED(PY_SSL_DEFAULT_CIPHER_STRING, "$withval")
+        ;;
+esac
+],
+[
+AC_MSG_RESULT(python)
+AC_DEFINE(PY_SSL_DEFAULT_CIPHERS, 1)
+])
+
+
 # generate output files
-AC_CONFIG_FILES(Makefile.pre Modules/Setup.config Misc/python.pc Misc/python-config.sh)
+AC_CONFIG_FILES(Makefile.pre Misc/python.pc Misc/python-config.sh)
 AC_CONFIG_FILES([Modules/ld_so_aix], [chmod +x Modules/ld_so_aix])
 AC_OUTPUT
 
@@ -5527,7 +5612,7 @@ fi
 
 echo "creating Makefile" >&AS_MESSAGE_FD
 $SHELL $srcdir/Modules/makesetup -c $srcdir/Modules/config.c.in \
-			-s Modules Modules/Setup.config \
+			-s Modules \
 			Modules/Setup.local Modules/Setup
 mv config.c Modules
 

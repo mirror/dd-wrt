@@ -116,10 +116,10 @@ bytes(cdata)
 #endif
 #include "ctypes.h"
 
-PyObject *PyExc_ArgError;
+PyObject *PyExc_ArgError = NULL;
 
 /* This dict maps ctypes types to POINTER types */
-PyObject *_ctypes_ptrtype_cache;
+PyObject *_ctypes_ptrtype_cache = NULL;
 
 static PyTypeObject Simple_Type;
 
@@ -156,8 +156,7 @@ _DictRemover_call(PyObject *myself, PyObject *args, PyObject *kw)
         Py_CLEAR(self->key);
         Py_CLEAR(self->dict);
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyTypeObject DictRemover_Type = {
@@ -211,7 +210,7 @@ PyDict_SetItemProxy(PyObject *dict, PyObject *key, PyObject *item)
     PyObject *proxy;
     int result;
 
-    obj = PyObject_CallObject((PyObject *)&DictRemover_Type, NULL);
+    obj = _PyObject_CallNoArg((PyObject *)&DictRemover_Type);
     if (obj == NULL)
         return -1;
 
@@ -438,7 +437,7 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
     if (PyDict_GetItemString(result->tp_dict, "_abstract_"))
         return (PyObject *)result;
 
-    dict = (StgDictObject *)PyObject_CallObject((PyObject *)&PyCStgDict_Type, NULL);
+    dict = (StgDictObject *)_PyObject_CallNoArg((PyObject *)&PyCStgDict_Type);
     if (!dict) {
         Py_DECREF(result);
         return NULL;
@@ -1049,8 +1048,7 @@ PyCPointerType_set_type(PyTypeObject *self, PyObject *type)
     if (-1 == PyDict_SetItemString((PyObject *)dict, "_type_", type))
         return NULL;
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyObject *_byref(PyObject *);
@@ -1392,8 +1390,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     StgDictObject *stgdict;
     StgDictObject *itemdict;
     PyObject *length_attr, *type_attr;
-    long length;
-    int overflow;
+    Py_ssize_t length;
     Py_ssize_t itemsize, itemalign;
 
     /* create the new instance (which is a class,
@@ -1415,14 +1412,15 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Py_XDECREF(length_attr);
         goto error;
     }
-    length = PyLong_AsLongAndOverflow(length_attr, &overflow);
-    if (overflow) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "The '_length_' attribute is too large");
-        Py_DECREF(length_attr);
+    length = PyLong_AsSsize_t(length_attr);
+    Py_DECREF(length_attr);
+    if (length == -1 && PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_OverflowError)) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "The '_length_' attribute is too large");
+        }
         goto error;
     }
-    Py_DECREF(length_attr);
 
     type_attr = PyObject_GetAttrString((PyObject *)result, "_type_");
     if (!type_attr) {
@@ -1570,8 +1568,7 @@ c_wchar_p_from_param(PyObject *type, PyObject *value)
     PyObject *as_parameter;
     int res;
     if (value == Py_None) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
     if (PyUnicode_Check(value)) {
         PyCArgObject *parg;
@@ -1635,8 +1632,7 @@ c_char_p_from_param(PyObject *type, PyObject *value)
     PyObject *as_parameter;
     int res;
     if (value == Py_None) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
     if (PyBytes_Check(value)) {
         PyCArgObject *parg;
@@ -1703,8 +1699,7 @@ c_void_p_from_param(PyObject *type, PyObject *value)
 
 /* None */
     if (value == Py_None) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
     /* Should probably allow buffer interface as well */
 /* int, long */
@@ -1909,7 +1904,7 @@ static PyCArgObject *
 PyCSimpleType_paramfunc(CDataObject *self)
 {
     StgDictObject *dict;
-    char *fmt;
+    const char *fmt;
     PyCArgObject *parg;
     struct fielddesc *fd;
 
@@ -2119,7 +2114,7 @@ static PyObject *
 PyCSimpleType_from_param(PyObject *type, PyObject *value)
 {
     StgDictObject *dict;
-    char *fmt;
+    const char *fmt;
     PyCArgObject *parg;
     struct fielddesc *fd;
     PyObject *as_parameter;
@@ -2670,8 +2665,11 @@ PyCData_setstate(PyObject *myself, PyObject *args)
     int res;
     PyObject *dict, *mydict;
     CDataObject *self = (CDataObject *)myself;
-    if (!PyArg_ParseTuple(args, "Os#", &dict, &data, &len))
+    if (!PyArg_ParseTuple(args, "O!s#",
+                          &PyDict_Type, &dict, &data, &len))
+    {
         return NULL;
+    }
     if (len > self->b_size)
         len = self->b_size;
     memmove(self->b_ptr, data, len);
@@ -2690,8 +2688,7 @@ PyCData_setstate(PyObject *myself, PyObject *args)
     Py_DECREF(mydict);
     if (res == -1)
         return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 /*
@@ -2913,8 +2910,7 @@ _PyCData_set(CDataObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
             return result;
         } else if (value == Py_None && PyCPointerTypeObject_Check(type)) {
             *(void **)ptr = NULL;
-            Py_INCREF(Py_None);
-            return Py_None;
+            Py_RETURN_NONE;
         } else {
             PyErr_Format(PyExc_TypeError,
                          "expected %s instance, got %s",
@@ -3068,8 +3064,7 @@ PyCFuncPtr_get_errcheck(PyCFuncPtrObject *self)
         Py_INCREF(self->errcheck);
         return self->errcheck;
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static int
@@ -3107,8 +3102,7 @@ PyCFuncPtr_get_restype(PyCFuncPtrObject *self)
         Py_INCREF(dict->restype);
         return dict->restype;
     } else {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
 }
 
@@ -3145,8 +3139,7 @@ PyCFuncPtr_get_argtypes(PyCFuncPtrObject *self)
         Py_INCREF(dict->argtypes);
         return dict->argtypes;
     } else {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
 }
 
@@ -3347,7 +3340,9 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
         /* Here ftuple is a borrowed reference */
         return NULL;
 
-    if (!PyArg_ParseTuple(ftuple, "O&O", _get_name, &name, &dll)) {
+    if (!PyArg_ParseTuple(ftuple, "O&O;illegal func_spec argument",
+                          _get_name, &name, &dll))
+    {
         Py_DECREF(ftuple);
         return NULL;
     }
@@ -3691,12 +3686,9 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
         case PARAMFLAG_FIN | PARAMFLAG_FLCID:
             /* ['in', 'lcid'] parameter.  Always taken from defval,
              if given, else the integer 0. */
-            if (defval == NULL) {
-                defval = PyLong_FromLong(0);
-                if (defval == NULL)
-                    goto error;
-            } else
-                Py_INCREF(defval);
+            if (defval == NULL)
+                defval = _PyLong_Zero;
+            Py_INCREF(defval);
             PyTuple_SET_ITEM(callargs, i, defval);
             break;
         case (PARAMFLAG_FIN | PARAMFLAG_FOUT):
@@ -3746,19 +3738,19 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
                 goto error;
             }
             if (PyCArrayTypeObject_Check(ob))
-                ob = PyObject_CallObject(ob, NULL);
+                ob = _PyObject_CallNoArg(ob);
             else
                 /* Create an instance of the pointed-to type */
-                ob = PyObject_CallObject(dict->proto, NULL);
+                ob = _PyObject_CallNoArg(dict->proto);
             /*
                XXX Is the following correct any longer?
                We must not pass a byref() to the array then but
-               the array instance itself. Then, we cannot retrive
+               the array instance itself. Then, we cannot retrieve
                the result from the PyCArgObject.
             */
             if (ob == NULL)
                 goto error;
-            /* The .from_param call that will ocurr later will pass this
+            /* The .from_param call that will occur later will pass this
                as a byref parameter. */
             PyTuple_SET_ITEM(callargs, i, ob);
             *poutmask |= (1 << i); /* mark as out arg */
@@ -3776,7 +3768,7 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
        must be the same as len(inargs) + len(kwds), otherwise we have
        either too much or not enough arguments. */
 
-    actual_args = PyTuple_GET_SIZE(inargs) + (kwds ? PyDict_Size(kwds) : 0);
+    actual_args = PyTuple_GET_SIZE(inargs) + (kwds ? PyDict_GET_SIZE(kwds) : 0);
     if (actual_args != inargs_index) {
         /* When we have default values or named parameters, this error
            message is misleading.  See unittests/test_paramflags.py
@@ -5231,7 +5223,7 @@ comerror_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTuple(args, "OOO:COMError", &hresult, &text, &details))
         return -1;
 
-    a = PySequence_GetSlice(args, 1, PySequence_Size(args));
+    a = PySequence_GetSlice(args, 1, PyTuple_GET_SIZE(args));
     if (!a)
         return -1;
     status = PyObject_SetAttrString(self, "args", a);
@@ -5327,7 +5319,7 @@ cast_check_pointertype(PyObject *arg)
     if (PyCFuncPtrTypeObject_Check(arg))
         return 1;
     dict = PyType_stgdict(arg);
-    if (dict) {
+    if (dict != NULL && dict->proto != NULL) {
         if (PyUnicode_Check(dict->proto)
             && (strchr("sPzUZXO", PyUnicode_AsUTF8(dict->proto)[0]))) {
             /* simple pointer types, c_void_p, c_wchar_p, BSTR, ... */
@@ -5348,7 +5340,7 @@ cast(void *ptr, PyObject *src, PyObject *ctype)
     CDataObject *result;
     if (0 == cast_check_pointertype(ctype))
         return NULL;
-    result = (CDataObject *)PyObject_CallFunctionObjArgs(ctype, NULL);
+    result = (CDataObject *)_PyObject_CallNoArg(ctype);
     if (result == NULL)
         return NULL;
 
@@ -5431,9 +5423,7 @@ PyInit__ctypes(void)
    ob_type is the metatype (the 'type'), defaults to PyType_Type,
    tp_base is the base type, defaults to 'object' aka PyBaseObject_Type.
 */
-#ifdef WITH_THREAD
     PyEval_InitThreads();
-#endif
     m = PyModule_Create(&_ctypesmodule);
     if (!m)
         return NULL;

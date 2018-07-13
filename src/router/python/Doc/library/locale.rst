@@ -153,7 +153,7 @@ The :mod:`locale` module defines the following exception and functions:
    different than the ``LC_CTYPE`` locale. This temporary change affects other
    threads.
 
-   .. versionchanged:: 3.6.5
+   .. versionchanged:: 3.7
       The function now sets temporarily the ``LC_CTYPE`` locale to the
       ``LC_NUMERIC`` locale in some cases.
 
@@ -326,6 +326,13 @@ The :mod:`locale` module defines the following exception and functions:
    preferences, so this function is not thread-safe. If invoking setlocale is not
    necessary or desired, *do_setlocale* should be set to ``False``.
 
+   On Android or in the UTF-8 mode (:option:`-X` ``utf8`` option), always
+   return ``'UTF-8'``, the locale and the *do_setlocale* argument are ignored.
+
+   .. versionchanged:: 3.7
+      The function now always returns ``UTF-8`` on Android or if the UTF-8 mode
+      is enabled.
+
 
 .. function:: normalize(localename)
 
@@ -362,7 +369,7 @@ The :mod:`locale` module defines the following exception and functions:
    sequence of strings.
 
 
-.. function:: format(format, val, grouping=False, monetary=False)
+.. function:: format_string(format, val, grouping=False, monetary=False)
 
    Formats a number *val* according to the current :const:`LC_NUMERIC` setting.
    The format follows the conventions of the ``%`` operator.  For floating point
@@ -372,14 +379,23 @@ The :mod:`locale` module defines the following exception and functions:
    If *monetary* is true, the conversion uses monetary thousands separator and
    grouping strings.
 
-   Please note that this function will only work for exactly one %char specifier.
-   For whole format strings, use :func:`format_string`.
-
-
-.. function:: format_string(format, val, grouping=False)
-
    Processes formatting specifiers as in ``format % val``, but takes the current
    locale settings into account.
+
+   .. versionchanged:: 3.7
+      The *monetary* keyword parameter was added.
+
+
+.. function:: format(format, val, grouping=False, monetary=False)
+
+   Please note that this function works like :meth:`format_string` but will
+   only work for exactly one ``%char`` specifier.  For example, ``'%f'`` and
+   ``'%.0f'`` are both valid specifiers, but ``'%f KiB'`` is not.
+
+   For whole format strings, use :func:`format_string`.
+
+   .. deprecated:: 3.7
+      Use :meth:`format_string` instead.
 
 
 .. function:: currency(val, symbol=True, grouping=False, international=False)
