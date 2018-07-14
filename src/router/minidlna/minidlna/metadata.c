@@ -1683,12 +1683,12 @@ video_no_dlna:
 	}
 	else
 	{
+		ret = sqlite3_last_insert_rowid(db);
+		check_for_captions(path, ret);
 		if ( GETFLAG(META_MASK) )
 		{
 			DPRINTF(E_DEBUG, L_METADATA, "Create metadata file...[%s]\n", path);
 
-			ret = sqlite3_last_insert_rowid(db);
-			check_for_captions(path, ret);
 
 			// Create metadata file
 			struct stat file_stat;
