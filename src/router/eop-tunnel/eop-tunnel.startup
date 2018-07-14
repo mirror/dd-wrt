@@ -24,6 +24,7 @@ do
 			insmod udp_tunnel
 			insmod ip6_udp_tunnel
 			insmod wireguard
+			logger -p user.info "Enable WireGuard interface oet${i} on port $($nv get oet${i}_port)"
 			ip link add oet${i} type wireguard
 			wg set oet${i} listen-port $($nv get oet${i}_port)
 			$nv get oet${i}_private > /tmp/wireguard/oet${i}_private
@@ -43,6 +44,7 @@ do
 				fi
 				if [ `$nv get oet${i}_endpoint${p}` -eq 1 ]
 				then
+					logger -p user.info "Establish WireGuard tunnel with peer endpoint $($nv get oet${i}_rem${p}):$($nv get oet${i}_peerport${p})"
 					ENDPOINTARG1="endpoint"
 					ENDPOINTARG2="$($nv get oet${i}_rem${p}):$($nv get oet${i}_peerport${p})"
 				fi
@@ -56,6 +58,7 @@ do
 		then
 			insmod gre
 			insmod eoip
+			logger -p user.info "Enable Mikrotik Tunnel interface oet${i} on address $($nv get oet${i}_local) with peer $($nv get oet${i}_rem)"
 			eoip add tunnel-id $($nv get oet${i}_id) name oet${i} remote $($nv get oet${i}_rem) local $($nv get oet${i}_local)
 			if [ `$nv get oet${i}_bridged` -eq 1 ]
 			then
@@ -75,8 +78,10 @@ do
 			insmod etherip
 			if [ `$nv get oet${i}_local` == "0.0.0.0" ]
 			then
+				logger -p user.info "Enable RFC 3378 EtherIP Tunnel interface oet${i} with peer $($nv get oet${i}_rem)"
 				ip tunnel add oet${i} mode etherip remote $($nv get oet${i}_rem) local any
 			else
+				logger -p user.info "Enable RFC 3378 EtherIP Tunnel interface oet${i} on address $($nv get oet${i}_local) with peer $($nv get oet${i}_rem)"
 				ip tunnel add oet${i} mode etherip remote $($nv get oet${i}_rem) local $($nv get oet${i}_local)			
 			fi
 			if [ `$nv get oet${i}_bridged` -eq 1 ]
