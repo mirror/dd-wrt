@@ -23,6 +23,7 @@ do
 			insmod ipv6
 			insmod udp_tunnel
 			insmod ip6_udp_tunnel
+			insmod ip_tunnel
 			insmod wireguard
 			logger -p user.info "Enable WireGuard interface oet${i} on port $($nv get oet${i}_port)"
 			ip link add oet${i} type wireguard
