@@ -1853,7 +1853,7 @@ static routerinfo_t *desc_routerinfo = NULL;
 static extrainfo_t *desc_extrainfo = NULL;
 /** Why did we most recently decide to regenerate our descriptor?  Used to
  * tell the authorities why we're sending it to them. */
-static const char *desc_gen_reason = NULL;
+static const char *desc_gen_reason = "uninitialized reason";
 /** Since when has our descriptor been "clean"?  0 if we need to regenerate it
  * now. */
 static time_t desc_clean_since = 0;
@@ -1950,10 +1950,11 @@ router_compare_to_my_exit_policy(const tor_addr_t *addr, uint16_t port)
 MOCK_IMPL(int,
 router_my_exit_policy_is_reject_star,(void))
 {
-  if (!router_get_my_routerinfo()) /* make sure routerinfo exists */
+  const routerinfo_t *me = router_get_my_routerinfo();
+  if (!me) /* make sure routerinfo exists */
     return -1;
 
-  return router_get_my_routerinfo()->policy_is_reject_star;
+  return me->policy_is_reject_star;
 }
 
 /** Return true iff I'm a server and <b>digest</b> is equal to
@@ -2441,6 +2442,9 @@ router_rebuild_descriptor(int force)
   desc_clean_since = time(NULL);
   desc_needs_upload = 1;
   desc_gen_reason = desc_dirty_reason;
+  if (BUG(desc_gen_reason == NULL)) {
+    desc_gen_reason = "descriptor was marked dirty earlier, for no reason.";
+  }
   desc_dirty_reason = NULL;
   control_event_my_descriptor_changed();
   return 0;
@@ -2497,6 +2501,9 @@ void
 mark_my_descriptor_dirty(const char *reason)
 {
   const or_options_t *options = get_options();
+  if (BUG(reason == NULL)) {
+    reason = "marked descriptor dirty for unspecified reason";
+  }
   if (server_mode(options) && options->PublishServerDescriptor_)
     log_info(LD_OR, "Decided to publish new relay descriptor: %s", reason);
   desc_clean_since = 0;
@@ -2516,10 +2523,11 @@ check_descriptor_bandwidth_changed(time_t now)
 {
   static time_t last_changed = 0;
   uint64_t prev, cur;
-  if (!router_get_my_routerinfo())
+  const routerinfo_t *my_ri = router_get_my_routerinfo();
+  if (!my_ri) /* make sure routerinfo exists */
     return;
 
-  prev = router_get_my_routerinfo()->bandwidthcapacity;
+  prev = my_ri->bandwidthcapacity;
   cur = we_are_hibernating() ? 0 : rep_hist_bandwidth_assess();
   if ((prev != cur && (!prev || !cur)) ||
       cur > prev*2 ||
@@ -2570,14 +2578,15 @@ check_descriptor_ipaddress_changed(time_t now)
   const or_options_t *options = get_options();
   const char *method = NULL;
   char *hostname = NULL;
+  const routerinfo_t *my_ri = router_get_my_routerinfo();
 
   (void) now;
 
-  if (router_get_my_routerinfo() == NULL)
+  if (my_ri == NULL) /* make sure routerinfo exists */
     return;
 
   /* XXXX ipv6 */
-  prev = router_get_my_routerinfo()->addr;
+  prev = my_ri->addr;
   if (resolve_my_address(LOG_INFO, options, &cur, &method, &hostname) < 0) {
     log_info(LD_CONFIG,"options->Address didn't resolve into an IP.");
     return;
