@@ -550,7 +550,7 @@ libinternal_la_LIBADD = \
 	viewer/libmcviewer.la \
 	$(DIFFLIB) $(EDITLIB) $(SUBSHELLLIB)
 
-mc_LDADD = libinternal.la $(top_builddir)/lib/libmc.la $(am__append_6)
+mc_LDADD = libinternal.la $(top_builddir)/lib/libmc.la $(am__append_6) -lintl
 SRC_mc_conssaver = \
 	cons.handler.c consaver/cons.saver.h
 
