@@ -1,8 +1,55 @@
 #Nmap Changelog ($Id$); -*-text-*-
 
+o [NSE][GH#1251] New script-arg `http.host` allows users to force a particular
+  value for the Host header in all HTTP requests.
+
+o [NSE][GH#1258] Use smtp.domain script arg or target's domain name instead of
+  "example.com" in EHLO command used for STARTTLS. [gwire]
+
+o [NSE][GH#1233] Fix brute.lua's BruteSocket wrapper, which was crashing Nmap
+  with an assertion failure due to socket mixup [Daniel Miller]:
+    nmap: nse_nsock.cc:672: int receive_buf(lua_State*, int, lua_KContext): Assertion `lua_gettop(L) == 7' failed.
+
+o [NSE][GH#1254] Handle an error condition in smb-vuln-ms17-010 caused by IPS
+  closing the connection. [Clément Notin]
+
+o [NSE] https-redirect detects HTTP servers that redirect to the same port, but
+  with HTTPS. Some nginx servers do this, which made ssl-* scripts not run
+  properly. [Daniel Miller]
+
+o [NSE][GH#1236] Added broadcast-jenkins-discover to discover Jenkins servers
+  on a LAN by sending a discovery broadcast probe. [Brendan Coles]
+
+o [NSE][GH#1232] Added broadcast-hid-discoveryd to discover HID devices
+  on a LAN by sending a discoveryd network broadcast probe. [Brendan Coles]
+
+o New service probe and match lines for adb, the Android Debug Bridge, which
+  allows remote code execution and is left enabled by default on many devices.
+  [Daniel Miller]
+
+o [Ncat][GH#1237] Fixed literal IPv6 URL format for connecting through
+  HTTP proxies. [Phil Dibowitz]
+
+o [NSE][GH#1212] Updates vendors from ODVA list for enip-info. [NothinRandom]
+
+o [NSE][GH#1191] Add two common error strings that improve MySQL detection
+  by the script http-sql-injection. [Robert Taylor, Paulino Calderon]
+
+o [NSE][GH#1220] Fix bug in http-vuln-cve2006-3392 that prevented the script to
+  generate the vulnerability report correctly. [rewardone]
+
+o [NSE][GH#1218] Fix bug related to screen rendering in NSE library tn3270. This
+  patch also improves the brute force script tso-brute. [mainframed]
+
+o [NSE][GH#1209] Fix SIP, SASL, and HTTP Digest authentication when the algorithm
+  contains lowercase characters. [Jeswin Mathai]
+
 o [GH#1204] Nmap could be fooled into ignoring TCP response packets if they
   used an unknown TCP Option, which would misalign the validation, causing it
   to fail. [Clément Notin, Daniel Miller]
+
+o [NSE]The HTTP response parser now tolerates status lines without a reason
+  phrase, which improves compatibility with some HTTP servers. [nnposter]
 
 o [NSE][GH#1169][GH#1170][GH#1171]][GH#1198] Parser for HTTP Set-Cookie header
   is now more compliant with RFC 6265:
