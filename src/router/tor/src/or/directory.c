@@ -1811,9 +1811,10 @@ directory_send_command(dir_connection_t *conn,
       tor_assert(payload);
       httpcommand = "POST";
       url = tor_strdup("/tor/");
-      if (why) {
-        smartlist_add_asprintf(headers, "X-Desc-Gen-Reason: %s\r\n", why);
+      if (!why) {
+        why = "for no reason at all";
       }
+      smartlist_add_asprintf(headers, "X-Desc-Gen-Reason: %s\r\n", why);
       break;
     }
     case DIR_PURPOSE_UPLOAD_VOTE:
@@ -3679,6 +3680,7 @@ client_likes_consensus(const struct consensus_cache_entry_t *ent,
   int have = 0;
 
   if (consensus_cache_entry_get_voter_id_digests(ent, voters) != 0) {
+    smartlist_free(voters);
     return 1; // We don't know the voters; assume the client won't mind. */
   }
 

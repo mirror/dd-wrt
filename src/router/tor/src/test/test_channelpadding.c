@@ -701,6 +701,7 @@ test_channelpadding_consensus(void *arg)
   memcpy(relay->identity_digest,
           ((channel_tls_t *)chan)->conn->identity_digest, DIGEST_LEN);
   smartlist_add(current_md_consensus->routerstatus_list, relay);
+  relay = NULL; /* Prevent double-free */
 
   tried_to_write_cell = 0;
   decision = channelpadding_decide_to_pad_channel(chan);
@@ -769,6 +770,8 @@ test_channelpadding_consensus(void *arg)
   tt_i64_op(val, OP_LE, 24*60*60*2);
 
  done:
+  tor_free(relay);
+
   free_mock_consensus();
   free_fake_channeltls((channel_tls_t*)chan);
   smartlist_free(connection_array);

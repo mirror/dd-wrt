@@ -4342,8 +4342,10 @@ handle_control_hspost(control_connection_t *conn,
 
   smartlist_t *args = smartlist_new();
 
-  /* If any SERVER= options were specified, try parse the options line */
-  if (!strcasecmpstart(argline, opt_server)) {
+  /* If any SERVER= or HSADDRESS= options were specified, try to parse
+   * the options line. */
+  if (!strcasecmpstart(argline, opt_server) ||
+      !strcasecmpstart(argline, opt_hsaddress)) {
     /* encoded_desc begins after a newline character */
     cp = cp + 1;
     encoded_desc = cp;
@@ -4366,11 +4368,12 @@ handle_control_hspost(control_connection_t *conn,
           hs_dirs = smartlist_new();
         smartlist_add(hs_dirs, node->rs);
       } else if (!strcasecmpstart(arg, opt_hsaddress)) {
-        if (!hs_address_is_valid(arg)) {
+        const char *address = arg + strlen(opt_hsaddress);
+        if (!hs_address_is_valid(address)) {
           connection_printf_to_buf(conn, "512 Malformed onion address\r\n");
           goto done;
         }
-        onion_address = arg;
+        onion_address = address;
       } else {
         connection_printf_to_buf(conn, "512 Unexpected argument \"%s\"\r\n",
                                  arg);
@@ -4385,6 +4388,8 @@ handle_control_hspost(control_connection_t *conn,
     read_escaped_data(encoded_desc, encoded_desc_len, &desc_str);
     if (hs_control_hspost_command(desc_str, onion_address, hs_dirs) < 0) {
       connection_printf_to_buf(conn, "554 Invalid descriptor\r\n");
+    } else {
+      send_control_done(conn);
     }
     tor_free(desc_str);
     goto done;
@@ -7605,6 +7610,14 @@ control_free_all(void)
     tor_event_free(flush_queued_events_event);
     flush_queued_events_event = NULL;
   }
+  bootstrap_percent = BOOTSTRAP_STATUS_UNDEF;
+  notice_bootstrap_percent = 0;
+  bootstrap_problems = 0;
+  authentication_cookie_is_set = 0;
+  global_event_mask = 0;
+  disable_log_messages = 0;
+  memset(last_sent_bootstrap_message, 0, sizeof(last_sent_bootstrap_message));
+  flush_queued_event_pending = 0;
 }
 
 #ifdef TOR_UNIT_TESTS
@@ -7615,4 +7628,3 @@ control_testing_set_global_event_mask(uint64_t mask)
   global_event_mask = mask;
 }
 #endif /* defined(TOR_UNIT_TESTS) */
-
