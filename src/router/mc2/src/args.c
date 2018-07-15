@@ -1,7 +1,7 @@
 /*
    Handle command line arguments.
 
-   Copyright (C) 2009-2017
+   Copyright (C) 2009-2018
    Free Software Foundation, Inc.
 
    Written by:
@@ -137,7 +137,7 @@ static const GOptionEntry argument_main_table[] = {
      "printwd", 'P', G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_STRING,
      &mc_args__last_wd_file,
      N_("Print last working directory to specified file"),
-     "<file>"
+     N_("<file>")
     },
 
 #ifdef ENABLE_SUBSHELL
@@ -162,7 +162,7 @@ static const GOptionEntry argument_main_table[] = {
      "ftplog", 'l', G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_STRING,
      &mc_args__netfs_logfile,
      N_("Log ftp dialog to specified file"),
-     "<file>"
+     N_("<file>")
     },
 #endif /* ENABLE_VFS_FTP */
 #ifdef ENABLE_VFS_SMB
@@ -170,7 +170,7 @@ static const GOptionEntry argument_main_table[] = {
      "debuglevel", 'D', G_OPTION_FLAG_IN_MAIN, G_OPTION_ARG_INT,
      &mc_args__debug_level,
      N_("Set debug level"),
-     "<integer>"
+     N_("<integer>")
     },
 #endif /* ENABLE_VFS_SMB */
 
@@ -179,7 +179,7 @@ static const GOptionEntry argument_main_table[] = {
      "view", 'v', G_OPTION_FLAG_IN_MAIN | G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_CALLBACK,
      (gpointer) parse_mc_v_argument,
      N_("Launches the file viewer on a file"),
-     "<file>"
+     N_("<file>")
     },
 
     {
@@ -187,7 +187,7 @@ static const GOptionEntry argument_main_table[] = {
      "edit", 'e', G_OPTION_FLAG_IN_MAIN | G_OPTION_FLAG_NO_ARG, G_OPTION_ARG_CALLBACK,
      (gpointer) parse_mc_e_argument,
      N_("Edit files"),
-     "<file> ..." },
+     N_("<file> ...") },
 
     {
      NULL, '\0', 0, 0, NULL, NULL, NULL /* Complete struct initialization */
@@ -264,7 +264,7 @@ static const GOptionEntry argument_terminal_table[] = {
      "keymap", 'K', ARGS_TERM_OPTIONS, G_OPTION_ARG_STRING,
      &mc_args__keymap_file,
      N_("Load definitions of key bindings from specified file"),
-     "<file>"
+     N_("<file>")
     },
 
     {
@@ -306,14 +306,14 @@ static const GOptionEntry argument_color_table[] = {
      "colors", 'C', ARGS_COLOR_OPTIONS, G_OPTION_ARG_STRING,
      &mc_global.tty.command_line_colors,
      N_("Specifies a color configuration"),
-     "<string>"
+     N_("<string>")
     },
 
     {
      "skin", 'S', ARGS_COLOR_OPTIONS, G_OPTION_ARG_STRING,
      &mc_global.tty.skin,
      N_("Show mc with specified skin"),
-     "<string>"
+     N_("<string>")
     },
 
     {
@@ -831,7 +831,7 @@ mc_setup_by_args (int argc, char **argv, GError ** mcerror)
                                 _("Two files are required to envoke the diffviewer."));
             return FALSE;
         }
-        /* fallthrough */
+        MC_FALLTHROUGH;
 #endif /* USE_DIFF_VIEW */
 
     case MC_RUN_FULL:

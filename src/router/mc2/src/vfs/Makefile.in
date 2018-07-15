@@ -131,6 +131,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/ax_path_lib_pcre.m4 \
 	$(top_srcdir)/m4.include/dx_doxygen.m4 \
 	$(top_srcdir)/m4.include/mc-cflags.m4 \
+	$(top_srcdir)/m4.include/ax_gcc_func_attribute.m4 \
 	$(top_srcdir)/m4.include/mc-check-search-type.m4 \
 	$(top_srcdir)/m4.include/mode_t.m4 \
 	$(top_srcdir)/m4.include/stat-size.m4 \
@@ -138,6 +139,8 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/fstypename.m4 \
 	$(top_srcdir)/m4.include/fsusage.m4 \
 	$(top_srcdir)/m4.include/mountlist.m4 \
+	$(top_srcdir)/m4.include/windows-stat-inodes.m4 \
+	$(top_srcdir)/m4.include/sys_types_h.m4 \
 	$(top_srcdir)/m4.include/mc-get-fs-info.m4 \
 	$(top_srcdir)/m4.include/mc-with-x.m4 \
 	$(top_srcdir)/m4.include/mc-use-termcap.m4 \

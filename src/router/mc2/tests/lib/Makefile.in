@@ -87,12 +87,15 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
+@ENABLE_MCLIB_TRUE@am__append_1 = $(GLIB_LIBS)
 TESTS = library_independ$(EXEEXT) mc_build_filename$(EXEEXT) \
 	name_quote$(EXEEXT) serialize$(EXEEXT) \
 	utilunix__my_system_fork_fail$(EXEEXT) \
 	utilunix__my_system_fork_child_shell$(EXEEXT) \
-	utilunix__my_system_fork_child$(EXEEXT) x_basename$(EXEEXT)
-check_PROGRAMS = $(am__EXEEXT_1)
+	utilunix__my_system_fork_child$(EXEEXT) x_basename$(EXEEXT) \
+	$(am__EXEEXT_1)
+@CHARSET_TRUE@am__append_2 = mc_realpath
+check_PROGRAMS = $(am__EXEEXT_2)
 subdir = tests/lib
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
@@ -118,6 +121,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/ax_path_lib_pcre.m4 \
 	$(top_srcdir)/m4.include/dx_doxygen.m4 \
 	$(top_srcdir)/m4.include/mc-cflags.m4 \
+	$(top_srcdir)/m4.include/ax_gcc_func_attribute.m4 \
 	$(top_srcdir)/m4.include/mc-check-search-type.m4 \
 	$(top_srcdir)/m4.include/mode_t.m4 \
 	$(top_srcdir)/m4.include/stat-size.m4 \
@@ -125,6 +129,8 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/fstypename.m4 \
 	$(top_srcdir)/m4.include/fsusage.m4 \
 	$(top_srcdir)/m4.include/mountlist.m4 \
+	$(top_srcdir)/m4.include/windows-stat-inodes.m4 \
+	$(top_srcdir)/m4.include/sys_types_h.m4 \
 	$(top_srcdir)/m4.include/mc-get-fs-info.m4 \
 	$(top_srcdir)/m4.include/mc-with-x.m4 \
 	$(top_srcdir)/m4.include/mc-use-termcap.m4 \
@@ -159,11 +165,13 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-am__EXEEXT_1 = library_independ$(EXEEXT) mc_build_filename$(EXEEXT) \
+@CHARSET_TRUE@am__EXEEXT_1 = mc_realpath$(EXEEXT)
+am__EXEEXT_2 = library_independ$(EXEEXT) mc_build_filename$(EXEEXT) \
 	name_quote$(EXEEXT) serialize$(EXEEXT) \
 	utilunix__my_system_fork_fail$(EXEEXT) \
 	utilunix__my_system_fork_child_shell$(EXEEXT) \
-	utilunix__my_system_fork_child$(EXEEXT) x_basename$(EXEEXT)
+	utilunix__my_system_fork_child$(EXEEXT) x_basename$(EXEEXT) \
+	$(am__EXEEXT_1)
 am_library_independ_OBJECTS = library_independ.$(OBJEXT)
 library_independ_OBJECTS = $(am_library_independ_OBJECTS)
 library_independ_LDADD = $(LDADD)
@@ -174,6 +182,9 @@ am__v_lt_1 =
 am_mc_build_filename_OBJECTS = mc_build_filename.$(OBJEXT)
 mc_build_filename_OBJECTS = $(am_mc_build_filename_OBJECTS)
 mc_build_filename_LDADD = $(LDADD)
+am_mc_realpath_OBJECTS = mc_realpath.$(OBJEXT)
+mc_realpath_OBJECTS = $(am_mc_realpath_OBJECTS)
+mc_realpath_LDADD = $(LDADD)
 am_name_quote_OBJECTS = name_quote.$(OBJEXT)
 name_quote_OBJECTS = $(am_name_quote_OBJECTS)
 name_quote_LDADD = $(LDADD)
@@ -233,13 +244,14 @@ am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = $(library_independ_SOURCES) $(mc_build_filename_SOURCES) \
-	$(name_quote_SOURCES) $(serialize_SOURCES) \
-	$(utilunix__my_system_fork_child_SOURCES) \
+	$(mc_realpath_SOURCES) $(name_quote_SOURCES) \
+	$(serialize_SOURCES) $(utilunix__my_system_fork_child_SOURCES) \
 	$(utilunix__my_system_fork_child_shell_SOURCES) \
 	$(utilunix__my_system_fork_fail_SOURCES) $(x_basename_SOURCES)
 DIST_SOURCES = $(library_independ_SOURCES) \
-	$(mc_build_filename_SOURCES) $(name_quote_SOURCES) \
-	$(serialize_SOURCES) $(utilunix__my_system_fork_child_SOURCES) \
+	$(mc_build_filename_SOURCES) $(mc_realpath_SOURCES) \
+	$(name_quote_SOURCES) $(serialize_SOURCES) \
+	$(utilunix__my_system_fork_child_SOURCES) \
 	$(utilunix__my_system_fork_child_shell_SOURCES) \
 	$(utilunix__my_system_fork_fail_SOURCES) $(x_basename_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
@@ -616,7 +628,7 @@ LIBMULTITHREAD = @LIBMULTITHREAD@
 LIBOBJS = @LIBOBJS@
 LIBPTH = @LIBPTH@
 LIBPTH_PREFIX = @LIBPTH_PREFIX@
-LIBS = @CHECK_LIBS@ $(top_builddir)/lib/libmc.la
+LIBS = @CHECK_LIBS@ $(top_builddir)/lib/libmc.la $(am__append_1)
 LIBSSH_CFLAGS = @LIBSSH_CFLAGS@
 LIBSSH_LIBS = @LIBSSH_LIBS@
 LIBTHREAD = @LIBTHREAD@
@@ -755,6 +767,9 @@ library_independ_SOURCES = \
 mc_build_filename_SOURCES = \
 	mc_build_filename.c
 
+mc_realpath_SOURCES = \
+	mc_realpath.c
+
 name_quote_SOURCES = \
 	name_quote.c
 
@@ -824,6 +839,10 @@ mc_build_filename$(EXEEXT): $(mc_build_filename_OBJECTS) $(mc_build_filename_DEP
 	@rm -f mc_build_filename$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(mc_build_filename_OBJECTS) $(mc_build_filename_LDADD) $(LIBS)
 
+mc_realpath$(EXEEXT): $(mc_realpath_OBJECTS) $(mc_realpath_DEPENDENCIES) $(EXTRA_mc_realpath_DEPENDENCIES) 
+	@rm -f mc_realpath$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mc_realpath_OBJECTS) $(mc_realpath_LDADD) $(LIBS)
+
 name_quote$(EXEEXT): $(name_quote_OBJECTS) $(name_quote_DEPENDENCIES) $(EXTRA_name_quote_DEPENDENCIES) 
 	@rm -f name_quote$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(name_quote_OBJECTS) $(name_quote_LDADD) $(LIBS)
@@ -856,6 +875,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/library_independ.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mc_build_filename.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mc_realpath.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/name_quote.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/serialize.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utilunix__my_system-fork_child.Po@am__quote@
@@ -1182,6 +1202,13 @@ utilunix__my_system_fork_child.log: utilunix__my_system_fork_child$(EXEEXT)
 x_basename.log: x_basename$(EXEEXT)
 	@p='x_basename$(EXEEXT)'; \
 	b='x_basename'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+mc_realpath.log: mc_realpath$(EXEEXT)
+	@p='mc_realpath$(EXEEXT)'; \
+	b='mc_realpath'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

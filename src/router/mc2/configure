@@ -5961,6 +5961,48 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wimplicit-fallthrough" >&5
+$as_echo_n "checking whether ${CC} accepts -Wimplicit-fallthrough... " >&6; }
+
+  safe_CFLAGS=$CFLAGS
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wimplicit-fallthrough"
+      ;;
+    *)
+      CFLAGS="-Wimplicit-fallthrough"
+      ;;
+  esac
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  mc_check_one_cflag=yes
+else
+  mc_check_one_cflag=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+  CFLAGS=$safe_CFLAGS
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $mc_check_one_cflag" >&5
+$as_echo "$mc_check_one_cflag" >&6; }
+
+  if test x$mc_check_one_cflag = xyes; then
+    mc_configured_cflags="$mc_configured_cflags -Wimplicit-fallthrough"
+  fi
+
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wignored-qualifiers" >&5
 $as_echo_n "checking whether ${CC} accepts -Wignored-qualifiers... " >&6; }
 
@@ -7540,6 +7582,57 @@ $as_echo "$mc_check_one_cflag" >&6; }
   fi
 
 fi
+
+
+
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for __attribute__((fallthrough))" >&5
+$as_echo_n "checking for __attribute__((fallthrough))... " >&6; }
+if ${ax_cv_have_func_attribute_fallthrough+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+                    int foo( void ) {switch (0) { case 1: __attribute__((fallthrough)); case 2: break ; }};
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+                                      if test -s conftest.err; then :
+  ax_cv_have_func_attribute_fallthrough=no
+else
+  ax_cv_have_func_attribute_fallthrough=yes
+fi
+else
+  ax_cv_have_func_attribute_fallthrough=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_have_func_attribute_fallthrough" >&5
+$as_echo "$ax_cv_have_func_attribute_fallthrough" >&6; }
+
+    if test yes = $ax_cv_have_func_attribute_fallthrough; then :
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_FUNC_ATTRIBUTE_FALLTHROUGH 1
+_ACEOF
+
+fi
+
+
+
 
 case `pwd` in
   *\ * | *\	*)
@@ -17402,6 +17495,65 @@ else
   as_fn_error $? "Cannot find ncurses library" "$LINENO" 5
 fi
 
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing stdscr" >&5
+$as_echo_n "checking for library containing stdscr... " >&6; }
+if ${ac_cv_search_stdscr+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char stdscr ();
+int
+main ()
+{
+return stdscr ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' tinfo ncurses; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_stdscr=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_stdscr+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_stdscr+:} false; then :
+
+else
+  ac_cv_search_stdscr=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_stdscr" >&5
+$as_echo "$ac_cv_search_stdscr" >&6; }
+ac_res=$ac_cv_search_stdscr
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  MCLIBS="$MCLIBS $LIBS"
+else
+  as_fn_error $? "Cannot find a library providing stdscr" "$LINENO" 5
+fi
+
+
 
         screen_type=ncurses
         screen_msg="NCurses"
@@ -17470,6 +17622,65 @@ $as_echo "$as_me: WARNING: Cannot find ncurses library, that support wide charac
 fi
 
 
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing stdscr" >&5
+$as_echo_n "checking for library containing stdscr... " >&6; }
+if ${ac_cv_search_stdscr+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char stdscr ();
+int
+main ()
+{
+return stdscr ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' tinfow tinfo ncursesw ncurses curses; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_stdscr=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_stdscr+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_stdscr+:} false; then :
+
+else
+  ac_cv_search_stdscr=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_stdscr" >&5
+$as_echo "$ac_cv_search_stdscr" >&6; }
+ac_res=$ac_cv_search_stdscr
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  MCLIBS="$MCLIBS $LIBS"
+else
+  as_fn_error $? "Cannot find a library providing stdscr" "$LINENO" 5
+fi
+
+
         if test x"$ncursesw_found" = "x"; then
             LIBS=
             { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing has_colors" >&5
@@ -17528,6 +17739,64 @@ if test "$ac_res" != no; then :
   MCLIBS="$MCLIBS $LIBS"
 else
   as_fn_error $? "Cannot find ncurses library" "$LINENO" 5
+fi
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing stdscr" >&5
+$as_echo_n "checking for library containing stdscr... " >&6; }
+if ${ac_cv_search_stdscr+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char stdscr ();
+int
+main ()
+{
+return stdscr ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' tinfo ncurses curses; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_stdscr=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_stdscr+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_stdscr+:} false; then :
+
+else
+  ac_cv_search_stdscr=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_stdscr" >&5
+$as_echo "$ac_cv_search_stdscr" >&6; }
+ac_res=$ac_cv_search_stdscr
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  MCLIBS="$MCLIBS $LIBS"
+else
+  as_fn_error $? "Cannot find a library providing stdscr" "$LINENO" 5
 fi
 
         fi
@@ -17669,6 +17938,65 @@ if test "$ac_res" != no; then :
 else
   as_fn_error $? "Cannot find ncursesw library" "$LINENO" 5
 fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing stdscr" >&5
+$as_echo_n "checking for library containing stdscr... " >&6; }
+if ${ac_cv_search_stdscr+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_func_search_save_LIBS=$LIBS
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char stdscr ();
+int
+main ()
+{
+return stdscr ();
+  ;
+  return 0;
+}
+_ACEOF
+for ac_lib in '' tinfow ncursesw; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_stdscr=$ac_res
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext
+  if ${ac_cv_search_stdscr+:} false; then :
+  break
+fi
+done
+if ${ac_cv_search_stdscr+:} false; then :
+
+else
+  ac_cv_search_stdscr=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_stdscr" >&5
+$as_echo "$ac_cv_search_stdscr" >&6; }
+ac_res=$ac_cv_search_stdscr
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+  MCLIBS="$MCLIBS $LIBS"
+else
+  as_fn_error $? "Cannot find a library providing stdscr" "$LINENO" 5
+fi
+
 
 
         ncurses_h_found=
@@ -18747,35 +19075,27 @@ fi
 
 done
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether sys/types.h defines makedev" >&5
-$as_echo_n "checking whether sys/types.h defines makedev... " >&6; }
-if ${ac_cv_header_sys_types_h_makedev+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <sys/types.h>
-int
-main ()
-{
-return makedev(0, 0);
-  ;
-  return 0;
-}
+
+      for ac_header in sys/types.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "sys/types.h" "ac_cv_header_sys_types_h" "$ac_includes_default"
+if test "x$ac_cv_header_sys_types_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_SYS_TYPES_H 1
 _ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_header_sys_types_h_makedev=yes
-else
-  ac_cv_header_sys_types_h_makedev=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
 
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_header_sys_types_h_makedev" >&5
-$as_echo "$ac_cv_header_sys_types_h_makedev" >&6; }
 
-if test $ac_cv_header_sys_types_h_makedev = no; then
+done
+
+
+
+  :
+
+
+
+
+
 ac_fn_c_check_header_mongrel "$LINENO" "sys/mkdev.h" "ac_cv_header_sys_mkdev_h" "$ac_includes_default"
 if test "x$ac_cv_header_sys_mkdev_h" = xyes; then :
 
@@ -18784,9 +19104,8 @@ $as_echo "#define MAJOR_IN_MKDEV 1" >>confdefs.h
 fi
 
 
-
-  if test $ac_cv_header_sys_mkdev_h = no; then
-    ac_fn_c_check_header_mongrel "$LINENO" "sys/sysmacros.h" "ac_cv_header_sys_sysmacros_h" "$ac_includes_default"
+if test $ac_cv_header_sys_mkdev_h = no; then
+  ac_fn_c_check_header_mongrel "$LINENO" "sys/sysmacros.h" "ac_cv_header_sys_sysmacros_h" "$ac_includes_default"
 if test "x$ac_cv_header_sys_sysmacros_h" = xyes; then :
 
 $as_echo "#define MAJOR_IN_SYSMACROS 1" >>confdefs.h
@@ -18794,7 +19113,6 @@ $as_echo "#define MAJOR_IN_SYSMACROS 1" >>confdefs.h
 fi
 
 
-  fi
 fi
 
 
@@ -21712,23 +22030,6 @@ $as_echo "#define STAT_STATFS2_FS_DATA 1" >>confdefs.h
   fi
 fi
 
-if test $ac_fsusage_space = no; then
-  # SVR2
-  # (AIX, HP-UX, OSF/1 already handled above.)
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <sys/filsys.h>
-
-_ACEOF
-if ac_fn_c_try_cpp "$LINENO"; then :
-
-$as_echo "#define STAT_READ_FILSYS 1" >>confdefs.h
-
-     ac_fsusage_space=yes
-fi
-rm -f conftest.err conftest.i conftest.$ac_ext
-fi
-
 if test $ac_fsusage_space = yes; then :
   gl_cv_fs_space=yes
 else
@@ -21739,7 +22040,7 @@ fi
 
     if test $gl_cv_fs_space = yes; then
 
-  for ac_header in dustat.h sys/fs/s5param.h sys/filsys.h sys/statfs.h
+  for ac_header in dustat.h sys/fs/s5param.h sys/statfs.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"

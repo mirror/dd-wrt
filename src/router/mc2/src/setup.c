@@ -1,7 +1,7 @@
 /*
    Setup loading/saving.
 
-   Copyright (C) 1994-2017
+   Copyright (C) 1994-2018
    Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -87,6 +87,8 @@ gboolean boot_current_is_left = TRUE;
 
 /* If on, default for "No" in delete operations */
 gboolean safe_delete = FALSE;
+/* If on, default for "No" in overwrite files */
+gboolean safe_overwrite = FALSE;
 
 /* Controls screen clearing before an exec */
 gboolean clear_before_exec = TRUE;
@@ -293,6 +295,7 @@ static const struct
     { "confirm_directory_hotlist_delete", &confirm_directory_hotlist_delete },
     { "confirm_view_dir", &confirm_view_dir },
     { "safe_delete", &safe_delete },
+    { "safe_overwrite", &safe_overwrite },
 #ifndef HAVE_CHARSET
     { "eight_bit_clean", &mc_global.eight_bit_clean },
     { "full_eight_bits", &mc_global.full_eight_bits },
@@ -302,7 +305,7 @@ static const struct
     { "mouse_close_dialog", &mouse_close_dialog},
     { "fast_refresh", &fast_refresh },
     { "drop_menus", &drop_menus },
-    { "wrap_mode",  &mcview_global_wrap_mode },
+    { "wrap_mode",  &mcview_global_flags.wrap },
     { "old_esc_mode", &old_esc_mode },
     { "cd_symlinks", &mc_global.vfs.cd_symlinks },
     { "show_all_if_ambiguous", &mc_global.widget.show_all_if_ambiguous },
@@ -1456,12 +1459,13 @@ panel_load_setup (WPanel * panel, const char *section)
     size_t i;
     char *buffer, buffer2[BUF_TINY];
 
-    panel->sort_info.reverse = mc_config_get_int (mc_global.panels_config, section, "reverse", 0);
+    panel->sort_info.reverse =
+        mc_config_get_bool (mc_global.panels_config, section, "reverse", FALSE);
     panel->sort_info.case_sensitive =
-        mc_config_get_int (mc_global.panels_config, section, "case_sensitive",
-                           OS_SORT_CASE_SENSITIVE_DEFAULT);
+        mc_config_get_bool (mc_global.panels_config, section, "case_sensitive",
+                            OS_SORT_CASE_SENSITIVE_DEFAULT);
     panel->sort_info.exec_first =
-        mc_config_get_int (mc_global.panels_config, section, "exec_first", 0);
+        mc_config_get_bool (mc_global.panels_config, section, "exec_first", FALSE);
 
     /* Load sort order */
     buffer = mc_config_get_string (mc_global.panels_config, section, "sort_order", "name");
@@ -1514,10 +1518,11 @@ panel_save_setup (WPanel * panel, const char *section)
     char buffer[BUF_TINY];
     size_t i;
 
-    mc_config_set_int (mc_global.panels_config, section, "reverse", panel->sort_info.reverse);
-    mc_config_set_int (mc_global.panels_config, section, "case_sensitive",
-                       panel->sort_info.case_sensitive);
-    mc_config_set_int (mc_global.panels_config, section, "exec_first", panel->sort_info.exec_first);
+    mc_config_set_bool (mc_global.panels_config, section, "reverse", panel->sort_info.reverse);
+    mc_config_set_bool (mc_global.panels_config, section, "case_sensitive",
+                        panel->sort_info.case_sensitive);
+    mc_config_set_bool (mc_global.panels_config, section, "exec_first",
+                        panel->sort_info.exec_first);
 
     mc_config_set_string (mc_global.panels_config, section, "sort_order", panel->sort_field->id);
 

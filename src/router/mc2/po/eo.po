@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the mc package.
 #
 # Translators:
-# Keith Bowes <zooplah@gmail.com>, 2011,2016
+# Keith Bowes <zooplah@gmail.com>, 2011,2016,2018
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2017-11-25 19:35+0100\n"
-"PO-Revision-Date: 2017-09-19 09:16+0000\n"
-"Last-Translator: Keith Bowes <zooplah@gmail.com>\n"
+"POT-Creation-Date: 2018-06-03 11:03+0200\n"
+"PO-Revision-Date: 2018-04-30 12:37+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Esperanto (http://www.transifex.com/mc/mc/language/eo/)\n"
 "Language: eo\n"
 "MIME-Version: 1.0\n"
@@ -659,6 +659,9 @@ msgstr "Eligi muntajn agordaĵojn"
 msgid "Print last working directory to specified file"
 msgstr "Eligi lastan labordosierujon al specifan dosieron"
 
+msgid "<file>"
+msgstr "<dosieron>"
+
 msgid "Enables subshell support (default)"
 msgstr "Aktivigi subŝelon (apriore)"
 
@@ -671,11 +674,17 @@ msgstr "Protokoli FTP-dialogon al specifa dosiero"
 msgid "Set debug level"
 msgstr "Specifi senerarigan nivelon"
 
+msgid "<integer>"
+msgstr "<entjero>"
+
 msgid "Launches the file viewer on a file"
 msgstr "Plenumigi la dosiero-legilon je la dosiero"
 
 msgid "Edit files"
 msgstr "Redakti dosierojn"
+
+msgid "<file> ..."
+msgstr "<dosiero> …"
 
 msgid "Forces xterm features"
 msgstr "Devigi xterm-trajtojn"
@@ -715,6 +724,9 @@ msgstr "Peti plenumiĝi bunte"
 
 msgid "Specifies a color configuration"
 msgstr "Specifi koloran agordon"
+
+msgid "<string>"
+msgstr "<ĉeno>"
 
 msgid "Show mc with specified skin"
 msgstr "Montri kun specifa etoso"
@@ -1640,10 +1652,8 @@ msgstr ""
 "Afabla tekstoredaktilo\n"
 "verkita por Midnight Commander."
 
-msgid "Copyright (C) 1996-2016 the Free Software Foundation"
+msgid "Copyright (C) 1996-2018 the Free Software Foundation"
 msgstr ""
-"Kopirajto © 1996–2016 Free Software Foundation (Fondaĵo pri liberaj "
-"programoj)"
 
 msgid "About"
 msgstr "Pri"
@@ -1830,6 +1840,15 @@ msgstr ""
 "Ne eblas ŝanĝi permesojn de \"%s\"\n"
 "%s"
 
+msgid "&Ignore"
+msgstr "&Ignori"
+
+msgid "Ignore &all"
+msgstr "Ignori ĉio&n"
+
+msgid "&Retry"
+msgstr "&Reprovi"
+
 #, c-format
 msgid ""
 "Cannot chown \"%s\"\n"
@@ -1921,6 +1940,9 @@ msgstr "Dosieruja ŝanĝo sek&vas ligilojn"
 
 msgid "Sa&fe delete"
 msgstr "Sendanĝera &forigo"
+
+msgid "Safe overwrite"
+msgstr ""
 
 msgid "A&uto save setup"
 msgstr "Aŭtomate konservi agor&don"
@@ -2525,11 +2547,32 @@ msgstr ""
 "Ne eblas krei celan molan ligilon \"%s\"\n"
 "%s"
 
+#, c-format
+msgid ""
+"\"%s\"\n"
+"and\n"
+"\"%s\"\n"
+"are the same directory"
+msgstr ""
+"\"%s\"\n"
+"kaj\n"
+"\"%s\"\n"
+"estas la sama dosierujo"
+
+#, c-format
+msgid ""
+"\"%s\"\n"
+"and\n"
+"\"%s\"\n"
+"are the same file"
+msgstr ""
+"\"%s\"\n"
+"kaj\n"
+"\"%s\"\n"
+"estas la sama dosiero"
+
 msgid "Ski&p all"
 msgstr "Preter&lasi ĉion"
-
-msgid "&Retry"
-msgstr "&Reprovi"
 
 #, c-format
 msgid ""
@@ -2554,23 +2597,19 @@ msgstr "Neni&o"
 
 #, c-format
 msgid ""
+"Cannot remove file \"%s\"\n"
+"%s"
+msgstr ""
+"Ne eblas forigi dosieron \"%s\"\n"
+"%s"
+
+#, c-format
+msgid ""
 "Cannot stat file \"%s\"\n"
 "%s"
 msgstr ""
 "Ne eblas trovi dosieron \"%s\n"
 "%s"
-
-#, c-format
-msgid ""
-"\"%s\"\n"
-"and\n"
-"\"%s\"\n"
-"are the same file"
-msgstr ""
-"\"%s\"\n"
-"kaj\n"
-"\"%s\"\n"
-"estas la sama dosiero"
 
 #, c-format
 msgid "Cannot overwrite directory \"%s\""
@@ -2582,22 +2621,6 @@ msgid ""
 "%s"
 msgstr ""
 "Ne eblas movi dosieron \"%s\" al \"%s\"\n"
-"%s"
-
-#, c-format
-msgid ""
-"Cannot remove file \"%s\"\n"
-"%s"
-msgstr ""
-"Ne eblas forigi dosieron \"%s\"\n"
-"%s"
-
-#, c-format
-msgid ""
-"Cannot delete file \"%s\"\n"
-"%s"
-msgstr ""
-"Ne eblas forigi dosieron \"%s\"\n"
 "%s"
 
 #, c-format
@@ -2615,6 +2638,25 @@ msgid ""
 msgstr ""
 "Ne eblas anstataŭigi dosierujon \"%s\"\n"
 "%s"
+
+#, c-format
+msgid ""
+"Cannot overwrite file \"%s\"\n"
+"%s"
+msgstr ""
+"Ne eblas anstataŭigi dosieron \"%s\"\n"
+"%s"
+
+#, c-format
+msgid ""
+"Cannot move directory \"%s\" to \"%s\"\n"
+"%s"
+msgstr ""
+"Ne eblas movi dosierujon \"%s\" al \"%s\"\n"
+"%s"
+
+msgid "Cannot operate on \"..\"!"
+msgstr "Ne eblas operacii je \"..\"!"
 
 #, c-format
 msgid ""
@@ -2781,39 +2823,8 @@ msgstr ""
 "%s"
 
 #, c-format
-msgid ""
-"\"%s\"\n"
-"and\n"
-"\"%s\"\n"
-"are the same directory"
-msgstr ""
-"\"%s\"\n"
-"kaj\n"
-"\"%s\"\n"
-"estas la sama dosierujo"
-
-#, c-format
-msgid ""
-"Cannot overwrite file \"%s\"\n"
-"%s"
-msgstr ""
-"Ne eblas anstataŭigi dosieron \"%s\"\n"
-"%s"
-
-#, c-format
-msgid ""
-"Cannot move directory \"%s\" to \"%s\"\n"
-"%s"
-msgstr ""
-"Ne eblas movi dosierujon \"%s\" al \"%s\"\n"
-"%s"
-
-#, c-format
 msgid "Directories: %zu, total size: %s"
 msgstr "Dosierujoj: %zu, ĉioma grando: %s"
-
-msgid "Cannot operate on \"..\"!"
-msgstr "Ne eblas operacii je \"..\"!"
 
 msgid "Sorry, I could not put the job in background"
 msgstr "Bedaŭrinde mi ne povis meti la taskon en la fonon"
@@ -4227,6 +4238,10 @@ msgstr "sftp: Malsukcesis starigi SSH-seancon"
 
 msgid "sftp: No file handler data present for reading file"
 msgstr "sftp: Neniu dosiertraktila datumo ĉeestas por legi dosieron"
+
+#, c-format
+msgid "sftp: socket error: %s"
+msgstr "sftp: kontaktoskatola eraro: %s"
 
 #, c-format
 msgid "sftp: (Ctrl-G break) Listing... %s"

@@ -78,6 +78,7 @@ src/vfs/sfs/sfs.c
 src/vfs/sftpfs/config_parser.c
 src/vfs/sftpfs/connection.c
 src/vfs/sftpfs/file.c
+src/vfs/sftpfs/internal.c
 src/vfs/sftpfs/vfs_class.c
 src/vfs/sftpfs/vfs_subclass.c
 src/vfs/smbfs/smbfs.c

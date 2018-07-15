@@ -14,9 +14,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2017-11-25 19:35+0100\n"
-"PO-Revision-Date: 2017-11-18 18:04+0000\n"
-"Last-Translator: Yury V. Zaytsev <yury@shurup.com>\n"
+"POT-Creation-Date: 2018-06-03 11:03+0200\n"
+"PO-Revision-Date: 2018-04-30 12:37+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Dutch (http://www.transifex.com/mc/mc/language/nl/)\n"
 "Language: nl\n"
 "MIME-Version: 1.0\n"
@@ -664,6 +664,9 @@ msgstr "Toon instellingsopties"
 msgid "Print last working directory to specified file"
 msgstr "Werkmap wegschrijven in bestand bij afsluiten programma"
 
+msgid "<file>"
+msgstr ""
+
 msgid "Enables subshell support (default)"
 msgstr "Zet subshell-ondersteuning aan (standaard)"
 
@@ -676,11 +679,17 @@ msgstr "Schrijf FTP log naar aangegeven bestand"
 msgid "Set debug level"
 msgstr "Debugniveau instellen"
 
+msgid "<integer>"
+msgstr ""
+
 msgid "Launches the file viewer on a file"
 msgstr "Start de bestandviewer voor een bestand"
 
 msgid "Edit files"
 msgstr "Bewerk bestanden"
+
+msgid "<file> ..."
+msgstr ""
 
 msgid "Forces xterm features"
 msgstr "Dwingt xterm features"
@@ -720,6 +729,9 @@ msgstr "Vraag om de kleurenmodus te gebruiken"
 
 msgid "Specifies a color configuration"
 msgstr "Geef een kleurconfiguratie aan"
+
+msgid "<string>"
+msgstr ""
 
 msgid "Show mc with specified skin"
 msgstr "Laad mc met aangegeven skin"
@@ -1639,8 +1651,8 @@ msgstr ""
 "Eeen gebruikersvriendelijke tekstbewerker\n"
 "geschreven voor de Midnight Commander"
 
-msgid "Copyright (C) 1996-2016 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2016 the Free Software Foundation"
+msgid "Copyright (C) 1996-2018 the Free Software Foundation"
+msgstr ""
 
 msgid "About"
 msgstr "Over"
@@ -1827,6 +1839,15 @@ msgstr ""
 "chmod \"%s\" mislukt \n"
 "%s"
 
+msgid "&Ignore"
+msgstr ""
+
+msgid "Ignore &all"
+msgstr ""
+
+msgid "&Retry"
+msgstr "&Nogmaals"
+
 #, c-format
 msgid ""
 "Cannot chown \"%s\"\n"
@@ -1918,6 +1939,9 @@ msgstr "cd volgt lin&ks"
 
 msgid "Sa&fe delete"
 msgstr "Veili&g verwijderen"
+
+msgid "Safe overwrite"
+msgstr ""
 
 msgid "A&uto save setup"
 msgstr "A&utomatisch instellingen opslaan"
@@ -2525,11 +2549,32 @@ msgstr ""
 "Maken van doel van symbolische link \"%s\" mislukt \n"
 "%s "
 
+#, c-format
+msgid ""
+"\"%s\"\n"
+"and\n"
+"\"%s\"\n"
+"are the same directory"
+msgstr ""
+"\"%s\"\n"
+"en \n"
+"\"%s\" \n"
+"zijn dezelfde map "
+
+#, c-format
+msgid ""
+"\"%s\"\n"
+"and\n"
+"\"%s\"\n"
+"are the same file"
+msgstr ""
+"`%s' \n"
+"en \n"
+"`%s' \n"
+"zijn hetzelfde bestand "
+
 msgid "Ski&p all"
 msgstr "Alles ove&rslaan"
-
-msgid "&Retry"
-msgstr "&Nogmaals"
 
 #, c-format
 msgid ""
@@ -2554,23 +2599,19 @@ msgstr "Ge&en"
 
 #, c-format
 msgid ""
+"Cannot remove file \"%s\"\n"
+"%s"
+msgstr ""
+"Verwijderen van bestand \"%s\" mislukt \n"
+"%s"
+
+#, c-format
+msgid ""
 "Cannot stat file \"%s\"\n"
 "%s"
 msgstr ""
 "Bestand \"%s\" kan niet geïnspecteerd worden \n"
 "%s "
-
-#, c-format
-msgid ""
-"\"%s\"\n"
-"and\n"
-"\"%s\"\n"
-"are the same file"
-msgstr ""
-"`%s' \n"
-"en \n"
-"`%s' \n"
-"zijn hetzelfde bestand "
 
 #, c-format
 msgid "Cannot overwrite directory \"%s\""
@@ -2582,22 +2623,6 @@ msgid ""
 "%s"
 msgstr ""
 "Verplaatsen van \"%s\" naar \"%s\" mislukt \n"
-"%s"
-
-#, c-format
-msgid ""
-"Cannot remove file \"%s\"\n"
-"%s"
-msgstr ""
-"Verwijderen van bestand \"%s\" mislukt \n"
-"%s"
-
-#, c-format
-msgid ""
-"Cannot delete file \"%s\"\n"
-"%s"
-msgstr ""
-"Verwijderen van bestand \"%s\" mislukt \n"
 "%s"
 
 #, c-format
@@ -2615,6 +2640,25 @@ msgid ""
 msgstr ""
 "Map \"%s\" kan niet overschreven worden \n"
 "%s "
+
+#, c-format
+msgid ""
+"Cannot overwrite file \"%s\"\n"
+"%s"
+msgstr ""
+"Kan bestand \"%s\" niet overschrijven\n"
+"%s "
+
+#, c-format
+msgid ""
+"Cannot move directory \"%s\" to \"%s\"\n"
+"%s"
+msgstr ""
+"Kan map  \"%s\" niet naar \"%s\" verplaatsen \n"
+"%s "
+
+msgid "Cannot operate on \"..\"!"
+msgstr "Opereren op \"..\" is niet mogelijk! "
 
 #, c-format
 msgid ""
@@ -2781,39 +2825,8 @@ msgstr ""
 "%s "
 
 #, c-format
-msgid ""
-"\"%s\"\n"
-"and\n"
-"\"%s\"\n"
-"are the same directory"
-msgstr ""
-"\"%s\"\n"
-"en \n"
-"\"%s\" \n"
-"zijn dezelfde map "
-
-#, c-format
-msgid ""
-"Cannot overwrite file \"%s\"\n"
-"%s"
-msgstr ""
-"Kan bestand \"%s\" niet overschrijven\n"
-"%s "
-
-#, c-format
-msgid ""
-"Cannot move directory \"%s\" to \"%s\"\n"
-"%s"
-msgstr ""
-"Kan map  \"%s\" niet naar \"%s\" verplaatsen \n"
-"%s "
-
-#, c-format
 msgid "Directories: %zu, total size: %s"
 msgstr "Directories: %zu, totale grootte: %s"
-
-msgid "Cannot operate on \"..\"!"
-msgstr "Opereren op \"..\" is niet mogelijk! "
 
 msgid "Sorry, I could not put the job in background"
 msgstr "Sorry, de taak kon niet in de achtergrond geplaatst worden"
@@ -4230,6 +4243,10 @@ msgstr "sftp: SHH-sessie openen is niet gelukt"
 
 msgid "sftp: No file handler data present for reading file"
 msgstr "sftp: Geen gegevens over bestand aanwezig om bestand te kunnen lezen"
+
+#, c-format
+msgid "sftp: socket error: %s"
+msgstr ""
 
 #, c-format
 msgid "sftp: (Ctrl-G break) Listing... %s"

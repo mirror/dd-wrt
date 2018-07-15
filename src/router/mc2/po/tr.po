@@ -13,9 +13,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2017-11-25 19:35+0100\n"
-"PO-Revision-Date: 2017-11-05 02:24+0000\n"
-"Last-Translator: yusuf <yusuf.aydemir@pisilinux.org>\n"
+"POT-Creation-Date: 2018-06-03 11:03+0200\n"
+"PO-Revision-Date: 2018-04-30 12:37+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Turkish (http://www.transifex.com/mc/mc/language/tr/)\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
@@ -656,6 +656,9 @@ msgstr "Yazdırma yapılandırma seçenekleri"
 msgid "Print last working directory to specified file"
 msgstr "Belirlenen dosyaya son çalışılan dizini yaz"
 
+msgid "<file>"
+msgstr ""
+
 msgid "Enables subshell support (default)"
 msgstr "Altkabuk desteğini etkinleştirir (öntanımlı)"
 
@@ -668,11 +671,17 @@ msgstr "ftp dialog günlüğünü belirtilen dosyaya yazar"
 msgid "Set debug level"
 msgstr "Hata ayıklama seviyesini ayarla"
 
+msgid "<integer>"
+msgstr ""
+
 msgid "Launches the file viewer on a file"
 msgstr "Bir dosyayı dosya göstericide açar"
 
 msgid "Edit files"
 msgstr "Dosyasyaları düzenle"
+
+msgid "<file> ..."
+msgstr ""
 
 msgid "Forces xterm features"
 msgstr "xterm özelliklerini etkinleştirir"
@@ -712,6 +721,9 @@ msgstr "Renkli kipte çalıştırma isteği"
 
 msgid "Specifies a color configuration"
 msgstr "Bir renk yapılandırması belirtir"
+
+msgid "<string>"
+msgstr ""
 
 msgid "Show mc with specified skin"
 msgstr "Mc'yi belirtilen önyüz ile göster"
@@ -1638,8 +1650,8 @@ msgstr ""
 "Kullanıcı dostu bir metin düzenleyici\n"
 "Midnight Commander için yazıldı"
 
-msgid "Copyright (C) 1996-2016 the Free Software Foundation"
-msgstr "Telif hakkı (C) 1996-2016 Özgür Yazılım Vakfı"
+msgid "Copyright (C) 1996-2018 the Free Software Foundation"
+msgstr ""
 
 msgid "About"
 msgstr "Hakkında"
@@ -1828,6 +1840,15 @@ msgstr ""
 "chmod \"%s\" yapılamadı \n"
 " %s"
 
+msgid "&Ignore"
+msgstr ""
+
+msgid "Ignore &all"
+msgstr ""
+
+msgid "&Retry"
+msgstr "&Tekrar"
+
 #, c-format
 msgid ""
 "Cannot chown \"%s\"\n"
@@ -1919,6 +1940,9 @@ msgstr "cd &Bağları izler"
 
 msgid "Sa&fe delete"
 msgstr "güvenilir si&lme"
+
+msgid "Safe overwrite"
+msgstr ""
 
 msgid "A&uto save setup"
 msgstr "&Ayarları otomatik kaydet"
@@ -2523,11 +2547,32 @@ msgstr ""
 "Hedef sembolik bağ \"%s\" oluşturulamıyor \n"
 " %s"
 
+#, c-format
+msgid ""
+"\"%s\"\n"
+"and\n"
+"\"%s\"\n"
+"are the same directory"
+msgstr ""
+"\"%s\"\n"
+"ve\n"
+"\"%s\"\n"
+"aynı dizin"
+
+#, c-format
+msgid ""
+"\"%s\"\n"
+"and\n"
+"\"%s\"\n"
+"are the same file"
+msgstr ""
+"\"%s\"\n"
+"ve \n"
+"\"%s\"\n"
+"aynı dosya"
+
 msgid "Ski&p all"
 msgstr "Tümünü atla"
-
-msgid "&Retry"
-msgstr "&Tekrar"
 
 #, c-format
 msgid ""
@@ -2552,23 +2597,19 @@ msgstr "&hiçbiri"
 
 #, c-format
 msgid ""
+"Cannot remove file \"%s\"\n"
+"%s"
+msgstr ""
+"\"%s\" dosyası silinemiyor \n"
+" %s"
+
+#, c-format
+msgid ""
 "Cannot stat file \"%s\"\n"
 "%s"
 msgstr ""
 "\"%s\" dosyası durumlanamıyor \n"
 " %s"
-
-#, c-format
-msgid ""
-"\"%s\"\n"
-"and\n"
-"\"%s\"\n"
-"are the same file"
-msgstr ""
-"\"%s\"\n"
-"ve \n"
-"\"%s\"\n"
-"aynı dosya"
 
 #, c-format
 msgid "Cannot overwrite directory \"%s\""
@@ -2580,22 +2621,6 @@ msgid ""
 "%s"
 msgstr ""
 "\"%s\" dosyası \"%s\" e taşınamıyor \n"
-" %s"
-
-#, c-format
-msgid ""
-"Cannot remove file \"%s\"\n"
-"%s"
-msgstr ""
-"\"%s\" dosyası silinemiyor \n"
-" %s"
-
-#, c-format
-msgid ""
-"Cannot delete file \"%s\"\n"
-"%s"
-msgstr ""
-"\"%s\" dosyası silinemiyor \n"
 " %s"
 
 #, c-format
@@ -2613,6 +2638,25 @@ msgid ""
 msgstr ""
 "\"%s\" dizininin üstüne yazılamıyor \n"
 "%s"
+
+#, c-format
+msgid ""
+"Cannot overwrite file \"%s\"\n"
+"%s"
+msgstr ""
+"\"%s\" dosyasının üstüne yazılamadı\n"
+"%s"
+
+#, c-format
+msgid ""
+"Cannot move directory \"%s\" to \"%s\"\n"
+"%s"
+msgstr ""
+"\"%s\" dizini \"%s\"e taşınamıyor \n"
+" %s"
+
+msgid "Cannot operate on \"..\"!"
+msgstr "\"..\" üzerinde işlem yapılamıyor!"
 
 #, c-format
 msgid ""
@@ -2779,39 +2823,8 @@ msgstr ""
 " %s"
 
 #, c-format
-msgid ""
-"\"%s\"\n"
-"and\n"
-"\"%s\"\n"
-"are the same directory"
-msgstr ""
-"\"%s\"\n"
-"ve\n"
-"\"%s\"\n"
-"aynı dizin"
-
-#, c-format
-msgid ""
-"Cannot overwrite file \"%s\"\n"
-"%s"
-msgstr ""
-"\"%s\" dosyasının üstüne yazılamadı\n"
-"%s"
-
-#, c-format
-msgid ""
-"Cannot move directory \"%s\" to \"%s\"\n"
-"%s"
-msgstr ""
-"\"%s\" dizini \"%s\"e taşınamıyor \n"
-" %s"
-
-#, c-format
 msgid "Directories: %zu, total size: %s"
 msgstr "Dizinler:%zu, toplam boyut:%s"
-
-msgid "Cannot operate on \"..\"!"
-msgstr "\"..\" üzerinde işlem yapılamıyor!"
 
 msgid "Sorry, I could not put the job in background"
 msgstr "İş artalana konulamadı"
@@ -4226,6 +4239,10 @@ msgstr "stp: SSH oturumu kurarken hata oluştu"
 
 msgid "sftp: No file handler data present for reading file"
 msgstr "sftp: Dosya okumak için hiç dosya işleyici verisi mevcut değil "
+
+#, c-format
+msgid "sftp: socket error: %s"
+msgstr ""
 
 #, c-format
 msgid "sftp: (Ctrl-G break) Listing... %s"

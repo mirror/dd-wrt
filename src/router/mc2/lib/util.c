@@ -1,7 +1,7 @@
 /*
    Various utilities
 
-   Copyright (C) 1994-2017
+   Copyright (C) 1994-2018
    Free Software Foundation, Inc.
 
    Written by:
@@ -383,7 +383,9 @@ size_trunc_sep (uintmax_t size, gboolean use_si)
     p += strlen (p) - 1;
     d = x + sizeof (x) - 1;
     *d-- = '\0';
-    while (p >= y && (isalpha ((unsigned char) *p) || (unsigned char) *p == ' '))
+    /* @size format is "size unit", i.e. "[digits][space][letters]".
+       Copy all charactes after digits. */
+    while (p >= y && !g_ascii_isdigit (*p))
         *d-- = *p--;
     for (count = 0; p >= y; count++)
     {
@@ -891,6 +893,9 @@ get_compression_type (int fd, const char *name)
         && magic[2] == 0x7A && magic[3] == 0x58 && magic[4] == 0x5A && magic[5] == 0x00)
         return COMPRESSION_XZ;
 
+    if (magic[0] == 0x28 && magic[1] == 0xB5 && magic[2] == 0x2F && magic[3] == 0xFD)
+        return COMPRESSION_ZSTD;
+
     str_len = strlen (name);
     /* HACK: we must belive to extension of LZMA file :) ... */
     if ((str_len > 5 && strcmp (&name[str_len - 5], ".lzma") == 0) ||
@@ -921,6 +926,8 @@ decompress_extension (int type)
         return "/ulzma" VFS_PATH_URL_DELIMITER;
     case COMPRESSION_XZ:
         return "/uxz" VFS_PATH_URL_DELIMITER;
+    case COMPRESSION_ZSTD:
+        return "/uzst" VFS_PATH_URL_DELIMITER;
     default:
         break;
     }

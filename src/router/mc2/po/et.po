@@ -3,13 +3,13 @@
 # This file is distributed under the same license as the mc package.
 #
 # Translators:
-# Kristjan Räts <kristjanrats@gmail.com>, 2013-2016
+# Kristjan Räts <kristjanrats@gmail.com>, 2013-2016,2018
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2017-11-25 19:35+0100\n"
-"PO-Revision-Date: 2017-09-19 18:39+0000\n"
+"POT-Creation-Date: 2018-06-03 11:03+0200\n"
+"PO-Revision-Date: 2018-04-30 12:37+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Estonian (http://www.transifex.com/mc/mc/language/et/)\n"
 "Language: et\n"
@@ -103,18 +103,22 @@ msgid ""
 "Number out of range (should be in byte range, 0 <= n <= 0xFF, expressed in "
 "hex)"
 msgstr ""
+"Väärtus ei ole oodatud vahemikus (peab olema baidi vahemikus 0x00 <= x <= "
+"0xFF, kirjutatud 16-süsteemis)"
 
 msgid "Invalid character"
-msgstr ""
+msgstr "Vigane märk"
 
 msgid "Unmatched quotes character"
-msgstr ""
+msgstr "Paariliseta jutumärk"
 
 #, c-format
 msgid ""
 "Hex pattern error at position %d:\n"
 "%s."
 msgstr ""
+"16-numbri mustri viga kohal %d:\n"
+"%s."
 
 msgid "Search string not found"
 msgstr "Otsitavat stringi ei leitud"
@@ -656,6 +660,9 @@ msgstr "Trüki häälestuse suvandid"
 msgid "Print last working directory to specified file"
 msgstr "Väljasta viimane töökataloog määratud faili"
 
+msgid "<file>"
+msgstr "<file>"
+
 msgid "Enables subshell support (default)"
 msgstr "Lubab alamkesta toe (vaikimisi)"
 
@@ -668,11 +675,17 @@ msgstr "Logi FTP dialoog määratud faili"
 msgid "Set debug level"
 msgstr "Määra silumistase"
 
+msgid "<integer>"
+msgstr "<integer>"
+
 msgid "Launches the file viewer on a file"
 msgstr "Käivitab failivaaturi failile"
 
 msgid "Edit files"
 msgstr "Muuda faile"
+
+msgid "<file> ..."
+msgstr "<file> ..."
 
 msgid "Forces xterm features"
 msgstr "Sunnib xterm'i tunnused"
@@ -712,6 +725,9 @@ msgstr "Nõuab värvide kasutamist"
 
 msgid "Specifies a color configuration"
 msgstr "Määrab värvide seadistuse"
+
+msgid "<string>"
+msgstr "<string>"
 
 msgid "Show mc with specified skin"
 msgstr "Kuva mc määratud nahaga"
@@ -785,13 +801,13 @@ msgid "Color options"
 msgstr "Värvi suvandid"
 
 msgid "[+lineno] file1[:lineno] [file2[:lineno]...]"
-msgstr ""
+msgstr "[+reanr] fail1[:reanr] [fail2[:reanr]...]"
 
 msgid "file"
 msgstr "fail"
 
 msgid "file1 file2"
-msgstr ""
+msgstr "fail1 fail2"
 
 msgid "[this_dir] [other_panel_dir]"
 msgstr "[this_dir] [other_panel_dir]"
@@ -1635,8 +1651,8 @@ msgstr ""
 "Kasutajasõbralik tekstitoimeti, mis\n"
 "on loodud Midnight Commanderile."
 
-msgid "Copyright (C) 1996-2016 the Free Software Foundation"
-msgstr "Autoriõigus (C) 1996-2016 Free Software Foundation"
+msgid "Copyright (C) 1996-2018 the Free Software Foundation"
+msgstr ""
 
 msgid "About"
 msgstr "Programmist"
@@ -1822,6 +1838,15 @@ msgstr ""
 "\"%s\" õiguste muutmine nurjus\n"
 "%s"
 
+msgid "&Ignore"
+msgstr "E&ira"
+
+msgid "Ignore &all"
+msgstr "Eira &kõiki"
+
+msgid "&Retry"
+msgstr "&Proovi uuesti"
+
 #, c-format
 msgid ""
 "Cannot chown \"%s\"\n"
@@ -1913,6 +1938,9 @@ msgstr "&Järgi kataloogide nimeviitu"
 
 msgid "Sa&fe delete"
 msgstr "&Kindel kustutamine"
+
+msgid "Safe overwrite"
+msgstr ""
 
 msgid "A&uto save setup"
 msgstr "Seadete a&utomaatsalvestus"
@@ -2024,7 +2052,7 @@ msgid "User &mini status"
 msgstr "Kasutaja &mini info"
 
 msgid "Listing format"
-msgstr ""
+msgstr "Loendi vormindus"
 
 msgid "Executable &first"
 msgstr "Käivitatavad &esimestena"
@@ -2503,6 +2531,9 @@ msgid ""
 "\n"
 "Option Stable Symlinks will be disabled"
 msgstr ""
+"Stabiilseid nimeviitu saab luua ainult kohalikes failisüsteemides:\n"
+"\n"
+"Valik stabiilsed nimeviidad keelatakse"
 
 #, c-format
 msgid ""
@@ -2512,11 +2543,32 @@ msgstr ""
 "Nimeviida \"%s\" loomine nurjus sihtkohas\n"
 "%s"
 
+#, c-format
+msgid ""
+"\"%s\"\n"
+"and\n"
+"\"%s\"\n"
+"are the same directory"
+msgstr ""
+"\"%s\"\n"
+"ja\n"
+"\"%s\"\n"
+"on üks ja see sama kataloog"
+
+#, c-format
+msgid ""
+"\"%s\"\n"
+"and\n"
+"\"%s\"\n"
+"are the same file"
+msgstr ""
+"\"%s\"\n"
+"ja\n"
+"\"%s\"\n"
+"on üks ja see sama fail"
+
 msgid "Ski&p all"
 msgstr "Jäta &kõik vahele"
-
-msgid "&Retry"
-msgstr "&Proovi uuesti"
 
 #, c-format
 msgid ""
@@ -2541,23 +2593,19 @@ msgstr "&Mitte ükski"
 
 #, c-format
 msgid ""
+"Cannot remove file \"%s\"\n"
+"%s"
+msgstr ""
+"Faili \"%s\" eemaldamine nurjus\n"
+"%s"
+
+#, c-format
+msgid ""
 "Cannot stat file \"%s\"\n"
 "%s"
 msgstr ""
 "Faili \"%s\" info päring nurjus\n"
 "%s"
-
-#, c-format
-msgid ""
-"\"%s\"\n"
-"and\n"
-"\"%s\"\n"
-"are the same file"
-msgstr ""
-"\"%s\"\n"
-"ja\n"
-"\"%s\"\n"
-"on üks ja see sama fail"
 
 #, c-format
 msgid "Cannot overwrite directory \"%s\""
@@ -2569,22 +2617,6 @@ msgid ""
 "%s"
 msgstr ""
 "Faili \"%s\" teisaldamine kataloogi \"%s\" nurjus\n"
-"%s"
-
-#, c-format
-msgid ""
-"Cannot remove file \"%s\"\n"
-"%s"
-msgstr ""
-"Faili \"%s\" eemaldamine nurjus\n"
-"%s"
-
-#, c-format
-msgid ""
-"Cannot delete file \"%s\"\n"
-"%s"
-msgstr ""
-"Faili \"%s\" kustutamine nurjus\n"
 "%s"
 
 #, c-format
@@ -2602,6 +2634,25 @@ msgid ""
 msgstr ""
 "Kataloogi \"%s\" ülekirjutamine nurjus\n"
 "%s"
+
+#, c-format
+msgid ""
+"Cannot overwrite file \"%s\"\n"
+"%s"
+msgstr ""
+"Faili \"%s\" ülekirjutamine nurjus\n"
+"%s"
+
+#, c-format
+msgid ""
+"Cannot move directory \"%s\" to \"%s\"\n"
+"%s"
+msgstr ""
+"Kataloogi \"%s\" teisaldamine kataloogi \"%s\" nurjus\n"
+"%s"
+
+msgid "Cannot operate on \"..\"!"
+msgstr "Kataloogi \"..\" kasutamine on keelatud!"
 
 #, c-format
 msgid ""
@@ -2768,39 +2819,8 @@ msgstr ""
 "%s"
 
 #, c-format
-msgid ""
-"\"%s\"\n"
-"and\n"
-"\"%s\"\n"
-"are the same directory"
-msgstr ""
-"\"%s\"\n"
-"ja\n"
-"\"%s\"\n"
-"on üks ja see sama kataloog"
-
-#, c-format
-msgid ""
-"Cannot overwrite file \"%s\"\n"
-"%s"
-msgstr ""
-"Faili \"%s\" ülekirjutamine nurjus\n"
-"%s"
-
-#, c-format
-msgid ""
-"Cannot move directory \"%s\" to \"%s\"\n"
-"%s"
-msgstr ""
-"Kataloogi \"%s\" teisaldamine kataloogi \"%s\" nurjus\n"
-"%s"
-
-#, c-format
 msgid "Directories: %zu, total size: %s"
 msgstr "Katalooge: %zu, kogumaht: %s"
-
-msgid "Cannot operate on \"..\"!"
-msgstr "Kataloogi \"..\" kasutamine on keelatud!"
 
 msgid "Sorry, I could not put the job in background"
 msgstr "Vabandust, töö saatmine taustale nurjus"
@@ -3231,7 +3251,7 @@ msgid "&Info"
 msgstr "&Info"
 
 msgid "&Listing format..."
-msgstr ""
+msgstr "&Loendi vormindus"
 
 msgid "&Sort order..."
 msgstr "&Sortimine..."
@@ -3854,10 +3874,10 @@ msgid "Data types:"
 msgstr "Andmetüübid:"
 
 msgid "Home directory:"
-msgstr ""
+msgstr "Kodukataloog:"
 
 msgid "Profile root directory:"
-msgstr ""
+msgstr "Profiili juurkataloog:"
 
 msgid "System data"
 msgstr "Süsteemi andmed"
@@ -4213,6 +4233,10 @@ msgstr "sftp: nurjus SSH ühenduse loomine"
 
 msgid "sftp: No file handler data present for reading file"
 msgstr "sftp: faili lugemiseks puuduvad faili käsitleja andmed"
+
+#, c-format
+msgid "sftp: socket error: %s"
+msgstr "sftp: sokli viga: %s"
 
 #, c-format
 msgid "sftp: (Ctrl-G break) Listing... %s"

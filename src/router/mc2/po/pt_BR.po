@@ -13,9 +13,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2017-11-25 19:35+0100\n"
-"PO-Revision-Date: 2017-09-19 09:10+0000\n"
-"Last-Translator: Mauro Hemerly Gazzani <mauro.hemerly@gmail.com>\n"
+"POT-Creation-Date: 2018-06-03 11:03+0200\n"
+"PO-Revision-Date: 2018-04-30 12:37+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Portuguese (Brazil) (http://www.transifex.com/mc/mc/language/"
 "pt_BR/)\n"
 "Language: pt_BR\n"
@@ -663,6 +663,9 @@ msgstr "Opções de configuração de impressão"
 msgid "Print last working directory to specified file"
 msgstr "Exibir último diretório de trabalho para o arquivo especificado"
 
+msgid "<file>"
+msgstr ""
+
 msgid "Enables subshell support (default)"
 msgstr "Habilita suporte à sub interpretadores de comandos (padrão)"
 
@@ -675,11 +678,17 @@ msgstr "Acessar diálogo FTP para um arquivo específico"
 msgid "Set debug level"
 msgstr "Definir nível de depuração"
 
+msgid "<integer>"
+msgstr ""
+
 msgid "Launches the file viewer on a file"
 msgstr "Lança o visualizador de arquivos"
 
 msgid "Edit files"
 msgstr "Editar arquivos"
+
+msgid "<file> ..."
+msgstr ""
 
 msgid "Forces xterm features"
 msgstr "Força recursos do xterm"
@@ -719,6 +728,9 @@ msgstr "Solicita para ser executado em cores"
 
 msgid "Specifies a color configuration"
 msgstr "Especifica uma configuração de cores"
+
+msgid "<string>"
+msgstr ""
 
 msgid "Show mc with specified skin"
 msgstr "Exibir mc com o tema especificado"
@@ -1601,8 +1613,8 @@ msgid ""
 "written for the Midnight Commander."
 msgstr ""
 
-msgid "Copyright (C) 1996-2016 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2016 the Free Software Foundation"
+msgid "Copyright (C) 1996-2018 the Free Software Foundation"
+msgstr ""
 
 msgid "About"
 msgstr "Sobre"
@@ -1789,6 +1801,15 @@ msgstr ""
 "Não foi possível executar chmod \"%s\"\n"
 "%s"
 
+msgid "&Ignore"
+msgstr ""
+
+msgid "Ignore &all"
+msgstr ""
+
+msgid "&Retry"
+msgstr "&Tentar Novamente"
+
 #, c-format
 msgid ""
 "Cannot chown \"%s\"\n"
@@ -1879,6 +1900,9 @@ msgid "Cd follows lin&ks"
 msgstr "Cd segue lin&ks"
 
 msgid "Sa&fe delete"
+msgstr ""
+
+msgid "Safe overwrite"
 msgstr ""
 
 msgid "A&uto save setup"
@@ -2468,11 +2492,32 @@ msgstr ""
 "Não foi possível criar alvo symlink \"%s\"\n"
 "%s"
 
+#, c-format
+msgid ""
+"\"%s\"\n"
+"and\n"
+"\"%s\"\n"
+"are the same directory"
+msgstr ""
+"\"%s\"\n"
+"e\n"
+"\"%s\"\n"
+"são o mesmo diretório"
+
+#, c-format
+msgid ""
+"\"%s\"\n"
+"and\n"
+"\"%s\"\n"
+"are the same file"
+msgstr ""
+"\"%s\"\n"
+"e\n"
+"\"%s\"\n"
+"são o mesmo arquivo"
+
 msgid "Ski&p all"
 msgstr ""
-
-msgid "&Retry"
-msgstr "&Tentar Novamente"
 
 #, c-format
 msgid ""
@@ -2492,23 +2537,19 @@ msgstr "&Nenhum"
 
 #, c-format
 msgid ""
+"Cannot remove file \"%s\"\n"
+"%s"
+msgstr ""
+"Não foi possível remover arquivo \"%s\"\n"
+"%s"
+
+#, c-format
+msgid ""
 "Cannot stat file \"%s\"\n"
 "%s"
 msgstr ""
 "Não foi possível pegar estado de arquivo \"%s\"\n"
 "%s"
-
-#, c-format
-msgid ""
-"\"%s\"\n"
-"and\n"
-"\"%s\"\n"
-"are the same file"
-msgstr ""
-"\"%s\"\n"
-"e\n"
-"\"%s\"\n"
-"são o mesmo arquivo"
 
 #, c-format
 msgid "Cannot overwrite directory \"%s\""
@@ -2520,22 +2561,6 @@ msgid ""
 "%s"
 msgstr ""
 "Não foi possível mover arquivo \"%s\" para \"%s\"\n"
-"%s"
-
-#, c-format
-msgid ""
-"Cannot remove file \"%s\"\n"
-"%s"
-msgstr ""
-"Não foi possível remover arquivo \"%s\"\n"
-"%s"
-
-#, c-format
-msgid ""
-"Cannot delete file \"%s\"\n"
-"%s"
-msgstr ""
-"Não foi possível deletar \"%s\"\n"
 "%s"
 
 #, c-format
@@ -2553,6 +2578,25 @@ msgid ""
 msgstr ""
 "Não foi possível sobrescrever o diretório \"%s\"\n"
 "%s"
+
+#, c-format
+msgid ""
+"Cannot overwrite file \"%s\"\n"
+"%s"
+msgstr ""
+"Não foi possível sobrescrever o arquivo \"%s\"\n"
+"%s"
+
+#, c-format
+msgid ""
+"Cannot move directory \"%s\" to \"%s\"\n"
+"%s"
+msgstr ""
+"Não foi possível mover o diretório \"%s\" para \"%s\"\n"
+"%s"
+
+msgid "Cannot operate on \"..\"!"
+msgstr "Não foi possível operar em \"..\""
 
 #, c-format
 msgid ""
@@ -2715,39 +2759,8 @@ msgstr ""
 "%s"
 
 #, c-format
-msgid ""
-"\"%s\"\n"
-"and\n"
-"\"%s\"\n"
-"are the same directory"
-msgstr ""
-"\"%s\"\n"
-"e\n"
-"\"%s\"\n"
-"são o mesmo diretório"
-
-#, c-format
-msgid ""
-"Cannot overwrite file \"%s\"\n"
-"%s"
-msgstr ""
-"Não foi possível sobrescrever o arquivo \"%s\"\n"
-"%s"
-
-#, c-format
-msgid ""
-"Cannot move directory \"%s\" to \"%s\"\n"
-"%s"
-msgstr ""
-"Não foi possível mover o diretório \"%s\" para \"%s\"\n"
-"%s"
-
-#, c-format
 msgid "Directories: %zu, total size: %s"
 msgstr ""
-
-msgid "Cannot operate on \"..\"!"
-msgstr "Não foi possível operar em \"..\""
 
 msgid "Sorry, I could not put the job in background"
 msgstr "Desculpe, não consegui colocar o procesos em plano de fundo"
@@ -4144,6 +4157,10 @@ msgid "sftp: Failure establishing SSH session"
 msgstr ""
 
 msgid "sftp: No file handler data present for reading file"
+msgstr ""
+
+#, c-format
+msgid "sftp: socket error: %s"
 msgstr ""
 
 #, c-format

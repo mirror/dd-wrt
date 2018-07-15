@@ -12,16 +12,18 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2017-11-25 19:35+0100\n"
-"PO-Revision-Date: 2017-09-19 09:10+0000\n"
+"POT-Creation-Date: 2018-06-03 11:03+0200\n"
+"PO-Revision-Date: 2018-04-30 12:37+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Ukrainian (http://www.transifex.com/mc/mc/language/uk/)\n"
 "Language: uk\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
-"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Plural-Forms: nplurals=4; plural=(n % 1 == 0 && n % 10 == 1 && n % 100 != "
+"11 ? 0 : n % 1 == 0 && n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % "
+"100 > 14) ? 1 : n % 1 == 0 && (n % 10 ==0 || (n % 10 >=5 && n % 10 <=9) || "
+"(n % 100 >=11 && n % 100 <=14 )) ? 2: 3);\n"
 
 # "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 msgid "Warning: cannot load codepages list"
@@ -662,6 +664,9 @@ msgstr "Показати параметри конфігурації"
 msgid "Print last working directory to specified file"
 msgstr "Показати останній робочий каталог у вказаний файл"
 
+msgid "<file>"
+msgstr ""
+
 msgid "Enables subshell support (default)"
 msgstr "Вмикає підтримку вкладеної оболонки (стандартно)"
 
@@ -674,11 +679,17 @@ msgstr "Журналювати команди FTP у вказаний файл"
 msgid "Set debug level"
 msgstr "Встановити рівень відлагоджування"
 
+msgid "<integer>"
+msgstr ""
+
 msgid "Launches the file viewer on a file"
 msgstr "Запускає програму перегляду для файлу"
 
 msgid "Edit files"
 msgstr "Редагувати файли"
+
+msgid "<file> ..."
+msgstr ""
 
 msgid "Forces xterm features"
 msgstr "Нав’язує властивості xterm"
@@ -718,6 +729,9 @@ msgstr "Запит на запуск у кольоровому режимі"
 
 msgid "Specifies a color configuration"
 msgstr "Вказує конфігурацію кольорів"
+
+msgid "<string>"
+msgstr ""
 
 msgid "Show mc with specified skin"
 msgstr "Показати mc із обраною обкладинкою"
@@ -1621,8 +1635,8 @@ msgstr ""
 "Дружній до користувача редактор тексту\n"
 "написаний для Midnight Commander."
 
-msgid "Copyright (C) 1996-2016 the Free Software Foundation"
-msgstr "Авторські права (C) 1996-2016 за Free Software Foundation"
+msgid "Copyright (C) 1996-2018 the Free Software Foundation"
+msgstr ""
 
 msgid "About"
 msgstr "Про програму"
@@ -1808,6 +1822,15 @@ msgstr ""
 "Не вдалося змінити права на «%s» \n"
 "%s"
 
+msgid "&Ignore"
+msgstr ""
+
+msgid "Ignore &all"
+msgstr ""
+
+msgid "&Retry"
+msgstr "По&вторити"
+
 #, c-format
 msgid ""
 "Cannot chown \"%s\"\n"
@@ -1899,6 +1922,9 @@ msgstr "Зміна &каталогу за посиланнями"
 
 msgid "Sa&fe delete"
 msgstr "Безпечне &видалення"
+
+msgid "Safe overwrite"
+msgstr ""
 
 msgid "A&uto save setup"
 msgstr "&Автозбереження параметрів"
@@ -2498,11 +2524,32 @@ msgstr ""
 "Не вдалося створити цільове символьне посилання «%s»\n"
 "%s"
 
+#, c-format
+msgid ""
+"\"%s\"\n"
+"and\n"
+"\"%s\"\n"
+"are the same directory"
+msgstr ""
+"«%s»\n"
+"та\n"
+"«%s» \n"
+"є одним і тим же каталогом"
+
+#, c-format
+msgid ""
+"\"%s\"\n"
+"and\n"
+"\"%s\"\n"
+"are the same file"
+msgstr ""
+"«%s»\n"
+"та\n"
+"«%s»\n"
+"є одним і тим же файлом "
+
 msgid "Ski&p all"
 msgstr "П&ропустити все"
-
-msgid "&Retry"
-msgstr "По&вторити"
 
 #, c-format
 msgid ""
@@ -2527,23 +2574,19 @@ msgstr "Ж&oдного"
 
 #, c-format
 msgid ""
+"Cannot remove file \"%s\"\n"
+"%s"
+msgstr ""
+"Не вдалося видалити файл «%s»\n"
+"%s"
+
+#, c-format
+msgid ""
 "Cannot stat file \"%s\"\n"
 "%s"
 msgstr ""
 "Не вдалося отримати властивості файлу «%s»\n"
 "%s"
-
-#, c-format
-msgid ""
-"\"%s\"\n"
-"and\n"
-"\"%s\"\n"
-"are the same file"
-msgstr ""
-"«%s»\n"
-"та\n"
-"«%s»\n"
-"є одним і тим же файлом "
 
 #, c-format
 msgid "Cannot overwrite directory \"%s\""
@@ -2556,22 +2599,6 @@ msgid ""
 msgstr ""
 "Не вдалося перенести файл «%s» у «%s»\n"
 "%s "
-
-#, c-format
-msgid ""
-"Cannot remove file \"%s\"\n"
-"%s"
-msgstr ""
-"Не вдалося видалити файл «%s»\n"
-"%s"
-
-#, c-format
-msgid ""
-"Cannot delete file \"%s\"\n"
-"%s"
-msgstr ""
-"Не вдалося видалити файл «%s»\n"
-"%s"
 
 #, c-format
 msgid ""
@@ -2588,6 +2615,23 @@ msgid ""
 msgstr ""
 "Не вдалося перезаписати каталог «%s»\n"
 "%s"
+
+#, c-format
+msgid ""
+"Cannot overwrite file \"%s\"\n"
+"%s"
+msgstr "Не вдалося перезаписати файл «%s» %s"
+
+#, c-format
+msgid ""
+"Cannot move directory \"%s\" to \"%s\"\n"
+"%s"
+msgstr ""
+"Не вдалося перенести каталог «%s» у «%s»\n"
+"%s"
+
+msgid "Cannot operate on \"..\"!"
+msgstr "Не можна виконувати операції з «..»"
 
 #, c-format
 msgid ""
@@ -2754,37 +2798,8 @@ msgstr ""
 "%s"
 
 #, c-format
-msgid ""
-"\"%s\"\n"
-"and\n"
-"\"%s\"\n"
-"are the same directory"
-msgstr ""
-"«%s»\n"
-"та\n"
-"«%s» \n"
-"є одним і тим же каталогом"
-
-#, c-format
-msgid ""
-"Cannot overwrite file \"%s\"\n"
-"%s"
-msgstr "Не вдалося перезаписати файл «%s» %s"
-
-#, c-format
-msgid ""
-"Cannot move directory \"%s\" to \"%s\"\n"
-"%s"
-msgstr ""
-"Не вдалося перенести каталог «%s» у «%s»\n"
-"%s"
-
-#, c-format
 msgid "Directories: %zu, total size: %s"
 msgstr "Теки: %zu, загальний розмір: %s"
-
-msgid "Cannot operate on \"..\"!"
-msgstr "Не можна виконувати операції з «..»"
 
 msgid "Sorry, I could not put the job in background"
 msgstr "Не вдалося помістити цей процес у фон"
@@ -2987,6 +3002,7 @@ msgid_plural "Finished (ignored %zu directories)"
 msgstr[0] "Завершено (ігнорований %zu каталог)"
 msgstr[1] "Завершено (ігноровано %zu каталогів)"
 msgstr[2] "Завершено (ігноровано %zu каталогів)"
+msgstr[3] "Завершено (ігноровано %zu каталогів)"
 
 msgid "Searching"
 msgstr "Виконується пошук"
@@ -3151,6 +3167,7 @@ msgid_plural " (%lu blocks)"
 msgstr[0] " (%lu блок)"
 msgstr[1] " (%lu блоків)"
 msgstr[2] " (%lu блоків)"
+msgstr[3] " (%lu блоків)"
 
 #, c-format
 msgid "Owner:      %s/%s"
@@ -3387,6 +3404,7 @@ msgid_plural "You have %zu opened screens. Quit anyway?"
 msgstr[0] "Відкрито %zu екран. Все одно вийти?"
 msgstr[1] "Відкрито %zu екрани. Все одно вийти?"
 msgstr[2] "Відкрито %zu екранів. Все одно вийти?"
+msgstr[3] "Відкрито %zu екранів. Все одно вийти?"
 
 msgid "The Midnight Commander"
 msgstr "Midnight Commander"
@@ -3535,6 +3553,7 @@ msgid_plural "%s in %d files"
 msgstr[0] "%s у %d файлі"
 msgstr[1] "%s у %d файлах"
 msgstr[2] "%s у %d файлах"
+msgstr[3] "%s у %d файлах"
 
 msgid "Panelize"
 msgstr "Панелізувати"
@@ -4202,6 +4221,10 @@ msgstr "sftp: Невдача при встановленні SSH сесії"
 
 msgid "sftp: No file handler data present for reading file"
 msgstr "sftp: Немає даних про  оброблювач для читання файлу"
+
+#, c-format
+msgid "sftp: socket error: %s"
+msgstr ""
 
 #, c-format
 msgid "sftp: (Ctrl-G break) Listing... %s"
