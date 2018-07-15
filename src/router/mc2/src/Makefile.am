@@ -59,6 +59,7 @@ if ENABLE_VFS_SMB
 # this is a hack for linking with own samba library in simple way
 mc_LDADD += vfs/smbfs/helpers/libsamba.a
 endif
+mc_LDADD += -lintl
 
 SRC_mc_conssaver = \
 	cons.handler.c consaver/cons.saver.h
