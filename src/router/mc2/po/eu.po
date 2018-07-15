@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the mc package.
 #
 # Translators:
-# Iñigo Salvador Azurmendi <xalba@euskalnet.net>, 2011,2015-2017
+# Iñigo Salvador Azurmendi <xalba@euskalnet.net>, 2011,2015-2018
 # Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2017-11-25 19:35+0100\n"
-"PO-Revision-Date: 2017-09-19 09:10+0000\n"
+"POT-Creation-Date: 2018-06-03 11:03+0200\n"
+"PO-Revision-Date: 2018-05-12 11:25+0000\n"
 "Last-Translator: Iñigo Salvador Azurmendi <xalba@euskalnet.net>\n"
 "Language-Team: Basque (http://www.transifex.com/mc/mc/language/eu/)\n"
 "Language: eu\n"
@@ -104,6 +104,8 @@ msgid ""
 "Number out of range (should be in byte range, 0 <= n <= 0xFF, expressed in "
 "hex)"
 msgstr ""
+"Barruti kanpoko zenbakia (byte barrutian egon behar luke, 0 <= n <= 0xFF, "
+"hamaseitarrean adierazita)"
 
 msgid "Invalid character"
 msgstr "Karaktere baliogabea"
@@ -656,6 +658,9 @@ msgstr "Inprimatu konfiguratzeko aukerak"
 msgid "Print last working directory to specified file"
 msgstr "Inprimatu laneko azken direktorioa zehaztutako fitxategira"
 
+msgid "<file>"
+msgstr "<file>"
+
 msgid "Enables subshell support (default)"
 msgstr "Subshell euskarria (lehenetsia) gaitzen du"
 
@@ -668,11 +673,17 @@ msgstr "Gorde ftp elkarrizketa zehaztutako fitxategian"
 msgid "Set debug level"
 msgstr "Ezarri arazketa maila"
 
+msgid "<integer>"
+msgstr "<integer>"
+
 msgid "Launches the file viewer on a file"
 msgstr "Fitxategi-ikustailea fitxategian abiarazten du"
 
 msgid "Edit files"
 msgstr "Editatu fitxategiak"
+
+msgid "<file> ..."
+msgstr "<file> ..."
 
 msgid "Forces xterm features"
 msgstr "xterm eginbideak behartzen ditu"
@@ -712,6 +723,9 @@ msgstr "Kolore moduan exekutatzeko eskatzen du"
 
 msgid "Specifies a color configuration"
 msgstr "Kolore-konfigurazioa zehazten du"
+
+msgid "<string>"
+msgstr "<string>"
 
 msgid "Show mc with specified skin"
 msgstr "Erakutsi mc zehaztutako azalarekin"
@@ -1638,8 +1652,8 @@ msgstr ""
 "Testu editore lagunkoi bat\n"
 "Midnight Commander-rarentzako idatzia."
 
-msgid "Copyright (C) 1996-2016 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2016 the Free Software Foundation"
+msgid "Copyright (C) 1996-2018 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2018 the Free Software Foundation"
 
 msgid "About"
 msgstr "Honi buruz"
@@ -1826,6 +1840,15 @@ msgstr ""
 "\"%s\"-ren baimenak ezin aldatu (\"chmod\")\n"
 "%s"
 
+msgid "&Ignore"
+msgstr "&Jaromonik ez"
+
+msgid "Ignore &all"
+msgstr "Jaramonik ez &guztiari"
+
+msgid "&Retry"
+msgstr "&Saiatu berriz"
+
 #, c-format
 msgid ""
 "Cannot chown \"%s\"\n"
@@ -1917,6 +1940,9 @@ msgstr "Cd-k este&kei jarraitzen die"
 
 msgid "Sa&fe delete"
 msgstr "E&zabatze segurua"
+
+msgid "Safe overwrite"
+msgstr ""
 
 msgid "A&uto save setup"
 msgstr "A&uto gorde ezarpena"
@@ -2521,11 +2547,32 @@ msgstr ""
 "\"%s\" helburu esteka sinbolikoa ezin sortu\n"
 "%s"
 
+#, c-format
+msgid ""
+"\"%s\"\n"
+"and\n"
+"\"%s\"\n"
+"are the same directory"
+msgstr ""
+"\"%s\"\n"
+"eta\n"
+"\"%s\"\n"
+"direktorio bera dira"
+
+#, c-format
+msgid ""
+"\"%s\"\n"
+"and\n"
+"\"%s\"\n"
+"are the same file"
+msgstr ""
+"\"%s\"\n"
+"eta\n"
+"\"%s\"\n"
+"fitxategi bera dira"
+
 msgid "Ski&p all"
 msgstr "Sa&hiestu guztia"
-
-msgid "&Retry"
-msgstr "&Saiatu berriz"
 
 #, c-format
 msgid ""
@@ -2550,23 +2597,19 @@ msgstr "&Bat ere ez"
 
 #, c-format
 msgid ""
+"Cannot remove file \"%s\"\n"
+"%s"
+msgstr ""
+"\"%s\" fitxategia ezin ezabatu\n"
+"%s"
+
+#, c-format
+msgid ""
 "Cannot stat file \"%s\"\n"
 "%s"
 msgstr ""
 "\"%s\" fitxategiaren egoera (\"stat\") ezin lortu\n"
 "%s"
-
-#, c-format
-msgid ""
-"\"%s\"\n"
-"and\n"
-"\"%s\"\n"
-"are the same file"
-msgstr ""
-"\"%s\"\n"
-"eta\n"
-"\"%s\"\n"
-"fitxategi bera dira"
 
 #, c-format
 msgid "Cannot overwrite directory \"%s\""
@@ -2578,22 +2621,6 @@ msgid ""
 "%s"
 msgstr ""
 "\"%s\" fitxategia \"%s\"-ra ezin mugitu\n"
-"%s"
-
-#, c-format
-msgid ""
-"Cannot remove file \"%s\"\n"
-"%s"
-msgstr ""
-"\"%s\" fitxategia ezin ezabatu\n"
-"%s"
-
-#, c-format
-msgid ""
-"Cannot delete file \"%s\"\n"
-"%s"
-msgstr ""
-"\"%s\" fitxategia ezin ezabatu\n"
 "%s"
 
 #, c-format
@@ -2611,6 +2638,25 @@ msgid ""
 msgstr ""
 "\"%s\" direktorioa ezin gainidatzi\n"
 "%s"
+
+#, c-format
+msgid ""
+"Cannot overwrite file \"%s\"\n"
+"%s"
+msgstr ""
+"\"%s\" fitxategia ezin gainidatzi\n"
+"%s"
+
+#, c-format
+msgid ""
+"Cannot move directory \"%s\" to \"%s\"\n"
+"%s"
+msgstr ""
+"\"%s\" direktorioa \"%s\"-ra ezin mugitu\n"
+"%s"
+
+msgid "Cannot operate on \"..\"!"
+msgstr "Ezin da \"..\" erabili!"
 
 #, c-format
 msgid ""
@@ -2777,39 +2823,8 @@ msgstr ""
 "%s"
 
 #, c-format
-msgid ""
-"\"%s\"\n"
-"and\n"
-"\"%s\"\n"
-"are the same directory"
-msgstr ""
-"\"%s\"\n"
-"eta\n"
-"\"%s\"\n"
-"direktorio bera dira"
-
-#, c-format
-msgid ""
-"Cannot overwrite file \"%s\"\n"
-"%s"
-msgstr ""
-"\"%s\" fitxategia ezin gainidatzi\n"
-"%s"
-
-#, c-format
-msgid ""
-"Cannot move directory \"%s\" to \"%s\"\n"
-"%s"
-msgstr ""
-"\"%s\" direktorioa \"%s\"-ra ezin mugitu\n"
-"%s"
-
-#, c-format
 msgid "Directories: %zu, total size: %s"
 msgstr "Direktorioak: %zu, guztizko neurria: %s"
-
-msgid "Cannot operate on \"..\"!"
-msgstr "Ezin da \"..\" erabili!"
 
 msgid "Sorry, I could not put the job in background"
 msgstr "Barkatu, ezin izan dut lana hondoan ipini"
@@ -4224,6 +4239,10 @@ msgstr "sftp: Hutsegitea SSH saioa ezartzean"
 
 msgid "sftp: No file handler data present for reading file"
 msgstr "sftp: Ez dago fitxategi maneiatzaile daturik fitxategia irakurtzeko"
+
+#, c-format
+msgid "sftp: socket error: %s"
+msgstr ""
 
 #, c-format
 msgid "sftp: (Ctrl-G break) Listing... %s"

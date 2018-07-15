@@ -11,9 +11,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2017-11-25 19:35+0100\n"
-"PO-Revision-Date: 2017-11-20 23:51+0000\n"
-"Last-Translator: Rezső Páder <rezso@rezso.net>\n"
+"POT-Creation-Date: 2018-06-03 11:03+0200\n"
+"PO-Revision-Date: 2018-04-30 12:37+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Hungarian (http://www.transifex.com/mc/mc/language/hu/)\n"
 "Language: hu\n"
 "MIME-Version: 1.0\n"
@@ -650,6 +650,9 @@ msgstr "Beállítások kiíratása"
 msgid "Print last working directory to specified file"
 msgstr "A legutóbbi aktuális könyvtár írása az adott fájlba"
 
+msgid "<file>"
+msgstr ""
+
 msgid "Enables subshell support (default)"
 msgstr "Háttér-shell bekapcsolása (alapértelmezett)"
 
@@ -662,11 +665,17 @@ msgstr "FTP-párbeszéd naplózása megadott fájlba"
 msgid "Set debug level"
 msgstr "Nyomkövetési (debug) szint beállítása"
 
+msgid "<integer>"
+msgstr ""
+
 msgid "Launches the file viewer on a file"
 msgstr "Fájlmegjelenítés indítása a megadott fájlon"
 
 msgid "Edit files"
 msgstr "Fájlok szerkesztése"
+
+msgid "<file> ..."
+msgstr ""
 
 msgid "Forces xterm features"
 msgstr "Xterm-funkciók kikényszerítése"
@@ -708,6 +717,9 @@ msgstr "Színes üzemmód kérése"
 
 msgid "Specifies a color configuration"
 msgstr "Színösszeállítás megadása"
+
+msgid "<string>"
+msgstr ""
 
 msgid "Show mc with specified skin"
 msgstr "MC a megadott borítással"
@@ -1630,8 +1642,8 @@ msgstr ""
 "Felhasználóbarát szövegszerkesztő\n"
 "a Midnight Commander-hez készítve"
 
-msgid "Copyright (C) 1996-2016 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2016 the Free Software Foundation"
+msgid "Copyright (C) 1996-2018 the Free Software Foundation"
+msgstr ""
 
 msgid "About"
 msgstr "Névjegy"
@@ -1818,6 +1830,15 @@ msgstr ""
 "\"%s\" jogai nem állíthatók\n"
 "%s"
 
+msgid "&Ignore"
+msgstr ""
+
+msgid "Ignore &all"
+msgstr ""
+
+msgid "&Retry"
+msgstr "Új&ra"
+
 #, c-format
 msgid ""
 "Cannot chown \"%s\"\n"
@@ -1909,6 +1930,9 @@ msgstr "Li&nkkövető könyvtárváltás"
 
 msgid "Sa&fe delete"
 msgstr "\"Ó&vatos\" törlés"
+
+msgid "Safe overwrite"
+msgstr ""
 
 msgid "A&uto save setup"
 msgstr "Auto &Beállításmentés"
@@ -2509,11 +2533,31 @@ msgstr ""
 "Nem sikerült létrehozni a cél szim-linket \"%s\"\n"
 "%s"
 
+#, c-format
+msgid ""
+"\"%s\"\n"
+"and\n"
+"\"%s\"\n"
+"are the same directory"
+msgstr ""
+"\"%s\" \n"
+"és \n"
+"\"%s\" \n"
+"ugyanaz a könyvtár"
+
+#, c-format
+msgid ""
+"\"%s\"\n"
+"and\n"
+"\"%s\"\n"
+"are the same file"
+msgstr ""
+"\"%s\"  és \n"
+"\"%s\" \n"
+"ugyanaz a fájl"
+
 msgid "Ski&p all"
 msgstr "Ö&sszes kihagyása"
-
-msgid "&Retry"
-msgstr "Új&ra"
 
 #, c-format
 msgid ""
@@ -2537,22 +2581,19 @@ msgstr "&Egyiket sem"
 
 #, c-format
 msgid ""
+"Cannot remove file \"%s\"\n"
+"%s"
+msgstr ""
+"A(z) \"%s\" fájl nem törölhető \n"
+"%s"
+
+#, c-format
+msgid ""
 "Cannot stat file \"%s\"\n"
 "%s"
 msgstr ""
 "A(z) \"%s\" fájl adatai nem lekérdezhetők \n"
 "%s"
-
-#, c-format
-msgid ""
-"\"%s\"\n"
-"and\n"
-"\"%s\"\n"
-"are the same file"
-msgstr ""
-"\"%s\"  és \n"
-"\"%s\" \n"
-"ugyanaz a fájl"
 
 #, c-format
 msgid "Cannot overwrite directory \"%s\""
@@ -2564,22 +2605,6 @@ msgid ""
 "%s"
 msgstr ""
 "A(z) \"%s\" fájl nem átnevezhető/mozgatható erre: \"%s\"\n"
-"%s"
-
-#, c-format
-msgid ""
-"Cannot remove file \"%s\"\n"
-"%s"
-msgstr ""
-"A(z) \"%s\" fájl nem törölhető \n"
-"%s"
-
-#, c-format
-msgid ""
-"Cannot delete file \"%s\"\n"
-"%s"
-msgstr ""
-"A(z) \"%s\" fájl nem törölhető \n"
 "%s"
 
 #, c-format
@@ -2597,6 +2622,25 @@ msgid ""
 msgstr ""
 "A(z) \"%s\" könyvtár nem felülírható \n"
 "%s"
+
+#, c-format
+msgid ""
+"Cannot overwrite file \"%s\"\n"
+"%s"
+msgstr ""
+"A(z) \"%s\" fájl nem felülírható\n"
+"%s"
+
+#, c-format
+msgid ""
+"Cannot move directory \"%s\" to \"%s\"\n"
+"%s"
+msgstr ""
+"A(z) \"%s\" könyvtár nem átnevezhető/mozgatható erre: \"%s\" \n"
+"%s"
+
+msgid "Cannot operate on \"..\"!"
+msgstr "A \"..\" könyvtárral ez nem lehetséges!"
 
 #, c-format
 msgid ""
@@ -2767,39 +2811,8 @@ msgstr ""
 "%s"
 
 #, c-format
-msgid ""
-"\"%s\"\n"
-"and\n"
-"\"%s\"\n"
-"are the same directory"
-msgstr ""
-"\"%s\" \n"
-"és \n"
-"\"%s\" \n"
-"ugyanaz a könyvtár"
-
-#, c-format
-msgid ""
-"Cannot overwrite file \"%s\"\n"
-"%s"
-msgstr ""
-"A(z) \"%s\" fájl nem felülírható\n"
-"%s"
-
-#, c-format
-msgid ""
-"Cannot move directory \"%s\" to \"%s\"\n"
-"%s"
-msgstr ""
-"A(z) \"%s\" könyvtár nem átnevezhető/mozgatható erre: \"%s\" \n"
-"%s"
-
-#, c-format
 msgid "Directories: %zu, total size: %s"
 msgstr "Könyvtár: %zu, teljes méret: %s"
-
-msgid "Cannot operate on \"..\"!"
-msgstr "A \"..\" könyvtárral ez nem lehetséges!"
 
 msgid "Sorry, I could not put the job in background"
 msgstr "Nem tudtam a feladatot a háttérben végezni"
@@ -4215,6 +4228,10 @@ msgstr "stp: Hiba lépett fel az ssh kapcsolat létrehozása közben"
 
 msgid "sftp: No file handler data present for reading file"
 msgstr "sftp: Nincs jelenleg elérhető fájlkezelő adat a fájl olvasásához"
+
+#, c-format
+msgid "sftp: socket error: %s"
+msgstr ""
 
 #, c-format
 msgid "sftp: (Ctrl-G break) Listing... %s"

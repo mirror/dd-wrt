@@ -1,7 +1,7 @@
 /*
    Editor initialisation and callback handler.
 
-   Copyright (C) 1996-2017
+   Copyright (C) 1996-2018
    Free Software Foundation, Inc.
 
    Written by:
@@ -145,7 +145,7 @@ edit_about (void)
         QUICK_LABEL (N_("A user friendly text editor\n"
                         "written for the Midnight Commander."), NULL),
         QUICK_SEPARATOR (FALSE),
-        QUICK_LABEL (N_("Copyright (C) 1996-2016 the Free Software Foundation"), NULL),
+        QUICK_LABEL (N_("Copyright (C) 1996-2018 the Free Software Foundation"), NULL),
         QUICK_START_BUTTONS (TRUE, TRUE),
             QUICK_BUTTON (N_("&OK"), B_ENTER, NULL, NULL),
         QUICK_END
@@ -632,10 +632,13 @@ edit_quit (WDialog * h)
 {
     GList *l;
     WEdit *e = NULL;
+    GSList *m = NULL;
+    GSList *me;
 
     /* don't stop the dialog before final decision */
     widget_set_state (WIDGET (h), WST_ACTIVE, TRUE);
 
+    /* check window state and get modified files */
     for (l = h->widgets; l != NULL; l = g_list_next (l))
         if (edit_widget_is_editor (CONST_WIDGET (l->data)))
         {
@@ -644,21 +647,31 @@ edit_quit (WDialog * h)
             if (e->drag_state != MCEDIT_DRAG_NONE)
             {
                 edit_restore_size (e);
+                g_slist_free (m);
                 return;
             }
 
+            /* create separate list because widget_select()
+               changes the window position in Z order */
             if (e->modified)
-            {
-                widget_select (WIDGET (e));
-
-                if (!edit_ok_to_exit (e))
-                    return;
-            }
+                m = g_slist_prepend (m, l->data);
         }
 
-    /* no editors in dialog at all or no any file required to be saved */
-    if (e == NULL || l == NULL)
+    for (me = m; me != NULL; me = g_slist_next (me))
+    {
+        e = (WEdit *) me->data;
+
+        widget_select (WIDGET (e));
+
+        if (!edit_ok_to_exit (e))
+            break;
+    }
+
+    /* if all files were checked, quit editor */
+    if (me == NULL)
         dlg_stop (h);
+
+    g_slist_free (m);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -811,13 +824,18 @@ edit_dialog_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, v
                 if (!e->extmod)
                     command = keybind_lookup_keymap_command (editor_map, parm);
                 else
-                {
-                    e->extmod = FALSE;
                     command = keybind_lookup_keymap_command (editor_x_map, parm);
-                }
 
-                if (command != CK_IgnoreKey)
+                if (command == CK_IgnoreKey)
+                    e->extmod = FALSE;
+                else
+                {
                     ret = edit_dialog_command_execute (h, command);
+                    /* if command was not handled, keep the extended mode
+                       for the further key processing */
+                    if (ret == MSG_HANDLED)
+                        e->extmod = FALSE;
+                }
             }
 
             /*
@@ -1115,7 +1133,7 @@ edit_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
             }
         }
 
-        /* fall through to start/stop text selection */
+        MC_FALLTHROUGH;         /* to start/stop text selection */
 
     case MSG_MOUSE_UP:
         edit_update_cursor (edit, event);
@@ -1435,6 +1453,7 @@ edit_handle_move_resize (WEdit * edit, long command)
         case CK_WindowMove:
             edit->drag_state = MCEDIT_DRAG_NONE;
             edit_status (edit, TRUE);   /* redraw frame and status */
+            MC_FALLTHROUGH;
         default:
             ret = TRUE;
             break;
@@ -1459,6 +1478,7 @@ edit_handle_move_resize (WEdit * edit, long command)
         case CK_WindowResize:
             edit->drag_state = MCEDIT_DRAG_NONE;
             edit_status (edit, TRUE);   /* redraw frame and status */
+            MC_FALLTHROUGH;
         default:
             ret = TRUE;
             break;
