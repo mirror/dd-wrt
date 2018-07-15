@@ -150,6 +150,9 @@
 /* Define to 1 if you have the `fs_stat_dev' function. */
 #undef HAVE_FS_STAT_DEV
 
+/* Define to 1 if the system has the `fallthrough' function attribute */
+#undef HAVE_FUNC_ATTRIBUTE_FALLTHROUGH
+
 /* Define to 1 if you have the `fwprintf' function. */
 #undef HAVE_FWPRINTF
 
@@ -451,9 +454,6 @@
    `HAVE_STRUCT_STAT_ST_BLOCKS' instead. */
 #undef HAVE_ST_BLOCKS
 
-/* Define to 1 if you have the <sys/filsys.h> header file. */
-#undef HAVE_SYS_FILSYS_H
-
 /* Define to 1 if you have the <sys/fs/s5param.h> header file. */
 #undef HAVE_SYS_FS_S5PARAM_H
 
@@ -700,10 +700,6 @@
    and 4.1.3_U1 are reported to have this problem. SunOS 4.1.1 seems not to be
    affected.) */
 #undef STATFS_TRUNCATES_BLOCK_COUNTS
-
-/* Define if there is no specific function for reading file systems usage
-   information and you have the <sys/filsys.h> header file. (SVR2) */
-#undef STAT_READ_FILSYS
 
 /* Define if statfs takes 2 args and struct statfs has a field named f_bsize.
    (4.3BSD, SunOS 4, HP-UX, AIX PS/2) */

@@ -90,6 +90,7 @@ host_triplet = @host@
 
 # this is a hack for linking with own samba library in simple way
 @ENABLE_VFS_SMB_TRUE@am__append_1 = $(top_builddir)/src/vfs/smbfs/helpers/libsamba.a
+@ENABLE_MCLIB_TRUE@am__append_2 = $(GLIB_LIBS)
 TESTS = editcmd__edit_complete_word_cmd$(EXEEXT)
 check_PROGRAMS = $(am__EXEEXT_1)
 subdir = tests/src/editor
@@ -117,6 +118,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/ax_path_lib_pcre.m4 \
 	$(top_srcdir)/m4.include/dx_doxygen.m4 \
 	$(top_srcdir)/m4.include/mc-cflags.m4 \
+	$(top_srcdir)/m4.include/ax_gcc_func_attribute.m4 \
 	$(top_srcdir)/m4.include/mc-check-search-type.m4 \
 	$(top_srcdir)/m4.include/mode_t.m4 \
 	$(top_srcdir)/m4.include/stat-size.m4 \
@@ -124,6 +126,8 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/fstypename.m4 \
 	$(top_srcdir)/m4.include/fsusage.m4 \
 	$(top_srcdir)/m4.include/mountlist.m4 \
+	$(top_srcdir)/m4.include/windows-stat-inodes.m4 \
+	$(top_srcdir)/m4.include/sys_types_h.m4 \
 	$(top_srcdir)/m4.include/mc-get-fs-info.m4 \
 	$(top_srcdir)/m4.include/mc-with-x.m4 \
 	$(top_srcdir)/m4.include/mc-use-termcap.m4 \
@@ -538,7 +542,8 @@ LIBOBJS = @LIBOBJS@
 LIBPTH = @LIBPTH@
 LIBPTH_PREFIX = @LIBPTH_PREFIX@
 LIBS = @CHECK_LIBS@ $(top_builddir)/src/libinternal.la \
-	$(top_builddir)/lib/libmc.la @PCRE_LIBS@ $(am__append_1)
+	$(top_builddir)/lib/libmc.la @PCRE_LIBS@ $(am__append_1) \
+	$(am__append_2)
 LIBSSH_CFLAGS = @LIBSSH_CFLAGS@
 LIBSSH_LIBS = @LIBSSH_LIBS@
 LIBTHREAD = @LIBTHREAD@

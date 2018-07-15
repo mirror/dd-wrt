@@ -49,7 +49,7 @@ include python.syntax
 file ..\*\\.(pyx|pxd|pxi)$ Cython\sor\sPyrex\sProgram
 include cython.syntax
 
-file ..\*\\.(?:rb)$ Ruby\sProgram ^#!.\*([\s/]ruby|@RUBY@)
+file ..\*\\.(?i:rb)$ Ruby\sProgram ^#!.\*([\s/]ruby|@RUBY@)
 include ruby.syntax
 
 file ..\*\\.(man|[0-9n]|[0-9](x|ncurses|ssl|p|pm|menu|form|vga|t|td))$ NROFF\sSource
@@ -103,6 +103,9 @@ include fortran.syntax
 file ..\*\\.go$ GoLang\sProgram
 include go.syntax
 
+file ..\*\\.rs$ Rust\sProgram
+include rust.syntax
+
 file ..\*\\.(?i:f)9[05]$ Freeform\sFortran\sProgram
 include f90.syntax
 
@@ -124,7 +127,7 @@ include properties.syntax
 file ..\*\\.(?i:cs)$ C\#\sProgram
 include cs.syntax
 
-file ..\*\\.(?i:js)$ JavaScript\sProgram ^#!.\*[\s/](node|nodejs)\\b
+file ..\*\\.(?i:m?js)$ JavaScript\sProgram ^#!.\*[\s/](node|nodejs)\\b
 include js.syntax
 
 file ..\*\\.(?i:ts)$ TypeScript\sProgram

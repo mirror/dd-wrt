@@ -45,6 +45,8 @@ if test "x$enable_werror" = xyes; then
     mc_CHECK_ONE_CFLAG([-Werror])
 fi
 
+AX_GCC_FUNC_ATTRIBUTE([fallthrough])
+
 AC_PROG_LIBTOOL
 
 
@@ -160,6 +162,8 @@ AC_CHECK_HEADERS([string.h memory.h limits.h malloc.h \
 	utime.h sys/statfs.h sys/vfs.h \
 	sys/select.h sys/ioctl.h stropts.h arpa/inet.h \
 	sys/socket.h])
+dnl This macro is redefined in m4.include/sys_types_h.m4
+dnl   to work around a buggy version in autoconf <= 2.69.
 AC_HEADER_MAJOR
 
 

@@ -9,7 +9,7 @@
 # Fabian Affolter <fab@fedoraproject.org>, 2012-2013
 # Karsten <waldstadt@web.de>, 2016
 # Larson März <larson@protonmail.ch>, 2016
-# Ronny Hößrich, 2015
+# Ronny Hößrich, 2015,2018
 # Slava Zanko <slavazanko@gmail.com>, 2011
 # username <my.somewhat.lengthy.loginname@gmail.com>, 2011
 # valsu <valsu@hylia.de>, 2016
@@ -18,9 +18,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2017-11-25 19:35+0100\n"
-"PO-Revision-Date: 2017-09-19 09:10+0000\n"
-"Last-Translator: Ettore Atalan <atalanttore@googlemail.com>\n"
+"POT-Creation-Date: 2018-06-03 11:03+0200\n"
+"PO-Revision-Date: 2018-04-30 12:37+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: German (http://www.transifex.com/mc/mc/language/de/)\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
@@ -676,6 +676,9 @@ msgstr "Konfigurationsoptionen anzeigen"
 msgid "Print last working directory to specified file"
 msgstr "Letztes Verzeichnis zur angegebenen Datei anzeigen"
 
+msgid "<file>"
+msgstr "<file>"
+
 msgid "Enables subshell support (default)"
 msgstr "Schaltet Subshell-Unterstützung ein (normal)"
 
@@ -688,11 +691,17 @@ msgstr "FTP-Dialog in die angegebene Datei mitprotokollieren"
 msgid "Set debug level"
 msgstr "Debugging-Level setzen"
 
+msgid "<integer>"
+msgstr "<integer>"
+
 msgid "Launches the file viewer on a file"
 msgstr "Startet den Ansichtsmodus für eine Datei"
 
 msgid "Edit files"
 msgstr "Datei bearbeiten"
+
+msgid "<file> ..."
+msgstr "<file> ..."
 
 msgid "Forces xterm features"
 msgstr "Erzwingt xterm-Funktionen"
@@ -734,6 +743,9 @@ msgstr "Anfrage für Ausführung im Farbmodus"
 
 msgid "Specifies a color configuration"
 msgstr "Gibt eine Farbkonfiguration an"
+
+msgid "<string>"
+msgstr "<string>"
 
 msgid "Show mc with specified skin"
 msgstr "mc mit dem angegebenen Skin anzeigen"
@@ -1658,8 +1670,8 @@ msgstr ""
 "Ein benutzerfreundlicher Texteditor\n"
 "geschrieben für Midnight Commander."
 
-msgid "Copyright (C) 1996-2016 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2016 the Free Software Foundation"
+msgid "Copyright (C) 1996-2018 the Free Software Foundation"
+msgstr ""
 
 msgid "About"
 msgstr "Über"
@@ -1846,6 +1858,15 @@ msgstr ""
 "Kann chmod für \"%s\" nicht durchführen\n"
 "%s"
 
+msgid "&Ignore"
+msgstr "&Ignorieren"
+
+msgid "Ignore &all"
+msgstr "&Alles ignorieren"
+
+msgid "&Retry"
+msgstr "Wiede&rholen"
+
 #, c-format
 msgid ""
 "Cannot chown \"%s\"\n"
@@ -1937,6 +1958,9 @@ msgstr "cd folgt Lin&ks"
 
 msgid "Sa&fe delete"
 msgstr "Sicheres &löschen"
+
+msgid "Safe overwrite"
+msgstr ""
 
 msgid "A&uto save setup"
 msgstr "Einstellungen auto&m. speichern"
@@ -2542,11 +2566,32 @@ msgstr ""
 "Kann das Ziel des symbolischen Links \"%s\" nicht anlegen\n"
 "%s"
 
+#, c-format
+msgid ""
+"\"%s\"\n"
+"and\n"
+"\"%s\"\n"
+"are the same directory"
+msgstr ""
+"\"%s\"\n"
+"und\n"
+"\"%s\"\n"
+"sind die gleichen Verzeichnisse"
+
+#, c-format
+msgid ""
+"\"%s\"\n"
+"and\n"
+"\"%s\"\n"
+"are the same file"
+msgstr ""
+"\"%s\"\n"
+"und\n"
+"\"%s\"\n"
+"sind die gleichen Dateien"
+
 msgid "Ski&p all"
 msgstr "Alle übers&pringen"
-
-msgid "&Retry"
-msgstr "Wiede&rholen"
 
 #, c-format
 msgid ""
@@ -2571,23 +2616,19 @@ msgstr "Kein&e"
 
 #, c-format
 msgid ""
+"Cannot remove file \"%s\"\n"
+"%s"
+msgstr ""
+"Kann Datei \"%s\" nicht löschen\n"
+"%s"
+
+#, c-format
+msgid ""
 "Cannot stat file \"%s\"\n"
 "%s"
 msgstr ""
 "Kann Datei \"%s\" nicht untersuchen\n"
 "%s"
-
-#, c-format
-msgid ""
-"\"%s\"\n"
-"and\n"
-"\"%s\"\n"
-"are the same file"
-msgstr ""
-"\"%s\"\n"
-"und\n"
-"\"%s\"\n"
-"sind die gleichen Dateien"
 
 #, c-format
 msgid "Cannot overwrite directory \"%s\""
@@ -2599,22 +2640,6 @@ msgid ""
 "%s"
 msgstr ""
 "Kann Datei \"%s\" nicht in \"%s\" umbenennen\n"
-"%s"
-
-#, c-format
-msgid ""
-"Cannot remove file \"%s\"\n"
-"%s"
-msgstr ""
-"Kann Datei \"%s\" nicht löschen\n"
-"%s"
-
-#, c-format
-msgid ""
-"Cannot delete file \"%s\"\n"
-"%s"
-msgstr ""
-"Kann Datei \"%s\" nicht löschen\n"
 "%s"
 
 #, c-format
@@ -2632,6 +2657,25 @@ msgid ""
 msgstr ""
 "Kann Verzeichnis \"%s\" nicht überschreiben\n"
 "%s"
+
+#, c-format
+msgid ""
+"Cannot overwrite file \"%s\"\n"
+"%s"
+msgstr ""
+"Kann Datei \"%s\" nicht überschreiben\n"
+"%s"
+
+#, c-format
+msgid ""
+"Cannot move directory \"%s\" to \"%s\"\n"
+"%s"
+msgstr ""
+"Kann Verzeichnis \"%s\" nicht in \"%s\" umbenennen\n"
+"%s"
+
+msgid "Cannot operate on \"..\"!"
+msgstr "Kann nicht auf \"..\" agieren!"
 
 #, c-format
 msgid ""
@@ -2798,39 +2842,8 @@ msgstr ""
 "%s"
 
 #, c-format
-msgid ""
-"\"%s\"\n"
-"and\n"
-"\"%s\"\n"
-"are the same directory"
-msgstr ""
-"\"%s\"\n"
-"und\n"
-"\"%s\"\n"
-"sind die gleichen Verzeichnisse"
-
-#, c-format
-msgid ""
-"Cannot overwrite file \"%s\"\n"
-"%s"
-msgstr ""
-"Kann Datei \"%s\" nicht überschreiben\n"
-"%s"
-
-#, c-format
-msgid ""
-"Cannot move directory \"%s\" to \"%s\"\n"
-"%s"
-msgstr ""
-"Kann Verzeichnis \"%s\" nicht in \"%s\" umbenennen\n"
-"%s"
-
-#, c-format
 msgid "Directories: %zu, total size: %s"
 msgstr "Verzeichnisse: %zu, Gesamtgröße: %s"
-
-msgid "Cannot operate on \"..\"!"
-msgstr "Kann nicht auf \"..\" agieren!"
 
 msgid "Sorry, I could not put the job in background"
 msgstr "Ich kann den Job nicht in den Hintergrund legen"
@@ -4249,6 +4262,10 @@ msgstr "sftp: Fehler beim Herstellen der SSH Sitzung"
 
 msgid "sftp: No file handler data present for reading file"
 msgstr "sftp: Kein Dateihandler vorhanden zum Lesen der Datei"
+
+#, c-format
+msgid "sftp: socket error: %s"
+msgstr "sftp: Socket Fehler: %s"
 
 #, c-format
 msgid "sftp: (Ctrl-G break) Listing... %s"

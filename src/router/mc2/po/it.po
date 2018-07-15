@@ -11,8 +11,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2017-11-25 19:35+0100\n"
-"PO-Revision-Date: 2017-05-03 09:33+0200\n"
+"POT-Creation-Date: 2018-06-03 11:03+0200\n"
+"PO-Revision-Date: 2018-05-30 09:39+0200\n"
 "Last-Translator: Marco Ciampa <ciampix@libero.it>\n"
 "Language-Team: Italian (http://www.transifex.com/projects/p/mc/language/"
 "it/)\n"
@@ -661,6 +661,9 @@ msgstr "Stampa le opzioni di configurazione"
 msgid "Print last working directory to specified file"
 msgstr "Stampa l'ultima directory corrente nel file specificato"
 
+msgid "<file>"
+msgstr "<file>"
+
 msgid "Enables subshell support (default)"
 msgstr "Abilita il supporto subshell (predefinito)"
 
@@ -673,11 +676,17 @@ msgstr "Annota i messaggi dell'ftp in un file specificato"
 msgid "Set debug level"
 msgstr "Imposta livello di debug"
 
+msgid "<integer>"
+msgstr "<integer>"
+
 msgid "Launches the file viewer on a file"
 msgstr "Esegue il visualizzatore per un file"
 
 msgid "Edit files"
 msgstr "Modifica i file"
+
+msgid "<file> ..."
+msgstr "<file> ..."
 
 msgid "Forces xterm features"
 msgstr "Forza il comportamento xterm"
@@ -718,6 +727,9 @@ msgstr "Richiede l'esecuzione a colori"
 
 msgid "Specifies a color configuration"
 msgstr "Specifica la configurazione dei colori"
+
+msgid "<string>"
+msgstr "<stringa>"
 
 msgid "Show mc with specified skin"
 msgstr "Mostra mc con il tema specificato"
@@ -1641,8 +1653,8 @@ msgstr ""
 "Un semplice editor di testi\n"
 "scritto per il Midnight Commander."
 
-msgid "Copyright (C) 1996-2016 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2016 the Free Software Foundation"
+msgid "Copyright (C) 1996-2018 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2018 the Free Software Foundation"
 
 msgid "About"
 msgstr "Informazioni"
@@ -1829,6 +1841,15 @@ msgstr ""
 "Impossibile eseguire chmod su \"%s\"\n"
 "%s"
 
+msgid "&Ignore"
+msgstr "&Ignora"
+
+msgid "Ignore &all"
+msgstr "Ignor&a tutto"
+
+msgid "&Retry"
+msgstr "&Riprova"
+
 #, c-format
 msgid ""
 "Cannot chown \"%s\"\n"
@@ -1920,6 +1941,9 @@ msgstr "Cd seg&ue i collegamenti"
 
 msgid "Sa&fe delete"
 msgstr "Cance&llazione sicura"
+
+msgid "Safe overwrite"
+msgstr "Sovrascrittura sicura"
 
 msgid "A&uto save setup"
 msgstr "Autosalva &configurazione"
@@ -2525,11 +2549,32 @@ msgstr ""
 "Impossibile creare collegamento simb. destinazione \"%s\"\n"
 "%s"
 
+#, c-format
+msgid ""
+"\"%s\"\n"
+"and\n"
+"\"%s\"\n"
+"are the same directory"
+msgstr ""
+"\"%s\"\n"
+"e\n"
+"\"%s\"\n"
+"sono la stessa directory"
+
+#, c-format
+msgid ""
+"\"%s\"\n"
+"and\n"
+"\"%s\"\n"
+"are the same file"
+msgstr ""
+"\"%s\"\n"
+"e\n"
+"\"%s\"\n"
+"sono lo stesso file"
+
 msgid "Ski&p all"
 msgstr "Sa&lta tutti"
-
-msgid "&Retry"
-msgstr "&Riprova"
 
 #, c-format
 msgid ""
@@ -2554,23 +2599,19 @@ msgstr "Nessun&o"
 
 #, c-format
 msgid ""
+"Cannot remove file \"%s\"\n"
+"%s"
+msgstr ""
+"Impossibile rimuovere il file \"%s\"\n"
+"%s"
+
+#, c-format
+msgid ""
 "Cannot stat file \"%s\"\n"
 "%s"
 msgstr ""
 "Impossibile ottenere info sul file \"%s\"\n"
 "%s"
-
-#, c-format
-msgid ""
-"\"%s\"\n"
-"and\n"
-"\"%s\"\n"
-"are the same file"
-msgstr ""
-"\"%s\"\n"
-"e\n"
-"\"%s\"\n"
-"sono lo stesso file"
 
 #, c-format
 msgid "Cannot overwrite directory \"%s\""
@@ -2582,22 +2623,6 @@ msgid ""
 "%s"
 msgstr ""
 "Impossibile spostare il file \"%s\" in \"%s\" \n"
-"%s"
-
-#, c-format
-msgid ""
-"Cannot remove file \"%s\"\n"
-"%s"
-msgstr ""
-"Impossibile rimuovere il file \"%s\"\n"
-"%s"
-
-#, c-format
-msgid ""
-"Cannot delete file \"%s\"\n"
-"%s"
-msgstr ""
-"Impossibile eliminare il file \"%s\"\n"
 "%s"
 
 #, c-format
@@ -2615,6 +2640,25 @@ msgid ""
 msgstr ""
 "Impossibile sovrascrivere la directory \"%s\"\n"
 "%s"
+
+#, c-format
+msgid ""
+"Cannot overwrite file \"%s\"\n"
+"%s"
+msgstr ""
+"Impossibile sovrascrivere il file \"%s\"\n"
+"%s"
+
+#, c-format
+msgid ""
+"Cannot move directory \"%s\" to \"%s\"\n"
+"%s"
+msgstr ""
+"Impossibile spostare la directory \"%s\" in \"%s\"\n"
+"%s"
+
+msgid "Cannot operate on \"..\"!"
+msgstr "Impossibile operare su \"..\"!"
 
 #, c-format
 msgid ""
@@ -2781,39 +2825,8 @@ msgstr ""
 "%s"
 
 #, c-format
-msgid ""
-"\"%s\"\n"
-"and\n"
-"\"%s\"\n"
-"are the same directory"
-msgstr ""
-"\"%s\"\n"
-"e\n"
-"\"%s\"\n"
-"sono la stessa directory"
-
-#, c-format
-msgid ""
-"Cannot overwrite file \"%s\"\n"
-"%s"
-msgstr ""
-"Impossibile sovrascrivere il file \"%s\"\n"
-"%s"
-
-#, c-format
-msgid ""
-"Cannot move directory \"%s\" to \"%s\"\n"
-"%s"
-msgstr ""
-"Impossibile spostare la directory \"%s\" in \"%s\"\n"
-"%s"
-
-#, c-format
 msgid "Directories: %zu, total size: %s"
 msgstr "Directory: %zu, dim totale: %s"
-
-msgid "Cannot operate on \"..\"!"
-msgstr "Impossibile operare su \"..\"!"
 
 msgid "Sorry, I could not put the job in background"
 msgstr "Spiacente, non posso mettere il programma in background"
@@ -4226,6 +4239,10 @@ msgstr "sftp: fallita avvio sessione SSH"
 
 msgid "sftp: No file handler data present for reading file"
 msgstr "sftp: nessun file handler dati per la lettura del file"
+
+#, c-format
+msgid "sftp: socket error: %s"
+msgstr "sftp: errore socket: %s"
 
 #, c-format
 msgid "sftp: (Ctrl-G break) Listing... %s"
