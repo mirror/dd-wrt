@@ -112,6 +112,7 @@ def SAMBA_LIBRARY(bld, libname, source,
                   vnum=None,
                   soname=None,
                   cflags='',
+                  cflags_end=None,
                   ldflags='',
                   external_library=False,
                   realname=None,
@@ -144,7 +145,7 @@ def SAMBA_LIBRARY(bld, libname, source,
     '''define a Samba library'''
 
     if pyembed and bld.env['IS_EXTRA_PYTHON']:
-        public_headers = pc_files = None
+        public_headers = None
 
     if private_library and public_headers:
         raise Utils.WafError("private library '%s' must not have public header files" %
@@ -195,6 +196,7 @@ def SAMBA_LIBRARY(bld, libname, source,
                         private_headers= private_headers,
                         header_path    = header_path,
                         cflags         = cflags,
+                        cflags_end     = cflags_end,
                         group          = subsystem_group,
                         autoproto      = autoproto,
                         autoproto_extra_source=autoproto_extra_source,
@@ -225,7 +227,7 @@ def SAMBA_LIBRARY(bld, libname, source,
         if vnum is None and soname is None:
             raise Utils.WafError("public library '%s' must have a vnum" %
                     libname)
-        if pc_files is None and not bld.env['IS_EXTRA_PYTHON']:
+        if pc_files is None:
             raise Utils.WafError("public library '%s' must have pkg-config file" %
                        libname)
         if public_headers is None and not bld.env['IS_EXTRA_PYTHON']:
@@ -328,7 +330,10 @@ def SAMBA_LIBRARY(bld, libname, source,
         t.link_name = link_name
 
     if pc_files is not None and not private_library:
-        bld.PKG_CONFIG_FILES(pc_files, vnum=vnum)
+        if pyembed and bld.env['IS_EXTRA_PYTHON']:
+            bld.PKG_CONFIG_FILES(pc_files, vnum=vnum, extra_name=bld.env['PYTHON_SO_ABI_FLAG'])
+        else:
+            bld.PKG_CONFIG_FILES(pc_files, vnum=vnum)
 
     if (manpages is not None and 'XSLTPROC_MANPAGES' in bld.env and
         bld.env['XSLTPROC_MANPAGES']):
@@ -348,6 +353,7 @@ def SAMBA_BINARY(bld, binname, source,
                  modules=None,
                  ldflags=None,
                  cflags='',
+                 cflags_end=None,
                  autoproto=None,
                  use_hostcc=False,
                  use_global_deps=True,
@@ -405,6 +411,7 @@ def SAMBA_BINARY(bld, binname, source,
                         deps           = deps,
                         includes       = includes,
                         cflags         = pie_cflags,
+                        cflags_end     = cflags_end,
                         group          = subsystem_group,
                         autoproto      = autoproto,
                         subsystem_name = subsystem_name,
@@ -453,6 +460,7 @@ def SAMBA_MODULE(bld, modname, source,
                  autoproto=None,
                  autoproto_extra_source='',
                  cflags='',
+                 cflags_end=None,
                  internal_module=True,
                  local_include=True,
                  global_include=True,
@@ -462,7 +470,8 @@ def SAMBA_MODULE(bld, modname, source,
                  pyembed=False,
                  manpages=None,
                  allow_undefined_symbols=False,
-                 allow_warnings=False
+                 allow_warnings=False,
+                 install=True
                  ):
     '''define a Samba module.'''
 
@@ -482,6 +491,7 @@ def SAMBA_MODULE(bld, modname, source,
                     autoproto=autoproto,
                     autoproto_extra_source=autoproto_extra_source,
                     cflags=cflags,
+                    cflags_end=cflags_end,
                     local_include=local_include,
                     global_include=global_include,
                     allow_warnings=allow_warnings,
@@ -521,6 +531,7 @@ def SAMBA_MODULE(bld, modname, source,
                       deps=deps,
                       includes=includes,
                       cflags=cflags,
+                      cflags_end=cflags_end,
                       realname = realname,
                       autoproto = autoproto,
                       local_include=local_include,
@@ -532,7 +543,8 @@ def SAMBA_MODULE(bld, modname, source,
                       pyembed=pyembed,
                       manpages=manpages,
                       allow_undefined_symbols=allow_undefined_symbols,
-                      allow_warnings=allow_warnings
+                      allow_warnings=allow_warnings,
+                      install=install
                       )
 
 
@@ -880,13 +892,30 @@ def INSTALL_WILDCARD(bld, destdir, pattern, chmod=MODE_644, flat=False,
                   python_fixup=python_fixup, base_name=trim_path)
 Build.BuildContext.INSTALL_WILDCARD = INSTALL_WILDCARD
 
+def INSTALL_DIR(bld, path, chmod=0o755, env=None):
+    """Install a directory if it doesn't exist, always set permissions."""
 
-def INSTALL_DIRS(bld, destdir, dirs):
+    if not path:
+        return []
+
+    destpath = bld.get_install_path(path, env)
+
+    if bld.is_install > 0:
+        if not os.path.isdir(destpath):
+            try:
+                os.makedirs(destpath)
+                os.chmod(destpath, chmod)
+            except OSError as e:
+                if not os.path.isdir(destpath):
+                    raise Utils.WafError("Cannot create the folder '%s' (error: %s)" % (path, e))
+Build.BuildContext.INSTALL_DIR = INSTALL_DIR
+
+def INSTALL_DIRS(bld, destdir, dirs, chmod=0o755, env=None):
     '''install a set of directories'''
     destdir = bld.EXPAND_VARIABLES(destdir)
     dirs = bld.EXPAND_VARIABLES(dirs)
     for d in TO_LIST(dirs):
-        bld.install_dir(os.path.join(destdir, d))
+        INSTALL_DIR(bld, os.path.join(destdir, d), chmod, env)
 Build.BuildContext.INSTALL_DIRS = INSTALL_DIRS
 
 

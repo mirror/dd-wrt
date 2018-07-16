@@ -5,7 +5,7 @@ VERSION = '1.2.1'
 
 blddir = 'bin'
 
-import sys, os
+import Logs, sys, os
 
 # find the buildtools directory
 srcdir = '.'
@@ -65,13 +65,48 @@ def configure(conf):
                         headers='sys/inotify.h')
 
     conf.CHECK_HEADERS('security/pam_appl.h zlib.h asm/unistd.h')
-    conf.CHECK_HEADERS('aio.h sys/unistd.h rpc/rpc.h rpc/nettype.h alloca.h float.h')
+    conf.CHECK_HEADERS('aio.h sys/unistd.h alloca.h float.h')
 
-    conf.CHECK_HEADERS('rpcsvc/nis.h rpcsvc/ypclnt.h sys/sysctl.h')
+    conf.SET_TARGET_TYPE('tirpc', 'EMPTY')
+
+    if conf.CHECK_CODE(
+            '\n#ifndef _TIRPC_RPC_H\n#error "no tirpc headers in system path"\n#endif\n',
+            'HAVE_RPC_RPC_HEADERS',
+            headers=['rpc/rpc.h', 'rpc/nettype.h'],
+            msg='Checking for tirpc rpc headers in default system path'):
+        if conf.CONFIG_SET('HAVE_RPC_RPC_H'):
+            conf.undefine('HAVE_RPC_RPC_H')
+
+    if not conf.CONFIG_SET('HAVE_RPC_RPC_H'):
+        if conf.CHECK_CFG(package='libtirpc', args='--cflags --libs',
+                       msg='Checking for libtirpc headers',
+                       uselib_store='TIRPC'):
+            conf.CHECK_HEADERS('rpc/rpc.h rpc/nettype.h', lib='tirpc', together=True)
+            conf.SET_TARGET_TYPE('tirpc', 'SYSLIB')
+    if not conf.CONFIG_SET('HAVE_RPC_RPC_H'):
+        if conf.CHECK_CFG(package='libntirpc', args='--cflags',
+                       msg='Checking for libntirpc headers',
+                       uselib_store='TIRPC'):
+            conf.CHECK_HEADERS('rpc/rpc.h rpc/nettype.h', lib='tirpc', together=True)
+            conf.SET_TARGET_TYPE('tirpc', 'SYSLIB')
+    if not conf.CONFIG_SET('HAVE_RPC_RPC_H'):
+            Logs.warn('No rpc/rpc.h header found, tirpc or libntirpc missing?')
+
+    conf.SET_TARGET_TYPE('nsl', 'EMPTY')
+    conf.CHECK_HEADERS('rpc/rpc.h rpcsvc/yp_prot.h', lib='tirpc')
+    if not conf.CONFIG_SET('HAVE_RPCSVC_YP_PROT_H'):
+        if conf.CHECK_CFG(package='libnsl', args='--cflags --libs',
+                          msg='Checking for libnsl',
+                          uselib_store='NSL'):
+            conf.SET_TARGET_TYPE('nsl', 'SYSLIB')
+            conf.CHECK_HEADERS('rpc/rpc.h rpcsvc/yp_prot.h', lib='tirpc nsl')
+        else:
+            conf.SET_TARGET_TYPE('nsl', 'SYSLIB')
+    conf.CHECK_HEADERS('rpcsvc/nis.h rpcsvc/ypclnt.h', lib='tirpc nsl')
+
+    conf.CHECK_HEADERS('sys/sysctl.h')
     conf.CHECK_HEADERS('sys/fileio.h sys/filesys.h sys/dustat.h sys/sysmacros.h')
     conf.CHECK_HEADERS('xfs/libxfs.h netgroup.h')
-
-    conf.CHECK_CODE('', headers='rpc/rpc.h rpcsvc/yp_prot.h', define='HAVE_RPCSVC_YP_PROT_H')
 
     conf.CHECK_HEADERS('valgrind.h valgrind/valgrind.h valgrind/memcheck.h')
     conf.CHECK_HEADERS('nss_common.h nsswitch.h ns_api.h')
@@ -80,6 +115,15 @@ def configure(conf):
     conf.CHECK_HEADERS('syscall.h sys/syscall.h inttypes.h')
     conf.CHECK_HEADERS('sys/atomic.h')
     conf.CHECK_HEADERS('libgen.h')
+
+    if conf.CHECK_CFLAGS('-Wno-format-truncation'):
+        conf.define('HAVE_WNO_FORMAT_TRUNCATION', '1')
+
+    if conf.CHECK_CFLAGS('-Wno-unused-function'):
+        conf.define('HAVE_WNO_UNUSED_FUNCTION', '1')
+
+    if conf.CHECK_CFLAGS('-Wno-strict-overflow'):
+        conf.define('HAVE_WNO_STRICT_OVERFLOW', '1')
 
     # Check for process set name support
     conf.CHECK_CODE('''
@@ -216,6 +260,42 @@ def configure(conf):
                     headers='stdint.h sys/atomic.h',
                     msg='Checking for atomic_add_32 compiler builtin')
 
+    conf.CHECK_CODE('''
+                    #define FALL_THROUGH __attribute__((fallthrough))
+
+                    enum direction_e {
+                        UP = 0,
+                        DOWN,
+                    };
+
+                    int main(void) {
+                        enum direction_e key = UP;
+                        int i = 10;
+                        int j = 0;
+
+                        switch (key) {
+                        case UP:
+                            i = 5;
+                            FALL_THROUGH;
+                        case DOWN:
+                            j = i * 2;
+                            break;
+                        default:
+                            break;
+                        }
+
+                        if (j < i) {
+                            return 1;
+                        }
+
+                        return 0;
+                    }
+                    ''',
+                    'HAVE_FALLTHROUGH_ATTRIBUTE',
+                    addmain=False,
+                    strict=True,
+                    msg='Checking for fallthrough attribute')
+
     # these may be builtins, so we need the link=False strategy
     conf.CHECK_FUNCS('strdup memmem printf memset memcpy memmove strcpy strncpy bzero', link=False)
 
@@ -246,16 +326,33 @@ def configure(conf):
     if conf.CONFIG_SET('HAVE_MEMALIGN'):
         conf.CHECK_DECLS('memalign', headers='malloc.h')
 
+    # glibc up to 2.3.6 had dangerously broken posix_fallocate(). DON'T USE IT.
+    if conf.CHECK_CODE('''
+#define _XOPEN_SOURCE 600
+#include <stdlib.h>
+#if defined(__GLIBC__) && ((__GLIBC__ < 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ < 4))
+#error probably broken posix_fallocate
+#endif
+''',
+                       '_POSIX_FALLOCATE_CAPABLE_LIBC',
+                       msg='Checking for posix_fallocate-capable libc'):
+        conf.CHECK_FUNCS('posix_fallocate')
+
     conf.CHECK_FUNCS('prctl dirname basename')
+
+    strlcpy_in_bsd = False
 
     # libbsd on some platforms provides strlcpy and strlcat
     if not conf.CHECK_FUNCS('strlcpy strlcat'):
-        conf.CHECK_FUNCS_IN('strlcpy strlcat', 'bsd', headers='bsd/string.h',
-                checklibc=True)
+        if conf.CHECK_FUNCS_IN('strlcpy strlcat', 'bsd', headers='bsd/string.h',
+                               checklibc=True):
+            strlcpy_in_bsd = True
     if not conf.CHECK_FUNCS('getpeereid'):
         conf.CHECK_FUNCS_IN('getpeereid', 'bsd', headers='sys/types.h bsd/unistd.h')
     if not conf.CHECK_FUNCS_IN('setproctitle', 'setproctitle', headers='setproctitle.h'):
         conf.CHECK_FUNCS_IN('setproctitle', 'bsd', headers='sys/types.h bsd/unistd.h')
+    if not conf.CHECK_FUNCS('setproctitle_init'):
+        conf.CHECK_FUNCS_IN('setproctitle_init', 'bsd', headers='sys/types.h bsd/unistd.h')
 
     if not conf.CHECK_FUNCS('closefrom'):
         conf.CHECK_FUNCS_IN('closefrom', 'bsd', headers='bsd/unistd.h')
@@ -296,35 +393,24 @@ def configure(conf):
 
     xattr_headers='sys/attributes.h attr/xattr.h sys/xattr.h'
 
-    conf.CHECK_FUNCS_IN('''
-fgetxattr flistea flistxattr
-fremovexattr fsetxattr getxattr
-listxattr removexattr setxattr
-''', 'attr', checklibc=True, headers=xattr_headers)
+    # default to 1, we set it to 0 if we don't find any EA implementation below:
+    conf.DEFINE('HAVE_XATTR_SUPPORT', 1)
+    if conf.CHECK_FUNCS_IN('getxattr', 'attr', checklibc=True, headers=xattr_headers):
+        conf.DEFINE('HAVE_XATTR_XATTR', 1)
+        # Darwin has extra options to xattr-family functions
+        conf.CHECK_CODE('getxattr(NULL, NULL, NULL, 0, 0, 0)',
+                        headers=xattr_headers, local_include=False,
+                        define='XATTR_ADDITIONAL_OPTIONS',
+                        msg="Checking whether xattr interface takes additional options")
+    elif conf.CHECK_FUNCS_IN('attr_listf', 'attr', checklibc=True, headers=xattr_headers):
+        conf.DEFINE('HAVE_XATTR_ATTR', 1)
+    elif conf.CHECK_FUNCS('extattr_list_fd'):
+        conf.DEFINE('HAVE_XATTR_EXTATTR', 1)
+    elif conf.CHECK_FUNCS('flistea'):
+        conf.DEFINE('HAVE_XATTR_EA', 1)
+    elif not conf.CHECK_FUNCS('attropen'):
+            conf.DEFINE('HAVE_XATTR_SUPPORT', 0)
 
-    # We need to check for linux xattrs first, as we do not wish to link to -lattr
-    # (the XFS compat API) on Linux systems with the native xattr API
-    if not conf.CONFIG_SET('HAVE_GETXATTR'):
-        conf.CHECK_FUNCS_IN('''
-attr_get attr_getf attr_list attr_listf attropen attr_remove
-attr_removef attr_set attr_setf extattr_delete_fd extattr_delete_file
-extattr_get_fd extattr_get_file extattr_list_fd extattr_list_file
-extattr_set_fd extattr_set_file fgetea
-fremoveea fsetea getea listea
-removeea setea
-''', 'attr', checklibc=True, headers=xattr_headers)
-
-    if (conf.CONFIG_SET('HAVE_ATTR_LISTF') or
-        conf.CONFIG_SET('HAVE_EXTATTR_LIST_FD') or
-        conf.CONFIG_SET('HAVE_FLISTEA') or
-        conf.CONFIG_SET('HAVE_FLISTXATTR')):
-            conf.DEFINE('HAVE_XATTR_SUPPORT', 1)
-
-    # Darwin has extra options to xattr-family functions
-    conf.CHECK_CODE('getxattr(NULL, NULL, NULL, 0, 0, 0)',
-                    headers=xattr_headers, local_include=False,
-                    define='XATTR_ADDITIONAL_OPTIONS',
-                    msg="Checking whether xattr interface takes additional options")
 
     conf.CHECK_FUNCS_IN('dlopen dlsym dlerror dlclose', 'dl',
                         checklibc=True, headers='dlfcn.h dl.h')
@@ -466,6 +552,7 @@ removeea setea
             conf.DEFINE('HAVE_ROBUST_MUTEXES', 1)
 
     conf.CHECK_FUNCS_IN('crypt', 'crypt', checklibc=True)
+    conf.CHECK_FUNCS_IN('crypt_r', 'crypt', checklibc=True)
 
     conf.CHECK_VARIABLE('rl_event_hook', define='HAVE_DECL_RL_EVENT_HOOK', always=True,
                         headers='readline.h readline/readline.h readline/history.h')
@@ -572,6 +659,10 @@ removeea setea
                                 headers='sys/socket.h netinet/in.h',
                                 define='HAVE_SOCK_SIN_LEN')
 
+    conf.CHECK_STRUCTURE_MEMBER('struct sockaddr_in6', 'sin6_len',
+                                headers='sys/socket.h netinet/in.h',
+                                define='HAVE_SOCK_SIN6_LEN')
+
     conf.CHECK_CODE('struct sockaddr_un sunaddr; sunaddr.sun_family = AF_UNIX;',
                     define='HAVE_UNIXSOCKET', headers='sys/socket.h sys/un.h')
 
@@ -607,6 +698,9 @@ removeea setea
 
     # look for a method of finding the list of network interfaces
     for method in ['HAVE_IFACE_GETIFADDRS', 'HAVE_IFACE_AIX', 'HAVE_IFACE_IFCONF', 'HAVE_IFACE_IFREQ']:
+        bsd_for_strlcpy = ''
+        if strlcpy_in_bsd:
+            bsd_for_strlcpy = ' bsd'
         if conf.CHECK_CODE('''
                            #define %s 1
                            #define NO_CONFIG_H 1
@@ -619,13 +713,20 @@ removeea setea
                            #include "test/getifaddrs.c"
                            ''' % method,
                            method,
-                           lib='nsl socket',
+                           lib='nsl socket' + bsd_for_strlcpy,
                            addmain=False,
                            execute=True):
             break
 
     conf.RECURSE('system')
     conf.SAMBA_CONFIG_H()
+    if conf.CHECK_FUNCS('strerror_r'):
+        # Check if strerror_r is XSI-Compatable, the default GNU implementation
+        # is not
+        conf.CHECK_CODE('int strerror_r(int errnum, char *buf, size_t buflen);',
+                        'STRERROR_R_XSI_NOT_GNU',
+                        headers='string.h', addmain=False, link=False,
+                        msg="Checking for XSI (rather than GNU) prototype for strerror_r")
 
 
 REPLACEMENT_FUNCTIONS = {
@@ -703,11 +804,14 @@ def build(bld):
                       private_library=True,
                       deps='crypt dl nsl socket rt attr' + extra_libs)
 
+    replace_test_cflags="-Wno-format-zero-length"
+    if bld.CONFIG_SET('HAVE_WNO_FORMAT_TRUNCATION'):
+        replace_test_cflags += " -Wno-format-truncation"
     bld.SAMBA_SUBSYSTEM('replace-test',
                         source='''test/testsuite.c test/strptime.c
                         test/os2_delete.c test/getifaddrs.c''',
                         deps='replace',
-                        cflags="-Wno-format-length")
+                        cflags=replace_test_cflags)
 
     if bld.env.standalone_replace:
         bld.SAMBA_BINARY('replace_testsuite',
