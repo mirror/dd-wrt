@@ -24,7 +24,7 @@ def check(self, *k, **kw):
     if not 'env' in kw:
         kw['env'] = self.env.copy()
 
-    # match the configuration test with speficic options, for example:
+    # match the configuration test with specific options, for example:
     # --with-libiconv -> Options.options.iconv_open -> "Checking for library iconv"
     additional_dirs = []
     if 'msg' in kw:
@@ -50,7 +50,7 @@ def check(self, *k, **kw):
     ret = None
     try:
         ret = self.run_c_code(*k, **kw)
-    except Configure.ConfigurationError, e:
+    except Configure.ConfigurationError as e:
         self.check_message_2(kw['errmsg'], 'YELLOW')
         if 'mandatory' in kw and kw['mandatory']:
             if Logs.verbose > 1:

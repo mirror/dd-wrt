@@ -407,10 +407,11 @@ const char *talloc_set_name(const void *ptr, const char *fmt, ...) PRINTF_ATTRIB
  *
  * @param[in]  new_ctx  The new parent context.
  *
- * @param[in]  pptr     Pointer to the talloc chunk to move.
+ * @param[in]  pptr     Pointer to a pointer to the talloc chunk to move.
  *
- * @return              The pointer of the talloc chunk it has been moved to,
- *                      NULL on error.
+ * @return              The pointer to the talloc chunk that moved.
+ *                      It does not have any failure modes.
+ *
  */
 void *talloc_move(const void *new_ctx, void **pptr);
 #else
@@ -1225,7 +1226,7 @@ size_t talloc_array_length(const void *ctx);
  *
  * @code
  *     ptr = talloc_array(ctx, type, count);
- *     if (ptr) memset(ptr, sizeof(type) * count);
+ *     if (ptr) memset(ptr, 0, sizeof(type) * count);
  * @endcode
  */
 void *talloc_zero_array(const void *ctx, #type, unsigned count);
@@ -1897,8 +1898,8 @@ void talloc_set_log_stderr(void);
  *	  This affects all children of this context and constrain any
  *	  allocation in the hierarchy to never exceed the limit set.
  *	  The limit can be removed by setting 0 (unlimited) as the
- *	  max_size by calling the funciton again on the sam context.
- *	  Memory limits can also be nested, meaning a hild can have
+ *	  max_size by calling the function again on the same context.
+ *	  Memory limits can also be nested, meaning a child can have
  *	  a stricter memory limit than a parent.
  *	  Memory limits are enforced only at memory allocation time.
  *	  Stealing a context into a 'limited' hierarchy properly
