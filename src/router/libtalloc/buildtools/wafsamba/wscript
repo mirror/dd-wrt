@@ -196,6 +196,10 @@ def set_options(opt):
                    help='tag release in git at the same time',
                    type='string', action='store', dest='TAG_RELEASE')
 
+    opt.add_option('--disable-python',
+                    help='do not generate python modules',
+                    action='store_true', dest='disable_python', default=False)
+
     opt.add_option('--extra-python', type=str,
                     help=("build selected libraries for the specified "
                           "additional version of Python "
@@ -207,6 +211,8 @@ def set_options(opt):
 def configure(conf):
     conf.env.hlist = []
     conf.env.srcdir = conf.srcdir
+
+    conf.define('SRCDIR', conf.env['srcdir'])
 
     if Options.options.timestamp_dependencies:
         conf.ENABLE_TIMESTAMP_DEPENDENCIES()
@@ -263,6 +269,7 @@ def configure(conf):
     conf.env.MODULESDIR = Options.options.MODULESDIR
     conf.env.PRIVATELIBDIR = Options.options.PRIVATELIBDIR
     conf.env.BUNDLED_LIBS = Options.options.BUNDLED_LIBS.split(',')
+    conf.env.SYSTEM_LIBS = ()
     conf.env.PRIVATE_LIBS = Options.options.PRIVATE_LIBS.split(',')
     conf.env.BUILTIN_LIBRARIES = Options.options.BUILTIN_LIBRARIES.split(',')
     conf.env.NONSHARED_BINARIES = Options.options.NONSHARED_BINARIES.split(',')
@@ -279,7 +286,13 @@ def configure(conf):
     conf.env.AUTOCONF_HOST  = Options.options.AUTOCONF_HOST
     conf.env.AUTOCONF_PROGRAM_PREFIX = Options.options.AUTOCONF_PROGRAM_PREFIX
 
+    conf.env.disable_python = Options.options.disable_python
+
     conf.env.EXTRA_PYTHON = Options.options.EXTRA_PYTHON
+
+    if (conf.env.disable_python and conf.env.EXTRA_PYTHON):
+        Logs.error('ERROR: cannot specify both --disable-python and --extra-python.')
+        sys.exit(1)
 
     if (conf.env.AUTOCONF_HOST and
         conf.env.AUTOCONF_BUILD and
@@ -301,10 +314,6 @@ def configure(conf):
 
     conf.env.GIT_LOCAL_CHANGES = Options.options.GIT_LOCAL_CHANGES
 
-    conf.CHECK_COMMAND(['uname', '-a'],
-                       msg='Checking build system',
-                       define='BUILD_SYSTEM',
-                       on_target=False)
     conf.CHECK_UNAME()
 
     # see if we can compile and run a simple C program
@@ -366,6 +375,7 @@ def configure(conf):
         conf.CHECK_CODE('''int main(void) { return 0; }
                            __attribute__((visibility("default"))) void vis_foo2(void) {}''',
                         cflags=conf.env.VISIBILITY_CFLAGS,
+                        strict=True,
                         define='HAVE_VISIBILITY_ATTR', addmain=False)
 
     # check HAVE_CONSTRUCTOR_ATTRIBUTE
@@ -383,6 +393,7 @@ def configure(conf):
             ''',
             'HAVE_CONSTRUCTOR_ATTRIBUTE',
             addmain=False,
+            strict=True,
             msg='Checking for library constructor support')
 
         # check HAVE_DESTRUCTOR_ATTRIBUTE
@@ -400,6 +411,7 @@ def configure(conf):
             ''',
             'HAVE_DESTRUCTOR_ATTRIBUTE',
             addmain=False,
+            strict=True,
             msg='Checking for library destructor support')
 
     conf.CHECK_CODE('''
@@ -416,6 +428,7 @@ def configure(conf):
             ''',
             'HAVE___ATTRIBUTE__',
             addmain=False,
+            strict=True,
             msg='Checking for __attribute__')
 
     if sys.platform.startswith('aix'):
