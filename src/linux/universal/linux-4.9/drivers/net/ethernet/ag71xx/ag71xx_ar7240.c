@@ -293,6 +293,7 @@ struct ar7240sw {
 	struct mii_bus	*mii_bus;
 	struct ag71xx_switch_platform_data *swdata;
 	struct switch_dev swdev;
+	bool init;
 	int num_ports;
 	u8 ver;
 	bool vlan;
@@ -909,7 +910,7 @@ ar7240_hw_apply(struct switch_dev *dev)
 	ar7240_vtu_op(as, AR7240_VTU_OP_FLUSH, 0);
 
 	memset(portmask, 0, sizeof(portmask));
-	if (as->vlan) {
+	if (!as->init) {
 		/* calculate the port destination masks and load vlans
 		 * into the vlan translation unit */
 		for (j = 0; j < AR7240_MAX_VLANS; j++) {
@@ -953,6 +954,7 @@ ar7240_reset_switch(struct switch_dev *dev)
 {
 	struct ar7240sw *as = sw_to_ar7240(dev);
 	ar7240sw_reset(as);
+	as->init = false;
 	return 0;
 }
 
@@ -1340,7 +1342,6 @@ void ag71xx_ar7240_start(struct ag71xx *ag)
 
 	ag->speed = SPEED_1000;
 	ag->duplex = 1;
-
 	ar7240_set_addr(as, ag->dev->dev_addr);
 	ar7240_hw_apply(&as->swdev);
 
@@ -1361,6 +1362,7 @@ int ag71xx_ar7240_init(struct ag71xx *ag)
 		return -ENODEV;
 
 	ag->phy_priv = as;
+	ag->init = true;
 	ar7240sw_reset(as);
 
 	rwlock_init(&as->stats_lock);
