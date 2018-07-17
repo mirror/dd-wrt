@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: file-list.h 14241 2014-01-21 03:10:30Z jordan $
+ * $Id$
  */
 
 #ifndef GTK_TORRENT_FILE_LIST_H

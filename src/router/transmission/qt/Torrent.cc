@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: Torrent.cc 14610 2015-12-06 18:02:37Z jordan $
+ * $Id$
  */
 
 #include <cassert>

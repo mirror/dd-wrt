@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: MainWindow.cc 14599 2015-11-14 14:22:57Z mikedld $
+ * $Id$
  */
 
 #include <cassert>
@@ -623,7 +623,7 @@ MainWindow::openStats ()
 void
 MainWindow::openDonate ()
 {
-  QDesktopServices::openUrl (QUrl (QLatin1String ("http://www.transmissionbt.com/donate.php")));
+  QDesktopServices::openUrl (QUrl (QLatin1String ("https://transmissionbt.com/donate/")));
 }
 
 void
@@ -635,7 +635,7 @@ MainWindow::openAbout ()
 void
 MainWindow::openHelp ()
 {
-  QDesktopServices::openUrl (QUrl (QString::fromLatin1 ("http://www.transmissionbt.com/help/gtk/%1.%2x").
+  QDesktopServices::openUrl (QUrl (QString::fromLatin1 ("https://transmissionbt.com/help/gtk/%1.%2x").
     arg (MAJOR_VERSION).arg (MINOR_VERSION / 10)));
 }
 

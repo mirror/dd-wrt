@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: daemon.h 14485 2015-04-04 17:43:56Z mikedld $
+ * $Id$
  */
 
 #ifndef DTR_DAEMON_H

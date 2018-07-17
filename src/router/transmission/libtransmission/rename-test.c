@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: rename-test.c 14491 2015-04-11 10:51:59Z mikedld $
+ * $Id$
  */
 
 #include <assert.h>

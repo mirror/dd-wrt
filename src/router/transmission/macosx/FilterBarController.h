@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: FilterBarController.h 13414 2012-07-25 12:49:11Z livings124 $
+ * $Id$
  * 
  * Copyright (c) 2011-2012 Transmission authors and contributors
  *

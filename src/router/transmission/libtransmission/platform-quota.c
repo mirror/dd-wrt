@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: platform-quota.c 14480 2015-03-19 06:08:06Z mikedld $
+ * $Id$
  */
 
 #include <errno.h>

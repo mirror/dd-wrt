@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: PrefsController.h 14161 2013-08-10 02:29:12Z livings124 $
+ * $Id$
  *
  * Copyright (c) 2005-2012 Transmission authors and contributors
  *

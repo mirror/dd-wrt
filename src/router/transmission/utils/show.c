@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: show.c 14615 2015-12-06 22:39:14Z jordan $
+ * $Id$
  */
 
 #include <stdio.h> /* fprintf () */

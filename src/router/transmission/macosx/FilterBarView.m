@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: FilterBarView.m 14340 2014-10-16 13:01:17Z livings124 $
+ * $Id$
  * 
  * Copyright (c) 2011-2012 Transmission authors and contributors
  *

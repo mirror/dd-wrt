@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: daemon-win32.c 14700 2016-03-02 16:15:06Z mikedld $
+ * $Id$
  */
 
 #include <process.h> /* _beginthreadex () */

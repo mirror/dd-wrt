@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: variant.c 14634 2015-12-25 11:34:35Z mikedld $
+ * $Id$
  */
 
 #if defined (HAVE_USELOCALE) && (!defined (_XOPEN_SOURCE) || _XOPEN_SOURCE < 700)

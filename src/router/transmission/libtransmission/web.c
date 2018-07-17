@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: web.c 14644 2015-12-29 19:37:31Z mikedld $
+ * $Id$
  */
 
 #include <assert.h>
@@ -594,6 +594,7 @@ tr_webGetResponseStr (long code)
       case 415: return "Unsupported Media Type";
       case 416: return "Requested Range Not Satisfiable";
       case 417: return "Expectation Failed";
+      case 421: return "Misdirected Request";
       case 500: return "Internal Server Error";
       case 501: return "Not Implemented";
       case 502: return "Bad Gateway";

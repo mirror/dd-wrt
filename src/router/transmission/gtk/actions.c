@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: actions.c 14681 2016-02-23 04:34:57Z mikedld $
+ * $Id$
  */
 
 #include <string.h>

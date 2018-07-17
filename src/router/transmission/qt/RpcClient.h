@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: RpcClient.h 14608 2015-12-06 17:28:54Z jordan $
+ * $Id$
  */
 
 #ifndef QTR_RPC_CLIENT_H

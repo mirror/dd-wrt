@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: AddWindowController.m 14587 2015-10-23 04:09:40Z mikedld $
+ * $Id$
  *
  * Copyright (c) 2008-2012 Transmission authors and contributors
  *

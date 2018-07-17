@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: InfoGeneralViewController.h 13481 2012-09-08 20:22:05Z livings124 $
+ * $Id$
  *
  * Copyright (c) 2010-2012 Transmission authors and contributors
  *

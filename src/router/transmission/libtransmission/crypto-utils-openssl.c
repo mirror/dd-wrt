@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: crypto-utils-openssl.c 14640 2015-12-28 23:53:55Z mikedld $
+ * $Id$
  */
 
 #ifdef __APPLE__
@@ -50,7 +50,7 @@ log_openssl_error (const char * file,
       static bool strings_loaded = false;
       if (!strings_loaded)
         {
-#if OPENSSL_VERSION_NUMBER < 0x10100000
+#if OPENSSL_VERSION_NUMBER < 0x10100000 || (defined (LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000)
           ERR_load_crypto_strings ();
 #else
           OPENSSL_init_crypto (OPENSSL_INIT_LOAD_CRYPTO_STRINGS, NULL);
@@ -236,7 +236,7 @@ tr_rc4_process (tr_rc4_ctx_t   handle,
 ****
 ***/
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000
+#if OPENSSL_VERSION_NUMBER < 0x10100000 || (defined (LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000)
 
 static inline int
 DH_set0_pqg (DH     * dh,

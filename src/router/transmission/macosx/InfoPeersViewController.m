@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: InfoPeersViewController.m 14706 2016-03-03 22:27:45Z mikedld $
+ * $Id$
  *
  * Copyright (c) 2010-2012 Transmission authors and contributors
  *

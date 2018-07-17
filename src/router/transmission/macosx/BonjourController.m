@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: BonjourController.m 13491 2012-09-10 02:01:07Z livings124 $
+ * $Id$
  *
  * Copyright (c) 2008-2012 Transmission authors and contributors
  *

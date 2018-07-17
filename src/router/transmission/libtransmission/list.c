@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: list.c 14319 2014-07-06 20:06:45Z jordan $
+ * $Id$
  */
 
 #include "transmission.h"

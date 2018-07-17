@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: watchdir-common.h 14651 2016-01-02 14:28:59Z mikedld $
+ * $Id$
  */
 
 #ifndef TR_WATCHDIR_COMMON_H

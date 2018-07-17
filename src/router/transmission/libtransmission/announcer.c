@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: announcer.c 14644 2015-12-29 19:37:31Z mikedld $
+ * $Id$
  */
 
 #include <assert.h>
@@ -1424,6 +1424,8 @@ multiscrape (tr_announcer * announcer, tr_ptrArray * tiers)
         tr_tier * tier = tr_ptrArrayNth (tiers, i);
         char * url = tier->currentTracker->scrape;
         const uint8_t * hash = tier->tor->info.hash;
+
+        assert (url != NULL);
 
         /* if there's a request with this scrape URL and a free slot, use it */
         for (j=0; j<request_count; ++j)

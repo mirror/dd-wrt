@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: Application.h 14600 2015-11-15 11:03:27Z mikedld $
+ * $Id$
  */
 
 #ifndef QTR_APPLICATION_H

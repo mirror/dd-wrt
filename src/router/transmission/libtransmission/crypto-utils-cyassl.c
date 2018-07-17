@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: crypto-utils-cyassl.c 14442 2015-01-07 13:20:56Z mikedld $
+ * $Id$
  */
 
 #include <assert.h>

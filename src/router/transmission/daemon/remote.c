@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: remote.c 14707 2016-03-05 17:27:40Z mikedld $
+ * $Id$
  */
 
 #include <assert.h>
@@ -198,7 +198,7 @@ getUsage (void)
     return
         MY_NAME" "LONG_VERSION_STRING"\n"
         "A fast and easy BitTorrent client\n"
-        "http://www.transmissionbt.com/\n"
+        "https://transmissionbt.com/\n"
         "\n"
         "Usage: " MY_NAME
         " [host] [options]\n"

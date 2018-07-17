@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: TorrentFilter.cc 14554 2015-07-30 06:55:28Z mikedld $
+ * $Id$
  */
 
 #include <algorithm>

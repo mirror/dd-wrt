@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: torrent-magnet.h 14664 2016-01-07 17:12:14Z mikedld $
+ * $Id$
  */
 
 #ifndef __TRANSMISSION__

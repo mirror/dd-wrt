@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: upnp.c 14565 2015-10-04 04:53:18Z mikedld $
+ * $Id$
  */
 
 #include <assert.h>

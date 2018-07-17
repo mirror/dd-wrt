@@ -4,7 +4,7 @@
  * It may be used under the 3-Clause BSD License, the GNU Public License v2,
  * or v3, or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: transmission.h 14645 2015-12-29 19:44:50Z mikedld $
+ * $Id$
  */
 
 /*
@@ -123,6 +123,7 @@ const char* tr_getDefaultDownloadDir (void);
 #define TR_DEFAULT_BIND_ADDRESS_IPV4        "0.0.0.0"
 #define TR_DEFAULT_BIND_ADDRESS_IPV6             "::"
 #define TR_DEFAULT_RPC_WHITELIST          "127.0.0.1"
+#define TR_DEFAULT_RPC_HOST_WHITELIST              ""
 #define TR_DEFAULT_RPC_PORT_STR                "9091"
 #define TR_DEFAULT_RPC_URL_STR       "/transmission/"
 #define TR_DEFAULT_PEER_PORT_STR              "51413"

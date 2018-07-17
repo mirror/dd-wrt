@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: platform.h 14532 2015-05-31 22:13:31Z mikedld $
+ * $Id$
  */
 
 #ifndef __TRANSMISSION__

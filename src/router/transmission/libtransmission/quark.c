@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: quark.c 14666 2016-01-07 19:20:14Z mikedld $
+ * $Id$
  */
 
 #include <assert.h>
@@ -289,6 +289,8 @@ static const struct tr_key_struct my_static[] =
   { "rpc-authentication-required", 27 },
   { "rpc-bind-address", 16 },
   { "rpc-enabled", 11 },
+  { "rpc-host-whitelist", 18 },
+  { "rpc-host-whitelist-enabled", 26 },
   { "rpc-password", 12 },
   { "rpc-port", 8 },
   { "rpc-url", 7 },

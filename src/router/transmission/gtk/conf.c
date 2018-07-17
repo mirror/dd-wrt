@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: conf.c 14526 2015-05-09 11:56:35Z mikedld $
+ * $Id$
  *
  * Copyright (c) Transmission authors and contributors
  *
