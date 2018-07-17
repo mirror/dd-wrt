@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: TrackerModel.cc 14556 2015-08-06 20:28:44Z mikedld $
+ * $Id$
  */
 
 #include <algorithm> // std::sort()

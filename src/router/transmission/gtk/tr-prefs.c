@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: tr-prefs.c 14639 2015-12-28 23:52:26Z mikedld $
+ * $Id$
  */
 
 #include <ctype.h> /* isspace */

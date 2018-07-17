@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: filter.c 14613 2015-12-06 22:13:10Z jordan $
+ * $Id$
  */
 
 #include <stdlib.h> /* qsort () */

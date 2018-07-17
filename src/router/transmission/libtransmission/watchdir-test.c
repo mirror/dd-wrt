@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: watchdir-test.c 14675 2016-01-25 22:09:49Z mikedld $
+ * $Id$
  */
 
 #include <event2/event.h>

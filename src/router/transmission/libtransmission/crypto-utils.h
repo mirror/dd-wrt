@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: crypto-utils.h 14422 2015-01-01 21:16:36Z mikedld $
+ * $Id$
  */
 
 #ifndef TR_CRYPTO_UTILS_H

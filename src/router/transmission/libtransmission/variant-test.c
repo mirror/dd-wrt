@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: variant-test.c 14666 2016-01-07 19:20:14Z mikedld $
+ * $Id$
  */
 
 #include <ctype.h> /* isspace () */

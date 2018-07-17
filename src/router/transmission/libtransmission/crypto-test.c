@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: crypto-test.c 14429 2015-01-03 21:35:20Z mikedld $
+ * $Id$
  */
 
 #include <string.h>

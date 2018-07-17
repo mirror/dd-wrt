@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: StatusBarController.h 13343 2012-06-10 13:47:32Z livings124 $
+ * $Id$
  * 
  * Copyright (c) 2011-2012 Transmission authors and contributors
  *

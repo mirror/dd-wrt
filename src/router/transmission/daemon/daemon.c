@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: daemon.c 14675 2016-01-25 22:09:49Z mikedld $
+ * $Id$
  */
 
 #include <errno.h>
@@ -80,7 +80,7 @@ static const char *
 getUsage (void)
 {
     return "Transmission " LONG_VERSION_STRING
-           "  http://www.transmissionbt.com/\n"
+           "  https://transmissionbt.com/\n"
            "A fast and easy BitTorrent client\n"
            "\n"
            MY_NAME " is a headless Transmission session\n"

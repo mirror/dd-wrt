@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: FileListNode.m 14036 2013-02-19 01:29:25Z livings124 $
+ * $Id$
  *
  * Copyright (c) 2008-2012 Transmission authors and contributors
  *

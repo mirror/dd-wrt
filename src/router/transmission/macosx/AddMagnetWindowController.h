@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: AddMagnetWindowController.h 13602 2012-10-30 00:22:10Z livings124 $
+ * $Id$
  *
  * Copyright (c) 2010-2012 Transmission authors and contributors
  *

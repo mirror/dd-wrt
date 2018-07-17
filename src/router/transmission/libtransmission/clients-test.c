@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: clients-test.c 14286 2014-06-07 15:07:51Z jordan $
+ * $Id$
  */
 
 #include "transmission.h"

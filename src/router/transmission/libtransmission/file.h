@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: file.h 14584 2015-10-20 21:22:19Z mikedld $
+ * $Id$
  */
 
 #ifndef TR_FILE_H

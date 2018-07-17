@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: CreatorWindowController.h 13323 2012-05-28 19:43:53Z livings124 $
+ * $Id$
  *
  * Copyright (c) 2007-2012 Transmission authors and contributors
  *

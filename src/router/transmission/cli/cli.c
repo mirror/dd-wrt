@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: cli.c 14581 2015-10-18 18:39:14Z mikedld $
+ * $Id$
  *
  * Copyright (c) Transmission authors and contributors
  *

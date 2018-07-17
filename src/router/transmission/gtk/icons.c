@@ -3,7 +3,7 @@
  * "There is no problem for me, you can license my code
  * under whatever licence you wish :)"
  *
- * $Id: icons.c 14613 2015-12-06 22:13:10Z jordan $
+ * $Id$
  */
 
 #include <glib.h>

@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: MakeDialog.h 14561 2015-09-01 20:19:26Z mikedld $
+ * $Id$
  */
 
 #ifndef QTR_MAKE_DIALOG_H

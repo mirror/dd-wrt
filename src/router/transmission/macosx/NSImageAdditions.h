@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: NSImageAdditions.h 14226 2014-01-19 01:29:38Z jordan $
+ * $Id$
  *
  * Copyright (c) 2011-2012 Transmission authors and contributors
  *

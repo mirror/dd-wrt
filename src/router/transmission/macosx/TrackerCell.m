@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: TrackerCell.m 13434 2012-08-13 00:52:04Z livings124 $
+ * $Id$
  * 
  * Copyright (c) 2009-2012 Transmission authors and contributors
  *

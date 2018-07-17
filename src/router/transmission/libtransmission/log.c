@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: log.c 14620 2015-12-13 10:34:53Z mikedld $
+ * $Id$
  */
 
 #include <assert.h>

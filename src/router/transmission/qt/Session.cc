@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: Session.cc 14581 2015-10-18 18:39:14Z mikedld $
+ * $Id$
  */
 
 #include <cassert>

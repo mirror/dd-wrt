@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: watchdir-win32.c 14653 2016-01-02 15:26:23Z mikedld $
+ * $Id$
  */
 
 #include <assert.h>

@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: file-win32.c 14588 2015-10-23 05:29:47Z mikedld $
+ * $Id$
  */
 
 #include <assert.h>

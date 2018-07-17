@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: verify.c 14543 2015-06-23 21:16:33Z mikedld $
+ * $Id$
  */
 
 #if defined (HAVE_POSIX_FADVISE) && (!defined (_XOPEN_SOURCE) || _XOPEN_SOURCE < 600)

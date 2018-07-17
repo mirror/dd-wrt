@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: stats.c 14241 2014-01-21 03:10:30Z jordan $
+ * $Id$
  */
 
 #include <glib/gi18n.h>

@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: libtransmission-test.h 14382 2014-12-13 15:22:39Z mikedld $
+ * $Id$
  */
 
 /* Note VERBOSE needs to be (un)defined before including this file */

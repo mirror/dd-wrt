@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: FreeSpaceLabel.h 14540 2015-06-12 22:41:36Z mikedld $
+ * $Id$
  */
 
 #ifndef QTR_FREE_SPACE_LABEL_H

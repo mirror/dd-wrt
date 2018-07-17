@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: utils.c 14682 2016-02-23 05:07:43Z mikedld $
+ * $Id$
  */
 
 #ifdef HAVE_MEMMEM
@@ -636,16 +636,19 @@ tr_binary_to_hex (const void * input,
 {
   static const char hex[] = "0123456789abcdef";
   const uint8_t * input_octets = input;
-  size_t i;
 
-  for (i = 0; i < byte_length; ++i)
-    {
-      const unsigned int val = *input_octets++;
-      *output++ = hex[val >> 4];
-      *output++ = hex[val & 0xf];
-    }
+  /* go from back to front to allow for in-place conversion */
+  input_octets += byte_length;
+  output += byte_length * 2;
 
   *output = '\0';
+
+  while (byte_length-- > 0)
+    {
+      const unsigned int val = *(--input_octets);
+      *(--output) = hex[val & 0xf];
+      *(--output) = hex[val >> 4];
+    }
 }
 
 void

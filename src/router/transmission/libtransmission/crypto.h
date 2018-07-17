@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: crypto.h 14360 2014-12-04 20:45:18Z mikedld $
+ * $Id$
  */
 
 #ifndef TR_ENCRYPTION_H

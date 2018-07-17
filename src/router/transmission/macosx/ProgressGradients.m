@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: ProgressGradients.m 13253 2012-03-13 03:20:09Z livings124 $
+ * $Id$
  * 
  * Copyright (c) 2007-2012 Transmission authors and contributors
  *

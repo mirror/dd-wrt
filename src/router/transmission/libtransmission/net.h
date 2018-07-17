@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: net.h 14574 2015-10-11 16:35:51Z mikedld $
+ * $Id$
  *
  * Copyright (c) Transmission authors and contributors
  *

@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: rpcimpl.h 14633 2015-12-25 10:19:50Z mikedld $
+ * $Id$
  */
 
 #ifndef TR_RPC_H

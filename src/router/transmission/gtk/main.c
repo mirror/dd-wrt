@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: main.c 14689 2016-02-27 23:18:02Z mikedld $
+ * $Id$
  *
  * Copyright (c) Transmission authors and contributors
  *
@@ -1363,7 +1363,7 @@ update_model_loop (gpointer gdata)
 static void
 show_about_dialog (GtkWindow * parent)
 {
-  const char * uri = "http://www.transmissionbt.com/";
+  const char * uri = "https://transmissionbt.com/";
   const char * authors[] = { "Jordan Lee (Backend; GTK+)",
                              "Mitchell Livingston (Backend; OS X)",
                              NULL };
@@ -1547,7 +1547,7 @@ gtr_actions_handler (const char * action_name, gpointer user_data)
     }
   else if (!g_strcmp0 (action_name, "donate"))
     {
-      gtr_open_uri ("http://www.transmissionbt.com/donate.php");
+      gtr_open_uri ("https://transmissionbt.com/donate/");
     }
   else if (!g_strcmp0 (action_name, "pause-all-torrents"))
     {

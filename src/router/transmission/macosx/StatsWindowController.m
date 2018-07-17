@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: StatsWindowController.m 14662 2016-01-06 11:05:37Z mikedld $
+ * $Id$
  *
  * Copyright (c) 2007-2012 Transmission authors and contributors
  *

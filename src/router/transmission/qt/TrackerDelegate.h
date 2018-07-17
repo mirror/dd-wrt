@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: TrackerDelegate.h 14539 2015-06-12 22:12:12Z mikedld $
+ * $Id$
  */
 
 #ifndef QTR_TRACKER_DELEGATE_H

@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: TorrentView.cc 14590 2015-10-24 20:56:45Z mikedld $
+ * $Id$
  */
 
 #include <QApplication>

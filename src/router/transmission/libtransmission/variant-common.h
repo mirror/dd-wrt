@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: variant-common.h 14521 2015-05-04 19:58:34Z mikedld $
+ * $Id$
  */
 
 #ifndef __LIBTRANSMISSION_VARIANT_MODULE__

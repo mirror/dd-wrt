@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: InteropObject.h 14624 2015-12-16 20:01:03Z mikedld $
+ * $Id$
  */
 
 #ifndef QTR_INTEROP_OBJECT_H

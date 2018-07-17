@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: InfoOptionsViewController.h 13480 2012-09-08 18:09:02Z livings124 $
+ * $Id$
  *
  * Copyright (c) 2010-2012 Transmission authors and contributors
  *

@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: makemeta.h 14294 2014-06-10 00:43:21Z jordan $
+ * $Id$
  */
 
 #ifndef TR_MAKEMETA_H

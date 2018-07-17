@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: DBusInteropHelper.h 14621 2015-12-16 17:57:05Z mikedld $
+ * $Id$
  */
 
 #ifndef QTR_DBUS_INTEROP_HELPER_H

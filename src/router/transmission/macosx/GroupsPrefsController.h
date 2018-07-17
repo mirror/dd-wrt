@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: GroupsPrefsController.h 14699 2016-03-02 07:55:37Z mikedld $
+ * $Id$
  *
  * Copyright (c) 2007-2012 Transmission authors and contributors
  *
