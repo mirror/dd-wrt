@@ -1362,7 +1362,7 @@ int ag71xx_ar7240_init(struct ag71xx *ag)
 		return -ENODEV;
 
 	ag->phy_priv = as;
-	ag->init = true;
+	as->init = true;
 	ar7240sw_reset(as);
 
 	rwlock_init(&as->stats_lock);
