@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: WatchDir.h 14539 2015-06-12 22:12:12Z mikedld $
+ * $Id$
  */
 
 #ifndef QTR_WATCH_DIR_H

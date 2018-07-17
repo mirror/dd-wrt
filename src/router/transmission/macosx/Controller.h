@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: Controller.h 14662 2016-01-06 11:05:37Z mikedld $
+ * $Id$
  *
  * Copyright (c) 2005-2012 Transmission authors and contributors
  *
@@ -259,7 +259,7 @@ typedef enum
 
 - (void) linkHomepage: (id) sender;
 - (void) linkForums: (id) sender;
-- (void) linkTrac: (id) sender;
+- (void) linkGitHub: (id) sender;
 - (void) linkDonate: (id) sender;
 
 - (void) rpcCallback: (tr_rpc_callback_type) type forTorrentStruct: (struct tr_torrent *) torrentStruct;

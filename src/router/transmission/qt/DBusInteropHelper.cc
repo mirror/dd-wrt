@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: DBusInteropHelper.cc 14698 2016-02-29 14:16:55Z mikedld $
+ * $Id$
  */
 
 #include <iostream>

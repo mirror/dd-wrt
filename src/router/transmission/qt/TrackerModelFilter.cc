@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: TrackerModelFilter.cc 14537 2015-06-10 21:27:11Z mikedld $
+ * $Id$
  */
 
 #include "TrackerModel.h"

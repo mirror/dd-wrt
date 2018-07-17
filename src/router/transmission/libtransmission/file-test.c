@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: file-test.c 14658 2016-01-04 05:04:55Z mikedld $
+ * $Id$
  */
 
 #include <string.h>

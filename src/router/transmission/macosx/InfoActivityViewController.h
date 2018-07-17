@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: InfoActivityViewController.h 14051 2013-03-12 03:08:59Z livings124 $
+ * $Id$
  *
  * Copyright (c) 2010-2012 Transmission authors and contributors
  *

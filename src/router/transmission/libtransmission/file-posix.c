@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: file-posix.c 14640 2015-12-28 23:53:55Z mikedld $
+ * $Id$
  */
 
 #if defined (HAVE_MKDTEMP) && (!defined (_XOPEN_SOURCE) || _XOPEN_SOURCE < 700)

@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: bitfield.c 14646 2015-12-31 05:22:42Z mikedld $
+ * $Id$
  */
 
 #include <assert.h>

@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: SessionDialog.cc 14562 2015-09-01 20:39:34Z mikedld $
+ * $Id$
  */
 
 #include "Prefs.h"

@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: handshake.c 14644 2015-12-29 19:37:31Z mikedld $
+ * $Id$
  */
 
 #include <assert.h>
@@ -426,7 +426,8 @@ readYb (tr_handshake * handshake, struct evbuffer * inbuf)
 
   /* compute the secret */
   evbuffer_remove (inbuf, yb, KEY_LEN);
-  tr_cryptoComputeSecret (handshake->crypto, yb);
+  if (!tr_cryptoComputeSecret (handshake->crypto, yb))
+    return tr_handshakeDone (handshake, false);
 
   /* now send these: HASH ('req1', S), HASH ('req2', SKEY) xor HASH ('req3', S),
    * ENCRYPT (VC, crypto_provide, len (PadC), PadC, len (IA)), ENCRYPT (IA) */
@@ -742,7 +743,9 @@ readYa (tr_handshake    * handshake,
 
   /* read the incoming peer's public key */
   evbuffer_remove (inbuf, ya, KEY_LEN);
-  tr_cryptoComputeSecret (handshake->crypto, ya);
+  if (!tr_cryptoComputeSecret (handshake->crypto, ya))
+    return tr_handshakeDone (handshake, false);
+
   computeRequestHash (handshake, "req1", handshake->myReq1);
 
   /* send our public key to the peer */

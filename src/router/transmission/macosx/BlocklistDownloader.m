@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: BlocklistDownloader.m 13326 2012-05-29 01:03:21Z livings124 $
+ * $Id$
  *
  * Copyright (c) 2008-2012 Transmission authors and contributors
  *

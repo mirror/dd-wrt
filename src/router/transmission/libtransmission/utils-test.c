@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: utils-test.c 14678 2016-02-07 11:54:01Z mikedld $
+ * $Id$
  */
 
 #include <limits.h> /* INT_MAX */

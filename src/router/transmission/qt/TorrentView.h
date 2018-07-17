@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: TorrentView.h 14590 2015-10-24 20:56:45Z mikedld $
+ * $Id$
  */
 
 #ifndef QTR_TORRENT_VIEW_H

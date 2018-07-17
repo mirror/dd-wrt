@@ -699,11 +699,11 @@ Transmission.prototype =
 				break;
 
 			case 'homepage':
-				window.open('http://www.transmissionbt.com/');
+				window.open('https://transmissionbt.com/');
 				break;
 
 			case 'tipjar':
-				window.open('http://www.transmissionbt.com/donate.php');
+				window.open('https://transmissionbt.com/donate/');
 				break;
 
 			case 'unlimited_download_rate':

@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tr-window.c 14519 2015-05-03 10:30:35Z mikedld $
+ * $Id$
  *
  * Copyright (c) Transmission authors and contributors
  *

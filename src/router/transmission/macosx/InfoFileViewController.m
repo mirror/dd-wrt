@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: InfoFileViewController.m 14667 2016-01-08 10:05:19Z mikedld $
+ * $Id$
  *
  * Copyright (c) 2010-2012 Transmission authors and contributors
  *

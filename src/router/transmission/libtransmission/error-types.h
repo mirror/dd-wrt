@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: error-types.h 14492 2015-04-11 10:58:08Z mikedld $
+ * $Id$
  */
 
 #ifndef TR_ERROR_TYPES_H

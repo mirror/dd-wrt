@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: rpc-server.h 14241 2014-01-21 03:10:30Z jordan $
+ * $Id$
  */
 
 #ifndef __TRANSMISSION__
@@ -48,6 +48,12 @@ void            tr_rpcSetWhitelist (tr_rpc_server * server,
                                     const char *    whitelist);
 
 const char*     tr_rpcGetWhitelist (const tr_rpc_server * server);
+
+void            tr_rpcSetHostWhitelistEnabled (tr_rpc_server * server,
+                                               bool            isEnabled);
+
+void            tr_rpcSetHostWhitelist (tr_rpc_server * server,
+                                        const char *    whitelist);
 
 void            tr_rpcSetPassword (tr_rpc_server * server,
                                    const char *    password);

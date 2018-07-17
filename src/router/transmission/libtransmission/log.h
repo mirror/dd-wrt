@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: log.h 14476 2015-03-15 11:43:32Z mikedld $
+ * $Id$
  */
 
 #ifndef TR_LOG_H

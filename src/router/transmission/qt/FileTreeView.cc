@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: FileTreeView.cc 14559 2015-08-16 22:07:09Z mikedld $
+ * $Id$
  */
 
 #include <algorithm>

@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: daemon-posix.c 14641 2015-12-29 00:42:40Z mikedld $
+ * $Id$
  */
 
 #include <assert.h>

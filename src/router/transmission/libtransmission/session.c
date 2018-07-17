@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: session.c 14666 2016-01-07 19:20:14Z mikedld $
+ * $Id$
  */
 
 #include <assert.h>
@@ -359,6 +359,8 @@ tr_sessionGetDefaultSettings (tr_variant * d)
   tr_variantDictAddStr  (d, TR_KEY_rpc_username,                    "");
   tr_variantDictAddStr  (d, TR_KEY_rpc_whitelist,                   TR_DEFAULT_RPC_WHITELIST);
   tr_variantDictAddBool (d, TR_KEY_rpc_whitelist_enabled,           true);
+  tr_variantDictAddStr  (d, TR_KEY_rpc_host_whitelist,              TR_DEFAULT_RPC_HOST_WHITELIST);
+  tr_variantDictAddBool (d, TR_KEY_rpc_host_whitelist_enabled,      true);
   tr_variantDictAddInt  (d, TR_KEY_rpc_port,                        atoi (TR_DEFAULT_RPC_PORT_STR));
   tr_variantDictAddStr  (d, TR_KEY_rpc_url,                         TR_DEFAULT_RPC_URL_STR);
   tr_variantDictAddBool (d, TR_KEY_scrape_paused_torrents_enabled,  true);

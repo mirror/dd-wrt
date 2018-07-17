@@ -99,6 +99,7 @@ host_triplet = @host@
 @CRYPTO_USE_OPENSSL_TRUE@am__append_7 = crypto-utils-openssl.c
 @CRYPTO_USE_CYASSL_TRUE@am__append_8 = crypto-utils-cyassl.c
 @CRYPTO_USE_POLARSSL_TRUE@am__append_9 = crypto-utils-polarssl.c
+@CRYPTO_USE_POLARSSL_TRUE@@POLARSSL_IS_MBEDTLS_TRUE@am__append_10 = -DPOLARSSL_IS_MBEDTLS
 TESTS = bitfield-test$(EXEEXT) blocklist-test$(EXEEXT) \
 	clients-test$(EXEEXT) crypto-test$(EXEEXT) error-test$(EXEEXT) \
 	file-test$(EXEEXT) history-test$(EXEEXT) json-test$(EXEEXT) \
@@ -727,6 +728,8 @@ LTLIBOBJS = @LTLIBOBJS@
 LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
+MBEDTLS_CFLAGS = @MBEDTLS_CFLAGS@
+MBEDTLS_LIBS = @MBEDTLS_LIBS@
 MKDIR_P = @MKDIR_P@
 MKINSTALLDIRS = @MKINSTALLDIRS@
 MSGFMT = @MSGFMT@
@@ -823,6 +826,7 @@ pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
+runstatedir = @runstatedir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
@@ -834,7 +838,7 @@ top_srcdir = @top_srcdir@
 transmissionlocaledir = @transmissionlocaledir@
 AM_CPPFLAGS = -I$(top_srcdir) -D__TRANSMISSION__ \
 	-DPACKAGE_DATA_DIR=\""$(datadir)"\" $(am__append_2) \
-	$(am__append_4)
+	$(am__append_4) $(am__append_10)
 AM_CFLAGS = \
   @DHT_CFLAGS@ \
   @LIBB64_CFLAGS@ \

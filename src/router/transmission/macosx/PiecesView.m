@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: PiecesView.m 14050 2013-03-12 02:56:35Z livings124 $
+ * $Id$
  *
  * Copyright (c) 2006-2012 Transmission authors and contributors
  *

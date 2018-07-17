@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: bitfield-test.c 14669 2016-01-08 11:12:22Z mikedld $
+ * $Id$
  */
 
 #include <string.h> /* strlen () */

@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: MainWindow.h 14582 2015-10-19 20:30:26Z mikedld $
+ * $Id$
  */
 
 #ifndef QTR_MAIN_WINDOW_H

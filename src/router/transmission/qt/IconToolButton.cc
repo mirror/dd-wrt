@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: IconToolButton.cc 14547 2015-06-28 14:18:06Z mikedld $
+ * $Id$
  */
 
 #include <QStyle>

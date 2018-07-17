@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: FileTreeItem.cc 14609 2015-12-06 17:39:18Z jordan $
+ * $Id$
  */
 
 #include <algorithm>

@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: clients.c 14546 2015-06-26 21:22:27Z mikedld $
+ * $Id$
  */
 
 /* thanks amc1! */

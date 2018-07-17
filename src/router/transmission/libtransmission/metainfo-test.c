@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: metainfo-test.c 14428 2015-01-02 11:15:31Z mikedld $
+ * $Id$
  */
 
 #include "libtransmission-test.h"

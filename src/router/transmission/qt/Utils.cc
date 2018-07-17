@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: Utils.cc 14564 2015-09-27 20:23:03Z mikedld $
+ * $Id$
  */
 
 #ifdef _WIN32

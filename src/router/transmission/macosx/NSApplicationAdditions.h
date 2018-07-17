@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: NSApplicationAdditions.h 14662 2016-01-06 11:05:37Z mikedld $
+ * $Id$
  *
  * Copyright (c) 2009-2012 Transmission authors and contributors
  *

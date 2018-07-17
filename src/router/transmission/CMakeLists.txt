@@ -41,8 +41,8 @@ set(TR_NAME ${PROJECT_NAME})
 #         "Z" for unsupported trunk builds,
 #         "0" for stable, supported releases
 # these should be the only two lines you need to change
-set(TR_USER_AGENT_PREFIX "2.92")
-set(TR_PEER_ID_PREFIX "-TR2920-")
+set(TR_USER_AGENT_PREFIX "2.94")
+set(TR_PEER_ID_PREFIX "-TR2940-")
 
 string(REGEX MATCH "^([0-9]+)\\.([0-9]+).*" TR_VERSION "${TR_USER_AGENT_PREFIX}")
 set(TR_VERSION_MAJOR "${CMAKE_MATCH_1}")
@@ -56,57 +56,41 @@ else()
     set(TR_STABLE_RELEASE 1)
 endif()
 
-set(TR_SCM_REVISION_FILE "${CMAKE_SOURCE_DIR}/REVISION")
-set(TR_SCM_REVISION_RELIABLE ON)
+set(TR_VCS_REVISION_FILE "${CMAKE_SOURCE_DIR}/REVISION")
 
-if(IS_DIRECTORY ${CMAKE_SOURCE_DIR}/.svn)
-    find_package(Subversion)
-    if(Subversion_FOUND)
-        Subversion_WC_INFO(${CMAKE_SOURCE_DIR} TR_SVN)
-        set(TR_SCM_REVISION "${TR_SVN_WC_REVISION}")
-    endif()
+if(NOT "$ENV{JENKINS_URL}" STREQUAL "" AND NOT "$ENV{GIT_COMMIT}" STREQUAL "")
+    set(TR_VCS_REVISION "$ENV{GIT_COMMIT}")
+elseif(NOT "$ENV{TEAMCITY_PROJECT_NAME}" STREQUAL "" AND NOT "$ENV{BUILD_VCS_NUMBER}" STREQUAL "")
+    set(TR_VCS_REVISION "$ENV{BUILD_VCS_NUMBER}")
 elseif(IS_DIRECTORY ${CMAKE_SOURCE_DIR}/.git)
     find_package(Git)
     if(GIT_FOUND)
         execute_process(
             COMMAND
-                ${GIT_EXECUTABLE} rev-list --max-count=1 --abbrev-commit HEAD
+                ${GIT_EXECUTABLE} rev-list --max-count=1 HEAD
             WORKING_DIRECTORY
                 ${CMAKE_SOURCE_DIR}
             OUTPUT_VARIABLE
-                TR_SCM_REVISION
+                TR_VCS_REVISION
             OUTPUT_STRIP_TRAILING_WHITESPACE
         )
     endif()
 endif()
 
-if("${TR_SCM_REVISION}" STREQUAL "" AND EXISTS "${TR_SCM_REVISION_FILE}")
-    file(READ "${TR_SCM_REVISION_FILE}" TR_SCM_REVISION)
-    string(STRIP "${TR_SCM_REVISION}" TR_SCM_REVISION)
+if("${TR_VCS_REVISION}" STREQUAL "" AND EXISTS "${TR_VCS_REVISION_FILE}")
+    file(READ "${TR_VCS_REVISION_FILE}" TR_VCS_REVISION)
 endif()
 
-if("${TR_SCM_REVISION}" STREQUAL "")
-    # Give up and check the source files
-    set(TR_SCM_REVISION 0)
-    set(TR_SCM_REVISION_RELIABLE OFF)
-    file(GLOB_RECURSE TR_ALL_SOURCES RELATIVE ${CMAKE_SOURCE_DIR} *.cc *.[chm] *.po)
-    foreach(F ${TR_ALL_SOURCES})
-        file(STRINGS ${F} F_ID REGEX "\\$Id:")
-        if(F_ID MATCHES "\\$Id: [^ ]+ ([0-9]+) " AND CMAKE_MATCH_1 GREATER TR_SCM_REVISION)
-            set(TR_SCM_REVISION ${CMAKE_MATCH_1})
-        endif()
-    endforeach()
-endif()
+string(STRIP "${TR_VCS_REVISION}" TR_VCS_REVISION)
 
-if("${TR_SCM_REVISION}" STREQUAL "")
-    set(TR_SCM_REVISION 0)
+if(NOT "${TR_VCS_REVISION}" STREQUAL "")
+    file(WRITE "${TR_VCS_REVISION_FILE}" "${TR_VCS_REVISION}\n")
 else()
-    if(TR_SCM_REVISION_RELIABLE)
-        file(WRITE "${TR_SCM_REVISION_FILE}" "${TR_SCM_REVISION}")
-    else()
-        file(REMOVE "${TR_SCM_REVISION_FILE}")
-    endif()
+    set(TR_VCS_REVISION 0)
+    file(REMOVE "${TR_VCS_REVISION_FILE}")
 endif()
+
+string(SUBSTRING "${TR_VCS_REVISION}" 0 10 TR_VCS_REVISION)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 

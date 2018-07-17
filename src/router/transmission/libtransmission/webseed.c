@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: webseed.c 14619 2015-12-13 10:23:22Z mikedld $
+ * $Id$
  */
 
 #include <string.h> /* strlen () */

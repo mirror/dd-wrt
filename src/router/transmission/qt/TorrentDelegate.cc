@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: TorrentDelegate.cc 14555 2015-08-01 16:05:02Z mikedld $
+ * $Id$
  */
 
 #include <QApplication>

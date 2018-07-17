@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: fdlimit.h 14479 2015-03-18 07:34:26Z mikedld $
+ * $Id$
  */
 
 #ifndef __TRANSMISSION__

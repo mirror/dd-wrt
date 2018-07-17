@@ -4,7 +4,7 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id: util.h 14587 2015-10-23 04:09:40Z mikedld $
+ * $Id$
  */
 
 #ifndef GTR_UTIL_H

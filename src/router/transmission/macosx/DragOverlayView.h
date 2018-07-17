@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: DragOverlayView.h 13162 2012-01-14 17:12:04Z livings124 $
+ * $Id$
  *
  * Copyright (c) 2007-2012 Transmission authors and contributors
  *
