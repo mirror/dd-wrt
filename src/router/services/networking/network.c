@@ -2103,7 +2103,6 @@ void start_lan(void)
 						enable_dhcprelay(lan_ifname);
 					}
 #endif
-					do_mssid(name);
 				}
 #ifdef HAVE_WAVESAT
 				if (nvram_match(wl_name, "bridge")) {
@@ -2118,7 +2117,6 @@ void start_lan(void)
 					do_portsetup(lan_ifname, name);
 					// br_add_interface (getBridge (name), name); //eval
 					// ("brctl", "addif", lan_ifname, name);
-					do_mssid(name);
 				}
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 				wl_scan_params_t params;
@@ -2157,10 +2155,6 @@ void start_lan(void)
 					// eval ("wl", "ssid", nvram_get ("wl0_ssid"));
 					eval("wl", "-i", name, "ssid", nvram_nget("wl%d_ssid", get_wl_instance(name)));
 					// eval ("brctl", "addif", lan_ifname, name);
-#ifndef HAVE_FON
-					if (nvram_matchi("fon_enable", 0))
-						do_mssid(name);
-#endif
 #endif
 				}
 
@@ -2208,7 +2202,6 @@ void start_lan(void)
 					do_portsetup(lan_ifname, name);
 					// br_add_interface (getBridge (name), name); //eval
 					// ("brctl", "addif", lan_ifname, name);
-					do_mssid(name);
 				}
 #endif
 
