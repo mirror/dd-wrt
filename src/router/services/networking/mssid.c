@@ -61,23 +61,3 @@ void config_macs(char *wlifname)	// reconfigure macs which
 		}
 	}
 }
-
-void do_mssid(char *wlifname)
-{
-	// bridge the virtual interfaces too
-	char *next;
-	char var[80];
-	char *vifs = nvram_nget("wl%d_vifs", get_wl_instance(wlifname));
-	char tmp[256];
-	foreach(var, vifs, next) {
-		char *mac = nvram_nget("%s_hwaddr", var);
-		eval("ifconfig", var, "down");
-		set_hwaddr(var, mac);
-		eval("ifconfig", var, "up");
-		if (!nvram_nmatch("0", "%s_bridged", var)) {
-			br_add_interface(getBridge(var, tmp), var);
-		} else {
-			ifconfig(var, IFUP, nvram_nget("%s_ipaddr", var), nvram_nget("%s_netmask", var));
-		}
-	}
-}
