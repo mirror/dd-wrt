@@ -188,6 +188,8 @@ void start_sysinit(void)
 #ifdef HAVE_WPE72
 	if (!nvram_matchi("wlanled", 0))
 		eval("/sbin/wlanled", "-l", "generic_14:-94", "-l", "generic_15:-80", "-l", "generic_16:-73", "-l", "generic_17:-65");
+	setEthLED(0, "eth0");
+	setEthLED(1, "eth1");
 #elif HAVE_DAP3310
 	set_gpio(14, 1);
 	set_gpio(13, 1);
