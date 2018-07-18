@@ -3221,7 +3221,16 @@ int wlconf_up(char *name)
 	char *vifs = nvram_nget("%s_vifs", ifinst);
 	if (vifs != NULL) {
 		foreach(var, vifs, next) {
+			char tmp[256];
+			eval("ifconfig", var, "down");
+			char *mac = nvram_nget("%s_hwaddr", var);
+			set_hwaddr(var, mac);
 			eval("ifconfig", var, "up");
+			if (!nvram_nmatch("0", "%s_bridged", var)) {
+				br_add_interface(getBridge(var, tmp), var);
+			} else {
+				ifconfig(var, IFUP, nvram_nget("%s_ipaddr", var), nvram_nget("%s_netmask", var));
+			}
 		}
 		if (nvram_nmatch("apstawet", "wl%d_mode", instance)) {
 			foreach(var, vifs, next) {
