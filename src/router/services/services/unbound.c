@@ -46,8 +46,6 @@ static void unbound_config(void)
 		"rrset-cache-slabs: 1\n"	//
 		"infra-cache-slabs: 1\n"	//
 		"infra-cache-numhosts: 200\n"	//
-		"access-control: 0.0.0.0/0 allow\n"	//
-		"access-control: ::0/0 allow\n"	//
 		"username: \"\"\n"	//
 		"pidfile: \"/var/run/unbound.pid\"\n"	//
 		"root-hints: \"/etc/unbound/named.cache\"\n"	//
@@ -58,6 +56,34 @@ static void unbound_config(void)
 		"key-cache-size: 100k\n"	//
 		"key-cache-slabs: 1\n"	//
 		"neg-cache-size: 10k\n");	//
+
+	char *lan_ip = nvram_safe_get("lan_ipaddr");
+	char *lan_mask = nvram_safe_get("lan_netmask");
+	char *prefix;
+	int do_6to4 = 0;
+	if (nvram_match("ipv6_typ", "ipv6to4")) {
+		do_6to4 = 1;
+	}
+
+	prefix = do_6to4 ? "0:0:0:1::" : nvram_safe_get("ipv6_prefix");
+
+	if (nvram_matchi("ipv6_enable", 1) && nvram_matchi("radvd_enable", 1)) {
+		fprintf(fp, "access-control: %s/64 allow\n", prefix);
+	}
+
+	char vifs[256];
+	getIfLists(vifs, 256);
+	char var[256], *wordlist, *next;
+	foreach(var, vifs, next) {
+		if (strcmp(get_wan_face(), var)
+		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
+			char *ipaddr = nvram_nget("%s_ipaddr", var);
+			char *netmask = nvram_nget("%s_netmask", var);
+			if (strlen(ipaddr) > 0 && strcmp(ipaddr, "0.0.0.0"))
+				fprintf(fp, "access-control: %s/%d allow\n", ipaddr, getmask(netmask));
+
+		}
+	}
 
 	FILE *in = fopen("/etc/hosts", "rb");
 	char ip[32];
