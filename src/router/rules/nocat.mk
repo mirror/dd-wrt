@@ -22,6 +22,7 @@ nocat-install:
 	ln -sf /tmp/etc/nocat.conf $(INSTALLDIR)/nocat/etc/nocat.conf
 	mkdir -p $(INSTALLDIR)/nocat/usr/libexec
 	cp -r nocat/libexec/iptables $(INSTALLDIR)/nocat/usr/libexec/nocat
+	rm -rf $(INSTALLDIR)/nocat/usr/libexec/nocat/iptables
 ifeq ($(CONFIG_RAMSKOV),y)
 	install -D nocat/config_redirect/nocat.webhotspot $(INSTALLDIR)/nocat/etc/config/nocat.webhotspot
 	install -D nocat/config_redirect/nocat.nvramconfig $(INSTALLDIR)/nocat/etc/config/nocat.nvramconfig
