@@ -1,3 +1,16 @@
+Release 1.10.0: (18th January 2018)
+
+- assign copyright of contributed pptpsetup and routing.c to FSF,
+- remove inststr in favour of prctrl PR_SET_NAME,
+- vector tests; include in make, fix code rot, fix return status,
+- pqueue; include missing sys/types.h,
+- pptpsetup; prevent world-readable peers file, use three-argument
+  append, allow password trailing spaces, split prints to
+  chap-secrets, allow passwords with quotes, use absolute path to
+  pptp,
+- remove uid from ip route get output; iproute2-4.10 and later may
+  emit uid,
+
 Release 1.9.0: (29th November 2016)
 
 - close a memory leak in pqueue,
