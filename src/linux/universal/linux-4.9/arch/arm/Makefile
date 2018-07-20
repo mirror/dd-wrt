@@ -74,9 +74,9 @@ ifeq ($(CONFIG_ARCH_QCOM),y)
 arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -mcpu=cortex-a15 -mfpu=neon-vfpv4
 else
 ifeq ($(CONFIG_ARM_VIRT_EXT),y)
-arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 $(call cc-option,-march=armv7ve,-march=armv5t -Wa$(comma)-march=armv7ve)
+arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -march=armv7ve -Wa$(comma)-march=armv7ve
 else
-arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 $(call cc-option,-march=armv7-a,-march=armv5t -Wa$(comma)-march=armv7-a)
+arch-$(CONFIG_CPU_32v7)		=-D__LINUX_ARM_ARCH__=7 -march=armv7-a -Wa$(comma)-march=armv7-a
 endif
 endif
 endif
