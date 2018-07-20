@@ -1,4 +1,16 @@
 ------------------------------------------------------------------------
+r4136 | brainslayer | 2018-07-20 09:03:07 +0200 (Fri, 20 Jul 2018) | 1 line
+
+fix some warnings
+------------------------------------------------------------------------
+r4135 | brainslayer | 2018-07-20 09:00:33 +0200 (Fri, 20 Jul 2018) | 1 line
+
+fix typo
+------------------------------------------------------------------------
+r4134 | brainslayer | 2018-07-20 08:58:29 +0200 (Fri, 20 Jul 2018) | 1 line
+
+import some interesting patches from https://github.com/steinwurf/openwrt-patches/tree/master/openwrt-r41097/mac80211
+------------------------------------------------------------------------
 r4133 | brainslayer | 2018-07-20 07:33:20 +0200 (Fri, 20 Jul 2018) | 1 line
 
 update toolchains to 8.1.0 for madwifi
