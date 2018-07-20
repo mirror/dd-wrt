@@ -2902,6 +2902,7 @@ void start_restore_defaults(void)
 #ifdef HAVE_FREERADIUS
 	nvram_unset("cert_running");
 #endif
+	nvram_unset("probe_working");
 	nvram_unset("probe_blacklist");
 
 	if (nvram_get("overclocking") == NULL) {
