@@ -24,7 +24,7 @@
 #include "pptp_gre.h"
 #include "util.h"
 #include "pqueue.h"
-#include "test.h"
+#include "test-redirections.h"
 
 /* globals from pptp.c */
 extern struct in_addr localbind;
