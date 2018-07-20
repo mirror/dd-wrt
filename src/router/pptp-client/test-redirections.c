@@ -10,7 +10,7 @@ pqueue.c so that it can be tested independently.
 #include <stdlib.h>
 #include <string.h>
 #include "util.h"
-#include "test.h"
+#include "test-redirections.h"
 
 /* whether we are asked to test ordering, obtained from command line */
 extern int test_type;

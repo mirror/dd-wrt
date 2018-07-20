@@ -11,7 +11,7 @@
 #define MAX 25
 
 void main(void) {
-    int i, j, retval;
+    int i, j, *d, retval;
 
     VECTOR *v = vector_create();
     assert(v != NULL);
@@ -26,14 +26,16 @@ void main(void) {
     }
 
     for (i=1; i<=MAX; i++) {
-        retval = vector_insert(v, i, (PPTP_CALL *)i);
+        d = malloc(sizeof(int));
+        *d = i;
+        retval = vector_insert(v, i, (PPTP_CALL *)d);
         assert(retval);
         assert(vector_size(v)==i);
     }
     for (i=1; i<MAX; i++) {
-        retval = vector_search(v, i, (PPTP_CALL **)&j);
+        retval = vector_search(v, i, (PPTP_CALL **)&d);
         assert(retval);
-        assert(j==i);
+        assert(*d==i);
         retval = vector_contains(v, i);
         assert(retval);
     }
@@ -68,14 +70,16 @@ void main(void) {
         retval = vector_scan(v, 1, MAX, &j);
         assert(retval);
         assert(j==k);
-        retval = vector_insert(v, k, (PPTP_CALL *) k);
+        d = malloc(sizeof(int));
+        *d = k;
+        retval = vector_insert(v, k, (PPTP_CALL *) d);
         assert(retval);
         assert(vector_size(v)==MAX);
         assert(vector_contains(v, k));
         assert(!vector_scan(v, 1, MAX, &j));
-        retval = vector_search(v, k, (PPTP_CALL **) &j);
+        retval = vector_search(v, k, (PPTP_CALL **) &d);
         assert(retval);
-        assert(j==k);
+        assert(*d==k);
     }
 
     for (i=1; i<=MAX; i++) {
@@ -91,4 +95,5 @@ void main(void) {
     }
     assert(vector_size(v)==0);
     vector_destroy(v);
+    exit(0);
 }

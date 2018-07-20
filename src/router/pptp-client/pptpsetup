@@ -55,7 +55,7 @@ sub create {
     if ( !$PASSWORD ) {
         print "Password: ";
         $PASSWORD = <STDIN>;
-        chomp $PASSWORD;
+        $PASSWORD =~ s/([^\x20\x21\x23-\x7e])/sprintf ("\\x%02x", ord ($1))/eg;
     }
 
     # put '\' between domain and username IF specified a domain
@@ -64,10 +64,13 @@ sub create {
     # create or add lines to the /etc/ppp/chap-secrets file,
     # which holds usernames and passwords
     my $chap_secrets_file = '/etc/ppp/chap-secrets';
-    open( FILE, ">>$chap_secrets_file" )
+    umask( 0027 );
+    open( FILE, ">>", $chap_secrets_file )
       or die "$0: can't write to '$chap_secrets_file': $!\n";
 
-    print FILE "\n# added by pptpsetup for $TUNNEL\n$DOMAIN$USERNAME $TUNNEL \"$PASSWORD\" *\n";
+    print FILE "\n";
+    print FILE "# added by pptpsetup for $TUNNEL\n";
+    print FILE "$DOMAIN$USERNAME $TUNNEL \"$PASSWORD\" *\n";
 
     close FILE;
 
@@ -78,7 +81,7 @@ sub create {
 
     print FILE <<"TUNNEL";
 # written by pptpsetup
-pty "pptp $SERVER --nolaunchpppd"
+pty "/usr/sbin/pptp $SERVER --nolaunchpppd"
 lock
 noauth
 nobsdcomp
@@ -106,7 +109,7 @@ pptpsetup --create <TUNNEL> --server <SERVER> [--domain <DOMAIN>]
           --username <USERNAME> [--password <PASSWORD>]
           [--encrypt] [--start]
 
-pptpsetup --delete <TUNNEL> 
+pptpsetup --delete <TUNNEL>
 
 Options:
 
@@ -120,12 +123,13 @@ Options:
 
 pptpsetup - Point-to-Point Tunneling Protocol setup
 
-Copyright (C) 2006 Nelson Ferraz
+Copyright (C) 2006  Free Software Foundation
 
 pptpsetup comes with ABSOLUTELY NO WARRANTY; for details see source.
 This is free software, and you are welcome to redistribute it
 under certain conditions; see source for details.
 
+Written by Nelson Ferraz.
 EOF
 
     exit;
@@ -188,8 +192,8 @@ pptpsetup - Point-to-Point Tunneling Protocol setup
 
 =head1 DESCRIPTION
 
-PPTP Client is a Linux, FreeBSD, NetBSD and OpenBSD client for the 
-proprietary Microsoft Point-to-Point Tunneling Protocol, PPTP. 
+PPTP Client is a Linux, FreeBSD, NetBSD and OpenBSD client for the
+proprietary Microsoft Point-to-Point Tunneling Protocol, PPTP.
 
 This script configures PPTP Client on Linux.
 
@@ -203,7 +207,7 @@ create a tunnel named TUNNEL
 
 =item --delete TUNNEL
 
-delete the file /etc/ppp/peers/TUNNEL and any lines from 
+delete the file /etc/ppp/peers/TUNNEL and any lines from
 /etc/ppp/chap-secrets that contains "TUNNEL" as a single word
 
 =item --server SERVER
@@ -220,7 +224,7 @@ the username you are to use
 
 =item --password PASSWORD
 
-the password you are to use. If you don't specify a password, 
+the password you are to use. If you don't specify a password,
 pptpsetup will ask for one.
 
 =item --encrypt

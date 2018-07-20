@@ -63,7 +63,6 @@
 #if defined(__linux__)
 #include <sys/prctl.h>
 #endif
-#include "inststr.h"
 #include "util.h"
 #include "pptp_quirks.h"
 #include "pqueue.h"
@@ -234,8 +233,6 @@ int main(int argc, char **argv, char **envp)
         switch (c) {
             case 0: 
                 if (option_index == 0) { /* --phone specified */
-                    /* copy it to a buffer, as the argv's will be overwritten
-                     * by inststr() */
                     strncpy(phonenrbuf,optarg,sizeof(phonenrbuf));
                     phonenrbuf[sizeof(phonenrbuf) - 1] = '\0';
                     phonenr = phonenrbuf;
@@ -437,8 +434,6 @@ int main(int argc, char **argv, char **envp)
 #ifdef PR_SET_NAME
     rc = prctl(PR_SET_NAME, "pptpgw", 0, 0, 0);
     if (rc != 0) perror("prctl");
-#else
-    inststr(argc, argv, envp, buf);
 #endif
     if (sigsetjmp(env, 1)!= 0) goto shutdown;
 
@@ -554,8 +549,6 @@ void launch_callmgr(struct in_addr inetaddr, char *phonenr, int argc __attribute
       int rc;
       rc = prctl(PR_SET_NAME, "pptpcm", 0, 0, 0);
       if (rc != 0) perror("prctl");
-#else
-      inststr(argc, argv, envp, buf);
 #endif
       exit(callmgr_main(3, my_argv, envp));
 }
