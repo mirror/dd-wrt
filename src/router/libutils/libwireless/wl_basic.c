@@ -263,17 +263,27 @@ char *get_wdev(void)
 #endif
 }
 
+static void wladdList(char *name)
+{
+	if (isListed("probe_working", name))
+		return;
+	addList("probe_blacklist", name);
+}
+
 int wl_probe(char *name)
 {
 	int ret, val = 0;
 	char buf[DEV_TYPE_LEN];
 	if (isListed("probe_blacklist", name))
 		return -1;
-	if ((ret = wl_get_dev_type(name, buf, DEV_TYPE_LEN)) < 0)
+	if ((ret = wl_get_dev_type(name, buf, DEV_TYPE_LEN)) < 0) {
+		if (ret)
+			wladdList(name);
 		return ret;
+	}
 	/* Check interface */
 	if (strncmp(buf, "wl", 2)) {
-		addList("probe_blacklist", name);
+		wladdList(name);
 		return -1;
 	}
 #if 0
@@ -285,7 +295,7 @@ int wl_probe(char *name)
 #ifdef HAVE_DHDAP
 		if (dhd_probe(name)) {
 #endif
-			addList("probe_blacklist", name);
+			wladdList(name);
 			return ret;
 #ifdef HAVE_DHDAP
 		}
@@ -295,15 +305,16 @@ int wl_probe(char *name)
 
 	if ((ret = wl_ioctl(name, WLC_GET_VERSION, &val, sizeof(val)))) {
 		fprintf(stderr, "WLC_GET_VERSION fail: %s\n", name);
-		addList("probe_blacklist", name);
+		wladdList(name);
 		return ret;
 	}
 
 	if (val > WLC_IOCTL_VERSION) {
 		fprintf(stderr, "WLC_IOCTL_VERSION fail name: %s val: %d ictlv: %d \n", name, val, WLC_IOCTL_VERSION);
-		addList("probe_blacklist", name);
+		wladdList(name);
 		return -1;
 	}
+	addList("probe_working", name);	// interfaces in this list worked already and should never be blacklisted later
 	return ret;
 }
 

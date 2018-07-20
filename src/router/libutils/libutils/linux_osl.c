@@ -100,7 +100,6 @@ err2:
 	// return ret;
 }
 
-
 struct iface {
 	struct iface *next;
 
