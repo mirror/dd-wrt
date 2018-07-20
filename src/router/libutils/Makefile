@@ -97,9 +97,22 @@ CFLAGS	+= -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -Iinclude
 #  -Werror=maybe-uninitialized -Werror=int-conversion -Werror=array-bounds
 CFLAGS	+= -fPIC
 LDFLAGS += -L. -ldl
-OBJS := libutils/utils.o libutils/ledconfig.o libutils/detect.o libutils/linux_timer.o libutils/gpio.o libutils/md5c.o libutils/nvparse.o libutils/bcmutils.o libutils/linux_osl.o libutils/airbag.o libutils/ipfmt.o
+OBJS := libutils/utils.o libutils/ledconfig.o libutils/bridgetools.o libutils/detect.o libutils/linux_timer.o libutils/gpio.o libutils/md5c.o libutils/nvparse.o libutils/bcmutils.o libutils/linux_osl.o libutils/airbag.o libutils/ipfmt.o
 SHOBJS =  libshutils/timezones.o libshutils/shutils.o libshutils/sha1.o
 WOBJS := libwireless/wl.o libwireless/wl_basic.o libwireless/wl_linux.o libwireless/country.o libwireless/wl_macfuncs.o
+
+ifneq ($(CONFIG_TW6600),y)
+ifeq ($(CONFIG_DIST),"micro")
+CFLAGS_EXTRA += -DHAVE_MICRO
+OBJS += libutils/libbridge_if.o
+OBJS += libutils/libbridge_init.o
+endif
+ifeq ($(CONFIG_DIST),"micro-special")
+CFLAGS_EXTRA += -DHAVE_MICRO
+OBJS += libutils/libbridge_if.o
+OBJS += libutils/libbridge_init.o
+endif
+endif
 
 #defaults.o
 ifeq ($(CONFIG_MAGICBOX),y)
