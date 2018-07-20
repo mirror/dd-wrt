@@ -24,7 +24,8 @@
 #include <fcntl.h>
 #include <glob.h>
 #include <channelcache.h>
-#include <net/if.h>
+#include <sys/socket.h>
+#include <linux/if.h>
 
 int getValueFromPath(char *path, int dev, char *fmt, int *err)
 {
