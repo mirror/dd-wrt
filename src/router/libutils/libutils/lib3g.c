@@ -30,7 +30,6 @@
 #include <glob.h>
 #include <utils.h>
 
-
 #define SIERRA_DETECTION_FN "/tmp/.sierra_detection_done"
 
 void detectcontrol_and_data_port(void);
