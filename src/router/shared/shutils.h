@@ -20,6 +20,8 @@
 #define MAX_NVPARSE 256
 
 
+#define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
+#define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
 
 #define DEBUG_CONSOLE 0
 #define DEBUG_HTTPD 1

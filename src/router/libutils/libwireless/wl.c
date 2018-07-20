@@ -24,6 +24,7 @@
 #include <fcntl.h>
 #include <glob.h>
 #include <channelcache.h>
+#include <net/if.h>
 
 int getValueFromPath(char *path, int dev, char *fmt, int *err)
 {
@@ -3016,6 +3017,7 @@ void set_vifsmac(char *base)	// corrects hwaddr and bssid assignment
 
 #define TXPWR_MAX 1000
 #define TXPWR_DEFAULT 70
+#define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
 int wlconf_up(char *name)
 {
