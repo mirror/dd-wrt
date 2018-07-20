@@ -57,7 +57,7 @@
 #include <utils.h>
 #include <unistd.h>
 #include <services.h>
-#include "../networking/libbridge.h"
+#include <libbridge.h>
 
 #ifdef HAVE_VLANTAGGING
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
