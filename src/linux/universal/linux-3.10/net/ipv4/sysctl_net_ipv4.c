@@ -241,8 +241,9 @@ static int proc_tcp_fastopen_key(ctl_table *ctl, int write, void __user *buffer,
 {
 	ctl_table tbl = { .maxlen = (TCP_FASTOPEN_KEY_LENGTH * 2 + 10) };
 	struct tcp_fastopen_context *ctxt;
-	int ret;
 	u32  user_key[4]; /* 16 bytes, matching TCP_FASTOPEN_KEY_LENGTH */
+	__le32 key[4];
+	int ret, i;
 
 	tbl.data = kmalloc(tbl.maxlen, GFP_KERNEL);
 	if (!tbl.data)
@@ -251,10 +252,13 @@ static int proc_tcp_fastopen_key(ctl_table *ctl, int write, void __user *buffer,
 	rcu_read_lock();
 	ctxt = rcu_dereference(tcp_fastopen_ctx);
 	if (ctxt)
-		memcpy(user_key, ctxt->key, TCP_FASTOPEN_KEY_LENGTH);
+		memcpy(key, ctxt->key, TCP_FASTOPEN_KEY_LENGTH);
 	else
-		memset(user_key, 0, sizeof(user_key));
+		memset(key, 0, sizeof(key));
 	rcu_read_unlock();
+
+	for (i = 0; i < ARRAY_SIZE(key); i++)
+		user_key[i] = le32_to_cpu(key[i]);
 
 	snprintf(tbl.data, tbl.maxlen, "%08x-%08x-%08x-%08x",
 		user_key[0], user_key[1], user_key[2], user_key[3]);
@@ -266,7 +270,11 @@ static int proc_tcp_fastopen_key(ctl_table *ctl, int write, void __user *buffer,
 			ret = -EINVAL;
 			goto bad_key;
 		}
-		tcp_fastopen_reset_cipher(user_key, TCP_FASTOPEN_KEY_LENGTH);
+
+		for (i = 0; i < ARRAY_SIZE(user_key); i++)
+			key[i] = cpu_to_le32(user_key[i]);
+
+		tcp_fastopen_reset_cipher(key, TCP_FASTOPEN_KEY_LENGTH);
 	}
 
 bad_key:
