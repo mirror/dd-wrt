@@ -147,9 +147,9 @@ tap_alloc(const char *path)
      return errno;
    
    if ((ptr = strrchr(path, '/')))
-     strncpy(dev, ptr+1, IFNAMSIZ+1);
+     strlcpy(dev, ptr+1, IFNAMSIZ);
    else
-     strncpy(dev, path, IFNAMSIZ+1);
+     strlcpy(dev, path, IFNAMSIZ);
    
    return 0;
 }
