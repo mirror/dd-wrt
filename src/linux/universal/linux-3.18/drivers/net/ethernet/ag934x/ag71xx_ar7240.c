@@ -295,6 +295,7 @@ struct ar7240sw {
 	struct switch_dev swdev;
 	bool init;
 	int num_ports;
+	bool init;
 	u8 ver;
 	bool vlan;
 	u16 vlan_id[AR7240_MAX_VLANS];
