@@ -70,6 +70,7 @@ static void unbound_config(void)
 	if (nvram_matchi("ipv6_enable", 1) && nvram_matchi("radvd_enable", 1)) {
 		fprintf(fp, "access-control: %s/64 allow\n", prefix);
 	}
+	fprintf(fp, "access-control: 127.0.0.0/8 allow\n");
 	fprintf(fp, "access-control: %s/%d allow\n", lan_ip, getmask(lan_mask));
 	char vifs[256];
 	getIfLists(vifs, 256);
