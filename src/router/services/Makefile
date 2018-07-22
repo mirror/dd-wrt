@@ -922,19 +922,6 @@ ifeq ($(CONFIG_KODATA),y)
 CFLAGS_EXTRA += -DHAVE_KODATA
 endif
 
-ifneq ($(CONFIG_TW6600),y)
-ifeq ($(CONFIG_DIST),"micro")
-CFLAGS_EXTRA += -DHAVE_MICRO
-OBJS += libbridge_if.o
-OBJS += libbridge_init.o
-endif
-ifeq ($(CONFIG_DIST),"micro-special")
-CFLAGS_EXTRA += -DHAVE_MICRO
-OBJS += libbridge_if.o
-OBJS += libbridge_init.o
-endif
-endif
-
 ifeq ($(CONFIG_RADIOOFF),y)
   CFLAGS_EXTRA += -DHAVE_RADIOOFF
 endif
