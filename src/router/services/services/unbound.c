@@ -30,21 +30,22 @@
 
 static void unbound_config(void)
 {
-	FILE *fp = fopen("/tmp/unbound.conf", "wb");
+#ifdef _SC_NPROCESSORS_ONLN
+	int cpucount = sysconf(_SC_NPROCESSORS_ONLN);
+#else
+	int cpucount = 1
+#endif
+	    FILE * fp = fopen("/tmp/unbound.conf", "wb");
 	fprintf(fp, "server:\n"	//
 		"verbosity: 1\n"	//
 		"interface: 0.0.0.0\n"	//
 		"interface: ::0\n"	//
-		"outgoing-range: 60\n"	//
-		"outgoing-num-tcp: 1\n"	//
-		"incoming-num-tcp: 1\n"	//
+		"outgoing-num-tcp: 10\n"	//
+		"incoming-num-tcp: 10\n"	//
 		"msg-buffer-size: 8192\n"	//
-		"msg-cache-size: 100k\n"	//
-		"msg-cache-slabs: 1\n"	//
+		"msg-cache-size: 1m\n"	//
 		"num-queries-per-thread: 30\n"	//
-		"rrset-cache-size: 100k\n"	//
-		"rrset-cache-slabs: 1\n"	//
-		"infra-cache-slabs: 1\n"	//
+		"rrset-cache-size: 2m\n"	//
 		"infra-cache-numhosts: 200\n"	//
 		"username: \"\"\n"	//
 		"pidfile: \"/var/run/unbound.pid\"\n"	//
@@ -54,8 +55,23 @@ static void unbound_config(void)
 		"harden-large-queries: yes\n"	//
 		"auto-trust-anchor-file: \"/etc/unbound/root.key\"\n"	//
 		"key-cache-size: 100k\n"	//
-		"key-cache-slabs: 1\n"	//
 		"neg-cache-size: 10k\n");	//
+	fprintf(fp, "num-threads: %d\n", cpucount);
+	fprintf(fp, "so-reuseport: yes\n");
+	slabs = 2;
+	while (1) {
+		if (slabs >= cpucount)
+			break;
+		slabs <<= 1;
+	}
+	fprintf(fp, "msg-cache-slabs: %d\n", slabs);
+	fprintf(fp, "rrset-cache-slabs: %d\n", slabs);
+	fprintf(fp, "infra-cache-slabs: %d\n", slabs);
+	fprintf(fp, "key-cache-slabs: %d\n", slabs);
+	int range = 1024 / cpucount;
+	if (range > 50)
+		range -= 50;
+	fprintf(fp, "outgoing-range: %d\n", range);
 
 	char *lan_ip = nvram_safe_get("lan_ipaddr");
 	char *lan_mask = nvram_safe_get("lan_netmask");
