@@ -223,7 +223,7 @@ char *getRealBridge(char *ifname, char *word)
 		if (!tag || !port)
 			break;
 		if (!strcmp(port, ifname)) {
-			strcpy(word,tag);
+			strcpy(word, tag);
 			return word;
 		}
 	}
