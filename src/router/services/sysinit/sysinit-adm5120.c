@@ -134,26 +134,6 @@ void start_sysinit(void)
 	/*
 	 * /proc 
 	 */
-
-	mknod("/dev/mmc", S_IFBLK | 0660, makedev(126, 0));
-	mknod("/dev/mmc0", S_IFBLK | 0660, makedev(126, 1));
-	mknod("/dev/mmc1", S_IFBLK | 0660, makedev(126, 2));
-	mknod("/dev/mmc2", S_IFBLK | 0660, makedev(126, 3));
-	mknod("/dev/mmc3", S_IFBLK | 0660, makedev(126, 4));
-
-	mkdir("/dev/mtd", 0700);
-
-	mknod("/dev/mtd/0", S_IFCHR | 0644, makedev(90, 0));
-	mknod("/dev/mtd/0ro", S_IFCHR | 0644, makedev(90, 1));
-	mknod("/dev/mtd/1", S_IFCHR | 0644, makedev(90, 2));
-	mknod("/dev/mtd/1ro", S_IFCHR | 0644, makedev(90, 3));
-	mknod("/dev/mtd/2", S_IFCHR | 0644, makedev(90, 4));
-	mknod("/dev/mtd/2ro", S_IFCHR | 0644, makedev(90, 5));
-	mknod("/dev/mtd/3", S_IFCHR | 0644, makedev(90, 6));
-	mknod("/dev/mtd/3ro", S_IFCHR | 0644, makedev(90, 7));
-	mknod("/dev/mtd/4", S_IFCHR | 0644, makedev(90, 8));
-	mknod("/dev/mtd/4ro", S_IFCHR | 0644, makedev(90, 9));
-
 	cprintf("sysinit() setup console\n");
 	/*
 	 * Setup console 
