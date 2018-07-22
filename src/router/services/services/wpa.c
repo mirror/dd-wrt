@@ -356,7 +356,7 @@ void start_nas(void)
 	}
 	char *iface;
 	eval("touch", "/tmp/.startnas");
-//	sleep(3);
+//      sleep(3);
 	int cnt = get_wl_instances();
 	int c;
 	int deadcount;
@@ -415,9 +415,9 @@ void start_nas(void)
 
 		}
 	}
-//	iface = get_wl_instance_name(c);
-//	wlconf_up(iface);	// double tip
-//	}
+//      iface = get_wl_instance_name(c);
+//      wlconf_up(iface);       // double tip
+//      }
 	unlink("/tmp/.startnas");
 	return;
 }
@@ -584,7 +584,6 @@ void start_nas_single(char *type, char *prefix)
 	fclose(fp);
 
 	cprintf("done\n");
-
 
 	return;
 
