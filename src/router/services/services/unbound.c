@@ -150,8 +150,8 @@ void start_unbound(void)
 		fp = fopen("/jffs/etc/unbound.conf", "r");	//test if custom config is available
 
 		if (fp != NULL) {
-			eval("unbound", "-c", "/jffs/etc/unbound.conf");
 			fclose(fp);
+			eval("unbound", "-c", "/jffs/etc/unbound.conf");
 		} else {
 			eval("unbound", "-c", "/tmp/unbound.conf");
 		}
