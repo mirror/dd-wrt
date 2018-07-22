@@ -1857,11 +1857,20 @@ cprintf("disable bss %s\n",name);
 		fprintf(stderr,"local bit addr %s\n",ether_etoa((uchar *)vif_addr, eaddr));
 
 		/* construct and set other wlX.Y_hwaddr */
-		for (i = 1; i < bclist->count; i++) {
+/*		for (i = 1; i < bclist->count; i++) {
 			snprintf(tmp, sizeof(tmp), "wl%d.%d_hwaddr", unit, i);
 			addr = nvram_safe_get(tmp);
 				vif_addr[5] = (vif_addr[5] & ~MBSS_UC_IDX_MASK) | (MBSS_UC_IDX_MASK & (vif_addr[5]+i));
 				fprintf(stderr,"set new addr %s mask %d\n",ether_etoa((uchar *)vif_addr, eaddr), MBSS_UC_IDX_MASK);
+				nvram_set(tmp, ether_etoa((uchar *)vif_addr, eaddr));
+		}
+*/
+		for (i = 1; i < bclist->count; i++) {
+			snprintf(tmp, sizeof(tmp), "wl%d.%d_hwaddr", unit, i);
+			addr = nvram_safe_get(tmp);
+				vif_addr[5] = (vif_addr[5] & ~(max_no_vifs-1))
+				        | ((max_no_vifs-1) & (vif_addr[5]+1));
+
 				nvram_set(tmp, ether_etoa((uchar *)vif_addr, eaddr));
 		}
 
