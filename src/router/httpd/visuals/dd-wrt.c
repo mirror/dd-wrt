@@ -4462,7 +4462,7 @@ void ej_gen_timer_compute(webs_t wp, int argc, char_t ** argv)
 	int c = getdevicecount();
 	int i;
 	for (i = 0; i < c; i++) {
-		websWrite(wp, "F.radio%d_on_time.value = computeWlTimer(0);\n", i);
+		websWrite(wp, "F.radio%d_on_time.value = computeWlTimer(%d);\n", i, i);
 	}
 #endif
 }
