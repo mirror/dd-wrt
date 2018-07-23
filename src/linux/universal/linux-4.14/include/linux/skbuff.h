@@ -628,6 +628,7 @@ typedef unsigned char *sk_buff_data_t;
  *	@hash: the packet hash
  *	@queue_mapping: Queue mapping for multiqueue devices
  *	@xmit_more: More SKBs are pending for this queue
+ *	@pfmemalloc: skbuff was allocated from PFMEMALLOC reserves
  *	@ndisc_nodetype: router type (from link layer)
  *	@ooo_okay: allow the mapping of a socket to a queue to be changed
  *	@l4_hash: indicate hash is a canonical 4-tuple hash over transport
@@ -733,7 +734,7 @@ struct sk_buff {
 				peeked:1,
 				head_frag:1,
 				xmit_more:1,
-				__unused:1; /* one bit hole */
+				pfmemalloc:1;
 
 	/* fields enclosed in headers_start/headers_end are copied
 	 * using a single memcpy() in __copy_skb_header()
@@ -752,7 +753,6 @@ struct sk_buff {
 
 	__u8			__pkt_type_offset[0];
 	__u8			pkt_type:3;
-	__u8			pfmemalloc:1;
 	__u8			ignore_df:1;
 
 	__u8			nf_trace:1;
