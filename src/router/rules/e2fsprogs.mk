@@ -30,6 +30,7 @@ ifneq ($(CONFIG_E2FSPROGS_ADV),y)
 	rm -f $(INSTALLDIR)/e2fsprogs/sbin/e2label
 	rm -f $(INSTALLDIR)/e2fsprogs/sbin/findfs
 endif
+	rm -f $(INSTALLDIR)/e2fsprogs/lib/libblk*
 	rm -rf $(INSTALLDIR)/e2fsprogs/usr/share
 	rm -rf $(INSTALLDIR)/e2fsprogs/usr/man
 	-cd $(INSTALLDIR)/e2fsprogs/etc && ln -sf /proc/mounts mtab
