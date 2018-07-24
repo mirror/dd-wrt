@@ -178,7 +178,7 @@ endif
 else
 cflags-y += $(call cc-option,-march=octeon) -Wa,--trap
 ifeq (,$(findstring march=octeon, $(cflags-y)))
-cflags-y += -Wa,-march=octeon
+cflags-y += -Wa,-march=octeon+
 endif
 endif
 endif
