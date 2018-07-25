@@ -208,6 +208,9 @@ static inline int is_syscall_trace_event(struct trace_event_call *tp_event)
 
 #define __PROTECT(...) asmlinkage_protect(__VA_ARGS__)
 #define __SYSCALL_DEFINEx(x, name, ...)					\
+	__diag_push();							\
+	__diag_ignore(GCC, 8, "-Wattribute-alias",			\
+		      "Type aliasing is used to sanitize syscall arguments");\
 	asmlinkage long sys##name(__MAP(x,__SC_DECL,__VA_ARGS__))	\
 		__attribute__((alias(__stringify(SyS##name))));		\
 	static inline long SYSC##name(__MAP(x,__SC_DECL,__VA_ARGS__));	\
@@ -219,6 +222,7 @@ static inline int is_syscall_trace_event(struct trace_event_call *tp_event)
 		__PROTECT(x, ret,__MAP(x,__SC_ARGS,__VA_ARGS__));	\
 		return ret;						\
 	}								\
+	__diag_pop();							\
 	static inline long SYSC##name(__MAP(x,__SC_DECL,__VA_ARGS__))
 
 /*
