@@ -14,9 +14,35 @@ version 2.80
         when the upstream namesevers do not support DNSSEC, and in this
         case no DNSSEC validation at all is occuring.
 
+        Fix DHCP broken-ness when --no-ping AND --dhcp-sequential-ip
+	are set. Thanks to Daniel Miess for help with this.
 
+	Add a facilty to store DNS packets sent/recieved in a
+	pcap-format file for later debugging. The file location
+	is given by the --dumpfile option, and a bitmap controlling
+	which packets should be dumped is given by the --dumpmask
+	option.
 
+	Handle the case of both standard and constructed dhcp-ranges on the
+	same interface better. We don't now contruct a dhcp-range if there's
+	already one specified. This allows the specified interface to
+	have different parameters and avoids advertising the same
+	prefix twice. Thanks to Luis Marsano for spotting this case.
 
+	Allow zone transfer in authoritative mode if auth-peer is specified,
+	even if auth-sec-servers is not. Thanks to Raphaël Halimi for
+	the suggestion.
+
+	Fix bug which sometimes caused dnsmasq to wrongly return answers
+	without DNSSEC RRs to queries with the do-bit set, but only when
+	DNSSEC validation was not enabled.
+	Thanks to Petr Menšík for spotting this.
+
+	Fix missing fatal errors with some malformed options
+	(server, local, address, rebind-domain-ok, ipset, alias).
+	Thanks to Eugene Lozovoy for spotting the problem.
+	
+	
 version 2.79
 	Fix parsing of CNAME arguments, which are confused by extra spaces.
 	Thanks to Diego Aguirre for spotting the bug.

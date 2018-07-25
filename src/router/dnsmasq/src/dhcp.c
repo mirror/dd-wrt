@@ -678,7 +678,7 @@ struct ping_result *do_icmp_ping(time_t now, struct in_addr addr, unsigned int h
   if ((count >= max) || option_bool(OPT_NO_PING) || loopback)
     {
       /* overloaded, or configured not to check, loopback interface, return "not in use" */
-      dummy.hash = 0;
+      dummy.hash = hash;
       return &dummy;
     }
   else if (icmp_ping(addr))
