@@ -990,9 +990,12 @@ static int zend_verify_internal_return_type(zend_function *zf, zval *ret)
 	zend_class_entry *ce = NULL;
 	void *dummy_cache_slot = NULL;
 
-	if (UNEXPECTED(ZEND_TYPE_CODE(ret_info->type) == IS_VOID && Z_TYPE_P(ret) != IS_NULL)) {
-		zend_verify_void_return_error(zf, zend_zval_type_name(ret), "");
-		return 0;
+	if (ZEND_TYPE_CODE(ret_info->type) == IS_VOID) {
+		if (UNEXPECTED(Z_TYPE_P(ret) != IS_NULL)) {
+			zend_verify_void_return_error(zf, zend_zval_type_name(ret), "");
+			return 0;
+		}
+		return 1;
 	}
 
 	if (UNEXPECTED(!zend_check_type(ret_info->type, ret, &ce, &dummy_cache_slot, NULL, NULL, 1))) {
@@ -1651,7 +1654,9 @@ fetch_from_array:
 			zend_throw_error(NULL, "[] operator not supported for strings");
 		} else {
 			zend_check_string_offset(dim, type EXECUTE_DATA_CC);
-			zend_wrong_string_offset(EXECUTE_DATA_C);
+			if (EXPECTED(EG(exception) == NULL)) {
+				zend_wrong_string_offset(EXECUTE_DATA_C);
+			}
 		}
 		ZVAL_ERROR(result);
 	} else if (EXPECTED(Z_TYPE_P(container) == IS_OBJECT)) {
