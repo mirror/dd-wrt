@@ -232,6 +232,9 @@ extern struct trace_event_functions exit_syscall_print_funcs;
 #define SYSCALL_DEFINE(name) static inline long SYSC_##name
 
 #define __SYSCALL_DEFINEx(x, name, ...)					\
+	__diag_push();							\
+	__diag_ignore(GCC, 8, "-Wattribute-alias",			\
+		      "Type aliasing is used to sanitize syscall arguments");\
 	asmlinkage long sys##name(__SC_DECL##x(__VA_ARGS__));		\
 	static inline long SYSC##name(__SC_DECL##x(__VA_ARGS__));	\
 	asmlinkage long SyS##name(__SC_LONG##x(__VA_ARGS__))		\
@@ -240,6 +243,7 @@ extern struct trace_event_functions exit_syscall_print_funcs;
 		return (long) SYSC##name(__SC_CAST##x(__VA_ARGS__));	\
 	}								\
 	SYSCALL_ALIAS(sys##name, SyS##name);				\
+	__diag_pop();							\
 	static inline long SYSC##name(__SC_DECL##x(__VA_ARGS__))
 
 #else /* CONFIG_HAVE_SYSCALL_WRAPPERS */
