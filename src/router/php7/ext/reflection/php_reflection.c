@@ -20,7 +20,7 @@
    +----------------------------------------------------------------------+
 */
 
-/* $Id: 991f0da341ffa07e5bf7e30e3718b33cf8b586a0 $ */
+/* $Id: a0d4ebb4a00a610b72686facdf62693a7855fc2b $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -4496,7 +4496,7 @@ ZEND_METHOD(reflection_class, getConstants)
 	ZEND_HASH_FOREACH_STR_KEY_PTR(&ce->constants_table, key, c) {
 		if (UNEXPECTED(zval_update_constant_ex(&c->value, ce) != SUCCESS)) {
 			zend_array_destroy(Z_ARRVAL_P(return_value));
-			return;
+			RETURN_NULL();
 		}
 		val = zend_hash_add_new(Z_ARRVAL_P(return_value), key, &c->value);
 		Z_TRY_ADDREF_P(val);
@@ -5531,7 +5531,7 @@ ZEND_METHOD(reflection_property, getValue)
 			return;
 		}
 
-		if (!instanceof_function(Z_OBJCE_P(object), ref->ce)) {
+		if (!instanceof_function(Z_OBJCE_P(object), ref->prop.ce)) {
 			_DO_THROW("Given object is not an instance of the class this property was declared in");
 			/* Returns from this function */
 		}
@@ -6825,7 +6825,7 @@ PHP_MINFO_FUNCTION(reflection) /* {{{ */
 	php_info_print_table_start();
 	php_info_print_table_header(2, "Reflection", "enabled");
 
-	php_info_print_table_row(2, "Version", "$Id: 991f0da341ffa07e5bf7e30e3718b33cf8b586a0 $");
+	php_info_print_table_row(2, "Version", "$Id: a0d4ebb4a00a610b72686facdf62693a7855fc2b $");
 
 	php_info_print_table_end();
 } /* }}} */
