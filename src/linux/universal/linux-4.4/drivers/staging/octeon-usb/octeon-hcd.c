@@ -2823,9 +2823,10 @@ static int cvmx_usb_poll_channel(struct cvmx_usb_state *usb, int channel)
 							CVMX_USB_STAGE_NON_CONTROL;
 					else {
 						if (transaction->type ==
-							CVMX_USB_TRANSFER_INTERRUPT)
+							CVMX_USB_TRANSFER_INTERRUPT){
 							pipe->next_tx_frame +=
 								pipe->interval;
+						}
 							cvmx_usb_perform_complete(
 								usb,
 								pipe,
