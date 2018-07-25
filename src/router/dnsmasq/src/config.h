@@ -117,6 +117,9 @@ HAVE_AUTH
 HAVE_DNSSEC
    include DNSSEC validator.
 
+HAVE_DUMPFILE
+   include code to dump packets to a libpcap-format file for debugging.
+
 HAVE_LOOP
    include functionality to probe for and remove DNS forwarding loops.
 
@@ -132,6 +135,7 @@ NO_DHCP6
 NO_SCRIPT
 NO_LARGEFILE
 NO_AUTH
+NO_DUMPFILE
 NO_INOTIFY
    these are avilable to explicitly disable compile time options which would 
    otherwise be enabled automatically (HAVE_IPV6, >2Gb file sizes) or 
@@ -168,6 +172,11 @@ RESOLVFILE
 #define HAVE_AUTH
 //#define HAVE_IPSET 
 #define HAVE_LOOP
+//#define HAVE_DUMPFILE
+
+//#ifdef NO_DUMPFILE
+#undef HAVE_DUMPFILE
+//#endif
 
 /* Build options which require external libraries.
    
@@ -455,8 +464,11 @@ static char *compile_opts =
 #ifndef HAVE_INOTIFY
 "no-"
 #endif
-"inotify";
-
+"inotify "
+#ifndef HAVE_DUMPFILE
+"no-"
+#endif
+"dumpfile";
 
 #endif
 
