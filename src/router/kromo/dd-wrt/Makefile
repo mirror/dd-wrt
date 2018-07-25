@@ -818,6 +818,10 @@ ifeq ($(CONFIG_ANTAIRA),y)
 	cp -f antaira/logo.png $(INSTALLDIR)/www/style
 	cp -f antaira/favicon.ico $(INSTALLDIR)/www/images/favicon.ico
 	cp -f antaira/logo-help.png $(INSTALLDIR)/www/help/logo-help.png
+	mkdir -p $(INSTALLDIR)/sbin
+	cp -f kmt/defaults/sbin/* $(INSTALLDIR)/sbin/
+	cp -f kmt/defaults/sbin/*default* $(INSTALLDIR)/sbin/
+	cp -f kmt/defaults/sbin/getmtd-for-backup.sh $(INSTALLDIR)/sbin/
 endif
 
 ifneq ($(CONFIG_USB),y)
