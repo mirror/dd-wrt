@@ -640,13 +640,20 @@ static int construct_worker(struct in6_addr *local, int prefix,
     return 0;
   
   for (template = daemon->dhcp6; template; template = template->next)
-    if (!(template->flags & CONTEXT_TEMPLATE))
+    if (!(template->flags & (CONTEXT_TEMPLATE | CONTEXT_CONSTRUCTED)))
       {
 	/* non-template entries, just fill in interface and local addresses */
 	if (prefix <= template->prefix &&
 	    is_same_net6(local, &template->start6, template->prefix) &&
 	    is_same_net6(local, &template->end6, template->prefix))
 	  {
+	    /* First time found, do fast RA. */
+	    if (template->if_index != if_index || !IN6_ARE_ADDR_EQUAL(&template->local6, local))
+	      {
+		ra_start_unsolicited(param->now, template);
+		param->newone = 1;
+	      }
+	    
 	    template->if_index = if_index;
 	    template->local6 = *local;
 	  }
@@ -661,24 +668,33 @@ static int construct_worker(struct in6_addr *local, int prefix,
 	setaddr6part(&end6, addr6part(&template->end6));
 	
 	for (context = daemon->dhcp6; context; context = context->next)
-	  if ((context->flags & CONTEXT_CONSTRUCTED) &&
+	  if (!(context->flags & CONTEXT_TEMPLATE) &&
 	      IN6_ARE_ADDR_EQUAL(&start6, &context->start6) &&
 	      IN6_ARE_ADDR_EQUAL(&end6, &context->end6))
 	    {
-	      int flags = context->flags;
-	      context->flags &= ~(CONTEXT_GC | CONTEXT_OLD);
-	      if (flags & CONTEXT_OLD)
+	      /* If there's an absolute address context covering this address
+		 then don't construct one as well. */
+	      if (!(context->flags & CONTEXT_CONSTRUCTED))
+		break;
+	      
+	      if (context->if_index == if_index)
 		{
-		  /* address went, now it's back */
-		  log_context(AF_INET6, context); 
-		  /* fast RAs for a while */
-		  ra_start_unsolicited(param->now, context);
-		  param->newone = 1; 
-		  /* Add address to name again */
-		  if (context->flags & CONTEXT_RA_NAME)
-		    param->newname = 1;
+		  int cflags = context->flags;
+		  context->flags &= ~(CONTEXT_GC | CONTEXT_OLD);
+		  if (cflags & CONTEXT_OLD)
+		    {
+		      /* address went, now it's back, and on the same interface */
+		      log_context(AF_INET6, context); 
+		      /* fast RAs for a while */
+		      ra_start_unsolicited(param->now, context);
+		      param->newone = 1; 
+		      /* Add address to name again */
+		      if (context->flags & CONTEXT_RA_NAME)
+			param->newname = 1;
+		    
+		    }
+		  break;
 		}
-	      break;
 	    }
 	
 	if (!context && (context = whine_malloc(sizeof (struct dhcp_context))))

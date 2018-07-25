@@ -161,6 +161,8 @@ struct myoption {
 #define LOPT_TFTP_MTU      349
 #define LOPT_REPLY_DELAY   350
 #define LOPT_RAPID_COMMIT  351
+#define LOPT_DUMPFILE      352
+#define LOPT_DUMPMASK      353
  
 #ifdef HAVE_GETOPT_LONG
 static const struct option opts[] =  
@@ -327,6 +329,8 @@ static const struct myoption opts[] =
     { "dhcp-ttl", 1, 0 , LOPT_DHCPTTL },
     { "dhcp-reply-delay", 1, 0, LOPT_REPLY_DELAY },
     { "dhcp-rapid-commit", 0, 0, LOPT_RAPID_COMMIT },
+    { "dumpfile", 1, 0, LOPT_DUMPFILE },
+    { "dumpmask", 1, 0, LOPT_DUMPMASK },
     { NULL, 0, 0, 0 }
   };
 
@@ -500,6 +504,8 @@ static struct {
   { LOPT_DHCPTTL, ARG_ONE, "<ttl>", gettext_noop("Set TTL in DNS responses with DHCP-derived addresses."), NULL }, 
   { LOPT_REPLY_DELAY, ARG_ONE, "<integer>", gettext_noop("Delay DHCP replies for at least number of seconds."), NULL },
   { LOPT_RAPID_COMMIT, OPT_RAPID_COMMIT, NULL, gettext_noop("Enables DHCPv4 Rapid Commit option."), NULL },
+  { LOPT_DUMPFILE, ARG_ONE, "<path>", gettext_noop("Path to debug packet dump file"), NULL },
+  { LOPT_DUMPMASK, ARG_ONE, "<hex>", gettext_noop("Mask which packets to dump"), NULL },
   { 0, 0, NULL, NULL, NULL }
 }; 
 
@@ -1811,6 +1817,14 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	ret_err(_("bad MX target"));
       break;
 
+    case LOPT_DUMPFILE:  /* --dumpfile */
+      daemon->dump_file = opt_string_alloc(arg);
+      break;
+
+    case LOPT_DUMPMASK:  /* --dumpmask */
+      daemon->dump_mask = strtol(arg, NULL, 0);
+      break;
+      
 #ifdef HAVE_DHCP      
     case 'l':  /* --dhcp-leasefile */
       daemon->lease_file = opt_string_alloc(arg);
@@ -2403,7 +2417,7 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 		if (strcmp(arg, "#") == 0)
 		  domain = "";
 		else if (strlen (arg) != 0 && !(domain = canonicalise_opt(arg)))
-		  option = '?';
+		  ret_err(gen_err);
 		serv = opt_malloc(sizeof(struct server));
 		memset(serv, 0, sizeof(struct server));
 		serv->next = newlist;
@@ -2535,7 +2549,7 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 		 if (strcmp(arg, "#") == 0 || !*arg)
 		   domain = "";
 		 else if (strlen(arg) != 0 && !(domain = canonicalise_opt(arg)))
-		   option = '?';
+		   ret_err(gen_err);
 		 ipsets->next = opt_malloc(sizeof(struct ipsets));
 		 ipsets = ipsets->next;
 		 memset(ipsets, 0, sizeof(struct ipsets));
@@ -2550,13 +2564,11 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	     memset(ipsets, 0, sizeof(struct ipsets));
 	     ipsets->domain = "";
 	   }
+	 
 	 if (!arg || !*arg)
-	   {
-	     option = '?';
-	     break;
-	   }
-	 size = 2;
-	 for (end = arg; *end; ++end) 
+	   ret_err(gen_err);
+	 
+	 for (size = 2, end = arg; *end; ++end) 
 	   if (*end == ',')
 	       ++size;
      
@@ -2589,8 +2601,6 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	    
 	    if (size < 0)
 	      size = 0;
-	    else if (size > 10000)
-	      size = 10000;
 	    
 	    daemon->cachesize = size;
 	  }
@@ -2785,12 +2795,6 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	
 	memset (new, 0, sizeof(*new));
 	new->lease_time = DEFLEASE;
-	
-	if (!arg)
-	  {
-	    option = '?';
-	    break;
-	  }
 	
 	while(1)
 	  {
@@ -3793,11 +3797,9 @@ err:
 
 	if ((k < 2) || 
 	    (!(inet_pton(AF_INET, a[0], &new->in) > 0)) ||
-	    (!(inet_pton(AF_INET, a[1], &new->out) > 0)))
-	  option = '?';
-	
-	if (k == 3 && !inet_pton(AF_INET, a[2], &new->mask))
-	  option = '?';
+	    (!(inet_pton(AF_INET, a[1], &new->out) > 0)) ||
+	    (k == 3 && !inet_pton(AF_INET, a[2], &new->mask)))
+	  ret_err(_("missing address in alias"));
 	
 	if (dash && 
 	    (!(inet_pton(AF_INET, dash, &new->end) > 0) ||
@@ -4135,11 +4137,11 @@ err:
       }
 
 #ifdef HAVE_DNSSEC
-    case LOPT_DNSSEC_STAMP:
+    case LOPT_DNSSEC_STAMP: /* --dnssec-timestamp */
       daemon->timestamp_file = opt_string_alloc(arg); 
       break;
 
-    case LOPT_DNSSEC_CHECK:
+    case LOPT_DNSSEC_CHECK: /* --dnssec-check-unsigned */
       if (arg)
 	{
 	  if (strcmp(arg, "no") == 0)
@@ -4149,7 +4151,7 @@ err:
 	}
       break;
       
-    case LOPT_TRUST_ANCHOR:
+    case LOPT_TRUST_ANCHOR: /* --trust-anchor */
       {
 	struct ds_config *new = opt_malloc(sizeof(struct ds_config));
       	char *cp, *cp1, *keyhex, *digest, *algo = NULL;

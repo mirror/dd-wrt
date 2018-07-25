@@ -883,12 +883,7 @@ int dnssec_validate_ds(time_t now, struct dns_header *header, size_t plen, char 
   
   if (rc == STAT_INSECURE)
     {
-      static int reported = 0;
-      if (!reported)
-	{
-	  reported = 1;
-	  my_syslog(LOG_WARNING, _("Insecure DS reply received, do upstream DNS servers support DNSSEC?"));
-	}
+      my_syslog(LOG_WARNING, _("Insecure DS reply received, do upstream DNS servers support DNSSEC?"));
       rc = STAT_BOGUS;
     }
   
