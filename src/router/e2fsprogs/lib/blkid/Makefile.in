@@ -28,18 +28,18 @@ SRCS= $(srcdir)/cache.c $(srcdir)/dev.c $(srcdir)/devname.c $(srcdir)/devno.c \
 
 HFILES_IN=	blkid.h blkid_types.h
 
-LIBRARY= libblkid
+LIBRARY= libe2fsblkid
 LIBDIR= blkid
 
 ELF_VERSION = 1.0
 ELF_SO_VERSION = 1
-ELF_IMAGE = libblkid
+ELF_IMAGE = libe2fsblkid
 ELF_MYDIR = blkid
 ELF_INSTALL_DIR = $(root_libdir)
 ELF_OTHER_LIBS = -luuid
 
 BSDLIB_VERSION = 2.0
-BSDLIB_IMAGE = libblkid
+BSDLIB_IMAGE = libe2fsblkid
 BSDLIB_MYDIR = blkid
 BSDLIB_INSTALL_DIR = $(root_libdir)
 
