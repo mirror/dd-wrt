@@ -3494,7 +3494,7 @@ void start_wan(int status)
 					if (nvram_match("3gdata", "sierradirectip")) {
 						sysprintf("export COMGTAPN=\"%s\";export COMGTPROF=3 ; comgt -s -d %s /etc/comgt/dip-apn.comgt", nvram_safe_get(wsbuf), controldevice);
 					} else {
-						sysprintf("export COMGTAPN=\"%s\";comgt APN -d %s", nvram_safe_get(wsbuf), controldevice);
+						sysprintf("export COMGTAPN=\"%s\";comgt -s -d %s APN", nvram_safe_get(wsbuf), controldevice);
 					}
 				}
 			}
@@ -3502,7 +3502,7 @@ void start_wan(int status)
 			/* init PIN */
 			sprintf(wsbuf, "wan_pin%s", wsel);
 			if (strlen(nvram_safe_get(wsbuf)))
-				sysprintf("export COMGTPIN=%s;comgt PIN -d %s", nvram_safe_get(wsbuf), controldevice);
+				sysprintf("export COMGTPIN=%s;comgt -s -d %s PIN", nvram_safe_get(wsbuf), controldevice);
 			// set netmode, even if it is auto, should be set every time, the stick might save it
 			// some sticks, don't save it ;-)
 			if (strlen(nvram_safe_get("3gnmvariant"))) {

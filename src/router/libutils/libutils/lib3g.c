@@ -1586,6 +1586,7 @@ void detectcontrol_and_data_port(void)
 	}
 	if (controlfound != -1) {
 		sprintf(controlport, "/dev/usb/tts/%d", controlfound);
+		nvram_set("3gcontrol", controlport);
 		fprintf(out, "Setting controlport to _%s_\n", controlport);
 	}
 	fclose(out);
@@ -1612,6 +1613,7 @@ void get3GControlDevice(void)
 	static char control[32];
 	static char data[32];
 	FILE *file = NULL;
+	int sierra_detection_done=0;
 
 #if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
 	mkdir("/tmp/usb", 0700);
@@ -1669,6 +1671,7 @@ void get3GControlDevice(void)
 #ifdef HAVE_ERC
 	needreset = 0;
 #endif
+	sierra_detection_done=0;
 	file = fopen(SIERRA_DETECTION_FN, "r");
 	if (file) {
 		fclose(file);
@@ -1677,7 +1680,7 @@ void get3GControlDevice(void)
 			unlink(SIERRA_DETECTION_FN);
 		} else {
 			fprintf(stderr, "Sierra detection already done\n");
-			return;
+			sierra_detection_done=1;
 		}
 	}
 
@@ -1710,13 +1713,23 @@ void get3GControlDevice(void)
 				insmod("sierra");
 				insmod("usbnet");
 				insmod("sierra_net");
+				int count = 0;
+				while (!ifexists("wwan0")) {
+					dd_syslog(LOG_INFO, "looking for wwan0");
+					sleep(1);
+					if (count++ > 6) {
+						dd_syslog(LOG_INFO, "no wwan0 after 6 seconds");
+						break;
+					}
+				}
 				if (ifexists("wwan0")) {
 					if (devicelist[devicecount].customsetup) {
 						sysprintf("touch /tmp/.sierrastatus.sh.lock");
 						fprintf(stderr, "SierraDirectip customsetup\n");
 						devicelist[devicecount].customsetup(needreset, devicecount);
 					}
-					detectcontrol_and_data_port();
+					if (sierra_detection_done != 1) 
+						detectcontrol_and_data_port();
 					// nvram_set("3gcontrol", control);
 					// sysprintf("echo \"Setting controlport to %s\" | logger", control);
 					// sysprintf("rm /tmp/.sierrastatus.sh.lock");
@@ -1846,7 +1859,8 @@ void get3GControlDevice(void)
 			}
 			nvram_set("3gdata", data);
 			if (devicelist[devicecount].driver == sierra) {
-				detectcontrol_and_data_port();
+				if (sierra_detection_done != 1)
+					detectcontrol_and_data_port();
 			}
 			nvram_set("3gcontrol", control);
 			return;

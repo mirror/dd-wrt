@@ -9,7 +9,7 @@ function ws(s) {ret=s; for (i=0;i<8-length(s);i++) ret=ret" "; return ret; }
 {
 	out[trim($1)]=trim($2)
 } END {
-printf "nvram set wan_3g_mode=\"<pre>"
+printf "nvram set wan_3g_signal=\"<pre>"
 if (out["type"]=="lte")  {
 	print "System mode\tLTE"; 
 	print ws("SNR")"\t" out["snr"];
