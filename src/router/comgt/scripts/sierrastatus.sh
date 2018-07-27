@@ -14,7 +14,7 @@ function trim(s) { return rtrim(ltrim(s)); }
 function ws(s) {ret=s; for (i=0;i<8-length(s);i++) ret=ret" "; return ret; }
 BEGIN {
 	lc=0;
-	printf "nvram set wan_3g_mode=\"<pre>"
+	printf "nvram set wan_3g_signal=\"<pre>"
 }
 {
 if (lc >1) {
