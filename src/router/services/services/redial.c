@@ -71,9 +71,6 @@ void start_redial(void)
 	};
 	if (pidof("redial") > 0) {
 		stop_redial();
-		if (pidof("redial") > 0) {
-			return;		// not required, already running
-		}
 	}
 
 	mkdir("/tmp/ppp", 0777);
