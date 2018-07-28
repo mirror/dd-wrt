@@ -481,6 +481,10 @@ void printothpentry(struct othptable *table, struct othptabent *entry,
 		wattrset(table->othpwin, IPV6ATTR);
 		strcpy(protname, "IPv6 tun");
 		break;
+	case 97:
+		wattrset(table->othpwin, EOIPATTR);
+		strcpy(protname, "EOIP");
+		break;
 	default:
 		wattrset(table->othpwin, UNKNIPATTR);
 		protptr = getprotobynumber(entry->protocol);
