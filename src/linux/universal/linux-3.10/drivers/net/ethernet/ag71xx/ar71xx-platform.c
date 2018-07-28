@@ -141,14 +141,19 @@ void ar71xx_device_start(u32 mask)
 EXPORT_SYMBOL_GPL(ar71xx_device_start);
 void ar71xx_ddr_flush(u32 reg)
 {
-	ar71xx_ddr_wr(reg, 1);
-	while ((ar71xx_ddr_rr(reg) & 0x1))
+	void __iomem *flush_reg = ar71xx_ddr_base + (reg * 4);
+
+	/* Flush the DDR write buffer. */
+	__raw_writel(0x1, flush_reg);
+	while (__raw_readl(flush_reg) & 0x1)
 		;
 
-	ar71xx_ddr_wr(reg, 1);
-	while ((ar71xx_ddr_rr(reg) & 0x1))
+	/* It must be run twice. */
+	__raw_writel(0x1, flush_reg);
+	while (__raw_readl(flush_reg) & 0x1)
 		;
 }
+
 EXPORT_SYMBOL_GPL(ar71xx_ddr_flush);
 #endif
 #endif
