@@ -15,7 +15,7 @@ int dev_set_flags(const char *iface, int flags);
 int dev_clear_flags(const char *iface, int flags);
 int dev_get_ifname(int ifindex, char *ifname);
 int dev_bind_ifindex(const int fd, const int ifindex);
-int dev_bind_ifname(const int fd, const char const *ifname);
+int dev_bind_ifname(const int fd, const char * const ifname);
 char *gen_iface_msg(char *ifptr);
 int dev_promisc_flag(const char *dev_name);
 

@@ -146,7 +146,7 @@ void gethostparams(struct hostparams *data, char *init_saddr, char *init_smask,
 				snprintf(msgstr, 60,
 					 "Invalid protocol input at or near token \"%s\"",
 					 bptr);
-				tui_error(ANYKEY_MSG, msgstr);
+				tui_error(ANYKEY_MSG, "%s", msgstr);
 				doagain = 1;
 			} else
 				doagain = 0;

@@ -55,21 +55,19 @@ int EOIPATTR;
 void draw_desktop(void)
 {
 	int row;		/* counter for desktop construction */
-	char sp_buf[10];
 
-	sprintf(sp_buf, "%%%dc", COLS);
 	scrollok(stdscr, 0);
 	attrset(STATUSBARATTR);
 	move(0, 0);
-	printw(sp_buf, ' ');	/* these two print the top n' bottom */
+	printw("%*c", COLS, ' ');	/* these two print the top n' bottom */
 	move(LINES - 1, 0);
-	printw(sp_buf, ' ');	/* lines */
+	printw("%*c", COLS, ' ');	/* lines */
 
 	attrset(FIELDATTR);
 
 	for (row = 1; row <= LINES - 2; row++) {	/* draw the background */
 		move(row, 0);
-		printw(sp_buf, ' ');
+		printw("%*c", COLS, ' ');
 	}
 
 	refresh();
@@ -173,11 +171,8 @@ void tabkeyhelp(WINDOW * win)
 
 void indicate(char *message)
 {
-	char sp_buf[10];
-
 	attrset(STATUSBARATTR);
-	sprintf(sp_buf, "%%%dc", COLS);
-	mvprintw(LINES - 1, 0, sp_buf, ' ');
+	mvprintw(LINES - 1, 0, "%*c", COLS, ' ');
 	mvprintw(LINES - 1, 1, message);
 	refresh();
 }
@@ -194,6 +189,12 @@ void printlargenum(unsigned long long i, WINDOW * win)
 		wprintw(win, "%8lluG", i / 1000000000ULL);
 	else
 		wprintw(win, "%8lluT", i / 1000000000000ULL);
+}
+
+void print_packet_drops(unsigned long count, WINDOW *win, int x)
+{
+	wattrset(win, BOXATTR);
+	mvwprintw(win, getmaxy(win) - 1, x, " Dropped packets:  %lu ", count);
 }
 
 int screen_update_needed(const struct timeval *now, const struct timeval *last)
@@ -263,7 +264,7 @@ void standardcolors(int color)
 		ICMPV6ATTR = COLOR_PAIR(19) | A_BOLD;
 		IPV6ATTR = COLOR_PAIR(19);
 		UNKNATTR = COLOR_PAIR(4) | A_BOLD;
-		EOIP = COLOR_PAIR(1);
+		EOIPATTR = COLOR_PAIR(1);
 	} else {
 		STDATTR = A_REVERSE;
 		HIGHATTR = A_REVERSE;

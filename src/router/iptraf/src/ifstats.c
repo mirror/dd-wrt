@@ -36,7 +36,6 @@ ifstats.c	- the interface statistics module
 struct iflist {
 	char ifname[IFNAMSIZ];
 	int ifindex;
-	unsigned int encap;
 	unsigned long long iptotal;
 	unsigned long long ip6total;
 	unsigned long badtotal;
@@ -126,6 +125,15 @@ static int ifinlist(struct iflist *list, char *ifname)
 	return result;
 }
 
+static struct iflist *alloc_iflist_entry(void)
+{
+	struct iflist *tmp = xmallocz(sizeof(struct iflist));
+
+	rate_alloc(&tmp->rate, 5);
+
+	return tmp;
+}
+
 /*
  * Initialize the list of interfaces.  This linked list is used in the
  * selection boxes as well as in the general interface statistics screen.
@@ -171,10 +179,9 @@ static void initiflist(struct iflist **list)
 		 * At this point, the interface is now sure to be up and running.
 		 */
 
-		struct iflist *itmp = xmallocz(sizeof(struct iflist));
-		strcpy(itmp->ifname, ifname);
+		struct iflist *itmp = alloc_iflist_entry();
 		itmp->ifindex = ifindex;
-		rate_alloc(&itmp->rate, 5);
+		strcpy(itmp->ifname, ifname);
 
 		/* make the linked list sorted by ifindex */
 		struct iflist *cur = *list, *last = NULL;
@@ -211,7 +218,7 @@ static struct iflist *positionptr(struct iflist *iflist, const int ifindex)
 	}
 	/* no interface was found, try to create new one */
 	if (ptmp == NULL) {
-		struct iflist *itmp = xmallocz(sizeof(struct iflist));
+		struct iflist *itmp = alloc_iflist_entry();
 		itmp->ifindex = ifindex;
 		itmp->index = last->index + 1;
 		int r = dev_get_ifname(ifindex, itmp->ifname);
@@ -231,20 +238,14 @@ static struct iflist *positionptr(struct iflist *iflist, const int ifindex)
 
 static void destroyiflist(struct iflist *list)
 {
-	struct iflist *ctmp;
-	struct iflist *ptmp;
+	struct iflist *ptmp = list;
 
-	if (list != NULL) {
-		ptmp = list;
-		ctmp = ptmp->next_entry;
+	while (ptmp != NULL) {
+		struct iflist *ctmp = ptmp->next_entry;
 
-		do {
-			rate_destroy(&ptmp->rate);
-			free(ptmp);
-			ptmp = ctmp;
-			if (ctmp != NULL)
-				ctmp = ctmp->next_entry;
-		} while (ptmp != NULL);
+		rate_destroy(&ptmp->rate);
+		free(ptmp);
+		ptmp = ctmp;
 	}
 }
 
@@ -288,18 +289,16 @@ static void showrates(struct iftab *table)
 	} while (ptmp != table->lastvisible->next_entry);
 }
 
-static void printifentry(struct iflist *ptmp, WINDOW * win, unsigned int idx)
+static void printifentry(struct iftab *table, struct iflist *ptmp)
 {
-	unsigned int target_row;
+	int target_row = ptmp->index - table->firstvisible->index;
+	WINDOW *win = table->statwin;
 
-	if ((ptmp->index < idx) || (ptmp->index > idx + (LINES - 5)))
+	if ((target_row < 0) || (target_row > LINES - 5))
 		return;
 
-	target_row = ptmp->index - idx;
-
 	wattrset(win, STDATTR);
-	wmove(win, target_row, 1);
-	wprintw(win, "%s", ptmp->ifname);
+	mvwprintw(win, target_row, 1, "%s", ptmp->ifname);
 	wattrset(win, HIGHATTR);
 	wmove(win, target_row, 14 * COLS / 80);
 	printlargenum(ptmp->total, win);
@@ -321,7 +320,7 @@ static void print_if_entries(struct iftab *table)
 	unsigned int winht = LINES - 4;
 
 	do {
-		printifentry(ptmp, table->statwin, table->firstvisible->index);
+		printifentry(table, ptmp);
 
 		if (i <= winht)
 			table->lastvisible = ptmp;
@@ -333,24 +332,17 @@ static void print_if_entries(struct iftab *table)
 
 static void labelstats(WINDOW *win)
 {
-	wmove(win, 0, 1);
-	wprintw(win, " Iface ");
+	mvwprintw(win, 0, 1, " Iface ");
 	/* 14, 24, 34, ... from printifentry() */
 	/* 10 = strlen(printed number); from printlargenum() */
 	/* 7 = strlen(" Total ") */
 	/* 1 = align the string on 'l' from " Total " */
-	wmove(win, 0, (14 * COLS / 80) + 10 - 7 + 1);
-	wprintw(win, " Total ");
-	wmove(win, 0, (24 * COLS / 80) + 10 - 6 + 1);
-	wprintw(win, " IPv4 ");
-	wmove(win, 0, (34 * COLS / 80) + 10 - 6 + 1);
-	wprintw(win, " IPv6 ");
-	wmove(win, 0, (44 * COLS / 80) + 10 - 7 + 1);
-	wprintw(win, " NonIP ");
-	wmove(win, 0, (53 * COLS / 80) + 8 - 7 + 1);
-	wprintw(win, " BadIP ");
-	wmove(win, 0, (63 * COLS / 80) + 14 - 10);
-	wprintw(win, " Activity ");
+	mvwprintw(win, 0, (14 * COLS / 80) + 10 - 7 + 1, " Total ");
+	mvwprintw(win, 0, (24 * COLS / 80) + 10 - 6 + 1, " IPv4 ");
+	mvwprintw(win, 0, (34 * COLS / 80) + 10 - 6 + 1, " IPv6 ");
+	mvwprintw(win, 0, (44 * COLS / 80) + 10 - 7 + 1, " NonIP ");
+	mvwprintw(win, 0, (53 * COLS / 80) + 8 - 7 + 1, " BadIP ");
+	mvwprintw(win, 0, (63 * COLS / 80) + 14 - 10, " Activity ");
 }
 
 static void initiftab(struct iftab *table)
@@ -370,65 +362,130 @@ static void initiftab(struct iftab *table)
 	wtimeout(table->statwin, -1);
 	wattrset(table->statwin, STDATTR);
 	tx_colorwin(table->statwin);
-	wattrset(table->statwin, BOXATTR);
-	wmove(table->borderwin, LINES - 3, 32 * COLS / 80);
-	wprintw(table->borderwin,
-		" Total, IP, NonIP, and BadIP are packet counts ");
 }
 
 /*
  * Scrolling routines for the general interface statistics window
  */
 
-static void scrollgstatwin(struct iftab *table, int direction)
+static void scrollgstatwin(struct iftab *table, int direction, int lines)
 {
-	char buf[255];
+	if (lines < 1)
+		return;
 
-	sprintf(buf, "%%%dc", COLS - 2);
 	wattrset(table->statwin, STDATTR);
 	if (direction == SCROLLUP) {
-		if (table->lastvisible->next_entry != NULL) {
-			wscrl(table->statwin, 1);
-			table->lastvisible = table->lastvisible->next_entry;
+		for (int i = 0; i < lines; i++) {
+			if (table->lastvisible->next_entry == NULL)
+				break;
+
 			table->firstvisible = table->firstvisible->next_entry;
-			wmove(table->statwin, LINES - 5, 0);
+			table->lastvisible = table->lastvisible->next_entry;
+
+			wscrl(table->statwin, 1);
 			scrollok(table->statwin, 0);
-			wprintw(table->statwin, buf, ' ');
+			mvwprintw(table->statwin, LINES - 5, 0, "%*c", COLS - 2, ' ');
 			scrollok(table->statwin, 1);
-			printifentry(table->lastvisible, table->statwin,
-				     table->firstvisible->index);
+
+			printifentry(table, table->lastvisible);
 		}
 	} else {
-		if (table->firstvisible != table->head) {
-			wscrl(table->statwin, -1);
+		for (int i = 0; i < lines; i++) {
+			if (table->firstvisible == table->head)
+				break;
+
 			table->firstvisible = table->firstvisible->prev_entry;
 			table->lastvisible = table->lastvisible->prev_entry;
-			wmove(table->statwin, 0, 0);
-			wprintw(table->statwin, buf, ' ');
-			printifentry(table->firstvisible, table->statwin,
-				     table->firstvisible->index);
+
+			wscrl(table->statwin, -1);
+			mvwprintw(table->statwin, 0, 0, "%*c", COLS - 2, ' ');
+
+			printifentry(table, table->firstvisible);
 		}
 	}
+	showrates(table);
 }
 
-static void pagegstatwin(struct iftab *table, int direction)
+static void ifstats_process_key(struct iftab *table, int ch)
 {
-	int i = 1;
-
-	if (direction == SCROLLUP) {
-		while ((i <= LINES - 5)
-		       && (table->lastvisible->next_entry != NULL)) {
-			i++;
-			scrollgstatwin(table, direction);
-		}
-	} else {
-		while ((i <= LINES - 5) && (table->firstvisible != table->head)) {
-			i++;
-			scrollgstatwin(table, direction);
-		}
+	switch (ch) {
+	case KEY_UP:
+		scrollgstatwin(table, SCROLLDOWN, 1);
+		break;
+	case KEY_DOWN:
+		scrollgstatwin(table, SCROLLUP, 1);
+		break;
+	case KEY_PPAGE:
+	case '-':
+		scrollgstatwin(table, SCROLLDOWN, LINES - 5);
+		break;
+	case KEY_NPAGE:
+	case ' ':
+		scrollgstatwin(table, SCROLLUP, LINES - 5);
+		break;
+	case KEY_HOME:
+		scrollgstatwin(table, SCROLLDOWN, INT_MAX);
+		break;
+	case KEY_END:
+		scrollgstatwin(table, SCROLLUP, INT_MAX);
+		break;
+	case 12:
+	case 'l':
+	case 'L':
+		tx_refresh_screen();
+		break;
+	case 'Q':
+	case 'q':
+	case 'X':
+	case 'x':
+	case 27:
+	case 24:
+		exitloop = 1;
+		break;
+	case ERR:
+	default:
+		/* no key ready, do nothing */
+		break;
 	}
 }
 
+static void ifstats_process_packet(struct iftab *table, struct pkt_hdr *pkt)
+{
+	int pkt_result = packet_process(pkt, NULL, NULL, NULL,
+					MATCH_OPPOSITE_USECONFIG,
+					options.v6inv4asv6);
+
+	switch (pkt_result) {
+	case PACKET_OK:			/* we only handle these */
+	case MORE_FRAGMENTS:
+	case CHECKSUM_ERROR:
+		break;
+	default:			/* drop others */
+		return;
+	}
+
+	struct iflist *ptmp = positionptr(table->head, pkt->from->sll_ifindex);
+	if (!ptmp)
+		return;
+
+	ptmp->total++;
+
+	ptmp->spanbr += pkt->pkt_len;
+	ptmp->br += pkt->pkt_len;
+
+	if (pkt->pkt_protocol == ETH_P_IP) {
+		ptmp->iptotal++;
+
+		if (pkt_result == CHECKSUM_ERROR) {
+			ptmp->badtotal++;
+			return;
+		}
+	} else if (pkt->pkt_protocol == ETH_P_IPV6) {
+		ptmp->ip6total++;
+	} else {
+		ptmp->noniptotal++;
+	}
+}
 
 /*
  * The general interface statistics function
@@ -439,23 +496,15 @@ void ifstats(time_t facilitytime)
 	int logging = options.logging;
 	struct iftab table;
 
-	int pkt_result = 0;
-
-	struct iflist *ptmp = NULL;
-
 	FILE *logfile = NULL;
 
 	int ch;
 
 	int fd;
 
-	struct timeval tv;
-	time_t starttime = 0;
-	time_t statbegin = 0;
-	time_t now = 0;
-	struct timeval start_tv;
-	time_t startlog = 0;
-	struct timeval updtime;
+	struct pkt_hdr pkt;
+
+	unsigned long dropped = 0UL;
 
 	initiflist(&(table.head));
 	if (!table.head) {
@@ -469,6 +518,12 @@ void ifstats(time_t facilitytime)
 	if (options.promisc) {
 		promisc_init(&promisc, NULL);
 		promisc_set_list(&promisc);
+	}
+
+	fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+	if(fd == -1) {
+		write_error("Unable to obtain monitoring socket");
+		goto err;
 	}
 
 	if (logging) {
@@ -496,59 +551,60 @@ void ifstats(time_t facilitytime)
 
 	table.firstvisible = table.head;
 	print_if_entries(&table);
+	showrates(&table);
 
 	update_panels();
 	doupdate();
 
-	fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
-	if(fd == -1) {
-		write_error("Unable to obtain monitoring socket");
-		goto err;
-	}
+	packet_init(&pkt);
 
 	exitloop = 0;
-	gettimeofday(&tv, NULL);
-	start_tv = tv;
-	updtime = tv;
-	starttime = startlog = statbegin = tv.tv_sec;
 
-	PACKET_INIT(pkt);
+	struct timeval now;
+	gettimeofday(&now, NULL);
+	struct timeval last_time = now;
+	struct timeval last_update = now;
+
+	time_t starttime = now.tv_sec;
+	time_t endtime = INT_MAX;
+	if (facilitytime != 0)
+		endtime = now.tv_sec + facilitytime * 60;
+
+	time_t log_next = INT_MAX;
+	if (logging)
+		log_next = now.tv_sec + options.logspan;
 
 	while (!exitloop) {
-		gettimeofday(&tv, NULL);
-		now = tv.tv_sec;
+		gettimeofday(&now, NULL);
 
-		if ((now - starttime) >= 1) {
-			unsigned long msecs;
-
-			msecs = timeval_diff_msec(&tv, &start_tv);
+		if (now.tv_sec > last_time.tv_sec) {
+			unsigned long msecs = timeval_diff_msec(&now, &last_time);
 			updaterates(&table, msecs);
 			showrates(&table);
-			printelapsedtime(statbegin, now, LINES - 3, 1,
-					 table.borderwin);
-			starttime = now;
-			start_tv = tv;
-		}
-		if (logging) {
-			check_rotate_flag(&logfile);
-			if ((now - startlog) >= options.logspan) {
-				writegstatlog(&table,
-					      time(NULL) - statbegin,
-					      logfile);
-				startlog = now;
+
+			printelapsedtime(now.tv_sec - starttime, 1, table.borderwin);
+
+			dropped += packet_get_dropped(fd);
+			print_packet_drops(dropped, table.borderwin, 49);
+
+			if (logging && (now.tv_sec > log_next)) {
+				check_rotate_flag(&logfile);
+				writegstatlog(&table, now.tv_sec - starttime, logfile);
+				log_next = now.tv_sec + options.logspan;
 			}
+
+			if (now.tv_sec > endtime)
+				exitloop = 1;
+
+			last_time = now;
 		}
-		if (screen_update_needed(&tv, &updtime)) {
+		if (screen_update_needed(&now, &last_update)) {
 			print_if_entries(&table);
 			update_panels();
 			doupdate();
 
-			updtime = tv;
+			last_update = now;
 		}
-
-		if ((facilitytime != 0)
-		    && (((now - statbegin) / 60) >= facilitytime))
-			exitloop = 1;
 
 		if (packet_get(fd, &pkt, &ch, table.statwin) == -1) {
 			write_error("Packet receive failed");
@@ -556,73 +612,25 @@ void ifstats(time_t facilitytime)
 			break;
 		}
 
-		switch (ch) {
-		case ERR:
-			/* no key ready, do nothing */
-			break;
-		case KEY_UP:
-			scrollgstatwin(&table, SCROLLDOWN);
-			break;
-		case KEY_DOWN:
-			scrollgstatwin(&table, SCROLLUP);
-			break;
-		case KEY_PPAGE:
-		case '-':
-			pagegstatwin(&table, SCROLLDOWN);
-			break;
-		case KEY_NPAGE:
-		case ' ':
-			pagegstatwin(&table, SCROLLUP);
-			break;
-		case 12:
-		case 'l':
-		case 'L':
-			tx_refresh_screen();
-			break;
-		case 'Q':
-		case 'q':
-		case 'X':
-		case 'x':
-		case 27:
-		case 24:
-			exitloop = 1;
-			break;
-		}
-		if (pkt.pkt_len <= 0)
-			continue;
+		if (ch != ERR)
+			ifstats_process_key(&table, ch);
 
-		pkt_result = packet_process(&pkt, NULL, NULL, NULL,
-					   MATCH_OPPOSITE_USECONFIG,
-					   options.v6inv4asv6);
+		if (pkt.pkt_len > 0)
+			ifstats_process_packet(&table, &pkt);
 
-		if (pkt_result != PACKET_OK
-		    && pkt_result != MORE_FRAGMENTS)
-			continue;
-
-		ptmp = positionptr(table.head, pkt.pkt_ifindex);
-		if (!ptmp)
-			continue;
-
-		ptmp->total++;
-
-		ptmp->spanbr += pkt.pkt_len;
-		ptmp->br += pkt.pkt_len;
-
-		if (pkt.pkt_protocol == ETH_P_IP) {
-			ptmp->iptotal++;
-
-			if (pkt_result == CHECKSUM_ERROR) {
-				(ptmp->badtotal)++;
-				continue;
-			}
-		} else if (pkt.pkt_protocol == ETH_P_IPV6) {
-			ptmp->ip6total++;
-		} else {
-			(ptmp->noniptotal)++;
-		}
 	}
-	close(fd);
+	packet_destroy(&pkt);
 
+	if (logging) {
+		signal(SIGUSR1, SIG_DFL);
+		writegstatlog(&table, time(NULL) - starttime, logfile);
+		writelog(logging, logfile,
+			 "******** General interface statistics stopped ********");
+		fclose(logfile);
+	}
+	strcpy(current_logfile, "");
+
+	close(fd);
 err:
 	if (options.promisc) {
 		promisc_restore_list(&promisc);
@@ -636,22 +644,11 @@ err:
 	update_panels();
 	doupdate();
 
-	if (logging) {
-		signal(SIGUSR1, SIG_DFL);
-		writegstatlog(&table, time(NULL) - statbegin, logfile);
-		writelog(logging, logfile,
-			 "******** General interface statistics stopped ********");
-		fclose(logfile);
-	}
 	destroyiflist(table.head);
-	pkt_cleanup();
-	strcpy(current_logfile, "");
 }
 
 void selectiface(char *ifname, int withall, int *aborted)
 {
-	int ch;
-
 	struct iflist *list;
 	struct iflist *ptmp;
 
@@ -692,7 +689,7 @@ void selectiface(char *ifname, int withall, int *aborted)
 	}
 
 	tx_show_listbox(&scrolllist);
-	tx_operate_listbox(&scrolllist, &ch, aborted);
+	tx_operate_listbox(&scrolllist, aborted);
 	tx_close_listbox(&scrolllist);
 
 	if (!(*aborted) && (list != NULL)) {

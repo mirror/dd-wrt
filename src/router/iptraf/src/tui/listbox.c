@@ -12,6 +12,9 @@
 #include "listbox.h"
 #include "msgboxes.h"
 
+#define SCROLLUP 0
+#define SCROLLDOWN 1
+
 void tx_init_listbox(struct scroll_list *list, int width, int height,
 		     int startx, int starty, int mainattr, int borderattr,
 		     int selectattr, int keyattr)
@@ -32,6 +35,7 @@ void tx_init_listbox(struct scroll_list *list, int width, int height,
 	list->height = height;
 	list->width = width;
 	list->keyattr = keyattr;
+	list->row = 0;
 
 	tx_stdwinset(list->win);
 	scrollok(list->win, 0);
@@ -78,13 +82,56 @@ void tx_show_listbox(struct scroll_list *list)
 	doupdate();
 }
 
-void tx_operate_listbox(struct scroll_list *list, int *keystroke, int *aborted)
+static void tx_print_row(struct scroll_list *list, int attr)
 {
-	int ch;
+	wattrset(list->win, attr);
+	mvwprintw(list->win, list->row, 0, " %-*s", list->width - 3,
+		  list->textptr->text);
+
+}
+
+static void tx_scroll_listbox(struct scroll_list *list, int direction,
+			      int lines)
+{
+	if (lines < 1)
+		return;
+
+	if (direction == SCROLLUP) {
+		for (int i = 0; i < lines; i++) {
+			if (list->textptr->next_entry == NULL)
+				break;
+
+			tx_print_row(list, list->mainattr);
+			if (list->row == list->height - 3) {
+				scrollok(list->win, 1);
+				wscrl(list->win, 1);
+				scrollok(list->win, 0);
+			} else
+				list->row++;
+			list->textptr = list->textptr->next_entry;
+			tx_print_row(list, list->selectattr);
+		}
+	} else {
+		for (int i = 0; i < lines; i++) {
+			if (list->textptr->prev_entry == NULL)
+				break;
+
+			tx_print_row(list, list->mainattr);
+			if (list->row == 0) {
+				scrollok(list->win, 1);
+				wscrl(list->win, -1);
+				scrollok(list->win, 0);
+			} else
+				list->row--;
+			list->textptr = list->textptr->prev_entry;
+			tx_print_row(list, list->selectattr);
+		}
+	}
+}
+
+void tx_operate_listbox(struct scroll_list *list, int *aborted)
+{
 	int endloop = 0;
-	int row = 0;
-	char padding[MAX_TEXT_LENGTH];
-	char sp_buf[10];
 
 	if (list->textlist == NULL) {
 		tui_error(ANYKEY_MSG, "No list entries");
@@ -98,50 +145,26 @@ void tx_operate_listbox(struct scroll_list *list, int *keystroke, int *aborted)
 	update_panels();
 	doupdate();
 
+	tx_print_row(list, list->selectattr);
 	while (!endloop) {
-		snprintf(sp_buf, 9, "%%%zuc",
-			 list->width - strlen(list->textptr->text) - 3);
-		snprintf(padding, MAX_TEXT_LENGTH - 1, sp_buf, ' ');
-		wattrset(list->win, list->selectattr);
-		mvwprintw(list->win, row, 0, " %s%s", list->textptr->text,
-			  padding);
-
-		ch = wgetch(list->win);
-
-		wattrset(list->win, list->mainattr);
-		mvwprintw(list->win, row, 0, " %s%s", list->textptr->text,
-			  padding);
-
-		switch (ch) {
+		switch (wgetch(list->win)) {
 		case KEY_UP:
-			if (list->textptr == NULL)
-				continue;
-
-			if (list->textptr->prev_entry != NULL) {
-				if (row == 0) {
-					scrollok(list->win, 1);
-					wscrl(list->win, -1);
-					scrollok(list->win, 0);
-				} else
-					row--;
-
-				list->textptr = list->textptr->prev_entry;
-			}
+			tx_scroll_listbox(list, SCROLLDOWN, 1);
 			break;
 		case KEY_DOWN:
-			if (list->textptr == NULL)
-				continue;
-
-			if (list->textptr->next_entry != NULL) {
-				if (row == list->height - 3) {
-					scrollok(list->win, 1);
-					wscrl(list->win, 1);
-					scrollok(list->win, 0);
-				} else
-					row++;
-
-				list->textptr = list->textptr->next_entry;
-			}
+			tx_scroll_listbox(list, SCROLLUP, 1);
+			break;
+		case KEY_PPAGE:
+			tx_scroll_listbox(list, SCROLLDOWN, list->height - 2);
+			break;
+		case KEY_NPAGE:
+			tx_scroll_listbox(list, SCROLLUP, list->height - 2);
+			break;
+		case KEY_HOME:
+			tx_scroll_listbox(list, SCROLLDOWN, INT_MAX);
+			break;
+		case KEY_END:
+			tx_scroll_listbox(list, SCROLLUP, INT_MAX);
 			break;
 		case 13:
 			*aborted = 0;
@@ -160,7 +183,6 @@ void tx_operate_listbox(struct scroll_list *list, int *keystroke, int *aborted)
 			break;
 		}
 	}
-	*keystroke = ch;
 }
 
 void tx_hide_listbox(struct scroll_list *list)
@@ -195,15 +217,9 @@ void tx_destroy_list(struct scroll_list *list)
 	struct textlisttype *ttmp = list->textlist;
 	struct textlisttype *ctmp;
 
-	if (ttmp != NULL) {
+	while (ttmp != NULL) {
 		ctmp = ttmp->next_entry;
-
-		while (ttmp != NULL) {
-			free(ttmp);
-			ttmp = ctmp;
-
-			if (ctmp != NULL)
-				ctmp = ctmp->next_entry;
-		}
+		free(ttmp);
+		ttmp = ctmp;
 	}
 }

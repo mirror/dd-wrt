@@ -32,7 +32,6 @@ void tx_addfield(struct FIELDLIST *list, unsigned int len, unsigned int y,
 		 unsigned int x, const char *initstr)
 {
 	struct FIELD *newfield;
-	unsigned int i;
 
 	newfield = xmalloc(sizeof(struct FIELD));
 
@@ -58,12 +57,7 @@ void tx_addfield(struct FIELDLIST *list, unsigned int len, unsigned int y,
 		newfield->tlen = len;
 
 	wattrset(list->fieldwin, list->fieldattr);
-	wmove(list->fieldwin, y, x);
-	for (i = 1; i <= len; i++)
-		wprintw(list->fieldwin, " ");
-
-	wmove(list->fieldwin, y, x);
-	wprintw(list->fieldwin, "%s", newfield->buf);
+	mvwprintw(list->fieldwin, y, x, "%-*s", len, newfield->buf);
 
 	update_panels();
 	doupdate();
@@ -75,9 +69,8 @@ void tx_getinput(struct FIELDLIST *list, struct FIELD *field, int *exitkey)
 	int y, x;
 	int endloop = 0;
 
-	wmove(list->fieldwin, field->ypos, field->xpos);
 	wattrset(list->fieldwin, list->fieldattr);
-	wprintw(list->fieldwin, "%s", field->buf);
+	mvwprintw(list->fieldwin, field->ypos, field->xpos, "%s", field->buf);
 	update_panels();
 	doupdate();
 
@@ -93,8 +86,7 @@ void tx_getinput(struct FIELDLIST *list, struct FIELD *field, int *exitkey)
 			if (field->tlen > 0) {
 				getyx(list->fieldwin, y, x);
 				x--;
-				wmove(list->fieldwin, y, x);
-				wprintw(list->fieldwin, " ");
+				mvwprintw(list->fieldwin, y, x, " ");
 				wmove(list->fieldwin, y, x);
 				field->tlen--;
 				field->buf[field->tlen] = '\0';
@@ -171,21 +163,18 @@ void tx_fillfields(struct FIELDLIST *list, int *aborted)
 
 void tx_destroyfields(struct FIELDLIST *list)
 {
-	struct FIELD *ptmp;
-	struct FIELD *pnext;
+	struct FIELD *ptmp = list->list;
 
-	list->list->prevfield->nextfield = NULL;
-	ptmp = list->list;
-	pnext = list->list->nextfield;
+	/* break the circular list */
+	if (ptmp != NULL)
+		ptmp->prevfield->nextfield = NULL;
 
-	do {
+	while (ptmp != NULL) {
+		struct FIELD *pnext = ptmp->nextfield;
+
 		free(ptmp);
-
 		ptmp = pnext;
-		if (pnext != NULL) {
-			pnext = pnext->nextfield;
-		}
-	} while (ptmp != NULL);
+	}
 
 	del_panel(list->fieldpanel);
 	delwin(list->fieldwin);

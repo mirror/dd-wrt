@@ -33,17 +33,13 @@ static void setlabels(WINDOW *win, int mode)
 	whline(win, ACS_HLINE, 23 * COLS / 80);
 
 	if (mode == 0) {
-		wmove(win, 0, 47 * COLS / 80);
-		wprintw(win, " Packets ");
-		wmove(win, 0, 59 * COLS / 80);
-		wprintw(win, " Bytes ");
+		mvwprintw(win, 0, 47 * COLS / 80, " Packets ");
+		mvwprintw(win, 0, 59 * COLS / 80, " Bytes ");
 	} else if (mode == 1) {
 		mvwprintw(win, 0, 47 * COLS / 80, " Source MAC Addr ");
 	} else if (mode == 2) {
-		wmove(win, 0, 45 * COLS / 80);
-		wprintw(win, " Pkt Size ");
-		wmove(win, 0, 56 * COLS / 80);
-		wprintw(win, " Win Size ");
+		mvwprintw(win, 0, 45 * COLS / 80, " Pkt Size ");
+		mvwprintw(win, 0, 56 * COLS / 80, " Win Size ");
 	}
 }
 
@@ -100,6 +96,20 @@ static void print_tcp_num_entries(struct tcptable *table)
 		  table->count);
 }
 
+static void prepare_statwin(WINDOW *win)
+{
+	wattrset(win, IPSTATLABELATTR);
+	mvwprintw(win, 0, 1, "Packets captured:");
+	mvwaddch(win, 0, 45 * COLS / 80, ACS_VLINE);
+}
+
+void show_stats(WINDOW *win, unsigned long long total)
+{
+	wattrset(win, IPSTATATTR);
+	wmove(win, 0, 35 * COLS / 80);
+	printlargenum(total, win);
+}
+
 void init_tcp_table(struct tcptable *table)
 {
 	int i;
@@ -112,15 +122,13 @@ void init_tcp_table(struct tcptable *table)
 
 	wattrset(table->borderwin, BOXATTR);
 	tx_box(table->borderwin, ACS_VLINE, ACS_HLINE);
-	wmove(table->borderwin, 0, 1);
-	wprintw(table->borderwin, " TCP Connections (Source Host:Port) ");
+	mvwprintw(table->borderwin, 0, 1, " TCP Connections (Source Host:Port) ");
 
 	setlabels(table->borderwin, 0);	/* initially use mode 0 */
+	table->mode = 0;
 
-	wmove(table->borderwin, 0, 65 * COLS / 80);
-	wprintw(table->borderwin, " Flag ");
-	wmove(table->borderwin, 0, 70 * COLS / 80);
-	wprintw(table->borderwin, " Iface ");
+	mvwprintw(table->borderwin, 0, 65 * COLS / 80, " Flag ");
+	mvwprintw(table->borderwin, 0, 70 * COLS / 80, " Iface ");
 	update_panels();
 	doupdate();
 	table->ifnamew = COLS - (70 * COLS / 80) - 3;
@@ -143,6 +151,13 @@ void init_tcp_table(struct tcptable *table)
 	tx_stdwinset(table->tcpscreen);
 	print_tcp_num_entries(table);
 
+	table->statwin = newwin(1, COLS, LINES - 2, 0);
+	table->statpanel = new_panel(table->statwin);
+	wattrset(table->statwin, IPSTATLABELATTR);
+	mvwprintw(table->statwin, 0, 0, "%*c", COLS, ' ');
+	prepare_statwin(table->statwin);
+	show_stats(table->statwin, 0);
+
 	/* 
 	 * Initialize hash table to nulls
 	 */
@@ -152,7 +167,6 @@ void init_tcp_table(struct tcptable *table)
 		table->hash_tails[i] = NULL;
 	}
 	table->barptr = NULL;
-	table->baridx = 0;
 }
 
 /*
@@ -395,13 +409,10 @@ struct tcptableent *addentry(struct tcptable *table,
 	 * Mark flow rate start time and byte counter for flow computation
 	 * if the highlight bar is on either flow of the new connection.
 	 */
-	if (table->barptr == new_entry) {
-		new_entry->starttime = time(NULL);
+	if (table->barptr == new_entry)
 		new_entry->spanbr = 0;
-	} else if (table->barptr == new_entry->oth_connection) {
-		new_entry->oth_connection->starttime = time(NULL);
+	else if (table->barptr == new_entry->oth_connection)
 		new_entry->oth_connection->spanbr = 0;
-	}
 
 	/*
 	 * Add entries to hash table
@@ -444,6 +455,8 @@ static char *tcplog_flowrate_msg(struct tcptableent *entry, char *buf,
 				 size_t bufsize)
 {
 	time_t interval = time(NULL) - entry->conn_starttime;
+	if (interval < 1)
+		interval = 1;
 
 	char rbuf[64];
 	rate_print(entry->bcount / interval, rbuf, sizeof(rbuf));
@@ -472,16 +485,35 @@ void write_timeout_log(int logging, FILE *logfile, struct tcptableent *tcpnode)
 	}
 }
 
+void mark_timeouted_entries(struct tcptable *table, int logging, FILE *logfile)
+{
+	if (options.timeout == 0)
+		return;
+
+	time_t now = time(NULL);
+	struct tcptableent *ptmp = table->head;
+
+	while (ptmp != NULL) {
+		if (((now - ptmp->lastupdate) / 60 > options.timeout)
+		    && !ptmp->inclosed) {
+			ptmp->timedout = 1;
+			ptmp->oth_connection->timedout = 1;
+			addtoclosedlist(table, ptmp);
+
+			if (logging)
+				write_timeout_log(logging, logfile, ptmp);
+		}
+		ptmp = ptmp->next_entry;
+	}
+}
+
 struct tcptableent *in_table(struct tcptable *table,
 			     struct sockaddr_storage *saddr,
 			     struct sockaddr_storage *daddr,
-			     char *ifname, int logging,
-			     FILE *logfile, time_t timeout)
+			     char *ifname)
 {
 	struct tcp_hashentry *hashptr;
 	unsigned int hp;
-
-	time_t now;
 
 	if (table->head == NULL) {
 		return 0;
@@ -499,24 +531,6 @@ struct tcptableent *in_table(struct tcptable *table,
 		    && (strcmp(hashptr->tcpnode->ifname, ifname) == 0))
 			break;
 
-		now = time(NULL);
-
-		/*
-		 * Add the timed out entries to the closed list in case we didn't
-		 * find any closed ones.
-		 */
-
-		if ((timeout > 0)
-		    && ((now - hashptr->tcpnode->lastupdate) / 60 > timeout)
-		    && (!(hashptr->tcpnode->inclosed))) {
-			hashptr->tcpnode->timedout = 1;
-			hashptr->tcpnode->oth_connection->timedout = 1;
-			addtoclosedlist(table, hashptr->tcpnode);
-
-			if (logging)
-				write_timeout_log(logging, logfile,
-						  hashptr->tcpnode);
-		}
 		hashptr = hashptr->next_entry;
 	}
 
@@ -541,10 +555,9 @@ struct tcptableent *in_table(struct tcptable *table,
  * Update the TCP status record should an applicable packet arrive.
  */
 
-void updateentry(struct tcptable *table, struct tcptableent *tableentry,
-		 struct tcphdr *transpacket, char *packet, int linkproto,
-		 unsigned long packetlength, unsigned int bcount,
-		 unsigned int fragofs, int logging, int *revlook, int rvnfd,
+void updateentry(struct tcptable *table, struct pkt_hdr *pkt,
+		 struct tcptableent *tableentry, struct tcphdr *tcp,
+		 unsigned int bcount, int *revlook, int rvnfd, int logging,
 		 FILE *logfile)
 {
 	char msgstring[MSGSTRING_MAX];
@@ -566,20 +579,16 @@ void updateentry(struct tcptable *table, struct tcptableent *tableentry,
 	}
 	tableentry->pcount++;
 	tableentry->bcount += bcount;
-	tableentry->psize = packetlength;
+	tableentry->psize = pkt->pkt_len;
 	tableentry->spanbr += bcount;
 
 	if (options.mac) {
 		memset(newmacaddr, 0, sizeof(newmacaddr));
 
-
-		/* change updateentry to take struct pkt to remove this */
-		if (linkproto == ARPHRD_ETHER) {
-			convmacaddr((char *) (((struct ethhdr *) packet)->
-					      h_source), newmacaddr);
-		} else if (linkproto == ARPHRD_FDDI) {
-			convmacaddr((char *) (((struct fddihdr *) packet)->
-					      saddr), newmacaddr);
+		if (pkt->from->sll_hatype == ARPHRD_ETHER) {
+			convmacaddr((char *) pkt->ethhdr->h_source, newmacaddr);
+		} else if (pkt->from->sll_hatype == ARPHRD_FDDI) {
+			convmacaddr((char *) pkt->fddihdr->saddr, newmacaddr);
 		}
 
 		if (tableentry->smacaddr[0] != '\0') {
@@ -603,7 +612,7 @@ void updateentry(struct tcptable *table, struct tcptableent *tableentry,
 	 * TCP header.
 	 */
 
-	if ((ntohs(fragofs) & 0x1fff) != 0) {
+	if (!packet_is_first_fragment(pkt)) {
 		tableentry->lastupdate =
 		    tableentry->oth_connection->lastupdate = time(NULL);
 		return;
@@ -613,19 +622,19 @@ void updateentry(struct tcptable *table, struct tcptableent *tableentry,
 	 */
 
 	if (tableentry->pcount == 1) {
-		if ((transpacket->syn) || (transpacket->rst))
+		if (tcp->syn || tcp->rst)
 			tableentry->partial = 0;
 		else
 			tableentry->partial = 1;
 	}
-	tableentry->win = ntohs(transpacket->window);
+	tableentry->win = ntohs(tcp->window);
 
 	tableentry->stat = 0;
 
-	if (transpacket->syn)
+	if (tcp->syn)
 		tableentry->stat |= FLAG_SYN;
 
-	if (transpacket->ack) {
+	if (tcp->ack) {
 		tableentry->stat |= FLAG_ACK;
 
 		/*
@@ -639,7 +648,7 @@ void updateentry(struct tcptable *table, struct tcptableent *tableentry,
 		 */
 
 		if ((tableentry->oth_connection->finsent == 1)
-		    && (ntohl(transpacket->seq) ==
+		    && (ntohl(tcp->seq) ==
 			tableentry->oth_connection->finack)) {
 			tableentry->oth_connection->finsent = 2;
 
@@ -660,7 +669,7 @@ void updateentry(struct tcptable *table, struct tcptableent *tableentry,
 	 * in ACK above.
 	 */
 
-	if (transpacket->fin) {
+	if (tcp->fin) {
 
 		/*
 		 * First, we check if the opposite direction has no counts, in which
@@ -688,7 +697,7 @@ void updateentry(struct tcptable *table, struct tcptableent *tableentry,
 			 */
 
 			tableentry->finsent = 1;
-			tableentry->finack = ntohl(transpacket->ack_seq);
+			tableentry->finack = ntohl(tcp->ack_seq);
 		}
 		if (logging) {
 			char flowrate[64];
@@ -701,7 +710,7 @@ void updateentry(struct tcptable *table, struct tcptableent *tableentry,
 				    tableentry->psize, msgstring);
 		}
 	}
-	if (transpacket->rst) {
+	if (tcp->rst) {
 		tableentry->stat |= FLAG_RST;
 		if (!(tableentry->inclosed))
 			addtoclosedlist(table, tableentry);
@@ -720,10 +729,10 @@ void updateentry(struct tcptable *table, struct tcptableent *tableentry,
 				    tableentry->psize, msgstring);
 		}
 	}
-	if (transpacket->psh)
+	if (tcp->psh)
 		tableentry->stat |= FLAG_PSH;
 
-	if (transpacket->urg)
+	if (tcp->urg)
 		tableentry->stat |= FLAG_URG;
 
 	tableentry->lastupdate = tableentry->oth_connection->lastupdate =
@@ -756,19 +765,17 @@ void updateentry(struct tcptable *table, struct tcptableent *tableentry,
  * Returns immediately if the entry is not visible in the window.
  */
 
-void clearaddr(struct tcptable *table, struct tcptableent *tableentry,
-	       unsigned int screen_idx)
+void clearaddr(struct tcptable *table, struct tcptableent *tableentry)
 {
 	unsigned int target_row;
 
-	if ((tableentry->index < screen_idx)
-	    || (tableentry->index > screen_idx + (table->imaxy - 1)))
+	if ((tableentry->index < table->firstvisible->index)
+	    || (tableentry->index > table->lastvisible->index))
 		return;
 
-	target_row = (tableentry->index) - screen_idx;
+	target_row = tableentry->index - table->firstvisible->index;
 
-	wmove(table->tcpscreen, target_row, 1);
-	wprintw(table->tcpscreen, "%44c", ' ');
+	mvwprintw(table->tcpscreen, target_row, 1, "%44c", ' ');
 }
 
 /*
@@ -776,8 +783,7 @@ void clearaddr(struct tcptable *table, struct tcptableent *tableentry,
  * not visible in the window.
  */
 
-void printentry(struct tcptable *table, struct tcptableent *tableentry,
-		unsigned int screen_idx, int mode)
+void printentry(struct tcptable *table, struct tcptableent *tableentry)
 {
 	char stat[7] = "";
 	unsigned int target_row;
@@ -797,11 +803,11 @@ void printentry(struct tcptable *table, struct tcptableent *tableentry,
 		highattr = HIGHATTR;
 	}
 
-	if ((tableentry->index < screen_idx)
-	    || (tableentry->index > screen_idx + (table->imaxy - 1)))
+	if ((tableentry->index < table->firstvisible->index)
+	    || (tableentry->index > table->lastvisible->index))
 		return;
 
-	target_row = (tableentry->index) - screen_idx;
+	target_row = tableentry->index - table->firstvisible->index;
 
 	/* clear the data if it's a reused entry */
 
@@ -809,8 +815,7 @@ void printentry(struct tcptable *table, struct tcptableent *tableentry,
 	wmove(table->tcpscreen, target_row, 2);
 	if (tableentry->reused) {
 		scrollok(table->tcpscreen, 0);
-		sprintf(sp_buf, "%%%dc", COLS - 4);
-		wprintw(table->tcpscreen, sp_buf, ' ');
+		wprintw(table->tcpscreen, "%*c", COLS - 4, ' ');
 		scrollok(table->tcpscreen, 1);
 		tableentry->reused = 0;
 		wmove(table->tcpscreen, target_row, 1);
@@ -823,8 +828,7 @@ void printentry(struct tcptable *table, struct tcptableent *tableentry,
 	/* proceed with the actual entry */
 
 	wattrset(table->tcpscreen, normalattr);
-	sprintf(sp_buf, "%%%dc", COLS - 5);
-	mvwprintw(table->tcpscreen, target_row, 2, sp_buf, ' ');
+	mvwprintw(table->tcpscreen, target_row, 2, "%*c", COLS - 5, ' ');
 
 	sprintf(sp_buf, "%%.%ds:%%.%ds", 32 * COLS / 80, 10);
 
@@ -839,7 +843,7 @@ void printentry(struct tcptable *table, struct tcptableent *tableentry,
 	 * on the value of mode.
 	 */
 
-	switch (mode) {
+	switch (table->mode) {
 	case 0:
 		wmove(table->tcpscreen, target_row, 47 * COLS / 80 - 2);
 		if (tableentry->partial)
@@ -866,7 +870,9 @@ void printentry(struct tcptable *table, struct tcptableent *tableentry,
 
 	wattrset(table->tcpscreen, normalattr);
 
-	if (tableentry->finsent == 1)
+	if (tableentry->timedout)
+		strcpy(stat, "TMOU");
+	else if (tableentry->finsent == 1)
 		strcpy(stat, "DONE");
 	else if (tableentry->finsent == 2)
 		strcpy(stat, "CLOS");
@@ -890,17 +896,17 @@ void printentry(struct tcptable *table, struct tcptableent *tableentry,
  * Redraw the TCP window
  */
 
-void refreshtcpwin(struct tcptable *table, unsigned int idx, int mode)
+void refreshtcpwin(struct tcptable *table)
 {
 	struct tcptableent *ptmp;
 
-	setlabels(table->borderwin, mode);
+	setlabels(table->borderwin, table->mode);
 	wattrset(table->tcpscreen, STDATTR);
 	tx_colorwin(table->tcpscreen);
 	ptmp = table->firstvisible;
 
 	while ((ptmp != NULL) && (ptmp->prev_entry != table->lastvisible)) {
-		printentry(table, ptmp, idx, mode);
+		printentry(table, ptmp);
 		ptmp = ptmp->next_entry;
 	}
 
@@ -914,79 +920,65 @@ void refreshtcpwin(struct tcptable *table, unsigned int idx, int mode)
 
 static void destroy_closed_entries(struct tcptable *table)
 {
-	struct closedlist *closedtemp;
-	struct closedlist *closedtemp_next;
+	struct closedlist *ptmp = table->closedentries;
 
-	if (table->closedentries != NULL) {
-		closedtemp = table->closedentries;
-		closedtemp_next = table->closedentries->next_entry;
+	while (ptmp != NULL) {
+		struct closedlist *ctmp = ptmp->next_entry;
 
-		while (closedtemp != NULL) {
-			free(closedtemp);
-			closedtemp = closedtemp_next;
-			if (closedtemp_next != NULL)
-				closedtemp_next = closedtemp_next->next_entry;
+		free(ptmp);
+		ptmp = ctmp;
+	}
+	table->closedentries = NULL;
+	table->closedtail = NULL;
+}
+
+static void destroy_tcp_entries(struct tcptable *table)
+{
+	struct tcptableent *ptmp = table->head;
+
+	while (ptmp != NULL) {
+		struct tcptableent *ctmp = ptmp->next_entry;
+
+		rate_destroy(&ptmp->rate);
+		free(ptmp);
+		ptmp = ctmp;
+	}
+	table->head = NULL;
+	table->tail = NULL;
+}
+
+static void destroy_hash_entries(struct tcptable *table)
+{
+	for (unsigned int i = 0; i < ENTRIES_IN_HASH_TABLE; i++) {
+		struct tcp_hashentry *ptmp = table->hash_table[i];
+		while (ptmp != NULL) {
+			struct tcp_hashentry *ctmp = ptmp->next_entry;
+
+			free(ptmp);
+			ptmp = ctmp;
 		}
-
-		table->closedentries = NULL;
-		table->closedtail = NULL;
+		table->hash_table[i] = NULL;
 	}
 }
 
-/*
- * Kill the entire TCP table
- */
+/* kill the entire TCP table */
 void destroytcptable(struct tcptable *table)
 {
-	struct tcptableent *ctemp;
-	struct tcptableent *c_next_entry;
-	struct tcp_hashentry *hashtemp;
-	struct tcp_hashentry *hashtemp_next;
+	/* destroy main TCP table */
+	destroy_tcp_entries(table);
 
-	unsigned int i;
-
-	/*
-	 * Destroy main TCP table
-	 */
-
-	if (table->head != NULL) {
-		ctemp = table->head;
-		c_next_entry = table->head->next_entry;
-
-		while (ctemp != NULL) {
-			rate_destroy(&ctemp->rate);
-			free(ctemp);
-			ctemp = c_next_entry;
-
-			if (c_next_entry != NULL)
-				c_next_entry = c_next_entry->next_entry;
-		}
-	}
-	/*
-	 * Destroy list of closed entries
-	 */
-
+	/* destroy list of closed entries */
 	destroy_closed_entries(table);
 
-	/*
-	 * Destroy hash table
-	 */
+	/* destroy hash table */
+	destroy_hash_entries(table);
 
-	for (i = 0; i <= ENTRIES_IN_HASH_TABLE - 1; i++) {
-		if (table->hash_table[i] != NULL) {
-			hashtemp = table->hash_table[i];
-			hashtemp_next = table->hash_table[i]->next_entry;
-
-			while (hashtemp != NULL) {
-				free(hashtemp);
-				hashtemp = hashtemp_next;
-
-				if (hashtemp_next != NULL)
-					hashtemp_next =
-					    hashtemp_next->next_entry;
-			}
-		}
-	}
+	del_panel(table->statpanel);
+	delwin(table->statwin);
+	del_panel(table->tcppanel);
+	delwin(table->tcpscreen);
+	del_panel(table->borderpanel);
+	delwin(table->borderwin);
 }
 
 /*
@@ -1019,33 +1011,16 @@ static void destroy_tcp_entry(struct tcptable *table, struct tcptableent *ptmp)
  * entries.
  */
 
-void flushclosedentries(struct tcptable *table, unsigned long *screen_idx,
-			int logging, FILE *logfile)
+void flushclosedentries(struct tcptable *table)
 {
 	struct tcptableent *ptmp = table->head;
 	struct tcptableent *ctmp = NULL;
 	unsigned long idx = 1;
-	time_t now;
-	time_t lastupdated = 0;
+	unsigned long screen_idx = table->firstvisible->index;
 
 	while (ptmp != NULL) {
-		now = time(NULL);
-		lastupdated = (now - ptmp->lastupdate) / 60;
-
-		if ((ptmp->inclosed) || (lastupdated > options.timeout)) {
+		if (ptmp->inclosed) {
 			ctmp = ptmp;
-			/*
-			 * Mark and flush timed out TCP entries.
-			 */
-			if (lastupdated > options.timeout) {
-				if ((!(ptmp->timedout)) && (!(ptmp->inclosed))) {
-					write_timeout_log(logging, logfile,
-							  ptmp);
-					ptmp->timedout =
-					    ptmp->oth_connection->timedout = 1;
-				}
-			}
-
 			/*
 			 * Advance to next entry and destroy target entry.
 			 */
@@ -1077,21 +1052,21 @@ void flushclosedentries(struct tcptable *table, unsigned long *screen_idx,
 			 * Adjust screen index if the deleted entry was "above"
 			 * the screen.
 			 */
-			if (idx < *screen_idx)
-				(*screen_idx)--;
+			if (idx < screen_idx)
+				screen_idx--;
 		} else {
 			/*
 			 * Set the first visible pointer once the index matches
 			 * the screen index.
 			 */
-			if (idx == *screen_idx)
+			if (idx == screen_idx)
 				table->firstvisible = ptmp;
 
 			/*
 			 * Keep setting the last visible pointer until the scan
 			 * index "leaves" the screen
 			 */
-			if (idx <= (*screen_idx) + (table->imaxy - 1))
+			if (idx <= screen_idx + (table->imaxy - 1))
 				table->lastvisible = ptmp;
 
 			ptmp->index = idx;
@@ -1116,8 +1091,8 @@ void flushclosedentries(struct tcptable *table, unsigned long *screen_idx,
 		 * "above" the screen index.  Set the firstvisible pointer to that
 		 * as well.
 		 */
-		if (table->tail->index < *screen_idx) {
-			*screen_idx = table->tail->index;
+		if (table->tail->index < screen_idx) {
+			screen_idx = table->tail->index;
 			table->firstvisible = table->tail;
 		}
 
@@ -1128,16 +1103,11 @@ void flushclosedentries(struct tcptable *table, unsigned long *screen_idx,
 		 * head of the table.  The highlight bar should "go along" with
 		 * the shifting.
 		 */
-		while ((table->tail->index < *screen_idx + table->imaxy - 1)
+		while ((table->tail->index < screen_idx + table->imaxy - 1)
 		       && (table->firstvisible->prev_entry != NULL)) {
 			table->firstvisible = table->firstvisible->prev_entry;
-			(*screen_idx)--;
+			screen_idx--;
 		}
-
-		/*
-		 * Set the bar position index once everything's done.
-		 */
-		table->baridx = table->barptr->index - *screen_idx + 1;
 	}
 }
 
