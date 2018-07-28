@@ -48,6 +48,7 @@ int UNKNIPATTR;
 int UNKNATTR;
 int IPV6ATTR;
 int ICMPV6ATTR;
+int EOIPATTR;
 
 /*  draw the basic desktop common to my screen-oriented programs */
 
@@ -262,6 +263,7 @@ void standardcolors(int color)
 		ICMPV6ATTR = COLOR_PAIR(19) | A_BOLD;
 		IPV6ATTR = COLOR_PAIR(19);
 		UNKNATTR = COLOR_PAIR(4) | A_BOLD;
+		EOIP = COLOR_PAIR(1);
 	} else {
 		STDATTR = A_REVERSE;
 		HIGHATTR = A_REVERSE;
@@ -289,6 +291,7 @@ void standardcolors(int color)
 		IGRPATTR = A_REVERSE;
 		ARPATTR = A_BOLD;
 		GREATTR = A_BOLD;
+		EOIPATTR = A_BOLD;
 		UNKNIPATTR = A_BOLD;
 		ICMPV6ATTR = A_REVERSE;
 		UNKNATTR = A_BOLD;
