@@ -110,6 +110,7 @@
 #define GSTATLOG	get_path(T_LOGDIR, "iface_stats_general.log")
 #define DSTATLOG	get_path(T_LOGDIR, "iface_stats_detailed")
 #define TCPUDPLOG	get_path(T_LOGDIR, "tcp_udp_services")
+#define DDDESTLOG	get_path(T_LOGDIR, "tcp_udp_services")
 #define LANLOG		get_path(T_LOGDIR, "lan_statistics")
 #define PKTSIZELOG	get_path(T_LOGDIR, "packet_size")
 #define DAEMONLOG	get_path(T_LOGDIR, "daemon.log")

@@ -248,7 +248,7 @@ int dev_bind_ifindex(int fd, const int ifindex)
 	return bind(fd, (struct sockaddr *) &fromaddr, addrlen);
 }
 
-int dev_bind_ifname(int fd, const char const *ifname)
+int dev_bind_ifname(int fd, const char * const ifname)
 {
 	int ir;
 	struct ifreq ifr;

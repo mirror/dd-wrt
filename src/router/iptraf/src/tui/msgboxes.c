@@ -39,9 +39,8 @@ void tui_error_va(const char *prompt, const char *err, va_list vararg)
 	wattrset(win, ERR_BORDER_ATTR);
 	tx_colorwin(win);
 	tx_box(win, ACS_VLINE, ACS_HLINE);
-	wmove(win, 2, 2);
 	wattrset(win, ERR_PROMPT_ATTR);
-	wprintw(win, "%s", prompt);
+	mvwprintw(win, 2, 2, "%s", prompt);
 
 	wattrset(win, ERR_TEXT_ATTR);
 	wmove(win, 1, 2);

@@ -49,8 +49,8 @@ struct othptabent {
 		} ospf;
 		struct {
 			unsigned short opcode;
-			char src_ip_address[4];
-			char dest_ip_address[4];
+			struct in_addr src_ip_address;
+			struct in_addr dest_ip_address;
 		} arp;
 		struct {
 			unsigned short opcode;
@@ -118,7 +118,8 @@ struct ospfhdr {
 
 void init_othp_table(struct othptable *table);
 
-void process_dest_unreach(struct tcptable *table, char *packet, char *ifname);
+void check_icmp_dest_unreachable(struct tcptable *table, struct pkt_hdr *pkt,
+				 char *ifname);
 
 struct othptabent *add_othp_entry(struct othptable *table, struct pkt_hdr *pkt,
 				  struct sockaddr_storage *saddr,
@@ -127,7 +128,7 @@ struct othptabent *add_othp_entry(struct othptable *table, struct pkt_hdr *pkt,
 				  int protocol,
 				  char *packet2,
 				  char *ifname, int *rev_lookup, int rvnamedon,
-				  int logging, FILE *logfile, int fragment);
+				  int logging, FILE *logfile);
 
 void printothpentry(struct othptable *table, struct othptabent *entry,
 		    unsigned int screen_idx, int logging, FILE * logfile);

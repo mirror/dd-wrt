@@ -7,6 +7,7 @@
 
 ***/
 
+#include "packet.h"
 #include "rate.h"
 
 /*
@@ -58,7 +59,6 @@ struct tcptableent {
 	unsigned long spanbr;
 	struct rate rate;
 	time_t lastupdate;
-	time_t starttime;
 	time_t conn_starttime;
 	struct tcp_hashentry *hash_node;
 	struct tcptableent *oth_connection;	/* the other half of the connection */
@@ -90,17 +90,22 @@ struct tcptable {
 	struct tcptableent *firstvisible;
 	struct tcptableent *lastvisible;
 	struct tcptableent *barptr;
-	unsigned int baridx;
 	unsigned int lastpos;
 	unsigned int count;
 	unsigned int bmaxy;	/* number of lines of the border window */
 	unsigned int imaxy;	/* number of lines inside the border */
 	int ifnamew;		/* interface name width to display */
+	int mode;
+
 	WINDOW *tcpscreen;
 	PANEL *tcppanel;
 	WINDOW *borderwin;
 	PANEL *borderpanel;
+	WINDOW *statwin;
+	PANEL *statpanel;
 };
+
+void show_stats(WINDOW *win, unsigned long long total);
 
 void init_tcp_table(struct tcptable *table);
 
@@ -110,32 +115,29 @@ struct tcptableent *addentry(struct tcptable *table,
 			     int protocol, char *ifname,
 			     int *rev_lookup, int rvnamedon);
 
+void mark_timeouted_entries(struct tcptable *table, int logging, FILE *logfile);
+
 struct tcptableent *in_table(struct tcptable *table,
 			     struct sockaddr_storage *saddr,
 			     struct sockaddr_storage *daddr,
-			     char *ifname, int logging,
-			     FILE *logfile, time_t timeout);
+			     char *ifname);
 
-void updateentry(struct tcptable *table, struct tcptableent *tableentry,
-		 struct tcphdr *transpacket, char *packet, int linkproto,
-		 unsigned long packetlength, unsigned int bcount,
-		 unsigned int fragofs, int logging, int *revlook, int rvnfd,
+void updateentry(struct tcptable *table, struct pkt_hdr *pkt,
+		 struct tcptableent *tableentry, struct tcphdr *transpacket,
+		 unsigned int bcount, int *revlook, int rvnfd, int logging,
 		 FILE *logfile);
 
 void addtoclosedlist(struct tcptable *table, struct tcptableent *tableentry);
 
-void clearaddr(struct tcptable *table, struct tcptableent *tableentry,
-	       unsigned int screen_idx);
+void clearaddr(struct tcptable *table, struct tcptableent *tableentry);
 
-void printentry(struct tcptable *table, struct tcptableent *tableentry,
-		unsigned int screen_idx, int mode);
+void printentry(struct tcptable *table, struct tcptableent *tableentry);
 
-void refreshtcpwin(struct tcptable *table, unsigned int idx, int mode);
+void refreshtcpwin(struct tcptable *table);
 
 void destroytcptable(struct tcptable *table);
 
-void flushclosedentries(struct tcptable *table, unsigned long *screen_idx,
-			int logging, FILE *logfile);
+void flushclosedentries(struct tcptable *table);
 
 void write_timeout_log(int logging, FILE *logfile, struct tcptableent *tcpnode);
 

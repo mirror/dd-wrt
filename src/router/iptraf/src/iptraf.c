@@ -19,6 +19,7 @@ An IP Network Statistics Utility
 #include "fltmgr.h"
 #include "fltedit.h"
 #include "serv.h"
+#include "ddwatch.h"
 #include "options.h"
 #include "attrs.h"
 #include "rvnamed.h"
@@ -114,12 +115,14 @@ static void term_usr2_handler(int s __unused)
 
 static void init_break_menu(struct MENU *break_menu)
 {
-	tx_initmenu(break_menu, 6, 20, (LINES - 6) / 2, COLS / 2, BOXATTR,
+	tx_initmenu(break_menu, 7, 20, (LINES - 6) / 2, COLS / 2, BOXATTR,
 		    STDATTR, HIGHATTR, BARSTDATTR, BARHIGHATTR, DESCATTR);
 	tx_additem(break_menu, " By packet ^s^ize",
 		   "Displays packet counts by packet size range");
 	tx_additem(break_menu, " By TCP/UDP ^p^ort",
 		   "Displays packet and byte counts by service port");
+	tx_additem(break_menu, " By ^i^p",
+		   "Displays packet and byte counts by Ip");
 	tx_additem(break_menu, NULL, NULL);
 	tx_additem(break_menu, " E^x^it menu", "Return to main menu");
 }
@@ -214,7 +217,17 @@ static void program_interface(void)
 				if (!aborted)
 					servmon(ifname, 0);
 				break;
+			case 3:
+				selectiface(ifname, WITHOUTALL, &aborted);
+				if (!aborted)
+					ddmon(ifname, 0);
+				break;
 			case 4:
+				selectiface(ifname, WITHOUTALL, &aborted);
+				if (!aborted)
+					ddmon(ifname, 0);
+				break;
+			case 5:
 				break;
 			}
 			tx_destroymenu(&break_menu);
@@ -427,9 +440,7 @@ int main(int argc, char **argv)
 
 
 	if (create_pidfile() < 0)
-		goto cleanup;
-
-	int pidfile_created = 1;
+		goto bailout;
 
 	/*
 	 * If a facility is directly invoked from the command line, check for
@@ -537,8 +548,7 @@ int main(int argc, char **argv)
 	endwin();
 
 cleanup:
-	if (pidfile_created)
-		unlink(IPTRAF_PIDFILE);
-
+	unlink(IPTRAF_PIDFILE);
+bailout:
 	return 0;
 }

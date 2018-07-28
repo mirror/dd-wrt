@@ -4,9 +4,9 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#define CHILDSOCKNAME "/tmp/rvndcldcomsk"
-#define PARENTSOCKNAME "/tmp/rvndpntcomsk"
-#define IPTSOCKNAME "/tmp/rvndiptcomsk"
+#define CHILDSOCKNAME "/dev/rvndcldcomsk"
+#define PARENTSOCKNAME "/dev/rvndpntcomsk"
+#define IPTSOCKNAME "/dev/rvndiptcomsk"
 
 #define SOCKET_PREFIX	"isock"
 

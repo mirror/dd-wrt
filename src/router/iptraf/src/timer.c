@@ -10,17 +10,12 @@ timer.c		- module to display the elapsed time since a facility
 
 #include "iptraf-ng-compat.h"
 
-void printelapsedtime(time_t start, time_t now, int y, int x, WINDOW * win)
+void printelapsedtime(time_t elapsed, int x, WINDOW *win)
 {
-	time_t elapsed;
-	unsigned int hours;
-	unsigned int mins;
+	unsigned int hours = elapsed / 3600;
+	unsigned int mins = (elapsed % 3600) / 60;
 
-	elapsed = now - start;
+	int y = getmaxy(win) - 1;
 
-	hours = elapsed / 3600;
-	mins = (elapsed % 3600) / 60;
-
-	wmove(win, y, x);
-	wprintw(win, " Elapsed time: %3u:%02u ", hours, mins);
+	mvwprintw(win, y, x, " Elapsed time: %3u:%02u ", hours, mins);
 }

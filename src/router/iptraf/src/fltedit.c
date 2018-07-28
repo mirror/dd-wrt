@@ -470,28 +470,20 @@ void modify_host_parameters(struct filterlist *fl)
 	doupdate();
 }
 
-/*
- * Remove a currently applied filter from memory
- */
-
+/* remove a currently applied filter from memory */
 void destroyfilter(struct filterlist *fl)
 {
-	struct filterent *fe;
-	struct filterent *cfe;
+	struct filterent *fe = fl->head;
 
-	if (fl->head != NULL) {
-		fe = fl->head;
-		cfe = fl->head->next_entry;
+	while (fe != NULL) {
+		struct filterent *cfe = fe->next_entry;
 
-		do {
-			free(fe);
-			fe = cfe;
-			if (cfe != NULL)
-				cfe = cfe->next_entry;
-		} while (fe != NULL);
-
-		fl->head = fl->tail = NULL;
+		free(fe);
+		fe = cfe;
 	}
+
+	fl->head = NULL;
+	fl->tail = NULL;
 }
 
 

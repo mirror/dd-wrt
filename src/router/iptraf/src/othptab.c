@@ -29,12 +29,6 @@ othptab.c - non-TCP protocol display module
 #define MSGSTRING_MAX	240
 #define SHORTSTRING_MAX	40
 
-/*
-* A trick to suppress uninitialized variable warning without generating any
-* code
-*/
-#define uninitialized_var(x) x = x
-
 static void writeothplog(int logging, FILE *fd, char *protname,
 			 char *description, char *additional, int is_ip,
 			 int withmac, struct othptabent *entry)
@@ -92,8 +86,8 @@ void init_othp_table(struct othptable *table)
 	unsigned int wintop;
 	unsigned int obmaxx __unused;
 
-	winht = LINES - (LINES * 0.6) - 2;
 	wintop = (LINES * 0.6) + 1;
+	winht = LINES - wintop - 2;
 
 	table->count = 0;
 	table->lastpos = 0;
@@ -119,47 +113,71 @@ void init_othp_table(struct othptable *table)
 	table->oimaxy = table->obmaxy - 2;
 }
 
-void process_dest_unreach(struct tcptable *table, char *packet, char *ifname)
+/* Cancel the corresponding TCP entry if an ICMP Destination Unreachable
+ * is received.
+ */
+void check_icmp_dest_unreachable(struct tcptable *table, struct pkt_hdr *pkt,
+				 char *ifname)
 {
-	struct iphdr *ip;
-	struct ip6_hdr *ip6;
+	char *ip_payload = pkt->pkt_payload + pkt_iph_len(pkt);
 	struct tcphdr *tcp;
-	struct tcptableent *tcpentry;
+	struct tcptableent *tcpentry = NULL;
 
-	ip = (struct iphdr *) (packet + 8);
-
-	/*
-	 * Timeout checking won't be performed either, so we just pass 0
-	 * as timeout variable.
-	 */
-
-	if (ip->version == 6) {
-		ip6 = (struct ip6_hdr *) (packet + 8);
-		if (ip6->ip6_nxt != IPPROTO_TCP)
+	switch (pkt_ip_protocol(pkt)) {
+	case IPPROTO_ICMP: {
+		struct icmphdr *icmp = (struct icmphdr *)ip_payload;
+		if (icmp->type != ICMP_DEST_UNREACH)
 			return;
-		tcp = (struct tcphdr *) (packet + 48);
-		struct sockaddr_storage saddr, daddr;
-		sockaddr_make_ipv6(&saddr, &ip6->ip6_src);
-		sockaddr_set_port(&saddr, ntohs(tcp->source));
-		sockaddr_make_ipv6(&daddr, &ip6->ip6_dst);
-		sockaddr_set_port(&daddr, ntohs(tcp->dest));
-		tcpentry =
-		    in_table(table, &saddr, &daddr, ifname, 0, NULL, 0);
-	} else {
+
+		/* get an original IP header located after ICMP header */
+		struct iphdr *ip = (struct iphdr *)(ip_payload + 8);
 		if (ip->protocol != IPPROTO_TCP)
 			return;
-		tcp = (struct tcphdr *) (packet + 8 + (ip->ihl * 4));
+
 		struct sockaddr_storage saddr, daddr;
 		sockaddr_make_ipv4(&saddr, ip->saddr);
-		sockaddr_set_port(&saddr, ntohs(tcp->source));
 		sockaddr_make_ipv4(&daddr, ip->daddr);
+
+		/* get an original TCP header */
+		tcp = (struct tcphdr *) (ip_payload + 8 + (ip->ihl * 4));
+		sockaddr_set_port(&saddr, ntohs(tcp->source));
 		sockaddr_set_port(&daddr, ntohs(tcp->dest));
-		tcpentry =
-		    in_table(table, &saddr, &daddr, ifname, 0, NULL, 0);
+
+		/* check if this tcpentry exists */
+		tcpentry = in_table(table, &saddr, &daddr, ifname);
+
+		break; }
+	case IPPROTO_ICMPV6: {
+		struct icmp6_hdr *icmp6 = (struct icmp6_hdr *)ip_payload;
+		if (icmp6->icmp6_type != ICMP6_DST_UNREACH)
+			return;
+
+		/* get an original IPv6 header located after ICMPv6 header */
+		struct ip6_hdr *ip6 = (struct ip6_hdr *)(ip_payload + 8);
+		if (ip6->ip6_nxt != IPPROTO_TCP)		/* FIXME: IPv6 extension headers ??? */
+			return;
+
+		struct sockaddr_storage saddr, daddr;
+		sockaddr_make_ipv6(&saddr, &ip6->ip6_src);
+		sockaddr_make_ipv6(&daddr, &ip6->ip6_dst);
+
+		/* get an original TCP header */
+		tcp = (struct tcphdr *) (ip_payload + 8 + 40);	/* FIXME: 40: IPv6 extension headers ??? */
+		sockaddr_set_port(&saddr, ntohs(tcp->source));
+		sockaddr_set_port(&daddr, ntohs(tcp->dest));
+
+		/* check if this tcpentry exists */
+		tcpentry = in_table(table, &saddr, &daddr, ifname);
+
+		break; }
+	default:
+		return;
 	}
 
 	if (tcpentry != NULL) {
-		tcpentry->stat = tcpentry->oth_connection->stat = FLAG_RST;
+		/* yes, tcpentry exists --> reset it */
+		tcpentry->stat = FLAG_RST;
+		tcpentry->oth_connection->stat = FLAG_RST;
 		addtoclosedlist(table, tcpentry);
 	}
 }
@@ -171,7 +189,7 @@ struct othptabent *add_othp_entry(struct othptable *table, struct pkt_hdr *pkt,
 				  int protocol,
 				  char *packet2,
 				  char *ifname, int *rev_lookup, int rvnfd,
-				  int logging, FILE *logfile, int fragment)
+				  int logging, FILE *logfile)
 {
 	struct othptabent *new_entry;
 	struct othptabent *temp;
@@ -179,13 +197,13 @@ struct othptabent *add_othp_entry(struct othptable *table, struct pkt_hdr *pkt,
 	new_entry = xmallocz(sizeof(struct othptabent));
 
 	new_entry->is_ip = is_ip;
-	new_entry->fragment = fragment;
+	new_entry->fragment = !packet_is_first_fragment(pkt);
 
 	if (options.mac || !is_ip) {
-		if (pkt->pkt_hatype == ARPHRD_ETHER) {
+		if (pkt->from->sll_hatype == ARPHRD_ETHER) {
 			convmacaddr((char *) pkt->ethhdr->h_source, new_entry->smacaddr);
 			convmacaddr((char *) pkt->ethhdr->h_dest, new_entry->dmacaddr);
-		} else if (pkt->pkt_hatype == ARPHRD_FDDI) {
+		} else if (pkt->from->sll_hatype == ARPHRD_FDDI) {
 			convmacaddr((char *) pkt->fddihdr->saddr, new_entry->smacaddr);
 			convmacaddr((char *) pkt->fddihdr->daddr, new_entry->dmacaddr);
 		}
@@ -200,7 +218,7 @@ struct othptabent *add_othp_entry(struct othptable *table, struct pkt_hdr *pkt,
 		revname(rev_lookup, daddr, new_entry->d_fqdn,
 			sizeof(new_entry->d_fqdn), rvnfd);
 
-		if (!fragment) {
+		if (!new_entry->fragment) {
 			if (protocol == IPPROTO_ICMP) {
 				new_entry->un.icmp.type =
 				    ((struct icmphdr *) packet2)->type;
@@ -231,14 +249,14 @@ struct othptabent *add_othp_entry(struct othptable *table, struct pkt_hdr *pkt,
 			}
 		}
 	} else {
-		new_entry->linkproto = pkt->pkt_hatype;
+		new_entry->linkproto = pkt->from->sll_hatype;
 
 		if (protocol == ETH_P_ARP) {
 			new_entry->un.arp.opcode =
 			    ((struct arp_hdr *) packet2)->ar_op;
-			memcpy(&(new_entry->un.arp.src_ip_address),
+			memcpy(&new_entry->un.arp.src_ip_address.s_addr,
 			       &(((struct arp_hdr *) packet2)->ar_sip), 4);
-			memcpy(&(new_entry->un.arp.dest_ip_address),
+			memcpy(&new_entry->un.arp.dest_ip_address.s_addr,
 			       &(((struct arp_hdr *) packet2)->ar_tip), 4);
 		} else if (protocol == ETH_P_RARP) {
 			new_entry->un.rarp.opcode =
@@ -341,20 +359,15 @@ void printothpentry(struct othptable *table, struct othptabent *entry,
 	char additional[MSGSTRING_MAX];
 	char msgstring[MSGSTRING_MAX];
 	char scratchpad[MSGSTRING_MAX];
-	char sp_buf[SHORTSTRING_MAX];
 	char *startstr;
 
 	char *packet_type;
-
-	struct in_addr uninitialized_var(saddr);
 
 	char rarp_mac_addr[18];
 
 	unsigned int unknown = 0;
 
 	struct protoent *protptr;
-
-	sprintf(sp_buf, "%%%dc", COLS - 2);
 
 	wmove(table->borderwin, table->obmaxy - 1, 1);
 	if ((table->lastvisible == table->tail) && (table->htstat != TIND)
@@ -367,10 +380,12 @@ void printothpentry(struct othptable *table, struct othptabent *entry,
 		table->htstat = HIND;
 	}
 	if (!(entry->is_ip)) {
+		struct in_addr *saddr = NULL;
+
 		wmove(table->othpwin, target_row, 0);
 		scrollok(table->othpwin, 0);
 		wattrset(table->othpwin, UNKNATTR);
-		wprintw(table->othpwin, sp_buf, ' ');
+		wprintw(table->othpwin, "%*c", COLS - 2, ' ');
 		scrollok(table->othpwin, 1);
 		wmove(table->othpwin, target_row, 1);
 
@@ -380,17 +395,15 @@ void printothpentry(struct othptable *table, struct othptabent *entry,
 			switch (ntohs(entry->un.arp.opcode)) {
 			case ARPOP_REQUEST:
 				strcat(msgstring, "request for ");
-				memcpy(&(saddr.s_addr),
-				       entry->un.arp.dest_ip_address, 4);
+				saddr = &entry->un.arp.dest_ip_address;
 				break;
 			case ARPOP_REPLY:
 				strcat(msgstring, "reply from ");
-				memcpy(&(saddr.s_addr),
-				       entry->un.arp.src_ip_address, 4);
+				saddr = &entry->un.arp.src_ip_address;
 				break;
 			}
 
-			inet_ntop(AF_INET, &saddr, scratchpad, sizeof(scratchpad));
+			inet_ntop(AF_INET, saddr, scratchpad, sizeof(scratchpad));
 			strcat(msgstring, scratchpad);
 			wattrset(table->othpwin, ARPATTR);
 			break;
@@ -410,7 +423,7 @@ void printothpentry(struct othptable *table, struct othptabent *entry,
 				break;
 			}
 
-			sprintf(scratchpad, rarp_mac_addr);
+			sprintf(scratchpad, "%s", rarp_mac_addr);
 			strcat(msgstring, scratchpad);
 			wattrset(table->othpwin, ARPATTR);
 			break;
@@ -489,7 +502,7 @@ void printothpentry(struct othptable *table, struct othptabent *entry,
 		wattrset(table->othpwin, UNKNIPATTR);
 		protptr = getprotobynumber(entry->protocol);
 		if (protptr != NULL) {
-			sprintf(protname, protptr->p_aliases[0]);
+			sprintf(protname, "%s", protptr->p_aliases[0]);
 		} else {
 			sprintf(protname, "IP protocol");
 			unknown = 1;
@@ -728,9 +741,8 @@ void printothpentry(struct othptable *table, struct othptabent *entry,
 	strcat(msgstring, " on ");
 	strcat(msgstring, entry->iface);
 
-	wmove(table->othpwin, target_row, 0);
 	scrollok(table->othpwin, 0);
-	wprintw(table->othpwin, sp_buf, ' ');
+	mvwprintw(table->othpwin, target_row, 0, "%*c", COLS - 2, ' ');
 	scrollok(table->othpwin, 1);
 	wmove(table->othpwin, target_row, 1);
 	startstr = msgstring + table->strindex;
@@ -763,19 +775,17 @@ void refresh_othwindow(struct othptable *table)
 
 void destroyothptable(struct othptable *table)
 {
-	struct othptabent *ctemp;
-	struct othptabent *ctemp_next;
+	struct othptabent *ctemp = table->head;
 
-	if (table->head != NULL) {
-		ctemp = table->head;
-		ctemp_next = table->head->next_entry;
+	while (ctemp != NULL) {
+		struct othptabent *next = ctemp->next_entry;
 
-		while (ctemp != NULL) {
-			free(ctemp);
-			ctemp = ctemp_next;
-
-			if (ctemp_next != NULL)
-				ctemp_next = ctemp_next->next_entry;
-		}
+		free(ctemp);
+		ctemp = next;
 	}
+
+	del_panel(table->othppanel);
+	delwin(table->othpwin);
+	del_panel(table->borderpanel);
+	delwin(table->borderwin);
 }

@@ -212,8 +212,7 @@ static void settimeout(time_t *value, const char *units, int allow_zero,
 	tx_box(dlgwin, ACS_VLINE, ACS_HLINE);
 
 	wattrset(dlgwin, DLGTEXTATTR);
-	wmove(dlgwin, 2, 2);
-	wprintw(dlgwin, "Enter value in %s", units);
+	mvwprintw(dlgwin, 2, 2, "Enter value in %s", units);
 	wmove(dlgwin, 5, 2);
 	stdkeyhelp(dlgwin);
 
