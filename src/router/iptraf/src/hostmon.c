@@ -72,6 +72,9 @@ struct ethtab {
 	unsigned long count;
 	unsigned long entcount;
 	int units;
+	struct eth_desc *elist;
+	struct eth_desc *flist;
+
 	WINDOW *borderwin;
 	PANEL *borderpanel;
 	WINDOW *tabwin;
@@ -148,6 +151,14 @@ static void writeethlog(struct ethtabent *list, unsigned long nsecs, FILE *fd)
 	fflush(fd);
 }
 
+static void hostmonhelp(void)
+{
+	move(LINES - 1, 1);
+	scrollkeyhelp();
+	sortkeyhelp();
+	stdexitkeyhelp();
+}
+
 static void initethtab(struct ethtab *table)
 {
 	table->head = table->tail = NULL;
@@ -162,36 +173,32 @@ static void initethtab(struct ethtab *table)
 
 	wattrset(table->borderwin, BOXATTR);
 	tx_box(table->borderwin, ACS_VLINE, ACS_HLINE);
-	wmove(table->borderwin, 0, 5 * COLS / 80);
-	wprintw(table->borderwin, " PktsIn ");
-	wmove(table->borderwin, 0, 16 * COLS / 80);
-	wprintw(table->borderwin, " IP In ");
-	wmove(table->borderwin, 0, 24 * COLS / 80);
-	wprintw(table->borderwin, " BytesIn ");
-	wmove(table->borderwin, 0, 34 * COLS / 80);
-	wprintw(table->borderwin, " InRate ");
 
-	wmove(table->borderwin, 0, 42 * COLS / 80);
-	wprintw(table->borderwin, " PktsOut ");
-	wmove(table->borderwin, 0, 53 * COLS / 80);
-	wprintw(table->borderwin, " IP Out ");
-	wmove(table->borderwin, 0, 61 * COLS / 80);
-	wprintw(table->borderwin, " BytesOut ");
-	wmove(table->borderwin, 0, 70 * COLS / 80);
-	wprintw(table->borderwin, " OutRate ");
-
-	wmove(table->borderwin, LINES - 3, 40);
-
-	wprintw(table->borderwin, " InRate and OutRate are in %s ",
-		dispmode(options.actmode));
+	mvwprintw(table->borderwin, 0,  5 * COLS / 80, " PktsIn ");
+	mvwprintw(table->borderwin, 0, 16 * COLS / 80, " IP In ");
+	mvwprintw(table->borderwin, 0, 24 * COLS / 80, " BytesIn ");
+	mvwprintw(table->borderwin, 0, 34 * COLS / 80, " InRate ");
+	mvwprintw(table->borderwin, 0, 42 * COLS / 80, " PktsOut ");
+	mvwprintw(table->borderwin, 0, 53 * COLS / 80, " IP Out ");
+	mvwprintw(table->borderwin, 0, 61 * COLS / 80, " BytesOut ");
+	mvwprintw(table->borderwin, 0, 70 * COLS / 80, " OutRate ");
 
 	wattrset(table->tabwin, STDATTR);
 	tx_colorwin(table->tabwin);
 	tx_stdwinset(table->tabwin);
 	wtimeout(table->tabwin, -1);
+	leaveok(table->tabwin, TRUE);
+
+	hostmonhelp();
 
 	update_panels();
 	doupdate();
+
+	/* Ethernet description list */
+	table->elist = load_eth_desc(ARPHRD_ETHER);
+
+	/* FDDI description list */
+	table->flist = load_eth_desc(ARPHRD_FDDI);
 }
 
 static struct ethtabent *addethnode(struct ethtab *table)
@@ -283,8 +290,8 @@ static struct ethtabent *addethentry(struct ethtab *table,
 
 	table->entcount++;
 
-	wmove(table->borderwin, LINES - 3, 1);
-	wprintw(table->borderwin, " %u entries ", table->entcount);
+	mvwprintw(table->borderwin, LINES - 3, 1, " %u entries ",
+		  table->entcount);
 
 	return ptemp;
 }
@@ -324,15 +331,15 @@ static void updateethent(struct ethtabent *entry, int pktsize, int is_ip,
 	}
 }
 
-static void printethent(struct ethtab *table, struct ethtabent *entry,
-			unsigned int idx)
+static void printethent(struct ethtab *table, struct ethtabent *entry)
 {
 	unsigned int target_row;
 
-	if ((entry->index < idx) || (entry->index > idx + LINES - 5))
+	if ((entry->index < table->firstvisible->index) ||
+	    (entry->index > table->lastvisible->index))
 		return;
 
-	target_row = entry->index - idx;
+	target_row = entry->index - table->firstvisible->index;
 
 	if (entry->type == 0) {
 		wmove(table->tabwin, target_row, 1);
@@ -381,53 +388,67 @@ static void printethent(struct ethtab *table, struct ethtabent *entry,
 static void destroyethtab(struct ethtab *table)
 {
 	struct ethtabent *ptemp = table->head;
-	struct ethtabent *cnext = NULL;
-
-	if (table->head != NULL)
-		cnext = table->head->next_entry;
 
 	while (ptemp != NULL) {
+		struct ethtabent *next = ptemp->next_entry;
+
 		if (ptemp->type == 1) {
 			rate_destroy(&ptemp->un.figs.outrate);
 			rate_destroy(&ptemp->un.figs.inrate);
 		}
 		free(ptemp);
-		ptemp = cnext;
-
-		if (cnext != NULL)
-			cnext = cnext->next_entry;
+		ptemp = next;
 	}
+
+	free_eth_desc(table->elist);
+	free_eth_desc(table->flist);
+
+	del_panel(table->tabpanel);
+	delwin(table->tabwin);
+
+	del_panel(table->borderpanel);
+	delwin(table->borderwin);
+
+	update_panels();
+	doupdate();
 }
 
-static void hostmonhelp(void)
-{
-	move(LINES - 1, 1);
-	scrollkeyhelp();
-	sortkeyhelp();
-	stdexitkeyhelp();
-}
-
-static void printrates(struct ethtab *table, unsigned int target_row,
-		       struct ethtabent *ptmp)
+static void print_entry_rates(struct ethtab *table, struct ethtabent *entry)
 {
 	char buf[32];
 
-	rate_print_no_units(rate_get_average(&ptmp->un.figs.inrate),
-		   buf, sizeof(buf));
-	wmove(table->tabwin, target_row, 32 * COLS / 80);
-	wprintw(table->tabwin, "%s", buf);
+	if (entry == NULL)
+		return;
+	if (entry->type != 1)
+		return;
 
-	rate_print_no_units(rate_get_average(&ptmp->un.figs.outrate),
+	int target_row = entry->index - table->firstvisible->index;
+
+	wattrset(table->tabwin, HIGHATTR);
+	rate_print_no_units(rate_get_average(&entry->un.figs.inrate),
 		   buf, sizeof(buf));
-	wmove(table->tabwin, target_row, 69 * COLS / 80);
-	wprintw(table->tabwin, "%s", buf);
+	mvwprintw(table->tabwin, target_row, 32 * COLS / 80, "%s", buf);
+
+	rate_print_no_units(rate_get_average(&entry->un.figs.outrate),
+		   buf, sizeof(buf));
+	mvwprintw(table->tabwin, target_row, 69 * COLS / 80, "%s", buf);
 }
 
-static void updateethrates(struct ethtab *table, unsigned long msecs,
-			   unsigned int idx)
+static void print_visible_rates(struct ethtab *table)
+{
+	struct ethtabent *entry = table->firstvisible;
+
+	while ((entry != NULL) && (entry->prev_entry != table->lastvisible)) {
+		print_entry_rates(table, entry);
+		entry = entry->next_entry;
+	}
+	update_panels();
+	doupdate();
+}
+
+static void updateethrates(struct ethtab *table, unsigned long msecs)
 {
 	struct ethtabent *ptmp = table->head;
-	unsigned int target_row = 0;
 
 	if (table->lastvisible == NULL)
 		return;
@@ -439,19 +460,12 @@ static void updateethrates(struct ethtab *table, unsigned long msecs,
 
 			rate_add_rate(&ptmp->un.figs.outrate, ptmp->un.figs.outspanbr, msecs);
 			ptmp->un.figs.outspanbr = 0;
-
-			if ((ptmp->index >= idx)
-			    && (ptmp->index <= idx + LINES - 5)) {
-				wattrset(table->tabwin, HIGHATTR);
-				target_row = ptmp->index - idx;
-				printrates(table, target_row, ptmp);
-			}
 		}
 		ptmp = ptmp->next_entry;
 	}
 }
 
-static void refresh_hostmon_screen(struct ethtab *table, unsigned int idx)
+static void refresh_hostmon_screen(struct ethtab *table)
 {
 	struct ethtabent *ptmp = table->firstvisible;
 
@@ -459,7 +473,7 @@ static void refresh_hostmon_screen(struct ethtab *table, unsigned int idx)
 	tx_colorwin(table->tabwin);
 
 	while ((ptmp != NULL) && (ptmp->prev_entry != table->lastvisible)) {
-		printethent(table, ptmp, idx);
+		printethent(table, ptmp);
 		ptmp = ptmp->next_entry;
 	}
 
@@ -467,62 +481,69 @@ static void refresh_hostmon_screen(struct ethtab *table, unsigned int idx)
 	doupdate();
 }
 
-static void scrollethwin(struct ethtab *table, int direction, unsigned int *idx)
+static void scrollethwin_one(struct ethtab *table, int direction)
 {
-	char sp_buf[10];
-
-	sprintf(sp_buf, "%%%dc", COLS - 2);
 	wattrset(table->tabwin, STDATTR);
 	if (direction == SCROLLUP) {
 		if (table->lastvisible != table->tail) {
-			wscrl(table->tabwin, 1);
-			table->lastvisible = table->lastvisible->next_entry;
 			table->firstvisible = table->firstvisible->next_entry;
-			(*idx)++;
-			wmove(table->tabwin, LINES - 5, 0);
+			table->lastvisible = table->lastvisible->next_entry;
+
+			wscrl(table->tabwin, 1);
 			scrollok(table->tabwin, 0);
-			wprintw(table->tabwin, sp_buf, ' ');
+			mvwprintw(table->tabwin, LINES - 5, 0, "%*c", COLS - 2, ' ');
 			scrollok(table->tabwin, 1);
-			printethent(table, table->lastvisible, *idx);
-			if (table->lastvisible->type == 1)
-				printrates(table, LINES - 5,
-					   table->lastvisible);
+
+			printethent(table, table->lastvisible);
+			print_entry_rates(table, table->lastvisible);
 		}
 	} else {
 		if (table->firstvisible != table->head) {
-			wscrl(table->tabwin, -1);
-			table->lastvisible = table->lastvisible->prev_entry;
 			table->firstvisible = table->firstvisible->prev_entry;
-			(*idx)--;
-			wmove(table->tabwin, 0, 0);
-			wprintw(table->tabwin, sp_buf, ' ');
-			printethent(table, table->firstvisible, *idx);
-			if (table->firstvisible->type == 1)
-				printrates(table, 0, table->firstvisible);
+			table->lastvisible = table->lastvisible->prev_entry;
+
+			wscrl(table->tabwin, -1);
+			mvwprintw(table->tabwin, 0, 0, "%*c", COLS - 2, ' ');
+
+			printethent(table, table->firstvisible);
+			print_entry_rates(table, table->firstvisible);
 		}
 	}
 }
 
-static void pageethwin(struct ethtab *table, int direction, unsigned int *idx)
+static void scrollethwin_many(struct ethtab *table, int direction, int lines)
 {
-	int i = 1;
-
-	if (direction == SCROLLUP) {
-		while ((i <= LINES - 7) && (table->lastvisible != table->tail)) {
-			i++;
+	switch (direction) {
+	case SCROLLUP:
+		while (lines && (table->lastvisible != table->tail)) {
 			table->firstvisible = table->firstvisible->next_entry;
 			table->lastvisible = table->lastvisible->next_entry;
-			(*idx)++;
+			lines--;
 		}
-	} else {
-		while ((i <= LINES - 7) && (table->firstvisible != table->head)) {
-			i++;
+		break;
+	case SCROLLDOWN:
+		while (lines && (table->firstvisible != table->head)) {
 			table->firstvisible = table->firstvisible->prev_entry;
 			table->lastvisible = table->lastvisible->prev_entry;
-			(*idx)--;
+			lines--;
 		}
+		break;
 	}
-	refresh_hostmon_screen(table, *idx);
+	refresh_hostmon_screen(table);
+	print_visible_rates(table);
+}
+
+static void scrollethwin(struct ethtab *table, int direction, int lines)
+{
+	if (table->head == NULL)
+		return;
+	if (lines < 1)
+		return;
+	if (lines < 16)
+		while (lines--)
+			scrollethwin_one(table, direction);
+	else
+		scrollethwin_many(table, direction, lines);
 }
 
 static void show_hostsort_keywin(WINDOW ** win, PANEL ** panel)
@@ -707,11 +728,8 @@ static void quicksort_lan_entries(struct ethtab *table, struct ethtabent *low,
 	}
 }
 
-static void sort_hosttab(struct ethtab *list, unsigned int *idx, int command)
+static void sort_hosttab(struct ethtab *list, int command)
 {
-	struct ethtabent *ptemp1;
-	int idxtmp;
-
 	if (!list->head)
 		return;
 
@@ -724,18 +742,154 @@ static void sort_hosttab(struct ethtab *list, unsigned int *idx, int command)
 	quicksort_lan_entries(list, list->head, list->tail->prev_entry,
 			      command);
 
-	ptemp1 = list->firstvisible = list->head;
-	*idx = 1;
-	idxtmp = 0;
-	tx_colorwin(list->tabwin);
-	while ((ptemp1) && (idxtmp <= LINES - 4)) {
-		printethent(list, ptemp1, *idx);
-		idxtmp++;
-		if (idxtmp <= LINES - 4)
-			list->lastvisible = ptemp1;
-		ptemp1 = ptemp1->next_entry;
+	list->firstvisible = list->head;
+	struct ethtabent *ptmp = list->head;
+	while (ptmp && ((int)ptmp->index <= getmaxy(list->tabwin))) {
+		list->lastvisible = ptmp;
+		ptmp = ptmp->next_entry;
+	}
+}
+
+static void hostmon_process_key(struct ethtab *table, int ch)
+{
+	static WINDOW *sortwin;
+	static PANEL *sortpanel;
+	static int keymode = 0;
+
+	if (keymode == 0) {
+		switch (ch) {
+		case KEY_UP:
+			scrollethwin(table, SCROLLDOWN, 1);
+			break;
+		case KEY_DOWN:
+			scrollethwin(table, SCROLLUP, 1);
+			break;
+		case KEY_PPAGE:
+		case '-':
+			scrollethwin(table, SCROLLDOWN, LINES - 4);
+			break;
+		case KEY_NPAGE:
+		case ' ':
+			scrollethwin(table, SCROLLUP, LINES - 4);
+			break;
+		case KEY_HOME:
+			scrollethwin(table, SCROLLDOWN, INT_MAX);
+			break;
+		case KEY_END:
+			scrollethwin(table, SCROLLUP, INT_MAX);
+			break;
+		case 12:
+		case 'l':
+		case 'L':
+			tx_refresh_screen();
+			break;
+		case 's':
+		case 'S':
+			show_hostsort_keywin(&sortwin, &sortpanel);
+			keymode = 1;
+			break;
+		case 'q':
+		case 'Q':
+		case 'x':
+		case 'X':
+		case 27:
+		case 24:
+			exitloop = 1;
+		}
+	} else if (keymode == 1) {
+		del_panel(sortpanel);
+		delwin(sortwin);
+		sort_hosttab(table, ch);
+		keymode = 0;
+		refresh_hostmon_screen(table);
+		print_visible_rates(table);
+	}
+}
+
+static void hostmon_process_packet(struct ethtab *table, struct pkt_hdr *pkt,
+				   char *ifptr)
+{
+	char ifnamebuf[IFNAMSIZ];
+	char *ifname = ifptr;
+
+	int pkt_result = packet_process(pkt, NULL, NULL, NULL,
+					MATCH_OPPOSITE_USECONFIG, 0);
+
+	if (pkt_result != PACKET_OK)
+		return;
+
+	if (ifptr == NULL) {
+		/* we're capturing on "All interfaces", */
+		/* so get the name of the interface */
+		/* of this packet */
+		int r = dev_get_ifname(pkt->from->sll_ifindex, ifnamebuf);
+		if (r != 0) {
+			write_error("Unable to get interface name");
+			return;	/* can't get interface name, get out! */
+		}
+		ifname = ifnamebuf;
 	}
 
+	char scratch_saddr[ETH_ALEN];
+	char scratch_daddr[ETH_ALEN];
+	struct eth_desc *list = NULL;
+	struct ethtabent *entry;
+	int is_ip;
+
+	/* get HW addresses */
+	switch (pkt->from->sll_hatype) {
+	case ARPHRD_ETHER:
+		memcpy(scratch_saddr, pkt->ethhdr->h_source, ETH_ALEN);
+		memcpy(scratch_daddr, pkt->ethhdr->h_dest, ETH_ALEN);
+		list = table->elist;
+		break;
+	case ARPHRD_FDDI:
+		memcpy(scratch_saddr, pkt->fddihdr->saddr, FDDI_K_ALEN);
+		memcpy(scratch_daddr, pkt->fddihdr->daddr, FDDI_K_ALEN);
+		list = table->flist;
+		break;
+	default:
+		/* unknown link protocol */
+		return;
+	}
+
+	switch(pkt->pkt_protocol) {
+	case ETH_P_IP:
+	case ETH_P_IPV6:
+		is_ip = 1;
+		break;
+	default:
+		is_ip = 0;
+		break;
+	}
+
+	/* Check source address entry */
+	entry = in_ethtable(table, pkt->from->sll_hatype, scratch_saddr);
+	if (!entry)
+		entry = addethentry(table, pkt->from->sll_hatype,
+				    ifname, scratch_saddr, list);
+
+	if (entry != NULL) {
+		updateethent(entry, pkt->pkt_len, is_ip, 1);
+		if (!entry->prev_entry->un.desc.printed)
+			printethent(table, entry->prev_entry);
+
+		printethent(table, entry);
+	}
+
+	/* Check destination address entry */
+	entry = in_ethtable(table, pkt->from->sll_hatype, scratch_daddr);
+	if (!entry)
+		entry = addethentry(table, pkt->from->sll_hatype,
+				    ifname, scratch_daddr, list);
+
+	if (entry != NULL) {
+		updateethent(entry, pkt->pkt_len, is_ip, 0);
+		if (!entry->prev_entry->un.desc.printed)
+			printethent(table, entry->prev_entry);
+
+		printethent(table, entry);
+	}
 }
 
 /*
@@ -746,39 +900,23 @@ void hostmon(time_t facilitytime, char *ifptr)
 {
 	int logging = options.logging;
 	struct ethtab table;
-	struct ethtabent *entry;
 
-	char scratch_saddr[ETH_ALEN];
-	char scratch_daddr[ETH_ALEN];
-	unsigned int idx = 1;
-	int is_ip;
 	int ch;
-
-	char *ifname = ifptr;
-
-	struct timeval tv;
-	struct timeval tv_rate;
-	time_t now = 0;
-	time_t statbegin = 0;
-	time_t startlog = 0;
-	struct timeval updtime;
-
-	struct eth_desc *list = NULL;
 
 	FILE *logfile = NULL;
 
-	int pkt_result;
-
-	WINDOW *sortwin;
-	PANEL *sortpanel;
-	int keymode = 0;
-
 	int fd;
+
+	struct pkt_hdr pkt;
+
+	unsigned long dropped = 0UL;
 
 	if (ifptr && !dev_up(ifptr)) {
 		err_iface_down();
 		return;
 	}
+
+	initethtab(&table);
 
 	LIST_HEAD(promisc);
 	if (options.promisc) {
@@ -786,15 +924,15 @@ void hostmon(time_t facilitytime, char *ifptr)
 		promisc_set_list(&promisc);
 	}
 
-	hostmonhelp();
-
-	initethtab(&table);
-
-	/* Ethernet description list */
-	struct eth_desc *elist = load_eth_desc(ARPHRD_ETHER);
-
-	/* FDDI description list */
-	struct eth_desc *flist = load_eth_desc(ARPHRD_FDDI);
+	fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+	if(fd == -1) {
+		write_error("Unable to obtain monitoring socket");
+		goto err;
+	}
+	if(ifptr && dev_bind_ifname(fd, ifptr) == -1) {
+		write_error("Unable to bind interface on the socket");
+		goto err_close;
+	}
 
 	if (logging) {
 		if (strcmp(current_logfile, "") == 0) {
@@ -820,55 +958,56 @@ void hostmon(time_t facilitytime, char *ifptr)
 			 "******** LAN traffic monitor started ********");
 	}
 
-	leaveok(table.tabwin, TRUE);
-
-	fd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
-	if(fd == -1) {
-		write_error("Unable to obtain monitoring socket");
-		goto err;
-	}
-	if(ifptr && dev_bind_ifname(fd, ifptr) == -1) {
-		write_error("Unable to bind interface on the socket");
-		goto err_close;
-	}
+	packet_init(&pkt);
 
 	exitloop = 0;
-	gettimeofday(&tv, NULL);
-	tv_rate = tv;
-	updtime = tv;
-	statbegin = startlog = tv.tv_sec;
 
-	PACKET_INIT(pkt);
+	struct timeval now;
+	gettimeofday(&now, NULL);
+	struct timeval last_time = now;
+	struct timeval last_update = now;
 
-	do {
-		gettimeofday(&tv, NULL);
-		now = tv.tv_sec;
+	time_t starttime = now.tv_sec;
+	time_t endtime = INT_MAX;
+	if (facilitytime != 0)
+		endtime = now.tv_sec + facilitytime * 60;
 
-		unsigned long msecs = timeval_diff_msec(&tv, &tv_rate);
-		if (msecs >= 1000) {
-			printelapsedtime(statbegin, now, LINES - 3, 15,
-					 table.borderwin);
-			updateethrates(&table, msecs, idx);
-			tv_rate = tv;
-		}
-		if (logging) {
-			check_rotate_flag(&logfile);
-			if ((now - startlog) >= options.logspan) {
-				writeethlog(table.head, now - statbegin,
+	time_t log_next = INT_MAX;
+	if (logging)
+		log_next = now.tv_sec + options.logspan;
+
+	while (!exitloop) {
+		gettimeofday(&now, NULL);
+
+		if (now.tv_sec > last_time.tv_sec) {
+			unsigned long msecs = timeval_diff_msec(&now, &last_time);
+			updateethrates(&table, msecs);
+			print_visible_rates(&table);
+
+			printelapsedtime(now.tv_sec - starttime, 15, table.borderwin);
+
+			dropped += packet_get_dropped(fd);
+			print_packet_drops(dropped, table.borderwin, 49);
+
+			if (logging && (now.tv_sec > log_next)) {
+				check_rotate_flag(&logfile);
+				writeethlog(table.head, now.tv_sec - starttime,
 					    logfile);
-				startlog = now;
+				log_next = now.tv_sec + options.logspan;
 			}
+
+			if (now.tv_sec > endtime)
+				exitloop = 1;
+
+			last_time = now;
 		}
-		if (screen_update_needed(&tv, &updtime)) {
+
+		if (screen_update_needed(&now, &last_update)) {
 			update_panels();
 			doupdate();
 
-			updtime = tv;
+			last_update = now;
 		}
-
-		if ((facilitytime != 0)
-		    && (((now - statbegin) / 60) >= facilitytime))
-			exitloop = 1;
 
 		if (packet_get(fd, &pkt, &ch, table.tabwin) == -1) {
 			write_error("Packet receive failed");
@@ -876,164 +1015,32 @@ void hostmon(time_t facilitytime, char *ifptr)
 			break;
 		}
 
-		if (ch != ERR) {
-			if (keymode == 0) {
-				switch (ch) {
-				case KEY_UP:
-					scrollethwin(&table, SCROLLDOWN, &idx);
-					break;
-				case KEY_DOWN:
-					scrollethwin(&table, SCROLLUP, &idx);
-					break;
-				case KEY_PPAGE:
-				case '-':
-					pageethwin(&table, SCROLLDOWN, &idx);
-					break;
-				case KEY_NPAGE:
-				case ' ':
-					pageethwin(&table, SCROLLUP, &idx);
-					break;
-				case 12:
-				case 'l':
-				case 'L':
-					tx_refresh_screen();
-					break;
-				case 's':
-				case 'S':
-					show_hostsort_keywin(&sortwin,
-							     &sortpanel);
-					keymode = 1;
-					break;
-				case 'q':
-				case 'Q':
-				case 'x':
-				case 'X':
-				case 27:
-				case 24:
-					exitloop = 1;
-				}
-			} else if (keymode == 1) {
-				del_panel(sortpanel);
-				delwin(sortwin);
-				sort_hosttab(&table, &idx, ch);
-				keymode = 0;
-			}
-		}
+		if (ch != ERR)
+			hostmon_process_key(&table, ch);
 
-		if (pkt.pkt_len <= 0)
-			continue;
+		if (pkt.pkt_len > 0)
+			hostmon_process_packet(&table, &pkt, ifptr);
 
-		char ifnamebuf[IFNAMSIZ];
+	}
 
-		pkt_result =
-			packet_process(&pkt, NULL, NULL, NULL,
-				       MATCH_OPPOSITE_USECONFIG,
-				       0);
+	packet_destroy(&pkt);
 
-		if (pkt_result != PACKET_OK)
-			continue;
-
-		if (!ifptr) {
-			/* we're capturing on "All interfaces", */
-			/* so get the name of the interface */
-			/* of this packet */
-			int r = dev_get_ifname(pkt.pkt_ifindex, ifnamebuf);
-			if (r != 0) {
-				write_error("Unable to get interface name");
-				break;	/* can't get interface name, get out! */
-			}
-			ifname = ifnamebuf;
-		}
-
-		/* get HW addresses */
-		switch (pkt.pkt_hatype) {
-		case ARPHRD_ETHER: {
-			memcpy(scratch_saddr, pkt.ethhdr->h_source, ETH_ALEN);
-			memcpy(scratch_daddr, pkt.ethhdr->h_dest, ETH_ALEN);
-			list = elist;
-			break; }
-		case ARPHRD_FDDI: {
-			memcpy(scratch_saddr, pkt.fddihdr->saddr, FDDI_K_ALEN);
-			memcpy(scratch_daddr, pkt.fddihdr->daddr, FDDI_K_ALEN);
-			list = flist;
-			break; }
-		default:
-			/* unknown link protocol */
-			continue;
-		}
-
-		switch(pkt.pkt_protocol) {
-		case ETH_P_IP:
-		case ETH_P_IPV6:
-			is_ip = 1;
-			break;
-		default:
-			is_ip = 0;
-			break;
-		}
-
-		/* Check source address entry */
-		entry = in_ethtable(&table, pkt.pkt_hatype,
-				    scratch_saddr);
-
-		if (!entry)
-			entry = addethentry(&table, pkt.pkt_hatype,
-					    ifname, scratch_saddr, list);
-
-		if (entry != NULL) {
-			updateethent(entry, pkt.pkt_len, is_ip, 1);
-			if (!entry->prev_entry->un.desc.printed)
-				printethent(&table, entry->prev_entry,
-					    idx);
-
-			printethent(&table, entry, idx);
-		}
-
-		/* Check destination address entry */
-		entry = in_ethtable(&table, pkt.pkt_hatype,
-				    scratch_daddr);
-		if (!entry)
-			entry = addethentry(&table, pkt.pkt_hatype,
-					    ifname, scratch_daddr, list);
-
-		if (entry != NULL) {
-			updateethent(entry, pkt.pkt_len, is_ip, 0);
-			if (!entry->prev_entry->un.desc.printed)
-				printethent(&table, entry->prev_entry,
-					    idx);
-
-			printethent(&table, entry, idx);
-		}
-	} while (!exitloop);
+	if (logging) {
+		signal(SIGUSR1, SIG_DFL);
+		writeethlog(table.head, time(NULL) - starttime, logfile);
+		writelog(logging, logfile,
+			 "******** LAN traffic monitor stopped ********");
+		fclose(logfile);
+	}
+	strcpy(current_logfile, "");
 
 err_close:
 	close(fd);
-
 err:
 	if (options.promisc) {
 		promisc_restore_list(&promisc);
 		promisc_destroy(&promisc);
 	}
 
-	if (logging) {
-		signal(SIGUSR1, SIG_DFL);
-		writeethlog(table.head, time(NULL) - statbegin, logfile);
-		writelog(logging, logfile,
-			 "******** LAN traffic monitor stopped ********");
-		fclose(logfile);
-	}
-
-
-	del_panel(table.tabpanel);
-	delwin(table.tabwin);
-	del_panel(table.borderpanel);
-	delwin(table.borderwin);
-	update_panels();
-	doupdate();
 	destroyethtab(&table);
-
-	free_eth_desc(elist);
-	free_eth_desc(flist);
-
-	strcpy(current_logfile, "");
 }

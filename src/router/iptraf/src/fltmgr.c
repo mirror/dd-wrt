@@ -181,17 +181,11 @@ int loadfilterlist(struct ffnode **fltfile)
 
 void destroyfilterlist(struct ffnode *fltlist)
 {
-	struct ffnode *fftemp;
+	while (fltlist != NULL) {
+		struct ffnode *fftemp = fltlist->next_entry;
 
-	if (fltlist != NULL) {
-		fftemp = fltlist->next_entry;
-
-		do {
-			free(fltlist);
-			fltlist = fftemp;
-			if (fftemp != NULL)
-				fftemp = fftemp->next_entry;
-		} while (fltlist != NULL);
+		free(fltlist);
+		fltlist = fftemp;
 	}
 }
 
@@ -228,7 +222,6 @@ void save_filterlist(struct ffnode *fltlist)
 void operate_select(struct ffnode *ffiles, struct ffnode **item, int *aborted)
 {
 	struct ffnode *pptr;
-	int ch;
 	struct scroll_list list;
 
 	tx_listkeyhelp(STDATTR, HIGHATTR);
@@ -249,7 +242,7 @@ void operate_select(struct ffnode *ffiles, struct ffnode **item, int *aborted)
 	}
 
 	tx_show_listbox(&list);
-	tx_operate_listbox(&list, &ch, aborted);
+	tx_operate_listbox(&list, aborted);
 
 	if (!(*aborted))
 		*item = (struct ffnode *) list.textptr->nodeptr;

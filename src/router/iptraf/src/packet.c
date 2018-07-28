@@ -38,29 +38,28 @@ packet.c - routines to open the raw socket, read socket data and
 		pkt_cast_hdrp_l3off_t(hdr, pkt, 0)
 
 /* code taken from http://www.faqs.org/rfcs/rfc1071.html. See section 4.1 "C"  */
-static int in_cksum(u_short * addr, int len)
+static int verify_ipv4_hdr_chksum(struct iphdr *ip)
 {
 	register int sum = 0;
+	u_short *addr = (u_short *)ip;
+	int len = ip->ihl * 4;
 
 	while (len > 1) {
-		sum += *(u_short *) addr++;
+		sum += *addr++;
 		len -= 2;
 	}
-
-	if (len > 0)
-		sum += *(unsigned char *) addr;
 
 	while (sum >> 16)
 		sum = (sum & 0xffff) + (sum >> 16);
 
-	return (u_short) (~sum);
+	return ((u_short) ~sum) == 0;
 }
 
 static int packet_adjust(struct pkt_hdr *pkt)
 {
 	int retval = 0;
 
-	switch (pkt->pkt_hatype) {
+	switch (pkt->from->sll_hatype) {
 	case ARPHRD_ETHER:
 	case ARPHRD_LOOPBACK:
 		pkt_cast_hdrp_l2(ethhdr, pkt);
@@ -144,34 +143,24 @@ int packet_get(int fd, struct pkt_hdr *pkt, int *ch, WINDOW *win)
 		ss = poll(pfds, nfds, DEFAULT_UPDATE_DELAY);
 	} while ((ss == -1) && (errno == EINTR));
 
-	PACKET_INIT_STRUCT(pkt);
+	/* no packet ready yet */
+	pkt->pkt_len = 0;
+
 	if ((ss > 0) && (pfds[0].revents & POLLIN) != 0) {
-		struct sockaddr_ll from;
-		struct iovec iov;
-		struct msghdr msg;
 
-		iov.iov_len = pkt->pkt_bufsize;
-		iov.iov_base = pkt->pkt_buf;
+		/* these are set upon return from recvmsg() so clean */
+		/* them beforehand */
+		pkt->msg->msg_controllen = 0;
+		pkt->msg->msg_flags = 0;
 
-		msg.msg_name = &from;
-		msg.msg_namelen = sizeof(from);
-		msg.msg_iov = &iov;
-		msg.msg_iovlen = 1;
-		msg.msg_control = NULL;
-		msg.msg_controllen = 0;
-		msg.msg_flags = 0;
-
-		ssize_t len = recvmsg(fd, &msg, MSG_TRUNC | MSG_DONTWAIT);
+		ssize_t len = recvmsg(fd, pkt->msg, MSG_TRUNC | MSG_DONTWAIT);
 		if (len > 0) {
 			pkt->pkt_len = len;
 			pkt->pkt_caplen = len;
 			if (pkt->pkt_caplen > pkt->pkt_bufsize)
 				pkt->pkt_caplen = pkt->pkt_bufsize;
 			pkt->pkt_payload = NULL;
-			pkt->pkt_protocol = ntohs(from.sll_protocol);
-			pkt->pkt_ifindex = from.sll_ifindex;
-			pkt->pkt_hatype = from.sll_hatype;
-			pkt->pkt_pkttype = from.sll_pkttype;
+			pkt->pkt_protocol = ntohs(pkt->from->sll_protocol);
 		} else
 			ss = len;
 	}
@@ -198,19 +187,9 @@ again:
 	switch (pkt->pkt_protocol) {
 	case ETH_P_IP: {
 		struct iphdr *ip = pkt->iphdr;
-		int hdr_check;
-		register int ip_checksum;
 		in_port_t f_sport = 0, f_dport = 0;
 
-		/*
-		 * Compute and verify IP header checksum.
-		 */
-
-		ip_checksum = ip->check;
-		ip->check = 0;
-		hdr_check = in_cksum((u_short *) pkt->iphdr, pkt_iph_len(pkt));
-
-		if ((hdr_check != ip_checksum))
+		if (!verify_ipv4_hdr_chksum(ip))
 			return CHECKSUM_ERROR;
 
 		if ((ip->protocol == IPPROTO_TCP || ip->protocol == IPPROTO_UDP)
@@ -220,8 +199,8 @@ again:
 			/*
 			 * Process TCP/UDP fragments
 			 */
-			if ((ntohs(ip->frag_off) & 0x3fff) != 0) {
-				int firstin;
+			if (ipv4_is_fragmented(ip)) {
+				int firstin = 0;
 
 				/*
 				 * total_br contains total byte count of all fragments
@@ -338,7 +317,68 @@ again:
 	return PACKET_OK;
 }
 
-void pkt_cleanup(void)
+int packet_init(struct pkt_hdr *pkt)
 {
+	pkt->pkt_buf		= xmallocz(MAX_PACKET_SIZE);
+	pkt->pkt_bufsize	= MAX_PACKET_SIZE;
+	pkt->pkt_payload	= NULL;
+	pkt->ethhdr		= NULL;
+	pkt->fddihdr		= NULL;
+	pkt->iphdr		= NULL;
+	pkt->ip6_hdr		= NULL;
+	pkt->pkt_len		= 0;	/* signalize we have no packet prepared */
+
+	pkt->iov.iov_len	= pkt->pkt_bufsize;
+	pkt->iov.iov_base	= pkt->pkt_buf;
+
+	pkt->from		= xmallocz(sizeof(*pkt->from));
+	pkt->msg		= xmallocz(sizeof(*pkt->msg));
+
+	pkt->msg->msg_name	= pkt->from;
+	pkt->msg->msg_namelen	= sizeof(*pkt->from);
+	pkt->msg->msg_iov	= &pkt->iov;
+	pkt->msg->msg_iovlen	= 1;
+	pkt->msg->msg_control	= NULL;
+
+	return 0;	/* all O.K. */
+}
+
+void packet_destroy(struct pkt_hdr *pkt)
+{
+	free(pkt->msg);
+	pkt->msg = NULL;
+
+	free(pkt->from);
+	pkt->from = NULL;
+
+	free(pkt->pkt_buf);
+	pkt->pkt_buf = NULL;
+
 	destroyfraglist();
+}
+
+unsigned int packet_get_dropped(int fd)
+{
+	struct tpacket_stats stats;
+	socklen_t len = sizeof(stats);
+
+	memset(&stats, 0, len);
+	int err = getsockopt(fd, SOL_PACKET, PACKET_STATISTICS, &stats, &len);
+	if (err < 0)
+		die_errno("%s(): getsockopt(PACKET_STATISTICS)", __func__);
+
+	return stats.tp_drops;
+}
+
+int packet_is_first_fragment(struct pkt_hdr *pkt)
+{
+	switch (pkt->pkt_protocol) {
+	case ETH_P_IP:
+		return ipv4_is_first_fragment(pkt->iphdr);
+	case ETH_P_IPV6:
+		/* FIXME: IPv6 can also be fragmented !!! */
+		/* fall through for now */
+	default:
+		return !0;
+	}
 }

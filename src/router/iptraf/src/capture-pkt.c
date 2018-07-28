@@ -47,25 +47,29 @@ int cmd_capture(int argc, char **argv)
 			die_errno("fopen");
 	}
 
-	PACKET_INIT(p);
+	struct pkt_hdr pkt;
+	packet_init(&pkt);
+
 	int captured = 0;
 	for (;;) {
-		if (packet_get(fd, &p, NULL, NULL) == -1)
+		if (packet_get(fd, &pkt, NULL, NULL) == -1)
 			die_errno("fail to get packet");
 
-		if (!p.pkt_len)
+		if (!pkt.pkt_len)
 			continue;
 
 		printf(".");
 		fflush(stdout);
 
 		if (fp)
-			fwrite(&p, sizeof(p), 1, fp);
+			fwrite(&pkt, sizeof(pkt), 1, fp);
 
 		if (++captured == cap_nr_pkt)
 			break;
 	}
 	printf("\n");
+
+	packet_destroy(&pkt);
 
 	close(fd);
 
