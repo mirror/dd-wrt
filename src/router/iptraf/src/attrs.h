@@ -34,5 +34,6 @@ extern int UNKNIPATTR;
 extern int UNKNATTR;
 extern int IPV6ATTR;
 extern int ICMPV6ATTR;
+extern int EOIPATTR;
 
 #endif	/* IPTRAF_NG_ATTRS_H */
