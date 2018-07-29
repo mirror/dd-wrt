@@ -153,7 +153,7 @@ void start_ipvs(void)
 
 void stop_ipvs(void)
 {
-	stop_process("ipvsadm", "ipvs");
+	stop_process("ipvsadm", "ipvs daemon");
 	return;
 }
 

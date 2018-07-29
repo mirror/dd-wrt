@@ -64,13 +64,13 @@ void start_vncrepeater(void)
 	fclose(fp);
 
 	system("repeater /tmp/vncrepeater.ini&");
-	syslog(LOG_INFO, "VNCRepeater : repeater successfully started\n");
+	dd_syslog("vncrepeater","daemon successfully started\n");
 
 	return;
 }
 
 void stop_vncrepeater(void)
 {
-	stop_process("repeater", "VNCRepeater");
+	stop_process("vncrepeater", "daemon");
 }
 #endif

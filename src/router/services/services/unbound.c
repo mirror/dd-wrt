@@ -163,7 +163,7 @@ void start_unbound(void)
 
 void stop_unbound(void)
 {
-	stop_process("unbound", "unbound daemon");
+	stop_process("unbound", "daemon");
 	return;
 }
 #endif

@@ -31,7 +31,7 @@
 
 void stop_olsrd(void)
 {
-	stop_process("olsrd", "OLSR daemon");
+	stop_process("olsrd", "daemon");
 }
 
 void start_olsrd(void)

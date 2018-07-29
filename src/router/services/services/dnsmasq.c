@@ -155,7 +155,7 @@ void start_dnsmasq(void)
 
 #ifdef HAVE_DNSCRYPT
 	if (nvram_matchi("dns_crypt", 1)) {
-		eval("killall", "dnscrypt-proxy");
+		stop_process("dnscrypt-proxy", "daemon");
 		eval("dnscrypt-proxy", "-S", "-a", "127.0.0.1:30", "-R", nvram_get("dns_crypt_resolver"), "-L", "/etc/dnscrypt/dnscrypt-resolvers.csv");
 	}
 #endif
@@ -452,7 +452,7 @@ void start_dnsmasq(void)
 
 void stop_dnsmasq(void)
 {
-	if (stop_process("dnsmasq", "dnsmasq daemon")) {
+	if (stop_process("dnsmasq", "daemon")) {
 		unlink("/tmp/resolv.dnsmasq");
 	}
 }

@@ -123,7 +123,7 @@ void start_dhcp6c(void)
 
 void stop_dhcp6c(void)
 {
-	stop_process("dhcp6c", "dhcp6c");
+	stop_process("dhcp6c", "daemon");
 }
 
 void start_dhcp6s(void)
@@ -203,7 +203,7 @@ void start_dhcp6s(void)
 
 void stop_dhcp6s(void)
 {
-	stop_process("dhcp6s", "dhcp6s");
+	stop_process("dhcp6s", "daemon");
 }
 
 int dhcp6c_state_main(int argc, char **argv)

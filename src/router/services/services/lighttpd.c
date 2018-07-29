@@ -145,6 +145,6 @@ void start_lighttpd(void)
 
 void stop_lighttpd(void)
 {
-	stop_process("lighttpd", "lighttpd");
+	stop_process("lighttpd", "daemon");
 }
 #endif

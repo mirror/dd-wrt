@@ -73,7 +73,7 @@ void start_process_monitor(void)
 
 void stop_process_monitor(void)
 {
-	stop_process("process_monitor", "Process Monitor");
+	stop_process("process_monitor", "daemon");
 	cprintf("done\n");
 
 	return;

@@ -30,7 +30,7 @@
 
 void stop_nstxd(void)
 {
-	stop_process("nstxd", "nstx daemon");
+	stop_process("nstxd", "daemon");
 }
 
 void start_nstxd(void)

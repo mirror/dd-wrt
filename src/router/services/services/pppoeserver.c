@@ -336,7 +336,7 @@ void start_pppoeserver(void)
 
 void stop_pppoeserver(void)
 {
-	if (stop_process("pppoe-server", "pppoe server")) {
+	if (stop_process("pppoe-server", "daemon")) {
 		del_pppoe_natrule();
 		unlink("/tmp/pppoe_connected");
 		unlink("/tmp/pppoeserver/radius/radiusclient.conf");

@@ -41,15 +41,15 @@ void start_lltd(void)
 	/*
 	 * Make sure its not running first 
 	 */
-	stop_process("lld2d", "Stop LLTD Daemon");
+	stop_process("lld2d", "daemon");
 	ret = eval("lld2d", nvram_safe_get("lan_ifname"));
-	dd_loginfo("lld2d", "LLTD Daemon successfully started\n");
+	dd_loginfo("lld2d", "daemon successfully started\n");
 	return;
 }
 
 void stop_lltd(void)
 {
-	stop_process("lld2d", "Stop LLTD Daemon");
+	stop_process("lld2d", "daemon");
 	return;
 }
 

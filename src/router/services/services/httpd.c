@@ -68,7 +68,7 @@ void start_httpd(void)
 
 void stop_httpd(void)
 {
-	stop_process("httpd", "http daemon");
+	stop_process("httpd", "daemon");
 	unlink("/var/run/httpd.pid");
 #ifdef HAVE_HTTPS
 	unlink("/var/run/httpsd.pid");
