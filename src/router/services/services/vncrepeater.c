@@ -64,7 +64,7 @@ void start_vncrepeater(void)
 	fclose(fp);
 
 	system("repeater /tmp/vncrepeater.ini&");
-	dd_syslog("vncrepeater","daemon successfully started\n");
+	dd_syslog("vncrepeater", "daemon successfully started\n");
 
 	return;
 }
