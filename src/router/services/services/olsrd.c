@@ -148,7 +148,7 @@ void start_olsrd(void)
 	fclose(fp);
 	eval("olsrd");
 
-	dd_syslog(LOG_INFO, "olsrd : OLSR daemon successfully started\n");
+	dd_loginfo("olsrd", "daemon successfully started\n");
 }
 
 #endif

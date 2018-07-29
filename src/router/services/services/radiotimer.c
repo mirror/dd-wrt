@@ -78,7 +78,7 @@ void start_radio_timer(void)
 	char *argv[] = { "radio_timer", NULL };
 	int ret = _evalpid(argv, NULL, 0, &pid);
 
-	dd_syslog(LOG_INFO, "radio_timer : radio timer daemon successfully started\n");
+	dd_loginfo("radio_timer", "radio timer daemon successfully started\n");
 
 	cprintf("done");
 	return;

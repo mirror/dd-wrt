@@ -444,7 +444,7 @@ void start_dnsmasq(void)
 		eval("dnsmasq", "-u", "root", "-g", "root", "--conf-file=/tmp/dnsmasq.conf", "--cache-size=1500", wpad);
 	}
 
-	dd_syslog(LOG_INFO, "dnsmasq : dnsmasq daemon successfully started\n");
+	dd_loginfo("dnsmasq", "daemon successfully started\n");
 
 	cprintf("done\n");
 	return;

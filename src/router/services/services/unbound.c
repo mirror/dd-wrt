@@ -156,7 +156,7 @@ void start_unbound(void)
 			eval("unbound", "-c", "/tmp/unbound.conf");
 		}
 
-		dd_syslog(LOG_INFO, "unbound : recursive dns resolver daemon successfully started\n");
+		dd_loginfo("unbound", "recursive dns resolver daemon successfully started\n");
 	}
 	return;
 }

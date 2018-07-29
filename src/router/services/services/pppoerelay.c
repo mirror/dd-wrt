@@ -36,7 +36,7 @@ void start_pppoerelay(void)
 		else
 			eval("pppoe-relay", "-S", nvram_safe_get("wan_ifname"), "-C", "br0");
 
-		dd_syslog(LOG_INFO, "pppoe-relay successfully started\n");
+		dd_loginfo("pppoe-relay", "successfully started\n");
 	}
 }
 

@@ -83,7 +83,7 @@ void start_openvpnserver(void)
 		&& nvram_matchi("sys_enable_jffs2", 1)))
 		jffs = 1;
 
-	dd_syslog(LOG_INFO, "openvpn : OpenVPN daemon (Server) starting/restarting...\n");
+	dd_loginfo("openvpn", "OpenVPN daemon (Server) starting/restarting...\n");
 	mkdir("/tmp/openvpn", 0700);
 	mkdir("/tmp/openvpn/ccd", 0700);
 	write_nvram("/tmp/openvpn/dh.pem", "openvpn_dh");
@@ -376,7 +376,7 @@ void start_openvpn(void)
 	if (nvram_invmatchi("openvpncl_enable", 1))
 		return;
 	insmod("tun");
-	dd_syslog(LOG_INFO, "openvpn : OpenVPN daemon (Client) starting/restarting...\n");
+	dd_loginfo("openvpn", "OpenVPN daemon (Client) starting/restarting...\n");
 	mkdir("/tmp/openvpncl", 0700);
 	write_nvram("/tmp/openvpncl/ca.crt", "openvpncl_ca");
 	write_nvram("/tmp/openvpncl/client.crt", "openvpncl_client");

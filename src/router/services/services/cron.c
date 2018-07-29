@@ -160,7 +160,7 @@ void start_cron(void)
 	cprintf("starting cron\n");
 
 	ret = eval("cron");
-	dd_syslog(LOG_INFO, "cron : cron daemon successfully started\n");
+	dd_loginfo("cron", "daemon successfully started\n");
 
 	cprintf("done\n");
 	return;
@@ -168,7 +168,7 @@ void start_cron(void)
 
 void stop_cron(void)
 {
-	stop_process("cron", "cron daemon");
+	stop_process("cron", "daemon");
 	cprintf("done\n");
 	return;
 }

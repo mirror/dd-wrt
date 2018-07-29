@@ -248,7 +248,7 @@ void start_pptpd(void)
 	// Execute pptpd daemon
 	eval("pptpd", "-c", "/tmp/pptpd/pptpd.conf", "-o", "/tmp/pptpd/options.pptpd");
 
-	dd_syslog(LOG_INFO, "pptpd : pptp daemon successfully started\n");
+	dd_loginfo("pptpd", "daemon successfully started\n");
 	return;
 }
 
@@ -263,7 +263,7 @@ void stop_pptpd(void)
 #ifdef HAVE_PPTP_ACCEL
 	rmmod("pptp");
 #endif
-	dd_syslog(LOG_INFO, "pptpd : pptp daemon successfully stopped\n");
+	dd_loginfo("pptpd", "daemon successfully stopped\n");
 	return;
 }
 #endif

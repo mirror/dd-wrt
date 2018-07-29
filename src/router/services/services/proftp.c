@@ -185,7 +185,7 @@ void start_ftpsrv(void)
 	if (eval("/usr/bin/taskset", "0x2", "proftpd"))
 #endif
 		eval("proftpd");
-	syslog(LOG_INFO, "Proftpd : proftpd server successfully started\n");
+	dd_loginfo("proftpd", "server successfully started\n");
 
 	return;
 }

@@ -119,15 +119,17 @@ void start_dlna(void)
 	} else {
 		eval("minidlna", "-f", "/tmp/minidlna.conf");
 	}
-	syslog(LOG_INFO, "minidlna : DLNA Media Server successfully started\n");
+	dd_loginfo("minidlna", "DLNA Media Server successfully started\n");
 
 	return;
 }
 
 void start_dlna_rescan(void)
 {
-	if (nvram_match("dlna_enable", "1") && nvram_match("dlna_rescan", "1"))
+	if (nvram_match("dlna_enable", "1") && nvram_match("dlna_rescan", "1")) {
+		dd_loginfo("minidlna", "Start rescan of folders\n");
 		eval("minidlna", "-P", "/var/run/minidlna/minidlna.pid", "-U");
+	}
 }
 
 void stop_dlna(void)

@@ -52,7 +52,7 @@ void start_mactelnetd(void)
 	else
 		return;
 #endif
-	dd_syslog(LOG_INFO, "mactelnetd : MAC Telnet daemon successfully started\n");
+	dd_loginfo("mactelnetd", "daemon successfully started\n");
 
 	cprintf("done\n");
 	return;
@@ -60,6 +60,6 @@ void start_mactelnetd(void)
 
 void stop_mactelnetd(void)
 {
-	stop_process("mactelnetd", "MAC Telnet daemon");
+	stop_process("mactelnetd", "daemon");
 }
 #endif
