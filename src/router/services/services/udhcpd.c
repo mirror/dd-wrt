@@ -309,7 +309,7 @@ void start_udhcpd(void)
 	dns_to_resolv();
 
 	eval("udhcpd", "/tmp/udhcpd.conf");
-	dd_syslog(LOG_INFO, "udhcpd : udhcp daemon successfully started\n");
+	dd_loginfo("udhcpd", "udhcp daemon successfully started\n");
 
 	/*
 	 * Dump static leases to udhcpd.leases so they can be read by dnsmasq 

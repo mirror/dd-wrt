@@ -84,7 +84,7 @@ void start_sshd(void)
 #else
 	sysprintf("dropbear -b /tmp/loginprompt -r %s -p %s %s %s", RSA_HOST_KEY_FILE, port, passwd_ok, forwarding_ok);
 #endif
-	dd_syslog(LOG_INFO, "dropbear : ssh daemon successfully started\n");
+	dd_loginfo("dropbear", "ssh daemon successfully started\n");
 
 	return;
 }

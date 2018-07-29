@@ -391,7 +391,7 @@ static int auth_check(webs_t conn_fp)
 
 	/* Basic authorization info? */
 	if (!conn_fp->authorization || strncmp(conn_fp->authorization, "Basic ", 6) != 0) {
-		dd_syslog(LOG_INFO, "Authentication fail");
+		dd_loginfo("httpd", "Authentication fail");
 
 		goto out;
 	}
@@ -656,7 +656,7 @@ static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, c
 		while (len) {
 			size_t ret = fread(buffer, 1, len > 4096 ? 4096 : len, web);
 			if (!ret) {
-				dd_syslog(LOG_INFO, "%s: cannot ret from stream (%s)\n", __func__, strerror(errno));
+				dd_loginfo("httpd", "%s: cannot ret from stream (%s)\n", __func__, strerror(errno));
 				break;	// deadlock prevention
 			}
 			len -= ret;
@@ -1290,7 +1290,7 @@ get_client_ip_mac(int conn_fd, webs_t conn_fp)
 
 static void handle_server_sig_int(int sig)
 {
-	dd_syslog(LOG_INFO, "httpd server shutdown");
+	dd_loginfo("httpd", "httpd server shutdown");
 	exit(0);
 }
 
@@ -1471,9 +1471,9 @@ int main(int argc, char **argv)
 		}
 	openlog("httpd", LOG_PID | LOG_NDELAY, LOG_DAEMON);
 #ifdef HAVE_HTTPS
-	dd_syslog(LOG_INFO, "httpd server %sstarted at port %d\n", do_ssl ? "(ssl support) " : "", server_port);
+	dd_loginfo("httpd", "httpd server %sstarted at port %d\n", do_ssl ? "(ssl support) " : "", server_port);
 #else
-	dd_syslog(LOG_INFO, "httpd server started at port %d\n", server_port);
+	dd_loginfo("httpd", "httpd server started at port %d\n", server_port);
 #endif
 	/* Ignore broken pipes */
 	signal(SIGPIPE, SIG_IGN);

@@ -48,7 +48,7 @@ void start_udpxy(void)
 
 	eval(cmd, "-m", nicfrom, "-a", listen_if, "-p", listen_port);
 
-	dd_syslog(LOG_INFO, "udpxy : UDP-to-HTTP multicast traffic relay daemon started\n");
+	dd_loginfo("udpxy", "UDP-to-HTTP multicast traffic relay daemon started\n");
 
 	return;
 }
@@ -56,7 +56,6 @@ void start_udpxy(void)
 void stop_udpxy(void)
 {
 	stop_process("udpxy", "UDP-to-HTTP multicast traffic relay daemon");
-	dd_syslog(LOG_INFO, "udpxy : UDP-to-HTTP multicast traffic relay daemon stopped\n");
 	return;
 }
 #endif

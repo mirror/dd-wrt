@@ -91,7 +91,7 @@ void start_igmprt(void)
 	if (ifcount) {
 		if (pidof("igmprt") < 1)
 			ret = _evalpid(argv, NULL, 0, &pid);
-		dd_syslog(LOG_INFO, "igmprt : multicast daemon successfully started\n");
+		dd_loginfo("igmprt", "multicast daemon successfully started\n");
 	}
 
 	cprintf("done\n");

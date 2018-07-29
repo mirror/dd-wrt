@@ -181,7 +181,7 @@ void start_radvd(void)
 	}
 
 	eval("radvd", "-C", "/tmp/radvd.conf");
-	dd_syslog(LOG_INFO, "radvd : RADVD daemon successfully started\n");
+	dd_loginfo("radvd", "RADVD daemon successfully started\n");
 
 	cprintf("done\n");
 	return;

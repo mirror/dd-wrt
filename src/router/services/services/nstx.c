@@ -38,7 +38,7 @@ void start_nstxd(void)
 	if (nvram_matchi("nstxd_enable", 1)) {
 		stop_nstxd();
 		eval("nstxd");
-		dd_syslog(LOG_INFO, "nstxd daemon successfully started\n");
+		dd_loginfo("nstxd", "daemon successfully started\n");
 	}
 }
 

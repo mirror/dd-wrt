@@ -51,7 +51,7 @@ void start_telnetd(void)
 	else
 		return;
 #endif
-	dd_syslog(LOG_INFO, "telnetd : telnet daemon successfully started\n");
+	dd_loginfo("telnetd", "daemon successfully started\n");
 
 	cprintf("done\n");
 	return;
@@ -59,7 +59,7 @@ void start_telnetd(void)
 
 void stop_telnetd(void)
 {
-	stop_process("telnetd", "telnet daemon");
+	stop_process("telnetd", "daemon");
 	cprintf("done\n");
 	return;
 }

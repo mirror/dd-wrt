@@ -73,7 +73,7 @@ void start_wland(void)
 	// return 0;
 
 	_evalpid(wland_argv, NULL, 0, &pid);
-	dd_syslog(LOG_INFO, "wland : WLAN daemon successfully started\n");
+	dd_loginfo("wland", "daemon successfully started\n");
 	cprintf("done\n");
 	return;
 }
