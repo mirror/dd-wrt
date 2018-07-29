@@ -1006,7 +1006,7 @@ static void resetbtn_period_check(int sig)
 	if (nvram_match("dlna_enable", "1") && nvram_match("dlna_rescan", "1")) {
 		dlna_counter++;
 
-		if (dlna_counter % 3600 == 0) {
+		if ((dlna_counter % 3600) == 0) {
 			start_service_force_f("dlna_rescan");
 		}
 	}
