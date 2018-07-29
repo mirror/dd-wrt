@@ -1,7 +1,7 @@
 .\"
 .\"     ipvsadm(8) manual page
 .\"
-.\"	$Id: ipvsadm.8 73 2010-10-07 12:59:40Z horms $
+.\"	$Id$
 .\"
 .\"     Authors: Mike Wangsmo <wanger@redhat.com>
 .\"              Wensong Zhang <wensong@linux-vs.org>
@@ -35,11 +35,11 @@
 .SH NAME
 ipvsadm \- Linux Virtual Server administration
 .SH SYNOPSIS
-.B ipvsadm -A|E -t|u|f \fIservice-address\fP [-s \fIscheduler\fP]
+.B ipvsadm -A|E \fIvirtual-service\fP [-s \fIscheduler\fP]
 .ti 15
-.B [-p [\fItimeout\fP]] [-M \fInetmask\fP]
+.B [-p [\fItimeout\fP]] [-M \fInetmask\fP] [-b \fIsched-flags\fP]
 .br
-.B ipvsadm -D -t|u|f \fIservice-address\fP
+.B ipvsadm -D \fIvirtual-service\fP
 .br
 .B ipvsadm -C
 .br
@@ -47,19 +47,19 @@ ipvsadm \- Linux Virtual Server administration
 .br
 .B ipvsadm -S [-n]
 .br
-.B ipvsadm -a|e -t|u|f \fIservice-address\fP -r \fIserver-address\fP
+.B ipvsadm -a|e \fIvirtual-service\fP -r \fIserver-address\fP
 .ti 15
 .B [-g|i|m] [-w \fIweight\fP] [-x \fIupper\fP] [-y \fIlower\fP]
 .br
-.B ipvsadm -d -t|u|f \fIservice-address\fP -r \fIserver-address\fP
+.B ipvsadm -d \fIvirtual-service\fP -r \fIserver-address\fP
 .br
-.B ipvsadm -L|l [options]
+.B ipvsadm -L|l [\fIvirtual-service\fP] [options]
 .br
-.B ipvsadm -Z [-t|u|f \fIservice-address\fP]
+.B ipvsadm -Z [\fIvirtual-service\fP]
 .br
 .B ipvsadm --set \fItcp\fP \fItcpfin\fP \fIudp\fP
 .br
-.B ipvsadm --start-daemon \fIstate\fP [--mcast-interface \fIinterface\fP]
+.B ipvsadm --start-daemon \fIstate\fP [daemon-options]
 .ti 15
 .B [--syncid \fIsyncid\fP]
 .br
@@ -72,7 +72,7 @@ server table in the Linux kernel. The Linux Virtual Server can be used
 to build scalable network services based on a cluster of two or more
 nodes. The active node of the cluster redirects service requests to a
 collection of server hosts that will actually perform the
-services. Supported features include two protocols (TCP and UDP),
+services. Supported features include three protocols (TCP, UDP and SCTP),
 three packet-forwarding methods (NAT, tunneling, and direct routing),
 and eight load balancing algorithms (round robin, weighted round
 robin, least-connection, weighted least-connection, locality-based
@@ -81,11 +81,11 @@ destination-hashing, and source-hashing).
 .PP
 The command has two basic formats for execution:
 .TP
-.B ipvsadm \fICOMMAND\fP [\fIprotocol\fP] \fIservice-address\fP
+.B ipvsadm \fICOMMAND\fP \fIvirtual-service\fP
 .ti 15
 .B [\fIscheduling-method\fP] [\fIpersistence options\fP]
 .TP
-.B ipvsadm \fIcommand\fP [\fIprotocol\fP] \fIservice-address\fP
+.B ipvsadm \fIcommand\fP \fIvirtual-service\fP
 .ti 15
 .B \fIserver-address\fP [\fIpacket-forwarding-method\fP]
 .ti 15
@@ -167,16 +167,15 @@ balancer fails, a backup load balancer will takeover, and it has state
 of almost all connections, so that almost all established connections
 can continue to access the service.
 .PP
-The sync daemon currently only supports IPv4 connections.
+The sync daemon supports IPv4 and IPv6 connections.
 .TP
 .B --stop-daemon
 Stop the connection synchronization daemon.
 .TP
 \fB-h, --help\fR
 Display a description of the command syntax.
-.SS PARAMETERS
-The commands above accept or require zero or more of the following
-parameters.
+.SS virtual-service
+Specifies the virtual service based on protocol/addr/port or firewall mark.
 .TP
 .B -t, --tcp-service \fIservice-address\fP
 Use TCP service. The \fIservice-address\fP is of the form
@@ -189,6 +188,10 @@ wild-card port, that is connections will be accepted to any port.
 .TP
 .B -u, --udp-service \fIservice-address\fP
 Use UDP service. See the -t|--tcp-service for the description of  the
+\fIservice-address\fP.
+.TP
+.B --sctp-service \fIservice-address\fP
+Use SCTP service. See the -t|--tcp-service for the description of the
 \fIservice-address\fP.
 .TP
 .B -f, --fwmark-service \fIinteger\fP
@@ -206,6 +209,9 @@ single virtual service. This is useful for both simplifying
 configuration if a large number of virtual services are required and
 grouping persistence across what would otherwise be multiple virtual
 services.
+.SS PARAMETERS
+The commands above accept or require zero or more of the following
+parameters.
 .TP
 .B -s, --scheduler \fIscheduling-method\fP
 \fIscheduling-method\fP  Algorithm for allocating TCP connections and
@@ -248,6 +254,9 @@ addresses.
 .sp
 \fBsh\fR - Source Hashing: assigns jobs to servers through looking up
 a statically assigned hash table by their source IP addresses.
+This scheduler has two flags: sh-fallback, which enables fallback to a
+different server if the selected server was unavailable, and sh-port,
+which adds the source port number to the hash computation.
 .sp
 \fBsed\fR - Shortest Expected Delay: assigns an incoming job to the
 server with the shortest expected delay. The expected delay that the
@@ -285,6 +294,11 @@ granularity is per client host. Less specific netmasks may be used to
 resolve problems with non-persistent cache clusters on the client side.
 IPv6 netmasks should be specified as a prefix length between 1 and 128.
 The default prefix length is 128.
+.TP
+.B -b, --sched-flags \fIsched-flags\fP
+Set scheduler flags for this virtual server.  \fIsched-flags\fP is a
+comma-separated list of flags.  See the scheduler descriptions for
+valid scheduler flags.
 .TP
 .B -r, --real-server \fIserver-address\fP
 Real server that an associated request for service may be assigned to.
@@ -344,18 +358,6 @@ connections drops below its lower connection threshold. If
 \fIlthreshold\fP is not set but \fIuthreshold\fP is set, the server
 will receive new connections when the number of its connections drops
 below three forth of its upper connection threshold.
-.TP
-.B --mcast-interface \fIinterface\fP
-Specify the multicast interface that the sync master daemon sends
-outgoing multicasts through, or the sync backup daemon listens to for
-multicasts.
-.TP
-.B --syncid \fIsyncid\fP
-Specify the \fIsyncid\fP that the sync master daemon fills in the
-SyncID header while sending multicast messages, or the sync backup
-daemon uses to filter out multicast messages not matched with the
-SyncID value. The valid values of \fIsyncid\fP are 0 through to
-255. The default is 0, which means no filtering at all.
 .TP
 .B -c, --connection
 Connection output. The \fIlist\fP command with this option will list
@@ -424,6 +426,45 @@ One-packet scheduling.
 Used in conjunction with a UDP virtual service or
 a fwmark virtual service that handles only UDP packets.
 All connections are created such that they only schedule one packet.
+.SS PARAMETERS FOR SYNCHRONIZATION DAEMON
+The --start-daemon requires zero or more of the following
+parameters.
+.TP
+.B --syncid \fIsyncid\fP
+Specify the \fIsyncid\fP that the sync master daemon fills in the
+SyncID header while sending multicast messages, or the sync backup
+daemon uses to filter out multicast messages not matched with the
+SyncID value. The valid values of \fIsyncid\fP are 0 through to
+255. The default is 0, which means no filtering at all.
+.TP
+.B --sync-maxlen \fIlength\fP
+Specify the desired length of sync messages (UDP payload size).
+It is expected that backup server will use value not less than
+the used value in master server.
+The valid values of \fIlength\fP are in the 1 .. (65535 - 20 - 8)
+range but the kernel ensures a space for at least one sync message.
+If value is lower than MTU the sync messages will be fragmented by
+IP layer.
+The default value is derived from the MTU value when daemon is started
+but master daemon will not default to value above 1500 for compatibility
+reasons.
+.TP
+.B --mcast-interface \fIinterface\fP
+Specify the multicast interface that the sync master daemon sends
+outgoing multicasts through, or the sync backup daemon listens to for
+multicasts.
+.TP
+.B --mcast-group \fIaddress\fP
+Specify IPv4 or IPv6 multicast address for the sync messages.
+The default value is 224.0.0.81.
+.TP
+.B --mcast-port \fIport\fP
+Specify the UDP port for sync messages.
+The default value is 8848.
+.TP
+.B --mcast-ttl \fIttl\fP
+Specify the TTL value for sync messages (1 .. 255).
+The default value is 1.
 .SH EXAMPLE 1 - Simple Virtual Service
 The following commands configure a Linux Director to distribute
 incoming requests addressed to port 80 on 207.175.44.110 equally to
