@@ -29,10 +29,7 @@
 
 void stop_rstats(void)
 {
-	if (pidof("rstats") > 0) {
-		dd_syslog(LOG_INFO, "rstats : rstats daemon successfully stopped\n");
-		killall("rstats", SIGTERM);
-	}
+	stop_process("rstats", "daemon");
 }
 
 void start_rstats(void)
@@ -47,7 +44,7 @@ void start_rstats(void)
 	if (nvram_matchi("rstats_enable", 1)) {
 		stop_rstats();
 		eval("rstats");
-		dd_syslog(LOG_INFO, "rstats daemon successfully started\n");
+		dd_loginfo("rstats", "daemon successfully started\n");
 	}
 }
 

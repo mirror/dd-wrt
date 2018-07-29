@@ -131,7 +131,7 @@ void start_chilli(void)
 #else
 		ret = eval("chilli", "-c", "/tmp/chilli/hotss.conf");
 #endif
-		dd_syslog(LOG_INFO, "hotspotsystem : chilli daemon successfully started\n");
+		dd_loginfo("hotspotsystem", "chilli daemon successfully started\n");
 	} else {
 #ifdef HAVE_COOVA_CHILLI
 		putenv("CHILLISTATEDIR=/var/run/chilli1");
@@ -140,7 +140,7 @@ void start_chilli(void)
 #else
 		ret = eval("chilli", "-c", "/tmp/chilli/chilli.conf");
 #endif
-		dd_syslog(LOG_INFO, "chilli : chilli daemon successfully started\n");
+		dd_loginfo("chilli", "chilli daemon successfully started\n");
 	}
 #ifdef HAVE_TIEXTRA1
 	start_mchilli();

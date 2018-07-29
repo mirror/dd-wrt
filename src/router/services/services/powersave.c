@@ -31,10 +31,10 @@
 void start_powersafe(void)
 {
 	if (nvram_matchi("powersave", 1)) {
-		dd_syslog(LOG_INFO, "powersave : Ondemand CPUFrequency scaler Enabled\n");
+		dd_loginfo("powersave", "Ondemand CPUFrequency scaler Enabled\n");
 		sysprintf("echo ondemand > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
 	} else {
-		dd_syslog(LOG_INFO, "powersave : Performance CPUFrequency scaler Enabled\n");
+		dd_loginfo("powersave", "Performance CPUFrequency scaler Enabled\n");
 		sysprintf("echo performance > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
 	}
 	return;

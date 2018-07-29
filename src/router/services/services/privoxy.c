@@ -116,7 +116,7 @@ void start_privoxy(void)
 	}
 	fclose(fp);
 	eval("privoxy", "/tmp/privoxy.conf");
-	syslog(LOG_INFO, "Privoxy : privoxy started\n");
+	dd_loginfo("privoxy", "successfully started\n");
 	return;
 }
 

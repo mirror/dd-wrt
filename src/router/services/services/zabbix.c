@@ -44,7 +44,7 @@ void start_zabbix(void)
 		//syslog(LOG_INFO, "dlna : minidlna already running\n");
 	} else {
 		eval("sh", "/etc/config/zabbix.startup");
-		syslog(LOG_INFO, "zabbix : monitoring client started\n");
+		dd_loginfo("zabbix", "monitoring client started\n");
 	}
 
 	return;

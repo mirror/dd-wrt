@@ -280,7 +280,7 @@ void start_splashd(void)
 	fclose(fp);
 	chmod("/tmp/start_splashd.sh", 0700);
 	system2("/tmp/start_splashd.sh&");
-	dd_syslog(LOG_INFO, "splashd : splash daemon successfully started\n");
+	dd_loginfo("splashd", "nocatsplash daemon successfully started\n");
 
 	cprintf("done\n");
 	return;

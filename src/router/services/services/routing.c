@@ -66,7 +66,7 @@ static int zebra_init(void)
 		}
 	}
 	if (services) {
-		dd_syslog(LOG_INFO, "zebra : zebra (%s) successfully initiated\n", daemons);
+		dd_loginfo("zebra", "(%s) successfully initiated\n", daemons);
 		system(daemons);
 	}
 	return 0;
@@ -674,7 +674,7 @@ static int bird_init(void)
 		fclose(fp);
 
 		eval("bird", "-c", "/tmp/bird/bird.conf");
-		dd_syslog(LOG_INFO, "bird : bird daemon successfully started\n");
+		dd_loginfo("bird", "daemon successfully started\n");
 	}
 	return 0;
 

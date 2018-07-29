@@ -137,7 +137,7 @@ void start_resetbutton(void)
 	int ret = 0;
 
 	ret = eval("resetbutton");
-	dd_syslog(LOG_INFO, "resetbutton : resetbutton daemon successfully started\n");
+	dd_loginfo("resetbutton", "resetbutton daemon successfully started\n");
 
 	cprintf("done\n");
 	return;
@@ -158,7 +158,7 @@ void start_iptqueue(void)
 		return;
 
 	ret = eval("iptqueue");
-	dd_syslog(LOG_INFO, "iptqueue successfully started\n");
+	dd_loginfo("iptqueue", "successfully started\n");
 
 	cprintf("done\n");
 	return;
@@ -176,7 +176,7 @@ void stop_ipv6(void)
 {
 	rmmod("ipcomp6 xfrm6_tunnel xfrm6_mode_tunnel xfrm6_mode_transport xfrm6_mode xfrm6_mode_beet ip6_tunnel tunnel6 mip6 ah6 esp6 ipv6");
 
-	dd_syslog(LOG_INFO, "ipv6 successfully stopped\n");
+	dd_loginfo("ipv6", "successfully stopped\n");
 
 }
 
@@ -189,7 +189,7 @@ void start_ipv6(void)
 
 	insmod("ipv6 tunnel4 ip_tunnel sit xfrm_algo esp6 ah6 mip6 tunnel6 ip6_tunnel xfrm6_mode_beet xfrm6_mode_ro xfrm6_mode_transport xfrm6_mode_tunnel xfrm6_tunnel xfrm_ipcomp ipcomp6");
 
-	dd_syslog(LOG_INFO, "ipv6 successfully started\n");
+	dd_loginfo("ipv6", "successfully started\n");
 
 	cprintf("done\n");
 	return;
@@ -223,7 +223,7 @@ void stop_dhcpc(void)
 		int pid;
 		fscanf(fp, "%d", &pid);
 		fclose(fp);
-		dd_syslog(LOG_INFO, "udhcpc : udhcp client process successfully stopped\n");
+		dd_loginfo("udhcpc", "udhcp client process successfully stopped\n");
 		kill(pid, SIGTERM);
 	}
 #ifdef HAVE_3G

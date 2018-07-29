@@ -185,7 +185,6 @@ void start_dhcp6s(void)
 		if (nvram_invmatch("ipv6_get_domain", ""))
 			fprintf(fp, "option domain-name \"%s\";\n", nvram_safe_get("ipv6_get_domain"));
 		if (nvram_matchi("dhcp6s_seq_ips", 1)) {
-			dd_syslog(LOG_INFO, "kong: dhcp6c ipv6_prefix: %s\n", nvram_get("ipv6_prefix"));
 			fprintf(fp, "\ninterface %s {\n", nvram_get("lan_ifname"));
 			fprintf(fp, "\tallow rapid-commit;\n\taddress-pool pool1 30 86400;\n};\n");
 			fprintf(fp, "pool pool1 {\n \t range %s1000 to %sffff;\n};\n", nvram_get("ipv6_prefix"), nvram_get("ipv6_prefix"));

@@ -181,7 +181,7 @@ void start_freeradius(void)
 	}
 	ret = _evalpid(radiusd_argv, NULL, 0, &pid);
 
-	dd_syslog(LOG_INFO, "radiusd : FreeRadius daemon successfully started\n");
+	dd_loginfo("radiusd", "FreeRadius daemon successfully started\n");
 
 	return;
 }

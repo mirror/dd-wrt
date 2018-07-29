@@ -43,7 +43,7 @@ void start_lltd(void)
 	 */
 	stop_process("lld2d", "Stop LLTD Daemon");
 	ret = eval("lld2d", nvram_safe_get("lan_ifname"));
-	dd_syslog(LOG_INFO, "lld2d : LLTD Daemon successfully started\n");
+	dd_loginfo("lld2d", "LLTD Daemon successfully started\n");
 	return;
 }
 

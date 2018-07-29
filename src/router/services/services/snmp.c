@@ -87,7 +87,7 @@ void start_snmp(void)
 	_evalpid(snmpd_argv, NULL, 0, &pid);
 
 	cprintf("done\n");
-	dd_syslog(LOG_INFO, "snmpd : SNMP daemon successfully started\n");
+	dd_loginfo("snmpd", "SNMP daemon successfully started\n");
 
 	return;
 }

@@ -246,9 +246,9 @@ void start_aoss(void)
 		eval("iptables", "-I", "OUTPUT", "-o", "aoss", "-j", "ACCEPT");
 		eval("iptables", "-I", "INPUT", "-i", "aoss", "-j", "ACCEPT");
 		ret = eval("aoss", "-i", "aoss", "-m", "ap");
-		dd_syslog(LOG_INFO, "aoss : aoss daemon successfully started\n");
+		dd_loginfo("aoss", "daemon successfully started\n");
 	} else
-		dd_syslog(LOG_INFO, "aoss : aoss daemon not started (operation mode is not AP or WDSAP)\n");
+		dd_loginfo("aoss", "daemon not started (operation mode is not AP or WDSAP)\n");
 
 #endif
 	cprintf("done\n");
