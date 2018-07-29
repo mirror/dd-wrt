@@ -109,7 +109,7 @@ int get_mtu_val(void)
 		else
 			return nvram_geti("wan_mtu");
 	} else
-		return atoi(getBridgeMTU(get_wshaper_dev(),buf));
+		return atoi(getBridgeMTU(get_wshaper_dev(), buf));
 }
 
 struct namemaps {
