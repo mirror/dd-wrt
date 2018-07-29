@@ -57,7 +57,7 @@ void start_httpd(void)
 
 		chdir("/www");
 		ret = eval("httpd", "-S");
-		syslog(LOG_INFO, "httpd", "https daemon successfully started\n");
+		dd_loginfo("httpd", "https daemon successfully started\n");
 		chdir("/");
 	}
 #endif

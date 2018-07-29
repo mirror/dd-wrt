@@ -139,7 +139,7 @@ void start_lighttpd(void)
 		eval("lighttpd", "-f", "/tmp/lighttpd.conf");
 	}
 
-	syslog(LOG_INFO, "lighttpd : lighttpd started\n");
+	dd_loginfo("lighttpd", "lighttpd started\n");
 	return;
 }
 
