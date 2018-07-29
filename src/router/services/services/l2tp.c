@@ -279,8 +279,8 @@ void stop_l2tp(void)
 
 	unlink("/tmp/ppp/link");
 
-	stop_process("pppd", "ppp daemon");
-	stop_process("xl2tpd", "L2TP daemon");
+	stop_process("pppd", "daemon");
+	stop_process("xl2tpd", "daemon");
 	stop_process("listen", "connectivity listener");
 
 	cprintf("done\n");

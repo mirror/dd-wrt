@@ -311,25 +311,13 @@ void start_udhcpd(void)
 	eval("udhcpd", "/tmp/udhcpd.conf");
 	dd_loginfo("udhcpd", "udhcp daemon successfully started\n");
 
-	/*
-	 * Dump static leases to udhcpd.leases so they can be read by dnsmasq 
-	 */
-	/*
-	 * DD-WRT (belanger) : the dump database is now handled directly in
-	 * udhcpd 
-	 */
-	// sprintf (sigusr1, "-%d", SIGUSR1);
-	// killps("udhcpd",sigusr1);
-
-	// eval ("killall", sigusr1, "udhcpd");
-
 	cprintf("done\n");
 	return;
 }
 
 void stop_udhcpd(void)
 {
-	stop_process("udhcpd", "DHCP daemon");
+	stop_process("udhcpd", "daemon");
 	return;
 }
 

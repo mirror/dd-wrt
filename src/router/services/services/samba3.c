@@ -229,8 +229,8 @@ void start_samba3(void)
 
 void stop_samba3(void)
 {
-	stop_process("smbd", "samba");
-	stop_process("nmbd", "nmbd");
+	stop_process("smbd", "samba daemon");
+	stop_process("nmbd", "daemon");
 	//samba has changed the way pidfiles are named, thus stop process will not kill smbd and nmbd pidfiles, see pidfile.c in samba 
 	sysprintf("rm -rf /var/run/*smb.conf.pid");
 

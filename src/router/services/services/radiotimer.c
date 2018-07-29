@@ -89,7 +89,7 @@ void stop_radio_timer(void)
 {
 
 #ifndef HAVE_NOWIFI
-	stop_process("radio_timer", "radio timer daemon");
+	stop_process("radio_timer", "daemon");
 	cprintf("done\n");
 
 	return;

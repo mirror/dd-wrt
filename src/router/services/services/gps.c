@@ -36,8 +36,8 @@ void start_gps(void)
 
 void stop_gps(void)
 {
-	stop_process("gpsi", "GPS: stopping gps polling service");
-	stop_process("gpsd", "GPS: stopping gpsd service");
+	stop_process("gpsi", "polling service");
+	stop_process("gpsd", "gpsd service");
 	return;
 }
 #endif

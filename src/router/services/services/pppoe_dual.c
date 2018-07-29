@@ -277,7 +277,7 @@ void start_pppoe_dual(int status)
 #ifdef HAVE_PPTP
 	stop_pptp();
 #endif
-	stop_process("pppd", "PPP daemon");
+	stop_process("pppd", "daemon");
 	start_pppmodules();
 	eval("pppd", "file", "/tmp/ppp/options.pppoe");
 
@@ -291,7 +291,7 @@ void start_pppoe_dual(int status)
 void stop_pppoe_dual()
 {
 	unlink("/tmp/ppp/link");
-	stop_process("pppd", "pppoe process");
+	stop_process("pppd", "pppoe daemon");
 
 	cprintf("done\n");
 	return;

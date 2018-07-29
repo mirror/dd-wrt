@@ -711,16 +711,16 @@ void stop_zebra(void)
 {
 
 #ifdef HAVE_QUAGGA
-	stop_process("watchquagga", "watchquagga daemon");
-	stop_process("zebra", "zebra daemon");
-	stop_process("ripd", "rip daemon");
-	stop_process("ospfd", "ospf daemon");
-	stop_process("ospf6d", "ospf6 daemon");
-	stop_process("bgpd", "bgp daemon");
+	stop_process("watchquagga", "daemon");
+	stop_process("zebra", "daemon");
+	stop_process("ripd", "daemon");
+	stop_process("ospfd", "daemon");
+	stop_process("ospf6d", "daemon");
+	stop_process("bgpd", "daemon");
 	return;
 
 #elif defined(HAVE_BIRD)
-	stop_process("bird", "bird daemon");
+	stop_process("bird", "daemon");
 	return;
 
 #else

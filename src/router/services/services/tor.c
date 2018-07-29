@@ -36,7 +36,7 @@
 
 void stop_tor(void)
 {
-	stop_process("tor", "Stopping TOR");
+	stop_process("tor", "daemon");
 }
 
 void start_tor(void)

@@ -44,12 +44,12 @@ void start_transmission(void)
 	eval("mkdir", "-p", nvram_safe_get("transmission_dir"));
 
 	eval("transmissiond", "--config-dir", nvram_safe_get("transmission_dir"));
-	syslog(LOG_INFO, "transmission : transmissiond started\n");
+	dd_loginfo("transmission","daemon successfully started\n");
 	return;
 }
 
 void stop_transmission(void)
 {
-	stop_process("transmissiond", "transmissiond");
+	stop_process("transmission", "daemon");
 }
 #endif

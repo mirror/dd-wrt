@@ -56,7 +56,7 @@
 
 void stop_wland(void)
 {
-	stop_process("wland", "WLAN daemon");
+	stop_process("wland", "daemon");
 	return;
 }
 
