@@ -4,7 +4,7 @@
 #      A very simple wrapper to save IPVS rules
 #      Inspired by ipchains-save.
 #
-#      Version: $Id: ipvsadm-save 49 2001-03-27 09:27:54Z wensong $
+#      Version: $Id$
 #
 #      Script Author: Horms <horms@vergenet.net>
 #

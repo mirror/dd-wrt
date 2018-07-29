@@ -2,7 +2,7 @@
 #      ipvsadm - IP Virtual Server ADMinistration program
 #                for IPVS NetFilter Module in kernel 2.4
 #
-#      Version: $Id: Makefile 77 2011-02-08 00:23:51Z wensong $
+#      Version: $Id$
 #
 #      Authors: Wensong Zhang <wensong@linux-vs.org>
 #               Peter Kese <peter.kese@ijs.si>
@@ -36,16 +36,17 @@ RPMSOURCEDIR	= $(shell rpm --eval '%_sourcedir')
 RPMSPECDIR	= $(shell rpm --eval '%_specdir')
 
 #CC		= gcc
-#INCLUDE		=
-SBIN		= $(BUILD_ROOT)$(INSTALLDIR)/usr/sbin
-MANDIR		= $(INSTALLDIR)/usr/man
-MAN		= $(BUILD_ROOT)$(INSTALLDIR)/$(MANDIR)/man8
-INIT		= $(BUILD_ROOT)$(INSTALLDIR)/etc/rc.d/init.d
+INCLUDE		=
+SBIN		= $(BUILD_ROOT)/sbin
+MANDIR		= usr/man
+MAN		= $(BUILD_ROOT)/$(MANDIR)/man8
+INIT		= $(BUILD_ROOT)/etc/rc.d/init.d
 MKDIR		= mkdir
 INSTALL		= install
 STATIC_LIBS	= libipvs/libipvs.a
 
 CFLAGS = $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -DNEED_PRINTF  -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/libnl-tiny
+
 
 #####################################
 # No servicable parts below this line
@@ -57,18 +58,19 @@ RPMBUILD = $(shell				\
 		echo "/bin/rpm";		\
 	fi )
 
-
-ifneq (,$(POPT_LIB))
-POPT_DEFINE = -DHAVE_POPT
-endif
-
 OBJS		= ipvsadm.o config_stream.o dynamic_array.o popt.o popthelp.o poptparse.o poptint.o
-LIBS		= $(POPT_LIB)
+LIBS		= -lnl-tiny
 ifneq (0,$(HAVE_NL))
-LIBS		+= -lnl-tiny
+LIBS		+= $(shell \
+		if which pkg-config > /dev/null 2>&1; then \
+		  if   pkg-config --libs libnl-genl-3.0  2> /dev/null; then :;\
+		  elif pkg-config --libs libnl-2.0       2> /dev/null; then :;\
+		  elif pkg-config --libs libnl-1         2> /dev/null; then :;\
+		  fi; \
+		else echo "-lnl"; fi)
 endif
 DEFINES		= -DVERSION=\"$(VERSION)\" -DSCHEDULERS=\"$(SCHEDULERS)\" \
-		  -DPE_LIST=\"$(PE_LIST)\" $(POPT_DEFINE)
+		  -DPE_LIST=\"$(PE_LIST)\" -DHAVE_POPT
 DEFINES		+= $(shell if [ ! -f ../ip_vs.h ]; then	\
 		     echo "-DHAVE_NET_IP_VS_H"; fi;)
 
