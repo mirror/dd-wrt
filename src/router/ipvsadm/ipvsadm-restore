@@ -4,7 +4,7 @@
 #      A very simple wrapper to restore IPVS rules
 #      Inspired by ipchains-save.
 #
-#      Version: $Id: ipvsadm-restore 54 2008-09-15 20:09:17Z vince $
+#      Version: $Id$
 #
 #      Script Author: Horms <horms@vergenet.net>
 #

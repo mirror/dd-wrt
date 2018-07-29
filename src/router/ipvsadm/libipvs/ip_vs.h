@@ -10,7 +10,6 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <linux/types.h>	/* For __beXX types in userland */
-#include <sys/types.h>
 
 #ifdef LIBIPVS_USE_NL
 #include <netlink/netlink.h>
@@ -30,6 +29,13 @@
 #define IP_VS_SVC_F_PERSISTENT	0x0001		/* persistent port */
 #define IP_VS_SVC_F_HASHED	0x0002		/* hashed entry */
 #define IP_VS_SVC_F_ONEPACKET	0x0004		/* one-packet scheduling */
+#define IP_VS_SVC_F_SCHED1	0x0008		/* scheduler flag 1 */
+#define IP_VS_SVC_F_SCHED2	0x0010		/* scheduler flag 2 */
+#define IP_VS_SVC_F_SCHED3	0x0020		/* scheduler flag 3 */
+
+#define IP_VS_SVC_F_SCHED_SH_FALLBACK	IP_VS_SVC_F_SCHED1 /* SH fallback */
+#define IP_VS_SVC_F_SCHED_SH_PORT	IP_VS_SVC_F_SCHED2 /* SH use port */
+
 
 /*
  *      IPVS sync daemon states
@@ -189,6 +195,22 @@ struct ip_vs_stats_user
 	__u32			outbps;		/* current out byte rate */
 };
 
+/*
+ *	IPVS statistics object (for user space), 64-bit
+ */
+struct ip_vs_stats64 {
+	__u64			conns;		/* connections scheduled */
+	__u64			inpkts;		/* incoming packets */
+	__u64			outpkts;	/* outgoing packets */
+	__u64			inbytes;	/* incoming bytes */
+	__u64			outbytes;	/* outgoing bytes */
+
+	__u64			cps;		/* current connection rate */
+	__u64			inpps;		/* current in packet rate */
+	__u64			outpps;		/* current out packet rate */
+	__u64			inbps;		/* current in byte rate */
+	__u64			outbps;		/* current out byte rate */
+};
 
 /* The argument to IP_VS_SO_GET_INFO */
 struct ip_vs_getinfo {
@@ -247,6 +269,8 @@ struct ip_vs_service_entry {
 	union nf_inet_addr	addr;
 	char			pe_name[IP_VS_PENAME_MAXLEN];
 
+	/* statistics, 64-bit */
+	struct ip_vs_stats64	stats64;
 };
 
 struct ip_vs_dest_entry_kern {
@@ -283,6 +307,9 @@ struct ip_vs_dest_entry {
 	struct ip_vs_stats_user stats;
 	u_int16_t		af;
 	union nf_inet_addr	addr;
+
+	/* statistics, 64-bit */
+	struct ip_vs_stats64	stats64;
 };
 
 /* The argument to IP_VS_SO_GET_DESTS */
@@ -342,6 +369,17 @@ struct ip_vs_timeout_user {
 
 
 /* The argument to IP_VS_SO_GET_DAEMON */
+struct ip_vs_daemon_kern {
+	/* sync daemon state (master/backup) */
+	int			state;
+
+	/* multicast interface name */
+	char			mcast_ifn[IP_VS_IFNAME_MAXLEN];
+
+	/* SyncID we belong to */
+	int			syncid;
+};
+
 struct ip_vs_daemon_user {
 	/* sync daemon state (master/backup) */
 	int			state;
@@ -351,6 +389,21 @@ struct ip_vs_daemon_user {
 
 	/* SyncID we belong to */
 	int			syncid;
+
+	/* UDP Payload Size */
+	int			sync_maxlen;
+
+	/* Multicast Port (base) */
+	u_int16_t		mcast_port;
+
+	/* Multicast TTL */
+	u_int16_t		mcast_ttl;
+
+	/* Multicast Address Family */
+	u_int16_t		mcast_af;
+
+	/* Multicast Address */
+	union nf_inet_addr	mcast_group;
 };
 
 
@@ -414,7 +467,7 @@ enum {
 	__IPVS_CMD_ATTR_MAX,
 };
 
-#define IPVS_CMD_ATTR_MAX (__IPVS_SVC_ATTR_MAX - 1)
+#define IPVS_CMD_ATTR_MAX (__IPVS_CMD_ATTR_MAX - 1)
 
 /*
  * Attributes used to describe a service
@@ -437,6 +490,8 @@ enum {
 	IPVS_SVC_ATTR_STATS,		/* nested attribute for service stats */
 
 	IPVS_SVC_ATTR_PE_NAME,		/* name of scheduler */
+
+	IPVS_SVC_ATTR_STATS64,		/* nested attribute for service stats */
 
 	__IPVS_SVC_ATTR_MAX,
 };
@@ -464,6 +519,11 @@ enum {
 	IPVS_DEST_ATTR_PERSIST_CONNS,	/* persistent connections */
 
 	IPVS_DEST_ATTR_STATS,		/* nested attribute for dest stats */
+
+	IPVS_DEST_ATTR_ADDR_FAMILY,	/* Address family of address */
+
+	IPVS_DEST_ATTR_STATS64,		/* nested attribute for dest stats */
+
 	__IPVS_DEST_ATTR_MAX,
 };
 
@@ -479,6 +539,11 @@ enum {
 	IPVS_DAEMON_ATTR_STATE,		/* sync daemon state (master/backup) */
 	IPVS_DAEMON_ATTR_MCAST_IFN,	/* multicast interface name */
 	IPVS_DAEMON_ATTR_SYNC_ID,	/* SyncID we belong to */
+	IPVS_DAEMON_ATTR_SYNC_MAXLEN,	/* UDP Payload Size */
+	IPVS_DAEMON_ATTR_MCAST_GROUP,	/* IPv4 Multicast Address */
+	IPVS_DAEMON_ATTR_MCAST_GROUP6,	/* IPv6 Multicast Address */
+	IPVS_DAEMON_ATTR_MCAST_PORT,	/* Multicast Port (base) */
+	IPVS_DAEMON_ATTR_MCAST_TTL,	/* Multicast TTL */
 	__IPVS_DAEMON_ATTR_MAX,
 };
 
@@ -487,7 +552,8 @@ enum {
 /*
  * Attributes used to describe service or destination entry statistics
  *
- * Used inside nested attributes IPVS_SVC_ATTR_STATS and IPVS_DEST_ATTR_STATS
+ * Used inside nested attributes IPVS_SVC_ATTR_STATS, IPVS_DEST_ATTR_STATS,
+ * IPVS_SVC_ATTR_STATS64 and IPVS_DEST_ATTR_STATS64.
  */
 enum {
 	IPVS_STATS_ATTR_UNSPEC = 0,
