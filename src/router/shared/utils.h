@@ -1224,8 +1224,10 @@ char *getRADev(char *prefix);
 
 #ifndef HAVE_SYSLOG
 #define dd_syslog(a, args...) do { } while(0);
+#define dd_loginfo(a, args...) do { } while(0);
 #else
 #define dd_syslog(a, args...) syslog( a,## args);
+#define dd_loginfo(a, args...) syslog(LOG_INFO, a,## args);
 #endif
 #endif
 
