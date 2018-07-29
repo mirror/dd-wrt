@@ -24,15 +24,15 @@ DEFINES		+= $(shell if which pkg-config > /dev/null 2>&1; then \
 
 .PHONY		= all clean install dist distclean rpm rpms
 STATIC_LIB	= libipvs.a
-SHARED_LIB	= libipvs.so
+#SHARED_LIB	= libipvs.so
 
-all:		$(STATIC_LIB) $(SHARED_LIB)
+all:		$(STATIC_LIB)
 
 $(STATIC_LIB):	libipvs.o ip_vs_nl_policy.o
 		ar rv $@ $^
 
-$(SHARED_LIB):	libipvs.o ip_vs_nl_policy.o
-		$(CC) -shared -Wl,-soname,$@ -o $@ $^
+#$(SHARED_LIB):	libipvs.o ip_vs_nl_policy.o
+#		$(CC) -shared -Wl,-soname,$@ -o $@ $^
 
 %.o:		%.c
 		$(CC) $(CFLAGS) $(INCLUDE) $(DEFINES) -c -o $@ $<
