@@ -64,6 +64,9 @@ endif
 
 all : gnupg $(BINS)
 
+configure:
+	rm -f libgpg-error/Makefile
+	rm -f libgcrypt/Makefile
 gnupg :
 	if test ! -e "libgpg-error/Makefile"; then cd libgpg-error && ./configure --host=$(ARCH)-linux --prefix=/usr  --libdir=/usr/lib --disable-nls; fi
 	make -C libgpg-error
