@@ -191,13 +191,13 @@ int dd_timer_create(clockid_t clock_id,	/* clock ID (always CLOCK_REALTIME) */
 	struct event *event;
 
 	if (clock_id != CLOCK_REALTIME) {
-		dd_syslog(LOG_INFO, "timer_create can only support clock id CLOCK_REALTIME");
+		dd_loginfo("timer", "timer_create can only support clock id CLOCK_REALTIME");
 		return -1;
 	}
 
 	if (evp != NULL) {
 		if (evp->sigev_notify != SIGEV_SIGNAL || evp->sigev_signo != SIGALRM) {
-			dd_syslog(LOG_INFO, "timer_create can only support signalled alarms using SIGALRM");
+			dd_loginfo("timer", "timer_create can only support signalled alarms using SIGALRM");
 			return -1;
 		}
 	}
@@ -205,7 +205,7 @@ int dd_timer_create(clockid_t clock_id,	/* clock ID (always CLOCK_REALTIME) */
 	event = event_freelist;
 	if (event == NULL) {
 		print_event_queue();
-		dd_syslog(LOG_INFO, "eventlist is full\n");
+		dd_loginfo("timer", "eventlist is full\n");
 		return -1;
 	}
 	assert(event != NULL);
@@ -228,7 +228,7 @@ int dd_timer_delete(timer_t timerid	/* timer ID */
 	struct event *event = (struct event *)timerid;
 
 	if (event->flags & TFLAG_DELETED) {
-		dd_syslog(LOG_INFO, "Cannot delete a deleted event");
+		dd_loginfo("timer", "Cannot delete a deleted event");
 		return 1;
 	}
 
@@ -298,7 +298,7 @@ int dd_timer_settime(timer_t timerid,	/* timer ID */
 	event->start = uclock();
 #endif
 	if (event->next) {
-		dd_syslog(LOG_INFO, "calling timer_settime with a timer that is already on the queue.");
+		dd_loginfo("timer", "calling timer_settime with a timer that is already on the queue.");
 	}
 
 	/* We always want to make sure that the event at the head of the
@@ -321,7 +321,7 @@ int dd_timer_settime(timer_t timerid,	/* timer ID */
 				/* it is an error if the amount of time remaining is more than the
 				 * amount of time requested by the top event.
 				 */
-				dd_syslog(LOG_INFO, "timer_settime: TIMER ERROR!");
+				dd_loginfo("timer", "timer_settime: TIMER ERROR!");
 
 			} else {
 				/* some portion of the top event has already expired.
@@ -396,11 +396,11 @@ static void check_timer()
 
 	getitimer(ITIMER_REAL, &itimer);
 	if (timerisset(&itimer.it_interval)) {
-		dd_syslog(LOG_INFO, "ERROR timer interval is set.");
+		dd_loginfo("timer", "ERROR timer interval is set.");
 	}
 	/* CSTYLED */
 	if (timercmp(&(itimer.it_value), &(event_queue->it_value), >)) {
-		dd_syslog(LOG_INFO, "ERROR timer expires later than top event.");
+		dd_loginfo("timer", "ERROR timer expires later than top event.");
 	}
 }
 
@@ -421,7 +421,7 @@ static void check_event_queue()
 	timerclear(&sum);
 	for (event = event_queue; event; event = event->next) {
 		if (i > g_maxevents) {
-			dd_syslog(LOG_INFO, "timer queue looks like it loops back on itself!");
+			dd_loginfo("timer", "timer queue looks like it loops back on itself!");
 			print_event_queue();
 			exit(1);
 		}
@@ -449,10 +449,10 @@ static void print_event_queue()
 	int i = 0;
 
 	for (event = event_queue; event; event = event->next) {
-		dd_syslog(LOG_INFO, "#%d (0x%lx)->0x%lx: \t%d sec %d usec\t%p\n", i++, (unsigned long)event, (unsigned long)event->next, (int)
-			  event->it_value.tv_sec, (int)event->it_value.tv_usec, event->func);
+		dd_loginfo("timer", "#%d (0x%lx)->0x%lx: \t%d sec %d usec\t%p\n", i++, (unsigned long)event, (unsigned long)event->next, (int)
+			   event->it_value.tv_sec, (int)event->it_value.tv_usec, event->func);
 		if (i > g_maxevents) {
-			dd_syslog(LOG_INFO, "...(giving up)\n");
+			dd_loginfo("timer", "...(giving up)\n");
 			break;
 		}
 	}
@@ -566,7 +566,7 @@ static void alarm_handler(int i)
 		setitimer(ITIMER_REAL, &itimer, NULL);
 		check_timer();
 	} else {
-		dd_syslog(LOG_INFO, "There are no events in the queue - timer not reset.");
+		dd_loginfo("timer", "There are no events in the queue - timer not reset.");
 	}
 
 	dd_unblock_timer();
@@ -620,7 +620,7 @@ void dd_timer_cancel(timer_t timerid)
 	struct event **ppevent;
 
 	if (event->flags & TFLAG_CANCELLED) {
-		dd_syslog(LOG_INFO, "Cannot cancel a cancelled event");
+		dd_loginfo("timer", "Cannot cancel a cancelled event");
 		return;
 	}
 
