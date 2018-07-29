@@ -147,6 +147,6 @@ void stop_privoxy(void)
 			}
 		}
 	}
-	stop_process("privoxy", "privoxy");
+	stop_process("privoxy", "daemon");
 }
 #endif

@@ -36,7 +36,7 @@ void stop_milkfish(void)
 {
 
 	if (stop_process("rtpproxy", "rtpproxy")
-	    || stop_process("openser", "openser")) {
+	    || stop_process("openser", "daemon")) {
 		eval("milkfish_services", "stop");
 	}
 }

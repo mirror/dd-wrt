@@ -190,8 +190,8 @@ void start_radvd(void)
 void stop_radvd(void)
 {
 
-	stop_process("radvd", "RADV daemon");
-	stop_process("dhcp6s", "DHCP6S daemon");
+	stop_process("radvd", "daemon");
+	stop_process("dhcp6s", "daemon");
 	unlink("/var/run/radvd.pid");
 
 	cprintf("done\n");

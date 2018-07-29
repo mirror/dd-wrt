@@ -46,7 +46,7 @@ void start_sputnik(void)
 
 void stop_sputnik(void)
 {
-	stop_process("sputnik", "sputnik daemon");
+	stop_process("sputnik", "daemon");
 	return;
 }
 

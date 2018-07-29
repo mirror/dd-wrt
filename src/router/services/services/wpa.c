@@ -604,8 +604,8 @@ void stop_nas(void)
 	led_control(LED_SEC0, LED_OFF);
 	led_control(LED_SEC1, LED_OFF);
 
-	stop_process("nas", "NAS daemon");
-	stop_process("wrt-radauth", "Radius daemon");
+	stop_process("nas", "daemon");
+	stop_process("wrt-radauth", "radauth daemon");
 
 #ifdef HAVE_WPA_SUPPLICANT
 	killall("wpa_supplicant", SIGKILL);

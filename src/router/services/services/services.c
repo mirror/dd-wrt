@@ -145,7 +145,7 @@ void start_resetbutton(void)
 
 void stop_resetbutton(void)
 {
-	stop_process("resetbutton", "resetbutton daemon");
+	stop_process("resetbutton", "daemon");
 	cprintf("done\n");
 	return;
 }
@@ -166,7 +166,7 @@ void start_iptqueue(void)
 
 void stop_iptqueue(void)
 {
-	stop_process("iptqueue", "iptqueue daemon");
+	stop_process("iptqueue", "daemon");
 	cprintf("done\n");
 	return;
 }
@@ -200,7 +200,7 @@ void start_ipv6(void)
 void stop_3g(void)
 {
 	unlink("/tmp/ppp/link");
-	stop_process("pppd", "3g/umts process");
+	stop_process("pppd", "3g/umts/lte process");
 	cprintf("done\n");
 }
 

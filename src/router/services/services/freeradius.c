@@ -181,7 +181,7 @@ void start_freeradius(void)
 	}
 	ret = _evalpid(radiusd_argv, NULL, 0, &pid);
 
-	dd_loginfo("radiusd", "FreeRadius daemon successfully started\n");
+	dd_loginfo("freeradius", "daemon successfully started\n");
 
 	return;
 }
@@ -190,7 +190,7 @@ void stop_freeradius(void)
 {
 
 	cprintf("done\n");
-	stop_process("radiusd", "FreeRadius daemon");
+	stop_process("freeradius", "daemon");
 	return;
 }
 #endif

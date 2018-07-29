@@ -94,7 +94,7 @@ void start_snmp(void)
 
 void stop_snmp(void)
 {
-	stop_process("snmpd", "SNMP Daemon");
+	stop_process("snmpd", "daemon");
 	return;
 }
 #endif

@@ -120,9 +120,7 @@ void start_chilli(void)
 	chilli_config();
 
 #endif
-
-	ret = killall("chilli", SIGTERM);
-	ret = killall("chilli", SIGKILL);
+	stopservice("chilli","daemon");
 	if (f_exists("/tmp/chilli/hotss.conf")) {
 #ifdef HAVE_COOVA_CHILLI
 		putenv("CHILLISTATEDIR=/var/run/chilli1");
@@ -140,7 +138,7 @@ void start_chilli(void)
 #else
 		ret = eval("chilli", "-c", "/tmp/chilli/chilli.conf");
 #endif
-		dd_loginfo("chilli", "chilli daemon successfully started\n");
+		dd_loginfo("chillispot", "daemon successfully started\n");
 	}
 #ifdef HAVE_TIEXTRA1
 	start_mchilli();
@@ -152,7 +150,7 @@ void start_chilli(void)
 
 void stop_chilli(void)
 {
-	if (stop_process("chilli", "chilli daemon")) {
+	if (stop_process("chillispot", "daemon")) {
 		unlink("/tmp/chilli/chilli.conf");
 		unlink("/tmp/chilli/hotss.conf");
 		unlink("/tmp/chilli/ip-up.sh");

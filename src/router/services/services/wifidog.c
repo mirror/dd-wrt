@@ -100,7 +100,7 @@ void start_wifidog(void)
 
 void stop_wifidog(void)
 {
-	stop_process("wifidog", "WiFiDOG");
+	stop_process("wifidog", "daemon");
 }
 
 #endif

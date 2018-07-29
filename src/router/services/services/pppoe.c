@@ -280,7 +280,7 @@ void stop_dns_clear_resolv(void)
 void start_dns_clear_resolv(void)
 {
 	FILE *fp_w;
-	stop_process("dnsmasq", "dnsmasq daemon");
+	stop_process("dnsmasq", "daemon");
 	/*
 	 * Save DNS to resolv.conf 
 	 */

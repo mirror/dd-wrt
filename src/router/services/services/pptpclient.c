@@ -283,8 +283,8 @@ void stop_pptp(void)
 	route_del(nvram_safe_get("wan_ifname"), 0, nvram_safe_get("pptp_server_ip"), NULL, NULL);
 
 	unlink("/tmp/ppp/link");
-	stop_process("pppd", "PPP daemon");
-	stop_process("pptp", "PPTP daemon");
+	stop_process("pppd", "daemon");
+	stop_process("pptp", "daemon");
 	stop_process("listen", "activity daemon");
 
 	cprintf("done\n");

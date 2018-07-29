@@ -27,9 +27,14 @@
 #include <syslog.h>
 #include <signal.h>
 #include <services.h>
+void stop_pppoerelay(void)
+{
+	stop_process("pppoe-relay", "daemon");
+}
+
 void start_pppoerelay(void)
 {
-	killall("pppoe-relay", SIGTERM);
+	stop_pppoerelay();
 	if (nvram_matchi("pppoerelay_enable", 1)) {
 		if (getSTA())
 			eval("pppoe-relay", "-S", getSTA(), "-C", "br0");
@@ -40,8 +45,4 @@ void start_pppoerelay(void)
 	}
 }
 
-void stop_pppoerelay(void)
-{
-	stop_process("pppoe-relay", "pppoe relay");
-}
 #endif
