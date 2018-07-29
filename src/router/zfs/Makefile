@@ -49,3 +49,4 @@ install:
 
 clean:
 	$(MAKE) -C $(LINUXDIR) SUBDIRS=`pwd` CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" O=$(LINUXDIR) $@
+	find . -name *.lo -delete
