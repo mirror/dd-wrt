@@ -34,3 +34,4 @@ transmission-configure: libevent-configure curl-configure
 	LIBEVENT_LIBS="-L$(TOP)/libevent/.libs -levent" \
 	OPENSSL_CFLAGS="-I$(TOP)/openssl/include" \
 	OPENSSL_LIBS="-L$(TOP)/openssl -lssl -lcrypto"
+	$(MAKE) -C transmission clean
