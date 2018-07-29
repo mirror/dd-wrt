@@ -135,19 +135,19 @@ static void checkreset(unsigned char tty)
 		sysprintf("uqmi -d /dev/cdc-wdm0 --set-device-operating-mode offline");
 		sysprintf("uqmi -d /dev/cdc-wdm0 --set-device-operating-mode reset");
 		while (ifexists("wwan0")) {
-			dd_syslog(LOG_INFO, "looking for wwan0 to disapear");
+			dd_loginfo("3g", "looking for wwan0 to disapear");
 			sleep(1);
 			if (count++ > 10) {
-				dd_syslog(LOG_INFO, "reset of wwan0 failed");
+				dd_loginfo("3g", "reset of wwan0 failed");
 				break;
 			}
 		}
 		count = 0;
 		while (!ifexists("wwan0")) {
-			dd_syslog(LOG_INFO, "looking for wwan0 after reset");
+			dd_loginfo("3g", "looking for wwan0 after reset");
 			sleep(1);
 			if (count++ > 20) {
-				dd_syslog(LOG_INFO, "reset of wwan0 failed");
+				dd_loginfo("3g", "reset of wwan0 failed");
 				break;
 			}
 		}
@@ -1613,7 +1613,7 @@ void get3GControlDevice(void)
 	static char control[32];
 	static char data[32];
 	FILE *file = NULL;
-	int sierra_detection_done=0;
+	int sierra_detection_done = 0;
 
 #if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
 	mkdir("/tmp/usb", 0700);
@@ -1671,7 +1671,7 @@ void get3GControlDevice(void)
 #ifdef HAVE_ERC
 	needreset = 0;
 #endif
-	sierra_detection_done=0;
+	sierra_detection_done = 0;
 	file = fopen(SIERRA_DETECTION_FN, "r");
 	if (file) {
 		fclose(file);
@@ -1680,7 +1680,7 @@ void get3GControlDevice(void)
 			unlink(SIERRA_DETECTION_FN);
 		} else {
 			fprintf(stderr, "Sierra detection already done\n");
-			sierra_detection_done=1;
+			sierra_detection_done = 1;
 		}
 	}
 
@@ -1698,11 +1698,11 @@ void get3GControlDevice(void)
 	}
 	sprintf(checkforce, "wan_dial%s", wsel);
 	if (nvram_matchi(checkforce, 97))
-		dd_syslog(LOG_INFO, "lib3g force MBIM");
+		dd_loginfo("3g", "lib3g force MBIM");
 	if (nvram_matchi(checkforce, 98))
-		dd_syslog(LOG_INFO, "lib3g force QMI");
+		dd_loginfo("3g", "lib3g force QMI");
 	if (nvram_matchi(checkforce, 99))
-		dd_syslog(LOG_INFO, "lib3g force DIRECTIP");
+		dd_loginfo("3g", "lib3g force DIRECTIP");
 
 	int devicecount = 0;
 	while (devicelist[devicecount].vendor != 0xffff) {
@@ -1715,10 +1715,10 @@ void get3GControlDevice(void)
 				insmod("sierra_net");
 				int count = 0;
 				while (!ifexists("wwan0")) {
-					dd_syslog(LOG_INFO, "looking for wwan0");
+					dd_loginfo("3g", "looking for wwan0");
 					sleep(1);
 					if (count++ > 6) {
-						dd_syslog(LOG_INFO, "no wwan0 after 6 seconds");
+						dd_loginfo("3g", "no wwan0 after 6 seconds");
 						break;
 					}
 				}
@@ -1728,7 +1728,7 @@ void get3GControlDevice(void)
 						fprintf(stderr, "SierraDirectip customsetup\n");
 						devicelist[devicecount].customsetup(needreset, devicecount);
 					}
-					if (sierra_detection_done != 1) 
+					if (sierra_detection_done != 1)
 						detectcontrol_and_data_port();
 					// nvram_set("3gcontrol", control);
 					// sysprintf("echo \"Setting controlport to %s\" | logger", control);
@@ -1737,7 +1737,7 @@ void get3GControlDevice(void)
 					nvram_set("3gnmvariant", "1");
 					return;
 				} else {
-					dd_syslog(LOG_INFO, "wwan0 not found, fall back to ppp mode");
+					dd_loginfo("3g", "wwan0 not found, fall back to ppp mode");
 				}
 
 			}
