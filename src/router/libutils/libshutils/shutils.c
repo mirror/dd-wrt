@@ -170,7 +170,18 @@ void dd_debug(int target, const char *fmt, ...)
 	free(varbuf);
 	return;
 }
-
+#ifdef HAVE_SYSLOG
+void dd_loginfo(const char *servicename, const char *fmt, ...)
+{
+	char *str;
+	va_list args;
+	va_start(args, (char *)fmt);
+	vasprintf(&str, fmt, args);
+	va_end(args);
+	dd_syslog(LOG_INFO, "%s : %s",servicename, str);
+	free(str);
+}
+#endif
 int eval_va(const char *cmd, ...)
 {
 	const char *s_args[128];
