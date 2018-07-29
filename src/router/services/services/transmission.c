@@ -44,7 +44,7 @@ void start_transmission(void)
 	eval("mkdir", "-p", nvram_safe_get("transmission_dir"));
 
 	eval("transmissiond", "--config-dir", nvram_safe_get("transmission_dir"));
-	dd_loginfo("transmission","daemon successfully started\n");
+	dd_loginfo("transmission", "daemon successfully started\n");
 	return;
 }
 

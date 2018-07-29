@@ -222,7 +222,7 @@ void start_samba3(void)
 #endif
 			eval("/usr/sbin/smbd", "-D", conffile);
 	}
-	syslog(LOG_INFO, "Samba3 : samba started\n");
+	dd_loginfo("smbd", "samba started\n");
 
 	return;
 }
