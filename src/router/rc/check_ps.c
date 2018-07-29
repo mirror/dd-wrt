@@ -280,7 +280,7 @@ static int do_mon(void)
 				}
 			if (!search_process(v->name, count)) {
 
-				dd_syslog(LOG_INFO, "Maybe %s had died, we need to re-exec it\n", v->name);
+				dd_loginfo(v->name, "maybe died, we need to re-exec it\n");
 				eval("stopservice", v->name);
 				killall(v->name, SIGKILL);
 				eval("startservice_f", v->name);
