@@ -540,7 +540,7 @@ int redial_main(int argc, char **argv)
 			start_check_mbim();
 		}
 #endif
-#if defined(HAVE_UQMI) || defined(HAVE_LIBQMI)
+#if defined(HAVE_3G)
 		if (nvram_match("wan_proto", "3g")
 		    && nvram_match("3gdata", "sierradirectip")) {
 			start_check_sierradirectip();
@@ -548,6 +548,8 @@ int redial_main(int argc, char **argv)
 			   && nvram_match("3gnmvariant", "1")) {
 			start_check_sierrappp();
 		}
+#endif
+#if defined(HAVE_UQMI) || defined(HAVE_LIBQMI)
 		if (nvram_match("wan_proto", "3g")
 		    && nvram_match("3gdata", "qmi") && _count == 1) {
 			start_check_qmi();

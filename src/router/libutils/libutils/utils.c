@@ -477,7 +477,7 @@ int check_wan_link(int num)
 			return 1;
 	}
 #endif
-#if defined(HAVE_LIBQMI) || defined(HAVE_UQMI)
+#if defined(HAVE_3G)
 	else if (nvram_match("wan_proto", "3g") && nvram_match("3gdata", "sierradirectip")) {
 		FILE *fp = fopen("/tmp/sierradipstatus", "rb");
 		int value = 0;
