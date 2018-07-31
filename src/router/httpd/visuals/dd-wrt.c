@@ -2565,7 +2565,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #ifndef HAVE_GUESTPORT
 	websWrite(wp, "<div class=\"center\">\n");
 #ifdef HAVE_MADWIFI
-	if (!has_ad(prefix) && count < 8)
+	if ((is_ath10k(prefix) && !has_ad(prefix) && count < 8) || (is_ath9k(prefix) && !is_ath10k(prefix) && !has_ad(prefix) && count < 16))
 #elif HAVE_RT2880
 	if (count < 7)
 #else
