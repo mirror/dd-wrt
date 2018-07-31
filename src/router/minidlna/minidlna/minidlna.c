@@ -940,6 +940,7 @@ init(int argc, char **argv)
 				DPRINTF(E_FATAL, L_GENERAL, "Failed to clean old file cache %s. EXITING\n", db_path);
 			break;
 		case 'U':
+			debug_flag = 1;
 			pid = process_check_if_running(pidfilename);
 			printf("Manual rescan for " SERVER_NAME " %s\n", (pid > 0 && !kill(pid, SIGUSR2)) ? "sent" : "failed");
 			exit(0);
