@@ -124,13 +124,12 @@ openssl-configure:
 			$(OPENSSL_OPTIONS)
 
 	$(MAKE) -C openssl clean
-
+	touch openssl/crypto/bn/asm/*
 	-$(MAKE) -C openssl CC="$(CC) -I$(TOP)/openssl/crypto -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
+	touch openssl/crypto/bn/asm/*
+	touch openssl/crypto/bn/asm/*
 	-$(MAKE) -C openssl build_libs CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
+	touch openssl/crypto/bn/asm/*
 	-$(MAKE) -C openssl build_programs CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
-	-rm -f openssl/apps/openssl
-	
-	-$(MAKE) -C openssl CC="$(CC) -I$(TOP)/openssl/crypto -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
-	-$(MAKE) -C openssl build_libs CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
-	-$(MAKE) -C openssl build_programs CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
+	touch openssl/crypto/bn/asm/*
 	-rm -f openssl/apps/openssl
