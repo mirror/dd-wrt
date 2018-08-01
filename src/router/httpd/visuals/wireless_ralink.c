@@ -250,7 +250,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 		return cnt;
 	}
 	(void)bzero(&iwr, sizeof(struct iwreq));
-	(void)strncpy(iwr.ifr_name, getRADev(ifname), sizeof(iwr.ifr_name));
+	(void)strlcpy(iwr.ifr_name, getRADev(ifname), sizeof(iwr.ifr_name) - 1);
 
 	iwr.u.data.pointer = (caddr_t) & table;
 	iwr.u.data.length = sizeof(table);

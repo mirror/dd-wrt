@@ -128,9 +128,9 @@ void ej_dumplog(webs_t wp, int argc, char_t ** argv)
 				    && !strcmp(proto, proto_old)) {
 					continue;	// skip same record
 				} else {
-					strncpy(src_old, src, sizeof(src_old) - 1);
-					strncpy(dpt_old, dpt, sizeof(dpt_old) - 1);
-					strncpy(proto_old, proto, sizeof(proto_old) - 1);
+					strlcpy(src_old, src, sizeof(src_old) - 1);
+					strlcpy(dpt_old, dpt, sizeof(dpt_old) - 1);
+					strlcpy(proto_old, proto, sizeof(proto_old) - 1);
 				}
 
 				websWrite(wp, "<tr height=\"1\">\n<td>%s</td>\n<td align=\"center\">%s</td>\n<td align=\"center\">%s</td>\n<td align=\"center\">%s</td>\n</tr>\n", src, proto, servp ? servp->s_name : dpt,
@@ -150,10 +150,10 @@ void ej_dumplog(webs_t wp, int argc, char_t ** argv)
 				    && !strcmp(dpt, dpt_old)) {
 					continue;	// skip same record
 				} else {
-					strncpy(src_old, src, sizeof(src_old) - 1);
-					strncpy(dst_old, dst, sizeof(dst_old) - 1);
-					strncpy(proto_old, proto, sizeof(proto_old) - 1);
-					strncpy(dpt_old, dpt, sizeof(dpt_old) - 1);
+					strlcpy(src_old, src, sizeof(src_old) - 1);
+					strlcpy(dst_old, dst, sizeof(dst_old) - 1);
+					strlcpy(proto_old, proto, sizeof(proto_old) - 1);
+					strlcpy(dpt_old, dpt, sizeof(dpt_old) - 1);
 				}
 
 				websWrite(wp, "<tr height=\"1\">\n<td>%s</td>\n<td>%s</td>\n<td align=\"center\">%s</td>\n<td>%s</td>\n<td align=\"center\">%s</td>\n</tr>\n", src, dst, proto, servp ? servp->s_name : dpt,
@@ -177,9 +177,9 @@ void ej_dumplog(webs_t wp, int argc, char_t ** argv)
 			    && !strcmp(dst, dst_old)) {
 				continue;	// skip same record
 			} else {
-				strncpy(src_old, src, sizeof(src_old) - 1);
-				strncpy(dpt_old, dpt, sizeof(dpt_old) - 1);
-				strncpy(dst_old, dst, sizeof(dst_old) - 1);
+				strlcpy(src_old, src, sizeof(src_old) - 1);
+				strlcpy(dpt_old, dpt, sizeof(dpt_old) - 1);
+				strlcpy(dst_old, dst, sizeof(dst_old) - 1);
 			}
 
 			websWrite(wp, "%c'%s','%s','%s','%s','%d'\n", count ? ',' : ' ', proto, src, dst, servp ? servp->s_name : dpt, dir);

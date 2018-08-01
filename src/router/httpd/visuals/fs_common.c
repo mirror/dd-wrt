@@ -62,7 +62,7 @@ static struct fsentry *parsefsentry(char line[256])
 			strcpy(entry->fstype, token);
 		} else if (tokcount == 5) {
 			perm = strtok(token, ",");
-			strncpy(entry->perms, perm + 1, strlen(perm) - 1);
+			strlcpy(entry->perms, perm + 1, strlen(perm) - 1);
 		}
 		// next token
 		token = strtok(NULL, " ");

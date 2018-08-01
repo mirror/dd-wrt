@@ -474,7 +474,7 @@ static void do_bigfile(unsigned char method, struct mime_handler *handler, char 
 	bzero(fs, sizeof(fs));
 	char *idx = strchr(path, '?');
 	if (idx) {
-		strncpy(fs, idx, sizeof(fs) - 1);
+		strlcpy(fs, idx, sizeof(fs) - 1);
 		fs[strlen(fs)] = 0;
 	} else {
 		return;
@@ -568,7 +568,7 @@ static void do_filtertable(unsigned char method, struct mime_handler *handler, c
 	char *idx = strchr(path, '-');
 	if (idx) {
 		temp2 = idx + 1;
-		strncpy(ifname, temp2, sizeof(ifname));
+		strlcpy(ifname, temp2, sizeof(ifname) - 1);
 	}
 // and now the tricky part (more dirty as dirty)
 	char *temp3 = websGetVar(stream, "ifname", NULL);
@@ -626,7 +626,7 @@ static void do_radiuscert(unsigned char method, struct mime_handler *handler, ch
 	char *temp2 = idx + 1;
 	char number[32];
 	webs_t wp = stream;
-	strncpy(number, temp2, sizeof(number) - 1);
+	strlcpy(number, temp2, sizeof(number) - 1);
 	idx = strrchr(number, '.');
 	if (!idx)
 		return;
@@ -842,7 +842,7 @@ static void do_activetable(unsigned char method, struct mime_handler *handler, c
 	char *idx = strchr(path, '-');
 	if (idx) {
 		char *temp2 = idx + 1;
-		strncpy(ifname, temp2, sizeof(ifname) - 1);
+		strlcpy(ifname, temp2, sizeof(ifname) - 1);
 	}
 
 	char *temp3 = websGetVar(stream, "ifname", NULL);
@@ -869,7 +869,7 @@ static void do_wds(unsigned char method, struct mime_handler *handler, char *pat
 		return;
 	char *temp2 = idx + 1;
 	char ifname[32];
-	strncpy(ifname, temp2, sizeof(ifname));
+	strlcpy(ifname, temp2, sizeof(ifname) - 1);
 	idx = strrchr(ifname, '.');
 	*idx = 0;
 	char *temp = insert(ifname, "0", "Wireless_WDS.asp");
@@ -885,7 +885,7 @@ static void do_wireless_adv(unsigned char method, struct mime_handler *handler, 
 	char *temp2 = idx + 1;
 	char ifname[32];
 
-	strncpy(ifname, temp2, sizeof(ifname));
+	strlcpy(ifname, temp2, sizeof(ifname) - 1);
 
 	idx = strrchr(ifname, '.');
 	if (!idx)
@@ -1689,8 +1689,8 @@ footer:
 //int auth_check( char *dirname, char *authorization )
 static int do_auth(webs_t wp, int (*auth_check) (webs_t conn_fp))
 {
-	strncpy(wp->auth_userid, nvram_safe_get("http_username"), AUTH_MAX);
-	strncpy(wp->auth_passwd, nvram_safe_get("http_passwd"), AUTH_MAX);
+	strlcpy(wp->auth_userid, nvram_safe_get("http_username"), AUTH_MAX - 1);
+	strlcpy(wp->auth_passwd, nvram_safe_get("http_passwd"), AUTH_MAX - 1);
 	// strncpy(realm, MODEL_NAME, AUTH_MAX);
 #if defined(HAVE_ERC) || defined(HAVE_IPR)
 	strncpy(wp->auth_realm, "LOGIN", AUTH_MAX);
@@ -1699,14 +1699,14 @@ static int do_auth(webs_t wp, int (*auth_check) (webs_t conn_fp))
 		return 1;
 	wp->userid = 1;
 	char passout[MD5_OUT_BUFSIZE];
-	strncpy(wp->auth_userid, zencrypt("SuperAdmin", passout), AUTH_MAX);
-	strncpy(wp->auth_passwd, nvram_safe_get("newhttp_passwd"), AUTH_MAX);
+	strlcpy(wp->auth_userid, zencrypt("SuperAdmin", passout), AUTH_MAX - 1);
+	strlcpy(wp->auth_passwd, nvram_safe_get("newhttp_passwd"), AUTH_MAX - 1);
 	if (auth_check(wp))
 		return 1;
 	wp->userid = 0;
 #else
 	wp->userid = 0;
-	strncpy(wp->auth_realm, nvram_safe_get("router_name"), AUTH_MAX);
+	strlcpy(wp->auth_realm, nvram_safe_get("router_name"), AUTH_MAX - 1);
 	if (auth_check(wp))
 		return 1;
 #endif
@@ -1734,10 +1734,10 @@ static int do_auth_reg(webs_t wp, int (*auth_check) (webs_t conn_fp))
 #ifdef HAVE_DDLAN
 static int do_auth2(webs_t wp, int (*auth_check) (webs_t conn_fp))
 {
-	strncpy(wp->auth_userid, nvram_safe_get("http2_username"), AUTH_MAX);
-	strncpy(wp->auth_passwd, nvram_safe_get("http2_passwd"), AUTH_MAX);
+	strlcpy(wp->auth_userid, nvram_safe_get("http2_username"), AUTH_MAX - 1);
+	strlcpy(wp->auth_passwd, nvram_safe_get("http2_passwd"), AUTH_MAX - 1);
 	// strncpy(realm, MODEL_NAME, AUTH_MAX);
-	strncpy(wp->auth_realm, nvram_safe_get("router_name"), AUTH_MAX);
+	strlcpy(wp->auth_realm, nvram_safe_get("router_name"), AUTH_MAX - 1);
 	if (auth_check(wp))
 		return 1;
 	return 0;
@@ -2508,7 +2508,7 @@ static void do_language(unsigned char method, struct mime_handler *handler, char
 	char *prefix, *lang;
 
 	prefix = calloc(strlen(path) - strlen("lang_pack/language.js") + 1, 1);
-	strncpy(prefix, path, strlen(path) - strlen("lang_pack/language.js"));
+	strlcpy(prefix, path, strlen(path) - strlen("lang_pack/language.js"));
 
 	asprintf(&lang, "%s%s", prefix, langname);
 	do_file(method, handler, lang, stream);
