@@ -275,8 +275,8 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 		 */
 
 		char open[32];
-		strncpy(open, (site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? live_translate("share.no")
-			: live_translate("share.yes"), 31);
+		strlcpy(open, (site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? live_translate("share.no")
+			: live_translate("share.yes"), sizeof(open));
 
 		char *netmode;
 		int netmodecap = site_survey_lists[i].capability;

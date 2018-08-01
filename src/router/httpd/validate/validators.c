@@ -2203,7 +2203,7 @@ char *buildmac(char *in)
 	char *outmac;
 
 	outmac = safe_malloc(20);
-	strncpy(mac, in, 20);
+	strlcpy(mac, in, 19);
 	filterstring(mac, ':');
 	filterstring(mac, '-');
 	filterstring(mac, ' ');

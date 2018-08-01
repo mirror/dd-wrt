@@ -117,7 +117,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 		return cnt;
 	}
 	(void)bzero(&iwr, sizeof(struct iwreq));
-	(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
+	(void)strlcpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name) - 1);
 
 	iwr.u.data.pointer = (void *)&madbuf[0];
 	iwr.u.data.length = 24 * 1024;
@@ -146,7 +146,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 		cnt++;
 		char mac[32];
 
-		strncpy(mac, ieee80211_ntoa(si->isi_macaddr), 31);
+		strlcpy(mac, ieee80211_ntoa(si->isi_macaddr), 31);
 		if (nvram_matchi("maskmac", 1) && macmask) {
 			mac[0] = 'x';
 			mac[1] = 'x';
