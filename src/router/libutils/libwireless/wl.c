@@ -361,7 +361,7 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 	int freq;
 
 	(void)bzero(&wrq, sizeof(struct iwreq));
-	strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
+	strlcpy(wrq.ifr_name, ifname, IFNAMSIZ - 1);
 	ioctl(getsocket(), SIOCGIWFREQ, &wrq);
 	closesocket();
 	freq = wrq.u.freq.m;
@@ -388,7 +388,7 @@ long long wifi_getrate(char *ifname)
 	struct iwreq wrq;
 
 	(void)bzero(&wrq, sizeof(struct iwreq));
-	strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
+	strlcpy(wrq.ifr_name, ifname, IFNAMSIZ - 1);
 	ioctl(getsocket(), SIOCGIWRATE, &wrq);
 	closesocket();
 	return wrq.u.bitrate.value;
@@ -405,7 +405,7 @@ int get_radiostate(char *ifname)
 	struct ifreq ifr;
 	int skfd = getsocket();
 
-	strncpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
+	strlcpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name) - 1);
 	if (ioctl(skfd, SIOCGIFFLAGS, &ifr) < 0) {
 		closesocket();
 		return -1;
@@ -559,7 +559,7 @@ int getassoclist(char *ifname, unsigned char *list)
 			ignore = 1;
 		}
 		(void)bzero(&iwr, sizeof(struct iwreq));
-		(void)strncpy(iwr.ifr_name, getRADev(ifname), sizeof(iwr.ifr_name));
+		(void)strlcpy(iwr.ifr_name, getRADev(ifname), sizeof(iwr.ifr_name) - 1);
 
 		iwr.u.data.pointer = (caddr_t) & table;
 		if (ioctl(s, RTPRIV_IOCTL_GET_MAC_TABLE, &iwr) < 0) {
@@ -613,7 +613,7 @@ int getWifiInfo(char *ifname, unsigned char *mac, int field)
 			ignore = 1;
 		}
 		(void)bzero(&iwr, sizeof(struct iwreq));
-		(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
+		(void)strlcpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name) - 1);
 
 		iwr.u.data.pointer = (caddr_t) & table;
 		if (ioctl(s, RTPRIV_IOCTL_GET_MAC_TABLE, &iwr) < 0) {
@@ -1176,7 +1176,7 @@ static int set80211priv(struct iwreq *iwr, const char *ifname, int op, void *dat
 #define	N(a)	(sizeof(a)/sizeof(a[0]))
 
 	bzero(iwr, sizeof(struct iwreq));
-	strncpy(iwr->ifr_name, ifname, IFNAMSIZ);
+	strlcpy(iwr->ifr_name, ifname, IFNAMSIZ - 1);
 	if (len < IFNAMSIZ) {
 		/*
 		 * Argument data fits inline; put it there.
@@ -1301,7 +1301,7 @@ long long wifi_getrate(char *ifname)
 		struct iwreq wrq;
 
 		(void)bzero(&wrq, sizeof(struct iwreq));
-		strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
+		strlcpy(wrq.ifr_name, ifname, IFNAMSIZ - 1);
 		ioctl(getsocket(), SIOCGIWRATE, &wrq);
 		return wrq.u.bitrate.value;
 	}
@@ -1436,7 +1436,7 @@ int wifi_gettxpower(char *ifname)
 
 	(void)bzero(&wrq, sizeof(struct iwreq));
 
-	strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
+	strlcpy(wrq.ifr_name, ifname, IFNAMSIZ - 1);
 
 	ioctl(getsocket(), SIOCGIWTXPOW, &wrq);
 	closesocket();
@@ -1650,7 +1650,7 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 #endif
 
 	(void)bzero(&wrq, sizeof(struct iwreq));
-	strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
+	strlcpy(wrq.ifr_name, ifname, IFNAMSIZ - 1);
 	ioctl(getsocket(), SIOCGIWFREQ, &wrq);
 	closesocket();
 	struct wifi_interface *interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
@@ -1690,7 +1690,7 @@ int get_radiostate(char *ifname)
 	struct ifreq ifr;
 	int skfd = getsocket();
 
-	strncpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name));
+	strlcpy(ifr.ifr_name, ifname, sizeof(ifr.ifr_name) - 1);
 	if (ioctl(skfd, SIOCGIFFLAGS, &ifr) < 0) {
 		closesocket();
 		return -1;
@@ -1711,7 +1711,7 @@ static int iw_get_ext(int skfd,	/* Socket to the kernel */
 	/*
 	 * Set device name 
 	 */
-	strncpy(pwrq->ifr_name, ifname, IFNAMSIZ);
+	strlcpy(pwrq->ifr_name, ifname, IFNAMSIZ - 1);
 	/*
 	 * Do the request 
 	 */
@@ -1995,7 +1995,7 @@ int getWifiInfo(char *ifname, unsigned char *mac, int field)
 		return 0;
 	}
 	(void)bzero(&iwr, sizeof(iwr));
-	(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
+	(void)strlcpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name) - 1);
 	iwr.u.data.pointer = (void *)buf;
 	iwr.u.data.length = 1024 * 24;
 	if (ioctl(s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0) {
@@ -2115,7 +2115,7 @@ int getassoclist(char *ifname, unsigned char *list)
 		return mincount;
 	}
 	(void)bzero(&iwr, sizeof(iwr));
-	(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
+	(void)strlcpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name) - 1);
 	iwr.u.data.pointer = (void *)buf;
 	iwr.u.data.length = 1024 * 24;
 	if (ioctl(s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0) {

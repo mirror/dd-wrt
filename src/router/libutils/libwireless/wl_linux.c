@@ -88,7 +88,7 @@ int wl_ioctl(char *name, int cmd, void *buf, int len)
 	ioc.used = 0;
 	ioc.needed = 0;
 
-	strncpy(ifr.ifr_name, name, IFNAMSIZ);
+	strlcpy(ifr.ifr_name, name, IFNAMSIZ - 1);
 	ifr.ifr_data = (caddr_t) & ioc;
 	if ((ret = ioctl(s, SIOCDEVPRIVATE, &ifr)) < 0)
 		if (cmd != WLC_GET_MAGIC)
@@ -121,7 +121,7 @@ int wl_hwaddr(char *name, unsigned char *hwaddr)
 	/*
 	 * do it 
 	 */
-	strncpy(ifr.ifr_name, name, IFNAMSIZ);
+	strlcpy(ifr.ifr_name, name, IFNAMSIZ - 1);
 	if ((ret = ioctl(s, SIOCGIFHWADDR, &ifr)) == 0)
 		memcpy(hwaddr, ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
 
@@ -155,7 +155,7 @@ int wl_get_dev_type(char *name, void *buf, int len)
 	bzero(&info, sizeof(info));
 	info.cmd = ETHTOOL_GDRVINFO;
 	ifr.ifr_data = (caddr_t) & info;
-	strncpy(ifr.ifr_name, name, IFNAMSIZ);
+	strlcpy(ifr.ifr_name, name, IFNAMSIZ - 1);
 	if ((ret = ioctl(s, SIOCETHTOOL, &ifr)) < 0) {
 
 		/* print a good diagnostic if not superuser */
