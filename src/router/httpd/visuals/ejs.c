@@ -1236,9 +1236,9 @@ void ej_get_totaltraff(webs_t wp, int argc, char_t ** argv)
 		return;
 
 	if (nvram_match("ttraff_iface", "") || !nvram_get("ttraff_iface"))
-		strncpy(wanface, get_wan_face(), sizeof(wanface));
+		strlcpy(wanface, get_wan_face(), sizeof(wanface) - 1);
 	else
-		strncpy(wanface, nvram_safe_get("ttraff_iface"), sizeof(wanface));
+		strlcpy(wanface, nvram_safe_get("ttraff_iface"), sizeof(wanface) - 1);
 	strcat(wanface, ":");
 
 	in = fopen("/proc/net/dev", "rb");
