@@ -35,3 +35,17 @@ static char *UPTIME(int uptime, char *str)
 		sprintf(str, "%d:%02d:%02d", (minutes / 60) % 24, minutes % 60, uptime % 60);
 	return str;
 }
+
+#ifndef HAVE_ATH9K
+void ej_get_busy(webs_t wp, int argc, char_t ** argv)
+{
+}
+
+void ej_get_active(webs_t wp, int argc, char_t ** argv)
+{
+}
+
+void ej_show_busy(webs_t wp, int argc, char_t ** argv)
+{
+}
+#endif
