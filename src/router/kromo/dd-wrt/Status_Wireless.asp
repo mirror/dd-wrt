@@ -206,6 +206,7 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("share.channel"); %></div>
 									<span id="wl_channel"><% get_curchannel(); %></span>&nbsp;
 								</div>
+								<% show_busy(); %>
 								<div class="setting">
 									<div class="label"><% tran("wl_basic.TXpower"); %></div>
 									<span id="wl_xmit"><% get_txpower(); %></span>&nbsp;
