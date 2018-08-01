@@ -240,6 +240,46 @@ nla_put_failure:
 	return (-199);
 }
 
+int getBusy_mac80211(char *interface)
+{
+	lock();
+	struct nl_msg *msg;
+	struct mac80211_info mac80211_info;
+	int wdev = if_nametoindex(interface);
+	bzero(&mac80211_info, sizeof(mac80211_info));
+
+	msg = unl_genl_msg(&unl, NL80211_CMD_GET_SURVEY, true);
+	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
+	unl_genl_request(&unl, msg, mac80211_cb_survey, &mac80211_info);
+	unlock();
+	return mac80211_info.channel_busy_time;
+
+nla_put_failure:
+	nlmsg_free(msg);
+	unlock();
+	return (-1);
+}
+
+int getActive_mac80211(char *interface)
+{
+	lock();
+	struct nl_msg *msg;
+	struct mac80211_info mac80211_info;
+	int wdev = if_nametoindex(interface);
+	bzero(&mac80211_info, sizeof(mac80211_info));
+
+	msg = unl_genl_msg(&unl, NL80211_CMD_GET_SURVEY, true);
+	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
+	unl_genl_request(&unl, msg, mac80211_cb_survey, &mac80211_info);
+	unlock();
+	return mac80211_info.channel_active_time;
+
+nla_put_failure:
+	nlmsg_free(msg);
+	unlock();
+	return (-1);
+}
+
 #ifdef HAVE_ATH10K
 int is_beeliner(const char *prefix)
 {
