@@ -221,7 +221,7 @@ int getassoclist_11n(char *ifname, unsigned char *list)
 		return mincount;
 	}
 	(void)bzero(&iwr, sizeof(iwr));
-	(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
+	(void)strlcpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name) - 1);
 	iwr.u.data.pointer = (void *)buf;
 	iwr.u.data.length = 1024 * 24;
 	if (ioctl(s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0) {
@@ -278,7 +278,7 @@ int getRssi_11n(char *ifname, unsigned char *mac)
 		return 0;
 	}
 	(void)bzero(&iwr, sizeof(iwr));
-	(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
+	(void)strlcpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name) - 1);
 	iwr.u.data.pointer = (void *)buf;
 	iwr.u.data.length = 1024 * 24;
 	if (ioctl(s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0) {
@@ -336,7 +336,7 @@ int getUptime_11n(char *ifname, unsigned char *mac)
 		return 0;
 	}
 	(void)bzero(&iwr, sizeof(iwr));
-	(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
+	(void)strlcpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name) - 1);
 	iwr.u.data.pointer = (void *)buf;
 	iwr.u.data.length = 24 * 1024;
 	if (ioctl(s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0) {
@@ -394,7 +394,7 @@ int getNoise_11n(char *ifname, unsigned char *mac)
 		return 0;
 	}
 	(void)bzero(&iwr, sizeof(iwr));
-	(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
+	(void)strlcpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name) - 1);
 	iwr.u.data.pointer = (void *)buf;
 	iwr.u.data.length = 24 * 1024;
 	if (ioctl(s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0) {

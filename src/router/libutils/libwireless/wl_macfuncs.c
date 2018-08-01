@@ -44,7 +44,7 @@ static int set80211param(char *iface, int op, int arg)
 	struct iwreq iwr;
 
 	bzero(&iwr, sizeof(iwr));
-	strncpy(iwr.ifr_name, iface, IFNAMSIZ);
+	strlcpy(iwr.ifr_name, iface, IFNAMSIZ - 1);
 	iwr.u.mode = op;
 	memcpy(iwr.u.name + sizeof(__u32), &arg, sizeof(arg));
 

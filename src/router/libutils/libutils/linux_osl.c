@@ -53,7 +53,7 @@ int ifconfig(char *name, int flags, char *addr, char *netmask)
 		goto err2;	// override socket close
 	cprintf("ifconfig(): socket opened\n");
 
-	strncpy(ifr.ifr_name, name, IFNAMSIZ);
+	strlcpy(ifr.ifr_name, name, IFNAMSIZ - 1);
 	cprintf("ifconfig(): set interface name\n");
 	if (flags) {
 		ifr.ifr_flags = flags;
@@ -131,7 +131,7 @@ struct in_addr *osl_ifaddr(const char *ifname, struct in_addr *inaddr)
 		perror("socket");
 		return NULL;
 	}
-	strncpy(ifreq.ifr_name, ifname, IFNAMSIZ);
+	strlcpy(ifreq.ifr_name, ifname, IFNAMSIZ - 1);
 	if (ioctl(sockfd, SIOCGIFADDR, &ifreq) < 0) {
 		inaddr = NULL;
 	} else {
@@ -152,7 +152,7 @@ static short osl_ifflags(const char *ifname)
 		return flags;
 	}
 
-	strncpy(ifreq.ifr_name, ifname, IFNAMSIZ);
+	strlcpy(ifreq.ifr_name, ifname, IFNAMSIZ - 1);
 	if (ioctl(sockfd, SIOCGIFFLAGS, &ifreq) < 0) {
 		flags = 0;
 	} else {

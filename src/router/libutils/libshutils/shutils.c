@@ -170,6 +170,7 @@ void dd_debug(int target, const char *fmt, ...)
 	free(varbuf);
 	return;
 }
+
 #ifdef HAVE_SYSLOG
 void dd_loginfo(const char *servicename, const char *fmt, ...)
 {
@@ -178,7 +179,7 @@ void dd_loginfo(const char *servicename, const char *fmt, ...)
 	va_start(args, (char *)fmt);
 	vasprintf(&str, fmt, args);
 	va_end(args);
-	dd_syslog(LOG_INFO, "%s : %s",servicename, str);
+	dd_syslog(LOG_INFO, "%s : %s", servicename, str);
 	free(str);
 }
 #endif
