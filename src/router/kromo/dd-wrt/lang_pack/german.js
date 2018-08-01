@@ -1843,6 +1843,8 @@ status_wireless.h22="WLAN-Knoten";
 status_wireless.legend3="Clients";
 status_wireless.signal_qual="Signalqualit&auml;t";
 status_wireless.wds="WDS-Knotenpunkte";
+status_wireless.busy="Belegte Zeit";
+status_wireless.active="Aktive Zeit";
 
 // ** GPS info **//
 
