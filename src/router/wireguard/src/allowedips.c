@@ -7,7 +7,7 @@
 #include "peer.h"
 
 struct allowedips_node {
-	struct wireguard_peer *peer;
+	struct wireguard_peer __rcu *peer;
 	struct rcu_head rcu;
 	struct allowedips_node __rcu *bit[2];
 	/* While it may seem scandalous that we waste space for v4,
@@ -49,17 +49,17 @@ static void node_free_rcu(struct rcu_head *rcu)
 #define push(stack, p, len) ({ \
 	if (rcu_access_pointer(p)) { \
 		BUG_ON(len >= 128); \
-		stack[len++] = rcu_dereference_protected(p, lockdep_is_held(lock)); \
+		stack[len++] = rcu_dereference_raw(p); \
 	} \
 	true; \
 })
-static void free_root_node(struct allowedips_node __rcu *top, struct mutex *lock)
+static void root_free_rcu(struct rcu_head *rcu)
 {
-	struct allowedips_node *stack[128], *node;
-	unsigned int len;
+	struct allowedips_node *node, *stack[128] = { container_of(rcu, struct allowedips_node, rcu) };
+	unsigned int len = 1;
 
-	for (len = 0, push(stack, top, len); len > 0 && (node = stack[--len]) && push(stack, node->bit[0], len) && push(stack, node->bit[1], len);)
-		call_rcu_bh(&node->rcu, node_free_rcu);
+	while (len > 0 && (node = stack[--len]) && push(stack, node->bit[0], len) && push(stack, node->bit[1], len))
+		kfree(node);
 }
 
 static int walk_by_peer(struct allowedips_node __rcu *top, u8 bits, struct allowedips_cursor *cursor, struct wireguard_peer *peer, int (*func)(void *ctx, const u8 *ip, u8 cidr, int family), void *ctx, struct mutex *lock)
@@ -75,7 +75,7 @@ static int walk_by_peer(struct allowedips_node __rcu *top, u8 bits, struct allow
 		push(cursor->stack, top, cursor->len);
 
 	for (; cursor->len > 0 && (node = cursor->stack[cursor->len - 1]); --cursor->len, push(cursor->stack, node->bit[0], cursor->len), push(cursor->stack, node->bit[1], cursor->len)) {
-		if (node->peer != peer)
+		if (rcu_dereference_protected(node->peer, lockdep_is_held(lock)) != peer)
 			continue;
 
 		swap_endian(ip, node->bits, bits);
@@ -119,8 +119,8 @@ static void walk_remove_by_peer(struct allowedips_node __rcu **top, struct wireg
 			if (ref(node->bit[1]))
 				push(&node->bit[1]);
 		} else {
-			if (node->peer == peer) {
-				node->peer = NULL;
+			if (rcu_dereference_protected(node->peer, lockdep_is_held(lock)) == peer) {
+				RCU_INIT_POINTER(node->peer, NULL);
 				if (!node->bit[0] || !node->bit[1]) {
 					rcu_assign_pointer(*nptr, deref(&node->bit[!ref(node->bit[0])]));
 					call_rcu_bh(&node->rcu, node_free_rcu);
@@ -161,7 +161,7 @@ static __always_inline struct allowedips_node *find_node(struct allowedips_node 
 	struct allowedips_node *node = trie, *found = NULL;
 
 	while (node && prefix_matches(node, key, bits)) {
-		if (node->peer)
+		if (rcu_access_pointer(node->peer))
 			found = node;
 		if (node->cidr == bits)
 			break;
@@ -180,9 +180,13 @@ static __always_inline struct wireguard_peer *lookup(struct allowedips_node __rc
 	swap_endian(ip, be_ip, bits);
 
 	rcu_read_lock_bh();
+retry:
 	node = find_node(rcu_dereference_bh(root), bits, ip);
-	if (node)
-		peer = peer_get(node->peer);
+	if (node) {
+		peer = peer_get_maybe_zero(rcu_dereference_bh(node->peer));
+		if (!peer)
+			goto retry;
+	}
 	rcu_read_unlock_bh();
 	return peer;
 }
@@ -219,20 +223,20 @@ static int add(struct allowedips_node __rcu **trie, u8 bits, const u8 *be_key, u
 		node = kzalloc(sizeof(*node), GFP_KERNEL);
 		if (!node)
 			return -ENOMEM;
-		node->peer = peer;
+		RCU_INIT_POINTER(node->peer, peer);
 		copy_and_assign_cidr(node, key, cidr, bits);
 		rcu_assign_pointer(*trie, node);
 		return 0;
 	}
 	if (node_placement(*trie, key, cidr, bits, &node, lock)) {
-		node->peer = peer;
+		rcu_assign_pointer(node->peer, peer);
 		return 0;
 	}
 
 	newnode = kzalloc(sizeof(*newnode), GFP_KERNEL);
 	if (!newnode)
 		return -ENOMEM;
-	newnode->peer = peer;
+	RCU_INIT_POINTER(newnode->peer, peer);
 	copy_and_assign_cidr(newnode, key, cidr, bits);
 
 	if (!node)
@@ -281,10 +285,12 @@ void allowedips_free(struct allowedips *table, struct mutex *lock)
 {
 	struct allowedips_node __rcu *old4 = table->root4, *old6 = table->root6;
 	++table->seq;
-	rcu_assign_pointer(table->root4, NULL);
-	rcu_assign_pointer(table->root6, NULL);
-	free_root_node(old4, lock);
-	free_root_node(old6, lock);
+	RCU_INIT_POINTER(table->root4, NULL);
+	RCU_INIT_POINTER(table->root6, NULL);
+	if (rcu_access_pointer(old4))
+		call_rcu_bh(&rcu_dereference_protected(old4, lockdep_is_held(lock))->rcu, root_free_rcu);
+	if (rcu_access_pointer(old6))
+		call_rcu_bh(&rcu_dereference_protected(old6, lockdep_is_held(lock))->rcu, root_free_rcu);
 }
 
 int allowedips_insert_v4(struct allowedips *table, const struct in_addr *ip, u8 cidr, struct wireguard_peer *peer, struct mutex *lock)

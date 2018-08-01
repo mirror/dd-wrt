@@ -9,6 +9,8 @@
 #include "queueing.h"
 #include "socket.h"
 
+#include <linux/ktime.h>
+
 /*
  * Timer for retransmitting the handshake if we don't hear back after `REKEY_TIMEOUT + jitter` ms
  * Timer for sending empty packet if we have received a packet but after have not sent one for `KEEPALIVE_TIMEOUT` ms
@@ -18,7 +20,10 @@
  */
 
 #define peer_get_from_timer(timer_name) \
-	struct wireguard_peer *peer = peer_rcu_get(from_timer(peer, timer, timer_name)); \
+	struct wireguard_peer *peer; \
+	rcu_read_lock_bh(); \
+	peer = peer_get_maybe_zero(from_timer(peer, timer, timer_name)); \
+	rcu_read_unlock_bh(); \
 	if (unlikely(!peer)) \
 		return;
 

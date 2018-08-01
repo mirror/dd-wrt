@@ -62,8 +62,11 @@ struct wireguard_peer {
 
 static struct wireguard_peer *peer_create(struct wireguard_device *wg, const u8 public_key[NOISE_PUBLIC_KEY_LEN], const u8 preshared_key[NOISE_SYMMETRIC_KEY_LEN]);
 
-static struct wireguard_peer *peer_get(struct wireguard_peer *peer);
-static struct wireguard_peer *peer_rcu_get(struct wireguard_peer *peer);
+static struct wireguard_peer * __must_check peer_get_maybe_zero(struct wireguard_peer *peer);
+static inline void peer_get(struct wireguard_peer *peer)
+{
+	kref_get(&peer->refcount);
+}
 
 static void peer_put(struct wireguard_peer *peer);
 static void peer_remove(struct wireguard_peer *peer);
