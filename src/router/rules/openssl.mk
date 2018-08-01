@@ -63,7 +63,7 @@ openssl:
 	rm -f openssl/apps/openssl
 
 openssl-shared: openssl
-	$(MAKE) -C openssl build_libs CC="$(CC)-fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
+	$(MAKE) -C openssl build_libs CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
 
 
 openssl-apps: openssl-shared	
