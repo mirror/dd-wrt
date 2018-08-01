@@ -48,7 +48,7 @@ struct wireguard_peer *pubkey_hashtable_lookup(struct pubkey_hashtable *table, c
 			break;
 		}
 	}
-	peer = peer_get(peer);
+	peer = peer_get_maybe_zero(peer);
 	rcu_read_unlock_bh();
 	return peer;
 }
@@ -133,6 +133,12 @@ bool index_hashtable_replace(struct index_hashtable *table, struct index_hashtab
 	spin_lock_bh(&table->lock);
 	new->index = old->index;
 	hlist_replace_rcu(&old->index_hash, &new->index_hash);
+
+	/* Calling init here NULLs out index_hash, and in fact after this function returns,
+	 * it's theoretically possible for this to get reinserted elsewhere. That means
+	 * the RCU lookup below might either terminate early or jump between buckets, in which
+	 * case the packet simply gets dropped, which isn't terrible.
+	 */
 	INIT_HLIST_NODE(&old->index_hash);
 	spin_unlock_bh(&table->lock);
 	return true;
@@ -159,7 +165,7 @@ struct index_hashtable_entry *index_hashtable_lookup(struct index_hashtable *tab
 		}
 	}
 	if (likely(entry)) {
-		entry->peer = peer_get(entry->peer);
+		entry->peer = peer_get_maybe_zero(entry->peer);
 		if (unlikely(!entry->peer))
 			entry = NULL;
 	}
