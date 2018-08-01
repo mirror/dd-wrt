@@ -428,7 +428,7 @@ int dhd_ioctl(char *name, int cmd, void *buf, int len)
 	ioc.driver = DHD_IOCTL_MAGIC;
 	ioc.used = 0;
 	ioc.needed = 0;
-	strncpy(ifr.ifr_name, name, sizeof(ifr.ifr_name) - 1);
+	strlcpy(ifr.ifr_name, name, sizeof(ifr.ifr_name) - 1);
 	ifr.ifr_name[sizeof(ifr.ifr_name) - 1] = '\0';
 	ifr.ifr_data = (caddr_t) & ioc;
 	if ((ret = ioctl(s, SIOCDEVPRIVATE, &ifr)) < 0)
