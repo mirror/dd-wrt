@@ -58,13 +58,14 @@ void packet_send_queued_handshake_initiation(struct wireguard_peer *peer, bool i
 	/* First checking the timestamp here is just an optimization; it will
 	 * be caught while properly locked inside the actual work queue.
 	 */
-	if (!has_expired(peer->last_sent_handshake, REKEY_TIMEOUT))
+	if (!has_expired(peer->last_sent_handshake, REKEY_TIMEOUT) || unlikely(!atomic_inc_not_zero(&peer->dead_count)))
 		return;
 
 	peer_get(peer);
 	/* Queues up calling packet_send_queued_handshakes(peer), where we do a peer_put(peer) after: */
 	if (!queue_work(peer->device->handshake_send_wq, &peer->transmit_handshake_work))
 		peer_put(peer); /* If the work was already queued, we want to drop the extra reference */
+	atomic_dec(&peer->dead_count);
 }
 
 void packet_send_handshake_response(struct wireguard_peer *peer)
@@ -223,7 +224,7 @@ void packet_tx_worker(struct work_struct *work)
 	struct sk_buff *first;
 	enum packet_state state;
 
-	while ((first = __ptr_ring_peek(&queue->ring)) != NULL && (state = atomic_read(&PACKET_CB(first)->state)) != PACKET_STATE_UNCRYPTED) {
+	while ((first = __ptr_ring_peek(&queue->ring)) != NULL && (state = atomic_read_acquire(&PACKET_CB(first)->state)) != PACKET_STATE_UNCRYPTED) {
 		__ptr_ring_discard_one(&queue->ring);
 		peer = PACKET_PEER(first);
 		keypair = PACKET_CB(first)->keypair;
@@ -268,17 +269,21 @@ static void packet_create_data(struct sk_buff *first)
 	struct wireguard_device *wg = peer->device;
 	int ret;
 
-	ret = queue_enqueue_per_device_and_peer(&wg->encrypt_queue, &peer->tx_queue, first, wg->packet_crypt_wq, &wg->encrypt_queue.last_cpu);
-	if (likely(!ret))
-		return; /* Successful. No need to fall through to drop references below. */
+	if (unlikely(!atomic_inc_not_zero(&peer->dead_count)))
+		goto err;
 
-	if (ret == -EPIPE)
+	peer_get(peer);
+	ret = queue_enqueue_per_device_and_peer(&wg->encrypt_queue, &peer->tx_queue, first, wg->packet_crypt_wq, &wg->encrypt_queue.last_cpu);
+	if (unlikely(ret == -EPIPE))
 		queue_enqueue_per_peer(&peer->tx_queue, first, PACKET_STATE_DEAD);
-	else {
-		peer_put(peer);
-		noise_keypair_put(PACKET_CB(first)->keypair);
-		skb_free_null_queue(first);
-	}
+	atomic_dec(&peer->dead_count);
+	peer_put(peer);
+	if (likely(!ret || ret == -EPIPE))
+		return;
+err:
+	noise_keypair_put(PACKET_CB(first)->keypair);
+	peer_put(peer);
+	skb_free_null_queue(first);
 }
 
 void packet_send_staged_packets(struct wireguard_peer *peer)

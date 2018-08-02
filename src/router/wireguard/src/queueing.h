@@ -12,35 +12,35 @@
 #include <linux/ip.h>
 #include <linux/ipv6.h>
 
-static struct wireguard_device;
-static struct wireguard_peer;
-static struct multicore_worker;
-static struct crypt_queue;
-static struct sk_buff;
+struct wireguard_device;
+struct wireguard_peer;
+struct multicore_worker;
+struct crypt_queue;
+struct sk_buff;
 
 /* queueing.c APIs: */
-static int packet_queue_init(struct crypt_queue *queue, work_func_t function, bool multicore, unsigned int len);
-static void packet_queue_free(struct crypt_queue *queue, bool multicore);
-static struct multicore_worker __percpu *packet_alloc_percpu_multicore_worker(work_func_t function, void *ptr);
+int packet_queue_init(struct crypt_queue *queue, work_func_t function, bool multicore, unsigned int len);
+void packet_queue_free(struct crypt_queue *queue, bool multicore);
+struct multicore_worker __percpu *packet_alloc_percpu_multicore_worker(work_func_t function, void *ptr);
 
 /* receive.c APIs: */
-static void packet_receive(struct wireguard_device *wg, struct sk_buff *skb);
-static void packet_handshake_receive_worker(struct work_struct *work);
-/* Workqueue workers: */
+void packet_receive(struct wireguard_device *wg, struct sk_buff *skb);
+void packet_handshake_receive_worker(struct work_struct *work);
 /* NAPI poll function: */
-static int packet_rx_poll(struct napi_struct *napi, int budget);
-static void packet_decrypt_worker(struct work_struct *work);
+int packet_rx_poll(struct napi_struct *napi, int budget);
+/* Workqueue worker: */
+void packet_decrypt_worker(struct work_struct *work);
 
 /* send.c APIs: */
-static void packet_send_queued_handshake_initiation(struct wireguard_peer *peer, bool is_retry);
-static void packet_send_handshake_response(struct wireguard_peer *peer);
-static void packet_send_handshake_cookie(struct wireguard_device *wg, struct sk_buff *initiating_skb, __le32 sender_index);
-static void packet_send_keepalive(struct wireguard_peer *peer);
-static void packet_send_staged_packets(struct wireguard_peer *peer);
+void packet_send_queued_handshake_initiation(struct wireguard_peer *peer, bool is_retry);
+void packet_send_handshake_response(struct wireguard_peer *peer);
+void packet_send_handshake_cookie(struct wireguard_device *wg, struct sk_buff *initiating_skb, __le32 sender_index);
+void packet_send_keepalive(struct wireguard_peer *peer);
+void packet_send_staged_packets(struct wireguard_peer *peer);
 /* Workqueue workers: */
-static void packet_handshake_send_worker(struct work_struct *work);
-static void packet_tx_worker(struct work_struct *work);
-static void packet_encrypt_worker(struct work_struct *work);
+void packet_handshake_send_worker(struct work_struct *work);
+void packet_tx_worker(struct work_struct *work);
+void packet_encrypt_worker(struct work_struct *work);
 
 enum packet_state { PACKET_STATE_UNCRYPTED, PACKET_STATE_CRYPTED, PACKET_STATE_DEAD };
 struct packet_cb {
@@ -120,9 +120,15 @@ static inline int queue_enqueue_per_device_and_peer(struct crypt_queue *device_q
 {
 	int cpu;
 
-	atomic_set(&PACKET_CB(skb)->state, PACKET_STATE_UNCRYPTED);
+	atomic_set_release(&PACKET_CB(skb)->state, PACKET_STATE_UNCRYPTED);
+	/* We first queue this up for the peer ingestion, but the consumer
+	 * will wait for the state to change to CRYPTED or DEAD before.
+	 */
 	if (unlikely(ptr_ring_produce_bh(&peer_queue->ring, skb)))
 		return -ENOSPC;
+	/* Then we queue it up in the device queue, which consumes the
+	 * packet as soon as it can.
+	 */
 	cpu = cpumask_next_online(next_cpu);
 	if (unlikely(ptr_ring_produce_bh(&device_queue->ring, skb)))
 		return -EPIPE;
@@ -132,14 +138,24 @@ static inline int queue_enqueue_per_device_and_peer(struct crypt_queue *device_q
 
 static inline void queue_enqueue_per_peer(struct crypt_queue *queue, struct sk_buff *skb, enum packet_state state)
 {
-	atomic_set(&PACKET_CB(skb)->state, state);
-	queue_work_on(cpumask_choose_online(&PACKET_PEER(skb)->serial_work_cpu, PACKET_PEER(skb)->internal_id), PACKET_PEER(skb)->device->packet_crypt_wq, &queue->work);
+	/* We take a reference, because as soon as we call atomic_set, the
+	 * peer can be freed from below us.
+	 */
+	struct wireguard_peer *peer = peer_get(PACKET_PEER(skb));
+	atomic_set_release(&PACKET_CB(skb)->state, state);
+	queue_work_on(cpumask_choose_online(&peer->serial_work_cpu, peer->internal_id), peer->device->packet_crypt_wq, &queue->work);
+	peer_put(peer);
 }
 
 static inline void queue_enqueue_per_peer_napi(struct crypt_queue *queue, struct sk_buff *skb, enum packet_state state)
 {
-	atomic_set(&PACKET_CB(skb)->state, state);
-	napi_schedule(&PACKET_PEER(skb)->napi);
+	/* We take a reference, because as soon as we call atomic_set, the
+	 * peer can be freed from below us.
+	 */
+	struct wireguard_peer *peer = peer_get(PACKET_PEER(skb));
+	atomic_set_release(&PACKET_CB(skb)->state, state);
+	napi_schedule(&peer->napi);
+	peer_put(peer);
 }
 
 #ifdef DEBUG
