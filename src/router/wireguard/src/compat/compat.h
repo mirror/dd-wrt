@@ -51,6 +51,9 @@
 #ifndef READ_ONCE
 #define READ_ONCE ACCESS_ONCE
 #endif
+#ifndef WRITE_ONCE
+#define WRITE_ONCE(p, v) (ACCESS_ONCE(*p) = (v))
+#endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 17, 0)
 #include "udp_tunnel/udp_tunnel_partial_compat.h"
@@ -636,6 +639,14 @@ do { \
 #ifndef atomic_set_release
 #define atomic_set_release(v, i) smp_store_release(&(v)->counter, (i))
 #endif
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
+#include <linux/kref.h>
+static inline int kref_read(const struct kref *kref)
+{
+	return atomic_read(&kref->refcount);
+}
 #endif
 
 /* https://lkml.kernel.org/r/20170624021727.17835-1-Jason@zx2c4.com */
