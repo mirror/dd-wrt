@@ -103,16 +103,13 @@ static struct noise_keypair *keypair_create(struct wireguard_peer *peer)
 
 static void keypair_free_rcu(struct rcu_head *rcu)
 {
-	struct noise_keypair *keypair = container_of(rcu, struct noise_keypair, rcu);
-
-	net_dbg_ratelimited("%s: Keypair %llu destroyed for peer %llu\n", keypair->entry.peer->device->dev->name, keypair->internal_id, keypair->entry.peer->internal_id);
-	kzfree(keypair);
+	kzfree(container_of(rcu, struct noise_keypair, rcu));
 }
 
 static void keypair_free_kref(struct kref *kref)
 {
 	struct noise_keypair *keypair = container_of(kref, struct noise_keypair, refcount);
-
+	net_dbg_ratelimited("%s: Keypair %llu destroyed for peer %llu\n", keypair->entry.peer->device->dev->name, keypair->internal_id, keypair->entry.peer->internal_id);
 	index_hashtable_remove(&keypair->entry.peer->device->index_hashtable, &keypair->entry);
 	call_rcu_bh(&keypair->rcu, keypair_free_rcu);
 }
@@ -424,7 +421,7 @@ struct wireguard_peer *noise_handshake_consume_initiation(struct message_handsha
 	u8 e[NOISE_PUBLIC_KEY_LEN];
 	u8 t[NOISE_TIMESTAMP_LEN];
 	struct noise_handshake *handshake;
-	struct wireguard_peer *wg_peer = NULL;
+	struct wireguard_peer *peer = NULL, *ret_peer = NULL;
 	u8 key[NOISE_SYMMETRIC_KEY_LEN];
 	u8 hash[NOISE_HASH_LEN];
 	u8 chaining_key[NOISE_HASH_LEN];
@@ -447,10 +444,10 @@ struct wireguard_peer *noise_handshake_consume_initiation(struct message_handsha
 		goto out;
 
 	/* Lookup which peer we're actually talking to */
-	wg_peer = pubkey_hashtable_lookup(&wg->peer_hashtable, s);
-	if (!wg_peer)
+	peer = pubkey_hashtable_lookup(&wg->peer_hashtable, s);
+	if (!peer)
 		goto out;
-	handshake = &wg_peer->handshake;
+	handshake = &peer->handshake;
 
 	/* ss */
 	kdf(chaining_key, key, NULL, handshake->precomputed_static_static, NOISE_HASH_LEN, NOISE_SYMMETRIC_KEY_LEN, 0, NOISE_PUBLIC_KEY_LEN, chaining_key);
@@ -463,11 +460,8 @@ struct wireguard_peer *noise_handshake_consume_initiation(struct message_handsha
 	replay_attack = memcmp(t, handshake->latest_timestamp, NOISE_TIMESTAMP_LEN) <= 0;
 	flood_attack = handshake->last_initiation_consumption + NSEC_PER_SEC / INITIATIONS_PER_SECOND > ktime_get_boot_fast_ns();
 	up_read(&handshake->lock);
-	if (replay_attack || flood_attack) {
-		peer_put(wg_peer);
-		wg_peer = NULL;
+	if (replay_attack || flood_attack)
 		goto out;
-	}
 
 	/* Success! Copy everything to peer */
 	down_write(&handshake->lock);
@@ -479,13 +473,16 @@ struct wireguard_peer *noise_handshake_consume_initiation(struct message_handsha
 	handshake->last_initiation_consumption = ktime_get_boot_fast_ns();
 	handshake->state = HANDSHAKE_CONSUMED_INITIATION;
 	up_write(&handshake->lock);
+	ret_peer = peer;
 
 out:
 	memzero_explicit(key, NOISE_SYMMETRIC_KEY_LEN);
 	memzero_explicit(hash, NOISE_HASH_LEN);
 	memzero_explicit(chaining_key, NOISE_HASH_LEN);
 	up_read(&wg->static_identity.lock);
-	return wg_peer;
+	if (!ret_peer)
+		peer_put(peer);
+	return ret_peer;
 }
 
 bool noise_handshake_create_response(struct message_handshake_response *dst, struct noise_handshake *handshake)
@@ -542,7 +539,7 @@ out:
 struct wireguard_peer *noise_handshake_consume_response(struct message_handshake_response *src, struct wireguard_device *wg)
 {
 	struct noise_handshake *handshake;
-	struct wireguard_peer *ret_peer = NULL;
+	struct wireguard_peer *peer = NULL, *ret_peer = NULL;
 	u8 key[NOISE_SYMMETRIC_KEY_LEN];
 	u8 hash[NOISE_HASH_LEN];
 	u8 chaining_key[NOISE_HASH_LEN];
@@ -556,7 +553,7 @@ struct wireguard_peer *noise_handshake_consume_response(struct message_handshake
 	if (unlikely(!wg->static_identity.has_identity))
 		goto out;
 
-	handshake = (struct noise_handshake *)index_hashtable_lookup(&wg->index_hashtable, INDEX_HASHTABLE_HANDSHAKE, src->receiver_index);
+	handshake = (struct noise_handshake *)index_hashtable_lookup(&wg->index_hashtable, INDEX_HASHTABLE_HANDSHAKE, src->receiver_index, &peer);
 	if (unlikely(!handshake))
 		goto out;
 
@@ -575,11 +572,11 @@ struct wireguard_peer *noise_handshake_consume_response(struct message_handshake
 
 	/* ee */
 	if (!mix_dh(chaining_key, NULL, ephemeral_private, e))
-		goto out;
+		goto fail;
 
 	/* se */
 	if (!mix_dh(chaining_key, NULL, wg->static_identity.static_private, e))
-		goto out;
+		goto fail;
 
 	/* psk */
 	mix_psk(chaining_key, hash, key, handshake->preshared_key);
@@ -601,11 +598,11 @@ struct wireguard_peer *noise_handshake_consume_response(struct message_handshake
 	handshake->remote_index = src->sender_index;
 	handshake->state = HANDSHAKE_CONSUMED_RESPONSE;
 	up_write(&handshake->lock);
-	ret_peer = handshake->entry.peer;
+	ret_peer = peer;
 	goto out;
 
 fail:
-	peer_put(handshake->entry.peer);
+	peer_put(peer);
 out:
 	memzero_explicit(key, NOISE_SYMMETRIC_KEY_LEN);
 	memzero_explicit(hash, NOISE_HASH_LEN);
@@ -637,7 +634,7 @@ bool noise_handshake_begin_session(struct noise_handshake *handshake, struct noi
 
 	handshake_zero(handshake);
 	add_new_keypair(keypairs, new_keypair);
-	net_dbg_ratelimited("%s: Keypair %llu created for peer %llu\n", new_keypair->entry.peer->device->dev->name, new_keypair->internal_id, new_keypair->entry.peer->internal_id);
+	net_dbg_ratelimited("%s: Keypair %llu created for peer %llu\n", handshake->entry.peer->device->dev->name, new_keypair->internal_id, handshake->entry.peer->internal_id);
 	WARN_ON(!index_hashtable_replace(&handshake->entry.peer->device->index_hashtable, &handshake->entry, &new_keypair->entry));
 	up_write(&handshake->lock);
 
