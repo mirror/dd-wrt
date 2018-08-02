@@ -120,7 +120,7 @@ void start_chilli(void)
 	chilli_config();
 
 #endif
-	stopservice("chilli", "daemon");
+	stop_process("chilli", "daemon");
 	if (f_exists("/tmp/chilli/hotss.conf")) {
 #ifdef HAVE_COOVA_CHILLI
 		putenv("CHILLISTATEDIR=/var/run/chilli1");
