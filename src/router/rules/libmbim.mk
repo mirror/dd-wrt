@@ -29,3 +29,4 @@ libmbim-install:
 	cp private/lte-scripte/mbim-status* $(INSTALLDIR)/libmbim/usr/sbin/
 	cp private/lte-scripte/7*xx-set-mode-* $(INSTALLDIR)/libmbim/usr/sbin/
 	cp private/lte-scripte/check_mbim_qmi_mode.sh $(INSTALLDIR)/libmbim/usr/sbin/
+	cp private/lte-scripte/deploy* $(INSTALLDIR)/libmbim/usr/sbin/
