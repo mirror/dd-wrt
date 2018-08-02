@@ -185,7 +185,7 @@ void packet_handshake_receive_worker(struct work_struct *work)
 	}
 }
 
-static inline void rcv_keep_key_fresh(struct wireguard_peer *peer)
+static inline void keep_key_fresh(struct wireguard_peer *peer)
 {
 	struct noise_keypair *keypair;
 	bool send = false;
@@ -301,7 +301,7 @@ static void packet_consume_data_done(struct wireguard_peer *peer, struct sk_buff
 		packet_send_staged_packets(peer);
 	}
 
-	rcv_keep_key_fresh(peer);
+	keep_key_fresh(peer);
 
 	timers_any_authenticated_packet_received(peer);
 	timers_any_authenticated_packet_traversal(peer);
@@ -382,8 +382,8 @@ int packet_rx_poll(struct napi_struct *napi, int budget)
 	struct sk_buff *skb;
 	struct endpoint endpoint;
 	enum packet_state state;
-	bool free;
 	int work_done = 0;
+	bool free;
 
 	if (unlikely(budget <= 0))
 		return 0;
