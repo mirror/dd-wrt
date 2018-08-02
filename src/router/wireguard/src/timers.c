@@ -29,18 +29,18 @@
 
 static inline void mod_peer_timer(struct wireguard_peer *peer, struct timer_list *timer, unsigned long expires)
 {
-	if (unlikely(!netif_running(peer->device->dev) || !atomic_inc_not_zero(&peer->dead_count)))
-		return;
-	mod_timer(timer, expires);
-	atomic_dec(&peer->dead_count);
+	rcu_read_lock_bh();
+	if (likely(netif_running(peer->device->dev) && !peer->is_dead))
+		mod_timer(timer, expires);
+	rcu_read_unlock_bh();
 }
 
 static inline void del_peer_timer(struct wireguard_peer *peer, struct timer_list *timer)
 {
-	if (unlikely(!netif_running(peer->device->dev) || !atomic_inc_not_zero(&peer->dead_count)))
-		return;
-	del_timer(timer);
-	atomic_dec(&peer->dead_count);
+	rcu_read_lock_bh();
+	if (likely(netif_running(peer->device->dev) && !peer->is_dead))
+		del_timer(timer);
+	rcu_read_unlock_bh();
 }
 
 static void expired_retransmit_handshake(struct timer_list *timer)
@@ -100,14 +100,12 @@ static void expired_zero_key_material(struct timer_list *timer)
 {
 	peer_get_from_timer(timer_zero_key_material);
 
-	if (unlikely(!atomic_inc_not_zero(&peer->dead_count)))
-		goto out;
-	peer_get(peer);
-	if (!queue_work(peer->device->handshake_send_wq, &peer->clear_peer_work))
-		peer_put(peer); /* If the work was already on the queue, we want to drop the extra reference */
-	atomic_dec(&peer->dead_count);
-out:
-	peer_put(peer);
+	rcu_read_lock_bh();
+	if (!peer->is_dead) {
+		if (!queue_work(peer->device->handshake_send_wq, &peer->clear_peer_work)) /* Should take our reference. */
+			peer_put(peer); /* If the work was already on the queue, we want to drop the extra reference */
+	}
+	rcu_read_unlock_bh();
 }
 static void queued_expired_zero_key_material(struct work_struct *work)
 {

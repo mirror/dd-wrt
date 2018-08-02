@@ -12,35 +12,35 @@
 #include <linux/ip.h>
 #include <linux/ipv6.h>
 
-struct wireguard_device;
-struct wireguard_peer;
-struct multicore_worker;
-struct crypt_queue;
-struct sk_buff;
+static struct wireguard_device;
+static struct wireguard_peer;
+static struct multicore_worker;
+static struct crypt_queue;
+static struct sk_buff;
 
 /* queueing.c APIs: */
-int packet_queue_init(struct crypt_queue *queue, work_func_t function, bool multicore, unsigned int len);
-void packet_queue_free(struct crypt_queue *queue, bool multicore);
-struct multicore_worker __percpu *packet_alloc_percpu_multicore_worker(work_func_t function, void *ptr);
+static int packet_queue_init(struct crypt_queue *queue, work_func_t function, bool multicore, unsigned int len);
+static void packet_queue_free(struct crypt_queue *queue, bool multicore);
+static struct multicore_worker __percpu *packet_alloc_percpu_multicore_worker(work_func_t function, void *ptr);
 
 /* receive.c APIs: */
-void packet_receive(struct wireguard_device *wg, struct sk_buff *skb);
-void packet_handshake_receive_worker(struct work_struct *work);
+static void packet_receive(struct wireguard_device *wg, struct sk_buff *skb);
+static void packet_handshake_receive_worker(struct work_struct *work);
 /* NAPI poll function: */
-int packet_rx_poll(struct napi_struct *napi, int budget);
+static int packet_rx_poll(struct napi_struct *napi, int budget);
 /* Workqueue worker: */
-void packet_decrypt_worker(struct work_struct *work);
+static void packet_decrypt_worker(struct work_struct *work);
 
 /* send.c APIs: */
-void packet_send_queued_handshake_initiation(struct wireguard_peer *peer, bool is_retry);
-void packet_send_handshake_response(struct wireguard_peer *peer);
-void packet_send_handshake_cookie(struct wireguard_device *wg, struct sk_buff *initiating_skb, __le32 sender_index);
-void packet_send_keepalive(struct wireguard_peer *peer);
-void packet_send_staged_packets(struct wireguard_peer *peer);
+static void packet_send_queued_handshake_initiation(struct wireguard_peer *peer, bool is_retry);
+static void packet_send_handshake_response(struct wireguard_peer *peer);
+static void packet_send_handshake_cookie(struct wireguard_device *wg, struct sk_buff *initiating_skb, __le32 sender_index);
+static void packet_send_keepalive(struct wireguard_peer *peer);
+static void packet_send_staged_packets(struct wireguard_peer *peer);
 /* Workqueue workers: */
-void packet_handshake_send_worker(struct work_struct *work);
-void packet_tx_worker(struct work_struct *work);
-void packet_encrypt_worker(struct work_struct *work);
+static void packet_handshake_send_worker(struct work_struct *work);
+static void packet_tx_worker(struct work_struct *work);
+static void packet_encrypt_worker(struct work_struct *work);
 
 enum packet_state { PACKET_STATE_UNCRYPTED, PACKET_STATE_CRYPTED, PACKET_STATE_DEAD };
 struct packet_cb {
