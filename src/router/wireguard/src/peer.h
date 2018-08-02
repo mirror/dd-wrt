@@ -54,6 +54,7 @@ struct wireguard_peer {
 	bool timers_enabled, timer_need_another_keepalive, sent_lastminute_handshake;
 	struct timespec walltime_last_handshake;
 	struct kref refcount;
+	atomic_t dead_count;
 	struct rcu_head rcu;
 	struct list_head peer_list;
 	u64 internal_id;
