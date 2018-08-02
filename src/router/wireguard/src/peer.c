@@ -48,7 +48,6 @@ struct wireguard_peer *peer_create(struct wireguard_device *wg, const u8 public_
 	spin_lock_init(&peer->keypairs.keypair_update_lock);
 	INIT_WORK(&peer->transmit_handshake_work, packet_handshake_send_worker);
 	rwlock_init(&peer->endpoint_lock);
-	atomic_set(&peer->dead_count, 1);
 	kref_init(&peer->refcount);
 	skb_queue_head_init(&peer->staged_packet_queue);
 	peer->last_sent_handshake = ktime_get_boot_fast_ns() - (u64)(REKEY_TIMEOUT + 1) * NSEC_PER_SEC;
@@ -94,32 +93,39 @@ void peer_remove(struct wireguard_peer *peer)
 	pubkey_hashtable_remove(&peer->device->peer_hashtable, peer);
 
 	/* Mark as dead, so that we don't allow jumping contexts after. */
-	while (atomic_cmpxchg(&peer->dead_count, 1, 0) != 1) cpu_relax();
+	WRITE_ONCE(peer->is_dead, true);
+	synchronize_rcu_bh();
 
-	/* The transition between packet encryption/decryption queues isn't guarded
-	 * by the dead_count, but each reference's life is strictly bounded by
-	 * two generations: once for parallel crypto and once for serial ingestion,
-	 * so we can simply flush twice, and be sure that we no longer have references
-	 * inside these queues.
-	 */
-
-	/* The first flush is for encrypt/decrypt. */
-	flush_workqueue(peer->device->packet_crypt_wq);
-	/* The second.1 flush is for send (but not receive, since that's napi). */
-	flush_workqueue(peer->device->packet_crypt_wq);
-	/* The second.2 flush is for receive (but not send, since that's wq). */
-	napi_disable(&peer->napi);
-	/* It's now safe to remove the napi struct, which must be done here from process context. */
-	netif_napi_del(&peer->napi);
-	/* Ensure any workstructs we own (like transmit_handshake_work or clear_peer_work) no longer are in use. */
-	flush_workqueue(peer->device->handshake_send_wq);
-
-	/* Remove keys and handshakes from memory. Handshake removal must be done here from process context. */
-	noise_handshake_clear(&peer->handshake);
+	/* Now that no more keypairs can be created for this peer, we destroy existing ones. */
 	noise_keypairs_clear(&peer->keypairs);
 
 	/* Destroy all ongoing timers that were in-flight at the beginning of this function. */
 	timers_stop(peer);
+
+	/* The transition between packet encryption/decryption queues isn't guarded
+	 * by is_dead, but each reference's life is strictly bounded by two
+	 * generations: once for parallel crypto and once for serial ingestion,
+	 * so we can simply flush twice, and be sure that we no longer have references
+	 * inside these queues.
+	 *
+	 * a) For encrypt/decrypt. */
+	flush_workqueue(peer->device->packet_crypt_wq);
+	/* b.1) For send (but not receive, since that's napi). */
+	flush_workqueue(peer->device->packet_crypt_wq);
+	/* b.2.1) For receive (but not send, since that's wq). */
+	napi_disable(&peer->napi);
+	/* b.2.1) It's now safe to remove the napi struct, which must be done here from process context. */
+	netif_napi_del(&peer->napi);
+
+	/* Ensure any workstructs we own (like transmit_handshake_work or clear_peer_work) no longer are in use. */
+	flush_workqueue(peer->device->handshake_send_wq);
+
+	/* Wait until we have the last reference. This should nearly always become
+	 * true immediately, given the flushing above, but there are some insignificant
+	 * cleanup cases that might cause this to spin a very low number of times.
+	 */
+	while (kref_read(&peer->refcount) > 1)
+		cond_resched();
 
 	--peer->device->num_peers;
 	peer_put(peer);
