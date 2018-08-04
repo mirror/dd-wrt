@@ -240,7 +240,7 @@ nla_put_failure:
 	return (-199);
 }
 
-int getBusy_mac80211(char *interface)
+unsigned long long getBusy_mac80211(char *interface)
 {
 	lock();
 	struct nl_msg *msg;
@@ -257,10 +257,10 @@ int getBusy_mac80211(char *interface)
 nla_put_failure:
 	nlmsg_free(msg);
 	unlock();
-	return (-1);
+	return unsigned long long(-1);
 }
 
-int getActive_mac80211(char *interface)
+unsigned long long getActive_mac80211(char *interface)
 {
 	lock();
 	struct nl_msg *msg;
@@ -277,7 +277,7 @@ int getActive_mac80211(char *interface)
 nla_put_failure:
 	nlmsg_free(msg);
 	unlock();
-	return (-1);
+	return unsigned long long(-1);
 }
 
 #ifdef HAVE_ATH10K
