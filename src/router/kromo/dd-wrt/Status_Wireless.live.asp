@@ -4,8 +4,8 @@
 {wl_radio::<% get_radio_state(); %>}
 {wl_xmit::<% get_txpower(); %>}
 {wl_rate::<% get_currate(); %>}
-{wl_busy::<% get_busy(); %>
-{wl_active::<% get_active(); %>
+{wl_busy::<% get_busy(); %>}
+{wl_active::<% get_active(); %>}
 {wl_ack::<% update_acktiming(); %>}
 {active_wireless::<% active_wireless(0); %>}
 {active_wds::<% active_wds(0); %>}
