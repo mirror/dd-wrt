@@ -151,6 +151,8 @@ struct site_survey_list {
 	char ENCINFO[128];	/* encryption info */
 	uint rate_count;	/* # rates in this set */
 	uint8 dtim_period;	/* DTIM period */
+	uint64_t active;	/* channel active time */
+	uint64_t busy;		/* channel busy time */
 };
 
 struct wifi_interface {

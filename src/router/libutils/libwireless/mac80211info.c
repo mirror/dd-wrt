@@ -257,7 +257,7 @@ unsigned long long getBusy_mac80211(char *interface)
 nla_put_failure:
 	nlmsg_free(msg);
 	unlock();
-	return unsigned long long(-1);
+	return (unsigned long long)-1;
 }
 
 unsigned long long getActive_mac80211(char *interface)
@@ -277,7 +277,7 @@ unsigned long long getActive_mac80211(char *interface)
 nla_put_failure:
 	nlmsg_free(msg);
 	unlock();
-	return unsigned long long(-1);
+	return (unsigned long long)-1;
 }
 
 #ifdef HAVE_ATH10K
