@@ -63,11 +63,12 @@
 
 #include "mac80211site_survey.h"
 
-
 static int sscount = 0;
 static int rate_count = 0;
 
-static int noise[6075];
+static int *noise;
+static unsigned long long *active;
+static unsigned long long *busy;
 
 static struct scan_params scan_params;
 
@@ -164,6 +165,15 @@ static int cb_survey(struct nl_msg *msg, void *data)
 		noise[freq] = lnoise;
 		// int channel=ieee80211_mhz2ieee(freq);
 		// noise[channel] = lnoise;
+	} else {
+		noise[freq] = 0;
+	}
+	if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME] && sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY]) {
+		active[freq] = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME]);
+		busy[freq] = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY]);
+	} else {
+		active[freq] = 0;
+		busy[freq] = 0;
 	}
 
 out:
@@ -251,7 +261,7 @@ static void print_mcs_index(const __u8 *mcs)
 		unsigned int MCS_RATE_BIT = 1 << mcs_bit % 8;
 		bool mcs_rate_idx_set;
 
-		mcs_rate_idx_set = !!(mcs[mcs_octet] & MCS_RATE_BIT);
+		mcs_rate_idx_set = ! !(mcs[mcs_octet] & MCS_RATE_BIT);
 
 		if (!mcs_rate_idx_set)
 			continue;
@@ -283,10 +293,10 @@ static void print_ht_mcs(const __u8 *mcs)
 	bool tx_mcs_set_defined, tx_mcs_set_equal, tx_unequal_modulation;
 
 	max_rx_supp_data_rate = ((mcs[10] >> 8) & ((mcs[11] & 0x3) << 8));
-	tx_mcs_set_defined = !!(mcs[12] & (1 << 0));
+	tx_mcs_set_defined = ! !(mcs[12] & (1 << 0));
 	tx_mcs_set_equal = !(mcs[12] & (1 << 1));
 	tx_max_num_spatial_streams = ((mcs[12] >> 2) & 3) + 1;
-	tx_unequal_modulation = !!(mcs[12] & (1 << 4));
+	tx_unequal_modulation = ! !(mcs[12] & (1 << 4));
 
 	if (max_rx_supp_data_rate)
 		printf("\t\tHT Max RX data rate: %d Mbps\n", max_rx_supp_data_rate);
@@ -688,6 +698,8 @@ static int print_bss_handler(struct nl_msg *msg, void *arg)
 	site_survey_lists[sscount].rate_count = rate_count;
 	int freq = site_survey_lists[sscount].frequency;
 	site_survey_lists[sscount].phy_noise = noise[freq];
+	site_survey_lists[sscount].active = active[freq];
+	site_survey_lists[sscount].busy = busy[freq];
 	if ((site_survey_lists[sscount].channel & 0xff) == 0) {
 		site_survey_lists[sscount].channel |= (ieee80211_mhz2ieee(site_survey_lists[sscount].frequency) & 0xff);
 	}
@@ -1488,7 +1500,7 @@ static void print_capabilities(const uint8_t type, uint8_t len, const uint8_t * 
 }
 
 //  end of iw copied code
-void mac80211_scan(struct unl *unl,char *interface)
+void mac80211_scan(struct unl *unl, char *interface)
 {
 	struct nl_msg *msg;
 	int wdev;
@@ -1510,6 +1522,9 @@ static int open_site_survey(void);
 
 void mac80211_site_survey(char *interface)
 {
+	noise = malloc(6200 * sizeof(int));
+	active = malloc(6200 * sizeof(unsigned long long));
+	busy = malloc(6200 * sizeof(unsigned long long));
 	struct unl unl;
 	unl_genl_init(&unl, "nl80211");
 	site_survey_lists = malloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
@@ -1530,7 +1545,7 @@ void mac80211_site_survey(char *interface)
 		}
 
 		fprintf(stderr,
-			"[%2d] SSID[%20s] BSSID[%s] channel[%2d/%4d] frequency[%4d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
+			"[%2d] SSID[%20s] BSSID[%s] channel[%2d/%4d] frequency[%4d] rssi[%d] noise[%d] active[%llu] busy[%llu] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
 			i, site_survey_lists[i].SSID,
 			site_survey_lists[i].BSSID,
 			site_survey_lists[i].channel & 0xff,
@@ -1538,10 +1553,14 @@ void mac80211_site_survey(char *interface)
 			site_survey_lists[i].frequency,
 			site_survey_lists[i].RSSI,
 			site_survey_lists[i].phy_noise,
-			site_survey_lists[i].beacon_period, site_survey_lists[i].capability, site_survey_lists[i].dtim_period, site_survey_lists[i].rate_count, site_survey_lists[i].ENCINFO);
+			site_survey_lists[i].active,
+			site_survey_lists[i].busy, site_survey_lists[i].beacon_period, site_survey_lists[i].capability, site_survey_lists[i].dtim_period, site_survey_lists[i].rate_count, site_survey_lists[i].ENCINFO);
 	}
 	free(site_survey_lists);
 	unl_free(&unl);
+	free(busy);
+	free(active);
+	free(noise);
 }
 
 static int write_site_survey(void)
