@@ -260,7 +260,8 @@ static int cb_survey(struct nl_msg *msg, void *data)
 
 	freq = nla_get_u32(sinfo[NL80211_SURVEY_INFO_FREQUENCY]);
 	if (sinfo[NL80211_SURVEY_INFO_NOISE]) {
-		noise = nla_get_u8(sinfo[NL80211_SURVEY_INFO_NOISE]);
+		uint8_t lnoise = nla_get_u8(sinfo[NL80211_SURVEY_INFO_NOISE]);
+		noise = lnoise;
 	}
 	if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME])
 		active = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME]);
