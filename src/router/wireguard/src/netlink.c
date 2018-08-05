@@ -335,9 +335,8 @@ static int set_peer(struct wireguard_device *wg, struct nlattr **attrs)
 
 	ret = 0;
 	if (flags & WGPEER_F_REMOVE_ME) {
-		peer_put(peer);
 		peer_remove(peer);
-		goto out_noput;
+		goto out;
 	}
 
 	if (preshared_key) {
@@ -389,7 +388,6 @@ static int set_peer(struct wireguard_device *wg, struct nlattr **attrs)
 
 out:
 	peer_put(peer);
-out_noput:
 	if (attrs[WGPEER_A_PRESHARED_KEY])
 		memzero_explicit(nla_data(attrs[WGPEER_A_PRESHARED_KEY]), nla_len(attrs[WGPEER_A_PRESHARED_KEY]));
 	return ret;
