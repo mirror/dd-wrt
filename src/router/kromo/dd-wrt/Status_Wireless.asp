@@ -292,9 +292,9 @@ addEvent(window, "unload", function() {
 								//<![CDATA[
 								<% spectral_scan(); %>
 								document.write("<input class=\"button\" type=\"button\" name=\"site_survey\" value=\"" + sbutton.survey + "\" onclick=\"OpenSiteSurvey()\" />");
-								<% ifndef("MAC80211","/"); %><% ifndef("MAC80211","*"); %>document.write("<input class=\"button\" type=\"button\" name=\"channel_survey\" value=\"Channel survey\" onclick=\"OpenChannelSurvey()\" />");
+								<% ifndef("MAC80211","/"); %><% ifndef("MAC80211","*"); %>document.write("<input class=\"button\" type=\"button\" name=\"channel_survey\" value=\"" + sbutton.csurvey + "\" onclick=\"OpenChannelSurvey()\" />");
 								<% ifndef("MAC80211","*"); %><% ifndef("MAC80211","/"); %>
-								<% ifndef("WIVIZ","/"); %><% ifndef("WIVIZ","*"); %>document.write("<input class=\"button\" type=\"button\" name=\"wiviz_survey\" value=\"Wiviz survey\" onclick=\"OpenWiwizSurvey()\" />");
+								<% ifndef("WIVIZ","/"); %><% ifndef("WIVIZ","*"); %>document.write("<input class=\"button\" type=\"button\" name=\"wiviz_survey\" value=\"" + sbutton.wsurvey + "\" onclick=\"OpenWiwizSurvey()\" />");
 								<% ifndef("WIVIZ","*"); %><% ifndef("WIVIZ","/"); %>
 								//]]>
 								</script>
