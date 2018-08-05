@@ -50,7 +50,7 @@ struct wireguard_peer *peer_create(struct wireguard_device *wg, const u8 public_
 	rwlock_init(&peer->endpoint_lock);
 	kref_init(&peer->refcount);
 	skb_queue_head_init(&peer->staged_packet_queue);
-	peer->last_sent_handshake = ktime_get_boot_fast_ns() - (u64)(REKEY_TIMEOUT + 1) * NSEC_PER_SEC;
+	atomic64_set(&peer->last_sent_handshake, ktime_get_boot_fast_ns() - (u64)(REKEY_TIMEOUT + 1) * NSEC_PER_SEC);
 	set_bit(NAPI_STATE_NO_BUSY_POLL, &peer->napi.state);
 	netif_napi_add(wg->dev, &peer->napi, packet_rx_poll, NAPI_POLL_WEIGHT);
 	napi_enable(&peer->napi);
@@ -119,13 +119,6 @@ void peer_remove(struct wireguard_peer *peer)
 
 	/* Ensure any workstructs we own (like transmit_handshake_work or clear_peer_work) no longer are in use. */
 	flush_workqueue(peer->device->handshake_send_wq);
-
-	/* Wait until we have the last reference. This should nearly always become
-	 * true immediately, given the flushing above, but there are some insignificant
-	 * cleanup cases that might cause this to spin a very low number of times.
-	 */
-	while (kref_read(&peer->refcount) > 1)
-		cond_resched();
 
 	--peer->device->num_peers;
 	peer_put(peer);
