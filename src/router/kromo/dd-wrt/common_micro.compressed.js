@@ -1145,8 +1145,8 @@ function SortableTable(_7c){
 this.tbody=_7c.getElementsByTagName("tbody");
 this.thead=_7c.getElementsByTagName("tbody");
 this.getInnerText=function(el){
-if (typeof e1 == "undefined") return '';
-if (e1 == null) return '';
+if (typeof e1 == "undefined") return null;
+if (el == null) return null;
 if(typeof (el.textContent)!="undefined"){
 return el.textContent;
 }
@@ -1172,7 +1172,7 @@ this.sort=function(_7e){
 var _7f=_7e.cellIndex;
 var itm=this.getInnerText(this.tbody[0].rows[1].cells[_7f]);
 var _80=this.sortCaseInsensitive;
-if(itm.replace(/^\s+|\s+$/g,"").match(/^[\d]+$/)){
+if(itm != null && itm.replace(/^\s+|\s+$/g,"").match(/^[\d]+$/)){
 _80=this.sortNumeric;
 }
 this.sortColumnIndex=_7f;
