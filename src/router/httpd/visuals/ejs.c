@@ -565,6 +565,9 @@ static char *s_conditions[] = {
 #if defined(HAVE_BKM) || defined(HAVE_TMK)
 	"MULTISIM",
 #endif
+#ifdef HAVE_ATH9K
+	"MAC80211",
+#endif
 	NULL
 };
 
