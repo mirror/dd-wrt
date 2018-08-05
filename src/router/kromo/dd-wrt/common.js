@@ -1294,8 +1294,8 @@ function SortableTable (tableEl) {
 	this.thead = tableEl.getElementsByTagName('tbody');
  
 	this.getInnerText = function (el) {
-		if (typeof e1 == "undefined") return '';
-		if (e1 == null) return '';
+		if (typeof e1 == "undefined") return null;
+		if (el == null) return null;
 		if (typeof(el.textContent) != 'undefined') return el.textContent;
 		if (typeof(el.innerText) != 'undefined') return el.innerText;
 		if (typeof(el.innerHTML) == 'string') return el.innerHTML.replace(/<[^<>]+>/g,'');
@@ -1313,12 +1313,11 @@ function SortableTable (tableEl) {
  
 	    var column = cell.cellIndex;
 	    var itm = this.getInnerText(this.tbody[0].rows[1].cells[column]);
-		var sortfn = this.sortCaseInsensitive;
- 
-		if (itm.replace(/^\s+|\s+$/g,"").match(/^[\d]+$/)) sortfn = this.sortNumeric;
+	    var sortfn = this.sortCaseInsensitive;
+	    if (itm != null && itm.replace(/^\s+|\s+$/g,"").match(/^[\d]+$/)) sortfn = this.sortNumeric;
  
 		this.sortColumnIndex = column;
- 
+
 	    var newRows = new Array();
 	    for (j = 1; j < this.tbody[0].rows.length; j++) {
 			newRows[j - 1] = this.tbody[0].rows[j];
