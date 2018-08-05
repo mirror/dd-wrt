@@ -161,6 +161,17 @@ void ej_get_active(webs_t wp, int argc, char_t ** argv)
 	}
 }
 
+void ej_get_quality(webs_t wp, int argc, char_t ** argv)
+{
+	char *prefix = nvram_safe_get("wifi_display");
+	if (is_ath9k(prefix)) {
+		unsigned long long active = getActive_mac80211(prefix);
+		unsigned long long busy = getBusy_mac80211(prefix);
+		unsigned long long quality = 100 - ((busy * 100) / active);
+		websWrite(wp, "%llu ms", quality);
+	}
+}
+
 void ej_show_busy(webs_t wp, int argc, char_t ** argv)
 {
 	char *prefix = nvram_safe_get("wifi_display");
@@ -177,6 +188,13 @@ void ej_show_busy(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<div class=\"setting\">\n");
 			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(status_wireless.active)</script></div>\n");
 			websWrite(wp, "<span id=\"wl_active\">%llu ms</span>&nbsp;\n", active);
+			websWrite(wp, "</div>\n");
+		}
+		if (active != (unsigned long long)(-1) && busy != (unsigned long long)(-1)) {
+			unsigned long long quality = 100 - ((busy * 100) / active);
+			websWrite(wp, "<div class=\"setting\">\n");
+			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(status_wireless.quality)</script></div>\n");
+			websWrite(wp, "<span id=\"wl_quality\">%llu ms</span>&nbsp;\n", quality);
 			websWrite(wp, "</div>\n");
 		}
 	}
