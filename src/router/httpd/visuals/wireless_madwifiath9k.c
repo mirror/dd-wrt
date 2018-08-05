@@ -146,33 +146,39 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 void ej_get_busy(webs_t wp, int argc, char_t ** argv)
 {
 	char *prefix = nvram_safe_get("wifi_display");
-	unsigned long long busy = getBusy_mac80211(prefix);
-	websWrite(wp, "%llu ms", busy);
+	if (is_ath9k(prefix)) {
+		unsigned long long busy = getBusy_mac80211(prefix);
+		websWrite(wp, "%llu ms", busy);
+	}
 }
 
 void ej_get_active(webs_t wp, int argc, char_t ** argv)
 {
 	char *prefix = nvram_safe_get("wifi_display");
-	unsigned long long active = getActive_mac80211(prefix);
-	websWrite(wp, "%llu ms", active);
+	if (is_ath9k(prefix)) {
+		unsigned long long active = getActive_mac80211(prefix);
+		websWrite(wp, "%llu ms", active);
+	}
 }
 
 void ej_show_busy(webs_t wp, int argc, char_t ** argv)
 {
 	char *prefix = nvram_safe_get("wifi_display");
-	unsigned long long busy = getBusy_mac80211(prefix);
-	unsigned long long active = getActive_mac80211(prefix);
-	if (busy != (unsigned long long)(-1)) {
-		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(status_wireless.busy)</script></div>\n");
-		websWrite(wp, "<span id=\"wl_busy\">%llu ms</span>&nbsp;\n", busy);
-		websWrite(wp, "</div>\n");
-	}
-	if (active !=(unsigned long long)(-1)) {
-		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(status_wireless.active)</script></div>\n");
-		websWrite(wp, "<span id=\"wl_active\">%llu ms</span>&nbsp;\n", active);
-		websWrite(wp, "</div>\n");
+	if (is_ath9k(prefix)) {
+		unsigned long long busy = getBusy_mac80211(prefix);
+		unsigned long long active = getActive_mac80211(prefix);
+		if (busy != (unsigned long long)(-1)) {
+			websWrite(wp, "<div class=\"setting\">\n");
+			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(status_wireless.busy)</script></div>\n");
+			websWrite(wp, "<span id=\"wl_busy\">%llu ms</span>&nbsp;\n", busy);
+			websWrite(wp, "</div>\n");
+		}
+		if (active != (unsigned long long)(-1)) {
+			websWrite(wp, "<div class=\"setting\">\n");
+			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(status_wireless.active)</script></div>\n");
+			websWrite(wp, "<span id=\"wl_active\">%llu ms</span>&nbsp;\n", active);
+			websWrite(wp, "</div>\n");
+		}
 	}
 }
 
