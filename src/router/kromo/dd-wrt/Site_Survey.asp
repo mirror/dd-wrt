@@ -54,7 +54,7 @@ function do_join (F,SSID) {
 						document.write("<tr><td colspan=\"12\" align=\"center\">" + share.none + "</td></tr>");
 					}
 					else {
-						for (var i = 0; i < table.length; i = i + 12) {
+						for (var i = 0; i < table.length; i = i + 13) {
 							document.write("<tr>");
 							document.write("<td>"+table[i]+"</td>");
 							document.write("<td align=\"left\">"+table[i+1]+"</td>");
