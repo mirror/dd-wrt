@@ -1353,7 +1353,9 @@ hroute.right10="Setzt den angewandten Netzwerk-Bereich.";
 // ** Site_Survey.asp **//
 
 survey.titl="Netzsuche";
+survey.titl2="Kanalsuche";
 survey.h2="Benachbarte WLAN-Netzwerke";
+survey.h3="Kanäle und Qualitäten";
 survey.thjoin="Netz beitreten";
 
 
@@ -1847,6 +1849,9 @@ status_wireless.wds="WDS-Knotenpunkte";
 status_wireless.busy="Belegte Zeit";
 status_wireless.active="Aktive Zeit";
 status_wireless.quality="Kanal Qualität";
+status_wireless.rx_time="Empfangszeit";
+status_wireless.tx_time="Sendezeit";
+
 
 // ** GPS info **//
 

@@ -1586,7 +1586,9 @@ hroute.page5="<dd>Click the <i>Show Routing Table</i> button to view all of the 
 // ** Site_Survey.asp **//
 var survey=new Object();
 survey.titl="Site Survey";
+survey.titl2="Channel Survey";
 survey.h2="Neighbor&#39;s Wireless Networks";
+survey.h3="Channel Survey and Qualities";
 survey.thjoin="Join Site";
 
 
@@ -2159,6 +2161,8 @@ status_wireless.wds="WDS Nodes";
 status_wireless.busy="Busy Time";
 status_wireless.active="Active Time";
 status_wireless.quality="Channel Quality";
+status_wireless.rx_time="Receive Time";
+status_wireless.tx_time="Transmission Time";
 
 // ** GPS info **//
 var status_gpsi=new Object();

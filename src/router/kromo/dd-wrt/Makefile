@@ -968,6 +968,9 @@ endif
 ifneq ($(CONFIG_3G),y)
 	rm -f $(INSTALLDIR)/www/index_3g.asp
 endif
+ifneq ($(CONFIG_ATH9K),y)
+	rm -f $(INSTALLDIR)/www/Channel_Survey.asp
+endif
 
 ifneq ($(CONFIG_NOCAT),y)
 	rm -f $(INSTALLDIR)/www/splash.html
