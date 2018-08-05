@@ -275,7 +275,11 @@ static int cb_survey(struct nl_msg *msg, void *data)
 	if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_TX])
 		tx_time = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_TX]);
 
+	if (sinfo[NL80211_SURVEY_INFO_IN_USE])
+	websWrite(d->wp, "%c\"[%d]\"", !d->first_survey ? ' ' : ',', freq);
+	else
 	websWrite(d->wp, "%c\"%d\"", !d->first_survey ? ' ' : ',', freq);
+
 	websWrite(d->wp, ",\"%d\"", ieee80211_mhz2ieee(freq));
 	d->first_survey = 1;
 
