@@ -254,6 +254,8 @@ int site_survey_main(int argc, char *argv[])
 		site_survey_lists[i].capability = sr->isr_capinfo;
 		// site_survey_lists[i].athcaps = sr->isr_athflags;
 		site_survey_lists[i].rate_count = sr->isr_nrates;
+		site_survey_lists[i].busy = sr->isr_busy;
+		site_survey_lists[i].active = sr->isr_active;
 		int n11 = fillenc(site_survey_lists[i].ENCINFO,
 				  (unsigned char *)(vp + sr->isr_ssid_len),
 				  sr->isr_ie_len);
@@ -273,13 +275,16 @@ int site_survey_main(int argc, char *argv[])
 		}
 
 		fprintf(stderr,
-			"[%2d] SSID[%20s] BSSID[%s] channel[%2d] frequency[%4d] rssi[%d] noise[%d] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
+			"[%2d] SSID[%20s] BSSID[%s] channel[%2d] frequency[%4d] rssi[%d] noise[%d] active[%llu] busy[%llu] quality[%llu] beacon[%d] cap[%x] dtim[%d] rate[%d] enc[%s]\n",
 			i, site_survey_lists[i].SSID,
 			site_survey_lists[i].BSSID,
 			site_survey_lists[i].channel,
 			site_survey_lists[i].frequency,
 			site_survey_lists[i].RSSI,
 			site_survey_lists[i].phy_noise,
+			site_survey_lists[i].active,
+			site_survey_lists[i].busy, 
+			site_survey_lists[i].active ? (100 - (site_survey_lists[i].busy * 100 / site_survey_lists[i].active)) : 100,
 			site_survey_lists[i].beacon_period, site_survey_lists[i].capability, site_survey_lists[i].dtim_period, site_survey_lists[i].rate_count, site_survey_lists[i].ENCINFO);
 	}
 
