@@ -116,6 +116,7 @@ share.frequency="Frequency";
 share.rssi="RSSI";
 share.signal="Signal";
 share.noise="Noise";
+share.quality="Quality";
 share.beacon="Beacon";
 share.openn="Open";
 share.dtim="DTIM";
