@@ -168,7 +168,7 @@ void ej_get_quality(webs_t wp, int argc, char_t ** argv)
 		unsigned long long active = getActive_mac80211(prefix);
 		unsigned long long busy = getBusy_mac80211(prefix);
 		unsigned long long quality = 100 - ((busy * 100) / active);
-		websWrite(wp, "%llu ms", quality);
+		websWrite(wp, "%llu%%", quality);
 	}
 }
 
@@ -194,7 +194,7 @@ void ej_show_busy(webs_t wp, int argc, char_t ** argv)
 			unsigned long long quality = 100 - ((busy * 100) / active);
 			websWrite(wp, "<div class=\"setting\">\n");
 			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(status_wireless.quality)</script></div>\n");
-			websWrite(wp, "<span id=\"wl_quality\">%llu ms</span>&nbsp;\n", quality);
+			websWrite(wp, "<span id=\"wl_quality\">%llu%%</span>&nbsp;\n", quality);
 			websWrite(wp, "</div>\n");
 		}
 	}
