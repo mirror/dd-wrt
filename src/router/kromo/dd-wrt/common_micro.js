@@ -1202,7 +1202,7 @@ function SortableTable (tableEl) {
 	this.thead = tableEl.getElementsByTagName('tbody');
  
 	this.getInnerText = function (el) {
-		if (typeof e1 == "undefined") return null;
+		if (typeof el == "undefined") return null;
 		if (el == null) return null;
 		if (typeof(el.textContent) != 'undefined') return el.textContent;
 		if (typeof(el.innerText) != 'undefined') return el.innerText;

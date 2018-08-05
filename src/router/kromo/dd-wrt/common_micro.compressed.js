@@ -1145,7 +1145,7 @@ function SortableTable(_7c){
 this.tbody=_7c.getElementsByTagName("tbody");
 this.thead=_7c.getElementsByTagName("tbody");
 this.getInnerText=function(el){
-if (typeof e1 == "undefined") return null;
+if (typeof el == "undefined") return null;
 if (el == null) return null;
 if(typeof (el.textContent)!="undefined"){
 return el.textContent;
