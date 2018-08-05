@@ -32,15 +32,15 @@ function do_join (F,SSID) {
 				   <th width="25%"><% tran("share.ssid"); %></th>
 				   <th width="7%">Mode</th>
 				   <th width="19%"><% tran("share.mac"); %></th>
-				   <th width="6%"><% tran("share.channel"); %></th>
-				   <th width="6%"><% tran("share.frequency"); %></th>
-				   <th width="6%"><% tran("share.rssi"); %></th>
-				   <th width="6%"><% tran("share.noise"); %></th>
-				   <th width="6%"><% tran("share.quality"); %></th>
-				   <th width="6%"><% tran("share.beacon"); %></th>
-				   <th width="6%"><% tran("share.openn"); %></th>
-				   <th width="6%"><% tran("share.dtim"); %></th>
-				   <th width="6%"><% tran("share.rates"); %></th>
+				   <th width="5%"><% tran("share.channel"); %></th>
+				   <th width="5%"><% tran("share.frequency"); %></th>
+				   <th width="5%"><% tran("share.rssi"); %></th>
+				   <th width="5%"><% tran("share.noise"); %></th>
+				   <th width="5%"><% tran("share.quality"); %></th>
+				   <th width="5%"><% tran("share.beacon"); %></th>
+				   <th width="5%"><% tran("share.openn"); %></th>
+				   <th width="5%"><% tran("share.dtim"); %></th>
+				   <th width="5%"><% tran("share.rates"); %></th>
 				   <th width="7%"><% tran("survey.thjoin"); %></th>
 				</tr>
 					<script type="text/javascript">
