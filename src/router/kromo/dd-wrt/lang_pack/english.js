@@ -2157,6 +2157,7 @@ status_wireless.signal_qual="Signal Quality";
 status_wireless.wds="WDS Nodes";
 status_wireless.busy="Busy Time";
 status_wireless.active="Active Time";
+status_wireless.quality="Channel Quality";
 
 // ** GPS info **//
 var status_gpsi=new Object();
