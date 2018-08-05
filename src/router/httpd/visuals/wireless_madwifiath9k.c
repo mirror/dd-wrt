@@ -48,7 +48,7 @@
 #include "wireless_generic.c"
 #include <nl80211.h>
 #include <unl.h>
-#include <bnet/if.h>
+#include <net/if.h>
 int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifname, int cnt, int turbo, int macmask)
 {
 	char mac[32];
@@ -275,7 +275,7 @@ static int cb_survey(struct nl_msg *msg, void *data)
 	if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_TX])
 		tx_time = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_TX]);
 
-	websWrite(d->wp, "%c\"%d\"", freq, !d->first_survey ? ' ' : ',');
+	websWrite(d->wp, "%c\"%d\"", !d->first_survey ? ' ' : ',', freq);
 	websWrite(d->wp, ",\"%d\"", ieee80211_mhz2ieee(freq));
 	d->first_survey = 1;
 
@@ -305,9 +305,9 @@ static int cb_survey(struct nl_msg *msg, void *data)
 		websWrite(d->wp, ",\"N/A\"");
 
 	if (tx_time != -1)
-		websWrite(d->wp, ",\"%d\"", tx_time);
+		websWrite(d->wp, ",\"%d\"\n", tx_time);
 	else
-		websWrite(d->wp, ",\"N/A\"");
+		websWrite(d->wp, ",\"N/A\"\n");
 
 out:
 	return NL_SKIP;
