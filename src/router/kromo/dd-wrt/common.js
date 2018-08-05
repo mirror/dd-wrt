@@ -1294,7 +1294,7 @@ function SortableTable (tableEl) {
 	this.thead = tableEl.getElementsByTagName('tbody');
  
 	this.getInnerText = function (el) {
-		if (typeof e1 == "undefined") return null;
+		if (typeof el == "undefined") return null;
 		if (el == null) return null;
 		if (typeof(el.textContent) != 'undefined') return el.textContent;
 		if (typeof(el.innerText) != 'undefined') return el.innerText;
@@ -1339,6 +1339,10 @@ function SortableTable (tableEl) {
 	}
  
 	this.sortCaseInsensitive = function(a,b) {
+		if (thisObject.getInnerText(a.cells[thisObject.sortColumnIndex]) == null) 
+		    return 0;
+		if (thisObject.getInnerText(b.cells[thisObject.sortColumnIndex]) == null) 
+		    return 0;
 		aa = thisObject.getInnerText(a.cells[thisObject.sortColumnIndex]).toLowerCase();
 		bb = thisObject.getInnerText(b.cells[thisObject.sortColumnIndex]).toLowerCase();
 		if (aa==bb) return 0;
@@ -1347,6 +1351,10 @@ function SortableTable (tableEl) {
 	}
  
 	this.sortNumeric = function(a,b) {
+		if (thisObject.getInnerText(a.cells[thisObject.sortColumnIndex]) == null)
+		    return 0;
+		if (thisObject.getInnerText(b.cells[thisObject.sortColumnIndex]) == null)
+		    return 0;
 		aa = parseFloat(thisObject.getInnerText(a.cells[thisObject.sortColumnIndex]));
 		if (isNaN(aa)) aa = 0;
 		bb = parseFloat(thisObject.getInnerText(b.cells[thisObject.sortColumnIndex]));
