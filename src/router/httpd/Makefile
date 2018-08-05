@@ -949,6 +949,7 @@ ifeq ($(CONFIG_ATH9K),y)
 LDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
 ATH9KVISOBJS += wireless_madwifiath9k.o
 ATH9KVISFILES += visuals/wireless_madwifiath9k.c
+CFLAGS += -I$(TOP)/libnl-tiny/include
 endif
 
 

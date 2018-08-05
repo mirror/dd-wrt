@@ -46,6 +46,9 @@
 #include <utils.h>
 #include <wlutils.h>
 #include "wireless_generic.c"
+#include <nl80211.h>
+#include <unl.h>
+#include <bnet/if.h>
 int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifname, int cnt, int turbo, int macmask)
 {
 	char mac[32];
@@ -200,4 +203,138 @@ void ej_show_busy(webs_t wp, int argc, char_t ** argv)
 	}
 }
 
+static struct nla_policy survey_policy[NL80211_SURVEY_INFO_MAX + 1] = {
+	[NL80211_SURVEY_INFO_FREQUENCY] = {.type = NLA_U32},
+	[NL80211_SURVEY_INFO_NOISE] = {.type = NLA_U8},
+	[NL80211_SURVEY_INFO_CHANNEL_TIME] = {.type = NLA_U64},
+	[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY] = {.type = NLA_U64},
+};
+
+static int parse_survey(struct nl_msg *msg, struct nlattr **sinfo)
+{
+	struct nlattr *tb[NL80211_ATTR_MAX + 1];
+	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
+
+	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
+
+	if (!tb[NL80211_ATTR_SURVEY_INFO])
+		return -1;
+
+	if (nla_parse_nested(sinfo, NL80211_SURVEY_INFO_MAX, tb[NL80211_ATTR_SURVEY_INFO], survey_policy))
+		return -1;
+
+	if (!sinfo[NL80211_SURVEY_INFO_FREQUENCY])
+		return -1;
+
+	return 0;
+}
+
+struct survey_data {
+	int first_survey;
+	webs_t wp;
+};
+
+static int cb_survey(struct nl_msg *msg, void *data)
+{
+	struct survey_data *d = (struct survey_data *)data;
+	struct nlattr *sinfo[NL80211_SURVEY_INFO_MAX + 1];
+	struct nlattr *tb[NL80211_ATTR_MAX + 1];
+	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
+	int freq;
+	int noise = -1;
+	int64_t active = -1;
+	int64_t busy = -1;
+	int64_t rx_time = -1;
+	int64_t tx_time = -1;
+	int64_t quality = -1;
+
+	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
+	if (!tb[NL80211_ATTR_SURVEY_INFO])
+		return NL_SKIP;
+
+	if (nla_parse_nested(sinfo, NL80211_SURVEY_INFO_MAX, tb[NL80211_ATTR_SURVEY_INFO], survey_policy))
+		return NL_SKIP;
+
+	if (!sinfo[NL80211_SURVEY_INFO_FREQUENCY])
+		return NL_SKIP;
+
+	freq = nla_get_u32(sinfo[NL80211_SURVEY_INFO_FREQUENCY]);
+	if (sinfo[NL80211_SURVEY_INFO_NOISE]) {
+		noise = nla_get_u8(sinfo[NL80211_SURVEY_INFO_NOISE]);
+	}
+	if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME])
+		active = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME]);
+	if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY])
+		busy = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY]);
+
+	if (active > 0)
+		quality = 100 - ((busy * 100) / active);
+
+	if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_RX])
+		rx_time = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_RX]);
+	if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_TX])
+		tx_time = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_TX]);
+
+	websWrite(d->wp, "%c\"%d\"", freq, !d->first_survey ? ' ' : ',');
+	websWrite(d->wp, ",\"%d\"", ieee80211_mhz2ieee(freq));
+	d->first_survey = 1;
+
+	if (noise != -1)
+		websWrite(d->wp, ",\"%d\"", noise);
+	else
+		websWrite(d->wp, ",\"N/A\"");
+
+	if (quality != -1)
+		websWrite(d->wp, ",\"%d\"", quality);
+	else
+		websWrite(d->wp, ",\"N/A\"");
+
+	if (active != -1)
+		websWrite(d->wp, ",\"%d\"", active);
+	else
+		websWrite(d->wp, ",\"N/A\"");
+
+	if (busy != -1)
+		websWrite(d->wp, ",\"%d\"", busy);
+	else
+		websWrite(d->wp, ",\"N/A\"");
+
+	if (rx_time != -1)
+		websWrite(d->wp, ",\"%d\"", rx_time);
+	else
+		websWrite(d->wp, ",\"N/A\"");
+
+	if (tx_time != -1)
+		websWrite(d->wp, ",\"%d\"", tx_time);
+	else
+		websWrite(d->wp, ",\"N/A\"");
+
+out:
+	return NL_SKIP;
+}
+
+void ej_dump_channel_survey(webs_t wp, int argc, char_t ** argv)
+{
+	struct nl_msg *surveymsg;
+	struct unl unl;
+	struct survey_data data;
+	int wdev;
+	data.first_survey = 0;
+	data.wp = wp;
+	char *interface = nvram_safe_get("wifi_display");
+	wdev = if_nametoindex(interface);
+	eval("iw", "dev", interface, "scan");
+	unl_genl_init(&unl, "nl80211");
+	surveymsg = unl_genl_msg(&unl, NL80211_CMD_GET_SURVEY, true);
+	NLA_PUT_U32(surveymsg, NL80211_ATTR_IFINDEX, wdev);
+	unl_genl_request(&unl, surveymsg, cb_survey, &data);
+	unl_free(&unl);
+	return;
+
+nla_put_failure:
+	nlmsg_free(surveymsg);
+	unl_free(&unl);
+	return;
+
+}
 #endif
