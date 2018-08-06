@@ -206,8 +206,6 @@ void ej_show_busy(webs_t wp, int argc, char_t ** argv)
 static struct nla_policy survey_policy[NL80211_SURVEY_INFO_MAX + 1] = {
 	[NL80211_SURVEY_INFO_FREQUENCY] = {.type = NLA_U32},
 	[NL80211_SURVEY_INFO_NOISE] = {.type = NLA_U8},
-	[NL80211_SURVEY_INFO_CHANNEL_TIME] = {.type = NLA_U64},
-	[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY] = {.type = NLA_U64},
 };
 
 static int parse_survey(struct nl_msg *msg, struct nlattr **sinfo)
@@ -242,11 +240,11 @@ static int cb_survey(struct nl_msg *msg, void *data)
 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
 	int freq;
 	int noise = -1;
-	int64_t active = -1;
-	int64_t busy = -1;
-	int64_t rx_time = -1;
-	int64_t tx_time = -1;
-	int64_t quality = -1;
+	long long active = -1;
+	long long busy = -1;
+	long long rx_time = -1;
+	long long tx_time = -1;
+	long long quality = -1;
 
 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 	if (!tb[NL80211_ATTR_SURVEY_INFO])
@@ -264,17 +262,18 @@ static int cb_survey(struct nl_msg *msg, void *data)
 		noise = lnoise;
 	}
 	if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME])
-		active = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME]);
+		active = (unsigned long long)nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME]);
+
 	if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY])
-		busy = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY]);
+		busy = (unsigned long long)nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY]);
 
 	if (active > 0)
 		quality = 100 - ((busy * 100) / active);
 
 	if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_RX])
-		rx_time = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_RX]);
+		rx_time = (unsigned long long)nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_RX]);
 	if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_TX])
-		tx_time = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_TX]);
+		tx_time = (unsigned long long)nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_TX]);
 
 	if (sinfo[NL80211_SURVEY_INFO_IN_USE])
 		websWrite(d->wp, "%c\"[%d]\"", !d->first_survey ? ' ' : ',', freq);
@@ -290,27 +289,27 @@ static int cb_survey(struct nl_msg *msg, void *data)
 		websWrite(d->wp, ",\"N/A\"");
 
 	if (quality != -1)
-		websWrite(d->wp, ",\"%d\"", quality);
+		websWrite(d->wp, ",\"%lld\"", quality);
 	else
 		websWrite(d->wp, ",\"N/A\"");
-
+	
 	if (active != -1)
-		websWrite(d->wp, ",\"%d\"", active);
+		websWrite(d->wp, ",\"%lld\"", active);
 	else
 		websWrite(d->wp, ",\"N/A\"");
 
 	if (busy != -1)
-		websWrite(d->wp, ",\"%d\"", busy);
+		websWrite(d->wp, ",\"%lld\"", busy);
 	else
 		websWrite(d->wp, ",\"N/A\"");
 
 	if (rx_time != -1)
-		websWrite(d->wp, ",\"%d\"", rx_time);
+		websWrite(d->wp, ",\"%lld\"", rx_time);
 	else
 		websWrite(d->wp, ",\"N/A\"");
 
 	if (tx_time != -1)
-		websWrite(d->wp, ",\"%d\"\n", tx_time);
+		websWrite(d->wp, ",\"%lld\"\n", tx_time);
 	else
 		websWrite(d->wp, ",\"N/A\"\n");
 
