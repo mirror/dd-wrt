@@ -1,4 +1,20 @@
 ------------------------------------------------------------------------
+r4161 | brainslayer | 2018-08-06 13:14:52 +0200 (Mon, 06 Aug 2018) | 1 line
+
+multicast to unicast as default
+------------------------------------------------------------------------
+r4160 | brainslayer | 2018-08-06 13:13:29 +0200 (Mon, 06 Aug 2018) | 1 line
+
+iterate two times over all slots and find maximum length empty area
+------------------------------------------------------------------------
+r4159 | brainslayer | 2018-08-06 13:11:33 +0200 (Mon, 06 Aug 2018) | 1 line
+
+Regarding delivery of buffered multicast frame Let dtim_period be 1.
+------------------------------------------------------------------------
+r4158 | brainslayer | 2018-08-06 13:08:48 +0200 (Mon, 06 Aug 2018) | 1 line
+
+for increasing to 16 vaps we need to increase bcbufs
+------------------------------------------------------------------------
 r4157 | brainslayer | 2018-08-05 15:59:02 +0200 (Sun, 05 Aug 2018) | 1 line
 
 patch madwifi for active / busy time support
