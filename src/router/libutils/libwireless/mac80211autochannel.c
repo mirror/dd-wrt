@@ -194,7 +194,7 @@ static int freq_add_stats(struct nl_msg *msg, void *data)
 		goto out;
 
 	if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME] && sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY]) {
-		uint64_t time, busy;
+		unsigned long long time, busy;
 
 		time = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME]);
 		busy = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY]);
