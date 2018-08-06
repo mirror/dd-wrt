@@ -96,22 +96,6 @@ static char *get_json_data_by_key(char *output, char *getkey)
 }
 #endif
 
-#if defined(HAVE_3G)
-#if defined(HAVE_LIBMBIM) || defined(HAVE_UMBIM)
-void start_check_mbim(void)
-{
-#ifdef HAVE_REGISTER
-	if (registered_has_cap(27))
-#endif
-	{
-		// char *str;
-		// asprintf(&str, "/dev/%s", nvram_safe_get("3gctrl")); // ???? no where set
-		eval("/usr/sbin/mbim-status.sh");
-		// free(str);
-	}
-}
-#endif
-
 void start_check_qmi(void)
 {
 #ifdef HAVE_UQMI
