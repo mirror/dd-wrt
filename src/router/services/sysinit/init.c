@@ -534,13 +534,13 @@ int redial_main(int argc, char **argv)
 	int num;
 
 	while (1) {
+#if defined(HAVE_3G)
 #if defined(HAVE_LIBMBIM) || defined(HAVE_UMBIM)
 		if (nvram_match("wan_proto", "3g")
 		    && nvram_match("3gdata", "mbim")) {
 			start_check_mbim();
 		}
 #endif
-#if defined(HAVE_3G)
 		if (nvram_match("wan_proto", "3g")
 		    && nvram_match("3gdata", "sierradirectip")) {
 			start_check_sierradirectip();
