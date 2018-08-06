@@ -540,7 +540,7 @@ int redial_main(int argc, char **argv)
 			start_check_mbim();
 		}
 #endif
-#if defined(HAVE_3G)
+#if defined(HAVE_3G) && (defined(HAVE_UQMI) || defined(HAVE_LIBQMI))
 		if (nvram_match("wan_proto", "3g")
 		    && nvram_match("3gdata", "sierradirectip")) {
 			start_check_sierradirectip();
