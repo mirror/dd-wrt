@@ -141,7 +141,7 @@ void ar71xx_device_start(u32 mask)
 EXPORT_SYMBOL_GPL(ar71xx_device_start);
 void ar71xx_ddr_flush(u32 reg)
 {
-	void __iomem *flush_reg = ar71xx_ddr_base + (reg * 4);
+	void __iomem *flush_reg = ar71xx_ddr_base + reg;
 
 	/* Flush the DDR write buffer. */
 	__raw_writel(0x1, flush_reg);
