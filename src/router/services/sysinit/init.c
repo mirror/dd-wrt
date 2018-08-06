@@ -412,6 +412,12 @@ void start_init_start(void)
 		wlconf_up(iface);	// touble tip
 	}
 #endif
+	eval("startservice_f", "modules_wait");
+
+}
+
+void start_modules_wait(void)
+{
 
 	cprintf("run rc file\n");
 #ifndef HAVE_MICRO
@@ -444,6 +450,7 @@ void start_init_start(void)
 		start_run_rc_startup();
 	}
 #endif
+
 
 }
 
