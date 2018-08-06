@@ -138,4 +138,3 @@ void start_check_qmi(void)
 	sysprintf("qmi-network /dev/cdc-wdm0 status|grep disconnected|wc -l>/tmp/qmistatus");
 #endif
 }
-#endif
