@@ -69,8 +69,8 @@
 
 #define SERVICEALT_MODULE "/jffs/usr/lib/validate.so"
 #define VISSERVICEALT_MODULE "/jffs/usr/lib/visuals.so"
-#define SERVICEALT_MODULE "/tmp/validate.so"
-#define VISSERVICEALT_MODULE "/tmp/visuals.so"
+//#define SERVICEALT_MODULE "/tmp/validate.so"
+//#define VISSERVICEALT_MODULE "/tmp/visuals.so"
 
 //#define SERVICE_MODULE "/tmp/validate.so"
 //#define VISSERVICE_MODULE "/tmp/visuals.so"
