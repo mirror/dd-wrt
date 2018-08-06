@@ -22,7 +22,13 @@ obj-$(CONFIG_MTD_SST25L)	+= sst25l.o
 obj-$(CONFIG_MTD_BCM47XXSFLASH)	+= bcm47xxsflash.o
 obj-$(CONFIG_MTD_AR7100_SPI_FLASH)	+= ar7100_flash.o
 obj-$(CONFIG_MTD_AR9100_PARALLEL_FLASH)	+= ar9100_pflash.o
+
+ifeq ($(CONFIG_WASP_SUPPORT),y)
 obj-$(CONFIG_MTD_AR7240_SPI_FLASH)	+= ar7240_flash.o qca-sf.o
+else
+obj-$(CONFIG_MTD_AR7240_SPI_FLASH)	+= ar7240_flash_old.o
+endif
+
 obj-$(CONFIG_WZRAG300NH)	+= wzrag300nh_flash.o
 obj-$(CONFIG_WZRG450NH)		+= wzrg450nh_flash.o
 obj-$(CONFIG_MTD_SPIFLASH)	+= spiflash.o
