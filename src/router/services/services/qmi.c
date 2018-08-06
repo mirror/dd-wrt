@@ -96,17 +96,7 @@ static char *get_json_data_by_key(char *output, char *getkey)
 }
 #endif
 
-#if defined(HAVE_UQMI) || defined(HAVE_LIBQMI)
-void start_check_sierradirectip(void)
-{
-	eval("/etc/comgt/sierrastatus.sh", nvram_safe_get("3gcontrol"), "dip");
-}
-
-void start_check_sierrappp(void)
-{
-	eval("/etc/comgt/sierrastatus.sh", nvram_safe_get("3gcontrol"));
-}
-
+#if defined(HAVE_3G)
 #if defined(HAVE_LIBMBIM) || defined(HAVE_UMBIM)
 void start_check_mbim(void)
 {

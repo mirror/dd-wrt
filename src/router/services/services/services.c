@@ -204,6 +204,15 @@ void stop_3g(void)
 	cprintf("done\n");
 }
 
+void start_check_sierradirectip(void)
+{
+	eval("/etc/comgt/sierrastatus.sh", nvram_safe_get("3gcontrol"), "dip");
+}
+
+void start_check_sierrappp(void)
+{
+	eval("/etc/comgt/sierrastatus.sh", nvram_safe_get("3gcontrol"));
+}
 #endif
 
 void start_pppmodules(void)
