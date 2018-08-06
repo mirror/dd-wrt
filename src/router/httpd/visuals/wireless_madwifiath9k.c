@@ -342,4 +342,12 @@ nla_put_failure:
 	return;
 
 }
+
+void ej_channel_survey(webs_t wp, int argc, char_t ** argv)
+{
+	if (is_ath9k(nvram_safe_get("wifi_display"))) {
+		websWrite(wp, "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"channel_survey\\\" value=\\\"\" + sbutton.csurvey + \"\\\" onclick=\\\"OpenChannelSurvey()\\\" />\");\n");
+	}
+}
+
 #endif
