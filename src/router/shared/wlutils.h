@@ -151,8 +151,8 @@ struct site_survey_list {
 	char ENCINFO[128];	/* encryption info */
 	uint rate_count;	/* # rates in this set */
 	uint8 dtim_period;	/* DTIM period */
-	uint64_t active;	/* channel active time */
-	uint64_t busy;		/* channel busy time */
+	unsigned long long active;	/* channel active time */
+	unsigned long long busy;		/* channel busy time */
 };
 
 struct wifi_interface {
@@ -234,11 +234,11 @@ struct wifi_channels {
 struct mac80211_info {
 	struct wifi_client_info *wci;
 	int8_t noise;
-	uint64_t channel_active_time;
-	uint64_t channel_busy_time;
-	uint64_t channel_receive_time;
-	uint64_t channel_transmit_time;
-	uint64_t extension_channel_busy_time;
+	unsigned long long channel_active_time;
+	unsigned long long channel_busy_time;
+	unsigned long long channel_receive_time;
+	unsigned long long channel_transmit_time;
+	unsigned long long extension_channel_busy_time;
 	uint32_t frequency;
 };
 
