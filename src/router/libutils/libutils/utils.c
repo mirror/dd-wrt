@@ -416,7 +416,7 @@ int check_wan_link(int num)
 	int ppp3g = 1;
 
 #ifdef HAVE_3G
-	FILE *fp;
+	FILE *fp = NULL;
 	int value = 0;
 	if (nvram_match("wan_proto", "3g")) {
 		if (nvram_match("3gdata", "hso")
