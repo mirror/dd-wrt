@@ -15,14 +15,11 @@ opengt
  if % = 3 goto senderror
 
  print "Timeout dialing '"+$env("COMGTDIAL")+"'\n"
- system "rm /tmp/.sierrastatus.sh.lock"
  exit 1
 
 :senderror
- system "rm /tmp/.sierrastatus.sh.lock"
  print "Error dialing '"+$env("COMGTDIAL")+"'\n"
  exit 1
 
 :continue
- system "rm /tmp/.sierrastatus.sh.lock"
  exit 0

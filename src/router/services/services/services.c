@@ -220,10 +220,8 @@ void start_check_mbim(void)
 	if (registered_has_cap(27))
 #endif
 	{
-		// char *str;
-		// asprintf(&str, "/dev/%s", nvram_safe_get("3gctrl")); // ???? no where set
+		dd_loginfo("mbim","STARTING mbim-status.sh\n");
 		eval("/usr/sbin/mbim-status.sh");
-		// free(str);
 	}
 }
 #endif
