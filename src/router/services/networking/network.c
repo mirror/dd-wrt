@@ -3476,7 +3476,6 @@ void start_wan(int status)
 
 		} else {
 			if (nvram_match("3gnmvariant", "1")) {
-				sysprintf("touch /tmp/.sierrastatus.sh.lock");
 				sleep(3);
 				sprintf(wsbuf, "wan_roaming%s", wsel);
 				if (nvram_match(wsbuf, "1")) {
@@ -3561,7 +3560,6 @@ void start_wan(int status)
 				insmod("sierra_net");
 				// sysprintf("echo 1 > /proc/sys/net/ipv6/conf/wwan0/disable_ipv6\n");
 				start_dhcpc("wwan0", NULL, NULL, 1, 0, 0);
-				sysprintf("rm /tmp/.sierrastatus.sh.lock");
 				if (status != REDIAL) {
 					start_redial();
 				}
