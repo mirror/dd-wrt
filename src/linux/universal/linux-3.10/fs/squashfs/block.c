@@ -159,6 +159,8 @@ int squashfs_read_data(struct super_block *sb, void **buffer, u64 index,
 	}
 
 	if (compressed) {
+		if (!msblk->stream)
+			goto read_failure;
 		length = squashfs_decompress(msblk, buffer, bh, b, offset,
 			 length, srclength, pages);
 		if (length < 0)
