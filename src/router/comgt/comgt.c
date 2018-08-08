@@ -63,6 +63,9 @@
 #define BOOL unsigned char
 #define NVARS 286       /* a-z, a0-z9 == 26*11 */
 
+#define LOCKPOLLUSEC 1000*500 /*time for usleep to poll the lockfile*/
+#define LOCKPOLLUSECDIV 2000 /*up to n usecs diversity*/
+
 
 extern char *optarg;
 extern int optind, opterr;
@@ -149,6 +152,139 @@ int doscript(void);
 char GTdevice[4][20] = {"/dev/noz2",
                         "/dev/ttyUSB2",
                         "/dev/modem",""}; /* default device names to search for */
+
+#define LOCKFILEBASE "/tmp/.comgt."
+static unsigned long hashStr(unsigned char *str)
+{
+	unsigned long _hash = 5381;
+	int c;
+
+	while (c = *str++)
+		_hash = ((_hash << 5) + _hash) + c; /* hash * 33 + c */
+
+	return _hash;
+}
+
+
+char *makeLockFileName(const char *device)
+{
+	char lfp[BUFSIZ];
+	snprintf(lfp, BUFSIZ, LOCKFILEBASE "%ld", hashStr((unsigned char *)device) );
+
+	char *ret = (char *)calloc(1, strlen(lfp));
+	strcpy(ret, lfp);
+
+	return ret;
+}
+
+int fileExists(const char *fpath)
+{
+	if(!fpath) return 0;
+	FILE *fp = fopen(fpath, "r");
+	if(!fp) return 0;
+
+	fclose(fp);
+	return 1;
+}
+
+int pidAlive(const char *pid)
+{
+	if(!pid) return 0;
+	char procpath[BUFSIZ];
+	snprintf(procpath, BUFSIZ, "/proc/%s", pid);
+	return fileExists(procpath);
+}
+
+#define _PIDLEN_ 16
+void readPid(const char *fpath, char *dest)
+{
+	if(!fpath) return;
+	FILE *fp = fopen(fpath, "r");
+	if(!fp) return;
+
+	char s[_PIDLEN_];
+	fgets(s,_PIDLEN_,fp);
+
+	fclose(fp);
+
+	strncpy(dest,s,_PIDLEN_);
+}
+
+void flushTheDead(const char *lockfile)
+{
+	if(!lockfile) return;
+
+	char pid[_PIDLEN_];
+	readPid(lockfile, pid);
+
+	if(pidAlive(pid)) {
+		return;
+	}
+
+	fprintf(stderr, "%s is not alive anymore, remove the lock of it %s\n", pid, lockfile);
+	char rmcmd[BUFSIZ];
+	snprintf(rmcmd, BUFSIZ, "rm %s", lockfile);
+	system(rmcmd);
+
+	return;
+}
+
+void lock(const char *lfile)
+{
+	FILE *fp = fopen(lfile, "w+");
+	if(!fp) {
+		fprintf(stderr, "error writing lockfile at %s\n", lfile);
+		perror("err:");
+		return;
+	}
+	pid_t mypid = getpid();
+	char pid[_PIDLEN_];
+	int len = snprintf(pid, _PIDLEN_, "%d", mypid);
+	fwrite(pid, len, 1, fp);
+	fclose(fp);
+}
+
+char *_lockFile;
+void unlock()
+{
+	char rmcmd[BUFSIZ];
+	snprintf(rmcmd, BUFSIZ, "rm %s", _lockFile);
+	system(rmcmd);
+}
+void unlockS(int sig)
+{
+	unlock();
+}
+
+/*
+ * blocks until free to go
+ * then blocks
+ */
+void lockBlock(const char *devicePath)
+{
+	srand(time(NULL));
+	_lockFile = makeLockFileName(devicePath);
+	if(!_lockFile) {
+		fprintf(stderr, "failed to create lockfilename\n");
+		return;
+	}
+
+	while (fileExists(_lockFile)) {
+		fprintf(stderr, "waiting for lock to come free\n");
+
+		flushTheDead(_lockFile);
+
+		int rnd = rand() % LOCKPOLLUSECDIV;
+		usleep(LOCKPOLLUSEC + rnd);
+	}
+
+	lock(_lockFile);
+
+	signal(SIGSEGV, unlockS);
+	signal(SIGABRT, unlockS);
+	atexit(unlock);
+}
+
 
 /* Returns hundreds of seconds */
 unsigned long htime(void) {
@@ -1259,6 +1395,7 @@ void doclose(void) {
 }
 
 void opengt(void) {
+  lockBlock(device);
   int dcount = 0;
     
   if(strcmp(device,"-")==0) { //no device on command line or env so try the list of devices
@@ -1307,7 +1444,6 @@ void opengt(void) {
 }
 
 void opendevice(void) {
-
   if(strcmp(device,"-")!=0) {
     if ((comfd = open(device, O_RDWR|O_NOCTTY)) <0) { //O_NONBLOCK|O_NOCTTY)) <0) {//
       sprintf(msg,"Can't open device %s.\n",device);
@@ -1316,6 +1452,7 @@ void opendevice(void) {
     }
   }
   else comfd=0;
+
 
   if (ioctl (comfd, TCGETA, &svbuf) < 0) {
     sprintf(msg,"Can't ioctl get device %s.\n",device);
@@ -1546,6 +1683,9 @@ int doscript(void) {
   return(exitcode);
 }
 
+
+
+
 int main(int argc,char **argv) {
   unsigned int a;
   int aa,b,i,skip_default;
@@ -1634,6 +1774,7 @@ int main(int argc,char **argv) {
     sprintf(msg,"Script file: %s",scriptfile);
     vmsg(msg);
   }
+
 
   char * code;
   code = get_code(scriptfile);

@@ -1724,7 +1724,6 @@ void get3GControlDevice(void)
 				}
 				if (ifexists("wwan0")) {
 					if (devicelist[devicecount].customsetup) {
-						sysprintf("touch /tmp/.sierrastatus.sh.lock");
 						fprintf(stderr, "SierraDirectip customsetup\n");
 						devicelist[devicecount].customsetup(needreset, devicecount);
 					}
@@ -1732,7 +1731,6 @@ void get3GControlDevice(void)
 						detectcontrol_and_data_port();
 					// nvram_set("3gcontrol", control);
 					// sysprintf("echo \"Setting controlport to %s\" | logger", control);
-					// sysprintf("rm /tmp/.sierrastatus.sh.lock");
 					nvram_set("3gdata", "sierradirectip");
 					nvram_set("3gnmvariant", "1");
 					return;

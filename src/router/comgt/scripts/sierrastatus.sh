@@ -1,12 +1,4 @@
 #!/bin/sh
-if [ -f /tmp/.sierrastatus.sh.lock ]
-then
-	if [ x$3 != xignorelock ]
-	then
-		echo "SIERRASTATUS LOCK EXISTS DIAL IN PROGRESS" | logger
-		exit 0
-	fi
-fi
 comgt -s -d $1 /etc/comgt/sierrastatus.comgt 2>/dev/null | tr -d '"' | awk -F"\t" '
 function ltrim(s) { sub(/^[ \t\r\n]+/, "", s); return s }
 function rtrim(s) { sub(/[ \t\r\n]+$/, "", s); return s }
@@ -75,6 +67,11 @@ then
   if [ x${CURIP} != x${WWANIP} ]
   then
     echo "ip changed"
+    echo 0 >/tmp/sierradipstatus
+  fi
+  if [ -f /tmp/diphanguptest ]
+  then
+    echo "test reconnect"
     echo 0 >/tmp/sierradipstatus
   fi
 fi

@@ -413,6 +413,54 @@ int get_ppp_pid(char *file)
 int check_wan_link(int num)
 {
 	int wan_link = 0;
+	int ppp3g = 1;
+
+#ifdef HAVE_3G
+	FILE *fp;
+	int value = 0;
+	if (nvram_match("wan_proto", "3g")) {
+		if (nvram_match("3gdata", "hso")
+			|| nvram_match("3gdata", "qmi") 
+			|| nvram_match("3gdata", "mbim") 
+			|| nvram_match("3gdata", "sierradirectip") ) {
+			ppp3g = 0;
+			if (nvram_match("3gdata", "sierradirectip")) {
+				fp = fopen("/tmp/sierradipstatus", "rb");
+			}
+#ifdef HAVE_UQMI
+			if (nvram_match("3gdata", "qmi")) {
+				fp = fopen("/tmp/qmistatus", "rb");
+			}
+#endif
+#ifdef HAVE_LIBMBIM
+			if (nvram_match("3gdata", "mbim")) {
+				fp = fopen("/tmp/mbimstatus", "rb");
+			}
+#endif
+			// Where is hso? was never handled
+			if (fp) {
+				fscanf(fp, "%d", &value);
+				fclose(fp);
+			}
+			if (value) {
+				wan_link = 1;
+			}
+			else {
+				wan_link = 0;
+#if defined(HAVE_TMK) || defined(HAVE_BKM)
+				char *gpio3g;
+				gpio3g = nvram_get("gpio3g");
+				if (gpio3g != NULL)
+					set_gpio(atoi(gpio3g), 0);
+				gpio3g = nvram_get("gpiowancable");
+				if (gpio3g != NULL)
+				set_gpio(atoi(gpio3g), 0);
+#endif
+			}
+		return wan_link;
+		}
+	}
+#endif
 
 	if ((nvram_match("wan_proto", "pptp")
 #ifdef HAVE_L2TP
@@ -428,9 +476,7 @@ int check_wan_link(int num)
 	     || nvram_match("wan_proto", "pppoa")
 #endif
 #ifdef HAVE_3G
-	     || (nvram_match("wan_proto", "3g") && !nvram_match("3gdata", "hso")
-		 && !nvram_match("3gdata", "qmi") && !nvram_match("3gdata", "mbim")
-		 && !nvram_match("3gdata", "sierradirectip"))
+	     || nvram_match("wan_proto", "3g") 
 #endif
 	     || nvram_match("wan_proto", "heartbeat"))
 	    ) {
@@ -465,94 +511,6 @@ int check_wan_link(int num)
 			}
 		}
 	}
-#if defined(HAVE_LIBMBIM)
-	else if (nvram_match("wan_proto", "3g") && nvram_match("3gdata", "mbim")) {
-		FILE *fp = fopen("/tmp/mbimstatus", "rb");
-		int value = 0;
-		if (fp) {
-			fscanf(fp, "%d", &value);
-			fclose(fp);
-		}
-		if (value)
-			return 1;
-	}
-#endif
-#if defined(HAVE_3G)
-	else if (nvram_match("wan_proto", "3g") && nvram_match("3gdata", "sierradirectip")) {
-		FILE *fp = fopen("/tmp/sierradipstatus", "rb");
-		int value = 0;
-		if (fp) {
-			fscanf(fp, "%d", &value);
-			fclose(fp);
-		}
-		if (value) {
-#if defined(HAVE_TMK) || defined(HAVE_BKM)
-#if 0
-			char *gpio3g;
-			gpio3g = nvram_get("gpio3g");
-			if (gpio3g != NULL)
-				set_gpio(atoi(gpio3g), 1);
-#endif
-#endif
-			return 1;
-		}
-#if defined(HAVE_TMK) || defined(HAVE_BKM)
-		char *gpio3g;
-		gpio3g = nvram_get("gpio3g");
-		if (gpio3g != NULL)
-			set_gpio(atoi(gpio3g), 0);
-		gpio3g = nvram_get("gpiowancable");
-		if (gpio3g != NULL)
-			set_gpio(atoi(gpio3g), 0);
-#endif
-		return 0;
-	} else if (nvram_match("wan_proto", "3g") && nvram_match("3gdata", "qmi")) {
-		FILE *fp = fopen("/tmp/qmistatus", "rb");
-		int value = 0;
-		if (fp) {
-			fscanf(fp, "%d", &value);
-			fclose(fp);
-		}
-#ifdef HAVE_UQMI
-		if (value) {
-#if defined(HAVE_TMK) || defined(HAVE_BKM)
-#if 0
-			char *gpio3g;
-			gpio3g = nvram_get("gpio3g");
-			if (gpio3g != NULL)
-				set_gpio(atoi(gpio3g), 1);
-#endif
-#endif
-			return 1;
-		}
-	} else if (nvram_match("wan_proto", "3g") && nvram_match("3gdata", "mbim")) {
-		FILE *fp = fopen("/tmp/mbimstatus", "rb");
-		int value = 0;
-		if (fp) {
-			fscanf(fp, "%d", &value);
-			fclose(fp);
-		}
-		if (value) {
-			return 1;
-		}
-#if defined(HAVE_TMK) || defined(HAVE_BKM)
-		char *gpio3g;
-		gpio3g = nvram_get("gpio3g");
-		if (gpio3g != NULL)
-			set_gpio(atoi(gpio3g), 0);
-		gpio3g = nvram_get("gpiowancable");
-		if (gpio3g != NULL)
-			set_gpio(atoi(gpio3g), 0);
-#endif
-		return 0;
-#else
-		if (value)
-			return 0;
-		return 1;
-#endif
-	}
-#endif
-	else
 #ifdef HAVE_IPETH
 	if (nvram_match("wan_proto", "iphone")) {
 		FILE *fp;
