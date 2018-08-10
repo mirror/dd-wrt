@@ -1,24 +1,24 @@
-/* parens.c -- Implementation of matching parentheses feature. */
+/* parens.c -- implementation of matching parentheses feature. */
 
-/* Copyright (C) 1987, 1989, 1992 Free Software Foundation, Inc.
+/* Copyright (C) 1987, 1989, 1992-2015 Free Software Foundation, Inc.
 
-   This file is part of the GNU Readline Library, a library for
-   reading lines of text with interactive input and history editing.
+   This file is part of the GNU Readline Library (Readline), a library
+   for reading lines of text with interactive input and history editing.      
 
-   The GNU Readline Library is free software; you can redistribute it
-   and/or modify it under the terms of the GNU General Public License
-   as published by the Free Software Foundation; either version 2, or
+   Readline is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
-   The GNU Readline Library is distributed in the hope that it will be
-   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   Readline is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
-   The GNU General Public License is often shipped with GNU software, and
-   is generally kept in a file called COPYING or LICENSE.  If you do not
-   have a copy of the license, write to the Free Software Foundation,
-   59 Temple Place, Suite 330, Boston, MA 02111 USA. */
+   You should have received a copy of the GNU General Public License
+   along with Readline.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #define READLINE_LIBRARY
 
 #if defined (__TANDEM)
@@ -38,16 +38,7 @@
 #  include <unistd.h>
 #endif
 
-#if defined (FD_SET) && !defined (HAVE_SELECT)
-#  define HAVE_SELECT
-#endif
-
-#if defined (HAVE_SELECT)
-#  include <sys/time.h>
-#endif /* HAVE_SELECT */
-#if defined (HAVE_SYS_SELECT_H)
-#  include <sys/select.h>
-#endif
+#include "posixselect.h"
 
 #if defined (HAVE_STRING_H)
 #  include <string.h>
@@ -66,11 +57,7 @@ static int find_matching_open PARAMS((char *, int, int));
 
 /* Non-zero means try to blink the matching open parenthesis when the
    close parenthesis is inserted. */
-#if defined (HAVE_SELECT)
-int rl_blink_matching_paren = 1;
-#else /* !HAVE_SELECT */
 int rl_blink_matching_paren = 0;
-#endif /* !HAVE_SELECT */
 
 static int _paren_blink_usec = 500000;
 
@@ -81,16 +68,32 @@ _rl_enable_paren_matching (on_or_off)
      int on_or_off;
 {
   if (on_or_off)
-    {	/* ([{ */
+    {
+      /* ([{ */
       rl_bind_key_in_map (')', rl_insert_close, emacs_standard_keymap);
       rl_bind_key_in_map (']', rl_insert_close, emacs_standard_keymap);
       rl_bind_key_in_map ('}', rl_insert_close, emacs_standard_keymap);
+
+#if defined (VI_MODE)
+      /* ([{ */
+      rl_bind_key_in_map (')', rl_insert_close, vi_insertion_keymap);
+      rl_bind_key_in_map (']', rl_insert_close, vi_insertion_keymap);
+      rl_bind_key_in_map ('}', rl_insert_close, vi_insertion_keymap);
+#endif
     }
   else
-    {	/* ([{ */
+    {
+      /* ([{ */
       rl_bind_key_in_map (')', rl_insert, emacs_standard_keymap);
       rl_bind_key_in_map (']', rl_insert, emacs_standard_keymap);
       rl_bind_key_in_map ('}', rl_insert, emacs_standard_keymap);
+
+#if defined (VI_MODE)
+      /* ([{ */
+      rl_bind_key_in_map (')', rl_insert, vi_insertion_keymap);
+      rl_bind_key_in_map (']', rl_insert, vi_insertion_keymap);
+      rl_bind_key_in_map ('}', rl_insert, vi_insertion_keymap);
+#endif
     }
 }
 
@@ -126,12 +129,11 @@ rl_insert_close (count, invoking_key)
 
       /* Emacs might message or ring the bell here, but I don't. */
       if (match_point < 0)
-	return -1;
+	return 1;
 
       FD_ZERO (&readfds);
       FD_SET (fileno (rl_instream), &readfds);
-      timer.tv_sec = 0;
-      timer.tv_usec = _paren_blink_usec;
+      USEC_TO_TIMEVAL (_paren_blink_usec, timer);
 
       orig_point = rl_point;
       rl_point = match_point;
