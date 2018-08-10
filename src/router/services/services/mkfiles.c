@@ -165,7 +165,9 @@ void start_mkfiles(void)
 	if (nvram_matchi("unblock", 1)) {
 		nvram_unset("unblock");
 		start_telnetd();	//password has been changed, now we can start telnet or ssh (if enabled)
+#ifdef HAVE_SSHD
 		start_sshd();
+#endif
 	}
 
 	return;
