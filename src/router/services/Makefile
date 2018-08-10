@@ -1544,6 +1544,12 @@ CFLAGS_EXTRA += -DHAVE_QUAGGA
 OBJS += routing.o
 endif
 
+ifeq ($(CONFIG_FRR),y)
+CFLAGS_EXTRA += -DHAVE_QUAGGA
+CFLAGS_EXTRA += -DHAVE_FRR
+OBJS += routing.o
+endif
+
 ifeq ($(CONFIG_IPVS),y)
 CFLAGS_EXTRA += -DHAVE_IPVS
 OBJS += ipvs.o
