@@ -797,6 +797,9 @@ endif
 ifeq ($(CONFIG_QUAGGA),y)
 CFLAGS += -DHAVE_QUAGGA
 endif
+ifeq ($(CONFIG_FRR),y)
+CFLAGS += -DHAVE_QUAGGA
+endif
 ifeq ($(CONFIG_PPTP),y)
 CFLAGS += -DHAVE_PPTP
 endif
