@@ -1,24 +1,24 @@
 /* mbutil.c -- readline multibyte character utility functions */
 
-/* Copyright (C) 2001-2004 Free Software Foundation, Inc.
+/* Copyright (C) 2001-2015 Free Software Foundation, Inc.
 
-   This file is part of the GNU Readline Library, a library for
-   reading lines of text with interactive input and history editing.
+   This file is part of the GNU Readline Library (Readline), a library
+   for reading lines of text with interactive input and history editing.      
 
-   The GNU Readline Library is free software; you can redistribute it
-   and/or modify it under the terms of the GNU General Public License
-   as published by the Free Software Foundation; either version 2, or
+   Readline is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
-   The GNU Readline Library is distributed in the hope that it will be
-   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   Readline is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
-   The GNU General Public License is often shipped with GNU software, and
-   is generally kept in a file called COPYING or LICENSE.  If you do not
-   have a copy of the license, write to the Free Software Foundation,
-   59 Temple Place, Suite 330, Boston, MA 02111 USA. */
+   You should have received a copy of the GNU General Public License
+   along with Readline.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #define READLINE_LIBRARY
 
 #if defined (HAVE_CONFIG_H)
@@ -64,6 +64,9 @@ int rl_byte_oriented = 0;
 int rl_byte_oriented = 1;
 #endif
 
+/* Ditto */
+int _rl_utf8locale = 0;
+
 /* **************************************************************** */
 /*								    */
 /*		Multibyte Character Utility Functions		    */
@@ -77,10 +80,12 @@ _rl_find_next_mbchar_internal (string, seed, count, find_non_zero)
      char *string;
      int seed, count, find_non_zero;
 {
-  size_t tmp = 0;
+  size_t tmp, len;
   mbstate_t ps;
-  int point = 0;
+  int point;
   wchar_t wc;
+
+  tmp = 0;
 
   memset(&ps, 0, sizeof (mbstate_t));
   if (seed < 0)
@@ -88,18 +93,22 @@ _rl_find_next_mbchar_internal (string, seed, count, find_non_zero)
   if (count <= 0)
     return seed;
 
-  point = seed + _rl_adjust_point(string, seed, &ps);
-  /* if this is true, means that seed was not pointed character
-     started byte.  So correct the point and consume count */
+  point = seed + _rl_adjust_point (string, seed, &ps);
+  /* if this is true, means that seed was not pointing to a byte indicating
+     the beginning of a multibyte character.  Correct the point and consume
+     one char. */
   if (seed < point)
     count--;
 
   while (count > 0)  
     {
-      tmp = mbrtowc (&wc, string+point, strlen(string + point), &ps);
+      len = strlen (string + point);
+      if (len == 0)
+	break;
+      tmp = mbrtowc (&wc, string+point, len, &ps);
       if (MB_INVALIDCH ((size_t)tmp))
 	{
-	  /* invalid bytes. asume a byte represents a character */
+	  /* invalid bytes. assume a byte represents a character */
 	  point++;
 	  count--;
 	  /* reset states. */
@@ -113,7 +122,7 @@ _rl_find_next_mbchar_internal (string, seed, count, find_non_zero)
 	  point += tmp;
 	  if (find_non_zero)
 	    {
-	      if (wcwidth (wc) == 0)
+	      if (WCWIDTH (wc) == 0)
 		continue;
 	      else
 		count--;
@@ -126,18 +135,17 @@ _rl_find_next_mbchar_internal (string, seed, count, find_non_zero)
   if (find_non_zero)
     {
       tmp = mbrtowc (&wc, string + point, strlen (string + point), &ps);
-      while (wcwidth (wc) == 0)
+      while (MB_NULLWCH (tmp) == 0 && MB_INVALIDCH (tmp) == 0 && WCWIDTH (wc) == 0)
 	{
 	  point += tmp;
 	  tmp = mbrtowc (&wc, string + point, strlen (string + point), &ps);
-	  if (tmp == (size_t)(0) || tmp == (size_t)(-1) || tmp == (size_t)(-2))
-	    break;
 	}
     }
-    return point;
+
+  return point;
 }
 
-static int
+/*static*/ int
 _rl_find_prev_mbchar_internal (string, seed, find_non_zero)
      char *string;
      int seed, find_non_zero;
@@ -179,7 +187,7 @@ _rl_find_prev_mbchar_internal (string, seed, find_non_zero)
 	{
 	  if (find_non_zero)
 	    {
-	      if (wcwidth (wc) != 0)
+	      if (WCWIDTH (wc) != 0)
 		prev = point;
 	    }
 	  else
@@ -258,7 +266,7 @@ _rl_compare_chars (buf1, pos1, ps1, buf2, pos2, ps2)
    if point is invalied (point < 0 || more than string length),
    it returns -1 */
 int
-_rl_adjust_point(string, point, ps)
+_rl_adjust_point (string, point, ps)
      char *string;
      int point;
      mbstate_t *ps;
@@ -312,6 +320,28 @@ _rl_is_mbchar_matched (string, seed, end, mbchar, length)
     if (string[seed + i] != mbchar[i])
       return 0;
   return 1;
+}
+
+wchar_t
+_rl_char_value (buf, ind)
+     char *buf;
+     int ind;
+{
+  size_t tmp;
+  wchar_t wc;
+  mbstate_t ps;
+  int l;
+
+  if (MB_LEN_MAX == 1 || rl_byte_oriented)
+    return ((wchar_t) buf[ind]);
+  l = strlen (buf);
+  if (ind >= l - 1)
+    return ((wchar_t) buf[ind]);
+  memset (&ps, 0, sizeof (mbstate_t));
+  tmp = mbrtowc (&wc, buf + ind, l - ind, &ps);
+  if (MB_INVALIDCH (tmp) || MB_NULLWCH (tmp))  
+    return ((wchar_t) buf[ind]);
+  return wc;
 }
 #endif /* HANDLE_MULTIBYTE */
 

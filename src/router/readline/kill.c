@@ -1,24 +1,24 @@
 /* kill.c -- kill ring management. */
 
-/* Copyright (C) 1994 Free Software Foundation, Inc.
+/* Copyright (C) 1994-2015 Free Software Foundation, Inc.
 
-   This file is part of the GNU Readline Library, a library for
-   reading lines of text with interactive input and history editing.
+   This file is part of the GNU Readline Library (Readline), a library
+   for reading lines of text with interactive input and history editing.      
 
-   The GNU Readline Library is free software; you can redistribute it
-   and/or modify it under the terms of the GNU General Public License
-   as published by the Free Software Foundation; either version 2, or
+   Readline is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
-   The GNU Readline Library is distributed in the hope that it will be
-   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   Readline is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
-   The GNU General Public License is often shipped with GNU software, and
-   is generally kept in a file called COPYING or LICENSE.  If you do not
-   have a copy of the license, write to the Free Software Foundation,
-   59 Temple Place, Suite 330, Boston, MA 02111 USA. */
+   You should have received a copy of the GNU General Public License
+   along with Readline.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #define READLINE_LIBRARY
 
 #if defined (HAVE_CONFIG_H)
@@ -97,7 +97,7 @@ _rl_copy_to_kill_ring (text, append)
   int slot;
 
   /* First, find the slot to work with. */
-  if (_rl_last_command_was_kill == 0)
+  if (_rl_last_command_was_kill == 0 || rl_kill_ring == 0)
     {
       /* Get a new slot.  */
       if (rl_kill_ring == 0)
@@ -115,7 +115,7 @@ _rl_copy_to_kill_ring (text, append)
 	  if (slot == rl_max_kills)
 	    {
 	      register int i;
-	      free (rl_kill_ring[0]);
+	      xfree (rl_kill_ring[0]);
 	      for (i = 0; i < slot; i++)
 		rl_kill_ring[i] = rl_kill_ring[i + 1];
 	    }
@@ -146,8 +146,8 @@ _rl_copy_to_kill_ring (text, append)
 	  strcpy (new, text);
 	  strcat (new, old);
 	}
-      free (old);
-      free (text);
+      xfree (old);
+      xfree (text);
       rl_kill_ring[slot] = new;
     }
   else
@@ -278,7 +278,7 @@ rl_backward_kill_line (direction, ignore)
     return (rl_kill_line (1, ignore));
   else
     {
-      if (!rl_point)
+      if (rl_point == 0)
 	rl_ding ();
       else
 	{
@@ -506,7 +506,7 @@ rl_yank (count, ignore)
   if (rl_kill_ring == 0)
     {
       _rl_abort_internal ();
-      return -1;
+      return 1;
     }
 
   _rl_set_mark_at_pos (rl_point);
@@ -528,7 +528,7 @@ rl_yank_pop (count, key)
       !rl_kill_ring)
     {
       _rl_abort_internal ();
-      return -1;
+      return 1;
     }
 
   l = strlen (rl_kill_ring[rl_kill_index]);
@@ -546,9 +546,43 @@ rl_yank_pop (count, key)
   else
     {
       _rl_abort_internal ();
-      return -1;
+      return 1;
     }
 }
+
+#if defined (VI_MODE)
+int
+rl_vi_yank_pop (count, key)
+     int count, key;
+{
+  int l, n;
+
+  if (((rl_last_func != rl_vi_yank_pop) && (rl_last_func != rl_vi_put)) ||
+      !rl_kill_ring)
+    {
+      _rl_abort_internal ();
+      return 1;
+    }
+
+  l = strlen (rl_kill_ring[rl_kill_index]);
+  n = rl_point - l;
+  if (n >= 0 && STREQN (rl_line_buffer + n, rl_kill_ring[rl_kill_index], l))
+    {
+      rl_delete_text (n, rl_point);
+      rl_point = n;
+      rl_kill_index--;
+      if (rl_kill_index < 0)
+	rl_kill_index = rl_kill_ring_length - 1;
+      rl_vi_put (1, 'p');
+      return 0;
+    }
+  else
+    {
+      _rl_abort_internal ();
+      return 1;
+    }
+}
+#endif /* VI_MODE */
 
 /* Yank the COUNTh argument from the previous history line, skipping
    HISTORY_SKIP lines before looking for the `previous line'. */
@@ -575,14 +609,15 @@ rl_yank_nth_arg_internal (count, ignore, history_skip)
   if (entry == 0)
     {
       rl_ding ();
-      return -1;
+      return 1;
     }
 
   arg = history_arg_extract (count, count, entry->line);
   if (!arg || !*arg)
     {
       rl_ding ();
-      return -1;
+      FREE (arg);
+      return 1;
     }
 
   rl_begin_undo_group ();
@@ -600,7 +635,7 @@ rl_yank_nth_arg_internal (count, ignore, history_skip)
 #endif /* VI_MODE */
 
   rl_insert_text (arg);
-  free (arg);
+  xfree (arg);
 
   rl_end_undo_group ();
   return 0;
@@ -639,7 +674,7 @@ rl_yank_last_arg (count, key)
     {
       if (undo_needed)
 	rl_do_undo ();
-      if (count < 1)
+      if (count < 0)		/* XXX - was < 1 */
         direction = -direction;
       history_skip += direction;
       if (history_skip < 0)
@@ -655,8 +690,58 @@ rl_yank_last_arg (count, key)
   return retval;
 }
 
-/* A special paste command for users of Cygnus's cygwin32. */
-#if defined (__CYGWIN__)
+/* Having read the special escape sequence denoting the beginning of a
+   `bracketed paste' sequence, read the rest of the pasted input until the
+   closing sequence and insert the pasted text as a single unit without
+   interpretation. */
+int
+rl_bracketed_paste_begin (count, key)
+     int count, key;
+{
+  int retval, c;
+  size_t len, cap;
+  char *buf;
+
+  retval = 1;
+  len = 0;
+  buf = xmalloc (cap = 64);
+
+  RL_SETSTATE (RL_STATE_MOREINPUT);
+  while ((c = rl_read_key ()) >= 0)
+    {
+      if (RL_ISSTATE (RL_STATE_MACRODEF))
+	_rl_add_macro_char (c);
+
+      if (c == '\r')		/* XXX */
+	c = '\n';
+
+      if (len == cap)
+	buf = xrealloc (buf, cap *= 2);
+
+      buf[len++] = c;
+      if (len >= BRACK_PASTE_SLEN && c == BRACK_PASTE_LAST &&
+	  STREQN (buf + len - BRACK_PASTE_SLEN, BRACK_PASTE_SUFF, BRACK_PASTE_SLEN))
+	{
+	  len -= BRACK_PASTE_SLEN;
+	  break;
+	}
+    }
+  RL_UNSETSTATE (RL_STATE_MOREINPUT);
+
+  if (c >= 0)
+    {
+      if (len == cap)
+	buf = xrealloc (buf, cap + 1);
+      buf[len] = '\0';
+      retval = rl_insert_text (buf);
+    }
+
+  xfree (buf);
+  return (retval);
+}
+
+/* A special paste command for Windows users.. */
+#if defined (_WIN32)
 #include <windows.h>
 
 int
@@ -685,9 +770,9 @@ rl_paste_from_clipboard (count, key)
       _rl_set_mark_at_pos (rl_point);
       rl_insert_text (ptr);
       if (ptr != data)
-	free (ptr);
+	xfree (ptr);
       CloseClipboard ();
     }
   return (0);
 }
-#endif /* __CYGWIN__ */
+#endif /* _WIN32 */

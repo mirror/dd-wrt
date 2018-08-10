@@ -1,24 +1,23 @@
 /* chardefs.h -- Character definitions for readline. */
 
-/* Copyright (C) 1994 Free Software Foundation, Inc.
+/* Copyright (C) 1994-2015 Free Software Foundation, Inc.
 
-   This file is part of the GNU Readline Library, a library for
-   reading lines of text with interactive input and history editing.
+   This file is part of the GNU Readline Library (Readline), a library
+   for reading lines of text with interactive input and history editing.
 
-   The GNU Readline Library is free software; you can redistribute it
-   and/or modify it under the terms of the GNU General Public License
-   as published by the Free Software Foundation; either version 2, or
+   Readline is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
-   The GNU Readline Library is distributed in the hope that it will be
-   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   Readline is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
-   The GNU General Public License is often shipped with GNU software, and
-   is generally kept in a file called COPYING or LICENSE.  If you do not
-   have a copy of the license, write to the Free Software Foundation,
-   59 Temple Place, Suite 330, Boston, MA 02111 USA. */
+   You should have received a copy of the GNU General Public License
+   along with Readline.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
 #ifndef _CHARDEFS_H_
 #define _CHARDEFS_H_
@@ -73,8 +72,8 @@
 #  define IN_CTYPE_DOMAIN(c) isascii(c)
 #endif
 
-#if !defined (isxdigit) && !defined (HAVE_ISXDIGIT)
-#  define isxdigit(c)   (isdigit((c)) || ((c) >= 'a' && (c) <= 'f') || ((c) >= 'A' && (c) <= 'F'))
+#if !defined (isxdigit) && !defined (HAVE_ISXDIGIT) && !defined (__cplusplus)
+#  define isxdigit(c)   (isdigit((unsigned char)(c)) || ((c) >= 'a' && (c) <= 'f') || ((c) >= 'A' && (c) <= 'F'))
 #endif
 
 #if defined (CTYPE_NON_ASCII)
@@ -86,13 +85,15 @@
 /* Some systems define these; we want our definitions. */
 #undef ISPRINT
 
-#define ISALNUM(c)	(IN_CTYPE_DOMAIN (c) && isalnum (c))
-#define ISALPHA(c)	(IN_CTYPE_DOMAIN (c) && isalpha (c))
-#define ISDIGIT(c)	(IN_CTYPE_DOMAIN (c) && isdigit (c))
-#define ISLOWER(c)	(IN_CTYPE_DOMAIN (c) && islower (c))
-#define ISPRINT(c)	(IN_CTYPE_DOMAIN (c) && isprint (c))
-#define ISUPPER(c)	(IN_CTYPE_DOMAIN (c) && isupper (c))
-#define ISXDIGIT(c)	(IN_CTYPE_DOMAIN (c) && isxdigit (c))
+/* Beware:  these only work with single-byte ASCII characters. */
+
+#define ISALNUM(c)	(IN_CTYPE_DOMAIN (c) && isalnum ((unsigned char)c))
+#define ISALPHA(c)	(IN_CTYPE_DOMAIN (c) && isalpha ((unsigned char)c))
+#define ISDIGIT(c)	(IN_CTYPE_DOMAIN (c) && isdigit ((unsigned char)c))
+#define ISLOWER(c)	(IN_CTYPE_DOMAIN (c) && islower ((unsigned char)c))
+#define ISPRINT(c)	(IN_CTYPE_DOMAIN (c) && isprint ((unsigned char)c))
+#define ISUPPER(c)	(IN_CTYPE_DOMAIN (c) && isupper ((unsigned char)c))
+#define ISXDIGIT(c)	(IN_CTYPE_DOMAIN (c) && isxdigit ((unsigned char)c))
 
 #define _rl_lowercase_p(c)	(NON_NEGATIVE(c) && ISLOWER(c))
 #define _rl_uppercase_p(c)	(NON_NEGATIVE(c) && ISUPPER(c))

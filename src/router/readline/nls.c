@@ -1,24 +1,24 @@
 /* nls.c -- skeletal internationalization code. */
 
-/* Copyright (C) 1996 Free Software Foundation, Inc.
+/* Copyright (C) 1996-2009 Free Software Foundation, Inc.
 
-   This file is part of the GNU Readline Library, a library for
-   reading lines of text with interactive input and history editing.
+   This file is part of the GNU Readline Library (Readline), a library
+   for reading lines of text with interactive input and history editing.      
 
-   The GNU Readline Library is free software; you can redistribute it
-   and/or modify it under the terms of the GNU General Public License
-   as published by the Free Software Foundation; either version 2, or
+   Readline is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
-   The GNU Readline Library is distributed in the hope that it will be
-   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   Readline is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
-   The GNU General Public License is often shipped with GNU software, and
-   is generally kept in a file called COPYING or LICENSE.  If you do not
-   have a copy of the license, write to the Free Software Foundation,
-   59 Temple Place, Suite 330, Boston, MA 02111 USA. */
+   You should have received a copy of the GNU General Public License
+   along with Readline.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #define READLINE_LIBRARY
 
 #if defined (HAVE_CONFIG_H)
@@ -43,12 +43,18 @@
 #  include <locale.h>
 #endif
 
+#if defined (HAVE_LANGINFO_CODESET)
+#  include <langinfo.h>
+#endif
+
 #include <ctype.h>
 
 #include "rldefs.h"
 #include "readline.h"
 #include "rlshell.h"
 #include "rlprivate.h"
+
+static int utf8locale PARAMS((char *));
 
 #if !defined (HAVE_SETLOCALE)    
 /* A list of legal values for the LANG or LC_CTYPE environment variables.
@@ -72,8 +78,9 @@ static char *legal_lang_values[] =
 };
 
 static char *normalize_codeset PARAMS((char *));
-static char *find_codeset PARAMS((char *, size_t *));
 #endif /* !HAVE_SETLOCALE */
+
+static char *find_codeset PARAMS((char *, size_t *));
 
 static char *_rl_get_locale_var PARAMS((const char *));
 
@@ -91,7 +98,26 @@ _rl_get_locale_var (v)
 
   return lspec;
 }
-  
+
+static int
+utf8locale (lspec)
+     char *lspec;
+{
+  char *cp;
+  size_t len;
+
+#if HAVE_LANGINFO_CODESET
+  cp = nl_langinfo (CODESET);
+  return (STREQ (cp, "UTF-8") || STREQ (cp, "utf8"));
+#else
+  cp = find_codeset (lspec, &len);
+
+  if (cp == 0 || len < 4 || len > 5)
+    return 0;
+  return ((len == 5) ? strncmp (cp, "UTF-8", len) == 0 : strncmp (cp, "utf8", 4) == 0);
+#endif
+}
+
 /* Check for LC_ALL, LC_CTYPE, and LANG and use the first with a value
    to decide the defaults for 8-bit character input and output.  Returns
    1 if we set eight-bit mode. */
@@ -115,6 +141,9 @@ _rl_init_eightbit ()
   if (lspec == 0)
     lspec = "";
   t = setlocale (LC_CTYPE, lspec);
+
+  if (t && *t)
+    _rl_utf8locale = utf8locale (t);
 
   if (t && *t && (t[0] != 'C' || t[1]) && (STREQ (t, "POSIX") == 0))
     {
@@ -145,7 +174,7 @@ _rl_init_eightbit ()
 	_rl_output_meta_chars = 1;
 	break;
       }
-  free (t);
+  xfree (t);
   return (legal_lang_values[i] ? 1 : 0);
 
 #endif /* !HAVE_SETLOCALE */
@@ -197,6 +226,7 @@ normalize_codeset (codeset)
 
   return retval;
 }
+#endif /* !HAVE_SETLOCALE */
 
 /* Isolate codeset portion of locale specification. */
 static char *
@@ -249,4 +279,3 @@ find_codeset (name, lenp)
 
   return result;
 }
-#endif /* !HAVE_SETLOCALE */

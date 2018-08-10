@@ -1,24 +1,24 @@
 /* funmap.c -- attach names to functions. */
 
-/* Copyright (C) 1987, 1989, 1992 Free Software Foundation, Inc.
+/* Copyright (C) 1987-2016 Free Software Foundation, Inc.
 
-   This file is part of the GNU Readline Library, a library for
-   reading lines of text with interactive input and history editing.
+   This file is part of the GNU Readline Library (Readline), a library
+   for reading lines of text with interactive input and history editing.      
 
-   The GNU Readline Library is free software; you can redistribute it
-   and/or modify it under the terms of the GNU General Public License
-   as published by the Free Software Foundation; either version 2, or
+   Readline is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
-   The GNU Readline Library is distributed in the hope that it will be
-   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   Readline is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
 
-   The GNU General Public License is often shipped with GNU software, and
-   is generally kept in a file called COPYING or LICENSE.  If you do not
-   have a copy of the license, write to the Free Software Foundation,
-   59 Temple Place, Suite 330, Boston, MA 02111 USA. */
+   You should have received a copy of the GNU General Public License
+   along with Readline.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #define READLINE_LIBRARY
 
 #if defined (HAVE_CONFIG_H)
@@ -56,7 +56,7 @@ static int funmap_entry;
    program specific function. */
 int funmap_program_specific_entry_start;
 
-static FUNMAP default_funmap[] = {
+static const FUNMAP default_funmap[] = {
   { "abort", rl_abort },
   { "accept-line", rl_newline },
   { "arrow-key-prefix", rl_arrow_keys },
@@ -68,6 +68,7 @@ static FUNMAP default_funmap[] = {
   { "backward-word", rl_backward_word },
   { "beginning-of-history", rl_beginning_of_history },
   { "beginning-of-line", rl_beg_of_line },
+  { "bracketed-paste-begin", rl_bracketed_paste_begin },
   { "call-last-kbd-macro", rl_call_last_kbd_macro },
   { "capitalize-word", rl_capitalize_word },
   { "character-search", rl_char_search },
@@ -98,6 +99,8 @@ static FUNMAP default_funmap[] = {
   { "forward-word", rl_forward_word },
   { "history-search-backward", rl_history_search_backward },
   { "history-search-forward", rl_history_search_forward },
+  { "history-substring-search-backward", rl_history_substr_search_backward },
+  { "history-substring-search-forward", rl_history_substr_search_forward },
   { "insert-comment", rl_insert_comment },
   { "insert-completions", rl_insert_completions },
   { "kill-whole-line", rl_kill_full_line },
@@ -105,17 +108,20 @@ static FUNMAP default_funmap[] = {
   { "kill-region", rl_kill_region },
   { "kill-word", rl_kill_word },
   { "menu-complete", rl_menu_complete },
+  { "menu-complete-backward", rl_backward_menu_complete },
   { "next-history", rl_get_next_history },
   { "non-incremental-forward-search-history", rl_noninc_forward_search },
   { "non-incremental-reverse-search-history", rl_noninc_reverse_search },
   { "non-incremental-forward-search-history-again", rl_noninc_forward_search_again },
   { "non-incremental-reverse-search-history-again", rl_noninc_reverse_search_again },
+  { "old-menu-complete", rl_old_menu_complete },
   { "overwrite-mode", rl_overwrite_mode },
-#ifdef __CYGWIN__
+#if defined (_WIN32)
   { "paste-from-clipboard", rl_paste_from_clipboard },
 #endif
   { "possible-completions", rl_possible_completions },
   { "previous-history", rl_get_previous_history },
+  { "print-last-kbd-macro", rl_print_last_kbd_macro },
   { "quoted-insert", rl_quoted_insert },
   { "re-read-init-file", rl_re_read_init_file },
   { "redraw-current-line", rl_refresh_line},
@@ -123,6 +129,7 @@ static FUNMAP default_funmap[] = {
   { "revert-line", rl_revert_line },
   { "self-insert", rl_insert },
   { "set-mark", rl_set_mark },
+  { "skip-csi-sequence", rl_skip_csi_sequence },
   { "start-kbd-macro", rl_start_kbd_macro },
   { "tab-insert", rl_tab_insert },
   { "tilde-expand", rl_tilde_expand },
@@ -145,6 +152,8 @@ static FUNMAP default_funmap[] = {
   { "vi-append-mode", rl_vi_append_mode },
   { "vi-arg-digit", rl_vi_arg_digit },
   { "vi-back-to-indent", rl_vi_back_to_indent },
+  { "vi-backward-bigword", rl_vi_bWord },
+  { "vi-backward-word", rl_vi_bword },
   { "vi-bWord", rl_vi_bWord },
   { "vi-bword", rl_vi_bword },
   { "vi-change-case", rl_vi_change_case },
@@ -157,16 +166,19 @@ static FUNMAP default_funmap[] = {
   { "vi-delete-to", rl_vi_delete_to },
   { "vi-eWord", rl_vi_eWord },
   { "vi-editing-mode", rl_vi_editing_mode },
+  { "vi-end-bigword", rl_vi_eWord },
   { "vi-end-word", rl_vi_end_word },
   { "vi-eof-maybe", rl_vi_eof_maybe },
   { "vi-eword", rl_vi_eword },
   { "vi-fWord", rl_vi_fWord },
   { "vi-fetch-history", rl_vi_fetch_history },
   { "vi-first-print", rl_vi_first_print },
+  { "vi-forward-bigword", rl_vi_fWord },
+  { "vi-forward-word", rl_vi_fword },
   { "vi-fword", rl_vi_fword },
   { "vi-goto-mark", rl_vi_goto_mark },
   { "vi-insert-beg", rl_vi_insert_beg },
-  { "vi-insertion-mode", rl_vi_insertion_mode },
+  { "vi-insertion-mode", rl_vi_insert_mode },
   { "vi-match", rl_vi_match },
   { "vi-movement-mode", rl_vi_movement_mode },
   { "vi-next-word", rl_vi_next_word },
@@ -176,12 +188,15 @@ static FUNMAP default_funmap[] = {
   { "vi-put", rl_vi_put },
   { "vi-redo", rl_vi_redo },
   { "vi-replace", rl_vi_replace },
+  { "vi-rubout", rl_vi_rubout },
   { "vi-search", rl_vi_search },
   { "vi-search-again", rl_vi_search_again },
   { "vi-set-mark", rl_vi_set_mark },
   { "vi-subst", rl_vi_subst },
   { "vi-tilde-expand", rl_vi_tilde_expand },
+  { "vi-unix-word-rubout", rl_vi_unix_word_rubout },
   { "vi-yank-arg", rl_vi_yank_arg },
+  { "vi-yank-pop", rl_vi_yank_pop },
   { "vi-yank-to", rl_vi_yank_to },
 #endif /* VI_MODE */
 
@@ -227,7 +242,7 @@ rl_initialize_funmap ()
 
 /* Produce a NULL terminated array of known function names.  The array
    is sorted.  The array itself is allocated, but not the strings inside.
-   You should free () the array when you done, but not the pointrs. */
+   You should free () the array when you done, but not the pointers. */
 const char **
 rl_funmap_names ()
 {
