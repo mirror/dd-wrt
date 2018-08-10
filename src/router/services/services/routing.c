@@ -44,9 +44,9 @@ static int zebra_init(void)
 	char daemons[64];
 	int services = 0;
 #ifdef HAVE_FRR
-	strcpy(daemons, "watchfrr -d -s '%s -d' -k 'killall %s' -r '%s -d' zebra");
+	sprintf(daemons, "watchfrr -d -s '%%s -d' -k 'killall %%s' -r '%%s -d' zebra");
 #else
-	strcpy(daemons, "watchquagga -dz -r '%s -d' zebra");
+	sprintf(daemons, "watchquagga -dz -r '%%s -d' zebra");
 #endif
 	sub = nvram_safe_get("wk_mode");
 	foreach(var, sub, next) {
@@ -82,7 +82,7 @@ static int zebra_init(void)
 	}
 	if (services) {
 		dd_loginfo("zebra", "(%s) successfully initiated\n", daemons);
-		sysprintf(daemons);
+		system(daemons);
 	}
 	return 0;
 }
