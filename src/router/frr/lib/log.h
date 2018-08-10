@@ -26,6 +26,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <sys/types.h>
 
 /* Here is some guidance on logging levels to use:
  *
