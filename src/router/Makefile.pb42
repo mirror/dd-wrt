@@ -1977,6 +1977,10 @@ ifeq ($(CONFIG_WR940V4),y)
 	-./tools/tplink/mktplinkfw -s "00000000;45550000;" -B TL-WR940NDv4 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR940NDv4-firmware-eu.bin
 	-./tools/tplink/mktplinkfw -s "00000000;55530000;" -B TL-WR940NDv4 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR940NDv4-firmware-us.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR940NDv4-firmware.bin mips-uclibc/tplink-WR940NDv4-firmware-eu.bin
+
+	-./tools/tplink/mktplinkfw -s "00000000;45550000;" -B TL-WR940NDv6 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR940NDv6-firmware-eu.bin
+	-./tools/tplink/mktplinkfw -s "00000000;55530000;" -B TL-WR940NDv6 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR940NDv6-firmware-us.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR940NDv6-firmware.bin mips-uclibc/tplink-WR940NDv6-firmware-eu.bin
 endif
 ifeq ($(CONFIG_WR842V2),y)
 	-./tools/tplink/mktplinkfw -B TL-WR842NDv2 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR842NDv2-firmware.bin
@@ -2127,7 +2131,7 @@ ifeq ($(CONFIG_RAMBUTAN),y)
 	cp tools/rambutan/ubinize.cfg $(ARCH)-uclibc
 	tools/rambutan/padjffs2 $(ARCH)-uclibc/root.fs 128
 	cd $(ARCH)-uclibc && ../tools/rambutan/ubinize -v -m 2048 -p 128KiB -s 512 -O 2048 -o root.squashfs.ubi ubinize.cfg && cd ..
-	./tools/trx_n -m 60000000 -o $(ARCH)-uclibc/webflash-rambutan.trx $(ARCH)-uclibc/root.squashfs.ubi
+	./tools/trx_n -m 80000000 -o $(ARCH)-uclibc/webflash-rambutan.trx $(ARCH)-uclibc/root.squashfs.ubi
 endif
 
 include rules/all.mk
