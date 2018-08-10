@@ -1,0 +1,61 @@
+# Maintainer: Arthur Jones <arthur.jones@riverbed.com>
+pkgname=frr
+pkgver=@VERSION@
+pkgrel=0
+pkgdesc="Free Range Routing is a fork of quagga"
+url="https://frrouting.org/"
+arch="x86_64"
+license="GPL-2.0"
+depends="json-c c-ares ipsec-tools iproute2 python py-ipaddr bash"
+makedepends="ncurses-dev net-snmp-dev gawk texinfo perl
+    acct autoconf automake bash
+    binutils binutils-libs bison bsd-compat-headers build-base
+    c-ares c-ares-dev ca-certificates cryptsetup-libs curl
+    device-mapper-libs expat fakeroot flex fortify-headers gdbm
+    git gmp isl json-c-dev kmod lddtree libacl libatomic libattr
+    libblkid libburn libbz2 libc-dev libcap libcurl libedit libffi libgcc
+    libgomp libisoburn libisofs libltdl libressl libssh2
+    libstdc++ libtool libuuid linux-headers lzip lzo m4 make mkinitfs mpc1
+    mpfr3 mtools musl-dev ncurses-libs ncurses-terminfo ncurses-terminfo-base
+    patch pax-utils pcre perl pkgconf python2 python2-dev readline
+    readline-dev sqlite-libs squashfs-tools sudo tar texinfo xorriso xz-libs
+    py-sphinx"
+install="$pkgname.pre-install $pkgname.pre-deinstall $pkgname.post-deinstall"
+subpackages="$pkgname-dev $pkgname-doc $pkgname-dbg"
+source="$pkgname-$pkgver.tar.gz docker-start daemons daemons.conf"
+
+builddir="$srcdir"/$pkgname-$pkgver
+
+_sbindir=/usr/lib/frr
+_sysconfdir=/etc/frr
+_libdir=/usr/lib
+_localstatedir=/var/run/frr
+_user=frr
+
+build() {
+	cd "$builddir"
+	./configure \
+		--prefix=/usr \
+		--sbindir=$_sbindir \
+		--sysconfdir=$_sysconfdir \
+		--libdir=$_libdir \
+		--localstatedir=$_localstatedir \
+		--enable-systemd=no \
+		--enable-vtysh \
+		--enable-multipath=64 \
+		--enable-vty-group=frrvty \
+		--enable-user=$_user \
+		--enable-group=$_user || return 1
+	make || return 1
+}
+
+package() {
+	cd "$builddir"
+	make DESTDIR="$pkgdir" install || return 1
+
+	install -Dm755 "$srcdir"/docker-start "$pkgdir"$_sbindir
+	install -Dm644 "$srcdir"/daemons "$pkgdir"$_sysconfdir
+	install -Dm644 "$srcdir"/daemons.conf "$pkgdir"$_sysconfdir
+	install -d "$pkgdir"/etc/init.d
+	ln -s ${_sbindir}/frr "$pkgdir"/etc/init.d/frr
+}

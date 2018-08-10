@@ -1,0 +1,3 @@
+Tests: daemons
+Depends: frr
+Restrictions: needs-root
