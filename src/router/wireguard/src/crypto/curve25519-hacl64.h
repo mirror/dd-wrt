@@ -10,21 +10,14 @@
 typedef __uint128_t u128;
 static  u64 u64_eq_mask(u64 x, u64 y)
 {
-	x = ~(x ^ y);
-	x &= x << 32;
-	x &= x << 16;
-	x &= x << 8;
-	x &= x << 4;
-	x &= x << 2;
-	x &= x << 1;
-	return ((s64)x) >> 63;
+	x ^= y;
+	x |= -x;
+	return (x >> 63) - 1;
 }
 
 static  u64 u64_gte_mask(u64 x, u64 y)
 {
-	u64 low63 = ~((u64)((s64)((s64)(x & 0x7fffffffffffffffLLU) - (s64)(y & 0x7fffffffffffffffLLU)) >> 63));
-	u64 high_bit = ~((u64)((s64)((s64)(x & 0x8000000000000000LLU) - (s64)(y & 0x8000000000000000LLU)) >> 63));
-	return low63 & high_bit;
+	return ((x ^ ((x ^ y) | ((x - y) ^ y))) >> 63) - 1;
 }
 
 static  void modulo_carry_top(u64 *b)

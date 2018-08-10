@@ -6,6 +6,8 @@
 #ifndef _WG_TIMERS_H
 #define _WG_TIMERS_H
 
+#include <linux/ktime.h>
+
 static struct wireguard_peer;
 
 static void timers_init(struct wireguard_peer *peer);
