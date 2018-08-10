@@ -14,6 +14,8 @@ readline-install:
 	rm -rf $(INSTALLDIR)/readline/usr/include
 	rm -rf $(INSTALLDIR)/readline/usr/info
 	rm -rf $(INSTALLDIR)/readline/usr/man
+	rm -rf $(INSTALLDIR)/readline/usr/share
+	rm -rf $(INSTALLDIR)/readline/usr/bin
 	rm -f $(INSTALLDIR)/readline/usr/lib/*.la
 	rm -f $(INSTALLDIR)/readline/usr/lib/*.a
 	rm -f $(INSTALLDIR)/readline/usr/lib/libhistory*
