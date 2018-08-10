@@ -808,3 +808,499 @@ examples/rl-fgets.c
 	- new example from Harold Levy that wraps fgets replacement functions
 	  that call readline in a shared library that can be interposed with
 	  LD_PRELOAD
+
+				   7/27
+				   ----
+[readline-5.0 released]
+
+				   11/15
+				   -----
+examples/rlfe/{ChangeLog,Makefile.in,README,config.h.in,configure,configure.in,extern.h,os.h,pty.c,rlfe.c,screen.h}
+	- new version of rlfe, rlfe-0.4, from Per Bothner; now a standalone
+	  application
+
+				   11/16
+				   -----
+shlib/Makefile.in
+	- substitute TERMCAP_LIB in from configure
+
+configure.in
+	- if SHLIB_LIBS doesn't include a termcap library (curses, ncurses,
+	  termcap, termlib), append the value of $TERMCAP_LIB to it
+
+				   11/30
+				   -----
+configure.in
+	- take out change from 11/16; it doesn't work for some systems (e.g.,
+	  SunOS 4.x and Solaris 2.6)
+	- add support for --enable-purify configure argument
+	- pass TERMCAP_LIB in environment when calling shobj-conf
+
+examples/Makefile.in 
+	- add support for building examples with purify
+
+				 1/23/2005
+				 ---------
+configure.in
+        - set BUILD_DIR to contain backslashes to escape any spaces in the
+          directory name -- this is what make will accept in targets and
+          prerequisites, so it's better than trying to use double quotes
+
+				   2/25
+				   ----
+configure.in
+	- change check for sys/ptem.h to include sys/stream.h if present, to
+	  avoid the `present but cannot be compiled' messages on Solaris and
+	  SVR4.2 (does anyone still use SVR4.2?)
+
+				    5/7
+				    ---
+configure.in
+	- add cross-compiling support from the bash configure.in, which cygwin
+	  and mingw have apparently adopted
+	- add check for pwd.h, fcntl.h
+	- add checks for fcntl, kill system calls
+	- add checks for getpw{ent,nam,uid} C library functions
+	- pass a compile-time option through to Makefiles if cross-compiling
+
+config.h.in
+	- add HAVE_PWD_H for <pwd.h>, HAVE_FCNTL_H for <fcntl.h>
+	- add HAVE_FCNTL, HAVE_KILL for respective system calls
+	- add HAVE_GETPW{ENT,NAM,UID} for passwd functions
+
+Makefile.in,shlib/Makefile.in
+        - @CROSS_COMPILE@ is substituted into DEFS (equal to -DCROSS_COMPILING
+	  if bash is being cross-compiled)
+
+				    8/2
+				    ---
+examples/Makefile.in
+	- use $(READLINE_LIB) instead of -lreadline to get around MacOS X 10.4's
+	  preference for (incompatible) shared libraries over static libraries
+	  in the load path
+
+				   8/11
+				   ----
+support/shobj-conf
+	- new variable: SHLIB_LIBPREF, prefix for shared library name (defaults
+	  to `lib'
+	- new variable: SHLIB_DLLVERSION, used on Cygwin to set the library
+	  version number
+	- new variable: SHLIB_DOT, separator character between library name and
+	  suffix and version information (defaults to `.')
+	- new stanza for cygwin to generate windows-compatible dll
+
+support/shlib-install
+	- add new option `-b bindir' for systems like cygwin/windows that
+	  require it
+	- new stanza for cygwin that installs a dll into $bindir and an implied
+	  link library into $libdir
+
+configure.in
+	- substitute new variables from shobj-conf
+
+shlib/Makefile.in
+	- substitute bindir, SHLIB_DOT, SHLIB_LIBPREF, SHLIB_DLLVERSION from
+	  configure
+	- pass `-b $(bindir)' to shlib-install for install and uninstall targets
+	- library names now use $SHLIB_LIBPREF and $SHLIB_DOT
+
+INSTALL,README
+	- document new SHLIB_DOT, SHLIB_LIBPREF, and SHLIB_DLLVERSION variables
+
+				   10/4
+				   ----
+[readline-5.1-beta1 frozen]
+
+				   12/1
+				   ----
+configure.in
+	- changed release status to `release'
+
+[readline-5.1 frozen]
+
+				   12/9
+				   ----
+[readline-5.1 released]
+
+				   12/14
+				   -----
+examples/rlfe/Makefile.in
+	- add @LIBS@ to LIBS assignment to pick up extra libraries from
+	  configure
+
+				 1/3/2006
+				 --------
+support/shlib-install
+	- Install shared libraries with execute bit set on Linux
+
+				    6/9
+				    ---
+[readline-5.2-alpha frozen]
+
+				   6/26
+				   ----
+configure.in
+	- set CROSS_COMPILE to the empty string by default, so we don't inherit
+	  a random value from the environment
+
+				    7/8
+				    ---
+[readline-5.2-alpha released]
+
+
+[readline-5.2-beta released]
+
+				   9/12
+				   ----
+config.h.in
+        - add defines for wcscoll, iswctype, iswupper, iswlower, towupper,
+          towlower functions
+        - replace define for wctomb with one for wcrtomb
+        - add defines for wchar_t, wint_t, wctype_t types
+
+				   10/11
+				   -----
+[readline-5.2 released]
+
+				   11/9
+				   ----
+examples/rlfe/{configure.in,Makefile.in,config.h.in,rlfe.c,pty.c}
+	- portability fixes from Mike Frysinger <vapier@gentoo.org>
+
+				   11/21
+				   -----
+Makefile.in
+	- add `install-examples' and `uninstall-examples' targets
+
+examples/Makefile.in
+	- add correct variables to build examples on Windows
+	- add appropriate rules to install and uninstall example sources in
+	  $(datadir)/readline 
+
+				   11/27
+				   -----
+config.h.in
+	- move #undef of HAVE_STRCOLL out of config.h.in, since autoconf tries
+	  to substitute it based on configure tests
+
+				 4/27/2007
+				 ---------
+examples/autoconf
+	- new directory with example autoconf macros to detect readline and
+	  return information about the installed version
+
+				   6/13
+				   ----
+support/shlib-install
+	- changes to support AIX 5.x shared library installation
+
+				 3/20/2008
+				 ---------
+support/shlib-install
+	- add support for NetBSD and Interix shared library installation
+
+				   4/22
+				   ----
+support/wcwidth.c
+	- updated implementation from 2007-05
+
+				   7/18
+				   ----
+support/shlib-install
+	- support for mingw32, contributed by Carlo Bramix <carlo.bramix@libero.it>
+
+				    8/4
+				    ---
+configure.in
+	- changed to readline-6.0
+
+				   8/18
+				   ----
+support/config.{guess,sub}
+	- updated to newer versions from autoconf-2.62 distribution
+
+				 3/5/2009
+				 --------
+support/shlib-install
+	- take a new -V host_vendor argument
+	- add ${host_vendor} to string tested in case statement for symlink
+	  creation section
+	- add support for FreeBSD/gentoo, which uses Linux library naming
+	  scheme
+	- change FreeBSD symlink rules, since FreeBSD 7+ has only ELF shared
+	  libraries.  DragonflyBSD rules are the same.  Fix from Timothy
+	  Redaelli <drizzt@gentoo.org>
+
+shlib/Makefile.in
+	- add definition of host_vendor, substituted by configure
+	- add -V host_vendor argument to all invocations of shlib-install.
+	  Fix from Timothy Redaelli <drizzt@gentoo.org>
+
+				   3/10
+				   ----
+configure.in
+	- add call to AC_SYS_LARGEFILE for readdir and largefile support on
+	  Linux
+
+config.h.in
+	- add _FILE_OFFSET_BITS define
+
+				   4/19
+				   ----
+Makefile.in
+	- add targets for making and installing documentation required by GNU
+	  coding standards.  Fix from Joseph Myers <joseph@codesourcery.com>
+
+posixselect.h
+	- pick up from bash.  Inspired by Mike Frysinger <vapier@gentoo.org>
+
+				   10/28
+				   -----
+support/shlib-install
+	- decrease the default version of FreeBSD that installs shared libraries
+	  to 4.x.  Advice from Peter Jeremy <peterjeremy@acm.org>
+
+				   12/18
+				   -----
+[readline-6.1-rc1 released]
+
+				   12/23
+				   -----
+doc/Makefile.in
+	- make sure $(topdir) is not ".." before removing all of the formatted
+	  documentation in `make distclean'.  $(topdir) is set to `..' if
+	  readline is being built in the source directory.  Fixes problem
+	  noticed by THOUMIN Damien <thoumin@ipanematech.com>
+
+				   12/29
+				   -----
+[readline-6.1 frozen]
+
+				 2/5/2010
+				 --------
+examples/Makefile.in
+        - make sure to install example C files using $(srcdir)/$$f in case
+          we're building outside the source directory.  Bug report and fix
+          from Peter Breitenlohner <peb@mppmu.mpg.de>
+
+				   7/25
+				   ----
+xfree.c
+	- new file with xfree() implementation, moved from xmalloc.c
+
+				   12/28
+				   -----
+{examples,shlib}/Makefile.in
+	- Cygwin-based changes from Eric Blake <eblake@redhat.com>
+
+				 3/26/2011
+				 ---------
+Makefile.in
+	- don't ignore failures when building, installing, or cleaning in
+	  the shlib subdirectory.  Sample patch from Mike Frysinger
+	  <vapier@gentoo.org>
+
+shlib/Makefile.in
+	- split the install and uninstall targets into install-supported and
+	  install-unsupported targets that depend on the value of
+	  SHLIB_STATUS
+
+				    4/2
+				    ---
+{,shlib}/Makefile.in
+	- add dependency for callback.o/callback.so on xmalloc.h.  From
+	  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+{,doc,examples,shlib}/Makefile.in
+	- fix typo: htm target should be html.  From Jan Kratochvil
+	  <jan.kratochvil@redhat.com>
+	- remove `.' from VPATH.  From Jan Kratochvil
+	   <jan.kratochvil@redhat.com>
+
+examples/rlfe/configure.in
+	- quote AC_PROGRAM_SOURCE.  From Jan Kratochvil
+	   <jan.kratochvil@redhat.com>
+
+				   5/17
+				   ----
+config.h.in
+	- WCWIDTH_BROKEN: new define, picked up from bash, defined on systems
+	  where wcwidth returns 1 for Unicode combining characters
+
+				   11/28
+				   -----
+support/shlib-install
+	- make sure solaris2 systems make the installed shared library
+	  executable.  ldd warns about it otherwise.  Bug and fix from
+	  Tim Mooney <tim.mooney@ndsu.edu>
+
+examples/hist_erasedups.c
+	- new example program, shows how to erase duplicates from the history
+	  list
+
+examples/hist_purgecmd.c
+	- new example program, shows how to remove all entries matching a
+	  string or pattern from the history list
+
+				 1/12/2012
+				 ---------
+colors.[ch],parse-colors.[ch]}
+	- new files, part of color infrastructure support
+
+Makefile.in,shlib/Makefile.in
+	- arrange to have colors.o and parse-colors.o added to library
+	  (static and shared versions)
+
+{configure,config.h}.in
+	- check for stdbool.h, define HAVE_STDBOOL_H if found
+
+rldefs.h
+	- COLOR_SUPPORT: if defined, compile in colors.c and parse-colors.c
+	  for color support
+
+				   1/18
+				   ----
+
+{configure,config.h}.in
+        - new check: check for AUDIT_USER_TTY defined in <linux/audit.h>,
+          define HAVE_DECL_AUDIT_USER_TTY if both are found
+
+				    8/7
+				    ---
+configure.in
+	- AC_CANONICAL_BUILD: call to set the build_xxx variables
+	- use $build_os instead of $host_os to decide when DJGPP should run
+	  `pwd.exe' to figure out the build directory.  Report and fix from
+	  Yao Qi <yao@codesourcery.com>
+
+				   8/29
+				   ----
+configure.ac
+	- new name for configure.in
+
+MANIFEST,Makefile.in
+	- configure.in -> configure.ac
+
+				 1/5/2013
+				 --------
+configure.ac
+	- move version number up to 6.3
+
+				   1/31
+				   ----
+configure.ac
+	- use AC_CHECK_TOOL instead of AC_CHECK_PROG to check for ar, since it
+	  will find $host-prefixed versions of utilities.  Report and fix from
+	  Mike Frysinger <vapier@gentoo.org>
+
+				    3/4
+				    ---
+Makefile.in
+        - PACKAGE_TARNAME, docdir: new variables substituted by autoconf
+        - OTHER_DOCS,OTHER_INSTALLED_DOCS: new variables with auxiliary
+	  documentation files to be installed into $(docdir)
+        - install: add new rule to install $(OTHER_DOCS)
+        - uninstall: add new rule to uninstall $(docdir)/$(OTHER_INSTALLED_DOCS)
+
+				   4/29
+				   ----
+Makefile.in
+	- installdirs: make sure to create $(DESTDIR)$(docdir).  Report from
+	  <hiroo.hayashi@computer.org>
+
+				 1/27/2014
+				 ---------
+Makefile.in
+	- install-examples: should not depend on `shared', since the examples
+	  themselves are not built using shared libraries.  Report from
+	  <hiroo.hayashi@computer.org>
+
+support/shobj-conf
+	- [from bash] darwin: changed the install_name embedded into the
+	  shared library to contain only the major version number, not the
+	  minor one. The idea is that the minor versions should all be API/ABI
+	  compatible, and it is better to link automatically with the latest
+	  one.  Idea from Max Horn <max@quendi.de>
+
+				 2/26/2014
+				 ---------
+[readline-6.3 released]
+
+				   3/14
+				   ----
+shlib/Makefile.in
+	- fix typo in dependency list for vi_mode.so: it should not depend on
+	  just $(topdir). Report and fix from Natanael Copa
+	  <ncopa@alpinelinux.org>
+
+				   4/15
+				   ----
+{.,shlib,examples}/Makefile.in
+	- make sure $(INCLUDES) appears before $(CPPFLAGS) in the various
+	  CFLAGS assignments so readline looks in its own source and build
+	  directories (INCLUDES) before some directories specified by the
+	  user or builder (CPPFLAGS).  Report and fix from Max Horn
+	  <max@quendi.de>
+
+				    6/2
+				    ---
+config.h.in
+	- use correct symbols: HAVE_STRUCT_DIRENT_D_INO, HAVE_STRUCT_DIRENT_D_FILENO
+	  HAVE_STRUCT_DIRENT_D_NAMLEN.  They don't really matter, but they are
+	  what posixdir.h looks for.  Report from Ross Burton <ross.burton@intel.com>
+
+				   6/11
+				   ----
+readline.pc.in
+	- new file, config file for pkgconfig. Patch to add from Jirka Klimes
+	  <jklimes@redhat.com>
+
+{MANIFEST,configure.ac,Makefile.in}
+	- readline.pc: changes to create file for pkgconfig
+
+				   10/13
+				   -----
+doc/Makefile.in
+	- readline.pdf, history.pdf, rluserman.pdf: use texi2dvi --pdf to generate
+	  these.  Suggestion from Siep Kroonenberg <siepo@cybercomm.nl>
+
+				   11/29
+				   -----
+config.h.in
+        - HAVE_PSELECT: define if pselect(2) available
+
+configure.ac
+        - check for pselect(2), define HAVE_PSELECT if found
+
+				   12/29
+				   -----
+configure.ac
+	- bump version number up to 6.4
+
+				 1/6/2015
+				 --------
+configure.ac,config.h.in
+	- look for ncurses/termcap.h, define HAVE_NCURSES_TERMCAP_H
+
+				   4/20
+				   ----
+configure.ac
+	- add template definitions set by AC_USE_SYSTEM_EXTENSIONS from a report
+	  from Andreas Schwab <schwab@linux-m68k.org>
+
+				   4/24
+				   ----
+configure.ac,config.h.in
+	- add check for sys/ioctl.h to AC_CHECK_HEADERS, define HAVE_SYS_IOCTL_H
+	  if found
+
+				   5/29
+				   ----
+configure.ac
+	- bump library version to 7.0 because of addition of rl_callback_sigcleanup
+
+				   8/26
+				   ----
+configure.ac,Makefile.in,examples/Makefile.in
+	- remove references to purify
