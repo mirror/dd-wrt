@@ -6,6 +6,7 @@
 #ifndef _WG_POLY1305_H
 #define _WG_POLY1305_H
 
+#include "simd.h"
 #include <linux/types.h>
 
 enum poly1305_lengths {
@@ -23,9 +24,9 @@ struct poly1305_ctx {
 
 static void poly1305_fpu_init(void);
 
-static void poly1305_init(struct poly1305_ctx *ctx, const u8 key[POLY1305_KEY_SIZE], bool have_simd);
-static void poly1305_update(struct poly1305_ctx *ctx, const u8 *inp, size_t len, bool have_simd);
-static void poly1305_finish(struct poly1305_ctx *ctx, u8 mac[POLY1305_MAC_SIZE], bool have_simd);
+static void poly1305_init(struct poly1305_ctx *ctx, const u8 key[POLY1305_KEY_SIZE], simd_context_t simd_context);
+static void poly1305_update(struct poly1305_ctx *ctx, const u8 *inp, const size_t len, simd_context_t simd_context);
+static void poly1305_finish(struct poly1305_ctx *ctx, u8 mac[POLY1305_MAC_SIZE], simd_context_t simd_context);
 
 #ifdef DEBUG
 bool poly1305_selftest(void);
