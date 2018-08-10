@@ -207,6 +207,9 @@ static void log_it(const char *line)
   fprintf(logfile, "%s:%s %s\n", tod, user, line);
 }
 
+extern int nvram_match(char *name, char *match);
+extern int nvram_set(const char *name, const char *value);
+
 /* VTY shell main routine. */
 int
 main (int argc, char **argv, char **env)
@@ -225,13 +228,18 @@ main (int argc, char **argv, char **env)
   int no_error = 0;
   char *homedir = NULL;
 
-   system("nvram set wk_mode=\"ospf bgp rip router\"");
-   system("nvram set zebra_copt=1");
-   system("nvram set ospfd_copt=1");
-   system("nvram set ripd_copt=1");
-   system("nvram set bgpd_copt=1");
+   if (!nvram_match("zebra_copt", "1") ||
+       !nvram_match("ospfd_copt", "1") ||
+       !nvram_match("ripd_copt", "1") ||
+       !nvram_match("bgpd_copt", "1")) {
+   nvram_set("wk_mode", "ospf bgp rip router");
+   nvram_set("zebra_copt", "1");
+   nvram_set("ospfd_copt", "1");
+   nvram_set("ripd_copt", "1");
+   nvram_set("bgpd_copt", "1");
    system("stopservice zebra");
    system("startservice zebra");
+   }
 
   /* Preserve name of myself. */
   progname = ((p = strrchr (argv[0], '/')) ? ++p : argv[0]);
