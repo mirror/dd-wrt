@@ -6,7 +6,7 @@ readline-configure:
 readline:
 	$(MAKE) -C readline
 	cd readline/shlib && rm -f libreadline.so
-	cd readline/shlib && ln -s libreadline.so.5.0 libreadline.so
+	cd readline/shlib && ln -s libreadline.so.7.0 libreadline.so
 
 readline-install:
 	rm -rf $(INSTALLDIR)/readline/usr/lib
