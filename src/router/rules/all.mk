@@ -201,6 +201,7 @@ include rules/nvtlstatus.mk
 include rules/ctorrent.mk
 include rules/milkfish.mk
 include rules/mc.mk
+include rules/readline.mk
 include rules/quagga.mk
 include rules/frr.mk
 include rules/bmon.mk
