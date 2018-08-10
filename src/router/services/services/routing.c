@@ -43,8 +43,11 @@ static int zebra_init(void)
 	char var[32], *next;
 	char daemons[64];
 	int services = 0;
+#ifdef HAVE_FRR
+	sprintf(daemons, "watchfrr -dz -r '%%s -d' zebra");
+#else
 	sprintf(daemons, "watchquagga -dz -r '%%s -d' zebra");
-
+#endif
 	sub = nvram_safe_get("wk_mode");
 	foreach(var, sub, next) {
 		if (!strcmp(var, "ospf")) {
@@ -711,7 +714,11 @@ void stop_zebra(void)
 {
 
 #ifdef HAVE_QUAGGA
+#ifdef HAVE_FRR
+	stop_process("watchfrr", "daemon");
+#else
 	stop_process("watchquagga", "daemon");
+#endif
 	stop_process("zebra", "daemon");
 	stop_process("ripd", "daemon");
 	stop_process("ospfd", "daemon");
