@@ -7,6 +7,13 @@ define kernelfeatures
 	if [ "$(CONFIG_WIREGUARD)" = "y" ]; then \
 		sed -i 's/\# CONFIG_NET_FOU is not set/CONFIG_NET_FOU=m/g' $(LINUXDIR)/.config; \
 	fi
+	if [ "$(CONFIG_FRR)" = "y" ]; then \
+		sed -i 's/\# CONFIG_NAMESPACES is not set/CONFIG_NAMESPACES=y/g' $(LINUXDIR)/.config; \
+		echo "CONFIG_UTS_NS=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IPC_NS=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_PID_NS=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NET_NS=y" >> $(LINUXDIR)/.config; \
+	fi
 	if [ "$(CONFIG_NTFS3G)" = "y" ]; then \
 		sed -i 's/\# CONFIG_FUSE_FS is not set/CONFIG_FUSE_FS=m/g' $(LINUXDIR)/.config; \
 		echo "# CONFIG_CUSE is not set" >> $(LINUXDIR)/.config; \
