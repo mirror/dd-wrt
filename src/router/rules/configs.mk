@@ -183,6 +183,7 @@ obj-$(CONFIG_PCMCIA) += nvtlstatus
 obj-$(CONFIG_PCMCIA) += setserial
 obj-$(CONFIG_COMGT) += comgt
 obj-$(CONFIG_MEDIASERVER) += mediaserver
+obj-$(CONFIG_FRR) += zlib frr json-c
 obj-$(CONFIG_QUAGGA) += zlib quagga
 obj-$(CONFIG_VPNC) += vpnc
 obj-$(CONFIG_STUCK) += stuck_beacon
