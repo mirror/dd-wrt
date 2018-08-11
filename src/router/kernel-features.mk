@@ -13,6 +13,7 @@ define kernelfeatures
 		echo "CONFIG_IPC_NS=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_PID_NS=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NET_NS=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_USER_NS=y" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_NTFS3G)" = "y" ]; then \
 		sed -i 's/\# CONFIG_FUSE_FS is not set/CONFIG_FUSE_FS=m/g' $(LINUXDIR)/.config; \
