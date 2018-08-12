@@ -110,7 +110,7 @@ struct frequency {
 
 unsigned long long getBusy_mac80211(char *interface);
 unsigned long long getActive_mac80211(char *interface);
-int getsurveystats(struct list_head frequencies,char *interface, char *freq_range, int scans);
+int getsurveystats(struct list_head *frequencies,char *interface, char *freq_range, int scans);
 
 int getassoclist(char *name, unsigned char *list);
 
