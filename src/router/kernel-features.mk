@@ -9,11 +9,11 @@ define kernelfeatures
 	fi
 	if [ "$(CONFIG_FRR)" = "y" ]; then \
 		sed -i 's/\# CONFIG_NAMESPACES is not set/CONFIG_NAMESPACES=y/g' $(LINUXDIR)/.config; \
-		echo "CONFIG_UTS_NS=y" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_IPC_NS=y" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_PID_NS=y" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_UTS_NS is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_IPC_NS is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_PID_NS is not set" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NET_NS=y" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_USER_NS=y" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_USER_NS is not set" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_NTFS3G)" = "y" ]; then \
 		sed -i 's/\# CONFIG_FUSE_FS is not set/CONFIG_FUSE_FS=m/g' $(LINUXDIR)/.config; \
