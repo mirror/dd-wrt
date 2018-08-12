@@ -184,18 +184,15 @@ static int freq_add_stats(struct nl_msg *msg, void *data)
 	if (sinfo[NL80211_SURVEY_INFO_IN_USE]) {
 		f->in_use = true;
 	}
-
-	if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME] && sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY]) {
-
+	if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME]) {
 		time = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME]);
-		busy = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY]);
-		if (!time)
-			goto out;
-
-		f->clear += 100 - (uint32_t) (busy * 100 / time);
-		f->clear_count++;
 		f->active += time;
-		f->busy += busy;
+		f->active_count++;
+	}
+	if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY]) {
+		time = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY]);
+		f->busy += time;
+		f->busy_count++;
 	}
 	if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_RX]) {
 		time = (unsigned long long)nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_RX]);
@@ -212,6 +209,14 @@ static int freq_add_stats(struct nl_msg *msg, void *data)
 		int8_t noise = nla_get_u8(sinfo[NL80211_SURVEY_INFO_NOISE]);
 		f->noise += noise;
 		f->noise_count++;
+	}
+	if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME] && sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY]) {
+		time = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME]);
+		busy = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY]);
+		if (!time)
+			goto out;
+		f->clear += 100 - (uint32_t) (busy * 100 / time);
+		f->clear_count++;
 	}
 
 out:
@@ -385,6 +390,8 @@ static int sort_cmp(void *priv, struct list_head *a, struct list_head *b)
 
 int getsurveystats(struct list_head *frequencies, char *interface, char *freq_range, int scans)
 {
+	struct frequency *f;
+	int verbose = 0;
 	struct unl unl;
 	int wdev, phy;
 	int i, ch;
@@ -416,9 +423,9 @@ int getsurveystats(struct list_head *frequencies, char *interface, char *freq_ra
 		}
 		survey(&unl, wdev, freq_add_stats, frequencies);
 	}
-	list_for_each_entry(f, frequencies, list) {
-		fprintf(stderr, "%s: freq:%d qual:%d noise:%d eirp: %d\n", interface, f->freq, f->clear , f->noise, f->eirp);
-	}
+//	list_for_each_entry(f, frequencies, list) {
+//		fprintf(stderr, "%s: freq:%d qual:%d active:%lld busy:%lld rx:%lld tx:%lld noise:%d eirp: %d\n", interface, f->freq, f->clear,f->active,f->busy,f->rx_time,f->tx_time , f->noise, f->eirp);
+//	}
 out:
 	unl_free(&unl);
 	return ret;
