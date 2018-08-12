@@ -383,7 +383,7 @@ static int sort_cmp(void *priv, struct list_head *a, struct list_head *b)
 		return (f1->quality < f2->quality);
 }
 
-int getsurveystats(struct list_head frequencies, char *interface, char *freq_range, int scans)
+int getsurveystats(struct list_head *frequencies, char *interface, char *freq_range, int scans)
 {
 	struct unl unl;
 	int wdev, phy;
@@ -406,15 +406,18 @@ int getsurveystats(struct list_head frequencies, char *interface, char *freq_ran
 		ret = -1;
 		goto out;
 	}
-	freq_list(&unl, phy, freq_range, &frequencies);
+	freq_list(&unl, phy, freq_range, frequencies);
 	for (i = 0; i < scans; i++) {
 		int x = 0;
 		while (x++ < 10) {
-			if (!scan(&unl, wdev, &frequencies))
+			if (!scan(&unl, wdev, frequencies))
 				break;
 			sleep(1);	// try again
 		}
-		survey(&unl, wdev, freq_add_stats, &frequencies);
+		survey(&unl, wdev, freq_add_stats, frequencies);
+	}
+	list_for_each_entry(f, frequencies, list) {
+		fprintf(stderr, "%s: freq:%d qual:%d noise:%d eirp: %d\n", interface, f->freq, f->clear , f->noise, f->eirp);
 	}
 out:
 	unl_free(&unl);
