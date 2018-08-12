@@ -24,8 +24,8 @@
 
 #include "unl.h"
 #include <nl80211.h>
-#include "list.h"
-#include "list_sort.h"
+#include <list.h>
+#include <list_sort.h>
 
 #include "wlutils.h"
 
@@ -35,20 +35,6 @@
 
 static struct mac80211_ac *add_to_mac80211_ac(struct mac80211_ac *list_root);
 void free_mac80211_ac(struct mac80211_ac *acs);
-
-struct frequency {
-	struct list_head list;
-	unsigned int freq;
-	bool passive;
-	int quality;
-	int clear;
-	int clear_count;
-	unsigned long long active;
-	unsigned long long busy;
-	int noise;
-	int noise_count;
-	int eirp;
-};
 
 static struct nla_policy survey_policy[NL80211_SURVEY_INFO_MAX + 1] = {
 	[NL80211_SURVEY_INFO_FREQUENCY] = {.type = NLA_U32},
@@ -187,6 +173,7 @@ static int freq_add_stats(struct nl_msg *msg, void *data)
 	struct frequency *f;
 	struct list_head *frequencies = data;
 	int freq;
+	unsigned long long time, busy;
 	if (mac80211_parse_survey(msg, sinfo))
 		goto out;
 
@@ -194,9 +181,11 @@ static int freq_add_stats(struct nl_msg *msg, void *data)
 	f = get_freq(freq, frequencies);
 	if (!f)
 		goto out;
+	if (sinfo[NL80211_SURVEY_INFO_IN_USE]) {
+		f->in_use = true;
+	}
 
 	if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME] && sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY]) {
-		unsigned long long time, busy;
 
 		time = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME]);
 		busy = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY]);
@@ -209,12 +198,14 @@ static int freq_add_stats(struct nl_msg *msg, void *data)
 		f->busy += busy;
 	}
 	if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_RX]) {
-		time= (unsigned long long)nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_RX]);
+		time = (unsigned long long)nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_RX]);
 		f->rx_time += time;
+		f->rx_time_count++;
 	}
 	if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_TX]) {
 		time = (unsigned long long)nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_TX]);
 		f->tx_time += time;
+		f->tx_time_count++;
 	}
 
 	if (sinfo[NL80211_SURVEY_INFO_NOISE]) {
@@ -391,7 +382,8 @@ static int sort_cmp(void *priv, struct list_head *a, struct list_head *b)
 	else
 		return (f1->quality < f2->quality);
 }
-struct int getsurveystats(struct list_head *frequencies,char *interface, char *freq_range, int scans)
+
+int getsurveystats(struct list_head frequencies, char *interface, char *freq_range, int scans)
 {
 	struct unl unl;
 	int wdev, phy;
@@ -426,7 +418,9 @@ struct int getsurveystats(struct list_head *frequencies,char *interface, char *f
 	}
 out:
 	unl_free(&unl);
+	return ret;
 }
+
 // leave space for enhencements with more cards and already chosen channels...
 struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int scans, int ammount, int enable_passive, int htflags)
 {
