@@ -1,5 +1,5 @@
 readline-configure: 
-	cd readline && ./configure --host=$(ARCH)-uclibc-linux --prefix=/usr --disable-static CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -fno-strict-aliasing"
+	cd readline && ./configure --host=$(ARCH)-uclibc-linux --prefix=/usr --libdir=/usr/lib --disable-static CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -fno-strict-aliasing"
 	$(MAKE) -C readline clean all
 	cd readline/shlib && rm -f libreadline.so
 
