@@ -15,6 +15,7 @@
 #ifndef _wlutils_h_
 #define _wlutils_h_
 
+#include <list_head.h>
 #include <typedefs.h>
 #ifndef _NO_WLIOCTL_H
 #include <wlioctl.h>
@@ -86,9 +87,30 @@ int getassoclist_qtn(char *name, unsigned char *list);
 int getNoiseIndex_qtn(char *ifname, int index);
 int getRssiIndex_qtn(char *ifname, int index);
 #endif
+struct frequency {
+	struct list_head list;
+	unsigned int freq;
+	bool in_use;
+	bool passive;
+	int quality;
+	int clear;
+	int clear_count;
+	unsigned long long active;
+	unsigned long long busy;
+	unsigned long long rx_time;
+	unsigned long long tx_time;
+	int rx_time_count;
+	int tx_time_count;
+	int busy_count;
+	int active_count;
+	int noise;
+	int noise_count;
+	int eirp;
+};
 
 unsigned long long getBusy_mac80211(char *interface);
 unsigned long long getActive_mac80211(char *interface);
+int getsurveystats(struct list_head frequencies,char *interface, char *freq_range, int scans);
 
 int getassoclist(char *name, unsigned char *list);
 

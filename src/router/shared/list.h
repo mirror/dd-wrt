@@ -3,6 +3,7 @@
 #define _LINUX_LIST_H
 
 #include <stddef.h>
+#include <list_head.h>
 /**
  * container_of - cast a member of a structure out to the containing structure
  * @ptr:	the pointer to the member.
@@ -24,10 +25,6 @@
  * generate better code by using them directly rather than
  * using the generic single-entry routines.
  */
-
-struct list_head {
-	struct list_head *next, *prev;
-};
 
 #define LIST_HEAD_INIT(name) { &(name), &(name) }
 
