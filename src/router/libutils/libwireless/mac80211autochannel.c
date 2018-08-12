@@ -43,6 +43,8 @@ struct frequency {
 	int quality;
 	int clear;
 	int clear_count;
+	unsigned long long active;
+	unsigned long long busy;
 	int noise;
 	int noise_count;
 	int eirp;
@@ -203,6 +205,16 @@ static int freq_add_stats(struct nl_msg *msg, void *data)
 
 		f->clear += 100 - (uint32_t) (busy * 100 / time);
 		f->clear_count++;
+		f->active += time;
+		f->busy += busy;
+	}
+	if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_RX]) {
+		time= (unsigned long long)nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_RX]);
+		f->rx_time += time;
+	}
+	if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_TX]) {
+		time = (unsigned long long)nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_TX]);
+		f->tx_time += time;
 	}
 
 	if (sinfo[NL80211_SURVEY_INFO_NOISE]) {
@@ -379,7 +391,42 @@ static int sort_cmp(void *priv, struct list_head *a, struct list_head *b)
 	else
 		return (f1->quality < f2->quality);
 }
-
+struct int getsurveystats(struct list_head *frequencies,char *interface, char *freq_range, int scans)
+{
+	struct unl unl;
+	int wdev, phy;
+	int i, ch;
+	struct wifi_channels *wifi_channels;
+	int ret = unl_genl_init(&unl, "nl80211");
+	wdev = if_nametoindex(interface);
+	if (wdev < 0) {
+		ret = -1;
+		goto out;
+	}
+	const char *country = getIsoName(nvram_default_get("ath0_regdomain", "UNITED_STATES"));
+	if (!country)
+		country = "DE";
+	wifi_channels = mac80211_get_channels(&unl, interface, country, 20, 0xff);
+	if (scans == 0)
+		scans = 2;
+	phy = unl_nl80211_wdev_to_phy(&unl, wdev);
+	if (phy < 0) {
+		ret = -1;
+		goto out;
+	}
+	freq_list(&unl, phy, freq_range, &frequencies);
+	for (i = 0; i < scans; i++) {
+		int x = 0;
+		while (x++ < 10) {
+			if (!scan(&unl, wdev, &frequencies))
+				break;
+			sleep(1);	// try again
+		}
+		survey(&unl, wdev, freq_add_stats, &frequencies);
+	}
+out:
+	unl_free(&unl);
+}
 // leave space for enhencements with more cards and already chosen channels...
 struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int scans, int ammount, int enable_passive, int htflags)
 {
