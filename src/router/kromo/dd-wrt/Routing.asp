@@ -157,8 +157,8 @@ addEvent(window, "unload", function() {
 								</div>
 							</div>
 							</fieldset><br />
-							<% has_routing(""ospf","-->"); %>
-							<% has_routing(""bgp","<!--"); %>
+							<% has_routing("ospf","-->"); %>
+							<% has_routing("bgp","<!--"); %>
 							<fieldset>
 								<legend><% tran("route.bgp_legend"); %></legend>
 								<div class="setting">
