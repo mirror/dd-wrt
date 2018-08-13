@@ -248,8 +248,8 @@ void ej_dump_channel_survey(webs_t wp, int argc, char_t ** argv)
 		else
 			websWrite(wp, ",\"N/A\"");
 
-		if (f->clear_count)
-			websWrite(wp, ",\"%ld\"", f->clear / f->clear_count);
+		if (f->active_count && f->busy_count)
+			websWrite(wp, ",\"%lld\"", 100 - ((f->busy * 100) / f->active));
 		else
 			websWrite(wp, ",\"N/A\"");
 
