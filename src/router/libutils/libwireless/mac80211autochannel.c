@@ -210,14 +210,6 @@ static int freq_add_stats(struct nl_msg *msg, void *data)
 		f->noise += noise;
 		f->noise_count++;
 	}
-	if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME] && sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY]) {
-		time = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME]);
-		busy = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY]);
-		if (!time)
-			goto out;
-		f->clear += 100 - (uint32_t) (busy * 100 / time);
-		f->clear_count++;
-	}
 
 out:
 	return NL_SKIP;
@@ -323,10 +315,11 @@ static int freq_quality(struct wifi_channels *wifi_channels, int _max_eirp, int 
 	int c;
 	int idx;
 
-	if (f->clear_count) {
+	if (f->active_count && f->busy_count) {
 
-		c = f->clear;
-
+		c = 100 - (uint32_t) (f->busy * 100 / f->active);
+		if (c < 0)
+			c = 0;
 		idx = (f->freq - 2412) / 5;
 		int *bias = bias_2g;
 		if (_htflags % AUTO_FORCEHT40)
@@ -424,9 +417,9 @@ int getsurveystats(struct dd_list_head *frequencies, char *interface, char *freq
 		}
 		survey(&unl, wdev, freq_add_stats, frequencies);
 	}
-//	list_for_each_entry(f, frequencies, list) {
-//		fprintf(stderr, "%s: freq:%d qual:%d active:%lld busy:%lld rx:%lld tx:%lld noise:%d eirp: %d\n", interface, f->freq, f->clear,f->active,f->busy,f->rx_time,f->tx_time , f->noise, f->eirp);
-//	}
+//      list_for_each_entry(f, frequencies, list) {
+//              fprintf(stderr, "%s: freq:%d qual:%d active:%lld busy:%lld rx:%lld tx:%lld noise:%d eirp: %d\n", interface, f->freq, f->clear,f->active,f->busy,f->rx_time,f->tx_time , f->noise, f->eirp);
+//      }
 out:
 	unl_free(&unl);
 	mac80211_unlock();
@@ -490,11 +483,6 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 	}
 	bzero(&sdata, sizeof(sdata));
 	list_for_each_entry(f, &frequencies, list) {
-		if (f->clear_count) {
-			f->clear /= f->clear_count;
-			f->clear_count = 1;
-		}
-
 		if (f->noise_count) {
 			f->noise /= f->noise_count;
 			f->noise_count = 1;
