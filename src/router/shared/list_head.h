@@ -4,7 +4,7 @@
 
 #include <stddef.h>
 
-struct list_head {
-	struct list_head *next, *prev;
+struct dd_list_head {
+	struct dd_list_head *next, *prev;
 };
 #endif
