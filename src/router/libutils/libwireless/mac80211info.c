@@ -186,7 +186,8 @@ static int mac80211_cb_survey(struct nl_msg *msg, void *data)
 #endif
 	}
 	if (sinfo[NL80211_SURVEY_INFO_IN_USE]) {
-
+		mac80211_info->channel_active_time = (unsigned long long)-1;
+		mac80211_info->channel_busy_time = (unsigned long long)-1;
 		if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME] && sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY]) {
 			mac80211_info->channel_active_time = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME]);
 			mac80211_info->channel_busy_time = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY]);
@@ -230,64 +231,23 @@ nla_put_failure:
 	return;
 }
 
-int getNoise_mac80211(char *interface)
+struct mac80211_info *getcurrentsurvey_mac80211(char *interface, struct mac80211_info *mac80211_info)
 {
 	lock();
 	struct nl_msg *msg;
-	struct mac80211_info mac80211_info;
 	int wdev = if_nametoindex(interface);
-	bzero(&mac80211_info, sizeof(mac80211_info));
+	bzero(mac80211_info, sizeof(struct mac80211_info));
 
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_SURVEY, true);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
-	unl_genl_request(&unl, msg, mac80211_cb_survey, &mac80211_info);
+	unl_genl_request(&unl, msg, mac80211_cb_survey, mac80211_info);
 	unlock();
-	return mac80211_info.noise;
+	return mac80211_info;
 
 nla_put_failure:
 	nlmsg_free(msg);
 	unlock();
-	return (-199);
-}
-
-unsigned long long getBusy_mac80211(char *interface)
-{
-	lock();
-	struct nl_msg *msg;
-	struct mac80211_info mac80211_info;
-	int wdev = if_nametoindex(interface);
-	bzero(&mac80211_info, sizeof(mac80211_info));
-
-	msg = unl_genl_msg(&unl, NL80211_CMD_GET_SURVEY, true);
-	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
-	unl_genl_request(&unl, msg, mac80211_cb_survey, &mac80211_info);
-	unlock();
-	return mac80211_info.channel_busy_time;
-
-nla_put_failure:
-	nlmsg_free(msg);
-	unlock();
-	return (unsigned long long)-1;
-}
-
-unsigned long long getActive_mac80211(char *interface)
-{
-	lock();
-	struct nl_msg *msg;
-	struct mac80211_info mac80211_info;
-	int wdev = if_nametoindex(interface);
-	bzero(&mac80211_info, sizeof(mac80211_info));
-
-	msg = unl_genl_msg(&unl, NL80211_CMD_GET_SURVEY, true);
-	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
-	unl_genl_request(&unl, msg, mac80211_cb_survey, &mac80211_info);
-	unlock();
-	return mac80211_info.channel_active_time;
-
-nla_put_failure:
-	nlmsg_free(msg);
-	unlock();
-	return (unsigned long long)-1;
+	return NULL;
 }
 
 #ifdef HAVE_ATH10K
