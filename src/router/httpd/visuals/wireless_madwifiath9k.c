@@ -151,6 +151,8 @@ void ej_get_busy(webs_t wp, int argc, char_t ** argv)
 {
 	char *prefix = nvram_safe_get("wifi_display");
 	if (is_ath9k(prefix)) {
+		if (nvram_nmatch("disabled", "%s_net_mode", prefix))
+			break;
 		unsigned long long busy = getBusy_mac80211(prefix);
 		websWrite(wp, "%llu ms", busy);
 	}
@@ -160,6 +162,8 @@ void ej_get_active(webs_t wp, int argc, char_t ** argv)
 {
 	char *prefix = nvram_safe_get("wifi_display");
 	if (is_ath9k(prefix)) {
+		if (nvram_nmatch("disabled", "%s_net_mode", prefix))
+			break;
 		unsigned long long active = getActive_mac80211(prefix);
 		websWrite(wp, "%llu ms", active);
 	}
@@ -169,6 +173,8 @@ void ej_get_quality(webs_t wp, int argc, char_t ** argv)
 {
 	char *prefix = nvram_safe_get("wifi_display");
 	if (is_ath9k(prefix)) {
+		if (nvram_nmatch("disabled", "%s_net_mode", prefix))
+			break;
 		unsigned long long active = getActive_mac80211(prefix);
 		unsigned long long busy = getBusy_mac80211(prefix);
 		unsigned long long quality = 100 - ((busy * 100) / active);
@@ -180,6 +186,8 @@ void ej_show_busy(webs_t wp, int argc, char_t ** argv)
 {
 	char *prefix = nvram_safe_get("wifi_display");
 	if (is_ath9k(prefix)) {
+		if (nvram_nmatch("disabled", "%s_net_mode", prefix))
+			break;
 		unsigned long long busy = getBusy_mac80211(prefix);
 		unsigned long long active = getActive_mac80211(prefix);
 		if (busy != (unsigned long long)(-1)) {
@@ -264,6 +272,8 @@ void ej_dump_channel_survey(webs_t wp, int argc, char_t ** argv)
 void ej_channel_survey(webs_t wp, int argc, char_t ** argv)
 {
 	if (is_ath9k(nvram_safe_get("wifi_display"))) {
+		if (nvram_nmatch("disabled", "%s_net_mode", nvram_safe_get("wifi_display")))
+			break;
 		websWrite(wp, "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"channel_survey\\\" value=\\\"\" + sbutton.csurvey + \"\\\" onclick=\\\"OpenChannelSurvey()\\\" />\");\n");
 	}
 }
