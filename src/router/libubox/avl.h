@@ -44,7 +44,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#include "list.h"
+#include "ubox_list.h"
 #include "list_compat.h"
 
 /* Support for OLSR.org linker symbol export */

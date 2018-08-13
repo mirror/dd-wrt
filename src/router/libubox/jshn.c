@@ -25,7 +25,7 @@
 #include <stdbool.h>
 #include <ctype.h>
 #include <getopt.h>
-#include "list.h"
+#include "ubox_list.h"
 
 #include "avl.h"
 #include "blob.h"
