@@ -149,65 +149,77 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 
 void ej_get_busy(webs_t wp, int argc, char_t ** argv)
 {
+	struct mac80211_info info;
 	char *prefix = nvram_safe_get("wifi_display");
 	if (is_ath9k(prefix)) {
 		if (nvram_nmatch("disabled", "%s_net_mode", prefix))
 			return;
-		unsigned long long busy = getBusy_mac80211(prefix);
-		websWrite(wp, "%llu ms", busy);
+		if (getcurrentsurvey_mac80211(prefix, &info)) {
+			unsigned long long busy = info.channel_busy_time;
+			websWrite(wp, "%llu ms", busy);
+		}
 	}
 }
 
 void ej_get_active(webs_t wp, int argc, char_t ** argv)
 {
+	struct mac80211_info info;
 	char *prefix = nvram_safe_get("wifi_display");
 	if (is_ath9k(prefix)) {
 		if (nvram_nmatch("disabled", "%s_net_mode", prefix))
 			return;
-		unsigned long long active = getActive_mac80211(prefix);
-		websWrite(wp, "%llu ms", active);
+		if (getcurrentsurvey_mac80211(prefix, &info)) {
+			unsigned long long active = info.channel_active_time;
+			websWrite(wp, "%llu ms", active);
+		}
 	}
 }
 
 void ej_get_quality(webs_t wp, int argc, char_t ** argv)
 {
+	struct mac80211_info info;
 	char *prefix = nvram_safe_get("wifi_display");
 	if (is_ath9k(prefix)) {
 		if (nvram_nmatch("disabled", "%s_net_mode", prefix))
 			return;
-		unsigned long long active = getActive_mac80211(prefix);
-		unsigned long long busy = getBusy_mac80211(prefix);
-		unsigned long long quality = 100 - ((busy * 100) / active);
-		websWrite(wp, "%llu%%", quality);
+		if (getcurrentsurvey_mac80211(prefix, &info)) {
+			unsigned long long active = info.channel_active_time;
+			unsigned long long busy = info.channel_busy_time;
+			unsigned long long quality = 100 - ((busy * 100) / active);
+			websWrite(wp, "%llu%%", quality);
+		}
 	}
 }
 
 void ej_show_busy(webs_t wp, int argc, char_t ** argv)
 {
+	struct mac80211_info info;
 	char *prefix = nvram_safe_get("wifi_display");
 	if (is_ath9k(prefix)) {
 		if (nvram_nmatch("disabled", "%s_net_mode", prefix))
 			return;
-		unsigned long long busy = getBusy_mac80211(prefix);
-		unsigned long long active = getActive_mac80211(prefix);
-		if (busy != (unsigned long long)(-1)) {
-			websWrite(wp, "<div class=\"setting\">\n");
-			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(status_wireless.busy)</script></div>\n");
-			websWrite(wp, "<span id=\"wl_busy\">%llu ms</span>&nbsp;\n", busy);
-			websWrite(wp, "</div>\n");
-		}
-		if (active != (unsigned long long)(-1)) {
-			websWrite(wp, "<div class=\"setting\">\n");
-			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(status_wireless.active)</script></div>\n");
-			websWrite(wp, "<span id=\"wl_active\">%llu ms</span>&nbsp;\n", active);
-			websWrite(wp, "</div>\n");
-		}
-		if (active != (unsigned long long)(-1) && busy != (unsigned long long)(-1)) {
-			unsigned long long quality = 100 - ((busy * 100) / active);
-			websWrite(wp, "<div class=\"setting\">\n");
-			websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(status_wireless.quality)</script></div>\n");
-			websWrite(wp, "<span id=\"wl_quality\">%llu%%</span>&nbsp;\n", quality);
-			websWrite(wp, "</div>\n");
+		if (getcurrentsurvey_mac80211(prefix, &info)) {
+			unsigned long long active = info.channel_active_time;
+			unsigned long long busy = info.channel_busy_time;
+			if (busy != (unsigned long long)(-1)) {
+				websWrite(wp, "<div class=\"setting\">\n");
+				websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(status_wireless.busy)</script></div>\n");
+				websWrite(wp, "<span id=\"wl_busy\">%llu ms</span>&nbsp;\n", busy);
+				websWrite(wp, "</div>\n");
+			}
+			if (active != (unsigned long long)(-1)) {
+				websWrite(wp, "<div class=\"setting\">\n");
+				websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(status_wireless.active)</script></div>\n");
+				websWrite(wp, "<span id=\"wl_active\">%llu ms</span>&nbsp;\n", active);
+				websWrite(wp, "</div>\n");
+			}
+			if (active != (unsigned long long)(-1) && busy != (unsigned long long)(-1)) {
+				unsigned long long quality = 100 - ((busy * 100) / active);
+				websWrite(wp, "<div class=\"setting\">\n");
+				websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(status_wireless.quality)</script></div>\n");
+				websWrite(wp, "<span id=\"wl_quality\">%llu%%</span>&nbsp;\n", quality);
+				websWrite(wp, "</div>\n");
+			}
 		}
 	}
 }
