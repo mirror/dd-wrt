@@ -19,7 +19,7 @@
 #ifndef __LIBUBOX_RUNQUEUE_H
 #define __LIBUBOX_RUNQUEUE_H
 
-#include "list.h"
+#include "ubox_list.h"
 #include "safe_list.h"
 #include "uloop.h"
 

@@ -30,7 +30,7 @@
 #define USE_EPOLL
 #endif
 
-#include "list.h"
+#include "ubox_list.h"
 
 struct uloop_fd;
 struct uloop_timeout;
