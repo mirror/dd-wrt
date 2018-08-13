@@ -108,6 +108,8 @@ struct frequency {
 	int eirp;
 };
 
+void mac80211_lock(void);
+void mac80211_unlock(void);
 unsigned long long getBusy_mac80211(char *interface);
 unsigned long long getActive_mac80211(char *interface);
 int getsurveystats(struct dd_list_head *frequencies,char *interface, char *freq_range, int scans);
