@@ -45,7 +45,7 @@
 #include <string.h>
 
 #include "avl.h"
-#include "list.h"
+#include "ubox_list.h"
 
 /**
  * internal type save inline function to calculate the maximum of
