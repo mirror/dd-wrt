@@ -268,7 +268,7 @@ static int scan(struct unl *unl, int wdev, struct dd_list_head *frequencies)
 
 	unl_genl_subscribe(unl, "scan");
 	if ((i = unl_genl_request(unl, msg, NULL, NULL)) < 0) {
-		fprintf(stderr, "Scan request failed: %s\n", strerror(-i));
+		dd_loginfo("survey", "Scan request failed: %s\n", strerror(-i));
 		ret = -1;
 		goto out;
 	}
@@ -396,6 +396,7 @@ int getsurveystats(struct dd_list_head *frequencies, char *interface, char *freq
 	int wdev, phy;
 	int i, ch;
 	struct wifi_channels *wifi_channels;
+	mac80211_lock();
 	int ret = unl_genl_init(&unl, "nl80211");
 	wdev = if_nametoindex(interface);
 	if (wdev < 0) {
@@ -428,6 +429,7 @@ int getsurveystats(struct dd_list_head *frequencies, char *interface, char *freq
 //	}
 out:
 	unl_free(&unl);
+	mac80211_unlock();
 	return ret;
 }
 
