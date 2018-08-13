@@ -88,7 +88,7 @@ int getNoiseIndex_qtn(char *ifname, int index);
 int getRssiIndex_qtn(char *ifname, int index);
 #endif
 struct frequency {
-	struct list_head list;
+	struct dd_list_head list;
 	unsigned int freq;
 	bool in_use;
 	bool passive;
@@ -110,7 +110,7 @@ struct frequency {
 
 unsigned long long getBusy_mac80211(char *interface);
 unsigned long long getActive_mac80211(char *interface);
-int getsurveystats(struct list_head *frequencies,char *interface, char *freq_range, int scans);
+int getsurveystats(struct dd_list_head *frequencies,char *interface, char *freq_range, int scans);
 
 int getassoclist(char *name, unsigned char *list);
 
