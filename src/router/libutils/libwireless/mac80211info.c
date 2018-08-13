@@ -95,6 +95,16 @@ static char *lastunlock;
 #define unlock()
 #endif
 
+void mac80211_lock(void)
+{
+	lock();
+}
+
+void mac80211_unlock(void)
+{
+	unlock();
+}
+
 static struct unl unl;
 static bool bunl = false;
 
