@@ -93,8 +93,6 @@ struct frequency {
 	bool in_use;
 	bool passive;
 	int quality;
-	int clear;
-	int clear_count;
 	unsigned long long active;
 	unsigned long long busy;
 	unsigned long long rx_time;
