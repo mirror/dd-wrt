@@ -109,7 +109,7 @@ struct frequency {
 void mac80211_lock(void);
 void mac80211_unlock(void);
 struct mac80211_info *getcurrentsurvey_mac80211(char *interface, struct mac80211_info *mac80211_info);
-int getsurveystats(struct dd_list_head *frequencies,char *interface, char *freq_range, int scans);
+int getsurveystats(struct dd_list_head *frequencies,char *interface, char *freq_range, int scans,int bw);
 
 int getassoclist(char *name, unsigned char *list);
 
