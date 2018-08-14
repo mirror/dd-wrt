@@ -185,10 +185,11 @@ void ej_get_quality(webs_t wp, int argc, char_t ** argv)
 		if (getcurrentsurvey_mac80211(prefix, &info)) {
 			long long active = info.channel_active_time;
 			long long busy = info.channel_busy_time;
+			long long quality = 100;
 			if (active > 0) {
-				long long quality = 100 - ((busy * 100) / active);
-				websWrite(wp, "%llu%%", quality < 0 ? 0 : quality);
+				quality = 100 - ((busy * 100) / active);
 			}
+			websWrite(wp, "%llu%%", quality < 0 ? 0 : quality);
 		}
 	}
 }
@@ -215,8 +216,10 @@ void ej_show_busy(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "<span id=\"wl_active\">%llu ms</span>&nbsp;\n", active);
 				websWrite(wp, "</div>\n");
 			}
-			if (busy != -1 && active > 0) {
-				long long quality = 100 - ((busy * 100) / active);
+			if (busy != -1 && active != -1) {
+				long long quality = 100;
+				if (active > 0)
+					quality = 100 - ((busy * 100) / active);
 				websWrite(wp, "<div class=\"setting\">\n");
 				websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(status_wireless.quality)</script></div>\n");
 				websWrite(wp, "<span id=\"wl_quality\">%llu%%</span>&nbsp;\n", quality < 0 ? 0 : quality);
