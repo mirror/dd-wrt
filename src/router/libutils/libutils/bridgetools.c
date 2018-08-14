@@ -213,7 +213,7 @@ int br_set_bridge_prio(const char *br, int prio)
 #endif
 int br_add_bridge(const char *brname)
 {
-	dd_loginfo("bridge", "bridge added successfully\n");
+	dd_loginfo("bridge", "bridge %s successfully added\n", brname);
 	char ipaddr[32];
 	char brmcast[32];
 	char hwaddr[32];
@@ -261,7 +261,7 @@ int br_del_bridge(const char *brname)
 {
 	if (!ifexists(brname))
 		return -1;
-	dd_loginfo("bridge", "bridge deleted successfully\n");
+	dd_loginfo("bridge", "bridge %s successfully deleted\n", brname);
 	/* Stop the EMF for this LAN */
 #ifdef HAVE_80211AC
 	eval("emf", "stop", brname);
@@ -303,7 +303,7 @@ int br_add_interface(const char *br, const char *dev)
 		eval("ifconfig", dev, "up");
 	}
 
-	dd_loginfo("bridge", "interface added successfully\n");
+	dd_loginfo("bridge", "interface %s successfully added to bridge %s\n", dev, br);
 	int ret = eval("brctl", "addif", br, dev);
 #ifdef HAVE_80211AC
 	eval("emf", "add", "iface", br, dev);
@@ -321,7 +321,7 @@ int br_del_interface(const char *br, const char *dev)
 {
 	if (!ifexists(dev))
 		return -1;
-	dd_loginfo("bridge", "interface deleted successfully\n");
+	dd_loginfo("bridge", "interface %s successfully deleted from bridge %s\n", dev, br);
 	int ret = eval("brctl", "delif", br, dev);
 #ifdef HAVE_80211AC
 	eval("emf", "del", "iface", br, dev);
