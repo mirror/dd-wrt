@@ -381,7 +381,7 @@ static int sort_cmp(void *priv, struct dd_list_head *a, struct dd_list_head *b)
 		return (f1->quality < f2->quality);
 }
 
-int getsurveystats(struct dd_list_head *frequencies, char *interface, char *freq_range, int scans)
+int getsurveystats(struct dd_list_head *frequencies, char *interface, char *freq_range, int scans, int bw)
 {
 	struct frequency *f;
 	int verbose = 0;
@@ -399,7 +399,7 @@ int getsurveystats(struct dd_list_head *frequencies, char *interface, char *freq
 	const char *country = getIsoName(nvram_default_get("ath0_regdomain", "UNITED_STATES"));
 	if (!country)
 		country = "DE";
-	wifi_channels = mac80211_get_channels(&unl, interface, country, 20, 0xff);
+	wifi_channels = mac80211_get_channels(&unl, interface, country, bw, 0xff);
 	if (scans == 0)
 		scans = 2;
 	phy = unl_nl80211_wdev_to_phy(&unl, wdev);
@@ -427,7 +427,7 @@ out:
 }
 
 // leave space for enhencements with more cards and already chosen channels...
-struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int scans, int ammount, int enable_passive, int htflags)
+struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int scans, int amount, int enable_passive, int htflags)
 {
 	struct mac80211_ac *acs = NULL;
 	struct frequency *f, *ftmp;
@@ -435,9 +435,7 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 	int i, ch;
 	struct sort_data sdata;
 	int wdev, phy;
-	struct unl unl;
-	int ret = unl_genl_init(&unl, "nl80211");
-	unsigned int count = ammount;
+	unsigned int count = amount;
 	int _htflags = htflags;
 	int bw = 20;
 	struct wifi_channels *wifi_channels;
@@ -450,37 +448,10 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 		bw = 160;
 	else if (htflags & AUTO_FORCEHT40)
 		bw = 40;
-	const char *country = getIsoName(nvram_default_get("ath0_regdomain", "UNITED_STATES"));
-	if (!country)
-		country = "DE";
-
-	wifi_channels = mac80211_get_channels(&unl, interface, country, bw, 0xff);
-	if (scans == 0)
-		scans = 2;
 	/* get maximum eirp possible in channel list */
 	_max_eirp = get_max_eirp(wifi_channels);
-	wdev = if_nametoindex(interface);
-	if (wdev < 0) {
-		fprintf(stderr, "mac80211autochannel Interface not found\n");
+	if (getsurveystats(&frequencies, interface, freq_range, scans, bw))
 		goto out;
-	}
-
-	phy = unl_nl80211_wdev_to_phy(&unl, wdev);
-	if (phy < 0) {
-		fprintf(stderr, "mac80211autochannel PHY not found\n");
-		goto out;
-	}
-
-	freq_list(&unl, phy, freq_range, &frequencies);
-	for (i = 0; i < scans; i++) {
-		int x = 0;
-		while (x++ < 10) {
-			if (!scan(&unl, wdev, &frequencies))
-				break;
-			sleep(1);	// try again
-		}
-		survey(&unl, wdev, freq_add_stats, &frequencies);
-	}
 	bzero(&sdata, sizeof(sdata));
 	list_for_each_entry(f, &frequencies, list) {
 		if (f->noise_count) {
@@ -522,7 +493,6 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 	}
 
 out:
-	unl_free(&unl);
 	return acs;
 }
 
