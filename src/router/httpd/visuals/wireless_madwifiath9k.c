@@ -235,7 +235,7 @@ void ej_dump_channel_survey(webs_t wp, int argc, char_t ** argv)
 	int first_survey = 0;
 	char *interface = nvram_safe_get("wifi_display");
 	LIST_HEAD(frequencies);
-	if (getsurveystats(&frequencies, interface, NULL, 2, 20))
+	if (getsurveystats(&frequencies, NULL, interface, NULL, 2, 20))
 		return;
 
 	list_for_each_entry(f, &frequencies, list) {

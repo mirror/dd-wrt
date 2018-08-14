@@ -381,7 +381,7 @@ static int sort_cmp(void *priv, struct dd_list_head *a, struct dd_list_head *b)
 		return (f1->quality < f2->quality);
 }
 
-int getsurveystats(struct dd_list_head *frequencies, char *interface, char *freq_range, int scans, int bw)
+int getsurveystats(struct dd_list_head *frequencies, struct wifi_channels **channels, char *interface, char *freq_range, int scans, int bw)
 {
 	struct frequency *f;
 	int verbose = 0;
@@ -400,6 +400,8 @@ int getsurveystats(struct dd_list_head *frequencies, char *interface, char *freq
 	if (!country)
 		country = "DE";
 	wifi_channels = mac80211_get_channels(&unl, interface, country, bw, 0xff);
+	if (channels)
+		*channels = wifi_channels;
 	if (scans == 0)
 		scans = 2;
 	phy = unl_nl80211_wdev_to_phy(&unl, wdev);
@@ -417,9 +419,7 @@ int getsurveystats(struct dd_list_head *frequencies, char *interface, char *freq
 		}
 		survey(&unl, wdev, freq_add_stats, frequencies);
 	}
-//      list_for_each_entry(f, frequencies, list) {
-//              fprintf(stderr, "%s: freq:%d qual:%d active:%lld busy:%lld rx:%lld tx:%lld noise:%d eirp: %d\n", interface, f->freq, f->clear,f->active,f->busy,f->rx_time,f->tx_time , f->noise, f->eirp);
-//      }
+
 out:
 	unl_free(&unl);
 	mac80211_unlock();
@@ -438,8 +438,8 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 	unsigned int count = amount;
 	int _htflags = htflags;
 	int bw = 20;
-	struct wifi_channels *wifi_channels;
 	int _max_eirp;
+	struct wifi_channels *wifi_channels;
 	LIST_HEAD(frequencies);
 
 	if (htflags & AUTO_FORCEVHT80)
@@ -449,9 +449,9 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 	else if (htflags & AUTO_FORCEHT40)
 		bw = 40;
 	/* get maximum eirp possible in channel list */
-	_max_eirp = get_max_eirp(wifi_channels);
-	if (getsurveystats(&frequencies, interface, freq_range, scans, bw))
+	if (getsurveystats(&frequencies, &wifi_channels, interface, freq_range, scans, bw))
 		goto out;
+	_max_eirp = get_max_eirp(wifi_channels);
 	bzero(&sdata, sizeof(sdata));
 	list_for_each_entry(f, &frequencies, list) {
 		if (f->noise_count) {

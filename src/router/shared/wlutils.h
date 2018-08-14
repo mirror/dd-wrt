@@ -106,10 +106,19 @@ struct frequency {
 	int eirp;
 };
 
+struct wifi_channels {
+	int channel;
+	int freq;
+	int noise;
+	int max_eirp;
+	int hw_eirp;
+	unsigned int no_outdoor:1, no_indoor:1, no_ofdm:1, no_cck:1, ptp_only:1, ptmp_only:1, passive_scan:1, no_ibss:1, lll:1, llu:1, lul:1, luu:1, ull:1, ulu:1, uul:1, uuu:1, ht40:1, vht80:1, vht160:1, dfs:1;
+};
+
 void mac80211_lock(void);
 void mac80211_unlock(void);
 struct mac80211_info *getcurrentsurvey_mac80211(char *interface, struct mac80211_info *mac80211_info);
-int getsurveystats(struct dd_list_head *frequencies,char *interface, char *freq_range, int scans,int bw);
+int getsurveystats(struct dd_list_head *frequencies,struct wifi_channels **channels, char *interface, char *freq_range, int scans,int bw);
 
 int getassoclist(char *name, unsigned char *list);
 
@@ -243,14 +252,6 @@ extern int mac80211_check_valid_frequency(char *interface, char *country, int fr
 extern int getFrequency_mac80211(char *interface);
 extern int mac80211_get_phyidx_by_vifname(char *vif);
 
-struct wifi_channels {
-	int channel;
-	int freq;
-	int noise;
-	int max_eirp;
-	int hw_eirp;
-	unsigned int no_outdoor:1, no_indoor:1, no_ofdm:1, no_cck:1, ptp_only:1, ptmp_only:1, passive_scan:1, no_ibss:1, lll:1, llu:1, lul:1, luu:1, ull:1, ulu:1, uul:1, uuu:1, ht40:1, vht80:1, vht160:1, dfs:1;
-};
 
 struct mac80211_info {
 	struct wifi_client_info *wci;
