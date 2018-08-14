@@ -76,6 +76,7 @@
 #include <asm/realmode.h>
 #include <asm/misc.h>
 #include <asm/spec-ctrl.h>
+#include <asm/hw_irq.h>
 
 /* Number of siblings per CPU package */
 int smp_num_siblings = 1;
@@ -293,6 +294,23 @@ int topology_update_package_map(unsigned int pkg, unsigned int cpu)
 found:
 	cpu_data(cpu).logical_proc_id = physical_to_logical_pkg[pkg];
 	return 0;
+}
+
+/**
+ * topology_is_primary_thread - Check whether CPU is the primary SMT thread
+ * @cpu:	CPU to check
+ */
+bool topology_is_primary_thread(unsigned int cpu)
+{
+	return apic_id_is_primary_thread(per_cpu(x86_cpu_to_apicid, cpu));
+}
+
+/**
+ * topology_smt_supported - Check whether SMT is supported by the CPUs
+ */
+bool topology_smt_supported(void)
+{
+	return smp_num_siblings > 1;
 }
 
 /**
