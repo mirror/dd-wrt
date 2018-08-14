@@ -1131,6 +1131,7 @@ int is_wil6210(const char *prefix);
 
 #ifdef HAVE_ATH9K
 extern int is_ath9k(const char *prefix);
+extern int has_channelsurvey(const char *prefix);
 extern int has_spectralscanning(const char *prefix);
 extern int getath9kdevicecount(void);
 #else
