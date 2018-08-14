@@ -30,46 +30,54 @@ struct mon {
 	char *nvmatch;
 	char *nvvalue2;
 	char *nvmatch2;
+	int (*checkfunc) (void);
 };
+
+static int check_igmprt(void)
+{
+	if (nvram_match("wan_proto", "disabled") || !strlen(get_wan_face()))	// todo: add upstream 
+		return 0;
+	return 1;
+}
 
 enum { M_LAN, M_WAN };
 
 struct mon mons[] = {
 	// {"tftpd",  M_LAN, stop_tftpd, start_tftpd},
 #ifdef HAVE_UPNP
-	{"upnp", M_LAN, "upnp_enable", "1", NULL, NULL},
+	{"upnp", M_LAN, "upnp_enable", "1", NULL, NULL, NULL},
 #endif
-	{"process_monitor", M_LAN, NULL, NULL, NULL, NULL},
-	{"httpd", M_LAN, "http_enable", "1", "https_enable", "1"},
+	{"process_monitor", M_LAN, NULL, NULL, NULL, NULL, NULL},
+	{"httpd", M_LAN, "http_enable", "1", "https_enable", "1", NULL},
 #ifdef HAVE_UDHCPD
-	{"udhcpd", M_LAN, NULL, NULL, NULL, NULL},
+	{"udhcpd", M_LAN, NULL, NULL, NULL, NULL, NULL},
 #endif
-	{"dnsmasq", M_LAN, "dnsmasq_enable", "1", NULL, NULL},
-	{"dhcpfwd", M_WAN, "dhcpfwd_enable", "1", NULL, NULL},
+	{"dnsmasq", M_LAN, "dnsmasq_enable", "1", NULL, NULL, NULL},
+	{"dhcpfwd", M_WAN, "dhcpfwd_enable", "1", NULL, NULL, NULL},
 #ifdef HAVE_PRIVOXY
-	{"privoxy", M_LAN, "privoxy_enable", "1", NULL, NULL},
+	{"privoxy", M_LAN, "privoxy_enable", "1", NULL, NULL, NULL},
 #endif
 #ifdef HAVE_NOCAT
-	{"splashd", M_LAN, "NC_enable", "1", NULL, NULL},
+	{"splashd", M_LAN, "NC_enable", "1", NULL, NULL, NULL},
 #endif
 #ifdef HAVE_CHILLI
-	{"chilli", M_LAN, "chilli_enable", "1", NULL, NULL},
+	{"chilli", M_LAN, "chilli_enable", "1", NULL, NULL, NULL},
 #endif
 #ifdef HAVE_WIFIDOG
-	{"wifidog", M_WAN, "wd_enable", "1", NULL, NULL},
+	{"wifidog", M_WAN, "wd_enable", "1", NULL, NULL, NULL},
 #endif
 #ifdef HAVE_OLSRD
-	{"olsrd", M_LAN, "wk_mode", "olsrd", NULL, NULL},
+	{"olsrd", M_LAN, "wk_mode", "olsrd", NULL, NULL, NULL},
 #endif
 #ifdef HAVE_SPUTNIK_APD
-	{"sputnik", M_WAN, "apd_enable", "1", NULL, NULL},
+	{"sputnik", M_WAN, "apd_enable", "1", NULL, NULL, NULL},
 #endif
 #ifdef HAVE_MULTICAST
-	{"igmprt", M_WAN, "block_multicast", "0", NULL, NULL},
+	{"igmprt", M_WAN, "block_multicast", "0", NULL, NULL, &check_igmprt},
 #endif
 #ifdef HAVE_ERC
 #ifdef HAVE_OPENVPN
-	{"openvpn", M_LAN, "openvpncl_enable", "1", NULL, NULL},
+	{"openvpn", M_LAN, "openvpncl_enable", "1", NULL, NULL, NULL},
 #endif
 #endif
 	{NULL, 0, NULL, NULL, NULL, NULL}
@@ -270,6 +278,8 @@ static int do_mon(void)
 			count++;
 		if (v->nvvalue2 && nvram_match(v->nvvalue2, v->nvmatch2))
 			count++;
+		if (v->checkfunc && !v->checkfunc())	// optional check method. 
+			count = 0;
 		if (count) {
 			printf("checking %s\n", v->name);
 
