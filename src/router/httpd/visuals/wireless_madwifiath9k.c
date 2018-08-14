@@ -185,8 +185,10 @@ void ej_get_quality(webs_t wp, int argc, char_t ** argv)
 		if (getcurrentsurvey_mac80211(prefix, &info)) {
 			long long active = info.channel_active_time;
 			long long busy = info.channel_busy_time;
-			long long quality = 100 - ((busy * 100) / active);
-			websWrite(wp, "%llu%%", quality < 0 ? 0 : quality);
+			if (active > 0) {
+				long long quality = 100 - ((busy * 100) / active);
+				websWrite(wp, "%llu%%", quality < 0 ? 0 : quality);
+			}
 		}
 	}
 }
@@ -213,7 +215,7 @@ void ej_show_busy(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "<span id=\"wl_active\">%llu ms</span>&nbsp;\n", active);
 				websWrite(wp, "</div>\n");
 			}
-			if (active != -1 && busy != -1) {
+			if (busy != -1 && active > 0) {
 				long long quality = 100 - ((busy * 100) / active);
 				websWrite(wp, "<div class=\"setting\">\n");
 				websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(status_wireless.quality)</script></div>\n");
@@ -283,7 +285,7 @@ void ej_dump_channel_survey(webs_t wp, int argc, char_t ** argv)
 
 void ej_channel_survey(webs_t wp, int argc, char_t ** argv)
 {
-	if (is_ath9k(nvram_safe_get("wifi_display"))) {
+	if (has_channelsurvey(nvram_safe_get("wifi_display"))) {
 		if (nvram_nmatch("disabled", "%s_net_mode", nvram_safe_get("wifi_display")))
 			return;
 		websWrite(wp, "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"channel_survey\\\" value=\\\"\" + sbutton.csurvey + \"\\\" onclick=\\\"OpenChannelSurvey()\\\" />\");\n");
