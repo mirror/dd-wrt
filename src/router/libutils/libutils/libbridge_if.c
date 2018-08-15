@@ -33,6 +33,24 @@
 static int br_socket_fd = -1;
 static struct sysfs_class *br_class_net;
 
+static unsigned long __tv_to_jiffies(const struct timeval *tv)
+{
+	unsigned long long jif;
+
+	jif = 1000000ULL * tv->tv_sec + tv->tv_usec;
+
+	return (HZ * jif) / 1000000;
+}
+
+static void __jiffies_to_tv(struct timeval *tv, unsigned long jiffies)
+{
+	unsigned long long tvusec;
+
+	tvusec = (1000000ULL * jiffies) / HZ;
+	tv->tv_sec = tvusec / 1000000;
+	tv->tv_usec = tvusec - 1000000 * tv->tv_sec;
+}
+
 /* 
  * Only used if sysfs is not available.
  */
@@ -650,7 +668,6 @@ int br_cmd_show(void)
 	br_foreach_bridge(show_bridge, NULL);
 	return 0;
 }
-
 
 int br_init(void)
 {

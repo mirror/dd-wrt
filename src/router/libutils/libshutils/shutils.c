@@ -1139,7 +1139,7 @@ int nvram_commit(void)
 #else
 	eval("ledtool", "1");
 #endif
-    return _nvram_commit();
+	return _nvram_commit();
 }
 
 #ifdef MEMDEBUG

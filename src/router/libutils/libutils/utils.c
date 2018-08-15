@@ -420,9 +420,9 @@ int check_wan_link(int num)
 	int value = 0;
 	if (nvram_match("wan_proto", "3g")) {
 		if (nvram_match("3gdata", "hso")
-			|| nvram_match("3gdata", "qmi") 
-			|| nvram_match("3gdata", "mbim") 
-			|| nvram_match("3gdata", "sierradirectip") ) {
+		    || nvram_match("3gdata", "qmi")
+		    || nvram_match("3gdata", "mbim")
+		    || nvram_match("3gdata", "sierradirectip")) {
 			ppp3g = 0;
 			if (nvram_match("3gdata", "sierradirectip")) {
 				fp = fopen("/tmp/sierradipstatus", "rb");
@@ -444,8 +444,7 @@ int check_wan_link(int num)
 			}
 			if (value) {
 				wan_link = 1;
-			}
-			else {
+			} else {
 				wan_link = 0;
 #if defined(HAVE_TMK) || defined(HAVE_BKM)
 				char *gpio3g;
@@ -454,10 +453,10 @@ int check_wan_link(int num)
 					set_gpio(atoi(gpio3g), 0);
 				gpio3g = nvram_get("gpiowancable");
 				if (gpio3g != NULL)
-				set_gpio(atoi(gpio3g), 0);
+					set_gpio(atoi(gpio3g), 0);
 #endif
 			}
-		return wan_link;
+			return wan_link;
 		}
 	}
 #endif
@@ -476,7 +475,7 @@ int check_wan_link(int num)
 	     || nvram_match("wan_proto", "pppoa")
 #endif
 #ifdef HAVE_3G
-	     || nvram_match("wan_proto", "3g") 
+	     || nvram_match("wan_proto", "3g")
 #endif
 	     || nvram_match("wan_proto", "heartbeat"))
 	    ) {

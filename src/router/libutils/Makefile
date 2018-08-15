@@ -105,12 +105,10 @@ ifneq ($(CONFIG_TW6600),y)
 ifeq ($(CONFIG_DIST),"micro")
 CFLAGS += -DHAVE_MICRO
 OBJS += libutils/libbridge_if.o
-OBJS += libutils/libbridge_init.o
 endif
 ifeq ($(CONFIG_DIST),"micro-special")
 CFLAGS += -DHAVE_MICRO
 OBJS += libutils/libbridge_if.o
-OBJS += libutils/libbridge_init.o
 endif
 endif
 
