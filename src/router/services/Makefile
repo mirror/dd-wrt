@@ -922,6 +922,14 @@ ifeq ($(CONFIG_KODATA),y)
 CFLAGS_EXTRA += -DHAVE_KODATA
 endif
 
+ifeq ($(CONFIG_DIST),"micro")
+CFLAGS_EXTRA += -DHAVE_MICRO
+endif
+
+ifeq ($(CONFIG_DIST),"micro-special")
+CFLAGS_EXTRA += -DHAVE_MICRO
+endif
+
 ifeq ($(CONFIG_RADIOOFF),y)
   CFLAGS_EXTRA += -DHAVE_RADIOOFF
 endif
