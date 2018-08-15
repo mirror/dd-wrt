@@ -4075,22 +4075,6 @@ static void tcp_sack_remove(struct tcp_sock *tp)
 	tp->rx_opt.num_sacks = num_sacks;
 }
 
-static bool tcp_ooo_try_coalesce(struct sock *sk,
-			     struct sk_buff *to,
-			     struct sk_buff *from,
-			     bool *fragstolen)
-{
-	bool res = tcp_try_coalesce(sk, to, from, fragstolen);
-
-	/* In case tcp_drop() is called later, update to->gso_segs */
-	if (res) {
-		u32 gso_segs = max_t(u16, 1, skb_shinfo(to)->gso_segs) +
-			       max_t(u16, 1, skb_shinfo(from)->gso_segs);
-
-		skb_shinfo(to)->gso_segs = min_t(u32, gso_segs, 0xFFFF);
-	}
-	return res;
-}
 
 
 /* This one checks to see if we can put data from the
@@ -4192,6 +4176,24 @@ static bool tcp_try_coalesce(struct sock *sk,
 	TCP_SKB_CB(to)->end_seq = TCP_SKB_CB(from)->end_seq;
 	TCP_SKB_CB(to)->ack_seq = TCP_SKB_CB(from)->ack_seq;
 	return true;
+}
+
+
+static bool tcp_ooo_try_coalesce(struct sock *sk,
+			     struct sk_buff *to,
+			     struct sk_buff *from,
+			     bool *fragstolen)
+{
+	bool res = tcp_try_coalesce(sk, to, from, fragstolen);
+
+	/* In case tcp_drop() is called later, update to->gso_segs */
+	if (res) {
+		u32 gso_segs = max_t(u16, 1, skb_shinfo(to)->gso_segs) +
+			       max_t(u16, 1, skb_shinfo(from)->gso_segs);
+
+		skb_shinfo(to)->gso_segs = min_t(u32, gso_segs, 0xFFFF);
+	}
+	return res;
 }
 
 static void tcp_data_queue_ofo(struct sock *sk, struct sk_buff *skb)
