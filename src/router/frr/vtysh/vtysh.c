@@ -2654,6 +2654,7 @@ DEFUN (vtysh_write_memory,
 	for (i = 0; i < array_size(vtysh_client); i++)
 		ret = vtysh_client_execute(&vtysh_client[i], line, outputfile);
 
+  	system("startservice quagga_writememory -f");  
 	return ret;
 }
 
