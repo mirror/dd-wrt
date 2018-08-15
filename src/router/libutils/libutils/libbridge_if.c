@@ -30,6 +30,9 @@
 #include "libbridge.h"
 #include "libbridge_private.h"
 
+static int br_socket_fd = -1;
+static struct sysfs_class *br_class_net;
+
 /* 
  * Only used if sysfs is not available.
  */
@@ -646,4 +649,26 @@ int br_cmd_show(void)
 	fprintf(stdout, "bridge name\tbridge id\t\tSTP enabled\tinterfaces\n");
 	br_foreach_bridge(show_bridge, NULL);
 	return 0;
+}
+
+
+int br_init(void)
+{
+	if (br_socket_fd == -1) {
+		if ((br_socket_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+			return errno;
+
+		br_class_net = sysfs_open_class("net");
+	}
+	return 0;
+}
+
+void br_shutdown(void)
+{
+	if (br_socket_fd != -1) {
+		sysfs_close_class(br_class_net);
+		br_class_net = NULL;
+		close(br_socket_fd);
+		br_socket_fd = -1;
+	}
 }
