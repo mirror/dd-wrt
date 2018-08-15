@@ -88,7 +88,7 @@ int getNoiseIndex_qtn(char *ifname, int index);
 int getRssiIndex_qtn(char *ifname, int index);
 #endif
 struct frequency {
-	struct list_head list;
+	struct dd_list_head list;
 	unsigned int freq;
 	bool in_use;
 	bool passive;
@@ -118,7 +118,7 @@ struct wifi_channels {
 void mac80211_lock(void);
 void mac80211_unlock(void);
 struct mac80211_info *getcurrentsurvey_mac80211(char *interface, struct mac80211_info *mac80211_info);
-int getsurveystats(struct list_head *frequencies,struct wifi_channels **channels, char *interface, char *freq_range, int scans,int bw);
+int getsurveystats(struct dd_list_head *frequencies,struct wifi_channels **channels, char *interface, char *freq_range, int scans,int bw);
 
 int getassoclist(char *name, unsigned char *list);
 
