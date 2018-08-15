@@ -1225,7 +1225,7 @@ char *getRADev(char *prefix);
 
 #ifndef HAVE_SYSLOG
 #define dd_syslog(a, args...) do { } while(0);
-#define dd_loginfo(a, args...) do { } while(0);
+#define dd_loginfo(a, fmt, args...) do { } while(0);
 #else
 #define dd_syslog(a, args...) syslog( a,## args);
 void dd_loginfo(const char *servicename, const char *fmt, ...);
