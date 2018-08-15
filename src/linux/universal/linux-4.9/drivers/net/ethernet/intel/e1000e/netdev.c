@@ -3694,7 +3694,6 @@ static int e1000e_config_hwtstamp(struct e1000_adapter *adapter,
 		 * Delay Request messages but not both so fall-through to
 		 * time stamp all packets.
 		 */
-	case HWTSTAMP_FILTER_NTP_ALL:
 	case HWTSTAMP_FILTER_ALL:
 		is_l2 = true;
 		is_l4 = true;
@@ -5956,10 +5955,11 @@ static void e1000_reset_task(struct work_struct *work)
  *
  * Returns the address of the device statistics structure.
  **/
-void e1000e_get_stats64(struct net_device *netdev,
+struct rtnl_link_stats64 *e1000e_get_stats64(struct net_device *netdev,
 			struct rtnl_link_stats64 *stats)
 {
 	struct e1000_adapter *adapter = netdev_priv(netdev);
+	memset(stats, 0, sizeof(struct rtnl_link_stats64));
 
 	spin_lock(&adapter->stats64_lock);
 	e1000e_update_stats(adapter);
@@ -5993,6 +5993,8 @@ void e1000e_get_stats64(struct net_device *netdev,
 	/* Tx Dropped needs to be maintained elsewhere */
 
 	spin_unlock(&adapter->stats64_lock);
+
+	return stats;
 }
 
 /**
@@ -7217,11 +7219,6 @@ static int e1000_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 		netdev->features |= NETIF_F_HIGHDMA;
 		netdev->vlan_features |= NETIF_F_HIGHDMA;
 	}
-
-	/* MTU range: 68 - max_hw_frame_size */
-	netdev->min_mtu = ETH_MIN_MTU;
-	netdev->max_mtu = adapter->max_hw_frame_size -
-			  (VLAN_ETH_HLEN + ETH_FCS_LEN);
 
 	if (e1000e_enable_mng_pass_thru(&adapter->hw))
 		adapter->flags |= FLAG_MNG_PT_ENABLED;
