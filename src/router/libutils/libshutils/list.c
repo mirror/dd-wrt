@@ -1,6 +1,6 @@
 #include <dd_list.h>
 
-void INIT_LIST_HEAD(struct list_head *list)
+void INIT_LIST_HEAD(struct dd_list_head *list)
 {
 	list->next = list;
 	list->prev = list;
@@ -12,7 +12,7 @@ void INIT_LIST_HEAD(struct list_head *list)
  * This is only for internal list manipulation where we know
  * the prev/next entries already!
  */
-void __list_add(struct list_head *new, struct list_head *prev, struct list_head *next)
+void __list_add(struct dd_list_head *new, struct dd_list_head *prev, struct dd_list_head *next)
 {
 	next->prev = new;
 	new->next = next;
@@ -27,7 +27,7 @@ void __list_add(struct list_head *new, struct list_head *prev, struct list_head 
  * This is only for internal list manipulation where we know
  * the prev/next entries already!
  */
-void __list_del(struct list_head *prev, struct list_head *next)
+void __list_del(struct dd_list_head *prev, struct dd_list_head *next)
 {
 	next->prev = prev;
 	prev->next = next;
@@ -39,7 +39,7 @@ void __list_del(struct list_head *prev, struct list_head *next)
  * Note: list_empty() on entry does not return true after this, the entry is
  * in an undefined state.
  */
-void list_del(struct list_head *entry)
+void list_del(struct dd_list_head *entry)
 {
 	__list_del(entry->prev, entry->next);
 	entry->next = NULL;
@@ -53,7 +53,7 @@ void list_del(struct list_head *entry)
  *
  * If @old was empty, it will be overwritten.
  */
-void list_replace(struct list_head *old, struct list_head *new)
+void list_replace(struct dd_list_head *old, struct dd_list_head *new)
 {
 	new->next = old->next;
 	new->next->prev = new;
@@ -61,7 +61,7 @@ void list_replace(struct list_head *old, struct list_head *new)
 	new->prev->next = new;
 }
 
-void list_replace_init(struct list_head *old, struct list_head *new)
+void list_replace_init(struct dd_list_head *old, struct dd_list_head *new)
 {
 	list_replace(old, new);
 	INIT_LIST_HEAD(old);
@@ -71,7 +71,7 @@ void list_replace_init(struct list_head *old, struct list_head *new)
  * list_del_init - deletes entry from list and reinitialize it.
  * @entry: the element to delete from the list.
  */
-void list_del_init(struct list_head *entry)
+void list_del_init(struct dd_list_head *entry)
 {
 	__list_del(entry->prev, entry->next);
 	INIT_LIST_HEAD(entry);
@@ -82,7 +82,7 @@ void list_del_init(struct list_head *entry)
  * @list: the entry to move
  * @head: the head that will precede our entry
  */
-void list_move(struct list_head *list, struct list_head *head)
+void list_move(struct dd_list_head *list, struct dd_list_head *head)
 {
 	__list_del(list->prev, list->next);
 	list_add(list, head);
@@ -93,7 +93,7 @@ void list_move(struct list_head *list, struct list_head *head)
  * @list: the entry to move
  * @head: the head that will follow our entry
  */
-void list_move_tail(struct list_head *list, struct list_head *head)
+void list_move_tail(struct dd_list_head *list, struct dd_list_head *head)
 {
 	__list_del(list->prev, list->next);
 	list_add_tail(list, head);
@@ -112,17 +112,17 @@ void list_move_tail(struct list_head *list, struct list_head *head)
  * to the list entry is list_del_init(). Eg. it cannot be used
  * if another CPU could re-list_add() it.
  */
-int list_empty_careful(const struct list_head *head)
+int list_empty_careful(const struct dd_list_head *head)
 {
-	struct list_head *next = head->next;
+	struct dd_list_head *next = head->next;
 	return (next == head) && (next == head->prev);
 }
 
-void __list_splice(struct list_head *list, struct list_head *head)
+void __list_splice(struct dd_list_head *list, struct dd_list_head *head)
 {
-	struct list_head *first = list->next;
-	struct list_head *last = list->prev;
-	struct list_head *at = head->next;
+	struct dd_list_head *first = list->next;
+	struct dd_list_head *last = list->prev;
+	struct dd_list_head *at = head->next;
 
 	first->prev = head;
 	head->next = first;
@@ -136,7 +136,7 @@ void __list_splice(struct list_head *list, struct list_head *head)
  * @list: the new list to add.
  * @head: the place to add it in the first list.
  */
-void list_splice(struct list_head *list, struct list_head *head)
+void list_splice(struct dd_list_head *list, struct dd_list_head *head)
 {
 	if (!list_empty(list))
 		__list_splice(list, head);
@@ -149,7 +149,7 @@ void list_splice(struct list_head *list, struct list_head *head)
  *
  * The list at @list is reinitialised
  */
-void list_splice_init(struct list_head *list, struct list_head *head)
+void list_splice_init(struct dd_list_head *list, struct dd_list_head *head)
 {
 	if (!list_empty(list)) {
 		__list_splice(list, head);

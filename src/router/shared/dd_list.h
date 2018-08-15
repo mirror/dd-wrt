@@ -4,8 +4,8 @@
 
 #include <stddef.h>
 
-struct list_head {
-	struct list_head *next, *prev;
+struct dd_list_head {
+	struct dd_list_head *next, *prev;
 };
 
 /**
@@ -33,9 +33,9 @@ struct list_head {
 #define LIST_HEAD_INIT(name) { &(name), &(name) }
 
 #define LIST_HEAD(name) \
-	struct list_head name = LIST_HEAD_INIT(name)
+	struct dd_list_head name = LIST_HEAD_INIT(name)
 
-void INIT_LIST_HEAD(struct list_head *list);
+void INIT_LIST_HEAD(struct dd_list_head *list);
 
 /*
  * Insert a new entry between two known consecutive entries.
@@ -43,7 +43,7 @@ void INIT_LIST_HEAD(struct list_head *list);
  * This is only for internal list manipulation where we know
  * the prev/next entries already!
  */
-void __list_add(struct list_head *new, struct list_head *prev, struct list_head *next);
+void __list_add(struct dd_list_head *new, struct dd_list_head *prev, struct dd_list_head *next);
 
 /**
  * list_add - add a new entry
@@ -73,7 +73,7 @@ void __list_add(struct list_head *new, struct list_head *prev, struct list_head 
  * This is only for internal list manipulation where we know
  * the prev/next entries already!
  */
-void __list_del(struct list_head *prev, struct list_head *next);
+void __list_del(struct dd_list_head *prev, struct dd_list_head *next);
 
 /**
  * list_del - deletes entry from list.
@@ -81,7 +81,7 @@ void __list_del(struct list_head *prev, struct list_head *next);
  * Note: list_empty() on entry does not return true after this, the entry is
  * in an undefined state.
  */
-void list_del(struct list_head *entry);
+void list_del(struct dd_list_head *entry);
 
 /**
  * list_replace - replace old entry by new one
@@ -90,29 +90,29 @@ void list_del(struct list_head *entry);
  *
  * If @old was empty, it will be overwritten.
  */
-void list_replace(struct list_head *old, struct list_head *new);
+void list_replace(struct dd_list_head *old, struct dd_list_head *new);
 
-void list_replace_init(struct list_head *old, struct list_head *new);
+void list_replace_init(struct dd_list_head *old, struct dd_list_head *new);
 
 /**
  * list_del_init - deletes entry from list and reinitialize it.
  * @entry: the element to delete from the list.
  */
-void list_del_init(struct list_head *entry);
+void list_del_init(struct dd_list_head *entry);
 
 /**
  * list_move - delete from one list and add as another's head
  * @list: the entry to move
  * @head: the head that will precede our entry
  */
-void list_move(struct list_head *list, struct list_head *head);
+void list_move(struct dd_list_head *list, struct dd_list_head *head);
 
 /**
  * list_move_tail - delete from one list and add as another's tail
  * @list: the entry to move
  * @head: the head that will follow our entry
  */
-void list_move_tail(struct list_head *list, struct list_head *head);
+void list_move_tail(struct dd_list_head *list, struct dd_list_head *head);
 
 /**
  * list_is_last - tests whether @list is the last entry in list @head
@@ -141,15 +141,15 @@ void list_move_tail(struct list_head *list, struct list_head *head);
  * to the list entry is list_del_init(). Eg. it cannot be used
  * if another CPU could re-list_add() it.
  */
-int list_empty_careful(const struct list_head *head);
+int list_empty_careful(const struct dd_list_head *head);
 
-void __list_splice(struct list_head *list, struct list_head *head);
+void __list_splice(struct dd_list_head *list, struct dd_list_head *head);
 /**
  * list_splice - join two lists
  * @list: the new list to add.
  * @head: the place to add it in the first list.
  */
-void list_splice(struct list_head *list, struct list_head *head);
+void list_splice(struct dd_list_head *list, struct dd_list_head *head);
 
 /**
  * list_splice_init - join two lists and reinitialise the emptied list.
@@ -158,11 +158,11 @@ void list_splice(struct list_head *list, struct list_head *head);
  *
  * The list at @list is reinitialised
  */
-void list_splice_init(struct list_head *list, struct list_head *head);
+void list_splice_init(struct dd_list_head *list, struct dd_list_head *head);
 
 /**
  * list_entry - get the struct for this entry
- * @ptr:	the &struct list_head pointer.
+ * @ptr:	the &struct dd_list_head pointer.
  * @type:	the type of the struct this is embedded in.
  * @member:	the name of the list_struct within the struct.
  */
@@ -182,7 +182,7 @@ void list_splice_init(struct list_head *list, struct list_head *head);
 
 /**
  * list_for_each	-	iterate over a list
- * @pos:	the &struct list_head to use as a loop cursor.
+ * @pos:	the &struct dd_list_head to use as a loop cursor.
  * @head:	the head for your list.
  */
 #define list_for_each(pos, head) \
@@ -191,7 +191,7 @@ void list_splice_init(struct list_head *list, struct list_head *head);
 
 /**
  * __list_for_each	-	iterate over a list
- * @pos:	the &struct list_head to use as a loop cursor.
+ * @pos:	the &struct dd_list_head to use as a loop cursor.
  * @head:	the head for your list.
  *
  * This variant differs from list_for_each() in that it's the
@@ -204,7 +204,7 @@ void list_splice_init(struct list_head *list, struct list_head *head);
 
 /**
  * list_for_each_prev	-	iterate over a list backwards
- * @pos:	the &struct list_head to use as a loop cursor.
+ * @pos:	the &struct dd_list_head to use as a loop cursor.
  * @head:	the head for your list.
  */
 #define list_for_each_prev(pos, head) \
@@ -213,8 +213,8 @@ void list_splice_init(struct list_head *list, struct list_head *head);
 
 /**
  * list_for_each_safe - iterate over a list safe against removal of list entry
- * @pos:	the &struct list_head to use as a loop cursor.
- * @n:		another &struct list_head to use as temporary storage
+ * @pos:	the &struct dd_list_head to use as a loop cursor.
+ * @n:		another &struct dd_list_head to use as temporary storage
  * @head:	the head for your list.
  */
 #define list_for_each_safe(pos, n, head) \
@@ -223,8 +223,8 @@ void list_splice_init(struct list_head *list, struct list_head *head);
 
 /**
  * list_for_each_prev_safe - iterate over a list backwards safe against removal of list entry
- * @pos:	the &struct list_head to use as a loop cursor.
- * @n:		another &struct list_head to use as temporary storage
+ * @pos:	the &struct dd_list_head to use as a loop cursor.
+ * @n:		another &struct dd_list_head to use as temporary storage
  * @head:	the head for your list.
  */
 #define list_for_each_prev_safe(pos, n, head) \

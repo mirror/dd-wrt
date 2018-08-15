@@ -90,7 +90,7 @@ static struct nla_policy freq_policy[NL80211_FREQUENCY_ATTR_MAX + 1] = {
 	[NL80211_FREQUENCY_ATTR_FREQ] = {.type = NLA_U32},
 };
 
-static int freq_list(struct unl *unl, int phy, const char *freq_range, struct list_head *frequencies)
+static int freq_list(struct unl *unl, int phy, const char *freq_range, struct dd_list_head *frequencies)
 {
 	struct nlattr *tb[NL80211_FREQUENCY_ATTR_MAX + 1];
 	struct frequency *f;
@@ -154,7 +154,7 @@ nla_put_failure:
 
 int mac80211_parse_survey(struct nl_msg *msg, struct nlattr **sinfo);
 
-static struct frequency *get_freq(int freq, struct list_head *frequencies)
+static struct frequency *get_freq(int freq, struct dd_list_head *frequencies)
 {
 	struct frequency *f;
 
@@ -171,7 +171,7 @@ static int freq_add_stats(struct nl_msg *msg, void *data)
 {
 	struct nlattr *sinfo[NL80211_SURVEY_INFO_MAX + 1];
 	struct frequency *f;
-	struct list_head *frequencies = data;
+	struct dd_list_head *frequencies = data;
 	int freq;
 	unsigned long long time, busy;
 	if (mac80211_parse_survey(msg, sinfo))
@@ -215,7 +215,7 @@ out:
 	return NL_SKIP;
 }
 
-static void survey(struct unl *unl, int wdev, unl_cb cb, struct list_head *frequencies)
+static void survey(struct unl *unl, int wdev, unl_cb cb, struct dd_list_head *frequencies)
 {
 	struct nl_msg *msg;
 
@@ -242,7 +242,7 @@ static int scan_event_cb(struct nl_msg *msg, void *data)
 	}
 }
 
-static int scan(struct unl *unl, int wdev, struct list_head *frequencies)
+static int scan(struct unl *unl, int wdev, struct dd_list_head *frequencies)
 {
 	struct frequency *f;
 	struct nlattr *opts;
@@ -371,7 +371,7 @@ static int freq_quality(struct wifi_channels *wifi_channels, int _max_eirp, int 
 	return c;
 }
 
-static int sort_cmp(void *priv, struct list_head *a, struct list_head *b)
+static int sort_cmp(void *priv, struct dd_list_head *a, struct dd_list_head *b)
 {
 	struct frequency *f1 = container_of(a, struct frequency, list);
 	struct frequency *f2 = container_of(b, struct frequency, list);
@@ -381,7 +381,7 @@ static int sort_cmp(void *priv, struct list_head *a, struct list_head *b)
 		return (f1->quality < f2->quality);
 }
 
-int getsurveystats(struct list_head *frequencies, struct wifi_channels **channels, char *interface, char *freq_range, int scans, int bw)
+int getsurveystats(struct dd_list_head *frequencies, struct wifi_channels **channels, char *interface, char *freq_range, int scans, int bw)
 {
 	struct frequency *f;
 	int verbose = 0;
