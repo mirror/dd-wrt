@@ -98,7 +98,7 @@ CFLAGS	+= -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -Iinclude
 CFLAGS	+= -fPIC
 LDFLAGS += -L. -ldl
 OBJS := libutils/utils.o libutils/ledconfig.o libutils/bridgetools.o libutils/detect.o libutils/linux_timer.o libutils/gpio.o libutils/md5c.o libutils/nvparse.o libutils/bcmutils.o libutils/linux_osl.o libutils/airbag.o libutils/ipfmt.o
-SHOBJS =  libshutils/timezones.o libshutils/shutils.o libshutils/sha1.o
+SHOBJS =  libshutils/timezones.o libshutils/shutils.o libshutils/sha1.o libshutils/list.o libshutils/list_sort.o
 WOBJS := libwireless/wl.o libwireless/wl_basic.o libwireless/wl_linux.o libwireless/country.o libwireless/wl_macfuncs.o
 
 ifneq ($(CONFIG_TW6600),y)
@@ -183,8 +183,8 @@ endif
 ifeq ($(CONFIG_ATH9K),y)
 ATH9KCFLAGS+= $(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -DHAVE_ATH9K -I. -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include -I$(SRCBASE)/
 ATH9KCFLAGS	+= -fPIC $(call cc-option,-Werror=return-local-addr)
-ATH9KOBJS += wl_ath9k.o list_sort.o mac80211info.o mac80211regulatory.o mac80211autochannel.o
-ATH9KFILES += libwireless/wl_ath9k.c libwireless/list_sort.c libwireless/mac80211info.c libwireless/mac80211regulatory.c libwireless/mac80211autochannel.c
+ATH9KOBJS += wl_ath9k.o mac80211info.o mac80211regulatory.o mac80211autochannel.o
+ATH9KFILES += libwireless/wl_ath9k.c libwireless/mac80211info.c libwireless/mac80211regulatory.c libwireless/mac80211autochannel.c
 ATH9KLDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
 ifeq ($(CONFIG_SYSLOG),y)
 ATH9KCFLAGS += -DHAVE_SYSLOG
