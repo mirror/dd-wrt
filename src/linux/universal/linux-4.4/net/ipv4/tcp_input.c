@@ -4293,6 +4293,24 @@ static bool tcp_try_coalesce(struct sock *sk,
 	return true;
 }
 
+static bool tcp_ooo_try_coalesce(struct sock *sk,
+			     struct sk_buff *to,
+			     struct sk_buff *from,
+			     bool *fragstolen)
+{
+	bool res = tcp_try_coalesce(sk, to, from, fragstolen);
+
+	/* In case tcp_drop() is called later, update to->gso_segs */
+	if (res) {
+		u32 gso_segs = max_t(u16, 1, skb_shinfo(to)->gso_segs) +
+			       max_t(u16, 1, skb_shinfo(from)->gso_segs);
+
+		skb_shinfo(to)->gso_segs = min_t(u32, gso_segs, 0xFFFF);
+	}
+	return res;
+}
+
+
 /* This one checks to see if we can put data from the
  * out_of_order queue into the receive_queue.
  */
@@ -4400,7 +4418,8 @@ static void tcp_data_queue_ofo(struct sock *sk, struct sk_buff *skb)
 	if (seq == TCP_SKB_CB(skb1)->end_seq) {
 		bool fragstolen;
 
-		if (!tcp_try_coalesce(sk, skb1, skb, &fragstolen)) {
+		if (!tcp_ooo_try_coalesce(sk, skb1,
+				 skb, &fragstolen)) {
 			__skb_queue_after(&tp->out_of_order_queue, skb1, skb);
 		} else {
 			tcp_grow_window(sk, skb);
