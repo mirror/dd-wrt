@@ -2386,7 +2386,7 @@ struct wifidevices {
 	int flags;
 	unsigned short vendor;
 	unsigned short device;
-	unsigned short subvendor;		//optional
+	unsigned short subvendor;	//optional
 	unsigned short subdevice;
 };
 #define NONE 0x0
