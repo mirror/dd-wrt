@@ -56,24 +56,4 @@ static inline void sysfs_close_class(struct sysfs_class *class)
 }
 #endif
 
-extern int br_socket_fd;
-extern struct sysfs_class *br_class_net;
-
-static inline unsigned long __tv_to_jiffies(const struct timeval *tv)
-{
-	unsigned long long jif;
-
-	jif = 1000000ULL * tv->tv_sec + tv->tv_usec;
-
-	return (HZ * jif) / 1000000;
-}
-
-static inline void __jiffies_to_tv(struct timeval *tv, unsigned long jiffies)
-{
-	unsigned long long tvusec;
-
-	tvusec = (1000000ULL * jiffies) / HZ;
-	tv->tv_sec = tvusec / 1000000;
-	tv->tv_usec = tvusec - 1000000 * tv->tv_sec;
-}
 #endif
