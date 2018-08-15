@@ -49,7 +49,7 @@
 #include <nl80211.h>
 #include <unl.h>
 #include <net/if.h>
-#include <list.h>
+#include <dd_list.h>
 int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifname, int cnt, int turbo, int macmask)
 {
 	char mac[32];
