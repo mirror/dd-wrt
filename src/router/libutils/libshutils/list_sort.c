@@ -19,9 +19,9 @@
  * to chaining of merge() calls: null-terminated, no reserved or
  * sentinel head node, "prev" links not maintained.
  */
-static struct list_head *merge(void *priv, int (*cmp) (void *priv, struct list_head * a, struct list_head * b), struct list_head *a, struct list_head *b)
+static struct dd_list_head *merge(void *priv, int (*cmp) (void *priv, struct dd_list_head * a, struct dd_list_head * b), struct dd_list_head *a, struct dd_list_head *b)
 {
-	struct list_head head, *tail = &head;
+	struct dd_list_head head, *tail = &head;
 
 	while (a && b) {
 		/* if equal, take 'a' -- important for sort stability */
@@ -45,9 +45,9 @@ static struct list_head *merge(void *priv, int (*cmp) (void *priv, struct list_h
  * prev-link restoration pass, or maintaining the prev links
  * throughout.
  */
-static void merge_and_restore_back_links(void *priv, int (*cmp) (void *priv, struct list_head * a, struct list_head * b), struct list_head *head, struct list_head *a, struct list_head *b)
+static void merge_and_restore_back_links(void *priv, int (*cmp) (void *priv, struct dd_list_head * a, struct dd_list_head * b), struct dd_list_head *head, struct dd_list_head *a, struct dd_list_head *b)
 {
-	struct list_head *tail = head;
+	struct dd_list_head *tail = head;
 
 	while (a && b) {
 		/* if equal, take 'a' -- important for sort stability */
@@ -95,13 +95,13 @@ static void merge_and_restore_back_links(void *priv, int (*cmp) (void *priv, str
  * @b. If @a and @b are equivalent, and their original relative
  * ordering is to be preserved, @cmp must return 0.
  */
-void list_sort(void *priv, struct list_head *head, int (*cmp) (void *priv, struct list_head * a, struct list_head * b))
+void list_sort(void *priv, struct dd_list_head *head, int (*cmp) (void *priv, struct dd_list_head * a, struct dd_list_head * b))
 {
-	struct list_head *part[MAX_LIST_LENGTH_BITS + 1];	/* sorted partial lists
+	struct dd_list_head *part[MAX_LIST_LENGTH_BITS + 1];	/* sorted partial lists
 								   -- last slot is a sentinel */
 	int lev;		/* index into part[] */
 	int max_lev = 0;
-	struct list_head *list;
+	struct dd_list_head *list;
 
 	if (list_empty(head))
 		return;
@@ -112,7 +112,7 @@ void list_sort(void *priv, struct list_head *head, int (*cmp) (void *priv, struc
 	list = head->next;
 
 	while (list) {
-		struct list_head *cur = list;
+		struct dd_list_head *cur = list;
 		list = list->next;
 		cur->next = NULL;
 
