@@ -296,12 +296,26 @@ static int nearby_node(int apicid)
 }
 #endif
 
-#ifdef CONFIG_SMP
-
 static void amd_get_topology_early(struct cpuinfo_x86 *c)
 {
 	if (cpu_has(c, X86_FEATURE_TOPOEXT))
 		smp_num_siblings = ((cpuid_ebx(0x8000001e) >> 8) & 0xff) + 1;
+}
+
+/*
+ * Fix up cpu_core_id for pre-F17h systems to be in the
+ * [0 .. cores_per_node - 1] range. Not really needed but
+ * kept so as not to break existing setups.
+ */
+static void legacy_fixup_core_id(struct cpuinfo_x86 *c)
+{
+	u32 cus_per_node;
+
+	if (c->x86 >= 0x17)
+		return;
+
+	cus_per_node = c->x86_max_cores / nodes_per_socket;
+	c->cpu_core_id %= cus_per_node;
 }
 
 /*
@@ -359,18 +373,11 @@ static void amd_get_topology(struct cpuinfo_x86 *c)
 	} else
 		return;
 
-	/* fixup multi-node processor information */
 	if (nodes_per_socket > 1) {
-		u32 cus_per_node;
-
 		set_cpu_cap(c, X86_FEATURE_AMD_DCM);
-		cus_per_node = c->x86_max_cores / nodes_per_socket;
-
-		/* core id has to be in the [0 .. cores_per_node - 1] range */
-		c->cpu_core_id %= cus_per_node;
+		legacy_fixup_core_id(c);
 	}
 }
-#endif
 
 /*
  * On a AMD dual core setup the lower bits of the APIC id distinguish the cores.
@@ -378,7 +385,6 @@ static void amd_get_topology(struct cpuinfo_x86 *c)
  */
 static void amd_detect_cmp(struct cpuinfo_x86 *c)
 {
-#ifdef CONFIG_SMP
 	unsigned bits;
 	int cpu = smp_processor_id();
 
@@ -390,16 +396,11 @@ static void amd_detect_cmp(struct cpuinfo_x86 *c)
 	/* use socket ID also for last level cache */
 	per_cpu(cpu_llc_id, cpu) = c->phys_proc_id;
 	amd_get_topology(c);
-#endif
 }
 
 u16 amd_get_nb_id(int cpu)
 {
-	u16 id = 0;
-#ifdef CONFIG_SMP
-	id = per_cpu(cpu_llc_id, cpu);
-#endif
-	return id;
+	return per_cpu(cpu_llc_id, cpu);
 }
 EXPORT_SYMBOL_GPL(amd_get_nb_id);
 
