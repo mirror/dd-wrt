@@ -370,6 +370,10 @@ static int write_main(int argc, char *argv[])
 	} else
 		return -1;
 	memcpy(&trx, &etrx.trx, sizeof(struct trx_header));
+	trx.magic = STORE32_LE(trx.magic);
+	trx.len = STORE32_LE(trx.len);
+	trx.crc32 = STORE32_LE(trx.crc32);
+	
 	trx.len += sizeof(struct code_header2);
 #else
 
@@ -501,6 +505,9 @@ static int write_main(int argc, char *argv[])
 	} else {
 		return -1;
 	}
+	trx.magic = STORE32_LE(trx.magic);
+	trx.len = STORE32_LE(trx.len);
+	trx.crc32 = STORE32_LE(trx.crc32);
 
 #endif
 	// count = http_get (path, (char *) &trx, sizeof (struct trx_header), 0);
@@ -526,10 +533,6 @@ static int write_main(int argc, char *argv[])
 	killall("schedulerb.sh", SIGTERM);
 	killall("proxywatchdog.sh", SIGTERM);
 #endif
-	trx.magic = STORE32_LE(trx.magic);
-	trx.len = STORE32_LE(trx.len);
-	trx.crc32 = STORE32_LE(trx.crc32);
-
 	if (trx.magic != TRX_MAGIC || trx.len < sizeof(struct trx_header)) {
 		fprintf(stderr, "%s: Bad trx header\n", path);
 		goto fail;
