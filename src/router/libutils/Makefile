@@ -103,12 +103,12 @@ WOBJS := libwireless/wl.o libwireless/wl_basic.o libwireless/wl_linux.o libwirel
 
 ifneq ($(CONFIG_TW6600),y)
 ifeq ($(CONFIG_DIST),"micro")
-CFLAGS_EXTRA += -DHAVE_MICRO
+CFLAGS += -DHAVE_MICRO
 OBJS += libutils/libbridge_if.o
 OBJS += libutils/libbridge_init.o
 endif
 ifeq ($(CONFIG_DIST),"micro-special")
-CFLAGS_EXTRA += -DHAVE_MICRO
+CFLAGS += -DHAVE_MICRO
 OBJS += libutils/libbridge_if.o
 OBJS += libutils/libbridge_init.o
 endif
