@@ -1,6 +1,6 @@
 /* GPL v2, lend from the linux kernel */
-#ifndef _LINUX_LIST_H
-#define _LINUX_LIST_H
+#ifndef _DD_LINUX_LIST_H
+#define _DD_LINUX_LIST_H
 
 #include <stddef.h>
 

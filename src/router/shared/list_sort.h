@@ -1,7 +1,7 @@
 /* GPL v2, lend from the linux kernel */
 
-#ifndef __LIST_SORT_H
-#define __LIST_SORT_H
+#ifndef __DD_LIST_SORT_H
+#define __DD_LIST_SORT_H
 
 /**
  * list_sort - sort a list
