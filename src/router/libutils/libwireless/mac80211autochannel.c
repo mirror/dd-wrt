@@ -137,10 +137,10 @@ static int freq_list(struct unl *unl, int phy, const char *freq_range, struct dd
 				continue;
 #endif
 			f = calloc(1, sizeof(*f));
-			INIT_LIST_HEAD(&f->list);
+			INIT_DD_LIST_HEAD(&f->list);
 
 			f->freq = freq_mhz;
-			list_add_tail(&f->list, frequencies);
+			dd_list_add_tail(&f->list, frequencies);
 			if (tb[NL80211_FREQUENCY_ATTR_PASSIVE_SCAN])
 				f->passive = true;
 		}
@@ -158,7 +158,7 @@ static struct frequency *get_freq(int freq, struct dd_list_head *frequencies)
 {
 	struct frequency *f;
 
-	list_for_each_entry(f, frequencies, list) {
+	dd_list_for_each_entry(f, frequencies, list) {
 		if (f->freq != freq)
 			continue;
 
@@ -253,7 +253,7 @@ static int scan(struct unl *unl, int wdev, struct dd_list_head *frequencies)
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
 
 	opts = nla_nest_start(msg, NL80211_ATTR_SCAN_FREQUENCIES);
-	list_for_each_entry(f, frequencies, list) {
+	dd_list_for_each_entry(f, frequencies, list) {
 		NLA_PUT_U32(msg, ++i, f->freq);
 	}
 	nla_nest_end(msg, opts);
@@ -440,7 +440,7 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 	int bw = 20;
 	int _max_eirp;
 	struct wifi_channels *wifi_channels;
-	LIST_HEAD(frequencies);
+	DD_LIST_HEAD(frequencies);
 
 	if (htflags & AUTO_FORCEVHT80)
 		bw = 80;
@@ -453,7 +453,7 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 		goto out;
 	_max_eirp = get_max_eirp(wifi_channels);
 	bzero(&sdata, sizeof(sdata));
-	list_for_each_entry(f, &frequencies, list) {
+	dd_list_for_each_entry(f, &frequencies, list) {
 		if (f->noise_count) {
 			f->noise /= f->noise_count;
 			f->noise_count = 1;
@@ -462,20 +462,20 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 		}
 	}
 
-	list_for_each_entry(f, &frequencies, list) {
+	dd_list_for_each_entry(f, &frequencies, list) {
 		/* in case noise calibration fails, we assume -95 as default here */
 		if (!f->noise)
 			f->noise = -95;
 		f->quality = freq_quality(wifi_channels, _max_eirp, _htflags, f, &sdata);
 	}
 
-	list_sort(&sdata, &frequencies, sort_cmp);
+	dd_list_sort(&sdata, &frequencies, sort_cmp);
 
-	list_for_each_entry(f, &frequencies, list) {
+	dd_list_for_each_entry(f, &frequencies, list) {
 		fprintf(stderr, "%s: freq:%d qual:%d noise:%d eirp: %d\n", interface, f->freq, f->quality, f->noise, f->eirp);
 	}
 
-	list_for_each_entry(f, &frequencies, list) {
+	dd_list_for_each_entry(f, &frequencies, list) {
 		if (f->passive && !enable_passive)
 			continue;
 
@@ -487,8 +487,8 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 		acs->noise = f->noise;
 	}
 
-	list_for_each_entry_safe(f, ftmp, &frequencies, list) {
-		list_del(&f->list);
+	dd_list_for_each_entry_safe(f, ftmp, &frequencies, list) {
+		dd_list_del(&f->list);
 		free(f);
 	}
 

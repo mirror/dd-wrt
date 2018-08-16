@@ -234,11 +234,11 @@ void ej_dump_channel_survey(webs_t wp, int argc, char_t ** argv)
 	struct frequency *f, *ftmp;
 	int first_survey = 0;
 	char *interface = nvram_safe_get("wifi_display");
-	LIST_HEAD(frequencies);
+	DD_LIST_HEAD(frequencies);
 	if (getsurveystats(&frequencies, NULL, interface, NULL, 2, 20))
 		return;
 
-	list_for_each_entry(f, &frequencies, list) {
+	dd_list_for_each_entry(f, &frequencies, list) {
 
 		if (f->in_use)
 			websWrite(wp, "%c\"[%d]\"", !first_survey ? ' ' : ',', f->freq);
@@ -279,8 +279,8 @@ void ej_dump_channel_survey(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, ",\"N/A\"\n");
 
 	}
-	list_for_each_entry_safe(f, ftmp, &frequencies, list) {
-		list_del(&f->list);
+	dd_list_for_each_entry_safe(f, ftmp, &frequencies, list) {
+		dd_list_del(&f->list);
 		free(f);
 	}
 
