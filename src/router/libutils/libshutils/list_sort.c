@@ -95,7 +95,7 @@ static void merge_and_restore_back_links(void *priv, int (*cmp) (void *priv, str
  * @b. If @a and @b are equivalent, and their original relative
  * ordering is to be preserved, @cmp must return 0.
  */
-void list_sort(void *priv, struct dd_list_head *head, int (*cmp) (void *priv, struct dd_list_head * a, struct dd_list_head * b))
+void dd_list_sort(void *priv, struct dd_list_head *head, int (*cmp) (void *priv, struct dd_list_head * a, struct dd_list_head * b))
 {
 	struct dd_list_head *part[MAX_LIST_LENGTH_BITS + 1];	/* sorted partial lists
 								   -- last slot is a sentinel */
@@ -103,7 +103,7 @@ void list_sort(void *priv, struct dd_list_head *head, int (*cmp) (void *priv, st
 	int max_lev = 0;
 	struct dd_list_head *list;
 
-	if (list_empty(head))
+	if (dd_list_empty(head))
 		return;
 
 	bzero(part, sizeof(part));
