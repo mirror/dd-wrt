@@ -244,9 +244,6 @@ static const char *mctxRegNames[NMCTXREGS] = {
 #define FMTBIT "08"
 static const int gregOffset = 3;
 #elif defined(__mips__)
-#ifndef SIGEMT
-#define SIGEMT 7
-#endif
 #include "sysdeps/generic_backtrace.c"
 #define NMCTXREGS NGREG
 #if (defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN))
