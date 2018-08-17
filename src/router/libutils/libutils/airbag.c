@@ -139,10 +139,32 @@ static const char *sigNames[MAX_SIGNALS] = {
 	/*[SIGUSR1  ] = */ "USR1",
 #endif
 	/*[SIGSEGV  ] = */ "SEGV",
+#if defined(__mips__)
+	/*[SIGSYS  ] =  */ "USR2", // 12
+#else
 	/*[SIGUSR2  ] = */ "USR2",
+#endif
 	/*[SIGPIPE  ] = */ "PIPE",
 	/*[SIGALRM  ] = */ "ALRM",
 	/*[SIGTERM  ] = */ "TERM",
+#if defined(__mips__)
+	/*[SIGUSR1  ] = */ "SIGUSR1",
+	/*[SIGUSR2  ] = */ "SIGUSR2",
+	/*[SIGCHLD  ] = */ "CHLD",
+	/*[SIGPWR  ] = */ "PWR",
+	/*[SIGWINCH  ] = */ "WINCH",
+	/*[SIGURG  ] = */ "URG",
+	/*[SIGIO  ] = */ "IO",
+	/*[SIGSTOP   ] = */ "STOP",
+	/*[SIGTSTP  ] = */ "TSTP",
+	/*[SIGCONT  ] = */ "CONT",
+	/*[SIGTTIN] = */ "TTIN",
+	/*[SIGTTOU  ] = */ "TTOU",
+	/*[SIGVTALRM ] = */ "VTALRM",
+	/*[SIGPROF    ] = */ "PROF",
+	/*[SIGXCPU   ] = */ "XCPU",
+	/*[SIGXFSZ   ] = */ "XFSZ"
+#else
 	/*[SIGSTKFLT] = */ "STKFLT",
 	/*[SIGCHLD  ] = */ "CHLD",
 	/*[SIGCONT  ] = */ "CONT",
@@ -159,6 +181,7 @@ static const char *sigNames[MAX_SIGNALS] = {
 	/*[SIGIO    ] = */ "IO",
 	/*[SIGPWR   ] = */ "PWR",
 	/*[SIGSYS   ] = */ "SYS"
+#endif
 };
 
 /*
