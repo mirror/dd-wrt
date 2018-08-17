@@ -126,10 +126,18 @@ static const char *sigNames[MAX_SIGNALS] = {
 	/*[SIGILL   ] = */ "ILL",
 	/*[SIGTRAP  ] = */ "TRAP",
 	/*[SIGABRT  ] = */ "ABRT",
+#if defined(__mips__)
+	/*[SIGEMT   ] = */ "EMT",
+#else
 	/*[SIGBUS   ] = */ "BUS",
+#endif
 	/*[SIGFPE   ] = */ "FPE",
 	/*[SIGKILL  ] = */ "KILL",
+#if defined(__mips__)
+	/*[SIGBUS   ] = */ "BUS",
+#else
 	/*[SIGUSR1  ] = */ "USR1",
+#endif
 	/*[SIGSEGV  ] = */ "SEGV",
 	/*[SIGUSR2  ] = */ "USR2",
 	/*[SIGPIPE  ] = */ "PIPE",
@@ -213,6 +221,9 @@ static const char *mctxRegNames[NMCTXREGS] = {
 #define FMTBIT "08"
 static const int gregOffset = 3;
 #elif defined(__mips__)
+#ifndef SIGEMT
+#define SIGEMT 7
+#endif
 #include "sysdeps/generic_backtrace.c"
 #define NMCTXREGS NGREG
 #if (defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN))
@@ -946,6 +957,7 @@ static struct fault sigill_fault[] = {
 	{__ILL_BREAK, "illegal break"},
 	{__ILL_BNDMOD, "bundle-update (modification) in progress"},
 };
+
 #ifndef SEGV_BNDERR
 #define SEGV_BNDERR	3	/* failed address bound checks */
 #endif
@@ -971,11 +983,36 @@ static struct fault sigsegv_fault[] = {
 	{SEGV_ADIPERR, "Precise MCD exception"},
 };
 
+#ifndef TRAP_BRKPT
+#define TRAP_BRKPT	1	/* process breakpoint */
+#endif
+#ifndef TRAP_TRACE
+#define TRAP_TRACE	2	/* process trace trap */
+#endif
+#ifndef TRAP_BRANCH
+#define TRAP_BRANCH     3	/* process taken branch trap */
+#endif
+#ifndef TRAP_HWBKPT
+#define TRAP_HWBKPT     4	/* hardware breakpoint/watchpoint */
+#endif
+#ifndef TRAP_UNK
+#define TRAP_UNK	5	/* undiagnosed trap */
+#endif
+
+static struct fault sigtrap_fault[] = {
+	{TRAP_BRKPT, "process breakpoint"},
+	{TRAP_TRACE, "process trace trap"},
+	{TRAP_BRANCH, "process taken branch trap"},
+	{TRAP_HWBKPT, "hardware breakpoint/watchpoint"},
+	{TRAP_UNK, "undiagnosed trap"},
+};
+
 static struct faults signals[] = {
 	{SIGBUS, sizeof(sigbus_fault) / sizeof(struct fault), sigbus_fault},
 	{SIGFPE, sizeof(sigfpe_fault) / sizeof(struct fault), sigfpe_fault},
 	{SIGILL, sizeof(sigill_fault) / sizeof(struct fault), sigill_fault},
 	{SIGSEGV, sizeof(sigsegv_fault) / sizeof(struct fault), sigsegv_fault},
+	{SIGTRAP, sizeof(sigtrap_fault) / sizeof(struct fault), sigtrap_fault},
 };
 
 static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)
@@ -1012,7 +1049,6 @@ static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)
 		printWhere((void *)pc);
 	} else {
 		printWhere((void *)pc);
-
 		const char *faultReason = 0;
 		switch (sigNum) {
 		case SIGABRT:
@@ -1021,8 +1057,16 @@ static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)
 			break;
 		case SIGQUIT:
 			break;
-		case SIGTERM:
+		case SIGXCPU:
 			break;
+		case SIGXFSZ:
+			break;
+		case SIGSYS:
+			break;
+#ifdef SIGEMT
+		case SIGEMT:
+			break;
+#endif
 		default:
 			for (i = 0; i < sizeof(signals) / sizeof(struct faults); i++) {
 				struct faults s = signals[i];
@@ -1237,7 +1281,14 @@ static void deinitCrashHandlers()
 	sigaction(SIGILL, &sa, 0);
 	sigaction(SIGSEGV, &sa, 0);
 	sigaction(SIGFPE, &sa, 0);
-
+	sigaction(SIGQUIT, &sa, 0);
+	sigaction(SIGTRAP, &sa, 0);
+	sigaction(SIGXCPU, &sa, 0);
+	sigaction(SIGXFSZ, &sa, 0);
+	sigaction(SIGSYS, &sa, 0);
+#ifdef SIGEMT
+	sigaction(SIGEMT, &sa, 0);
+#endif
 #if defined(USE_GCC_DEMANGLE)
 	if (s_demangleBuf) {
 		free(s_demangleBuf);
