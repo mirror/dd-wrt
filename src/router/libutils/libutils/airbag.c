@@ -865,6 +865,12 @@ struct faults {
 	struct fault *errors;
 
 };
+#ifndef  BUS_MCEERR_AR
+#define BUS_MCEERR_AR	4
+#endif
+#ifndef  BUS_MCEERR_AO
+#define BUS_MCEERR_AO	5
+#endif
 static struct fault sigbus_fault[] = {
 	{BUS_ADRALN, "invalid address alignment"},
 	{BUS_ADRERR, "nonexistent physical address"},
@@ -877,6 +883,28 @@ static struct fault sigbus_fault[] = {
 #endif
 };
 
+#ifndef __FPE_DECOVF
+#define __FPE_DECOVF	9	/* decimal overflow */
+#endif
+#ifndef __FPE_DECDIV
+#define __FPE_DECDIV	10	/* decimal division by zero */
+#endif
+#ifndef __FPE_DECERR
+#define __FPE_DECERR	11	/* packed decimal error */
+#endif
+#ifndef __FPE_INVASC
+#define __FPE_INVASC	12	/* invalid ASCII digit */
+#endif
+#ifndef __FPE_INVDEC
+#define __FPE_INVDEC	13	/* invalid decimal digit */
+#endif
+#ifndef FPE_FLTUNK
+#define FPE_FLTUNK	14	/* undiagnosed floating-point exception */
+#endif
+#ifndef FPE_CONDTRAP
+#define FPE_CONDTRAP	15	/* trap on condition */
+#endif
+
 static struct fault sigfpe_fault[] = {
 	{FPE_INTDIV, "integer divide by zero"},
 	{FPE_INTOVF, "integer overflow"},
@@ -885,8 +913,25 @@ static struct fault sigfpe_fault[] = {
 	{FPE_FLTUND, "floating-point underflow"},
 	{FPE_FLTRES, "floating-point inexact result"},
 	{FPE_FLTINV, "floating-point invalid operation"},
-	{FPE_FLTSUB, "subscript out of range"}
+	{FPE_FLTSUB, "subscript out of range"},
+	{__FPE_DECOVF, "decimal overflow"},
+	{__FPE_DECDIV, "decimal division by zero"},
+	{__FPE_DECERR, "packed decimal error"},
+	{__FPE_INVASC, "invalid ASCII digit"},
+	{__FPE_INVDEC, "invalid decimal digit"},
+	{FPE_FLTUNK, "undiagnosed floating-point exception"},
+	{FPE_CONDTRAP, "trap on condition"}
 };
+
+#ifndef ILL_BADIADDR
+#define ILL_BADIADDR	9	/* unimplemented instruction address */
+#endif
+#ifndef __ILL_BREAK
+#define __ILL_BREAK	10	/* illegal break */
+#endif
+#ifndef __ILL_BNDMOD
+#define __ILL_BNDMOD	11	/* bundle-update (modification) in progress */
+#endif
 
 static struct fault sigill_fault[] = {
 	{ILL_ILLOPC, "illegal opcode"},
@@ -897,17 +942,33 @@ static struct fault sigill_fault[] = {
 	{ILL_PRVREG, "privileged register"},
 	{ILL_COPROC, "coprocessor error"},
 	{ILL_BADSTK, "stack error"},
+	{ILL_BADIADDR, "unimplemented instruction address"},
+	{__ILL_BREAK, "illegal break"},
+	{__ILL_BNDMOD, "bundle-update (modification) in progress"},
 };
-
+#ifndef SEGV_BNDERR
+#define SEGV_BNDERR	3	/* failed address bound checks */
+#endif
+#ifndef SEGV_PKUERR
+#define SEGV_PKUERR	4	/* failed protection key checks */
+#endif
+#ifndef SEGV_ACCADI
+#define SEGV_ACCADI	5	/* ADI not enabled for mapped object */
+#endif
+#ifndef SEGV_ADIDERR
+#define SEGV_ADIDERR	6	/* Disrupting MCD error */
+#endif
+#ifndef SEGV_ADIPERR
+#define SEGV_ADIPERR	7	/* Precise MCD exception */
+#endif
 static struct fault sigsegv_fault[] = {
 	{SEGV_MAPERR, "address not mapped to object"},
 	{SEGV_ACCERR, "invalid permissions for mapped object"},
-#ifdef SEGV_BNDERR
 	{SEGV_BNDERR, "failed address bound checks"},
-#endif
-#ifdef SEGV_PKUERR
 	{SEGV_PKUERR, "failed protection key checks"},
-#endif
+	{SEGV_ACCADI, "ADI not enabled for mapped object"},
+	{SEGV_ADIDERR, "Disrupting MCD error"},
+	{SEGV_ADIPERR, "Precise MCD exception"},
 };
 
 static struct faults signals[] = {
