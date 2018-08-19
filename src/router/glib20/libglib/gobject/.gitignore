@@ -1,0 +1,8 @@
+glib-genmarshal
+glib-mkenums
+gmarshal.strings
+gobject-query
+testgobject
+libgobject-gdb.py
+gobject_probes.h
+gobject-public-headers.txt
