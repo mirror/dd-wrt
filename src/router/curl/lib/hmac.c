@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2016, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2018, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -49,16 +49,16 @@ static const unsigned char hmac_opad = 0x5C;
 
 HMAC_context *
 Curl_HMAC_init(const HMAC_params * hashparams,
-               const unsigned char * key,
+               const unsigned char *key,
                unsigned int keylen)
 {
   size_t i;
-  HMAC_context * ctxt;
-  unsigned char * hkey;
+  HMAC_context *ctxt;
+  unsigned char *hkey;
   unsigned char b;
 
   /* Create HMAC context. */
-  i = sizeof *ctxt + 2 * hashparams->hmac_ctxtsize +
+  i = sizeof(*ctxt) + 2 * hashparams->hmac_ctxtsize +
     hashparams->hmac_resultlen;
   ctxt = malloc(i);
 
@@ -101,7 +101,7 @@ Curl_HMAC_init(const HMAC_params * hashparams,
 }
 
 int Curl_HMAC_update(HMAC_context * ctxt,
-                     const unsigned char * data,
+                     const unsigned char *data,
                      unsigned int len)
 {
   /* Update first hash calculation. */
@@ -110,7 +110,7 @@ int Curl_HMAC_update(HMAC_context * ctxt,
 }
 
 
-int Curl_HMAC_final(HMAC_context * ctxt, unsigned char * result)
+int Curl_HMAC_final(HMAC_context *ctxt, unsigned char *result)
 {
   const HMAC_params * hashparams = ctxt->hmac_hash;
 

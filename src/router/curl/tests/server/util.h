@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2012, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2017, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -25,6 +25,7 @@
 
 char *data_to_hex(char *data, size_t len);
 void logmsg(const char *msg, ...);
+long timediff(struct timeval newer, struct timeval older);
 
 #define TEST_DATA_PATH "%s/data/test%ld"
 
@@ -44,7 +45,7 @@ extern const char *serverlogfile;
 
 #undef perror
 #define perror(m) win32_perror(m)
-void win32_perror (const char *msg);
+void win32_perror(const char *msg);
 #endif  /* WIN32 */
 
 #ifdef USE_WINSOCK
@@ -62,5 +63,7 @@ int write_pidfile(const char *filename);
 void set_advisor_read_lock(const char *filename);
 
 void clear_advisor_read_lock(const char *filename);
+
+int strncasecompare(const char *first, const char *second, size_t max);
 
 #endif  /* HEADER_CURL_SERVER_UTIL_H */

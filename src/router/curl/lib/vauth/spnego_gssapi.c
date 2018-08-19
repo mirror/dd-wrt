@@ -41,6 +41,20 @@
 #include "memdebug.h"
 
 /*
+ * Curl_auth_is_spnego_supported()
+ *
+ * This is used to evaluate if SPNEGO (Negotiate) is supported.
+ *
+ * Parameters: None
+ *
+ * Returns TRUE if Negotiate supported by the GSS-API library.
+ */
+bool Curl_auth_is_spnego_supported(void)
+{
+  return TRUE;
+}
+
+/*
  * Curl_auth_decode_spnego_message()
  *
  * This is used to decode an already encoded SPNEGO (Negotiate) challenge
@@ -165,6 +179,10 @@ CURLcode Curl_auth_decode_spnego_message(struct Curl_easy *data,
 
     return CURLE_OUT_OF_MEMORY;
   }
+
+  /* Free previous token */
+  if(nego->output_token.length && nego->output_token.value)
+    gss_release_buffer(&unused_status, &nego->output_token);
 
   nego->output_token = output_token;
 

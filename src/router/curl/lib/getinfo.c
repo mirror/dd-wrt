@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2018, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -36,8 +36,11 @@
 #include "memdebug.h"
 
 /*
- * This is supposed to be called in the beginning of a perform() session
- * and should reset all session-info variables
+ * Initialize statistical and informational data.
+ *
+ * This function is called in curl_easy_reset, curl_easy_duphandle and at the
+ * beginning of a perform session. It must reset the session-info variables,
+ * in particular all variables in struct PureInfo.
  */
 CURLcode Curl_initinfo(struct Curl_easy *data)
 {
@@ -51,6 +54,7 @@ CURLcode Curl_initinfo(struct Curl_easy *data)
   pro->t_starttransfer = 0;
   pro->timespent = 0;
   pro->t_redirect = 0;
+  pro->is_t_startransfer_set = false;
 
   info->httpcode = 0;
   info->httpproxycode = 0;
@@ -58,23 +62,35 @@ CURLcode Curl_initinfo(struct Curl_easy *data)
   info->filetime = -1; /* -1 is an illegal time and thus means unknown */
   info->timecond = FALSE;
 
+  info->header_size = 0;
+  info->request_size = 0;
+  info->proxyauthavail = 0;
+  info->httpauthavail = 0;
+  info->numconnects = 0;
+
   free(info->contenttype);
   info->contenttype = NULL;
 
-  info->header_size = 0;
-  info->request_size = 0;
-  info->numconnects = 0;
+  free(info->wouldredirect);
+  info->wouldredirect = NULL;
 
   info->conn_primary_ip[0] = '\0';
   info->conn_local_ip[0] = '\0';
   info->conn_primary_port = 0;
   info->conn_local_port = 0;
 
+  info->conn_scheme = 0;
+  info->conn_protocol = 0;
+
+#ifdef USE_SSL
+  Curl_ssl_free_certinfo(data);
+#endif
+
   return CURLE_OK;
 }
 
 static CURLcode getinfo_char(struct Curl_easy *data, CURLINFO info,
-                             char **param_charp)
+                             const char **param_charp)
 {
   switch(info) {
   case CURLINFO_EFFECTIVE_URL:
@@ -111,6 +127,9 @@ static CURLcode getinfo_char(struct Curl_easy *data, CURLINFO info,
   case CURLINFO_RTSP_SESSION_ID:
     *param_charp = data->set.str[STRING_RTSP_SESSION_ID];
     break;
+  case CURLINFO_SCHEME:
+    *param_charp = data->info.conn_scheme;
+    break;
 
   default:
     return CURLE_UNKNOWN_OPTION;
@@ -137,7 +156,12 @@ static CURLcode getinfo_long(struct Curl_easy *data, CURLINFO info,
     *param_longp = data->info.httpproxycode;
     break;
   case CURLINFO_FILETIME:
-    *param_longp = data->info.filetime;
+    if(data->info.filetime > LONG_MAX)
+      *param_longp = LONG_MAX;
+    else if(data->info.filetime < LONG_MIN)
+      *param_longp = LONG_MIN;
+    else
+      *param_longp = (long)data->info.filetime;
     break;
   case CURLINFO_HEADER_SIZE:
     *param_longp = data->info.header_size;
@@ -147,6 +171,9 @@ static CURLcode getinfo_long(struct Curl_easy *data, CURLINFO info,
     break;
   case CURLINFO_SSL_VERIFYRESULT:
     *param_longp = data->set.ssl.certverifyresult;
+    break;
+  case CURLINFO_PROXY_SSL_VERIFYRESULT:
+    *param_longp = data->set.proxy_ssl.certverifyresult;
     break;
   case CURLINFO_REDIRECT_COUNT:
     *param_longp = data->set.followlocation;
@@ -199,7 +226,7 @@ static CURLcode getinfo_long(struct Curl_easy *data, CURLINFO info,
     *param_longp = data->state.rtsp_CSeq_recv;
     break;
   case CURLINFO_HTTP_VERSION:
-    switch (data->info.httpversion) {
+    switch(data->info.httpversion) {
     case 10:
       *param_longp = CURL_HTTP_VERSION_1_0;
       break;
@@ -214,6 +241,67 @@ static CURLcode getinfo_long(struct Curl_easy *data, CURLINFO info,
       break;
     }
     break;
+  case CURLINFO_PROTOCOL:
+    *param_longp = data->info.conn_protocol;
+    break;
+
+  default:
+    return CURLE_UNKNOWN_OPTION;
+  }
+
+  return CURLE_OK;
+}
+
+#define DOUBLE_SECS(x) (double)(x)/1000000
+
+static CURLcode getinfo_offt(struct Curl_easy *data, CURLINFO info,
+                             curl_off_t *param_offt)
+{
+  switch(info) {
+  case CURLINFO_FILETIME_T:
+    *param_offt = (curl_off_t)data->info.filetime;
+    break;
+  case CURLINFO_SIZE_UPLOAD_T:
+    *param_offt = data->progress.uploaded;
+    break;
+  case CURLINFO_SIZE_DOWNLOAD_T:
+    *param_offt = data->progress.downloaded;
+    break;
+  case CURLINFO_SPEED_DOWNLOAD_T:
+    *param_offt =  data->progress.dlspeed;
+    break;
+  case CURLINFO_SPEED_UPLOAD_T:
+    *param_offt = data->progress.ulspeed;
+    break;
+  case CURLINFO_CONTENT_LENGTH_DOWNLOAD_T:
+    *param_offt = (data->progress.flags & PGRS_DL_SIZE_KNOWN)?
+      data->progress.size_dl:-1;
+    break;
+  case CURLINFO_CONTENT_LENGTH_UPLOAD_T:
+    *param_offt = (data->progress.flags & PGRS_UL_SIZE_KNOWN)?
+      data->progress.size_ul:-1;
+    break;
+  case CURLINFO_TOTAL_TIME_T:
+    *param_offt = data->progress.timespent;
+    break;
+  case CURLINFO_NAMELOOKUP_TIME_T:
+    *param_offt = data->progress.t_nslookup;
+    break;
+  case CURLINFO_CONNECT_TIME_T:
+    *param_offt = data->progress.t_connect;
+    break;
+  case CURLINFO_APPCONNECT_TIME_T:
+    *param_offt = data->progress.t_appconnect;
+    break;
+  case CURLINFO_PRETRANSFER_TIME_T:
+    *param_offt = data->progress.t_pretransfer;
+    break;
+  case CURLINFO_STARTTRANSFER_TIME_T:
+    *param_offt = data->progress.t_starttransfer;
+    break;
+  case CURLINFO_REDIRECT_TIME_T:
+    *param_offt = data->progress.t_redirect;
+    break;
 
   default:
     return CURLE_UNKNOWN_OPTION;
@@ -227,22 +315,22 @@ static CURLcode getinfo_double(struct Curl_easy *data, CURLINFO info,
 {
   switch(info) {
   case CURLINFO_TOTAL_TIME:
-    *param_doublep = data->progress.timespent;
+    *param_doublep = DOUBLE_SECS(data->progress.timespent);
     break;
   case CURLINFO_NAMELOOKUP_TIME:
-    *param_doublep = data->progress.t_nslookup;
+    *param_doublep = DOUBLE_SECS(data->progress.t_nslookup);
     break;
   case CURLINFO_CONNECT_TIME:
-    *param_doublep = data->progress.t_connect;
+    *param_doublep = DOUBLE_SECS(data->progress.t_connect);
     break;
   case CURLINFO_APPCONNECT_TIME:
-    *param_doublep = data->progress.t_appconnect;
+    *param_doublep = DOUBLE_SECS(data->progress.t_appconnect);
     break;
   case CURLINFO_PRETRANSFER_TIME:
-    *param_doublep =  data->progress.t_pretransfer;
+    *param_doublep = DOUBLE_SECS(data->progress.t_pretransfer);
     break;
   case CURLINFO_STARTTRANSFER_TIME:
-    *param_doublep = data->progress.t_starttransfer;
+    *param_doublep = DOUBLE_SECS(data->progress.t_starttransfer);
     break;
   case CURLINFO_SIZE_UPLOAD:
     *param_doublep =  (double)data->progress.uploaded;
@@ -265,7 +353,7 @@ static CURLcode getinfo_double(struct Curl_easy *data, CURLINFO info,
       (double)data->progress.size_ul:-1;
     break;
   case CURLINFO_REDIRECT_TIME:
-    *param_doublep =  data->progress.t_redirect;
+    *param_doublep = DOUBLE_SECS(data->progress.t_redirect);
     break;
 
   default:
@@ -302,46 +390,25 @@ static CURLcode getinfo_slist(struct Curl_easy *data, CURLINFO info,
       struct curl_tlssessioninfo **tsip = (struct curl_tlssessioninfo **)
                                           param_slistp;
       struct curl_tlssessioninfo *tsi = &data->tsi;
+#ifdef USE_SSL
       struct connectdata *conn = data->easy_conn;
+#endif
 
       *tsip = tsi;
       tsi->backend = Curl_ssl_backend();
       tsi->internals = NULL;
 
+#ifdef USE_SSL
       if(conn && tsi->backend != CURLSSLBACKEND_NONE) {
         unsigned int i;
         for(i = 0; i < (sizeof(conn->ssl) / sizeof(conn->ssl[0])); ++i) {
           if(conn->ssl[i].use) {
-#if defined(USE_AXTLS)
-            tsi->internals = (void *)conn->ssl[i].ssl;
-#elif defined(USE_CYASSL)
-            tsi->internals = (void *)conn->ssl[i].handle;
-#elif defined(USE_DARWINSSL)
-            tsi->internals = (void *)conn->ssl[i].ssl_ctx;
-#elif defined(USE_GNUTLS)
-            tsi->internals = (void *)conn->ssl[i].session;
-#elif defined(USE_GSKIT)
-            tsi->internals = (void *)conn->ssl[i].handle;
-#elif defined(USE_MBEDTLS)
-            tsi->internals = (void *)&conn->ssl[i].ssl;
-#elif defined(USE_NSS)
-            tsi->internals = (void *)conn->ssl[i].handle;
-#elif defined(USE_OPENSSL)
-            /* Legacy: CURLINFO_TLS_SESSION must return an SSL_CTX pointer. */
-            tsi->internals = ((info == CURLINFO_TLS_SESSION) ?
-                              (void *)conn->ssl[i].ctx :
-                              (void *)conn->ssl[i].handle);
-#elif defined(USE_POLARSSL)
-            tsi->internals = (void *)&conn->ssl[i].ssl;
-#elif defined(USE_SCHANNEL)
-            tsi->internals = (void *)&conn->ssl[i].ctxt->ctxt_handle;
-#elif defined(USE_SSL)
-#error "SSL backend specific information missing for CURLINFO_TLS_SSL_PTR"
-#endif
+            tsi->internals = Curl_ssl->get_internals(&conn->ssl[i], info);
             break;
           }
         }
       }
+#endif
     }
     break;
   default:
@@ -370,7 +437,8 @@ CURLcode Curl_getinfo(struct Curl_easy *data, CURLINFO info, ...)
   va_list arg;
   long *param_longp = NULL;
   double *param_doublep = NULL;
-  char **param_charp = NULL;
+  curl_off_t *param_offt = NULL;
+  const char **param_charp = NULL;
   struct curl_slist **param_slistp = NULL;
   curl_socket_t *param_socketp = NULL;
   int type;
@@ -384,7 +452,7 @@ CURLcode Curl_getinfo(struct Curl_easy *data, CURLINFO info, ...)
   type = CURLINFO_TYPEMASK & (int)info;
   switch(type) {
   case CURLINFO_STRING:
-    param_charp = va_arg(arg, char **);
+    param_charp = va_arg(arg, const char **);
     if(param_charp)
       result = getinfo_char(data, info, param_charp);
     break;
@@ -397,6 +465,11 @@ CURLcode Curl_getinfo(struct Curl_easy *data, CURLINFO info, ...)
     param_doublep = va_arg(arg, double *);
     if(param_doublep)
       result = getinfo_double(data, info, param_doublep);
+    break;
+  case CURLINFO_OFF_T:
+    param_offt = va_arg(arg, curl_off_t *);
+    if(param_offt)
+      result = getinfo_offt(data, info, param_offt);
     break;
   case CURLINFO_SLIST:
     param_slistp = va_arg(arg, struct curl_slist **);

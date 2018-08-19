@@ -1362,10 +1362,10 @@
 			Name="Source Files"
 			Filter="">
 			<File
-				RelativePath="..\..\..\..\lib\nonblock.c">
+				RelativePath="..\..\..\..\lib\curl_ctype.c">
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\rawstr.c">
+				RelativePath="..\..\..\..\lib\nonblock.c">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\strtoofft.c">
@@ -1416,6 +1416,9 @@
 				RelativePath="..\..\..\..\src\tool_easysrc.c">
 			</File>
 			<File
+				RelativePath="..\..\..\..\src\tool_filetime.c">
+			</File>
+			<File
 				RelativePath="..\..\..\..\src\tool_formparse.c">
 			</File>
 			<File
@@ -1444,9 +1447,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\src\tool_metalink.c">
-			</File>
-			<File
-				RelativePath="..\..\..\..\src\tool_mfiles.c">
 			</File>
 			<File
 				RelativePath="..\..\..\..\src\tool_msgs.c">
@@ -1485,9 +1485,6 @@
 				RelativePath="..\..\..\..\src\tool_vms.c">
 			</File>
 			<File
-				RelativePath="..\..\..\..\src\tool_writeenv.c">
-			</File>
-			<File
 				RelativePath="..\..\..\..\src\tool_writeout.c">
 			</File>
 			<File
@@ -1501,13 +1498,13 @@
 				RelativePath="..\..\..\..\lib\config-win32.h">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\curl_ctype.h">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\curl_setup.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\nonblock.h">
-			</File>
-			<File
-				RelativePath="..\..\..\..\lib\rawstr.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\strtoofft.h">
@@ -1558,6 +1555,9 @@
 				RelativePath="..\..\..\..\src\tool_easysrc.h">
 			</File>
 			<File
+				RelativePath="..\..\..\..\src\tool_filetime.h">
+			</File>
+			<File
 				RelativePath="..\..\..\..\src\tool_formparse.h">
 			</File>
 			<File
@@ -1586,9 +1586,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\src\tool_metalink.h">
-			</File>
-			<File
-				RelativePath="..\..\..\..\src\tool_mfiles.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\src\tool_msgs.h">
@@ -1634,9 +1631,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\src\tool_vms.h">
-			</File>
-			<File
-				RelativePath="..\..\..\..\src\tool_writeenv.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\src\tool_writeout.h">

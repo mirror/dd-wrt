@@ -49,13 +49,12 @@ static size_t decodeQuantum(unsigned char *dest, const char *src)
   unsigned long i, x = 0;
 
   for(i = 0, s = src; i < 4; i++, s++) {
-    unsigned long v = 0;
-
     if(*s == '=') {
       x = (x << 6);
       padding++;
     }
     else {
+      unsigned long v = 0;
       p = base64;
 
       while(*p && (*p != *s)) {
@@ -189,6 +188,11 @@ static CURLcode base64_encode(const char *table64,
 
   if(!insize)
     insize = strlen(indata);
+
+#if SIZEOF_SIZE_T == 4
+  if(insize > UINT_MAX/4)
+    return CURLE_OUT_OF_MEMORY;
+#endif
 
   base64data = output = malloc(insize * 4 / 3 + 4);
   if(!output)

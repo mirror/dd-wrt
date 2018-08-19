@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2016, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2017, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -21,7 +21,7 @@
  ***************************************************************************/
 #include "curlcheck.h"
 
-#include "strequal.h"
+#include "strcase.h"
 
 static CURLcode unit_setup(void) {return CURLE_OK;}
 static void unit_stop(void) {}
@@ -31,7 +31,7 @@ UNITTEST_START
 int rc;
 
 rc = curl_strequal("iii", "III");
-fail_unless(rc != 0, "return code should be zero");
+fail_unless(rc != 0, "return code should be non-zero");
 
 rc = curl_strequal("iiia", "III");
 fail_unless(rc == 0, "return code should be zero");

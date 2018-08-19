@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 2013-2015, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 2013-2017, Daniel Stenberg, <daniel@haxx.se>, et al.
  * Copyright (C) 2010, 2011, Hoi-Ho Chan, <hoiho.chan@gmail.com>
  *
  * This software is licensed as described in the file COPYING, which
@@ -52,7 +52,7 @@ int Curl_polarsslthreadlock_thread_setup(void)
   int i;
   int ret;
 
-  mutex_buf = malloc(NUMT * sizeof(POLARSSL_MUTEX_T));
+  mutex_buf = calloc(NUMT * sizeof(POLARSSL_MUTEX_T), 1);
   if(!mutex_buf)
     return 0;     /* error, no number of threads defined */
 
@@ -114,7 +114,7 @@ int Curl_polarsslthreadlock_lock_function(int n)
   }
 #elif defined(HAVE_PROCESS_H)
   if(n < NUMT) {
-    ret = (WaitForSingleObject(mutex_buf[n], INFINITE)==WAIT_FAILED?1:0);
+    ret = (WaitForSingleObject(mutex_buf[n], INFINITE) == WAIT_FAILED?1:0);
     if(ret) {
       DEBUGF(fprintf(stderr,
                      "Error: polarsslthreadlock_lock_function failed\n"));
