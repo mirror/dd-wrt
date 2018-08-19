@@ -16,4 +16,5 @@ strace-clean:
 
 strace-install: 
 	$(MAKE) -C strace install DESTDIR=$(INSTALLDIR)/strace
+	rm -rf $(INSTALLDIR)/strace/usr/man
 	
