@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# Check signal injection.
+. "${srcdir=.}/init.sh"
+
+: ${suffix=}
+[ -z "${name_override-}" ] || NAME="$name_override"
+
+run_strace -a12 -echdir,exit_group -einject=chdir:signal=USR1"$suffix" \
+	../$NAME
+match_diff

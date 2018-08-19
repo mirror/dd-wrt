@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# Check rt_sigaction decoding.
+
+. "${srcdir=.}/init.sh"
+
+run_prog
+run_strace -ert_sigaction $args
+match_awk
+
+exit 0

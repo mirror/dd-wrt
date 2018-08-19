@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# Check how prctl PR_SET_SECCOMP SECCOMP_MODE_STRICT is decoded.
+
+. "${srcdir=.}/init.sh"
+
+check_prog grep
+set -- "../$NAME"
+"$@" > /dev/null || {
+	case $? in
+		77) skip_ "$* exited with code 77" ;;
+		137) framework_skip_ "$* killed by SIGKILL, fix your kernel" ;;
+		*) fail_ "$args failed" ;;
+	esac
+}
+run_strace -eprctl "$@" > "$EXP"
+grep -v '^prctl(PR_GET_' < "$LOG" > "$OUT"
+match_diff "$OUT" "$EXP"

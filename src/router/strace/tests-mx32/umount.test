@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# Check umount syscall decoding.
+
+. "${srcdir=.}/init.sh"
+
+case "$STRACE_ARCH" in
+	alpha) syscall=oldumount ;;
+	*) syscall=umount ;;
+esac
+run_strace_match_diff -a24 -s6 -e trace=$syscall
