@@ -4114,62 +4114,62 @@ msgstr "dezembro"
 #: ../glib/gdatetime.c:265
 msgctxt "abbreviated month name"
 msgid "Jan"
-msgstr "Jan"
+msgstr "jan"
 
 #: ../glib/gdatetime.c:267
 msgctxt "abbreviated month name"
 msgid "Feb"
-msgstr "Fev"
+msgstr "fev"
 
 #: ../glib/gdatetime.c:269
 msgctxt "abbreviated month name"
 msgid "Mar"
-msgstr "Mar"
+msgstr "mar"
 
 #: ../glib/gdatetime.c:271
 msgctxt "abbreviated month name"
 msgid "Apr"
-msgstr "Abr"
+msgstr "abr"
 
 #: ../glib/gdatetime.c:273
 msgctxt "abbreviated month name"
 msgid "May"
-msgstr "Mai"
+msgstr "mai"
 
 #: ../glib/gdatetime.c:275
 msgctxt "abbreviated month name"
 msgid "Jun"
-msgstr "Jun"
+msgstr "jun"
 
 #: ../glib/gdatetime.c:277
 msgctxt "abbreviated month name"
 msgid "Jul"
-msgstr "Jul"
+msgstr "jul"
 
 #: ../glib/gdatetime.c:279
 msgctxt "abbreviated month name"
 msgid "Aug"
-msgstr "Ago"
+msgstr "ago"
 
 #: ../glib/gdatetime.c:281
 msgctxt "abbreviated month name"
 msgid "Sep"
-msgstr "Set"
+msgstr "set"
 
 #: ../glib/gdatetime.c:283
 msgctxt "abbreviated month name"
 msgid "Oct"
-msgstr "Out"
+msgstr "out"
 
 #: ../glib/gdatetime.c:285
 msgctxt "abbreviated month name"
 msgid "Nov"
-msgstr "Nov"
+msgstr "nov"
 
 #: ../glib/gdatetime.c:287
 msgctxt "abbreviated month name"
 msgid "Dec"
-msgstr "Dez"
+msgstr "dez"
 
 #: ../glib/gdatetime.c:302
 msgctxt "full weekday name"
@@ -4199,12 +4199,12 @@ msgstr "6ª feira"
 #: ../glib/gdatetime.c:312
 msgctxt "full weekday name"
 msgid "Saturday"
-msgstr "Sábado"
+msgstr "sábado"
 
 #: ../glib/gdatetime.c:314
 msgctxt "full weekday name"
 msgid "Sunday"
-msgstr "Domingo"
+msgstr "domingo"
 
 #: ../glib/gdatetime.c:329
 msgctxt "abbreviated weekday name"
@@ -4234,12 +4234,12 @@ msgstr "6ª"
 #: ../glib/gdatetime.c:339
 msgctxt "abbreviated weekday name"
 msgid "Sat"
-msgstr "Sáb"
+msgstr "sáb"
 
 #: ../glib/gdatetime.c:341
 msgctxt "abbreviated weekday name"
 msgid "Sun"
-msgstr "Dom"
+msgstr "dom"
 
 #: ../glib/gdir.c:155
 #, c-format
@@ -5366,6 +5366,102 @@ msgstr[1] "%s bytes"
 #, c-format
 msgid "%.1f KB"
 msgstr "%.1f KB"
+
+msgctxt "full month name with day"
+msgid "January"
+msgstr "janeiro"
+
+msgctxt "full month name with day"
+msgid "February"
+msgstr "fevereiro"
+
+msgctxt "full month name with day"
+msgid "March"
+msgstr "março"
+
+msgctxt "full month name with day"
+msgid "April"
+msgstr "abril"
+
+msgctxt "full month name with day"
+msgid "May"
+msgstr "maio"
+
+msgctxt "full month name with day"
+msgid "June"
+msgstr "junho"
+
+msgctxt "full month name with day"
+msgid "July"
+msgstr "julho"
+
+msgctxt "full month name with day"
+msgid "August"
+msgstr "agosto"
+
+msgctxt "full month name with day"
+msgid "September"
+msgstr "setembro"
+
+msgctxt "full month name with day"
+msgid "October"
+msgstr "outubro"
+
+msgctxt "full month name with day"
+msgid "November"
+msgstr "novembro"
+
+msgctxt "full month name with day"
+msgid "December"
+msgstr "dezembro"
+
+msgctxt "abbreviated month name with day"
+msgid "Jan"
+msgstr "jan"
+
+msgctxt "abbreviated month name with day"
+msgid "Feb"
+msgstr "fev"
+
+msgctxt "abbreviated month name with day"
+msgid "Mar"
+msgstr "mar"
+
+msgctxt "abbreviated month name with day"
+msgid "Apr"
+msgstr "abr"
+
+msgctxt "abbreviated month name with day"
+msgid "May"
+msgstr "mai"
+
+msgctxt "abbreviated month name with day"
+msgid "Jun"
+msgstr "jun"
+
+msgctxt "abbreviated month name with day"
+msgid "Jul"
+msgstr "jul"
+
+msgctxt "abbreviated month name with day"
+msgid "Aug"
+msgstr "ago"
+
+msgctxt "abbreviated month name with day"
+msgid "Sep"
+msgstr "set"
+
+msgctxt "abbreviated month name with day"
+msgid "Oct"
+msgstr "out"
+
+msgctxt "abbreviated month name with day"
+msgid "Nov"
+msgstr "nov"
+
+msgctxt "abbreviated month name with day"
+msgid "Dec"
+msgstr "dez"
 
 #~ msgid "No locations gives"
 #~ msgstr "Nenhuma localização dá"

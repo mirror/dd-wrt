@@ -190,6 +190,22 @@ quark_from_string (const gchar *string,
   return quark;
 }
 
+static inline GQuark
+quark_from_string_locked (const gchar   *string,
+                          gboolean       duplicate)
+{
+  GQuark quark = 0;
+
+  if (!string)
+    return 0;
+
+  G_LOCK (quark_global);
+  quark = quark_from_string (string, duplicate);
+  G_UNLOCK (quark_global);
+
+  return quark;
+}
+
 /**
  * g_quark_from_string:
  * @string: (nullable): a string
@@ -203,16 +219,7 @@ quark_from_string (const gchar *string,
 GQuark
 g_quark_from_string (const gchar *string)
 {
-  GQuark quark;
-
-  if (!string)
-    return 0;
-
-  G_LOCK (quark_global);
-  quark = quark_from_string (string, TRUE);
-  G_UNLOCK (quark_global);
-
-  return quark;
+  return quark_from_string_locked (string, TRUE);
 }
 
 /**
@@ -237,16 +244,7 @@ g_quark_from_string (const gchar *string)
 GQuark
 g_quark_from_static_string (const gchar *string)
 {
-  GQuark quark;
-
-  if (!string)
-    return 0;
-
-  G_LOCK (quark_global);
-  quark = quark_from_string (string, FALSE);
-  G_UNLOCK (quark_global);
-
-  return quark;
+  return quark_from_string_locked (string, FALSE);
 }
 
 /**
@@ -301,6 +299,24 @@ quark_new (gchar *string)
   return quark;
 }
 
+static inline const gchar *
+quark_intern_string_locked (const gchar   *string,
+                            gboolean       duplicate)
+{
+  const gchar *result;
+  GQuark quark;
+
+  if (!string)
+    return NULL;
+
+  G_LOCK (quark_global);
+  quark = quark_from_string (string, duplicate);
+  result = quarks[quark];
+  G_UNLOCK (quark_global);
+
+  return result;
+}
+
 /**
  * g_intern_string:
  * @string: (nullable): a string
@@ -316,18 +332,7 @@ quark_new (gchar *string)
 const gchar *
 g_intern_string (const gchar *string)
 {
-  const gchar *result;
-  GQuark quark;
-
-  if (!string)
-    return NULL;
-
-  G_LOCK (quark_global);
-  quark = quark_from_string (string, TRUE);
-  result = quarks[quark];
-  G_UNLOCK (quark_global);
-
-  return result;
+  return quark_intern_string_locked (string, TRUE);
 }
 
 /**
@@ -346,16 +351,5 @@ g_intern_string (const gchar *string)
 const gchar *
 g_intern_static_string (const gchar *string)
 {
-  GQuark quark;
-  const gchar *result;
-
-  if (!string)
-    return NULL;
-
-  G_LOCK (quark_global);
-  quark = quark_from_string (string, FALSE);
-  result = quarks[quark];
-  G_UNLOCK (quark_global);
-
-  return result;
+  return quark_intern_string_locked (string, FALSE);
 }

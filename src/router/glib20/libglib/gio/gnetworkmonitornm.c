@@ -228,6 +228,7 @@ update_cached_property (GDBusProxy   *proxy,
   if (!v)
     return;
   g_dbus_proxy_set_cached_property (proxy, property_name, v);
+  g_variant_unref (v);
 }
 
 static void
@@ -248,6 +249,7 @@ proxy_signal_cb (GDBusProxy        *proxy,
     return;
 
   dict = g_variant_dict_new (asv);
+  g_variant_unref (asv);
   if (!dict)
     {
       g_warning ("Failed to handle PropertiesChanged signal from NetworkManager");
@@ -266,7 +268,6 @@ has_property (GDBusProxy *proxy,
               const char *property_name)
 {
   char **props;
-  guint i;
   gboolean prop_found = FALSE;
 
   props = g_dbus_proxy_get_cached_property_names (proxy);
@@ -274,15 +275,7 @@ has_property (GDBusProxy *proxy,
   if (!props)
     return FALSE;
 
-  for (i = 0; props[i] != NULL; i++)
-    {
-      if (g_str_equal (props[i], property_name))
-        {
-          prop_found = TRUE;
-          break;
-        }
-    }
-
+  prop_found = g_strv_contains ((const gchar * const *) props, property_name);
   g_strfreev (props);
   return prop_found;
 }

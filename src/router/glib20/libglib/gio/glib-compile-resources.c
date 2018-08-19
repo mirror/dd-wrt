@@ -76,6 +76,7 @@ typedef struct
 
 static gchar **sourcedirs = NULL;
 static gchar *xmllint = NULL;
+static gchar *jsonformat = NULL;
 static gchar *gdk_pixbuf_pixdata = NULL;
 
 static void
@@ -219,7 +220,6 @@ end_element (GMarkupParseContext  *context,
       gchar *key;
       FileData *data = NULL;
       char *tmp_file = NULL;
-      char *tmp_file2 = NULL;
 
       file = state->string->str;
       key = file;
@@ -274,6 +274,7 @@ end_element (GMarkupParseContext  *context,
           gchar **options;
           guint i;
           gboolean xml_stripblanks = FALSE;
+          gboolean json_stripblanks = FALSE;
           gboolean to_pixdata = FALSE;
 
           options = g_strsplit (state->preproc_options, ",", -1);
@@ -284,6 +285,8 @@ end_element (GMarkupParseContext  *context,
                 xml_stripblanks = TRUE;
               else if (!strcmp (options[i], "to-pixdata"))
                 to_pixdata = TRUE;
+              else if (!strcmp (options[i], "json-stripblanks"))
+                json_stripblanks = TRUE;
               else
                 {
                   g_set_error (error, G_MARKUP_ERROR, G_MARKUP_ERROR_INVALID_CONTENT,
@@ -294,73 +297,148 @@ end_element (GMarkupParseContext  *context,
             }
           g_strfreev (options);
 
-          if (xml_stripblanks && xmllint != NULL)
+          if (xml_stripblanks)
             {
-              int fd;
-	      GSubprocess *proc;
-
-              tmp_file = g_strdup ("resource-XXXXXXXX");
-              if ((fd = g_mkstemp (tmp_file)) == -1)
+              /* This is not fatal: pretty-printed XML is still valid XML */
+              if (xmllint == NULL)
                 {
-                  int errsv = errno;
+                  static gboolean xmllint_warned = FALSE;
 
-                  g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errsv),
-                               _("Failed to create temp file: %s"),
-                              g_strerror (errsv));
-                  g_free (tmp_file);
-                  tmp_file = NULL;
-                  goto cleanup;
+                  if (!xmllint_warned)
+                    {
+                      /* Translators: the first %s is a gresource XML attribute,
+                       * the second %s is an environment variable, and the third
+                       * %s is a command line tool
+                       */
+                      char *warn = g_strdup_printf (_("%s preprocessing requested, but %s is not set, and %s is not in PATH"),
+                                                    "xml-stripblanks",
+                                                    "XMLLINT",
+                                                    "xmllint");
+                      g_printerr ("%s\n", warn);
+                      g_free (warn);
+
+                      /* Only warn once */
+                      xmllint_warned = TRUE;
+                    }
                 }
-              close (fd);
+              else
+                {
+                  GSubprocess *proc;
+                  int fd;
 
-              proc = g_subprocess_new (G_SUBPROCESS_FLAGS_STDOUT_SILENCE, error,
-                                       xmllint, "--nonet", "--noblanks", "--output", tmp_file, real_file, NULL);
-              g_free (real_file);
-	      real_file = NULL;
+                  fd = g_file_open_tmp ("resource-XXXXXXXX", &tmp_file, error);
+                  if (fd < 0)
+                    goto cleanup;
 
-	      if (!proc)
-		goto cleanup;
+                  close (fd);
 
-	      if (!g_subprocess_wait_check (proc, NULL, error))
-		{
-		  g_object_unref (proc);
-                  goto cleanup;
+                  proc = g_subprocess_new (G_SUBPROCESS_FLAGS_STDOUT_SILENCE, error,
+                                           xmllint, "--nonet", "--noblanks", "--output", tmp_file, real_file, NULL);
+                  g_free (real_file);
+                  real_file = NULL;
+
+                  if (!proc)
+                    goto cleanup;
+
+                  if (!g_subprocess_wait_check (proc, NULL, error))
+                    {
+                      g_object_unref (proc);
+                      goto cleanup;
+                    }
+
+                  g_object_unref (proc);
+
+                  real_file = g_strdup (tmp_file);
                 }
+            }
 
-	      g_object_unref (proc);
+          if (json_stripblanks)
+            {
+              /* As above, this is not fatal: pretty-printed JSON is still
+               * valid JSON
+               */
+              if (jsonformat == NULL)
+                {
+                  static gboolean jsonformat_warned = FALSE;
 
-              real_file = g_strdup (tmp_file);
+                  if (!jsonformat_warned)
+                    {
+                      /* Translators: the first %s is a gresource XML attribute,
+                       * the second %s is an environment variable, and the third
+                       * %s is a command line tool
+                       */
+                      char *warn = g_strdup_printf (_("%s preprocessing requested, but %s is not set, and %s is not in PATH"),
+                                                    "json-stripblanks",
+                                                    "JSON_GLIB_FORMAT",
+                                                    "json-glib-format");
+                      g_printerr ("%s\n", warn);
+                      g_free (warn);
+
+                      /* Only warn once */
+                      jsonformat_warned = TRUE;
+                    }
+                }
+              else
+                {
+                  GSubprocess *proc;
+                  int fd;
+
+                  fd = g_file_open_tmp ("resource-XXXXXXXX", &tmp_file, error);
+                  if (fd < 0)
+                    goto cleanup;
+
+                  close (fd);
+
+                  proc = g_subprocess_new (G_SUBPROCESS_FLAGS_STDOUT_SILENCE, error,
+                                           jsonformat, "--output", tmp_file, real_file, NULL);
+                  g_free (real_file);
+                  real_file = NULL;
+
+                  if (!proc)
+                    goto cleanup;
+
+                  if (!g_subprocess_wait_check (proc, NULL, error))
+                    {
+                      g_object_unref (proc);
+                      goto cleanup;
+                    }
+
+                  g_object_unref (proc);
+
+                  real_file = g_strdup (tmp_file);
+                }
             }
 
           if (to_pixdata)
             {
-              int fd;
 	      GSubprocess *proc;
+              int fd;
 
+              /* This is a fatal error: if to-pixdata is used it means that
+               * the code loading the GResource expects a specific data format
+               */
               if (gdk_pixbuf_pixdata == NULL)
                 {
-                  g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_FAILED,
-                                       "to-pixbuf preprocessing requested but GDK_PIXBUF_PIXDATA "
-                                       "not set and gdk-pixbuf-pixdata not found in path");
+                  /* Translators: the first %s is a gresource XML attribute,
+                   * the second %s is an environment variable, and the third
+                   * %s is a command line tool
+                   */
+                  g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                               _("%s preprocessing requested, but %s is not set, and %s is not in PATH"),
+                               "to-pixdata",
+                               "GDK_PIXBUF_PIXDATA",
+                               "gdk-pixbuf-pixdata");
                   goto cleanup;
                 }
 
-              tmp_file2 = g_strdup ("resource-XXXXXXXX");
-              if ((fd = g_mkstemp (tmp_file2)) == -1)
-                {
-                  int errsv = errno;
+              fd = g_file_open_tmp ("resource-XXXXXXXX", &tmp_file, error);
+              if (fd < 0)
+                goto cleanup;
 
-                  g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errsv),
-                               _("Failed to create temp file: %s"),
-			       g_strerror (errsv));
-                  g_free (tmp_file2);
-                  tmp_file2 = NULL;
-                  goto cleanup;
-                }
               close (fd);
 
               proc = g_subprocess_new (G_SUBPROCESS_FLAGS_STDOUT_SILENCE, error,
-                                       gdk_pixbuf_pixdata, real_file, tmp_file2, NULL);
+                                       gdk_pixbuf_pixdata, real_file, tmp_file, NULL);
               g_free (real_file);
               real_file = NULL;
 
@@ -372,7 +450,7 @@ end_element (GMarkupParseContext  *context,
 
 	      g_object_unref (proc);
 
-              real_file = g_strdup (tmp_file2);
+              real_file = g_strdup (tmp_file);
             }
 	}
 
@@ -435,12 +513,6 @@ done:
         {
           unlink (tmp_file);
           g_free (tmp_file);
-        }
-
-      if (tmp_file2)
-        {
-          unlink (tmp_file2);
-          g_free (tmp_file2);
         }
 
       if (data != NULL)
@@ -662,13 +734,13 @@ main (int argc, char **argv)
   GOptionContext *context;
   GOptionEntry entries[] = {
     { "version", 0, 0, G_OPTION_ARG_NONE, &show_version_and_exit, N_("Show program version and exit"), NULL },
-    { "target", 0, 0, G_OPTION_ARG_FILENAME, &target, N_("name of the output file"), N_("FILE") },
-    { "sourcedir", 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &sourcedirs, N_("The directories where files are to be read from (default to current directory)"), N_("DIRECTORY") },
+    { "target", 0, 0, G_OPTION_ARG_FILENAME, &target, N_("Name of the output file"), N_("FILE") },
+    { "sourcedir", 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &sourcedirs, N_("The directories to load files referenced in FILE from (default: current directory)"), N_("DIRECTORY") },
     { "generate", 0, 0, G_OPTION_ARG_NONE, &generate_automatic, N_("Generate output in the format selected for by the target filename extension"), NULL },
     { "generate-header", 0, 0, G_OPTION_ARG_NONE, &generate_header, N_("Generate source header"), NULL },
-    { "generate-source", 0, 0, G_OPTION_ARG_NONE, &generate_source, N_("Generate sourcecode used to link in the resource file into your code"), NULL },
+    { "generate-source", 0, 0, G_OPTION_ARG_NONE, &generate_source, N_("Generate source code used to link in the resource file into your code"), NULL },
     { "generate-dependencies", 0, 0, G_OPTION_ARG_NONE, &generate_dependencies, N_("Generate dependency list"), NULL },
-    { "dependency-file", 0, 0, G_OPTION_ARG_FILENAME, &dependency_file, N_("name of the dependency file to generate"), N_("FILE") },
+    { "dependency-file", 0, 0, G_OPTION_ARG_FILENAME, &dependency_file, N_("Name of the dependency file to generate"), N_("FILE") },
     { "generate-phony-targets", 0, 0, G_OPTION_ARG_NONE, &generate_phony_targets, N_("Include phony targets in the generated dependency file"), NULL },
     { "manual-register", 0, 0, G_OPTION_ARG_NONE, &manual_register, N_("Don’t automatically create and register resource"), NULL },
     { "internal", 0, 0, G_OPTION_ARG_NONE, &internal, N_("Don’t export functions; declare them G_GNUC_INTERNAL"), NULL },
@@ -733,8 +805,10 @@ main (int argc, char **argv)
   xmllint = g_strdup (g_getenv ("XMLLINT"));
   if (xmllint == NULL)
     xmllint = g_find_program_in_path ("xmllint");
-  if (xmllint == NULL)
-    g_printerr ("XMLLINT not set and xmllint not found in path; skipping xml preprocessing.\n");
+
+  jsonformat = g_strdup (g_getenv ("JSON_GLIB_FORMAT"));
+  if (jsonformat == NULL)
+    jsonformat = g_find_program_in_path ("json-glib-format");
 
   gdk_pixbuf_pixdata = g_strdup (g_getenv ("GDK_PIXBUF_PIXDATA"));
   if (gdk_pixbuf_pixdata == NULL)
@@ -956,7 +1030,7 @@ main (int argc, char **argv)
 	  return 1;
 	}
 
-      fprintf (file,
+      g_fprintf (file,
 	       "#ifndef __RESOURCE_%s_H__\n"
 	       "#define __RESOURCE_%s_H__\n"
 	       "\n"
@@ -966,14 +1040,14 @@ main (int argc, char **argv)
 	       c_name, c_name, linkage, c_name);
 
       if (manual_register)
-	fprintf (file,
+	g_fprintf (file,
 		 "\n"
 		 "%s void %s_register_resource (void);\n"
 		 "%s void %s_unregister_resource (void);\n"
 		 "\n",
 		 linkage, c_name, linkage, c_name);
 
-      fprintf (file,
+      g_fprintf (file,
 	       "#endif\n");
 
       fclose (file);
@@ -1004,7 +1078,7 @@ main (int argc, char **argv)
 	  return 1;
 	}
 
-      fprintf (file,
+      g_fprintf (file,
 	       "#include <gio/gio.h>\n"
 	       "\n"
 	       "#if defined (__ELF__) && ( __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 6))\n"
@@ -1018,17 +1092,17 @@ main (int argc, char **argv)
 
       for (i = 0; i < data_size; i++) {
 	if (i % 8 == 0)
-	  fprintf (file, "  ");
-	fprintf (file, "0x%2.2x", (int)data[i]);
+	  g_fprintf (file, "  ");
+	g_fprintf (file, "0x%2.2x", (int)data[i]);
 	if (i != data_size - 1)
-	  fprintf (file, ", ");
+	  g_fprintf (file, ", ");
 	if ((i % 8 == 7) || (i == data_size - 1))
-	  fprintf (file, "\n");
+	  g_fprintf (file, "\n");
       }
 
-      fprintf (file, "} };\n");
+      g_fprintf (file, "} };\n");
 
-      fprintf (file,
+      g_fprintf (file,
 	       "\n"
 	       "static GStaticResource static_resource = { %s_resource_data.data, sizeof (%s_resource_data.data), NULL, NULL, NULL };\n"
 	       "%s GResource *%s_get_resource (void);\n"
@@ -1041,7 +1115,7 @@ main (int argc, char **argv)
 
       if (manual_register)
 	{
-	  fprintf (file,
+	  g_fprintf (file,
 		   "\n"
 		   "%s void %s_unregister_resource (void);\n"
 		   "void %s_unregister_resource (void)\n"
@@ -1058,8 +1132,8 @@ main (int argc, char **argv)
 	}
       else
 	{
-	  fprintf (file, "%s", gconstructor_code);
-	  fprintf (file,
+	  g_fprintf (file, "%s", gconstructor_code);
+	  g_fprintf (file,
 		   "\n"
 		   "#ifdef G_HAS_CONSTRUCTORS\n"
 		   "\n"
@@ -1096,6 +1170,7 @@ main (int argc, char **argv)
   g_free (target);
   g_hash_table_destroy (table);
   g_free (xmllint);
+  g_free (jsonformat);
   g_free (c_name);
   g_hash_table_unref (files);
 

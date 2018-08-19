@@ -291,6 +291,43 @@ g_io_module_finalize (GObject *object)
 }
 
 static gboolean
+load_symbols (GIOModule *module)
+{
+  gchar *name;
+  gchar *load_symname;
+  gchar *unload_symname;
+  gboolean ret;
+
+  name = _g_io_module_extract_name (module->filename);
+  load_symname = g_strconcat ("g_io_", name, "_load", NULL);
+  unload_symname = g_strconcat ("g_io_", name, "_unload", NULL);
+
+  ret = g_module_symbol (module->library,
+                         load_symname,
+                         (gpointer) &module->load) &&
+        g_module_symbol (module->library,
+                         unload_symname,
+                         (gpointer) &module->unload);
+
+  if (!ret)
+    {
+      /* Fallback to old names */
+      ret = g_module_symbol (module->library,
+                             "g_io_module_load",
+                             (gpointer) &module->load) &&
+            g_module_symbol (module->library,
+                             "g_io_module_unload",
+                             (gpointer) &module->unload);
+    }
+
+  g_free (name);
+  g_free (load_symname);
+  g_free (unload_symname);
+
+  return ret;
+}
+
+static gboolean
 g_io_module_load_module (GTypeModule *gmodule)
 {
   GIOModule *module = G_IO_MODULE (gmodule);
@@ -310,12 +347,7 @@ g_io_module_load_module (GTypeModule *gmodule)
     }
 
   /* Make sure that the loaded library contains the required methods */
-  if (! g_module_symbol (module->library,
-                         "g_io_module_load",
-                         (gpointer) &module->load) ||
-      ! g_module_symbol (module->library,
-                         "g_io_module_unload",
-                         (gpointer) &module->unload))
+  if (!load_symbols (module))
     {
       g_printerr ("%s\n", g_module_error ());
       g_module_close (module->library);
@@ -690,8 +722,8 @@ try_class (GIOExtension *extension,
  * The result is cached after it is generated the first time, and
  * the function is thread-safe.
  *
- * Returns: (transfer none): an object implementing
- *     @extension_point, or %NULL if there are no usable
+ * Returns: (transfer none): the type to instantiate to implement
+ *     @extension_point, or %G_TYPE_INVALID if there are no usable
  *     implementations.
  */
 GType
@@ -770,14 +802,29 @@ _g_io_module_get_default_type (const gchar *extension_point,
 }
 
 static gpointer
-try_implementation (GIOExtension         *extension,
+try_implementation (const char           *extension_point,
+                    GIOExtension         *extension,
 		    GIOModuleVerifyFunc   verify_func)
 {
   GType type = g_io_extension_get_type (extension);
   gpointer impl;
 
   if (g_type_is_a (type, G_TYPE_INITABLE))
-    return g_initable_new (type, NULL, NULL, NULL);
+    {
+      GError *error = NULL;
+
+      impl = g_initable_new (type, NULL, &error, NULL);
+      if (impl)
+        return impl;
+
+      g_debug ("Failed to initialize %s (%s) for %s: %s",
+               g_io_extension_get_name (extension),
+               g_type_name (type),
+               extension_point,
+               error ? error->message : "");
+      g_clear_error (&error);
+      return NULL;
+    }
   else
     {
       impl = g_object_new (type, NULL);
@@ -863,7 +910,7 @@ _g_io_module_get_default (const gchar         *extension_point,
       preferred = g_io_extension_point_get_extension_by_name (ep, use_this);
       if (preferred)
 	{
-	  impl = try_implementation (preferred, verify_func);
+	  impl = try_implementation (extension_point, preferred, verify_func);
 	  if (impl)
 	    goto done;
 	}
@@ -879,7 +926,7 @@ _g_io_module_get_default (const gchar         *extension_point,
       if (extension == preferred)
 	continue;
 
-      impl = try_implementation (extension, verify_func);
+      impl = try_implementation (extension_point, extension, verify_func);
       if (impl)
 	goto done;
     }
@@ -930,8 +977,10 @@ extern GType g_cocoa_notification_backend_get_type (void);
 #endif
 
 #ifdef G_PLATFORM_WIN32
+extern GType g_win32_notification_backend_get_type (void);
 
 #include <windows.h>
+extern GType _g_win32_network_monitor_get_type (void);
 
 static HMODULE gio_dll = NULL;
 
@@ -1133,6 +1182,7 @@ _g_io_modules_ensure_loaded (void)
       g_type_ensure (g_cocoa_notification_backend_get_type ());
 #endif
 #ifdef G_OS_WIN32
+      g_type_ensure (g_win32_notification_backend_get_type ());
       g_type_ensure (_g_winhttp_vfs_get_type ());
 #endif
       g_type_ensure (_g_local_vfs_get_type ());
@@ -1147,6 +1197,9 @@ _g_io_modules_ensure_loaded (void)
 #ifdef HAVE_NETLINK
       g_type_ensure (_g_network_monitor_netlink_get_type ());
       g_type_ensure (_g_network_monitor_nm_get_type ());
+#endif
+#ifdef G_OS_WIN32
+      g_type_ensure (_g_win32_network_monitor_get_type ());
 #endif
     }
 

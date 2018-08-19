@@ -213,7 +213,7 @@ struct _GMatchInfo
   gint *workspace;              /* workspace for pcre_dfa_exec() */
   gint n_workspace;             /* number of workspace elements */
   const gchar *string;          /* string passed to the match function */
-  gssize string_len;            /* length of string */
+  gssize string_len;            /* length of string, in bytes */
 };
 
 struct _GRegex
@@ -1662,10 +1662,12 @@ g_regex_match_simple (const gchar        *pattern,
  * @match_info: (out) (optional): pointer to location where to store
  *     the #GMatchInfo, or %NULL if you do not need it
  *
- * Scans for a match in string for the pattern in @regex.
+ * Scans for a match in @string for the pattern in @regex.
  * The @match_options are combined with the match options specified
  * when the @regex structure was created, letting you have more
  * flexibility in reusing #GRegex structures.
+ *
+ * Unless %G_REGEX_RAW is specified in the options, @string must be valid UTF-8.
  *
  * A #GMatchInfo structure, used to get information on the match,
  * is stored in @match_info if not %NULL. Note that if @match_info
@@ -1719,14 +1721,14 @@ g_regex_match (const GRegex      *regex,
  * g_regex_match_full:
  * @regex: a #GRegex structure from g_regex_new()
  * @string: (array length=string_len): the string to scan for matches
- * @string_len: the length of @string, or -1 if @string is nul-terminated
+ * @string_len: the length of @string, in bytes, or -1 if @string is nul-terminated
  * @start_position: starting index of the string to match, in bytes
  * @match_options: match options
  * @match_info: (out) (optional): pointer to location where to store
  *     the #GMatchInfo, or %NULL if you do not need it
  * @error: location to store the error occurring, or %NULL to ignore errors
  *
- * Scans for a match in string for the pattern in @regex.
+ * Scans for a match in @string for the pattern in @regex.
  * The @match_options are combined with the match options specified
  * when the @regex structure was created, letting you have more
  * flexibility in reusing #GRegex structures.
@@ -1734,6 +1736,8 @@ g_regex_match (const GRegex      *regex,
  * Setting @start_position differs from just passing over a shortened
  * string and setting #G_REGEX_MATCH_NOTBOL in the case of a pattern
  * that begins with any kind of lookbehind assertion, such as "\b".
+ *
+ * Unless %G_REGEX_RAW is specified in the options, @string must be valid UTF-8.
  *
  * A #GMatchInfo structure, used to get information on the match, is
  * stored in @match_info if not %NULL. Note that if @match_info is
@@ -1850,7 +1854,7 @@ g_regex_match_all (const GRegex      *regex,
  * g_regex_match_all_full:
  * @regex: a #GRegex structure from g_regex_new()
  * @string: (array length=string_len): the string to scan for matches
- * @string_len: the length of @string, or -1 if @string is nul-terminated
+ * @string_len: the length of @string, in bytes, or -1 if @string is nul-terminated
  * @start_position: starting index of the string to match, in bytes
  * @match_options: match options
  * @match_info: (out) (optional): pointer to location where to store
@@ -1858,7 +1862,7 @@ g_regex_match_all (const GRegex      *regex,
  * @error: location to store the error occurring, or %NULL to ignore errors
  *
  * Using the standard algorithm for regular expression matching only
- * the longest match in the string is retrieved, it is not possible
+ * the longest match in the @string is retrieved, it is not possible
  * to obtain all the available matches. For instance matching
  * "<a> <b> <c>" against the pattern "<.*>"
  * you get "<a> <b> <c>".
@@ -1883,6 +1887,8 @@ g_regex_match_all (const GRegex      *regex,
  * Setting @start_position differs from just passing over a shortened
  * string and setting #G_REGEX_MATCH_NOTBOL in the case of a pattern
  * that begins with any kind of lookbehind assertion, such as "\b".
+ *
+ * Unless %G_REGEX_RAW is specified in the options, @string must be valid UTF-8.
  *
  * A #GMatchInfo structure, used to get information on the match, is
  * stored in @match_info if not %NULL. Note that if @match_info is
@@ -2123,7 +2129,7 @@ g_regex_split (const GRegex     *regex,
  * g_regex_split_full:
  * @regex: a #GRegex structure
  * @string: (array length=string_len): the string to split with the pattern
- * @string_len: the length of @string, or -1 if @string is nul-terminated
+ * @string_len: the length of @string, in bytes, or -1 if @string is nul-terminated
  * @start_position: starting index of the string to match, in bytes
  * @match_options: match time option flags
  * @max_tokens: the maximum number of tokens to split @string into.
@@ -2752,7 +2758,7 @@ interpolation_list_needs_match (GList *list)
  * g_regex_replace:
  * @regex: a #GRegex structure
  * @string: (array length=string_len): the string to perform matches against
- * @string_len: the length of @string, or -1 if @string is nul-terminated
+ * @string_len: the length of @string, in bytes, or -1 if @string is nul-terminated
  * @start_position: starting index of the string to match, in bytes
  * @replacement: text to replace each match with
  * @match_options: options for the match
@@ -2843,7 +2849,7 @@ literal_replacement (const GMatchInfo *match_info,
  * g_regex_replace_literal:
  * @regex: a #GRegex structure
  * @string: (array length=string_len): the string to perform matches against
- * @string_len: the length of @string, or -1 if @string is nul-terminated
+ * @string_len: the length of @string, in bytes, or -1 if @string is nul-terminated
  * @start_position: starting index of the string to match, in bytes
  * @replacement: text to replace each match with
  * @match_options: options for the match
@@ -2886,7 +2892,7 @@ g_regex_replace_literal (const GRegex      *regex,
  * g_regex_replace_eval:
  * @regex: a #GRegex structure from g_regex_new()
  * @string: (array length=string_len): string to perform matches against
- * @string_len: the length of @string, or -1 if @string is nul-terminated
+ * @string_len: the length of @string, in bytes, or -1 if @string is nul-terminated
  * @start_position: starting index of the string to match, in bytes
  * @match_options: options for the match
  * @eval: a function to call for each match
@@ -3110,7 +3116,7 @@ g_regex_escape_nul (const gchar *string,
 /**
  * g_regex_escape_string:
  * @string: (array length=length): the string to escape
- * @length: the length of @string, or -1 if @string is nul-terminated
+ * @length: the length of @string, in bytes, or -1 if @string is nul-terminated
  *
  * Escapes the special characters used for regular expressions
  * in @string, for instance "a.b*c" becomes "a\.b\*c". This

@@ -96,7 +96,7 @@ _g_object_dispose_and_wait_weak_notify (gpointer object)
 
   if (data.timed_out)
     {
-      g_warning ("Weak notify timeout, object ref_count=%d\n",
+      g_warning ("Weak notify timeout, object ref_count=%d",
           G_OBJECT (object)->ref_count);
     }
   else
@@ -823,6 +823,7 @@ g_test_dbus_down (GTestDBus *self)
     _g_object_dispose_and_wait_weak_notify (connection);
 
   g_test_dbus_unset ();
+  _g_bus_forget_singleton (G_BUS_TYPE_SESSION);
   self->priv->up = FALSE;
 }
 

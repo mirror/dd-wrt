@@ -132,7 +132,7 @@ test_clear (void)
 static void
 test_clear_function (void)
 {
-  volatile GObject *o = NULL;
+  GObject *o = NULL;
   GObject *tmp;
 
   (g_clear_object) (&o);
@@ -156,11 +156,14 @@ test_set (void)
 {
   GObject *o = NULL;
   GObject *tmp;
+  gpointer tmp_weak = NULL;
 
   g_assert (!g_set_object (&o, NULL));
   g_assert (o == NULL);
 
   tmp = g_object_new (G_TYPE_OBJECT, NULL);
+  tmp_weak = tmp;
+  g_object_add_weak_pointer (tmp, &tmp_weak);
   g_assert_cmpint (tmp->ref_count, ==, 1);
 
   g_assert (g_set_object (&o, tmp));
@@ -174,10 +177,11 @@ test_set (void)
   g_assert (!g_set_object (&o, tmp));
   g_assert (o == tmp);
   g_assert_cmpint (tmp->ref_count, ==, 1);
+  g_assert_nonnull (tmp_weak);
 
   g_assert (g_set_object (&o, NULL));
   g_assert (o == NULL);
-  g_assert (!G_IS_OBJECT (tmp));  /* finalised */
+  g_assert_null (tmp_weak);
 }
 
 static void
@@ -185,11 +189,14 @@ test_set_function (void)
 {
   GObject *o = NULL;
   GObject *tmp;
+  gpointer tmp_weak = NULL;
 
   g_assert (!(g_set_object) (&o, NULL));
   g_assert (o == NULL);
 
   tmp = g_object_new (G_TYPE_OBJECT, NULL);
+  tmp_weak = tmp;
+  g_object_add_weak_pointer (tmp, &tmp_weak);
   g_assert_cmpint (tmp->ref_count, ==, 1);
 
   g_assert ((g_set_object) (&o, tmp));
@@ -203,10 +210,11 @@ test_set_function (void)
   g_assert (!(g_set_object) (&o, tmp));
   g_assert (o == tmp);
   g_assert_cmpint (tmp->ref_count, ==, 1);
+  g_assert_nonnull (tmp_weak);
 
   g_assert ((g_set_object) (&o, NULL));
   g_assert (o == NULL);
-  g_assert (!G_IS_OBJECT (tmp));  /* finalised */
+  g_assert_null (tmp_weak);
 }
 
 static void
@@ -311,6 +319,108 @@ test_weak_pointer (void)
   g_object_unref (obj);
   g_assert (weak == NULL);
   g_assert (weak2 == obj);
+}
+
+static void
+test_weak_pointer_clear (void)
+{
+  GObject *obj;
+  gpointer weak = NULL;
+
+  g_clear_weak_pointer (&weak);
+  g_assert_null (weak);
+
+  weak = obj = g_object_new (G_TYPE_OBJECT, NULL);
+  g_assert_cmpint (obj->ref_count, ==, 1);
+
+  g_object_add_weak_pointer (obj, &weak);
+  g_assert_cmpint (obj->ref_count, ==, 1);
+  g_assert_true (weak == obj);
+
+  g_clear_weak_pointer (&weak);
+  g_assert_cmpint (obj->ref_count, ==, 1);
+  g_assert_null (weak);
+
+  g_object_unref (obj);
+}
+
+static void
+test_weak_pointer_clear_function (void)
+{
+  GObject *obj;
+  gpointer weak = NULL;
+
+  (g_clear_weak_pointer) (&weak);
+  g_assert_null (weak);
+
+  weak = obj = g_object_new (G_TYPE_OBJECT, NULL);
+  g_assert_cmpint (obj->ref_count, ==, 1);
+
+  g_object_add_weak_pointer (obj, &weak);
+  g_assert_cmpint (obj->ref_count, ==, 1);
+  g_assert_true (weak == obj);
+
+  (g_clear_weak_pointer) (&weak);
+  g_assert_cmpint (obj->ref_count, ==, 1);
+  g_assert_null (weak);
+
+  g_object_unref (obj);
+}
+
+static void
+test_weak_pointer_set (void)
+{
+  GObject *obj;
+  gpointer weak = NULL;
+
+  g_assert_false (g_set_weak_pointer (&weak, NULL));
+  g_assert_null (weak);
+
+  obj = g_object_new (G_TYPE_OBJECT, NULL);
+  g_assert_cmpint (obj->ref_count, ==, 1);
+
+  g_assert_true (g_set_weak_pointer (&weak, obj));
+  g_assert_cmpint (obj->ref_count, ==, 1);
+  g_assert_true (weak == obj);
+
+  g_assert_true (g_set_weak_pointer (&weak, NULL));
+  g_assert_cmpint (obj->ref_count, ==, 1);
+  g_assert_null (weak);
+
+  g_assert_true (g_set_weak_pointer (&weak, obj));
+  g_assert_cmpint (obj->ref_count, ==, 1);
+  g_assert_true (weak == obj);
+
+  g_object_unref (obj);
+  g_assert_null (weak);
+}
+
+static void
+test_weak_pointer_set_function (void)
+{
+  GObject *obj;
+  gpointer weak = NULL;
+
+  g_assert_false ((g_set_weak_pointer) (&weak, NULL));
+  g_assert_null (weak);
+
+  obj = g_object_new (G_TYPE_OBJECT, NULL);
+  g_assert_cmpint (obj->ref_count, ==, 1);
+
+  g_assert_true ((g_set_weak_pointer) (&weak, obj));
+  g_assert_cmpint (obj->ref_count, ==, 1);
+  g_assert_true (weak == obj);
+
+  g_assert_true ((g_set_weak_pointer) (&weak, NULL));
+  g_assert_cmpint (obj->ref_count, ==, 1);
+  g_assert_null (weak);
+
+  g_assert_true ((g_set_weak_pointer) (&weak, obj));
+  g_assert_cmpint (obj->ref_count, ==, 1);
+  g_assert_true (weak == obj);
+
+  g_object_unref (obj);
+  g_assert_null (weak);
 }
 
 /* See gobject/tests/threadtests.c for the threaded version */
@@ -667,6 +777,10 @@ main (int argc, char **argv)
   g_test_add_func ("/object/value", test_object_value);
   g_test_add_func ("/object/initially-unowned", test_initially_unowned);
   g_test_add_func ("/object/weak-pointer", test_weak_pointer);
+  g_test_add_func ("/object/weak-pointer/clear", test_weak_pointer_clear);
+  g_test_add_func ("/object/weak-pointer/clear-function", test_weak_pointer_clear_function);
+  g_test_add_func ("/object/weak-pointer/set", test_weak_pointer_set);
+  g_test_add_func ("/object/weak-pointer/set-function", test_weak_pointer_set_function);
   g_test_add_func ("/object/weak-ref", test_weak_ref);
   g_test_add_func ("/object/toggle-ref", test_toggle_ref);
   g_test_add_func ("/object/qdata", test_object_qdata);

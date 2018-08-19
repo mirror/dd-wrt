@@ -384,7 +384,7 @@ g_output_stream_vprintf (GOutputStream  *stream,
   gboolean  success;
 
   g_return_val_if_fail (G_IS_OUTPUT_STREAM (stream), FALSE);
-  g_return_val_if_fail (cancellable == NULL || G_IS_CANCELLABLE (stream), FALSE);
+  g_return_val_if_fail (cancellable == NULL || G_IS_CANCELLABLE (cancellable), FALSE);
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
   g_return_val_if_fail (format != NULL, FALSE);
 
@@ -1340,6 +1340,7 @@ g_output_stream_flush_async (GOutputStream       *stream,
   
   if (class->flush_async == NULL)
     {
+      g_output_stream_clear_pending (stream);
       g_task_return_boolean (task, TRUE);
       g_object_unref (task);
       return;

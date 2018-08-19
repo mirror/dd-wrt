@@ -779,7 +779,7 @@ g_node_traverse_level (GNode		 *node,
 static gboolean
 g_node_depth_traverse_level (GNode             *node,
 			     GTraverseFlags	flags,
-			     guint		depth,
+			     gint		depth,
 			     GNodeTraverseFunc  func,
 			     gpointer	        data)
 {
@@ -787,7 +787,7 @@ g_node_depth_traverse_level (GNode             *node,
   gboolean more_levels;
 
   level = 0;  
-  while (level != depth) 
+  while (depth < 0 || level != (guint) depth)
     {
       more_levels = FALSE;
       if (g_node_traverse_level (node, flags, level, func, data, &more_levels))
@@ -816,6 +816,7 @@ g_node_depth_traverse_level (GNode             *node,
  * Traverses a tree starting at the given root #GNode.
  * It calls the given function for each node visited.
  * The traversal can be halted at any point by returning %TRUE from @func.
+ * @func must not do anything that would modify the structure of the tree.
  */
 
 /**
@@ -1235,8 +1236,9 @@ g_node_last_sibling (GNode *node)
  * @func: the function to call for each visited node
  * @data: user data to pass to the function
  *
- * Calls a function for each of the children of a #GNode.
- * Note that it doesn't descend beneath the child nodes.
+ * Calls a function for each of the children of a #GNode. Note that it
+ * doesn't descend beneath the child nodes. @func must not do anything
+ * that would modify the structure of the tree.
  */
 /**
  * GNodeForeachFunc:

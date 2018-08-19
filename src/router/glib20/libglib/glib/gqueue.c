@@ -35,6 +35,9 @@
  * using one of the [Type Conversion Macros][glib-Type-Conversion-Macros],
  * or simply pointers to any type of data.
  *
+ * As with all other GLib data structures, #GQueue is not thread-safe.
+ * For a thread-safe queue, use #GAsyncQueue.
+ *
  * To create a new GQueue, use g_queue_new().
  *
  * To initialize a statically-allocated GQueue, use #G_QUEUE_INIT or
@@ -94,6 +97,9 @@ g_queue_free (GQueue *queue)
  *
  * Convenience method, which frees all the memory used by a #GQueue,
  * and calls the specified destroy function on every element's data.
+ *
+ * @free_func should not modify the queue (eg, by removing the freed
+ * element from it).
  *
  * Since: 2.32
  */
@@ -231,6 +237,9 @@ g_queue_copy (GQueue *queue)
  * Calls @func for each element in the queue passing @user_data to the
  * function.
  * 
+ * It is safe for @func to remove the element from @queue, but it must
+ * not modify any part of the queue after that element.
+ *
  * Since: 2.4
  */
 void
@@ -363,7 +372,7 @@ g_queue_push_nth (GQueue   *queue,
 {
   g_return_if_fail (queue != NULL);
 
-  if (n < 0 || n >= queue->length)
+  if (n < 0 || (guint) n >= queue->length)
     {
       g_queue_push_tail (queue, data);
       return;
@@ -466,7 +475,7 @@ g_queue_push_nth_link (GQueue *queue,
   g_return_if_fail (queue != NULL);
   g_return_if_fail (link_ != NULL);
 
-  if (n < 0 || n >= queue->length)
+  if (n < 0 || (guint) n >= queue->length)
     {
       g_queue_push_tail_link (queue, link_);
       return;
@@ -740,7 +749,7 @@ g_queue_peek_nth_link (GQueue *queue,
                        guint   n)
 {
   GList *link;
-  gint i;
+  guint i;
   
   g_return_val_if_fail (queue != NULL, NULL);
 

@@ -141,6 +141,35 @@ gsettings_list_schemas (void)
 }
 
 static void
+gsettings_list_schemas_with_paths (void)
+{
+  gchar **schemas;
+  gsize i;
+
+  g_settings_schema_source_list_schemas (global_schema_source, TRUE, &schemas, NULL);
+
+  for (i = 0; schemas[i] != NULL; i++)
+    {
+      GSettingsSchema *schema;
+      gchar *schema_name;
+      const gchar *schema_path;
+
+      schema_name = g_steal_pointer (&schemas[i]);
+
+      schema = g_settings_schema_source_lookup (global_schema_source, schema_name, TRUE);
+      schema_path = g_settings_schema_get_path (schema);
+
+      schemas[i] = g_strconcat (schema_name, " ", schema_path, NULL);
+
+      g_settings_schema_unref (schema);
+      g_free (schema_name);
+    }
+
+  output_list (schemas);
+  g_strfreev (schemas);
+}
+
+static void
 gsettings_list_relocatable_schemas (void)
 {
   gchar **schemas;
@@ -233,10 +262,28 @@ list_recursively (GSettings *settings)
   children = g_settings_list_children (settings);
   for (i = 0; children[i]; i++)
     {
+      gboolean will_see_elsewhere = FALSE;
       GSettings *child;
 
       child = g_settings_get_child (settings, children[i]);
-      list_recursively (child);
+
+      if (global_settings == NULL)
+        {
+	  /* we're listing all non-relocatable settings objects from the
+	   * top-level, so if this one is non-relocatable, don't recurse,
+	   * because we will pick it up later on.
+	   */
+
+	  GSettingsSchema *child_schema;
+
+	  g_object_get (child, "settings-schema", &child_schema, NULL);
+	  will_see_elsewhere = !is_relocatable_schema (child_schema);
+	  g_settings_schema_unref (child_schema);
+        }
+
+      if (!will_see_elsewhere)
+        list_recursively (child);
+
       g_object_unref (child);
     }
 
@@ -532,7 +579,7 @@ gsettings_help (gboolean     requested,
   else if (strcmp (command, "list-schemas") == 0)
     {
       description = _("List the installed (non-relocatable) schemas");
-      synopsis = "";
+      synopsis = "[--print-paths]";
     }
 
   else if (strcmp (command, "list-relocatable-schemas") == 0)
@@ -690,7 +737,7 @@ int
 main (int argc, char **argv)
 {
   void (* function) (void);
-  gboolean need_settings;
+  gboolean need_settings, skip_third_arg_test;
 
 #ifdef G_OS_WIN32
   gchar *tmp;
@@ -744,6 +791,7 @@ main (int argc, char **argv)
     g_settings_schema_source_ref (global_schema_source);
 
   need_settings = TRUE;
+  skip_third_arg_test = FALSE;
 
   if (strcmp (argv[1], "help") == 0)
     return gsettings_help (TRUE, argv[2]);
@@ -753,6 +801,13 @@ main (int argc, char **argv)
 
   else if (argc == 2 && strcmp (argv[1], "list-schemas") == 0)
     function = gsettings_list_schemas;
+
+  else if (argc == 3 && strcmp (argv[1], "list-schemas") == 0
+                     && strcmp (argv[2], "--print-paths") == 0)
+    {
+      skip_third_arg_test = TRUE;
+      function = gsettings_list_schemas_with_paths;
+    }
 
   else if (argc == 2 && strcmp (argv[1], "list-relocatable-schemas") == 0)
     function = gsettings_list_relocatable_schemas;
@@ -802,7 +857,7 @@ main (int argc, char **argv)
   else
     return gsettings_help (FALSE, argv[1]);
 
-  if (argc > 2)
+  if (argc > 2 && !skip_third_arg_test)
     {
       gchar **parts;
 

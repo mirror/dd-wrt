@@ -91,6 +91,7 @@ g_file_hash
 g_file_equal
 g_file_get_basename
 g_file_get_path
+g_file_peek_path
 g_file_get_uri
 g_file_get_parse_name
 g_file_get_parent
@@ -1247,6 +1248,7 @@ g_drive_stop_finish
 g_drive_enumerate_identifiers
 g_drive_get_identifier
 g_drive_get_sort_key
+G_DRIVE_IDENTIFIER_KIND_UNIX_DEVICE
 <SUBSECTION Standard>
 G_DRIVE
 G_IS_DRIVE
@@ -1495,6 +1497,12 @@ g_mount_operation_get_password_save
 g_mount_operation_set_password_save
 g_mount_operation_get_choice
 g_mount_operation_set_choice
+g_mount_operation_get_is_tcrypt_hidden_volume
+g_mount_operation_set_is_tcrypt_hidden_volume
+g_mount_operation_get_is_tcrypt_system_volume
+g_mount_operation_set_is_tcrypt_system_volume
+g_mount_operation_get_pim
+g_mount_operation_set_pim
 g_mount_operation_reply
 <SUBSECTION Standard>
 GMountOperationClass
@@ -1545,6 +1553,7 @@ g_unix_mount_copy
 g_unix_mount_get_mount_path
 g_unix_mount_get_device_path
 g_unix_mount_get_fs_type
+g_unix_mount_get_options
 g_unix_mount_is_readonly
 g_unix_mount_is_system_internal
 g_unix_mount_guess_icon
@@ -1569,6 +1578,7 @@ g_unix_mount_point_guess_can_eject
 g_unix_mount_points_get
 g_unix_mounts_get
 g_unix_mount_at
+g_unix_mount_for
 g_unix_mounts_changed_since
 g_unix_mount_points_changed_since
 g_unix_mount_monitor_get
@@ -1609,10 +1619,12 @@ g_desktop_app_info_get_keywords
 g_desktop_app_info_get_startup_wm_class
 g_desktop_app_info_set_desktop_env
 g_desktop_app_info_get_string
+g_desktop_app_info_get_locale_string
 g_desktop_app_info_get_boolean
 g_desktop_app_info_has_key
 GDesktopAppLaunchCallback
 g_desktop_app_info_launch_uris_as_manager
+g_desktop_app_info_launch_uris_as_manager_with_fds
 <SUBSECTION>
 g_desktop_app_info_list_actions
 g_desktop_app_info_get_action_name
@@ -1937,26 +1949,40 @@ GSocketConnectableIface
 g_socket_connectable_enumerate
 g_socket_connectable_proxy_enumerate
 g_socket_connectable_to_string
-<SUBSECTION>
-GSocketAddressEnumerator
-g_socket_address_enumerator_next
-g_socket_address_enumerator_next_async
-g_socket_address_enumerator_next_finish
-<SUBSECTION>
-GProxyAddressEnumerator
 <SUBSECTION Standard>
 G_IS_SOCKET_CONNECTABLE
 G_SOCKET_CONNECTABLE
 G_SOCKET_CONNECTABLE_GET_IFACE
 G_TYPE_SOCKET_CONNECTABLE
+<SUBSECTION Private>
+g_socket_connectable_get_type
+</SECTION>
+
+<SECTION>
+<FILE>gsocketaddressenumerator</FILE>
+<TITLE>GSocketAddressEnumerator</TITLE>
+GSocketAddressEnumerator
 GSocketAddressEnumeratorClass
+g_socket_address_enumerator_next
+g_socket_address_enumerator_next_async
+g_socket_address_enumerator_next_finish
+<SUBSECTION Standard>
 G_IS_SOCKET_ADDRESS_ENUMERATOR
 G_IS_SOCKET_ADDRESS_ENUMERATOR_CLASS
 G_SOCKET_ADDRESS_ENUMERATOR
 G_SOCKET_ADDRESS_ENUMERATOR_CLASS
 G_SOCKET_ADDRESS_ENUMERATOR_GET_CLASS
 G_TYPE_SOCKET_ADDRESS_ENUMERATOR
+<SUBSECTION Private>
+g_socket_address_enumerator_get_type
+</SECTION>
+
+<SECTION>
+<FILE>gproxyaddressenumerator</FILE>
+<TITLE>GProxyAddressEnumerator</TITLE>
+GProxyAddressEnumerator
 GProxyAddressEnumeratorClass
+<SUBSECTION Standard>
 G_IS_PROXY_ADDRESS_ENUMERATOR
 G_IS_PROXY_ADDRESS_ENUMERATOR_CLASS
 G_PROXY_ADDRESS_ENUMERATOR
@@ -1966,8 +1992,6 @@ G_TYPE_PROXY_ADDRESS_ENUMERATOR
 <SUBSECTION Private>
 GProxyAddressEnumeratorPrivate
 g_proxy_address_enumerator_get_type
-g_socket_address_enumerator_get_type
-g_socket_connectable_get_type
 </SECTION>
 
 <SECTION>
@@ -3220,6 +3244,9 @@ g_application_run
 g_application_add_main_option_entries
 g_application_add_main_option
 g_application_add_option_group
+g_application_set_option_context_parameter_string
+g_application_set_option_context_summary
+g_application_set_option_context_description
 <SUBSECTION>
 g_application_set_default
 g_application_get_default

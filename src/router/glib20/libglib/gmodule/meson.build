@@ -84,14 +84,59 @@ gmoduleconf_h = configure_file(input : 'gmoduleconf.h.in',
 
 install_headers(['gmodule.h'], subdir : 'glib-2.0')
 
-libgmodule = shared_library('gmodule-2.0',
-  sources : ['gmodule.c'],
+gmodule_sources = ['gmodule.c']
+if host_system == 'windows'
+  gmodule_win_rc = configure_file(
+    input: 'gmodule.rc.in',
+    output: 'gmodule.rc',
+    configuration: glibconfig_conf,
+  )
+  gmodule_win_res = windows.compile_resources(gmodule_win_rc)
+  gmodule_sources += [gmodule_win_res]
+endif
+
+libgmodule = library('gmodule-2.0',
+  sources : gmodule_sources,
   version : library_version,
   soversion : soversion,
   install : true,
   include_directories : [configinc, gmoduleinc],
   dependencies : [libdl_dep, libglib_dep],
-  c_args : ['-DG_LOG_DOMAIN="GModule"', '-DG_DISABLE_DEPRECATED'] + glib_hidden_visibility_args)
+  c_args : ['-DG_LOG_DOMAIN="GModule"', '-DG_DISABLE_DEPRECATED'] + glib_hidden_visibility_args,
+  link_args : [glib_link_flags],
+)
+
+supported_var = 'gmodule_supported=@0@'.format(g_module_impl != '0')
+
+pkg.generate(libraries : [libgmodule, thread_dep],
+  requires : ['glib-2.0'],
+  version : glib_version,
+  variables : [supported_var],
+  install_dir : glib_pkgconfigreldir,
+  filebase : 'gmodule-no-export-2.0',
+  name : 'GModule',
+  description : 'Dynamic module loader for GLib',
+)
+
+pkg.generate(libraries : [libgmodule, export_dynamic_ldflags],
+  requires : ['glib-2.0'],
+  version : glib_version,
+  variables : [supported_var],
+  install_dir : glib_pkgconfigreldir,
+  filebase : 'gmodule-export-2.0',
+  name : 'GModule',
+  description : 'Dynamic module loader for GLib',
+)
+
+pkg.generate(libraries : [libgmodule, export_dynamic_ldflags],
+  requires : ['glib-2.0'],
+  version : glib_version,
+  variables : [supported_var],
+  install_dir : glib_pkgconfigreldir,
+  filebase : 'gmodule-2.0',
+  name : 'GModule',
+  description : 'Dynamic module loader for GLib',
+)
 
 libgmodule_dep = declare_dependency(link_with : libgmodule,
   include_directories : gmoduleinc)

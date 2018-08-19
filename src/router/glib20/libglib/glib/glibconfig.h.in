@@ -18,6 +18,9 @@
  */
 #mesondefine GLIB_USING_SYSTEM_PRINTF
 
+#mesondefine GLIB_STATIC_COMPILATION
+#mesondefine GOBJECT_STATIC_COMPILATION
+
 G_BEGIN_DECLS
 
 #define G_MINFLOAT	FLT_MIN
@@ -115,7 +118,6 @@ typedef unsigned @glib_intptr_type_define@ guintptr;
 #define GLIB_MICRO_VERSION @GLIB_MICRO_VERSION@
 
 @glib_os@
-@glib_static_compilation@
 
 @glib_vacopy@
 
@@ -131,10 +133,10 @@ typedef unsigned @glib_intptr_type_define@ guintptr;
 #endif
 
 #mesondefine G_HAVE_GROWING_STACK
+#mesondefine G_HAVE_GNUC_VISIBILITY
 
 #ifndef _MSC_VER
 # define G_HAVE_GNUC_VARARGS 1
-# define G_HAVE_GNUC_VISIBILITY 1
 #endif
 
 #if defined(__SUNPRO_C) && (__SUNPRO_C >= 0x590)
@@ -201,6 +203,11 @@ typedef @g_pid_type@ GPid;
 #define GLIB_SYSDEF_MSG_OOB @g_msg_oob@
 #define GLIB_SYSDEF_MSG_PEEK @g_msg_peek@
 #define GLIB_SYSDEF_MSG_DONTROUTE @g_msg_dontroute@
+
+#define G_DIR_SEPARATOR '@g_dir_separator@'
+#define G_DIR_SEPARATOR_S "@g_dir_separator@"
+#define G_SEARCHPATH_SEPARATOR '@g_searchpath_separator@'
+#define G_SEARCHPATH_SEPARATOR_S "@g_searchpath_separator@"
 
 G_END_DECLS
 

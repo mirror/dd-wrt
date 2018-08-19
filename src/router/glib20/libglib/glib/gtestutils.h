@@ -27,6 +27,7 @@
 #include <glib/gstring.h>
 #include <glib/gerror.h>
 #include <glib/gslist.h>
+#include <string.h>
 
 G_BEGIN_DECLS
 
@@ -63,10 +64,17 @@ typedef void (*GTestFixtureFunc) (gpointer      fixture,
                                                  #n1 " " #cmp " " #n2, (long double) __n1, #cmp, (long double) __n2, 'x'); \
                                         } G_STMT_END
 #define g_assert_cmpfloat(n1,cmp,n2)    G_STMT_START { \
-                                             long double __n1 = (n1), __n2 = (n2); \
+                                             long double __n1 = (long double) (n1), __n2 = (long double) (n2); \
                                              if (__n1 cmp __n2) ; else \
                                                g_assertion_message_cmpnum (G_LOG_DOMAIN, __FILE__, __LINE__, G_STRFUNC, \
                                                  #n1 " " #cmp " " #n2, (long double) __n1, #cmp, (long double) __n2, 'f'); \
+                                        } G_STMT_END
+#define g_assert_cmpfloat_with_epsilon(n1,n2,epsilon) \
+                                        G_STMT_START { \
+                                             double __n1 = (n1), __n2 = (n2), __epsilon = (epsilon); \
+                                             if (G_APPROX_VALUE (__n1,  __n2, __epsilon)) ; else \
+                                               g_assertion_message_cmpnum (G_LOG_DOMAIN, __FILE__, __LINE__, G_STRFUNC, \
+                                                 #n1 " == " #n2 " (+/- " #epsilon ")", __n1, "==", __n2, 'f'); \
                                         } G_STMT_END
 #define g_assert_cmpmem(m1, l1, m2, l2) G_STMT_START {\
                                              gconstpointer __m1 = m1, __m2 = m2; \
@@ -139,6 +147,29 @@ GLIB_AVAILABLE_IN_ALL
 void    g_test_init                     (int            *argc,
                                          char         ***argv,
                                          ...) G_GNUC_NULL_TERMINATED;
+
+/* While we discourage its use, g_assert() is often used in unit tests
+ * (especially in legacy code). g_assert_*() should really be used instead.
+ * g_assert() can be disabled at client program compile time, which can render
+ * tests useless. Highlight that to the user. */
+#ifdef G_DISABLE_ASSERT
+#if defined(G_HAVE_ISO_VARARGS)
+#define g_test_init(argc, argv, ...) \
+  G_STMT_START { \
+    g_printerr ("Tests were compiled with G_DISABLE_ASSERT and are likely no-ops. Aborting.\n"); \
+    exit (1); \
+  } G_STMT_END
+#elif defined(G_HAVE_GNUC_VARARGS)
+#define g_test_init(argc, argv...) \
+  G_STMT_START { \
+    g_printerr ("Tests were compiled with G_DISABLE_ASSERT and are likely no-ops. Aborting.\n"); \
+    exit (1); \
+  } G_STMT_END
+#else  /* no varargs */
+  /* do nothing */
+#endif  /* varargs support */
+#endif  /* G_DISABLE_ASSERT */
+
 /* query testing framework config */
 #define g_test_initialized()            (g_test_config_vars->test_initialized)
 #define g_test_quick()                  (g_test_config_vars->test_quick)
@@ -354,6 +385,13 @@ typedef struct {
 GLIB_VAR const GTestConfig * const g_test_config_vars;
 
 /* internal logging API */
+typedef enum {
+  G_TEST_RUN_SUCCESS,
+  G_TEST_RUN_SKIPPED,
+  G_TEST_RUN_FAILURE,
+  G_TEST_RUN_INCOMPLETE
+} GTestResult;
+
 typedef enum {
   G_TEST_LOG_NONE,
   G_TEST_LOG_ERROR,             /* s:msg */

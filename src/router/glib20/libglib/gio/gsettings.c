@@ -62,7 +62,7 @@
  * that describes the keys in your settings and their types and default
  * values, as well as some other information.
  *
- * Normally, a schema has as fixed path that determines where the settings
+ * Normally, a schema has a fixed path that determines where the settings
  * are stored in the conceptual global tree of settings. However, schemas
  * can also be '[relocatable][gsettings-relocatable]', i.e. not equipped with
  * a fixed path. This is
@@ -587,7 +587,7 @@ g_settings_set_property (GObject      *object,
             settings->priv->schema = g_settings_schema_source_lookup (default_source, schema_id, TRUE);
 
             if (settings->priv->schema == NULL)
-              g_error ("Settings schema '%s' is not installed\n", schema_id);
+              g_error ("Settings schema '%s' is not installed", schema_id);
           }
       }
       break;
@@ -1204,10 +1204,7 @@ g_settings_get_value (GSettings   *settings,
   value = g_settings_read_from_backend (settings, &skey, FALSE, FALSE);
 
   if (value == NULL)
-    value = g_settings_schema_key_get_translated_default (&skey);
-
-  if (value == NULL)
-    value = g_variant_ref (skey.default_value);
+    value = g_settings_schema_key_get_default_value (&skey);
 
   g_settings_schema_key_clear (&skey);
 
@@ -1304,10 +1301,7 @@ g_settings_get_default_value (GSettings   *settings,
   value = g_settings_read_from_backend (settings, &skey, FALSE, TRUE);
 
   if (value == NULL)
-    value = g_settings_schema_key_get_translated_default (&skey);
-
-  if (value == NULL)
-    value = g_variant_ref (skey.default_value);
+    value = g_settings_schema_key_get_default_value (&skey);
 
   g_settings_schema_key_clear (&skey);
 
@@ -1360,10 +1354,7 @@ g_settings_get_enum (GSettings   *settings,
   value = g_settings_read_from_backend (settings, &skey, FALSE, FALSE);
 
   if (value == NULL)
-    value = g_settings_schema_key_get_translated_default (&skey);
-
-  if (value == NULL)
-    value = g_variant_ref (skey.default_value);
+    value = g_settings_schema_key_get_default_value (&skey);
 
   result = g_settings_schema_key_to_enum (&skey, value);
   g_settings_schema_key_clear (&skey);
@@ -1473,10 +1464,7 @@ g_settings_get_flags (GSettings   *settings,
   value = g_settings_read_from_backend (settings, &skey, FALSE, FALSE);
 
   if (value == NULL)
-    value = g_settings_schema_key_get_translated_default (&skey);
-
-  if (value == NULL)
-    value = g_variant_ref (skey.default_value);
+    value = g_settings_schema_key_get_default_value (&skey);
 
   result = g_settings_schema_key_to_flags (&skey, value);
   g_settings_schema_key_clear (&skey);
@@ -1745,6 +1733,13 @@ g_settings_get_mapped (GSettings           *settings,
     }
 
   if ((value = g_settings_schema_key_get_translated_default (&skey)))
+    {
+      okay = mapping (value, &result, user_data);
+      g_variant_unref (value);
+      if (okay) goto okay;
+    }
+
+  if ((value = g_settings_schema_key_get_per_desktop_default (&skey)))
     {
       okay = mapping (value, &result, user_data);
       g_variant_unref (value);
@@ -2475,8 +2470,7 @@ g_settings_list_keys (GSettings *settings)
  * to call g_settings_get_child().
  *
  * For GSettings objects that are lists, this value can change at any
- * time and you should connect to the "children-changed" signal to watch
- * for those changes.  Note that there is a race condition here: you may
+ * time. Note that there is a race condition here: you may
  * request a child after listing it only for it to have been destroyed
  * in the meantime.  For this reason, g_settings_get_child() may return
  * %NULL even for a child that was listed by this function.
@@ -2661,6 +2655,20 @@ g_settings_binding_key_changed (GSettings   *settings,
 
   if (variant == NULL)
     {
+      variant = g_settings_schema_key_get_per_desktop_default (&binding->key);
+      if (variant &&
+          !binding->get_mapping (&value, variant, binding->user_data))
+        {
+          g_error ("Per-desktop default value for key '%s' in schema '%s' "
+                   "was rejected by the binding mapping function.",
+                   binding->key.name, g_settings_schema_get_id (binding->key.schema));
+          g_variant_unref (variant);
+          variant = NULL;
+        }
+    }
+
+  if (variant == NULL)
+    {
       variant = g_variant_ref (binding->key.default_value);
       if (!binding->get_mapping (&value, variant, binding->user_data))
         g_error ("The schema default value for key '%s' in schema '%s' "
@@ -2683,6 +2691,7 @@ g_settings_binding_property_changed (GObject          *object,
   GSettingsBinding *binding = user_data;
   GValue value = G_VALUE_INIT;
   GVariant *variant;
+  gboolean valid = TRUE;
 
   g_assert (object == binding->object);
   g_assert (pspec == binding->property);
@@ -2701,24 +2710,33 @@ g_settings_binding_property_changed (GObject          *object,
 
       if (!g_settings_schema_key_type_check (&binding->key, variant))
         {
+          gchar *type_str;
+          type_str = g_variant_type_dup_string (binding->key.type);
           g_critical ("binding mapping function for key '%s' returned "
                       "GVariant of type '%s' when type '%s' was requested",
                       binding->key.name, g_variant_get_type_string (variant),
-                      g_variant_type_dup_string (binding->key.type));
-          return;
+                      type_str);
+          g_free (type_str);
+          valid = FALSE;
         }
 
-      if (!g_settings_schema_key_range_check (&binding->key, variant))
+      if (valid && !g_settings_schema_key_range_check (&binding->key, variant))
         {
+          gchar *variant_str;
+          variant_str = g_variant_print (variant, TRUE);
           g_critical ("GObject property '%s' on a '%s' object is out of "
                       "schema-specified range for key '%s' of '%s': %s",
                       binding->property->name, g_type_name (binding->property->owner_type),
                       binding->key.name, g_settings_schema_get_id (binding->key.schema),
-                      g_variant_print (variant, TRUE));
-          return;
+                      variant_str);
+          g_free (variant_str);
+          valid = FALSE;
         }
 
-      g_settings_write_to_backend (binding->settings, &binding->key, variant);
+      if (valid)
+        {
+          g_settings_write_to_backend (binding->settings, &binding->key, variant);
+        }
       g_variant_unref (variant);
     }
   g_value_unset (&value);
@@ -2903,10 +2921,12 @@ g_settings_bind_with_mapping (GSettings               *settings,
 
       if (!g_variant_type_equal (binding->key.type, G_VARIANT_TYPE_BOOLEAN))
         {
+          gchar *type_string = g_variant_type_dup_string (binding->key.type);
           g_critical ("g_settings_bind: G_SETTINGS_BIND_INVERT_BOOLEAN "
                       "was specified, but key '%s' on schema '%s' has "
                       "type '%s'", key, g_settings_schema_get_id (settings->priv->schema),
-                      g_variant_type_dup_string (binding->key.type));
+                      type_string);
+          g_free (type_string);
           return;
         }
 
@@ -2917,12 +2937,14 @@ g_settings_bind_with_mapping (GSettings               *settings,
            !g_settings_mapping_is_compatible (binding->property->value_type,
                                               binding->key.type))
     {
+      gchar *type_string = g_variant_type_dup_string (binding->key.type);
       g_critical ("g_settings_bind: property '%s' on class '%s' has type "
                   "'%s' which is not compatible with type '%s' of key '%s' "
                   "on schema '%s'", binding->property->name, G_OBJECT_TYPE_NAME (object),
                   g_type_name (binding->property->value_type),
-                  g_variant_type_dup_string (binding->key.type), key,
+                  type_string, key,
                   g_settings_schema_get_id (settings->priv->schema));
+      g_free (type_string);
       return;
     }
 

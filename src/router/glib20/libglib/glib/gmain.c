@@ -268,7 +268,7 @@ struct _GMainContext
   guint owner_count;
   GSList *waiters;
 
-  gint ref_count;
+  volatile gint ref_count;
 
   GHashTable *sources;              /* guint -> GSource */
 
@@ -277,8 +277,7 @@ struct _GMainContext
 
   guint next_id;
   GList *source_lists;
-  gboolean in_check_or_prepare;
-  gboolean need_wakeup;
+  gint in_check_or_prepare;
 
   GPollRec *poll_records;
   guint n_poll_records;
@@ -300,7 +299,7 @@ struct _GMainContext
 
 struct _GSourceCallback
 {
-  guint ref_count;
+  volatile gint ref_count;
   GSourceFunc func;
   gpointer    data;
   GDestroyNotify notify;
@@ -310,7 +309,7 @@ struct _GMainLoop
 {
   GMainContext *context;
   gboolean is_running;
-  gint ref_count;
+  volatile gint ref_count;
 };
 
 struct _GTimeoutSource
@@ -652,7 +651,6 @@ g_main_context_new (void)
   
   context->pending_dispatches = g_ptr_array_new ();
   
-  context->need_wakeup = FALSE;
   context->time_is_fresh = FALSE;
   
   context->wakeup = g_wakeup_new ();
@@ -1120,23 +1118,6 @@ source_remove_from_context (GSource      *source,
     }
 }
 
-/* See https://bugzilla.gnome.org/show_bug.cgi?id=761102 for
- * the introduction of this.
- *
- * The main optimization is to avoid waking up the main
- * context if a change is made by the current owner.
- */
-static void
-conditional_wakeup (GMainContext *context)
-{
-  /* This flag is set if at the start of prepare() we have no other ready
-   * sources, and hence would wait in poll(). In that case, any other threads
-   * attaching sources will need to signal a wakeup.
-   */
-  if (context->need_wakeup)
-    g_wakeup_signal (context->wakeup);
-}
-
 static guint
 g_source_attach_unlocked (GSource      *source,
                           GMainContext *context,
@@ -1183,8 +1164,8 @@ g_source_attach_unlocked (GSource      *source,
   /* If another thread has acquired the context, wake it up since it
    * might be in poll() right now.
    */
-  if (do_wakeup)
-    conditional_wakeup (context);
+  if (do_wakeup && context->owner && context->owner != G_THREAD_SELF)
+    g_wakeup_signal (context->wakeup);
 
   return source->source_id;
 }
@@ -1314,6 +1295,11 @@ g_source_destroy (GSource *source)
  * is a positive integer which is unique within a particular main loop 
  * context. The reverse
  * mapping from ID to source is done by g_main_context_find_source_by_id().
+ *
+ * You can only call this function while the source is associated to a
+ * #GMainContext instance; calling this function before g_source_attach()
+ * or after g_source_destroy() yields undefined behavior. The ID returned
+ * is unique within the #GMainContext instance passed to g_source_attach().
  *
  * Returns: the ID (greater than 0) for the source
  **/
@@ -1551,7 +1537,7 @@ g_source_callback_ref (gpointer cb_data)
 {
   GSourceCallback *callback = cb_data;
 
-  callback->ref_count++;
+  g_atomic_int_inc (&callback->ref_count);
 }
 
 static void
@@ -1559,8 +1545,7 @@ g_source_callback_unref (gpointer cb_data)
 {
   GSourceCallback *callback = cb_data;
 
-  callback->ref_count--;
-  if (callback->ref_count == 0)
+  if (g_atomic_int_dec_and_test (&callback->ref_count))
     {
       if (callback->notify)
         callback->notify (callback->data);
@@ -1648,7 +1633,8 @@ g_source_set_callback_indirect (GSource              *source,
  *
  * The exact type of @func depends on the type of source; ie. you
  * should not count on @func being called with @data as its first
- * parameter.
+ * parameter. Cast @func with G_SOURCE_FUNC() to avoid warnings about
+ * incompatible function types.
  *
  * See [memory management of sources][mainloop-memory-management] for details
  * on how to handle memory management of @data.
@@ -1825,7 +1811,7 @@ g_source_get_priority (GSource *source)
  * Note that if you have a pair of sources where the ready time of one
  * suggests that it will be delivered first but the priority for the
  * other suggests that it would be delivered first, and the ready time
- * for both sources is reached during the same main context iteration
+ * for both sources is reached during the same main context iteration,
  * then the order of dispatch is undefined.
  *
  * It is a no-op to call this function on a #GSource which has already been
@@ -1843,15 +1829,28 @@ g_source_set_ready_time (GSource *source,
   GMainContext *context;
 
   g_return_if_fail (source != NULL);
-  g_return_if_fail (source->ref_count > 0);
-
-  if (source->priv->ready_time == ready_time)
-    return;
+  /* We deliberately don't check for ref_count > 0 here, because that
+   * breaks cancellable_source_cancelled() in GCancellable: it has no
+   * way to find out that the last-unref has happened until the
+   * finalize() function is called, but that's too late, because the
+   * ref_count already has already reached 0 before that time.
+   * However, priv is only poisoned (set to NULL) after finalize(),
+   * so we can use this as a simple guard against use-after-free.
+   * See https://bugzilla.gnome.org/show_bug.cgi?id=791754 */
+  g_return_if_fail (source->priv != NULL);
 
   context = source->context;
 
   if (context)
     LOCK_CONTEXT (context);
+
+  if (source->priv->ready_time == ready_time)
+    {
+      if (context)
+        UNLOCK_CONTEXT (context);
+
+      return;
+    }
 
   source->priv->ready_time = ready_time;
 
@@ -1861,7 +1860,7 @@ g_source_set_ready_time (GSource *source,
     {
       /* Quite likely that we need to change the timeout on the poll */
       if (!SOURCE_BLOCKED (source))
-        conditional_wakeup (context);
+        g_wakeup_signal (context->wakeup);
       UNLOCK_CONTEXT (context);
     }
 }
@@ -2123,6 +2122,21 @@ g_source_unref_internal (GSource      *source,
           source->ref_count--;
 	}
 
+      if (old_cb_funcs)
+        {
+          /* Temporarily increase the ref count again so that GSource methods
+           * can be called from callback_funcs.unref(). */
+          source->ref_count++;
+          if (context)
+            UNLOCK_CONTEXT (context);
+
+          old_cb_funcs->unref (old_cb_data);
+
+          if (context)
+            LOCK_CONTEXT (context);
+          source->ref_count--;
+        }
+
       g_free (source->name);
       source->name = NULL;
 
@@ -2147,20 +2161,9 @@ g_source_unref_internal (GSource      *source,
 
       g_free (source);
     }
-  
+
   if (!have_lock && context)
     UNLOCK_CONTEXT (context);
-
-  if (old_cb_funcs)
-    {
-      if (have_lock)
-	UNLOCK_CONTEXT (context);
-      
-      old_cb_funcs->unref (old_cb_data);
-
-      if (have_lock)
-	LOCK_CONTEXT (context);
-    }
 }
 
 /**
@@ -2319,16 +2322,14 @@ g_main_context_find_source_by_user_data (GMainContext *context,
  * g_source_remove:
  * @tag: the ID of the source to remove.
  *
- * Removes the source with the given id from the default main context.
+ * Removes the source with the given ID from the default main context. You must
+ * use g_source_destroy() for sources added to a non-default main context.
  *
- * The id of a #GSource is given by g_source_get_id(), or will be
+ * The ID of a #GSource is given by g_source_get_id(), or will be
  * returned by the functions g_source_attach(), g_idle_add(),
  * g_idle_add_full(), g_timeout_add(), g_timeout_add_full(),
  * g_child_watch_add(), g_child_watch_add_full(), g_io_add_watch(), and
  * g_io_add_watch_full().
- *
- * See also g_source_destroy(). You must use g_source_destroy() for sources
- * added to a non-default main context.
  *
  * It is a programmer error to attempt to remove a non-existent source.
  *
@@ -2442,8 +2443,7 @@ g_clear_handle_id (guint            *tag_ptr,
   if (_handle_id > 0)
     {
       *tag_ptr = 0;
-      if (clear_func != NULL)
-        clear_func (_handle_id);
+      clear_func (_handle_id);
     }
 }
 
@@ -3307,25 +3307,10 @@ g_main_context_release (GMainContext *context)
   UNLOCK_CONTEXT (context); 
 }
 
-/**
- * g_main_context_wait:
- * @context: a #GMainContext
- * @cond: a condition variable
- * @mutex: a mutex, currently held
- * 
- * Tries to become the owner of the specified context,
- * as with g_main_context_acquire(). But if another thread
- * is the owner, atomically drop @mutex and wait on @cond until 
- * that owner releases ownership or until @cond is signaled, then
- * try again (once) to become the owner.
- * 
- * Returns: %TRUE if the operation succeeded, and
- *   this thread is now the owner of @context.
- **/
-gboolean
-g_main_context_wait (GMainContext *context,
-		     GCond        *cond,
-		     GMutex       *mutex)
+static gboolean
+g_main_context_wait_internal (GMainContext *context,
+                              GCond        *cond,
+                              GMutex       *mutex)
 {
   gboolean result = FALSE;
   GThread *self = G_THREAD_SELF;
@@ -3333,18 +3318,6 @@ g_main_context_wait (GMainContext *context,
   
   if (context == NULL)
     context = g_main_context_default ();
-
-  if G_UNLIKELY (cond != &context->cond || mutex != &context->mutex)
-    {
-      static gboolean warned;
-
-      if (!warned)
-        {
-          g_critical ("WARNING!! g_main_context_wait() will be removed in a future release.  "
-                      "If you see this message, please file a bug immediately.");
-          warned = TRUE;
-        }
-    }
 
   loop_internal_waiter = (mutex == &context->mutex);
   
@@ -3361,10 +3334,10 @@ g_main_context_wait (GMainContext *context,
       context->waiters = g_slist_append (context->waiters, &waiter);
       
       if (!loop_internal_waiter)
-	UNLOCK_CONTEXT (context);
+        UNLOCK_CONTEXT (context);
       g_cond_wait (cond, mutex);
-      if (!loop_internal_waiter)      
-	LOCK_CONTEXT (context);
+      if (!loop_internal_waiter)
+        LOCK_CONTEXT (context);
 
       context->waiters = g_slist_remove (context->waiters, &waiter);
     }
@@ -3385,6 +3358,45 @@ g_main_context_wait (GMainContext *context,
     UNLOCK_CONTEXT (context); 
   
   return result;
+}
+
+/**
+ * g_main_context_wait:
+ * @context: a #GMainContext
+ * @cond: a condition variable
+ * @mutex: a mutex, currently held
+ *
+ * Tries to become the owner of the specified context,
+ * as with g_main_context_acquire(). But if another thread
+ * is the owner, atomically drop @mutex and wait on @cond until
+ * that owner releases ownership or until @cond is signaled, then
+ * try again (once) to become the owner.
+ *
+ * Returns: %TRUE if the operation succeeded, and
+ *   this thread is now the owner of @context.
+ * Deprecated: 2.58: Use g_main_context_is_owner() and separate locking instead.
+ */
+gboolean
+g_main_context_wait (GMainContext *context,
+                     GCond        *cond,
+                     GMutex       *mutex)
+{
+  if (context == NULL)
+    context = g_main_context_default ();
+
+  if (G_UNLIKELY (cond != &context->cond || mutex != &context->mutex))
+    {
+      static gboolean warned;
+
+      if (!warned)
+        {
+          g_critical ("WARNING!! g_main_context_wait() will be removed in a future release.  "
+                      "If you see this message, please file a bug immediately.");
+          warned = TRUE;
+        }
+    }
+
+  return g_main_context_wait_internal (context, cond, mutex);
 }
 
 /**
@@ -3416,10 +3428,6 @@ g_main_context_prepare (GMainContext *context,
     context = g_main_context_default ();
   
   LOCK_CONTEXT (context);
-
-  /* context->need_wakeup is protected by LOCK_CONTEXT/UNLOCK_CONTEXT,
-   * so need not set it yet.
-   */
 
   context->time_is_fresh = FALSE;
 
@@ -3546,8 +3554,6 @@ g_main_context_prepare (GMainContext *context,
 	}
     }
   g_source_iter_clear (&iter);
-  /* See conditional_wakeup() where this is used */
-  context->need_wakeup = (n_ready == 0);
 
   TRACE (GLIB_MAIN_CONTEXT_AFTER_PREPARE (context, current_priority, n_ready));
 
@@ -3682,12 +3688,6 @@ g_main_context_check (GMainContext *context,
 
   TRACE (GLIB_MAIN_CONTEXT_BEFORE_CHECK (context, max_priority, fds, n_fds));
 
-  /* We don't need to wakeup during check or dispatch, because
-   * all sources will be re-evaluated during prepare/query.
-   */
-  context->need_wakeup = FALSE;
-
-  /* And if we have a wakeup pending, acknowledge it */
   for (i = 0; i < n_fds; i++)
     {
       if (fds[i].fd == context->wake_up_rec.fd)
@@ -3876,9 +3876,9 @@ g_main_context_iterate (GMainContext *context,
       if (!block)
 	return FALSE;
 
-      got_ownership = g_main_context_wait (context,
-                                           &context->cond,
-                                           &context->mutex);
+      got_ownership = g_main_context_wait_internal (context,
+                                                    &context->cond,
+                                                    &context->mutex);
 
       if (!got_ownership)
 	return FALSE;
@@ -4085,9 +4085,9 @@ g_main_loop_run (GMainLoop *loop)
 	loop->is_running = TRUE;
 
       while (loop->is_running && !got_ownership)
-	got_ownership = g_main_context_wait (loop->context,
-                                             &loop->context->cond,
-                                             &loop->context->mutex);
+        got_ownership = g_main_context_wait_internal (loop->context,
+                                                      &loop->context->cond,
+                                                      &loop->context->mutex);
       
       if (!loop->is_running)
 	{
@@ -4347,7 +4347,7 @@ g_main_context_add_poll_unlocked (GMainContext *context,
   context->poll_changed = TRUE;
 
   /* Now wake up the main loop if it is waiting in the poll() */
-  conditional_wakeup (context);
+  g_wakeup_signal (context->wakeup);
 }
 
 /**
@@ -4407,7 +4407,7 @@ g_main_context_remove_poll_unlocked (GMainContext *context,
   context->poll_changed = TRUE;
 
   /* Now wake up the main loop if it is waiting in the poll() */
-  conditional_wakeup (context);
+  g_wakeup_signal (context->wakeup);
 }
 
 /**
@@ -4659,7 +4659,7 @@ g_timeout_dispatch (GSource     *source,
 
   if (!callback)
     {
-      g_warning ("Timeout source dispatched without callback\n"
+      g_warning ("Timeout source dispatched without callback. "
                  "You must call g_source_set_callback().");
       return FALSE;
     }
@@ -4714,7 +4714,7 @@ g_timeout_source_new (guint interval)
  * The scheduling granularity/accuracy of this timeout source will be
  * in seconds.
  *
- * The interval given in terms of monotonic time, not wall clock time.
+ * The interval given is in terms of monotonic time, not wall clock time.
  * See g_get_monotonic_time().
  *
  * Returns: the newly-created timeout source
@@ -4768,7 +4768,7 @@ g_timeout_source_new_seconds (guint interval)
  * context. You can do these steps manually if you need greater control or to
  * use a custom main context.
  *
- * The interval given in terms of monotonic time, not wall clock time.
+ * The interval given is in terms of monotonic time, not wall clock time.
  * See g_get_monotonic_time().
  * 
  * Returns: the ID (greater than 0) of the event source.
@@ -5205,7 +5205,7 @@ g_unix_signal_watch_dispatch (GSource    *source,
 
   if (!callback)
     {
-      g_warning ("Unix signal source dispatched without callback\n"
+      g_warning ("Unix signal source dispatched without callback. "
 		 "You must call g_source_set_callback().");
       return FALSE;
     }
@@ -5251,6 +5251,68 @@ unref_unix_signal_handler_unlocked (int signum)
     }
 }
 
+/* Return a const string to avoid allocations. We lose precision in the case the
+ * @signum is unrecognised, but that’ll do. */
+static const gchar *
+signum_to_string (int signum)
+{
+  /* See `man 0P signal.h` */
+#define SIGNAL(s) \
+    case (s): \
+      return ("GUnixSignalSource: " #s);
+  switch (signum)
+    {
+    /* These signals are guaranteed to exist by POSIX. */
+    SIGNAL (SIGABRT)
+    SIGNAL (SIGFPE)
+    SIGNAL (SIGILL)
+    SIGNAL (SIGINT)
+    SIGNAL (SIGSEGV)
+    SIGNAL (SIGTERM)
+    /* Frustratingly, these are not, and hence for brevity the list is
+     * incomplete. */
+#ifdef SIGALRM
+    SIGNAL (SIGALRM)
+#endif
+#ifdef SIGCHLD
+    SIGNAL (SIGCHLD)
+#endif
+#ifdef SIGHUP
+    SIGNAL (SIGHUP)
+#endif
+#ifdef SIGKILL
+    SIGNAL (SIGKILL)
+#endif
+#ifdef SIGPIPE
+    SIGNAL (SIGPIPE)
+#endif
+#ifdef SIGQUIT
+    SIGNAL (SIGQUIT)
+#endif
+#ifdef SIGSTOP
+    SIGNAL (SIGSTOP)
+#endif
+#ifdef SIGUSR1
+    SIGNAL (SIGUSR1)
+#endif
+#ifdef SIGUSR2
+    SIGNAL (SIGUSR2)
+#endif
+#ifdef SIGPOLL
+    SIGNAL (SIGPOLL)
+#endif
+#ifdef SIGPROF
+    SIGNAL (SIGPROF)
+#endif
+#ifdef SIGTRAP
+    SIGNAL (SIGTRAP)
+#endif
+    default:
+      return "GUnixSignalSource: Unrecognized signal";
+    }
+#undef SIGNAL
+}
+
 GSource *
 _g_main_create_unix_signal_watch (int signum)
 {
@@ -5262,6 +5324,9 @@ _g_main_create_unix_signal_watch (int signum)
 
   unix_signal_source->signum = signum;
   unix_signal_source->pending = FALSE;
+
+  /* Set a default name on the source, just in case the caller does not. */
+  g_source_set_name (source, signum_to_string (signum));
 
   G_LOCK (unix_signal_lock);
   ref_unix_signal_handler_unlocked (signum);
@@ -5308,7 +5373,7 @@ g_child_watch_dispatch (GSource    *source,
 
   if (!callback)
     {
-      g_warning ("Child watch source dispatched without callback\n"
+      g_warning ("Child watch source dispatched without callback. "
 		 "You must call g_source_set_callback().");
       return FALSE;
     }
@@ -5390,6 +5455,9 @@ g_child_watch_source_new (GPid pid)
 
   source = g_source_new (&g_child_watch_funcs, sizeof (GChildWatchSource));
   child_watch_source = (GChildWatchSource *)source;
+
+  /* Set a default name on the source, just in case the caller does not. */
+  g_source_set_name (source, "GChildWatchSource");
 
   child_watch_source->pid = pid;
 
@@ -5544,7 +5612,7 @@ g_idle_dispatch (GSource    *source,
 
   if (!callback)
     {
-      g_warning ("Idle source dispatched without callback\n"
+      g_warning ("Idle source dispatched without callback. "
 		 "You must call g_source_set_callback().");
       return FALSE;
     }
@@ -5576,6 +5644,9 @@ g_idle_source_new (void)
 
   source = g_source_new (&g_idle_funcs, sizeof (GSource));
   g_source_set_priority (source, G_PRIORITY_DEFAULT_IDLE);
+
+  /* Set a default name on the source, just in case the caller does not. */
+  g_source_set_name (source, "GIdleSource");
 
   return source;
 }

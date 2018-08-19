@@ -405,8 +405,8 @@ g_content_type_get_description (const gchar *type)
  *
  * Gets the mime type for the content type, if one is registered.
  *
- * Returns: (nullable): the registered mime type for the given @type,
- *     or %NULL if unknown.
+ * Returns: (nullable) (transfer full): the registered mime type for the
+ *     given @type, or %NULL if unknown; free with g_free().
  */
 char *
 g_content_type_get_mime_type (const char *type)
@@ -1052,7 +1052,7 @@ read_tree_magic_from_directory (const gchar *prefix)
                 }
               else
                 {
-                  g_warning ("%s: header corrupt; skipping\n", filename);
+                  g_warning ("%s: header corrupt; skipping", filename);
                   break;
                 }
             }
@@ -1060,7 +1060,7 @@ read_tree_magic_from_directory (const gchar *prefix)
           g_strfreev (lines);
         }
       else
-        g_warning ("%s: header not found, skipping\n", filename);
+        g_warning ("%s: header not found, skipping", filename);
 
       g_free (text);
     }

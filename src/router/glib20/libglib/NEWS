@@ -1,3 +1,298 @@
+Overview of changes in GLib 2.57.2
+==================================
+
+* Require pcre 8.31
+* Require meson 0.47.0
+
+* Bugs fixed:
+ 742456 Add g_steal_pointer() convenience function to mark ownership...
+ 795569 MinGW CI: fix tests
+ 796341 gmem.h: Use typeof() in g_steal_pointer() macro 
+ #1013 Support for per-session overrides
+ #1360 glib-mkenums breaks if option specified but no nick
+ #1175 Add names and tags to various GSources and GTasks constructed in GLib
+ #903 g_main_context_wait() not deprecated in API, but emits a g_critical()...
+ #786 Fix memory leaks in libgio tests
+ #927 gio/gresource.c:do_lookup check for terminating "/"
+ #976 Document difference between g_assert() and g_assert_*()...
+ #1447 glib 2.57.1: test_month_names: assertion failed...
+
+* Translation updates:
+ Friulian
+ German
+ Romanian
+
+
+Overview of changes in GLib 2.57.1
+==================================
+
+* New api:
+ - g_hash_table_steal_extended
+ - G_GNUC_NO_INLINE 
+
+* Bug fixes:
+ 668132 Use libmount and expose mount options on GUnixMountEntry type
+ 736741 Update private copy of valgrind.h
+ 748620 g_regex_* utf-8 validity requirements are not stated clearly
+ 784995 meson: some Windows improvements
+ 788771 NODELETE missing when built with meson
+ 788773 meson does not install correct pc files
+ 789968 Add g_autoptr() support for GTypeClass
+ 794325 Various fixes to compile on OSX
+ 795152 gdesktopappinfo: Mark GDesktopAppInfo constructors as nullable.
+ 795165 Add g_date_time_get_timezone() and g_time_zone_get_identifier()
+ 795180 Investigate performance impacts of recent compiler features on hot functions
+ 795302 Add g_hash_table_steal_extended() API
+ 795376 Add g_ptr_array_steal()
+ 795544 Add binary/textfile/zero size detection
+ 795569 MinGW CI: fix tests
+ 795636 gitlab-ci: generate test coverage reports
+ 795735 Fix comparison for GVariant property values
+ 795802 gdbus-codegen doesn't accept --output-directory with --output for --body and --header
+ 795849 gwin32: Fix detection of MinGW32 vs MinGW-w64
+ 795876 meson: Fix checks for posix_memalign and stpcpy
+ 795960 g_format_size_for_display() is deprecated since 2.30
+ 796085 Meson: Many apps breaks on non-glibc because of missing libintl
+ 796138 Fix typo in g_file_info_set_attribute docs
+ 796139 Add g_autoptr() support for GParamSpec
+ 796164 Fix atomic ops check in meson.build
+ 796186 Typo: "instead off" in gsignal.c
+ 796213 Meson: Fail to build on macosx
+ 796220 meson: do not run atomic test with msvc
+ 796264 Add android CI
+ 796325 meson: Add exception for atomic ops test for Android
+ 796328 gengiotypefuncs.py: Read and parse files in binary mode 
+
+* Translation updates:
+ Czech
+ Indonesian
+
+
+Overview of changes in GLib 2.57.0
+==================================
+
+* Bug fixes:
+ 739424	Rewrite kqueue GFileMonitor backend to drop threading
+ 751826	Use g_get_language_names() for other locale categories
+ 788773	meson does not install correct pc files
+ 793400	g_application_id_is_valid() not strict enough
+ 793578	gdatetime tests depend on Japanese translation of month names
+ 793645	test_month_names: Updated translations needed for el_GR, hr_HR, ru_RU
+ 793729	gitlab-ci: Add Windows MinGW support
+ 793994	GUnixVolumeMonitor doesn’t show user mounts when run as root
+ 794170	gdbus: hexdecode() and hexencode() do not return/use decoded/encoded s...
+ 794194	gobject_gdb.py: 'address' is a property of gdb.Value not a function
+ 794207	leak: g_socket_listener_add_inet_port increases ref-count on socket-li...
+ 794284	Support whitespace stripping for JSON resources
+ 794285	glib-compile-resources should not noisily g_printerr() when xmllint is...
+ 794473	Remove duplicated option in gio.xml
+ 794506	glib-mkenums: Enters infinite loop if using typedef enum SomeIdentifier
+ 794528	Fix segfault caused by use-after-free in GPollFileMonitor
+ 794555	glib meson build fails on MinGW due to misdetected functions
+ 794557	gtkdoc-scangobj fails on gio in meson builds
+ 794606	glib-2.56.0 fails to compile when res_nquery is not available
+ 794635	gmacros: Don't define bogus __has_* macros
+ 794636	G_HAVE_GNUC_VISIBILITY is defined in meson MinGW builds
+ 794686	Date (except weekday) displayed in English
+ 794732	Fix various compiler warnings 
+
+* Translation updates
+ Hungarian
+ Slowak
+ Slovenian
+ Spanish
+
+
+Overview of changes in GLib 2.56.0
+==================================
+
+* Bugs fixed:
+ 672777 Error in gdummyfile.c
+ 732184 GObject: warn on use of deprecated properties
+ 733338 Don't segfault in GNetworkMonitor when IPv6 support is unavailable
+ 742124 g_data_input_stream_read_upto()'s documentation should say that the...
+ 749206 GDateTime: month names in the genitive case
+ 768507 simplify qguark functions
+ 791457 Slow transfer rate when writing to smb/cifs
+ 793272 fix GCC 8.0's -Wcast-function-type warnings
+ 793300 g_hash_table_add() return value change in 2.40 not mentioned in docs
+ 793399 Fix some cases of -Wduplicated-branches
+ 793555 -Wimplicit-function-declaration when using g_abort()
+ 793565 GLib does not compile on macOS 10.13 due to .m file naming
+ 793597 gdbus-tool: Make --dest optional for emit again
+ 793635 Enable CI for GLib
+ 793880 gnetworkmonitor: Minor fixes based on code review 
+ 793578 gdatetime tests depend on Japanese translation of month names 
+ 794180 test_month_names fails unless installed
+
+* Translation updates:
+ Brazilian Portuguese
+ British English
+ Catalan
+ Czech
+ Danish
+ Dutch
+ Finnish
+ French
+ Friulian
+ Galician
+ German
+ Hungarian
+ Indonesian
+ Italian
+ Kazakh
+ Korean
+ Lithuanian
+ Polish
+ Scottish Gaelic
+ Serbian
+ Serbian Latin
+ Spanish
+ Swedish
+ Turkish
+
+
+Overview of changes in GLib 2.55.2
+==================================
+
+* GFile now has API to get the path without copying
+
+* A network monitor implementation for Windows has been added
+
+* Bugs fixed:
+ 520116 g_utf8_strlcpy()
+ 584284 g_data_input_stream_read_until_async behaves confusingly different f...
+ 605700 request for g_key_file_get_locale()
+ 658713 ngettext (plural forms) needed for "Message has %d file descriptors ...
+ 685442 windows GNetworkMonitor implementation
+ 723003 gsettings list-recursively reports some keys multiple times
+ 749583 GSequence performance improvements
+ 757284 Move G_DIR_SEPARATOR* and G_SEARCHPATH_SEPARATOR* into glibconfig.h
+ 760324 [PATCH] gkeyfile.c: find_file_in_data_dirs fails to return the path ...
+ 761102 Increase performance for main loop
+ 767976 GFile: Add g_file_peek_path()
+ 770335 gdbus-codegen: generated getter for 'ao' property is actually (trans...
+ 772989 Totem allows invalid urls that might cause segfault that's irrecover...
+ 790698 convert: test failure on NetBSD
+ 791015 gdbus-codegen: Split generation of header and source
+ 791622 Disable strict-aliasing in GLib
+ 792050 GResolver is not thread-safe
+ 792217 Deprecate GTlsClientConnection:use-ssl3
+ 792338 meson, autotools: figure out if mem barrier is needed for arm64 host...
+ 792351 gbookmarkfile: check length before dereferencing groups
+ 792364 gdbus-threading test method-calls-in-thread: assertion failed (elaps...
+ 792370 GNetworkMonitor: Rename "network-changed" signal argument
+ 792410 GDateTime new_from_iso8601 test broken in 2.55 on i386
+ 792432 flush stdout after logging (debug) messages
+ 792455 Improve docs of GSequence
+ 792499 deadlock on startup with TCP session bus
+ 792516 gconvert: More consistent handling of embedded NUL bytes
+ 792777 g_notification_set_urgent() unconditionally sets G_NOTIFICATION_PRIO...
+ 792780 gbytes should reference toplevel bytes when slicing with g_bytes_new...
+ 792856 off64_t isn't a part of C standard
+ 792862 gpollableoutputstream: document side effects of WOULD_BLOCK on D/TLS
+ 792903 Clarification between g_try_.. functions and their counterparts
+ 793006 High CPU load for GUnixMountsMonitor consumers
+ 793026 possible mem leak in g_mutex_impl_new
+ 793074 g_message() does not get -Wformat warnings when compiling with G_LOG...
+
+* Translation updates:
+ Hungarian
+ Indonesian
+ Polish
+
+
+Overview of changes in GLib 2.55.1
+==================================
+
+* Build:
+ - The --enable-rebuilds configure option has been removed
+ - The --with-charsetalias-dir configure option has been added
+
+* GList and GSList now have autoptr support
+
+* The gsettings list-schemas command has gained a --print-paths option
+
+* Bugs fixed:
+ 346816 Refactor LIBDIR in libcharset Makefile
+ 508976 Does g_slist_sort preserve the order of equal elements?
+ 562334 2.18.2 break libglade on Solaris
+ 662802 systemtap multiarch issue
+ 684282 Add support static link of GIO modules
+ 692034 Install an invalidation notifier for GClosure in g_source_set_closure()
+ 694723 Get rid of REBUILD stuff in configure.ac
+ 697715 floating point precision problem in check test gst/gstvalue
+ 701156 testgobject assumes that the priv data follows the instance data
+ 720380 Segfault when using GDBusMenuModel on a peer-to-peer connection
+ 724383 glib: document restrictions on various foreach() functions
+ 724412 GLib mappedfile.c test uses g_get_user_runtime_dir instead of a tempo...
+ 724794 Fix "on on" typo in tap-driver.sh comment
+ 732003 gnode: Eliminate implicit signed-to-unsigned integer conversion
+ 734479 G_VALUE_HOLDS etc. cause -Wcast-qual warnings for a const GValue *
+ 737677 gmain: Make GSourceCallback thread-safe
+ 741167 gdbus-codegen fix for boxed out parameters
+ 748534 gtest: if a subprocess assertion fails, print its stdout and stderr
+ 749527 add weak pointer helpers similar to g_set_object
+ 749652 compilation errors with gcc 4.8
+ 754634 Update the list of Linux filesystem magic numbers used in get_fs_type
+ 756011 Fix up annotations for GBookmarkFile
+ 761102 Increase performance for main loop
+ 773980 GIR scanner doesn't interpret array type properly
+ 776147 gio/glocalfilemonitor.c doesn't handle case G_FILE_MONITOR_EVENT_MOVE...
+ 776195 -z nodelete configure check does not work on Solaris
+ 777075 Potential leak of memory pointed to by 'list'
+ 779413 Translated X-Geoclue-Reason string not used in a dialog window
+ 780309 gio/tests/appinfo build fails: gdesktopappinfo.c skipped on OS X
+ 780893 Reword licensing header for gdbus-codegen
+ 782057 Unit tests fail in run-assert-msg-test.sh
+ 784995 meson: some Windows improvements
+ 786796 gtk-doc build fails with meson
+ 788806 Impossible to build static glib via meson
+ 788936 Show mime type icons on OS X
+ 790416 g_date_time_format returns empty string on %r with German locale
+ 790588 Generated file missing from .gitignore
+ 790697 g_object_ref API should propagate parameter type
+ 790785 glib-tap: Add missing mkdir for .test generation rule
+ 790829 glib-genmarshal --body must not generate alias implementations
+ 790830 Mismatch between number of interface methods in text and example code
+ 790837 Meson: missing many configure options
+ 790839 GApplication command line: lacks parameter_string, summary and descri...
+ 790877 fix non-portable check in G_GNUC_CHECK_VERSION
+ 790894 Do not connect to the session bus when trying GProxyResolverPortal io...
+ 790896 docs/reference/README has broken link to http://www.gtk.org/rdp/
+ 790914 gdesktopappinfo: Downgrade a warning to a debug message
+ 790934 gtester doesn't handle skipped tests
+ 790948 GSourceFuncs documentation is confusing: when will dispatch be called?
+ 791036 Guard for g_output_stream_vprintf makes no sense
+ 791128 C runtime complains about bad arguments on each g_log() call
+ 791221 po/README.translators has no useful information in 2017
+ 791235 Fix gschema.dtd regarding flags.
+ 791267 Make gschema.dtd usable.
+ 791296 gtester-report: fix range usage when running as python3 app
+ 791318 GBytes: Improve documentation
+ 791325 Gio handling of thumbnail:: attribute namespace causes inconsistent b...
+ 791334 gbinding.c:898: The target object of type GNetworkAddress has no prop...
+ 791337 Crash opening URIs with g_desktop_app_info_launch_uris_with_spawn()
+ 791342 Add autoptr support for lists
+ 791460 meson: fixes for OSX
+ 791532 Implicit declaration of function ‘memcmp’ in gtestutils.h
+ 791622 Disable strict-aliasing in GLib
+ 791720 Criticals in gio/xdp-dbus.h leading to crash under flatpak
+ 791744 gmenumodel test sometimes fails: assertion failed (items_changed_coun...
+ 791745 not immediately clear whether g_test_slow() is in effect by default
+ 791906 GSocketListenerClass.event has wrong signature
+ 792064 gsettings list-schemas --print-paths
+ 792098 Binding: bind_property’s @notify func is nullable
+ 792099 gdbus-test-codegen: Cast to void* to printf "%p"
+ 792129 meson: skip optional linux/unix deps that default to true when buildi...
+ 792322 GLib-GIO:ERROR:gschema-compile.c:51:test_schema: child process (/gsch...
+ 792324 gkeyfile: Document need for KEEP_TRANSLATIONS with get_locale_string()
+
+* Translation updates
+ Hebrew
+ Indonesian
+
+
 Overview of changes in GLib 2.55.0
 ==================================
 

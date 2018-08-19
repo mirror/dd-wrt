@@ -50,6 +50,12 @@
  * GLib also defines macros for the limits of some of the standard
  * integer and floating point types, as well as macros for suitable
  * printf() formats for these types.
+ *
+ * Note that depending on the platform and build configuration, the format
+ * macros might not be compatible with the system provided printf() function,
+ * because GLib might use a different printf() implementation internally.
+ * The format macros will always work with GLib API (like g_print()), and with
+ * any C99 compatible printf() implementation.
  */
 
 /**
@@ -617,7 +623,9 @@
  * goffset:
  *
  * A signed integer type that is used for file offsets,
- * corresponding to the C99 type off64_t.
+ * corresponding to the POSIX type `off_t` as if compiling with
+ * `_FILE_OFFSET_BITS` set to 64. #goffset is always 64 bits wide, even on
+ * 32-bit architectures.
  * Values of this type can range from #G_MINOFFSET to
  * #G_MAXOFFSET.
  *
@@ -758,7 +766,7 @@
  *   i = (int) (long) p;
  * ]|
  * The GLib macros GPOINTER_TO_INT(), GINT_TO_POINTER(), etc. take care
- * to do the right thing on the every platform.
+ * to do the right thing on every platform.
  *
  * Warning: You may not store pointers in integers. This is not
  * portable in any way, shape or form. These macros only allow storing
@@ -1781,6 +1789,26 @@
  */
 
 /**
+ * G_APPROX_VALUE:
+ * @a: a numeric value
+ * @b: a numeric value
+ * @epsilon: a numeric value that expresses the tolerance between @a and @b
+ *
+ * Evaluates to a truth value if the absolute difference between @a and @b is
+ * smaller than @epsilon, and to a false value otherwise.
+ *
+ * For example,
+ * - `G_APPROX_VALUE (5, 6, 2)` evaluates to true
+ * - `G_APPROX_VALUE (3.14, 3.15, 0.001)` evaluates to false
+ * - `G_APPROX_VALUE (n, 0.f, FLT_EPSILON)` evaluates to true if `n` is within
+ *   the single precision floating point epsilon from zero
+ *
+ * Returns: %TRUE if the two values are within the desired range
+ *
+ * Since: 2.58
+ */
+
+/**
  * G_STRUCT_MEMBER:
  * @member_type: the type of the struct field
  * @struct_p: a pointer to a struct
@@ -2044,6 +2072,25 @@
  * Place the attribute after the declaration, just before the semicolon.
  *
  * See the GNU C documentation for more details.
+ */
+
+/**
+ * G_GNUC_NO_INLINE:
+ *
+ * Expands to the GNU C `noinline` function attribute if the compiler is gcc.
+ * If the compiler is not gcc, this macro expands to nothing.
+ *
+ * Declaring a function as `noinline` prevents the function from being
+ * considered for inlining.
+ *
+ * The attribute may be placed before the declaration, right before the
+ * `static` keyword.
+ *
+ * See the
+ * [GNU C documentation](https://gcc.gnu.org/onlinedocs/gcc/Common-Function-Attributes.html#index-noinline-function-attribute)
+ * for more details.
+ *
+ * Since: 2.58
  */
 
 /**
@@ -2597,14 +2644,70 @@
  *
  *   membuf = g_malloc (8192);
  *
- *   /<!-- -->* Some computation on membuf *<!-- -->/
+ *   // Some computation on membuf
  *
- *   /<!-- -->* membuf will be automatically freed here *<!-- -->/
+ *   // membuf will be automatically freed here
  *   return TRUE;
  * }
  * ]|
  *
  * Since: 2.44
+ */
+
+/**
+ * g_autolist:
+ * @TypeName: a supported variable type
+ *
+ * Helper to declare a list variable with automatic deep cleanup.
+ *
+ * The list is deeply freed, in a way appropriate to the specified type, when the
+ * variable goes out of scope.  The type must support this.
+ *
+ * This feature is only supported on GCC and clang.  This macro is not
+ * defined on other compilers and should not be used in programs that
+ * are intended to be portable to those compilers.
+ *
+ * This is meant to be used to declare lists of a type with a cleanup
+ * function.  The type of the variable is a GList *.  You
+ * must not add your own '*'.
+ *
+ * This macro can be used to avoid having to do explicit cleanups of
+ * local variables when exiting functions.  It often vastly simplifies
+ * handling of error conditions, removing the need for various tricks
+ * such as 'goto out' or repeating of cleanup code.  It is also helpful
+ * for non-error cases.
+ *
+ * See also g_autoslist(), g_autoptr() and g_steal_pointer().
+ *
+ * Since: 2.56
+ */
+
+/**
+ * g_autoslist:
+ * @TypeName: a supported variable type
+ *
+ * Helper to declare a singly linked list variable with automatic deep cleanup.
+ *
+ * The list is deeply freed, in a way appropriate to the specified type, when the
+ * variable goes out of scope.  The type must support this.
+ *
+ * This feature is only supported on GCC and clang.  This macro is not
+ * defined on other compilers and should not be used in programs that
+ * are intended to be portable to those compilers.
+ *
+ * This is meant to be used to declare lists of a type with a cleanup
+ * function.  The type of the variable is a GSList *.  You
+ * must not add your own '*'.
+ *
+ * This macro can be used to avoid having to do explicit cleanups of
+ * local variables when exiting functions.  It often vastly simplifies
+ * handling of error conditions, removing the need for various tricks
+ * such as 'goto out' or repeating of cleanup code.  It is also helpful
+ * for non-error cases.
+ *
+ * See also g_autolist(), g_autoptr() and g_steal_pointer().
+ *
+ * Since: 2.56
  */
 
 /**
