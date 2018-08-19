@@ -797,8 +797,13 @@ init_subshell_precmd (char *precmd, size_t buff_size)
     {
     case SHELL_BASH:
         g_snprintf (precmd, buff_size,
-                    " PROMPT_COMMAND=${PROMPT_COMMAND:+$PROMPT_COMMAND\n}'pwd>&%d;kill -STOP $$'\n"
-                    "PS1='\\u@\\h:\\w\\$ '\n", subshell_pipe[WRITE]);
+               " if [ -n \"${PROMPT_COMMAND:-}\" ]; then\n"
+                    "   PROMPT_COMMAND_MC_SAVE=\"$PROMPT_COMMAND\"\n"
+                    "   PROMPT_COMMAND='eval -- \"$PROMPT_COMMAND_MC_SAVE\"; pwd >&%d; kill -STOP $$'\n"
+                    " else\n"
+                    "   PROMPT_COMMAND='pwd >&%d; kill -STOP $$'\n"
+                    " fi\n",
+                    subshell_pipe[WRITE], subshell_pipe[WRITE]);
         break;
 
     case SHELL_ASH_BUSYBOX:
