@@ -15,16 +15,21 @@ libunwind-configure:
 	sed -i 's/need_relink=yes/need_relink=no/g' $(TOP)/libunwind/libtool
 
 libunwind: 
+ifeq ($(ARCH),i386)
 	$(MAKE) -C libunwind
+endif
 
 libunwind-clean: 
+ifeq ($(ARCH),i386)
 	if test -e "libunwind/Makefile"; then $(MAKE) -C libunwind clean ; fi
+endif
 
 libunwind-install: 
+ifeq ($(ARCH),i386)
 	$(MAKE) -C libunwind install DESTDIR=$(INSTALLDIR)/libunwind
 	rm -rf $(INSTALLDIR)/libunwind/usr/man
 	rm -rf $(INSTALLDIR)/libunwind/usr/include
 	rm -f $(INSTALLDIR)/libunwind/usr/lib/*.a
 	rm -f $(INSTALLDIR)/libunwind/usr/lib/*.la
 	rm -rf $(INSTALLDIR)/libunwind/usr/lib/pkgconfig
-	
+endif	
