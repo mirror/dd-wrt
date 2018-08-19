@@ -49,14 +49,7 @@
 # define ptrace_peeksiginfo_args XXX_ptrace_peeksiginfo_args
 #endif
 
-#if POWERPC
-#include <linux/types.h>
-#define __ASSEMBLY__
-#endif
 #include <linux/ptrace.h>
-#if POWERPC
-#undef __ASSEMBLY__
-#endif
 
 #ifdef HAVE_STRUCT_IA64_FPREG
 # undef ia64_fpreg
