@@ -24,6 +24,7 @@
 #endif
 
 #include <glib/gtypes.h>
+#include "gatomic.h"
 
 G_BEGIN_DECLS
 
