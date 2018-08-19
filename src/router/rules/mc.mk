@@ -23,17 +23,17 @@ mc-configure: ncurses
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.la
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
-	cd mc2/slang && ./configure --host=$(ARCH)-uclibc-linux CFLAGS="$(COPTS)  $(MIPS16_OPT) -I$(TOP)/zlib -L$(TOP)/zlib -L$(INSTALLDIR)/util-linux/usr/lib" --enable-shared \
+	cd mc/slang && ./configure --host=$(ARCH)-uclibc-linux CFLAGS="$(COPTS)  $(MIPS16_OPT) -I$(TOP)/zlib -L$(TOP)/zlib -L$(INSTALLDIR)/util-linux/usr/lib" --enable-shared \
 		--enable-static \
 		--without-png \
 		--libdir=/usr/lib \
 		--enable-debug=no 
-	make -C mc2/slang clean
-	make -C mc2/slang
+	make -C mc/slang clean
+	make -C mc/slang
 
-	cd mc2 && ./configure --host=$(ARCH)-uclibc-linux AWK="awk" \
-		CFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF -DSTAT_STATVFS -I$(TOP)/mc2/slang/src -I$(TOP)/ncurses/include" \
-		LDFLAGS="-L$(TOP)/ncurses/lib -L$(TOP)/mc2/slang/src/elf$(ARCH)objs -lncurses -L$(TOP)/mc2/intl" \
+	cd mc && ./configure --host=$(ARCH)-uclibc-linux AWK="awk" \
+		CFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF -DSTAT_STATVFS -I$(TOP)/mc/slang/src -I$(TOP)/ncurses/include" \
+		LDFLAGS="-L$(TOP)/ncurses/lib -L$(TOP)/mc/slang/src/elf$(ARCH)objs -lncurses -L$(TOP)/mc/intl" \
 		GLIB_CFLAGS="-I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -L$(INSTALLDIR)/util-linux/usr/lib" \
 		GLIB_LIBS="-L$(TOP)/glib20/libglib/glib/.libs -lglib-2.0" \
 		GMODULE_CFLAGS="-pthread -I$(TOP)/glib20/libglib/gmodule -I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib" \
@@ -52,8 +52,8 @@ mc-configure: ncurses
 	--without-efence \
 	--without-terminfo \
 	--without-termcap \
-	--with-slang-includes=$(TOP)/mc2/slang/src \
-	--with-slang-libs=$(TOP)/mc2/slang/src/elf$(ARCH)objs \
+	--with-slang-includes=$(TOP)/mc/slang/src \
+	--with-slang-libs=$(TOP)/mc/slang/src/elf$(ARCH)objs \
 	--without-ext2undel \
 	--without-catgets \
 	--without-x \
@@ -92,8 +92,8 @@ mc: ncurses
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.la
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
-	$(MAKE) -j 4 -C mc2/slang
-	$(MAKE) -j 4 -C mc2 LDFLAGS="-L$(TOP)/ncurses/lib -L$(TOP)/mc2/slang/src/elf$(ARCH)objs -lncurses -L$(TOP)/mc2/intl"
+	$(MAKE) -j 4 -C mc/slang
+	$(MAKE) -j 4 -C mc LDFLAGS="-L$(TOP)/ncurses/lib -L$(TOP)/mc/slang/src/elf$(ARCH)objs -lncurses -L$(TOP)/mc/intl"
 	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
 	rm -rf $(INSTALLDIR)/util-linux/usr/bin
 	rm -rf $(INSTALLDIR)/util-linux/bin
@@ -129,11 +129,11 @@ endif
 
 
 mc-install:
-	install -D mc2/slang/src/elf$(ARCH)objs/libslang.so.2 $(INSTALLDIR)/mc/usr/lib/libslang.so.2
-	if test -e "mc2/Makefile"; then $(MAKE) -C mc2 install DESTDIR=$(INSTALLDIR)/mc; fi
+	install -D mc/slang/src/elf$(ARCH)objs/libslang.so.2 $(INSTALLDIR)/mc/usr/lib/libslang.so.2
+	if test -e "mc/Makefile"; then $(MAKE) -C mc install DESTDIR=$(INSTALLDIR)/mc; fi
 	rm -rf $(INSTALLDIR)/mc/usr/share/man
 
 
 mc-clean:
-	if test -e "mc2/slang/Makefile"; then $(MAKE) -C mc2/slang clean; fi
-	if test -e "mc2/Makefile"; then $(MAKE) -C mc2 clean; fi
+	if test -e "mc/slang/Makefile"; then $(MAKE) -C mc/slang clean; fi
+	if test -e "mc/Makefile"; then $(MAKE) -C mc clean; fi
