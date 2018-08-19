@@ -11,6 +11,8 @@ libunwind-configure:
 		CC="$(CC)" \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl -DNEED_PRINTF -D_GNU_SOURCE" \
 		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl"
+	sed -i 's/need_relink=yes/need_relink=no/g' $(TOP)/libunwind/config/ltmain.sh
+	sed -i 's/need_relink=yes/need_relink=no/g' $(TOP)/libunwind/libtool
 
 libunwind: 
 	$(MAKE) -C libunwind
