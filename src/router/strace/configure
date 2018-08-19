@@ -14835,7 +14835,7 @@ if test "x$ac_cv_lib_unwind_backtrace" = xyes; then :
 	     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for unw_create_addr_space in libunwind-generic" >&5
 $as_echo_n "checking for unw_create_addr_space in libunwind-generic... " >&6; }
 	     saved_LIBS="$LIBS"
-	     LIBS="-lunwind-generic $libunwind_LIBS $LIBS"
+	     LIBS="$libunwind_LIBS $LIBS"
 
 	     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -14852,7 +14852,7 @@ _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-		libunwind_LIBS="-lunwind-generic $libunwind_LIBS"
+		libunwind_LIBS="$libunwind_LIBS"
 
 		{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for _UPT_create in -lunwind-ptrace" >&5
 $as_echo_n "checking for _UPT_create in -lunwind-ptrace... " >&6; }
