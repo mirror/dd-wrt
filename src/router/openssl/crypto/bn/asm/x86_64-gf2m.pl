@@ -54,9 +54,7 @@ $code.=<<___;
 .type	_mul_1x1,\@abi-omnipotent
 .align	16
 _mul_1x1:
-.cfi_startproc
 	sub	\$128+8,%rsp
-.cfi_adjust_cfa_offset	128+8
 	mov	\$-1,$a1
 	lea	($a,$a),$i0
 	shr	\$3,$a1
@@ -162,10 +160,8 @@ $code.=<<___;
 	xor	$i1,$hi
 
 	add	\$128+8,%rsp
-.cfi_adjust_cfa_offset	-128-8
 	ret
 .Lend_mul_1x1:
-.cfi_endproc
 .size	_mul_1x1,.-_mul_1x1
 ___
 
@@ -178,10 +174,8 @@ $code.=<<___;
 .type	bn_GF2m_mul_2x2,\@abi-omnipotent
 .align	16
 bn_GF2m_mul_2x2:
-.cfi_startproc
-	mov	%rsp,%rax
-	mov	OPENSSL_ia32cap_P(%rip),%r10
-	bt	\$33,%r10
+	mov	OPENSSL_ia32cap_P(%rip),%rax
+	bt	\$33,%rax
 	jnc	.Lvanilla_mul_2x2
 
 	movq		$a1,%xmm0
@@ -216,7 +210,6 @@ $code.=<<___;
 .align	16
 .Lvanilla_mul_2x2:
 	lea	-8*17(%rsp),%rsp
-.cfi_adjust_cfa_offset	8*17
 ___
 $code.=<<___ if ($win64);
 	mov	`8*17+40`(%rsp),$b0
@@ -225,15 +218,10 @@ $code.=<<___ if ($win64);
 ___
 $code.=<<___;
 	mov	%r14,8*10(%rsp)
-.cfi_rel_offset	%r14,8*10
 	mov	%r13,8*11(%rsp)
-.cfi_rel_offset	%r13,8*11
 	mov	%r12,8*12(%rsp)
-.cfi_rel_offset	%r12,8*12
 	mov	%rbp,8*13(%rsp)
-.cfi_rel_offset	%rbp,8*13
 	mov	%rbx,8*14(%rsp)
-.cfi_rel_offset	%rbx,8*14
 .Lbody_mul_2x2:
 	mov	$rp,32(%rsp)		# save the arguments
 	mov	$a1,40(%rsp)
@@ -281,15 +269,10 @@ $code.=<<___;
 	mov	$lo,8(%rbp)
 
 	mov	8*10(%rsp),%r14
-.cfi_restore	%r14
 	mov	8*11(%rsp),%r13
-.cfi_restore	%r13
 	mov	8*12(%rsp),%r12
-.cfi_restore	%r12
 	mov	8*13(%rsp),%rbp
-.cfi_restore	%rbp
 	mov	8*14(%rsp),%rbx
-.cfi_restore	%rbx
 ___
 $code.=<<___ if ($win64);
 	mov	8*15(%rsp),%rdi
@@ -297,11 +280,8 @@ $code.=<<___ if ($win64);
 ___
 $code.=<<___;
 	lea	8*17(%rsp),%rsp
-.cfi_adjust_cfa_offset	-8*17
-.Lepilogue_mul_2x2:
 	ret
 .Lend_mul_2x2:
-.cfi_endproc
 .size	bn_GF2m_mul_2x2,.-bn_GF2m_mul_2x2
 .asciz	"GF(2^m) Multiplication for x86_64, CRYPTOGAMS by <appro\@openssl.org>"
 .align	16
@@ -332,18 +312,12 @@ se_handler:
 	pushfq
 	sub	\$64,%rsp
 
-	mov	120($context),%rax	# pull context->Rax
+	mov	152($context),%rax	# pull context->Rsp
 	mov	248($context),%rbx	# pull context->Rip
 
 	lea	.Lbody_mul_2x2(%rip),%r10
 	cmp	%r10,%rbx		# context->Rip<"prologue" label
 	jb	.Lin_prologue
-
-	mov	152($context),%rax	# pull context->Rsp
-
-	lea	.Lepilogue_mul_2x2(%rip),%r10
-	cmp	%r10,%rbx		# context->Rip>="epilogue" label
-	jae	.Lin_prologue
 
 	mov	8*10(%rax),%r14		# mimic epilogue
 	mov	8*11(%rax),%r13
@@ -361,9 +335,8 @@ se_handler:
 	mov	%r13,224($context)	# restore context->R13
 	mov	%r14,232($context)	# restore context->R14
 
-	lea	8*17(%rax),%rax
-
 .Lin_prologue:
+	lea	8*17(%rax),%rax
 	mov	%rax,152($context)	# restore context->Rsp
 
 	mov	40($disp),%rdi		# disp->ContextRecord
