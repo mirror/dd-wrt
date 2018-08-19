@@ -1150,6 +1150,7 @@ read_bytes (gint         fd,
   return TRUE;
 }
 
+#ifdef G_OS_UNIX
 static void
 test_unix_fd (void)
 {
@@ -1206,6 +1207,7 @@ test_unix_fd (void)
   close (fds[1]);
   close (fds[0]);
 }
+#endif
 
 static void
 assert_main_context_state (gint n_to_poll,
@@ -1248,7 +1250,7 @@ assert_main_context_state (gint n_to_poll,
           }
 
       if (j == n)
-        g_error ("Unable to find fd %d (index %d) with events 0x%x\n", expected_fd, i, (guint) expected_events);
+        g_error ("Unable to find fd %d (index %d) with events 0x%x", expected_fd, i, (guint) expected_events);
     }
   va_end (ap);
 
@@ -1304,7 +1306,21 @@ test_unix_fd_source (void)
 
   out = in = FALSE;
   out_source = g_unix_fd_source_new (fds[1], G_IO_OUT);
-  g_source_set_callback (out_source, (GSourceFunc) flag_bool, &out, NULL);
+  /* -Wcast-function-type complains about casting 'flag_bool' to GSourceFunc.
+   * GCC has no way of knowing that it will be cast back to GUnixFDSourceFunc
+   * before being called. Although GLib itself is not compiled with
+   * -Wcast-function-type, applications that use GLib may well be (since
+   * -Wextra includes it), so we provide a G_SOURCE_FUNC() macro to suppress
+   * the warning. We check that it works here.
+   */
+#if G_GNUC_CHECK_VERSION(8, 0)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic error "-Wcast-function-type"
+#endif
+  g_source_set_callback (out_source, G_SOURCE_FUNC (flag_bool), &out, NULL);
+#if G_GNUC_CHECK_VERSION(8, 0)
+#pragma GCC diagnostic pop
+#endif
   g_source_attach (out_source, NULL);
   assert_main_context_state (1,
                              fds[1], G_IO_OUT, 0);
@@ -1513,6 +1529,7 @@ test_unix_file_poll (void)
 
 #endif
 
+#ifdef G_OS_UNIX
 static gboolean
 timeout_cb (gpointer data)
 {
@@ -1564,6 +1581,7 @@ test_mainloop_wait (void)
 
   g_main_context_unref (context);
 }
+#endif
 
 static gboolean
 nfds_in_cb (GIOChannel   *io,

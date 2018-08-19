@@ -211,47 +211,6 @@
 #define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
 #endif
 
-/* XXX: Remove once XP support really dropped */
-#if _WIN32_WINNT < 0x0600
-
-typedef enum _FILE_INFO_BY_HANDLE_CLASS
-{
-  FileBasicInfo                   = 0,
-  FileStandardInfo                = 1,
-  FileNameInfo                    = 2,
-  FileRenameInfo                  = 3,
-  FileDispositionInfo             = 4,
-  FileAllocationInfo              = 5,
-  FileEndOfFileInfo               = 6,
-  FileStreamInfo                  = 7,
-  FileCompressionInfo             = 8,
-  FileAttributeTagInfo            = 9,
-  FileIdBothDirectoryInfo         = 10,
-  FileIdBothDirectoryRestartInfo  = 11,
-  FileIoPriorityHintInfo          = 12,
-  FileRemoteProtocolInfo          = 13,
-  FileFullDirectoryInfo           = 14,
-  FileFullDirectoryRestartInfo    = 15,
-  FileStorageInfo                 = 16,
-  FileAlignmentInfo               = 17,
-  FileIdInfo                      = 18,
-  FileIdExtdDirectoryInfo         = 19,
-  FileIdExtdDirectoryRestartInfo  = 20,
-  MaximumFileInfoByHandlesClass
-} FILE_INFO_BY_HANDLE_CLASS;
-
-typedef struct _FILE_NAME_INFO
-{
-  DWORD FileNameLength;
-  WCHAR FileName[1];
-} FILE_NAME_INFO;
-
-typedef BOOL (WINAPI fGetFileInformationByHandleEx) (HANDLE,
-                                                     FILE_INFO_BY_HANDLE_CLASS,
-                                                     LPVOID,
-                                                     DWORD);
-#endif
-
 #if defined (_MSC_VER) && (_MSC_VER >=1400)
 /* This is ugly, but we need it for isatty() in case we have bad fd's,
  * otherwise Windows will abort() the program on msvcrt80.dll and later
@@ -387,6 +346,16 @@ myInvalidParameterHandler(const wchar_t *expression,
  * preferred for that instead, as it allows calling functions to perform actions
  * conditional on the type of error.
  *
+ * Warning messages are intended to be used in the event of unexpected
+ * external conditions (system misconfiguration, missing files,
+ * other trusted programs violating protocol, invalid contents in
+ * trusted files, etc.)
+ *
+ * If attempting to deal with programmer errors (for example, incorrect function
+ * parameters) then you should use %G_LOG_LEVEL_CRITICAL instead.
+ *
+ * g_warn_if_reached() and g_warn_if_fail() log at %G_LOG_LEVEL_WARNING.
+ *
  * You can make warnings fatal at runtime by setting the `G_DEBUG`
  * environment variable (see
  * [Running GLib Applications](glib-running.html)):
@@ -413,19 +382,24 @@ myInvalidParameterHandler(const wchar_t *expression,
  *     into the format string (as with printf())
  *
  * Logs a "critical warning" (#G_LOG_LEVEL_CRITICAL).
- * It's more or less application-defined what constitutes
- * a critical vs. a regular warning. You could call
- * g_log_set_always_fatal() to make critical warnings exit
- * the program, then use g_critical() for fatal errors, for
- * example.
  *
- * You can also make critical warnings fatal at runtime by
+ * Critical warnings are intended to be used in the event of an error
+ * that originated in the current process (a programmer error).
+ * Logging of a critical error is by definition an indication of a bug
+ * somewhere in the current program (or its libraries).
+ *
+ * g_return_if_fail(), g_return_val_if_fail(), g_return_if_reached() and
+ * g_return_val_if_reached() log at %G_LOG_LEVEL_CRITICAL.
+ *
+ * You can make critical warnings fatal at runtime by
  * setting the `G_DEBUG` environment variable (see
  * [Running GLib Applications](glib-running.html)):
  *
  * |[
  *   G_DEBUG=fatal-warnings gdb ./my-program
  * ]|
+ *
+ * You can also use g_log_set_always_fatal().
  *
  * Any unrelated failures can be skipped over in
  * [gdb](https://www.gnu.org/software/gdb/) using the `continue` command.
@@ -777,6 +751,11 @@ g_log_set_always_fatal (GLogLevelFlags fatal_mask)
  * messages, programs must install a custom log writer function using
  * g_log_set_writer_func(). See
  * [Using Structured Logging][using-structured-logging].
+ *
+ * This function is mostly intended to be used with
+ * %G_LOG_LEVEL_CRITICAL.  You should typically not set
+ * %G_LOG_LEVEL_WARNING, %G_LOG_LEVEL_MESSAGE, %G_LOG_LEVEL_INFO or
+ * %G_LOG_LEVEL_DEBUG as fatal except inside of test programs.
  *
  * Returns: the old fatal mask for the log domain
  */
@@ -1476,17 +1455,17 @@ log_level_to_color (GLogLevelFlags log_level,
     return "";
 
   if (log_level & G_LOG_LEVEL_ERROR)
-    return "\033[1;31m";
+    return "\033[1;31m"; /* red */
   else if (log_level & G_LOG_LEVEL_CRITICAL)
-    return "\033[1;35m";
+    return "\033[1;35m"; /* magenta */
   else if (log_level & G_LOG_LEVEL_WARNING)
-    return "\033[1;33m";
+    return "\033[1;33m"; /* yellow */
   else if (log_level & G_LOG_LEVEL_MESSAGE)
-    return "\033[1;32m";
+    return "\033[1;32m"; /* green */
   else if (log_level & G_LOG_LEVEL_INFO)
-    return "\033[1;32m";
+    return "\033[1;32m"; /* green */
   else if (log_level & G_LOG_LEVEL_DEBUG)
-    return "\033[1;32m";
+    return "\033[1;32m"; /* green */
 
   /* No color for custom log levels. */
   return "";
@@ -1513,40 +1492,18 @@ static gboolean
 win32_is_pipe_tty (int fd)
 {
   gboolean result = FALSE;
-  int error;
   HANDLE h_fd;
   FILE_NAME_INFO *info = NULL;
   gint info_size = sizeof (FILE_NAME_INFO) + sizeof (WCHAR) * MAX_PATH;
   wchar_t *name = NULL;
   gint length;
 
-  /* XXX: Remove once XP support really dropped */
-#if _WIN32_WINNT < 0x0600
-  HANDLE h_kerneldll = NULL;
-  fGetFileInformationByHandleEx *GetFileInformationByHandleEx;
-#endif
-
   h_fd = (HANDLE) _get_osfhandle (fd);
 
   if (h_fd == INVALID_HANDLE_VALUE || GetFileType (h_fd) != FILE_TYPE_PIPE)
     goto done_query;
 
-  /* The following check is available on Vista or later, so on XP, no color support */
   /* mintty uses a pipe, in the form of \{cygwin|msys}-xxxxxxxxxxxxxxxx-ptyN-{from|to}-master */
-
-  /* XXX: Remove once XP support really dropped */
-#if _WIN32_WINNT < 0x0600
-  h_kerneldll = LoadLibraryW (L"kernel32.dll");
-
-  if (h_kerneldll == NULL)
-    goto done_query;
-
-  GetFileInformationByHandleEx =
-    (fGetFileInformationByHandleEx *) GetProcAddress (h_kerneldll, "GetFileInformationByHandleEx");
-
-  if (GetFileInformationByHandleEx == NULL)
-    goto done_query;
-#endif
 
   info = g_try_malloc (info_size);
 
@@ -1594,12 +1551,6 @@ win32_is_pipe_tty (int fd)
 done_query:
   if (info != NULL)
     g_free (info);
-
-  /* XXX: Remove once XP support really dropped */
-#if _WIN32_WINNT < 0x0600
-  if (h_kerneldll != NULL)
-    FreeLibrary (h_kerneldll);
-#endif
 
   return result;
 }
@@ -1976,6 +1927,59 @@ g_log_structured_array (GLogLevelFlags   log_level,
     _g_log_abort (!(log_level & G_LOG_FLAG_RECURSION));
 }
 
+/* Semi-private helper function to implement the g_message() (etc.) macros
+ * with support for G_GNUC_PRINTF so that @message_format can be checked
+ * with -Wformat. */
+void
+g_log_structured_standard (const gchar    *log_domain,
+                           GLogLevelFlags  log_level,
+                           const gchar    *file,
+                           const gchar    *line,
+                           const gchar    *func,
+                           const gchar    *message_format,
+                           ...)
+{
+  GLogField fields[] =
+    {
+      { "PRIORITY", log_level_to_priority (log_level), -1 },
+      { "CODE_FILE", file, -1 },
+      { "CODE_LINE", line, -1 },
+      { "CODE_FUNC", func, -1 },
+      /* Filled in later: */
+      { "MESSAGE", NULL, -1 },
+      /* If @log_domain is %NULL, we will not pass this field: */
+      { "GLIB_DOMAIN", log_domain, -1 },
+    };
+  gsize n_fields;
+  gchar *message_allocated = NULL;
+  gchar buffer[1025];
+  va_list args;
+
+  va_start (args, message_format);
+
+  if (log_level & G_LOG_FLAG_RECURSION)
+    {
+      /* we use a stack buffer of fixed size, since we're likely
+       * in an out-of-memory situation
+       */
+      gsize size G_GNUC_UNUSED;
+
+      size = _g_vsnprintf (buffer, sizeof (buffer), message_format, args);
+      fields[4].value = buffer;
+    }
+  else
+    {
+      fields[4].value = message_allocated = g_strdup_vprintf (message_format, args);
+    }
+
+  va_end (args);
+
+  n_fields = G_N_ELEMENTS (fields) - ((log_domain == NULL) ? 1 : 0);
+  g_log_structured_array (log_level, fields, n_fields);
+
+  g_free (message_allocated);
+}
+
 /**
  * g_log_set_writer_func:
  * @func: log writer function, which must not be %NULL
@@ -2167,12 +2171,15 @@ g_log_writer_is_journald (gint output_fd)
 
   if (g_once_init_enter (&initialized))
     {
-      struct sockaddr_storage addr;
+      union {
+        struct sockaddr_storage storage;
+        struct sockaddr sa;
+        struct sockaddr_un un;
+      } addr;
       socklen_t addr_len = sizeof(addr);
-      int err = getpeername (output_fd, (struct sockaddr *) &addr, &addr_len);
-      if (err == 0 && addr.ss_family == AF_UNIX)
-        fd_is_journal = g_str_has_prefix (((struct sockaddr_un *)&addr)->sun_path,
-                                          "/run/systemd/journal/");
+      int err = getpeername (output_fd, &addr.sa, &addr_len);
+      if (err == 0 && addr.storage.ss_family == AF_UNIX)
+        fd_is_journal = g_str_has_prefix (addr.un.sun_path, "/run/systemd/journal/");
 
       g_once_init_leave (&initialized, TRUE);
     }
@@ -2268,7 +2275,7 @@ g_log_writer_format_fields (GLogLevelFlags   log_level,
 
   /* Timestamp */
   now = g_get_real_time ();
-  now_secs = (time_t) now / 1000000;
+  now_secs = (time_t) (now / 1000000);
   now_tm = localtime (&now_secs);
   strftime (time_buf, sizeof (time_buf), "%H:%M:%S", now_tm);
 
@@ -2553,6 +2560,7 @@ g_log_writer_standard_streams (GLogLevelFlags   log_level,
   out = g_log_writer_format_fields (log_level, fields, n_fields,
                                     g_log_writer_supports_color (fileno (stream)));
   _g_fprintf (stream, "%s\n", out);
+  fflush (stream);
   g_free (out);
 
   return G_LOG_WRITER_HANDLED;

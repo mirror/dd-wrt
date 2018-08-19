@@ -22,6 +22,7 @@ installed_test_programs = \
 	signals					\
 	singleton				\
 	references				\
+	testgobject				\
 	$(NULL)
 
 # Don't install these ones, and keep them out of 'make check' because they take too long...
@@ -39,10 +40,12 @@ AM_TESTS_ENVIRONMENT = \
 	MALLOC_CHECK_=2                                         \
 	MALLOC_PERTURB_=$$(($${RANDOM:-256} % 256))
 
-accumulator_SOURCES = accumulator.c testmarshal.c testmarshal.h
+accumulator_SOURCES = accumulator.c
+nodist_accumulator_SOURCES = testmarshal.c testmarshal.h
 signals_SOURCES = signals.c
 defaultiface_SOURCES = defaultiface.c testmodule.c testmodule.h
 dynamictype_SOURCES = dynamictype.c testmodule.c testmodule.h
+testgobject_SOURCES = testgobject.c
 
 if ENABLE_TIMELOOP
 installed_test_programs += timeloop-closure
@@ -55,29 +58,17 @@ glib_genmarshal=$(top_builddir)/gobject/glib-genmarshal
 
 testmarshal.h: stamp-testmarshal.h
 	@true
-stamp-testmarshal.h: @REBUILD@ testmarshal.list $(glib_genmarshal)
+stamp-testmarshal.h: testmarshal.list $(glib_genmarshal)
 	$(AM_V_GEN) $(glib_genmarshal) --prefix=test_marshal $(srcdir)/testmarshal.list --header >> xgen-gmh \
 	&& (cmp -s xgen-gmh testmarshal.h 2>/dev/null || cp xgen-gmh testmarshal.h) \
 	&& rm -f xgen-gmh xgen-gmh~ \
 	&& echo timestamp > $@
-testmarshal.c: @REBUILD@ testmarshal.h testmarshal.list $(glib_genmarshal)
+testmarshal.c: testmarshal.h testmarshal.list $(glib_genmarshal)
 	$(AM_V_GEN) (echo "#include \"testmarshal.h\""; $(glib_genmarshal) --prefix=test_marshal $(srcdir)/testmarshal.list --body) >> xgen-gmc \
 	&& cp xgen-gmc testmarshal.c \
 	&& rm -f xgen-gmc xgen-gmc~
 
 BUILT_SOURCES += testmarshal.h testmarshal.c
-CLEANFILES += stamp-testmarshal.h
+CLEANFILES += stamp-testmarshal.h testmarshal.h testmarshal.c
 EXTRA_DIST += testcommon.h testmarshal.list
-BUILT_EXTRA_DIST += testmarshal.h testmarshal.c
 endif # !CROSS_COMPILING
-
-dist-hook: $(BUILT_EXTRA_DIST)
-	files='$(BUILT_EXTRA_DIST)';				\
-	for f in $$files; do					\
-	  if test -f $$f; then d=.; else d=$(srcdir); fi;	\
-	  cp $$d/$$f $(distdir) || exit 1; done
-
-distclean-local:
-	if test $(srcdir) = .; then :; else	\
-	    rm -f $(BUILT_EXTRA_DIST);		\
-	fi

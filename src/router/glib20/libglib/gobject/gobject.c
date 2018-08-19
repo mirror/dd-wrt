@@ -477,11 +477,17 @@ g_object_do_class_init (GObjectClass *class)
    * @gobject: the object which received the signal.
    * @pspec: the #GParamSpec of the property which changed.
    *
-   * The notify signal is emitted on an object when one of its
-   * properties has been changed. Note that getting this signal
-   * doesn't guarantee that the value of the property has actually
-   * changed, it may also be emitted when the setter for the property
-   * is called to reinstate the previous value.
+   * The notify signal is emitted on an object when one of its properties has
+   * its value set through g_object_set_property(), g_object_set(), et al.
+   *
+   * Note that getting this signal doesn’t itself guarantee that the value of
+   * the property has actually changed. When it is emitted is determined by the
+   * derived GObject class. If the implementor did not create the property with
+   * %G_PARAM_EXPLICIT_NOTIFY, then any call to g_object_set_property() results
+   * in ::notify being emitted, even if the new value is the same as the old.
+   * If they did pass %G_PARAM_EXPLICIT_NOTIFY, then this signal is emitted only
+   * when they explicitly call g_object_notify() or g_object_notify_by_pspec(),
+   * and common practice is to do that only when the value has actually changed.
    *
    * This signal is typically used to obtain change notification for a
    * single property, by specifying the property name as a detail in the
@@ -492,7 +498,7 @@ g_object_do_class_init (GObjectClass *class)
    *                   text_view)
    * ]|
    * It is important to note that you must use
-   * [canonical][canonical-parameter-name] parameter names as
+   * [canonical parameter names][canonical-parameter-names] as
    * detail strings for the notify signal.
    */
   gobject_signals[NOTIFY] =
@@ -748,6 +754,8 @@ g_object_class_install_properties (GObjectClass  *oclass,
  * vtable initialization function (the @class_init member of
  * #GTypeInfo.) It must not be called after after @class_init has
  * been called for any object types implementing this interface.
+ *
+ * If @pspec is a floating reference, it will be consumed.
  *
  * Since: 2.4
  */
@@ -1897,7 +1905,7 @@ g_object_new_is_valid_property (GType                  object_type,
 
 
 /**
- * g_object_new_with_properties: (rename-to g_object_new)
+ * g_object_new_with_properties: (skip)
  * @object_type: the object type to instantiate
  * @n_properties: the number of properties
  * @names: (array length=n_properties): the names of each property to be set
@@ -2980,12 +2988,15 @@ g_object_is_floating (gpointer _object)
  * count unchanged.  If the object is not floating, then this call
  * adds a new normal reference increasing the reference count by one.
  *
+ * Since GLib 2.56, the type of @object will be propagated to the return type
+ * under the same conditions as for g_object_ref().
+ *
  * Since: 2.10
  *
  * Returns: (type GObject.Object) (transfer none): @object
  */
 gpointer
-g_object_ref_sink (gpointer _object)
+(g_object_ref_sink) (gpointer _object)
 {
   GObject *object = _object;
   gboolean was_floating;
@@ -3185,10 +3196,15 @@ g_object_remove_toggle_ref (GObject       *object,
  *
  * Increases the reference count of @object.
  *
+ * Since GLib 2.56, if `GLIB_VERSION_MAX_ALLOWED` is 2.56 or greater, the type
+ * of @object will be propagated to the return type (using the GCC typeof()
+ * extension), so any casting the caller needs to do on the return type must be
+ * explicit.
+ *
  * Returns: (type GObject.Object) (transfer none): the same @object
  */
 gpointer
-g_object_ref (gpointer _object)
+(g_object_ref) (gpointer _object)
 {
   GObject *object = _object;
   gint old_val;
@@ -3362,7 +3378,7 @@ g_object_unref (gpointer _object)
  **/
 #undef g_clear_object
 void
-g_clear_object (volatile GObject **object_ptr)
+g_clear_object (GObject **object_ptr)
 {
   g_clear_pointer (object_ptr, g_object_unref);
 }
@@ -3472,7 +3488,7 @@ g_object_dup_qdata (GObject        *object,
  * If the previous value was replaced then ownership of the
  * old value (@oldval) is passed to the caller, including
  * the registered destroy notify for it (passed out in @old_destroy).
- * Its up to the caller to free this as he wishes, which may
+ * It’s up to the caller to free this as needed, which may
  * or may not include using @old_destroy as sometimes replacement
  * should not destroy the object in the normal way.
  *
@@ -3682,7 +3698,7 @@ g_object_dup_data (GObject        *object,
  * If the previous value was replaced then ownership of the
  * old value (@oldval) is passed to the caller, including
  * the registered destroy notify for it (passed out in @old_destroy).
- * Its up to the caller to free this as he wishes, which may
+ * It’s up to the caller to free this as needed, which may
  * or may not include using @old_destroy as sometimes replacement
  * should not destroy the object in the normal way.
  *

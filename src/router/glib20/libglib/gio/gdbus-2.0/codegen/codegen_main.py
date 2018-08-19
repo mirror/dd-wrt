@@ -1,8 +1,10 @@
 # -*- Mode: Python -*-
+# coding=utf-8
 
 # GDBus - GLib D-Bus Library
 #
 # Copyright (C) 2008-2011 Red Hat, Inc.
+# Copyright (C) 2018 Iñigo Martínez <inigomartinez@gmail.com>
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -19,16 +21,16 @@
 #
 # Author: David Zeuthen <davidz@redhat.com>
 
+import argparse
+import os
 import sys
-import optparse
-from os import path
 
 from . import config
-from . import utils
 from . import dbustypes
 from . import parser
 from . import codegen
 from . import codegen_docbook
+from .utils import print_error, print_warning
 
 def find_arg(arg_list, arg_name):
     for a in arg_list:
@@ -61,39 +63,39 @@ def apply_annotation(iface_list, iface, method, signal, prop, arg, key, value):
             iface_obj = i
             break
 
-    if iface_obj == None:
-        raise RuntimeError('No interface %s'%iface)
+    if iface_obj is None:
+        print_error('No interface "{}"'.format(iface))
 
     target_obj = None
 
     if method:
         method_obj = find_method(iface_obj, method)
-        if method_obj == None:
-            raise RuntimeError('No method %s on interface %s'%(method, iface))
+        if method_obj is None:
+            print_error('No method "{}" on interface "{}"'.format(method, iface))
         if arg:
             arg_obj = find_arg(method_obj.in_args, arg)
-            if (arg_obj == None):
+            if (arg_obj is None):
                 arg_obj = find_arg(method_obj.out_args, arg)
-                if (arg_obj == None):
-                    raise RuntimeError('No arg %s on method %s on interface %s'%(arg, method, iface))
+                if (arg_obj is None):
+                    print_error('No arg "{}" on method "{}" on interface "{}"'.format(arg, method, iface))
             target_obj = arg_obj
         else:
             target_obj = method_obj
     elif signal:
         signal_obj = find_signal(iface_obj, signal)
-        if signal_obj == None:
-            raise RuntimeError('No signal %s on interface %s'%(signal, iface))
+        if signal_obj is None:
+            print_error('No signal "{}" on interface "{}"'.format(signal, iface))
         if arg:
             arg_obj = find_arg(signal_obj.args, arg)
-            if (arg_obj == None):
-                raise RuntimeError('No arg %s on signal %s on interface %s'%(arg, signal, iface))
+            if (arg_obj is None):
+                print_error('No arg "{}" on signal "{}" on interface "{}"'.format(arg, signal, iface))
             target_obj = arg_obj
         else:
             target_obj = signal_obj
     elif prop:
         prop_obj = find_prop(iface_obj, prop)
-        if prop_obj == None:
-            raise RuntimeError('No property %s on interface %s'%(prop, iface))
+        if prop_obj is None:
+            print_error('No property "{}" on interface "{}"'.format(prop, iface))
         target_obj = prop_obj
     else:
         target_obj = iface_obj
@@ -146,64 +148,150 @@ def apply_annotations(iface_list, annotation_list):
                     apply_annotation(iface_list, iface, None, None, None, None, key, value)
 
 def codegen_main():
-    arg_parser = optparse.OptionParser('%prog [options]')
-    arg_parser.add_option('', '--xml-files', metavar='FILE', action='append',
-                          help='D-Bus introspection XML file')
-    arg_parser.add_option('', '--interface-prefix', metavar='PREFIX', default='',
+    arg_parser = argparse.ArgumentParser(description='D-Bus code and documentation generator')
+    arg_parser.add_argument('files', metavar='FILE', nargs='*',
+                            help='D-Bus introspection XML file')
+    arg_parser.add_argument('--xml-files', metavar='FILE', action='append', default=[],
+                            help=argparse.SUPPRESS)
+    arg_parser.add_argument('--interface-prefix', metavar='PREFIX', default='',
                             help='String to strip from D-Bus interface names for code and docs')
-    arg_parser.add_option('', '--c-namespace', metavar='NAMESPACE', default='',
+    arg_parser.add_argument('--c-namespace', metavar='NAMESPACE', default='',
                             help='The namespace to use for generated C code')
-    arg_parser.add_option('', '--c-generate-object-manager', action='store_true',
+    arg_parser.add_argument('--c-generate-object-manager', action='store_true',
                             help='Generate a GDBusObjectManagerClient subclass when generating C code')
-    arg_parser.add_option('', '--generate-c-code', metavar='OUTFILES',
-                          help='Generate C code in OUTFILES.[ch]')
-    arg_parser.add_option('', '--c-generate-autocleanup', type='choice', choices=['none', 'objects', 'all'], default='objects',
-                             help='Generate autocleanup support')
-    arg_parser.add_option('', '--generate-docbook', metavar='OUTFILES',
-                          help='Generate Docbook in OUTFILES-org.Project.IFace.xml')
-    arg_parser.add_option('', '--annotate', nargs=3, action='append', metavar='WHAT KEY VALUE',
-                          help='Add annotation (may be used several times)')
-    arg_parser.add_option('', '--output-directory', metavar='OUTDIR', default='',
-                          help='Location to output generated files')
-    (opts, args) = arg_parser.parse_args();
+    arg_parser.add_argument('--c-generate-autocleanup', choices=['none', 'objects', 'all'], default='objects',
+                            help='Generate autocleanup support')
+    arg_parser.add_argument('--generate-docbook', metavar='OUTFILES',
+                            help='Generate Docbook in OUTFILES-org.Project.IFace.xml')
+    arg_parser.add_argument('--pragma-once', action='store_true',
+                            help='Use "pragma once" as the inclusion guard')
+    arg_parser.add_argument('--annotate', nargs=3, action='append', metavar='WHAT KEY VALUE',
+                            help='Add annotation (may be used several times)')
+
+    group = arg_parser.add_mutually_exclusive_group()
+    group.add_argument('--generate-c-code', metavar='OUTFILES',
+                       help='Generate C code in OUTFILES.[ch]')
+    group.add_argument('--header', action='store_true',
+                       help='Generate C headers')
+    group.add_argument('--body', action='store_true',
+                       help='Generate C code')
+    group.add_argument('--interface-info-header', action='store_true',
+                       help='Generate GDBusInterfaceInfo C header')
+    group.add_argument('--interface-info-body', action='store_true',
+                       help='Generate GDBusInterfaceInfo C code')
+
+    group = arg_parser.add_mutually_exclusive_group()
+    group.add_argument('--output', metavar='FILE',
+                       help='Write output into the specified file')
+    group.add_argument('--output-directory', metavar='OUTDIR', default='',
+                       help='Location to output generated files')
+
+    args = arg_parser.parse_args();
+
+    if len(args.xml_files) > 0:
+        print_warning('The "--xml-files" option is deprecated; use positional arguments instead')
+
+    if ((args.generate_c_code is not None or args.generate_docbook is not None) and
+            args.output is not None):
+        print_error('Using --generate-c-code or --generate-docbook and '
+                    '--output at the same time is not allowed')
+
+    if args.generate_c_code:
+        header_name = args.generate_c_code + '.h'
+        h_file = os.path.join(args.output_directory, header_name)
+        args.header = True
+        c_file = os.path.join(args.output_directory, args.generate_c_code + '.c')
+        args.body = True
+    elif args.header:
+        if args.output is None:
+            print_error('Using --header requires --output')
+
+        h_file = args.output
+        header_name = os.path.basename(h_file)
+    elif args.body:
+        if args.output is None:
+            print_error('Using --body requires --output')
+
+        c_file = args.output
+        header_name = os.path.splitext(os.path.basename(c_file))[0] + '.h'
+    elif args.interface_info_header:
+        if args.output is None:
+            print_error('Using --interface-info-header requires --output')
+        if args.c_generate_object_manager:
+            print_error('--c-generate-object-manager is incompatible with '
+                        '--interface-info-header')
+
+        h_file = args.output
+        header_name = os.path.basename(h_file)
+    elif args.interface_info_body:
+        if args.output is None:
+            print_error('Using --interface-info-body requires --output')
+        if args.c_generate_object_manager:
+            print_error('--c-generate-object-manager is incompatible with '
+                        '--interface-info-body')
+
+        c_file = args.output
+        header_name = os.path.splitext(os.path.basename(c_file))[0] + '.h'
 
     all_ifaces = []
-    for fname in args:
-        f = open(fname, 'rb')
-        xml_data = f.read()
-        f.close()
+    input_files_basenames = []
+    for fname in args.files + args.xml_files:
+        with open(fname, 'rb') as f:
+            xml_data = f.read()
         parsed_ifaces = parser.parse_dbus_xml(xml_data)
         all_ifaces.extend(parsed_ifaces)
+        input_files_basenames.append(os.path.basename(fname))
 
-    if opts.annotate != None:
-        apply_annotations(all_ifaces, opts.annotate)
+    if args.annotate is not None:
+        apply_annotations(all_ifaces, args.annotate)
 
     for i in all_ifaces:
-        i.post_process(opts.interface_prefix, opts.c_namespace)
+        i.post_process(args.interface_prefix, args.c_namespace)
 
-    outdir = opts.output_directory
-
-    docbook = opts.generate_docbook
-    docbook_gen = codegen_docbook.DocbookCodeGenerator(all_ifaces, docbook, outdir);
+    docbook = args.generate_docbook
+    docbook_gen = codegen_docbook.DocbookCodeGenerator(all_ifaces);
     if docbook:
-        ret = docbook_gen.generate()
+        ret = docbook_gen.generate(docbook, args.output_directory)
 
-    c_code = opts.generate_c_code
-    if c_code:
-        header_name = c_code + '.h'
-        h = open(path.join(outdir, header_name), 'w')
-        c = open(path.join(outdir, c_code + '.c'), 'w')
-        gen = codegen.CodeGenerator(all_ifaces,
-                                    opts.c_namespace,
-                                    opts.interface_prefix,
-                                    opts.c_generate_object_manager,
-                                    opts.c_generate_autocleanup,
-                                    docbook_gen,
-                                    h, c,
-                                    header_name)
-        ret = gen.generate()
-        h.close()
-        c.close()
+    if args.header:
+        with open(h_file, 'w') as outfile:
+            gen = codegen.HeaderCodeGenerator(all_ifaces,
+                                              args.c_namespace,
+                                              args.c_generate_object_manager,
+                                              args.c_generate_autocleanup,
+                                              header_name,
+                                              input_files_basenames,
+                                              args.pragma_once,
+                                              outfile)
+            gen.generate()
+
+    if args.body:
+        with open(c_file, 'w') as outfile:
+            gen = codegen.CodeGenerator(all_ifaces,
+                                        args.c_namespace,
+                                        args.c_generate_object_manager,
+                                        header_name,
+                                        input_files_basenames,
+                                        docbook_gen,
+                                        outfile)
+            gen.generate()
+
+    if args.interface_info_header:
+        with open(h_file, 'w') as outfile:
+            gen = codegen.InterfaceInfoHeaderCodeGenerator(all_ifaces,
+                                                           args.c_namespace,
+                                                           header_name,
+                                                           args.pragma_once,
+                                                           outfile)
+            gen.generate()
+
+    if args.interface_info_body:
+        with open(c_file, 'w') as outfile:
+            gen = codegen.InterfaceInfoBodyCodeGenerator(all_ifaces,
+                                                         args.c_namespace,
+                                                         header_name,
+                                                         outfile)
+            gen.generate()
 
     sys.exit(0)
 

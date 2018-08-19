@@ -287,9 +287,8 @@ struct  _GObject
  * 
  * The class structure for the GObject type.
  * 
- * <example>
- * <title>Implementing singletons using a constructor</title>
- * <programlisting>
+ * |[<!-- language="C" -->
+ * // Example of implementing a singleton using a constructor.
  * static MySingleton *the_singleton = NULL;
  * 
  * static GObject*
@@ -311,7 +310,7 @@ struct  _GObject
  * 
  *   return object;
  * }
- * </programlisting></example>
+ * ]|
  */
 struct  _GObjectClass
 {
@@ -508,6 +507,12 @@ GLIB_AVAILABLE_IN_ALL
 void        g_object_remove_weak_pointer      (GObject        *object, 
                                                gpointer       *weak_pointer_location);
 
+#if defined(g_has_typeof) && GLIB_VERSION_MAX_ALLOWED >= GLIB_VERSION_2_56
+/* Make reference APIs type safe with macros */
+#define g_object_ref(Obj)      ((__typeof__(Obj)) (g_object_ref) (Obj))
+#define g_object_ref_sink(Obj) ((__typeof__(Obj)) (g_object_ref_sink) (Obj))
+#endif
+
 /**
  * GToggleNotify:
  * @data: Callback data passed to g_object_add_toggle_ref()
@@ -663,7 +668,7 @@ G_STMT_START { \
     G_OBJECT_WARN_INVALID_PSPEC ((object), "property", (property_id), (pspec))
 
 GLIB_AVAILABLE_IN_ALL
-void    g_clear_object (volatile GObject **object_ptr);
+void    g_clear_object (GObject **object_ptr);
 #define g_clear_object(object_ptr) g_clear_pointer ((object_ptr), g_object_unref)
 
 /**
@@ -731,6 +736,108 @@ static inline gboolean
  (/* Check types match. */ \
   0 ? *(object_ptr) = (new_object), FALSE : \
   (g_set_object) ((GObject **) (object_ptr), (GObject *) (new_object)) \
+ )
+
+/**
+ * g_clear_weak_pointer: (skip)
+ * @weak_pointer_location: The memory address of a pointer
+ *
+ * Clears a weak reference to a #GObject.
+ *
+ * @weak_pointer_location must not be %NULL.
+ *
+ * If the weak reference is %NULL then this function does nothing.
+ * Otherwise, the weak reference to the object is removed for that location
+ * and the pointer is set to %NULL.
+ *
+ * A macro is also included that allows this function to be used without
+ * pointer casts. The function itself is static inline, so its address may vary
+ * between compilation units.
+ *
+ * Since: 2.56
+ */
+static inline void
+(g_clear_weak_pointer) (gpointer *weak_pointer_location)
+{
+  GObject *object = (GObject *) *weak_pointer_location;
+
+  if (object != NULL)
+    {
+      g_object_remove_weak_pointer (object, weak_pointer_location);
+      *weak_pointer_location = NULL;
+    }
+}
+
+#define g_clear_weak_pointer(weak_pointer_location) \
+ (/* Check types match. */ \
+  (g_clear_weak_pointer) ((gpointer *) (weak_pointer_location)) \
+ )
+
+/**
+ * g_set_weak_pointer: (skip)
+ * @weak_pointer_location: the memory address of a pointer
+ * @new_object: (nullable) (transfer none): a pointer to the new #GObject to
+ *   assign to it, or %NULL to clear the pointer
+ *
+ * Updates a pointer to weakly refer to @new_object. It assigns @new_object
+ * to @weak_pointer_location and ensures that @weak_pointer_location will
+ * automaticaly be set to %NULL if @new_object gets destroyed. The assignment
+ * is not atomic. The weak reference is not thread-safe, see
+ * g_object_add_weak_pointer() for details.
+ *
+ * @weak_pointer_location must not be %NULL.
+ *
+ * A macro is also included that allows this function to be used without
+ * pointer casts. The function itself is static inline, so its address may vary
+ * between compilation units.
+ *
+ * One convenient usage of this function is in implementing property setters:
+ * |[
+ *   void
+ *   foo_set_bar (Foo *foo,
+ *                Bar *new_bar)
+ *   {
+ *     g_return_if_fail (IS_FOO (foo));
+ *     g_return_if_fail (new_bar == NULL || IS_BAR (new_bar));
+ *
+ *     if (g_set_weak_pointer (&foo->bar, new_bar))
+ *       g_object_notify (foo, "bar");
+ *   }
+ * ]|
+ *
+ * Returns: %TRUE if the value of @weak_pointer_location changed, %FALSE otherwise
+ *
+ * Since: 2.56
+ */
+static inline gboolean
+(g_set_weak_pointer) (gpointer *weak_pointer_location,
+                      GObject  *new_object)
+{
+  GObject *old_object = (GObject *) *weak_pointer_location;
+
+  /* elide a (weak_pointer_location != NULL) check because most of the time we
+   * will be operating on struct members with a constant offset, so a NULL
+   * check would not catch bugs
+   */
+
+  if (old_object == new_object)
+    return FALSE;
+
+  if (old_object != NULL)
+    g_object_remove_weak_pointer (old_object, weak_pointer_location);
+
+  *weak_pointer_location = new_object;
+
+  if (new_object != NULL)
+    g_object_add_weak_pointer (new_object, weak_pointer_location);
+
+  return TRUE;
+}
+
+#define g_set_weak_pointer(weak_pointer_location, new_object) \
+ (/* Check types match. */ \
+  0 ? *(weak_pointer_location) = (new_object), FALSE : \
+  (g_set_weak_pointer) ((gpointer *) (weak_pointer_location), (GObject *) (new_object)) \
  )
 
 typedef struct {

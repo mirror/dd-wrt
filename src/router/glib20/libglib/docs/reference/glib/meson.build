@@ -1,4 +1,4 @@
-if get_option('with-docs') != 'no'
+if get_option('gtk_doc')
   subdir('xml')
 
   ignore_headers = [
@@ -34,6 +34,7 @@ if get_option('with-docs') != 'no'
     'glib-init.h',
     'gconstructor.h',
     'valgrind.h',
+    'gvalgrind.h',
   ]
 
   ignore_decorators = [
@@ -107,7 +108,6 @@ if get_option('with-docs') != 'no'
                src_dir : [ 'glib', 'gmodule' ],
                dependencies : libglib_dep,
                scan_args : [
-                 '--rebuild-types',
                  '--deprecated-guards=G_DISABLE_DEPRECATED',
                  '--ignore-decorators=' + '|'.join(ignore_decorators),
                  '--ignore-headers=' + ' '.join(ignore_headers),
@@ -145,7 +145,7 @@ if get_option('with-docs') != 'no'
                install: true)
 endif
 
-if get_option('with-man') != 'no' and xsltproc.found()
+if get_option('man')
   manpages = ['glib-gettextize', 'gtester', 'gtester-report']
   foreach page : manpages
     custom_target(page + '-man',

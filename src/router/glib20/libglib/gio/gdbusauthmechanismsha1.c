@@ -273,18 +273,21 @@ ensure_keyring_directory (GError **error)
                            G_IO_ERROR_FAILED,
                            _("Permissions on directory “%s” are malformed. Expected mode 0700, got 0%o"),
                            path,
-                           statbuf.st_mode & 0777);
+                           (guint) (statbuf.st_mode & 0777));
               g_free (path);
               path = NULL;
               goto out;
             }
 #else
 #ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic warning "-Wcpp"
 #warning Please implement permission checking on this non-UNIX platform
+#pragma GCC diagnostic pop
 #endif
 #endif
         }
-        goto out;
+      goto out;
     }
 
   if (g_mkdir (path, 0700) != 0)
@@ -303,42 +306,6 @@ ensure_keyring_directory (GError **error)
 
 out:
   return path;
-}
-
-/* ---------------------------------------------------------------------------------------------------- */
-
-static void
-append_nibble (GString *s, gint val)
-{
-  g_string_append_c (s, val >= 10 ? ('a' + val - 10) : ('0' + val));
-}
-
-static gchar *
-hexencode (const gchar *str,
-           gssize       len)
-{
-  guint n;
-  GString *s;
-
-  if (len == -1)
-    len = strlen (str);
-
-  s = g_string_new (NULL);
-  for (n = 0; n < len; n++)
-    {
-      gint val;
-      gint upper_nibble;
-      gint lower_nibble;
-
-      val = ((const guchar *) str)[n];
-      upper_nibble = val >> 4;
-      lower_nibble = val & 0x0f;
-
-      append_nibble (s, upper_nibble);
-      append_nibble (s, lower_nibble);
-    }
-
-  return g_string_free (s, FALSE);
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -636,7 +603,7 @@ keyring_generate_entry (const gchar  *cookie_context,
   gchar **lines;
   gint max_line_id;
   GString *new_contents;
-  guint64 now;
+  gint64 now;
   gboolean have_id;
   gint use_id;
   gchar *use_cookie;
@@ -691,7 +658,7 @@ keyring_generate_entry (const gchar  *cookie_context,
     }
 
   new_contents = g_string_new (NULL);
-  now = time (NULL);
+  now = g_get_real_time () / G_USEC_PER_SEC;
   changed_file = FALSE;
 
   max_line_id = 0;
@@ -705,7 +672,7 @@ keyring_generate_entry (const gchar  *cookie_context,
           gchar **tokens;
           gchar *endp;
           gint line_id;
-          guint64 line_when;
+          gint64 line_when;
           gboolean keep_entry;
 
           if (line[0] == '\0')
@@ -836,13 +803,13 @@ keyring_generate_entry (const gchar  *cookie_context,
       gchar *raw_cookie;
       *out_id = max_line_id + 1;
       raw_cookie = random_blob (32);
-      *out_cookie = hexencode (raw_cookie, 32);
+      *out_cookie = _g_dbus_hexencode (raw_cookie, 32);
       g_free (raw_cookie);
 
       g_string_append_printf (new_contents,
-                              "%d %" G_GUINT64_FORMAT " %s\n",
+                              "%d %" G_GINT64_FORMAT " %s\n",
                               *out_id,
-                              (guint64) time (NULL),
+                              g_get_real_time () / G_USEC_PER_SEC,
                               *out_cookie);
       changed_file = TRUE;
     }
@@ -949,7 +916,7 @@ mechanism_server_initiate (GDBusAuthMechanism   *mechanism,
   m->priv->is_server = TRUE;
   m->priv->state = G_DBUS_AUTH_MECHANISM_STATE_REJECTED;
 
-  if (initial_response != NULL && strlen (initial_response) > 0)
+  if (initial_response != NULL && initial_response_len > 0)
     {
 #ifdef G_OS_UNIX
       gint64 uid;
@@ -1035,6 +1002,7 @@ mechanism_server_data_send (GDBusAuthMechanism   *mechanism,
   g_return_val_if_fail (m->priv->state == G_DBUS_AUTH_MECHANISM_STATE_HAVE_DATA_TO_SEND, NULL);
 
   s = NULL;
+  *out_data_len = 0;
 
   /* TODO: use GDBusAuthObserver here to get the cookie context to use? */
   cookie_context = "org_gtk_gdbus_general";
@@ -1057,6 +1025,7 @@ mechanism_server_data_send (GDBusAuthMechanism   *mechanism,
                        cookie_context,
                        cookie_id,
                        m->priv->server_challenge);
+  *out_data_len = strlen (s);
 
   m->priv->state = G_DBUS_AUTH_MECHANISM_STATE_WAITING_FOR_DATA;
 
@@ -1116,12 +1085,14 @@ mechanism_client_initiate (GDBusAuthMechanism   *mechanism,
   m->priv->is_client = TRUE;
   m->priv->state = G_DBUS_AUTH_MECHANISM_STATE_WAITING_FOR_DATA;
 
-  *out_initial_response_len = -1;
+  *out_initial_response_len = 0;
 
 #ifdef G_OS_UNIX
   initial_response = g_strdup_printf ("%" G_GINT64_FORMAT, (gint64) getuid ());
+  *out_initial_response_len = strlen (initial_response);
 #elif defined (G_OS_WIN32)
-initial_response = _g_dbus_win32_get_user_sid ();
+  initial_response = _g_dbus_win32_get_user_sid ();
+  *out_initial_response_len = strlen (initial_response);
 #else
 #error Please implement for your OS
 #endif
@@ -1208,6 +1179,7 @@ mechanism_client_data_send (GDBusAuthMechanism   *mechanism,
 
   m->priv->state = G_DBUS_AUTH_MECHANISM_STATE_ACCEPTED;
 
+  *out_data_len = strlen (m->priv->to_send);
   return g_strdup (m->priv->to_send);
 }
 

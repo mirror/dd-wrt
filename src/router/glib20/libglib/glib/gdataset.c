@@ -900,7 +900,7 @@ g_datalist_id_dup_data (GData          **datalist,
  *
  * If the previous value was replaced then ownership of the
  * old value (@oldval) is passed to the caller, including
- * the registred destroy notify for it (passed out in @old_destroy).
+ * the registered destroy notify for it (passed out in @old_destroy).
  * Its up to the caller to free this as he wishes, which may
  * or may not include using @old_destroy as sometimes replacement
  * should not destroy the object in the normal way.
@@ -1065,8 +1065,12 @@ g_datalist_get_data (GData	 **datalist,
  *
  * Calls the given function for each data element which is associated
  * with the given location. Note that this function is NOT thread-safe.
- * So unless @datalist can be protected from any modifications during
- * invocation of this function, it should not be called.
+ * So unless @dataset_location can be protected from any modifications
+ * during invocation of this function, it should not be called.
+ *
+ * @func can make changes to the dataset, but the iteration will not
+ * reflect changes made during the g_dataset_foreach() call, other
+ * than skipping over elements that are removed.
  **/
 void
 g_dataset_foreach (gconstpointer    dataset_location,
@@ -1104,6 +1108,10 @@ g_dataset_foreach (gconstpointer    dataset_location,
  * function is NOT thread-safe. So unless @datalist can be protected
  * from any modifications during invocation of this function, it should
  * not be called.
+ *
+ * @func can make changes to @datalist, but the iteration will not
+ * reflect changes made during the g_datalist_foreach() call, other
+ * than skipping over elements that are removed.
  **/
 void
 g_datalist_foreach (GData	   **datalist,

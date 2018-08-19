@@ -13,24 +13,24 @@ else
   subdir('gnulib')
 endif
 
-glib_headers = [
+glib_headers = files(
   'glib.h',
   'glib-unix.h',
   'glib-object.h',
-]
+)
 install_headers(glib_headers, subdir : 'glib-2.0')
 
-glib_deprecated_headers = [
+glib_deprecated_headers = files(
   'deprecated/gallocator.h',
   'deprecated/gcache.h',
   'deprecated/gcompletion.h',
   'deprecated/gmain.h',
   'deprecated/grel.h',
   'deprecated/gthread.h',
-]
+)
 install_headers(glib_deprecated_headers, subdir : 'glib-2.0/glib/deprecated')
 
-glib_sub_headers = [
+glib_sub_headers = files(
   'glib-autocleanups.h',
   'galloca.h',
   'garray.h',
@@ -76,6 +76,9 @@ glib_sub_headers = [
   'gquark.h',
   'gqueue.h',
   'grand.h',
+  'grcbox.h',
+  'grefcount.h',
+  'grefstring.h',
   'gregex.h',
   'gscanner.h',
   'gsequence.h',
@@ -105,18 +108,19 @@ glib_sub_headers = [
   'gversionmacros.h',
   'gwin32.h',
   'gprintf.h',
-]
+)
 install_headers(glib_sub_headers, subdir : 'glib-2.0/glib')
 
-deprecated_sources = [
+deprecated_sources = files(
   'deprecated/gallocator.c',
   'deprecated/gcache.c',
   'deprecated/gcompletion.c',
   'deprecated/grel.c',
   'deprecated/gthread-deprecated.c'
-]
+)
 
-glib_sources = [
+glib_sources = files(
+  'garcbox.c',
   'garray.c',
   'gasyncqueue.c',
   'gatomic.c',
@@ -159,6 +163,9 @@ glib_sources = [
   'gquark.c',
   'gqueue.c',
   'grand.c',
+  'grcbox.c',
+  'grefcount.c',
+  'grefstring.c',
   'gregex.c',
   'gscanner.c',
   'gsequence.c',
@@ -194,17 +201,24 @@ glib_sources = [
   'gversion.c',
   'gwakeup.c',
   'gprintf.c',
-]
+)
 
 if host_system == 'windows'
-  thread_src = ['gthread-win32.c']
-  plat_src = ['gwin32.c', 'gspawn-win32.c', 'giowin32.c']
+  glib_win_rc = configure_file(
+    input: 'glib.rc.in',
+    output: 'glib.rc',
+    configuration: glibconfig_conf,
+  )
+  glib_win_res = windows.compile_resources(glib_win_rc)
+  glib_sources += [glib_win_res]
+  glib_sources += files('gwin32.c', 'gspawn-win32.c', 'giowin32.c')
   platform_deps = [winsock2, cc.find_library('winmm')]
 else
-  thread_src = ['gthread-posix.c']
-  plat_src = ['glib-unix.c', 'gspawn.c', 'giounix.c']
+  glib_sources += files('glib-unix.c', 'gspawn.c', 'giounix.c')
   platform_deps = []
 endif
+
+glib_sources += files('gthread-@0@.c'.format(threads_implementation))
 
 if enable_dtrace
   glib_dtrace_obj = dtrace_obj_gen.process('glib_probes.d')
@@ -220,23 +234,42 @@ if use_pcre_static_flag
   pcre_static_args = ['-DPCRE_STATIC']
 endif
 
-libglib = shared_library('glib-2.0',
+libglib = library('glib-2.0',
   glib_dtrace_obj, glib_dtrace_hdr,
-  sources : [deprecated_sources, glib_sources, thread_src, plat_src],
+  sources : [deprecated_sources, glib_sources],
   version : library_version,
   soversion : soversion,
   install : true,
   # intl.lib is not compatible with SAFESEH
-  link_args : noseh_link_args,
+  link_args : [noseh_link_args, glib_link_flags, win32_ldflags],
   include_directories : configinc,
   link_with : [charset_lib, gnulib_lib],
   dependencies : [pcre, thread_dep, libintl, librt] + libiconv + platform_deps,
   c_args : ['-DG_LOG_DOMAIN="GLib"', '-DGLIB_COMPILATION'] + pcre_static_args + glib_hidden_visibility_args
 )
 
-libglib_dep = declare_dependency(link_with : libglib,
+libglib_dep = declare_dependency(
+  link_with : libglib,
+  # thread_dep doesn't get pulled in from libglib atm,
+  # see https://github.com/mesonbuild/meson/issues/1426
+  dependencies : [thread_dep, libintl],
   # We sadly need to export configinc here because everyone includes <glib/*.h>
   include_directories : [configinc, glibinc])
+
+pkg.generate(libraries : [libglib, libintl],
+  libraries_private : [osx_ldflags, win32_ldflags],
+  subdirs : ['glib-2.0'],
+  extra_cflags : ['-I${libdir}/glib-2.0/include'] + win32_cflags,
+  variables : ['bindir=' + join_paths('${prefix}', get_option('bindir')),
+               'glib_genmarshal=' + join_paths('${bindir}', 'glib-genmarshal'),
+               'gobject_query=' + join_paths('${bindir}', 'gobject-query'),
+               'glib_mkenums=' + join_paths('${bindir}', 'glib-mkenums')],
+  version : glib_version,
+  install_dir : glib_pkgconfigreldir,
+  filebase : 'glib-2.0',
+  name : 'GLib',
+  description : 'C Utility Library',
+)
 
 # On Windows, glib needs a spawn helper for g_spawn* API
 if host_system == 'windows'
@@ -244,31 +277,28 @@ if host_system == 'windows'
     executable('gspawn-win32-helper', 'gspawn-win32-helper.c',
       install : true,
       gui_app : true,
-      c_args : ['-DHAVE_CONFIG_H=1'],
       include_directories : configinc,
-      dependencies : [libintl, libglib_dep])
+      dependencies : [libglib_dep])
     executable('gspawn-win32-helper-console', 'gspawn-win32-helper.c',
       install : true,
-      c_args : ['-DHAVE_CONFIG_H=1', '-DHELPER_CONSOLE'],
+      c_args : ['-DHELPER_CONSOLE'],
       include_directories : configinc,
-      dependencies : [libintl, libglib_dep])
+      dependencies : [libglib_dep])
   else
     executable('gspawn-win64-helper', 'gspawn-win32-helper.c',
       install : true,
       gui_app : true,
-      c_args : ['-DHAVE_CONFIG_H=1'],
       include_directories : configinc,
-      dependencies : [libintl, libglib_dep])
+      dependencies : [libglib_dep])
     executable('gspawn-win64-helper-console', 'gspawn-win32-helper.c',
       install : true,
-      c_args : ['-DHAVE_CONFIG_H=1', '-DHELPER_CONSOLE'],
+      c_args : ['-DHELPER_CONSOLE'],
       include_directories : configinc,
-      dependencies : [libintl, libglib_dep])
+      dependencies : [libglib_dep])
   endif
 else
   gtester = executable('gtester', 'gtester.c',
     install : true,
-    c_args : ['-DHAVE_CONFIG_H=1'],
     include_directories : configinc,
     dependencies : [libglib_dep])
 endif
@@ -304,7 +334,4 @@ if enable_systemtap
     install : true)
 endif
 
-# gtester doesn't work on native windows
-if cc.get_id() != 'msvc'
-  subdir('tests')
-endif
+subdir('tests')

@@ -37,11 +37,14 @@
  */
 #include <stddef.h>
 
+#ifdef __GNUC__
 #define G_GNUC_CHECK_VERSION(major, minor) \
-    (defined(__GNUC__) && \
-     ((__GNUC__ > (major)) || \
-      ((__GNUC__ == (major)) && \
-       (__GNUC_MINOR__ >= (minor)))))
+    ((__GNUC__ > (major)) || \
+     ((__GNUC__ == (major)) && \
+      (__GNUC_MINOR__ >= (minor))))
+#else
+#define G_GNUC_CHECK_VERSION(major, minor) 0
+#endif
 
 /* Here we provide G_GNUC_EXTENSION as an alias for __extension__,
  * where this is valid. This allows for warningless compilation of
@@ -94,9 +97,11 @@
 #if    __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 96)
 #define G_GNUC_PURE __attribute__((__pure__))
 #define G_GNUC_MALLOC __attribute__((__malloc__))
+#define G_GNUC_NO_INLINE __attribute__((noinline))
 #else
 #define G_GNUC_PURE
 #define G_GNUC_MALLOC
+#define G_GNUC_NO_INLINE
 #endif
 
 #if     __GNUC__ >= 4
@@ -105,21 +110,48 @@
 #define G_GNUC_NULL_TERMINATED
 #endif
 
-/* Clang feature detection: http://clang.llvm.org/docs/LanguageExtensions.html */
-#ifndef __has_attribute
-#define __has_attribute(x) 0
+/*
+ * We can only use __typeof__ on GCC >= 4.8, and not when compiling C++. Since
+ * __typeof__ is used in a few places in GLib, provide a pre-processor symbol
+ * to factor the check out from callers.
+ *
+ * This symbol is private.
+ */
+#undef g_has_typeof
+#if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)) && !defined(__cplusplus)
+#define g_has_typeof
 #endif
 
-#ifndef __has_feature
-#define __has_feature(x) 0
+/*
+ * Clang feature detection: http://clang.llvm.org/docs/LanguageExtensions.html
+ * These are not available on GCC, but since the pre-processor doesn't do
+ * operator short-circuiting, we can't use it in a statement or we'll get:
+ *
+ * error: missing binary operator before token "("
+ *
+ * So we define it to 0 to satisfy the pre-processor.
+ */
+
+#ifdef __has_attribute
+#define g_macro__has_attribute __has_attribute
+#else
+#define g_macro__has_attribute(x) 0
 #endif
 
-#ifndef __has_builtin
-#define __has_builtin(x) 0
+#ifdef __has_feature
+#define g_macro__has_feature __has_feature
+#else
+#define g_macro__has_feature(x) 0
+#endif
+
+#ifdef __has_builtin
+#define g_macro__has_builtin __has_builtin
+#else
+#define g_macro__has_builtin(x) 0
 #endif
 
 #if     (!defined(__clang__) && ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 3))) || \
-        (defined(__clang__) && __has_attribute(__alloc_size__))
+        (defined(__clang__) && g_macro__has_attribute(__alloc_size__))
 #define G_GNUC_ALLOC_SIZE(x) __attribute__((__alloc_size__(x)))
 #define G_GNUC_ALLOC_SIZE2(x,y) __attribute__((__alloc_size__(x,y)))
 #else
@@ -128,10 +160,17 @@
 #endif
 
 #if     __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ > 4)
+#if !defined (__clang__) && G_GNUC_CHECK_VERSION (4, 4)
+#define G_GNUC_PRINTF( format_idx, arg_idx )    \
+  __attribute__((__format__ (gnu_printf, format_idx, arg_idx)))
+#define G_GNUC_SCANF( format_idx, arg_idx )     \
+  __attribute__((__format__ (gnu_scanf, format_idx, arg_idx)))
+#else
 #define G_GNUC_PRINTF( format_idx, arg_idx )    \
   __attribute__((__format__ (__printf__, format_idx, arg_idx)))
 #define G_GNUC_SCANF( format_idx, arg_idx )     \
   __attribute__((__format__ (__scanf__, format_idx, arg_idx)))
+#endif
 #define G_GNUC_FORMAT( arg_idx )                \
   __attribute__((__format_arg__ (arg_idx)))
 #define G_GNUC_NORETURN                         \
@@ -220,7 +259,7 @@
 #endif  /* !__GNUC__ */
 #endif  /* !G_DISABLE_DEPRECATED */
 
-#if __has_feature(attribute_analyzer_noreturn) && defined(__clang_analyzer__)
+#if g_macro__has_feature(attribute_analyzer_noreturn) && defined(__clang_analyzer__)
 #define G_ANALYZER_ANALYZING 1
 #define G_ANALYZER_NORETURN __attribute__((analyzer_noreturn))
 #else
@@ -301,6 +340,9 @@
 
 #undef	CLAMP
 #define CLAMP(x, low, high)  (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
+
+#define G_APPROX_VALUE(a, b, epsilon) \
+  (((a) > (b) ? (a) - (b) : (b) - (a)) < (epsilon))
 
 /* Count the number of elements in an array. The array must be defined
  * as such; using this with a dynamically allocated array will give
@@ -430,11 +472,17 @@
 #define GLIB_UNAVAILABLE(maj,min) G_UNAVAILABLE(maj,min) _GLIB_EXTERN
 #endif
 
+#ifndef __GI_SCANNER__
+
 #ifdef __GNUC__
 
 /* these macros are private */
 #define _GLIB_AUTOPTR_FUNC_NAME(TypeName) glib_autoptr_cleanup_##TypeName
 #define _GLIB_AUTOPTR_TYPENAME(TypeName)  TypeName##_autoptr
+#define _GLIB_AUTOPTR_LIST_FUNC_NAME(TypeName) glib_listautoptr_cleanup_##TypeName
+#define _GLIB_AUTOPTR_LIST_TYPENAME(TypeName)  TypeName##_listautoptr
+#define _GLIB_AUTOPTR_SLIST_FUNC_NAME(TypeName) glib_slistautoptr_cleanup_##TypeName
+#define _GLIB_AUTOPTR_SLIST_TYPENAME(TypeName)  TypeName##_slistautoptr
 #define _GLIB_AUTO_FUNC_NAME(TypeName)    glib_auto_cleanup_##TypeName
 #define _GLIB_CLEANUP(func)               __attribute__((cleanup(func)))
 #define _GLIB_DEFINE_AUTOPTR_CHAINUP(ModuleObjName, ParentName) \
@@ -446,8 +494,12 @@
 /* these macros are API */
 #define G_DEFINE_AUTOPTR_CLEANUP_FUNC(TypeName, func) \
   typedef TypeName *_GLIB_AUTOPTR_TYPENAME(TypeName);                                                           \
+  typedef GList *_GLIB_AUTOPTR_LIST_TYPENAME(TypeName);                                                         \
+  typedef GSList *_GLIB_AUTOPTR_SLIST_TYPENAME(TypeName);                                                         \
   G_GNUC_BEGIN_IGNORE_DEPRECATIONS                                                                              \
-  static inline void _GLIB_AUTOPTR_FUNC_NAME(TypeName) (TypeName **_ptr) { if (*_ptr) (func) (*_ptr); }         \
+  static G_GNUC_UNUSED inline void _GLIB_AUTOPTR_FUNC_NAME(TypeName) (TypeName **_ptr) { if (*_ptr) (func) (*_ptr); }         \
+  static G_GNUC_UNUSED inline void _GLIB_AUTOPTR_LIST_FUNC_NAME(TypeName) (GList **_l) { g_list_free_full (*_l, (GDestroyNotify) (void(*)(void)) func); } \
+  static G_GNUC_UNUSED inline void _GLIB_AUTOPTR_SLIST_FUNC_NAME(TypeName) (GSList **_l) { g_slist_free_full (*_l, (GDestroyNotify) (void(*)(void)) func); } \
   G_GNUC_END_IGNORE_DEPRECATIONS
 #define G_DEFINE_AUTO_CLEANUP_CLEAR_FUNC(TypeName, func) \
   G_GNUC_BEGIN_IGNORE_DEPRECATIONS                                                                              \
@@ -458,6 +510,8 @@
   static inline void _GLIB_AUTO_FUNC_NAME(TypeName) (TypeName *_ptr) { if (*_ptr != none) (func) (*_ptr); }     \
   G_GNUC_END_IGNORE_DEPRECATIONS
 #define g_autoptr(TypeName) _GLIB_CLEANUP(_GLIB_AUTOPTR_FUNC_NAME(TypeName)) _GLIB_AUTOPTR_TYPENAME(TypeName)
+#define g_autolist(TypeName) _GLIB_CLEANUP(_GLIB_AUTOPTR_LIST_FUNC_NAME(TypeName)) _GLIB_AUTOPTR_LIST_TYPENAME(TypeName)
+#define g_autoslist(TypeName) _GLIB_CLEANUP(_GLIB_AUTOPTR_SLIST_FUNC_NAME(TypeName)) _GLIB_AUTOPTR_SLIST_TYPENAME(TypeName)
 #define g_auto(TypeName) _GLIB_CLEANUP(_GLIB_AUTO_FUNC_NAME(TypeName)) TypeName
 #define g_autofree _GLIB_CLEANUP(g_autoptr_cleanup_generic_gfree)
 
@@ -471,6 +525,16 @@
 #define G_DEFINE_AUTO_CLEANUP_FREE_FUNC(TypeName, func, none)
 
 /* no declaration of g_auto() or g_autoptr() here */
-#endif
+#endif /* __GNUC__ */
+
+#else
+
+#define _GLIB_DEFINE_AUTOPTR_CHAINUP(ModuleObjName, ParentName)
+
+#define G_DEFINE_AUTOPTR_CLEANUP_FUNC(TypeName, func)
+#define G_DEFINE_AUTO_CLEANUP_CLEAR_FUNC(TypeName, func)
+#define G_DEFINE_AUTO_CLEANUP_FREE_FUNC(TypeName, func, none)
+
+#endif /* __GI_SCANNER__ */
 
 #endif /* __G_MACROS_H__ */

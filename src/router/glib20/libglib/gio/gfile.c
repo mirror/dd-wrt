@@ -392,7 +392,7 @@ g_file_default_init (GFileIface *iface)
  *
  * Checks to see if a file is native to the platform.
  *
- * A native file s one expressed in the platform-native filename format,
+ * A native file is one expressed in the platform-native filename format,
  * e.g. "C:\Windows" or "/usr/bin/". This does not mean the file is local,
  * as it might be on a locally mounted remote filesystem.
  *
@@ -534,6 +534,107 @@ g_file_get_path (GFile *file)
   return (* iface->get_path) (file);
 }
 
+/* Original commit introducing this in libgsystem:
+ *
+ *  fileutil: Handle recent: and trash: URIs
+ *
+ *  The gs_file_get_path_cached() was rather brittle in its handling
+ *  of URIs. It would assert() when a GFile didn't have a backing path
+ *  (such as when handling trash: or recent: URIs), and didn't know
+ *  how to get the target URI for those items either.
+ *
+ *  Make sure that we do not assert() when a backing path cannot be
+ *  found, and handle recent: and trash: URIs.
+ *
+ *  https://bugzilla.gnome.org/show_bug.cgi?id=708435
+ */
+static char *
+file_get_target_path (GFile *file)
+{
+  GFileInfo *info;
+  const char *target;
+  char *path;
+
+  info = g_file_query_info (file, G_FILE_ATTRIBUTE_STANDARD_TARGET_URI, G_FILE_QUERY_INFO_NONE, NULL, NULL);
+  if (info == NULL)
+    return NULL;
+  target = g_file_info_get_attribute_string (info, G_FILE_ATTRIBUTE_STANDARD_TARGET_URI);
+  path = g_filename_from_uri (target, NULL, NULL);
+  g_object_unref (info);
+
+  return path;
+}
+
+static const char *
+file_peek_path_generic (GFile *file)
+{
+  const char *path;
+  static GQuark _file_path_quark = 0;
+
+  if (G_UNLIKELY (_file_path_quark) == 0)
+    _file_path_quark = g_quark_from_static_string ("gio-file-path");
+
+  /* We need to be careful about threading, as two threads calling
+   * g_file_peek_path() on the same file could race: both would see
+   * (g_object_get_qdata(…) == NULL) to begin with, both would generate and add
+   * the path, but the second thread to add it would end up freeing the path
+   * set by the first thread. The first thread would still return the pointer
+   * to that freed path, though, resulting an a read-after-free. Handle that
+   * with a compare-and-swap loop. The g_object_*_qdata() functions are atomic. */
+
+  while (TRUE)
+    {
+      gchar *new_path = NULL;
+
+      path = g_object_get_qdata ((GObject*)file, _file_path_quark);
+
+      if (path != NULL)
+        break;
+
+      if (g_file_has_uri_scheme (file, "trash") ||
+          g_file_has_uri_scheme (file, "recent"))
+        new_path = file_get_target_path (file);
+      else
+        new_path = g_file_get_path (file);
+      if (new_path == NULL)
+        return NULL;
+
+      /* By passing NULL here, we ensure we never replace existing data: */
+      if (g_object_replace_qdata ((GObject *) file, _file_path_quark,
+                                  NULL, (gpointer) new_path,
+                                  (GDestroyNotify) g_free, NULL))
+        break;
+      else
+        g_free (new_path);
+    }
+
+  return path;
+}
+
+/**
+ * g_file_peek_path:
+ * @file: input #GFile
+ *
+ * Exactly like g_file_get_path(), but caches the result via
+ * g_object_set_qdata_full().  This is useful for example in C
+ * applications which mix `g_file_*` APIs with native ones.  It
+ * also avoids an extra duplicated string when possible, so will be
+ * generally more efficient.
+ *
+ * This call does no blocking I/O.
+ *
+ * Returns: (type filename) (nullable): string containing the #GFile's path,
+ *     or %NULL if no such path exists. The returned string is owned by @file.
+ * Since: 2.56
+ */
+const char *
+g_file_peek_path (GFile *file)
+{
+  if (G_IS_LOCAL_FILE (file))
+    return _g_local_file_get_filename ((GLocalFile *) file);
+  return file_peek_path_generic (file);
+}
+
 /**
  * g_file_get_uri:
  * @file: input #GFile
@@ -600,6 +701,11 @@ g_file_get_parse_name (GFile *file)
  * Duplicates a #GFile handle. This operation does not duplicate
  * the actual file or directory represented by the #GFile; see
  * g_file_copy() if attempting to copy a file.
+ *
+ * g_file_dup() is useful when a second handle is needed to the same underlying
+ * file, for use in a separate thread (#GFile is not thread-safe). For use
+ * within the same thread, use g_object_ref() to increment the existing object’s
+ * reference count.
  *
  * This call does no blocking I/O.
  *
@@ -1060,7 +1166,7 @@ g_file_enumerate_children_finish (GFile         *file,
  * Utility function to check if a particular file exists. This is
  * implemented using g_file_query_info() and as such does blocking I/O.
  *
- * Note that in many cases it is racy to first check for file existence
+ * Note that in many cases it is [racy to first check for file existence](https://en.wikipedia.org/wiki/Time_of_check_to_time_of_use)
  * and then execute something based on the outcome of that, because the
  * file might have been created or removed in between the operations. The
  * general approach to handling that is to not check, but just do the
@@ -2873,7 +2979,7 @@ retry:
 
       if (errsv == EINTR)
         goto retry;
-      else if (errsv == ENOSYS || errsv == EINVAL)
+      else if (errsv == ENOSYS || errsv == EINVAL || errsv == EOPNOTSUPP)
         g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
                              _("Splice not supported"));
       else
@@ -2898,6 +3004,7 @@ splice_stream_with_progress (GInputStream           *in,
                              GError                **error)
 {
   int buffer[2] = { -1, -1 };
+  int buffer_size;
   gboolean res;
   goffset total_size;
   loff_t offset_in;
@@ -2909,6 +3016,34 @@ splice_stream_with_progress (GInputStream           *in,
 
   if (!g_unix_open_pipe (buffer, FD_CLOEXEC, error))
     return FALSE;
+
+#if defined(F_SETPIPE_SZ) && defined(F_GETPIPE_SZ)
+  /* Try a 1MiB buffer for improved throughput. If that fails, use the default
+   * pipe size. See: https://bugzilla.gnome.org/791457 */
+  buffer_size = fcntl (buffer[1], F_SETPIPE_SZ, 1024 * 1024);
+  if (buffer_size <= 0)
+    {
+      int errsv;
+      buffer_size = fcntl (buffer[1], F_GETPIPE_SZ);
+      errsv = errno;
+
+      if (buffer_size <= 0)
+        {
+          g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errsv),
+                       _("Error splicing file: %s"), g_strerror (errsv));
+          res = FALSE;
+          goto out;
+        }
+    }
+#else
+  /* If #F_GETPIPE_SZ isn’t available, assume we’re on Linux < 2.6.35,
+   * but ≥ 2.6.11, meaning the pipe capacity is 64KiB. Ignore the possibility of
+   * running on Linux < 2.6.11 (where the capacity was the system page size,
+   * typically 4KiB) because it’s ancient. See pipe(7). */
+  buffer_size = 1024 * 64;
+#endif
+
+  g_assert (buffer_size > 0);
 
   total_size = -1;
   /* avoid performance impact of querying total size when it's not needed */
@@ -2933,7 +3068,7 @@ splice_stream_with_progress (GInputStream           *in,
       if (g_cancellable_set_error_if_cancelled (cancellable, error))
         break;
 
-      if (!do_splice (fd_in, &offset_in, buffer[1], NULL, 1024*64, &n_read, error))
+      if (!do_splice (fd_in, &offset_in, buffer[1], NULL, buffer_size, &n_read, error))
         break;
 
       if (n_read == 0)

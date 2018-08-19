@@ -199,112 +199,13 @@ _g_local_file_get_filename (GLocalFile *file)
   return file->filename;
 }
 
-static char *
-canonicalize_filename (const char *filename)
-{
-  char *canon, *start, *p, *q;
-  char *cwd;
-  int i;
-  
-  if (!g_path_is_absolute (filename))
-    {
-      cwd = g_get_current_dir ();
-      canon = g_build_filename (cwd, filename, NULL);
-      g_free (cwd);
-    }
-  else
-    canon = g_strdup (filename);
-
-  start = (char *)g_path_skip_root (canon);
-
-  if (start == NULL)
-    {
-      /* This shouldn't really happen, as g_get_current_dir() should
-	 return an absolute pathname, but bug 573843 shows this is
-	 not always happening */
-      g_free (canon);
-      return g_build_filename (G_DIR_SEPARATOR_S, filename, NULL);
-    }
-  
-  /* POSIX allows double slashes at the start to
-   * mean something special (as does windows too).
-   * So, "//" != "/", but more than two slashes
-   * is treated as "/".
-   */
-  i = 0;
-  for (p = start - 1;
-       (p >= canon) &&
-	 G_IS_DIR_SEPARATOR (*p);
-       p--)
-    i++;
-  if (i > 2)
-    {
-      i -= 1;
-      start -= i;
-      memmove (start, start+i, strlen (start+i)+1);
-    }
-
-  /* Make sure we're using the canonical dir separator */
-  p++;
-  while (p < start && G_IS_DIR_SEPARATOR (*p))
-    *p++ = G_DIR_SEPARATOR;
-  
-  p = start;
-  while (*p != 0)
-    {
-      if (p[0] == '.' && (p[1] == 0 || G_IS_DIR_SEPARATOR (p[1])))
-	{
-	  memmove (p, p+1, strlen (p+1)+1);
-	}
-      else if (p[0] == '.' && p[1] == '.' && (p[2] == 0 || G_IS_DIR_SEPARATOR (p[2])))
-	{
-	  q = p + 2;
-	  /* Skip previous separator */
-	  p = p - 2;
-	  if (p < start)
-	    p = start;
-	  while (p > start && !G_IS_DIR_SEPARATOR (*p))
-	    p--;
-	  if (G_IS_DIR_SEPARATOR (*p))
-	    *p++ = G_DIR_SEPARATOR;
-	  memmove (p, q, strlen (q)+1);
-	}
-      else
-	{
-	  /* Skip until next separator */
-	  while (*p != 0 && !G_IS_DIR_SEPARATOR (*p))
-	    p++;
-	  
-	  if (*p != 0)
-	    {
-	      /* Canonicalize one separator */
-	      *p++ = G_DIR_SEPARATOR;
-	    }
-	}
-
-      /* Remove additional separators */
-      q = p;
-      while (*q && G_IS_DIR_SEPARATOR (*q))
-	q++;
-
-      if (p != q)
-	memmove (p, q, strlen (q)+1);
-    }
-
-  /* Remove trailing slashes */
-  if (p > start && G_IS_DIR_SEPARATOR (*(p-1)))
-    *(p-1) = 0;
-  
-  return canon;
-}
-
 GFile *
 _g_local_file_new (const char *filename)
 {
   GLocalFile *local;
 
   local = g_object_new (G_TYPE_LOCAL_FILE, NULL);
-  local->filename = canonicalize_filename (filename);
+  local->filename = g_canonicalize_filename (filename, NULL);
   
   return G_FILE (local);
 }
@@ -665,22 +566,42 @@ get_fs_type (long f_type)
       return "autofs";
     case 0xADFF:
       return "affs";
+    case 0x62646576:
+      return "bdevfs";
     case 0x42465331:
       return "befs";
     case 0x1BADFACE:
       return "bfs";
+    case 0x42494e4d:
+      return "binfmt_misc";
     case 0x9123683E:
       return "btrfs";
+    case 0x73727279:
+      return "btrfs_test_fs";
+    case 0x27e0eb:
+      return "cgroup";
+    case 0x63677270:
+      return "cgroup2";
     case 0xFF534D42:
       return "cifs";
     case 0x73757245:
       return "coda";
     case 0x012FF7B7:
       return "coh";
+    case 0x62656570:
+      return "configfs";
     case 0x28cd3d45:
       return "cramfs";
+    case 0x64626720:
+      return "debugfs";
     case 0x1373:
       return "devfs";
+    case 0x1cd1:
+      return "devpts";
+    case 0xf15f:
+      return "ecryptfs";
+    case 0xde5e81e4:
+      return "efivarfs";
     case 0x00414A53:
       return "efs";
     case 0x137D:
@@ -689,8 +610,18 @@ get_fs_type (long f_type)
       return "ext2";
     case 0xEF53:
       return "ext3/ext4";
+    case 0xF2F52010:
+      return "f2fs";
+    case 0x65735546:
+      return "fuse";
+    case 0x65735543:
+      return "fusectl";
+    case 0xBAD1DEA:
+      return "futexfs";
     case 0x4244:
       return "hfs";
+    case 0x00c0ffee:
+      return "hostfs";
     case 0xF995E849:
       return "hpfs";
     case 0x958458f6:
@@ -709,42 +640,80 @@ get_fs_type (long f_type)
       return "minix2";
     case 0x2478:
       return "minix22";
+    case 0x4d5a:
+      return "minix3";
+    case 0x19800202:
+      return "mqueue";
     case 0x4d44:
       return "msdos";
     case 0x564c:
       return "ncp";
     case 0x6969:
       return "nfs";
+    case 0x3434:
+      return "nilfs";
+    case 0x6e736673:
+      return "nsfs";
     case 0x5346544e:
       return "ntfs";
+    case 0x7461636f:
+      return "ocfs2";
     case 0x9fa1:
       return "openprom";
+    case 0x794c7630:
+      return "overlay";
+    case 0x50495045:
+      return "pipefs";
     case 0x9fa0:
       return "proc";
+    case 0x6165676C:
+      return "pstore";
     case 0x002f:
       return "qnx4";
+    case 0x68191122:
+      return "qnx6";
+    case 0x858458f6:
+      return "ramfs";
     case 0x52654973:
       return "reiserfs";
     case 0x7275:
       return "romfs";
+    case 0x67596969:
+      return "rpc_pipefs";
+    case 0x73636673:
+      return "securityfs";
+    case 0xf97cff8c:
+      return "selinuxfs";
+    case 0x43415d53:
+      return "smackfs";
     case 0x517B:
       return "smb";
+    case 0x534F434B:
+      return "sockfs";
     case 0x73717368:
       return "squashfs";
+    case 0x62656572:
+      return "sysfs";
     case 0x012FF7B6:
       return "sysv2";
     case 0x012FF7B5:
       return "sysv4";
     case 0x01021994:
       return "tmpfs";
+    case 0x74726163:
+      return "tracefs";
     case 0x15013346:
       return "udf";
     case 0x00011954:
       return "ufs";
     case 0x9fa2:
       return "usbdevice";
+    case 0x01021997:
+      return "v9fs";
     case 0xa501FCF5:
       return "vxfs";
+    case 0xabba1974:
+      return "xenfs";
     case 0x012FF7B4:
       return "xenix";
     case 0x58465342:
@@ -753,8 +722,6 @@ get_fs_type (long f_type)
       return "xiafs";
     case 0x52345362:
       return "reiser4";
-    case 0x65735546:
-      return "fuse";
     default:
       return NULL;
     }
@@ -1593,7 +1560,7 @@ expand_symlink (const char *link)
 #endif
   
   if (g_path_is_absolute (symlink_value))
-    return canonicalize_filename (symlink_value);
+    return g_canonicalize_filename (symlink_value, NULL);
   else
     {
       link2 = strip_trailing_slashes (link);
@@ -1603,7 +1570,7 @@ expand_symlink (const char *link)
       resolved = g_build_filename (parent, symlink_value, NULL);
       g_free (parent);
       
-      canonical = canonicalize_filename (resolved);
+      canonical = g_canonicalize_filename (resolved, NULL);
       
       g_free (resolved);
 
@@ -1710,21 +1677,36 @@ find_mountpoint_for (const char *file,
     }
 }
 
-char *
-_g_local_file_find_topdir_for (const char *file)
+static char *
+_g_local_file_find_topdir_for_internal (const char *file, dev_t file_dev)
 {
   char *dir;
   char *mountpoint = NULL;
   dev_t dir_dev;
 
   dir = get_parent (file, &dir_dev);
-  if (dir == NULL)
-    return NULL;
+  if (dir == NULL || dir_dev != file_dev)
+    {
+      g_free (dir);
+
+      return NULL;
+    }
 
   mountpoint = find_mountpoint_for (dir, dir_dev);
   g_free (dir);
 
   return mountpoint;
+}
+
+char *
+_g_local_file_find_topdir_for (const char *file)
+{
+  GStatBuf file_stat;
+
+  if (g_lstat (file, &file_stat) != 0)
+    return NULL;
+
+  return _g_local_file_find_topdir_for_internal (file, file_stat.st_dev);
 }
 
 static char *
@@ -1802,6 +1784,7 @@ _g_local_file_has_trash_dir (const char *dirname, dev_t dir_dev)
   char uid_str[32];
   GStatBuf global_stat, trash_stat;
   gboolean res;
+  GUnixMountEntry *mount;
 
   if (g_once_init_enter (&home_dev_set))
     {
@@ -1819,6 +1802,17 @@ _g_local_file_has_trash_dir (const char *dirname, dev_t dir_dev)
   topdir = find_mountpoint_for (dirname, dir_dev);
   if (topdir == NULL)
     return FALSE;
+
+  mount = g_unix_mount_at (topdir, NULL);
+  if (mount == NULL || g_unix_mount_is_system_internal (mount))
+    {
+      g_clear_pointer (&mount, g_unix_mount_free);
+      g_free (topdir);
+
+      return FALSE;
+    }
+
+  g_clear_pointer (&mount, g_unix_mount_free);
 
   globaldir = g_build_filename (topdir, ".Trash", NULL);
   if (g_lstat (globaldir, &global_stat) == 0 &&
@@ -1915,7 +1909,7 @@ g_local_file_trash (GFile         *file,
   int i;
   char *data;
   gboolean is_homedir_trash;
-  char delete_time[32];
+  char *delete_time = NULL;
   int fd;
   GStatBuf trash_stat, global_stat;
   char *dirname, *globaldir;
@@ -1963,19 +1957,35 @@ g_local_file_trash (GFile         *file,
     {
       uid_t uid;
       char uid_str[32];
+      GUnixMountEntry *mount;
 
       uid = geteuid ();
       g_snprintf (uid_str, sizeof (uid_str), "%lu", (unsigned long)uid);
 
-      topdir = _g_local_file_find_topdir_for (local->filename);
+      topdir = _g_local_file_find_topdir_for_internal (local->filename,
+                                                       file_stat.st_dev);
       if (topdir == NULL)
 	{
           g_set_io_error (error,
                           _("Unable to find toplevel directory to trash %s"),
-                          file, G_IO_ERROR_NOT_SUPPORTED);
+                          file, ENOTSUP);
 	  return FALSE;
 	}
-      
+
+      mount = g_unix_mount_at (topdir, NULL);
+      if (mount == NULL || g_unix_mount_is_system_internal (mount))
+        {
+          g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
+                       _("Trashing on system internal mounts is not supported"));
+
+          g_clear_pointer (&mount, g_unix_mount_free);
+          g_free (topdir);
+
+          return FALSE;
+        }
+
+      g_clear_pointer (&mount, g_unix_mount_free);
+
       /* Try looking for global trash dir $topdir/.Trash/$uid */
       globaldir = g_build_filename (topdir, ".Trash", NULL);
       if (g_lstat (globaldir, &global_stat) == 0 &&
@@ -2127,16 +2137,17 @@ g_local_file_trash (GFile         *file,
   g_free (topdir);
   
   {
-    time_t t;
-    struct tm now;
-    t = time (NULL);
-    localtime_r (&t, &now);
-    delete_time[0] = 0;
-    strftime(delete_time, sizeof (delete_time), "%Y-%m-%dT%H:%M:%S", &now);
+    GDateTime *now = g_date_time_new_now_local ();
+    if (now != NULL)
+      delete_time = g_date_time_format (now, "%Y-%m-%dT%H:%M:%S");
+    else
+      delete_time = g_strdup ("9999-12-31T23:59:59");
+    g_date_time_unref (now);
   }
 
   data = g_strdup_printf ("[Trash Info]\nPath=%s\nDeletionDate=%s\n",
 			  original_name_escaped, delete_time);
+  g_free (delete_time);
 
   g_file_set_contents (infofile, data, -1, NULL);
 
@@ -2753,7 +2764,9 @@ g_local_file_measure_size_of_file (gint           parent_fd,
   if (S_ISDIR (buf.st_mode))
     {
       int dir_fd = -1;
+#ifdef AT_FDCWD
       int errsv;
+#endif
 
       if (g_cancellable_set_error_if_cancelled (state->cancellable, error))
         return FALSE;

@@ -61,7 +61,9 @@ IGNORE_HFILES = \
 	gtranslit-data.h	\
 	glib-init.h		\
 	gconstructor.h		\
-	valgrind.h
+	valgrind.h		\
+	gvalgrind.h		\
+	$(NULL)
 
 # Images to copy into HTML directory
 HTML_IMAGES =  						\
@@ -137,8 +139,6 @@ endif
 
 CLEANFILES ?=
 CLEANFILES += $(man_MANS)
-
-EXTRA_DIST += $(man_MANS)
 
 dist-hook-local: all-local
 

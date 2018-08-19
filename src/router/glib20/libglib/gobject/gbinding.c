@@ -748,7 +748,7 @@ g_binding_get_target_property (GBinding *binding)
 
 /**
  * g_binding_unbind:
- * @binding: a #GBinding
+ * @binding: (transfer full): a #GBinding
  *
  * Explicitly releases the binding between the source and the target
  * property expressed by @binding.
@@ -781,8 +781,8 @@ g_binding_unbind (GBinding *binding)
  *     from the @target to the @source, or %NULL to use the default
  * @user_data: custom data to be passed to the transformation functions,
  *     or %NULL
- * @notify: function to be called when disposing the binding, to free the
- *     resources used by the transformation functions
+ * @notify: (nullable): a function to call when disposing the binding, to free
+ *     resources used by the transformation functions, or %NULL if not required
  *
  * Complete version of g_object_bind_property().
  *

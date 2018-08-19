@@ -105,9 +105,9 @@ ViewerFile *file = g_object_new (VIEWER_TYPE_FILE, NULL);
       This will make sure the class structure of this new object is
       correctly initialized. Here, <function>viewer_file_class_init</function>
       is expected to override the object's class methods and setup the
-      class' own methods. In the example above, the constructor method is
-      the only overridden method: it is set to
-      <function>viewer_file_constructor</function>.
+      class' own methods. In the example above, the <literal>constructed</literal>
+      method is the only overridden method: it is set to
+      <function>viewer_file_constructed</function>.
     </para>
 
     <para>
@@ -540,7 +540,7 @@ viewer_file_class_init (ViewerFileClass *klass)
                          "Filename",
                          "Name of the file to load and display from.",
                          NULL  /* default value */,
-                         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE));
+                         G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE);
 
   obj_properties[PROP_ZOOM_LEVEL] =
     g_param_spec_uint ("zoom-level",
@@ -549,7 +549,7 @@ viewer_file_class_init (ViewerFileClass *klass)
                        0  /* minimum value */,
                        10 /* maximum value */,
                        2  /* default value */,
-                       G_PARAM_READWRITE));
+                       G_PARAM_READWRITE);
 
   g_object_class_install_properties (object_class,
                                      N_PROPERTIES,

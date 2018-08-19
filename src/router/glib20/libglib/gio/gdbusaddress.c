@@ -66,6 +66,9 @@
  * like `unix:tmpdir=/tmp/my-app-name`. The exact format of addresses
  * is explained in detail in the
  * [D-Bus specification](http://dbus.freedesktop.org/doc/dbus-specification.html#addresses).
+ *
+ * TCP D-Bus connections are supported, but accessing them via a proxy is
+ * currently not supported.
  */
 
 static gchar *get_session_address_platform_specific (GError **error);
@@ -415,6 +418,10 @@ g_dbus_is_supported_address (const gchar  *string,
         supported = is_valid_nonce_tcp (a[n], key_value_pairs, error);
       else if (g_strcmp0 (a[n], "autolaunch:") == 0)
         supported = TRUE;
+      else
+        g_set_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT,
+                     _("Unknown or unsupported transport “%s” for address “%s”"),
+                     transport_name, a[n]);
 
       g_free (transport_name);
       g_hash_table_unref (key_value_pairs);
@@ -675,6 +682,13 @@ g_dbus_address_connect (const gchar   *address_entry,
 
       g_assert (ret == NULL);
       client = g_socket_client_new ();
+
+      /* Disable proxy support to prevent a deadlock on startup, since loading a
+       * proxy resolver causes the GIO modules to be loaded, and there will
+       * almost certainly be one of them which then tries to use GDBus.
+       * See: https://bugzilla.gnome.org/show_bug.cgi?id=792499 */
+      g_socket_client_set_enable_proxy (client, FALSE);
+
       connection = g_socket_client_connect (client,
                                             connectable,
                                             cancellable,

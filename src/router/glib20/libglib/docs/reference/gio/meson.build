@@ -1,4 +1,4 @@
-if get_option('with-docs') != 'no'
+if get_option('gtk_doc')
   subdir('xml')
 
   ignore_headers = [
@@ -52,9 +52,11 @@ if get_option('with-docs') != 'no'
     'gnetworkmonitorbase.h',
     'gnetworkmonitornetlink.h',
     'gnetworkmonitornm.h',
+    'gnetworkmonitorportal.h',
     'gnotificationbackend.h',
     'gnotification-private.h',
     'gpollfilemonitor.h',
+    'gproxyresolverportal.h',
     'gregistrysettingsbackend.h',
     'gresourcefile.h',
     'gsettingsbackendinternal.h',
@@ -73,15 +75,41 @@ if get_option('with-docs') != 'no'
     'gunixvolume.h',
     'gunixvolumemonitor.h',
     'gwin32appinfo.h',
-    'gwin32inputstream.h',
     'gwin32mount.h',
-    'gwin32outputstream.h',
     'gwin32registrykey.h',
     'gwin32resolver.h',
     'gwin32volumemonitor.h',
     'thumbnail-verify.h',
     'xdp-dbus.h',
   ]
+
+  if host_system == 'windows'
+    ignore_headers += [
+      'gfiledescriptorbased.h',
+      'gunixconnection.h',
+      'gunixcredentialsmessage.h',
+      'gunixmounts.h',
+      'gunixfdlist.h',
+      'gunixfdmessage.h',
+      'gunixinputstream.h',
+      'gunixoutputstream.h',
+      'gunixsocketaddress.h',
+      'gdesktopappinfo.h',
+      'gosxappinfo.h',
+    ]
+  else
+    if glib_have_cocoa
+      ignore_headers += ['gdesktopappinfo.h']
+    else
+      ignore_headers += ['gosxappinfo.h']
+    endif
+
+    ignore_headers += [
+      'gwin32networkmonitor.h',
+      'gwin32inputstream.h',
+      'gwin32outputstream.h',
+    ]
+  endif
 
   ignore_decorators = [
     'GLIB_VAR',
@@ -154,7 +182,6 @@ if get_option('with-docs') != 'no'
   gnome.gtkdoc('gio',
     main_xml : 'gio-docs.xml',
     namespace : 'g',
-    gobject_typesfile : 'gio.types',
     mode : 'none',
     dependencies : [libgio_dep, libgobject_dep, libglib_dep],
     src_dir : 'gio',
@@ -202,7 +229,7 @@ if get_option('with-docs') != 'no'
 endif
 
 
-if get_option('with-man') != 'no' and xsltproc.found()
+if get_option('man')
   manpages = ['gapplication', 'gio-querymodules', 'glib-compile-schemas',
               'glib-compile-resources', 'gsettings', 'gresource', 'gdbus',
               'gio', 'gdbus-codegen']

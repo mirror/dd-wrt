@@ -2028,7 +2028,7 @@ g_option_context_parse (GOptionContext   *context,
 
                   /* Now look for --<group>-<option> */
                   dash = strchr (arg, '-');
-                  if (dash)
+                  if (dash && arg < dash)
                     {
                       /* Try the groups */
                       list = context->groups;
@@ -2293,7 +2293,7 @@ g_option_group_free (GOptionGroup *group)
  *
  * Increments the reference count of @group by one.
  *
- * Returns: a #GoptionGroup
+ * Returns: a #GOptionGroup
  *
  * Since: 2.44
  */

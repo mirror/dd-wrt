@@ -36,11 +36,19 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <utime.h>
 #endif
 #include <fcntl.h>
-#include <utime.h>
 #ifdef G_OS_WIN32
 #include <windows.h>
+#include <sys/utime.h>
+#include <io.h>
+#ifndef S_ISDIR
+#define S_ISDIR(m) (((m) & _S_IFMT) == _S_IFDIR)
+#endif
+#ifndef F_OK
+#define F_OK 0
+#endif
 #endif
 
 #define S G_DIR_SEPARATOR_S
@@ -435,47 +443,47 @@ test_mkdir_with_parents_1 (const gchar *base)
   g_remove (p0);
 
   if (g_file_test (p0, G_FILE_TEST_EXISTS))
-    g_error ("failed, %s exists, cannot test g_mkdir_with_parents\n", p0);
+    g_error ("failed, %s exists, cannot test g_mkdir_with_parents", p0);
 
   if (g_file_test (p1, G_FILE_TEST_EXISTS))
-    g_error ("failed, %s exists, cannot test g_mkdir_with_parents\n", p1);
+    g_error ("failed, %s exists, cannot test g_mkdir_with_parents", p1);
 
   if (g_file_test (p2, G_FILE_TEST_EXISTS))
-    g_error ("failed, %s exists, cannot test g_mkdir_with_parents\n", p2);
+    g_error ("failed, %s exists, cannot test g_mkdir_with_parents", p2);
 
   if (g_mkdir_with_parents (p2, 0777) == -1)
     {
       int errsv = errno;
-      g_error ("failed, g_mkdir_with_parents(%s) failed: %s\n", p2, g_strerror (errsv));
+      g_error ("failed, g_mkdir_with_parents(%s) failed: %s", p2, g_strerror (errsv));
     }
 
   if (!g_file_test (p2, G_FILE_TEST_IS_DIR))
-    g_error ("failed, g_mkdir_with_parents(%s) succeeded, but %s is not a directory\n", p2, p2);
+    g_error ("failed, g_mkdir_with_parents(%s) succeeded, but %s is not a directory", p2, p2);
 
   if (!g_file_test (p1, G_FILE_TEST_IS_DIR))
-    g_error ("failed, g_mkdir_with_parents(%s) succeeded, but %s is not a directory\n", p2, p1);
+    g_error ("failed, g_mkdir_with_parents(%s) succeeded, but %s is not a directory", p2, p1);
 
   if (!g_file_test (p0, G_FILE_TEST_IS_DIR))
-    g_error ("failed, g_mkdir_with_parents(%s) succeeded, but %s is not a directory\n", p2, p0);
+    g_error ("failed, g_mkdir_with_parents(%s) succeeded, but %s is not a directory", p2, p0);
 
   g_rmdir (p2);
   if (g_file_test (p2, G_FILE_TEST_EXISTS))
-    g_error ("failed, did g_rmdir(%s), but %s is still there\n", p2, p2);
+    g_error ("failed, did g_rmdir(%s), but %s is still there", p2, p2);
 
   g_rmdir (p1);
   if (g_file_test (p1, G_FILE_TEST_EXISTS))
-    g_error ("failed, did g_rmdir(%s), but %s is still there\n", p1, p1);
+    g_error ("failed, did g_rmdir(%s), but %s is still there", p1, p1);
 
   f = g_fopen (p1, "w");
   if (f == NULL)
-    g_error ("failed, couldn't create file %s\n", p1);
+    g_error ("failed, couldn't create file %s", p1);
   fclose (f);
 
   if (g_mkdir_with_parents (p1, 0666) == 0)
-    g_error ("failed, g_mkdir_with_parents(%s) succeeded, even if %s is a file\n", p1, p1);
+    g_error ("failed, g_mkdir_with_parents(%s) succeeded, even if %s is a file", p1, p1);
 
   if (g_mkdir_with_parents (p2, 0666) == 0)
-    g_error("failed, g_mkdir_with_parents(%s) succeeded, even if %s is a file\n", p2, p1);
+    g_error("failed, g_mkdir_with_parents(%s) succeeded, even if %s is a file", p2, p1);
 
   g_remove (p2);
   g_remove (p1);
@@ -879,6 +887,16 @@ test_stdio_wrappers (void)
   gint ret;
   struct utimbuf ut;
   GError *error = NULL;
+  GStatBuf path_statbuf, cwd_statbuf;
+
+  /* The permissions tests here don’t work when running as root. */
+#ifdef G_OS_UNIX
+  if (getuid () == 0 || geteuid () == 0)
+    {
+      g_test_skip ("File permissions tests cannot be run as root");
+      return;
+    }
+#endif
 
   g_remove ("mkdir-test/test-create");
   ret = g_rmdir ("mkdir-test");
@@ -903,7 +921,13 @@ test_stdio_wrappers (void)
   ret = g_chdir (path);
   g_assert_cmpint (ret, ==, 0);
   cwd = g_get_current_dir ();
-  g_assert_true (g_str_equal (cwd, path));
+  /* We essentially want to check that cwd == path, but we can’t compare the
+   * paths directly since the tests might be running under a symlink (for
+   * example, /tmp is sometimes a symlink). Compare the inode numbers instead. */
+  g_assert_cmpint (g_stat (cwd, &cwd_statbuf), ==, 0);
+  g_assert_cmpint (g_stat (path, &path_statbuf), ==, 0);
+  g_assert_true (cwd_statbuf.st_dev == path_statbuf.st_dev &&
+                 cwd_statbuf.st_ino == path_statbuf.st_ino);
   g_free (cwd);
   g_free (path);
 
@@ -935,12 +959,64 @@ test_stdio_wrappers (void)
   g_rmdir ("mkdir-test");
 }
 
+/* Win32 does not support "wb+", but g_fopen() should automatically
+ * translate this mode to its alias "w+b".
+ * Also check various other file open modes for correct support accross
+ * platforms.
+ * See: https://gitlab.gnome.org/GNOME/glib/merge_requests/119
+ */
+static void
+test_fopen_modes (void)
+{
+  char        *path = g_build_filename ("temp-fopen", NULL);
+  gsize        i;
+  const gchar *modes[] =
+    {
+      "w",
+      "r",
+      "a",
+      "w+",
+      "r+",
+      "a+",
+      "wb",
+      "rb",
+      "ab",
+      "w+b",
+      "r+b",
+      "a+b",
+      "wb+",
+      "rb+",
+      "ab+"
+    };
+
+  g_test_bug ("119");
+
+  if (g_file_test (path, G_FILE_TEST_EXISTS))
+    g_error ("failed, %s exists, cannot test g_fopen()", path);
+
+  for (i = 0; i < G_N_ELEMENTS (modes); i++)
+    {
+      FILE *f;
+
+      g_test_message ("Testing fopen() mode '%s'", modes[i]);
+
+      f = g_fopen (path, modes[i]);
+      g_assert_nonnull (f);
+      fclose (f);
+    }
+
+  g_remove (path);
+  g_free (path);
+}
+
 int
 main (int   argc,
       char *argv[])
 {
   g_setenv ("LC_ALL", "C", TRUE);
   g_test_init (&argc, &argv, NULL);
+
+  g_test_bug_base ("https://gitlab.gnome.org/GNOME/glib/merge_requests/");
 
   g_test_add_func ("/fileutils/build-path", test_build_path);
   g_test_add_func ("/fileutils/build-pathv", test_build_pathv);
@@ -957,6 +1033,7 @@ main (int   argc,
   g_test_add_func ("/fileutils/set-contents", test_set_contents);
   g_test_add_func ("/fileutils/read-link", test_read_link);
   g_test_add_func ("/fileutils/stdio-wrappers", test_stdio_wrappers);
+  g_test_add_func ("/fileutils/fopen-modes", test_fopen_modes);
 
   return g_test_run ();
 }

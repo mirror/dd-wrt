@@ -17,6 +17,8 @@
  * Author: Matthias Clasen
  */
 
+#include <locale.h>
+
 #include <glib/glib.h>
 #include <glib/gstdio.h>
 #include <gio/gio.h>
@@ -91,6 +93,8 @@ test_delete (void)
       res = g_app_info_delete (info);
       g_assert (!res);
     }
+
+  g_free (filename);
 }
 
 static void
@@ -113,6 +117,7 @@ test_default (void)
   info = g_app_info_get_default_for_type ("application/x-test", FALSE);
   g_assert (info != NULL);
   g_assert_cmpstr (g_app_info_get_id (info), ==, g_app_info_get_id (info2));
+  g_object_unref (info);
 
   /* now try adding something, but not setting as default */
   g_app_info_add_supports_type (info3, "application/x-test", &error);
@@ -122,6 +127,7 @@ test_default (void)
   info = g_app_info_get_default_for_type ("application/x-test", FALSE);
   g_assert (info != NULL);
   g_assert_cmpstr (g_app_info_get_id (info), ==, g_app_info_get_id (info2));
+  g_object_unref (info);
 
   /* now remove info1 again */
   g_app_info_remove_supports_type (info1, "application/x-test", &error);
@@ -131,6 +137,7 @@ test_default (void)
   info = g_app_info_get_default_for_type ("application/x-test", FALSE);
   g_assert (info != NULL);
   g_assert_cmpstr (g_app_info_get_id (info), ==, g_app_info_get_id (info2));
+  g_object_unref (info);
 
   /* now clean it all up */
   g_app_info_reset_type_associations ("application/x-test");
@@ -144,6 +151,7 @@ test_default (void)
 
   g_object_unref (info1);
   g_object_unref (info2);
+  g_object_unref (info3);
 }
 
 static void
@@ -322,6 +330,8 @@ cleanup_dir_recurse (GFile   *parent,
 
   ret = TRUE;
  out:
+  g_clear_object (&enumerator);
+
   return ret;
 }
 
@@ -340,14 +350,20 @@ cleanup_subdirs (const char *base_dir)
   (void) cleanup_dir_recurse (file, file, &error);
   g_assert_no_error (error);
   g_object_unref (file);
+  g_object_unref (base);
 }
 
 static void
 test_extra_getters (void)
 {
   GDesktopAppInfo *appinfo;
+  const gchar *lang;
   gchar *s;
   gboolean b;
+
+  lang = setlocale (LC_ALL, NULL);
+  g_setenv ("LANGUAGE", "de_DE.UTF8", TRUE);
+  setlocale (LC_ALL, "");
 
   appinfo = g_desktop_app_info_new_from_filename (g_test_get_filename (G_TEST_DIST, "appinfo-test.desktop", NULL));
   g_assert (appinfo != NULL);
@@ -359,10 +375,24 @@ test_extra_getters (void)
   g_assert_cmpstr (s, ==, "appinfo-class");
   g_free (s);
 
+  s = g_desktop_app_info_get_locale_string (appinfo, "X-JunkFood");
+  g_assert_cmpstr (s, ==, "Bratwurst");
+  g_free (s);
+
+  g_setenv ("LANGUAGE", "sv_SV.UTF8", TRUE);
+  setlocale (LC_ALL, "");
+
+  s = g_desktop_app_info_get_locale_string (appinfo, "X-JunkFood");
+  g_assert_cmpstr (s, ==, "Burger"); /* fallback */
+  g_free (s);
+
   b = g_desktop_app_info_get_boolean (appinfo, "Terminal");
   g_assert (b);
 
   g_object_unref (appinfo);
+
+  g_setenv ("LANGUAGE", lang, TRUE);
+  setlocale (LC_ALL, "");
 }
 
 static void
@@ -605,7 +635,7 @@ assert_implementations (const gchar *interface,
 }
 
 #define ALL_USR_APPS  "evince-previewer.desktop nautilus-classic.desktop gnome-font-viewer.desktop "         \
-                      "baobab.desktop yelp.desktop eog.desktop cheese.desktop gnome-clocks.desktop "         \
+                      "baobab.desktop yelp.desktop eog.desktop cheese.desktop org.gnome.clocks.desktop "         \
                       "gnome-contacts.desktop kde4-kate.desktop gcr-prompter.desktop totem.desktop "         \
                       "gnome-terminal.desktop nautilus-autorun-software.desktop gcr-viewer.desktop "         \
                       "nautilus-connect-server.desktop kde4-dolphin.desktop gnome-music.desktop "            \
@@ -646,6 +676,17 @@ test_search (void)
   assert_search ("image viewer", "", FALSE, TRUE, NULL, NULL);
   assert_search ("image viewer", "", TRUE, TRUE, NULL, NULL);
 
+  /* There're "flatpak" apps (clocks) installed as well - they should *not*
+   * match the prefix command ("/bin/sh") in the Exec= line though.
+   */
+  assert_search ("sh", "gnome-terminal.desktop\n", TRUE, FALSE, NULL, NULL);
+
+  /* "frobnicator.desktop" is ignored by get_all() because the binary is
+   * missing, but search should still find it (to avoid either stale results
+   * from the cache or expensive stat() calls for each potential result)
+   */
+  assert_search ("frobni", "frobnicator.desktop\n", TRUE, FALSE, NULL, NULL);
+
   /* Obvious multi-word search */
   assert_search ("gno hel", "yelp.desktop\n", TRUE, TRUE, NULL, NULL);
 
@@ -664,7 +705,7 @@ test_search (void)
    * yelp and gnome-contacts, though.
    */
   assert_search ("gnome", "eog.desktop\n"
-                          "gnome-clocks.desktop\n"
+                          "org.gnome.clocks.desktop\n"
                           "yelp.desktop gnome-contacts.desktop\n", TRUE, TRUE, NULL, NULL);
 
   /* eog has exec name 'false' in usr only */
@@ -756,6 +797,46 @@ test_show_in (void)
   assert_shown ("gcr-prompter.desktop", TRUE, "KDE:GNOME-Classic");
 }
 
+/* Test g_desktop_app_info_launch_uris_as_manager() and
+ * g_desktop_app_info_launch_uris_as_manager_with_fds()
+ */
+static void
+test_launch_as_manager (void)
+{
+  GDesktopAppInfo *appinfo;
+  GError *error = NULL;
+  gboolean retval;
+  const gchar *path;
+
+  if (g_getenv ("DISPLAY") == NULL || g_getenv ("DISPLAY")[0] == '\0')
+    {
+      g_test_skip ("No DISPLAY.  Skipping test.");
+      return;
+    }
+
+  path = g_test_get_filename (G_TEST_DIST, "appinfo-test.desktop", NULL);
+  appinfo = g_desktop_app_info_new_from_filename (path);
+  g_assert_nonnull (appinfo);
+
+  retval = g_desktop_app_info_launch_uris_as_manager (appinfo, NULL, NULL, 0,
+                                                      NULL, NULL,
+                                                      NULL, NULL,
+                                                      &error);
+  g_assert_no_error (error);
+  g_assert_true (retval);
+
+  retval = g_desktop_app_info_launch_uris_as_manager_with_fds (appinfo,
+                                                               NULL, NULL, 0,
+                                                               NULL, NULL,
+                                                               NULL, NULL,
+                                                               -1, -1, -1,
+                                                               &error);
+  g_assert_no_error (error);
+  g_assert_true (retval);
+
+  g_object_unref (appinfo);
+}
+
 int
 main (int   argc,
       char *argv[])
@@ -784,6 +865,7 @@ main (int   argc,
   g_test_add_func ("/desktop-app-info/search", test_search);
   g_test_add_func ("/desktop-app-info/implements", test_implements);
   g_test_add_func ("/desktop-app-info/show-in", test_show_in);
+  g_test_add_func ("/desktop-app-info/launch-as-manager", test_launch_as_manager);
 
   result = g_test_run ();
 

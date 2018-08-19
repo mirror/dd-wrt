@@ -25,6 +25,7 @@
 #undef G_DISABLE_ASSERT
 #undef G_LOG_DOMAIN
 
+#include <locale.h>
 #include <string.h>
 
 #include <glib.h>
@@ -33,8 +34,8 @@
 static void
 test_iconv_state (void)
 {
-  gchar *in = "\xf4\xe5\xf8\xe5\xed";
-  gchar *expected = "\xd7\xa4\xd7\x95\xd7\xa8\xd7\x95\xd7\x9d";
+  const gchar *in = "\xf4\xe5\xf8\xe5\xed";
+  const gchar *expected = "\xd7\xa4\xd7\x95\xd7\xa8\xd7\x95\xd7\x9d";
   gchar *out;
   gsize bytes_read = 0;
   gsize bytes_written = 0;
@@ -53,17 +54,19 @@ test_iconv_state (void)
   g_free (out);
 }
 
-/* some tests involving "vulgar fraction one half" */
+/* Some tests involving "vulgar fraction one half" (U+00BD). This is
+ * represented in UTF-8 as \xC2\xBD, in ISO-8859-1 as \xBD, and is not
+ * represented in ISO-8859-15. */
 static void 
 test_one_half (void)
 {
-  gchar *in = "\xc2\xbd";
+  const gchar *in_utf8 = "\xc2\xbd";
   gchar *out;
   gsize bytes_read = 0;
   gsize bytes_written = 0;
   GError *error = NULL;  
 
-  out = g_convert (in, -1, 
+  out = g_convert (in_utf8, -1,
 		   "ISO-8859-1", "UTF-8",
 		   &bytes_read, &bytes_written,
 		   &error);
@@ -74,7 +77,7 @@ test_one_half (void)
   g_assert_cmpstr (out, ==, "\xbd");
   g_free (out);
 
-  out = g_convert (in, -1, 
+  out = g_convert (in_utf8, -1,
 		   "ISO-8859-15", "UTF-8",
 		   &bytes_read, &bytes_written,
 		   &error);
@@ -86,7 +89,7 @@ test_one_half (void)
   g_clear_error (&error);
   g_free (out);
 
-  out = g_convert_with_fallback (in, -1, 
+  out = g_convert_with_fallback (in_utf8, -1,
 				 "ISO8859-15", "UTF-8",
 				 "a",
 				 &bytes_read, &bytes_written,
@@ -104,7 +107,7 @@ test_byte_order (void)
 {
   gchar in_be[4] = { 0xfe, 0xff, 0x03, 0x93}; /* capital gamma */
   gchar in_le[4] = { 0xff, 0xfe, 0x93, 0x03};
-  gchar *expected = "\xce\x93";
+  const gchar *expected = "\xce\x93";
   gchar *out;
   gsize bytes_read = 0;
   gsize bytes_written = 0;
@@ -585,7 +588,7 @@ check_utf16_to_ucs4 (const gunichar2 *utf16,
 static void
 test_unicode_conversions (void)
 {
-  char *utf8;
+  const char *utf8;
   gunichar ucs4[100];
   gunichar2 utf16[100];
 
@@ -683,10 +686,234 @@ test_filename_display (void)
   g_free (display);
 }
 
+/* g_convert() should accept and produce text buffers with embedded
+ * nul bytes/characters.
+ */
+static void
+test_convert_embedded_nul (void)
+{
+  gchar *res;
+  gsize bytes_read, bytes_written;
+  GError *error = NULL;
+
+  res = g_convert ("ab\0\xf6", 4, "UTF-8", "ISO-8859-1",
+                   &bytes_read, &bytes_written, &error);
+  g_assert_no_error (error);
+  g_assert_cmpuint (bytes_read, ==, 4);
+  g_assert_cmpmem (res, bytes_written, "ab\0\xc3\xb6", 5);
+  g_free (res);
+}
+
+static void
+test_locale_to_utf8_embedded_nul (void)
+{
+  g_test_trap_subprocess ("/conversion/locale-to-utf8/embedded-nul/subprocess/utf8", 0, 0);
+  g_test_trap_assert_passed ();
+  g_test_trap_subprocess ("/conversion/locale-to-utf8/embedded-nul/subprocess/iconv", 0, 0);
+  g_test_trap_assert_passed ();
+}
+
+/* Test that embedded nul characters in UTF-8 input to g_locale_to_utf8()
+ * result in an error.
+ */
+static void
+test_locale_to_utf8_embedded_nul_utf8 (void)
+{
+  gchar *res;
+  gsize bytes_read;
+  GError *error = NULL;
+
+  setlocale (LC_ALL, "");
+  g_setenv ("CHARSET", "UTF-8", TRUE);
+  g_assert_true (g_get_charset (NULL));
+
+  res = g_locale_to_utf8 ("ab\0c", 4, &bytes_read, NULL, &error);
+
+  g_assert_null (res);
+  g_assert_error (error, G_CONVERT_ERROR, G_CONVERT_ERROR_ILLEGAL_SEQUENCE);
+  g_assert_cmpuint (bytes_read, ==, 2);
+  g_error_free (error);
+}
+
+/* Test that embedded nul characters in output of g_locale_to_utf8(),
+ * when converted from non-UTF8 input, result in an error.
+ */
+static void
+test_locale_to_utf8_embedded_nul_iconv (void)
+{
+  gchar *res;
+  GError *error = NULL;
+
+  setlocale (LC_ALL, "C");
+  g_setenv ("CHARSET", "US-ASCII", TRUE);
+  g_assert_false (g_get_charset (NULL));
+
+  res = g_locale_to_utf8 ("ab\0c", 4, NULL, NULL, &error);
+
+  g_assert_null (res);
+  g_assert_error (error, G_CONVERT_ERROR, G_CONVERT_ERROR_EMBEDDED_NUL);
+  g_error_free (error);
+}
+
+static void
+test_locale_from_utf8_embedded_nul (void)
+{
+  g_test_trap_subprocess ("/conversion/locale-from-utf8/embedded-nul/subprocess/utf8", 0, 0);
+  g_test_trap_assert_passed ();
+  g_test_trap_subprocess ("/conversion/locale-from-utf8/embedded-nul/subprocess/iconv", 0, 0);
+  g_test_trap_assert_passed ();
+}
+
+/* Test that embedded nul characters in input to g_locale_from_utf8(),
+ * when converting (copying) to UTF-8 output, result in an error.
+ */
+static void
+test_locale_from_utf8_embedded_nul_utf8 (void)
+{
+  gchar *res;
+  gsize bytes_read;
+  GError *error = NULL;
+
+  setlocale (LC_ALL, "");
+  g_setenv ("CHARSET", "UTF-8", TRUE);
+  g_assert_true (g_get_charset (NULL));
+
+  res = g_locale_from_utf8 ("ab\0c", 4, &bytes_read, NULL, &error);
+
+  g_assert_null (res);
+  g_assert_error (error, G_CONVERT_ERROR, G_CONVERT_ERROR_ILLEGAL_SEQUENCE);
+  g_assert_cmpuint (bytes_read, ==, 2);
+  g_error_free (error);
+}
+
+/* Test that embedded nul characters in input to g_locale_from_utf8(),
+ * when converting to non-UTF-8 output, result in an error.
+ */
+static void
+test_locale_from_utf8_embedded_nul_iconv (void)
+{
+  gchar *res;
+  gsize bytes_read;
+  GError *error = NULL;
+
+  setlocale (LC_ALL, "C");
+  g_setenv ("CHARSET", "US-ASCII", TRUE);
+  g_assert_false (g_get_charset (NULL));
+
+  res = g_locale_from_utf8 ("ab\0c", 4, &bytes_read, NULL, &error);
+
+  g_assert_null (res);
+  g_assert_error (error, G_CONVERT_ERROR, G_CONVERT_ERROR_ILLEGAL_SEQUENCE);
+  g_assert_cmpuint (bytes_read, ==, 2);
+  g_error_free (error);
+}
+
+static void
+test_filename_to_utf8_embedded_nul (void)
+{
+  g_test_trap_subprocess ("/conversion/filename-to-utf8/embedded-nul/subprocess/utf8", 0, 0);
+  g_test_trap_assert_passed ();
+  g_test_trap_subprocess ("/conversion/filename-to-utf8/embedded-nul/subprocess/iconv", 0, 0);
+  g_test_trap_assert_passed ();
+}
+
+/* Test that embedded nul characters in UTF-8 input to g_filename_to_utf8()
+ * result in an error.
+ */
+static void
+test_filename_to_utf8_embedded_nul_utf8 (void)
+{
+  gchar *res;
+  gsize bytes_read;
+  GError *error = NULL;
+
+  g_setenv ("G_FILENAME_ENCODING", "UTF-8", TRUE);
+  g_assert_true (g_get_filename_charsets (NULL));
+
+  res = g_filename_to_utf8 ("ab\0c", 4, &bytes_read, NULL, &error);
+
+  g_assert_null (res);
+  g_assert_error (error, G_CONVERT_ERROR, G_CONVERT_ERROR_ILLEGAL_SEQUENCE);
+  g_assert_cmpuint (bytes_read, ==, 2);
+  g_error_free (error);
+}
+
+/* Test that embedded nul characters in non-UTF-8 input of g_filename_to_utf8()
+ * result in an error.
+ */
+static void
+test_filename_to_utf8_embedded_nul_iconv (void)
+{
+  gchar *res;
+  gsize bytes_read;
+  GError *error = NULL;
+
+  g_setenv ("G_FILENAME_ENCODING", "US-ASCII", TRUE);
+  g_assert_false (g_get_filename_charsets (NULL));
+
+  res = g_filename_to_utf8 ("ab\0c", 4, &bytes_read, NULL, &error);
+
+  g_assert_null (res);
+  g_assert_error (error, G_CONVERT_ERROR, G_CONVERT_ERROR_ILLEGAL_SEQUENCE);
+  g_assert_cmpuint (bytes_read, ==, 2);
+  g_error_free (error);
+}
+
+static void
+test_filename_from_utf8_embedded_nul (void)
+{
+  g_test_trap_subprocess ("/conversion/filename-from-utf8/embedded-nul/subprocess/utf8", 0, 0);
+  g_test_trap_assert_passed ();
+  g_test_trap_subprocess ("/conversion/filename-from-utf8/embedded-nul/subprocess/iconv", 0, 0);
+  g_test_trap_assert_passed ();
+}
+
+/* Test that embedded nul characters in input to g_filename_from_utf8(),
+ * when converting (copying) to UTF-8 output, result in an error.
+ */
+static void
+test_filename_from_utf8_embedded_nul_utf8 (void)
+{
+  gchar *res;
+  gsize bytes_read;
+  GError *error = NULL;
+
+  g_setenv ("G_FILENAME_ENCODING", "UTF-8", TRUE);
+  g_assert_true (g_get_filename_charsets (NULL));
+
+  res = g_filename_from_utf8 ("ab\0c", 4, &bytes_read, NULL, &error);
+
+  g_assert_null (res);
+  g_assert_error (error, G_CONVERT_ERROR, G_CONVERT_ERROR_ILLEGAL_SEQUENCE);
+  g_assert_cmpuint (bytes_read, ==, 2);
+  g_error_free (error);
+}
+
+/* Test that embedded nul characters in input to g_filename_from_utf8(),
+ * when converting to non-UTF-8 output, result in an error.
+ */
+static void
+test_filename_from_utf8_embedded_nul_iconv (void)
+{
+  gchar *res;
+  gsize bytes_read;
+  GError *error = NULL;
+
+  g_setenv ("G_FILENAME_ENCODING", "US-ASCII", TRUE);
+  g_assert_false (g_get_filename_charsets (NULL));
+
+  res = g_filename_from_utf8 ("ab\0c", 4, &bytes_read, NULL, &error);
+
+  g_assert_null (res);
+  g_assert_error (error, G_CONVERT_ERROR, G_CONVERT_ERROR_ILLEGAL_SEQUENCE);
+  g_assert_cmpuint (bytes_read, ==, 2);
+  g_error_free (error);
+}
+
 static void
 test_no_conv (void)
 {
-  gchar *in = "";
+  const gchar *in = "";
   gchar *out G_GNUC_UNUSED;
   gsize bytes_read = 0;
   gsize bytes_written = 0;
@@ -712,6 +939,19 @@ main (int argc, char *argv[])
   g_test_add_func ("/conversion/unicode", test_unicode_conversions);
   g_test_add_func ("/conversion/filename-utf8", test_filename_utf8);
   g_test_add_func ("/conversion/filename-display", test_filename_display);
+  g_test_add_func ("/conversion/convert-embedded-nul", test_convert_embedded_nul);
+  g_test_add_func ("/conversion/locale-to-utf8/embedded-nul", test_locale_to_utf8_embedded_nul);
+  g_test_add_func ("/conversion/locale-to-utf8/embedded-nul/subprocess/utf8", test_locale_to_utf8_embedded_nul_utf8);
+  g_test_add_func ("/conversion/locale-to-utf8/embedded-nul/subprocess/iconv", test_locale_to_utf8_embedded_nul_iconv);
+  g_test_add_func ("/conversion/locale-from-utf8/embedded-nul", test_locale_from_utf8_embedded_nul);
+  g_test_add_func ("/conversion/locale-from-utf8/embedded-nul/subprocess/utf8", test_locale_from_utf8_embedded_nul_utf8);
+  g_test_add_func ("/conversion/locale-from-utf8/embedded-nul/subprocess/iconv", test_locale_from_utf8_embedded_nul_iconv);
+  g_test_add_func ("/conversion/filename-to-utf8/embedded-nul", test_filename_to_utf8_embedded_nul);
+  g_test_add_func ("/conversion/filename-to-utf8/embedded-nul/subprocess/utf8", test_filename_to_utf8_embedded_nul_utf8);
+  g_test_add_func ("/conversion/filename-to-utf8/embedded-nul/subprocess/iconv", test_filename_to_utf8_embedded_nul_iconv);
+  g_test_add_func ("/conversion/filename-from-utf8/embedded-nul", test_filename_from_utf8_embedded_nul);
+  g_test_add_func ("/conversion/filename-from-utf8/embedded-nul/subprocess/utf8", test_filename_from_utf8_embedded_nul_utf8);
+  g_test_add_func ("/conversion/filename-from-utf8/embedded-nul/subprocess/iconv", test_filename_from_utf8_embedded_nul_iconv);
 
   return g_test_run ();
 }

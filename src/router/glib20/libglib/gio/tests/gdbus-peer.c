@@ -875,6 +875,7 @@ test_peer (void)
                       getuid ());
     g_assert_cmpuint (g_credentials_get_unix_pid (credentials, NULL), ==,
                       getpid ());
+    g_object_unref (credentials);
 #else
     g_assert_error (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED);
     g_assert (credentials == NULL);
@@ -1358,6 +1359,8 @@ test_nonce_tcp (void)
 
   g_main_loop_quit (service_loop);
   g_thread_join (service_thread);
+
+  g_ptr_array_unref (data.current_connections);
 }
 
 static void
@@ -1682,7 +1685,11 @@ codegen_test_peer (void)
                                   NULL, &error);
   g_assert_no_error (error);
   g_variant_get (value, "(&s)", &s);
-  g_assert (g_dbus_is_guid (s));
+  g_test_message ("Machine ID: %s", s);
+  /* It's valid for machine-id inside containers to be empty, so we
+   * need to test for that possibility
+   */
+  g_assert ((s == NULL || *s == '\0') || g_dbus_is_guid (s));
   g_variant_unref (value);
   
   /* Poke server and make sure animal is updated */
@@ -1707,6 +1714,7 @@ codegen_test_peer (void)
    * change notifications anyway because those are done from an idle handler
    */
   example_animal_call_poke_sync (animal2, TRUE, TRUE, NULL, &error);
+  g_clear_error (&error);
 
   g_object_unref (animal1);
   g_object_unref (animal2);
