@@ -809,7 +809,7 @@ EOF
           return <<"EOF";
 $args{src}: $args{generator}->[0] $deps
 	\$(CC) $incs \$(CFLAGS) -E $args{generator}->[0] | \\
-	\$(PERL) -ne '/^#(line)?\\s*[0-9]+/ or print' > \$@
+	cat > \$@
 EOF
       }
   }
@@ -850,8 +850,8 @@ EOF
           $recipe .= <<"EOF";
 $obj$objext: $deps
 	( trap "rm -f \$@.*" INT 0; \\
-	  \$(CC) $incs \$(CFLAGS) $ecflags -E $srcs | \\
-	  \$(PERL) -ne '/^#(line)?\\s*[0-9]+/ or print' > \$@.s && \\
+	  \$(CPP) $incs \$(CFLAGS) $ecflags $srcs | \\
+	  cat > \$@.s && \\
 	  \$(CC) \$(CFLAGS) $ecflags -c -o \$\@ \$@.s )
 EOF
       } elsif (!$disabled{makedepend} && $makedepprog !~ /\/makedepend/) {
