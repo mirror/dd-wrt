@@ -1,0 +1,25 @@
+#!/bin/sh
+
+# Check -ttt option.
+
+. "${srcdir=.}/init.sh"
+
+run_prog_skip_if_failed date +%s > /dev/null
+run_prog ../sleep 0
+
+s0="$(date +%s)"
+run_strace -ttt -eexecve $args
+s1="$(date +%s)"
+
+s="$s0"
+t_reg=
+while [ "$s" -le "$s1" ]; do
+	[ -z "$t_reg" ] && t_reg="$s" || t_reg="$t_reg|$s"
+	s=$(($s + 1))
+done
+
+cat > "$EXP" << __EOF__
+($t_reg)\\.[[:digit:]]{6} execve\\("\\.\\./sleep", \\["\\.\\./sleep", "0"\\], 0x[[:xdigit:]]* /\\* [[:digit:]]+ vars \\*/\\) = 0
+__EOF__
+
+match_grep "$LOG" "$EXP"

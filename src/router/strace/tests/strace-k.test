@@ -1,0 +1,75 @@
+#!/bin/sh
+#
+# Ensure that strace -k works.
+#
+# Copyright (c) 2014 Masatake YAMATO <yamato@redhat.com>
+# Copyright (c) 2014-2016 Dmitry V. Levin <ldv@altlinux.org>
+# Copyright (c) 2014-2018 The strace developers.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 3. The name of the author may not be used to endorse or promote products
+#    derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+# IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+# NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+# THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+. "${srcdir=.}/init.sh"
+
+# strace -k is implemented using /proc/$pid/maps
+[ -f /proc/self/maps ] ||
+	framework_skip_ '/proc/self/maps is not available'
+
+check_prog grep
+check_prog sed
+check_prog tr
+
+run_prog "${test_prog=../stack-fcall}"
+run_strace -e getpid -k $args
+
+expected="$srcdir/$NAME.expected"
+sed -r -n '1,/\(main\+0x[a-f0-9]+\) .*/ s/^[^(]+\(([^+]+)\+0x[a-f0-9]+\) .*/\1/p' "$LOG" |
+	tr '\n' ' ' |sed 's/ $//' > "$OUT"
+
+LC_ALL=C grep -E -x -f "$expected" < "$OUT" > /dev/null || {
+	cat >&2 <<__EOF__
+Failed pattern of expected output: $(cat "$expected")
+Actual output: $(cat "$OUT")
+__EOF__
+
+	pattern=
+	case "$STRACE_ARCH" in
+		aarch64|i386|ppc*|s390*|sparc*|x32|x86*)
+			# These architectures are supported by elfutils libdw,
+			# see grep '\<HOOK\>.*\<abi_cfi\>' elfutils/backends
+			;;
+		arm) pattern='No DWARF information found'
+			# This is also supported by elfutils libdw
+			# but the latter needs debuginfo for unwinding.
+			;;
+		*) pattern='Unwinding not supported for this architecture'
+			;;
+	esac
+	if [ -n "$pattern" ] &&
+	   LC_ALL=C grep -x " > $pattern" < "$LOG" > /dev/null; then
+		cat < "$LOG" >&2
+		skip_ "stack tracing is not fully supported on $STRACE_ARCH yet"
+	fi
+
+	dump_log_and_fail_with "$STRACE $args output mismatch"
+}

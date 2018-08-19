@@ -1,0 +1,72 @@
+#!/bin/sh
+#
+# Check how SCM_RIGHTS and SCM_CREDENTIALS control messages are decoded in -y mode.
+#
+# Copyright (c) 2014-2015 Dmitry V. Levin <ldv@altlinux.org>
+# Copyright (c) 2014-2017 The strace developers.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 3. The name of the author may not be used to endorse or promote products
+#    derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+# IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+# NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+# THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+. "${srcdir=.}/init.sh"
+
+# strace -y is implemented using /proc/$pid/fd
+[ -d /proc/self/fd/ ] ||
+	framework_skip_ '/proc/self/fd/ is not available'
+
+check_prog mkdir
+check_prog seq
+check_prog touch
+
+mkdir dir ||
+	framework_skip_ 'failed to create a directory'
+
+file="dir/$(for i in $(seq 1 127); do echo A; done; echo Z)"
+
+touch -- "$file" ||
+	framework_skip_ 'failed to create a file'
+
+run_prog ../scm_rights /dev/zero
+run_strace -y -x -e%network $args "$file"
+
+hex='[[:xdigit:]]'
+n='[1-9][0-9]*'
+sample="$(for i in $(seq 1 15); do printf '\\\\xf%x' $i; done)"
+socket='<socket:\[[0-9]+\]>'
+
+path6='(/.*/(A\\n){127}Z|\\x2f(\\x'"$hex$hex"')*\\x2f(\\x41\\x0a){127}\\x5a)'
+rights_data='\[4</dev/null>, 5</dev/zero>, 6<'"$path6"'>\]'
+iov='\[\{iov_base="'"$sample"'", iov_len=15\}\]'
+ids='\{pid='"$n"', uid=[0-9]+, gid=[0-9]+\}'
+
+msg_head='\{msg_name=NULL, msg_namelen=0, msg_iov='"$iov"', msg_iovlen=1, msg_control='
+msg_tail=', msg_controllen='"$n"', msg_flags=0'
+rights='\{cmsg_len='"$n"', cmsg_level=SOL_SOCKET, cmsg_type=SCM_RIGHTS, cmsg_data='"$rights_data"'\}'
+creds='\{cmsg_len='"$n"', cmsg_level=SOL_SOCKET, cmsg_type=SCM_CREDENTIALS, cmsg_data='"$ids"'\}'
+
+cat > "$EXP" << __EOF__
+sendmsg\\(3$socket, $msg_head\\[$rights\\]$msg_tail\\}, 0\\) = 15
+recvmsg\\(0$socket, $msg_head\\[$creds, $rights\\]$msg_tail\\}, 0\\) = 15
+__EOF__
+
+match_grep "$LOG" "$EXP"

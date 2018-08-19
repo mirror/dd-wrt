@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# Check how "resuming interrupted nanosleep" works.
+
+. "${srcdir=.}/init.sh"
+
+run_prog > /dev/null
+syscalls=nanosleep,restart_syscall
+run_strace -a20 -e trace=$syscalls $args > "$EXP"
+match_grep "$LOG" "$EXP"

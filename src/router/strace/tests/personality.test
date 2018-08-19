@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# Check personality syscall decoding.
+
+. "${srcdir=.}/init.sh"
+
+run_prog > /dev/null
+run_strace -a20 -epersonality "$@" $args > "$EXP"
+match_grep "$LOG" "$EXP"

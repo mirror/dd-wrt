@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# Check verbose decoding of prctl PR_SET_SECCOMP SECCOMP_MODE_FILTER.
+
+. "${srcdir=.}/init.sh"
+
+check_prog grep
+run_prog > /dev/null
+run_strace -v -eprctl $args > "$EXP"
+grep -v '^prctl(PR_GET_' < "$LOG" > "$OUT"
+match_diff "$OUT" "$EXP"
