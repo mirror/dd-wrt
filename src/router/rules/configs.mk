@@ -191,7 +191,7 @@ obj-$(CONFIG_GPSI) += gpsi
 obj-$(CONFIG_BMON) += bmon
 obj-$(CONFIG_SERCD) += sercd
 obj-$(CONFIG_SER2NET) += ser2net
-obj-$(CONFIG_STRACE) += strace
+obj-$(CONFIG_STRACE) += libunwind strace
 obj-$(CONFIG_RT3062) += rt3062
 obj-$(CONFIG_RT2860) += rt2860
 obj-$(CONFIG_P910ND) += p910nd
@@ -297,6 +297,7 @@ obj-$(CONFIG_TMK) += multisim
 obj-$(CONFIG_ZFS) += util-linux spl zlib zfs
 obj-$(CONFIG_SCREEN) += ncurses screen
 obj-$(CONFIG_DDRESCUE) += ddrescue
+obj-$(CONFIG_I2CTOOLS) += i2ctools
 
 obj-y+=configs
 

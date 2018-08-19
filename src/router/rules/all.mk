@@ -211,6 +211,7 @@ include rules/p910nd.mk
 include rules/ethtool.mk
 include rules/openlldp.mk
 include rules/ipsec-tools.mk
+include rules/libunwind.mk
 include rules/strace.mk
 include rules/util-linux.mk
 include rules/asterisk.mk
