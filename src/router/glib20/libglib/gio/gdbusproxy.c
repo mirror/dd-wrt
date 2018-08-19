@@ -53,7 +53,7 @@
  * both well-known and unique names.
  *
  * By default, #GDBusProxy will cache all properties (and listen to
- * changes) of the remote object, and proxy all signals that gets
+ * changes) of the remote object, and proxy all signals that get
  * emitted. This behaviour can be changed by passing suitable
  * #GDBusProxyFlags when the proxy is created. If the proxy is for a
  * well-known name, the property cache is flushed when the name owner
@@ -572,7 +572,7 @@ g_dbus_proxy_class_init (GDBusProxyClass *klass)
   /**
    * GDBusProxy::g-properties-changed:
    * @proxy: The #GDBusProxy emitting the signal.
-   * @changed_properties: A #GVariant containing the properties that changed
+   * @changed_properties: A #GVariant containing the properties that changed (type: `a{sv}`)
    * @invalidated_properties: A %NULL terminated array of properties that was invalidated
    *
    * Emitted when one or more D-Bus properties on @proxy changes. The
@@ -656,7 +656,8 @@ property_name_sort_func (const gchar **a,
  *
  * Gets the names of all cached properties on @proxy.
  *
- * Returns: (transfer full): A %NULL-terminated array of strings or %NULL if
+ * Returns: (transfer full) (nullable) (array zero-terminated=1): A
+ *          %NULL-terminated array of strings or %NULL if
  *          @proxy has no cached properties. Free the returned array with
  *          g_strfreev().
  *
@@ -723,9 +724,9 @@ lookup_property_info (GDBusProxy  *proxy,
  * #GDBusProxy:g-interface-info) and @property_name is referenced by
  * it, then @value is checked against the type of the property.
  *
- * Returns: A reference to the #GVariant instance that holds the value
- * for @property_name or %NULL if the value is not in the cache. The
- * returned reference must be freed with g_variant_unref().
+ * Returns: (transfer full) (nullable): A reference to the #GVariant instance
+ *    that holds the value for @property_name or %NULL if the value is not in
+ *    the cache. The returned reference must be freed with g_variant_unref().
  *
  * Since: 2.26
  */
@@ -2049,7 +2050,8 @@ g_dbus_proxy_new (GDBusConnection     *connection,
  *
  * Finishes creating a #GDBusProxy.
  *
- * Returns: A #GDBusProxy or %NULL if @error is set. Free with g_object_unref().
+ * Returns: (transfer full): A #GDBusProxy or %NULL if @error is set.
+ *    Free with g_object_unref().
  *
  * Since: 2.26
  */
@@ -2104,7 +2106,8 @@ g_dbus_proxy_new_finish (GAsyncResult  *res,
  *
  * #GDBusProxy is used in this [example][gdbus-wellknown-proxy].
  *
- * Returns: A #GDBusProxy or %NULL if error is set. Free with g_object_unref().
+ * Returns: (transfer full): A #GDBusProxy or %NULL if error is set.
+ *    Free with g_object_unref().
  *
  * Since: 2.26
  */
@@ -2200,7 +2203,8 @@ g_dbus_proxy_new_for_bus (GBusType             bus_type,
  *
  * Finishes creating a #GDBusProxy.
  *
- * Returns: A #GDBusProxy or %NULL if @error is set. Free with g_object_unref().
+ * Returns: (transfer full): A #GDBusProxy or %NULL if @error is set.
+ *    Free with g_object_unref().
  *
  * Since: 2.26
  */
@@ -2227,7 +2231,8 @@ g_dbus_proxy_new_for_bus_finish (GAsyncResult  *res,
  *
  * #GDBusProxy is used in this [example][gdbus-wellknown-proxy].
  *
- * Returns: A #GDBusProxy or %NULL if error is set. Free with g_object_unref().
+ * Returns: (transfer full): A #GDBusProxy or %NULL if error is set.
+ *    Free with g_object_unref().
  *
  * Since: 2.26
  */
@@ -2327,7 +2332,8 @@ g_dbus_proxy_get_name (GDBusProxy *proxy)
  * #GObject::notify signal to track changes to the
  * #GDBusProxy:g-name-owner property.
  *
- * Returns: The name owner or %NULL if no name owner exists. Free with g_free().
+ * Returns: (transfer full) (nullable): The name owner or %NULL if no name
+ *    owner exists. Free with g_free().
  *
  * Since: 2.26
  */
@@ -2448,8 +2454,8 @@ g_dbus_proxy_set_default_timeout (GDBusProxy *proxy,
  * that @proxy conforms to. See the #GDBusProxy:g-interface-info
  * property for more details.
  *
- * Returns: A #GDBusInterfaceInfo or %NULL. Do not unref the returned
- * object, it is owned by @proxy.
+ * Returns: (transfer none) (nullable): A #GDBusInterfaceInfo or %NULL.
+ *    Do not unref the returned object, it is owned by @proxy.
  *
  * Since: 2.26
  */
@@ -2472,7 +2478,8 @@ g_dbus_proxy_get_interface_info (GDBusProxy *proxy)
 /**
  * g_dbus_proxy_set_interface_info:
  * @proxy: A #GDBusProxy
- * @info: (nullable): Minimum interface this proxy conforms to or %NULL to unset.
+ * @info: (transfer none) (nullable): Minimum interface this proxy conforms to
+ *    or %NULL to unset.
  *
  * Ensure that interactions with @proxy conform to the given
  * interface. See the #GDBusProxy:g-interface-info property for more

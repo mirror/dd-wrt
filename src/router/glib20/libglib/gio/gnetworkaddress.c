@@ -340,7 +340,7 @@ g_network_address_new_loopback (guint16 port)
  * used as the port number to connect to.
  *
  * In general, @host_and_port is expected to be provided by the user
- * (allowing them to give the hostname, and a port overide if necessary)
+ * (allowing them to give the hostname, and a port override if necessary)
  * and @default_port is expected to be provided by the application.
  *
  * (The port component of @host_and_port can also be specified as a
@@ -489,9 +489,10 @@ gboolean
 _g_uri_parse_authority (const char  *uri,
 		        char       **host,
 		        guint16     *port,
-		        char       **userinfo)
+		        char       **userinfo,
+		        GError     **error)
 {
-  char *tmp_str;
+  char *ascii_uri, *tmp_str;
   const char *start, *p, *at, *delim;
   char c;
 
@@ -506,6 +507,11 @@ _g_uri_parse_authority (const char  *uri,
   if (userinfo)
     *userinfo = NULL;
 
+  /* Catch broken URIs early by trying to convert to ASCII. */
+  ascii_uri = g_hostname_to_ascii (uri);
+  if (!ascii_uri)
+    goto error;
+
   /* From RFC 3986 Decodes:
    * URI          = scheme ":" hier-part [ "?" query ] [ "#" fragment ]
    * hier-part    = "//" authority path-abempty
@@ -514,21 +520,21 @@ _g_uri_parse_authority (const char  *uri,
    */
 
   /* Check we have a valid scheme */
-  tmp_str = g_uri_parse_scheme (uri);
+  tmp_str = g_uri_parse_scheme (ascii_uri);
 
   if (tmp_str == NULL)
-    return FALSE;
+    goto error;
 
   g_free (tmp_str);
 
   /* Decode hier-part:
    *  hier-part   = "//" authority path-abempty
    */
-  p = uri;
+  p = ascii_uri;
   start = strstr (p, "//");
 
   if (start == NULL)
-    return FALSE;
+    goto error;
 
   start += 2;
 
@@ -559,7 +565,7 @@ _g_uri_parse_authority (const char  *uri,
 	    {
 	      if (!(g_ascii_isxdigit (p[0]) ||
 		    g_ascii_isxdigit (p[1])))
-		return FALSE;
+          goto error;
 
 	      p++;
 
@@ -571,7 +577,7 @@ _g_uri_parse_authority (const char  *uri,
 		strchr (G_URI_OTHER_UNRESERVED, c) ||
 		strchr (G_URI_RESERVED_CHARS_SUBCOMPONENT_DELIMITERS, c) ||
 		c == ':'))
-	    return FALSE;
+      goto error;
 	}
 
       if (userinfo)
@@ -618,7 +624,7 @@ _g_uri_parse_authority (const char  *uri,
 		strchr (G_URI_RESERVED_CHARS_SUBCOMPONENT_DELIMITERS, c) ||
 		c == ':' ||
 		c == '.'))
-	    goto error;
+      goto error;
 	}
 
       if (host)
@@ -649,7 +655,7 @@ _g_uri_parse_authority (const char  *uri,
 	    {
 	      if (!(g_ascii_isxdigit (p[0]) ||
 		    g_ascii_isxdigit (p[1])))
-		goto error;
+          goto error;
 
 	      p++;
 
@@ -660,7 +666,7 @@ _g_uri_parse_authority (const char  *uri,
 	  if (!(g_ascii_isalnum (c) ||
 		strchr (G_URI_OTHER_UNRESERVED, c) ||
 		strchr (G_URI_RESERVED_CHARS_SUBCOMPONENT_DELIMITERS, c)))
-	    goto error;
+      goto error;
 	}
 
       if (host)
@@ -685,7 +691,7 @@ _g_uri_parse_authority (const char  *uri,
 	    break;
 
 	  if (!g_ascii_isdigit (c))
-	    goto error;
+      goto error;
 
 	  tmp = (tmp * 10) + (c - '0');
 
@@ -696,9 +702,14 @@ _g_uri_parse_authority (const char  *uri,
 	*port = (guint16) tmp;
     }
 
+  g_free (ascii_uri);
+
   return TRUE;
 
 error:
+  g_set_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT,
+               "Invalid URI ‘%s’", uri);
+
   if (host && *host)
     {
       g_free (*host);
@@ -710,6 +721,8 @@ error:
       g_free (*userinfo);
       *userinfo = NULL;
     }
+
+  g_free (ascii_uri);
 
   return FALSE;
 }
@@ -782,13 +795,8 @@ g_network_address_parse_uri (const gchar  *uri,
   gchar *hostname;
   guint16 port;
 
-  if (!_g_uri_parse_authority (uri, &hostname, &port, NULL))
-    {
-      g_set_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT,
-		   "Invalid URI '%s'",
-		   uri);
-      return NULL;
-    }
+  if (!_g_uri_parse_authority (uri, &hostname, &port, NULL, error))
+    return NULL;
 
   if (port == 0)
     port = default_port;
@@ -1088,7 +1096,7 @@ g_network_address_connectable_enumerate (GSocketConnectable *connectable)
   GNetworkAddressAddressEnumerator *addr_enum;
 
   addr_enum = g_object_new (G_TYPE_NETWORK_ADDRESS_ADDRESS_ENUMERATOR, NULL);
-  addr_enum->addr = g_object_ref (connectable);
+  addr_enum->addr = g_object_ref (G_NETWORK_ADDRESS (connectable));
 
   return (GSocketAddressEnumerator *)addr_enum;
 }

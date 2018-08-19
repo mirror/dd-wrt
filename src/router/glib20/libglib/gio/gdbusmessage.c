@@ -32,6 +32,8 @@
 #include <sys/mkdev.h>
 #elif MAJOR_IN_SYSMACROS
 #include <sys/sysmacros.h>
+#elif MAJOR_IN_TYPES
+#include <sys/types.h>
 #else
 #define MAJOR_MINOR_NOT_FOUND 1
 #endif
@@ -2653,7 +2655,7 @@ g_dbus_message_to_blob (GDBusMessage          *message,
       g_set_error (error,
                    G_IO_ERROR,
                    G_IO_ERROR_INVALID_ARGUMENT,
-                   _("Message has %d file descriptors but the header field indicates %d file descriptors"),
+                   _("Number of file descriptors in message (%d) differs from header field (%d)"),
                    num_fds_in_message,
                    num_fds_according_to_header);
       goto out;
@@ -3481,10 +3483,10 @@ g_dbus_message_print (GDBusMessage *message,
                 {
 #ifndef MAJOR_MINOR_NOT_FOUND                       
                   g_string_append_printf (fs, "%s" "dev=%d:%d", fs->len > 0 ? "," : "",
-                                          major (statbuf.st_dev), minor (statbuf.st_dev));
+                                          (gint) major (statbuf.st_dev), (gint) minor (statbuf.st_dev));
 #endif                  
                   g_string_append_printf (fs, "%s" "mode=0%o", fs->len > 0 ? "," : "",
-                                          statbuf.st_mode);
+                                          (guint) statbuf.st_mode);
                   g_string_append_printf (fs, "%s" "ino=%" G_GUINT64_FORMAT, fs->len > 0 ? "," : "",
                                           (guint64) statbuf.st_ino);
                   g_string_append_printf (fs, "%s" "uid=%u", fs->len > 0 ? "," : "",
@@ -3493,7 +3495,7 @@ g_dbus_message_print (GDBusMessage *message,
                                           (guint) statbuf.st_gid);
 #ifndef MAJOR_MINOR_NOT_FOUND                     
                   g_string_append_printf (fs, "%s" "rdev=%d:%d", fs->len > 0 ? "," : "",
-                                          major (statbuf.st_rdev), minor (statbuf.st_rdev));
+                                          (gint) major (statbuf.st_rdev), (gint) minor (statbuf.st_rdev));
 #endif                  
                   g_string_append_printf (fs, "%s" "size=%" G_GUINT64_FORMAT, fs->len > 0 ? "," : "",
                                           (guint64) statbuf.st_size);

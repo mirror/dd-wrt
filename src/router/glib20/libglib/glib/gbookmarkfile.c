@@ -210,7 +210,7 @@ struct _GBookmarkFile
 };
 
 /* parser state machine */
-enum
+typedef enum
 {
   STATE_STARTED        = 0,
   
@@ -228,7 +228,7 @@ enum
   STATE_ICON,
   
   STATE_FINISHED
-};
+} ParserState;
 
 static void          g_bookmark_file_init        (GBookmarkFile  *bookmark);
 static void          g_bookmark_file_clear       (GBookmarkFile  *bookmark);
@@ -547,7 +547,7 @@ bookmark_item_dump (BookmarkItem *item)
    */
   if (!item->metadata || !item->metadata->applications)
     {
-      g_warning ("Item for URI '%s' has no registered applications: skipping.\n", item->uri);
+      g_warning ("Item for URI '%s' has no registered applications: skipping.", item->uri);
       return NULL;
     }
   
@@ -681,7 +681,7 @@ g_bookmark_file_clear (GBookmarkFile *bookmark)
 
 struct _ParseData
 {
-  gint state;
+  ParserState state;
   
   GHashTable *namespaces;
   
@@ -1083,6 +1083,43 @@ is_element_full (ParseData   *parse_data,
 #define IS_ELEMENT(p,s,e)	(is_element_full ((p), (s), NULL, (e), '\0'))
 #define IS_ELEMENT_NS(p,s,n,e)	(is_element_full ((p), (s), (n), (e), '|'))
 
+static const gchar *
+parser_state_to_element_name (ParserState state)
+{
+  switch (state)
+    {
+    case STATE_STARTED:
+    case STATE_FINISHED:
+      return "(top-level)";
+    case STATE_ROOT:
+      return XBEL_ROOT_ELEMENT;
+    case STATE_BOOKMARK:
+      return XBEL_BOOKMARK_ELEMENT;
+    case STATE_TITLE:
+      return XBEL_TITLE_ELEMENT;
+    case STATE_DESC:
+      return XBEL_DESC_ELEMENT;
+    case STATE_INFO:
+      return XBEL_INFO_ELEMENT;
+    case STATE_METADATA:
+      return XBEL_METADATA_ELEMENT;
+    case STATE_APPLICATIONS:
+      return BOOKMARK_APPLICATIONS_ELEMENT;
+    case STATE_APPLICATION:
+      return BOOKMARK_APPLICATION_ELEMENT;
+    case STATE_GROUPS:
+      return BOOKMARK_GROUPS_ELEMENT;
+    case STATE_GROUP:
+      return BOOKMARK_GROUP_ELEMENT;
+    case STATE_MIME:
+      return MIME_TYPE_ELEMENT;
+    case STATE_ICON:
+      return BOOKMARK_ICON_ELEMENT;
+    default:
+      g_assert_not_reached ();
+    }
+}
+
 static void
 start_element_raw_cb (GMarkupParseContext *context,
                       const gchar         *element_name,
@@ -1263,8 +1300,23 @@ start_element_raw_cb (GMarkupParseContext *context,
         	     element_name,
         	     BOOKMARK_GROUP_ELEMENT);
       break;
+
+    case STATE_TITLE:
+    case STATE_DESC:
+    case STATE_APPLICATION:
+    case STATE_GROUP:
+    case STATE_MIME:
+    case STATE_ICON:
+    case STATE_FINISHED:
+      g_set_error (error, G_MARKUP_ERROR,
+                   G_MARKUP_ERROR_INVALID_CONTENT,
+                   _("Unexpected tag “%s” inside “%s”"),
+                   element_name,
+                   parser_state_to_element_name (parse_data->state));
+      break;
+
     default:
-      g_warn_if_reached ();
+      g_assert_not_reached ();
       break;
     }
 }
@@ -1612,7 +1664,8 @@ g_bookmark_file_free (GBookmarkFile *bookmark)
 /**
  * g_bookmark_file_load_from_data:
  * @bookmark: an empty #GBookmarkFile struct
- * @data: desktop bookmarks loaded in memory
+ * @data: (array length=length) (element-type guint8): desktop bookmarks
+ *    loaded in memory
  * @length: the length of @data in bytes
  * @error: return location for a #GError, or %NULL
  *
@@ -1766,14 +1819,14 @@ find_file_in_data_dirs (const gchar   *file,
  * g_bookmark_file_load_from_data_dirs:
  * @bookmark: a #GBookmarkFile
  * @file: (type filename): a relative path to a filename to open and parse
- * @full_path: (type filename) (nullable): return location for a string
+ * @full_path: (out) (optional) (type filename): return location for a string
  *    containing the full path of the file, or %NULL
  * @error: return location for a #GError, or %NULL
  *
  * This function looks for a desktop bookmark file named @file in the
  * paths returned from g_get_user_data_dir() and g_get_system_data_dirs(), 
  * loads the file into @bookmark and returns the file's full path in 
- * @full_path.  If the file could not be loaded then an %error is
+ * @full_path.  If the file could not be loaded then @error is
  * set to either a #GFileError or #GBookmarkFileError.
  *
  * Returns: %TRUE if a key file could be loaded, %FALSE otherwise
@@ -1852,8 +1905,8 @@ g_bookmark_file_load_from_data_dirs (GBookmarkFile  *bookmark,
  *
  * This function outputs @bookmark as a string.
  *
- * Returns: a newly allocated string holding
- *   the contents of the #GBookmarkFile
+ * Returns: (array length=length) (element-type guint8):
+ *   a newly allocated string holding the contents of the #GBookmarkFile
  *
  * Since: 2.12
  */
@@ -2822,7 +2875,8 @@ g_bookmark_file_remove_group (GBookmarkFile  *bookmark,
  * g_bookmark_file_set_groups:
  * @bookmark: a #GBookmarkFile
  * @uri: an item's URI
- * @groups: (nullable): an array of group names, or %NULL to remove all groups
+ * @groups: (nullable) (array length=length) (element-type utf8): an array of
+ *    group names, or %NULL to remove all groups
  * @length: number of group name values in @groups
  *
  * Sets a list of group names for the item with URI @uri.  Each previously
@@ -2860,7 +2914,7 @@ g_bookmark_file_set_groups (GBookmarkFile  *bookmark,
   
   if (groups)
     {
-      for (i = 0; groups[i] != NULL && i < length; i++)
+      for (i = 0; i < length && groups[i] != NULL; i++)
         item->metadata->groups = g_list_append (item->metadata->groups,
 					        g_strdup (groups[i]));
     }

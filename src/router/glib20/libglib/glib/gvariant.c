@@ -403,11 +403,11 @@ g_variant_get_boolean (GVariant *value)
  * It is an error to call this function with a @value of any type
  * other than %G_VARIANT_TYPE_BYTE.
  *
- * Returns: a #guchar
+ * Returns: a #guint8
  *
  * Since: 2.24
  **/
-NUMERIC_TYPE (BYTE, byte, guchar)
+NUMERIC_TYPE (BYTE, byte, guint8)
 
 /**
  * g_variant_new_int16:
@@ -1105,7 +1105,7 @@ g_variant_lookup_value (GVariant           *dictionary,
  * the appropriate type:
  * - %G_VARIANT_TYPE_INT16 (etc.): #gint16 (etc.)
  * - %G_VARIANT_TYPE_BOOLEAN: #guchar (not #gboolean!)
- * - %G_VARIANT_TYPE_BYTE: #guchar
+ * - %G_VARIANT_TYPE_BYTE: #guint8
  * - %G_VARIANT_TYPE_HANDLE: #guint32
  * - %G_VARIANT_TYPE_DOUBLE: #gdouble
  *
@@ -1364,10 +1364,10 @@ g_variant_new_object_path (const gchar *object_path)
  * should ensure that a string is a valid D-Bus object path before
  * passing it to g_variant_new_object_path().
  *
- * A valid object path starts with '/' followed by zero or more
- * sequences of characters separated by '/' characters.  Each sequence
- * must contain only the characters "[A-Z][a-z][0-9]_".  No sequence
- * (including the one following the final '/' character) may be empty.
+ * A valid object path starts with `/` followed by zero or more
+ * sequences of characters separated by `/` characters.  Each sequence
+ * must contain only the characters `[A-Z][a-z][0-9]_`.  No sequence
+ * (including the one following the final `/` character) may be empty.
  *
  * Returns: %TRUE if @string is a D-Bus object path
  *
@@ -4738,10 +4738,13 @@ g_variant_valist_new_nnp (const gchar **str,
           type = g_variant_type_element (type);
 
           if G_UNLIKELY (!g_variant_type_is_subtype_of (type, (GVariantType *) *str))
-            g_error ("g_variant_new: expected GVariantBuilder array element "
-                     "type '%s' but the built value has element type '%s'",
-                     g_variant_type_dup_string ((GVariantType *) *str),
-                     g_variant_get_type_string (value) + 1);
+            {
+              gchar *type_string = g_variant_type_dup_string ((GVariantType *) *str);
+              g_error ("g_variant_new: expected GVariantBuilder array element "
+                       "type '%s' but the built value has element type '%s'",
+                       type_string, g_variant_get_type_string (value) + 1);
+              g_free (type_string);
+            }
 
           g_variant_type_string_scan (*str, NULL, str);
 
@@ -4803,10 +4806,13 @@ g_variant_valist_new_nnp (const gchar **str,
 
     case '@':
       if G_UNLIKELY (!g_variant_is_of_type (ptr, (GVariantType *) *str))
-        g_error ("g_variant_new: expected GVariant of type '%s' but "
-                 "received value has type '%s'",
-                 g_variant_type_dup_string ((GVariantType *) *str),
-                 g_variant_get_type_string (ptr));
+        {
+          gchar *type_string = g_variant_type_dup_string ((GVariantType *) *str);
+          g_error ("g_variant_new: expected GVariant of type '%s' but "
+                   "received value has type '%s'",
+                   type_string, g_variant_get_type_string (ptr));
+          g_free (type_string);
+        }
 
       g_variant_type_string_scan (*str, NULL, str);
 
@@ -5042,7 +5048,7 @@ g_variant_valist_get_leaf (const gchar **str,
           return;
 
         case 'y':
-          *(guchar *) ptr = g_variant_get_byte (value);
+          *(guint8 *) ptr = g_variant_get_byte (value);
           return;
 
         case 'n':
@@ -5083,7 +5089,7 @@ g_variant_valist_get_leaf (const gchar **str,
       switch (*(*str)++)
         {
         case 'y':
-          *(guchar *) ptr = 0;
+          *(guint8 *) ptr = 0;
           return;
 
         case 'n':
@@ -5282,7 +5288,7 @@ g_variant_valist_get (const gchar **str,
  * GVariant *new_variant;
  *
  * new_variant = g_variant_new ("(t^as)",
- *                              /<!-- -->* This cast is required. *<!-- -->/
+ *                              // This cast is required.
  *                              (guint64) some_flags,
  *                              some_strings);
  * ]|
@@ -5854,6 +5860,13 @@ g_variant_deep_copy (GVariant *value)
  * It makes sense to call this function if you've received #GVariant
  * data from untrusted sources and you want to ensure your serialised
  * output is definitely in normal form.
+ *
+ * If @value is already in normal form, a new reference will be returned
+ * (which will be floating if @value is floating). If it is not in normal form,
+ * the newly created #GVariant will be returned with a single non-floating
+ * reference. Typically, g_variant_take_ref() should be called on the return
+ * value from this function to guarantee ownership of a single non-floating
+ * reference to it.
  *
  * Returns: (transfer full): a trusted #GVariant
  *

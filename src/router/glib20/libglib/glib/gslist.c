@@ -165,6 +165,9 @@ g_slist_free_1 (GSList *list)
  * Convenience method, which frees all the memory used by a #GSList, and
  * calls the specified destroy function on every element's data.
  *
+ * @free_func must not modify the list (eg, by removing the freed
+ * element from it).
+ *
  * Since: 2.28
  **/
 void
@@ -844,6 +847,9 @@ g_slist_length (GSList *list)
  * @user_data: user data to pass to the function
  *
  * Calls a function for each element of a #GSList.
+ *
+ * It is safe for @func to remove the element from @list, but it must
+ * not modify any part of the list after that element.
  */
 void
 g_slist_foreach (GSList   *list,
@@ -1028,7 +1034,8 @@ g_slist_sort_real (GSList   *list,
  *     first element comes before the second, or a positive value if
  *     the first element comes after the second.
  *
- * Sorts a #GSList using the given comparison function.
+ * Sorts a #GSList using the given comparison function. The algorithm
+ * used is a stable sort.
  *
  * Returns: the start of the sorted #GSList
  */

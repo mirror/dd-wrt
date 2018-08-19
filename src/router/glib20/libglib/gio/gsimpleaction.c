@@ -371,12 +371,14 @@ g_simple_action_class_init (GSimpleActionClass *class)
   /**
    * GSimpleAction::activate:
    * @simple: the #GSimpleAction
-   * @parameter: (nullable): the parameter to the activation
+   * @parameter: (nullable): the parameter to the activation, or %NULL if it has
+   *   no parameter
    *
    * Indicates that the action was just activated.
    *
-   * @parameter will always be of the expected type.  In the event that
-   * an incorrect type was given, no signal will be emitted.
+   * @parameter will always be of the expected type, i.e. the parameter type
+   * specified when the action was created. If an incorrect type is given when
+   * activating the action, this signal is not emitted.
    *
    * Since GLib 2.40, if no handler is connected to this signal then the
    * default behaviour for boolean-stated actions with a %NULL parameter
@@ -405,8 +407,10 @@ g_simple_action_class_init (GSimpleActionClass *class)
    * Indicates that the action just received a request to change its
    * state.
    *
-   * @value will always be of the correct state type.  In the event that
-   * an incorrect type was given, no signal will be emitted.
+   * @value will always be of the correct state type, i.e. the type of the
+   * initial state passed to g_simple_action_new_stateful(). If an incorrect
+   * type is given when requesting to change the state, this signal is not
+   * emitted.
    *
    * If no handler is connected to this signal then the default
    * behaviour is to call g_simple_action_set_state() to set the state
@@ -591,11 +595,13 @@ g_simple_action_set_state_hint (GSimpleAction *simple,
 /**
  * g_simple_action_new:
  * @name: the name of the action
- * @parameter_type: (nullable): the type of parameter to the activate function
+ * @parameter_type: (nullable): the type of parameter that will be passed to
+ *   handlers for the #GSimpleAction::activate signal, or %NULL for no parameter
  *
  * Creates a new action.
  *
- * The created action is stateless.  See g_simple_action_new_stateful().
+ * The created action is stateless. See g_simple_action_new_stateful() to create
+ * an action that has state.
  *
  * Returns: a new #GSimpleAction
  *
@@ -616,15 +622,16 @@ g_simple_action_new (const gchar        *name,
 /**
  * g_simple_action_new_stateful:
  * @name: the name of the action
- * @parameter_type: (nullable): the type of the parameter to the activate function
+ * @parameter_type: (nullable): the type of the parameter that will be passed to
+ *   handlers for the #GSimpleAction::activate signal, or %NULL for no parameter
  * @state: the initial state of the action
  *
  * Creates a new stateful action.
  *
- * @state is the initial state of the action.  All future state values
- * must have the same #GVariantType as the initial state.
+ * All future state values must have the same #GVariantType as the initial
+ * @state.
  *
- * If the @state GVariant is floating, it is consumed.
+ * If the @state #GVariant is floating, it is consumed.
  *
  * Returns: a new #GSimpleAction
  *

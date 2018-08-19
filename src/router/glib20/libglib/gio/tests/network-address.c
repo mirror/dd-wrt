@@ -123,11 +123,6 @@ static ResolveTest address_tests[] = {
   { "192.168.1.2",         TRUE,  TRUE,  TRUE },
   { "fe80::42",            TRUE,  TRUE,  TRUE },
 
-  /* GResolver accepts this by ignoring the scope ID. This was not
-   * intentional, but it's best to not "fix" it at this point.
-   */
-  { "fe80::42%1",          TRUE,  TRUE,  FALSE },
-
   /* g_network_address_parse() accepts these, but they are not
    * (just) IP addresses.
    */
@@ -153,6 +148,8 @@ test_resolve_address (gconstpointer d)
   GSocketAddressEnumerator *addr_enum;
   GSocketAddress *addr;
   GError *error = NULL;
+
+  g_test_message ("Input: %s", test->input);
 
   g_assert_cmpint (test->valid_ip, ==, g_hostname_is_ip_address (test->input));
 
@@ -192,6 +189,8 @@ test_resolve_address_gresolver (gconstpointer d)
   GInetAddress *iaddr;
   GError *error = NULL;
 
+  g_test_message ("Input: %s", test->input);
+
   resolver = g_resolver_get_default ();
   addrs = g_resolver_lookup_by_name (resolver, test->input, NULL, &error);
   g_object_unref (resolver);
@@ -209,6 +208,8 @@ test_resolve_address_gresolver (gconstpointer d)
     }
   else
     {
+      g_assert_nonnull (error);
+      g_test_message ("Error: %s", error->message);
       g_assert_false (test->valid_resolve);
 
       if (!test->valid_parse)

@@ -177,7 +177,8 @@ mechanism_server_get_state (GDBusAuthMechanism   *mechanism)
 }
 
 static gboolean
-data_matches_credentials (const gchar *data,
+data_matches_credentials (const gchar  *data,
+                          gsize         data_len,
                           GCredentials *credentials)
 {
   gboolean match;
@@ -187,7 +188,7 @@ data_matches_credentials (const gchar *data,
   if (credentials == NULL)
     goto out;
 
-  if (data == NULL || strlen (data) == 0)
+  if (data == NULL || data_len == 0)
     goto out;
 
 #if defined(G_OS_UNIX)
@@ -227,7 +228,9 @@ mechanism_server_initiate (GDBusAuthMechanism   *mechanism,
 
   if (initial_response != NULL)
     {
-      if (data_matches_credentials (initial_response, _g_dbus_auth_mechanism_get_credentials (mechanism)))
+      if (data_matches_credentials (initial_response,
+                                    initial_response_len,
+                                    _g_dbus_auth_mechanism_get_credentials (mechanism)))
         {
           m->priv->state = G_DBUS_AUTH_MECHANISM_STATE_ACCEPTED;
         }
@@ -253,7 +256,9 @@ mechanism_server_data_receive (GDBusAuthMechanism   *mechanism,
   g_return_if_fail (m->priv->is_server && !m->priv->is_client);
   g_return_if_fail (m->priv->state == G_DBUS_AUTH_MECHANISM_STATE_WAITING_FOR_DATA);
 
-  if (data_matches_credentials (data, _g_dbus_auth_mechanism_get_credentials (mechanism)))
+  if (data_matches_credentials (data,
+                                data_len,
+                                _g_dbus_auth_mechanism_get_credentials (mechanism)))
     {
       m->priv->state = G_DBUS_AUTH_MECHANISM_STATE_ACCEPTED;
     }
@@ -332,7 +337,7 @@ mechanism_client_initiate (GDBusAuthMechanism   *mechanism,
   m->priv->is_client = TRUE;
   m->priv->state = G_DBUS_AUTH_MECHANISM_STATE_ACCEPTED;
 
-  *out_initial_response_len = -1;
+  *out_initial_response_len = 0;
 
   credentials = _g_dbus_auth_mechanism_get_credentials (mechanism);
   g_assert (credentials != NULL);
@@ -340,9 +345,13 @@ mechanism_client_initiate (GDBusAuthMechanism   *mechanism,
   /* return the uid */
 #if defined(G_OS_UNIX)
   initial_response = g_strdup_printf ("%" G_GINT64_FORMAT, (gint64) g_credentials_get_unix_user (credentials, NULL));
+ *out_initial_response_len = strlen (initial_response);
 #elif defined(G_OS_WIN32)
 #ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic warning "-Wcpp"
 #warning Dont know how to send credentials on this OS. The EXTERNAL D-Bus authentication mechanism will not work.
+#pragma GCC diagnostic pop
 #endif
   m->priv->state = G_DBUS_AUTH_MECHANISM_STATE_REJECTED;
 #endif

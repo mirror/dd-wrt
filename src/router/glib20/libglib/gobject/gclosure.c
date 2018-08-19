@@ -22,7 +22,7 @@
 
 #include "config.h"
 
-#include "../glib/valgrind.h"
+#include "../glib/gvalgrind.h"
 #include <string.h>
 
 #include <ffi.h>
@@ -52,9 +52,11 @@
  * to a function and maybe a data argument, and the marshaller
  * converts between #GValue and native C types. The GObject
  * library provides the #GCClosure type for this purpose. Bindings for
- * other languages need marshallers which convert between #GValue<!--
- * -->s and suitable representations in the runtime of the language in
- * order to use functions written in that languages as callbacks.
+ * other languages need marshallers which convert between #GValues
+ * and suitable representations in the runtime of the language in
+ * order to use functions written in that language as callbacks. Use
+ * g_closure_set_marshal() to set the marshaller on such a custom
+ * closure implementation.
  *
  * Within GObject, closures play an important role in the
  * implementation of signals. When a signal is registered, the
@@ -198,6 +200,7 @@ g_closure_new_simple (guint           sizeof_closure,
 
   private_size = sizeof (GRealClosure) - sizeof (GClosure);
 
+#ifdef ENABLE_VALGRIND
   /* See comments in gtype.c about what's going on here... */
   if (RUNNING_ON_VALGRIND)
     {
@@ -211,6 +214,7 @@ g_closure_new_simple (guint           sizeof_closure,
       VALGRIND_MALLOCLIKE_BLOCK (allocated + sizeof (gpointer), private_size - sizeof (gpointer), 0, TRUE);
     }
   else
+#endif
     allocated = g_malloc0 (private_size + sizeof_closure);
 
   closure = (GClosure *) (allocated + private_size);
@@ -611,6 +615,7 @@ g_closure_unref (GClosure *closure)
       closure_invoke_notifiers (closure, FNOTIFY);
       g_free (closure->notifiers);
 
+#ifdef ENABLE_VALGRIND
       /* See comments in gtype.c about what's going on here... */
       if (RUNNING_ON_VALGRIND)
         {
@@ -625,6 +630,7 @@ g_closure_unref (GClosure *closure)
           VALGRIND_FREELIKE_BLOCK (closure, 0);
         }
       else
+#endif
         g_free (G_REAL_CLOSURE (closure));
     }
 }

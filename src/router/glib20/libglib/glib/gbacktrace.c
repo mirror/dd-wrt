@@ -68,20 +68,8 @@
 #include "gprintfint.h"
 #include "gutils.h"
 
-
-#ifndef NO_FD_SET
-#  define SELECT_MASK fd_set
-#else
-#  if defined(_IBMR2)
-#    define SELECT_MASK void
-#  else
-#    define SELECT_MASK int
-#  endif
-#endif
-
-
 #ifndef G_OS_WIN32
-static void stack_trace (char **args);
+static void stack_trace (const char * const *args);
 #endif
 
 /* People want to hit this from their debugger... */
@@ -226,7 +214,7 @@ g_on_error_stack_trace (const gchar *prg_name)
 #if defined(G_OS_UNIX)
   pid_t pid;
   gchar buf[16];
-  gchar *args[4] = { "gdb", NULL, NULL, NULL };
+  const gchar *args[4] = { "gdb", NULL, NULL, NULL };
   int status;
 
   if (!prg_name)
@@ -234,7 +222,7 @@ g_on_error_stack_trace (const gchar *prg_name)
 
   _g_sprintf (buf, "%u", (guint) getpid ());
 
-  args[1] = (gchar*) prg_name;
+  args[1] = prg_name;
   args[2] = buf;
 
   pid = fork ();
@@ -269,13 +257,13 @@ stack_trace_sigchld (int signum)
 }
 
 static void
-stack_trace (char **args)
+stack_trace (const char * const *args)
 {
   pid_t pid;
   int in_fd[2];
   int out_fd[2];
-  SELECT_MASK fdset;
-  SELECT_MASK readset;
+  fd_set fdset;
+  fd_set readset;
   struct timeval tv;
   int sel, idx, state;
   char buffer[256];
@@ -301,7 +289,7 @@ stack_trace (char **args)
       close (1); dup (out_fd[1]);  /* set the stdout to the out pipe */
       close (2); dup (out_fd[1]);  /* set the stderr to the out pipe */
 
-      execvp (args[0], args);      /* exec gdb */
+      execvp (args[0], (char **) args);      /* exec gdb */
 
       /* Print failure to original stderr */
       close (2); dup (old_err);

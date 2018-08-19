@@ -752,7 +752,7 @@ _g_dbus_worker_do_read_cb (GInputStream  *input_stream,
               g_warning ("Error decoding D-Bus message of %" G_GSIZE_FORMAT " bytes\n"
                          "The error is: %s\n"
                          "The payload is as follows:\n"
-                         "%s\n",
+                         "%s",
                          worker->read_buffer_cur_size,
                          error->message,
                          s);
@@ -2231,4 +2231,39 @@ _g_signal_accumulator_false_handled (GSignalInvocationHint *ihint,
   continue_emission = signal_return;
 
   return continue_emission;
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
+
+static void
+append_nibble (GString *s, gint val)
+{
+  g_string_append_c (s, val >= 10 ? ('a' + val - 10) : ('0' + val));
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
+
+gchar *
+_g_dbus_hexencode (const gchar *str,
+                   gsize        str_len)
+{
+  gsize n;
+  GString *s;
+
+  s = g_string_new (NULL);
+  for (n = 0; n < str_len; n++)
+    {
+      gint val;
+      gint upper_nibble;
+      gint lower_nibble;
+
+      val = ((const guchar *) str)[n];
+      upper_nibble = val >> 4;
+      lower_nibble = val & 0x0f;
+
+      append_nibble (s, upper_nibble);
+      append_nibble (s, lower_nibble);
+    }
+
+  return g_string_free (s, FALSE);
 }

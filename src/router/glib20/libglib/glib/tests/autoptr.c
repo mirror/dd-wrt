@@ -1,6 +1,12 @@
 #include <glib.h>
 #include <string.h>
 
+typedef struct _HNVC HasNonVoidCleanup;
+HasNonVoidCleanup * non_void_cleanup (HasNonVoidCleanup *);
+
+/* Should not cause any warnings with -Wextra */
+G_DEFINE_AUTOPTR_CLEANUP_FUNC(HasNonVoidCleanup, non_void_cleanup)
+
 static void
 test_autofree (void)
 {
@@ -97,7 +103,13 @@ test_g_hmac (void)
 static void
 test_g_io_channel (void)
 {
-  g_autoptr(GIOChannel) val = g_io_channel_new_file ("/dev/null", "r", NULL);
+#ifdef G_OS_WIN32
+  const gchar *devnull = "nul";
+#else
+  const gchar *devnull = "/dev/null";
+#endif
+
+  g_autoptr(GIOChannel) val = g_io_channel_new_file (devnull, "r", NULL);
   g_assert (val != NULL);
 }
 
@@ -410,6 +422,78 @@ test_strv (void)
   g_assert (val != NULL);
 }
 
+static void
+test_refstring (void)
+{
+  g_autoptr(GRefString) str = g_ref_string_new ("hello, world");
+  g_assert_nonnull (str);
+}
+
+static void
+mark_freed (gpointer ptr)
+{
+  gboolean *freed = ptr;
+  *freed = TRUE;
+}
+
+static void
+test_autolist (void)
+{
+  char data[1] = {0};
+  gboolean freed1 = FALSE;
+  gboolean freed2 = FALSE;
+  gboolean freed3 = FALSE;
+  GBytes *b1 = g_bytes_new_with_free_func (data, sizeof(data), mark_freed, &freed1);
+  GBytes *b2 = g_bytes_new_with_free_func (data, sizeof(data), mark_freed, &freed2);
+  GBytes *b3 = g_bytes_new_with_free_func (data, sizeof(data), mark_freed, &freed3);
+
+  {
+    g_autolist(GBytes) l = NULL;
+
+    l = g_list_prepend (l, b1);
+    l = g_list_prepend (l, b3);
+  }
+
+  /* Only assert if autoptr works */
+#ifdef __GNUC__
+  g_assert (freed1);
+  g_assert (freed3);
+#endif
+  g_assert (!freed2);
+
+  g_bytes_unref (b2);
+  g_assert (freed2);
+}
+
+static void
+test_autoslist (void)
+{
+  char data[1] = {0};
+  gboolean freed1 = FALSE;
+  gboolean freed2 = FALSE;
+  gboolean freed3 = FALSE;
+  GBytes *b1 = g_bytes_new_with_free_func (data, sizeof(data), mark_freed, &freed1);
+  GBytes *b2 = g_bytes_new_with_free_func (data, sizeof(data), mark_freed, &freed2);
+  GBytes *b3 = g_bytes_new_with_free_func (data, sizeof(data), mark_freed, &freed3);
+
+  {
+    g_autoslist(GBytes) l = NULL;
+
+    l = g_slist_prepend (l, b1);
+    l = g_slist_prepend (l, b3);
+  }
+
+  /* Only assert if autoptr works */
+#ifdef __GNUC__
+  g_assert (freed1);
+  g_assert (freed3);
+#endif
+  g_assert (!freed2);
+
+  g_bytes_unref (b2);
+  g_assert (freed2);
+}
+
 int
 main (int argc, gchar *argv[])
 {
@@ -462,6 +546,9 @@ main (int argc, gchar *argv[])
   g_test_add_func ("/autoptr/g_variant_dict", test_g_variant_dict);
   g_test_add_func ("/autoptr/g_variant_type", test_g_variant_type);
   g_test_add_func ("/autoptr/strv", test_strv);
+  g_test_add_func ("/autoptr/refstring", test_refstring);
+  g_test_add_func ("/autoptr/autolist", test_autolist);
+  g_test_add_func ("/autoptr/autoslist", test_autoslist);
 
   return g_test_run ();
 }

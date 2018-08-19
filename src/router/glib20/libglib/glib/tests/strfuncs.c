@@ -1037,7 +1037,11 @@ test_strtod (void)
   check_strtod_number (0.75, "%5.2f", " 0.75");
   check_strtod_number (-0.75, "%0.2f", "-0.75");
   check_strtod_number (-0.75, "%5.2f", "-0.75");
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(__MINGW32__)
+  /* FIXME: The included gnulib and the mingw-w64 implementation
+   * currently don't follow C99 and print 3 digits for the exponent.
+   * In case of mingw-w64 this was fixed but not released yet:
+   * https://sourceforge.net/p/mingw-w64/bugs/732/ */
   check_strtod_number (1e99, "%0.e", "1e+099");
 #else
   check_strtod_number (1e99, "%.0e", "1e+99");
@@ -1324,29 +1328,30 @@ test_strip_context (void)
   g_assert (s == msgval + 7);
 }
 
+/* Test the strings returned by g_strerror() are valid and unique. On Windows,
+ * fewer than 200 error numbers are used, so we expect some strings to
+ * return a generic ‘unknown error code’ message. */
 static void
 test_strerror (void)
 {
   GHashTable *strs;
   gint i;
-  const gchar *str;
-  GHashTableIter iter;
+  const gchar *str, *unknown_str;
 
   setlocale (LC_ALL, "C");
 
+  unknown_str = g_strerror (-1);
   strs = g_hash_table_new (g_str_hash, g_str_equal);
   for (i = 1; i < 200; i++)
     {
+      gboolean is_unknown;
       str = g_strerror (i);
+      is_unknown = (strcmp (str, unknown_str) == 0);
       g_assert (str != NULL);
       g_assert (g_utf8_validate (str, -1, NULL));
-      g_assert_false (g_hash_table_contains (strs, str));
+      g_assert_true (!g_hash_table_contains (strs, str) || is_unknown);
       g_hash_table_add (strs, (char *)str);
     }
-
-  g_hash_table_iter_init (&iter, strs);
-  while (g_hash_table_iter_next (&iter, (gpointer *)&str, NULL))
-    g_assert (g_utf8_validate (str, -1, NULL));
 
   g_hash_table_unref (strs);
 }

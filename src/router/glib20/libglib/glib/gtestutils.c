@@ -87,12 +87,17 @@
  * creates a test suite called "misc" with a single test case named
  * "assertions", which consists of running the test_assertions function.
  *
- * In addition to the traditional g_assert(), the test framework provides
+ * In addition to the traditional g_assert_true(), the test framework provides
  * an extended set of assertions for comparisons: g_assert_cmpfloat(),
- * g_assert_cmpint(), g_assert_cmpuint(), g_assert_cmphex(),
- * g_assert_cmpstr(), and g_assert_cmpmem(). The advantage of these
- * variants over plain g_assert() is that the assertion messages can be
- * more elaborate, and include the values of the compared entities.
+ * g_assert_cmpfloat_with_epsilon(), g_assert_cmpint(), g_assert_cmpuint(),
+ * g_assert_cmphex(), g_assert_cmpstr(), and g_assert_cmpmem(). The
+ * advantage of these variants over plain g_assert_true() is that the assertion
+ * messages can be more elaborate, and include the values of the compared
+ * entities.
+ *
+ * Note that g_assert() should not be used in unit tests, since it is a no-op
+ * when compiling with `G_DISABLE_ASSERT`. Use g_assert() in production code,
+ * and g_assert_true() in unit tests.
  *
  * A full example of creating a test suite with two tests using fixtures:
  * |[<!-- language="C" -->
@@ -248,6 +253,10 @@
  * Exactly one of g_test_quick() and g_test_slow() is active in any run;
  * there is no "medium speed".
  *
+ * By default, tests are run in quick mode. In tests that use
+ * g_test_init(), the options `-m quick`, `-m slow` and `-m thorough`
+ * can be used to change this.
+ *
  * Returns: %TRUE if in quick mode
  */
 
@@ -258,6 +267,10 @@
  * Exactly one of g_test_quick() and g_test_slow() is active in any run;
  * there is no "medium speed".
  *
+ * By default, tests are run in quick mode. In tests that use
+ * g_test_init(), the options `-m quick`, `-m slow` and `-m thorough`
+ * can be used to change this.
+ *
  * Returns: the opposite of g_test_quick()
  */
 
@@ -267,6 +280,10 @@
  * Returns %TRUE if tests are run in thorough mode, equivalent to
  * g_test_slow().
  *
+ * By default, tests are run in quick mode. In tests that use
+ * g_test_init(), the options `-m quick`, `-m slow` and `-m thorough`
+ * can be used to change this.
+ *
  * Returns: the same thing as g_test_slow()
  */
 
@@ -274,6 +291,10 @@
  * g_test_perf:
  *
  * Returns %TRUE if tests are run in performance mode.
+ *
+ * By default, tests are run in quick mode. In tests that use
+ * g_test_init(), the option `-m perf` enables performance tests, while
+ * `-m quick` disables them.
  *
  * Returns: %TRUE if in performance mode
  */
@@ -283,7 +304,10 @@
  *
  * Returns %TRUE if tests may provoke assertions and other formally-undefined
  * behaviour, to verify that appropriate warnings are given. It might, in some
- * cases, be useful to turn this off if running tests under valgrind.
+ * cases, be useful to turn this off with if running tests under valgrind;
+ * in tests that use g_test_init(), the option `-m no-undefined` disables
+ * those tests, while `-m undefined` explicitly enables them (the default
+ * behaviour).
  *
  * Returns: %TRUE if tests may provoke programming errors
  */
@@ -292,6 +316,8 @@
  * g_test_verbose:
  *
  * Returns %TRUE if tests are run in verbose mode.
+ * In tests that use g_test_init(), the option `--verbose` enables this,
+ * while `-q` or `--quiet` disables it.
  * The default is neither g_test_verbose() nor g_test_quiet().
  *
  * Returns: %TRUE if in verbose mode
@@ -301,6 +327,8 @@
  * g_test_quiet:
  *
  * Returns %TRUE if tests are run in quiet mode.
+ * In tests that use g_test_init(), the option `-q` or `--quiet` enables
+ * this, while `--verbose` disables it.
  * The default is neither g_test_verbose() nor g_test_quiet().
  *
  * Returns: %TRUE if in quiet mode
@@ -449,7 +477,10 @@
  *
  * The macro can be turned off in final releases of code by defining
  * `G_DISABLE_ASSERT` when compiling the application, so code must
- * not depend on any side effects from @expr.
+ * not depend on any side effects from @expr. Similarly, it must not be used
+ * in unit tests, otherwise the unit tests will be ineffective if compiled with
+ * `G_DISABLE_ASSERT`. Use g_assert_true() and related macros in unit tests
+ * instead.
  */
 
 /**
@@ -460,7 +491,8 @@
  * application is terminated.
  *
  * The macro can be turned off in final releases of code by defining
- * `G_DISABLE_ASSERT` when compiling the application.
+ * `G_DISABLE_ASSERT` when compiling the application. Hence, it should not be
+ * used in unit tests, where assertions should always be effective.
  */
 
 /**
@@ -472,6 +504,10 @@
  * If the assertion fails (i.e. the expression is not true),
  * an error message is logged and the application is either
  * terminated or the testcase marked as failed.
+ *
+ * Note that unlike g_assert(), this macro is unaffected by whether
+ * `G_DISABLE_ASSERT` is defined. Hence it should only be used in tests and,
+ * conversely, g_assert() should not be used in tests.
  *
  * See g_test_set_nonfatal_assertions().
  *
@@ -488,6 +524,10 @@
  * an error message is logged and the application is either
  * terminated or the testcase marked as failed.
  *
+ * Note that unlike g_assert(), this macro is unaffected by whether
+ * `G_DISABLE_ASSERT` is defined. Hence it should only be used in tests and,
+ * conversely, g_assert() should not be used in tests.
+ *
  * See g_test_set_nonfatal_assertions().
  *
  * Since: 2.38
@@ -503,6 +543,10 @@
  * an error message is logged and the application is either
  * terminated or the testcase marked as failed.
  *
+ * Note that unlike g_assert(), this macro is unaffected by whether
+ * `G_DISABLE_ASSERT` is defined. Hence it should only be used in tests and,
+ * conversely, g_assert() should not be used in tests.
+ *
  * See g_test_set_nonfatal_assertions().
  *
  * Since: 2.38
@@ -517,6 +561,10 @@
  * If the assertion fails (i.e. the expression is %NULL),
  * an error message is logged and the application is either
  * terminated or the testcase marked as failed.
+ *
+ * Note that unlike g_assert(), this macro is unaffected by whether
+ * `G_DISABLE_ASSERT` is defined. Hence it should only be used in tests and,
+ * conversely, g_assert() should not be used in tests.
  *
  * See g_test_set_nonfatal_assertions().
  *
@@ -611,6 +659,23 @@
  * actual values of @n1 and @n2.
  *
  * Since: 2.16
+ */
+
+/**
+ * g_assert_cmpfloat_with_epsilon:
+ * @n1: an floating point number
+ * @n2: another floating point number
+ * @epsilon: a numeric value that expresses the expected tolerance
+ *   between @n1 and @n2
+ *
+ * Debugging macro to compare two floating point numbers within an epsilon.
+ *
+ * The effect of `g_assert_cmpfloat_with_epsilon (n1, n2, epsilon)` is
+ * the same as `g_assert_true (abs (n1 - n2) < epsilon)`. The advantage
+ * of this macro is that it can produce a message that includes the
+ * actual values of @n1 and @n2.
+ *
+ * Since: 2.58
  */
 
 /**
@@ -731,12 +796,6 @@ static void     gtest_default_log_handler       (const gchar    *log_domain,
                                                  gpointer        unused_data);
 
 
-typedef enum {
-  G_TEST_RUN_SUCCESS,
-  G_TEST_RUN_SKIPPED,
-  G_TEST_RUN_FAILURE,
-  G_TEST_RUN_INCOMPLETE
-} GTestResult;
 static const char * const g_test_result_names[] = {
   "OK",
   "SKIP",
@@ -765,7 +824,7 @@ static double      test_user_stamp = 0;
 static GSList     *test_paths = NULL;
 static GSList     *test_paths_skipped = NULL;
 static GTestSuite *test_suite_root = NULL;
-static int         test_trap_last_status = 0;
+static int         test_trap_last_status = 0;  /* unmodified platform-specific status */
 static GPid        test_trap_last_pid = 0;
 static char       *test_trap_last_subprocess = NULL;
 static char       *test_trap_last_stdout = NULL;
@@ -1197,15 +1256,16 @@ parse_args (gint    *argc_p,
  *   be skipped (ie, a test whose name contains "/subprocess").
  * - `-m {perf|slow|thorough|quick|undefined|no-undefined}`: Execute tests according to these test modes:
  *
- *   `perf`: Performance tests, may take long and report results.
+ *   `perf`: Performance tests, may take long and report results (off by default).
  *
- *   `slow`, `thorough`: Slow and thorough tests, may take quite long and maximize coverage.
+ *   `slow`, `thorough`: Slow and thorough tests, may take quite long and maximize coverage
+ *   (off by default).
  *
- *   `quick`: Quick tests, should run really quickly and give good coverage.
+ *   `quick`: Quick tests, should run really quickly and give good coverage (the default).
  *
  *   `undefined`: Tests for undefined behaviour, may provoke programming errors
  *   under g_test_trap_subprocess() or g_test_expect_message() to check
- *   that appropriate assertions or warnings are given
+ *   that appropriate assertions or warnings are given (the default).
  *
  *   `no-undefined`: Avoid tests for undefined behaviour
  *
@@ -1214,9 +1274,9 @@ parse_args (gint    *argc_p,
  * Since: 2.16
  */
 void
-g_test_init (int    *argc,
-             char ***argv,
-             ...)
+(g_test_init) (int    *argc,
+               char ***argv,
+               ...)
 {
   static char seedstr[4 + 4 * 8 + 1];
   va_list args;
@@ -2679,7 +2739,7 @@ sane_dup2 (int fd1,
 typedef struct {
   GPid pid;
   GMainLoop *loop;
-  int child_status;
+  int child_status;  /* unmodified platform-specific status */
 
   GIOChannel *stdout_io;
   gboolean echo_stdout;
@@ -2704,18 +2764,8 @@ child_exited (GPid     pid,
 {
   WaitForChildData *data = user_data;
 
-#ifdef G_OS_UNIX
-  if (WIFEXITED (status)) /* normal exit */
-    data->child_status = WEXITSTATUS (status); /* 0..255 */
-  else if (WIFSIGNALED (status) && WTERMSIG (status) == SIGALRM)
-    data->child_status = G_TEST_STATUS_TIMED_OUT;
-  else if (WIFSIGNALED (status))
-    data->child_status = (WTERMSIG (status) << 12); /* signalled */
-  else /* WCOREDUMP (status) */
-    data->child_status = 512; /* coredump */
-#else
+  g_assert (status != -1);
   data->child_status = status;
-#endif
 
   check_complete (data);
 }
@@ -3084,7 +3134,7 @@ g_test_trap_subprocess (const char           *test_path,
                                  &pid, NULL, &stdout_fd, &stderr_fd,
                                  &error))
     {
-      g_error ("g_test_trap_subprocess() failed: %s\n",
+      g_error ("g_test_trap_subprocess() failed: %s",
                error->message);
     }
   g_ptr_array_free (argv, TRUE);
@@ -3124,7 +3174,12 @@ g_test_subprocess (void)
 gboolean
 g_test_trap_has_passed (void)
 {
-  return test_trap_last_status == 0; /* exit_status == 0 && !signal && !coredump */
+#ifdef G_OS_UNIX
+  return (WIFEXITED (test_trap_last_status) &&
+      WEXITSTATUS (test_trap_last_status) == 0);
+#else
+  return test_trap_last_status == 0;
+#endif
 }
 
 /**
@@ -3139,13 +3194,61 @@ g_test_trap_has_passed (void)
 gboolean
 g_test_trap_reached_timeout (void)
 {
+#ifdef G_OS_UNIX
+  return (WIFSIGNALED (test_trap_last_status) &&
+      WTERMSIG (test_trap_last_status) == SIGALRM);
+#else
   return test_trap_last_status == G_TEST_STATUS_TIMED_OUT;
+#endif
 }
 
 static gboolean
 log_child_output (const gchar *process_id)
 {
   gchar *escaped;
+
+#ifdef G_OS_UNIX
+  if (WIFEXITED (test_trap_last_status)) /* normal exit */
+    {
+      if (WEXITSTATUS (test_trap_last_status) == 0)
+        g_test_message ("child process (%s) exit status: 0 (success)",
+            process_id);
+      else
+        g_test_message ("child process (%s) exit status: %d (error)",
+            process_id, WEXITSTATUS (test_trap_last_status));
+    }
+  else if (WIFSIGNALED (test_trap_last_status) &&
+      WTERMSIG (test_trap_last_status) == SIGALRM)
+    {
+      g_test_message ("child process (%s) timed out", process_id);
+    }
+  else if (WIFSIGNALED (test_trap_last_status))
+    {
+      const gchar *maybe_dumped_core = "";
+
+#ifdef WCOREDUMP
+      if (WCOREDUMP (test_trap_last_status))
+        maybe_dumped_core = ", core dumped";
+#endif
+
+      g_test_message ("child process (%s) killed by signal %d (%s)%s",
+          process_id, WTERMSIG (test_trap_last_status),
+          g_strsignal (WTERMSIG (test_trap_last_status)),
+          maybe_dumped_core);
+    }
+  else
+    {
+      g_test_message ("child process (%s) unknown wait status %d",
+          process_id, test_trap_last_status);
+    }
+#else
+  if (test_trap_last_status == 0)
+    g_test_message ("child process (%s) exit status: 0 (success)",
+        process_id);
+  else
+    g_test_message ("child process (%s) exit status: %d (error)",
+        process_id, test_trap_last_status);
+#endif
 
   escaped = g_strescape (test_trap_last_stdout, NULL);
   g_test_message ("child process (%s) stdout: \"%s\"", process_id, escaped);

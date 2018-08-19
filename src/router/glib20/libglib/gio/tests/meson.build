@@ -1,4 +1,9 @@
-common_gio_tests_deps = [libglib_dep, libgmodule_dep, libgobject_dep, libgio_dep]
+common_gio_tests_deps = [
+  libglib_dep,
+  libgmodule_dep,
+  libgobject_dep,
+  libgio_dep,
+]
 
 subdir('gdbus-object-manager-example')
 
@@ -38,8 +43,10 @@ gio_tests = [
   'memory-input-stream',
   'memory-output-stream',
   'monitor',
+  'mount-operation',
   'network-address',
   'network-monitor',
+  'network-monitor-race',
   'permission',
   'pollable',
   'proxy-test',
@@ -57,6 +64,14 @@ gio_tests = [
   'glistmodel',
   'testfilemonitor',
   'thumbnail-verification',
+  'tls-certificate',
+  'tls-interaction',
+]
+slow_tests = [
+  'actions',
+  'gdbus-export',
+  'gdbus-threading',
+  'testfilemonitor',
 ]
 
 test_extra_programs = [
@@ -64,13 +79,13 @@ test_extra_programs = [
   ['gdbus-testserver'],
 ]
 
-test_env = [
-  'G_TEST_SRCDIR=' + meson.current_source_dir(),
-  'G_TEST_BUILDDIR=' + meson.current_build_dir(),
-]
+test_env = environment()
+test_env.set('G_TEST_SRCDIR', meson.current_source_dir())
+test_env.set('G_TEST_BUILDDIR', meson.current_build_dir())
+test_env.set('GIO_MODULE_DIR', '')
+test_env.set('GIO_LAUNCH_DESKTOP', meson.build_root() + '/gio/gio-launch-desktop')
 
 test_c_args = [
-  '-DHAVE_CONFIG_H=1',
   '-DG_LOG_DOMAIN="GLib-GIO"',
   '-DTEST_SERVICES="@0@/gio/tests/services"'.format(meson.build_root()),
   '-DGLIB_MKENUMS="@0@"'.format(glib_mkenums),
@@ -100,7 +115,7 @@ if dbus1_dep.found()
       install : false,
       c_args : test_c_args,
       dependencies : common_gio_tests_deps + [dbus1_dep])
-  test('gdbus-serialization', exe, env : test_env)
+  test('gdbus-serialization', exe, env : test_env, suite : ['gio'])
 endif
 
 #  Test programs buildable on UNIX only
@@ -117,6 +132,7 @@ if host_machine.system() != 'windows'
     'unix-streams',
     'g-file-info-filesystem-readonly',
     'gschema-compile',
+    'trash',
   ]
 
   # Uninstalled because of the check-for-executable logic in DesktopAppInfo
@@ -188,7 +204,7 @@ if host_machine.system() != 'windows'
     ]
 
     if not glib_have_cocoa
-      gio_dbus_tests = [['dbus-appinfo', [], []]]
+      gio_dbus_tests += [['dbus-appinfo', [], []]]
     endif
 
     # separate loop because extra source files for each test
@@ -201,7 +217,12 @@ if host_machine.system() != 'windows'
           install : false,
           c_args : test_c_args,
           dependencies : common_gio_tests_deps + extra_deps)
-      test(test_name, exe, env : test_env)
+      # These tests may take more than 30 seconds to run on the CI infrastructure
+      if slow_tests.contains(test_name)
+        test(test_name, exe, env : test_env, timeout : 120, suite : ['gio', 'slow'])
+      else
+        test(test_name, exe, env : test_env, suite : ['gio'])
+      endif
     endforeach
 
     exe = executable('gdbus-test-codegen-old', 'gdbus-test-codegen.c',
@@ -209,7 +230,7 @@ if host_machine.system() != 'windows'
           install : false,
           c_args : test_c_args + ['-DGLIB_VERSION_MIN_REQUIRED=GLIB_VERSION_2_36', '-DGLIB_VERSION_MAX_ALLOWED=GLIB_VERSION_2_36'],
           dependencies : common_gio_tests_deps)
-    test('gdbus-test-codegen-old', exe, env : test_env)
+    test('gdbus-test-codegen-old', exe, env : test_env, suite : ['gio'])
 
     # There is already a gapplication exe target in gio so need to use a
     # different name for the unit test executable, since we can't have two
@@ -222,7 +243,7 @@ if host_machine.system() != 'windows'
                        c_args : test_c_args,
                        dependencies : common_gio_tests_deps)
     endif
-    test('gapplication', exe, env : test_env)
+    test('gapplication', exe, env : test_env, suite : ['gio'])
 
     gio_tests += ['gdbus-unix-addresses']
   endif # have_dbus_daemon
@@ -238,14 +259,14 @@ if host_machine.system() != 'windows'
       install : false,
       c_args : test_c_args,
       dependencies : common_gio_tests_deps)
-  test('gdbus-connection-flush', exe, env : test_env)
+  test('gdbus-connection-flush', exe, env : test_env, suite : ['gio'])
 
   exe = executable('gdbus-non-socket', 'gdbus-non-socket.c',
       'gdbus-tests.c', 'test-io-stream.c', 'test-pipe-unix.c',
       install : false,
       c_args : test_c_args,
       dependencies : common_gio_tests_deps)
-  test('gdbus-non-socket', exe, env : test_env)
+  test('gdbus-non-socket', exe, env : test_env, suite : ['gio'])
 
   # Generate test.mo from de.po using msgfmt
   msgfmt = find_program('msgfmt', required : false)
@@ -259,7 +280,7 @@ if host_machine.system() != 'windows'
                    '-DTEST_LOCALE_PATH="@0@"'.format(test_mo_dir),
                  ],
         dependencies : common_gio_tests_deps)
-    test('gsettings', exe, env : test_env)
+    test('gsettings', exe, env : test_env, suite : ['gio'])
   endif
 endif # unix
 
@@ -284,15 +305,18 @@ foreach test_name : gio_tests
     # This is peer to peer so it doesn't need a session bus, so we can run
     # it automatically as a test by default
     extra_deps = [libgdbus_example_objectmanager_dep]
+  elif test_name == 'tls-certificate' or test_name == 'tls-interaction'
+    srcs += ['gtesttlsbackend.c']
   endif
   exe = executable(test_name, srcs,
       install : false,
       c_args : test_c_args,
       dependencies : common_gio_tests_deps + extra_deps)
-  if test_name == 'testfilemonitor'
-    test(test_name, exe, env : test_env, timeout : 45)
+  # These tests may take more than 30 seconds to run on the CI infrastructure
+  if slow_tests.contains(test_name)
+    test(test_name, exe, env : test_env, timeout : 120, suite : ['gio', 'slow'])
   else
-    test(test_name, exe, env : test_env)
+    test(test_name, exe, env : test_env, suite : ['gio'])
   endif
 endforeach
 
@@ -304,6 +328,7 @@ uninstalled_test_extra_programs = [
   ['gapplication-example-cmdline'],
   ['gapplication-example-cmdline2'],
   ['gapplication-example-cmdline3'],
+  ['gapplication-example-cmdline4'],
   ['gapplication-example-dbushooks'],
   ['gapplication-example-open'],
   ['gdbus-daemon', gdbus_daemon_sources],
@@ -322,8 +347,6 @@ uninstalled_test_extra_programs = [
   ['send-data'],
   ['socket-server'],
   ['socket-client', ['gtlsconsoleinteraction.c']],
-  ['tls-certificate', ['gtesttlsbackend.c']],
-  ['tls-interaction', ['gtesttlsbackend.c']],
   # These three are manual-run tests because they need a session bus but don't bring one up themselves
   # FIXME: these build but don't seem to work!
   ['gdbus-example-objectmanager-client', [], [libgdbus_example_objectmanager_dep]],
@@ -368,7 +391,7 @@ if not meson.is_cross_build() or meson.has_exe_wrapper()
     resource_plugin_platform_link_args = []
   endif
   shared_module ('resourceplugin', 'resourceplugin.c', plugin_resources_c,
-    link_args : ['-export-dynamic'] + resource_plugin_platform_link_args,
+    link_args : export_dynamic_ldflags + resource_plugin_platform_link_args,
     dependencies : common_gio_tests_deps)
 
   test_gresource = custom_target('test.gresource',
@@ -415,7 +438,7 @@ if not meson.is_cross_build() or meson.has_exe_wrapper()
   # referenced by test.gresource.xml
   test_generated_txt = configure_file(input : 'test1.txt',
     output : 'test-generated.txt',
-    configuration : configuration_data(),
+    copy : true,
     install : false)
 
   exe = executable('resources', 'resources.c', test_gresource,
@@ -423,7 +446,7 @@ if not meson.is_cross_build() or meson.has_exe_wrapper()
       install : false,
       c_args : test_c_args,
       dependencies : common_gio_tests_deps)
-  test('resources', exe, env : test_env)
+  test('resources', exe, env : test_env, suite : ['gio'])
 endif
 
 # FIXME: subdir('services')

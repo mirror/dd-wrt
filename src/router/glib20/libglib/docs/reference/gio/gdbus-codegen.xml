@@ -35,7 +35,13 @@
     <arg><option>--c-generate-autocleanup</option> none|objects|all</arg>
     <arg><option>--output-directory</option> <replaceable>OUTDIR</replaceable></arg>
     <arg><option>--generate-docbook</option> <replaceable>OUTFILES</replaceable></arg>
+    <arg><option>--pragma-once</option></arg>
     <arg><option>--xml-files</option> <replaceable>FILE</replaceable></arg>
+    <arg><option>--header</option></arg>
+    <arg><option>--body</option></arg>
+    <arg><option>--interface-info-header</option></arg>
+    <arg><option>--interface-info-body</option></arg>
+    <arg><option>--output</option> <replaceable>OUTFILE</replaceable></arg>
     <group choice="plain" rep="repeat">
       <arg>
         <option>--annotate</option>
@@ -55,13 +61,21 @@
   <title>Description</title>
   <para>
     <command>gdbus-codegen</command> is used to generate code and/or
-    documentation for one or more D-Bus interfaces. The tool reads
+    documentation for one or more D-Bus interfaces.
+  </para>
+  <para>
+    <command>gdbus-codegen</command> reads
     <ulink
     url="http://dbus.freedesktop.org/doc/dbus-specification.html#introspection-format">D-Bus
-    Introspection XML</ulink> files and generates output files. The
-    tool currently supports generating C code (via
-    <option>--generate-c-code</option>) and Docbook XML (via
-    <option>--generate-docbook</option>).
+    Introspection XML</ulink> from files passed as additional
+    arguments on the command line and generates output files.
+    It currently supports generating C source code (via
+    <option>--body</option>) or header (via <option>--header</option>)
+    and Docbook XML (via <option>--generate-docbook</option>). Alternatively,
+    more restricted C source code and headers can be generated, which just
+    contain the interface information (as <type>GDBusInterfaceInfo</type>
+    structures) using <option>--interface-info-body</option> and
+    <option>--interface-info-header</option>.
   </para>
 </refsect1>
 
@@ -79,6 +93,23 @@
     #GDBusInterfaceSkeleton type making it easy to export on a
     #GDBusConnection either directly or via a
     #GDBusObjectManagerServer instance.
+  </para>
+  <para>
+    For C code generation either <option>--body</option> that
+    generates source code, <option>--header</option> that
+    generates headers, <option>--interface-info-body</option> that generates
+    interface information source code, or
+    <option>--interface-info-header</option> that generates interface information
+    headers, can be used. These options must be used along with
+    <option>--output</option>, which is used to specify the file to output to.
+  </para>
+  <para>
+    Both files can be generated at the same time by using
+    <option>--generate-c-code</option>, but this option is deprecated.
+    In this case <option>--output</option> cannot be used due to the
+    generation of multiple files. Instead pass
+    <option>--output-directory</option> to specify the directory to put
+    the output files in. By default the current directory will be used.
   </para>
   <para>
     The name of each generated C type is derived from the D-Bus
@@ -152,6 +183,7 @@
       <term><option>--xml-files</option> <replaceable>FILE</replaceable></term>
       <listitem>
         <para>
+          This option is deprecated; use positional arguments instead.
           The D-Bus introspection XML file.
         </para>
       </listitem>
@@ -178,6 +210,11 @@
           put it in <filename>OUTFILES-NAME.xml</filename> where
           <literal>NAME</literal> is a place-holder for the interface
           name, e.g. <literal>net.Corp.FooBar</literal> and so on.
+        </para>
+        <para>
+          Pass <option>--output-directory</option> to specify the directory
+          to put the output files in. By default the current directory
+          will be used.
         </para>
       </listitem>
     </varlistentry>
@@ -206,6 +243,17 @@
           to be in <ulink
           url="http://en.wikipedia.org/wiki/CamelCase">CamelCase</ulink>
           or <emphasis>Ugly_Case</emphasis> (see above).
+        </para>
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term><option>--pragma-once</option></term>
+      <listitem>
+        <para>
+          If this option is passed, the
+          <ulink url="https://en.wikipedia.org/wiki/Pragma_once">&#35;pragma once</ulink>
+          preprocessor directive is used instead of include guards.
         </para>
       </listitem>
     </varlistentry>
@@ -241,6 +289,102 @@
       <listitem>
         <para>
           Directory to output generated source to. Equivalent to changing directory before generation.
+        </para>
+        <para>
+          This option cannot be used with <option>--body</option>,
+          <option>--header</option>, <option>--interface-info-body</option> or
+          <option>--interface-info-header</option>; and
+          <option>--output</option> must be used.
+        </para>
+
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term><option>--header</option></term>
+      <listitem>
+        <para>
+          If this option is passed, it will generate the header code and write it to the disk by
+          using the path and file name provided by <option>--output</option>.
+        </para>
+        <para>
+          Using <option>--generate-c-code</option>, <option>--generate-docbook</option> or
+          <option>--output-directory</option> are not allowed to be used along with
+          <option>--header</option> and <option>--body</option> options, because these options
+          are used to generate only one file.
+        </para>
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term><option>--body</option></term>
+      <listitem>
+        <para>
+          If this option is passed, it will generate the source code and write it to the disk by
+          using the path and file name provided by <option>--output</option>.
+        </para>
+        <para>
+          Using <option>--generate-c-code</option>, <option>--generate-docbook</option> or
+          <option>--output-directory</option> are not allowed to be used along with
+          <option>--header</option> and <option>--body</option> options, because these options
+          are used to generate only one file.
+        </para>
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term><option>--interface-info-header</option></term>
+      <listitem>
+        <para>
+          If this option is passed, it will generate the header code for the
+          <type>GDBusInterfaceInfo</type> structures only and will write it to
+          the disk by using the path and file name provided by
+          <option>--output</option>.
+        </para>
+        <para>
+          Using <option>--generate-c-code</option>, <option>--generate-docbook</option> or
+          <option>--output-directory</option> are not allowed to be used along with
+          the <option>--interface-info-header</option> and
+          <option>--interface-info-body</option> options, because these options
+          are used to generate only one file.
+        </para>
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term><option>--interface-info-body</option></term>
+      <listitem>
+        <para>
+          If this option is passed, it will generate the source code for the
+          <type>GDBusInterfaceInfo</type> structures only and will write it to
+          the disk by using the path and file name provided by
+          <option>--output</option>.
+        </para>
+        <para>
+          Using <option>--generate-c-code</option>, <option>--generate-docbook</option> or
+          <option>--output-directory</option> are not allowed to be used along with
+          the <option>--interface-info-header</option> and
+          <option>--interface-info-body</option> options, because these options
+          are used to generate only one file.
+        </para>
+      </listitem>
+    </varlistentry>
+
+    <varlistentry>
+      <term><option>--output</option> <replaceable>OUTFILE</replaceable></term>
+      <listitem>
+        <para>
+          The full path where the header (<option>--header</option>,
+          <option>--interface-info-header</option>) or the source code
+          (<option>--body</option>, <option>--interface-info-body</option>) will
+          be written, using the path and filename provided by
+          <option>--output</option>. The full path could be something like
+          <literal>$($OUTFILE).{c,h}</literal>.
+        </para>
+        <para>
+          Using <option>--generate-c-code</option>, <option>--generate-docbook</option> or
+          <option>--output-directory</option> is not allowed along with
+          <option>--output</option>, because the latter is used to generate only one file.
         </para>
       </listitem>
     </varlistentry>
@@ -894,7 +1038,7 @@ on_handle_hello_world (MyAppFrobber           *interface,
   <para>
     Please send bug reports to either the distribution bug tracker
     or the upstream bug tracker at
-    <ulink url="https://bugzilla.gnome.org/enter_bug.cgi?product=glib">https://bugzilla.gnome.org/enter_bug.cgi?product=glib</ulink>.
+    <ulink url="https://gitlab.gnome.org/GNOME/glib/issues/new">https://gitlab.gnome.org/GNOME/glib/issues/new</ulink>.
   </para>
 </refsect1>
 

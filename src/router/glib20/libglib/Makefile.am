@@ -6,8 +6,8 @@ include $(top_srcdir)/glib.mk
 
 ACLOCAL_AMFLAGS = -I m4macros ${ACLOCAL_FLAGS}
 
-SUBDIRS = . m4macros glib gmodule gthread gobject gio po docs tests
-DIST_SUBDIRS = $(SUBDIRS) build win32
+SUBDIRS = . m4macros glib gmodule gthread gobject gio po docs tests subprojects
+DIST_SUBDIRS = $(SUBDIRS) build
 
 bin_SCRIPTS = glib-gettextize
 
@@ -34,12 +34,11 @@ EXTRA_DIST += 			\
 	ChangeLog.pre-2-2	\
 	ChangeLog.pre-2-0	\
 	ChangeLog.pre-1-2	\
-	glib-zip.in		\
 	NEWS.pre-1-3		\
 	acglib.m4		\
 	sanity_check		\
-	README.commits		\
-	README.in		\
+	CONTRIBUTING.md		\
+	README.md		\
 	README.rationale	\
 	INSTALL.in		\
 	README.win32		\
@@ -50,7 +49,6 @@ EXTRA_DIST += 			\
 	tap-driver.sh		\
 	tap-test		\
 	msvc_recommended_pragmas.h \
-	config.h.win32.in	\
         po/po2tbl.sed.in        \
 	glib-2.0.pc.in 		\
 	gobject-2.0.pc.in 	\
@@ -66,7 +64,6 @@ EXTRA_DIST += 			\
 	$(NULL)
 
 meson_build_files = \
-	config.h.meson \
 	meson_options.txt \
 	meson.build \
 	docs/reference/gio/meson.build \
@@ -79,7 +76,10 @@ meson_build_files = \
 	docs/reference/gobject/xml/gtkdocentities.ent.in \
 	docs/reference/gobject/xml/meson.build \
 	gio/data-to-c.py \
+	gio/fam/gfamfilemonitor.map \
+	gio/fam/meson.build \
 	gio/gdbus-2.0/codegen/meson.build \
+	gio/gio-querymodules-wrapper.py \
 	gio/inotify/meson.build \
 	gio/kqueue/meson.build \
 	gio/meson.build \
@@ -110,10 +110,8 @@ EXTRA_DIST += $(meson_build_files)
 
 # These may be in the builddir too
 BUILT_EXTRA_DIST += 		\
-	README			\
 	INSTALL			\
 	ChangeLog		\
-	config.h.win32		\
 	$(NULL)
 
 CONFIGURE_DEPENDENCIES = acglib.m4
@@ -149,7 +147,7 @@ valgrinddir = $(datadir)/glib-2.0/valgrind
 dist_valgrind_DATA = glib.supp
 
 # build documentation when doing distcheck
-DISTCHECK_CONFIGURE_FLAGS = --enable-debug --enable-gtk-doc --enable-man --disable-maintainer-mode
+AM_DISTCHECK_CONFIGURE_FLAGS = --enable-debug --enable-gtk-doc --enable-man --disable-maintainer-mode
 
 DISTCLEANFILES += config.lt
 

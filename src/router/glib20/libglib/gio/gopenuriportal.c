@@ -197,15 +197,17 @@ open_call_done (GObject      *source,
                 GAsyncResult *result,
                 gpointer      user_data)
 {
-  GDBusConnection *connection = G_DBUS_CONNECTION (source);
+  GXdpOpenURI *openuri = GXDP_OPEN_URI (source);
+  GDBusConnection *connection;
   GTask *task = user_data;
   GError *error = NULL;
   gboolean open_file;
   gboolean res;
-  char *path;
+  char *path = NULL;
   const char *handle;
   guint signal_id;
 
+  connection = g_dbus_proxy_get_connection (G_DBUS_PROXY (openuri));
   open_file = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (task), "open-file"));
 
   if (open_file)
@@ -222,7 +224,7 @@ open_call_done (GObject      *source,
     }
 
   handle = (const char *)g_object_get_data (G_OBJECT (task), "handle");
-  if (strcmp (handle, path) != 0)
+  if (g_strcmp0 (handle, path) != 0)
     {
       signal_id = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (task), "signal-id"));
       g_dbus_connection_signal_unsubscribe (connection, signal_id);
