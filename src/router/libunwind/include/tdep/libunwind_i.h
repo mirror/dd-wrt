@@ -32,6 +32,6 @@
 
 #else /* UNW_REMOTE_ONLY */
 
-# include "tdep-x86_64/libunwind_i.h"
+# include "tdep-mips/libunwind_i.h"
 
 #endif /* UNW_REMOTE_ONLY */
