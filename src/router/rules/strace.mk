@@ -23,7 +23,7 @@ export LIBUNWIND_OPT = --with-libunwind
 export LIBUNWIND_LIB = -lunwind-ppc32
 endif
 ifeq ($(ARCH),i386)
-export LIBUNWIND_LIB = -lunwind -lunwind-x86
+#export LIBUNWIND_LIB = -lunwind -lunwind-x86
 endif
 ifeq ($(ARCH),x86_64)
 export LIBUNWIND_OPT = --with-libunwind
