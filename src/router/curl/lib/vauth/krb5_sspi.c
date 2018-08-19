@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 2014 - 2016, Steve Holme, <steve_holme@hotmail.com>.
+ * Copyright (C) 2014 - 2017, Steve Holme, <steve_holme@hotmail.com>.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -40,6 +40,28 @@
 #include "memdebug.h"
 
 /*
+ * Curl_auth_is_gssapi_supported()
+ *
+ * This is used to evaluate if GSSAPI (Kerberos V5) is supported.
+ *
+ * Parameters: None
+ *
+ * Returns TRUE if Kerberos V5 is supported by Windows SSPI.
+ */
+bool Curl_auth_is_gssapi_supported(void)
+{
+  PSecPkgInfo SecurityPackage;
+  SECURITY_STATUS status;
+
+  /* Query the security package for Kerberos */
+  status = s_pSecFn->QuerySecurityPackageInfo((TCHAR *)
+                                              TEXT(SP_NAME_KERBEROS),
+                                              &SecurityPackage);
+
+  return (status == SEC_E_OK ? TRUE : FALSE);
+}
+
+/*
  * Curl_auth_create_gssapi_user_message()
  *
  * This is used to generate an already encoded GSSAPI (Kerberos V5) user token
@@ -52,7 +74,7 @@
  * passdwp     [in]     - The user's password.
  * service     [in]     - The service type such as http, smtp, pop or imap.
  * host        [in]     - The host name.
- * mutual_auth [in]     - Flag specifing whether or not mutual authentication
+ * mutual_auth [in]     - Flag specifying whether or not mutual authentication
  *                        is enabled.
  * chlg64      [in]     - The optional base64 encoded challenge message.
  * krb5        [in/out] - The Kerberos 5 data struct being used and modified.
@@ -113,7 +135,7 @@ CURLcode Curl_auth_create_gssapi_user_message(struct Curl_easy *data,
   }
 
   if(!krb5->credentials) {
-    /* Do we have credientials to use or are we using single sign-on? */
+    /* Do we have credentials to use or are we using single sign-on? */
     if(userp && *userp) {
       /* Populate our identity structure */
       result = Curl_create_sspi_identity(userp, passwdp, &krb5->identity);
@@ -128,11 +150,9 @@ CURLcode Curl_auth_create_gssapi_user_message(struct Curl_easy *data,
       krb5->p_identity = NULL;
 
     /* Allocate our credentials handle */
-    krb5->credentials = malloc(sizeof(CredHandle));
+    krb5->credentials = calloc(1, sizeof(CredHandle));
     if(!krb5->credentials)
       return CURLE_OUT_OF_MEMORY;
-
-    memset(krb5->credentials, 0, sizeof(CredHandle));
 
     /* Acquire our credentials handle */
     status = s_pSecFn->AcquireCredentialsHandle(NULL,
@@ -145,11 +165,9 @@ CURLcode Curl_auth_create_gssapi_user_message(struct Curl_easy *data,
       return CURLE_LOGIN_DENIED;
 
     /* Allocate our new context handle */
-    krb5->context = malloc(sizeof(CtxtHandle));
+    krb5->context = calloc(1, sizeof(CtxtHandle));
     if(!krb5->context)
       return CURLE_OUT_OF_MEMORY;
-
-    memset(krb5->context, 0, sizeof(CtxtHandle));
   }
 
   if(chlg64 && *chlg64) {

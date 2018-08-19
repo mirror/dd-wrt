@@ -2388,6 +2388,7 @@
     <ClCompile Include="..\..\..\..\lib\content_encoding.c" />
     <ClCompile Include="..\..\..\..\lib\cookie.c" />
     <ClCompile Include="..\..\..\..\lib\curl_addrinfo.c" />
+    <ClCompile Include="..\..\..\..\lib\curl_ctype.c" />
     <ClCompile Include="..\..\..\..\lib\curl_des.c" />
     <ClCompile Include="..\..\..\..\lib\curl_endian.c" />
     <ClCompile Include="..\..\..\..\lib\curl_fnmatch.c" />
@@ -2397,6 +2398,8 @@
     <ClCompile Include="..\..\..\..\lib\curl_multibyte.c" />
     <ClCompile Include="..\..\..\..\lib\curl_ntlm_core.c" />
     <ClCompile Include="..\..\..\..\lib\curl_ntlm_wb.c" />
+    <ClCompile Include="..\..\..\..\lib\curl_path.c" />
+    <ClCompile Include="..\..\..\..\lib\curl_range.c" />
     <ClCompile Include="..\..\..\..\lib\curl_rtmp.c" />
     <ClCompile Include="..\..\..\..\lib\curl_sasl.c" />
     <ClCompile Include="..\..\..\..\lib\curl_sspi.c" />
@@ -2439,6 +2442,7 @@
     <ClCompile Include="..\..\..\..\lib\md4.c" />
     <ClCompile Include="..\..\..\..\lib\md5.c" />
     <ClCompile Include="..\..\..\..\lib\memdebug.c" />
+    <ClCompile Include="..\..\..\..\lib\mime.c" />
     <ClCompile Include="..\..\..\..\lib\mprintf.c" />
     <ClCompile Include="..\..\..\..\lib\multi.c" />
     <ClCompile Include="..\..\..\..\lib\netrc.c" />
@@ -2450,11 +2454,14 @@
     <ClCompile Include="..\..\..\..\lib\pipeline.c" />
     <ClCompile Include="..\..\..\..\lib\pop3.c" />
     <ClCompile Include="..\..\..\..\lib\progress.c" />
-    <ClCompile Include="..\..\..\..\lib\rawstr.c" />
+    <ClCompile Include="..\..\..\..\lib\psl.c" />
+    <ClCompile Include="..\..\..\..\lib\rand.c" />
     <ClCompile Include="..\..\..\..\lib\rtsp.c" />
     <ClCompile Include="..\..\..\..\lib\security.c" />
     <ClCompile Include="..\..\..\..\lib\select.c" />
     <ClCompile Include="..\..\..\..\lib\sendf.c" />
+    <ClCompile Include="..\..\..\..\lib\setopt.c" />
+    <ClCompile Include="..\..\..\..\lib\sha256.c" />
     <ClCompile Include="..\..\..\..\lib\share.c" />
     <ClCompile Include="..\..\..\..\lib\slist.c" />
     <ClCompile Include="..\..\..\..\lib\smb.c" />
@@ -2465,8 +2472,9 @@
     <ClCompile Include="..\..\..\..\lib\speedcheck.c" />
     <ClCompile Include="..\..\..\..\lib\splay.c" />
     <ClCompile Include="..\..\..\..\lib\ssh.c" />
+    <ClCompile Include="..\..\..\..\lib\ssh-libssh.c" />
+    <ClCompile Include="..\..\..\..\lib\strcase.c" />
     <ClCompile Include="..\..\..\..\lib\strdup.c" />
-    <ClCompile Include="..\..\..\..\lib\strequal.c" />
     <ClCompile Include="..\..\..\..\lib\strerror.c" />
     <ClCompile Include="..\..\..\..\lib\strtok.c" />
     <ClCompile Include="..\..\..\..\lib\strtoofft.c" />
@@ -2503,6 +2511,7 @@
     <ClCompile Include="..\..\..\..\lib\vtls\polarssl.c" />
     <ClCompile Include="..\..\..\..\lib\vtls\polarssl_threadlock.c" />
     <ClCompile Include="..\..\..\..\lib\vtls\schannel.c" />
+    <ClCompile Include="..\..\..\..\lib\vtls\schannel_verify.c" />
     <ClCompile Include="..\..\..\..\lib\vtls\vtls.c" />
   </ItemGroup>
   <ItemGroup>
@@ -2516,6 +2525,7 @@
     <ClInclude Include="..\..\..\..\lib\cookie.h" />
     <ClInclude Include="..\..\..\..\lib\curl_addrinfo.h" />
     <ClInclude Include="..\..\..\..\lib\curl_base64.h" />
+    <ClInclude Include="..\..\..\..\lib\curl_ctype.h" />
     <ClInclude Include="..\..\..\..\lib\curl_des.h" />
     <ClInclude Include="..\..\..\..\lib\curl_endian.h" />
     <ClInclude Include="..\..\..\..\lib\curl_fnmatch.h" />
@@ -2530,12 +2540,15 @@
     <ClInclude Include="..\..\..\..\lib\curl_multibyte.h" />
     <ClInclude Include="..\..\..\..\lib\curl_ntlm_core.h" />
     <ClInclude Include="..\..\..\..\lib\curl_ntlm_wb.h" />
+    <ClInclude Include="..\..\..\..\lib\curl_path.h" />
     <ClInclude Include="..\..\..\..\lib\curl_printf.h" />
+    <ClInclude Include="..\..\..\..\lib\curl_range.h" />
     <ClInclude Include="..\..\..\..\lib\curl_rtmp.h" />
     <ClInclude Include="..\..\..\..\lib\curl_sasl.h" />
     <ClInclude Include="..\..\..\..\lib\curl_sec.h" />
     <ClInclude Include="..\..\..\..\lib\curl_setup.h" />
     <ClInclude Include="..\..\..\..\lib\curl_setup_once.h" />
+    <ClInclude Include="..\..\..\..\lib\curl_sha256.h" />
     <ClInclude Include="..\..\..\..\lib\curl_sspi.h" />
     <ClInclude Include="..\..\..\..\lib\curl_threads.h" />
     <ClInclude Include="..\..\..\..\lib\curlx.h" />
@@ -2566,6 +2579,7 @@
     <ClInclude Include="..\..\..\..\lib\inet_pton.h" />
     <ClInclude Include="..\..\..\..\lib\llist.h" />
     <ClInclude Include="..\..\..\..\lib\memdebug.h" />
+    <ClInclude Include="..\..\..\..\lib\mime.h" />
     <ClInclude Include="..\..\..\..\lib\multihandle.h" />
     <ClInclude Include="..\..\..\..\lib\multiif.h" />
     <ClInclude Include="..\..\..\..\lib\netrc.h" />
@@ -2576,10 +2590,12 @@
     <ClInclude Include="..\..\..\..\lib\pipeline.h" />
     <ClInclude Include="..\..\..\..\lib\pop3.h" />
     <ClInclude Include="..\..\..\..\lib\progress.h" />
-    <ClInclude Include="..\..\..\..\lib\rawstr.h" />
+    <ClInclude Include="..\..\..\..\lib\psl.h" />
+    <ClInclude Include="..\..\..\..\lib\rand.h" />
     <ClInclude Include="..\..\..\..\lib\rtsp.h" />
     <ClInclude Include="..\..\..\..\lib\select.h" />
     <ClInclude Include="..\..\..\..\lib\sendf.h" />
+    <ClInclude Include="..\..\..\..\lib\setopt.h" />
     <ClInclude Include="..\..\..\..\lib\setup-vms.h" />
     <ClInclude Include="..\..\..\..\lib\share.h" />
     <ClInclude Include="..\..\..\..\lib\sigpipe.h" />
@@ -2591,8 +2607,8 @@
     <ClInclude Include="..\..\..\..\lib\speedcheck.h" />
     <ClInclude Include="..\..\..\..\lib\splay.h" />
     <ClInclude Include="..\..\..\..\lib\ssh.h" />
+    <ClInclude Include="..\..\..\..\lib\strcase.h" />
     <ClInclude Include="..\..\..\..\lib\strdup.h" />
-    <ClInclude Include="..\..\..\..\lib\strequal.h" />
     <ClInclude Include="..\..\..\..\lib\strerror.h" />
     <ClInclude Include="..\..\..\..\lib\strtok.h" />
     <ClInclude Include="..\..\..\..\lib\strtoofft.h" />

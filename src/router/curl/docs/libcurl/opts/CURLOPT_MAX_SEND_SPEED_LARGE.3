@@ -5,7 +5,7 @@
 .\" *                            | (__| |_| |  _ <| |___
 .\" *                             \___|\___/|_| \_\_____|
 .\" *
-.\" * Copyright (C) 1998 - 2014, Daniel Stenberg, <daniel@haxx.se>, et al.
+.\" * Copyright (C) 1998 - 2017, Daniel Stenberg, <daniel@haxx.se>, et al.
 .\" *
 .\" * This software is licensed as described in the file COPYING, which
 .\" * you should have received as part of this distribution. The terms
@@ -20,7 +20,8 @@
 .\" *
 .\" **************************************************************************
 .\"
-.TH CURLOPT_MAX_SEND_SPEED_LARGE 3 "19 Jun 2014" "libcurl 7.37.0" "curl_easy_setopt options"
+.TH CURLOPT_MAX_SEND_SPEED_LARGE 3 "May 30, 2017" "libcurl 7.61.0" "curl_easy_setopt options"
+
 .SH NAME
 CURLOPT_MAX_SEND_SPEED_LARGE \- rate limit data upload speed
 .SH SYNOPSIS
@@ -31,9 +32,9 @@ CURLcode curl_easy_setopt(CURL *handle, CURLOPT_MAX_SEND_SPEED_LARGE,
                           curl_off_t maxspeed);
 .SH DESCRIPTION
 Pass a curl_off_t as parameter with the \fImaxspeed\fP.  If an upload exceeds
-this speed (counted in bytes per second) on cumulative average during the
-transfer, the transfer will pause to keep the average rate less than or equal
-to the parameter value.  Defaults to unlimited speed.
+this speed (counted in bytes per second) the transfer will pause to keep the
+speed less than or equal to the parameter value.  Defaults to unlimited
+speed.
 
 This option doesn't affect transfer speeds done with FILE:// URLs.
 .SH DEFAULT
@@ -41,7 +42,17 @@ This option doesn't affect transfer speeds done with FILE:// URLs.
 .SH PROTOCOLS
 All except file://
 .SH EXAMPLE
-TODO
+.nf
+CURL *curl = curl_easy_init();
+if(curl) {
+  CURLcode ret;
+  curl_easy_setopt(curl, CURLOPT_URL, "https://example.com/");
+  /* cap the upload speed to 1000 bytes/sec */
+  curl_easy_setopt(curl, CURLOPT_MAX_SEND_SPEED_LARGE, (curl_off_t)1000);
+  /* (set some upload options as well!) */
+  ret = curl_easy_perform(curl);
+}
+.fi
 .SH AVAILABILITY
 Added in 7.15.5
 .SH RETURN VALUE

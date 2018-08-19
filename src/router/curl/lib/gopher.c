@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2017, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -28,13 +28,11 @@
 #include <curl/curl.h>
 #include "transfer.h"
 #include "sendf.h"
-
 #include "progress.h"
-#include "strequal.h"
 #include "gopher.h"
-#include "rawstr.h"
 #include "select.h"
 #include "url.h"
+#include "escape.h"
 #include "warnless.h"
 #include "curl_memory.h"
 /* The last #include file should be: */
@@ -67,6 +65,7 @@ const struct Curl_handler Curl_handler_gopher = {
   ZERO_NULL,                            /* perform_getsock */
   ZERO_NULL,                            /* disconnect */
   ZERO_NULL,                            /* readwrite */
+  ZERO_NULL,                            /* connection_check */
   PORT_GOPHER,                          /* defport */
   CURLPROTO_GOPHER,                     /* protocol */
   PROTOPT_NONE                          /* flags */
@@ -74,16 +73,16 @@ const struct Curl_handler Curl_handler_gopher = {
 
 static CURLcode gopher_do(struct connectdata *conn, bool *done)
 {
-  CURLcode result=CURLE_OK;
-  struct Curl_easy *data=conn->data;
+  CURLcode result = CURLE_OK;
+  struct Curl_easy *data = conn->data;
   curl_socket_t sockfd = conn->sock[FIRSTSOCKET];
 
   curl_off_t *bytecount = &data->req.bytecount;
   char *path = data->state.path;
-  char *sel;
+  char *sel = NULL;
   char *sel_org = NULL;
   ssize_t amount, k;
-  int len;
+  size_t len;
 
   *done = TRUE; /* unconditionally */
 
@@ -98,18 +97,18 @@ static CURLcode gopher_do(struct connectdata *conn, bool *done)
 
     /* Otherwise, drop / and the first character (i.e., item type) ... */
     newp = path;
-    newp+=2;
+    newp += 2;
 
     /* ... then turn ? into TAB for search servers, Veronica, etc. ... */
     j = strlen(newp);
-    for(i=0; i<j; i++)
+    for(i = 0; i<j; i++)
       if(newp[i] == '?')
         newp[i] = '\x09';
 
     /* ... and finally unescape */
-    sel = curl_easy_unescape(data, newp, 0, &len);
-    if(!sel)
-      return CURLE_OUT_OF_MEMORY;
+    result = Curl_urldecode(data, newp, 0, &sel, &len, FALSE);
+    if(result)
+      return result;
     sel_org = sel;
   }
 
@@ -121,20 +120,17 @@ static CURLcode gopher_do(struct connectdata *conn, bool *done)
     result = Curl_write(conn, sockfd, sel, k, &amount);
     if(!result) { /* Which may not have written it all! */
       result = Curl_client_write(conn, CLIENTWRITE_HEADER, sel, amount);
-      if(result) {
-        free(sel_org);
-        return result;
-      }
+      if(result)
+        break;
+
       k -= amount;
       sel += amount;
       if(k < 1)
         break; /* but it did write it all */
     }
-    else {
-      failf(data, "Failed sending Gopher request");
-      free(sel_org);
-      return result;
-    }
+    else
+      break;
+
     /* Don't busyloop. The entire loop thing is a work-around as it causes a
        BLOCKING behavior which is a NO-NO. This function should rather be
        split up in a do and a doing piece where the pieces that aren't
@@ -144,14 +140,18 @@ static CURLcode gopher_do(struct connectdata *conn, bool *done)
        Wait a while for the socket to be writable. Note that this doesn't
        acknowledge the timeout.
     */
-    Curl_socket_ready(CURL_SOCKET_BAD, sockfd, 100);
+    if(SOCKET_WRITABLE(sockfd, 100) < 0) {
+      result = CURLE_SEND_ERROR;
+      break;
+    }
   }
 
   free(sel_org);
 
-  /* We can use Curl_sendf to send the terminal \r\n relatively safely and
-     save allocing another string/doing another _write loop. */
-  result = Curl_sendf(sockfd, conn, "\r\n");
+  if(!result)
+    /* We can use Curl_sendf to send the terminal \r\n relatively safely and
+       save allocing another string/doing another _write loop. */
+    result = Curl_sendf(sockfd, conn, "\r\n");
   if(result) {
     failf(data, "Failed sending Gopher request");
     return result;
