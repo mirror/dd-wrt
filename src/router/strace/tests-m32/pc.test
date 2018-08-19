@@ -1,0 +1,58 @@
+#!/bin/sh
+#
+# Check -i option.
+#
+# Copyright (c) 2015 Dmitry V. Levin <ldv@altlinux.org>
+# Copyright (c) 2015-2017 The strace developers.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 3. The name of the author may not be used to endorse or promote products
+#    derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+# IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+# OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+# IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+# NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+# THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+. "${srcdir=.}/init.sh"
+
+check_prog sed
+
+run_prog > /dev/null
+
+args="-if $args"
+$STRACE $args 2> "$LOG" ||
+	dump_log_and_fail_with "$STRACE $args failed"
+
+len="$(sed -r -n 's/^\[[[:xdigit:]]+\] write\(-1, NULL, ([[:digit:]]{1,2})\)[[:space:]]+= -1 .*/\1/p' "$LOG")" &&
+[ -n "$len" ] &&
+pid="$(sed -r -n 's/^\[[[:xdigit:]]{'"$len"'}\] --- SIGCHLD \{si_signo=SIGCHLD, si_code=CLD_(KILLED|DUMPED), si_pid=([[:digit:]]+), .*/\2/p' "$LOG")" &&
+[ -n "$pid" ] &&
+ip="$(sed -r -n 's/^\[pid +'"$pid"'\] \[([[:xdigit:]]{'"$len"'})] --- SIGSEGV \{.*\} ---$/\1/p' "$LOG")" &&
+[ -n "$ip" ] &&
+addr="$(echo "$ip" |sed -r 's/^0+//')" &&
+[ -n "$addr" ] ||
+	dump_log_and_fail_with
+
+cat > "$EXP" << __EOF__
+\\[[[:xdigit:]]{$len}\\] munmap\\(0x[[:xdigit:]]+, 0\\) += -1 .*
+\\[pid +$pid\\] \\[$ip\\] --- SIGSEGV \\{si_signo=SIGSEGV, si_code=SEGV_MAPERR, si_addr=0x$addr\\} ---
+\\[pid +$pid\\] \\[\\?{$len}\\] \\+\\+\\+ killed by SIGSEGV( \\(core dumped\\))? \\+\\+\\+
+\\[\\?{$len}\\] \\+\\+\\+ exited with 0 \\+\\+\\+
+__EOF__
+
+match_grep "$LOG" "$EXP"

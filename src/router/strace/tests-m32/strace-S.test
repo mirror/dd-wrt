@@ -1,0 +1,30 @@
+#!/bin/sh
+
+# Check -S option.
+
+. "${srcdir=.}/init.sh"
+
+run_prog ../readv > /dev/null
+
+test_c()
+{
+	local sortby sortopts sedexpr
+	sortby="$1"; shift
+	sortopts="$1"; shift
+	sedexpr="$1"; shift
+
+	run_strace -c -w -S "$sortby" ../readv > /dev/null
+	sed -r -n -e "$sedexpr" < "$LOG" > "$OUT"
+
+	[ -s "$OUT" ] ||
+		fail_ "$STRACE $args output mismatch"
+	LC_ALL=C sort -c $sortopts "$OUT" || {
+		echo 'Actual output:'
+		cat < "$LOG"
+		fail_ "$STRACE $args output not sorted properly"
+	}
+}
+
+c='[[:space:]]+([^[:space:]]+)'
+test_c calls '-n -r' '/^[[:space:]]+[0-9]/ s/^'"$c$c$c$c"'[[:space:]].*/\4/p'
+test_c name '' '/^[[:space:]]+[0-9]/ s/^'"$c$c$c$c"'([[:space:]]+[0-9]+)?'"$c"'$/\6/p'

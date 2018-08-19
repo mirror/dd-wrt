@@ -1,0 +1,26 @@
+#!/bin/sh
+
+# Check decoding of out-of-range syscalls along with debug ouput
+
+. "${srcdir=.}/init.sh"
+
+: ${debug_flag=-d}
+NAME=nsyscalls-d
+
+if [ "$MIPS_ABI" = "o32" ]; then
+	syscall=syscall
+	[ -z "$debug_flag" ] ||
+		skip_ "mips $MIPS_ABI is not supported by this test yet"
+else
+	syscall=none
+fi
+
+run_strace $debug_flag -e trace=$syscall ../$NAME "$STRACE_EXE" 9 \
+	2> "$LOG-err-all" > "$EXP" 9> "$EXP-err"
+
+[ -n "$debug_flag" ] || > "$EXP-err"
+
+grep "invalid syscall" "$LOG-err-all" > "$LOG-err"
+
+match_diff "$LOG" "$EXP"
+match_diff "$LOG-err" "$EXP-err"

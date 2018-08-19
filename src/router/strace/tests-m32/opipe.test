@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# Check how -o '|pipe' works.
+
+. "${srcdir=.}/init.sh"
+
+check_prog grep
+grep chdir $srcdir/umovestr.expected > "$EXP"
+run_prog ../umovestr
+
+$STRACE -o "|cat > $LOG && $SLEEP_A_BIT && grep chdir < $LOG > $OUT" -e chdir $args ||
+	dump_log_and_fail_with "$STRACE $args failed"
+
+match_diff "$OUT" "$EXP"

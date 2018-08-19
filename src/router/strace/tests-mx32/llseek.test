@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# Check _llseek syscall decoding.
+
+. "${srcdir=.}/init.sh"
+
+check_prog grep
+run_prog > /dev/null
+run_strace -e_llseek $args > "$EXP"
+grep -v '^_llseek([0-9]' < "$LOG" > "$OUT"
+match_diff "$OUT" "$EXP"

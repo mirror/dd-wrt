@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# umovestr short read regression test
+
+. "${srcdir=.}/init.sh"
+
+run_prog > /dev/null
+run_strace -veexecve -s262144 $args > "$EXP"
+check_prog sed
+sed 1d < "$LOG" > "$OUT"
+match_diff "$OUT" "$EXP"

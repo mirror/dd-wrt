@@ -1,0 +1,2 @@
+pipe([0, 1]) = 0
++++ exited with 0 +++
