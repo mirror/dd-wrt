@@ -20,7 +20,7 @@
 #
 ###########################################################################
 
-# This Perl package helps with path transforming when running cURL tests on
+# This Perl package helps with path transforming when running curl tests on
 # Win32 platform with Msys or Cygwin.
 # Three main functions 'sys_native_abs_path', 'sys_native_path' and
 # 'build_sys_abs_path' autodetect format of given pathnames. Following formats
@@ -451,7 +451,7 @@ sub build_sys_abs_path {
         return $path;
     }
     elsif(should_use_cygpath()) {
-        # 'cygpath' is avalable - use it.
+        # 'cygpath' is available - use it.
 
         my $has_final_slash = ($path =~ m{[\\/]$});
 

@@ -1283,6 +1283,9 @@
 				RelativePath="..\..\..\..\lib\curl_addrinfo.c">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\curl_ctype.c">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\curl_des.c">
 			</File>
 			<File
@@ -1308,6 +1311,12 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\curl_ntlm_wb.c">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\curl_path.c">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\curl_range.c">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\curl_rtmp.c">
@@ -1436,6 +1445,9 @@
 				RelativePath="..\..\..\..\lib\memdebug.c">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\mime.c">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\mprintf.c">
 			</File>
 			<File
@@ -1469,7 +1481,10 @@
 				RelativePath="..\..\..\..\lib\progress.c">
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\rawstr.c">
+				RelativePath="..\..\..\..\lib\psl.c">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\rand.c">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\rtsp.c">
@@ -1482,6 +1497,12 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\sendf.c">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\setopt.c">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\sha256.c">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\share.c">
@@ -1514,10 +1535,13 @@
 				RelativePath="..\..\..\..\lib\ssh.c">
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\strdup.c">
+				RelativePath="..\..\..\..\lib\ssh-libssh.c">
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\strequal.c">
+				RelativePath="..\..\..\..\lib\strcase.c">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\strdup.c">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\strerror.c">
@@ -1593,6 +1617,9 @@
 				RelativePath="..\..\..\..\lib\curl_base64.h">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\curl_ctype.h">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\curl_des.h">
 			</File>
 			<File
@@ -1635,7 +1662,13 @@
 				RelativePath="..\..\..\..\lib\curl_ntlm_wb.h">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\curl_path.h">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\curl_printf.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\curl_range.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\curl_rtmp.h">
@@ -1651,6 +1684,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\curl_setup_once.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\curl_sha256.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\curl_sspi.h">
@@ -1743,6 +1779,9 @@
 				RelativePath="..\..\..\..\lib\memdebug.h">
 			</File>
 			<File
+				RelativePath="..\..\..\..\lib\mime.h">
+			</File>
+			<File
 				RelativePath="..\..\..\..\lib\multihandle.h">
 			</File>
 			<File
@@ -1773,7 +1812,10 @@
 				RelativePath="..\..\..\..\lib\progress.h">
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\rawstr.h">
+				RelativePath="..\..\..\..\lib\psl.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\rand.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\rtsp.h">
@@ -1783,6 +1825,9 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\sendf.h">
+			</File>
+			<File
+				RelativePath="..\..\..\..\lib\setopt.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\setup-vms.h">
@@ -1818,10 +1863,10 @@
 				RelativePath="..\..\..\..\lib\ssh.h">
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\strdup.h">
+				RelativePath="..\..\..\..\lib\strcase.h">
 			</File>
 			<File
-				RelativePath="..\..\..\..\lib\strequal.h">
+				RelativePath="..\..\..\..\lib\strdup.h">
 			</File>
 			<File
 				RelativePath="..\..\..\..\lib\strerror.h">
@@ -1965,6 +2010,9 @@
 				</File>
 				<File
 					RelativePath="..\..\..\..\lib\vtls\schannel.c">
+				</File>
+				<File
+					RelativePath="..\..\..\..\lib\vtls\schannel_verify.c">
 				</File>
 				<File
 					RelativePath="..\..\..\..\lib\vtls\vtls.c">

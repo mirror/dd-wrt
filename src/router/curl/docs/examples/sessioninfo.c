@@ -24,7 +24,7 @@
  * </DESC>
  */
 
-/* Note that this example currently requires cURL to be linked against
+/* Note that this example currently requires curl to be linked against
    GnuTLS (and this program must also be linked against -lgnutls). */
 
 #include <stdio.h>
@@ -63,7 +63,7 @@ static size_t wrfu(void *ptr, size_t size, size_t nmemb, void *stream)
                gnutls_x509_crt_import(cert, &chainp[i], GNUTLS_X509_FMT_DER)) {
               if(GNUTLS_E_SUCCESS ==
                  gnutls_x509_crt_print(cert, GNUTLS_CRT_PRINT_FULL, &dn)) {
-                fprintf(stderr, "Certificate #%d: %.*s", i, dn.size, dn.data);
+                fprintf(stderr, "Certificate #%u: %.*s", i, dn.size, dn.data);
 
                 gnutls_free(dn.data);
               }

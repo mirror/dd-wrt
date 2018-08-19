@@ -7,7 +7,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2015, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2018, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -87,7 +87,7 @@ int Curl_resolv(struct connectdata *conn, const char *hostname,
                 int port, struct Curl_dns_entry **dnsentry);
 int Curl_resolv_timeout(struct connectdata *conn, const char *hostname,
                         int port, struct Curl_dns_entry **dnsentry,
-                        long timeoutms);
+                        time_t timeoutms);
 
 #ifdef CURLRES_IPV6
 /*
@@ -130,8 +130,8 @@ int Curl_mk_dnscache(struct curl_hash *hash);
 /* prune old entries from the DNS cache */
 void Curl_hostcache_prune(struct Curl_easy *data);
 
-/* Return # of adresses in a Curl_addrinfo struct */
-int Curl_num_addresses (const Curl_addrinfo *addr);
+/* Return # of addresses in a Curl_addrinfo struct */
+int Curl_num_addresses(const Curl_addrinfo *addr);
 
 #if defined(CURLDEBUG) && defined(HAVE_GETNAMEINFO)
 int curl_dogetnameinfo(GETNAMEINFO_QUAL_ARG1 GETNAMEINFO_TYPE_ARG1 sa,
@@ -143,7 +143,7 @@ int curl_dogetnameinfo(GETNAMEINFO_QUAL_ARG1 GETNAMEINFO_TYPE_ARG1 sa,
 #endif
 
 /* IPv4 threadsafe resolve function used for synch and asynch builds */
-Curl_addrinfo *Curl_ipv4_resolve_r(const char * hostname, int port);
+Curl_addrinfo *Curl_ipv4_resolve_r(const char *hostname, int port);
 
 CURLcode Curl_async_resolved(struct connectdata *conn,
                              bool *protocol_connect);
@@ -182,6 +182,17 @@ struct Curl_dns_entry *
 Curl_fetch_addr(struct connectdata *conn,
                 const char *hostname,
                 int port);
+
+/*
+ * Curl_shuffle_addr() shuffles the order of addresses in a 'Curl_addrinfo'
+ * struct by re-linking its linked list.
+ *
+ * The addr argument should be the address of a pointer to the head node of a
+ * `Curl_addrinfo` list and it will be modified to point to the new head after
+ * shuffling.
+ */
+CURLcode Curl_shuffle_addr(struct Curl_easy *data, Curl_addrinfo **addr);
+
 /*
  * Curl_cache_addr() stores a 'Curl_addrinfo' struct in the DNS cache.
  *

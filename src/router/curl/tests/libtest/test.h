@@ -20,6 +20,8 @@
  *
  ***************************************************************************/
 
+/* !checksrc! disable ASSIGNWITHINCONDITION all */
+
 /* Now include the curl_setup.h file from libcurl's private libdir (the source
    version, but that might include "curl_config.h" from the build dir so we
    need both of them in the include path), so that we get good in-depth
@@ -65,7 +67,7 @@ extern void wait_ms(int ms); /* wait this many milliseconds */
 extern int test(char *URL); /* the actual test function provided by each
                                individual libXXX.c file */
 
-extern char *hexdump(unsigned char *buffer, size_t len);
+extern char *hexdump(const unsigned char *buffer, size_t len);
 
 #ifdef UNITTESTS
 extern int unitfail;
@@ -112,7 +114,7 @@ extern int unitfail;
 ** label 'test_cleanup' is performed.
 **
 ** Every easy_* and multi_* macros have a res_easy_* and res_multi_* macro
-** counterpart that operates in tha same way with the exception that no
+** counterpart that operates in the same way with the exception that no
 ** jump takes place in case of failure. res_easy_* and res_multi_* macros
 ** should be immediately followed by checking if 'res' variable has been
 ** set.

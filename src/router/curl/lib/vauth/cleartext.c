@@ -5,7 +5,7 @@
  *                            | (__| |_| |  _ <| |___
  *                             \___|\___/|_| \_\_____|
  *
- * Copyright (C) 1998 - 2016, Daniel Stenberg, <daniel@haxx.se>, et al.
+ * Copyright (C) 1998 - 2018, Daniel Stenberg, <daniel@haxx.se>, et al.
  *
  * This software is licensed as described in the file COPYING, which
  * you should have received as part of this distribution. The terms
@@ -33,8 +33,6 @@
 #include "curl_md5.h"
 #include "warnless.h"
 #include "strtok.h"
-#include "strequal.h"
-#include "rawstr.h"
 #include "sendf.h"
 #include "curl_printf.h"
 
@@ -68,16 +66,21 @@ CURLcode Curl_auth_create_plain_message(struct Curl_easy *data,
   char *plainauth;
   size_t ulen;
   size_t plen;
+  size_t plainlen;
 
+  *outlen = 0;
+  *outptr = NULL;
   ulen = strlen(userp);
   plen = strlen(passwdp);
 
-  plainauth = malloc(2 * ulen + plen + 2);
-  if(!plainauth) {
-    *outlen = 0;
-    *outptr = NULL;
+  /* Compute binary message length. Check for overflows. */
+  if((ulen > SIZE_T_MAX/2) || (plen > (SIZE_T_MAX/2 - 2)))
     return CURLE_OUT_OF_MEMORY;
-  }
+  plainlen = 2 * ulen + plen + 2;
+
+  plainauth = malloc(plainlen);
+  if(!plainauth)
+    return CURLE_OUT_OF_MEMORY;
 
   /* Calculate the reply */
   memcpy(plainauth, userp, ulen);
@@ -87,8 +90,7 @@ CURLcode Curl_auth_create_plain_message(struct Curl_easy *data,
   memcpy(plainauth + 2 * ulen + 2, passwdp, plen);
 
   /* Base64 encode the reply */
-  result = Curl_base64_encode(data, plainauth, 2 * ulen + plen + 2, outptr,
-                              outlen);
+  result = Curl_base64_encode(data, plainauth, plainlen, outptr, outlen);
   free(plainauth);
 
   return result;

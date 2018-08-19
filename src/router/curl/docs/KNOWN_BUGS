@@ -18,18 +18,17 @@ problems may have been fixed or changed somewhat since this was written!
  1.4 multipart formposts file name encoding
  1.5 Expect-100 meets 417
  1.6 Unnecessary close when 401 received waiting for 100
- 1.7 CONNECT response larger than 16KB
- 1.8 DNS timing is wrong for HTTP redirects
  1.9 HTTP/2 frames while in the connection pool kill reuse
  1.10 Strips trailing dot from host name
- 1.11 transfer-encoding: chunked in HTTP/2
- 1.12 CURLOPT_SEEKFUNCTION not called with CURLFORM_STREAM
+ 1.11 CURLOPT_SEEKFUNCTION not called with CURLFORM_STREAM
 
  2. TLS
- 2.1 Hangs with PolarSSL
- 2.2 CURLINFO_SSL_VERIFYRESULT has limited support
- 2.3 DER in keychain
- 2.4 GnuTLS backend skips really long certificate fields
+ 2.1 CURLINFO_SSL_VERIFYRESULT has limited support
+ 2.2 DER in keychain
+ 2.3 GnuTLS backend skips really long certificate fields
+ 2.4 DarwinSSL won't import PKCS#12 client certificates without a password
+ 2.5 Client cert handling with Issuer DN differs between backends
+ 2.6 CURL_GLOBAL_SSL
 
  3. Email protocols
  3.1 IMAP SEARCH ALL truncated response
@@ -38,22 +37,25 @@ problems may have been fixed or changed somewhat since this was written!
  3.4 POP3 expects "CRLF.CRLF" eob for some single-line responses
 
  4. Command line
- 4.1 -J with %-encoded file nameas
+ 4.1 -J and -O with %-encoded file names
  4.2 -J with -C - fails
  4.3 --retry and transfer timeouts
+ 4.4 --upload-file . hang if delay in STDIN
 
  5. Build and portability issues
- 5.1 Windows Borland compiler
  5.2 curl-config --libs contains private details
- 5.3 libidn and old iconv
- 5.4 AIX shared build with c-ares fails
  5.5 can't handle Unicode arguments in Windows
+ 5.6 cmake support gaps
+ 5.7 Visual Studio project gaps
+ 5.8 configure finding libs in wrong directory
+ 5.9 Utilize Requires.private directives in libcurl.pc
 
  6. Authentication
  6.1 NTLM authentication and unicode
  6.2 MIT Kerberos for Windows build
  6.3 NTLM in system context uses wrong name
- 6.4 Negotiate needs a fake user name
+ 6.4 Negotiate and Kerberos V5 need a fake user name
+ 6.5 NTLM doen't support password with § character
 
  7. FTP
  7.1 FTP without or slow 220 response
@@ -63,6 +65,9 @@ problems may have been fixed or changed somewhat since this was written!
  7.5 ASCII FTP
  7.6 FTP with NULs in URL parts
  7.7 FTP and empty path parts in the URL
+ 7.8 Premature transfer end but healthy control channel
+ 7.9 Passive transfer tries only one IP address
+ 7.10 Stick to same family over SOCKS proxy
 
  8. TELNET
  8.1 TELNET and time limtiations don't work
@@ -76,18 +81,23 @@ problems may have been fixed or changed somewhat since this was written!
  10.2 SOCKS don't support timeouts
  10.3 FTPS over SOCKS
  10.4 active FTP over a SOCKS
- 10.5 SOCKS proxy not working via IPv6
 
  11. Internals
  11.1 Curl leaks .onion hostnames in DNS
  11.2 error buffer not set if connection to multiple addresses fails
+ 11.3 c-ares deviates from stock resolver on http://1346569778
+ 11.4 HTTP test server 'connection-monitor' problems
+ 11.5 Connection information when using TCP Fast Open
+ 11.6 slow connect to localhost on Windows
 
  12. LDAP and OpenLDAP
  12.1 OpenLDAP hangs after returning results
 
- 13 TCP/IP
+ 13. TCP/IP
  13.1 --interface for ipv6 binds to unusable IP address
 
+ 14 DICT
+ 14.1 DICT responses show the underlying protocol
 
 ==============================================================================
 
@@ -106,6 +116,9 @@ problems may have been fixed or changed somewhat since this was written!
 
  Disabling HTTP Pipelining when there are ongoing transfers can lead to
  heap corruption and crash. https://curl.haxx.se/bug/view.cgi?id=1411
+
+ Similarly, removing a handle when pipelining corrupts data:
+ https://github.com/curl/curl/issues/2101
 
 1.3 STARTTRANSFER time is wrong for HTTP POSTs
 
@@ -138,19 +151,6 @@ problems may have been fixed or changed somewhat since this was written!
  waiting for the the 100-continue response.
  https://curl.haxx.se/mail/lib-2008-08/0462.html
 
-1.7 CONNECT response larger than 16KB
-
- If a CONNECT response-headers are larger than BUFSIZE (16KB) when the
- connection is meant to be kept alive (like for NTLM proxy auth), the function
- will return prematurely and will confuse the rest of the HTTP protocol
- code. This should be very rare.
-
-1.8 DNS timing is wrong for HTTP redirects
-
- When extracting timing information after HTTP redirects, only the last
- transfer's results are returned and not the totals:
- https://github.com/curl/curl/issues/522
-
 1.9 HTTP/2 frames while in the connection pool kill reuse
 
  If the server sends HTTP/2 frames (like for example an HTTP/2 PING frame) to
@@ -163,7 +163,7 @@ problems may have been fixed or changed somewhat since this was written!
 
 1.10 Strips trailing dot from host name
 
- When given a URL wit a trailing dot for the host name part:
+ When given a URL with a trailing dot for the host name part:
  "https://example.com./", libcurl will strip off the dot and use the name
  without a dot internally and send it dot-less in HTTP Host: headers and in
  the TLS SNI field.
@@ -188,7 +188,7 @@ problems may have been fixed or changed somewhat since this was written!
  It can also be noted that while adding a trailing dot to the host name in
  most (all?) cases will make the name resolve to the same set of IP addresses,
  many HTTP servers will not happily accept the trailing dot there unless that
- has been specificly configured to be a fine virtual host.
+ has been specifically configured to be a fine virtual host.
 
  If URLs with trailing dots for host names become more popular or even just
  used more than for just plain fun experiments, I'm sure we will have reason
@@ -196,15 +196,7 @@ problems may have been fixed or changed somewhat since this was written!
 
  See https://github.com/curl/curl/issues/716 for the discussion.
 
-1.11 transfer-encoding: chunked in HTTP/2
-
- For HTTP/1, when -H transfer-encoding:chunked option is given, curl encodes
- the request using chunked encoding. But when HTTP/2 is being used, the
- command wrongly sends a request with both content-length and
- transfer-encoding: chunked headers being set (and the request body is not
- chunked-encoded). See https://github.com/curl/curl/issues/662
-
-1.12 CURLOPT_SEEKFUNCTION not called with CURLFORM_STREAM
+1.11 CURLOPT_SEEKFUNCTION not called with CURLFORM_STREAM
 
  I'm using libcurl to POST form data using a FILE* with the CURLFORM_STREAM
  option of curl_formadd(). I've noticed that if the connection drops at just
@@ -218,30 +210,63 @@ problems may have been fixed or changed somewhat since this was written!
 
 2. TLS
 
-2.1 Hangs with PolarSSL
-
- "curl_easy_perform hangs with imap and PolarSSL"
- https://github.com/curl/curl/issues/334
-
- Most likely, a fix similar to commit c111178bd4 (for mbedTLS) is
- necessary. Or if we just wait a little longer we'll rip out all support for
- PolarSSL instead...
-
-2.2 CURLINFO_SSL_VERIFYRESULT has limited support
+2.1 CURLINFO_SSL_VERIFYRESULT has limited support
 
  CURLINFO_SSL_VERIFYRESULT is only implemented for the OpenSSL and NSS
  backends, so relying on this information in a generic app is flaky.
 
-2.3 DER in keychain
+2.2 DER in keychain
 
  Curl doesn't recognize certificates in DER format in keychain, but it works
  with PEM.  https://curl.haxx.se/bug/view.cgi?id=1065
 
-2.4 GnuTLS backend skips really long certificate fields
+2.3 GnuTLS backend skips really long certificate fields
 
  libcurl calls gnutls_x509_crt_get_dn() with a fixed buffer size and if the
  field is too long in the cert, it'll just return an error and the field will
  be displayed blank.
+
+2.4 DarwinSSL won't import PKCS#12 client certificates without a password
+
+ libcurl calls SecPKCS12Import with the PKCS#12 client certificate, but that
+ function rejects certificates that do not have a password.
+ https://github.com/curl/curl/issues/1308
+
+2.5 Client cert handling with Issuer DN differs between backends
+
+ When the specified client certificate doesn't match any of the
+ server-specified DNs, the OpenSSL and GnuTLS backends behave differently.
+ The github discussion may contain a solution.
+
+ See https://github.com/curl/curl/issues/1411
+
+2.6 CURL_GLOBAL_SSL
+
+ Since libcurl 7.57.0, the flag CURL_GLOBAL_SSL is a no-op. The change was
+ merged in https://github.com/curl/curl/commit/d661b0afb571a
+
+ It was removed since it was
+
+ A) never clear for applications on how to deal with init in the light of
+    different SSL backends (the option was added back in the days when life
+    was simpler)
+
+ B) multissl introduced dynamic switching between SSL backends which
+    emphasized (A) even more
+
+ C) libcurl uses some TLS backend functionality even for non-TLS functions (to
+    get "good" random) so applications trying to avoid the init for
+    performance reasons would do wrong anyway
+
+ D) never very carefully documented so all this mostly just happened to work
+    for some users
+
+ However, in spite of the problems with the feature, there were some users who
+ apparently depended on this feature and who now claim libcurl is broken for
+ them. The fix for this situation is not obvious as a downright revert of the
+ patch is totally ruled out due to those reasons above.
+
+ https://github.com/curl/curl/issues/2276
 
 
 3. Email protocols
@@ -275,7 +300,7 @@ problems may have been fixed or changed somewhat since this was written!
 
 4. Command line
 
-4.1 -J with %-encoded file nameas
+4.1 -J and -O with %-encoded file names
 
  -J/--remote-header-name doesn't decode %-encoded file names. RFC6266 details
  how it should be done. The can of worm is basically that we have no charset
@@ -284,6 +309,13 @@ problems may have been fixed or changed somewhat since this was written!
  like "../" sequences and the like. Probably everything to the left of any
  embedded slashes should be cut off.
  https://curl.haxx.se/bug/view.cgi?id=1294
+
+ -O also doesn't decode %-encoded names, and while it has even less
+ information about the charset involved the process is similar to the -J case.
+
+ Note that we won't add decoding to -O without the user asking for it with
+ some other means as well, since -O has always been documented to use the name
+ exactly as specified in the URL.
 
 4.2 -J with -C - fails
 
@@ -302,33 +334,21 @@ problems may have been fixed or changed somewhat since this was written!
  https://curl.haxx.se/mail/lib-2008-01/0080.html and Mandriva bug report
  https://qa.mandriva.com/show_bug.cgi?id=22565
 
+4.4 --upload-file . hangs if delay in STDIN
+
+ "(echo start; sleep 1; echo end) | curl --upload-file . http://mywebsite -vv"
+
+ ... causes a hang when it shouldn't.
+
+ See https://github.com/curl/curl/issues/2051
 
 5. Build and portability issues
-
-5.1 Windows Borland compiler
-
- When building with the Windows Borland compiler, it fails because the "tlib"
- tool doesn't support hyphens (minus signs) in file names and we have such in
- the build.  https://curl.haxx.se/bug/view.cgi?id=1222
 
 5.2 curl-config --libs contains private details
 
  "curl-config --libs" will include details set in LDFLAGS when configure is
  run that might be needed only for building libcurl. Further, curl-config
  --cflags suffers from the same effects with CFLAGS/CPPFLAGS.
-
-5.3 libidn and old iconv
-
- Test case 165 might fail on a system which has libidn present, but with an
- old iconv version (2.1.3 is a known bad version), since it doesn't recognize
- the charset when named ISO8859-1. Changing the name to ISO-8859-1 makes the
- test pass, but instead makes it fail on Solaris hosts that use its native
- iconv.
-
-5.4 AIX shared build with c-ares fails
-
- curl version 7.12.2 fails on AIX if compiled with --enable-ares.  The
- workaround is to combine --enable-ares with --disable-shared
 
 5.5 can't handle Unicode arguments in Windows
 
@@ -341,6 +361,50 @@ problems may have been fixed or changed somewhat since this was written!
   https://curl.haxx.se/bug/?i=345
   https://curl.haxx.se/bug/?i=731
 
+5.6 cmake support gaps
+
+ The cmake build setup lacks several features that the autoconf build
+ offers. This includes:
+
+  - use of correct soname for the shared library build
+  - support for several TLS backends are missing
+  - the unit tests cause link failures in regular non-static builds
+  - no nghttp2 check
+
+5.7 Visual Studio project gaps
+
+ The Visual Studio projects lack some features that the autoconf and nmake
+ builds offer, such as the following:
+
+  - support for zlib and nghttp2
+  - use of static runtime libraries
+  - add the test suite components
+
+ In addition to this the following could be implemented:
+
+  - support for other development IDEs
+  - add PATH environment variables for third-party DLLs
+
+5.8 configure finding libs in wrong directory
+
+ When the configure script checks for third-party libraries, it adds those
+ directories to the LDFLAGS variable and then tries linking to see if it
+ works. When successful, the found directory is kept in the LDFLAGS variable
+ when the script continues to execute and do more tests and possibly check for
+ more libraries.
+
+ This can make subsequent checks for libraries wrongly detect another
+ installation in a directory that was previously added to LDFLAGS by another
+ library check!
+
+ A possibly better way to do these checks would be to keep the pristine LDFLAGS
+ even after successful checks and instead add those verified paths to a
+ separate variable that only after all library checks have been performed gets
+ appended to LDFLAGS.
+
+5.9 Utilize Requires.private directives in libcurl.pc
+
+ https://github.com/curl/curl/issues/864
 
 6. Authentication
 
@@ -359,7 +423,7 @@ problems may have been fixed or changed somewhat since this was written!
 
  libcurl fails to build with MIT Kerberos for Windows (KfW) due to KfW's
  library header files exporting symbols/macros that should be kept private to
- the KfW library. See ticket #5601 at http://krbdev.mit.edu/rt/
+ the KfW library. See ticket #5601 at https://krbdev.mit.edu/rt/
 
 6.3 NTLM in system context uses wrong name
 
@@ -367,14 +431,21 @@ problems may have been fixed or changed somewhat since this was written!
  "system context" will make it use wrong(?) user name - at least when compared
  to what winhttp does. See https://curl.haxx.se/bug/view.cgi?id=535
 
-6.4 Negotiate needs a fake user name
+6.4 Negotiate and Kerberos V5 need a fake user name
 
- To get HTTP Negotiate (SPNEGO) authentication to work fine, you need to
- provide a (fake) user name (this concerns both curl and the lib) because the
- code wrongly only considers authentication if there's a user name provided.
- https://curl.haxx.se/bug/view.cgi?id=440 How?
- https://curl.haxx.se/mail/lib-2004-08/0182.html
+ In order to get Negotiate (SPNEGO) authentication to work in HTTP or Kerberos
+ V5 in the e-mail protocols, you need to  provide a (fake) user name (this
+ concerns both curl and the lib) because the code wrongly only considers
+ authentication if there's a user name provided by setting
+ conn->bits.user_passwd in url.c  https://curl.haxx.se/bug/view.cgi?id=440 How?
+ https://curl.haxx.se/mail/lib-2004-08/0182.html A possible solution is to
+ either modify this variable to be set or introduce a variable such as
+ new conn->bits.want_authentication which is set when any of the authentication
+ options are set.
 
+6.5 NTLM doen't support password with § character
+
+ https://github.com/curl/curl/issues/2120
 
 7. FTP
 
@@ -442,6 +513,38 @@ problems may have been fixed or changed somewhat since this was written!
  the user wants to reach the root dir (this exception SHALL remain even when
  this bug is fixed).
 
+7.8 Premature transfer end but healthy control channel
+
+ When 'multi_done' is called before the transfer has been completed the normal
+ way, it is considered a "premature" transfer end. In this situation, libcurl
+ closes the connection assuming it doesn't know the state of the connection so
+ it can't be reused for subsequent requests.
+
+ With FTP however, this isn't necessarily true but there are a bunch of
+ situations (listed in the ftp_done code) where it *could* keep the connection
+ alive even in this situation - but the current code doesn't. Fixing this would
+ allow libcurl to reuse FTP connections better.
+
+7.9 Passive transfer tries only one IP address
+
+ When doing FTP operations through a proxy at localhost, the reported spotted
+ that curl only tried to connect once to the proxy, while it had mulitiple
+ addresses and a failed connect on one address should make it try the next.
+
+ After switching to passive mode (EPSV), curl should try all IP addresses for
+ "localhost". Currently it tries ::1, but it should also try 127.0.0.1.
+
+ See https://github.com/curl/curl/issues/1508
+
+7.10 Stick to same family over SOCKS proxy
+
+ When asked to do FTP over a SOCKS proxy, it might connect to the proxy (and
+ then subsequently to the remote server) using for example IPv4. When doing
+ the second connection, curl should make sure that the second connection is
+ using the same IP protocol version as the first connection did and not try
+ others, since the remote server will only accept the same.
+
+ See https://curl.haxx.se/mail/archive-2018-07/0000.html
 
 8. TELNET
 
@@ -493,12 +596,6 @@ problems may have been fixed or changed somewhat since this was written!
 
  libcurl doesn't support active FTP over a SOCKS proxy
 
-10.5 SOCKS proxy not working via IPv6
-
- `curl --proxy "socks://hostname-with-AAAA-record" example.com`
-
- curl: (7) Can't complete SOCKS4 connection to 1.2.3.4:109. (91),
- request rejected or failed.
 
 11. Internals
 
@@ -517,6 +614,45 @@ problems may have been fixed or changed somewhat since this was written!
  CURLE_COULDNT_CONNECT. But the error buffer set by CURLOPT_ERRORBUFFER
  remains empty. Issue: https://github.com/curl/curl/issues/544
 
+11.3 c-ares deviates from stock resolver on http://1346569778
+
+ When using the socket resolvers, that URL becomes:
+
+     * Rebuilt URL to: http://1346569778/
+     *   Trying 80.67.6.50...
+
+ but with c-ares it instead says "Could not resolve: 1346569778 (Domain name
+ not found)"
+
+ See https://github.com/curl/curl/issues/893
+
+11.4 HTTP test server 'connection-monitor' problems
+
+ The 'connection-monitor' feature of the sws HTTP test server doesn't work
+ properly if some tests are run in unexpected order. Like 1509 and then 1525.
+
+ See https://github.com/curl/curl/issues/868
+
+11.5 Connection information when using TCP Fast Open
+
+ CURLINFO_LOCAL_PORT (and possibly a few other) fails when TCP Fast Open is
+ enabled.
+
+ See https://github.com/curl/curl/issues/1332
+
+11.6 slow connect to localhost on Windows
+
+ When connecting to "localhost" on Windows, curl will resolve the name for
+ both ipv4 and ipv6 and try to connect to both happy eyeballs-style. Something
+ in there does however make it take 200 millseconds to succeed - which is the
+ HAPPY_EYEBALLS_TIMEOUT define exactly. Lowering that define speeds up the
+ connection, suggesting a problem in the HE handling.
+
+ If we can *know* that we're talking to a local host, we should lower the
+ happy eyeballs delay timeout for IPv6 (related: hardcode the "localhost"
+ addresses, mentioned in TODO). Possibly we should reduce that delay for all.
+
+ https://github.com/curl/curl/issues/2281
 
 12. LDAP and OpenLDAP
 
@@ -540,7 +676,7 @@ problems may have been fixed or changed somewhat since this was written!
      https://curl.haxx.se/mail/lib-2016-01/0101.html
 
 
-13 TCP/IP
+13. TCP/IP
 
 13.1 --interface for ipv6 binds to unusable IP address
 
@@ -549,3 +685,12 @@ problems may have been fixed or changed somewhat since this was written!
  locally scoped address as that is bound to fail.
 
  https://github.com/curl/curl/issues/686
+
+14. DICT
+
+14.1 DICT responses show the underlying protocol
+
+ When getting a DICT response, the protocol parts of DICT aren't stripped off
+ from the output.
+
+ https://github.com/curl/curl/issues/1809
