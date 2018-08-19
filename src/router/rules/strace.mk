@@ -40,6 +40,7 @@ strace-configure: libunwind
 		--prefix=/usr \
 		--libdir=/usr/lib \
 		--sysconfdir=/etc \
+		--enable-mpers=no \
 		--host=$(ARCH)-linux \
 		$(LIBUNWIND_OPT) \
 		CC="$(CC)" \
