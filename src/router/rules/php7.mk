@@ -86,7 +86,7 @@ icu-install:
 	-cp -fpR $(TOP)/icu/target_staging/lib64/*.so* $(INSTALLDIR)/icu/usr/lib/
 
 
-php7: libxml2 libmcrypt icu
+php7: libxml2 libmcrypt icu glib20
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	CFLAGS="$(COPTS) $(MIPS16_OPT)   -I$(TOP)/libpng -I$(TOP)/libxml2/include -I$(TOP)/curl/include -I$(TOP)/openssl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/libpng -I$(TOP)/libxml2/include -I$(TOP)/curl/include -I$(TOP)/openssl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
@@ -194,7 +194,7 @@ PHP_ENDIAN=ac_cv_c_bigendian_php="yes"
 endif
 
 	
-php7-configure: libpng libgd libxml2 zlib curl
+php7-configure: libpng libgd libxml2 zlib curl glib20
 	rm -f php7/config.cache
 	rm -rf php7/autom4te.cach
 	cd php7 && touch configure.ac && autoconf
