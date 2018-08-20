@@ -7,7 +7,7 @@ export ac_cv_func_posix_getgrgid_r=no
 #export GLIB_CONFIG=$(TOP)/glib-1.2.10-install/bin/glib-config
 export GLIB_CFLAGS=-I$(TOP)/glib20/libglib/glib
 
-mc-configure: ncurses
+mc-configure: ncurses glib20
 	make -C util-linux
 	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
 	mkdir -p $(INSTALLDIR)/util-linux/usr/lib
@@ -76,7 +76,7 @@ mc-configure: ncurses
 #	--with-glib-prefix="$(TOP)/mc/glib" \
 
 
-mc: ncurses
+mc: ncurses glib20
 	make -C util-linux
 	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
 	mkdir -p $(INSTALLDIR)/util-linux/usr/lib
