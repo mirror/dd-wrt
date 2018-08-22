@@ -4033,8 +4033,9 @@ int redir_main(struct redir_t *redir,
           syslog(LOG_DEBUG, "%s(%d): handling Access-Reject", __FUNCTION__, __LINE__);
 
         if (!hasnexturl) {
-          if (_options.challengetimeout)
+          if (_options.challengetimeout) {
             redir_memcopy(REDIR_CHALLENGE);
+    	  }
         } else {
           msg.mtype = REDIR_NOTYET;
         }
