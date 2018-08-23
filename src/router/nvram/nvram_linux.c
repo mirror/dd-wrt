@@ -72,7 +72,7 @@ char *nvram_get(const char *name)
 {
 	if (!name) {
 		fprintf(stderr, "error in %s: name is NULL\n", __func__);
-		return -ENOMEM;
+		return NULL;
 	}
 	size_t count = strlen(name) + 1;
 	char *value = NULL;
