@@ -1354,12 +1354,16 @@ endif
 
 vpath %.c modules modules/special.$(ARCH) $(SRCBASE)/../tools/src validate visuals ../private/buffalo ../private/buffalo/intatstart/httpd/validate ../private/buffalo/intatstart/httpd/visuals
 
+%.o : %.c
+	@echo "[CC] $@"
+	@$(CC) $(CFLAGS) -c -o $@ $<
 
 all: generate validate.so visuals.so httpd cert
 
 generate:
-	gcc -o gen gen.c
-	./gen > webs.h
+	@echo "[GENWWW] gen"
+	@gcc -o gen gen.c
+	@./gen > webs.h
 
 clean:
 	rm -f *.o *~ httpd
@@ -1403,23 +1407,26 @@ endif
 endif
 	
 httpd: httpd.o $(ADDOBJ) $(OBJS)
+	@echo "[LD] $@"
 #	gcc -o write_web write_web.c
 #	./write_web www 
-	$(CC) -o $@ $^ $(CFLAGS) $(SSLCFLAGS) $(SSLLDFLAGS) $(LDFLAGS)
+	@$(CC) -o $@ $^ $(CFLAGS) $(SSLCFLAGS) $(SSLLDFLAGS) $(LDFLAGS)
 #	ar arc -o $@ $^
 	rm -f ../rc/rc
 
 validate.so: validators.o webs.o wepkey.o setupassist.o aoss_save.o wps.o $(WEBSOBJS) $(REGOBJS)
-	$(CC) --shared -o $@ $^ $(CFLAGS) -DVALIDSOURCE -DGETREGCODE $(LDFLAGS) $(WEBSLDFLAGS)
+	@echo "[LD] $@"
+	@$(CC) --shared -o $@ $^ $(CFLAGS) -DVALIDSOURCE -DGETREGCODE $(LDFLAGS) $(WEBSLDFLAGS)
 
 visuals.so: dd-wrt.o lib.o ejs.o wireless.o getservice.o ddns.o index.o status.o filters.o forward.o static_route.o dynamic_route.o log.o dhcp.o diag.o find_pattern.o setupassistant.o gps.o aoss.o ejwps.o fs_common.o minidlna.o samba3.o status_gpio.o eoptunnel.o $(VISOBJS) $(REGOBJS2)
+	@echo "[LD] $@"
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
-	$(CC) --shared -c -o $(NVISOBJS) $(NVISFILES) $(NCFLAGS) -DVISUALSOURCE $(LDFLAGS)
+	@$(CC) --shared -c -o $(NVISOBJS) $(NVISFILES) $(NCFLAGS) -DVISUALSOURCE $(LDFLAGS)
 endif
 ifeq ($(CONFIG_ATH9K),y)
-	$(CC) --shared -c -o $(ATH9KVISOBJS) $(ATH9KVISFILES) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS)
+	@$(CC) --shared -c -o $(ATH9KVISOBJS) $(ATH9KVISFILES) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS)
 endif
-	$(CC) --shared -o $@ $^ $(NVISOBJS) $(ATH9KVISOBJS) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS) $(WEBSLDFLAGS)
+	@$(CC) --shared -o $@ $^ $(NVISOBJS) $(ATH9KVISOBJS) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS) $(WEBSLDFLAGS)
 	
 	
 build_date.o: build_date.c

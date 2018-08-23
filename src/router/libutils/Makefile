@@ -1528,25 +1528,33 @@ ifeq ($(CONFIG_ATH9K),y)
 endif
 	@true
 
-
+%.o : %.c
+	@echo "[CC] $@"
+	@$(CC) $(CFLAGS) -c -o $@ $<
 
 libsharetools.so: $(SHARETOOLSOBJS)
-	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -L../nvram -lnvram -L. -lshutils -L$(TOP)/jansson/src/.libs -ljansson -lm
+	@echo "[LD] $@"
+	@$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -L../nvram -lnvram -L. -lshutils -L$(TOP)/jansson/src/.libs -ljansson -lm
 
 libqos.so: libqos/qos.o
-	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram -L. -lshutils
+	@echo "[LD] $@"
+	@$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram -L. -lshutils
 
 libwireless.so: $(WOBJS) madwififiles ath9kfiles
-	$(CC) -shared $(CFLAGS) $(LDFLAGS)  -o $@ $(WOBJS) $(NOBJS) $(ATH9KOBJS) -L../nvram -lnvram -L. -lshutils $(WLDFLAGS) $(ATH9KLDFLAGS) $(QTNFLAGS)
+	@echo "[LD] $@"
+	@$(CC) -shared $(CFLAGS) $(LDFLAGS)  -o $@ $(WOBJS) $(NOBJS) $(ATH9KOBJS) -L../nvram -lnvram -L. -lshutils $(WLDFLAGS) $(ATH9KLDFLAGS) $(QTNFLAGS)
 
 libutils.so: $(OBJS)
-	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram -L. -lshutils
+	@echo "[LD] $@"
+	@$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram -L. -lshutils
 
 libshutils.so: $(SHOBJS)
-	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -L../nvram -lnvram
+	@echo "[LD] $@"
+	@$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -L../nvram -lnvram
 
 mchillispot.o: $(TOP)/private/telkom/mchillispot.c
-	$(CC) -DNEED_PRINTF -I$(TOP)/jansson/src $(ATH9KCFLAGS) $(MIPS16_OPT) -c -o $@ $^
+	@echo "[CC] $@"
+	@$(CC) -DNEED_PRINTF -I$(TOP)/jansson/src $(ATH9KCFLAGS) $(MIPS16_OPT) -c -o $@ $^
 
 
 

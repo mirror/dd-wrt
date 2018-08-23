@@ -1760,6 +1760,10 @@ HCFLAGS += $(CFLAGS_EXTRA)
 
 vpath %.c sysinit sysinit/switchlib services tools networking utils $(TOP)/shared $(SRCBASE)/rts/src
 
+%.o : %.c
+	@echo "[CC] $@"
+	@$(CC) $(CFLAGS) -c -o $@ $<
+
 all: services.so services.a
 ifeq ($(CONFIG_RT2880),y)
 ifeq ($(CONFIG_MT7620),y)
@@ -1773,8 +1777,9 @@ endif
 	$(CC) $(CFLAGS) -DNEED_PRINTF -o mii_mgr tools/mii_mgr.c
 endif
 #	$(CC) $(CFLAGS) $(LDFLAGS) -DNEED_PRINTF -DTEST -o tools/site_survey_test tools/site_survey_broadcom.c -lnvram
-	gcc -o bin/defaults $(HCFLAGS) bin/defaults.c
-	cd bin && ./defaults
+	@echo "[MAKEDEFAULTS] bin/defaults"
+	@gcc -o bin/defaults $(HCFLAGS) bin/defaults.c
+	@cd bin && ./defaults
     
 clean:
 	rm -f *.o *.a *.so
@@ -1797,20 +1802,22 @@ ifeq ($(CONFIG_WZRG300NH2),y)
 endif
 
 services.so: $(OBJS)
+	@echo "[LD] $@"
 #	$(AR) rcu -o $@.a $^
 ifeq ($(CONFIG_MADWIFI_MIMO),y)
-	$(CC) --shared -L ../wireless-tools -c $(NCFLAGS) $(MAD_FLAGS) -o $(NOBJS) $(NFILES)  -liw
+	@$(CC) --shared -L ../wireless-tools -c $(NCFLAGS) $(MAD_FLAGS) -o $(NOBJS) $(NFILES)  -liw
 endif
 ifeq ($(CONFIG_ATH9K),y)
 ifneq ($(CONFIG_NOWIFI),y)
-	$(CC) -shared -L ../wireless-tools -c $(ATH9KCFLAGS)  $(MAD_FLAGS)  $(ATH9KFILES) -liw
+	@$(CC) -shared -L ../wireless-tools -c $(ATH9KCFLAGS)  $(MAD_FLAGS)  $(ATH9KFILES) -liw
 endif
 endif
-	$(CC) --shared -L ../wireless-tools $(CFLAGS)  $(MAD_FLAGS) -o $@ $^  $(NOBJS) $(ATH9KOBJS) $(LDFLAGS) $(ATH9KLDFLAGS)
+	@$(CC) --shared -L ../wireless-tools $(CFLAGS)  $(MAD_FLAGS) -o $@ $^  $(NOBJS) $(ATH9KOBJS) $(LDFLAGS) $(ATH9KLDFLAGS)
 #	$(CC) $(CFLAGS) -o wland $^ $(LDFLAGS)
 	
 services.a: $(OBJS)
-	$(AR) cr $@ $^
+	@echo "[AR] $@"
+	@$(AR) cr $@ $^
 
 #	$(CC) -o $@.test $^ $(LDFLAGS)
 

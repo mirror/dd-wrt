@@ -1022,6 +1022,10 @@ CFLAGS += $(DD_CFLAGS)
 
 vpath %.c $(TOP)/shared $(SRCBASE)/rts/src
 
+%.o : %.c
+	@echo "[CC] $@"
+	@$(CC) $(CFLAGS) -c -o $@ $<
+
 all: rc init resetbutton wland et
 
 clean:
@@ -1166,22 +1170,27 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc ipfmt
 
 wland: wland.o
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lwireless -lshutils -lqos
+	@echo "[CC] $@"
+	@$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lwireless -lshutils -lqos
 
 
 resetbutton: resetbutton.o
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lshutils
+	@echo "[CC] $@"
+	@$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lshutils
 
 init:
-	$(CC) $(CFLAGS) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c -lnvram -lshutils 
+	@echo "[LD] init"
+	@$(CC) $(CFLAGS) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c -lnvram -lshutils 
 
 et:
 ifeq ($(CONFIG_NORTHSTAR),y)
-	$(CC) $(CFLAGS) -I$(LINUXDIR)/brcm/arm/include  -o et et.c
+	@echo "[LD] et"
+	@$(CC) $(CFLAGS) -I$(LINUXDIR)/brcm/arm/include  -o et et.c
 endif
 	@true
 
 rc: $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lwireless -lshutils -lqos
+	@echo "[LD] $@"
+	@$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lwireless -lshutils -lqos
 
 $(OBJS): $(CY_DEPS)
