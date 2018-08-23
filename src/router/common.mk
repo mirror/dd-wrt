@@ -69,9 +69,8 @@ clean_target:
 
 distclean mrproper: $(obj-distclean) clean_target
 	rm -rf $(INSTALLDIR)
-	$(MAKE) -C $(LINUXDIR) distclean
-	$(MAKE) -C $(LINUXDIR)/arch/mips/bcm947xx/compressed clean
-	#rm -f $(PLATFORMDIR)/zImage $(PLATFORMDIR)/linux.bin
+	-$(MAKE) -C $(LINUXDIR) distclean
+	-$(MAKE) -C $(LINUXDIR)/arch/mips/bcm947xx/compressed clean
 	$(MAKE) -C config clean
 	rm -f .config $(LINUXDIR)/.config
 	rm -f .config.old .config.cmd
