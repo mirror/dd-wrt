@@ -569,6 +569,7 @@ upnp_osl_wan_max_bitrates(unsigned long *rx, unsigned long *tx)
 	*rx = *tx = speed;
 	return TRUE;
 }
+extern char *get_wan_face(void);
 
 int
 upnp_osl_wan_ip(struct in_addr *inaddr)
