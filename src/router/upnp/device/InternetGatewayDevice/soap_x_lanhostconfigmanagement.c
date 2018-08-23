@@ -137,7 +137,7 @@ statevar_DNSServers
 	UPNP_USE_HINT( UPNP_STR(value) )
 
 	/* << USER CODE START >> */
-	int	ifid = context->focus_ifp->if_instance;
+//	int	ifid = context->focus_ifp->if_instance;
 	char name[32];
 	char *dnslist;
 	char buf[128];

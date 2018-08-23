@@ -61,6 +61,7 @@ wan_primary_ifunit(void)
 
 	return 0;
 }
+extern char *get_wan_face(void);
 
 int
 main(int argc, char *argv[])

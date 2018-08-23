@@ -282,13 +282,13 @@ statevar_ActiveConnectionDeviceContainer
 	UPNP_ADVERTISE *wan_advertise = 0;
 	
 	wan_service = get_service(context, "/control?WANIPConnection");
-    if (!wan_service)
-        return SOAP_DEVICE_INTERNAL_ERROR;
-
+    if (!wan_service) {
+         return SOAP_DEVICE_INTERNAL_ERROR;
+    }
 	wan_advertise = get_advertise(context, wan_service->name);
-    if (!wan_advertise)
+    if (!wan_advertise) {
         return SOAP_DEVICE_INTERNAL_ERROR;
-    
+    }
     sprintf(UPNP_STR(value), "uuid:%s:WANConnectionDevice:1", wan_advertise->uuid);
 
     return OK;
@@ -532,13 +532,13 @@ action_GetActiveConnections
 	UPNP_ADVERTISE *wan_advertise = 0;
 	
 	wan_service = get_service(context, "/control?WANIPConnection");
-    if (!wan_service)
+    if (!wan_service) {
         return SOAP_DEVICE_INTERNAL_ERROR;
-
+    }
 	wan_advertise = get_advertise(context, wan_service->name);
-    if (!wan_advertise)
+    if (!wan_advertise) {
         return SOAP_DEVICE_INTERNAL_ERROR;
-    
+    }
     sprintf(ARG_STR(out_NewActiveConnDeviceContainer), 
             "uuid:%s:WANConnectionDevice:1",
             wan_advertise->uuid);
