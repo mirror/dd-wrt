@@ -24,6 +24,7 @@ OPENSER_MODULES := sl tm rr maxfwd usrloc registrar dbtext textops exec auth aut
 OPENSER_MODULE_FILES := $(foreach module,$(OPENSER_MODULES),openser/modules/$(module)/$(module).so)
 OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-rmd160 no-aes192
 OPENSSL_OPTIONS:= shared no-ec no-err no-fips no-hw no-krb5 no-threads zlib-dynamic
+CONFIG_MUSL=y
 
 # Source bases
 
@@ -92,7 +93,7 @@ ifeq ($(ARCH),mipsel)
 export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time 
 endif
 ifeq ($(ARCH),arm)
-export COPTS:=$(BASEOPT) -march=armv4 -pipe -funit-at-a-time -msoft-float -mtune=arm9tdmi -D_FILE_OFFSET_BITS=64 
+export COPTS:=$(BASEOPT) -march=armv4 -pipe -funit-at-a-time -msoft-float -mtune=arm9tdmi -fno-caller-saves -fno-plt -D_FILE_OFFSET_BITS=64 
 endif
 ifeq ($(ARCH),mips)
 export COPTS:=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time 
@@ -139,6 +140,7 @@ all: install_headers build_date clean_target $(obj-y) $(LINUXDIR)/.config kernel
 
 build_date:
 	echo "#define BUILD_DATE \"$(shell date +%D)\"" > ../../opt/build.h 
+	echo "CONFIG_MUSL=y" >> .config 
 
 include kernel-features.mk
 
@@ -244,39 +246,102 @@ distclean mrproper: $(obj-distclean) clean_target
 	rm -f .config.old .config.cmd
 
 optimize-lib:
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=ld-uClibc.so.0} $(ARCH)-uclibc/target/lib/ld-uClibc.so.0 
+ifneq ($(CONFIG_MUSL),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
+else
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so} $(ARCH)-uclibc/target/lib/libc.so 
+endif
+ifneq ($(CONFIG_MUSL),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=ld-uclibc.so.0} $(ARCH)-uclibc/target/lib/ld-uClibc.so.0 
+else
+	cd $(ARCH)-uclibc/target/lib && ln -sf libc.so ld-musl-arm.so.1
+endif
 	cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
 ifeq ($(CONFIG_LIBDL),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libdl.so.0} $(ARCH)-uclibc/target/lib/libdl.so.0 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libdl.so.0} $(ARCH)-uclibc/target/lib/libdl.so.0 
 endif
 ifeq ($(CONFIG_LIBRT),y)
 	-cp ${shell $(ARCH)-linux-gcc -print-file-name=librt.so.0} $(ARCH)-uclibc/target/lib/librt.so.0 
+endif
+ifeq ($(CONFIG_LIBATOMIC),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libatomic.so.1} $(ARCH)-uclibc/target/lib/libatomic.so.1 
 endif
 ifeq ($(CONFIG_LIBNSL),y)
 	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libnsl.so.0} $(ARCH)-uclibc/target/lib/libnsl.so.0 
 endif
 ifeq ($(CONFIG_LIBUTIL),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libutil.so.0} $(ARCH)-uclibc/target/lib/libutil.so.0 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libutil.so.0} $(ARCH)-uclibc/target/lib/libutil.so.0 
 endif
 ifeq ($(CONFIG_LIBCPP),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libstdc++.so.6} $(ARCH)-uclibc/target/lib/libstdc++.so.6 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libstdc++.so.6} $(ARCH)-uclibc/target/lib/libstdc++.so.6 
 endif
 ifeq ($(CONFIG_LIBCRYPT),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so.0} $(ARCH)-uclibc/target/lib/libcrypt.so.0 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so.0} $(ARCH)-uclibc/target/lib/libcrypt.so.0 
 endif
 ifeq ($(CONFIG_LIBM),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libm.so.0} $(ARCH)-uclibc/target/lib/libm.so.0 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libm.so.0} $(ARCH)-uclibc/target/lib/libm.so.0 
 endif
 ifeq ($(CONFIG_LIBRESOLV),y)
 	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libresolv.so.0} $(ARCH)-uclibc/target/lib/libresolv.so.0 
 endif
 ifeq ($(CONFIG_LIBPTHREAD),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0} $(ARCH)-uclibc/target/lib/libpthread.so.0 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0} $(ARCH)-uclibc/target/lib/libpthread.so.0 
 endif
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
+ifeq ($(CONFIG_RELINK),y)
+ifneq ($(CONFIG_MUSL),y)
+	relink-lib.sh \
+		"$(ARCH)-linux-" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libc_so.a}" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libc_so.a}" \
+		"$(ARCH)-uclibc/target/lib/libc.so.0" \
+		-Wl,-init,__uClibc_init -Wl,-soname=libc.so.0 \
+		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1}
+else
+	relink-lib.sh \
+		"$(ARCH)-linux-" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libc.a}" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libc.a}" \
+		"$(ARCH)-uclibc/target/lib/libc.so" \
+		-Wl,-init,__uClibc_init -Wl,-soname=libc.so \
+		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1}
+endif
+
+	-relink-lib.sh \
+		"$(ARCH)-linux-" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so}" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libcrypt_pic.a}" \
+		"$(ARCH)-uclibc/target/lib/libcrypt.so.0" \
+		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
+		-Wl,-soname=libcrypt.so.0
+
+	-relink-lib.sh \
+		"$(ARCH)-linux-" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libm.so}" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libm_pic.a}" \
+		"$(ARCH)-uclibc/target/lib/libm.so.0" \
+		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
+		-Wl,-soname=libm.so.0 
+
+	-relink-lib.sh \
+		"$(ARCH)-linux-" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0}" \
+		"${shell $(ARCH)-linux-gcc -print-file-name=libpthread_so.a}" \
+		"$(ARCH)-uclibc/target/lib/libpthread.so.0" \
+		-Wl,-z,nodelete,-z,initfirst,-init=__pthread_initialize_minimal_internal \
+		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
+		-Wl,-soname=libpthread.so.0
+endif
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
+#	relink-lib.sh \
+#		"$(ARCH)-linux-" \
+#		"${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1}" \
+#		"${shell $(ARCH)-linux-gcc -print-file-name=libgcc_pic.a}" \
+#		"$(ARCH)-uclibc/target/lib/libgcc_s.so.1" \
+#		-Wl,--version-script=${shell $(ARCH)-linux-gcc -print-file-name=libgcc.map} -Wl,-soname=libgcc_s.so.1
+
+
 
 ifneq ($(CONFIG_NOOPT),y)
-
 	rm -rf /tmp/$(ARCHITECTURE)/mklibs-out
 	rm -f /tmp/$(ARCHITECTURE)/mklibs-progs
 	-mkdir -p /tmp/$(ARCHITECTURE)/
@@ -289,6 +354,7 @@ ifneq ($(CONFIG_NOOPT),y)
 		awk ' /shared object/ { print $$1 }' >> /tmp/$(ARCHITECTURE)/mklibs-progs
 
 	mkdir -p /tmp/$(ARCHITECTURE)/mklibs-out
+ifneq ($(CONFIG_MUSL),y)
 	mklibs.py -D \
 		-d /tmp/$(ARCHITECTURE)/mklibs-out \
 		--sysroot $(TARGETDIR) \
@@ -297,8 +363,23 @@ ifneq ($(CONFIG_NOOPT),y)
 		--ldlib /lib/ld-uClibc.so.0 \
 		--target $(ARCH)-linux-uclibc \
 		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
+else
+	mklibs.py -D \
+		-d /tmp/$(ARCHITECTURE)/mklibs-out \
+		--sysroot $(TARGETDIR) \
+		-L /lib \
+		-L /usr/lib \
+		--ldlib /lib/ld-musl-arm.so.1 \
+		--target $(ARCH)-linux-uclibc \
+		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
+
+endif
 	cp /tmp/$(ARCHITECTURE)/mklibs-out/* $(TARGETDIR)/lib
 endif
+#	rm -f $(TARGETDIR)/lib/*.a
+#	rm -f $(TARGETDIR)/lib/*.map
+#	cp lib.$(ARCH)/libresolv.so.0 $(TARGETDIR)/lib
+#	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
 
 
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
@@ -344,6 +425,13 @@ endif
         # Make sure mksquashfs-2.0 is used
 	cd $(TARGETDIR)  &&  find . -iname "CVS" | xargs rm -rf
 	cd $(TARGETDIR)  &&  find . -iname ".svn" | xargs rm -rf
+	find $(TARGETDIR)/lib -name *.ko -exec arm-linux-strip --strip-unneeded --remove-section=.comment {} +		
+	#e2fsck -y -f $(ARCH)-uclibc/root.fs
+	-find $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KERNELRELEASE) \;
+	-find $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/net -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KERNELRELEASE) \;
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/net
+	#e2fsck -y -f $(ARCH)-uclibc/root.fs
 	./busybox/examples/depmod.pl -F $(LINUXDIR)/System.map -b $(ARCH)-uclibc/target/lib/modules
 ifneq ($(CONFIG_ERC),y)
 #	tar --directory=$(TARGETDIR) --remove-files -cvvjf $(TARGETDIR)/etc/local.tar.bz2 usr/local
@@ -364,10 +452,10 @@ endif
 	mkdir -p $(ARCH)-uclibc/target/boot
 	echo "mem=59M root=/dev/hda" > $(ARCH)-uclibc/target/boot/kparam
 	cp $(LINUXDIR)/arch/arm/boot/zImage $(ARCH)-uclibc/target/boot
-	./tools/ext2/genext2fs -d $(ARCH)-uclibc/target -b 128000 -i 65536 -N 65536 -q $(ARCH)-uclibc/disc.img
+	./tools/ext2/genext2fs -d $(ARCH)-uclibc/target -b 220000 -i 65536 -N 65536 -q $(ARCH)-uclibc/disc.img
 	echo "mem=59M root=/dev/sda" > $(ARCH)-uclibc/target/boot/kparam
 	echo "this file just prevents reinstallation" > $(ARCH)-uclibc/target/boot/.installed
-	./tools/ext2/genext2fs -d $(ARCH)-uclibc/target -b 128000 -i 65536 -N 65536 -q $(ARCH)-uclibc/disc_sd.img
+	./tools/ext2/genext2fs -d $(ARCH)-uclibc/target -b 220000 -i 65536 -N 65536 -q $(ARCH)-uclibc/disc_sd.img
 	
 #	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -root-owned -le
 #	mkfs.jffs2 --pad --big-endian --squash -e 0x20000 -o $(ARCH)-uclibc/dd-wrt.jffs2 -d $(ARCH)-uclibc/target
