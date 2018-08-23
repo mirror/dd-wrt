@@ -40,13 +40,13 @@ statevar_DefaultConnectionService
 	UPNP_ADVERTISE *wan_advertise = 0;
 	
 	wan_service = get_service(context, "/control?WANIPConnection");
-    if (!wan_service)
+    if (!wan_service){
         return SOAP_DEVICE_INTERNAL_ERROR;
-
+    }
 	wan_advertise = get_advertise(context, wan_service->name);
-    if (!wan_advertise)
+    if (!wan_advertise) {
         return SOAP_DEVICE_INTERNAL_ERROR;
-    
+    }
     /* Construct out string */
     sprintf(UPNP_STR(value), "uuid:%s:WANConnectionDevice:1,urn:upnp-org:serviceId:%s",
             wan_advertise->uuid,
