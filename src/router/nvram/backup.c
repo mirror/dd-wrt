@@ -384,7 +384,7 @@ static void save(FILE * fp, char *p, int not)
 int nvram_restore(char *filename, int force)
 {
 	char sign[7];
-	char *nvram_ver = NULL;
+//	char *nvram_ver = NULL;
 #ifdef HAVE_REGISTER
 	if (!isregistered_real()) {
 		return -1;
@@ -439,8 +439,8 @@ int nvram_restore(char *filename, int force)
 				len -= (l + 2);
 				value[l] = 0;
 				// cprintf("setting %s to %s\n",name,value);
-				if (!strcmp(name, "nvram_ver"))
-					nvram_ver = value;
+//				if (!strcmp(name, "nvram_ver"))
+//					nvram_ver = value;
 				if (!c && !strcmp(name, "DD_BOARD")) {
 					fprintf(stdout, "backup is for board %s, board is %s\n", value, nvram_safe_get("DD_BOARD"));
 					if (!nvram_match("DD_BOARD", value)) {

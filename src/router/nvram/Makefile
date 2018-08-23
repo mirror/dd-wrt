@@ -172,6 +172,10 @@ CFLAGS += $(DD_CFLAGS)
 
 vpath %.c $(SRCBASE)/shared/nvram
 
+%.o : %.c
+	@echo "[CC] $@"
+	@$(CC) $(CFLAGS) -c -o $@ $<
+
 all: libnvram.so 
 
 install: all
@@ -183,8 +187,10 @@ clean:
 	rm -f *.o *.a *.so nvram
 
 libnvram.so: nvram_linux.o nvram_convert.o backup.o
-	$(CC) $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
-	$(AR) cr libnvram.a $^
+	@echo "[LD] $@"
+	@$(CC) $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
+	@$(AR) cr libnvram.a $^
 
 convertnvram: convertnvram.o
-	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS) -lnvram
+	@echo "[CC] $@"
+	@$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS) -lnvram
