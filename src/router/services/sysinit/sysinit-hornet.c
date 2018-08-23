@@ -191,13 +191,9 @@ void start_sysinit(void)
 	setEthLED(15, "eth1");
 #elif HAVE_CARAMBOLA
 	eval("swconfig", "dev", "switch0", "set", "reset", "1");
-	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
-	eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "0t 1");
-	eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "0t 2");
+	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "0");
+	eval("swconfig", "dev", "switch0", "vlan", "0", "set", "ports", "0 1 2 3 4");
 	eval("swconfig", "dev", "switch0", "set", "apply");
-	eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
-	eval("vconfig", "add", "eth1", "1");
-	eval("vconfig", "add", "eth1", "2");
 #endif
 
 #ifndef HAVE_ERC
