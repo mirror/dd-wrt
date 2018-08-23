@@ -1384,11 +1384,11 @@ void start_lan(void)
 		nvram_set("et0macaddr", get_hwaddr("eth1", macaddr));
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_CARAMBOLA
-	nvram_setz(lan_ifnames, "vlan1 vlan2 ath0");
+	nvram_setz(lan_ifnames, "eth0 eth1 ath0");
 	if (getSTA() || getWET() || CANBRIDGE()) {
 		PORTSETUPWAN("");
 	} else {
-		PORTSETUPWAN("vlan2");
+		PORTSETUPWAN("vlan1");
 	}
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("vlan1", macaddr));
