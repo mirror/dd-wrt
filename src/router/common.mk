@@ -22,6 +22,10 @@ ifeq ($(ARCH),mipsel)
 MUSL_LD:=ld-musl-mipsel-sf.so.1
 KERNEL_ARCH:=mips
 endif
+ifeq ($(ARCH),mips64)
+MUSL_LD:=ld-musl-mips64-sf.so.1
+KERNEL_ARCH:=mips
+endif
 ifeq ($(ARCH),i386)
 MUSL_LD:=ld-musl-i386.so.1
 KERNEL_ARCH:=i386
