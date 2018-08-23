@@ -83,8 +83,10 @@ $(OBJDIR):
 
 $(SOURCES.OBJ): upnp.h
 
+
 $(OBJDIR)/%.o:	%.c
-	$(CC) $(CFLAGS) $(INCLUDES) -o $@ -c $<
+	@echo "[CC] $@"
+	@$(CC) $(CFLAGS) $(INCLUDES) -o $@ -c $<
 
 # uncomment BUILD_LIBS if you want this makefile to build the netconf and itables libraries.
 #BUILD_LIBS=1
@@ -116,7 +118,8 @@ $(UPNPBASE)/libupnp.a : FORCE
 	$(MAKE) -C $(UPNPBASE) DEBUG=$(DEBUG) PLATFORM=x86 CC=$(CC) LD=$(LD) VENDOR=$(VENDOR)
 
 $(TARGET) :: $(UPNPBASE)/libupnp.a  $(SOURCES.OBJ)
-	$(CC) $(CFLAGS) -o $(TARGET) $(SOURCES.OBJ) $(LIBS)
+	@echo "[LD] $@"
+	@$(CC) $(CFLAGS) -o $(TARGET) $(SOURCES.OBJ) $(LIBS)
 	$(SIZE)  $(TARGET)
 
 clean: 

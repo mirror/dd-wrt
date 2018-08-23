@@ -61,13 +61,15 @@ $(OBJDIR):
 $(SOURCES.OBJ): upnp.h
 
 $(OBJDIR)/%.o:	%.c
-	$(CC) $(CFLAGS) $(INCLUDES) -o $@ -c $<
+	@echo "[CC] $@"	
+	@$(CC) $(CFLAGS) $(INCLUDES) -o $@ -c $<
 
 
 $(TARGET) : $(SOURCES.OBJ)
-	$(AR) -rcs $(TARGET) $(SOURCES.OBJ) 
-	$(RANLIB) $(TARGET)
-	$(SIZE)  $(TARGET)
+	@echo "[AR] $@"	
+	@$(AR) -rcs $(TARGET) $(SOURCES.OBJ) 
+	@$(RANLIB) $(TARGET)
+	@$(SIZE)  $(TARGET)
 
 clean: 
 	rm -rf obj 
