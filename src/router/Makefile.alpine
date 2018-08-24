@@ -265,7 +265,7 @@ endif
 	export STRIP="sstrip" && \
 	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
 	cd $(TARGETDIR) && $(TOP)/misc/rootprep.sh
-	#mkdir $(TARGETDIR)/boot
+#	#mkdir $(TARGETDIR)/boot
 	
 	cp -fpR $(LINUXDIR)/arch/arm/boot/zImage $(ARCH)-uclibc/zImage-alpine
 #	cat $(LINUXDIR)/arch/arm/boot/dts/alpine-r9000.dtb >> $(ARCH)-uclibc/zImage-alpine;
