@@ -209,42 +209,6 @@ endif
 	    $(MAKE) -j 4 -C $(LINUXDIR) vmlinux zImage ARCH=arm EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h"  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
 	fi
 
-install_headers:
-# important step, required for new kernels
-	-mkdir -p $(TOP)/kernel_headers/$(KERNELRELEASE)
-	$(MAKE) -C $(LINUXDIR) headers_install ARCH=arm INSTALL_HDR_PATH=$(TOP)/kernel_headers/$(KERNELRELEASE)
-
-	
-realclean: $(obj-clean)
-	rm -f .config.old .config.cmd
-	#umount $(TARGETDIR)
-	rm -rf $(INSTALLDIR)
-	rm -rf $(TARGETDIR)
-	rm -f $(TARGETDIR)/*
-	-rm -f $(ARCH)-uclibc/*
-
-	
-clean: rc-clean httpd-clean services-clean shared-clean libutils-clean madwifi-clean madwifi_mimo-clean busybox-clean pppd-clean iproute2-clean
-	rm -f .config.old .config.cmd
-	#umount $(TARGETDIR)
-	rm -rf $(INSTALLDIR)
-	rm -rf $(TARGETDIR)
-	rm -f $(TARGETDIR)/*
-	-rm -f $(ARCH)-uclibc/*
-
-clean_target:
-	rm -rf $(TARGETDIR)
-	rm -rf $(INSTALLDIR)
-
-distclean mrproper: $(obj-distclean) clean_target
-	rm -rf $(INSTALLDIR)
-	$(MAKE) -C $(LINUXDIR) distclean
-	$(MAKE) -C $(LINUXDIR)/arch/mips/bcm947xx/compressed clean
-	#rm -f $(PLATFORMDIR)/zImage $(PLATFORMDIR)/linux.bin
-	$(MAKE) -C config clean
-	rm -f .config $(LINUXDIR)/.config
-	rm -f .config.old .config.cmd
-
 include common.mk
 
 
