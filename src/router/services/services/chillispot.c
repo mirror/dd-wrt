@@ -57,9 +57,8 @@ static char log_reject[64];
 void start_chilli(void)
 {
 	int ret = 0;
-	char ssid[128];
-
 #ifdef HAVE_HOTSPOT
+	char ssid[128];
 
 	if (nvram_matchi("chilli_enable", 1)
 	    && nvram_matchi("chilli_def_enable", 0)
@@ -129,7 +128,7 @@ void start_chilli(void)
 #else
 		ret = eval("chilli", "-c", "/tmp/chilli/hotss.conf");
 #endif
-		dd_loginfo("hotspotsystem", "chilli daemon successfully started\n");
+		dd_logstart("hotspotsystem", ret);
 	} else {
 #ifdef HAVE_COOVA_CHILLI
 		putenv("CHILLISTATEDIR=/var/run/chilli1");
@@ -138,7 +137,7 @@ void start_chilli(void)
 #else
 		ret = eval("chilli", "-c", "/tmp/chilli/chilli.conf");
 #endif
-		dd_loginfo("chillispot", "daemon successfully started\n");
+		dd_logstart("chillispot", ret);
 	}
 #ifdef HAVE_TIEXTRA1
 	start_mchilli();

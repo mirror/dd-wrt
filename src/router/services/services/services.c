@@ -36,7 +36,7 @@
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <wait.h>
+#include <sys/wait.h>
 #include <net/route.h>		/* AhMan March 18 2005 */
 #include <sys/types.h>
 #include <signal.h>
@@ -213,6 +213,7 @@ void start_check_sierrappp(void)
 {
 	eval("/etc/comgt/sierrastatus.sh", nvram_safe_get("3gcontrol"));
 }
+
 #if defined(HAVE_LIBMBIM) || defined(HAVE_UMBIM)
 void start_check_mbim(void)
 {
@@ -220,7 +221,7 @@ void start_check_mbim(void)
 	if (registered_has_cap(27))
 #endif
 	{
-		dd_loginfo("mbim","STARTING mbim-status.sh\n");
+		dd_loginfo("mbim", "STARTING mbim-status.sh\n");
 		eval("/usr/sbin/mbim-status.sh");
 	}
 }
