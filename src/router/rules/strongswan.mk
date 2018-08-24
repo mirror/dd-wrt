@@ -1,7 +1,15 @@
 ifeq ($(ARCH),armeb)
 	KERNEL_ARCH := arm
 else
+ifeq ($(ARCH),mipsel)
+	KERNEL_ARCH := mips
+else
+ifeq ($(ARCH),mips64)
+	KERNEL_ARCH := mips
+else
 	KERNEL_ARCH := $(ARCH)
+endif
+endif
 endif
 
 PKG_MOD_AVAILABLE:= \
