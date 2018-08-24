@@ -182,6 +182,14 @@ void dd_loginfo(const char *servicename, const char *fmt, ...)
 	dd_syslog(LOG_INFO, "%s : %s", servicename, str);
 	free(str);
 }
+
+void dd_logstart(const char *servicename, int retcode)
+{
+	if (retcode)
+		dd_loginfo(servicename, "Error on startup, returncode %d", retcode);
+	else
+		dd_loginfo(servicename, "successfully started");
+}
 #endif
 int eval_va(const char *cmd, ...)
 {
