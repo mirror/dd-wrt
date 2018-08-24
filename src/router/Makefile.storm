@@ -160,42 +160,7 @@ endif
 	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE=$(ARCH)-linux-uclibc- ; \
 	fi
 
-	
-realclean: $(obj-clean)
-	rm -f .config.old .config.cmd
-	#umount $(TARGETDIR)
-	rm -rf $(INSTALLDIR)
-	rm -rf $(TARGETDIR)
-	rm -f $(TARGETDIR)/*
-	-rm -f $(ARCH)-uclibc/*
-
-	
-clean: rc-clean httpd-clean services-clean shared-clean libutils-clean madwifi-clean madwifi_mimo-clean busybox-clean pppd-clean iproute2-clean
-	rm -f .config.old .config.cmd
-	#umount $(TARGETDIR)
-	rm -rf $(INSTALLDIR)
-	rm -rf $(TARGETDIR)
-	rm -f $(TARGETDIR)/*
-	-rm -f $(ARCH)-uclibc/*
-
-clean_target:
-	rm -rf $(TARGETDIR)
-	rm -rf $(INSTALLDIR)
-
-distclean mrproper: $(obj-distclean) clean_target
-	rm -rf $(INSTALLDIR)
-	$(MAKE) -C $(LINUXDIR) distclean
-	$(MAKE) -C $(LINUXDIR)/arch/mips/bcm947xx/compressed clean
-	#rm -f $(PLATFORMDIR)/zImage $(PLATFORMDIR)/linux.bin
-	$(MAKE) -C config clean
-	rm -f .config $(LINUXDIR)/.config
-	rm -f .config.old .config.cmd
-
-optimize-lib:
-#	../../tools/optimize_lib.sh shared/ libshared.so libshared.a libshared_min.so $(TARGETDIR) $(TARGETDIR)/lib/libshared.so
-#	../../tools/optimize_lib.sh lib.$(ARCH)/ libpthread.so libpthread.a libphread_min.so $(TARGETDIR) $(TARGETDIR)/lib/libpthread.so.0
-	@true
-
+include common.mk
 
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
         # Install binaries into target directory
