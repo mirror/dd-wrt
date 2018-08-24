@@ -1,49 +1,49 @@
 ifeq ($(ARCH),arm)
 MUSL_LD:=ld-musl-armhf.so.1
-KERNEL_ARCH:=arm
+KERNEL_HEADER_ARCH:=arm
 endif
 ifeq ($(CONFIG_ARCHITECTURE),northstar)
 MUSL_LD:=ld-musl-arm.so.1
-KERNEL_ARCH:=arm
+KERNEL_HEADER_ARCH:=arm
 endif
 ifeq ($(CONFIG_ARCHITECTURE),openrisc)
 MUSL_LD:=ld-musl-arm.so.1
-KERNEL_ARCH:=arm
+KERNEL_HEADER_ARCH:=arm
 endif
 ifeq ($(ARCH),armeb)
 MUSL_LD:=ld-musl-armeb.so.1
-KERNEL_ARCH:=arm
+KERNEL_HEADER_ARCH:=arm
 endif
 ifeq ($(ARCH),mips)
 MUSL_LD:=ld-musl-mips-sf.so.1
-KERNEL_ARCH:=mips
+KERNEL_HEADER_ARCH:=mips
 endif
 ifeq ($(ARCH),mipsel)
 MUSL_LD:=ld-musl-mipsel-sf.so.1
-KERNEL_ARCH:=mips
+KERNEL_HEADER_ARCH:=mips
 endif
 ifeq ($(ARCH),mips64)
 MUSL_LD:=ld-musl-mips64-sf.so.1
-KERNEL_ARCH:=mips
+KERNEL_HEADER_ARCH:=mips
 endif
 ifeq ($(ARCH),i386)
 MUSL_LD:=ld-musl-i386.so.1
-KERNEL_ARCH:=i386
+KERNEL_HEADER_ARCH:=i386
 endif
 ifeq ($(ARCH),x86_64)
 MUSL_LD:=ld-musl-x86_64.so.1
-KERNEL_ARCH:=x86_64
+KERNEL_HEADER_ARCH:=x86_64
 endif
 ifeq ($(ARCH),powerpc)
 MUSL_LD:=ld-musl-powerpc-sf.so.1
-KERNEL_ARCH:=powerpc
+KERNEL_HEADER_ARCH:=powerpc
 endif
 
 
 install_headers:
 # important step, required for new kernels
 	-mkdir -p $(TOP)/kernel_headers/$(KERNELRELEASE)
-	$(MAKE) -C $(LINUXDIR) headers_install ARCH=$(KERNEL_ARCH) INSTALL_HDR_PATH=$(TOP)/kernel_headers/$(KERNELRELEASE)
+	$(MAKE) -C $(LINUXDIR) headers_install ARCH=$(KERNEL_HEADER_ARCH) INSTALL_HDR_PATH=$(TOP)/kernel_headers/$(KERNELRELEASE)
 
 	
 realclean: $(obj-clean)
