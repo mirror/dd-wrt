@@ -1388,7 +1388,7 @@ void start_lan(void)
 	if (getSTA() || getWET() || CANBRIDGE()) {
 		PORTSETUPWAN("");
 	} else {
-		PORTSETUPWAN("vlan1");
+		PORTSETUPWAN("eth1");
 	}
 	if (nvram_match("et0macaddr", ""))
 		nvram_set("et0macaddr", get_hwaddr("vlan1", macaddr));
