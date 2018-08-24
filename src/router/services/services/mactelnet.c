@@ -30,8 +30,8 @@
 
 void start_mactelnetd(void)
 {
-	int ret = 0;
 	pid_t pid;
+	int ret = 0;
 
 	char *telnetd_argv[] = { "mactelnetd", NULL };
 	stop_mactelnetd();
@@ -52,7 +52,7 @@ void start_mactelnetd(void)
 	else
 		return;
 #endif
-	dd_loginfo("mactelnetd", "daemon successfully started\n");
+	dd_logstart("mactelnetd", ret);
 
 	cprintf("done\n");
 	return;
