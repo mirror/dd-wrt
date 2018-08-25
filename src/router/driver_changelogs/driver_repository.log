@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r4178 | brainslayer | 2018-08-24 14:09:50 +0200 (Fri, 24 Aug 2018) | 1 line
+
+Fix bad signal reporting seen on WRT32X / 88W8964
+------------------------------------------------------------------------
 r4177 | brainslayer | 2018-08-22 00:06:53 +0200 (Wed, 22 Aug 2018) | 1 line
 
 fix wrong partition name for northstar
