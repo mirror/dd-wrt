@@ -739,9 +739,6 @@ endif
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
 	    $(MAKE) -j 4 -C $(LINUXDIR) vmlinux EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
 	fi
-
-
-
 	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus 
 
 
@@ -1806,12 +1803,12 @@ ifeq ($(CONFIG_WR941V6),y)
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR941NDv6-firmware.bin mips-uclibc/tplink-WR941NDv6-firmware.bin
 endif
 ifeq ($(CONFIG_WR940V4),y)
-	-./tools/tplink/mktplinkfw -s "00000000;45550000;" -B TL-WR940NDv4 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR940NDv4-firmware-eu.bin
-	-./tools/tplink/mktplinkfw -s "00000000;55530000;" -B TL-WR940NDv4 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR940NDv4-firmware-us.bin
+	-./tools/tplink/mktplinkfw -s "00000000;45550000;" -B TL-WR940NDv4 -N "TP-LINK Technologies" -V "ver. 1.0" -v 3.99.99 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR940NDv4-firmware-eu.bin
+	-./tools/tplink/mktplinkfw -s "00000000;55530000;" -B TL-WR940NDv4 -N "TP-LINK Technologies" -V "ver. 1.0" -v 3.99.99 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR940NDv4-firmware-us.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR940NDv4-firmware.bin mips-uclibc/tplink-WR940NDv4-firmware-eu.bin
 
-	-./tools/tplink/mktplinkfw -s "00000000;45550000;" -B TL-WR940NDv6 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR940NDv6-firmware-eu.bin
-	-./tools/tplink/mktplinkfw -s "00000000;55530000;" -B TL-WR940NDv6 -N "TP-LINK Technologies" -V "ver. 1.0" -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR940NDv6-firmware-us.bin
+	-./tools/tplink/mktplinkfw -s "00000000;45550000;" -B TL-WR940NDv6 -N "TP-LINK Technologies" -V "ver. 1.0" -v 3.99.99 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR940NDv6-firmware-eu.bin
+	-./tools/tplink/mktplinkfw -s "00000000;55530000;" -B TL-WR940NDv6 -N "TP-LINK Technologies" -V "ver. 1.0" -v 3.99.99 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-WR940NDv6-firmware-us.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/WR940NDv6-firmware.bin mips-uclibc/tplink-WR940NDv6-firmware-eu.bin
 endif
 ifeq ($(CONFIG_WR842V2),y)
@@ -1910,6 +1907,7 @@ ifeq ($(CONFIG_RB2011),y)
 	make -f Makefile.pb42 kernel
 endif
 	make -C lzma-loader/relocate
+	$(ARCH)-linux-objcopy -O binary $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vmlinus 
 	cp $(ARCH)-uclibc/vmlinus lzma-loader/relocate/vmlinus.bin.new
 	rm -f lzma-loader/relocate/vmlinus.bin
 	make -C lzma-loader/relocate vmlinus.bin
