@@ -130,7 +130,7 @@ sess_prt(const int sock)
 {
     TABNODE     sess;
     int         n_be, n_sess, cont_len;
-    char        buf[KEY_SIZE + 1], escaped[KEY_SIZE * 2 + 1];
+    char        buf[KEY_SIZE + 1];
 
     n_sess = 0;
     while(read(sock, (void *)&sess, sizeof(TABNODE)) == sizeof(TABNODE)) {
@@ -214,13 +214,10 @@ int
 main(const int argc, char **argv)
 {
     CTRL_CMD    cmd;
-    int         sock, n_lstn, n_svc, n_be, n_sess, i;
-    char        *arg0, *sock_name, buf[KEY_SIZE + 1];
+    int         sock, n_lstn, i;
+    char        *arg0, *sock_name;
     int         c_opt, en_lst, de_lst, en_svc, de_svc, en_be, de_be, a_sess, d_sess, is_set;
     LISTENER    lstn;
-    SERVICE     svc;
-    BACKEND     be;
-    TABNODE     sess;
     struct  sockaddr_storage    a;
 
     arg0 = *argv;

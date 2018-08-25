@@ -8,6 +8,16 @@ POUND - REVERSE-PROXY AND LOAD-BALANCER
     under the GPL - no warranty, it's free to use, copy and
     give away.
 
+ABOUT THIS VERSION
+
+    This is a fork of Pound 2.8a modified to compile and link
+    with OpenSSL version 1.1.0 and later. Backward compatibility
+    with earlier versions of OpenSSL is retained. The orginal code
+    has been obtained from http://www.apsis.ch/pound/Pound-2.8a.tgz.
+    Later on, the changes from the stable 2.8 release were applied.
+    
+    This modified version was tested under production load with
+    OpenSSL 1.1.0g and 1.0.1e.
 
 WHAT POUND IS:
 
@@ -83,6 +93,21 @@ STATUS
     issues were observed with problematic SSL implementations, most notably
     with Opera 6, but these should be OK in the present version.
 
+BOOTSTRAPPING
+
+    If you obtained the sources from the repository, you will need the
+    following tools in order to build from them:
+
+      - Autoconf v.2.63 or later (http://www.gnu.org/software/automake) 
+      - Automake v.1.11 or later (http://www.gnu.org/software/autoconf)
+
+    Change to the project directory and run
+
+      ./bootstrap
+
+    This will create the configure script and populate the directory with
+    auxiliary files needed for configuration. Once done, proceed to
+    ./configure and make as discussed in the following section.
 
 INSTALLATION
 
