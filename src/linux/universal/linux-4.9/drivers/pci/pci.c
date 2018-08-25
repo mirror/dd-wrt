@@ -3407,35 +3407,6 @@ void pci_unmap_iospace(struct resource *res)
 #endif
 }
 
-static void __pci_set_master(struct pci_dev *dev, bool enable)
-{
-	u16 old_cmd, cmd;
-
-	pci_read_config_word(dev, PCI_COMMAND, &old_cmd);
-	if (enable)
-		cmd = old_cmd | PCI_COMMAND_MASTER;
-	else
-		cmd = old_cmd & ~PCI_COMMAND_MASTER;
-	if (cmd != old_cmd) {
-		dev_dbg(&dev->dev, "%s bus mastering\n",
-			enable ? "enabling" : "disabling");
-		pci_write_config_word(dev, PCI_COMMAND, cmd);
-	}
-	dev->is_busmaster = enable;
-}
-
-/**
- * pcibios_setup - process "pci=" kernel boot arguments
- * @str: string used to pass in "pci=" kernel boot arguments
- *
- * Process kernel boot arguments.  This is the default implementation.
- * Architecture specific implementations can override this as necessary.
- */
-char * __weak __init pcibios_setup(char *str)
-{
-	return str;
-}
-
 static void devm_pci_unmap_iospace(struct device *dev, void *ptr)
 {
 	struct resource **res = ptr;
@@ -3473,6 +3444,35 @@ int devm_pci_remap_iospace(struct device *dev, const struct resource *res,
 	return error;
 }
 EXPORT_SYMBOL(devm_pci_remap_iospace);
+
+static void __pci_set_master(struct pci_dev *dev, bool enable)
+{
+	u16 old_cmd, cmd;
+
+	pci_read_config_word(dev, PCI_COMMAND, &old_cmd);
+	if (enable)
+		cmd = old_cmd | PCI_COMMAND_MASTER;
+	else
+		cmd = old_cmd & ~PCI_COMMAND_MASTER;
+	if (cmd != old_cmd) {
+		dev_dbg(&dev->dev, "%s bus mastering\n",
+			enable ? "enabling" : "disabling");
+		pci_write_config_word(dev, PCI_COMMAND, cmd);
+	}
+	dev->is_busmaster = enable;
+}
+
+/**
+ * pcibios_setup - process "pci=" kernel boot arguments
+ * @str: string used to pass in "pci=" kernel boot arguments
+ *
+ * Process kernel boot arguments.  This is the default implementation.
+ * Architecture specific implementations can override this as necessary.
+ */
+char * __weak __init pcibios_setup(char *str)
+{
+	return str;
+}
 
 /**
  * pcibios_set_master - enable PCI bus-mastering for device dev
