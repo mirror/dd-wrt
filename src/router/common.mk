@@ -82,7 +82,7 @@ else
 	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so} $(ARCH)-uclibc/target/lib/libc.so 
 endif
 ifneq ($(CONFIG_MUSL),y)
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=ld-uclibc.so.0} $(ARCH)-uclibc/target/lib/ld-uClibc.so.0 
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=ld-uClibc.so.0} $(ARCH)-uclibc/target/lib/ld-uClibc.so.0 
 else
 	cd $(ARCH)-uclibc/target/lib && ln -sf libc.so $(MUSL_LD)
 endif
