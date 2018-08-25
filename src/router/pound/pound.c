@@ -66,6 +66,9 @@ static  pid_t               son = 0;
 /*
  * OpenSSL thread support stuff
  */
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+#define l_init()
+#else
 static pthread_mutex_t  *l_array;
 
 static void
@@ -104,6 +107,7 @@ l_id(void)
 {
     return (unsigned long)pthread_self();
 }
+#endif
 
 /*
  * work queue stuff
@@ -234,7 +238,6 @@ main(const int argc, char **argv)
     LISTENER            *lstn;
     pthread_t           thr;
     pthread_attr_t      attr;
-    struct sched_param  sp;
     uid_t               user_id;
     gid_t               group_id;
     FILE                *fpid;
@@ -435,7 +438,7 @@ main(const int argc, char **argv)
 
     /* split off into monitor and working process if necessary */
     for(;;) {
-#ifdef  UPER
+#if SUPERVISOR
         if((son = fork()) > 0) {
             int status;
 
@@ -548,7 +551,7 @@ main(const int argc, char **argv)
                     }
                 }
             }
-#ifdef  UPER
+#if SUPERVISOR
         } else {
             /* failed to spawn son */
             logmsg(LOG_ERR, "Can't fork worker (%s) - aborted", strerror(errno));
