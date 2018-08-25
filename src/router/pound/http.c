@@ -31,7 +31,6 @@
 static char *h500 = "500 Internal Server Error",
             *h501 = "501 Not Implemented",
             *h503 = "503 Service Unavailable",
-            *h414 = "414 Request URI too long",
             *h400 = "Bad Request";
 
 static char *err_response = "HTTP/1.0 %s\r\nContent-Type: text/html\r\nContent-Length: %d\r\nExpires: now\r\nPragma: no-cache\r\nCache-control: no-cache,no-store\r\n\r\n%s";
@@ -127,7 +126,7 @@ static int
 get_line(BIO *const in, char *const buf, const int bufsize)
 {
     char    tmp;
-    int     i, n_read, seen_cr;
+    int     i, seen_cr;
 
     memset(buf, 0, bufsize);
     for(i = 0, seen_cr = 0; i < bufsize - 1; i++)
@@ -143,7 +142,7 @@ get_line(BIO *const in, char *const buf, const int bufsize)
                 if(tmp != '\n') {
                     /* we have CR not followed by NL */
                     do {
-                        if(BIO_read(in, &tmp, 1) < 0)
+                        if(BIO_read(in, &tmp, 1) <= 0)
                             return 1;
                     } while(tmp != '\n');
                     return 1;
@@ -170,7 +169,7 @@ get_line(BIO *const in, char *const buf, const int bufsize)
 
             /* all other control characters cause an error */
             do {
-                if(BIO_read(in, &tmp, 1) < 0)
+                if(BIO_read(in, &tmp, 1) <= 0)
                     return 1;
             } while(tmp != '\n');
             return 1;
@@ -178,7 +177,7 @@ get_line(BIO *const in, char *const buf, const int bufsize)
 
     /* line too long */
     do {
-        if(BIO_read(in, &tmp, 1) < 0)
+        if(BIO_read(in, &tmp, 1) <= 0)
             return 1;
     } while(tmp != '\n');
     return 1;
@@ -415,7 +414,7 @@ static char **
 get_headers(BIO *const in, BIO *const cl, const LISTENER *lstn)
 {
     char    **headers, buf[MAXBUF];
-    int     res, n, has_eol;
+    int     res, n;
 
     /* HTTP/1.1 allows leading CRLF */
     memset(buf, 0, MAXBUF);
@@ -527,12 +526,22 @@ log_bytes(char *res, const LONG cnt)
 
 /* Cleanup code. This should really be in the pthread_cleanup_push, except for bugs in some implementations */
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+# define clear_error()
+#elif OPENSSL_VERSION_NUMBER >= 0x10000000L
+# define clear_error() \
+	if(ssl != NULL) { ERR_clear_error(); ERR_remove_thread_state(NULL); }
+#else
+# define clear_error() \
+	if(ssl != NULL) { ERR_clear_error(); ERR_remove_state(0); }
+#endif
+
 #define clean_all() {   \
     if(ssl != NULL) { BIO_ssl_shutdown(cl); } \
     if(be != NULL) { BIO_flush(be); BIO_reset(be); BIO_free_all(be); be = NULL; } \
     if(cl != NULL) { BIO_flush(cl); BIO_reset(cl); BIO_free_all(cl); cl = NULL; } \
     if(x509 != NULL) { X509_free(x509); x509 = NULL; } \
-    if(ssl != NULL) { ERR_clear_error(); ERR_remove_state(0); } \
+    clear_error(); \
 }
 
 /*

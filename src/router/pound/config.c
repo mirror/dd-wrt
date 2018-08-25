@@ -25,15 +25,13 @@
  * EMail: roseg@apsis.ch
  */
 
-#ifndef MISS_FACILITYNAMES
-#define SYSLOG_NAMES    1
-#endif
+#define NEED_FACILITYNAMES
 
 #include    "pound.h"
 
 #include    <openssl/x509v3.h>
 
-#ifdef MISS_FACILITYNAMES
+#ifndef HAVE_FACILITYNAMES
 
 /* This is lifted verbatim from the Linux sys/syslog.h */
 
@@ -174,6 +172,18 @@ conf_fgets(char *buf, const int max)
     }
 }
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+# define general_name_string(n) \
+	(unsigned char*) \
+	strndup((char*)ASN1_STRING_get0_data(n->d.dNSName),	\
+	        ASN1_STRING_length(n->d.dNSName) + 1)
+#else
+# define general_name_string(n) \
+	(unsigned char*) \
+	strndup((char*)ASN1_STRING_data(n->d.dNSName),	\
+	       ASN1_STRING_length(n->d.dNSName) + 1)
+#endif
+
 unsigned char **
 get_subjectaltnames(X509 *x509, unsigned int *count)
 {
@@ -194,8 +204,7 @@ get_subjectaltnames(X509 *x509, unsigned int *count)
         name = sk_GENERAL_NAME_pop(san_stack);
         switch(name->type) {
             case GEN_DNS:
-                temp[local_count] = strndup(ASN1_STRING_data(name->d.dNSName), ASN1_STRING_length(name->d.dNSName)
-                                    + 1);
+ 	        temp[local_count] = general_name_string(name);
                 if(temp[local_count] == NULL)
                     conf_err("out of memory");
                 local_count++;
@@ -209,12 +218,8 @@ get_subjectaltnames(X509 *x509, unsigned int *count)
     result = (unsigned char**)malloc(sizeof(unsigned char*)*local_count);
     if(result == NULL)
         conf_err("out of memory");
-    for(i = 0;i < local_count; i++) {
-        result[i] = strndup(temp[i], strlen(temp[i])+1);
-        if(result[i] == NULL)
-            conf_err("out of memory");
-        free(temp[i]);
-    }
+    for(i = 0; i < local_count; i++)
+	result[i] = temp[i];
     *count = local_count;
 
     sk_GENERAL_NAME_pop_free(san_stack, GENERAL_NAME_free);
@@ -231,7 +236,6 @@ parse_be(const int is_emergency)
     char        lin[MAXBUF];
     BACKEND     *res;
     int         has_addr, has_port;
-    struct hostent      *host;
     struct sockaddr_in  in;
     struct sockaddr_in6 in6;
 
@@ -527,24 +531,27 @@ t_hash(const TABNODE *e)
     return res;
 }
 
-#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+# if OPENSSL_VERSION_NUMBER >= 0x10000000L
 static IMPLEMENT_LHASH_HASH_FN(t, TABNODE)
-#else
+# else
 static IMPLEMENT_LHASH_HASH_FN(t_hash, const TABNODE *)
+# endif
 #endif
- 
+
 static int
 t_cmp(const TABNODE *d1, const TABNODE *d2)
 {
     return strcmp(d1->key, d2->key);
 }
 
-#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+# if OPENSSL_VERSION_NUMBER >= 0x10000000L
 static IMPLEMENT_LHASH_COMP_FN(t, TABNODE)
-#else
+# else
 static IMPLEMENT_LHASH_COMP_FN(t_cmp, const TABNODE *)
+# endif
 #endif
-
 
 /*
  * parse a service
@@ -565,7 +572,9 @@ parse_service(const char *svc_name)
     pthread_mutex_init(&res->mut, NULL);
     if(svc_name)
         strncpy(res->name, svc_name, KEY_SIZE);
-#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+    if((res->sessions = lh_TABNODE_new(t_hash, t_cmp)) == NULL)    
+#elif OPENSSL_VERSION_NUMBER >= 0x10000000L
     if((res->sessions = LHM_lh_new(TABNODE, t)) == NULL)
 #else
     if((res->sessions = lh_new(LHASH_HASH_FN(t_hash), LHASH_COMP_FN(t_cmp))) == NULL)
@@ -907,7 +916,7 @@ SNI_server_name(SSL *ssl, int *dummy, POUND_CTX *ctx)
             int i;
 
             for(i = 0; i < pc->subjectAltNameCount; i++) {
-                if(fnmatch(pc->subjectAltNames[i], server_name, 0) == 0) {
+                if(fnmatch((char*)pc->subjectAltNames[i], server_name, 0) == 0) {
                     SSL_set_SSL_CTX(ssl, pc->ctx);
                     return SSL_TLSEXT_ERR_OK;
                 }
@@ -933,7 +942,6 @@ parse_HTTPS(void)
     MATCHER             *m;
     int                 has_addr, has_port, has_other;
     long                ssl_op_enable, ssl_op_disable;
-    struct hostent      *host;
     struct sockaddr_in  in;
     struct sockaddr_in6 in6;
     POUND_CTX           *pc;
@@ -1037,7 +1045,7 @@ parse_HTTPS(void)
 #ifdef SSL_CTRL_SET_TLSEXT_SERVERNAME_CB
             /* we have support for SNI */
             FILE        *fcert;
-            char        server_name[MAXBUF], *cp;
+            char        server_name[MAXBUF];
             X509        *x509;
 
             if(has_other)
@@ -1245,8 +1253,6 @@ parse_HTTPS(void)
                 svc->next = parse_service(lin + matches[1].rm_so);
             }
         } else if(!regexec(&End, lin, 4, matches, 0)) {
-            X509_STORE  *store;
-
             if(!has_addr || !has_port || res->ctx == NULL)
                 conf_err("ListenHTTPS missing Address, Port or Certificate - aborted");
 #ifdef SSL_CTRL_SET_TLSEXT_SERVERNAME_CB
@@ -1425,7 +1431,6 @@ void
 config_parse(const int argc, char **const argv)
 {
     char    *conf_name;
-    FILE    *f_conf;
     int     c_opt, check_only;
 
     if(regcomp(&Empty, "^[ \t]*$", REG_ICASE | REG_NEWLINE | REG_EXTENDED)
@@ -1523,24 +1528,18 @@ config_parse(const int argc, char **const argv)
             break;
         case 'V':
             print_log = 1;
-            logmsg(LOG_DEBUG, "Version %s", VERSION);
+            logmsg(LOG_DEBUG, "Version %s", PACKAGE_VERSION);
             logmsg(LOG_DEBUG, "  Configuration switches:");
-#ifdef  C_SUPER
-            if(strcmp(C_SUPER, "0"))
-                logmsg(LOG_DEBUG, "    --disable-super");
-#endif
+	    if (!SUPERVISOR)
+		    logmsg(LOG_DEBUG, "    --disable-super");
 #ifdef  C_SSL
             if(strcmp(C_SSL, ""))
                 logmsg(LOG_DEBUG, "    --with-ssl=%s", C_SSL);
 #endif
-#ifdef  C_T_RSA
-            if(strcmp(C_T_RSA, "0"))
-                logmsg(LOG_DEBUG, "    --with-t_rsa=%s", C_T_RSA);
-#endif
-#ifdef  C_MAXBUF
-            if(strcmp(C_MAXBUF, "0"))
-                logmsg(LOG_DEBUG, "    --with-maxbuf=%s", C_MAXBUF);
-#endif
+            if(T_RSA_KEYS != 7200)
+                logmsg(LOG_DEBUG, "    --with-t_rsa=%d", T_RSA_KEYS);
+            if(MAXBUF != 4096)
+                logmsg(LOG_DEBUG, "    --with-maxbuf=%d", MAXBUF);
 #ifdef  C_OWNER
             if(strcmp(C_OWNER, ""))
                 logmsg(LOG_DEBUG, "    --with-owner=%s", C_OWNER);
@@ -1549,10 +1548,8 @@ config_parse(const int argc, char **const argv)
             if(strcmp(C_GROUP, ""))
                 logmsg(LOG_DEBUG, "    --with-group=%s", C_GROUP);
 #endif
-#ifdef  C_DH_LEN
-            if(strcmp(C_DH_LEN, "0"))
-                logmsg(LOG_DEBUG, "    --with-dh=%s", C_DH_LEN);
-#endif
+            if(DH_LEN != 2048)
+                logmsg(LOG_DEBUG, "    --with-dh=%d", DH_LEN);
             logmsg(LOG_DEBUG, "Exiting...");
             exit(0);
             break;
