@@ -477,7 +477,6 @@ static int enable_dhcprelay(char *ifname)
 }
 #endif
 
-
 int isClient(void)
 {
 	if (getSTA())
@@ -1989,7 +1988,7 @@ void start_lan(void)
 			eval("ifconfig", realname, "txqueuelen", getTXQ(realname));
 			if (!nvram_nmatch("", "%s_hwaddr", realname))
 				set_hwaddr(realname, nvram_nget("%s_hwaddr", realname));
-				
+
 			if (strncmp(realname, "ath", 3) != 0) {	// this is not an ethernet driver
 				eval("ifconfig", realname, "up");	//fixup for some ethernet drivers
 			}
@@ -2611,19 +2610,19 @@ void start_lan(void)
 			diag_led(DMZ, STOP_LED);
 	}
 #endif
-{
-	char word[256];
-	br_set_stp_state("br0", getBridgeSTP("br0", word));
-	// eval ("rm", "/tmp/hosts");
-	addHost("localhost", "127.0.0.1", 0);
-	if (strlen(nvram_safe_get("wan_hostname"))) {
-		addHost(nvram_safe_get("wan_hostname"), nvram_safe_get("lan_ipaddr"), 0);
-		addHost(nvram_safe_get("wan_hostname"), nvram_safe_get("lan_ipaddr"), 1);
-	} else if (strlen(nvram_safe_get("router_name"))) {
-		addHost(nvram_safe_get("router_name"), nvram_safe_get("lan_ipaddr"), 0);
-		addHost(nvram_safe_get("router_name"), nvram_safe_get("lan_ipaddr"), 1);
+	{
+		char word[256];
+		br_set_stp_state("br0", getBridgeSTP("br0", word));
+		// eval ("rm", "/tmp/hosts");
+		addHost("localhost", "127.0.0.1", 0);
+		if (strlen(nvram_safe_get("wan_hostname"))) {
+			addHost(nvram_safe_get("wan_hostname"), nvram_safe_get("lan_ipaddr"), 0);
+			addHost(nvram_safe_get("wan_hostname"), nvram_safe_get("lan_ipaddr"), 1);
+		} else if (strlen(nvram_safe_get("router_name"))) {
+			addHost(nvram_safe_get("router_name"), nvram_safe_get("lan_ipaddr"), 0);
+			addHost(nvram_safe_get("router_name"), nvram_safe_get("lan_ipaddr"), 1);
+		}
 	}
-}
 #ifdef HAVE_MICRO
 	br_shutdown();
 #endif
@@ -3325,7 +3324,7 @@ void start_wan(int status)
 #endif
 			{
 				if (pidof("mbim-connect.sh") < 0) {
-					dd_loginfo("mbim","STARTING mbim-status.sh\n");
+					dd_loginfo("mbim", "STARTING mbim-status.sh\n");
 					sysprintf("mbim-connect.sh");
 				}
 				if (status != REDIAL) {
@@ -3999,9 +3998,9 @@ void start_wan(int status)
 
 			if (isClient())
 				wan_iface = getSTA();
-			if(wan_iface != NULL)
+			if (wan_iface != NULL)
 				ifconfig(wan_iface, IFUP, nvram_safe_get("wan_ipaddr_static"), nvram_safe_get("wan_netmask_static"));
-			
+
 			dns_to_resolv();
 			dns_list = get_dns_list();
 
@@ -4314,11 +4313,11 @@ void start_wan(int status)
 #ifdef HAVE_MICRO
 	br_init();
 #endif
-{
-			char word[256];
+	{
+		char word[256];
 
-	br_set_stp_state("br0", getBridgeSTP("br0", word));
-}
+		br_set_stp_state("br0", getBridgeSTP("br0", word));
+	}
 #ifdef HAVE_MICRO
 	br_shutdown();
 #endif
@@ -4620,10 +4619,10 @@ void start_wan_done(char *wan_ifname)
 	br_init();
 #endif
 
-{
-	char word[256];
-	br_set_stp_state(nvram_safe_get("lan_ifname"), getBridgeSTP(nvram_safe_get("lan_ifname"), word));
-}
+	{
+		char word[256];
+		br_set_stp_state(nvram_safe_get("lan_ifname"), getBridgeSTP(nvram_safe_get("lan_ifname"), word));
+	}
 #ifdef HAVE_MICRO
 	br_shutdown();
 #endif
@@ -5181,10 +5180,10 @@ void start_hotplug_net(void)
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 		notify_nas("lan", interface, "up");
 #endif
-{
-		char word[256];
-		br_set_stp_state("br0", getBridgeSTP("br0", word));
-}
+		{
+			char word[256];
+			br_set_stp_state("br0", getBridgeSTP("br0", word));
+		}
 #ifdef HAVE_MICRO
 		br_shutdown();
 #endif

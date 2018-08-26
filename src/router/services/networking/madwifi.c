@@ -638,9 +638,9 @@ static void checkhostapd(char *ifname, int force)
 					char fstr[32];
 					sprintf(fstr, "/tmp/%s_hostap.conf", ifname);
 					if (force) {
-						dd_loginfo( "hostapd","daemon on %s with pid %d is forced to be restarted....\n", ifname, pid);
+						dd_loginfo("hostapd", "daemon on %s with pid %d is forced to be restarted....\n", ifname, pid);
 					} else {
-						dd_loginfo( "hostapd","daemon on %s with pid %d died, restarting....\n", ifname, pid);
+						dd_loginfo("hostapd", "daemon on %s with pid %d died, restarting....\n", ifname, pid);
 					}
 					do_hostapd(fstr, ifname);
 				}
@@ -2417,7 +2417,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 #endif
 	{
 		eval("/usr/sbin/nldstart.sh");
-		dd_loginfo("nld:","startup\n");
+		dd_loginfo("nld:", "startup\n");
 	}
 #endif
 #if defined(HAVE_TMK) || defined(HAVE_BKM)

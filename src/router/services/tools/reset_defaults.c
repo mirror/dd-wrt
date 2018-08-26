@@ -34,7 +34,6 @@ extern struct nvram_param *srouter_defaults;
 extern void load_defaults(void);
 extern void free_defaults(void);
 
-
 extern int nvram_critical(char *name);
 
 int nvram_size(void);
