@@ -318,6 +318,12 @@ struct mac80211_ac {
 
 extern void free_wifi_clients(struct wifi_client_info *wci);
 extern void free_mac80211_ac(struct mac80211_ac *ac);
+#else
+#define has_airtime_fairness(prefix) 0
+#define has_shortgi(prefix) 0
+#define has_subeamforming(prefix) 0
+#define has_mubeamforming(prefix) 0
+#define has_vht80(interface) 0
 #endif
 
 char *getCountryList(void);
