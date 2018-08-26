@@ -373,7 +373,7 @@ static int write_main(int argc, char *argv[])
 	trx.magic = STORE32_LE(trx.magic);
 	trx.len = STORE32_LE(trx.len);
 	trx.crc32 = STORE32_LE(trx.crc32);
-	
+
 	trx.len += sizeof(struct code_header2);
 #else
 
