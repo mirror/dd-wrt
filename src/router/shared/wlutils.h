@@ -119,36 +119,36 @@ struct wifi_client_info {
 	char ifname[20];
 	char is_wds;
 	char mac[18];
-	uint32_t uptime;
-	uint16_t txrate;
-	uint32_t rxrate;
-	int8_t signal;
-	int8_t signal_avg;
-	uint32_t noise;
-	uint32_t snr;
-	int8_t mcs;
-	int8_t rx_mcs;
+	unsigned int uptime;
+	unsigned short txrate;
+	unsigned int rxrate;
+	char signal;
+	char signal_avg;
+	unsigned int noise;
+	unsigned int snr;
+	char mcs;
+	char rx_mcs;
 	unsigned int is_40mhz:1, is_80mhz:1, is_160mhz:1, is_80p80mhz:1, is_ht:1, is_vht:1, is_short_gi:1, rx_is_40mhz:1, rx_is_80mhz:1, rx_is_160mhz:1, rx_is_80p80mhz:1, rx_is_ht:1, rx_is_vht:1, rx_is_short_gi:1,
 	    ht40intol:1, islzo:1;
-	uint32_t inactive_time;
-	uint32_t rx_packets;
-	uint32_t tx_packets;
-	uint32_t rx_compressed;
-	uint32_t tx_compressed;
-	uint32_t rx_bytes;
-	uint32_t tx_bytes;
+	unsigned int inactive_time;
+	unsigned int rx_packets;
+	unsigned int tx_packets;
+	unsigned int rx_compressed;
+	unsigned int tx_compressed;
+	unsigned int rx_bytes;
+	unsigned int tx_bytes;
 	struct wifi_client_info *next;
 };
 
 struct mac80211_info {
 	struct wifi_client_info *wci;
-	int8_t noise;
+	char noise;
 	unsigned long long channel_active_time;
 	unsigned long long channel_busy_time;
 	unsigned long long channel_receive_time;
 	unsigned long long channel_transmit_time;
 	unsigned long long extension_channel_busy_time;
-	uint32_t frequency;
+	unsigned int frequency;
 };
 
 void mac80211_lock(void);
