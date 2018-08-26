@@ -2,11 +2,11 @@ ifeq ($(ARCH),arm)
 MUSL_LD:=ld-musl-armhf.so.1
 KERNEL_HEADER_ARCH:=arm
 endif
-ifeq ($(CONFIG_ARCHITECTURE),northstar)
+ifeq ($(ARCHITECTURE),northstar)
 MUSL_LD:=ld-musl-arm.so.1
 KERNEL_HEADER_ARCH:=arm
 endif
-ifeq ($(CONFIG_ARCHITECTURE),openrisc)
+ifeq ($(ARCHITECTURE),openrisc)
 MUSL_LD:=ld-musl-arm.so.1
 KERNEL_HEADER_ARCH:=arm
 endif
