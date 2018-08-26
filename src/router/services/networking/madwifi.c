@@ -93,13 +93,11 @@ static void deconfigure_single(int count)
 		led_control(LED_SEC1, LED_OFF);
 
 	char vifs[128];
-#ifdef HAVE_ATH9K
 	if (is_ath9k(dev)) {
 		deconfigure_single_ath9k(count);
 		sysprintf("rm -f /tmp/ath%d_configured", count);
 		return;
 	}
-#endif
 #ifdef HAVE_MADWIFI_MIMO
 	if (is_ar5008(dev)) {
 		deconfigure_single_11n(count);
@@ -1466,14 +1464,12 @@ static void configure_single(int count)
 		led_control(LED_SEC0, LED_OFF);
 	if (!strncmp(dev, "ath1", 4))
 		led_control(LED_SEC1, LED_OFF);
-#ifdef HAVE_ATH9K
 	if (is_ath9k(dev)) {
 		configure_single_ath9k(count);
 		ath9k_start_supplicant(count);
 		sysprintf("touch /tmp/ath%d_configured", count);
 		return;
 	}
-#endif
 #ifdef HAVE_MADWIFI_MIMO
 	if (is_ar5008(dev)) {
 		configure_single_11n(count);
