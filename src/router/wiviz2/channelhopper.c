@@ -85,7 +85,6 @@ char *get_monitor(void);
 int set_channel(char *dev, int channel)
 {
 	struct iwreq wrq;
-#ifdef HAVE_ATH9K
 	int flags = 0;
 	if (is_ath9k(nvram_safe_get("wifi_display"))) {
 		if (channel > 14)
@@ -94,7 +93,6 @@ int set_channel(char *dev, int channel)
 			flags = 1;
 		sysprintf("iw dev %s scan freq %d passive", dev, ieee80211_ieee2mhz(channel, flags));
 	} else
-#endif
 	{
 		memset(&wrq, 0, sizeof(struct iwreq));
 		strncpy(wrq.ifr_name, get_monitor(), IFNAMSIZ);
