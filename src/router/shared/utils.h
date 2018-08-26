@@ -1135,10 +1135,13 @@ extern int has_channelsurvey(const char *prefix);
 extern int has_spectralscanning(const char *prefix);
 extern int getath9kdevicecount(void);
 #else
+#define is_ath9k(prefix) 0
 #define has_spectralscanning(prefix) 0
 #endif
 #ifdef HAVE_ATH10K
 extern int is_ath10k(const char *prefix);
+#else
+#define is_ath10k(prefix) 0
 #endif
 #ifdef HAVE_MVEBU
 extern int is_mvebu(const char *prefix);
