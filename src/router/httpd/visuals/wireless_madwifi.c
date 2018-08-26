@@ -197,9 +197,6 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 	return cnt;
 }
 
-#if defined(HAVE_MADWIFI_MIMO)
-extern int ej_active_wireless_if_11n(webs_t wp, int argc, char_t ** argv, char *ifname, int cnt, int turbo, int macmask);
-#endif
 #if defined(HAVE_ATH9K)
 extern int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifname, int cnt, int turbo, int macmask);
 #endif
@@ -222,12 +219,6 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			t = 2;
 		else
 			t = 1;
-#if defined(HAVE_MADWIFI_MIMO)
-		if (is_ar5008(devs)) {
-			cnt = ej_active_wireless_if_11n(wp, argc, argv, devs, cnt, t, macmask);
-			gotassocs = 1;
-		}
-#endif
 #ifdef HAVE_ATH9K
 		if (is_ath9k(devs)) {
 			if (has_ad(devs))
@@ -251,11 +242,6 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			char *vifs = nvram_get(vif);
 			if (vifs != NULL)
 				foreach(var, vifs, next) {
-#if defined(HAVE_MADWIFI_MIMO)
-				if (is_ar5008(devs))
-					cnt = ej_active_wireless_if_11n(wp, argc, argv, var, cnt, t, macmask);
-				else
-#endif
 					cnt = ej_active_wireless_if(wp, argc, argv, var, cnt, t, macmask);
 				}
 		}
@@ -294,11 +280,6 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 					continue;
 				if (nvram_matchi(wdsvarname, 0))
 					continue;
-#if defined(HAVE_MADWIFI_MIMO)
-				if (is_ar5008(devs))
-					cnt = ej_active_wireless_if_11n(wp, argc, argv, dev, cnt, t, macmask);
-				else
-#endif
 					cnt = ej_active_wireless_if(wp, argc, argv, dev, cnt, t, macmask);
 			}
 		}

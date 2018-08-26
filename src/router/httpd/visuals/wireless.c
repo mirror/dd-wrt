@@ -805,14 +805,14 @@ void ej_show_wireless_advanced(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_MADWIFI
 	int showrate = 1;
-#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
+#if defined(HAVE_ATH9K)
 	showrate = 0;
 	char ifname[32];
 	int i;
 	for (i = 0; i < 16; i++) {
 		sprintf(ifname, "ath%d", i);
 		if (ifexists(ifname)) {
-			if (!is_ath11n(ifname))
+			if (!is_ath9k(ifname))
 				showrate = 1;
 		} else
 			break;
