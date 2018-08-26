@@ -107,11 +107,9 @@ int has_2ghz(char *prefix)
 		RETURNVALUE(0);
 	}
 #endif
-#ifdef HAVE_ATH9K
 	if (is_ath9k(prefix)) {
 		RETURNVALUE(mac80211_check_band(prefix, 2));
 	}
-#endif
 
 	RETURNVALUE(has_athmask(dn, 0x8));
 	EXITVALUECACHE();
@@ -125,11 +123,9 @@ int has_5ghz(char *prefix)
 	if (has_ad(prefix)) {
 		RETURNVALUE(0);
 	}
-#ifdef HAVE_ATH9K
 	if (is_ath9k(prefix)) {
 		RETURNVALUE(mac80211_check_band(prefix, 5));
 	}
-#endif
 
 	RETURNVALUE(has_athmask(dn, 0x1));
 	EXITVALUECACHE();
@@ -1238,8 +1234,7 @@ int do80211priv(const char *ifname, int op, void *data, size_t len)
 
 long long wifi_getrate(char *ifname)
 {
-#if defined(HAVE_ATH9K) && !defined(HAVE_MVEBU)
-	if (is_ath9k(ifname)) {
+	if (is_ath9k(ifname) && !is_mvebu(ifname)) {
 		char physical[32];
 		bzero(physical, sizeof(physical));
 		strncpy(physical, ifname, 4);
@@ -1265,10 +1260,8 @@ long long wifi_getrate(char *ifname)
 			vhtmcs = mac80211_get_maxvhtmcs(physical);
 		int mcs = mac80211_get_maxmcs(physical);
 		int novht = 0;
-#ifdef HAVE_ATH10K
 		if (is_ath10k(ifname) && has_2ghz(physical))
 			novht = nvram_nmatch("0", "%s_turbo_qam", physical);
-#endif
 		sgi = sgi ? nvram_nmatch("1", "%s_shortgi", physical) : 0;
 		switch (interface->width) {
 		case 2:
@@ -1294,9 +1287,7 @@ long long wifi_getrate(char *ifname)
 		}
 		free(interface);
 		return rate * KILO;
-	} else
-#endif
-	{
+	} else {
 
 		struct iwreq wrq;
 
@@ -1635,7 +1626,6 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 {
 	struct iwreq wrq;
 
-#ifdef HAVE_ATH9K
 	if (has_ad(ifname)) {
 		struct wifi_interface *interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
 		bzero(interface, sizeof(struct wifi_interface));
@@ -1647,7 +1637,6 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 	if (is_ath9k(ifname)) {
 		return mac80211_get_interface(ifname);
 	}
-#endif
 
 	(void)bzero(&wrq, sizeof(struct iwreq));
 	strlcpy(wrq.ifr_name, ifname, IFNAMSIZ - 1);
@@ -1679,13 +1668,11 @@ int get_radiostate(char *ifname)
 	if (nvram_nmatch("disabled", "%s_net_mode", ifname))
 		return 0;
 	if (!has_ad(ifname)) {
-#ifdef HAVE_ATH9K
 		if (is_ath9k(ifname)) {
 			int state = getValueFromPath("/sys/kernel/debug/ieee80211/phy%d/ath9k/diag", get_ath9k_phy_ifname(ifname), "0x%x", NULL);
 			if (state == 0x00000003)
 				return 0;
 		}
-#endif
 	}
 	struct ifreq ifr;
 	int skfd = getsocket();
@@ -1827,10 +1814,8 @@ int is_ar5008(char *prefix)
 
 int is_ath11n(char *prefix)
 {
-#ifdef HAVE_ATH9K
 	if (is_ath9k(prefix))
 		return 1;
-#endif
 #ifdef HAVE_MADWIFI_MIMO
 	if (is_ar5008(prefix))
 		return 1;
@@ -1974,11 +1959,9 @@ struct wifi_channels *list_channels(char *devnr)
 
 int getWifiInfo(char *ifname, unsigned char *mac, int field)
 {
-#ifdef HAVE_ATH9K
 	if (is_ath9k(ifname)) {
 		return getWifiInfo_ath9k(ifname, mac, field);
 	}
-#endif
 	unsigned char *buf = calloc(24 * 1024, 1);
 
 	unsigned char *cp;
@@ -2066,11 +2049,9 @@ int getWifiInfo(char *ifname, unsigned char *mac, int field)
 
 int getassoclist(char *ifname, unsigned char *list)
 {
-#ifdef HAVE_ATH9K
 	if (is_ath9k(ifname)) {
 		return getassoclist_ath9k(ifname, list);
 	}
-#endif
 #ifdef HAVE_MADWIFI_MIMO
 	if (is_ar5008(ifname)) {
 		return getassoclist_11n(ifname, list);
@@ -2254,7 +2235,6 @@ void radio_on(int idx)
 
 int gettxantenna(char *ifname)
 {
-#ifdef HAVE_ATH9K
 	if (is_ath9k(ifname)) {
 #ifdef HAVE_CARLSONWIRELESS
 		if (!registered_has_cap(20))
@@ -2262,13 +2242,11 @@ int gettxantenna(char *ifname)
 #endif
 		return (mac80211_get_avail_tx_antenna(get_ath9k_phy_ifname(ifname)));
 	} else
-#endif
 		return (7);
 }
 
 int getrxantenna(char *ifname)
 {
-#ifdef HAVE_ATH9K
 	if (is_ath9k(ifname)) {
 #ifdef HAVE_CARLSONWIRELESS
 		if (!registered_has_cap(20))
@@ -2276,7 +2254,6 @@ int getrxantenna(char *ifname)
 #endif
 		return (mac80211_get_avail_rx_antenna(get_ath9k_phy_ifname(ifname)));
 	} else
-#endif
 		return (7);
 }
 
