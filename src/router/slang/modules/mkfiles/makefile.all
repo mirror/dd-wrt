@@ -1,0 +1,189 @@
+!ifndef MSDOS WIN16 WIN32 OS2
+# -*- mode: sh; mode: fold -*-
+# This file has been folded.  It is far more comprehensible when viewed with
+# an editor that supports folding.
+
+#{{{ MACRO descriptions
+
+This is a master makefile that from which DOS/Windows/OS2 makefiles
+may be derived.  A makefile for a particular system may be derived by
+passing this through the standalone DOS executable 'mkmake' which
+should be present in this directory.  For example, to produce a makefile
+suitable for OS2 using the EMX compiler use:
+
+    mkmake OS2 EMX < makefile.all > Makefile
+
+Similarly,
+
+    mkmake MSDOS BCC < makefile.all > Makefile
+
+will produce a makefile for MSDOS and the Borland C compiler.
+
+Currently supported environments in this file include:
+
+   WIN32
+
+Currently supported compilers include:
+
+   WIN32 - VC, CYGWIN32, MINGW32
+
+Each section must define the following macros:
+
+ CC             : The C compiler
+ CFLAGS		: Compiler flags
+ P		: Path separator used by make/compiler
+ O		: Object file extension
+ OBJDIR		: Subdirectory where lib slang objects were placed
+ COMPILE_TARGET	: Command used to produce object from .c file
+ LINK_TARGET    : Command used to produce the dll
+ SLANGDIR       : Location of slang library
+ SLANGINC       : Location of slang.h
+ COPY		: Copy command
+ RM		: Delete command
+
+Other macros include:
+
+ RSPFILE	: Name of response file
+ RSP_PREFIX	: Prefix for response file line (See its usage)
+ RSP_POSTFIX	: Postfix for response file line (See its usage)
+ DEF_FILE	: *.def file
+
+Special notes:
+
+ The P macro could be problematic when its value is a backslash (\).  Some
+ make programs may require it to be doubled, i.e., \\.  Whatever its value is,
+ it should expand to something that does not include whitespace.  Usually
+ this requires that it be followed by a '#' character; however, this may
+ result in the '#' character being quoted, or, escaped if the value of P is
+ a backslash.
+
+#}}}
+!else   #rest of file
+# Note:
+# This makefile was automatically generated from the master makefile.all.
+# The actual build is performed by a sub-make process.  See the rules below.
+TOOL_PREFIX =
+!ifdef WIN32 #{{{
+! ifdef VC #{{{
+# Makefile for slang as Win32 GUI using nmake under Visual C.
+CC = cl
+CFLAGS = /nologo /W3 /O2 /D "NDEBUG" /D $(CPU) /D "__WIN32__" /DSLANG_DLL=1
+P = \\
+O = obj # Object extension
+OBJDIR = mw32objs# Location of objects
+RM = del
+COPY = copy
+TARGET_C = $(TARGET)-module.c
+TARGET_DLL = $(TARGET)-module.dll
+TARGET_OBJ = $(TARGET)-module.$(O)
+LINK_TARGET = link /DLL /SUBSYSTEM:console /LIBPATH:$(SLANGDIR) wslang32.lib -out:$(TARGET_DLL) $(TARGET_OBJ)#
+COMPILE_TARGET = $(CC) /c $(CFLAGS) /I "." /I $(SLANGINC) $(TARGETINCS) /Fo $(TARGET_OBJ) $(TARGET_C)
+#
+ICONVDIR=..$(P)..$(P)iconv
+ICONVINCS = /I$(ICONVDIR)$(P)include
+ICONVLIBS = /LIBPATH:$(ICONVDIR)$(P)lib
+#
+ONIGDIR=..$(P)..$(P)onig
+ONIGINCS = /I$(ONIGDIR)$(P)include
+ONIGLIBS = /LIBPATH:$(ONIGDIR)$(P)lib
+#
+PNGDIR=..$(P)..$(P)png
+PNGINCS = /I$(PNGDIR)$(P)include
+PNGLIBS = /LIBPATH:$(PNGDIR)$(P)lib
+#
+ZLIBDIR=..$(P)..$(P)zlib
+ZLIBINCS = /I$(ZLIBDIR)$(P)include
+ZLIBLIBS = /LIBPATH:$(ZLIBDIR)$(P)lib
+
+# This needs changing for Windows NT on non-Intel processors
+CPU = _X86_
+#}}}
+! elifdef CYGWIN32 MINGW32 #{{{
+CC = $(TOOL_PREFIX)gcc
+P = /
+O = o
+OBJDIR = gw32objs
+!  ifdef DLL
+DLL_FLAGS = -DSLANG_DLL=1
+!  endif
+WFLAGS = -W -Wall
+!  ifdef CYGWIN32
+CFLAGS = -DWIN32 -O2 $(WFLAGS) -mno-cygwin $(DLL_FLAGS)
+RM = rm
+COPY = cp
+!  else
+CFLAGS = -DWIN32 -O2 $(WFLAGS) $(DLL_FLAGS)
+RM = del
+COPY = copy
+!  endif
+TARGET_C = $(TARGET)-module.c
+TARGET_DLL = $(TARGET)-module.dll
+TARGET_OBJ = $(TARGET)-module.$(O)
+LINK_TARGET = $(CC) -s -shared -o $(TARGET_DLL) $(TARGET_OBJ) \
+ -L$(SLANGDIR) -lslang $(TARGETLIBS) -luser32
+COMPILE_TARGET = $(CC) -c $(CFLAGS) -I$(SLANGINC) $(TARGETINCS) $(TARGET_C)
+INCFLAGS =
+LIBFLAGS =
+ICONVINCS = $(INCFLAGS)
+ICONVLIBS = $(LIBFLAGS) -liconv
+PNGINCS = $(INCFLAGS)
+PNGLIBS = $(LIBFLAGS) -lpng
+ZLIBINCS = $(INCFLAGS)
+ZLIBLIBS = $(LIBFLAGS) -lz
+ONIGINCS = $(INCFLAGS)
+ONIGLIBS = $(LIBFLAGS) -lonig
+#}}}
+! endif
+SLANGINC = ..$(P)src
+SLANGDIR = ..$(P)src$(P)$(OBJDIR)
+#}}}
+!endif
+# End of compiler specific section
+# ---------------------------------------------------------------------------
+# List of modules to compile.  Some/Most require additional libraries to be
+# installed.
+MODULES = slsmg rand csv
+# slsmg, rand, csv: no external dependencies
+# iconv: iconv library
+# png:   png library
+# pcre: Ported to Win32 by GnuWin32 group.
+# onig: onig RE library
+# varray-module.c: No external libs but requires porting to windows.
+# zlib: z compression/decompression library
+# select, fcntl, socket, termios, fork, sysconf: requires POSIX support
+
+all: $(MODULES)
+
+#iconv-module.c
+iconv:
+	$(MAKE) TARGET=iconv TARGETLIBS=$(ICONVLIBS) TARGETINCS=$(ICONVINCS) build-target
+onig:
+	$(MAKE) TARGET=onig TARGETLIBS=$(ONIGLIBS) TARGETINCS=$(ONIGINCS) build-target
+slsmg:
+	$(MAKE) TARGET=slsmg TARGETLIBS=$(SLSMGLIBS) TARGETINCS=$(SLSMGINCS) build-target
+rand:
+	$(MAKE) TARGET=rand TARGETLIBS=$(RANDLIBS) TARGETINCS=$(RANDINCS) build-target
+csv:
+	$(MAKE) TARGET=csv TARGETLIBS=$(CSVLIBS) TARGETINCS=$(CSVINCS) build-target
+pcre:
+	$(MAKE) TARGET=pcre TARGETLIBS=$(PCRELIBS) TARGETINCS=$(PCREINCS) build-target
+png:
+	$(MAKE) TARGET=png TARGETLIBS=$(PNGLIBS) TARGETINCS=$(PNGINCS) build-target
+zlib:
+	$(MAKE) TARGET=zlib TARGETLIBS=$(ZLIBLIBS) TARGETINCS=$(ZLIBINCS) build-target
+varray:
+	$(MAKE) TARGET=varray TARGETLIBS=$(VARRAYLIBS) TARGETINCS=$(VARRAYINCS) build-target
+#
+build-target: $(TARGET_DLL)
+$(TARGET_DLL): $(TARGET_OBJ)
+	$(LINK_TARGET)
+$(TARGET_OBJ): $(TARGET_C)
+	$(COMPILE_TARGET)
+#
+$(OBJDIR) :
+	-mkdir $(OBJDIR)
+clean:
+	$(RM) *.$(O)
+#
+.PHONY: $(MODULES) build-target
+!endif   #NOT HELP

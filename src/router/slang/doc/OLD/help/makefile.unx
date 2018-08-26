@@ -1,0 +1,8 @@
+# Uncomment if you have gcc 
+# CC = gcc
+#
+# If you compiled with termcap, uncomment next line.
+# THETERMCAP = -ltermcap
+
+slhelp: slhelp.c
+	$(CC) $(CFLAGS) slhelp.c -I../src -L../src -o slhelp -lslang $(THETERMCAP)

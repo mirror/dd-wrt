@@ -1,0 +1,34 @@
+Before building slsh, it is wise to first build the slang library and
+install it via, e.g., 'make install-elf'.
+
+On Unix, running 'make install' will put:
+
+    * the slsh executable in $prefix/bin/
+    * lib/slsh.rc in $prefix/etc/
+    * lib/*.sl in $prefix/share/slsh/
+
+(See ../INSTALL.unx for information about $prefix.) To change these
+locations, edit the Makefile.
+
+A mingw32 windows executable may be created using Makefile.g32 via
+
+   make -f Makefile.g32
+   make -f Makefile.g32 install
+
+As above, edit the makefile to change the installation locations.  You
+may also have to put something like:
+
+   set SLSH_PATH=C:/etc
+   set SLSH_CONF_DIR=C:/etc
+
+in your autoexec.bat file and then reboot.
+
+For a windows native slsh.exe use, e.g.,
+
+   ..\src\mkfiles\mkmake WIN32 VC < mkfiles\makefile.all > Makefile
+   nmake
+
+(change the options to mkmake and the 'make' program name to suit your
+development environment).
+
+Good luck.

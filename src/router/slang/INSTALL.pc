@@ -1,0 +1,39 @@
+-*- text -*-
+
+The slang library is available for OS/2, MSDOS, and WIN32 (windows
+9x/NT) systems.  This _includes_ the various GNU environments such as
+DJGPP, and MING32.  For CYGWIN, follow the UNIX instructions.
+
+Each of the src, modules, and slsh directories contains a mkfiles
+subdirectory that can be used to create Makefiles for non-CYGWIN
+builds.  The simplest approach to building the distribution is to
+invoke the build scripts located in the top-level mkfiles directory.
+
+For example, from a CMD window, a mingw32 version may be built and
+installed using a simple 3-step process:
+
+   1.    C:\path\to\slang> mkfiles\m32init.bat
+   2.    C:\path\to\slang> mingw32-make
+   3.    C:\path\to\slang> mingw32-make install
+
+The first step will generate makefiles for mingw32.  In particular, it
+will create a top-level makefile that contains the locations where the
+library and its components will get installed.  Before, going on to
+step 2, it is a good idea to look at the makefile and edit it if
+necessary.
+
+The second step will build the library, slsh, and the modules.  If
+something goes wrong here, fix it before going to step 3.
+
+The final step installs the library and its components.  The actual
+work is carried out by slsh, which was created in step 2.  Please
+note, if you make an changes the installation paths in the makefile
+after completing step 2, then you will need to rebuild it.  That is,
+run `mingw32-make clean', then go to step 2.
+
+Finally you will need to make sure that the $PREFIX/bin directory is
+in your PATH.  Assuming that this has been done, you should be able
+to run `slsh' at the CMD prompt.
+
+More information on the makefile generation process is available
+in src/mkfiles/README.

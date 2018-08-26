@@ -1,0 +1,69 @@
+# -*- sh -*-
+
+#---------------------------------------------------------------------------
+# Choose a C compiler.  It must understand prototypes.
+#-----------------------------------------------------------------------------
+CC = @CC@
+CFLAGS = @CFLAGS@
+LDFLAGS = @LDFLAGS@ @DYNAMIC_LINK_FLAGS@
+#-----------------------------------------------------------------------------
+# Directory where the various libraries are located.
+#-----------------------------------------------------------------------------
+SLANG_INCLUDE = ../src#             location of slang.h
+SLANG_LIB = $(SLANG_INCLUDE)/$(ARCH)objs#     location of libslang.a
+
+#---------------------------------------------------------------------------
+# Other libraries
+#---------------------------------------------------------------------------
+TCAPLIB = @TERMCAP@ @DYNAMIC_LINK_LIB@
+#TCAPLIB = -ltermcap
+
+#----------------------------------------------------------------------------
+# End of user configuration
+#----------------------------------------------------------------------------
+@SET_MAKE@
+SHELL = /bin/sh
+OTHERSTUFF = useropen pager keypad smgtest
+CONFIG_H = config.h
+
+ALL_CFLAGS = $(CFLAGS) -Dunix -I$(SLANG_INCLUDE)
+
+COMPILE_CMD = $(CC) -c $(ALL_CFLAGS)
+EXECLIBS = -L$(SLANG_LIB) -lslang @M_LIB@ $(TCAPLIB)
+EXECDEPS = $(SLANG_LIB)/libslang.a
+DOT_O_DEPS = demolib.c
+
+#---------------------------------------------------------------------------
+all: $(CONFIG_H) $(OTHERSTUFF)
+
+$(CONFIG_H) : $(SLANG_LIB)/libslang.a ../src/config.h
+	/bin/cp ../src/config.h $(CONFIG_H)
+$(SLANG_LIB)/libslang.a :
+	cd ../src; $(MAKE)
+#---------------------------------------------------------------------------
+# Housekeeping
+#---------------------------------------------------------------------------
+clean:
+	-/bin/rm -f *~ $(OTHERSTUFF) *.o
+distclean: clean
+	-/bin/rm -rf Makefile config.h
+#
+useropen : useropen.o $(useropen_DEPS) $(EXECDEPS)
+	$(CC) -o useropen $(LDFLAGS) useropen.o $(useropen_LIBS) $(EXECLIBS)
+useropen.o : useropen.c $(DOT_O_DEPS) $(useropen_O_DEP)
+	$(COMPILE_CMD) $(useropen_INC) $(EXECINC) useropen.c
+
+pager : pager.o $(pager_DEPS) $(EXECDEPS)
+	$(CC) -o pager $(LDFLAGS) pager.o $(pager_LIBS) $(EXECLIBS)
+pager.o : pager.c $(DOT_O_DEPS) $(pager_O_DEP)
+	$(COMPILE_CMD) $(pager_INC) $(EXECINC) pager.c
+
+keypad : keypad.o $(keypad_DEPS) $(EXECDEPS)
+	$(CC) -o keypad $(LDFLAGS) keypad.o $(keypad_LIBS) $(EXECLIBS)
+keypad.o : keypad.c $(DOT_O_DEPS) $(keypad_O_DEP)
+	$(COMPILE_CMD) $(keypad_INC) $(EXECINC) keypad.c
+
+smgtest : smgtest.o $(smgtest_DEPS) $(EXECDEPS)
+	$(CC) -o smgtest $(LDFLAGS) smgtest.o $(smgtest_LIBS) $(EXECLIBS)
+smgtest.o : smgtest.c $(DOT_O_DEPS) $(smgtest_O_DEP)
+	$(COMPILE_CMD) $(smgtest_INC) $(EXECINC) smgtest.c

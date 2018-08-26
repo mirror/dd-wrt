@@ -1,0 +1,131 @@
+readascii
+
+ SYNOPSIS
+  Read data from a text file
+
+ USAGE
+  Int_Type readascii (file, &v1,...&vN ; qualifiers)
+
+ DESCRIPTION
+ This function may be used to read formatted data from a text (as
+ opposed to binary) file and stores the values as arrays in the
+ specified variables `v1,..., vN' (passed as references).  It
+ returns the number of lines read from the file that matched the
+ format (implicit or specified by a qualifier).
+
+ The file parameter may be a string that gives the filename to read,
+ a `File_Type' object representing an open file pointer, or an
+ array of lines to be scanned.
+
+ QUALIFIERS
+ The following qualifiers are supported by the function
+
+   format=string        The sscanf format string to be used when
+                          parsing lines.
+   nrows=integer        The maximum number of matching rows to handle.
+   ncols=integer        If a single reference is passed, it will be
+                          assigned an array of ncols arrays of data values.
+   skip=integer         Skip the specified number of lines before
+                          scanning
+   maxlines=integer     Read no more than this many lines.
+   cols=Array_Type      Read only the specified (1-based) columns.
+                          Used with an implict format
+   delim=string         For an implicit format, use this as a field
+                          separator.  The default is whitespace.
+   type=string          For an implicit format, use this sscanf type
+                          specifier.  Default is %lf (Double_Type).
+   size=integer         Use this value as the initial size for the
+                          arrays.
+   dsize=integer        Use this value as an increment when
+                          reallocating the arrays.
+   stop_on_mismatch     Stop reading input when a line does not match
+                          the format
+   lastline=&v          Assign the last line read to the variable v.
+   lastlinenum=&v       Assign the last line number (1-based to v)
+   comment=string       Lines beginning with this string are ignored.
+   as_list              If present, then return data in lists rather
+                          than arrays.
+
+
+ EXAMPLE
+ As a simple example, consider a file called `imped.dat' containing
+
+    # Distance    Zr   Zi
+    0.0          50.2    0.1
+    1.0          47.3  -12.2
+    2.0          43.9  -15.8
+
+  The 3 columns may be read and stored in the variables `x', `zr',
+  `zi' using
+
+     n = readascii ("imped.dat", &x, &zr, &zi);
+
+ After return, The value of `x' will be set to
+ `[0.0,1.0,2.0]', `zr' to `[50.2,47.3,43.9]',
+ `zi' to `[0.1,-12.2,-15.8]', and `n' to 3.
+
+ Another way to read the same data is to use
+
+    n = readascii ("imped.dat", &data; ncols=3);
+
+ In this case, `data' will be `Array_Type[3]', with each
+ element of the array containing the array of data values for the
+ corresponding column.  As before, `n' will be 3.
+
+ As a more complex example, Consider a file called `score.dat'
+ that contains:
+
+    Name      Score     Date          Flags
+    Bill       73.2     03-Nov-2046    1
+    James      22.9     03-Nov-2046    1
+    Lucy       89.1     04-Nov-2046    3
+
+ This file may be read using
+
+     n = readascii ("score.dat", &name, &score, &date, &flags;
+                    format="%s %lf %s %d");
+
+ In this case, `n' will be 3, `name' and `date' will
+ be String_Type arrays, `score' will be a
+ Double_Type array, and `flags' will be an
+ `Int_Type' array.
+
+ Now suppose that only the score and flags column are of interest.
+ The `name' and `date' fields may be ignored using
+
+     n = readascii ("score.dat", &score, &flags";
+                    format="%*s %lf %*s %d");
+
+ Here, `%*s' indicates that the field is to be parsed as a
+ string, but not assigned to a variable.
+
+ Consider the task of reading columns from a file called
+ `books.dat' that contain quoted strings such as:
+
+     # Year  Author Title
+     "1605" "Miguel de Cervantes"  "Don Quixote de la Mancha"
+     "1885" "Mark Twain" "The Adventures of Huckleberry Finn"
+     "1955" "Vladimir Nabokov" "Lolita"
+
+ Such a file may be read using
+
+     n = readascii ("books.dat", &year, &author, &title;
+                    format="\"%[^\"]\" \"%[^\"]\" \"%[^\"]\"");
+
+
+
+ NOTES
+ This current version of this function does not handle missing data.
+ For such files, the `csv_readcol' function might be a better
+ choice.
+
+ By default, lines not matching the expected format are assumed to
+ be comments and are skipped.  So normally the `comment'
+ qualifier is not needed.  However, it is useful in conjunction with
+ the `stop_on_mismatch' qualifier to force the parser to skip
+ lines beginning with the comment string and continue scanning.
+
+ SEE ALSO
+  sscanf, atof, fopen, fgets, fgetslines, csv_readcol
+
+--------------------------------------------------------------

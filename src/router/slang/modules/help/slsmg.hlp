@@ -1,0 +1,201 @@
+slsmg_suspend_smg
+
+ USAGE
+  slsmg_suspend_smg ()
+
+--------------------------------------------------------------
+
+slsmg_resume_smg
+
+ USAGE
+  slsmg_resume_smg ()
+
+--------------------------------------------------------------
+
+slsmg_erase_eol
+
+ USAGE
+  slsmg_erase_eol ()
+
+--------------------------------------------------------------
+
+slsmg_gotorc
+
+ USAGE
+  slsmg_gotorc (Integer_Type r, c)
+
+--------------------------------------------------------------
+
+slsmg_erase_eos
+
+ USAGE
+  slsmg_erase_eos ()
+
+--------------------------------------------------------------
+
+slsmg_reverse_video
+
+ USAGE
+  slsmg_reverse_video ()
+
+--------------------------------------------------------------
+
+slsmg_set_color
+
+ USAGE
+  slsmg_set_color (Integer_Type c)
+
+--------------------------------------------------------------
+
+slsmg_normal_video
+
+ USAGE
+  slsmg_normal_video ()
+
+--------------------------------------------------------------
+
+slsmg_write_string
+
+ USAGE
+  slsmg_write_string (String_Type s)
+
+--------------------------------------------------------------
+
+slsmg_cls
+
+ USAGE
+  slsmg_cls ()
+
+--------------------------------------------------------------
+
+slsmg_refresh
+
+ USAGE
+  slsmg_refresh ()
+
+--------------------------------------------------------------
+
+slsmg_reset_smg
+
+ USAGE
+  slsmg_reset_smg ()
+
+--------------------------------------------------------------
+
+slsmg_init_smg
+
+ USAGE
+  slsmg_init_smg ()
+
+--------------------------------------------------------------
+
+slsmg_write_nstring
+
+ USAGE
+  slsmg_write_nstring (String_Type s, Integer_Type len)
+
+--------------------------------------------------------------
+
+slsmg_write_wrapped_string
+
+ USAGE
+  slsmg_write_wrapped_string (String_Type s, Integer_Type r, c, dr, dc, fill)
+
+--------------------------------------------------------------
+
+slsmg_char_at
+
+ USAGE
+  Integer_Type slsmg_char_at ()
+
+--------------------------------------------------------------
+
+slsmg_set_screen_start
+
+ USAGE
+  slsmg_set_screen_start (Integer_Type r, c)
+
+--------------------------------------------------------------
+
+slsmg_draw_hline
+
+ USAGE
+  slsmg_draw_hline (Integer_Type dn)
+
+--------------------------------------------------------------
+
+slsmg_draw_vline
+
+ USAGE
+  slsmg_draw_vline (Integer_Type dn)
+
+--------------------------------------------------------------
+
+slsmg_draw_object
+
+ USAGE
+  slsmg_draw_object (Integer_Type r, c, obj)
+
+--------------------------------------------------------------
+
+slsmg_draw_box
+
+ USAGE
+  slsmg_draw_box (Integer_Type r, c, dr, dc)
+
+--------------------------------------------------------------
+
+slsmg_get_column
+
+ USAGE
+  Integer_Type slsmg_get_column ()
+
+--------------------------------------------------------------
+
+slsmg_get_row
+
+ USAGE
+  Integer_Type slsmg_get_row ()
+
+--------------------------------------------------------------
+
+slsmg_forward
+
+ USAGE
+  slsmg_forward (Integer_Type n)
+
+--------------------------------------------------------------
+
+slsmg_set_color_in_region
+
+ USAGE
+  slsmg_set_color_in_region (Integer_Type color, r, c, dr, dc)
+
+--------------------------------------------------------------
+
+slsmg_define_color
+
+ USAGE
+  slsmg_define_color (Integer_Type obj, String_Type fg, bg)
+
+ DESCRIPTION
+  `fg' and `bg' colors can be one of the following strings:
+
+  "color0" or "black",      "color8"  or "gray",
+  "color1" or "red",        "color9"  or "brightred",
+  "color2" or "green",      "color10" or "brightgreen",
+  "color3" or "brown",      "color11" or "yellow",
+  "color4" or "blue",       "color12" or "brightblue",
+  "color5" or "magenta",    "color13" or "brightmagenta",
+  "color6" or "cyan",       "color14" or "brightcyan",
+  "color7" or "lightgray",  "color15" or "white"
+
+
+--------------------------------------------------------------
+
+slsmg_write_to_status_line
+
+ USAGE
+  slsmg_write_to_status_line (String_Type s)
+
+--------------------------------------------------------------

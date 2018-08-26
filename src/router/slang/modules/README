@@ -1,0 +1,98 @@
+This directory contains some examples of dynamically loaded modules
+that may be loaded via the `import' intrinsic function:
+
+  import ("NAME");
+
+This intrinsic function is available to applications that enable it
+via a call to the `SLang_init_import' function.  Of course, the OS
+must provide support for dynamic linking.
+
+When a slang script contains a line such as
+
+  import ("NAME");
+
+or
+
+  import ("NAME", "NAMESPACE");
+
+the interpreter will request that the operating system dynamically
+link to a shared object called NAME-module.so.  In order for such
+linking to take place, the OS must be able to find the module.  The
+search for the module takes place as follows:
+
+   First a search takes place along the set of paths returned by the
+   `get_import_module_path' function.  If not found, a search is
+   performed along the paths given by the `SLANG_MODULE_PATH'
+   environment variable.  Then the search will take place in the path
+   defined by the slang/src/Makefile MODULE_INSTALL_DIR variable.  If
+   the module has not been found along any of these paths, a system
+   dependent search will be performed (e.g., using the `LD_LIBRARY_PATH'
+   environment variable).
+
+Hence, if you are writing a module that will work with all slang
+applications, then module should be installed in the path specified by
+the Makefile variable MODULE_INSTALL_DIR, which by default is
+
+   $(exec_prefix)/lib/slang/v2/modules
+
+for this version of the library.
+
+If the module was sucessfully loaded, the slang library will call the
+function `init_NAME_ns' that NAME-module.so must define.  This
+function must have the prototype:
+
+  int init_NAME_module_ns (char *namespace);
+
+and shall return 0 upon success, or -1 if an error occurred.  The
+namespace argument corresponds to the second (optional) parameter of
+the import intrinsic indicating that the module should be imported
+into the specified namespace.  To this end, the module must call one
+of the SLns_* functions to load intrinsics into the namespace.
+
+****NOTE****
+
+  In order to support the inclusion of the module into more than one
+  namespace, this function may be called multiple times.  Hence, the
+  function should be coded in such a way that initialization code
+  that should execute no more than once does so only once.  See, e.g.,
+  the "register_pcre_type" function in pcre-module.c for an explicit
+  example.
+
+  Module writers are encouraged to supply a script called NAME.sl that
+  looks like:
+
+     import ("NAME");
+     % Optional code...
+     provide ("NAME");
+
+  Then a user would be able to load the module by using, e.g.,
+
+     require ("NAME");
+
+*************
+
+Optionally, the module may define a function called `deinit_NAME_module' that
+will be called by the interpreter to deinitialize the module.  This
+function must have the prototype:
+
+   void deinit_NAME_module (void);
+
+To ensure the correct prototypes for these functions, the module
+should include the line:
+
+    SLANG_MODULE(name);
+
+SLANG_MODULE is a macro that expands into function prototypes.
+
+See the examples in this directory for more information.
+
+To run these modules, use the slsh program in ../slsh/.
+slsh.c is a program that embeds the interpreter and may be used to
+test slang scripts.  In fact, it may be used to create unix executable
+scripts via, e.g.,
+
+#! /usr/bin/env slsh
+
+as the first line of the script.  See ../slsh/scripts subdirectory for
+examples of this approach.
+

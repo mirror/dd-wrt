@@ -1,0 +1,65 @@
+#! /usr/bin/env slsh
+% -*- mode: slang -*-
+_debug_info = 1;
+
+private define purge_file (file, age, print_option)
+{
+   variable st = stat_file (file);
+   if (st == NULL)
+     {
+	() = fprintf (stderr, "stat %s failed: %s\n", file, errno_string (errno));
+	return;
+     }
+
+   if (st.st_ctime >= age)
+     return;
+
+   if (print_option)
+     {
+	() = fprintf (stdout, "%s\n", file);
+	return;
+     }
+
+   if (-1 == remove (file))
+     () = fprintf (stderr, "remove %s failed: %s\n", file, errno_string (errno));
+}
+
+private define purge_usage ()
+{
+   () = fprintf (stderr, "Usage: %s [-n] NUM-DAYS-OLD files...\n", __argv[0]);
+   () = fprintf (stderr, "  Files older than NUM-DAYS-OLD be deleted.\n");
+   () = fprintf (stderr, "  -n ==> Just print the files to be removed but do not remove them.\n");
+   exit (1);
+}
+
+private define main (argc, argv)
+{
+   variable age, i, print_option, file;
+
+   if (argc < 3) purge_usage ();
+
+   i = 2;
+   print_option = 0;
+   if (argv[1] == "-n")
+     {
+	i++;
+	print_option = 1;
+	if (argc < 4)
+	  purge_usage ();
+     }
+
+   age = __argv[i-1];
+   if (String_Type == _slang_guess_type (age))
+     purge_usage ();
+
+   age = _time() - atof(age) * 24 * 3600;
+
+   foreach (argv[[i:]])
+     {
+	file = ();
+	purge_file (file, age, print_option);
+     }
+   exit (0);
+}
+
+main (__argc, __argv);

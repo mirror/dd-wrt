@@ -1,0 +1,3 @@
+Information about upgrading from slang 1 is now contained in the
+appendices of doc/txt/slang.txt (interpreter) and doc/text/cslang.txt
+(C API).

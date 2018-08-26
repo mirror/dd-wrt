@@ -1,0 +1,22 @@
+glob
+
+ SYNOPSIS
+  Find files using wildcards
+
+ USAGE
+  files = glob (pattern1, ..., patternN);
+
+ DESCRIPTION
+  This function returns a list of files whose names match the specified
+  globbing patterns.  A globbing pattern is one in which '?' matches a
+  single character, and '*' matches 0 or more characters.
+
+ EXAMPLE
+
+   files = glob ("*.c", "*.h");
+
+
+ SEE ALSO
+  glob_to_regexp
+
+--------------------------------------------------------------

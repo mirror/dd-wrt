@@ -1,0 +1,134 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="LinuxDoc-Tools 0.9.50">
+ <TITLE> SLSH Library Reference (version 2.2.0): Structure Functions</TITLE>
+ <LINK HREF="slshfun-7.html" REL=next>
+ <LINK HREF="slshfun-5.html" REL=previous>
+ <LINK HREF="slshfun.html#toc6" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="slshfun-7.html">Next</A>
+<A HREF="slshfun-5.html">Previous</A>
+<A HREF="slshfun.html#toc6">Contents</A>
+<HR>
+<H2><A NAME="s6">6.</A> <A HREF="slshfun.html#toc6">Structure Functions</A></H2>
+
+<P>These functions are defined in <CODE>structfuns.sl</CODE>.</P>
+<H2><A NAME="struct_filter"></A> <A NAME="ss6.1">6.1</A> <A HREF="slshfun.html#toc6.1"><B>struct_filter</B></A>
+</H2>
+
+<P>
+<DL>
+<DT><B> Synopsis </B><DD>
+<P>Apply a filter to a struct</P>
+<DT><B> Usage </B><DD>
+<P><CODE>struct_filter(Struct_Type s, Int_Type i)</CODE></P>
+<DT><B> Description </B><DD>
+<P>This function applies the filter <CODE>i</CODE> to the fields of a structure
+by performing the operation
+<BLOCKQUOTE><CODE>
+<PRE>
+    s.field = s.field[i];
+</PRE>
+</CODE></BLOCKQUOTE>
+
+on each array field of the structure.  Scalar fields will not be modified.</P>
+<P>The <CODE>dim</CODE> qualifier may be used to filter on a specific array
+dimension.  For example, consider the structure
+<BLOCKQUOTE><CODE>
+<PRE>
+    s = struct { a = Int_Type[10], b = Int_Type[10,20] };
+</PRE>
+</CODE></BLOCKQUOTE>
+
+Then
+<BLOCKQUOTE><CODE>
+<PRE>
+    struct_filter (s, i; dim=0);
+</PRE>
+</CODE></BLOCKQUOTE>
+
+would produce the same result as
+<BLOCKQUOTE><CODE>
+<PRE>
+    s.a = s.a[i];
+    s.b = s.b[i,*];
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<DT><B> Notes </B><DD>
+<P>By default this function modifies the fields of the structure passed
+to it.  Sometimes it is desirable to create a new structure and
+leave the old one untouched.  This may be achieved using the
+<CODE>copy</CODE> qualifier, e.g.,
+<BLOCKQUOTE><CODE>
+<PRE>
+     filtered_s = struct_filter (s, i; copy);
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<DT><B> See Also </B><DD>
+<P><CODE>where</CODE></P>
+</DL>
+</P>
+
+
+<H2><A NAME="struct_combine"></A> <A NAME="ss6.2">6.2</A> <A HREF="slshfun.html#toc6.2"><B>struct_combine</B></A>
+</H2>
+
+<P>
+<DL>
+<DT><B> Synopsis </B><DD>
+<P>Combine two or more structures</P>
+<DT><B> Usage </B><DD>
+<P><CODE>new_s = struct_combine (s1, s2, ...)</CODE></P>
+<DT><B> Description </B><DD>
+<P>This function creates a new structure from two or more structures
+<CODE>s1</CODE>, <CODE>s2</CODE>,....  The new structure will have fields formed by the
+union of the fields of the input structures.  The new structure fields will
+be given values that correspond to the fields of the input structures.  If
+more than one structure has the same field name, the value of the field will
+be given by the last structure.</P>
+<P>If any of the input values is a string, or an array of strings, then
+it will be interpreted as a representing a structure with the
+corresponding field names.  This is a useful feature when one wants
+to expand a structure with new field names, e.g.,
+<BLOCKQUOTE><CODE>
+<PRE>
+    s = struct { foo, bar };
+    t = struct_combine (s, "baz");   % t = struct {foo, bar, baz};
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<DT><B> See Also </B><DD>
+<P><CODE>get_struct_field_names</CODE></P>
+</DL>
+</P>
+
+
+<H2><A NAME="struct_field_exists"></A> <A NAME="ss6.3">6.3</A> <A HREF="slshfun.html#toc6.3"><B>struct_field_exists</B></A>
+</H2>
+
+<P>
+<DL>
+<DT><B> Synopsis </B><DD>
+<P>Determine whether or not a structure contains a specified field</P>
+<DT><B> Usage </B><DD>
+<P><CODE>Int_Type struct_field_exists (Struct_Type s, String_Type f)</CODE></P>
+<DT><B> Description </B><DD>
+<P>This function may be used to determine if a structure contains a field with
+a specfied name.  It returns 0 if the structure does not contain the field,
+or non-zero if it does.</P>
+<DT><B> See Also </B><DD>
+<P><CODE>get_struct_field_names</CODE></P>
+</DL>
+</P>
+
+
+<HR>
+<A HREF="slshfun-7.html">Next</A>
+<A HREF="slshfun-5.html">Previous</A>
+<A HREF="slshfun.html#toc6">Contents</A>
+</BODY>
+</HTML>

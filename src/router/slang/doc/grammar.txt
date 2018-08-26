@@ -1,0 +1,125 @@
+This grammar was derived from slparse.c --- it is out-dated.
+
+statement:
+	 compound-statement
+	 if ( expression ) statement
+	 if ( expression ) statement else statement
+	 !if ( expression ) statement
+	 loop ( expression ) statement
+	 _for ( expression ) statement
+	 while ( expression ) statement
+	 do statement while (expression) ;
+	 for ( expressionopt ; expressionopt ; expressionopt ) statement
+	 ERROR_BLOCK statement
+	 EXIT_BLOCK statement
+	 USER_BLOCK0 statement
+	 USER_BLOCK1 statement
+	 USER_BLOCK2 statement
+	 USER_BLOCK3 statement
+	 USER_BLOCK4 statement
+	 forever statement
+	 break ;
+	 continue ;
+	 return expressionopt ;
+	 variable variable-list ;
+	 struct struct-decl ;
+	 define identifier function-args ;
+	 define identifier function-args compound-statement
+	 switch ( expression ) statement
+	 rpn-line
+	 at-line
+	 push ( expression )
+	 ( expression ) = expression ;
+	 expression ;
+	 expression :
+
+statement-list:
+	 statement
+	 statement-list statement
+
+compound-statement:
+	 { statement-list }
+
+variable-list:
+	variable-decl
+	variable-decl variable-list
+
+variable-decl:
+	identifier
+	identifier = simple-expression
+
+struct-declaration:
+	struct { struct-field-list };
+
+struct-field-list:
+	struct-field-name , struct-field-list
+	struct-field-name
+
+struct-declaration:
+	typedef struct { struct-field-list } Type_Name;
+
+struct-field-list:
+	struct-field-name , struct-field-list
+	struct-field-name
+
+function-args:
+	( args-dec-opt )
+
+args-decl-opt:
+	identifier
+	args-decl , identifier
+
+expression:
+	 simple_expression
+	 simple-expression , expression
+      <none>
+
+% Note: simple-expression groups operators OP1 at same level.  The
+% actual implementation will not do this.
+simple-expression:
+	 unary-expression
+	 binary-expression BINARY-OP unary-expression
+	 andelse xxelse-expression-list
+	 orelse xxelse-expression-list
+
+xxelse-expression-list:
+	{ expression }
+	xxelse-expression-list { expression }
+binary-expression:
+        unary-expression
+	unary-expression BINARY-OP binary-expression
+
+unary-expression:
+	 postfix-expression
+	 ++ postfix-expression
+	 -- postfix-expression
+	 case unary-expression
+	 OP3 unary-expression
+	 (OP3: + - ~ & not @)
+
+postfix-expression:
+	 primary-expression
+	 postfix-expression [ expression ]
+	 postfix-expression ( function-args-expression )
+	 postfix-expression . identifier
+	 postfix-expression ^ unary-expression
+	 postfix-expression ++
+	 postfix-expression --
+	 postfix-expression = simple-expression
+	 postfix-expression += simple-expression
+	 postfix-expression -= simple-expression
+
+primary-expression:
+	literal
+	identifier
+	( expression_opt )
+	[ inline-array-expression ]
+	&identifier
+	struct-definition
+	__tmp(literal)
+
+inline-array-expression:
+        expression
+	expression : expression
+	expression : expression : expression
+

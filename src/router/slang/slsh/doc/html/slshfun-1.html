@@ -1,0 +1,45 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="LinuxDoc-Tools 0.9.50">
+ <TITLE> SLSH Library Reference (version 2.2.0): Introduction</TITLE>
+ <LINK HREF="slshfun-2.html" REL=next>
+
+ <LINK HREF="slshfun.html#toc1" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="slshfun-2.html">Next</A>
+Previous
+<A HREF="slshfun.html#toc1">Contents</A>
+<HR>
+<H2><A NAME="s1">1.</A> <A HREF="slshfun.html#toc1">Introduction</A></H2>
+
+
+
+<P>This document describes the functions that are part of the <B>slsh</B>
+library.  These functions are written in <B>S-Lang</B> and make use of
+lower-level intrinsic functions that are described in the
+<A HREF="http://www.jedsoft.org/slang/doc/html/slangfun.html">Intrinsic Function Reference Manual</A>.
+As the <B>slsh</B> library functions make no use of <B>slsh</B> intrinsics, they
+may be used by any conforming <B>S-Lang</B> application.</P>
+<P>Before a particular <B>slsh</B> library function may be used, the file that
+defines the function must first be loaded.  The recommended mechanism
+for loading a file is through the use of the
+<CODE>require</CODE> function, e.g.,
+<BLOCKQUOTE><CODE>
+<PRE>
+   require ("structfuns");
+</PRE>
+</CODE></BLOCKQUOTE>
+
+will make the functions defined in the file <CODE>structfuns.sl</CODE>
+available to the interpreter.  The <CODE>require</CODE> function itself is
+defined in the file <CODE>require.sl</CODE>, which a conforming application
+will automatically load.</P>
+
+<HR>
+<A HREF="slshfun-2.html">Next</A>
+Previous
+<A HREF="slshfun.html#toc1">Contents</A>
+</BODY>
+</HTML>

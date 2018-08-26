@@ -1,0 +1,171 @@
+#!/usr/bin/env slsh
+
+% This is a simple-minded implementation of a highlighting grep program
+% designed to test the pcre module.
+import ("pcre");
+
+static define usage ()
+{
+   ()=fprintf(stderr, "Usage: %s [-inl] pattern [files...]\n", __argv[0]);
+   exit (1);
+}
+
+static variable MATCH = 1;
+static variable LINENUM = 2;
+static variable FILENAME = 4;
+static variable Output_Format = 0;
+
+static define grep (file, p)
+{
+   variable fp;
+
+   if (file == NULL)
+     fp = stdin;
+   else
+     fp = fopen (file, "r");
+
+   if (fp == NULL)
+     {
+	fprintf (stderr, "*** Unable to open %s\n", file);
+	return;
+     }
+
+   variable linenum = 0;
+   foreach (fp) using ("line")
+     {
+	variable str = ();
+	linenum++;
+
+	if (pcre_exec (p, str, 0))
+	  {
+	     variable i0, i1, i;
+
+	     switch (Output_Format)
+	       {
+		case FILENAME:
+		  () = fprintf (stdout, "%s\n", file);
+		  return;
+	       }
+	       {
+		case LINENUM:
+		  () = fprintf (stdout, "%d\n", linenum);
+		  continue;
+	       }
+	       {
+		case (MATCH|LINENUM):
+
+		  () = fprintf (stdout, "%d:", linenum);
+	       }
+	       {
+		case (LINENUM|FILENAME):
+		  () = fprintf (stdout, "%s:%d\n", file, linenum);
+		  continue;
+	       }
+	       {
+		case (LINENUM|FILENAME|MATCH):
+		  () = fprintf (stdout, "%s:%d:", file, linenum);
+	       }
+	       {
+		case (FILENAME|MATCH):
+		  () = fprintf (stdout, "%s:", file);
+	       }
+
+	     do
+	       {
+		  i = pcre_nth_match (p, 0);
+		  i0 = i[0];
+		  i1 = i[1];
+		  if (i1 <= i0)
+		    break;
+		  if (i0 > 0)
+		    () = fprintf (stdout, "%s", str[[0:i0-1]]);
+		  () = fprintf (stdout, "\e[7m%s\e[m", str[[i0:i1-1]]);
+		  str = str[[i1:]];
+	       }
+	     while (pcre_exec (p, str, 0));
+	     () = fprintf (stdout, "%s", str);
+	  }
+     }
+}
+
+static define main (argc, argv)
+{
+   variable i;
+   variable files, pattern;
+   variable options;
+
+   i = 1;
+   files = NULL;
+   pattern = NULL;
+   options = 0;
+   Output_Format = MATCH;
+
+   while (i < argc)
+     {
+	variable arg = __argv[i];
+	i++;
+
+	if (arg[0] == '-')
+	  {
+	     foreach (arg[[1:]])
+	       {
+		  variable ch = ();
+		  switch (ch)
+		    {
+		     case 'i':
+		       options |= PCRE_CASELESS;
+		    }
+		    {
+		     case 'l':
+		       Output_Format &= ~MATCH;
+		       Output_Format |= FILENAME;
+		    }
+		    {
+		     case 'n':
+		       Output_Format |= LINENUM;
+		    }
+		    {
+		       () = fprintf (stderr, "Unsupported option: '%c'\n", ch);
+		       exit (1);
+		    }
+	       }
+	     continue;
+	  }
+
+	pattern = arg;
+	break;
+     }
+
+   if (pattern == NULL)
+     usage ();
+
+   variable p = pcre_compile (pattern, options);
+
+   if (i == __argc)
+     {
+	if (isatty (stdin))
+	  usage ();
+
+	Output_Format &= ~FILENAME;
+	grep (NULL, p);
+	return;
+     }
+
+   files = argv[[i:]];
+
+   if (length(files) > 1)
+     Output_Format |= FILENAME;
+
+   foreach (files)
+     {
+	variable f = ();
+	grep (f, p);
+     }
+}
+
+public define slsh_main ()
+{
+   main (__argc, __argv);
+   exit (0);
+}
+

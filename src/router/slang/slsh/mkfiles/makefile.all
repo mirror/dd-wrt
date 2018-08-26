@@ -1,0 +1,401 @@
+!ifndef MSDOS WIN16 WIN32 OS2
+# -*- mode: sh; mode: fold -*-
+# This file has been folded.  It is far more comprehensible when viewed with
+# an editor that supports folding.
+
+#{{{ MACRO descriptions
+
+This is a master makefile that from which DOS/Windows/OS2 makefiles
+may be derived.  A makefile for a particular system may be derived by
+passing this through the standalone DOS executable 'mkmake' which
+should be present in this directory.  For example, to produce a makefile
+suitable for OS2 using the EMX compiler use:
+
+    mkmake OS2 EMX < makefile.all > Makefile
+
+Similarly,
+
+    mkmake MSDOS BCC < makefile.all > Makefile
+
+will produce a makefile for MSDOS and the Borland C compiler.
+
+Currently supported environments include:
+
+   MSDOS WIN16 WIN32 OS2
+
+Currently supported compilers include:
+
+   MSDOS - BCC, DJGPP, DJGPP_V1
+   WIN16 - BCC
+   WIN32 - BCC, VC, CYGWIN32, MINGW32
+     OS2 - EMX, ICC
+
+If are linking against a dll version of slang,
+add a 'DLL' parameter to mkmake:
+
+   mkmake WIN32 VC DLL < makefile.all > Makefile
+
+(right now this is known to work only with Visual Studio).
+
+Each section must define the following macros:
+
+ CC             : The C compiler
+ CFLAGS		: Compiler flags
+ P		: Path separator used by make/compiler
+ O		: Object file extension
+ SRCDIR		: SRC location (.)
+ OBJDIR		: Directory where objects are placed
+ COMPILE_CMD	: Command used to produce object from .c file
+ LINK_CMD       : Command used to produce executable
+ LIBDEPS	: Other dependencies library depends upon
+ TARGET		: Primary target name
+ SLANGLIB       : Location of slang library
+ SLANGINC       : Location of slang.h
+ TARGET_DEPS    : Misc stuff to build
+ COMPILE_DEPS   : Dependencies associated with COMPILE_CMD
+ COPY		: Copy command
+ RM		: What to use to delete a file
+
+Other macros include:
+
+ RSPFILE	: Name of response file
+ RSP_PREFIX	: Prefix for response file line (See its usage)
+ RSP_POSTFIX	: Postfix for response file line (See its usage)
+ DEF_FILE       : *.def file
+ RC		: resource compiler
+ RC_FILE	: resource compiler base name (e.g. wjed)
+
+Special notes:
+
+ The P macro could be problematic when its value is a backslash (\).  Some
+ make programs may require it to be doubled, i.e., \\.  Whatever its value is,
+ it should expand to something that does not include whitespace.  Usually
+ this requires that it be followed by a '#' character; however, this may
+ result in the '#' character being quoted, or, escaped if the value of P is
+ a backslash.
+
+#}}}
+!else   #rest of file
+# Note:
+# This makefile was automatically generated from the master makefile.all.
+TOOL_PREFIX =
+!ifdef MSDOS #{{{
+! ifdef DJGPP DJGPP_V1 #{{{
+CC = gcc
+CFLAGS = -O2 -fno-strength-reduce -Wall
+P = /# path sep
+O = o # Object extension
+SRCDIR = .# Location of sources
+OBJDIR = djgobjs# Location of objects
+TARGET = $(OBJDIR)/slsh.exe
+RSPFILE = $(OBJDIR)/link.rsp
+RSP_PREFIX =
+RSP_POSTFIX =
+SLANGINC = ../src
+SLANGLIB = $(SLANGINC)/$(OBJDIR)
+COMPILE_CMD = $(CC) -c $(CFLAGS) -I$(SLANGINC) -o #
+!   ifndef DJGPP_V1
+LINK_CMD = $(CC) -s -L$(SLANGLIB) -o $(TARGET) @$(RSPFILE) -lslang
+!   else
+GO32 = G:/djgpp/bin/go32.exe
+!   endif
+COMPILE_DEPS =
+TARGET_DEPS =
+RM = rm
+COPY = cp
+#}}}
+! elifdef BCC #{{{
+CC = bcc
+CFLAGS = -G- -H -N -O1 -w -ml -Dmsdos
+P = \\
+O = obj
+SRCDIR = .
+OBJDIR = bccobjs
+TARGET = $(OBJDIR)\slsh.exe
+RSPFILE = $(OBJDR)\bcc.rsp
+RSP_PREFIX =
+RSP_POSTFIX =
+SLANGINC = ..\src
+SLANGLIB = $(SLANGINC)\$(OBJDIR)
+COMPILE_CMD = $(CC) -c $(CFLAGS) -I$(SLANGINC) -o#  <-- no tailing space
+LINK_CMD = $(CC) -ml -L$(SLANGLIB) -e$(TARGET) /P=4096 @$(RSPFILE) slang.lib
+COMPILE_DEPS =
+TARGET_DEPS =
+RM = del
+COPY = copy
+#}}}
+! endif
+#}}}
+!endif
+!ifdef WIN16 #{{{
+! ifdef BCC #{{{
+CC = bcc
+CFLAGS = -G- -H -N -w -ml -Dmsdos -D__WIN16__ -W
+#CFLAGS = -N -v  -H -w -ml -Dmsdos -DMSWINDOWS -WS
+OBJDIR = mswobjs# Location of objects
+TARGET = $(OBJDIR)\slsh.exe
+BCCLIB = C:\BCC31\LIB
+O = obj # Object extension
+P = \\
+SRCDIR = .# Location of sources
+SLANGINC = ..\src
+SLANGLIB = $(SLANGINC)\$(OBJDIR)
+RSPFILE = $(OBJDIR)\mswin.rsp
+RSP_PREFIX =
+RSP_POSTFIX = +
+COMPILE_CMD = $(CC) -c $(CFLAGS) -I$(SLANGINC) -o#
+LINK_CMD = tlink /Twe/m/v/c/P/i/s $(BCCLIB)\c0wl @$(RSPFILE)
+MSWSHELL_EXE = ..\bin\mswshell.exe
+DEF_FILE = $(OBJDIR)\slsh.def
+TARGET_DEPS = $(MSWSHELL_EXE) $(DEF_FILE)
+COMPILE_DEPS =
+RM = del
+COPY = copy
+#}}}
+! endif
+#}}}
+!endif
+!ifdef WIN32 #{{{
+! ifdef BCC #{{{
+CC = bcc32
+#CFLAGS = -G- -H -N -w -D__WIN32__ -W
+CFLAGS = -G- -H -N -w -W -w-sig -w-stu
+# Location of objects
+OBJDIR = bw32objs
+TARGET = $(OBJDIR)\slsh.exe
+BCCLIB = C:\BC5\LIB
+# Object extension
+O = obj
+P = \\ # Comment to prevent continuation marker confusion with Borland Make
+SRCDIR = .
+RSPFILE = $(OBJDIR)\link.rsp
+RSPFILE2 = $(OBJDIR)\link2.rsp
+RSP_PREFIX =
+RSP_POSTFIX = +
+COMPILE_CMD = $(CC) -c $(CFLAGS) -I$(SLANGINC) -o
+LINK_CMD = tlink32 /Tpe /ap /c /x $(BCCLIB)\c0x32 @$(RSPFILE), $(OBJDIR)$(P)slsh.exe, @$(RSPFILE2)
+DEF_FILE =
+TARGET_DEPS = $(RSPFILE2)
+COMPILE_DEPS =
+RM = del
+COPY = copy
+#}}}
+! elifdef VC #{{{
+# Makefile for slang as Win32 GUI using nmake under Visual C.
+CC = cl
+CFLAGS = /nologo /W3 /O2 /D "NDEBUG" /D $(CPU) /D "__WIN32__" /D "_CRT_SECURE_NO_WARNINGS" /D "_CRT_NONSTDC_NO_DEPRECATE" /I "." /I $(SLANGINC)
+P = \\
+O = obj # Object extension
+SRCDIR = .# Location of sources
+OBJDIR = mw32objs# Location of objects
+RSPFILE = $(OBJDIR)\link.rsp
+RSP_PREFIX =
+RSP_POSTFIX =
+COMPILE_RSP = $(OBJDIR)\comp.rsp
+COMPILE_CMD = $(CC) /c $(CFLAGS) @$(COMPILE_RSP) /Fo # /Fo specifies object file name
+RC = rc
+RC_FILE = mkfiles\slsh
+RES_FILE = $(OBJDIR)\slsh.res
+TARGET_DEPS = $(RES_FILE)
+COMPILE_DEPS = $(COMPILE_RSP)
+RM = del
+COPY = copy
+LINK_CMD = link -out:$(OBJDIR)$(P)slsh.exe /SUBSYSTEM:console @$(RSPFILE) $(RES_FILE)
+# This needs changing for Windows NT on non-Intel processors
+CPU = _X86_
+#}}}
+! elifdef CYGWIN32 MINGW32 #{{{
+CC = $(TOOL_PREFIX)gcc
+P = /
+WFLAGS = -W -Wall
+!  ifdef CYGWIN32
+CFLAGS = -DWIN32 -O2 -fno-strength-reduce $(WFLAGS) -mno-cygwin
+!  else
+!   ifdef DLL
+DLL_FLAGS = -DSLANG_DLL=1
+!   endif
+CFLAGS = -DWIN32 -O2 -fno-strength-reduce $(WFLAGS) $(DLL_FLAGS)
+!  endif
+LINK_CMD = $(CC) -s -L$(SLANGLIB) -o $(OBJDIR)$(P)slsh.exe $(OBJS) -lslang -luser32
+OBJDIR = gw32objs# Location of objects
+O = o # Object extension
+SRCDIR = .# Location of sources
+RSPFILE =
+RSP_PREFIX =
+RSP_POSTFIX =
+DEFS = -DSLSH_CONF_DIR='"$(SLSH_CONF_DIR)"' -DSLSH_PATH='"$(SLSH_LIB_DIR)"'
+COMPILE_CMD = $(CC) -c $(CFLAGS) $(DEFS) -I$(SLANGINC) -o #
+SLSH_CONF_DIR = /etc
+SLSH_LIB_DIR = /usr/share/slsh
+COMPILE_DEPS =
+RM = rm
+COPY = cp
+#}}}
+! endif
+TARGET = $(OBJDIR)$(P)slsh.exe
+SLANGINC = ..$(P)src
+SLANGLIB = ..$(P)src$(P)$(OBJDIR)
+#}}}
+!endif
+!ifdef OS2 #{{{
+! ifdef EMX #{{{
+CC = gcc -Zmtd
+CFLAGS = -DOS2 -D__os2__
+P = /
+O = o # Object extension
+SRCDIR = .# Location of sources
+OBJDIR = emxobjs# Location of objects
+SLANGINC = ../src
+SLANGLIB = ../src/$(OBJDIR)
+TARGET = $(OBJDIR)/slsh.exe
+COMPILE_CMD = $(CC) -c $(CFLAGS) -I$(SLANGINC) -o #
+DEF_FILE = $(OBJDIR)/slsh.def
+LINK_CMD = $(CC) -o $(TARGET) $(OBJS) -L$(SLANGLIB) $(DEF_FILE) -lslang -lvideo
+TARGET_DEPS = $(DEF_FILE)
+COMPILE_DEPS =
+RM = rm
+COPY = cp
+#}}}
+! elifdef WCC #{{{
+CC = wcc386
+CFLAGS = -DOS2 -D__os2__ -bm -bt=os2 #
+P = \#
+O = obj # Object extension
+SRCDIR = .# Location of sources
+OBJDIR = wccobjs# Location of objects
+SLANGINC = ..\src
+SLANGLIB = ..\src\$(OBJDIR)\slang.lib
+TARGET = $(OBJDIR)\slsh.exe
+COMPILE_CMD = $(CC) $(CFLAGS) -I=$(SLANGINC) -fo=#
+DEF_FILE =
+LINK_CMD = wcl386 -fe=$(TARGET) $(OBJS) $(SLANGLIB) -k150000 # -lvideo
+TARGET_DEPS =
+COMPILE_DEPS =
+RM = del
+COPY = copy
+#}}}
+! elifdef ICC #{{{
+CC = icc
+CFLAGS = -Q+ -W3 -DOS2 -D__os2__ -Gm+ -Wcnd-
+P = \#
+O = obj
+SRCDIR = .
+OBJDIR = iccobjs
+SLANGINC = ..\src
+SLANGLIB = ..\src\$(OBJDIR)\slang.lib
+TARGET = $(OBJDIR)\slsh.exe
+COMPILE_CMD = $(CC) -c $(CFLAGS) -I$(SLANGINC) -Fo#  <-- no trailing space
+DEF_FILE =
+LINK_CMD = $(CC) -Fe$(TARGET) $(OBJS) $(SLANGLIB)
+TARGET_DEPS =
+COMPILE_DEPS =
+RM = del
+COPY = copy
+#}}}
+! endif
+#}}}
+!endif
+#-------------------------------------------------------------------------------
+
+# End of compiler specific section
+
+#{{{ OBJS =
+OBJS = $(OBJDIR)$(P)slsh.$(O) $(OBJDIR)$(P)readline.$(O)
+#}}}
+
+! ifdef WIN32
+slsh: $(TARGET)
+	@echo slsh created in $(OBJDIR)
+$(TARGET): $(OBJDIR) $(RSPFILE) $(OBJS) $(TARGET_DEPS)
+	$(LINK_CMD)
+!  ifdef VC
+$(RES_FILE): $(RC_FILE).rc
+	$(RC) /fo $(RES_FILE) $(RC_FILE).rc
+$(COMPILE_RSP) :
+	echo $(CFLAGS) > $(COMPILE_RSP)
+!   ifdef DLL
+	echo /DSLANG_DLL=1 >> $(COMPILE_RSP)
+!   endif
+!  elifdef BCC
+$(RSPFILE2) : makefile
+	@echo $(OBJDIR)$(P)slsh.map > $(RSPFILE2)
+	@echo $(SLANGLIB)$(P)wslang+ >> $(RSPFILE2)
+	@echo $(BCCLIB)$(P)import32+ >> $(RSPFILE2)
+	@echo $(BCCLIB)$(P)cw32 >> $(RSPFILE2)
+!   ifdef WIN16 EMX
+	@echo $(DEF_FILE) >> $(RSPFILE2)
+!   endif
+!  endif
+! else
+$(TARGET): $(OBJDIR) $(RSPFILE) $(OBJS) $(TARGET_DEPS)
+!  ifndef DJGPP_V1
+	$(LINK_CMD)
+!  else
+	$(CC) -s @$(RSPFILE) -L$(SLANGLIB) -lslang -lpc -o $(OBJDIR)/slsh.386
+	strip $(OBJDIR)/slsh.386
+	coff2exe -s $(GO32) $(OBJDIR)/slsh.386
+!  endif
+! endif # WIN32
+
+! ifndef EMX CYGWIN32 MINGW32 ICC
+#{{{ $(RSPFILE)
+$(RSPFILE) : makefile
+	echo Creating response file $(RSPFILE)
+!  ifdef VC
+	@echo /NOLOGO user32.lib gdi32.lib > $(RSPFILE)
+	@echo winspool.lib comdlg32.lib advapi32.lib shell32.lib >> $(RSPFILE)
+!  endif
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slsh.$(O) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)readline.$(O) >> $(RSPFILE)
+!  ifdef WIN16
+	@echo $(TARGET) >> $(RSPFILE)
+	@echo slsh.map >> $(RSPFILE)
+	@echo $(SLANGLIB)\wslang+ >> $(RSPFILE)
+	@echo $(BCCLIB)\import+ >> $(RSPFILE)
+	@echo $(BCCLIB)\mathwl+ >> $(RSPFILE)
+	@echo $(BCCLIB)\cwl >> $(RSPFILE)
+	@echo $(DEF_FILE) >> $(RSPFILE)
+!endif
+!ifdef WIN32
+!ifdef VC
+	@echo $(SLANGLIB)\WSLANG32.LIB >> $(RSPFILE)
+!endif
+!endif
+#}}}
+!endif  #NOT EMX
+
+$(OBJDIR) :
+	-mkdir $(OBJDIR)
+
+! ifdef WIN16 EMX
+#{{{ $(DEF_FILE)
+
+$(DEF_FILE) :
+	@echo creating $(DEF_FILE)
+! ifdef WIN16
+	@echo NAME      SLSH > $(DEF_FILE)
+	@echo EXETYPE   WINDOWS >> $(DEF_FILE)
+	@echo CODE PRELOAD MOVEABLE DISCARDABLE >> $(DEF_FILE)
+	@echo DATA PRELOAD MOVEABLE >> $(DEF_FILE)
+	@echo HEAPSIZE 100 >> $(DEF_FILE)
+	@echo STACKSIZE 16384 >> $(DEF_FILE)
+! endif
+! ifdef EMX
+	@echo NAME SLSH WINDOWCOMPAT > $(DEF_FILE)
+	@echo DESCRIPTION 'SLSH for OS/2' >> $(DEF_FILE)
+	@echo STACKSIZE 150000 >> $(DEF_FILE)
+! endif
+
+#}}}
+!endif
+
+$(OBJDIR)$(P)slsh.$(O) : $(SRCDIR)$(P)slsh.c $(COMPILE_DEPS)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slsh.$(O) $(SRCDIR)$(P)slsh.c
+$(OBJDIR)$(P)readline.$(O) : $(SRCDIR)$(P)readline.c $(COMPILE_DEPS)
+	$(COMPILE_CMD)$(OBJDIR)$(P)readline.$(O) $(SRCDIR)$(P)readline.c
+
+clean:
+	cd $(OBJDIR) && $(RM) *.$(O) *.exe
+
+!endif   #NOT HELP
+

@@ -1,0 +1,136 @@
+#!/usr/bin/env slsh
+
+% This is a simple-minded implementation of a highlighting grep program
+% designed to test the onig module.
+require ("onig");
+require ("cmdopt");
+
+private define usage ()
+{
+   ()=fprintf(stderr, "Usage: %s [-inl] [--syntax syntax] pattern [files...]\n", __argv[0]);
+   exit (1);
+}
+
+private variable MATCH = 1;
+private variable LINENUM = 2;
+private variable FILENAME = 4;
+private variable Output_Format = 0;
+
+private define grep (file, p)
+{
+   variable fp;
+
+   if (file == NULL)
+     fp = stdin;
+   else
+     fp = fopen (file, "r");
+
+   if (fp == NULL)
+     {
+	fprintf (stderr, "*** Unable to open %s\n", file);
+	return;
+     }
+
+   variable linenum = 0;
+   foreach (fp) using ("line")
+     {
+	variable str = ();
+	linenum++;
+
+	if (onig_search (p, str))
+	  {
+	     variable i0, i1, i;
+
+	     switch (Output_Format)
+	       {
+		case FILENAME:
+		  () = fprintf (stdout, "%s\n", file);
+		  return;
+	       }
+	       {
+		case LINENUM:
+		  () = fprintf (stdout, "%d\n", linenum);
+		  continue;
+	       }
+	       {
+		case (MATCH|LINENUM):
+
+		  () = fprintf (stdout, "%d:", linenum);
+	       }
+	       {
+		case (LINENUM|FILENAME):
+		  () = fprintf (stdout, "%s:%d\n", file, linenum);
+		  continue;
+	       }
+	       {
+		case (LINENUM|FILENAME|MATCH):
+		  () = fprintf (stdout, "%s:%d:", file, linenum);
+	       }
+	       {
+		case (FILENAME|MATCH):
+		  () = fprintf (stdout, "%s:", file);
+	       }
+
+	     do
+	       {
+		  i = onig_nth_match (p, 0);
+		  i0 = i[0];
+		  i1 = i[1];
+		  if (i1 <= i0)
+		    break;
+		  if (i0 > 0)
+		    () = fprintf (stdout, "%s", str[[0:i0-1]]);
+		  () = fprintf (stdout, "\e[7m%s\e[m", str[[i0:i1-1]]);
+		  str = str[[i1:]];
+	       }
+	     while (onig_search (p, str));
+	     () = fprintf (stdout, "%s", str);
+	  }
+     }
+}
+
+define slsh_main ()
+{
+   variable options;
+   options = 0;
+   Output_Format = MATCH;
+   variable syntax = "perl";
+
+   variable opts = cmdopt_new ();
+   opts.add ("i", &options; bor=ONIG_OPTION_IGNORECASE);
+   opts.add ("n", &Output_Format; bor=LINENUM);
+   opts.add ("l", &Output_Format; bor=FILENAME, band=~MATCH);
+   opts.add ("h|help", &usage);
+   opts.add ("s|syntax", &syntax);
+
+   variable i = opts.process (__argv, 1);
+
+   if (i + 1 > __argc)
+     usage ();
+
+   variable pattern = __argv[i];
+   i++;
+
+   variable reg = onig_new (pattern, options, "utf8", syntax);
+
+   if (i == __argc)
+     {
+	if (isatty (stdin))
+	  usage ();
+
+	Output_Format &= ~FILENAME;
+	grep (NULL, reg);
+	return;
+     }
+
+   variable files = __argv[[i:]];
+
+   if (length(files) > 1)
+     Output_Format |= FILENAME;
+
+   foreach (files)
+     {
+	variable f = ();
+	grep (f, reg);
+     }
+}

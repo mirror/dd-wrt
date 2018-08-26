@@ -1,0 +1,10 @@
+VMS Installation instructions:
+
+In the source directory, you will find the following files:
+
+   vmsmake.com     VMS DCL command procedure
+
+On VMS, just type `@vmsmake' or if you have gcc, type `@vmsmake gcc'.
+
+Note: Since I nolonger have access to VMS, I cannot guarantee that the
+library will compile cleanly under VMS.

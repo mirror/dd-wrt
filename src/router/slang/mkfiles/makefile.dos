@@ -1,0 +1,16 @@
+MAKE = nmake
+all:
+	cd src
+	$(MAKE)
+	cd ../slsh
+	$(MAKE)
+	cd ../modules
+	$(MAKE)
+#
+clean:
+	cd src
+	-$(MAKE) clean
+	cd ../slsh
+	-$(MAKE) clean
+	cd ../modules
+	-$(MAKE) clean

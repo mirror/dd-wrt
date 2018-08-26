@@ -1,0 +1,279 @@
+/* -*- c -*- */
+/* Note: this is for unix only. */
+
+#ifndef SL_CONFIG_H
+#define SL_CONFIG_H
+
+/* Files used by the slang-readline interface.  The interface first tries
+ * to read SLRLINE_USER_INIT_FILE from $HOME, and if that does not exist, it
+ * will read SLRLINE_SYS_INIT_FILE from the interpreter's load path.
+ */
+#define SLRLINE_USER_INIT_FILE	".slrlinerc"
+#define SLRLINE_SYS_INIT_FILE	"rline/slrline.rc"
+
+/* define if you have long long type */
+#undef HAVE_LONG_LONG
+
+/* The following set defines may be necessary to activate long file support */
+#undef _FILE_OFFSET_BITS
+#undef _LARGE_FILES
+#undef _LARGEFILE_SOURCE
+
+/* define if you have stdlib.h */
+#undef HAVE_STDLIB_H
+
+/* define if you have unistd.h */
+#undef HAVE_UNISTD_H
+
+/* define if you have termios.h */
+#undef HAVE_TERMIOS_H
+
+/* define if you have memory.h */
+#undef HAVE_MEMORY_H
+
+/* define if you have malloc.h */
+#undef HAVE_MALLOC_H
+
+/* define if you have memset */
+#undef HAVE_MEMSET
+
+/* define if you have memcpy */
+#undef HAVE_MEMCPY
+
+#undef HAVE_SETLOCALE
+#undef HAVE_LOCALE_H
+#undef HAVE_LANGINFO_H
+#undef HAVE_NL_LANGINFO_CODESET
+
+#undef HAVE_FLOATINGPOINT_H
+#undef HAVE_NAN_H
+#undef HAVE_IEEEFP_H
+#undef HAVE_FENV_H
+
+#undef HAVE_FECLEAREXCEPT
+#undef HAVE_FPSETSTICKY
+
+#undef HAVE_VFSCANF
+#undef HAVE_STRTOD
+#undef HAVE_ATOLL
+#undef HAVE_STRTOLL
+
+/* define if you have fcntl.h */
+#undef HAVE_FCNTL_H
+
+/* Define if you have the vsnprintf, snprintf functions and they return
+ * EOF upon failure.
+ */
+#undef HAVE_VSNPRINTF
+#undef HAVE_SNPRINTF
+
+/* define if you have sys/fcntl.h */
+#undef HAVE_SYS_FCNTL_H
+
+#undef HAVE_SYS_TYPES_H
+#undef HAVE_SYS_WAIT_H
+#undef HAVE_SYS_TIMES_H
+#undef HAVE_SYS_TIME_H
+
+#undef HAVE_UTIME_H
+#undef HAVE_UTIME
+#undef HAVE_UTIMES
+
+#undef HAVE_SYS_MMAN_H
+
+#undef HAVE_SYS_RESOURCE_H
+
+/* Set these to the appropriate values */
+#undef SIZEOF_SHORT
+#undef SIZEOF_INT
+#undef SIZEOF_LONG
+#undef SIZEOF_FLOAT
+#undef SIZEOF_DOUBLE
+#undef SIZEOF_LONG_LONG
+
+#undef off_t
+#undef SIZEOF_OFF_T
+#undef size_t
+#undef SIZEOF_SIZE_T
+
+/* define if you have these. */
+#undef HAVE_ATEXIT
+#undef HAVE_ON_EXIT
+#undef HAVE_PUTENV
+#undef HAVE_GETCWD
+#undef HAVE_TCGETATTR
+#undef HAVE_TCSETATTR
+#undef HAVE_CFGETOSPEED
+#undef HAVE_LSTAT
+#undef HAVE_KILL
+#undef HAVE_KILLPG
+#undef HAVE_CHOWN
+#undef HAVE_VSNPRINTF
+#undef HAVE_POPEN
+#undef HAVE_UMASK
+#undef HAVE_READLINK
+#undef HAVE_SYMLINK
+#undef HAVE_LINK
+#undef HAVE_TIMES
+#undef HAVE_GMTIME
+#undef HAVE_GMTIME_R
+#undef HAVE_LOCALTIME_R
+#undef HAVE_CTIME_R
+#undef HAVE_GETTIMEOFDAY
+#undef HAVE_MKTIME
+#undef HAVE_MKFIFO
+#undef HAVE_MMAP
+#undef HAVE_TTYNAME_R
+#undef HAVE_TTYNAME
+
+#undef HAVE_GETPPID
+#undef HAVE_GETGID
+#undef HAVE_GETEGID
+#undef HAVE_GETEUID
+#undef HAVE_GETUID
+
+#undef HAVE_SETGID
+#undef HAVE_SETUID
+
+#undef HAVE_GETPGID
+#undef HAVE_GETPGRP
+#undef HAVE_SETPGID
+#undef HAVE_SETPGRP
+#undef HAVE_GETSID
+#undef HAVE_SETSID
+
+#undef HAVE_GETPRIORITY
+#undef HAVE_SETPRIORITY
+
+#undef HAVE_ISSETUGID
+
+#undef HAVE_ACOSH
+#undef HAVE_ASINH
+#undef HAVE_ATANH
+
+#undef HAVE_ROUND
+#undef HAVE_FINITE
+#undef HAVE_ISINF
+#undef HAVE_ISNAN
+#undef HAVE_HYPOT
+#undef HAVE_ATAN2
+#undef HAVE_FREXP
+#undef HAVE_FREXPF
+#undef HAVE_LDEXP
+#undef HAVE_LDEXPF
+
+#undef HAVE_DIRENT_H
+#undef HAVE_SYS_NDIR_H
+#undef HAVE_SYS_DIR_H
+#undef HAVE_NDIR_H
+
+#undef HAVE_FSEEKO
+#undef HAVE_SETVBUF
+
+#undef HAVE_DLFCN_H
+
+#undef HAVE_SYS_UTSNAME_H
+#undef HAVE_UNAME
+
+#undef HAVE_ALARM
+#undef HAVE_PAUSE
+
+/* These are used by the socket module */
+#undef HAVE_SOCKET
+#undef HAVE_SOCKETPAIR
+#undef HAVE_SYS_SOCKET_H
+#undef HAVE_SOCKET_H
+#undef HAVE_NETINET_IN_H
+#undef HAVE_ARPA_INET_H
+#undef HAVE_SYS_UN_H
+#undef socklen_t
+
+#undef HAVE_CONFSTR
+#undef HAVE_SYSCONF
+#undef HAVE_PATHCONF
+
+/* These two are needed on DOS-like systems.  Unix does not require them.
+ * They are included here for consistency.
+ *
+#define HAVE_IO_H
+#define HAVE_PROCESS_H
+ */
+
+#undef HAVE_PCRE_H
+
+#undef USE_TERMCAP
+
+#undef mode_t
+#undef uid_t
+#undef pid_t
+#undef gid_t
+
+#undef HAVE_SIGLONGJMP
+
+/* Do we have posix signals? */
+#undef HAVE_SIGACTION
+#undef HAVE_SIGPROCMASK
+#undef HAVE_SIGEMPTYSET
+#undef HAVE_SIGADDSET
+
+#undef HAVE_ICONV
+#undef ICONV_CONST
+
+#undef HAVE_FORK
+#undef HAVE_WAITPID
+
+#if defined(HAVE_SIGADDSET) && defined(HAVE_SIGEMPTYSET)
+# if defined(HAVE_SIGACTION) && defined(HAVE_SIGPROCMASK)
+#  define SLANG_POSIX_SIGNALS
+# endif
+#endif
+
+/* Define if you need to in order for stat and other things to work.  */
+#undef _POSIX_SOURCE
+
+#ifdef _AIX
+# ifndef _POSIX_SOURCE
+#  define _POSIX_SOURCE 1
+# endif
+# ifndef _ALL_SOURCE
+#  define _ALL_SOURCE
+# endif
+/* This may generate warnings but the fact is that without it, xlc will
+ * INCORRECTLY inline many str* functions. */
+# undef __STR__
+#endif
+
+/* define USE_TERMCAP if you want to use it instead of terminfo. */
+#if defined(sequent) || defined(NeXT)
+# ifndef USE_TERMCAP
+#  define USE_TERMCAP
+# endif
+#endif
+
+#if defined(ultrix) && !defined(__GNUC__)
+# ifndef NO_PROTOTYPES
+#  define NO_PROTOTYPES
+# endif
+#endif
+
+#ifndef unix
+# define unix 1
+#endif
+
+#ifndef __unix__
+# define __unix__ 1
+#endif
+
+#ifndef HAVE_LONG_LONG
+# undef SIZEOF_LONG_LONG
+# define SIZEOF_LONG_LONG 0
+#endif
+
+#if defined(BUILD_DLL) && BUILD_DLL
+# ifdef __CYGWIN32__
+#  undef SLANG_DLL
+#  define SLANG_DLL 1
+# endif
+#endif
+
+#endif /* SL_CONFIG_H */

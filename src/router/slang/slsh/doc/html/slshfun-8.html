@@ -1,0 +1,296 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="LinuxDoc-Tools 0.9.50">
+ <TITLE> SLSH Library Reference (version 2.2.0): Subprocess Functions</TITLE>
+ <LINK HREF="slshfun-9.html" REL=next>
+ <LINK HREF="slshfun-7.html" REL=previous>
+ <LINK HREF="slshfun.html#toc8" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="slshfun-9.html">Next</A>
+<A HREF="slshfun-7.html">Previous</A>
+<A HREF="slshfun.html#toc8">Contents</A>
+<HR>
+<H2><A NAME="s8">8.</A> <A HREF="slshfun.html#toc8">Subprocess Functions</A></H2>
+
+<P>These functions in <CODE>process.sl</CODE> facilitate the creation of
+subprocesses and pipelines.</P>
+<H2><A NAME="new_process"></A> <A NAME="ss8.1">8.1</A> <A HREF="slshfun.html#toc8.1"><B>new_process</B></A>
+</H2>
+
+<P>
+<DL>
+<DT><B> Synopsis </B><DD>
+<P>Create a subprocess object</P>
+<DT><B> Usage </B><DD>
+<P><CODE>Struct_Type new_process (String_Type argv[]; qualifiers)</CODE></P>
+<DT><B> Description </B><DD>
+<P>This function executes the program specified by the <CODE>argv</CODE>
+parameter in a subprocess.  If <CODE>argv</CODE> is an array, the first
+element (<CODE>argv[0]</CODE>) of the array gives the name of the program
+to be executed, and the remaining elements serve as arguments passed
+to the program.  The program returns a structure that may be used to
+interact with the process.  Upon error, an exception will be thrown.</P>
+<P>The calling program may interact with the subprocess by reading from
+or writing to the file descriptor fields of the structure returned
+by the <CODE>new_process</CODE> function.  The specific file descriptors
+are dictated via the <CODE>read</CODE>, <CODE>write</CODE>, and <CODE>dupN</CODE>
+qualifiers, as described in detail below.</P>
+<P>The function returns a structure containing zero or more fields of the form
+<CODE>fdN</CODE> where <CODE>N</CODE> is an integer derived from the qualifiers,
+e.g., <CODE>fd0</CODE> and <CODE>fd1</CODE> correspond to the child's stdin and
+stdout, respectively.  The structure also contains fields of the
+form <CODE>fpN</CODE> whose values are stdio <CODE>File_Type</CODE> objects
+obtained using <CODE>fdopen</CODE> with the correponding <CODE>fdN</CODE> value.</P>
+<P>Other important fields include <CODE>pid</CODE> whose value is
+the process-id of the newly created process.</P>
+<P>The status of the process may be checked or collected using the
+<CODE>wait</CODE> method.  It is very important to call this method to
+avoid the creation of zombie processes.</P>
+
+<DT><B> Qualifiers </B><DD>
+<P>The following qualifiers are supported:
+<BLOCKQUOTE><CODE>
+<PRE>
+   read=fds
+</PRE>
+</CODE></BLOCKQUOTE>
+
+fds is a list of integer file descriptors that are open for read
+access in the subprocess, and may be written to by the calling
+process using the fdN or fpN fields of the structure.
+<BLOCKQUOTE><CODE>
+<PRE>
+   write=fds
+</PRE>
+</CODE></BLOCKQUOTE>
+
+fds is a list of integer file descriptors that are open for write
+access in the subprocess, and may be read to by the calling
+process using the fdN or fpN fields of the structure.
+<BLOCKQUOTE><CODE>
+<PRE>
+   stdin=filename
+   stdout=filename
+   stderr=filename
+</PRE>
+</CODE></BLOCKQUOTE>
+
+These qualifiers allow the stdin, stdout, and stderr file
+descriptors in the subprocess to be redirected to a file.  Note:
+The filenames are interpreted relative to the value of the
+<CODE>dir</CODE> qualifier.
+<BLOCKQUOTE><CODE>
+<PRE>
+   fdN=string
+</PRE>
+</CODE></BLOCKQUOTE>
+
+This qualifier will cause the integer file descriptor N to be open
+in the subprocess and redirected to the filename represented by
+the string, which is interpreted relative to the value of the <CODE>dir</CODE>
+qualifier.  The access mode is dictated by the first few
+characters of the string as described in more detail below.
+<BLOCKQUOTE><CODE>
+<PRE>
+   stdin=File_Type|FD_Type
+   stdout=File_Type|FD_Type
+   stderr=File_Type|FD_Type
+   fdN=FD_Type|FD_Type
+</PRE>
+</CODE></BLOCKQUOTE>
+
+If the stdin, stdout, stderr, or fdN qualifiers have File_Type or
+FD_Type values, then corresponding file descriptors in the
+subprocess will be dup'd to FD_Type or FP_Type file descriptor.
+This form of the qualifier may be used to setup pipelines.
+<BLOCKQUOTE><CODE>
+<PRE>
+   dupN=int
+</PRE>
+</CODE></BLOCKQUOTE>
+
+The file descriptor corresponding to the integer N in the
+subprocess is created by duping the descriptor given by the
+integer value of the qualifier.  For example, dup2=1 would cause
+stderr (fd=2) in the subprocess to be redirected to stdout (fd=1).
+<BLOCKQUOTE><CODE>
+<PRE>
+   dir=string
+</PRE>
+</CODE></BLOCKQUOTE>
+
+Change to the specified directory in the child process.  This
+will happen after the child process is started, but before any
+files have been opened.  Hence, files attached to <CODE>stdin</CODE>,
+<CODE>stdout</CODE>, etc will be opened relative to this directory.
+<BLOCKQUOTE><CODE>
+<PRE>
+   pre_exec_hook=&amp;func
+</PRE>
+</CODE></BLOCKQUOTE>
+
+This qualifier will cause the function corresponding to func to
+be called prior to closing unused file descriptors and invoking
+the executable.  The function will be passed a list of integer
+valued of file descriptors that will be kept open.  Additional
+integers may be added to the list by the function.</P>
+<P>Note that the read and write qualifiers specify the nature of the
+file descriptors from the child process's view.  That is, those
+opened in the child process using the read qualifier, may be written
+to by the parent.  Similarly, those opened using the write qualifier
+may be read by the parent.</P>
+
+<DT><B> Methods </B><DD>
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+    Struct_Type .wait ( [ options ] )
+</PRE>
+</CODE></BLOCKQUOTE>
+
+The <CODE>.wait</CODE> method may be used to collect the exist status of
+the process.  When called without arguments, it will cause the
+parent process to wait for the subprocess to exit and return its
+exit status in the form of a <CODE>waitpid</CODE> structure.  The optional
+<CODE>options</CODE> argument corresponds to the options argument of the
+<CODE>waitpid</CODE> function.  The most common is the WNOHANG option,
+which will cause the <CODE>.wait</CODE> method to return immediately if
+the process has not exited.</P>
+<P>If an error occurs, the function will return NULL and set
+<CODE>errno</CODE> accordingly.  Otherwise it will return a <CODE>waitpid</CODE>
+structure.  See the documentation for <CODE>waitpid</CODE> for more
+information.</P>
+
+<DT><B> Example </B><DD>
+<P>In the following examples, <CODE>pgm</CODE> represents the program to be
+invoked in the subprocess.  For simplicity, no addition arguments are
+shown</P>
+<P>Create subprocess that inherits stdin, stdout, stderr from the caller:
+<BLOCKQUOTE><CODE>
+<PRE>
+   obj = new_process (pgm);
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<P>Create a subprocess that inherits stdin, stdout, and writes stderr
+to a file:
+<BLOCKQUOTE><CODE>
+<PRE>
+   obj = new_process (pgm; stderr="/tmp/file");   % form 1
+   obj = new_process (pgm; fd2="&gt;/tmp/file");     % form 2
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<P>Mimic popen(pgm, "r"):
+<BLOCKQUOTE><CODE>
+<PRE>
+   obj = new_process (pgm; write=1);   % Read from obj.fp1
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<P>Mimic popen(pgm, "w"):
+<BLOCKQUOTE><CODE>
+<PRE>
+   obj = new_process (pgm; read=0);  % Write to obj.fp0
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<P>Mimic popen("pgm 2&gt;&amp;1", "r"):
+<BLOCKQUOTE><CODE>
+<PRE>
+   obj = new_process (pgm; write=1, dup2=1);  % Read from fp1
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<P>Send stdout to a file, read from the subprocess's stderr:
+<BLOCKQUOTE><CODE>
+<PRE>
+   obj = new_process (pgm; stdout="/tmp/file", write=2);
+   % Read from obj.fp2
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<P>Create a process with handles to its stdin, stdout, stderr
+<BLOCKQUOTE><CODE>
+<PRE>
+   obj = new_process (pgm; write={1,2}, read=0);
+   % Use obj.fp0 for stdin, obj.fp1 for stdout, and obj.fp2 for stderr
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<P>Create a process with a write handle to the process's fd=27 and a
+read handle to the process's stdout.
+<BLOCKQUOTE><CODE>
+<PRE>
+   obj = new_process (pgm; read=27, write=1);
+   % write to fp27, read from fp1
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<P>Create a pipeline: pgm1 | pgm2 &gt; /tmp/log :
+<BLOCKQUOTE><CODE>
+<PRE>
+  obj1 = new_process (pgm1; write=1);
+  obj2 = new_process (pgm2; stdin=obj1.fp1, stdout="/tmp/log");
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<P>Create a pipeline with fd=27 from pgm1 redirected to stdin of pgm2:
+<BLOCKQUOTE><CODE>
+<PRE>
+  obj1 = new_process (pgm1; write=27);
+  obj2 = new_process (pgm2; stdin=obj1.fp27);
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<P>Create a pipeline with fd=27 from pgm1 redirected to fd=9 of pgm2:
+<BLOCKQUOTE><CODE>
+<PRE>
+  obj1 = new_process (pgm1; write=27);
+  obj2 = new_process (pgm2; fp9=obj1.fp27);
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<P>Mimic: pgm 2&gt;&amp;1 1&gt;/dev/null
+<BLOCKQUOTE><CODE>
+<PRE>
+  obj = new_process (pgm; fp2=1, stdout="/dev/null");
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<P>Mimic: pgm &gt;/dev/null 2&gt;&amp;1
+<BLOCKQUOTE><CODE>
+<PRE>
+  obj = new_process (pgm; stdout="/dev/null", dup2=1);
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<P>Append the output of pgm to /tmp/file.log:
+<BLOCKQUOTE><CODE>
+<PRE>
+   obj = new_process (pgm; stdout="&gt;&gt;/tmp/file.log");
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+
+<DT><B> Notes </B><DD>
+<P>Care must be exercised when reading or writing to multiple file
+descriptors of a subprocess to avoid deadlock.  In such cases, the
+select module should be used, or the file descriptors could be put in
+non-blocking mode via the fcntl module.</P>
+<P>It is important to call the <CODE>.wait</CODE> method prevent the process
+from becoming a zombie and clogging the process table.</P>
+<DT><B> See Also </B><DD>
+<P><CODE>popen, system</CODE></P>
+</DL>
+</P>
+
+
+<HR>
+<A HREF="slshfun-9.html">Next</A>
+<A HREF="slshfun-7.html">Previous</A>
+<A HREF="slshfun.html#toc8">Contents</A>
+</BODY>
+</HTML>
