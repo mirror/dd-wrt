@@ -1,0 +1,14 @@
+This file contains various scripts to build slang on non-Unix systems.
+See ../README.pc for an overview.
+
+m32init.sh:      Creates makefiles for MINGW32
+makefile.m32:    Becomes the top-level makefile for MINGW32
+runslsh.bat:     Runs slsh to execute the install script
+install.sl:      The install script
+
+The following files may or may not work:
+
+build.bat:       An NMAKE script
+makefile.dos     NMAKE top-level makefile
+build.sh:        Cygwin/MinGW shell script
+makefile.sh      Cygwin/MinGW top-level makefile

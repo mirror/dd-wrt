@@ -1,0 +1,78 @@
+#!/usr/bin/env slsh
+% Find links that point to non-existent files
+
+private define warn ()
+{
+   variable args = __pop_args (_NARGS-1);
+   variable err = ();
+   variable msg;
+
+   msg = sprintf (__push_args (args));
+
+   if (err)
+     err = ": " + errno_string (err);
+   else
+     err == "";
+
+   () = fprintf (stderr, "%s: %s%s\n",
+		 __argv[0], msg, err);
+}
+
+private define badlinks (dir)
+{
+   variable files, file;
+   variable st;
+
+   files = listdir (dir);
+   if (files == NULL)
+     {
+	warn (errno, dir);
+	return;
+     }
+
+   foreach (files)
+     {
+	file = ();
+
+	file = path_concat (dir, file);
+	st = stat_file (file);
+	if (st != NULL)
+	  continue;
+
+	if (errno != ENOENT)
+	  {
+	     warn (errno, file);
+	     continue;
+	  }
+
+	if (-1 == fprintf (stdout, "%s\n", file))
+	  break;
+     }
+}
+
+define main (argc, argv)
+{
+   if (argc > 1)
+     {
+	if (argv[1] == "--help")
+	  {
+	     () = fprintf (stdout, "Usage: %s [--help] [dirs....]\n",
+			   __argv[0]);
+	     exit (1);
+	  }
+     }
+
+   if (argc == 1)
+     {
+	badlinks (".");
+	exit (0);
+     }
+
+   foreach (argv[[1:]])
+     badlinks ();
+
+   exit (0);
+}
+
+main (__argc, __argv);
+

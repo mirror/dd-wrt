@@ -1,0 +1,173 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="LinuxDoc-Tools 0.9.50">
+ <TITLE> SLSH Library Reference (version 2.2.0): Reading Text-formated Data Files</TITLE>
+ <LINK HREF="slshfun-6.html" REL=next>
+ <LINK HREF="slshfun-4.html" REL=previous>
+ <LINK HREF="slshfun.html#toc5" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="slshfun-6.html">Next</A>
+<A HREF="slshfun-4.html">Previous</A>
+<A HREF="slshfun.html#toc5">Contents</A>
+<HR>
+<H2><A NAME="s5">5.</A> <A HREF="slshfun.html#toc5">Reading Text-formated Data Files</A></H2>
+
+<P>These functions are defined in <CODE>readascii.sl</CODE>.</P>
+<H2><A NAME="readascii"></A> <A NAME="ss5.1">5.1</A> <A HREF="slshfun.html#toc5.1"><B>readascii</B></A>
+</H2>
+
+<P>
+<DL>
+<DT><B> Synopsis </B><DD>
+<P>Read data from a text file</P>
+<DT><B> Usage </B><DD>
+<P><CODE>Int_Type readascii (file, &amp;v1,...&amp;vN ; qualifiers)</CODE></P>
+<DT><B> Description </B><DD>
+<P>This function may be used to read formatted data from a text (as
+opposed to binary) file and stores the values as arrays in the
+specified variables <CODE>v1,..., vN</CODE> (passed as references).  It
+returns the number of lines read from the file that matched the
+format (implicit or specified by a qualifier).</P>
+<P>The file parameter may be a string that gives the filename to read,
+a <CODE>File_Type</CODE> object representing an open file pointer, or an
+array of lines to be scanned.</P>
+<DT><B> Qualifiers </B><DD>
+<P>The following qualifiers are supported by the function
+<BLOCKQUOTE><CODE>
+<PRE>
+   format=string        The sscanf format string to be used when
+                          parsing lines.
+   nrows=integer        The maximum number of matching rows to handle.
+   ncols=integer        If a single reference is passed, it will be
+                          assigned an array of ncols arrays of data values.
+   skip=integer         Skip the specified number of lines before
+                          scanning
+   maxlines=integer     Read no more than this many lines.
+   cols=Array_Type      Read only the specified (1-based) columns.
+                          Used with an implict format
+   delim=string         For an implicit format, use this as a field
+                          separator.  The default is whitespace.
+   type=string          For an implicit format, use this sscanf type
+                          specifier.  Default is %lf (Double_Type).
+   size=integer         Use this value as the initial size for the
+                          arrays.
+   dsize=integer        Use this value as an increment when
+                          reallocating the arrays.
+   stop_on_mismatch     Stop reading input when a line does not match
+                          the format
+   lastline=&amp;v          Assign the last line read to the variable v.
+   lastlinenum=&amp;v       Assign the last line number (1-based to v)
+   comment=string       Lines beginning with this string are ignored.
+   as_list              If present, then return data in lists rather
+                          than arrays.
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<DT><B> Example </B><DD>
+<P>As a simple example, consider a file called <CODE>imped.dat</CODE> containing
+<BLOCKQUOTE><CODE>
+<PRE>
+    # Distance    Zr   Zi
+    0.0          50.2    0.1
+    1.0          47.3  -12.2
+    2.0          43.9  -15.8
+</PRE>
+</CODE></BLOCKQUOTE>
+
+The 3 columns may be read and stored in the variables <CODE>x</CODE>, <CODE>zr</CODE>,
+<CODE>zi</CODE> using
+<BLOCKQUOTE><CODE>
+<PRE>
+     n = readascii ("imped.dat", &amp;x, &amp;zr, &amp;zi);
+</PRE>
+</CODE></BLOCKQUOTE>
+
+After return, The value of <CODE>x</CODE> will be set to
+<CODE>[0.0,1.0,2.0]</CODE>, <CODE>zr</CODE> to <CODE>[50.2,47.3,43.9]</CODE>,
+<CODE>zi</CODE> to <CODE>[0.1,-12.2,-15.8]</CODE>, and <CODE>n</CODE> to 3.</P>
+<P>Another way to read the same data is to use
+<BLOCKQUOTE><CODE>
+<PRE>
+    n = readascii ("imped.dat", &amp;data; ncols=3);
+</PRE>
+</CODE></BLOCKQUOTE>
+
+In this case, <CODE>data</CODE> will be <CODE>Array_Type[3]</CODE>, with each
+element of the array containing the array of data values for the
+corresponding column.  As before, <CODE>n</CODE> will be 3.</P>
+<P>As a more complex example, Consider a file called <CODE>score.dat</CODE>
+that contains:
+<BLOCKQUOTE><CODE>
+<PRE>
+    Name      Score     Date          Flags
+    Bill       73.2     03-Nov-2046    1
+    James      22.9     03-Nov-2046    1
+    Lucy       89.1     04-Nov-2046    3
+</PRE>
+</CODE></BLOCKQUOTE>
+
+This file may be read using
+<BLOCKQUOTE><CODE>
+<PRE>
+     n = readascii ("score.dat", &amp;name, &amp;score, &amp;date, &amp;flags;
+                    format="%s %lf %s %d");
+</PRE>
+</CODE></BLOCKQUOTE>
+
+In this case, <CODE>n</CODE> will be 3, <CODE>name</CODE> and <CODE>date</CODE> will
+be <CODE>String_Type</CODE> arrays, <CODE>score</CODE> will be a
+<CODE>Double_Type</CODE> array, and <CODE>flags</CODE> will be an
+<CODE>Int_Type</CODE> array.</P>
+<P>Now suppose that only the score and flags column are of interest.
+The <CODE>name</CODE> and <CODE>date</CODE> fields may be ignored using
+<BLOCKQUOTE><CODE>
+<PRE>
+     n = readascii ("score.dat", &amp;score, &amp;flags";
+                    format="%*s %lf %*s %d");
+</PRE>
+</CODE></BLOCKQUOTE>
+
+Here, <CODE>%*s</CODE> indicates that the field is to be parsed as a
+string, but not assigned to a variable.</P>
+<P>Consider the task of reading columns from a file called
+<CODE>books.dat</CODE> that contain quoted strings such as:
+<BLOCKQUOTE><CODE>
+<PRE>
+     # Year  Author Title
+     "1605" "Miguel de Cervantes"  "Don Quixote de la Mancha"
+     "1885" "Mark Twain" "The Adventures of Huckleberry Finn"
+     "1955" "Vladimir Nabokov" "Lolita"
+</PRE>
+</CODE></BLOCKQUOTE>
+
+Such a file may be read using
+<BLOCKQUOTE><CODE>
+<PRE>
+     n = readascii ("books.dat", &amp;year, &amp;author, &amp;title;
+                    format="\"%[^\"]\" \"%[^\"]\" \"%[^\"]\"");
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<DT><B> Notes </B><DD>
+<P>This current version of this function does not handle missing data.
+For such files, the <CODE>csv_readcol</CODE> function might be a better
+choice.</P>
+<P>By default, lines not matching the expected format are assumed to
+be comments and are skipped.  So normally the <CODE>comment</CODE>
+qualifier is not needed.  However, it is useful in conjunction with
+the <CODE>stop_on_mismatch</CODE> qualifier to force the parser to skip
+lines beginning with the comment string and continue scanning.</P>
+<DT><B> See Also </B><DD>
+<P><CODE>sscanf, atof, fopen, fgets, fgetslines, csv_readcol</CODE></P>
+</DL>
+</P>
+
+
+<HR>
+<A HREF="slshfun-6.html">Next</A>
+<A HREF="slshfun-4.html">Previous</A>
+<A HREF="slshfun.html#toc5">Contents</A>
+</BODY>
+</HTML>

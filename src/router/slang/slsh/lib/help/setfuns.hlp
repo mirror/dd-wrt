@@ -1,0 +1,133 @@
+complement
+
+ SYNOPSIS
+  Extract the elements of a set that are not contained in other sets.
+
+ USAGE
+  indices = complement (a, b, ..., c)
+
+ DESCRIPTION
+  This function computes the elements of the first argument (`a')
+  that are not contained in the sets given by the other arguments
+  (`b,...,c') and returns them in the form of indices into the
+  first argument.
+
+ EXAMPLE
+
+   a = {"foo", PI, 7};
+   b = [1,2,3,PI];
+   indices = complement (a, b);
+
+  Upon return, `indices' will have the value `[0, 2]' since
+  `a[0]' and `a[2]' are not contained in `b'.
+
+ NOTES
+  A set may either be an Array_Type or a List_Type object.
+  For a homogeneous collection of objects, it is better to
+  use an Array_Type. i.e., `[1,2,3]' instead of `{1,2,3}'.
+
+ SEE ALSO
+  intersection, ismember, union, unique
+
+--------------------------------------------------------------
+
+intersection
+
+ SYNOPSIS
+  Extract the common elements of two or more sets
+
+ USAGE
+  indices = complement (a, b, ..., c)
+
+ DESCRIPTION
+  This function computes the common elements of two or more sets and
+  returns them in the form of indices into the first argument.
+
+ EXAMPLE
+
+   a = {"foo", 7, PI};
+   b = {PI, "bar", "foo"};
+   indices = intersection (a, b);
+
+  Upon return, `indices' will have the value `[0, 2]' since
+  `a[0]' and `a[2]' are the common elements of the sets.
+
+ NOTES
+  A set may either be an Array_Type or a List_Type object.
+  For a homogeneous collection of objects, it is better to
+  use an Array_Type. i.e., `[1,2,3]' instead of `{1,2,3}'.
+
+ SEE ALSO
+  complement, ismember, union, unique
+
+--------------------------------------------------------------
+
+ismember
+
+ SYNOPSIS
+  test to see if the elements of one set are members of another
+
+ USAGE
+  val = ismember (a, b)
+
+ DESCRIPTION
+  This function may be used to see which of the elements of the set
+  `a' are members of the set `b'.  It returns a boolean
+  array indicating whether or not the corresponding element of
+  `a' is a member of `b'.
+
+ NOTES
+  A set may either be an Array_Type or a List_Type object.
+  For a homogeneous collection of objects, it is better to
+  use an Array_Type. i.e., `[1,2,3]' instead of `{1,2,3}'.
+
+ SEE ALSO
+  complement, intersection, union, unique
+
+--------------------------------------------------------------
+
+union
+
+ SYNOPSIS
+  Form a set of the unique elements of one ore more subsets
+
+ USAGE
+  abc = union (a, b,..., c)
+
+ DESCRIPTION
+  This function interprets each of its arguments as a set, then merges
+  them together and returns only the unique elements.  The returned
+  value may either be an Array_Type or a List_Type
+  object.
+
+ NOTES
+  A set may either be an Array_Type or a List_Type object.
+  For a homogeneous collection of objects, it is better to
+  use an Array_Type. i.e., `[1,2,3]' instead of `{1,2,3}'.
+
+ SEE ALSO
+  complement, intersection, ismember, unique
+
+--------------------------------------------------------------
+
+unique
+
+ SYNOPSIS
+  Get the indices of the unique elements of a set
+
+ USAGE
+  indices = unique (A)
+
+ DESCRIPTION
+  This function returns an array of the indices of the unique elements
+  of a set.
+
+ NOTES
+  A set may either be an Array_Type or a List_Type object.
+  For a homogeneous collection of objects, it is better to
+  use an Array_Type. i.e., `[1,2,3]' instead of `{1,2,3}'.
+
+ SEE ALSO
+  complement, intersection, ismember, union
+
+--------------------------------------------------------------

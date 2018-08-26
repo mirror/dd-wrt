@@ -1,0 +1,241 @@
+Help file for slang
+
+1 Interpreter
+  See readme files for information--- no help file yet.
+1 Keyboard-Interface
+  SLang's keyboard interface is designed to allow one to read a character
+  at a time in a system independent manner.  To initialize the interface,
+  one must first call the function `SLang_init_tty'.  Before exiting the
+  program, the function `SLang_reset_tty' must be called to restore the
+  keyboard interface to its original state.  This is particularly true for
+  MSDOS since INT-9 is hooked by S-Lang.
+ 
+2 Functions
+  
+3 init_tty
+
+  Prototype: int SLang_init_tty (int abort_char, int flow_ctrl, int opost);
+
+  This function must be called to initialize the tty for single character
+  input.  The first parameter `abort_char' must lie in the range 0-255 and
+  is used as an abort character.  By default, pressing this character sets
+  the global variable `SLang_Error' to USER_BREAK.  See help on the function 
+  `SLang_set_abort_signal' to change the default action.
+
+  If the second parameter `flow_ctrl' is non-zero, flow control is enabled.
+
+  If the third parmeter `opost' is zero, output processing is NOT turned on.
+  A value of zero is required for SLang's screen management routines (SLsmg)
+  to work properly. 
+
+  This function returns 0 upon success. In addition, if the global variable
+  SLang_TT_Baud_Rate == 0 when this function is called, SLang will attempt
+  to determine the terminals baud rate and set this variable accordingly. As
+  far as the SLang library is concerned, if SLang_TT_Baud_Rate is less than
+  or equal to zero, the baud rate is effectively infinite.
+
+3 reset_tty
+
+   Prototype:  void SLang_reset_tty (void);
+   
+   This function must be called to reset the tty to the state the terminal
+   was in before a previous call to `SLang_init_tty'.
+
+3 getkey
+
+  Prototype: unsigned int SLang_getkey (void);
+
+  This function returns a single key from the tty.  If the read fails,
+  0xFFFF is returned.  Before attempting to use this function, one myust
+  first call SLang_init_tty to initialize the terminal.
+  
+  If the abort character is pressed while this function is called, it will
+  return the value of the abort character.  In addition, the global variable
+  SLKeyBoard_Quit will be set and SLang_Error will will be set to USER_BREAK
+  unless the variable SLang_Ignore_User_Abort is non-zero.
+
+3 unget_keystring
+
+  Prototype: void SLang_ungetkey_string (unsigned char *buf, int buflen);
+
+3 buffer_keystring
+
+  Prototype: void SLang_buffer_keystring (unsigned char *buf, int buflen);
+
+3 ungetkey
+
+  Prototype: void SLang_ungetkey (unsigned char ch);
+  
+3 flush_input  
+
+  Prototype: void SLang_flush_input (void);
+  
+3 input_pending  
+
+  Prototype int SLang_input_pending (int tsecs);
+  
+3 set_abort_signal
+ 
+  Prototype: void SLang_set_abort_signal (void (*f)(int));
+  
+  If SIGINT is generated, the function p1 will be called.  If `f' is NULL
+  the SLang default signal handler is called.  This sets SLang_Error to 
+  USER_BREAK.  I suspect most users will simply want to pass NULL.
+  
+2 Variables
+3 Abort_Char
+
+  int SLang_Abort_Char;
+  The value of the character (0-255) used to trigger SIGINT
+  
+3 Ignore_User_Abort
+
+  int SLang_Ignore_User_Abort;
+  If non-zero, pressing the abort character will not result in USER_BREAK
+  SLang_Error.
+ 
+3 KeyBoard_Quit
+
+  volatile int SLKeyBoard_Quit
+
+3 TT_Baud_Rate
+
+  int SLang_TT_Baud_Rate;
+  
+  If this value is zero before SLang_init_tty is called, after the call, it
+  will be set to the baud rate if the terminal on systems which support it.
+
+1Screen_Management
+ S-Lang's screen management routines are located in the slsmg.c file.  All
+ exported functions and variables are prefixed by `SLsmg', e.g., `SLsmg_cls'.
+ The screen management code uses the `SLtt' routines for writing output to
+ the terminal.
+
+ To initialize the screen management system, call `SLtt_get_terminfo' first
+ to initialize the display system. Then call `SLsmg_init_smg' to initialize
+ the SLsmg routines.  If you are going to read characters from the keyboard,
+ it is also a good idea to initialize the tty at this point via the
+ SLang_init_tty function (See `Keyboard'). 
+
+ Before exiting the program, call the approriate routines to reset the
+ terminal and display system.  Basically, your program will look like
+ something like:
+\begin{verbatim}
+ #include "slang.h"
+ 
+ int main ()
+ {
+    SLtt_get_terminfo ();
+    SLang_init_tty (7, 0, 0);
+    SLsmg_init_smg ();
+    
+    /* do stuff .... */
+    
+    SLsmg_reset_smg ();
+    SLang_reset_tty ();
+    return 0;
+ }
+\end{verbatim}
+
+2Functions
+3erase_eol
+ Prototype: void SLsmg_erase_eol (void);
+ Erase line from current position to the end of the line.
+3gotorc
+ Prototype: void SLsmg_gotorc (int row, int col);
+ Move cursor position to ('row', 'col').  (0,0) corresponds to the top left
+ corner of the screen.
+3erase_eos
+ Prototype: void SLsmg_erase_eos (void);
+ Erase fro the current position to the end of the screen.
+3reverse_video
+ Prototype: void SLsmg_reverse_video (void);
+ Start writing characters in reverse video.
+3set_color
+ Prototype: void SLsmg_set_color (int obj);
+ Set the character attributes to those of 'obj'.
+3normal_video
+ Prototype: void SLsmg_normal_video (void);
+ Turn off characters attributes and set attributes to object 0.
+3printf
+ Prototype: void SLsmg_printf (char *, ...);
+ Write a formatted string to the virtual display.
+3vprintf
+ Prototype: void SLsmg_vprintf (char *, va_list);
+ Like 'SLsmg_printf' but uses a variable argument list.
+3write_string
+ Prototype: void SLsmg_write_string (char *);
+3write_char
+ Prototype: void SLsmg_write_char (char);
+3write_nchars
+ Prototype: void SLsmg_write_nchars (char *, int);
+3cls
+ Prototype: void SLsmg_cls (void);
+ Clear the screen
+3refresh
+ Prototype: void SLsmg_refresh (void);
+ Make the physical display look like the virtual display.
+3touch_lines
+ Prototype: void SLsmg_touch_lines (int row, int n);
+ Mark screen rows 'row', 'row + 1', ... 'row + (n - 1)' as modified.
+3init_smg
+ Prototype: int SLsmg_init_smg (void);
+ Must be called before any of the other routines will work.
+3reset_smg
+ Prototype: void SLsmg_reset_smg (void);
+3char_at
+ unsigned short SLsmg_char_at(void);
+ Prototype: unsigned short SLsmg_char_at(void);
+ Returns the character and its attributes object number at the current
+ cursor position.
+2Variables
+ SLsmg_Tab_Width (Default is 8).
+
+1Searching-Functions
+ The S-Lang library incorporates two types of searches: Regular expression
+ pattern matching and ordinary searching.
+2Regular-Expressions
+
+             !!! No documentation available yet !!!
+
+2Simple-Searches
+ The routines for ordinary searching are defined in the `slsearch.c' file.
+ To use these routines, simply include "slang.h" in your program and simply
+ call the appropriate routines.
+ 
+ The searches can go in either a forward or backward direction and can
+ either be case or case insensitive.  The region that is searched may
+ contain null characters (ASCII 0) however, the search string cannot in the
+ current implementation.  In addition the length of the string to be found
+ is currently limited to 256 characters.
+ 
+ Before searching, the function `SLsearch_init' must first be called to
+ ``preprocess'' the search string.
+3initialization
+ The function `SLsearch_init' must be called before a search can take place.
+ Its prototype is:
+ 
+    int SLsearch_init (char *key, int dir, int case_sens, SLsearch_Type *st);
+    
+ Here `key' is the string to be searched for.  `dir' specifies the direction
+ of the search: a value greater than zero is used for searching forward and
+ a value less than zero is used for searching backward.  The parameter
+ `case_sens' specifies whether the search is case sensitive or not.  A
+ non-zero value indicates that case is important.  `st' is a pointer to a
+ structure of type `SLsearch_Type' defined in "slang.h".  This structure is
+ initialized by this routine and must be passed to `SLsearch' when the
+ search is actually performed.
+ 
+ This routine returns the length of the string to be searched for.
+
+3SLsearch
+ Prototype: unsigned char *SLsearch (unsigned char *pmin, unsigned char *pmax, 
+                                     SLsearch_Type *st);
+				     
+ This function performs the search defined by a previous call to
+ `SLsearch_init'  over a region specified by the pointers `pmin' and `pmax'.
+ 
+ It returns a pointer to the start of the match if successful or it will
+ return NULL if a match was not found.
+  
+

@@ -1,0 +1,89 @@
+#!/usr/bin/env jed-script
+
+if (__argc != 2)
+{
+   () = fprintf (stderr, "Usage: %s file.txt\n", __argv[0]);
+   exit (1);
+}
+
+% The txt file looks ugly and the contents at the beginning are
+% totally misleading.
+
+static define process_file (file)
+{
+   variable txt;
+
+   () = read_file (file);
+   % trim excess blank lines
+   trim_buffer ();
+
+   % fix the underscore chars
+   bob ();
+   while (fsearch ("_.ds h "))
+     {
+	deln (7);
+	insert ("_");
+	% Unfortunately, there are other things associated with this that are
+	% messed up.  See my debian linuxdoc bug report.  In particular, the
+	% table of contents associated with this are hosed and possibly the
+	% rest of the text on this line.  Here is a fix for contents.
+	push_spot ();
+	bol_skip_white ();
+	push_mark ();
+	skip_chars ("0-9.");
+	variable sect = bufsubstr ();
+	skip_white ();
+	push_mark ();
+	eol ();
+	txt = bufsubstr ();
+	eob ();
+	() = bsearch ("Table of Contents");
+	sect = strcat ("  ",sect," ");
+	if (bol_fsearch (sect))
+	  {
+	     go_right(strlen (sect));
+	     del_eol ();
+	     insert (txt);
+	  }
+	pop_spot ();
+     }
+
+   % Delete the contents at the beginning.  They are wrong.
+   bob ();
+   if (fsearch ("Table of Contents"))
+     {
+	bol ();
+	push_mark ();
+	if (fsearch ("____________________________________________"))
+	  {
+	     go_down(1);
+	     del_region ();
+	     % Grab the contents from the bottom
+	     push_spot ();
+	     eob ();
+	     () = bsearch ("Table of Contents");
+	     bol ();
+	     push_mark ();
+	     % Get rid of . . . stufff since the page numbers are meaningless
+	     while (re_fsearch ("\\d$"))
+	       {
+		  eol ();
+		  push_mark ();
+		  bskip_chars ("[0-9]");
+		  bskip_chars (" .");
+		  del_region ();
+	       }
+	     eob ();
+	     txt = bufsubstr_delete ();
+	     pop_spot ();
+	     insert (txt);
+	  }
+	else pop_mark (0);
+     }
+
+   save_buffer ();
+}
+
+process_file (__argv[1]);
+exit (0);
+

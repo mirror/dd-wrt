@@ -1,0 +1,32 @@
+% -*- slang -*-
+% This is a site-wide slang readline init file.  If $HOME/.slrlinerc
+% does not exist, then this file will get loaded.
+
+autoload ("require", "require");
+
+autoload ("rline_call_editor", "rline/editor");
+autoload ("rline_edit_line", "rline/editor");
+
+% Load the completion hooks
+require ("rline/complete");
+
+% This defines the Rline_History_File variable and exports the rline
+% history functions.
+require ("rline/history");
+
+% The default bindings are emacs-like bindings
+require ("rline/emacskeys");
+
+%RLine_History_File = "$HOME/.${name}_hist";
+
+define rline_open_hook (name)
+{
+   if (RLine_History_File != NULL)
+     rline_load_history (_$(RLine_History_File));
+}
+
+define rline_close_hook (name)
+{
+   if (RLine_History_File != NULL)
+     rline_save_history (_$(RLine_History_File));
+}

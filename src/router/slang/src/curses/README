@@ -1,0 +1,11 @@
+The files in this directory serve to illustrate the S-Lang library curses
+emulation.  The emulation is far from complete; however, for many simple
+programs, it is adequate.
+
+The C files in the directory come from the ncurses test directory.  The only
+modifications I have made to them involve adding code to stop gcc warnings,
+e.g.,
+
+./bs.c: In function `main':
+./bs.c:1250: warning: control reaches end of non-void function
+

@@ -1,0 +1,322 @@
+#!/usr/bin/env slsh
+%_debug_info = 1;
+% A simple ls designed primarily for windows.
+
+private variable Months =
+  ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep",
+  "Oct", "Nov", "Dec"];
+
+private variable Six_Months_Ago = _time () - 3600*24*30*6;
+
+private define ls_long (this_dir, file_list, st_list)
+{
+   _for (0, length(file_list)-1, 1)
+     {
+	variable i = ();
+	variable file = file_list[i];
+	variable st = st_list[i];
+
+	variable size, mode, owner, group, symlink, mtime;
+	variable mstring;
+	variable tm;
+
+	size = st.st_size;
+	mtime = st.st_mtime;
+	mode = st.st_mode;
+	owner = st.st_uid;
+	group = st.st_gid;
+#ifdef WIN32
+	variable attrs = st.st_opt_attrs;
+#endif
+	tm = localtime (mtime);
+#ifdef WIN32
+	if (tm == NULL)
+	  mtime = "Jan 01  1980";
+	else
+#endif
+	if (mtime < Six_Months_Ago)
+	  mtime = sprintf ("%s %2d  %4d",
+			   Months[tm.tm_mon],
+			   tm.tm_mday,
+			   1900 + tm.tm_year);
+	else
+	  mtime = sprintf ("%s %2d %2d:%02d",
+			   Months[tm.tm_mon],
+			   tm.tm_mday,
+			   tm.tm_hour,
+			   tm.tm_min);
+
+	symlink = "";
+#ifexists readlink
+	if (stat_is ("lnk", mode))
+	  {
+	     symlink = readlink (path_concat (this_dir, file));
+	     if (symlink == NULL)
+	       symlink = "??";
+
+	     symlink = " -> " + symlink;
+	  }
+#endif
+#ifdef WIN32
+	mstring = stat_mode_to_string (mode, attrs);
+#else
+	mstring = stat_mode_to_string (mode);
+#endif
+	() = fprintf (stdout,
+		      "%8s %8S %8S %10S %s %s%s\n",
+		      mstring, owner, group, size, mtime, file, symlink);
+     }
+}
+
+private variable
+  Use_Long_Form = 0,
+  Use_atime = 0,
+  Sort_By_Time = 0,
+  Sort_By_Size = 0,
+  Use_a_Option = 0,
+  Use_F_Option = 1,
+  Use_R_Option = 0,
+  Use_d_Option = 0;
+
+private define parse_args (args)
+{
+   variable ch;
+
+   foreach (args)
+     {
+	ch = ();
+	switch (ch)
+	  { case 'l': Use_Long_Form = 1; }
+	  { case 'u': Use_atime = 1; }
+	  { case 't': Sort_By_Time = 1; }
+	  { case 'S': Sort_By_Size = 1; }
+	  { case 'd': Use_d_Option = 1; }
+	  { case 'a': Use_a_Option = 1; }
+	  { case 'R': Use_R_Option = 1; }
+	  { case '-':}		       %  ignore it
+	  {
+	     () = fprintf (stderr, "Option '%c' not supported.\n", ch);
+	  }
+     }
+}
+
+define ls_short (dirs)
+{
+   variable max_len;
+   variable ncols;
+   variable num, num_per_row, num_rows;
+   variable stride;
+
+   num = length (dirs);
+   max_len = 0;
+   foreach (dirs)
+     {
+	variable dir;
+
+	dir = ();
+	if (strlen (dir) > max_len)
+	  max_len = strlen (dir);
+     }
+
+   max_len += 2;
+
+   variable format = "%-" + string (max_len) + "s";
+
+   ncols = 80;
+   num_per_row = ncols / max_len;
+   if (num_per_row == 0)
+     num_per_row = 1;
+
+   num_rows = (num + num_per_row - 1) / num_per_row;
+   _for (0, num_rows-1, 1)
+     {
+	variable r = ();
+	_for (0, num_per_row-1, 1)
+	  {
+	     variable c = ();
+	     variable i = r + num_rows * c;
+
+	     if (i < num)
+	       {
+		  if (c + 1 < num_per_row)
+		    () = fprintf (stdout, format, dirs[i]);
+		  else
+		    () = fputs (dirs[i], stdout);
+	       }
+	  }
+	() = fputs ("\n", stdout);
+     }
+}
+
+private define size_sort (a, b)
+{
+   b.st_size - a.st_size;
+}
+
+private define time_sort (a, b)
+{
+   b.st_mtime - a.st_mtime;
+}
+
+private define is_non_null_fun (a)
+{
+   a != NULL;
+}
+
+define sort_files (dirs, sts)
+{
+   variable st, i, non_null;
+
+   % Some of the sts structs may be NULL.  Get rid of those
+   non_null = array_map (Char_Type, &is_non_null_fun, sts);
+
+   i = where (non_null);
+   dirs = dirs [i];
+   sts = sts [i];
+
+   if (Use_atime)
+     {
+	foreach (sts)
+	  {
+	     st = ();
+	     st.st_mtime = st.st_atime;
+	  }
+     }
+
+   if (Sort_By_Time)
+     i = array_sort (sts, &time_sort);
+   else if (Sort_By_Size)
+     i = array_sort (sts, &size_sort);
+   else
+     i = array_sort (dirs);
+
+   return dirs[i], sts[i];
+}
+
+private define isdir_fun (st)
+{
+   stat_is ("dir", st.st_mode);
+}
+
+private define list_dir (dir)
+{
+#ifndef UNIX
+   if (Use_a_Option)
+     listdir (dir, "");
+   else
+#endif
+     listdir (dir);
+}
+
+define do_ls ();
+define do_ls (dirs, this_dir, recurse, prune_hidden)
+{
+   variable i, len, st, sts, dir;
+
+   if (dirs == NULL)
+     return;
+
+   len = length(dirs);
+   sts = Struct_Type [len];
+
+   _for (0, len-1, 1)
+     {
+	i = ();
+	dir = dirs[i];
+
+	if (prune_hidden)
+	  {
+	     if ((dir[0] == '.') and (Use_a_Option == 0))
+	       {
+		  !if (is_substr (dir, "\\"))
+		    continue;
+	       }
+	  }
+
+	st = lstat_file (path_concat (this_dir, dir));
+	if (st == NULL)
+	  () = fprintf (stderr, "%s: %s: %s\n",
+			__argv[0],
+			path_concat (this_dir, dir),
+			errno_string (errno));
+	else
+	  sts[i] = st;
+     }
+
+   (dirs, sts) =  sort_files (dirs, sts);
+
+   variable isdir;
+
+   if (length (sts)) isdir = array_map (Char_Type, &isdir_fun, sts);
+   else isdir = Int_Type[0];
+
+   variable i_reg = where (isdir == 0);
+   variable i_dir = where (isdir);
+   variable dont_recurse;
+
+   if (Use_F_Option and length (i_dir))
+     dirs[i_dir] = array_map (String_Type, &path_concat, dirs[i_dir], "");
+
+   dont_recurse = (Use_d_Option or not recurse);
+
+   if (dont_recurse)
+     {
+	if (Use_Long_Form)
+	  ls_long (this_dir, dirs, sts);
+	else
+	  ls_short (dirs);
+	return;
+     }
+
+   if (Use_Long_Form)
+     ls_long (this_dir, dirs[i_reg], sts[i_reg]);
+   else
+     ls_short (dirs[i_reg]);
+
+   if (length(i_dir) == 1)
+     {
+	if (length (i_reg) == 0)
+	  {
+	     dir = dirs[i_dir][0];
+
+	     do_ls (list_dir (dir), dir, Use_R_Option, 1);
+	     return;
+	  }
+	() = fputs ("\n", stdout);
+     }
+
+   foreach (dirs[i_dir])
+     {
+	dir = ();
+	dir = path_concat (this_dir, dir);
+	() = fprintf (stdout, "%s:\n", dir);
+	do_ls (list_dir (dir), dir, Use_R_Option, 1);
+	() = fprintf (stdout, "\n");
+     }
+}
+
+define main (argc, argv)
+{
+   variable dirs;
+
+   if (argc == 1)
+     return do_ls (list_dir("."), ".", 0, 1);
+   else if (__argv[1][0] == '-')
+     {
+	parse_args (__argv[1]);
+
+	if (Use_d_Option and Use_R_Option)
+	  Use_R_Option = 0;
+
+	if (__argc > 2)
+	  dirs = __argv[[2:]];
+	else
+	  return do_ls (list_dir("."), ".", Use_R_Option, 1);
+     }
+   else
+     dirs = __argv[[1:]];
+
+   do_ls (dirs, ".", 1, 0);
+}
+
+main (__argc, __argv);

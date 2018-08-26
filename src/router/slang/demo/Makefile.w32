@@ -1,0 +1,6 @@
+CC=gcc
+CFLAGS = -DSLANG_DLL=1
+smgtest: smgtest.c
+	$(CC) $(CFLAGS) smgtest.c -I../src -L../src/gw32objs -o smgtest -lslang
+pager: pager.c
+	$(CC) $(CFLAGS) pager.c -I../src -L../src/gw32objs -o pager -lslang

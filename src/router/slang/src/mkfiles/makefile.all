@@ -1,0 +1,754 @@
+!ifndef MSDOS WIN16 WIN32 OS2
+# -*- mode: sh; mode: fold -*-
+# This file has been folded.
+
+#{{{ MACRO descriptions
+
+This is a master makefile that from which DOS/Windows/OS2 makefiles
+may be derived.  A makefile for a particular system may be derived by
+passing this through the standalone DOS executable 'mkmake' which
+should be present in this directory.  For example, to produce a makefile
+suitable for OS2 using the EMX compiler use:
+
+    mkmake OS2 EMX < makefile.all > Makefile
+
+Currently supported platforms include:
+
+   MSDOS WIN16 WIN32 OS2
+
+Currently supported compilers include:
+
+   MSDOS - BCC, DJGPP
+   WIN16 - BCC
+   WIN32 - BCC, VC, CYGWIN32, MINGW32, WCC
+     OS2 - EMX, WCC, ICC
+
+More will be added in the future.
+
+For example to produce makefile for compiling for Win32 using
+Visual C++ use:
+
+   mkmake WIN32 VC < makefile.all > Makefile
+
+Similarly,
+
+   mkmake WIN32 MINGW32 < makefile.all > Makefile
+
+will produce a makefile for the MINGW32 compiler.
+
+If you want to create a dynamic link library (instead of static),
+add a 'DLL' parameter to mkmake:
+
+   mkmake WIN32 VC DLL < makefile.all > Makefile
+
+(right now this is known to work only with Visual Studio).
+
+Each compiler-dependent section of this master makefile must define
+the following macros:
+
+ CC             : The C compiler
+ CFLAGS		: Compiler flags
+ P		: Path separator used by make/compiler
+ O		: Object file extension
+ SRCDIR		: SRC location (.)
+ OBJDIR		: Directory where objects are placed
+ COMPILE_CMD	: Command used to produce object from .c file
+ LIBDEPS	: Other dependencies library depends upon
+ TARGET		: Primary target name
+ COPY		: copy command
+
+Other macros include:
+
+ RSPFILE	: Name of response file
+ RSP_PREFIX	: Prefix for response file line (See its usage)
+ RSP_POSTFIX	: Postfix for response file line (See its usage)
+ RM             : What to use to delete a file
+ TOUCH		: Touch program
+
+Special notes:
+
+ The P macro could be problematic when its value is a backslash (\).  Some
+ make programs may require it to be doubled, i.e., \\.  Whatever its value is,
+ it should expand to something that does not include whitespace.  Usually
+ this requires that it be followed by a '#' character; however, this may
+ result in the '#' character being quoted, or, escaped if the value of P is
+ a backslash.
+
+#}}}
+!else   #rest of file
+# Note:
+# This makefile was automatically generated from the master makefile.all.
+# If you have problems with this file, edit the mkfiles/makefile.all.
+# Also check slconfig.h to make sure that what is defined there is
+# appropriate to your system.
+#
+TOOL_PREFIX =
+! ifdef MSDOS
+!  ifdef DJGPP #{{{
+CC = $(TOOL_PREFIX)gcc
+CFLAGS = -O2 -fno-strength-reduce -Wall -W
+RANLIB = $(TOOL_PREFIX)ranlib
+AR_CR = $(TOOL_PREFIX)ar -cr
+P = /# path sep
+O = o # Object extension
+SRCDIR = .# Location of sources
+OBJDIR = djgobjs# Location of objects
+TARGET = $(OBJDIR)/libslang.a
+RSPFILE = $(OBJDIR)/link.rsp
+RSP_PREFIX =
+RSP_POSTFIX =
+COMPILE_CMD = $(CC) -c $(CFLAGS) -o #
+LIBDEPS = $(RSPFILE)
+RM = rm
+TOUCH = touch
+COPY = cp
+#}}}
+!  elifdef BCC #{{{
+CC = bcc
+CFLAGS = -G- -H -N -O1 -w -ml -Dmsdos
+P = \\
+O = obj
+SRCDIR = .
+OBJDIR = bccobjs
+TARGET = $(OBJDIR)\slang.lib
+RSPFILE = $(OBJDIR)\link.rsp
+RSP_PREFIX = +-
+RSP_POSTFIX = &
+COMPILE_CMD = $(CC) -c $(CFLAGS) -o#  <-- no tailing space
+LIBDEPS = $(RSPFILE)
+TOUCH = touch
+COPY = copy
+#}}} BCC
+!  endif #ifdef BCC elifdef DJGPP
+! endif #MSDOS
+! ifdef WIN16 #{{{
+!  ifdef WCC
+CC = wcl
+DEFINES = -Dmsdos -DMSWINDOWS
+CFLAGS = /bt=win16 /ort /I. $(DEFINES)
+P = \#
+O = obj # Object extension
+
+.c.obj: .AUTODEPEND
+	$(CC) $(CFLAGS) /c $< /fo=$@
+
+SRCDIR = .# Location of sources
+OBJDIR = wccobjs# Location of objects
+TARGET = $(OBJDIR)\slang.lib
+RSPFILE = $(OBJDIR)\link.rsp
+RSP_PREFIX = -+
+RSP_POSTFIX =
+COMPILE_CMD = $(CC) $(CFLAGS) /c /fo=
+LIBDEPS = $(RSPFILE)
+# This needs changing for Windows NT on non-Intel processors
+TOUCH = wtouch
+RM = del
+COPY = copy
+!  else
+CC = bcc
+CFLAGS = -G- -H -N -w -ml -Dmsdos -DMSWINDOWS -W
+#CFLAGS = -N -v  -H -w -ml -Dmsdos -DMSWINDOWS -WS
+OBJDIR = mswobjs# Location of objects
+O = obj # Object extension
+P = \\
+SRCDIR = .# Location of sources
+TARGET = $(OBJDIR)$(P)wslang.lib
+RSPFILE = $(OBJDIR)$(P)mswin.rsp
+RSP_PREFIX = +-#
+RSP_POSTFIX = &#
+COMPILE_CMD = $(CC) -c $(CFLAGS) -o#
+LIBDEPS = $(RSPFILE)
+TOUCH = touch
+COPY = copy
+!  endif #}}}
+! endif #WIN16
+! ifdef OS2
+!  ifdef EMX #{{{
+CC = gcc -Zmtd -DEMX_VIDEO
+CFLAGS = -DOS2 -D__os2__
+P = /
+O = o # Object extension
+SRCDIR = .# Location of sources
+OBJDIR = emxobjs# Location of objects
+TARGET = $(OBJDIR)/slang.a
+COMPILE_CMD = $(CC) -c $(CFLAGS) -o #
+LIBDEPS =
+TOUCH = touch
+COPY = cp
+AR_CR = ar crv
+RANLIB = ranlib
+
+#}}}
+!  elifdef WCC #{{{
+CC = wcc386
+CFLAGS = -DOS2 -D__os2__ -bm -bt=os2 #
+P = \#
+O = obj # Object extension
+SRCDIR = .# Location of sources
+OBJDIR = wccobjs# Location of objects
+TARGET = $(OBJDIR)\slang.lib
+COMPILE_CMD = $(CC) $(CFLAGS) -fo=#
+RSPFILE =
+RSP_PREFIX = +-
+RSP_POSTFIX =
+LIBDEPS = $(RSPFILE)
+TOUCH = wtouch
+COPY = copy
+RM = del
+#}}}
+!  elifdef ICC #{{{
+CC = icc
+CFLAGS = -Q+ -W3 -DOS2 -D__os2__ -Gm+ -Wcnd-
+P = \#
+O = obj
+SRCDIR = .
+OBJDIR = iccobjs
+TARGET = $(OBJDIR)\slang.lib
+COMPILE_CMD = $(CC) -c $(CFLAGS) -Fo#  <-- no trailing space
+LIBDEPS = $(RSPFILE)
+RSPFILE = $(OBJDIR)\link.rsp
+RSP_PREFIX =
+TMP1=A
+# Hack to get ^&
+RSP_POSTFIX = $(TMP1:A=^^)&
+COPY = copy
+RM=del
+TOUCH=echo
+#}}}
+!  endif # ifdef EMX elifdef WCC
+! endif #OS2
+! ifdef WIN32
+!  ifdef VC #{{{
+# Makefile for slang as Win32 GUI using nmake under Visual C.
+CC = cl
+CFLAGS =
+P = \\
+O = obj # Object extension
+SRCDIR = .# Location of sources
+OBJDIR = mw32objs# Location of objects
+TGTBASE=$(OBJDIR)\wslang32
+TARGET = $(TGTBASE).lib
+RSPFILE = $(OBJDIR)\link.rsp
+RSP_PREFIX =
+RSP_POSTFIX =
+COMPILE_CMD = $(CC) /c @$(OBJDIR)\comp.rsp /Fo # /Fo specifies object file name
+LIBDEPS = $(RSPFILE) $(OBJDIR)\comp.rsp
+# This needs changing for Windows NT on non-Intel processors
+CPU = _X86_
+RM = del
+TOUCH = touch
+COPY = copy
+#}}}
+!  elifdef BCC #{{{
+CC = bcc32
+CFLAGS = -N -w -w-sig -w-stu -v -DWIN32
+# Location of sources
+SRCDIR = .
+# Location of objects
+OBJDIR = bw32objs
+# Object extension
+O = obj
+P = \\
+TARGET = $(OBJDIR)\wslang.lib
+RSPFILE = $(OBJDIR)\link.rsp
+RSP_PREFIX = +-
+! if$OS Windows_NT
+RSP_POSTFIX = ^^&
+! else
+RSP_POSTFIX = &
+! endif
+COMPILE_CMD = $(CC) -c $(CFLAGS) -o
+LIBDEPS = $(RSPFILE)
+TOUCH = touch
+COPY = copy
+
+#}}}
+!  elifdef CYGWIN32 #{{{
+# This Makefile is for the CYGWIN32 environment
+CC = gcc
+CFLAGS = -DWIN32 -W -Wall -O2 -fno-strength-reduce
+P = /#
+O = o # Object extension
+SRCDIR = .# Location of sources
+OBJDIR = gw32objs# Location of objects
+TARGET = $(OBJDIR)/libslang.a
+COMPILE_CMD = $(CC) -c $(CFLAGS) -o #
+LIBDEPS =
+RM = rm
+TOUCH = touch
+COPY = cp
+AR_CR = ar crv
+RANLIB = ranlib
+
+#}}}
+!  elifdef MINGW32 #{{{
+# This Makefile is for the MINGW32 environment
+CC = $(TOOL_PREFIX)gcc
+WFLAGS = -W -Wall
+!   ifdef DLL
+CFLAGS = -DWIN32 -DSLANG_DLL=1 -O2 $(WFLAGS)
+!   else
+CFLAGS = -DWIN32 -O2 $(WFLAGS)
+!   endif
+P = /#
+O = o # Object extension
+SRCDIR = .# Location of sources
+OBJDIR = gw32objs# Location of objects
+TGTBASE=$(OBJDIR)/libslang
+prefix=/mingw/local
+module_install_dir = $(prefix)/lib/slang/v2/modules#
+install_doc_dir = $(prefix)/share/doc/slang/v2
+slstd_C_FLAGS = -DSLANG_DOC_DIR='"$(install_doc_dir)"' -DSLANG_INSTALL_PREFIX='"$(prefix)"'
+slimport_C_FLAGS = -DMODULE_INSTALL_DIR='"$(module_install_dir)"'
+
+TARGET = $(TGTBASE).a
+COMPILE_CMD = $(CC) -c $(CFLAGS) -o #
+LIBDEPS =
+RM = rm
+TOUCH = touch
+COPY = cp
+AR_CR = $(TOOL_PREFIX)ar crv
+RANLIB = $(TOOL_PREFIX)ranlib
+
+#COPY = copy
+#}}}
+!  elifdef WCC #{{{
+# Watcom makefile for slang
+
+CC = wcl386
+DEFINES = /DWIN32 /D__WIN32__
+CFLAGS = /bt=nt /ort /I. $(DEFINES)
+P = \#
+O = obj # Object extension
+
+.c.obj: .AUTODEPEND
+	$(CC) $(CFLAGS) /c $< /fo=$@
+
+SRCDIR = .# Location of sources
+OBJDIR = w32objs# Location of objects
+TARGET = $(OBJDIR)\wslang32.lib
+RSPFILE = $(OBJDIR)\link.rsp
+RSP_PREFIX = -+
+RSP_POSTFIX =
+COMPILE_CMD = $(CC) $(CFLAGS) /c /fo=
+LIBDEPS = $(RSPFILE)
+# This needs changing for Windows NT on non-Intel processors
+CPU = _X86_
+TOUCH = wtouch
+RM = del
+COPY = copy
+#}}}
+!  endif    #ifdef VC elifdef BCC ... elifdef MINGW32
+! endif #WIN32
+
+# End of compiler specific section
+
+CONFIG_H = config.h
+#{{{ OBJS =
+
+OBJS = $(OBJDIR)$(P)slang.$(O) \
+       $(OBJDIR)$(P)slarray.$(O) \
+       $(OBJDIR)$(P)slclass.$(O) \
+       $(OBJDIR)$(P)slcmd.$(O) \
+       $(OBJDIR)$(P)slerr.$(O) \
+       $(OBJDIR)$(P)slgetkey.$(O) \
+       $(OBJDIR)$(P)slkeymap.$(O) \
+       $(OBJDIR)$(P)slmalloc.$(O) \
+       $(OBJDIR)$(P)slmath.$(O) \
+       $(OBJDIR)$(P)slarith.$(O) \
+       $(OBJDIR)$(P)slassoc.$(O) \
+       $(OBJDIR)$(P)slmemchr.$(O) \
+       $(OBJDIR)$(P)slmemcmp.$(O) \
+       $(OBJDIR)$(P)slmemcpy.$(O) \
+       $(OBJDIR)$(P)slmemset.$(O) \
+       $(OBJDIR)$(P)slmisc.$(O) \
+       $(OBJDIR)$(P)slparse.$(O) \
+       $(OBJDIR)$(P)slprepr.$(O) \
+       $(OBJDIR)$(P)slregexp.$(O) \
+       $(OBJDIR)$(P)slrline.$(O) \
+       $(OBJDIR)$(P)slsearch.$(O) \
+       $(OBJDIR)$(P)slsmg.$(O) \
+       $(OBJDIR)$(P)slstd.$(O) \
+       $(OBJDIR)$(P)sltoken.$(O) \
+       $(OBJDIR)$(P)sltypes.$(O) \
+       $(OBJDIR)$(P)slscroll.$(O) \
+       $(OBJDIR)$(P)slsignal.$(O) \
+       $(OBJDIR)$(P)slsig.$(O) \
+       $(OBJDIR)$(P)slkeypad.$(O) \
+       $(OBJDIR)$(P)slerrno.$(O) \
+       $(OBJDIR)$(P)slstring.$(O) \
+       $(OBJDIR)$(P)slstruct.$(O) \
+       $(OBJDIR)$(P)slcmplex.$(O) \
+       $(OBJDIR)$(P)slarrfun.$(O) \
+       $(OBJDIR)$(P)slimport.$(O) \
+       $(OBJDIR)$(P)slpath.$(O) \
+       $(OBJDIR)$(P)slcompat.$(O) \
+       $(OBJDIR)$(P)slposdir.$(O) \
+       $(OBJDIR)$(P)slstdio.$(O) \
+       $(OBJDIR)$(P)slproc.$(O) \
+       $(OBJDIR)$(P)sltime.$(O) \
+       $(OBJDIR)$(P)slstrops.$(O) \
+       $(OBJDIR)$(P)slbstr.$(O) \
+       $(OBJDIR)$(P)slpack.$(O) \
+       $(OBJDIR)$(P)slintall.$(O) \
+       $(OBJDIR)$(P)slistruc.$(O) \
+       $(OBJDIR)$(P)slposio.$(O) \
+       $(OBJDIR)$(P)slnspace.$(O) \
+       $(OBJDIR)$(P)slarrmis.$(O) \
+       $(OBJDIR)$(P)slospath.$(O) \
+       $(OBJDIR)$(P)slscanf.$(O) \
+! ifndef WIN16
+       $(OBJDIR)$(P)slvideo.$(O) \
+! endif
+! ifdef MSDOS
+       $(OBJDIR)$(P)sldostty.$(O) \
+! endif
+! ifdef WIN32
+       $(OBJDIR)$(P)slw32tty.$(O) \
+! endif
+! ifdef OS2
+       $(OBJDIR)$(P)slos2tty.$(O) \
+! endif
+       $(OBJDIR)$(P)sllower.$(O) \
+       $(OBJDIR)$(P)slupper.$(O) \
+       $(OBJDIR)$(P)slischar.$(O) \
+       $(OBJDIR)$(P)slutf8.$(O) \
+       $(OBJDIR)$(P)slwcwidth.$(O) \
+       $(OBJDIR)$(P)slwclut.$(O) \
+       $(OBJDIR)$(P)slcommon.$(O) \
+       $(OBJDIR)$(P)sllist.$(O) \
+       $(OBJDIR)$(P)slexcept.$(O) \
+       $(OBJDIR)$(P)slfpu.$(O) \
+       $(OBJDIR)$(P)slboseos.$(O) \
+       $(OBJDIR)$(P)slxstrng.$(O)
+#---------------------------------------------------------------------------
+
+#}}}
+
+$(TARGET): $(OBJDIR) $(CONFIG_H) $(LIBDEPS) $(OBJS)
+! ifdef DJGPP CYGWIN32 MINGW32 ICC
+	-$(RM) $(TARGET)
+! endif
+! ifdef DJGPP
+	$(AR_CR) $(TARGET) @$(RSPFILE)
+	$(RANLIB) $(TARGET)
+! elifdef BCC
+	tlib $(TARGET) /P32 /C @$(RSPFILE)
+! elifdef EMX CYGWIN32
+	$(AR_CR) $(TARGET) $(OBJS)
+	$(RANLIB) $(TARGET)
+! elifdef MINGW32
+!  ifdef DLL
+	$(CC) -shared -o $(TGTBASE).dll $(OBJS) -Wl,--out-implib,$(TARGET)
+!  else
+	$(AR_CR) $(TARGET) $(OBJS)
+	$(RANLIB) $(TARGET)
+!  endif
+! elifdef VC
+# dll support
+!  ifdef DLL
+	link /dll /machine:I386 /out:$(TGTBASE).dll /implib:$(TGTBASE).lib @$(RSPFILE)
+!  else
+ 	link -lib -out:$(TARGET) @$(RSPFILE)
+!  endif
+! elifdef WCC
+	wlib $(TARGET) @$(RSPFILE)
+#	wlib $(TARGET) -+ $(OBJS)
+! elifdef ICC
+	ilib $(TARGET) @$(RSPFILE);
+#	ilib $(TARGET) $(OBJS);
+! endif
+
+$(OBJDIR) :
+	-mkdir $(OBJDIR)
+$(CONFIG_H): slconfig.h
+	$(COPY) slconfig.h config.h
+	-$(TOUCH) config.h
+
+!ifndef EMX CYGWIN32 MINGW32 #ICC WCC
+#{{{ Create Response File
+
+$(RSPFILE) :
+	@echo Creating response file $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slxstrng.$(O) $(RSP_POSTFIX) > $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)sllower.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slupper.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slischar.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slutf8.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slwcwidth.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slwclut.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slcommon.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)sllist.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slexcept.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slfpu.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slboseos.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)sltypes.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)sltoken.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slstd.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slsmg.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slsearch.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slrline.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slregexp.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slprepr.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slparse.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slmisc.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slmemset.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slmemcpy.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slmemcmp.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slmemchr.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slmath.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slarith.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slassoc.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slmalloc.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slkeymap.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slgetkey.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slerr.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slcmd.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slclass.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slarray.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slscroll.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slsignal.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slsig.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slkeypad.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slerrno.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slstring.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slstruct.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slistruc.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slcmplex.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slarrfun.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slimport.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slpath.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slcompat.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slposdir.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slstdio.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slproc.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)sltime.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slstrops.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slbstr.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slpack.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slintall.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slposio.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slnspace.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slarrmis.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slospath.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slscanf.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+! ifndef WIN16
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slvideo.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+! endif
+! ifdef MSDOS
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)sldostty.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+! endif
+! ifdef WIN32
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slw32tty.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+! endif
+! ifdef OS2
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slos2tty.$(O) $(RSP_POSTFIX) >> $(RSPFILE)
+! endif
+	@echo $(RSP_PREFIX)$(OBJDIR)$(P)slang.$(O) >> $(RSPFILE)
+
+#}}}
+!endif  # NOT EMX, WCC, CYGWIN32, MINGW32
+
+!ifdef VC
+$(OBJDIR)\comp.rsp:
+	echo /nologo /W3 /O2 /D "NDEBUG" /D $(CPU) > $(OBJDIR)\comp.rsp
+	echo /D "WIN32" /I "." /MT >> $(OBJDIR)\comp.rsp
+	echo /D "_CRT_SECURE_NO_WARNINGS " >> $(OBJDIR)\comp.rsp
+	echo /D "_CRT_NONSTDC_NO_DEPRECATE" >> $(OBJDIR)\comp.rsp
+! ifdef DLL
+	echo /D SLANG_DLL >> $(OBJDIR)\comp.rsp
+! endif
+!endif
+
+#---------------------------------------------------------------------------
+
+# explicit rules follow below
+$(OBJDIR)$(P)slxstrng.$(O) : $(SRCDIR)$(P)slxstrng.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slxstrng.$(O) $(SRCDIR)$(P)slxstrng.c
+$(OBJDIR)$(P)sllower.$(O) : $(SRCDIR)$(P)sllower.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)sllower.$(O) $(SRCDIR)$(P)sllower.c
+
+$(OBJDIR)$(P)slupper.$(O) : $(SRCDIR)$(P)slupper.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slupper.$(O) $(SRCDIR)$(P)slupper.c
+
+$(OBJDIR)$(P)slischar.$(O) : $(SRCDIR)$(P)slischar.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slischar.$(O) $(SRCDIR)$(P)slischar.c
+
+$(OBJDIR)$(P)slutf8.$(O) : $(SRCDIR)$(P)slutf8.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slutf8.$(O) $(SRCDIR)$(P)slutf8.c
+
+$(OBJDIR)$(P)slwcwidth.$(O) : $(SRCDIR)$(P)slwcwidth.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slwcwidth.$(O) $(SRCDIR)$(P)slwcwidth.c
+
+$(OBJDIR)$(P)slwclut.$(O) : $(SRCDIR)$(P)slwclut.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slwclut.$(O) $(SRCDIR)$(P)slwclut.c
+
+$(OBJDIR)$(P)slcommon.$(O) : $(SRCDIR)$(P)slcommon.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slcommon.$(O) $(SRCDIR)$(P)slcommon.c
+
+$(OBJDIR)$(P)sllist.$(O) : $(SRCDIR)$(P)sllist.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)sllist.$(O) $(SRCDIR)$(P)sllist.c
+
+$(OBJDIR)$(P)slexcept.$(O) : $(SRCDIR)$(P)slexcept.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slexcept.$(O) $(SRCDIR)$(P)slexcept.c
+
+$(OBJDIR)$(P)slfpu.$(O) : $(SRCDIR)$(P)slfpu.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slfpu.$(O) $(SRCDIR)$(P)slfpu.c
+
+$(OBJDIR)$(P)slboseos.$(O) : $(SRCDIR)$(P)slboseos.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slboseos.$(O) $(SRCDIR)$(P)slboseos.c
+
+$(OBJDIR)$(P)sltypes.$(O) : $(SRCDIR)$(P)sltypes.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)sltypes.$(O) $(SRCDIR)$(P)sltypes.c
+
+$(OBJDIR)$(P)sltoken.$(O) : $(SRCDIR)$(P)sltoken.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)sltoken.$(O) $(SRCDIR)$(P)sltoken.c
+
+$(OBJDIR)$(P)slstd.$(O) : $(SRCDIR)$(P)slstd.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slstd.$(O) $(slstd_C_FLAGS) $(SRCDIR)$(P)slstd.c
+
+$(OBJDIR)$(P)slsmg.$(O) : $(SRCDIR)$(P)slsmg.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slsmg.$(O) $(SRCDIR)$(P)slsmg.c
+
+$(OBJDIR)$(P)slsearch.$(O) : $(SRCDIR)$(P)slsearch.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slsearch.$(O) $(SRCDIR)$(P)slsearch.c
+
+$(OBJDIR)$(P)slrline.$(O) : $(SRCDIR)$(P)slrline.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slrline.$(O) $(SRCDIR)$(P)slrline.c
+
+$(OBJDIR)$(P)slregexp.$(O) : $(SRCDIR)$(P)slregexp.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slregexp.$(O) $(SRCDIR)$(P)slregexp.c
+
+$(OBJDIR)$(P)slprepr.$(O) : $(SRCDIR)$(P)slprepr.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slprepr.$(O) $(SRCDIR)$(P)slprepr.c
+
+$(OBJDIR)$(P)slparse.$(O) : $(SRCDIR)$(P)slparse.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slparse.$(O) $(SRCDIR)$(P)slparse.c
+
+$(OBJDIR)$(P)slmisc.$(O) : $(SRCDIR)$(P)slmisc.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slmisc.$(O) $(SRCDIR)$(P)slmisc.c
+
+$(OBJDIR)$(P)slmemset.$(O) : $(SRCDIR)$(P)slmemset.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slmemset.$(O) $(SRCDIR)$(P)slmemset.c
+
+$(OBJDIR)$(P)slmemcpy.$(O) : $(SRCDIR)$(P)slmemcpy.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slmemcpy.$(O) $(SRCDIR)$(P)slmemcpy.c
+
+$(OBJDIR)$(P)slmemcmp.$(O) : $(SRCDIR)$(P)slmemcmp.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slmemcmp.$(O) $(SRCDIR)$(P)slmemcmp.c
+
+$(OBJDIR)$(P)slmemchr.$(O) : $(SRCDIR)$(P)slmemchr.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slmemchr.$(O) $(SRCDIR)$(P)slmemchr.c
+
+$(OBJDIR)$(P)slmath.$(O) : $(SRCDIR)$(P)slmath.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slmath.$(O) $(SRCDIR)$(P)slmath.c
+
+$(OBJDIR)$(P)slarith.$(O) : $(SRCDIR)$(P)slarith.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slarith.$(O) $(SRCDIR)$(P)slarith.c
+
+$(OBJDIR)$(P)slassoc.$(O) : $(SRCDIR)$(P)slassoc.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slassoc.$(O) $(SRCDIR)$(P)slassoc.c
+
+$(OBJDIR)$(P)slmalloc.$(O) : $(SRCDIR)$(P)slmalloc.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slmalloc.$(O) $(SRCDIR)$(P)slmalloc.c
+
+$(OBJDIR)$(P)slkeymap.$(O) : $(SRCDIR)$(P)slkeymap.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slkeymap.$(O) $(SRCDIR)$(P)slkeymap.c
+
+$(OBJDIR)$(P)slgetkey.$(O) : $(SRCDIR)$(P)slgetkey.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slgetkey.$(O) $(SRCDIR)$(P)slgetkey.c
+
+$(OBJDIR)$(P)slerr.$(O) : $(SRCDIR)$(P)slerr.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slerr.$(O) $(SRCDIR)$(P)slerr.c
+
+$(OBJDIR)$(P)slcmd.$(O) : $(SRCDIR)$(P)slcmd.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slcmd.$(O) $(SRCDIR)$(P)slcmd.c
+
+$(OBJDIR)$(P)slclass.$(O) : $(SRCDIR)$(P)slclass.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slclass.$(O) $(SRCDIR)$(P)slclass.c
+
+$(OBJDIR)$(P)slarray.$(O) : $(SRCDIR)$(P)slarray.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slarray.$(O) $(SRCDIR)$(P)slarray.c
+
+$(OBJDIR)$(P)slscroll.$(O) : $(SRCDIR)$(P)slscroll.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slscroll.$(O) $(SRCDIR)$(P)slscroll.c
+
+$(OBJDIR)$(P)slsignal.$(O) : $(SRCDIR)$(P)slsignal.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slsignal.$(O) $(SRCDIR)$(P)slsignal.c
+
+$(OBJDIR)$(P)slsig.$(O) : $(SRCDIR)$(P)slsig.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slsig.$(O) $(SRCDIR)$(P)slsig.c
+
+$(OBJDIR)$(P)slkeypad.$(O) : $(SRCDIR)$(P)slkeypad.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slkeypad.$(O) $(SRCDIR)$(P)slkeypad.c
+
+$(OBJDIR)$(P)slerrno.$(O) : $(SRCDIR)$(P)slerrno.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slerrno.$(O) $(SRCDIR)$(P)slerrno.c
+
+$(OBJDIR)$(P)slang.$(O) : $(SRCDIR)$(P)slang.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slang.$(O) $(SRCDIR)$(P)slang.c
+
+$(OBJDIR)$(P)slstring.$(O) : $(SRCDIR)$(P)slstring.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slstring.$(O) $(SRCDIR)$(P)slstring.c
+$(OBJDIR)$(P)slstruct.$(O) : $(SRCDIR)$(P)slstruct.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slstruct.$(O) $(SRCDIR)$(P)slstruct.c
+$(OBJDIR)$(P)slistruc.$(O) : $(SRCDIR)$(P)slistruc.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slistruc.$(O) $(SRCDIR)$(P)slistruc.c
+$(OBJDIR)$(P)slcmplex.$(O) : $(SRCDIR)$(P)slcmplex.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slcmplex.$(O) $(SRCDIR)$(P)slcmplex.c
+$(OBJDIR)$(P)slarrfun.$(O) : $(SRCDIR)$(P)slarrfun.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slarrfun.$(O) $(SRCDIR)$(P)slarrfun.c
+$(OBJDIR)$(P)slimport.$(O) : $(SRCDIR)$(P)slimport.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slimport.$(O) $(slimport_C_FLAGS) $(SRCDIR)$(P)slimport.c
+$(OBJDIR)$(P)slpath.$(O) : $(SRCDIR)$(P)slpath.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slpath.$(O) $(SRCDIR)$(P)slpath.c
+$(OBJDIR)$(P)slcompat.$(O) : $(SRCDIR)$(P)slcompat.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slcompat.$(O) $(SRCDIR)$(P)slcompat.c
+$(OBJDIR)$(P)slposdir.$(O) : $(SRCDIR)$(P)slposdir.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slposdir.$(O) $(SRCDIR)$(P)slposdir.c
+$(OBJDIR)$(P)slstdio.$(O) : $(SRCDIR)$(P)slstdio.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slstdio.$(O) $(SRCDIR)$(P)slstdio.c
+$(OBJDIR)$(P)slproc.$(O) : $(SRCDIR)$(P)slproc.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slproc.$(O) $(SRCDIR)$(P)slproc.c
+$(OBJDIR)$(P)sltime.$(O) : $(SRCDIR)$(P)sltime.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)sltime.$(O) $(SRCDIR)$(P)sltime.c
+$(OBJDIR)$(P)slstrops.$(O) : $(SRCDIR)$(P)slstrops.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slstrops.$(O) $(SRCDIR)$(P)slstrops.c
+$(OBJDIR)$(P)slbstr.$(O) : $(SRCDIR)$(P)slbstr.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slbstr.$(O) $(SRCDIR)$(P)slbstr.c
+$(OBJDIR)$(P)slpack.$(O) : $(SRCDIR)$(P)slpack.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slpack.$(O) $(SRCDIR)$(P)slpack.c
+$(OBJDIR)$(P)slintall.$(O) : $(SRCDIR)$(P)slintall.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slintall.$(O) $(SRCDIR)$(P)slintall.c
+$(OBJDIR)$(P)slposio.$(O) : $(SRCDIR)$(P)slposio.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slposio.$(O) $(SRCDIR)$(P)slposio.c
+$(OBJDIR)$(P)slnspace.$(O) : $(SRCDIR)$(P)slnspace.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slnspace.$(O) $(SRCDIR)$(P)slnspace.c
+$(OBJDIR)$(P)slarrmis.$(O) : $(SRCDIR)$(P)slarrmis.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slarrmis.$(O) $(SRCDIR)$(P)slarrmis.c
+$(OBJDIR)$(P)slospath.$(O) : $(SRCDIR)$(P)slospath.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slospath.$(O) $(SRCDIR)$(P)slospath.c
+$(OBJDIR)$(P)slscanf.$(O) : $(SRCDIR)$(P)slscanf.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slscanf.$(O) $(SRCDIR)$(P)slscanf.c
+#
+!ifndef WIN16
+$(OBJDIR)$(P)slvideo.$(O) : $(SRCDIR)$(P)slvideo.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slvideo.$(O) $(SRCDIR)$(P)slvideo.c
+!endif
+!ifdef MSDOS
+$(OBJDIR)$(P)sldostty.$(O) : $(SRCDIR)$(P)sldostty.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)sldostty.$(O) $(SRCDIR)$(P)sldostty.c
+!endif
+!ifdef OS2
+$(OBJDIR)$(P)slos2tty.$(O) : $(SRCDIR)$(P)slos2tty.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slos2tty.$(O) $(SRCDIR)$(P)slos2tty.c
+!endif
+!ifdef WIN32
+$(OBJDIR)$(P)slw32tty.$(O) : $(SRCDIR)$(P)slw32tty.c $(CONFIG_H)
+	$(COMPILE_CMD)$(OBJDIR)$(P)slw32tty.$(O) $(SRCDIR)$(P)slw32tty.c
+!endif
+
+clean:
+	cd $(OBJDIR) && $(RM) *.$(O) *.dll *.a
+#
+!endif   #NOT HELP

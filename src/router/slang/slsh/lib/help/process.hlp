@@ -1,0 +1,221 @@
+new_process
+
+ SYNOPSIS
+  Create a subprocess object
+
+ USAGE
+  Struct_Type new_process (String_Type argv[]; qualifiers)
+
+ DESCRIPTION
+  This function executes the program specified by the `argv'
+  parameter in a subprocess.  If `argv' is an array, the first
+  element (`argv[0]') of the array gives the name of the program
+  to be executed, and the remaining elements serve as arguments passed
+  to the program.  The program returns a structure that may be used to
+  interact with the process.  Upon error, an exception will be thrown.
+
+  The calling program may interact with the subprocess by reading from
+  or writing to the file descriptor fields of the structure returned
+  by the `new_process' function.  The specific file descriptors
+  are dictated via the `read', `write', and `dupN'
+  qualifiers, as described in detail below.
+
+  The function returns a structure containing zero or more fields of the form
+  `fdN' where `N' is an integer derived from the qualifiers,
+  e.g., `fd0' and `fd1' correspond to the child's stdin and
+  stdout, respectively.  The structure also contains fields of the
+  form `fpN' whose values are stdio File_Type objects
+  obtained using `fdopen' with the correponding `fdN' value.
+
+  Other important fields include `pid' whose value is
+  the process-id of the newly created process.
+
+  The status of the process may be checked or collected using the
+  `wait' method.  It is very important to call this method to
+  avoid the creation of zombie processes.
+
+ QUALIFIERS
+  The following qualifiers are supported:
+
+   read=fds
+
+    fds is a list of integer file descriptors that are open for read
+    access in the subprocess, and may be written to by the calling
+    process using the fdN or fpN fields of the structure.
+
+   write=fds
+
+    fds is a list of integer file descriptors that are open for write
+    access in the subprocess, and may be read to by the calling
+    process using the fdN or fpN fields of the structure.
+
+   stdin=filename
+   stdout=filename
+   stderr=filename
+
+    These qualifiers allow the stdin, stdout, and stderr file
+    descriptors in the subprocess to be redirected to a file.  Note:
+    The filenames are interpreted relative to the value of the
+    `dir' qualifier.
+
+   fdN=string
+
+    This qualifier will cause the integer file descriptor N to be open
+    in the subprocess and redirected to the filename represented by
+    the string, which is interpreted relative to the value of the `dir'
+    qualifier.  The access mode is dictated by the first few
+    characters of the string as described in more detail below.
+
+   stdin=File_Type|FD_Type
+   stdout=File_Type|FD_Type
+   stderr=File_Type|FD_Type
+   fdN=FD_Type|FD_Type
+
+     If the stdin, stdout, stderr, or fdN qualifiers have File_Type or
+     FD_Type values, then corresponding file descriptors in the
+     subprocess will be dup'd to FD_Type or FP_Type file descriptor.
+     This form of the qualifier may be used to setup pipelines.
+
+   dupN=int
+
+     The file descriptor corresponding to the integer N in the
+     subprocess is created by duping the descriptor given by the
+     integer value of the qualifier.  For example, dup2=1 would cause
+     stderr (fd=2) in the subprocess to be redirected to stdout (fd=1).
+
+   dir=string
+
+     Change to the specified directory in the child process.  This
+     will happen after the child process is started, but before any
+     files have been opened.  Hence, files attached to `stdin',
+     `stdout', etc will be opened relative to this directory.
+
+   pre_exec_hook=&func
+
+     This qualifier will cause the function corresponding to func to
+     be called prior to closing unused file descriptors and invoking
+     the executable.  The function will be passed a list of integer
+     valued of file descriptors that will be kept open.  Additional
+     integers may be added to the list by the function.
+
+  Note that the read and write qualifiers specify the nature of the
+  file descriptors from the child process's view.  That is, those
+  opened in the child process using the read qualifier, may be written
+  to by the parent.  Similarly, those opened using the write qualifier
+  may be read by the parent.
+
+ METHODS
+
+    Struct_Type .wait ( [ options ] )
+
+  The `.wait' method may be used to collect the exist status of
+  the process.  When called without arguments, it will cause the
+  parent process to wait for the subprocess to exit and return its
+  exit status in the form of a `waitpid' structure.  The optional
+  `options' argument corresponds to the options argument of the
+  `waitpid' function.  The most common is the WNOHANG option,
+  which will cause the `.wait' method to return immediately if
+  the process has not exited.
+
+  If an error occurs, the function will return NULL and set
+  `errno' accordingly.  Otherwise it will return a `waitpid'
+  structure.  See the documentation for `waitpid' for more
+  information.
+
+ EXAMPLE
+  In the following examples, `pgm' represents the program to be
+  invoked in the subprocess.  For simplicity, no addition arguments are
+  shown
+
+  Create subprocess that inherits stdin, stdout, stderr from the caller:
+
+   obj = new_process (pgm);
+
+
+  Create a subprocess that inherits stdin, stdout, and writes stderr
+  to a file:
+
+   obj = new_process (pgm; stderr="/tmp/file");   % form 1
+   obj = new_process (pgm; fd2=">/tmp/file");     % form 2
+
+
+  Mimic popen(pgm, "r"):
+
+   obj = new_process (pgm; write=1);   % Read from obj.fp1
+
+
+  Mimic popen(pgm, "w"):
+
+   obj = new_process (pgm; read=0);  % Write to obj.fp0
+
+
+  Mimic popen("pgm 2>&1", "r"):
+
+   obj = new_process (pgm; write=1, dup2=1);  % Read from fp1
+
+
+  Send stdout to a file, read from the subprocess's stderr:
+
+   obj = new_process (pgm; stdout="/tmp/file", write=2);
+   % Read from obj.fp2
+
+
+  Create a process with handles to its stdin, stdout, stderr
+
+   obj = new_process (pgm; write={1,2}, read=0);
+   % Use obj.fp0 for stdin, obj.fp1 for stdout, and obj.fp2 for stderr
+
+
+  Create a process with a write handle to the process's fd=27 and a
+  read handle to the process's stdout.
+
+   obj = new_process (pgm; read=27, write=1);
+   % write to fp27, read from fp1
+
+
+  Create a pipeline: pgm1 | pgm2 > /tmp/log :
+
+  obj1 = new_process (pgm1; write=1);
+  obj2 = new_process (pgm2; stdin=obj1.fp1, stdout="/tmp/log");
+
+
+  Create a pipeline with fd=27 from pgm1 redirected to stdin of pgm2:
+
+  obj1 = new_process (pgm1; write=27);
+  obj2 = new_process (pgm2; stdin=obj1.fp27);
+
+
+  Create a pipeline with fd=27 from pgm1 redirected to fd=9 of pgm2:
+
+  obj1 = new_process (pgm1; write=27);
+  obj2 = new_process (pgm2; fp9=obj1.fp27);
+
+
+  Mimic: pgm 2>&1 1>/dev/null
+
+  obj = new_process (pgm; fp2=1, stdout="/dev/null");
+
+
+  Mimic: pgm >/dev/null 2>&1
+
+  obj = new_process (pgm; stdout="/dev/null", dup2=1);
+
+
+  Append the output of pgm to /tmp/file.log:
+
+   obj = new_process (pgm; stdout=">>/tmp/file.log");
+
+
+ NOTES
+  Care must be exercised when reading or writing to multiple file
+  descriptors of a subprocess to avoid deadlock.  In such cases, the
+  select module should be used, or the file descriptors could be put in
+  non-blocking mode via the fcntl module.
+
+  It is important to call the `.wait' method prevent the process
+  from becoming a zombie and clogging the process table.
+
+ SEE ALSO
+  popen, system
+
+--------------------------------------------------------------

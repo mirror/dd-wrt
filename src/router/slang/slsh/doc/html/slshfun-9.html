@@ -1,0 +1,152 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="LinuxDoc-Tools 0.9.50">
+ <TITLE> SLSH Library Reference (version 2.2.0): Profiling Functions</TITLE>
+ <LINK HREF="slshfun-10.html" REL=next>
+ <LINK HREF="slshfun-8.html" REL=previous>
+ <LINK HREF="slshfun.html#toc9" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="slshfun-10.html">Next</A>
+<A HREF="slshfun-8.html">Previous</A>
+<A HREF="slshfun.html#toc9">Contents</A>
+<HR>
+<H2><A NAME="s9">9.</A> <A HREF="slshfun.html#toc9">Profiling Functions</A></H2>
+
+<P>These functions are used by <B>slprof</B> for profiling <B>slsh</B>
+applications.</P>
+<H2><A NAME="profile_on"></A> <A NAME="ss9.1">9.1</A> <A HREF="slshfun.html#toc9.1"><B>profile_on</B></A>
+</H2>
+
+<P>
+<DL>
+<DT><B> Synopsis </B><DD>
+<P>Enable code generation to support profiling hooks</P>
+<DT><B> Usage </B><DD>
+<P><CODE>profile_on ( [line_by_line] )</CODE></P>
+<DT><B> Description </B><DD>
+<P>This function will turn cause the interpreter to generate code to
+call hooks that are used to profile code.  The <CODE>profile_on</CODE>
+function does not establish those hooks, rather it causes code to be
+generated to support such hooks.</P>
+<P>With no optional argument, only code to support function call hooks
+will be generated.  To enable support for line-by-line profile
+hooks, a value of 1 should be passed to this function.</P>
+<DT><B> See Also </B><DD>
+<P><CODE>profile_off, profile_begin, profile_end, profile_calibrate, profile_report</CODE>}</P>
+</DL>
+</P>
+
+
+<H2><A NAME="profile_off"></A> <A NAME="ss9.2">9.2</A> <A HREF="slshfun.html#toc9.2"><B>profile_off</B></A>
+</H2>
+
+<P>
+<DL>
+<DT><B> Synopsis </B><DD>
+<P>Turn off code generation for profiling hooks</P>
+<DT><B> Usage </B><DD>
+<P><CODE>profile_off ()</CODE></P>
+<DT><B> Description </B><DD>
+<P>This function turns off the generation of code to support profiling
+hooks.</P>
+<DT><B> See Also </B><DD>
+<P><CODE>profile_on, profile_begin, profile_end, profile_calibrate, profile_report</CODE>}</P>
+</DL>
+</P>
+
+
+<H2><A NAME="profile_begin"></A> <A NAME="ss9.3">9.3</A> <A HREF="slshfun.html#toc9.3"><B>profile_begin</B></A>
+</H2>
+
+<P>
+<DL>
+<DT><B> Synopsis </B><DD>
+<P>Establish profiling hooks and reset the profiler</P>
+<DT><B> Usage </B><DD>
+<P><CODE>profile_begin ( [line_by_line] )</CODE></P>
+<DT><B> Description </B><DD>
+<P>This function establishes the profiling hooks and resets or
+initializes the profiler state.  By default, only hooks to gather
+function call information are created.  To enable the gathering of
+line-by-line information, a value of 1 should be passed to this
+function.</P>
+<DT><B> See Also </B><DD>
+<P><CODE>profile_end, profile_on, profile_off, profile_calibrate, profile_report</CODE>}</P>
+</DL>
+</P>
+
+
+<H2><A NAME="profile_end"></A> <A NAME="ss9.4">9.4</A> <A HREF="slshfun.html#toc9.4"><B>profile_end</B></A>
+</H2>
+
+<P>
+<DL>
+<DT><B> Synopsis </B><DD>
+<P>Remove profiling hooks and turn off profiler code generation</P>
+<DT><B> Usage </B><DD>
+<P><CODE>profile_end ()</CODE></P>
+<DT><B> Description </B><DD>
+<P>The <CODE>profile_end</CODE> function turns off the code generation to
+support profiling hooks and removes any profiling hooks that are in
+place.</P>
+<DT><B> See Also </B><DD>
+<P><CODE>profile_begin, profile_on, profile_off, profile_calibrate, profile_report</CODE></P>
+</DL>
+</P>
+
+
+<H2><A NAME="profile_calibrate"></A> <A NAME="ss9.5">9.5</A> <A HREF="slshfun.html#toc9.5"><B>profile_calibrate</B></A>
+</H2>
+
+<P>
+<DL>
+<DT><B> Synopsis </B><DD>
+<P>Calibrate the profiler</P>
+<DT><B> Usage </B><DD>
+<P><CODE>profile_calibrate ([ N ])</CODE></P>
+<DT><B> Description </B><DD>
+<P>This function may be used to ``calibrate'' the profiler.  As the
+performance of the profiler and the interpreter varies with a
+platform and load-dependent manner, this function should be called
+prior to enabling the profiler.  It tries to determine the average
+amount of overhead per statement executed and function call by
+executing a series of statements and functions many times to
+determine statistically accurate values.  The optional parameter
+<CODE>N</CODE> may be used to control the amount of code executed
+for the calibration process.  If no value is provided, the <CODE>N</CODE>
+will default to 1000.  The higher the value, the more accurate the
+calibration will be and the longer the calibration process will take.</P>
+<DT><B> See Also </B><DD>
+<P><CODE>profile_begin, profile_end, profile_on, profile_off, profile_report</CODE></P>
+</DL>
+</P>
+
+
+<H2><A NAME="profile_report"></A> <A NAME="ss9.6">9.6</A> <A HREF="slshfun.html#toc9.6"><B>profile_report</B></A>
+</H2>
+
+<P>
+<DL>
+<DT><B> Synopsis </B><DD>
+<P>Generate the profile report</P>
+<DT><B> Usage </B><DD>
+<P><CODE>profile_report (file)</CODE></P>
+<DT><B> Description </B><DD>
+<P>The function may be used to format the profile report and write it
+to the specified file.  If the <CODE>file</CODE> parameter represents a
+<CODE>File_Type</CODE> file descriptor, then the report will be written
+the the descriptor.</P>
+<DT><B> See Also </B><DD>
+<P><CODE>profile_begin, profile_end, profile_on, profile_off, profile_calibrate</CODE></P>
+</DL>
+</P>
+
+
+<HR>
+<A HREF="slshfun-10.html">Next</A>
+<A HREF="slshfun-8.html">Previous</A>
+<A HREF="slshfun.html#toc9">Contents</A>
+</BODY>
+</HTML>
