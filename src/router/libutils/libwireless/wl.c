@@ -1816,10 +1816,6 @@ int is_ath11n(char *prefix)
 {
 	if (is_ath9k(prefix))
 		return 1;
-#ifdef HAVE_MADWIFI_MIMO
-	if (is_ar5008(prefix))
-		return 1;
-#endif
 	return 0;
 }
 
@@ -2052,11 +2048,6 @@ int getassoclist(char *ifname, unsigned char *list)
 	if (is_ath9k(ifname)) {
 		return getassoclist_ath9k(ifname, list);
 	}
-#ifdef HAVE_MADWIFI_MIMO
-	if (is_ar5008(ifname)) {
-		return getassoclist_11n(ifname, list);
-	}
-#endif
 	unsigned char *buf;
 
 	buf = calloc(24 * 1024, 1);
@@ -2138,25 +2129,20 @@ int getassoclist(char *ifname, unsigned char *list)
 void radio_off(int idx)
 {
 #ifdef HAVE_ATH9K
-#ifdef HAVE_MADWIFI_MIMO
-	if (nvram_match("mimo_driver", "ath9k"))
-#endif
-	{
-		if (idx == -1) {
-			int cc = getdevicecount();
-			int i;
-			for (i = 0; i < cc; i++) {
-				radio_on_off_ath9k(i, 0);
-			}
-			led_control(LED_WLAN0, LED_OFF);
-			led_control(LED_WLAN1, LED_OFF);
-		} else {
-			radio_on_off_ath9k(idx, 0);
-			if (idx == 0)
-				led_control(LED_WLAN0, LED_OFF);
-			if (idx == 1)
-				led_control(LED_WLAN1, LED_OFF);
+	if (idx == -1) {
+		int cc = getdevicecount();
+		int i;
+		for (i = 0; i < cc; i++) {
+			radio_on_off_ath9k(i, 0);
 		}
+		led_control(LED_WLAN0, LED_OFF);
+		led_control(LED_WLAN1, LED_OFF);
+	} else {
+		radio_on_off_ath9k(idx, 0);
+		if (idx == 0)
+			led_control(LED_WLAN0, LED_OFF);
+		if (idx == 1)
+			led_control(LED_WLAN1, LED_OFF);
 	}
 #endif
 	if (idx != -1) {
@@ -2191,25 +2177,20 @@ void radio_off(int idx)
 void radio_on(int idx)
 {
 #ifdef HAVE_ATH9K
-#ifdef HAVE_MADWIFI_MIMO
-	if (nvram_match("mimo_driver", "ath9k"))
-#endif
-	{
-		if (idx == -1) {
-			int cc = getdevicecount();
-			int i;
-			for (i = 0; i < cc; i++) {
-				radio_on_off_ath9k(i, 1);
-			}
-			led_control(LED_WLAN0, LED_ON);
-			led_control(LED_WLAN1, LED_ON);
-		} else {
-			radio_on_off_ath9k(idx, 1);
-			if (idx == 0)
-				led_control(LED_WLAN0, LED_ON);
-			if (idx == 1)
-				led_control(LED_WLAN1, LED_ON);
+	if (idx == -1) {
+		int cc = getdevicecount();
+		int i;
+		for (i = 0; i < cc; i++) {
+			radio_on_off_ath9k(i, 1);
 		}
+		led_control(LED_WLAN0, LED_ON);
+		led_control(LED_WLAN1, LED_ON);
+	} else {
+		radio_on_off_ath9k(idx, 1);
+		if (idx == 0)
+			led_control(LED_WLAN0, LED_ON);
+		if (idx == 1)
+			led_control(LED_WLAN1, LED_ON);
 	}
 #endif
 	if (idx != -1) {
@@ -2569,16 +2550,10 @@ int getath9kdevicecount(void)
 	glob_t globbuf;
 	int globresult;
 	int count = 0;
-#ifndef HAVE_MADWIFI_MIMO
-	if (1) {
-#else
-	if (nvram_match("mimo_driver", "ath9k")) {
-#endif
-		globresult = glob("/sys/class/ieee80211/phy*", GLOB_NOSORT, NULL, &globbuf);
-		if (globresult == 0)
-			count = (int)globbuf.gl_pathc;
-		globfree(&globbuf);
-	}
+	globresult = glob("/sys/class/ieee80211/phy*", GLOB_NOSORT, NULL, &globbuf);
+	if (globresult == 0)
+		count = (int)globbuf.gl_pathc;
+	globfree(&globbuf);
 	return (count);
 }
 
@@ -2620,11 +2595,6 @@ int is_ath9k(const char *prefix)
 	int globresult;
 	int devnum;
 	// get legacy interface count
-#ifdef HAVE_MADWIFI_MIMO
-	if (!nvram_match("mimo_driver", "ath9k")) {
-		RETURNVALUE(0);
-	}
-#endif
 	// correct index if there are legacy cards arround
 	devnum = get_ath9k_phy_ifname(prefix);
 	if (devnum == -1) {
@@ -2653,19 +2623,13 @@ int has_spectralscanning(const char *prefix)
 	int globresult;
 	int devnum;
 	// get legacy interface count
-#ifdef HAVE_MADWIFI_MIMO
-	if (!nvram_match("mimo_driver", "ath9k"))
-		RETURNVALUE(0);
-#endif
 	// correct index if there are legacy cards arround
 	devnum = get_ath9k_phy_ifname(prefix);
 	if (devnum == -1)
 		RETURNVALUE(0);
-#ifdef HAVE_ATH10K
 	if (is_ath10k(prefix))
 		asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/ath10k/spectral_count", devnum);
 	else
-#endif
 		asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/spectral_count", devnum);
 	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 	free(globstring);
@@ -2745,10 +2709,6 @@ int is_mvebu(const char *prefix)
 int is_ath10k(const char *prefix)
 {
 	// get legacy interface count
-#ifdef HAVE_MADWIFI_MIMO
-	if (!nvram_match("mimo_driver", "ath9k"))
-		return (0);
-#endif
 	return devicecountbydriver(prefix, "ath10k_pci");
 }
 
@@ -3792,7 +3752,7 @@ int haswifi(void)
 	int count = 0;
 #ifdef HAVE_NOWIFI
 	return 0;
-#elif defined(HAVE_ATH9K) || defined(HAVE_MADWIFI) || defined(HAVE_MADWIFI_MIMO)
+#elif defined(HAVE_ATH9K) || defined(HAVE_MADWIFI)
 	count += getdevicecount();
 	return (count);
 #else
