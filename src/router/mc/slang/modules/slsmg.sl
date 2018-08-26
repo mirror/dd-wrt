@@ -1,2 +1,0 @@
-import("slsmg");
-provide("slsmg");
