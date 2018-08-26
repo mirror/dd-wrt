@@ -1,0 +1,357 @@
+NEWS for version 2.2.x                                             -*-text-*-
+
+Interpreter Enhancements
+========================
+
+   1.  The ternary expression was added:
+
+           expression = condition ? val1 : val2
+
+       If condition is non-zero, then expression = val1,
+        otherwise expression = val2
+
+   2.  The break and condition statements support an optional integer
+       that indicates how many loop levels the statement affects, e.g.,
+       the break statement in
+
+           while (1)
+	     {
+	         loop (10)
+		    {
+		        break 2;
+		    }
+	     }
+
+       will cause both loops to be terminated.
+
+   3.  Multiline strings have been added:
+
+           "This is a \
+	    multiline \
+	    string"
+
+           `This is
+	    another multiline
+	    string that
+	    does not require
+	    a \ for continuation`
+
+    4.  List_Type objects may be indexed using an array of indices
+        instead of just a single scalar index.
+
+    5.  (v2.2.3) Binary literal integers of the form 0bxx...x are supported.
+        Here, x is 0 or 1.  The printf "%B" format specifier was added
+	to format integers as binary.
+
+    6.  (v2.2.3) The dereference operator (@) may be used in a structure
+        definition to include the fields from the dereferenced
+	structure, e.g.,
+
+	  space = struct {x, y, z};
+	  spacetime = struct {@space, t};
+
+    7.  (v2.2.3) Dereferencing a scalar or vector class type now
+       results in duplication of the object, e.g, @7 will produce 7.
+
+    8.  (v2.2.3) Mergesort was made the default sorting algorithm.  See the
+        array_sort for details.
+
+Modules
+=======
+
+   1.  zlib: A module that wraps the popular z compression library.
+
+   2.  fork: A module that wraps the fork, exec*, and waitpid functions.
+
+         slsh/lib/process.sl utilizes this module to allow an
+	 application to easily create subprocesses and pipelines.
+
+   3.  sysconf: Module that implements interfaces to the posix
+       sysconf, pathconf, etc. functions.
+
+   4.  (2.2.3) csv: A module that supports the reading and writing of
+       so-called Comma Separated Values files.
+
+Intrinsic Functions
+===================
+
+   The following intrinsic functions have been added for 2.2.x:
+
+      sumsq
+          equivalent to sum(x*x)
+
+      expm1
+          More accurate version of exp(x)-1 for x near 0.
+
+      log1p
+          More accurate version of log(1+x) for x near 0
+
+      list_to_array
+          Creates an array from a list.
+
+      string_matches
+          A convenient alternative to string_match and string_match_nth
+	  functions.
+
+      strskipbytes (v2.2.3)
+          Skip a range of bytes in a byte string.
+
+      is_substrbytes (v2.2.3)
+          Like is_substr except this works with binary strings
+	  containing embedded null characters.
+
+      strskipchar, strbskipchar (v2.2.3)
+         Analogous to C ch=*p++ and ch=*p-- for UTF-8 encoded strings.
+
+      _close
+          Close an integer descriptor
+      _fileno
+          Returns the descriptor as an integer
+
+      dup2, getsid, killpg, getpriority/setpriority
+          Wraps the corresponding system functions.
+
+      utime (v2.2.3)
+          Change a file's last access and modification time.
+
+      ldexp, frexp:
+          If x == a*2^b, where 0.5<=a<1.0 then (a,b)=frexp(x),
+	  and x=ldexp(a,b).
+
+      islower, isupper, isxdigit, isalnum, isalpha, iscntrl, isprint,
+      isgraph, ispunct, isblank, isascii, isspace (v2.2.3):
+          Character classification functions.
+
+      list_append, list_join (v2.2.3)
+          Functions for merging two lists together.
+
+      ttyname (v2.2.3)
+          Get the name of the terminal
+
+      timegm (v2.2.3)
+          Inverse of gmtime
+
+   The following functions have been enhanced:
+
+      hypot
+          If given a single array argument, it returns the equivalent
+	  of sqrt(sum(X*X)).
+
+          Support for N arrays added for e.g., the Euclidean norm in
+	  an N dimensional space (v2.2.3)
+
+      _min, _max: (v2.2.3)
+          Added support for more than two elements.
+
+      polynom
+          The calling interface to this function was changed and
+	  support added for arrays.
+
+      strjoin (v2.2.3)
+          delimiter made optional
+
+      strreplace (v2.2.3)
+          New usage designed to facilitate the most common case where
+	  one wants to replace all the substrings.
+
+      strtrans (v2.2.3)
+          Additional character classes added (see documentation).
+
+      string_match, string_matches (v2.2.3)
+          The position argument made optional
+
+   The following string functions have been vectorized to act upon
+   arrays of strings (v2.2.3):
+
+       is_substr
+       str_delete_chars
+       strbytelen
+       strcharlen
+       strcmp
+       strcompress
+       strlen
+       strlow
+       strnbytecmp
+       strncharcmp
+       strncmp
+       strtrans
+       strtrim
+       strtrim_beg
+       strtrim_end
+       strup
+
+
+slsh
+====
+      slang readline enhancements:
+         New functions:
+	   rline_up/down_hist
+	      Behaves similar to zsh up/down-line-or-search functions (v2.2.3).
+
+	   rline_call_editor
+           rline_edit_history
+	   rline_edit_line
+	      Call external editor for line/history editing. (v2.2.3)
+
+         Structure field completion. (v2.2.3)
+
+         Instead of scrolling horizontally when editing a line,
+	 attempt to wrap the line. (v2.2.3)
+
+         setfuns.sl: Various set functions: unique, intersection,
+	 complement,union (v2.2.3)
+
+Misc
+====
+
+   Unicode tables updated to version 5.1.
+
+=x=x=x=x=x=x=x=x=x=x=x=x=x=x=x=x=x=x=x=x=x=x=x=x=x=x=x=x=x=x=x=x=x=x=x
+
+NEWS for version 2.1
+
+Building the library
+====================
+
+   `make install' installs the shared version of the library.
+   Previously `make install' installed just the static version and a
+   separate step (`make install-elf') was required to install the
+   shared version.  Now, `make install-static' is necessary to install
+   the static one.
+
+Interpreter News
+=================
+
+Syntax enhancements:
+--------------------
+
+   1.  Short circuiting boolean operators:
+
+           if ((x == y) || (y == 3) && (x != 4)) ...
+
+       (orelse and andelse are deprecated)
+
+   2.  Structure definitions allow embdedded assignment expressions:
+
+           s = struct {x = 3, name="foo", a = [1:10]};
+
+   3.  Qualifiers (aka "keywords") added to the language:
+
+           save_file ("foo.c"; overwrite=1);
+	   plot_points ([1:10], sin([1:10]); color="red", style="solid");
+
+   3.  Expressions such as (a < b < c) now interpreted to mean
+       (a<b)and(b<c).
+
+   4.  New keywords: ifnot, then
+
+       ifnot may be used instead of !if, which has been deprecated.
+       For "then" see the next item.
+
+   5.  Looping constructs support a "then" clause that will get
+       executed if the loop runs to completion, e.g.,
+
+           loop (20)
+	    {
+	       if (this ())
+	         break;  % The then clause will NOT get executed
+	    }
+	   then do_that ();
+
+   6.  A floating point array of exactly N elements may be created
+       using the form [a:b:#N], where the elements are uniformly
+       spaced and run from a to b, inclusive.
+
+   7.  References to array elements and structure fields are
+       supported, e.g., &A[3], &s.foo.
+
+   8.  An exception may be rethrown by calling "throw" without any
+       arguments:
+
+           try { something (); }
+	   catch AnyError: { do_this (); throw; }
+
+New Intrinsic Functions:
+------------------------
+
+   wherenot(x) :
+              Equivalent to where (not(x))
+
+   _$(str) :
+              Evaluates strings with embedded "dollar" variables, e.g.,
+              _$("$TERM");
+
+   __push_list/__pop_list :
+              Push list items onto the stack
+
+   prod(x) :
+              Computes the product of an array a[0]*a[1]*...
+
+   minabs(x), maxabs(x):
+              Equivalent to min(abs(x)) and max(abs(x))
+
+   getpgrp,setgid, getpgid:
+              Get and set the process group (Unix)
+   setsid  :
+              Create a new session
+
+API News
+========
+
+  Although not new I feel that this point should be stressed now
+  because it was not emphasized earlier: The SLarray_* functions that
+  deal with indices or sizes use `SLindex_Type' instead of `int'.
+  Currently, `SLindex_Type' is typedefed to be an `int', but this will
+  change in a future version.  So for future compatibility, use
+  `SLindex_Type' instead of `int' in functions that deal with slang
+  arrays.  Similarly, instead of using SLang_pop_int for obtaining an
+  array index, use SLang_pop_array_index.  See the array-specific
+  examples in the documentation for more information.
+
+  There have been significant enhancements to the slang readline
+  interface.  The interface has been opened up to the interpreter
+  allowing for such features as completion and a persistent history
+  mechanism.  Applications wishing to take advantage of these features
+  should use the new function `SLrline_open2' instead of
+  `SLrline_open'.  For an example, see how this function is used in
+  slsh/src/readline.c.
+
+  SLclass_patch_intrin_fun_table was added to facilitiate the patching
+  of intrinsic tables during runtime.  If you have created dynamically
+  loaded modules, then you may have a good idea what this function is
+  for.
+
+  The SLang_Traceback variable is now interpreted as a bitmapped
+  integer providing greater flexibility and control over traceback
+  messages.
+
+  SLerr_throw was added to permit applications to mimic the semantics
+  of the `throw' statement.
+
+  SLang_verror_va was added to support calling the error routines with
+  a va_list argument.
+
+slsh enhancements
+=================
+
+  When configured to use slang's readline routines, new features
+  include filename completion and persistent history.
+
+  The profiler was rewritten to be much more friendly, flexible, and
+  more accurate.
+
+  struct_filter and struct_combine defined in structfuns.sl have been
+  made more flxible.  See their documentation for more information.
+
+  A new function called readascii may be used for reading
+  non-binary (or so-called "ascii") data files.
+
+New modules
+===========
+
+  The following modules have been added:
+
+      iconv:  Performs character-set conversion using the iconv library.
+      onig:   A regular expression module using oniguruma RE library.
+      rand:   A random number module
+

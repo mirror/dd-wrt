@@ -1,0 +1,59 @@
+Variable Assignment:
+   x =   --> =x
+   x +=  --> +=x
+   x -=  --> -=x
+   x++   --> ++x
+   x--   --> --x
+  Note: The current version of slang does not distguish between the
+  post and pre-increment operators.  A future version may make a
+  distinction and assignment statements may return a value.
+
+Function Definition: define f (arg1, ..., argN) { statements }
+   --> ( [ arg1 arg2 ... argN ] =argN ... =arg1 rpn-statements ) f
+
+Variable Declaration: variable x1, ... xN;
+   --> [ x1 ... xN ]
+
+Structure Definition: struct {f1, ... fN}
+   -->  "f1" ... "fN" N struct
+
+Structure Typedef: typedef struct { f1, ... fN } Type_Name ;
+   --> __typedef f1 ... fN ] "Type_Name"
+
+Multiple Assignment Expression: (x1, ..., xN) = expression
+   --> rpn-expression =xN ... =x1
+   Note: If xj is missing, it will be replaced by `pop'
+
+Function call:  f (x1, ..., xN)
+   --> __arg x1 ... xN __earg f
+   Note: if xj is missing, it will be replaced by NULL
+
+Array reference: X [x1, .., xN]
+   --> __arg x1 ... xN X __aget
+   Note: __earg is implicit
+
+Array assignment: X [x1, ... xN] ASSIGNMENT-OP
+   --> __arg x1 ... xN X RPN-ASSIGNMENT-OP
+   ASSIGNMENT-OP:
+      =   --> __aput
+      ++  --> __aput_plusplus
+      --  --> __aput_minusminus
+      +=  --> __aput_pluseqs
+      -=  --> __aput_minuseqs
+   Note: __earg is implicit
+
+Structure Reference: X.a --> "a" X .
+
+Structure Assignment: X.a ASSIGNMENT-OP expression;
+   --> rpn-expression "a" X RPN-ASSIGNMENT-OP
+   ASSIGNMENT-OP --> RPN-ASSIGNMENT-OP:
+     =   --> __struct_eqs
+     +=  --> __struct_pluseqs
+     -=  --> __struct_minuseqs
+     --  --> __struct_minusminus
+     ++  --> __struct_plusplus
+
+Variable Alias:  &x --> __alias x
+
+foreach (X) using (Y,...) block
+   --> X __arg Y... __earg { block } foreach

@@ -1,0 +1,66 @@
+This directory includes two programs:
+
+tm2txt:
+  This program processes one or more specially formatted .tm
+  source files and writes the result on stdout.  By specially
+  formatted, it is meant that the .tm files are formatted
+  into sections such as:
+
+\function{my_function}
+\synopsis{Short Description}
+\usage{int my_function (void);}
+\description
+   \var{my_function} does something special and returns an integer.
+\example
+  Here is an example of its use:
+#v+
+   if (-1 == my_function ())
+     exit (1);
+#v-
+\seealso{my_other_function, your_function}
+\done
+
+  Run this README file through tm2txt and see the result.
+
+sl2tm:
+  This program strips the specially formatted documentation described
+  above from C files and S-Lang files.  Here is an example of how the
+  documentation would appear in the C source:
+
+/*%+
+ *\function{my_other_function}
+ *\synopsis{Just another function}
+ *\usage{int my_other_function(void)}
+ *\description
+ *  \var{my_other_function} is similar to \var{my_function} except that
+ *  it returns a \em{random} integer.
+ *\example
+ * Here is an example:
+ *#v+
+ *   (void) my_other_function ();
+ *#v-
+ *\notes
+ * This function is obsolete.  Use \var{my_new_function} instead.
+ *\seealso{my_function, my_new_function}
+ *%- Note that \done should not be used.  `*%-' implies \done
+ */
+
+In S-Lang files, the format is similar:
+
+%!%+  Lines that start with this denotes the start of documentation
+%\function{my_other_function}
+%\synopsis{Just another function}
+%\usage{int my_other_function(void)}
+%\description
+%  \var{my_other_function} is similar to \var{my_function} except that
+%  it returns a \em{random} integer.
+%\example
+% Here is an example:
+%#v+
+%   (void) my_other_function ();
+%#v-
+%\notes
+% This function is obsolete.  Use \var{my_new_function} instead.
+%\seealso{my_function, my_new_function}
+%!%- Note that \done should not be used.  `%!%-' implies \done
+

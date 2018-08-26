@@ -1,0 +1,317 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="LinuxDoc-Tools 0.9.50">
+ <TITLE> SLSH Library Reference (version 2.2.0): Command Line Parsing Functions</TITLE>
+ <LINK HREF="slshfun-4.html" REL=next>
+ <LINK HREF="slshfun-2.html" REL=previous>
+ <LINK HREF="slshfun.html#toc3" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="slshfun-4.html">Next</A>
+<A HREF="slshfun-2.html">Previous</A>
+<A HREF="slshfun.html#toc3">Contents</A>
+<HR>
+<H2><A NAME="s3">3.</A> <A HREF="slshfun.html#toc3">Command Line Parsing Functions</A></H2>
+
+<P>These functions are defined in the <CODE>cmdopt.sl</CODE> file.</P>
+<H2><A NAME="cmdopt_new"></A> <A NAME="ss3.1">3.1</A> <A HREF="slshfun.html#toc3.1"><B>cmdopt_new</B></A>
+</H2>
+
+<P>
+<DL>
+<DT><B> Synopsis </B><DD>
+<P>Create a cmdopt object for parsing command-line options</P>
+<DT><B> Usage </B><DD>
+<P><CODE>obj = cmdopt_new (Ref_Type error_routine)</CODE></P>
+<DT><B> Description </B><DD>
+<P>This function creates an returns an object that may be used by the
+<CODE>cmdopt_process</CODE> function to parse command line arguments.  The
+<CODE>cmdopt_new</CODE> function takes a reference to an error handling
+function that will get called upon error.  In most cases, this
+function should print out the error message, display a usage
+message, and the call <CODE>exit</CODE>.  If the error handler is <CODE>NULL</CODE>,
+or it returns instead of calling exit, then an exception will be thrown.</P>
+<P>The error hander must be defined to take a single string argument
+(the error message) and must return nothing.</P>
+<DT><B> Example </B><DD>
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+   require ("cmdopt");
+   private define help_callback ()
+   {
+     () = fputs ("Usage: pgm [options] infile\n", stderr);
+     () = fputs ("Options:\n", stderr);
+     () = fputs (" -h|--help           Show this help\n", stderr);
+     () = fputs (" -v|--verbose        Increase verbosity level\n", stderr);
+     () = fputs (" -o|--output         Output filename [stdout]\n", stderr);
+     exit (1);
+   }
+   private define error_handler (text)
+   {
+      () = fprintf (stderr, "%s\n", text);
+      help_callback ();
+   }
+   define slsh_main ()
+   {
+      variable verbose = 0;
+      outfile = "-";   % stdout
+      variable c = cmdopt_new (&amp;error_handler);
+      cmdopt_add (c, "v|verbose", &amp;verbose; inc);
+      cmdopt_add (c, "h|help", &amp;help_callback);
+      cmdopt_add (c, "s:o|output", &amp;outfile; type="str");
+      variable iend = cmdopt_process (c, __argv, 1);
+
+      if (verbose) message ("some informative message");
+      variable fp = stdout;
+      if (outfile != "-") fp = fopen (outfile, "w");
+        .
+        .
+    }
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<DT><B> See Also </B><DD>
+<P><CODE>cmdopt_add, cmdopt_process</CODE></P>
+</DL>
+</P>
+
+
+<H2><A NAME="cmdopt_process"></A> <A NAME="ss3.2">3.2</A> <A HREF="slshfun.html#toc3.2"><B>cmdopt_process</B></A>
+</H2>
+
+<P>
+<DL>
+<DT><B> Synopsis </B><DD>
+<P>Process the command-line options</P>
+<DT><B> Usage </B><DD>
+<P><CODE>Int_Type cmdopt_process (optobj, argv, istart)</CODE>
+<BLOCKQUOTE><CODE>
+<PRE>
+   Struct_Type optobj;
+   Array_Type argv;
+   Int_Type istart
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<DT><B> Description </B><DD>
+<P>This function parses the command line arguments in the string array
+<CODE>argv</CODE> according to the rules specified by the <CODE>optobj</CODE>
+object, previously allocated by <CODE>cmdopt_new</CODE>.  The array of
+strings is processed starting at the index specified by
+<CODE>istart</CODE>.  The function returns the index of the array element
+where parsing stopped.  Upon error, the function will call the error
+handler established  by the prior call to <CODE>cmdopt_new</CODE>.</P>
+<DT><B> Example </B><DD>
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+    define slsh_main ()
+    {
+          .
+          .
+       optobj = cmdopt_new (...);
+       cmdopt_add (optobj, ...);
+          .
+          .
+       variable iend = cmdopt_process (optobj, __argv, 1);
+          .
+          .
+    }
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<DT><B> Notes </B><DD>
+<P>This function may also be called in an object-oriented style using the
+<CODE>process</CODE> method:
+<BLOCKQUOTE><CODE>
+<PRE>
+       optobj = cmdopt_new (...);
+       optobj.add (...)
+       iend = optobj.process (__argv, 1);
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<DT><B> See Also </B><DD>
+<P><CODE>cmdopt_add, cmdopt_new</CODE></P>
+</DL>
+</P>
+
+
+<H2><A NAME="cmdopt_add"></A> <A NAME="ss3.3">3.3</A> <A HREF="slshfun.html#toc3.3"><B>cmdopt_add</B></A>
+</H2>
+
+<P>
+<DL>
+<DT><B> Synopsis </B><DD>
+<P>Add support for a command-line option</P>
+<DT><B> Usage </B><DD>
+<P><CODE>cmdopt_add (optobj, optname, addr [,...] [;qualifiers])</CODE>
+<BLOCKQUOTE><CODE>
+<PRE>
+   Struct_Type optobj;
+   String_Type optname;
+   Ref_Type addr;
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<DT><B> Description </B><DD>
+<P>This function adds support for a command-line option to
+<CODE>optobj</CODE> and specifies how that option should be handled.
+Handling an option involves setting the value of a variable
+associated with the option, or by calling a function upon its
+behalf.</P>
+<P>For clarity, assume a command-line option can be specified using the
+single character <CODE>f</CODE> or by the longer name <CODE>foo</CODE>. Then the
+rules for calling <CODE>cmdopt_add</CODE> for the various flavors options
+supported by this interface and how the option may be specified on
+the command line are as follows:</P>
+<P>Options that set a variable <CODE>v</CODE> to a value <CODE>val</CODE>:
+<BLOCKQUOTE><CODE>
+<PRE>
+    cmdopt_add (optobj, "f|foo", &amp;v; default=val);
+    cmdline: pgm -f ...
+    cmdline: pgm --foo ...
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<P>Options that increment an integer variable <CODE>v</CODE>:
+<BLOCKQUOTE><CODE>
+<PRE>
+    cmdopt_add (optobj, "f|foo", &amp;v; inc);
+    cmdline: pgm -f -f ...       % In these examples, v
+    cmdline: pgm --foo --foo ... % gets incremented twice
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<P>Options that bitwise-or an integer variable <CODE>v</CODE> with <CODE>FLAG</CODE>:
+<BLOCKQUOTE><CODE>
+<PRE>
+    cmdopt_add (optobj, "f|foo", &amp;v; bor=FLAG);
+    cmdline: pgm -f ...       % v = v | FLAG
+    cmdline: pgm --foo ...    % v = v | FLAG
+</PRE>
+</CODE></BLOCKQUOTE>
+
+Options that bitwise-and an integer variable <CODE>v</CODE> with <CODE>MASK</CODE>:
+<BLOCKQUOTE><CODE>
+<PRE>
+    cmdopt_add (optobj, "f|foo", &amp;v; band=MASK);
+    cmdline: pgm -f ...       % v = v &amp; MASK;
+    cmdline: pgm --foo ...    % v = v &amp; MASK;
+</PRE>
+</CODE></BLOCKQUOTE>
+
+The above two options may be combined:
+<BLOCKQUOTE><CODE>
+<PRE>
+    cmdopt_add (optobj, "f|foo", &amp;v; bor=FLAG1, band=~FLAG2);
+    cmdline: pgm -f ...       % v &amp;= ~FLAG2; v |= FLAG1;
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<P>Options that require a value and set <CODE>v</CODE> to the value VAL.
+<BLOCKQUOTE><CODE>
+<PRE>
+    cmdopt_add (optobj, "f|foo", &amp;v; type="int");
+    cmdline: pgm -f VAL ...
+    cmdline: pgm -fVAL ...
+    cmdline: pgm --foo VAL ...
+    cmdline: pgm --foo=VAL ...
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<P>Options whose value is optional:
+<BLOCKQUOTE><CODE>
+<PRE>
+    cmdopt_add (optobj, "f|foo", &amp;v; type="string", optional=DLFT);
+    cmdline: pgm -f ...            % set v to DFLT
+    cmdline: pgm -fVAL ...         % set v to VAL
+    cmdline: pgm --foo ...         % set v to DFLT
+    cmdline: pgm --foo=VAL ...     % set v to VAL
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<P>For the latter two cases, if the <CODE>append</CODE> qualifier is used,
+then instead of assigning the value to the specified variable, the
+value will be appended to a list assigned to the variable, e.g.,
+<BLOCKQUOTE><CODE>
+<PRE>
+    cmdopt_add (optobj, "f|foo", &amp;v; type="float", append);
+</PRE>
+</CODE></BLOCKQUOTE>
+
+Then the command line <CODE>pgm --foo=VAL1 -fVAL2 -f VAL3 ...</CODE> will
+result in the assignment to <CODE>v</CODE> or the 3 element list
+<CODE>{VAL1, VAL2, VAL3}</CODE>.</P>
+<P>An option can also be associated with a callback function that get
+called when the option is handled.</P>
+<P>Options that cause a function to be called with arguments
+<CODE>a0,...</CODE>:
+<BLOCKQUOTE><CODE>
+<PRE>
+    cmdopt_add (optobj, "f|foo", &amp;func, a0...);
+    cmdline: pgm --foo
+    cmdline: pgm -f
+</PRE>
+</CODE></BLOCKQUOTE>
+
+Here <CODE>func</CODE> should be written with the signature:
+<BLOCKQUOTE><CODE>
+<PRE>
+    define func (a0, ...) {...}
+</PRE>
+</CODE></BLOCKQUOTE>
+
+Options that take a value and cause a function to be called with
+additional arguments <CODE>a0,...</CODE>:
+<BLOCKQUOTE><CODE>
+<PRE>
+    cmdopt_add (optobj, "f|foo", &amp;func, a0,...; type="int");
+    cmdline: pgm --foo=VAL
+    cmdline: pgm -f VAL
+    cmdline: pgm -fVAL
+</PRE>
+</CODE></BLOCKQUOTE>
+
+In this case, <CODE>func</CODE> should be written as
+<BLOCKQUOTE><CODE>
+<PRE>
+    define func (value, a0, ...) {...}
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<P>As the above examples illustrate, the data-type of the value assigned
+to a variable must be specified using the <CODE>type</CODE> qualifier.
+Currently the <CODE>type</CODE> must be set to one of the following values:
+<BLOCKQUOTE><CODE>
+<PRE>
+     "str"          (String_Type)
+     "int"          (Int_Type)
+     "float"        (Double_Type)
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<DT><B> Notes </B><DD>
+<P>This function may also be called in an object-oriented style using the
+<CODE>add</CODE> method:
+<BLOCKQUOTE><CODE>
+<PRE>
+       optobj = cmdopt_new (...);
+       optobj.add ("f|foo", &amp;func, a0,...; type="int");
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<DT><B> See Also </B><DD>
+<P><CODE>cmdopt_new, cmdopt_process</CODE></P>
+</DL>
+</P>
+
+
+<HR>
+<A HREF="slshfun-4.html">Next</A>
+<A HREF="slshfun-2.html">Previous</A>
+<A HREF="slshfun.html#toc3">Contents</A>
+</BODY>
+</HTML>

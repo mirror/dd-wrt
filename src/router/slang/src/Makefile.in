@@ -1,0 +1,249 @@
+# -*- sh -*-
+#---------------------------------------------------------------------------
+# ANSI C compiler
+#---------------------------------------------------------------------------
+CC              = @CC@
+CFLAGS 		= @CFLAGS@
+LDFLAGS		= @LDFLAGS@
+#-----------------------------------------------------------------------------
+# System library that contains functions for dynamic linking (-ldl)
+#-----------------------------------------------------------------------------
+DL_LIB		= @DYNAMIC_LINK_LIB@
+
+#---------------------------------------------------------------------------
+# Compiler for producing a shared library (ELF)
+#---------------------------------------------------------------------------
+ELF_CC 		= @ELF_CC@
+ELF_CFLAGS	= @ELF_CFLAGS@
+ELF_LINK        = @ELF_LINK@
+ELF_DEP_LIBS	= @ELF_DEP_LIBS@
+
+#---------------------------------------------------------------------------
+# Set these values to ABSOLUTE path names
+#---------------------------------------------------------------------------
+SRCDIR = @SRCDIR@# Location of sources
+OBJDIR = @OBJDIR@# Location of objects
+ELFDIR = @ELFDIR@# Location of elf objects
+VERSION_SCRIPT	= $(SRCDIR)/slang.ver
+
+#---------------------------------------------------------------------------
+# When searching for modules, slang will search the paths specified by the
+# value of the SLANG_MODULE_PATH environment variable.  The name of this
+# variable may be changed here.
+#---------------------------------------------------------------------------
+MODULE_PATH_ENV_NAME = "SLANG_MODULE_PATH"
+
+#---------------------------------------------------------------------------
+# Misc Libraries
+MISC_TERMINFO_DIRS = @MISC_TERMINFO_DIRS@
+OTHERLIBS = @TERMCAP@ @LIBS@ @M_LIB@
+#---------------------------------------------------------------------------
+# Directory where library is going to go when installed
+#---------------------------------------------------------------------------
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+install_lib_dir = @libdir@
+install_bin_dir = @bindir@
+install_include_dir = @includedir@
+install_doc_dir = $(prefix)/share/doc/slang/v@slang_major_version@
+DOC_FILES = ../changes.txt ../COPY* ../doc/slangdoc.html ../doc/text/*.txt
+MODULE_INSTALL_DIR = @libdir@/slang/v@slang_major_version@/modules
+#---------------------------------------------------------------------------
+# DESTDIR is designed to facilitate making packages.  Normally it is empty
+#---------------------------------------------------------------------------
+#DESTDIR =
+DEST_LIBDIR = $(DESTDIR)$(install_lib_dir)
+DEST_DOCDIR = $(DESTDIR)$(install_doc_dir)
+DEST_INCDIR = $(DESTDIR)$(install_include_dir)
+DEST_BINDIR = $(DESTDIR)$(install_bin_dir)
+
+#---------------------------------------------------------------------------
+# Misc commands (safe to leave these untouched)
+#---------------------------------------------------------------------------
+RANLIB 		= @RANLIB@
+INSTALL		= @INSTALL@
+INSTALL_DATA	= @INSTALL_DATA@
+MKINSDIR	= @CONFIG_DIR@/autoconf/mkinsdir.sh
+RM 		= rm -f
+RM_R		= rm -rf
+AR_CR 		= ar cr
+RMDIR 		= rmdir
+LN 		= /bin/ln -sf
+CP 		= cp
+@SET_MAKE@
+#---------------------------------------------------------------------------
+# There should be no need to change anything below here.
+#---------------------------------------------------------------------------
+THIS_LIB		= slang#
+DLL_IMPLIB_NAME		= @DLL_IMPLIB_NAME@
+OTHERSTUFF 		=
+THIS_LIB_DEFINES	= -DSLANG
+ELF_MAJOR_VERSION	= @slang_major_version@#
+ELF_MINOR_VERSION	= @slang_minor_version@#
+ELF_MICRO_VERSION	= @slang_micro_version@#
+INSTALL_ELFLIB_TARGET	= @INSTALL_ELFLIB_TARGET@
+
+CONFIG_H		= config.h
+TERMINFO_INC		= terminfo/@TERMINFO_LAYOUT@.inc
+ALL_CFLAGS		= $(CFLAGS) -Dunix $(THIS_LIB_DEFINES)
+ALL_ELF_CFLAGS		= $(ELF_CFLAGS) -Dunix $(THIS_LIB_DEFINES)
+COMPILE_CMD		= $(CC) -c $(ALL_CFLAGS)
+ELFCOMPILE_CMD		= $(ELF_CC) -c $(ALL_ELF_CFLAGS)
+ELF_LINK_CMD		= $(ELF_LINK)
+
+NORMAL_LIB = lib$(THIS_LIB).a
+OBJDIR_NORMAL_LIB = $(OBJDIR)/$(NORMAL_LIB)
+
+# On most systems, these variables have values of the form:
+#   libslang.so, libslang.so.X, libslang.so.X.Y, libslang.so.X.Y.Z
+ELFLIB = @ELFLIB@
+ELFLIB_MAJOR = @ELFLIB_MAJOR@
+ELFLIB_MAJOR_MINOR = @ELFLIB_MAJOR_MINOR@
+ELFLIB_MAJOR_MINOR_MICRO = @ELFLIB_MAJOR_MINOR_MICRO@
+
+# Set this to one of the above ELFLIB_MAJOR_* values
+ELFLIB_BUILD_NAME       = @ELFLIB_BUILD_NAME@
+
+ELFDIR_ELF_LIB = $(ELFDIR)/$(ELFLIB_BUILD_NAME)#
+ELFDIR_DLL_LIB = $(ELFDIR)/$(DLL_IMPLIB_NAME)#
+
+EXECLIBS = -L$(OBJDIR) -lslang $(OTHERLIBS) $(DL_LIB)
+EXECDEPS = $(OBJDIR_NORMAL_LIB)
+
+OFILES = @PROGRAM_OFILES@
+OBJS = @PROGRAM_OBJECTS@
+ELFOBJS = @PROGRAM_ELFOBJECTS@
+
+SHELL = /bin/sh
+
+DOT_O_DEPS = sllimits.h _slang.h $(CONFIG_H)
+sltoken_O_DEP = keywhash.c
+slarith_O_DEP = slarith.inc slarith2.inc
+slarrfun_O_DEP = slarrfun.inc
+slarray_O_DEP = slagetput.inc
+slischar_O_DEP = slischar.h
+slwclut_O_DEP = slischar.h
+sllower_O_DEP = sllower.h
+slupper_O_DEP = slupper.h
+slwcwidth_O_DEP = slwcwidth.h
+slcommon_O_DEP = slang.h
+slstd_O_DEP = Makefile
+slimport_O_DEP = Makefile
+sltermin_O_DEP = Makefile terminfo.inc
+slstd_C_FLAGS = -DSLANG_DOC_DIR='"$(install_doc_dir)"' -DSLANG_INSTALL_PREFIX='"$(prefix)"'
+slimport_C_FLAGS = -DMODULE_INSTALL_DIR='"$(MODULE_INSTALL_DIR)"' -DMODULE_PATH_ENV_NAME='$(MODULE_PATH_ENV_NAME)'
+sltermin_C_FLAGS = -DMISC_TERMINFO_DIRS='"$(MISC_TERMINFO_DIRS)"'
+UPDATE_VERSION_SCRIPT = $(HOME)/bin/update_changes_version
+
+#---------------------------------------------------------------------------
+# Rules
+#---------------------------------------------------------------------------
+all: static elf
+static: $(OBJDIR) $(CONFIG_H) $(OBJDIR_NORMAL_LIB) $(OTHERSTUFF)
+elf: $(ELFDIR) $(CONFIG_H) $(ELFDIR_ELF_LIB)
+
+$(OBJDIR_NORMAL_LIB): $(OBJDIR) $(CONFIG_H) $(OBJS)
+	-$(RM) $(OBJDIR_NORMAL_LIB)
+	cd $(OBJDIR) && $(AR_CR) $(NORMAL_LIB) $(OFILES)
+	$(RANLIB) $(OBJDIR_NORMAL_LIB)
+	@echo ""
+	@echo $(NORMAL_LIB) created in $(OBJDIR)
+
+$(ELFDIR_ELF_LIB): $(ELFDIR) $(CONFIG_H) $(ELFOBJS) $(VERSION_SCRIPT)
+	-$(RM) $(ELFDIR_ELF_LIB)
+	cd $(ELFDIR) && $(ELF_LINK_CMD) -o $(ELFLIB_BUILD_NAME) $(OFILES) $(LDFLAGS) $(ELF_DEP_LIBS)
+	if [ $(ELFLIB_MAJOR) != $(ELFLIB_BUILD_NAME) ]; then \
+	  cd $(ELFDIR) && $(RM) $(ELFLIB_MAJOR) && $(LN) $(ELFLIB_BUILD_NAME) $(ELFLIB_MAJOR); \
+	fi
+	cd $(ELFDIR) && $(RM) $(ELFLIB) && $(LN) $(ELFLIB_BUILD_NAME) $(ELFLIB)
+	@echo ""
+	@echo $(ELFLIB_BUILD_NAME) created in $(ELFDIR).
+	@echo The link $(ELFLIB) to $(ELFLIB_BUILD_NAME) was also created.
+	@echo ""
+$(OBJDIR) :
+	-$(MKINSDIR) $(OBJDIR)
+$(ELFDIR) :
+	-$(MKINSDIR) $(ELFDIR)
+$(CONFIG_H) : sysconf.h
+	-$(CP) sysconf.h $(CONFIG_H)
+terminfo.inc: $(TERMINFO_INC) Makefile
+	-$(CP) $(TERMINFO_INC) terminfo.inc
+#---------------------------------------------------------------------------
+# Intallation rules
+#---------------------------------------------------------------------------
+$(DEST_DOCDIR):
+	$(MKINSDIR) $(DEST_DOCDIR)
+$(DEST_INCDIR):
+	$(MKINSDIR) $(DEST_INCDIR)
+$(DEST_LIBDIR):
+	$(MKINSDIR) $(DEST_LIBDIR)
+install-headers: $(DEST_INCDIR)
+	@echo installing slang.h and slcurses.h in $(DEST_INCDIR)/
+	$(INSTALL_DATA) $(SRCDIR)/slang.h $(DEST_INCDIR)/
+	$(INSTALL_DATA) $(SRCDIR)/slcurses.h $(DEST_INCDIR)/
+install-docs: $(DEST_DOCDIR)
+	@for i in $(DOC_FILES); \
+	do \
+		echo $(INSTALL_DATA) $$i $(DEST_DOCDIR)/; \
+		$(INSTALL_DATA) $$i $(DEST_DOCDIR)/; \
+	done
+install-static: static install-headers install-docs $(DEST_LIBDIR)
+	@echo installing $(OBJDIR_NORMAL_LIB) in $(DEST_LIBDIR)/
+	$(INSTALL_DATA) $(OBJDIR_NORMAL_LIB) $(DEST_LIBDIR)/
+	$(RANLIB) $(DEST_LIBDIR)/$(NORMAL_LIB)
+install-elf-and-links:
+	-$(RM) $(DEST_LIBDIR)/$(ELFLIB)
+	-$(RM) $(DEST_LIBDIR)/$(ELFLIB_MAJOR)
+	@echo installing $(ELFLIB_BUILD_NAME) in $(DEST_LIBDIR)
+	$(INSTALL_DATA) $(ELFDIR_ELF_LIB) $(DEST_LIBDIR)/
+	-cd $(DEST_LIBDIR) && $(LN) $(ELFLIB_BUILD_NAME) $(ELFLIB_MAJOR)
+	-cd $(DEST_LIBDIR) && $(LN) $(ELFLIB_MAJOR) $(ELFLIB)
+	@echo ""
+	@echo $(ELFLIB_BUILD_NAME) created in $(DEST_LIBDIR).
+	@echo The links $(ELFLIB) and $(ELFLIB_MAJOR) to $(ELFLIB_BUILD_NAME) were also created.
+	@echo ""
+# On cygwin, the DLL must be installed in the bin directory and the import-lib
+# goes in the lib directory
+install-elf-cygwin:
+	$(INSTALL_DATA) $(ELFDIR_DLL_LIB) $(DEST_LIBDIR)/
+	$(MKINSDIR) $(DEST_BINDIR)
+	$(INSTALL) $(ELFDIR_ELF_LIB) $(DEST_BINDIR)/
+install-elf: elf install-headers install-docs $(DEST_LIBDIR) $(INSTALL_ELFLIB_TARGET)
+install-all: install-elf install-static
+install: install-all
+#---------------------------------------------------------------------------
+# Tests
+#---------------------------------------------------------------------------
+runtests: $(OBJDIR_NORMAL_LIB)
+	cd test; $(MAKE) CC="$(CC)" CFLAGS="$(CFLAGS)" OTHERLIBS="$(OTHERLIBS)" SLANGLIB="$(OBJDIR)"
+#---------------------------------------------------------------------------
+# Housekeeping
+#---------------------------------------------------------------------------
+elf-clean:
+	-$(RM) $(ELFDIR)/*
+clean: elf-clean
+	-$(RM) *~ "#"*
+	-$(RM) $(OBJDIR)/*
+	-$(RM) $(ELFDIR)/*
+distclean: clean
+	-$(RM_R) $(OBJDIR) $(ELFDIR) Makefile sysconf.h $(CONFIG_H)
+
+# The symlinks target is for my own private use.  It simply creates the object
+# directory as a symbolic link to a local disk instead of an NFS mounted one.
+symlinks:
+	-/bin/rm -f $(ARCH)objs
+	mkdir -p $(HOME)/sys/$(ARCH)/objs/slang/src
+	ln -s $(HOME)/sys/$(ARCH)/objs/slang/src $(ARCH)objs
+	@echo "Also try: make elfsymlinks"
+elfsymlinks: symlinks
+	-/bin/rm -f elf$(ARCH)objs
+	mkdir -p $(HOME)/sys/$(ARCH)/objs/slang/src/elf
+	ln -s $(HOME)/sys/$(ARCH)/objs/slang/src/elf elf$(ARCH)objs
+slang.h: $(SRCDIR)/../changes.txt
+	if [ -x $(UPDATE_VERSION_SCRIPT) ]; then \
+	  $(UPDATE_VERSION_SCRIPT) $(SRCDIR)/../changes.txt $(SRCDIR)/slang.h; \
+	fi
+#
+#---------------------------------------------------------------------------
+# Object Rules : These are created from the configure script (hopefully)
+#---------------------------------------------------------------------------

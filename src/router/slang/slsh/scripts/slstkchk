@@ -1,0 +1,119 @@
+#!/usr/bin/env slsh
+require ("cmdopt");
+require ("stkcheck");
+
+private variable Version = "0.1.0-0";
+private variable Output_Fp;
+
+private define _slstkchk_version ()
+{
+   () = fprintf (stderr, "slstkchk version %s; S-Lang version: %s\n",
+		 Version, _slang_version_string);
+}
+
+private define _slstkchk_usage ()
+{
+   variable fp = stderr;
+   () = fprintf (fp, "Usage: %s [options] script args...\n", path_basename (__argv[0]));
+   () = fprintf (fp, "Options:\n");
+   variable opts =
+     [
+      " -f|--func <function>       Name of Function to call [default: slsh_main]\n",
+      " -o|--output <file>         Name of output file [default: write to stderr]\n",
+      " -v|--version               Print version information\n",
+      " -h|--help                  Print this message\n"
+     ];
+   variable opt;
+   foreach opt (opts)
+     () = fputs (opt, fp);
+   exit (1);
+}
+
+private define _slstkchk_cmdopt_error (msg)
+{
+   () = fprintf (stderr, "%s\n", msg);
+   _slstkchk_usage ();
+}
+
+private define _slstkchk_output_hook (fp, str)
+{
+   () = fputs (str, fp);
+}
+
+private define _slstkchk_main ()
+{
+   variable output = NULL;
+   variable func = "slsh_main";
+
+   variable opts = cmdopt_new (&_slstkchk_cmdopt_error);
+   opts.add("f|funct", &func; type="string");
+   opts.add("o|output",&output; type="string");
+   opts.add("v|version", &_slstkchk_version),
+   opts.add("h|help", &_slstkchk_usage);
+   variable i = opts.process (__argv, 1);
+
+   if (func == "")
+     _slstkchk_usage ();
+
+   if (i >= __argc)
+     _slstkchk_usage ();
+
+   variable main = strtok (func, " \t(;")[0];
+   variable main_args = strtrim (substrbytes (func, 1+strlen(main), -1));
+
+   variable depth = _stkdepth();
+   try
+     {
+	if (strlen (main)) eval (main_args);
+     }
+   catch AnyError:
+     {
+	() = fprintf (stderr, "Error parsing args of %s\n", func);
+	exit (1);
+     }
+   main_args = __pop_list (_stkdepth ()-depth);
+
+   variable script = __argv[i];
+
+   if (not path_is_absolute (script))
+     script = path_concat (getcwd (), script);
+
+   variable st = stat_file (script);
+   if (st == NULL)
+     {
+	() = fprintf (stderr, "Unable to stat %s -- did you specify its path?\n", script);
+	exit (1);
+     }
+
+   if (not stat_is ("reg", st.st_mode))
+     () = fprintf (stderr, "*** Warning %s is not a regular file\n", script);
+
+   variable fp = NULL;
+   if (output != NULL)
+     {
+	fp = fopen (output, "w");
+	if (fp == NULL)
+	  {
+	     () = fprintf (stderr, "Unable to open output file %s\n");
+	     exit (1);
+	  }
+	stkcheck_set_output_hook (&_slstkchk_output_hook, fp);
+     }
+
+   __set_argc_argv (__argv[[i:]]);
+
+   enable_stack_check ();
+   () = evalfile (script);
+
+   variable ref = __get_reference (main);
+   if (ref != NULL)
+     (@ref) (__push_list (main_args));
+   else if (main != "slsh_main")
+     () = fprintf (stderr, "*** Warning: %s is not defined\n", main);
+
+   if (fp != NULL)
+     () = fclose (fp);
+}
+
+_slstkchk_main ();
+exit (0);

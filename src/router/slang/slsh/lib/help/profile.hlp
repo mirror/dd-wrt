@@ -1,0 +1,122 @@
+profile_on
+
+ SYNOPSIS
+  Enable code generation to support profiling hooks
+
+ USAGE
+  profile_on ( [line_by_line] )
+
+ DESCRIPTION
+  This function will turn cause the interpreter to generate code to
+  call hooks that are used to profile code.  The `profile_on'
+  function does not establish those hooks, rather it causes code to be
+  generated to support such hooks.
+
+  With no optional argument, only code to support function call hooks
+  will be generated.  To enable support for line-by-line profile
+  hooks, a value of 1 should be passed to this function.
+
+ SEE ALSO
+  profile_off, profile_begin, profile_end, profile_calibrate, profile_report}
+
+--------------------------------------------------------------
+
+profile_off
+
+ SYNOPSIS
+  Turn off code generation for profiling hooks
+
+ USAGE
+  profile_off ()
+
+ DESCRIPTION
+  This function turns off the generation of code to support profiling
+  hooks.
+
+ SEE ALSO
+  profile_on, profile_begin, profile_end, profile_calibrate, profile_report}
+
+--------------------------------------------------------------
+
+profile_begin
+
+ SYNOPSIS
+  Establish profiling hooks and reset the profiler
+
+ USAGE
+  profile_begin ( [line_by_line] )
+
+ DESCRIPTION
+  This function establishes the profiling hooks and resets or
+  initializes the profiler state.  By default, only hooks to gather
+  function call information are created.  To enable the gathering of
+  line-by-line information, a value of 1 should be passed to this
+  function.
+
+ SEE ALSO
+  profile_end, profile_on, profile_off, profile_calibrate, profile_report}
+
+--------------------------------------------------------------
+
+profile_end
+
+ SYNOPSIS
+  Remove profiling hooks and turn off profiler code generation
+
+ USAGE
+  profile_end ()
+
+ DESCRIPTION
+  The `profile_end' function turns off the code generation to
+  support profiling hooks and removes any profiling hooks that are in
+  place.
+
+ SEE ALSO
+  profile_begin, profile_on, profile_off, profile_calibrate, profile_report
+
+--------------------------------------------------------------
+
+profile_calibrate
+
+ SYNOPSIS
+  Calibrate the profiler
+
+ USAGE
+  profile_calibrate ([ N ])
+
+ DESCRIPTION
+ This function may be used to ``calibrate'' the profiler.  As the
+ performance of the profiler and the interpreter varies with a
+ platform and load-dependent manner, this function should be called
+ prior to enabling the profiler.  It tries to determine the average
+ amount of overhead per statement executed and function call by
+ executing a series of statements and functions many times to
+ determine statistically accurate values.  The optional parameter
+ `N' may be used to control the amount of code executed
+ for the calibration process.  If no value is provided, the `N'
+ will default to 1000.  The higher the value, the more accurate the
+ calibration will be and the longer the calibration process will take.
+
+ SEE ALSO
+  profile_begin, profile_end, profile_on, profile_off, profile_report
+
+--------------------------------------------------------------
+
+profile_report
+
+ SYNOPSIS
+  Generate the profile report
+
+ USAGE
+  profile_report (file)
+
+ DESCRIPTION
+  The function may be used to format the profile report and write it
+  to the specified file.  If the `file' parameter represents a
+  File_Type file descriptor, then the report will be written
+  the the descriptor.
+
+ SEE ALSO
+  profile_begin, profile_end, profile_on, profile_off, profile_calibrate
+
+--------------------------------------------------------------

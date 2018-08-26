@@ -1,0 +1,133 @@
+#!/usr/bin/env slsh
+
+% This script prints the width and height of one or more jpeg image files.
+if (__argc < 2)
+{
+   () = fprintf (stderr, "Usage: %s files....\n", path_basename (__argv[0]));
+   exit (1);
+}
+
+private variable M_SOF0	= 0xC0;	       %/* Start Of Frame N */
+private variable M_SOF1	= 0xC1;	       %/* N indicates which compression process */
+private variable M_SOF2	= 0xC2;	       %/* Only SOF0-SOF2 are now in common use */
+private variable M_SOF3	= 0xC3;	       %
+private variable M_SOF5	= 0xC5;	       %/* NB: codes C4 and CC are NOT SOF markers */
+private variable M_SOF6	= 0xC6;	       %
+private variable M_SOF7	= 0xC7;	       %
+private variable M_SOF9	= 0xC9;	       %
+private variable M_SOF10	= 0xCA;	       %
+private variable M_SOF11	= 0xCB;	       %
+private variable M_SOF13	= 0xCD;	       %
+private variable M_SOF14	= 0xCE;	       %
+private variable M_SOF15	= 0xCF;	       %
+private variable M_SOI	= 0xD8;	       %/* Start Of Image (beginning of datastream) */
+private variable M_EOI	= 0xD9;	       %/* End Of Image (end of datastream) */
+private variable M_SOI	= 0xD8;	       % Start Of Image (beginning of datastream)
+
+private define read_nbytes (fp, n)
+{
+   variable b;
+   if (n != fread_bytes (&b, n, fp))
+     throw ReadError, "Failed to read $n bytes"$;
+   return b;
+}
+
+private define read_ushort (fp)
+{
+   return unpack (">H", read_nbytes (fp, 2));
+}
+
+private define open_jpg_file_for_read (file)
+{
+   variable fp = fopen (file, "rb");
+   variable b = read_nbytes (fp, 2);
+   if ((b[0] != 0xFF) or (b[1] != M_SOI))
+     return NULL;
+   return fp;
+}
+
+private define next_marker (fp)
+{
+   variable c = read_nbytes (fp, 1);
+   while (c != 0xFF)
+     c = read_nbytes (fp, 1);
+
+   % Remove pad bytes
+   do
+     c = read_nbytes (fp, 1);
+   while (c == 0xFF);
+
+   return c;
+}
+
+private define skip_variable (fp)
+{
+   variable len = read_ushort (fp);
+   if (len < 2)
+     throw DataError, "Erroneous JPEG marker length";
+   len -= 2;
+
+   while (len > 512)
+     {
+	() = read_nbytes (fp, 512);
+	len -= 512;
+     }
+   () = read_nbytes (fp, len);
+}
+
+public define jpeg_size (file, width, height)
+{
+   variable fp = open_jpg_file_for_read (file);
+   if (fp == NULL)
+     return -1;
+
+   variable is_sof = UChar_Type[256];
+   is_sof[M_SOF0] = 1;
+   is_sof[M_SOF1] = 1;
+   is_sof[M_SOF2] = 1;
+   is_sof[M_SOF3] = 1;
+   is_sof[M_SOF5] = 1;
+   is_sof[M_SOF6] = 1;
+   is_sof[M_SOF7] = 1;
+   is_sof[M_SOF9] = 1;
+   is_sof[M_SOF10] = 1;
+   is_sof[M_SOF11] = 1;
+   is_sof[M_SOF13] = 1;
+   is_sof[M_SOF15] = 1;
+
+   while (0 == is_sof[next_marker(fp)])
+     {
+	skip_variable (fp);
+     }
+
+   variable len = read_ushort (fp);
+   variable data_precision = read_nbytes (fp, 1);
+   variable h = read_ushort (fp);
+   variable w = read_ushort (fp);
+
+   @width = w;
+   @height = h;
+   return 0;
+}
+
+private define main ()
+{
+   variable file;
+   foreach file (__argv[[1:]])
+     {
+	try
+	  {
+	     variable width, height;
+	     if (-1 == jpeg_size (file, &width, &height))
+	       {
+		  () = fprintf (stderr, "%s is not a jpeg file\n", file);
+		  continue;
+	       }
+	     () = fprintf (stdout, "%s: %ux%u\n", file, width, height);
+	  }
+	catch ReadError, DataError:
+	() = fprintf (stderr, "Caught error processing %s ...skipped\n", file);
+     }
+   exit (0);
+}
+main ();

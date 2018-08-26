@@ -1,0 +1,114 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="LinuxDoc-Tools 0.9.50">
+ <TITLE> SLSH Library Reference (version 2.2.0): The require Function</TITLE>
+ <LINK HREF="slshfun-3.html" REL=next>
+ <LINK HREF="slshfun-1.html" REL=previous>
+ <LINK HREF="slshfun.html#toc2" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="slshfun-3.html">Next</A>
+<A HREF="slshfun-1.html">Previous</A>
+<A HREF="slshfun.html#toc2">Contents</A>
+<HR>
+<H2><A NAME="s2">2.</A> <A HREF="slshfun.html#toc2">The <CODE>require</CODE> Function</A></H2>
+
+<P>The functions in <CODE>require.sl</CODE> facilitate the loading of <B>S-Lang</B>
+code.</P>
+<H2><A NAME="_featurep"></A> <A NAME="ss2.1">2.1</A> <A HREF="slshfun.html#toc2.1"><B>_featurep</B></A>
+</H2>
+
+<P>
+<DL>
+<DT><B> Synopsis </B><DD>
+<P>Test whether or not a feature is present</P>
+<DT><B> Usage </B><DD>
+<P><CODE>Int_Type _featurep (String_Type feature [,String_Type namespace])</CODE></P>
+<DT><B> Description </B><DD>
+<P>The <CODE>_featurep</CODE> function returns a non-zero value if the specified
+feature is present.  Otherwise, it returns 0 to indicate that the feature
+has not been loaded.</P>
+<DT><B> See Also </B><DD>
+<P><CODE>require, provide</CODE></P>
+</DL>
+</P>
+
+
+<H2><A NAME="provide"></A> <A NAME="ss2.2">2.2</A> <A HREF="slshfun.html#toc2.2"><B>provide</B></A>
+</H2>
+
+<P>
+<DL>
+<DT><B> Synopsis </B><DD>
+<P>Declare that a specified feature is available</P>
+<DT><B> Usage </B><DD>
+<P><CODE>provide (String_Type feature [,String_Type namespace])</CODE></P>
+<DT><B> Description </B><DD>
+<P>The <CODE>provide</CODE> function may be used to declare that a "feature" has
+been loaded into the specified namespace.  If the namespace argument is not
+present, the current namespace will be used.
+See the documentation for <CODE>require</CODE> for more information.</P>
+<DT><B> See Also </B><DD>
+<P><CODE>require, _featurep</CODE></P>
+</DL>
+</P>
+
+
+<H2><A NAME="require"></A> <A NAME="ss2.3">2.3</A> <A HREF="slshfun.html#toc2.3"><B>require</B></A>
+</H2>
+
+<P>
+<DL>
+<DT><B> Synopsis </B><DD>
+<P>Make sure a feature is present, and load it if not</P>
+<DT><B> Usage </B><DD>
+<P><CODE>require (feature [,namespace [,file]])</CODE>
+<BLOCKQUOTE><CODE>
+<PRE>
+   String_Type feature, namespace, file;
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<DT><B> Description </B><DD>
+<P>The <CODE>require</CODE> function ensures that a specified "feature" is present.
+If the feature is not present, the <CODE>require</CODE> function will attempt to
+load the feature from a file.  If the <CODE>namespace</CODE> argument is present
+and non-NULL, the specified namespace will be used.  The default is to use
+the current non-anonymous namespace. If called with three arguments, the
+feature will be loaded from the file specified by the third argument
+if it does not already exist in the namespace.  Otherwise, the feature
+will be loaded from a file given by the name of the feature, with
+".sl" appended.</P>
+<P>If after loading the file, if the feature is not present,
+a warning message will be issued.</P>
+<DT><B> Example </B><DD>
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+    require ("histogram");
+    require ("histogram", "foo");
+    require ("histogram", "foo", "/home/bob/hist.sl");
+    require ("histogram", ,"/home/bob/hist.sl");
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<DT><B> Notes </B><DD>
+<P>"feature" is an abstract quantity that is undefined here.</P>
+<P>A popular use of the <CODE>require</CODE> function is to ensure that a specified
+file has already been loaded.  In this case, the feature is the
+filename itself.  The advantage of using this mechanism over using
+<CODE>evalfile</CODE> is that if the file has already been loaded, <CODE>require</CODE>
+will not re-load it.</P>
+<DT><B> See Also </B><DD>
+<P><CODE>provide, _featurep, evalfile</CODE></P>
+</DL>
+</P>
+
+
+<HR>
+<A HREF="slshfun-3.html">Next</A>
+<A HREF="slshfun-1.html">Previous</A>
+<A HREF="slshfun.html#toc2">Contents</A>
+</BODY>
+</HTML>

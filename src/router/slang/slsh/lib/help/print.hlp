@@ -1,0 +1,78 @@
+print
+
+ SYNOPSIS
+  Display a string representation of an object or value
+
+ USAGE
+  print (value [,&var|file-pointer|filename])
+
+ DESCRIPTION
+ The `print' function displays the string representation of a
+ value to the display.  An optional second argument may be provided to
+ specify where to write the resulting string: a variable, an open file
+ pointer, or to a file.
+
+ If the string representation of the object appears to contain more
+ lines than are available on the screen, then the output will be piped
+ to the program given by the `PAGER' environment variable.
+ Alternatively the pager program may be specified via the `pager'
+ qualifier.
+
+ QUALIFIERS
+
+   pager[=string]       Force the use of the pager.  If a value is
+                         specified, then use it for the pager command.
+   nopager              Do not use a pager.
+
+
+ EXAMPLE
+  Print the string representation of an array to a file called
+  `array.dat':
+
+   print ([1:20:0.1], "array.dat");
+
+
+  Print the string represent of an array to a string `str':
+
+   print ([1:20:0.1], &str);
+
+
+ SEE ALSO
+  print_set_pager, print_set_pager_lines
+
+--------------------------------------------------------------
+
+print_set_pager
+
+ SYNOPSIS
+  Set the name of the pager program used by the print program
+
+ USAGE
+  print_set_pager (String_Type cmd)
+
+ DESCRIPTION
+  This function may be used to specify the name of the default pager to be
+  used by the `print' function.
+
+ SEE ALSO
+  print, print_set_pager_lines
+
+--------------------------------------------------------------
+
+print_set_pager_lines
+
+ SYNOPSIS
+  Set the maximum number of lines to print before using a pager
+
+ USAGE
+  print_set_pager_lines (Int_Type num)
+
+ DESCRIPTION
+  The `print_set_pager_lines' function sets the maximum number of
+  lines that the string representation of an object can be before the
+  `print' function will use a pager.
+
+ SEE ALSO
+  print, print_set_pager
+
+--------------------------------------------------------------

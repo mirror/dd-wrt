@@ -1,0 +1,75 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="LinuxDoc-Tools 0.9.50">
+ <TITLE> SLSH Library Reference (version 2.2.0): Array Functions</TITLE>
+ <LINK HREF="slshfun-8.html" REL=next>
+ <LINK HREF="slshfun-6.html" REL=previous>
+ <LINK HREF="slshfun.html#toc7" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="slshfun-8.html">Next</A>
+<A HREF="slshfun-6.html">Previous</A>
+<A HREF="slshfun.html#toc7">Contents</A>
+<HR>
+<H2><A NAME="s7">7.</A> <A HREF="slshfun.html#toc7">Array Functions</A></H2>
+
+<P><B>S-Lang</B> includes many intrinsic functions that operate on arrays.   The
+additional functions described here are defined in
+<CODE>arrayfuns.sl</CODE>.</P>
+<H2><A NAME="reverse"></A> <A NAME="ss7.1">7.1</A> <A HREF="slshfun.html#toc7.1"><B>reverse</B></A>
+</H2>
+
+<P>
+<DL>
+<DT><B> Synopsis </B><DD>
+<P>Reverse the elements of a 1-d array</P>
+<DT><B> Usage </B><DD>
+<P><CODE>Array_Type reverse (Array_Type A)</CODE></P>
+<DT><B> Description </B><DD>
+<P>The <CODE>reverse</CODE> function reverses the elements of a 1-d array and
+returns the result.</P>
+<DT><B> See Also </B><DD>
+<P><CODE>shift</CODE></P>
+</DL>
+</P>
+
+
+<H2><A NAME="shift"></A> <A NAME="ss7.2">7.2</A> <A HREF="slshfun.html#toc7.2"><B>shift</B></A>
+</H2>
+
+<P>
+<DL>
+<DT><B> Synopsis </B><DD>
+<P>Shift the elements of a 1-d array</P>
+<DT><B> Usage </B><DD>
+<P><CODE>Array_Type shift (Array_Type A, Int_Type n)</CODE></P>
+<DT><B> Description </B><DD>
+<P>The <CODE>shift</CODE> function shifts the elements of an array by a specified amount
+and returns the result.  If <CODE>n</CODE> is positive, the ith element of the array
+will be shifted to the position <CODE>i-n</CODE> of the array.  Elements for
+which <CODE>i-n</CODE> is less than 0 will be moved to the end of the array.</P>
+<DT><B> Example </B><DD>
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+   A = [1,2,3,4,5,6,7,8,9];
+   B = shift (A, 3);          % ==&gt; B = [4,5,6,7,8,9,1,2,3];
+   C = shift (A, -1);         % ==&gt; C = [9,1,2,3,4,5,6,7,8];
+</PRE>
+</CODE></BLOCKQUOTE>
+</P>
+<DT><B> Notes </B><DD>
+<P>It many ways <CODE>rotate</CODE> would be a better name for this function.</P>
+<DT><B> See Also </B><DD>
+<P><CODE>reverse, transpose</CODE></P>
+</DL>
+</P>
+
+
+<HR>
+<A HREF="slshfun-8.html">Next</A>
+<A HREF="slshfun-6.html">Previous</A>
+<A HREF="slshfun.html#toc7">Contents</A>
+</BODY>
+</HTML>

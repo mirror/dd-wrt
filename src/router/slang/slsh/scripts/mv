@@ -1,0 +1,157 @@
+#!/usr/bin/env slsh
+% -*- slang -*-
+
+require ("cmdopt");
+private variable Script_Version_String = "0.1.0";
+
+private variable
+  Confirm_Move = 0,
+  Verbose = 0,
+  Force = 0,
+  NoClobber = 0;
+
+private define exit_version ()
+{
+   () = fprintf (stdout, "Version: %S\n", Script_Version_String);
+   exit (0);
+}
+
+private define exit_usage ()
+{
+   variable fp = stderr;
+   () = fprintf (fp, "Usage: %s [options] files... dir\n", __argv[0]);
+   () = fprintf (fp, "Usage: %s [options] file1 file2\n", __argv[0]);
+   variable opts =
+     [
+      "Options:\n",
+      " -i                      Prompt before overwrite\n",
+      " -f                      Do not prompt before overwriting \n",
+      " -n                      Do not clobber\n",
+      " -v                      Be verbose  \n",
+      " --version               Show version\n",
+      " -h|--help               Show this message\n",
+     ];
+   foreach (opts)
+     {
+	variable opt = ();
+	() = fputs (opt, fp);
+     }
+   exit (1);
+}
+
+private define print_error ()
+{
+   variable args = __pop_list (_NARGS);
+   () = fprintf (stderr, "%s: ", __argv[0]);
+   () = fprintf (stderr, __push_list (args));
+}
+
+private define get_yn ()
+{
+   variable args = __pop_list (_NARGS);
+   () = fprintf (stdout, __push_list (args));
+   () = fflush (stdout);
+
+   variable yn;
+   if (fgets (&yn, stdin) <= 0)
+     return -1;
+
+   "y" == strlow (strtrim (yn));
+}
+
+private define move_file (from, to, st_to)
+{
+   variable st_from = stat_file (from);
+
+   if (st_from == NULL)
+     {
+	() = fprintf (stderr, "Unable to access %s\n", from);
+	return -1;
+     }
+
+   if ((from == to)
+       || ((st_to != NULL)
+	   && (st_from.st_ino == st_to.st_ino)
+	   && (st_from.st_dev == st_to.st_dev)))
+     {
+	print_error ("Cannot move a file to itself\n");
+	return -1;
+     }
+
+   if (st_to != NULL)
+     {
+	if (NoClobber)
+	  {
+	     ()= fprintf(stderr, "Move %s to %s aborted because of noclobber\n",
+			 from, to);
+	     return -1;
+	  }
+
+	if (Confirm_Move
+	    && (1 != get_yn ("%s exists.  Overwrite? [y/n]", to)))
+	  {
+	     () = fputs ("Not Confirmed\n", stdout);
+	     return -1;
+	  }
+     }
+
+   if (0 == rename (from, to))
+     {
+	if (Verbose)
+	  ()= fprintf (stdout, "`%s' -> `%s'\n", from, to);
+	return 0;
+     }
+
+   ()=fprintf (stderr, "Failed to rename %s to %s: %s\n",
+	       from, to, errno_string (errno));
+
+   return -1;
+}
+
+private define move_files (from_files, to)
+{
+   variable num_from = length (from_files);
+   variable st = stat_file (to);
+
+   if ((st == NULL) || (0 == stat_is ("dir", st.st_mode)))
+     {
+	if (num_from != 1)
+	  {
+	     () = fprintf (stderr, "target `%s' is not a directory\n", to);
+	     exit (1);
+	  }
+
+	if (-1 == move_file (from_files[0], to, st))
+	  exit (1);
+
+	exit (0);
+     }
+
+   foreach (from_files)
+     {
+	variable old = ();
+	variable new = path_concat (to, path_basename (old));
+	() = move_file (old, new, stat_file (new));
+     }
+}
+
+define slsh_main ()
+{
+   variable c = cmdopt_new ();
+   c.add("h|help", &exit_usage);
+   c.add("version", &exit_version);
+   c.add("i", &Confirm_Move);
+   c.add("f", &Force);
+   c.add("n", &NoClobber);
+   c.add("v", &Verbose);
+   variable i = c.process (__argv, 1);
+
+   if (i + 2 > __argc)
+     exit_usage ();
+
+   if (Confirm_Move && Force)
+     Confirm_Move = 0;
+
+   move_files (__argv[[i:__argc-2]], __argv[-1]);
+}
+
