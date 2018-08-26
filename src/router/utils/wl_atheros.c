@@ -5,10 +5,6 @@
 #include <utils.h>
 #include <bcmnvram.h>
 
-struct wifi_client_info {
-	void *dummy;
-};
-
 struct wifi_info {
 	unsigned char mac[6];
 	char ifname[32];
