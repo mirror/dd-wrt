@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2009,2010 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2016,2017 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -47,7 +47,7 @@
 #include <ctype.h>
 #include <tic.h>
 
-MODULE_ID("$Id: parse_entry.c,v 1.75 2010/05/01 19:35:09 tom Exp $")
+MODULE_ID("$Id: parse_entry.c,v 1.92 2017/08/26 19:49:50 tom Exp $")
 
 #ifdef LINT
 static short const parametrized[] =
@@ -56,8 +56,8 @@ static short const parametrized[] =
 #include <parametrized.h>
 #endif
 
-static void postprocess_termcap(TERMTYPE *, bool);
-static void postprocess_terminfo(TERMTYPE *);
+static void postprocess_termcap(TERMTYPE2 *, bool);
+static void postprocess_terminfo(TERMTYPE2 *);
 static struct name_table_entry const *lookup_fullname(const char *name);
 
 #if NCURSES_XNAMES
@@ -66,7 +66,7 @@ static struct name_table_entry const *
 _nc_extend_names(ENTRY * entryp, char *name, int token_type)
 {
     static struct name_table_entry temp;
-    TERMTYPE *tp = &(entryp->tterm);
+    TERMTYPE2 *tp = &(entryp->tterm);
     unsigned offset = 0;
     unsigned actual;
     unsigned tindex;
@@ -145,27 +145,27 @@ _nc_extend_names(ENTRY * entryp, char *name, int token_type)
 	case BOOLEAN:
 	    tp->ext_Booleans++;
 	    tp->num_Booleans++;
-	    tp->Booleans = typeRealloc(NCURSES_SBOOL, tp->num_Booleans, tp->Booleans);
+	    TYPE_REALLOC(NCURSES_SBOOL, tp->num_Booleans, tp->Booleans);
 	    for_each_value(tp->num_Booleans)
 		tp->Booleans[last] = tp->Booleans[last - 1];
 	    break;
 	case NUMBER:
 	    tp->ext_Numbers++;
 	    tp->num_Numbers++;
-	    tp->Numbers = typeRealloc(short, tp->num_Numbers, tp->Numbers);
+	    TYPE_REALLOC(NCURSES_INT2, tp->num_Numbers, tp->Numbers);
 	    for_each_value(tp->num_Numbers)
 		tp->Numbers[last] = tp->Numbers[last - 1];
 	    break;
 	case STRING:
 	    tp->ext_Strings++;
 	    tp->num_Strings++;
-	    tp->Strings = typeRealloc(char *, tp->num_Strings, tp->Strings);
+	    TYPE_REALLOC(char *, tp->num_Strings, tp->Strings);
 	    for_each_value(tp->num_Strings)
 		tp->Strings[last] = tp->Strings[last - 1];
 	    break;
 	}
 	actual = NUM_EXT_NAMES(tp);
-	tp->ext_Names = typeRealloc(char *, actual, tp->ext_Names);
+	TYPE_REALLOC(char *, actual, tp->ext_Names);
 	while (--actual > offset)
 	    tp->ext_Names[actual] = tp->ext_Names[actual - 1];
 	tp->ext_Names[offset] = _nc_save_str(name);
@@ -179,6 +179,20 @@ _nc_extend_names(ENTRY * entryp, char *name, int token_type)
     return &temp;
 }
 #endif /* NCURSES_XNAMES */
+
+static bool
+valid_entryname(const char *name)
+{
+    bool result = TRUE;
+    int ch;
+    while ((ch = UChar(*name++)) != '\0') {
+	if (ch <= ' ' || ch > '~' || ch == '/') {
+	    result = FALSE;
+	    break;
+	}
+    }
+    return result;
+}
 
 /*
  *	int
@@ -203,12 +217,15 @@ _nc_extend_names(ENTRY * entryp, char *name, int token_type)
  	{ bad_tc_usage = TRUE; \
 	 _nc_warning("Legacy termcap allows only a trailing tc= clause"); }
 
+#define MAX_NUMBER MAX_OF_TYPE(NCURSES_INT2)
+
 NCURSES_EXPORT(int)
-_nc_parse_entry(struct entry *entryp, int literal, bool silent)
+_nc_parse_entry(ENTRY * entryp, int literal, bool silent)
 {
     int token_type;
     struct name_table_entry const *entry_ptr;
     char *ptr, *base;
+    const char *name;
     bool bad_tc_usage = FALSE;
 
     token_type = _nc_get_token(silent);
@@ -218,7 +235,7 @@ _nc_parse_entry(struct entry *entryp, int literal, bool silent)
     if (token_type != NAMES)
 	_nc_err_abort("Entry does not start with terminal names in column one");
 
-    _nc_init_entry(&entryp->tterm);
+    _nc_init_entry(entryp);
 
     entryp->cstart = _nc_comment_start;
     entryp->cend = _nc_comment_end;
@@ -234,13 +251,14 @@ _nc_parse_entry(struct entry *entryp, int literal, bool silent)
      * implemented it.  Note that the resulting terminal type was never the
      * 2-character name, but was instead the first alias after that.
      */
+#define ok_TC2(s) (isgraph(UChar(s)) && (s) != '|')
     ptr = _nc_curr_token.tk_name;
     if (_nc_syntax == SYN_TERMCAP
 #if NCURSES_XNAMES
 	&& !_nc_user_definable
 #endif
 	) {
-	if (ptr[2] == '|') {
+	if (ok_TC2(ptr[0]) && ok_TC2(ptr[1]) && (ptr[2] == '|')) {
 	    ptr += 3;
 	    _nc_curr_token.tk_name[2] = '\0';
 	}
@@ -258,7 +276,12 @@ _nc_parse_entry(struct entry *entryp, int literal, bool silent)
      * results in the terminal type getting prematurely set to correspond
      * to that of the next entry.
      */
-    _nc_set_type(_nc_first_name(entryp->tterm.term_names));
+    name = _nc_first_name(entryp->tterm.term_names);
+    if (!valid_entryname(name)) {
+	_nc_warning("invalid entry name \"%s\"", name);
+	name = "invalid";
+    }
+    _nc_set_type(name);
 
     /* check for overly-long names and aliases */
     for (base = entryp->tterm.term_names; (ptr = strchr(base, '|')) != 0;
@@ -280,6 +303,19 @@ _nc_parse_entry(struct entry *entryp, int literal, bool silent)
 	bool is_use = (strcmp(_nc_curr_token.tk_name, "use") == 0);
 	bool is_tc = !is_use && (strcmp(_nc_curr_token.tk_name, "tc") == 0);
 	if (is_use || is_tc) {
+	    if (!VALID_STRING(_nc_curr_token.tk_valstring)
+		|| _nc_curr_token.tk_valstring[0] == '\0') {
+		_nc_warning("missing name for use-clause");
+		continue;
+	    } else if (!valid_entryname(_nc_curr_token.tk_valstring)) {
+		_nc_warning("invalid name for use-clause \"%s\"",
+			    _nc_curr_token.tk_valstring);
+		continue;
+	    } else if (entryp->nuses >= MAX_USES) {
+		_nc_warning("too many use-clauses, ignored \"%s\"",
+			    _nc_curr_token.tk_valstring);
+		continue;
+	    }
 	    entryp->uses[entryp->nuses].name = _nc_save_str(_nc_curr_token.tk_valstring);
 	    entryp->uses[entryp->nuses].line = _nc_curr_line;
 	    entryp->nuses++;
@@ -367,7 +403,16 @@ _nc_parse_entry(struct entry *entryp, int literal, bool silent)
 	    }
 
 	    /* deal with bad type/value combinations. */
-	    if (token_type != CANCEL && entry_ptr->nte_type != token_type) {
+	    if (token_type == CANCEL) {
+		/*
+		 * Prefer terminfo in this (long-obsolete) ambiguity:
+		 */
+		if (!strcmp("ma", _nc_curr_token.tk_name)) {
+		    entry_ptr = _nc_find_type_entry("ma", NUMBER,
+						    _nc_syntax != 0);
+		    assert(entry_ptr != 0);
+		}
+	    } else if (entry_ptr->nte_type != token_type) {
 		/*
 		 * Nasty special cases here handle situations in which type
 		 * information can resolve name clashes.  Normal lookup
@@ -444,8 +489,12 @@ _nc_parse_entry(struct entry *entryp, int literal, bool silent)
 		break;
 
 	    case NUMBER:
-		entryp->tterm.Numbers[entry_ptr->nte_index] =
-		    (short) _nc_curr_token.tk_valnumber;
+		if (_nc_curr_token.tk_valnumber > MAX_NUMBER) {
+		    entryp->tterm.Numbers[entry_ptr->nte_index] = MAX_NUMBER;
+		} else {
+		    entryp->tterm.Numbers[entry_ptr->nte_index] =
+ 			(NCURSES_INT2) _nc_curr_token.tk_valnumber;
+		}
 		break;
 
 	    case STRING:
@@ -480,16 +529,16 @@ _nc_parse_entry(struct entry *entryp, int literal, bool silent)
     if (!literal) {
 	if (_nc_syntax == SYN_TERMCAP) {
 	    bool has_base_entry = FALSE;
-	    unsigned i;
 
 	    /*
 	     * Don't insert defaults if this is a `+' entry meant only
 	     * for inclusion in other entries (not sure termcap ever
 	     * had these, actually).
 	     */
-	    if (strchr(entryp->tterm.term_names, '+'))
+	    if (strchr(entryp->tterm.term_names, '+')) {
 		has_base_entry = TRUE;
-	    else
+	    } else {
+		unsigned i;
 		/*
 		 * Otherwise, look for a base entry that will already
 		 * have picked up defaults via translation.
@@ -497,6 +546,7 @@ _nc_parse_entry(struct entry *entryp, int literal, bool silent)
 		for (i = 0; i < entryp->nuses; i++)
 		    if (!strchr((char *) entryp->uses[i].name, '+'))
 			has_base_entry = TRUE;
+	    }
 
 	    postprocess_termcap(&entryp->tterm, has_base_entry);
 	} else
@@ -511,43 +561,50 @@ NCURSES_EXPORT(int)
 _nc_capcmp(const char *s, const char *t)
 /* compare two string capabilities, stripping out padding */
 {
-    if (!VALID_STRING(s) && !VALID_STRING(t))
-	return (0);
-    else if (!VALID_STRING(s) || !VALID_STRING(t))
-	return (1);
+    bool ok_s = VALID_STRING(s);
+    bool ok_t = VALID_STRING(t);
 
-    for (;;) {
-	if (s[0] == '$' && s[1] == '<') {
-	    for (s += 2;; s++)
-		if (!(isdigit(UChar(*s))
-		      || *s == '.'
-		      || *s == '*'
-		      || *s == '/'
-		      || *s == '>'))
-		    break;
+    if (ok_s && ok_t) {
+	for (;;) {
+	    if (s[0] == '$' && s[1] == '<') {
+		for (s += 2;; s++) {
+		    if (!(isdigit(UChar(*s))
+			  || *s == '.'
+			  || *s == '*'
+			  || *s == '/'
+			  || *s == '>')) {
+			break;
+		    }
+		}
+	    }
+
+	    if (t[0] == '$' && t[1] == '<') {
+		for (t += 2;; t++) {
+		    if (!(isdigit(UChar(*t))
+			  || *t == '.'
+			  || *t == '*'
+			  || *t == '/'
+			  || *t == '>')) {
+			break;
+		    }
+		}
+	    }
+
+	    /* we've now pushed s and t past any padding they pointed at */
+
+	    if (*s == '\0' && *t == '\0')
+		return (0);
+
+	    if (*s != *t)
+		return (*t - *s);
+
+	    /* else *s == *t but one is not NUL, so continue */
+	    s++, t++;
 	}
-
-	if (t[0] == '$' && t[1] == '<') {
-	    for (t += 2;; t++)
-		if (!(isdigit(UChar(*t))
-		      || *t == '.'
-		      || *t == '*'
-		      || *t == '/'
-		      || *t == '>'))
-		    break;
-	}
-
-	/* we've now pushed s and t past any padding they were pointing at */
-
-	if (*s == '\0' && *t == '\0')
-	    return (0);
-
-	if (*s != *t)
-	    return (*t - *s);
-
-	/* else *s == *t but one is not NUL, so continue */
-	s++, t++;
+    } else if (ok_s || ok_t) {
+	return 1;
     }
+    return 0;
 }
 
 static void
@@ -565,7 +622,7 @@ append_acs0(string_desc * dst, int code, int src)
 static void
 append_acs(string_desc * dst, int code, char *src)
 {
-    if (src != 0 && strlen(src) == 1) {
+    if (VALID_STRING(src) && strlen(src) == 1) {
 	append_acs0(dst, code, *src);
     }
 }
@@ -575,32 +632,32 @@ append_acs(string_desc * dst, int code, char *src)
  * list.  For each capability, we may assume there is a keycap that sends the
  * string which is the value of that capability.
  */
+#define DATA(from, to) { { from }, { to } }
 typedef struct {
-    const char *from;
-    const char *to;
+    const char from[3];
+    const char to[6];
 } assoc;
 static assoc const ko_xlate[] =
 {
-    {"al", "kil1"},		/* insert line key  -> KEY_IL    */
-    {"bt", "kcbt"},		/* back tab         -> KEY_BTAB  */
-    {"cd", "ked"},		/* clear-to-eos key -> KEY_EOL   */
-    {"ce", "kel"},		/* clear-to-eol key -> KEY_EOS   */
-    {"cl", "kclr"},		/* clear key        -> KEY_CLEAR */
-    {"ct", "tbc"},		/* clear all tabs   -> KEY_CATAB */
-    {"dc", "kdch1"},		/* delete char      -> KEY_DC    */
-    {"dl", "kdl1"},		/* delete line      -> KEY_DL    */
-    {"do", "kcud1"},		/* down key         -> KEY_DOWN  */
-    {"ei", "krmir"},		/* exit insert key  -> KEY_EIC   */
-    {"ho", "khome"},		/* home key         -> KEY_HOME  */
-    {"ic", "kich1"},		/* insert char key  -> KEY_IC    */
-    {"im", "kIC"},		/* insert-mode key  -> KEY_SIC   */
-    {"le", "kcub1"},		/* le key           -> KEY_LEFT  */
-    {"nd", "kcuf1"},		/* nd key           -> KEY_RIGHT */
-    {"nl", "kent"},		/* new line key     -> KEY_ENTER */
-    {"st", "khts"},		/* set-tab key      -> KEY_STAB  */
-    {"ta", CANCELLED_STRING},
-    {"up", "kcuu1"},		/* up-arrow key     -> KEY_UP    */
-    {(char *) 0, (char *) 0},
+    DATA("al", "kil1"),		/* insert line key  -> KEY_IL    */
+    DATA("bt", "kcbt"),		/* back tab         -> KEY_BTAB  */
+    DATA("cd", "ked"),		/* clear-to-eos key -> KEY_EOL   */
+    DATA("ce", "kel"),		/* clear-to-eol key -> KEY_EOS   */
+    DATA("cl", "kclr"),		/* clear key        -> KEY_CLEAR */
+    DATA("ct", "tbc"),		/* clear all tabs   -> KEY_CATAB */
+    DATA("dc", "kdch1"),	/* delete char      -> KEY_DC    */
+    DATA("dl", "kdl1"),		/* delete line      -> KEY_DL    */
+    DATA("do", "kcud1"),	/* down key         -> KEY_DOWN  */
+    DATA("ei", "krmir"),	/* exit insert key  -> KEY_EIC   */
+    DATA("ho", "khome"),	/* home key         -> KEY_HOME  */
+    DATA("ic", "kich1"),	/* insert char key  -> KEY_IC    */
+    DATA("im", "kIC"),		/* insert-mode key  -> KEY_SIC   */
+    DATA("le", "kcub1"),	/* le key           -> KEY_LEFT  */
+    DATA("nd", "kcuf1"),	/* nd key           -> KEY_RIGHT */
+    DATA("nl", "kent"),		/* new line key     -> KEY_ENTER */
+    DATA("st", "khts"),		/* set-tab key      -> KEY_STAB  */
+    DATA("ta", ""),
+    DATA("up", "kcuu1"),	/* up-arrow key     -> KEY_UP    */
 };
 
 /*
@@ -615,13 +672,6 @@ static const char C_BS[] = "\b";
 static const char C_HT[] = "\t";
 
 /*
- * Note that WANTED and PRESENT are not simple inverses!  If a capability
- * has been explicitly cancelled, it's not considered WANTED.
- */
-#define WANTED(s)	((s) == ABSENT_STRING)
-#define PRESENT(s)	(((s) != ABSENT_STRING) && ((s) != CANCELLED_STRING))
-
-/*
  * This bit of legerdemain turns all the terminfo variable names into
  * references to locations in the arrays Booleans, Numbers, and Strings ---
  * precisely what's needed.
@@ -631,7 +681,7 @@ static const char C_HT[] = "\t";
 #define CUR tp->
 
 static void
-postprocess_termcap(TERMTYPE *tp, bool has_base)
+postprocess_termcap(TERMTYPE2 *tp, bool has_base)
 {
     char buf[MAX_LINE * 2 + 2];
     string_desc result;
@@ -646,22 +696,24 @@ postprocess_termcap(TERMTYPE *tp, bool has_base)
 
     /* if there was a tc entry, assume we picked up defaults via that */
     if (!has_base) {
-	if (WANTED(init_3string) && termcap_init2)
+	if (WANTED(init_3string) && PRESENT(termcap_init2))
 	    init_3string = _nc_save_str(termcap_init2);
 
-	if (WANTED(reset_2string) && termcap_reset)
+	if (WANTED(reset_2string) && PRESENT(termcap_reset))
 	    reset_2string = _nc_save_str(termcap_reset);
 
 	if (WANTED(carriage_return)) {
 	    if (carriage_return_delay > 0) {
-		sprintf(buf, "%s$<%d>", C_CR, carriage_return_delay);
+		_nc_SPRINTF(buf, _nc_SLIMIT(sizeof(buf))
+			    "%s$<%d>", C_CR, carriage_return_delay);
 		carriage_return = _nc_save_str(buf);
 	    } else
 		carriage_return = _nc_save_str(C_CR);
 	}
 	if (WANTED(cursor_left)) {
 	    if (backspace_delay > 0) {
-		sprintf(buf, "%s$<%d>", C_BS, backspace_delay);
+		_nc_SPRINTF(buf, _nc_SLIMIT(sizeof(buf))
+			    "%s$<%d>", C_BS, backspace_delay);
 		cursor_left = _nc_save_str(buf);
 	    } else if (backspaces_with_bs == 1)
 		cursor_left = _nc_save_str(C_BS);
@@ -674,7 +726,8 @@ postprocess_termcap(TERMTYPE *tp, bool has_base)
 		cursor_down = linefeed_if_not_lf;
 	    else if (linefeed_is_newline != 1) {
 		if (new_line_delay > 0) {
-		    sprintf(buf, "%s$<%d>", C_LF, new_line_delay);
+		    _nc_SPRINTF(buf, _nc_SLIMIT(sizeof(buf))
+				"%s$<%d>", C_LF, new_line_delay);
 		    cursor_down = _nc_save_str(buf);
 		} else
 		    cursor_down = _nc_save_str(C_LF);
@@ -685,7 +738,8 @@ postprocess_termcap(TERMTYPE *tp, bool has_base)
 		cursor_down = linefeed_if_not_lf;
 	    else if (linefeed_is_newline != 1) {
 		if (new_line_delay > 0) {
-		    sprintf(buf, "%s$<%d>", C_LF, new_line_delay);
+		    _nc_SPRINTF(buf, _nc_SLIMIT(sizeof(buf))
+				"%s$<%d>", C_LF, new_line_delay);
 		    scroll_forward = _nc_save_str(buf);
 		} else
 		    scroll_forward = _nc_save_str(C_LF);
@@ -694,7 +748,8 @@ postprocess_termcap(TERMTYPE *tp, bool has_base)
 	if (WANTED(newline)) {
 	    if (linefeed_is_newline == 1) {
 		if (new_line_delay > 0) {
-		    sprintf(buf, "%s$<%d>", C_LF, new_line_delay);
+		    _nc_SPRINTF(buf, _nc_SLIMIT(sizeof(buf))
+				"%s$<%d>", C_LF, new_line_delay);
 		    newline = _nc_save_str(buf);
 		} else
 		    newline = _nc_save_str(C_LF);
@@ -736,7 +791,8 @@ postprocess_termcap(TERMTYPE *tp, bool has_base)
 	 */
 	if (WANTED(tab)) {
 	    if (horizontal_tab_delay > 0) {
-		sprintf(buf, "%s$<%d>", C_HT, horizontal_tab_delay);
+		_nc_SPRINTF(buf, _nc_SLIMIT(sizeof(buf))
+			    "%s$<%d>", C_HT, horizontal_tab_delay);
 		tab = _nc_save_str(buf);
 	    } else
 		tab = _nc_save_str(C_HT);
@@ -758,7 +814,7 @@ postprocess_termcap(TERMTYPE *tp, bool has_base)
 	if (init_tabs != 8 && init_tabs != ABSENT_NUMERIC)
 	    _nc_warning("hardware tabs with a width other than 8: %d", init_tabs);
 	else {
-	    if (tab && _nc_capcmp(tab, C_HT))
+	    if (PRESENT(tab) && _nc_capcmp(tab, C_HT))
 		_nc_warning("hardware tabs with a non-^I tab string %s",
 			    _nc_visbuf(tab));
 	    else {
@@ -777,7 +833,6 @@ postprocess_termcap(TERMTYPE *tp, bool has_base)
 	char *bp, *cp, *dp;
 	struct name_table_entry const *from_ptr;
 	struct name_table_entry const *to_ptr;
-	assoc const *ap;
 	char buf2[MAX_TERMINFO_LENGTH];
 	bool foundim;
 
@@ -790,17 +845,21 @@ postprocess_termcap(TERMTYPE *tp, bool has_base)
 	     (cp = strchr(base, ',')) != 0;
 	     base = cp + 1) {
 	    size_t len = (unsigned) (cp - base);
+	    size_t n;
+	    assoc const *ap = 0;
 
-	    for (ap = ko_xlate; ap->from; ap++) {
-		if (len == strlen(ap->from)
-		    && strncmp(ap->from, base, len) == 0)
+	    for (n = 0; n < SIZEOF(ko_xlate); ++n) {
+		if (len == strlen(ko_xlate[n].from)
+		    && strncmp(ko_xlate[n].from, base, len) == 0) {
+		    ap = ko_xlate + n;
 		    break;
+		}
 	    }
-	    if (!(ap->from && ap->to)) {
+	    if (ap == 0) {
 		_nc_warning("unknown capability `%.*s' in ko string",
 			    (int) len, base);
 		continue;
-	    } else if (ap->to == CANCELLED_STRING)	/* ignore it */
+	    } else if (ap->to[0] == '\0')	/* ignore it */
 		continue;
 
 	    /* now we know we found a match in ko_table, so... */
@@ -817,15 +876,14 @@ postprocess_termcap(TERMTYPE *tp, bool has_base)
 	    }
 
 	    if (tp->Strings[to_ptr->nte_index]) {
+		const char *s = tp->Strings[from_ptr->nte_index];
+		const char *t = tp->Strings[to_ptr->nte_index];
 		/* There's no point in warning about it if it's the same
 		 * string; that's just an inefficiency.
 		 */
-		if (strcmp(
-			      tp->Strings[from_ptr->nte_index],
-			      tp->Strings[to_ptr->nte_index]) != 0)
+		if (VALID_STRING(s) && VALID_STRING(t) && strcmp(s, t) != 0)
 		    _nc_warning("%s (%s) already has an explicit value %s, ignoring ko",
-				ap->to, ap->from,
-				_nc_visbuf(tp->Strings[to_ptr->nte_index]));
+				ap->to, ap->from, t);
 		continue;
 	    }
 
@@ -833,17 +891,22 @@ postprocess_termcap(TERMTYPE *tp, bool has_base)
 	     * The magic moment -- copy the mapped key string over,
 	     * stripping out padding.
 	     */
-	    for (dp = buf2, bp = tp->Strings[from_ptr->nte_index]; *bp; bp++) {
-		if (bp[0] == '$' && bp[1] == '<') {
-		    while (*bp && *bp != '>') {
-			++bp;
-		    }
-		} else
-		    *dp++ = *bp;
-	    }
-	    *dp = '\0';
+	    bp = tp->Strings[from_ptr->nte_index];
+	    if (VALID_STRING(bp)) {
+		for (dp = buf2; *bp; bp++) {
+		    if (bp[0] == '$' && bp[1] == '<') {
+			while (*bp && *bp != '>') {
+			    ++bp;
+			}
+		    } else
+			*dp++ = *bp;
+		}
+		*dp = '\0';
 
-	    tp->Strings[to_ptr->nte_index] = _nc_save_str(buf2);
+		tp->Strings[to_ptr->nte_index] = _nc_save_str(buf2);
+	    } else {
+		tp->Strings[to_ptr->nte_index] = bp;
+	    }
 	}
 
 	/*
@@ -852,7 +915,7 @@ postprocess_termcap(TERMTYPE *tp, bool has_base)
 	 * got mapped to kich1 and im to kIC to avoid a collision.
 	 * If the description has im but not ic, hack kIC back to kich1.
 	 */
-	if (foundim && WANTED(key_ic) && key_sic) {
+	if (foundim && WANTED(key_ic) && PRESENT(key_sic)) {
 	    key_ic = key_sic;
 	    key_sic = ABSENT_STRING;
 	}
@@ -904,15 +967,15 @@ postprocess_termcap(TERMTYPE *tp, bool has_base)
 	    acs_chars = _nc_save_str(buf2);
 	    _nc_warning("acsc string synthesized from XENIX capabilities");
 	}
-    } else if (acs_chars == 0
-	       && enter_alt_charset_mode != 0
-	       && exit_alt_charset_mode != 0) {
+    } else if (acs_chars == ABSENT_STRING
+	       && PRESENT(enter_alt_charset_mode)
+	       && PRESENT(exit_alt_charset_mode)) {
 	acs_chars = _nc_save_str(VT_ACSC);
     }
 }
 
 static void
-postprocess_terminfo(TERMTYPE *tp)
+postprocess_terminfo(TERMTYPE2 *tp)
 {
     /*
      * TERMINFO-TO-TERMINFO MAPPINGS FOR SOURCE TRANSLATION

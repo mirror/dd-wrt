@@ -1,6 +1,6 @@
-# $Id: Makefile.in,v 1.40 2010/11/27 21:45:27 tom Exp $
+# $Id: Makefile.in,v 1.43 2015/08/05 09:25:55 tom Exp $
 ##############################################################################
-# Copyright (c) 1998,2009,2010 Free Software Foundation, Inc.                #
+# Copyright (c) 1998-2013,2015 Free Software Foundation, Inc.                #
 #                                                                            #
 # Permission is hereby granted, free of charge, to any person obtaining a    #
 # copy of this software and associated documentation files (the "Software"), #
@@ -39,7 +39,7 @@
 # turn off _all_ suffix rules; we'll generate our own
 .SUFFIXES:
 
-SHELL		= /bin/sh
+SHELL		= @SHELL@
 VPATH		= @srcdir@
 THIS		= Makefile
 
@@ -48,6 +48,9 @@ srcdir		= @srcdir@
 prefix		= @prefix@
 exec_prefix	= @exec_prefix@
 includedir	= @includedir@
+includesubdir	= @includesubdir@
+
+INCLUDEDIR	= $(DESTDIR)$(includedir)$(includesubdir)
 
 INSTALL		= @INSTALL@
 INSTALL_DATA	= @INSTALL_DATA@
@@ -93,22 +96,22 @@ curses.h : $(TERMINFO_CAPS) \
 		$(srcdir)/curses.tail \
 		$(srcdir)/MKkey_defs.sh
 	cat curses.head >$@
-	AWK=$(AWK) sh $(srcdir)/MKkey_defs.sh $(TERMINFO_CAPS) >>$@
-	sh -c 'if test "@NCURSES_CH_T@" = "cchar_t" ; then cat $(srcdir)/curses.wide >>$@ ; fi'
+	AWK=$(AWK) $(SHELL) $(srcdir)/MKkey_defs.sh $(TERMINFO_CAPS) >>$@
+	$(SHELL) -c 'if test "@NCURSES_CH_T@" = "cchar_t" ; then cat $(srcdir)/curses.wide >>$@ ; fi'
 	cat $(srcdir)/curses.tail >>$@
 
 term.h: $(TERMINFO_CAPS) MKterm.h.awk
 	$(AWK) -f MKterm.h.awk $(TERMINFO_CAPS) > $@
-	sh $(srcdir)/edit_cfg.sh ../include/ncurses_cfg.h $@
+	$(SHELL) $(srcdir)/edit_cfg.sh ../include/ncurses_cfg.h $@
 
 hashsize.h: $(TERMINFO_CAPS) $(srcdir)/MKhashsize.sh
-	sh $(srcdir)/MKhashsize.sh $(TERMINFO_CAPS) >$@
+	$(SHELL) $(srcdir)/MKhashsize.sh $(TERMINFO_CAPS) >$@
 
 ncurses_def.h: $(srcdir)/ncurses_defs $(srcdir)/MKncurses_def.sh
-	AWK=$(AWK) sh $(srcdir)/MKncurses_def.sh $(srcdir)/ncurses_defs >$@
+	AWK=$(AWK) $(SHELL) $(srcdir)/MKncurses_def.sh $(srcdir)/ncurses_defs >$@
 
 parametrized.h: $(TERMINFO_CAPS) $(srcdir)/MKparametrized.sh
-	AWK=$(AWK) sh $(srcdir)/MKparametrized.sh $(TERMINFO_CAPS) >$@
+	AWK=$(AWK) $(SHELL) $(srcdir)/MKparametrized.sh $(TERMINFO_CAPS) >$@
 
 # This is required by pthread.h on MinGW
 config.h:
@@ -125,6 +128,7 @@ mostlyclean ::
 
 clean :: mostlyclean
 	-rm -f $(AUTO_SRC)
+	-rm -rf *.dSYM
 
 distclean :: clean
 	-rm -f Makefile $(CONFIG_SRC) config.h

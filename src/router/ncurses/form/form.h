@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2004,2009 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2016,2017 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -30,10 +30,11 @@
  *   Author:  Juergen Pfeifer, 1995,1997                                    *
  ****************************************************************************/
 
-/* $Id: form.h,v 0.21 2009/11/07 19:31:11 tom Exp $ */
+/* $Id: form.h,v 0.27 2017/02/11 16:35:42 tom Exp $ */
 
 #ifndef FORM_H
 #define FORM_H
+/* *INDENT-OFF*/
 
 #include <curses.h>
 #include <eti.h>
@@ -57,18 +58,24 @@ typedef int Field_Options;
 	*  _PAGE  *
 	**********/
 
-typedef struct {
+typedef struct pagenode
+#if !NCURSES_OPAQUE_FORM
+{
   short pmin;		/* index of first field on page			*/
   short pmax;		/* index of last field on page			*/
   short smin;		/* index of top leftmost field on page		*/
   short smax;		/* index of bottom rightmost field on page	*/
-} _PAGE;
+}
+#endif /* !NCURSES_OPAQUE_FORM */
+_PAGE;
 
 	/**********
 	*  FIELD  *
 	**********/
 
-typedef struct fieldnode {
+typedef struct fieldnode
+#if 1			/* not yet: !NCURSES_OPAQUE_FORM */
+{
   unsigned short	status;		/* flags			*/
   short			rows;		/* size in rows			*/
   short			cols;		/* size in cols			*/
@@ -97,20 +104,24 @@ typedef struct fieldnode {
   /*
    * The wide-character configuration requires extra information.  Because
    * there are existing applications that manipulate the members of FIELD
-   * directly, we cannot make the struct opaque.  Offsets of members up to
-   * this point are the same in the narrow- and wide-character configuration.
-   * But note that the type of buf depends on the configuration, and is made
-   * opaque for that reason.
+   * directly, we cannot make the struct opaque, except by changing the ABI. 
+   * Offsets of members up to this point are the same in the narrow- and
+   * wide-character configuration.  But note that the type of buf depends on
+   * the configuration, and is made opaque for that reason.
    */
   NCURSES_FIELD_INTERNALS
-} FIELD;
+}
+#endif /* NCURSES_OPAQUE_FORM */
+FIELD;
 
 
 	/*********
 	*  FORM  *
 	*********/
 
-typedef struct formnode {
+typedef struct formnode
+#if 1			/* not yet: !NCURSES_OPAQUE_FORM */
+{
   unsigned short	status;	  	/* flags			*/
   short			rows;		/* size in rows			*/
   short			cols;		/* size in cols			*/
@@ -135,14 +146,18 @@ typedef struct formnode {
   void			(*fieldinit)(struct formnode *);
   void			(*fieldterm)(struct formnode *);
 
-} FORM;
+}
+#endif /* !NCURSES_OPAQUE_FORM */
+FORM;
 
 
 	/**************
 	*  FIELDTYPE  *
 	**************/
 
-typedef struct typenode {
+typedef struct typenode
+#if !NCURSES_OPAQUE_FORM
+{
   unsigned short	status;			/* flags		    */
   long			ref;			/* reference count	    */
   struct typenode *	left;			/* ptr to operand for |     */
@@ -178,7 +193,9 @@ typedef struct typenode {
   bool	(*next)(FIELD *,const void *);		/* enumerate next value */
   bool	(*prev)(FIELD *,const void *);		/* enumerate prev value */
 #endif
-} FIELDTYPE;
+}
+#endif /* !NCURSES_OPAQUE_FORM */
+FIELDTYPE;
 
 typedef void (*Form_Hook)(FORM *);
 
@@ -203,6 +220,8 @@ typedef void (*Form_Hook)(FORM *);
 #define O_NULLOK		(0x0080U)
 #define O_PASSOK		(0x0100U)
 #define O_STATIC		(0x0200U)
+#define O_DYNAMIC_JUSTIFY	(0x0400U)	/* ncurses extension	*/
+#define O_NO_LEFT_STRIP		(0x0800U)	/* ncurses extension	*/
 
 /* form options */
 #define O_NL_OVERLOAD		(0x0001U)
@@ -384,6 +403,7 @@ extern NCURSES_EXPORT(int)	field_count (const FORM *);
 extern NCURSES_EXPORT(int)	set_form_win (FORM *,WINDOW *);
 extern NCURSES_EXPORT(int)	set_form_sub (FORM *,WINDOW *);
 extern NCURSES_EXPORT(int)	set_current_field (FORM *,FIELD *);
+extern NCURSES_EXPORT(int)	unfocus_current_field (FORM *);
 extern NCURSES_EXPORT(int)	field_index (const FIELD *);
 extern NCURSES_EXPORT(int)	set_form_page (FORM *,int);
 extern NCURSES_EXPORT(int)	form_page (const FORM *);
@@ -396,6 +416,9 @@ extern NCURSES_EXPORT(int)	post_form (FORM *);
 extern NCURSES_EXPORT(int)	unpost_form (FORM *);
 extern NCURSES_EXPORT(int)	pos_form_cursor (FORM *);
 extern NCURSES_EXPORT(int)	form_driver (FORM *,int);
+# if NCURSES_WIDECHAR
+extern NCURSES_EXPORT(int)	form_driver_w (FORM *,int,wchar_t);
+# endif
 extern NCURSES_EXPORT(int)	set_form_userptr (FORM *,void *);
 extern NCURSES_EXPORT(int)	set_form_opts (FORM *,Form_Options);
 extern NCURSES_EXPORT(int)	form_opts_on (FORM *,Form_Options);
@@ -418,5 +441,6 @@ extern NCURSES_EXPORT(FORM *)	NCURSES_SP_NAME(new_form) (SCREEN*, FIELD **);
 #ifdef __cplusplus
   }
 #endif
+/* *INDENT-ON*/
 
-#endif	/* FORM_H */
+#endif /* FORM_H */

@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2009,2010 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2012,2016 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -32,7 +32,7 @@
 
 #include "form.priv.h"
 
-MODULE_ID("$Id: fld_ftchoice.c,v 1.12 2010/01/23 21:14:35 tom Exp $")
+MODULE_ID("$Id: fld_ftchoice.c,v 1.14 2016/01/23 21:32:00 tom Exp $")
 
 /*---------------------------------------------------------------------------
 |   Facility      :  libnform  
@@ -51,12 +51,12 @@ set_fieldtype_choice(FIELDTYPE *typ,
 		     bool (*const next_choice) (FIELD *, const void *),
 		     bool (*const prev_choice) (FIELD *, const void *))
 {
-  T((T_CALLED("set_fieldtype_choice(%p,%p,%p)"), (void *)typ, next_choice, prev_choice));
+  T((T_CALLED("set_fieldtype_choice(%p,%p,%p)"), (void *)typ, TR_FUNC(next_choice), TR_FUNC(prev_choice)));
 
   if (!typ || !next_choice || !prev_choice)
     RETURN(E_BAD_ARGUMENT);
 
-  typ->status |= _HAS_CHOICE;
+  SetStatus(typ, _HAS_CHOICE);
 #if NCURSES_INTEROP_FUNCS
   typ->enum_next.onext = next_choice;
   typ->enum_prev.oprev = prev_choice;

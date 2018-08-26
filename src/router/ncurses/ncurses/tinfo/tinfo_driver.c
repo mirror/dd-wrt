@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2008-2009,2010 Free Software Foundation, Inc.              *
+ * Copyright (c) 2008-2016,2017 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -28,12 +28,13 @@
 
 /****************************************************************************
  *  Author: Juergen Pfeifer                                                 *
- *                                                                          *
+ *     and: Thomas E. Dickey                                                *
  ****************************************************************************/
 
 #include <curses.priv.h>
-#define CUR ((TERMINAL*)TCB)->type.
+#define CUR TerminalType((TERMINAL*)TCB).
 #include <tic.h>
+#include <termcap.h>		/* ospeed */
 
 #if HAVE_NANOSLEEP
 #include <time.h>
@@ -50,7 +51,7 @@
 # endif
 #endif
 
-MODULE_ID("$Id: tinfo_driver.c,v 1.13 2010/12/20 01:47:09 tom Exp $")
+MODULE_ID("$Id: tinfo_driver.c,v 1.59 2017/09/10 21:08:46 tom Exp $")
 
 /*
  * SCO defines TIOCGSIZE and the corresponding struct.  Other systems (SunOS,
@@ -93,7 +94,7 @@ NCURSES_EXPORT_VAR(int) COLORS = 0;
 
 #define TCBMAGIC NCDRV_MAGIC(NCDRV_TINFO)
 #define AssertTCB() assert(TCB!=0 && TCB->magic==TCBMAGIC)
-#define SetSP() assert(TCB->csp!=0); sp = TCB->csp
+#define SetSP() assert(TCB->csp!=0); sp = TCB->csp; (void) sp
 
 /*
  * This routine needs to do all the work to make curscr look
@@ -106,21 +107,42 @@ drv_doupdate(TERMINAL_CONTROL_BLOCK * TCB)
     return TINFO_DOUPDATE(TCB->csp);
 }
 
-#define ret_error(code, fmt, arg)	if (errret) {\
-					    *errret = code;\
-					    return(FALSE); \
-					} else {\
-					    fprintf(stderr, fmt, arg);\
-					    exit(EXIT_FAILURE);\
-					}
+static const char *
+drv_Name(TERMINAL_CONTROL_BLOCK * TCB)
+{
+    (void) TCB;
+    return "tinfo";
+}
 
-#define ret_error0(code, msg)		if (errret) {\
-					    *errret = code;\
-					    return(FALSE);\
-					} else {\
-					    fprintf(stderr, msg);\
-					    exit(EXIT_FAILURE);\
-					}
+static void
+get_baudrate(TERMINAL *termp)
+{
+    int my_ospeed;
+    int result;
+    if (GET_TTY(termp->Filedes, &termp->Nttyb) == OK) {
+#ifdef TERMIOS
+	termp->Nttyb.c_oflag &= (unsigned) (~OFLAGS_TABS);
+#else
+	termp->Nttyb.sg_flags &= (unsigned) (~XTABS);
+#endif
+    }
+#ifdef USE_OLD_TTY
+    result = (int) cfgetospeed(&(termp->Nttyb));
+    my_ospeed = (NCURSES_OSPEED) _nc_ospeed(result);
+#else /* !USE_OLD_TTY */
+#ifdef TERMIOS
+    my_ospeed = (NCURSES_OSPEED) cfgetospeed(&(termp->Nttyb));
+#else
+    my_ospeed = (NCURSES_OSPEED) termp->Nttyb.sg_ospeed;
+#endif
+    result = _nc_baudrate(my_ospeed);
+#endif
+    termp->_baudrate = result;
+    ospeed = (NCURSES_OSPEED) my_ospeed;
+}
+
+#undef SETUP_FAIL
+#define SETUP_FAIL FALSE
 
 static bool
 drv_CanHandle(TERMINAL_CONTROL_BLOCK * TCB, const char *tname, int *errret)
@@ -130,23 +152,26 @@ drv_CanHandle(TERMINAL_CONTROL_BLOCK * TCB, const char *tname, int *errret)
     TERMINAL *termp;
     SCREEN *sp;
 
+    START_TRACE();
+    T((T_CALLED("tinfo::drv_CanHandle(%p)"), (void *) TCB));
+
     assert(TCB != 0 && tname != 0);
     termp = (TERMINAL *) TCB;
     sp = TCB->csp;
     TCB->magic = TCBMAGIC;
 
-#if (USE_DATABASE || USE_TERMCAP)
-    status = _nc_setup_tinfo(tname, &termp->type);
+#if (NCURSES_USE_DATABASE || NCURSES_USE_TERMCAP)
+    status = _nc_setup_tinfo(tname, &TerminalType(termp));
 #else
     status = TGETENT_NO;
 #endif
 
     /* try fallback list if entry on disk */
     if (status != TGETENT_YES) {
-	const TERMTYPE *fallback = _nc_fallback(tname);
+	const TERMTYPE2 *fallback = _nc_fallback2(tname);
 
 	if (fallback) {
-	    termp->type = *fallback;
+	    TerminalType(termp) = *fallback;
 	    status = TGETENT_YES;
 	}
     }
@@ -156,30 +181,63 @@ drv_CanHandle(TERMINAL_CONTROL_BLOCK * TCB, const char *tname, int *errret)
 	if (status == TGETENT_ERR) {
 	    ret_error0(status, "terminals database is inaccessible\n");
 	} else if (status == TGETENT_NO) {
-	    ret_error(status, "'%s': unknown terminal type.\n", tname);
+	    ret_error1(status, "unknown terminal type.\n", tname);
 	}
     }
     result = TRUE;
+#if NCURSES_EXT_NUMBERS
+    _nc_export_termtype2(&termp->type, &TerminalType(termp));
+#endif
 #if !USE_REENTRANT
-    strncpy(ttytype, termp->type.term_names, NAMESIZE - 1);
-    ttytype[NAMESIZE - 1] = '\0';
+    save_ttytype(termp);
 #endif
 
     if (command_character)
 	_nc_tinfo_cmdch(termp, *command_character);
 
+    /*
+     * If an application calls setupterm() rather than initscr() or
+     * newterm(), we will not have the def_prog_mode() call in
+     * _nc_setupscreen().  Do it now anyway, so we can initialize the
+     * baudrate.
+     */
+    if (sp == 0 && NC_ISATTY(termp->Filedes)) {
+	get_baudrate(termp);
+    }
+#if NCURSES_EXT_NUMBERS
+#define cleanup_termtype() \
+    _nc_free_termtype2(&TerminalType(termp)); \
+    _nc_free_termtype(&termp->type)
+#else
+#define cleanup_termtype() \
+    _nc_free_termtype2(&TerminalType(termp))
+#endif
+
     if (generic_type) {
-	ret_error(TGETENT_NO, "'%s': I need something more specific.\n", tname);
+	/*
+	 * BSD 4.3's termcap contains mis-typed "gn" for wy99.  Do a sanity
+	 * check before giving up.
+	 */
+	if ((VALID_STRING(cursor_address)
+	     || (VALID_STRING(cursor_down) && VALID_STRING(cursor_home)))
+	    && VALID_STRING(clear_screen)) {
+	    cleanup_termtype();
+	    ret_error1(TGETENT_YES, "terminal is not really generic.\n", tname);
+	} else {
+	    cleanup_termtype();
+	    ret_error1(TGETENT_NO, "I need something more specific.\n", tname);
+	}
     }
     if (hard_copy) {
-	ret_error(TGETENT_YES, "'%s': I can't handle hardcopy terminals.\n", tname);
+	cleanup_termtype();
+	ret_error1(TGETENT_YES, "I can't handle hardcopy terminals.\n", tname);
     }
 
-    return result;
+    returnBool(result);
 }
 
 static int
-drv_dobeepflash(TERMINAL_CONTROL_BLOCK * TCB, bool beepFlag)
+drv_dobeepflash(TERMINAL_CONTROL_BLOCK * TCB, int beepFlag)
 {
     SCREEN *sp;
     int res = ERR;
@@ -190,22 +248,18 @@ drv_dobeepflash(TERMINAL_CONTROL_BLOCK * TCB, bool beepFlag)
     /* FIXME: should make sure that we are not in altchar mode */
     if (beepFlag) {
 	if (bell) {
-	    res = NCURSES_SP_NAME(_nc_putp) (NCURSES_SP_ARGx "bell", bell);
+	    res = NCURSES_PUTP2("bell", bell);
 	    NCURSES_SP_NAME(_nc_flush) (sp);
 	} else if (flash_screen) {
-	    res = NCURSES_SP_NAME(_nc_putp) (NCURSES_SP_ARGx
-					     "flash_screen",
-					     flash_screen);
+	    res = NCURSES_PUTP2("flash_screen", flash_screen);
 	    NCURSES_SP_NAME(_nc_flush) (sp);
 	}
     } else {
 	if (flash_screen) {
-	    res = NCURSES_SP_NAME(_nc_putp) (NCURSES_SP_ARGx
-					     "flash_screen",
-					     flash_screen);
+	    res = NCURSES_PUTP2("flash_screen", flash_screen);
 	    NCURSES_SP_NAME(_nc_flush) (sp);
 	} else if (bell) {
-	    res = NCURSES_SP_NAME(_nc_putp) (NCURSES_SP_ARGx "bell", bell);
+	    res = NCURSES_PUTP2("bell", bell);
 	    NCURSES_SP_NAME(_nc_flush) (sp);
 	}
     }
@@ -258,8 +312,8 @@ drv_defaultcolors(TERMINAL_CONTROL_BLOCK * TCB, int fg, int bg)
 	sp->_has_sgr_39_49 = (NCURSES_SP_NAME(tigetflag) (NCURSES_SP_ARGx
 							  "AX")
 			      == TRUE);
-	sp->_default_fg = isDefaultColor(fg) ? COLOR_DEFAULT : (fg & C_MASK);
-	sp->_default_bg = isDefaultColor(bg) ? COLOR_DEFAULT : (bg & C_MASK);
+	sp->_default_fg = isDefaultColor(fg) ? COLOR_DEFAULT : fg;
+	sp->_default_bg = isDefaultColor(bg) ? COLOR_DEFAULT : bg;
 	if (sp->_color_pairs != 0) {
 	    bool save = sp->_default_color;
 	    sp->_default_color = TRUE;
@@ -277,7 +331,7 @@ drv_defaultcolors(TERMINAL_CONTROL_BLOCK * TCB, int fg, int bg)
 
 static void
 drv_setcolor(TERMINAL_CONTROL_BLOCK * TCB,
-	     bool fore,
+	     int fore,
 	     int color,
 	     NCURSES_SP_OUTC outc)
 {
@@ -321,7 +375,7 @@ drv_rescol(TERMINAL_CONTROL_BLOCK * TCB)
     SetSP();
 
     if (orig_pair != 0) {
-	NCURSES_SP_NAME(_nc_putp) (NCURSES_SP_ARGx "orig_pair", orig_pair);
+	NCURSES_PUTP2("orig_pair", orig_pair);
 	result = TRUE;
     }
     return result;
@@ -337,7 +391,7 @@ drv_rescolors(TERMINAL_CONTROL_BLOCK * TCB)
     SetSP();
 
     if (orig_colors != 0) {
-	NCURSES_SP_NAME(_nc_putp) (NCURSES_SP_ARGx "orig_colors", orig_colors);
+	NCURSES_PUTP2("orig_colors", orig_colors);
 	result = TRUE;
     }
     return result;
@@ -348,14 +402,18 @@ drv_size(TERMINAL_CONTROL_BLOCK * TCB, int *linep, int *colp)
 {
     SCREEN *sp;
     bool useEnv = TRUE;
+    bool useTioctl = TRUE;
 
     AssertTCB();
     sp = TCB->csp;		/* can be null here */
 
     if (sp) {
 	useEnv = sp->_use_env;
-    } else
+	useTioctl = sp->use_tioctl;
+    } else {
 	useEnv = _nc_prescreen.use_env;
+	useTioctl = _nc_prescreen.use_tioctl;
+    }
 
     /* figure out the size of the screen */
     T(("screen size: terminfo lines = %d columns = %d", lines, columns));
@@ -363,7 +421,7 @@ drv_size(TERMINAL_CONTROL_BLOCK * TCB, int *linep, int *colp)
     *linep = (int) lines;
     *colp = (int) columns;
 
-    if (useEnv) {
+    if (useEnv || useTioctl) {
 	int value;
 
 #ifdef __EMX__
@@ -371,7 +429,9 @@ drv_size(TERMINAL_CONTROL_BLOCK * TCB, int *linep, int *colp)
 	    int screendata[2];
 	    _scrsize(screendata);
 	    *colp = screendata[0];
-	    *linep = screendata[1];
+	    *linep = ((sp != 0 && sp->_filtered)
+		      ? 1
+		      : screendata[1]);
 	    T(("EMX screen size: environment LINES = %d COLUMNS = %d",
 	       *linep, *colp));
 	}
@@ -380,7 +440,7 @@ drv_size(TERMINAL_CONTROL_BLOCK * TCB, int *linep, int *colp)
 	/* try asking the OS */
 	{
 	    TERMINAL *termp = (TERMINAL *) TCB;
-	    if (isatty(termp->Filedes)) {
+	    if (NC_ISATTY(termp->Filedes)) {
 		STRUCT_WINSIZE size;
 
 		errno = 0;
@@ -400,19 +460,33 @@ drv_size(TERMINAL_CONTROL_BLOCK * TCB, int *linep, int *colp)
 	}
 #endif /* HAVE_SIZECHANGE */
 
-	/*
-	 * Finally, look for environment variables.
-	 *
-	 * Solaris lets users override either dimension with an environment
-	 * variable.
-	 */
-	if ((value = _nc_getenv_num("LINES")) > 0) {
-	    *linep = value;
-	    T(("screen size: environment LINES = %d", *linep));
-	}
-	if ((value = _nc_getenv_num("COLUMNS")) > 0) {
-	    *colp = value;
-	    T(("screen size: environment COLUMNS = %d", *colp));
+	if (useEnv) {
+	    if (useTioctl) {
+		/*
+		 * If environment variables are used, update them.
+		 */
+		if ((sp == 0 || !sp->_filtered) && _nc_getenv_num("LINES") > 0) {
+		    _nc_setenv_num("LINES", *linep);
+		}
+		if (_nc_getenv_num("COLUMNS") > 0) {
+		    _nc_setenv_num("COLUMNS", *colp);
+		}
+	    }
+
+	    /*
+	     * Finally, look for environment variables.
+	     *
+	     * Solaris lets users override either dimension with an environment
+	     * variable.
+	     */
+	    if ((value = _nc_getenv_num("LINES")) > 0) {
+		*linep = value;
+		T(("screen size: environment LINES = %d", *linep));
+	    }
+	    if ((value = _nc_getenv_num("COLUMNS")) > 0) {
+		*colp = value;
+		T(("screen size: environment COLUMNS = %d", *colp));
+	    }
 	}
 
 	/* if we can't get dynamic info about the size, use static */
@@ -463,7 +537,7 @@ drv_setsize(TERMINAL_CONTROL_BLOCK * TCB, int l, int c)
 }
 
 static int
-drv_sgmode(TERMINAL_CONTROL_BLOCK * TCB, bool setFlag, TTY * buf)
+drv_sgmode(TERMINAL_CONTROL_BLOCK * TCB, int setFlag, TTY * buf)
 {
     SCREEN *sp = TCB->csp;
     TERMINAL *_term = (TERMINAL *) TCB;
@@ -497,7 +571,7 @@ drv_sgmode(TERMINAL_CONTROL_BLOCK * TCB, bool setFlag, TTY * buf)
 }
 
 static int
-drv_mode(TERMINAL_CONTROL_BLOCK * TCB, bool progFlag, bool defFlag)
+drv_mode(TERMINAL_CONTROL_BLOCK * TCB, int progFlag, int defFlag)
 {
     SCREEN *sp;
     TERMINAL *_term = (TERMINAL *) TCB;
@@ -527,7 +601,6 @@ drv_mode(TERMINAL_CONTROL_BLOCK * TCB, bool progFlag, bool defFlag)
 		if (sp) {
 		    if (sp->_keypad_on)
 			_nc_keypad(sp, TRUE);
-		    NC_BUFFERED(sp, TRUE);
 		}
 		code = OK;
 	    }
@@ -553,7 +626,6 @@ drv_mode(TERMINAL_CONTROL_BLOCK * TCB, bool progFlag, bool defFlag)
 	    if (sp) {
 		_nc_keypad(sp, FALSE);
 		NCURSES_SP_NAME(_nc_flush) (sp);
-		NC_BUFFERED(sp, FALSE);
 	    }
 	    code = drv_sgmode(TCB, TRUE, &(_term->Ottyb));
 	}
@@ -620,15 +692,13 @@ drv_screen_init(SCREEN *sp)
 static void
 drv_init(TERMINAL_CONTROL_BLOCK * TCB)
 {
-    SCREEN *sp;
     TERMINAL *trm;
 
     AssertTCB();
 
     trm = (TERMINAL *) TCB;
-    sp = TCB->csp;
 
-    TCB->info.initcolor = initialize_color;
+    TCB->info.initcolor = VALID_STRING(initialize_color);
     TCB->info.canchange = can_change;
     TCB->info.hascolor = ((VALID_NUMERIC(max_colors) && VALID_NUMERIC(max_pairs)
 			   && (((set_foreground != NULL)
@@ -656,8 +726,8 @@ drv_init(TERMINAL_CONTROL_BLOCK * TCB)
      * _nc_setupscreen().  Do it now anyway, so we can initialize the
      * baudrate.
      */
-    if (isatty(trm->Filedes)) {
-	TCB->drv->mode(TCB, TRUE, TRUE);
+    if (NC_ISATTY(trm->Filedes)) {
+	TCB->drv->td_mode(TCB, TRUE, TRUE);
     }
 }
 
@@ -665,7 +735,7 @@ drv_init(TERMINAL_CONTROL_BLOCK * TCB)
 #define InPalette(n)	((n) >= 0 && (n) < MAX_PALETTE)
 
 static void
-drv_initpair(TERMINAL_CONTROL_BLOCK * TCB, short pair, short f, short b)
+drv_initpair(TERMINAL_CONTROL_BLOCK * TCB, int pair, int f, int b)
 {
     SCREEN *sp;
 
@@ -681,12 +751,11 @@ drv_initpair(TERMINAL_CONTROL_BLOCK * TCB, short pair, short f, short b)
 	    tp[f].red, tp[f].green, tp[f].blue,
 	    tp[b].red, tp[b].green, tp[b].blue));
 
-	NCURSES_SP_NAME(_nc_putp) (NCURSES_SP_ARGx
-				   "initialize_pair",
-				   TPARM_7(initialize_pair,
-					   pair,
-					   tp[f].red, tp[f].green, tp[f].blue,
-					   tp[b].red, tp[b].green, tp[b].blue));
+	NCURSES_PUTP2("initialize_pair",
+		      TPARM_7(initialize_pair,
+			      pair,
+			      tp[f].red, tp[f].green, tp[f].blue,
+			      tp[b].red, tp[b].green, tp[b].blue));
     }
 }
 
@@ -712,29 +781,28 @@ default_bg(SCREEN *sp)
 
 static void
 drv_initcolor(TERMINAL_CONTROL_BLOCK * TCB,
-	      short color, short r, short g, short b)
+	      int color, int r, int g, int b)
 {
     SCREEN *sp = TCB->csp;
 
     AssertTCB();
     if (initialize_color != NULL) {
-	NCURSES_SP_NAME(_nc_putp) (NCURSES_SP_ARGx
-				   "initialize_color",
-				   TPARM_4(initialize_color, color, r, g, b));
+	NCURSES_PUTP2("initialize_color",
+		      TPARM_4(initialize_color, color, r, g, b));
     }
 }
 
 static void
 drv_do_color(TERMINAL_CONTROL_BLOCK * TCB,
-	     short old_pair,
-	     short pair,
-	     bool reverse,
+	     int old_pair,
+	     int pair,
+	     int reverse,
 	     NCURSES_SP_OUTC outc)
 {
     SCREEN *sp = TCB->csp;
-    NCURSES_COLOR_T fg = COLOR_DEFAULT;
-    NCURSES_COLOR_T bg = COLOR_DEFAULT;
-    NCURSES_COLOR_T old_fg, old_bg;
+    int fg = COLOR_DEFAULT;
+    int bg = COLOR_DEFAULT;
+    int old_fg, old_bg;
 
     AssertTCB();
     if (sp == 0)
@@ -749,19 +817,13 @@ drv_do_color(TERMINAL_CONTROL_BLOCK * TCB,
 				    TPARM_1(set_color_pair, pair), 1, outc);
 	    return;
 	} else if (sp != 0) {
-	    NCURSES_SP_NAME(pair_content) (NCURSES_SP_ARGx
-					   (short) pair,
-					   &fg,
-					   &bg);
+	    _nc_pair_content(SP_PARM, pair, &fg, &bg);
 	}
     }
 
     if (old_pair >= 0
 	&& sp != 0
-	&& NCURSES_SP_NAME(pair_content) (NCURSES_SP_ARGx
-					  old_pair,
-					  &old_fg,
-					  &old_bg) !=ERR) {
+	&& _nc_pair_content(SP_PARM, old_pair, &old_fg, &old_bg) != ERR) {
 	if ((isDefaultColor(fg) && !isDefaultColor(old_fg))
 	    || (isDefaultColor(bg) && !isDefaultColor(old_bg))) {
 #if NCURSES_EXT_FUNCS
@@ -790,13 +852,13 @@ drv_do_color(TERMINAL_CONTROL_BLOCK * TCB,
 
 #if NCURSES_EXT_FUNCS
     if (isDefaultColor(fg))
-	fg = (NCURSES_COLOR_T) default_fg(sp);
+	fg = default_fg(sp);
     if (isDefaultColor(bg))
-	bg = (NCURSES_COLOR_T) default_bg(sp);
+	bg = default_bg(sp);
 #endif
 
     if (reverse) {
-	NCURSES_COLOR_T xx = fg;
+	int xx = fg;
 	fg = bg;
 	bg = xx;
     }
@@ -834,10 +896,10 @@ drv_initmouse(TERMINAL_CONTROL_BLOCK * TCB)
     if (sp != 0) {
 	if (key_mouse != 0) {
 	    if (!strcmp(key_mouse, xterm_kmous)
-		|| strstr(TerminalOf(sp)->type.term_names, "xterm") != 0) {
+		|| strstr(SP_TERMTYPE term_names, "xterm") != 0) {
 		init_xterm_mouse(sp);
 	    }
-	} else if (strstr(TerminalOf(sp)->type.term_names, "xterm") != 0) {
+	} else if (strstr(SP_TERMTYPE term_names, "xterm") != 0) {
 	    if (_nc_add_to_try(&(sp->_keytry), xterm_kmous, KEY_MOUSE) == OK)
 		init_xterm_mouse(sp);
 	}
@@ -845,7 +907,9 @@ drv_initmouse(TERMINAL_CONTROL_BLOCK * TCB)
 }
 
 static int
-drv_testmouse(TERMINAL_CONTROL_BLOCK * TCB, int delay)
+drv_testmouse(TERMINAL_CONTROL_BLOCK * TCB,
+	      int delay
+	      EVENTLIST_2nd(_nc_eventlist * evl))
 {
     int rc = 0;
     SCREEN *sp;
@@ -860,11 +924,11 @@ drv_testmouse(TERMINAL_CONTROL_BLOCK * TCB, int delay)
     } else
 #endif
     {
-	rc = TCBOf(sp)->drv->twait(TCBOf(sp),
-				   TWAIT_MASK,
-				   delay,
-				   (int *) 0
-				   EVENTLIST_2nd(evl));
+	rc = TCBOf(sp)->drv->td_twait(TCBOf(sp),
+				      TWAIT_MASK,
+				      delay,
+				      (int *) 0
+				      EVENTLIST_2nd(evl));
 #if USE_SYSMOUSE
 	if ((sp->_mouse_type == M_SYSMOUSE)
 	    && (sp->_sysmouse_head < sp->_sysmouse_tail)
@@ -882,7 +946,7 @@ drv_mvcur(TERMINAL_CONTROL_BLOCK * TCB, int yold, int xold, int ynew, int xnew)
 {
     SCREEN *sp = TCB->csp;
     AssertTCB();
-    return TINFO_MVCUR(sp, yold, xold, ynew, xnew);
+    return NCURSES_SP_NAME(_nc_mvcur) (sp, yold, xold, ynew, xnew);
 }
 
 static void
@@ -892,22 +956,21 @@ drv_hwlabel(TERMINAL_CONTROL_BLOCK * TCB, int labnum, char *text)
 
     AssertTCB();
     if (labnum > 0 && labnum <= num_labels) {
-	NCURSES_SP_NAME(_nc_putp) (NCURSES_SP_ARGx
-				   "plab_norm",
-				   TPARM_2(plab_norm, labnum, text));
+	NCURSES_PUTP2("plab_norm",
+		      TPARM_2(plab_norm, labnum, text));
     }
 }
 
 static void
-drv_hwlabelOnOff(TERMINAL_CONTROL_BLOCK * TCB, bool OnFlag)
+drv_hwlabelOnOff(TERMINAL_CONTROL_BLOCK * TCB, int OnFlag)
 {
     SCREEN *sp = TCB->csp;
 
     AssertTCB();
     if (OnFlag) {
-	NCURSES_SP_NAME(_nc_putp) (NCURSES_SP_ARGx "label_on", label_on);
+	NCURSES_PUTP2("label_on", label_on);
     } else {
-	NCURSES_SP_NAME(_nc_putp) (NCURSES_SP_ARGx "label_off", label_off);
+	NCURSES_PUTP2("label_off", label_off);
     }
 }
 
@@ -948,6 +1011,11 @@ drv_conattr(TERMINAL_CONTROL_BLOCK * TCB)
     if (sp && sp->_coloron)
 	attrs |= A_COLOR;
 
+#if USE_ITALIC
+    if (enter_italics_mode)
+	attrs |= A_ITALIC;
+#endif
+
     return (attrs);
 }
 
@@ -956,12 +1024,18 @@ drv_setfilter(TERMINAL_CONTROL_BLOCK * TCB)
 {
     AssertTCB();
 
-    clear_screen = 0;
-    cursor_down = parm_down_cursor = 0;
-    cursor_address = 0;
-    cursor_up = parm_up_cursor = 0;
-    row_address = 0;
-    cursor_home = carriage_return;
+    /* *INDENT-EQLS* */
+    clear_screen     = ABSENT_STRING;
+    cursor_address   = ABSENT_STRING;
+    cursor_down      = ABSENT_STRING;
+    cursor_up        = ABSENT_STRING;
+    parm_down_cursor = ABSENT_STRING;
+    parm_up_cursor   = ABSENT_STRING;
+    row_address      = ABSENT_STRING;
+    cursor_home      = carriage_return;
+
+    if (back_color_erase)
+	clr_eos = ABSENT_STRING;
 }
 
 static void
@@ -972,7 +1046,7 @@ drv_initacs(TERMINAL_CONTROL_BLOCK * TCB, chtype *real_map, chtype *fake_map)
     AssertTCB();
     assert(sp != 0);
     if (ena_acs != NULL) {
-	NCURSES_SP_NAME(_nc_putp) (NCURSES_SP_ARGx "ena_acs", ena_acs);
+	NCURSES_PUTP2("ena_acs", ena_acs);
     }
 #if NCURSES_EXT_FUNCS
     /*
@@ -991,7 +1065,7 @@ drv_initacs(TERMINAL_CONTROL_BLOCK * TCB, chtype *real_map, chtype *fake_map)
 	size_t i;
 	for (i = 1; i < ACS_LEN; ++i) {
 	    if (real_map[i] == 0) {
-		real_map[i] = i;
+		real_map[i] = (chtype) i;
 		if (real_map != fake_map) {
 		    if (sp != 0)
 			sp->_screen_acs_map[i] = TRUE;
@@ -1074,16 +1148,7 @@ _nc_cookie_init(SCREEN *sp)
 
     if (magic_cookie_glitch > 0) {	/* tvi, wyse */
 
-	sp->_xmc_triggers = sp->_ok_attributes & (
-						     A_STANDOUT |
-						     A_UNDERLINE |
-						     A_REVERSE |
-						     A_BLINK |
-						     A_DIM |
-						     A_BOLD |
-						     A_INVIS |
-						     A_PROTECT
-	    );
+	sp->_xmc_triggers = sp->_ok_attributes & XMC_CONFLICT;
 #if 0
 	/*
 	 * We "should" treat colors as an attribute.  The wyse350 (and its
@@ -1176,7 +1241,7 @@ drv_read(TERMINAL_CONTROL_BLOCK * TCB, int *buf)
     if ((pthread_self) && (pthread_kill) && (pthread_equal))
 	_nc_globals.read_thread = pthread_self();
 # endif
-    n = read(sp->_ifd, &c2, 1);
+    n = (int) read(sp->_ifd, &c2, (size_t) 1);
 #if USE_PTHREADS_EINTR
     _nc_globals.read_thread = 0;
 #endif
@@ -1209,7 +1274,7 @@ __nc_putp(SCREEN *sp, const char *name GCC_UNUSED, const char *value)
     int rc = ERR;
 
     if (value) {
-	rc = NCURSES_SP_NAME(_nc_putp) (NCURSES_SP_ARGx name, value);
+	rc = NCURSES_PUTP2(name, value);
     }
     return rc;
 }
@@ -1225,7 +1290,7 @@ __nc_putp_flush(SCREEN *sp, const char *name, const char *value)
 }
 
 static int
-drv_kpad(TERMINAL_CONTROL_BLOCK * TCB, bool flag)
+drv_kpad(TERMINAL_CONTROL_BLOCK * TCB, int flag)
 {
     int ret = ERR;
     SCREEN *sp;
@@ -1251,7 +1316,7 @@ drv_kpad(TERMINAL_CONTROL_BLOCK * TCB, bool flag)
 }
 
 static int
-drv_keyok(TERMINAL_CONTROL_BLOCK * TCB, int c, bool flag)
+drv_keyok(TERMINAL_CONTROL_BLOCK * TCB, int c, int flag)
 {
     SCREEN *sp;
     int code = ERR;
@@ -1264,7 +1329,8 @@ drv_keyok(TERMINAL_CONTROL_BLOCK * TCB, int c, bool flag)
     if (c >= 0) {
 	unsigned ch = (unsigned) c;
 	if (flag) {
-	    while ((s = _nc_expand_try(sp->_key_ok, ch, &count, 0)) != 0
+	    while ((s = _nc_expand_try(sp->_key_ok,
+				       ch, &count, (size_t) 0)) != 0
 		   && _nc_remove_key(&(sp->_key_ok), ch)) {
 		code = _nc_add_to_try(&(sp->_keytry), s, ch);
 		free(s);
@@ -1273,7 +1339,8 @@ drv_keyok(TERMINAL_CONTROL_BLOCK * TCB, int c, bool flag)
 		    break;
 	    }
 	} else {
-	    while ((s = _nc_expand_try(sp->_keytry, ch, &count, 0)) != 0
+	    while ((s = _nc_expand_try(sp->_keytry,
+				       ch, &count, (size_t) 0)) != 0
 		   && _nc_remove_key(&(sp->_keytry), ch)) {
 		code = _nc_add_to_try(&(sp->_key_ok), s, ch);
 		free(s);
@@ -1284,6 +1351,35 @@ drv_keyok(TERMINAL_CONTROL_BLOCK * TCB, int c, bool flag)
 	}
     }
     return (code);
+}
+
+static int
+drv_cursorSet(TERMINAL_CONTROL_BLOCK * TCB, int vis)
+{
+    SCREEN *sp;
+    int code = ERR;
+
+    AssertTCB();
+    SetSP();
+
+    T((T_CALLED("tinfo:drv_cursorSet(%p,%d)"), (void *) SP_PARM, vis));
+
+    if (SP_PARM != 0 && IsTermInfo(SP_PARM)) {
+	switch (vis) {
+	case 2:
+	    code = NCURSES_PUTP2_FLUSH("cursor_visible", cursor_visible);
+	    break;
+	case 1:
+	    code = NCURSES_PUTP2_FLUSH("cursor_normal", cursor_normal);
+	    break;
+	case 0:
+	    code = NCURSES_PUTP2_FLUSH("cursor_invisible", cursor_invisible);
+	    break;
+	}
+    } else {
+	code = ERR;
+    }
+    returnCode(code);
 }
 
 static bool
@@ -1300,6 +1396,7 @@ drv_kyExist(TERMINAL_CONTROL_BLOCK * TCB, int key)
 
 NCURSES_EXPORT_VAR (TERM_DRIVER) _nc_TINFO_DRIVER = {
     TRUE,
+	drv_Name,		/* Name */
 	drv_CanHandle,		/* CanHandle */
 	drv_init,		/* init */
 	drv_release,		/* release */
@@ -1333,5 +1430,6 @@ NCURSES_EXPORT_VAR (TERM_DRIVER) _nc_TINFO_DRIVER = {
 	drv_nap,		/* nap */
 	drv_kpad,		/* kpad */
 	drv_keyok,		/* kyOk */
-	drv_kyExist		/* kyExist */
+	drv_kyExist,		/* kyExist */
+	drv_cursorSet		/* cursorSet */
 };

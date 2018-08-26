@@ -2,7 +2,7 @@
  *  newdemo.c	-	A demo program using PDCurses. The program illustrate
  *  	 		the use of colours for text output.
  *
- * $Id: newdemo.c,v 1.35 2010/12/12 00:19:15 tom Exp $
+ * $Id: newdemo.c,v 1.45 2017/09/30 15:43:08 tom Exp $
  */
 
 #include <test.priv.h>
@@ -47,10 +47,10 @@ static const char *messages[] =
 /*
  *  Trap interrupt
  */
-static RETSIGTYPE
+static void
 trap(int sig GCC_UNUSED)
 {
-    endwin();
+    exit_curses();
     ExitProgram(EXIT_FAILURE);
 }
 
@@ -84,7 +84,7 @@ set_colors(WINDOW *win, int pair, int foreground, int background)
 	if (pair > COLOR_PAIRS)
 	    pair = COLOR_PAIRS;
 	init_pair((short) pair, (short) foreground, (short) background);
-	(void) wattrset(win, (attr_t) COLOR_PAIR(pair));
+	(void) wattrset(win, AttrArg(COLOR_PAIR(pair), 0));
     }
 }
 
@@ -96,7 +96,7 @@ use_colors(WINDOW *win, int pair, chtype attrs)
 	    pair = COLOR_PAIRS;
 	attrs |= (chtype) COLOR_PAIR(pair);
     }
-    (void) wattrset(win, attrs);
+    (void) wattrset(win, AttrArg(attrs, 0));
     return attrs;
 }
 
@@ -113,12 +113,19 @@ SubWinTest(WINDOW *win)
     getbegyx(win, by, bx);
     sw = w / 3;
     sh = h / 3;
-    if ((swin1 = subwin(win, sh, sw, by + 3, bx + 5)) == NULL)
+
+    if ((swin1 = subwin(win, sh, sw, by + 3, bx + 5)) == NULL) {
 	return 1;
-    if ((swin2 = subwin(win, sh, sw, by + 4, bx + 8)) == NULL)
+    }
+    if ((swin2 = subwin(win, sh, sw, by + 4, bx + 8)) == NULL) {
+	delwin(swin1);
 	return 1;
-    if ((swin3 = subwin(win, sh, sw, by + 5, bx + 11)) == NULL)
+    }
+    if ((swin3 = subwin(win, sh, sw, by + 5, bx + 11)) == NULL) {
+	delwin(swin1);
+	delwin(swin2);
 	return 1;
+    }
 
     set_colors(swin1, 8, COLOR_RED, COLOR_BLUE);
     werase(swin1);
@@ -215,7 +222,7 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 {
     WINDOW *win;
     int w, x, y, i, j, k;
-    char buffer[200];
+    char buffer[SIZEOF(messages) * 80];
     const char *message;
     int width, height;
     chtype save[80];
@@ -223,9 +230,7 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 
     setlocale(LC_ALL, "");
 
-    CATCHALL(trap);
-
-    initscr();
+    InitAndCatch(initscr(), trap);
     if (has_colors())
 	start_color();
     cbreak();
@@ -234,7 +239,7 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
     height = 14;		/* Create a drawing window */
     win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
     if (win == NULL) {
-	endwin();
+	exit_curses();
 	ExitProgram(EXIT_FAILURE);
     }
 
@@ -292,11 +297,11 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 	message = messages[j = 0];
 	i = 1;
 	w = width - 2;
-	strcpy(buffer, message);
+	_nc_STRCPY(buffer, message, sizeof(buffer));
 	while (j < NMESSAGES) {
 	    while ((int) strlen(buffer) < w) {
-		strcat(buffer, " ... ");
-		strcat(buffer, messages[++j % NMESSAGES]);
+		_nc_STRCAT(buffer, " ... ", sizeof(buffer));
+		_nc_STRCAT(buffer, messages[++j % NMESSAGES], sizeof(buffer));
 	    }
 
 	    if (i < w)
@@ -353,6 +358,6 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
 	if (WaitForUser(win) == 1)
 	    break;
     }
-    endwin();
+    exit_curses();
     ExitProgram(EXIT_SUCCESS);
 }

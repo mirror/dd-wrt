@@ -6,13 +6,13 @@
  *  wrs(5/28/93) -- modified to be consistent (perform identically) with either
  *                  PDCurses or under Unix System V, R4
  *
- * $Id: testcurs.c,v 1.43 2010/11/13 21:02:28 tom Exp $
+ * $Id: testcurs.c,v 1.53 2017/12/23 21:38:26 tom Exp $
  */
 
 #include <test.priv.h>
 
 #if defined(XCURSES)
-char *XCursesProgramName = "testcurs";
+const char *XCursesProgramName = "testcurs";
 #endif
 
 static int initTest(WINDOW **);
@@ -20,138 +20,15 @@ static void display_menu(int, int);
 static void inputTest(WINDOW *);
 static void introTest(WINDOW *);
 static void outputTest(WINDOW *);
+#if HAVE_NEWPAD
 static void padTest(WINDOW *);
+#endif
 static void scrollTest(WINDOW *);
 #if defined(PDCURSES) && !defined(XCURSES)
 static void resizeTest(WINDOW *);
 #endif
 
-struct commands {
-    NCURSES_CONST char *text;
-    void (*function) (WINDOW *);
-};
-typedef struct commands COMMAND;
-
-static const COMMAND command[] =
-{
-    {"General Test", introTest},
-    {"Pad Test", padTest},
-#if defined(PDCURSES) && !defined(XCURSES)
-    {"Resize Test", resizeTest},
-#endif
-    {"Scroll Test", scrollTest},
-    {"Input Test", inputTest},
-    {"Output Test", outputTest}
-};
-#define MAX_OPTIONS (int) SIZEOF(command)
-
-#if !HAVE_STRDUP
-#define strdup my_strdup
-static char *
-strdup(char *s)
-{
-    char *p = typeMalloc(char, strlen(s) + 1);
-    if (p)
-	strcpy(p, s);
-    return (p);
-}
-#endif /* not HAVE_STRDUP */
-
 static int width, height;
-
-int
-main(
-	int argc GCC_UNUSED,
-	char *argv[]GCC_UNUSED)
-{
-    WINDOW *win;
-    int key;
-    int old_option = (-1);
-    int new_option = 0;
-    bool quit = FALSE;
-    int n;
-
-    setlocale(LC_ALL, "");
-
-#ifdef PDCDEBUG
-    PDC_debug("testcurs started\n");
-#endif
-    if (!initTest(&win))
-	ExitProgram(EXIT_FAILURE);
-
-    erase();
-    display_menu(old_option, new_option);
-    for (;;) {
-#ifdef A_COLOR
-	if (has_colors()) {
-	    init_pair(1, COLOR_WHITE, COLOR_BLUE);
-	    wbkgd(win, COLOR_PAIR(1));
-	} else
-	    wbkgd(win, A_REVERSE);
-#else
-	wbkgd(win, A_REVERSE);
-#endif
-	werase(win);
-
-	noecho();
-	keypad(stdscr, TRUE);
-	raw();
-	key = getch();
-	if (key < KEY_MIN && key > 0 && isalpha(key)) {
-	    if (islower(key))
-		key = toupper(key);
-	    for (n = 0; n < MAX_OPTIONS; ++n) {
-		if (key == command[n].text[0]) {
-		    display_menu(old_option, new_option = n);
-		    key = ' ';
-		    break;
-		}
-	    }
-	}
-	switch (key) {
-	case 10:
-	case 13:
-	case KEY_ENTER:
-	    erase();
-	    refresh();
-	    (*command[new_option].function) (win);
-	    erase();
-	    display_menu(old_option, new_option);
-	    break;
-	case KEY_UP:
-	    new_option = ((new_option == 0)
-			  ? new_option
-			  : new_option - 1);
-	    display_menu(old_option, new_option);
-	    break;
-	case KEY_DOWN:
-	    new_option = ((new_option == (MAX_OPTIONS - 1))
-			  ? new_option
-			  : new_option + 1);
-	    display_menu(old_option, new_option);
-	    break;
-	case 'Q':
-	case 'q':
-	    quit = TRUE;
-	    break;
-	default:
-	    beep();
-	    break;
-	case ' ':
-	    break;
-	}
-	if (quit == TRUE)
-	    break;
-    }
-
-    delwin(win);
-
-    endwin();
-#ifdef XCURSES
-    XCursesExit();
-#endif
-    ExitProgram(EXIT_SUCCESS);
-}
 
 static void
 Continue(WINDOW *win)
@@ -196,7 +73,7 @@ initTest(WINDOW **win)
     height = 13;		/* Create a drawing window */
     *win = newwin(height, width, (LINES - height) / 2, (COLS - width) / 2);
     if (*win == NULL) {
-	endwin();
+	exit_curses();
 	return 0;
     }
     return 1;
@@ -298,7 +175,7 @@ inputTest(WINDOW *win)
 #ifdef A_COLOR
     if (has_colors()) {
 	init_pair(2, COLOR_WHITE, COLOR_RED);
-	wbkgd(subWin, COLOR_PAIR(2) | A_BOLD);
+	wbkgd(subWin, (chtype) COLOR_PAIR(2) | A_BOLD);
     } else
 	wbkgd(subWin, A_BOLD);
 #else
@@ -353,6 +230,9 @@ inputTest(WINDOW *win)
     typeahead(-1);
 #endif
 
+#ifdef NCURSES_MOUSE_VERSION
+    mousemask(ALL_MOUSE_EVENTS, (mmask_t *) 0);
+#endif
 #if defined(PDCURSES)
     mouse_set(ALL_MOUSE_EVENTS);
 #endif
@@ -367,8 +247,38 @@ inputTest(WINDOW *win)
 	    wprintw(win, "Key Pressed: %c", c);
 	else
 	    wprintw(win, "Key Pressed: %s", unctrl(UChar(c)));
-#if defined(PDCURSES)
+#ifdef KEY_MOUSE
 	if (c == KEY_MOUSE) {
+#if defined(NCURSES_MOUSE_VERSION)
+#define ButtonChanged(n) ((event.bstate) & NCURSES_MOUSE_MASK(1, 037))
+#define ButtonPressed(n) ((event.bstate) & NCURSES_MOUSE_MASK(1, NCURSES_BUTTON_PRESSED))
+#define ButtonDouble(n)  ((event.bstate) & NCURSES_MOUSE_MASK(1, NCURSES_DOUBLE_CLICKED))
+#define ButtonTriple(n)  ((event.bstate) & NCURSES_MOUSE_MASK(1, NCURSES_TRIPLE_CLICKED))
+#define ButtonRelease(n) ((event.bstate) & NCURSES_MOUSE_MASK(1, NCURSES_BUTTON_RELEASED))
+	    MEVENT event;
+	    int button = 0;
+
+	    getmouse(&event);
+	    if (ButtonChanged(1))
+		button = 1;
+	    else if (ButtonChanged(2))
+		button = 2;
+	    else if (ButtonChanged(3))
+		button = 3;
+	    else
+		button = 0;
+	    wmove(win, 4, 18);
+	    wprintw(win, "Button %d: ", button);
+	    if (ButtonPressed(button))
+		wprintw(win, "pressed: ");
+	    else if (ButtonDouble(button))
+		wprintw(win, "double: ");
+	    else if (ButtonTriple(button))
+		wprintw(win, "triple: ");
+	    else
+		wprintw(win, "released: ");
+	    wprintw(win, " Position: Y: %d X: %d", event.y, event.x);
+#elif defined(PDCURSES)
 	    int button = 0;
 	    request_mouse_pos();
 	    if (BUTTON_CHANGED(1))
@@ -390,8 +300,9 @@ inputTest(WINDOW *win)
 	    else
 		wprintw(win, "released: ");
 	    wprintw(win, " Position: Y: %d X: %d", MOUSE_Y_POS, MOUSE_X_POS);
+#endif /* NCURSES_VERSION vs PDCURSES */
 	}
-#endif
+#endif /* KEY_MOUSE */
 	wrefresh(win);
 	if (c == ' ')
 	    break;
@@ -415,7 +326,7 @@ inputTest(WINDOW *win)
 	    "%d %[][a-zA-Z]s",
 	    "%d %[^0-9]"
 	};
-	const char *format = fmt[(unsigned) repeat % SIZEOF(fmt)];
+	char *format = strdup(fmt[(unsigned) repeat % SIZEOF(fmt)]);
 
 	wclear(win);
 	MvWAddStr(win, 3, 2, "The window should have moved");
@@ -431,12 +342,13 @@ inputTest(WINDOW *win)
 	noraw();
 	num = 0;
 	*buffer = 0;
-	answered = mvwscanw(win, 7, 6, strdup(format), &num, buffer);
+	answered = mvwscanw(win, 7, 6, format, &num, buffer);
 	MvWPrintw(win, 8, 6,
 		  "String: %s Number: %d (%d values read)",
 		  buffer, num, answered);
 	Continue(win);
 	++repeat;
+	free(format);
     } while (answered > 0);
 }
 
@@ -491,7 +403,7 @@ outputTest(WINDOW *win)
 #ifdef A_COLOR
 	if (has_colors()) {
 	    init_pair(3, COLOR_BLUE, COLOR_WHITE);
-	    wbkgd(win1, COLOR_PAIR(3));
+	    wbkgd(win1, (chtype) COLOR_PAIR(3));
 	} else
 	    wbkgd(win1, A_NORMAL);
 #else
@@ -645,7 +557,7 @@ resizeTest(WINDOW *dummy GCC_UNUSED)
 
     win1 = newwin(10, 50, 14, 25);
     if (win1 == NULL) {
-	endwin();
+	exit_curses();
 	return;
     }
 #ifdef A_COLOR
@@ -673,6 +585,7 @@ resizeTest(WINDOW *dummy GCC_UNUSED)
 }
 #endif
 
+#if HAVE_NEWPAD
 static void
 padTest(WINDOW *dummy GCC_UNUSED)
 {
@@ -693,9 +606,11 @@ padTest(WINDOW *dummy GCC_UNUSED)
 	raw();
 	wgetch(pad);
 
-	spad = subpad(pad, 12, 25, 6, 52);
-	MvWAddStr(spad, 2, 2, "This is a new subpad");
-	box(spad, 0, 0);
+	if ((spad = subpad(pad, 12, 25, 6, 52)) != 0) {
+	    MvWAddStr(spad, 2, 2, "This is a new subpad");
+	    box(spad, 0, 0);
+	    delwin(spad);
+	}
 	prefresh(pad, 0, 0, 0, 0, 15, 75);
 	keypad(pad, TRUE);
 	raw();
@@ -711,6 +626,28 @@ padTest(WINDOW *dummy GCC_UNUSED)
 	delwin(pad);
     }
 }
+#endif /* HAVE_NEWPAD */
+
+struct commands {
+    NCURSES_CONST char *text;
+    void (*function) (WINDOW *);
+};
+typedef struct commands COMMAND;
+
+static const COMMAND command[] =
+{
+    {"General Test", introTest},
+#if HAVE_NEWPAD
+    {"Pad Test", padTest},
+#endif
+#if defined(PDCURSES) && !defined(XCURSES)
+    {"Resize Test", resizeTest},
+#endif
+    {"Scroll Test", scrollTest},
+    {"Input Test", inputTest},
+    {"Output Test", outputTest}
+};
+#define MAX_OPTIONS (int) SIZEOF(command)
 
 static void
 display_menu(int old_option, int new_option)
@@ -734,4 +671,98 @@ display_menu(int old_option, int new_option)
     MvAddStr(13, 3,
 	     "Use Up and Down Arrows to select - Enter to run - Q to quit");
     refresh();
+}
+
+int
+main(
+	int argc GCC_UNUSED,
+	char *argv[]GCC_UNUSED)
+{
+    WINDOW *win;
+    int key;
+    int old_option = (-1);
+    int new_option = 0;
+    bool quit = FALSE;
+    int n;
+
+    setlocale(LC_ALL, "");
+
+#ifdef PDCDEBUG
+    PDC_debug("testcurs started\n");
+#endif
+    if (!initTest(&win))
+	ExitProgram(EXIT_FAILURE);
+
+    erase();
+    display_menu(old_option, new_option);
+    for (;;) {
+#ifdef A_COLOR
+	if (has_colors()) {
+	    init_pair(1, COLOR_WHITE, COLOR_BLUE);
+	    wbkgd(win, (chtype) COLOR_PAIR(1));
+	} else
+	    wbkgd(win, A_REVERSE);
+#else
+	wbkgd(win, A_REVERSE);
+#endif
+	werase(win);
+
+	noecho();
+	keypad(stdscr, TRUE);
+	raw();
+	key = getch();
+	if (key < KEY_MIN && key > 0 && isalpha(key)) {
+	    if (islower(key))
+		key = toupper(key);
+	    for (n = 0; n < MAX_OPTIONS; ++n) {
+		if (key == command[n].text[0]) {
+		    display_menu(old_option, new_option = n);
+		    key = ' ';
+		    break;
+		}
+	    }
+	}
+	switch (key) {
+	case 10:
+	case 13:
+	case KEY_ENTER:
+	    erase();
+	    refresh();
+	    (*command[new_option].function) (win);
+	    erase();
+	    display_menu(old_option, new_option);
+	    break;
+	case KEY_UP:
+	    new_option = ((new_option == 0)
+			  ? new_option
+			  : new_option - 1);
+	    display_menu(old_option, new_option);
+	    break;
+	case KEY_DOWN:
+	    new_option = ((new_option == (MAX_OPTIONS - 1))
+			  ? new_option
+			  : new_option + 1);
+	    display_menu(old_option, new_option);
+	    break;
+	case 'Q':
+	case 'q':
+	    quit = TRUE;
+	    break;
+	default:
+	    beep();
+	    break;
+	case ' ':
+	    break;
+	}
+	if (quit == TRUE)
+	    break;
+    }
+
+    delwin(win);
+
+    exit_curses();
+#ifdef XCURSES
+    XCursesExit();
+#endif
+    ExitProgram(EXIT_SUCCESS);
 }

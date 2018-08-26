@@ -1,6 +1,6 @@
-# $Id: MKunctrl.awk,v 1.26 2009/07/04 22:05:15 Clemens.Ladisch Exp $
+# $Id: MKunctrl.awk,v 1.28 2017/02/11 17:30:48 tom Exp $
 ##############################################################################
-# Copyright (c) 1998-2008,2009 Free Software Foundation, Inc.                #
+# Copyright (c) 1998-2012,2017 Free Software Foundation, Inc.                #
 #                                                                            #
 # Permission is hereby granted, free of charge, to any person obtaining a    #
 # copy of this software and associated documentation files (the "Software"), #
@@ -140,9 +140,10 @@ END	{
 		} else {
 			stringname = "unctrl"
 		}
-		print  "\tint check = ChCharOf(ch);"
+		print  "\tint check = (int) ChCharOf(ch);"
 		print  "\tconst char *result;"
 		print  ""
+		print  "(void) sp;"
 		print  "\tif (check >= 0 && check < (int)SIZEOF(unctrl_table)) {"
 		print  "#if NCURSES_EXT_FUNCS"
 		print  "\t\tif ((sp != 0)"

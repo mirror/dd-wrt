@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2010,2011 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2016,2017 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -43,7 +43,7 @@
 #include <curses.priv.h>
 #include <stddef.h>
 
-MODULE_ID("$Id: lib_newwin.c,v 1.69 2011/03/07 21:58:17 tom Exp $")
+MODULE_ID("$Id: lib_newwin.c,v 1.74 2017/05/13 23:17:29 tom Exp $")
 
 #define window_is(name) ((sp)->_##name == win)
 
@@ -91,8 +91,6 @@ remove_window_from_screen(WINDOW *win)
 NCURSES_EXPORT(int)
 _nc_freewin(WINDOW *win)
 {
-    WINDOWLIST *p, *q;
-    int i;
     int result = ERR;
 #ifdef USE_SP_WINDOWLIST
     SCREEN *sp = _nc_screen_of(win);	/* pretend this is parameter */
@@ -101,17 +99,23 @@ _nc_freewin(WINDOW *win)
     T((T_CALLED("_nc_freewin(%p)"), (void *) win));
 
     if (win != 0) {
+
 	if (_nc_nonsp_try_global(curses) == 0) {
+	    WINDOWLIST *p, *q;
+
 	    q = 0;
-	    for (each_window(SP_PARM, p)) {
+	    for (each_window(sp, p)) {
+
 		if (&(p->win) == win) {
 		    remove_window_from_screen(win);
 		    if (q == 0)
-			WindowList(SP_PARM) = p->next;
+			WindowList(sp) = p->next;
 		    else
 			q->next = p->next;
 
 		    if (!(win->_flags & _SUBWIN)) {
+			int i;
+
 			for (i = 0; i <= win->_maxy; i++)
 			    FreeIfNeeded(win->_line[i].text);
 		    }
@@ -141,7 +145,11 @@ NCURSES_SP_NAME(newwin) (NCURSES_SP_DCLx
     T((T_CALLED("newwin(%p, %d,%d,%d,%d)"), (void *) SP_PARM, num_lines, num_columns,
        begy, begx));
 
-    if (begy < 0 || begx < 0 || num_lines < 0 || num_columns < 0)
+    if (begy < 0
+	|| begx < 0
+	|| num_lines < 0
+	|| num_columns < 0
+	|| SP_PARM == 0)
 	returnWin(0);
 
     if (num_lines == 0)
@@ -235,10 +243,15 @@ derwin(WINDOW *orig, int num_lines, int num_columns, int begy, int begx)
 NCURSES_EXPORT(WINDOW *)
 subwin(WINDOW *w, int l, int c, int y, int x)
 {
-    T((T_CALLED("subwin(%p, %d, %d, %d, %d)"), (void *) w, l, c, y, x));
-    T(("parent has begy = %ld, begx = %ld", (long) w->_begy, (long) w->_begx));
+    WINDOW *result = 0;
 
-    returnWin(derwin(w, l, c, y - w->_begy, x - w->_begx));
+    T((T_CALLED("subwin(%p, %d, %d, %d, %d)"), (void *) w, l, c, y, x));
+    if (w != 0) {
+	T(("parent has begy = %ld, begx = %ld", (long) w->_begy, (long) w->_begx));
+
+	result = derwin(w, l, c, y - w->_begy, x - w->_begx);
+    }
+    returnWin(result);
 }
 
 static bool
@@ -375,18 +388,18 @@ NCURSES_SP_NAME(_nc_makenew) (NCURSES_SP_DCLx
 NCURSES_EXPORT(WINDOW *)
 _nc_curscr_of(SCREEN *sp)
 {
-    return sp == 0 ? 0 : CurScreen(sp);
+    return (sp == 0) ? NULL : CurScreen(sp);
 }
 
 NCURSES_EXPORT(WINDOW *)
 _nc_newscr_of(SCREEN *sp)
 {
-    return sp == 0 ? 0 : NewScreen(sp);
+    return (sp == 0) ? NULL : NewScreen(sp);
 }
 
 NCURSES_EXPORT(WINDOW *)
 _nc_stdscr_of(SCREEN *sp)
 {
-    return sp == 0 ? 0 : StdScreen(sp);
+    return (sp == 0) ? NULL : StdScreen(sp);
 }
 #endif

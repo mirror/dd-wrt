@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2009,2011 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2015,2016 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -45,7 +45,7 @@
 #define CUR SP_TERMTYPE
 #endif
 
-MODULE_ID("$Id: resizeterm.c,v 1.43 2011/01/10 01:34:49 tom Exp $")
+MODULE_ID("$Id: resizeterm.c,v 1.49 2016/05/28 23:11:26 tom Exp $")
 
 /*
  * If we're trying to be reentrant, do not want any local statics.
@@ -60,6 +60,12 @@ static int current_cols;
 #define CurCols  current_cols
 #define EXTRA_ARGS		/* nothing */
 #define EXTRA_DCLS		/* nothing */
+#endif
+
+#if NCURSES_SP_FUNCS && !defined(USE_SP_WINDOWLIST)
+#define UNUSED_SP  (void) sp
+#else
+#define UNUSED_SP		/* nothing */
 #endif
 
 #ifdef TRACE
@@ -140,9 +146,10 @@ static int
 ripped_bottom(WINDOW *win)
 {
     int result = 0;
-    ripoff_t *rop;
 
     if (win != 0) {
+	ripoff_t *rop;
+
 #ifdef USE_SP_RIPOFF
 	SCREEN *sp = _nc_screen_of(win);
 #endif
@@ -276,6 +283,7 @@ decrease_size(NCURSES_SP_DCLx int ToLines, int ToCols, int stolen EXTRA_DCLS)
     WINDOWLIST *wp;
 
     T((T_CALLED("decrease_size(%p, %d, %d)"), (void *) SP_PARM, ToLines, ToCols));
+    UNUSED_SP;
 
     do {
 	found = FALSE;
@@ -310,6 +318,7 @@ increase_size(NCURSES_SP_DCLx int ToLines, int ToCols, int stolen EXTRA_DCLS)
     WINDOWLIST *wp;
 
     T((T_CALLED("increase_size(%p, %d, %d)"), (void *) SP_PARM, ToLines, ToCols));
+    UNUSED_SP;
 
     do {
 	found = FALSE;
@@ -347,7 +356,7 @@ NCURSES_SP_NAME(resize_term) (NCURSES_SP_DCLx int ToLines, int ToCols)
        (SP_PARM == 0) ? -1 : screen_lines(SP_PARM),
        (SP_PARM == 0) ? -1 : screen_columns(SP_PARM)));
 
-    if (SP_PARM == 0) {
+    if (SP_PARM == 0 || ToLines <= 0 || ToCols <= 0) {
 	returnCode(ERR);
     }
 
@@ -365,58 +374,71 @@ NCURSES_SP_NAME(resize_term) (NCURSES_SP_DCLx int ToLines, int ToCols)
 	}
 #endif
 	if (ToLines > screen_lines(SP_PARM)) {
-	    increase_size(NCURSES_SP_ARGx
-			  myLines = ToLines, myCols, was_stolen EXTRA_ARGS);
+	    result = increase_size(NCURSES_SP_ARGx
+				   myLines = ToLines,
+				   myCols,
+				   was_stolen EXTRA_ARGS);
 	    CurLines = myLines;
 	    CurCols = myCols;
 	}
 
-	if (ToCols > screen_columns(SP_PARM)) {
-	    increase_size(NCURSES_SP_ARGx
-			  myLines, myCols = ToCols, was_stolen EXTRA_ARGS);
+	if ((result == OK)
+	    && (ToCols > screen_columns(SP_PARM))) {
+	    result = increase_size(NCURSES_SP_ARGx
+				   myLines,
+				   myCols = ToCols,
+				   was_stolen EXTRA_ARGS);
 	    CurLines = myLines;
 	    CurCols = myCols;
 	}
 
-	if (ToLines < myLines ||
-	    ToCols < myCols) {
-	    decrease_size(NCURSES_SP_ARGx ToLines, ToCols, was_stolen EXTRA_ARGS);
+	if ((result == OK)
+	    && (ToLines < myLines ||
+		ToCols < myCols)) {
+	    result = decrease_size(NCURSES_SP_ARGx
+				   ToLines,
+				   ToCols,
+				   was_stolen EXTRA_ARGS);
 	}
 
-	screen_lines(SP_PARM) = (NCURSES_SIZE_T) ToLines;
-	screen_columns(SP_PARM) = (NCURSES_SIZE_T) ToCols;
+	if (result == OK) {
+	    screen_lines(SP_PARM) = (NCURSES_SIZE_T) ToLines;
+	    screen_columns(SP_PARM) = (NCURSES_SIZE_T) ToCols;
 
 #ifdef USE_TERM_DRIVER
-	CallDriver_2(SP_PARM, setsize, ToLines, ToCols);
+	    CallDriver_2(SP_PARM, td_setsize, ToLines, ToCols);
 #else
-	lines = (NCURSES_SIZE_T) ToLines;
-	columns = (NCURSES_SIZE_T) ToCols;
+	    lines = (NCURSES_SIZE_T) ToLines;
+	    columns = (NCURSES_SIZE_T) ToCols;
 #endif
 
-	SP_PARM->_lines_avail = (NCURSES_SIZE_T) (ToLines - was_stolen);
+	    SP_PARM->_lines_avail = (NCURSES_SIZE_T) (ToLines - was_stolen);
 
-	if (SP_PARM->oldhash) {
-	    FreeAndNull(SP_PARM->oldhash);
-	}
-	if (SP_PARM->newhash) {
-	    FreeAndNull(SP_PARM->newhash);
-	}
+	    if (SP_PARM->oldhash) {
+		FreeAndNull(SP_PARM->oldhash);
+	    }
+	    if (SP_PARM->newhash) {
+		FreeAndNull(SP_PARM->newhash);
+	    }
 #ifdef TRACE
-	if (USE_TRACEF(TRACE_UPDATE)) {
-	    SET_LINES(ToLines - was_stolen);
-	    SET_COLS(ToCols);
-	    show_window_sizes("after");
-	    _nc_unlock_global(tracef);
-	}
+	    if (USE_TRACEF(TRACE_UPDATE)) {
+		SET_LINES(ToLines - was_stolen);
+		SET_COLS(ToCols);
+		show_window_sizes("after");
+		_nc_unlock_global(tracef);
+	    }
 #endif
+	}
     }
 
-    /*
-     * Always update LINES, to allow for call from lib_doupdate.c which
-     * needs to have the count adjusted by the stolen (ripped off) lines.
-     */
-    SET_LINES(ToLines - was_stolen);
-    SET_COLS(ToCols);
+    if (result == OK) {
+	/*
+	 * Always update LINES, to allow for call from lib_doupdate.c which
+	 * needs to have the count adjusted by the stolen (ripped off) lines.
+	 */
+	SET_LINES(ToLines - was_stolen);
+	SET_COLS(ToCols);
+    }
 
     _nc_nonsp_unlock_global(curses);
 
@@ -427,7 +449,7 @@ NCURSES_SP_NAME(resize_term) (NCURSES_SP_DCLx int ToLines, int ToCols)
 NCURSES_EXPORT(int)
 resize_term(int ToLines, int ToCols)
 {
-    int res = ERR;
+    int res;
     _nc_sp_lock_global(curses);
     res = NCURSES_SP_NAME(resize_term) (CURRENT_SCREEN, ToLines, ToCols);
     _nc_sp_unlock_global(curses);
@@ -453,7 +475,7 @@ NCURSES_SP_NAME(resizeterm) (NCURSES_SP_DCLx int ToLines, int ToCols)
        (SP_PARM == 0) ? -1 : screen_lines(SP_PARM),
        (SP_PARM == 0) ? -1 : screen_columns(SP_PARM)));
 
-    if (SP_PARM != 0) {
+    if (SP_PARM != 0 && ToLines > 0 && ToCols > 0) {
 	result = OK;
 	SP_PARM->_sig_winch = FALSE;
 
@@ -471,7 +493,6 @@ NCURSES_SP_NAME(resizeterm) (NCURSES_SP_DCLx int ToLines, int ToCols)
 	    result = NCURSES_SP_NAME(resize_term) (NCURSES_SP_ARGx ToLines, ToCols);
 
 #if USE_SIGWINCH
-	    safe_ungetch(SP_PARM, KEY_RESIZE);	/* so application can know this */
 	    clearok(CurScreen(SP_PARM), TRUE);	/* screen contents are unknown */
 
 	    /* ripped-off lines are a special case: if we did not lengthen
@@ -501,6 +522,9 @@ NCURSES_SP_NAME(resizeterm) (NCURSES_SP_DCLx int ToLines, int ToCols)
 	    }
 #endif
 	}
+#if USE_SIGWINCH
+	safe_ungetch(SP_PARM, KEY_RESIZE);	/* so application can know this */
+#endif
     }
 
     returnCode(result);
