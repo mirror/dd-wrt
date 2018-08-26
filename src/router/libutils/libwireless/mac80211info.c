@@ -830,9 +830,9 @@ nla_put_failure:
 }
 #endif
 
+#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
 int has_vht160(char *interface)
 {
-#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
 	INITVALUECACHEi(interface);
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "VHT160")) {
@@ -845,10 +845,8 @@ int has_vht160(char *interface)
 	free(vhtcaps);
 	EXITVALUECACHE();
 	return ret;
-#else
-	return 0;
-#endif
 }
+#endif
 
 int has_greenfield(char *interface)
 {
@@ -864,9 +862,9 @@ int has_greenfield(char *interface)
 
 }
 
+#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
 int has_vht80(char *interface)
 {
-#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
 	INITVALUECACHEi(interface);
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "SHORT-GI-80")) {
@@ -875,10 +873,8 @@ int has_vht80(char *interface)
 	free(vhtcaps);
 	EXITVALUECACHE();
 	return ret;
-#else
-	return 0;
-#endif
 }
+#endif
 
 #ifdef HAVE_ATH10K
 int has_ac(char *prefix)
@@ -895,9 +891,9 @@ int has_ad(char *prefix)
 	return (is_wil6210(prefix));
 }
 #endif
+#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
 int has_vht80plus80(char *interface)
 {
-#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
 	INITVALUECACHEi(interface);
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "VHT160-80PLUS80")) {
@@ -906,14 +902,12 @@ int has_vht80plus80(char *interface)
 	free(vhtcaps);
 	EXITVALUECACHE();
 	return ret;
-#else
-	return 0;
-#endif
 }
+#endif
 
+#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
 int has_subeamforming(char *interface)
 {
-#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
 	INITVALUECACHEi(interface);
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "SU-BEAMFORMER") || strstr(vhtcaps, "SU-BEAMFORMEE")) {
@@ -922,14 +916,12 @@ int has_subeamforming(char *interface)
 	free(vhtcaps);
 	EXITVALUECACHE();
 	return ret;
-#else
-	return 0;
-#endif
 }
+#endif
 
+#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
 int has_mubeamforming(char *interface)
 {
-#if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
 	INITVALUECACHEi(interface);
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "MU-BEAMFORMER") || strstr(vhtcaps, "MU-BEAMFORMEE")) {
@@ -938,10 +930,8 @@ int has_mubeamforming(char *interface)
 	free(vhtcaps);
 	EXITVALUECACHE();
 	return ret;
-#else
-	return 0;
-#endif
 }
+#endif
 
 int has_shortgi(char *interface)
 {
