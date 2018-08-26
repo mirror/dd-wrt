@@ -938,15 +938,6 @@ endif
 
 
 
-ifeq ($(CONFIG_MADWIFI_MIMO),y)
-CFLAGS += -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -DHAVE_ACK -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -DATH_USE_COMMONHAL
-ifneq ($(ARCHITECTURE),broadcom)
-CFLAGS += -DHAVE_RELAYD
-endif
-NCFLAGS += $(BCFLAGS) -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -DHAVE_ACK -I../madwifi.dev/madwifi_mimo.dev/core -include ../madwifi.dev/madwifi_mimo.dev/core/include/compat.h  -DATH_USE_COMMONHAL
-NVISOBJS += wireless_madwifi11n.o
-NVISFILES += visuals/wireless_madwifi11n.c
-endif
 
 ifeq ($(CONFIG_ATH9K),y)
 LDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
@@ -960,13 +951,8 @@ ifeq ($(CONFIG_MADWIFI),y)
 ifneq ($(ARCHITECTURE),broadcom)
 CFLAGS += -DHAVE_RELAYD
 endif
-ifeq ($(CONFIG_MADWIFI_MIMO),y)
-CFLAGS += -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -DHAVE_ACK -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -DATH_USE_COMMONHAL
-VISOBJS += wireless_madwifi.o
-else
 CFLAGS += -DHAVE_MADWIFI -DHAVE_ACK -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h
 VISOBJS += wireless_madwifi.o
-endif
 
 #OBJS += ../wireless-tools/libiw.so.29
 endif
@@ -1024,9 +1010,6 @@ ifeq ($(CONFIG_EASY_WIRELESS_CONFIG),y)
 CFLAGS += -DHAVE_EASY_WIRELESS_CONFIG
 endif
 ifeq ($(CONFIG_MADWIFI),y)
-CFLAGS += -DHAVE_EASY_WIRELESS_CONFIG
-endif
-ifeq ($(CONFIG_MADWIFI_MIMO),y)
 CFLAGS += -DHAVE_EASY_WIRELESS_CONFIG
 endif
 ifeq ($(CONFIG_MADWIFI_ATH9K),y)
@@ -1420,9 +1403,6 @@ validate.so: validators.o webs.o wepkey.o setupassist.o aoss_save.o wps.o $(WEBS
 
 visuals.so: dd-wrt.o lib.o ejs.o wireless.o getservice.o ddns.o index.o status.o filters.o forward.o static_route.o dynamic_route.o log.o dhcp.o diag.o find_pattern.o setupassistant.o gps.o aoss.o ejwps.o fs_common.o minidlna.o samba3.o status_gpio.o eoptunnel.o $(VISOBJS) $(REGOBJS2)
 	@echo "[LD] $@"
-ifeq ($(CONFIG_MADWIFI_MIMO),y)
-	@$(CC) --shared -c -o $(NVISOBJS) $(NVISFILES) $(NCFLAGS) -DVISUALSOURCE $(LDFLAGS)
-endif
 ifeq ($(CONFIG_ATH9K),y)
 	@$(CC) --shared -c -o $(ATH9KVISOBJS) $(ATH9KVISFILES) $(CFLAGS) -DVISUALSOURCE $(LDFLAGS)
 endif
