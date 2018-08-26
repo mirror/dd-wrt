@@ -98,13 +98,6 @@ static void deconfigure_single(int count)
 		sysprintf("rm -f /tmp/ath%d_configured", count);
 		return;
 	}
-#ifdef HAVE_MADWIFI_MIMO
-	if (is_ar5008(dev)) {
-		deconfigure_single_11n(count);
-		sysprintf("rm -f /tmp/ath%d_configured", count);
-		return;
-	}
-#endif
 
 #ifdef HAVE_MADWIFI
 	sprintf(vifs, "%s.1 %s.2 %s.3 %s.4 %s.5 %s.6 %s.7 %s.8 %s.9", dev, dev, dev, dev, dev, dev, dev, dev, dev);
@@ -1470,13 +1463,6 @@ static void configure_single(int count)
 		sysprintf("touch /tmp/ath%d_configured", count);
 		return;
 	}
-#ifdef HAVE_MADWIFI_MIMO
-	if (is_ar5008(dev)) {
-		configure_single_11n(count);
-		sysprintf("touch /tmp/ath%d_configured", count);
-		return;
-	}
-#endif
 #ifdef HAVE_MADWIFI
 
 	sprintf(wifivifs, "ath%d_vifs", count);
