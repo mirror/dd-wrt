@@ -25,7 +25,7 @@ mc-configure: glib20 slang
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
 	cd mc && ./configure --host=$(ARCH)-uclibc-linux AWK="awk" \
 		CFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF -DSTAT_STATVFS -I$(TOP)/slang/src" \
-		LDFLAGS="-L$(TOP)/slang/src/elf$(ARCH)objs -L$(TOP)/mc/intl" \
+		LDFLAGS="-L$(TOP)/slang/src/$(ARCH)elfobjs -L$(TOP)/mc/intl" \
 		GLIB_CFLAGS="-I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -L$(INSTALLDIR)/util-linux/usr/lib" \
 		GLIB_LIBS="-L$(TOP)/glib20/libglib/glib/.libs -lglib-2.0" \
 		GMODULE_CFLAGS="-pthread -I$(TOP)/glib20/libglib/gmodule -I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib" \
@@ -84,7 +84,7 @@ mc: glib20 slang
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.la
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
-	$(MAKE) -j 4 -C mc LDFLAGS="-L$(TOP)/slang/src/elf$(ARCH)objs -L$(TOP)/mc/intl"
+	$(MAKE) -j 4 -C mc LDFLAGS="-L$(TOP)/slang/src/$(ARCH)elfobjs -L$(TOP)/mc/intl"
 	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
 	rm -rf $(INSTALLDIR)/util-linux/usr/bin
 	rm -rf $(INSTALLDIR)/util-linux/bin
@@ -120,7 +120,7 @@ endif
 
 
 mc-install:
-	install -D mc/slang/src/elf$(ARCH)objs/libslang.so.2 $(INSTALLDIR)/mc/usr/lib/libslang.so.2
+	install -D mc/slang/src/$(ARCH)elfobjs/libslang.so.2 $(INSTALLDIR)/mc/usr/lib/libslang.so.2
 	if test -e "mc/Makefile"; then $(MAKE) -C mc install DESTDIR=$(INSTALLDIR)/mc; fi
 	rm -rf $(INSTALLDIR)/mc/usr/share/man
 
