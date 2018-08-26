@@ -1290,14 +1290,12 @@ static void addvhtcaps(char *prefix, FILE * fp)
 		}
 	}
 #endif
-#ifdef HAVE_ATH9K
 	if (is_ath9k(prefix)) {
 		char shortgi[32];
 		sprintf(shortgi, "%s_shortgi", prefix);
 		if (nvram_matchi(shortgi, 0))
 			fprintf(fp, "\tdisable_sgi=1\n");
 	}
-#endif
 }
 
 static char *makescanlist(char *value)

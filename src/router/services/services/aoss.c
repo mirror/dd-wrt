@@ -90,9 +90,7 @@ void start_aoss(void)
 	char copy2[256];
 	strcpy(copy2, vifbak2);
 #endif
-#ifdef HAVE_ATH9K
 	if (!is_ath9k("ath0"))
-#endif
 	{
 		eval("startservice", "deconfigurewifi", "-f");
 	}
@@ -100,9 +98,7 @@ void start_aoss(void)
 #ifdef HAVE_WZRHPAG300NH
 	nvram_unset("ath1_vifs");
 #endif
-#ifdef HAVE_ATH9K
 	if (!is_ath9k("ath0"))
-#endif
 	{
 		eval("startservice", "configurewifi", "-f");
 	}
@@ -205,7 +201,6 @@ void start_aoss(void)
 	}
 #else
 	if (nvram_match("ath0_mode", "ap") || nvram_match("ath0_mode", "wdsap")) {
-#ifdef HAVE_ATH9K
 		if (is_ath9k("ath0")) {
 			deconfigure_single_ath9k(0);
 			configure_single_ath9k(0);
@@ -229,7 +224,6 @@ void start_aoss(void)
 			}
 			eval("hostapd", "-B", "-P", "/var/run/ath0_hostapd.pid", "/tmp/ath0_hostap.conf");
 		} else
-#endif
 
 		{
 			hasaoss = 1;
