@@ -1502,43 +1502,43 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 		char fr[32];
 		int gotchannels = 0;
 		int channelbw = 20;
-			if (is_ath9k(prefix)) {
-				// temp must be replaced with the actual selected country
-				char regdomain[16];
-				char *country;
-				int checkband = 255;
-				sprintf(regdomain, "%s_regdomain", prefix);
-				country = nvram_default_get(regdomain, "UNITED_STATES");
-				// temp end
+		if (is_ath9k(prefix)) {
+			// temp must be replaced with the actual selected country
+			char regdomain[16];
+			char *country;
+			int checkband = 255;
+			sprintf(regdomain, "%s_regdomain", prefix);
+			country = nvram_default_get(regdomain, "UNITED_STATES");
+			// temp end
 
-				if (nvram_nmatch("ng-only", "%s_net_mode", prefix)
-				    || nvram_nmatch("n2-only", "%s_net_mode", prefix)
-				    || nvram_nmatch("bg-mixed", "%s_net_mode", prefix)
-				    || nvram_nmatch("ng-mixed", "%s_net_mode", prefix)
-				    || nvram_nmatch("b-only", "%s_net_mode", prefix)
-				    || nvram_nmatch("g-only", "%s_net_mode", prefix)) {
-					checkband = 2;
-				}
-				if (nvram_nmatch("a-only", "%s_net_mode", prefix)
-				    || nvram_nmatch("na-only", "%s_net_mode", prefix)
-				    || nvram_nmatch("ac-only", "%s_net_mode", prefix)
-				    || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)
-				    || nvram_nmatch("n5-only", "%s_net_mode", prefix)) {
-					checkband = 5;
-				}
-				if (nvram_nmatch("80", "%s_channelbw", prefix))
-					channelbw = 80;
-				if (nvram_nmatch("160", "%s_channelbw", prefix))
-					channelbw = 160;
-				if (nvram_nmatch("40", "%s_channelbw", prefix))
-					channelbw = 40;
-				chan = mac80211_get_channels_simple(prefix, getIsoName(country), channelbw, checkband);
-				/* if (chan == NULL)
-				   chan =
-				   list_channels_ath9k(dev, "DE", 40,
-				   0xff); */
-				gotchannels = 1;
+			if (nvram_nmatch("ng-only", "%s_net_mode", prefix)
+			    || nvram_nmatch("n2-only", "%s_net_mode", prefix)
+			    || nvram_nmatch("bg-mixed", "%s_net_mode", prefix)
+			    || nvram_nmatch("ng-mixed", "%s_net_mode", prefix)
+			    || nvram_nmatch("b-only", "%s_net_mode", prefix)
+			    || nvram_nmatch("g-only", "%s_net_mode", prefix)) {
+				checkband = 2;
 			}
+			if (nvram_nmatch("a-only", "%s_net_mode", prefix)
+			    || nvram_nmatch("na-only", "%s_net_mode", prefix)
+			    || nvram_nmatch("ac-only", "%s_net_mode", prefix)
+			    || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)
+			    || nvram_nmatch("n5-only", "%s_net_mode", prefix)) {
+				checkband = 5;
+			}
+			if (nvram_nmatch("80", "%s_channelbw", prefix))
+				channelbw = 80;
+			if (nvram_nmatch("160", "%s_channelbw", prefix))
+				channelbw = 160;
+			if (nvram_nmatch("40", "%s_channelbw", prefix))
+				channelbw = 40;
+			chan = mac80211_get_channels_simple(prefix, getIsoName(country), channelbw, checkband);
+			/* if (chan == NULL)
+			   chan =
+			   list_channels_ath9k(dev, "DE", 40,
+			   0xff); */
+			gotchannels = 1;
+		}
 		if (!gotchannels) {
 			chan = list_channels(prefix);
 			if (chan == NULL)
@@ -2508,7 +2508,6 @@ static int show_virtualssid(webs_t wp, char *prefix)
 
 			websWrite(wp, "</fieldset>\n");
 		}
-
 #endif
 
 #ifdef HAVE_RT2880
@@ -2725,7 +2724,6 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 		}
 	}
-
 #ifdef HAVE_MADWIFI
 #ifndef HAVE_MAKSAT
 #ifndef HAVE_DDLINK
@@ -2972,14 +2970,10 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	{
 		if (is_ath9k(prefix)) {
 			showRadio(wp, "wl_basic.intmit", wl_intmit);
-		} else
-		{
+		} else {
 			showAutoOption(wp, "wl_basic.intmit", wl_intmit);
 		}
-#if defined(HAVE_ATH9K)
-		if (!is_ath9k(prefix) && !is)
-#endif
-		{
+		if (!is_ath9k(prefix)) {
 			websWrite(wp, "<div class=\"setting\">\n");
 			show_caption(wp, "label", "wl_basic.noise_immunity", NULL);
 			websWrite(wp, "<select name=\"%s\">\n", wl_noise_immunity);
@@ -3001,10 +2995,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		show_rates(wp, prefix, 1);
 	}
 	showRadio(wp, "wl_basic.preamble", wl_preamble);
-#if defined(HAVE_ATH9K)
-	if (!is_ath9k(prefix))
-#endif
-	{
+	if (!is_ath9k(prefix)) {
 		showRadio(wp, "wl_basic.extrange", wl_xr);
 		showRadio(wp, "wl_basic.supergff", wl_ff);
 	}
@@ -3030,9 +3021,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 #ifndef HAVE_BUFFALO
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
-#ifdef HAVE_ATH9K
 	if (!is_ath9k(var)) {
-#endif
 
 		if (has_5ghz(prefix)) {
 			if (nvram_nmatch("1", "%s_regulatory", prefix)
@@ -3050,43 +3039,32 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		  wl_width, prefix);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	websWrite(wp, "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n", nvram_matchi(wl_width, 20) ? "selected=\\\"selected\\\"" : "");
-#if defined(HAVE_ATH9K)
-	if (is_ath9k(prefix)) {
 
-#if defined(HAVE_ATH9K)
-		if (!is_ath9k(prefix) || has_ht40(prefix))
-#endif
-			if ((nvram_nmatch("n-only", "%s_net_mode", prefix)
-			     || nvram_nmatch("ng-only", "%s_net_mode", prefix)
-			     || nvram_nmatch("n2-only", "%s_net_mode", prefix)
-			     || nvram_nmatch("mixed", "%s_net_mode", prefix)
-			     || nvram_nmatch("n5-only", "%s_net_mode", prefix)
-			     || nvram_nmatch("ac-only", "%s_net_mode", prefix)
-			     || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)
-			     || nvram_nmatch("na-only", "%s_net_mode", prefix))) {
-				websWrite(wp, "document.write(\"<option value=\\\"2040\\\" %s >\" + share.dynamicturbo + \"</option>\");\n", nvram_matchi(wl_width, 2040) ? "selected=\\\"selected\\\"" : "");
-				fprintf(stderr, "[CHANNEL WIDTH] 20/40 (1)\n");
-			}
-	}
-	if (!is_ath9k(prefix) || is_ath9k(prefix) || (is_ath9k(prefix)
-						       && (nvram_nmatch("n-only", "%s_net_mode", prefix)
-							   || nvram_nmatch("ng-only", "%s_net_mode", prefix)
-							   || nvram_nmatch("n2-only", "%s_net_mode", prefix)
-							   || nvram_nmatch("mixed", "%s_net_mode", prefix)
-							   || nvram_nmatch("n5-only", "%s_net_mode", prefix)
-							   || nvram_nmatch("ac-only", "%s_net_mode", prefix)
-							   || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)
-							   || nvram_nmatch("na-only", "%s_net_mode", prefix))))
-#endif
-	{
-#if defined(HAVE_ATH9K)
+	if (!is_ath9k(prefix) || has_ht40(prefix))
+		if ((nvram_nmatch("n-only", "%s_net_mode", prefix)
+		     || nvram_nmatch("ng-only", "%s_net_mode", prefix)
+		     || nvram_nmatch("n2-only", "%s_net_mode", prefix)
+		     || nvram_nmatch("mixed", "%s_net_mode", prefix)
+		     || nvram_nmatch("n5-only", "%s_net_mode", prefix)
+		     || nvram_nmatch("ac-only", "%s_net_mode", prefix)
+		     || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)
+		     || nvram_nmatch("na-only", "%s_net_mode", prefix))) {
+			websWrite(wp, "document.write(\"<option value=\\\"2040\\\" %s >\" + share.dynamicturbo + \"</option>\");\n", nvram_matchi(wl_width, 2040) ? "selected=\\\"selected\\\"" : "");
+			fprintf(stderr, "[CHANNEL WIDTH] 20/40 (1)\n");
+		}
+	if (is_ath9k(prefix)
+	    && (nvram_nmatch("n-only", "%s_net_mode", prefix)
+		|| nvram_nmatch("ng-only", "%s_net_mode", prefix)
+		|| nvram_nmatch("n2-only", "%s_net_mode", prefix)
+		|| nvram_nmatch("mixed", "%s_net_mode", prefix)
+		|| nvram_nmatch("n5-only", "%s_net_mode", prefix)
+		|| nvram_nmatch("ac-only", "%s_net_mode", prefix)
+		|| nvram_nmatch("acn-mixed", "%s_net_mode", prefix)
+		|| nvram_nmatch("na-only", "%s_net_mode", prefix))) {
 		if (!is_ath9k(prefix))
 			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n", nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
 		else if (has_ht40(prefix))
 			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.ht40 + \"</option>\");\n", nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
-#else
-		websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n", nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
-#endif
 #if defined(HAVE_ATH10K)
 		if (has_ac(prefix) && has_5ghz(prefix) && nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)) {
 			websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.vht80 + \"</option>\");\n", nvram_matchi(wl_width, 80) ? "selected=\\\"selected\\\"" : "");
@@ -3184,10 +3162,7 @@ websWrite(wp, "//]]>\n</script>\n");
 websWrite(wp, "</select>\n");
 websWrite(wp, "</div>\n");
 #else
-#if defined(HAVE_ATH9K)
-if (!is_ath9k(prefix))
-#endif
-{
+if (!is_ath9k(prefix)) {
 	showRadio(wp, "wl_basic.diversity", wl_diversity);
 	websWrite(wp, "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_adv.label12)</script></div><select name=\"%s\" >\n", wl_txantenna);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
@@ -3269,7 +3244,6 @@ websWrite(wp, "<div class=\"setting\">\n");
 show_caption(wp, "label", "wl_adv.label7", NULL);
 websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,1,255,wl_adv.label7)\" value=\"%s\" />\n", dtim, nvram_default_get(dtim, "2"));
 websWrite(wp, "</div>\n");
-#ifdef HAVE_ATH9K
 if (has_airtime_fairness(prefix)) {
 	char wl_atf[16];
 	sprintf(wl_atf, "%s_atf", prefix);
@@ -3281,13 +3255,10 @@ if (is_ath9k(prefix) && !is_mvebu(prefix)) {
 	char *names[] = { "\" + share.disabled + \"", "LZO", "LZ4", "LZMA" };
 	showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 3 2", names, nvram_default_get(wl_fc, "0"));
 }
-#endif
 sprintf(wmm, "%s_wmm", prefix);
-#ifdef HAVE_ATH9K
 if (is_ath9k(prefix))
 	showRadioDefaultOn(wp, "wl_adv.label18", wmm);
 else
-#endif
 	showRadio(wp, "wl_adv.label18", wmm);
 #endif
 websWrite(wp, "<div class=\"setting\">\n");
@@ -3372,7 +3343,6 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 	} else {
 
 		show_channel(wp, prefix, prefix, 0);
-#if defined(HAVE_ATH9K)
 		if (is_ath9k(prefix)) {
 			if (nvram_matchi(wl_width, 40) || nvram_matchi(wl_width, 2040)) {
 				websWrite(wp, "<div class=\"setting\">\n");
@@ -3424,7 +3394,6 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 				websWrite(wp, "</div>\n");
 			}
 		}
-#endif
 	}
 
 	char wl_closed[16];
@@ -3511,16 +3480,11 @@ if (nvram_nmatch("ap", "%s_mode", prefix)
 	websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 256 \" + status_wireless.legend3 + \")\");\n//]]>\n</script></span>\n");
 	websWrite(wp, "</div>\n");
 }
-#ifdef HAVE_ATH9K
 if (!is_ath9k(var)) {
-#endif
 	sprintf(power, "%s_mtikie", prefix);
 	nvram_default_get(power, "0");
 	showRadio(wp, "wl_basic.mtikie", power);
-#ifdef HAVE_ATH9K
 }
-#endif
-#ifdef HAVE_ATH9K
 if (is_ath9k(prefix) && (nvram_nmatch("ap", "%s_mode", prefix) || nvram_nmatch("wdsap", "%s_mode", prefix))) {
 	char signal[32];
 	websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_adv.droplowsignal)</script></legend>");
@@ -3546,7 +3510,6 @@ if (is_ath9k(prefix) && (nvram_nmatch("ap", "%s_mode", prefix) || nvram_nmatch("
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "</fieldset>\n");
 }
-#endif
 
 showbridgesettings(wp, prefix, 1, 1);
 #elif HAVE_RT2880
@@ -3706,9 +3669,7 @@ if (!strcmp(prefix, "wl2"))
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	websWrite(wp, "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n", nvram_matchi(wl_width, 20) ? "selected=\\\"selected\\\"" : "");
 /* limit channel options by mode */
-#if defined(HAVE_ATH9K)
 	if (!is_ath9k(prefix) || has_ht40(prefix))
-#endif
 		if (is_ath9k(prefix)) {
 			if ((nvram_nmatch("n-only", "%s_net_mode", prefix)
 			     || nvram_nmatch("ng-only", "%s_net_mode", prefix)
@@ -3729,25 +3690,19 @@ if (!strcmp(prefix, "wl2"))
 		    || nvram_nmatch("n5-only", "%s_net_mode", prefix)
 		    || nvram_nmatch("ac-only", "%s_net_mode", prefix)
 		    || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)
-		    || nvram_nmatch("na-only", "%s_net_mode", prefix))))
-	{
-#if defined(HAVE_ATH9K)
+		    || nvram_nmatch("na-only", "%s_net_mode", prefix)))) {
 		if (!is_ath9k(prefix))
 			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n", nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
 		else if (has_ht40(prefix))
 			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.ht40 + \"</option>\");\n", nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
-#else
-		websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n", nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
-#endif
-#if defined(HAVE_ATH10K)
-		if (has_ac(prefix) && has_5ghz(prefix) && (nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix))) {
+		if ((is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix)) && has_5ghz(prefix)
+		    && (nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix))) {
 			websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.vht80 + \"</option>\");\n", nvram_matchi(wl_width, 80) ? "selected=\\\"selected\\\"" : "");
 			if (has_vht160(prefix))
 				websWrite(wp, "document.write(\"<option value=\\\"160\\\" %s >\" + share.vht160 + \"</option>\");\n", nvram_matchi(wl_width, 160) ? "selected=\\\"selected\\\"" : "");
 			if (has_vht80plus80(prefix))
 				websWrite(wp, "document.write(\"<option value=\\\"80+80\\\" %s >\" + share.vht80plus80 + \"</option>\");\n", nvram_match(wl_width, "80+80") ? "selected=\\\"selected\\\"" : "");
 		}
-#endif
 	}
 #if !defined(HAVE_BUFFALO)
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) && !defined(HAVE_MADIFI_MIMO)
@@ -3839,7 +3794,6 @@ if (!strcmp(prefix, "wl2"))
 		} else {
 
 			show_channel(wp, prefix, prefix, 0);
-#if defined(HAVE_ATH9K)
 			if (is_ath9k(prefix)) {
 				if (nvram_matchi(wl_width, 40) || nvram_matchi(wl_width, 2040)) {
 					websWrite(wp, "<div class=\"setting\">\n");
@@ -3891,7 +3845,6 @@ if (!strcmp(prefix, "wl2"))
 					websWrite(wp, "</div>\n");
 				}
 			}
-#endif
 		}
 	}
 	if (has_ac(prefix) && has_2ghz(prefix)) {
@@ -3950,7 +3903,6 @@ if (!strcmp(prefix, "wl2"))
 		  "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.if_info)</script></div><textarea name=\"%s\" cols=\"60\" rows=\"3\">%s</textarea></div>\n",
 		  wl_note, nvram_safe_get(wl_note));
 #endif
-#ifdef HAVE_ATH9K
 	if (is_ath9k(prefix)) {
 		if (isFXXN_PRO(prefix) == 1) {
 			char wl_cardtype[32];
@@ -3971,8 +3923,6 @@ if (!strcmp(prefix, "wl2"))
 			websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 		}
 	}
-#endif				//HAVE_ATH9K
-
 #ifdef HAVE_MADWIFI
 #ifndef HAVE_MAKSAT
 #ifndef HAVE_DDLINK
@@ -4081,18 +4031,12 @@ if (!strcmp(prefix, "wl2"))
 	if (!is_mvebu(prefix))
 #endif
 	{
-#if defined(HAVE_ATH9K)
 		if (is_ath9k(prefix)) {
 			showRadio(wp, "wl_basic.intmit", wl_intmit);
-		} else
-#endif
-		{
+		} else {
 			showAutoOption(wp, "wl_basic.intmit", wl_intmit);
 		}
-#if defined(HAVE_ATH9K)
-		if (!is_ath9k(prefix))
-#endif
-		{
+		if (!is_ath9k(prefix)) {
 			websWrite(wp, "<div class=\"setting\">\n");
 			show_caption(wp, "label", "wl_basic.noise_immunity", NULL);
 			websWrite(wp, "<select name=\"%s\">\n", wl_noise_immunity);
@@ -4114,20 +4058,14 @@ if (!strcmp(prefix, "wl2"))
 		show_rates(wp, prefix, 1);
 	}
 	showRadio(wp, "wl_basic.preamble", wl_preamble);
-#if defined(HAVE_ATH9K)
-	if (!is_ath9k(prefix))
-#endif
-	{
+	if (!is_ath9k(prefix)) {
 		showRadio(wp, "wl_basic.extrange", wl_xr);
 		showRadio(wp, "wl_basic.supergff", wl_ff);
 	}
-#ifdef HAVE_ATH9K
 	if (has_shortgi(prefix)) {
 		nvram_default_get(wl_shortgi, "1");
 		showRadio(wp, "wl_basic.shortgi", wl_shortgi);
 	}
-#endif
-#ifdef HAVE_ATH10K
 	if (has_subeamforming(prefix)) {
 		nvram_default_get(wl_subf, "0");
 		showRadio(wp, "wl_basic.subf", wl_subf);
@@ -4136,21 +4074,16 @@ if (!strcmp(prefix, "wl2"))
 		nvram_default_get(wl_mubf, "0");
 		showRadio(wp, "wl_basic.mubf", wl_mubf);
 	}
-#endif
 #ifndef HAVE_BUFFALO
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
-#ifdef HAVE_ATH9K
 	if (!is_ath9k(prefix)) {
-#endif
 		if (has_5ghz(prefix)) {
 			if (nvram_nmatch("1", "%s_regulatory", prefix)
 			    || !issuperchannel()) {
 				showRadio(wp, "wl_basic.outband", wl_outdoor);
 			}
 		}
-#ifdef HAVE_ATH9K
 	}
-#endif
 #endif
 #endif
 
@@ -4258,7 +4191,6 @@ if (!strcmp(prefix, "wl2"))
 	show_caption(wp, "label", "wl_adv.label7", NULL);
 	websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,1,255,wl_adv.label7)\" value=\"%s\" />\n", dtim, nvram_default_get(dtim, "2"));
 	websWrite(wp, "</div>\n");
-#ifdef HAVE_ATH9K
 	if (has_airtime_fairness(prefix)) {
 		char wl_atf[16];
 		sprintf(wl_atf, "%s_atf", prefix);
@@ -4270,16 +4202,12 @@ if (!strcmp(prefix, "wl2"))
 		char *names[] = { "\" + share.disabled + \"", "LZO", "LZ4", "LZMA" };
 		showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 3 2", names, nvram_default_get(wl_fc, "0"));
 	}
-#endif
-
 // wmm
 
 	sprintf(wmm, "%s_wmm", prefix);
-#ifdef HAVE_ATH9K
 	if (is_ath9k(prefix))
 		showRadioDefaultOn(wp, "wl_adv.label18", wmm);
 	else
-#endif
 		showRadio(wp, "wl_adv.label18", wmm);
 #endif
 // radar detection
@@ -4329,16 +4257,11 @@ if (!strcmp(prefix, "wl2"))
 		websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 256 \" + status_wireless.legend3 + \")\");\n//]]>\n</script></span>\n");
 		websWrite(wp, "</div>\n");
 	}
-#ifdef HAVE_ATH9K
 	if (!is_ath9k(prefix)) {
-#endif
 		sprintf(power, "%s_mtikie", prefix);
 		nvram_default_get(power, "0");
 		showRadio(wp, "wl_basic.mtikie", power);
-#ifdef HAVE_ATH9K
 	}
-#endif
-#ifdef HAVE_ATH9K
 	if (is_ath9k(prefix) && (nvram_nmatch("ap", "%s_mode", prefix) || nvram_nmatch("wdsap", "%s_mode", prefix))) {
 		char signal[32];
 		websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_adv.droplowsignal)</script></legend>");
@@ -4364,7 +4287,6 @@ if (!strcmp(prefix, "wl2"))
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "</fieldset>\n");
 	}
-#endif
 
 	showbridgesettings(wp, prefix, 1, 1);
 #elif HAVE_RT2880
