@@ -884,10 +884,7 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 #endif
 
 #ifdef HAVE_IAS
-#ifdef HAVE_ATH9K
 			if (!is_ath9k(prefix))
-// disabled -> not implemented for newer wireless drivers
-#endif
 				websWrite(wp, "<option value=\"radius\" %s>%s</option>\n", selmatch(var, "radius", "selected=\"selected\""), ias_enc_label("radius"));
 #else
 			websWrite(wp, "<option value=\"radius\" %s>RADIUS</option>\n", selmatch(var, "radius", "selected=\"selected\""));
@@ -1495,11 +1492,9 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wl_basic.label4", NULL);
-#ifdef HAVE_ATH9K
 		if (is_ath9k(prefix))
 			websWrite(wp, "<select name=\"%s\" rel=\"ath9k\" onfocus=\"check_action(this,0)\" onchange=\"setChannelProperties(this);\"><script type=\"text/javascript\">\n//<![CDATA[\n", wl_channel);
 		else
-#endif
 			websWrite(wp, "<select name=\"%s\" onfocus=\"check_action(this,0)\"><script type=\"text/javascript\">\n//<![CDATA[\n", wl_channel);
 #ifdef HAVE_MADWIFI
 		struct wifi_channels *chan;
@@ -1507,9 +1502,6 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 		char fr[32];
 		int gotchannels = 0;
 		int channelbw = 20;
-#if defined(HAVE_ATH9K)
-		if (is_ath9k(prefix)) {
-#ifdef HAVE_ATH9K
 			if (is_ath9k(prefix)) {
 				// temp must be replaced with the actual selected country
 				char regdomain[16];
@@ -1547,9 +1539,6 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				   0xff); */
 				gotchannels = 1;
 			}
-#endif
-		}
-#endif
 		if (!gotchannels) {
 			chan = list_channels(prefix);
 			if (chan == NULL)
@@ -2011,7 +2000,6 @@ static void show_netmode(webs_t wp, char *prefix)
 #endif
 
 #endif
-#if defined(HAVE_ATH9K)
 	if (is_ath9k(prefix)) {
 		if (has_2ghz(prefix)) {
 			websWrite(wp, "document.write(\"<option value=\\\"ng-only\\\" %s>\" + wl_basic.ng + \"</option>\");\n", nvram_match(wl_net_mode, "ng-only") ? "selected=\\\"selected\\\"" : "");
@@ -2021,17 +2009,14 @@ static void show_netmode(webs_t wp, char *prefix)
 			websWrite(wp, "document.write(\"<option value=\\\"na-only\\\" %s>\" + wl_basic.na + \"</option>\");\n", nvram_match(wl_net_mode, "na-only") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"n5-only\\\" %s>\" + wl_basic.n5 + \"</option>\");\n", nvram_match(wl_net_mode, "n5-only") ? "selected=\\\"selected\\\"" : "");
 		}
-#ifdef HAVE_ATH10K
-		if (has_ac(prefix) && has_5ghz(prefix)) {
+		if ((is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix)) && has_5ghz(prefix)) {
 			websWrite(wp, "document.write(\"<option value=\\\"acn-mixed\\\" %s>\" + wl_basic.acn + \"</option>\");\n", nvram_match(wl_net_mode, "acn-mixed") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"ac-only\\\" %s>\" + wl_basic.ac + \"</option>\");\n", nvram_match(wl_net_mode, "ac-only") ? "selected=\\\"selected\\\"" : "");
 		}
-#endif
 		if (has_ad(prefix)) {
 			websWrite(wp, "document.write(\"<option value=\\\"ad-only\\\" %s>\" + wl_basic.ad + \"</option>\");\n", nvram_match(wl_net_mode, "ad-only") ? "selected=\\\"selected\\\"" : "");
 		}
 	}
-#endif
 
 	websWrite(wp, "//]]>\n</script>\n");
 	websWrite(wp, "</select>\n");
@@ -2441,21 +2426,17 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		sprintf(wl_protmode, "%s_protmode", var);
 		showOptionsLabel(wp, "wl_basic.protmode", wl_protmode, "None CTS RTS/CTS", nvram_default_get(wl_protmode, "None"));
 		showrtssettings(wp, var);
-#ifdef HAVE_ATH9K
 		if (is_ath9k(prefix) && !is_mvebu(prefix)) {
 			char wl_fc[16];
 			sprintf(wl_fc, "%s_fc", var);
 			char *names[] = { "\" + share.disabled + \"", "LZO", "LZ4", "LZMA" };
 			showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 3 2", names, nvram_default_get(wl_fc, "0"));
 		}
-#endif
 
 		sprintf(wmm, "%s_wmm", var);
-#ifdef HAVE_ATH9K
 		if (is_ath9k(var))
 			showRadioDefaultOn(wp, "wl_adv.label18", wmm);
 		else
-#endif
 			showRadio(wp, "wl_adv.label18", wmm);
 #endif
 
@@ -2485,15 +2466,11 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 256 \" + share.user + \")\");\n//]]>\n</script></span>\n");
 			websWrite(wp, "</div>\n");
 		}
-#ifdef HAVE_ATH9K
 		if (!is_ath9k(var)) {
-#endif
 			sprintf(power, "%s_mtikie", var);
 			nvram_default_get(power, "0");
 			showRadio(wp, "wl_basic.mtikie", power);
-#ifdef HAVE_ATH9K
 		}
-#endif
 
 		char dtim[32];
 		sprintf(dtim, "%s_dtim", var);
@@ -2502,7 +2479,6 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,1,255,wl_adv.label7)\" value=\"%s\" />\n", dtim, nvram_default_get(dtim, "2"));
 		websWrite(wp, "</div>\n");
 
-#ifdef HAVE_ATH9K
 		if (is_ath9k(var) && (nvram_nmatch("ap", "%s_mode", var) || nvram_nmatch("wdsap", "%s_mode", var))) {
 			websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_adv.droplowsignal)</script></legend>");
 			char signal[32];
@@ -2532,7 +2508,6 @@ static int show_virtualssid(webs_t wp, char *prefix)
 
 			websWrite(wp, "</fieldset>\n");
 		}
-#endif
 
 #endif
 
@@ -2557,11 +2532,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #ifndef HAVE_GUESTPORT
 	websWrite(wp, "<div class=\"center\">\n");
 #ifdef HAVE_MADWIFI
-#ifndef HAVE_ATH9K
-	if (count < 8)
-#else
 	if ((!has_ad(prefix) && count < 8) || (is_ath9k(prefix) && !has_ad(prefix) && count < 16))
-#endif
 #elif HAVE_RT2880
 	if (count < 7)
 #else
@@ -2734,7 +2705,6 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	char power[16];
 #if !defined(HAVE_EASY_WIRELESS_CONFIG) || defined(HAVE_BCMMODERN)
 	// char maxpower[16];
-#ifdef HAVE_ATH9K
 	if (is_ath9k(prefix)) {
 		if (isFXXN_PRO(prefix) == 1) {
 			char wl_cardtype[32];
@@ -2755,7 +2725,6 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 		}
 	}
-#endif				//HAVE_ATH9K
 
 #ifdef HAVE_MADWIFI
 #ifndef HAVE_MAKSAT
@@ -3001,11 +2970,9 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	if (!is_mvebu(prefix))
 #endif
 	{
-#if defined(HAVE_ATH9K)
 		if (is_ath9k(prefix)) {
 			showRadio(wp, "wl_basic.intmit", wl_intmit);
 		} else
-#endif
 		{
 			showAutoOption(wp, "wl_basic.intmit", wl_intmit);
 		}
