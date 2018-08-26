@@ -896,12 +896,6 @@ ifeq ($(CONFIG_MADWIFI),y)
 CFLAGS +=  -DHAVE_MADWIFI -DHAVE_ROAMING 
 LDFLAGS +=  -L$(TOP)/wireless-tools -liw
 endif
-ifeq ($(CONFIG_MADWIFI_MIMO),y)
-CFLAGS +=  -DHAVE_MADWIFI_MIMO
-endif
-
-
-
 ifeq ($(CONFIG_SNMP),y)
 CFLAGS += -DHAVE_SNMP
 endif
