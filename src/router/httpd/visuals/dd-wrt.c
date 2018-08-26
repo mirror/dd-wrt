@@ -2672,6 +2672,26 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	char wl_macaddr[18];
 	char wl_ssid[16];
 	char frequencies[128];
+	char wl_outdoor[16];
+	char wl_diversity[16];
+	char wl_rxantenna[16];
+	char wl_txantenna[16];
+	char wl_width[16];
+	char wl_preamble[16];
+	char wl_xr[16];
+	char wl_comp[32];
+	char wl_ff[16];
+	char wmm[32];
+	char wl_isolate[32];
+	char wl_intmit[32];
+	char wl_noise_immunity[32];
+	char wl_ofdm_weak_det[32];
+	char wl_protmode[32];
+	char wl_doth[32];
+	char wl_csma[32];
+	char wl_shortgi[32];
+	char wl_subf[32];
+	char wl_mubf[32];
 	char *chipset = getWifiDeviceName(prefix);
 	sprintf(wl_mode, "%s_mode", prefix);
 	sprintf(wl_macaddr, "%s_hwaddr", prefix);
@@ -2926,26 +2946,6 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	// turbo options
 #ifdef HAVE_MADWIFI
 	// char wl_xchanmode[16];
-	char wl_outdoor[16];
-	char wl_diversity[16];
-	char wl_rxantenna[16];
-	char wl_txantenna[16];
-	char wl_width[16];
-	char wl_preamble[16];
-	char wl_xr[16];
-	char wl_comp[32];
-	char wl_ff[16];
-	char wmm[32];
-	char wl_isolate[32];
-	char wl_intmit[32];
-	char wl_noise_immunity[32];
-	char wl_ofdm_weak_det[32];
-	char wl_protmode[32];
-	char wl_doth[32];
-	char wl_csma[32];
-	char wl_shortgi[32];
-	char wl_subf[32];
-	char wl_mubf[32];
 	sprintf(wl_csma, "%s_csma", prefix);
 	sprintf(wl_doth, "%s_doth", prefix);
 	sprintf(wl_protmode, "%s_protmode", prefix);
@@ -3003,13 +3003,10 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	showRadio(wp, "wl_basic.csma", wl_csma);
 #endif
 	// showOption (wp, "wl_basic.extchannel", wl_xchanmode);
-#ifdef HAVE_ATH9K
 	if (has_shortgi(prefix)) {
 		nvram_default_get(wl_shortgi, "1");
 		showRadio(wp, "wl_basic.shortgi", wl_shortgi);
 	}
-#endif
-#ifdef HAVE_ATH10K
 	if (has_subeamforming(prefix)) {
 		nvram_default_get(wl_subf, "0");
 		showRadio(wp, "wl_basic.subf", wl_subf);
@@ -3018,7 +3015,6 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		nvram_default_get(wl_mubf, "0");
 		showRadio(wp, "wl_basic.mubf", wl_mubf);
 	}
-#endif
 #ifndef HAVE_BUFFALO
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
 	if (!is_ath9k(var)) {
@@ -3029,9 +3025,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 				showRadio(wp, "wl_basic.outband", wl_outdoor);
 			}
 		}
-#ifdef HAVE_ATH9K
 	}
-#endif
 #endif
 #endif
 	websWrite(wp,
