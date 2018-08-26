@@ -200,6 +200,7 @@ include rules/microcom.mk
 include rules/nvtlstatus.mk
 include rules/ctorrent.mk
 include rules/milkfish.mk
+include rules/slang.mk
 include rules/mc.mk
 include rules/readline.mk
 include rules/quagga.mk
