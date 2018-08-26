@@ -115,6 +115,42 @@ struct wifi_channels {
 	unsigned int no_outdoor:1, no_indoor:1, no_ofdm:1, no_cck:1, ptp_only:1, ptmp_only:1, passive_scan:1, no_ibss:1, lll:1, llu:1, lul:1, luu:1, ull:1, ulu:1, uul:1, uuu:1, ht40:1, vht80:1, vht160:1, dfs:1;
 };
 
+struct wifi_client_info {
+	char ifname[20];
+	char is_wds;
+	char mac[18];
+	uint32_t uptime;
+	uint16_t txrate;
+	uint32_t rxrate;
+	int8_t signal;
+	int8_t signal_avg;
+	uint32_t noise;
+	uint32_t snr;
+	int8_t mcs;
+	int8_t rx_mcs;
+	unsigned int is_40mhz:1, is_80mhz:1, is_160mhz:1, is_80p80mhz:1, is_ht:1, is_vht:1, is_short_gi:1, rx_is_40mhz:1, rx_is_80mhz:1, rx_is_160mhz:1, rx_is_80p80mhz:1, rx_is_ht:1, rx_is_vht:1, rx_is_short_gi:1,
+	    ht40intol:1, islzo:1;
+	uint32_t inactive_time;
+	uint32_t rx_packets;
+	uint32_t tx_packets;
+	uint32_t rx_compressed;
+	uint32_t tx_compressed;
+	uint32_t rx_bytes;
+	uint32_t tx_bytes;
+	struct wifi_client_info *next;
+};
+
+struct mac80211_info {
+	struct wifi_client_info *wci;
+	int8_t noise;
+	unsigned long long channel_active_time;
+	unsigned long long channel_busy_time;
+	unsigned long long channel_receive_time;
+	unsigned long long channel_transmit_time;
+	unsigned long long extension_channel_busy_time;
+	uint32_t frequency;
+};
+
 void mac80211_lock(void);
 void mac80211_unlock(void);
 struct mac80211_info *getcurrentsurvey_mac80211(char *interface, struct mac80211_info *mac80211_info);
@@ -271,42 +307,6 @@ extern int mac80211_check_valid_frequency(char *interface, char *country, int fr
 extern int getFrequency_mac80211(char *interface);
 extern int mac80211_get_phyidx_by_vifname(char *vif);
 
-
-struct mac80211_info {
-	struct wifi_client_info *wci;
-	int8_t noise;
-	unsigned long long channel_active_time;
-	unsigned long long channel_busy_time;
-	unsigned long long channel_receive_time;
-	unsigned long long channel_transmit_time;
-	unsigned long long extension_channel_busy_time;
-	uint32_t frequency;
-};
-
-struct wifi_client_info {
-	char ifname[20];
-	char is_wds;
-	char mac[18];
-	uint32_t uptime;
-	uint16_t txrate;
-	uint32_t rxrate;
-	int8_t signal;
-	int8_t signal_avg;
-	uint32_t noise;
-	uint32_t snr;
-	int8_t mcs;
-	int8_t rx_mcs;
-	unsigned int is_40mhz:1, is_80mhz:1, is_160mhz:1, is_80p80mhz:1, is_ht:1, is_vht:1, is_short_gi:1, rx_is_40mhz:1, rx_is_80mhz:1, rx_is_160mhz:1, rx_is_80p80mhz:1, rx_is_ht:1, rx_is_vht:1, rx_is_short_gi:1,
-	    ht40intol:1, islzo:1;
-	uint32_t inactive_time;
-	uint32_t rx_packets;
-	uint32_t tx_packets;
-	uint32_t rx_compressed;
-	uint32_t tx_compressed;
-	uint32_t rx_bytes;
-	uint32_t tx_bytes;
-	struct wifi_client_info *next;
-};
 
 struct mac80211_ac {
 	int freq;
