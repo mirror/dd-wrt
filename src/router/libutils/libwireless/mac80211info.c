@@ -677,10 +677,8 @@ struct mac80211_info *mac80211_assoclist(char *interface)
 		msg = unl_genl_msg(&unl, NL80211_CMD_GET_STATION, true);
 		NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, if_nametoindex(ifname + 1));
 		data.iftype = 0;
-#ifdef HAVE_ATH10K
 		if (is_ath10k(ifname + 1))
 			data.iftype = 1;
-#endif
 		unl_genl_request(&unl, msg, mac80211_cb_stations, &data);
 	}
 	// print_wifi_clients(mac80211_info->wci);
