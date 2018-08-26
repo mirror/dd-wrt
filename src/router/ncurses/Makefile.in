@@ -1,6 +1,6 @@
-# $Id: Makefile.in,v 1.30 2010/11/27 21:45:27 tom Exp $
+# $Id: Makefile.in,v 1.40 2015/08/05 23:15:41 tom Exp $
 ##############################################################################
-# Copyright (c) 1998-2008,2010 Free Software Foundation, Inc.                #
+# Copyright (c) 1998-2014,2015 Free Software Foundation, Inc.                #
 #                                                                            #
 # Permission is hereby granted, free of charge, to any person obtaining a    #
 # copy of this software and associated documentation files (the "Software"), #
@@ -27,15 +27,16 @@
 # authorization.                                                             #
 ##############################################################################
 #
-# Author: Thomas E. Dickey <dickey@clark.net> 1996,1997
+# Author: Thomas E. Dickey		1996-on
 #
 # Master Makefile for ncurses library.
 
-SHELL = /bin/sh
+SHELL 		= @SHELL@
 VPATH		= @srcdir@
 
 DESTDIR=@DESTDIR@
-CF_MFLAGS = @cf_cv_makeflags@ DESTDIR="$(DESTDIR)"
+RPATH_LIST=@RPATH_LIST@
+TOP_MFLAGS = @cf_cv_makeflags@ DESTDIR="$(DESTDIR)" RPATH_LIST="$(RPATH_LIST)"
 
 @SET_MAKE@
 
@@ -48,12 +49,17 @@ srcdir		= @srcdir@
 
 prefix		= @prefix@
 exec_prefix	= @exec_prefix@
+datarootdir	= @datarootdir@
 
 bindir		= @bindir@
 ticdir		= @TERMINFO@
 includedir	= @includedir@
+includesubdir	= @includesubdir@
 libdir		= @libdir@
 mandir		= @mandir@
+pkgdir		= @PKG_CONFIG_LIBDIR@
+
+include_dir	= ${includedir}${includesubdir}
 
 INSTALL		= @INSTALL@
 INSTALL_DATA	= @INSTALL_DATA@
@@ -69,30 +75,28 @@ preinstall :
 	@ echo ''
 	@ echo '** Configuration summary for NCURSES $(NCURSES_MAJOR).$(NCURSES_MINOR) $(NCURSES_PATCH):'
 	@ echo ''
-	@ echo '     extended funcs: '`test @NCURSES_EXT_FUNCS@ != 0 && echo yes || echo no`
-	@ echo '     xterm terminfo: '@WHICH_XTERM@
+	@ echo '       extended funcs: '`test @NCURSES_EXT_FUNCS@ != 0 && echo yes || echo no`
+	@ echo '       xterm terminfo: '@WHICH_XTERM@
 	@ echo ''
-	@ echo '      bin directory: '$(bindir)
-	@ echo '      lib directory: '$(libdir)
-	@ echo '  include directory: '$(includedir)
-	@ echo '      man directory: '$(mandir)
-@MAKE_TERMINFO@	@ echo ' terminfo directory: '$(ticdir)
+	@ echo '        bin directory: '$(bindir)
+	@ echo '        lib directory: '$(libdir)
+	@ echo '    include directory: '$(include_dir)
+	@ echo '        man directory: '$(mandir)
+@MAKE_TERMINFO@	@ echo '   terminfo directory: '$(ticdir)
+@MAKE_PC_FILES@	@ echo ' pkg-config directory: '$(pkgdir)
 	@ echo ''
-	@ test "$(includedir)" = "$(prefix)/include" || \
+	@ test "$(include_dir)" = "$(prefix)/include" || \
 		echo '** Include-directory is not in a standard location'
-	@ test ! -f $(includedir)/termcap.h || \
-		fgrep NCURSES_VERSION $(includedir)/termcap.h >/dev/null || \
+	@ test ! -f $(include_dir)/termcap.h || \
+		fgrep NCURSES_VERSION $(include_dir)/termcap.h >/dev/null || \
 		echo '** Will overwrite non-ncurses termcap.h'
-	@ test ! -f $(includedir)/curses.h || \
-		fgrep NCURSES_VERSION $(includedir)/curses.h >/dev/null || \
+	@ test ! -f $(include_dir)/curses.h || \
+		fgrep NCURSES_VERSION $(include_dir)/curses.h >/dev/null || \
 		echo '** Will overwrite non-ncurses curses.h'
-
-dlls:	libs
-	$(SHELL) $(srcdir)/mk-dlls.sh
 
 distclean \
 realclean ::
-	-rm -f mk-dlls.sh mingw_arch
+
 
 # Put the common rules here so that we can easily construct the list of
 # directories to visit.

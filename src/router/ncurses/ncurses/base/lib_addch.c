@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2009,2010 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2016,2017 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -36,7 +36,7 @@
 #include <curses.priv.h>
 #include <ctype.h>
 
-MODULE_ID("$Id: lib_addch.c,v 1.124 2010/04/24 22:41:05 tom Exp $")
+MODULE_ID("$Id: lib_addch.c,v 1.131 2017/07/29 20:42:02 tom Exp $")
 
 static const NCURSES_CH_T blankchar = NewChar(BLANK_TEXT);
 
@@ -51,7 +51,7 @@ static const NCURSES_CH_T blankchar = NewChar(BLANK_TEXT);
  */
 
 /* Return bit mask for clearing color pair number if given ch has color */
-#define COLOR_MASK(ch) (~(attr_t)((ch) & A_COLOR ? A_COLOR : 0))
+#define COLOR_MASK(ch) (~(attr_t)(((ch) & A_COLOR) ? A_COLOR : 0))
 
 static NCURSES_INLINE NCURSES_CH_T
 render_char(WINDOW *win, NCURSES_CH_T ch)
@@ -117,14 +117,18 @@ _nc_render(WINDOW *win, NCURSES_CH_T ch)
 #endif
 
 static bool
-newline_forces_scroll(WINDOW *win, NCURSES_SIZE_T * ypos)
+newline_forces_scroll(WINDOW *win, NCURSES_SIZE_T *ypos)
 {
     bool result = FALSE;
 
-    if (*ypos >= win->_regtop && *ypos == win->_regbottom) {
-	*ypos = win->_regbottom;
-	result = TRUE;
-    } else {
+    if (*ypos >= win->_regtop && *ypos <= win->_regbottom) {
+	if (*ypos == win->_regbottom) {
+	    *ypos = win->_regbottom;
+	    result = TRUE;
+	} else {
+	    *ypos = (NCURSES_SIZE_T) (*ypos + 1);
+	}
+    } else if (*ypos < win->_maxy) {
 	*ypos = (NCURSES_SIZE_T) (*ypos + 1);
     }
     return result;
@@ -209,7 +213,8 @@ _nc_build_wch(WINDOW *win, ARG_CH_T ch)
     buffer[WINDOW_EXT(win, addch_used)] = '\0';
     if ((len = (int) mbrtowc(&result,
 			     buffer,
-			     WINDOW_EXT(win, addch_used), &state)) > 0) {
+			     (size_t) WINDOW_EXT(win, addch_used),
+			     &state)) > 0) {
 	attr_t attrs = AttrOf(CHDEREF(ch));
 	if_EXT_COLORS(int pair = GetPair(CHDEREF(ch)));
 	SetChar(CHDEREF(ch), result, attrs);
@@ -269,11 +274,11 @@ waddch_literal(WINDOW *win, NCURSES_CH_T ch)
 
 		/* handle EILSEQ (i.e., when len >= -1) */
 		if (len == -1 && is8bits(CharOf(ch))) {
-		    int rc = OK;
 		    const char *s = NCURSES_SP_NAME(unctrl)
 		      (NCURSES_SP_ARGx (chtype) CharOf(ch));
 
 		    if (s[1] != '\0') {
+			int rc = OK;
 			while (*s != '\0') {
 			    rc = waddch(win, UChar(*s) | attr);
 			    if (rc != OK)
@@ -411,10 +416,12 @@ waddch_nosync(WINDOW *win, const NCURSES_CH_T ch)
 #endif
     const char *s = NCURSES_SP_NAME(unctrl) (NCURSES_SP_ARGx t);
     int tabsize = 8;
+
     /*
      * If we are using the alternate character set, forget about locale.
      * Otherwise, if unctrl() returns a single-character or the locale
-     * claims the code is printable, treat it that way.
+     * claims the code is printable (and not also a control character),
+     * treat it that way.
      */
     if ((AttrOf(ch) & A_ALTCHARSET)
 	|| (
@@ -424,14 +431,15 @@ waddch_nosync(WINDOW *win, const NCURSES_CH_T ch)
 	       s[1] == 0
 	)
 	|| (
-	       isprint(t)
+	       (isprint((int) t) && !iscntrl((int) t))
 #if USE_WIDEC_SUPPORT
 	       || ((sp == 0 || !sp->_legacy_coding) &&
 		   (WINDOW_EXT(win, addch_used)
 		    || !_nc_is_charable(CharOf(ch))))
 #endif
-	))
+	)) {
 	return waddch_literal(win, ch);
+    }
 
     /*
      * Handle carriage control and other codes that are not printable, or are
@@ -497,7 +505,7 @@ waddch_nosync(WINDOW *win, const NCURSES_CH_T ch)
     default:
 	while (*s) {
 	    NCURSES_CH_T sch;
-	    SetChar(sch, *s++, AttrOf(ch));
+	    SetChar(sch, UChar(*s++), AttrOf(ch));
 	    if_EXT_COLORS(SetPair(sch, GetPair(ch)));
 	    if (waddch_literal(win, sch) == ERR)
 		return ERR;

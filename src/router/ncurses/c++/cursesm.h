@@ -1,6 +1,6 @@
 // * This makes emacs happy -*-Mode: C++;-*-
 /****************************************************************************
- * Copyright (c) 1998-2003,2005 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2012,2014 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -31,7 +31,7 @@
  *   Author: Juergen Pfeifer, 1997                                          *
  ****************************************************************************/
 
-// $Id: cursesm.h,v 1.25 2005/08/13 18:10:36 tom Exp $
+// $Id: cursesm.h,v 1.30 2014/08/09 22:06:18 Adam.Jiang Exp $
 
 #ifndef NCURSES_CURSESM_H_incl
 #define NCURSES_CURSESM_H_incl 1
@@ -53,7 +53,7 @@ class NCURSES_IMPEXP NCursesMenuItem
 protected:
   ITEM *item;
 
-  inline void OnError (int err) const THROWS(NCursesMenuException) {
+  inline void OnError (int err) const THROW2(NCursesException const, NCursesMenuException) {
     if (err != E_OK)
       THROW(new NCursesMenuException (err));
   }
@@ -82,6 +82,7 @@ public:
   NCursesMenuItem(const NCursesMenuItem& rhs)
     : item(0)
   {
+    (void) rhs;
   }
 
   virtual ~NCursesMenuItem ();
@@ -252,7 +253,7 @@ protected:
 		 bool with_frame,
 		 bool autoDeleteItems);
 
-  inline void OnError (int err) const THROWS(NCursesMenuException) {
+  inline void OnError (int err) const THROW2(NCursesException const, NCursesMenuException) {
     if (err != E_OK)
       THROW(new NCursesMenuException (this, err));
   }
@@ -631,20 +632,20 @@ protected:
 		   const T* p_UserData = STATIC_CAST(T*)(0))
     : NCursesMenu(nlines,ncols,begin_y,begin_x) {
       if (menu)
-	set_user (const_cast<void *>(p_UserData));
+	set_user (const_cast<void *>(reinterpret_cast<const void*>(p_UserData)));
   }
 
 public:
-  NCursesUserMenu (NCursesMenuItem Items[],
+  NCursesUserMenu (NCursesMenuItem* Items[],
 		   const T* p_UserData = STATIC_CAST(T*)(0),
 		   bool with_frame=FALSE,
 		   bool autoDelete_Items=FALSE)
     : NCursesMenu (Items, with_frame, autoDelete_Items) {
       if (menu)
-	set_user (const_cast<void *>(p_UserData));
+	set_user (const_cast<void *>(reinterpret_cast<const void*>(p_UserData)));
   };
 
-  NCursesUserMenu (NCursesMenuItem Items[],
+  NCursesUserMenu (NCursesMenuItem* Items[],
 		   int nlines,
 		   int ncols,
 		   int begin_y = 0,
@@ -653,19 +654,19 @@ public:
 		   bool with_frame=FALSE)
     : NCursesMenu (Items, nlines, ncols, begin_y, begin_x, with_frame) {
       if (menu)
-	set_user (const_cast<void *>(p_UserData));
+	set_user (const_cast<void *>(reinterpret_cast<const void*>(p_UserData)));
   };
 
   virtual ~NCursesUserMenu() {
   };
 
-  inline T* UserData (void) const {
+  inline T* UserData (void) {
     return reinterpret_cast<T*>(get_user ());
   };
 
   inline virtual void setUserData (const T* p_UserData) {
     if (menu)
-      set_user (const_cast<void *>(p_UserData));
+      set_user (const_cast<void *>(reinterpret_cast<const void*>(p_UserData)));
   }
 };
 

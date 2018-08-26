@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2010,2011 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2016,2017 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -37,21 +37,18 @@
  * Terminal setup routines common to termcap and terminfo:
  *
  *		use_env(bool)
+ *		use_tioctl(bool)
  *		setupterm(char *, int, int *)
  */
 
 #include <curses.priv.h>
 #include <tic.h>		/* for MAX_NAME_SIZE */
 
-#if SVR4_TERMIO && !defined(_POSIX_SOURCE)
-#define _POSIX_SOURCE
-#endif
-
 #if HAVE_LOCALE_H
 #include <locale.h>
 #endif
 
-MODULE_ID("$Id: lib_setup.c,v 1.135 2011/02/06 01:04:21 tom Exp $")
+MODULE_ID("$Id: lib_setup.c,v 1.188 2017/07/01 18:24:50 tom Exp $")
 
 /****************************************************************************
  *
@@ -101,7 +98,7 @@ MODULE_ID("$Id: lib_setup.c,v 1.135 2011/02/06 01:04:21 tom Exp $")
  * Reduce explicit use of "cur_term" global variable.
  */
 #undef CUR
-#define CUR termp->type.
+#define CUR TerminalType(termp).
 
 /*
  * Wrap global variables in this module.
@@ -118,12 +115,12 @@ NCURSES_PUBLIC_VAR(ttytype) (void)
     if (CURRENT_SCREEN) {
 	TERMINAL *termp = TerminalOf(CURRENT_SCREEN);
 	if (termp != 0) {
-	    result = termp->type.term_names;
+	    result = TerminalType(termp).term_names;
 	}
     }
 #else
     if (cur_term != 0) {
-	result = cur_term->type.term_names;
+	result = TerminalType(cur_term).term_names;
     }
 #endif
     return result;
@@ -223,6 +220,7 @@ _nc_handle_sigwinch(SCREEN *sp)
 NCURSES_EXPORT(void)
 NCURSES_SP_NAME(use_env) (NCURSES_SP_DCLx bool f)
 {
+    START_TRACE();
     T((T_CALLED("use_env(%p,%d)"), (void *) SP_PARM, (int) f));
 #if NCURSES_SP_FUNCS
     if (IsPreScreen(SP_PARM)) {
@@ -234,12 +232,37 @@ NCURSES_SP_NAME(use_env) (NCURSES_SP_DCLx bool f)
     returnVoid;
 }
 
+NCURSES_EXPORT(void)
+NCURSES_SP_NAME(use_tioctl) (NCURSES_SP_DCLx bool f)
+{
+    START_TRACE();
+    T((T_CALLED("use_tioctl(%p,%d)"), (void *) SP_PARM, (int) f));
+#if NCURSES_SP_FUNCS
+    if (IsPreScreen(SP_PARM)) {
+	SP_PARM->use_tioctl = f;
+    }
+#else
+    _nc_prescreen.use_tioctl = f;
+#endif
+    returnVoid;
+}
+
 #if NCURSES_SP_FUNCS
 NCURSES_EXPORT(void)
 use_env(bool f)
 {
+    START_TRACE();
     T((T_CALLED("use_env(%d)"), (int) f));
     _nc_prescreen.use_env = f;
+    returnVoid;
+}
+
+NCURSES_EXPORT(void)
+use_tioctl(bool f)
+{
+    START_TRACE();
+    T((T_CALLED("use_tioctl(%d)"), (int) f));
+    _nc_prescreen.use_tioctl = f;
     returnVoid;
 }
 #endif
@@ -247,7 +270,7 @@ use_env(bool f)
 NCURSES_EXPORT(void)
 _nc_get_screensize(SCREEN *sp,
 #ifdef USE_TERM_DRIVER
-		   TERMINAL * termp,
+		   TERMINAL *termp,
 #endif
 		   int *linep, int *colp)
 /* Obtain lines/columns values from the environment and/or terminfo entry */
@@ -260,7 +283,7 @@ _nc_get_screensize(SCREEN *sp,
     TCB = (TERMINAL_CONTROL_BLOCK *) termp;
 
     my_tabsize = TCB->info.tabsize;
-    TCB->drv->size(TCB, linep, colp);
+    TCB->drv->td_size(TCB, linep, colp);
 
 #if USE_REENTRANT
     if (sp != 0) {
@@ -274,6 +297,8 @@ _nc_get_screensize(SCREEN *sp,
 #else /* !USE_TERM_DRIVER */
     TERMINAL *termp = cur_term;
     int my_tabsize;
+    bool useEnv = _nc_prescreen.use_env;
+    bool useTioctl = _nc_prescreen.use_tioctl;
 
     /* figure out the size of the screen */
     T(("screen size: terminfo lines = %d columns = %d", lines, columns));
@@ -281,22 +306,29 @@ _nc_get_screensize(SCREEN *sp,
     *linep = (int) lines;
     *colp = (int) columns;
 
-    if (_nc_prescreen.use_env) {
-	int value;
+#if NCURSES_SP_FUNCS
+    if (sp) {
+	useEnv = sp->_use_env;
+	useTioctl = sp->use_tioctl;
+    }
+#endif
 
+    if (useEnv || useTioctl) {
 #ifdef __EMX__
 	{
 	    int screendata[2];
 	    _scrsize(screendata);
 	    *colp = screendata[0];
-	    *linep = screendata[1];
+	    *linep = ((sp != 0 && sp->_filtered)
+		      ? 1
+		      : screendata[1]);
 	    T(("EMX screen size: environment LINES = %d COLUMNS = %d",
 	       *linep, *colp));
 	}
 #endif
 #if HAVE_SIZECHANGE
 	/* try asking the OS */
-	if (isatty(cur_term->Filedes)) {
+	if (NC_ISATTY(cur_term->Filedes)) {
 	    STRUCT_WINSIZE size;
 
 	    errno = 0;
@@ -315,19 +347,35 @@ _nc_get_screensize(SCREEN *sp,
 	}
 #endif /* HAVE_SIZECHANGE */
 
-	/*
-	 * Finally, look for environment variables.
-	 *
-	 * Solaris lets users override either dimension with an environment
-	 * variable.
-	 */
-	if ((value = _nc_getenv_num("LINES")) > 0) {
-	    *linep = value;
-	    T(("screen size: environment LINES = %d", *linep));
-	}
-	if ((value = _nc_getenv_num("COLUMNS")) > 0) {
-	    *colp = value;
-	    T(("screen size: environment COLUMNS = %d", *colp));
+	if (useEnv) {
+	    int value;
+
+	    if (useTioctl) {
+		/*
+		 * If environment variables are used, update them.
+		 */
+		if ((sp == 0 || !sp->_filtered) && _nc_getenv_num("LINES") > 0) {
+		    _nc_setenv_num("LINES", *linep);
+		}
+		if (_nc_getenv_num("COLUMNS") > 0) {
+		    _nc_setenv_num("COLUMNS", *colp);
+		}
+	    }
+
+	    /*
+	     * Finally, look for environment variables.
+	     *
+	     * Solaris lets users override either dimension with an environment
+	     * variable.
+	     */
+	    if ((value = _nc_getenv_num("LINES")) > 0) {
+		*linep = value;
+		T(("screen size: environment LINES = %d", *linep));
+	    }
+	    if ((value = _nc_getenv_num("COLUMNS")) > 0) {
+		*colp = value;
+		T(("screen size: environment COLUMNS = %d", *colp));
+	    }
 	}
 
 	/* if we can't get dynamic info about the size, use static */
@@ -350,8 +398,14 @@ _nc_get_screensize(SCREEN *sp,
 	 * Put the derived values back in the screen-size caps, so
 	 * tigetnum() and tgetnum() will do the right thing.
 	 */
-	lines = (short) (*linep);
-	columns = (short) (*colp);
+	lines = (NCURSES_INT2) (*linep);
+	columns = (NCURSES_INT2) (*colp);
+#if NCURSES_EXT_NUMBERS
+#define OldNumber(termp,name) \
+	(termp)->type.Numbers[(&name - (termp)->type2.Numbers)]
+	OldNumber(termp, lines) = (short) (*linep);
+	OldNumber(termp, columns) = (short) (*colp);
+#endif
     }
 
     T(("screen size is %dx%d", *linep, *colp));
@@ -384,7 +438,7 @@ _nc_update_screensize(SCREEN *sp)
 
     assert(sp != 0);
 
-    CallDriver_2(sp, getsize, &old_lines, &old_cols);
+    CallDriver_2(sp, td_getsize, &old_lines, &old_cols);
 
 #else
     TERMINAL *termp = cur_term;
@@ -399,10 +453,12 @@ _nc_update_screensize(SCREEN *sp)
      * We're doing it this way because those functions belong to the upper
      * ncurses library, while this resides in the lower terminfo library.
      */
-    if (sp != 0
-	&& sp->_resize != 0) {
-	if ((new_lines != old_lines) || (new_cols != old_cols))
+    if (sp != 0 && sp->_resize != 0) {
+	if ((new_lines != old_lines) || (new_cols != old_cols)) {
 	    sp->_resize(NCURSES_SP_ARGx new_lines, new_cols);
+	} else if (sp->_sig_winch && (sp->_ungetch != 0)) {
+	    sp->_ungetch(SP_PARM, KEY_RESIZE);	/* so application can know this */
+	}
 	sp->_sig_winch = FALSE;
     }
 }
@@ -414,32 +470,16 @@ _nc_update_screensize(SCREEN *sp)
  *
  ****************************************************************************/
 
-#define ret_error(code, fmt, arg)	if (errret) {\
-					    *errret = code;\
-					    returnCode(ERR);\
-					} else {\
-					    fprintf(stderr, fmt, arg);\
-					    exit(EXIT_FAILURE);\
-					}
-
-#define ret_error0(code, msg)		if (errret) {\
-					    *errret = code;\
-					    returnCode(ERR);\
-					} else {\
-					    fprintf(stderr, msg);\
-					    exit(EXIT_FAILURE);\
-					}
-
-#if USE_DATABASE || USE_TERMCAP
+#if NCURSES_USE_DATABASE || NCURSES_USE_TERMCAP
 /*
  * Return 1 if entry found, 0 if not found, -1 if database not accessible,
  * just like tgetent().
  */
 int
-_nc_setup_tinfo(const char *const tn, TERMTYPE *const tp)
+_nc_setup_tinfo(const char *const tn, TERMTYPE2 *const tp)
 {
     char filename[PATH_MAX];
-    int status = _nc_read_entry(tn, filename, tp);
+    int status = _nc_read_entry2(tn, filename, tp);
 
     /*
      * If we have an entry, force all of the cancelled strings to null
@@ -467,10 +507,8 @@ _nc_setup_tinfo(const char *const tn, TERMTYPE *const tp)
 **	and substitute it in for the prototype given in 'command_character'.
 */
 void
-_nc_tinfo_cmdch(TERMINAL * termp, char proto)
+_nc_tinfo_cmdch(TERMINAL *termp, int proto)
 {
-    unsigned i;
-    char CC;
     char *tmp;
 
     /*
@@ -479,10 +517,12 @@ _nc_tinfo_cmdch(TERMINAL * termp, char proto)
      * name as an environment variable - using the same symbol.
      */
     if ((tmp = getenv("CC")) != 0 && strlen(tmp) == 1) {
-	CC = *tmp;
+	unsigned i;
+	char CC = *tmp;
+
 	for_each_string(i, &(termp->type)) {
-	    for (tmp = termp->type.Strings[i]; *tmp; tmp++) {
-		if (*tmp == proto)
+	    for (tmp = termp->type.Strings[i]; tmp && *tmp; tmp++) {
+		if (UChar(*tmp) == proto)
 		    *tmp = CC;
 	    }
 	}
@@ -520,7 +560,9 @@ NCURSES_EXPORT(int)
 _nc_unicode_locale(void)
 {
     int result = 0;
-#if HAVE_LANGINFO_CODESET
+#if defined(__MINGW32__) && USE_WIDEC_SUPPORT
+    result = 1;
+#elif HAVE_LANGINFO_CODESET
     char *env = nl_langinfo(CODESET);
     result = !strcmp(env, "UTF-8");
     T(("_nc_unicode_locale(%s) ->%d", env, result));
@@ -544,14 +586,15 @@ _nc_unicode_locale(void)
  * character set.
  */
 NCURSES_EXPORT(int)
-_nc_locale_breaks_acs(TERMINAL * termp)
+_nc_locale_breaks_acs(TERMINAL *termp)
 {
     const char *env_name = "NCURSES_NO_UTF8_ACS";
-    char *env;
+    const char *env;
     int value;
     int result = 0;
 
-    if ((env = getenv(env_name)) != 0) {
+    T((T_CALLED("_nc_locale_breaks_acs:%d"), result));
+    if (getenv(env_name) != 0) {
 	result = _nc_getenv_num(env_name);
     } else if ((value = tigetnum("U8")) >= 0) {
 	result = value;		/* use extension feature */
@@ -570,20 +613,18 @@ _nc_locale_breaks_acs(TERMINAL * termp)
 	    }
 	}
     }
-    return result;
+    returnCode(result);
 }
 
 NCURSES_EXPORT(int)
-TINFO_SETUP_TERM(TERMINAL ** tp,
+TINFO_SETUP_TERM(TERMINAL **tp,
 		 NCURSES_CONST char *tname,
 		 int Filedes,
 		 int *errret,
-		 bool reuse)
+		 int reuse)
 {
 #ifdef USE_TERM_DRIVER
     TERMINAL_CONTROL_BLOCK *TCB = 0;
-#else
-    int status;
 #endif
     TERMINAL *termp;
     SCREEN *sp = 0;
@@ -608,7 +649,11 @@ TINFO_SETUP_TERM(TERMINAL ** tp,
     if (tname == 0) {
 	tname = getenv("TERM");
 	if (tname == 0 || *tname == '\0') {
+#ifdef USE_TERM_DRIVER
+	    tname = "unknown";
+#else
 	    ret_error0(TGETENT_ERR, "TERM environment variable not set.\n");
+#endif
 	}
     }
 
@@ -624,7 +669,7 @@ TINFO_SETUP_TERM(TERMINAL ** tp,
      * Allow output redirection.  This is what SVr3 does.  If stdout is
      * directed to a file, screen updates go to standard error.
      */
-    if (Filedes == STDOUT_FILENO && !isatty(Filedes))
+    if (Filedes == STDOUT_FILENO && !NC_ISATTY(Filedes))
 	Filedes = STDERR_FILENO;
 
     /*
@@ -648,13 +693,21 @@ TINFO_SETUP_TERM(TERMINAL ** tp,
 	&& termp->Filedes == Filedes
 	&& termp->_termname != 0
 	&& !strcmp(termp->_termname, tname)
-	&& _nc_name_match(termp->type.term_names, tname, "|")) {
+	&& _nc_name_match(TerminalType(termp).term_names, tname, "|")) {
 	T(("reusing existing terminal information and mode-settings"));
 	code = OK;
+#ifdef USE_TERM_DRIVER
+	TCB = (TERMINAL_CONTROL_BLOCK *) termp;
+#endif
     } else {
 #ifdef USE_TERM_DRIVER
-	termp = (TERMINAL *) typeCalloc(TERMINAL_CONTROL_BLOCK, 1);
+	TERMINAL_CONTROL_BLOCK *my_tcb;
+	termp = 0;
+	if ((my_tcb = typeCalloc(TERMINAL_CONTROL_BLOCK, 1)) != 0)
+	    termp = &(my_tcb->term);
 #else
+	int status;
+
 	termp = typeCalloc(TERMINAL, 1);
 #endif
 	if (termp == 0) {
@@ -669,22 +722,24 @@ TINFO_SETUP_TERM(TERMINAL ** tp,
 	    termp->Filedes = (short) Filedes;
 	    termp->_termname = strdup(tname);
 	} else {
-	    ret_error0(TGETENT_ERR,
+	    _nc_free_termtype2(&TerminalType(termp));
+	    free(my_tcb);
+	    ret_error0(errret ? *errret : TGETENT_ERR,
 		       "Could not find any driver to handle this terminal.\n");
 	}
 #else
-#if USE_DATABASE || USE_TERMCAP
-	status = _nc_setup_tinfo(tname, &termp->type);
+#if NCURSES_USE_DATABASE || NCURSES_USE_TERMCAP
+	status = _nc_setup_tinfo(tname, &TerminalType(termp));
 #else
 	status = TGETENT_NO;
 #endif
 
 	/* try fallback list if entry on disk */
 	if (status != TGETENT_YES) {
-	    const TERMTYPE *fallback = _nc_fallback(tname);
+	    const TERMTYPE2 *fallback = _nc_fallback2(tname);
 
 	    if (fallback) {
-		termp->type = *fallback;
+		TerminalType(termp) = *fallback;
 		status = TGETENT_YES;
 	    }
 	}
@@ -694,12 +749,14 @@ TINFO_SETUP_TERM(TERMINAL ** tp,
 	    if (status == TGETENT_ERR) {
 		ret_error0(status, "terminals database is inaccessible\n");
 	    } else if (status == TGETENT_NO) {
-		ret_error(status, "'%s': unknown terminal type.\n", tname);
+		ret_error1(status, "unknown terminal type.\n", tname);
 	    }
 	}
+#if NCURSES_EXT_NUMBERS
+	_nc_export_termtype2(&termp->type, &TerminalType(termp));
+#endif
 #if !USE_REENTRANT
-	strncpy(ttytype, termp->type.term_names, NAMESIZE - 1);
-	ttytype[NAMESIZE - 1] = '\0';
+	save_ttytype(termp);
 #endif
 
 	termp->Filedes = (short) Filedes;
@@ -708,16 +765,17 @@ TINFO_SETUP_TERM(TERMINAL ** tp,
 	set_curterm(termp);
 
 	if (command_character)
-	    _nc_tinfo_cmdch(termp, *command_character);
+	    _nc_tinfo_cmdch(termp, UChar(*command_character));
 
 	/*
 	 * If an application calls setupterm() rather than initscr() or
 	 * newterm(), we will not have the def_prog_mode() call in
 	 * _nc_setupscreen().  Do it now anyway, so we can initialize the
-	 * baudrate.
+	 * baudrate.  Also get the shell-mode so that erasechar() works.
 	 */
-	if (isatty(Filedes)) {
-	    def_prog_mode();
+	if (NC_ISATTY(Filedes)) {
+	    NCURSES_SP_NAME(def_shell_mode) (NCURSES_SP_ARG);
+	    NCURSES_SP_NAME(def_prog_mode) (NCURSES_SP_ARG);
 	    baudrate();
 	}
 	code = OK;
@@ -727,7 +785,7 @@ TINFO_SETUP_TERM(TERMINAL ** tp,
 #ifdef USE_TERM_DRIVER
     *tp = termp;
     NCURSES_SP_NAME(set_curterm) (sp, termp);
-    TCB->drv->init(TCB);
+    TCB->drv->td_init(TCB);
 #else
     sp = SP;
 #endif
@@ -742,33 +800,98 @@ TINFO_SETUP_TERM(TERMINAL ** tp,
 
 #ifndef USE_TERM_DRIVER
     if (generic_type) {
-	ret_error(TGETENT_NO, "'%s': I need something more specific.\n", tname);
-    }
-    if (hard_copy) {
-	ret_error(TGETENT_YES, "'%s': I can't handle hardcopy terminals.\n", tname);
+	/*
+	 * BSD 4.3's termcap contains mis-typed "gn" for wy99.  Do a sanity
+	 * check before giving up.
+	 */
+	if ((VALID_STRING(cursor_address)
+	     || (VALID_STRING(cursor_down) && VALID_STRING(cursor_home)))
+	    && VALID_STRING(clear_screen)) {
+	    ret_error1(TGETENT_YES, "terminal is not really generic.\n", tname);
+	} else {
+	    del_curterm(termp);
+	    ret_error1(TGETENT_NO, "I need something more specific.\n", tname);
+	}
+    } else if (hard_copy) {
+	ret_error1(TGETENT_YES, "I can't handle hardcopy terminals.\n", tname);
     }
 #endif
     returnCode(code);
 }
 
+#ifdef USE_PTHREADS
+/*
+ * Returns a non-null pointer unless a new screen should be allocated because
+ * no match was found in the pre-screen cache.
+ */
+NCURSES_EXPORT(SCREEN *)
+_nc_find_prescr(void)
+{
+    SCREEN *result = 0;
+    PRESCREEN_LIST *p;
+    for (p = _nc_prescreen.allocated; p != 0; p = p->next) {
+	if (p->id == pthread_self()) {
+	    result = p->sp;
+	    break;
+	}
+    }
+    return result;
+}
+
+/*
+ * Tells ncurses to forget that this thread was associated with the pre-screen
+ * cache.  It does not modify the pre-screen cache itself, since that is used
+ * for creating new screens.
+ */
+NCURSES_EXPORT(void)
+_nc_forget_prescr(void)
+{
+    PRESCREEN_LIST *p, *q;
+    for (p = _nc_prescreen.allocated, q = 0; p != 0; q = p, p = p->next) {
+	if (p->id == pthread_self()) {
+	    if (q) {
+		q->next = p->next;
+	    } else {
+		_nc_prescreen.allocated = p->next;
+	    }
+	    free(p);
+	    break;
+	}
+    }
+}
+#endif /* USE_PTHREADS */
+
 #if NCURSES_SP_FUNCS
 /*
  * In case of handling multiple screens, we need to have a screen before
- * initialization in setupscreen takes place.  This is to extend the substitute
- * for some of the stuff in _nc_prescreen, especially for slk and ripoff
- * handling which should be done per screen.
+ * initialization in _nc_setupscreen takes place.  This is to extend the
+ * substitute for some of the stuff in _nc_prescreen, especially for slk and
+ * ripoff handling which should be done per screen.
  */
 NCURSES_EXPORT(SCREEN *)
 new_prescr(void)
 {
-    static SCREEN *sp;
+    SCREEN *sp;
 
     START_TRACE();
     T((T_CALLED("new_prescr()")));
 
-    if (sp == 0) {
+    _nc_lock_global(screen);
+    if ((sp = _nc_find_prescr()) == 0) {
 	sp = _nc_alloc_screen_sp();
+	T(("_nc_alloc_screen_sp %p", (void *) sp));
 	if (sp != 0) {
+#ifdef USE_PTHREADS
+	    PRESCREEN_LIST *p = typeCalloc(PRESCREEN_LIST, 1);
+	    if (p != 0) {
+		p->id = pthread_self();
+		p->sp = sp;
+		p->next = _nc_prescreen.allocated;
+		_nc_prescreen.allocated = p;
+	    }
+#else
+	    _nc_prescreen.allocated = sp;
+#endif
 	    sp->rsp = sp->rippedoff;
 	    sp->_filtered = _nc_prescreen.filter_mode;
 	    sp->_use_env = _nc_prescreen.use_env;
@@ -784,7 +907,10 @@ new_prescr(void)
 	    sp->_ESCDELAY = _nc_prescreen._ESCDELAY;
 #endif
 	}
+    } else {
+	T(("_nc_alloc_screen_sp %p (reuse)", (void *) sp));
     }
+    _nc_unlock_global(screen);
     returnSP(sp);
 }
 #endif
@@ -798,14 +924,21 @@ NCURSES_EXPORT(int)
 _nc_setupterm(NCURSES_CONST char *tname,
 	      int Filedes,
 	      int *errret,
-	      bool reuse)
+	      int reuse)
 {
-    int res;
-    TERMINAL *termp;
-    res = TINFO_SETUP_TERM(&termp, tname, Filedes, errret, reuse);
-    if (ERR != res)
-	NCURSES_SP_NAME(set_curterm) (CURRENT_SCREEN_PRE, termp);
-    return res;
+    int rc = ERR;
+    TERMINAL *termp = 0;
+
+    _nc_lock_global(prescreen);
+    START_TRACE();
+    if (TINFO_SETUP_TERM(&termp, tname, Filedes, errret, reuse) == OK) {
+	_nc_forget_prescr();
+	if (NCURSES_SP_NAME(set_curterm) (CURRENT_SCREEN_PRE, termp) != 0) {
+	    rc = OK;
+	}
+    }
+    _nc_unlock_global(prescreen);
+    return rc;
 }
 #endif
 
@@ -818,5 +951,6 @@ _nc_setupterm(NCURSES_CONST char *tname,
 NCURSES_EXPORT(int)
 setupterm(NCURSES_CONST char *tname, int Filedes, int *errret)
 {
+    START_TRACE();
     return _nc_setupterm(tname, Filedes, errret, FALSE);
 }

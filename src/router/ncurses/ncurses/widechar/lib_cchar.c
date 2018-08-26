@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2001-2009,2010 Free Software Foundation, Inc.              *
+ * Copyright (c) 2001-2016,2017 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -35,7 +35,7 @@
 
 #include <curses.priv.h>
 
-MODULE_ID("$Id: lib_cchar.c,v 1.20 2010/12/25 23:46:26 tom Exp $")
+MODULE_ID("$Id: lib_cchar.c,v 1.31 2017/03/31 11:14:26 tom Exp $")
 
 /* 
  * The SuSv2 description leaves some room for interpretation.  We'll assume wch
@@ -47,22 +47,25 @@ NCURSES_EXPORT(int)
 setcchar(cchar_t *wcval,
 	 const wchar_t *wch,
 	 const attr_t attrs,
-	 short color_pair,
+	 NCURSES_PAIRS_T pair_arg,
 	 const void *opts)
 {
-    unsigned i;
-    unsigned len;
     int code = OK;
+    int color_pair = pair_arg;
+    unsigned len;
 
     TR(TRACE_CCALLS, (T_CALLED("setcchar(%p,%s,%lu,%d,%p)"),
 		      (void *) wcval, _nc_viswbuf(wch),
 		      (unsigned long) attrs, color_pair, opts));
 
-    len = (unsigned) wcslen(wch);
-    if (opts != NULL
-	|| (len > 1 && wcwidth(wch[0]) < 0)) {
+    set_extended_pair(opts, color_pair);
+    if (wch == NULL
+	|| ((len = (unsigned) wcslen(wch)) > 1 && wcwidth(wch[0]) < 0)
+	|| color_pair < 0) {
 	code = ERR;
     } else {
+	unsigned i;
+
 	if (len > CCHARW_MAX)
 	    len = CCHARW_MAX;
 
@@ -80,7 +83,7 @@ setcchar(cchar_t *wcval,
 	memset(wcval, 0, sizeof(*wcval));
 
 	if (len != 0) {
-	    SetAttr(*wcval, attrs | (attr_t) ColorPair(color_pair));
+	    SetAttr(*wcval, attrs);
 	    SetPair(CHDEREF(wcval), color_pair);
 	    memcpy(&wcval->chars, wch, len * sizeof(wchar_t));
 	    TR(TRACE_CCALLS, ("copy %d wchars, first is %s", len,
@@ -96,22 +99,24 @@ NCURSES_EXPORT(int)
 getcchar(const cchar_t *wcval,
 	 wchar_t *wch,
 	 attr_t *attrs,
-	 short *color_pair,
+	 NCURSES_PAIRS_T *pair_arg,
 	 void *opts)
 {
-    wchar_t *wp;
-    int len;
     int code = ERR;
+    int color_pair;
 
     TR(TRACE_CCALLS, (T_CALLED("getcchar(%p,%p,%p,%p,%p)"),
 		      (const void *) wcval,
 		      (void *) wch,
 		      (void *) attrs,
-		      (void *) color_pair,
+		      (void *) pair_arg,
 		      opts));
 
-    if (opts == NULL) {
-	len = ((wp = wmemchr(wcval->chars, L'\0', CCHARW_MAX))
+    if (opts == NULL && wcval != NULL) {
+	wchar_t *wp;
+	int len;
+
+	len = ((wp = wmemchr(wcval->chars, L'\0', (size_t) CCHARW_MAX))
 	       ? (int) (wp - wcval->chars)
 	       : CCHARW_MAX);
 
@@ -121,14 +126,17 @@ getcchar(const cchar_t *wcval,
 	     * If the value is not a null, return the length plus 1 for null.
 	     */
 	    code = (len < CCHARW_MAX) ? (len + 1) : CCHARW_MAX;
-	} else if (attrs == 0 || color_pair == 0) {
+	} else if (attrs == 0 || pair_arg == 0) {
 	    code = ERR;
 	} else if (len >= 0) {
 	    *attrs = AttrOf(*wcval) & A_ATTRIBUTES;
-	    *color_pair = (short) GetPair(*wcval);
-	    wmemcpy(wch, wcval->chars, (unsigned) len);
+	    color_pair = GetPair(*wcval);
+	    get_extended_pair(opts, color_pair);
+	    *pair_arg = limit_PAIRS(color_pair);
+	    wmemcpy(wch, wcval->chars, (size_t) len);
 	    wch[len] = L'\0';
-	    code = OK;
+	    if (*pair_arg >= 0)
+		code = OK;
 	}
     }
 

@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2009,2010 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2012,2015 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -34,7 +34,7 @@
 
 #include "form.priv.h"
 
-MODULE_ID("$Id: fty_regex.c,v 1.24 2010/01/23 21:14:37 tom Exp $")
+MODULE_ID("$Id: fty_regex.c,v 1.26 2015/01/10 17:10:25 tom Exp $")
 
 #if HAVE_REGEX_H_FUNCS		/* We prefer POSIX regex */
 #include <regex.h>
@@ -113,7 +113,7 @@ Generic_RegularExpression_Type(void *arg MAYBE_UNUSED)
 
   if (rx)
     {
-      preg = typeMalloc(RegExp_Arg, 1);
+      preg = typeCalloc(RegExp_Arg, 1);
 
       if (preg)
 	{
@@ -123,9 +123,8 @@ Generic_RegularExpression_Type(void *arg MAYBE_UNUSED)
 			  (REG_EXTENDED | REG_NOSUB | REG_NEWLINE)))
 	    {
 	      T((T_CREATE("regex_t %p"), (void *)preg->pRegExp));
-	      preg->refCount = typeMalloc(unsigned long, 1);
-
-	      *(preg->refCount) = 1;
+	      if ((preg->refCount = typeMalloc(unsigned long, 1)) != 0)
+		 *(preg->refCount) = 1;
 	    }
 	  else
 	    {
@@ -151,9 +150,8 @@ Generic_RegularExpression_Type(void *arg MAYBE_UNUSED)
 
 	  T((T_CREATE("RegExp_Arg %p"), pArg));
 	  pArg->compiled_expression = NULL;
-	  pArg->refCount = typeMalloc(unsigned long, 1);
-
-	  *(pArg->refCount) = 1;
+	  if ((pArg->refCount = typeMalloc(unsigned long, 1)) != 0)
+	     *(pArg->refCount) = 1;
 
 	  do
 	    {
@@ -266,6 +264,7 @@ Free_RegularExpression_Type(void *argp MAYBE_UNUSED)
 	    {
 	      free(ap->refCount);
 	      regfree(ap->pRegExp);
+	      free(ap->pRegExp);
 	    }
 #elif HAVE_REGEXP_H_FUNCS | HAVE_REGEXPR_H_FUNCS
 	  if (ap->compiled_expression)

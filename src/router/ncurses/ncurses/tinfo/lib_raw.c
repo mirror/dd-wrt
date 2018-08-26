@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2009,2010 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2016,2017 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -49,11 +49,7 @@
 
 #include <curses.priv.h>
 
-MODULE_ID("$Id: lib_raw.c,v 1.19 2010/04/24 23:49:12 tom Exp $")
-
-#if SVR4_TERMIO && !defined(_POSIX_SOURCE)
-#define _POSIX_SOURCE
-#endif
+MODULE_ID("$Id: lib_raw.c,v 1.23 2017/04/15 22:24:45 tom Exp $")
 
 #if HAVE_SYS_TERMIO_H
 #include <sys/termio.h>		/* needed for ISC */
@@ -64,6 +60,11 @@ MODULE_ID("$Id: lib_raw.c,v 1.19 2010/04/24 23:49:12 tom Exp $")
 #define _nc_setmode(mode) setmode(SP_PARM->_ifd, mode)
 #else
 #define _nc_setmode(mode)	/* nothing */
+#endif
+
+#if USE_KLIBC_KBD
+#define INCL_KBD
+#include <os2.h>
 #endif
 
 #define COOKED_INPUT	(IXON|BRKINT|PARMRK)
@@ -100,8 +101,21 @@ NCURSES_SP_NAME(raw) (NCURSES_SP_DCL0)
 #endif
 	result = NCURSES_SP_NAME(_nc_set_tty_mode) (NCURSES_SP_ARGx &buf);
 	if (result == OK) {
-	    SP_PARM->_raw = TRUE;
-	    SP_PARM->_cbreak = 1;
+#if USE_KLIBC_KBD
+	    KBDINFO kbdinfo;
+
+	    kbdinfo.cb = sizeof(kbdinfo);
+	    KbdGetStatus(&kbdinfo, 0);
+
+	    kbdinfo.cb = sizeof(kbdinfo);
+	    kbdinfo.fsMask &= ~KEYBOARD_ASCII_MODE;
+	    kbdinfo.fsMask |= KEYBOARD_BINARY_MODE;
+	    KbdSetStatus(&kbdinfo, 0);
+#endif
+	    if (SP_PARM) {
+		SP_PARM->_raw = TRUE;
+		SP_PARM->_cbreak = 1;
+	    }
 	    termp->Nttyb = buf;
 	}
 	AFTER("raw");
@@ -142,7 +156,9 @@ NCURSES_SP_NAME(cbreak) (NCURSES_SP_DCL0)
 #endif
 	result = NCURSES_SP_NAME(_nc_set_tty_mode) (NCURSES_SP_ARGx &buf);
 	if (result == OK) {
-	    SP_PARM->_cbreak = 1;
+	    if (SP_PARM) {
+		SP_PARM->_cbreak = 1;
+	    }
 	    termp->Nttyb = buf;
 	}
 	AFTER("cbreak");
@@ -165,12 +181,12 @@ cbreak(void)
 NCURSES_EXPORT(void)
 NCURSES_SP_NAME(qiflush) (NCURSES_SP_DCL0)
 {
-    int result = ERR;
     TERMINAL *termp;
 
     T((T_CALLED("qiflush(%p)"), (void *) SP_PARM));
     if ((termp = TerminalOf(SP_PARM)) != 0) {
 	TTY buf;
+	int result;
 
 	BEFORE("qiflush");
 	buf = termp->Nttyb;
@@ -178,6 +194,7 @@ NCURSES_SP_NAME(qiflush) (NCURSES_SP_DCL0)
 	buf.c_lflag &= (unsigned) ~(NOFLSH);
 	result = NCURSES_SP_NAME(_nc_set_tty_mode) (NCURSES_SP_ARGx &buf);
 #else
+	result = ERR;
 	/* FIXME */
 #endif
 	if (result == OK)
@@ -218,8 +235,21 @@ NCURSES_SP_NAME(noraw) (NCURSES_SP_DCL0)
 #endif
 	result = NCURSES_SP_NAME(_nc_set_tty_mode) (NCURSES_SP_ARGx &buf);
 	if (result == OK) {
-	    SP_PARM->_raw = FALSE;
-	    SP_PARM->_cbreak = 0;
+#if USE_KLIBC_KBD
+	    KBDINFO kbdinfo;
+
+	    kbdinfo.cb = sizeof(kbdinfo);
+	    KbdGetStatus(&kbdinfo, 0);
+
+	    kbdinfo.cb = sizeof(kbdinfo);
+	    kbdinfo.fsMask &= ~KEYBOARD_BINARY_MODE;
+	    kbdinfo.fsMask |= KEYBOARD_ASCII_MODE;
+	    KbdSetStatus(&kbdinfo, 0);
+#endif
+	    if (SP_PARM) {
+		SP_PARM->_raw = FALSE;
+		SP_PARM->_cbreak = 0;
+	    }
 	    termp->Nttyb = buf;
 	}
 	AFTER("noraw");
@@ -257,7 +287,9 @@ NCURSES_SP_NAME(nocbreak) (NCURSES_SP_DCL0)
 #endif
 	result = NCURSES_SP_NAME(_nc_set_tty_mode) (NCURSES_SP_ARGx &buf);
 	if (result == OK) {
-	    SP_PARM->_cbreak = 0;
+	    if (SP_PARM) {
+		SP_PARM->_cbreak = 0;
+	    }
 	    termp->Nttyb = buf;
 	}
 	AFTER("nocbreak");
@@ -276,12 +308,12 @@ nocbreak(void)
 NCURSES_EXPORT(void)
 NCURSES_SP_NAME(noqiflush) (NCURSES_SP_DCL0)
 {
-    int result = ERR;
     TERMINAL *termp;
 
     T((T_CALLED("noqiflush(%p)"), (void *) SP_PARM));
     if ((termp = TerminalOf(SP_PARM)) != 0) {
 	TTY buf;
+	int result;
 
 	BEFORE("noqiflush");
 	buf = termp->Nttyb;
@@ -290,6 +322,7 @@ NCURSES_SP_NAME(noqiflush) (NCURSES_SP_DCL0)
 	result = NCURSES_SP_NAME(_nc_set_tty_mode) (NCURSES_SP_ARGx &buf);
 #else
 	/* FIXME */
+	result = ERR;
 #endif
 	if (result == OK)
 	    termp->Nttyb = buf;

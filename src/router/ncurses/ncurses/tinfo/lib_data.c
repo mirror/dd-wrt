@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2009,2010 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2016,2017 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -42,7 +42,7 @@
 
 #include <curses.priv.h>
 
-MODULE_ID("$Id: lib_data.c,v 1.61 2010/05/15 22:06:56 tom Exp $")
+MODULE_ID("$Id: lib_data.c,v 1.75 2017/08/04 08:59:48 tom Exp $")
 
 /*
  * OS/2's native linker complains if we don't initialize public data when
@@ -94,7 +94,9 @@ _nc_screen(void)
 NCURSES_EXPORT(int)
 _nc_alloc_screen(void)
 {
-    return ((my_screen = _nc_alloc_screen_sp()) != 0);
+    my_screen = _nc_alloc_screen_sp();
+    T(("_nc_alloc_screen_sp %p", my_screen));
+    return (my_screen != 0);
 }
 
 NCURSES_EXPORT(void)
@@ -114,6 +116,7 @@ NCURSES_EXPORT_VAR(SCREEN *) SP = NULL; /* Some linkers require initialized data
 #define TGETENT_0s { TGETENT_0, TGETENT_0, TGETENT_0, TGETENT_0 }
 
 NCURSES_EXPORT_VAR(NCURSES_GLOBALS) _nc_globals = {
+    0,				/* have_sigtstp */
     0,				/* have_sigwinch */
     0,				/* cleanup_nested */
 
@@ -125,13 +128,14 @@ NCURSES_EXPORT_VAR(NCURSES_GLOBALS) _nc_globals = {
 
     FALSE,			/* have_tic_directory */
     FALSE,			/* keep_tic_directory */
-    TERMINFO,			/* tic_directory */
+    0,				/* tic_directory */
 
     NULL,			/* dbi_list */
     0,				/* dbi_size */
 
     NULL,			/* first_name */
     NULL,			/* keyname_table */
+    0,				/* init_keyname */
 
     0,				/* slk_format */
 
@@ -141,6 +145,12 @@ NCURSES_EXPORT_VAR(NCURSES_GLOBALS) _nc_globals = {
     TGETENT_0s,			/* tgetent_cache */
     0,				/* tgetent_index */
     0,				/* tgetent_sequence */
+
+    0,				/* dbd_blob */
+    0,				/* dbd_list */
+    0,				/* dbd_size */
+    0,				/* dbd_time */
+    { { 0, 0 } },		/* dbd_vars */
 
 #ifndef USE_SP_WINDOWLIST
     0,				/* _nc_windowlist */
@@ -160,10 +170,11 @@ NCURSES_EXPORT_VAR(NCURSES_GLOBALS) _nc_globals = {
 #endif
 
 #ifdef TRACE
-    FALSE,			/* init_trace */
+    FALSE,			/* trace_opened */
     CHARS_0s,			/* trace_fname */
     0,				/* trace_level */
     NULL,			/* trace_fp */
+    -1,				/* trace_fd */
 
     NULL,			/* tracearg_buf */
     0,				/* tracearg_used */
@@ -186,8 +197,14 @@ NCURSES_EXPORT_VAR(NCURSES_GLOBALS) _nc_globals = {
     0,				/* nested_tracef */
 #endif
 #endif /* TRACE */
+#if NO_LEAKS
+    FALSE,			/* leak_checking */
+#endif
 #ifdef USE_PTHREADS
     PTHREAD_MUTEX_INITIALIZER,	/* mutex_curses */
+    PTHREAD_MUTEX_INITIALIZER,	/* mutex_prescreen */
+    PTHREAD_MUTEX_INITIALIZER,	/* mutex_screen */
+    PTHREAD_MUTEX_INITIALIZER,	/* mutex_update */
     PTHREAD_MUTEX_INITIALIZER,	/* mutex_tst_tracef */
     PTHREAD_MUTEX_INITIALIZER,	/* mutex_tracef */
     0,				/* nested_tracef */
@@ -195,6 +212,9 @@ NCURSES_EXPORT_VAR(NCURSES_GLOBALS) _nc_globals = {
 #endif
 #if USE_PTHREADS_EINTR
     0,				/* read_thread */
+#endif
+#if USE_WIDEC_SUPPORT
+    CHARS_0s,			/* key_name */
 #endif
 };
 
@@ -206,6 +226,7 @@ NCURSES_EXPORT_VAR(NCURSES_GLOBALS) _nc_globals = {
 #define RIPOFF_0s	{ RIPOFF_0 }
 
 NCURSES_EXPORT_VAR(NCURSES_PRESCREEN) _nc_prescreen = {
+    NULL,			/* allocated */
     TRUE,			/* use_env */
     FALSE,			/* filter_mode */
     A_NORMAL,			/* previous_attr */
@@ -249,6 +270,7 @@ NCURSES_EXPORT_VAR(NCURSES_PRESCREEN) _nc_prescreen = {
     NULL,			/* _tputs_trace */
 #endif
 #endif
+    FALSE,			/* use_tioctl */
 };
 /* *INDENT-ON* */
 
@@ -278,6 +300,9 @@ init_global_mutexes(void)
     if (!initialized) {
 	initialized = TRUE;
 	_nc_mutex_init(&_nc_globals.mutex_curses);
+	_nc_mutex_init(&_nc_globals.mutex_prescreen);
+	_nc_mutex_init(&_nc_globals.mutex_screen);
+	_nc_mutex_init(&_nc_globals.mutex_update);
 	_nc_mutex_init(&_nc_globals.mutex_tst_tracef);
 	_nc_mutex_init(&_nc_globals.mutex_tracef);
     }
@@ -362,7 +387,7 @@ _nc_sigprocmask(int how, const sigset_t * newmask, sigset_t * oldmask)
     if ((pthread_sigmask))
 	return pthread_sigmask(how, newmask, oldmask);
     else
-	return sigprocmask(how, newmask, oldmask);
+	return (sigprocmask) (how, newmask, oldmask);
 }
 #endif
 #endif /* USE_PTHREADS */

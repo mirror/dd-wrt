@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2009,2010 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2015,2017 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -39,30 +39,28 @@
 #include <curses.priv.h>
 #include <hashed_db.h>
 
-#include <sys/stat.h>
-
 #include <tic.h>
-
-#ifndef S_ISDIR
-#define S_ISDIR(mode) ((mode & S_IFMT) == S_IFDIR)
-#endif
 
 #if 1
 #define TRACE_OUT(p) DEBUG(2, p)
+#define TRACE_NUM(n) if (VALID_NUMERIC(Numbers[n])) { \
+	TRACE_OUT(("put Numbers[%u]=%d", (unsigned) (n), Numbers[n])); }
 #else
 #define TRACE_OUT(p)		/*nothing */
+#define TRACE_NUM(n)		/* nothing */
 #endif
 
-MODULE_ID("$Id: write_entry.c,v 1.78 2010/12/25 23:23:08 tom Exp $")
+MODULE_ID("$Id: write_entry.c,v 1.101 2017/11/25 19:56:06 tom Exp $")
 
 static int total_written;
+static int total_parts;
+static int total_size;
 
 static int make_db_root(const char *);
-static int write_object(TERMTYPE *, char *, unsigned *, unsigned);
 
 #if !USE_HASHED_DB
 static void
-write_file(char *filename, TERMTYPE *tp)
+write_file(char *filename, TERMTYPE2 *tp)
 {
     char buffer[MAX_ENTRY_SIZE];
     unsigned limit = sizeof(buffer);
@@ -75,8 +73,8 @@ write_file(char *filename, TERMTYPE *tp)
     }
     DEBUG(1, ("Created %s", filename));
 
-    if (write_object(tp, buffer, &offset, limit) == ERR
-	|| fwrite(buffer, sizeof(char), offset, fp) != offset) {
+    if (_nc_write_object(tp, buffer, &offset, limit) == ERR
+	|| fwrite(buffer, sizeof(char), (size_t) offset, fp) != offset) {
 	_nc_syserr_abort("error writing %s/%s", _nc_tic_dir(0), filename);
     }
 
@@ -99,13 +97,13 @@ check_writeable(int code)
     char dir[sizeof(LEAF_FMT)];
     char *s = 0;
 
-    if (code == 0 || (s = strchr(dirnames, code)) == 0)
+    if (code == 0 || (s = (strchr) (dirnames, code)) == 0)
 	_nc_err_abort("Illegal terminfo subdirectory \"" LEAF_FMT "\"", code);
 
     if (verified[s - dirnames])
 	return;
 
-    sprintf(dir, LEAF_FMT, code);
+    _nc_SPRINTF(dir, _nc_SLIMIT(sizeof(dir)) LEAF_FMT, code);
     if (make_db_root(dir) < 0) {
 	_nc_err_abort("%s/%s: permission denied", _nc_tic_dir(0), dir);
     }
@@ -115,36 +113,35 @@ check_writeable(int code)
 #endif /* !USE_HASHED_DB */
 
 static int
-make_db_path(char *dst, const char *src, unsigned limit)
+make_db_path(char *dst, const char *src, size_t limit)
 {
     int rc = -1;
     const char *top = _nc_tic_dir(0);
 
     if (src == top || _nc_is_abs_path(src)) {
 	if (strlen(src) + 1 <= limit) {
-	    (void) strcpy(dst, src);
+	    _nc_STRCPY(dst, src, limit);
 	    rc = 0;
 	}
     } else {
 	if (strlen(top) + strlen(src) + 2 <= limit) {
-	    (void) sprintf(dst, "%s/%s", top, src);
+	    _nc_SPRINTF(dst, _nc_SLIMIT(limit) "%s/%s", top, src);
 	    rc = 0;
 	}
     }
 #if USE_HASHED_DB
     if (rc == 0) {
-	if (_nc_is_dir_path(dst)) {
-	    rc = -1;
-	} else {
-	    static const char suffix[] = DBM_SUFFIX;
-	    unsigned have = strlen(dst);
-	    unsigned need = strlen(suffix);
-	    if (have > need && strcmp(dst + have - need, suffix)) {
-		if (have + need <= limit)
-		    strcat(dst, suffix);
-		else
-		    rc = -1;
+	static const char suffix[] = DBM_SUFFIX;
+	size_t have = strlen(dst);
+	size_t need = strlen(suffix);
+	if (have > need && strcmp(dst + (int) (have - need), suffix)) {
+	    if (have + need <= limit) {
+		_nc_STRCAT(dst, suffix, limit);
+	    } else {
+		rc = -1;
 	    }
+	} else if (_nc_is_dir_path(dst)) {
+	    rc = -1;
 	}
     }
 #endif
@@ -164,10 +161,11 @@ make_db_root(const char *path)
 #if USE_HASHED_DB
 	DB *capdbp;
 
-	if ((capdbp = _nc_db_open(fullpath, TRUE)) == NULL)
+	if ((capdbp = _nc_db_open(fullpath, TRUE)) == NULL) {
 	    rc = -1;
-	else if (_nc_db_close(capdbp) < 0)
+	} else if (_nc_db_close(capdbp) < 0) {
 	    rc = -1;
+	}
 #else
 	struct stat statbuf;
 
@@ -191,13 +189,16 @@ make_db_root(const char *path)
  * Set the write directory for compiled entries.
  */
 NCURSES_EXPORT(void)
-_nc_set_writedir(char *dir)
+_nc_set_writedir(const char *dir)
 {
     const char *destination;
     char actual[PATH_MAX];
 
     if (dir == 0
-	&& use_terminfo_vars())
+#ifndef USE_ROOT_ENVIRON
+	&& use_terminfo_vars()
+#endif
+	)
 	dir = getenv("TERMINFO");
 
     if (dir != 0)
@@ -250,7 +251,7 @@ _nc_set_writedir(char *dir)
  */
 
 NCURSES_EXPORT(void)
-_nc_write_entry(TERMTYPE *const tp)
+_nc_write_entry(TERMTYPE2 *const tp)
 {
 #if USE_HASHED_DB
 
@@ -271,6 +272,9 @@ _nc_write_entry(TERMTYPE *const tp)
 #endif
 #endif /* USE_SYMLINKS */
 
+    unsigned limit2 = sizeof(filename) - (2 + LEAF_LEN);
+    char saved = '\0';
+
     static int call_count;
     static time_t start_time;	/* time at start of writes */
 
@@ -279,16 +283,21 @@ _nc_write_entry(TERMTYPE *const tp)
     char name_list[MAX_TERMINFO_LENGTH];
     char *first_name, *other_names;
     char *ptr;
+    char *term_names = tp->term_names;
+    size_t name_size = strlen(term_names);
 
-    assert(strlen(tp->term_names) != 0);
-    assert(strlen(tp->term_names) < sizeof(name_list));
+    if (name_size == 0) {
+	_nc_syserr_abort("no terminal name found.");
+    } else if (name_size >= sizeof(name_list) - 1) {
+	_nc_syserr_abort("terminal name too long: %s", term_names);
+    }
 
-    (void) strcpy(name_list, tp->term_names);
+    _nc_STRCPY(name_list, term_names, sizeof(name_list));
     DEBUG(7, ("Name list = '%s'", name_list));
 
     first_name = name_list;
 
-    ptr = &name_list[strlen(name_list) - 1];
+    ptr = &name_list[name_size - 1];
     other_names = ptr + 1;
 
     while (ptr > name_list && *ptr != '|')
@@ -314,7 +323,7 @@ _nc_write_entry(TERMTYPE *const tp)
     _nc_set_type(first_name);
 
 #if USE_HASHED_DB
-    if (write_object(tp, buffer + 1, &offset, limit - 1) != ERR) {
+    if (_nc_write_object(tp, buffer + 1, &offset, limit - 1) != ERR) {
 	DB *capdb = _nc_db_open(_nc_tic_dir(0), TRUE);
 	DBT key, data;
 
@@ -322,8 +331,8 @@ _nc_write_entry(TERMTYPE *const tp)
 	    buffer[0] = 0;
 
 	    memset(&key, 0, sizeof(key));
-	    key.data = tp->term_names;
-	    key.size = strlen(tp->term_names);
+	    key.data = term_names;
+	    key.size = name_size;
 
 	    memset(&data, 0, sizeof(data));
 	    data.data = buffer;
@@ -336,9 +345,13 @@ _nc_write_entry(TERMTYPE *const tp)
 	    key.data = name_list;
 	    key.size = strlen(name_list);
 
-	    strcpy(buffer + 1, tp->term_names);
-	    data.size = strlen(tp->term_names) + 1;
+	    _nc_STRCPY(buffer + 1,
+		       term_names,
+		       sizeof(buffer) - 1);
+	    data.size = name_size + 1;
 
+	    total_size += data.size;
+	    total_parts++;
 	    _nc_db_put(capdb, &key, &data);
 
 	    while (*other_names != '\0') {
@@ -353,9 +366,10 @@ _nc_write_entry(TERMTYPE *const tp)
 		key.data = ptr;
 		key.size = strlen(ptr);
 
+		total_size += data.size;
+		total_parts++;
 		_nc_db_put(capdb, &key, &data);
 	    }
-	    _nc_db_close(capdb);
 	}
     }
 #else /* !USE_HASHED_DB */
@@ -363,10 +377,17 @@ _nc_write_entry(TERMTYPE *const tp)
 	start_time = 0;
     }
 
-    if (strlen(first_name) >= sizeof(filename) - (2 + LEAF_LEN))
+    if (strlen(first_name) >= sizeof(filename) - (2 + LEAF_LEN)) {
 	_nc_warning("terminal name too long.");
+	saved = first_name[limit2];
+	first_name[limit2] = '\0';
+    }
 
-    sprintf(filename, LEAF_FMT "/%s", first_name[0], first_name);
+    _nc_SPRINTF(filename, _nc_SLIMIT(sizeof(filename))
+		LEAF_FMT "/%s", first_name[0], first_name);
+
+    if (saved)
+	first_name[limit2] = saved;
 
     /*
      * Has this primary name been written since the first call to
@@ -376,7 +397,22 @@ _nc_write_entry(TERMTYPE *const tp)
     if (start_time > 0 &&
 	stat(filename, &statbuf) >= 0
 	&& statbuf.st_mtime >= start_time) {
+#if HAVE_LINK && !USE_SYMLINKS
+	/*
+	 * If the file has more than one link, the reason for the previous
+	 * write could be that the current primary name used to be an alias for
+	 * the previous entry.  In that case, unlink the file so that we will
+	 * not modify the previous entry as we write this one.
+	 */
+	if (statbuf.st_nlink > 1) {
+	    _nc_warning("name redefined.");
+	    unlink(filename);
+	} else {
+	    _nc_warning("name multiply defined.");
+	}
+#else
 	_nc_warning("name multiply defined.");
+#endif
     }
 
     check_writeable(first_name[0]);
@@ -407,7 +443,8 @@ _nc_write_entry(TERMTYPE *const tp)
 	}
 
 	check_writeable(ptr[0]);
-	sprintf(linkname, LEAF_FMT "/%s", ptr[0], ptr);
+	_nc_SPRINTF(linkname, _nc_SLIMIT(sizeof(linkname))
+		    LEAF_FMT "/%s", ptr[0], ptr);
 
 	if (strcmp(filename, linkname) == 0) {
 	    _nc_warning("self-synonym ignored");
@@ -419,13 +456,14 @@ _nc_write_entry(TERMTYPE *const tp)
 	{
 	    int code;
 #if USE_SYMLINKS
-	    if (first_name[0] == linkname[0])
-		strncpy(symlinkname, first_name, sizeof(symlinkname) - 1);
-	    else {
-		strcpy(symlinkname, "../");
-		strncat(symlinkname, filename, sizeof(symlinkname) - 4);
+#define MY_SIZE sizeof(symlinkname) - 1
+	    if (first_name[0] == linkname[0]) {
+		_nc_STRNCPY(symlinkname, first_name, MY_SIZE);
+	    } else {
+		_nc_STRCPY(symlinkname, "../", sizeof(symlinkname));
+		_nc_STRNCPY(symlinkname + 3, filename, MY_SIZE - 3);
 	    }
-	    symlinkname[sizeof(symlinkname) - 1] = '\0';
+	    symlinkname[MY_SIZE] = '\0';
 #endif /* USE_SYMLINKS */
 #if HAVE_REMOVE
 	    code = remove(linkname);
@@ -491,7 +529,7 @@ fake_write(char *dst,
     return (want / size);
 }
 
-#define Write(buf, size, count) fake_write(buffer, offset, limit, (char *) buf, count, size)
+#define Write(buf, size, count) fake_write(buffer, offset, (size_t) limit, (char *) buf, (size_t) count, (size_t) size)
 
 #undef LITTLE_ENDIAN		/* BSD/OS defines this as a feature macro */
 #define HI(x)			((x) / 256)
@@ -522,7 +560,7 @@ compute_offsets(char **Strings, size_t strmax, short *offsets)
     return nextfree;
 }
 
-static void
+static size_t
 convert_shorts(unsigned char *buf, short *Numbers, size_t count)
 {
     size_t i;
@@ -537,14 +575,49 @@ convert_shorts(unsigned char *buf, short *Numbers, size_t count)
 	    TRACE_OUT(("put Numbers[%u]=%d", (unsigned) i, Numbers[i]));
 	}
     }
+    return SIZEOF_SHORT;
 }
+
+#if NCURSES_EXT_NUMBERS
+static size_t
+convert_16bit(unsigned char *buf, NCURSES_INT2 *Numbers, size_t count)
+{
+    size_t i, j;
+    size_t size = SIZEOF_SHORT;
+    for (i = 0; i < count; i++) {
+	unsigned value = (unsigned) Numbers[i];
+	TRACE_NUM(i);
+	for (j = 0; j < size; ++j) {
+	    *buf++ = value & 0xff;
+	    value >>= 8;
+	}
+    }
+    return size;
+}
+
+static size_t
+convert_32bit(unsigned char *buf, NCURSES_INT2 *Numbers, size_t count)
+{
+    size_t i, j;
+    size_t size = SIZEOF_INT2;
+    for (i = 0; i < count; i++) {
+	unsigned value = (unsigned) Numbers[i];
+	TRACE_NUM(i);
+	for (j = 0; j < size; ++j) {
+	    *buf++ = value & 0xff;
+	    value >>= 8;
+	}
+    }
+    return size;
+}
+#endif
 
 #define even_boundary(value) \
 	    ((value) % 2 != 0 && Write(&zero, sizeof(char), 1) != 1)
 
 #if NCURSES_XNAMES
 static unsigned
-extended_Booleans(TERMTYPE *tp)
+extended_Booleans(TERMTYPE2 *tp)
 {
     unsigned result = 0;
     unsigned i;
@@ -557,7 +630,7 @@ extended_Booleans(TERMTYPE *tp)
 }
 
 static unsigned
-extended_Numbers(TERMTYPE *tp)
+extended_Numbers(TERMTYPE2 *tp)
 {
     unsigned result = 0;
     unsigned i;
@@ -570,7 +643,7 @@ extended_Numbers(TERMTYPE *tp)
 }
 
 static unsigned
-extended_Strings(TERMTYPE *tp)
+extended_Strings(TERMTYPE2 *tp)
 {
     unsigned short result = 0;
     unsigned short i;
@@ -587,7 +660,7 @@ extended_Strings(TERMTYPE *tp)
  * clause - discard the unneeded data.
  */
 static bool
-extended_object(TERMTYPE *tp)
+extended_object(TERMTYPE2 *tp)
 {
     bool result = FALSE;
 
@@ -600,11 +673,11 @@ extended_object(TERMTYPE *tp)
 }
 #endif
 
-static int
-write_object(TERMTYPE *tp, char *buffer, unsigned *offset, unsigned limit)
+NCURSES_EXPORT(int)
+_nc_write_object(TERMTYPE2 *tp, char *buffer, unsigned *offset, unsigned limit)
 {
     char *namelist;
-    size_t namelen, boolmax, nummax, strmax;
+    size_t namelen, boolmax, nummax, strmax, numlen;
     char zero = '\0';
     size_t i;
     int nextfree;
@@ -613,6 +686,12 @@ write_object(TERMTYPE *tp, char *buffer, unsigned *offset, unsigned limit)
     unsigned last_bool = BOOLWRITE;
     unsigned last_num = NUMWRITE;
     unsigned last_str = STRWRITE;
+#if NCURSES_EXT_NUMBERS
+    bool need_ints = FALSE;
+    size_t (*convert_numbers) (unsigned char *, NCURSES_INT2 *, size_t) = convert_32bit;
+#else
+#define convert_numbers convert_shorts
+#endif
 
 #if NCURSES_XNAMES
     /*
@@ -633,14 +712,21 @@ write_object(TERMTYPE *tp, char *buffer, unsigned *offset, unsigned limit)
 
     boolmax = 0;
     for (i = 0; i < last_bool; i++) {
-	if (tp->Booleans[i] == TRUE)
+	if (tp->Booleans[i] == TRUE) {
 	    boolmax = i + 1;
+	}
     }
 
     nummax = 0;
     for (i = 0; i < last_num; i++) {
-	if (tp->Numbers[i] != ABSENT_NUMERIC)
+	if (tp->Numbers[i] != ABSENT_NUMERIC) {
 	    nummax = i + 1;
+#if NCURSES_EXT_NUMBERS
+	    if (tp->Numbers[i] > MAX_OF_TYPE(NCURSES_COLOR_T)) {
+		need_ints = TRUE;
+	    }
+#endif
+	}
     }
 
     strmax = 0;
@@ -652,7 +738,17 @@ write_object(TERMTYPE *tp, char *buffer, unsigned *offset, unsigned limit)
     nextfree = compute_offsets(tp->Strings, strmax, offsets);
 
     /* fill in the header */
+#if NCURSES_EXT_NUMBERS
+    if (need_ints) {
+	convert_numbers = convert_32bit;
+	LITTLE_ENDIAN(buf, MAGIC2);
+    } else {
+	convert_numbers = convert_16bit;
+	LITTLE_ENDIAN(buf, MAGIC);
+    }
+#else
     LITTLE_ENDIAN(buf, MAGIC);
+#endif
     LITTLE_ENDIAN(buf + 2, min(namelen, MAX_NAME_SIZE + 1));
     LITTLE_ENDIAN(buf + 4, boolmax);
     LITTLE_ENDIAN(buf + 6, nummax);
@@ -679,15 +775,15 @@ write_object(TERMTYPE *tp, char *buffer, unsigned *offset, unsigned limit)
     TRACE_OUT(("Numerics begin at %04x", *offset));
 
     /* the numerics */
-    convert_shorts(buf, tp->Numbers, nummax);
-    if (Write(buf, 2, nummax) != nummax)
+    numlen = convert_numbers(buf, tp->Numbers, nummax);
+    if (Write(buf, numlen, nummax) != nummax)
 	return (ERR);
 
     TRACE_OUT(("String offsets begin at %04x", *offset));
 
     /* the string offsets */
     convert_shorts(buf, offsets, strmax);
-    if (Write(buf, 2, strmax) != strmax)
+    if (Write(buf, SIZEOF_SHORT, strmax) != strmax)
 	return (ERR);
 
     TRACE_OUT(("String table begins at %04x", *offset));
@@ -706,7 +802,7 @@ write_object(TERMTYPE *tp, char *buffer, unsigned *offset, unsigned limit)
 	    return (ERR);
 
 	nextfree = compute_offsets(tp->Strings + STRCOUNT,
-				   tp->ext_Strings,
+				   (size_t) tp->ext_Strings,
 				   offsets);
 	TRACE_OUT(("after extended string capabilities, nextfree=%d", nextfree));
 
@@ -714,7 +810,7 @@ write_object(TERMTYPE *tp, char *buffer, unsigned *offset, unsigned limit)
 	    return (ERR);
 
 	nextfree += compute_offsets(tp->ext_Names,
-				    extcnt,
+				    (size_t) extcnt,
 				    offsets + tp->ext_Strings);
 	TRACE_OUT(("after extended capnames, nextfree=%d", nextfree));
 	strmax = tp->ext_Strings + extcnt;
@@ -742,8 +838,8 @@ write_object(TERMTYPE *tp, char *buffer, unsigned *offset, unsigned limit)
 
 	TRACE_OUT(("WRITE %d numbers @%d", tp->ext_Numbers, *offset));
 	if (tp->ext_Numbers) {
-	    convert_shorts(buf, tp->Numbers + NUMCOUNT, tp->ext_Numbers);
-	    if (Write(buf, 2, tp->ext_Numbers) != tp->ext_Numbers)
+	    numlen = convert_numbers(buf, tp->Numbers + NUMCOUNT, (size_t) tp->ext_Numbers);
+	    if (Write(buf, numlen, tp->ext_Numbers) != tp->ext_Numbers)
 		return (ERR);
 	}
 
@@ -753,7 +849,7 @@ write_object(TERMTYPE *tp, char *buffer, unsigned *offset, unsigned limit)
 	 */
 	convert_shorts(buf, offsets, strmax);
 	TRACE_OUT(("WRITE offsets @%d", *offset));
-	if (Write(buf, 2, strmax) != strmax)
+	if (Write(buf, SIZEOF_SHORT, strmax) != strmax)
 	    return (ERR);
 
 	/*
@@ -782,6 +878,8 @@ write_object(TERMTYPE *tp, char *buffer, unsigned *offset, unsigned limit)
 #endif /* NCURSES_XNAMES */
 
     total_written++;
+    total_parts++;
+    total_size = total_size + (int) (*offset + 1);
     return (OK);
 }
 
@@ -791,5 +889,7 @@ write_object(TERMTYPE *tp, char *buffer, unsigned *offset, unsigned limit)
 NCURSES_EXPORT(int)
 _nc_tic_written(void)
 {
+    TR(TRACE_DATABASE, ("_nc_tic_written %d entries, %d parts, %d size",
+			total_written, total_parts, total_size));
     return total_written;
 }

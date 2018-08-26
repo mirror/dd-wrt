@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2007,2008 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2015,2017 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -30,19 +30,22 @@
  *  Author: Thomas E. Dickey                    1997-on                     *
  ****************************************************************************/
 /*
- * $Id: progs.priv.h,v 1.34 2008/08/03 17:43:05 tom Exp $
+ * $Id: progs.priv.h,v 1.46 2017/10/09 00:30:38 tom Exp $
  *
  *	progs.priv.h
  *
  *	Header file for curses utility programs
  */
 
+#ifndef PROGS_PRIV_H
+#define PROGS_PRIV_H 1
+
 #include <ncurses_cfg.h>
 
 #if USE_RCS_IDS
 #define MODULE_ID(id) static const char Ident[] = id;
 #else
-#define MODULE_ID(id) /*nothing*/
+#define MODULE_ID(id)		/*nothing */
 #endif
 
 #include <stdlib.h>
@@ -90,6 +93,14 @@
 # endif
 #endif
 
+#if HAVE_INTTYPES_H
+# include <inttypes.h>
+#else
+# if HAVE_STDINT_H
+#  include <stdint.h>
+# endif
+#endif
+
 #include <assert.h>
 #include <errno.h>
 
@@ -99,7 +110,7 @@ extern int errno;
 
 #if HAVE_GETOPT_H
 #include <getopt.h>
-#else
+#elif !defined(HAVE_GETOPT_HEADER)
 /* 'getopt()' may be prototyped in <stdlib.h>, but declaring its
  * variables doesn't hurt.
  */
@@ -107,11 +118,16 @@ extern char *optarg;
 extern int optind;
 #endif /* HAVE_GETOPT_H */
 
+#define NCURSES_INTERNALS 1
+#define NCURSES_OPAQUE    0
+
 #include <curses.h>
 #include <term_entry.h>
+#include <nc_termios.h>
 #include <tic.h>
 #include <nc_tparm.h>
 
+#include <nc_string.h>
 #include <nc_alloc.h>
 #if HAVE_NC_FREEALL
 #undef ExitProgram
@@ -121,6 +137,20 @@ extern int optind;
 #define ExitProgram(code) _nc_free_tic(code)
 #endif
 #endif
+
+#define VtoTrace(opt) (unsigned) ((opt > 0) ? opt : (opt == 0))
+
+/* error-returns for tput */
+#define ErrUsage	2
+#define ErrTermType	3
+#define ErrCapName	4
+#define ErrSystem(n)	(4 + (n))
+
+#if defined(__GNUC__) && defined(_FORTIFY_SOURCE)
+#define IGNORE_RC(func) errno = (int) func
+#else
+#define IGNORE_RC(func) (void) func
+#endif /* gcc workarounds */
 
 /* usually in <unistd.h> */
 #ifndef STDOUT_FILENO
@@ -171,7 +201,7 @@ extern int optind;
 # elif defined(MAXPATHLEN)
 #  define PATH_MAX MAXPATHLEN
 # else
-#  define PATH_MAX 255	/* the Posix minimum pathsize */
+#  define PATH_MAX 255		/* the Posix minimum pathsize */
 # endif
 #endif
 
@@ -183,10 +213,20 @@ extern int optind;
 # if ('z'-'a' == 25) && ('z' < 127) && ('Z'-'A' == 25) && ('Z' < 127) && ('9' < 127)
 #  define isascii(c) (UChar(c) <= 127)
 # else
-#  define isascii(c) 1	/* not really ascii anyway */
+#  define isascii(c) 1		/* not really ascii anyway */
 # endif
 #endif
 
 #define UChar(c)    ((unsigned char)(c))
 
 #define SIZEOF(v) (sizeof(v)/sizeof(v[0]))
+
+#define NCURSES_EXT_NUMBERS (NCURSES_EXT_COLORS && HAVE_INIT_EXTENDED_COLOR)
+
+#if NCURSES_EXT_NUMBERS
+#else
+#define _nc_free_termtype2(t) _nc_free_termtype(t)
+#define _nc_read_entry2(n,f,t) _nc_read_entry(n,f,t)
+#endif
+
+#endif /* PROGS_PRIV_H */

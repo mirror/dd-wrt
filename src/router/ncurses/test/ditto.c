@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2009,2010 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2016,2017 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -29,7 +29,7 @@
 /*
  * Author: Thomas E. Dickey (1998-on)
  *
- * $Id: ditto.c,v 1.40 2010/11/14 01:06:47 tom Exp $
+ * $Id: ditto.c,v 1.47 2017/10/18 23:04:42 tom Exp $
  *
  * The program illustrates how to set up multiple screens from a single
  * program.
@@ -43,6 +43,8 @@
  */
 #include <test.priv.h>
 #include <sys/stat.h>
+
+#if HAVE_DELSCREEN
 
 #ifdef USE_PTHREADS
 #include <pthread.h>
@@ -80,6 +82,7 @@ typedef struct {
     int which1;			/* this screen's index in DITTO[] array */
     int length;			/* length of windows[] and peeks[] */
     char **titles;		/* per-window titles */
+    WINDOW **parents;		/* display boxes around each screen's data */
     WINDOW **windows;		/* display data from each screen */
     PEEK *peeks;		/* indices for each screen's fifo */
     FIFO fifo;			/* fifo for this screen */
@@ -98,6 +101,9 @@ typedef struct {
     DITTO *ditto;		/* data for all screens */
 } DDATA;
 
+static void failed(const char *) GCC_NORETURN;
+static void usage(void) GCC_NORETURN;
+
 static void
 failed(const char *s)
 {
@@ -108,7 +114,7 @@ failed(const char *s)
 static void
 usage(void)
 {
-    fprintf(stderr, "usage: ditto [terminal1 ...]\n");
+    fprintf(stderr, "Usage: ditto [terminal1 ...]\n");
     ExitProgram(EXIT_FAILURE);
 }
 
@@ -151,6 +157,10 @@ open_tty(char *path)
     int aslave;
     char slave_name[1024];
     char s_option[sizeof(slave_name) + 80];
+    const char *xterm_prog = 0;
+
+    if ((xterm_prog = getenv("XTERM_PROG")) == 0)
+	xterm_prog = "xterm";
 
     if (openpty(&amaster, &aslave, slave_name, 0, 0) != 0
 	|| strlen(slave_name) > sizeof(slave_name) - 1)
@@ -159,9 +169,10 @@ open_tty(char *path)
 	errno = EISDIR;
 	failed(slave_name);
     }
-    sprintf(s_option, "-S%s/%d", slave_name, aslave);
+    _nc_SPRINTF(s_option, _nc_SLIMIT(sizeof(s_option))
+		"-S%s/%d", slave_name, aslave);
     if (fork()) {
-	execlp("xterm", "xterm", s_option, "-title", path, (char *) 0);
+	execlp(xterm_prog, xterm_prog, s_option, "-title", path, (char *) 0);
 	_exit(0);
     }
     fp = fdopen(amaster, "r+");
@@ -201,6 +212,7 @@ init_screen(
     scrollok(stdscr, TRUE);
     box(stdscr, 0, 0);
 
+    target->parents = typeCalloc(WINDOW *, (size_t) target->length);
     target->windows = typeCalloc(WINDOW *, (size_t) target->length);
     target->peeks = typeCalloc(PEEK, (size_t) target->length);
 
@@ -220,6 +232,7 @@ init_screen(
 	nodelay(inner, TRUE);
 #endif
 
+	target->parents[k] = outer;
 	target->windows[k] = inner;
     }
     doupdate();
@@ -439,3 +452,11 @@ main(int argc, char *argv[])
     }
     ExitProgram(EXIT_SUCCESS);
 }
+#else
+int
+main(void)
+{
+    printf("This program requires the curses delscreen function\n");
+    ExitProgram(EXIT_FAILURE);
+}
+#endif

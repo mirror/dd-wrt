@@ -1,6 +1,6 @@
 // * This makes emacs happy -*-Mode: C++;-*-
 /****************************************************************************
- * Copyright (c) 1998-2007,2008 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2012,2017 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -31,7 +31,7 @@
  *   Author: Juergen Pfeifer, 1997                                          *
  ****************************************************************************/
 
-// $Id: etip.h.in,v 1.37 2008/08/30 19:27:32 tom Exp $
+// $Id: etip.h.in,v 1.41 2017/06/24 21:57:16 tom Exp $
 
 #ifndef NCURSES_ETIP_H_incl
 #define NCURSES_ETIP_H_incl 1
@@ -184,7 +184,7 @@ public:
 
   NCursesPanelException (const char *msg, int err) :
     NCursesException (msg, err),
-    p (NULL)
+    p (0)
     {};
 
   NCursesPanelException (const NCursesPanel* panel,
@@ -196,7 +196,7 @@ public:
 
   NCursesPanelException (int err) :
     NCursesException ("panel library error", err),
-    p (NULL)
+    p (0)
     {};
 
   NCursesPanelException (const NCursesPanel* panel,
@@ -235,7 +235,7 @@ public:
 
   NCursesMenuException (const char *msg, int err) :
     NCursesException (msg, err),
-    m (NULL)
+    m (0)
     {};
 
   NCursesMenuException (const NCursesMenu* menu,
@@ -247,7 +247,7 @@ public:
 
   NCursesMenuException (int err) :
     NCursesException ("menu library error", err),
-    m (NULL)
+    m (0)
     {};
 
   NCursesMenuException (const NCursesMenu* menu,
@@ -286,7 +286,7 @@ public:
 
   NCursesFormException (const char *msg, int err) :
     NCursesException (msg, err),
-    f (NULL)
+    f (0)
     {};
 
   NCursesFormException (const NCursesForm* form,
@@ -298,7 +298,7 @@ public:
 
   NCursesFormException (int err) :
     NCursesException ("form library error", err),
-    f (NULL)
+    f (0)
     {};
 
   NCursesFormException (const NCursesForm* form,
@@ -330,7 +330,7 @@ public:
   }
 };
 
-#if !((defined(__GNUG__) && defined(__EXCEPTIONS)) || defined(__SUNPRO_CC))
+#if !((defined(__GNUG__) && defined(__EXCEPTIONS) && (__GNUG__ < 7)) || defined(__SUNPRO_CC))
 #  if HAVE_IOSTREAM
 #     include <iostream>
 #     if IOSTREAM_NAMESPACE
@@ -347,15 +347,20 @@ inline void THROW(const NCursesException *e) {
 #if defined(__GNUG__) && defined(__EXCEPTIONS)
 #  if ((__GNUG__ <= 2) && (__GNUC_MINOR__ < 8))
       (*lib_error_handler)(e ? e->classname() : "", e ? e->message : "");
-#else
-#define CPP_HAS_TRY_CATCH 1
-#endif
+#  elif (__GNUG__ >= 7)
+     // g++ 7.0 warns about deprecation, but lacks the predefined symbols
+      ::endwin();
+      std::cerr << "Found a problem - goodbye" << std::endl;
+      exit(EXIT_FAILURE);
+#  else
+#    define CPP_HAS_TRY_CATCH 1
+#  endif
 #elif defined(__SUNPRO_CC)
 #  if !defined(__SUNPRO_CC_COMPAT) || (__SUNPRO_CC_COMPAT < 5)
   genericerror(1, ((e != 0) ? (char *)(e->message) : ""));
-#else
-#define CPP_HAS_TRY_CATCH 1
-#endif
+#  else
+#    define CPP_HAS_TRY_CATCH 1
+#  endif
 #else
   if (e)
     cerr << e->message << endl;
@@ -367,11 +372,19 @@ inline void THROW(const NCursesException *e) {
 #define NCURSES_CPP_TRY		/* nothing */
 #define NCURSES_CPP_CATCH(e)	if (false)
 #define THROWS(s)		/* nothing */
+#define THROW2(s,t)		/* nothing */
 #elif CPP_HAS_TRY_CATCH
   throw *e;
 #define NCURSES_CPP_TRY		try
 #define NCURSES_CPP_CATCH(e)	catch(e)
+#if defined(__cpp_noexcept_function_type) && (__cpp_noexcept_function_type >= 201510)
+// C++17 deprecates the usage of throw().
+#define THROWS(s)		/* nothing */
+#define THROW2(s,t)		/* nothing */
+#else
 #define THROWS(s)		throw(s)
+#define THROW2(s,t)		throw(s,t)
+#endif
 #endif
 }
 

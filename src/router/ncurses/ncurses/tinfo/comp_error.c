@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2005,2007 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2012,2016 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -41,7 +41,7 @@
 
 #include <tic.h>
 
-MODULE_ID("$Id: comp_error.c,v 1.31 2007/04/21 23:38:32 tom Exp $")
+MODULE_ID("$Id: comp_error.c,v 1.37 2016/09/10 20:26:29 tom Exp $")
 
 NCURSES_EXPORT_VAR(bool) _nc_suppress_warnings = FALSE;
 NCURSES_EXPORT_VAR(int) _nc_curr_line = 0; /* current line # in input */
@@ -59,18 +59,21 @@ _nc_get_source(void)
 NCURSES_EXPORT(void)
 _nc_set_source(const char *const name)
 {
-    SourceName = name;
+    FreeIfNeeded(SourceName);
+    SourceName = strdup(name);
 }
 
 NCURSES_EXPORT(void)
 _nc_set_type(const char *const name)
 {
+#define MY_SIZE (size_t) MAX_NAME_SIZE
     if (TermType == 0)
-	TermType = typeMalloc(char, MAX_NAME_SIZE + 1);
+	TermType = typeMalloc(char, MY_SIZE + 1);
     if (TermType != 0) {
 	TermType[0] = '\0';
-	if (name)
-	    strncat(TermType, name, MAX_NAME_SIZE);
+	if (name) {
+	    _nc_STRNCAT(TermType, name, MY_SIZE, MY_SIZE);
+	}
     }
 }
 
@@ -84,7 +87,7 @@ _nc_get_type(char *name)
     }
 #endif
     if (name != 0)
-	strcpy(name, TermType != 0 ? TermType : "");
+	_nc_STRCPY(name, TermType != 0 ? TermType : "", MAX_NAME_SIZE);
 }
 
 static NCURSES_INLINE void
@@ -151,3 +154,12 @@ _nc_syserr_abort(const char *const fmt,...)
     exit(EXIT_FAILURE);
 #endif
 }
+
+#if NO_LEAKS
+NCURSES_EXPORT(void)
+_nc_comp_error_leaks(void)
+{
+    FreeAndNull(SourceName);
+    FreeAndNull(TermType);
+}
+#endif

@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2008,2009 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2011,2017 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -40,14 +40,14 @@
 
 #include <curses.priv.h>
 
-MODULE_ID("$Id: lib_getstr.c,v 1.29 2009/10/24 21:59:02 tom Exp $")
+MODULE_ID("$Id: lib_getstr.c,v 1.31 2017/03/25 21:09:51 tom Exp $")
 
 /*
  * This wipes out the last character, no matter whether it was a tab, control
  * or other character, and handles reverse wraparound.
  */
 static char *
-WipeOut(WINDOW *win, int y, int x, char *first, char *last, bool echoed)
+WipeOut(WINDOW *win, int y, int x, char *first, char *last, int echoed)
 {
     if (last > first) {
 	*--last = '\0';
@@ -85,7 +85,7 @@ wgetnstr_events(WINDOW *win,
 
     T((T_CALLED("wgetnstr(%p,%p,%d)"), (void *) win, (void *) str, maxlen));
 
-    if (!win)
+    if (!win || !str)
 	returnCode(ERR);
 
     NCURSES_SP_NAME(_nc_get_tty_mode) (NCURSES_SP_ARGx &buf);

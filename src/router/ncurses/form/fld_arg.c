@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2004,2010 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2012,2016 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -32,7 +32,7 @@
 
 #include "form.priv.h"
 
-MODULE_ID("$Id: fld_arg.c,v 1.12 2010/01/23 21:14:35 tom Exp $")
+MODULE_ID("$Id: fld_arg.c,v 1.14 2016/01/23 21:32:00 tom Exp $")
 
 /*---------------------------------------------------------------------------
 |   Facility      :  libnform
@@ -67,11 +67,11 @@ set_fieldtype_arg(FIELDTYPE *typ,
 		  void (*const free_arg) (void *))
 {
   T((T_CALLED("set_fieldtype_arg(%p,%p,%p,%p)"),
-     (void *)typ, make_arg, copy_arg, free_arg));
+     (void *)typ, TR_FUNC(make_arg), TR_FUNC(copy_arg), TR_FUNC(free_arg)));
 
   if (typ != 0 && make_arg != (void *)0)
     {
-      typ->status |= _HAS_ARGS;
+      SetStatus(typ, _HAS_ARGS);
       typ->makearg = make_arg;
       typ->copyarg = copy_arg;
       typ->freearg = free_arg;

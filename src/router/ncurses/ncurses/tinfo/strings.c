@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2000-2003,2007 Free Software Foundation, Inc.              *
+ * Copyright (c) 2000-2012,2017 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -35,8 +35,9 @@
 **/
 
 #include <curses.priv.h>
+#include <tic.h>
 
-MODULE_ID("$Id: strings.c,v 1.6 2007/08/11 17:12:17 tom Exp $")
+MODULE_ID("$Id: strings.c,v 1.9 2017/08/26 13:16:11 tom Exp $")
 
 /****************************************************************************
  * Useful string functions (especially for mvcur)
@@ -105,12 +106,12 @@ _nc_str_copy(string_desc * dst, string_desc * src)
 NCURSES_EXPORT(bool)
 _nc_safe_strcat(string_desc * dst, const char *src)
 {
-    if (src != 0) {
+    if (PRESENT(src)) {
 	size_t len = strlen(src);
 
 	if (len < dst->s_size) {
 	    if (dst->s_tail != 0) {
-		strcpy(dst->s_tail, src);
+		_nc_STRCPY(dst->s_tail, src, dst->s_size);
 		dst->s_tail += len;
 	    }
 	    dst->s_size -= len;
@@ -126,12 +127,12 @@ _nc_safe_strcat(string_desc * dst, const char *src)
 NCURSES_EXPORT(bool)
 _nc_safe_strcpy(string_desc * dst, const char *src)
 {
-    if (src != 0) {
+    if (PRESENT(src)) {
 	size_t len = strlen(src);
 
 	if (len < dst->s_size) {
 	    if (dst->s_head != 0) {
-		strcpy(dst->s_head, src);
+		_nc_STRCPY(dst->s_head, src, dst->s_size);
 		dst->s_tail = dst->s_head + len;
 	    }
 	    dst->s_size = dst->s_init - len;
