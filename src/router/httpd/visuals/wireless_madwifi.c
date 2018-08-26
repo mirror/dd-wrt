@@ -242,7 +242,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			char *vifs = nvram_get(vif);
 			if (vifs != NULL)
 				foreach(var, vifs, next) {
-					cnt = ej_active_wireless_if(wp, argc, argv, var, cnt, t, macmask);
+				cnt = ej_active_wireless_if(wp, argc, argv, var, cnt, t, macmask);
 				}
 		}
 	}
@@ -280,7 +280,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 					continue;
 				if (nvram_matchi(wdsvarname, 0))
 					continue;
-					cnt = ej_active_wireless_if(wp, argc, argv, dev, cnt, t, macmask);
+				cnt = ej_active_wireless_if(wp, argc, argv, dev, cnt, t, macmask);
 			}
 		}
 	}
