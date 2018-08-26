@@ -197,13 +197,11 @@ int site_survey_main(int argc, char *argv[])
 	unsigned char *cp;
 	int len;
 	char *sta = nvram_safe_get("wifi_display");
-#ifdef HAVE_ATH9K
 #ifndef HAVE_NOWIFI
 	if (is_ath9k(sta)) {
 		extern int site_survey_main_mac802211(int argc, char *argv[]);
 		return site_survey_main_mac802211(argc, argv);
 	}
-#endif
 #endif
 #ifdef HAVE_MADWIFI_MIMO
 #ifndef HAVE_NOWIFI
