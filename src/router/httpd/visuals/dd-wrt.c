@@ -1507,16 +1507,8 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 		char fr[32];
 		int gotchannels = 0;
 		int channelbw = 20;
-#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
-		if (is_ath11n(prefix)) {
-#ifdef HAVE_MADWIFI_MIMO
-			if (is_ar5008(prefix)) {
-				chan = list_channels_11n(prefix);
-				if (chan == NULL)
-					chan = list_channels_11n(dev);
-				gotchannels = 1;
-			}
-#endif
+#if defined(HAVE_ATH9K)
+		if (is_ath9k(prefix)) {
 #ifdef HAVE_ATH9K
 			if (is_ath9k(prefix)) {
 				// temp must be replaced with the actual selected country
@@ -2019,8 +2011,8 @@ static void show_netmode(webs_t wp, char *prefix)
 #endif
 
 #endif
-#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
-	if (is_ath11n(prefix)) {
+#if defined(HAVE_ATH9K)
+	if (is_ath9k(prefix)) {
 		if (has_2ghz(prefix)) {
 			websWrite(wp, "document.write(\"<option value=\\\"ng-only\\\" %s>\" + wl_basic.ng + \"</option>\");\n", nvram_match(wl_net_mode, "ng-only") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"n2-only\\\" %s>\" + wl_basic.n2 + \"</option>\");\n", nvram_match(wl_net_mode, "n2-only") ? "selected=\\\"selected\\\"" : "");
@@ -2554,7 +2546,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #endif
 		websWrite(wp, "</fieldset><br />\n");
 		count++;
-#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
+#if defined(HAVE_ATH9K)
 		if (count == 4 && isap8x()) {
 			websWrite(wp, "<div class=\"warning\">\n");
 			websWrite(wp, "  <p><script type=\"text/javascript\">Capture(wl_basic.ap83_vap_note)</script></p>\n");
@@ -2565,7 +2557,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #ifndef HAVE_GUESTPORT
 	websWrite(wp, "<div class=\"center\">\n");
 #ifdef HAVE_MADWIFI
-#ifdef HAVE_ATH9K
+#ifndef HAVE_ATH9K
 	if (count < 8)
 #else
 	if ((!has_ad(prefix) && count < 8) || (is_ath9k(prefix) && !has_ad(prefix) && count < 16))
@@ -3009,16 +3001,16 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	if (!is_mvebu(prefix))
 #endif
 	{
-#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
-		if (is_ath11n(prefix)) {
+#if defined(HAVE_ATH9K)
+		if (is_ath9k(prefix)) {
 			showRadio(wp, "wl_basic.intmit", wl_intmit);
 		} else
 #endif
 		{
 			showAutoOption(wp, "wl_basic.intmit", wl_intmit);
 		}
-#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
-		if (!is_ath11n(prefix) && !is)
+#if defined(HAVE_ATH9K)
+		if (!is_ath9k(prefix) && !is)
 #endif
 		{
 			websWrite(wp, "<div class=\"setting\">\n");
@@ -3037,13 +3029,13 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 
 	showOptionsLabel(wp, "wl_basic.protmode", wl_protmode, "None CTS RTS/CTS", nvram_default_get(wl_protmode, "None"));
 	showrtssettings(wp, prefix);
-	if (!is_ath11n(prefix)) {
+	if (!is_ath9k(prefix)) {
 		show_rates(wp, prefix, 0);
 		show_rates(wp, prefix, 1);
 	}
 	showRadio(wp, "wl_basic.preamble", wl_preamble);
-#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
-	if (!is_ath11n(prefix))
+#if defined(HAVE_ATH9K)
+	if (!is_ath9k(prefix))
 #endif
 	{
 		showRadio(wp, "wl_basic.extrange", wl_xr);
@@ -3091,8 +3083,8 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		  wl_width, prefix);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	websWrite(wp, "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n", nvram_matchi(wl_width, 20) ? "selected=\\\"selected\\\"" : "");
-#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
-	if (is_ath11n(prefix)) {
+#if defined(HAVE_ATH9K)
+	if (is_ath9k(prefix)) {
 
 #if defined(HAVE_ATH9K)
 		if (!is_ath9k(prefix) || has_ht40(prefix))
@@ -3109,7 +3101,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 				fprintf(stderr, "[CHANNEL WIDTH] 20/40 (1)\n");
 			}
 	}
-	if (!is_ath11n(prefix) || is_ath9k(prefix) || (is_ath11n(prefix)
+	if (!is_ath9k(prefix) || is_ath9k(prefix) || (is_ath9k(prefix)
 						       && (nvram_nmatch("n-only", "%s_net_mode", prefix)
 							   || nvram_nmatch("ng-only", "%s_net_mode", prefix)
 							   || nvram_nmatch("n2-only", "%s_net_mode", prefix)
@@ -3138,7 +3130,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		}
 #endif
 	}
-#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
+#if defined(HAVE_ATH9K)
 }
 #endif
 #if !defined(HAVE_BUFFALO)
@@ -3225,8 +3217,8 @@ websWrite(wp, "//]]>\n</script>\n");
 websWrite(wp, "</select>\n");
 websWrite(wp, "</div>\n");
 #else
-#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
-if (!is_ath11n(prefix))
+#if defined(HAVE_ATH9K)
+if (!is_ath9k(prefix))
 #endif
 {
 	showRadio(wp, "wl_basic.diversity", wl_diversity);
@@ -3247,7 +3239,7 @@ if (!is_ath11n(prefix))
 	websWrite(wp, "</select>\n");
 	websWrite(wp, "</div>\n");
 }
-#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
+#if defined(HAVE_ATH9K)
 else {
 	int maxrx = 7;
 	int maxtx = 7;
@@ -3413,8 +3405,8 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 	} else {
 
 		show_channel(wp, prefix, prefix, 0);
-#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
-		if (is_ath11n(prefix)) {
+#if defined(HAVE_ATH9K)
+		if (is_ath9k(prefix)) {
 			if (nvram_matchi(wl_width, 40) || nvram_matchi(wl_width, 2040)) {
 				websWrite(wp, "<div class=\"setting\">\n");
 				show_caption(wp, "label", "wl_basic.channel_wide", NULL);
@@ -3746,12 +3738,11 @@ if (!strcmp(prefix, "wl2"))
 		  wl_width, prefix);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	websWrite(wp, "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n", nvram_matchi(wl_width, 20) ? "selected=\\\"selected\\\"" : "");
-#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 /* limit channel options by mode */
 #if defined(HAVE_ATH9K)
 	if (!is_ath9k(prefix) || has_ht40(prefix))
 #endif
-		if (is_ath11n(prefix)) {
+		if (is_ath9k(prefix)) {
 			if ((nvram_nmatch("n-only", "%s_net_mode", prefix)
 			     || nvram_nmatch("ng-only", "%s_net_mode", prefix)
 			     || nvram_nmatch("n2-only", "%s_net_mode", prefix)
@@ -3762,8 +3753,8 @@ if (!strcmp(prefix, "wl2"))
 			     || nvram_nmatch("na-only", "%s_net_mode", prefix)))
 				websWrite(wp, "document.write(\"<option value=\\\"2040\\\" %s >\" + share.dynamicturbo + \"</option>\");\n", nvram_matchi(wl_width, 2040) ? "selected=\\\"selected\\\"" : "");
 		}
-	if (!is_ath11n(prefix)
-	    || (is_ath11n(prefix)
+	if (!is_ath9k(prefix)
+	    || (is_ath9k(prefix)
 		&& (nvram_nmatch("n-only", "%s_net_mode", prefix)
 		    || nvram_nmatch("ng-only", "%s_net_mode", prefix)
 		    || nvram_nmatch("n2-only", "%s_net_mode", prefix)
@@ -3772,7 +3763,6 @@ if (!strcmp(prefix, "wl2"))
 		    || nvram_nmatch("ac-only", "%s_net_mode", prefix)
 		    || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)
 		    || nvram_nmatch("na-only", "%s_net_mode", prefix))))
-#endif
 	{
 #if defined(HAVE_ATH9K)
 		if (!is_ath9k(prefix))
@@ -3882,8 +3872,8 @@ if (!strcmp(prefix, "wl2"))
 		} else {
 
 			show_channel(wp, prefix, prefix, 0);
-#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
-			if (is_ath11n(prefix)) {
+#if defined(HAVE_ATH9K)
+			if (is_ath9k(prefix)) {
 				if (nvram_matchi(wl_width, 40) || nvram_matchi(wl_width, 2040)) {
 					websWrite(wp, "<div class=\"setting\">\n");
 					show_caption(wp, "label", "wl_basic.channel_wide", NULL);
@@ -4124,16 +4114,16 @@ if (!strcmp(prefix, "wl2"))
 	if (!is_mvebu(prefix))
 #endif
 	{
-#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
-		if (is_ath11n(prefix)) {
+#if defined(HAVE_ATH9K)
+		if (is_ath9k(prefix)) {
 			showRadio(wp, "wl_basic.intmit", wl_intmit);
 		} else
 #endif
 		{
 			showAutoOption(wp, "wl_basic.intmit", wl_intmit);
 		}
-#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
-		if (!is_ath11n(prefix))
+#if defined(HAVE_ATH9K)
+		if (!is_ath9k(prefix))
 #endif
 		{
 			websWrite(wp, "<div class=\"setting\">\n");
@@ -4152,13 +4142,13 @@ if (!strcmp(prefix, "wl2"))
 
 	showOptionsLabel(wp, "wl_basic.protmode", wl_protmode, "None CTS RTS/CTS", nvram_default_get(wl_protmode, "None"));
 	showrtssettings(wp, prefix);
-	if (!is_ath11n(prefix)) {
+	if (!is_ath9k(prefix)) {
 		show_rates(wp, prefix, 0);
 		show_rates(wp, prefix, 1);
 	}
 	showRadio(wp, "wl_basic.preamble", wl_preamble);
-#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
-	if (!is_ath11n(prefix))
+#if defined(HAVE_ATH9K)
+	if (!is_ath9k(prefix))
 #endif
 	{
 		showRadio(wp, "wl_basic.extrange", wl_xr);
@@ -4214,8 +4204,8 @@ if (!strcmp(prefix, "wl2"))
 	websWrite(wp, "</select>\n");
 	websWrite(wp, "</div>\n");
 #else
-#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
-	if (!is_ath11n(prefix))
+#if defined(HAVE_ATH9K)
+	if (!is_ath9k(prefix))
 #endif
 	{
 		showRadio(wp, "wl_basic.diversity", wl_diversity);
@@ -4236,7 +4226,7 @@ if (!strcmp(prefix, "wl2"))
 		websWrite(wp, "</select>\n");
 		websWrite(wp, "</div>\n");
 	}
-#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
+#if defined(HAVE_ATH9K)
 	else {
 		int maxrx = 7;
 		int maxtx = 7;
