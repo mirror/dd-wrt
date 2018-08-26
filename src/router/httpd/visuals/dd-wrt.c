@@ -3614,27 +3614,6 @@ if (!strcmp(prefix, "wl2"))
 	show_netmode(wp, prefix);
 	// turbo options
 #ifdef HAVE_MADWIFI
-	// char wl_xchanmode[16];
-	char wl_outdoor[16];
-	char wl_diversity[16];
-	char wl_rxantenna[16];
-	char wl_txantenna[16];
-	char wl_width[16];
-	char wl_preamble[16];
-	char wl_xr[16];
-	char wl_comp[32];
-	char wl_ff[16];
-	char wmm[32];
-	char wl_isolate[32];
-	char wl_intmit[32];
-	char wl_noise_immunity[32];
-	char wl_ofdm_weak_det[32];
-	char wl_protmode[32];
-	char wl_doth[32];
-	char wl_csma[32];
-	char wl_shortgi[32];
-	char wl_subf[32];
-	char wl_mubf[32];
 	sprintf(wl_csma, "%s_csma", prefix);
 	sprintf(wl_doth, "%s_doth", prefix);
 	sprintf(wl_protmode, "%s_protmode", prefix);
