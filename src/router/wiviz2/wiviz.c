@@ -45,7 +45,6 @@ To add:
 #include <unistd.h>
 #include <stdint.h>
 
-
 #define INFO_UPTIME 0
 #define INFO_RSSI 1
 #define INFO_NOISE 2
@@ -126,21 +125,14 @@ int main(int argc, char **argv)
 		if (!strcmp(argv[1], "terminate")) {
 #ifdef HAVE_MADWIFI
 			// return to original channel
-#ifdef HAVE_ATH9K
 			if (is_ath9k(wl_dev)) {
 				sysprintf("ifconfig %s down", get_monitor());
 				sysprintf("iw dev %s del", get_monitor());
-			}
-#endif
-			{
+			} else {
 				sysprintf("iwconfig %s channel %sM", get_monitor(), nvram_nget("%s_channel", nvram_safe_get("wifi_display")));
 				sleep(1);
 				sysprintf("ifconfig %s down", get_monitor());
-				if (is_ar5008(nvram_safe_get("wifi_display"))) {
-					sysprintf("80211n_wlanconfig %s destroy", get_monitor());
-				} else {
-					sysprintf("wlanconfig %s destroy", get_monitor());
-				}
+				sysprintf("wlanconfig %s destroy", get_monitor());
 			}
 #elif HAVE_RT2880
 			if (nvram_match("wifi_display", "wl0")) {
@@ -207,18 +199,11 @@ int main(int argc, char **argv)
 	}
 	cfg.readFromWl = 1;
 #else
-#ifdef HAVE_ATH9K
 	if (is_ath9k(nvram_safe_get("wifi_display"))) {
 		sysprintf("iw phy phy%d interface add %s type monitor", get_ath9k_phy_ifname(nvram_safe_get("wifi_display")), get_monitor());
 		sysprintf("ifconfig %s up", get_monitor());
-	}
-#endif
-	{
-		if (is_ar5008(nvram_safe_get("wifi_display"))) {
-			sysprintf("80211n_wlanconfig %s create wlandev %s wlanmode monitor", get_monitor(), getWifi(nvram_safe_get("wifi_display")));
-		} else {
-			sysprintf("wlanconfig %s create wlandev %s wlanmode monitor", get_monitor(), getWifi(nvram_safe_get("wifi_display")));
-		}
+	} else {
+		sysprintf("wlanconfig %s create wlandev %s wlanmode monitor", get_monitor(), getWifi(nvram_safe_get("wifi_display")));
 		sysprintf("ifconfig %s up", get_monitor());
 	}
 	cfg.readFromWl = 1;
@@ -523,7 +508,6 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 	dst = i_dst;
 	bss = i_bss;
 
-#ifdef HAVE_ATH9K
 	if (is_ath9k(nvram_safe_get("wifi_display"))) {
 		if (packet[0] > 0) {
 			printf("Wrong radiotap header version.\n");
@@ -541,9 +525,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 		rssi = -(100 - (packet[number - 4] - noise));
 		printf("rssi %d\n", rssi);
 		hWifi = (ieee802_11_hdr *) (packet + (number));
-	} else
-#endif
-	{
+	} else {
 		prism_hdr *hPrism;
 		prism_did *i;
 		if (pktlen < sizeof(prism_hdr) + (sizeof(ieee802_11_hdr)))
