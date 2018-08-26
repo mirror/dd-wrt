@@ -1,4 +1,4 @@
-gpsd-configure:
+gpsd-configure: ncurses
 	cd gpsd && ./configure --host=$(ARCH)-linux --disable-fv18 --disable-sirf --disable-python --disable-tsip --disable-garmin --disable-ntrip --disable-evermore --disable-rtcm104 --disable-tripmate --disable-earthmate --disable-shared --without-x CFLAGS="$(COPTS) -DNEED_PRINTF -I../ncurses/include -L../ncurses/lib " --prefix=/usr 
 
 gpsd:
