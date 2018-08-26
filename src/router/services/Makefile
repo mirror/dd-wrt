@@ -249,10 +249,6 @@ endif
 ifeq ($(CONFIG_WILLY),y)
 CFLAGS_EXTRA += -DHAVE_WILLY
 endif
-ifeq ($(CONFIG_MADWIFI_MIMO),y)
-CFLAGS_EXTRA += -DHAVE_MADWIFI_MIMO
-OBJS += madwifi_11n.o
-endif
 ifeq ($(CONFIG_ATH9K),y)
 CFLAGS_EXTRA += -DHAVE_ATH9K
 endif
@@ -836,12 +832,6 @@ endif
 ifeq ($(CONFIG_THOM),y)
 CFLAGS_EXTRA += -DHAVE_THOM
 endif
-ifeq ($(CONFIG_MADWIFI_MIMO),y)
-NOBJS += site_survey_madwifi_11n.o
-NFILES += tools/site_survey_madwifi_11n.c
-NCFLAGS += $(BCFLAGS) -DHAVE_MADWIFI -DMADWIFI_MIMO -I../madwifi.dev/madwifi_mimo.dev/core -I../wireless-tools -DHEADERS_KERNEL -DATH_USE_COMMONHAL
-MAD_FLAGS +=  -include ../madwifi.dev/madwifi_mimo.dev/core/include/compat.h 
-endif
 ifeq ($(CONFIG_ATH9K),y)
 ifneq ($(CONFIG_NOWIFI),y)
 
@@ -995,10 +985,6 @@ ifeq ($(CONFIG_WG302),y)
 endif
 ifeq ($(CONFIG_WG302V1),y)
   CFLAGS_EXTRA += -DHAVE_WG302V1
-endif
-ifeq ($(CONFIG_MADWIFI_MIMO),y)
-CFLAGS_EXTRA += -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO 
-MAD_FLAGS += -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL -DATH_USE_COMMONHAL
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
@@ -1303,10 +1289,6 @@ ifeq ($(CONFIG_RELAYD),y)
 CFLAGS_EXTRA += -DHAVE_RELAYD
 endif
 ifeq ($(CONFIG_MADWIFI),y)
-CFLAGS_EXTRA += -DHAVE_RELAYD
-endif
-
-ifeq ($(CONFIG_MADWIFI_MIMO),y)
 CFLAGS_EXTRA += -DHAVE_RELAYD
 endif
 endif
@@ -1803,10 +1785,6 @@ endif
 
 services.so: $(OBJS)
 	@echo "[LD] $@"
-#	$(AR) rcu -o $@.a $^
-ifeq ($(CONFIG_MADWIFI_MIMO),y)
-	@$(CC) --shared -L ../wireless-tools -c $(NCFLAGS) $(MAD_FLAGS) -o $(NOBJS) $(NFILES)  -liw
-endif
 ifeq ($(CONFIG_ATH9K),y)
 ifneq ($(CONFIG_NOWIFI),y)
 	@$(CC) -shared -L ../wireless-tools -c $(ATH9KCFLAGS)  $(MAD_FLAGS)  $(ATH9KFILES) -liw

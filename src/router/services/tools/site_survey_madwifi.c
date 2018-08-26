@@ -203,13 +203,6 @@ int site_survey_main(int argc, char *argv[])
 		return site_survey_main_mac802211(argc, argv);
 	}
 #endif
-#ifdef HAVE_MADWIFI_MIMO
-#ifndef HAVE_NOWIFI
-	if (is_ar5008(sta)) {
-		return site_survey_main_11n(argc, argv);
-	}
-#endif
-#endif
 	unsigned char *buf = malloc(24 * 1024);
 	if (!buf)
 		return -1;
