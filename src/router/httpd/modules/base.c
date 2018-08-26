@@ -778,11 +778,9 @@ static void do_spectral_scan(unsigned char method, struct mime_handler *handler,
 	int phy = mac80211_get_phyidx_by_vifname(ifname);
 	char *path;
 
-#ifdef HAVE_ATH10K
 	if (is_ath10k(ifname))
 		asprintf(&path, "/sys/kernel/debug/ieee80211/phy%d/ath10k", phy);
 	else
-#endif
 		asprintf(&path, "/sys/kernel/debug/ieee80211/phy%d/ath9k", phy);
 
 	char dest[64];
@@ -793,7 +791,6 @@ static void do_spectral_scan(unsigned char method, struct mime_handler *handler,
 	while (!feof(fp))
 		getc(fp);
 	fclose(fp);
-#ifdef HAVE_ATH10K
 	if (is_ath10k(ifname)) {
 		sprintf(dest, "%s/spectral_bins", path);
 		writestr(dest, "64");
@@ -801,7 +798,6 @@ static void do_spectral_scan(unsigned char method, struct mime_handler *handler,
 		writestr(dest, "manual");
 		writestr(dest, "trigger");
 	} else
-#endif
 	{
 		sprintf(dest, "%s/spectral_scan_ctl", path);
 		writestr(dest, "chanscan");
