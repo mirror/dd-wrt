@@ -158,7 +158,11 @@ extern int has_athmask(int devnum, int mask);
 extern int has_2ghz(char *prefix);
 extern int is_wrt3200(void);
 extern int has_5ghz(char *prefix);
+#ifdef HAVE_ATH9K
 extern int has_ht40(char *prefix);
+#else
+#define has_ht40(prefix) 0
+#endif
 #ifdef HAVE_80211AC
 extern int has_beamforming(char *prefix);
 #endif
@@ -229,9 +233,16 @@ extern void set_ath10kreg(char *ifname, unsigned int reg, unsigned int value);
 extern void set_ath10kdistance(char *ifname, unsigned int distance);
 extern unsigned int get_ath10kack(char *ifname);
 extern unsigned int get_ath10kdistance(char *ifname);
+#else
+#define has_subeamforming(prefix) 0
+#define has_mubeamforming(prefix) 0
 #endif
 struct unl;
+#ifdef HAVE_ATH9K
 extern int has_airtime_fairness(char *prefix);
+#else
+#define has_airtime_fairness(prefix) 0
+#endif
 extern int mac80211_check_band(char *interface, int checkband);
 struct wifi_channels *mac80211_get_channels(struct unl *unl, char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband);
 struct wifi_channels *mac80211_get_channels_simple(char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband);
