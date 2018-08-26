@@ -135,7 +135,7 @@ int has_5ghz(char *prefix)
 
 #endif
 
-#ifndef HAVE_ATH9K
+#ifndef HAVE_MADWIFI
 int has_vht160(char *prefix)
 {
 #ifdef HAVE_RT2880
@@ -1797,27 +1797,6 @@ void radio_on_off_ath9k(int idx, int on)
 }
 
 #endif
-
-int is_ar5008(char *prefix)
-{
-	char sys[64];
-	int devnum;
-	sscanf(prefix, "ath%d", &devnum);
-
-	sprintf(sys, "/proc/sys/dev/wifi%d/mimo", devnum);
-
-	if (f_exists(sys))
-		return 1;
-
-	return 0;
-}
-
-int is_ath11n(char *prefix)
-{
-	if (is_ath9k(prefix))
-		return 1;
-	return 0;
-}
 
 int has_athmask(int devnum, int mask)
 {
