@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2009,2010 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2014,2017 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -41,10 +41,11 @@
  *
  *	Date: 05.Nov.90
  *
- * $Id: hanoi.c,v 1.31 2010/11/14 01:01:07 tom Exp $
+ * $Id: hanoi.c,v 1.39 2017/09/09 00:19:24 tom Exp $
  */
 
 #include <test.priv.h>
+#include <math.h>
 
 #define NPEGS			3	/* This is not configurable !! */
 #define MINTILES		3
@@ -57,7 +58,7 @@
 #define MIDPEG			39
 #define RIGHTPEG		59
 
-#define LENTOIND(x)		(((x)-1)/2)
+#define LENTOIND(x)		(((int)(x)-1)/2)
 #define OTHER(a,b)		(3-((a)+(b)))
 
 struct Peg {
@@ -84,109 +85,9 @@ static short TileColour[] =
     COLOR_MAGENTA,		/* Length 17 */
     COLOR_RED,			/* Length 19 */
 };
+static int NTiles = 0;
 static int NMoves = 0;
 static bool AutoFlag = FALSE;
-
-static void InitTiles(int NTiles);
-static void DisplayTiles(void);
-static void MakeMove(int From, int To);
-static void AutoMove(int From, int To, int Num);
-static void Usage(void);
-static int Solved(int NumTiles);
-static int GetMove(int *From, int *To);
-static int InvalidMove(int From, int To);
-
-int
-main(int argc, char **argv)
-{
-    int NTiles, FromCol, ToCol;
-
-    setlocale(LC_ALL, "");
-
-    switch (argc) {
-    case 1:
-	NTiles = DEFAULTTILES;
-	break;
-    case 2:
-	NTiles = atoi(argv[1]);
-	if (NTiles > MAXTILES || NTiles < MINTILES) {
-	    fprintf(stderr, "Range %d to %d\n", MINTILES, MAXTILES);
-	    ExitProgram(EXIT_FAILURE);
-	}
-	break;
-    case 3:
-	if (strcmp(argv[2], "a")) {
-	    Usage();
-	    ExitProgram(EXIT_FAILURE);
-	}
-	NTiles = atoi(argv[1]);
-	if (NTiles > MAXTILES || NTiles < MINTILES) {
-	    fprintf(stderr, "Range %d to %d\n", MINTILES, MAXTILES);
-	    ExitProgram(EXIT_FAILURE);
-	}
-	AutoFlag = TRUE;
-	break;
-    default:
-	Usage();
-	ExitProgram(EXIT_FAILURE);
-    }
-#ifdef TRACE
-    trace(TRACE_MAXIMUM);
-#endif
-    initscr();
-    if (has_colors()) {
-	int i;
-	short bg = COLOR_BLACK;
-	start_color();
-#if HAVE_USE_DEFAULT_COLORS
-	if (use_default_colors() == OK)
-	    bg = -1;
-#endif
-	for (i = 0; i < 9; i++)
-	    init_pair((short) (i + 1), bg, TileColour[i]);
-    }
-    cbreak();
-    if (LINES < 24) {
-	endwin();
-	fprintf(stderr, "Min screen length 24 lines\n");
-	ExitProgram(EXIT_FAILURE);
-    }
-    if (AutoFlag) {
-	curs_set(0);
-	leaveok(stdscr, TRUE);	/* Attempt to remove cursor */
-    }
-    InitTiles(NTiles);
-    DisplayTiles();
-    if (AutoFlag) {
-	do {
-	    noecho();
-	    AutoMove(0, 2, NTiles);
-	} while (!Solved(NTiles));
-	sleep(2);
-    } else {
-	echo();
-	for (;;) {
-	    if (GetMove(&FromCol, &ToCol))
-		break;
-	    if (InvalidMove(FromCol, ToCol)) {
-		MvAddStr(STATUSLINE, 0, "Invalid Move !!");
-		refresh();
-		beep();
-		continue;
-	    }
-	    MakeMove(FromCol, ToCol);
-	    if (Solved(NTiles)) {
-		MvPrintw(STATUSLINE, 0,
-			 "Well Done !! You did it in %d moves", NMoves);
-		refresh();
-		sleep(5);
-		break;
-	    }
-	}
-    }
-    endwin();
-    ExitProgram(EXIT_SUCCESS);
-}
 
 static int
 InvalidMove(int From, int To)
@@ -211,7 +112,7 @@ InvalidMove(int From, int To)
 }
 
 static void
-InitTiles(int NTiles)
+InitTiles(void)
 {
     int Size, SlotNo;
 
@@ -232,7 +133,7 @@ DisplayTiles(void)
     erase();
     MvAddStr(1, 24, "T O W E R S   O F   H A N O I");
     MvAddStr(3, 34, "SJR 1990");
-    MvPrintw(19, 5, "Moves : %d", NMoves);
+    MvPrintw(19, 5, "Moves : %d of %.0f", NMoves, pow(2.0, (float) NTiles) - 1);
     (void) attrset(A_REVERSE);
     MvAddStr(BASELINE, 8,
 	     "                                                               ");
@@ -255,7 +156,7 @@ DisplayTiles(void)
 		memset(TileBuf, ' ', len);
 		TileBuf[len] = '\0';
 		if (has_colors())
-		    (void) attrset(COLOR_PAIR(LENTOIND(len)));
+		    (void) attrset(AttrArg(COLOR_PAIR(LENTOIND(len)), 0));
 		else
 		    (void) attrset(A_REVERSE);
 		MvAddStr(BASELINE - (SlotNo + 1),
@@ -310,12 +211,12 @@ AutoMove(int From, int To, int Num)
     if (Num == 1) {
 	MakeMove(From, To);
 	napms(500);
-	return;
+    } else {
+	AutoMove(From, OTHER(From, To), Num - 1);
+	MakeMove(From, To);
+	napms(500);
+	AutoMove(OTHER(From, To), To, Num - 1);
     }
-    AutoMove(From, OTHER(From, To), Num - 1);
-    MakeMove(From, To);
-    napms(500);
-    AutoMove(OTHER(From, To), To, Num - 1);
 }
 
 static int
@@ -330,9 +231,129 @@ Solved(int NumTiles)
 }
 
 static void
-Usage(void)
+usage(void)
 {
-    fprintf(stderr, "Usage: hanoi [<No Of Tiles>] [a]\n");
-    fprintf(stderr,
-	    "The 'a' option causes the tower to be solved automatically\n");
+    static const char *msg[] =
+    {
+	"Usage: hanoi [options] [[<No Of Tiles>] [a]]"
+	,""
+	,"Options:"
+#if HAVE_USE_DEFAULT_COLORS
+	," -d       invoke use_default_colors"
+#endif
+	," -n NUM   set number of tiles (positional param is deprecated)"
+	," -X       solve automatically (positional \"a\" is deprecated)"
+    };
+    size_t n;
+
+    for (n = 0; n < SIZEOF(msg); n++)
+	fprintf(stderr, "%s\n", msg[n]);
+
+    ExitProgram(EXIT_FAILURE);
+}
+
+int
+main(int argc, char **argv)
+{
+    int ch, FromCol, ToCol;
+
+#if HAVE_USE_DEFAULT_COLORS
+    bool d_option = FALSE;
+#endif
+
+    NTiles = DEFAULTTILES;
+    while ((ch = getopt(argc, argv, "dn:X")) != -1) {
+	switch (ch) {
+#if HAVE_USE_DEFAULT_COLORS
+	case 'd':
+	    d_option = TRUE;
+	    break;
+#endif
+	case 'n':
+	    NTiles = atoi(optarg);
+	    break;
+	case 'X':
+	    AutoFlag = TRUE;
+	    break;
+	default:
+	    usage();
+	    /* NOTREACHED */
+	}
+    }
+    setlocale(LC_ALL, "");
+
+    switch (ch = (argc - optind)) {
+    case 2:
+	if (strcmp(argv[optind + 1], "a")) {
+	    usage();
+	}
+	AutoFlag = TRUE;
+	/* FALLTHRU */
+    case 1:
+	NTiles = atoi(argv[optind]);
+	/* FALLTHRU */
+    case 0:
+	break;
+    default:
+	usage();
+    }
+
+    if (NTiles > MAXTILES || NTiles < MINTILES) {
+	fprintf(stderr, "Range %d to %d\n", MINTILES, MAXTILES);
+	usage();
+    }
+
+    initscr();
+    if (has_colors()) {
+	int i;
+	short bg = COLOR_BLACK;
+	start_color();
+#if HAVE_USE_DEFAULT_COLORS
+	if (d_option && (use_default_colors() == OK))
+	    bg = -1;
+#endif
+	for (i = 0; i < 9; i++)
+	    init_pair((short) (i + 1), bg, TileColour[i]);
+    }
+    cbreak();
+    if (LINES < 24) {
+	endwin();
+	fprintf(stderr, "Min screen length 24 lines\n");
+	ExitProgram(EXIT_FAILURE);
+    }
+    if (AutoFlag) {
+	curs_set(0);
+	leaveok(stdscr, TRUE);	/* Attempt to remove cursor */
+    }
+    InitTiles();
+    DisplayTiles();
+    if (AutoFlag) {
+	do {
+	    noecho();
+	    AutoMove(0, 2, NTiles);
+	} while (!Solved(NTiles));
+	sleep(2);
+    } else {
+	echo();
+	for (;;) {
+	    if (GetMove(&FromCol, &ToCol))
+		break;
+	    if (InvalidMove(FromCol, ToCol)) {
+		MvAddStr(STATUSLINE, 0, "Invalid Move !!");
+		refresh();
+		beep();
+		continue;
+	    }
+	    MakeMove(FromCol, ToCol);
+	    if (Solved(NTiles)) {
+		MvPrintw(STATUSLINE, 0,
+			 "Well Done !! You did it in %d moves", NMoves);
+		refresh();
+		sleep(5);
+		break;
+	    }
+	}
+    }
+    exit_curses();
+    ExitProgram(EXIT_SUCCESS);
 }

@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2002-2009,2010 Free Software Foundation, Inc.              *
+ * Copyright (c) 2002-2016,2017 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -26,7 +26,7 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: inserts.c,v 1.23 2010/12/12 00:19:55 tom Exp $
+ * $Id: inserts.c,v 1.29 2017/04/08 22:20:46 tom Exp $
  *
  * Demonstrate the winsstr() and winsch functions.
  * Thomas Dickey - 2002/10/19
@@ -161,12 +161,22 @@ test_inserts(int level)
 	static char cmd[80];
 	setlocale(LC_ALL, "");
 
-	putenv(strcpy(cmd, "TABSIZE=8"));
+	_nc_STRCPY(cmd, "TABSIZE=8", sizeof(cmd));
+	putenv(cmd);
 
 	initscr();
 	(void) cbreak();	/* take input chars one at a time, no wait for \n */
 	(void) noecho();	/* don't echo input */
 	keypad(stdscr, TRUE);
+
+	/*
+	 * Show the characters inserted in color, to distinguish from those
+	 * that are shifted.
+	 */
+	if (has_colors()) {
+	    start_color();
+	    init_pair(1, COLOR_WHITE, COLOR_BLUE);
+	}
     }
 
     limit = LINES - 5;
@@ -200,14 +210,8 @@ test_inserts(int level)
 
     doupdate();
 
-    /*
-     * Show the characters inserted in color, to distinguish from those that
-     * are shifted.
-     */
     if (has_colors()) {
-	start_color();
-	init_pair(1, COLOR_WHITE, COLOR_BLUE);
-	wbkgdset(work, COLOR_PAIR(1) | ' ');
+	wbkgdset(work, (chtype) (COLOR_PAIR(1) | ' '));
     }
 
     while ((ch = read_linedata(work)) != ERR && !isQUIT(ch)) {
@@ -216,11 +220,13 @@ test_inserts(int level)
 	case key_RECUR:
 	    test_inserts(level + 1);
 
-	    touchwin(look);
+	    if (look)
+		touchwin(look);
 	    touchwin(work);
 	    touchwin(show);
 
-	    wnoutrefresh(look);
+	    if (look)
+		wnoutrefresh(look);
 	    wnoutrefresh(work);
 	    wnoutrefresh(show);
 
@@ -314,6 +320,8 @@ test_inserts(int level)
 		beep();
 		break;
 	    }
+	    if (length >= BUFSIZ - 2)
+		break;
 	    buffer[length++] = (char) ch;
 	    buffer[length] = '\0';
 
@@ -368,10 +376,10 @@ test_inserts(int level)
 	}
     }
     if (level > 0) {
-	delwin(show);
 	delwin(work);
 	delwin(look);
     }
+    delwin(show);
 }
 
 static void

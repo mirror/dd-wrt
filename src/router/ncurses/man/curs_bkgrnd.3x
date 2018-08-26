@@ -1,5 +1,5 @@
 .\"***************************************************************************
-.\" Copyright (c) 2002-2006,2010 Free Software Foundation, Inc.              *
+.\" Copyright (c) 2002-2015,2017 Free Software Foundation, Inc.              *
 .\"                                                                          *
 .\" Permission is hereby granted, free of charge, to any person obtaining a  *
 .\" copy of this software and associated documentation files (the            *
@@ -26,7 +26,11 @@
 .\" authorization.                                                           *
 .\"***************************************************************************
 .\"
-.\" $Id: curs_bkgrnd.3x,v 1.4 2010/12/04 18:49:20 tom Exp $
+.\" $Id: curs_bkgrnd.3x,v 1.8 2017/11/18 23:47:37 tom Exp $
+.de bP
+.ie n  .IP \(bu 4
+.el    .IP \(bu 2
+..
 .TH curs_bkgrnd 3X ""
 .SH NAME
 \fBbkgrnd\fR,
@@ -52,6 +56,8 @@
 \fBint wgetbkgrnd(WINDOW *\fR\fIwin\fR\fB, cchar_t *\fR\fIwch\fR\fB);\fR
 .br
 .SH DESCRIPTION
+.SS bkgrndset
+.PP
 The \fBbkgrndset\fR and \fBwbkgrndset\fR routines manipulate the
 background of the named window.
 The window background is a \fBcchar_t\fR consisting of
@@ -67,34 +73,39 @@ insert/delete line/character operations.
 To the extent possible on a
 particular terminal, the attribute part of the background is displayed
 as the graphic rendition of the character put on the screen.
+.SS bkgrnd
 .PP
 The \fBbkgrnd\fR and \fBwbkgrnd\fR functions
 set the background property of the current or specified window
 and then apply this setting to every character position in that window:
-.RS
-.PP
+.bP
 The rendition of every character on the screen is changed to
 the new background rendition.
-.PP
+.bP
 Wherever the former background character
 appears, it is changed to the new background character.
-.RE
+.SS getbkgrnd
 .PP
 The \fBgetbkgrnd\fR function returns the given window's current background
 character/attribute pair via the \fBwch\fR pointer.
-.
+If the given window pointer is null,
+the character is not updated (but no error returned).
 .SH NOTES
 Note that
 \fBbkgrnd\fR,
 \fBbkgrndset\fR, and
 \fBgetbkgrnd\fR
 may be macros.
-.SH RETURN VALUES
+.SH RETURN VALUE
+.PP
 The \fBbkgrndset\fR and \fBwbkgrndset\fR routines do not return a value.
 .PP
 Upon successful completion, the other functions return \fBOK\fR.
-Otherwise, they return \fBERR\fR.
+Otherwise, they return \fBERR\fR:
+.bP
 A null window pointer is treated as an error.
+.bP
+A null character pointer is treated as an error.
 .SH SEE ALSO
 \fBcurses\fR(3X),
 \fBcurs_bkgd\fR(3X)

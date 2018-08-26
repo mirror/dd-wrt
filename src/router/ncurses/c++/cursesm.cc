@@ -1,6 +1,6 @@
 // * this is for making emacs happy: -*-Mode: C++;-*-
 /****************************************************************************
- * Copyright (c) 1998-2003,2005 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2011,2017 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -35,7 +35,7 @@
 #include "cursesm.h"
 #include "cursesapp.h"
 
-MODULE_ID("$Id: cursesm.cc,v 1.22 2005/04/02 20:39:05 tom Exp $")
+MODULE_ID("$Id: cursesm.cc,v 1.24 2017/06/26 08:32:53 tom Exp $")
 
 NCursesMenuItem::~NCursesMenuItem()
 {
@@ -180,8 +180,8 @@ NCursesMenu::~NCursesMenu()
   UserHook* hook = reinterpret_cast<UserHook*>(::menu_userptr(menu));
   delete hook;
   if (b_sub_owner) {
-    delete sub;
     ::set_menu_sub(menu, static_cast<WINDOW *>(0));
+    delete sub;
   }
   if (menu) {
     ITEM** itms = ::menu_items(menu);
@@ -375,33 +375,39 @@ NCursesMenu::On_Menu_Termination()
 void
 NCursesMenu::On_Item_Init(NCursesMenuItem& item)
 {
+  (void) item;
 }
 
 void
 NCursesMenu::On_Item_Termination(NCursesMenuItem& item)
 {
+  (void) item;
 }
 
 void
 NCursesMenu::On_Request_Denied(int c) const
 {
+  (void) c;
   ::beep();
 }
 
 void
 NCursesMenu::On_Not_Selectable(int c) const
 {
+  (void) c;
   ::beep();
 }
 
 void
 NCursesMenu::On_No_Match(int c) const
 {
+  (void) c;
   ::beep();
 }
 
 void
 NCursesMenu::On_Unknown_Command(int c) const
 {
+  (void) c;
   ::beep();
 }

@@ -1,6 +1,6 @@
 // * This makes emacs happy -*-Mode: C++;-*-
 /****************************************************************************
- * Copyright (c) 1998-2004,2005 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2012,2014 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -31,7 +31,7 @@
  *   Author: Juergen Pfeifer, 1997                                          *
  ****************************************************************************/
 
-// $Id: cursesf.h,v 1.28 2005/08/13 18:08:24 tom Exp $
+// $Id: cursesf.h,v 1.32 2014/08/09 22:06:11 Adam.Jiang Exp $
 
 #ifndef NCURSES_CURSESF_H_incl
 #define NCURSES_CURSESF_H_incl 1
@@ -61,7 +61,7 @@ class NCURSES_IMPEXP NCursesFieldType
 protected:
   FIELDTYPE* fieldtype;
 
-  inline void OnError(int err) const THROWS(NCursesFormException) {
+  inline void OnError(int err) const THROW2(NCursesException const, NCursesFormException) {
     if (err!=E_OK)
       THROW(new NCursesFormException (err));
   }
@@ -109,7 +109,7 @@ protected:
   NCursesFieldType* ftype;   // Associated field type
 
   // Error handler
-  inline void OnError (int err) const THROWS(NCursesFormException) {
+  inline void OnError (int err) const THROW2(NCursesException const, NCursesFormException) {
     if (err != E_OK)
       THROW(new NCursesFormException (err));
   }
@@ -391,7 +391,7 @@ protected:
 		 bool with_frame,
 		 bool autoDeleteFields);
 
-  inline void OnError (int err) const THROWS(NCursesFormException) {
+  inline void OnError (int err) const THROW2(NCursesException const, NCursesFormException) {
     if (err != E_OK)
       THROW(new NCursesFormException (err));
   }
@@ -673,20 +673,21 @@ protected:
 		   const T* p_UserData = STATIC_CAST(T*)(0))
     : NCursesForm(nlines,ncols,begin_y,begin_x) {
       if (form)
-	set_user (const_cast<void *>(p_UserData));
+	set_user (const_cast<void *>(reinterpret_cast<const void*>
+				     (p_UserData)));
   }
 
 public:
-  NCursesUserForm (NCursesFormField Fields[],
+  NCursesUserForm (NCursesFormField* Fields[],
 		   const T* p_UserData = STATIC_CAST(T*)(0),
 		   bool with_frame=FALSE,
 		   bool autoDelete_Fields=FALSE)
     : NCursesForm (Fields, with_frame, autoDelete_Fields) {
       if (form)
-	set_user (const_cast<void *>(p_UserData));
+	set_user (const_cast<void *>(reinterpret_cast<const void*>(p_UserData)));
   };
 
-  NCursesUserForm (NCursesFormField Fields[],
+  NCursesUserForm (NCursesFormField* Fields[],
 		   int nlines,
 		   int ncols,
 		   int begin_y = 0,
@@ -697,19 +698,20 @@ public:
     : NCursesForm (Fields, nlines, ncols, begin_y, begin_x,
 		   with_frame, autoDelete_Fields) {
       if (form)
-	set_user (const_cast<void *>(p_UserData));
+	set_user (const_cast<void *>(reinterpret_cast<const void*>
+				     (p_UserData)));
   };
 
   virtual ~NCursesUserForm() {
   };
 
-  inline T* UserData (void) const {
+  inline T* UserData (void) {
     return reinterpret_cast<T*>(get_user ());
   };
 
   inline virtual void setUserData (const T* p_UserData) {
     if (form)
-      set_user (const_cast<void *>(p_UserData));
+      set_user (const_cast<void *>(reinterpret_cast<const void*>(p_UserData)));
   }
 
 };

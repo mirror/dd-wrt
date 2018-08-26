@@ -1,5 +1,5 @@
 .\"***************************************************************************
-.\" Copyright (c) 2010 Free Software Foundation, Inc.                        *
+.\" Copyright (c) 2010-2015,2017 Free Software Foundation, Inc.              *
 .\"                                                                          *
 .\" Permission is hereby granted, free of charge, to any person obtaining a  *
 .\" copy of this software and associated documentation files (the            *
@@ -26,10 +26,11 @@
 .\" authorization.                                                           *
 .\"***************************************************************************
 .\"
-.\" $Id: curs_variables.3x,v 1.4 2010/12/04 18:38:55 tom Exp $
+.\" $Id: curs_variables.3x,v 1.9 2017/11/18 23:56:00 tom Exp $
 .TH curs_variables 3X ""
 .de bP
-.IP \(bu 4
+.ie n  .IP \(bu 4
+.el    .IP \(bu 2
 ..
 .ds n 5
 .na
@@ -74,7 +75,7 @@ This page summarizes variables provided by the \fBcurses\fP library.
 A more complete description is given in the \fBcurses\fP(3X) manual page.
 .PP
 Depending on the configuration, these may be actual variables,
-or macros (see \fBcurs_threads\fR(3X))
+or macros (see \fBcurs_threads\fR(3X) and \fBcurs_opaque\fR(3X))
 which provide read-only access to \fIcurses\fP's state.
 In either case, applications should treat them as read-only to avoid
 confusing the library.
@@ -127,9 +128,24 @@ most of these variables reside in the curses library.
 .SH PORTABILITY
 ESCDELAY and TABSIZE are extensions,
 not provided in most other implementations of curses.
+.PP
+ESCDELAY is an extension in AIX curses:
+.bP
+In AIX, the units for ESCDELAY are \fIfifths\fP of a millisecond.
+.bP
+The default value for AIX's ESCDELAY is 0.1 seconds.
+.bP
+AIX also enforces a limit of 10,000 seconds for ESCDELAY;
+this implementation currently has no upper limit.
+.PP
+This implementation has long used ESCDELAY with units of milliseconds,
+making it impossible to be completely compatible with AIX.
+Likewise, most users have either decided to override the value,
+or rely upon its default value.
 .SH SEE ALSO
 \fBcurses\fR(3X),
+\fBcurs_opaque\fR(3X),
+\fBcurs_terminfo\fR(3X),
 \fBcurs_threads\fR(3X),
 \fBterm_variables\fR(3X),
-\fBterminfo\fR(3X),
 \fBterminfo\fR(\*n).

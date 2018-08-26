@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2009,2010 Free Software Foundation, Inc.                   *
+ * Copyright (c) 2009-2016,2017 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -26,7 +26,7 @@
  * authorization.                                                           *
  ****************************************************************************/
 /*
- * $Id: test_addwstr.c,v 1.6 2010/12/12 00:18:00 tom Exp $
+ * $Id: test_addwstr.c,v 1.16 2017/04/15 15:08:03 tom Exp $
  *
  * Demonstrate the waddwstr() and wadd_wch functions.
  * Thomas Dickey - 2009/9/12
@@ -48,12 +48,16 @@
 #define WIDE_LINEDATA
 #include <linedata.h>
 
+#undef AddCh
 #undef MvAddCh
 #undef MvAddStr
 #undef MvWAddCh
 #undef MvWAddStr
+#undef WAddCh
 
-/* definitions to make it simpler to compare with inserts.c */
+/*
+ * redefinitions to simplify comparison between test_*str programs
+ */
 #define AddNStr    addnwstr
 #define AddStr     addwstr
 #define MvAddNStr  (void) mvaddnwstr
@@ -103,8 +107,7 @@ legend(WINDOW *win, int level, Options state, wchar_t *buffer, int length)
     wprintw(win,
 	    "down-arrow or ^N to repeat on next line, ^W for inner window, ESC to exit.\n");
     wclrtoeol(win);
-    wprintw(win, "Level %d,%s inserted %d characters <", level,
-	    showstate, length);
+    wprintw(win, "Level %d,%s added %d characters <", level, showstate, length);
     waddwstr(win, buffer);
     waddstr(win, ">");
 }
@@ -137,7 +140,7 @@ ColOf(wchar_t *buffer, int length, int margin)
 	    result += 2;
 	    break;
 	default:
-	    result += wcwidth(ch);
+	    result += wcwidth((wchar_t) ch);
 	    if (ch < 32)
 		++result;
 	    break;
@@ -218,7 +221,7 @@ AddCh(chtype ch)
 
 #define LEN(n) ((length - (n) > n_opt) ? n_opt : (length - (n)))
 static void
-test_inserts(int level)
+recursive_test(int level)
 {
     static bool first = TRUE;
 
@@ -233,19 +236,33 @@ test_inserts(int level)
     WINDOW *work = 0;
     WINDOW *show = 0;
     int margin = (2 * MY_TABSIZE) - 1;
-    Options option = ((m_opt ? oMove : oDefault)
-		      | ((w_opt || (level > 0)) ? oWindow : oDefault));
+    Options option = (Options) ((unsigned) (m_opt
+					    ? oMove
+					    : oDefault)
+				| (unsigned) ((w_opt || (level > 0))
+					      ? oWindow
+					      : oDefault));
 
     if (first) {
 	static char cmd[80];
 	setlocale(LC_ALL, "");
 
-	putenv(strcpy(cmd, "TABSIZE=8"));
+	_nc_STRCPY(cmd, "TABSIZE=8", sizeof(cmd));
+	putenv(cmd);
 
 	initscr();
 	(void) cbreak();	/* take input chars one at a time, no wait for \n */
 	(void) noecho();	/* don't echo input */
 	keypad(stdscr, TRUE);
+
+	/*
+	 * Show the characters added in color, to distinguish from those that
+	 * are shifted.
+	 */
+	if (has_colors()) {
+	    start_color();
+	    init_pair(1, COLOR_WHITE, COLOR_BLUE);
+	}
     }
 
     limit = LINES - 5;
@@ -279,27 +296,23 @@ test_inserts(int level)
 
     doupdate();
 
-    /*
-     * Show the characters inserted in color, to distinguish from those that
-     * are shifted.
-     */
     if (has_colors()) {
-	start_color();
-	init_pair(1, COLOR_WHITE, COLOR_BLUE);
-	wbkgdset(work, COLOR_PAIR(1) | ' ');
+	wbkgdset(work, (chtype) (COLOR_PAIR(1) | ' '));
     }
 
     while ((ch = read_linedata(work)) != ERR && !isQUIT(ch)) {
 	wmove(work, row, margin + 1);
 	switch (ch) {
 	case key_RECUR:
-	    test_inserts(level + 1);
+	    recursive_test(level + 1);
 
-	    touchwin(look);
+	    if (look)
+		touchwin(look);
 	    touchwin(work);
 	    touchwin(show);
 
-	    wnoutrefresh(look);
+	    if (look)
+		wnoutrefresh(look);
 	    wnoutrefresh(work);
 	    wnoutrefresh(show);
 
@@ -361,7 +374,7 @@ test_inserts(int level)
 		    break;
 		}
 
-		/* do the corresponding single-character insertion */
+		/* do the corresponding single-character add */
 		row2 = limit + row;
 		for (col = 0; col < length; ++col) {
 		    col2 = ColOf(buffer, col, margin);
@@ -392,7 +405,7 @@ test_inserts(int level)
 	    ch = '\b';
 	    /* FALLTHRU */
 	default:
-	    buffer[length++] = ch;
+	    buffer[length++] = (wchar_t) ch;
 	    buffer[length] = '\0';
 
 	    /* put the string in, one character at a time */
@@ -416,7 +429,7 @@ test_inserts(int level)
 		break;
 	    }
 
-	    /* do the corresponding single-character insertion */
+	    /* do the corresponding single-character add */
 	    switch (option) {
 	    case oDefault:
 		if (move(limit + row, col) != ERR) {
@@ -445,8 +458,8 @@ test_inserts(int level)
 	    break;
 	}
     }
+    delwin(show);
     if (level > 0) {
-	delwin(show);
 	delwin(work);
 	delwin(look);
     }
@@ -457,12 +470,12 @@ usage(void)
 {
     static const char *tbl[] =
     {
-	"Usage: inserts [options]"
+	"Usage: test_addwstr [options]"
 	,""
 	,"Options:"
 	,"  -f FILE read data from given file"
-	,"  -n NUM  limit string-inserts to NUM bytes on ^N replay"
-	,"  -m      perform wmove/move separately from insert-functions"
+	,"  -n NUM  limit string-adds to NUM bytes on ^N replay"
+	,"  -m      perform wmove/move separately from add-functions"
 	,"  -w      use window-parameter even when stdscr would be implied"
     };
     unsigned n;
@@ -502,7 +515,7 @@ main(int argc GCC_UNUSED, char *argv[]GCC_UNUSED)
     if (optind < argc)
 	usage();
 
-    test_inserts(0);
+    recursive_test(0);
     endwin();
     ExitProgram(EXIT_SUCCESS);
 }

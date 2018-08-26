@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2000-2008,2009 Free Software Foundation, Inc.              *
+ * Copyright (c) 2000-2013,2017 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -29,7 +29,7 @@
 /*
  * Author: Thomas E. Dickey - 2000
  *
- * $Id: railroad.c,v 1.19 2009/10/24 21:37:56 tom Exp $
+ * $Id: railroad.c,v 1.22 2017/09/30 17:55:22 tom Exp $
  *
  * A simple demo of the termcap interface.
  */
@@ -55,20 +55,20 @@ static char *backup;
 
 static bool interrupted = FALSE;
 
-static int
-outc(TPUTS_ARG c)
+static
+TPUTS_PROTO(outc, c)
 {
     int rc = OK;
 
     if (interrupted) {
 	char tmp = (char) c;
-	if (write(STDOUT_FILENO, &tmp, 1) == -1)
+	if (write(STDOUT_FILENO, &tmp, (size_t) 1) == -1)
 	    rc = ERR;
     } else {
 	if (putc(c, stdout) == EOF)
 	    rc = ERR;
     }
-    return rc;
+    TPUTS_RETURN(rc);
 }
 
 static void
@@ -187,10 +187,13 @@ railroad(char **args)
     NCURSES_CONST char *name = getenv("TERM");
     char buffer[1024];
     char area[1024], *ap = area;
+    int z;
 
     if (name == 0)
 	name = "dumb";
-    if (tgetent(buffer, name) >= 0) {
+
+    InitAndCatch(z = tgetent(buffer, name), onsig);
+    if (z >= 0) {
 
 	wipeit = tgetstr("ce", &ap);
 	height = tgetnum("li");
@@ -219,8 +222,6 @@ railroad(char **args)
 	finisC = tgetstr("vi", &ap);
 
 	MyShowCursor(0);
-
-	CATCHALL(onsig);
 
 	while (*args) {
 	    ShowSign(*args++);

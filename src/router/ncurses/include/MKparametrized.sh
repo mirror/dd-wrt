@@ -1,6 +1,6 @@
 #!/bin/sh
 ##############################################################################
-# Copyright (c) 1998-2000,2006 Free Software Foundation, Inc.                #
+# Copyright (c) 1998-2014,2017 Free Software Foundation, Inc.                #
 #                                                                            #
 # Permission is hereby granted, free of charge, to any person obtaining a    #
 # copy of this software and associated documentation files (the "Software"), #
@@ -26,7 +26,7 @@
 # use or other dealings in this Software without prior written               #
 # authorization.                                                             #
 ##############################################################################
-# $Id: MKparametrized.sh,v 1.6 2006/04/22 21:36:16 tom Exp $
+# $Id: MKparametrized.sh,v 1.8 2017/07/22 16:32:27 tom Exp $
 #
 # MKparametrized.sh -- generate indirection vectors for various sort methods
 #
@@ -35,6 +35,8 @@
 #
 CAPS="${1-Caps}"
 cat <<EOF
+#ifndef PARAMETRIZED_H
+#define PARAMETRIZED_H 1
 /*
  * parametrized.h --- is a termcap capability parametrized?
  *
@@ -53,10 +55,12 @@ EOF
 # this, that would be cleaner....
 
 ${AWK-awk} <$CAPS '
-$3 != "str"	{next;}
-$1 ~ /^acs_/	{print "-1,\t/* ", $2, " */"; count++; next;}
-$0 ~ /#[0-9]/	{print "1,\t/* ", $2, " */"; count++; next;}
-		{print "0,\t/* ", $2, " */"; count++;}
-END		{printf("} /* %d entries */;\n\n", count);}
+$3 != "str"		{next;}
+$1 ~ /^acs_/		{print "-1,\t/* ", $2, " */"; count++; next;}
+$1 ~ /^label_format/	{print "-1,\t/* ", $2, " */"; count++; next;}
+$0 ~ /#[0-9]/		{print "1,\t/* ", $2, " */"; count++; next;}
+			{print "0,\t/* ", $2, " */"; count++;}
+END			{printf("} /* %d entries */;\n\n", count);}
 '
 
+echo "#endif /* PARAMETRIZED_H */"

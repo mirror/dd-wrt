@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 2008-2009,2010 Free Software Foundation, Inc.              *
+ * Copyright (c) 2008-2012,2014 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -33,7 +33,7 @@
 
 #include <curses.priv.h>
 
-MODULE_ID("$Id: lib_driver.c,v 1.3 2010/12/20 00:29:17 tom Exp $")
+MODULE_ID("$Id: lib_driver.c,v 1.6 2014/04/11 08:21:23 jpf Exp $")
 
 typedef struct DriverEntry {
     const char *name;
@@ -43,9 +43,9 @@ typedef struct DriverEntry {
 static DRIVER_ENTRY DriverTable[] =
 {
 #ifdef __MINGW32__
-    {"win", &_nc_WIN_DRIVER},
+    {"win32console", &_nc_WIN_DRIVER},
 #endif
-    {"tinfo", &_nc_TINFO_DRIVER}
+    {"tinfo", &_nc_TINFO_DRIVER}	/* must be last */
 };
 
 NCURSES_EXPORT(int)
@@ -63,9 +63,11 @@ _nc_get_driver(TERMINAL_CONTROL_BLOCK * TCB, const char *name, int *errret)
 
     for (i = 0; i < SIZEOF(DriverTable); i++) {
 	res = DriverTable[i].driver;
-	if (res->CanHandle(TCB, name, errret)) {
-	    use = res;
-	    break;
+	if (strcmp(DriverTable[i].name, res->td_name(TCB)) == 0) {
+	    if (res->td_CanHandle(TCB, name, errret)) {
+		use = res;
+		break;
+	    }
 	}
     }
     if (use != 0) {
@@ -79,7 +81,7 @@ NCURSES_EXPORT(int)
 NCURSES_SP_NAME(has_key) (SCREEN *sp, int keycode)
 {
     T((T_CALLED("has_key(%p, %d)"), (void *) sp, keycode));
-    returnCode(IsValidTIScreen(sp) ? CallDriver_1(sp, kyExist, keycode) : FALSE);
+    returnCode(IsValidTIScreen(sp) ? CallDriver_1(sp, td_kyExist, keycode) : FALSE);
 }
 
 NCURSES_EXPORT(int)
@@ -94,7 +96,7 @@ NCURSES_SP_NAME(_nc_mcprint) (SCREEN *sp, char *data, int len)
     int code = ERR;
 
     if (0 != TerminalOf(sp))
-	code = CallDriver_2(sp, print, data, len);
+	code = CallDriver_2(sp, td_print, data, len);
     return (code);
 }
 
@@ -112,7 +114,7 @@ NCURSES_SP_NAME(doupdate) (SCREEN *sp)
     T((T_CALLED("doupdate(%p)"), (void *) sp));
 
     if (IsValidScreen(sp))
-	code = CallDriver(sp, update);
+	code = CallDriver(sp, td_update);
 
     returnCode(code);
 }
@@ -130,7 +132,7 @@ NCURSES_SP_NAME(mvcur) (SCREEN *sp, int yold, int xold, int ynew, int xnew)
     TR(TRACE_CALLS | TRACE_MOVE, (T_CALLED("mvcur(%p,%d,%d,%d,%d)"),
 				  (void *) sp, yold, xold, ynew, xnew));
     if (HasTerminal(sp)) {
-	code = CallDriver_4(sp, hwcur, yold, xold, ynew, xnew);
+	code = CallDriver_4(sp, td_hwcur, yold, xold, ynew, xnew);
     }
     returnCode(code);
 }

@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (c) 1998-2005,2009 Free Software Foundation, Inc.              *
+ * Copyright (c) 1998-2012,2016 Free Software Foundation, Inc.              *
  *                                                                          *
  * Permission is hereby granted, free of charge, to any person obtaining a  *
  * copy of this software and associated documentation files (the            *
@@ -27,7 +27,7 @@
  ****************************************************************************/
 
 /****************************************************************************
- *  Author: Thomas E. Dickey <dickey@clark.net> 1997                        *
+ *  Author: Thomas E. Dickey            1997-on                             *
  ****************************************************************************/
 
 /*
@@ -39,7 +39,7 @@
 
 #include <curses.priv.h>
 
-MODULE_ID("$Id: lib_printw.c,v 1.20 2009/10/24 22:07:03 tom Exp $")
+MODULE_ID("$Id: lib_printw.c,v 1.24 2016/05/28 23:11:26 tom Exp $")
 
 NCURSES_EXPORT(int)
 printw(const char *fmt,...)
@@ -48,10 +48,11 @@ printw(const char *fmt,...)
     int code;
 
 #ifdef TRACE
-    va_start(argp, fmt);
+    va_list argq;
+    va_start(argq, fmt);
     T((T_CALLED("printw(%s%s)"),
-       _nc_visbuf(fmt), _nc_varargs(fmt, argp)));
-    va_end(argp);
+       _nc_visbuf(fmt), _nc_varargs(fmt, argq)));
+    va_end(argq);
 #endif
 
     va_start(argp, fmt);
@@ -68,10 +69,11 @@ wprintw(WINDOW *win, const char *fmt,...)
     int code;
 
 #ifdef TRACE
-    va_start(argp, fmt);
+    va_list argq;
+    va_start(argq, fmt);
     T((T_CALLED("wprintw(%p,%s%s)"),
-       (void *) win, _nc_visbuf(fmt), _nc_varargs(fmt, argp)));
-    va_end(argp);
+       (void *) win, _nc_visbuf(fmt), _nc_varargs(fmt, argq)));
+    va_end(argq);
 #endif
 
     va_start(argp, fmt);
@@ -84,17 +86,19 @@ wprintw(WINDOW *win, const char *fmt,...)
 NCURSES_EXPORT(int)
 mvprintw(int y, int x, const char *fmt,...)
 {
-    va_list argp;
     int code;
 
 #ifdef TRACE
-    va_start(argp, fmt);
+    va_list argq;
+    va_start(argq, fmt);
     T((T_CALLED("mvprintw(%d,%d,%s%s)"),
-       y, x, _nc_visbuf(fmt), _nc_varargs(fmt, argp)));
-    va_end(argp);
+       y, x, _nc_visbuf(fmt), _nc_varargs(fmt, argq)));
+    va_end(argq);
 #endif
 
     if ((code = move(y, x)) != ERR) {
+	va_list argp;
+
 	va_start(argp, fmt);
 	code = vwprintw(stdscr, fmt, argp);
 	va_end(argp);
@@ -105,17 +109,19 @@ mvprintw(int y, int x, const char *fmt,...)
 NCURSES_EXPORT(int)
 mvwprintw(WINDOW *win, int y, int x, const char *fmt,...)
 {
-    va_list argp;
     int code;
 
 #ifdef TRACE
-    va_start(argp, fmt);
+    va_list argq;
+    va_start(argq, fmt);
     T((T_CALLED("mvwprintw(%d,%d,%p,%s%s)"),
-       y, x, (void *) win, _nc_visbuf(fmt), _nc_varargs(fmt, argp)));
-    va_end(argp);
+       y, x, (void *) win, _nc_visbuf(fmt), _nc_varargs(fmt, argq)));
+    va_end(argq);
 #endif
 
     if ((code = wmove(win, y, x)) != ERR) {
+	va_list argp;
+
 	va_start(argp, fmt);
 	code = vwprintw(win, fmt, argp);
 	va_end(argp);
