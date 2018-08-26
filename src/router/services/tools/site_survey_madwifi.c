@@ -281,7 +281,7 @@ int site_survey_main(int argc, char *argv[])
 			site_survey_lists[i].RSSI,
 			site_survey_lists[i].phy_noise,
 			site_survey_lists[i].active,
-			site_survey_lists[i].busy, 
+			site_survey_lists[i].busy,
 			site_survey_lists[i].active ? (100 - (site_survey_lists[i].busy * 100 / site_survey_lists[i].active)) : 100,
 			site_survey_lists[i].beacon_period, site_survey_lists[i].capability, site_survey_lists[i].dtim_period, site_survey_lists[i].rate_count, site_survey_lists[i].ENCINFO);
 	}
