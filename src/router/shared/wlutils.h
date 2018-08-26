@@ -218,9 +218,14 @@ extern int getdevicecount(void);
 extern int mac80211_get_coverageclass(char *interface);
 extern struct mac80211_info *mac80211_assoclist(char *interface);
 extern char *mac80211_get_caps(char *interface, int shortgi, int greenfield);
-extern int has_shortgi(char *interface);
 extern int has_greenfield(char *interface);
-
+#ifdef HAVE_ATH9K
+extern int has_airtime_fairness(char *prefix);
+extern int has_shortgi(char *interface);
+#else
+#define has_airtime_fairness(prefix) 0
+#define has_shortgi(prefix) 0
+#endif
 #ifdef HAVE_ATH10K
 extern int has_vht160(char *interface);
 extern int has_vht80(char *interface);
@@ -236,13 +241,16 @@ extern unsigned int get_ath10kdistance(char *ifname);
 #else
 #define has_subeamforming(prefix) 0
 #define has_mubeamforming(prefix) 0
+#ifdef HAVE_MADWIFI
+#define has_vht160(interface) 0
 #endif
+#ifdef HAVE_MADWIFI
+#define has_vht80(interface) 0
+#endif
+#define has_vht80plus80(interface) 0
+#endif
+
 struct unl;
-#ifdef HAVE_ATH9K
-extern int has_airtime_fairness(char *prefix);
-#else
-#define has_airtime_fairness(prefix) 0
-#endif
 extern int mac80211_check_band(char *interface, int checkband);
 struct wifi_channels *mac80211_get_channels(struct unl *unl, char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband);
 struct wifi_channels *mac80211_get_channels_simple(char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband);
