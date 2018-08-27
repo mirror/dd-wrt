@@ -1156,9 +1156,8 @@ char *cpustring(void)
 #endif
 }
 
-#if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
-
-int isap8x(void)
+#if defined(HAVE_ATH9K)
+int is_ap8x(void)
 {
 #define CPUSTR "Atheros AR91"
 	char *str = cpustring();
@@ -1169,7 +1168,6 @@ int isap8x(void)
 #undef CPUSTR
 
 }
-
 #endif
 
 int insmod(char *module)
