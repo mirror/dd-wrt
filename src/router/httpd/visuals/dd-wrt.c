@@ -1555,9 +1555,6 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 			// int cnt = getchannelcount ();
 			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s>\" + share.auto + \"</option>\");\n", !strcmp(wlc, "0") ? "selected=\\\"selected\\\"" : "");
 			int i = 0;
-#ifdef HAVE_ATH9K
-			int isath9k = is_ath9k(prefix) && !is_ath5k(prefix);
-#endif
 			while (chan[i].freq != -1) {
 #ifdef HAVE_BUFFALO
 				if (chan[i].dfs == 1) {
@@ -1597,15 +1594,12 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				sprintf(fr, "%d", chan[i].freq);
 				int freq = chan[i].freq;
 				if (freq != -1) {
-#ifdef HAVE_ATH9K
-
-					if (isath9k) {
+					if (is_ath9k(prefix) && !is_ath5k(prefix)) {
 						websWrite(wp,
 							  "document.write(\"<option value=\\\"%s\\\" rel=\\\'{\\\"lll\\\":%d,\\\"llu\\\":%d,\\\"lul\\\":%d,\\\"luu\\\":%d,\\\"ull\\\":%d,\\\"ulu\\\":%d,\\\"uul\\\":%d,\\\"uuu\\\":%d}\\\'%s>%s - %d \"+wl_basic.mhz+\"</option>\");\n",
 							  fr, chan[i].lll, chan[i].llu, chan[i].lul, chan[i].luu, chan[i].ull, chan[i].ulu, chan[i].uul, chan[i].uuu, !strcmp(wlc, fr) ? " selected=\\\"selected\\\"" : "",
 							  cn, (freq + offset));
 					} else
-#endif
 					{
 						websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s>%s - %d \"+wl_basic.mhz+\"</option>\");\n", fr, !strcmp(wlc, fr) ? "selected=\\\"selected\\\"" : "",
 							  cn, (freq + offset));
