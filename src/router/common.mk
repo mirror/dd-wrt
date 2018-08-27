@@ -2,6 +2,10 @@ ifeq ($(ARCH),arm)
 MUSL_LD:=ld-musl-armhf.so.1
 KERNEL_HEADER_ARCH:=arm
 endif
+ifeq ($(ARCH),aarch64)
+MUSL_LD:=ld-musl-aarch64.so.1
+KERNEL_HEADER_ARCH:=arm64
+endif
 ifeq ($(ARCHITECTURE),northstar)
 MUSL_LD:=ld-musl-arm.so.1
 KERNEL_HEADER_ARCH:=arm
