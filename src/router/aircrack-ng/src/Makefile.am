@@ -120,11 +120,6 @@ pkglibexec_PROGRAMS += aircrack-ng--neon \
                        aircrack-ng--asimd
 endif
 
-if PPC
-pkglibexec_PROGRAMS += aircrack-ng--altivec \
-                       aircrack-ng--power8
-endif
-
 if X86
 pkglibexec_PROGRAMS += aircrack-ng--avx2 \
                        aircrack-ng--avx \

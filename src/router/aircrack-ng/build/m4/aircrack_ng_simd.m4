@@ -113,26 +113,6 @@ then
         AX_APPEND_FLAG(-fno-strict-aliasing, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
         AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
     ])
-
-    AX_CHECK_COMPILE_FLAG([-maltivec], [
-        AX_APPEND_FLAG(-maltivec, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
-        AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
-    ])
-
-    AX_CHECK_COMPILE_FLAG([-mabi=altivec], [
-        AX_APPEND_FLAG(-mabi=altivec, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
-        AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
-    ])
-
-    AX_CHECK_COMPILE_FLAG([-mvsx], [
-        AX_APPEND_FLAG(-mvsx, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
-        AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
-    ])
-
-    AX_CHECK_COMPILE_FLAG([-mpower8-vector], [
-        AX_APPEND_FLAG(-mpower8-vector, [ppc_altivec_[]_AC_LANG_ABBREV[]flags])
-        AC_SUBST(ppc_altivec_[]_AC_LANG_ABBREV[]flags)
-    ])
 fi
 
 if test $IS_X86 -eq 0
