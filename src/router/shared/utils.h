@@ -861,7 +861,6 @@ extern void getLANMac(char *newmac);
 extern void getWirelessMac(char *newmac, int instance);
 extern void getWANMac(char *newmac);
 extern char *cpustring(void);
-extern int isap8x(void);
 
 struct ledconfig {
 	int power_gpio;
@@ -1131,11 +1130,13 @@ int is_wil6210(const char *prefix);
 
 #ifdef HAVE_ATH9K
 extern int is_ath9k(const char *prefix);
+extern int is_ap8x(void);
 extern int has_channelsurvey(const char *prefix);
 extern int has_spectralscanning(const char *prefix);
 extern int getath9kdevicecount(void);
 #else
 #define is_ath9k(prefix) 0
+#define is_ap8x() 0
 #define has_spectralscanning(prefix) 0
 #endif
 #ifdef HAVE_ATH10K
