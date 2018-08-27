@@ -203,11 +203,7 @@ ATH9KCFLAGS += -DHAVE_ATH10K
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
-ifeq ($(CONFIG_MADWIFI_MIMO),y)
-CFLAGS += -DHAVE_MADWIFI -DHAVE_MADWIFI_MIMO -I../services/networking -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL -DATH_USE_COMMONHAL
-else
 CFLAGS += -DHAVE_MADWIFI -I../services/networking -I../madwifi.dev/madwifi.dev -include ../madwifi.dev/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL 
-endif
 WLDFLAGS = -L $(TOP)/wireless-tools -liw
 else
 #WLDFLAGS = -lutils
