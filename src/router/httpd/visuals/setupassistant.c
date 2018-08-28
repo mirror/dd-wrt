@@ -624,10 +624,10 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 	{
 		websWrite(wp, "document.write(\"<option value=\\\"10\\\" %s >\" + share.half + \"</option>\");\n", nvram_selmatch(wp, wl_width, "10") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >\" + share.quarter + \"</option>\");\n", nvram_selmatch(wp, wl_width, "5") ? "selected=\\\"selected\\\"" : "");
-	if (registered_has_subquarter()) {
-		/* will be enabled once it is tested and the spectrum analyse is done */
-		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\" + share.subquarter + \"</option>\");\n", nvram_selmatch(wp, wl_width, "2") ? "selected=\\\"selected\\\"" : "");
-	}
+		if (registered_has_subquarter()) {
+			/* will be enabled once it is tested and the spectrum analyse is done */
+			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\" + share.subquarter + \"</option>\");\n", nvram_selmatch(wp, wl_width, "2") ? "selected=\\\"selected\\\"" : "");
+		}
 	}
 #endif
 	websWrite(wp, "//]]>\n</script>\n");
