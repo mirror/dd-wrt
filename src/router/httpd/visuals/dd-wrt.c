@@ -1563,13 +1563,11 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				}
 #endif
 
-#ifdef HAVE_MVEBU
-				if ((chan[i].channel == 161 || chan[i].channel == 153 || chan[i].channel == 64) && channelbw == 80) {
+				if (is_mvebu(prefix) && ((chan[i].channel == 161 || chan[i].channel == 153 || chan[i].channel == 64) && channelbw == 80() {
 					fprintf(stderr, "Skip unsupported channel: %d\n", chan[i].channel);
 					i++;
 					continue;
 				}
-#endif
 
 				if (channelbw == 40 && !chan[i].lll && !chan[i].llu && !chan[i].lul && !chan[i].luu && !chan[i].ull && !chan[i].ulu && !chan[i].uul && !chan[i].uuu) {
 					i++;
@@ -1585,12 +1583,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 					i++;
 					continue;	// do not show channels where bandwidth is not available
 				}
-#ifdef HAVE_ATH9K
-
 				sprintf(cn, "%d", chan[i].channel);
-#else
-				sprintf(cn, "%d", chan[i].channel);
-#endif
 				sprintf(fr, "%d", chan[i].freq);
 				int freq = chan[i].freq;
 				if (freq != -1) {
@@ -2514,13 +2507,11 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #endif
 		websWrite(wp, "</fieldset><br />\n");
 		count++;
-#if defined(HAVE_ATH9K)
-		if (count == 4 && isap8x()) {
+		if (is_ap8x() && count == 4) {
 			websWrite(wp, "<div class=\"warning\">\n");
 			websWrite(wp, "  <p><script type=\"text/javascript\">Capture(wl_basic.ap83_vap_note)</script></p>\n");
 			websWrite(wp, "</div>\n<br>\n");
 		}
-#endif
 	}
 #ifndef HAVE_GUESTPORT
 	websWrite(wp, "<div class=\"center\">\n");
