@@ -219,7 +219,6 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			t = 2;
 		else
 			t = 1;
-#ifdef HAVE_ATH9K
 		if (is_ath9k(devs)) {
 			if (has_ad(devs))
 				cnt = ej_active_wireless_if_ath9k(wp, argc, argv, "giwifi0", cnt, t, macmask);
@@ -227,14 +226,10 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 				cnt = ej_active_wireless_if_ath9k(wp, argc, argv, devs, cnt, t, macmask);
 			gotassocs = 1;
 		}
-#endif
 		if (!gotassocs) {
 			cnt = ej_active_wireless_if(wp, argc, argv, devs, cnt, t, macmask);
 		}
-#ifdef HAVE_ATH9K
-		if (!is_ath9k(devs))
-#endif
-		{
+		if (!is_ath9k(devs)) {
 			char vif[32];
 
 			sprintf(vif, "%s_vifs", devs);
@@ -249,12 +244,8 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 
 	// show wds links
 	for (i = 0; i < c; i++) {
-#ifdef HAVE_ATH9K
 		sprintf(devs, "ath%d", i);
-		if (!is_ath9k(devs))
-#endif
-
-		{
+		if (!is_ath9k(devs)) {
 
 			int s;
 
@@ -348,19 +339,15 @@ void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "N/A");
 		return;
 	}
-#ifdef HAVE_ATH9K
 	if (is_ath9k(ifname) || is_mvebu(ifname)) {
 		int coverage = mac80211_get_coverageclass(ifname);
 		ack = coverage * 3;
 		/* See handle_distance() for an explanation where the '450' comes from */
 		distance = coverage * 450;
 	} else {
-#endif
 		ack = get_acktiming(ifname);
 		distance = get_distance(ifname);
-#ifdef HAVE_ATH9K
 	}
-#endif
 	if (ack <= 0 || distance <= 0)
 		websWrite(wp, "N/A");
 	else
@@ -405,10 +392,7 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 		divisor = KILO;
 	}
 	sprintf(mode, "%s_channelbw", ifname);
-#ifdef HAVE_ATH9K
-	if (!is_ath9k(ifname))
-#endif
-	{
+	if (!is_ath9k(ifname)) {
 
 		if (nvram_matchi(mode, 40))
 			rate *= 2;
@@ -435,20 +419,16 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 		}
 
 		int freq = get_wififreq(prefix, interface->freq);	// translation for special frequency devices
-#ifdef HAVE_ATH9K
 		if (is_ath9k(prefix)) {
 			websWrite(wp, "%d", ieee80211_mhz2ieee(interface->freq));
 			if (interface->center1 != -1 && interface->center1 != interface->freq)
 				websWrite(wp, " + %d", ieee80211_mhz2ieee(interface->center1));
 			if (interface->center2 != -1 && interface->center1 != interface->freq)
 				websWrite(wp, " + %d", ieee80211_mhz2ieee(interface->center2));
-		} else
-#endif
-		{
+		} else {
 			websWrite(wp, "%d", channel);
 		}
 		websWrite(wp, " (%d MHz", freq);
-#ifdef HAVE_ATH9K
 		if (is_ath9k(prefix)) {
 			switch (interface->width) {
 			case 10:
@@ -473,7 +453,6 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 				break;
 			}
 		}
-#endif
 		websWrite(wp, ")");
 		free(interface);
 
