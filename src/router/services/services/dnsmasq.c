@@ -179,14 +179,22 @@ void start_dnsmasq(void)
 	}
 //    fprintf(fp, "bind-interfaces\n");
 	if (nvram_matchi("chilli_enable", 1) || nvram_matchi("hotss_enable", 1)) {
+		char *chilliif;
 #ifdef HAVE_HOTSPOT
 		if (nvram_matchi("hotss_enable", 1))
-			fprintf(fp, "interface=%s", nvram_safe_get("hotss_interface"));
+			chilliif = nvram_safe_get("hotss_interface");
 		else
+			chilliif = nvram_safe_get("chilli_interface");
 #endif
-			fprintf(fp, "interface=%s", nvram_safe_get("chilli_interface"));
-		if (!canlan())
+
+		fprintf(fp, "interface=%s", chilliif);
+		if (!canlan()) {
 			fprintf(fp, ",");
+		} else {
+			if (strcmp(chilliif, nvram_safe_get("lan_ifname"))) {
+				fprintf(fp, ",%s", nvram_safe_get("lan_ifname"));
+			}
+		}
 	} else if (nvram_matchi("pptpd_enable", 1)) {
 		fprintf(fp, "listen-address=127.0.0.1");
 		if (canlan())
