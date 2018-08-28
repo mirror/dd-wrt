@@ -1149,6 +1149,12 @@ extern int is_mvebu(const char *prefix);
 #else
 #define is_mvebu(prefix) 0
 #endif
+#if defined(HAVE_SUBQUARTER) && (defined(HAVE_REGISTER) || defined(HAVE_SUPERCHANNEL))
+int registered_has_subquarter(void)
+#else 
+#define registered_has_subquarter()
+#endif
+
 extern char *get3GDeviceVendor(void);
 
 int isGrep(char *string, char *cmp);

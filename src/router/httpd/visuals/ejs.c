@@ -1304,11 +1304,9 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 	char eths2[256];
 	char bword[256];
 	char bufferif[512];
-#ifdef HAVE_ATH9K
 	glob_t globbuf;
 	char *globstring;
 	int globresult;
-#endif
 
 	show_bwif(wp, nvram_safe_get("lan_ifname"), "LAN");
 	bzero(eths, sizeof(eths));
@@ -1405,7 +1403,6 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 			snprintf(name, sizeof(name), "%s (%s)", tran_string(buf, "share.wireless"), getNetworkLabel(wp, wdsdev));
 			show_bwif(wp, wdsdev, name);
 		}
-#ifdef HAVE_ATH9K
 		if (is_ath9k(dev)) {
 			asprintf(&globstring, "/sys/class/ieee80211/phy*/device/net/%s.sta*", dev);
 			globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
@@ -1423,7 +1420,6 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 			globfree(&globbuf);
 			free(globstring);
 		}
-#endif
 	}
 
 #else
