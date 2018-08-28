@@ -178,8 +178,13 @@ void start_dnsmasq(void)
 		return;
 	}
 //    fprintf(fp, "bind-interfaces\n");
-	if (nvram_matchi("chilli_enable", 1)) {
-		fprintf(fp, "interface=%s", get_wdev());
+	if (nvram_matchi("chilli_enable", 1) || nvram_matchi("hotss_enable", 1)) {
+#ifdef HAVE_HOTSPOT
+		if (nvram_matchi("hotss_enable", 1))
+			fprintf(fp, "interface=%s", nvram_safe_get("hotss_interface"));
+		else
+#endif
+			fprintf(fp, "interface=%s", nvram_safe_get("chilli_interface"));
 		if (!canlan())
 			fprintf(fp, ",");
 	} else if (nvram_matchi("pptpd_enable", 1)) {
