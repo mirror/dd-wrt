@@ -3026,16 +3026,14 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 }
 
 #if !defined(HAVE_BUFFALO)
-#if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) && !defined(HAVE_MADIFI_MIMO)
+#if defined(HAVE_MADWIFI)
 if (!(is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix))) {
 	websWrite(wp, "document.write(\"<option value=\\\"10\\\" %s >\" + share.half + \"</option>\");\n", nvram_matchi(wl_width, 10) ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >\" + share.quarter + \"</option>\");\n", nvram_matchi(wl_width, 5) ? "selected=\\\"selected\\\"" : "");
-#ifdef HAVE_SUBQUARTER
 	if (registered_has_subquarter()) {
 		/* will be enabled once it is tested and the spectrum analyse is done */
 		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\" + share.subquarter + \"</option>\");\n", nvram_matchi(wl_width, 2) ? "selected=\\\"selected\\\"" : "");
 	}
-#endif
 }
 #endif
 #endif
@@ -3632,12 +3630,10 @@ if (!strcmp(prefix, "wl2"))
 	if (!(is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix))) {
 		websWrite(wp, "document.write(\"<option value=\\\"10\\\" %s >\" + share.half + \"</option>\");\n", nvram_matchi(wl_width, 10) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >\" + share.quarter + \"</option>\");\n", nvram_matchi(wl_width, 5) ? "selected=\\\"selected\\\"" : "");
-#ifdef HAVE_SUBQUARTER
 		if (registered_has_subquarter()) {
 			/* will be enabled once it is tested and the spectrum analyse is done */
 			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\" + share.subquarter + \"</option>\");\n", nvram_matchi(wl_width, 2) ? "selected=\\\"selected\\\"" : "");
 		}
-#endif
 	}
 #endif
 #endif

@@ -805,19 +805,20 @@ void ej_show_wireless_advanced(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_MADWIFI
 	int showrate = 1;
-#if defined(HAVE_ATH9K)
 	showrate = 0;
 	char ifname[32];
 	int i;
-	for (i = 0; i < 16; i++) {
+	int cnt = getdevicecount();
+	for (i = 0; i < cnt; i++) {
 		sprintf(ifname, "ath%d", i);
 		if (ifexists(ifname)) {
-			if (!is_ath9k(ifname))
+			if (!is_ath9k(ifname)) {
 				showrate = 1;
+				break;
+			}
 		} else
 			break;
 	}
-#endif
 
 	if (showrate) {
 		websWrite(wp, "<h2><script type=\"text/javascript\">Capture(wl_basic.advanced_options);</script></h2>\n");
