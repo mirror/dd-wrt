@@ -1152,7 +1152,7 @@ extern int is_mvebu(const char *prefix);
 #if defined(HAVE_SUBQUARTER) && (defined(HAVE_REGISTER) || defined(HAVE_SUPERCHANNEL))
 int registered_has_subquarter(void)
 #else 
-#define registered_has_subquarter()
+#define registered_has_subquarter() 0
 #endif
 
 extern char *get3GDeviceVendor(void);
