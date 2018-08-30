@@ -1754,9 +1754,11 @@ void get3GControlDevice(void)
 					insmod("usb_wwan");
 					insmod("qcserial");
 					//start custom setup, if defined
-					if (devicelist[devicecount].customsetup) {
-						fprintf(stderr, "customsetup MBIM\n");
-						devicelist[devicecount].customsetup(needreset, devicecount);
+					if (! nvram_match("3gdnccs", "1")) {
+						if (devicelist[devicecount].customsetup) {
+							fprintf(stderr, "customsetup MBIM\n");
+							devicelist[devicecount].customsetup(needreset, devicecount);
+						}
 					}
 					nvram_set("3gdata", "mbim");
 				}
