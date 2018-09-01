@@ -47,7 +47,7 @@
 
 /*formal version control*/
 #define AMBIT_HARDWARE_VERSION     "U12H332T00"
-#define AMBIT_SOFTWARE_VERSION     "V1.0.2.56"
+#define AMBIT_SOFTWARE_VERSION     "V1.0.2.99"
 #define AMBIT_UI_VERSION           "1.0.42"
 #define STRING_TBL_VERSION         "1.0.2.56_2.1.38.1"
 
