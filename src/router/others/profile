@@ -3,6 +3,8 @@ export LD_LIBRARY_PATH=/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/jffs/usr/local/lib
 export PS1='\[\033[01;31m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
 export TZ=`cat /etc/TZ`
 
+alias ll='ls -lahrt'
+
 reboot() {
   for f in /opt/etc/init.d/K* ; do
     [ -x "$f" ] && "$f" stop
