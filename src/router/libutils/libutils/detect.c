@@ -599,19 +599,17 @@ int internal_getRouterBrand()
 
 	if (boardnum == 32 && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1601")) {
-		if (nvram_match("et2phyaddr", "30") && !nvram_match("board_id", "U12H332T20_NETGEAR")) {
+		if (nvram_match("board_id", "U12H270T20")) {
 			setRouter("Netgear R7000P");
 			return ROUTER_NETGEAR_R7000P;
-		} else {
-			if (nvram_match("board_id", "U12H332T20_NETGEAR")) {
+		} else if (nvram_match("board_id", "U12H332T20_NETGEAR") 
+				|| nvram_match("board_id", "U12H332T30_NETGEAR")) {
 				setRouter("Netgear R6400 v2");
 				return ROUTER_NETGEAR_R6400V2;
-			} else {
+		} else {
 				setRouter("Netgear R6400 v1");
 				return ROUTER_NETGEAR_R6400;
-			}
 		}
-
 	}
 
 	if (boardnum == 32 && nvram_match("boardtype", "0x0665")
