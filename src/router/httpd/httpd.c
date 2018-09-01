@@ -773,6 +773,7 @@ static void *handle_request(void *arg)
 	for (;;) {
 		wfgets(line, LINE_LEN, conn_fp);
 		if (strlen(line) > 0 || time(NULL) > (start + 2))
+			usleep(1000);
 			break;
 	}
 
