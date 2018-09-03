@@ -608,7 +608,7 @@ int internal_getRouterBrand()
 				return ROUTER_NETGEAR_R6400V2;
 		} else if (nvram_match("board_id", "U12H332T77_NETGEAR"))  {
 				setRouter("Netgear R6700 v3");
-				return ROUTER_NETGEAR_R6700V3
+				return ROUTER_NETGEAR_R6700V3;
 		} else {
 				setRouter("Netgear R6400 v1");
 				return ROUTER_NETGEAR_R6400;
