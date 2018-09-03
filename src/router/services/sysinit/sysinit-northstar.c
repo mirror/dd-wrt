@@ -5353,6 +5353,7 @@ void start_sysinit(void)
 		break;
 	case ROUTER_NETGEAR_R6400:
 	case ROUTER_NETGEAR_R6400V2:
+	case ROUTER_NETGEAR_R6700V3:
 		if (nvram_get("pci/1/1/ddwrt") == NULL) {
 			if (!sv_valid_hwaddr(nvram_safe_get("pci/1/1/macaddr"))
 			    || startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
@@ -5369,7 +5370,7 @@ void start_sysinit(void)
 			/*
 			 * set router's extra parameters 
 			 */
-			if (nvram_match("board_id", "U12H332T20_NETGEAR") || nvram_match("board_id", "U12H332T30_NETGEAR") )
+			if (nvram_match("board_id", "U12H332T20_NETGEAR") || nvram_match("board_id", "U12H332T30_NETGEAR") || nvram_match("board_id", "U12H332T77_NETGEAR"))
 				extra_params = r6400v2_pci_1_1_params;
 			else
 				extra_params = r6400_pci_1_1_params;
@@ -5381,7 +5382,7 @@ void start_sysinit(void)
 			/*
 			 * set router's extra parameters 
 			 */
-			if (nvram_match("board_id", "U12H332T20_NETGEAR") || nvram_match("board_id", "U12H332T30_NETGEAR") )
+			if (nvram_match("board_id", "U12H332T20_NETGEAR") || nvram_match("board_id", "U12H332T30_NETGEAR") || nvram_match("board_id", "U12H332T77_NETGEAR"))
 				extra_params = r6400v2_pci_2_1_params;
 			else
 				extra_params = r6400_pci_2_1_params;
