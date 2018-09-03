@@ -453,6 +453,7 @@ static int write_main(int argc, char *argv[])
 				break;
 			case ROUTER_NETGEAR_R6400:
 			case ROUTER_NETGEAR_R6400V2:
+			case ROUTER_NETGEAR_R6700V3:
 				if (strncmp(board_id, "U12H332T20_NETGEAR", sizeof(board_id)) && strncmp(board_id, "U12H332T30_NETGEAR", sizeof(board_id)) && strncmp(board_id, "U12H332T00_NETGEAR", sizeof(board_id))) {
 					fprintf(stderr, "Error: board id %s expected %s\n", board_id, "U12H332T00_NETGEAR U12H332T20_NETGEAR or U12H332T30_NETGEAR");
 					fclose(fp);
