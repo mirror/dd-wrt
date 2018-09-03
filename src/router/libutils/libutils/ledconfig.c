@@ -1454,6 +1454,7 @@ static void getledconfig(struct ledconfig *cfg)
 		break;
 	case ROUTER_NETGEAR_R6400:
 	case ROUTER_NETGEAR_R6400V2:
+	case ROUTER_NETGEAR_R6700V3:
 		cfg->power_gpio = 0x101;	// 
 		cfg->connected_gpio = 0x107;	//
 		cfg->usb_power = 0x000;	//
