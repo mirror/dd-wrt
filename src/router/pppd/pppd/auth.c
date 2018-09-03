@@ -442,7 +442,6 @@ setupapfile(argv)
     }
     ufile = fopen(fname, "r");
     if (seteuid(euid) == -1) {
-	free(fname);
 	fatal("unable to regain privileges: %m");
     }
     if (ufile == NULL) {
