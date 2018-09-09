@@ -32,6 +32,9 @@
  *  to fit CyaSSL's needs.
  */
 
+/*!
+    \file wolfssl/wolfcrypt/tfm.h
+*/
 
 #ifndef WOLF_CRYPT_TFM_H
 #define WOLF_CRYPT_TFM_H
@@ -64,6 +67,10 @@
    #define MAX(x,y) ((x)>(y)?(x):(y))
 #endif
 
+#ifdef WOLFSSL_NO_ASM
+   #undef  TFM_NO_ASM
+   #define TFM_NO_ASM
+#endif
 
 #ifndef NO_64BIT
 /* autodetect x86-64 and make sure we are using 64-bit digits with x86-64 asm */
@@ -606,8 +613,6 @@ void fp_sqr_comba32(fp_int *a, fp_int *b);
 void fp_sqr_comba48(fp_int *a, fp_int *b);
 void fp_sqr_comba64(fp_int *a, fp_int *b);
 
-/*extern const char *fp_s_rmap;*/
-
 
 /**
  * Used by wolfSSL
@@ -634,10 +639,22 @@ typedef fp_int mp_int;
 #define MP_MASK FP_MASK
 
 /* Prototypes */
-#define mp_zero(a)  fp_zero(a)
+#define mp_zero(a)   fp_zero(a)
 #define mp_isone(a)  fp_isone(a)
-#define mp_iseven(a)  fp_iseven(a)
-#define mp_isneg(a)   fp_isneg(a)
+#define mp_iseven(a) fp_iseven(a)
+#define mp_isneg(a)  fp_isneg(a)
+
+#define MP_RADIX_BIN  2
+#define MP_RADIX_OCT  8
+#define MP_RADIX_DEC  10
+#define MP_RADIX_HEX  16
+#define MP_RADIX_MAX  64
+
+#define mp_tobinary(M, S)  mp_toradix((M), (S), MP_RADIX_BIN)
+#define mp_tooctal(M, S)   mp_toradix((M), (S), MP_RADIX_OCT)
+#define mp_todecimal(M, S) mp_toradix((M), (S), MP_RADIX_DEC)
+#define mp_tohex(M, S)     mp_toradix((M), (S), MP_RADIX_HEX)
+
 MP_API int  mp_init (mp_int * a);
 MP_API void mp_clear (mp_int * a);
 MP_API void mp_free (mp_int * a);
@@ -658,6 +675,7 @@ MP_API int  mp_mod(mp_int *a, mp_int *b, mp_int *c);
 MP_API int  mp_invmod(mp_int *a, mp_int *b, mp_int *c);
 MP_API int  mp_exptmod (mp_int * g, mp_int * x, mp_int * p, mp_int * y);
 MP_API int  mp_mul_2d(mp_int *a, int b, mp_int *c);
+MP_API int  mp_2expt(mp_int* a, int b);
 
 MP_API int  mp_div(mp_int * a, mp_int * b, mp_int * c, mp_int * d);
 
@@ -689,8 +707,11 @@ MP_API int mp_radix_size (mp_int * a, int radix, int *size);
     #define mp_dump(desc, a, verbose)
 #endif
 
-#ifdef HAVE_ECC
+#if !defined(NO_DSA) || defined(HAVE_ECC)
     MP_API int mp_read_radix(mp_int* a, const char* str, int radix);
+#endif
+
+#ifdef HAVE_ECC
     MP_API int mp_sqr(fp_int *a, fp_int *b);
     MP_API int mp_montgomery_reduce(fp_int *a, fp_int *m, fp_digit mp);
     MP_API int mp_montgomery_setup(fp_int *a, fp_digit *rho);
@@ -719,6 +740,7 @@ MP_API int  mp_cnt_lsb(fp_int *a);
 MP_API int  mp_div_2d(fp_int *a, int b, fp_int *c, fp_int *d);
 MP_API int  mp_mod_d(fp_int* a, fp_digit b, fp_digit* c);
 MP_API int  mp_lshd (mp_int * a, int b);
+MP_API int  mp_abs(mp_int* a, mp_int* b);
 
 WOLFSSL_API word32 CheckRunTimeFastMath(void);
 
