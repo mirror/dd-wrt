@@ -6,7 +6,9 @@
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
  */
-
+#ifdef OPENSSL_OCTEON
+#include "md5_one_octeon.c
+#else
 #include <stdio.h>
 #include <string.h>
 #include <openssl/md5.h>
@@ -45,3 +47,4 @@ unsigned char *MD5(const unsigned char *d, size_t n, unsigned char *md)
     OPENSSL_cleanse(&c, sizeof(c)); /* security consideration */
     return (md);
 }
+#endif
