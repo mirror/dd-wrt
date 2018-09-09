@@ -111,7 +111,7 @@
  * @file md5_dgst.c
  * MD5 Hash API
 */
-
+#define OCTEON_HASH
 #include <stdio.h>
 #include <stdio.h>
 #include "md5_locl.h"
@@ -123,7 +123,7 @@
 #include "cvmx-key.h"
 #endif
 
-const char *MD5_version = "MD5" OPENSSL_VERSION_PTEXT;
+
 #ifdef OCTEON_OPENSSL
 static inline uint64_t
 swap64 (uint64_t v)
