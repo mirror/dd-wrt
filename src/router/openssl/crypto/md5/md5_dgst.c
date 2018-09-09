@@ -6,7 +6,9 @@
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
  */
-
+#ifdef OPENSSL_OCTEON
+#include "md5_dgst_octeon.c
+#else
 #include <stdio.h>
 #include "md5_locl.h"
 #include <openssl/opensslv.h>
@@ -161,4 +163,5 @@ void md5_block_data_order(MD5_CTX *c, const void *data_, size_t num)
         D = c->D += D;
     }
 }
+#endif
 #endif
