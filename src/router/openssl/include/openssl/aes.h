@@ -36,7 +36,7 @@ struct aes_key_st {
 # endif
     int rounds;
 #ifdef OCTEON_OPENSSL
-    uint64_t cvmkey[4];
+    unsigned long long cvmkey[4];
     int cvm_keylen;
 #endif
 };
