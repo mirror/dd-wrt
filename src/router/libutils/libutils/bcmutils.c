@@ -1739,21 +1739,10 @@ filters *get_filters_list(void)
 
 int endswith(char *str, char *cmp)
 {
-	int cmp_len, str_len, i;
-
-	if (cmp == NULL)
+	if (!str || !cmp)
 		return 0;
-	if (str == NULL)
-		return 0;
-	cmp_len = strlen(cmp);
-	str_len = strlen(str);
-	if (cmp_len > str_len)
-		return (0);
-	for (i = 0; i < cmp_len; i++) {
-		if (str[(str_len - 1) - i] != cmp[(cmp_len - 1) - i])
-			return (0);
-	}
-	return (1);
+	int diff = strlen(str) - strlen(cmp);
+	return diff > 0 && 0 == strcmp(&str[diff], cmp);
 }
 
 int searchfor(FILE * fp, char *str, int scansize)
