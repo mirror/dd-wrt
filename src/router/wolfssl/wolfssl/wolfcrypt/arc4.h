@@ -19,7 +19,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
-
+/*!
+    \file wolfssl/wolfcrypt/arc4.h
+*/
 
 #ifndef WOLF_CRYPT_ARC4_H
 #define WOLF_CRYPT_ARC4_H
@@ -36,7 +38,8 @@
 
 enum {
 	ARC4_ENC_TYPE   = 4,    /* cipher unique type */
-    ARC4_STATE_SIZE = 256
+    ARC4_STATE_SIZE = 256,
+    RC4_KEY_SIZE    = 16,   /* always 128bit           */
 };
 
 /* ARC4 encryption and decryption */

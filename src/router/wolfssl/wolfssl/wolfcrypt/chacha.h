@@ -19,6 +19,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
+/*!
+    \file wolfssl/wolfcrypt/chacha.h
+*/
+
 
 #ifndef WOLF_CRYPT_CHACHA_H
 #define WOLF_CRYPT_CHACHA_H
@@ -39,12 +43,24 @@
 #define CHACHA_CHUNK_WORDS 16
 #define CHACHA_CHUNK_BYTES (CHACHA_CHUNK_WORDS * sizeof(word32))
 
+#ifdef WOLFSSL_X86_64_BUILD
+#if defined(USE_INTEL_SPEEDUP) && !defined(NO_CHACHA_ASM)
+    #define USE_INTEL_CHACHA_SPEEDUP
+    #define HAVE_INTEL_AVX1
+#endif
+#endif
+
 enum {
-	CHACHA_ENC_TYPE = 7     /* cipher unique type */
+	CHACHA_ENC_TYPE = WC_CIPHER_CHACHA,    /* cipher unique type */
+    CHACHA_MAX_KEY_SZ = 32,
 };
 
 typedef struct ChaCha {
     word32 X[CHACHA_CHUNK_WORDS];           /* state of cipher */
+#ifdef HAVE_INTEL_AVX1
+    /* vpshufd reads 16 bytes but we only use bottom 4. */
+    byte extra[12];
+#endif
 } ChaCha;
 
 /**

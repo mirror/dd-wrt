@@ -19,6 +19,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335, USA
  */
 
+/*!
+    \file wolfssl/wolfcrypt/md5.h
+*/
+
 
 #ifndef WOLF_CRYPT_MD5_H
 #define WOLF_CRYPT_MD5_H
@@ -48,14 +52,18 @@
 
 /* in bytes */
 enum {
-    WC_MD5             =  0,      /* hash type unique */
+    WC_MD5             =  WC_HASH_TYPE_MD5,
     WC_MD5_BLOCK_SIZE  = 64,
     WC_MD5_DIGEST_SIZE = 16,
     WC_MD5_PAD_SIZE    = 56
 };
 
+
 #ifdef WOLFSSL_MICROCHIP_PIC32MZ
     #include <wolfssl/wolfcrypt/port/pic32/pic32mz-crypt.h>
+#endif
+#ifdef STM32_HASH
+    #include <wolfssl/wolfcrypt/port/st/stm32.h>
 #endif
 #ifdef WOLFSSL_ASYNC_CRYPT
     #include <wolfssl/wolfcrypt/async.h>
@@ -63,10 +71,15 @@ enum {
 
 #ifdef WOLFSSL_TI_HASH
     #include "wolfssl/wolfcrypt/port/ti/ti-hash.h"
+#elif defined(WOLFSSL_IMX6_CAAM)
+    #include "wolfssl/wolfcrypt/port/caam/wolfcaam_sha.h"
 #else
 
 /* MD5 digest */
 typedef struct wc_Md5 {
+#ifdef STM32_HASH
+    STM32_HASH_Context stmCtx;
+#else
     word32  buffLen;   /* in bytes          */
     word32  loLen;     /* length in bytes   */
     word32  hiLen;     /* length in bytes   */
@@ -80,9 +93,7 @@ typedef struct wc_Md5 {
 #ifdef WOLFSSL_PIC32MZ_HASH
     hashUpdCache cache; /* cache for updates */
 #endif
-#if defined(STM32_HASH) && defined(WOLFSSL_STM32_CUBEMX)
-    HASH_HandleTypeDef hashHandle;
-#endif
+#endif /* STM32_HASH */
 #ifdef WOLFSSL_ASYNC_CRYPT
     WC_ASYNC_DEV asyncDev;
 #endif /* WOLFSSL_ASYNC_CRYPT */

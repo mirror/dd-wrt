@@ -162,10 +162,9 @@ int wc_RNG_GenerateByte(WC_RNG* rng, byte* b)
 
 /* Internal return codes */
 #define DRBG_SUCCESS      0
-#define DRBG_ERROR        1
-#define DRBG_FAILURE      2
-#define DRBG_NEED_RESEED  3
-#define DRBG_CONT_FAILURE 4
+#define DRBG_FAILURE      1
+#define DRBG_NEED_RESEED  2
+#define DRBG_CONT_FAILURE 3
 
 /* RNG health states */
 #define DRBG_NOT_INIT     0
@@ -300,6 +299,16 @@ static int Hash_DRBG_Reseed(DRBG* drbg, const byte* entropy, word32 entropySz)
     drbg->lastBlock = 0;
     drbg->matchCount = 0;
     return DRBG_SUCCESS;
+}
+
+/* Returns: DRBG_SUCCESS and DRBG_FAILURE or BAD_FUNC_ARG on fail */
+int wc_RNG_DRBG_Reseed(WC_RNG* rng, const byte* entropy, word32 entropySz)
+{
+    if (rng == NULL || entropy == NULL) {
+        return BAD_FUNC_ARG;
+    }
+
+    return Hash_DRBG_Reseed(rng->drbg, entropy, entropySz);
 }
 
 static INLINE void array_add_one(byte* data, word32 dataSz)
@@ -1490,7 +1499,25 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
 
         return 0;
     }
+#elif defined(WOLFSSL_NUCLEUS)
+#include "nucleus.h"
+#include "kernel/plus_common.h"
 
+#warning "potential for not enough entropy, currently being used for testing"
+int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
+{
+    int i;
+    srand(NU_Get_Time_Stamp());
+
+    for (i = 0; i < sz; i++ ) {
+        output[i] = rand() % 256;
+        if ((i % 8) == 7) {
+            srand(NU_Get_Time_Stamp());
+        }
+    }
+
+    return 0;
+}
 #elif defined(WOLFSSL_VXWORKS)
 
     #include <randomNumGen.h>
@@ -1628,6 +1655,51 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
         return 0;
     }
 
+#elif (defined(WOLFSSL_IMX6_CAAM) || defined(WOLFSSL_IMX6_CAAM_RNG))
+
+    #include <wolfssl/wolfcrypt/port/caam/wolfcaam.h>
+    #include <wolfssl/wolfcrypt/port/caam/caam_driver.h>
+
+    int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
+    {
+        Buffer buf[1];
+        int ret  = 0;
+        int times = 1000, i;
+
+        (void)os;
+
+        if (output == NULL) {
+            return BUFFER_E;
+        }
+
+        buf[0].BufferType = DataBuffer | LastBuffer;
+        buf[0].TheAddress = (Address)output;
+        buf[0].Length     = sz;
+
+        /* Check Waiting to make sure entropy is ready */
+        for (i = 0; i < times; i++) {
+            ret = wc_caamAddAndWait(buf, NULL, CAAM_ENTROPY);
+            if (ret == Success) {
+                break;
+            }
+
+            /* driver could be waiting for entropy */
+            if (ret != RAN_BLOCK_E) {
+                return ret;
+            }
+            usleep(100);
+        }
+
+        if (i == times && ret != Success) {
+             return RNG_FAILURE_E;
+        }
+        else { /* Success case */
+            ret = 0;
+        }
+
+        return ret;
+    }
+
 #elif defined(CUSTOM_RAND_GENERATE_BLOCK)
     /* #define CUSTOM_RAND_GENERATE_BLOCK myRngFunc
      * extern int myRngFunc(byte* output, word32 sz);
@@ -1638,7 +1710,7 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
       defined(WOLFSSL_uITRON4)  || defined(WOLFSSL_uTKERNEL2) || \
       defined(WOLFSSL_LPC43xx)  || defined(WOLFSSL_STM32F2xx) || \
       defined(MBED)             || defined(WOLFSSL_EMBOS) || \
-      defined(WOLFSSL_GENSEED_FORTEST)
+      defined(WOLFSSL_GENSEED_FORTEST) || defined(WOLFSSL_CHIBIOS)
 
     /* these platforms do not have a default random seed and
        you'll need to implement your own wc_GenerateSeed or define via
@@ -1671,21 +1743,23 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
                  /* success, we're done */
                  return ret;
              }
-    #ifdef FORCE_FAILURE_RDSEED
+        #ifdef FORCE_FAILURE_RDSEED
              /* don't fallback to /dev/urandom */
              return ret;
-    #else
-             /* fallback to /dev/urandom attempt */
+        #else
+             /* reset error and fallback to using /dev/urandom */
              ret = 0;
-    #endif
+        #endif
         }
-
     #endif /* HAVE_INTEL_RDSEED */
 
-        os->fd = open("/dev/urandom",O_RDONLY);
-        if (os->fd == -1) {
+    #ifndef NO_DEV_URANDOM /* way to disable use of /dev/urandom */
+        os->fd = open("/dev/urandom", O_RDONLY);
+        if (os->fd == -1)
+    #endif
+        {
             /* may still have /dev/random */
-            os->fd = open("/dev/random",O_RDONLY);
+            os->fd = open("/dev/random", O_RDONLY);
             if (os->fd == -1)
                 return OPEN_RAN_E;
         }
@@ -1701,7 +1775,7 @@ int wc_GenerateSeed(OS_Seed* os, byte* output, word32 sz)
             output += len;
 
             if (sz) {
-    #ifdef BLOCKING
+    #if defined(BLOCKING) || defined(WC_RNG_BLOCKING)
                 sleep(0);             /* context switch */
     #else
                 ret = RAN_BLOCK_E;

@@ -28,6 +28,9 @@
 #define CYASSL_OPENSSL_H_
 
 #include <cyassl/ssl.h>
+#ifndef HAVE_SNI
+#undef CYASSL_SNI_HOST_NAME
+#endif
 #include <wolfssl/openssl/ssl.h>
 
 #endif

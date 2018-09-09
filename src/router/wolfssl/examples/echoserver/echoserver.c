@@ -33,15 +33,10 @@
 #if defined(WOLFSSL_MDK_ARM) || defined(WOLFSSL_KEIL_TCP_NET)
         #include <stdio.h>
         #include <string.h>
-
-        #if !defined(WOLFSSL_MDK_ARM)
-            #include "cmsis_os.h"
-            #include "rl_fs.h"
-            #include "rl_net.h"
-        #else
-            #include "rtl.h"
-            #include "wolfssl_MDK_ARM.h"
-        #endif
+        #include "cmsis_os.h"
+        #include "rl_fs.h"
+        #include "rl_net.h"
+        #include "wolfssl_MDK_ARM.h"
 #endif
 
 #include <cyassl/ssl.h>
@@ -143,7 +138,7 @@ THREAD_RETURN CYASSL_THREAD echoserver_test(void* args)
 
 #if defined(CYASSL_DTLS)
     method  = CyaDTLSv1_2_server_method();
-#elif  !defined(NO_TLS)
+#elif !defined(NO_TLS)
     method = CyaSSLv23_server_method();
 #elif defined(WOLFSSL_ALLOW_SSLV3)
     method = CyaSSLv3_server_method();
@@ -153,7 +148,7 @@ THREAD_RETURN CYASSL_THREAD echoserver_test(void* args)
     ctx    = CyaSSL_CTX_new(method);
     /* CyaSSL_CTX_set_session_cache_mode(ctx, WOLFSSL_SESS_CACHE_OFF); */
 
-#if defined(OPENSSL_EXTRA) || defined(HAVE_WEBSERVER)
+#ifdef WOLFSSL_ENCRYPTED_KEYS
     CyaSSL_CTX_set_default_passwd_cb(ctx, PasswordCallBack);
 #endif
 
@@ -502,6 +497,7 @@ THREAD_RETURN CYASSL_THREAD echoserver_test(void* args)
 
         args.argc = argc;
         args.argv = argv;
+        args.return_code = 0;
 
         CyaSSL_Init();
 #if defined(DEBUG_CYASSL) && !defined(CYASSL_MDK_SHELL)

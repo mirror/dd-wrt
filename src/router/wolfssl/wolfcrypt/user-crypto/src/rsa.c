@@ -162,7 +162,7 @@ int wc_Rsa_unsigned_bin_size(void* bn)
 #define MP_OKAY 0
 #endif
 
-/* extract the bn value to a unsigned byte array and return MP_OKAY on succes */
+/* extract the bn value to a unsigned byte array and return MP_OKAY on success */
 int wc_Rsa_to_unsigned_bin(void* bn, byte* in, int inLen)
 {
     if (ippsGetOctString_BN((Ipp8u*)in, inLen, bn) != ippStsNoErr) {
@@ -308,34 +308,36 @@ int SetRsaExternal(WOLFSSL_RSA* rsa)
         return USER_CRYPTO_ERROR;
     }
 
-    if (SetIndividualExternal(&rsa->d, key->dipp) != 0) {
-        USER_DEBUG(("rsa d key error\n"));
-        return USER_CRYPTO_ERROR;
-    }
+    if (key->type == RSA_PRIVATE) {
+        if (SetIndividualExternal(&rsa->d, key->dipp) != 0) {
+            USER_DEBUG(("rsa d key error\n"));
+            return USER_CRYPTO_ERROR;
+        }
 
-    if (SetIndividualExternal(&rsa->p, key->pipp) != 0) {
-        USER_DEBUG(("rsa p key error\n"));
-        return USER_CRYPTO_ERROR;
-    }
+        if (SetIndividualExternal(&rsa->p, key->pipp) != 0) {
+            USER_DEBUG(("rsa p key error\n"));
+            return USER_CRYPTO_ERROR;
+        }
 
-    if (SetIndividualExternal(&rsa->q, key->qipp) != 0) {
-        USER_DEBUG(("rsa q key error\n"));
-        return USER_CRYPTO_ERROR;
-    }
+        if (SetIndividualExternal(&rsa->q, key->qipp) != 0) {
+            USER_DEBUG(("rsa q key error\n"));
+            return USER_CRYPTO_ERROR;
+        }
 
-    if (SetIndividualExternal(&rsa->dmp1, key->dPipp) != 0) {
-        USER_DEBUG(("rsa dP key error\n"));
-        return USER_CRYPTO_ERROR;
-    }
+        if (SetIndividualExternal(&rsa->dmp1, key->dPipp) != 0) {
+            USER_DEBUG(("rsa dP key error\n"));
+            return USER_CRYPTO_ERROR;
+        }
 
-    if (SetIndividualExternal(&rsa->dmq1, key->dQipp) != 0) {
-        USER_DEBUG(("rsa dQ key error\n"));
-        return USER_CRYPTO_ERROR;
-    }
+        if (SetIndividualExternal(&rsa->dmq1, key->dQipp) != 0) {
+            USER_DEBUG(("rsa dQ key error\n"));
+            return USER_CRYPTO_ERROR;
+        }
 
-    if (SetIndividualExternal(&rsa->iqmp, key->uipp) != 0) {
-        USER_DEBUG(("rsa u key error\n"));
-        return USER_CRYPTO_ERROR;
+        if (SetIndividualExternal(&rsa->iqmp, key->uipp) != 0) {
+            USER_DEBUG(("rsa u key error\n"));
+            return USER_CRYPTO_ERROR;
+        }
     }
 
     rsa->exSet = 1;
