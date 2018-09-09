@@ -1317,15 +1317,14 @@ endif
 
 
 
-ifeq ($(CONFIG_MATRIXSSL),y)
+#ifeq ($(CONFIG_MATRIXSSL),y)
 #CONFIG_XYSSL=y
-
-CFLAGS += -I$(TOP)/matrixssl
-SSLLDFLAGS += -L$(TOP)/matrixssl/src -lmatrixsslstatic -lpthread
-CFLAGS += -DHAVE_MATRIXSSL
-CFLAGS += -DHAVE_HTTPS
-OBJS += matrixssl_xface.o
-endif
+#CFLAGS += -I$(TOP)/matrixssl
+#SSLLDFLAGS += -L$(TOP)/matrixssl/src -lmatrixsslstatic -lpthread
+#CFLAGS += -DHAVE_MATRIXSSL
+#CFLAGS += -DHAVE_HTTPS
+#OBJS += matrixssl_xface.o
+#endif
 
 
 endif
