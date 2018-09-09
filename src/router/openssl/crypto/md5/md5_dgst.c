@@ -6,8 +6,8 @@
  * in the file LICENSE in the source distribution or at
  * https://www.openssl.org/source/license.html
  */
-#ifdef OPENSSL_OCTEON
-#include "md5_dgst_octeon.c
+#ifdef OCTEON_OPENSSL
+#include "md5_dgst_octeon.c"
 #else
 #include <stdio.h>
 #include "md5_locl.h"
