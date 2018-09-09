@@ -190,7 +190,7 @@ extern char *get_mac_from_ip(char *mac, char *ip);
 /* Forwards. */
 static int initialize_listen_socket(usockaddr * usaP);
 static int auth_check(webs_t conn_fp);
-static void send_error(webs_t conn_fp, int status, char *title, char *extra_header, char *text);
+static void send_error(webs_t conn_fp, int status, char *title, char *extra_header, const char *fmt, ...);
 static void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file, int nocache);
 static int b64_decode(const char *str, unsigned char *space, int size);
 static int match(const char *pattern, const char *string);
@@ -457,8 +457,13 @@ static void send_authenticate(webs_t conn_fp)
 	free(header);
 }
 
-static void send_error(webs_t conn_fp, int status, char *title, char *extra_header, char *text)
+static void send_error(webs_t conn_fp, int status, char *title, char *extra_header, const char *fmt, ...)
 {
+	char *text;
+	va_list args;
+	va_start(args, (char *)fmt);
+	vasprintf(&text, fmt, args);
+	va_end(args);
 	dd_syslog(LOG_ERR, "Request Error Code %d: %s\n", status, text);
 	// jimmy, https, 8/4/2003, fprintf -> wfprintf, fflush -> wfflush
 	send_headers(conn_fp, status, title, extra_header, "text/html", -1, NULL, 1);
@@ -466,6 +471,7 @@ static void send_error(webs_t conn_fp, int status, char *title, char *extra_head
 	(void)wfprintf(conn_fp, "%s\n", text);
 	(void)wfprintf(conn_fp, "</BODY></HTML>\n");
 	(void)wfflush(conn_fp);
+	free(text);
 }
 
 static void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file, int nocache)
@@ -863,7 +869,7 @@ static void *handle_request(void *arg)
 		method_type = METHOD_OPTIONS;
 
 	if (method_type == METHOD_INVALID) {
-		send_error(conn_fp, 501, "Not Implemented", NULL, "Method is not implemented.");
+		send_error(conn_fp, 501, "Not Implemented", NULL, "Method %s is not implemented.", method);
 		goto out;
 	}
 
@@ -974,15 +980,13 @@ static void *handle_request(void *arg)
 				if (host[a] == ' ' || host[a] == '\r' || host[a] == '\n' || host[a] == '\t')
 					host[a] = 0;
 			hlen = strlen(host);
-			char crosssite[128];
-			snprintf(crosssite, sizeof(crosssite), "Cross Site Action detected! (referer %s)", referer);
 			for (a = i; a < rlen; a++) {
 				if (referer[a] == '/') {
-					send_error(conn_fp, 400, "Bad Request", NULL, crosssite);
+					send_error(conn_fp, 400, "Bad Request", NULL, "Cross Site Action detected! (referer %s)", referer);
 					goto out;
 				}
 				if (host[c++] != referer[a]) {
-					send_error(conn_fp, 400, "Bad Request", NULL, crosssite);
+					send_error(conn_fp, 400, "Bad Request", NULL, "Cross Site Action detected! (referer %s)", referer);
 					goto out;
 				}
 				if (c == hlen) {
@@ -991,7 +995,7 @@ static void *handle_request(void *arg)
 				}
 			}
 			if (c != hlen || referer[a] != '/') {
-				send_error(conn_fp, 400, "Bad Request", NULL, crosssite);
+				send_error(conn_fp, 400, "Bad Request", NULL, "Cross Site Action detected! (referer %s)", referer);
 				goto out;
 			}
 		}
@@ -1218,10 +1222,7 @@ static void *handle_request(void *arg)
 			if (handler->output && file_found) {
 				handler->output(method_type, handler, file, conn_fp);
 			} else {
-				char *fname;
-				asprintf(&fname, "File %s not found.", file);
-				send_error(conn_fp, 404, "Not Found", NULL, fname);
-				free(fname);
+				send_error(conn_fp, 404, "Not Found", NULL, "File %s not found.", file);
 			}
 
 			break;
@@ -1229,10 +1230,7 @@ static void *handle_request(void *arg)
 		}
 
 		if (!handler || !handler->pattern) {
-			char *fname;
-			asprintf(&fname, "File %s not found.", file);
-			send_error(conn_fp, 404, "Not Found", NULL, fname);
-			free(fname);
+			send_error(conn_fp, 404, "Not Found", NULL, "File %s not found.", file);
 		}
 	}
 
