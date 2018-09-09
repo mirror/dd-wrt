@@ -416,7 +416,7 @@ int CheckOcspRequest(WOLFSSL_OCSP* ocsp, OcspRequest* ocspRequest,
     ioCtx = (ssl && ssl->ocspIOCtx != NULL) ?
                                         ssl->ocspIOCtx : ocsp->cm->ocspIOCtx;
 
-#if defined(WOLFSSL_NGINX) || defined(WOLFSSL_HAPROXY)
+#if defined(OPENSSL_ALL) || defined(WOLFSSL_NGINX) || defined(WOLFSSL_HAPROXY)
     if (ocsp->statusCb != NULL && ssl != NULL) {
         ret = ocsp->statusCb(ssl, ioCtx);
         if (ret == 0) {
@@ -459,7 +459,7 @@ int CheckOcspRequest(WOLFSSL_OCSP* ocsp, OcspRequest* ocspRequest,
                                         request, requestSz, &response);
     }
     if (responseSz == WOLFSSL_CBIO_ERR_WANT_READ) {
-        ret = WANT_READ;
+        ret = OCSP_WANT_READ;
     }
 
     XFREE(request, ocsp->cm->heap, DYNAMIC_TYPE_OCSP);
@@ -476,7 +476,7 @@ int CheckOcspRequest(WOLFSSL_OCSP* ocsp, OcspRequest* ocspRequest,
     return ret;
 }
 
-#if defined(WOLFSSL_NGINX) || defined(WOLFSSL_HAPROXY)
+#if defined(OPENSSL_ALL) || defined(WOLFSSL_NGINX) || defined(WOLFSSL_HAPROXY)
 
 int wolfSSL_OCSP_resp_find_status(WOLFSSL_OCSP_BASICRESP *bs,
     WOLFSSL_OCSP_CERTID* id, int* status, int* reason,
@@ -633,13 +633,14 @@ OcspResponse* wolfSSL_d2i_OCSP_RESPONSE_bio(WOLFSSL_BIO* bio,
     if (bio == NULL)
         return NULL;
 
-    if (bio->type == BIO_MEMORY) {
+    if (bio->type == WOLFSSL_BIO_MEMORY) {
         len = wolfSSL_BIO_get_mem_data(bio, &data);
         if (len <= 0 || data == NULL) {
             return NULL;
         }
     }
-    else if (bio->type == BIO_FILE) {
+#ifndef NO_FILESYSTEM
+    else if (bio->type == WOLFSSL_BIO_FILE) {
         long i;
         long l;
 
@@ -650,9 +651,10 @@ OcspResponse* wolfSSL_d2i_OCSP_RESPONSE_bio(WOLFSSL_BIO* bio,
         l = XFTELL(bio->file);
         if (l < 0)
             return NULL;
-        XFSEEK(bio->file, i, SEEK_SET);
+        if (XFSEEK(bio->file, i, SEEK_SET) != 0)
+            return NULL;
 
-        /* check calulated length */
+        /* check calculated length */
         if (l - i <= 0)
             return NULL;
 
@@ -663,6 +665,7 @@ OcspResponse* wolfSSL_d2i_OCSP_RESPONSE_bio(WOLFSSL_BIO* bio,
 
         len = wolfSSL_BIO_read(bio, (char *)data, (int)l);
     }
+#endif
     else
         return NULL;
 

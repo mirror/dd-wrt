@@ -37,7 +37,8 @@
 #define MAX_COMMAND_SZ 240
 #define MAX_SUITE_SZ 80
 #define NOT_BUILT_IN -123
-#if defined(NO_OLD_TLS) || !defined(WOLFSSL_ALLOW_SSLV3)
+#if defined(NO_OLD_TLS) || !defined(WOLFSSL_ALLOW_SSLV3) || \
+    !defined(WOLFSSL_ALLOW_TLSV10)
     #define VERSION_TOO_OLD -124
 #endif
 
@@ -55,55 +56,55 @@ static char flagSep[] = " ";
     static char svrPort[] = "0";
 #endif
 static char forceDefCipherListFlag[] = "-HdefCipherList";
+static char exitWithRetFlag[] = "-HexitWithRet";
 
 #ifdef WOLFSSL_ASYNC_CRYPT
     static int devId = INVALID_DEVID;
 #endif
 
 
-#ifndef WOLFSSL_ALLOW_SSLV3
-/* if the protocol version is sslv3 return 1, else 0 */
-static int IsSslVersion(const char* line)
+#ifdef VERSION_TOO_OLD
+static int GetTlsVersion(const char* line)
 {
+    int version = -1;
     const char* find = "-v ";
     const char* begin = strstr(line, find);
 
     if (begin) {
-        int version = -1;
-
         begin += 3;
 
         version = atoi(begin);
-
-        if (version == 0)
-            return 1;
     }
+    return version;
+}
 
-    return 0;
+#ifndef WOLFSSL_ALLOW_SSLV3
+/* if the protocol version is sslv3 return 1, else 0 */
+static int IsSslVersion(const char* line)
+{
+    int version = GetTlsVersion(line);
+    return (version == 0) ? 1 : 0;
 }
 #endif /* !WOLFSSL_ALLOW_SSLV3 */
+
+#ifndef WOLFSSL_ALLOW_TLSV10
+/* if the protocol version is TLSv1.0 return 1, else 0 */
+static int IsTls10Version(const char* line)
+{
+    int version = GetTlsVersion(line);
+    return (version == 1) ? 1 : 0;
+}
+#endif /* !WOLFSSL_ALLOW_TLSV10 */
 
 #ifdef NO_OLD_TLS
 /* if the protocol version is less than tls 1.2 return 1, else 0 */
 static int IsOldTlsVersion(const char* line)
 {
-    const char* find = "-v ";
-    const char* begin = strstr(line, find);
-
-    if (begin) {
-        int version = -1;
-
-        begin += 3;
-
-        version = atoi(begin);
-
-        if (version < 3)
-            return 1;
-    }
-
-    return 0;
+    int version = GetTlsVersion(line);
+    return (version < 3) ? 1 : 0;
 }
 #endif /* NO_OLD_TLS */
+#endif /* VERSION_TOO_OLD */
 
 
 /* if the cipher suite on line is valid store in suite and return 1, else 0 */
@@ -161,7 +162,7 @@ static int execute_test_case(int svr_argc, char** svr_argv,
                               int cli_argc, char** cli_argv,
                               int addNoVerify, int addNonBlocking,
                               int addDisableEMS, int forceSrvDefCipherList,
-                              int forceCliDefCipherList)
+                              int forceCliDefCipherList, int testShouldFail)
 {
 #ifdef WOLFSSL_TIRTOS
     func_args cliArgs = {0};
@@ -214,6 +215,14 @@ static int execute_test_case(int svr_argc, char** svr_argv,
         return VERSION_TOO_OLD;
     }
 #endif
+#ifndef WOLFSSL_ALLOW_TLSV10
+    if (IsTls10Version(commandLine) == 1) {
+        #ifdef DEBUG_SUITE_TESTS
+            printf("protocol version on line %s is too old\n", commandLine);
+        #endif
+        return VERSION_TOO_OLD;
+    }
+#endif
 #ifdef NO_OLD_TLS
     if (IsOldTlsVersion(commandLine) == 1) {
         #ifdef DEBUG_SUITE_TESTS
@@ -223,7 +232,7 @@ static int execute_test_case(int svr_argc, char** svr_argv,
     }
 #endif
 
-    /* Build Client Command */
+    /* Build Server Command */
     if (addNoVerify) {
         printf("repeating test with client cert request off\n");
         if (svrArgs.argc >= MAX_ARGS)
@@ -252,6 +261,12 @@ static int execute_test_case(int svr_argc, char** svr_argv,
             printf("cannot add the force def cipher list flag to server\n");
         else
             svr_argv[svrArgs.argc++] = forceDefCipherListFlag;
+    }
+#ifdef TEST_PK_PRIVKEY
+    svr_argv[svrArgs.argc++] = (char*)"-P";
+#endif
+    if (testShouldFail) {
+        svr_argv[svrArgs.argc++] = exitWithRetFlag;
     }
 
     /* update server flags list */
@@ -313,6 +328,12 @@ static int execute_test_case(int svr_argc, char** svr_argv,
         else
             cli_argv[cliArgs.argc++] = forceDefCipherListFlag;
     }
+#ifdef TEST_PK_PRIVKEY
+    cli_argv[cliArgs.argc++] = (char*)"-P";
+#endif
+    if (testShouldFail) {
+        cli_argv[cliArgs.argc++] = exitWithRetFlag;
+    }
 
     commandLine[0] = '\0';
     added = 0;
@@ -331,13 +352,15 @@ static int execute_test_case(int svr_argc, char** svr_argv,
     client_test(&cliArgs);
 
     /* verify results */
-    if (cliArgs.return_code != 0) {
+    if ((cliArgs.return_code != 0 && testShouldFail == 0) ||
+        (cliArgs.return_code == 0 && testShouldFail != 0)) {
         printf("client_test failed\n");
         exit(EXIT_FAILURE);
     }
 
     join_thread(serverThread);
-    if (svrArgs.return_code != 0) {
+    if ((svrArgs.return_code != 0 && testShouldFail == 0) ||
+        (svrArgs.return_code == 0 && testShouldFail != 0)) {
         printf("server_test failed\n");
         exit(EXIT_FAILURE);
     }
@@ -346,6 +369,11 @@ static int execute_test_case(int svr_argc, char** svr_argv,
     fdCloseSession(Task_self());
 #endif
     FreeTcpReady(&ready);
+
+    /* only run the first test for failure cases */
+    if (testShouldFail) {
+        return NOT_BUILT_IN;
+    }
 
     return 0;
 }
@@ -365,17 +393,22 @@ static void test_harness(void* vargs)
     char* cursor;
     char* comment;
     const char* fname = "tests/test.conf";
+    int   testShouldFail = 0;
 
     if (args->argc == 1) {
         printf("notice: using default file %s\n", fname);
     }
-    else if(args->argc != 2) {
-        printf("usage: harness [FILE]\n");
+    else if(args->argc > 3) {
+        printf("usage: harness [FILE] [ARG]\n");
         args->return_code = 1;
         return;
     }
-    else {
+
+    if (args->argc >= 2) {
         fname = args->argv[1];
+    }
+    if (args->argc == 3) {
+        testShouldFail = 1;
     }
 
     file = fopen(fname, "rb");
@@ -435,7 +468,7 @@ static void test_harness(void* vargs)
                 break;
             case '#':
                 /* Ignore lines that start with a #. */
-                comment = strsep(&cursor, "\n");
+                comment = XSTRSEP(&cursor, "\n");
 #ifdef DEBUG_SUITE_TESTS
                 printf("%s\n", comment);
 #else
@@ -446,20 +479,23 @@ static void test_harness(void* vargs)
                 /* Parameters start with a -. They end in either a newline
                  * or a space. Capture until either, save in Args list. */
                 if (cliMode)
-                    cliArgs[cliArgsSz++] = strsep(&cursor, " \n");
+                    cliArgs[cliArgsSz++] = XSTRSEP(&cursor, " \n");
                 else
-                    svrArgs[svrArgsSz++] = strsep(&cursor, " \n");
+                    svrArgs[svrArgsSz++] = XSTRSEP(&cursor, " \n");
+                if (*cursor == 0)  /* eof */
+                    do_it = 1;
                 break;
             default:
                 /* Anything from cursor until end of line that isn't the above
                  * is data for a paramter. Just up until the next newline in
                  * the Args list. */
                 if (cliMode)
-                    cliArgs[cliArgsSz++] = strsep(&cursor, "\n");
+                    cliArgs[cliArgsSz++] = XSTRSEP(&cursor, "\n");
                 else
-                    svrArgs[svrArgsSz++] = strsep(&cursor, "\n");
+                    svrArgs[svrArgsSz++] = XSTRSEP(&cursor, "\n");
                 if (*cursor == 0)  /* eof */
                     do_it = 1;
+                break;
         }
 
         if (svrArgsSz == MAX_ARGS || cliArgsSz == MAX_ARGS) {
@@ -469,31 +505,41 @@ static void test_harness(void* vargs)
 
         if (do_it) {
             ret = execute_test_case(svrArgsSz, svrArgs,
-                                    cliArgsSz, cliArgs, 0, 0, 0, 0, 0);
+                                    cliArgsSz, cliArgs, 0, 0, 0, 0, 0,
+                                    testShouldFail);
             /* don't repeat if not supported in build */
             if (ret == 0) {
                 /* test with default cipher list on server side */
                 execute_test_case(svrArgsSz, svrArgs,
-                                  cliArgsSz, cliArgs, 0, 0, 0, 1, 0);
+                                  cliArgsSz, cliArgs, 0, 0, 0, 1, 0,
+                                  testShouldFail);
                 /* test with default cipher list on client side */
                 execute_test_case(svrArgsSz, svrArgs,
-                                  cliArgsSz, cliArgs, 0, 0, 0, 0, 1);
+                                  cliArgsSz, cliArgs, 0, 0, 0, 0, 1,
+                                  testShouldFail);
 
                 execute_test_case(svrArgsSz, svrArgs,
-                                  cliArgsSz, cliArgs, 0, 1, 0, 0, 0);
+                                  cliArgsSz, cliArgs, 0, 1, 0, 0, 0,
+                                  testShouldFail);
                 execute_test_case(svrArgsSz, svrArgs,
-                                  cliArgsSz, cliArgs, 1, 0, 0, 0, 0);
+                                  cliArgsSz, cliArgs, 1, 0, 0, 0, 0,
+                                  testShouldFail);
                 execute_test_case(svrArgsSz, svrArgs,
-                                  cliArgsSz, cliArgs, 1, 1, 0, 0, 0);
+                                  cliArgsSz, cliArgs, 1, 1, 0, 0, 0,
+                                  testShouldFail);
 #ifdef HAVE_EXTENDED_MASTER
                 execute_test_case(svrArgsSz, svrArgs,
-                                  cliArgsSz, cliArgs, 0, 0, 1, 0, 0);
+                                  cliArgsSz, cliArgs, 0, 0, 1, 0, 0,
+                                  testShouldFail);
                 execute_test_case(svrArgsSz, svrArgs,
-                                  cliArgsSz, cliArgs, 0, 1, 1, 0, 0);
+                                  cliArgsSz, cliArgs, 0, 1, 1, 0, 0,
+                                  testShouldFail);
                 execute_test_case(svrArgsSz, svrArgs,
-                                  cliArgsSz, cliArgs, 1, 0, 1, 0, 0);
+                                  cliArgsSz, cliArgs, 1, 0, 1, 0, 0,
+                                  testShouldFail);
                 execute_test_case(svrArgsSz, svrArgs,
-                                  cliArgsSz, cliArgs, 1, 1, 1, 0, 0);
+                                  cliArgsSz, cliArgs, 1, 1, 1, 0, 0,
+                                  testShouldFail);
 #endif
             }
             svrArgsSz = 1;
@@ -512,14 +558,15 @@ int SuiteTest(void)
 {
 #if !defined(NO_WOLFSSL_SERVER) && !defined(NO_WOLFSSL_CLIENT)
     func_args args;
-    char argv0[2][80];
-    char* myArgv[2];
+    char argv0[3][80];
+    char* myArgv[3];
 
     printf(" Begin Cipher Suite Tests\n");
 
     /* setup */
     myArgv[0] = argv0[0];
     myArgv[1] = argv0[1];
+    myArgv[2] = argv0[2];
     args.argv = myArgv;
     strcpy(argv0[0], "SuiteTest");
 
@@ -529,7 +576,7 @@ int SuiteTest(void)
 
     (void)test_harness;
 
-    cipherSuiteCtx = wolfSSL_CTX_new(wolfTLSv1_2_client_method());
+    cipherSuiteCtx = wolfSSL_CTX_new(wolfSSLv23_client_method());
     if (cipherSuiteCtx == NULL) {
         printf("can't get cipher suite ctx\n");
         exit(EXIT_FAILURE);
@@ -577,6 +624,26 @@ int SuiteTest(void)
         printf("error from script %d\n", args.return_code);
         exit(EXIT_FAILURE);
     }
+    #ifdef HAVE_ECC
+    /* add TLSv13 ECC extra suites */
+    strcpy(argv0[1], "tests/test-tls13-ecc.conf");
+    printf("starting TLSv13 ECC extra cipher suite tests\n");
+    test_harness(&args);
+    if (args.return_code != 0) {
+        printf("error from script %d\n", args.return_code);
+        exit(EXIT_FAILURE);
+    }
+    #endif
+    #ifndef WOLFSSL_NO_TLS12
+    /* add TLSv13 downgrade tets */
+    strcpy(argv0[1], "tests/test-tls13-down.conf");
+    printf("starting TLSv13 Downgrade extra tests\n");
+    test_harness(&args);
+    if (args.return_code != 0) {
+        printf("error from script %d\n", args.return_code);
+        exit(EXIT_FAILURE);
+    }
+    #endif
 #endif
 #if defined(HAVE_CURVE25519) && defined(HAVE_ED25519)
     /* add ED25519 certificate cipher suite tests */
@@ -634,11 +701,36 @@ int SuiteTest(void)
         goto exit;
     }
 #endif
-
 #ifndef NO_PSK
+    #ifndef WOLFSSL_NO_TLS12
+        #if !defined(NO_RSA) || defined(HAVE_ECC)
+        /* add psk cipher suites */
+        strcpy(argv0[1], "tests/test-psk.conf");
+        printf("starting psk cipher suite tests\n");
+        test_harness(&args);
+        if (args.return_code != 0) {
+            printf("error from script %d\n", args.return_code);
+            args.return_code = EXIT_FAILURE;
+            goto exit;
+        }
+        #endif
+    #endif
+    #ifdef WOLFSSL_TLS13
     /* add psk extra suites */
-    strcpy(argv0[1], "tests/test-psk-no-id.conf");
-    printf("starting psk no identity extra cipher suite tests\n");
+    strcpy(argv0[1], "tests/test-tls13-psk.conf");
+    printf("starting TLS 1.3 psk no identity extra cipher suite tests\n");
+    test_harness(&args);
+    if (args.return_code != 0) {
+        printf("error from script %d\n", args.return_code);
+        args.return_code = EXIT_FAILURE;
+        goto exit;
+    }
+    #endif
+#endif
+#if defined(WOLFSSL_ENCRYPTED_KEYS) && !defined(NO_DES3)
+    /* test encrypted keys */
+    strcpy(argv0[1], "tests/test-enckeys.conf");
+    printf("starting encrypted keys extra cipher suite tests\n");
     test_harness(&args);
     if (args.return_code != 0) {
         printf("error from script %d\n", args.return_code);
@@ -646,6 +738,18 @@ int SuiteTest(void)
         goto exit;
     }
 #endif
+
+    /* failure tests */
+    args.argc = 3;
+    strcpy(argv0[1], "tests/test-fails.conf");
+    strcpy(argv0[2], "-f");
+    printf("starting tests that expect failure\n");
+    test_harness(&args);
+    if (args.return_code != 0) {
+        printf("error from script %d\n", args.return_code);
+        args.return_code = EXIT_FAILURE;
+        goto exit;
+    }
 
 exit:
     printf(" End Cipher Suite Tests\n");

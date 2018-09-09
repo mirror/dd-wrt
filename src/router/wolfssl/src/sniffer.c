@@ -301,7 +301,7 @@ typedef struct SnifferServer {
     int            port;                         /* server port */
 #ifdef HAVE_SNI
     NamedKey*      namedKeys;                    /* mapping of names and keys */
-    wolfSSL_Mutex   namedKeysMutex;               /* mutex for namedKey list */
+    wolfSSL_Mutex  namedKeysMutex;               /* mutex for namedKey list */
 #endif
     struct SnifferServer* next;                  /* for list */
 } SnifferServer;
@@ -1189,7 +1189,7 @@ static int LoadKeyFile(byte** keyBuf, word32* keyBufSz,
 
         ret = -1;
         if (saveBuf != NULL) {
-            saveBufSz = wolfSSL_KeyPemToDer(loadBuf, (int)fileSz,
+            saveBufSz = wc_KeyPemToDer(loadBuf, (int)fileSz,
                                                 saveBuf, (int)fileSz, password);
             if (saveBufSz < 0) {
                 saveBufSz = 0;
@@ -1248,11 +1248,10 @@ static int SetNamedPrivateKey(const char* name, const char* address, int port,
         XMEMSET(namedKey, 0, sizeof(NamedKey));
 
         namedKey->nameSz = (word32)XSTRLEN(name);
-        XSTRNCPY(namedKey->name, name, sizeof(namedKey->name));
-        if (namedKey->nameSz >= sizeof(namedKey->name)) {
-            namedKey->nameSz = sizeof(namedKey->name) - 1;
-            namedKey->name[namedKey->nameSz] = '\0';
-        }
+        if (namedKey->nameSz > sizeof(namedKey->name)-1)
+            namedKey->nameSz = sizeof(namedKey->name)-1;
+        XSTRNCPY(namedKey->name, name, namedKey->nameSz);
+        namedKey->name[MAX_SERVER_NAME-1] = '\0';
 
         ret = LoadKeyFile(&namedKey->key, &namedKey->keySz,
                           keyFile, type, password);
@@ -1288,7 +1287,7 @@ static int SetNamedPrivateKey(const char* name, const char* address, int port,
         sniffer->server = serverIp;
         sniffer->port = port;
 
-        sniffer->ctx = SSL_CTX_new(TLSv1_client_method());
+        sniffer->ctx = SSL_CTX_new(TLSv1_2_client_method());
         if (!sniffer->ctx) {
             SetError(MEMORY_STR, error, NULL, 0);
 #ifdef HAVE_SNI
@@ -1301,9 +1300,11 @@ static int SetNamedPrivateKey(const char* name, const char* address, int port,
 
     if (name == NULL) {
         if (password) {
+    #ifdef WOLFSSL_ENCRYPTED_KEYS
             SSL_CTX_set_default_passwd_cb(sniffer->ctx, SetPassword);
             SSL_CTX_set_default_passwd_cb_userdata(
                                                  sniffer->ctx, (void*)password);
+    #endif
         }
         ret = SSL_CTX_use_PrivateKey_file(sniffer->ctx, keyFile, type);
         if (ret != WOLFSSL_SUCCESS) {
@@ -1828,7 +1829,7 @@ static int ProcessClientHello(const byte* input, int* sslBytes,
         if (ret == WOLFSSL_SUCCESS) {
             NamedKey* namedKey;
 
-            if (nameSz >= sizeof(name))
+            if (nameSz > sizeof(name) - 1)
                 nameSz = sizeof(name) - 1;
             name[nameSz] = 0;
             wc_LockMutex(&session->context->namedKeysMutex);
