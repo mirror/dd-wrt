@@ -43,7 +43,8 @@
 #include <openssl/aes.h>
 #include "aes_locl.h"
 #ifdef OCTEON_OPENSSL
-#include "cvmx.h"
+#include "cvmx-address.h"
+#include "cvmx-asm.h"
 #include "cvmx-key.h"
 #endif
 
@@ -800,7 +801,6 @@ void AES_encrypt(const unsigned char *in, unsigned char *out,
                  const AES_KEY *key) {
 #ifdef OCTEON_OPENSSL
   uint64_t *in64,*out64;
-  CAV_ASSERT (in && out && key);
   CVMX_MT_AES_KEY (key->cvmkey[0], 0);
   CVMX_MT_AES_KEY (key->cvmkey[1], 1);
   CVMX_MT_AES_KEY (key->cvmkey[2], 2);
@@ -1008,7 +1008,6 @@ void AES_decrypt(const unsigned char *in, unsigned char *out,
 {
 #ifdef OCTEON_OPENSSL
   uint64_t *in64,*out64;
-  CAV_ASSERT (in && out && key);
   CVMX_MT_AES_KEY (key->cvmkey[0], 0);
   CVMX_MT_AES_KEY (key->cvmkey[1], 1);
   CVMX_MT_AES_KEY (key->cvmkey[2], 2);

@@ -117,7 +117,8 @@
 #include <string.h>
 #include <assert.h>
 
-#include "cvmx.h"
+#include "cvmx-address.h"
+#include "cvmx-asm.h"
 #include "cvmx-key.h"
 
 #include "openssl/aes.h"
@@ -137,7 +138,6 @@ cvm_crypto_aes_initialize (uint64_t * key, uint32_t key_len)
 void
 cvm_crypto_aes_encrypt (uint64_t * data, uint32_t data_len)
 {
-  CAV_ASSERT ((data_len & 0xf) == 0);
 
   while (data_len) {
     CVMX_MT_AES_ENC0 (*data);
@@ -151,7 +151,6 @@ cvm_crypto_aes_encrypt (uint64_t * data, uint32_t data_len)
 void
 cvm_crypto_aes_decrypt (uint64_t * data, uint32_t data_len)
 {
-  CAV_ASSERT ((data_len & 0xf) == 0);
 
   while (data_len) {
     CVMX_MT_AES_DEC0 (*data);
@@ -166,7 +165,6 @@ void
 cvm_crypto_aes_encrypt_cbc (uint64_t * iv, uint64_t * data,
   uint32_t data_len)
 {
-  CAV_ASSERT ((data_len & 0xf) == 0);
 
   CVMX_MT_AES_IV (iv[0], 0);
   CVMX_MT_AES_IV (iv[1], 1);
@@ -184,7 +182,6 @@ void
 cvm_crypto_aes_decrypt_cbc (uint64_t * iv, uint64_t * data,
   uint32_t data_len)
 {
-  CAV_ASSERT ((data_len & 0xf) == 0);
 
   CVMX_MT_AES_IV (iv[0], 0);
   CVMX_MT_AES_IV (iv[1], 1);
