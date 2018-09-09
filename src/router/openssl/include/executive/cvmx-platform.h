@@ -145,7 +145,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <errno.h>
-#include <sys/sysmips.h>
+//#include <sys/sysmips.h>
 #define MIPS_CAVIUM_XKPHYS_READ	   2010	/* XKPHYS */
 #define MIPS_CAVIUM_XKPHYS_WRITE	   2011	/* XKPHYS */
 

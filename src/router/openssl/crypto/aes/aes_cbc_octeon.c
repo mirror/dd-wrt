@@ -124,7 +124,8 @@
 #include "aes_locl.h"
 
 #ifdef OCTEON_OPENSSL
-#include "cvmx.h"
+#include "cvmx-address.h"
+#include "cvmx-asm.h"
 #include "cvmx-key.h"
 #endif
 
@@ -138,9 +139,6 @@ AES_cbc_encrypt (const unsigned char *in, unsigned char *out,
   unsigned long n;
   unsigned long len = length;
   unsigned char tmp[AES_BLOCK_SIZE];
-
-  CAV_ASSERT (in && out && key && ivec);
-  CAV_ASSERT ((AES_ENCRYPT == enc) || (AES_DECRYPT == enc));
 
   if (AES_ENCRYPT == enc) {
     while (len >= AES_BLOCK_SIZE) {
