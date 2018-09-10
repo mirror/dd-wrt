@@ -237,7 +237,7 @@ config CPUFREQ_DT_PLATDEV
 
 config GENERIC_CPUFREQ_KRAIT
 	tristate "Krait cpufreq driver"
-	depends on HAVE_CLK && OF
+	depends on HAVE_CLK && OF && ARCH_QCOM
 	# if CPU_THERMAL is on and THERMAL=m, CPU0 cannot be =y:
 	depends on !CPU_THERMAL || THERMAL
 	select PM_OPP
