@@ -125,7 +125,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id$ */
+/* $Id: ncat_core.c 37187 2018-03-11 03:50:53Z dmiller $ */
 
 #include "ncat.h"
 #include "util.h"
@@ -347,11 +347,13 @@ int fdinfo_recv(struct fdinfo *fdn, char *buf, size_t size)
             /* SSL_read returns <0 in some cases like renegotiation. In these
              * cases, SSL_get_error gives SSL_ERROR_WANT_{READ,WRITE}, and we
              * should try the SSL_read again. */
-            err = (n < 0) ? SSL_get_error(fdn->ssl, n) : SSL_ERROR_NONE;
+            if (n < 0) {
+                err = SSL_get_error(fdn->ssl, n);
+                if (err != SSL_ERROR_WANT_READ || err != SSL_ERROR_WANT_WRITE) {
+                    logdebug("SSL error on %d: %s\n", fdn->fd, ERR_error_string(err, NULL));
+                }
+            }
         } while (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE);
-        if (err != SSL_ERROR_NONE) {
-            logdebug("SSL error on %d: %s\n", fdn->fd, ERR_error_string(err, NULL));
-        }
         return n;
     }
 #endif

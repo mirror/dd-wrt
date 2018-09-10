@@ -1,4 +1,4 @@
-$Id$
+$Id: 3rd-party-licenses.txt 29907 2012-10-02 00:53:12Z david $
 
 This file is a list of the licenses of the third-party software used by
 Nmap and the other tools distributed with it. What follows is a

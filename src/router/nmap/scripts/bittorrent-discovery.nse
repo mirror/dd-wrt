@@ -64,15 +64,9 @@ action = function()
 
   local t = bittorrent.Torrent:new()
   if filename then
-    local status, err = t:load_from_file(filename)
-    if not status then
-      return stdnse.format_output(false, err)
-    end
+    t:load_from_file(filename)
   elseif magnet then
-    local status, err = t:load_from_magnet(magnet)
-    if not status then
-      return stdnse.format_output(false, err)
-    end
+    t:load_from_magnet(magnet)
   end
   t:trackers_peers()
   t:dht_peers(timeout)

@@ -155,7 +155,7 @@
 -- Following is an example how it can be done for FTP brute.
 --
 -- <code>
--- local line = <response from the server>
+-- local line = <responce from the server>
 --
 -- if(string.match(line, "^230")) then
 --   stdnse.debug1("Successful login: %s/%s", user, pass)
@@ -701,7 +701,7 @@ Engine = {
 
       status, response = driver:connect()
 
-      -- Temporary workaround. Did not connect successfully
+      -- Temporary workaround. Did not connect sucessfully
       -- due to stressed server
       if not status then
         -- We have to first check whether the response is a brute.Error
@@ -1465,17 +1465,6 @@ Iterators = {
 
 }
 
--- These functions all return a boolean and an error (or result)
--- and should all be wrapped in order to check status of the engine.
-checkwrap = {
-  connect = true,
-  send = true,
-  receive = true,
-  receive_lines = true,
-  receive_buf = true,
-  receive_bytes = true,
-}
-
 -- A socket wrapper class.
 -- Instances of this class can be treated as regular sockets.
 -- This wrapper is used to relay connection errors to the corresponding Engine
@@ -1487,29 +1476,20 @@ BruteSocket = {
     }
     setmetatable(o, self)
 
-    self.__index = function (instance, key)
-      local f = rawget(self, key)
-      if f then
-        -- BruteSocket function
-        return f
-      else
-        -- something provided by NSE socket
-        f = instance.socket[key]
-      end
-      -- Check if it should be wrapped with a checkStatus call
-      if checkwrap[key] then
-        return function(s, ...)
-          local status, err = f(instance.socket, ...)
-          instance:checkStatus(status, err)
-          return status, err
-        end
-      elseif type(f) == "function" then
-        -- not wrapped? call the function on the underlying socket
-        return function (s, ...)
-          return f(instance.socket, ...)
+    self.__index = function (table, key)
+      if self[key] then
+        return self[key]
+      elseif o.socket[key] then
+        if type(o.socket[key]) == "function" then
+          return function (self, ...)
+            return o.socket[key](o.socket, ...)
+          end
+        else
+          return o.socket[key]
         end
       end
-      return f
+
+      return nil
     end
 
     o.socket = nmap.new_socket()
@@ -1540,6 +1520,31 @@ BruteSocket = {
       thread_data.connection_error = true
       thread_data.con_error_reason = err
     end
+  end,
+
+  connect = function (self, host, port)
+    local status, err = self.socket:connect(host, port)
+    self:checkStatus(status, err)
+
+    return status, err
+  end,
+
+  send = function (self, data)
+    local status, err = self.socket:send(data)
+    self:checkStatus(status, err)
+
+    return status, err
+  end,
+
+  receive = function (self)
+    local status, data = self.socket:receive()
+    self:checkStatus(status, data)
+
+    return status, data
+  end,
+
+  close = function (self)
+    self.socket:close()
   end,
 }
 

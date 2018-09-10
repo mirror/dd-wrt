@@ -52,7 +52,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id$ */
+/* $Id: engine_poll.c 37126 2018-01-28 21:18:17Z fyodor $ */
 
 #ifndef WIN32
 /* Allow the use of POLLRDHUP, if available. */
