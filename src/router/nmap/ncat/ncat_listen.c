@@ -125,7 +125,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id$ */
+/* $Id: ncat_listen.c 37187 2018-03-11 03:50:53Z dmiller $ */
 
 #include "ncat.h"
 
@@ -878,14 +878,8 @@ static int ncat_listen_dgram(int proto)
             ncat_log_recv(buf, nbytes);
         }
 
-        if (o.verbose) {
-#if HAVE_SYS_UN_H
-        if (remotess.sockaddr.sa_family == AF_UNIX)
-            loguser("Connection from %s.\n", remotess.un.sun_path);
-        else
-#endif
+        if (o.verbose)
             loguser("Connection from %s.\n", inet_socktop(&remotess));
-        }
 
         conn_inc++;
 

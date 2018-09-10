@@ -126,7 +126,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id$ */
+/* $Id: ncat_main.c 37156 2018-03-05 01:53:34Z nnposter $ */
 
 #include "nsock.h"
 #include "ncat.h"
@@ -637,7 +637,6 @@ int main(int argc, char *argv[])
 "      --append-output        Append rather than clobber specified output files\n"
 "      --send-only            Only send data, ignoring received; quit on EOF\n"
 "      --recv-only            Only receive data, never send anything\n"
-"      --no-shutdown          Continue half-duplex when receiving EOF on stdin\n"
 "      --allow                Allow only given hosts to connect to Ncat\n"
 "      --allowfile            A file of hosts allowed to connect to Ncat\n"
 "      --deny                 Deny given hosts from connecting to Ncat\n"

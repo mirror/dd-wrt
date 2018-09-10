@@ -33,7 +33,6 @@ owns.
 --
 -- @xmloutput
 -- <elem key="server_name">WINDOWS2003</elem>
--- <elem key="workstation_name">WINDOWS2003</elem>
 -- <elem key="user">&lt;unknown&gt;</elem>
 -- <table key="mac">
 --   <elem key="manuf">VMware</elem>
@@ -114,8 +113,18 @@ end
 
 action = function(host)
 
+  local i
+  local status
+  local names, statistics
+  local server_name, user_name
+  local mac, prefix, manuf
+  local response = {}
+  local catch = function() return end
+  local try = nmap.new_try(catch)
+
+
   -- Get the list of NetBIOS names
-  local status, names, statistics = netbios.do_nbstat(host)
+  status, names, statistics = netbios.do_nbstat(host)
   status, names, statistics = netbios.do_nbstat(host)
   status, names, statistics = netbios.do_nbstat(host)
   status, names, statistics = netbios.do_nbstat(host)
@@ -124,43 +133,29 @@ action = function(host)
   end
 
   -- Get the server name
-  local status, server_name = netbios.get_server_name(host, names)
+  status, server_name = netbios.get_server_name(host, names)
   if(status == false) then
     return stdnse.format_output(false, server_name)
   end
 
-  -- Get the workstation name
-  local status, workstation_name = netbios.get_workstation_name(host, names)
-  if(status == false) then
-    return stdnse.format_output(false, workstation_name)
-  end
-
   -- Get the logged in user
-  local status, user_name = netbios.get_user_name(host, names)
+  status, user_name = netbios.get_user_name(host, names)
   if(status == false) then
     return stdnse.format_output(false, user_name)
   end
 
+  local mac_prefixes = try(datafiles.parse_mac_prefixes())
+
   -- Format the Mac address in the standard way
-  local mac = {
-    address = "<unknown>",
-    manuf = "unknown"
-  }
   if(#statistics >= 6) then
-    local status, mac_prefixes = datafiles.parse_mac_prefixes()
-    if not status then
-      -- Oh well
-      mac_prefixes = {}
-    end
-
     -- MAC prefixes are matched on the first three bytes, all uppercase
-    local prefix = string.upper(stdnse.tohex(statistics:sub(1,3)))
-    mac.address = stdnse.format_mac(statistics:sub(1,6))
-    mac.manuf = mac_prefixes[prefix] or "unknown"
-
+    prefix = string.upper(string.format("%02x%02x%02x", statistics:byte(1), statistics:byte(2), statistics:byte(3)))
+    mac = {
+      address = ("%02x:%02x:%02x:%02x:%02x:%02x"):format( statistics:byte(1), statistics:byte(2), statistics:byte(3), statistics:byte(4), statistics:byte(5), statistics:byte(6) ),
+      manuf = mac_prefixes[prefix] or "unknown"
+    }
     host.registry['nbstat'] = {
       server_name = server_name,
-      workstation_name = workstation_name,
       mac = mac.address
     }
     -- Samba doesn't set the Mac address, and nmap-mac-prefixes shows that as Xerox
@@ -168,6 +163,11 @@ action = function(host)
       mac.address = "<unknown>"
       mac.manuf = "unknown"
     end
+  else
+    mac = {
+      address = "<unknown>",
+      manuf = "unknown"
+    }
   end
   setmetatable(mac, {
     -- MAC is formatted as "00:11:22:33:44:55 (Manufacturer)"
@@ -179,9 +179,7 @@ action = function(host)
     user_name = "<unknown>"
   end
 
-  local response = stdnse.output_table()
   response["server_name"] = server_name
-  response["workstation_name"] = workstation_name
   response["user"] = user_name
   response["mac"] = mac
 
@@ -224,7 +222,7 @@ action = function(host)
   setmetatable(response, {
     __tostring = function(t)
       -- Normal single-line result
-      local ret = {string.format("NetBIOS name: %s, NetBIOS user: %s, NetBIOS MAC: %s", t.server_name or t.workstation_name, t.user, t.mac)}
+      local ret = {string.format("NetBIOS name: %s, NetBIOS user: %s, NetBIOS MAC: %s", t.server_name, t.user, t.mac)}
       -- If verbosity is set, dump the whole list of names
       if nmap.verbosity() >= 1 then
         table.insert(ret, string.format("Names:\n%s",t.names))

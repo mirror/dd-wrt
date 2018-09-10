@@ -102,10 +102,6 @@
 -- that should be pipelined. Defaults to <code>http.pipeline</code> (if set), or to what
 -- <code>getPipelineMax</code> function returns.
 --
--- @args http.host The value to use in the Host header of all requests unless
--- otherwise set. By default, the Host header uses the output of
--- <code>stdnse.get_hostname()</code>.
-
 -- TODO
 -- Implement cache system for http pipelines
 --
@@ -134,7 +130,6 @@ _ENV = stdnse.module("http", stdnse.seeall)
 local have_ssl, openssl = pcall(require,'openssl')
 
 USER_AGENT = stdnse.get_script_args('http.useragent') or "Mozilla/5.0 (compatible; Nmap Scripting Engine; https://nmap.org/book/nse.html)"
-local host_header = stdnse.get_script_args('http.host')
 local MAX_REDIRECT_COUNT = 5
 
 -- Recursively copy a table.
@@ -171,10 +166,9 @@ local get_default_port = url.get_default_port
 --- Get a value suitable for the Host header field.
 -- See RFC 2616 sections 14.23 and 5.2.
 local function get_host_field(host, port)
-  if host_header then return host_header end
   if not host then return nil end
   if type(port) == "number" then
-    port = {number=port, protocol="tcp", state="open"}
+    port = {number=port, protocol="tcp", state="open", version={}}
   end
   local scheme = shortport.ssl(host, port) and "https" or "http"
   if port.number == get_default_port(scheme) then
@@ -663,7 +657,7 @@ end
 local function parse_status_line(status_line, response)
   response["status-line"] = status_line
   local version, status, reason_phrase = string.match(status_line,
-    "^HTTP/(%d+%.%d+) +(%d+)%f[ \r\n] *(.-)\r?\n$")
+    "^HTTP/(%d+%.%d+) +(%d+) +(.-)\r?\n$")
   if not version then
     return nil, string.format("Error parsing status-line %q.", status_line)
   end
@@ -756,38 +750,62 @@ end
 -- Every key except "name" and "value" is optional.
 --
 -- This function attempts to support the header parser defined in RFC 6265,
--- Section 5.2.
---
--- This parser used to support quoted strings for cookie and attribute values
--- but this behavior was breaking interoperability.
+-- Section 5.2. Values need not be quoted, but if they start with a quote they
+-- will be interpreted as a quoted string.
 parse_set_cookie = function (s)
   local name, value
-  local _, pos
+  local _
 
   local cookie = {}
-  s = s:gsub(";", "; ")
 
   -- Get the NAME=VALUE part.
-  _, pos, cookie.name, cookie.value = s:find("^[ \t]*(.-)[ \t]*=[ \t]*(.-)[ \t]*%f[;\0]")
+  local pos
+  _, pos, cookie.name = s:find("^[ \t]*(.-)[ \t]*=[ \t]*")
   if not (cookie.name or ""):find("^[^;]+$") then
     return nil, "Can't get cookie name."
   end
   pos = pos + 1
+  if s:sub(pos, pos) == "\"" then
+    pos, cookie.value = get_quoted_string(s, pos)
+    if not cookie.value then
+      return nil, string.format("Can't get value of cookie named \"%s\".", cookie.name)
+    end
+    pos = skip_space(s, pos)
+  else
+    _, pos, cookie.value = s:find("^(.-)[ \t]*%f[;\0]", pos)
+    pos = pos + 1
+  end
 
   -- Loop over the attributes.
   while s:sub(pos, pos) == ";" do
-    _, pos, name = s:find("[ \t]*(.-)[ \t]*%f[=;\0]", pos + 1)
     pos = pos + 1
+    pos = skip_space(s, pos)
+    if pos > #s then
+      break
+    end
+    pos, name = get_token(s, pos)
+    if not name then
+      return nil, string.format("Can't get attribute name of cookie \"%s\".", cookie.name)
+    end
+    pos = skip_space(s, pos)
     if s:sub(pos, pos) == "=" then
-      _, pos, value = s:find("[ \t]*(.-)[ \t]*%f[;\0]", pos + 1)
       pos = pos + 1
+      pos = skip_space(s, pos)
+      if s:sub(pos, pos) == "\"" then
+        pos, value = get_quoted_string(s, pos)
+      else
+        _, pos, value = s:find("([^;]*)", pos)
+        value = value:match("(.-)[ \t]*$")
+        pos = pos + 1
+      end
+      if not value then
+        return nil, string.format("Can't get value of cookie attribute \"%s\".", name)
+      end
     else
-      value = ""
+      value = true
     end
-    name = name:lower()
-    if not (name == "" or name == "name" or name == "value") then
-      cookie[name] = value
-    end
+    cookie[name:lower()] = value
+    pos = skip_space(s, pos)
   end
 
   return cookie
@@ -2825,68 +2843,29 @@ test_suite = unittest.TestSuite:new()
 
 do
   local cookie_tests = {
-    { name = "#1198: conflicting attribute name",
-      cookie = "JSESSIONID=aaa; name=bbb; value=ccc; attr=ddd",
-      parsed = {
-        name = "JSESSIONID",
-        value = "aaa",
-        attr = "ddd",
-      }
-    },
-    { name = "#1171: empty attribute value",
-      cookie = "JSESSIONID=aaa; attr1; attr2=; attr3=",
-      parsed = {
-        name = "JSESSIONID",
-        value = "aaa",
-        attr1 = "",
-        attr2 = "",
-        attr3 = "",
-      }
-    },
-    { name = "#1170: quotes present",
-      cookie = "aaa=\"b\\\"bb\"; pATH = \"ddd eee\" fff",
-      parsed = {
-        name = "aaa",
-        value = "\"b\\\"bb\"",
-        path = "\"ddd eee\" fff"
-      }
-    },
-    { name = "#1169: empty attributes",
-      cookie = "JSESSIONID=aaa; ; Path=/;;Secure;",
-      parsed = {
-        name = "JSESSIONID",
-        value = "aaa",
-        path = "/",
-        secure = ""
-      }
-    },
-    { name = "#844: space in a cookie value",
-      cookie = " SESSIONID = IgAAABjN8b3xxxNsLRIiSpHLPn1lE=&IgAAAxxxMT6Bw==&Huawei USG6320&langfrombrows=en-US&copyright=2014 ;secure",
-      parsed = {
+    { -- #844
+      " SESSIONID=IgAAABjN8b3xxxNsLRIiSpHLPn1lE=&IgAAAxxxMT6Bw==&Huawei USG6320&langfrombrows=en-US&copyright=2014;secure", {
         name = "SESSIONID",
         value = "IgAAABjN8b3xxxNsLRIiSpHLPn1lE=&IgAAAxxxMT6Bw==&Huawei USG6320&langfrombrows=en-US&copyright=2014",
-        secure = ""
+        secure = true
       }
     },
-    { name = "#866: unexpected attribute",
-      cookie = " SID=c98fefa3ad659caa20b89582419bb14f; Max-Age=1200; Version=1",
-      parsed = {
+    { -- #866
+      " SID=c98fefa3ad659caa20b89582419bb14f; Max-Age=1200; Version=1", {
         name = "SID",
         value = "c98fefa3ad659caa20b89582419bb14f",
         ["max-age"] = "1200",
         version = "1"
       }
     },
-    { name = "#731: trailing semicolon",
-      cookie = "session_id=76ca8bc8c19;",
-      parsed = {
+    { -- #731
+      "session_id=76ca8bc8c19;", {
         name = "session_id",
         value = "76ca8bc8c19"
-      }
+        }
     },
-    { name = "#229: comma is not a delimiter",
-      cookie = "c1=aaa; path=/bbb/ccc,ddd/eee",
-      parsed = {
+    { -- #229
+      "c1=aaa; path=/bbb/ccc,ddd/eee", {
         name = "c1",
         value = "aaa",
         path = "/bbb/ccc,ddd/eee"
@@ -2895,64 +2874,9 @@ do
   }
 
   for _, test in ipairs(cookie_tests) do
-    local parsed = parse_set_cookie(test.cookie)
-    test_suite:add_test(unittest.not_nil(parsed), test.name)
-    if parsed then
-      test_suite:add_test(unittest.keys_equal(parsed, test.parsed), test.name)
-    end
+    local parsed = parse_set_cookie(test[1])
+    test_suite:add_test(unittest.keys_equal(parsed, test[2], test[1]))
   end
-
-  local status_line_tests = {
-    { name = "valid status line",
-      line = "HTTP/1.0 200 OK\r\n",
-      result = true,
-      parsed = {
-        version = "1.0",
-        status = 200,
-      }
-    },
-    { name = "malformed version in status line",
-      line = "HTTP/1. 200 OK\r\n",
-      result = false,
-      parsed = {
-        version = nil,
-        status = nil,
-      }
-    },
-    { name = "non-integer status code in status line",
-      line = "HTTP/1.0 20A OK\r\n",
-      result = false,
-      parsed = {
-        version = "1.0",
-        status = nil,
-      }
-    },
-    { name = "missing reason phrase in status line",
-      line = "HTTP/1.0 200\r\n",
-      result = true,
-      parsed = {
-        version = "1.0",
-        status = 200,
-      }
-    },
-  }
-
-  for _, test in ipairs(status_line_tests) do
-    local response = {}
-    local result, error = parse_status_line(test.line, response)
-    if test.result then
-      test_suite:add_test(unittest.not_nil(result), test.name)
-    else
-      test_suite:add_test(unittest.is_nil(result), test.name)
-      test_suite:add_test(unittest.not_nil(error), test.name)
-    end
-    test_suite:add_test(unittest.equal(response["status-line"], test.line), test.name)
-    if result then
-      test_suite:add_test(unittest.equal(response.status, test.parsed.status), test.name)
-      test_suite:add_test(unittest.equal(response.version, test.parsed.version), test.name)
-    end
-  end
-
 end
 
 return _ENV;

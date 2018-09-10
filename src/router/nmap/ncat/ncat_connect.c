@@ -125,7 +125,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id$ */
+/* $Id: ncat_connect.c 37126 2018-01-28 21:18:17Z fyodor $ */
 
 #include "base64.h"
 #include "nsock.h"
@@ -353,7 +353,7 @@ static const char *sock_to_url(char *host_str, unsigned short port)
            Snprintf(buf, sizeof(buf), "%s:%hu", host_str, port);
            break;
        case 2:
-           Snprintf(buf, sizeof(buf), "[%s]:%hu", host_str, port);
+           Snprintf(buf, sizeof(buf), "[%s]:%hu]", host_str, port);
     }
 
     return buf;

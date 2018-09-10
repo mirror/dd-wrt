@@ -128,7 +128,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id$ */
+/* $Id: FingerPrintResults.cc 37126 2018-01-28 21:18:17Z fyodor $ */
 
 #include "FingerPrintResults.h"
 #include "osscan.h"

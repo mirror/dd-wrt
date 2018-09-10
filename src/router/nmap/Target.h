@@ -129,7 +129,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id$ */
+/* $Id: Target.h 37126 2018-01-28 21:18:17Z fyodor $ */
 
 #ifndef TARGET_H
 #define TARGET_H
@@ -144,7 +144,7 @@
 
 #include "portreasons.h"
 #include "portlist.h"
-#include "probespec.h"
+#include "scan_engine.h"
 #include "osscan.h"
 #include "osscan2.h"
 class FingerPrintResults;

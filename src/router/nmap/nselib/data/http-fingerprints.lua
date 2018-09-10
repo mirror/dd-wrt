@@ -5251,14 +5251,14 @@ table.insert(fingerprints, {
     category = 'management',
     probes = {
       {
-        path = '/system/console',
+        path = '/lc/system/console',
         method = 'HEAD'
       },
     },
     matches = {
       {
         match = 'OSGi Management Console',
-        output = 'OSGi Management Console'
+        output = 'Adobe LiveCycle Management Console'
       }
     }
   });
