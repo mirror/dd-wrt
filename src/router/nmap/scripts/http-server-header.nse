@@ -30,7 +30,6 @@ correctly.
 author = "Daniel Miller"
 license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"version"}
-dependencies = {"https-redirect"}
 
 portrule = function(host, port)
   return (shortport.http(host,port) and nmap.version_intensity() >= 7)
@@ -49,21 +48,19 @@ action = function(host, port)
   end
   if #responses == 0 then
     -- Have to send the probe ourselves.
-    local socket, result = comm.tryssl(host, port, "GET / HTTP/1.0\r\n\r\n")
+    local status, result = comm.tryssl(host, port, "GET / HTTP/1.0\r\n\r\n")
 
-    if (not socket) then
+    if (not status) then
       return nil
     end
-    socket:close()
     responses[1] = result
   end
 
   -- Also send a probe with host header if we can. IIS reported to send
   -- different Server headers depending on presence of Host header.
-  local socket, result = comm.tryssl(host, port,
+  local status, result = comm.tryssl(host, port,
     ("GET / HTTP/1.1\r\nHost: %s\r\n\r\n"):format(stdnse.get_hostname(host)))
-  if socket then
-    socket:close()
+  if status then
     responses[#responses+1] = result
   end
 

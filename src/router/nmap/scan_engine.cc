@@ -129,7 +129,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id$ */
+/* $Id: scan_engine.cc 37126 2018-01-28 21:18:17Z fyodor $ */
 
 #ifdef WIN32
 #include "nmap_winconfig.h"
@@ -1796,13 +1796,6 @@ static unsigned int pingprobe_score(const probespec *pspec, int state) {
       score = 2;
     else if (pspec->pd.tcp.flags == TH_SYN && (state == PORT_OPEN || state == PORT_UNKNOWN))
       score = 3;
-    else if (pspec->pd.tcp.dport == 25 ||
-      pspec->pd.tcp.dport == 113 ||
-      pspec->pd.tcp.dport == 135 ||
-      pspec->pd.tcp.dport == 139 ||
-      pspec->pd.tcp.dport == 445)
-      /* Frequently spoofed port numbers */
-      score = 5;
     else
       score = 6;
     break;

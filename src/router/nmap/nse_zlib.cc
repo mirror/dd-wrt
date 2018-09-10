@@ -34,7 +34,7 @@ extern "C" {
 
 /*
 ** =========================================================================
-** compile time options which determine available functionality
+** compile time options wich determine available functionality
 ** =========================================================================
 */
 
@@ -596,16 +596,16 @@ static int lzstream_decompress(lua_State *L) {
 
 static int lzstream_readline(lua_State *L) {
     lz_stream *s;
-    int success;
+    int sucess;
 
     s = lzstream_check(L, lua_upvalueindex(1), LZ_INFLATE);
-    success = lz_read_line(L, s);
+    sucess = lz_read_line(L, s);
 
     if (s->error != Z_OK) {
         return lz_pushresult(L, s);
     }
 
-    if (success) {
+    if (sucess) {
         return 1;
     } else {
         /* EOF */

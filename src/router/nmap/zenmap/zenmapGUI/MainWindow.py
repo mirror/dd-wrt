@@ -767,18 +767,9 @@ This scan has not been run yet. Start the scan with the "Scan" button first.'))
             scan_interface.saved_filename = directory
 
             # Saving recent scan information
-            try:
-                for filename in filenames:
-                    recent_scans.add_recent_scan(filename)
-                recent_scans.save()
-            except (OSError, IOError), e:
-                alert = HIGAlertDialog(
-                        message_format=_(
-                            "Can't save recent scan information"),
-                        secondary_text=_(
-                            "Can't open file to write.\n%s") % str(e))
-                alert.run()
-                alert.destroy()
+            for filename in filenames:
+                recent_scans.add_recent_scan(filename)
+            recent_scans.save()
 
     def _save(self, scan_interface, saved_filename, selected_index,
             format="xml"):
@@ -803,17 +794,8 @@ This scan has not been run yet. Start the scan with the "Scan" button first.'))
 
             if format == "xml":
                 # Saving recent scan information
-                try:
-                    recent_scans.add_recent_scan(saved_filename)
-                    recent_scans.save()
-                except (OSError, IOError), e:
-                    alert = HIGAlertDialog(
-                            message_format=_(
-                                "Can't save recent scan information"),
-                            secondary_text=_(
-                                "Can't open file to write.\n%s") % str(e))
-                    alert.run()
-                    alert.destroy()
+                recent_scans.add_recent_scan(saved_filename)
+                recent_scans.save()
 
     def get_empty_interface(self):
         """Return this window if it is empty, otherwise create and return a new

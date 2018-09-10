@@ -3144,7 +3144,7 @@ kill_children;
 
 {
    local $xfail = 1;
-test "SOCKS5 client, server sends unknown code",
+test "SOCKS5 client, server sends unkown code",
     sub {
         my ($pid,$code);
         my $buf="";

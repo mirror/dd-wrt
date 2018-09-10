@@ -130,7 +130,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id$ */
+/* $Id: nbase_config.h.in 37126 2018-01-28 21:18:17Z fyodor $ */
 #ifndef NBASE_CONFIG_H
 #define NBASE_CONFIG_H
 

@@ -1,4 +1,4 @@
-$Id$
+$Id: NMAP_MODIFICATIONS 36918 2017-08-02 18:48:27Z dmiller $
 
 This is Dug Song's excellent Libdnet networking library version 1.12.
 It has been stripped down for inclusion within Nmap and modified as follows:
@@ -59,7 +59,7 @@ Index: configure.in
 --- configure.in	(revision 6317)
 +++ configure.in	(working copy)
 @@ -6,8 +6,6 @@
- dnl $Id$
+ dnl $Id: NMAP_MODIFICATIONS 36918 2017-08-02 18:48:27Z dmiller $
  
  AC_INIT(include/dnet.h)
 -AC_CONFIG_AUX_DIR(config)
@@ -2392,19 +2392,3 @@ Index: configure.in
  fi
  
  dnl Checks for typedefs, structures, and compiler characteristics.
-
-o Ensure we read 1 byte less than buffer size to allow for automatically-appended null char.
-
-diff --git a/libdnet-stripped/src/arp-ioctl.c b/libdnet-stripped/src/arp-ioctl.c
-index 434142e..31b9f8c 100644
---- a/libdnet-stripped/src/arp-ioctl.c
-+++ b/libdnet-stripped/src/arp-ioctl.c
-@@ -218,7 +218,7 @@ arp_loop(arp_t *a, arp_handler callback, void *arg)
- 
- 	ret = 0;
- 	while (fgets(buf, sizeof(buf), fp) != NULL) {
--		i = sscanf(buf, "%s 0x%x 0x%x %100s %100s %100s\n",
-+		i = sscanf(buf, "%s 0x%x 0x%x %99s %99s %99s\n",
- 		    ipbuf, &type, &flags, macbuf, maskbuf, devbuf);
- 		
- 		if (i < 4 || (flags & ATF_COM) == 0)

@@ -130,7 +130,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id$ */
+/* $Id: nmap_winconfig.h 37126 2018-01-28 21:18:17Z fyodor $ */
 
 #ifndef NMAP_WINCONFIG_H
 #define NMAP_WINCONFIG_H

@@ -129,7 +129,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id$ */
+/* $Id: nbase_winconfig.h 37126 2018-01-28 21:18:17Z fyodor $ */
 
 #ifndef NBASE_WINCONFIG_H
 #define NBASE_WINCONFIG_H

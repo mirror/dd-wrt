@@ -1,3 +1,5 @@
+local bin = require("bin")
+local match = require("match")
 local nmap = require("nmap")
 local packet = require "packet"
 local shortport = require("shortport")
@@ -48,7 +50,6 @@ For additional information:
 author = "Mak Kolybabi <mak@kolybabi.com>"
 license = "Same as Nmap--See https://nmap.org/book/man-legal.html"
 categories = {"vuln", "safe"}
-dependencies = {"https-redirect"}
 
 portrule = function(host, port)
   if not tls.handshake_parse.NewSessionTicket then

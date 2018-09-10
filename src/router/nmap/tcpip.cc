@@ -129,7 +129,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id$ */
+/* $Id: tcpip.cc 37126 2018-01-28 21:18:17Z fyodor $ */
 
 #include "nmap.h"
 
@@ -1360,31 +1360,25 @@ static bool validateTCPhdr(u8 *tcpc, unsigned len) {
   tcpc += sizeof(struct tcp_hdr);
   optlen = hdrlen - sizeof(struct tcp_hdr);
 
-#define OPTLEN_IS(expected) do { \
-  if (optlen < (expected) || *++tcpc != (expected)) \
-    return false; \
-  optlen -= (expected); \
-  tcpc += (expected) - 1; \
-} while(0);
-
   while (optlen > 0) {
     switch (*tcpc) {
-    case 0: // EOL
-      /* Options processing is over. */
-      return true;
-    case 1: // NOP
-      /* 1 byte, no length. All other options have a length. */
-      optlen--;
-      tcpc++;
-      break;
     case 2: /* MSS */
-      OPTLEN_IS(4);
+      if (optlen < 4)
+        return false;
+      optlen -= 4;
+      tcpc += 4;
       break;
     case 3: /* Window Scale */
-      OPTLEN_IS(3);
+      if (optlen < 3)
+        return false;
+      optlen -= 3;
+      tcpc += 3;
       break;
     case 4: /* SACK Permitted */
-      OPTLEN_IS(2);
+      if (optlen < 2)
+        return false;
+      optlen -= 2;
+      tcpc += 2;
       break;
     case 5: /* SACK */
       if (optlen < *++tcpc)
@@ -1395,19 +1389,23 @@ static bool validateTCPhdr(u8 *tcpc, unsigned len) {
       tcpc += (*tcpc - 1);
       break;
     case 8: /* Timestamp */
-      OPTLEN_IS(10);
+      if (optlen < 10)
+        return false;
+      optlen -= 10;
+      tcpc += 10;
       break;
     case 14: /* Alternate checksum */
       /* Sometimes used for hardware checksum offloading
        * ftp://ftp.ucsd.edu/pub/csl/fastnet/faq.txt
        */
-      OPTLEN_IS(3);
+      if (optlen < 3)
+        return false;
+      optlen -= 3;
+      tcpc += 3;
       break;
     default:
-      if (optlen < 2 || optlen < *++tcpc)
-        return false;
-      optlen -= *tcpc;
-      tcpc += (*tcpc - 1);
+      optlen--;
+      tcpc++;
       break;
     }
   }
