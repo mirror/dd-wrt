@@ -57,7 +57,7 @@ int getassoclist_ath9k(char *ifname, unsigned char *list)
 	count[0] = 0;
 	for (wc = mac80211_info->wci; wc; wc = wc->next) {
 
-		ether_atoe(wc->mac, l);
+		memcpy(l, wc->etheraddr, 6);
 		l += 6;
 		count[0]++;
 	}
@@ -69,14 +69,11 @@ int getassoclist_ath9k(char *ifname, unsigned char *list)
 // dummy TBD 
 int getWifiInfo_ath9k(char *ifname, unsigned char *mac, int field)
 {
-	unsigned char rmac[32];
-	ether_etoa(mac, rmac);
-
 	struct mac80211_info *mac80211_info;
 	struct wifi_client_info *wc;
 	mac80211_info = mac80211_assoclist(ifname);
 	for (wc = mac80211_info->wci; wc; wc = wc->next) {
-		if (!strcmp(wc->mac, rmac)) {
+		if (!memcmp(wc->etheraddr, mac, 6)) {
 			free_wifi_clients(mac80211_info->wci);
 			free(mac80211_info);
 			switch (field) {

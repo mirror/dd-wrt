@@ -17,6 +17,7 @@ struct wifi_info {
 
 static int _showAssocList(char *base, char *ifname, char *mac, struct wifi_info *rwc, int silent)
 {
+	char buf[18];
 	if (is_ath9k(ifname)) {
 		struct mac80211_info *mac80211_info;
 		struct wifi_client_info *wc;
@@ -26,9 +27,9 @@ static int _showAssocList(char *base, char *ifname, char *mac, struct wifi_info 
 				char out[48];
 				sprintf(out, "/tmp/snmp_cache/%s", base);
 				mkdir(out, 0777);
-				sprintf(out, "/tmp/snmp_cache/%s/%s", base, wc->mac);
+				sprintf(out, "/tmp/snmp_cache/%s/%s", base, ether_etoa(wc->etheraddr, buf));
 				struct wifi_info data;
-				ether_atoe(wc->mac, data.mac);
+				memcpy(data.mac, wc->etheraddr, 6);
 				strcpy(data.ifname, wc->ifname);
 				data.rssi = wc->signal;
 				data.noise = wc->noise;
@@ -39,7 +40,7 @@ static int _showAssocList(char *base, char *ifname, char *mac, struct wifi_info 
 				fwrite(&data, 1, sizeof(data), fp);
 				fclose(fp);
 				if (!silent)
-					fprintf(stdout, "assoclist %s\n", wc->mac);
+					fprintf(stdout, "assoclist %s\n", ether_etoa(wc->etheraddr, buf));
 			}
 		}
 		free_wifi_clients(mac80211_info->wci);
