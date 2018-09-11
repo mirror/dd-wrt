@@ -53,13 +53,9 @@ endif
 
 
 openssl:
-	touch openssl/crypto/bn/asm/*
 	$(MAKE) -C openssl CC="$(CC) -I$(TOP)/openssl/crypto -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
-	touch openssl/crypto/bn/asm/*
 	$(MAKE) -C openssl build_libs CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
-	touch openssl/crypto/bn/asm/*
 	$(MAKE)  -C openssl build_programs CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
-	touch openssl/crypto/bn/asm/*
 	rm -f openssl/apps/openssl
 
 openssl-shared: openssl
@@ -96,7 +92,7 @@ openssl-clean:
 
 
 
-OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-camellia no-whirlpool no-seed -no-gost no-ssl3 no-heartbeats no-rc2 no-weak-ssl-ciphers no-zlib
+OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-camellia no-whirlpool no-seed -no-gost no-ssl3 no-heartbeats no-rc2 no-weak-ssl-ciphers no-zlib no-aria no-devcryptoeng no-siphash no-sm2 no-sm3 no-sm4 no-tests no-external-tests
 
 OPENSSL_OPTIONS:= no-err threads no-ssl2 enable-ssl3-method no-ec2m no-heartbeats no-async no-egd
 
@@ -128,11 +124,7 @@ openssl-configure:
 			$(OPENSSL_OPTIONS)
 
 	$(MAKE) -C openssl clean
-	touch openssl/crypto/bn/asm/*
 	-$(MAKE) -C openssl CC="$(CC) -I$(TOP)/openssl/crypto -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
-	touch openssl/crypto/bn/asm/*
 	-$(MAKE) -C openssl build_libs CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
-	touch openssl/crypto/bn/asm/*
 	-$(MAKE) -C openssl build_programs CC="$(CC) -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
-	touch openssl/crypto/bn/asm/*
 	-rm -f openssl/apps/openssl
