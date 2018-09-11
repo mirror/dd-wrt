@@ -465,7 +465,7 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
 	struct nl80211_sta_flag_update *sta_flags;
-	char mac_addr[20], dev[20];
+	char dev[20];
 	struct statdata *d = data;
 	struct mac80211_info *mac80211_info = d->mac80211_info;
 	mac80211_info->wci = add_to_wifi_clients(mac80211_info->wci);
@@ -515,9 +515,8 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 		fprintf(stderr, "failed to parse nested attributes!\n");
 		return NL_SKIP;
 	}
-	ether_etoa(nla_data(tb[NL80211_ATTR_MAC]), mac_addr);
 	if_indextoname(nla_get_u32(tb[NL80211_ATTR_IFINDEX]), dev);
-	strcpy(mac80211_info->wci->mac, mac_addr);
+	memcpy(mac80211_info->wci->etheraddr, nla_data(tb[NL80211_ATTR_MAC]), 6);
 	strcpy(mac80211_info->wci->ifname, dev);
 	mac80211_info->wci->noise = mac80211_info->noise;
 	if (strstr(dev, ".sta"))
