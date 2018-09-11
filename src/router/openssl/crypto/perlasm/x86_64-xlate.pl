@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# Copyright 2005-2016 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2005-2018 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the OpenSSL license (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -531,7 +531,7 @@ my %globals;
 	);
 
     # Following constants are defined in x86_64 ABI supplement, for
-    # example avaiable at https://www.uclibc.org/docs/psABI-x86_64.pdf,
+    # example available at https://www.uclibc.org/docs/psABI-x86_64.pdf,
     # see section 3.7 "Stack Unwind Algorithm".
     my %DW_reg_idx = (
 	"%rax"=>0,  "%rdx"=>1,  "%rcx"=>2,  "%rbx"=>3,
@@ -544,7 +544,7 @@ my %globals;
 
     # [us]leb128 format is variable-length integer representation base
     # 2^128, with most significant bit of each byte being 0 denoting
-    # *last* most significat digit. See "Variable Length Data" in the
+    # *last* most significant digit. See "Variable Length Data" in the
     # DWARF specification, numbered 7.6 at least in versions 3 and 4.
     sub sleb128 {
 	use integer;	# get right shift extend sign
@@ -877,7 +877,7 @@ my %globals;
 							$var=~s/^(0b[0-1]+)/oct($1)/eig;
 							$var=~s/^0x([0-9a-f]+)/0$1h/ig if ($masm);
 							if ($sz eq "D" && ($current_segment=~/.[px]data/ || $dir eq ".rva"))
-							{ $var=~s/([_a-z\$\@][_a-z0-9\$\@]*)/$nasm?"$1 wrt ..imagebase":"imagerel $1"/egi; }
+							{ $var=~s/^([_a-z\$\@][_a-z0-9\$\@]*)/$nasm?"$1 wrt ..imagebase":"imagerel $1"/egi; }
 							$var;
 						    };
 
@@ -1427,6 +1427,6 @@ close STDOUT;
 #
 # (*)	Note that we're talking about run-time, not debug-time. Lack of
 #	unwind information makes debugging hard on both Windows and
-#	Unix. "Unlike" referes to the fact that on Unix signal handler
+#	Unix. "Unlike" refers to the fact that on Unix signal handler
 #	will always be invoked, core dumped and appropriate exit code
 #	returned to parent (for user notification).
