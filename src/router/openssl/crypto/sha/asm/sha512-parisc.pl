@@ -1,5 +1,5 @@
 #! /usr/bin/env perl
-# Copyright 2009-2016 The OpenSSL Project Authors. All Rights Reserved.
+# Copyright 2009-2018 The OpenSSL Project Authors. All Rights Reserved.
 #
 # Licensed under the OpenSSL license (the "License").  You may not use
 # this file except in compliance with the License.  You can obtain a copy
@@ -8,7 +8,7 @@
 
 
 # ====================================================================
-# Written by Andy Polyakov <appro@fy.chalmers.se> for the OpenSSL
+# Written by Andy Polyakov <appro@openssl.org> for the OpenSSL
 # project. The module is, however, dual licensed under OpenSSL and
 # CRYPTOGAMS licenses depending on where you obtain it. For further
 # details see http://www.openssl.org/~appro/cryptogams/.
@@ -767,13 +767,18 @@ sub assemble {
     ref($opcode) eq 'CODE' ? &$opcode($mod,$args) : "\t$mnemonic$mod\t$args";
 }
 
+if (`$ENV{CC} -Wa,-v -c -o /dev/null -x assembler /dev/null 2>&1`
+	=~ /GNU assembler/) {
+    $gnuas = 1;
+}
+
 foreach (split("\n",$code)) {
 	s/\`([^\`]*)\`/eval $1/ge;
 
 	s/shd\s+(%r[0-9]+),(%r[0-9]+),([0-9]+)/
 		$3>31 ? sprintf("shd\t%$2,%$1,%d",$3-32)	# rotation for >=32
 		:       sprintf("shd\t%$1,%$2,%d",$3)/e			or
-	# translate made up instructons: _ror, _shr, _align, _shl
+	# translate made up instructions: _ror, _shr, _align, _shl
 	s/_ror(\s+)(%r[0-9]+),/
 		($SZ==4 ? "shd" : "shrpd")."$1$2,$2,"/e			or
 
@@ -790,9 +795,11 @@ foreach (split("\n",$code)) {
 
 	s/^\s+([a-z]+)([\S]*)\s+([\S]*)/&assemble($1,$2,$3)/e if ($SIZE_T==4);
 
-	s/cmpb,\*/comb,/ if ($SIZE_T==4);
-
-	s/\bbv\b/bve/    if ($SIZE_T==8);
+	s/(\.LEVEL\s+2\.0)W/$1w/	if ($gnuas && $SIZE_T==8);
+	s/\.SPACE\s+\$TEXT\$/.text/	if ($gnuas && $SIZE_T==8);
+	s/\.SUBSPA.*//			if ($gnuas && $SIZE_T==8);
+	s/cmpb,\*/comb,/ 		if ($SIZE_T==4);
+	s/\bbv\b/bve/    		if ($SIZE_T==8);
 
 	print $_,"\n";
 }
