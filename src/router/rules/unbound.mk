@@ -6,7 +6,7 @@ unbound-configure:
 		--enable-tfo-server \
 		--with-chroot-dir=/tmp \
 		--with-ssl="$(TOP)/openssl" \
-		--without-pthreads \
+		--with-pthreads \
 		--prefix=/usr \
 		--libdir=/usr/lib \
 		--sysconfdir=/etc \
