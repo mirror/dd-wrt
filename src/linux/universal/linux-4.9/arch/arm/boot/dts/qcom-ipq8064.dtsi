@@ -21,7 +21,6 @@
 
 		cpu0: cpu@0 {
 			compatible = "qcom,krait";
-			enable-method = "qcom,kpss-acc-v1";
 			device_type = "cpu";
 			reg = <0>;
 			next-level-cache = <&L2>;
@@ -29,50 +28,16 @@
 			qcom,saw = <&saw0>;
 			clocks = <&kraitcc 0>, <&kraitcc 4>;
 			clock-names = "cpu", "l2";
-			clock-latency = <100000>;
+			clock-latency-ns = <256000>;
 			cpu-supply = <&smb208_s2a>;
 			voltage-tolerance = <5>;
 			cooling-min-state = <0>;
 			cooling-max-state = <10>;
 			#cooling-cells = <2>;
 			cpu-idle-states = <&CPU_SPC>;
-
-			operating-points-0-0 = <
-				/* kHz      uV */
-				1400000 1250000
-				1200000 1200000
-				1000000 1150000
-				 800000 1100000
-				 600000 1050000
- 				 384000 1000000
- 			>;
-			operating-points-0-1 = <
-				/* kHz      uV */
-				1400000 1175000
-				1200000 1125000
-				1000000 1075000
-				 800000 1025000
-				 600000  975000
-				 384000  925000
-			>;
-			operating-points-0-2 = <
-				/* kHz      uV */
-				1400000 1125000
-				1200000 1075000
-				1000000 1025000
-				 800000  995000
-				 600000  925000
-				 384000  875000
-			>;
-			operating-points-0-3 = <
-				/* kHz      uV */
-				1400000 1050000
-				1200000 1000000
-				1000000  950000
-				 800000  900000
-				 600000  850000
-				 384000  800000
-			>;
+			cpu_fab_threshold = <1000000000>;
+			operating-points-v2 = <&cpu0_opp_table>;
+			
 		};
 
 		cpu1: cpu@1 {
@@ -85,51 +50,72 @@
 			qcom,saw = <&saw1>;
 			clocks = <&kraitcc 1>, <&kraitcc 4>;
 			clock-names = "cpu", "l2";
-			clock-latency = <100000>;
+			clock-latency-ns = <256000>;
 			cpu-supply = <&smb208_s2b>;
+			voltage-tolerance = <5>;
 			cooling-min-state = <0>;
 			cooling-max-state = <10>;
 			#cooling-cells = <2>;
 			cpu-idle-states = <&CPU_SPC>;
-
-			operating-points-0-0 = <
-				/* kHz      uV */
-				1400000 1250000
-				1200000 1200000
-				1000000 1150000
-				 800000 1100000
-				 600000 1050000
- 				 384000 1000000
- 			>;
-			operating-points-0-1 = <
-				/* kHz      uV */
-				1400000 1175000
-				1200000 1125000
-				1000000 1075000
-				 800000 1025000
-				 600000  975000
-				 384000  925000
-			>;
-			operating-points-0-2 = <
-				/* kHz      uV */
-				1400000 1125000
-				1200000 1075000
-				1000000 1025000
-				 800000  995000
-				 600000  925000
-				 384000  875000
-			>;
-			operating-points-0-3 = <
-				/* kHz      uV */
-				1400000 1050000
-				1200000 1000000
-				1000000  950000
-				 800000  900000
-				 600000  850000
-				 384000  800000
-			>;
+			cpu_fab_threshold = <1000000000>;
+			operating-points-v2 = <&cpu1_opp_table>;
+			
 
 		};
+		
+		cpu0_opp_table: opp_table0 {
+                compatible = "operating-points-v2";
+                opp-shared;
+                
+                opp@384000000 {
+                        opp-hz = /bits/ 64 <384000000>;
+                        clock-latency-ns = <256000>;
+                };
+                opp@600000000 {
+                        opp-hz = /bits/ 64 <600000000>;
+                        clock-latency-ns = <256000>;
+                };
+                opp@800000000 {
+                        opp-hz = /bits/ 64 <800000000>;
+                        clock-latency-ns = <256000>;
+                };
+                opp@1000000000 {
+                        opp-hz = /bits/ 64 <1000000000>;
+                        clock-latency-ns = <256000>;
+                };
+                opp@1400000000 {
+                        opp-hz = /bits/ 64 <1400000000>;
+                        clock-latency-ns = <256000>;
+                };
+                
+        };
+		
+		cpu1_opp_table: opp_table1 {
+                compatible = "operating-points-v2";
+                opp-shared;
+                
+                opp@384000000 {
+                        opp-hz = /bits/ 64 <384000000>;
+                        clock-latency-ns = <256000>;
+                };
+                opp@600000000 {
+                        opp-hz = /bits/ 64 <600000000>;
+                        clock-latency-ns = <256000>;
+                };
+                opp@800000000 {
+                        opp-hz = /bits/ 64 <800000000>;
+                        clock-latency-ns = <256000>;
+                };
+                opp@1000000000 {
+                        opp-hz = /bits/ 64 <1000000000>;
+                        clock-latency-ns = <256000>;
+                };
+                opp@1400000000 {
+                        opp-hz = /bits/ 64 <1400000000>;
+                        clock-latency-ns = <256000>;
+                };
+                
+        };
 
 		L2: l2-cache {
 			compatible = "cache";
