@@ -555,14 +555,16 @@ void start_sysinit(void)
 
 	eval("ifconfig", "eth1", "up");
 	eval("ifconfig", "eth0", "up");
-
-//      writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "800000");
-//      writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "800000");
-	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate", "1000000");
+	
+	writeproc("/proc/irq/101/smp_affinity", "2");
+	writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "800000");
+	writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "800000");
+/*	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_rate", "1000000");
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/sampling_down_factor", "10");
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold", "50");
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold_any_cpu_load", "50");
 	writeproc("/sys/devices/system/cpu/cpufreq/ondemand/up_threshold_multi_core", "50");
+*/
 
 	char macaddr[32];
 	if (get_hwaddr("eth1", macaddr)) {
