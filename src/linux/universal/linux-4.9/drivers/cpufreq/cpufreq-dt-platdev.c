@@ -11,79 +11,12 @@
 #include <linux/of.h>
 #include <linux/platform_device.h>
 
-#include "cpufreq-dt.h"
-
 static const struct of_device_id machines[] __initconst = {
-	{ .compatible = "allwinner,sun4i-a10", },
-	{ .compatible = "allwinner,sun5i-a10s", },
-	{ .compatible = "allwinner,sun5i-a13", },
-	{ .compatible = "allwinner,sun5i-r8", },
-	{ .compatible = "allwinner,sun6i-a31", },
-	{ .compatible = "allwinner,sun6i-a31s", },
-	{ .compatible = "allwinner,sun7i-a20", },
-	{ .compatible = "allwinner,sun8i-a23", },
-	{ .compatible = "allwinner,sun8i-a33", },
-	{ .compatible = "allwinner,sun8i-a83t", },
-	{ .compatible = "allwinner,sun8i-h3", },
+	{ .compatible = "qcom,ipq4019" },
+	{ .compatible = "qcom,ipq807x" },
+	{ .compatible = "qcom,ipq8064" },
 
-	{ .compatible = "hisilicon,hi6220", },
-
-	{ .compatible = "fsl,imx27", },
-	{ .compatible = "fsl,imx51", },
-	{ .compatible = "fsl,imx53", },
-	{ .compatible = "fsl,imx7d", },
-
-	{ .compatible = "marvell,berlin", },
-
-	{ .compatible = "qcom,ipq4019", },
-
-	{ .compatible = "samsung,exynos3250", },
-	{ .compatible = "samsung,exynos4210", },
-	{ .compatible = "samsung,exynos4212", },
-	{ .compatible = "samsung,exynos4412", },
-	{ .compatible = "samsung,exynos5250", },
-#ifndef CONFIG_BL_SWITCHER
-	{ .compatible = "samsung,exynos5420", },
-	{ .compatible = "samsung,exynos5433", },
-	{ .compatible = "samsung,exynos5800", },
-#endif
-
-	{ .compatible = "renesas,emev2", },
-	{ .compatible = "renesas,r7s72100", },
-	{ .compatible = "renesas,r8a73a4", },
-	{ .compatible = "renesas,r8a7740", },
-	{ .compatible = "renesas,r8a7778", },
-	{ .compatible = "renesas,r8a7779", },
-	{ .compatible = "renesas,r8a7790", },
-	{ .compatible = "renesas,r8a7791", },
-	{ .compatible = "renesas,r8a7792", },
-	{ .compatible = "renesas,r8a7793", },
-	{ .compatible = "renesas,r8a7794", },
-	{ .compatible = "renesas,sh73a0", },
-
-	{ .compatible = "rockchip,rk2928", },
-	{ .compatible = "rockchip,rk3036", },
-	{ .compatible = "rockchip,rk3066a", },
-	{ .compatible = "rockchip,rk3066b", },
-	{ .compatible = "rockchip,rk3188", },
-	{ .compatible = "rockchip,rk3228", },
-	{ .compatible = "rockchip,rk3288", },
-	{ .compatible = "rockchip,rk3366", },
-	{ .compatible = "rockchip,rk3368", },
-	{ .compatible = "rockchip,rk3399", },
-
-	{ .compatible = "sigma,tango4" },
-
-	{ .compatible = "ti,am33xx", },
-	{ .compatible = "ti,dra7", },
-	{ .compatible = "ti,omap2", },
-	{ .compatible = "ti,omap3", },
-	{ .compatible = "ti,omap4", },
-	{ .compatible = "ti,omap5", },
-
-	{ .compatible = "xlnx,zynq-7000", },
-
-	{ }
+	{ /* sentinel */ }
 };
 
 static int __init cpufreq_dt_platdev_init(void)
@@ -99,8 +32,7 @@ static int __init cpufreq_dt_platdev_init(void)
 	if (!match)
 		return -ENODEV;
 
-	return PTR_ERR_OR_ZERO(platform_device_register_data(NULL, "cpufreq-dt",
-			       -1, match->data,
-			       sizeof(struct cpufreq_dt_platform_data)));
+	return PTR_ERR_OR_ZERO(platform_device_register_simple("cpufreq-dt", -1,
+							       NULL, 0));
 }
 device_initcall(cpufreq_dt_platdev_init);
