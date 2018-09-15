@@ -182,7 +182,7 @@ out:
 
 static void lgetnoise(struct unl *unl, int wdev)
 {
-	static struct nl_msg *surveymsg;
+	struct nl_msg *surveymsg;
 
 	surveymsg = unl_genl_msg(unl, NL80211_CMD_GET_SURVEY, true);
 	NLA_PUT_U32(surveymsg, NL80211_ATTR_IFINDEX, wdev);
@@ -987,21 +987,7 @@ static void print_cipher(const uint8_t * data)
 
 static void print_auth(const uint8_t * data)
 {
-	if (memcmp(data, wifi_oui, 3) == 0) {
-		switch (data[3]) {
-		case 1:
-			printf("IEEE 802.1X");
-			fillENC("IEEE 802.1X", " ");
-			break;
-		case 2:
-			printf("PSK");
-			fillENC("PSK", " ");
-			break;
-		default:
-			printf("%.02x-%.02x-%.02x:%d", data[0], data[1], data[2], data[3]);
-			break;
-		}
-	} else if (memcmp(data, ieee80211_oui, 3) == 0) {
+	if (memcmp(data, ieee80211_oui, 3) == 0 || memcmp(data, wifi_oui, 3) == 0) {
 		switch (data[3]) {
 		case 1:
 			printf("IEEE 802.1X");
@@ -1030,6 +1016,38 @@ static void print_auth(const uint8_t * data)
 		case 7:
 			printf("TDLS/TPK");
 			fillENC("TDLS/TPK", " ");
+			break;
+		case 8:
+			printf("SAE/PSK3");
+			fillENC("SAE/PSK3", " ");
+			break;
+		case 9:
+			printf("FT-OVER-SAE");
+			fillENC("FT-OVER-SAE", " ");
+			break;
+		case 11:
+			printf("8021X/SUITE-B");
+			fillENC("8021X/SUITE-B", " ");
+			break;
+		case 12:
+			printf("8021X/SUITE-B-192");
+			fillENC("8021X/SUITE-B-192", " ");
+			break;
+		case 14:
+			printf("FILS/SHA256");
+			fillENC("FILS/SHA256", " ");
+			break;
+		case 15:
+			printf("FILS/SHA384");
+			fillENC("FILS/SHA384", " ");
+			break;
+		case 16:
+			printf("FT-FILS/SHA256");
+			fillENC("FT-FILS/SHA256", " ");
+			break;
+		case 17:
+			printf("FT-FILS/SHA384");
+			fillENC("FT-FILS/SHA384", " ");
 			break;
 		default:
 			printf("%.02x-%.02x-%.02x:%d", data[0], data[1], data[2], data[3]);
