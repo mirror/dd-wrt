@@ -1153,9 +1153,9 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			addWPS(fp, ifname, 1);
 		} else {
 			// if (nvram_invmatch (akm, "radius"))
-			if (nvram_match("wpa2 wpa3"))
+			if (nvram_match(akm, "wpa2 wpa3"))
 				fprintf(fp, "wpa_key_mgmt=WPA-EAP WPA-EAP-SUITE-B-192\n");
-			else if (nvram_match("wpa3"))
+			else if (nvram_match(akm, "wpa3"))
 				fprintf(fp, "wpa_key_mgmt=WPA-EAP-SUITE-B-192\n");
 			else
 				fprintf(fp, "wpa_key_mgmt=WPA-EAP\n");
