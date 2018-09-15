@@ -10,12 +10,26 @@ ifeq ($(CONFIG_DRIVER_WIRED),y)
 ATH9K_LDFLAGS +=-L$(TOP)/libnfnetlink/src/.libs -lnfnetlink
 ATH9K_LDFLAGS +=-L$(TOP)/libnetfilter_log/src/.libs -lnetfilter_log
 endif
+ifeq ($(CONFIG_WPA3),y)
+ifndef $(HOSTAPDVERSION)
+HOSTAPDVERSION=2018-07-08
+endif
+else
 ifndef $(HOSTAPDVERSION)
 HOSTAPDVERSION=2017-08-24
+endif
 endif
 
 ATH9K_CFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
 ATH9K_LDCFLAGS += $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections
+
+ifeq ($(CONFIG_WPA3),y)
+ifeq ($(CONFIG_OPENSSL),y)
+ATH9K_LDFLAGS += -L$(TOP)/openssl -lcrypto -lssl
+else
+ATH9K_LDFLAGS += -L$(TOP)/wolfssl/src/.libs -lwolfssl
+endif
+endif
 
 hostapd2: $(TINY)
 	$(MAKE) -C hostapd-$(HOSTAPDVERSION)/hostapd clean
