@@ -858,6 +858,55 @@ static struct device_info boards[] = {
 		.first_sysupgrade_partition = "os-image",
 		.last_sysupgrade_partition = "file-system"
 	},
+	{
+		.id     = "ARCHER-C7-V5",
+		.vendor = "",
+		.support_list =
+			"SupportList:\n"
+			"{product_name:ARCHER C7,product_ver:5.0.0,special_id:00000000}\n" // UNIVERSAL
+			"{product_name:ARCHER C7,product_ver:5.0.0,special_id:55530000}\n" //US 
+			"{product_name:ARCHER C7,product_ver:5.0.0,special_id:45550000}\n" //EU
+			"{product_name:ARCHER C7,product_ver:5.0.0,special_id:4B520000}\n" //KR
+			"{product_name:ARCHER C7,product_ver:5.0.0,special_id:42520000}\n" //BR
+			"{product_name:ARCHER C7,product_ver:5.0.0,special_id:4A500000}\n" //JP
+			"{product_name:ARCHER C7,product_ver:5.0.0,special_id:43410000}\n" //CA
+			"{product_name:ARCHER C7,product_ver:5.0.0,special_id:41550000}\n" //AU
+			"{product_name:ARCHER C7,product_ver:5.0.0,special_id:52550000}\n" //RU
+			"{product_name:ARCHER C7,product_ver:5.0.0,special_id:54570000}\n", // TW
+		.support_trail = '\x00',
+		.soft_ver = "soft_ver:2.0.0\n",
+
+		/**
+		    We use a bigger os-image partition than the stock images (and thus
+		    smaller file-system), as our kernel doesn't fit in the stock firmware's
+		    1MB os-image.
+		*/
+		
+		.partitions = {
+			{"factory-boot base", 0x00000, 0x20000},
+			{"fs-uboot base", 0x20000, 0x20000},
+			{"os-image", 0xc0000, 0x120000},	/* Stock: base 0x30000 size 0x100000 */
+			{"file-system", 0x1e0000, 0xde0000},	/* Stock: base 0x130000 size 0x6a0000 */
+			{"default-mac", 0x60000, 0x00200},
+			{"pin", 0x60200, 0x00200},
+			{"device-id", 0xf00400, 0x00100},
+			{"product-info", 0x60500, 0x0fb00},
+			{"soft-version", 0x70000, 0x01000},
+			{"extra-para", 0x71000, 0x01000},
+			{"support-list", 0x72000, 0x0a000},
+			{"profile", 0x7c000, 0x04000},
+			{"default-config", 0xff0000, 0x10000},
+			{"user-config", 0x80000, 0x40000},
+			{"certificate base", 0xfe0000, 0x10000},
+			{"partition-table base", 0x40000, 0x10000},
+			{"log base", 0xfc0000, 0x20000},
+			{"radio base", 0x50000, 0x10000},
+			{NULL, 0, 0}
+		},
+
+		.first_sysupgrade_partition = "os-image",
+		.last_sysupgrade_partition = "file-system"
+	},
 
 	/** Firmware layout for the TL-WR902AC v1 */
 	{
