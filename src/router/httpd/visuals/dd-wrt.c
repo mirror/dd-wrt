@@ -850,6 +850,14 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 #else
 	websWrite(wp, "<option value=\"psk2\" %s>WPA2 Personal</option>\n", selmatch(var, "psk2", "selected=\"selected\""));
 #endif
+#ifdef HAVE_WPA3
+#ifdef HAVE_IAS
+	websWrite(wp, "<option value=\"psk3\" %s>%s</option>\n", selmatch(var, "psk3", "selected=\"selected\""), ias_enc_label("psk3"));
+#else
+	websWrite(wp, "<option value=\"psk3\" %s>WPA3 Personal</option>\n", selmatch(var, "psk3", "selected=\"selected\""));
+#endif
+
+#endif
 
 #ifdef HAVE_QTN
 	if (!has_qtn(prefix))
@@ -865,13 +873,24 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 #ifdef HAVE_RT2880
 	if (!primary || nvram_match(sta, "ap"))
 #endif
+{
 		websWrite(wp,
 #ifdef HAVE_IAS
 			  "<option value=\"psk psk2\" %s>%s</option>\n", selmatch(var, "psk psk2", "selected=\"selected\""), ias_enc_label("psk psk2"));
 #else
 			  "<option value=\"psk psk2\" %s>WPA2 Personal Mixed</option>\n", selmatch(var, "psk psk2", "selected=\"selected\""));
 #endif
+#ifdef HAVE_WPA3
+		websWrite(wp,
+#ifdef HAVE_IAS
+			  "<option value=\"psk2 psk3\" %s>%s</option>\n", selmatch(var, "psk2 psk3", "selected=\"selected\""), ias_enc_label("psk2 psk3"));
+#else
+			  "<option value=\"psk2 psk3\" %s>WPA2/WPA3 Personal Mixed</option>\n", selmatch(var, "psk2 psk3", "selected=\"selected\""));
+#endif
 
+#endif
+
+}
 #ifdef HAVE_QTN
 	if (!has_qtn(prefix))
 #endif
