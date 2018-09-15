@@ -2224,16 +2224,24 @@ static void showencstatus(webs_t wp, char *prefix)
 	websWrite(wp, "<script type=\"text/javascript\">");
 	if (nvram_match(akm, "psk"))
 		enc = "WPA Personal";
-	if (nvram_match(akm, "wpa"))
-		enc = "WPA Enterprise";
 	if (nvram_match(akm, "psk2"))
 		enc = "WPA2 Personal";
+	if (nvram_match(akm, "psk3"))
+		enc = "WPA3 Personal";
+	if (nvram_match(akm, "wpa"))
+		enc = "WPA Enterprise";
 	if (nvram_match(akm, "wpa2"))
 		enc = "WPA2 Enterprise";
+	if (nvram_match(akm, "wpa3"))
+		enc = "WPA3 Enterprise";
 	if (nvram_match(akm, "psk psk2"))
 		enc = "WPA2 Personal Mixed";
+	if (nvram_match(akm, "psk2 psk3"))
+		enc = "WPA2/WPA3 Personal Mixed";
 	if (nvram_match(akm, "wpa wpa2"))
 		enc = "WPA Enterprise Mixed";
+	if (nvram_match(akm, "wpa2 wpa3"))
+		enc = "WPA/WPA3 Enterprise Mixed";
 	if (nvram_match(akm, "radius"))
 		enc = "RADIUS";
 	if (nvram_match(akm, "wep"))

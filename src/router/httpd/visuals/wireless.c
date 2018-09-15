@@ -735,6 +735,8 @@ void ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix)
 	cprintf("security mode %s = %s\n", security_mode, var);
 	if (!strcmp(security_mode, "psk")
 	    || !strcmp(security_mode, "psk2")
+	    || !strcmp(security_mode, "psk3")
+	    || !strcmp(security_mode, "psk2 psk3")
 	    || !strcmp(security_mode, "psk psk2"))
 		show_preshared(wp, prefix);
 #if UI_STYLE != CISCO
@@ -745,6 +747,8 @@ void ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix)
 		show_radius(wp, prefix, 1, 0);
 	else if (!strcmp(security_mode, "wpa")
 		 || !strcmp(security_mode, "wpa2")
+		 || !strcmp(security_mode, "wpa3")
+		 || !strcmp(security_mode, "wpa2 wpa3")
 		 || !strcmp(security_mode, "wpa wpa2"))
 		show_wparadius(wp, prefix);
 	else if (!strcmp(security_mode, "wep"))

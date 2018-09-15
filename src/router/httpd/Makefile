@@ -1086,6 +1086,9 @@ endif
 ifeq ($(CONFIG_PB42),y)
 CFLAGS += -DHAVE_PB42
 endif
+ifeq ($(CONFIG_WPA3),y)
+CFLAGS += -DHAVE_WPA3
+endif
 ifeq ($(CONFIG_RS),y)
 CFLAGS += -DHAVE_RS
 endif
