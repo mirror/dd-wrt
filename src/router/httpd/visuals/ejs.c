@@ -2222,6 +2222,8 @@ static void showencstatus(webs_t wp, char *prefix)
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.encrypt)</script>&nbsp;-&nbsp;<script type=\"text/javascript\">Capture(share.intrface)</script>&nbsp;%s</div>\n", prefix);
 	websWrite(wp, "<script type=\"text/javascript\">");
+	if (nvram_match(akm, "owe"))
+		enc = "Opportunistic Wireless Encryption";
 	if (nvram_match(akm, "psk"))
 		enc = "WPA Personal";
 	if (nvram_match(akm, "psk2"))

@@ -828,6 +828,20 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"disabled\\\" %s >\" + share.disabled + \"</option>\");\n//]]>\n</script>\n",
 		  selmatch(var, "disabled", "selected=\\\"selected\\\""));
 #endif
+
+#ifdef HAVE_QTN
+	if (!has_qtn(prefix))
+#endif
+		if (!primary || nvram_match(sta, "ap") || nvram_match(sta, "wdsap")) {
+#ifdef HAVE_WPA3
+#ifdef HAVE_IAS
+			websWrite(wp, "<option value=\"owe\" %s>%s</option>\n", selmatch(var, "owe", "selected=\"selected\""), ias_enc_label("owe"));
+#else
+			websWrite(wp, "<option value=\"owe\" %s>OWE</option>\n", selmatch(var, "owe", "selected=\"selected\""));
+#endif
+
+#endif
+		}
 #ifdef HAVE_IAS
 	websWrite(wp, "<option value=\"psk\" %s>%s</option>\n", selmatch(var, "psk", "selected=\"selected\""), ias_enc_label("psk"));
 #else
