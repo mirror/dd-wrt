@@ -213,6 +213,15 @@ int nvram_default_match(char *var, char *match, char *def)
 	return !strcmp(v, match);
 }
 
+int nvram_default_matchi(char *var, int match, int def)
+{
+	char m[32];
+	char d[32];
+	sprintf(m, "%d", match);
+	sprintf(d, "%d", def);
+	return nvram_default_match(var, m, d);
+}
+
 char *nvram_default_get(char *var, char *def)
 {
 	char *v = nvram_get(var);
