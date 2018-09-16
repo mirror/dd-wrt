@@ -70,7 +70,7 @@
 			qcom,saw = <&saw0>;
 			clocks = <&kraitcc 0>, <&kraitcc 4>;
 			clock-names = "cpu", "l2";
-			clock-latency-ns = <256000>;
+			clock-latency-ns = <100000>;
 			cpu-supply = <&smb208_s2a>;
 			voltage-tolerance = <5>;
 			cooling-min-state = <0>;
@@ -92,7 +92,7 @@
 			qcom,saw = <&saw1>;
 			clocks = <&kraitcc 1>, <&kraitcc 4>;
 			clock-names = "cpu", "l2";
-			clock-latency-ns = <256000>;
+			clock-latency-ns = <100000>;
 			cpu-supply = <&smb208_s2b>;
 			voltage-tolerance = <5>;
 			cooling-min-state = <0>;
@@ -111,27 +111,27 @@
                 
                 opp@384000000 {
                         opp-hz = /bits/ 64 <384000000>;
-                        clock-latency-ns = <256000>;
+                        clock-latency-ns = <100000>;
                 };
                 opp@600000000 {
                         opp-hz = /bits/ 64 <600000000>;
-                        clock-latency-ns = <256000>;
+                        clock-latency-ns = <100000>;
                 };
                 opp@800000000 {
                         opp-hz = /bits/ 64 <800000000>;
-                        clock-latency-ns = <256000>;
+                        clock-latency-ns = <100000>;
                 };
                 opp@1000000000 {
                         opp-hz = /bits/ 64 <1000000000>;
-                        clock-latency-ns = <256000>;
+                        clock-latency-ns = <100000>;
                 };
                 opp@1400000000 {
                         opp-hz = /bits/ 64 <1400000000>;
-                        clock-latency-ns = <256000>;
+                        clock-latency-ns = <100000>;
                 };
 				opp@1725000000 {
                         opp-hz = /bits/ 64 <1725000000>;
-                        clock-latency-ns = <256000>;
+                        clock-latency-ns = <100000>;
                 };
                 
         };
@@ -142,27 +142,27 @@
                 
                 opp@384000000 {
                         opp-hz = /bits/ 64 <384000000>;
-                        clock-latency-ns = <256000>;
+                        clock-latency-ns = <100000>;
                 };
                 opp@600000000 {
                         opp-hz = /bits/ 64 <600000000>;
-                        clock-latency-ns = <256000>;
+                        clock-latency-ns = <100000>;
                 };
                 opp@800000000 {
                         opp-hz = /bits/ 64 <800000000>;
-                        clock-latency-ns = <256000>;
+                        clock-latency-ns = <100000>;
                 };
                 opp@1000000000 {
                         opp-hz = /bits/ 64 <1000000000>;
-                        clock-latency-ns = <256000>;
+                        clock-latency-ns = <100000>;
                 };
                 opp@1400000000 {
                         opp-hz = /bits/ 64 <1400000000>;
-                        clock-latency-ns = <256000>;
+                        clock-latency-ns = <100000>;
                 };
 				opp@1725000000 {
                         opp-hz = /bits/ 64 <1725000000>;
-                        clock-latency-ns = <256000>;
+                        clock-latency-ns = <100000>;
                 };
                 
         };
