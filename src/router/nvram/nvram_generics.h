@@ -265,12 +265,25 @@ void writenvram(const char *var, char *file)
 	fclose(fp);
 }
 
+#define foreach_int(word, wordlist, next) \
+	for (next = &wordlist[strspn(wordlist, " ")], \
+	     strncpy(word, next, sizeof(word)), \
+	     word[strcspn(word, " ")] = '\0', \
+	     word[sizeof(word) - 1] = '\0', \
+	     next = strchr(next, ' '); \
+	     strlen(word); \
+	     next = next ? &next[strspn(next, " ")] : "", \
+	     strncpy(word, next, sizeof(word)), \
+	     word[strcspn(word, " ")] = '\0', \
+	     word[sizeof(word) - 1] = '\0', \
+	     next = strchr(next, ' '))
+
 int nvhas(char *nvname, char *key)
 {
 	char *next;
 	char var[32];
 	char *list = nvram_safe_get(nvname);
-	foreach(var, list, next) {
+	foreach_int(var, list, next) {
 		if (!strcmp(var, key))
 			return 1;
 	}
