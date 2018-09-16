@@ -138,8 +138,7 @@
 
 		idle-states {
 			CPU_SPC: spc {
-				compatible = "qcom,idle-state-spc",
-						"arm,idle-state";
+				compatible = "qcom,idle-state-spc","arm,idle-state";
 				entry-latency-us = <400>;
 				exit-latency-us = <900>;
 				min-residency-us = <3000>;
@@ -587,6 +586,21 @@
 			 < 600000000  850000 >,
 			 < 384000000  800000 >;
 	};
+	
+	nss-common {
+                compatible = "qcom,nss-common";
+                reg = <0x03000000 0x00001000>;
+                reg-names = "nss_fpb_base";
+                clocks = <&gcc NSS_CORE_CLK>, <&gcc NSSTCM_CLK>,
+                         <&nss_fabric0_clk>, <&nss_fabric1_clk>;
+                clock-names = "nss-core-clk", "nss-tcm-clk", "nss-fab0-clk",
+                              "nss-fab0-clk";
+                nss_core-supply = <&smb208_s1b>;
+                nss_core_vdd_nominal = <1100000>;
+                nss_core_vdd_high = <1150000>;
+                nss_core_threshold_freq = <733000000>;
+        };
+
 
 	soc: soc {
 		#address-cells = <1>;
@@ -678,7 +692,73 @@
 					qcom,switch-mode-frequency = <1200000>;
 				};
 			};
+			
+			nss_fabric0_clk: nss-fabric0-clk {
+				#clock-cells = <0>;
+				compatible = "qcom,rpm-clk";
+				reg = <QCOM_RPM_NSS_FABRIC_0_CLK>;
+				qcom,rpm-clk-name = "nss-fabric0";
+				qcom,rpm-clk-freq = <533000000>;
+				qcom,rpm-clk-active-only;
+			};
+
+			nss_fabric1_clk: nss-fabric1-clk {
+				#clock-cells = <0>;
+				compatible = "qcom,rpm-clk";
+				reg = <QCOM_RPM_NSS_FABRIC_1_CLK>;
+				qcom,rpm-clk-name = "nss-fabric1";
+				qcom,rpm-clk-freq = <266000000>;
+				qcom,rpm-clk-active-only;
+			};
+			
+			cfpb_clk: cfpb-clk {
+				reg = <QCOM_RPM_CFPB_CLK>;
+				qcom,rpm-clk-name = "cfpb";
+				qcom,rpm-clk-freq = <64000000>;
+				#clock-cells = <0>;
+				compatible = "qcom,rpm-clk";
+				qcom,rpm-clk-active-only;
+			};
+
+			mm_fabric_clk: mm-fabric-clk {
+				reg = <QCOM_RPM_MM_FABRIC_CLK>;
+				qcom,rpm-clk-name = "mm-fabric";
+				qcom,rpm-clk-freq = <220000000>;
+				#clock-cells = <0>;
+				compatible = "qcom,rpm-clk";
+				qcom,rpm-clk-active-only;
+			};
+
+			mmfpb_clk: mmfpb-clk {
+				reg = <QCOM_RPM_MMFPB_CLK>;
+				qcom,rpm-clk-name = "mmfpb-fabric";
+				qcom,rpm-clk-freq = <83000000>;
+				#clock-cells = <0>;
+				compatible = "qcom,rpm-clk";
+				qcom,rpm-clk-active-only;
+			};
+
+			sys_fabric_clk: sys-fabric-clk {
+				reg = <QCOM_RPM_SYS_FABRIC_CLK>;
+				qcom,rpm-clk-name = "sys-fabric";
+				qcom,rpm-clk-freq = <160000000>;
+				#clock-cells = <0>;
+				compatible = "qcom,rpm-clk";
+				qcom,rpm-clk-active-only;
+			};
+		
+			sfpb_clk: sfpb-clk {
+				reg = <QCOM_RPM_SFPB_CLK>;
+				qcom,rpm-clk-name = "sfpb";
+				qcom,rpm-clk-freq = <64000000>;
+				#clock-cells = <0>;
+				compatible = "qcom,rpm-clk";
+				qcom,rpm-clk-active-only;
+			};
 		};
+		
+		
+		
 
 		rng@1a500000 {
 			compatible = "qcom,prng";
