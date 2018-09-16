@@ -264,3 +264,16 @@ void writenvram(const char *var, char *file)
 	fwritenvram(var, fp);
 	fclose(fp);
 }
+
+int nvhas(char *nvname, char *key)
+{
+	char *next;
+	char var[32];
+	char *list = nvram_safe_get(nvname);
+	foreach(var, list, next) {
+		if (!strcmp(var, key))
+			return 1;
+	}
+	return 0;
+
+}
