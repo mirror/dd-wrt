@@ -39,8 +39,6 @@
 extern int file2nvram(char *filename, char *varname);
 extern int nvram2file(char *varname, char *filename);
 
-extern void fwritenvram(char *var, FILE * fp);
-extern void writenvram(char *var, char *file);
 
 #define start_single_service() eval("start_single_service");
 #define stop_services() eval("stopservices");
