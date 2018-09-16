@@ -234,7 +234,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 	sprintf(akm, "%s_akm", prefix);
 	sprintf(wmode, "%s_mode", prefix);
 	sprintf(bridged, "%s_bridged", prefix);
-	if (nvram_match(akm, "psk") || nvram_match(akm, "psk2") || nvram_match(akm, "psk psk2")) {
+	if (nvhas(akm, "psk") || nvhas(akm, "psk2")) {
 		char fstr[32];
 		char psk[16];
 		if (!strncmp(prefix, "ath0", 4))
@@ -896,8 +896,8 @@ void start_ses_led_control(void)
 		if (nvram_nmatch("ap", "%s_mode", ath)
 		    || nvram_nmatch("wdsap", "%s_mode", ath)) {
 			sprintf(akm, "%s_akm", ath);
-			if (nvram_match(akm, "psk") || nvram_match(akm, "psk2") || nvram_match(akm, "psk psk2") || nvram_match(akm, "wpa") || nvram_match(akm, "wpa2")
-			    || nvram_match(akm, "wpa wpa2") || nvram_match(akm, "wep")) {
+			if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "wpa") || nvhas(akm, "wpa2")
+			    || nvram_match(akm, "wep")) {
 				if (!strncmp(ath, "ath0", 4))
 					led_control(LED_SEC0, LED_ON);
 				if (!strncmp(ath, "ath1", 4))
@@ -910,8 +910,8 @@ void start_ses_led_control(void)
 		if (vifs != NULL)
 			foreach(var, vifs, next) {
 			sprintf(akm, "%s_akm", var);
-			if (nvram_match(akm, "psk") || nvram_match(akm, "psk2") || nvram_match(akm, "psk psk2") || nvram_match(akm, "wpa") || nvram_match(akm, "wpa2")
-			    || nvram_match(akm, "wpa wpa2") || nvram_match(akm, "wep")) {
+			if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "wpa") || nvhas(akm, "wpa2")
+			    || nvram_match(akm, "wep")) {
 				if (!strncmp(var, "ath0", 4))
 					led_control(LED_SEC0, LED_ON);
 				if (!strncmp(var, "ath1", 4))
@@ -987,8 +987,7 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		fclose(fp);
 		do_hostapd(fstr, prefix);
 
-	} else if (nvram_match(akm, "psk") || nvram_match(akm, "psk2") || nvram_match(akm, "psk psk2") || nvram_match(akm, "wpa") || nvram_match(akm, "wpa2")
-		   || nvram_match(akm, "wpa wpa2")) {
+	} else if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "wpa") || nvhas(akm, "wpa2")) {
 		if (!strncmp(prefix, "ath0", 4))
 			led_control(LED_SEC0, LED_ON);
 		if (!strncmp(prefix, "ath1", 4))
@@ -1025,8 +1024,7 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		    || nvram_match(akm, "wpa wpa2"))
 			fprintf(fp, "wpa=3\n");
 
-		if (nvram_match(akm, "psk") || nvram_match(akm, "psk2")
-		    || nvram_match(akm, "psk psk2")) {
+		if (nvhas(akm, "psk") || nvhas(akm, "psk2")) {
 			if (strlen(nvram_nget("%s_wpa_psk", prefix)) == 64)
 				fprintf(fp, "wpa_psk=%s\n", nvram_nget("%s_wpa_psk", prefix));
 			else
