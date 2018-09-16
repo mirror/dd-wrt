@@ -122,6 +122,8 @@ extern void nvram_seti(const char *name, const int value);
 
 int nvram_ngeti(const char *fmt, ...);
 
+int nvhas(char *nvname, char *key);
+
 /*
  * Set the value of an NVRAM variable. The name and value strings are
  * copied into private storage. Pointers to previously set values
