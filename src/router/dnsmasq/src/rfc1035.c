@@ -956,22 +956,26 @@ size_t setup_reply(struct dns_header *header, size_t qlen,
       log_query(F_CONFIG | F_RCODE, "error", &a, NULL);
       SET_RCODE(header, SERVFAIL);
     }
-  else if (flags == F_IPV4)
-    { /* we know the address */
-      SET_RCODE(header, NOERROR);
-      header->ancount = htons(1);
-      header->hb3 |= HB3_AA;
-      add_resource_record(header, NULL, NULL, sizeof(struct dns_header), &p, ttl, NULL, T_A, C_IN, "4", addrp);
-    }
-#ifdef HAVE_IPV6
-  else if (flags == F_IPV6)
+  else if (flags & ( F_IPV4 | F_IPV6))
     {
-      SET_RCODE(header, NOERROR);
-      header->ancount = htons(1);
-      header->hb3 |= HB3_AA;
-      add_resource_record(header, NULL, NULL, sizeof(struct dns_header), &p, ttl, NULL, T_AAAA, C_IN, "6", addrp);
-    }
+      if (flags & F_IPV4)
+	{ /* we know the address */
+	  SET_RCODE(header, NOERROR);
+	  header->ancount = htons(1);
+	  header->hb3 |= HB3_AA;
+	  add_resource_record(header, NULL, NULL, sizeof(struct dns_header), &p, ttl, NULL, T_A, C_IN, "4", addrp);
+	}
+      
+#ifdef HAVE_IPV6
+      if (flags & F_IPV6)
+	{
+	  SET_RCODE(header, NOERROR);
+	  header->ancount = htons(ntohs(header->ancount) + 1);
+	  header->hb3 |= HB3_AA;
+	  add_resource_record(header, NULL, NULL, sizeof(struct dns_header), &p, ttl, NULL, T_AAAA, C_IN, "6", addrp);
+	}
 #endif
+    }
   else /* nowhere to forward to */
     {
       struct all_addr a;
@@ -986,40 +990,35 @@ size_t setup_reply(struct dns_header *header, size_t qlen,
 /* check if name matches local names ie from /etc/hosts or DHCP or local mx names. */
 int check_for_local_domain(char *name, time_t now)
 {
-  struct crec *crecp;
   struct mx_srv_record *mx;
   struct txt_record *txt;
   struct interface_name *intr;
   struct ptr_record *ptr;
   struct naptr *naptr;
 
-  /* Note: the call to cache_find_by_name is intended to find any record which matches
-     ie A, AAAA, CNAME. */
-
-  if ((crecp = cache_find_by_name(NULL, name, now, F_IPV4 | F_IPV6 | F_CNAME | F_NO_RR)) &&
-      (crecp->flags & (F_HOSTS | F_DHCP | F_CONFIG)))
-    return 1;
-  
   for (naptr = daemon->naptr; naptr; naptr = naptr->next)
-     if (hostname_isequal(name, naptr->name))
+     if (hostname_issubdomain(name, naptr->name))
       return 1;
 
    for (mx = daemon->mxnames; mx; mx = mx->next)
-    if (hostname_isequal(name, mx->name))
+    if (hostname_issubdomain(name, mx->name))
       return 1;
 
   for (txt = daemon->txt; txt; txt = txt->next)
-    if (hostname_isequal(name, txt->name))
+    if (hostname_issubdomain(name, txt->name))
       return 1;
 
   for (intr = daemon->int_names; intr; intr = intr->next)
-    if (hostname_isequal(name, intr->name))
+    if (hostname_issubdomain(name, intr->name))
       return 1;
 
   for (ptr = daemon->ptr; ptr; ptr = ptr->next)
-    if (hostname_isequal(name, ptr->name))
+    if (hostname_issubdomain(name, ptr->name))
       return 1;
- 
+
+  if (cache_find_non_terminal(name, now))
+    return 1;
+
   return 0;
 }
 
@@ -1382,11 +1381,11 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 		sec_data = 0;
 		if (!dryrun)
 		  {
-		    log_query(F_CONFIG | F_RRNAME, name, NULL, "<RR>");
+		    log_query(F_CONFIG | F_RRNAME, name, NULL, querystr(NULL, t->class));
 		    if (add_resource_record(header, limit, &trunc, nameoffset, &ansp, 
 					    daemon->local_ttl, NULL,
 					    t->class, C_IN, "t", t->len, t->txt))
-		      anscount ++;
+		      anscount++;
 		  }
 	      }
 		
