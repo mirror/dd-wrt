@@ -13,7 +13,7 @@
 } while (0)
 */
 
-void nvram_store_collection(char *name, char *buf)
+void nvram_store_collection(const char *name, char *buf)
 {
 	char *chain;
 	char *n;
@@ -54,7 +54,7 @@ void nvram_store_collection(char *name, char *buf)
 /*
     do not forget to free the returned result
 */
-char *nvram_get_collection(char *name)
+const char *nvram_get_collection(const char *name)
 {
 	char *chains = NULL;
 	int offset = 0;
@@ -86,13 +86,13 @@ char *nvram_get_collection(char *name)
  * @return	TRUE if variable is defined and its value is string equal
  *		to match or FALSE otherwise
  */
-int nvram_match(char *name, char *match)
+int nvram_match(const char *name, const char *match)
 {
 	const char *value = nvram_get(name);
 	return (value && !strcmp(value, match));
 }
 
-int nvram_matchi(char *name, int match)
+int nvram_matchi(const char *name, const int match)
 {
 	char tmp[100];
 	snprintf(tmp, sizeof(tmp), "%d", match);
@@ -106,34 +106,34 @@ int nvram_matchi(char *name, int match)
  * @return	TRUE if variable is defined and its value is not string
  *		equal to invmatch or FALSE otherwise
  */
-int nvram_invmatch(char *name, char *invmatch)
+int nvram_invmatch(const char *name, const char *invmatch)
 {
 	const char *value = nvram_get(name);
 	return (value && strcmp(value, invmatch));
 }
 
-int nvram_invmatchi(char *name, int invmatch)
+int nvram_invmatchi(const char *name, const int invmatch)
 {
 	char tmp[100];
 	snprintf(tmp, sizeof(tmp), "%d", invmatch);
 	return nvram_invmatch(name, tmp);
 }
 
-char *nvram_prefix_get(const char *name, const char *prefix)
+const char *nvram_prefix_get(const char *name, const char *prefix)
 {
 	char p[64];
 	sprintf(p, "%s_%s", prefix, name);
 	return nvram_safe_get(p);
 }
 
-int nvram_prefix_match(const char *name, const char *prefix, char *match)
+int nvram_prefix_match(const char *name, const char *prefix, const char *match)
 {
 	char p[64];
 	sprintf(p, "%s_%s", prefix, name);
 	return nvram_match(p, match);
 }
 
-int nvram_nmatch(char *match, const char *fmt, ...)
+int nvram_nmatch(const char *match, const char *fmt, ...)
 {
 	char varbuf[64];
 	va_list args;
@@ -143,7 +143,7 @@ int nvram_nmatch(char *match, const char *fmt, ...)
 	return nvram_match(varbuf, match);
 }
 
-char *nvram_nget(const char *fmt, ...)
+const char *nvram_nget(const char *fmt, ...)
 {
 	char varbuf[64];
 	va_list args;
@@ -163,7 +163,7 @@ int nvram_ngeti(const char *fmt, ...)
 	return atoi(nvram_safe_get(varbuf));
 }
 
-int nvram_nset(char *value, const char *fmt, ...)
+int nvram_nset(const char *value, const char *fmt, ...)
 {
 	char varbuf[64];
 	va_list args;
@@ -173,7 +173,7 @@ int nvram_nset(char *value, const char *fmt, ...)
 	return nvram_set(varbuf, value);
 }
 
-char *nvram_safe_get(const char *name)
+const char *nvram_safe_get(const char *name)
 {
 	return nvram_get(name) ? : "";
 }
@@ -184,7 +184,7 @@ int nvram_geti(const char *name)
 	return atoi(nvram_safe_get(name));
 }
 
-void nvram_seti(const char *name, int value)
+void nvram_seti(const char *name, const int value)
 {
 	char tmp[100];
 	snprintf(tmp, sizeof(tmp), "%d", value);
@@ -203,9 +203,9 @@ void nvram_safe_set(const char *name, char *value)
 		nvram_set(name, value);
 }
 
-int nvram_default_match(char *var, char *match, char *def)
+int nvram_default_match(const char *var, const char *match, const char *def)
 {
-	char *v = nvram_get(var);
+	const char *v = nvram_get(var);
 	if (v == NULL || strlen(v) == 0) {
 		nvram_set(var, def);
 		v = def;
@@ -213,7 +213,7 @@ int nvram_default_match(char *var, char *match, char *def)
 	return !strcmp(v, match);
 }
 
-int nvram_default_matchi(char *var, int match, int def)
+int nvram_default_matchi(const char *var, const int match, const int def)
 {
 	char m[32];
 	char d[32];
@@ -222,7 +222,7 @@ int nvram_default_matchi(char *var, int match, int def)
 	return nvram_default_match(var, m, d);
 }
 
-char *nvram_default_get(char *var, char *def)
+const char *nvram_default_get(const char *var, const char *def)
 {
 	char *v = nvram_get(var);
 	if (v == NULL || strlen(v) == 0) {
@@ -232,7 +232,7 @@ char *nvram_default_get(char *var, char *def)
 	return v;
 }
 
-int nvram_default_geti(char *var, int def)
+int nvram_default_geti(const char *var, const int def)
 {
 	char tmp[100];
 	char *v = nvram_get(var);
@@ -244,19 +244,19 @@ int nvram_default_geti(char *var, int def)
 	return atoi(v);
 }
 
-void fwritenvram(char *var, FILE * fp)
+void fwritenvram(const char *var, FILE * fp)
 {
 	int i;
 	if (fp == NULL)
 		return;
-	char *host_key = nvram_safe_get(var);
+	const char *host_key = nvram_safe_get(var);
 	int len = strlen(host_key);
 	for (i = 0; i < len; i++)
 		if (host_key[i] != '\r')
 			fprintf(fp, "%c", host_key[i]);
 }
 
-void writenvram(char *var, char *file)
+void writenvram(const char *var, char *file)
 {
 	FILE *fp = fopen(file, "wb");
 	if (fp == NULL)

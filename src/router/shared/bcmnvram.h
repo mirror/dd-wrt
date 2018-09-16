@@ -53,7 +53,7 @@ extern char *nvram_get(const char *name);
  * @param	name	name of variable to get
  * @return	value of variable or NUL if undefined
  */
-extern char *nvram_safe_get(const char *name);
+extern const char *nvram_safe_get(const char *name);
 
 extern void nvram_safe_unset(const char *name);
 
@@ -74,13 +74,13 @@ extern void nvram_safe_set(const char *name, char *value);
  * @return	TRUE if variable is defined and its value is not string
  *		equal to invmatch or FALSE otherwise
  */
-extern int nvram_match(char *name, char *match);
+extern int nvram_match(const char *name, const char *match);
 
-extern int nvram_invmatch(char *name, char *invmatch);
+extern int nvram_invmatch(const char *name, const char *invmatch);
 
-extern int nvram_matchi(char *name, int match);
+extern int nvram_matchi(const char *name, const int match);
 
-extern int nvram_invmatchi(char *name, int invmatch);
+extern int nvram_invmatchi(const char *name, const int invmatch);
 
 extern void nvram_open(void);
 
@@ -88,37 +88,37 @@ extern void nvram_close(void);
 
 extern int nvram_immed_set(const char *name, const char *value);
 
-extern void nvram_store_collection(char *name, char *buf);
+extern void nvram_store_collection(const char *name, char *buf);
 
-extern char *nvram_get_collection(char *name);
+extern const char *nvram_get_collection(const char *name);
 
-extern char *nvram_safe_get(const char *name);
+extern const char *nvram_safe_get(const char *name);
 
 extern void nvram_safe_unset(const char *name);
 
 extern void nvram_safe_set(const char *name, char *value);
 
-extern char *nvram_prefix_get(const char *name, const char *prefix);
+extern const char *nvram_prefix_get(const char *name, const char *prefix);
 
-extern int nvram_prefix_match(const char *name, const char *prefix, char *match);
+extern int nvram_prefix_match(const char *name, const char *prefix, const char *match);
 
-extern int nvram_default_match(char *var, char *match, char *def);
+extern int nvram_default_match(const char *var, const char *match, const char *def);
 
-extern int nvram_default_matchi(char *var, int match, int def);
+extern int nvram_default_matchi(const char *var, const int match, const int def);
 
-extern char *nvram_default_get(char *var, char *def);
+extern const char *nvram_default_get(const char *var, const char *def);
 
-int nvram_default_geti(char *var, int def);
+extern int nvram_default_geti(const char *var, const int def);
 
-extern char *nvram_nget(const char *fmt, ...);
+extern const char *nvram_nget(const char *fmt, ...);
 
-extern int nvram_nset(char *value, const char *fmt, ...);
+extern int nvram_nset(const char *value, const char *fmt, ...);
 
-extern int nvram_nmatch(char *match, const char *fmt, ...);
+extern int nvram_nmatch(const char *match, const char *fmt, ...);
 
 extern int nvram_geti(const char *name);
 
-extern void nvram_seti(const char *name, int value);
+extern void nvram_seti(const char *name, const int value);
 
 int nvram_ngeti(const char *fmt, ...);
 
@@ -172,8 +172,8 @@ extern int nvram_size(void);
 extern int file2nvram(char *filename, char *varname);
 extern int nvram2file(char *varname, char *filename);
 
-extern void fwritenvram(char *var, FILE * fp);
-extern void writenvram(char *var, char *file);
+extern void fwritenvram(const char *var, FILE * fp);
+extern void writenvram(const char *var, char *file);
 
 #endif				/* _LANGUAGE_ASSEMBLY */
 
