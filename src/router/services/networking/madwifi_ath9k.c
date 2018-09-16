@@ -249,7 +249,7 @@ void configure_single_ath9k(int count)
 		char akm[16];
 		sprintf(akm, "%s_akm", dev);
 		eval("iw", wif, "interface", "add", dev, "type", "ibss");
-		if (nvram_match(akm, "psk") || nvram_match(akm, "psk2") || nvram_match(akm, "psk psk2")) {
+		if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3")) {
 			// setup and join does wpa_supplicant
 			isadhoc = 1;
 		} else {
@@ -922,20 +922,6 @@ static int ieee80211_aton(char *str, unsigned char mac[6])
 	for (i = 0; i < 6; i++)
 		mac[i] = addr[i] & 0xff;
 	return 0;
-}
-
-static int nvhas(char *nvname, char *key)
-{
-	char *next;
-	char var[32];
-	char nvvar[32];
-	char *list = nvram_safe_get(nvname);
-	foreach(var, list, next) {
-		if (!strcmp(var, key))
-			return 1;
-	}
-	return 0;
-
 }
 
 extern char *hostapd_eap_get_types(void);
