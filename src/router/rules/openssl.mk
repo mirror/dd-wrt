@@ -119,10 +119,16 @@ openssl-configure:
 	cd openssl && CROSS_COMPILE= && ./Configure $(OPENSSL_TARGET) \
 			--prefix=/usr \
 			--openssldir=/etc/ssl \
-			$(COPTS) $(OPENSSL_CMAKEFLAGS) -DNDEBUG -D_GNU_SOURCE \
+			$(COPTS) $(MIPS16_OPT) $(OPENSSL_CMAKEFLAGS) -DNDEBUG -D_GNU_SOURCE \
 			$(TARGET_LDFLAGS) -ldl \
 			$(OPENSSL_NO_CIPHERS) \
 			$(OPENSSL_OPTIONS)
+ifeq ($(ARCH),mips)
+	cd openssl && patch -p0 < mips.diff
+endif
+ifeq ($(ARCH),mipsel)
+	cd openssl && patch -p0 < mips.diff
+endif
 
 	$(MAKE) -C openssl clean
 	-$(MAKE) -C openssl CC="$(CC) -I$(TOP)/openssl/crypto -fPIC" MAKEDEPPROG=$(ARCH)-linux-uclibc-gcc $(OPENSSL_MAKEFLAGS)
