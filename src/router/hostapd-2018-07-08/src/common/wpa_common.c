@@ -200,18 +200,6 @@ int wpa_eapol_key_mic(const u8 *key, size_t key_len, int akmp, int ver,
 		return -1;
 	}
 
-	if (key_len == 0) {
-		wpa_printf(MSG_DEBUG,
-			   "WPA: KCK not set - cannot calculate MIC");
-		return -1;
-	}
-
-	if (key_len == 0) {
-		wpa_printf(MSG_DEBUG,
-			   "WPA: KCK not set - cannot calculate MIC");
-		return -1;
-	}
-
 	switch (ver) {
 #ifndef CONFIG_FIPS
 	case WPA_KEY_INFO_TYPE_HMAC_MD5_RC4:
@@ -362,16 +350,6 @@ int wpa_pmk_to_ptk(const u8 *pmk, size_t pmk_len, const char *label,
 	u8 data[2 * ETH_ALEN + 2 * WPA_NONCE_LEN];
 	u8 tmp[WPA_KCK_MAX_LEN + WPA_KEK_MAX_LEN + WPA_TK_MAX_LEN];
 	size_t ptk_len;
-
-	if (pmk_len == 0) {
-		wpa_printf(MSG_ERROR, "WPA: No PMK set for PT derivation");
-		return -1;
-	}
-
-	if (pmk_len == 0) {
-		wpa_printf(MSG_ERROR, "WPA: No PMK set for PT derivation");
-		return -1;
-	}
 
 	if (pmk_len == 0) {
 		wpa_printf(MSG_ERROR, "WPA: No PMK set for PTK derivation");
@@ -2026,31 +2004,6 @@ const char * wpa_key_mgmt_txt(int key_mgmt, int proto)
 }
 
 
-static void wpa_fixup_wpa_ie_rsn(u8 *assoc_ie, const u8 *wpa_msg_ie,
-				 size_t rsn_ie_len)
-{
-	int pos, count;
-
-	pos = sizeof(struct rsn_ie_hdr) + RSN_SELECTOR_LEN;
-	if (rsn_ie_len < pos + 2)
-		return;
-
-	count = WPA_GET_LE16(wpa_msg_ie + pos);
-	pos += 2 + count * RSN_SELECTOR_LEN;
-	if (rsn_ie_len < pos + 2)
-		return;
-
-	count = WPA_GET_LE16(wpa_msg_ie + pos);
-	pos += 2 + count * RSN_SELECTOR_LEN;
-	if (rsn_ie_len < pos + 2)
-		return;
-
-	if (!assoc_ie[pos] && !assoc_ie[pos + 1] &&
-	    (wpa_msg_ie[pos] || wpa_msg_ie[pos + 1]))
-		memcpy(&assoc_ie[pos], &wpa_msg_ie[pos], 2);
-}
-
-
 u32 wpa_akm_to_suite(int akm)
 {
 	if (akm & WPA_KEY_MGMT_FT_IEEE8021X_SHA384)
@@ -2094,19 +2047,8 @@ int wpa_compare_rsn_ie(int ft_initial_assoc,
 	if (ie1 == NULL || ie2 == NULL)
 		return -1;
 
-	if (ie1len == ie2len) {
-		u8 *ie_tmp;
-
-		if (os_memcmp(ie1, ie2, ie1len) == 0)
-			return 0; /* identical IEs */
-
-		ie_tmp = alloca(ie1len);
-		memcpy(ie_tmp, ie1, ie1len);
-		wpa_fixup_wpa_ie_rsn(ie_tmp, ie2, ie1len);
-
-		if (os_memcmp(ie_tmp, ie2, ie1len) == 0)
-			return 0; /* only mismatch in RSN capabilties */
-	}
+	if (ie1len == ie2len && os_memcmp(ie1, ie2, ie1len) == 0)
+		return 0; /* identical IEs */
 
 #ifdef CONFIG_IEEE80211R
 	if (ft_initial_assoc) {
