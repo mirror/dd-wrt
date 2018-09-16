@@ -807,6 +807,9 @@ _8021xprv
 	copytonv(wp, "%s_crypto", prefix);
 	copytonv(wp, "%s_wpa_psk", prefix);
 	copytonv(wp, "%s_disable_eapol_key_retries", prefix);
+#ifdef HAVE_80211R
+	copytonv(wp, "%s_ft", prefix);
+#endif
 	copytonv(wp, "%s_wpa_gtk_rekey", prefix);
 	copymergetonv(wp, "%s_radius_ipaddr", prefix);
 	copytonv(wp, "%s_radius_port", prefix);
