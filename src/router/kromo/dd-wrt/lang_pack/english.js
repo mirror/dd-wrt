@@ -2362,6 +2362,7 @@ wpa.secmode="Security Mode";
 wpa.legend="Wireless Encryption";
 wpa.auth_mode="Network Authentication";
 wpa.wpa="WPA";
+wpa.mfp="802.11w Management Frame Protection";
 wpa.radius="Radius";
 wpa.gtk_rekey="WPA Group Rekey Interval";
 wpa.rekey="Key Renewal Interval (in seconds)";
