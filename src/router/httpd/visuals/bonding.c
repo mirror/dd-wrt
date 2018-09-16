@@ -68,7 +68,7 @@ void ej_show_bondings(webs_t wp, int argc, char_t ** argv)
 		char ath[32];
 
 		sprintf(ath, "ath%d_bridged", i);
-		if (nvram_default_match(ath, "0", "1")) {
+		if (nvram_default_matchi(ath, 0, 1)) {
 			sprintf(bufferif, "%s ath%d", bufferif, i);
 			char vifs[32];
 

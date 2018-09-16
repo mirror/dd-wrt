@@ -53,7 +53,7 @@ extern char *nvram_get(const char *name);
  * @param	name	name of variable to get
  * @return	value of variable or NUL if undefined
  */
-extern const char *nvram_safe_get(const char *name);
+extern char *nvram_safe_get(const char *name);
 
 extern void nvram_safe_unset(const char *name);
 
@@ -90,15 +90,15 @@ extern int nvram_immed_set(const char *name, const char *value);
 
 extern void nvram_store_collection(const char *name, char *buf);
 
-extern const char *nvram_get_collection(const char *name);
+extern char *nvram_get_collection(const char *name);
 
-extern const char *nvram_safe_get(const char *name);
+extern char *nvram_safe_get(const char *name);
 
 extern void nvram_safe_unset(const char *name);
 
 extern void nvram_safe_set(const char *name, char *value);
 
-extern const char *nvram_prefix_get(const char *name, const char *prefix);
+extern char *nvram_prefix_get(const char *name, const char *prefix);
 
 extern int nvram_prefix_match(const char *name, const char *prefix, const char *match);
 
@@ -106,11 +106,11 @@ extern int nvram_default_match(const char *var, const char *match, const char *d
 
 extern int nvram_default_matchi(const char *var, const int match, const int def);
 
-extern const char *nvram_default_get(const char *var, const char *def);
+extern char *nvram_default_get(const char *var, const char *def);
 
 extern int nvram_default_geti(const char *var, const int def);
 
-extern const char *nvram_nget(const char *fmt, ...);
+extern char *nvram_nget(const char *fmt, ...);
 
 extern int nvram_nset(const char *value, const char *fmt, ...);
 

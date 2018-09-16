@@ -1227,8 +1227,8 @@ static void showOption(webs_t wp, char *propname, char *nvname)
 	show_caption(wp, "label", propname, NULL);
 	websWrite(wp, "<select name=\"%s\">\n", nvname);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-	websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.disabled + \"</option>\");\n", nvram_default_match(nvname, "0", "0") ? "selected=\\\"selected\\\"" : "");
-	websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >\" + share.enabled + \"</option>\");\n", nvram_default_match(nvname, "1", "0") ? "selected=\\\"selected\\\"" : "");
+	websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.disabled + \"</option>\");\n", nvram_default_matchi(nvname, 0, 0) ? "selected=\\\"selected\\\"" : "");
+	websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >\" + share.enabled + \"</option>\");\n", nvram_default_matchi(nvname, 1, 0) ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 
 }
@@ -1239,10 +1239,10 @@ void showRadio(webs_t wp, char *propname, char *nvname)
 	show_caption(wp, "label", propname, NULL);
 	websWrite(wp,
 		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-		  nvname, nvram_default_match(nvname, "1", "0") ? "checked=\"checked\"" : "");
+		  nvname, nvram_default_matchi(nvname, 1, 0) ? "checked=\"checked\"" : "");
 	websWrite(wp,
 		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-		  nvname, nvram_default_match(nvname, "0", "0") ? "checked=\"checked\"" : "");
+		  nvname, nvram_default_matchi(nvname, 0, 0) ? "checked=\"checked\"" : "");
 	websWrite(wp, "</div>\n");
 }
 
@@ -1265,9 +1265,9 @@ void showAutoOption(webs_t wp, char *propname, char *nvname)
 	show_caption(wp, "label", propname, NULL);
 	websWrite(wp, "<select name=\"%s\">\n", nvname);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-	websWrite(wp, "document.write(\"<option value=\\\"-1\\\" %s >\" + share.auto + \"</option>\");\n", nvram_default_match(nvname, "0", "-1") ? "selected=\\\"selected\\\"" : "");
-	websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >\" + share.enabled + \"</option>\");\n", nvram_default_match(nvname, "1", "-1") ? "selected=\\\"selected\\\"" : "");
-	websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.disabled + \"</option>\");\n", nvram_default_match(nvname, "0", "-1") ? "selected=\\\"selected\\\"" : "");
+	websWrite(wp, "document.write(\"<option value=\\\"-1\\\" %s >\" + share.auto + \"</option>\");\n", nvram_default_matchi(nvname, 0, -1) ? "selected=\\\"selected\\\"" : "");
+	websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >\" + share.enabled + \"</option>\");\n", nvram_default_matchi(nvname, 1, -1) ? "selected=\\\"selected\\\"" : "");
+	websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.disabled + \"</option>\");\n", nvram_default_matchi(nvname, 0, -1) ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 
 }
@@ -2037,8 +2037,8 @@ static void show_netmode(webs_t wp, char *prefix)
 		show_caption(wp, "label", "wl_basic.label7", NULL);
 		websWrite(wp, "<select name=\"%s\" >\n", wl_greenfield);
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s>\" + wl_basic.mixed + \"</option>\");\n", nvram_default_match(wl_greenfield, "0", "0") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s>\" + wl_basic.greenfield + \"</option>\");\n", nvram_default_match(wl_greenfield, "1", "0") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s>\" + wl_basic.mixed + \"</option>\");\n", nvram_default_matchi(wl_greenfield, 0, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s>\" + wl_basic.greenfield + \"</option>\");\n", nvram_default_matchi(wl_greenfield, 1, 0) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</select>\n");
 		websWrite(wp, "</div>\n");
@@ -2058,10 +2058,10 @@ static void showrtssettings(webs_t wp, char *var)
 	websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.rts)</script></div>\n");
 	websWrite(wp,
 		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idrts', true);\" name=\"%s_rts\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-		  vvar, var, nvram_default_match(ssid, "1", "0") ? "checked=\"checked\"" : "");
+		  vvar, var, nvram_default_matchi(ssid, 1, 0) ? "checked=\"checked\"" : "");
 	websWrite(wp,
 		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idrts', false);\" name=\"%s_rts\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-		  vvar, var, nvram_default_match(ssid, "0", "0") ? "checked=\"checked\"" : "");
+		  vvar, var, nvram_default_matchi(ssid, 0, 0) ? "checked=\"checked\"" : "");
 	websWrite(wp, "</div>\n");
 
 	websWrite(wp, "<div id=\"%s_idrts\">\n", vvar);
@@ -2093,10 +2093,10 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 	websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.network)</script></div>\n");
 	websWrite(wp,
 		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idnetvifs', true);\" name=\"%s_bridged\" %s><script type=\"text/javascript\">Capture(wl_basic.unbridged)</script></input>&nbsp;\n",
-		  vvar, var, nvram_default_match(ssid, "0", "1") ? "checked=\"checked\"" : "");
+		  vvar, var, nvram_default_matchi(ssid, 0, 1) ? "checked=\"checked\"" : "");
 	websWrite(wp,
 		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idnetvifs', false);\" name=\"%s_bridged\" %s><script type=\"text/javascript\">Capture(wl_basic.bridged)</script></input>\n",
-		  vvar, var, nvram_default_match(ssid, "1", "1") ? "checked=\"checked\"" : "");
+		  vvar, var, nvram_default_matchi(ssid, 1, 1) ? "checked=\"checked\"" : "");
 	websWrite(wp, "</div>\n");
 
 	websWrite(wp, "<div id=\"%s_idnetvifs\">\n", vvar);
@@ -2126,10 +2126,10 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 	websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(idx.force_dnsmasq)</script></div>\n");
 	websWrite(wp,
 		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idredirect', true);\" name=\"%s_dns_redirect\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-		  vvar, var, nvram_default_match(redirect, "1", "0") ? "checked=\"checked\"" : "");
+		  vvar, var, nvram_default_matchi(redirect, 1, 0) ? "checked=\"checked\"" : "");
 	websWrite(wp,
 		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idredirect', false);\" name=\"%s_dns_redirect\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
-		  vvar, var, nvram_default_match(redirect, "0", "0") ? "checked=\"checked\"" : "");
+		  vvar, var, nvram_default_matchi(redirect, 0, 0) ? "checked=\"checked\"" : "");
 	websWrite(wp, "</div>\n");
 
 	websWrite(wp, "<div id=\"%s_idredirect\">\n", vvar);
@@ -2240,27 +2240,27 @@ static void show_chanshift(webs_t wp, char *prefix)
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 		if (nvram_matchi(wl_channelbw, 5)
 		    || nvram_matchi(wl_channelbw, 2))
-			websWrite(wp, "document.write(\"<option value=\\\"-15\\\" %s >-15 \"+wl_basic.mhz+\"</option>\");\n", nvram_default_match(wl_chanshift, "-15", "0") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"-15\\\" %s >-15 \"+wl_basic.mhz+\"</option>\");\n", nvram_default_matchi(wl_chanshift, -15, 0) ? "selected=\\\"selected\\\"" : "");
 		if (nvram_matchi(wl_channelbw, 5)
 		    || nvram_matchi(wl_channelbw, 10)
 		    || nvram_matchi(wl_channelbw, 2))
-			websWrite(wp, "document.write(\"<option value=\\\"-10\\\" %s >-10 \"+wl_basic.mhz+\"</option>\");\n", nvram_default_match(wl_chanshift, "-10", "0") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"-10\\\" %s >-10 \"+wl_basic.mhz+\"</option>\");\n", nvram_default_matchi(wl_chanshift, -10, 0) ? "selected=\\\"selected\\\"" : "");
 		if (nvram_matchi(wl_channelbw, 5)
 		    || nvram_matchi(wl_channelbw, 10)
 		    || nvram_matchi(wl_channelbw, 2))
-			websWrite(wp, "document.write(\"<option value=\\\"-5\\\" %s >-5 \"+wl_basic.mhz+\"</option>\");\n", nvram_default_match(wl_chanshift, "-5", "0") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >0 \"+wl_basic.mhz+\"</option>\");\n", nvram_default_match(wl_chanshift, "0", "0") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"-5\\\" %s >-5 \"+wl_basic.mhz+\"</option>\");\n", nvram_default_matchi(wl_chanshift, -5, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >0 \"+wl_basic.mhz+\"</option>\");\n", nvram_default_matchi(wl_chanshift, 0, 0) ? "selected=\\\"selected\\\"" : "");
 		if (nvram_matchi(wl_channelbw, 5)
 		    || nvram_matchi(wl_channelbw, 10)
 		    || nvram_matchi(wl_channelbw, 2))
-			websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >+5 \"+wl_basic.mhz+\"</option>\");\n", nvram_default_match(wl_chanshift, "5", "0") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >+5 \"+wl_basic.mhz+\"</option>\");\n", nvram_default_matchi(wl_chanshift, 5, 0) ? "selected=\\\"selected\\\"" : "");
 		if (nvram_matchi(wl_channelbw, 5)
 		    || nvram_matchi(wl_channelbw, 10)
 		    || nvram_matchi(wl_channelbw, 2))
-			websWrite(wp, "document.write(\"<option value=\\\"10\\\" %s >+10 \"+wl_basic.mhz+\"</option>\");\n", nvram_default_match(wl_chanshift, "10", "0") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"10\\\" %s >+10 \"+wl_basic.mhz+\"</option>\");\n", nvram_default_matchi(wl_chanshift, 10, 0) ? "selected=\\\"selected\\\"" : "");
 		if (nvram_matchi(wl_channelbw, 5)
 		    || nvram_matchi(wl_channelbw, 2))
-			websWrite(wp, "document.write(\"<option value=\\\"15\\\" %s >+15 \"+wl_basic.mhz+\"</option>\");\n", nvram_default_match(wl_chanshift, "15", "0") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"15\\\" %s >+15 \"+wl_basic.mhz+\"</option>\");\n", nvram_default_matchi(wl_chanshift, 15, 0) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 	}
 }
@@ -2737,13 +2737,13 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			websWrite(wp, "<select name=\"%s\">\n", wl_cardtype);
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 #ifdef HAVE_ONNET
-			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Atheros 2458</option>\");\n", nvram_default_match(wl_cardtype, "0", "0") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Atheros 3336</option>\");\n", nvram_default_match(wl_cardtype, "1", "0") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >Atheros 5964</option>\");\n", nvram_default_match(wl_cardtype, "2", "0") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Atheros 2458</option>\");\n", nvram_default_matchi(wl_cardtype, 0, 0) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Atheros 3336</option>\");\n", nvram_default_matchi(wl_cardtype, 1, 0) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >Atheros 5964</option>\");\n", nvram_default_matchi(wl_cardtype, 2, 0) ? "selected=\\\"selected\\\"" : "");
 #else
-			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Atheros Generic</option>\");\n", nvram_default_match(wl_cardtype, "0", "0") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >DBII F36N-PRO</option>\");\n", nvram_default_match(wl_cardtype, "1", "0") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >DBII F64N-PRO</option>\");\n", nvram_default_match(wl_cardtype, "2", "0") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Atheros Generic</option>\");\n", nvram_default_matchi(wl_cardtype, 0, 0) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >DBII F36N-PRO</option>\");\n", nvram_default_matchi(wl_cardtype, 1, 0) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >DBII F64N-PRO</option>\");\n", nvram_default_matchi(wl_cardtype, 2, 0) ? "selected=\\\"selected\\\"" : "");
 #endif
 			websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 		}
@@ -2759,9 +2759,9 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		show_caption(wp, "label", "wl_basic.cardtype", NULL);
 		websWrite(wp, "<select name=\"%s\">\n", wl_cardtype);
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Ubiquiti XR3.3</option>\");\n", nvram_default_match(wl_cardtype, "0", "0") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Ubiquiti XR3.6</option>\");\n", nvram_default_match(wl_cardtype, "1", "0") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >Ubiquiti XR3.7</option>\");\n", nvram_default_match(wl_cardtype, "2", "0") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Ubiquiti XR3.3</option>\");\n", nvram_default_matchi(wl_cardtype, 0, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Ubiquiti XR3.6</option>\");\n", nvram_default_matchi(wl_cardtype, 1, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >Ubiquiti XR3.7</option>\");\n", nvram_default_matchi(wl_cardtype, 2, 0) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 	}
 
@@ -2772,14 +2772,14 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		show_caption(wp, "label", "wl_basic.cardtype", NULL);
 		websWrite(wp, "<select name=\"%s\">\n", wl_cardtype);
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Atheros Generic</option>\");\n", nvram_default_match(wl_cardtype, "0", "0") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >Alfa Networks AWPCI085H</option>\");\n", nvram_default_match(wl_cardtype, "5", "0") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"6\\\" %s >Alfa Networks AWPCI085P</option>\");\n", nvram_default_match(wl_cardtype, "6", "0") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"7\\\" %s >Doodle Labs DLM105</option>\");\n", nvram_default_match(wl_cardtype, "7", "0") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"4\\\" %s >MakSat MAK27</option>\");\n", nvram_default_match(wl_cardtype, "4", "0") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Senao EMP-8602</option>\");\n", nvram_default_match(wl_cardtype, "1", "0") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >Senao EMP-8603-S</option>\");\n", nvram_default_match(wl_cardtype, "2", "0") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"3\\\" %s >Senao EMP-8603</option>\");\n", nvram_default_match(wl_cardtype, "3", "0") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Atheros Generic</option>\");\n", nvram_default_matchi(wl_cardtype, 0, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >Alfa Networks AWPCI085H</option>\");\n", nvram_default_matchi(wl_cardtype, 5, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"6\\\" %s >Alfa Networks AWPCI085P</option>\");\n", nvram_default_matchi(wl_cardtype, 6, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"7\\\" %s >Doodle Labs DLM105</option>\");\n", nvram_default_matchi(wl_cardtype, 7, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"4\\\" %s >MakSat MAK27</option>\");\n", nvram_default_matchi(wl_cardtype, 4, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Senao EMP-8602</option>\");\n", nvram_default_matchi(wl_cardtype, 1, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >Senao EMP-8603-S</option>\");\n", nvram_default_matchi(wl_cardtype, 2, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"3\\\" %s >Senao EMP-8603</option>\");\n", nvram_default_matchi(wl_cardtype, 3, 0) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 	}
 #endif
@@ -2952,11 +2952,11 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			show_caption(wp, "label", "wl_basic.noise_immunity", NULL);
 			websWrite(wp, "<select name=\"%s\">\n", wl_noise_immunity);
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >0</option>\");\n", nvram_default_match(wl_noise_immunity, "0", "4") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n", nvram_default_match(wl_noise_immunity, "1", "4") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >2</option>\");\n", nvram_default_match(wl_noise_immunity, "2", "4") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"3\\\" %s >3</option>\");\n", nvram_default_match(wl_noise_immunity, "3", "4") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"4\\\" %s >4</option>\");\n", nvram_default_match(wl_noise_immunity, "4", "4") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >0</option>\");\n", nvram_default_matchi(wl_noise_immunity, 0, 4) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n", nvram_default_matchi(wl_noise_immunity, 1, 4) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >2</option>\");\n", nvram_default_matchi(wl_noise_immunity, 2, 4) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"3\\\" %s >3</option>\");\n", nvram_default_matchi(wl_noise_immunity, 3, 4) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"4\\\" %s >4</option>\");\n", nvram_default_matchi(wl_noise_immunity, 4, 4) ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 			showRadio(wp, "wl_basic.ofdm_weak_det", wl_ofdm_weak_det);
 		}
@@ -3561,10 +3561,10 @@ if (!strcmp(prefix, "wl2"))
 		sprintf(wl_relayd, "%s_relayd_gw_auto", prefix);
 		websWrite(wp,
 			  " 		<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_relayd_gw_auto\" onclick=\"show_layer_ext(this, '%s_relayd_gw_ipaddr', false)\" %s /><script type=\"text/javascript\">Capture(share.auto)</script>&nbsp;(DHCP)&nbsp;\n",
-			  prefix, prefix, nvram_default_match(wl_relayd, "1", "1") ? "checked" : "");
+			  prefix, prefix, nvram_default_matchi(wl_relayd, 1, 1) ? "checked" : "");
 		websWrite(wp,
 			  " 		<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s_relayd_gw_auto\" onclick=\"show_layer_ext(this, '%s_relayd_gw_ipaddr', true)\" %s/><script type=\"text/javascript\">Capture(share.manual)</script>\n",
-			  prefix, prefix, nvram_default_match(wl_relayd, "0", "1") ? "checked" : "");
+			  prefix, prefix, nvram_default_matchi(wl_relayd, 0, 1) ? "checked" : "");
 		websWrite(wp, "</div>\n");
 		sprintf(wl_relayd, "%s_relayd_gw_ipaddr", prefix);
 		sscanf(nvram_safe_get(wl_relayd), "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3]);
@@ -3573,7 +3573,7 @@ if (!strcmp(prefix, "wl2"))
 			  "<input type=\"hidden\" name=\"%s_relayd_gw_ipaddr\" value=\"4\">\n"
 			  "<div class=\"label\"><script type=\"text/javascript\">Capture(share.gateway)</script></div>\n"
 			  "<input size=\"3\" maxlength=\"3\" name=\"%s_relayd_gw_ipaddr_0\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"%s_relayd_gw_ipaddr_1\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"%s_relayd_gw_ipaddr_2\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">.<input size=\"3\" maxlength=\"3\" name=\"%s_relayd_gw_ipaddr_3\" value=\"%d\" onblur=\"valid_range(this,1,254,'IP')\" class=\"num\">\n"
-			  "</div>\n", prefix, nvram_default_match(wl_relayd, "1", "0") ? " style=\"display: none; visibility: hidden;\"" : "", prefix, prefix, ip[0], prefix, ip[1], prefix, ip[2], prefix, ip[3]);
+			  "</div>\n", prefix, nvram_default_matchi(wl_relayd, 1, 0) ? " style=\"display: none; visibility: hidden;\"" : "", prefix, prefix, ip[0], prefix, ip[1], prefix, ip[2], prefix, ip[3]);
 	}
 #endif
 
@@ -3847,13 +3847,13 @@ if (!strcmp(prefix, "wl2"))
 			websWrite(wp, "<select name=\"%s\">\n", wl_cardtype);
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 #ifdef HAVE_ONNET
-			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Atheros 2458</option>\");\n", nvram_default_match(wl_cardtype, "0", "0") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Atheros 3336</option>\");\n", nvram_default_match(wl_cardtype, "1", "0") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >Atheros 5964</option>\");\n", nvram_default_match(wl_cardtype, "2", "0") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Atheros 2458</option>\");\n", nvram_default_matchi(wl_cardtype, 0, 0) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Atheros 3336</option>\");\n", nvram_default_matchi(wl_cardtype, 1, 0) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >Atheros 5964</option>\");\n", nvram_default_matchi(wl_cardtype, 2, 0) ? "selected=\\\"selected\\\"" : "");
 #else
-			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Atheros Generic</option>\");\n", nvram_default_match(wl_cardtype, "0", "0") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >DBII F36N-PRO</option>\");\n", nvram_default_match(wl_cardtype, "1", "0") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >DBII F64N-PRO</option>\");\n", nvram_default_match(wl_cardtype, "2", "0") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Atheros Generic</option>\");\n", nvram_default_matchi(wl_cardtype, 0, 0) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >DBII F36N-PRO</option>\");\n", nvram_default_matchi(wl_cardtype, 1, 0) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >DBII F64N-PRO</option>\");\n", nvram_default_matchi(wl_cardtype, 2, 0) ? "selected=\\\"selected\\\"" : "");
 #endif
 			websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 		}
@@ -3869,9 +3869,9 @@ if (!strcmp(prefix, "wl2"))
 		show_caption(wp, "label", "wl_basic.cardtype", NULL);
 		websWrite(wp, "<select name=\"%s\">\n", wl_cardtype);
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Ubiquiti XR3.3</option>\");\n", nvram_default_match(wl_cardtype, "0", "0") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Ubiquiti XR3.6</option>\");\n", nvram_default_match(wl_cardtype, "1", "0") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >Ubiquiti XR3.7</option>\");\n", nvram_default_match(wl_cardtype, "2", "0") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Ubiquiti XR3.3</option>\");\n", nvram_default_matchi(wl_cardtype, 0, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Ubiquiti XR3.6</option>\");\n", nvram_default_matchi(wl_cardtype, 1, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >Ubiquiti XR3.7</option>\");\n", nvram_default_matchi(wl_cardtype, 2, 0) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 	}
 
@@ -3882,14 +3882,14 @@ if (!strcmp(prefix, "wl2"))
 		show_caption(wp, "label", "wl_basic.cardtype", NULL);
 		websWrite(wp, "<select name=\"%s\">\n", wl_cardtype);
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Atheros Generic</option>\");\n", nvram_default_match(wl_cardtype, "0", "0") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >Alfa Networks AWPCI085H</option>\");\n", nvram_default_match(wl_cardtype, "5", "0") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"6\\\" %s >Alfa Networks AWPCI085P</option>\");\n", nvram_default_match(wl_cardtype, "6", "0") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"7\\\" %s >Doodle Labs DLM105</option>\");\n", nvram_default_match(wl_cardtype, "7", "0") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"4\\\" %s >MakSat MAK27</option>\");\n", nvram_default_match(wl_cardtype, "4", "0") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Senao EMP-8602</option>\");\n", nvram_default_match(wl_cardtype, "1", "0") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >Senao EMP-8603-S</option>\");\n", nvram_default_match(wl_cardtype, "2", "0") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"3\\\" %s >Senao EMP-8603</option>\");\n", nvram_default_match(wl_cardtype, "3", "0") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Atheros Generic</option>\");\n", nvram_default_matchi(wl_cardtype, 0, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >Alfa Networks AWPCI085H</option>\");\n", nvram_default_matchi(wl_cardtype, 5, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"6\\\" %s >Alfa Networks AWPCI085P</option>\");\n", nvram_default_matchi(wl_cardtype, 6, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"7\\\" %s >Doodle Labs DLM105</option>\");\n", nvram_default_matchi(wl_cardtype, 7, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"4\\\" %s >MakSat MAK27</option>\");\n", nvram_default_matchi(wl_cardtype, 4, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Senao EMP-8602</option>\");\n", nvram_default_matchi(wl_cardtype, 1, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >Senao EMP-8603-S</option>\");\n", nvram_default_matchi(wl_cardtype, 2, 0) ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"3\\\" %s >Senao EMP-8603</option>\");\n", nvram_default_matchi(wl_cardtype, 3, 0) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 	}
 #endif
@@ -3973,11 +3973,11 @@ if (!strcmp(prefix, "wl2"))
 			show_caption(wp, "label", "wl_basic.noise_immunity", NULL);
 			websWrite(wp, "<select name=\"%s\">\n", wl_noise_immunity);
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >0</option>\");\n", nvram_default_match(wl_noise_immunity, "0", "4") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n", nvram_default_match(wl_noise_immunity, "1", "4") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >2</option>\");\n", nvram_default_match(wl_noise_immunity, "2", "4") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"3\\\" %s >3</option>\");\n", nvram_default_match(wl_noise_immunity, "3", "4") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"4\\\" %s >4</option>\");\n", nvram_default_match(wl_noise_immunity, "4", "4") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >0</option>\");\n", nvram_default_matchi(wl_noise_immunity, 0, 4) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >1</option>\");\n", nvram_default_matchi(wl_noise_immunity, 1, 4) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >2</option>\");\n", nvram_default_matchi(wl_noise_immunity, 2, 4) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"3\\\" %s >3</option>\");\n", nvram_default_matchi(wl_noise_immunity, 3, 4) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"4\\\" %s >4</option>\");\n", nvram_default_matchi(wl_noise_immunity, 4, 4) ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "//]]>\n</script>\n</select>\n</div>\n");
 			showRadio(wp, "wl_basic.ofdm_weak_det", wl_ofdm_weak_det);
 		}
@@ -4527,10 +4527,10 @@ void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label18)</script></div>\n");
 		websWrite(wp,
 			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idacct', true);\" name=\"%s_acct\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>\n",
-			  vvar, prefix, nvram_default_match(acct, "1", "0") ? "checked=\"checked\"" : "");
+			  vvar, prefix, nvram_default_matchi(acct, 1, 0) ? "checked=\"checked\"" : "");
 		websWrite(wp,
 			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idacct', false);\" name=\"%s_acct\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-			  vvar, prefix, nvram_default_match(acct, "0", "0") ? "checked=\"checked\"" : "");
+			  vvar, prefix, nvram_default_matchi(acct, 0, 0) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div id=\"%s_idacct\">\n", vvar);
 		websWrite(wp, "<div class=\"setting\">\n");
