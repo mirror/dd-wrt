@@ -2009,6 +2009,7 @@ wpa.secmode="Sicherheitsmodus";
 wpa.legend="WLAN-Verschl&uuml;sselung";
 wpa.auth_mode="Netzwerk-Authentifikation";
 wpa.wpa="WPA";
+wpa.mfp="802.11w Management Frame Schutz";
 wpa.radius="RADIUS";
 wpa.gtk_rekey="WPA Group Rekey Interval";
 wpa.rekey="Erneuerungsintervall (in Sekunden) f&uuml;r den Schl&uuml;ssel";
