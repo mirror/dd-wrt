@@ -1451,9 +1451,11 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 	char cellidssid[5];
 	char mcr[32];
 	char ft[16];
+	char mfp[16];
 	char *mrate;
 	sprintf(akm, "%s_akm", prefix);
 	sprintf(ft, "%s_ft", prefix);
+	sprintf(mfp, "%s_mfp", prefix);
 	if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3")) {
 		char fstr[32];
 		char psk[16];
@@ -1570,6 +1572,14 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 #endif
 				fprintf(fp, "\tgroup=CCMP TKIP\n");
 		}
+#ifdef HAVE_80211W
+		if (nvram_default_matchi(mfp, -1, 0))
+			fprintf(fp, "ieee80211w=1\n");
+		if (nvram_default_matchi(mfp, 0, 0))
+			fprintf(fp, "ieee80211w=0\n");
+		if (nvram_default_matchi(mfp, 1, 0))
+			fprintf(fp, "ieee80211w=2\n");
+#endif
 		if (nvram_match(psk, "tkip")) {
 			fprintf(fp, "\tpairwise=TKIP\n");
 			fprintf(fp, "\tgroup=TKIP\n");
@@ -1726,6 +1736,14 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			else
 #endif
 				fprintf(fp, "\tkey_mgmt=WPA-EAP\n");
+#ifdef HAVE_80211W
+			if (nvram_default_matchi(mfp, -1, 0))
+				fprintf(fp, "ieee80211w=1\n");
+			if (nvram_default_matchi(mfp, 0, 0))
+				fprintf(fp, "ieee80211w=0\n");
+			if (nvram_default_matchi(mfp, 1, 0))
+				fprintf(fp, "ieee80211w=2\n");
+#endif
 			fprintf(fp, "\teap=TTLS\n");
 			fprintf(fp, "\tpairwise=CCMP TKIP\n");
 			fprintf(fp, "\tgroup=CCMP TKIP\n");
@@ -1766,6 +1784,14 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			fprintf(fp, "\tgroup=CCMP TKIP\n");
 			fprintf(fp, "\tidentity=\"%s\"\n", nvram_prefix_get("leap8021xuser", prefix));
 			fprintf(fp, "\tpassword=\"%s\"\n", nvram_prefix_get("leap8021xpasswd", prefix));
+#ifdef HAVE_80211W
+			if (nvram_default_matchi(mfp, -1, 0))
+				fprintf(fp, "ieee80211w=1\n");
+			if (nvram_default_matchi(mfp, 0, 0))
+				fprintf(fp, "ieee80211w=0\n");
+			if (nvram_default_matchi(mfp, 1, 0))
+				fprintf(fp, "ieee80211w=2\n");
+#endif
 			// sprintf (psk, "/tmp/%s", prefix);
 			// mkdir (psk);
 			// sprintf (psk, "/tmp/%s/ca.pem", prefix);
