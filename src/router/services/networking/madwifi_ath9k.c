@@ -1517,7 +1517,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		// fprintf (fp, "\tmode=0\n");
 		fprintf(fp, "\tscan_ssid=1\n");
 
-		fprintf(fp, "\tkey_mgmt");
+		fprintf(fp, "\tkey_mgmt=");
 		if (nvhas(akm, "psk2") || nvhas(akm, "psk"))
 			fprintf(fp, "WPA-PSK ");
 #ifdef HAVE_WPA3
@@ -1570,9 +1570,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			fprintf(fp, "\tproto=RSN\n");
 		if (nvram_match(akm, "psk psk2"))
 			fprintf(fp, "\tproto=WPA RSN\n");
-		if (nvram_match(akm, "psk3"))
-			fprintf(fp, "\tproto=RSN\n");
-		if (nvram_match(akm, "psk2 psk3"))
+		if (nvhas(akm, "psk2") || nvhas(akm, "psk3"))
 			fprintf(fp, "\tproto=RSN\n");
 		char *wpa_psk = nvram_nget("%s_wpa_psk", prefix);
 		if (strlen(wpa_psk) == 64)
