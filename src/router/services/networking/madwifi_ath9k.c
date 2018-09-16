@@ -1168,7 +1168,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 #ifdef HAVE_WPA3
 			if (nvhas(akm, "psk3"))
 				fprintf(fp, "SAE ");
-#emdif
+#endif
 #ifdef HAVE_80211R
 #ifdef HAVE_WPA3
 			if (nvram_matchi(ft, 1) && nvhas(akm, "psk3"))
