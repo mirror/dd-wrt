@@ -1022,8 +1022,8 @@ static void print_auth(const uint8_t * data)
 			fillENC("SAE/PSK3", " ");
 			break;
 		case 9:
-			printf("FT-OVER-SAE");
-			fillENC("FT-OVER-SAE", " ");
+			printf("FT/SAE");
+			fillENC("FT/SAE", " ");
 			break;
 		case 11:
 			printf("8021X/SUITE-B");
