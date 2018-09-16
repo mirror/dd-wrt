@@ -104,6 +104,8 @@ extern int nvram_prefix_match(const char *name, const char *prefix, char *match)
 
 extern int nvram_default_match(char *var, char *match, char *def);
 
+extern int nvram_default_matchi(char *var, int match, int def);
+
 extern char *nvram_default_get(char *var, char *def);
 
 int nvram_default_geti(char *var, int def);
