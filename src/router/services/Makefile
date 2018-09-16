@@ -845,6 +845,9 @@ ATH9KLDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
 ifeq ($(CONFIG_UNIWIP),y)
 ATH9KCFLAGS += -DHAVE_UNIWIP
 endif
+ifeq ($(CONFIG_WPA3),y)
+ATH9KCFLAGS += -DHAVE_WPA3 -DHAVE_80211R
+endif
 endif
 endif
 ifeq ($(CONFIG_ATH10K),y)
