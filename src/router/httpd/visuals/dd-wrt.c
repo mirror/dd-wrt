@@ -4484,7 +4484,7 @@ void show_preshared(webs_t wp, char *prefix)
 		//only for madwifi, ath9k, ath10k, mwlwifi etc. right now.
 #ifdef HAVE_80211W
 		char mfp[64];
-		sprintf(mfp, "%s_80211w", prefix);
+		sprintf(mfp, "%s_mfp", prefix);
 		nvram_default_get(mfp, "0");
 		showAutoOption(wp, "wpa.mfp", mfp);
 #endif
@@ -4927,7 +4927,7 @@ void show_wparadius(webs_t wp, char *prefix)
 	//only for madwifi, ath9k, ath10k, mwlwifi etc. right now.
 #ifdef HAVE_80211W
 	char mfp[64];
-	sprintf(mfp, "%s_80211w", prefix);
+	sprintf(mfp, "%s_mfp", prefix);
 	nvram_default_get(mfp, "0");
 	showAutoOption(wp, "wpa.mfp", mfp);
 #endif
