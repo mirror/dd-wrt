@@ -481,6 +481,9 @@ endif
 ifeq ($(CONFIG_3G),y)
 CFLAGS_EXTRA += -DHAVE_3G
 endif
+ifeq ($(CONFIG_WPA3),y)
+CFLAGS_EXTRA += -DHAVE_WPA -DHAVE_80211R
+endif
 ifeq ($(CONFIG_LIBQMI),y)
 CFLAGS_EXTRA += -DHAVE_LIBQMI
 endif
