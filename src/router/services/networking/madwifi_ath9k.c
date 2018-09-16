@@ -1168,7 +1168,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			if (nvram_matchi(ft, 1) && (nvhas(akm, "psk3") || nvhas(akm, "psk") || nvhas(akm, "psk2"))) {
 				fprintf(fp, "nas_identifier=%s\n", nvram_nget("%s_nas", ifname));
 				fprintf(fp, "mobility_domain=%s\n", nvram_nget("%s_domain", ifname));
-				fprintf(fp, "ft_over_fs=1\n");
+				fprintf(fp, "ft_over_ds=1\n");
 				fprintf(fp, "pmk_r1_push=1\n");
 				// todo. add key holders
 			}
