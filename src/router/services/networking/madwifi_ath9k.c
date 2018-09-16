@@ -1117,8 +1117,8 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		}
 	} else if (nvram_match(akm, "disabled")) {
 		addWPS(fp, ifname, 0);
-	} else if (nvram_match(akm, "psk") || nvram_match(akm, "psk2") || nvram_match(akm, "psk psk2") || nvram_match(akm, "psk2 psk3") || nvram_match(akm, "psk3") || nvram_match(akm, "wpa") || nvram_match(akm, "wpa2")
-		   || nvram_match(akm, "wpa wpa2") || nvram_match(akm, "wpa2 wpa3") || nvram_match(akm, "wpa3")) {
+	} else if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "wpa") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3")) {
+
 		if (!strncmp(ifname, "ath0", 4))
 			led_control(LED_SEC0, LED_ON);
 		if (!strncmp(ifname, "ath1", 4))
@@ -1156,8 +1156,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		if (nvram_match(akm, "psk psk2")
 		    || nvram_match(akm, "wpa wpa2") || nvram_match(akm, "wpa2 wpa3") || nvram_match(akm, "psk2 psk3"))
 			fprintf(fp, "wpa=3\n");
-		if (nvram_match(akm, "psk") || nvram_match(akm, "psk2") || nvram_match(akm, "psk3")
-		    || nvram_match(akm, "psk psk2") || nvram_match(akm, "psk2 psk3")) {
+		if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3")) {
 			if (strlen(nvram_nget("%s_wpa_psk", ifname)) == 64)
 				fprintf(fp, "wpa_psk=%s\n", nvram_nget("%s_wpa_psk", ifname));
 			else
@@ -1179,6 +1178,11 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 #endif
 			fprintf(fp, "\n");
 
+#ifdef HAVE_80211R
+			if (nvram_matchi(ft, 1) && (nvhas(akm, "psk3") || nvhas(akm, "psk") || nvhas(akm, "psk2")))
+				fprintf(fp, "nas_identifier=%s\n", nvram_nget("%s_nas", ifname));
+#endif
+
 			addWPS(fp, ifname, 1);
 		} else {
 			// if (nvram_invmatch (akm, "radius"))
@@ -1194,6 +1198,10 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 				fprintf(fp, "FT-EAP ");
 #endif
 			fprintf(fp, "\n");
+#ifdef HAVE_80211R
+			if (nvram_matchi(ft, 1) && nvhas(akm, "psk3") || nvhas(akm, "psk") || nvhas(akm, "psk2"))
+				fprintf(fp, "nas_identifier=%s\n", nvram_nget("%s_nas", ifname));
+#endif
 
 			// else
 			// fprintf (fp, "macaddr_acl=2\n");
@@ -1415,8 +1423,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 	char *mrate;
 	sprintf(akm, "%s_akm", prefix);
 	sprintf(ft, "%s_ft", prefix);
-	if (nvram_match(akm, "psk") || nvram_match(akm, "psk2") || nvram_match(akm, "psk3")
-	    || nvram_match(akm, "psk psk2") || nvram_match(akm, "psk2 psk3")) {
+	if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3")) {
 		char fstr[32];
 		char psk[16];
 		if (!strncmp(prefix, "ath0", 4))
