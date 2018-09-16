@@ -829,6 +829,7 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 		  selmatch(var, "disabled", "selected=\\\"selected\\\""));
 #endif
 
+	sprintf(sta, "%s_mode", prefix);
 #ifdef HAVE_QTN
 	if (!has_qtn(prefix))
 #endif
@@ -847,7 +848,6 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 #else
 	websWrite(wp, "<option value=\"psk\" %s>WPA Personal</option>\n", selmatch(var, "psk", "selected=\"selected\""));
 #endif
-	sprintf(sta, "%s_mode", prefix);
 #ifdef HAVE_QTN
 	if (!has_qtn(prefix))
 #endif
