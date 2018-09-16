@@ -324,6 +324,7 @@ errmsg.err34=" darf keine Leerzeichen enthalten.";
 errmsg.err110="Die snd Nummer mu&szlig; gr&ouml;&szlig;er als die start Nummer sein";
 errmsg.err111="Ung&uuml;ltige IP Adresse";
 errmsg.err112="Ung&uuml;ltige Zeichen \"<invchars>\" in Feld \"<fieldname>\"";
+errmsg.err113="Die Mobility Domain muss ein 4 Stelliger Hexadezimalwert sein";
 
 //Wol.asp error messages
 errmsg.err35="Sie m&uuml;ssen eine MAC-Adresse angeben um fortzufahren.";
