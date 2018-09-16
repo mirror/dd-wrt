@@ -809,6 +809,7 @@ _8021xprv
 	copytonv(wp, "%s_disable_eapol_key_retries", prefix);
 #ifdef HAVE_80211R
 	copytonv(wp, "%s_ft", prefix);
+	copytonv(wp, "%s_domain", prefix);
 	copytonv(wp, "%s_nas", prefix);
 #endif
 	copytonv(wp, "%s_wpa_gtk_rekey", prefix);
