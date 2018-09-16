@@ -102,10 +102,10 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			show_caption(wp, "label", "networking.bridgeassign", NULL);
 			websWrite(wp,
 				  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idnet', true);\" name=\"%s_bridged\" %s /><script type=\"text/javascript\">Capture(wl_basic.unbridged)</script>&nbsp;\n",
-				  layer, var, nvram_default_match(ssid, "0", "1") ? "checked=\"checked\"" : "");
+				  layer, var, nvram_default_matchi(ssid, 0, 1) ? "checked=\"checked\"" : "");
 			websWrite(wp,
 				  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idnet', false);\" name=\"%s_bridged\" %s /><script type=\"text/javascript\">Capture(share.deflt)</script>\n",
-				  layer, var, nvram_default_match(ssid, "1", "1") ? "checked=\"checked\"" : "");
+				  layer, var, nvram_default_matchi(ssid, 1, 1) ? "checked=\"checked\"" : "");
 			websWrite(wp, "</div>\n");
 		}
 		if (!isbridge) {
@@ -142,10 +142,10 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(idx.force_dnsmasq)</script></div>\n");
 		websWrite(wp,
 			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idredirect', true);\" name=\"%s_dns_redirect\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-			  layer, var, nvram_default_match(redirect, "1", "0") ? "checked=\"checked\"" : "");
+			  layer, var, nvram_default_matchi(redirect, 1, 0) ? "checked=\"checked\"" : "");
 		websWrite(wp,
 			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idredirect', false);\" name=\"%s_dns_redirect\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
-			  layer, var, nvram_default_match(redirect, "0", "0") ? "checked=\"checked\"" : "");
+			  layer, var, nvram_default_matchi(redirect, 0, 0) ? "checked=\"checked\"" : "");
 		websWrite(wp, "</div>\n");
 
 		websWrite(wp, "<div id=\"%s_idredirect\">\n", layer);

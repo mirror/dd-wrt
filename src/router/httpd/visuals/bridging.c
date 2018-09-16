@@ -69,7 +69,7 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgemcastbr%d", count);
 		websWrite(wp, "<td>");
-		showOptions(wp, bridge_name, "On Off", nvram_default_match("br0_mcast", "1", "0") ? "On" : "Off");
+		showOptions(wp, bridge_name, "On Off", nvram_default_matchi("br0_mcast", 1, 0) ? "On" : "Off");
 		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgeprio%d", count);
 		websWrite(wp, "<td>");
@@ -111,7 +111,7 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 		char mcast[32];
 		sprintf(mcast, "%s_mcast", bridge);
 		websWrite(wp, "<td>");
-		showOptions(wp, bridge_name, "On Off", nvram_default_match(mcast, "1", "0") ? "On" : "Off");
+		showOptions(wp, bridge_name, "On Off", nvram_default_matchi(mcast, 1, 0) ? "On" : "Off");
 		websWrite(wp, "</td>");
 		sprintf(bridge_name, "bridgeprio%d", count);
 
