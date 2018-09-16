@@ -1411,8 +1411,10 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 	char cellidtemp[32];
 	char cellidssid[5];
 	char mcr[32];
+	char ft[16];
 	char *mrate;
 	sprintf(akm, "%s_akm", prefix);
+	sprintf(ft, "%s_ft", prefix);
 	if (nvram_match(akm, "psk") || nvram_match(akm, "psk2") || nvram_match(akm, "psk3")
 	    || nvram_match(akm, "psk psk2") || nvram_match(akm, "psk2 psk3")) {
 		char fstr[32];
