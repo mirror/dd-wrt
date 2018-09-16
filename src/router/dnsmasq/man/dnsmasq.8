@@ -27,7 +27,7 @@ TFTP server to allow net/PXE boot of DHCP hosts and also supports BOOTP. The PXE
 .PP
 The dnsmasq DHCPv6 server provides the same set of features as the
 DHCPv4 server, and in addition, it includes router advertisements and
-a neat feature which allows nameing for clients which use DHCPv4 and
+a neat feature which allows naming for clients which use DHCPv4 and
 stateless autoconfiguration only for IPv6 configuration. There is support for doing address allocation (both DHCPv6 and RA) from subnets which are dynamically delegated via DHCPv6 prefix delegation.
 .PP
 Dnsmasq is coded with small embedded systems in mind. It aims for the smallest possible memory footprint compatible with the supported functions,  and allows unneeded functions to be omitted from the compiled binary.  
@@ -156,7 +156,7 @@ can be over-ridden with this switch.
 .TP
 .B \-g, --group=<groupname> 
 Specify the group which dnsmasq will run
-as. The defaults to "dip", if available, to facilitate access to
+as. The default is "dip", if available, to facilitate access to
 /etc/ppp/resolv.conf which is not normally world readable.
 .TP
 .B \-v, --version
@@ -366,6 +366,11 @@ been built with DBus support. If the service name is given, dnsmasq
 provides service at that name, rather than the default which is 
 .B uk.org.thekelleys.dnsmasq
 .TP 
+.B --enable-ubus
+Enable dnsmasq UBus interface. It sends notifications via UBus on
+DHCPACK and DHCPRELEASE events. Furthermore it offers metrics.
+Requires that dnsmasq has been built with UBus support.
+.TP
 .B \-o, --strict-order
 By default, dnsmasq will send queries to any of the upstream servers
 it knows about and tries to favour servers that are known to
@@ -505,7 +510,12 @@ upstream nameserver by a more specific \fB--server\fP directive. As for
 \fB--server\fP, one or more domains with no address returns a
 no-such-domain answer, so \fB--address=/example.com/\fP is equivalent to
 \fB--server=/example.com/\fP and returns NXDOMAIN for example.com and
-all its subdomains.
+all its subdomains. An address specified as '#' translates to the NULL
+address of 0.0.0.0 and its IPv6 equivalent of :: so
+\fB--address=/example.com/#\fP will return NULL addresses for example.com and
+its subdomains. This is partly syntactic sugar for \fB--address=/example.com/0.0.0.0\fP
+and \fB--address=/example.com/::\fP but is also more efficient than including both
+as seperate configuration lines.
 .TP
 .B --ipset=/<domain>[/<domain>...]/<ipset>[,<ipset>...]
 Places the resolved IP addresses of queries for one or more domains in
@@ -587,6 +597,9 @@ Return a PTR DNS record.
 .TP
 .B --naptr-record=<name>,<order>,<preference>,<flags>,<service>,<regexp>[,<replacement>]
 Return an NAPTR DNS record, as specified in RFC3403.
+.TP
+.B --caa-record=<name>,<flags>,<tag>,<value>
+Return a CAA DNS record, as specified in RFC6844.
 .TP
 .B --cname=<cname>,[<cname>,]<target>[,<TTL>]
 Return a CNAME record which indicates that <cname> is really
@@ -1323,6 +1336,9 @@ details.)  If the value is a string, substring matching is used.
 The special form with vi-encap:<enterprise number> matches against
 vendor-identifying vendor classes for the specified enterprise. Please
 see RFC 3925 for more details of these rare and interesting beasts.
+.TP
+.B --dhcp-name-match=set:<tag>,<name>[*]
+Set the tag if the given name is supplied by a dhcp client. There may be a single trailing wildcard *, which has the usual meaning. Combined with dhcp-ignore or dhcp-ignore-names this gives the ability to ignore certain clients by name, or disallow certain hostnames from being claimed by a client.
 .TP
 .B --tag-if=set:<tag>[,set:<tag>[,tag:<tag>[,tag:<tag>]]]
 Perform boolean operations on tags. Any tag appearing as set:<tag> is set if
@@ -2254,8 +2270,8 @@ secondary servers for reverse lookups.
 When dnsmasq is configured to act as an authoritative server, the
 following data is used to populate the authoritative zone.
 .PP
-.B --mx-host, --srv-host, --dns-rr, --txt-record, --naptr-record
-, as long as the record names are in the authoritative domain.
+.B --mx-host, --srv-host, --dns-rr, --txt-record, --naptr-record, --caa-record,
+as long as the record names are in the authoritative domain.
 .PP
 .B --cname
 as long as the record name is in  the authoritative domain. If the
