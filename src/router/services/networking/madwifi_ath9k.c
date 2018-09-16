@@ -887,7 +887,8 @@ static void setMacFilter(FILE * fp, char *iface)
 		char name[32];
 		sprintf(name, "/tmp/%s_deny", iface);
 		FILE *out = fopen(name, "wb");
-		foreach(var, nvram_safe_get(nvlist), next) {
+		char *list = nvram_safe_get(nvlist);
+		foreach(var, list, next) {
 			fprintf(out, "%s\n", var);
 		}
 		fclose(out);
@@ -900,7 +901,8 @@ static void setMacFilter(FILE * fp, char *iface)
 		char name[32];
 		sprintf(name, "/tmp/%s_accept", iface);
 		FILE *out = fopen(name, "wb");
-		foreach(var, nvram_safe_get(nvlist), next) {
+		char *list = nvram_safe_get(nvlist);
+		foreach(var, list, next) {
 			fprintf(out, "%s\n", var);
 		}
 		fclose(out);
@@ -922,6 +924,20 @@ static int ieee80211_aton(char *str, unsigned char mac[6])
 	return 0;
 }
 
+static int nvhas(char *nvname, char *key)
+{
+	char *next;
+	char var[32];
+	char nvvar[32];
+	char *list = nvram_safe_get(nvname);
+	foreach(var, list, next) {
+		if (!strcmp(var, key))
+			return 1;
+	}
+	return 0;
+
+}
+
 extern char *hostapd_eap_get_types(void);
 extern void addWPS(FILE * fp, char *prefix, int configured);
 extern void setupHS20(FILE * fp, char *prefix);
@@ -933,6 +949,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 #endif
 	char psk[32];
 	char akm[16];
+	char ft[16];
 	char fstr[32];
 	FILE *fp = NULL;
 	char *ssid;
@@ -963,6 +980,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		sprintf(ifname, "aoss");
 #endif
 	sprintf(akm, "%s_akm", ifname);
+	sprintf(ft, "%s_ft", ifname);
 	if (nvram_match(akm, "8021X"))
 		return;
 	sprintf(fstr, "/tmp/%s_hostap.conf", maininterface);
@@ -1144,21 +1162,39 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 				fprintf(fp, "wpa_psk=%s\n", nvram_nget("%s_wpa_psk", ifname));
 			else
 				fprintf(fp, "wpa_passphrase=%s\n", nvram_nget("%s_wpa_psk", ifname));
-			if (nvram_match(akm, "psk3"))
-				fprintf(fp, "wpa_key_mgmt=SAE\n");
-			else if (nvram_match(akm, "psk2 psk3"))
-				fprintf(fp, "wpa_key_mgmt=WPA-PSK SAE\n");
-			else
-				fprintf(fp, "wpa_key_mgmt=WPA-PSK\n");
+			fprintf(fp, "wpa_key_mgmt=");
+			if (nvhas(akm, "psk2") || nvhas(akm, "psk"))
+				fprintf(fp, "WPA-PSK ");
+#ifdef HAVE_WPA3
+			if (nvhas(akm, "psk3"))
+				fprintf(fp, "SAE ");
+#emdif
+#ifdef HAVE_80211R
+#ifdef HAVE_WPA3
+			if (nvram_matchi(ft, 1) && nvhas(akm, "psk3"))
+				fprintf(fp, "FT-SAE ");
+#endif
+			if (nvram_matchi(ft, 1) && (nvhas(akm, "psk2") || nvhas(akm, "psk")))
+				fprintf(fp, "FT-PSK ");
+#endif
+			fprintf(fp, "\n");
+
 			addWPS(fp, ifname, 1);
 		} else {
 			// if (nvram_invmatch (akm, "radius"))
-			if (nvram_match(akm, "wpa2 wpa3"))
-				fprintf(fp, "wpa_key_mgmt=WPA-EAP WPA-EAP-SUITE-B-192\n");
-			else if (nvram_match(akm, "wpa3"))
-				fprintf(fp, "wpa_key_mgmt=WPA-EAP-SUITE-B-192\n");
-			else
-				fprintf(fp, "wpa_key_mgmt=WPA-EAP\n");
+			fprintf(fp, "wpa_key_mgmt=");
+			if (nvhas(akm, "wpa2") || nvhas(akm, "wpa"))
+				fprintf(fp, "WPA-EAP ");
+#ifdef HAVE_WPA3
+			if (nvhas(akm, "wpa3"))
+				fprintf(fp, "WPA-EAP-SUITE-B-192 ");
+#endif
+#ifdef HAVE_80211R
+			if (nvram_matchi(ft, 1) && (nvhas(akm, "wpa") || nvhas(akm, "wpa2")))
+				fprintf(fp, "FT-EAP ");
+#endif
+			fprintf(fp, "\n");
+
 			// else
 			// fprintf (fp, "macaddr_acl=2\n");
 			fprintf(fp, "ieee8021x=1\n");
