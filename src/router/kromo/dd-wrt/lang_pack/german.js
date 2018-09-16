@@ -2017,7 +2017,7 @@ wpa.radius_key="RADIUS-Key";
 wpa.algorithms="WPA-Algorithmus";
 wpa.shared_key="WPA gemeinsamer Schl&uuml;ssel";
 wpa.eapol_key_retries="EAPOL Schlüssel Wiederholung abschalten";
-wpa.80211r="802.11R / Fast BSS Transission Unterstützung";
+wpa.ft="802.11R / Fast BSS Transission Unterstützung";
 
 
 
