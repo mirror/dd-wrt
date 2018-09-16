@@ -294,7 +294,7 @@ int nvram2file(char *varname, char *filename)
 {
 	FILE *fp;
 	int i = 0;
-	char *buf;
+	const char *buf;
 
 	if (!(fp = fopen(filename, "wb")))
 		return 0;

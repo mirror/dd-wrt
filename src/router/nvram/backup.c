@@ -372,7 +372,7 @@ static void save(FILE * fp, char *p, int not)
 		char *name = p;
 		fputc(strlen(name), fp);
 		fwrite(name, 1, strlen(name), fp);
-		char *val = nvram_safe_get(name);
+		const char *val = nvram_safe_get(name);
 		fputc(strlen(val) & 255, fp);
 		fputc(strlen(val) >> 8, fp);
 		fwrite(val, 1, strlen(val), fp);
