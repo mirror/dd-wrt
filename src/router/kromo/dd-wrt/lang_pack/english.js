@@ -2370,7 +2370,7 @@ wpa.radius_key="RADIUS Key";
 wpa.algorithms="WPA Algorithms";
 wpa.shared_key="WPA Shared Key";
 wpa.eapol_key_retries="Disable EAPOL Key Retries";
-wpa.ft="802.11R / Fast BSS Transission support";
+wpa.ft="802.11r / Fast BSS Transission support";
 wpa.nas="NAS Identifier";
 wpa.domain="Mobility Domain";
 
