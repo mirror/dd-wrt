@@ -1013,7 +1013,7 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		fprintf(fp, "eapol_key_index_workaround=0\n");
 		char eap_key_retries[32];
 		sprintf(eap_key_retries, "%s_wpa_disable_eapol_key_retries", prefix);
-		if (nvram_default_match(eap_key_retries, "1", "0")) {
+		if (nvram_default_matchi(eap_key_retries, 1, 0)) {
 			fprintf(fp, "wpa_disable_eapol_key_retries=1\n");
 		}
 		if (nvram_match(akm, "psk") || nvram_match(akm, "wpa"))
@@ -1122,7 +1122,7 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		sprintf(type, "%s_radmactype", prefix);
 		char *pragma = "";
 
-		if (nvram_default_match(type, "0", "0"))
+		if (nvram_default_matchi(type, 0, 0))
 			pragma = "-n1 ";
 		if (nvram_matchi(type, 1))
 			pragma = "-n2 ";
@@ -1312,7 +1312,7 @@ static void set_netmode(char *wif, char *dev, char *use)
 				eval("iwpriv", use, "mode", "1");
 		}
 	}
-	if (nvram_default_match(bw, "40", "20")) {
+	if (nvram_default_matchi(bw, 40, 20)) {
 		{
 			if (!strcmp(netmode, "g-only")) {
 				eval("iwpriv", use, "mode", "6");
@@ -1332,12 +1332,12 @@ static void set_netmode(char *wif, char *dev, char *use)
 			}
 		}
 	}
-//    if( nvram_default_match( comp, "1", "0" ) )
+//    if( nvram_default_matchi( comp, 1, 0 ) )
 //      sysprintf("iwpriv %s compression 1",use);
 //    else
 //      sysprintf("iwpriv %s compression 0",use);
 
-	if (nvram_default_match(ff, "1", "0"))
+	if (nvram_default_matchi(ff, 1, 0))
 		eval("iwpriv", use, "ff", "1");
 	else
 		eval("iwpriv", use, "ff", "0");
@@ -1377,7 +1377,7 @@ static void setRTS(char *use)
 
     sprintf( wif, "wifi%d", count );
     sprintf( comp, "ath%d_compression", count );
-    if( nvram_default_match( comp, "1", "0" ) )
+    if( nvram_default_matchi( comp, 1, 0 ) )
 	setsysctrl( wif, "compression", 1 );
     else
 	setsysctrl( wif, "compression", 0 );
@@ -1890,12 +1890,12 @@ static void configure_single(int count)
 		char isolate[32];
 
 		sprintf(isolate, "%s_ap_isolate", var);
-		if (nvram_default_match(isolate, "1", "0"))
+		if (nvram_default_matchi(isolate, 1, 0))
 			eval("iwpriv", var, "ap_bridge", "0");
 		if (!strcmp(mvap, "wdssta") || !strcmp(mvap, "wdsap"))
 			eval("iwpriv", var, "wds", "1");
 		sprintf(mtikie, "%s_mtikie", var);
-		if (nvram_default_match(mtikie, "1", "0"))
+		if (nvram_default_matchi(mtikie, 1, 0))
 			eval("iwpriv", var, "addmtikie", "1");
 
 #ifdef HAVE_BONDING
@@ -1913,13 +1913,13 @@ static void configure_single(int count)
 		}
 
 	sprintf(mtikie, "%s_mtikie", dev);
-	if (nvram_default_match(mtikie, "1", "0"))
+	if (nvram_default_matchi(mtikie, 1, 0))
 		eval("iwpriv", dev, "addmtikie", "1");
 
 	char isolate[32];
 
 	sprintf(isolate, "%s_ap_isolate", dev);
-	if (nvram_default_match(isolate, "1", "0"))
+	if (nvram_default_matchi(isolate, 1, 0))
 		eval("iwpriv", dev, "ap_bridge", "0");
 
 	sprintf(ssid, "ath%d_ssid", count);
@@ -1987,7 +1987,7 @@ static void configure_single(int count)
 	char preamble[32];
 
 	sprintf(preamble, "%s_preamble", dev);
-	if (nvram_default_match(preamble, "1", "0")) {
+	if (nvram_default_matchi(preamble, 1, 0)) {
 		eval("iwpriv", dev, "shpreamble", "1");
 	} else
 		eval("iwpriv", dev, "shpreamble", "0");
@@ -2087,7 +2087,7 @@ static void configure_single(int count)
 		char bridged[32];
 
 		sprintf(bridged, "%s_bridged", dev);
-		if (nvram_default_match(bridged, "1", "1")) {
+		if (nvram_default_matchi(bridged, 1, 1)) {
 			eval("ifconfig", dev, "0.0.0.0", "up");
 			br_add_interface(getBridge(dev, tmp), dev);
 			eval("ifconfig", dev, "0.0.0.0", "up");
@@ -2107,7 +2107,7 @@ static void configure_single(int count)
 
 		char bridged[32];
 		sprintf(bridged, "%s_bridged", dev);
-		if (nvram_default_match(bridged, "0", "1")) {
+		if (nvram_default_matchi(bridged, 0, 1)) {
 			eval("ifconfig", dev, "mtu", getMTU(dev));
 			eval("ifconfig", dev, "txqueuelen", getTXQ(dev));
 			eval("ifconfig", dev, nvram_nget("%s_ipaddr", dev), "netmask", nvram_nget("%s_netmask", dev), "up");
@@ -2136,7 +2136,7 @@ static void configure_single(int count)
 				char bridged[32];
 
 				sprintf(bridged, "%s_bridged", var);
-				if (nvram_default_match(bridged, "1", "1")) {
+				if (nvram_default_matchi(bridged, 1, 1)) {
 					eval("ifconfig", var, "0.0.0.0", "up");
 					br_add_interface(getBridge(var, tmp), var);
 				} else {
@@ -2250,7 +2250,7 @@ void start_vifs(void)
 					char bridged[32];
 
 					sprintf(bridged, "%s_bridged", var);
-					if (nvram_default_match(bridged, "1", "1")) {
+					if (nvram_default_matchi(bridged, 1, 1)) {
 						eval("ifconfig", var, "0.0.0.0", "up");
 						br_add_interface(getBridge(var, tmp), var);
 					} else {

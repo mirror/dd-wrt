@@ -529,7 +529,7 @@ static void do_portsetup(char *lan, char *ifname)
 	char var2[64];
 	char tmp[256];
 	sprintf(var, "%s_bridged", IFMAP(ifname));
-	if (nvram_default_match(var, "1", "1")) {
+	if (nvram_default_matchi(var, 1, 1)) {
 		br_add_interface(getBridge(IFMAP(ifname), tmp), IFMAP(ifname));
 	} else {
 		ifconfig(ifname, IFUP, nvram_nget("%s_ipaddr", IFMAP(ifname)), nvram_nget("%s_netmask", ifname));
@@ -5124,11 +5124,11 @@ void start_hotplug_net(void)
 		sprintf(compr, "%s_fc", ifname);
 		sprintf(compr, "%s_fc_th", ifname);
 		char *threshold = nvram_default_get(compr, "512");	// minimum framesize frequired for compression
-		if (nvram_default_match(compr, "1", "0")) {
+		if (nvram_default_matchi(compr, 1, 0)) {
 			eval("iw", "dev", interface, "set", "compr", "lzo", threshold);
-		} else if (nvram_default_match(compr, "2", "0")) {
+		} else if (nvram_default_matchi(compr, 2, 0)) {
 			eval("iw", "dev", interface, "set", "compr", "lzma", threshold);
-		} else if (nvram_default_match(compr, "3", "0")) {
+		} else if (nvram_default_matchi(compr, 3, 0)) {
 			eval("iw", "dev", interface, "set", "compr", "lz4", threshold);
 		} else {
 			eval("iw", "dev", interface, "set", "compr", "off");

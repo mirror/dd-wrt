@@ -87,7 +87,7 @@ void start_vlantagging(void)
 		char var[64];
 
 		sprintf(var, "%s_bridged", vlan_name);
-		if (nvram_default_match(var, "1", "1")) {
+		if (nvram_default_matchi(var, 1, 1)) {
 			eval("ifconfig", vlan_name, "0.0.0.0", "up");
 		} else {
 			eval("ifconfig", vlan_name, nvram_nget("%s_ipaddr", vlan_name), "netmask", nvram_nget("%s_netmask", vlan_name), "up");
