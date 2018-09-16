@@ -54,7 +54,7 @@ void nvram_store_collection(const char *name, char *buf)
 /*
     do not forget to free the returned result
 */
-const char *nvram_get_collection(const char *name)
+char *nvram_get_collection(const char *name)
 {
 	char *chains = NULL;
 	int offset = 0;
@@ -119,7 +119,7 @@ int nvram_invmatchi(const char *name, const int invmatch)
 	return nvram_invmatch(name, tmp);
 }
 
-const char *nvram_prefix_get(const char *name, const char *prefix)
+char *nvram_prefix_get(const char *name, const char *prefix)
 {
 	char p[64];
 	sprintf(p, "%s_%s", prefix, name);
@@ -143,7 +143,7 @@ int nvram_nmatch(const char *match, const char *fmt, ...)
 	return nvram_match(varbuf, match);
 }
 
-const char *nvram_nget(const char *fmt, ...)
+char *nvram_nget(const char *fmt, ...)
 {
 	char varbuf[64];
 	va_list args;
@@ -173,7 +173,7 @@ int nvram_nset(const char *value, const char *fmt, ...)
 	return nvram_set(varbuf, value);
 }
 
-const char *nvram_safe_get(const char *name)
+char *nvram_safe_get(const char *name)
 {
 	return nvram_get(name) ? : "";
 }
@@ -222,12 +222,12 @@ int nvram_default_matchi(const char *var, const int match, const int def)
 	return nvram_default_match(var, m, d);
 }
 
-const char *nvram_default_get(const char *var, const char *def)
+char *nvram_default_get(const char *var, const char *def)
 {
 	char *v = nvram_get(var);
 	if (v == NULL || strlen(v) == 0) {
 		nvram_set(var, def);
-		return def;
+		return nvram_safe_get(var);
 	}
 	return v;
 }
