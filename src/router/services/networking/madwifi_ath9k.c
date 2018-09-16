@@ -935,6 +935,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 #endif
 	char psk[32];
 	char akm[16];
+	char mfp[16];
 	char ft[16];
 	char fstr[32];
 	FILE *fp = NULL;
@@ -967,6 +968,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 #endif
 	sprintf(akm, "%s_akm", ifname);
 	sprintf(ft, "%s_ft", ifname);
+	sprintf(mfp, "%s_mfp", ifname);
 	if (nvram_match(akm, "8021X"))
 		return;
 	sprintf(fstr, "/tmp/%s_hostap.conf", maininterface);
@@ -1121,7 +1123,14 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fprintf(fp, "logger_stdout=-1\n");
 		fprintf(fp, "logger_stdout_level=2\n");
 		fprintf(fp, "wpa=2\n");
-		fprintf(fp, "ieee80211w\n");
+#ifdef HAVE_80211W
+		if (nvram_default_matchi(mfp, -1, 0))
+			fprintf(fp, "ieee80211w=1\n");
+		if (nvram_default_matchi(mfp, 0, 0))
+			fprintf(fp, "ieee80211w=0\n");
+		if (nvram_default_matchi(mfp, 1, 0))
+			fprintf(fp, "ieee80211w=2\n");
+#endif
 		fprintf(fp, "wpa_key_mgmt=OWE\n");
 		fprintf(fp, "rsn_pairwise=CCMP\n");
 		addWPS(fp, ifname, 0);
@@ -1165,6 +1174,14 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		if (nvram_match(akm, "psk psk2")
 		    || nvram_match(akm, "wpa wpa2") || nvram_match(akm, "wpa2 wpa3") || nvram_match(akm, "psk2 psk3"))
 			fprintf(fp, "wpa=3\n");
+#ifdef HAVE_80211W
+		if (nvram_default_matchi(mfp, -1, 0))
+			fprintf(fp, "ieee80211w=1\n");
+		if (nvram_default_matchi(mfp, 0, 0))
+			fprintf(fp, "ieee80211w=0\n");
+		if (nvram_default_matchi(mfp, 1, 0))
+			fprintf(fp, "ieee80211w=2\n");
+#endif
 		if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3")) {
 			if (strlen(nvram_nget("%s_wpa_psk", ifname)) == 64)
 				fprintf(fp, "wpa_psk=%s\n", nvram_nget("%s_wpa_psk", ifname));
