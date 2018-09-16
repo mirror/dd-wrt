@@ -450,7 +450,7 @@ void start_sysinit(void)
 			foreach(var, gpios, next) {
 				sprintf(nvgpio, "gpio%s", var);
 				fprintf(stderr, "GPIO foreach  %s\n", var);
-				if (nvram_default_match(nvgpio, "1", "0"))
+				if (nvram_default_matchi(nvgpio, 1, 0))
 					set_gpio(atoi(var), 1);
 				else
 					set_gpio(atoi(var), 0);

@@ -137,7 +137,7 @@ void start_radius(char *prefix)
 		sprintf(type, "%s_radmactype", prefix);
 		char *pragma = "";
 
-		if (nvram_default_match(type, "0", "0"))
+		if (nvram_default_matchi(type, 0, 0))
 			pragma = "-n1 ";
 		if (nvram_matchi(type, 1))
 			pragma = "-n2 ";

@@ -158,10 +158,10 @@ void configure_single_ath9k(int count)
 		sprintf(atf, "%s_atf", dev);
 #ifdef HAVE_ATH10K
 		if (is_ath10k(dev))
-			sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/ath10k/atf", nvram_default_match(atf, "1", "0") ? 1 : 0, wif);
+			sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/ath10k/atf", nvram_default_matchi(atf, 1, 0) ? 1 : 0, wif);
 		else
 #endif
-			sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/ath9k/airtime_flags", nvram_default_match(atf, "1", "1") ? 3 : 0, wif);
+			sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/ath9k/airtime_flags", nvram_default_matchi(atf, 1, 1) ? 3 : 0, wif);
 	}
 	// set channelbw ht40 is also 20!
 	sprintf(bw, "%s_channelbw", dev);
@@ -287,11 +287,11 @@ void configure_single_ath9k(int count)
 	sprintf(compr, "%s_fc_th", dev);
 	char *threshold = nvram_default_get(compr, "512");	// minimum framesize frequired for compression
 
-	if (nvram_default_match(compr, "1", "0")) {
+	if (nvram_default_matchi(compr, 1, 0)) {
 		eval("iw", "dev", dev, "set", "compr", "lzo", threshold);
-	} else if (nvram_default_match(compr, "2", "0")) {
+	} else if (nvram_default_matchi(compr, 2, 0)) {
 		eval("iw", "dev", dev, "set", "compr", "lzma", threshold);
-	} else if (nvram_default_match(compr, "3", "0")) {
+	} else if (nvram_default_matchi(compr, 3, 0)) {
 		eval("iw", "dev", dev, "set", "compr", "lz4", threshold);
 	} else {
 		eval("iw", "dev", dev, "set", "compr", "off");
@@ -341,11 +341,11 @@ void configure_single_ath9k(int count)
 		sprintf(compr, "%s_fc_th", var);
 		char *threshold = nvram_default_get(compr, "512");	// minimum framesize frequired for compression
 
-		if (nvram_default_match(compr, "1", "0")) {
+		if (nvram_default_matchi(compr, 1, 0)) {
 			eval("iw", "dev", var, "set", "compr", "lzo", threshold);
-		} else if (nvram_default_match(compr, "2", "0")) {
+		} else if (nvram_default_matchi(compr, 2, 0)) {
 			eval("iw", "dev", var, "set", "compr", "lzma", threshold);
-		} else if (nvram_default_match(compr, "3", "0")) {
+		} else if (nvram_default_matchi(compr, 3, 0)) {
 			eval("iw", "dev", var, "set", "compr", "lz4", threshold);
 		} else {
 			eval("iw", "dev", var, "set", "compr", "off");
@@ -760,7 +760,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		sprintf(shortgi, "%s_shortgi", prefix);
 		char greenfield[32];
 		sprintf(greenfield, "%s_gf", prefix);
-		caps = mac80211_get_caps(prefix, nvram_default_match(shortgi, "1", "1") ? 1 : 0, nvram_default_match(greenfield, "1", "0") ? 1 : 0);
+		caps = mac80211_get_caps(prefix, nvram_default_matchi(shortgi, 1, 1) ? 1 : 0, nvram_default_matchi(greenfield, 1, 0) ? 1 : 0);
 		if (ht) {
 			fprintf(fp, "ht_capab=[%s]%s\n", ht, caps);
 		} else {
@@ -775,7 +775,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			sprintf(mubf, "%s_mubf", prefix);
 			char subf[32];
 			sprintf(subf, "%s_subf", prefix);
-			caps = mac80211_get_vhtcaps(prefix, 0, 0, 0, 0, nvram_default_match(subf, "1", "0"), nvram_default_match(mubf, "1", "0"));
+			caps = mac80211_get_vhtcaps(prefix, 0, 0, 0, 0, nvram_default_matchi(subf, 1, 0), nvram_default_matchi(mubf, 1, 0));
 			fprintf(fp, "vht_capab=%s\n", caps);
 			//fprintf(fp, "ieee80211ac=1\n");
 			//fprintf(fp, "require_vht=1\n");
@@ -794,8 +794,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			char subf[32];
 			sprintf(subf, "%s_subf", prefix);
 			caps =
-			    mac80211_get_vhtcaps(prefix, nvram_default_match(shortgi, "1", "1") ? 1 : 0, (usebw == 80 || usebw == 160 || usebw == 8080) ? 1 : 0, usebw == 160 ? 1 : 0, usebw == 8080 ? 1 : 0,
-						 nvram_default_match(subf, "1", "0"), nvram_default_match(mubf, "1", "0"));
+			    mac80211_get_vhtcaps(prefix, nvram_default_matchi(shortgi, 1, 1) ? 1 : 0, (usebw == 80 || usebw == 160 || usebw == 8080) ? 1 : 0, usebw == 160 ? 1 : 0, usebw == 8080 ? 1 : 0,
+						 nvram_default_matchi(subf, 1, 0), nvram_default_matchi(mubf, 1, 0));
 			if (strlen(caps)) {
 				fprintf(fp, "vht_capab=%s\n", caps);
 				free(caps);
@@ -1035,10 +1035,10 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	char isolate[32];
 	char broadcast[32];
 	sprintf(isolate, "%s_ap_isolate", ifname);
-	if (nvram_default_match(isolate, "1", "0"))
+	if (nvram_default_matchi(isolate, 1, 0))
 		fprintf(fp, "ap_isolate=1\n");
 	sprintf(broadcast, "%s_closed", ifname);
-	if (nvram_default_match(broadcast, "1", "0"))
+	if (nvram_default_matchi(broadcast, 1, 0))
 		fprintf(fp, "ignore_broadcast_ssid=1\n");
 	else
 		fprintf(fp, "ignore_broadcast_ssid=0\n");
@@ -1145,7 +1145,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fprintf(fp, "eapol_key_index_workaround=0\n");
 		char eap_key_retries[32];
 		sprintf(eap_key_retries, "%s_disable_eapol_key_retries", ifname);
-		if (nvram_default_match(eap_key_retries, "1", "0")) {
+		if (nvram_default_matchi(eap_key_retries, 1, 0)) {
 			fprintf(fp, "wpa_disable_eapol_key_retries=1\n");
 		}
 		if (nvram_match(akm, "psk") || nvram_match(akm, "wpa"))
@@ -1183,7 +1183,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 				fprintf(fp, "nas_identifier=%s\n", nvram_nget("%s_nas", ifname));
 				fprintf(fp, "mobility_domain=%s\n", nvram_nget("%s_domain", ifname));
 				fprintf(fp, "ft_over_fs=1\n");
-				fprintf(fp, "pmk_r1_push=1\n"); 
+				fprintf(fp, "pmk_r1_push=1\n");
 				// todo. add key holders
 			}
 #endif
@@ -1329,17 +1329,17 @@ static void addvhtcaps(char *prefix, FILE * fp)
 		char subf[32];
 		sprintf(subf, "%s_subf", prefix);
 		mask = 0;
-		if (nvram_default_match(subf, "0", "0")) {
+		if (nvram_default_matchi(subf, 0, 0)) {
 			mask |= IEEE80211_VHT_CAP_SU_BEAMFORMER_CAPABLE;
 			mask |= IEEE80211_VHT_CAP_SU_BEAMFORMEE_CAPABLE;
 			mask |= IEEE80211_VHT_CAP_BEAMFORMEE_STS_MASK;
 			mask |= IEEE80211_VHT_CAP_SOUNDING_DIMENSIONS_MASK;
 		}
-		if (nvram_default_match(mubf, "0", "0")) {
+		if (nvram_default_matchi(mubf, 0, 0)) {
 			mask |= IEEE80211_VHT_CAP_MU_BEAMFORMER_CAPABLE;
 			mask |= IEEE80211_VHT_CAP_MU_BEAMFORMEE_CAPABLE;
 		}
-		if (nvram_default_match(shortgi, "0", "1")) {
+		if (nvram_default_matchi(shortgi, 0, 1)) {
 			mask |= IEEE80211_VHT_CAP_SHORT_GI_80;
 			mask |= IEEE80211_VHT_CAP_SHORT_GI_160;
 		}
@@ -1476,7 +1476,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			fprintf(fp, "\tfrequency=%d\n", freq);
 			sprintf(bw, "%s_channelbw", prefix);
 			sprintf(ht, "20");
-			if (nvram_default_match(bw, "20", "20")) {
+			if (nvram_default_matchi(bw, 20, 20)) {
 				sprintf(ht, "20");
 			} else if (nvram_match(bw, "40") || nvram_match(bw, "2040")) {
 				sprintf(sb, "%s_nctrlsb", prefix);
@@ -1931,7 +1931,7 @@ void ath9k_start_supplicant(int count)
 #endif
 		char bridged[32];
 		sprintf(bridged, "%s_bridged", dev);
-		if (nvram_default_match(bridged, "1", "1")) {
+		if (nvram_default_matchi(bridged, 1, 1)) {
 			eval("ifconfig", dev, "0.0.0.0", "up");
 			br_add_interface(getBridge(dev, tmp), dev);
 			eval("ifconfig", dev, "0.0.0.0", "up");
@@ -1951,7 +1951,7 @@ void ath9k_start_supplicant(int count)
 
 		char bridged[32];
 		sprintf(bridged, "%s_bridged", dev);
-		if (nvram_default_match(bridged, "0", "1")) {
+		if (nvram_default_matchi(bridged, 0, 1)) {
 			eval("ifconfig", dev, "mtu", getMTU(dev));
 			eval("ifconfig", dev, "txqueuelen", getTXQ(dev));
 			eval("ifconfig", dev, nvram_nget("%s_ipaddr", dev), "netmask", nvram_nget("%s_netmask", dev), "up");
@@ -1965,7 +1965,7 @@ void ath9k_start_supplicant(int count)
 			if (strcmp(m2, "sta")) {
 				char bridged[32];
 				sprintf(bridged, "%s_bridged", var);
-				if (nvram_default_match(bridged, "1", "1")) {
+				if (nvram_default_matchi(bridged, 1, 1)) {
 					eval("ifconfig", dev, "0.0.0.0", "up");
 					br_add_interface(getBridge(var, tmp), var);
 				} else {

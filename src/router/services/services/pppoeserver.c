@@ -161,23 +161,23 @@ static void do_pppoeconfig(FILE * fp)
 		nowins = 1;
 	}
 	// fprintf (fp, "crtscts\n");
-	if (nvram_default_match("pppoeserver_bsdcomp", "0", "0"))
+	if (nvram_default_matchi("pppoeserver_bsdcomp", 0, 0))
 		fprintf(fp, "nobsdcomp\n");
 	else
 		fprintf(fp, "bsdcomp 12\n");
-	if (nvram_default_match("pppoeserver_deflate", "0", "0"))
+	if (nvram_default_matchi("pppoeserver_deflate", 0, 0))
 		fprintf(fp, "nodeflate\n");
 	else
 		fprintf(fp, "deflate 12\n");
-	if (nvram_default_match("pppoeserver_lzs", "0", "0"))
+	if (nvram_default_matchi("pppoeserver_lzs", 0, 0))
 		fprintf(fp, "nolzs\n");
 	else
 		fprintf(fp, "lzs\n");
-	if (nvram_default_match("pppoeserver_mppc", "0", "0"))
+	if (nvram_default_matchi("pppoeserver_mppc", 0, 0))
 		fprintf(fp, "nomppc\n");
 	else
 		fprintf(fp, "mppc\n");
-	if (nvram_default_match("pppoeserver_encryption", "1", "0"))
+	if (nvram_default_matchi("pppoeserver_encryption", 1, 0))
 		fprintf(fp, "require-mppe-128\n");
 	else
 		fprintf(fp, "nomppe\n");
@@ -232,9 +232,9 @@ void start_pppoeserver(void)
 	chmod("/tmp/pppoeserver/calc-uptime.sh", 0744);*/
 
 	FILE *fp;
-	if (nvram_default_match("pppoeserver_enabled", "1", "0")) {
+	if (nvram_default_matchi("pppoeserver_enabled", 1, 0)) {
 		add_pppoe_natrule();
-		if (nvram_default_match("pppoeradius_enabled", "0", "0")) {
+		if (nvram_default_matchi("pppoeradius_enabled", 0, 0)) {
 
 			mkdir("/tmp/pppoeserver", 0777);
 			fp = fopen("/tmp/pppoeserver/pppoe-server-options", "wb");

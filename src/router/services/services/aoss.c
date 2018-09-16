@@ -221,8 +221,7 @@ void start_aoss(void)
 				sleep(2);
 			}
 			eval("hostapd", "-B", "-P", "/var/run/ath0_hostapd.pid", "/tmp/ath0_hostap.conf");
-		} else
-		{
+		} else {
 			hasaoss = 1;
 			eval("80211n_wlanconfig", "aoss", "create", "wlandev", "wifi0", "wlanmode", "ap");
 			eval("iwconfig", "aoss", "essid", "ESSID-AOSS");
