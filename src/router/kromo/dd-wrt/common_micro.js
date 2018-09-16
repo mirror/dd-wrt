@@ -232,6 +232,29 @@ function valid_macs_12(I) {
 	return true;
 }
 
+function valid_domain(I) {
+	var m,m3;
+	
+	if (I.value == "") {
+		alert(errmsg.err113);
+		return true;
+	}
+	if (I.value.length==4) {
+		for (i=0;i<4;i++) {
+			m=parseInt(I.value.charAt(i), 16);
+			if (isNaN(m)) break;
+		}
+		if (i!=4) {
+			alert(errmsg.err113);
+			I.value = I.defaultValue;
+		}
+	} else {
+		alert(errmsg.err113);
+		I.value = I.defaultValue;
+	}
+	return true;
+}
+
 function valid_email(addr,man,db) {
 if (addr == '' && man) {
    if (db) alert('email address is mandatory');
