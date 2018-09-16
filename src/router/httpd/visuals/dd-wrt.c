@@ -873,7 +873,7 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 #ifdef HAVE_RT2880
 	if (!primary || nvram_match(sta, "ap"))
 #endif
-{
+	{
 		websWrite(wp,
 #ifdef HAVE_IAS
 			  "<option value=\"psk psk2\" %s>%s</option>\n", selmatch(var, "psk psk2", "selected=\"selected\""), ias_enc_label("psk psk2"));
@@ -890,7 +890,7 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 
 #endif
 
-}
+	}
 #ifdef HAVE_QTN
 	if (!has_qtn(prefix))
 #endif
@@ -4422,6 +4422,13 @@ void show_preshared(webs_t wp, char *prefix)
 		  "<input type=\"checkbox\" name=\"%s_wl_unmask\" value=\"0\" onclick=\"setElementMask('%s_wpa_psk', this.checked)\" >&nbsp;<script type=\"text/javascript\">Capture(share.unmask)</script></input>\n",
 		  prefix, prefix);
 	websWrite(wp, "</div>\n");
+#ifdef HAVE_MADWIFI
+#ifdef HAVE_80211R
+	char bssft[64];
+	sprintf(bssft, "%s_ft", prefix);
+	showRadio(wp, "wpa.ft", bssft);
+#endif
+#endif
 	if (nvram_nmatch("ap", "%s_mode", prefix)
 	    || nvram_nmatch("wdsap", "%s_mode", prefix)) {
 		websWrite(wp, "<div class=\"setting\">\n");
@@ -4437,11 +4444,6 @@ void show_preshared(webs_t wp, char *prefix)
 		websWrite(wp, "</div>\n");
 #ifdef HAVE_MADWIFI
 		//only for madwifi, ath9k, ath10k, mwlwifi etc. right now.
-#ifdef HAVE_80211R
-		char bssft[64];
-		sprintf(bssft, "%s_ft", prefix);
-		showRadio(wp, "wpa.ft", bssft);
-#endif
 		char eap_key_retries[64];
 		sprintf(eap_key_retries, "%s_disable_eapol_key_retries", prefix);
 		showRadio(wp, "wpa.eapol_key_retries", eap_key_retries);
@@ -4640,6 +4642,13 @@ void show_80211X(webs_t wp, char *prefix)
 		  "<input class=\"spaceradio\" type=\"radio\" name=\"%s_8021xtype\" value=\"ttls\" onclick=\"enable_idttls('%s')\" %s />TTLS&nbsp;\n",
 		  prefix, prefix, nvram_prefix_match("8021xtype", prefix, "ttls") ? "checked=\"checked\"" : "");
 	websWrite(wp, "</div>\n");
+#ifdef HAVE_MADWIFI
+#ifdef HAVE_80211R
+	char bssft[64];
+	sprintf(bssft, "%s_ft", prefix);
+	showRadio(wp, "wpa.ft", bssft);
+#endif
+#endif
 	// ttls authentication
 	websWrite(wp, "<div id=\"idttls%s\">\n", prefix);
 	websWrite(wp, "<div class=\"setting\">\n");
@@ -4833,6 +4842,13 @@ void show_wparadius(webs_t wp, char *prefix)
 #else
 	show_radius(wp, prefix, 0, 0);
 #endif
+#ifdef HAVE_MADWIFI
+#ifdef HAVE_80211R
+	char bssft[64];
+	sprintf(bssft, "%s_ft", prefix);
+	showRadio(wp, "wpa.ft", bssft);
+#endif
+#endif
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "wpa.rekey", NULL);
 	sprintf(var, "%s_wpa_gtk_rekey", prefix);
@@ -4841,11 +4857,6 @@ void show_wparadius(webs_t wp, char *prefix)
 	websWrite(wp, "</div>\n");
 #ifdef HAVE_MADWIFI
 	//only for madwifi, ath9k, ath10k, mwlwifi etc. right now.
-#ifdef HAVE_80211R
-		char bssft[64];
-		sprintf(bssft, "%s_ft", prefix);
-		showRadio(wp, "wpa.ft", bssft);
-#endif
 	char eap_key_retries[64];
 	sprintf(eap_key_retries, "%s_disable_eapol_key_retries", prefix);
 	showRadio(wp, "wpa.eapol_key_retries", eap_key_retries);
