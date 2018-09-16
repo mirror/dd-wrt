@@ -4426,7 +4426,26 @@ void show_preshared(webs_t wp, char *prefix)
 #ifdef HAVE_80211R
 	char bssft[64];
 	sprintf(bssft, "%s_ft", prefix);
-	showRadio(wp, "wpa.ft", bssft);
+	websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.ft)</script></div>\n");
+	websWrite(wp,
+		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idnas', true);\" name=\"%s_acct\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>\n",
+		  prefix, prefix, nvram_default_matchi(bssft, 1, 0) ? "checked=\"checked\"" : "");
+	websWrite(wp,
+		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idnas', false);\" name=\"%s_acct\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+		  prefix, prefix, nvram_default_matchi(bssft, 0, 0) ? "checked=\"checked\"" : "");
+	websWrite(wp, "</div>\n");
+
+	websWrite(wp, "<div id=\"%s_idnas\">\n", prefix);
+	websWrite(wp, "<div class=\"setting\">\n");
+	show_caption(wp, "label", "wpa.nas", NULL);
+	sprintf(var, "%s_nas", prefix);
+	websWrite(wp, "<input  id=\"%s_nas\" name=\"%s_nas\" maxlength=\"48\" size=\"32\" value=\"%s\"", prefix, prefix, nvram_nget("%s_nas", prefix));
+	websWrite(wp, "</div>\n");
+	websWrite(wp, "</div>\n");
+
+	websWrite(wp, "<script>\n//<![CDATA[\n ");
+	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_ft\"), \"%s_idnas\", %s);\n", prefix, prefix, nvram_matchi(bssft, 1) ? "true" : "false");
+	websWrite(wp, "//]]>\n</script>\n");
 #endif
 #endif
 	if (nvram_nmatch("ap", "%s_mode", prefix)
@@ -4846,7 +4865,26 @@ void show_wparadius(webs_t wp, char *prefix)
 #ifdef HAVE_80211R
 	char bssft[64];
 	sprintf(bssft, "%s_ft", prefix);
-	showRadio(wp, "wpa.ft", bssft);
+	websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.ft)</script></div>\n");
+	websWrite(wp,
+		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idnas', true);\" name=\"%s_acct\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>\n",
+		  prefix, prefix, nvram_default_matchi(bssft, 1, 0) ? "checked=\"checked\"" : "");
+	websWrite(wp,
+		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idnas', false);\" name=\"%s_acct\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+		  prefix, prefix, nvram_default_matchi(bssft, 0, 0) ? "checked=\"checked\"" : "");
+	websWrite(wp, "</div>\n");
+
+	websWrite(wp, "<div id=\"%s_idnas\">\n", prefix);
+	websWrite(wp, "<div class=\"setting\">\n");
+	show_caption(wp, "label", "wpa.nas", NULL);
+	sprintf(var, "%s_nas", prefix);
+	websWrite(wp, "<input  id=\"%s_nas\" name=\"%s_nas\" maxlength=\"48\" size=\"32\" value=\"%s\"", prefix, prefix, nvram_nget("%s_nas", prefix));
+	websWrite(wp, "</div>\n");
+	websWrite(wp, "</div>\n");
+
+	websWrite(wp, "<script>\n//<![CDATA[\n ");
+	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_ft\"), \"%s_idnas\", %s);\n", prefix, prefix, nvram_matchi(bssft, 1) ? "true" : "false");
+	websWrite(wp, "//]]>\n</script>\n");
 #endif
 #endif
 	websWrite(wp, "<div class=\"setting\">\n");

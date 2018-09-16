@@ -2371,6 +2371,7 @@ wpa.algorithms="WPA Algorithms";
 wpa.shared_key="WPA Shared Key";
 wpa.eapol_key_retries="Disable EAPOL Key Retries";
 wpa.ft="802.11R / Fast BSS Transission support";
+wpa.nas="NAS Identifier";
 
 var aoss=new Object();
 aoss.titl="AOSS Security";
