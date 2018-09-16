@@ -1103,6 +1103,29 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		}
 	} else if (nvram_match(akm, "disabled")) {
 		addWPS(fp, ifname, 0);
+#ifdef HAVE_WPA3
+	} else if (nvram_match(akm, "owe")) {
+		if (nvram_nmatch("1", "%s_bridged", ifname))
+			fprintf(fp, "bridge=%s\n", getBridge(ifname, tmp));
+		fprintf(fp, "logger_syslog=-1\n");
+		debug = nvram_nget("%s_wpa_debug", ifname);
+		if (debug != NULL) {
+			if (!strcmp(debug, "1"))
+				fprintf(fp, "logger_syslog_level=1\n");
+			else if (!strcmp(debug, "2"))
+				fprintf(fp, "logger_syslog_level=2\n");
+			else if (!strcmp(debug, "3"))
+				fprintf(fp, "logger_syslog_level=0\n");
+		} else
+			fprintf(fp, "logger_syslog_level=2\n");
+		fprintf(fp, "logger_stdout=-1\n");
+		fprintf(fp, "logger_stdout_level=2\n");
+		fprintf(fp, "wpa=2\n");
+		fprintf(fp, "ieee80211w\n");
+		fprintf(fp, "wpa_key_mgmt=OWE\n");
+		fprintf(fp, "rsn_pairwise=CCMP\n");
+		addWPS(fp, ifname, 0);
+#endif
 	} else if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "wpa") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3")) {
 
 		if (!strncmp(ifname, "ath0", 4))
