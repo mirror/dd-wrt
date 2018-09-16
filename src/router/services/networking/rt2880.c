@@ -361,7 +361,7 @@ void start_radius(void)
 		sprintf(type, "%s_radmactype", prefix);
 		char *pragma = "";
 
-		if (nvram_default_match(type, "0", "0"))
+		if (nvram_default_matchi(type, 0, 0))
 			pragma = "-n1 ";
 		if (nvram_matchi(type, 1))
 			pragma = "-n2 ";
@@ -388,7 +388,7 @@ void start_radius(void)
 		sprintf(type, "%s_radmactype", prefix);
 		char *pragma = "";
 
-		if (nvram_default_match(type, "0", "0"))
+		if (nvram_default_matchi(type, 0, 0))
 			pragma = "-n1 ";
 		if (nvram_matchi(type, 1))
 			pragma = "-n2 ";
@@ -998,7 +998,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 	sprintf(gf, "wl%d_greenfield", idx);
 	char nmcs[32];
 	sprintf(nmcs, "wl%d_nmcsidx", idx);
-	if (nvram_default_match(gf, "1", "0"))
+	if (nvram_default_matchi(gf, 1, 0))
 		fprintf(fp, "HT_OpMode=1\n");	// green field mode
 	else
 		fprintf(fp, "HT_OpMode=0\n");
@@ -1198,7 +1198,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		char bridged[32];
 		char *raif = get_wl_instance_name(idx);
 		sprintf(bridged, "%s_bridged", getRADev(dev));
-		if (nvram_default_match(bridged, "1", "1")) {
+		if (nvram_default_matchi(bridged, 1, 1)) {
 			eval("ifconfig", raif, "0.0.0.0", "up");
 			if (nvram_nmatch("infra", "wl%d_mode", idx)) {
 				br_add_interface(getBridge(raif, tmp), raif);
@@ -1275,7 +1275,7 @@ void init_network(int idx)
 		sprintf(apcliif, "apcli%d", idx);
 
 		sprintf(bridged, "%s_bridged", getRADev(dev));
-		if (nvram_default_match(bridged, "1", "1")) {
+		if (nvram_default_matchi(bridged, 1, 1)) {
 			if (getSTA() || getWET()) {
 				eval("ifconfig", raif, "0.0.0.0", "up");
 				eval("ifconfig", apcliif, "0.0.0.0", "up");
@@ -1315,7 +1315,7 @@ void init_network(int idx)
 			foreach(var, vifs, next) {
 
 				sprintf(bridged, "%s_bridged", getRADev(var));
-				if (nvram_default_match(bridged, "1", "1")) {
+				if (nvram_default_matchi(bridged, 1, 1)) {
 					char ra[32];
 
 					sprintf(ra, "ra%d", count + (8 * idx));
