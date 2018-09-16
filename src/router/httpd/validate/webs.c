@@ -812,6 +812,9 @@ _8021xprv
 	copytonv(wp, "%s_domain", prefix);
 	copytonv(wp, "%s_nas", prefix);
 #endif
+#ifdef HAVE_80211W
+	copytonv(wp, "%s_mfp", prefix);
+#endif
 	copytonv(wp, "%s_wpa_gtk_rekey", prefix);
 	copymergetonv(wp, "%s_radius_ipaddr", prefix);
 	copytonv(wp, "%s_radius_port", prefix);
