@@ -4453,7 +4453,7 @@ void show_preshared(webs_t wp, char *prefix)
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "wpa.nas", NULL);
 	sprintf(var, "%s_nas", prefix);
-	websWrite(wp, "<input id=\"%s_nas\" name=\"%s_nas\" maxlength=\"48\" size=\"32\" value=\"%s\"", prefix, prefix, nvram_nget("%s_nas", prefix));
+	websWrite(wp, "<input id=\"%s_nas\" name=\"%s_nas\" maxlength=\"48\" size=\"32\" value=\"%s\" />\n", prefix, prefix, nvram_nget("%s_nas", prefix));
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "wpa.domain", NULL);
