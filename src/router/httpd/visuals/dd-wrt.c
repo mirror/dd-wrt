@@ -4436,6 +4436,20 @@ void show_preshared(webs_t wp, char *prefix)
 		  "<input type=\"checkbox\" name=\"%s_wl_unmask\" value=\"0\" onclick=\"setElementMask('%s_wpa_psk', this.checked)\" >&nbsp;<script type=\"text/javascript\">Capture(share.unmask)</script></input>\n",
 		  prefix, prefix);
 	websWrite(wp, "</div>\n");
+	if (nvram_nmatch("ap", "%s_mode", prefix)
+	    || nvram_nmatch("wdsap", "%s_mode", prefix)) {
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "wpa.rekey", NULL);
+		sprintf(var, "%s_wpa_gtk_rekey", prefix);
+		websWrite(wp, "<input class=\"num\" name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"5\" onblur=\"valid_range(this,0,99999,wpa.rekey)\" value=\"%s\" />\n", prefix, nvram_default_get(var, "3600"));
+		websWrite(wp,
+#ifdef HAVE_BUFFALO
+			  "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 3600, \" + share.range + \": 0 - 99999)\");\n//]]>\n</script></span>\n");
+#else
+			  "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 3600, \" + share.range + \": 1 - 99999)\");\n//]]>\n</script></span>\n");
+#endif
+		websWrite(wp, "</div>\n");
+	}
 #ifdef HAVE_MADWIFI
 #ifdef HAVE_80211R
 	char bssft[64];
@@ -4467,20 +4481,9 @@ void show_preshared(webs_t wp, char *prefix)
 	websWrite(wp, "//]]>\n</script>\n");
 #endif
 #endif
+#ifdef HAVE_MADWIFI
 	if (nvram_nmatch("ap", "%s_mode", prefix)
 	    || nvram_nmatch("wdsap", "%s_mode", prefix)) {
-		websWrite(wp, "<div class=\"setting\">\n");
-		show_caption(wp, "label", "wpa.rekey", NULL);
-		sprintf(var, "%s_wpa_gtk_rekey", prefix);
-		websWrite(wp, "<input class=\"num\" name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"5\" onblur=\"valid_range(this,0,99999,wpa.rekey)\" value=\"%s\" />\n", prefix, nvram_default_get(var, "3600"));
-		websWrite(wp,
-#ifdef HAVE_BUFFALO
-			  "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 3600, \" + share.range + \": 0 - 99999)\");\n//]]>\n</script></span>\n");
-#else
-			  "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 3600, \" + share.range + \": 1 - 99999)\");\n//]]>\n</script></span>\n");
-#endif
-		websWrite(wp, "</div>\n");
-#ifdef HAVE_MADWIFI
 		//only for madwifi, ath9k, ath10k, mwlwifi etc. right now.
 #ifdef HAVE_80211W
 		char mfp[64];
@@ -4491,9 +4494,7 @@ void show_preshared(webs_t wp, char *prefix)
 		char eap_key_retries[64];
 		sprintf(eap_key_retries, "%s_disable_eapol_key_retries", prefix);
 		showRadio(wp, "wpa.eapol_key_retries", eap_key_retries);
-#endif
 	}
-#ifdef HAVE_MADWIFI
 	show_addconfig(wp, prefix);
 #endif
 }
