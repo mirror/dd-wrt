@@ -4493,7 +4493,6 @@ void show_preshared(webs_t wp, char *prefix)
 		showRadio(wp, "wpa.eapol_key_retries", eap_key_retries);
 #endif
 	}
-	websWrite(wp, "</div>\n");
 #ifdef HAVE_MADWIFI
 	show_addconfig(wp, prefix);
 #endif
