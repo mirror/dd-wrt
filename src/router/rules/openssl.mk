@@ -120,7 +120,7 @@ openssl-configure:
 			--prefix=/usr \
 			--openssldir=/etc/ssl \
 			$(COPTS) $(MIPS16_OPT) $(OPENSSL_CMAKEFLAGS) -DNDEBUG -D_GNU_SOURCE \
-			$(TARGET_LDFLAGS) -ldl \
+			$(TARGET_LDFLAGS) -ldl -lrt \
 			$(OPENSSL_NO_CIPHERS) \
 			$(OPENSSL_OPTIONS)
 ifeq ($(ARCH),mips)
