@@ -17,15 +17,15 @@
 
 #ifndef _LANGUAGE_ASSEMBLY
 
-#include <bcmtypedefs.h>
+#include <stdint.h>
 #include <stdio.h>
 
 struct nvram_header {
-	uint32 magic;
-	uint32 len;
-	uint32 crc_ver_init;	/* 0:7 crc, 8:15 ver, 16:27 init, mem. test 28, 29-31 reserved */
-	uint32 config_refresh;	/* 0:15 config, 16:31 refresh */
-	uint32 config_ncdl;	/* ncdl values for memc */
+	uint32_t magic;
+	uint32_t len;
+	uint32_t crc_ver_init;	/* 0:7 crc, 8:15 ver, 16:27 init, mem. test 28, 29-31 reserved */
+	uint32_t config_refresh;	/* 0:15 config, 16:31 refresh */
+	uint32_t config_ncdl;	/* ncdl values for memc */
 };
 
 struct nvram_tuple {
