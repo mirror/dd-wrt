@@ -175,6 +175,7 @@ int CRYPTO_atomic_add(int *val, int amount, int *ret, CRYPTO_RWLOCK *lock)
     return 1;
 }
 
+#ifndef __UCLIBC__
 # ifdef OPENSSL_SYS_UNIX
 static pthread_once_t fork_once_control = PTHREAD_ONCE_INIT;
 
@@ -184,13 +185,15 @@ static void fork_once_func(void)
                    OPENSSL_fork_parent, OPENSSL_fork_child);
 }
 # endif
-
+#endif
 int openssl_init_fork_handlers(void)
 {
+#ifndef __UCLIBC__
 # ifdef OPENSSL_SYS_UNIX
     if (pthread_once(&fork_once_control, fork_once_func) == 0)
         return 1;
 # endif
+#endif
     return 0;
 }
 #endif

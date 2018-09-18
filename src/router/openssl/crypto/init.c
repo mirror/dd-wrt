@@ -755,7 +755,7 @@ int OPENSSL_atexit(void (*handler)(void))
 
     return 1;
 }
-
+#ifndef __UCLIBC__
 #ifdef OPENSSL_SYS_UNIX
 /*
  * The following three functions are for OpenSSL developers.  This is
@@ -780,4 +780,5 @@ void OPENSSL_fork_child(void)
 {
     rand_fork();
 }
+#endif
 #endif
