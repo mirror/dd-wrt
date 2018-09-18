@@ -60,7 +60,6 @@
 // #include <mkfiles.h>
 #include <typedefs.h>
 #include <bcmnvram.h>
-#include <bcmutils.h>
 #include <shutils.h>
 #include <wlutils.h>
 #include <cy_conf.h>

@@ -31,7 +31,6 @@
 #include <wlioctl.h>
 #include <wlutils.h>
 #include <utils.h>
-#include <bcmutils.h>
 
 #define sys_restart() kill(1, SIGHUP)
 

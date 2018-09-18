@@ -82,7 +82,6 @@
 //#include "ledcontrol.h"
 #include <cy_conf.h>
 #include <utils.h>
-#include <bcmutils.h>
 #include <nvparse.h>
 #include <etsockio.h>
 #include <bcmparams.h>

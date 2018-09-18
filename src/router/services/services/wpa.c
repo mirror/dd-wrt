@@ -36,7 +36,6 @@
 #include <utils.h>
 #include <syslog.h>
 #include <wlutils.h>
-#include <bcmutils.h>
 #include <services.h>
 
 void start_nas_notify(char *ifname)
