@@ -32,7 +32,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <malloc.h>
-#include <typedefs.h>
+#include <bcmtypedefs.h>
 #include <bcmnvram.h>
 #include <nvram_convert.h>
 
