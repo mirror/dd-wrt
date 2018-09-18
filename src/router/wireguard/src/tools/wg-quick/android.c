@@ -7,6 +7,7 @@
  */
 
 #define _GNU_SOURCE
+#include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -24,8 +25,11 @@
 #include <sys/wait.h>
 #include <sys/param.h>
 
+#ifndef WG_PACKAGE_NAME
+#define WG_PACKAGE_NAME "com.wireguard.android"
+#endif
 #ifndef WG_CONFIG_SEARCH_PATHS
-#define WG_CONFIG_SEARCH_PATHS "/data/misc/wireguard /data/data/com.wireguard.android/files"
+#define WG_CONFIG_SEARCH_PATHS "/data/misc/wireguard /data/data/" WG_PACKAGE_NAME "/files"
 #endif
 
 #define _printf_(x, y) __attribute__((format(printf, x, y)))
@@ -33,15 +37,6 @@
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(x[0]))
 
 static bool is_exiting = false;
-
-/* TODO: remove this once the NDK supports it. */
-static char *strchrnul(const char *s, int c)
-{
-	char *x = strchr(s, c);
-	if (!x)
-		return (char *)s + strlen(s);
-	return x;
-}
 
 static void *xmalloc(size_t size)
 {
@@ -598,8 +593,8 @@ static void broadcast_change(void)
 {
 	const char *pkg = getenv("CALLING_PACKAGE");
 
-	if (!pkg || strcmp(pkg, "com.wireguard.android"))
-		cmd("am broadcast -a com.wireguard.android.action.REFRESH_TUNNEL_STATES com.wireguard.android");
+	if (!pkg || strcmp(pkg, WG_PACKAGE_NAME))
+		cmd("am broadcast -a com.wireguard.android.action.REFRESH_TUNNEL_STATES " WG_PACKAGE_NAME);
 }
 
 static void print_search_paths(FILE *file, const char *prefix)

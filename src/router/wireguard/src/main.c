@@ -9,12 +9,8 @@
 #include "queueing.h"
 #include "ratelimiter.h"
 #include "netlink.h"
-#include "crypto/chacha20poly1305.h"
-#include "crypto/chacha20.h"
-#include "crypto/poly1305.h"
-#include "crypto/blake2s.h"
-#include "crypto/curve25519.h"
 #include "uapi/wireguard.h"
+#include "crypto/zinc.h"
 
 #include <linux/version.h>
 #include <linux/init.h>
@@ -26,12 +22,14 @@ static int __init mod_init(void)
 {
 	int ret;
 
-	chacha20_fpu_init();
-	poly1305_fpu_init();
-	blake2s_fpu_init();
-	curve25519_fpu_init();
+	if ((ret = chacha20_mod_init()) || (ret = poly1305_mod_init()) ||
+	    (ret = chacha20poly1305_mod_init()) || (ret = blake2s_mod_init()) ||
+	    (ret = curve25519_mod_init()))
+		return ret;
+
 #ifdef DEBUG
-	if (!allowedips_selftest() || !packet_counter_selftest() || !curve25519_selftest() || !poly1305_selftest() || !chacha20poly1305_selftest() || !blake2s_selftest() || !ratelimiter_selftest())
+	if (!allowedips_selftest() || !packet_counter_selftest() ||
+	    !ratelimiter_selftest())
 		return -ENOTRECOVERABLE;
 #endif
 	noise_init();
