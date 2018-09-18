@@ -40,7 +40,6 @@
 #include <bcmnvram.h>
 #include <wlutils.h>
 #include <utils.h>
-#include <bcmutils.h>
 #include <shutils.h>
 #include <utils.h>
 #include <unistd.h>
