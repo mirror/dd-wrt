@@ -40,7 +40,6 @@
 #include <proto/ethernet.h>
 #include <shutils.h>
 #include <bcmnvram.h>
-#include <bcmutils.h>
 #include <rc.h>
 #include <cy_conf.h>
 #include <utils.h>

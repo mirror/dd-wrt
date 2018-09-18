@@ -25,7 +25,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <bcmnvram.h>
-#include <bcmutils.h>
 #include <shutils.h>
 #include <libbridge.h>
 #include <net/if.h>
