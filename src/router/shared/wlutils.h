@@ -399,4 +399,11 @@ extern int wl_bssiovar_setint(char *ifname, char *iovar, int bssidx, int val);
 
 int wl_getbssid(char *wl, char *mac);
 
+/* tag_ID/length/value_buffer tuple */
+typedef struct bcm_tlv {
+	uint8_t	id;
+	uint8_t	len;
+	uint8_t	data[1];
+} bcm_tlv_t;
+
 #endif				/* _wlutils_h_ */
