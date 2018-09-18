@@ -318,12 +318,12 @@ typedef struct tor_mmap_t {
   size_t size; /**< Size of the file. */
 
   /* None of the fields below should be accessed from outside compat.c */
-#ifdef HAVE_SYS_MMAN_H
+#ifdef HAVE_MMAP
   size_t mapping_size; /**< Size of the actual mapping. (This is this file
                         * size, rounded up to the nearest page.) */
 #elif defined _WIN32
   HANDLE mmap_handle;
-#endif /* defined(HAVE_SYS_MMAN_H) || ... */
+#endif /* defined(HAVE_MMAP) || ... */
 
 } tor_mmap_t;
 
@@ -510,6 +510,8 @@ int get_n_open_sockets(void);
 MOCK_DECL(int,
 tor_getsockname,(tor_socket_t socket, struct sockaddr *address,
                  socklen_t *address_len));
+struct tor_addr_t;
+int tor_addr_from_getsockname(struct tor_addr_t *addr_out, tor_socket_t sock);
 
 #define tor_socket_send(s, buf, len, flags) send(s, buf, len, flags)
 #define tor_socket_recv(s, buf, len, flags) recv(s, buf, len, flags)

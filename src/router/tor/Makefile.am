@@ -26,8 +26,9 @@ TESTING_TOR_BINARY=$(top_builddir)/src/or/tor$(EXEEXT)
 endif
 
 if USE_RUST
-rust_ldadd=$(top_builddir)/src/rust/target/release/@TOR_RUST_STATIC_NAME@ \
-	@TOR_RUST_EXTRA_LIBS@
+## this MUST be $(), otherwise am__DEPENDENCIES will not track it
+rust_ldadd=$(top_builddir)/$(TOR_RUST_LIB_PATH) \
+	$(TOR_RUST_EXTRA_LIBS)
 else
 rust_ldadd=
 endif
@@ -38,6 +39,7 @@ include contrib/include.am
 
 EXTRA_DIST+= \
 	ChangeLog					\
+	CONTRIBUTING					\
 	INSTALL						\
 	LICENSE						\
 	Makefile.nmake					\
@@ -51,14 +53,14 @@ AM_ETAGSFLAGS=--regex='{c}/MOCK_IMPL([^,]+,\W*\([a-zA-Z0-9_]+\)\W*,/\1/s'
 if COVERAGE_ENABLED
 TEST_CFLAGS=-fno-inline -fprofile-arcs -ftest-coverage
 if DISABLE_ASSERTS_IN_UNIT_TESTS
-TEST_CPPFLAGS=-DTOR_UNIT_TESTS -DTOR_COVERAGE -DDISABLE_ASSERTS_IN_UNIT_TESTS
+TEST_CPPFLAGS=-DTOR_UNIT_TESTS -DTOR_COVERAGE -DDISABLE_ASSERTS_IN_UNIT_TESTS @TOR_MODULES_ALL_ENABLED@
 else
-TEST_CPPFLAGS=-DTOR_UNIT_TESTS -DTOR_COVERAGE
+TEST_CPPFLAGS=-DTOR_UNIT_TESTS -DTOR_COVERAGE @TOR_MODULES_ALL_ENABLED@
 endif
 TEST_NETWORK_FLAGS=--coverage --hs-multi-client 1
 else
 TEST_CFLAGS=
-TEST_CPPFLAGS=-DTOR_UNIT_TESTS
+TEST_CPPFLAGS=-DTOR_UNIT_TESTS @TOR_MODULES_ALL_ENABLED@
 TEST_NETWORK_FLAGS=--hs-multi-client 1
 endif
 TEST_NETWORK_WARNING_FLAGS=--quiet --only-warnings
@@ -125,6 +127,7 @@ test-network: need-chutney-path $(TESTING_TOR_BINARY) src/tools/tor-gencert
 # because they're incompatible
 test-network-all: need-chutney-path test-driver $(TESTING_TOR_BINARY) src/tools/tor-gencert
 	mkdir -p $(TEST_NETWORK_ALL_LOG_DIR)
+	rm -f $(TEST_NETWORK_ALL_LOG_DIR)/*.log $(TEST_NETWORK_ALL_LOG_DIR)/*.trs
 	@flavors="$(TEST_CHUTNEY_FLAVORS)"; \
 	if ping6 -q -c 1 -o ::1 >/dev/null 2>&1 || ping6 -q -c 1 -W 1 ::1 >/dev/null 2>&1 || ping -6 -c 1 -W 1 ::1 >/dev/null 2>&1; then \
 		echo "ping6 ::1 or ping ::1 succeeded, running IPv6 flavors: $(TEST_CHUTNEY_FLAVORS_IPV6)."; \
@@ -148,7 +151,7 @@ test-network-all: need-chutney-path test-driver $(TESTING_TOR_BINARY) src/tools/
 		$(top_srcdir)/src/test/test-network.sh $(TEST_NETWORK_WARNING_FLAGS); \
 	done; \
 	echo "Log and result files are available in $(TEST_NETWORK_ALL_LOG_DIR)."; \
-	! grep -q FAIL test_network_log/*.trs
+	! grep -q FAIL $(TEST_NETWORK_ALL_LOG_DIR)/*.trs
 
 need-stem-path:
 	@if test ! -d "$$STEM_SOURCE_DIR"; then \
@@ -216,6 +219,26 @@ check-docs: all
 check-logs:
 	$(top_srcdir)/scripts/maint/checkLogs.pl \
 		$(top_srcdir)/src/*/*.[ch] | sort -n
+
+.PHONY: check-typos
+check-typos:
+	@if test -x "`which misspell 2>&1;true`"; then \
+		echo "Checking for Typos ..."; \
+		(misspell \
+			$(top_srcdir)/src/[^e]*/*.[ch] \
+			$(top_srcdir)/doc \
+			$(top_srcdir)/contrib \
+			$(top_srcdir)/scripts \
+			$(top_srcdir)/README \
+			$(top_srcdir)/ChangeLog \
+			$(top_srcdir)/INSTALL \
+			$(top_srcdir)/ReleaseNotes \
+			$(top_srcdir)/LICENSE); \
+	else \
+		echo "Tor can use misspell to check for typos."; \
+		echo "It seems that you don't have misspell installed."; \
+		echo "You can install the latest version of misspell here: https://github.com/client9/misspell#install"; \
+	fi
 
 .PHONY: check-changes
 check-changes:

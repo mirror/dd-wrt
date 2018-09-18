@@ -1,3 +1,4 @@
+
 /* Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
  * Copyright (c) 2007-2017, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
@@ -52,6 +53,8 @@
 #include "connection_edge.h"
 #include "connection_or.h"
 #include "control.h"
+#include "crypto_rand.h"
+#include "crypto_util.h"
 #include "directory.h"
 #include "dirserv.h"
 #include "dnsserv.h"
@@ -76,14 +79,12 @@
 #include "router.h"
 #include "routerlist.h"
 #include "routerparse.h"
-#include "shared_random.h"
+#include "shared_random_client.h"
 
 #ifndef _WIN32
 #include <pwd.h>
 #include <sys/resource.h>
 #endif
-
-#include <event2/event.h>
 
 #include "crypto_s2k.h"
 #include "procmon.h"
@@ -111,6 +112,10 @@ static int disable_log_messages = 0;
  * <b>e</b>. */
 #define EVENT_IS_INTERESTING(e) \
   (!! (global_event_mask & EVENT_MASK_(e)))
+
+/** Macro: true if any event from the bitfield 'e' is interesting. */
+#define ANY_EVENT_IS_INTERESTING(e) \
+  (!! (global_event_mask & (e)))
 
 /** If we're using cookie-type authentication, how long should our cookies be?
  */
@@ -216,9 +221,10 @@ static void orconn_target_get_name(char *buf, size_t len,
 static int get_cached_network_liveness(void);
 static void set_cached_network_liveness(int liveness);
 
-static void flush_queued_events_cb(evutil_socket_t fd, short what, void *arg);
+static void flush_queued_events_cb(mainloop_event_t *event, void *arg);
 
 static char * download_status_to_string(const download_status_t *dl);
+static void control_get_bytes_rw_last_sec(uint64_t *r, uint64_t *w);
 
 /** Given a control event code for a message event, return the corresponding
  * log severity. */
@@ -259,6 +265,8 @@ clear_circ_bw_fields(void)
       continue;
     ocirc = TO_ORIGIN_CIRCUIT(circ);
     ocirc->n_written_circ_bw = ocirc->n_read_circ_bw = 0;
+    ocirc->n_overhead_written_circ_bw = ocirc->n_overhead_read_circ_bw = 0;
+    ocirc->n_delivered_written_circ_bw = ocirc->n_delivered_read_circ_bw = 0;
   }
   SMARTLIST_FOREACH_END(circ);
 }
@@ -271,6 +279,7 @@ control_update_global_event_mask(void)
   smartlist_t *conns = get_connection_array();
   event_mask_t old_mask, new_mask;
   old_mask = global_event_mask;
+  int any_old_per_sec_events = control_any_per_second_event_enabled();
 
   global_event_mask = 0;
   SMARTLIST_FOREACH(conns, connection_t *, _conn,
@@ -288,10 +297,13 @@ control_update_global_event_mask(void)
    * we want to hear...*/
   control_adjust_event_log_severity();
 
+  /* Macro: true if ev was false before and is true now. */
+#define NEWLY_ENABLED(ev) \
+  (! (old_mask & (ev)) && (new_mask & (ev)))
+
   /* ...then, if we've started logging stream or circ bw, clear the
    * appropriate fields. */
-  if (! (old_mask & EVENT_STREAM_BANDWIDTH_USED) &&
-      (new_mask & EVENT_STREAM_BANDWIDTH_USED)) {
+  if (NEWLY_ENABLED(EVENT_STREAM_BANDWIDTH_USED)) {
     SMARTLIST_FOREACH(conns, connection_t *, conn,
     {
       if (conn->type == CONN_TYPE_AP) {
@@ -300,10 +312,18 @@ control_update_global_event_mask(void)
       }
     });
   }
-  if (! (old_mask & EVENT_CIRC_BANDWIDTH_USED) &&
-      (new_mask & EVENT_CIRC_BANDWIDTH_USED)) {
+  if (NEWLY_ENABLED(EVENT_CIRC_BANDWIDTH_USED)) {
     clear_circ_bw_fields();
   }
+  if (NEWLY_ENABLED(EVENT_BANDWIDTH_USED)) {
+    uint64_t r, w;
+    control_get_bytes_rw_last_sec(&r, &w);
+  }
+  if (any_old_per_sec_events != control_any_per_second_event_enabled()) {
+    reschedule_per_second_timer();
+  }
+
+#undef NEWLY_ENABLED
 }
 
 /** Adjust the log severities that result in control_event_logmsg being called
@@ -350,6 +370,65 @@ int
 control_event_is_interesting(int event)
 {
   return EVENT_IS_INTERESTING(event);
+}
+
+/** Return true if any event that needs to fire once a second is enabled. */
+int
+control_any_per_second_event_enabled(void)
+{
+  return ANY_EVENT_IS_INTERESTING(
+      EVENT_MASK_(EVENT_BANDWIDTH_USED) |
+      EVENT_MASK_(EVENT_CELL_STATS) |
+      EVENT_MASK_(EVENT_CIRC_BANDWIDTH_USED) |
+      EVENT_MASK_(EVENT_CONN_BW) |
+      EVENT_MASK_(EVENT_STREAM_BANDWIDTH_USED)
+  );
+}
+
+/* The value of 'get_bytes_read()' the previous time that
+ * control_get_bytes_rw_last_sec() as called. */
+static uint64_t stats_prev_n_read = 0;
+/* The value of 'get_bytes_written()' the previous time that
+ * control_get_bytes_rw_last_sec() as called. */
+static uint64_t stats_prev_n_written = 0;
+
+/**
+ * Set <b>n_read</b> and <b>n_written</b> to the total number of bytes read
+ * and written by Tor since the last call to this function.
+ *
+ * Call this only from the main thread.
+ */
+static void
+control_get_bytes_rw_last_sec(uint64_t *n_read,
+                              uint64_t *n_written)
+{
+  const uint64_t stats_n_bytes_read = get_bytes_read();
+  const uint64_t stats_n_bytes_written = get_bytes_written();
+
+  *n_read = stats_n_bytes_read - stats_prev_n_read;
+  *n_written = stats_n_bytes_written - stats_prev_n_written;
+  stats_prev_n_read = stats_n_bytes_read;
+  stats_prev_n_written = stats_n_bytes_written;
+}
+
+/**
+ * Run all the controller events (if any) that are scheduled to trigger once
+ * per second.
+ */
+void
+control_per_second_events(void)
+{
+  if (!control_any_per_second_event_enabled())
+    return;
+
+  uint64_t bytes_read, bytes_written;
+  control_get_bytes_rw_last_sec(&bytes_read, &bytes_written);
+  control_event_bandwidth_used((uint32_t)bytes_read,(uint32_t)bytes_written);
+
+  control_event_stream_bandwidth_used();
+  control_event_conn_bandwidth_used();
+  control_event_circ_bandwidth_used();
+  control_event_circuit_cell_stats();
 }
 
 /** Append a NUL-terminated string <b>s</b> to the end of
@@ -691,7 +770,7 @@ static tor_mutex_t *queued_control_events_lock = NULL;
 
 /** An event that should fire in order to flush the contents of
  * queued_control_events. */
-static struct event *flush_queued_events_event = NULL;
+static mainloop_event_t *flush_queued_events_event = NULL;
 
 void
 control_initialize_event_queue(void)
@@ -703,9 +782,8 @@ control_initialize_event_queue(void)
   if (flush_queued_events_event == NULL) {
     struct event_base *b = tor_libevent_get_base();
     if (b) {
-      flush_queued_events_event = tor_event_new(b,
-                                              -1, 0, flush_queued_events_cb,
-                                              NULL);
+      flush_queued_events_event =
+        mainloop_event_new(flush_queued_events_cb, NULL);
       tor_assert(flush_queued_events_event);
     }
   }
@@ -781,7 +859,7 @@ queue_control_event_string,(uint16_t event, char *msg))
    */
   if (activate_event) {
     tor_assert(flush_queued_events_event);
-    event_active(flush_queued_events_event, EV_READ, 1);
+    mainloop_event_activate(flush_queued_events_event);
   }
 }
 
@@ -806,6 +884,9 @@ queued_event_free_(queued_event_t *ev)
 static void
 queued_events_flush_all(int force)
 {
+  /* Make sure that we get all the pending log events, if there are any. */
+  flush_pending_log_callbacks();
+
   if (PREDICT_UNLIKELY(queued_control_events == NULL)) {
     return;
   }
@@ -863,10 +944,9 @@ queued_events_flush_all(int force)
 /** Libevent callback: Flushes pending events to controllers that are
  * interested in them. */
 static void
-flush_queued_events_cb(evutil_socket_t fd, short what, void *arg)
+flush_queued_events_cb(mainloop_event_t *event, void *arg)
 {
-  (void) fd;
-  (void) what;
+  (void) event;
   (void) arg;
   queued_events_flush_all(0);
 }
@@ -1218,7 +1298,6 @@ static const struct control_event_t control_event_table[] = {
   { EVENT_CONF_CHANGED, "CONF_CHANGED"},
   { EVENT_CONN_BW, "CONN_BW" },
   { EVENT_CELL_STATS, "CELL_STATS" },
-  { EVENT_TB_EMPTY, "TB_EMPTY" },
   { EVENT_CIRC_BANDWIDTH_USED, "CIRC_BW" },
   { EVENT_TRANSPORT_LAUNCHED, "TRANSPORT_LAUNCHED" },
   { EVENT_HS_DESC, "HS_DESC" },
@@ -1784,24 +1863,24 @@ getinfo_helper_misc(control_connection_t *conn, const char *question,
   } else if (!strcmp(question, "process/pid")) {
     int myPid = -1;
 
-    #ifdef _WIN32
+#ifdef _WIN32
       myPid = _getpid();
-    #else
+#else
       myPid = getpid();
-    #endif
+#endif
 
     tor_asprintf(answer, "%d", myPid);
   } else if (!strcmp(question, "process/uid")) {
-    #ifdef _WIN32
+#ifdef _WIN32
       *answer = tor_strdup("-1");
-    #else
+#else
       int myUid = geteuid();
       tor_asprintf(answer, "%d", myUid);
 #endif /* defined(_WIN32) */
   } else if (!strcmp(question, "process/user")) {
-    #ifdef _WIN32
+#ifdef _WIN32
       *answer = tor_strdup("");
-    #else
+#else
       int myUid = geteuid();
       const struct passwd *myPwEntry = tor_getpwuid(myUid);
 
@@ -1896,6 +1975,8 @@ getinfo_helper_listeners(control_connection_t *control_conn,
 
   if (!strcmp(question, "net/listeners/or"))
     type = CONN_TYPE_OR_LISTENER;
+  else if (!strcmp(question, "net/listeners/extor"))
+    type = CONN_TYPE_EXT_OR_LISTENER;
   else if (!strcmp(question, "net/listeners/dir"))
     type = CONN_TYPE_DIR_LISTENER;
   else if (!strcmp(question, "net/listeners/socks"))
@@ -1904,6 +1985,8 @@ getinfo_helper_listeners(control_connection_t *control_conn,
     type = CONN_TYPE_AP_TRANS_LISTENER;
   else if (!strcmp(question, "net/listeners/natd"))
     type = CONN_TYPE_AP_NATD_LISTENER;
+  else if (!strcmp(question, "net/listeners/httptunnel"))
+    type = CONN_TYPE_AP_HTTP_CONNECT_LISTENER;
   else if (!strcmp(question, "net/listeners/dns"))
     type = CONN_TYPE_AP_DNS_LISTENER;
   else if (!strcmp(question, "net/listeners/control"))
@@ -1933,6 +2016,31 @@ getinfo_helper_listeners(control_connection_t *control_conn,
 
   SMARTLIST_FOREACH(res, char *, cp, tor_free(cp));
   smartlist_free(res);
+  return 0;
+}
+
+/** Implementation helper for GETINFO: answers requests for information about
+ * the current time in both local and UTF forms. */
+STATIC int
+getinfo_helper_current_time(control_connection_t *control_conn,
+                         const char *question,
+                         char **answer, const char **errmsg)
+{
+  (void)control_conn;
+  (void)errmsg;
+
+  struct timeval now;
+  tor_gettimeofday(&now);
+  char timebuf[ISO_TIME_LEN+1];
+
+  if (!strcmp(question, "current-time/local"))
+    format_local_iso_time_nospace(timebuf, (time_t)now.tv_sec);
+  else if (!strcmp(question, "current-time/utc"))
+    format_iso_time_nospace(timebuf, (time_t)now.tv_sec);
+  else
+    return 0;
+
+  *answer = tor_strdup(timebuf);
   return 0;
 }
 
@@ -3078,6 +3186,9 @@ static const getinfo_item_t getinfo_items[] = {
   DOC("config/defaults",
       "List of default values for configuration options. "
       "See also config/names"),
+  PREFIX("current-time/", current_time, "Current time."),
+  DOC("current-time/local", "Current time on the local system."),
+  DOC("current-time/utc", "Current UTC time."),
   PREFIX("downloads/networkstatus/", downloads,
          "Download statuses for networkstatus objects"),
   DOC("downloads/networkstatus/ns",
@@ -4495,7 +4606,7 @@ handle_control_add_onion(control_connection_t *conn,
                          const char *body)
 {
   smartlist_t *args;
-  size_t arg_len;
+  int arg_len;
   (void) len; /* body is nul-terminated; it's safe to ignore the length */
   args = getargs_helper("ADD_ONION", conn, body, 2, -1);
   if (!args)
@@ -4516,7 +4627,7 @@ handle_control_add_onion(control_connection_t *conn,
   rend_auth_type_t auth_type = REND_NO_AUTH;
   /* Default to adding an anonymous hidden service if no flag is given */
   int non_anonymous = 0;
-  for (size_t i = 1; i < arg_len; i++) {
+  for (int i = 1; i < arg_len; i++) {
     static const char *port_prefix = "Port=";
     static const char *flags_prefix = "Flags=";
     static const char *max_s_prefix = "MaxStreams=";
@@ -5813,8 +5924,6 @@ control_event_or_conn_status(or_connection_t *conn, or_conn_status_event_t tp,
 int
 control_event_stream_bandwidth(edge_connection_t *edge_conn)
 {
-  circuit_t *circ;
-  origin_circuit_t *ocirc;
   struct timeval now;
   char tbuf[ISO_TIME_USEC_LEN+1];
   if (EVENT_IS_INTERESTING(EVENT_STREAM_BANDWIDTH_USED)) {
@@ -5830,12 +5939,6 @@ control_event_stream_bandwidth(edge_connection_t *edge_conn)
                        (unsigned long)edge_conn->n_written,
                        tbuf);
 
-    circ = circuit_get_by_edge_conn(edge_conn);
-    if (circ && CIRCUIT_IS_ORIGIN(circ)) {
-      ocirc = TO_ORIGIN_CIRCUIT(circ);
-      ocirc->n_read_circ_bw += edge_conn->n_read;
-      ocirc->n_written_circ_bw += edge_conn->n_written;
-    }
     edge_conn->n_written = edge_conn->n_read = 0;
   }
 
@@ -5898,13 +6001,20 @@ control_event_circ_bandwidth_used(void)
     tor_gettimeofday(&now);
     format_iso_time_nospace_usec(tbuf, &now);
     send_control_event(EVENT_CIRC_BANDWIDTH_USED,
-                       "650 CIRC_BW ID=%d READ=%lu WRITTEN=%lu "
-                       "TIME=%s\r\n",
+                       "650 CIRC_BW ID=%d READ=%lu WRITTEN=%lu TIME=%s "
+                       "DELIVERED_READ=%lu OVERHEAD_READ=%lu "
+                       "DELIVERED_WRITTEN=%lu OVERHEAD_WRITTEN=%lu\r\n",
                        ocirc->global_identifier,
                        (unsigned long)ocirc->n_read_circ_bw,
                        (unsigned long)ocirc->n_written_circ_bw,
-                       tbuf);
+                       tbuf,
+                       (unsigned long)ocirc->n_delivered_read_circ_bw,
+                       (unsigned long)ocirc->n_overhead_read_circ_bw,
+                       (unsigned long)ocirc->n_delivered_written_circ_bw,
+                       (unsigned long)ocirc->n_overhead_written_circ_bw);
     ocirc->n_written_circ_bw = ocirc->n_read_circ_bw = 0;
+    ocirc->n_overhead_written_circ_bw = ocirc->n_overhead_read_circ_bw = 0;
+    ocirc->n_delivered_written_circ_bw = ocirc->n_delivered_read_circ_bw = 0;
   }
   SMARTLIST_FOREACH_END(circ);
 
@@ -6089,28 +6199,6 @@ control_event_circuit_cell_stats(void)
   return 0;
 }
 
-/** Tokens in <b>bucket</b> have been refilled: the read bucket was empty
- * for <b>read_empty_time</b> millis, the write bucket was empty for
- * <b>write_empty_time</b> millis, and buckets were last refilled
- * <b>milliseconds_elapsed</b> millis ago.  Only emit TB_EMPTY event if
- * either read or write bucket have been empty before. */
-int
-control_event_tb_empty(const char *bucket, uint32_t read_empty_time,
-                       uint32_t write_empty_time,
-                       int milliseconds_elapsed)
-{
-  if (get_options()->TestingEnableTbEmptyEvent &&
-      EVENT_IS_INTERESTING(EVENT_TB_EMPTY) &&
-      (read_empty_time > 0 || write_empty_time > 0)) {
-    send_control_event(EVENT_TB_EMPTY,
-                       "650 TB_EMPTY %s READ=%d WRITTEN=%d "
-                       "LAST=%d\r\n",
-                       bucket, read_empty_time, write_empty_time,
-                       milliseconds_elapsed);
-  }
-  return 0;
-}
-
 /* about 5 minutes worth. */
 #define N_BW_EVENTS_TO_CACHE 300
 /* Index into cached_bw_events to next write. */
@@ -6198,7 +6286,7 @@ control_event_logmsg(int severity, uint32_t domain, const char *msg)
   int event;
 
   /* Don't even think of trying to add stuff to a buffer from a cpuworker
-   * thread. */
+   * thread. (See #25987 for plan to fix.) */
   if (! in_main_thread())
     return;
 
@@ -6242,6 +6330,23 @@ control_event_logmsg(int severity, uint32_t domain, const char *msg)
     --disable_log_messages;
     tor_free(b);
   }
+}
+
+/**
+ * Logging callback: called when there is a queued pending log callback.
+ */
+void
+control_event_logmsg_pending(void)
+{
+  if (! in_main_thread()) {
+    /* We can't handle this case yet, since we're using a
+     * mainloop_event_t to invoke queued_events_flush_all.  We ought to
+     * use a different mechanism instead: see #25987.
+     **/
+    return;
+  }
+  tor_assert(flush_queued_events_event);
+  mainloop_event_activate(flush_queued_events_event);
 }
 
 /** Called whenever we receive new router descriptors: tell any
@@ -7025,6 +7130,8 @@ control_event_bootstrap_problem(const char *warn, const char *reason,
   if (bootstrap_problems >= BOOTSTRAP_PROBLEM_THRESHOLD)
     dowarn = 1;
 
+  /* Don't warn about our bootstrapping status if we are hibernating or
+   * shutting down. */
   if (we_are_hibernating())
     dowarn = 0;
 
@@ -7594,20 +7701,31 @@ control_event_hs_descriptor_upload_failed(const char *id_digest,
 void
 control_free_all(void)
 {
+  smartlist_t *queued_events = NULL;
+
+  stats_prev_n_read = stats_prev_n_written = 0;
+
   if (authentication_cookie) /* Free the auth cookie */
     tor_free(authentication_cookie);
   if (detached_onion_services) { /* Free the detached onion services */
     SMARTLIST_FOREACH(detached_onion_services, char *, cp, tor_free(cp));
     smartlist_free(detached_onion_services);
   }
-  if (queued_control_events) {
-    SMARTLIST_FOREACH(queued_control_events, queued_event_t *, ev,
-                      queued_event_free(ev));
-    smartlist_free(queued_control_events);
+
+  if (queued_control_events_lock) {
+    tor_mutex_acquire(queued_control_events_lock);
+    flush_queued_event_pending = 0;
+    queued_events = queued_control_events;
     queued_control_events = NULL;
+    tor_mutex_release(queued_control_events_lock);
+  }
+  if (queued_events) {
+    SMARTLIST_FOREACH(queued_events, queued_event_t *, ev,
+                      queued_event_free(ev));
+    smartlist_free(queued_events);
   }
   if (flush_queued_events_event) {
-    tor_event_free(flush_queued_events_event);
+    mainloop_event_free(flush_queued_events_event);
     flush_queued_events_event = NULL;
   }
   bootstrap_percent = BOOTSTRAP_STATUS_UNDEF;
@@ -7617,7 +7735,6 @@ control_free_all(void)
   global_event_mask = 0;
   disable_log_messages = 0;
   memset(last_sent_bootstrap_message, 0, sizeof(last_sent_bootstrap_message));
-  flush_queued_event_pending = 0;
 }
 
 #ifdef TOR_UNIT_TESTS
@@ -7628,3 +7745,4 @@ control_testing_set_global_event_mask(uint64_t mask)
   global_event_mask = mask;
 }
 #endif /* defined(TOR_UNIT_TESTS) */
+

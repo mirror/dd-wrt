@@ -69,6 +69,7 @@
 #include "circuitmux.h"
 #include "entrynodes.h"
 #include "geoip.h"
+#include "main.h"
 #include "nodelist.h"
 #include "relay.h"
 #include "rephist.h"
@@ -404,6 +405,7 @@ channel_register(channel_t *chan)
     /* Put it in the finished list, creating it if necessary */
     if (!finished_channels) finished_channels = smartlist_new();
     smartlist_add(finished_channels, chan);
+    mainloop_schedule_postloop_cleanup();
   } else {
     /* Put it in the active list, creating it if necessary */
     if (!active_channels) active_channels = smartlist_new();
@@ -1548,6 +1550,7 @@ channel_change_state_(channel_t *chan, channel_state_t to_state)
       if (active_channels) smartlist_remove(active_channels, chan);
       if (!finished_channels) finished_channels = smartlist_new();
       smartlist_add(finished_channels, chan);
+      mainloop_schedule_postloop_cleanup();
     }
     /* Need to put on active list? */
     else if (!was_active && is_active) {
@@ -1666,6 +1669,7 @@ channel_listener_change_state(channel_listener_t *chan_l,
       if (active_listeners) smartlist_remove(active_listeners, chan_l);
       if (!finished_listeners) finished_listeners = smartlist_new();
       smartlist_add(finished_listeners, chan_l);
+      mainloop_schedule_postloop_cleanup();
     }
     /* Need to put on active list? */
     else if (!was_active && is_active) {
@@ -2109,21 +2113,6 @@ channel_listener_dumpstats(int severity)
 }
 
 /**
- * Set the cmux policy on all active channels.
- */
-void
-channel_set_cmux_policy_everywhere(circuitmux_policy_t *pol)
-{
-  if (!active_channels) return;
-
-  SMARTLIST_FOREACH_BEGIN(active_channels, channel_t *, curr) {
-    if (curr->cmux) {
-      circuitmux_set_policy(curr->cmux, pol);
-    }
-  } SMARTLIST_FOREACH_END(curr);
-}
-
-/**
  * Clean up channels.
  *
  * This gets called periodically from run_scheduled_events() in main.c;
@@ -2402,7 +2391,7 @@ channel_get_for_extend(const char *rsa_id_digest,
 {
   channel_t *chan, *best = NULL;
   int n_inprogress_goodaddr = 0, n_old = 0;
-  int n_noncanonical = 0, n_possible = 0;
+  int n_noncanonical = 0;
 
   tor_assert(msg_out);
   tor_assert(launch_out);
@@ -2464,8 +2453,6 @@ channel_get_for_extend(const char *rsa_id_digest,
       ++n_noncanonical;
       continue;
     }
-
-    ++n_possible;
 
     if (!best) {
       best = chan; /* If we have no 'best' so far, this one is good enough. */

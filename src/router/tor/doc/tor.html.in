@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 8.6.9" />
+<meta name="generator" content="AsciiDoc 8.6.8" />
 <title>TOR(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -94,9 +94,7 @@ ul > li > * { color: black; }
   padding: 0;
   margin: 0;
 }
-pre {
-  white-space: pre-wrap;
-}
+
 
 #author {
   color: #527bbd;
@@ -225,7 +223,7 @@ div.exampleblock > div.content {
 }
 
 div.imageblock div.content { padding-left: 0; }
-span.image img { border-style: none; vertical-align: text-bottom; }
+span.image img { border-style: none; }
 a.image:visited { color: white; }
 
 dl {
@@ -1217,7 +1215,9 @@ forward slash (/) in the configuration file and on the command line.</p></div>
     other than controller connections, and we close (and don&#8217;t reattempt)
     any outbound
     connections.  Controllers sometimes use this option to avoid using
-    the network until Tor is fully configured. (Default: 0)
+    the network until Tor is fully configured.  Tor will make still certain
+    network-related calls (like DNS lookups) as a part of its configuration
+    process, even if DisableNetwork is set. (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1312,7 +1312,8 @@ forward slash (/) in the configuration file and on the command line.</p></div>
 <dd>
 <p>
     Like ControlPort, but listens on a Unix domain socket, rather than a TCP
-    socket. <em>0</em> disables ControlSocket (Unix and Unix-like systems only.)
+    socket. <em>0</em> disables ControlSocket. (Unix and Unix-like systems only.)
+    (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -2012,20 +2013,18 @@ forward slash (/) in the configuration file and on the command line.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="CircuitPriorityHalflife"></a> <strong>CircuitPriorityHalflife</strong> <em>NUM1</em>
+<a id="CircuitPriorityHalflife"></a> <strong>CircuitPriorityHalflife</strong> <em>NUM</em>
 </dt>
 <dd>
 <p>
     If this value is set, we override the default algorithm for choosing which
-    circuit&#8217;s cell to deliver or relay next. When the value is 0, we
-    round-robin between the active circuits on a connection, delivering one
-    cell from each in turn. When the value is positive, we prefer delivering
-    cells from whichever connection has the lowest weighted cell count, where
-    cells are weighted exponentially according to the supplied
-    CircuitPriorityHalflife value (in seconds). If this option is not set at
-    all, we use the behavior recommended in the current consensus
-    networkstatus. This is an advanced option; you generally shouldn&#8217;t have
-    to mess with it. (Default: not set)
+    circuit&#8217;s cell to deliver or relay next. It is delivered first to the
+    circuit that has the lowest weighted cell count, where cells are weighted
+    exponentially according to this value (in seconds). If the value is -1, it
+    is taken from the consensus if possible else it will fallback to the
+    default value of 30. Minimum: 1, Maximum: 2147483647. This can be defined
+    as a float value. This is an advanced option; you generally shouldn&#8217;t have
+    to mess with it. (Default: -1)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -2057,10 +2056,9 @@ forward slash (/) in the configuration file and on the command line.</p></div>
 <dd>
 <p>
     If this option is set to 1, then Tor will never launch another
-    executable, regardless of the settings of PortForwardingHelper,
-    ClientTransportPlugin, or ServerTransportPlugin.  Once this
-    option has been set to 1, it cannot be set back to 0 without
-    restarting Tor. (Default: 0)
+    executable, regardless of the settings of ClientTransportPlugin
+    or ServerTransportPlugin.  Once this option has been set to 1,
+    it cannot be set back to 0 without restarting Tor. (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -2883,9 +2881,11 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </dt>
 <dd>
 <p>
-    Set the refill interval of Tor&#8217;s token bucket to NUM milliseconds.
-    NUM must be between 1 and 1000, inclusive.  Note that the configured
-    bandwidth limits are still expressed in bytes per second: this
+    Set the refill delay interval of Tor&#8217;s token bucket to NUM milliseconds.
+    NUM must be between 1 and 1000, inclusive.  When Tor is out of bandwidth,
+    on a connection or globally, it will wait up to this long before it tries
+    to use that connection again.
+    Note that bandwidth limits are still expressed in bytes per second: this
     option only affects the frequency with which Tor checks to see whether
     previously exhausted connections may read again.
     Can not be changed while tor is running. (Default: 100 msec)
@@ -2984,6 +2984,18 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </p>
 </dd>
 <dt class="hdlist1">
+<a id="NumPrimaryGuards"></a> <strong>NumPrimaryGuards</strong> <em>NUM</em>
+</dt>
+<dd>
+<p>
+    If UseEntryGuards is set to 1, we will try to pick NUM routers for our
+    primary guard list, which is the set of routers we strongly prefer when
+    connecting to the Tor network. If NUM is 0, we try to learn the number from
+    the guard-n-primary-guards consensus parameter, and default to 3 if the
+    consensus parameter isn&#8217;t set. (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
 <a id="NumDirectoryGuards"></a> <strong>NumDirectoryGuards</strong> <em>NUM</em>
 </dt>
 <dd>
@@ -3077,7 +3089,7 @@ is preferable since it reduces the chances for an attacker to guess the
 <dd>
 <p>
     Open this port to listen for proxy connections using the "HTTP CONNECT"
-    protocol instead of SOCKS. Set this to 0
+    protocol instead of SOCKS. Set this to
     0 if you don&#8217;t want to allow "HTTP CONNECT" connections. Set the port
     to "auto" to have Tor pick a port for you. This directive can be
     specified multiple times to bind to multiple addresses/ports.  See
@@ -3127,7 +3139,7 @@ is preferable since it reduces the chances for an attacker to guess the
     Set this to "default", or leave it unconfigured, to use regular IPTables
     on Linux, or to use pf <code>rdr-to</code> rules on *BSD systems.<br />
 <br />
-    (Default: "default".)
+    (Default: "default")
 </p>
 </dd>
 <dt class="hdlist1">
@@ -3329,6 +3341,14 @@ is preferable since it reduces the chances for an attacker to guess the
     which means that nodes specified in ExcludeNodes will not be
     picked.
 <br />
+    When either this option or HSLayer3Nodes are set, the /16 subnet
+    and node family restrictions are removed for hidden service
+    circuits. Additionally, we allow the guard node to be present
+    as the Rend, HSDir, and IP node, and as the hop before it. This
+    is done to prevent the adversary from inferring information
+    about our guard, layer2, and layer3 node choices at later points
+    in the path.
+<br />
     This option is meant to be managed by a Tor controller such as
     <a href="https://github.com/mikeperry-tor/vanguards">https://github.com/mikeperry-tor/vanguards</a> that selects and
     updates this set of nodes for you. Hence it does not do load
@@ -3379,6 +3399,14 @@ is preferable since it reduces the chances for an attacker to guess the
     ExcludeNodes have higher priority than HSLayer3Nodes,
     which means that nodes specified in ExcludeNodes will not be
     picked.
+<br />
+    When either this option or HSLayer2Nodes are set, the /16 subnet
+    and node family restrictions are removed for hidden service
+    circuits. Additionally, we allow the guard node to be present
+    as the Rend, HSDir, and IP node, and as the hop before it. This
+    is done to prevent the adversary from inferring information
+    about our guard, layer2, and layer3 node choices at later points
+    in the path.
  <br />
     This option is meant to be managed by a Tor controller such as
     <a href="https://github.com/mikeperry-tor/vanguards">https://github.com/mikeperry-tor/vanguards</a> that selects and
@@ -3525,49 +3553,46 @@ is preferable since it reduces the chances for an attacker to guess the
     prevent your Tor client from bootstrapping.  If this option is negative,
     Tor will use a default value chosen by the directory authorities. If the
     directory authorities do not choose a value, Tor will default to 0.6.
-    (Default: -1.)
+    (Default: -1)
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="ClientBootstrapConsensusAuthorityDownloadSchedule"></a> <strong>ClientBootstrapConsensusAuthorityDownloadSchedule</strong> <em>N</em>,<em>N</em>,<em>&#8230;</em>
+<a id="ClientBootstrapConsensusAuthorityDownloadInitialDelay"></a> <strong>ClientBootstrapConsensusAuthorityDownloadInitialDelay</strong> <em>N</em>
 </dt>
 <dd>
 <p>
-    Schedule for when clients should download consensuses from authorities
+    Initial delay in seconds for when clients should download consensuses from authorities
     if they are bootstrapping (that is, they don&#8217;t have a usable, reasonably
     live consensus). Only used by clients fetching from a list of fallback
     directory mirrors. This schedule is advanced by (potentially concurrent)
     connection attempts, unlike other schedules, which are advanced by
-    connection failures. (Default: 6, 11, 3600, 10800, 25200, 54000, 111600,
-    262800)
+    connection failures. (Default: 6)
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="ClientBootstrapConsensusFallbackDownloadSchedule"></a> <strong>ClientBootstrapConsensusFallbackDownloadSchedule</strong> <em>N</em>,<em>N</em>,<em>&#8230;</em>
+<a id="ClientBootstrapConsensusFallbackDownloadInitialDelay"></a> <strong>ClientBootstrapConsensusFallbackDownloadInitialDelay</strong> <em>N</em>
 </dt>
 <dd>
 <p>
-    Schedule for when clients should download consensuses from fallback
+    Initial delay in seconds for when clients should download consensuses from fallback
     directory mirrors if they are bootstrapping (that is, they don&#8217;t have a
     usable, reasonably live consensus). Only used by clients fetching from a
     list of fallback directory mirrors. This schedule is advanced by
     (potentially concurrent) connection attempts, unlike other schedules,
-    which are advanced by connection failures. (Default: 0, 1, 4, 11, 3600,
-    10800, 25200, 54000, 111600, 262800)
+    which are advanced by connection failures. (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="ClientBootstrapConsensusAuthorityOnlyDownloadSchedule"></a> <strong>ClientBootstrapConsensusAuthorityOnlyDownloadSchedule</strong> <em>N</em>,<em>N</em>,<em>&#8230;</em>
+<a id="ClientBootstrapConsensusAuthorityOnlyDownloadInitialDelay"></a> <strong>ClientBootstrapConsensusAuthorityOnlyDownloadInitialDelay</strong> <em>N</em>
 </dt>
 <dd>
 <p>
-    Schedule for when clients should download consensuses from authorities
+    Initial delay in seconds for when clients should download consensuses from authorities
     if they are bootstrapping (that is, they don&#8217;t have a usable, reasonably
     live consensus). Only used by clients which don&#8217;t have or won&#8217;t fetch
     from a list of fallback directory mirrors. This schedule is advanced by
     (potentially concurrent) connection attempts, unlike other schedules,
-    which are advanced by connection failures. (Default: 0, 3, 7, 3600,
-    10800, 25200, 54000, 111600, 262800)
+    which are advanced by connection failures. (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -3740,7 +3765,7 @@ is non-zero):</p></div>
     If you want to use a reduced exit policy rather than the default exit
     policy, set "ReducedExitPolicy 1". If you want to <em>replace</em> the default
     exit policy with your custom exit policy, end your exit policy with either
-    a reject <strong>:</strong> or an accept <strong>:</strong>. Otherwise, you’re <em>augmenting</em> (prepending
+    a reject <strong>:</strong> or an accept <strong>:</strong>. Otherwise, you&#8217;re <em>augmenting</em> (prepending
     to) the default or reduced exit policy.<br />
 <br />
     The default exit policy is:
@@ -3950,6 +3975,8 @@ reject *:*</code></pre>
 <p>
     Set the server&#8217;s nickname to 'name'. Nicknames must be between 1 and 19
     characters inclusive, and must contain only the characters [a-zA-Z0-9].
+    If not set, <strong>Unnamed</strong> will be used. Relays can always be uniquely identified
+    by their identity fingerprints.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -4026,28 +4053,6 @@ reject *:*</code></pre>
 <p>
     For obvious reasons, NoAdvertise and NoListen are mutually exclusive, and
     IPv4Only and IPv6Only are mutually exclusive.
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="PortForwarding"></a> <strong>PortForwarding</strong> <strong>0</strong>|<strong>1</strong>
-</dt>
-<dd>
-<p>
-    Attempt to automatically forward the DirPort and ORPort on a NAT router
-    connecting this Tor server to the Internet. If set, Tor will try both
-    NAT-PMP (common on Apple routers) and UPnP (common on routers from other
-    manufacturers). (Default: 0)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="PortForwardingHelper"></a> <strong>PortForwardingHelper</strong> <em>filename</em>|<em>pathname</em>
-</dt>
-<dd>
-<p>
-    If PortForwarding is set, use this executable to configure the forwarding.
-    If set to a filename, the system path will be searched for the executable.
-    If set to a path, only the specified path will be executed.
-    (Default: tor-fw-helper)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -4317,7 +4322,8 @@ reject *:*</code></pre>
     sent and received by this relay, in addition to total cell counts.
     These statistics are rounded, and omitted if traffic is low. This
     information is important for load balancing decisions related to padding.
-    (Default: 1)
+    If ExtraInfoStatistics is enabled, it will be published
+    as a part of extra-info document. (Default: 1)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -4480,6 +4486,16 @@ reject *:*</code></pre>
     If this option is set to 0, don&#8217;t allow the filesystem group to read the
     KeywDirectory. If the option is set to 1, make the KeyDirectory readable
     by the default GID. (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="RephistTrackTime"></a> <strong>RephistTrackTime</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>|<strong>days</strong>|<strong>weeks</strong>
+</dt>
+<dd>
+<p>
+    Tells an authority, or other node tracking node reliability and history,
+    that fine-grained information about nodes can be discarded when it hasn&#8217;t
+    changed for a given amount of time.  (Default: 24 hours)
 </p>
 </dd>
 </dl></div>
@@ -5079,16 +5095,6 @@ on the public Tor network.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="RephistTrackTime"></a> <strong>RephistTrackTime</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>|<strong>days</strong>|<strong>weeks</strong>
-</dt>
-<dd>
-<p>
-    Tells an authority, or other node tracking node reliability and history,
-    that fine-grained information about nodes can be discarded when it hasn&#8217;t
-    changed for a given amount of time.  (Default: 24 hours)
-</p>
-</dd>
-<dt class="hdlist1">
 <a id="AuthDirHasIPv6Connectivity"></a> <strong>AuthDirHasIPv6Connectivity</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
@@ -5350,12 +5356,9 @@ EnforceDistinctSubnets 0
 AssumeReachable 1
 AuthDirMaxServersPerAddr 0
 AuthDirMaxServersPerAuthAddr 0
-ClientBootstrapConsensusAuthorityDownloadSchedule 0, 2,
-   4 (for 40 seconds), 8, 16, 32, 60
-ClientBootstrapConsensusFallbackDownloadSchedule 0, 1,
-   4 (for 40 seconds), 8, 16, 32, 60
-ClientBootstrapConsensusAuthorityOnlyDownloadSchedule 0, 1,
-   4 (for 40 seconds), 8, 16, 32, 60
+ClientBootstrapConsensusAuthorityDownloadInitialDelay 0
+ClientBootstrapConsensusFallbackDownloadInitialDelay 0
+ClientBootstrapConsensusAuthorityOnlyDownloadInitialDelay 0
 ClientDNSRejectInternalAddresses 0
 ClientRejectInternalAddresses 0
 CountPrivateBandwidth 1
@@ -5370,17 +5373,16 @@ TestingV3AuthInitialVoteDelay 20 seconds
 TestingV3AuthInitialDistDelay 20 seconds
 TestingAuthDirTimeToLearnReachability 0 minutes
 TestingEstimatedDescriptorPropagationTime 0 minutes
-TestingServerDownloadSchedule 0, 0, 0, 5, 10, 15, 20, 30, 60
-TestingClientDownloadSchedule 0, 0, 5, 10, 15, 20, 30, 60
-TestingServerConsensusDownloadSchedule 0, 0, 5, 10, 15, 20, 30, 60
-TestingClientConsensusDownloadSchedule 0, 0, 5, 10, 15, 20, 30, 60
-TestingBridgeDownloadSchedule 10, 30, 60
-TestingBridgeBootstrapDownloadSchedule 0, 0, 5, 10, 15, 20, 30, 60
+TestingServerDownloadInitialDelay 0
+TestingClientDownloadInitialDelay 0
+TestingServerConsensusDownloadInitialDelay 0
+TestingClientConsensusDownloadInitialDelay 0
+TestingBridgeDownloadInitialDelay 10
+TestingBridgeBootstrapDownloadInitialDelay 0
 TestingClientMaxIntervalWithoutRequest 5 seconds
 TestingDirConnectionMaxStall 30 seconds
 TestingEnableConnBwEvent 1
-TestingEnableCellStatsEvent 1
-TestingEnableTbEmptyEvent 1</code></pre>
+TestingEnableCellStatsEvent 1</code></pre>
 </div></div>
 </dd>
 <dt class="hdlist1">
@@ -5452,65 +5454,59 @@ TestingEnableTbEmptyEvent 1</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="TestingServerDownloadSchedule"></a> <strong>TestingServerDownloadSchedule</strong> <em>N</em>,<em>N</em>,<em>&#8230;</em>
+<a id="TestingServerDownloadInitialDelay"></a> <strong>TestingServerDownloadInitialDelay</strong> <em>N</em>
 </dt>
 <dd>
 <p>
-    Schedule for when servers should download things in general. Changing this
-    requires that <strong>TestingTorNetwork</strong> is set. (Default: 0, 0, 0, 60, 60, 120,
-    300, 900, 2147483647)
+    Initial delay in seconds for when servers should download things in general. Changing this
+    requires that <strong>TestingTorNetwork</strong> is set. (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="TestingClientDownloadSchedule"></a> <strong>TestingClientDownloadSchedule</strong> <em>N</em>,<em>N</em>,<em>&#8230;</em>
+<a id="TestingClientDownloadInitialDelay"></a> <strong>TestingClientDownloadInitialDelay</strong> <em>N</em>
 </dt>
 <dd>
 <p>
-    Schedule for when clients should download things in general. Changing this
-    requires that <strong>TestingTorNetwork</strong> is set. (Default: 0, 0, 60, 300, 600,
-    2147483647)
+    Initial delay in seconds for when clients should download things in general. Changing this
+    requires that <strong>TestingTorNetwork</strong> is set. (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="TestingServerConsensusDownloadSchedule"></a> <strong>TestingServerConsensusDownloadSchedule</strong> <em>N</em>,<em>N</em>,<em>&#8230;</em>
+<a id="TestingServerConsensusDownloadInitialDelay"></a> <strong>TestingServerConsensusDownloadInitialDelay</strong> <em>N</em>
 </dt>
 <dd>
 <p>
-    Schedule for when servers should download consensuses. Changing this
-    requires that <strong>TestingTorNetwork</strong> is set. (Default: 0, 0, 60, 300, 600,
-    1800, 1800, 1800, 1800, 1800, 3600, 7200)
+    Initial delay in seconds for when servers should download consensuses. Changing this
+    requires that <strong>TestingTorNetwork</strong> is set. (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="TestingClientConsensusDownloadSchedule"></a> <strong>TestingClientConsensusDownloadSchedule</strong> <em>N</em>,<em>N</em>,<em>&#8230;</em>
+<a id="TestingClientConsensusDownloadInitialDelay"></a> <strong>TestingClientConsensusDownloadInitialDelay</strong> <em>N</em>
 </dt>
 <dd>
 <p>
-    Schedule for when clients should download consensuses. Changing this
-    requires that <strong>TestingTorNetwork</strong> is set. (Default: 0, 0, 60, 300, 600,
-    1800, 3600, 3600, 3600, 10800, 21600, 43200)
+    Initial delay in seconds for when clients should download consensuses. Changing this
+    requires that <strong>TestingTorNetwork</strong> is set. (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="TestingBridgeDownloadSchedule"></a> <strong>TestingBridgeDownloadSchedule</strong> <em>N</em>,<em>N</em>,<em>&#8230;</em>
+<a id="TestingBridgeDownloadInitialDelay"></a> <strong>TestingBridgeDownloadInitialDelay</strong> <em>N</em>
 </dt>
 <dd>
 <p>
-    Schedule for when clients should download each bridge descriptor when they
+    Initial delay in seconds for when clients should download each bridge descriptor when they
     know that one or more of their configured bridges are running. Changing
-    this requires that <strong>TestingTorNetwork</strong> is set. (Default: 10800, 25200,
-    54000, 111600, 262800)
+    this requires that <strong>TestingTorNetwork</strong> is set. (Default: 10800)
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="TestingBridgeBootstrapDownloadSchedule"></a> <strong>TestingBridgeBootstrapDownloadSchedule</strong> <em>N</em>,<em>N</em>,<em>&#8230;</em>
+<a id="TestingBridgeBootstrapDownloadInitialDelay"></a> <strong>TestingBridgeBootstrapDownloadInitialDelay</strong> <em>N</em>
 </dt>
 <dd>
 <p>
-    Schedule for when clients should download each bridge descriptor when they
+    Initial delay in seconds for when clients should download each bridge descriptor when they
     have just started, or when they can not contact any of their bridges.
-    Changing this requires that <strong>TestingTorNetwork</strong> is set. (Default: 0, 30,
-    90, 600, 3600, 10800, 25200, 54000, 111600, 262800)
+    Changing this requires that <strong>TestingTorNetwork</strong> is set. (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -5630,16 +5626,6 @@ TestingEnableTbEmptyEvent 1</code></pre>
 <dd>
 <p>
     If this option is set, then Tor controllers may register for CELL_STATS
-    events.  Changing this requires that <strong>TestingTorNetwork</strong> is set.
-    (Default: 0)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="TestingEnableTbEmptyEvent"></a> <strong>TestingEnableTbEmptyEvent</strong> <strong>0</strong>|<strong>1</strong>
-</dt>
-<dd>
-<p>
-    If this option is set, then Tor controllers may register for TB_EMPTY
     events.  Changing this requires that <strong>TestingTorNetwork</strong> is set.
     (Default: 0)
 </p>
@@ -6327,8 +6313,7 @@ A short history of bandwidth usage, as produced in the server
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
-Last updated
- 2018-07-13 18:25:23 UTC
+Last updated 2018-06-15 21:20:53 UTC
 </div>
 </div>
 </body>

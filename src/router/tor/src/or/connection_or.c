@@ -39,6 +39,8 @@
 #include "connection.h"
 #include "connection_or.h"
 #include "control.h"
+#include "crypto_rand.h"
+#include "crypto_util.h"
 #include "dirserv.h"
 #include "entrynodes.h"
 #include "geoip.h"
@@ -50,6 +52,7 @@
 #include "proto_cell.h"
 #include "reasons.h"
 #include "relay.h"
+#include "rendcommon.h"
 #include "rephist.h"
 #include "router.h"
 #include "routerkeys.h"
@@ -793,18 +796,10 @@ connection_or_update_token_buckets_helper(or_connection_t *conn, int reset,
                                 (int)options->BandwidthBurst, 1, INT32_MAX);
   }
 
-  conn->bandwidthrate = rate;
-  conn->bandwidthburst = burst;
-  if (reset) { /* set up the token buckets to be full */
-    conn->read_bucket = conn->write_bucket = burst;
-    return;
+  token_bucket_rw_adjust(&conn->bucket, rate, burst);
+  if (reset) {
+    token_bucket_rw_reset(&conn->bucket, monotime_coarse_get_stamp());
   }
-  /* If the new token bucket is smaller, take out the extra tokens.
-   * (If it's larger, don't -- the buckets can grow to reach the cap.) */
-  if (conn->read_bucket > burst)
-    conn->read_bucket = burst;
-  if (conn->write_bucket > burst)
-    conn->write_bucket = burst;
 }
 
 /** Either our set of relays or our per-conn rate limits have changed.
@@ -1923,10 +1918,13 @@ connection_or_client_learned_peer_id(or_connection_t *conn,
                                                    conn->identity_digest);
     const int is_authority_fingerprint = router_digest_is_trusted_dir(
                                                    conn->identity_digest);
+    const int non_anonymous_mode = rend_non_anonymous_mode_enabled(options);
     int severity;
     const char *extra_log = "";
 
-    if (server_mode(options)) {
+    /* Relays, Single Onion Services, and Tor2web make direct connections using
+     * untrusted authentication keys. */
+    if (server_mode(options) || non_anonymous_mode) {
       severity = LOG_PROTOCOL_WARN;
     } else {
       if (using_hardcoded_fingerprints) {
@@ -1950,8 +1948,8 @@ connection_or_client_learned_peer_id(or_connection_t *conn,
     }
 
     log_fn(severity, LD_HANDSHAKE,
-           "Tried connecting to router at %s:%d, but RSA identity key was not "
-           "as expected: wanted %s + %s but got %s + %s.%s",
+           "Tried connecting to router at %s:%d, but RSA + ed25519 identity "
+           "keys were not as expected: wanted %s + %s but got %s + %s.%s",
            conn->base_.address, conn->base_.port,
            expected_rsa, expected_ed, seen_rsa, seen_ed, extra_log);
 
@@ -1968,8 +1966,8 @@ connection_or_client_learned_peer_id(or_connection_t *conn,
   }
 
   if (!expected_ed_key && ed_peer_id) {
-    log_info(LD_HANDSHAKE, "(we had no Ed25519 ID in mind when we made this "
-             "connection.");
+    log_info(LD_HANDSHAKE, "(We had no Ed25519 ID in mind when we made this "
+             "connection.)");
     connection_or_set_identity_digest(conn,
                                       (const char*)rsa_peer_id, ed_peer_id);
     changed_identity = 1;

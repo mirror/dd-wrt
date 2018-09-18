@@ -65,6 +65,8 @@
 #include "connection_edge.h"
 #include "connection_or.h"
 #include "control.h"
+#include "crypto_rand.h"
+#include "crypto_util.h"
 #include "entrynodes.h"
 #include "main.h"
 #include "hs_circuit.h"
@@ -76,6 +78,7 @@
 #include "onion_fast.h"
 #include "policies.h"
 #include "relay.h"
+#include "relay_crypto.h"
 #include "rendclient.h"
 #include "rendcommon.h"
 #include "rephist.h"
@@ -406,9 +409,6 @@ circuit_set_p_circid_chan(or_circuit_t *or_circ, circid_t id,
   circuit_set_circid_chan_helper(circ, CELL_DIRECTION_IN, id, chan);
 
   if (chan) {
-    tor_assert(bool_eq(or_circ->p_chan_cells.n,
-                       or_circ->next_active_on_p_chan));
-
     chan->timestamp_last_had_circuits = approx_time();
   }
 
@@ -431,8 +431,6 @@ circuit_set_n_circid_chan(circuit_t *circ, circid_t id,
   circuit_set_circid_chan_helper(circ, CELL_DIRECTION_OUT, id, chan);
 
   if (chan) {
-    tor_assert(bool_eq(circ->n_chan_cells.n, circ->next_active_on_n_chan));
-
     chan->timestamp_last_had_circuits = approx_time();
   }
 
@@ -1087,10 +1085,7 @@ circuit_free_(circuit_t *circ)
 
     should_free = (ocirc->workqueue_entry == NULL);
 
-    crypto_cipher_free(ocirc->p_crypto);
-    crypto_digest_free(ocirc->p_digest);
-    crypto_cipher_free(ocirc->n_crypto);
-    crypto_digest_free(ocirc->n_digest);
+    relay_crypto_clear(&ocirc->crypto);
 
     if (ocirc->rend_splice) {
       or_circuit_t *other = ocirc->rend_splice;
@@ -1230,10 +1225,7 @@ circuit_free_cpath_node(crypt_path_t *victim)
   if (!victim)
     return;
 
-  crypto_cipher_free(victim->f_crypto);
-  crypto_cipher_free(victim->b_crypto);
-  crypto_digest_free(victim->f_digest);
-  crypto_digest_free(victim->b_digest);
+  relay_crypto_clear(&victim->crypto);
   onion_handshake_state_release(&victim->handshake_state);
   crypto_dh_free(victim->rend_dh_handshake_state);
   extend_info_free(victim->extend_info);
@@ -2077,6 +2069,7 @@ circuit_mark_for_close_, (circuit_t *circ, int reason, int line,
     circuits_pending_close = smartlist_new();
 
   smartlist_add(circuits_pending_close, circ);
+  mainloop_schedule_postloop_cleanup();
 
   log_info(LD_GENERAL, "Circuit %u (id: %" PRIu32 ") marked for close at "
                        "%s:%d (orig reason: %d, new reason: %d)",
@@ -2596,8 +2589,7 @@ assert_cpath_layer_ok(const crypt_path_t *cp)
   switch (cp->state)
     {
     case CPATH_STATE_OPEN:
-      tor_assert(cp->f_crypto);
-      tor_assert(cp->b_crypto);
+      relay_crypto_assert_ok(&cp->crypto);
       /* fall through */
     case CPATH_STATE_CLOSED:
       /*XXXX Assert that there's no handshake_state either. */
@@ -2687,10 +2679,7 @@ assert_circuit_ok,(const circuit_t *c))
       c->state == CIRCUIT_STATE_GUARD_WAIT) {
     tor_assert(!c->n_chan_create_cell);
     if (or_circ) {
-      tor_assert(or_circ->n_crypto);
-      tor_assert(or_circ->p_crypto);
-      tor_assert(or_circ->n_digest);
-      tor_assert(or_circ->p_digest);
+      relay_crypto_assert_ok(&or_circ->crypto);
     }
   }
   if (c->state == CIRCUIT_STATE_CHAN_WAIT && !c->marked_for_close) {

@@ -16,7 +16,6 @@
 #include "directory.h"
 #include "test.h"
 #include "compress.h"
-#include "connection.h"
 #include "rendcommon.h"
 #include "rendcache.h"
 #include "router.h"
@@ -31,8 +30,9 @@
 #include "proto_http.h"
 #include "geoip.h"
 #include "dirserv.h"
-#include "dirvote.h"
+#include "dirauth/dirvote.h"
 #include "log_test_helpers.h"
+#include "voting_schedule.h"
 
 #ifdef _WIN32
 /* For mkdir() */
@@ -2057,7 +2057,7 @@ test_dir_handle_get_status_vote_d(void* data)
   mock_options->TestingV3AuthInitialDistDelay = 1;
 
   time_t now = 1441223455 -1;
-  dirvote_recalculate_timing(mock_options, now);
+  voting_schedule_recalculate_timing(mock_options, now);
 
   const char *msg_out = NULL;
   int status_out = 0;
@@ -2403,7 +2403,7 @@ test_dir_handle_get_status_vote_next_authority(void* data)
   mock_options->TestingV3AuthInitialDistDelay = 1;
 
   time_t now = 1441223455 -1;
-  dirvote_recalculate_timing(mock_options, now);
+  voting_schedule_recalculate_timing(mock_options, now);
 
   struct pending_vote_t *vote = dirvote_add_vote(VOTE_BODY_V3, &msg_out,
                                                  &status_out);
@@ -2482,7 +2482,7 @@ test_dir_handle_get_status_vote_current_authority(void* data)
   mock_options->TestingV3AuthInitialDistDelay = 1;
 
   time_t now = 1441223455;
-  dirvote_recalculate_timing(mock_options, now-1);
+  voting_schedule_recalculate_timing(mock_options, now-1);
 
   struct pending_vote_t *vote = dirvote_add_vote(VOTE_BODY_V3, &msg_out,
                                                  &status_out);

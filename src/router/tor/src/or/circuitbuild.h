@@ -29,7 +29,7 @@ void circuit_n_chan_done(channel_t *chan, int status,
 int inform_testing_reachability(void);
 int circuit_timeout_want_to_count_circ(const origin_circuit_t *circ);
 int circuit_send_next_onion_skin(origin_circuit_t *circ);
-void circuit_note_clock_jumped(int seconds_elapsed);
+void circuit_note_clock_jumped(int64_t seconds_elapsed, bool was_idle);
 int circuit_extend(cell_t *cell, circuit_t *circ);
 int circuit_init_cpath_crypto(crypt_path_t *cpath,
                               const char *key_data, size_t key_data_len,
@@ -83,6 +83,13 @@ STATIC circid_t get_unique_circ_id_by_chan(channel_t *chan);
 STATIC int new_route_len(uint8_t purpose, extend_info_t *exit_ei,
                          smartlist_t *nodes);
 MOCK_DECL(STATIC int, count_acceptable_nodes, (smartlist_t *nodes));
+
+STATIC int onion_extend_cpath(origin_circuit_t *circ);
+
+STATIC int
+onion_pick_cpath_exit(origin_circuit_t *circ, extend_info_t *exit_ei,
+                      int is_hs_v3_rp_circuit);
+
 #if defined(ENABLE_TOR2WEB_MODE) || defined(TOR_UNIT_TESTS)
 STATIC const node_t *pick_tor2web_rendezvous_node(router_crn_flags_t flags,
                                                   const or_options_t *options);

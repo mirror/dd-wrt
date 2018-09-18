@@ -122,7 +122,13 @@ void connection_mark_all_noncontrol_connections(void);
 ssize_t connection_bucket_write_limit(connection_t *conn, time_t now);
 int global_write_bucket_low(connection_t *conn, size_t attempt, int priority);
 void connection_bucket_init(void);
-void connection_bucket_refill(int seconds_elapsed, time_t now);
+void connection_bucket_adjust(const or_options_t *options);
+void connection_bucket_refill_all(time_t now,
+                                  uint32_t now_ts);
+void connection_read_bw_exhausted(connection_t *conn, bool is_global_bw);
+void connection_write_bw_exhausted(connection_t *conn, bool is_global_bw);
+void connection_consider_empty_read_buckets(connection_t *conn);
+void connection_consider_empty_write_buckets(connection_t *conn);
 
 int connection_handle_read(connection_t *conn);
 
@@ -248,9 +254,10 @@ void assert_connection_ok(connection_t *conn, time_t now);
 int connection_or_nonopen_was_started_here(or_connection_t *conn);
 void connection_dump_buffer_mem_stats(int severity);
 
-void clock_skew_warning(const connection_t *conn, long apparent_skew,
-                        int trusted, log_domain_mask_t domain,
-                        const char *received, const char *source);
+MOCK_DECL(void, clock_skew_warning,
+          (const connection_t *conn, long apparent_skew, int trusted,
+           log_domain_mask_t domain, const char *received,
+           const char *source));
 
 /** Check if a connection is on the way out so the OOS handler doesn't try
  * to kill more than it needs. */
@@ -272,13 +279,6 @@ void connection_check_oos(int n_socks, int failed);
 STATIC void connection_free_minimal(connection_t *conn);
 
 /* Used only by connection.c and test*.c */
-uint32_t bucket_millis_empty(int tokens_before, uint32_t last_empty_time,
-                             int tokens_after, int milliseconds_elapsed,
-                             const struct timeval *tvnow);
-void connection_buckets_note_empty_ts(uint32_t *timestamp_var,
-                                      int tokens_before,
-                                      size_t tokens_removed,
-                                      const struct timeval *tvnow);
 MOCK_DECL(STATIC int,connection_connect_sockaddr,
                                             (connection_t *conn,
                                              const struct sockaddr *sa,

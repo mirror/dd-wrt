@@ -29,6 +29,7 @@ const node_t *node_get_by_hex_id(const char *identity_digest,
 node_t *nodelist_set_routerinfo(routerinfo_t *ri, routerinfo_t **ri_old_out);
 node_t *nodelist_add_microdesc(microdesc_t *md);
 void nodelist_set_consensus(networkstatus_t *ns);
+void nodelist_ensure_freshness(networkstatus_t *ns);
 int nodelist_probably_contains_address(const tor_addr_t *addr);
 
 void nodelist_remove_microdesc(const char *identity_digest, microdesc_t *md);
@@ -79,11 +80,11 @@ int node_has_ipv6_dirport(const node_t *node);
 /* Deprecated - use node_ipv6_or_preferred or node_ipv6_dir_preferred */
 #define node_ipv6_preferred(node) node_ipv6_or_preferred(node)
 int node_ipv6_or_preferred(const node_t *node);
-int node_get_prim_orport(const node_t *node, tor_addr_port_t *ap_out);
+void node_get_prim_orport(const node_t *node, tor_addr_port_t *ap_out);
 void node_get_pref_orport(const node_t *node, tor_addr_port_t *ap_out);
 void node_get_pref_ipv6_orport(const node_t *node, tor_addr_port_t *ap_out);
 int node_ipv6_dir_preferred(const node_t *node);
-int node_get_prim_dirport(const node_t *node, tor_addr_port_t *ap_out);
+void node_get_prim_dirport(const node_t *node, tor_addr_port_t *ap_out);
 void node_get_pref_dirport(const node_t *node, tor_addr_port_t *ap_out);
 void node_get_pref_ipv6_dirport(const node_t *node, tor_addr_port_t *ap_out);
 int node_has_curve25519_onion_key(const node_t *node);

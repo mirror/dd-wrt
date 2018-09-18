@@ -52,6 +52,13 @@
 
 #define raw_assert(x) assert(x) // assert OK
 
+/** Defining compile-time constants for Tor log levels (used by the Rust
+ * log wrapper at src/rust/tor_log) */
+const int LOG_WARN_ = LOG_WARN;
+const int LOG_NOTICE_ = LOG_NOTICE;
+const log_domain_mask_t LD_GENERAL_ = LD_GENERAL;
+const log_domain_mask_t LD_NET_ = LD_NET;
+
 /** Information for a single logfile; only used in log.c */
 typedef struct logfile_t {
   struct logfile_t *next; /**< Next logfile_t in the linked list. */
@@ -163,6 +170,9 @@ typedef struct pending_log_message_t {
 /** Log messages waiting to be replayed onto callback-based logs */
 static smartlist_t *pending_cb_messages = NULL;
 
+/** Callback to invoke when pending_cb_messages becomes nonempty. */
+static pending_callback_callback pending_cb_cb = NULL;
+
 /** Log messages waiting to be replayed once the logging system is initialized.
  */
 static smartlist_t *pending_startup_messages = NULL;
@@ -223,6 +233,30 @@ log_set_application_name(const char *name)
 {
   tor_free(appname);
   appname = name ? tor_strdup(name) : NULL;
+}
+
+/** Return true if some of the running logs might be interested in a log
+ * message of the given severity in the given domains. If this function
+ * returns true, the log message might be ignored anyway, but if it returns
+ * false, it is definitely_ safe not to log the message. */
+int
+log_message_is_interesting(int severity, log_domain_mask_t domain)
+{
+  (void) domain;
+  return (severity <= log_global_min_severity_);
+}
+
+/**
+ * As tor_log, but takes an optional function name, and does not treat its
+ * <b>string</b> as a printf format.
+ *
+ * For use by Rust integration.
+ */
+void
+tor_log_string(int severity, log_domain_mask_t domain,
+               const char *function, const char *string)
+{
+  log_fn_(severity, domain, function, "%s", string);
 }
 
 /** Log time granularity in milliseconds. */
@@ -507,6 +541,9 @@ logfile_deliver(logfile_t *lf, const char *buf, size_t msg_len,
         smartlist_add(pending_cb_messages,
             pending_log_message_new(severity,domain,NULL,msg_after_prefix));
         *callbacks_deferred = 1;
+        if (smartlist_len(pending_cb_messages) == 1 && pending_cb_cb) {
+          pending_cb_cb();
+        }
       }
     } else {
       lf->callback(severity, domain, msg_after_prefix);
@@ -794,6 +831,7 @@ logs_free_all(void)
   logfiles = NULL;
   messages = pending_cb_messages;
   pending_cb_messages = NULL;
+  pending_cb_cb = NULL;
   messages2 = pending_startup_messages;
   pending_startup_messages = NULL;
   UNLOCK_LOGS();
@@ -954,6 +992,24 @@ add_temp_log(int min_severity)
   tor_free(s);
   logfiles->is_temporary = 1;
   UNLOCK_LOGS();
+}
+
+/**
+ * Register "cb" as the callback to call when there are new pending log
+ * callbacks to be flushed with flush_pending_log_callbacks().
+ *
+ * Note that this callback, if present, can be invoked from any thread.
+ *
+ * This callback must not log.
+ *
+ * It is intentional that this function contains the name "callback" twice: it
+ * sets a "callback" to be called on the condition that there is a "pending
+ * callback".
+ **/
+void
+logs_set_pending_callback_callback(pending_callback_callback cb)
+{
+  pending_cb_cb = cb;
 }
 
 /**

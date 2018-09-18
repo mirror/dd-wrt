@@ -12,10 +12,12 @@
 #include "buffers.h"
 #include "config.h"
 #include "control.h"
+#include "crypto_rand.h"
 #include "test.h"
 #include "memarea.h"
 #include "util_process.h"
 #include "log_test_helpers.h"
+#include "compress_zstd.h"
 
 #ifdef HAVE_PWD_H
 #include <pwd.h>
@@ -2395,6 +2397,37 @@ test_util_compress_stream_impl(compress_method_t method,
   tor_free(buf2);
   tor_free(buf3);
 }
+
+/** Setup function for compression tests: handles x-zstd:nostatic
+ */
+static void *
+compression_test_setup(const struct testcase_t *testcase)
+{
+  tor_assert(testcase->setup_data);
+  tor_assert(testcase->setup_data != (void*)TT_SKIP);
+  const char *methodname = testcase->setup_data;
+
+  if (!strcmp(methodname, "x-zstd:nostatic")) {
+    methodname = "x-zstd";
+    tor_zstd_set_static_apis_disabled_for_testing(1);
+  }
+
+  return (void *)methodname;
+}
+
+/** Cleanup for compression tests: disables nostatic */
+static int
+compression_test_cleanup(const struct testcase_t *testcase, void *ptr)
+{
+  (void)testcase;
+  (void)ptr;
+  tor_zstd_set_static_apis_disabled_for_testing(0);
+  return 1;
+}
+
+static const struct testcase_setup_t compress_setup = {
+  compression_test_setup, compression_test_cleanup
+};
 
 /** Run unit tests for compression functions */
 static void
@@ -5875,6 +5908,13 @@ test_util_monotonic_time(void *arg)
   tt_u64_op(coarse_stamp_diff, OP_GE, 120);
   tt_u64_op(coarse_stamp_diff, OP_LE, 1200);
 
+  {
+    uint64_t units = monotime_msec_to_approx_coarse_stamp_units(5000);
+    uint64_t ms = monotime_coarse_stamp_units_to_approx_msec(units);
+    tt_u64_op(ms, OP_GE, 4950);
+    tt_u64_op(ms, OP_LT, 5050);
+  }
+
  done:
   ;
 }
@@ -5996,6 +6036,9 @@ test_util_monotonic_time_add_msec(void *arg)
   monotime_coarse_add_msec(&ct2, &ct1, 1337);
   tt_i64_op(monotime_diff_msec(&t1, &t2), OP_EQ, 1337);
   tt_i64_op(monotime_coarse_diff_msec(&ct1, &ct2), OP_EQ, 1337);
+  // The 32-bit variant must be within 1% of the regular one.
+  tt_int_op(monotime_coarse_diff_msec32_(&ct1, &ct2), OP_GT, 1323);
+  tt_int_op(monotime_coarse_diff_msec32_(&ct1, &ct2), OP_LT, 1350);
 
   /* Add 1337 msec twice more; make sure that any second rollover issues
    * worked. */
@@ -6005,6 +6048,25 @@ test_util_monotonic_time_add_msec(void *arg)
   monotime_coarse_add_msec(&ct2, &ct2, 1337);
   tt_i64_op(monotime_diff_msec(&t1, &t2), OP_EQ, 1337*3);
   tt_i64_op(monotime_coarse_diff_msec(&ct1, &ct2), OP_EQ, 1337*3);
+  tt_int_op(monotime_coarse_diff_msec32_(&ct1, &ct2), OP_GT, 3970);
+  tt_int_op(monotime_coarse_diff_msec32_(&ct1, &ct2), OP_LT, 4051);
+
+ done:
+  ;
+}
+
+static void
+test_util_nowrap_math(void *arg)
+{
+  (void)arg;
+
+  tt_u64_op(0, OP_EQ, tor_add_u32_nowrap(0, 0));
+  tt_u64_op(1, OP_EQ, tor_add_u32_nowrap(0, 1));
+  tt_u64_op(1, OP_EQ, tor_add_u32_nowrap(1, 0));
+  tt_u64_op(4, OP_EQ, tor_add_u32_nowrap(2, 2));
+  tt_u64_op(UINT32_MAX, OP_EQ, tor_add_u32_nowrap(UINT32_MAX-1, 2));
+  tt_u64_op(UINT32_MAX, OP_EQ, tor_add_u32_nowrap(2, UINT32_MAX-1));
+  tt_u64_op(UINT32_MAX, OP_EQ, tor_add_u32_nowrap(UINT32_MAX, UINT32_MAX));
 
  done:
   ;
@@ -6122,22 +6184,22 @@ test_util_get_unquoted_path(void *arg)
   { #name, test_util_ ## name, flags, NULL, NULL }
 
 #define COMPRESS(name, identifier)              \
-  { "compress/" #name, test_util_compress, 0, &passthrough_setup,       \
+  { "compress/" #name, test_util_compress, 0, &compress_setup,          \
     (char*)(identifier) }
 
 #define COMPRESS_CONCAT(name, identifier)                               \
   { "compress_concat/" #name, test_util_decompress_concatenated, 0,     \
-    &passthrough_setup,                                                 \
+    &compress_setup,                                                    \
     (char*)(identifier) }
 
 #define COMPRESS_JUNK(name, identifier)                                 \
   { "compress_junk/" #name, test_util_decompress_junk, 0,               \
-    &passthrough_setup,                                                 \
+    &compress_setup,                                                    \
     (char*)(identifier) }
 
 #define COMPRESS_DOS(name, identifier)                                  \
   { "compress_dos/" #name, test_util_decompress_dos, 0,                 \
-    &passthrough_setup,                                                 \
+    &compress_setup,                                                    \
     (char*)(identifier) }
 
 #ifdef _WIN32
@@ -6168,11 +6230,13 @@ struct testcase_t util_tests[] = {
   COMPRESS(gzip, "gzip"),
   COMPRESS(lzma, "x-tor-lzma"),
   COMPRESS(zstd, "x-zstd"),
+  COMPRESS(zstd_nostatic, "x-zstd:nostatic"),
   COMPRESS(none, "identity"),
   COMPRESS_CONCAT(zlib, "deflate"),
   COMPRESS_CONCAT(gzip, "gzip"),
   COMPRESS_CONCAT(lzma, "x-tor-lzma"),
   COMPRESS_CONCAT(zstd, "x-zstd"),
+  COMPRESS_CONCAT(zstd_nostatic, "x-zstd:nostatic"),
   COMPRESS_CONCAT(none, "identity"),
   COMPRESS_JUNK(zlib, "deflate"),
   COMPRESS_JUNK(gzip, "gzip"),
@@ -6181,6 +6245,7 @@ struct testcase_t util_tests[] = {
   COMPRESS_DOS(gzip, "gzip"),
   COMPRESS_DOS(lzma, "x-tor-lzma"),
   COMPRESS_DOS(zstd, "x-zstd"),
+  COMPRESS_DOS(zstd_nostatic, "x-zstd:nostatic"),
   UTIL_TEST(gzip_compression_bomb, TT_FORK),
   UTIL_LEGACY(datadir),
   UTIL_LEGACY(memarea),
@@ -6201,6 +6266,7 @@ struct testcase_t util_tests[] = {
   UTIL_TEST(listdir, 0),
   UTIL_TEST(parent_dir, 0),
   UTIL_TEST(ftruncate, 0),
+  UTIL_TEST(nowrap_math, 0),
   UTIL_TEST(num_cpus, 0),
   UTIL_TEST_WIN_ONLY(load_win_lib, 0),
   UTIL_TEST_NO_WIN(exit_status, 0),
