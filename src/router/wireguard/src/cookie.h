@@ -38,15 +38,22 @@ enum cookie_mac_state {
 	VALID_MAC_WITH_COOKIE
 };
 
-static void cookie_checker_init(struct cookie_checker *checker, struct wireguard_device *wg);
+static void cookie_checker_init(struct cookie_checker *checker,
+			 struct wireguard_device *wg);
 static void cookie_checker_precompute_device_keys(struct cookie_checker *checker);
 static void cookie_checker_precompute_peer_keys(struct wireguard_peer *peer);
 static void cookie_init(struct cookie *cookie);
 
-static enum cookie_mac_state cookie_validate_packet(struct cookie_checker *checker, struct sk_buff *skb, bool check_cookie);
-static void cookie_add_mac_to_packet(void *message, size_t len, struct wireguard_peer *peer);
+static enum cookie_mac_state cookie_validate_packet(struct cookie_checker *checker,
+					     struct sk_buff *skb,
+					     bool check_cookie);
+static void cookie_add_mac_to_packet(void *message, size_t len,
+			      struct wireguard_peer *peer);
 
-static void cookie_message_create(struct message_handshake_cookie *src, struct sk_buff *skb, __le32 index, struct cookie_checker *checker);
-static void cookie_message_consume(struct message_handshake_cookie *src, struct wireguard_device *wg);
+static void cookie_message_create(struct message_handshake_cookie *src,
+			   struct sk_buff *skb, __le32 index,
+			   struct cookie_checker *checker);
+static void cookie_message_consume(struct message_handshake_cookie *src,
+			    struct wireguard_device *wg);
 
 #endif /* _WG_COOKIE_H */

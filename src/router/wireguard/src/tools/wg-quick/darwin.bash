@@ -11,7 +11,7 @@ export LC_ALL=C
 SELF="${BASH_SOURCE[0]}"
 [[ $SELF == */* ]] || SELF="./$SELF"
 SELF="$(cd "${SELF%/*}" && pwd -P)/${SELF##*/}"
-export PATH="${SELF%/*}:$PATH"
+export PATH="/usr/bin:/bin:/usr/sbin:/sbin:${SELF%/*}:$PATH"
 
 WG_CONFIG=""
 INTERFACE=""
@@ -187,7 +187,6 @@ collect_gateways() {
 	GATEWAY6=""
 	while read -r destination gateway _; do
 		[[ $destination == default ]] || continue
-		[[ $gateway == fe80:* ]] && continue
 		GATEWAY6="$gateway"
 		break
 	done < <(netstat -nr -f inet6)

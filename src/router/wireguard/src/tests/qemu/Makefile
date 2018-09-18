@@ -14,7 +14,7 @@ endif
 ARCH := $(firstword $(subst -, ,$(CBUILD)))
 
 # Set these from the environment to override
-KERNEL_VERSION ?= 4.17.12
+KERNEL_VERSION ?= 4.18.5
 KERNEL_VERSION := $(KERNEL_VERSION)$(if $(DEBUG_KERNEL),$(if $(findstring -debug,$(KERNEL_VERSION)),,-debug),)
 BUILD_PATH ?= $(PWD)/../../../qemu-build/$(ARCH)
 DISTFILES_PATH ?= $(PWD)/distfiles
@@ -22,8 +22,9 @@ NR_CPUS ?= 4
 
 MIRROR := https://download.wireguard.com/qemu-test/distfiles/
 
-WIREGUARD_SOURCES := $(wildcard ../../*.c ../../*.h ../../selftest/*.h ../../crypto/*.c ../../crypto/*.h ../../crypto/*.S ../../compat/*.h)
-TOOLS_SOURCES := $(wildcard ../../tools/*.c ../../tools/*.h ../../uapi/*.h ../../crypto/curve25519-hacl64.h ../../crypto/curve25519-fiat32.h)
+rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
+WIREGUARD_SOURCES := $(wildcard ../../Kbuild ../../Kconfig ../../*.c ../../*.h ../../selftest/*.h ../../uapi/*.h) $(call rwildcard,../../crypto/,*.c *.h *.S *.include) $(call rwildcard,../../compat/,*.c *.h *.include)
+TOOLS_SOURCES := $(wildcard ../../tools/*.c ../../tools/*.h ../../uapi/*.h ../../crypto/zinc/curve25519/curve25519-hacl64.h ../../crypto/zinc/curve25519/curve25519-fiat32.h)
 
 default: qemu
 
@@ -49,7 +50,7 @@ KERNEL_URL_DIRECTORY := https://git.kernel.org/torvalds/t/
 endif
 
 $(eval $(call tar_download,KERNEL,linux,$(KERNEL_VERSION),.tar.gz,$(KERNEL_URL_DIRECTORY)))
-$(eval $(call tar_download,MUSL,musl,1.1.16,.tar.gz,https://www.musl-libc.org/releases/))
+$(eval $(call tar_download,MUSL,musl,1.1.19,.tar.gz,https://www.musl-libc.org/releases/))
 $(eval $(call tar_download,LIBMNL,libmnl,1.0.4,.tar.bz2,https://www.netfilter.org/projects/libmnl/files/))
 $(eval $(call tar_download,IPERF,iperf,3.1.7,.tar.gz,http://downloads.es.net/pub/iperf/))
 $(eval $(call tar_download,BASH,bash,4.4.18,.tar.gz,https://ftp.gnu.org/gnu/bash/))
@@ -228,6 +229,11 @@ $(KERNEL_PATH)/.installed:
 	mkdir -p $(dir $(KERNEL_PATH))
 	flock -s $(dir $(KERNEL_TAR))/$(KERNEL_VERSION).lock git clone $(GIT_URI_$(patsubst %-git,%,$(patsubst %-debug,%,$(KERNEL_VERSION)))) $(KERNEL_PATH)
 	touch $@
+always-pull: $(KERNEL_PATH)/.installed
+	flock -s $(dir $(KERNEL_TAR))/$(KERNEL_VERSION).lock git -C $(KERNEL_PATH) fetch
+	flock -s $(dir $(KERNEL_TAR))/$(KERNEL_VERSION).lock git -C $(KERNEL_PATH) reset --hard FETCH_HEAD
+.PHONY: always-pull
+$(KERNEL_BZIMAGE): always-pull
 endif
 
 $(KERNEL_PATH)/.config: kernel.config arch/$(QEMU_ARCH).config | $(KERNEL_PATH)/.installed

@@ -22,9 +22,13 @@ struct pubkey_hashtable {
 };
 
 static void pubkey_hashtable_init(struct pubkey_hashtable *table);
-static void pubkey_hashtable_add(struct pubkey_hashtable *table, struct wireguard_peer *peer);
-static void pubkey_hashtable_remove(struct pubkey_hashtable *table, struct wireguard_peer *peer);
-static struct wireguard_peer *pubkey_hashtable_lookup(struct pubkey_hashtable *table, const u8 pubkey[NOISE_PUBLIC_KEY_LEN]);
+static void pubkey_hashtable_add(struct pubkey_hashtable *table,
+			  struct wireguard_peer *peer);
+static void pubkey_hashtable_remove(struct pubkey_hashtable *table,
+			     struct wireguard_peer *peer);
+static struct wireguard_peer *
+pubkey_hashtable_lookup(struct pubkey_hashtable *table,
+			const u8 pubkey[NOISE_PUBLIC_KEY_LEN]);
 
 struct index_hashtable {
 	/* TODO: move to rhashtable */
@@ -44,9 +48,16 @@ struct index_hashtable_entry {
 	__le32 index;
 };
 static void index_hashtable_init(struct index_hashtable *table);
-static __le32 index_hashtable_insert(struct index_hashtable *table, struct index_hashtable_entry *entry);
-static bool index_hashtable_replace(struct index_hashtable *table, struct index_hashtable_entry *old, struct index_hashtable_entry *new);
-static void index_hashtable_remove(struct index_hashtable *table, struct index_hashtable_entry *entry);
-static struct index_hashtable_entry *index_hashtable_lookup(struct index_hashtable *table, const enum index_hashtable_type type_mask, const __le32 index, struct wireguard_peer **peer);
+static __le32 index_hashtable_insert(struct index_hashtable *table,
+			      struct index_hashtable_entry *entry);
+static bool index_hashtable_replace(struct index_hashtable *table,
+			     struct index_hashtable_entry *old,
+			     struct index_hashtable_entry *new);
+static void index_hashtable_remove(struct index_hashtable *table,
+			    struct index_hashtable_entry *entry);
+static struct index_hashtable_entry *
+index_hashtable_lookup(struct index_hashtable *table,
+		       const enum index_hashtable_type type_mask,
+		       const __le32 index, struct wireguard_peer **peer);
 
 #endif /* _WG_HASHTABLES_H */
