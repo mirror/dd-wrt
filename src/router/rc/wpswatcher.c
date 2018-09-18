@@ -13,7 +13,6 @@
 #include <rc.h>
 
 #include <cy_conf.h>
-#include <bcmutils.h>
 #include <utils.h>
 #include <nvparse.h>
 
