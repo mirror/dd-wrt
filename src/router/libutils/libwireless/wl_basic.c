@@ -2,7 +2,6 @@
 #include <unistd.h>
 
 #include <typedefs.h>
-#include <bcmutils.h>
 #include <wlutils.h>
 #include <shutils.h>
 #include <utils.h>

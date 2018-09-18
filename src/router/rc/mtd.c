@@ -35,7 +35,6 @@
 
 #include <trxhdr.h>
 #include <crc.h>
-#include <bcmutils.h>
 #include <bcmnvram.h>
 #include <shutils.h>
 
@@ -51,6 +50,14 @@
 #define STORE32_LE(X)		(X)
 #else
 #error unkown endianness!
+#endif
+
+#ifndef OFFSETOF
+#define	OFFSETOF(type, member)	((uint)(uintptr)&((type *)0)->member)
+#endif
+
+#ifndef ROUNDUP
+#define	ROUNDUP(x, y)		((((x) + ((y) - 1)) / (y)) * (y))
 #endif
 
 /* Netgear definitions */

@@ -57,7 +57,6 @@
 #include <linux/if_ether.h>
 // #include <linux/mii.h>
 #include <linux/sockios.h>
-#include <broadcom.h>
 #ifdef HAVE_IPV6
 #include <ifaddrs.h>
 #endif

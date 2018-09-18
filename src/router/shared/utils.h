@@ -1293,3 +1293,28 @@ extern struct in_addr inet_netaddr_of(struct in_addr addr, struct in_addr msk);
 extern struct in_addr inet_bcastaddr_of(struct in_addr net, struct in_addr msk);
 extern void inet_addr_to_cidr(struct in_addr addr, struct in_addr msk, char *cidr_buf);
 extern int inet_cidr_to_addr(char *cidr_str, struct in_addr *addr, struct in_addr *msk);
+
+#define ETHER_ADDR_STR_LEN	18	/* 18-bytes of Ethernet address buffer length */
+#ifndef ETHER_ADDR_LEN
+#define ETHER_ADDR_LEN	6	/* 18-bytes of Ethernet address buffer length */
+
+#ifndef ABS
+#define	ABS(a)			(((a) < 0) ? -(a) : (a))
+#endif /* ABS */
+
+#ifndef MIN
+#define	MIN(a, b)		(((a) < (b)) ? (a) : (b))
+#endif /* MIN */
+
+#ifndef MAX
+#define	MAX(a, b)		(((a) > (b)) ? (a) : (b))
+#endif /* MAX */
+
+#ifndef OFFSETOF
+#define	OFFSETOF(type, member)	((uint)(uintptr)&((type *)0)->member)
+#endif
+
+#ifndef ROUNDUP
+#define	ROUNDUP(x, y)		((((x) + ((y) - 1)) / (y)) * (y))
+#endif
+#endif
