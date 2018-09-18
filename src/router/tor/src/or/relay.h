@@ -78,7 +78,6 @@ void destroy_cell_queue_append(destroy_cell_queue_t *queue,
 void channel_unlink_all_circuits(channel_t *chan, smartlist_t *detached_out);
 MOCK_DECL(int, channel_flush_from_first_active_circuit,
           (channel_t *chan, int max));
-void assert_circuit_mux_okay(channel_t *chan);
 void update_circuit_on_cmux_(circuit_t *circ, cell_direction_t direction,
                              const char *file, int lineno);
 #define update_circuit_on_cmux(circ, direction) \
@@ -91,9 +90,6 @@ const uint8_t *decode_address_from_payload(tor_addr_t *addr_out,
 void circuit_clear_cell_queue(circuit_t *circ, channel_t *chan);
 
 void stream_choice_seed_weak_rng(void);
-
-int relay_crypt(circuit_t *circ, cell_t *cell, cell_direction_t cell_direction,
-                crypt_path_t **layer_hint, char *recognized);
 
 circid_t packed_cell_get_circid(const packed_cell_t *cell, int wide_circ_ids);
 
@@ -118,6 +114,10 @@ STATIC packed_cell_t *packed_cell_new(void);
 STATIC packed_cell_t *cell_queue_pop(cell_queue_t *queue);
 STATIC destroy_cell_t *destroy_cell_queue_pop(destroy_cell_queue_t *queue);
 STATIC int cell_queues_check_size(void);
+STATIC int connection_edge_process_relay_cell(cell_t *cell, circuit_t *circ,
+                                   edge_connection_t *conn,
+                                   crypt_path_t *layer_hint);
+
 #endif /* defined(RELAY_PRIVATE) */
 
 #endif /* !defined(TOR_RELAY_H) */

@@ -9,6 +9,9 @@
 /* tor's configuration directory */
 #undef CONFDIR
 
+/* Enable smartlist debugging */
+#undef DEBUG_SMARTLIST
+
 /* Defined if we're turning off memory safety code to look for bugs */
 #undef DISABLE_MEMORY_SENTINELS
 
@@ -23,6 +26,9 @@
 
 /* Defined if we're building with support for in-process restart debugging. */
 #undef ENABLE_RESTART_DEBUGGING
+
+/* Defined if we're going to try to use zstd's "static-only" APIs. */
+#undef ENABLE_ZSTD_ADVANCED_APIS
 
 /* Define if enum is always signed */
 #undef ENUM_VALS_ARE_SIGNED
@@ -63,6 +69,9 @@
 /* True if we have -Woverlength-strings */
 #undef HAVE_CFLAG_WOVERLENGTH_STRINGS
 
+/* True if we have -Wunused-const-variable */
+#undef HAVE_CFLAG_WUNUSED_CONST_VARIABLE
+
 /* Define to 1 if you have the `clock_gettime' function. */
 #undef HAVE_CLOCK_GETTIME
 
@@ -75,10 +84,6 @@
 
 /* Define to 1 if you have the <cygwin/signal.h> header file. */
 #undef HAVE_CYGWIN_SIGNAL_H
-
-/* Define to 1 if you have the declaration of `getpagesize', and to 0 if you
-   don't. */
-#undef HAVE_DECL_GETPAGESIZE
 
 /* Define to 1 if you have the declaration of `mlockall', and to 0 if you
    don't. */
@@ -292,6 +297,12 @@
 /* Define to 1 if you have the `mlockall' function. */
 #undef HAVE_MLOCKALL
 
+/* Define to 1 if you have the `mmap' function. */
+#undef HAVE_MMAP
+
+/* Compile with Directory Authority feature support */
+#undef HAVE_MODULE_DIRAUTH
+
 /* Define to 1 if you have the <nacl/crypto_scalarmult_curve25519.h> header
    file. */
 #undef HAVE_NACL_CRYPTO_SCALARMULT_CURVE25519_H
@@ -373,6 +384,9 @@
 
 /* Define to 1 if you have the `SSL_CIPHER_find' function. */
 #undef HAVE_SSL_CIPHER_FIND
+
+/* Define to 1 if you have the `SSL_CTX_set_security_level' function. */
+#undef HAVE_SSL_CTX_SET_SECURITY_LEVEL
 
 /* Define to 1 if you have the `SSL_get_client_ciphers' function. */
 #undef HAVE_SSL_GET_CLIENT_CIPHERS
@@ -582,6 +596,12 @@
 /* Have Zstd */
 #undef HAVE_ZSTD
 
+/* Define to 1 if you have the `ZSTD_estimateCStreamSize' function. */
+#undef HAVE_ZSTD_ESTIMATECSTREAMSIZE
+
+/* Define to 1 if you have the `ZSTD_estimateDCtxSize' function. */
+#undef HAVE_ZSTD_ESTIMATEDCTXSIZE
+
 /* Define to 1 if you have the `_NSGetEnviron' function. */
 #undef HAVE__NSGETENVIRON
 
@@ -657,6 +677,9 @@
 /* The size of `pid_t', as computed by sizeof. */
 #undef SIZEOF_PID_T
 
+/* The size of `SHA_CTX', as computed by sizeof. */
+#undef SIZEOF_SHA_CTX
+
 /* The size of `short', as computed by sizeof. */
 #undef SIZEOF_SHORT
 
@@ -689,6 +712,12 @@
 
 /* The size of `__int64', as computed by sizeof. */
 #undef SIZEOF___INT64
+
+/* tor's sourcedir directory */
+#undef SRCDIR
+
+/* Set to 1 if we can compile a simple stdatomic example. */
+#undef STDATOMIC_WORKS
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS

@@ -36,6 +36,7 @@ hibernating, phase 2:
 #include "connection_edge.h"
 #include "connection_or.h"
 #include "control.h"
+#include "crypto_rand.h"
 #include "hibernate.h"
 #include "main.h"
 #include "router.h"
@@ -50,6 +51,10 @@ static time_t hibernate_end_time = 0;
 /** If we are shutting down, when do we plan finally exit? Set to 0 if
  * we aren't shutting down. */
 static time_t shutdown_time = 0;
+
+/** A timed event that we'll use when it's time to wake up from
+ * hibernation. */
+static mainloop_event_t *wakeup_event = NULL;
 
 /** Possible accounting periods. */
 typedef enum {
@@ -130,6 +135,8 @@ static time_t start_of_accounting_period_after(time_t now);
 static time_t start_of_accounting_period_containing(time_t now);
 static void accounting_set_wakeup_time(void);
 static void on_hibernate_state_change(hibernate_state_t prev_state);
+static void hibernate_schedule_wakeup_event(time_t now, time_t end_time);
+static void wakeup_event_callback(mainloop_event_t *ev, void *data);
 
 /**
  * Return the human-readable name for the hibernation state <b>state</b>
@@ -297,7 +304,7 @@ accounting_get_end_time,(void))
   return interval_end_time;
 }
 
-/** Called from main.c to tell us that <b>seconds</b> seconds have
+/** Called from connection.c to tell us that <b>seconds</b> seconds have
  * passed, <b>n_read</b> bytes have been read, and <b>n_written</b>
  * bytes have been written. */
 void
@@ -866,7 +873,7 @@ hibernate_end(hibernate_state_t new_state)
 
   hibernate_state = new_state;
   hibernate_end_time = 0; /* no longer hibernating */
-  stats_n_seconds_working = 0; /* reset published uptime */
+  reset_uptime(); /* reset published uptime */
 }
 
 /** A wrapper around hibernate_begin, for when we get SIGINT. */
@@ -876,11 +883,24 @@ hibernate_begin_shutdown(void)
   hibernate_begin(HIBERNATE_STATE_EXITING, time(NULL));
 }
 
-/** Return true iff we are currently hibernating. */
+/**
+ * Return true iff we are currently hibernating -- that is, if we are in
+ * any non-live state.
+ */
 MOCK_IMPL(int,
 we_are_hibernating,(void))
 {
   return hibernate_state != HIBERNATE_STATE_LIVE;
+}
+
+/**
+ * Return true iff we are currently _fully_ hibernating -- that is, if we are
+ * in a state where we expect to handle no network activity at all.
+ */
+MOCK_IMPL(int,
+we_are_fully_hibernating,(void))
+{
+  return hibernate_state == HIBERNATE_STATE_DORMANT;
 }
 
 /** If we aren't currently dormant, close all connections and become
@@ -935,6 +955,63 @@ hibernate_go_dormant(time_t now)
 
   or_state_mark_dirty(get_or_state(),
                       get_options()->AvoidDiskWrites ? now+600 : 0);
+
+  hibernate_schedule_wakeup_event(now, hibernate_end_time);
+}
+
+/**
+ * Schedule a mainloop event at <b>end_time</b> to wake up from a dormant
+ * state.  We can't rely on this happening from second_elapsed_callback,
+ * since second_elapsed_callback will be shut down when we're dormant.
+ *
+ * (Note that We might immediately go back to sleep after we set the next
+ * wakeup time.)
+ */
+static void
+hibernate_schedule_wakeup_event(time_t now, time_t end_time)
+{
+  struct timeval delay = { 0, 0 };
+
+  if (now >= end_time) {
+    // In these cases we always wait at least a second, to avoid running
+    // the callback in a tight loop.
+    delay.tv_sec = 1;
+  } else {
+    delay.tv_sec = (end_time - now);
+  }
+
+  if (!wakeup_event) {
+    wakeup_event = mainloop_event_postloop_new(wakeup_event_callback, NULL);
+  }
+
+  mainloop_event_schedule(wakeup_event, &delay);
+}
+
+/**
+ * Called at the end of the interval, or at the wakeup time of the current
+ * interval, to exit the dormant state.
+ **/
+static void
+wakeup_event_callback(mainloop_event_t *ev, void *data)
+{
+  (void) ev;
+  (void) data;
+
+  const time_t now = time(NULL);
+  accounting_run_housekeeping(now);
+  consider_hibernation(now);
+  if (hibernate_state != HIBERNATE_STATE_DORMANT) {
+    /* We woke up, so everything's great here */
+    return;
+  }
+
+  /* We're still dormant. */
+  if (now < interval_wakeup_time)
+    hibernate_end_time = interval_wakeup_time;
+  else
+    hibernate_end_time = interval_end_time;
+
+  hibernate_schedule_wakeup_event(now, hibernate_end_time);
 }
 
 /** Called when hibernate_end_time has arrived. */
@@ -1111,10 +1188,30 @@ getinfo_helper_accounting(control_connection_t *conn,
 static void
 on_hibernate_state_change(hibernate_state_t prev_state)
 {
-  (void)prev_state; /* Should we do something with this? */
   control_event_server_status(LOG_NOTICE,
                               "HIBERNATION_STATUS STATUS=%s",
                               hibernate_state_to_string(hibernate_state));
+
+  /* We are changing hibernation state, this can affect the main loop event
+   * list. Rescan it to update the events state. We do this whatever the new
+   * hibernation state because they can each possibly affect an event. The
+   * initial state means we are booting up so we shouldn't scan here because
+   * at this point the events in the list haven't been initialized. */
+  if (prev_state != HIBERNATE_STATE_INITIAL) {
+    rescan_periodic_events(get_options());
+  }
+
+  reschedule_per_second_timer();
+}
+
+/** Free all resources held by the accounting module */
+void
+accounting_free_all(void)
+{
+  mainloop_event_free(wakeup_event);
+  hibernate_state = HIBERNATE_STATE_INITIAL;
+  hibernate_end_time = 0;
+  shutdown_time = 0;
 }
 
 #ifdef TOR_UNIT_TESTS

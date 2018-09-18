@@ -40,6 +40,9 @@ int connection_control_process_inbuf(control_connection_t *conn);
 #define EVENT_NS 0x000F
 int control_event_is_interesting(int event);
 
+void control_per_second_events(void);
+int control_any_per_second_event_enabled(void);
+
 int control_event_circuit_status(origin_circuit_t *circ,
                                  circuit_status_event_t e, int reason);
 int control_event_circuit_purpose_changed(origin_circuit_t *circ,
@@ -59,10 +62,8 @@ int control_event_circ_bandwidth_used(void);
 int control_event_conn_bandwidth(connection_t *conn);
 int control_event_conn_bandwidth_used(void);
 int control_event_circuit_cell_stats(void);
-int control_event_tb_empty(const char *bucket, uint32_t read_empty_time,
-                           uint32_t write_empty_time,
-                           int milliseconds_elapsed);
 void control_event_logmsg(int severity, uint32_t domain, const char *msg);
+void control_event_logmsg_pending(void);
 int control_event_descriptors_changed(smartlist_t *routers);
 int control_event_address_mapped(const char *from, const char *to,
                                  time_t expires, const char *error,
@@ -194,7 +195,7 @@ void control_free_all(void);
 #define EVENT_CONF_CHANGED            0x0019
 #define EVENT_CONN_BW                 0x001A
 #define EVENT_CELL_STATS              0x001B
-#define EVENT_TB_EMPTY                0x001C
+/* UNUSED :                           0x001C */
 #define EVENT_CIRC_BANDWIDTH_USED     0x001D
 #define EVENT_TRANSPORT_LAUNCHED      0x0020
 #define EVENT_HS_DESC                 0x0021
@@ -311,6 +312,10 @@ STATIC int getinfo_helper_downloads(
     const char *question, char **answer,
     const char **errmsg);
 STATIC int getinfo_helper_dir(
+    control_connection_t *control_conn,
+    const char *question, char **answer,
+    const char **errmsg);
+STATIC int getinfo_helper_current_time(
     control_connection_t *control_conn,
     const char *question, char **answer,
     const char **errmsg);

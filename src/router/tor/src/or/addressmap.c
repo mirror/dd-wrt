@@ -21,9 +21,10 @@
 #include "config.h"
 #include "connection_edge.h"
 #include "control.h"
+#include "crypto_rand.h"
 #include "dns.h"
-#include "routerset.h"
 #include "nodelist.h"
+#include "routerset.h"
 
 /** A client-side struct to remember requests to rewrite addresses
  * to new addresses. These structs are stored in the hash table
@@ -959,9 +960,11 @@ addressmap_get_virtual_address(int type)
         char tmp[TOR_ADDR_BUF_LEN];
         tor_addr_to_str(tmp, &addr, sizeof(tmp), 0);
         if (strmap_get(addressmap, tmp)) {
+          // LCOV_EXCL_START
           log_warn(LD_BUG, "%s wasn't in the addressmap, but %s was.",
                    buf, tmp);
           continue;
+          // LCOV_EXCL_STOP
         }
 
         return tor_strdup(buf);
@@ -970,8 +973,10 @@ addressmap_get_virtual_address(int type)
     log_warn(LD_CONFIG, "Ran out of virtual addresses!");
     return NULL;
   } else {
+    // LCOV_EXCL_START
     log_warn(LD_BUG, "Called with unsupported address type (%d)", type);
     return NULL;
+    // LCOV_EXCL_STOP
   }
 }
 

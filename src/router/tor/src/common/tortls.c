@@ -25,6 +25,9 @@
   #include <ws2tcpip.h>
 #endif
 
+#include "crypto.h"
+#include "crypto_rand.h"
+#include "crypto_util.h"
 #include "compat.h"
 
 /* Some versions of OpenSSL declare SSL_get_selected_srtp_profile twice in
@@ -32,7 +35,6 @@
 DISABLE_GCC_WARNING(redundant-decls)
 
 #include <openssl/opensslv.h>
-#include "crypto.h"
 
 #ifdef OPENSSL_NO_EC
 #error "We require OpenSSL with ECC support"
@@ -56,10 +58,25 @@ ENABLE_GCC_WARNING(redundant-decls)
 #include "container.h"
 #include <string.h>
 
+#ifdef OPENSSL_1_1_API
+#define X509_get_notBefore_const(cert) \
+    X509_get0_notBefore(cert)
+#define X509_get_notAfter_const(cert) \
+    X509_get0_notAfter(cert)
+#ifndef X509_get_notBefore
+#define X509_get_notBefore(cert) \
+    X509_getm_notBefore(cert)
+#endif
+#ifndef X509_get_notAfter
+#define X509_get_notAfter(cert) \
+    X509_getm_notAfter(cert)
+#endif
+#else /* ! OPENSSL_VERSION_NUMBER >= OPENSSL_V_SERIES(1,1,0) */
 #define X509_get_notBefore_const(cert) \
   ((const ASN1_TIME*) X509_get_notBefore((X509 *)cert))
 #define X509_get_notAfter_const(cert) \
   ((const ASN1_TIME*) X509_get_notAfter((X509 *)cert))
+#endif
 
 /* Copied from or.h */
 #define LEGAL_NICKNAME_CHARACTERS \
@@ -355,8 +372,12 @@ tor_tls_init(void)
   check_no_tls_errors();
 
   if (!tls_library_is_initialized) {
+#ifdef OPENSSL_1_1_API
+    OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS, NULL);
+#else
     SSL_library_init();
     SSL_load_error_strings();
+#endif
 
 #if (SIZEOF_VOID_P >= 8 &&                              \
      OPENSSL_VERSION_NUMBER >= OPENSSL_V_SERIES(1,0,1))
@@ -896,18 +917,20 @@ tor_tls_cert_get_key(tor_x509_cert_t *cert)
 MOCK_IMPL(int,
 tor_tls_cert_matches_key,(const tor_tls_t *tls, const tor_x509_cert_t *cert))
 {
-  X509 *peercert = SSL_get_peer_certificate(tls->ssl);
+  tor_x509_cert_t *peer = tor_tls_get_peer_cert((tor_tls_t *)tls);
+  if (!peer)
+    return 0;
+
+  X509 *peercert = peer->cert;
   EVP_PKEY *link_key = NULL, *cert_key = NULL;
   int result;
 
-  if (!peercert)
-    return 0;
   link_key = X509_get_pubkey(peercert);
   cert_key = X509_get_pubkey(cert->cert);
 
   result = link_key && cert_key && EVP_PKEY_cmp(cert_key, link_key) == 1;
 
-  X509_free(peercert);
+  tor_x509_cert_free(peer);
   if (link_key)
     EVP_PKEY_free(link_key);
   if (cert_key)
@@ -1170,6 +1193,12 @@ tor_tls_context_new(crypto_pk_t *identity, unsigned int key_lifetime,
   if (!(result->ctx = SSL_CTX_new(SSLv23_method())))
     goto error;
 #endif /* defined(HAVE_TLS_METHOD) */
+
+#ifdef HAVE_SSL_CTX_SET_SECURITY_LEVEL
+  /* Level 1 re-enables RSA1024 and DH1024 for compatibility with old tors */
+  SSL_CTX_set_security_level(result->ctx, 1);
+#endif
+
   SSL_CTX_set_options(result->ctx, SSL_OP_NO_SSLv2);
   SSL_CTX_set_options(result->ctx, SSL_OP_NO_SSLv3);
 
@@ -2639,4 +2668,3 @@ evaluate_ecgroup_for_tls(const char *ecgroup)
 
   return ret;
 }
-

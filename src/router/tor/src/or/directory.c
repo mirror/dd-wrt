@@ -18,9 +18,10 @@
 #include "consdiffmgr.h"
 #include "control.h"
 #include "compat.h"
+#include "crypto_rand.h"
+#include "crypto_util.h"
 #include "directory.h"
 #include "dirserv.h"
-#include "dirvote.h"
 #include "entrynodes.h"
 #include "geoip.h"
 #include "hs_cache.h"
@@ -41,13 +42,16 @@
 #include "routerlist.h"
 #include "routerparse.h"
 #include "routerset.h"
-#include "shared_random.h"
 
 #if defined(EXPORTMALLINFO) && defined(HAVE_MALLOC_H) && defined(HAVE_MALLINFO)
 #if !defined(OpenBSD)
 #include <malloc.h>
 #endif
 #endif
+
+#include "dirauth/dirvote.h"
+#include "dirauth/mode.h"
+#include "dirauth/shared_random.h"
 
 /**
  * \file directory.c
@@ -794,9 +798,9 @@ directory_choose_address_routerstatus(const routerstatus_t *status,
      * Use the preferred address and port if they are reachable, otherwise,
      * use the alternate address and port (if any).
      */
-    have_or = fascist_firewall_choose_address_rs(status,
-                                                 FIREWALL_OR_CONNECTION, 0,
-                                                 use_or_ap);
+    fascist_firewall_choose_address_rs(status, FIREWALL_OR_CONNECTION, 0,
+                                       use_or_ap);
+    have_or = tor_addr_port_is_valid_ap(use_or_ap, 0);
   }
 
   /* DirPort connections
@@ -805,9 +809,9 @@ directory_choose_address_routerstatus(const routerstatus_t *status,
       indirection == DIRIND_ANON_DIRPORT ||
       (indirection == DIRIND_ONEHOP
        && !directory_must_use_begindir(options))) {
-    have_dir = fascist_firewall_choose_address_rs(status,
-                                                  FIREWALL_DIR_CONNECTION, 0,
-                                                  use_dir_ap);
+    fascist_firewall_choose_address_rs(status, FIREWALL_DIR_CONNECTION, 0,
+                                       use_dir_ap);
+    have_dir = tor_addr_port_is_valid_ap(use_dir_ap, 0);
   }
 
   /* We rejected all addresses in the relay's status. This means we can't
@@ -2438,7 +2442,7 @@ connection_dir_client_reached_eof(dir_connection_t *conn)
      * and the date header.  (We used to check now-date_header, but that's
      * inaccurate if we spend a lot of time downloading.)
      */
-    apparent_skew = conn->base_.timestamp_lastwritten - date_header;
+    apparent_skew = conn->base_.timestamp_last_write_allowed - date_header;
     if (labs(apparent_skew)>ALLOW_DIRECTORY_TIME_SKEW) {
       int trusted = router_digest_is_trusted_dir(conn->identity_digest);
       clock_skew_warning(TO_CONN(conn), apparent_skew, trusted, LD_HTTP,
@@ -4439,59 +4443,15 @@ handle_get_status_vote(dir_connection_t *conn, const get_handler_args_t *args)
 {
   const char *url = args->url;
   {
-    int current;
     ssize_t body_len = 0;
     ssize_t estimated_len = 0;
+    int lifetime = 60; /* XXXX?? should actually use vote intervals. */
     /* This smartlist holds strings that we can compress on the fly. */
     smartlist_t *items = smartlist_new();
     /* This smartlist holds cached_dir_t objects that have a precompressed
      * deflated version. */
     smartlist_t *dir_items = smartlist_new();
-    int lifetime = 60; /* XXXX?? should actually use vote intervals. */
-    url += strlen("/tor/status-vote/");
-    current = !strcmpstart(url, "current/");
-    url = strchr(url, '/');
-    tor_assert(url);
-    ++url;
-    if (!strcmp(url, "consensus")) {
-      const char *item;
-      tor_assert(!current); /* we handle current consensus specially above,
-                             * since it wants to be spooled. */
-      if ((item = dirvote_get_pending_consensus(FLAV_NS)))
-        smartlist_add(items, (char*)item);
-    } else if (!current && !strcmp(url, "consensus-signatures")) {
-      /* XXXX the spec says that we should implement
-       * current/consensus-signatures too.  It doesn't seem to be needed,
-       * though. */
-      const char *item;
-      if ((item=dirvote_get_pending_detached_signatures()))
-        smartlist_add(items, (char*)item);
-    } else if (!strcmp(url, "authority")) {
-      const cached_dir_t *d;
-      int flags = DGV_BY_ID |
-        (current ? DGV_INCLUDE_PREVIOUS : DGV_INCLUDE_PENDING);
-      if ((d=dirvote_get_vote(NULL, flags)))
-        smartlist_add(dir_items, (cached_dir_t*)d);
-    } else {
-      const cached_dir_t *d;
-      smartlist_t *fps = smartlist_new();
-      int flags;
-      if (!strcmpstart(url, "d/")) {
-        url += 2;
-        flags = DGV_INCLUDE_PENDING | DGV_INCLUDE_PREVIOUS;
-      } else {
-        flags = DGV_BY_ID |
-          (current ? DGV_INCLUDE_PREVIOUS : DGV_INCLUDE_PENDING);
-      }
-      dir_split_resource_into_fingerprints(url, fps, NULL,
-                                           DSR_HEX|DSR_SORT_UNIQ);
-      SMARTLIST_FOREACH(fps, char *, fp, {
-          if ((d = dirvote_get_vote(fp, flags)))
-            smartlist_add(dir_items, (cached_dir_t*)d);
-          tor_free(fp);
-        });
-      smartlist_free(fps);
-    }
+    dirvote_dirreq_get_status_vote(url, items, dir_items);
     if (!smartlist_len(dir_items) && !smartlist_len(items)) {
       write_short_http_response(conn, 404, "Not found");
       goto vote_done;
@@ -5302,84 +5262,71 @@ connection_dir_finished_connecting(dir_connection_t *conn)
 
 /** Decide which download schedule we want to use based on descriptor type
  * in <b>dls</b> and <b>options</b>.
- * Then return a list of int pointers defining download delays in seconds.
+ *
+ * Then, return the initial delay for that download schedule, in seconds.
+ *
  * Helper function for download_status_increment_failure(),
  * download_status_reset(), and download_status_increment_attempt(). */
-STATIC const smartlist_t *
-find_dl_schedule(const download_status_t *dls, const or_options_t *options)
+STATIC int
+find_dl_min_delay(const download_status_t *dls, const or_options_t *options)
 {
+  tor_assert(dls);
+  tor_assert(options);
+
   switch (dls->schedule) {
     case DL_SCHED_GENERIC:
       /* Any other directory document */
       if (dir_server_mode(options)) {
         /* A directory authority or directory mirror */
-        return options->TestingServerDownloadSchedule;
+        return options->TestingServerDownloadInitialDelay;
       } else {
-        return options->TestingClientDownloadSchedule;
+        return options->TestingClientDownloadInitialDelay;
       }
     case DL_SCHED_CONSENSUS:
       if (!networkstatus_consensus_can_use_multiple_directories(options)) {
         /* A public relay */
-        return options->TestingServerConsensusDownloadSchedule;
+        return options->TestingServerConsensusDownloadInitialDelay;
       } else {
         /* A client or bridge */
         if (networkstatus_consensus_is_bootstrapping(time(NULL))) {
           /* During bootstrapping */
           if (!networkstatus_consensus_can_use_extra_fallbacks(options)) {
             /* A bootstrapping client without extra fallback directories */
-            return
-             options->ClientBootstrapConsensusAuthorityOnlyDownloadSchedule;
+            return options->
+              ClientBootstrapConsensusAuthorityOnlyDownloadInitialDelay;
           } else if (dls->want_authority) {
             /* A bootstrapping client with extra fallback directories, but
              * connecting to an authority */
             return
-             options->ClientBootstrapConsensusAuthorityDownloadSchedule;
+             options->ClientBootstrapConsensusAuthorityDownloadInitialDelay;
           } else {
             /* A bootstrapping client connecting to extra fallback directories
              */
             return
-              options->ClientBootstrapConsensusFallbackDownloadSchedule;
+              options->ClientBootstrapConsensusFallbackDownloadInitialDelay;
           }
         } else {
           /* A client with a reasonably live consensus, with or without
            * certificates */
-          return options->TestingClientConsensusDownloadSchedule;
+          return options->TestingClientConsensusDownloadInitialDelay;
         }
       }
     case DL_SCHED_BRIDGE:
       if (options->UseBridges && num_bridges_usable(0) > 0) {
         /* A bridge client that is sure that one or more of its bridges are
          * running can afford to wait longer to update bridge descriptors. */
-        return options->TestingBridgeDownloadSchedule;
+        return options->TestingBridgeDownloadInitialDelay;
       } else {
         /* A bridge client which might have no running bridges, must try to
          * get bridge descriptors straight away. */
-        return options->TestingBridgeBootstrapDownloadSchedule;
+        return options->TestingBridgeBootstrapDownloadInitialDelay;
       }
     default:
       tor_assert(0);
   }
 
   /* Impossible, but gcc will fail with -Werror without a `return`. */
-  return NULL;
-}
-
-/** Decide which minimum delay step we want to use based on
- * descriptor type in <b>dls</b> and <b>options</b>.
- * Helper function for download_status_schedule_get_delay(). */
-STATIC int
-find_dl_min_delay(download_status_t *dls, const or_options_t *options)
-{
-  tor_assert(dls);
-  tor_assert(options);
-
-  /*
-   * For now, just use the existing schedule config stuff and pick the
-   * first/last entries off to get min/max delay for backoff purposes
-   */
-  const smartlist_t *schedule = find_dl_schedule(dls, options);
-  tor_assert(schedule != NULL && smartlist_len(schedule) >= 2);
-  return *(int *)(smartlist_get(schedule, 0));
+  return 0;
 }
 
 /** As next_random_exponential_delay() below, but does not compute a random
@@ -5636,10 +5583,9 @@ download_status_increment_attempt(download_status_t *dls, const char *item,
 static time_t
 download_status_get_initial_delay_from_now(const download_status_t *dls)
 {
-  const smartlist_t *schedule = find_dl_schedule(dls, get_options());
   /* We use constant initial delays, even in exponential backoff
    * schedules. */
-  return time(NULL) + *(int *)smartlist_get(schedule, 0);
+  return time(NULL) + find_dl_min_delay(dls, get_options());
 }
 
 /** Reset <b>dls</b> so that it will be considered downloadable

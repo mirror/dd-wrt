@@ -55,7 +55,6 @@
 #include "rephist.h"
 #include "router.h"
 #include "routerlist.h"
-#include "config.h"
 
 static void circuit_expire_old_circuits_clientside(void);
 static void circuit_increment_failure_count(void);
@@ -1632,7 +1631,7 @@ circuit_testing_opened(origin_circuit_t *circ)
     router_perform_bandwidth_test(NUM_PARALLEL_TESTING_CIRCS, time(NULL));
     have_performed_bandwidth_test = 1;
   } else
-    consider_testing_reachability(1, 0);
+    router_do_reachability_checks(1, 0);
 }
 
 /** A testing circuit has failed to build. Take whatever stats we want. */
@@ -2607,7 +2606,7 @@ link_apconn_to_circ(entry_connection_t *apconn, origin_circuit_t *circ,
   log_debug(LD_APP|LD_CIRC, "attaching new conn to circ. n_circ_id %u.",
             (unsigned)circ->base_.n_circ_id);
   /* reset it, so we can measure circ timeouts */
-  ENTRY_TO_CONN(apconn)->timestamp_lastread = time(NULL);
+  ENTRY_TO_CONN(apconn)->timestamp_last_read_allowed = time(NULL);
   ENTRY_TO_EDGE_CONN(apconn)->next_stream = circ->p_streams;
   ENTRY_TO_EDGE_CONN(apconn)->on_circuit = TO_CIRCUIT(circ);
   /* assert_connection_ok(conn, time(NULL)); */
@@ -3105,5 +3104,43 @@ mark_circuit_unusable_for_new_conns(origin_circuit_t *circ)
     circ->base_.timestamp_dirty -= options->MaxCircuitDirtiness;
 
   circ->unusable_for_new_conns = 1;
+}
+
+/**
+ * Add relay_body_len and RELAY_PAYLOAD_SIZE-relay_body_len to
+ * the valid delivered written fields and the overhead field,
+ * respectively.
+ */
+void
+circuit_sent_valid_data(origin_circuit_t *circ, uint16_t relay_body_len)
+{
+  if (!circ) return;
+
+  tor_assert_nonfatal(relay_body_len <= RELAY_PAYLOAD_SIZE);
+
+  circ->n_delivered_written_circ_bw =
+      tor_add_u32_nowrap(circ->n_delivered_written_circ_bw, relay_body_len);
+  circ->n_overhead_written_circ_bw =
+      tor_add_u32_nowrap(circ->n_overhead_written_circ_bw,
+                         RELAY_PAYLOAD_SIZE-relay_body_len);
+}
+
+/**
+ * Add relay_body_len and RELAY_PAYLOAD_SIZE-relay_body_len to
+ * the valid delivered read field and the overhead field,
+ * respectively.
+ */
+void
+circuit_read_valid_data(origin_circuit_t *circ, uint16_t relay_body_len)
+{
+  if (!circ) return;
+
+  tor_assert_nonfatal(relay_body_len <= RELAY_PAYLOAD_SIZE);
+
+  circ->n_delivered_read_circ_bw =
+      tor_add_u32_nowrap(circ->n_delivered_read_circ_bw, relay_body_len);
+  circ->n_overhead_read_circ_bw =
+      tor_add_u32_nowrap(circ->n_overhead_read_circ_bw,
+                         RELAY_PAYLOAD_SIZE-relay_body_len);
 }
 

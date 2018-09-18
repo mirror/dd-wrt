@@ -33,13 +33,12 @@
 #include "circuitbuild.h"
 #include "circuitlist.h"
 #include "circuituse.h"
-#include "crypto.h"
-#include "dirvote.h"
+#include "crypto_rand.h"
+#include "dirauth/dirvote.h"
 #include "networkstatus.h"
 #include "nodelist.h"
 #include "relay.h"
 #include "routerparse.h"
-
 #include "hs_common.h"
 #include "hs_config.h"
 #include "hs_ident.h"
@@ -51,7 +50,8 @@
 #include "main.h"
 #include "rendservice.h"
 #include "statefile.h"
-#include "shared_random_state.h"
+#include "dirauth/shared_random_state.h"
+#include "voting_schedule.h"
 
 /* Trunnel */
 #include "hs/cell_establish_intro.h"
@@ -173,12 +173,12 @@ test_e2e_rend_circuit_setup(void *arg)
   tt_int_op(retval, OP_EQ, 1);
 
   /* Check the digest algo */
-  tt_int_op(crypto_digest_get_algorithm(or_circ->cpath->f_digest),
+  tt_int_op(crypto_digest_get_algorithm(or_circ->cpath->crypto.f_digest),
             OP_EQ, DIGEST_SHA3_256);
-  tt_int_op(crypto_digest_get_algorithm(or_circ->cpath->b_digest),
+  tt_int_op(crypto_digest_get_algorithm(or_circ->cpath->crypto.b_digest),
             OP_EQ, DIGEST_SHA3_256);
-  tt_assert(or_circ->cpath->f_crypto);
-  tt_assert(or_circ->cpath->b_crypto);
+  tt_assert(or_circ->cpath->crypto.f_crypto);
+  tt_assert(or_circ->cpath->crypto.b_crypto);
 
   /* Ensure that circ purpose was changed */
   tt_int_op(or_circ->base_.purpose, OP_EQ, CIRCUIT_PURPOSE_S_REND_JOINED);
@@ -241,7 +241,7 @@ static hs_service_intro_point_t *
 helper_create_service_ip(void)
 {
   hs_desc_link_specifier_t *ls;
-  hs_service_intro_point_t *ip = service_intro_point_new(NULL, 0);
+  hs_service_intro_point_t *ip = service_intro_point_new(NULL, 0, 0);
   tor_assert(ip);
   /* Add a first unused link specifier. */
   ls = tor_malloc_zero(sizeof(*ls));
@@ -1057,7 +1057,7 @@ test_rotate_descriptors(void *arg)
   ret = parse_rfc1123_time("Sat, 26 Oct 1985 14:00:00 UTC",
                            &mock_ns.fresh_until);
   tt_int_op(ret, OP_EQ, 0);
-  dirvote_recalculate_timing(get_options(), mock_ns.valid_after);
+  voting_schedule_recalculate_timing(get_options(), mock_ns.valid_after);
 
   /* Create a service with a default descriptor and state. It's added to the
    * global map. */
@@ -1095,7 +1095,7 @@ test_rotate_descriptors(void *arg)
   ret = parse_rfc1123_time("Sat, 27 Oct 1985 02:00:00 UTC",
                            &mock_ns.fresh_until);
   tt_int_op(ret, OP_EQ, 0);
-  dirvote_recalculate_timing(get_options(), mock_ns.valid_after);
+  voting_schedule_recalculate_timing(get_options(), mock_ns.valid_after);
 
   /* Note down what to expect for the next rotation time which is 01:00 + 23h
    * meaning 00:00:00. */
@@ -1157,7 +1157,7 @@ test_build_update_descriptors(void *arg)
   ret = parse_rfc1123_time("Sat, 26 Oct 1985 04:00:00 UTC",
                            &mock_ns.fresh_until);
   tt_int_op(ret, OP_EQ, 0);
-  dirvote_recalculate_timing(get_options(), mock_ns.valid_after);
+  voting_schedule_recalculate_timing(get_options(), mock_ns.valid_after);
 
   /* Create a service without a current descriptor to trigger a build. */
   service = helper_create_service();
@@ -1237,7 +1237,7 @@ test_build_update_descriptors(void *arg)
     node->is_running = node->is_valid = node->is_fast = node->is_stable = 1;
   }
 
-  /* We have to set thise, or the lack of microdescriptors for these
+  /* We have to set this, or the lack of microdescriptors for these
    * nodes will make them unusable. */
   get_options_mutable()->UseMicrodescriptors = 0;
 

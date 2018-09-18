@@ -16,8 +16,8 @@
   #include <ws2tcpip.h>
 #endif
 
+#include "compat_openssl.h"
 #include <openssl/opensslv.h>
-#include "crypto.h"
 #include "crypto_openssl_mgt.h"
 
 #if OPENSSL_VERSION_NUMBER < OPENSSL_V_SERIES(1,0,0)
@@ -116,7 +116,11 @@ aes_cipher_free_(aes_cnt_cipher_t *cipher_)
   if (!cipher_)
     return;
   EVP_CIPHER_CTX *cipher = (EVP_CIPHER_CTX *) cipher_;
+#ifdef OPENSSL_1_1_API
+  EVP_CIPHER_CTX_reset(cipher);
+#else
   EVP_CIPHER_CTX_cleanup(cipher);
+#endif
   EVP_CIPHER_CTX_free(cipher);
 }
 void

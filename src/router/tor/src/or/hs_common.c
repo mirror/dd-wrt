@@ -15,6 +15,8 @@
 
 #include "config.h"
 #include "circuitbuild.h"
+#include "crypto_rand.h"
+#include "crypto_util.h"
 #include "networkstatus.h"
 #include "nodelist.h"
 #include "hs_cache.h"
@@ -28,9 +30,8 @@
 #include "rendservice.h"
 #include "routerset.h"
 #include "router.h"
-#include "routerset.h"
-#include "shared_random.h"
-#include "shared_random_state.h"
+#include "shared_random_client.h"
+#include "dirauth/shared_random_state.h"
 
 /* Trunnel */
 #include "ed25519_cert.h"
@@ -104,7 +105,7 @@ compare_digest_to_fetch_hsdir_index(const void *_key, const void **_member)
 {
   const char *key = _key;
   const node_t *node = *_member;
-  return tor_memcmp(key, node->hsdir_index->fetch, DIGEST256_LEN);
+  return tor_memcmp(key, node->hsdir_index.fetch, DIGEST256_LEN);
 }
 
 /* Helper function: The key is a digest that we compare to a node_t object
@@ -115,7 +116,7 @@ compare_digest_to_store_first_hsdir_index(const void *_key,
 {
   const char *key = _key;
   const node_t *node = *_member;
-  return tor_memcmp(key, node->hsdir_index->store_first, DIGEST256_LEN);
+  return tor_memcmp(key, node->hsdir_index.store_first, DIGEST256_LEN);
 }
 
 /* Helper function: The key is a digest that we compare to a node_t object
@@ -126,7 +127,7 @@ compare_digest_to_store_second_hsdir_index(const void *_key,
 {
   const char *key = _key;
   const node_t *node = *_member;
-  return tor_memcmp(key, node->hsdir_index->store_second, DIGEST256_LEN);
+  return tor_memcmp(key, node->hsdir_index.store_second, DIGEST256_LEN);
 }
 
 /* Helper function: Compare two node_t objects current hsdir_index. */
@@ -135,8 +136,8 @@ compare_node_fetch_hsdir_index(const void **a, const void **b)
 {
   const node_t *node1= *a;
   const node_t *node2 = *b;
-  return tor_memcmp(node1->hsdir_index->fetch,
-                    node2->hsdir_index->fetch,
+  return tor_memcmp(node1->hsdir_index.fetch,
+                    node2->hsdir_index.fetch,
                     DIGEST256_LEN);
 }
 
@@ -146,8 +147,8 @@ compare_node_store_first_hsdir_index(const void **a, const void **b)
 {
   const node_t *node1= *a;
   const node_t *node2 = *b;
-  return tor_memcmp(node1->hsdir_index->store_first,
-                    node2->hsdir_index->store_first,
+  return tor_memcmp(node1->hsdir_index.store_first,
+                    node2->hsdir_index.store_first,
                     DIGEST256_LEN);
 }
 
@@ -157,8 +158,8 @@ compare_node_store_second_hsdir_index(const void **a, const void **b)
 {
   const node_t *node1= *a;
   const node_t *node2 = *b;
-  return tor_memcmp(node1->hsdir_index->store_second,
-                    node2->hsdir_index->store_second,
+  return tor_memcmp(node1->hsdir_index.store_second,
+                    node2->hsdir_index.store_second,
                     DIGEST256_LEN);
 }
 
@@ -1289,18 +1290,15 @@ node_has_hsdir_index(const node_t *node)
 
   /* At this point, since the node has a desc, this node must also have an
    * hsdir index. If not, something went wrong, so BUG out. */
-  if (BUG(node->hsdir_index == NULL)) {
-    return 0;
-  }
-  if (BUG(tor_mem_is_zero((const char*)node->hsdir_index->fetch,
+  if (BUG(tor_mem_is_zero((const char*)node->hsdir_index.fetch,
                           DIGEST256_LEN))) {
     return 0;
   }
-  if (BUG(tor_mem_is_zero((const char*)node->hsdir_index->store_first,
+  if (BUG(tor_mem_is_zero((const char*)node->hsdir_index.store_first,
                           DIGEST256_LEN))) {
     return 0;
   }
-  if (BUG(tor_mem_is_zero((const char*)node->hsdir_index->store_second,
+  if (BUG(tor_mem_is_zero((const char*)node->hsdir_index.store_second,
                           DIGEST256_LEN))) {
     return 0;
   }
@@ -1334,15 +1332,20 @@ hs_get_responsible_hsdirs(const ed25519_public_key_t *blinded_pk,
 
   sorted_nodes = smartlist_new();
 
+  /* Make sure we actually have a live consensus */
+  networkstatus_t *c = networkstatus_get_live_consensus(approx_time());
+  if (!c || smartlist_len(c->routerstatus_list) == 0) {
+      log_warn(LD_REND, "No live consensus so we can't get the responsible "
+               "hidden service directories.");
+      goto done;
+  }
+
+  /* Ensure the nodelist is fresh, since it contains the HSDir indices. */
+  nodelist_ensure_freshness(c);
+
   /* Add every node_t that support HSDir v3 for which we do have a valid
    * hsdir_index already computed for them for this consensus. */
   {
-    networkstatus_t *c = networkstatus_get_latest_consensus();
-    if (!c || smartlist_len(c->routerstatus_list) == 0) {
-      log_warn(LD_REND, "No valid consensus so we can't get the responsible "
-                        "hidden service directories.");
-      goto done;
-    }
     SMARTLIST_FOREACH_BEGIN(c->routerstatus_list, const routerstatus_t *, rs) {
       /* Even though this node_t object won't be modified and should be const,
        * we can't add const object in a smartlist_t. */

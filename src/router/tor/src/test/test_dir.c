@@ -23,9 +23,10 @@
 #include "config.h"
 #include "control.h"
 #include "crypto_ed25519.h"
+#include "crypto_rand.h"
 #include "directory.h"
 #include "dirserv.h"
-#include "dirvote.h"
+#include "dirauth/dirvote.h"
 #include "entrynodes.h"
 #include "hibernate.h"
 #include "memarea.h"
@@ -35,12 +36,13 @@
 #include "routerlist.h"
 #include "routerparse.h"
 #include "routerset.h"
-#include "shared_random_state.h"
+#include "dirauth/shared_random_state.h"
 #include "test.h"
 #include "test_dir_common.h"
 #include "torcert.h"
 #include "relay.h"
 #include "log_test_helpers.h"
+#include "voting_schedule.h"
 
 #define NS_MODULE dir
 
@@ -1499,6 +1501,13 @@ test_dir_measured_bw_kb(void *arg)
                 "bw=1024 junk=007\n",
     "misc=junk node_id=$557365204145532d32353620696e73746561642e  "
                 "bw=1024 junk=007\n",
+    /* check whether node_id can be at the end */
+    "bw=1024 node_id=$557365204145532d32353620696e73746561642e\n",
+    /* check whether node_id can be at the end and bw has something in front*/
+    "foo=bar bw=1024 node_id=$557365204145532d32353620696e73746561642e\n",
+    /* check whether node_id can be at the end and something in the
+     * in the middle of bw and node_id */
+    "bw=1024 foo=bar node_id=$557365204145532d32353620696e73746561642e\n",
     "end"
   };
   const char *lines_fail[] = {
@@ -1538,12 +1547,18 @@ test_dir_measured_bw_kb(void *arg)
   (void)arg;
   for (i = 0; strcmp(lines_fail[i], "end"); i++) {
     //fprintf(stderr, "Testing: %s\n", lines_fail[i]);
-    tt_int_op(measured_bw_line_parse(&mbwl, lines_fail[i]), OP_EQ, -1);
+    /* Testing only with line_is_after_headers = 1. Tests with
+     * line_is_after_headers = 0 in
+     * test_dir_measured_bw_kb_line_is_after_headers */
+    tt_assert(measured_bw_line_parse(&mbwl, lines_fail[i], 1) == -1);
   }
 
   for (i = 0; strcmp(lines_pass[i], "end"); i++) {
     //fprintf(stderr, "Testing: %s %d\n", lines_pass[i], TOR_ISSPACE('\n'));
-    tt_int_op(measured_bw_line_parse(&mbwl, lines_pass[i]), OP_EQ, 0);
+    /* Testing only with line_is_after_headers = 1. Tests with
+     * line_is_after_headers = 0 in
+     * test_dir_measured_bw_kb_line_is_after_headers */
+    tt_assert(measured_bw_line_parse(&mbwl, lines_pass[i], 1) == 0);
     tt_assert(mbwl.bw_kb == 1024);
     tt_assert(strcmp(mbwl.node_hex,
                 "557365204145532d32353620696e73746561642e") == 0);
@@ -1555,7 +1570,7 @@ test_dir_measured_bw_kb(void *arg)
 
 /* Test dirserv_read_measured_bandwidths */
 static void
-test_dir_dirserv_read_measured_bandwidths(void *arg)
+test_dir_dirserv_read_measured_bandwidths_empty(void *arg)
 {
   char *fname=NULL;
   (void)arg;
@@ -1570,6 +1585,129 @@ test_dir_dirserv_read_measured_bandwidths(void *arg)
  done:
   tor_free(fname);
   teardown_capture_of_logs();
+}
+
+/* Unit tests for measured_bw_line_parse using line_is_after_headers flag.
+ * When the end of the header is detected (a first complete bw line is parsed),
+ * incomplete lines fail and give warnings, but do not give warnings if
+ * the header is not ended, allowing to ignore additional header lines. */
+static void
+test_dir_measured_bw_kb_line_is_after_headers(void *arg)
+{
+  (void)arg;
+  measured_bw_line_t mbwl;
+  const char *line_pass = \
+    "node_id=$557365204145532d32353620696e73746561642e bw=1024\n";
+  int i;
+  const char *lines_fail[] = {
+    "node_id=$557365204145532d32353620696e73746561642e \n",
+    "bw=1024\n",
+    "rtt=300\n",
+    "end"
+  };
+
+  setup_capture_of_logs(LOG_DEBUG);
+
+  /* Test bw lines when header has ended */
+  for (i = 0; strcmp(lines_fail[i], "end"); i++) {
+    tt_assert(measured_bw_line_parse(&mbwl, lines_fail[i], 1) == -1);
+    expect_log_msg_containing("Incomplete line in bandwidth file:");
+    mock_clean_saved_logs();
+  }
+
+  tt_assert(measured_bw_line_parse(&mbwl, line_pass, 1) == 0);
+
+  /* Test bw lines when header has not ended */
+  for (i = 0; strcmp(lines_fail[i], "end"); i++) {
+    tt_assert(measured_bw_line_parse(&mbwl, lines_fail[i], 0) == -1);
+    expect_log_msg_containing("Missing bw or node_id in bandwidth file line:");
+    mock_clean_saved_logs();
+  }
+
+  tt_assert(measured_bw_line_parse(&mbwl, line_pass, 0) == 0);
+
+ done:
+  teardown_capture_of_logs();
+}
+
+/* Test dirserv_read_measured_bandwidths with whole files. */
+static void
+test_dir_dirserv_read_measured_bandwidths(void *arg)
+{
+  (void)arg;
+  char *content = NULL;
+  time_t timestamp = time(NULL);
+  char *fname = tor_strdup(get_fname("V3BandwidthsFile"));
+
+  /* Test Torflow file only with timestamp*/
+  tor_asprintf(&content, "%ld", (long)timestamp);
+  write_str_to_file(fname, content, 0);
+  tor_free(content);
+  tt_int_op(-1, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL));
+
+  /* Test Torflow file with timestamp followed by '\n' */
+  tor_asprintf(&content, "%ld\n", (long)timestamp);
+  write_str_to_file(fname, content, 0);
+  tor_free(content);
+  tt_int_op(0, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL));
+
+  /* Test Torflow complete file*/
+  const char *torflow_relay_lines=
+    "node_id=$557365204145532d32353620696e73746561642e bw=1024 "
+    "nick=Test measured_at=1523911725 updated_at=1523911725 "
+    "pid_error=4.11374090719 pid_error_sum=4.11374090719 "
+    "pid_bw=57136645 pid_delta=2.12168374577 circ_fail=0.2 "
+    "scanner=/filepath\n";
+
+  tor_asprintf(&content, "%ld\n%s", (long)timestamp, torflow_relay_lines);
+  write_str_to_file(fname, content, 0);
+  tor_free(content);
+  tt_int_op(0, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL));
+
+  /* Test Torflow complete file including v1.1.0 headers */
+  const char *v110_header_lines=
+    "version=1.1.0\n"
+    "software=sbws\n"
+    "software_version=0.1.0\n"
+    "generator_started=2018-05-08T16:13:25\n"
+    "earliest_bandwidth=2018-05-08T16:13:26\n"
+    "====\n";
+
+  tor_asprintf(&content, "%ld\n%s%s", (long)timestamp, v110_header_lines,
+               torflow_relay_lines);
+  write_str_to_file(fname, content, 0);
+  tor_free(content);
+  tt_int_op(0, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL));
+
+  /* Test Torflow with additional headers afer a correct bw line */
+  tor_asprintf(&content, "%ld\n%s%s", (long)timestamp, torflow_relay_lines,
+               v110_header_lines);
+  write_str_to_file(fname, content, 0);
+  tor_free(content);
+  tt_int_op(0, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL));
+
+  /* Test Torflow with additional headers afer a correct bw line and more
+   * bw lines after the headers. */
+  tor_asprintf(&content, "%ld\n%s%s%s", (long)timestamp, torflow_relay_lines,
+               v110_header_lines, torflow_relay_lines);
+  write_str_to_file(fname, content, 0);
+  tor_free(content);
+  tt_int_op(0, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL));
+
+  /* Test sbws file */
+  const char *sbws_relay_lines=
+    "node_id=$68A483E05A2ABDCA6DA5A3EF8DB5177638A27F80 "
+    "master_key_ed25519=YaqV4vbvPYKucElk297eVdNArDz9HtIwUoIeo0+cVIpQ "
+    "bw=760 nick=Test rtt=380 time=2018-05-08T16:13:26\n";
+
+  tor_asprintf(&content, "%ld\n%s%s", (long)timestamp, v110_header_lines,
+               sbws_relay_lines);
+  write_str_to_file(fname, content, 0);
+  tor_free(content);
+  tt_int_op(0, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL));
+
+ done:
+  tor_free(fname);
 }
 
 #define MBWC_INIT_TIME 1000
@@ -2398,7 +2536,7 @@ test_a_networkstatus(
   sign_skey_2 = crypto_pk_new();
   sign_skey_3 = crypto_pk_new();
   sign_skey_leg1 = pk_generate(4);
-  dirvote_recalculate_timing(get_options(), now);
+  voting_schedule_recalculate_timing(get_options(), now);
   sr_state_init(0, 0);
 
   tt_assert(!crypto_pk_read_private_key_from_string(sign_skey_1,
@@ -2936,8 +3074,9 @@ gen_routerstatus_for_umbw(int idx, time_t now)
       rs->addr = 0x99008801;
       rs->or_port = 443;
       rs->dir_port = 8000;
-      /* all flags but running cleared */
+      /* all flags but running and valid cleared */
       rs->is_flagged_running = 1;
+      rs->is_valid = 1;
       /*
        * This one has measured bandwidth below the clip cutoff, and
        * so shouldn't be clipped; we'll have to test that it isn't
@@ -3010,8 +3149,9 @@ gen_routerstatus_for_umbw(int idx, time_t now)
       rs->addr = 0xC0000203;
       rs->or_port = 500;
       rs->dir_port = 1999;
-      /* all flags but running cleared */
+      /* all flags but running and valid cleared */
       rs->is_flagged_running = 1;
+      rs->is_valid = 1;
       /*
        * This one has unmeasured bandwidth below the clip cutoff, and
        * so shouldn't be clipped; we'll have to test that it isn't
@@ -3033,7 +3173,7 @@ gen_routerstatus_for_umbw(int idx, time_t now)
   if (vrs) {
     vrs->microdesc = tor_malloc_zero(sizeof(vote_microdesc_hash_t));
     tor_asprintf(&vrs->microdesc->microdesc_hash_line,
-                 "m 9,10,11,12,13,14,15,16,17 "
+                 "m 25,26,27,28 "
                  "sha256=xyzajkldsdsajdadlsdjaslsdksdjlsdjsdaskdaaa%d\n",
                  idx);
   }
@@ -3059,7 +3199,7 @@ vote_tweaks_for_umbw(networkstatus_t *v, int voter, time_t now)
   smartlist_clear(v->supported_methods);
   /* Method 17 is MIN_METHOD_TO_CLIP_UNMEASURED_BW_KB */
   smartlist_split_string(v->supported_methods,
-                         "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17",
+                         "25 26 27 28",
                          NULL, 0, -1);
   /* If we're using a non-default clip bandwidth, add it to net_params */
   if (alternate_clip_bw > 0) {
@@ -3221,9 +3361,9 @@ test_routerstatus_for_umbw(routerstatus_t *rs, time_t now)
     tt_assert(!rs->is_fast);
     tt_assert(!rs->is_possible_guard);
     tt_assert(!rs->is_stable);
-    /* (If it wasn't running it wouldn't be here) */
+    /* (If it wasn't running and valid it wouldn't be here) */
     tt_assert(rs->is_flagged_running);
-    tt_assert(!rs->is_valid);
+    tt_assert(rs->is_valid);
     tt_assert(!rs->is_named);
     /* This one should have measured bandwidth below the clip cutoff */
     tt_assert(rs->has_bandwidth);
@@ -4082,34 +4222,19 @@ test_dir_download_status_increment(void *arg)
     DL_WANT_ANY_DIRSERVER,
     DL_SCHED_INCREMENT_ATTEMPT,
     0, 0 };
-  int no_delay = 0;
-  int delay0 = -1;
-  int delay1 = -1;
-  int delay2 = -1;
-  smartlist_t *schedule = smartlist_new();
-  smartlist_t *schedule_no_initial_delay = smartlist_new();
   or_options_t test_options;
   time_t current_time = time(NULL);
 
-  /* Provide some values for the schedules */
-  delay0 = 10;
-  delay1 = 99;
-  delay2 = 20;
-
-  /* Make the schedules */
-  smartlist_add(schedule, (void *)&delay0);
-  smartlist_add(schedule, (void *)&delay1);
-  smartlist_add(schedule, (void *)&delay2);
-
-  smartlist_add(schedule_no_initial_delay, (void *)&no_delay);
-  smartlist_add(schedule_no_initial_delay, (void *)&delay1);
-  smartlist_add(schedule_no_initial_delay, (void *)&delay2);
+  const int delay0 = 10;
+  const int no_delay = 0;
+  const int schedule = 10;
+  const int schedule_no_initial_delay = 0;
 
   /* Put it in the options */
   mock_options = &test_options;
   reset_options(mock_options, &mock_get_options_calls);
-  mock_options->TestingBridgeBootstrapDownloadSchedule = schedule;
-  mock_options->TestingClientDownloadSchedule = schedule;
+  mock_options->TestingBridgeBootstrapDownloadInitialDelay = schedule;
+  mock_options->TestingClientDownloadInitialDelay = schedule;
 
   MOCK(get_options, mock_get_options);
 
@@ -4117,13 +4242,13 @@ test_dir_download_status_increment(void *arg)
    * whether or not it was reset before being used */
 
   /* regression test for 17750: no initial delay */
-  mock_options->TestingClientDownloadSchedule = schedule_no_initial_delay;
+  mock_options->TestingClientDownloadInitialDelay = schedule_no_initial_delay;
   mock_get_options_calls = 0;
   /* we really want to test that it's equal to time(NULL) + delay0, but that's
    * an unrealiable test, because time(NULL) might change. */
 
   /* regression test for 17750: exponential, no initial delay */
-  mock_options->TestingClientDownloadSchedule = schedule_no_initial_delay;
+  mock_options->TestingClientDownloadInitialDelay = schedule_no_initial_delay;
   mock_get_options_calls = 0;
   /* we really want to test that it's equal to time(NULL) + delay0, but that's
    * an unrealiable test, because time(NULL) might change. */
@@ -4136,7 +4261,7 @@ test_dir_download_status_increment(void *arg)
   tt_int_op(mock_get_options_calls, OP_GE, 1);
 
   /* regression test for 17750: exponential, initial delay */
-  mock_options->TestingClientDownloadSchedule = schedule;
+  mock_options->TestingClientDownloadInitialDelay = schedule;
   mock_get_options_calls = 0;
   /* we really want to test that it's equal to time(NULL) + delay0, but that's
    * an unrealiable test, because time(NULL) might change. */
@@ -4149,9 +4274,6 @@ test_dir_download_status_increment(void *arg)
   tt_int_op(mock_get_options_calls, OP_GE, 1);
 
  done:
-  /* the pointers in schedule are allocated on the stack */
-  smartlist_free(schedule);
-  smartlist_free(schedule_no_initial_delay);
   UNMOCK(get_options);
   mock_options = NULL;
   mock_get_options_calls = 0;
@@ -5469,7 +5591,7 @@ mock_num_bridges_usable(int use_maybe_reachable)
  * fallbacks.
  */
 static void
-test_dir_find_dl_schedule(void* data)
+test_dir_find_dl_min_delay(void* data)
 {
   const char *str = (const char *)data;
 
@@ -5502,44 +5624,45 @@ test_dir_find_dl_schedule(void* data)
        mock_num_bridges_usable);
 
   download_status_t dls;
-  smartlist_t server, client, server_cons, client_cons;
-  smartlist_t client_boot_auth_only_cons, client_boot_auth_cons;
-  smartlist_t client_boot_fallback_cons, bridge, bridge_bootstrap;
+
+  const int server=10, client=20, server_cons=30, client_cons=40;
+  const int client_boot_auth_only_cons=50, client_boot_auth_cons=60;
+  const int client_boot_fallback_cons=70, bridge=80, bridge_bootstrap=90;
 
   mock_options = tor_malloc(sizeof(or_options_t));
   reset_options(mock_options, &mock_get_options_calls);
   MOCK(get_options, mock_get_options);
 
-  mock_options->TestingServerDownloadSchedule = &server;
-  mock_options->TestingClientDownloadSchedule = &client;
-  mock_options->TestingServerConsensusDownloadSchedule = &server_cons;
-  mock_options->TestingClientConsensusDownloadSchedule = &client_cons;
-  mock_options->ClientBootstrapConsensusAuthorityOnlyDownloadSchedule =
-    &client_boot_auth_only_cons;
-  mock_options->ClientBootstrapConsensusAuthorityDownloadSchedule =
-    &client_boot_auth_cons;
-  mock_options->ClientBootstrapConsensusFallbackDownloadSchedule =
-    &client_boot_fallback_cons;
-  mock_options->TestingBridgeDownloadSchedule = &bridge;
-  mock_options->TestingBridgeBootstrapDownloadSchedule = &bridge_bootstrap;
+  mock_options->TestingServerDownloadInitialDelay = server;
+  mock_options->TestingClientDownloadInitialDelay = client;
+  mock_options->TestingServerConsensusDownloadInitialDelay = server_cons;
+  mock_options->TestingClientConsensusDownloadInitialDelay = client_cons;
+  mock_options->ClientBootstrapConsensusAuthorityOnlyDownloadInitialDelay =
+    client_boot_auth_only_cons;
+  mock_options->ClientBootstrapConsensusAuthorityDownloadInitialDelay =
+    client_boot_auth_cons;
+  mock_options->ClientBootstrapConsensusFallbackDownloadInitialDelay =
+    client_boot_fallback_cons;
+  mock_options->TestingBridgeDownloadInitialDelay = bridge;
+  mock_options->TestingBridgeBootstrapDownloadInitialDelay = bridge_bootstrap;
 
   dls.schedule = DL_SCHED_GENERIC;
   /* client */
   mock_options->ClientOnly = 1;
-  tt_ptr_op(find_dl_schedule(&dls, mock_options), OP_EQ, &client);
+  tt_int_op(find_dl_min_delay(&dls, mock_options), OP_EQ, client);
   mock_options->ClientOnly = 0;
 
   /* dir mode */
   mock_options->DirPort_set = 1;
   mock_options->DirCache = 1;
-  tt_ptr_op(find_dl_schedule(&dls, mock_options), OP_EQ, &server);
+  tt_int_op(find_dl_min_delay(&dls, mock_options), OP_EQ, server);
   mock_options->DirPort_set = 0;
   mock_options->DirCache = 0;
 
   dls.schedule = DL_SCHED_CONSENSUS;
   /* public server mode */
   mock_options->ORPort_set = 1;
-  tt_ptr_op(find_dl_schedule(&dls, mock_options), OP_EQ, &server_cons);
+  tt_int_op(find_dl_min_delay(&dls, mock_options), OP_EQ, server_cons);
   mock_options->ORPort_set = 0;
 
   /* client and bridge modes */
@@ -5548,30 +5671,30 @@ test_dir_find_dl_schedule(void* data)
       dls.want_authority = 1;
       /* client */
       mock_options->ClientOnly = 1;
-      tt_ptr_op(find_dl_schedule(&dls, mock_options), OP_EQ,
-                &client_boot_auth_cons);
+      tt_int_op(find_dl_min_delay(&dls, mock_options), OP_EQ,
+                client_boot_auth_cons);
       mock_options->ClientOnly = 0;
 
       /* bridge relay */
       mock_options->ORPort_set = 1;
       mock_options->BridgeRelay = 1;
-      tt_ptr_op(find_dl_schedule(&dls, mock_options), OP_EQ,
-                &client_boot_auth_cons);
+      tt_int_op(find_dl_min_delay(&dls, mock_options), OP_EQ,
+                client_boot_auth_cons);
       mock_options->ORPort_set = 0;
       mock_options->BridgeRelay = 0;
 
       dls.want_authority = 0;
       /* client */
       mock_options->ClientOnly = 1;
-      tt_ptr_op(find_dl_schedule(&dls, mock_options), OP_EQ,
-                &client_boot_fallback_cons);
+      tt_int_op(find_dl_min_delay(&dls, mock_options), OP_EQ,
+                client_boot_fallback_cons);
       mock_options->ClientOnly = 0;
 
       /* bridge relay */
       mock_options->ORPort_set = 1;
       mock_options->BridgeRelay = 1;
-      tt_ptr_op(find_dl_schedule(&dls, mock_options), OP_EQ,
-                &client_boot_fallback_cons);
+      tt_int_op(find_dl_min_delay(&dls, mock_options), OP_EQ,
+                client_boot_fallback_cons);
       mock_options->ORPort_set = 0;
       mock_options->BridgeRelay = 0;
 
@@ -5579,30 +5702,30 @@ test_dir_find_dl_schedule(void* data)
       /* dls.want_authority is ignored */
       /* client */
       mock_options->ClientOnly = 1;
-      tt_ptr_op(find_dl_schedule(&dls, mock_options), OP_EQ,
-                &client_boot_auth_only_cons);
+      tt_int_op(find_dl_min_delay(&dls, mock_options), OP_EQ,
+                client_boot_auth_only_cons);
       mock_options->ClientOnly = 0;
 
       /* bridge relay */
       mock_options->ORPort_set = 1;
       mock_options->BridgeRelay = 1;
-      tt_ptr_op(find_dl_schedule(&dls, mock_options), OP_EQ,
-                &client_boot_auth_only_cons);
+      tt_int_op(find_dl_min_delay(&dls, mock_options), OP_EQ,
+                client_boot_auth_only_cons);
       mock_options->ORPort_set = 0;
       mock_options->BridgeRelay = 0;
     }
   } else {
     /* client */
     mock_options->ClientOnly = 1;
-    tt_ptr_op(find_dl_schedule(&dls, mock_options), OP_EQ,
-              &client_cons);
+    tt_int_op(find_dl_min_delay(&dls, mock_options), OP_EQ,
+              client_cons);
     mock_options->ClientOnly = 0;
 
     /* bridge relay */
     mock_options->ORPort_set = 1;
     mock_options->BridgeRelay = 1;
-    tt_ptr_op(find_dl_schedule(&dls, mock_options), OP_EQ,
-              &client_cons);
+    tt_int_op(find_dl_min_delay(&dls, mock_options), OP_EQ,
+              client_cons);
     mock_options->ORPort_set = 0;
     mock_options->BridgeRelay = 0;
   }
@@ -5612,9 +5735,9 @@ test_dir_find_dl_schedule(void* data)
   mock_options->ClientOnly = 1;
   mock_options->UseBridges = 1;
   if (num_bridges_usable(0) > 0) {
-    tt_ptr_op(find_dl_schedule(&dls, mock_options), OP_EQ, &bridge);
+    tt_int_op(find_dl_min_delay(&dls, mock_options), OP_EQ, bridge);
   } else {
-    tt_ptr_op(find_dl_schedule(&dls, mock_options), OP_EQ, &bridge_bootstrap);
+    tt_int_op(find_dl_min_delay(&dls, mock_options), OP_EQ, bridge_bootstrap);
   }
 
  done:
@@ -5634,9 +5757,8 @@ test_dir_assumed_flags(void *arg)
   memarea_t *area = memarea_new();
   routerstatus_t *rs = NULL;
 
-  /* First, we should always assume that the Running flag is set, even
-   * when it isn't listed, since the consensus method is always
-   * higher than 4. */
+  /* We can assume that consensus method is higher than 24, so Running and
+   * Valid are always implicitly set */
   const char *str1 =
     "r example hereiswhereyouridentitygoes 2015-08-30 12:00:00 "
        "192.168.0.1 9001 0\n"
@@ -5644,17 +5766,6 @@ test_dir_assumed_flags(void *arg)
     "s Fast Guard Stable\n";
 
   const char *cp = str1;
-  rs = routerstatus_parse_entry_from_string(area, &cp, tokens, NULL, NULL,
-                                            23, FLAV_MICRODESC);
-  tt_assert(rs);
-  tt_assert(rs->is_flagged_running);
-  tt_assert(! rs->is_valid);
-  tt_assert(! rs->is_exit);
-  tt_assert(rs->is_fast);
-  routerstatus_free(rs);
-
-  /* With method 24 or later, we can assume "valid" is set. */
-  cp = str1;
   rs = routerstatus_parse_entry_from_string(area, &cp, tokens, NULL, NULL,
                                             24, FLAV_MICRODESC);
   tt_assert(rs);
@@ -5788,27 +5899,19 @@ test_dir_networkstatus_consensus_has_ipv6(void *arg)
   /* Test the bounds for A lines in the NS consensus */
   mock_options->UseMicrodescriptors = 0;
 
-  mock_networkstatus->consensus_method = MIN_METHOD_FOR_A_LINES;
+  mock_networkstatus->consensus_method = MIN_SUPPORTED_CONSENSUS_METHOD;
   has_ipv6 = networkstatus_consensus_has_ipv6(get_options());
   tt_assert(has_ipv6);
-
-  mock_networkstatus->consensus_method = MIN_METHOD_FOR_A_LINES + 1;
-  has_ipv6 = networkstatus_consensus_has_ipv6(get_options());
-  tt_assert(has_ipv6);
-
-  mock_networkstatus->consensus_method = MIN_METHOD_FOR_A_LINES + 20;
-  has_ipv6 = networkstatus_consensus_has_ipv6(get_options());
-  tt_assert(has_ipv6);
-
-  mock_networkstatus->consensus_method = MIN_METHOD_FOR_A_LINES - 1;
-  has_ipv6 = networkstatus_consensus_has_ipv6(get_options());
-  tt_assert(!has_ipv6);
 
   /* Test the bounds for A lines in the microdesc consensus */
   mock_options->UseMicrodescriptors = 1;
 
   mock_networkstatus->consensus_method =
       MIN_METHOD_FOR_A_LINES_IN_MICRODESC_CONSENSUS;
+  has_ipv6 = networkstatus_consensus_has_ipv6(get_options());
+  tt_assert(has_ipv6);
+
+  mock_networkstatus->consensus_method = MAX_SUPPORTED_CONSENSUS_METHOD + 20;
   has_ipv6 = networkstatus_consensus_has_ipv6(get_options());
   tt_assert(has_ipv6);
 
@@ -5853,6 +5956,57 @@ test_dir_networkstatus_consensus_has_ipv6(void *arg)
   UNMOCK(networkstatus_get_latest_consensus_by_flavor);
 }
 
+static void
+test_dir_format_versions_list(void *arg)
+{
+  (void)arg;
+  char *s = NULL;
+  config_line_t *lines = NULL;
+
+  setup_capture_of_logs(LOG_WARN);
+  s = format_recommended_version_list(lines, 1);
+  tt_str_op(s, OP_EQ, "");
+
+  tor_free(s);
+  config_line_append(&lines, "ignored", "0.3.4.1, 0.2.9.111-alpha, 4.4.4-rc");
+  s = format_recommended_version_list(lines, 1);
+  tt_str_op(s, OP_EQ,  "0.2.9.111-alpha,0.3.4.1,4.4.4-rc");
+
+  tor_free(s);
+  config_line_append(&lines, "ignored", "0.1.2.3,0.2.9.10   ");
+  s = format_recommended_version_list(lines, 1);
+  tt_str_op(s, OP_EQ,  "0.1.2.3,0.2.9.10,0.2.9.111-alpha,0.3.4.1,4.4.4-rc");
+
+  /* There should be no warnings so far. */
+  expect_no_log_entry();
+
+  /* Now try a line with a space in it. */
+  tor_free(s);
+  config_line_append(&lines, "ignored", "1.3.3.8 1.3.3.7");
+  s = format_recommended_version_list(lines, 1);
+  tt_str_op(s, OP_EQ,  "0.1.2.3,0.2.9.10,0.2.9.111-alpha,0.3.4.1,"
+            "1.3.3.7,1.3.3.8,4.4.4-rc");
+
+  expect_single_log_msg_containing(
+          "Unexpected space in versions list member \"1.3.3.8 1.3.3.7\"." );
+
+  /* Start over, with a line containing a bogus version */
+  config_free_lines(lines);
+  lines = NULL;
+  tor_free(s);
+  mock_clean_saved_logs();
+  config_line_append(&lines, "ignored", "0.1.2.3, alpha-complex, 0.1.1.8-rc");
+  s = format_recommended_version_list(lines,1);
+  tt_str_op(s, OP_EQ, "0.1.1.8-rc,0.1.2.3,alpha-complex");
+  expect_single_log_msg_containing(
+        "Recommended version \"alpha-complex\" does not look valid.");
+
+ done:
+  tor_free(s);
+  config_free_lines(lines);
+  teardown_capture_of_logs();
+}
+
 #define DIR_LEGACY(name)                             \
   { #name, test_dir_ ## name , TT_FORK, NULL, NULL }
 
@@ -5875,9 +6029,11 @@ struct testcase_t dir_tests[] = {
   DIR_LEGACY(versions),
   DIR_LEGACY(fp_pairs),
   DIR(split_fps, 0),
-  DIR_LEGACY(dirserv_read_measured_bandwidths),
+  DIR_LEGACY(dirserv_read_measured_bandwidths_empty),
   DIR_LEGACY(measured_bw_kb),
+  DIR_LEGACY(measured_bw_kb_line_is_after_headers),
   DIR_LEGACY(measured_bw_kb_cache),
+  DIR_LEGACY(dirserv_read_measured_bandwidths),
   DIR_LEGACY(param_voting),
   DIR(param_voting_lookup, 0),
   DIR_LEGACY(v3_networkstatus),
@@ -5909,18 +6065,18 @@ struct testcase_t dir_tests[] = {
   DIR(dump_unparseable_descriptors, 0),
   DIR(populate_dump_desc_fifo, 0),
   DIR(populate_dump_desc_fifo_2, 0),
-  DIR_ARG(find_dl_schedule, TT_FORK, "bfd"),
-  DIR_ARG(find_dl_schedule, TT_FORK, "bad"),
-  DIR_ARG(find_dl_schedule, TT_FORK, "cfd"),
-  DIR_ARG(find_dl_schedule, TT_FORK, "cad"),
-  DIR_ARG(find_dl_schedule, TT_FORK, "bfr"),
-  DIR_ARG(find_dl_schedule, TT_FORK, "bar"),
-  DIR_ARG(find_dl_schedule, TT_FORK, "cfr"),
-  DIR_ARG(find_dl_schedule, TT_FORK, "car"),
+  DIR_ARG(find_dl_min_delay, TT_FORK, "bfd"),
+  DIR_ARG(find_dl_min_delay, TT_FORK, "bad"),
+  DIR_ARG(find_dl_min_delay, TT_FORK, "cfd"),
+  DIR_ARG(find_dl_min_delay, TT_FORK, "cad"),
+  DIR_ARG(find_dl_min_delay, TT_FORK, "bfr"),
+  DIR_ARG(find_dl_min_delay, TT_FORK, "bar"),
+  DIR_ARG(find_dl_min_delay, TT_FORK, "cfr"),
+  DIR_ARG(find_dl_min_delay, TT_FORK, "car"),
   DIR(assumed_flags, 0),
   DIR(networkstatus_compute_bw_weights_v10, 0),
   DIR(platform_str, 0),
   DIR(networkstatus_consensus_has_ipv6, TT_FORK),
+  DIR(format_versions_list, TT_FORK),
   END_OF_TESTCASES
 };
-

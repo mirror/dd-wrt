@@ -50,6 +50,9 @@ typedef struct hs_service_intro_point_t {
   /* Legacy key if that intro point doesn't support v3. This should be used if
    * the base object legacy flag is set. */
   crypto_pk_t *legacy_key;
+  /* Legacy key SHA1 public key digest. This should be used only if the base
+   * object legacy flag is set. */
+  uint8_t legacy_key_digest[DIGEST_LEN];
 
   /* Amount of INTRODUCE2 cell accepted from this intro point. */
   uint64_t introduce2_count;
@@ -260,6 +263,7 @@ void hs_service_lists_fnames_for_sandbox(smartlist_t *file_list,
 int hs_service_set_conn_addr_port(const origin_circuit_t *circ,
                                   edge_connection_t *conn);
 
+void hs_service_map_has_changed(void);
 void hs_service_dir_info_changed(void);
 void hs_service_run_scheduled_events(time_t now);
 void hs_service_circuit_has_opened(origin_circuit_t *circ);
@@ -307,8 +311,9 @@ STATIC void remove_service(hs_service_ht *map, hs_service_t *service);
 STATIC int register_service(hs_service_ht *map, hs_service_t *service);
 /* Service introduction point functions. */
 STATIC hs_service_intro_point_t *service_intro_point_new(
-                                         const extend_info_t *ei,
-                                         unsigned int is_legacy);
+                            const extend_info_t *ei,
+                            unsigned int is_legacy,
+                            unsigned int supports_ed25519_link_handshake_any);
 STATIC void service_intro_point_free_(hs_service_intro_point_t *ip);
 #define service_intro_point_free(ip)                            \
   FREE_AND_NULL(hs_service_intro_point_t,             \

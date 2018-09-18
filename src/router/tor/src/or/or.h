@@ -80,6 +80,7 @@
 #include "crypto_curve25519.h"
 #include "crypto_ed25519.h"
 #include "tor_queue.h"
+#include "token_bucket.h"
 #include "util_format.h"
 #include "hs_circuitmap.h"
 
@@ -727,8 +728,8 @@ typedef enum {
 /** Catch-all "other" reason for closing origin circuits. */
 #define END_CIRC_AT_ORIGIN              -1
 
-/* Reasons why we (or a remote OR) might close a circuit. See tor-spec.txt for
- * documentation of these. */
+/* Reasons why we (or a remote OR) might close a circuit. See tor-spec.txt
+ * section 5.4 for documentation of these. */
 #define END_CIRC_REASON_MIN_            0
 #define END_CIRC_REASON_NONE            0
 #define END_CIRC_REASON_TORPROTOCOL     1
@@ -893,8 +894,19 @@ rend_data_v2_t *TO_REND_DATA_V2(const rend_data_t *d)
 struct hs_ident_edge_conn_t;
 struct hs_ident_dir_conn_t;
 struct hs_ident_circuit_t;
-/* Stub because we can't include hs_common.h. */
-struct hsdir_index_t;
+
+/* Hidden service directory index used in a node_t which is set once we set
+ * the consensus. */
+typedef struct hsdir_index_t {
+  /* HSDir index to use when fetching a descriptor. */
+  uint8_t fetch[DIGEST256_LEN];
+
+  /* HSDir index used by services to store their first and second
+   * descriptor. The first descriptor is chronologically older than the second
+   * one and uses older TP and SRV values. */
+  uint8_t store_first[DIGEST256_LEN];
+  uint8_t store_second[DIGEST256_LEN];
+} hsdir_index_t;
 
 /** Time interval for tracking replays of DH public keys received in
  * INTRODUCE2 cells.  Used only to avoid launching multiple
@@ -917,6 +929,7 @@ typedef enum {
 /** Initial value on both sides of a stream transmission window when the
  * stream is initialized.  Measured in cells. */
 #define STREAMWINDOW_START 500
+#define STREAMWINDOW_START_MAX 500
 /** Amount to increment a stream window when we get a stream SENDME. */
 #define STREAMWINDOW_INCREMENT 50
 
@@ -1369,10 +1382,10 @@ typedef struct connection_t {
                          * connection. */
   size_t outbuf_flushlen; /**< How much data should we try to flush from the
                            * outbuf? */
-  time_t timestamp_lastread; /**< When was the last time libevent said we could
-                              * read? */
-  time_t timestamp_lastwritten; /**< When was the last time libevent said we
-                                 * could write? */
+  time_t timestamp_last_read_allowed; /**< When was the last time libevent said
+                                       * we could read? */
+  time_t timestamp_last_write_allowed; /**< When was the last time libevent
+                                        * said we could write? */
 
   time_t timestamp_created; /**< When was this connection_t created? */
 
@@ -1660,20 +1673,8 @@ typedef struct or_connection_t {
 
   time_t timestamp_lastempty; /**< When was the outbuf last completely empty?*/
 
-  /* bandwidth* and *_bucket only used by ORs in OPEN state: */
-  int bandwidthrate; /**< Bytes/s added to the bucket. (OPEN ORs only.) */
-  int bandwidthburst; /**< Max bucket size for this conn. (OPEN ORs only.) */
-  int read_bucket; /**< When this hits 0, stop receiving. Every second we
-                    * add 'bandwidthrate' to this, capping it at
-                    * bandwidthburst. (OPEN ORs only) */
-  int write_bucket; /**< When this hits 0, stop writing. Like read_bucket. */
-
-  /** Last emptied read token bucket in msec since midnight; only used if
-   * TB_EMPTY events are enabled. */
-  uint32_t read_emptied_time;
-  /** Last emptied write token bucket in msec since midnight; only used if
-   * TB_EMPTY events are enabled. */
-  uint32_t write_emptied_time;
+  token_bucket_rw_t bucket; /**< Used for rate limiting when the connection is
+                          * in state CONN_OPEN. */
 
   /*
    * Count the number of bytes flushed out on this orconn, and the number of
@@ -2351,10 +2352,10 @@ typedef struct routerstatus_t {
    * If it's a descriptor, we only use the first DIGEST_LEN bytes. */
   char descriptor_digest[DIGEST256_LEN];
   uint32_t addr; /**< IPv4 address for this router, in host order. */
-  uint16_t or_port; /**< OR port for this router. */
+  uint16_t or_port; /**< IPv4 OR port for this router. */
   uint16_t dir_port; /**< Directory port for this router. */
   tor_addr_t ipv6_addr; /**< IPv6 address for this router. */
-  uint16_t ipv6_orport; /**<IPV6 OR port for this router. */
+  uint16_t ipv6_orport; /**< IPv6 OR port for this router. */
   unsigned int is_authority:1; /**< True iff this router is an authority. */
   unsigned int is_exit:1; /**< True iff this router is a good exit. */
   unsigned int is_stable:1; /**< True iff this router stays up a long time. */
@@ -2572,7 +2573,7 @@ typedef struct node_t {
   /* Hidden service directory index data. This is used by a service or client
    * in order to know what's the hs directory index for this node at the time
    * the consensus is set. */
-  struct hsdir_index_t *hsdir_index;
+  struct hsdir_index_t hsdir_index;
 } node_t;
 
 /** Linked list of microdesc hash lines for a single router in a directory
@@ -2907,11 +2908,7 @@ typedef struct {
   } u;
 } onion_handshake_state_t;
 
-/** Holds accounting information for a single step in the layered encryption
- * performed by a circuit.  Used only at the client edge of a circuit. */
-typedef struct crypt_path_t {
-  uint32_t magic;
-
+typedef struct relay_crypto_t {
   /* crypto environments */
   /** Encryption key and counter for cells heading towards the OR at this
    * step. */
@@ -2924,6 +2921,17 @@ typedef struct crypt_path_t {
   crypto_digest_t *f_digest; /* for integrity checking */
   /** Digest state for cells heading away from the OR at this step. */
   crypto_digest_t *b_digest;
+
+} relay_crypto_t;
+
+/** Holds accounting information for a single step in the layered encryption
+ * performed by a circuit.  Used only at the client edge of a circuit. */
+typedef struct crypt_path_t {
+  uint32_t magic;
+
+  /** Cryptographic state used for encrypting and authenticating relay
+   * cells to and from this hop. */
+  relay_crypto_t crypto;
 
   /** Current state of the handshake as performed with the OR at this
    * step. */
@@ -3170,15 +3178,6 @@ typedef struct circuit_t {
   /** Index in smartlist of all circuits (global_circuitlist). */
   int global_circuitlist_idx;
 
-  /** Next circuit in the doubly-linked ring of circuits waiting to add
-   * cells to n_conn.  NULL if we have no cells pending, or if we're not
-   * linked to an OR connection. */
-  struct circuit_t *next_active_on_n_chan;
-  /** Previous circuit in the doubly-linked ring of circuits waiting to add
-   * cells to n_conn.  NULL if we have no cells pending, or if we're not
-   * linked to an OR connection. */
-  struct circuit_t *prev_active_on_n_chan;
-
   /** Various statistics about cells being added to or removed from this
    * circuit's queues; used only if CELL_STATS events are enabled and
    * cleared after being sent to control port. */
@@ -3262,15 +3261,35 @@ typedef struct origin_circuit_t {
    * associated with this circuit. */
   edge_connection_t *p_streams;
 
-  /** Bytes read from any attached stream since last call to
+  /** Bytes read on this circuit since last call to
    * control_event_circ_bandwidth_used().  Only used if we're configured
    * to emit CIRC_BW events. */
   uint32_t n_read_circ_bw;
 
-  /** Bytes written to any attached stream since last call to
+  /** Bytes written to on this circuit since last call to
    * control_event_circ_bandwidth_used().  Only used if we're configured
    * to emit CIRC_BW events. */
   uint32_t n_written_circ_bw;
+
+  /** Total known-valid relay cell bytes since last call to
+   * control_event_circ_bandwidth_used().  Only used if we're configured
+   * to emit CIRC_BW events. */
+  uint32_t n_delivered_read_circ_bw;
+
+  /** Total written relay cell bytes since last call to
+   * control_event_circ_bandwidth_used().  Only used if we're configured
+   * to emit CIRC_BW events. */
+  uint32_t n_delivered_written_circ_bw;
+
+  /** Total overhead data in all known-valid relay data cells since last
+   * call to control_event_circ_bandwidth_used().  Only used if we're
+   * configured to emit CIRC_BW events. */
+  uint32_t n_overhead_read_circ_bw;
+
+  /** Total written overhead data in all relay data cells since last call to
+   * control_event_circ_bandwidth_used().  Only used if we're configured
+   * to emit CIRC_BW events. */
+  uint32_t n_overhead_written_circ_bw;
 
   /** Build state for this circuit. It includes the intended path
    * length, the chosen exit router, rendezvous information, etc.
@@ -3458,14 +3477,6 @@ struct onion_queue_t;
 typedef struct or_circuit_t {
   circuit_t base_;
 
-  /** Next circuit in the doubly-linked ring of circuits waiting to add
-   * cells to p_chan.  NULL if we have no cells pending, or if we're not
-   * linked to an OR connection. */
-  struct circuit_t *next_active_on_p_chan;
-  /** Previous circuit in the doubly-linked ring of circuits waiting to add
-   * cells to p_chan.  NULL if we have no cells pending, or if we're not
-   * linked to an OR connection. */
-  struct circuit_t *prev_active_on_p_chan;
   /** Pointer to an entry on the onion queue, if this circuit is waiting for a
    * chance to give an onionskin to a cpuworker. Used only in onion.c */
   struct onion_queue_t *onionqueue_entry;
@@ -3490,21 +3501,10 @@ typedef struct or_circuit_t {
   /** Linked list of Exit streams associated with this circuit that are
    * still being resolved. */
   edge_connection_t *resolving_streams;
-  /** The cipher used by intermediate hops for cells heading toward the
-   * OP. */
-  crypto_cipher_t *p_crypto;
-  /** The cipher used by intermediate hops for cells heading away from
-   * the OP. */
-  crypto_cipher_t *n_crypto;
 
-  /** The integrity-checking digest used by intermediate hops, for
-   * cells packaged here and heading towards the OP.
-   */
-  crypto_digest_t *p_digest;
-  /** The integrity-checking digest used by intermediate hops, for
-   * cells packaged at the OP and arriving here.
-   */
-  crypto_digest_t *n_digest;
+  /** Cryptographic state used for encrypting and authenticating relay
+   * cells to and from this hop. */
+  relay_crypto_t crypto;
 
   /** Points to spliced circuit if purpose is REND_ESTABLISHED, and circuit
    * is not marked for close. */
@@ -4180,6 +4180,8 @@ typedef struct {
 
   int NumDirectoryGuards; /**< How many dir guards do we try to establish?
                            * If 0, use value from NumEntryGuards. */
+  int NumPrimaryGuards; /**< How many primary guards do we want? */
+
   int RephistTrackTime; /**< How many seconds do we keep rephist info? */
   /** Should we always fetch our dir info on the mirror schedule (which
    * means directly from the authorities) no matter our other config? */
@@ -4223,10 +4225,6 @@ typedef struct {
                                         * testing our DNS server. */
   int EnforceDistinctSubnets; /**< If true, don't allow multiple routers in the
                                * same network zone in the same circuit. */
-  int PortForwarding; /**< If true, use NAT-PMP or UPnP to automatically
-                       * forward the DirPort and ORPort on the NAT device */
-  char *PortForwardingHelper; /** < Filename or full path of the port
-                                  forwarding helper executable */
   int AllowNonRFC953Hostnames; /**< If true, we allow connections to hostnames
                                 * with weird characters. */
   /** If true, we try resolving hostnames with weird characters. */
@@ -4352,19 +4350,19 @@ typedef struct {
 
   /** Schedule for when servers should download things in general.  Only
    * altered on testing networks. */
-  smartlist_t *TestingServerDownloadSchedule;
+  int TestingServerDownloadInitialDelay;
 
   /** Schedule for when clients should download things in general.  Only
    * altered on testing networks. */
-  smartlist_t *TestingClientDownloadSchedule;
+  int TestingClientDownloadInitialDelay;
 
   /** Schedule for when servers should download consensuses.  Only altered
    * on testing networks. */
-  smartlist_t *TestingServerConsensusDownloadSchedule;
+  int TestingServerConsensusDownloadInitialDelay;
 
   /** Schedule for when clients should download consensuses.  Only altered
    * on testing networks. */
-  smartlist_t *TestingClientConsensusDownloadSchedule;
+  int TestingClientConsensusDownloadInitialDelay;
 
   /** Schedule for when clients should download consensuses from authorities
    * if they are bootstrapping (that is, they don't have a usable, reasonably
@@ -4374,7 +4372,7 @@ typedef struct {
    * This schedule is incremented by (potentially concurrent) connection
    * attempts, unlike other schedules, which are incremented by connection
    * failures.  Only altered on testing networks. */
-  smartlist_t *ClientBootstrapConsensusAuthorityDownloadSchedule;
+  int ClientBootstrapConsensusAuthorityDownloadInitialDelay;
 
   /** Schedule for when clients should download consensuses from fallback
    * directory mirrors if they are bootstrapping (that is, they don't have a
@@ -4384,7 +4382,7 @@ typedef struct {
    * This schedule is incremented by (potentially concurrent) connection
    * attempts, unlike other schedules, which are incremented by connection
    * failures.  Only altered on testing networks. */
-  smartlist_t *ClientBootstrapConsensusFallbackDownloadSchedule;
+  int ClientBootstrapConsensusFallbackDownloadInitialDelay;
 
   /** Schedule for when clients should download consensuses from authorities
    * if they are bootstrapping (that is, they don't have a usable, reasonably
@@ -4394,15 +4392,15 @@ typedef struct {
    * This schedule is incremented by (potentially concurrent) connection
    * attempts, unlike other schedules, which are incremented by connection
    * failures.  Only altered on testing networks. */
-  smartlist_t *ClientBootstrapConsensusAuthorityOnlyDownloadSchedule;
+  int ClientBootstrapConsensusAuthorityOnlyDownloadInitialDelay;
 
   /** Schedule for when clients should download bridge descriptors.  Only
    * altered on testing networks. */
-  smartlist_t *TestingBridgeDownloadSchedule;
+  int TestingBridgeDownloadInitialDelay;
 
   /** Schedule for when clients should download bridge descriptors when they
    * have no running bridges.  Only altered on testing networks. */
-  smartlist_t *TestingBridgeBootstrapDownloadSchedule;
+  int TestingBridgeBootstrapDownloadInitialDelay;
 
   /** When directory clients have only a few descriptors to request, they
    * batch them until they have more, or until this amount of time has
@@ -4449,9 +4447,6 @@ typedef struct {
 
   /** Enable CELL_STATS events.  Only altered on testing networks. */
   int TestingEnableCellStatsEvent;
-
-  /** Enable TB_EMPTY events.  Only altered on testing networks. */
-  int TestingEnableTbEmptyEvent;
 
   /** If true, and we have GeoIP data, and we're a bridge, keep a per-country
    * count of how many client addresses have contacted us so that we can help
@@ -4782,15 +4777,6 @@ typedef struct {
   /** When did we last rotate our onion key?  "0" for 'no idea'. */
   time_t LastRotatedOnionKey;
 } or_state_t;
-
-/** Change the next_write time of <b>state</b> to <b>when</b>, unless the
- * state is already scheduled to be written to disk earlier than <b>when</b>.
- */
-static inline void or_state_mark_dirty(or_state_t *state, time_t when)
-{
-  if (state->next_write > when)
-    state->next_write = when;
-}
 
 #define MAX_SOCKS_REPLY_LEN 1024
 #define MAX_SOCKS_ADDR_LEN 256

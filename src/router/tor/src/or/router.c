@@ -13,6 +13,8 @@
 #include "config.h"
 #include "connection.h"
 #include "control.h"
+#include "crypto_rand.h"
+#include "crypto_util.h"
 #include "crypto_curve25519.h"
 #include "directory.h"
 #include "dirserv.h"
@@ -34,6 +36,8 @@
 #include "torcert.h"
 #include "transports.h"
 #include "routerset.h"
+
+#include "dirauth/mode.h"
 
 /**
  * \file router.c
@@ -102,6 +106,64 @@ static authority_cert_t *legacy_key_certificate = NULL;
  * but this key is never actually loaded by the Tor process.  Instead, it's
  * used by tor-gencert to sign new signing keys and make new key
  * certificates. */
+
+const char *format_node_description(char *buf,
+                                    const char *id_digest,
+                                    int is_named,
+                                    const char *nickname,
+                                    const tor_addr_t *addr,
+                                    uint32_t addr32h);
+
+/** Return a readonly string with human readable description
+ * of <b>err</b>.
+ */
+const char *
+routerinfo_err_to_string(int err)
+{
+  switch (err) {
+    case TOR_ROUTERINFO_ERROR_NO_EXT_ADDR:
+      return "No known exit address yet";
+    case TOR_ROUTERINFO_ERROR_CANNOT_PARSE:
+      return "Cannot parse descriptor";
+    case TOR_ROUTERINFO_ERROR_NOT_A_SERVER:
+      return "Not running in server mode";
+    case TOR_ROUTERINFO_ERROR_DIGEST_FAILED:
+      return "Key digest failed";
+    case TOR_ROUTERINFO_ERROR_CANNOT_GENERATE:
+      return "Cannot generate descriptor";
+    case TOR_ROUTERINFO_ERROR_DESC_REBUILDING:
+      return "Descriptor still rebuilding - not ready yet";
+  }
+
+  log_warn(LD_BUG, "unknown routerinfo error %d - shouldn't happen", err);
+  tor_assert_unreached();
+
+  return "Unknown error";
+}
+
+/** Return true if we expect given error to be transient.
+ * Return false otherwise.
+ */
+int
+routerinfo_err_is_transient(int err)
+{
+  switch (err) {
+    case TOR_ROUTERINFO_ERROR_NO_EXT_ADDR:
+      return 1;
+    case TOR_ROUTERINFO_ERROR_CANNOT_PARSE:
+      return 1;
+    case TOR_ROUTERINFO_ERROR_NOT_A_SERVER:
+      return 0;
+    case TOR_ROUTERINFO_ERROR_DIGEST_FAILED:
+      return 0; // XXX: bug?
+    case TOR_ROUTERINFO_ERROR_CANNOT_GENERATE:
+      return 1;
+    case TOR_ROUTERINFO_ERROR_DESC_REBUILDING:
+      return 1;
+  }
+
+  return 0;
+}
 
 /** Replace the current onion key with <b>k</b>.  Does not affect
  * lastonionkey; to update lastonionkey correctly, call rotate_onion_key().
@@ -1234,7 +1296,8 @@ check_whether_dirport_reachable(const or_options_t *options)
 /* XXX Should this be increased? */
 #define MIN_BW_TO_ADVERTISE_DIRSERVER 51200
 
-/** Return true iff we have enough configured bandwidth to cache directory
+/** Return true iff we have enough configured bandwidth to advertise or
+ * automatically provide directory services from cache directory
  * information. */
 static int
 router_has_bandwidth_to_be_dirserver(const or_options_t *options)
@@ -1257,7 +1320,7 @@ router_has_bandwidth_to_be_dirserver(const or_options_t *options)
  * MIN_BW_TO_ADVERTISE_DIRSERVER, don't bother trying to serve requests.
  */
 static int
-router_should_be_directory_server(const or_options_t *options, int dir_port)
+router_should_be_dirserver(const or_options_t *options, int dir_port)
 {
   static int advertising=1; /* start out assuming we will advertise */
   int new_choice=1;
@@ -1362,7 +1425,7 @@ decide_to_advertise_dir_impl(const or_options_t *options,
 
   /* Part two: consider config options that could make us choose to
    * publish or not publish that the user might find surprising. */
-  return router_should_be_directory_server(options, dir_port);
+  return router_should_be_dirserver(options, dir_port);
 }
 
 /** Front-end to decide_to_advertise_dir_impl(): return 0 if we don't want to
@@ -1370,7 +1433,7 @@ decide_to_advertise_dir_impl(const or_options_t *options,
  * DirPort we want to advertise.
  */
 static int
-decide_to_advertise_dirport(const or_options_t *options, uint16_t dir_port)
+router_should_advertise_dirport(const or_options_t *options, uint16_t dir_port)
 {
   /* supports_tunnelled_dir_requests is not relevant, pass 0 */
   return decide_to_advertise_dir_impl(options, dir_port, 0) ? dir_port : 0;
@@ -1380,7 +1443,7 @@ decide_to_advertise_dirport(const or_options_t *options, uint16_t dir_port)
  * advertise the fact that we support begindir requests, else return 1.
  */
 static int
-decide_to_advertise_begindir(const or_options_t *options,
+router_should_advertise_begindir(const or_options_t *options,
                              int supports_tunnelled_dir_requests)
 {
   /* dir_port is not relevant, pass 0 */
@@ -1413,26 +1476,17 @@ extend_info_from_router(const routerinfo_t *r)
                          &ap.addr, ap.port);
 }
 
-/** Some time has passed, or we just got new directory information.
- * See if we currently believe our ORPort or DirPort to be
- * unreachable. If so, launch a new test for it.
- *
- * For ORPort, we simply try making a circuit that ends at ourselves.
- * Success is noticed in onionskin_answer().
- *
- * For DirPort, we make a connection via Tor to our DirPort and ask
- * for our own server descriptor.
- * Success is noticed in connection_dir_client_reached_eof().
+/**See if we currently believe our ORPort or DirPort to be
+ * unreachable. If so, return 1 else return 0.
  */
-void
-consider_testing_reachability(int test_or, int test_dir)
+static int
+router_should_check_reachability(int test_or, int test_dir)
 {
   const routerinfo_t *me = router_get_my_routerinfo();
   const or_options_t *options = get_options();
-  int orport_reachable = check_whether_orport_reachable(options);
-  tor_addr_t addr;
+
   if (!me)
-    return;
+    return 0;
 
   if (routerset_contains_router(options->ExcludeNodes, me, -1) &&
       options->StrictNodes) {
@@ -1447,43 +1501,66 @@ consider_testing_reachability(int test_or, int test_dir)
                  "We cannot learn whether we are usable, and will not "
                  "be able to advertise ourself.");
     }
-    return;
+    return 0;
   }
+  return 1;
+}
 
-  if (test_or && (!orport_reachable || !circuit_enough_testing_circs())) {
-    extend_info_t *ei = extend_info_from_router(me);
+/** Some time has passed, or we just got new directory information.
+ * See if we currently believe our ORPort or DirPort to be
+ * unreachable. If so, launch a new test for it.
+ *
+ * For ORPort, we simply try making a circuit that ends at ourselves.
+ * Success is noticed in onionskin_answer().
+ *
+ * For DirPort, we make a connection via Tor to our DirPort and ask
+ * for our own server descriptor.
+ * Success is noticed in connection_dir_client_reached_eof().
+ */
+void
+router_do_reachability_checks(int test_or, int test_dir)
+{
+  const routerinfo_t *me = router_get_my_routerinfo();
+  const or_options_t *options = get_options();
+  int orport_reachable = check_whether_orport_reachable(options);
+  tor_addr_t addr;
+
+  if (router_should_check_reachability(test_or, test_dir)) {
+    if (test_or && (!orport_reachable || !circuit_enough_testing_circs())) {
+      extend_info_t *ei = extend_info_from_router(me);
+      /* XXX IPv6 self testing */
+      log_info(LD_CIRC, "Testing %s of my ORPort: %s:%d.",
+               !orport_reachable ? "reachability" : "bandwidth",
+               fmt_addr32(me->addr), me->or_port);
+      circuit_launch_by_extend_info(CIRCUIT_PURPOSE_TESTING, ei,
+                              CIRCLAUNCH_NEED_CAPACITY|CIRCLAUNCH_IS_INTERNAL);
+      extend_info_free(ei);
+    }
+
     /* XXX IPv6 self testing */
-    log_info(LD_CIRC, "Testing %s of my ORPort: %s:%d.",
-             !orport_reachable ? "reachability" : "bandwidth",
-             fmt_addr32(me->addr), me->or_port);
-    circuit_launch_by_extend_info(CIRCUIT_PURPOSE_TESTING, ei,
-                            CIRCLAUNCH_NEED_CAPACITY|CIRCLAUNCH_IS_INTERNAL);
-    extend_info_free(ei);
-  }
-
-  /* XXX IPv6 self testing */
-  tor_addr_from_ipv4h(&addr, me->addr);
-  if (test_dir && !check_whether_dirport_reachable(options) &&
-      !connection_get_by_type_addr_port_purpose(
-                CONN_TYPE_DIR, &addr, me->dir_port,
-                DIR_PURPOSE_FETCH_SERVERDESC)) {
-    tor_addr_port_t my_orport, my_dirport;
-    memcpy(&my_orport.addr, &addr, sizeof(addr));
-    memcpy(&my_dirport.addr, &addr, sizeof(addr));
-    my_orport.port = me->or_port;
-    my_dirport.port = me->dir_port;
-    /* ask myself, via tor, for my server descriptor. */
-    directory_request_t *req =
-      directory_request_new(DIR_PURPOSE_FETCH_SERVERDESC);
-    directory_request_set_or_addr_port(req, &my_orport);
-    directory_request_set_dir_addr_port(req, &my_dirport);
-    directory_request_set_directory_id_digest(req,
+    tor_addr_from_ipv4h(&addr, me->addr);
+    if (test_dir && !check_whether_dirport_reachable(options) &&
+        !connection_get_by_type_addr_port_purpose(
+                  CONN_TYPE_DIR, &addr, me->dir_port,
+                  DIR_PURPOSE_FETCH_SERVERDESC)) {
+      tor_addr_port_t my_orport, my_dirport;
+      memcpy(&my_orport.addr, &addr, sizeof(addr));
+      memcpy(&my_dirport.addr, &addr, sizeof(addr));
+      my_orport.port = me->or_port;
+      my_dirport.port = me->dir_port;
+      /* ask myself, via tor, for my server descriptor. */
+      directory_request_t *req =
+        directory_request_new(DIR_PURPOSE_FETCH_SERVERDESC);
+      directory_request_set_or_addr_port(req, &my_orport);
+      directory_request_set_dir_addr_port(req, &my_dirport);
+      directory_request_set_directory_id_digest(req,
                                               me->cache_info.identity_digest);
-    // ask via an anon circuit, connecting to our dirport.
-    directory_request_set_indirection(req, DIRIND_ANON_DIRPORT);
-    directory_request_set_resource(req, "authority.z");
-    directory_initiate_request(req);
-    directory_request_free(req);
+      // ask via an anon circuit, connecting to our dirport.
+      directory_request_set_indirection(req, DIRIND_ANON_DIRPORT);
+      directory_request_set_resource(req, "authority.z");
+      directory_initiate_request(req);
+      directory_request_free(req);
+    }
   }
 }
 
@@ -1528,7 +1605,7 @@ router_dirport_found_reachable(void)
                && check_whether_orport_reachable(options) ?
                " Publishing server descriptor." : "");
     can_reach_dir_port = 1;
-    if (decide_to_advertise_dirport(options, me->dir_port)) {
+    if (router_should_advertise_dirport(options, me->dir_port)) {
       mark_my_descriptor_dirty("DirPort found reachable");
       /* This is a significant enough change to upload immediately,
        * at least in a test network */
@@ -1573,13 +1650,22 @@ router_perform_bandwidth_test(int num_circs, time_t now)
   }
 }
 
-/** Return true iff our network is in some sense disabled: either we're
- * hibernating, entering hibernation, or the network is turned off with
- * DisableNetwork. */
+/** Return true iff our network is in some sense disabled or shutting down:
+ * either we're hibernating, entering hibernation, or the network is turned
+ * off with DisableNetwork. */
 int
 net_is_disabled(void)
 {
   return get_options()->DisableNetwork || we_are_hibernating();
+}
+
+/** Return true iff our network is in some sense "completely disabled" either
+ * we're fully hibernating or the network is turned off with
+ * DisableNetwork. */
+int
+net_is_completely_disabled(void)
+{
+  return get_options()->DisableNetwork || we_are_fully_hibernating();
 }
 
 /** Return true iff we believe ourselves to be an authoritative
@@ -1589,14 +1675,6 @@ int
 authdir_mode(const or_options_t *options)
 {
   return options->AuthoritativeDir != 0;
-}
-/** Return true iff we believe ourselves to be a v3 authoritative
- * directory server.
- */
-int
-authdir_mode_v3(const or_options_t *options)
-{
-  return authdir_mode(options) && options->V3AuthoritativeDir != 0;
 }
 /** Return true iff we are an authoritative directory server that is
  * authoritative about receiving and serving descriptors of type
@@ -1999,10 +2077,43 @@ router_is_me(const routerinfo_t *router)
 MOCK_IMPL(const routerinfo_t *,
 router_get_my_routerinfo,(void))
 {
-  if (!server_mode(get_options()))
+  return router_get_my_routerinfo_with_err(NULL);
+}
+
+/** Return routerinfo of this OR. Rebuild it from
+ * scratch if needed. Set <b>*err</b> to 0 on success or to
+ * appropriate TOR_ROUTERINFO_ERROR_* value on failure.
+ */
+MOCK_IMPL(const routerinfo_t *,
+router_get_my_routerinfo_with_err,(int *err))
+{
+  if (!server_mode(get_options())) {
+    if (err)
+      *err = TOR_ROUTERINFO_ERROR_NOT_A_SERVER;
+
     return NULL;
-  if (router_rebuild_descriptor(0))
+  }
+
+  if (!desc_clean_since) {
+    int rebuild_err = router_rebuild_descriptor(0);
+    if (rebuild_err < 0) {
+      if (err)
+        *err = rebuild_err;
+
+      return NULL;
+    }
+  }
+
+  if (!desc_routerinfo) {
+    if (err)
+      *err = TOR_ROUTERINFO_ERROR_DESC_REBUILDING;
+
     return NULL;
+  }
+
+  if (err)
+    *err = 0;
+
   return desc_routerinfo;
 }
 
@@ -2179,7 +2290,7 @@ router_build_fresh_descriptor(routerinfo_t **r, extrainfo_t **e)
 
   if (router_pick_published_address(options, &addr, 0) < 0) {
     log_warn(LD_CONFIG, "Don't know my address while generating descriptor");
-    return -1;
+    return TOR_ROUTERINFO_ERROR_NO_EXT_ADDR;
   }
 
   /* Log a message if the address in the descriptor doesn't match the ORPort
@@ -2235,7 +2346,7 @@ router_build_fresh_descriptor(routerinfo_t **r, extrainfo_t **e)
   if (crypto_pk_get_digest(ri->identity_pkey,
                            ri->cache_info.identity_digest)<0) {
     routerinfo_free(ri);
-    return -1;
+    return TOR_ROUTERINFO_ERROR_DIGEST_FAILED;
   }
   ri->cache_info.signing_key_cert =
     tor_cert_dup(get_master_signing_key_cert());
@@ -2251,6 +2362,7 @@ router_build_fresh_descriptor(routerinfo_t **r, extrainfo_t **e)
   /* and compute ri->bandwidthburst similarly */
   ri->bandwidthburst = get_effective_bwburst(options);
 
+  /* Report bandwidth, unless we're hibernating or shutting down */
   ri->bandwidthcapacity = hibernating ? 0 : rep_hist_bandwidth_assess();
 
   if (dns_seems_to_be_broken() || has_dns_init_failed()) {
@@ -2368,7 +2480,7 @@ router_build_fresh_descriptor(routerinfo_t **r, extrainfo_t **e)
     log_warn(LD_BUG, "Couldn't generate router descriptor.");
     routerinfo_free(ri);
     extrainfo_free(ei);
-    return -1;
+    return TOR_ROUTERINFO_ERROR_CANNOT_GENERATE;
   }
   ri->cache_info.signed_descriptor_len =
     strlen(ri->cache_info.signed_descriptor_body);
@@ -2411,6 +2523,7 @@ router_build_fresh_descriptor(routerinfo_t **r, extrainfo_t **e)
 int
 router_rebuild_descriptor(int force)
 {
+  int err = 0;
   routerinfo_t *ri;
   extrainfo_t *ei;
   uint32_t addr;
@@ -2425,13 +2538,14 @@ router_rebuild_descriptor(int force)
      * learn that it's time to try again when ip_address_changed()
      * marks it dirty. */
     desc_clean_since = time(NULL);
-    return -1;
+    return TOR_ROUTERINFO_ERROR_DESC_REBUILDING;
   }
 
   log_info(LD_OR, "Rebuilding relay descriptor%s", force ? " (forced)" : "");
 
-  if (router_build_fresh_descriptor(&ri, &ei) < 0) {
-    return -1;
+  err = router_build_fresh_descriptor(&ri, &ei);
+  if (err < 0) {
+    return err;
   }
 
   routerinfo_free(desc_routerinfo);
@@ -2528,6 +2642,9 @@ check_descriptor_bandwidth_changed(time_t now)
     return;
 
   prev = my_ri->bandwidthcapacity;
+
+  /* Consider ourselves to have zero bandwidth if we're hibernating or
+   * shutting down. */
   cur = we_are_hibernating() ? 0 : rep_hist_bandwidth_assess();
   if ((prev != cur && (!prev || !cur)) ||
       cur > prev*2 ||
@@ -2931,14 +3048,14 @@ router_dump_router_to_string(routerinfo_t *router,
     router->nickname,
     address,
     router->or_port,
-    decide_to_advertise_dirport(options, router->dir_port),
+    router_should_advertise_dirport(options, router->dir_port),
     ed_cert_line ? ed_cert_line : "",
     extra_or_address ? extra_or_address : "",
     router->platform,
     proto_line,
     published,
     fingerprint,
-    stats_n_seconds_working,
+    get_uptime(),
     (int) router->bandwidthrate,
     (int) router->bandwidthburst,
     (int) router->bandwidthcapacity,
@@ -3005,7 +3122,7 @@ router_dump_router_to_string(routerinfo_t *router,
     tor_free(p6);
   }
 
-  if (decide_to_advertise_begindir(options,
+  if (router_should_advertise_begindir(options,
                                    router->supports_tunnelled_dir_requests)) {
     smartlist_add_strdup(chunks, "tunnelled-dir-server\n");
   }
@@ -3454,6 +3571,15 @@ is_legal_hexdigest(const char *s)
           strspn(s,HEX_CHARACTERS)==HEX_DIGEST_LEN);
 }
 
+/**
+ * Longest allowed output of format_node_description, plus 1 character for
+ * NUL.  This allows space for:
+ * "$FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF~xxxxxxxxxxxxxxxxxxx at"
+ * " [ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255]"
+ * plus a terminating NUL.
+ */
+#define NODE_DESC_BUF_LEN (MAX_VERBOSE_NICKNAME_LEN+4+TOR_ADDR_BUF_LEN)
+
 /** Use <b>buf</b> (which must be at least NODE_DESC_BUF_LEN bytes long) to
  * hold a human-readable description of a node with identity digest
  * <b>id_digest</b>, named-status <b>is_named</b>, nickname <b>nickname</b>,
@@ -3499,15 +3625,16 @@ format_node_description(char *buf,
   return buf;
 }
 
-/** Use <b>buf</b> (which must be at least NODE_DESC_BUF_LEN bytes long) to
- * hold a human-readable description of <b>ri</b>.
+/** Return a human-readable description of the routerinfo_t <b>ri</b>.
  *
- *
- * Return a pointer to the front of <b>buf</b>.
+ * This function is not thread-safe.  Each call to this function invalidates
+ * previous values returned by this function.
  */
 const char *
-router_get_description(char *buf, const routerinfo_t *ri)
+router_describe(const routerinfo_t *ri)
 {
+  static char buf[NODE_DESC_BUF_LEN];
+
   if (!ri)
     return "<null>";
   return format_node_description(buf,
@@ -3518,14 +3645,15 @@ router_get_description(char *buf, const routerinfo_t *ri)
                                  ri->addr);
 }
 
-/** Use <b>buf</b> (which must be at least NODE_DESC_BUF_LEN bytes long) to
- * hold a human-readable description of <b>node</b>.
+/** Return a human-readable description of the node_t <b>node</b>.
  *
- * Return a pointer to the front of <b>buf</b>.
+ * This function is not thread-safe.  Each call to this function invalidates
+ * previous values returned by this function.
  */
 const char *
-node_get_description(char *buf, const node_t *node)
+node_describe(const node_t *node)
 {
+  static char buf[NODE_DESC_BUF_LEN];
   const char *nickname = NULL;
   uint32_t addr32h = 0;
   int is_named = 0;
@@ -3550,66 +3678,6 @@ node_get_description(char *buf, const node_t *node)
                                  addr32h);
 }
 
-/** Use <b>buf</b> (which must be at least NODE_DESC_BUF_LEN bytes long) to
- * hold a human-readable description of <b>rs</b>.
- *
- * Return a pointer to the front of <b>buf</b>.
- */
-const char *
-routerstatus_get_description(char *buf, const routerstatus_t *rs)
-{
-  if (!rs)
-    return "<null>";
-  return format_node_description(buf,
-                                 rs->identity_digest,
-                                 rs->is_named,
-                                 rs->nickname,
-                                 NULL,
-                                 rs->addr);
-}
-
-/** Use <b>buf</b> (which must be at least NODE_DESC_BUF_LEN bytes long) to
- * hold a human-readable description of <b>ei</b>.
- *
- * Return a pointer to the front of <b>buf</b>.
- */
-const char *
-extend_info_get_description(char *buf, const extend_info_t *ei)
-{
-  if (!ei)
-    return "<null>";
-  return format_node_description(buf,
-                                 ei->identity_digest,
-                                 0,
-                                 ei->nickname,
-                                 &ei->addr,
-                                 0);
-}
-
-/** Return a human-readable description of the routerinfo_t <b>ri</b>.
- *
- * This function is not thread-safe.  Each call to this function invalidates
- * previous values returned by this function.
- */
-const char *
-router_describe(const routerinfo_t *ri)
-{
-  static char buf[NODE_DESC_BUF_LEN];
-  return router_get_description(buf, ri);
-}
-
-/** Return a human-readable description of the node_t <b>node</b>.
- *
- * This function is not thread-safe.  Each call to this function invalidates
- * previous values returned by this function.
- */
-const char *
-node_describe(const node_t *node)
-{
-  static char buf[NODE_DESC_BUF_LEN];
-  return node_get_description(buf, node);
-}
-
 /** Return a human-readable description of the routerstatus_t <b>rs</b>.
  *
  * This function is not thread-safe.  Each call to this function invalidates
@@ -3619,7 +3687,15 @@ const char *
 routerstatus_describe(const routerstatus_t *rs)
 {
   static char buf[NODE_DESC_BUF_LEN];
-  return routerstatus_get_description(buf, rs);
+
+  if (!rs)
+    return "<null>";
+  return format_node_description(buf,
+                                 rs->identity_digest,
+                                 rs->is_named,
+                                 rs->nickname,
+                                 NULL,
+                                 rs->addr);
 }
 
 /** Return a human-readable description of the extend_info_t <b>ei</b>.
@@ -3631,7 +3707,15 @@ const char *
 extend_info_describe(const extend_info_t *ei)
 {
   static char buf[NODE_DESC_BUF_LEN];
-  return extend_info_get_description(buf, ei);
+
+  if (!ei)
+    return "<null>";
+  return format_node_description(buf,
+                                 ei->identity_digest,
+                                 0,
+                                 ei->nickname,
+                                 &ei->addr,
+                                 0);
 }
 
 /** Set <b>buf</b> (which must have MAX_VERBOSE_NICKNAME_LEN+1 bytes) to the
@@ -3733,4 +3817,3 @@ router_get_all_orports(const routerinfo_t *ri)
   fake_node.ri = (routerinfo_t *)ri;
   return node_get_all_orports(&fake_node);
 }
-

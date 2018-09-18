@@ -78,6 +78,7 @@
 #include "circuitlist.h"
 #include "circuituse.h"
 #include "config.h"
+#include "crypto_rand.h"
 #include "networkstatus.h"
 #include "nodelist.h"
 #include "rephist.h"
@@ -85,9 +86,8 @@
 #include "routerlist.h"
 #include "ht.h"
 #include "channelpadding.h"
-
-#include "channelpadding.h"
 #include "connection_or.h"
+#include "statefile.h"
 
 static void bw_arrays_init(void);
 static void predicted_ports_alloc(void);

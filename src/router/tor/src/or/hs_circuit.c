@@ -13,6 +13,8 @@
 #include "circuitlist.h"
 #include "circuituse.h"
 #include "config.h"
+#include "crypto_rand.h"
+#include "crypto_util.h"
 #include "nodelist.h"
 #include "policies.h"
 #include "relay.h"
@@ -193,11 +195,8 @@ register_intro_circ(const hs_service_intro_point_t *ip,
   tor_assert(circ);
 
   if (ip->base.is_only_legacy) {
-    uint8_t digest[DIGEST_LEN];
-    if (BUG(crypto_pk_get_digest(ip->legacy_key, (char *) digest) < 0)) {
-      return;
-    }
-    hs_circuitmap_register_intro_circ_v2_service_side(circ, digest);
+    hs_circuitmap_register_intro_circ_v2_service_side(circ,
+                                                      ip->legacy_key_digest);
   } else {
     hs_circuitmap_register_intro_circ_v3_service_side(circ,
                                          &ip->auth_key_kp.pubkey);
@@ -559,10 +558,14 @@ retry_service_rendezvous_point(const origin_circuit_t *circ)
   return;
 }
 
-/* Add all possible link specifiers in node to lspecs.
- * legacy ID is mandatory thus MUST be present in node. If the primary address
- * is not IPv4, log a BUG() warning, and return an empty smartlist.
- * Includes ed25519 id and IPv6 link specifiers if present in the node. */
+/* Add all possible link specifiers in node to lspecs:
+ *  - legacy ID is mandatory thus MUST be present in node;
+ *  - include ed25519 link specifier if present in the node, and the node
+ *    supports ed25519 link authentication, even if its link versions are not
+ *    compatible with us;
+ *  - include IPv4 link specifier, if the primary address is not IPv4, log a
+ *    BUG() warning, and return an empty smartlist;
+ *  - include IPv6 link specifier if present in the node. */
 static void
 get_lspecs_from_node(const node_t *node, smartlist_t *lspecs)
 {
@@ -600,8 +603,12 @@ get_lspecs_from_node(const node_t *node, smartlist_t *lspecs)
   link_specifier_set_ls_len(ls, link_specifier_getlen_un_legacy_id(ls));
   smartlist_add(lspecs, ls);
 
-  /* ed25519 ID is only included if the node has it. */
-  if (!ed25519_public_key_is_zero(&node->ed25519_id)) {
+  /* ed25519 ID is only included if the node has it, and the node declares a
+     protocol version that supports ed25519 link authentication, even if that
+     link version is not compatible with us. (We are sending the ed25519 key
+     to another tor, which may support different link versions.) */
+  if (!ed25519_public_key_is_zero(&node->ed25519_id) &&
+      node_supports_ed25519_link_authentication(node, 0)) {
     ls = link_specifier_new();
     link_specifier_set_ls_type(ls, LS_ED25519_ID);
     memcpy(link_specifier_getarray_un_ed25519_id(ls), &node->ed25519_id,
@@ -675,22 +682,14 @@ setup_introduce1_data(const hs_desc_intro_point_t *ip,
 origin_circuit_t *
 hs_circ_service_get_intro_circ(const hs_service_intro_point_t *ip)
 {
-  origin_circuit_t *circ = NULL;
-
   tor_assert(ip);
 
   if (ip->base.is_only_legacy) {
-    uint8_t digest[DIGEST_LEN];
-    if (BUG(crypto_pk_get_digest(ip->legacy_key, (char *) digest) < 0)) {
-      goto end;
-    }
-    circ = hs_circuitmap_get_intro_circ_v2_service_side(digest);
+    return hs_circuitmap_get_intro_circ_v2_service_side(ip->legacy_key_digest);
   } else {
-    circ = hs_circuitmap_get_intro_circ_v3_service_side(
+    return hs_circuitmap_get_intro_circ_v3_service_side(
                                         &ip->auth_key_kp.pubkey);
   }
- end:
-  return circ;
 }
 
 /* Called when we fail building a rendezvous circuit at some point other than
