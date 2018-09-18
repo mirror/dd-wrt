@@ -32,7 +32,7 @@
 #include <assert.h>
 #include <syslog.h>
 
-#include <typedefs.h>
+#include <bcmtypedefs.h>
 //#include <netconf.h>
 #include <bcmnvram.h>
 //#include <shutils.h>

@@ -17,7 +17,7 @@
 
 #ifndef _LANGUAGE_ASSEMBLY
 
-#include <typedefs.h>
+#include <bcmtypedefs.h>
 #include <stdio.h>
 
 struct nvram_header {
