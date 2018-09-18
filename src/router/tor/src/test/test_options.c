@@ -2067,12 +2067,12 @@ test_options_validate__testing(void *ignored)
   ENSURE_DEFAULT(TestingV3AuthVotingStartOffset, 3000);
   ENSURE_DEFAULT(TestingAuthDirTimeToLearnReachability, 3000);
   ENSURE_DEFAULT(TestingEstimatedDescriptorPropagationTime, 3000);
-  ENSURE_DEFAULT(TestingServerDownloadSchedule, 3000);
-  ENSURE_DEFAULT(TestingClientDownloadSchedule, 3000);
-  ENSURE_DEFAULT(TestingServerConsensusDownloadSchedule, 3000);
-  ENSURE_DEFAULT(TestingClientConsensusDownloadSchedule, 3000);
-  ENSURE_DEFAULT(TestingBridgeDownloadSchedule, 3000);
-  ENSURE_DEFAULT(TestingBridgeBootstrapDownloadSchedule, 3000);
+  ENSURE_DEFAULT(TestingServerDownloadInitialDelay, 3000);
+  ENSURE_DEFAULT(TestingClientDownloadInitialDelay, 3000);
+  ENSURE_DEFAULT(TestingServerConsensusDownloadInitialDelay, 3000);
+  ENSURE_DEFAULT(TestingClientConsensusDownloadInitialDelay, 3000);
+  ENSURE_DEFAULT(TestingBridgeDownloadInitialDelay, 3000);
+  ENSURE_DEFAULT(TestingBridgeBootstrapDownloadInitialDelay, 3000);
   ENSURE_DEFAULT(TestingClientMaxIntervalWithoutRequest, 3000);
   ENSURE_DEFAULT(TestingDirConnectionMaxStall, 3000);
   ENSURE_DEFAULT(TestingAuthKeyLifetime, 3000);
@@ -2418,37 +2418,6 @@ test_options_validate__circuits(void *ignored)
   policies_free_all();
   teardown_capture_of_logs();
   free_options_test_data(tdata);
-  tor_free(msg);
-}
-
-static void
-test_options_validate__port_forwarding(void *ignored)
-{
-  (void)ignored;
-  int ret;
-  char *msg;
-  options_test_data_t *tdata = NULL;
-
-  free_options_test_data(tdata);
-  tdata = get_options_test_data(TEST_OPTIONS_DEFAULT_VALUES
-                                "PortForwarding 1\nSandbox 1\n");
-  ret = options_validate(tdata->old_opt, tdata->opt, tdata->def_opt, 0, &msg);
-  tt_int_op(ret, OP_EQ, -1);
-  tt_str_op(msg, OP_EQ, "PortForwarding is not compatible with Sandbox;"
-            " at most one can be set");
-  tor_free(msg);
-
-  free_options_test_data(tdata);
-  tdata = get_options_test_data(TEST_OPTIONS_DEFAULT_VALUES
-                                "PortForwarding 1\nSandbox 0\n");
-  ret = options_validate(tdata->old_opt, tdata->opt, tdata->def_opt, 0, &msg);
-  tt_int_op(ret, OP_EQ, 0);
-  tt_assert(!msg);
-  tor_free(msg);
-
- done:
-  free_options_test_data(tdata);
-  policies_free_all();
   tor_free(msg);
 }
 
@@ -4135,16 +4104,6 @@ test_options_validate__testing_options(void *ignored)
   free_options_test_data(tdata);
   tdata = get_options_test_data(TEST_OPTIONS_DEFAULT_VALUES
                                 "TestingEnableTbEmptyEvent 1\n"
-                                );
-  ret = options_validate(tdata->old_opt, tdata->opt, tdata->def_opt, 0, &msg);
-  tt_int_op(ret, OP_EQ, -1);
-  tt_str_op(msg, OP_EQ, "TestingEnableTbEmptyEvent may only be changed "
-            "in testing Tor networks!");
-  tor_free(msg);
-
-  free_options_test_data(tdata);
-  tdata = get_options_test_data(TEST_OPTIONS_DEFAULT_VALUES
-                                "TestingEnableTbEmptyEvent 1\n"
                                 VALID_DIR_AUTH
                                 "TestingTorNetwork 1\n"
                                 "___UsingTestNetworkDefaults 0\n"
@@ -4261,7 +4220,6 @@ struct testcase_t options_tests[] = {
   LOCAL_VALIDATE_TEST(path_bias),
   LOCAL_VALIDATE_TEST(bandwidth),
   LOCAL_VALIDATE_TEST(circuits),
-  LOCAL_VALIDATE_TEST(port_forwarding),
   LOCAL_VALIDATE_TEST(tor2web),
   LOCAL_VALIDATE_TEST(rend),
   LOCAL_VALIDATE_TEST(single_onion),

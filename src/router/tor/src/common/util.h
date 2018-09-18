@@ -73,9 +73,9 @@ extern int dmalloc_free(const char *file, const int line, void *pnt,
     }                                               \
   STMT_END
 #else /* !(defined(USE_DMALLOC)) */
-/** Release memory allocated by tor_malloc, tor_realloc, tor_strdup, etc.
- * Unlike the free() function, tor_free() will still work on NULL pointers,
- * and it sets the pointer value to NULL after freeing it.
+/** Release memory allocated by tor_malloc, tor_realloc, tor_strdup,
+ * etc.  Unlike the free() function, the tor_free() macro sets the
+ * pointer value to NULL after freeing it.
  *
  * This is a macro.  If you need a function pointer to release memory from
  * tor_malloc(), use tor_free_().
@@ -88,17 +88,13 @@ extern int dmalloc_free(const char *file, const int line, void *pnt,
 #ifdef __GNUC__
 #define tor_free(p) STMT_BEGIN                                 \
     typeof(&(p)) tor_free__tmpvar = &(p);                      \
-    if (PREDICT_LIKELY((*tor_free__tmpvar)!=NULL)) {           \
-      raw_free(*tor_free__tmpvar);                             \
-      *tor_free__tmpvar=NULL;                                  \
-    }                                                          \
+    raw_free(*tor_free__tmpvar);                               \
+    *tor_free__tmpvar=NULL;                                    \
   STMT_END
 #else
 #define tor_free(p) STMT_BEGIN                                 \
-    if (PREDICT_LIKELY((p)!=NULL)) {                           \
-      raw_free(p);                                             \
-      (p)=NULL;                                                \
-    }                                                          \
+  raw_free(p);                                                 \
+  (p)=NULL;                                                    \
   STMT_END
 #endif
 #endif /* defined(USE_DMALLOC) */
@@ -179,6 +175,8 @@ int64_t add_laplace_noise(int64_t signal, double random, double delta_f,
 int n_bits_set_u8(uint8_t v);
 int64_t clamp_double_to_int64(double number);
 void simplify_fraction64(uint64_t *numer, uint64_t *denom);
+
+uint32_t tor_add_u32_nowrap(uint32_t a, uint32_t b);
 
 /* Compute the CEIL of <b>a</b> divided by <b>b</b>, for nonnegative <b>a</b>
  * and positive <b>b</b>.  Works on integer types only. Not defined if a+(b-1)
@@ -273,6 +271,7 @@ int parse_rfc1123_time(const char *buf, time_t *t);
 #define ISO_TIME_USEC_LEN (ISO_TIME_LEN+7)
 void format_local_iso_time(char *buf, time_t t);
 void format_iso_time(char *buf, time_t t);
+void format_local_iso_time_nospace(char *buf, time_t t);
 void format_iso_time_nospace(char *buf, time_t t);
 void format_iso_time_nospace_usec(char *buf, const struct timeval *tv);
 int parse_iso_time_(const char *cp, time_t *t, int strict, int nospace);
@@ -418,11 +417,6 @@ void start_daemon(void);
 void finish_daemon(const char *desired_cwd);
 int write_pidfile(const char *filename);
 
-/* Port forwarding */
-void tor_check_port_forwarding(const char *filename,
-                               struct smartlist_t *ports_to_forward,
-                               time_t now);
-
 void tor_disable_spawning_background_processes(void);
 
 typedef struct process_handle_t process_handle_t;
@@ -461,9 +455,7 @@ void set_environment_variable_in_smartlist(struct smartlist_t *env_vars,
                                            void (*free_old)(void*),
                                            int free_p);
 
-/* Values of process_handle_t.status. PROCESS_STATUS_NOTRUNNING must be
- * 0 because tor_check_port_forwarding depends on this being the initial
- * statue of the static instance of process_handle_t */
+/* Values of process_handle_t.status. */
 #define PROCESS_STATUS_NOTRUNNING 0
 #define PROCESS_STATUS_RUNNING 1
 #define PROCESS_STATUS_ERROR -1

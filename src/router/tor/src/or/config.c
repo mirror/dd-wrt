@@ -1,3 +1,4 @@
+
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
@@ -78,8 +79,9 @@
 #include "control.h"
 #include "confparse.h"
 #include "cpuworker.h"
+#include "crypto_rand.h"
+#include "crypto_util.h"
 #include "dirserv.h"
-#include "dirvote.h"
 #include "dns.h"
 #include "dos.h"
 #include "entrynodes.h"
@@ -104,11 +106,15 @@
 #include "statefile.h"
 #include "transports.h"
 #include "ext_orport.h"
+#include "voting_schedule.h"
 #ifdef _WIN32
 #include <shlobj.h>
 #endif
 
 #include "procmon.h"
+
+#include "dirauth/dirvote.h"
+#include "dirauth/mode.h"
 
 #ifdef HAVE_SYSTEMD
 #   if defined(__COVERITY__) && !defined(__INCLUDE_LEVEL__)
@@ -125,6 +131,11 @@ static const char unix_socket_prefix[] = "unix:";
 /* Prefix used to indicate a Unix socket with spaces in it, in a FooPort
  * configuration. */
 static const char unix_q_socket_prefix[] = "unix:\"";
+
+/** macro to help with the bulk rename of *DownloadSchedule to
+ * *DowloadInitialDelay . */
+#define DOWNLOAD_SCHEDULE(name) \
+  { #name "DownloadSchedule", #name "DownloadInitialDelay", 0, 1 }
 
 /** A list of abbreviations and aliases to map command-line options, obsolete
  * option names, or alternative option names, to their current values. */
@@ -174,6 +185,16 @@ static config_abbrev_t option_abbrevs_[] = {
   { "SocksSocketsGroupWritable", "UnixSocksGroupWritable", 0, 1},
   { "_HSLayer2Nodes", "HSLayer2Nodes", 0, 1 },
   { "_HSLayer3Nodes", "HSLayer3Nodes", 0, 1 },
+
+  DOWNLOAD_SCHEDULE(ClientBootstrapConsensusAuthority),
+  DOWNLOAD_SCHEDULE(ClientBootstrapConsensusAuthorityOnly),
+  DOWNLOAD_SCHEDULE(ClientBootstrapConsensusFallback),
+  DOWNLOAD_SCHEDULE(TestingBridge),
+  DOWNLOAD_SCHEDULE(TestingBridgeBootstrap),
+  DOWNLOAD_SCHEDULE(TestingClient),
+  DOWNLOAD_SCHEDULE(TestingClientConsensus),
+  DOWNLOAD_SCHEDULE(TestingServer),
+  DOWNLOAD_SCHEDULE(TestingServerConsensus),
 
   { NULL, NULL, 0, 0},
 };
@@ -267,7 +288,7 @@ static config_var_t option_vars_[] = {
   OBSOLETE("CircuitIdleTimeout"),
   V(CircuitsAvailableTimeout,    INTERVAL, "0"),
   V(CircuitStreamTimeout,        INTERVAL, "0"),
-  V(CircuitPriorityHalflife,     DOUBLE,  "-100.0"), /*negative:'Use default'*/
+  V(CircuitPriorityHalflife,     DOUBLE,  "-1.0"), /*negative:'Use default'*/
   V(ClientDNSRejectInternalAddresses, BOOL,"1"),
   V(ClientOnly,                  BOOL,     "0"),
   V(ClientPreferIPv6ORPort,      AUTOBOOL, "auto"),
@@ -337,7 +358,7 @@ static config_var_t option_vars_[] = {
   V(DownloadExtraInfo,           BOOL,     "0"),
   V(TestingEnableConnBwEvent,    BOOL,     "0"),
   V(TestingEnableCellStatsEvent, BOOL,     "0"),
-  V(TestingEnableTbEmptyEvent,   BOOL,     "0"),
+  OBSOLETE("TestingEnableTbEmptyEvent"),
   V(EnforceDistinctSubnets,      BOOL,     "1"),
   V(EntryNodes,                  ROUTERSET,   NULL),
   V(EntryStatistics,             BOOL,     "0"),
@@ -457,6 +478,7 @@ static config_var_t option_vars_[] = {
   V(NumCPUs,                     UINT,     "0"),
   V(NumDirectoryGuards,          UINT,     "0"),
   V(NumEntryGuards,              UINT,     "0"),
+  V(NumPrimaryGuards,            UINT,     "0"),
   V(OfflineMasterKey,            BOOL,     "0"),
   OBSOLETE("ORListenAddress"),
   VPORT(ORPort),
@@ -495,8 +517,8 @@ static config_var_t option_vars_[] = {
   V(TestingSigningKeySlop,           INTERVAL, "1 day"),
 
   V(OptimisticData,              AUTOBOOL, "auto"),
-  V(PortForwarding,              BOOL,     "0"),
-  V(PortForwardingHelper,        FILENAME, "tor-fw-helper"),
+  OBSOLETE("PortForwarding"),
+  OBSOLETE("PortForwardingHelper"),
   OBSOLETE("PreferTunneledDirConns"),
   V(ProtocolWarnings,            BOOL,     "0"),
   V(PublishServerDescriptor,     CSV,      "1"),
@@ -599,16 +621,10 @@ static config_var_t option_vars_[] = {
   VAR("__OwningControllerProcess",STRING,OwningControllerProcess, NULL),
   VAR("__OwningControllerFD",INT,OwningControllerFD, "-1"),
   V(MinUptimeHidServDirectoryV2, INTERVAL, "96 hours"),
-  V(TestingServerDownloadSchedule, CSV_INTERVAL, "0, 0, 0, 60, 60, 120, "
-                                 "300, 900, 2147483647"),
-  V(TestingClientDownloadSchedule, CSV_INTERVAL, "0, 0, 60, 300, 600, "
-                                 "2147483647"),
-  V(TestingServerConsensusDownloadSchedule, CSV_INTERVAL, "0, 0, 60, "
-                                 "300, 600, 1800, 1800, 1800, 1800, "
-                                 "1800, 3600, 7200"),
-  V(TestingClientConsensusDownloadSchedule, CSV_INTERVAL, "0, 0, 60, "
-                                 "300, 600, 1800, 3600, 3600, 3600, "
-                                 "10800, 21600, 43200"),
+  V(TestingServerDownloadInitialDelay, CSV_INTERVAL, "0"),
+  V(TestingClientDownloadInitialDelay, CSV_INTERVAL, "0"),
+  V(TestingServerConsensusDownloadInitialDelay, CSV_INTERVAL, "0"),
+  V(TestingClientConsensusDownloadInitialDelay, CSV_INTERVAL, "0"),
   /* With the ClientBootstrapConsensus*Download* below:
    * Clients with only authorities will try:
    *  - at least 3 authorities over 10 seconds, then exponentially backoff,
@@ -624,13 +640,11 @@ static config_var_t option_vars_[] = {
    *
    * When clients have authorities and fallbacks available, they use these
    * schedules: (we stagger the times to avoid thundering herds) */
-  V(ClientBootstrapConsensusAuthorityDownloadSchedule, CSV_INTERVAL,
-    "6, 11, 3600, 10800, 25200, 54000, 111600, 262800" /* 3 days + 1 hour */),
-  V(ClientBootstrapConsensusFallbackDownloadSchedule, CSV_INTERVAL,
-    "0, 1, 4, 11, 3600, 10800, 25200, 54000, 111600, 262800"),
+  V(ClientBootstrapConsensusAuthorityDownloadInitialDelay, CSV_INTERVAL, "6"),
+  V(ClientBootstrapConsensusFallbackDownloadInitialDelay, CSV_INTERVAL, "0"),
   /* When clients only have authorities available, they use this schedule: */
-  V(ClientBootstrapConsensusAuthorityOnlyDownloadSchedule, CSV_INTERVAL,
-    "0, 3, 7, 3600, 10800, 25200, 54000, 111600, 262800"),
+  V(ClientBootstrapConsensusAuthorityOnlyDownloadInitialDelay, CSV_INTERVAL,
+    "0"),
   /* We don't want to overwhelm slow networks (or mirrors whose replies are
    * blocked), but we also don't want to fail if only some mirrors are
    * blackholed. Clients will try 3 directories simultaneously.
@@ -638,14 +652,12 @@ static config_var_t option_vars_[] = {
   V(ClientBootstrapConsensusMaxInProgressTries, UINT, "3"),
   /* When a client has any running bridges, check each bridge occasionally,
     * whether or not that bridge is actually up. */
-  V(TestingBridgeDownloadSchedule, CSV_INTERVAL,
-    "10800, 25200, 54000, 111600, 262800"),
+  V(TestingBridgeDownloadInitialDelay, CSV_INTERVAL,"10800"),
   /* When a client is just starting, or has no running bridges, check each
    * bridge a few times quickly, and then try again later. These schedules
    * are much longer than the other schedules, because we try each and every
    * configured bridge with this schedule. */
-  V(TestingBridgeBootstrapDownloadSchedule, CSV_INTERVAL,
-    "0, 30, 90, 600, 3600, 10800, 25200, 54000, 111600, 262800"),
+  V(TestingBridgeBootstrapDownloadInitialDelay, CSV_INTERVAL, "0"),
   V(TestingClientMaxIntervalWithoutRequest, INTERVAL, "10 minutes"),
   V(TestingDirConnectionMaxStall, INTERVAL, "5 minutes"),
   OBSOLETE("TestingConsensusMaxDownloadTries"),
@@ -672,12 +684,10 @@ static const config_var_t testing_tor_network_defaults[] = {
   V(EnforceDistinctSubnets,      BOOL,     "0"),
   V(AssumeReachable,             BOOL,     "1"),
   V(AuthDirMaxServersPerAddr,    UINT,     "0"),
-  V(ClientBootstrapConsensusAuthorityDownloadSchedule, CSV_INTERVAL,
-    "0, 2, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 8, 16, 32, 60"),
-  V(ClientBootstrapConsensusFallbackDownloadSchedule, CSV_INTERVAL,
-    "0, 1, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 8, 16, 32, 60"),
-  V(ClientBootstrapConsensusAuthorityOnlyDownloadSchedule, CSV_INTERVAL,
-    "0, 1, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 8, 16, 32, 60"),
+  V(ClientBootstrapConsensusAuthorityDownloadInitialDelay, CSV_INTERVAL, "0"),
+  V(ClientBootstrapConsensusFallbackDownloadInitialDelay, CSV_INTERVAL, "0"),
+  V(ClientBootstrapConsensusAuthorityOnlyDownloadInitialDelay, CSV_INTERVAL,
+    "0"),
   V(ClientDNSRejectInternalAddresses, BOOL,"0"),
   V(ClientRejectInternalAddresses, BOOL,   "0"),
   V(CountPrivateBandwidth,       BOOL,     "1"),
@@ -692,22 +702,16 @@ static const config_var_t testing_tor_network_defaults[] = {
   V(TestingAuthDirTimeToLearnReachability, INTERVAL, "0 minutes"),
   V(TestingEstimatedDescriptorPropagationTime, INTERVAL, "0 minutes"),
   V(MinUptimeHidServDirectoryV2, INTERVAL, "0 minutes"),
-  V(TestingServerDownloadSchedule, CSV_INTERVAL, "0, 0, 0, 5, 10, 15, "
-                                 "20, 30, 60"),
-  V(TestingClientDownloadSchedule, CSV_INTERVAL, "0, 0, 5, 10, 15, 20, "
-                                 "30, 60"),
-  V(TestingServerConsensusDownloadSchedule, CSV_INTERVAL, "0, 0, 5, 10, "
-                                 "15, 20, 30, 60"),
-  V(TestingClientConsensusDownloadSchedule, CSV_INTERVAL, "0, 0, 5, 10, "
-                                 "15, 20, 30, 60"),
-  V(TestingBridgeDownloadSchedule, CSV_INTERVAL, "10, 30, 60"),
-  V(TestingBridgeBootstrapDownloadSchedule, CSV_INTERVAL, "0, 0, 5, 10, "
-                                 "15, 20, 30, 60"),
+  V(TestingServerDownloadInitialDelay, CSV_INTERVAL, "0"),
+  V(TestingClientDownloadInitialDelay, CSV_INTERVAL, "0"),
+  V(TestingServerConsensusDownloadInitialDelay, CSV_INTERVAL, "0"),
+  V(TestingClientConsensusDownloadInitialDelay, CSV_INTERVAL, "0"),
+  V(TestingBridgeDownloadInitialDelay, CSV_INTERVAL, "10"),
+  V(TestingBridgeBootstrapDownloadInitialDelay, CSV_INTERVAL, "0"),
   V(TestingClientMaxIntervalWithoutRequest, INTERVAL, "5 seconds"),
   V(TestingDirConnectionMaxStall, INTERVAL, "30 seconds"),
   V(TestingEnableConnBwEvent,    BOOL,     "1"),
   V(TestingEnableCellStatsEvent, BOOL,     "1"),
-  V(TestingEnableTbEmptyEvent,   BOOL,     "1"),
   VAR("___UsingTestNetworkDefaults", BOOL, UsingTestNetworkDefaults_, "1"),
   V(RendPostPeriod,              INTERVAL, "2 minutes"),
 
@@ -746,6 +750,8 @@ static int options_transition_allowed(const or_options_t *old,
 static int options_transition_affects_workers(
       const or_options_t *old_options, const or_options_t *new_options);
 static int options_transition_affects_descriptor(
+      const or_options_t *old_options, const or_options_t *new_options);
+static int options_transition_affects_dirauth_timing(
       const or_options_t *old_options, const or_options_t *new_options);
 static int normalize_nickname_list(config_line_t **normalized_out,
                                    const config_line_t *lst, const char *name,
@@ -904,8 +910,13 @@ set_options(or_options_t *new_val, char **msg)
     smartlist_free(elements);
   }
 
-  if (old_options != global_options)
+  if (old_options != global_options) {
     or_options_free(old_options);
+    /* If we are here it means we've successfully applied the new options and
+     * that the global options have been changed to the new values. We'll
+     * check if we need to remove or add periodic events. */
+    periodic_events_on_new_options(global_options);
+  }
 
   return 0;
 }
@@ -1438,9 +1449,9 @@ options_act_reversible(const or_options_t *old_options, char **msg)
     consider_hibernation(time(NULL));
 
     /* Launch the listeners.  (We do this before we setuid, so we can bind to
-     * ports under 1024.)  We don't want to rebind if we're hibernating. If
-     * networking is disabled, this will close all but the control listeners,
-     * but disable those. */
+     * ports under 1024.)  We don't want to rebind if we're hibernating or
+     * shutting down. If networking is disabled, this will close all but the
+     * control listeners, but disable those. */
     if (!we_are_hibernating()) {
       if (retry_all_listeners(replaced_listeners, new_listeners,
                               options->DisableNetwork) < 0) {
@@ -1544,6 +1555,7 @@ options_act_reversible(const or_options_t *old_options, char **msg)
       tor_malloc_zero(sizeof(log_severity_list_t));
     close_temp_logs();
     add_callback_log(severity, control_event_logmsg);
+    logs_set_pending_callback_callback(control_event_logmsg_pending);
     control_adjust_event_log_severity();
     tor_free(severity);
     tor_log_update_sigsafe_err_fds();
@@ -1651,8 +1663,7 @@ options_act_reversible(const or_options_t *old_options, char **msg)
 int
 options_need_geoip_info(const or_options_t *options, const char **reason_out)
 {
-  int bridge_usage =
-    options->BridgeRelay && options->BridgeRecordUsageByCountry;
+  int bridge_usage = should_record_bridge_info(options);
   int routerset_usage =
     routerset_needs_geoip(options->EntryNodes) ||
     routerset_needs_geoip(options->ExitNodes) ||
@@ -1742,6 +1753,32 @@ options_transition_affects_guards(const or_options_t *old_options,
   return 0;
 }
 
+/**
+ * Return true if changing the configuration from <b>old</b> to <b>new</b>
+ * affects the timing of the voting subsystem
+ */
+static int
+options_transition_affects_dirauth_timing(const or_options_t *old_options,
+                                          const or_options_t *new_options)
+{
+  tor_assert(old_options);
+  tor_assert(new_options);
+
+  if (authdir_mode_v3(old_options) != authdir_mode_v3(new_options))
+    return 1;
+  if (! authdir_mode_v3(new_options))
+    return 0;
+  YES_IF_CHANGED_INT(V3AuthVotingInterval);
+  YES_IF_CHANGED_INT(V3AuthVoteDelay);
+  YES_IF_CHANGED_INT(V3AuthDistDelay);
+  YES_IF_CHANGED_INT(TestingV3AuthInitialVotingInterval);
+  YES_IF_CHANGED_INT(TestingV3AuthInitialVoteDelay);
+  YES_IF_CHANGED_INT(TestingV3AuthInitialDistDelay);
+  YES_IF_CHANGED_INT(TestingV3AuthVotingStartOffset);
+
+  return 0;
+}
+
 /** Fetch the active option list, and take actions based on it. All of the
  * things we do should survive being done repeatedly.  If present,
  * <b>old_options</b> contains the previous value of the options.
@@ -1760,7 +1797,6 @@ options_act(const or_options_t *old_options)
   char *msg=NULL;
   const int transition_affects_workers =
     old_options && options_transition_affects_workers(old_options, options);
-  int old_ewma_enabled;
   const int transition_affects_guards =
     old_options && options_transition_affects_guards(old_options, options);
 
@@ -1965,6 +2001,9 @@ options_act(const or_options_t *old_options)
     finish_daemon(options->DataDirectory);
   }
 
+  /* See whether we need to enable/disable our once-a-second timer. */
+  reschedule_per_second_timer();
+
   /* We want to reinit keys as needed before we do much of anything else:
      keys are important, and other things can depend on them. */
   if (transition_affects_workers ||
@@ -2034,16 +2073,8 @@ options_act(const or_options_t *old_options)
   if (accounting_is_enabled(options))
     configure_accounting(time(NULL));
 
-  old_ewma_enabled = cell_ewma_enabled();
   /* Change the cell EWMA settings */
-  cell_ewma_set_scale_factor(options, networkstatus_get_latest_consensus());
-  /* If we just enabled ewma, set the cmux policy on all active channels */
-  if (cell_ewma_enabled() && !old_ewma_enabled) {
-    channel_set_cmux_policy_everywhere(&ewma_policy);
-  } else if (!cell_ewma_enabled() && old_ewma_enabled) {
-    /* Turn it off everywhere */
-    channel_set_cmux_policy_everywhere(NULL);
-  }
+  cmux_ewma_set_options(options, networkstatus_get_latest_consensus());
 
   /* Update the BridgePassword's hashed version as needed.  We store this as a
    * digest so that we can do side-channel-proof comparisons on it.
@@ -2206,6 +2237,12 @@ options_act(const or_options_t *old_options)
         options->PerConnBWBurst != old_options->PerConnBWBurst)
       connection_or_update_token_buckets(get_connection_array(), options);
 
+    if (options->BandwidthRate != old_options->BandwidthRate ||
+        options->BandwidthBurst != old_options->BandwidthBurst ||
+        options->RelayBandwidthRate != old_options->RelayBandwidthRate ||
+        options->RelayBandwidthBurst != old_options->RelayBandwidthBurst)
+      connection_bucket_adjust(options);
+
     if (options->MainloopStats != old_options->MainloopStats) {
       reset_main_loop_counters();
     }
@@ -2255,6 +2292,11 @@ options_act(const or_options_t *old_options)
     }
     if ((!old_options || !old_options->EntryStatistics) &&
         options->EntryStatistics && !should_record_bridge_info(options)) {
+      /* If we get here, we've started recording bridge info when we didn't
+       * do so before.  Note that "should_record_bridge_info()" will
+       * always be false at this point, because of the earlier block
+       * that cleared EntryStatistics when public_server_mode() was false.
+       * We're leaving it in as defensive programming. */
       if (geoip_is_loaded(AF_INET) || geoip_is_loaded(AF_INET6)) {
         geoip_entry_stats_init(now);
         print_notice = 1;
@@ -2324,8 +2366,10 @@ options_act(const or_options_t *old_options)
 
   /* We may need to reschedule some directory stuff if our status changed. */
   if (old_options) {
-    if (authdir_mode_v3(options) && !authdir_mode_v3(old_options))
-      dirvote_recalculate_timing(options, time(NULL));
+    if (options_transition_affects_dirauth_timing(old_options, options)) {
+      voting_schedule_recalculate_timing(options, time(NULL));
+      reschedule_dirvote(options);
+    }
     if (!bool_eq(directory_fetches_dir_info_early(options),
                  directory_fetches_dir_info_early(old_options)) ||
         !bool_eq(directory_fetches_dir_info_later(options),
@@ -3472,6 +3516,16 @@ options_validate(or_options_t *old_options, or_options_t *options,
          !options->RecommendedServerVersions))
       REJECT("Versioning authoritative dir servers must set "
              "Recommended*Versions.");
+
+#ifdef HAVE_MODULE_DIRAUTH
+    char *t;
+    /* Call these functions to produce warnings only. */
+    t = format_recommended_version_list(options->RecommendedClientVersions, 1);
+    tor_free(t);
+    t = format_recommended_version_list(options->RecommendedServerVersions, 1);
+    tor_free(t);
+#endif
+
     if (options->UseEntryGuards) {
       log_info(LD_CONFIG, "Authoritative directory servers can't set "
                "UseEntryGuards. Disabling.");
@@ -3770,6 +3824,11 @@ options_validate(or_options_t *old_options, or_options_t *options,
              "http://freehaven.net/anonbib/#hs-attack06 for details.");
   }
 
+  if (options->NumPrimaryGuards && options->NumEntryGuards &&
+      options->NumEntryGuards > options->NumPrimaryGuards) {
+    REJECT("NumEntryGuards must not be greater than NumPrimaryGuards.");
+  }
+
   if (options->EntryNodes &&
       routerset_is_list(options->EntryNodes) &&
       (routerset_len(options->EntryNodes) == 1) &&
@@ -3891,15 +3950,6 @@ options_validate(or_options_t *old_options, or_options_t *options,
 
   if (options->KeepalivePeriod < 1)
     REJECT("KeepalivePeriod option must be positive.");
-
-  if (options->PortForwarding && options->Sandbox) {
-    REJECT("PortForwarding is not compatible with Sandbox; at most one can "
-           "be set");
-  }
-  if (options->PortForwarding && options->NoExec) {
-    COMPLAIN("Both PortForwarding and NoExec are set; PortForwarding will "
-             "be ignored.");
-  }
 
   if (ensure_bandwidth_cap(&options->BandwidthRate,
                            "BandwidthRate", msg) < 0)
@@ -4377,12 +4427,12 @@ options_validate(or_options_t *old_options, or_options_t *options,
   CHECK_DEFAULT(TestingV3AuthVotingStartOffset);
   CHECK_DEFAULT(TestingAuthDirTimeToLearnReachability);
   CHECK_DEFAULT(TestingEstimatedDescriptorPropagationTime);
-  CHECK_DEFAULT(TestingServerDownloadSchedule);
-  CHECK_DEFAULT(TestingClientDownloadSchedule);
-  CHECK_DEFAULT(TestingServerConsensusDownloadSchedule);
-  CHECK_DEFAULT(TestingClientConsensusDownloadSchedule);
-  CHECK_DEFAULT(TestingBridgeDownloadSchedule);
-  CHECK_DEFAULT(TestingBridgeBootstrapDownloadSchedule);
+  CHECK_DEFAULT(TestingServerDownloadInitialDelay);
+  CHECK_DEFAULT(TestingClientDownloadInitialDelay);
+  CHECK_DEFAULT(TestingServerConsensusDownloadInitialDelay);
+  CHECK_DEFAULT(TestingClientConsensusDownloadInitialDelay);
+  CHECK_DEFAULT(TestingBridgeDownloadInitialDelay);
+  CHECK_DEFAULT(TestingBridgeBootstrapDownloadInitialDelay);
   CHECK_DEFAULT(TestingClientMaxIntervalWithoutRequest);
   CHECK_DEFAULT(TestingDirConnectionMaxStall);
   CHECK_DEFAULT(TestingAuthKeyLifetime);
@@ -4477,12 +4527,6 @@ options_validate(or_options_t *old_options, or_options_t *options,
   if (options->TestingEnableCellStatsEvent &&
       !options->TestingTorNetwork && !options->UsingTestNetworkDefaults_) {
     REJECT("TestingEnableCellStatsEvent may only be changed in testing "
-           "Tor networks!");
-  }
-
-  if (options->TestingEnableTbEmptyEvent &&
-      !options->TestingTorNetwork && !options->UsingTestNetworkDefaults_) {
-    REJECT("TestingEnableTbEmptyEvent may only be changed in testing "
            "Tor networks!");
   }
 
@@ -4629,15 +4673,14 @@ have_enough_mem_for_dircache(const or_options_t *options, size_t total_mem,
   if (options->DirCache) {
     if (total_mem < DIRCACHE_MIN_MEM_BYTES) {
       if (options->BridgeRelay) {
-        *msg = tor_strdup("Running a Bridge with less than "
-                      STRINGIFY(DIRCACHE_MIN_MEM_MB) " MB of memory is not "
-                      "recommended.");
+        tor_asprintf(msg, "Running a Bridge with less than %d MB of memory "
+                       "is not recommended.", DIRCACHE_MIN_MEM_MB);
       } else {
-        *msg = tor_strdup("Being a directory cache (default) with less than "
-                      STRINGIFY(DIRCACHE_MIN_MEM_MB) " MB of memory is not "
-                      "recommended and may consume most of the available "
-                      "resources, consider disabling this functionality by "
-                      "setting the DirCache option to 0.");
+        tor_asprintf(msg, "Being a directory cache (default) with less than "
+                       "%d MB of memory is not recommended and may consume "
+                       "most of the available resources. Consider disabling "
+                       "this functionality by setting the DirCache option "
+                       "to 0.", DIRCACHE_MIN_MEM_MB);
       }
     }
   } else {
@@ -8112,7 +8155,10 @@ getinfo_helper_config(control_connection_t *conn,
         case CONFIG_TYPE_ISOTIME: type = "Time"; break;
         case CONFIG_TYPE_ROUTERSET: type = "RouterList"; break;
         case CONFIG_TYPE_CSV: type = "CommaList"; break;
-        case CONFIG_TYPE_CSV_INTERVAL: type = "TimeIntervalCommaList"; break;
+        /* This type accepts more inputs than TimeInterval, but it ignores
+         * everything after the first entry, so we may as well pretend
+         * it's a TimeInterval. */
+        case CONFIG_TYPE_CSV_INTERVAL: type = "TimeInterval"; break;
         case CONFIG_TYPE_LINELIST: type = "LineList"; break;
         case CONFIG_TYPE_LINELIST_S: type = "Dependent"; break;
         case CONFIG_TYPE_LINELIST_V: type = "Virtual"; break;
@@ -8400,3 +8446,16 @@ init_cookie_authentication(const char *fname, const char *header,
   return retval;
 }
 
+/**
+ * Return true if any option is set in <b>options</b> to make us behave
+ * as a client.
+ */
+int
+options_any_client_port_set(const or_options_t *options)
+{
+  return (options->SocksPort_set ||
+          options->TransPort_set ||
+          options->NATDPort_set ||
+          options->DNSPort_set ||
+          options->HTTPTunnelPort_set);
+}

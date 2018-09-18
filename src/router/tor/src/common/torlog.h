@@ -154,6 +154,8 @@ int add_android_log(const log_severity_list_t *severity,
                     const char *android_identity_tag);
 #endif // HAVE_ANDROID_LOG_H.
 int add_callback_log(const log_severity_list_t *severity, log_callback cb);
+typedef void (*pending_callback_callback)(void);
+void logs_set_pending_callback_callback(pending_callback_callback cb);
 void logs_set_domain_logging(int enabled);
 int get_min_log_level(void);
 void switch_logs_debug(void);
@@ -190,6 +192,10 @@ void log_fn_ratelim_(struct ratelim_t *ratelim, int severity,
                      log_domain_mask_t domain, const char *funcname,
                      const char *format, ...)
   CHECK_PRINTF(5,6);
+
+int log_message_is_interesting(int severity, log_domain_mask_t domain);
+void tor_log_string(int severity, log_domain_mask_t domain,
+                    const char *function, const char *string);
 
 #if defined(__GNUC__) && __GNUC__ <= 3
 
@@ -247,6 +253,16 @@ void log_fn_ratelim_(struct ratelim_t *ratelim, int severity,
   log_fn_ratelim_(ratelim, severity, domain, __FUNCTION__, \
                   args, ##__VA_ARGS__)
 #endif /* defined(__GNUC__) && __GNUC__ <= 3 */
+
+/** This defines log levels that are linked in the Rust log module, rather
+ * than re-defining these in both Rust and C.
+ *
+ * C_RUST_COUPLED src/rust/tor_log LogSeverity, LogDomain
+ */
+extern const int LOG_WARN_;
+extern const int LOG_NOTICE_;
+extern const log_domain_mask_t LD_NET_;
+extern const log_domain_mask_t LD_GENERAL_;
 
 #ifdef LOG_PRIVATE
 MOCK_DECL(STATIC void, logv, (int severity, log_domain_mask_t domain,

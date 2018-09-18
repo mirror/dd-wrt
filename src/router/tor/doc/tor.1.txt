@@ -311,7 +311,9 @@ GENERAL OPTIONS
     other than controller connections, and we close (and don't reattempt)
     any outbound
     connections.  Controllers sometimes use this option to avoid using
-    the network until Tor is fully configured. (Default: 0)
+    the network until Tor is fully configured.  Tor will make still certain
+    network-related calls (like DNS lookups) as a part of its configuration
+    process, even if DisableNetwork is set. (Default: 0)
 
 [[ConstrainedSockets]] **ConstrainedSockets** **0**|**1**::
     If set, Tor will tell the kernel to attempt to shrink the buffers for all
@@ -366,7 +368,8 @@ GENERAL OPTIONS
 
 [[ControlSocket]] **ControlSocket** __Path__::
     Like ControlPort, but listens on a Unix domain socket, rather than a TCP
-    socket. '0' disables ControlSocket (Unix and Unix-like systems only.)
+    socket. '0' disables ControlSocket. (Unix and Unix-like systems only.)
+    (Default: 0)
 
 [[ControlSocketsGroupWritable]] **ControlSocketsGroupWritable** **0**|**1**::
     If this option is set to 0, don't allow the filesystem group to read and
@@ -786,17 +789,15 @@ GENERAL OPTIONS
     This is useful when running on flash memory or other media that support
     only a limited number of writes. (Default: 0)
 
-[[CircuitPriorityHalflife]] **CircuitPriorityHalflife** __NUM1__::
+[[CircuitPriorityHalflife]] **CircuitPriorityHalflife** __NUM__::
     If this value is set, we override the default algorithm for choosing which
-    circuit's cell to deliver or relay next. When the value is 0, we
-    round-robin between the active circuits on a connection, delivering one
-    cell from each in turn. When the value is positive, we prefer delivering
-    cells from whichever connection has the lowest weighted cell count, where
-    cells are weighted exponentially according to the supplied
-    CircuitPriorityHalflife value (in seconds). If this option is not set at
-    all, we use the behavior recommended in the current consensus
-    networkstatus. This is an advanced option; you generally shouldn't have
-    to mess with it. (Default: not set)
+    circuit's cell to deliver or relay next. It is delivered first to the
+    circuit that has the lowest weighted cell count, where cells are weighted
+    exponentially according to this value (in seconds). If the value is -1, it
+    is taken from the consensus if possible else it will fallback to the
+    default value of 30. Minimum: 1, Maximum: 2147483647. This can be defined
+    as a float value. This is an advanced option; you generally shouldn't have
+    to mess with it. (Default: -1)
 
 [[CountPrivateBandwidth]] **CountPrivateBandwidth** **0**|**1**::
     If this option is set, then Tor's rate-limiting applies not only to
@@ -813,10 +814,9 @@ GENERAL OPTIONS
 
 [[NoExec]] **NoExec** **0**|**1**::
     If this option is set to 1, then Tor will never launch another
-    executable, regardless of the settings of PortForwardingHelper,
-    ClientTransportPlugin, or ServerTransportPlugin.  Once this
-    option has been set to 1, it cannot be set back to 0 without
-    restarting Tor. (Default: 0)
+    executable, regardless of the settings of ClientTransportPlugin
+    or ServerTransportPlugin.  Once this option has been set to 1,
+    it cannot be set back to 0 without restarting Tor. (Default: 0)
 
 [[Schedulers]] **Schedulers** **KIST**|**KISTLite**|**Vanilla**::
     Specify the scheduler type that tor should use. The scheduler is
@@ -1294,9 +1294,11 @@ The following options are useful only for clients (that is, if
     2 minutes)
 
 [[TokenBucketRefillInterval]] **TokenBucketRefillInterval** __NUM__ [**msec**|**second**]::
-    Set the refill interval of Tor's token bucket to NUM milliseconds.
-    NUM must be between 1 and 1000, inclusive.  Note that the configured
-    bandwidth limits are still expressed in bytes per second: this
+    Set the refill delay interval of Tor's token bucket to NUM milliseconds.
+    NUM must be between 1 and 1000, inclusive.  When Tor is out of bandwidth,
+    on a connection or globally, it will wait up to this long before it tries
+    to use that connection again.
+    Note that bandwidth limits are still expressed in bytes per second: this
     option only affects the frequency with which Tor checks to see whether
     previously exhausted connections may read again.
     Can not be changed while tor is running. (Default: 100 msec)
@@ -1353,6 +1355,13 @@ The following options are useful only for clients (that is, if
     number from the guard-n-primary-guards-to-use consensus parameter, and
     default to 1 if the consensus parameter isn't set. (Default: 0)
 
+[[NumPrimaryGuards]] **NumPrimaryGuards** __NUM__::
+    If UseEntryGuards is set to 1, we will try to pick NUM routers for our
+    primary guard list, which is the set of routers we strongly prefer when
+    connecting to the Tor network. If NUM is 0, we try to learn the number from
+    the guard-n-primary-guards consensus parameter, and default to 3 if the
+    consensus parameter isn't set. (Default: 0)
+
 [[NumDirectoryGuards]] **NumDirectoryGuards** __NUM__::
     If UseEntryGuards is set to 1, we try to make sure we have at least NUM
     routers to use as directory guards. If this option is set to 0, use the
@@ -1406,7 +1415,7 @@ The following options are useful only for clients (that is, if
 
 [[HTTPTunnelPort]] **HTTPTunnelPort**  \['address':]__port__|**auto** [_isolation flags_]::
     Open this port to listen for proxy connections using the "HTTP CONNECT"
-    protocol instead of SOCKS. Set this to 0
+    protocol instead of SOCKS. Set this to
     0 if you don't want to allow "HTTP CONNECT" connections. Set the port
     to "auto" to have Tor pick a port for you. This directive can be
     specified multiple times to bind to multiple addresses/ports.  See
@@ -1446,7 +1455,7 @@ The following options are useful only for clients (that is, if
     Set this to "default", or leave it unconfigured, to use regular IPTables
     on Linux, or to use pf +rdr-to+ rules on *BSD systems. +
  +
-    (Default: "default".)
+    (Default: "default")
 
 [[NATDPort]] **NATDPort** \['address':]__port__|**auto** [_isolation flags_]::
     Open this port to listen for connections from old versions of ipfw (as
@@ -1583,6 +1592,14 @@ The following options are useful only for clients (that is, if
     which means that nodes specified in ExcludeNodes will not be
     picked.
  +
+    When either this option or HSLayer3Nodes are set, the /16 subnet
+    and node family restrictions are removed for hidden service
+    circuits. Additionally, we allow the guard node to be present
+    as the Rend, HSDir, and IP node, and as the hop before it. This
+    is done to prevent the adversary from inferring information
+    about our guard, layer2, and layer3 node choices at later points
+    in the path.
+ +
     This option is meant to be managed by a Tor controller such as
     https://github.com/mikeperry-tor/vanguards that selects and
     updates this set of nodes for you. Hence it does not do load
@@ -1628,6 +1645,14 @@ The following options are useful only for clients (that is, if
     ExcludeNodes have higher priority than HSLayer3Nodes,
     which means that nodes specified in ExcludeNodes will not be
     picked.
+ +
+    When either this option or HSLayer2Nodes are set, the /16 subnet
+    and node family restrictions are removed for hidden service
+    circuits. Additionally, we allow the guard node to be present
+    as the Rend, HSDir, and IP node, and as the hop before it. This
+    is done to prevent the adversary from inferring information
+    about our guard, layer2, and layer3 node choices at later points
+    in the path.
   +
     This option is meant to be managed by a Tor controller such as
     https://github.com/mikeperry-tor/vanguards that selects and
@@ -1738,34 +1763,31 @@ The following options are useful only for clients (that is, if
     prevent your Tor client from bootstrapping.  If this option is negative,
     Tor will use a default value chosen by the directory authorities. If the
     directory authorities do not choose a value, Tor will default to 0.6.
-    (Default: -1.)
+    (Default: -1)
 
-[[ClientBootstrapConsensusAuthorityDownloadSchedule]] **ClientBootstrapConsensusAuthorityDownloadSchedule** __N__,__N__,__...__::
-    Schedule for when clients should download consensuses from authorities
+[[ClientBootstrapConsensusAuthorityDownloadInitialDelay]] **ClientBootstrapConsensusAuthorityDownloadInitialDelay** __N__::
+    Initial delay in seconds for when clients should download consensuses from authorities
     if they are bootstrapping (that is, they don't have a usable, reasonably
     live consensus). Only used by clients fetching from a list of fallback
     directory mirrors. This schedule is advanced by (potentially concurrent)
     connection attempts, unlike other schedules, which are advanced by
-    connection failures. (Default: 6, 11, 3600, 10800, 25200, 54000, 111600,
-    262800)
+    connection failures. (Default: 6)
 
-[[ClientBootstrapConsensusFallbackDownloadSchedule]] **ClientBootstrapConsensusFallbackDownloadSchedule** __N__,__N__,__...__::
-    Schedule for when clients should download consensuses from fallback
+[[ClientBootstrapConsensusFallbackDownloadInitialDelay]] **ClientBootstrapConsensusFallbackDownloadInitialDelay** __N__::
+    Initial delay in seconds for when clients should download consensuses from fallback
     directory mirrors if they are bootstrapping (that is, they don't have a
     usable, reasonably live consensus). Only used by clients fetching from a
     list of fallback directory mirrors. This schedule is advanced by
     (potentially concurrent) connection attempts, unlike other schedules,
-    which are advanced by connection failures. (Default: 0, 1, 4, 11, 3600,
-    10800, 25200, 54000, 111600, 262800)
+    which are advanced by connection failures. (Default: 0)
 
-[[ClientBootstrapConsensusAuthorityOnlyDownloadSchedule]] **ClientBootstrapConsensusAuthorityOnlyDownloadSchedule** __N__,__N__,__...__::
-    Schedule for when clients should download consensuses from authorities
+[[ClientBootstrapConsensusAuthorityOnlyDownloadInitialDelay]] **ClientBootstrapConsensusAuthorityOnlyDownloadInitialDelay** __N__::
+    Initial delay in seconds for when clients should download consensuses from authorities
     if they are bootstrapping (that is, they don't have a usable, reasonably
     live consensus). Only used by clients which don't have or won't fetch
     from a list of fallback directory mirrors. This schedule is advanced by
     (potentially concurrent) connection attempts, unlike other schedules,
-    which are advanced by connection failures. (Default: 0, 3, 7, 3600,
-    10800, 25200, 54000, 111600, 262800)
+    which are advanced by connection failures. (Default: 0)
 
 [[ClientBootstrapConsensusMaxInProgressTries]] **ClientBootstrapConsensusMaxInProgressTries** __NUM__::
     Try this many simultaneous connections to download a consensus before
@@ -1896,7 +1918,7 @@ is non-zero):
     If you want to use a reduced exit policy rather than the default exit
     policy, set "ReducedExitPolicy 1". If you want to _replace_ the default
     exit policy with your custom exit policy, end your exit policy with either
-    a reject *:* or an accept *:*. Otherwise, you’re _augmenting_ (prepending
+    a reject *:* or an accept *:*. Otherwise, you're _augmenting_ (prepending
     to) the default or reduced exit policy. +
  +
     The default exit policy is:
@@ -2059,6 +2081,8 @@ is non-zero):
 [[Nickname]] **Nickname** __name__::
     Set the server's nickname to \'name'. Nicknames must be between 1 and 19
     characters inclusive, and must contain only the characters [a-zA-Z0-9].
+    If not set, **Unnamed** will be used. Relays can always be uniquely identified
+    by their identity fingerprints.
 
 [[NumCPUs]] **NumCPUs** __num__::
     How many processes to use at once for decrypting onionskins and other
@@ -2093,18 +2117,6 @@ is non-zero):
 [[ORPortFlagsExclusive]]::
     For obvious reasons, NoAdvertise and NoListen are mutually exclusive, and
     IPv4Only and IPv6Only are mutually exclusive.
-
-[[PortForwarding]] **PortForwarding** **0**|**1**::
-    Attempt to automatically forward the DirPort and ORPort on a NAT router
-    connecting this Tor server to the Internet. If set, Tor will try both
-    NAT-PMP (common on Apple routers) and UPnP (common on routers from other
-    manufacturers). (Default: 0)
-
-[[PortForwardingHelper]] **PortForwardingHelper** __filename__|__pathname__::
-    If PortForwarding is set, use this executable to configure the forwarding.
-    If set to a filename, the system path will be searched for the executable.
-    If set to a path, only the specified path will be executed.
-    (Default: tor-fw-helper)
 
 [[PublishServerDescriptor]] **PublishServerDescriptor** **0**|**1**|**v3**|**bridge**,**...**::
     This option specifies which descriptors Tor will publish when acting as
@@ -2269,7 +2281,8 @@ is non-zero):
     sent and received by this relay, in addition to total cell counts.
     These statistics are rounded, and omitted if traffic is low. This
     information is important for load balancing decisions related to padding.
-    (Default: 1)
+    If ExtraInfoStatistics is enabled, it will be published
+    as a part of extra-info document. (Default: 1)
 
 [[DirReqStatistics]] **DirReqStatistics** **0**|**1**::
     Relays and bridges only.
@@ -2367,6 +2380,11 @@ is non-zero):
     If this option is set to 0, don't allow the filesystem group to read the
     KeywDirectory. If the option is set to 1, make the KeyDirectory readable
     by the default GID. (Default: 0)
+
+[[RephistTrackTime]] **RephistTrackTime** __N__ **seconds**|**minutes**|**hours**|**days**|**weeks**::
+    Tells an authority, or other node tracking node reliability and history,
+    that fine-grained information about nodes can be discarded when it hasn't
+    changed for a given amount of time.  (Default: 24 hours)
 
 
 DIRECTORY SERVER OPTIONS
@@ -2737,11 +2755,6 @@ on the public Tor network.
     different identity.  This feature is used to migrate directory authority
     keys in the event of a compromise.  (Default: 0)
 
-[[RephistTrackTime]] **RephistTrackTime** __N__ **seconds**|**minutes**|**hours**|**days**|**weeks**::
-    Tells an authority, or other node tracking node reliability and history,
-    that fine-grained information about nodes can be discarded when it hasn't
-    changed for a given amount of time.  (Default: 24 hours)
-
 [[AuthDirHasIPv6Connectivity]] **AuthDirHasIPv6Connectivity** **0**|**1**::
     Authoritative directories only. When set to 0, OR ports with an
     IPv6 address are not included in the authority's votes. When set to 1,
@@ -2909,12 +2922,9 @@ The following options are used for running a testing Tor network.
        AssumeReachable 1
        AuthDirMaxServersPerAddr 0
        AuthDirMaxServersPerAuthAddr 0
-       ClientBootstrapConsensusAuthorityDownloadSchedule 0, 2,
-          4 (for 40 seconds), 8, 16, 32, 60
-       ClientBootstrapConsensusFallbackDownloadSchedule 0, 1,
-          4 (for 40 seconds), 8, 16, 32, 60
-       ClientBootstrapConsensusAuthorityOnlyDownloadSchedule 0, 1,
-          4 (for 40 seconds), 8, 16, 32, 60
+       ClientBootstrapConsensusAuthorityDownloadInitialDelay 0
+       ClientBootstrapConsensusFallbackDownloadInitialDelay 0
+       ClientBootstrapConsensusAuthorityOnlyDownloadInitialDelay 0
        ClientDNSRejectInternalAddresses 0
        ClientRejectInternalAddresses 0
        CountPrivateBandwidth 1
@@ -2929,17 +2939,16 @@ The following options are used for running a testing Tor network.
        TestingV3AuthInitialDistDelay 20 seconds
        TestingAuthDirTimeToLearnReachability 0 minutes
        TestingEstimatedDescriptorPropagationTime 0 minutes
-       TestingServerDownloadSchedule 0, 0, 0, 5, 10, 15, 20, 30, 60
-       TestingClientDownloadSchedule 0, 0, 5, 10, 15, 20, 30, 60
-       TestingServerConsensusDownloadSchedule 0, 0, 5, 10, 15, 20, 30, 60
-       TestingClientConsensusDownloadSchedule 0, 0, 5, 10, 15, 20, 30, 60
-       TestingBridgeDownloadSchedule 10, 30, 60
-       TestingBridgeBootstrapDownloadSchedule 0, 0, 5, 10, 15, 20, 30, 60
+       TestingServerDownloadInitialDelay 0
+       TestingClientDownloadInitialDelay 0
+       TestingServerConsensusDownloadInitialDelay 0
+       TestingClientConsensusDownloadInitialDelay 0
+       TestingBridgeDownloadInitialDelay 10
+       TestingBridgeBootstrapDownloadInitialDelay 0
        TestingClientMaxIntervalWithoutRequest 5 seconds
        TestingDirConnectionMaxStall 30 seconds
        TestingEnableConnBwEvent 1
        TestingEnableCellStatsEvent 1
-       TestingEnableTbEmptyEvent 1
 
 [[TestingV3AuthInitialVotingInterval]] **TestingV3AuthInitialVotingInterval** __N__ **minutes**|**hours**::
     Like V3AuthVotingInterval, but for initial voting interval before the first
@@ -2974,37 +2983,31 @@ The following options are used for running a testing Tor network.
     Minimum value for the Fast flag.  Overrides the ordinary minimum taken
     from the consensus when TestingTorNetwork is set. (Default: 0.)
 
-[[TestingServerDownloadSchedule]] **TestingServerDownloadSchedule** __N__,__N__,__...__::
-    Schedule for when servers should download things in general. Changing this
-    requires that **TestingTorNetwork** is set. (Default: 0, 0, 0, 60, 60, 120,
-    300, 900, 2147483647)
+[[TestingServerDownloadInitialDelay]] **TestingServerDownloadInitialDelay** __N__::
+    Initial delay in seconds for when servers should download things in general. Changing this
+    requires that **TestingTorNetwork** is set. (Default: 0)
 
-[[TestingClientDownloadSchedule]] **TestingClientDownloadSchedule** __N__,__N__,__...__::
-    Schedule for when clients should download things in general. Changing this
-    requires that **TestingTorNetwork** is set. (Default: 0, 0, 60, 300, 600,
-    2147483647)
+[[TestingClientDownloadInitialDelay]] **TestingClientDownloadInitialDelay** __N__::
+    Initial delay in seconds for when clients should download things in general. Changing this
+    requires that **TestingTorNetwork** is set. (Default: 0)
 
-[[TestingServerConsensusDownloadSchedule]] **TestingServerConsensusDownloadSchedule** __N__,__N__,__...__::
-    Schedule for when servers should download consensuses. Changing this
-    requires that **TestingTorNetwork** is set. (Default: 0, 0, 60, 300, 600,
-    1800, 1800, 1800, 1800, 1800, 3600, 7200)
+[[TestingServerConsensusDownloadInitialDelay]] **TestingServerConsensusDownloadInitialDelay** __N__::
+    Initial delay in seconds for when servers should download consensuses. Changing this
+    requires that **TestingTorNetwork** is set. (Default: 0)
 
-[[TestingClientConsensusDownloadSchedule]] **TestingClientConsensusDownloadSchedule** __N__,__N__,__...__::
-    Schedule for when clients should download consensuses. Changing this
-    requires that **TestingTorNetwork** is set. (Default: 0, 0, 60, 300, 600,
-    1800, 3600, 3600, 3600, 10800, 21600, 43200)
+[[TestingClientConsensusDownloadInitialDelay]] **TestingClientConsensusDownloadInitialDelay** __N__::
+    Initial delay in seconds for when clients should download consensuses. Changing this
+    requires that **TestingTorNetwork** is set. (Default: 0)
 
-[[TestingBridgeDownloadSchedule]] **TestingBridgeDownloadSchedule** __N__,__N__,__...__::
-    Schedule for when clients should download each bridge descriptor when they
+[[TestingBridgeDownloadInitialDelay]] **TestingBridgeDownloadInitialDelay** __N__::
+    Initial delay in seconds for when clients should download each bridge descriptor when they
     know that one or more of their configured bridges are running. Changing
-    this requires that **TestingTorNetwork** is set. (Default: 10800, 25200,
-    54000, 111600, 262800)
+    this requires that **TestingTorNetwork** is set. (Default: 10800)
 
-[[TestingBridgeBootstrapDownloadSchedule]] **TestingBridgeBootstrapDownloadSchedule** __N__,__N__,__...__::
-    Schedule for when clients should download each bridge descriptor when they
+[[TestingBridgeBootstrapDownloadInitialDelay]] **TestingBridgeBootstrapDownloadInitialDelay** __N__::
+    Initial delay in seconds for when clients should download each bridge descriptor when they
     have just started, or when they can not contact any of their bridges.
-    Changing this requires that **TestingTorNetwork** is set. (Default: 0, 30,
-    90, 600, 3600, 10800, 25200, 54000, 111600, 262800)
+    Changing this requires that **TestingTorNetwork** is set. (Default: 0)
 
 [[TestingClientMaxIntervalWithoutRequest]] **TestingClientMaxIntervalWithoutRequest** __N__ **seconds**|**minutes**::
     When directory clients have only a few descriptors to request, they batch
@@ -3074,11 +3077,6 @@ The following options are used for running a testing Tor network.
 
 [[TestingEnableCellStatsEvent]] **TestingEnableCellStatsEvent** **0**|**1**::
     If this option is set, then Tor controllers may register for CELL_STATS
-    events.  Changing this requires that **TestingTorNetwork** is set.
-    (Default: 0)
-
-[[TestingEnableTbEmptyEvent]] **TestingEnableTbEmptyEvent** **0**|**1**::
-    If this option is set, then Tor controllers may register for TB_EMPTY
     events.  Changing this requires that **TestingTorNetwork** is set.
     (Default: 0)
 

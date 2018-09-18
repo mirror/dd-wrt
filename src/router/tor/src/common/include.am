@@ -74,7 +74,11 @@ LIBOR_CTIME_A_SRC = \
    src/common/di_ops.c
 
 src_common_libor_ctime_a_SOURCES = $(LIBOR_CTIME_A_SRC)
+if UNITTESTS_ENABLED
 src_common_libor_ctime_testing_a_SOURCES = $(LIBOR_CTIME_A_SRC)
+else
+src_common_libor_ctime_testing_a_SOURCES =
+endif
 src_common_libor_ctime_a_CFLAGS = @CFLAGS_CONSTTIME@
 src_common_libor_ctime_testing_a_CFLAGS = @CFLAGS_CONSTTIME@ $(TEST_CFLAGS)
 
@@ -97,6 +101,7 @@ LIBOR_A_SRC = \
   src/common/util_process.c				\
   src/common/sandbox.c					\
   src/common/storagedir.c				\
+  src/common/token_bucket.c				\
   src/common/workqueue.c				\
   $(libor_extra_source)					\
   $(threads_impl_source)				\
@@ -114,11 +119,14 @@ LIBOR_CRYPTO_A_SRC = \
   src/common/compress_zlib.c	\
   src/common/compress_zstd.c	\
   src/common/crypto.c		\
-  src/common/crypto_rsa.c     \
+  src/common/crypto_digest.c     \
+  src/common/crypto_format.c	\
   src/common/crypto_openssl_mgt.c    \
   src/common/crypto_pwbox.c     \
+  src/common/crypto_rand.c     \
+  src/common/crypto_rsa.c     \
   src/common/crypto_s2k.c	\
-  src/common/crypto_format.c	\
+  src/common/crypto_util.c	\
   src/common/tortls.c		\
   src/common/crypto_curve25519.c \
   src/common/crypto_ed25519.c
@@ -133,9 +141,15 @@ src_common_libor_a_SOURCES = $(LIBOR_A_SRC)
 src_common_libor_crypto_a_SOURCES = $(LIBOR_CRYPTO_A_SRC)
 src_common_libor_event_a_SOURCES = $(LIBOR_EVENT_A_SRC)
 
+if UNITTESTS_ENABLED
 src_common_libor_testing_a_SOURCES = $(LIBOR_A_SRC)
 src_common_libor_crypto_testing_a_SOURCES = $(LIBOR_CRYPTO_A_SRC)
 src_common_libor_event_testing_a_SOURCES = $(LIBOR_EVENT_A_SRC)
+else
+src_common_libor_testing_a_SOURCES =
+src_common_libor_crypto_testing_a_SOURCES =
+src_common_libor_event_testing_a_SOURCES =
+endif
 
 src_common_libor_testing_a_CPPFLAGS = $(AM_CPPFLAGS) $(TEST_CPPFLAGS)
 src_common_libor_crypto_testing_a_CPPFLAGS = $(AM_CPPFLAGS) $(TEST_CPPFLAGS)
@@ -165,13 +179,16 @@ COMMONHEADERS = \
   src/common/confline.h				\
   src/common/container.h			\
   src/common/crypto.h				\
+  src/common/crypto_digest.h            \
   src/common/crypto_curve25519.h		\
   src/common/crypto_ed25519.h			\
   src/common/crypto_format.h			\
   src/common/crypto_openssl_mgt.h         \
-  src/common/crypto_rsa.h           \
   src/common/crypto_pwbox.h			\
+  src/common/crypto_rand.h          \
+  src/common/crypto_rsa.h           \
   src/common/crypto_s2k.h			\
+  src/common/crypto_util.h			\
   src/common/di_ops.h				\
   src/common/handles.h				\
   src/common/memarea.h				\
@@ -182,6 +199,7 @@ COMMONHEADERS = \
   src/common/storagedir.h			\
   src/common/testsupport.h			\
   src/common/timers.h				\
+  src/common/token_bucket.h			\
   src/common/torint.h				\
   src/common/torlog.h				\
   src/common/tortls.h				\

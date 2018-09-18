@@ -8,14 +8,17 @@
  * \brief Common pieces to implement unit tests.
  **/
 
+#define MAIN_PRIVATE
 #include "orconfig.h"
 #include "or.h"
 #include "control.h"
 #include "config.h"
+#include "crypto_rand.h"
 #include "rephist.h"
 #include "backtrace.h"
 #include "test.h"
 #include "channelpadding.h"
+#include "main.h"
 
 #include <stdio.h>
 #ifdef HAVE_FCNTL_H
@@ -28,8 +31,6 @@
 #else
 #include <dirent.h>
 #endif /* defined(_WIN32) */
-
-#include "or.h"
 
 #ifdef USE_DMALLOC
 #include <dmalloc.h>
@@ -292,6 +293,7 @@ main(int c, const char **v)
   }
   rep_hist_init();
   setup_directory();
+  initialize_mainloop_events();
   options_init(options);
   options->DataDirectory = tor_strdup(temp_dir);
   tor_asprintf(&options->KeyDirectory, "%s"PATH_SEPARATOR"keys",

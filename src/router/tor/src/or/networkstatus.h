@@ -24,9 +24,16 @@ void routerstatus_free_(routerstatus_t *rs);
 void networkstatus_vote_free_(networkstatus_t *ns);
 #define networkstatus_vote_free(ns) \
   FREE_AND_NULL(networkstatus_t, networkstatus_vote_free_, (ns))
+void ns_detached_signatures_free_(ns_detached_signatures_t *s);
+#define ns_detached_signatures_free(s) \
+  FREE_AND_NULL(ns_detached_signatures_t, ns_detached_signatures_free_, (s))
 networkstatus_voter_info_t *networkstatus_get_voter_by_id(
                                        networkstatus_t *vote,
                                        const char *identity);
+document_signature_t *networkstatus_get_voter_sig_by_alg(
+                                    const networkstatus_voter_info_t *voter,
+                                    digest_algorithm_t alg);
+
 int networkstatus_check_consensus_signature(networkstatus_t *consensus,
                                             int warn);
 int networkstatus_check_document_signature(const networkstatus_t *consensus,
@@ -144,6 +151,8 @@ void vote_routerstatus_free_(vote_routerstatus_t *rs);
 #ifdef TOR_UNIT_TESTS
 STATIC int networkstatus_set_current_consensus_from_ns(networkstatus_t *c,
                                                 const char *flavor);
+STATIC void warn_early_consensus(const networkstatus_t *c, const char *flavor,
+                                 time_t now);
 extern networkstatus_t *current_ns_consensus;
 extern networkstatus_t *current_md_consensus;
 #endif /* defined(TOR_UNIT_TESTS) */

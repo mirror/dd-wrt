@@ -46,6 +46,7 @@
 #include "config.h"
 #include "control.h"
 #include "cpuworker.h"
+#include "crypto_util.h"
 #include "dos.h"
 #include "hibernate.h"
 #include "nodelist.h"
@@ -339,7 +340,9 @@ command_process_create_cell(cell_t *cell, channel_t *chan)
     return;
   }
 
-  if (connection_or_digest_is_known_relay(chan->identity_digest)) {
+  if (!channel_is_client(chan)) {
+    /* remember create types we've seen, but don't remember them from
+     * clients, to be extra conservative about client statistics. */
     rep_hist_note_circuit_handshake_requested(create_cell->handshake_type);
   }
 
@@ -493,6 +496,17 @@ command_process_relay_cell(cell_t *cell, channel_t *chan)
     /* if we're a relay and treating connections with recent local
      * traffic better, then this is one of them. */
     channel_timestamp_client(chan);
+
+    /* Count all circuit bytes here for control port accuracy. We want
+     * to count even invalid/dropped relay cells, hence counting
+     * before the recognized check and the connection_edge_process_relay
+     * cell checks.
+     */
+    origin_circuit_t *ocirc = TO_ORIGIN_CIRCUIT(circ);
+
+    /* Count the payload bytes only. We don't care about cell headers */
+    ocirc->n_read_circ_bw = tor_add_u32_nowrap(ocirc->n_read_circ_bw,
+                                               CELL_PAYLOAD_SIZE);
   }
 
   if (!CIRCUIT_IS_ORIGIN(circ) &&

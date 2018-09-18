@@ -15,6 +15,8 @@
 #include "circuituse.h"
 #include "config.h"
 #include "connection.h"
+#include "crypto_rand.h"
+#include "crypto_util.h"
 #include "directory.h"
 #include "main.h"
 #include "networkstatus.h"
@@ -24,14 +26,13 @@
 #include "router.h"
 #include "routerkeys.h"
 #include "routerlist.h"
-#include "shared_random_state.h"
+#include "shared_random_client.h"
 #include "statefile.h"
 
 #include "hs_circuit.h"
 #include "hs_common.h"
 #include "hs_config.h"
 #include "hs_control.h"
-#include "hs_circuit.h"
 #include "hs_descriptor.h"
 #include "hs_ident.h"
 #include "hs_intropoint.h"
@@ -81,6 +82,7 @@ static smartlist_t *hs_service_staging_list;
  *  reupload if needed */
 static int consider_republishing_hs_descriptors = 0;
 
+/* Static declaration. */
 static void set_descriptor_revision_counter(hs_descriptor_t *hs_desc);
 static void move_descriptors(hs_service_t *src, hs_service_t *dst);
 
@@ -153,6 +155,12 @@ register_service(hs_service_ht *map, hs_service_t *service)
   }
   /* Taking ownership of the object at this point. */
   HT_INSERT(hs_service_ht, map, service);
+
+  /* If we just modified the global map, we notify. */
+  if (map == hs_service_map) {
+    hs_service_map_has_changed();
+  }
+
   return 0;
 }
 
@@ -178,6 +186,11 @@ remove_service(hs_service_ht *map, hs_service_t *service)
     log_warn(LD_BUG, "Could not find service in the global map "
                      "while removing service %s",
              escaped(service->config.directory_path));
+  }
+
+  /* If we just modified the global map, we notify. */
+  if (map == hs_service_map) {
+    hs_service_map_has_changed();
   }
 }
 
@@ -376,17 +389,21 @@ service_intro_point_free_void(void *obj)
 }
 
 /* Return a newly allocated service intro point and fully initialized from the
- * given extend_info_t ei if non NULL. If is_legacy is true, we also generate
- * the legacy key. On error, NULL is returned.
+ * given extend_info_t ei if non NULL.
+ * If is_legacy is true, we also generate the legacy key.
+ * If supports_ed25519_link_handshake_any is true, we add the relay's ed25519
+ * key to the link specifiers.
  *
  * If ei is NULL, returns a hs_service_intro_point_t with an empty link
  * specifier list and no onion key. (This is used for testing.)
+ * On any other error, NULL is returned.
  *
  * ei must be an extend_info_t containing an IPv4 address. (We will add supoort
  * for IPv6 in a later release.) When calling extend_info_from_node(), pass
  * 0 in for_direct_connection to make sure ei always has an IPv4 address. */
 STATIC hs_service_intro_point_t *
-service_intro_point_new(const extend_info_t *ei, unsigned int is_legacy)
+service_intro_point_new(const extend_info_t *ei, unsigned int is_legacy,
+                        unsigned int supports_ed25519_link_handshake_any)
 {
   hs_desc_link_specifier_t *ls;
   hs_service_intro_point_t *ip;
@@ -430,6 +447,10 @@ service_intro_point_new(const extend_info_t *ei, unsigned int is_legacy)
     if (crypto_pk_generate_key(ip->legacy_key) < 0) {
       goto err;
     }
+    if (crypto_pk_get_digest(ip->legacy_key,
+                             (char *) ip->legacy_key_digest) < 0) {
+      goto err;
+    }
   }
 
   if (ei == NULL) {
@@ -453,10 +474,13 @@ service_intro_point_new(const extend_info_t *ei, unsigned int is_legacy)
   }
   smartlist_add(ip->base.link_specifiers, ls);
 
-  /* ed25519 identity key is optional for intro points */
-  ls = hs_desc_link_specifier_new(ei, LS_ED25519_ID);
-  if (ls) {
-    smartlist_add(ip->base.link_specifiers, ls);
+  /* ed25519 identity key is optional for intro points. If the node supports
+   * ed25519 link authentication, we include it. */
+  if (supports_ed25519_link_handshake_any) {
+    ls = hs_desc_link_specifier_new(ei, LS_ED25519_ID);
+    if (ls) {
+      smartlist_add(ip->base.link_specifiers, ls);
+    }
   }
 
   /* IPv6 is not supported in this release. */
@@ -847,6 +871,7 @@ move_hs_state(hs_service_t *src_service, hs_service_t *dst_service)
     replaycache_free(dst->replay_cache_rend_cookie);
   }
   dst->replay_cache_rend_cookie = src->replay_cache_rend_cookie;
+  dst->next_rotation_time = src->next_rotation_time;
 
   src->replay_cache_rend_cookie = NULL; /* steal pointer reference */
 }
@@ -912,6 +937,11 @@ register_all_services(void)
   smartlist_clear(hs_service_staging_list);
   service_free_all();
   hs_service_map = new_service_map;
+  /* We've just register services into the new map and now we've replaced the
+   * global map with it so we have to notify that the change happened. When
+   * registering a service, the notify is only triggered if the destination
+   * map is the global map for which in here it was not. */
+  hs_service_map_has_changed();
 }
 
 /* Write the onion address of a given service to the given filename fname_ in
@@ -1586,8 +1616,12 @@ pick_intro_point(unsigned int direct_conn, smartlist_t *exclude_nodes)
     tor_assert_nonfatal(!ed25519_public_key_is_zero(&info->ed_identity));
   }
 
-  /* Create our objects and populate them with the node information. */
-  ip = service_intro_point_new(info, !node_supports_ed25519_hs_intro(node));
+  /* Create our objects and populate them with the node information.
+   * We don't care if the intro's link auth is compatible with us, because
+   * we are sending the ed25519 key to a remote client via the descriptor. */
+  ip = service_intro_point_new(info, !node_supports_ed25519_hs_intro(node),
+                               node_supports_ed25519_link_authentication(node,
+                                                                         0));
   if (ip == NULL) {
     goto err;
   }
@@ -2283,8 +2317,8 @@ upload_descriptor_to_hsdir(const hs_service_t *service,
   /* Logging so we know where it was sent. */
   {
     int is_next_desc = (service->desc_next == desc);
-    const uint8_t *idx = (is_next_desc) ? hsdir->hsdir_index->store_second:
-                                          hsdir->hsdir_index->store_first;
+    const uint8_t *idx = (is_next_desc) ? hsdir->hsdir_index.store_second:
+                                          hsdir->hsdir_index.store_first;
     log_info(LD_REND, "Service %s %s descriptor of revision %" PRIu64
                       " initiated upload request to %s with index %s",
              safe_str_client(service->onion_address),
@@ -2932,6 +2966,17 @@ service_add_fnames_to_list(const hs_service_t *service, smartlist_t *list)
 /* Public API */
 /* ========== */
 
+/* This is called everytime the service map (v2 or v3) changes that is if an
+ * element is added or removed. */
+void
+hs_service_map_has_changed(void)
+{
+  /* If we now have services where previously we had not, we need to enable
+   * the HS service main loop event. If we changed to having no services, we
+   * need to disable the event. */
+  rescan_periodic_events(get_options());
+}
+
 /* Upload an encoded descriptor in encoded_desc of the given version. This
  * descriptor is for the service identity_pk and blinded_pk used to setup the
  * directory connection identifier. It is uploaded to the directory hsdir_rs
@@ -3029,6 +3074,12 @@ hs_service_add_ephemeral(ed25519_secret_key_t *sk, smartlist_t *ports,
     goto err;
   }
 
+  /* Build the onion address for logging purposes but also the control port
+   * uses it for the HS_DESC event. */
+  hs_build_address(&service->keys.identity_pk,
+                   (uint8_t) service->config.version,
+                   service->onion_address);
+
   /* The only way the registration can fail is if the service public key
    * already exists. */
   if (BUG(register_service(hs_service_map, service) < 0)) {
@@ -3038,14 +3089,10 @@ hs_service_add_ephemeral(ed25519_secret_key_t *sk, smartlist_t *ports,
     goto err;
   }
 
-  /* Last step is to build the onion address. */
-  hs_build_address(&service->keys.identity_pk,
-                   (uint8_t) service->config.version,
-                   service->onion_address);
-  *address_out = tor_strdup(service->onion_address);
-
   log_info(LD_CONFIG, "Added ephemeral v3 onion service: %s",
            safe_str_client(service->onion_address));
+
+  *address_out = tor_strdup(service->onion_address);
   ret = RSAE_OKAY;
   goto end;
 

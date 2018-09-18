@@ -15,10 +15,13 @@
 #include "config.h"
 #include "connection.h"
 #include "connection_edge.h"
+#include "control.h"
+#include "crypto_rand.h"
+#include "crypto_util.h"
 #include "directory.h"
-#include "hs_common.h"
 #include "hs_circuit.h"
 #include "hs_client.h"
+#include "hs_common.h"
 #include "main.h"
 #include "networkstatus.h"
 #include "nodelist.h"
@@ -29,7 +32,6 @@
 #include "router.h"
 #include "routerlist.h"
 #include "routerset.h"
-#include "control.h"
 
 static extend_info_t *rend_client_get_random_intro_impl(
                           const rend_cache_entry_t *rend_query,
@@ -238,6 +240,15 @@ rend_client_send_introduction(origin_circuit_t *introcirc,
     dh_offset = v3_shift+7+DIGEST_LEN+2+klen+REND_COOKIE_LEN;
   } else {
     /* Version 0. */
+
+    /* Some compilers are smart enough to work out that nickname can be more
+     * than 19 characters, when it's a hexdigest. They warn that strncpy()
+     * will truncate hexdigests without NUL-terminating them. But we only put
+     * hexdigests in HSDir and general circuit exits. */
+    if (BUG(strlen(rendcirc->build_state->chosen_exit->nickname)
+            > MAX_NICKNAME_LEN)) {
+      goto perm_err;
+    }
     strncpy(tmp, rendcirc->build_state->chosen_exit->nickname,
             (MAX_NICKNAME_LEN+1)); /* nul pads */
     memcpy(tmp+MAX_NICKNAME_LEN+1, rendcirc->rend_data->rend_cookie,
@@ -915,8 +926,8 @@ rend_client_desc_trynow(const char *query)
       /* restart their timeout values, so they get a fair shake at
        * connecting to the hidden service. */
       base_conn->timestamp_created = now;
-      base_conn->timestamp_lastread = now;
-      base_conn->timestamp_lastwritten = now;
+      base_conn->timestamp_last_read_allowed = now;
+      base_conn->timestamp_last_write_allowed = now;
 
       connection_ap_mark_as_pending_circuit(conn);
     } else { /* 404, or fetch didn't get that far */

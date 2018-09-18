@@ -9,31 +9,31 @@
 #define HS_CLIENT_PRIVATE
 
 #include "or.h"
-#include "hs_circuit.h"
-#include "hs_ident.h"
-#include "connection_edge.h"
-#include "container.h"
-#include "rendclient.h"
-#include "hs_descriptor.h"
-#include "hs_cache.h"
-#include "hs_cell.h"
-#include "hs_ident.h"
-#include "config.h"
-#include "directory.h"
-#include "hs_client.h"
-#include "hs_control.h"
-#include "router.h"
-#include "routerset.h"
+#include "circpathbias.h"
+#include "circuitbuild.h"
 #include "circuitlist.h"
 #include "circuituse.h"
+#include "config.h"
 #include "connection.h"
-#include "nodelist.h"
-#include "circpathbias.h"
-#include "connection.h"
+#include "connection_edge.h"
+#include "container.h"
+#include "crypto_rand.h"
+#include "crypto_util.h"
+#include "directory.h"
+#include "hs_cache.h"
+#include "hs_cell.h"
+#include "hs_circuit.h"
+#include "hs_client.h"
+#include "hs_control.h"
+#include "hs_descriptor.h"
+#include "hs_ident.h"
 #include "hs_ntor.h"
-#include "circuitbuild.h"
 #include "networkstatus.h"
+#include "nodelist.h"
 #include "reasons.h"
+#include "rendclient.h"
+#include "router.h"
+#include "routerset.h"
 
 /* Return a human-readable string for the client fetch status code. */
 static const char *
@@ -1439,8 +1439,8 @@ hs_client_desc_has_arrived(const hs_ident_dir_conn_t *ident)
      * connection is considered "fresh" and can continue without being closed
      * too early. */
     base_conn->timestamp_created = now;
-    base_conn->timestamp_lastread = now;
-    base_conn->timestamp_lastwritten = now;
+    base_conn->timestamp_last_read_allowed = now;
+    base_conn->timestamp_last_write_allowed = now;
     /* Change connection's state into waiting for a circuit. */
     base_conn->state = AP_CONN_STATE_CIRCUIT_WAIT;
 

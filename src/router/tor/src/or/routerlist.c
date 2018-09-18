@@ -99,9 +99,9 @@
 #include "config.h"
 #include "connection.h"
 #include "control.h"
+#include "crypto_rand.h"
 #include "directory.h"
 #include "dirserv.h"
-#include "dirvote.h"
 #include "entrynodes.h"
 #include "fp_pair.h"
 #include "geoip.h"
@@ -121,6 +121,9 @@
 #include "routerset.h"
 #include "sandbox.h"
 #include "torcert.h"
+
+#include "dirauth/dirvote.h"
+#include "dirauth/mode.h"
 
 // #define DEBUG_ROUTERLIST
 
@@ -2761,9 +2764,8 @@ frac_nodes_with_descriptors(const smartlist_t *sl,
       if (node_has_any_descriptor(node))
         n_with_descs++;
     });
-
     tor_free(bandwidths);
-    return ((double)n_with_descs) / (double)smartlist_len(sl);
+    return ((double)n_with_descs) / smartlist_len(sl);
   }
 
   present = 0.0;

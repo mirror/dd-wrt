@@ -4,7 +4,7 @@ dnl Copyright (c) 2007-2017, The Tor Project, Inc.
 dnl See LICENSE for licensing information
 
 AC_PREREQ([2.63])
-AC_INIT([tor],[0.3.3.9])
+AC_INIT([tor],[0.3.4.8])
 AC_CONFIG_SRCDIR([src/or/main.c])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -61,6 +61,8 @@ AC_ARG_ENABLE(cargo-online-mode,
    AS_HELP_STRING(--enable-cargo-online-mode, [Allow cargo to make network requests to fetch crates. For builds with rust only.]))
 AC_ARG_ENABLE(restart-debugging,
    AS_HELP_STRING(--enable-restart-debugging, [Build Tor with support for debugging in-process restart. Developers only.]))
+AC_ARG_ENABLE(zstd-advanced-apis,
+   AS_HELP_STRING(--disable-zstd-advanced-apis, [Build without support for zstd's "static-only" APIs.]))
 
 if test "x$enable_coverage" != "xyes" -a "x$enable_asserts_in_tests" = "xno" ; then
     AC_MSG_ERROR([Can't disable assertions outside of coverage build])
@@ -114,6 +116,10 @@ if test "$enable_restart_debugging" = "yes"; then
             [Defined if we're building with support for in-process restart debugging.])
 fi
 
+if test "$enable_zstd_advanced_apis" != "no"; then
+   AC_DEFINE(ENABLE_ZSTD_ADVANCED_APIS, 1,
+             [Defined if we're going to try to use zstd's "static-only" APIs.])
+fi
 
 # systemd support
 if test "x$enable_systemd" = "xno"; then
@@ -170,6 +176,7 @@ AC_ARG_ENABLE(fragile-hardening,
     AS_HELP_STRING(--enable-fragile-hardening, [enable more fragile and expensive compiler hardening; makes Tor slower]))
 if test "x$enable_expensive_hardening" = "xyes" || test "x$enable_fragile_hardening" = "xyes"; then
   fragile_hardening="yes"
+  AC_DEFINE(DEBUG_SMARTLIST, 1, [Enable smartlist debugging])
 fi
 
 dnl Linker hardening options
@@ -223,6 +230,31 @@ if test "x$enable_android" = "xyes"; then
   AC_SEARCH_LIBS(__android_log_write, [log])
 
 fi
+
+dnl ---
+dnl Tor modules options. These options are namespaced with --disable-module-XXX
+dnl ---
+
+dnl All our modules.
+m4_define(MODULES, dirauth)
+
+dnl Directory Authority module.
+AC_ARG_ENABLE([module-dirauth],
+              AS_HELP_STRING([--disable-module-dirauth],
+                             [Do not build tor with the dirauth module]),
+              [], dnl Action if-given
+              AC_DEFINE([HAVE_MODULE_DIRAUTH], [1],
+                        [Compile with Directory Authority feature support]))
+AM_CONDITIONAL(BUILD_MODULE_DIRAUTH, [test "x$enable_module_dirauth" != "xno"])
+
+dnl Helper variables.
+TOR_MODULES_ALL_ENABLED=
+AC_DEFUN([ADD_MODULE], [
+    MODULE=m4_toupper($1)
+    TOR_MODULES_ALL_ENABLED="${TOR_MODULES_ALL_ENABLED} -DHAVE_MODULE_${MODULE}=1"
+])
+m4_foreach_w([module], MODULES, [ADD_MODULE([module])])
+AC_SUBST(TOR_MODULES_ALL_ENABLED)
 
 dnl check for the correct "ar" when cross-compiling.
 dnl   (AM_PROG_AR was new in automake 1.11.2, which we do not yet require,
@@ -279,7 +311,10 @@ fi
 AM_CONDITIONAL(USEPYTHON, [test "x$PYTHON" != "x"])
 
 dnl List all external rust crates we depend on here. Include the version
-rust_crates="libc-0.2.39"
+rust_crates=" \
+    digest-0.7.2 \
+    libc-0.2.39 \
+"
 AC_SUBST(rust_crates)
 
 ifdef([AC_C_FLEXIBLE_ARRAY_MEMBER], [
@@ -418,6 +453,8 @@ fi
 
 AC_C_BIGENDIAN
 
+AC_ARG_VAR([TOR_RUST_TARGET], [Rust target, must be specified when cross-compiling (HOST != BUILD). example: i686-pc-windows-gnu])
+
 if test "x$enable_rust" = "xyes"; then
   AC_ARG_VAR([RUSTC], [path to the rustc binary])
   AC_CHECK_PROG([RUSTC], [rustc], [rustc],[no])
@@ -432,6 +469,11 @@ if test "x$enable_rust" = "xyes"; then
   fi
 
   AC_DEFINE([HAVE_RUST], 1, [have Rust])
+  if test "x$enable_fatal_warnings" = "xyes"; then
+    RUST_WARN=
+  else
+    RUST_WARN=#
+  fi
   if test "x$enable_cargo_online_mode" = "xyes"; then
     CARGO_ONLINE=
     RUST_DL=#
@@ -478,13 +520,31 @@ if test "x$enable_rust" = "xyes"; then
   dnl For now both MSVC and MinGW rust libraries will output static libs with
   dnl the MSVC naming convention.
   if test "$bwin32" = "true"; then
-    TOR_RUST_STATIC_NAME=tor_rust.lib
+    tor_rust_static_name=tor_rust.lib
   else
-    TOR_RUST_STATIC_NAME=libtor_rust.a
+    tor_rust_static_name=libtor_rust.a
   fi
 
-  AC_SUBST(TOR_RUST_STATIC_NAME)
+  AC_CANONICAL_BUILD
+
+  if test -n "$TOR_RUST_TARGET"; then
+    if test "$host" = "$build"; then
+      AC_MSG_ERROR([HOST = BUILD is invalid if TOR_RUST_TARGET is specified, see configure --help for more information.])
+    fi
+    RUST_TARGET_PROP="target = '$TOR_RUST_TARGET'"
+    TOR_RUST_LIB_PATH="src/rust/target/$TOR_RUST_TARGET/release/$tor_rust_static_name"
+  else
+    if test "$host" != "$build"; then
+      AC_MSG_ERROR([TOR_RUST_TARGET must be specified when cross-compiling with Rust enabled.])
+    fi
+    RUST_TARGET_PROP=
+    TOR_RUST_LIB_PATH="src/rust/target/release/$tor_rust_static_name"
+  fi
+
+  AC_SUBST(RUST_TARGET_PROP)
+  AC_SUBST(TOR_RUST_LIB_PATH)
   AC_SUBST(CARGO_ONLINE)
+  AC_SUBST(RUST_WARN)
   AC_SUBST(RUST_DL)
 
   dnl Let's check the rustc version, too
@@ -515,8 +575,10 @@ if test "$LIBS" != "$saved_LIBS"; then
    have_rt=yes
 fi
 
-AC_SEARCH_LIBS(pthread_create, [pthread])
-AC_SEARCH_LIBS(pthread_detach, [pthread])
+if test "$bwin32" = "false"; then
+  AC_SEARCH_LIBS(pthread_create, [pthread])
+  AC_SEARCH_LIBS(pthread_detach, [pthread])
+fi
 
 AM_CONDITIONAL(THREADS_WIN32, test "$bwin32" = "true")
 AM_CONDITIONAL(THREADS_PTHREADS, test "$bwin32" = "false")
@@ -548,9 +610,9 @@ AC_CHECK_FUNCS(
         llround \
         localtime_r \
         lround \
-	mach_approximate_time \
         memmem \
         memset_s \
+        mmap \
 	pipe \
 	pipe2 \
         prctl \
@@ -574,9 +636,36 @@ AC_CHECK_FUNCS(
 	_vscprintf
 )
 
-# Apple messed up when they added two functions functions in Sierra: they
+# Apple messed up when they added some functions: they
 # forgot to decorate them with appropriate AVAILABLE_MAC_OS_VERSION
-# checks. So we should only probe for those functions if we are sure that we
+# checks.
+
+# We should only probe for these functions if we are sure that we
+# are not targeting OS X 10.9 or earlier.
+AC_MSG_CHECKING([for a pre-Yosemite OS X build target])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#ifdef __APPLE__
+#  include <AvailabilityMacros.h>
+#  ifndef MAC_OS_X_VERSION_10_10
+#    define MAC_OS_X_VERSION_10_10 101000
+#  endif
+#  if defined(MAC_OS_X_VERSION_MIN_REQUIRED)
+#    if MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_10
+#      error "Running on Mac OS X 10.9 or earlier"
+#    endif
+#  endif
+#endif
+]], [[]])],
+   [on_macos_pre_10_10=no ; AC_MSG_RESULT([no])],
+   [on_macos_pre_10_10=yes; AC_MSG_RESULT([yes])])
+
+if test "$on_macos_pre_10_10" = "no"; then
+  AC_CHECK_FUNCS(
+        mach_approximate_time \
+  )
+fi
+
+# We should only probe for these functions if we are sure that we
 # are not targeting OSX 10.11 or earlier.
 AC_MSG_CHECKING([for a pre-Sierra OSX build target])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
@@ -618,6 +707,21 @@ fi
 
 AM_CONDITIONAL(BUILD_READPASSPHRASE_C,
   test "x$ac_cv_func_readpassphrase" = "xno" && test "$bwin32" = "false")
+
+AC_MSG_CHECKING([whether free(NULL) works])
+AC_RUN_IFELSE([AC_LANG_PROGRAM([
+  #include <stdlib.h>
+], [
+char *p = NULL;
+free(p);
+])],
+[free_null_ok=true; AC_MSG_RESULT(yes)],
+[free_null_ok=false; AC_MSG_RESULT(no)],
+[free_null_ok=cross; AC_MSG_RESULT(cross)])
+
+if test "$free_null_ok" = "false"; then
+   AC_MSG_ERROR([Your libc implementation doesn't allow free(NULL), as required by C99.])
+fi
 
 dnl ------------------------------------------------------
 dnl Where do you live, libevent?  And how do we call you?
@@ -770,9 +874,18 @@ AC_ARG_WITH(ssl-dir,
 
 AC_MSG_NOTICE([Now, we'll look for OpenSSL >= 1.0.1])
 TOR_SEARCH_LIBRARY(openssl, $tryssldir, [-lssl -lcrypto $TOR_LIB_GDI $TOR_LIB_WS32],
-    [#include <openssl/ssl.h>],
-    [struct ssl_method_st; const struct ssl_method_st *TLSv1_1_method(void);],
-    [TLSv1_1_method();], [],
+    [#include <openssl/ssl.h>
+     char *getenv(const char *);],
+    [struct ssl_cipher_st;
+     unsigned SSL_CIPHER_get_id(const struct ssl_cipher_st *);
+     char *getenv(const char *);],
+    dnl This funny-looking test program calls getenv, so that the compiler
+    dnl will neither make code that call SSL_CIPHER_get_id(NULL) [producing
+    dnl a crash], nor optimize out the call to SSL_CIPHER_get_id().
+    dnl We look for SSL_cipher_get_id() because it is present in
+    dnl OpenSSL >=1.0.1, because it is not deprecated, and because Tor
+    dnl depends on it.
+    [if (getenv("THIS_SHOULDNT_BE_SET_X201803")) SSL_CIPHER_get_id((void *)0);], [],
     [/usr/local/opt/openssl /usr/local/openssl /usr/lib/openssl /usr/local/ssl /usr/lib/ssl /usr/local /opt/openssl])
 
 dnl XXXX check for OPENSSL_VERSION_NUMBER == SSLeay()
@@ -828,6 +941,7 @@ AC_CHECK_FUNCS([ \
                 SSL_get_client_ciphers \
                 SSL_get_client_random \
 		SSL_CIPHER_find \
+                SSL_CTX_set_security_level \
 		TLS_method
 	       ])
 
@@ -837,6 +951,10 @@ AC_CHECK_FUNCS([ EVP_PBE_scrypt ])
 dnl Check if OpenSSL structures are opaque
 AC_CHECK_MEMBERS([SSL.state], , ,
 [#include <openssl/ssl.h>
+])
+
+AC_CHECK_SIZEOF(SHA_CTX, , [AC_INCLUDES_DEFAULT()
+#include <openssl/sha.h>
 ])
 
 dnl Define the set of checks for KIST scheduler support.
@@ -957,6 +1075,16 @@ if test "x$have_zstd" = "xyes"; then
     AC_DEFINE(HAVE_ZSTD,1,[Have Zstd])
     TOR_ZSTD_CFLAGS="${ZSTD_CFLAGS}"
     TOR_ZSTD_LIBS="${ZSTD_LIBS}"
+
+    dnl now check for zstd functions
+    save_LIBS="$LIBS"
+    save_CFLAGS="$CFLAGS"
+    LIBS="$LIBS $ZSTD_LIBS"
+    CFLAGS="$CFLAGS $ZSTD_CFLAGS"
+    AC_CHECK_FUNCS(ZSTD_estimateCStreamSize \
+                   ZSTD_estimateDCtxSize)
+    LIBS="$save_LIBS"
+    CFLAGS="$save_CFLAGS"
 fi
 AC_SUBST(TOR_ZSTD_CFLAGS)
 AC_SUBST(TOR_ZSTD_LIBS)
@@ -1041,6 +1169,33 @@ if test "$fragile_hardening" = "yes"; then
 
 TOR_CHECK_CFLAGS([-fno-omit-frame-pointer])
 fi
+
+dnl Find the correct libraries to add in order to use the sanitizers.
+dnl
+dnl When building Rust, Cargo will run the linker with the -nodefaultlibs
+dnl option, which will prevent the compiler from linking the sanitizer
+dnl libraries it needs.  We need to specify them manually.
+dnl
+dnl What's more, we need to specify them in a linker script rather than
+dnl from build.rs: these options aren't allowed in the cargo:rustc-flags
+dnl variable.
+RUST_LINKER_OPTIONS=""
+if test "x$have_clang" = "xyes"; then
+	if test "x$CFLAGS_ASAN" != "x"; then
+		RUST_LINKER_OPTIONS="$RUST_LINKER_OPTIONS $CFLAGS_ASAN"
+	fi
+	if test "x$CFLAGS_UBSAN" != "x"; then
+        	RUST_LINKER_OPTIONS="$RUST_LINKER_OPTIONS $CFLAGS_UBSAN"
+	fi
+else
+	if test "x$CFLAGS_ASAN" != "x"; then
+		RUST_LINKER_OPTIONS="$RUST_LINKER_OPTIONS -lasan"
+	fi
+	if test "x$CFLAGS_UBSAN" != "x"; then
+        	RUST_LINKER_OPTIONS="$RUST_LINKER_OPTIONS -lubsan"
+	fi
+fi
+AC_SUBST(RUST_LINKER_OPTIONS)
 
 CFLAGS_BUGTRAP="$CFLAGS_FTRAPV $CFLAGS_ASAN $CFLAGS_UBSAN"
 CFLAGS_CONSTTIME="$CFLAGS_FWRAPV"
@@ -1531,6 +1686,26 @@ AC_CHECK_SIZEOF(socklen_t, , [AC_INCLUDES_DEFAULT()
 
 AC_CHECK_SIZEOF(cell_t)
 
+# Let's see if stdatomic works. (There are some debian clangs that screw it
+# up; see Tor bug #26779 and debian bug 903709.)
+AC_CACHE_CHECK([whether C11 stdatomic.h actually works],
+               tor_cv_stdatomic_works,
+[AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+#include <stdatomic.h>
+struct x { atomic_size_t y; };
+void try_atomic_init(struct x *xx)
+{
+  atomic_init(&xx->y, 99);
+  atomic_fetch_add(&xx->y, 1);
+}
+]])], [tor_cv_stdatomic_works=yes], [tor_cv_stdatomic_works=no])])
+
+if test "$tor_cv_stdatomic_works" = "yes"; then
+   AC_DEFINE(STDATOMIC_WORKS, 1, [Set to 1 if we can compile a simple stdatomic example.])
+elif test "$ac_cv_header_stdatomic_h" = "yes"; then
+   AC_MSG_WARN([Your compiler provides the stdatomic.h header, but it doesn't seem to work.  I'll pretend it isn't there. If you are using Clang on Debian, maybe this is because of https://bugs.debian.org/903709 ])
+fi
+
 # Now make sure that NULL can be represented as zero bytes.
 AC_CACHE_CHECK([whether memset(0) sets pointers to NULL], tor_cv_null_is_zero,
 [AC_RUN_IFELSE([AC_LANG_SOURCE(
@@ -1698,6 +1873,10 @@ fi
 if test "$using_custom_malloc" = "no"; then
    AC_CHECK_FUNCS(mallinfo)
 fi
+if test "$using_custom_malloc" = "yes"; then
+  # Tell the C compiler not to use the system allocator functions.
+  TOR_CHECK_CFLAGS([-fno-builtin-malloc -fno-builtin-realloc -fno-builtin-calloc -fno-builtin-free])
+fi
 
 # By default, we're going to assume we don't have mlockall()
 # bionic and other platforms have various broken mlockall subsystems.
@@ -1707,14 +1886,6 @@ AC_CHECK_FUNCS(mlockall)
 AC_CHECK_DECLS([mlockall], , , [
 #ifdef HAVE_SYS_MMAN_H
 #include <sys/mman.h>
-#endif])
-
-# Some MinGW environments don't have getpagesize in unistd.h. We don't use
-# AC_CHECK_FUNCS(getpagesize), because other environments rename getpagesize
-# using macros
-AC_CHECK_DECLS([getpagesize], , , [
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
 #endif])
 
 # Allow user to specify an alternate syslog facility
@@ -1853,6 +2024,12 @@ fi
 AC_SUBST(BUILDDIR)
 AH_TEMPLATE([BUILDDIR],[tor's build directory])
 AC_DEFINE_UNQUOTED(BUILDDIR,"$BUILDDIR")
+
+if test "x$SRCDIR" = "x"; then
+  SRCDIR=$(cd "$srcdir"; pwd)
+fi
+AH_TEMPLATE([SRCDIR],[tor's sourcedir directory])
+AC_DEFINE_UNQUOTED(SRCDIR,"$SRCDIR")
 
 if test "x$CONFDIR" = "x"; then
   CONFDIR=`eval echo $sysconfdir/tor`
@@ -2172,6 +2349,9 @@ dnl     -Wthread-safety-precise
   if test "$tor_cv_cflags__Woverlength_strings" = "yes"; then
     AC_DEFINE([HAVE_CFLAG_WOVERLENGTH_STRINGS], 1, [True if we have -Woverlength-strings])
   fi
+  if test "$tor_cv_cflags__warn_unused_const_variable_2" = "yes"; then
+    AC_DEFINE([HAVE_CFLAG_WUNUSED_CONST_VARIABLE], 1, [True if we have -Wunused-const-variable])
+  fi
 
   if test "x$enable_fatal_warnings" = "xyes"; then
     # I'd like to use TOR_CHECK_CFLAGS here, but I can't, since the
@@ -2193,6 +2373,8 @@ CPPFLAGS="$CPPFLAGS $TOR_CPPFLAGS_libevent $TOR_CPPFLAGS_openssl $TOR_CPPFLAGS_z
 AC_CONFIG_FILES([
         Doxyfile
         Makefile
+        config.rust
+        link_rust.sh
         contrib/dist/suse/tor.sh
         contrib/operator-tools/tor.logrotate
         contrib/dist/tor.sh

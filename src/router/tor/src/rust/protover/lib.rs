@@ -28,6 +28,7 @@ extern crate libc;
 extern crate smartlist;
 extern crate external;
 extern crate tor_allocate;
+#[macro_use]
 extern crate tor_util;
 
 pub mod errors;
