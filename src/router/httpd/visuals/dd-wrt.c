@@ -811,12 +811,13 @@ static char *wpa_enc_label(char *value)
 #ifdef HAVE_IAS
 	return ias_enc_label(value);
 #else
+	char buf[128];
 	/*
 	   I'm not sure if consumers can handle the new names for encryption types here, but at least we can change it back quick if required
 	 */
 	if (value) {
 		if (!strcmp(value, "disabled")) {
-			return tran_string("share.disabled");
+			return tran_string(buf, "share.disabled");
 		} else if (!strcmp(value, "psk")) {
 			return "WPA-PSK";
 		} else if (!strcmp(value, "psk2")) {
@@ -850,9 +851,8 @@ static char *wpa_enc_label(char *value)
 		} else {
 			return value;
 		}
-	} else {
-		return "";
-	}
+	} 
+	return "";
 #endif
 }
 
@@ -871,7 +871,7 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "wpa.secmode", NULL);
 	websWrite(wp, "<select name=\"%s_security_mode\" onchange=\"SelMode('%s_security_mode',this.form.%s_security_mode.selectedIndex,this.form)\">\n", prefix, prefix, prefix);
-	websWrite(wp, "<option value=\"disabled\" %s>%s</option>\n", selmatch(var, "psk", "selected=\"selected\""), ias_enc_label("disabled"));
+	websWrite(wp, "<option value=\"disabled\" %s>%s</option>\n", selmatch(var, "psk", "selected=\"selected\""), wpa_enc_label("disabled"));
 
 	sprintf(sta, "%s_mode", prefix);
 	if (has_wpa3(prefix)) {
