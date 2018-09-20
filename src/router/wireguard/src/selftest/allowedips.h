@@ -1,5 +1,5 @@
-/* SPDX-License-Identifier: GPL-2.0
- *
+/* SPDX-License-Identifier: GPL-2.0 */
+/*
  * Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  */
 
@@ -600,7 +600,7 @@ bool __init allowedips_selftest(void)
 	allowedips_remove_by_peer(&t, a, &mutex);
 	test_negative(4, a, 192, 168, 0, 1);
 
-	/* These will hit the BUG_ON(len >= 128) in free_node if something goes wrong. */
+	/* These will hit the WARN_ON(len >= 128) in free_node if something goes wrong. */
 	for (i = 0; i < 128; ++i) {
 		part = cpu_to_be64(~(1LLU << (i % 64)));
 		memset(&ip, 0xff, 16);
