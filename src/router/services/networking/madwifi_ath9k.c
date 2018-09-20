@@ -1132,7 +1132,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fprintf(fp, "wpa_key_mgmt=OWE\n");
 		fprintf(fp, "rsn_pairwise=CCMP\n");
 		addWPS(fp, ifname, 0);
-	} else if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "wpa") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3")) {
+	} else if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "wpa") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3") || nvhas(akm, "wpa3-192")) {
 
 		if (!strncmp(ifname, "ath0", 4))
 			led_control(LED_SEC0, LED_ON);
@@ -1166,10 +1166,10 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		if (nvram_match(akm, "psk") || nvram_match(akm, "wpa"))
 			fprintf(fp, "wpa=1\n");
 		if (nvram_match(akm, "psk2")
-		    || nvram_match(akm, "wpa2") || nvram_match(akm, "wpa3") || nvram_match(akm, "psk3"))
+		    || nvram_match(akm, "wpa2") || nvram_match(akm, "wpa3") || nvram_match(akm, "wpa3-192") || nvram_match(akm, "psk3"))
 			fprintf(fp, "wpa=2\n");
 		if (nvram_match(akm, "psk psk2")
-		    || nvram_match(akm, "wpa wpa2") || nvram_match(akm, "wpa2 wpa3") || nvram_match(akm, "psk2 psk3"))
+		    || nvram_match(akm, "wpa wpa2") || nvram_match(akm, "wpa2 wpa3") || nvram_match(akm, "wpa2 wpa3-192") || nvram_match(akm, "psk2 psk3"))
 			fprintf(fp, "wpa=3\n");
 #ifdef HAVE_80211W
 		if (nvram_default_matchi(mfp, -1, 0))
@@ -1214,6 +1214,8 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			if (nvhas(akm, "wpa2") || nvhas(akm, "wpa"))
 				fprintf(fp, "WPA-EAP ");
 			if (has_wpa3(ifname) && nvhas(akm, "wpa3"))
+				fprintf(fp, "WPA-EAP-SUITE-B ");
+			if (has_wpa3(ifname) && nvhas(akm, "wpa3-192"))
 				fprintf(fp, "WPA-EAP-SUITE-B-192 ");
 #ifdef HAVE_80211R
 			if (nvram_matchi(ft, 1) && (nvhas(akm, "wpa") || nvhas(akm, "wpa2")))
