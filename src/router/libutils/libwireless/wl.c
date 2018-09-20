@@ -2311,7 +2311,7 @@ int has_qtn(char *prefix)
 {
 	if (!strcmp(prefix, "qtn"))
 		return 1;
-	if (!strncmp(prefix, "wl1", "3"))
+	if (!strncmp(prefix, "wl1", 3))
 		return 1;
 	return 0;
 }
