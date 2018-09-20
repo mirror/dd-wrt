@@ -990,24 +990,24 @@ static void print_auth(const uint8_t * data)
 	if (memcmp(data, ieee80211_oui, 3) == 0 || memcmp(data, wifi_oui, 3) == 0) {
 		switch (data[3]) {
 		case 1:
-			printf("IEEE 802.1X");
-			fillENC("IEEE 802.1X", " ");
+			printf("EAP");
+			fillENC("EAP", " ");
 			break;
 		case 2:
 			printf("PSK");
 			fillENC("PSK", " ");
 			break;
 		case 3:
-			printf("FT/IEEE 802.1X");
-			fillENC("FT/IEEE 8021X", " ");
+			printf("FT/EAP");
+			fillENC("FT/EAP", " ");
 			break;
 		case 4:
 			printf("FT/PSK");
 			fillENC("FT/PSK", " ");
 			break;
 		case 5:
-			printf("IEEE 802.1X/SHA-256");
-			fillENC("IEEE 8021X/SHA-256", " ");
+			printf("EAP/SHA-256");
+			fillENC("EAP/SHA-256", " ");
 			break;
 		case 6:
 			printf("PSK/SHA-256");
@@ -1026,12 +1026,12 @@ static void print_auth(const uint8_t * data)
 			fillENC("FT/SAE", " ");
 			break;
 		case 11:
-			printf("8021X/SUITE-B");
-			fillENC("8021X/SUITE-B", " ");
+			printf("EAP/SUITE-B");
+			fillENC("EAP/SUITE-B", " ");
 			break;
 		case 12:
-			printf("8021X/SUITE-B-192");
-			fillENC("8021X/SUITE-B-192", " ");
+			printf("EAP/SUITE-B-192");
+			fillENC("EAP/SUITE-B-192", " ");
 			break;
 		case 14:
 			printf("FILS/SHA256");
