@@ -1360,7 +1360,7 @@ void cache_add_dhcp_entry(char *host_name, int prot,
 static void make_non_terminals(struct crec *source)
 {
   char *name = cache_get_name(source);
-  struct crec* crecp, *tmp, **up;
+  struct crec *crecp, *tmp, **up;
   int type = F_HOSTS | F_CONFIG;
 #ifdef HAVE_DHCP
   if (source->flags & F_DHCP)
@@ -1434,12 +1434,15 @@ static void make_non_terminals(struct crec *source)
 #endif
 	crecp = whine_malloc(sizeof(struct crec));
 
-      *crecp = *source;
-      crecp->flags &= ~(F_IPV4 | F_IPV6 | F_CNAME | F_DNSKEY | F_DS | F_REVERSE);
-      crecp->flags |= F_NAMEP;
-      crecp->name.namep = name;
-
-      cache_hash(crecp);
+      if (crecp)
+	{
+	  *crecp = *source;
+	  crecp->flags &= ~(F_IPV4 | F_IPV6 | F_CNAME | F_DNSKEY | F_DS | F_REVERSE);
+	  crecp->flags |= F_NAMEP;
+	  crecp->name.namep = name;
+	  
+	  cache_hash(crecp);
+	}
     }
 }
 
