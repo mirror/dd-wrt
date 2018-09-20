@@ -806,12 +806,11 @@ static char *selmatch(char *var, char *is, char *ret)
 	return "";
 }
 
-static char *wpa_enc_label(char *value)
+static char *wpa_enc_label(char *buf, char *value)
 {
 #ifdef HAVE_IAS
 	return ias_enc_label(value);
 #else
-	char buf[128];
 	/*
 	   I'm not sure if consumers can handle the new names for encryption types here, but at least we can change it back quick if required
 	 */
@@ -851,7 +850,7 @@ static char *wpa_enc_label(char *value)
 		} else {
 			return value;
 		}
-	} 
+	}
 	return "";
 #endif
 }
@@ -860,6 +859,7 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 {
 	char var[80];
 	char sta[80];
+	char buf[128];
 
 	// char p2[80];
 	cprintf("show security prefix\n");
@@ -871,45 +871,45 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "wpa.secmode", NULL);
 	websWrite(wp, "<select name=\"%s_security_mode\" onchange=\"SelMode('%s_security_mode',this.form.%s_security_mode.selectedIndex,this.form)\">\n", prefix, prefix, prefix);
-	websWrite(wp, "<option value=\"disabled\" %s>%s</option>\n", selmatch(var, "psk", "selected=\"selected\""), wpa_enc_label("disabled"));
+	websWrite(wp, "<option value=\"disabled\" %s>%s</option>\n", selmatch(var, "psk", "selected=\"selected\""), wpa_enc_label(buf, "disabled"));
 
 	sprintf(sta, "%s_mode", prefix);
 	if (has_wpa3(prefix)) {
 		if (!has_qtn(prefix)) {
 			if (!primary || nvram_match(sta, "ap") || nvram_match(sta, "wdsap")) {
-				websWrite(wp, "<option value=\"owe\" %s>%s</option>\n", selmatch(var, "owe", "selected=\"selected\""), wpa_enc_label("owe"));
+				websWrite(wp, "<option value=\"owe\" %s>%s</option>\n", selmatch(var, "owe", "selected=\"selected\""), wpa_enc_label(buf, "owe"));
 			}
 		}
 	}
-	websWrite(wp, "<option value=\"psk\" %s>%s</option>\n", selmatch(var, "psk", "selected=\"selected\""), wpa_enc_label("psk"));
-	websWrite(wp, "<option value=\"psk2\" %s>%s</option>\n", selmatch(var, "psk2", "selected=\"selected\""), wpa_enc_label("psk2"));
+	websWrite(wp, "<option value=\"psk\" %s>%s</option>\n", selmatch(var, "psk", "selected=\"selected\""), wpa_enc_label(buf, "psk"));
+	websWrite(wp, "<option value=\"psk2\" %s>%s</option>\n", selmatch(var, "psk2", "selected=\"selected\""), wpa_enc_label(buf, "psk2"));
 	if (has_wpa3(prefix))
-		websWrite(wp, "<option value=\"psk3\" %s>%s</option>\n", selmatch(var, "psk3", "selected=\"selected\""), wpa_enc_label("psk3"));
+		websWrite(wp, "<option value=\"psk3\" %s>%s</option>\n", selmatch(var, "psk3", "selected=\"selected\""), wpa_enc_label(buf, "psk3"));
 #ifdef HAVE_RT2880
 	if (!primary || nvram_match(sta, "ap"))
 #endif
 	{
-		websWrite(wp, "<option value=\"psk psk2\" %s>%s</option>\n", selmatch(var, "psk psk2", "selected=\"selected\""), wpa_enc_label("psk psk2"));
+		websWrite(wp, "<option value=\"psk psk2\" %s>%s</option>\n", selmatch(var, "psk psk2", "selected=\"selected\""), wpa_enc_label(buf, "psk psk2"));
 		if (has_wpa3(prefix))
-			websWrite(wp, "<option value=\"psk2 psk3\" %s>%s</option>\n", selmatch(var, "psk2 psk3", "selected=\"selected\""), wpa_enc_label("psk2 psk3"));
+			websWrite(wp, "<option value=\"psk2 psk3\" %s>%s</option>\n", selmatch(var, "psk2 psk3", "selected=\"selected\""), wpa_enc_label(buf, "psk2 psk3"));
 
 	}
 	if (!has_qtn(prefix)) {
 		if (!primary || nvram_match(sta, "ap") || nvram_match(sta, "wdsap")) {
-			websWrite(wp, "<option value=\"wpa\" %s>%s</option>\n", selmatch(var, "wpa", "selected=\"selected\""), wpa_enc_label("wpa"));
-			websWrite(wp, "<option value=\"wpa2\" %s>%s</option>\n", selmatch(var, "wpa2", "selected=\"selected\""), wpa_enc_label("wpa2"));
+			websWrite(wp, "<option value=\"wpa\" %s>%s</option>\n", selmatch(var, "wpa", "selected=\"selected\""), wpa_enc_label(buf, "wpa"));
+			websWrite(wp, "<option value=\"wpa2\" %s>%s</option>\n", selmatch(var, "wpa2", "selected=\"selected\""), wpa_enc_label(buf, "wpa2"));
 			if (has_wpa3(prefix)) {
-				websWrite(wp, "<option value=\"wpa3\" %s>%s</option>\n", selmatch(var, "wpa3", "selected=\"selected\""), wpa_enc_label("wpa3"));
-				websWrite(wp, "<option value=\"wpa3-192\" %s>%s</option>\n", selmatch(var, "wpa3-192", "selected=\"selected\""), wpa_enc_label("wpa3-192"));
+				websWrite(wp, "<option value=\"wpa3\" %s>%s</option>\n", selmatch(var, "wpa3", "selected=\"selected\""), wpa_enc_label(buf, "wpa3"));
+				websWrite(wp, "<option value=\"wpa3-192\" %s>%s</option>\n", selmatch(var, "wpa3-192", "selected=\"selected\""), wpa_enc_label(buf, "wpa3-192"));
 			}
-			websWrite(wp, "<option value=\"wpa wpa2\" %s>%s</option>\n", selmatch(var, "wpa wpa2", "selected=\"selected\""), wpa_enc_label("wpa wpa2"));
+			websWrite(wp, "<option value=\"wpa wpa2\" %s>%s</option>\n", selmatch(var, "wpa wpa2", "selected=\"selected\""), wpa_enc_label(buf, "wpa wpa2"));
 			if (has_wpa3(prefix)) {
-				websWrite(wp, "<option value=\"wpa2 wpa3\" %s>%s</option>\n", selmatch(var, "wpa2 wpa3", "selected=\"selected\""), wpa_enc_label("wpa2 wpa3"));
-				websWrite(wp, "<option value=\"wpa2 wpa3-192\" %s>%s</option>\n", selmatch(var, "wpa2 wpa3-192", "selected=\"selected\""), wpa_enc_label("wpa2 wpa3-192"));
+				websWrite(wp, "<option value=\"wpa2 wpa3\" %s>%s</option>\n", selmatch(var, "wpa2 wpa3", "selected=\"selected\""), wpa_enc_label(buf, "wpa2 wpa3"));
+				websWrite(wp, "<option value=\"wpa2 wpa3-192\" %s>%s</option>\n", selmatch(var, "wpa2 wpa3-192", "selected=\"selected\""), wpa_enc_label(buf, "wpa2 wpa3-192"));
 			}
-			websWrite(wp, "<option value=\"radius\" %s>%s</option>\n", selmatch(var, "radius", "selected=\"selected\""), wpa_enc_label("radius"));
+			websWrite(wp, "<option value=\"radius\" %s>%s</option>\n", selmatch(var, "radius", "selected=\"selected\""), wpa_enc_label(buf, "radius"));
 		}
-		websWrite(wp, "<option value=\"wep\" %s>%s</option>\n", selmatch(var, "wep", "selected=\"selected\""), wpa_enc_label("wep"));
+		websWrite(wp, "<option value=\"wep\" %s>%s</option>\n", selmatch(var, "wep", "selected=\"selected\""), wpa_enc_label(buf, "wep"));
 	}
 #ifdef HAVE_WPA_SUPPLICANT
 #ifndef HAVE_MICRO
