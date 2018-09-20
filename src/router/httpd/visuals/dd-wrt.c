@@ -812,8 +812,8 @@ static char *wpa_enc_label(char *value)
 	return ias_enc_label(value);
 #else
 	/*
-	I'm not sure if consumers can handle the new names for encryption types here, but at least we can change it back quick if required
-	*/
+	   I'm not sure if consumers can handle the new names for encryption types here, but at least we can change it back quick if required
+	 */
 	if (value) {
 		if (!strcmp(value, "disabled")) {
 			return tran_string("share.disabled");
@@ -832,11 +832,15 @@ static char *wpa_enc_label(char *value)
 		} else if (!strcmp(value, "wpa2")) {
 			return "WPA2-EAP";
 		} else if (!strcmp(value, "wpa3")) {
-			return "WPA3-EAP";
+			return "WPA3-EAP-SUITE-B";
+		} else if (!strcmp(value, "wpa3-192")) {
+			return "WPA3-EAP-SUITE-B-192";
 		} else if (!strcmp(value, "wpa wpa2")) {
 			return "WPA2-EAP/WPA-EAP";
 		} else if (!strcmp(value, "wpa2 wpa3")) {
-			return "WPA2-EAP/WPA3-EAP";
+			return "WPA2-EAP/WPA3-EAP-SUITE-B";
+		} else if (!strcmp(value, "wpa2 wpa3-192")) {
+			return "WPA2-EAP/WPA3-EAP-SUITE-B-192";
 		} else if (!strcmp(value, "wep")) {
 			return "WEP";
 		} else if (!strcmp(value, "owe")) {
@@ -894,12 +898,15 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 		if (!primary || nvram_match(sta, "ap") || nvram_match(sta, "wdsap")) {
 			websWrite(wp, "<option value=\"wpa\" %s>%s</option>\n", selmatch(var, "wpa", "selected=\"selected\""), wpa_enc_label("wpa"));
 			websWrite(wp, "<option value=\"wpa2\" %s>%s</option>\n", selmatch(var, "wpa2", "selected=\"selected\""), wpa_enc_label("wpa2"));
-			if (has_wpa3(prefix))
+			if (has_wpa3(prefix)) {
 				websWrite(wp, "<option value=\"wpa3\" %s>%s</option>\n", selmatch(var, "wpa3", "selected=\"selected\""), wpa_enc_label("wpa3"));
+				websWrite(wp, "<option value=\"wpa3-192\" %s>%s</option>\n", selmatch(var, "wpa3-192", "selected=\"selected\""), wpa_enc_label("wpa3-192"));
+			}
 			websWrite(wp, "<option value=\"wpa wpa2\" %s>%s</option>\n", selmatch(var, "wpa wpa2", "selected=\"selected\""), wpa_enc_label("wpa wpa2"));
-			if (has_wpa3(prefix))
+			if (has_wpa3(prefix)) {
 				websWrite(wp, "<option value=\"wpa2 wpa3\" %s>%s</option>\n", selmatch(var, "wpa2 wpa3", "selected=\"selected\""), wpa_enc_label("wpa2 wpa3"));
-
+				websWrite(wp, "<option value=\"wpa2 wpa3-192\" %s>%s</option>\n", selmatch(var, "wpa2 wpa3-192", "selected=\"selected\""), wpa_enc_label("wpa2 wpa3-192"));
+			}
 			websWrite(wp, "<option value=\"radius\" %s>%s</option>\n", selmatch(var, "radius", "selected=\"selected\""), wpa_enc_label("radius"));
 		}
 		websWrite(wp, "<option value=\"wep\" %s>%s</option>\n", selmatch(var, "wep", "selected=\"selected\""), wpa_enc_label("wep"));

@@ -2223,27 +2223,31 @@ static void showencstatus(webs_t wp, char *prefix)
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.encrypt)</script>&nbsp;-&nbsp;<script type=\"text/javascript\">Capture(share.intrface)</script>&nbsp;%s</div>\n", prefix);
 	websWrite(wp, "<script type=\"text/javascript\">");
 	if (nvram_match(akm, "owe"))
-		enc = "Opportunistic Wireless Encryption";
+		enc = "OWE";
 	if (nvram_match(akm, "psk"))
-		enc = "WPA Personal";
+		enc = "WPA-PSK";
 	if (nvram_match(akm, "psk2"))
-		enc = "WPA2 Personal";
+		enc = "WPA2-PSK";
 	if (nvram_match(akm, "psk3"))
-		enc = "WPA3 Personal";
+		enc = "WPA3-PSK";
 	if (nvram_match(akm, "wpa"))
-		enc = "WPA Enterprise";
+		enc = "WPA-EAP";
 	if (nvram_match(akm, "wpa2"))
-		enc = "WPA2 Enterprise";
+		enc = "WPA2-EAP";
 	if (nvram_match(akm, "wpa3"))
-		enc = "WPA3 Enterprise";
+		enc = "WPA3-EAP-SUITE-B";
+	if (nvram_match(akm, "wpa3-192"))
+		enc = "WPA3-EAP-SUITE-B-192";
 	if (nvram_match(akm, "psk psk2"))
-		enc = "WPA2 Personal Mixed";
+		enc = "WPA-PSK/WPA2-PSK";
 	if (nvram_match(akm, "psk2 psk3"))
-		enc = "WPA2/WPA3 Personal Mixed";
+		enc = "WPA2-PSK/WPA3-PSK";
 	if (nvram_match(akm, "wpa wpa2"))
-		enc = "WPA Enterprise Mixed";
+		enc = "WPA-EAP/WPA2-EAP";
 	if (nvram_match(akm, "wpa2 wpa3"))
-		enc = "WPA/WPA3 Enterprise Mixed";
+		enc = "WPA2-EAP/WPA3-EAP-SUITE-B";
+	if (nvram_match(akm, "wpa2 wpa3-192"))
+		enc = "WPA2-EAP/WPA3-EAP-SUITE-B-192";
 	if (nvram_match(akm, "radius"))
 		enc = "RADIUS";
 	if (nvram_match(akm, "wep"))
