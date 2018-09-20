@@ -191,7 +191,7 @@ extern int has_ad(char *prefix);
 #define has_ad(prefix) (0)
 #endif
 extern int has_gcmp(char *prefix);
-#ifndef HAVE_QTN
+#ifdef HAVE_QTN
 extern int has_qtn(char *prefix);
 #else
 #define has_qtn(prefix) 0
