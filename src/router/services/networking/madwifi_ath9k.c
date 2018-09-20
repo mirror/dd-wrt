@@ -1104,8 +1104,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		}
 	} else if (nvram_match(akm, "disabled")) {
 		addWPS(fp, ifname, 0);
-#ifdef HAVE_WPA3
-	} else if (nvram_match(akm, "owe")) {
+	} else if (has_wpa3(ifname) && nvram_match(akm, "owe")) {
 		if (nvram_nmatch("1", "%s_bridged", ifname))
 			fprintf(fp, "bridge=%s\n", getBridge(ifname, tmp));
 		fprintf(fp, "logger_syslog=-1\n");
@@ -1133,7 +1132,6 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fprintf(fp, "wpa_key_mgmt=OWE\n");
 		fprintf(fp, "rsn_pairwise=CCMP\n");
 		addWPS(fp, ifname, 0);
-#endif
 	} else if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "wpa") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3")) {
 
 		if (!strncmp(ifname, "ath0", 4))
@@ -1189,15 +1187,11 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			fprintf(fp, "wpa_key_mgmt=");
 			if (nvhas(akm, "psk2") || nvhas(akm, "psk"))
 				fprintf(fp, "WPA-PSK ");
-#ifdef HAVE_WPA3
-			if (nvhas(akm, "psk3"))
+			if (has_wpa3(ifname) && nvhas(akm, "psk3"))
 				fprintf(fp, "SAE ");
-#endif
 #ifdef HAVE_80211R
-#ifdef HAVE_WPA3
-			if (nvram_matchi(ft, 1) && nvhas(akm, "psk3"))
+			if (has_wpa3(ifname) && nvram_matchi(ft, 1) && nvhas(akm, "psk3"))
 				fprintf(fp, "FT-SAE ");
-#endif
 			if (nvram_matchi(ft, 1) && (nvhas(akm, "psk2") || nvhas(akm, "psk")))
 				fprintf(fp, "FT-PSK ");
 #endif
@@ -1219,10 +1213,8 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			fprintf(fp, "wpa_key_mgmt=");
 			if (nvhas(akm, "wpa2") || nvhas(akm, "wpa"))
 				fprintf(fp, "WPA-EAP ");
-#ifdef HAVE_WPA3
-			if (nvhas(akm, "wpa3"))
+			if (has_wpa3(ifname) && nvhas(akm, "wpa3"))
 				fprintf(fp, "WPA-EAP-SUITE-B-192 ");
-#endif
 #ifdef HAVE_80211R
 			if (nvram_matchi(ft, 1) && (nvhas(akm, "wpa") || nvhas(akm, "wpa2")))
 				fprintf(fp, "FT-EAP ");
@@ -1547,15 +1539,11 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		fprintf(fp, "\tkey_mgmt=");
 		if (nvhas(akm, "psk2") || nvhas(akm, "psk"))
 			fprintf(fp, "WPA-PSK ");
-#ifdef HAVE_WPA3
-		if (nvhas(akm, "psk3"))
+		if (has_wpa3(prefix) && nvhas(akm, "psk3"))
 			fprintf(fp, "SAE ");
-#endif
 #ifdef HAVE_80211R
-#ifdef HAVE_WPA3
-		if (nvram_matchi(ft, 1) && nvhas(akm, "psk3"))
+		if (has_wpa3(prefix) && nvram_matchi(ft, 1) && nvhas(akm, "psk3"))
 			fprintf(fp, "FT-SAE ");
-#endif
 		if (nvram_matchi(ft, 1) && (nvhas(akm, "psk2") || nvhas(akm, "psk")))
 			fprintf(fp, "FT-PSK ");
 #endif
