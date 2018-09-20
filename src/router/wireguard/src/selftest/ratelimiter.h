@@ -1,5 +1,5 @@
-/* SPDX-License-Identifier: GPL-2.0
- *
+/* SPDX-License-Identifier: GPL-2.0 */
+/*
  * Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  */
 
@@ -40,6 +40,10 @@ bool __init ratelimiter_selftest(void)
 #endif
 	struct sk_buff *skb4;
 	struct iphdr *hdr4;
+
+#if defined(CONFIG_KASAN) || defined(CONFIG_UBSAN)
+	return true;
+#endif
 
 	BUILD_BUG_ON(MSEC_PER_SEC % PACKETS_PER_SECOND != 0);
 

@@ -1,19 +1,19 @@
-/* SPDX-License-Identifier: MIT
- *
+/* SPDX-License-Identifier: GPL-2.0 OR MIT */
+/*
  * Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  */
 
-asmlinkage void chacha20_mips(u8 *out, const u8 *in, const size_t len,
-			      const u32 key[8], const u32 counter[4]);
+asmlinkage void chacha20_mips(u32 state[16], u8 *out, const u8 *in,
+			      const size_t len);
 static void __init chacha20_fpu_init(void)
 {
 }
 
-static inline bool chacha20_arch(u8 *dst, const u8 *src, const size_t len,
-				 const u32 key[8], const u32 counter[4],
+static inline bool chacha20_arch(struct chacha20_ctx *state, u8 *dst,
+				 const u8 *src, const size_t len,
 				 simd_context_t *simd_context)
 {
-	chacha20_mips(dst, src, len, key, counter);
+	chacha20_mips((u32 *)state, dst, src, len);
 	return true;
 }
 

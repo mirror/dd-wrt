@@ -1,44 +1,41 @@
-/* SPDX-License-Identifier: MIT
- *
+/* SPDX-License-Identifier: GPL-2.0 OR MIT */
+/*
  * Copyright (C) 2016-2018 René van Dorst <opensource@vdorst.com>. All Rights Reserved.
  * Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  */
 
-#define MASK_U32	0x3c
-#define MASK_BYTES	0x03
-#define CHACHA20_BLOCK_SIZE 64
-#define STACK_SIZE	4*16
+#define MASK_U32		0x3c
+#define MASK_BYTES		0x03
+#define CHACHA20_BLOCK_SIZE	64
+#define STACK_SIZE		40
 
-#define X0  $t0
-#define X1  $t1
-#define X2  $t2
-#define X3  $t3
-#define X4  $t4
-#define X5  $t5
-#define X6  $t6
-#define X7  $t7
-#define X8  $v1
-#define X9  $fp
-#define X10 $s7
-#define X11 $s6
-#define X12 $s5
-#define X13 $s4
-#define X14 $s3
-#define X15 $s2
+#define X0	$t0
+#define X1	$t1
+#define X2	$t2
+#define X3	$t3
+#define X4	$t4
+#define X5	$t5
+#define X6	$t6
+#define X7	$t7
+#define X8	$t8
+#define X9	$t9
+#define X10	$s7
+#define X11	$s6
+#define X12	$s5
+#define X13	$s4
+#define X14	$s3
+#define X15	$s2
 /* Use regs which are overwritten on exit for Tx so we don't leak clear data. */
-#define T0  $s1
-#define T1  $s0
-#define T(n) T ## n
-#define X(n) X ## n
+#define T0	$s1
+#define T1	$s0
+#define T(n)	T ## n
+#define X(n)	X ## n
 
 /* Input arguments */
-#define OUT		$a0
-#define IN		$a1
-#define BYTES		$a2
-/* KEY and NONCE argument must be u32 aligned */
-#define KEY		$a3
-/* NONCE pointer is given via stack */
-#define NONCE		$t9
+#define STATE		$a0
+#define OUT		$a1
+#define IN		$a2
+#define BYTES		$a3
 
 /* Output argument */
 /* NONCE[0] is kept in a register and not in memory.
@@ -54,16 +51,10 @@
 #define SAVED_X		X15
 #define SAVED_CA	$ra
 
-#define PTR_LAST_ROUND	$t8
+#define PTR_LAST_ROUND	$v1
 
-/* ChaCha20 constants and stack location */
-#define CONSTANT_OFS_SP	48
-#define UNALIGNED_OFS_SP 40
-
-#define CONSTANT_1	0x61707865
-#define CONSTANT_2	0x3320646e
-#define CONSTANT_3	0x79622d32
-#define CONSTANT_4	0x6b206574
+/* ChaCha20 stack location */
+#define UNALIGNED_OFS	$fp
 
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 #define MSB 0
@@ -81,62 +72,122 @@
 #define ROTR(n)
 #endif
 
-#define STORE_UNALIGNED(x, a, s, o) \
-.Lchacha20_mips_xor_unaligned_ ## x ## _b: ; \
-	.if ((s != NONCE) || (o != 0)); \
-		lw	T0, o(s); \
-	.endif; \
-	lwl	T1, x-4+MSB ## (IN); \
-	lwr	T1, x-4+LSB ## (IN); \
-	.if ((s == NONCE) && (o == 0)); \
-		addu	X ## a, NONCE_0; \
-	.else; \
-		addu	X ## a, T0; \
-	.endif; \
-	CPU_TO_LE32(X ## a); \
-	xor	X ## a, T1; \
-	swl	X ## a, x-4+MSB ## (OUT); \
-	swr	X ## a, x-4+LSB ## (OUT);
+#define FOR_EACH_WORD(x) \
+	x( 0); \
+	x( 1); \
+	x( 2); \
+	x( 3); \
+	x( 4); \
+	x( 5); \
+	x( 6); \
+	x( 7); \
+	x( 8); \
+	x( 9); \
+	x(10); \
+	x(11); \
+	x(12); \
+	x(13); \
+	x(14); \
+	x(15);
 
-#define STORE_ALIGNED(x, a, s, o) \
-.Lchacha20_mips_xor_aligned_ ## x ## _b: ; \
-	.if ((s != NONCE) || (o != 0)); \
-		lw	T0, o(s); \
+#define FOR_EACH_WORD_REV(x) \
+	x(15); \
+	x(14); \
+	x(13); \
+	x(12); \
+	x(11); \
+	x(10); \
+	x( 9); \
+	x( 8); \
+	x( 7); \
+	x( 6); \
+	x( 5); \
+	x( 4); \
+	x( 3); \
+	x( 2); \
+	x( 1); \
+	x( 0);
+
+#define PLUS_ONE_0	 1
+#define PLUS_ONE_1	 2
+#define PLUS_ONE_2	 3
+#define PLUS_ONE_3	 4
+#define PLUS_ONE_4	 5
+#define PLUS_ONE_5	 6
+#define PLUS_ONE_6	 7
+#define PLUS_ONE_7	 8
+#define PLUS_ONE_8	 9
+#define PLUS_ONE_9	10
+#define PLUS_ONE_10	11
+#define PLUS_ONE_11	12
+#define PLUS_ONE_12	13
+#define PLUS_ONE_13	14
+#define PLUS_ONE_14	15
+#define PLUS_ONE_15	16
+#define PLUS_ONE(x)	PLUS_ONE_ ## x
+#define _CONCAT3(a,b,c)	a ## b ## c
+#define CONCAT3(a,b,c)	_CONCAT3(a,b,c)
+
+#define STORE_UNALIGNED(x) \
+CONCAT3(.Lchacha20_mips_xor_unaligned_, PLUS_ONE(x), _b: ;) \
+	.if (x != 12); \
+		lw	T0, (x*4)(STATE); \
 	.endif; \
-	lw	T1, x-4 ## (IN); \
-	.if ((s == NONCE) && (o == 0)); \
-		addu	X ## a, NONCE_0; \
+	lwl	T1, (x*4)+MSB ## (IN); \
+	lwr	T1, (x*4)+LSB ## (IN); \
+	.if (x == 12); \
+		addu	X ## x, NONCE_0; \
 	.else; \
-		addu	X ## a, T0; \
+		addu	X ## x, T0; \
 	.endif; \
-	CPU_TO_LE32(X ## a); \
-	xor	X ## a, T1; \
-	sw	X ## a, x-4 ## (OUT);
+	CPU_TO_LE32(X ## x); \
+	xor	X ## x, T1; \
+	swl	X ## x, (x*4)+MSB ## (OUT); \
+	swr	X ## x, (x*4)+LSB ## (OUT);
+
+#define STORE_ALIGNED(x) \
+CONCAT3(.Lchacha20_mips_xor_aligned_, PLUS_ONE(x), _b: ;) \
+	.if (x != 12); \
+		lw	T0, (x*4)(STATE); \
+	.endif; \
+	lw	T1, (x*4) ## (IN); \
+	.if (x == 12); \
+		addu	X ## x, NONCE_0; \
+	.else; \
+		addu	X ## x, T0; \
+	.endif; \
+	CPU_TO_LE32(X ## x); \
+	xor	X ## x, T1; \
+	sw	X ## x, (x*4) ## (OUT);
 
 /* Jump table macro.
  * Used for setup and handling the last bytes, which are not multiple of 4.
  * X15 is free to store Xn
  * Every jumptable entry must be equal in size.
  */
-#define JMPTBL_ALIGNED(x, a, s, o) \
-.Lchacha20_mips_jmptbl_aligned_ ## a: ; \
-	.if ((s == NONCE) && (o == 0)); \
+#define JMPTBL_ALIGNED(x) \
+.Lchacha20_mips_jmptbl_aligned_ ## x: ; \
+	.set	noreorder; \
+	.if (x == 12); \
 		move	SAVED_CA, NONCE_0; \
 	.else; \
-		lw	SAVED_CA, o(s);\
+		lw	SAVED_CA, (x*4)(STATE); \
 	.endif; \
 	b	.Lchacha20_mips_xor_aligned_ ## x ## _b; \
-	move	SAVED_X, X ## a;
+	move	SAVED_X, X ## x; \
+	.set	reorder
 
-#define JMPTBL_UNALIGNED(x, a, s, o) \
-.Lchacha20_mips_jmptbl_unaligned_ ## a: ; \
-	.if ((s == NONCE) && (o == 0)); \
+#define JMPTBL_UNALIGNED(x) \
+.Lchacha20_mips_jmptbl_unaligned_ ## x: ; \
+	.set	noreorder; \
+	.if (x == 12); \
 		move	SAVED_CA, NONCE_0; \
 	.else; \
-		lw	SAVED_CA, o(s);\
+		lw	SAVED_CA, (x*4)(STATE);\
 	.endif; \
 	b	.Lchacha20_mips_xor_unaligned_ ## x ## _b; \
-	move	SAVED_X, X ## a;
+	move	SAVED_X, X ## x; \
+	.set	reorder
 
 #define AXR(A, B, C, D,  K, L, M, N,  V, W, Y, Z,  S) \
 	addu	X(A), X(K); \
@@ -153,27 +204,24 @@
 	rotl	X(Z), S;
 
 .text
-.set reorder
-.set noat
-.globl chacha20_mips
-.ent   chacha20_mips
+.set	reorder
+.set	noat
+.globl	chacha20_mips
+.ent	chacha20_mips
 chacha20_mips:
-	.frame $sp, STACK_SIZE, $ra
-	/* This is in the fifth argument */
-	lw	NONCE, 16($sp)
+	.frame	$sp, STACK_SIZE, $ra
+
+	addiu	$sp, -STACK_SIZE
 
 	/* Return bytes = 0. */
-	.set noreorder
 	beqz	BYTES, .Lchacha20_mips_end
-	addiu	$sp, -STACK_SIZE
-	.set reorder
 
 	/* Calculate PTR_LAST_ROUND */
 	addiu	PTR_LAST_ROUND, BYTES, -1
 	ins	PTR_LAST_ROUND, $zero, 0, 6
 	addu	PTR_LAST_ROUND, OUT
 
-	/* Save s0-s7, fp, ra. */
+	/* Save s0-s7, ra, fp */
 	sw	$ra,  0($sp)
 	sw	$fp,  4($sp)
 	sw	$s0,  8($sp)
@@ -185,35 +233,17 @@ chacha20_mips:
 	sw	$s6, 32($sp)
 	sw	$s7, 36($sp)
 
-	lw	NONCE_0, 0(NONCE)
+	lw	NONCE_0, 48(STATE)
+
 	/* Test IN or OUT is unaligned.
 	 * UNALIGNED (T1) = ( IN | OUT ) & 0x00000003
 	 */
-	or	T1, IN, OUT
-	andi	T1, 0x3
+	or	UNALIGNED_OFS, IN, OUT
+	andi	UNALIGNED_OFS, 0x3
 
-	/* Load constant */
-	lui	X0, %hi(CONSTANT_1)
-	lui	X1, %hi(CONSTANT_2)
-	lui	X2, %hi(CONSTANT_3)
-	lui	X3, %hi(CONSTANT_4)
-	ori	X0, %lo(CONSTANT_1)
-	ori	X1, %lo(CONSTANT_2)
-	ori	X2, %lo(CONSTANT_3)
-	ori	X3, %lo(CONSTANT_4)
-
-	/* Store constant on stack. */
-	sw	X0,  0+CONSTANT_OFS_SP($sp)
-	sw	X1,  4+CONSTANT_OFS_SP($sp)
-	sw	X2,  8+CONSTANT_OFS_SP($sp)
-	sw	X3, 12+CONSTANT_OFS_SP($sp)
-
-	sw	T1, UNALIGNED_OFS_SP($sp)
-
-	.set	noreorder
-	b	.Lchacha20_rounds_start
 	andi	BYTES, (CHACHA20_BLOCK_SIZE-1)
-	.set	reorder
+
+	b	.Lchacha20_rounds_start
 
 .align 4
 .Loop_chacha20_rounds:
@@ -221,29 +251,29 @@ chacha20_mips:
 	addiu	OUT, CHACHA20_BLOCK_SIZE
 	addiu	NONCE_0, 1
 
-	lw	X0,  0+CONSTANT_OFS_SP($sp)
-	lw	X1,  4+CONSTANT_OFS_SP($sp)
-	lw	X2,  8+CONSTANT_OFS_SP($sp)
-	lw	X3, 12+CONSTANT_OFS_SP($sp)
-	lw	T1,   UNALIGNED_OFS_SP($sp)
-
 .Lchacha20_rounds_start:
-	lw	X4,   0(KEY)
-	lw	X5,   4(KEY)
-	lw	X6,   8(KEY)
-	lw	X7,  12(KEY)
-	lw	X8,  16(KEY)
-	lw	X9,  20(KEY)
-	lw	X10, 24(KEY)
-	lw	X11, 28(KEY)
+	lw	X0,  0(STATE)
+	lw	X1,  4(STATE)
+	lw	X2,  8(STATE)
+	lw	X3,  12(STATE)
+
+	lw	X4,  16(STATE)
+	lw	X5,  20(STATE)
+	lw	X6,  24(STATE)
+	lw	X7,  28(STATE)
+	lw	X8,  32(STATE)
+	lw	X9,  36(STATE)
+	lw	X10, 40(STATE)
+	lw	X11, 44(STATE)
 
 	move	X12, NONCE_0
-	lw	X13,  4(NONCE)
-	lw	X14,  8(NONCE)
-	lw	X15, 12(NONCE)
+	lw	X13, 52(STATE)
+	lw	X14, 56(STATE)
+	lw	X15, 60(STATE)
 
-	li	$at, 9
+	li	$at, 20
 .Loop_chacha20_xor_rounds:
+	addiu	$at, -2
 	AXR( 0, 1, 2, 3,  4, 5, 6, 7, 12,13,14,15, 16);
 	AXR( 8, 9,10,11, 12,13,14,15,  4, 5, 6, 7, 12);
 	AXR( 0, 1, 2, 3,  4, 5, 6, 7, 12,13,14,15,  8);
@@ -252,92 +282,61 @@ chacha20_mips:
 	AXR(10,11, 8, 9, 15,12,13,14,  5, 6, 7, 4, 12);
 	AXR( 0, 1, 2, 3,  5, 6, 7, 4, 15,12,13,14,  8);
 	AXR(10,11, 8, 9, 15,12,13,14,  5, 6, 7, 4,  7);
-	.set noreorder
 	bnez	$at, .Loop_chacha20_xor_rounds
-	addiu	$at, -1
 
-	/* Unaligned? Jump */
-	bnez	T1, .Loop_chacha20_unaligned
 	andi	$at, BYTES, MASK_U32
 
-	/* Last round? No jump */
-	bne	OUT, PTR_LAST_ROUND, .Lchacha20_mips_xor_aligned_64_b
+	/* Unaligned? Jump */
+	bnez	UNALIGNED_OFS, .Loop_chacha20_unaligned
+
 	/* Load upper half of jump table addr */
 	lui	T0, %hi(.Lchacha20_mips_jmptbl_aligned_0)
 
-	/* Full block? Jump */
-	beqz	BYTES, .Lchacha20_mips_xor_aligned_64_b
+	/* Last round? No jump */
+	bne	OUT, PTR_LAST_ROUND, .Lchacha20_mips_xor_aligned_16_b
+
 	/* Calculate lower half jump table addr and offset */
 	ins	T0, $at, 2, 6
 
+	/* Full block? Jump */
+	beqz	BYTES, .Lchacha20_mips_xor_aligned_16_b
+
 	subu	T0, $at
 	addiu	T0, %lo(.Lchacha20_mips_jmptbl_aligned_0)
-
 	jr	T0
-	/* Delay slot */
-	nop
-
-	.set	reorder
 
 .Loop_chacha20_unaligned:
-	.set noreorder
-
-	/* Last round? no jump */
-	bne	OUT, PTR_LAST_ROUND, .Lchacha20_mips_xor_unaligned_64_b
 	/* Load upper half of jump table addr */
 	lui	T0, %hi(.Lchacha20_mips_jmptbl_unaligned_0)
 
-	/* Full block? Jump */
-	beqz	BYTES, .Lchacha20_mips_xor_unaligned_64_b
+	/* Last round? no jump */
+	bne	OUT, PTR_LAST_ROUND, .Lchacha20_mips_xor_unaligned_16_b
 
 	/* Calculate lower half jump table addr and offset */
-	ins     T0, $at, 2, 6
+	ins	T0, $at, 2, 6
+
+	/* Full block? Jump */
+	beqz	BYTES, .Lchacha20_mips_xor_unaligned_16_b
+
 	subu	T0, $at
 	addiu	T0, %lo(.Lchacha20_mips_jmptbl_unaligned_0)
-
 	jr	T0
-	/* Delay slot */
-	nop
-
-	.set	reorder
 
 /* Aligned code path
  */
 .align 4
-	STORE_ALIGNED(64, 15, NONCE,12)
-	STORE_ALIGNED(60, 14, NONCE, 8)
-	STORE_ALIGNED(56, 13, NONCE, 4)
-	STORE_ALIGNED(52, 12, NONCE, 0)
-	STORE_ALIGNED(48, 11, KEY, 28)
-	STORE_ALIGNED(44, 10, KEY, 24)
-	STORE_ALIGNED(40,  9, KEY, 20)
-	STORE_ALIGNED(36,  8, KEY, 16)
-	STORE_ALIGNED(32,  7, KEY, 12)
-	STORE_ALIGNED(28,  6, KEY,  8)
-	STORE_ALIGNED(24,  5, KEY,  4)
-	STORE_ALIGNED(20,  4, KEY,  0)
-	STORE_ALIGNED(16,  3, $sp, 12+CONSTANT_OFS_SP)
-	STORE_ALIGNED(12,  2, $sp,  8+CONSTANT_OFS_SP)
-	STORE_ALIGNED( 8,  1, $sp,  4+CONSTANT_OFS_SP)
-.Lchacha20_mips_xor_aligned_4_b:
-	/* STORE_ALIGNED( 4,  0, $sp, 0+CONSTANT_OFS_SP) */
-	lw	T0, 0+CONSTANT_OFS_SP($sp)
-	lw	T1, 0(IN)
-	addu	X0, T0
-	CPU_TO_LE32(X0)
-	xor	X0, T1
-	.set noreorder
-	bne	OUT, PTR_LAST_ROUND, .Loop_chacha20_rounds
-	sw	X0, 0(OUT)
-	.set reorder
+	FOR_EACH_WORD_REV(STORE_ALIGNED)
 
-	.set noreorder
-	bne	$at, BYTES, .Lchacha20_mips_xor_bytes
-	/* Empty delayslot, Increase NONCE_0, return NONCE_0 value */
+	bne	OUT, PTR_LAST_ROUND, .Loop_chacha20_rounds
+
+	/* Increase NONCE_0, return NONCE_0 value */
 	addiu	NONCE_0, 1
-	.set noreorder
+	bne	$at, BYTES, .Lchacha20_mips_xor_bytes
 
 .Lchacha20_mips_xor_done:
+	/* Write NONCE_0 back to right location in state */
+	sw	NONCE_0, 48(STATE)
+
 	/* Restore used registers */
 	lw	$ra,  0($sp)
 	lw	$fp,  4($sp)
@@ -350,71 +349,25 @@ chacha20_mips:
 	lw	$s6, 32($sp)
 	lw	$s7, 36($sp)
 .Lchacha20_mips_end:
-	.set noreorder
-	jr	$ra
 	addiu	$sp, STACK_SIZE
-	.set reorder
+	jr	$ra
 
-	.set noreorder
-	/* Start jump table */
-	JMPTBL_ALIGNED( 0,  0, $sp,  0+CONSTANT_OFS_SP)
-	JMPTBL_ALIGNED( 4,  1, $sp,  4+CONSTANT_OFS_SP)
-	JMPTBL_ALIGNED( 8,  2, $sp,  8+CONSTANT_OFS_SP)
-	JMPTBL_ALIGNED(12,  3, $sp, 12+CONSTANT_OFS_SP)
-	JMPTBL_ALIGNED(16,  4, KEY,  0)
-	JMPTBL_ALIGNED(20,  5, KEY,  4)
-	JMPTBL_ALIGNED(24,  6, KEY,  8)
-	JMPTBL_ALIGNED(28,  7, KEY, 12)
-	JMPTBL_ALIGNED(32,  8, KEY, 16)
-	JMPTBL_ALIGNED(36,  9, KEY, 20)
-	JMPTBL_ALIGNED(40, 10, KEY, 24)
-	JMPTBL_ALIGNED(44, 11, KEY, 28)
-	JMPTBL_ALIGNED(48, 12, NONCE, 0)
-	JMPTBL_ALIGNED(52, 13, NONCE, 4)
-	JMPTBL_ALIGNED(56, 14, NONCE, 8)
-	JMPTBL_ALIGNED(60, 15, NONCE,12)
-	/* End jump table */
-	.set reorder
+	/* Jump table */
+	FOR_EACH_WORD(JMPTBL_ALIGNED)
 
-/* Unaligned code path
- */
-	STORE_UNALIGNED(64, 15, NONCE,12)
-	STORE_UNALIGNED(60, 14, NONCE, 8)
-	STORE_UNALIGNED(56, 13, NONCE, 4)
-	STORE_UNALIGNED(52, 12, NONCE, 0)
-	STORE_UNALIGNED(48, 11, KEY, 28)
-	STORE_UNALIGNED(44, 10, KEY, 24)
-	STORE_UNALIGNED(40,  9, KEY, 20)
-	STORE_UNALIGNED(36,  8, KEY, 16)
-	STORE_UNALIGNED(32,  7, KEY, 12)
-	STORE_UNALIGNED(28,  6, KEY,  8)
-	STORE_UNALIGNED(24,  5, KEY,  4)
-	STORE_UNALIGNED(20,  4, KEY,  0)
-	STORE_UNALIGNED(16,  3, $sp, 12+CONSTANT_OFS_SP)
-	STORE_UNALIGNED(12,  2, $sp,  8+CONSTANT_OFS_SP)
-	STORE_UNALIGNED( 8,  1, $sp,  4+CONSTANT_OFS_SP)
-.Lchacha20_mips_xor_unaligned_4_b:
-	/* STORE_UNALIGNED( 4,  0, $sp, 0+CONSTANT_OFS_SP) */
-	lw	T0, 0+CONSTANT_OFS_SP($sp)
-	lwl	T1, 0+MSB(IN)
-	lwr	T1, 0+LSB(IN)
-	addu	X0, T0
-	CPU_TO_LE32(X0)
-	xor	X0, T1
-	swl	X0, 0+MSB(OUT)
-	.set noreorder
+	/* Unaligned code path */
+	FOR_EACH_WORD_REV(STORE_UNALIGNED)
+
 	bne	OUT, PTR_LAST_ROUND, .Loop_chacha20_rounds
-	swr	X0, 0+LSB(OUT)
-	.set reorder
 
 	/* Fall through to byte handling */
-	.set noreorder
+	.set	noreorder
 	beq	$at, BYTES, .Lchacha20_mips_xor_done
 	/* Empty delayslot, increase NONCE_0, return NONCE_0 value */
 .Lchacha20_mips_xor_unaligned_0_b:
 .Lchacha20_mips_xor_aligned_0_b:
 	addiu	NONCE_0, 1
-	.set reorder
+	.set	reorder
 
 .Lchacha20_mips_xor_bytes:
 	addu	OUT, $at
@@ -426,49 +379,24 @@ chacha20_mips:
 	CPU_TO_LE32(SAVED_X)
 	ROTR(SAVED_X)
 	xor	T1, SAVED_X
-	.set noreorder
-	beqz	$at, .Lchacha20_mips_xor_done
 	sb	T1, 0(OUT)
-	.set reorder
+	beqz	$at, .Lchacha20_mips_xor_done
 	/* Second byte */
 	lbu	T1, 1(IN)
 	andi	$at, BYTES, 1
 	ROTx	SAVED_X, 8
 	xor	T1, SAVED_X
-	.set noreorder
-	beqz	$at, .Lchacha20_mips_xor_done
 	sb	T1, 1(OUT)
-	.set reorder
+	beqz	$at, .Lchacha20_mips_xor_done
 	/* Third byte */
 	lbu	T1, 2(IN)
 	ROTx	SAVED_X, 8
 	xor	T1, SAVED_X
-	.set noreorder
-	b	.Lchacha20_mips_xor_done
 	sb	T1, 2(OUT)
-	.set reorder
-.set noreorder
+	b	.Lchacha20_mips_xor_done
 
 .Lchacha20_mips_jmptbl_unaligned:
-	/* Start jump table */
-	JMPTBL_UNALIGNED( 0,  0, $sp,  0+CONSTANT_OFS_SP)
-	JMPTBL_UNALIGNED( 4,  1, $sp,  4+CONSTANT_OFS_SP)
-	JMPTBL_UNALIGNED( 8,  2, $sp,  8+CONSTANT_OFS_SP)
-	JMPTBL_UNALIGNED(12,  3, $sp, 12+CONSTANT_OFS_SP)
-	JMPTBL_UNALIGNED(16,  4, KEY,  0)
-	JMPTBL_UNALIGNED(20,  5, KEY,  4)
-	JMPTBL_UNALIGNED(24,  6, KEY,  8)
-	JMPTBL_UNALIGNED(28,  7, KEY, 12)
-	JMPTBL_UNALIGNED(32,  8, KEY, 16)
-	JMPTBL_UNALIGNED(36,  9, KEY, 20)
-	JMPTBL_UNALIGNED(40, 10, KEY, 24)
-	JMPTBL_UNALIGNED(44, 11, KEY, 28)
-	JMPTBL_UNALIGNED(48, 12, NONCE, 0)
-	JMPTBL_UNALIGNED(52, 13, NONCE, 4)
-	JMPTBL_UNALIGNED(56, 14, NONCE, 8)
-	JMPTBL_UNALIGNED(60, 15, NONCE,12)
-	/* End jump table */
-.set reorder
-
+	/* Jump table */
+	FOR_EACH_WORD(JMPTBL_UNALIGNED)
 .end chacha20_mips
 .set at
