@@ -191,7 +191,12 @@ extern int has_ad(char *prefix);
 #define has_ad(prefix) (0)
 #endif
 extern int has_gcmp(char *prefix);
+#ifndef HAVE_QTN
 extern int has_qtn(char *prefix);
+#else
+#define has_qtn(prefix) 0
+#endif
+
 extern int has_athmask(int devnum, int mask);
 extern int has_2ghz(char *prefix);
 extern int is_wrt3200(void);
@@ -287,6 +292,7 @@ extern unsigned int get_ath10kdistance(char *ifname);
 #define has_vht80plus80(interface) 0
 #endif
 
+
 struct unl;
 extern int mac80211_check_band(char *interface, int checkband);
 struct wifi_channels *mac80211_get_channels(struct unl *unl, char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband);
@@ -325,6 +331,12 @@ extern void free_mac80211_ac(struct mac80211_ac *ac);
 #define has_subeamforming(prefix) 0
 #define has_mubeamforming(prefix) 0
 #define has_vht80(interface) 0
+#endif
+
+#ifdef HAVE_WPA3
+#define has_wpa3(prefix) 1
+#else
+#define has_wpa3(prefix) 0
 #endif
 
 char *getCountryList(void);
