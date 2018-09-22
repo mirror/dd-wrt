@@ -1798,7 +1798,7 @@ Extensions:
                           Enable PCRE valgrind support. Developers only!
   --without-sqlite3=DIR   Do not include SQLite3 support. DIR is the prefix to
                           SQLite3 installation directory.
-  --with-zlib=DIR         Include ZLIB support (requires zlib >= 1.0.9)
+  --with-zlib=DIR         Include ZLIB support (requires zlib >= 1.2.0.4)
   --with-zlib-dir=<DIR>   Define the location of zlib install directory
   --enable-bcmath         Enable bc style precision math functions
   --with-bz2=DIR          Include BZip2 support
@@ -3655,7 +3655,7 @@ ac_config_headers="$ac_config_headers main/php_config.h"
 
 PHP_MAJOR_VERSION=7
 PHP_MINOR_VERSION=2
-PHP_RELEASE_VERSION=9
+PHP_RELEASE_VERSION=10
 PHP_EXTRA_VERSION=""
 PHP_VERSION="$PHP_MAJOR_VERSION.$PHP_MINOR_VERSION.$PHP_RELEASE_VERSION$PHP_EXTRA_VERSION"
 PHP_VERSION_ID=`expr $PHP_MAJOR_VERSION \* 10000 + $PHP_MINOR_VERSION \* 100 + $PHP_RELEASE_VERSION`
@@ -9858,6 +9858,10 @@ EOF
 
 
   PHP_VAR_SUBST="$PHP_VAR_SUBST BUILD_PHPDBG_SHARED"
+
+
+
+  PHP_OUTPUT_FILES="$PHP_OUTPUT_FILES sapi/phpdbg/phpdbg.1"
 
 fi
 
@@ -21828,7 +21832,7 @@ EOF
   fi
 
   if test -z "$ZLIB_DIR"; then
-    as_fn_error $? "Cannot find libz" "$LINENO" 5
+    as_fn_error $? "Cannot find zlib" "$LINENO" 5
   fi
 
   case $ZLIB_DIR in
@@ -21838,11 +21842,11 @@ EOF
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for zlib version >= 1.2.0.4" >&5
 $as_echo_n "checking for zlib version >= 1.2.0.4... " >&6; }
-  ZLIB_VERSION=`$EGREP "define ZLIB_VERSION" $ZLIB_DIR/include/zlib.h | $SED -e 's/[^0-9\.]//g'`
+  ZLIB_VERSION=`$EGREP "define ZLIB_VERSION" $ZLIB_INCDIR/zlib.h | $SED -e 's/[^0-9\.]//g'`
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ZLIB_VERSION" >&5
 $as_echo "$ZLIB_VERSION" >&6; }
   if test `echo $ZLIB_VERSION | $SED -e 's/[^0-9]/ /g' | $AWK '{print $1*1000000 + $2*10000 + $3*100 + $4}'` -lt 1020004; then
-    as_fn_error $? "libz version greater or equal to 1.2.0.4 required" "$LINENO" 5
+    as_fn_error $? "zlib version greater or equal to 1.2.0.4 required" "$LINENO" 5
   fi
 
 
@@ -38419,106 +38423,6 @@ EOF
   PHP_VAR_SUBST="$PHP_VAR_SUBST GETTEXT_SHARED_LIBADD"
 
 
-  if test -n "$GETTEXT_LIBS"; then
-
-
-  if test "$ext_shared" = "yes"; then
-    GETTEXT_SHARED_LIBADD="-l$GETTEXT_LIBS $GETTEXT_SHARED_LIBADD"
-    if test -n "$GETTEXT_LIBDIR"; then
-
-  if test "$GETTEXT_LIBDIR" != "/usr/$PHP_LIBDIR" && test "$GETTEXT_LIBDIR" != "/usr/lib"; then
-
-  if test -z "$GETTEXT_LIBDIR" || echo "$GETTEXT_LIBDIR" | grep '^/' >/dev/null ; then
-    ai_p=$GETTEXT_LIBDIR
-  else
-
-    ep_dir=`echo $GETTEXT_LIBDIR|$SED 's%/*[^/][^/]*/*$%%'`
-
-    ep_realdir=`(cd "$ep_dir" && pwd)`
-    ai_p="$ep_realdir"/`basename "$GETTEXT_LIBDIR"`
-  fi
-
-
-      if test "$ext_shared" = "yes"; then
-        GETTEXT_SHARED_LIBADD="-L$ai_p $GETTEXT_SHARED_LIBADD"
-        test -n "$ld_runpath_switch" && GETTEXT_SHARED_LIBADD="$ld_runpath_switch$ai_p $GETTEXT_SHARED_LIBADD"
-      else
-
-
-
-  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
-
-  cmd="echo $ac_n \"\$LIBPATH$unique$ac_c\""
-  if test -n "$unique" && test "`eval $cmd`" = "" ; then
-    eval "LIBPATH$unique=set"
-
-    test -n "$ld_runpath_switch" && LDFLAGS="$LDFLAGS $ld_runpath_switch$ai_p"
-    LDFLAGS="$LDFLAGS -L$ai_p"
-    PHP_RPATHS="$PHP_RPATHS $ai_p"
-
-  fi
-
-
-      fi
-
-  fi
-
-    fi
-  else
-
-
-  if test -n "$GETTEXT_LIBDIR"; then
-
-  if test "$GETTEXT_LIBDIR" != "/usr/$PHP_LIBDIR" && test "$GETTEXT_LIBDIR" != "/usr/lib"; then
-
-  if test -z "$GETTEXT_LIBDIR" || echo "$GETTEXT_LIBDIR" | grep '^/' >/dev/null ; then
-    ai_p=$GETTEXT_LIBDIR
-  else
-
-    ep_dir=`echo $GETTEXT_LIBDIR|$SED 's%/*[^/][^/]*/*$%%'`
-
-    ep_realdir=`(cd "$ep_dir" && pwd)`
-    ai_p="$ep_realdir"/`basename "$GETTEXT_LIBDIR"`
-  fi
-
-
-
-
-
-  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
-
-  cmd="echo $ac_n \"\$LIBPATH$unique$ac_c\""
-  if test -n "$unique" && test "`eval $cmd`" = "" ; then
-    eval "LIBPATH$unique=set"
-
-    test -n "$ld_runpath_switch" && LDFLAGS="$LDFLAGS $ld_runpath_switch$ai_p"
-    LDFLAGS="$LDFLAGS -L$ai_p"
-    PHP_RPATHS="$PHP_RPATHS $ai_p"
-
-  fi
-
-
-
-  fi
-
-  fi
-
-
-  case $GETTEXT_LIBS in
-  c|c_r|pthread*) ;;
-  *)
-      LIBS="-l$GETTEXT_LIBS $LIBS"
-   ;;
-  esac
-
-
-
-
-  fi
-
-
-  fi
-
 
   if test "$GETTEXT_INCDIR" != "/usr/include"; then
 
@@ -38729,6 +38633,105 @@ fi
 
   LDFLAGS=$O_LDFLAGS
 
+  if test -n "$GETTEXT_LIBS"; then
+
+
+  if test "$ext_shared" = "yes"; then
+    GETTEXT_SHARED_LIBADD="-l$GETTEXT_LIBS $GETTEXT_SHARED_LIBADD"
+    if test -n "$GETTEXT_LIBDIR"; then
+
+  if test "$GETTEXT_LIBDIR" != "/usr/$PHP_LIBDIR" && test "$GETTEXT_LIBDIR" != "/usr/lib"; then
+
+  if test -z "$GETTEXT_LIBDIR" || echo "$GETTEXT_LIBDIR" | grep '^/' >/dev/null ; then
+    ai_p=$GETTEXT_LIBDIR
+  else
+
+    ep_dir=`echo $GETTEXT_LIBDIR|$SED 's%/*[^/][^/]*/*$%%'`
+
+    ep_realdir=`(cd "$ep_dir" && pwd)`
+    ai_p="$ep_realdir"/`basename "$GETTEXT_LIBDIR"`
+  fi
+
+
+      if test "$ext_shared" = "yes"; then
+        GETTEXT_SHARED_LIBADD="-L$ai_p $GETTEXT_SHARED_LIBADD"
+        test -n "$ld_runpath_switch" && GETTEXT_SHARED_LIBADD="$ld_runpath_switch$ai_p $GETTEXT_SHARED_LIBADD"
+      else
+
+
+
+  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
+
+  cmd="echo $ac_n \"\$LIBPATH$unique$ac_c\""
+  if test -n "$unique" && test "`eval $cmd`" = "" ; then
+    eval "LIBPATH$unique=set"
+
+    test -n "$ld_runpath_switch" && LDFLAGS="$LDFLAGS $ld_runpath_switch$ai_p"
+    LDFLAGS="$LDFLAGS -L$ai_p"
+    PHP_RPATHS="$PHP_RPATHS $ai_p"
+
+  fi
+
+
+      fi
+
+  fi
+
+    fi
+  else
+
+
+  if test -n "$GETTEXT_LIBDIR"; then
+
+  if test "$GETTEXT_LIBDIR" != "/usr/$PHP_LIBDIR" && test "$GETTEXT_LIBDIR" != "/usr/lib"; then
+
+  if test -z "$GETTEXT_LIBDIR" || echo "$GETTEXT_LIBDIR" | grep '^/' >/dev/null ; then
+    ai_p=$GETTEXT_LIBDIR
+  else
+
+    ep_dir=`echo $GETTEXT_LIBDIR|$SED 's%/*[^/][^/]*/*$%%'`
+
+    ep_realdir=`(cd "$ep_dir" && pwd)`
+    ai_p="$ep_realdir"/`basename "$GETTEXT_LIBDIR"`
+  fi
+
+
+
+
+
+  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
+
+  cmd="echo $ac_n \"\$LIBPATH$unique$ac_c\""
+  if test -n "$unique" && test "`eval $cmd`" = "" ; then
+    eval "LIBPATH$unique=set"
+
+    test -n "$ld_runpath_switch" && LDFLAGS="$LDFLAGS $ld_runpath_switch$ai_p"
+    LDFLAGS="$LDFLAGS -L$ai_p"
+    PHP_RPATHS="$PHP_RPATHS $ai_p"
+
+  fi
+
+
+
+  fi
+
+  fi
+
+
+  case $GETTEXT_LIBS in
+  c|c_r|pthread*) ;;
+  *)
+      LIBS="-l$GETTEXT_LIBS $LIBS"
+   ;;
+  esac
+
+
+
+
+  fi
+
+
+  fi
 fi
 
 
@@ -95290,7 +95293,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 95293 "configure"
+#line 95296 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -97329,7 +97332,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 97332 "configure"' > conftest.$ac_ext
+  echo '#line 97335 "configure"' > conftest.$ac_ext
   if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -98727,7 +98730,7 @@ else
       LDFLAGS="$LDFLAGS -Wl,-exported_symbols_list,conftest.sym"
 
 cat > conftest.$ac_ext <<EOF
-#line 98730 "configure"
+#line 98733 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -98885,11 +98888,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:98888: $lt_compile\"" >&5)
+   (eval echo "\"configure:98891: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "configure:98892: \$? = $ac_status" >&5
+   echo "configure:98895: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -99183,11 +99186,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:99186: $lt_compile\"" >&5)
+   (eval echo "\"configure:99189: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "configure:99190: \$? = $ac_status" >&5
+   echo "configure:99193: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -99287,11 +99290,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:99290: $lt_compile\"" >&5)
+   (eval echo "\"configure:99293: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "configure:99294: \$? = $ac_status" >&5
+   echo "configure:99297: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -99751,7 +99754,7 @@ _LT_EOF
        # Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 99754 "configure"
+#line 99757 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -99793,7 +99796,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
 	 # Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 99796 "configure"
+#line 99799 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -101310,7 +101313,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 101313 "configure"
+#line 101316 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -101410,7 +101413,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 101413 "configure"
+#line 101416 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -102475,7 +102478,7 @@ case $host_os in
       # Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 102478 "configure"
+#line 102481 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -102518,7 +102521,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
 	# Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 102521 "configure"
+#line 102524 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -103770,11 +103773,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:103773: $lt_compile\"" >&5)
+   (eval echo "\"configure:103776: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "configure:103777: \$? = $ac_status" >&5
+   echo "configure:103780: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -103874,11 +103877,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:103877: $lt_compile\"" >&5)
+   (eval echo "\"configure:103880: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "configure:103881: \$? = $ac_status" >&5
+   echo "configure:103884: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
