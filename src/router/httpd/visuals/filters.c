@@ -415,7 +415,7 @@ void ej_filter_policy_select(webs_t wp, int argc, char_t ** argv)
 	int i;
 
 	D("ej policy select");
-	for (i = 1; i <= 10; i++) {
+	for (i = 1; i <= NR_RULES; i++) {
 		char filter[] = "filter_ruleXXX";
 		char *data = "";
 		char name[50] = "";
@@ -749,7 +749,7 @@ void ej_filter_summary_show(webs_t wp, int argc, char_t ** argv)
 	char _24h[] = "24 Hours.";
 #endif
 	D("filter summary show");
-	for (i = 0; i < 10; i++) {
+	for (i = 0; i < NR_RULES; i++) {
 		char name[50] = "---";
 		char status[5] = "---";
 		char filter[] = "filter_ruleXXX";
