@@ -1317,4 +1317,7 @@ extern int inet_cidr_to_addr(char *cidr_str, struct in_addr *addr, struct in_add
 #ifndef ROUNDUP
 #define	ROUNDUP(x, y)		((((x) + ((y) - 1)) / (y)) * (y))
 #endif
+
+#define NR_RULES		20
+
 #endif
