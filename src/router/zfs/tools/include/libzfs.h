@@ -296,6 +296,8 @@ int zfs_dev_is_whole_disk(char *dev_name);
 char *zfs_get_underlying_path(char *dev_name);
 char *zfs_get_enclosure_sysfs_path(char *dev_name);
 
+const char *zpool_get_state_str(zpool_handle_t *);
+
 /*
  * Functions to manage pool properties
  */
@@ -331,6 +333,7 @@ typedef enum {
 	ZPOOL_STATUS_HOSTID_REQUIRED,	/* multihost=on and hostid=0 */
 	ZPOOL_STATUS_IO_FAILURE_WAIT,	/* failed I/O, failmode 'wait' */
 	ZPOOL_STATUS_IO_FAILURE_CONTINUE, /* failed I/O, failmode 'continue' */
+	ZPOOL_STATUS_IO_FAILURE_MMP,	/* failed MMP, failmode not 'panic' */
 	ZPOOL_STATUS_BAD_LOG,		/* cannot read log chain(s) */
 	ZPOOL_STATUS_ERRATA,		/* informational errata available */
 

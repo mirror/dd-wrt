@@ -1009,7 +1009,15 @@ zil_lwb_write_start(zilog_t *zilog, lwb_t *lwb)
 	 * to clean up in the event of allocation failure or I/O failure.
 	 */
 	tx = dmu_tx_create(zilog->zl_os);
-	VERIFY(dmu_tx_assign(tx, TXG_WAIT) == 0);
+
+	/*
+	 * Since we are not going to create any new dirty data, and we
+	 * can even help with clearing the existing dirty data, we
+	 * should not be subject to the dirty data based delays. We
+	 * use TXG_NOTHROTTLE to bypass the delay mechanism.
+	 */
+	VERIFY0(dmu_tx_assign(tx, TXG_WAIT | TXG_NOTHROTTLE));
+
 	dsl_dataset_dirty(dmu_objset_ds(zilog->zl_os), tx);
 	txg = dmu_tx_get_txg(tx);
 
@@ -1167,8 +1175,7 @@ cont:
 				lrw->lr_offset += dnow;
 				lrw->lr_length -= dnow;
 				ZIL_STAT_BUMP(zil_itx_needcopy_count);
-				ZIL_STAT_INCR(zil_itx_needcopy_bytes,
-				    lrw->lr_length);
+				ZIL_STAT_INCR(zil_itx_needcopy_bytes, dnow);
 			} else {
 				ASSERT(itx->itx_wr_state == WR_INDIRECT);
 				dbuf = NULL;

@@ -50,27 +50,27 @@ zpl_common_open(struct inode *ip, struct file *filp)
  * Get root directory contents.
  */
 static int
-zpl_root_iterate(struct file *filp, struct dir_context *ctx)
+zpl_root_iterate(struct file *filp, zpl_dir_context_t *ctx)
 {
 	zfsvfs_t *zfsvfs = ITOZSB(file_inode(filp));
 	int error = 0;
 
 	ZFS_ENTER(zfsvfs);
 
-	if (!dir_emit_dots(filp, ctx))
+	if (!zpl_dir_emit_dots(filp, ctx))
 		goto out;
 
 	if (ctx->pos == 2) {
-		if (!dir_emit(ctx, ZFS_SNAPDIR_NAME, strlen(ZFS_SNAPDIR_NAME),
-		    ZFSCTL_INO_SNAPDIR, DT_DIR))
+		if (!zpl_dir_emit(ctx, ZFS_SNAPDIR_NAME,
+		    strlen(ZFS_SNAPDIR_NAME), ZFSCTL_INO_SNAPDIR, DT_DIR))
 			goto out;
 
 		ctx->pos++;
 	}
 
 	if (ctx->pos == 3) {
-		if (!dir_emit(ctx, ZFS_SHAREDIR_NAME, strlen(ZFS_SHAREDIR_NAME),
-		    ZFSCTL_INO_SHARES, DT_DIR))
+		if (!zpl_dir_emit(ctx, ZFS_SHAREDIR_NAME,
+		    strlen(ZFS_SHAREDIR_NAME), ZFSCTL_INO_SHARES, DT_DIR))
 			goto out;
 
 		ctx->pos++;
@@ -91,7 +91,8 @@ out:
 static int
 zpl_root_readdir(struct file *filp, void *dirent, filldir_t filldir)
 {
-	struct dir_context ctx = DIR_CONTEXT_INIT(dirent, filldir, filp->f_pos);
+	zpl_dir_context_t ctx =
+	    ZPL_DIR_CONTEXT_INIT(dirent, filldir, filp->f_pos);
 	int error;
 
 	error = zpl_root_iterate(filp, &ctx);
@@ -99,7 +100,7 @@ zpl_root_readdir(struct file *filp, void *dirent, filldir_t filldir)
 
 	return (error);
 }
-#endif /* HAVE_VFS_ITERATE */
+#endif /* !HAVE_VFS_ITERATE && !HAVE_VFS_ITERATE_SHARED */
 
 /*
  * Get root directory attributes.
@@ -254,7 +255,7 @@ zpl_snapdir_lookup(struct inode *dip, struct dentry *dentry,
 }
 
 static int
-zpl_snapdir_iterate(struct file *filp, struct dir_context *ctx)
+zpl_snapdir_iterate(struct file *filp, zpl_dir_context_t *ctx)
 {
 	zfsvfs_t *zfsvfs = ITOZSB(file_inode(filp));
 	fstrans_cookie_t cookie;
@@ -266,7 +267,7 @@ zpl_snapdir_iterate(struct file *filp, struct dir_context *ctx)
 	ZFS_ENTER(zfsvfs);
 	cookie = spl_fstrans_mark();
 
-	if (!dir_emit_dots(filp, ctx))
+	if (!zpl_dir_emit_dots(filp, ctx))
 		goto out;
 
 	pos = ctx->pos;
@@ -278,7 +279,7 @@ zpl_snapdir_iterate(struct file *filp, struct dir_context *ctx)
 		if (error)
 			goto out;
 
-		if (!dir_emit(ctx, snapname, strlen(snapname),
+		if (!zpl_dir_emit(ctx, snapname, strlen(snapname),
 		    ZFSCTL_INO_SHARES - id, DT_DIR))
 			goto out;
 
@@ -298,7 +299,8 @@ out:
 static int
 zpl_snapdir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 {
-	struct dir_context ctx = DIR_CONTEXT_INIT(dirent, filldir, filp->f_pos);
+	zpl_dir_context_t ctx =
+	    ZPL_DIR_CONTEXT_INIT(dirent, filldir, filp->f_pos);
 	int error;
 
 	error = zpl_snapdir_iterate(filp, &ctx);
@@ -306,7 +308,7 @@ zpl_snapdir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 
 	return (error);
 }
-#endif /* HAVE_VFS_ITERATE */
+#endif /* !HAVE_VFS_ITERATE && !HAVE_VFS_ITERATE_SHARED */
 
 static int
 zpl_snapdir_rename2(struct inode *sdip, struct dentry *sdentry,
@@ -473,7 +475,7 @@ zpl_shares_lookup(struct inode *dip, struct dentry *dentry,
 }
 
 static int
-zpl_shares_iterate(struct file *filp, struct dir_context *ctx)
+zpl_shares_iterate(struct file *filp, zpl_dir_context_t *ctx)
 {
 	fstrans_cookie_t cookie;
 	cred_t *cr = CRED();
@@ -485,7 +487,7 @@ zpl_shares_iterate(struct file *filp, struct dir_context *ctx)
 	cookie = spl_fstrans_mark();
 
 	if (zfsvfs->z_shares_dir == 0) {
-		dir_emit_dots(filp, ctx);
+		zpl_dir_emit_dots(filp, ctx);
 		goto out;
 	}
 
@@ -510,7 +512,8 @@ out:
 static int
 zpl_shares_readdir(struct file *filp, void *dirent, filldir_t filldir)
 {
-	struct dir_context ctx = DIR_CONTEXT_INIT(dirent, filldir, filp->f_pos);
+	zpl_dir_context_t ctx =
+	    ZPL_DIR_CONTEXT_INIT(dirent, filldir, filp->f_pos);
 	int error;
 
 	error = zpl_shares_iterate(filp, &ctx);
@@ -518,7 +521,7 @@ zpl_shares_readdir(struct file *filp, void *dirent, filldir_t filldir)
 
 	return (error);
 }
-#endif /* HAVE_VFS_ITERATE */
+#endif /* !HAVE_VFS_ITERATE && !HAVE_VFS_ITERATE_SHARED */
 
 /* ARGSUSED */
 static int
