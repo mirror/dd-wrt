@@ -153,17 +153,8 @@ static char log_reject[64];
 static int web_lanport = HTTP_PORT;
 
 static unsigned int now_wday, now_hrmin;
-static int webfilter = 0;
-static int dmzenable = 0;
-static int remotemanage = 0;
 
-#ifdef HAVE_SSHD
-static int remotessh = 0;	/* Botho 03-05-2006 */
-#endif
 
-#ifdef HAVE_TELNET
-static int remotetelnet = 0;
-#endif
 static void save2file(const char *fmt, ...)
 {
 	char buf[10240];
@@ -292,7 +283,7 @@ static int ip2cclass(char *ipaddr, char *new, int count)
 	return snprintf(new, count, "%d.%d.%d.", ip[0], ip[1], ip[2]);
 }
 
-static void parse_port_forward(char *wanaddr, char *lan_cclass, char *wordlist)
+static void parse_port_forward(char *wanaddr, char *lan_cclass, char *wordlist, int dmzenable)
 {
 	char var[256], *next;
 	char buff[256], ip2[16];
@@ -593,7 +584,7 @@ static void parse_spec_forward(char *wanaddr, char *wordlist)
 	}
 }
 
-static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass)
+static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int dmzenable, int remotessh, int remotetelnet, int remotemanage)
 {
 	char var[256], *wordlist, *next;
 	char from[100], to[100];
@@ -750,7 +741,7 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass)
 		parse_upnp_forward(wanface, wanaddr, lan_cclass);
 #endif
 		parse_spec_forward(wanaddr, nvram_safe_get("forward_spec"));
-		parse_port_forward(wanaddr, lan_cclass, nvram_safe_get("forward_port"));
+		parse_port_forward(wanaddr, lan_cclass, nvram_safe_get("forward_port"), dmzenable);
 		/*
 		 * DD-WRT addition by Eric Sauvageau 
 		 */
@@ -1655,7 +1646,7 @@ static void lan2wan_chains(char *lan_cclass)
 			continue;	/* error format */
 		unsigned int iflen = 0, ifoffset = 0;
 
-		find_pattern(data, strlen(data), "$IFNAME:", sizeof("$IFNAME:") - 1, '$', &ifoffset, &iflen);
+		find_pattern(data, strlen(data), "$IF:", sizeof("$IF:") - 1, '$', &ifoffset, &iflen);
 		char ifname[40];
 		strncpy(buf, data + offset, len);
 		*(buf + len) = 0;
@@ -1834,7 +1825,7 @@ static void add_bridges(char *wanface, char *chain, int forward)
 }
 
 #endif
-static void filter_input(char *wanface, char *lanface, char *wanaddr)
+static void filter_input(char *wanface, char *lanface, char *wanaddr, int remotessh, int remotetelnet, int remotemanage)
 {
 
 	char *next, *iflist, buff[16];
@@ -2130,7 +2121,7 @@ void filter_output(char *wanface)
 #endif
 }
 
-static void filter_forward(char *wanface, char *lanface, char *lan_cclass)
+static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int dmzenable, int webfilter)
 {
 	char *filter_web_hosts, *filter_web_urls, *filter_rule;
 	char *next;
@@ -2405,11 +2396,11 @@ static void mangle_table(char *wanface, char *wanaddr)
 /*
  *      NAT table
  */
-static void nat_table(char *wanface, char *wanaddr, char *lan_cclass)
+static void nat_table(char *wanface, char *wanaddr, char *lan_cclass, int dmzenable, int remotessh, int remotetelnet, int remotemanage)
 {
 	save2file("*nat\n:PREROUTING ACCEPT [0:0]\n:POSTROUTING ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]");
 	if (wanactive(wanaddr)) {
-		nat_prerouting(wanface, wanaddr, lan_cclass);
+		nat_prerouting(wanface, wanaddr, lan_cclass, dmzenable, remotessh, remotetelnet, remotemanage);
 		nat_postrouting(wanface, wanaddr);
 	}
 	save2file("COMMIT\n");
@@ -2418,7 +2409,7 @@ static void nat_table(char *wanface, char *wanaddr, char *lan_cclass)
 /*
  *      Filter table
  */
-static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_cclass)
+static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_cclass, int dmzenable, int webfilter, int remotessh, int remotetelnet, int remotemanage)
 {
 	save2file("*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n:logaccept - [0:0]\n:logdrop - [0:0]\n:logreject - [0:0]\n"
 #ifdef FLOOD_PROTECT
@@ -2475,12 +2466,12 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 				save2file("-A INPUT -p tcp -i %s --dport 23 -j %s", wanface, log_drop);
 			}
 #endif
-			filter_forward(wanface, lanface, lan_cclass);
+			filter_forward(wanface, lanface, lan_cclass, dmzenable, webfilter);
 		} else {
 
-			filter_input(wanface, lanface, wanaddr);
+			filter_input(wanface, lanface, wanaddr,remotessh,remotetelnet,remotemanage);
 			filter_output(wanface);
-			filter_forward(wanface, lanface, lan_cclass);
+			filter_forward(wanface, lanface, lan_cclass, dmzenable, webfilter);
 		}
 	} else {
 		char dev[16];
@@ -2552,11 +2543,11 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 	save2file("COMMIT");
 }
 
-static void create_restore_file(char *wanface, char *lanface, char *wanaddr, char *lan_cclass)
+static void create_restore_file(char *wanface, char *lanface, char *wanaddr, char *lan_cclass, int dmzenable, int webfilter, int remotessh, int remotetelnet, int remotemanage)
 {
 	mangle_table(wanface, wanaddr);
-	nat_table(wanface, wanaddr, lan_cclass);
-	filter_table(wanface, lanface, wanaddr, lan_cclass);
+	nat_table(wanface, wanaddr, lan_cclass, dmzenable,remotessh,remotetelnet,remotemanage);
+	filter_table(wanface, lanface, wanaddr, lan_cclass, dmzenable, webfilter, remotessh, remotetelnet, remotemanage);
 }
 
 #ifdef HAVE_GUESTPORT
@@ -2660,6 +2651,10 @@ void start_firewall(void)
 	char lanface[IFNAMSIZ];
 	char lan_cclass[] = "xxx.xxx.xxx.";
 	char wanaddr[] = "xxx.xxx.xxx.xxx";
+	int dmzenable;
+	int remotessh = 0;
+	int remotetelnet = 0;
+	int remotemanage = 0;
 	mutex_init();
 	lock();
 	start_loadfwmodules();
@@ -2742,7 +2737,7 @@ void start_firewall(void)
 	/*
 	 * Run Webfilter ? 
 	 */
-	webfilter = 0;		/* Reset, clear the late setting */
+	int webfilter = 0;		/* Reset, clear the late setting */
 	if (nvram_matchi("block_cookie", 1))
 		webfilter |= BLK_COOKIE;
 	if (nvram_matchi("block_java", 1))
@@ -2802,7 +2797,7 @@ void start_firewall(void)
 	 * Create file for iptables-restore 
 	 */
 	DEBUG("start firewall()........4\n");
-	create_restore_file(wanface, lanface, wanaddr, lan_cclass);
+	create_restore_file(wanface, lanface, wanaddr, lan_cclass, dmzenable, webfilter, remotessh, remotetelnet, remotemanage);
 #ifndef DEVELOPE_ENV
 	/*
 	 * Insert the rules into kernel 
