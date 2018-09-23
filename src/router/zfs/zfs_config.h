@@ -352,9 +352,10 @@
 #define HAVE_REQ_FAILFAST_MASK 1
 
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
 /* iops->set_acl() exists */
 #define HAVE_SET_ACL 1
-
+#endif
 /* posix_acl_release() is usable */
 #define HAVE_SET_CACHED_ACL_USABLE 1
 
@@ -453,8 +454,12 @@
 #define HAVE_ZLIB 1
 
 /* __posix_acl_chmod() exists */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
+#define HAVE_POSIX_ACL_CHMOD 1
+//HAVE_POSIX_ACL_CHMOD
+#else
 #define HAVE___POSIX_ACL_CHMOD 1
-
+#endif
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
 #define LT_OBJDIR ".libs/"
