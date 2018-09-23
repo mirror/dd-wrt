@@ -157,8 +157,6 @@ static char lan_cclass[] = "xxx.xxx.xxx.";
 static char wanaddr[] = "xxx.xxx.xxx.xxx";
 static int web_lanport = HTTP_PORT;
 
-static FILE *ifd;		/* /tmp/.rule */
-static FILE *cfd;		/* /tmp/crontab */
 
 static unsigned int now_wday, now_hrmin;
 static int webfilter = 0;
@@ -1015,7 +1013,7 @@ static int match_hrmin(int hr_st, int mi_st, int hr_end, int mi_end)
  * RETURN - 0 : Data error or be disabled until in scheduled time.
  *                      1 : Enabled.
  */
-static int schedule_by_tod(int seq)
+static int schedule_by_tod(FILE *cfd, int seq)
 {
 	char *todvalue;
 	int sched = 0, allday = 0;
@@ -1600,7 +1598,8 @@ static void lan2wan_chains(void)
 	unsigned int mark = 0;
 	int up = 0;
 	int urlfilter = 1;
-
+	FILE *cfd;
+	FILE *ifd;
 	// char urlhost[] ="filter_url_hostxxx";
 	// char urlkeywd[]="filter_url_keywdxxx";
 
@@ -1643,7 +1642,7 @@ static void lan2wan_chains(void)
 		if (strcmp(data, "") == 0)
 			up = 0;
 		else
-			up = schedule_by_tod(seq);
+			up = schedule_by_tod(cfd, seq);
 
 		fprintf(ifd, "%d,", up);
 	}
