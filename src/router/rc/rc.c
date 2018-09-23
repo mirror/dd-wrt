@@ -98,7 +98,7 @@ static int service_main(int argc, char *argv[])
 {
 	char *base = argv[0];
 	if (argc < 2) {
-		fprintf(stdout, "%s: servicename [-f]\n");
+		fprintf(stdout, "%s: servicename [-f]\n", base);
 		fprintf(stdout, "-f : forces start/stop of service and without any care if service was already started or stopped\n");
 		return 1;
 	}
