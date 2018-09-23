@@ -2169,7 +2169,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass)
 		filter_web_urls = nvram_nget("filter_web_url%d", i);
 		filter_rule = nvram_nget("filter_rule%d", i);
 
-		if (filter_web_hosts && strcmp(filter_web_hosts, "")
+		if ((filter_web_hosts && strcmp(filter_web_hosts, ""))
 		    || (filter_web_urls && strcmp(filter_web_urls, ""))
 		    || (filter_rule && !strncmp(filter_rule, "$STAT:1", 7))
 		    || (filter_rule && !strncmp(filter_rule, "$STAT:2", 7))) {
