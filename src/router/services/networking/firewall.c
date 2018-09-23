@@ -91,7 +91,6 @@
 /*
  * Limitation definition 
  */
-#define NR_RULES		10
 #define NR_IPGROUPS 	5
 #define NR_MACGROUPS	5
 
