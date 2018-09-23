@@ -323,7 +323,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.intrface"); %></div>
-									<% show_ifselect("filter_if", "0", "Any"); %>
+									<% show_filterif("filter_if", "Any"); %>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("filter.polname"); %></div>
