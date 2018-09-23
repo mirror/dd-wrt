@@ -20,7 +20,7 @@
  *
  *  You should have received a copy of the GNU General Public License along
  *  with the SPL.  If not, see <http://www.gnu.org/licenses/>.
- *****************************************************************************
+ *
  *  Solaris Porting Layer (SPL) Error Implementation.
 \*****************************************************************************/
 
@@ -34,10 +34,11 @@
  * analysis and other such goodies.
  * But we would still default to the current default of not to do that.
  */
+/* BEGIN CSTYLED */
 unsigned int spl_panic_halt;
 module_param(spl_panic_halt, uint, 0644);
-MODULE_PARM_DESC(spl_panic_halt,
-		 "Cause kernel panic on assertion failures");
+MODULE_PARM_DESC(spl_panic_halt, "Cause kernel panic on assertion failures");
+/* END CSTYLED */
 
 /*
  * Limit the number of stack traces dumped to not more than 5 every
@@ -56,7 +57,8 @@ spl_dumpstack(void)
 EXPORT_SYMBOL(spl_dumpstack);
 
 int
-spl_panic(const char *file, const char *func, int line, const char *fmt, ...) {
+spl_panic(const char *file, const char *func, int line, const char *fmt, ...)
+{
 	const char *newfile;
 	char msg[MAXMSGLEN];
 	va_list ap;

@@ -66,6 +66,7 @@
  * because it has been shown to improve responsiveness on low memory systems.
  * This policy may be changed by setting KMC_EXPIRE_AGE or KMC_EXPIRE_MEM.
  */
+/* BEGIN CSTYLED */
 unsigned int spl_kmem_cache_expire = KMC_EXPIRE_MEM;
 EXPORT_SYMBOL(spl_kmem_cache_expire);
 module_param(spl_kmem_cache_expire, uint, 0644);
@@ -134,8 +135,8 @@ MODULE_PARM_DESC(spl_kmem_cache_slab_limit,
  * have been deemed costly by the kernel.
  */
 unsigned int spl_kmem_cache_kmem_limit =
-    ((1 << (PAGE_ALLOC_COSTLY_ORDER - 1)) * PAGE_SIZE) /
-    SPL_KMEM_CACHE_OBJ_PER_SLAB;
+	((1 << (PAGE_ALLOC_COSTLY_ORDER - 1)) * PAGE_SIZE) /
+	SPL_KMEM_CACHE_OBJ_PER_SLAB;
 module_param(spl_kmem_cache_kmem_limit, uint, 0644);
 MODULE_PARM_DESC(spl_kmem_cache_kmem_limit,
 	"Objects less than N bytes use the kmalloc");
@@ -148,6 +149,7 @@ unsigned int spl_kmem_cache_kmem_threads = 4;
 module_param(spl_kmem_cache_kmem_threads, uint, 0444);
 MODULE_PARM_DESC(spl_kmem_cache_kmem_threads,
 	"Number of spl_kmem_cache threads");
+/* END CSTYLED */
 
 /*
  * Slab allocation interfaces
@@ -356,8 +358,9 @@ out:
 	if (rc) {
 		if (skc->skc_flags & KMC_OFFSLAB)
 			list_for_each_entry_safe(sko,
-			    n, &sks->sks_free_list, sko_list)
+			    n, &sks->sks_free_list, sko_list) {
 				kv_free(skc, sko->sko_addr, offslab_size);
+			}
 
 		kv_free(skc, base, skc->skc_slab_size);
 		sks = NULL;
@@ -382,7 +385,6 @@ spl_slab_free(spl_kmem_slab_t *sks,
 
 	skc = sks->sks_cache;
 	ASSERT(skc->skc_magic == SKC_MAGIC);
-	ASSERT(spin_is_locked(&skc->skc_lock));
 
 	/*
 	 * Update slab/objects counters in the cache, then remove the
@@ -583,7 +585,6 @@ __spl_cache_flush(spl_kmem_cache_t *skc, spl_kmem_magazine_t *skm, int flush)
 
 	ASSERT(skc->skc_magic == SKC_MAGIC);
 	ASSERT(skm->skm_magic == SKM_MAGIC);
-	ASSERT(spin_is_locked(&skc->skc_lock));
 
 	for (i = 0; i < count; i++)
 		spl_cache_shrink(skc, skm->skm_objs[i]);
@@ -1002,15 +1003,15 @@ spl_kmem_cache_create(char *name, size_t size, size_t align,
 #endif
 
 #if defined(HAVE_KMEM_CACHE_CREATE_USERCOPY)
-        /*
-         * Newer grsec patchset uses kmem_cache_create_usercopy()
-         * instead of SLAB_USERCOPY flag
-         */
-        skc->skc_linux_cache = kmem_cache_create_usercopy(
-            skc->skc_name, size, align, slabflags, 0, size, NULL);
+	/*
+	 * Newer grsec patchset uses kmem_cache_create_usercopy()
+	 * instead of SLAB_USERCOPY flag
+	 */
+	skc->skc_linux_cache = kmem_cache_create_usercopy(
+	    skc->skc_name, size, align, slabflags, 0, size, NULL);
 #else
-        skc->skc_linux_cache = kmem_cache_create(
-            skc->skc_name, size, align, slabflags, NULL);
+	skc->skc_linux_cache = kmem_cache_create(
+	    skc->skc_name, size, align, slabflags, NULL);
 #endif
 		if (skc->skc_linux_cache == NULL) {
 			rc = ENOMEM;
@@ -1125,7 +1126,6 @@ spl_cache_obj(spl_kmem_cache_t *skc, spl_kmem_slab_t *sks)
 
 	ASSERT(skc->skc_magic == SKC_MAGIC);
 	ASSERT(sks->sks_magic == SKS_MAGIC);
-	ASSERT(spin_is_locked(&skc->skc_lock));
 
 	sko = list_entry(sks->sks_free_list.next, spl_kmem_obj_t, sko_list);
 	ASSERT(sko->sko_magic == SKO_MAGIC);
@@ -1189,7 +1189,7 @@ spl_cache_grow_work(void *data)
 	spl_kmem_alloc_t *ska = (spl_kmem_alloc_t *)data;
 	spl_kmem_cache_t *skc = ska->ska_cache;
 
-	(void)__spl_cache_grow(skc, ska->ska_flags);
+	(void) __spl_cache_grow(skc, ska->ska_flags);
 
 	atomic_dec(&skc->skc_ref);
 	smp_mb__before_atomic();
@@ -1396,7 +1396,6 @@ spl_cache_shrink(spl_kmem_cache_t *skc, void *obj)
 	spl_kmem_obj_t *sko = NULL;
 
 	ASSERT(skc->skc_magic == SKC_MAGIC);
-	ASSERT(spin_is_locked(&skc->skc_lock));
 
 	sko = spl_sko_from_obj(skc, obj);
 	ASSERT(sko->sko_magic == SKO_MAGIC);
