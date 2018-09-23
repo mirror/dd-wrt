@@ -505,7 +505,7 @@
 #define ZFS_META_RELEASE "1"
 
 /* Define the project version. */
-#define ZFS_META_VERSION "0.7.6"
+#define ZFS_META_VERSION "0.7.11"
 
 /* blk_queue_flag_clear() exists */
 #undef HAVE_BLK_QUEUE_FLAG_CLEAR
