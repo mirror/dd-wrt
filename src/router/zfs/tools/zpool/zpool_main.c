@@ -6226,7 +6226,8 @@ status_callback(zpool_handle_t *zhp, void *data)
 	    &nvroot) == 0);
 	verify(nvlist_lookup_uint64_array(nvroot, ZPOOL_CONFIG_VDEV_STATS,
 	    (uint64_t **)&vs, &c) == 0);
-	health = zpool_state_to_name(vs->vs_state, vs->vs_aux);
+
+	health = zpool_get_state_str(zhp);
 
 	(void) printf(gettext("  pool: %s\n"), zpool_get_name(zhp));
 	(void) printf(gettext(" state: %s\n"), health);
@@ -6393,6 +6394,15 @@ status_callback(zpool_handle_t *zhp, void *data)
 		    "from a backup source.  Manually marking the device\n"
 		    "\trepaired using 'zpool clear' may allow some data "
 		    "to be recovered.\n"));
+		break;
+
+	case ZPOOL_STATUS_IO_FAILURE_MMP:
+		(void) printf(gettext("status: The pool is suspended because "
+		    "multihost writes failed or were delayed;\n\tanother "
+		    "system could import the pool undetected.\n"));
+		(void) printf(gettext("action: Make sure the pool's devices "
+		    "are connected, then reboot your system and\n\timport the "
+		    "pool.\n"));
 		break;
 
 	case ZPOOL_STATUS_IO_FAILURE_WAIT:
@@ -7961,6 +7971,7 @@ main(int argc, char **argv)
 	int ret = 0;
 	int i = 0;
 	char *cmdname;
+	char **newargv;
 
 	(void) setlocale(LC_ALL, "");
 	(void) textdomain(TEXT_DOMAIN);
@@ -7996,15 +8007,24 @@ main(int argc, char **argv)
 	zfs_save_arguments(argc, argv, history_str, sizeof (history_str));
 
 	/*
+	 * Many commands modify input strings for string parsing reasons.
+	 * We create a copy to protect the original argv.
+	 */
+	newargv = malloc((argc + 1) * sizeof (newargv[0]));
+	for (i = 0; i < argc; i++)
+		newargv[i] = strdup(argv[i]);
+	newargv[argc] = NULL;
+
+	/*
 	 * Run the appropriate command.
 	 */
 	if (find_command_idx(cmdname, &i) == 0) {
 		current_command = &command_table[i];
-		ret = command_table[i].func(argc - 1, argv + 1);
+		ret = command_table[i].func(argc - 1, newargv + 1);
 	} else if (strchr(cmdname, '=')) {
 		verify(find_command_idx("set", &i) == 0);
 		current_command = &command_table[i];
-		ret = command_table[i].func(argc, argv);
+		ret = command_table[i].func(argc, newargv);
 	} else if (strcmp(cmdname, "freeze") == 0 && argc == 3) {
 		/*
 		 * 'freeze' is a vile debugging abomination, so we treat
@@ -8020,6 +8040,10 @@ main(int argc, char **argv)
 		usage(B_FALSE);
 		ret = 1;
 	}
+
+	for (i = 0; i < argc; i++)
+		free(newargv[i]);
+	free(newargv);
 
 	if (ret == 0 && log_history)
 		(void) zpool_log_history(g_zfs, history_str);

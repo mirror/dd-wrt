@@ -1183,6 +1183,14 @@ spa_activate(spa_t *spa, int mode)
 	    1, INT_MAX, 0);
 
 	/*
+	 * Taskq dedicated to prefetcher threads: this is used to prevent the
+	 * pool traverse code from monopolizing the global (and limited)
+	 * system_taskq by inappropriately scheduling long running tasks on it.
+	 */
+	spa->spa_prefetch_taskq = taskq_create("z_prefetch", boot_ncpus,
+	    defclsyspri, 1, INT_MAX, TASKQ_DYNAMIC);
+
+	/*
 	 * The taskq to upgrade datasets in this pool. Currently used by
 	 * feature SPA_FEATURE_USEROBJ_ACCOUNTING.
 	 */
@@ -1209,6 +1217,11 @@ spa_deactivate(spa_t *spa)
 	if (spa->spa_zvol_taskq) {
 		taskq_destroy(spa->spa_zvol_taskq);
 		spa->spa_zvol_taskq = NULL;
+	}
+
+	if (spa->spa_prefetch_taskq) {
+		taskq_destroy(spa->spa_prefetch_taskq);
+		spa->spa_prefetch_taskq = NULL;
 	}
 
 	if (spa->spa_upgrade_taskq) {
@@ -2457,6 +2470,10 @@ spa_activity_check(spa_t *spa, uberblock_t *ub, nvlist_t *config)
 	/* Apply a floor using the local default values. */
 	import_delay = MAX(import_delay, import_intervals *
 	    MSEC2NSEC(MAX(zfs_multihost_interval, MMP_MIN_INTERVAL)));
+
+	zfs_dbgmsg("import_delay=%llu ub_mmp_delay=%llu import_intervals=%u "
+	    "leaves=%u", import_delay, ub->ub_mmp_delay, import_intervals,
+	    vdev_count_leaves(spa));
 
 	/* Add a small random factor in case of simultaneous imports (0-25%) */
 	import_expire = gethrtime() + import_delay +
@@ -3778,10 +3795,14 @@ spa_get_stats(const char *name, nvlist_t **config,
 			    ZPOOL_CONFIG_ERRCOUNT,
 			    spa_get_errlog_size(spa)) == 0);
 
-			if (spa_suspended(spa))
+			if (spa_suspended(spa)) {
 				VERIFY(nvlist_add_uint64(*config,
 				    ZPOOL_CONFIG_SUSPENDED,
 				    spa->spa_failmode) == 0);
+				VERIFY(nvlist_add_uint64(*config,
+				    ZPOOL_CONFIG_SUSPENDED_REASON,
+				    spa->spa_suspended) == 0);
+			}
 
 			spa_add_spares(spa, *config);
 			spa_add_l2cache(spa, *config);
@@ -6969,7 +6990,7 @@ spa_sync(spa_t *spa, uint64_t txg)
 
 		if (error == 0)
 			break;
-		zio_suspend(spa, NULL);
+		zio_suspend(spa, NULL, ZIO_SUSPEND_IOERR);
 		zio_resume_wait(spa);
 	}
 	dmu_tx_commit(tx);

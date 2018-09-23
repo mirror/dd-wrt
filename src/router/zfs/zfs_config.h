@@ -1,3 +1,5 @@
+#include <linux/version.h>
+
 /* zfs_config.h.  Generated from zfs_config.h.in by configure.  */
 /* zfs_config.h.in.  Generated from configure.ac by autoheader.  */
 
@@ -48,8 +50,9 @@
 /* bio->bi_status exists */
 
 /* bio has bi_iter */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
 #define HAVE_BIO_BVEC_ITER 1
-
+#endif
 /* BIO_RW_BARRIER is defined */
 /* #undef HAVE_BIO_RW_BARRIER */
 
@@ -223,7 +226,9 @@
 #define HAVE_INODE_OWNER_OR_CAPABLE 1
 
 /* inode_set_flags() exists */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
 #define HAVE_INODE_SET_FLAGS 1
+#endif
 
 /* iops->truncate_range() exists */
 /* #undef HAVE_INODE_TRUNCATE_RANGE */
@@ -387,7 +392,9 @@
 /* #undef HAVE_S_INSTANCES_LIST_HEAD */
 
 /* i_op->tmpfile() exists */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
 #define HAVE_TMPFILE 1
+#endif
 
 /* truncate_setsize() is available */
 #define HAVE_TRUNCATE_SETSIZE 1
@@ -404,8 +411,11 @@
 /* #undef HAVE_VFS_READDIR */
 
 /* fops->read/write_iter() are available */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
 #define HAVE_VFS_RW_ITERATE 1
+#endif
 
+#define HAVE_FST_MOUNT 1
 /* xattr_handler->get() wants dentry */
 /* #undef HAVE_XATTR_GET_DENTRY */
 
@@ -497,3 +507,8 @@
 /* Define the project version. */
 #define ZFS_META_VERSION "0.7.6"
 
+/* blk_queue_flag_clear() exists */
+#undef HAVE_BLK_QUEUE_FLAG_CLEAR
+
+/* blk_queue_flag_set() exists */
+#undef HAVE_BLK_QUEUE_FLAG_SET

@@ -280,12 +280,12 @@ def init():
                 "outfile",
                 "help",
                 "verbose",
-                "seperator",
+                "separator",
                 "columns"
             ]
         )
     except getopt.error as msg:
-        sys.stderr.write(msg)
+        sys.stderr.write("Error: %s\n" % str(msg))
         usage()
         opts = None
 
@@ -299,7 +299,7 @@ def init():
             hflag = True
         if opt in ('-v', '--verbose'):
             vflag = True
-        if opt in ('-s', '--seperator'):
+        if opt in ('-s', '--separator'):
             sep = arg
             i += 1
         if opt in ('-f', '--columns'):
