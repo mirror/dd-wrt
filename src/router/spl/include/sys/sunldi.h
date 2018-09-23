@@ -23,7 +23,7 @@
 \*****************************************************************************/
 
 #ifndef _SPL_SUNLDI_H
-#define _SPL_SUNLDI_H
+#define	_SPL_SUNLDI_H
 
 #include <sys/types.h>
 #include <linux/fs.h>
@@ -32,6 +32,12 @@
 #include <linux/bio.h>
 #include <linux/blkdev.h>
 
-#define SECTOR_SIZE 512
+/*
+ * SECTOR_SIZE can be defined in blkdev.h. See
+ * https://github.com/torvalds/linux/commit/233bde21.
+ */
+#ifndef SECTOR_SIZE
+#define	SECTOR_SIZE 512
+#endif
 
 #endif /* SPL_SUNLDI_H */

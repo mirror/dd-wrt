@@ -54,20 +54,24 @@ int spl_panic(const char *file, const char *func, int line,
     const char *fmt, ...);
 void spl_dumpstack(void);
 
+/* BEGIN CSTYLED */
 #define	PANIC(fmt, a...)						\
 	spl_panic(__FILE__, __FUNCTION__, __LINE__, fmt, ## a)
 
 #define	VERIFY(cond)							\
-	(void)(unlikely(!(cond)) &&					\
+	(void) (unlikely(!(cond)) &&					\
 	    spl_panic(__FILE__, __FUNCTION__, __LINE__,			\
 	    "%s", "VERIFY(" #cond ") failed\n"))
 
-#define	VERIFY3_IMPL(LEFT, OP, RIGHT, TYPE, FMT, CAST)			\
-	(void)((!((TYPE)(LEFT) OP (TYPE)(RIGHT))) &&			\
-	    spl_panic(__FILE__, __FUNCTION__, __LINE__,			\
-	    "VERIFY3(" #LEFT " " #OP " " #RIGHT ") "			\
-	    "failed (" FMT " " #OP " " FMT ")\n",			\
-	    CAST (LEFT), CAST (RIGHT)))
+#define	VERIFY3_IMPL(LEFT, OP, RIGHT, TYPE, FMT, CAST)	do {		\
+		TYPE _verify3_left = (TYPE)(LEFT);				\
+		TYPE _verify3_right = (TYPE)(RIGHT);				\
+		if (!(_verify3_left OP _verify3_right))			\
+		    spl_panic(__FILE__, __FUNCTION__, __LINE__,		\
+		    "VERIFY3(" #LEFT " " #OP " " #RIGHT ") "		\
+		    "failed (" FMT " " #OP " " FMT ")\n",		\
+		    CAST (_verify3_left), CAST (_verify3_right));	\
+	} while (0)
 
 #define	VERIFY3B(x,y,z)	VERIFY3_IMPL(x, y, z, boolean_t, "%d", (boolean_t))
 #define	VERIFY3S(x,y,z)	VERIFY3_IMPL(x, y, z, int64_t, "%lld", (long long))
@@ -120,6 +124,7 @@ void spl_dumpstack(void);
 	((void)((!!(A) == !!(B)) || \
 	    spl_panic(__FILE__, __FUNCTION__, __LINE__, \
 	    "(" #A ") is equivalent to (" #B ")")))
+/* END CSTYLED */
 
 #endif /* NDEBUG */
 

@@ -31,6 +31,7 @@
 #include <sys/kmem.h>
 #include <sys/mutex.h>
 #include <sys/callo.h>
+#include <sys/time.h>
 
 /*
  * The kcondvar_t struct is protected by mutex taken externally before
@@ -56,6 +57,7 @@ extern void __cv_wait(kcondvar_t *, kmutex_t *);
 extern void __cv_wait_io(kcondvar_t *, kmutex_t *);
 extern void __cv_wait_sig(kcondvar_t *, kmutex_t *);
 extern clock_t __cv_timedwait(kcondvar_t *, kmutex_t *, clock_t);
+extern clock_t __cv_timedwait_io(kcondvar_t *, kmutex_t *, clock_t);
 extern clock_t __cv_timedwait_sig(kcondvar_t *, kmutex_t *, clock_t);
 extern clock_t cv_timedwait_hires(kcondvar_t *, kmutex_t *, hrtime_t,
     hrtime_t res, int flag);
@@ -71,6 +73,7 @@ extern void __cv_broadcast(kcondvar_t *c);
 #define	cv_wait_sig(cvp, mp)			__cv_wait_sig(cvp, mp)
 #define	cv_wait_interruptible(cvp, mp)		cv_wait_sig(cvp, mp)
 #define	cv_timedwait(cvp, mp, t)		__cv_timedwait(cvp, mp, t)
+#define	cv_timedwait_io(cvp, mp, t)		__cv_timedwait_io(cvp, mp, t)
 #define	cv_timedwait_sig(cvp, mp, t)		__cv_timedwait_sig(cvp, mp, t)
 #define	cv_timedwait_interruptible(cvp, mp, t)	cv_timedwait_sig(cvp, mp, t)
 #define	cv_signal(cvp)				__cv_signal(cvp)
