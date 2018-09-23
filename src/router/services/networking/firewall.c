@@ -2190,8 +2190,6 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass)
 		save2file("-A FORWARD -m state --state INVALID -j %s", log_drop);
 
 	getIfLists(vifs, 256);
-	// = nvram_safe_get ("lan_ifnames");
-	// if (vifs != NULL)
 	foreach(var, vifs, next) {
 		if (strcmp(get_wan_face(), var)
 		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
@@ -2380,6 +2378,11 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass)
 				if (nvram_matchi("privoxy_transp_enable", 1)) {
 					save2file("-I INPUT -i %s -d %s/%s -p tcp --dport 8118 -j %s", var, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"), log_accept);
 				}
+			}
+			if (strlen(wanface) > 0) {
+				save2file("-A FORWARD -i %s -o %s -j TRIGGER --trigger-type in\n", wanface, var);
+				save2file("-A FORWARD -i %s -j trigger_out\n", var);
+				save2file("-A FORWARD -i %s -m state --state NEW -j %s", var, log_accept);
 			}
 		}
 	}
