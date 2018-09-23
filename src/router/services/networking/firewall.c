@@ -154,7 +154,6 @@ static int web_lanport = HTTP_PORT;
 
 static unsigned int now_wday, now_hrmin;
 
-
 static void save2file(const char *fmt, ...)
 {
 	char buf[10240];
@@ -2469,7 +2468,7 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 			filter_forward(wanface, lanface, lan_cclass, dmzenable, webfilter);
 		} else {
 
-			filter_input(wanface, lanface, wanaddr,remotessh,remotetelnet,remotemanage);
+			filter_input(wanface, lanface, wanaddr, remotessh, remotetelnet, remotemanage);
 			filter_output(wanface);
 			filter_forward(wanface, lanface, lan_cclass, dmzenable, webfilter);
 		}
@@ -2546,7 +2545,7 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 static void create_restore_file(char *wanface, char *lanface, char *wanaddr, char *lan_cclass, int dmzenable, int webfilter, int remotessh, int remotetelnet, int remotemanage)
 {
 	mangle_table(wanface, wanaddr);
-	nat_table(wanface, wanaddr, lan_cclass, dmzenable,remotessh,remotetelnet,remotemanage);
+	nat_table(wanface, wanaddr, lan_cclass, dmzenable, remotessh, remotetelnet, remotemanage);
 	filter_table(wanface, lanface, wanaddr, lan_cclass, dmzenable, webfilter, remotessh, remotetelnet, remotemanage);
 }
 
@@ -2737,7 +2736,7 @@ void start_firewall(void)
 	/*
 	 * Run Webfilter ? 
 	 */
-	int webfilter = 0;		/* Reset, clear the late setting */
+	int webfilter = 0;	/* Reset, clear the late setting */
 	if (nvram_matchi("block_cookie", 1))
 		webfilter |= BLK_COOKIE;
 	if (nvram_matchi("block_java", 1))
