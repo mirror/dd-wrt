@@ -322,6 +322,10 @@ addEvent(window, "unload", function() {
 									<input class="spaceradio" type="radio" value="disable" name="f_status1" <% filter_policy_get("f_status","disable"); %>/><% tran("share.disable"); %>
 								</div>
 								<div class="setting">
+									<div class="label"><% tran("share.intrface"); %></div>
+									<% show_ifselect("filter_if", "0", "Any"); %>
+								</div>
+								<div class="setting">
 									<div class="label"><% tran("filter.polname"); %></div>
 									<input maxlength="30" size="22" name="f_name" value="<% filter_policy_get("f_name",""); %>"/>
 								</div>
