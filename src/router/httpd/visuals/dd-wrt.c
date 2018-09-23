@@ -5662,14 +5662,20 @@ void ej_show_ifselect(webs_t wp, int argc, char_t ** argv)
 	if (argc < 1)
 		return;
 	char *ifname = argv[0];
+	int showwan = 0;
+	if (argc > 1)
+		showwan = atoi(argv[1]);
+
 	websWrite(wp, "<select name=\"%s\">\n", ifname);
 	int i;
-	for (i = 1; i < argc; i++) {
+	for (i = 2; i < argc; i++) {
 		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", argv[i], nvram_match(ifname, argv[i]) ? "selected=\"selected\"" : "", argv[i]);
 	}
-	char *wanface = get_wan_face();
-	if (strcmp(wanface, "br0")) {
-		websWrite(wp, "<option value=\"%s\" %s >WAN</option>\n", wanface, nvram_match(ifname, wanface) ? "selected=\"selected\"" : "");
+	if (showwan & 1) {
+		char *wanface = get_wan_face();
+		if (strcmp(wanface, "br0")) {
+			websWrite(wp, "<option value=\"%s\" %s >WAN</option>\n", wanface, nvram_match(ifname, wanface) ? "selected=\"selected\"" : "");
+		}
 	}
 	websWrite(wp, "<option value=\"%s\" %s >LAN</option>\n", nvram_safe_get("lan_ifname"), nvram_match(ifname, nvram_safe_get("lan_ifname")) ? "selected=\"selected\"" : "");
 	char *next;
