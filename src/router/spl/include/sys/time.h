@@ -52,15 +52,28 @@
 #define	NSEC2SEC(n)	((n) / (NANOSEC / SEC))
 #define	SEC2NSEC(m)	((hrtime_t)(m) * (NANOSEC / SEC))
 
+typedef longlong_t		hrtime_t;
+typedef struct timespec		timespec_t;
+
 static const int hz = HZ;
 
 #define	TIMESPEC_OVERFLOW(ts)		\
 	((ts)->tv_sec < TIME_MIN || (ts)->tv_sec > TIME_MAX)
 
+#if defined(HAVE_INODE_TIMESPEC64_TIMES)
+typedef struct timespec64	inode_timespec_t;
+#else
+typedef struct timespec		inode_timespec_t;
+#endif
+
 static inline void
-gethrestime(timestruc_t *now)
-{
-	*now = current_kernel_time();
+gethrestime(inode_timespec_t *ts)
+ {
+#if defined(HAVE_INODE_TIMESPEC64_TIMES)
+	*ts = current_kernel_time64();
+#else
+	*ts = current_kernel_time();
+#endif
 }
 
 static inline time_t
@@ -74,9 +87,9 @@ gethrestime_sec(void)
 static inline hrtime_t
 gethrtime(void)
 {
-	struct timespec now;
-	getrawmonotonic(&now);
-	return (((hrtime_t)now.tv_sec * NSEC_PER_SEC) + now.tv_nsec);
+	struct timespec ts;
+	getrawmonotonic(&ts);
+	return (((hrtime_t)ts.tv_sec * NSEC_PER_SEC) + ts.tv_nsec);
 }
 
 #endif  /* _SPL_TIME_H */
