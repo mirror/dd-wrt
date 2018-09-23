@@ -434,6 +434,50 @@ void ej_filter_policy_select(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
+void ej_show_filterif(webs_t wp, int argc, char_t ** argv)
+{
+	if (argc < 1)
+		return;
+	char *ifname = argv[0];
+	char ifs[50] = "";
+	char filter[] = "filter_ruleXXX";
+	char *data = "";
+
+	snprintf(filter, sizeof(filter), "filter_rule%d", wp->p->filter_id);
+	data = nvram_safe_get(filter);
+	find_match_pattern(ifs, sizeof(ifs), data, "$IF:", "");	// get 
+
+	websWrite(wp, "<select name=\"%s\">\n", ifname);
+	int i;
+	for (i = 1; i < argc; i++) {
+		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", argv[i], nvram_match(ifname, argv[i]) ? "selected=\"selected\"" : "", argv[i]);
+	}
+	char *wanface = get_wan_face();
+	websWrite(wp, "<option value=\"%s\" %s >LAN</option>\n", nvram_safe_get("lan_ifname"), !strcmp(ifs, nvram_safe_get("lan_ifname")) ? "selected=\"selected\"" : "");
+	char *next;
+	char var[80];
+	char eths[256];
+	char eth2[256];
+	bzero(eths, 256);
+	getIfLists(eths, 256);
+	bzero(eth2, 256);
+	getIfList(eth2, "ppp");
+	strcat(eths, " ");
+	strcat(eths, eth2);
+	foreach(var, eths, next) {
+		if (!strcmp(wanface, var))
+			continue;
+		if (!strcmp(nvram_safe_get("lan_ifname"), var))
+			continue;
+		if (nvram_nmatch("1", "%s_bridged", var)
+		    && !isbridge(var))
+			continue;
+		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, !strcmp(ifs, var) ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
+	}
+
+	websWrite(wp, "</select>\n");
+}
+
 void ej_filter_policy_get(webs_t wp, int argc, char_t ** argv)
 {
 
