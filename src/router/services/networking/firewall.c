@@ -1653,7 +1653,7 @@ static void lan2wan_chains(char *lan_cclass)
 
 		if (len < 1)
 			continue;	/* error format */
-		unsigned int iflen, ifoffset;
+		unsigned int iflen = 0, ifoffset = 0;
 
 		find_pattern(data, strlen(data), "$IFNAME:", sizeof("$IFNAME:") - 1, '$', &ifoffset, &iflen);
 		char ifname[40];
