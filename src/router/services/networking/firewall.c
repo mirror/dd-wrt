@@ -2162,7 +2162,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass)
 	int i = 0;
 	int filter_host_url = 0;
 
-	while (i < 15 && filter_host_url == 0) {
+	while (i < 20 && filter_host_url == 0) {
 		i++;
 
 		filter_web_hosts = nvram_nget("filter_web_host%d", i);
