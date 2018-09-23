@@ -308,6 +308,7 @@ void applytake(char *value)
 void save_policy(webs_t wp)
 {
 	char *f_name, *f_status, *f_status2;
+	char *filter_if;
 	char buf[256] = "";
 	char *value = websGetVar(wp, "action", "");
 	struct variable filter_variables[] = {
@@ -322,6 +323,7 @@ void save_policy(webs_t wp)
 	which = &filter_variables[0];
 	char *f_id = websGetVar(wp, "f_id", NULL);
 	f_name = websGetVar(wp, "f_name", NULL);
+	filter_if = websGetVar(wp, "filter_if", "Any");
 	f_status = websGetVar(wp, "f_status", NULL);	// 0=>Disable /
 	// 1,2=>Enable
 	f_status2 = websGetVar(wp, "f_status2", NULL);	// deny=>Deny /
@@ -349,7 +351,7 @@ void save_policy(webs_t wp)
 
 	// Add $DENY to decide that users select Allow or Deny, if status is
 	// Disable // 2003/10/21
-	snprintf(buf, sizeof(buf), "$STAT:%s$NAME:%s$DENY:%d$$", f_status, f_name, !strcmp(f_status2, "deny") ? 1 : 0);
+	snprintf(buf, sizeof(buf), "$STAT:%s$NAME:%s$DENY:%d$IFNAME:%s$$", f_status, f_name, !strcmp(f_status2, "deny") ? 1 : 0, filter_if);
 
 	nvram_set(filter_buf, buf);
 	addAction("filters");
