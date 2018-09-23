@@ -886,7 +886,6 @@ static void nat_postrouting(char *wanface, char *wanaddr)
 static void parse_port_filter(char *lanface, char *wordlist)
 {
 	char var[256], *next;
-	char *protocol, *lan_port0, *lan_port1;
 
 	/*
 	 * Parse protocol:lan_port0-lan_port1 ... 
@@ -1226,7 +1225,6 @@ static void portgrp_chain(int seq, unsigned int mark, int urlenable, char *ifnam
 	char var[256], *next;
 	char *wordlist;
 	char target[100];
-	char *protocol, *lan_port0, *lan_port1;
 
 	wordlist = nvram_nget("filter_dport_grp%d", seq);
 	if (strcmp(wordlist, "") == 0)
@@ -1587,7 +1585,7 @@ static void lan2wan_chains(char *lan_cclass)
 	int seq;
 	char buf[] = "filter_rulexxx";
 	char *data;
-	int offset = 0, len = 0;
+	unsigned int offset = 0, len = 0;
 	unsigned int mark = 0;
 	int up = 0;
 	int urlfilter = 1;
@@ -1655,7 +1653,7 @@ static void lan2wan_chains(char *lan_cclass)
 
 		if (len < 1)
 			continue;	/* error format */
-		int iflen, ifoffset;
+		unsigned int iflen, ifoffset;
 
 		find_pattern(data, strlen(data), "$IFNAME:", sizeof("$IFNAME:") - 1, '$', &ifoffset, &iflen);
 		char ifname[40];
