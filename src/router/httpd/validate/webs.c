@@ -351,7 +351,7 @@ void save_policy(webs_t wp)
 
 	// Add $DENY to decide that users select Allow or Deny, if status is
 	// Disable // 2003/10/21
-	snprintf(buf, sizeof(buf), "$STAT:%s$NAME:%s$DENY:%d$IFNAME:%s$$", f_status, f_name, !strcmp(f_status2, "deny") ? 1 : 0, filter_if);
+	snprintf(buf, sizeof(buf), "$STAT:%s$NAME:%s$DENY:%d$IF:%s$$", f_status, f_name, !strcmp(f_status2, "deny") ? 1 : 0, filter_if);
 
 	nvram_set(filter_buf, buf);
 	addAction("filters");

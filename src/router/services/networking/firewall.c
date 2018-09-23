@@ -904,46 +904,6 @@ static void parse_port_filter(char *lanface, char *wordlist)
 	}
 }
 
-/*
- * Return 1 for match, 0 for accept, -1 for partial. 
- */
-static int find_pattern(const char *data, size_t dlen, const char *pattern, size_t plen, char term, unsigned int *numoff, unsigned int *numlen)
-{
-	size_t i, j, k;
-
-	// DEBUGP("find_pattern `%s': dlen = %u\n", pattern, dlen);
-	if (dlen == 0)
-		return 0;
-
-	if (dlen <= plen) {
-		/*
-		 * Short packet: try for partial? 
-		 */
-		if (strncmp(data, pattern, dlen) == 0)
-			return -1;
-		else
-			return 0;
-	}
-
-	for (i = 0; i <= (dlen - plen); i++) {
-		if (memcmp(data + i, pattern, plen) != 0)
-			continue;
-
-		/*
-		 * patten match !! 
-		 */
-		*numoff = i + plen;
-		for (j = *numoff, k = 0; data[j] != term; j++, k++)
-			if (j > dlen)
-				return -1;	/* no terminal char */
-
-		*numlen = k;
-		return 1;
-	}
-
-	return 0;
-}
-
 static int match_wday(char *wday)
 {
 	int wd[7] = { 0, 0, 0, 0, 0, 0, 0 };
@@ -1639,20 +1599,15 @@ static void lan2wan_chains(char *lan_cclass)
 		/*
 		 * Check if it is enabled 
 		 */
-		find_pattern(data, strlen(data), "$STAT:", sizeof("$STAT:") - 1, '$', &offset, &len);
-
-		if (len < 1)
-			continue;	/* error format */
-		unsigned int iflen = 0, ifoffset = 0;
-
-		find_pattern(data, strlen(data), "$IF:", sizeof("$IF:") - 1, '$', &ifoffset, &iflen);
+		char ifs[40];
 		char ifname[40];
-		strncpy(buf, data + offset, len);
-		*(buf + len) = 0;
-		if (iflen > 0) {
-			strcpy(ifname, " -i ");
-			strncpy(&ifname[4], data + ifoffset, iflen);
-			ifname[iflen + 4] = 0;
+		find_match_pattern(ifs, sizeof(ifs), data, "$IF:", "");	// get 
+		find_match_pattern(buf, sizeof(buf), data, "$STAT:", "");	// get 
+
+		if (!strcmp(buf, ""))
+			continue;	/* error format */
+		if (strlen(ifs) > 0) {
+			sprintf(ifname, " -i %s", ifs);
 		} else
 			ifname[0] = 0;
 		DEBUG("STAT: %s\n", buf);
