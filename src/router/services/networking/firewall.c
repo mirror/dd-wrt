@@ -2191,6 +2191,12 @@ static void filter_forward(void)
 		save2file("-A FORWARD -o %s -j %s", nvram_safe_get("tvnicfrom"), log_accept);
 	}
 
+	/*
+	 * Drop the wrong state, INVALID, packets 
+	 */
+	if (!has_gateway())
+		save2file("-A FORWARD -m state --state INVALID -j %s", log_drop);
+
 	getIfLists(vifs, 256);
 	// = nvram_safe_get ("lan_ifnames");
 	// if (vifs != NULL)
@@ -2198,26 +2204,11 @@ static void filter_forward(void)
 		if (strcmp(get_wan_face(), var)
 		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
 			if (isstandalone(var) && nvram_nmatch("1", "%s_nat", var)) {
-				save2file("-A FORWARD -i %s -j %s", var, log_accept);
+				save2file("-A FORWARD -i %s -j lan2wan", var);
 			}
 		}
 	}
 
-	/*
-	 * Drop the wrong state, INVALID, packets 
-	 */
-	// save2file("-A FORWARD -m state --state INVALID -j DROP\n");
-
-	/*
-	 * Sveasoft add - log invalid packets 
-	 */
-	if (!has_gateway())
-		save2file("-A FORWARD -m state --state INVALID -j %s", log_drop);
-
-	/*
-	 * Filter setting by user definition 
-	 */
-	// save2file ("-A FORWARD -i %s -j lan2wan\n", lanface);
 	save2file("-A FORWARD -j lan2wan");
 
 	/*
