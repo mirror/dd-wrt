@@ -156,7 +156,7 @@
 #define SPL_IS_GPL_COMPATIBLE 1
 
 /* Define the project alias string. */
-#define SPL_META_ALIAS "spl-0.7.6-1"
+#define SPL_META_ALIAS "spl-0.7.11-1"
 
 /* Define the project author. */
 #define SPL_META_AUTHOR "OpenZFS on Linux"
