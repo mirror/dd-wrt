@@ -25,6 +25,9 @@
 #include <cy_conf.h>
 #include <utils.h>
 
+
+#define NR_RULES		20
+
 //#define NTP_M_TIMER 3600
 //#define NTP_N_TIMER 30
 
