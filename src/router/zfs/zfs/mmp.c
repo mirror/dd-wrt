@@ -26,6 +26,7 @@
 #include <sys/mmp.h>
 #include <sys/spa.h>
 #include <sys/spa_impl.h>
+#include <sys/time.h>
 #include <sys/vdev.h>
 #include <sys/vdev_impl.h>
 #include <sys/zfs_context.h>
@@ -124,6 +125,7 @@ uint_t zfs_multihost_import_intervals = MMP_DEFAULT_IMPORT_INTERVALS;
 uint_t zfs_multihost_fail_intervals = MMP_DEFAULT_FAIL_INTERVALS;
 
 static void mmp_thread(spa_t *spa);
+char *mmp_tag = "mmp_write_uberblock";
 
 void
 mmp_init(spa_t *spa)
@@ -133,6 +135,7 @@ mmp_init(spa_t *spa)
 	mutex_init(&mmp->mmp_thread_lock, NULL, MUTEX_DEFAULT, NULL);
 	cv_init(&mmp->mmp_thread_cv, NULL, CV_DEFAULT, NULL);
 	mutex_init(&mmp->mmp_io_lock, NULL, MUTEX_DEFAULT, NULL);
+	mmp->mmp_kstat_id = 1;
 }
 
 void
@@ -197,28 +200,33 @@ mmp_thread_stop(spa_t *spa)
 	mmp->mmp_thread_exiting = 0;
 }
 
-/*
- * Choose a leaf vdev to write an MMP block to.  It must not have an
- * outstanding mmp write (if so then there is a problem, and a new write will
- * also block).  If there is no usable leaf in this subtree return NULL,
- * otherwise return a pointer to the leaf.
- *
- * When walking the subtree, a random child is chosen as the starting point so
- * that when the tree is healthy, the leaf chosen will be random with even
- * distribution.  If there are unhealthy vdevs in the tree, the distribution
- * will be really poor only if a large proportion of the vdevs are unhealthy,
- * in which case there are other more pressing problems.
- */
+typedef enum mmp_vdev_state_flag {
+	MMP_FAIL_NOT_WRITABLE	= (1 << 0),
+	MMP_FAIL_WRITE_PENDING	= (1 << 1),
+} mmp_vdev_state_flag_t;
+
 static vdev_t *
-mmp_random_leaf(vdev_t *vd)
+mmp_random_leaf_impl(vdev_t *vd, int *fail_mask)
 {
 	int child_idx;
 
-	if (!vdev_writeable(vd))
+	if (!vdev_writeable(vd)) {
+		*fail_mask |= MMP_FAIL_NOT_WRITABLE;
 		return (NULL);
+	}
 
-	if (vd->vdev_ops->vdev_op_leaf)
-		return (vd->vdev_mmp_pending == 0 ? vd : NULL);
+	if (vd->vdev_ops->vdev_op_leaf) {
+		vdev_t *ret;
+
+		if (vd->vdev_mmp_pending != 0) {
+			*fail_mask |= MMP_FAIL_WRITE_PENDING;
+			ret = NULL;
+		} else {
+			ret = vd;
+		}
+
+		return (ret);
+	}
 
 	child_idx = spa_get_random(vd->vdev_children);
 	for (int offset = vd->vdev_children; offset > 0; offset--) {
@@ -226,12 +234,103 @@ mmp_random_leaf(vdev_t *vd)
 		vdev_t *child = vd->vdev_child[(child_idx + offset) %
 		    vd->vdev_children];
 
-		leaf = mmp_random_leaf(child);
+		leaf = mmp_random_leaf_impl(child, fail_mask);
 		if (leaf)
 			return (leaf);
 	}
 
 	return (NULL);
+}
+
+/*
+ * Find a leaf vdev to write an MMP block to.  It must not have an outstanding
+ * mmp write (if so a new write will also likely block).  If there is no usable
+ * leaf in the tree rooted at in_vd, a nonzero error value is returned, and
+ * *out_vd is unchanged.
+ *
+ * The error value returned is a bit field.
+ *
+ * MMP_FAIL_WRITE_PENDING
+ * If set, one or more leaf vdevs are writeable, but have an MMP write which has
+ * not yet completed.
+ *
+ * MMP_FAIL_NOT_WRITABLE
+ * If set, one or more vdevs are not writeable.  The children of those vdevs
+ * were not examined.
+ *
+ * Assuming in_vd points to a tree, a random subtree will be chosen to start.
+ * That subtree, and successive ones, will be walked until a usable leaf has
+ * been found, or all subtrees have been examined (except that the children of
+ * un-writeable vdevs are not examined).
+ *
+ * If the leaf vdevs in the tree are healthy, the distribution of returned leaf
+ * vdevs will be even.  If there are unhealthy leaves, the following leaves
+ * (child_index % index_children) will be chosen more often.
+ */
+
+static int
+mmp_random_leaf(vdev_t *in_vd, vdev_t **out_vd)
+{
+	int error_mask = 0;
+	vdev_t *vd = mmp_random_leaf_impl(in_vd, &error_mask);
+
+	if (error_mask == 0)
+		*out_vd = vd;
+
+	return (error_mask);
+}
+
+/*
+ * MMP writes are issued on a fixed schedule, but may complete at variable,
+ * much longer, intervals.  The mmp_delay captures long periods between
+ * successful writes for any reason, including disk latency, scheduling delays,
+ * etc.
+ *
+ * The mmp_delay is usually calculated as a decaying average, but if the latest
+ * delay is higher we do not average it, so that we do not hide sudden spikes
+ * which the importing host must wait for.
+ *
+ * If writes are occurring frequently, such as due to a high rate of txg syncs,
+ * the mmp_delay could become very small.  Since those short delays depend on
+ * activity we cannot count on, we never allow mmp_delay to get lower than rate
+ * expected if only mmp_thread writes occur.
+ *
+ * If an mmp write was skipped or fails, and we have already waited longer than
+ * mmp_delay, we need to update it so the next write reflects the longer delay.
+ *
+ * Do not set mmp_delay if the multihost property is not on, so as not to
+ * trigger an activity check on import.
+ */
+static void
+mmp_delay_update(spa_t *spa, boolean_t write_completed)
+{
+	mmp_thread_t *mts = &spa->spa_mmp;
+	hrtime_t delay = gethrtime() - mts->mmp_last_write;
+
+	ASSERT(MUTEX_HELD(&mts->mmp_io_lock));
+
+	if (spa_multihost(spa) == B_FALSE) {
+		mts->mmp_delay = 0;
+		return;
+	}
+
+	if (delay > mts->mmp_delay)
+		mts->mmp_delay = delay;
+
+	if (write_completed == B_FALSE)
+		return;
+
+	mts->mmp_last_write = gethrtime();
+
+	/*
+	 * strictly less than, in case delay was changed above.
+	 */
+	if (delay < mts->mmp_delay) {
+		hrtime_t min_delay = MSEC2NSEC(zfs_multihost_interval) /
+		    MAX(1, vdev_count_leaves(spa));
+		mts->mmp_delay = MAX(((delay + mts->mmp_delay * 127) / 128),
+		    min_delay);
+	}
 }
 
 static void
@@ -242,42 +341,19 @@ mmp_write_done(zio_t *zio)
 	mmp_thread_t *mts = zio->io_private;
 
 	mutex_enter(&mts->mmp_io_lock);
+	uint64_t mmp_kstat_id = vd->vdev_mmp_kstat_id;
+	hrtime_t mmp_write_duration = gethrtime() - vd->vdev_mmp_pending;
+
+	mmp_delay_update(spa, (zio->io_error == 0));
+
 	vd->vdev_mmp_pending = 0;
+	vd->vdev_mmp_kstat_id = 0;
 
-	if (zio->io_error)
-		goto unlock;
-
-	/*
-	 * Mmp writes are queued on a fixed schedule, but under many
-	 * circumstances, such as a busy device or faulty hardware,
-	 * the writes will complete at variable, much longer,
-	 * intervals.  In these cases, another node checking for
-	 * activity must wait longer to account for these delays.
-	 *
-	 * The mmp_delay is calculated as a decaying average of the interval
-	 * between completed mmp writes.  This is used to predict how long
-	 * the import must wait to detect activity in the pool, before
-	 * concluding it is not in use.
-	 *
-	 * Do not set mmp_delay if the multihost property is not on,
-	 * so as not to trigger an activity check on import.
-	 */
-	if (spa_multihost(spa)) {
-		hrtime_t delay = gethrtime() - mts->mmp_last_write;
-
-		if (delay > mts->mmp_delay)
-			mts->mmp_delay = delay;
-		else
-			mts->mmp_delay = (delay + mts->mmp_delay * 127) /
-			    128;
-	} else {
-		mts->mmp_delay = 0;
-	}
-	mts->mmp_last_write = gethrtime();
-
-unlock:
 	mutex_exit(&mts->mmp_io_lock);
-	spa_config_exit(spa, SCL_STATE, FTAG);
+	spa_config_exit(spa, SCL_STATE, mmp_tag);
+
+	spa_mmp_history_set(spa, mmp_kstat_id, zio->io_error,
+	    mmp_write_duration);
 
 	abd_free(zio->io_abd);
 }
@@ -295,6 +371,7 @@ mmp_update_uberblock(spa_t *spa, uberblock_t *ub)
 	mutex_enter(&mmp->mmp_io_lock);
 	mmp->mmp_ub = *ub;
 	mmp->mmp_ub.ub_timestamp = gethrestime_sec();
+	mmp_delay_update(spa, B_TRUE);
 	mutex_exit(&mmp->mmp_io_lock);
 }
 
@@ -309,18 +386,45 @@ mmp_write_uberblock(spa_t *spa)
 	int flags = ZIO_FLAG_CONFIG_WRITER | ZIO_FLAG_CANFAIL;
 	mmp_thread_t *mmp = &spa->spa_mmp;
 	uberblock_t *ub;
-	vdev_t *vd;
-	int label;
+	vdev_t *vd = NULL;
+	int label, error;
 	uint64_t offset;
 
-	spa_config_enter(spa, SCL_STATE, FTAG, RW_READER);
-	vd = mmp_random_leaf(spa->spa_root_vdev);
-	if (vd == NULL) {
+	hrtime_t lock_acquire_time = gethrtime();
+	spa_config_enter(spa, SCL_STATE, mmp_tag, RW_READER);
+	lock_acquire_time = gethrtime() - lock_acquire_time;
+	if (lock_acquire_time > (MSEC2NSEC(MMP_MIN_INTERVAL) / 10))
+		zfs_dbgmsg("SCL_STATE acquisition took %llu ns\n",
+		    (u_longlong_t)lock_acquire_time);
+
+	error = mmp_random_leaf(spa->spa_root_vdev, &vd);
+
+	mutex_enter(&mmp->mmp_io_lock);
+
+	/*
+	 * spa_mmp_history has two types of entries:
+	 * Issued MMP write: records time issued, error status, etc.
+	 * Skipped MMP write: an MMP write could not be issued because no
+	 * suitable leaf vdev was available.  See comment above struct
+	 * spa_mmp_history for details.
+	 */
+
+	if (error) {
+		mmp_delay_update(spa, B_FALSE);
+		if (mmp->mmp_skip_error == error) {
+			spa_mmp_history_set_skip(spa, mmp->mmp_kstat_id - 1);
+		} else {
+			mmp->mmp_skip_error = error;
+			spa_mmp_history_add(spa, mmp->mmp_ub.ub_txg,
+			    gethrestime_sec(), mmp->mmp_delay, NULL, 0,
+			    mmp->mmp_kstat_id++, error);
+		}
+		mutex_exit(&mmp->mmp_io_lock);
 		spa_config_exit(spa, SCL_STATE, FTAG);
 		return;
 	}
 
-	mutex_enter(&mmp->mmp_io_lock);
+	mmp->mmp_skip_error = 0;
 
 	if (mmp->mmp_zio_root == NULL)
 		mmp->mmp_zio_root = zio_root(spa, NULL, NULL,
@@ -331,12 +435,14 @@ mmp_write_uberblock(spa_t *spa)
 	ub->ub_mmp_magic = MMP_MAGIC;
 	ub->ub_mmp_delay = mmp->mmp_delay;
 	vd->vdev_mmp_pending = gethrtime();
+	vd->vdev_mmp_kstat_id = mmp->mmp_kstat_id;
 
 	zio_t *zio  = zio_null(mmp->mmp_zio_root, spa, NULL, NULL, NULL, flags);
 	abd_t *ub_abd = abd_alloc_for_io(VDEV_UBERBLOCK_SIZE(vd), B_TRUE);
 	abd_zero(ub_abd, VDEV_UBERBLOCK_SIZE(vd));
 	abd_copy_from_buf(ub_abd, ub, sizeof (uberblock_t));
 
+	mmp->mmp_kstat_id++;
 	mutex_exit(&mmp->mmp_io_lock);
 
 	offset = VDEV_UBERBLOCK_OFFSET(vd, VDEV_UBERBLOCK_COUNT(vd) -
@@ -347,8 +453,8 @@ mmp_write_uberblock(spa_t *spa)
 	    VDEV_UBERBLOCK_SIZE(vd), mmp_write_done, mmp,
 	    flags | ZIO_FLAG_DONT_PROPAGATE);
 
-	spa_mmp_history_add(ub->ub_txg, ub->ub_timestamp, ub->ub_mmp_delay, vd,
-	    label);
+	(void) spa_mmp_history_add(spa, ub->ub_txg, ub->ub_timestamp,
+	    ub->ub_mmp_delay, vd, label, vd->vdev_mmp_kstat_id, 0);
 
 	zio_nowait(zio);
 }
@@ -381,27 +487,32 @@ mmp_thread(spa_t *spa)
 		    MAX(zfs_multihost_interval, MMP_MIN_INTERVAL));
 		boolean_t suspended = spa_suspended(spa);
 		boolean_t multihost = spa_multihost(spa);
-		hrtime_t start, next_time;
+		hrtime_t next_time;
 
-		start = gethrtime();
-		if (multihost) {
-			next_time = start + mmp_interval /
+		if (multihost)
+			next_time = gethrtime() + mmp_interval /
 			    MAX(vdev_count_leaves(spa), 1);
-		} else {
-			next_time = start + MSEC2NSEC(MMP_DEFAULT_INTERVAL);
-		}
+		else
+			next_time = gethrtime() +
+			    MSEC2NSEC(MMP_DEFAULT_INTERVAL);
 
 		/*
-		 * When MMP goes off => on, or spa goes suspended =>
-		 * !suspended, we know no writes occurred recently.  We
-		 * update mmp_last_write to give us some time to try.
+		 * MMP off => on, or suspended => !suspended:
+		 * No writes occurred recently.  Update mmp_last_write to give
+		 * us some time to try.
 		 */
 		if ((!last_spa_multihost && multihost) ||
 		    (last_spa_suspended && !suspended)) {
 			mutex_enter(&mmp->mmp_io_lock);
 			mmp->mmp_last_write = gethrtime();
 			mutex_exit(&mmp->mmp_io_lock);
-		} else if (last_spa_multihost && !multihost) {
+		}
+
+		/*
+		 * MMP on => off:
+		 * mmp_delay == 0 tells importing node to skip activity check.
+		 */
+		if (last_spa_multihost && !multihost) {
 			mutex_enter(&mmp->mmp_io_lock);
 			mmp->mmp_delay = 0;
 			mutex_exit(&mmp->mmp_io_lock);
@@ -427,17 +538,21 @@ mmp_thread(spa_t *spa)
 		 * mmp_interval * mmp_fail_intervals nanoseconds.
 		 */
 		if (!suspended && mmp_fail_intervals && multihost &&
-		    (start - mmp->mmp_last_write) > max_fail_ns) {
-			zio_suspend(spa, NULL);
+		    (gethrtime() - mmp->mmp_last_write) > max_fail_ns) {
+			cmn_err(CE_WARN, "MMP writes to pool '%s' have not "
+			    "succeeded in over %llus; suspending pool",
+			    spa_name(spa),
+			    NSEC2SEC(gethrtime() - mmp->mmp_last_write));
+			zio_suspend(spa, NULL, ZIO_SUSPEND_MMP);
 		}
 
-		if (multihost)
+		if (multihost && !suspended)
 			mmp_write_uberblock(spa);
 
 		CALLB_CPR_SAFE_BEGIN(&cpr);
-		(void) cv_timedwait_sig(&mmp->mmp_thread_cv,
-		    &mmp->mmp_thread_lock, ddi_get_lbolt() +
-		    ((next_time - gethrtime()) / (NANOSEC / hz)));
+		(void) cv_timedwait_sig_hires(&mmp->mmp_thread_cv,
+		    &mmp->mmp_thread_lock, next_time, USEC2NSEC(1),
+		    CALLOUT_FLAG_ABSOLUTE);
 		CALLB_CPR_SAFE_END(&cpr, &mmp->mmp_thread_lock);
 	}
 
@@ -492,7 +607,8 @@ param_set_multihost_interval(const char *val, zfs_kernel_param_t *kp)
 	if (ret < 0)
 		return (ret);
 
-	mmp_signal_all_threads();
+	if (spa_mode_global != 0)
+		mmp_signal_all_threads();
 
 	return (ret);
 }
