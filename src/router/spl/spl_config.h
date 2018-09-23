@@ -1,3 +1,5 @@
+#include <linux/version.h>
+
 /* spl_config.h.  Generated from spl_config.h.in by configure.  */
 /* spl_config.h.in.  Generated from configure.ac by autoheader.  */
 
@@ -85,7 +87,6 @@
 /* #undef HAVE_KMEM_CACHE_GFPFLAGS */
 
 /* kuid_t/kgid_t in use */
-#define HAVE_KUIDGID_T 1
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
@@ -108,8 +109,12 @@
 #define HAVE_SHRINK_CONTROL_STRUCT 1
 
 /* ->count_objects exists */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 12, 0)
 #define HAVE_SPLIT_SHRINKER_CALLBACK 1
-
+#define HAVE_KUIDGID_T 1
+#else
+#define HAVE_2ARGS_NEW_SHRINKER_CALLBACK 1
+#endif
 /* Define to 1 if you have the <stdint.h> header file. */
 #define HAVE_STDINT_H 1
 
@@ -135,8 +140,9 @@
 #define HAVE_USLEEP_RANGE 1
 
 /* yes */
-/* #undef HAVE_WAIT_ON_BIT_ACTION */
-
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
+#define HAVE_WAIT_ON_BIT_ACTION 1
+#endif
 /* wait_queue_entry_t exists */
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
