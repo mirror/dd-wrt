@@ -65,11 +65,6 @@ extern FILE *debout;
 extern int (*websGetVari) (webs_t wp, char *var, int d);
 extern int (*websWrite) (webs_t wp, char *fmt, ...);
 
-int day_all = 0, week0 = 0, week1 = 0, week2 = 0, week3 = 0, week4 = 0, week5 = 0, week6 = 0;
-int start_week = 0, end_week = 0;
-int time_all = 0, start_hour = 0, start_min = 0, start_time = 0, end_hour = 0, end_min = 0, end_time = 0;
-int tod_data_null = 0;
-
 /*
  * Example: 100-200 250-260 (ie. 192.168.1.100-192.168.1.200
  * 192.168.1.250-192.168.1.260) 
@@ -78,17 +73,14 @@ int tod_data_null = 0;
 static char *filter_ip_get(webs_t wp, char *type, int which, char *word)
 {
 	char *start, *end, *wordlist, *next;
-	int temp;
 	char filter_ip[] = "filter_ip_grpXXX";
-
+	int temp = which;
 	D("filter_ip_get");
 	snprintf(filter_ip, sizeof(filter_ip), "filter_ip_grp%d", wp->p->filter_id);
 
 	wordlist = nvram_safe_get(filter_ip);
 	if (!wordlist)
 		return "0";
-
-	temp = which;
 
 	foreach(word, wordlist, next) {
 		if (which-- == 0) {
@@ -216,12 +208,10 @@ static char *filter_dport_get(webs_t wp, char *type, int which, char *word)
 {
 	char *wordlist, *next;
 	char *start, *end, *proto;
-	int temp;
 	char name[] = "filter_dport_grpXXX";
 
 	sprintf(name, "filter_dport_grp%d", wp->p->filter_id);
 	wordlist = nvram_safe_get(name);
-	temp = which;
 	D("filter dport get");
 	foreach(word, wordlist, next) {
 		if (which-- == 0) {
@@ -291,11 +281,9 @@ static char *filter_port_get(char *type, int which, char *word)
 {
 	char *wordlist, *next;
 	char *start, *end, *proto;
-	int temp;
 
 	D("filter port get");
 	wordlist = nvram_safe_get("filter_port");
-	temp = which;
 
 	foreach(word, wordlist, next) {
 		if (which-- == 0) {
@@ -360,7 +348,6 @@ static char *filter_mac_get(webs_t wp, int which, char *word)
 {
 	char *wordlist, *next;
 	char *mac;
-	int temp;
 	char filter_mac[] = "filter_mac_grpXXX";
 
 	D("filter mac get");
@@ -369,8 +356,6 @@ static char *filter_mac_get(webs_t wp, int which, char *word)
 	wordlist = nvram_safe_get(filter_mac);
 	if (!wordlist)
 		return "";
-
-	temp = which;
 
 	foreach(word, wordlist, next) {
 		if (which-- == 0) {
@@ -575,7 +560,7 @@ void ej_filter_policy_get(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-int filter_tod_init(int which)
+int filter_tod_init(webs_t wp, int which)
 {
 	int ret;
 	char *tod_data, *tod_buf_data;
@@ -583,10 +568,10 @@ int filter_tod_init(int which)
 	char filter_tod_buf[] = "filter_tod_bufXXX";
 	char temp[3][20];
 
-	tod_data_null = 0;
-	day_all = week0 = week1 = week2 = week3 = week4 = week5 = week6 = 0;
-	time_all = start_hour = start_min = start_time = end_hour = end_min = end_time = 0;
-	start_week = end_week = 0;
+	wp->p->tod_data_null = 0;
+	wp->p->day_all = wp->p->week0 = wp->p->week1 = wp->p->week2 = wp->p->week3 = wp->p->week4 = wp->p->week5 = wp->p->week6 = 0;
+	wp->p->time_all = wp->p->start_hour = wp->p->start_min = wp->p->start_time = wp->p->end_hour = wp->p->end_min = wp->p->end_time = 0;
+	wp->p->start_week = wp->p->end_week = 0;
 	D("filter tod init");
 	snprintf(filter_tod, sizeof(filter_tod), "filter_tod%d", which);
 	snprintf(filter_tod_buf, sizeof(filter_tod_buf), "filter_tod_buf%d", which);
@@ -599,16 +584,16 @@ int filter_tod_init(int which)
 		return -1;	// no data
 	if (strcmp(tod_data, "")) {
 		sscanf(tod_data, "%s %s %s", temp[0], temp[1], temp[2]);
-		sscanf(temp[0], "%d:%d", &start_hour, &start_min);
-		sscanf(temp[1], "%d:%d", &end_hour, &end_min);
-		ret = sscanf(temp[2], "%d-%d", &start_week, &end_week);
+		sscanf(temp[0], "%d:%d", &wp->p->start_hour, &wp->p->start_min);
+		sscanf(temp[1], "%d:%d", &wp->p->end_hour, &wp->p->end_min);
+		ret = sscanf(temp[2], "%d-%d", &wp->p->start_week, &wp->p->end_week);
 		if (ret == 1)
-			end_week = start_week;
+			wp->p->end_week = wp->p->start_week;
 
-		if (start_hour == 0 && start_min == 0 && end_hour == 23 && end_min == 59) {	// 24 Hours
-			time_all = 1;
-			start_hour = end_hour = 0;
-			start_min = start_time = end_min = end_time = 0;
+		if (wp->p->start_hour == 0 && wp->p->start_min == 0 && wp->p->end_hour == 23 && wp->p->end_min == 59) {	// 24 Hours
+			wp->p->time_all = 1;
+			wp->p->start_hour = wp->p->end_hour = 0;
+			wp->p->start_min = wp->p->start_time = wp->p->end_min = wp->p->end_time = 0;
 		}
 		/*
 		 * else { // check AM or PM time_all = 0; if (start_hour > 11) {
@@ -616,21 +601,21 @@ int filter_tod_init(int which)
 		 * { end_hour = end_hour - 12; end_time = 1; } } 
 		 */
 	} else {		// default Everyday and 24 Hours
-		tod_data_null = 1;
-		day_all = 1;
-		time_all = 1;
+		wp->p->tod_data_null = 1;
+		wp->p->day_all = 1;
+		wp->p->time_all = 1;
 	}
 
-	if (tod_data_null == 0) {
+	if (wp->p->tod_data_null == 0) {
 		/*
 		 * Parse filter_tod_buf{1...10} 
 		 */
 		tod_buf_data = nvram_safe_get(filter_tod_buf);
 		if (!strcmp(tod_buf_data, "7")) {
-			day_all = 1;
+			wp->p->day_all = 1;
 		} else if (strcmp(tod_buf_data, "")) {
-			sscanf(tod_buf_data, "%d %d %d %d %d %d %d", &week0, &week1, &week2, &week3, &week4, &week5, &week6);
-			day_all = 0;
+			sscanf(tod_buf_data, "%d %d %d %d %d %d %d", &wp->p->week0, &wp->p->week1, &wp->p->week2, &wp->p->week3, &wp->p->week4, &wp->p->week5, &wp->p->week6);
+			wp->p->day_all = 0;
 		}
 	}
 	D("okay");
@@ -643,96 +628,65 @@ void ej_filter_tod_get(webs_t wp, int argc, char_t ** argv)
 	int i;
 	type = argv[0];
 
-	filter_tod_init(wp->p->filter_id);
+	filter_tod_init(wp, wp->p->filter_id);
 
 	if (!strcmp(type, "day_all_init")) {
-		if (day_all == 0)
+		if (wp->p->day_all == 0)
 			websWrite(wp, "1");
 		else
 			websWrite(wp, "0");
 	} else if (!strcmp(type, "time_all_init")) {
-		if (time_all == 0)
+		if (wp->p->time_all == 0)
 			websWrite(wp, "1");
 		else
 			websWrite(wp, "0");
 	} else if (!strcmp(type, "day_all")) {
-		websWrite(wp, "%s", day_all == 1 ? "checked=\"checked\" " : "");
+		websWrite(wp, "%s", wp->p->day_all == 1 ? "checked=\"checked\" " : "");
 	} else if (!strcmp(type, "start_week")) {
-		websWrite(wp, "%d", start_week);
+		websWrite(wp, "%d", wp->p->start_week);
 	} else if (!strcmp(type, "end_week")) {
-		websWrite(wp, "%d", end_week);
+		websWrite(wp, "%d", wp->p->end_week);
 	} else if (!strcmp(type, "week0")) {	// Sun
-		websWrite(wp, "%s", week0 == 1 ? "checked=\"checked\" " : "");
+		websWrite(wp, "%s", wp->p->week0 == 1 ? "checked=\"checked\" " : "");
 	} else if (!strcmp(type, "week1")) {	// Mon
-		websWrite(wp, "%s", week1 == 1 ? "checked=\"checked\" " : "");
+		websWrite(wp, "%s", wp->p->week1 == 1 ? "checked=\"checked\" " : "");
 	} else if (!strcmp(type, "week2")) {	// Tue
-		websWrite(wp, "%s", week2 == 1 ? "checked=\"checked\" " : "");
+		websWrite(wp, "%s", wp->p->week2 == 1 ? "checked=\"checked\" " : "");
 	} else if (!strcmp(type, "week3")) {	// Wed
-		websWrite(wp, "%s", week3 == 1 ? "checked=\"checked\" " : "");
+		websWrite(wp, "%s", wp->p->week3 == 1 ? "checked=\"checked\" " : "");
 	} else if (!strcmp(type, "week4")) {	// Thu
-		websWrite(wp, "%s", week4 == 1 ? "checked=\"checked\" " : "");
+		websWrite(wp, "%s", wp->p->week4 == 1 ? "checked=\"checked\" " : "");
 	} else if (!strcmp(type, "week5")) {	// Fri
-		websWrite(wp, "%s", week5 == 1 ? "checked=\"checked\" " : "");
+		websWrite(wp, "%s", wp->p->week5 == 1 ? "checked=\"checked\" " : "");
 	} else if (!strcmp(type, "week6")) {	// Sat
-		websWrite(wp, "%s", week6 == 1 ? "checked=\"checked\" " : "");
+		websWrite(wp, "%s", wp->p->week6 == 1 ? "checked=\"checked\" " : "");
 	} else if (!strcmp(type, "time_all_en")) {	// for linksys
-		websWrite(wp, "%s", time_all == 1 ? "checked=\"checked\" " : "");
+		websWrite(wp, "%s", wp->p->time_all == 1 ? "checked=\"checked\" " : "");
 	} else if (!strcmp(type, "time_all_dis")) {	// for linksys
-		websWrite(wp, "%s", time_all == 0 ? "checked=\"checked\" " : "");
+		websWrite(wp, "%s", wp->p->time_all == 0 ? "checked=\"checked\" " : "");
 	} else if (!strcmp(type, "time_all")) {
-		websWrite(wp, "%s", time_all == 1 ? "checked=\"checked\" " : "");
+		websWrite(wp, "%s", wp->p->time_all == 1 ? "checked=\"checked\" " : "");
 	} else if (!strcmp(type, "start_hour_24")) {	// 00 -> 23
 		for (i = 0; i < 24; i++) {
 
-			websWrite(wp, "<option value=%d %s>%d</option>\n", i, i == start_hour ? "selected=\"selected\" " : "", i);
+			websWrite(wp, "<option value=%d %s>%d</option>\n", i, i == wp->p->start_hour ? "selected=\"selected\" " : "", i);
 		}
 	} else if (!strcmp(type, "start_min_1")) {	// 0 1 2 3 4 .... -> 58 59
 		for (i = 0; i < 60; i++) {
 
-			websWrite(wp, "<option value=%02d %s>%02d</option>\n", i, i == start_min ? "selected=\"selected\" " : "", i);
+			websWrite(wp, "<option value=%02d %s>%02d</option>\n", i, i == wp->p->start_min ? "selected=\"selected\" " : "", i);
 		}
 	} else if (!strcmp(type, "end_hour_24")) {	// 00 ->23
 		for (i = 0; i < 24; i++) {
 
-			websWrite(wp, "<option value=%d %s>%d</option>\n", i, i == end_hour ? "selected=\"selected\" " : "", i);
+			websWrite(wp, "<option value=%d %s>%d</option>\n", i, i == wp->p->end_hour ? "selected=\"selected\" " : "", i);
 		}
 	} else if (!strcmp(type, "end_min_1")) {	// 0 1 2 3 4 .... -> 58 59
 		for (i = 0; i < 60; i++) {
 
-			websWrite(wp, "<option value=%02d %s>%02d</option>\n", i, i == end_min ? "selected=\"selected\" " : "", i);
+			websWrite(wp, "<option value=%02d %s>%02d</option>\n", i, i == wp->p->end_min ? "selected=\"selected\" " : "", i);
 		}
 	}
-	/*
-	 * else if (!strcmp (type, "start_hour_12")) { // 1 -> 12 for (i = 1; i
-	 * <= 12; i++) { int j; if (i == 12) j = 0; else j = i;
-	 * 
-	 * websWrite (wp, "<option value=%d %s>%d</option>\n", j, j == start_hour 
-	 * ? "selected=\"selected\" " : "", i); } } else if (!strcmp (type,
-	 * "start_min_5")) { // 0 5 10 15 20 25 30 35 40 45 50 55 for (i = 0; i < 
-	 * 12; i++) {
-	 * 
-	 * websWrite (wp, "<option value=%02d %s>%02d</option>\n", i * 5, i * 5
-	 * == start_min ? "selected=\"selected\" " : "", i * 5); } } else if
-	 * (!strcmp (type, "start_time_am")) { websWrite (wp, "%s", start_time == 
-	 * 1 ? "" : "selected=\"selected\" "); } else if (!strcmp (type,
-	 * "start_time_pm")) { websWrite (wp, "%s", start_time == 1 ?
-	 * "selected=\"selected\" " : ""); } else if (!strcmp (type,
-	 * "end_hour_12")) { // 1 -> 12 for (i = 1; i <= 12; i++) { int j; if (i
-	 * == 12) j = 0; else j = i;
-	 * 
-	 * websWrite (wp, "<option value=%d %s>%d</option>\n", j, j == end_hour ? 
-	 * "selected=\"selected\" " : "", i); } } else if (!strcmp (type,
-	 * "end_min_5")) { // 0 5 10 15 20 25 30 35 40 45 50 55 for (i = 0; i <
-	 * 12; i++) {
-	 * 
-	 * websWrite (wp, "<option value=%02d %s>%02d</option>\n", i * 5, i * 5
-	 * == end_min ? "selected=\"selected\" " : "", i * 5); } } else if
-	 * (!strcmp (type, "end_time_am")) { websWrite (wp, "%s", end_time == 1 ? 
-	 * "" : "selected=\"selected\" "); } else if (!strcmp (type,
-	 * "end_time_pm")) { websWrite (wp, "%s", end_time == 1 ?
-	 * "selected=\"selected\" " : ""); } 
-	 */
-	D("right");
 	return;
 }
 
@@ -811,7 +765,7 @@ void ej_filter_summary_show(webs_t wp, int argc, char_t ** argv)
 			// value
 		}
 
-		filter_tod_init(i + 1);
+		filter_tod_init(wp, i + 1);
 
 		websWrite(wp, "<tr align=\"center\" bgcolor=\"#CCCCCC\" >\n"
 			  "<td width=\"50\" ><font face=\"Arial\" size=\"2\" >%d.</font></td>\n"
@@ -821,25 +775,26 @@ void ej_filter_summary_show(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
 			  "<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
 			  "<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
-			  "<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n", tod_data_null == 0 && (day_all == 1
-																								|| week0 ==
-																								1) ? "#C0C0C0" : "#FFFFFF",
-			  w[0], tod_data_null == 0 && (day_all == 1 || week1 == 1) ? "#C0C0C0" : "#FFFFFF", w[1], tod_data_null == 0 && (day_all == 1 || week2 == 1) ? "#C0C0C0" : "#FFFFFF", w[2], tod_data_null == 0
-			  && (day_all == 1 || week3 == 1) ? "#C0C0C0" : "#FFFFFF", w[3]);
+			  "<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n", wp->p->tod_data_null == 0 && (wp->p->day_all == 1
+																								       || wp->p->week0 ==
+																								       1) ? "#C0C0C0" :
+			  "#FFFFFF", w[0], wp->p->tod_data_null == 0 && (wp->p->day_all == 1 || wp->p->week1 == 1) ? "#C0C0C0" : "#FFFFFF", w[1], wp->p->tod_data_null == 0 && (wp->p->day_all == 1
+																						|| wp->p->week2 ==
+																						1) ? "#C0C0C0" : "#FFFFFF", w[2],
+			  wp->p->tod_data_null == 0 && (wp->p->day_all == 1 || wp->p->week3 == 1) ? "#C0C0C0" : "#FFFFFF", w[3]);
 		websWrite(wp,
 			  "<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
 			  "<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n"
-			  "<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n" "</tr>\n" "</table>\n" "</td>\n", tod_data_null == 0
-			  && (day_all == 1 || week4 == 1) ? "#C0C0C0" : "#FFFFFF", w[4], tod_data_null == 0 && (day_all == 1 || week5 == 1) ? "#C0C0C0" : "#FFFFFF", w[5], tod_data_null == 0 && (day_all == 1
-																								  || week6 ==
-																								  1) ? "#C0C0C0" :
-			  "#FFFFFF", w[6]);
+			  "<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n" "</tr>\n" "</table>\n" "</td>\n",
+			  wp->p->tod_data_null == 0 && (wp->p->day_all == 1 || wp->p->week4 == 1) ? "#C0C0C0" : "#FFFFFF", w[4], wp->p->tod_data_null == 0 && (wp->p->day_all == 1
+																			       || wp->p->week5 == 1) ? "#C0C0C0" : "#FFFFFF", w[5],
+			  wp->p->tod_data_null == 0 && (wp->p->day_all == 1 || wp->p->week6 == 1) ? "#C0C0C0" : "#FFFFFF", w[6]);
 
-		if (tod_data_null == 0) {
-			if (time_all == 1)
+		if (wp->p->tod_data_null == 0) {
+			if (wp->p->time_all == 1)
 				strcpy(time_buf, _24h);
 			else {
-				snprintf(time_buf, sizeof(time_buf), "%02d:%02d - %02d:%02d", start_hour, start_min, end_hour, end_min);
+				snprintf(time_buf, sizeof(time_buf), "%02d:%02d - %02d:%02d", wp->p->start_hour, wp->p->start_min, wp->p->end_hour, wp->p->end_min);
 			}
 		}
 		websWrite(wp, "<td width=\"150\" ><font face=\"Arial\" size=\"2\" > %s </font></td>\n" "<td width=\"70\" ><input type=\"checkbox\" name=\"sum%d\" value=\"1\" ></td>\n" "</tr>\n", time_buf, i + 1);

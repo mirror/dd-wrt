@@ -63,7 +63,9 @@
 #define sys_stats(url) eval("stats", (url))
 
 // tofu
-
+static void do_file(unsigned char method, struct mime_handler *handler, char *path, webs_t stream);
+static void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file, int nocache);
+static void do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *attachment);
 static void do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, webs_t stream);
 static int start_validator(char *name, webs_t wp, char *value, struct variable *v);
 static char *websGetVar(webs_t wp, char *var, char *d);
@@ -74,16 +76,11 @@ static void do_upgrade_post(char *url, webs_t stream, int len, char *boundary);
 static int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp);
 static char *wfgets(char *buf, int len, webs_t fp);
 static int wfprintf(webs_t fp, char *fmt, ...);
-static size_t wfwrite(char *buf, int size, int n, webs_t fp);
-static size_t wfread(char *buf, int size, int n, webs_t fp);
+static size_t wfwrite(void *buf, int size, int n, webs_t fp);
+static size_t wfread(void *buf, int size, int n, webs_t fp);
 static int wfclose(webs_t fp);
 static int wfflush(webs_t fp);
-#ifndef VALIDSOURCE
-#ifndef VISUALSOURCE
-
 static int wfputs(char *buf, webs_t fp);
-#endif
-#endif
 /* Basic authorization userid and passwd limit */
 
 static void send_authenticate(webs_t conn_fp);
@@ -797,8 +794,7 @@ static void do_spectral_scan(unsigned char method, struct mime_handler *handler,
 		sprintf(dest, "%s/spectral_scan_ctl", path);
 		writestr(dest, "manual");
 		writestr(dest, "trigger");
-	} else
-	{
+	} else {
 		sprintf(dest, "%s/spectral_scan_ctl", path);
 		writestr(dest, "chanscan");
 	}

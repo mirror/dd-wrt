@@ -85,15 +85,12 @@ void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 	int which, count;
 	char word[256];
 	char *next, *page;
-	int temp;
 	char name[50] = "";
 	char new_name[200];
 	arg = argv[0];
 	count = atoi(argv[1]);
 
 	which = websGetVari(wp, "route_page", 0);
-
-	temp = which;
 
 	if (!strcmp(arg, "name")) {
 		char *sroutename = nvram_safe_get("static_route_name");
