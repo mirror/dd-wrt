@@ -17,7 +17,7 @@ static void ndpi_int_tor_add_connection(struct ndpi_detection_module_struct
 
 static int ndpi_is_ssl_tor(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, char *certificate)
 {
-	int prev_num = 0, numbers_found = 0, num_found = 0, i, len;
+	int prev_num = 0, numbers_found = 0, num_found = 0, i, len, num_impossible = 0;
 	char dummy[48], *dot, *name;
 
 	if (certificate == NULL)
@@ -69,12 +69,11 @@ static int ndpi_is_ssl_tor(struct ndpi_detection_module_struct *ndpi_struct, str
 			if (ndpi_match_bigram(ndpi_struct, &ndpi_struct->bigrams_automa, &name[i])) {
 				num_found++;
 			} else if (ndpi_match_bigram(ndpi_struct, &ndpi_struct->impossible_bigrams_automa, &name[i])) {
-				ndpi_int_tor_add_connection(ndpi_struct, flow);
-				return (1);
+				num_impossible++;
 			}
 		}
 
-		if (num_found == 0) {
+		if ((num_found == 0) || (num_impossible > 1)) {
 			ndpi_int_tor_add_connection(ndpi_struct, flow);
 			return (1);
 		} else {
