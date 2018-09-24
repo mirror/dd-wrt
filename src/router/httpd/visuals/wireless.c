@@ -70,7 +70,6 @@
 
 #undef ABURN_WSEC_CHECK
 
-
 static char *wl_filter_mac_get(char *ifname2, char *type, int which, char *word)
 {
 	char *wordlist, *next;
@@ -450,7 +449,7 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 	}
 
 	if (!strcmp(type, "offline")) {
-		get_hostname_ip(wp,"offline", OLD_NAME_IP);
+		get_hostname_ip(wp, "offline", OLD_NAME_IP);
 	}
 
 	if (!strcmp(type, "online")) {
