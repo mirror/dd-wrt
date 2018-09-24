@@ -33,6 +33,9 @@
 
 #include <samba3.h>
 #include "fs_common.h"
+void show_caption_pp(webs_t wp, const char *class, const char *caption, const char *pre, const char *post);
+void show_caption_simple(webs_t wp, const char *caption);
+void show_caption(webs_t wp, const char *class, const char *caption, const char *ext);
 
 void ej_samba3_sharepaths(webs_t wp, int argc, char_t ** argv)
 {

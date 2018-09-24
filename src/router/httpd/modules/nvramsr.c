@@ -24,8 +24,8 @@
 static int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp);
 static char *wfgets(char *buf, int len, webs_t fp);
 static int wfprintf(webs_t fp, char *fmt, ...);
-static size_t wfwrite(char *buf, int size, int n, webs_t fp);
-static size_t wfread(char *buf, int size, int n, webs_t fp);
+static size_t wfwrite(void *buf, int size, int n, webs_t fp);
+static size_t wfread(void *buf, int size, int n, webs_t fp);
 static int wfclose(webs_t fp);
 static int wfflush(webs_t fp);
 
@@ -88,6 +88,8 @@ static void nv_file_in(char *url, webs_t wp, int len, char *boundary)
 	chdir("/www");
 }
 
+static void do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t stream);
+
 static void sr_config_cgi(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
 {
 	if (wp->restore_ret != 0)
@@ -106,6 +108,8 @@ static void sr_config_cgi(unsigned char method, struct mime_handler *handler, ch
 		sys_reboot();
 	}
 }
+
+static void do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *attachment);
 
 static void nv_file_out(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
 {

@@ -73,10 +73,8 @@ void show_subscriber_table(webs_t wp, char *type, int which)
 	char *next, *wordlist;
 	char *user, *pass;
 	char new_user[200], new_pass[200];
-	int temp;
 
 	wordlist = nvram_safe_get("milkfish_ddsubscribers");
-	temp = which;
 
 	foreach(word, wordlist, next) {
 		if (which-- == 0) {
@@ -124,10 +122,8 @@ void show_aliases_table(webs_t wp, char *type, int which)
 	char *next, *wordlist;
 	char *user, *pass;
 	char new_user[200], new_pass[200];
-	int temp;
 
 	wordlist = nvram_safe_get("milkfish_ddaliases");
-	temp = which;
 
 	foreach(word, wordlist, next) {
 		if (which-- == 0) {
@@ -175,10 +171,8 @@ void show_registrations_table(webs_t wp, char *type, int which)
 	char *next, *wordlist;
 	char *user, *contact, *agent;
 	char new_user[200], new_contact[200], new_agent[200];
-	int temp;
 
 	wordlist = nvram_safe_get("milkfish_ddactive");
-	temp = which;
 
 	foreach(word, wordlist, next) {
 		if (which-- == 0) {

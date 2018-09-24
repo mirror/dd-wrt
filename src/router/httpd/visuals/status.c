@@ -43,6 +43,8 @@
 #define STATUS_REFRESH_TIME1	5
 #define STATUS_REFRESH_TIME2	60
 
+void show_caption_simple(webs_t wp, const char *caption);
+
 int retry_count = -1;
 int refresh_time = STATUS_REFRESH_TIME2;
 

@@ -28,7 +28,6 @@
 
 #include <broadcom.h>
 
-
 /*
  * Example data = www.kimo.com.tw<&nbsp;>www.google<&nbsp;> find_each(name,
  * sizeof(name), data, "<&nbsp;>", 0, ""); produces : ret = 1, name =

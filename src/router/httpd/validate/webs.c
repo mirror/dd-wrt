@@ -206,7 +206,7 @@ static void validate_filter_tod(webs_t wp)
 
 	}, *which;
 
-	int day_all, week0, week1, week2, week3, week4, week5, week6;
+	int day_all;
 	int time_all, start_hour, start_min, end_hour, end_min;
 	int _start_hour, _start_min, _end_hour, _end_min;
 	char time[20];
@@ -218,13 +218,13 @@ static void validate_filter_tod(webs_t wp)
 	which = &filter_tod_variables[0];
 
 	day_all = websGetVari(wp, "day_all", 0);
-	week0 = websGetVari(wp, "week0", 0);
-	week1 = websGetVari(wp, "week1", 0);
-	week2 = websGetVari(wp, "week2", 0);
-	week3 = websGetVari(wp, "week3", 0);
-	week4 = websGetVari(wp, "week4", 0);
-	week5 = websGetVari(wp, "week5", 0);
-	week6 = websGetVari(wp, "week6", 0);
+	week[0] = websGetVari(wp, "week0", 0);
+	week[1] = websGetVari(wp, "week1", 0);
+	week[2] = websGetVari(wp, "week2", 0);
+	week[3] = websGetVari(wp, "week3", 0);
+	week[4] = websGetVari(wp, "week4", 0);
+	week[5] = websGetVari(wp, "week5", 0);
+	week[6] = websGetVari(wp, "week6", 0);
 	time_all = websGetVari(wp, "time_all", 0);
 	start_hour = websGetVari(wp, "start_hour", 0);
 	start_min = websGetVari(wp, "start_min", 0);
@@ -236,13 +236,6 @@ static void validate_filter_tod(webs_t wp)
 		strcpy(time, "0-6");
 		strcpy(tod_buf, "7");
 	} else {
-		week[0] = week0;
-		week[1] = week1;
-		week[2] = week2;
-		week[3] = week3;
-		week[4] = week4;
-		week[5] = week5;
-		week[6] = week6;
 		strcpy(time, "");
 
 		for (i = 0; i < 7; i++) {
@@ -273,7 +266,7 @@ static void validate_filter_tod(webs_t wp)
 		if (time[strlen(time) - 1] == ',')
 			time[strlen(time) - 1] = '\0';
 
-		snprintf(tod_buf, sizeof(tod_buf), "%d %d %d %d %d %d %d", week0, week1, week2, week3, week4, week5, week6);
+		snprintf(tod_buf, sizeof(tod_buf), "%d %d %d %d %d %d %d", week[0], week[1], week[2], week[3], week[4], week[5], week[6]);
 	}
 	if (time_all == 1) {
 		_start_hour = 0;
