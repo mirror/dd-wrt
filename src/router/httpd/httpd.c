@@ -35,8 +35,8 @@
 static int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp);
 static char *wfgets(char *buf, int len, webs_t fp);
 static int wfprintf(webs_t fp, char *fmt, ...);
-static size_t wfwrite(char *buf, int size, int n, webs_t fp);
-static size_t wfread(char *buf, int size, int n, webs_t fp);
+static size_t wfwrite(void *buf, int size, int n, webs_t fp);
+static size_t wfread(void *buf, int size, int n, webs_t fp);
 static int wfclose(webs_t fp);
 static int wfflush(webs_t fp);
 #ifndef VALIDSOURCE
@@ -1936,7 +1936,7 @@ static int websWrite(webs_t wp, char *fmt, ...)
 	return ret;
 }
 
-static size_t wfwrite(char *buf, int size, int n, webs_t wp)
+static size_t wfwrite(void *buf, int size, int n, webs_t wp)
 {
 
 	FILE *fp = wp->fp;
@@ -1966,8 +1966,9 @@ static int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp)
 
 }
 
-static size_t wfread(char *buf, int size, int n, webs_t wp)
+static size_t wfread(void *p, int size, int n, webs_t wp)
 {
+	char *buf = (void*)p;
 	size_t ret;
 	FILE *fp = wp->fp;
 

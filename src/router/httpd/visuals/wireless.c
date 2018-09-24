@@ -89,7 +89,6 @@ struct lease_table {
 static char *wl_filter_mac_get(char *ifname2, char *type, int which, char *word)
 {
 	char *wordlist, *next;
-	int temp;
 	char ifname[32];
 	strcpy(ifname, ifname2);
 	rep(ifname, 'X', '.');
@@ -105,8 +104,6 @@ static char *wl_filter_mac_get(char *ifname2, char *type, int which, char *word)
 		sprintf(var, "%s_maclist", ifname);
 	}
 	wordlist = nvram_safe_get(var);
-
-	temp = which;
 
 	foreach(word, wordlist, next) {
 		if (which-- == 0) {

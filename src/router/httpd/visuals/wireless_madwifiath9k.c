@@ -56,8 +56,7 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 	struct mac80211_info *mac80211_info;
 	struct wifi_client_info *wc;
 	char nb[32];
-	int bias, qual, it, div = 1, mul = 1;
-	int co = 0;
+	int bias, qual, div = 1, mul = 1;
 	sprintf(nb, "%s_bias", ifname);
 	bias = nvram_default_geti(nb, 0);
 
