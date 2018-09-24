@@ -189,8 +189,7 @@ static void ndpi_search_stun(struct ndpi_detection_module_struct *ndpi_struct, s
 					NDPI_LOG(NDPI_PROTOCOL_SKYPE, ndpi_struct, NDPI_LOG_DEBUG, "Found Skype\n");
 
 					if ((flow->protos.stun_ssl.stun.num_processed_pkts >= 8) || (flow->protos.stun_ssl.stun.num_binding_requests >= 4))
-						ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_SKYPE,
-									   NDPI_PROTOCOL_SKYPE);
+						ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_SKYPE, NDPI_PROTOCOL_SKYPE);
 				} else {
 					NDPI_LOG(NDPI_PROTOCOL_STUN, ndpi_struct, NDPI_LOG_DEBUG, "found UDP stun.\n");
 					ndpi_int_stun_add_connection(ndpi_struct, is_whatsapp ? NDPI_PROTOCOL_WHATSAPP_VOICE : NDPI_PROTOCOL_STUN, flow);
