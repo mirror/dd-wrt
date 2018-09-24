@@ -1077,10 +1077,10 @@ static void macgrp_chain(int seq, int urlenable, char *ifname, char *target)
 
 	insmod("ipt_mac xt_mac");
 
-		foreach(var, wordlist, next) {
-			save2file("-A grp_%d%s -m mac --mac-source %s -j %s", seq, ifname, var, target);
-			save2file("-A grp_%d%s -m mac --mac-destination %s -j %s", seq, ifname, var, target);
-		}
+	foreach(var, wordlist, next) {
+		save2file("-A grp_%d%s -m mac --mac-source %s -j %s", seq, ifname, var, target);
+		save2file("-A grp_%d%s -m mac --mac-destination %s -j %s", seq, ifname, var, target);
+	}
 }
 
 static void ipgrp_chain(char *lan_cclass, int seq, int urlenable, char *ifname, char *target)
@@ -1135,10 +1135,10 @@ static void ipgrp_chain(char *lan_cclass, int seq, int urlenable, char *ifname, 
 
 		DEBUG("range=%s\n", wordlist2);
 
-			foreach(var2, wordlist2, next2) {
-				save2file("-A grp_%d%s -s %s -j %s", seq, ifname, var2, target);
-				save2file("-A grp_%d%s -d %s -j %s", seq, ifname, var2, target);
-			}
+		foreach(var2, wordlist2, next2) {
+			save2file("-A grp_%d%s -s %s -j %s", seq, ifname, var2, target);
+			save2file("-A grp_%d%s -d %s -j %s", seq, ifname, var2, target);
+		}
 	}
 }
 
@@ -1593,11 +1593,11 @@ static void lan2wan_chains(char *lan_cclass)
 		 * 
 		 * DEBUG("host=%s, keywd=%s\n", urlhost, urlkeywd); 
 		 */
-	char target[100];
-	if (mark == MARK_DROP)
-		strncpy(target, log_drop, sizeof(log_drop));
-	else
-		sprintf(target, "advgrp_%d", seq);
+		char target[100];
+		if (mark == MARK_DROP)
+			strncpy(target, log_drop, sizeof(log_drop));
+		else
+			sprintf(target, "advgrp_%d", seq);
 
 		macgrp_chain(seq, urlfilter, ifname, target);
 		ipgrp_chain(lan_cclass, seq, urlfilter, ifname, target);
