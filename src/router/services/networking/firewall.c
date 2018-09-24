@@ -1607,7 +1607,8 @@ static void lan2wan_chains(char *lan_cclass)
 		if (!strcmp(buf, ""))
 			continue;	/* error format */
 		if (strlen(ifs) > 0) {
-			sprintf(ifname, " -i %s", ifs);
+			if (strcmp(ifs, "Any"))
+				sprintf(ifname, " -i %s", ifs);
 		} else
 			ifname[0] = 0;
 		DEBUG("STAT: %s\n", buf);
