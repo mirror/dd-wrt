@@ -1206,10 +1206,10 @@ static void portgrp_chain(int seq, unsigned int mark, int urlenable, char *ifnam
 		 * udp --dport 0:655 -j logdrop 
 		 */
 		if (!strcmp(protocol, "tcp") || !strcmp(protocol, "both")) {
-			save2file("-A grp_%d%s -p tcp --dport %s:%s -j %s", seq, lan_port0, lan_port1, target);
+			save2file("-A grp_%d%s -p tcp --dport %s:%s -j %s", seq, ifname, lan_port0, lan_port1, target);
 		}
 		if (!strcmp(protocol, "udp") || !strcmp(protocol, "both")) {
-			save2file("-A grp_%d%s -p udp --dport %s:%s -j %s", seq, lan_port0, lan_port1, target);
+			save2file("-A grp_%d%s -p udp --dport %s:%s -j %s", seq, ifname, lan_port0, lan_port1, target);
 		}
 	}
 }
@@ -1319,12 +1319,12 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable, char *ifname
 			cprintf("match:: name=%s, protocol=%s, ports=%s\n", word, protocol, ports);
 			if (!strcmp(protocol, "tcp")
 			    || !strcmp(protocol, "both"))
-				save2file("-A advgrp_%d%s -p tcp --dport %s -j %s", seq, ifname, ports, log_drop);
+				save2file("-A advgrp_%d -p tcp --dport %s -j %s", seq, ports, log_drop);
 			if (!strcmp(protocol, "udp")
 			    || !strcmp(protocol, "both"))
-				save2file("-A advgrp_%d%s -p udp --dport %s -j %s", seq, ifname, ports, log_drop);
+				save2file("-A advgrp_%d -p udp --dport %s -j %s", seq, ports, log_drop);
 			if (!strcmp(protocol, "icmp"))
-				save2file("-A advgrp_%d%s -p icmp -j %s", seq, ifname, log_drop);
+				save2file("-A advgrp_%d -p icmp -j %s", seq,, log_drop);
 			if (!strcmp(protocol, "l7")) {
 				int i;
 
@@ -1332,12 +1332,12 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable, char *ifname
 					realname[i] = tolower(realname[i]);
 				insmod("ipt_layer7 xt_layer7");
 
-				save2file("-A advgrp_%d%s -m layer7 --l7proto %s -j %s", seq, ifname, realname, log_drop);
+				save2file("-A advgrp_%d -m layer7 --l7proto %s -j %s", seq, realname, log_drop);
 			}
 #ifdef HAVE_OPENDPI
 			if (!strcmp(protocol, "dpi")) {
 				insmod("xt_opendpi");
-				save2file("-A advgrp_%d%s -m ndpi --%s -j %s", seq, ifname, realname, log_drop);
+				save2file("-A advgrp_%d -m ndpi --%s -j %s", seq, realname, log_drop);
 			}
 #endif
 			if (!strcmp(protocol, "p2p")) {
@@ -1373,21 +1373,21 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable, char *ifname
 				if (proto)	//avoid null pointer, if realname isnt matched
 				{
 					insmod("ipt_ipp2p xt_ipp2p");
-					save2file("-A advgrp_%d%s -m ipp2p --%s -j %s", seq, ifname, proto, log_drop);
+					save2file("-A advgrp_%d -m ipp2p --%s -j %s", seq, proto, log_drop);
 					if (!strcmp(proto, "bit")) {
 						/* bittorrent detection enhanced */
 #ifdef HAVE_OPENDPI
 						insmod("xt_opendpi");
-						save2file("-A advgrp_%d%s -m ndpi --bittorrent -j %s", seq, ifname, log_drop);
+						save2file("-A advgrp_%d -m ndpi --bittorrent -j %s", seq, log_drop);
 #else
 						insmod("ipt_layer7 xt_layer7");
 #ifdef HAVE_MICRO
-						save2file("-A advgrp_%d%s -m layer7 --l7proto bt -j %s", seq, ifname, log_drop);
+						save2file("-A advgrp_%d -m layer7 --l7proto bt -j %s", seq, log_drop);
 #else
-						save2file("-A advgrp_%d%s -m length --length 0:550 -m layer7 --l7proto bt -j %s", seq, log_drop);
+						save2file("-A advgrp_%d -m length --length 0:550 -m layer7 --l7proto bt -j %s", seq, log_drop);
 #endif
-						save2file("-A advgrp_%d%s -m layer7 --l7proto bt1 -j %s", seq, ifname, log_drop);
-						save2file("-A advgrp_%d%s -m layer7 --l7proto bt2 -j %s", seq, ifname, log_drop);
+						save2file("-A advgrp_%d -m layer7 --l7proto bt1 -j %s", seq, log_drop);
+						save2file("-A advgrp_%d -m layer7 --l7proto bt2 -j %s", seq, log_drop);
 #endif
 					}
 				}
@@ -1400,77 +1400,77 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable, char *ifname
 	 */
 	if (nvram_nmatch("1", "filter_p2p_grp%d", seq)) {
 		insmod("ipt_layer7 xt_layer7 ipt_ipp2p xt_ipp2p");
-		save2file("-A advgrp_%d%s -m ipp2p --edk -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -m ipp2p --dc -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -m ipp2p --gnu -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -m ipp2p --kazaa -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -m ipp2p --bit -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -m ipp2p --apple -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -m ipp2p --soul -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -m ipp2p --winmx -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -m ipp2p --ares -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -m ipp2p --mute -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -m ipp2p --waste -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -m ipp2p --xdcc -j %s", seq, ifname, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --edk -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --dc -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --gnu -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --kazaa -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --bit -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --apple -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --soul -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --winmx -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --ares -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --mute -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --waste -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m ipp2p --xdcc -j %s", seq, log_drop);
 
 		/* p2p detection enhanced */
 #ifdef HAVE_OPENDPI
 		insmod("xt_opendpi");
 		/*commonly used protocols, decending */
-		save2file("-A advgrp_%d%s -m ndpi --bittorrent -j %s", seq, ifname, log_drop);
+		save2file("-A advgrp_%d -m ndpi --bittorrent -j %s", seq, log_drop);
 /*  disable till pattern works
 		save2file
-		    ("-A advgrp_%d%s -m ndpi --edonkey -j %s",
+		    ("-A advgrp_%d -m ndpi --edonkey -j %s",
 		     seq, log_drop); */
 		/*atm rarly used protocols */
-		save2file("-A advgrp_%d%s -m ndpi --apple -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -p tcp -m ndpi --directconnect -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -m ndpi --fasttrack -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -m ndpi --filetopia -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -p tcp -m ndpi --gnutella -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -m ndpi --imesh -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -p tcp -m ndpi --openft -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -p tcp -m ndpi --pando -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -p tcp -m ndpi --soulseek -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -p tcp -m ndpi --winmx -j %s", seq, ifname, log_drop);
+		save2file("-A advgrp_%d -m ndpi --apple -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -p tcp -m ndpi --directconnect -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m ndpi --fasttrack -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m ndpi --filetopia -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -p tcp -m ndpi --gnutella -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m ndpi --imesh -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -p tcp -m ndpi --openft -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -p tcp -m ndpi --pando -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -p tcp -m ndpi --soulseek -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -p tcp -m ndpi --winmx -j %s", seq, log_drop);
 #else
 #ifdef HAVE_MICRO
-		save2file("-A advgrp_%d%s -m layer7 --l7proto bt -j %s", seq, ifname, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto bt -j %s", seq, log_drop);
 #else
-		save2file("-A advgrp_%d%s -m length --length 0:550 -m layer7 --l7proto bt -j %s", seq, ifname, log_drop);
+		save2file("-A advgrp_%d -m length --length 0:550 -m layer7 --l7proto bt -j %s", seq, log_drop);
 #endif
 #endif
 		/* commonly used protocols, decending */
-/*		save2file("-A advgrp_%d%s -m layer7 --l7proto bt -j %s", seq, ifname, log_drop); */
-		save2file("-A advgrp_%d%s  -p tcp -m layer7 --l7proto ares -j %s", seq, ifname, log_drop);
+/*		save2file("-A advgrp_%d -m layer7 --l7proto bt -j %s", seq, log_drop); */
+		save2file("-A advgrp_%d  -p tcp -m layer7 --l7proto ares -j %s", seq, log_drop);
 #ifndef HAVE_OPENDPI
-		save2file("-A advgrp_%d%s -m layer7 --l7proto bt4 -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -m layer7 --l7proto bt1 -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -m layer7 --l7proto bittorrent -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -m layer7 --l7proto bt2 -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -p tcp -m layer7 --l7proto gnutella -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -m layer7 --l7proto applejuice -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -p tcp -m layer7 --l7proto directconnect -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -p tcp -m layer7 --l7proto soulseek -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -p tcp -m layer7 --l7proto openft -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -m layer7 --l7proto fasttrack -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -m layer7 --l7proto imesh -j %s", seq, ifname, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto bt4 -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto bt1 -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto bittorrent -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto bt2 -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto gnutella -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto applejuice -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto directconnect -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto soulseek -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto openft -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto fasttrack -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto imesh -j %s", seq, log_drop);
 #endif
-		save2file("-A advgrp_%d%s -m layer7 --l7proto audiogalaxy -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -p tcp -m layer7 --l7proto bearshare -j %s", seq, ifname, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto audiogalaxy -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto bearshare -j %s", seq, log_drop);
 		/* atm rarly used protocols */
-		save2file("-A advgrp_%d%s -m layer7 --l7proto edonkey -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -m layer7 --l7proto freenet -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -m layer7 --l7proto gnucleuslan -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -m layer7 --l7proto goboogy -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -m layer7 --l7proto hotline -j %s", seq, ifname, log_drop);
-/*	 	save2file("-A advgrp_%d%s -m layer7 --l7proto kugoo -j %s", seq, ifname, log_drop);// xunlei, kugoo, winmx block websurfing */
-		save2file("-A advgrp_%d%s -p tcp -m layer7 --l7proto mute -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -p tcp -m layer7 --l7proto napster -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -p tcp -m layer7 --l7proto soribada -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -m layer7 --l7proto tesla -j %s", seq, ifname, log_drop);
-/*		save2file("-A advgrp_%d%s -p tcp -m layer7 --l7proto winmx -j %s", seq, ifname, log_drop);
-		save2file("-A advgrp_%d%s -m layer7 --l7proto xunlei -j %s", seq, ifname, log_drop); */
+		save2file("-A advgrp_%d -m layer7 --l7proto edonkey -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto freenet -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto gnucleuslan -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto goboogy -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto hotline -j %s", seq, log_drop);
+/*	 	save2file("-A advgrp_%d -m layer7 --l7proto kugoo -j %s", seq, log_drop);// xunlei, kugoo, winmx block websurfing */
+		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto mute -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto napster -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto soribada -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto tesla -j %s", seq, log_drop);
+/*		save2file("-A advgrp_%d -p tcp -m layer7 --l7proto winmx -j %s", seq, log_drop);
+		save2file("-A advgrp_%d -m layer7 --l7proto xunlei -j %s", seq, log_drop); */
 	}
 	free(services);
 	/*
@@ -1479,7 +1479,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable, char *ifname
 	wordlist = nvram_nget("filter_web_host%d", seq);
 	if (wordlist && strcmp(wordlist, "")) {
 		insmod("ipt_webstr");
-		save2file("-A advgrp_%d%s -p tcp -m webstr --host \"%s\" -j %s", seq, ifname, wordlist, log_reject);
+		save2file("-A advgrp_%d -p tcp -m webstr --host \"%s\" -j %s", seq, wordlist, log_reject);
 #if !defined(ARCH_broadcom) && !defined(HAVE_RTG32) || defined(HAVE_BCMMODERN)
 		char var[256];
 		char *next;
@@ -1491,7 +1491,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable, char *ifname
 			int offset = 0;
 			if (strstr(var, "https://"))
 				offset = 8;
-			save2file("-A advgrp_%d%s -p tcp -m string --string \"%s\" --algo bm --from 1 --to 600 -j %s", seq, ifname, &var[offset], log_reject);
+			save2file("-A advgrp_%d -p tcp -m string --string \"%s\" --algo bm --from 1 --to 600 -j %s", seq, &var[offset], log_reject);
 			wordlist = next + 8;
 		}
 
@@ -1504,7 +1504,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable, char *ifname
 	wordlist = nvram_nget("filter_web_url%d", seq);
 	if (wordlist && strcmp(wordlist, "")) {
 		insmod("ipt_webstr");
-		save2file("-A advgrp_%d%s -p tcp -m webstr --url \"%s\" -j %s", seq, ifname, wordlist, log_reject);
+		save2file("-A advgrp_%d -p tcp -m webstr --url \"%s\" -j %s", seq, wordlist, log_reject);
 #if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN) && !defined(HAVE_RTG32)
 		char var[256];
 		char *next;
@@ -1516,7 +1516,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable, char *ifname
 			int offset = 0;
 			if (strstr(var, "https://"))
 				offset = 8;
-			save2file("-A advgrp_%d%s -p tcp -m string --string \"%s\" --algo bm --from 1 --to 600 -j %s", seq, ifname, &var[offset], log_reject);
+			save2file("-A advgrp_%d -p tcp -m string --string \"%s\" --algo bm --from 1 --to 600 -j %s", seq, &var[offset], log_reject);
 			wordlist = next + 8;
 		}
 #endif
@@ -1525,7 +1525,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable, char *ifname
 	/*
 	 * Others will be accepted 
 	 */
-	// save2file ("-A advgrp_%d%s -j %s", seq, log_accept);
+	// save2file ("-A advgrp_%d -j %s", seq, log_accept);
 }
 
 static void lan2wan_chains(char *lan_cclass)
