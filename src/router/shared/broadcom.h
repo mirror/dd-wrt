@@ -221,7 +221,6 @@ extern void ej_show_chaps(webs_t wp, int argc, char_t ** argv);
 /*
  * for dhcp 
  */
-extern char *dhcp_reltime(char *buf, time_t t);
 extern void ej_dumpleases(webs_t wp, int argc, char_t ** argv);
 extern void validate_dhcp(webs_t wp, char *value, struct variable *v);
 extern void dhcp_check(webs_t wp, char *value, struct variable *v);
@@ -666,9 +665,7 @@ extern int (*UwebsGetVari) (webs_t wp, char *var, int d);
 extern int (*UwebsWrite) (webs_t wp, char *fmt, ...);
 
 #define websWrite UwebsWrite
-extern struct wl_client_mac *Uwl_client_macs;
 
-#define wl_client_macs Uwl_client_macs
 extern void (*Udo_ej) (unsigned char method, struct mime_handler * handler, char *path, webs_t stream);	// jimmy, 
 									// https, 
 									// 8/4/2003
@@ -712,9 +709,7 @@ extern int (*UwebsWrite) (webs_t wp, char *fmt, ...);
 extern char *(*UGOZILA_GET) (webs_t wp, char *name);
 
 #define GOZILA_GET UGOZILA_GET
-extern struct wl_client_mac *Uwl_client_macs;
 
-#define wl_client_macs Uwl_client_macs
 extern void (*Uvalidate_cgi) (webs_t wp);
 
 #define validate_cgi Uvalidate_cgi
