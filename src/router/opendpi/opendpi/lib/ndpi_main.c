@@ -829,6 +829,8 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_SMBV23, no_master, no_master, "SMBv23", ndpi_build_default_ports(ports_a, 445, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
+	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_MINING, no_master, no_master, "Mining", ndpi_build_default_ports(ports_a, 8333, 0, 0, 0, 0) /* TCP */ ,
+				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_SYSLOG, no_master, no_master, "Syslog", ndpi_build_default_ports(ports_a, 514, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 514, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DHCP, no_master, no_master, "DHCP", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
@@ -1983,6 +1985,9 @@ static void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_st
 
 	/* SMB */
 	init_smb_dissector(ndpi_struct, &a, detection_bitmask);
+
+	/* MINING */
+	init_mining_dissector(ndpi_struct, &a, detection_bitmask);
 
 	/* TELNET */
 	init_telnet_dissector(ndpi_struct, &a, detection_bitmask);
