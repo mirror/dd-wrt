@@ -37,7 +37,7 @@ SOFTWARE.
 
 // https://en.wikipedia.org/wiki/Jenkins_hash_function
 #define HASH_FUNCTION jenkins_one_at_a_time_hash
-uint32_t jenkins_one_at_a_time_hash(const uint8_t* key, size_t length) {
+static uint32_t jenkins_one_at_a_time_hash(const uint8_t* key, size_t length) {
   size_t i = 0;
   uint32_t hash = 0;
   while (i != length) {
@@ -73,7 +73,7 @@ struct cache_entry {
 };
 
 
-void cache_touch_entry(cache_t cache, cache_entry entry) {
+static void cache_touch_entry(cache_t cache, cache_entry entry) {
   if(entry->prev) {
     if(entry->next) {
       entry->prev->next = entry->next;
@@ -90,14 +90,14 @@ void cache_touch_entry(cache_t cache, cache_entry entry) {
 }
 
 
-cache_entry cache_entry_new(void) {
+static cache_entry cache_entry_new(void) {
   return (cache_entry) ndpi_calloc(sizeof(struct cache_entry), 1);
 }
-cache_entry_map cache_entry_map_new(void) {
+static cache_entry_map cache_entry_map_new(void) {
   return (cache_entry_map) ndpi_calloc(sizeof(struct cache_entry_map), 1);
 }
 
-cache_t cache_new(uint32_t cache_max_size) {
+static cache_t cache_new(uint32_t cache_max_size) {
   cache_t cache;
   if(!cache_max_size) {
     return NULL;
@@ -121,7 +121,7 @@ cache_t cache_new(uint32_t cache_max_size) {
   return cache;
 }
 
-cache_result cache_add(cache_t cache, void *item, uint32_t item_size) {
+static cache_result cache_add(cache_t cache, void *item, uint32_t item_size) {
   uint32_t hash;
   cache_entry entry;
   cache_entry_map map_entry;
@@ -215,7 +215,7 @@ cache_result cache_add(cache_t cache, void *item, uint32_t item_size) {
   return CACHE_NO_ERROR;
 }
 
-cache_result cache_contains(cache_t cache, void *item, uint32_t item_size) {
+static cache_result cache_contains(cache_t cache, void *item, uint32_t item_size) {
   uint32_t hash;
 
   if(!cache || !item || !item_size) {
@@ -241,7 +241,7 @@ cache_result cache_contains(cache_t cache, void *item, uint32_t item_size) {
   return CACHE_CONTAINS_FALSE;
 }
 
-cache_result cache_remove(cache_t cache, void *item, uint32_t item_size) {
+static cache_result cache_remove(cache_t cache, void *item, uint32_t item_size) {
   uint32_t hash;
 
   if(!cache || !item || !item_size) {
@@ -297,7 +297,7 @@ cache_result cache_remove(cache_t cache, void *item, uint32_t item_size) {
   return CACHE_REMOVE_NOT_FOUND;
 }
 
-void cache_free(cache_t cache) {
+static void cache_free(cache_t cache) {
   int i;
   if(!cache) {
     return;

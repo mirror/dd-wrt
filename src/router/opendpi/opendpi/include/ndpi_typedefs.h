@@ -448,6 +448,10 @@ struct ndpi_flow_tcp_struct {
 #ifdef NDPI_PROTOCOL_PPSTREAM
 	u_int32_t ppstream_stage:3;
 #endif
+
+/* NDPI_PROTOCOL_MEMCACHED */
+  u_int8_t memcached_matches;
+
 }
 #if !defined(WIN32)
 __attribute__((__packed__))
@@ -504,6 +508,9 @@ struct ndpi_flow_udp_struct {
 	u_int32_t rx_conn_epoch;
 	u_int32_t rx_conn_id;
 #endif
+
+/* NDPI_PROTOCOL_MEMCACHED */
+  u_int8_t memcached_matches;
 }
 #if !defined(WIN32)
 __attribute__((__packed__))
