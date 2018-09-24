@@ -469,7 +469,8 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{"slack", NDPI_ONLY},
 #endif
-	{"smb", DPI},
+	{"smbv1", DPI},
+	{"smbv23", DPI},
 #ifdef HAVE_OPENDPI
 	{"smpp", NDPI_ONLY},
 #endif
