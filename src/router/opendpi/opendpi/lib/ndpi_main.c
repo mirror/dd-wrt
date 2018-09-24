@@ -825,7 +825,9 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 				ndpi_build_default_ports(ports_b, 161, 162, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_XDMCP, no_master, no_master, "XDMCP", ndpi_build_default_ports(ports_a, 177, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 177, 0, 0, 0, 0) /* UDP */ );
-	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_SMB, no_master, no_master, "SMB", ndpi_build_default_ports(ports_a, 445, 0, 0, 0, 0) /* TCP */ ,
+	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_SMBV1, no_master, no_master, "SMBv1", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
+				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
+	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_SMBV23, no_master, no_master, "SMBv23", ndpi_build_default_ports(ports_a, 445, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_SYSLOG, no_master, no_master, "Syslog", ndpi_build_default_ports(ports_a, 514, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 514, 0, 0, 0, 0) /* UDP */ );

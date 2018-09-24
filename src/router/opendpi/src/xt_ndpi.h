@@ -46,7 +46,7 @@ struct xt_ndpi_tginfo {
 #define NDPI_PROTOCOL_SHORT_STRING "unknown",	"ftp_control",     "pop3",             "smtp",        "imap",     "dns",\
 "ipp",             "http",                 "mdns",             "ntp",           "netbios",\
 "nfs",             "ssdp",                 "bgp",              "snmp",          "xdmcp",\
-"smb",             "syslog",               "dhcp",             "postgres",      "mysql",\
+"smbv1",             "syslog",               "dhcp",             "postgres",      "mysql",\
 "tds",             "direct_download_link", "pop3_ssl",        "applejuice",    "directconnect",\
 "socrates",        "winmx",                "vmware",           "mail_smtps",    "filetopia",\
 "imesh",           "kontiki",              "openft",           "fasttrack",     "gnutella",\
@@ -88,10 +88,10 @@ struct xt_ndpi_tginfo {
 "coap", "applestore", "opendns", "git", "drda", "playstore", "someip", "fix", "playstation", "pastebin", "linkedin", "soundcloud", "csgo", "lisp", \
 "nintendo", "dnscrypt", "1kxun", "iqiyi", "wechat", "github", "sina", "slack", "iflix", "hotmail", "google_drive", "ookla", \
 "hangout", "bjnp", "smpp", "tinc", "amqp", "google_plus", "diameter", "apple_push", "google_services", "amazon_video", "google_docs", "whatsapp_files", \
-"ajp", "ntop", "facebook_messenger", "musically", "facebook_zero", "vidto", "rapidvideo", "showmax"
+"ajp", "ntop", "facebook_messenger", "musically", "facebook_zero", "vidto", "rapidvideo", "showmax", "smbv23"
 
 
-#define NDPI_PROTOCOL_MAXNUM 277
+#define NDPI_PROTOCOL_MAXNUM 278
 #endif
 
 #endif				/* _LINUX_NETFILTER_XT_NDPI_H */
