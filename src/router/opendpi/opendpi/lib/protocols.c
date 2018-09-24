@@ -169,3 +169,4 @@
 #include "protocols/ajp.c"
 #include "protocols/fbzero.c"
 #include "protocols/mining.c"
+#include "protocols/memcached.c"
