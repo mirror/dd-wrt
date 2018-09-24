@@ -57,7 +57,6 @@ int (*httpd_filter_name) (char *old_name, char *new_name, size_t size, int type)
 char *(*websGetVar) (webs_t wp, char *var, char *d) = NULL;
 int (*websGetVari) (webs_t wp, char *var, int d) = NULL;
 int (*websWrite) (webs_t wp, char *fmt, ...) = NULL;
-struct wl_client_mac *wl_client_macs = NULL;
 
 void (*do_ej) (unsigned char method, struct mime_handler * handler, char *path, webs_t stream) = NULL;	// jimmy, 
 									// https, 
@@ -75,7 +74,6 @@ void initWeb(struct Webenvironment *env)
 	websGetVar = env->PwebsGetVar;
 	websGetVari = env->PwebsGetVari;
 	httpd_filter_name = env->Phttpd_filter_name;
-	wl_client_macs = env->Pwl_client_macs;
 	websWrite = env->PwebsWrite;
 	do_ej_buffer = env->Pdo_ej_buffer;
 	do_ej = env->Pdo_ej;

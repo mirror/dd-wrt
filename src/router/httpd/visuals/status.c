@@ -86,31 +86,6 @@ void ej_localtime(webs_t wp, int argc, char_t ** argv)
 	}
 }
 
-void ej_dhcp_remaining_time(webs_t wp, int argc, char_t ** argv)
-{
-	// tofu12
-
-	if (nvram_invmatch("wan_proto", "dhcp"))
-		return;
-
-	long exp;
-	char buf[128];
-	struct sysinfo si;
-	long n;
-
-	exp = 0;
-	if (file_to_buf("/tmp/udhcpc.expires", buf, sizeof(buf))) {
-		n = atol(buf);
-		if (n > 0) {
-			sysinfo(&si);
-			exp = n - si.uptime;
-		}
-	}
-	websWrite(wp, dhcp_reltime(buf, exp));
-
-	return;
-}
-
 void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 {
 	char *type;
