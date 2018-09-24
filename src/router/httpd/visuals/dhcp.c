@@ -63,7 +63,7 @@ void ej_dhcpenabled(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, argv[1]);
 }
 
-char *dhcp_reltime(char *buf, time_t t)
+static char *dhcp_reltime(char *buf, time_t t)
 {
 	if (t < 0)
 		t = 0;
@@ -296,5 +296,30 @@ void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 			fclose(fp);
 		}
 	}
+	return;
+}
+
+void ej_dhcp_remaining_time(webs_t wp, int argc, char_t ** argv)
+{
+	// tofu12
+
+	if (nvram_invmatch("wan_proto", "dhcp"))
+		return;
+
+	long exp;
+	char buf[128];
+	struct sysinfo si;
+	long n;
+
+	exp = 0;
+	if (file_to_buf("/tmp/udhcpc.expires", buf, sizeof(buf))) {
+		n = atol(buf);
+		if (n > 0) {
+			sysinfo(&si);
+			exp = n - si.uptime;
+		}
+	}
+	websWrite(wp, dhcp_reltime(buf, exp));
+
 	return;
 }

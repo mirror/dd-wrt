@@ -951,8 +951,6 @@ void security_save(webs_t wp)
 	applytake(value);
 }
 
-extern struct wl_client_mac *wl_client_macs;
-
 void add_active_mac(webs_t wp)
 {
 	int i, count = 0;
@@ -965,28 +963,24 @@ void add_active_mac(webs_t wp)
 
 	for (i = 0; i < MAX_LEASES + 2; i++) {
 		char active_mac[] = "onXXX";
-		char *index = NULL;
+		int index;
 
 		snprintf(active_mac, sizeof(active_mac), "%s%d", "on", i);
-		index = websGetVar(wp, active_mac, NULL);
-		if (!index)
-			continue;
+		index = websGetVari(wp, active_mac, 0);
 
 		count++;
 
-		cur += snprintf(cur, buf + msize - cur, "%s%s", cur == buf ? "" : " ", wl_client_macs[atoi(index)].hwaddr);
+		cur += snprintf(cur, buf + msize - cur, "%s%s", cur == buf ? "" : " ", wp->p->wl_client_macs[index].hwaddr);
 	}
 	for (i = 0; i < MAX_LEASES + 2; i++) {
 		char active_mac[] = "offXXX";
-		char *index;
+		int index;
 
 		snprintf(active_mac, sizeof(active_mac), "%s%d", "off", i);
-		index = websGetVar(wp, active_mac, NULL);
-		if (!index)
-			continue;
+		index = websGetVari(wp, active_mac, 0);
 
 		count++;
-		cur += snprintf(cur, buf + msize - cur, "%s%s", cur == buf ? "" : " ", wl_client_macs[atoi(index)].hwaddr);
+		cur += snprintf(cur, buf + msize - cur, "%s%s", cur == buf ? "" : " ", wp->p->wl_client_macs[index].hwaddr);
 	}
 	char acmac[32];
 	sprintf(acmac, "%s_active_mac", ifname);

@@ -70,21 +70,6 @@
 
 #undef ABURN_WSEC_CHECK
 
-/*
- * WEP Format: wl_wep_buf=111:371A82447F:FBEA2AB7D4:1C9D814E6C:B4695172B4:2
- * (only for UI read)
- * wl_wep_gen=111:371A82447F:FBEA2AB7D4:1C9D814E6C:B4695172B4:2 (only for UI
- * read) wl_key=2 wl_key1=371A82447F wl_key2=FBEA2AB7D4 wl_key3=1C9D814E6C
- * wl_key4=B4695172B4 wl_passphrase=111 (only for UI) wl_wep_bit=64 (only for 
- * UI)
- * 
- */
-
-struct lease_table {
-	unsigned char hostname[32];
-	char ipaddr[20];
-	char hwaddr[20];
-} *dhcp_lease_table;
 
 static char *wl_filter_mac_get(char *ifname2, char *type, int which, char *word)
 {
@@ -272,9 +257,7 @@ int dhcp_lease_table_init(void)
 	return count;
 }
 
-extern struct wl_client_mac *wl_client_macs;
-
-void get_hostname_ip(char *type, char *filename)
+static void get_hostname_ip(webs_t wp, char *type, char *filename)
 {
 	FILE *fp;
 	char line[80];
@@ -290,9 +273,9 @@ void get_hostname_ip(char *type, char *filename)
 			if (sscanf(line, "%s %s %s", leases[0], leases[1], leases[2]) != 3)
 				continue;
 			for (i = 0; i < MAX_LEASES; i++) {
-				if (!strcmp(leases[0], wl_client_macs[i].hwaddr)) {
-					snprintf(wl_client_macs[i].ipaddr, sizeof(wl_client_macs[i].ipaddr), "%s", leases[1]);
-					snprintf(wl_client_macs[i].hostname, sizeof(wl_client_macs[i].hostname), "%s", leases[2]);
+				if (!strcmp(leases[0], wp->p->wl_client_macs[i].hwaddr)) {
+					snprintf(wp->p->wl_client_macs[i].ipaddr, sizeof(wp->p->wl_client_macs[i].ipaddr), "%s", leases[1]);
+					snprintf(wp->p->wl_client_macs[i].hostname, sizeof(wp->p->wl_client_macs[i].hostname), "%s", leases[2]);
 					break;
 				}
 			}
@@ -301,8 +284,7 @@ void get_hostname_ip(char *type, char *filename)
 	}
 }
 
-int nv_count = 0;
-static void save_hostname_ip(void)
+static void save_hostname_ip(webs_t wp)
 {
 	FILE *fp, *fp_w;
 	char line[80];
@@ -337,22 +319,22 @@ static void save_hostname_ip(void)
 
 	}
 	count = i;
-	for (i = 0; i < nv_count; i++) {	// init value
-		if (wl_client_macs[i].status == 1 && strcmp(wl_client_macs[i].ipaddr, "")) {	// online && have ip address
+	for (i = 0; i < wp->p->nv_count; i++) {	// init value
+		if (wp->p->wl_client_macs[i].status == 1 && strcmp(wp->p->wl_client_macs[i].ipaddr, "")) {	// online && have ip address
 			for (j = 0; j < MAX_LEASES; j++) {
 				match = 0;
-				if (!strcmp(wl_clients[j].hwaddr, wl_client_macs[i].hwaddr)) {
-					snprintf(wl_clients[j].ipaddr, sizeof(wl_clients[j].ipaddr), "%s", wl_client_macs[i].ipaddr);
-					snprintf(wl_clients[j].hostname, sizeof(wl_clients[j].hostname), "%s", wl_client_macs[i].hostname);
+				if (!strcmp(wl_clients[j].hwaddr, wp->p->wl_client_macs[i].hwaddr)) {
+					snprintf(wl_clients[j].ipaddr, sizeof(wl_clients[j].ipaddr), "%s", wp->p->wl_client_macs[i].ipaddr);
+					snprintf(wl_clients[j].hostname, sizeof(wl_clients[j].hostname), "%s", wp->p->wl_client_macs[i].hostname);
 					match = 1;
 					break;
 				}
 
 			}
 			if (match == 0) {
-				snprintf(wl_clients[count].hwaddr, sizeof(wl_clients[i].hwaddr), "%s", wl_client_macs[i].hwaddr);
-				snprintf(wl_clients[count].ipaddr, sizeof(wl_clients[i].ipaddr), "%s", wl_client_macs[i].ipaddr);
-				snprintf(wl_clients[count].hostname, sizeof(wl_clients[i].hostname), "%s", wl_client_macs[i].hostname);
+				snprintf(wl_clients[count].hwaddr, sizeof(wl_clients[i].hwaddr), "%s", wp->p->wl_client_macs[i].hwaddr);
+				snprintf(wl_clients[count].ipaddr, sizeof(wl_clients[i].ipaddr), "%s", wp->p->wl_client_macs[i].ipaddr);
+				snprintf(wl_clients[count].hostname, sizeof(wl_clients[i].hostname), "%s", wp->p->wl_client_macs[i].hostname);
 				count++;
 			}
 		}
@@ -376,7 +358,6 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 	FILE *fp;
 	char list[2][20];
 	char line[80];
-	int dhcp_table_count;
 	char *type, *ifname2;
 	char ifname[32];
 	type = argv[0];
@@ -385,14 +366,14 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 	rep(ifname, 'X', '.');
 	if (!strcmp(type, "online")) {
 		for (i = 0; i < MAX_LEASES; i++) {	// init value
-			strcpy(wl_client_macs[i].hostname, "");
-			strcpy(wl_client_macs[i].ipaddr, "");
-			strcpy(wl_client_macs[i].hwaddr, "");
-			wl_client_macs[i].status = -1;
-			wl_client_macs[i].check = 0;
+			strcpy(wp->p->wl_client_macs[i].hostname, "");
+			strcpy(wp->p->wl_client_macs[i].ipaddr, "");
+			strcpy(wp->p->wl_client_macs[i].hwaddr, "");
+			wp->p->wl_client_macs[i].status = -1;
+			wp->p->wl_client_macs[i].check = 0;
 		}
 
-		nv_count = 0;	// init mac list
+		wp->p->nv_count = 0;	// init mac list
 
 		char var[32];
 		if (!strcmp(nvram_safe_get("wl_active_add_mac"), "1")) {
@@ -403,10 +384,10 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 		char *maclist = nvram_safe_get(var);
 
 		foreach(word, maclist, next) {
-			snprintf(wl_client_macs[nv_count].hwaddr, sizeof(wl_client_macs[nv_count].hwaddr), "%s", word);
-			wl_client_macs[nv_count].status = 0;	// offline (default)
-			wl_client_macs[nv_count].check = 1;	// checked
-			nv_count++;
+			snprintf(wp->p->wl_client_macs[wp->p->nv_count].hwaddr, sizeof(wp->p->wl_client_macs[wp->p->nv_count].hwaddr), "%s", word);
+			wp->p->wl_client_macs[wp->p->nv_count].status = 0;	// offline (default)
+			wp->p->wl_client_macs[wp->p->nv_count].check = 1;	// checked
+			wp->p->nv_count++;
 		}
 
 		char *iface;
@@ -440,63 +421,62 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 					continue;
 				if (strcmp(list[0], "assoclist"))
 					continue;
-				for (i = 0; i < nv_count; i++) {
-					if (!strcmp(wl_client_macs[i].hwaddr, list[1])) {
-						wl_client_macs[i].status = 1;	// online
-						wl_client_macs[i].check = 1;	// checked
+				for (i = 0; i < wp->p->nv_count; i++) {
+					if (!strcmp(wp->p->wl_client_macs[i].hwaddr, list[1])) {
+						wp->p->wl_client_macs[i].status = 1;	// online
+						wp->p->wl_client_macs[i].check = 1;	// checked
 						match = 1;
 
 						break;
 					}
 				}
 				if (match == 0) {
-					snprintf(wl_client_macs[nv_count].hwaddr, sizeof(wl_client_macs[nv_count].hwaddr), "%s", list[1]);
-					wl_client_macs[nv_count].status = 1;	// online
-					wl_client_macs[nv_count].check = 0;	// no checked
-					nv_count++;
+					snprintf(wp->p->wl_client_macs[wp->p->nv_count].hwaddr, sizeof(wp->p->wl_client_macs[wp->p->nv_count].hwaddr), "%s", list[1]);
+					wp->p->wl_client_macs[wp->p->nv_count].status = 1;	// online
+					wp->p->wl_client_macs[wp->p->nv_count].check = 0;	// no checked
+					wp->p->nv_count++;
 				}
 			}
 			pclose(fp);
 		}
 		if (!strcmp(type, "online")) {
-			dhcp_table_count = dhcp_lease_table_init();	// init dhcp
+			dhcp_lease_table_init();	// init dhcp
 			// lease
 			// table and
 			// get count
-			get_hostname_ip("online", LEASES_NAME_IP);
+			get_hostname_ip(wp, "online", LEASES_NAME_IP);
 		}
-		save_hostname_ip();
+		save_hostname_ip(wp);
 	}
 
 	if (!strcmp(type, "offline")) {
-		get_hostname_ip("offline", OLD_NAME_IP);
+		get_hostname_ip(wp,"offline", OLD_NAME_IP);
 	}
 
 	if (!strcmp(type, "online")) {
-		for (i = 0; i < nv_count; i++) {
-			if (wl_client_macs[i].status != 1)
+		for (i = 0; i < wp->p->nv_count; i++) {
+			if (wp->p->wl_client_macs[i].status != 1)
 				continue;
 			websWrite(wp, "<tr align=\"middle\"> \n"
 				  "<td height=\"20\" width=\"167\">%s</td> \n"
 				  "<td height=\"20\" width=\"140\">%s</td> \n"
 				  "<td height=\"20\" width=\"156\">%s</td> \n"
 				  "<td height=\"20\" width=\"141\"><input type=\"checkbox\" name=\"on%d\" value=\"%d\" %s></td> \n"
-				  "</tr>\n", wl_client_macs[i].hostname, wl_client_macs[i].ipaddr, wl_client_macs[i].hwaddr, flag++, i, wl_client_macs[i].check ? "checked=\"checked\"" : "");
+				  "</tr>\n", wp->p->wl_client_macs[i].hostname, wp->p->wl_client_macs[i].ipaddr, wp->p->wl_client_macs[i].hwaddr, flag++, i, wp->p->wl_client_macs[i].check ? "checked=\"checked\"" : "");
 		}
 	} else if (!strcmp(type, "offline")) {
-		for (i = 0; i < nv_count; i++) {
-			if (wl_client_macs[i].status != 0)
+		for (i = 0; i < wp->p->nv_count; i++) {
+			if (wp->p->wl_client_macs[i].status != 0)
 				continue;
 			websWrite(wp, "<tr align=\"middle\"> \n"
 				  "<td height=\"20\" width=\"167\">%s</td> \n"
 				  "<td height=\"20\" width=\"140\">%s</td> \n"
 				  "<td height=\"20\" width=\"156\">%s</td> \n"
 				  "<td height=\"20\" width=\"141\"><input type=\"checkbox\" name=\"off%d\" value=\"%d\" %s></td> \n"
-				  "</tr>\n", wl_client_macs[i].hostname, wl_client_macs[i].ipaddr, wl_client_macs[i].hwaddr, flag++, i, wl_client_macs[i].check ? "checked=\"checked\"" : "");
+				  "</tr>\n", wp->p->wl_client_macs[i].hostname, wp->p->wl_client_macs[i].ipaddr, wp->p->wl_client_macs[i].hwaddr, flag++, i, wp->p->wl_client_macs[i].check ? "checked=\"checked\"" : "");
 
 		}
 	}
-	// if(dhcp_lease_table) free(dhcp_lease_table);
 	return;
 }
 
