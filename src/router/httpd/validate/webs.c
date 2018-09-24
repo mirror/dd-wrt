@@ -312,7 +312,7 @@ void save_policy(webs_t wp)
 	char buf[256] = "";
 	char *value = websGetVar(wp, "action", "");
 	struct variable filter_variables[] = {
-	      {argv:ARGV("1", "10")},
+	      {argv:ARGV("1", "20")},
 	      {argv:ARGV("0", "1", "2")},
 	      {argv:ARGV("deny", "allow")},
 
