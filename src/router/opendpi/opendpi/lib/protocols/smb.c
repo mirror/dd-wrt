@@ -39,10 +39,10 @@ static void ndpi_search_smb_tcp(struct ndpi_detection_module_struct *ndpi_struct
 
 			NDPI_LOG(NDPI_PROTOCOL_SMB, ndpi_struct, NDPI_LOG_DEBUG, "found SMB.\n");
 
-			if(packet->payload[8] == 0x72)
-			    ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_SMBV1, NDPI_PROTOCOL_UNKNOWN);
+			if (packet->payload[8] == 0x72)
+				ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_SMBV1, NDPI_PROTOCOL_UNKNOWN);
 			else
-			    ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_SMBV23, NDPI_PROTOCOL_UNKNOWN);
+				ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_SMBV23, NDPI_PROTOCOL_UNKNOWN);
 			return;
 		}
 	}
