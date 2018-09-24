@@ -1067,38 +1067,23 @@ static int schedule_by_tod(FILE * cfd, int seq)
 	return 0;
 }
 
-static void macgrp_chain(int seq, unsigned int mark, int urlenable, char *ifname)
+static void macgrp_chain(int seq, int urlenable, char *ifname, char *target)
 {
 	char var[256], *next;
 	char *wordlist;
-
 	wordlist = nvram_nget("filter_mac_grp%d", seq);
 	if (strcmp(wordlist, "") == 0)
 		return;
 
 	insmod("ipt_mac xt_mac");
 
-	if (mark == MARK_DROP) {
 		foreach(var, wordlist, next) {
-			save2file("-A grp_%d%s -m mac --mac-source %s -j %s", seq, ifname, var, log_drop);
-			save2file("-A grp_%d%s -m mac --mac-destination %s -j %s", seq, ifname, var, log_drop);
+			save2file("-A grp_%d%s -m mac --mac-source %s -j %s", seq, ifname, var, target);
+			save2file("-A grp_%d%s -m mac --mac-destination %s -j %s", seq, ifname, var, target);
 		}
-	} else {
-		foreach(var, wordlist, next) {
-			save2file("-A grp_%d%s -m mac --mac-source %s -j advgrp_%d", seq, ifname, var, seq);
-			save2file("-A grp_%d%s -m mac --mac-destination %s -j advgrp_%d", seq, ifname, var, seq);
-
-			/*
-			 * mark = urlenable ? mark : webfilter ? MARK_HTTP : 0; if (mark) 
-			 * { save2file("-A macgrp_%d -p tcp --dport %d -m mac "
-			 * "--mac-source %s -j MARK --set-mark %d\n" , seq, HTTP_PORT,
-			 * var, mark); } 
-			 */
-		}
-	}
 }
 
-static void ipgrp_chain(char *lan_cclass, int seq, unsigned int mark, int urlenable, char *ifname)
+static void ipgrp_chain(char *lan_cclass, int seq, int urlenable, char *ifname, char *target)
 {
 	char buf[256];
 	char var1[256], *wordlist1, *next1;
@@ -1150,43 +1135,21 @@ static void ipgrp_chain(char *lan_cclass, int seq, unsigned int mark, int urlena
 
 		DEBUG("range=%s\n", wordlist2);
 
-		if (mark == MARK_DROP) {
 			foreach(var2, wordlist2, next2) {
-				save2file("-A grp_%d%s -s %s -j %s", seq, ifname, var2, log_drop);
+				save2file("-A grp_%d%s -s %s -j %s", seq, ifname, var2, target);
+				save2file("-A grp_%d%s -d %s -j %s", seq, ifname, var2, target);
 			}
-		} else {
-			foreach(var2, wordlist2, next2) {
-				save2file("-A grp_%d%s -s %s -j advgrp_%d", seq, ifname, var2, seq);
-				save2file("-A grp_%d%s -d %s -j advgrp_%d", seq, ifname, var2, seq);
-
-				/*
-				 * mark = urlenable ? mark : webfilter ? MARK_HTTP : 0; if
-				 * (mark){ save2file("-A ipgrp_%d -p tcp --dport %d -s 
-				 * %s " "-j MARK --set-mark %d\n", seq, HTTP_PORT, var2,
-				 * mark); } 
-				 */
-			}
-		}
 	}
 }
 
-static void portgrp_chain(int seq, unsigned int mark, int urlenable, char *ifname)
+static void portgrp_chain(int seq, int urlenable, char *ifname, char *target)
 {
 	char var[256], *next;
 	char *wordlist;
-	char target[100];
 
 	wordlist = nvram_nget("filter_dport_grp%d", seq);
 	if (strcmp(wordlist, "") == 0)
 		return;
-
-	/*
-	 * Determine the filter target 
-	 */
-	if (mark == MARK_DROP)
-		strncpy(target, log_drop, sizeof(log_drop));
-	else
-		sprintf(target, "advgrp_%d", seq);
 
 	/*
 	 * Parse protocol:lan_port0-lan_port1 ... 
@@ -1257,7 +1220,7 @@ char *fw_get_filter_services(void)
  * 
  * return services; } 
  */
-static void advgrp_chain(int seq, unsigned int mark, int urlenable, char *ifname)
+static void advgrp_chain(int seq, int urlenable, char *ifname)
 {
 	char *wordlist, word[1024], *next;
 	char *services, srv[1024], *next2;
@@ -1324,7 +1287,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable, char *ifname
 			    || !strcmp(protocol, "both"))
 				save2file("-A advgrp_%d -p udp --dport %s -j %s", seq, ports, log_drop);
 			if (!strcmp(protocol, "icmp"))
-				save2file("-A advgrp_%d -p icmp -j %s", seq,, log_drop);
+				save2file("-A advgrp_%d -p icmp -j %s", seq, log_drop);
 			if (!strcmp(protocol, "l7")) {
 				int i;
 
@@ -1630,10 +1593,16 @@ static void lan2wan_chains(char *lan_cclass)
 		 * 
 		 * DEBUG("host=%s, keywd=%s\n", urlhost, urlkeywd); 
 		 */
-		macgrp_chain(seq, mark, urlfilter, ifname);
-		ipgrp_chain(lan_cclass, seq, mark, urlfilter, ifname);
-		portgrp_chain(seq, mark, urlfilter, ifname);
-		advgrp_chain(seq, mark, urlfilter, ifname);
+	char target[100];
+	if (mark == MARK_DROP)
+		strncpy(target, log_drop, sizeof(log_drop));
+	else
+		sprintf(target, "advgrp_%d", seq);
+
+		macgrp_chain(seq, urlfilter, ifname, target);
+		ipgrp_chain(lan_cclass, seq, urlfilter, ifname, target);
+		portgrp_chain(seq, urlfilter, ifname, target);
+		advgrp_chain(seq, urlfilter, ifname);
 	}
 }
 
@@ -1686,6 +1655,69 @@ int filter_main(int argc, char *argv[])
 		return -1;
 	}
       out:;
+	return 0;
+}
+
+/*
+ * PARAM - seq : Seqence number.
+ *
+ * RETURN - 0 : It's not in time.
+ *                      1 : in time and anytime
+ *                      2 : in time
+ */
+int if_tod_intime(int seq)
+{
+	char *todvalue;
+	int sched = 0, allday = 0;
+	int hr_st, hr_end;	/* hour */
+	int mi_st, mi_end;	/* minute */
+	char wday[128];
+	int intime = 0;
+	/*
+	 * Get the NVRAM data 
+	 */
+	todvalue = nvram_nget("filter_tod%d", seq);
+	DEBUG("%s: %s\n", todname, todvalue);
+	if (strcmp(todvalue, "") == 0)
+		return 0;
+	/*
+	 * Is it anytime or scheduled ? 
+	 */
+	if (strcmp(todvalue, "0:0 23:59 0-0") == 0 || strcmp(todvalue, "0:0 23:59 0-6") == 0) {
+		sched = 0;
+	} else {
+		sched = 1;
+		if (strcmp(todvalue, "0:0 23:59") == 0)
+			allday = 1;
+		if (sscanf(todvalue, "%d:%d %d:%d %s", &hr_st, &mi_st, &hr_end, &mi_end, wday) != 5)
+			return 0;	/* error format */
+	}
+
+	DEBUG("sched=%d, allday=%d\n", sched, allday);
+	/*
+	 * Anytime 
+	 */
+	if (!sched)
+		return 1;
+	/*
+	 * Scheduled 
+	 */
+	if (allday) {		/* 24-hour, but not everyday */
+
+		if (match_wday(wday))
+			intime = 1;
+	} else {		/* Nither 24-hour, nor everyday */
+
+		if (match_wday(wday)
+		    && match_hrmin(hr_st, mi_st, hr_end, mi_end))
+			intime = 1;
+	}
+	DEBUG("intime=%d\n", intime);
+	/*
+	 * Would it be enabled now ? 
+	 */
+	if (intime)
+		return 2;
 	return 0;
 }
 
@@ -2026,7 +2058,6 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	foreach(buff, iflist, next) {
 		save2file("-A INPUT -i %s -m state --state NEW -j %s", buff, log_accept);
 	}
-	char dev[16];
 	char var[80];
 	char vifs[256];
 	getIfLists(vifs, 256);
@@ -2080,7 +2111,6 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 {
 	char *filter_web_hosts, *filter_web_urls, *filter_rule;
 	char *next;
-	char dev[16];
 	char var[80];
 	char vifs[256];		// 
 	int i = 0;
@@ -2429,7 +2459,6 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 			filter_forward(wanface, lanface, lan_cclass, dmzenable, webfilter);
 		}
 	} else {
-		char dev[16];
 		char var[80];
 		char vifs[256];
 		char *next;
@@ -2912,67 +2941,4 @@ void stop_firewall(void)
 #endif
 	unlock();
 	return;
-}
-
-/*
- * PARAM - seq : Seqence number.
- *
- * RETURN - 0 : It's not in time.
- *                      1 : in time and anytime
- *                      2 : in time
- */
-int if_tod_intime(int seq)
-{
-	char *todvalue;
-	int sched = 0, allday = 0;
-	int hr_st, hr_end;	/* hour */
-	int mi_st, mi_end;	/* minute */
-	char wday[128];
-	int intime = 0;
-	/*
-	 * Get the NVRAM data 
-	 */
-	todvalue = nvram_nget("filter_tod%d", seq);
-	DEBUG("%s: %s\n", todname, todvalue);
-	if (strcmp(todvalue, "") == 0)
-		return 0;
-	/*
-	 * Is it anytime or scheduled ? 
-	 */
-	if (strcmp(todvalue, "0:0 23:59 0-0") == 0 || strcmp(todvalue, "0:0 23:59 0-6") == 0) {
-		sched = 0;
-	} else {
-		sched = 1;
-		if (strcmp(todvalue, "0:0 23:59") == 0)
-			allday = 1;
-		if (sscanf(todvalue, "%d:%d %d:%d %s", &hr_st, &mi_st, &hr_end, &mi_end, wday) != 5)
-			return 0;	/* error format */
-	}
-
-	DEBUG("sched=%d, allday=%d\n", sched, allday);
-	/*
-	 * Anytime 
-	 */
-	if (!sched)
-		return 1;
-	/*
-	 * Scheduled 
-	 */
-	if (allday) {		/* 24-hour, but not everyday */
-
-		if (match_wday(wday))
-			intime = 1;
-	} else {		/* Nither 24-hour, nor everyday */
-
-		if (match_wday(wday)
-		    && match_hrmin(hr_st, mi_st, hr_end, mi_end))
-			intime = 1;
-	}
-	DEBUG("intime=%d\n", intime);
-	/*
-	 * Would it be enabled now ? 
-	 */
-	if (intime)
-		return 2;
-	return 0;
 }
