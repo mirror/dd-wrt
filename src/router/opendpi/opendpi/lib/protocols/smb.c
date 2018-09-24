@@ -22,7 +22,7 @@
  */
 #include "ndpi_protocols.h"
 
-#ifdef NDPI_PROTOCOL_SMB
+#ifdef NDPI_PROTOCOL_SMBV1
 
 static void ndpi_search_smb_tcp(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow)
 {
@@ -39,19 +39,24 @@ static void ndpi_search_smb_tcp(struct ndpi_detection_module_struct *ndpi_struct
 
 			NDPI_LOG(NDPI_PROTOCOL_SMB, ndpi_struct, NDPI_LOG_DEBUG, "found SMB.\n");
 
-			ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_SMB, NDPI_PROTOCOL_UNKNOWN);
+			if(packet->payload[8] == 0x72)
+			    ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_SMBV1, NDPI_PROTOCOL_UNKNOWN);
+			else
+			    ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_SMBV23, NDPI_PROTOCOL_UNKNOWN);
 			return;
 		}
 	}
 
-	NDPI_LOG(NDPI_PROTOCOL_SMB, ndpi_struct, NDPI_LOG_DEBUG, "exclude SMB.\n");
-	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_SMB);
+	NDPI_LOG(NDPI_PROTOCOL_SMBV1, ndpi_struct, NDPI_LOG_DEBUG, "exclude SMBv1.\n");
+	NDPI_LOG(NDPI_PROTOCOL_SMBV23, ndpi_struct, NDPI_LOG_DEBUG, "exclude SMBv23.\n");
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_SMBV1);
+	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_SMBV23);
 }
 
 static void init_smb_dissector(struct ndpi_detection_module_struct *ndpi_struct, u_int32_t *id, NDPI_PROTOCOL_BITMASK * detection_bitmask)
 {
 	ndpi_set_bitmask_protocol_detection("SMB", ndpi_struct, detection_bitmask, *id,
-					    NDPI_PROTOCOL_SMB,
+					    NDPI_PROTOCOL_SMBV23,
 					    ndpi_search_smb_tcp, NDPI_SELECTION_BITMASK_PROTOCOL_V4_V6_TCP_WITH_PAYLOAD_WITHOUT_RETRANSMISSION, SAVE_DETECTION_BITMASK_AS_UNKNOWN, ADD_TO_DETECTION_BITMASK);
 
 	*id += 1;
