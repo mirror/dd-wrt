@@ -304,6 +304,7 @@ l7filters filters_list[] = {
 	{"megaco", NDPI_ONLY},
 	{"mgcp", NDPI_ONLY},
 	{"microsoft", NDPI_ONLY},
+	{"mining", NDPI_ONLY},  // bitcoin, ethereum, zcash, monero
 	{"mms", NDPI_ONLY},
 #endif
 	{"mohaa", L7_ONLY},
@@ -464,13 +465,17 @@ l7filters filters_list[] = {
 	{"skinny", NDPI_ONLY},
 	{"skype", NDPI_ONLY},
 #endif
+#ifdef HAVE_OPENDPI
 	{"skypeout", L7_ONLY},
 	{"skypetoskype", L7_ONLY},
-#ifdef HAVE_OPENDPI
 	{"slack", NDPI_ONLY},
 #endif
-	{"smbv1", DPI},
-	{"smbv23", DPI},
+#ifdef HAVE_OPENDPI
+	{"smbv1", NDPI_ONLY},
+	{"smbv23", NDPI_ONLY},
+#else
+	{"smb", DPI},
+#endif
 #ifdef HAVE_OPENDPI
 	{"smpp", NDPI_ONLY},
 #endif
