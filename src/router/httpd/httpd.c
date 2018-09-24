@@ -1968,7 +1968,7 @@ static int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp)
 
 static size_t wfread(void *p, int size, int n, webs_t wp)
 {
-	char *buf = (void*)p;
+	char *buf = (void *)p;
 	size_t ret;
 	FILE *fp = wp->fp;
 

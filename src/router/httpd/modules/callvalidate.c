@@ -158,7 +158,6 @@ static void *load_service(char *name)
 
 extern const websRomPageIndexType websRomPageIndex[];
 
-
 static char *_live_translate(const char *tran);
 static void _validate_cgi(webs_t wp);
 
