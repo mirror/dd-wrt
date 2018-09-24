@@ -157,9 +157,7 @@ static void *load_service(char *name)
 }
 
 extern const websRomPageIndexType websRomPageIndex[];
-static struct wl_client_mac wl_client_macs[MAX_LEASES];
 
-// extern struct wl_client_mac *wl_client_macs;
 
 static char *_live_translate(const char *tran);
 static void _validate_cgi(webs_t wp);
@@ -178,7 +176,6 @@ static int initWeb(void *handle)
 	env.PwebsGetVari = websGetVari;
 	env.PwebsWrite = websWrite;
 	env.Phttpd_filter_name = _httpd_filter_name;
-	env.Pwl_client_macs = wl_client_macs;
 	env.Pdo_ej_buffer = do_ej_buffer;
 	env.Pdo_ej = do_ej;
 	env.PgetWebsFile = getWebsFile;

@@ -32,6 +32,7 @@ extern BIO *bio_err;
 #endif
 
 #include <bcmnvram.h>
+#include <utils.h>
 #if defined(linux)
 /* Use SVID search */
 #define __USE_GNU
@@ -52,6 +53,8 @@ typedef struct {
 	int start_week, end_week;
 	int time_all, start_hour, start_min, start_time, end_hour, end_min, end_time;
 	int tod_data_null;
+	int nv_count;
+	struct wl_client_mac wl_client_macs[MAX_LEASES];
 } persistent_vars;
 
 typedef struct {
@@ -161,7 +164,6 @@ struct Webenvironment {
 	char *(*PwebsGetVar) (webs_t wp, char *var, char *d);
 	int (*PwebsGetVari) (webs_t wp, char *var, int d);
 	int (*PwebsWrite) (webs_t wp, char *fmt, ...);
-	struct wl_client_mac *Pwl_client_macs;
 	void (*Pdo_ej) (unsigned char method, struct mime_handler * handler, char *path, webs_t stream);	// jimmy, https, 8/4/2003
 	FILE *(*PgetWebsFile) (char *path);
 	int (*Pwfputs) (char *buf, webs_t fp);

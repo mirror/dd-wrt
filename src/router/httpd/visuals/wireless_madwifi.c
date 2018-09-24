@@ -277,7 +277,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 	}
 }
 
-int get_distance(char *ifname)
+static int get_distance(char *ifname)
 {
 	char path[64];
 	int ifcount, distance = 0;
@@ -304,7 +304,7 @@ int get_distance(char *ifname)
 	return distance;
 }
 
-int get_acktiming(char *ifname)
+static int get_acktiming(char *ifname)
 {
 	char path[64];
 	int ifcount, ack = 0;
