@@ -302,6 +302,7 @@ l7filters filters_list[] = {
 	{"mdns", NDPI_ONLY},
 	{"meebo", NDPI_ONLY},
 	{"megaco", NDPI_ONLY},
+	{"memcached", NDPI_ONLY},
 	{"mgcp", NDPI_ONLY},
 	{"microsoft", NDPI_ONLY},
 	{"mining", NDPI_ONLY},  // bitcoin, ethereum, zcash, monero
