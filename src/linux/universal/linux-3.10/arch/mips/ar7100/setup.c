@@ -66,6 +66,7 @@ void Uart16550Init(void);
 
 void ar7100_restart(char *command)
 {
+	local_irq_disable();
 	for (;;) {
 		ar7100_reg_wr(AR7100_RESET, AR7100_RESET_FULL_CHIP);
 	}

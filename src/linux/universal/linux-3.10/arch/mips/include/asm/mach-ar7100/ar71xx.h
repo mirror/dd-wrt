@@ -329,6 +329,7 @@ extern void __iomem *ar71xx_reset_base;
 static inline void ar71xx_reset_wr(unsigned reg, u32 val)
 {
 	__raw_writel(val, ar71xx_reset_base + reg);
+	(void) __raw_readl(ar71xx_reset_base + reg); /* flush */
 }
 
 static inline u32 ar71xx_reset_rr(unsigned reg)
