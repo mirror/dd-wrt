@@ -33,7 +33,7 @@ void ej_get_voltage(webs_t wp, int argc, char_t ** argv)
 		fp = fopen("/sys/devices/platform/IXP4XX-I2C.0/i2c-0/0-0028/in1_input", "rb");
 #endif
 	if (fp == NULL) {
-		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
+		websWrite(wp, "%s", live_translate(wp, "status_router.notavail"));	// no 
 		// i2c 
 		// lm75 
 		// found

@@ -199,7 +199,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	}
 #endif
 	if (!present[0] && !present[1] && !present[2] && cputemp)
-		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
+		websWrite(wp, "%s", live_translate(wp, "status_router.notavail"));	// no 
 	else {
 		for (i = 0; i < cc; i++) {
 			if (present[i]) {
@@ -342,7 +342,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 			}
 			int temperature = temp / 1000;
 			if (temperature < 0 || temperature > 200)
-				websWrite(wp, "ath%d %s", i, live_translate("status_router.notavail"));
+				websWrite(wp, "ath%d %s", i, live_translate(wp, "status_router.notavail"));
 			else
 				websWrite(wp, "ath%d %d &#176;C", i, temp / 1000);
 			cpufound = 1;
@@ -350,7 +350,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	}
 #endif
 	if (!cpufound)
-		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
+		websWrite(wp, "%s", live_translate(wp, "status_router.notavail"));	// no 
 
 #endif
 }

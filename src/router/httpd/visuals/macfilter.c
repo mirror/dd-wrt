@@ -22,9 +22,9 @@
 static void show_macfilter_if(webs_t wp, char *ifname)
 {
 	websWrite(wp, "<fieldset>\n");
-	websWrite(wp, "<legend>%s SSID [%s] - %s</legend>\n", getNetworkLabel(wp, IFMAP(ifname)), nvram_nget("%s_ssid", ifname), live_translate("wl_mac.legend"));
+	websWrite(wp, "<legend>%s SSID [%s] - %s</legend>\n", getNetworkLabel(wp, IFMAP(ifname)), nvram_nget("%s_ssid", ifname), live_translate(wp, "wl_mac.legend"));
 	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\">%s</div>\n", live_translate("wl_mac.label"));
+	websWrite(wp, "<div class=\"label\">%s</div>\n", live_translate(wp, "wl_mac.label"));
 	char macmode[32];
 
 	sprintf(macmode, "%s_macmode1", ifname);
@@ -37,24 +37,24 @@ static void show_macfilter_if(webs_t wp, char *ifname)
 	rep(id, '.', 'X');
 	char mycopy[256];
 
-	strcpy(mycopy, live_translate("share.enable"));
+	strcpy(mycopy, live_translate(wp, "share.enable"));
 	websWrite(wp,
 		  "<input class=\"spaceradio\" type=\"radio\" value=\"other\" name=\"%s\" %s onclick=\"show_layer_ext(this, '%s', true)\" />%s&nbsp;\n",
 		  macmode, nvram_match(macmode, "other") ? "checked=\"checked\"" : "", id, mycopy);
-	strcpy(mycopy, live_translate("share.disable"));
+	strcpy(mycopy, live_translate(wp, "share.disable"));
 	websWrite(wp,
 		  "<input class=\"spaceradio\" type=\"radio\" value=\"disabled\" name=\"%s\" %s onclick=\"show_layer_ext(this, '%s', false)\" />%s\n",
 		  macmode, nvram_match(macmode, "disabled") ? "checked=\"checked\"" : "", id, mycopy);
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "<div class=\"setting\" id=\"%s\">\n", id);
-	websWrite(wp, "<div class=\"label\">%s<br />&nbsp;</div>\n", live_translate("wl_mac.label2"));
+	websWrite(wp, "<div class=\"label\">%s<br />&nbsp;</div>\n", live_translate(wp, "wl_mac.label2"));
 	sprintf(macmode, "%s_macmode", ifname);
 	if (nvram_get(macmode) == NULL)
 		nvram_set(macmode, "disabled");
-	strcpy(mycopy, live_translate("wl_mac.deny"));
+	strcpy(mycopy, live_translate(wp, "wl_mac.deny"));
 	websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"deny\" name=\"%s\" %s />%s&nbsp;\n", macmode, nvram_invmatch(macmode, "allow") ? "checked=\"checked\"" : "", mycopy);
 	websWrite(wp, "<br />\n");
-	strcpy(mycopy, live_translate("wl_mac.allow"));
+	strcpy(mycopy, live_translate(wp, "wl_mac.allow"));
 	websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"allow\" name=\"%s\" %s />%s\n", macmode, nvram_match(macmode, "allow") ? "checked=\"checked\"" : "", mycopy);
 	websWrite(wp, "</div><br />\n");
 	websWrite(wp, "<div class=\"center\">\n");

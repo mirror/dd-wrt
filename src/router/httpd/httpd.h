@@ -43,6 +43,7 @@ extern BIO *bio_err;
 
 #define USE_LAN 0
 #define USE_WAN 1
+struct Webenvironment;
 
 typedef struct {
 //persistent
@@ -55,6 +56,7 @@ typedef struct {
 	int tod_data_null;
 	int nv_count;
 	struct wl_client_mac wl_client_macs[MAX_LEASES];
+	struct Webenvironment *env;
 } persistent_vars;
 
 typedef struct {
@@ -137,6 +139,20 @@ typedef struct {
 	unsigned int size;	/* Size of web page in bytes */
 } websRomPageIndexType;
 
+struct Webenvironment {
+	void (*do_ej_buffer) (char *buffer, webs_t stream);
+	char *(*websGetVar) (webs_t wp, char *var, char *d);
+	int (*websGetVari) (webs_t wp, char *var, int d);
+	size_t (*vwebsWrite) (webs_t wp, char *fmt, va_list args);
+	void (*do_ej) (unsigned char method, struct mime_handler * handler, char *path, webs_t stream);	// jimmy, https, 8/4/2003
+	FILE *(*getWebsFile) (webs_t wp, char *path);
+	int (*wfputs) (char *buf, webs_t fp);
+	char *(*GOZILA_GET) (webs_t wp, char *name);
+	char *(*live_translate) (webs_t wp, const char *tran);
+	void (*validate_cgi) (webs_t fp);
+	const websRomPageIndexType *websRomPageIndex;
+};
+
 //static void setLength(long len);
 
 static struct mime_handler mime_handlers[];
@@ -157,21 +173,6 @@ typedef char char_t;
 #define websHeader(wp) wfputs("<html lang=\"en\">", wp)
 #define websFooter(wp) wfputs("</html>", wp)
 #define websDone(wp, code) wfflush(wp)
-
-struct Webenvironment {
-	void (*Pdo_ej_buffer) (char *buffer, webs_t stream);
-	int (*Phttpd_filter_name) (char *old_name, char *new_name, size_t size, int type);
-	char *(*PwebsGetVar) (webs_t wp, char *var, char *d);
-	int (*PwebsGetVari) (webs_t wp, char *var, int d);
-	int (*PwebsWrite) (webs_t wp, char *fmt, ...);
-	void (*Pdo_ej) (unsigned char method, struct mime_handler * handler, char *path, webs_t stream);	// jimmy, https, 8/4/2003
-	FILE *(*PgetWebsFile) (char *path);
-	int (*Pwfputs) (char *buf, webs_t fp);
-	char *(*PGOZILA_GET) (webs_t wp, char *name);
-	char *(*Plive_translate) (const char *tran);
-	void (*Pvalidate_cgi) (webs_t fp);
-	const websRomPageIndexType *PwebsRomPageIndex;
-};
 
 #define websSetVar(wp, var, value) set_cgi(wp, var, value)
 #define websDefaultHandler(wp, urlPrefix, webDir, arg, url, path) ({ do_ej(METHOD_GET, path, wp,""); fflush(wp); 1; })

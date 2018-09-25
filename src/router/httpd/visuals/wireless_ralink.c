@@ -396,7 +396,7 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 	int state = get_radiostate(nvram_safe_get("wifi_display"));
 
 	if (state == 0 || state == -1) {
-		websWrite(wp, "%s", live_translate("share.disabled"));
+		websWrite(wp, "%s", live_translate(wp, "share.disabled"));
 		return;
 	}
 	long long rate = wifi_getrate(getRADev(nvram_safe_get("wifi_display")));
@@ -413,7 +413,7 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 	if (rate > 0.0) {
 		websWrite(wp, "%lld %cb/s", rate / divisor, scale);
 	} else
-		websWrite(wp, "%s", live_translate("share.auto"));
+		websWrite(wp, "%s", live_translate(wp, "share.auto"));
 
 }
 
@@ -435,7 +435,7 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 	if (channel > 0 && channel < 1000) {
 		struct wifi_interface *interface = wifi_getfreq(getRADev(prefix));
 		if (!interface) {
-			websWrite(wp, "%s", live_translate("share.unknown"));
+			websWrite(wp, "%s", live_translate(wp, "share.unknown"));
 			return;
 		}
 		int freq = interface->freq;
@@ -479,7 +479,7 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, " (%d MHz)", freq);
 
 	} else
-		websWrite(wp, "%s", live_translate("share.unknown"));
+		websWrite(wp, "%s", live_translate(wp, "share.unknown"));
 	return;
 }
 
