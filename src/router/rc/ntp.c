@@ -153,7 +153,7 @@ static int do_ntp(void)		// called from ntp_main and
 	if ((abs(now.tv_sec - then.tv_sec) > 100000000)) {
 		int seq;
 		for (seq = 1; seq <= NR_RULES; seq++)
-			sysprintf("/sbin/filter del %d", seq); // for time scheduled filtering we need to reinitialize the tables here to prevent wrong 
+			sysprintf("/sbin/filter del %d", seq); // for time scheduled filtering we need to reinitialize the tables here to prevent wrong timed triggers
 		sync_daemons();
 		nvram_seti("ntp_success", 1);
 		eval("restart", "process_monitor");
