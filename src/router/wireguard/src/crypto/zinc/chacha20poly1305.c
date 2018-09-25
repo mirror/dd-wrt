@@ -34,7 +34,7 @@ static struct blkcipher_desc chacha20_desc = {
 static inline void
 __chacha20poly1305_encrypt(u8 *dst, const u8 *src, const size_t src_len,
 			   const u8 *ad, const size_t ad_len, const u64 nonce,
-			   const u8 key[CHACHA20POLY1305_KEYLEN],
+			   const u8 key[CHACHA20POLY1305_KEY_SIZE],
 			   simd_context_t *simd_context)
 {
 	struct poly1305_ctx poly1305_state;
@@ -73,7 +73,7 @@ __chacha20poly1305_encrypt(u8 *dst, const u8 *src, const size_t src_len,
 void chacha20poly1305_encrypt(u8 *dst, const u8 *src, const size_t src_len,
 			      const u8 *ad, const size_t ad_len,
 			      const u64 nonce,
-			      const u8 key[CHACHA20POLY1305_KEYLEN])
+			      const u8 key[CHACHA20POLY1305_KEY_SIZE])
 {
 	simd_context_t simd_context;
 
@@ -88,7 +88,7 @@ bool chacha20poly1305_encrypt_sg(struct scatterlist *dst,
 				 struct scatterlist *src, const size_t src_len,
 				 const u8 *ad, const size_t ad_len,
 				 const u64 nonce,
-				 const u8 key[CHACHA20POLY1305_KEYLEN],
+				 const u8 key[CHACHA20POLY1305_KEY_SIZE],
 				 simd_context_t *simd_context)
 {
 	struct poly1305_ctx poly1305_state;
@@ -157,7 +157,7 @@ EXPORT_SYMBOL(chacha20poly1305_encrypt_sg);
 static inline bool
 __chacha20poly1305_decrypt(u8 *dst, const u8 *src, const size_t src_len,
 			   const u8 *ad, const size_t ad_len, const u64 nonce,
-			   const u8 key[CHACHA20POLY1305_KEYLEN],
+			   const u8 key[CHACHA20POLY1305_KEY_SIZE],
 			   simd_context_t *simd_context)
 {
 	struct poly1305_ctx poly1305_state;
@@ -207,7 +207,7 @@ __chacha20poly1305_decrypt(u8 *dst, const u8 *src, const size_t src_len,
 bool chacha20poly1305_decrypt(u8 *dst, const u8 *src, const size_t src_len,
 			      const u8 *ad, const size_t ad_len,
 			      const u64 nonce,
-			      const u8 key[CHACHA20POLY1305_KEYLEN])
+			      const u8 key[CHACHA20POLY1305_KEY_SIZE])
 {
 	simd_context_t simd_context, ret;
 
@@ -223,7 +223,7 @@ bool chacha20poly1305_decrypt_sg(struct scatterlist *dst,
 				 struct scatterlist *src, const size_t src_len,
 				 const u8 *ad, const size_t ad_len,
 				 const u64 nonce,
-				 const u8 key[CHACHA20POLY1305_KEYLEN],
+				 const u8 key[CHACHA20POLY1305_KEY_SIZE],
 				 simd_context_t *simd_context)
 {
 	struct poly1305_ctx poly1305_state;
@@ -301,37 +301,39 @@ EXPORT_SYMBOL(chacha20poly1305_decrypt_sg);
 
 void xchacha20poly1305_encrypt(u8 *dst, const u8 *src, const size_t src_len,
 			       const u8 *ad, const size_t ad_len,
-			       const u8 nonce[XCHACHA20POLY1305_NONCELEN],
-			       const u8 key[CHACHA20POLY1305_KEYLEN])
+			       const u8 nonce[XCHACHA20POLY1305_NONCE_SIZE],
+			       const u8 key[CHACHA20POLY1305_KEY_SIZE])
 {
 	simd_context_t simd_context;
-	u8 derived_key[CHACHA20POLY1305_KEYLEN] __aligned(16);
+	u32 derived_key[CHACHA20_KEY_WORDS] __aligned(16);
 
 	simd_get(&simd_context);
 	hchacha20(derived_key, nonce, key, &simd_context);
+	cpu_to_le32_array(derived_key, ARRAY_SIZE(derived_key));
 	__chacha20poly1305_encrypt(dst, src, src_len, ad, ad_len,
 				   get_unaligned_le64(nonce + 16),
-				   derived_key, &simd_context);
-	memzero_explicit(derived_key, CHACHA20POLY1305_KEYLEN);
+				   (u8 *)derived_key, &simd_context);
+	memzero_explicit(derived_key, CHACHA20POLY1305_KEY_SIZE);
 	simd_put(&simd_context);
 }
 EXPORT_SYMBOL(xchacha20poly1305_encrypt);
 
 bool xchacha20poly1305_decrypt(u8 *dst, const u8 *src, const size_t src_len,
 			       const u8 *ad, const size_t ad_len,
-			       const u8 nonce[XCHACHA20POLY1305_NONCELEN],
-			       const u8 key[CHACHA20POLY1305_KEYLEN])
+			       const u8 nonce[XCHACHA20POLY1305_NONCE_SIZE],
+			       const u8 key[CHACHA20POLY1305_KEY_SIZE])
 {
 	bool ret;
 	simd_context_t simd_context;
-	u8 derived_key[CHACHA20POLY1305_KEYLEN] __aligned(16);
+	u32 derived_key[CHACHA20_KEY_WORDS] __aligned(16);
 
 	simd_get(&simd_context);
 	hchacha20(derived_key, nonce, key, &simd_context);
+	cpu_to_le32_array(derived_key, ARRAY_SIZE(derived_key));
 	ret = __chacha20poly1305_decrypt(dst, src, src_len, ad, ad_len,
 					 get_unaligned_le64(nonce + 16),
-					 derived_key, &simd_context);
-	memzero_explicit(derived_key, CHACHA20POLY1305_KEYLEN);
+					 (u8 *)derived_key, &simd_context);
+	memzero_explicit(derived_key, CHACHA20POLY1305_KEY_SIZE);
 	simd_put(&simd_context);
 	return ret;
 }
