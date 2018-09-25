@@ -96,6 +96,7 @@ EXPORT_SYMBOL(ar7240_ahb_freq);
 
 void ar7240_restart(char *command)
 {
+	local_irq_disable();
 	for (;;) {
 		if (is_ar934x_10()) {
 			/*
