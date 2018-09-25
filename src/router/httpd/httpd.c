@@ -643,7 +643,7 @@ static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, c
 {
 
 	size_t len;
-	FILE *web = getWebsFile(path);
+	FILE *web = getWebsFile(stream, path);
 
 	if (web == NULL) {
 		if (!(web = fopen(path, "rb")))
@@ -653,7 +653,7 @@ static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, c
 		fseek(web, 0, SEEK_SET);
 
 	} else {
-		len = getWebsFileLen(path);
+		len = getWebsFileLen(stream, path);
 	}
 	if (!handler->send_headers)
 		send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, len, attach, 0);
@@ -725,6 +725,7 @@ void ias_sid_set(webs_t wp);
 int ias_sid_valid(webs_t wp);
 #endif
 static persistent_vars global_vars;
+static struct Webenvironment webenv;
 #define LINE_LEN 10000
 static void *handle_request(void *arg)
 {
@@ -1211,7 +1212,7 @@ static void *handle_request(void *arg)
 			// check for do_file handler and check if file exists
 			file_found = 1;
 			if (handler->output == do_file) {
-				if (getWebsFileLen(file) == 0) {
+				if (getWebsFileLen(conn_fp, file) == 0) {
 					if (!(fp = fopen(file, "rb"))) {
 						file_found = 0;
 					} else {
@@ -1413,6 +1414,19 @@ int main(int argc, char **argv)
 	ctr_drbg_context ctr_drbg;
 	const char *pers = "ssl_server";
 #endif
+
+	webenv.websGetVar = websGetVar;
+	webenv.websGetVari = websGetVari;
+	webenv.vwebsWrite = vwebsWrite;
+	webenv.do_ej_buffer = do_ej_buffer;
+	webenv.do_ej = do_ej;
+	webenv.getWebsFile = getWebsFile;
+	webenv.wfputs = wfputs;
+	webenv.websRomPageIndex = websRomPageIndex;
+	webenv.live_translate = _live_translate;
+	webenv.GOZILA_GET = _GOZILA_GET;
+	webenv.validate_cgi = _validate_cgi;
+	global_vars.env = &webenv;
 #ifndef HAVE_MICRO
 #ifdef __UCLIBC__
 	pthread_mutex_init(&crypt_mutex, NULL);
@@ -1906,18 +1920,16 @@ static int wfprintf(webs_t wp, char *fmt, ...)
 	return ret;
 }
 
-static int websWrite(webs_t wp, char *fmt, ...)
+static size_t vwebsWrite(webs_t wp, char *fmt, va_list args)
 {
 
-	va_list args;
 	char *buf;
 	int ret;
-	if (!wp || !fmt)
+	if (!wp)
 		return -1;
 
 	FILE *fp = wp->fp;
 
-	va_start(args, fmt);
 	vasprintf(&buf, fmt, args);
 	if (DO_SSL(wp)) {
 #ifdef HAVE_OPENSSL
@@ -1931,6 +1943,17 @@ static int websWrite(webs_t wp, char *fmt, ...)
 	} else
 		ret = fprintf(fp, "%s", buf);
 	free(buf);
+
+	return ret;
+}
+
+static size_t websWrite(webs_t wp, char *fmt, ...)
+{
+	if (!wp || !fmt)
+		return -1;
+	va_list args;
+	va_start(args, fmt);
+	size_t ret = vwebsWrite(wp, fmt, args);
 	va_end(args);
 
 	return ret;

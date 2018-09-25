@@ -66,21 +66,24 @@ extern FILE *debout;
 #define D(a)
 #endif
 
-int (*httpd_filter_name) (char *old_name, char *new_name, size_t size, int type);
-char *(*websGetVar) (webs_t wp, char *var, char *d);
-int (*websGetVari) (webs_t wp, char *var, int d);
-void (*validate_cgi) (webs_t fp) = NULL;
-char *copytonv(webs_t wp, const char *fmt, ...);
-char *copymergetonv(webs_t wp, const char *fmt, ...);
-
-void initWeb(struct Webenvironment *env)
+void validate_cgi(webs_t fp)
 {
-	cprintf("set websgetwar\n");
-	websGetVar = env->PwebsGetVar;
-	websGetVari = env->PwebsGetVari;
-	httpd_filter_name = env->Phttpd_filter_name;
-	validate_cgi = env->Pvalidate_cgi;
+	fp->p->env->validate_cgi(fp);
 }
+
+char *websGetVar(webs_t wp, char *var, char *d)
+{
+	return wp->p->env->websGetVar(wp, var, d);
+}
+
+int websGetVari(webs_t wp, char *var, int d)
+{
+	return wp->p->env->websGetVari(wp, var, d);
+}
+
+char *copytonv(webs_t wp, const char *fmt, ...);
+
+char *copymergetonv(webs_t wp, const char *fmt, ...);
 
 /*
  * Example: ISASCII("", 0); return true; ISASCII("", 1); return false;

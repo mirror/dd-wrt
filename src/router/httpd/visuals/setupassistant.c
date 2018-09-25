@@ -279,15 +279,15 @@ void ej_do_sas_stage_menu(webs_t wp, int argc, char_t ** argv)
 	for (i = 1; i < 5; i++) {
 		if (i + 1 < 5) {
 			if (atoi(stage) == i) {
-				websWrite(wp, "      <li class=\"active\"><span><strong class=\"step_%s\">%s</strong></span></li>\n", stage, live_translate(labels[atoi(stage)]));
+				websWrite(wp, "      <li class=\"active\"><span><strong class=\"step_%s\">%s</strong></span></li>\n", stage, live_translate(wp, labels[atoi(stage)]));
 			} else {
-				websWrite(wp, "      <li><span><strong class=\"step_%i\">%s</strong></span></li>\n", i, live_translate(labels[i]));
+				websWrite(wp, "      <li><span><strong class=\"step_%i\">%s</strong></span></li>\n", i, live_translate(wp, labels[i]));
 			}
 		} else {
 			if (atoi(stage) == i) {
-				websWrite(wp, "      <li class=\"active last\"><span class=\"last\"><strong class=\"step_%s\">%s</strong></span></li>\n", stage, live_translate(labels[atoi(stage)]));
+				websWrite(wp, "      <li class=\"active last\"><span class=\"last\"><strong class=\"step_%s\">%s</strong></span></li>\n", stage, live_translate(wp, labels[atoi(stage)]));
 			} else {
-				websWrite(wp, "      <li class=\"last\"><span class=\"last\"><strong class=\"step_%i\">%s</strong></span></li>\n", i, live_translate(labels[i]));
+				websWrite(wp, "      <li class=\"last\"><span class=\"last\"><strong class=\"step_%i\">%s</strong></span></li>\n", i, live_translate(wp, labels[i]));
 			}
 		}
 	}

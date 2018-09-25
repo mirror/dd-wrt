@@ -59,7 +59,7 @@ void ej_show_ddns_status(webs_t wp, int argc, char_t ** argv)
 
 	if (nvram_matchi("ddns_enable", 0))	// only for no hidden page
 	{
-		websWrite(wp, "%s", live_translate("ddnsm.all_disabled"));
+		websWrite(wp, "%s", live_translate(wp, "ddnsm.all_disabled"));
 		return;
 	}
 
@@ -77,7 +77,7 @@ void ej_show_ddns_status(webs_t wp, int argc, char_t ** argv)
 		}
 		fclose(fp);
 	} else {
-		websWrite(wp, "%s", live_translate("ddnsm.all_connecting"));
+		websWrite(wp, "%s", live_translate(wp, "ddnsm.all_connecting"));
 		return;
 	}
 

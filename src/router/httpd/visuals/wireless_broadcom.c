@@ -466,7 +466,7 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 	if (rate > 0)
 		websWrite(wp, "%d%s Mbps", (rate / 2), (rate & 1) ? ".5" : "");
 	else
-		websWrite(wp, "%s", live_translate("share.unknown"));
+		websWrite(wp, "%s", live_translate(wp, "share.unknown"));
 
 	return;
 }
@@ -501,7 +501,7 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "%d (scanning)", ci.scan_channel);
 	} else {
 		if (ci.hw_channel == 0) {
-			websWrite(wp, "%s", live_translate("share.unknown"));
+			websWrite(wp, "%s", live_translate(wp, "share.unknown"));
 			return;
 		}
 		switch ((bi->chanspec & 0x3800)) {

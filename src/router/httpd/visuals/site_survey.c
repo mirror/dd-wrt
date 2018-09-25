@@ -275,8 +275,8 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 		 */
 
 		char open[32];
-		strlcpy(open, (site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? live_translate("share.no")
-			: live_translate("share.yes"), sizeof(open));
+		strlcpy(open, (site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? live_translate(wp, "share.no")
+			: live_translate(wp, "share.yes"), sizeof(open));
 
 		char *netmode;
 		int netmodecap = site_survey_lists[i].capability;
@@ -287,7 +287,7 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 		else if (netmodecap == DOT11_CAP_IBSS)
 			netmode = "AdHoc";
 		else
-			netmode = live_translate("share.unknown");
+			netmode = live_translate(wp, "share.unknown");
 		char net[32];
 		strcpy(net, netmode);
 		websWrite(wp, "%c\"", i ? ',' : ' ');

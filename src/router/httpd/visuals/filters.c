@@ -62,8 +62,6 @@ extern FILE *debout;
  * hours)
  * 
  */
-extern int (*websGetVari) (webs_t wp, char *var, int d);
-extern int (*websWrite) (webs_t wp, char *fmt, ...);
 
 /*
  * Example: 100-200 250-260 (ie. 192.168.1.100-192.168.1.200
