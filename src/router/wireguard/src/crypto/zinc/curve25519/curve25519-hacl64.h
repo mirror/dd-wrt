@@ -182,8 +182,7 @@ static __always_inline void fmul_mul_shift_reduce_(u128 *output, u64 *input,
 
 static __always_inline void fmul_fmul(u64 *output, u64 *input, u64 *input21)
 {
-	u64 tmp[5];
-	memcpy(tmp, input, 5 * sizeof(*input));
+	u64 tmp[5] = { input[0], input[1], input[2], input[3], input[4] };
 	{
 		u128 b4;
 		u128 b0;
@@ -584,7 +583,7 @@ static __always_inline void ladder_bigloop_cmult_big_loop(u8 *n1, u64 *nq,
 	}
 }
 
-static __always_inline void ladder_cmult(u64 *result, u8 *n1, u64 *q)
+static void ladder_cmult(u64 *result, u8 *n1, u64 *q)
 {
 	u64 point_buf[40] = { 0 };
 	u64 *nq = point_buf;
@@ -753,9 +752,9 @@ static __always_inline void format_scalar_of_point(u8 *scalar, u64 *point)
 	format_fcontract(scalar, sc);
 }
 
-static void curve25519_generic(u8 mypublic[CURVE25519_POINT_SIZE],
-			       const u8 secret[CURVE25519_POINT_SIZE],
-			       const u8 basepoint[CURVE25519_POINT_SIZE])
+static void curve25519_generic(u8 mypublic[CURVE25519_KEY_SIZE],
+			       const u8 secret[CURVE25519_KEY_SIZE],
+			       const u8 basepoint[CURVE25519_KEY_SIZE])
 {
 	u64 buf0[10] __aligned(32) = { 0 };
 	u64 *x0 = buf0;

@@ -13,7 +13,10 @@
 #include <asm/simd.h>
 #elif IS_ENABLED(CONFIG_KERNEL_MODE_NEON)
 #include <asm/neon.h>
+#ifndef SIMD_INC
+#define SIMD_INC
 #include <asm/simd.h>
+#endif
 #endif
 
 typedef enum {

@@ -5,13 +5,14 @@
 
 #include <asm/hwcap.h>
 #include <asm/neon.h>
+#ifndef SIMD_INC
+#define SIMD_INC
 #include <asm/simd.h>
-
-#if IS_ENABLED(CONFIG_KERNEL_MODE_NEON) && __LINUX_ARM_ARCH__ == 7
-#define ARM_USE_NEON
-asmlinkage void curve25519_neon(u8 mypublic[CURVE25519_POINT_SIZE],
-				const u8 secret[CURVE25519_POINT_SIZE],
-				const u8 basepoint[CURVE25519_POINT_SIZE]);
+#endif
+#if defined(CONFIG_KERNEL_MODE_NEON) && !defined(CONFIG_CPU_BIG_ENDIAN)
+asmlinkage void curve25519_neon(u8 mypublic[CURVE25519_KEY_SIZE],
+				const u8 secret[CURVE25519_KEY_SIZE],
+				const u8 basepoint[CURVE25519_KEY_SIZE]);
 #endif
 
 static bool curve25519_use_neon __ro_after_init;
@@ -21,11 +22,11 @@ static void __init curve25519_fpu_init(void)
 	curve25519_use_neon = elf_hwcap & HWCAP_NEON;
 }
 
-static inline bool curve25519_arch(u8 mypublic[CURVE25519_POINT_SIZE],
-				   const u8 secret[CURVE25519_POINT_SIZE],
-				   const u8 basepoint[CURVE25519_POINT_SIZE])
+static inline bool curve25519_arch(u8 mypublic[CURVE25519_KEY_SIZE],
+				   const u8 secret[CURVE25519_KEY_SIZE],
+				   const u8 basepoint[CURVE25519_KEY_SIZE])
 {
-#ifdef ARM_USE_NEON
+#if defined(CONFIG_KERNEL_MODE_NEON) && !defined(CONFIG_CPU_BIG_ENDIAN)
 	if (curve25519_use_neon && may_use_simd()) {
 		kernel_neon_begin();
 		curve25519_neon(mypublic, secret, basepoint);
@@ -36,8 +37,8 @@ static inline bool curve25519_arch(u8 mypublic[CURVE25519_POINT_SIZE],
 	return false;
 }
 
-static inline bool curve25519_base_arch(u8 pub[CURVE25519_POINT_SIZE],
-					const u8 secret[CURVE25519_POINT_SIZE])
+static inline bool curve25519_base_arch(u8 pub[CURVE25519_KEY_SIZE],
+					const u8 secret[CURVE25519_KEY_SIZE])
 {
 	return false;
 }

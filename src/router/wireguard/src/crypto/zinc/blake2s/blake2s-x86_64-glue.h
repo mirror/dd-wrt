@@ -6,7 +6,10 @@
 #include <asm/cpufeature.h>
 #include <asm/processor.h>
 #include <asm/fpu/api.h>
+#ifndef SIMD_INC
+#define SIMD_INC
 #include <asm/simd.h>
+#endif
 
 #ifdef CONFIG_AS_AVX
 asmlinkage void blake2s_compress_avx(struct blake2s_state *state,
