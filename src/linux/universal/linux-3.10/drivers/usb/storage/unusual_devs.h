@@ -492,16 +492,22 @@ UNUSUAL_DEV(  0x04e6, 0x000a, 0x0200, 0x0200,
 		"eUSB CompactFlash Adapter",
 		USB_SC_8020, USB_PR_CB, NULL, 0),
 
-UNUSUAL_DEV(  0x04e6, 0x000B, 0x0100, 0x0100,
+UNUSUAL_DEV(  0x04e6, 0x000b, 0x0100, 0x0100,
 		"Shuttle",
 		"eUSCSI Bridge",
 		USB_SC_SCSI, USB_PR_BULK, usb_stor_euscsi_init,
 		US_FL_SCM_MULT_TARG ), 
 
-UNUSUAL_DEV(  0x04e6, 0x000C, 0x0100, 0x0100,
+UNUSUAL_DEV(  0x04e6, 0x000c, 0x0100, 0x0100,
 		"Shuttle",
 		"eUSCSI Bridge",
 		USB_SC_SCSI, USB_PR_BULK, usb_stor_euscsi_init,
+		US_FL_SCM_MULT_TARG ),
+
+UNUSUAL_DEV(  0x04e6, 0x000f, 0x0000, 0x9999,
+		"SCM Microsystems",
+		"eUSB SCSI Adapter (Bus Powered)",
+		USB_SC_DEVICE, USB_PR_DEVICE, usb_stor_euscsi_init,
 		US_FL_SCM_MULT_TARG ),
 
 UNUSUAL_DEV(  0x04e6, 0x0101, 0x0200, 0x0200,
@@ -941,6 +947,12 @@ UNUSUAL_DEV(  0x069b, 0x3004, 0x0001, 0x0001,
 		USB_SC_DEVICE, USB_PR_DEVICE, NULL,
 		US_FL_FIX_CAPACITY ),
 
+UNUSUAL_DEV(  0x06ca, 0x2003, 0x0100, 0x0100,
+		"Newer Technology",
+		"uSCSI",
+		USB_SC_DEVICE, USB_PR_DEVICE, usb_stor_euscsi_init,
+		US_FL_SCM_MULT_TARG ),
+
 /* Reported by Adrian Pilchowiec <adi1981@epf.pl> */
 UNUSUAL_DEV(  0x071b, 0x3203, 0x0000, 0x0000,
 		"RockChip",
@@ -1099,6 +1111,13 @@ UNUSUAL_DEV( 0x0840, 0x0085, 0x0001, 0x0001,
 		"Storage",
 		USB_SC_DEVICE, USB_PR_DEVICE, NULL,
 		US_FL_FIX_CAPACITY),
+
+/* Supplied with some Castlewood ORB removable drives */
+UNUSUAL_DEV(  0x084b, 0xa001, 0x0000, 0x9999,
+		"Castlewood Systems",
+		"USB to SCSI cable",
+		USB_SC_DEVICE, USB_PR_DEVICE, usb_stor_euscsi_init,
+		US_FL_SCM_MULT_TARG ),
 
 /* Entry and supporting patch by Theodore Kilgore <kilgota@auburn.edu>.
  * Flag will support Bulk devices which use a standards-violating 32-byte
@@ -1371,6 +1390,13 @@ UNUSUAL_DEV( 0x0bc2, 0x3010, 0x0000, 0x0000,
 		"FreeAgent Pro",
 		USB_SC_DEVICE, USB_PR_DEVICE, NULL,
 		US_FL_SANE_SENSE ),
+
+/* Reported by Kris Lindgren <kris.lindgren@gmail.com> */
+UNUSUAL_DEV( 0x0bc2, 0x3332, 0x0000, 0x9999,
+		"Seagate",
+		"External",
+		USB_SC_DEVICE, USB_PR_DEVICE, NULL,
+		US_FL_NO_WP_DETECT ),
 
 UNUSUAL_DEV(  0x0d49, 0x7310, 0x0000, 0x9999,
 		"Maxtor",
@@ -1979,6 +2005,13 @@ UNUSUAL_DEV(  0x14cd, 0x6600, 0x0201, 0x0201,
 		USB_SC_DEVICE, USB_PR_DEVICE, NULL,
 		US_FL_IGNORE_RESIDUE ),
 
+/* Reported by Michael Büsch <m@bues.ch> */
+UNUSUAL_DEV(  0x152d, 0x0567, 0x0114, 0x0114,
+		"JMicron",
+		"USB to ATA/ATAPI Bridge",
+		USB_SC_DEVICE, USB_PR_DEVICE, NULL,
+		US_FL_BROKEN_FUA ),
+
 /* Reported by Alexandre Oliva <oliva@lsd.ic.unicamp.br>
  * JMicron responds to USN and several other SCSI ioctls with a
  * residue that causes subsequent I/O requests to fail.  */
@@ -1987,6 +2020,13 @@ UNUSUAL_DEV(  0x152d, 0x2329, 0x0100, 0x0100,
 		"USB to ATA/ATAPI Bridge",
 		USB_SC_DEVICE, USB_PR_DEVICE, NULL,
 		US_FL_IGNORE_RESIDUE | US_FL_SANE_SENSE ),
+
+/* Reported by Dmitry Nezhevenko <dion@dion.org.ua> */
+UNUSUAL_DEV(  0x152d, 0x2566, 0x0114, 0x0114,
+		"JMicron",
+		"USB to ATA/ATAPI Bridge",
+		USB_SC_DEVICE, USB_PR_DEVICE, NULL,
+		US_FL_BROKEN_FUA ),
 
 /* Entrega Technologies U1-SC25 (later Xircom PortGear PGSCSI)
  * and Mac USB Dock USB-SCSI */
@@ -2081,6 +2121,13 @@ UNUSUAL_DEV( 0x1e74, 0x4621, 0x0000, 0x0000,
 		USB_SC_DEVICE, USB_PR_DEVICE, NULL,
 		US_FL_BULK_IGNORE_TAG | US_FL_MAX_SECTORS_64 ),
 
+/* Supplied with some Castlewood ORB removable drives */
+UNUSUAL_DEV(  0x2027, 0xa001, 0x0000, 0x9999,
+		"Double-H Technology",
+		"USB to SCSI Intelligent Cable",
+		USB_SC_DEVICE, USB_PR_DEVICE, usb_stor_euscsi_init,
+		US_FL_SCM_MULT_TARG ),
+
 UNUSUAL_DEV( 0x2116, 0x0320, 0x0001, 0x0001,
 		"ST",
 		"2A",
@@ -2095,6 +2142,13 @@ UNUSUAL_DEV(  0x22b8, 0x3010, 0x0001, 0x0001,
 		"RAZR V3x",
 		USB_SC_DEVICE, USB_PR_DEVICE, NULL,
 		US_FL_FIX_CAPACITY | US_FL_IGNORE_RESIDUE ),
+
+/* Reported by David Kozub <zub@linux.fjfi.cvut.cz> */
+UNUSUAL_DEV(0x152d, 0x0578, 0x0000, 0x9999,
+		"JMicron",
+		"JMS567",
+		USB_SC_DEVICE, USB_PR_DEVICE, NULL,
+		US_FL_BROKEN_FUA),
 
 /*
  * Patch by Constantin Baranov <const@tltsu.ru>
@@ -2175,6 +2229,11 @@ UNUSUAL_DEV( 0xed10, 0x7636, 0x0001, 0x0001,
 		"TGE",
 		"Digital MP3 Audio Player",
 		USB_SC_DEVICE, USB_PR_DEVICE, NULL, US_FL_NOT_LOCKABLE ),
+
+/* Unusual uas devices */
+#if IS_ENABLED(CONFIG_USB_UAS)
+#include "unusual_uas.h"
+#endif
 
 /* Control/Bulk transport for all SubClass values */
 USUAL_DEV(USB_SC_RBC, USB_PR_CB),

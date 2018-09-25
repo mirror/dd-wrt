@@ -467,13 +467,15 @@ static void adjust_quirks(struct us_data *us)
 	u16 pid = le16_to_cpu(us->pusb_dev->descriptor.idProduct);
 	unsigned f = 0;
 	unsigned int mask = (US_FL_SANE_SENSE | US_FL_BAD_SENSE |
-			US_FL_FIX_CAPACITY |
+			US_FL_FIX_CAPACITY | US_FL_IGNORE_UAS |
 			US_FL_CAPACITY_HEURISTICS | US_FL_IGNORE_DEVICE |
 			US_FL_NOT_LOCKABLE | US_FL_MAX_SECTORS_64 |
 			US_FL_CAPACITY_OK | US_FL_IGNORE_RESIDUE |
 			US_FL_SINGLE_LUN | US_FL_NO_WP_DETECT |
 			US_FL_NO_READ_DISC_INFO | US_FL_NO_READ_CAPACITY_16 |
-			US_FL_INITIAL_READ10 | US_FL_WRITE_CACHE);
+			US_FL_INITIAL_READ10 | US_FL_WRITE_CACHE |
+			US_FL_NO_ATA_1X | US_FL_NO_REPORT_OPCODES |
+			US_FL_MAX_SECTORS_240 | US_FL_NO_REPORT_LUNS);
 
 	p = quirks;
 	while (*p) {
@@ -511,11 +513,20 @@ static void adjust_quirks(struct us_data *us)
 		case 'e':
 			f |= US_FL_NO_READ_CAPACITY_16;
 			break;
+		case 'f':
+			f |= US_FL_NO_REPORT_OPCODES;
+			break;
+		case 'g':
+			f |= US_FL_MAX_SECTORS_240;
+			break;
 		case 'h':
 			f |= US_FL_CAPACITY_HEURISTICS;
 			break;
 		case 'i':
 			f |= US_FL_IGNORE_DEVICE;
+			break;
+		case 'j':
+			f |= US_FL_NO_REPORT_LUNS;
 			break;
 		case 'l':
 			f |= US_FL_NOT_LOCKABLE;
@@ -537,6 +548,12 @@ static void adjust_quirks(struct us_data *us)
 			break;
 		case 's':
 			f |= US_FL_SINGLE_LUN;
+			break;
+		case 't':
+			f |= US_FL_NO_ATA_1X;
+			break;
+		case 'u':
+			f |= US_FL_IGNORE_UAS;
 			break;
 		case 'w':
 			f |= US_FL_NO_WP_DETECT;
