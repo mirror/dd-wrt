@@ -52,37 +52,54 @@
 #endif
 #include <glob.h>
 
-void (*do_ej_buffer) (char *buffer, webs_t stream) = NULL;
-int (*httpd_filter_name) (char *old_name, char *new_name, size_t size, int type) = NULL;
-char *(*websGetVar) (webs_t wp, char *var, char *d) = NULL;
-int (*websGetVari) (webs_t wp, char *var, int d) = NULL;
-int (*websWrite) (webs_t wp, char *fmt, ...) = NULL;
-
-void (*do_ej) (unsigned char method, struct mime_handler * handler, char *path, webs_t stream) = NULL;	// jimmy, 
-									// https, 
-									// 8/4/2003
-FILE *(*getWebsFile) (char *path) = NULL;
-int (*wfputs) (char *buf, webs_t fp) = NULL;
-char *(*live_translate) (const char *tran) = NULL;
-websRomPageIndexType *PwebsRomPageIndex = NULL;
-char *(*GOZILA_GET) (webs_t wp, char *name) = NULL;
-void (*validate_cgi) (webs_t fp) = NULL;
-
-void initWeb(struct Webenvironment *env)
+void do_ej_buffer(char *buffer, webs_t stream)
 {
+	stream->p->env->do_ej_buffer(buffer, stream);
+}
 
-	websGetVar = env->PwebsGetVar;
-	websGetVari = env->PwebsGetVari;
-	httpd_filter_name = env->Phttpd_filter_name;
-	websWrite = env->PwebsWrite;
-	do_ej_buffer = env->Pdo_ej_buffer;
-	do_ej = env->Pdo_ej;
-	getWebsFile = env->PgetWebsFile;
-	wfputs = env->Pwfputs;
-	PwebsRomPageIndex = env->PwebsRomPageIndex;
-	live_translate = env->Plive_translate;
-	GOZILA_GET = env->PGOZILA_GET;
-	validate_cgi = env->Pvalidate_cgi;
+char *websGetVar(webs_t wp, char *var, char *d)
+{
+	return wp->p->env->websGetVar(wp, var, d);
+}
+
+int websGetVari(webs_t wp, char *var, int d)
+{
+	return wp->p->env->websGetVari(wp, var, d);
+}
+
+size_t websWrite(webs_t wp, char *fmt, ...)
+{
+	va_list arglist;
+	va_start(arglist, fmt);
+	size_t ret = wp->p->env->vwebsWrite(wp, fmt, arglist);
+	va_end(arglist);
+	return ret;
+}
+
+void do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
+{
+	stream->p->env->do_ej(method, handler, path, stream);
+
+}
+
+FILE *getWebsFile(webs_t wp, char *path)
+{
+	return wp->p->env->getWebsFile(wp, path);
+}
+
+int wfputs(char *buf, webs_t fp)
+{
+	return fp->p->env->wfputs(buf, fp);
+}
+
+char *live_translate(webs_t wp, const char *tran)
+{
+	return wp->p->env->live_translate(wp, tran);
+}
+
+char *GOZILA_GET(webs_t wp, char *name)
+{
+	return wp->p->env->GOZILA_GET(wp, name);
 }
 
 struct onload onloads[] = {
@@ -962,7 +979,7 @@ void ej_show_styles(webs_t wp, int argc, char_t ** argv)
 
 	while ((entry = readdir(directory)) != NULL) {
 		sprintf(buf, "style/%s/style.css", entry->d_name);
-		FILE *web = getWebsFile(buf);
+		FILE *web = getWebsFile(wp, buf);
 
 		if (web == NULL) {
 			sprintf(buf, "/www/style/%s/style.css", entry->d_name);
@@ -978,7 +995,6 @@ void ej_show_styles(webs_t wp, int argc, char_t ** argv)
 }
 
 #ifdef HAVE_LANGUAGE
-// extern websRomPageIndexType websRomPageIndex[];
 void ej_show_languages(webs_t wp, int argc, char_t ** argv)
 {
 	char buf[256];
@@ -986,13 +1002,13 @@ void ej_show_languages(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	int i = 0;
 
-	while (PwebsRomPageIndex[i].path != NULL) {
-		cprintf("checking %s\n", PwebsRomPageIndex[i].path);
-		if (!strncmp(PwebsRomPageIndex[i].path, "lang_pack/", strlen("lang_pack/"))) {
+	while (wp->p->env->websRomPageIndex[i].path != NULL) {
+		cprintf("checking %s\n", wp->p->env->websRomPageIndex[i].path);
+		if (!strncmp(wp->p->env->websRomPageIndex[i].path, "lang_pack/", strlen("lang_pack/"))) {
 			cprintf("found language\n");
-			if (strlen(PwebsRomPageIndex[i].path) < 14)
+			if (strlen(wp->p->env->websRomPageIndex[i].path) < 14)
 				continue;
-			strcpy(buf, PwebsRomPageIndex[i].path);
+			strcpy(buf, wp->p->env->websRomPageIndex[i].path);
 			char *mybuf = &buf[strlen("lang_pack/")];
 
 			if (strchr(mybuf, (int)'-') == NULL) {
@@ -1919,7 +1935,7 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 	char *style_dark = nvram_get("router_style_dark");
 	static char *charset = NULL;
 	if (!charset)
-		charset = strdup(live_translate("lang_charset.set"));
+		charset = strdup(live_translate(wp, "lang_charset.set"));
 
 	websWrite(wp,
 		  "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n<html>\n\t<head>\n\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
@@ -1959,7 +1975,7 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 	websWrite(wp, "\t\t<title>%s (build %s)", nvram_get("router_name"), SVN_REVISION);
 #endif
 	if (strlen(argv[0]) != 0) {
-		websWrite(wp, " - %s", live_translate(argv[0]));
+		websWrite(wp, " - %s", live_translate(wp, argv[0]));
 	}
 	websWrite(wp, "</title>\n");
 
@@ -1973,15 +1989,15 @@ void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 		return;		// stop here, for About.htm
 	websWrite(wp, "<html>\n");
 	websWrite(wp, "\t<head>\n");
-	websWrite(wp, "\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n", live_translate("lang_charset.set"));
+	websWrite(wp, "\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n", live_translate(wp, "lang_charset.set"));
 	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"../common.js\"></script>\n");
 	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"../lang_pack/english.js\"></script>\n");
 #ifdef HAVE_LANGUAGE
 	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"../lang_pack/language.js\"></script>\n");
 #endif
 	websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"help.css\">\n");
-	websWrite(wp, "\t\t<title>%s (build %s)", live_translate("share.help"), SVN_REVISION);
-	websWrite(wp, " - %s</title>\n", live_translate(htitle));
+	websWrite(wp, "\t\t<title>%s (build %s)", live_translate(wp, "share.help"), SVN_REVISION);
+	websWrite(wp, " - %s</title>\n", live_translate(wp, htitle));
 	websWrite(wp, "\t</head>\n");
 
 }
@@ -2011,7 +2027,7 @@ void ej_show_wanipinfo(webs_t wp, int argc, char_t ** argv)	// Eko
 	int wan_link;
 	static char *disabled = NULL;
 	if (!disabled)
-		disabled = strdup(live_translate("share.disabled"));
+		disabled = strdup(live_translate(wp, "share.disabled"));
 	if (getWET() || nvram_match("wan_proto", "disabled")
 	    || nvram_match("wan_proto", "bridge")) {
 		websWrite(wp, ": %s", disabled);
@@ -2278,7 +2294,7 @@ void ej_get_txpower(webs_t wp, int argc, char_t ** argv)
 	sprintf(mode, "%s_net_mode", m);
 	if (nvram_match(mode, "disabled")) {
 		txpower = 0;
-		websWrite(wp, "%s", live_translate("wl_basic.radio_off"));
+		websWrite(wp, "%s", live_translate(wp, "wl_basic.radio_off"));
 	} else {
 
 		sprintf(txpwr, "%s_txpwr", m);
@@ -2615,7 +2631,7 @@ void ej_get_radio_state(webs_t wp, int argc, char_t ** argv)
 	char buf[64];
 	bzero(buf, sizeof(buf));
 	get_radio_state(buf);
-	websWrite(wp, "%s", live_translate(buf));
+	websWrite(wp, "%s", live_translate(wp, buf));
 }
 
 void ej_get_radio_statejs(webs_t wp, int argc, char_t ** argv)

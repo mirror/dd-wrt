@@ -87,7 +87,8 @@
 	} \
 } while (0)
 #endif
-int websWrite(webs_t wp, char *fmt, ...);
+static size_t websWrite(webs_t wp, char *fmt, ...);
+static size_t vwebsWrite(webs_t wp, char *fmt, va_list args);
 static char *websGetVar(webs_t wp, char *var, char *d)
 {
 	return get_cgi(wp, var) ? : d;
@@ -158,34 +159,8 @@ static void *load_service(char *name)
 
 extern const websRomPageIndexType websRomPageIndex[];
 
-static char *_live_translate(const char *tran);
+static char *_live_translate(webs_t wp, const char *tran);
 static void _validate_cgi(webs_t wp);
-
-static int initWeb(void *handle)
-{
-	struct Webenvironment env;
-	void (*init) (struct Webenvironment * env);
-
-	init = (void (*)(struct Webenvironment * env))dlsym(handle, "initWeb");
-	if (!init) {
-		fprintf(stderr, "error, initWeb not found\n");
-		return -1;
-	}
-	env.PwebsGetVar = websGetVar;
-	env.PwebsGetVari = websGetVari;
-	env.PwebsWrite = websWrite;
-	env.Phttpd_filter_name = _httpd_filter_name;
-	env.Pdo_ej_buffer = do_ej_buffer;
-	env.Pdo_ej = do_ej;
-	env.PgetWebsFile = getWebsFile;
-	env.Pwfputs = wfputs;
-	env.PwebsRomPageIndex = websRomPageIndex;
-	env.Plive_translate = _live_translate;
-	env.PGOZILA_GET = _GOZILA_GET;
-	env.Pvalidate_cgi = _validate_cgi;
-	init(&env);
-	return 0;
-}
 
 static void *s_service = NULL;
 
@@ -194,18 +169,11 @@ static void start_gozila(char *name, webs_t wp)
 	// lcdmessaged("Starting Service",name);
 	cprintf("start_gozila %s\n", name);
 	char service[64];
-	int init = 0;
 	if (!s_service) {
-		init = 1;
 		s_service = load_service(name);
 	}
 	if (s_service == NULL) {
 		return;
-	}
-	if (init) {
-		if (initWeb(s_service) != 0) {
-			return;
-		}
 	}
 
 	int (*fptr) (webs_t wp);
@@ -229,18 +197,11 @@ static int start_validator(char *name, webs_t wp, char *value, struct variable *
 	// lcdmessaged("Starting Service",name);
 	cprintf("start_validator %s\n", name);
 	char service[64];
-	int init = 0;
 	if (!s_service) {
 		s_service = load_service(name);
-		init = 1;
 	}
 	if (s_service == NULL) {
 		return FALSE;
-	}
-	if (init) {
-		if (initWeb(s_service) != 0) {
-			return FALSE;
-		}
 	}
 	int ret = FALSE;
 
@@ -268,11 +229,9 @@ static void *start_validator_nofree(char *name, void *handle, webs_t wp, char *v
 	// lcdmessaged("Starting Service",name);
 	cprintf("start_service_nofree %s\n", name);
 	char service[64];
-	int nohandle = 0;
 
 	if (!handle) {
 		handle = load_service(name);
-		nohandle = 1;
 	}
 	if (handle == NULL) {
 		return NULL;
@@ -280,11 +239,6 @@ static void *start_validator_nofree(char *name, void *handle, webs_t wp, char *v
 	void (*fptr) (webs_t wp, char *value, struct variable * v);
 
 	sprintf(service, "%s", name);
-	if (nohandle) {
-		if (initWeb(handle) != 0) {
-			return handle;
-		}
-	}
 	cprintf("resolving %s\n", service);
 	fptr = (void (*)(webs_t wp, char *value, struct variable * v))
 	    dlsym(handle, service);
@@ -309,14 +263,12 @@ static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** ar
 			fprintf(stderr, " %s", argv[i]);
 	}
 	char service[64];
-	int nohandle = 0;
 
 	{
 		memdebug_enter();
 		if (!handle) {
 			cprintf("load visual_service\n");
 			handle = load_visual_service(name);
-			nohandle = 1;
 		}
 		memdebug_leave_info("loadviz");
 	}
@@ -328,16 +280,6 @@ static void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** ar
 	void (*fptr) (webs_t wp, int argc, char_t ** argv);
 
 	sprintf(service, "ej_%s", name);
-	{
-		memdebug_enter();
-		if (nohandle) {
-			cprintf("init web\n");
-			if (initWeb(handle) != 0) {
-				return handle;
-			}
-		}
-		memdebug_leave_info("initweb");
-	}
 	cprintf("resolving %s\n", service);
 	fptr = (void (*)(webs_t wp, int argc, char_t ** argv))dlsym(handle, service);
 

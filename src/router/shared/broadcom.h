@@ -533,11 +533,7 @@ char *tran_string(char *buf, char *str);
  * set type to 1 to replace ' ' with "&nbsp;" and ':' with "&semi;"
  * set type to 2 to replace "&nbsp;" with ' ' and "&semi;" with ':'
  */
-#ifndef VALIDSOURCE
-#ifndef VISUALSOURCE
 extern int httpd_filter_name(char *old_name, char *new_name, size_t size, int type);
-#endif
-#endif
 
 /*
  * check the value for a digit (0 through 9) set flag to 0 to ignore
@@ -646,73 +642,28 @@ extern filters *get_filters_list(void);
 extern void ej_show_rflowif(webs_t wp, int argc, char_t ** argv);
 #endif
 
+#ifndef BASEDEF
 void ej_showbridgesettings(webs_t wp, int argc, char_t ** argv);
 
-#ifdef VISUALSOURCE
-extern void (*do_ej_buffer) (char *buffer, webs_t stream);
+void do_ej_buffer(char *buffer, webs_t stream);
 
-#define do_ej_buffer Udo_ej_buffer
-extern int (*Uhttpd_filter_name) (char *old_name, char *new_name, size_t size, int type);
-#define httpd_filter_name Uhttpd_filter_name
-extern char *(*UwebsGetVar) (webs_t wp, char *var, char *d);
+char *websGetVar(webs_t wp, char *var, char *d);
 
-#define websGetVar UwebsGetVar
+int websGetVari(webs_t wp, char *var, int d);
 
-extern int (*UwebsGetVari) (webs_t wp, char *var, int d);
+size_t websWrite(webs_t wp, char *fmt, ...);
 
-#define websGetVari UwebsGetVari
+void do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t stream);
 
-extern int (*UwebsWrite) (webs_t wp, char *fmt, ...);
+FILE *getWebsFile(webs_t wp, char *path);
 
-#define websWrite UwebsWrite
+int wfputs(char *buf, webs_t fp);
 
-extern void (*Udo_ej) (unsigned char method, struct mime_handler * handler, char *path, webs_t stream);	// jimmy, 
-									// https, 
-									// 8/4/2003
-#define do_ej Udo_ej
+char *live_translate(webs_t wp, const char *tran);
 
-extern FILE *(*UgetWebsFile) (char *path);
+char *GOZILA_GET(webs_t wp, char *name);
 
-#define getWebsFile UgetWebsFile
-extern int (*Uwfputs) (char *buf, webs_t fp);
-
-#define wfputs Uwfputs
-extern char *(*Ulive_translate) (const char *tran);
-
-#define live_translate Ulive_translate
-extern void (*Uvalidate_cgi) (webs_t wp);
-
-#define validate_cgi Uvalidate_cgi
-extern websRomPageIndexType *UwebsRomPageIndex;
-
-#define websRomPageIndex UwebsRomPageIndex
-extern char *(*UGOZILA_GET) (webs_t wp, char *name);
-
-#define GOZILA_GET UGOZILA_GET
-#endif
-
-#ifdef VALIDSOURCE
-extern void (*Udo_ej_buffer) (char *buffer, webs_t stream);
-
-#define do_ej_buffer Udo_ej_buffer
-extern int (*Uhttpd_filter_name) (char *old_name, char *new_name, size_t size, int type);
-#define httpd_filter_name Uhttpd_filter_name
-extern char *(*UwebsGetVar) (webs_t wp, char *var, char *d);
-#define websGetVar UwebsGetVar
-
-extern int (*UwebsGetVari) (webs_t wp, char *var, int d);
-#define websGetVari UwebsGetVari
-
-extern int (*UwebsWrite) (webs_t wp, char *fmt, ...);
-
-#define websWrite UwebsWrite
-extern char *(*UGOZILA_GET) (webs_t wp, char *name);
-
-#define GOZILA_GET UGOZILA_GET
-
-extern void (*Uvalidate_cgi) (webs_t wp);
-
-#define validate_cgi Uvalidate_cgi
+void validate_cgi(webs_t fp);
 
 #endif
 #endif

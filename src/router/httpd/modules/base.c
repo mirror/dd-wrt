@@ -85,7 +85,7 @@ static int wfputs(char *buf, webs_t fp);
 
 static void send_authenticate(webs_t conn_fp);
 
-static char *_live_translate(const char *tran);
+static char *_live_translate(webs_t wp, const char *tran);
 #ifdef HAVE_BUFFALO
 void do_vsp_page(unsigned char method, struct mime_handler *handler, char *url, webs_t stream);
 #endif
@@ -414,10 +414,10 @@ static char *_tran_string(char *buf, char *str)
 	return buf;
 }
 
-static char *readweb(char *filename)
+static char *readweb(webs_t wp, char *filename)
 {
-	FILE *web = getWebsFile(filename);
-	unsigned int len = getWebsFileLen(filename);
+	FILE *web = getWebsFile(wp, filename);
+	unsigned int len = getWebsFileLen(wp, filename);
 	char *webfile = (char *)safe_malloc(len + 1);
 	fread(webfile, len, 1, web);
 	fclose(web);
@@ -425,9 +425,9 @@ static char *readweb(char *filename)
 	return webfile;
 }
 
-static char *insert(char *ifname, char *index, char *filename)
+static char *insert(webs_t wp, char *ifname, char *index, char *filename)
 {
-	char *webfile = readweb(filename);
+	char *webfile = readweb(wp, filename);
 	int weblen = strlen(webfile);
 	int i;
 	int ai = 0;
@@ -582,7 +582,7 @@ static void do_filtertable(unsigned char method, struct mime_handler *handler, c
 		return;
 	rep(ifname, '.', 'X');
 
-	char *temp = insert(ifname, "0", "WL_FilterTable.asp");
+	char *temp = insert(stream, ifname, "0", "WL_FilterTable.asp");
 	do_ej_buffer(temp, stream);
 	free(temp);
 }
@@ -849,7 +849,7 @@ static void do_activetable(unsigned char method, struct mime_handler *handler, c
 		*idx = 0;
 	if (!strlen(ifname))
 		return;
-	char *temp = insert(ifname, "0", "WL_ActiveTable.asp");
+	char *temp = insert(stream, ifname, "0", "WL_ActiveTable.asp");
 	do_ej_buffer(temp, stream);
 	free(temp);
 }
@@ -864,7 +864,7 @@ static void do_wds(unsigned char method, struct mime_handler *handler, char *pat
 	strlcpy(ifname, temp2, sizeof(ifname) - 1);
 	idx = strrchr(ifname, '.');
 	*idx = 0;
-	char *temp = insert(ifname, "0", "Wireless_WDS.asp");
+	char *temp = insert(stream, ifname, "0", "Wireless_WDS.asp");
 	do_ej_buffer(temp, stream);
 	free(temp);
 }
@@ -889,7 +889,7 @@ static void do_wireless_adv(unsigned char method, struct mime_handler *handler, 
 		substring(strl - 1, strl, ifname, index);
 	else
 		return;
-	char *temp = insert(ifname, index, "Wireless_Advanced.asp");
+	char *temp = insert(stream, ifname, index, "Wireless_Advanced.asp");
 	do_ej_buffer(temp, stream);
 	free(temp);
 }
@@ -2059,18 +2059,18 @@ static char *getLanguageName()
 	return l;
 }
 
-static char *scanfile(char *buf, const char *tran)
+static char *scanfile(webs_t wp, char *buf, const char *tran)
 {
 	char *temp = malloc(256);
 	char *temp2;
 	char *temp1;
-	FILE *fp = getWebsFile(buf);
+	FILE *fp = getWebsFile(wp, buf);
 	if (fp) {
 		temp1 = malloc(strlen(tran) + 3);
 		strcpy(temp1, tran);
 		strcat(temp1, "=\"");
 		int len = strlen(temp1);
-		int filelen = getWebsFileLen(buf);
+		int filelen = getWebsFileLen(wp, buf);
 		int i;
 		int count = 0;
 		int ign = 0;
@@ -2165,7 +2165,7 @@ struct cacheentry {
 };
 static int cachecount = 0;
 static struct cacheentry *translationcache = NULL;
-static char *private_live_translate(const char *tran)
+static char *private_live_translate(webs_t wp, const char *tran)
 {
 
 	if (tran == NULL || !strlen(tran))
@@ -2175,12 +2175,12 @@ static char *private_live_translate(const char *tran)
 	sprintf(buf, "%s", lang);
 	free(lang);
 
-	char *result = scanfile(buf, tran);
+	char *result = scanfile(wp, buf, tran);
 	if (result)
 		return result;
 
 	strcpy(buf, "lang_pack/english.js");	// if string not found, try english 
-	result = scanfile(buf, tran);
+	result = scanfile(wp, buf, tran);
 	if (result)
 		return result;
 	return NULL;
@@ -2206,7 +2206,7 @@ static void clear_translationcache(void)
 
 }
 
-static char *_live_translate(const char *tran)	// todo: add locking to be thread safe
+static char *_live_translate(webs_t wp, const char *tran)	// todo: add locking to be thread safe
 {
 	static char *cur_language = NULL;
 	if (!tran || strlen(tran) == 0)
@@ -2241,7 +2241,7 @@ static char *_live_translate(const char *tran)	// todo: add locking to be thread
 			return translation;
 		}
 	}
-	char *ret = private_live_translate(tran);
+	char *ret = private_live_translate(wp, tran);
 	struct cacheentry *entry = NULL;
 	/* fill hole if there is any */
 	int i;
@@ -2273,7 +2273,7 @@ static void do_syslog(unsigned char method, struct mime_handler *handler, char *
 
 	static const char filename[] = "/var/log/messages";
 	if (!charset)
-		charset = strdup(_live_translate("lang_charset.set"));
+		charset = strdup(_live_translate(stream, "lang_charset.set"));
 	int offset = 0;
 	int count = 0;
 	char *query = strchr(url, '?');
@@ -2325,7 +2325,7 @@ static void do_syslog(unsigned char method, struct mime_handler *handler, char *
 static void do_ttgraph(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
 	if (!charset)
-		charset = strdup(_live_translate("lang_charset.set"));
+		charset = strdup(_live_translate(stream, "lang_charset.set"));
 
 #define COL_WIDTH 16		/* single column width */
 
@@ -2396,9 +2396,9 @@ static void do_ttgraph(unsigned char method, struct mime_handler *handler, char 
 		f = f * 10;
 	}
 
-	char *incom = _live_translate("status_inet.traffin");
-	char *outcom = _live_translate("status_inet.traffout");
-	char *monthname = _live_translate(months[month - 1]);
+	char *incom = _live_translate(stream, "status_inet.traffin");
+	char *outcom = _live_translate(stream, "status_inet.traffout");
+	char *monthname = _live_translate(stream, months[month - 1]);
 
 	websWrite(stream, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"	//
 		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n"	//
@@ -2715,90 +2715,6 @@ static struct mime_handler mime_handlers[] = {
 	// for ddm
 	{NULL, NULL, NULL, NULL, NULL, NULL, 0, 0}
 };
-
-/*
- * Format: type = SET : " " => "&nbsp;" , ":" => "&semi;" type = GET :
- * "&nbsp;" => " " , "&semi;" => ":" Example: name1 = test 123:abc
- * filter_name("name1", new_name, SET); new_name="test&nbsp;123&semi;abc"
- * name2 = test&nbsp;123&semi;abc filter_name("name2", new_name, GET);
- * new_name="test 123:abc" 
- */
-static int _httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
-{
-	int i, j, match;
-
-	cprintf("httpd_filter_name\n");
-
-	struct pattern {
-		char ch;
-		char *string;
-	};
-
-	struct pattern patterns[] = {
-		{' ', "&nbsp;"},
-		{':', "&semi;"},
-		{'<', "&lt;"},
-		{'>', "&gt;"},
-	};
-
-	struct pattern *v;
-
-	strcpy(new_name, "");
-
-	switch (type) {
-	case SET:
-		for (i = 0; *(old_name + i); i++) {
-			match = 0;
-			for (v = patterns; v < &patterns[STRUCT_LEN(patterns)]; v++) {
-				if (*(old_name + i) == v->ch) {
-					if (strlen(new_name) + strlen(v->string) > size) {	// avoid overflow
-						cprintf("%s(): overflow\n", __FUNCTION__);
-						new_name[strlen(new_name)] = '\0';
-						return 1;
-					}
-					sprintf(new_name + strlen(new_name), "%s", v->string);
-					match = 1;
-					break;
-				}
-			}
-			if (!match) {
-				if (strlen(new_name) + 1 > size) {
-					cprintf("%s(): overflow\n", __FUNCTION__);	// avoid 
-					// overflow
-					new_name[strlen(new_name)] = '\0';
-					return 1;
-				}
-				sprintf(new_name + strlen(new_name), "%c", *(old_name + i));
-			}
-		}
-
-		break;
-	case GET:
-		for (i = 0, j = 0; *(old_name + j); j++) {
-			match = 0;
-			for (v = patterns; v < &patterns[STRUCT_LEN(patterns)]; v++) {
-				if (!memcmp(old_name + j, v->string, strlen(v->string))) {
-					*(new_name + i) = v->ch;
-					j = j + strlen(v->string) - 1;
-					match = 1;
-					break;
-				}
-			}
-			if (!match)
-				*(new_name + i) = *(old_name + j);
-
-			i++;
-		}
-		*(new_name + i) = '\0';
-		break;
-	default:
-		cprintf("%s():Invalid type!\n", __FUNCTION__);
-		break;
-	}
-	// cprintf("%s():new_name=[%s]\n", __FUNCTION__, new_name);
-
-	return 1;
-}
 
 #ifdef HAVE_BUFFALO
 void do_vsp_page(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)

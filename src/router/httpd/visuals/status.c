@@ -82,7 +82,7 @@ void ej_localtime(webs_t wp, int argc, char_t ** argv)
 		if (argc && !strcmp(argv[0], "1"))
 			show_caption_simple(wp, "status_router.notavail");
 		else
-			websWrite(wp, "%s", live_translate("status_router.notavail"));
+			websWrite(wp, "%s", live_translate(wp, "status_router.notavail"));
 	}
 }
 
@@ -193,7 +193,7 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 	char buf[128];
 	if (!strcmp(type, "wan_ipaddr")) {
 		if (getWET() || !strcmp(wan_proto, "disabled")) {
-			websWrite(wp, "%s", trans == 2 ? tran_string(buf, "share.disabled") : live_translate("share.disabled"));
+			websWrite(wp, "%s", trans == 2 ? tran_string(buf, "share.disabled") : live_translate(wp, "share.disabled"));
 		} else
 			websWrite(wp, "%s", wan_ipaddr);
 	} else if (!strcmp(type, "wan_netmask"))
@@ -207,12 +207,12 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 	} else if (!strcmp(type, "wan_dns2")) {
 		websWrite(wp, "%s", get_dns_entry(dns_list, 2));
 	} else if (!strcmp(type, "status1"))
-		websWrite(wp, "%s", trans == 3 ? status1 : trans == 2 ? tran_string(buf, status1) : live_translate(status1));
+		websWrite(wp, "%s", trans == 3 ? status1 : trans == 2 ? tran_string(buf, status1) : live_translate(wp, status1));
 	else if (!strcmp(type, "status2"))
-		websWrite(wp, "%s", trans == 3 ? status2 : trans == 2 ? tran_string(buf, status2) : live_translate(status2));
+		websWrite(wp, "%s", trans == 3 ? status2 : trans == 2 ? tran_string(buf, status2) : live_translate(wp, status2));
 	else if (!strcmp(type, "button1")) {
 		if (trans)
-			websWrite(wp, "%s", trans == 3 ? button1 : trans == 2 ? tran_string(buf, button1) : live_translate(button1));
+			websWrite(wp, "%s", trans == 3 ? button1 : trans == 2 ? tran_string(buf, button1) : live_translate(wp, button1));
 		else
 			websWrite(wp, "%s", button1);
 	} else if (!strcmp(type, "hidden1"))

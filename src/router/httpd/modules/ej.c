@@ -119,7 +119,7 @@ static void *call(void *handle, char *func, webs_t stream)	//jimmy, https, 8/4/2
 	return call_ej(func, handle, stream, argc, argv);
 }
 
-static int websWrite(webs_t wp, char *fmt, ...);
+static size_t websWrite(webs_t wp, char *fmt, ...);
 
 static inline int decompress(webs_t stream, char *pattern, int len, int last)
 {
@@ -310,7 +310,7 @@ static void do_ej_file(FILE * fp, int len, webs_t stream)
 
 #include "../html.c"
 
-static FILE *getWebsFile(char *path2)
+static FILE *getWebsFile(webs_t wp, char *path2)
 {
 	FILE *web;
 
@@ -344,7 +344,7 @@ err:
 	return NULL;
 }
 
-static int getWebsFileLen(char *path2)
+static int getWebsFileLen(webs_t wp, char *path2)
 {
 	unsigned int len = 0;
 	int i = 0;

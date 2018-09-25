@@ -1,5 +1,5 @@
 #include <stdio.h>
-
+#define BASEDEF 1
 /* GoAhead 2.1 Embedded JavaScript compatibility */
 
 #include "webs.h"
