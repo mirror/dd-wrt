@@ -29,6 +29,7 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #include <sys/socket.h>
+#include <sys/sysinfo.h>
 #include <ctype.h>
 
 #include <broadcom.h>
