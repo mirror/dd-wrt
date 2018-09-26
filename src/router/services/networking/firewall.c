@@ -1067,7 +1067,7 @@ static int schedule_by_tod(FILE * cfd, int seq)
 	return 0;
 }
 
-static void macgrp_chain(int seq, int urlenable, char *ifname, char *target)
+static void macgrp_chain(int seq, int urlenable, char *iflist, char *target)
 {
 	char var[256], *next;
 	char *wordlist;
@@ -1078,12 +1078,23 @@ static void macgrp_chain(int seq, int urlenable, char *ifname, char *target)
 	insmod("ipt_mac xt_mac");
 
 	foreach(var, wordlist, next) {
-		save2file("-A grp_%d%s -m mac --mac-source %s -j %s", seq, ifname, var, target);
-		save2file("-A grp_%d%s -m mac --mac-destination %s -j %s", seq, ifname, var, target);
+
+		char ifname[32];
+		char *nextif;
+		if (iflist) {
+			foreach(ifname, iflist, nextif) {
+				save2file("-A grp_%d -i %s -m mac --mac-source %s -j %s", seq, ifname, var, target);
+				save2file("-A grp_%d -i %s -m mac --mac-destination %s -j %s", seq, ifname, var, target);
+			}
+		} else {
+			save2file("-A grp_%d -m mac --mac-source %s -j %s", seq, var, target);
+			save2file("-A grp_%d -m mac --mac-destination %s -j %s", seq, var, target);
+
+		}
 	}
 }
 
-static void ipgrp_chain(char *lan_cclass, int seq, int urlenable, char *ifname, char *target)
+static void ipgrp_chain(char *lan_cclass, int seq, int urlenable, char *iflist, char *target)
 {
 	char buf[256];
 	char var1[256], *wordlist1, *next1;
@@ -1136,13 +1147,23 @@ static void ipgrp_chain(char *lan_cclass, int seq, int urlenable, char *ifname, 
 		DEBUG("range=%s\n", wordlist2);
 
 		foreach(var2, wordlist2, next2) {
-			save2file("-A grp_%d%s -s %s -j %s", seq, ifname, var2, target);
-			save2file("-A grp_%d%s -d %s -j %s", seq, ifname, var2, target);
+			char ifname[32];
+			char *nextif;
+			if (iflist) {
+				foreach(ifname, iflist, nextif) {
+					save2file("-A grp_%d -i %s -s %s -j %s", seq, ifname, var2, target);
+					save2file("-A grp_%d -i %s -d %s -j %s", seq, ifname, var2, target);
+				}
+
+			} else {
+				save2file("-A grp_%d -s %s -j %s", seq, var2, target);
+				save2file("-A grp_%d -d %s -j %s", seq, var2, target);
+			}
 		}
 	}
 }
 
-static void portgrp_chain(int seq, int urlenable, char *ifname, char *target)
+static void portgrp_chain(int seq, int urlenable, char *iflist, char *target)
 {
 	char var[256], *next;
 	char *wordlist;
@@ -1164,15 +1185,29 @@ static void portgrp_chain(int seq, int urlenable, char *ifname, char *target)
 		if (!strcmp(protocol, "disable"))
 			continue;
 
-		/*
-		 * -A grp_* -p tcp --dport 0:655 -j logdrop -A grp_* -p udp -m 
-		 * udp --dport 0:655 -j logdrop 
-		 */
-		if (!strcmp(protocol, "tcp") || !strcmp(protocol, "both")) {
-			save2file("-A grp_%d%s -p tcp --dport %s:%s -j %s", seq, ifname, lan_port0, lan_port1, target);
-		}
-		if (!strcmp(protocol, "udp") || !strcmp(protocol, "both")) {
-			save2file("-A grp_%d%s -p udp --dport %s:%s -j %s", seq, ifname, lan_port0, lan_port1, target);
+		char ifname[32];
+		char *nextif;
+		if (iflist) {
+			foreach(ifname, iflist, nextif) {
+				if (!strcmp(protocol, "tcp") || !strcmp(protocol, "both")) {
+					save2file("-A grp_%d -i %s -p tcp --dport %s:%s -j %s", seq, ifname, lan_port0, lan_port1, target);
+				}
+				if (!strcmp(protocol, "udp") || !strcmp(protocol, "both")) {
+					save2file("-A grp_%d -i %s -p udp --dport %s:%s -j %s", seq, ifname, lan_port0, lan_port1, target);
+				}
+			}
+
+		} else {
+			/*
+			 * -A grp_* -p tcp --dport 0:655 -j logdrop -A grp_* -p udp -m 
+			 * udp --dport 0:655 -j logdrop 
+			 */
+			if (!strcmp(protocol, "tcp") || !strcmp(protocol, "both")) {
+				save2file("-A grp_%d -p tcp --dport %s:%s -j %s", seq, lan_port0, lan_port1, target);
+			}
+			if (!strcmp(protocol, "udp") || !strcmp(protocol, "both")) {
+				save2file("-A grp_%d -p udp --dport %s:%s -j %s", seq, lan_port0, lan_port1, target);
+			}
 		}
 	}
 }
@@ -1563,7 +1598,7 @@ static void lan2wan_chains(char *lan_cclass)
 		 * Check if it is enabled 
 		 */
 		char ifs[40];
-		char ifname[40];
+		char *iflist = NULL;
 		find_match_pattern(ifs, sizeof(ifs), data, "$IF:", "");	// get 
 		find_match_pattern(buf, sizeof(buf), data, "$STAT:", "");	// get 
 
@@ -1571,9 +1606,8 @@ static void lan2wan_chains(char *lan_cclass)
 			continue;	/* error format */
 		if (strlen(ifs) > 0) {
 			if (strcmp(ifs, "Any"))
-				sprintf(ifname, " -i %s", ifs);
-		} else
-			ifname[0] = 0;
+				iflist = ifs;
+		}
 		DEBUG("STAT: %s\n", buf);
 		switch (atoi(buf)) {
 		case 1:	/* Drop it */
@@ -1599,10 +1633,10 @@ static void lan2wan_chains(char *lan_cclass)
 		else
 			sprintf(target, "advgrp_%d", seq);
 
-		macgrp_chain(seq, urlfilter, ifname, target);
-		ipgrp_chain(lan_cclass, seq, urlfilter, ifname, target);
-		portgrp_chain(seq, urlfilter, ifname, target);
-		advgrp_chain(seq, urlfilter, ifname);
+		macgrp_chain(seq, urlfilter, iflist, target);
+		ipgrp_chain(lan_cclass, seq, urlfilter, iflist, target);
+		portgrp_chain(seq, urlfilter, iflist, target);
+		advgrp_chain(seq, urlfilter, iflist);
 	}
 }
 
