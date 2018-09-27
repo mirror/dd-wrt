@@ -1347,17 +1347,17 @@ static void sslbufferfree(struct sslbuffer *buffer)
 	free(buffer);
 }
 
-static int sslbufferread(struct sslbuffer *buffer, char *data, int datalen)
+static int sslbufferread(struct sslbuffer *buffer, char *data, size_t datalen)
 {
 	return SSL_read(buffer->ssl, data, datalen);
 }
 
-static int sslbufferpeek(struct sslbuffer *buffer, char *data, int datalen)
+static int sslbufferpeek(struct sslbuffer *buffer, char *data, size_t datalen)
 {
 	return SSL_peek(buffer->ssl, data, datalen);
 }
 
-static int sslbufferwrite(struct sslbuffer *buffer, char *data, int datalen)
+static size_t sslbufferwrite(struct sslbuffer *buffer, char *data, size_t datalen)
 {
 
 	int targetsize = SSLBUFFERSIZE - buffer->count;
