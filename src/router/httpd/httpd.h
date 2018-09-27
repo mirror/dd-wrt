@@ -38,6 +38,7 @@ extern BIO *bio_err;
 #define __USE_GNU
 #include <search.h>
 #endif
+#include <stdarg.h>
 
 #define AUTH_MAX 64
 
