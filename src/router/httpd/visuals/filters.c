@@ -28,14 +28,6 @@
 
 #include <broadcom.h>
 
-#ifdef FILTER_DEBUG
-extern FILE *debout;
-
-#define D(a) fprintf(debout,"%s\n",a); fflush(debout);
-#else
-#define D(a)
-#endif
-
 /*
  * Format: filter_rule{1...10}=$STAT:1$NAME:test1$ (1=>disable 2=>enable)
  * 
@@ -73,7 +65,6 @@ static char *filter_ip_get(webs_t wp, char *type, int which, char *word)
 	char *start, *end, *wordlist, *next;
 	char filter_ip[] = "filter_ip_grpXXX";
 	int temp = which;
-	D("filter_ip_get");
 	snprintf(filter_ip, sizeof(filter_ip), "filter_ip_grp%d", wp->p->filter_id);
 
 	wordlist = nvram_safe_get(filter_ip);
@@ -190,65 +181,41 @@ static char *filter_ip_get(webs_t wp, char *type, int which, char *word)
 					return eip4;
 
 			}
-			D("return word");
 			return word;
 		}
 	}
-	D("return zero");
 	return "0";
 }
 
-/*
- * Example: tcp:100-200 udp:210-220 both:250-260 
- */
-
-static char *filter_dport_get(webs_t wp, char *type, int which, char *word)
+static char *filter_port_get(char *list, char *type, int which)
 {
 	char *wordlist, *next;
+	char word[256];
 	char *start, *end, *proto;
-	char name[] = "filter_dport_grpXXX";
+	char *protos[] = { "disable", "both", "tcp", "udp", "l7" };
 
-	sprintf(name, "filter_dport_grp%d", wp->p->filter_id);
-	wordlist = nvram_safe_get(name);
-	D("filter dport get");
+	wordlist = nvram_safe_get(list);
 	foreach(word, wordlist, next) {
 		if (which-- == 0) {
 			start = word;
 			proto = strsep(&start, ":");
 			end = start;
 			start = strsep(&end, "-");
-			if (!strcmp(type, "disable")) {
-				if (!strcmp(proto, "disable"))
-					return "selected";
-				else
-					return " ";
-			} else if (!strcmp(type, "both")) {
-				if (!strcmp(proto, "both"))
-					return "selected";
-				else
-					return " ";
-			} else if (!strcmp(type, "tcp")) {
-				if (!strcmp(proto, "tcp"))
-					return "selected";
-				else
-					return " ";
-			} else if (!strcmp(type, "udp")) {
-				if (!strcmp(proto, "udp"))
-					return "selected";
-				else
-					return " ";
-			} else if (!strcmp(type, "l7")) {
-				if (!strcmp(proto, "l7"))
-					return "selected";
-				else
-					return " ";
-			} else if (!strcmp(type, "start"))
+			int i;
+			for (i = 0; i < sizeof(protos) / sizeof(char *); i++) {
+				if (!strcmp(type, protos[i])) {
+					if (!strcmp(proto, protos[i]))
+						return "selected";
+					else
+						return " ";
+				}
+			}
+			if (!strcmp(type, "start"))
 				return start;
-			else if (!strcmp(type, "end"))
+			if (!strcmp(type, "end"))
 				return end;
 		}
 	}
-	D("check type and return");
 	if (!strcmp(type, "start") || !strcmp(type, "end"))
 		return "0";
 	else
@@ -259,81 +226,26 @@ void ej_filter_dport_get(webs_t wp, int argc, char_t ** argv)
 {
 	int which;
 	char *type;
-	char word[256];
+	char name[] = "filter_dport_grpXXX";
+	sprintf(name, "filter_dport_grp%d", wp->p->filter_id);
 
-	D("ej filter dport get");
 	type = argv[0];
 	which = atoi(argv[1]);
-	websWrite(wp, "%s", filter_dport_get(wp, type, which, word));
-	D("good value");
+	websWrite(wp, "%s", filter_port_get(name, type, which));
 
 	return;
 
-}
-
-/*
- * Example: tcp:100-200 udp:210-220 both:250-260 
- */
-
-static char *filter_port_get(char *type, int which, char *word)
-{
-	char *wordlist, *next;
-	char *start, *end, *proto;
-
-	D("filter port get");
-	wordlist = nvram_safe_get("filter_port");
-
-	foreach(word, wordlist, next) {
-		if (which-- == 0) {
-			start = word;
-			proto = strsep(&start, ":");
-			end = start;
-			start = strsep(&end, "-");
-			if (!strcmp(type, "disable")) {
-				if (!strcmp(proto, "disable"))
-					return "selected";
-				else
-					return " ";
-			} else if (!strcmp(type, "both")) {
-				if (!strcmp(proto, "both"))
-					return "selected";
-				else
-					return " ";
-			} else if (!strcmp(type, "tcp")) {
-				if (!strcmp(proto, "tcp"))
-					return "selected";
-				else
-					return " ";
-			} else if (!strcmp(type, "udp")) {
-				if (!strcmp(proto, "udp"))
-					return "selected";
-				else
-					return " ";
-			} else if (!strcmp(type, "start"))
-				return start;
-			else if (!strcmp(type, "end"))
-				return end;
-		}
-	}
-	D("return type");
-	if (!strcmp(type, "start") || !strcmp(type, "end"))
-		return "0";
-	else
-		return "";
 }
 
 void ej_filter_port_get(webs_t wp, int argc, char_t ** argv)
 {
 	int which;
 	char *type;
-	char word[256];
 
-	D("ej filter port get");
 	type = argv[0];
 	which = atoi(argv[1]);
-	websWrite(wp, "%s", filter_port_get(type, which, word));
+	websWrite(wp, "%s", filter_port_get(type, "filter_port", which));
 
-	D("good value");
 	return;
 
 }
@@ -348,7 +260,6 @@ static char *filter_mac_get(webs_t wp, int which, char *word)
 	char *mac;
 	char filter_mac[] = "filter_mac_grpXXX";
 
-	D("filter mac get");
 	snprintf(filter_mac, sizeof(filter_mac), "filter_mac_grp%d", wp->p->filter_id);
 
 	wordlist = nvram_safe_get(filter_mac);
@@ -358,11 +269,9 @@ static char *filter_mac_get(webs_t wp, int which, char *word)
 	foreach(word, wordlist, next) {
 		if (which-- == 0) {
 			mac = word;
-			D("return mac");
 			return mac;
 		}
 	}
-	D("return zero mac");
 	return "00:00:00:00:00:00";
 }
 
@@ -372,12 +281,10 @@ void ej_filter_ip_get(webs_t wp, int argc, char_t ** argv)
 	char *type;
 	char word[256];
 
-	D("ej-filter ip get");
 	type = argv[0];
 	which = atoi(argv[1]);
 	websWrite(wp, "%s", filter_ip_get(wp, type, which, word));
 
-	D("good value");
 	return;
 }
 
@@ -386,10 +293,8 @@ void ej_filter_mac_get(webs_t wp, int argc, char_t ** argv)
 	int which;
 	char word[256];
 
-	D("ej filter mac get");
 	which = atoi(argv[0]);
 	websWrite(wp, "%s", filter_mac_get(wp, which, word));
-	D("good value");
 	return;
 }
 
@@ -397,7 +302,6 @@ void ej_filter_policy_select(webs_t wp, int argc, char_t ** argv)
 {
 	int i;
 
-	D("ej policy select");
 	for (i = 1; i <= NR_RULES; i++) {
 		char filter[] = "filter_ruleXXX";
 		char *data = "";
@@ -413,7 +317,6 @@ void ej_filter_policy_select(webs_t wp, int argc, char_t ** argv)
 		}
 		websWrite(wp, "<option value=%d %s>%d ( %s ) </option>\n", i, (wp->p->filter_id == i ? "selected=\"selected\" " : ""), i, name);
 	}
-	D("okay");
 	return;
 }
 
@@ -466,7 +369,6 @@ void ej_filter_policy_get(webs_t wp, int argc, char_t ** argv)
 
 	char *type, *part;
 
-	D("ej filter policy get");
 	type = argv[0];
 	part = argv[1];
 
@@ -554,7 +456,6 @@ void ej_filter_policy_get(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "disable");
 		}
 	}
-	D("okay");
 	return;
 }
 
@@ -570,7 +471,6 @@ int filter_tod_init(webs_t wp, int which)
 	wp->p->day_all = wp->p->week0 = wp->p->week1 = wp->p->week2 = wp->p->week3 = wp->p->week4 = wp->p->week5 = wp->p->week6 = 0;
 	wp->p->time_all = wp->p->start_hour = wp->p->start_min = wp->p->start_time = wp->p->end_hour = wp->p->end_min = wp->p->end_time = 0;
 	wp->p->start_week = wp->p->end_week = 0;
-	D("filter tod init");
 	snprintf(filter_tod, sizeof(filter_tod), "filter_tod%d", which);
 	snprintf(filter_tod_buf, sizeof(filter_tod_buf), "filter_tod_buf%d", which);
 
@@ -616,7 +516,6 @@ int filter_tod_init(webs_t wp, int which)
 			wp->p->day_all = 0;
 		}
 	}
-	D("okay");
 	return 0;
 }
 
@@ -698,7 +597,6 @@ void ej_filter_web_get(webs_t wp, int argc, char_t ** argv)
 	int which;
 	char *token = "<&nbsp;>";
 
-	D("filter-web-get");
 	type = argv[0];
 	which = atoi(argv[1]);
 
@@ -723,7 +621,6 @@ void ej_filter_web_get(webs_t wp, int argc, char_t ** argv)
 		find_each(url, sizeof(url), url_data, token, which, "");
 		websWrite(wp, "%s", url);
 	}
-	D("okay");
 	return;
 }
 
@@ -744,7 +641,6 @@ void ej_filter_summary_show(webs_t wp, int argc, char_t ** argv)
 	// char pm[] = "PM";
 	char _24h[] = "24 Hours.";
 #endif
-	D("filter summary show");
 	for (i = 0; i < NR_RULES; i++) {
 		char name[50] = "---";
 		char status[5] = "---";
@@ -797,7 +693,6 @@ void ej_filter_summary_show(webs_t wp, int argc, char_t ** argv)
 		}
 		websWrite(wp, "<td width=\"150\" ><font face=\"Arial\" size=\"2\" > %s </font></td>\n" "<td width=\"70\" ><input type=\"checkbox\" name=\"sum%d\" value=\"1\" ></td>\n" "</tr>\n", time_buf, i + 1);
 	}
-	D("okay");
 	return;
 
 }
@@ -819,8 +714,6 @@ void filter_port_services_get(webs_t wp, char *type, int which)
 {
 	char word[1024], *next;
 	char delim[] = "<&nbsp;>";
-
-	D("ej_filter_port_services get");
 
 	char *services;
 
@@ -918,15 +811,12 @@ void filter_port_services_get(webs_t wp, char *type, int which)
 		websWrite(wp, "%s", port_data);
 
 	}
-	D("okay");
 	return;
 }
 
 void filtersummary_onload(webs_t wp, char *arg)
 {
-	D("filter summary unload");
 	if (!strcmp(nvram_safe_get("filter_summary"), "1")) {
 		websWrite(wp, arg);
 	}
-	D("okay");
 }

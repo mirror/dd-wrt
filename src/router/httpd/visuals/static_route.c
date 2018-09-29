@@ -32,7 +32,6 @@
 
 #include <broadcom.h>
 
-
 void ej_show_routeif(webs_t wp, int argc, char_t ** argv)
 {
 	int which;
