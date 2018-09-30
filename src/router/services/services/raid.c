@@ -1,0 +1,122 @@
+/*
+ * raid.c
+ *
+ * Copyright (C) 2018 Sebastian Gottschall <gottschall@dd-wrt.com>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ *
+ * $Id:
+ */
+#ifdef HAVE_RAID
+#include <stdlib.h>
+#include <bcmnvram.h>
+#include <shutils.h>
+#include <utils.h>
+#include <syslog.h>
+#include <signal.h>
+#include <services.h>
+
+void stop_raid(void)
+{
+	// cannot be unloaded
+}
+
+void start_raid(void)
+{
+	if (nvram_matchi("raid_enable", 1)) {
+		insmod("dm-mod");
+		insmod("async_tx");
+		insmod("async_memcpy");
+		insmod("xor");
+		insmod("async_xor");
+		insmod("raid6_pq");
+		insmod("async_pq");
+		insmod("async_raid6_recov");
+		insmod("md-mod");
+		insmod("raid456");
+		insmod("dm-raid");
+		insmod("raid0");
+		insmod("raid1");
+		insmod("raid10");
+		dd_loginfo("raid", "raid modules successfully loaded\n");
+	}
+	int i = 0;
+	while (1) {
+		char *raid = nvram_nget("raid%d", i);
+		if (!strlen(raid))
+			break;
+		char *level = nvram_nget("raidlevel%d", i);
+		char *done = nvram_nget("raiddone%d", i);
+		char *type = nvram_nget("raidtype%d", i);
+		if (strcmp(done, "1")) {
+			char *next;
+			char drive[64];
+			int drives = 0;
+			foreach(drive, raid, next) {
+				drives++;
+			}
+			if (!strcmp(type, "md")) {
+				dd_loginfo("creating MD Raid /dev/md%d", i);
+				sysprintf("mdadm --create /dev/md%d --level=%s --raid-devices=%d %s", i, level, drives, raid);
+				if (nvram_nmatch("ext4", "raidfs%d", i))
+					sysprintf("mkfs.ext4 /dev/md%d", i);
+				if (nvram_nmatch("ext2", "raidfs%d", i))
+					sysprintf("mkfs.ext2 /dev/md%d", i);
+				if (nvram_nmatch("xfs", "raidfs%d", i))
+					sysprintf("mkfs.xfs /dev/md%d", i);
+				if (nvram_nmatch("btrfs", "raidfs%d", i))
+					sysprintf("mkfs.btrfs /dev/md%d", i);
+				nvram_nset("1", "raiddone%d", i);
+				nvram_commit();
+			}
+			if (!strcmp(type, "zfs")) {
+				char *poolname = nvram_nget("raidname%d", i);
+				dd_loginfo("creating ZFS Pool %s", poolname);
+				if (!strcmp(level, "mirror"))
+					sysprintf("zpool create %s mirror %s", poolname, raid);
+				if (!strcmp(level, "raidz1"))
+					sysprintf("zpool create %s raidz1 %s", poolname, raid);
+				if (!strcmp(level, "raidz2"))
+					sysprintf("zpool create %s raidz2 %s", poolname, raid);
+				if (!strcmp(level, "raidz3"))
+					sysprintf("zpool create %s raidz3 %s", poolname, raid);
+				if (!strcmp(level, "stripe"))
+					sysprintf("zpool create %s %s", poolname, raid);
+				sysprintf("zfs create %s/fs1");
+
+			}
+			nvram_nset("1", "raiddone%d", i);
+			nvram_commit();
+		}
+		if (!strcmp(type, "zfs")) {
+			char *poolname = nvram_nget("raidname%d", i);
+			if (nvram_nmatch("1", "raidlz%d", i))
+				sysprintf("zfs set compression=lz4 %s/fs1", poolname);
+			else
+				sysprintf("zfs set compression=off %s/fs1", poolname);
+
+			if (nvram_nmatch("1", "raiddedup%d", i))
+				sysprintf("zfs set dedup=on %s/fs1", poolname);
+			else
+				sysprintf("zfs set dedup=off %s/fs1", poolname);
+
+		}
+
+		i++;
+	}
+
+}
+
+#endif
