@@ -62,6 +62,7 @@ void detect_udf(SECTION * section, int level);
 /* in linux.c */
 void detect_ext234(SECTION * section, int level);
 void detect_btrfs(SECTION * section, int level);
+void detect_zfs(SECTION * section, int level);
 void detect_f2fs(SECTION * section, int level);
 void detect_reiser(SECTION * section, int level);
 void detect_reiser4(SECTION * section, int level);
@@ -160,6 +161,7 @@ DETECTOR detectors[] = {
 	/* 5: file formats */
 	detect_archive,
 	detect_compressed,	/* this is down here because of boot disks */
+	detect_zfs,
 	/* 6: blank formatted disk */
 	detect_blank,
 
