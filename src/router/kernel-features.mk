@@ -226,6 +226,7 @@ define kernelfeatures
 	fi
 	if [ "$(CONFIG_RAID)" = "y" ]; then \
 		sed -i 's/\# CONFIG_MD is not set/CONFIG_MD=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_RAID6_PQ is not set/CONFIG_RAID6_PQ=y/g' $(LINUXDIR)/.config; \
 		echo "CONFIG_MD=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_BLK_DEV_MD=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_MD_AUTODETECT=y" >> $(LINUXDIR)/.config; \
@@ -272,8 +273,10 @@ define kernelfeatures
 		echo "CONFIG_DM_LOG_WRITES=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_DM_INTEGRITY=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_DM_ZONED=m" >> $(LINUXDIR)/.config; \
-		echo "CONFIG_ASYNC_RAID6_TEST=m" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_ASYNC_RAID6_TEST is not set" >> $(LINUXDIR)/.config; \
 	else \
 		sed -i 's/\CONFIG_MD=y/# CONFIG_MD is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/\CONFIG_RAID6_PQ=m/# CONFIG_RAID6_PQ is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/\CONFIG_RAID6_PQ=y/# CONFIG_RAID6_PQ is not set/g' $(LINUXDIR)/.config; \
 	fi
 endef
