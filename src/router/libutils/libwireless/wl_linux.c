@@ -48,7 +48,7 @@ int getsocket(void)
 	if (s_socket < 0) {
 		s_socket = socket(AF_INET, SOCK_DGRAM, 0);
 		if (s_socket < 0)
-			err(1, "socket(SOCK_DGRAM)");
+			perror("socket(SOCK_DGRAM)");
 	}
 	return s_socket;
 }
