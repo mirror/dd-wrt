@@ -51,27 +51,27 @@ static void show_macos_type(const char *filename);
 
 int main(int argc, char *argv[])
 {
-  int i;
+	int i;
 
-  /* argument check */
-  if (argc < 2) {
-    if (isatty(0)) {
-      fprintf(stderr, "Usage: %s <device/file>...\n", PROGNAME);
-      return 1;
-    } else {
-      print_line(0, "");
-      analyze_stdin();
-    }
-  }
+	/* argument check */
+	if (argc < 2) {
+		if (isatty(0)) {
+			fprintf(stderr, "Usage: %s <device/file>...\n", PROGNAME);
+			return 1;
+		} else {
+			print_line(0, "");
+			analyze_stdin();
+		}
+	}
 
-  /* loop over filenames */
-  print_line(0, "");
-  for (i = 1; i < argc; i++) {
-    analyze_file(argv[i]);
-    print_line(0, "");
-  }
+	/* loop over filenames */
+	print_line(0, "");
+	for (i = 1; i < argc; i++) {
+		analyze_file(argv[i]);
+		print_line(0, "");
+	}
 
-  return 0;
+	return 0;
 }
 
 /*
@@ -80,147 +80,147 @@ int main(int argc, char *argv[])
 
 static void analyze_file(const char *filename)
 {
-  int fd, filekind;
-  struct stat sb;
+	int fd, filekind;
+	struct stat sb;
 
-  /* accept '-' as an alias for stdin */
-  if (strcmp(filename, "-") == 0) {
-    analyze_stdin();
-    return;
-  }
+	/* accept '-' as an alias for stdin */
+	if (strcmp(filename, "-") == 0) {
+		analyze_stdin();
+		return;
+	}
 
-  print_line(0, "--- %s", filename);
+	print_line(0, "--- %s", filename);
 
-  /* stat check */
-  if (stat(filename, &sb) < 0) {
-    errore("Can't stat %.300s", filename);
-    return;
-  }
-  filekind = analyze_stat(&sb, filename);
-  if (filekind < 0)
-    return;
+	/* stat check */
+	if (stat(filename, &sb) < 0) {
+		errore("Can't stat %.300s", filename);
+		return;
+	}
+	filekind = analyze_stat(&sb, filename);
+	if (filekind < 0)
+		return;
 
-  /* Mac OS type & creator code (if running on Mac OS X) */
+	/* Mac OS type & creator code (if running on Mac OS X) */
 #ifdef USE_MACOS_TYPE
-  if (filekind == 0)
-    show_macos_type(filename);
+	if (filekind == 0)
+		show_macos_type(filename);
 #endif
 
-  /* open for reading */
-  fd = open(filename, O_RDONLY);
-  if (fd < 0) {
-    errore("Can't open %.300s", filename);
-    return;
-  }
+	/* open for reading */
+	fd = open(filename, O_RDONLY);
+	if (fd < 0) {
+		errore("Can't open %.300s", filename);
+		return;
+	}
 
-  /* go for it */
-  analyze_fd(fd, filekind, filename);
+	/* go for it */
+	analyze_fd(fd, filekind, filename);
 }
 
 static void analyze_stdin(void)
 {
-  int fd = 0;
-  int filekind;
-  const char *filename = "stdin";
-  struct stat sb;
+	int fd = 0;
+	int filekind;
+	const char *filename = "stdin";
+	struct stat sb;
 
-  print_line(0, "--- Standard Input");
+	print_line(0, "--- Standard Input");
 
-  /* stat check */
-  if (fstat(fd, &sb) < 0) {
-    errore("Can't stat %.300s", filename);
-    return;
-  }
-  filekind = analyze_stat(&sb, filename);
-  if (filekind < 0)
-    return;
+	/* stat check */
+	if (fstat(fd, &sb) < 0) {
+		errore("Can't stat %.300s", filename);
+		return;
+	}
+	filekind = analyze_stat(&sb, filename);
+	if (filekind < 0)
+		return;
 
-  /* go for it */
-  analyze_fd(fd, filekind, filename);
+	/* go for it */
+	analyze_fd(fd, filekind, filename);
 }
 
 static int analyze_stat(struct stat *sb, const char *filename)
 {
-  int filekind = 0;
-  u8 filesize;
-  char *reason;
+	int filekind = 0;
+	u8 filesize;
+	char *reason;
 
-  reason = NULL;
-  if (S_ISREG(sb->st_mode)) {
-    filesize = sb->st_size;
-    print_kind(filekind, filesize, 1);
-  } else if (S_ISBLK(sb->st_mode))
-    filekind = 1;
-  else if (S_ISCHR(sb->st_mode))
-    filekind = 2;
-  else if (S_ISDIR(sb->st_mode))
-    reason = "Is a directory";
-  else if (S_ISFIFO(sb->st_mode))
-    filekind = 3;
+	reason = NULL;
+	if (S_ISREG(sb->st_mode)) {
+		filesize = sb->st_size;
+		print_kind(filekind, filesize, 1);
+	} else if (S_ISBLK(sb->st_mode))
+		filekind = 1;
+	else if (S_ISCHR(sb->st_mode))
+		filekind = 2;
+	else if (S_ISDIR(sb->st_mode))
+		reason = "Is a directory";
+	else if (S_ISFIFO(sb->st_mode))
+		filekind = 3;
 #ifdef S_ISSOCK
-  else if (S_ISSOCK(sb->st_mode))
-    filekind = 4;
+	else if (S_ISSOCK(sb->st_mode))
+		filekind = 4;
 #endif
-  else
-    reason = "Is an unknown kind of special file";
+	else
+		reason = "Is an unknown kind of special file";
 
-  if (reason != NULL) {
-    error("%.300s: %s", filename, reason);
-    return -1;
-  }
+	if (reason != NULL) {
+		error("%.300s: %s", filename, reason);
+		return -1;
+	}
 
-  return filekind;
+	return filekind;
 }
 
 static void analyze_fd(int fd, int filekind, const char *filename)
 {
-  SOURCE *s;
+	SOURCE *s;
 
-  /* (try to) guard against TTY character devices */
-  if (filekind == 2) {
-    if (isatty(fd)) {
-      error("%.300s: Is a TTY device", filename);
-      return;
-    }
-  }
+	/* (try to) guard against TTY character devices */
+	if (filekind == 2) {
+		if (isatty(fd)) {
+			error("%.300s: Is a TTY device", filename);
+			return;
+		}
+	}
 
-  /* create a source */
-  s = init_file_source(fd, filekind);
+	/* create a source */
+	s = init_file_source(fd, filekind);
 
-  /* tell the user what it is */
-  if (filekind != 0)
-    print_kind(filekind, s->size, s->size_known);
+	/* tell the user what it is */
+	if (filekind != 0)
+		print_kind(filekind, s->size, s->size_known);
 
-  /* now analyze it */
-  analyze_source(s, 0);
+	/* now analyze it */
+	analyze_source(s, 0);
 
-  /* finish it up */
-  close_source(s);
+	/* finish it up */
+	close_source(s);
 }
 
 static void print_kind(int filekind, u8 size, int size_known)
 {
-  char buf[256], *kindname;
+	char buf[256], *kindname;
 
-  if (filekind == 0)
-    kindname = "Regular file";
-  else if (filekind == 1)
-    kindname = "Block device";
-  else if (filekind == 2)
-    kindname = "Character device";
-  else if (filekind == 3)
-    kindname = "FIFO";
-  else if (filekind == 4)
-    kindname = "Socket";
-  else
-    kindname = "Unknown kind";
+	if (filekind == 0)
+		kindname = "Regular file";
+	else if (filekind == 1)
+		kindname = "Block device";
+	else if (filekind == 2)
+		kindname = "Character device";
+	else if (filekind == 3)
+		kindname = "FIFO";
+	else if (filekind == 4)
+		kindname = "Socket";
+	else
+		kindname = "Unknown kind";
 
-  if (size_known) {
-    format_size_verbose(buf, size);
-    print_line(0, "%s, size %s", kindname, buf);
-  } else {
-    print_line(0, "%s, unknown size", kindname);
-  }
+	if (size_known) {
+		format_size_verbose(buf, size);
+		print_line(0, "%s, size %s", kindname, buf);
+	} else {
+		print_line(0, "%s, unknown size", kindname);
+	}
 }
 
 /*
@@ -231,39 +231,37 @@ static void print_kind(int filekind, u8 size, int size_known)
 
 static void show_macos_type(const char *filename)
 {
-  int err;
-  FSRef ref;
-  FSCatalogInfo info;
-  FInfo *finfo;
+	int err;
+	FSRef ref;
+	FSCatalogInfo info;
+	FInfo *finfo;
 
-  err = FSPathMakeRef(filename, &ref, NULL);
-  if (err == 0) {
-    err = FSGetCatalogInfo(&ref, kFSCatInfoFinderInfo,
-                           &info, NULL, NULL, NULL);
-  }
+	err = FSPathMakeRef(filename, &ref, NULL);
+	if (err == 0) {
+		err = FSGetCatalogInfo(&ref, kFSCatInfoFinderInfo, &info, NULL, NULL, NULL);
+	}
 
-  if (err == 0) {
-    finfo = (FInfo *)(info.finderInfo);
-    if (finfo->fdType != 0 || finfo->fdCreator != 0) {
-      char typecode[5], creatorcode[5], s1[256], s2[256];
+	if (err == 0) {
+		finfo = (FInfo *) (info.finderInfo);
+		if (finfo->fdType != 0 || finfo->fdCreator != 0) {
+			char typecode[5], creatorcode[5], s1[256], s2[256];
 
-      memcpy(typecode, &finfo->fdType, 4);
-      typecode[4] = 0;
-      format_ascii(typecode, s1);
+			memcpy(typecode, &finfo->fdType, 4);
+			typecode[4] = 0;
+			format_ascii(typecode, s1);
 
-      memcpy(creatorcode, &finfo->fdCreator, 4);
-      creatorcode[4] = 0;
-      format_ascii(creatorcode, s2);
+			memcpy(creatorcode, &finfo->fdCreator, 4);
+			creatorcode[4] = 0;
+			format_ascii(creatorcode, s2);
 
-      print_line(0, "Type code \"%s\", creator code \"%s\"",
-                 s1, s2);
-    } else {
-      print_line(0, "No type and creator code");
-    }
-  }
-  if (err) {
-    print_line(0, "Type and creator code unknown (error %d)", err);
-  }
+			print_line(0, "Type code \"%s\", creator code \"%s\"", s1, s2);
+		} else {
+			print_line(0, "No type and creator code");
+		}
+	}
+	if (err) {
+		print_line(0, "Type and creator code unknown (error %d)", err);
+	}
 }
 
 #endif
