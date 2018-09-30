@@ -24,7 +24,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE. 
  */
-
+#include <inttypes.h>
 #include "global.h"
 
 /*
@@ -120,7 +120,69 @@ void detect_btrfs(SECTION *section, int level)
   }
 }
 
+#define VDEV_LABEL_UBERBLOCK	(128 * 1024ULL)
+#define VDEV_LABEL_NVPAIR	( 16 * 1024ULL)
+#define VDEV_LABEL_SIZE		(256 * 1024ULL)
+#define UBERBLOCK_MAGIC         0x00bab10c              /* oo-ba-bloc!  */
+#define ZFS_TRIES	64
+#define ZFS_WANT	 4
+struct zfs_uberblock {
+	uint64_t	ub_magic;	/* UBERBLOCK_MAGIC		*/
+	uint64_t	ub_version;	/* SPA_VERSION			*/
+	uint64_t	ub_txg;		/* txg of last sync		*/
+	uint64_t	ub_guid_sum;	/* sum of all vdev guids	*/
+	uint64_t	ub_timestamp;	/* UTC time of last sync	*/
+	char		ub_rootbp;	/* MOS objset_phys_t		*/
+} __attribute__((packed));
 
+#ifndef bswap_64
+# define bswap_64(x) ((((x) & 0x00000000000000FFULL) << 56) | \
+                      (((x) & 0x000000000000FF00ULL) << 40) | \
+                      (((x) & 0x0000000000FF0000ULL) << 24) | \
+                      (((x) & 0x00000000FF000000ULL) << 8)  | \
+                      (((x) & 0x000000FF00000000ULL) >> 8)  | \
+                      (((x) & 0x0000FF0000000000ULL) >> 24) | \
+                      (((x) & 0x00FF000000000000ULL) >> 40) | \
+                      (((x) & 0xFF00000000000000ULL) >> 56))
+#endif
+
+void detect_zfs(SECTION *section, int level)
+{
+uint64_t swab_magic = bswap_64(UBERBLOCK_MAGIC);
+struct zfs_uberblock *ub;
+	int swab_endian;
+	off_t offset, ub_offset = 0;
+	int tried;
+	int found;
+
+	for (tried = found = 0, offset = VDEV_LABEL_UBERBLOCK;
+	     tried < ZFS_TRIES && found < ZFS_WANT;
+	     tried++, offset += 4096) {
+		/* also try the second uberblock copy */
+		if (tried == (ZFS_TRIES / 2))
+			offset = VDEV_LABEL_SIZE + VDEV_LABEL_UBERBLOCK;
+		  if (get_buffer(section, offset, sizeof(struct zfs_uberblock), (void **)&ub) < 1024)
+			return;
+
+		if (ub == NULL)
+			return;
+
+		if (ub->ub_magic == UBERBLOCK_MAGIC) {
+			ub_offset = offset;
+			found++;
+		}
+
+		if ((swab_endian = (ub->ub_magic == swab_magic))) {
+			ub_offset = offset;
+			found++;
+		}
+	}
+
+	if (found < 4)
+		return;
+	print_line(level, "ZFS file system v%" PRIu64 " Endian: %s",swab_endian ? bswap_64(ub->ub_version) : ub->ub_version, swab_endian?"big":"little");
+
+}
 
 void detect_f2fs(SECTION *section, int level)
 {
