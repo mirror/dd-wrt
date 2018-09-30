@@ -32,71 +32,69 @@
  * BeOS BFS (BeFS) file system
  */
 
-void detect_bfs(SECTION *section, int level)
+void detect_bfs(SECTION * section, int level)
 {
-  unsigned char *buf;
-  char s[256];
-  int off, en;
-  u4 blocksize;
-  u8 blockcount;
+	unsigned char *buf;
+	char s[256];
+	int off, en;
+	u4 blocksize;
+	u8 blockcount;
 
-  for (off = 0; off <= 512; off += 512) {
-    if (get_buffer(section, off, 512, (void **)&buf) < 512)
-      continue;
+	for (off = 0; off <= 512; off += 512) {
+		if (get_buffer(section, off, 512, (void **)&buf) < 512)
+			continue;
 
-    for (en = 0; en < 2; en++) {
-      if (get_ve_long(en, buf + 32) == 0x42465331 &&   /* magic 1 */
-          get_ve_long(en, buf + 36) == 0x42494745 &&   /* endianness */
-          get_ve_long(en, buf + 68) == 0xdd121031 &&   /* magic 2 */
-          get_ve_long(en, buf + 112) == 0x15b6830e) {  /* magic 3 */
+		for (en = 0; en < 2; en++) {
+			if (get_ve_long(en, buf + 32) == 0x42465331 &&	/* magic 1 */
+			    get_ve_long(en, buf + 36) == 0x42494745 &&	/* endianness */
+			    get_ve_long(en, buf + 68) == 0xdd121031 &&	/* magic 2 */
+			    get_ve_long(en, buf + 112) == 0x15b6830e) {	/* magic 3 */
 
-        print_line(level, "BeOS BFS (BeFS) file system, %s placement, %s",
-                   (off == 0) ? "Apple" : "Intel",
-                   get_ve_name(en));
+				print_line(level, "BeOS BFS (BeFS) file system, %s placement, %s", (off == 0) ? "Apple" : "Intel", get_ve_name(en));
 
-        /* get label */
-        get_string(buf, 32, s);
-        if (s[0])
-          print_line(level + 1, "Volume name \"%s\"", s);
+				/* get label */
+				get_string(buf, 32, s);
+				if (s[0])
+					print_line(level + 1, "Volume name \"%s\"", s);
 
-        /* get size */
-        blocksize = get_ve_long(en, buf + 40);
-        blockcount = get_ve_quad(en, buf + 48);
-        /* possible further consistency checks: 
-           blocksize must be in ( 512, 1024, 2048, 4096 )
-           long @ 44 is shift number for the block size, i.e.
-             blocksize == 1 << get_ve_long(en, buf + 44)
-        */
+				/* get size */
+				blocksize = get_ve_long(en, buf + 40);
+				blockcount = get_ve_quad(en, buf + 48);
+				/* possible further consistency checks: 
+				   blocksize must be in ( 512, 1024, 2048, 4096 )
+				   long @ 44 is shift number for the block size, i.e.
+				   blocksize == 1 << get_ve_long(en, buf + 44)
+				 */
 
-        format_blocky_size(s, blockcount, blocksize, "blocks", NULL);
-        print_line(level + 1, "Volume size %s", s);
+				format_blocky_size(s, blockcount, blocksize, "blocks", NULL);
+				print_line(level + 1, "Volume size %s", s);
 
-        return;
-      }
-    }
-  }
+				return;
+			}
+		}
+	}
 }
 
 /*
  * BeOS boot loader
  */
 
-void detect_beos_loader(SECTION *section, int level)
+void detect_beos_loader(SECTION * section, int level)
 {
-  unsigned char *buf;
+	unsigned char *buf;
 
-  if (section->flags & FLAG_IN_DISKLABEL)
-    return;
+	if (section->flags & FLAG_IN_DISKLABEL)
+		return;
 
-  if (get_buffer(section, 0, 512, (void **)&buf) < 512)
-    return;
+	if (get_buffer(section, 0, 512, (void **)&buf) < 512)
+		return;
 
-  if (find_memory(buf, 512, "Be Boot Loader", 14) >= 0)
-    print_line(level, "BeOS boot loader");
-  if (find_memory(buf, 512, "yT Boot Loader", 14) >= 0)
-    print_line(level, "ZETA/yellowTab boot loader");
-  if (find_memory(buf, 512, "\x04" "beos\x06" "system\x05" "zbeos", 18) >= 0)
-    print_line(level, "Haiku boot loader");
+	if (find_memory(buf, 512, "Be Boot Loader", 14) >= 0)
+		print_line(level, "BeOS boot loader");
+	if (find_memory(buf, 512, "yT Boot Loader", 14) >= 0)
+		print_line(level, "ZETA/yellowTab boot loader");
+	if (find_memory(buf, 512, "\x04" "beos\x06" "system\x05" "zbeos", 18) >= 0)
+		print_line(level, "Haiku boot loader");
 }
 
 /* EOF */

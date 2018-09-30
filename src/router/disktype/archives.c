@@ -35,73 +35,73 @@
  * /etc/magic.
  */
 
-void detect_archive(SECTION *section, int level)
+void detect_archive(SECTION * section, int level)
 {
-  int fill, i, stored_sum, sum, en;
-  u4 magic;
-  unsigned char *buf;
+	int fill, i, stored_sum, sum, en;
+	u4 magic;
+	unsigned char *buf;
 
-  fill = get_buffer(section, 0, 512, (void **)&buf);
-  if (fill < 512)
-    return;
+	fill = get_buffer(section, 0, 512, (void **)&buf);
+	if (fill < 512)
+		return;
 
-  /* tar archives */
-  sum = 0;
-  for (i = 0; i < 148; i++)
-    sum += (char)buf[i];
-  for (; i < 156; i++)
-    sum += ' ';
-  for (; i < 512; i++)
-    sum += (char)buf[i];
-  stored_sum = 0;
-  for (i = 148; i < 156; i++) {
-    if (buf[i] == 0)
-      break;
-    else if (buf[i] >= '0' && buf[i] <= '7')
-      stored_sum = (stored_sum * 8) + (buf[i] - '0');
-    else if (buf[i] != ' ') {
-      stored_sum = -1;  /* make it mismatch, since this is an error */
-      break;
-    }
-  }
-  if (sum == stored_sum) {
-    if (memcmp((char *)buf + 257, "ustar  \0", 8) == 0) {
-      print_line(level, "GNU tar archive");
-    } else if (memcmp((char *)buf + 257, "ustar\0", 6) == 0) {
-      print_line(level, "POSIX tar archive");
-    } else {
-      print_line(level, "Pre-POSIX tar archive");
-    }
-  }
+	/* tar archives */
+	sum = 0;
+	for (i = 0; i < 148; i++)
+		sum += (char)buf[i];
+	for (; i < 156; i++)
+		sum += ' ';
+	for (; i < 512; i++)
+		sum += (char)buf[i];
+	stored_sum = 0;
+	for (i = 148; i < 156; i++) {
+		if (buf[i] == 0)
+			break;
+		else if (buf[i] >= '0' && buf[i] <= '7')
+			stored_sum = (stored_sum * 8) + (buf[i] - '0');
+		else if (buf[i] != ' ') {
+			stored_sum = -1;	/* make it mismatch, since this is an error */
+			break;
+		}
+	}
+	if (sum == stored_sum) {
+		if (memcmp((char *)buf + 257, "ustar  \0", 8) == 0) {
+			print_line(level, "GNU tar archive");
+		} else if (memcmp((char *)buf + 257, "ustar\0", 6) == 0) {
+			print_line(level, "POSIX tar archive");
+		} else {
+			print_line(level, "Pre-POSIX tar archive");
+		}
+	}
 
-  /* cpio */
-  if (get_le_short(buf) == 070707) {
-    print_line(level, "cpio archive, little-endian binary");
-  } else if (get_be_short(buf) == 070707) {
-    print_line(level, "cpio archive, big-endian binary");
-  } else if (memcmp(buf, "07070", 5) == 0) {
-    print_line(level, "cpio archive, ascii");
-  }
+	/* cpio */
+	if (get_le_short(buf) == 070707) {
+		print_line(level, "cpio archive, little-endian binary");
+	} else if (get_be_short(buf) == 070707) {
+		print_line(level, "cpio archive, big-endian binary");
+	} else if (memcmp(buf, "07070", 5) == 0) {
+		print_line(level, "cpio archive, ascii");
+	}
 
-  /* bar */
-  if (memcmp(buf + 65, "\x56\0", 2) == 0) {
-    print_line(level, "bar archive");
-  }
+	/* bar */
+	if (memcmp(buf + 65, "\x56\0", 2) == 0) {
+		print_line(level, "bar archive");
+	}
 
-  /* dump */
-  for (en = 0; en < 2; en++) {
-    magic = get_ve_long(en, buf + 24);
+	/* dump */
+	for (en = 0; en < 2; en++) {
+		magic = get_ve_long(en, buf + 24);
 
-    if (magic == 60011) {
-      print_line(level, "dump: 4.1BSD (or older) or Sun OFS, %s", get_ve_name(en));
-    } else if (magic == 60012) {
-      print_line(level, "dump: 4.2BSD (or newer) without IDC or Sun NFS, %s", get_ve_name(en));
-    } else if (magic == 60013) {
-      print_line(level, "dump: 4.2BSD (or newer) with IDC, %s", get_ve_name(en));
-    } else if (magic == 60014) {
-      print_line(level, "dump: Convex Storage Manager, %s", get_ve_name(en));
-    }
-  }
+		if (magic == 60011) {
+			print_line(level, "dump: 4.1BSD (or older) or Sun OFS, %s", get_ve_name(en));
+		} else if (magic == 60012) {
+			print_line(level, "dump: 4.2BSD (or newer) without IDC or Sun NFS, %s", get_ve_name(en));
+		} else if (magic == 60013) {
+			print_line(level, "dump: 4.2BSD (or newer) with IDC, %s", get_ve_name(en));
+		} else if (magic == 60014) {
+			print_line(level, "dump: Convex Storage Manager, %s", get_ve_name(en));
+		}
+	}
 }
 
 /* EOF */
