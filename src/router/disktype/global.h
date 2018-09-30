@@ -27,7 +27,6 @@
 
 #define PROGNAME "disktype"
 
-
 /* global includes */
 
 #include <stdio.h>
@@ -40,7 +39,6 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <fcntl.h>
-
 
 /* constants */
 
@@ -58,51 +56,49 @@ typedef long long int s8;
 typedef unsigned long long int u8;
 
 typedef struct source {
-  u8 size;
-  int size_known;
-  void *cache_head;
+	u8 size;
+	int size_known;
+	void *cache_head;
 
-  int sequential;
-  u8 seq_pos;
-  int blocksize;
-  struct source *foundation;
+	int sequential;
+	u8 seq_pos;
+	int blocksize;
+	struct source *foundation;
 
-  int (*analyze)(struct source *s, int level);
-  u8 (*read_bytes)(struct source *s, u8 pos, u8 len, void *buf);
-  int (*read_block)(struct source *s, u8 pos, void *buf);
-  void (*close)(struct source *s);
+	int (*analyze) (struct source * s, int level);
+	u8 (*read_bytes) (struct source * s, u8 pos, u8 len, void *buf);
+	int (*read_block) (struct source * s, u8 pos, void *buf);
+	void (*close) (struct source * s);
 
-  /* private data may follow */
+	/* private data may follow */
 } SOURCE;
 
 typedef struct section {
-  u8 pos, size;
-  int flags;
-  SOURCE *source;
+	u8 pos, size;
+	int flags;
+	SOURCE *source;
 } SECTION;
 
-typedef void (*DETECTOR)(SECTION *section, int level);
-
+typedef void (*DETECTOR) (SECTION * section, int level);
 
 /* detection dispatching functions */
 
-void analyze_source(SOURCE *s, int level);
-void analyze_source_special(SOURCE *s, int level, u8 pos, u8 size);
-void analyze_recursive(SECTION *section, int level,
-                       u8 rel_pos, u8 size, int flags);
+void analyze_source(SOURCE * s, int level);
+void analyze_source_special(SOURCE * s, int level, u8 pos, u8 size);
+void analyze_recursive(SECTION * section, int level, u8 rel_pos, u8 size, int flags);
 void stop_detect(void);
 
 /* file source functions */
 
 SOURCE *init_file_source(int fd, int filekind);
 
-int analyze_cdaccess(int fd, SOURCE *s, int level);
+int analyze_cdaccess(int fd, SOURCE * s, int level);
 
 /* buffer functions */
 
-u8 get_buffer(SECTION *section, u8 pos, u8 len, void **buf);
-u8 get_buffer_real(SOURCE *s, u8 pos, u8 len, void *inbuf, void **outbuf);
-void close_source(SOURCE *s);
+u8 get_buffer(SECTION * section, u8 pos, u8 len, void **buf);
+u8 get_buffer_real(SOURCE * s, u8 pos, u8 len, void *inbuf, void **outbuf);
+void close_source(SOURCE * s);
 
 /* output functions */
 
@@ -113,8 +109,7 @@ void finish_line(int level);
 
 /* formatting functions */
 
-void format_blocky_size(char *buf, u8 count, u4 blocksize,
-                        const char *blockname, const char *append);
+void format_blocky_size(char *buf, u8 count, u4 blocksize, const char *blockname, const char *append);
 void format_size(char *buf, u8 size);
 void format_size_verbose(char *buf, u8 size);
 
@@ -140,7 +135,7 @@ u2 get_ve_short(int endianness, void *from);
 u4 get_ve_long(int endianness, void *from);
 u8 get_ve_quad(int endianness, void *from);
 
-const char * get_ve_name(int endianness);
+const char *get_ve_name(int endianness);
 
 /* more data access */
 
@@ -148,12 +143,11 @@ void get_string(void *from, int len, char *to);
 void get_pstring(void *from, char *to);
 void get_padded_string(void *from, int len, char pad, char *to);
 
-int find_memory(void *haystack, int haystack_len,
-                void *needle, int needle_len);
+int find_memory(void *haystack, int haystack_len, void *needle, int needle_len);
 
 /* name table lookups */
 
-char * get_name_for_mbrtype(int type);
+char *get_name_for_mbrtype(int type);
 
 /* error functions */
 

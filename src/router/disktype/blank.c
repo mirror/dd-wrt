@@ -39,45 +39,44 @@
 #define MAX_BLOCKS (2048*2)
 #define MIN_BLOCKS (64*2)
 
-
-void detect_blank(SECTION *section, int level)
+void detect_blank(SECTION * section, int level)
 {
-  unsigned char *buffer;
-  int i, j;
-  int block_size = BLOCK_SIZE;
-  int max_blocks = MAX_BLOCKS;
-  int blank_blocks = 0;
-  unsigned char code;
-  char s[256];
+	unsigned char *buffer;
+	int i, j;
+	int block_size = BLOCK_SIZE;
+	int max_blocks = MAX_BLOCKS;
+	int blank_blocks = 0;
+	unsigned char code;
+	char s[256];
 
-  if (get_buffer(section, 0, 1, (void **)&buffer) < 1)
-    return;
-  code = buffer[0];
+	if (get_buffer(section, 0, 1, (void **)&buffer) < 1)
+		return;
+	code = buffer[0];
 
-  /* Limit to actual size of partition / disk */
-  if (section->size && section->size < max_blocks * block_size) {
-    max_blocks = section->size / block_size;
-  }
+	/* Limit to actual size of partition / disk */
+	if (section->size && section->size < max_blocks * block_size) {
+		max_blocks = section->size / block_size;
+	}
 
-  /* Determine number of blank blocks */
-  for (i = 0; i < max_blocks; i++) {
-    if (get_buffer(section, i * block_size, block_size, (void **)&buffer) < block_size)
-      break;
+	/* Determine number of blank blocks */
+	for (i = 0; i < max_blocks; i++) {
+		if (get_buffer(section, i * block_size, block_size, (void **)&buffer) < block_size)
+			break;
 
-    for (j = 0; j < block_size; j++) {
-      if (buffer[j] != code)
-        break;
-    }
-    if (j < block_size)
-      break;
+		for (j = 0; j < block_size; j++) {
+			if (buffer[j] != code)
+				break;
+		}
+		if (j < block_size)
+			break;
 
-    blank_blocks = i + 1;
-  }
+		blank_blocks = i + 1;
+	}
 
-  if (blank_blocks > 0 && blank_blocks >= max_blocks) {
-    print_line(level, "Blank disk/medium");
-  } else if (blank_blocks > MIN_BLOCKS) {
-    format_size(s, blank_blocks * block_size);
-    print_line(level, "First %s are blank", s);
-  }
+	if (blank_blocks > 0 && blank_blocks >= max_blocks) {
+		print_line(level, "Blank disk/medium");
+	} else if (blank_blocks > MIN_BLOCKS) {
+		format_size(s, blank_blocks * block_size);
+		print_line(level, "First %s are blank", s);
+	}
 }
