@@ -1,0 +1,20 @@
+
+# create a raid0, re-assemble with a different super-minor
+mdadm -CR -e 0.90 $md0 -l0 -n3 $dev0 $dev1 $dev2
+testdev $md0 3 $mdsize0 512
+minor1=`mdadm -E $dev0 | sed -n -e 's/.*Preferred Minor : //p'`
+mdadm -S /dev/md0
+
+mdadm -A $md1 $dev0 $dev1 $dev2
+minor2=`mdadm -E $dev0 | sed -n -e 's/.*Preferred Minor : //p'`
+mdadm -S /dev/md1
+
+mdadm -A $md1 --update=super-minor $dev0 $dev1 $dev2
+minor3=`mdadm -E $dev0 | sed -n -e 's/.*Preferred Minor : //p'`
+mdadm -S /dev/md1
+
+case "$minor1 $minor2 $minor3" in
+  "0 0 1" ) ;;
+  * ) echo >&2 "ERROR minors should be '0 0 1' but are '$minor1 $minor2 $minor3'"
+      exit 1
+esac

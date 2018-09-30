@@ -1,0 +1,113 @@
+sha1_sum() {
+    sha1sum "$1" | cut -c 1-40
+}
+
+get_rootdev() {
+    local dev=$(stat -c %D /)
+    local maj=$(expr $dev : '\(..*\)..')
+    local min=${dev#$maj}
+    local bd=/dev/$(basename $(readlink /sys/dev/block/$((0x$maj)):$((0x$min))))
+    [ -b $bd ] || exit 1
+    echo $bd
+}
+
+get_sysdir() {
+    local mddev=$1
+    [ -L $mddev ] && mddev=$(readlink -f $mddev)
+    echo "/sys/class/block/$(basename $mddev)/md"
+}
+
+get_raiddisks() {
+    sysdir=$(get_sysdir "$1")
+    for i in $(seq 0 $(($(cat $sysdir/raid_disks)-1))); do
+	if [ -d $sysdir/rd$i ]; then
+	    readlink -f /dev/block/$(cat $sysdir/rd$i/block/dev)
+	else
+	    echo MISSING
+        fi
+    done
+}
+
+get_present() {
+    get_raiddisks $1 | grep -vc MISSING
+}
+
+ddf_check() {
+    udevadm settle
+    case $1 in
+    container )
+	grep -s "blocks super external:ddf" /proc/mdstat > /dev/null || {
+	    echo >&2 "**Fatal** Correctly formed container not found"; cat /proc/mdstat; exit 1; }
+	;;
+    member )
+	t_member=$2
+	t_num_disks=$3
+	t_level=$4
+	t_rd_size=$5
+	t_size=$6
+	t_offset=$7
+	t_chunk=$8
+	t_layout=$9
+
+	if [ $t_chunk -ne 0 ]; then
+	    t_rd_size=$((t_rd_size & ~(t_chunk - 1)))
+	fi
+	case $t_level in
+	0) t_size=$((t_num_disks*$t_rd_size));;
+	1) t_size=$t_rd_size;;
+	4|5) t_size=$(((t_num_disks-1)*$t_rd_size));;
+	6) t_size=$(((t_num_disks-2)*$t_rd_size));;
+	10) t_size=$((t_num_disks*$t_rd_size/t_layout));;
+	esac
+
+	err=0
+
+	eval `stat -L -c "let major=0x%t; let minor=0x%T;" $t_member`
+	sysfs=/sys/dev/block/${major}:${minor}
+	if [ ! -f ${sysfs}/md/array_state ]; then
+	    echo "**Fatal**: Array member $t_member not found" >&2; cat /proc/mdstat >&2; exit 1
+	fi
+	_chunk=`cat ${sysfs}/md/chunk_size`
+	if [ $t_chunk -ne $((_chunk/1024)) ]; then
+	    echo "**Error**: Chunk size mismatch - expected $t_chunk, actual $_chunk" >&2
+	    err=$((err + 1))
+	fi
+	for i in `seq 0 $((t_num_disks - 1))`; do
+	    _offset=`cat ${sysfs}/md/rd${i}/offset`
+	    if [ $t_offset -ne $((_offset / 2)) ]; then
+		echo "**Error**: Offset mismatch - expected $t_offset, actual $((_offset/2))" >&2
+		err=$((err + 1))
+	    fi
+	    _rd_size=`cat ${sysfs}/md/rd${i}/size`
+	    if [ $t_rd_size -ne $_rd_size ]; then
+		echo "**Error**: Component size mismatch - expected $t_rd_size, actual $_rd_size" >&2
+		err=$((err + 1))
+	    fi
+	done
+	_size=`cat ${sysfs}/md/array_size`
+	[ o$_size = odefault ] && _size=$(($(cat ${sysfs}/size)/2))
+	if [ $t_size -ne $_size ]; then
+	    echo "**Error**: Array size mismatch - expected $t_size, actual $_size" >&2
+	    err=$((err + 1))
+	fi
+	if [ $err -gt 0 ]; then
+	    echo "$t_member failed check" >&2
+	    cat /proc/mdstat >&2
+	    mdadm -E /dev/loop8 >&2
+	    exit 1
+	fi
+	;;
+    * )
+	echo >&2 "**Error** unknown check $1"; exit 1;
+    esac
+}
+
+container=/dev/md/ddf0
+member0=/dev/md/vol0
+member1=/dev/md/vol1
+member2=/dev/md/vol2
+member3=/dev/md/vol3
+member4=/dev/md/vol4
+
+# We don't want systemd to start system mdmon; start our own
+export MDADM_NO_SYSTEMCTL=1

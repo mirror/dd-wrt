@@ -1,0 +1,27 @@
+#!/bin/sh
+#
+# sample event handling script for mdadm
+# e.g. mdadm --follow --program=/sbin/syslog-events --scan
+#
+# License: GPL ver.2
+# Copyright (C) 2004 SEKINE Tatsuo <tsekine@sdri.co.jp>
+
+event="$1"
+dev="$2"
+disc="$3"
+
+facility="kern"
+tag="mdmonitor"
+
+case x"${event}" in
+    xFail*) priority="error" ;;
+    xTest*) priority="debug" ;;
+    x*)     priority="info"  ;;
+esac
+
+msg="${event} event on ${dev}"
+if [ x"${disc}" != x ]; then
+     msg="${msg}, related to disc ${disc}"
+fi
+
+exec logger -t "${tag}" -p "${facility}.${priority}" -- "${msg}"

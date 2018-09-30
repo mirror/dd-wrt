@@ -1,0 +1,109 @@
+
+# create a raid5 array and assemble it in various ways,
+# including with missing devices.
+
+mdadm -CR -e 0.90 $md1 -l5 -n3 $dev0 $dev1 $dev2
+tst="check raid5 ;testdev $md1 2 $mdsize0 512 ; mdadm -S $md1"
+uuid=`mdadm -Db $md1 | sed 's/.*UUID=//'`
+check wait
+eval $tst
+
+mdadm -A $md1 $dev0 $dev1 $dev2
+eval $tst
+
+mdadm -A $md1 -u $uuid $devlist
+eval $tst
+
+mdadm -A $md1 -m 1 $devlist
+eval $tst
+
+
+conf=$targetdir/mdadm.conf
+{
+  echo DEVICE $devlist
+  echo array $md1 UUID=$uuid
+} > $conf
+
+mdadm -As -c $conf $md1
+eval $tst
+
+{
+  echo DEVICE $devlist
+  echo array $md1 super-minor=1
+} > $conf
+
+mdadm -As -c $conf
+eval $tst
+
+{
+  echo DEVICE $devlist
+  echo array $md1 devices=$dev0,$dev1,$dev2
+} > $conf
+
+mdadm -As -c $conf
+
+echo "DEVICE $devlist" > $conf
+mdadm -Db $md1 >> $conf
+eval $tst
+
+mdadm --assemble --scan --config=$conf $md1
+eval $tst
+
+echo "  metadata=0.90 devices=$dev0,$dev1,$dev2" >> $conf
+mdadm --assemble --scan --config=$conf $md1
+eval $tst
+
+### Now with a missing device
+
+mdadm -AR $md1 $dev0 $dev2 #
+check state U_U
+eval $tst
+
+mdadm -A $md1 -u $uuid $devlist
+check state U_U
+eval $tst
+
+mdadm -A $md1 -m 1 $devlist
+check state U_U
+eval $tst
+
+
+conf=$targetdir/mdadm.conf
+{
+  echo DEVICE $devlist
+  echo array $md1 UUID=$uuid
+} > $conf
+
+mdadm -As -c $conf $md1
+check state U_U
+eval $tst
+
+{
+  echo DEVICE $devlist
+  echo array $md1 super-minor=1
+} > $conf
+
+mdadm -As -c $conf
+check state U_U
+eval $tst
+
+{
+  echo DEVICE $devlist
+  echo array $md1 devices=$dev0,$dev1,$dev2
+} > $conf
+
+mdadm -As -c $conf
+
+echo "DEVICE $devlist" > $conf
+mdadm -Db $md1 >> $conf
+check state U_U
+eval $tst
+
+mdadm --assemble --scan --config=$conf $md1
+check state U_U
+eval $tst
+
+echo "  metadata=0.90 devices=$dev0,$dev1,$dev2" >> $conf
+mdadm --assemble --scan --config=$conf $md1
+check state U_U
+eval $tst

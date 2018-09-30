@@ -1,0 +1,144 @@
+Subject:  ANNOUNCE: mdadm 3.2.4 - A tool for managing Soft RAID under Linux
+
+I am pleased to announce the availability of
+   mdadm version 3.2.4
+
+It is available at the usual places, now including github:
+   countrycode=xx.
+   http://www.${countrycode}kernel.org/pub/linux/utils/raid/mdadm/
+and via git at
+   git://github.com/neilbrown/mdadm
+   git://neil.brown.name/mdadm
+   http://neil.brown.name/git/mdadm
+
+This release is largely a bugfix release for the 3.2 series with many
+minor fixes with little or no impact.
+
+"--oneline" log of changes is below.  Some notable ones are:
+
+ - --offroot argument to improve interactions between mdmon and initrd
+ - --prefer argument to select which /dev names to display in some
+   circumstances.
+ - relax restructions on when "--add" will be allowed
+ - Fix bug with adding write-intent-bitmap to active array
+ - Now defaults to "/run/mdadm" for storing run-time files.
+
+Upgrading is encouraged.
+
+The next mdadm release is expected to be 3.3 with a number of new
+features.
+
+NeilBrown 9th May 2012
+
+77b3ac8 monitor: make return from read_and_act more symbolic.
+68226a8 monitor: ensure we retry soon when 'remove' fails.
+8453f8d fix: Monitor sometimes crashes
+90fa1a2 Work around gcc-4.7's strict aliasing checks
+0c4304c fix: container creation with --incremental used.
+5d1c7cd FIX: External metadata sometimes is not updated
+3c20f98 FIX: mdmon check in reshape_container() can cause a problem
+59ab9f5 FIX: Typo error in fprint command
+9587c37 imsm: load_super_imsm_all function refactoring
+ec50f7b imsm: load_imsm_super_all supports loading metadata from the device list
+ca9de18 imsm: validate the number of imsm volumes per controller
+30602f5 imsm: display fd in error trace when when store_imsm_mpb failes
+eb155f6 mdmon: Use getopt_long() to parse command line options
+08ca2ad Add --offroot argument to mdadm
+da82751 Add --offroot argument to mdmon
+a0963a8 Spawn mdmon with --offroot if mdadm was launched with --offroot
+f878b24 imsm: fix, the second array need to have the whole available space on devices
+d597705 getinfo_super1: Use MaxSector in place of sb->size
+6ef8905 super1: make aread/awrite always use an aligned buffer.
+de5a472 Remove avail_disks arg from 'enough'.
+da8fe5a Assemble: fix --force assemble during reshape.
+b10c663 config: fix handing of 'homehost' in AUTO line.
+92d49ec FIX: NULL pointer to strdup() can be passed
+d2bde6d imsm: FIX: No new missing disks are allowed during general migration
+111e9fd FIX: Array is not run when expansion disks are added
+bf5cf7c imsm: FIX: imsm_get_allowed_degradation() doesn't count degradation for raid1
+50927b1 Fix: Sometimes mdmon throws core dump during reshape
+78340e2 Flush mdmon before next reshape step during container operation
+e174219 imsm: FIX: Chunk size migration problem
+f93346e FIX: use md position to reshape restart
+6a75c8c imsm: FIX: use md position to reshape restart
+51d83f5 imsm: FIX: Clear migration record when migration switches to next volume.
+e1dd332 FIX: restart reshape when reshape process is stopped just between 2 reshapes
+1ca90aa FIX: Do not try to (continue) reshape using inactive array
+9f1b0f0 config: conf_match should ignore devname when not set.
+d669228 Use posix_memalign() for memory used to write bitmaps
+178950e FIX: Changes in '0' case for reshape position verification
+9200d41 avoid double-free upon "old buggy kernel" sysfs_read failure
+4011421 Print error message if failing to write super for 1.x metadata
+0011874 Use MDMON_DIR for pid files created in Monitor.c
+56d1885 Assemble: don't use O_EXCL until we have checked device content.
+b720636 Assemble: support assembling of a RAID0 being reshaped.
+c69ffac Manage: allow --re-add to failed array.
+52f07f5 Reset bad flag on map update
+911cead super1: support superblocks up to 4K.
+ad6db3c Create: reduce the verbosity of 'default_layout'.
+b2bfdfa super1.c don't keep recalculating bitmap pointer
+4122675 Define and use SUPER1_SIZE for allocations
+1afa930 init_super1() memset full buffer allocated for superblock
+2de0b8a match_metadata_desc1(): Use calloc instead of malloc+memset
+3c0bcd4 Use 4K buffer alignment for superblock allocations
+308340a Use struct align_fd to cache fd's block size for aligned reads/writes
+65ed615 match_metadata_desc0(): Use calloc instead of malloc+memset
+de89706 Generalize ROUND_UP() macro and introduce matching ROUND_UP_PTR()
+0a2f189 super1.c: use ROUND_UP/ROUND_UP_PTR
+654a381 super-intel.c: Use ROUND_UP() instead of manually coding it
+42d5dfd __write_init_super_ddf(): Use posix_memalign() instead of static aligned buffer
+d4633e0 Examine: fix array size calculation for RAID10.
+e62b778 Assemble: improve verbose logging when including old devices.
+0073a6e Remove possible crash during RAID6 -> RAID5 reshape.
+69fe207 Incremental: fix adding devices with --incremental
+bcbb311 Manage: replace 'return 1' with 'goto abort'.
+9f58469 Manage: freeze recovery while adding multiple devices.
+ae6c05a Create: round off size for RAID1 arrays.
+5ca3a90 Grow: print useful error when converting RAID1->RAID5 will fail.
+c07d640 Fix tests/05r1-re-add-nosupper
+2d762ad Fix the new ROUND_UP macro.
+fd324b0 sysfs: fixed sysfs_freeze_array array to work properly with Manage_subdevs.
+5551b11 imsm: avoid overflows for disks over 1TB
+97f81ee clear hi bits if not used after loading metadata from disk
+e03640b simplify calculating array_blocks
+29cd082 show 2TB volumes/disks support in --detail-platform
+2cc699a check volume size in validate_geometry_imsm_orom
+9126b9a check that no disk over 2TB is used to create container when no support
+027c374 imsm: set 2tb disk attribute for spare
+3556c2f Fix typo: wan -> want
+15632a9 parse_size: distinguish between 0 and error.
+fbdef49 Bitmap_offset is a signed number
+508a7f1 super1: leave more space in front of data by default.
+40110b9 Fix two typos in fprintf messages
+342460c mdadm man page: fix typo
+0e7f69a imsm: display maximum volumes per controller and array
+36fd8cc imsm: FIX: Update function imsm_num_data_members() for Raid1/10
+7abc987 imsm: FIX: Add volume size expand support to imsm_analyze_change()
+f3871fd imsm: Add new metadata update for volume size expansion
+54397ed imsm: Execute size change for external metatdata
+016e00f FIX: Support metadata changes rollback
+fbf3d20 imsm: FIX: Support metadata changes rollback
+44f6f18 FIX: Extend size of raid0 array
+7e7e9a4 FIX: Respect metadata size limitations
+65a9798 FIX: Detect error and rollback metadata
+13bcac9 imsm: Add function imsm_get_free_size()
+b130333 imsm: Support setting max size for size change operation
+c41e00b imsm: FIX: Component size alignment check
+58d26a2 FIX: Size change is possible as standalone change only
+4aecb54 FIX: Assembled second array is in read only state during reshape
+ae2416e FIX: resolve make everything compilation error
+480f356 Raid limit of 1024 when scanning for devices.
+c2ecf5f Add --prefer option for --detail and --monitor
+0a99975 Relax restrictions on when --add is permitted.
+7ce0570 imsm: fix: rebuild does not continue after reboot
+b51702b fix: correct extending size of raid0 array
+34a1395 Fix sign extension of bitmap_offset in super1.c
+012a864 Introduce sysfs_set_num_signed() and use it to set bitmap/offset
+5d7b407 imsm: fix: thunderdome may drop 2tb attribute
+5ffdc2d Update test for "is udev active".
+96fd06e Adjust to new standard of /run
+974e039 test: don't worry too much about array size.
+b0a658f Grow: failing the set the per-device size is not an error.
+36614e9 super-intel.c: Don't try to close negative fd
+562aa10 super-intel.c: Fix resource leak from opendir()
+

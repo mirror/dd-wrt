@@ -1,0 +1,31 @@
+Subject:  ANNOUNCE: mdadm 3.2.5 - A tool for managing Soft RAID under Linux
+
+I am somewhat disappointed to have to announce the availability of
+   mdadm version 3.2.5
+
+It is available at the usual places, now including github:
+   countrycode=xx.
+   http://www.${countrycode}kernel.org/pub/linux/utils/raid/mdadm/
+and via git at
+   git://github.com/neilbrown/mdadm
+   git://neil.brown.name/mdadm
+   http://neil.brown.name/git/mdadm
+
+This release primarily fixes a serious regression in 3.2.4.
+This regression does *not* cause any risk to data.  It simply
+means that adding a device with "--add" would sometime fail
+when it should not.
+
+The fix also includes a couple of minor fixes such as making
+the "--layout=preserve" option to "--grow" work again.
+
+A reminder that the default location for runtime files is now
+"/run/mdadm".  If you compile this for a distro that does not
+have "/run", you will need to compile with an alternate setting for
+MAP_DIR. e.g.
+   make MAP_DIR=/var/run/mdadm
+or
+   make MAP_DIR=/dev/.mdadm
+
+NeilBrown 18th May 2012
+

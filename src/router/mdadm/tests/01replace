@@ -1,0 +1,52 @@
+set -x -e
+
+## test --replace for raid5 raid6 raid1 and raid10
+#1/ after replace, can remove replaced device
+#2/ after --replace-with cannot remove the 'with' device
+#3/ preserve integrity with concurrent failure
+
+for level in 1 5 6 10
+do
+  dd if=/dev/zero of=$dev4 bs=1M || true
+  dd if=/dev/zero of=$dev5 bs=1M || true
+  mdadm -CR $md0 -l $level -n4 -x2 $devlist5
+  dd if=/dev/urandom of=$md0 bs=1M || true
+  sum=`sha1sum < $md0`
+  check wait
+  mdadm $md0 --replace $dev1
+  check wait
+  mdadm $md0 --remove $dev1
+  mdadm $md0 --remove $dev5 && exit 1
+  mdadm -S $md0
+  dd if=/dev/zero of=$dev4 bs=1M || true
+  dd if=/dev/zero of=$dev5 bs=1M || true
+  mdadm -CR $md0 -l $level -n4 -x2 $devlist5
+  check wait
+  sum1=`sha1sum < $md0`
+  [ "$sum" == "$sum1" ]
+
+  mdadm $md0 --replace $dev1 --with $dev4
+  check wait
+  mdadm $md0 --remove $dev1
+  mdadm $md0 --remove $dev5
+  mdadm $md0 --remove $dev4 && exit 1
+
+  mdadm $md0 --add $dev1 $dev5
+  mdadm $md0 --replace $dev0
+  sleep 1
+  mdadm $md0 --fail $dev2
+  check wait
+  sum2=`sha1sum < $md0`
+  [ "$sum" == "$sum2" ]
+
+  mdadm $md0 --remove $dev0 $dev2
+  mdadm $md0 --add $dev0 $dev2
+  mdadm $md0 --replace $dev3
+  sleep 1
+  mdadm $md0 --fail $dev0 $dev2
+  check wait
+  sum3=`sha1sum < $md0`
+  [ "$sum" == "$sum3" ]
+
+  mdadm -S $md0
+done

@@ -1,0 +1,33 @@
+Subject:  ANNOUNCE: mdadm 3.1 - A tool for managing Soft RAID under Linux
+
+Hot on the heals of 3.0.3 I am pleased to announce the availability of
+   mdadm version 3.1
+
+It is available at the usual places:
+   countrycode=xx.
+   http://www.${countrycode}kernel.org/pub/linux/utils/raid/mdadm/
+and via git at
+   git://neil.brown.name/mdadm
+   http://neil.brown.name/git?p=mdadm
+
+
+It contains significant feature enhancements over 3.0.x
+
+The brief change log is:
+   -    Support --grow to change the layout of RAID4/5/6
+   -    Support --grow to change the chunksize of raid 4/5/6
+   -    Support --grow to change level from RAID1 -> RAID5 -> RAID6 and
+        back.
+   -    Support --grow to reduce the number of devices in RAID4/5/6.
+   -    Support restart of these grow options which assembling an array 
+	which is partially grown.
+   -    Assorted tests of this code, and of different RAID6 layouts.
+
+Note that a 2.6.31 or later is needed to have access to these.
+Reducing devices in a RAID4/5/6 requires 2.6.32.
+Changing RAID5 to RAID1 requires 2.6.33.
+
+You should only upgrade if you need to use, or which to test, these
+features.
+	
+NeilBrown 22nd October 2009

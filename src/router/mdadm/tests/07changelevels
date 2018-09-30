@@ -1,0 +1,114 @@
+
+# Test changing of level, chunksize etc.
+# Create a RAID1, convert to RAID5, add a disk, add another disk
+# convert to RAID6, back to RAID5 and ultimately to RAID1
+
+testK=$[64*3*6]
+dd if=/dev/urandom of=/tmp/RandFile bs=1024 count=$testK
+export MDADM_GROW_VERIFY=1
+
+dotest() {
+ sleep 2
+ check wait
+ testdev $md0 $1 19968 64 nd
+ blockdev --flushbufs $md0
+ cmp -s -n $[textK*1024] $md0 /tmp/RandFile || { echo cmp failed; exit 2; }
+ # write something new - shift chars 4 space
+ tr ' -~' '$-~ -#' < /tmp/RandFile > /tmp/RandFile2
+ mv /tmp/RandFile2 /tmp/RandFile
+ dd if=/tmp/RandFile of=$md0
+}
+
+checkgeo() {
+ # check the geometry of an array
+ # level raid_disks chunk_size layout
+ dev=$1
+ shift
+ sleep 0.5
+ check wait
+ sleep 1
+ for attr in level raid_disks chunk_size layout
+ do
+   if [ $# -gt 0 ] ; then
+      val=$1
+      shift
+      if [ " `cat /sys/block/$dev/md/$attr`" != " $val" ]
+      then echo "$attr doesn't match for $dev"
+           exit 1
+      fi
+   fi
+ done
+}
+
+
+bu=/tmp/md-test-backup
+rm -f $bu
+mdadm -CR $md0 -l1 -n2 -x1 $dev0 $dev1 $dev2 -z 19968
+testdev $md0 1 $mdsize1a 64
+dd if=/tmp/RandFile of=$md0
+dotest 1
+
+mdadm --grow $md0 -l5 -n3 --chunk 64
+dotest 2
+
+mdadm $md0 --add $dev3 $dev4
+mdadm --grow $md0 -n4 --chunk 32
+dotest 3
+
+mdadm -G $md0 -l6 --backup-file $bu
+dotest 3
+
+mdadm -G /dev/md0 --array-size 39936
+mdadm -G $md0 -n4 --backup-file $bu
+checkgeo md0 raid6 4 $[32*1024]
+dotest 2
+
+mdadm -G $md0 -l5 --backup-file $bu
+checkgeo md0 raid5 3 $[32*1024]
+dotest 2
+
+mdadm -G /dev/md0 --array-size 19968
+mdadm -G $md0 -n2 --backup-file $bu
+checkgeo md0 raid5 2 $[32*1024]
+dotest 1
+
+mdadm -G --level=1 $md0
+dotest 1
+
+# now repeat that last few steps only with a degraded array.
+mdadm -S $md0
+mdadm -CR $md0 -l6 -n5 $dev0 $dev1 $dev2 $dev3 $dev4
+dd if=/tmp/RandFile of=$md0
+dotest 3
+
+mdadm $md0 --fail $dev0
+
+mdadm -G /dev/md0 --array-size 37888
+mdadm -G $md0 -n4 --backup-file $bu
+dotest 2
+checkgeo md0 raid6 4 $[512*1024]
+mdadm $md0 --fail $dev4
+
+mdadm $md0 --fail $dev3
+# now double-degraded.
+# switch layout to a DDF layout and back to make sure that works.
+
+mdadm -G /dev/md0 --layout=ddf-N-continue --backup-file $bu
+checkgeo md0 raid6 4 $[512*1024] 10
+dotest 2
+mdadm -G /dev/md0 --layout=ra --backup-file $bu
+checkgeo md0 raid6 4 $[512*1024] 1
+dotest 2
+
+mdadm -G $md0 -l5 --backup-file $bu
+dotest 2
+
+mdadm -G /dev/md0 --array-size 18944
+mdadm -G $md0 -n2 --backup-file $bu
+dotest 1
+checkgeo md0 raid5 2 $[512*1024]
+mdadm $md0 --fail $dev2
+
+mdadm -G --level=1 $md0
+dotest 1
+checkgeo md0 raid1 2

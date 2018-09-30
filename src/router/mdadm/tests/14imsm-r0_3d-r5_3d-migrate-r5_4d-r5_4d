@@ -1,0 +1,29 @@
+. tests/env-imsm-template
+
+# RAID 0 and RAID 5 volumes (3 disks) migrate to RAID 5 and RAID 5 volumes (4 disks)
+# NEGATIVE test - migration is not allowed if there is more then one array in a container
+
+num_disks=3
+device_list="$dev0 $dev1 $dev2"
+spare_list="$dev3"
+
+# Before: RAID 0 volume, 3 disks, 64k chunk size, as member #0
+vol0_level=0
+vol0_comp_size=$((5 * 1024))
+vol0_chunk=64
+vol0_num_comps=$num_disks
+vol0_offset=0
+
+# Extra: RAID 5 volume, 3 disks, 64k chunk size, as member #1
+vol1_level=5
+vol1_comp_size=$((5 * 1024))
+vol1_chunk=64
+vol1_num_comps=$((num_disks - 1))
+vol1_offset=$((vol0_comp_size + 2048))
+
+# After: RAID 5 volume, 4 disks, 64k chunk size (only member #0)
+vol0_new_level=5
+vol0_new_num_comps=$num_disks
+vol0_new_chunk=64
+
+. tests/imsm-grow-template 1 1

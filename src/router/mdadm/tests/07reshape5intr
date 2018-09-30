@@ -1,0 +1,41 @@
+
+#
+# test interrupting and restarting raid5 reshape.
+set -x
+devs="$dev1"
+st=UU
+for disks in 2 3 4 5
+do
+  eval devs=\"$devs \$dev$disks\"
+  st=U$st
+  for d in $devs
+  do dd if=/dev/urandom of=$d bs=1024 || true
+  done
+
+  case $disks in
+   2 | 3) chunk=1024;;
+   4 ) chunk=512;;
+   5 ) chunk=256;;
+  esac
+
+  mdadm -CR $md0 -amd -l5 -c $chunk -n$disks --assume-clean $devs
+  mdadm $md0 --add $dev6
+  echo 20 > /proc/sys/dev/raid/speed_limit_min
+  echo 20 > /proc/sys/dev/raid/speed_limit_max
+  mdadm --grow $md0 -n $[disks+1]
+  check reshape
+  check state $st
+  mdadm --stop $md0
+  mdadm --assemble $md0 $devs $dev6
+  check reshape
+  echo 1000 > /proc/sys/dev/raid/speed_limit_min
+  echo 2000 > /proc/sys/dev/raid/speed_limit_max
+  check wait
+  while ! echo check > /sys/block/md0/md/sync_action; do sleep 0.1; done
+  check wait
+  mm=`cat /sys/block/md0/md/mismatch_cnt`
+  if [ $mm -gt 0 ]
+  then echo >&2 "ERROR mismatch_cnt non-zero : $mm" ; exit 1
+  fi
+  mdadm -S $md0
+done

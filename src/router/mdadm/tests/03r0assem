@@ -1,0 +1,137 @@
+
+# create a raid0 array from 3 devices, and assemble it in a multitude of ways.
+# explicitly list devices
+# uuid, md-minor on command line with wildcard devices
+# mdadm.conf file
+
+mdadm -CR $md2 -l0 -n3 $dev0 $dev1 $dev2
+check raid0
+tst="testdev $md2 3 $mdsize1_l 512"
+$tst
+uuid=`mdadm -Db $md2 | sed 's/.*UUID=//'`
+mdadm -S $md2
+
+mdadm -A $md2 $dev0 $dev1 $dev2
+$tst
+mdadm -S $md2
+
+mdadm -A $md2 -u $uuid $devlist
+$tst
+mdadm -S $md2
+
+mdadm --assemble $md2 --name=2 $devlist
+$tst
+mdadm -S $md2
+
+conf=$targetdir/mdadm.conf
+{
+  echo DEVICE $devlist
+  echo array $md2 UUID=$uuid
+} > $conf
+
+mdadm -As -c $conf $md2
+$tst
+mdadm -S $md2
+
+{
+  echo DEVICE $devlist
+  echo array $md2 name=2
+} > $conf
+
+mdadm -As -c $conf $md2
+$tst
+mdadm -S $md2
+
+
+{
+  echo DEVICE $devlist
+  echo array $md2 devices=$dev0,$dev1,$dev2
+} > $conf
+
+mdadm -As -c $conf $md2
+$tst
+
+echo "DEVICE $devlist" > $conf
+mdadm -Db $md2 >> $conf
+mdadm -S $md2
+
+mdadm --assemble --scan --config=$conf $md2
+$tst
+mdadm -S $md2
+
+echo "  metadata=0.90 devices=$dev0,$dev1,$dev2" >> $conf
+mdadm --assemble --scan --config=$conf $md2
+$tst
+mdadm -S $md2
+
+
+### Now for version 0...
+
+mdadm --zero-superblock $dev0 $dev1 $dev2
+mdadm -CR $md2 -l0 --metadata=0.90 -n3 $dev0 $dev1 $dev2
+check raid0
+tst="testdev $md2 3 $mdsize0 512"
+$tst
+
+uuid=`mdadm -Db $md2 | sed 's/.*UUID=//'`
+mdadm -S $md2
+
+mdadm -A $md2 $dev0 $dev1 $dev2
+$tst
+mdadm -S $md2
+
+mdadm -A $md2 -u $uuid $devlist
+$tst
+mdadm -S $md2
+
+mdadm --assemble $md2 --super-minor=2 $devlist #
+$tst
+mdadm -S $md2
+
+conf=$targetdir/mdadm.conf
+{
+  echo DEVICE $devlist
+  echo array $md2 UUID=$uuid
+} > $conf
+
+mdadm -As -c $conf $md2
+$tst
+mdadm -S $md2
+
+{
+  echo DEVICE $devlist
+  echo array $md2 super-minor=2
+} > $conf
+
+mdadm -As -c $conf $md2
+$tst
+mdadm -S $md2
+
+
+{
+  echo DEVICE $devlist
+  echo array $md2 devices=$dev0,$dev1,$dev2
+} > $conf
+
+mdadm -As -c $conf $md2
+$tst
+
+echo "DEVICE $devlist" > $conf
+mdadm -Db $md2 >> $conf
+mdadm -S $md2
+
+mdadm --assemble --scan --config=$conf $md2
+$tst
+mdadm -S $md2
+
+echo "  metadata=1 devices=$dev0,$dev1,$dev2" >> $conf
+mdadm --assemble --scan --config=$conf $md2
+$tst
+mdadm -S $md2
+
+# Now use incremental assembly.
+mdadm -I --config=$conf $dev0
+mdadm -I --config=$conf $dev1
+mdadm -I --config=$conf $dev2
+$tst
+mdadm -S $md2

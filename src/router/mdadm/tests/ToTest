@@ -1,0 +1,44 @@
+
+multipath!!
+
+add/remove/fail
+  raid1 DONE
+  raid5 DONE
+  raid6/10 needed??
+
+assemble
+  by devices     DONE
+  by uuid        DONE
+  by superminor  DONE
+  by config file DONE
+
+  various --updates DONE (not sparc2.2 or summaries)
+
+stop
+  --scan
+
+readonly/readwrite
+
+bitmap
+  separate file
+  internal
+  filename in config file
+
+examine
+  --scan
+  --brief
+
+detail
+
+grow:
+  size
+    raid1/5/6 DONE
+  devices
+    raid1 add DONE
+    raid1 shrink DONE
+
+'--quiet' option, and remove ""
+'--name' option fo v1, and configfile etc...
+
+faulty
+  errors in raid1/5/6

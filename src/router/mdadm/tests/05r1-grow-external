@@ -1,0 +1,33 @@
+
+#
+# create a raid1 array, add an external bitmap
+#
+mdadm --create --run $md0 -l 1 -n 2 $dev1 $dev2
+check wait
+testdev $md0 1 $mdsize1a 64
+
+bmf=$targetdir/bm
+rm -f $bmf
+#mdadm -E $dev1
+mdadm --grow $md0 --bitmap=$bmf --delay=1 || { mdadm -X $bmf ; exit 1; }
+dirty1=`mdadm -X $bmf | sed -n -e 's/.*Bitmap.* \([0-9]*\) dirty.*/\1/p'`
+sleep 4
+dirty2=`mdadm -X $bmf | sed -n -e 's/.*Bitmap.* \([0-9]*\) dirty.*/\1/p'`
+
+testdev $md0 1 $mdsize1a 64
+dirty3=`mdadm -X $bmf | sed -n -e 's/.*Bitmap.* \([0-9]*\) dirty.*/\1/p'`
+sleep 4
+dirty4=`mdadm -X $bmf | sed -n -e 's/.*Bitmap.* \([0-9]*\) dirty.*/\1/p'`
+
+#echo $dirty1 $dirty2 $dirty3 $dirty4
+if [ $dirty2 -ne 0 -o $dirty4 -ne 0 -o $dirty3 -lt 400 ]
+then
+   echo bad dirty counts
+   exit 1
+fi
+
+# now to remove the bitmap
+check bitmap
+mdadm --grow $md0 --bitmap=none
+check nobitmap
+mdadm -S $md0

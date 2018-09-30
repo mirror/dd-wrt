@@ -1,0 +1,35 @@
+
+case $1 in
+ raid* | linear )
+   grep -s "active $1 " /proc/mdstat > /dev/null || {
+		echo >&2 "ERROR active $1 not found" ; cat /proc/mdstat ; exit 1;}
+  ;;
+ resync | recovery )
+   sleep 0.1
+   grep -s $1 /proc/mdstat > /dev/null || {
+		echo >&2 ERROR no $1 happening; cat /proc/mdstat; exit 1; }
+  ;;
+
+  nosync )
+    sleep 0.5
+    grep -s 're[synccovery]* =' > /dev/null /proc/mdstat && {
+		echo >&2 "ERROR resync or recovery is happening!"; cat /proc/mdstat ; exit 1; }
+  ;;
+
+ wait )
+   sleep 0.1
+   while grep 're[synccovery]* =' > /dev/null /proc/mdstat
+   do sleep 2;
+   done
+   ;;
+
+ state )
+    grep -s "blocks.*\[$2\]\$" /proc/mdstat > /dev/null || {
+		echo >&2 "ERROR state $2 not found!"; cat /proc/mdstat ; exit 1; }
+    sleep 0.5
+   ;;
+
+ * ) echo >&2 ERROR unknown check $1 ; exit 1;
+esac
+
+exit 0

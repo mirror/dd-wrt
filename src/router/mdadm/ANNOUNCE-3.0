@@ -1,0 +1,98 @@
+Subject:  ANNOUNCE: mdadm 3.0 - A tool for managing Soft RAID under Linux
+
+I am pleased to (finally) announce the availability of
+   mdadm version 3.0
+
+It is available at the usual places:
+   countrycode=xx.
+   http://www.${countrycode}kernel.org/pub/linux/utils/raid/mdadm/
+and via git at
+   git://neil.brown.name/mdadm
+   http://neil.brown.name/git?p=mdadm
+
+
+This is a major new version and as such should be treated with some
+caution.  However it has seen substantial testing and is considerred
+to be ready for wide use.
+
+
+The significant change which justifies the new major version number is
+that mdadm can now handle metadata updates entirely in userspace.
+This allows mdadm to support metadata formats that the kernel knows
+nothing about.
+
+Currently two such metadata formats are supported:
+  - DDF  - The SNIA standard format
+  - Intel Matrix - The metadata used by recent Intel ICH controlers.
+
+Also the approach to device names has changed significantly.
+
+If udev is installed on the system, mdadm will not create any devices
+in /dev.  Rather it allows udev to manage those devices.  For this to work
+as expected, the included udev rules file should be installed.
+
+If udev is not installed, mdadm will still create devices and symlinks 
+as required, and will also remove them when the array is stopped.
+
+mdadm now requires all devices which do not have a standard name (mdX
+or md_dX) to live in the directory /dev/md/.  Names in this directory
+will always be created as symlinks back to the standard name in /dev.
+
+The man pages contain some information about the new externally managed
+metadata.  However see below for a more condensed overview.
+
+Externally managed metadata introduces the concept of a 'container'.
+A container is a collection of (normally) physical devices which have
+a common set of metadata.  A container is assembled as an md array, but
+is left 'inactive'.
+
+A container can contain one or more data arrays.  These are composed from
+slices (partitions?) of various devices in the container.
+
+For example, a 5 devices DDF set can container a RAID1 using the first
+half of two devices, a RAID0 using the first half of the remain 3 devices,
+and a RAID5 over thte second half of all 5 devices.
+
+A container can be created with
+
+   mdadm --create /dev/md0 -e ddf -n5 /dev/sd[abcde]
+
+or "-e imsm" to use the Intel Matrix Storage Manager.
+
+An array can be created within a container either by giving the
+container name and the only member:
+
+   mdadm -C /dev/md1 --level raid1 -n 2 /dev/md0
+
+or by listing the component devices
+
+   mdadm -C /dev/md2 --level raid0 -n 3 /dev/sd[cde]
+
+To assemble a container, it is easiest just to pass each device in turn to 
+mdadm -I
+
+  for i in /dev/sd[abcde]
+  do mdadm -I $i
+  done
+
+This will assemble the container and the components.
+
+Alternately the container can be assembled explicitly
+
+   mdadm -A /dev/md0 /dev/sd[abcde]
+
+Then the components can all be assembled with
+
+   mdadm -I /dev/md0
+
+For each container, mdadm will start a program called "mdmon" which will
+monitor the array and effect any metadata updates needed.  The array is
+initially assembled readonly. It is up to "mdmon" to mark the metadata 
+as 'dirty' and which the array to 'read-write'.
+
+The version 0.90 and 1.x metadata formats supported by previous
+versions for mdadm are still supported and the kernel still performs
+the same updates it use to.  The new 'mdmon' approach is only used for
+newly introduced metadata types.
+
+NeilBrown 2nd June 2009

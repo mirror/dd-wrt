@@ -1,0 +1,43 @@
+
+# create a simple raid0
+
+mdadm -CR $md0 -l raid0 -n3 $dev0 $dev1 $dev2
+check raid0
+testdev $md0 3 $mdsize2_l 512
+mdadm -S $md0
+
+# now with version-0.90 superblock
+mdadm -CR $md0 -e0.90 -l0 -n4 $dev0 $dev1 $dev2 $dev3
+check raid0
+testdev $md0 4 $mdsize0 512
+mdadm -S $md0
+
+# now with no superblock
+mdadm -B $md0 -l0 -n5 $dev0 $dev1 $dev2 $dev3 $dev4
+check raid0
+testdev $md0 5 $size 512
+mdadm -S $md0
+
+
+# now same again with different chunk size
+for chunk in 4 32 256
+do
+  mdadm -CR $md0 -e0.90 -l raid0 --chunk $chunk -n3 $dev0 $dev1 $dev2
+  check raid0
+  testdev $md0 3 $mdsize0 $chunk
+  mdadm -S $md0
+
+  # now with version-1 superblock
+  mdadm -CR $md0 -e1.0 -l0 -c $chunk -n4 $dev0 $dev1 $dev2 $dev3
+  check raid0
+  testdev $md0 4 $mdsize1 $chunk
+  mdadm -S $md0
+
+  # now with no superblock
+  mdadm -B $md0 -l0 -n5 --chun=$chunk $dev0 $dev1 $dev2 $dev3 $dev4
+  check raid0
+  testdev $md0 5 $size $chunk
+  mdadm -S $md0
+
+done
+exit 0

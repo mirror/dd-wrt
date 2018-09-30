@@ -1,0 +1,96 @@
+.\" -*- nroff -*-
+.\" Copyright Piergiorgio Sartor and others.
+.\"   This program is free software; you can redistribute it and/or modify
+.\"   it under the terms of the GNU General Public License as published by
+.\"   the Free Software Foundation; either version 2 of the License, or
+.\"   (at your option) any later version.
+.\" See file COPYING in distribution for details.
+.TH RAID6CHECK 8 "" v1.0.0
+.SH NAME
+raid6check \- check MD RAID6 device for errors
+.I aka
+Linux Software RAID
+
+.SH SYNOPSIS
+
+.BI raid6check " <raid6 device> <start stripe> <number of stripes>"
+
+.SH DESCRIPTION
+RAID6 devices in which one single component drive has errors can use
+the double parity in order to find out which component drive.
+The "raid6check" tool checks, for each stripe, the double parity
+consistency, reports mismatches and, if possible, which
+component drive has the mismatch.
+Since it works at stripe level, it can report different drives with
+mismatches at different stripes.
+
+"raid6check" requires a non-degraded RAID6 MD device as first
+parameter, a starting stripe (usually 0) and the number of stripes
+to be checked.
+If this third parameter is also 0, it will check the array up to
+the end.
+
+"raid6check" will start printing information about the RAID6, then
+for each stripe, it will report the parity rotation status.
+In case of parity mismatches, "raid6check" reports, if possible,
+which component drive could be responsible. Otherwise it reports
+that it is not possible to find the component drive.
+
+If the given MD device is not a RAID6, "raid6check" will, of
+course, not continue.
+
+If the RAID6 MD device is degraded, "raid6check" will report
+an error and it will not proceed further.
+
+No write operations are performed on the array or the components.
+Furthermore, the checked array can be online and in use during
+the operation of "raid6check".
+
+.SH EXAMPLES
+
+.B "  raid6check /dev/md0 0 0"
+.br
+This will check /dev/md0 from start to end.
+
+.B "  raid6check /dev/md3 0 1"
+.br
+This will check the first stripe of /dev/md3.
+
+.B "  raid6check /dev/md1 1000 0"
+.br
+This will check /dev/md1 from stripe 1000 up to the end.
+
+.B "  raid6check /dev/m127 128 256"
+.br
+This will check 256 stripes of /dev/md127 starting from stripe 128.
+
+.B "  raid6check /dev/md0 0 0 | grep -i error > md0_err.log"
+.br
+This will check /dev/md0 completely and create a log file only
+with errors, if any.
+
+.SH FILES
+
+"raid6check" uses directly the component drives as found in /dev.
+Furthermore, the sysfs interface is needed in order to find out
+the RAID6 parameters.
+
+.SH BUGS
+Negative parameters can lead to unexpected results.
+
+It is not clear what will happen if the RAID6 MD device gets
+degraded during the check.
+
+.PP
+The latest version of
+.I raid6check
+should always be available from
+.IP
+.B http://www.kernel.org/pub/linux/utils/raid/mdadm/
+.PP
+Related man pages:
+.PP
+.IR mdadm (8)
+.IR mdmon (8),
+.IR mdadm.conf (5),
+.IR md (4).

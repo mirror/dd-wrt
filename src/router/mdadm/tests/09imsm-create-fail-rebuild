@@ -1,0 +1,78 @@
+# sanity check array creation
+
+imsm_check_hold() {
+   if mdadm --remove $1 $2; then
+       echo "$2 removal from $1 should have been blocked" >&2
+       cat /proc/mdstat >&2
+       mdadm -E $2
+       exit 1
+   fi
+}
+
+imsm_check_removal() {
+   if ! mdadm --remove $1 $2 ; then
+       echo "$2 removal from $1 should have succeeded" >&2
+       cat /proc/mdstat >&2
+       mdadm -E $2
+       exit 1
+   fi
+}
+
+. tests/env-imsm-template
+
+# IMSM rounds to multiples of one mebibyte - 1024K
+DEV_ROUND_K=1024
+
+num_disks=2
+mdadm -CR $container -e imsm -n $num_disks $dev0 $dev1
+imsm_check container $num_disks
+
+# RAID0 + RAID1
+size=9000
+level=0
+chunk=64
+offset=0
+mdadm -CR $member0 $dev0 $dev1 -n $num_disks -l $level -z $size -c $chunk
+imsm_check member $member0 $num_disks $level $size $((size*2)) $offset $chunk
+testdev $member0 $num_disks $size $chunk
+
+offset=$(((size & ~(chunk - 1)) + 2048))
+size=4000
+level=1
+chunk=0
+mdadm -CR $member1 $dev0 $dev1 -n $num_disks -l $level -z $size
+imsm_check member $member1 $num_disks $level $size $size $offset $chunk
+testdev $member1 1 $size 64
+check wait
+
+mdadm -Ss
+
+# RAID10 + RAID5
+num_disks=4
+mdadm -CR $container -e imsm -n $num_disks $dev0 $dev1 $dev2 $dev3
+imsm_check container $num_disks
+
+size=9000
+level=10
+chunk=64
+offset=0
+mdadm -CR $member0 $dev0 $dev1 $dev2 $dev3 -n $num_disks -l $level -z $size -c $chunk
+imsm_check member $member0 $num_disks $level $size $((size*2)) $offset $chunk
+testdev $member0 $((num_disks-2)) $size $chunk
+
+offset=$(((size & ~(chunk - 1)) + 2048))
+size=4000
+level=5
+mdadm -CR $member1 $dev0 $dev1 $dev2 $dev3 -n $num_disks -l $level -z $size -c $chunk
+imsm_check member $member1 $num_disks $level $size $((size*3)) $offset $chunk
+testdev $member1 $((num_disks-1)) $size $chunk
+check wait
+
+# FAIL / REBUILD
+imsm_check_hold $container $dev0
+mdadm --fail $member0 $dev0
+mdadm --wait-clean --scan || true
+imsm_check_removal $container $dev0
+mdadm --add $container $dev4
+check wait
+imsm_check_hold $container $dev4

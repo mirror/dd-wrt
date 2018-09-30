@@ -1,0 +1,77 @@
+# sanity check array creation
+
+ddf_check_hold() {
+   if mdadm --remove $1 $2; then
+       echo "$2 removal from $1 should have been blocked" >&2
+       cat /proc/mdstat >&2
+       mdadm -E $2
+       exit 1
+   fi
+}
+
+ddf_check_removal() {
+   if ! mdadm --remove $1 $2 ; then
+       echo "$2 removal from $1 should have succeeded" >&2
+       cat /proc/mdstat >&2
+       mdadm -E $2
+       exit 1
+   fi
+}
+
+. tests/env-ddf-template
+
+num_disks=2
+mdadm -CR $container -e ddf -n $num_disks $dev8 $dev9
+ddf_check container $num_disks
+
+# RAID0 + RAID1
+size=9000
+level=0
+chunk=64
+offset=0
+layout=0
+mdadm -CR $member0 $dev8 $dev9 -n $num_disks -l $level -z $size -c $chunk
+ddf_check member $member0 $num_disks $level $size $((size*2)) $offset $chunk $layout
+testdev $member0 $num_disks $size $chunk
+
+offset=$(((size & ~(chunk - 1))))
+size=4000
+level=1
+chunk=0
+mdadm -CR $member1 $dev8 $dev9 -n $num_disks -l $level -z $size
+ddf_check member $member1 $num_disks $level $size $size $offset $chunk $layout
+testdev $member1 1 $size 1
+check wait
+
+mdadm -Ss
+
+# RAID10 + RAID5
+num_disks=4
+mdadm -CR $container -e ddf -n $num_disks $dev8 $dev9 $dev10 $dev11
+ddf_check container $num_disks
+
+size=9000
+level=10
+chunk=64
+offset=0
+layout=2
+mdadm -CR $member0 $dev8 $dev9 $dev10 $dev11 -n $num_disks -l $level -z $size -c $chunk
+ddf_check member $member0 $num_disks $level $size $((size*2)) $offset $chunk $layout
+testdev $member0 $((num_disks-2)) $size $chunk
+
+offset=$(((size & ~(chunk - 1))))
+size=4000
+level=5
+mdadm -CR $member1 $dev8 $dev9 $dev10 $dev11 -n $num_disks -l $level -z $size -c $chunk
+ddf_check member $member1 $num_disks $level $size $((size*3)) $offset $chunk $layout
+testdev $member1 $((num_disks-1)) $size $chunk
+check wait
+
+# FAIL / REBUILD
+ddf_check_hold $container $dev8
+mdadm --fail $member0 $dev8
+mdadm --wait-clean --scan || true
+ddf_check_removal $container $dev8
+mdadm --add $container $dev12
+check wait
+ddf_check_hold $container $dev12

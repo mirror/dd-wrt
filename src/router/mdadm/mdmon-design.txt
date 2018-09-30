@@ -1,0 +1,146 @@
+
+When managing a RAID1 array which uses metadata other than the
+"native" metadata understood by the kernel, mdadm makes use of a
+partner program named 'mdmon' to manage some aspects of updating
+that metadata and synchronising the metadata with the array state.
+
+This document provides some details on how mdmon works.
+
+Containers
+----------
+
+As background: mdadm makes a distinction between an 'array' and a
+'container'.  Other sources sometimes use the term 'volume' or
+'device' for an 'array', and may use the term 'array' for a
+'container'.
+
+For our purposes:
+ - a 'container' is a collection of devices which are described by a
+   single set of metadata.  The metadata may be stored equally
+   on all devices, or different devices may have quite different
+   subsets of the total metadata.  But there is conceptually one set
+   of metadata that unifies the devices.
+
+ - an 'array' is a set of datablock from various devices which
+   together are used to present the abstraction of a single linear
+   sequence of block, which may provide data redundancy or enhanced
+   performance.
+
+So a container has some metadata and provides a number of arrays which
+are described by that metadata.
+
+Sometimes this model doesn't work perfectly.  For example, global
+spares may have their own metadata which is quite different from the
+metadata from any device that participates in one or more arrays.
+Such a global spare might still need to belong to some container so
+that it is available to be used should a failure arise.  In that case
+we consider the 'metadata' to be the union of the metadata on the
+active devices which describes the arrays, and the metadata on the
+global spares which only describes the spares.  In this case different
+devices in the one container will have quite different metadata.
+
+
+Purpose
+-------
+
+The main purpose of mdmon is to update the metadata in response to
+changes to the array which need to be reflected in the metadata before
+futures writes to the array can safely be performed.
+These include:
+ - transitions from 'clean' to 'dirty'.
+ - recording the devices have failed.
+ - recording the progress of a 'reshape'
+
+This requires mdmon to be running at any time that the array is
+writable (a read-only array does not require mdmon to be running).
+
+Because mdmon must be able to process these metadata updates at any
+time, it must (when running) have exclusive write access to the
+metadata.  Any other changes (e.g. reconfiguration of the array) must
+go through mdmon.
+
+A secondary role for mdmon is to activate spares when a device fails.
+This role is much less time-critical than the other metadata updates,
+so it could be performed by a separate process, possibly
+"mdadm --monitor" which has a related role of moving devices between
+arrays.  A main reason for including this functionality in mdmon is
+that in the native-metadata case this function is handled in the
+kernel, and mdmon's reason for existence to provide functionality
+which is otherwise handled by the kernel.
+
+
+Design overview
+---------------
+
+mdmon is structured as two threads with a common address space and
+common data structures.  These threads are know as the 'monitor' and
+the 'manager'.
+
+The 'monitor' has the primary role of monitoring the array for
+important state changes and updating the metadata accordingly.  As
+writes to the array can be blocked until 'monitor' completes and
+acknowledges the update, it much be very careful not to block itself.
+In particular it must not block waiting for any write to complete else
+it could deadlock.  This means that it must not allocate memory as
+doing this can require dirty memory to be written out and if the
+system choose to write to the array that mdmon is monitoring, the
+memory allocation could deadlock.
+
+So 'monitor' must never allocate memory and must limit the number of
+other system call it performs. It may:
+ - use select (or poll) to wait for activity on a file descriptor
+ - read from a sysfs file descriptor
+ - write to a sysfs file descriptor
+ - write the metadata out to the block devices using O_DIRECT
+ - send a signal (kill) to the manager thread
+
+It must not e.g. open files or do anything similar that might allocate
+resources.
+
+The 'manager' thread does everything else that is needed.  If any
+files are to be opened (e.g. because a device has been added to the
+array), the manager does that.  If any memory needs to be allocated
+(e.g. to hold data about a new array as can happen when one set of
+metadata describes several arrays), the manager performs that
+allocation.
+
+The 'manager' is also responsible for communicating with mdadm and
+assigning spares to replace failed devices.
+
+
+Handling metadata updates
+-------------------------
+
+There are a number of cases in which mdadm needs to update the
+metdata which mdmon is managing.  These include:
+ - creating a new array in an active container
+ - adding a device to a container
+ - reconfiguring an array
+etc.
+
+To complete these updates, mdadm must send a message to mdmon which
+will merge the update into the metadata as it is at that moment.
+
+To achieve this, mdmon creates a Unix Domain Socket which the manager
+thread listens on.  mdadm sends a message over this socket.  The
+manager thread examines the message to see if it will require
+allocating any memory and allocates it.  This is done in the
+'prepare_update' metadata method.
+
+The update message is then queued for handling by the monitor thread
+which it will do when convenient.  The monitor thread calls
+->process_update which should atomically make the required changes to
+the metadata, making use of the pre-allocate memory as required.  Any
+memory the is no-longer needed can be placed back in the request and
+the manager thread will free it.
+
+The exact format of a metadata update is up to the implementer of the
+metadata handlers.  It will simply describe a change that needs to be
+made.  It will sometimes contain fragments of the metadata to be
+copied in to place.  However the ->process_update routine must make
+sure not to over-write any field that the monitor thread might have
+updated, such as a 'device failed' or 'array is dirty' state.
+
+When the monitor thread has completed the update and written it to the
+devices, an acknowledgement message is sent back over the socket so
+that mdadm knows it is complete.

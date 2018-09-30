@@ -1,0 +1,42 @@
+Subject:  ANNOUNCE: mdadm 3.1.5 - A tool for managing Soft RAID under Linux
+
+I am pleased to announce the availability of
+   mdadm version 3.1.5
+
+It is available at the usual places:
+   countrycode=xx.
+   http://www.${countrycode}kernel.org/pub/linux/utils/raid/mdadm/
+and via git at
+   git://neil.brown.name/mdadm
+   http://neil.brown.name/git?p=mdadm
+
+This is a bugfix/stability release over 3.1.4.  It contains all the
+important bugfixes found while working on 3.2 and 3.2.1.  It will be
+the last 3.1.x release - 3.2.1 is expected to be released in a few days.
+
+Changes include:
+  - Fixes for v1.x metadata on big-endian machines.
+  - man page improvements
+  - Improve '--detail --export' when run on partitions of an md array.
+  - Fix regression with removing 'failed' or 'detached' devices.
+  - Fixes for "--assemble --force" in various unusual cases.
+  - Allow '-Y' to mean --export.  This was documented but not implemented.
+  - Various fixed for handling 'ddf' metadata.  This is now more reliable
+    but could benefit from more interoperability testing.
+  - Correctly list subarrays of a container in "--detail" output.
+  - Improve checks on whether the requested number of devices is supported
+    by the metadata - both for --create and --grow.
+  - Don't remove partitions from a device that is being included in an
+    array until we are fully committed to including it.
+  - Allow "--assemble --update=no-bitmap" so an array with a corrupt
+    bitmap can still be assembled.
+  - Don't allow --add to succeed if it looks like a "--re-add" is probably
+    wanted, but cannot succeed.  This avoids inadvertently turning
+    devices into spares when an array is failed.
+
+This release is believed to be stable and you should feel free to
+upgrade to 3.1.5
+
+
+NeilBrown 23rd March 2011
+

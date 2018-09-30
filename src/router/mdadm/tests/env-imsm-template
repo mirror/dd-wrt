@@ -1,0 +1,74 @@
+imsm_check() {
+    udevadm settle
+    case $1 in
+    container )
+        grep -s "blocks super external:imsm" /proc/mdstat > /dev/null || {
+            echo >&2 "**Fatal** Correctly formed container not found"; cat /proc/mdstat; exit 1; }
+        ;;
+    member )
+        t_member=$2
+        t_num_disks=$3
+        t_level=$4
+        t_rd_size=$5
+        t_size=$6
+        t_offset=$7
+        t_chunk=$8
+
+	if [ $t_level -ne 1 ]; then
+	   t_rd_size=$((t_rd_size & ~(t_chunk - 1)))
+	else
+	   t_chunk=64
+	fi
+	t_size=$((t_size/1024))
+	t_size=$((t_size*1024))
+        err=0
+
+        eval `stat -L -c "let major=0x%t; let minor=0x%T;" $t_member`
+        sysfs=/sys/dev/block/${major}:${minor}
+        if [ ! -f ${sysfs}/md/array_state ]; then
+            echo "**Fatal**: Array member $t_member not found" >&2; cat /proc/mdstat >&2; exit 1
+        fi
+        _chunk=`cat ${sysfs}/md/chunk_size`
+        if [ $t_chunk -ne $((_chunk/1024)) ]; then
+            echo "**Error**: Chunk size mismatch - expected $t_chunk, actual $_chunk" >&2
+            err=$((err + 1))
+        fi
+        for i in `seq 0 $((t_num_disks - 1))`; do
+	    _offset=`cat ${sysfs}/md/rd${i}/offset`
+	    if [ $t_offset -ne $((_offset / 2)) ]; then
+		echo "**Error**: Offset mismatch - expected $t_offset, actual $_offset" >&2
+		err=$((err + 1))
+	    fi
+	    _rd_size=`cat ${sysfs}/md/rd${i}/size`
+	    if [ $t_rd_size -ne $_rd_size ]; then
+		echo "**Error**: Component size mismatch - expected $t_rd_size, actual $_rd_size" >&2
+		err=$((err + 1))
+	    fi
+        done
+        _size=`cat ${sysfs}/md/array_size`
+        if [ $t_size -ne $_size ]; then
+            echo "**Error**: Array size mismatch - expected $t_size, actual $_size" >&2
+            err=$((err + 1))
+        fi
+        if [ $err -gt 0 ]; then
+            echo "$t_member failed check" >&2
+            cat /proc/mdstat >&2
+            mdadm -E /dev/loop0 >&2
+            exit 1
+        fi
+        ;;
+    * )
+        echo >&2 "**Error** unknown check $1"; exit 1;
+    esac
+}
+
+export IMSM_NO_PLATFORM=1
+export IMSM_DEVNAME_AS_SERIAL=1
+export IMSM_TEST_OROM=1
+export MDADM_EXPERIMENTAL=1
+container=/dev/md/container
+member0=/dev/md/vol0
+member1=/dev/md/vol1
+member2=/dev/md/vol2
+member3=/dev/md/vol3
+member4=/dev/md/vol4

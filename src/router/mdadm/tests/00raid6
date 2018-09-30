@@ -1,0 +1,16 @@
+
+# create a simple raid6 set
+
+mdadm -CfR $md0 -e0.90 -l 6 -n4 $dev0 $dev1 $dev2 $dev3
+check resync ; check raid6
+testdev $md0 2 $mdsize0 512
+mdadm -S $md0
+
+# now with version-1 superblock
+mdadm -CR $md0 -e1 --level=raid6 -n5 $dev0 $dev1 $dev2 $dev3 $dev4
+check resync ; check raid6
+testdev $md0 3 $mdsize1 512
+mdadm -S $md0
+
+
+exit 0

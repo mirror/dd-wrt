@@ -1,0 +1,71 @@
+# Simple fail / re-add test
+. tests/env-ddf-template
+
+tmp=$(mktemp /tmp/mdtest-XXXXXX)
+rm -f $tmp
+
+mdadm --zero-superblock $dev8 $dev9
+mdadm -CR $container -e ddf -l container -n 2 $dev8 $dev9
+
+mdadm -CR $member0 -l raid1 -n 2 $container
+#$dir/mdadm -CR $member0 -l raid1 -n 2 $container >/tmp/mdmon.txt 2>&1
+
+check wait
+
+set -- $(get_raiddisks $member0)
+fail0=$1
+mdadm $member0 --fail $fail0
+
+sleep 1
+set -- $(get_raiddisks $member0)
+case $1 in MISSING) shift;; esac
+good0=$1
+
+# Check that the meta data now show one disk as failed
+ret=0
+for x in $@; do
+    mdadm -E $x  >$tmp
+    if ! grep -q 'state\[0\] : Degraded, Consistent' $tmp; then
+	echo ERROR: member 0 should be degraded in meta data on $x
+	ret=1
+    fi
+    phys=$(grep $x $tmp)
+    case $x:$phys in
+    $fail0:*active/Offline,\ Failed);;
+    $good0:*active/Online);;
+    *) echo ERROR: wrong phys disk state for $x
+       ret=1
+       ;;
+    esac
+done
+
+mdadm $container --remove $fail0
+
+# We re-add the disk now
+mdadm $container --add $fail0
+
+sleep 1
+mdadm --wait $member0 || true
+
+set -- $(get_raiddisks $member0)
+case $1:$2 in
+    $dev8:$dev9|$dev9:$dev8);;
+    *) echo ERROR: bad raid disks "$@"; ret=1;;
+esac
+
+mdadm -Ss
+for x in $@; do
+    mdadm -E $x  >$tmp
+    if ! grep -q 'state\[0\] : Optimal, Consistent' $tmp; then
+	echo ERROR: member 0 should be optimal in meta data on $x
+	ret=1
+    fi
+done
+
+rm -f $tmp
+if [ $ret -ne 0 ]; then
+    mdadm -E $dev8
+    mdadm -E $dev9
+fi
+
+[ $ret -eq 0 ]

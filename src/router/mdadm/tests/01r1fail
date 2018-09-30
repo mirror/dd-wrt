@@ -1,0 +1,29 @@
+
+# create a raid1, fail and remove a drive during initial sync
+# Add two more, fail and remove one
+# wait for sync to complete, fail, remove, re-add
+
+mdadm -CR $md0 -l1 -n4 $dev0 $dev1 $dev2 missing
+check resync
+mdadm $md0 --fail $dev2
+check resync
+mdadm $md0 --fail $dev1
+sleep 1
+check nosync
+check state U___
+mdadm $md0 --add $dev4 $dev3
+check recovery
+# there could be two separate recoveries, one for each dev
+check wait
+check wait
+mdadm $md0 --remove $dev2 $dev1
+check nosync
+check state UUU_
+
+mdadm --zero-superblock $dev2
+mdadm $md0 -a $dev2
+check recovery
+check wait
+check state UUUU
+
+mdadm -S $md0

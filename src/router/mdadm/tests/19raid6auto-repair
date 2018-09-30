@@ -1,0 +1,49 @@
+number_of_disks=5
+chunksize_in_kib=512
+chunksize_in_b=$[chunksize_in_kib*1024]
+array_data_size_in_kib=$[chunksize_in_kib*(number_of_disks-2)*number_of_disks]
+array_data_size_in_b=$[array_data_size_in_kib*1024]
+devs="$dev0 $dev1 $dev2 $dev3 $dev4"
+
+# default 2048 sectors
+data_offset_in_kib=$[2048/2]
+
+# make a raid5 from a file
+dd if=/dev/urandom of=/tmp/RandFile bs=1024 count=$array_data_size_in_kib
+
+# perform test for every layout
+layouts="ls rs la ra parity-first ddf-zero-restart ddf-N-restart ddf-N-continue \
+	left-asymmetric-6 right-asymmetric-6 left-symmetric-6 \
+	right-symmetric-6 parity-first-6"
+
+for layout in $layouts
+do
+    mdadm -CR $md0 -l6 --layout=$layout -n$number_of_disks -c $chunksize_in_kib $devs
+    dd if=/tmp/RandFile of=$md0 bs=1024 count=$array_data_size_in_kib
+    blockdev --flushbufs $md0; sync
+    check wait
+    blockdev --flushbufs $devs; sync
+    echo 3 > /proc/sys/vm/drop_caches
+    cmp -s -n $array_data_size_in_b $md0 /tmp/RandFile || { echo sanity cmp failed ; exit 2; }
+
+    # wipe out 5 chunks on each device
+    dd if=/dev/urandom of=$dev0 bs=1024 count=$[5*chunksize_in_kib] seek=$[data_offset_in_kib+chunksize_in_kib*0]
+    dd if=/dev/urandom of=$dev1 bs=1024 count=$[5*chunksize_in_kib] seek=$[data_offset_in_kib+chunksize_in_kib*5]
+    dd if=/dev/urandom of=$dev2 bs=1024 count=$[5*chunksize_in_kib] seek=$[data_offset_in_kib+chunksize_in_kib*10]
+    dd if=/dev/urandom of=$dev3 bs=1024 count=$[5*chunksize_in_kib] seek=$[data_offset_in_kib+chunksize_in_kib*15]
+    dd if=/dev/urandom of=$dev4 bs=1024 count=$[5*chunksize_in_kib] seek=$[data_offset_in_kib+chunksize_in_kib*20]
+
+    blockdev --flushbufs $devs; sync
+    echo 3 > /proc/sys/vm/drop_caches
+
+    $dir/raid6check $md0 0 0 2>&1 | grep -qs "Error" || { echo should detect errors; exit 2; }
+
+    $dir/raid6check $md0 0 0 autorepair > /dev/null || { echo repair failed; exit 2; }
+    blockdev --flushbufs $md0 $devs; sync
+    echo 3 > /proc/sys/vm/drop_caches
+
+    $dir/raid6check $md0 0 0 2>&1 | grep -qs "Error" && { echo errors detected; exit 2; }
+    cmp -s -n $array_data_size_in_b $md0 /tmp/RandFile || { echo cmp failed ; exit 2; }
+
+    mdadm -S $md0
+done

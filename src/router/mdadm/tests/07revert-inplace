@@ -1,0 +1,44 @@
+set -e -x
+
+# revert a reshape that is not changing the number of data devices,
+# raid5, raid6, and raid10
+
+# RAID5 -> RAID6
+mdadm -CR --assume-clean $md0 -l5 -n4 -x1 $devlist4
+check raid5
+testdev $md0 3 $mdsize1 512
+mdadm -G $md0 -l 6
+sleep 2
+mdadm -S $md0
+mdadm -A $md0 --update=revert-reshape $devlist4 --backup-file=/tmp/md-backup
+check wait
+check raid6
+check algorithm 18
+testdev $md0 3 $mdsize1 512
+mdadm -S $md0
+
+# RAID6 -> RAID5
+mdadm -CR --assume-clean $md0 -l6 -n5 $devlist4
+check raid6
+testdev $md0 3 $mdsize1 512
+mdadm -G $md0 -l 5
+sleep 2
+mdadm -S $md0
+mdadm -A $md0 --update=revert-reshape $devlist4 --backup-file=/tmp/md-backup
+check wait
+check raid6
+testdev $md0 3 $mdsize1 512
+mdadm -S $md0
+
+# RAID10 - decrease chunk size
+mdadm -CR --assume-clean $md0 -l10 -n6 -c 64 $devlist5
+check raid10
+testdev $md0 3 $mdsize1 64
+mdadm -G $md0 -c 32
+sleep 2
+mdadm -S $md0
+strace -o /tmp/str ./mdadm -A $md0 --update=revert-reshape $devlist5
+check wait
+check raid10
+testdev $md0 3 $mdsize1 64
+mdadm -S $md0

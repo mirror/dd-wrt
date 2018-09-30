@@ -1,0 +1,33 @@
+
+# create a simple raid5 set
+
+mdadm -CfR $md0 -e 0.90 -l 5 -n3 $dev0 $dev1 $dev2
+check resync
+testdev $md0 2 $mdsize0 512
+mdadm -S $md0
+
+# now with version-1 superblock
+mdadm -CR $md0 -e1 --level=raid5 -n4 $dev0 $dev1 $dev2 $dev3
+check recovery
+testdev $md0 3 $mdsize1 512
+mdadm -S $md0
+
+# now same again with explicit layout
+
+for lo in la ra left-symmetric right-symmetric
+do
+
+  mdadm -CfR $md0  -l 5 -p $lo -n3 $dev0 $dev1 $dev2
+  check resync ; check raid5
+  testdev $md0 2 $mdsize1 512
+  mdadm -S $md0
+
+  # now with version-1 superblock
+  mdadm -CR $md0 -e1 --level=raid5 --layout $lo -n4 $dev0 $dev1 $dev2 $dev3
+  check recovery ; check raid5
+  testdev $md0 3 $mdsize1 512
+  mdadm -S $md0
+
+done
+
+exit 0

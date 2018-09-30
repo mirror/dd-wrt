@@ -1,0 +1,454 @@
+# Set of tests for autorebuild functionality using mdadm -F
+# To be able to test ddf one must have all loop devices of bigger size, with the ones
+# above number 7 bigger again by any amount (this is not changed for now as it
+# could affect other tests)
+
+export IMSM_DEVNAME_AS_SERIAL=1
+export IMSM_TEST_OROM=1
+export IMSM_NO_PLATFORM=1
+
+. tests/utils
+set -ex
+verbose="yes"
+sleeptime=10
+
+# if listfailed=yes then don't exit if test failed due to wrong
+# spare-migration and just print a list at the end. Other errors still
+# stop the test.
+# if listfailed=no then exit on first failure
+listfailed="yes"
+
+# start Monitor, set monitorpid
+# uses global scan variable
+# all parameters are numbers of devices to be monitored. only used when $scan="no"
+# eg. monitor 0 1 will start monitoring of containers c0, c1 and subarrays v0, v1
+monitor(){
+       [ -z $monitorpid ] || return
+       if [ "$scan" == "yes" ]; then
+               $mdadm -F -d 1 --scan --mail root@localhost -c $config &
+               monitorpid=$!
+               return
+       fi
+       unset mddevs
+       while [ -n "$1" ]
+       do
+               eval container=\$c$1
+               eval volumes=\$v$1
+               mddevs="$mddevs /dev/$container"
+               if [ "$container" != "$volumes" ]; then
+                       for vol in $volumes; do
+                               mddevs="$mddevs /dev/$vol"
+                       done
+               fi
+               shift
+       done
+       if [ -n "$mddevs" ]; then
+               if [ "$verbose" != "yes" ]; then
+                       $mdadm -F -d 1 $mddevs -c $config >&2 &
+                       monitorpid=$!
+               else
+                       $mdadm -F -t -d 1 $mddevs -c $config &
+                       monitorpid=$!
+               fi
+       fi
+       [ "$verbose" != "yes" ] || echo $mddevs $monitorpid
+}
+
+test0()
+{
+dsc "Test 0: No config file, no spare should be moved"
+> $config
+setupdevs 0 0 1 $platform
+setupdevs 1 3 4 $platform
+monitor 0 1
+mdadm -a /dev/$c1 $dev2
+mdadm --fail /dev/$v0 $dev0
+# check that spare loop2 was not moved from container c1 to container c0
+chksparemoved $c1 $c0 $dev2 n
+tidyup
+}
+
+test0a()
+{
+dsc "Test 0a: No domains in config file, no spare should be moved"
+setupdevs 0 0 1 $platform
+setupdevs 1 3 4 $platform
+createconfig a
+monitor 0 1
+mdadm -a /dev/$c1 $dev2
+mdadm --fail /dev/$v0 $dev0
+# check that spare loop2 was not moved from container c1 to container c0
+chksparemoved $c1 $c0 $dev2 n
+tidyup
+}
+
+test1()
+{
+dsc "Test 1: Common domain, add disk to one container and fail first one in another container, spare should be moved"
+setupdevs 0 0 1 $platform
+setupdevs 1 3 4 $platform
+# create config file with arrays and common domain
+createconfig a
+createconfig domain-$platform $platform spare 0 1 2 3 4
+monitor 0 1
+mdadm -a /dev/$c1 $dev2
+mdadm --fail /dev/$v0 $dev0
+# check that spare loop2 was moved from container c1 to container c0
+chksparemoved $c1 $c0 $dev2
+tidyup
+}
+
+test1a()
+{
+dsc "Test 1a: Common domain, add disk to one container and fail second one in another container, spare should be moved"
+setupdevs 0 0 1 $platform
+setupdevs 1 3 4 $platform
+createconfig a
+createconfig domain-$platform $platform spare 0 1 2 3 4
+monitor 0 1
+mdadm -a /dev/$c1 $dev2
+mdadm --fail /dev/$v0 $dev1
+# check that spare loop2 was moved from container c1 to container c0
+chksparemoved $c1 $c0 $dev2
+tidyup
+}
+
+test2()
+{
+dsc "Test 2: Common domain, fail disk in one container and add one to another container, spare should be moved"
+setupdevs 0 0 1 $platform
+setupdevs 1 3 4 $platform
+createconfig a
+createconfig domain-$platform $platform spare 0 1 2 3 4
+monitor 0 1
+mdadm --fail /dev/$v0 $dev1
+mdadm -a /dev/$c1 $dev2
+chksparemoved $c1 $c0 $dev2
+tidyup
+}
+
+test3()
+{
+dsc "Test 3: Two domains, fail a disk in one domain, add a disk to another domain, the spare should not be moved"
+setupdevs 0 0 1 $platform
+setupdevs 1 3 4 $platform
+# create config file with 2 domains
+createconfig a
+createconfig domain-$platform"1" $platform spare 0 1 2
+createconfig domain-$platform"2" $platform spare 3 4 5
+monitor 0 1
+mdadm --fail /dev/$v0 $dev1
+mdadm -a /dev/$c1 $dev5
+chksparemoved $c1 $c0 $dev5 n
+tidyup
+}
+
+test4()
+{
+dsc "Test 4: One domain holds one container, fail a disk in domain, and add disk to a container not described by domain, move if metadata allows"
+setupdevs 0 0 1 $platform
+setupdevs 1 3 4 $platform
+createconfig a
+createconfig domain-$platform $platform spare 0 1 2
+monitor 0 1
+mdadm --fail /dev/$v0 $dev1
+mdadm -a /dev/$c1 $dev5
+unset shouldmove
+[ "$platform" == "imsm" ] || shouldmove="n"
+chksparemoved $c1 $c0 $dev5 $shouldmove
+tidyup
+}
+
+test5()
+{
+dsc "Test 5: Two domains, two containers in each domain"
+setupdevs 0 0 1 $platform
+setupdevs 1 3 4 $platform
+setupdevs 2 5 6 $platform
+setupdevs 3 8 10 $platform
+# 2 and 9 for spares
+createconfig a
+createconfig domain-$platform"1" $platform spare 0 1 2 3 4
+createconfig domain-$platform"2" $platform spare 5 6 8 9 10
+monitor 0 1 2 3
+test5a
+test5b
+test5c
+tidyup
+}
+
+test5a()
+{
+dsc "Test 5a: Two containers in each domain, add spare loop2 to domain1 and fail disk in the other domain, the spare should not be moved"
+mdadm -a /dev/$c0 $dev2
+mdadm --fail /dev/$v2 $dev5
+chksparemoved $c0 $c2 $dev2 n
+}
+
+test5b()
+{
+dsc "Test 5b: Fail disk in the same domain but different container, spare loop2 should be moved"
+mdadm --fail /dev/$v1 $dev3
+chksparemoved $c0 $c1 $dev2
+}
+
+test5c()
+{
+dsc "Test 5c: Add spare loop9 to different container in domain with degraded array, spare should be moved"
+mdadm -a /dev/$c3 $dev9
+chksparemoved $c3 $c2 $dev9
+}
+
+test6()
+{
+dsc "Test 6: One domain has two containers, fail a disk in one container, there is a spare in other container too small to use for rebuild"
+setupdevs 0 0 1 $platform
+setupdevs 1 8 9 $platform
+# all devices in one domain
+createconfig a
+createconfig domain-$platform $platform spare 0 1 2 8 9
+monitor 0 1
+mdadm -a /dev/$c0 $dev2
+mdadm --fail /dev/$v1 $dev8
+chksparemoved $c0 $c1 $dev2 n
+tidyup
+}
+
+test7()
+{
+dsc "Test 7: One domain, add small spare to container, fail disk in array, spare not used, add suitable spare to other container, spare should be moved"
+setupdevs 0 0 1 $platform
+setupdevs 1 8 9 $platform
+createconfig a
+createconfig domain-$platform $platform spare 0 1 2 8 9 10
+monitor 0 1
+mdadm -a /dev/$c1 $dev2
+mdadm --fail /dev/$v1 $dev8
+mdadm -a /dev/$c0 $dev10
+chksparemoved $c0 $c1 $dev10
+tidyup
+}
+
+
+test7a()
+{
+dsc "Test 7a: Small spare in parent, suitable one in other container, $dev2 in $c1 is not in common domain"
+setupdevs 0 0 1 $platform
+setupdevs 1 8 9 $platform
+#all $platform devices in one domain
+createconfig a
+createconfig domain-$platform"1" $platform spare 0 1 8 9 10
+createconfig domain-$platform"2" $platform spare 2
+monitor 0 1
+mdadm -a /dev/$c1 $dev2
+chkspare $c1 $dev2
+mdadm --fail /dev/$v1 $dev8
+mdadm -a /dev/$c0 $dev10
+chksparemoved $c0 $c1 $dev10
+tidyup
+}
+
+test8()
+{
+# ddf does not have getinfo_super_disks implemented so skip this test
+return
+dsc "Test 8: imsm and ddf - spare should not be migrated"
+setupdevs 0 10 11 imsm
+setupdevs 1 8 9 ddf
+createconfig a
+createconfig domain0 noplatform spare 8 9 10 11 12
+monitor 0 1
+mdadm -a /dev/$c1 $dev12
+mdadm --fail /dev/$v0 $dev10
+chksparemoved $c1 $c0 $dev12 n
+tidyup
+}
+
+test9()
+{
+dsc "Test 9: imsm and native 1.2 - one domain, no metadata specified, spare should be moved"
+setupdevs 0 10 11 imsm
+setupdevs 1 8 9 1.2
+createconfig a
+createconfig domain0 noplatform spare 8 9 10 11 12
+monitor 0 1
+mdadm -a /dev/$c1 $dev12
+mdadm --fail /dev/$v0 $dev10
+chksparemoved $c1 $c0 $dev12
+tidyup
+}
+
+test9a()
+{
+dsc "Test 9a: imsm and native 1.2 - spare in global domain, should be moved"
+setupdevs 0 10 11 imsm
+setupdevs 1 8 9 1.2
+createconfig a
+createconfig domain-global noplatform spare 8 9 10 11 12
+createconfig domain-1.2 1.2 spare 8 9
+createconfig domain-imsm imsm spare 10 11
+monitor 0 1
+mdadm -a /dev/$c1 $dev12
+mdadm --fail /dev/$v0 $dev10
+chksparemoved $c1 $c0 $dev12
+tidyup
+}
+
+test10()
+{
+dsc "Test 10: Two arrays on the same devices in container"
+setupdevs 0 0 1 $platform 10000
+setupdevs 1 3 4 $platform
+createconfig a
+createconfig domain-$platform $platform spare 0 1 2 3 4 5
+monitor 0 1
+mdadm -a /dev/$c1 $dev2
+mdadm --fail /dev/md/sub0_ $dev0
+chksparemoved $c1 $c0 $dev2
+if [ $failed -eq 0 ]; then
+# now fail the spare and see if we get another one
+       mdadm --fail /dev/md/sub0_ $dev2
+       mdadm -a /dev/$c1 $dev5
+       chksparemoved $c1 $c0 $dev5
+fi
+tidyup
+}
+
+test11()
+{
+dsc "Test 11: Failed spare from other container should not be used"
+setupdevs 0 0 1 $platform
+setupdevs 1 3 4 $platform
+createconfig a
+createconfig domain-$platform $platform spare 0 1 2 3 4
+monitor 0 1
+mdadm -a /dev/$c1 $dev2
+mdadm --fail /dev/$v1 $dev3
+#wait until recovery finishes so no degraded array in c1
+check wait
+mdadm --fail /dev/$v0 $dev0
+chksparemoved $c1 $c0 $dev3 n
+tidyup
+}
+
+test12()
+{
+dsc "Test 12: Only one spare should be taken for rebuild, second not needed"
+setupdevs 0 0 1 $platform
+setupdevs 1 3 4 $platform
+createconfig a
+createconfig domain-$platform $platform spare 0 1 2 3 4 5
+monitor 0 1
+mdadm -a /dev/$c1 $dev2
+mdadm -a /dev/$c1 $dev5
+mdadm --fail /dev/$v0 $dev0
+sleep $sleeptime
+chkarray $dev2 n
+sc1=$c
+chkarray $dev5 n
+sc2=$c
+[ "$sc1" != "$sc2" ] || err "both spares in the same container $sc1"
+tidyup
+}
+
+test13()
+{
+dsc "Test 13: Common domain, two containers, fail a disk in container, action is below spare, the spare should be moved regadless of action"
+setupdevs 0 0 1 $platform
+setupdevs 1 4 5 $platform
+# same domain but different action on 4 5 6
+createconfig a
+createconfig domain-$platform $platform spare 0 1
+createconfig domain-$platform $platform include 4 5 6
+monitor 0 1
+mdadm -a /dev/$c1 $dev6
+mdadm --fail /dev/$v0 $dev0
+chksparemoved $c1 $c0 $d6
+tidyup
+}
+
+test14()
+{
+dsc "Test 14: One domain, small array on big disks, check if small spare is accepted"
+setupdevs 0 8 9 $platform 10000 1
+setupdevs 1 0 1 $platform
+createconfig a
+createconfig domain-$platform $platform spare 0 1 2 8 9
+monitor 0 1
+mdadm -a /dev/$c1 $dev2
+mdadm --fail /dev/$v0 $dev9
+chksparemoved $c1 $c0 $d2
+tidyup
+}
+
+test15()
+{
+dsc "Test 15: spare in global domain for $platform metadata, should be moved"
+# this is like 9a but only one metadata used
+setupdevs 0 10 11 $platform
+setupdevs 1 8 9 $platform
+createconfig a
+createconfig domain-global $platform spare 8 9 10 11 12
+createconfig domain-1 $platform spare 8 9
+createconfig domain-2 $platform spare 10 11
+monitor 0 1
+mdadm -a /dev/$c1 $dev12
+mdadm --fail /dev/$v0 $dev10
+chksparemoved $c1 $c0 $dev12
+tidyup
+}
+
+try()
+{
+test0
+test0a
+test1
+test1a
+test2
+test3
+test4
+test5
+test6
+if [ "$platform" != "1.2" ]; then
+# this is because we can't have a small spare added to native array
+    test7
+    test7a
+fi
+test8
+test9
+test9a
+if [ "$platform" != "1.2" ]; then
+# we can't create two subarrays on the same devices for native (without
+# partitions)
+    test10
+fi
+test11
+test12
+test13
+test14
+test15
+}
+
+try_failed()
+{
+platform="1.2"
+scan="no"
+test5
+test9
+test13
+scan="yes"
+test9
+}
+
+#try_failed
+
+for scan in no yes; do
+       for platform in 1.2 imsm; do
+               try
+       done
+done
+
+[ $listfailed == "no" ] || [ -z $flist ] || echo -e "\n FAILED TESTS: $flist"
+
+#cat $targetdir/log
+rm -f /dev/disk/by-path/loop*

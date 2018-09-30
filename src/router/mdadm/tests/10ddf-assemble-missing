@@ -1,0 +1,61 @@
+# An array is assembled incompletely.
+# Re missing disks get marked as missing and are not allowed back in
+
+. tests/env-ddf-template
+tmp=$(mktemp /tmp/mdtest-XXXXXX)
+rm -f $tmp /var/tmp/mdmon.log
+ret=0
+
+mdadm -CR $container -e ddf -n 4 $dev8 $dev9 $dev10 $dev11
+ddf_check container 4
+
+mdadm -CR $member1 -n 4 -l 10 $dev8 $dev10 $dev9 $dev11 -z 10000
+mdadm -CR $member0 -n 2 -l 1 $dev8 $dev9 -z 10000
+
+mdadm --wait $member0 || true
+mdadm --wait $member1 || true
+
+mdadm -Ss
+sleep 1
+
+# Add all devices except those for $member0
+mdadm -I $dev10
+mdadm -I $dev11
+
+# Start runnable members
+mdadm -IRs || true
+mdadm -Ss
+
+#[ -f /var/tmp/mdmon.log ] && cat /var/tmp/mdmon.log
+
+# Now reassemble
+# This should work because BVDs weren't written to
+for d in $dev8 $dev9 $dev10 $dev11; do
+    mdadm -I $d
+done
+mdadm -Ss
+
+# Expect consistent state
+for d in $dev10 $dev11; do
+    mdadm -E $d>$tmp
+    egrep 'state\[0\] : Degraded, Consistent' $tmp || {
+        ret=1
+        echo ERROR: $member0 has unexpected state on $d
+    }
+    egrep 'state\[1\] : Optimal, Consistent' $tmp || {
+        ret=1
+        echo ERROR: $member1 has unexpected state on $d
+    }
+
+    if [ x$(egrep -c 'active/Online$' $tmp) != x2 ]; then
+	ret=1
+	echo ERROR: unexpected number of online disks on $d
+    fi
+done
+
+if [ $ret -ne 0 ]; then
+    mdadm -E $dev10
+    mdadm -E $dev8
+fi
+rm -f $tmp /var/tmp/mdmon.log
+[ $ret -eq 0 ]

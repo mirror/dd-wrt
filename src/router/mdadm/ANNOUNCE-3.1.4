@@ -1,0 +1,37 @@
+Subject:  ANNOUNCE: mdadm 3.1.4 - A tool for managing Soft RAID under Linux
+
+I am pleased to announce the availability of
+   mdadm version 3.1.4
+
+It is available at the usual places:
+   countrycode=xx.
+   http://www.${countrycode}kernel.org/pub/linux/utils/raid/mdadm/
+and via git at
+   git://neil.brown.name/mdadm
+   http://neil.brown.name/git?p=mdadm
+
+This is a bugfix/stability release over 3.1.3.
+3.1.3 had a couple of embarrasing regressions and a couple of other
+issues surfaces which had easy fixes so I decided to make a 3.1.4
+release after all.
+
+Two fixes related to configs that aren't using udev:
+   - Don't remove md devices which 'standard' names on --stop
+   - Allow dev_open to work on read-only /dev
+And fixed regressions:
+   - Allow --incremental to add spares to an array
+   - Accept --no-degraded as a deprecated option rather than
+            throwing an error
+   - Return correct success status when --incrmental assembling 
+     a container which does not yet have enough devices.
+   - Don't link mdadm with pthreads, only mdmon needs it.
+   - Fix compiler warning due to bad use of snprintf
+   - Fix spare migration
+
+This release is believed to be stable and you should feel free to
+upgrade to 3.1.4
+
+It is expected that the next release will be 3.2 with a number of new
+features.
+
+NeilBrown 31st August 2010

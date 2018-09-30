@@ -1,0 +1,63 @@
+Subject: ANNOUNCE: mdadm 3.3 - A tools for managing md Soft RAID under Linux
+
+I am pleased to announce the availability of
+   mdadm version 3.3
+
+It is available at the usual places:
+   http://www.kernel.org/pub/linux/utils/raid/mdadm/
+and via git at
+   git://github.com/neilbrown/mdadm
+   git://neil.brown.name/mdadm
+   http://git.neil.brown.name/git/mdadm
+
+This is a major new release so don't be too surprised if there are a
+few issues.  If I hear about them they will be fixed in 3.3.1.
+git log reports nearly 500 changes since 3.2.6 so I won't list them
+all.
+
+Some highlights are:
+
+- Some array reshapes can proceed without needing backup file.
+  This is done by changing the 'data_offset' so we never need to write
+  any data back over where it was before.  If there is no "head space"
+  or "tail space" to allow data_offset to change, the old mechanism
+  with a backup file can still be used.
+- RAID10 arrays can be reshaped to change the number of devices,
+  change the chunk size, or change the layout between 'near'
+  and 'offset'.
+  This will always change data_offset, and will fail if there is no
+  room for data_offset to be moved.
+- "--assemble --update=metadata" can convert a 0.90 array to a 1.0 array.
+- bad-block-logs are supported (but not heavily tested yet)
+- "--assemble --update=revert-reshape" can be used to undo a reshape
+  that has just been started but isn't really wanted.  This is very
+  new and while it passes basic tests it cannot be guaranteed.
+- improved locking between --incremental and --assemble
+- uses systemd to run "mdmon" if systemd is configured to do that.
+- kernel names of md devices can be non-numeric. e.g. "md_home" rather than
+  "md0".  This will probably confuse lots of other tools, so you need to
+       echo CREATE names=yes >> /etc/mdadm.conf
+  or the feature will not be used.  (you also need a reasonably new kernel).
+- "--stop" can be given a kernel name instead of a device name. i.e
+     mdadm --stop md4
+  will work even if /dev/md4 doesn't exist.
+- "--detail --export" has some information about the devices in the array
+- --dump and --restore can be used to backup and restore the metadata on an
+   array.
+- Hot-replace is supported with
+     mdadm /dev/mdX --replace /dev/foo
+  and
+     mdadm /dev/mdX --replace /dev/foo --with /dev/bar
+- Config file can be a directory in which case all "*.conf" files are
+  read in lexical order.
+  Default is to read /etc/mdadm.conf and then /etc/mdadm.conf.d
+  Thus
+      echo CREATE name=yes > /etc/mdadm.conf.d/names.conf
+  will also enable the use of named md devices.
+
+- Lots of improvements to DDF support including adding support for
+  RAID10 (thanks Martin Wilck).
+
+and lots of bugfixes and other little changes.
+
+NeilBrown 3rd September 2013
