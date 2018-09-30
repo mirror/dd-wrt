@@ -35,7 +35,23 @@ void stop_raid(void)
 
 void start_raid(void)
 {
-	if (nvram_matchi("raid_enable", 1)) {
+	int i = 0;
+	int zfs = 0;
+	int md = 0;
+	if (!nvram_matchi("raid_enable", 1))
+		return;
+	while (1) {
+		char *raid = nvram_nget("raid%d", i);
+		char *type = nvram_nget("raidtype%d", i);
+		if (!strcmp(type, "md"))
+			md = 1;
+		if (!strcmp(type, "zfs"))
+			zfs = 1;
+		if (!strlen(raid))
+			break;
+		i++;
+	}
+	if (md) {
 		insmod("dm-mod");
 		insmod("async_tx");
 		insmod("async_memcpy");
@@ -50,9 +66,19 @@ void start_raid(void)
 		insmod("raid0");
 		insmod("raid1");
 		insmod("raid10");
-		dd_loginfo("raid", "raid modules successfully loaded\n");
+		dd_loginfo("raid", "MD raid modules successfully loaded\n");
 	}
-	int i = 0;
+	if (zfs) {
+		insmod("spl");
+		insmod("icp");
+		insmod("znvpair");
+		insmod("zcommon");
+		insmod("zunicode");
+		insmod("zavl");
+		insmod("zfs");
+		dd_loginfo("raid", "ZFS modules successfully loaded\n");
+	}
+	i=0;
 	while (1) {
 		char *raid = nvram_nget("raid%d", i);
 		if (!strlen(raid))
@@ -97,8 +123,6 @@ void start_raid(void)
 				sysprintf("zfs create %s/fs1");
 				sysprintf("mkdir -p /tmp/mnt/%s", poolname);
 				sysprintf("zfs set mountpoint=/tmp/mnt/%s %s/fs1", poolname, poolname);
-				sysprintf("zfs mount %s/fs1", poolname);
-
 			}
 			nvram_nset("1", "raiddone%d", i);
 			nvram_commit();
@@ -109,12 +133,12 @@ void start_raid(void)
 				sysprintf("zfs set compression=lz4 %s/fs1", poolname);
 			else
 				sysprintf("zfs set compression=off %s/fs1", poolname);
-
 			if (nvram_nmatch("1", "raiddedup%d", i))
 				sysprintf("zfs set dedup=on %s/fs1", poolname);
 			else
 				sysprintf("zfs set dedup=off %s/fs1", poolname);
-
+			sysprintf("mkdir -p /tmp/mnt/%s", poolname);
+			sysprintf("zfs mount %s/fs1", poolname);
 		}
 
 		i++;
