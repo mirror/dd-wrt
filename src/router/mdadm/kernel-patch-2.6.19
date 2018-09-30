@@ -1,0 +1,34 @@
+
+### Diffstat output
+ ./drivers/md/md.c |    5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff .prev/drivers/md/md.c ./drivers/md/md.c
+--- .prev/drivers/md/md.c	2006-12-21 15:55:01.000000000 +1100
++++ ./drivers/md/md.c	2006-12-21 16:28:09.000000000 +1100
+@@ -1792,7 +1792,8 @@ state_store(mdk_rdev_t *rdev, const char
+ 		else {
+ 			mddev_t *mddev = rdev->mddev;
+ 			kick_rdev_from_array(rdev);
+-			md_update_sb(mddev, 1);
++			if (mddev->pers)
++				md_update_sb(mddev, 1);
+ 			md_new_event(mddev);
+ 			err = 0;
+ 		}
+@@ -2004,6 +2005,7 @@ static mdk_rdev_t *md_import_device(dev_
+ 
+ 	rdev->desc_nr = -1;
+ 	rdev->saved_raid_disk = -1;
++	rdev->raid_disk = -1;
+ 	rdev->flags = 0;
+ 	rdev->data_offset = 0;
+ 	rdev->sb_events = 0;
+@@ -3977,6 +3979,7 @@ static int set_array_info(mddev_t * mdde
+ 		mddev->major_version = info->major_version;
+ 		mddev->minor_version = info->minor_version;
+ 		mddev->patch_version = info->patch_version;
++		mddev->persistent = ! info->not_persistent;
+ 		return 0;
+ 	}
+ 	mddev->major_version = MD_MAJOR_VERSION;

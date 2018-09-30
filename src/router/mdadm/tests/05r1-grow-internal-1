@@ -1,0 +1,31 @@
+
+#
+# create a raid1 array, version 1 superblock, add an internal bitmap
+#
+mdadm --create --run $md0 -e1 -l 1 -n 2 $dev1 $dev2
+check wait
+testdev $md0 1 $mdsize1b 64
+
+#mdadm -E $dev1
+mdadm --grow $md0 --bitmap=internal --bitmap-chunk=4 --delay=1
+dirty1=`mdadm -X $dev2 | sed -n -e 's/.*Bitmap.* \([0-9]*\) dirty.*/\1/p'`
+sleep 4
+dirty2=`mdadm -X $dev2 | sed -n -e 's/.*Bitmap.* \([0-9]*\) dirty.*/\1/p'`
+
+testdev $md0 1 $mdsize1b 64
+dirty3=`mdadm -X $dev2 | sed -n -e 's/.*Bitmap.* \([0-9]*\) dirty.*/\1/p'`
+sleep 4
+dirty4=`mdadm -X $dev2 | sed -n -e 's/.*Bitmap.* \([0-9]*\) dirty.*/\1/p'`
+
+#echo $dirty1 $dirty2 $dirty3 $dirty4
+if [ $dirty2 -ne 0 -o $dirty4 -ne 0 -o $dirty3 -lt 400 ]
+then
+   echo bad dirty counts
+   exit 1
+fi
+
+# now to remove the bitmap
+check bitmap
+mdadm --grow $md0 --bitmap=none
+check nobitmap
+mdadm -S $md0

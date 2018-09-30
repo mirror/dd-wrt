@@ -1,0 +1,89 @@
+#
+# Test basic DDF functionality.
+#
+# Create a container with 5 drives
+# create a small raid0 across them all,
+# then a small raid10 using 4 drives, then a 2disk raid1
+# and a 3disk raid5 using the remaining space
+#
+# add some data, tear down the array, reassemble
+# and make sure it is still there.
+set -e
+. tests/env-ddf-template
+sda=$(get_rootdev) || exit 1
+
+mdadm -CR /dev/md/ddf0 -e ddf -n 5 $dev8 $dev9 $dev10 $dev11 $dev12
+mdadm -CR r5 -l5 -n5 /dev/md/ddf0 -z 5000
+if mdadm -CR r5 -l1 -n2 /dev/md/ddf0 -z 5000
+then echo >&2 create with same name should fail ; exit 1
+fi
+mdadm -CR r10 -l10 -n4 -pn2 /dev/md/ddf0 -z 5000
+mdadm -CR r1 -l1 -n2 /dev/md/ddf0
+mdadm -CR r0 -l0 -n3 /dev/md/ddf0
+testdev /dev/md/r5 4 5000 512
+testdev /dev/md/r10 2 5000 512
+# r0/r10 will use 4608 due to chunk size, so that leaves 23552 for the rest
+testdev /dev/md/r1 1 23552 64
+testdev /dev/md/r0 3 23552 512
+dd if=$sda of=/dev/md/r0 || true
+dd if=$sda of=/dev/md/r10 || true
+dd if=$sda of=/dev/md/r1 || true
+dd if=$sda of=/dev/md/r5 || true
+
+s0=`sha1sum /dev/md/r0`
+s10=`sha1sum /dev/md/r10`
+s1=`sha1sum /dev/md/r1`
+s5=`sha1sum /dev/md/r5`
+
+
+mdadm -Ss
+mdadm -A /dev/md/ddf0  $dev8 $dev9 $dev10 $dev11 $dev12
+mdadm -I /dev/md/ddf0
+
+udevadm settle
+s0a=`sha1sum /dev/md/r0`
+s10a=`sha1sum /dev/md/r10`
+s1a=`sha1sum /dev/md/r1`
+s5a=`sha1sum /dev/md/r5`
+
+if [ "$s0" != "$s0a" ]; then
+   echo r0 did not match ; exit 1;
+fi
+if [ "$s10" != "$s10a" ]; then
+   echo r10 did not match ; exit 1;
+fi
+if [ "$s1" != "$s1a" ]; then
+   echo r1 did not match ; exit 1;
+fi
+if [ "$s5" != "$s5a" ]; then
+   echo r5 did not match ; exit 1;
+fi
+
+# failure status just means it has completed already, so ignore it.
+mdadm --wait /dev/md/r1 || true
+mdadm --wait /dev/md/r10 || true
+mdadm --wait /dev/md/r5 || true
+
+mdadm -Dbs > /var/tmp/mdadm.conf
+
+mdadm -Ss
+
+# Now try to assemble using mdadm.conf
+mdadm -Asc /var/tmp/mdadm.conf
+check nosync  # This failed once. The raid5 was resyncing.
+udevadm settle
+mdadm -Dbs | sort > /tmp/mdadm.conf
+sort /var/tmp/mdadm.conf | diff /tmp/mdadm.conf -
+mdadm -Ss
+
+# and now assemble fully incrementally.
+for i in  $dev8 $dev9 $dev10 $dev11 $dev12
+do
+   mdadm -I $i -c /var/tmp/mdadm.conf
+done
+check nosync
+udevadm settle
+mdadm -Dbs | sort > /tmp/mdadm.conf
+sort /var/tmp/mdadm.conf | diff /tmp/mdadm.conf -
+mdadm -Ss
+rm /tmp/mdadm.conf /var/tmp/mdadm.conf

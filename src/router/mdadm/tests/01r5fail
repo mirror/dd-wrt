@@ -1,0 +1,27 @@
+
+
+# create a raid5, fail and remove a drive during initial sync
+# Add two more, fail and remove one
+# wait for sync to complete, fail, remove, re-add
+
+mdadm -CR $md0 -l5 -n4 $dev0 $dev1 $dev2 $dev3
+check recovery
+mdadm $md0 --fail $dev3
+sleep 1
+check nosync
+check state UUU_
+
+mdadm $md0 --add $dev4 $dev5
+check recovery
+check wait
+mdadm $md0 --fail $dev0
+mdadm $md0 --remove $dev3 $dev0
+check recovery
+check state _UUU
+
+mdadm $md0 -a $dev3
+check recovery
+check wait
+check state UUUU
+
+mdadm -S $md0

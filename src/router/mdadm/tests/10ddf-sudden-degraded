@@ -1,0 +1,18 @@
+#
+# An array is assembled with one device missing.
+# The other device must be marked as Failed in metadata
+
+. tests/env-ddf-template
+
+mdadm -CR $container -e ddf -n 2 $dev8 $dev9
+ddf_check container 2
+
+mdadm -CR $member1 -n 2 -l1 $dev8 $dev9
+mdadm --wait $member1 || true
+mdadm -Ss
+
+mdadm -I $dev8
+mdadm -R $container
+mkfs $member1
+# There must be a missing device recorded
+mdadm --examine $dev8 | grep 'Raid Devices.*--' || exit 1

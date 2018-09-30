@@ -1,0 +1,75 @@
+
+
+I am pleased to announce the availability of
+   mdadm version 3.2.1
+
+It is available at the usual places:
+   countrycode=xx.
+   http://www.${countrycode}kernel.org/pub/linux/utils/raid/mdadm/
+and via git at
+   git://neil.brown.name/mdadm
+   http://neil.brown.name/git/mdadm
+
+Many of the changes in this release are of internal interest only,
+restructuring and refactoring code and so forth.
+
+Most of the bugs found and fixed during development for 3.2.1 have been
+back-ported for the recently-release 3.1.5 so this release primarily
+provides a few new features over 3.1.5.
+
+They include:
+  - policy framework
+     Policy can be expressed for moving spare devices between arrays, and
+     for how to handle hot-plugged devices.  This policy can be different
+     for devices plugged in to different controllers etc.
+     This, for example, allows a configuration where when a device is plugged
+     in it is immediately included in an md array as a hot spare and
+     possibly starts recovery immediately if an array is degraded.
+
+  - some understanding of mbr and gpt paritition tables
+     This is primarly to support the new hot-plug support.  If a
+     device is plugged in and policy suggests it should have a partition table,
+     the partition table will be copied from a suitably similar device, and
+     then the partitions will hot-plug and can then be added to md arrays.
+
+  - "--incremental --remove" can remember where a device was removed from
+    so if a device gets plugged back in the same place, special policy applies
+    to it, allowing it to be included in an array even if a general hotplug
+    will not be included.
+
+  - enhanced reshape options, including growing a RAID0 by converting to RAID4,
+    restriping, and converting back.  Also convertions between RAID0 and
+    RAID10 and between RAID1 and RAID10 are possible (with a suitably recent
+    kernel).
+
+  - spare migration for IMSM arrays.
+     Spare migration can now work across 'containers' using non-native metadata
+     and specifically Intel's IMSM arrays support spare migrations.
+
+  - OLCE and level migration for Intel IMSM arrays.
+     OnLine Capacity Expansion and level migration (e.g. RAID0 -> RAID5) is
+     supported for Intel Matrix Storage Manager arrays.
+     This support is currently 'experimental' for technical reasons.  It can
+     be enabled with "export MDADM_EXPERIMENTAL=1"
+
+  - avoid including wayward devices
+     If you split a RAID1, mount the two halves as two separate degraded RAID1s,
+     and then later bring the two back together, it is possible that the md 
+     metadata won't properly show that one must over-ride the other.
+     mdadm now does extra checking to detect this possibilty and avoid
+     potentially corrupting data.
+
+  - remove any possible confusion between similar options.
+     e.g. --brief and --bitmap were mapped to 'b' and mdadm wouldn't
+     notice if one was used where the other was expected.
+
+  - allow K,M,G suffixes on chunk sizes
+
+
+While mdadm-3.2.1 is considered to be reasonably stable, you should
+only use it if you want to try out the new features, or if you
+generally like to be on the bleeding edge.   If the new features are not
+important to you, then 3.1.5 is probably the appropriate version to be using
+until 3.2.2 comes out.
+
+NeilBrown 28th March 2011

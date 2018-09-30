@@ -1,0 +1,106 @@
+
+# 0 - POSITIVE test, otherwise NEGATIVE test
+negative_test=$1
+
+# 0 - On-line Capacity Expansion test, otherwise LEVEL migration or CHUNK size migration test
+migration_test=$2
+
+function grow_member() {
+	local member=$1
+	local disks=$2
+	local comps=$3
+	local level=$4
+	local size=$5
+	local offset=$6
+	local chunk=$7
+	local array_size=$((comps * size))
+
+	rm -f $backup_imsm
+	( set -ex; mdadm --grow $member --chunk=$chunk --level=$level )
+	local status=$?
+	if [ $negative_test -ne 0 ]; then
+		if [ $status -eq 0 ]; then
+			echo >&2 "**Error**: $member: --grow should failed, but it completed successfuly"
+			exit 1
+		fi
+		return
+	fi
+	check wait
+	sleep 5
+	imsm_check member $member $disks $level $size $array_size $offset $chunk
+	testdev $member $comps $size $chunk
+}
+
+# Create container
+mdadm --create --run $container --auto=md --metadata=imsm --raid-disks=$num_disks $device_list
+check wait
+imsm_check container $num_disks
+
+# Create first volume inside the container
+mdadm --create --run $member0 --auto=md --level=$vol0_level --size=$vol0_comp_size --chunk=$vol0_chunk --raid-disks=$num_disks $device_list
+check wait
+
+# Create second volume inside the container (if defined)
+if [ ! -z $vol1_chunk ]; then
+    mdadm --create --run $member1 --auto=md --level=$vol1_level --size=$vol1_comp_size --chunk=$vol1_chunk --raid-disks=$num_disks $device_list
+    check wait
+fi
+
+# Wait for any RESYNC to complete
+check wait
+
+# Test first volume
+imsm_check member $member0 $num_disks $vol0_level $vol0_comp_size $((vol0_comp_size * vol0_num_comps)) $vol0_offset $vol0_chunk
+testdev $member0 $vol0_num_comps $vol0_comp_size $vol0_chunk
+
+# Test second volume (if defined)
+if [ ! -z $vol1_chunk ]; then
+    imsm_check member $member1 $num_disks $vol1_level $vol1_comp_size $((vol1_comp_size * vol1_num_comps)) $vol1_offset $vol1_chunk
+    testdev $member1 $vol1_num_comps $vol1_comp_size $vol1_chunk
+fi
+
+# Add extra disks to container if operation requires spares in container.
+for i in $spare_list
+do
+    mdadm --add $container $i
+    check wait
+    num_disks=$((num_disks + 1))
+done
+
+imsm_check container $num_disks
+num_disks=$((num_disks + add_to_num_disks))
+backup_imsm=/tmp/backup_imsm
+
+# Grow each member or a container depending on the type of an operation
+if [ $migration_test -ne 0 ]; then
+	if [ -z $new_num_disks ]; then
+		new_num_disks=$num_disks
+	fi
+	grow_member $member0 $new_num_disks $vol0_new_num_comps $vol0_new_level $vol0_comp_size $vol0_offset $vol0_new_chunk
+	if [[ $vol1_new_chunk -ne 0 ]] ; then
+		grow_member $member1 $new_num_disks $vol1_new_num_comps $vol1_new_level $vol1_comp_size $vol1_offset $vol1_new_chunk
+	fi
+else
+	rm -f $backup_imsm
+	( set -x; mdadm --grow $container --raid-disks=$num_disks )
+	grow_status=$?
+	if [ $negative_test -ne 0 ]; then
+		if [ $grow_status -eq 0 ]; then
+			echo >&2 "**Error**: $container: --grow should failed, but it completed successfuly"
+			exit 1
+		fi
+	else
+		sleep 5
+		check wait
+		sleep 5
+		check wait
+		imsm_check member $member0 $num_disks $vol0_level $vol0_comp_size $((vol0_comp_size * vol0_new_num_comps)) $vol0_offset $vol0_chunk
+		testdev $member0 $vol0_new_num_comps $vol0_comp_size $vol0_chunk
+		if [ $vol1_new_num_comps -ne 0 ]; then
+			imsm_check member $member1 $num_disks $vol1_level $vol1_comp_size $((vol1_comp_size * vol1_new_num_comps)) $vol1_offset $vol1_chunk
+			testdev $member1 $vol1_new_num_comps $vol1_comp_size $vol1_chunk
+		fi
+	fi
+fi
+
+exit 0

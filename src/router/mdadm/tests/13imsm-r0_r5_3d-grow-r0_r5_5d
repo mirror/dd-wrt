@@ -1,0 +1,29 @@
+. tests/env-imsm-template
+
+# Grow the container (arrays inside) from 3 disks to 5 disks
+# POSITIVE test
+
+num_disks=3
+device_list="$dev0 $dev1 $dev2"
+spare_list="$dev3 $dev4"
+
+# Before: RAID 0 volume in slot #0, 3 disks, 256k chunk size
+#         RAID 5 volume in slot #1, 3 disks, 512k chunk size
+vol0_level=0
+vol0_comp_size=$((5 * 1024))
+vol0_chunk=128
+vol0_num_comps=$num_disks
+vol0_offset=0
+
+vol1_level=5
+vol1_comp_size=$((5 * 1024))
+vol1_chunk=128
+vol1_num_comps=$((num_disks - 1))
+vol1_offset=$((vol0_comp_size + 2048))
+
+# After: RAID 0 volume in slot #0, 5 disks, 256k chunk size
+#        RAID 5 volume in slot #1, 5 disks, 512k chunk size
+vol0_new_num_comps=$((num_disks + 2))
+vol1_new_num_comps=$((num_disks + 1))
+
+. tests/imsm-grow-template 0 0

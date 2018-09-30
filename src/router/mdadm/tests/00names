@@ -1,0 +1,13 @@
+set -x -e
+
+# create arrays with non-numeric names
+conf=$targetdir/mdadm.conf
+echo "CREATE names=yes" > $conf
+
+for i in linear raid0 raid1 raid4 raid5 raid6
+do
+  mdadm -CR --config $conf /dev/md/$i -l $i -n 4 $dev4 $dev3 $dev2 $dev1
+  check $i
+  [ -d /sys/class/block/md_$i/md ]
+  mdadm -S md_$i
+done

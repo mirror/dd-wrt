@@ -1,0 +1,24 @@
+
+# create two raid1s, build a raid0 on top, then
+# tear it down and get auto-assemble to rebuild it.
+
+mdadm -CR $md1 -l1 -n2 $dev0 $dev1  --homehost=testing
+mdadm -CR $md2 -l1 -n2 $dev2 $dev3  --homehost=testing
+mdadm -CR $md0 -l0 -n2 $md1 $md2  --homehost=testing
+
+mdadm -Ss
+mdadm -As -c /dev/null --homehost=testing -vvv
+testdev $md1 1 $mdsize1a 64
+testdev $md2 1 $mdsize1a 64
+testdev $md0 2 $mdsize11a 512
+mdadm -Ss
+
+mdadm --zero-superblock $dev0 $dev1 $dev2 $dev3
+## Now the raid0 uses one stacked and one not
+mdadm -CR $md1 -l1 -n2 $dev0 $dev1  --homehost=testing
+mdadm -CR $md0 -l0 -n2 $md1 $dev2  --homehost=testing
+mdadm -Ss
+mdadm -As -c /dev/null --homehost=testing -vvv
+testdev $md1 1 $mdsize1a 64
+testdev $md0 1 $[mdsize1a+mdsize11a] 512
+mdadm -Ss

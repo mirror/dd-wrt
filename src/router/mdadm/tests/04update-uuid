@@ -1,0 +1,82 @@
+set -x
+
+# create an array, then change the uuid.
+
+mdadm -CR --assume-clean $md0 -l5 -n3 $dev0 $dev1 $dev2
+mdadm -S /dev/md0
+mdadm -A /dev/md0 --update=uuid --uuid=0123456789abcdef:fedcba9876543210 $dev0 $dev1 $dev2
+no_errors
+mdadm -D /dev/md0 | grep -s > /dev/null 01234567:89abcdef:fedcba98:76543210 || {
+   echo Wrong uuid; mdadm -D /dev/md0 ; exit 2;
+}
+mdadm -S /dev/md0
+
+# try v1 superblock
+
+mdadm -CR --assume-clean -e1 $md0 -l5 -n3 $dev0 $dev1 $dev2
+mdadm -S /dev/md0
+mdadm -A /dev/md0 --update=uuid --uuid=0123456789abcdef:fedcba9876543210 $dev0 $dev1 $dev2
+no_errors
+mdadm -D /dev/md0 | grep -s > /dev/null 01234567:89abcdef:fedcba98:76543210 || {
+   echo Wrong uuid; mdadm -D /dev/md0 ; exit 2;
+}
+mdadm -S /dev/md0
+
+
+# now if we have a bitmap, that needs updating too.
+rm -f $targetdir/bitmap
+mdadm -CR --assume-clean -b $targetdir/bitmap $md0 -l5 -n3 $dev0 $dev1 $dev2
+mdadm -S /dev/md0
+mdadm -A /dev/md0 -b $targetdir/bitmap --update=uuid --uuid=0123456789abcdef:fedcba9876543210 $dev0 $dev1 $dev2
+no_errors
+mdadm -D /dev/md0 | grep -s > /dev/null 01234567:89abcdef:fedcba98:76543210 || {
+   echo Wrong uuid; mdadm -D /dev/md0 ; exit 2;
+}
+if mdadm -X $targetdir/bitmap | grep -s > /dev/null 01234567:89abcdef:fedcba98:76543210 ||
+   mdadm -X $targetdir/bitmap | grep -s > /dev/null 67452301:efcdab89:98badcfe:10325476
+then : ; else
+   echo Wrong uuid; mdadm -X $targetdir/bitmap ; exit 2;
+fi
+mdadm -S /dev/md0
+
+# and bitmap for version1
+rm -f $targetdir/bitmap
+mdadm -CR --assume-clean -e1.1 -b $targetdir/bitmap $md0 -l5 -n3 $dev0 $dev1 $dev2
+mdadm -S /dev/md0
+mdadm -A /dev/md0 -b $targetdir/bitmap --update=uuid --uuid=0123456789abcdef:fedcba9876543210 $dev0 $dev1 $dev2
+no_errors
+mdadm -D /dev/md0 | grep -s > /dev/null 01234567:89abcdef:fedcba98:76543210 || {
+   echo Wrong uuid; mdadm -D /dev/md0 ; exit 2;
+}
+# -X cannot tell which byteorder to use for the UUID, so allow both.
+if mdadm -X $targetdir/bitmap | grep -s > /dev/null 01234567:89abcdef:fedcba98:76543210 ||
+   mdadm -X $targetdir/bitmap | grep -s > /dev/null 67452301:efcdab89:98badcfe:10325476
+then : ; else
+   echo Wrong uuid; mdadm -X $targetdir/bitmap ; exit 2;
+fi
+mdadm -S /dev/md0
+
+# Internal bitmaps too.
+mdadm -CR --assume-clean  -b internal --bitmap-chunk 4 $md0 -l5 -n3 $dev0 $dev1 $dev2
+mdadm -S /dev/md0
+mdadm -A /dev/md0 --update=uuid --uuid=0123456789abcdef:fedcba9876543210 $dev0 $dev1 $dev2
+no_errors
+mdadm -D /dev/md0 | grep -s > /dev/null 01234567:89abcdef:fedcba98:76543210 || {
+   echo Wrong uuid; mdadm -D /dev/md0 ; exit 2;
+}
+mdadm -X $dev0 | grep -s > /dev/null 01234567:89abcdef:fedcba98:76543210 || {
+   echo Wrong uuid; mdadm -X $dev0; exit 2;
+}
+mdadm -S /dev/md0
+
+mdadm -CR --assume-clean -e1.2 -b internal --bitmap-chunk=4 $md0 -l5 -n3 $dev0 $dev1 $dev2
+mdadm -S /dev/md0
+mdadm -A /dev/md0 --update=uuid --uuid=0123456789abcdef:fedcba9876543210 $dev0 $dev1 $dev2
+no_errors
+mdadm -D /dev/md0 | grep -s > /dev/null 01234567:89abcdef:fedcba98:76543210 || {
+   echo Wrong uuid; mdadm -D /dev/md0 ; exit 2;
+}
+mdadm -X $dev0 | grep -s > /dev/null 01234567:89abcdef:fedcba98:76543210 || {
+   echo Wrong uuid; mdadm -X $dev0; exit 2;
+}
+mdadm -S /dev/md0

@@ -1,0 +1,33 @@
+
+# Check integrity of raid5 in degraded mode
+# Create a 4 disk raid5, create a filesystem and
+# sha1sum it with each device failed
+
+if [ "$INTEGRITY" != "yes" ]; then
+  echo -ne 'skipping... '
+  exit 0
+fi
+
+for layout in ls rs la ra
+do
+  mdadm -CR $md0 -l5 --layout $layout -n4 $dev0 $dev1 $dev2 $dev3
+  check wait
+  tar cf - /etc > $md0
+  sum=`sha1sum $md0`
+
+  for i in $dev0 $dev1 $dev2 $dev3
+  do
+    mdadm $md0 -f $i
+    mdadm $md0 -r $i
+    blockdev --flushbufs $md0
+    sum1=`sha1sum $md0`
+    if [ "$sum" != "$sum1" ]
+    then
+     echo $sum does not match $sum1 with $i missing
+     exit 1
+    fi
+    mdadm $md0 -a $i
+    while ! (check state 'U*'); do check wait; sleep 0.2; done
+  done
+  mdadm -S $md0
+done

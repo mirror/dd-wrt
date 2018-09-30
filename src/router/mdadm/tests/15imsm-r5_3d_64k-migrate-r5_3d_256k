@@ -1,0 +1,21 @@
+. tests/env-imsm-template
+
+# RAID 5 volume, Migration from 64k to 256k chunk size.
+# POSITIVE test
+
+num_disks=3
+device_list="$dev0 $dev1 $dev2"
+
+# RAID 5, 3 disks, 64k chunk size
+vol0_level=5
+vol0_comp_size=$((5 * 1024))
+vol0_chunk=64
+vol0_num_comps=$((num_disks - 1))
+vol0_offset=0
+
+# RAID 5, 3 disks, 256k chunk size
+vol0_new_level=5
+vol0_new_num_comps=$vol0_num_comps
+vol0_new_chunk=256
+
+. tests/imsm-grow-template 0 1

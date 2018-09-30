@@ -1,0 +1,27 @@
+#
+# Confirm that raid6check handles all RAID6 layouts.
+# Try both 4 and 5 devices.
+
+layouts='ls rs la ra'
+lv=`uname -r`
+if expr $lv '>=' 2.6.30 > /dev/null
+then
+  layouts="$layouts parity-first ddf-zero-restart ddf-N-restart ddf-N-continue \
+	left-asymmetric-6 right-asymmetric-6 left-symmetric-6 right-symmetric-6 parity-first-6"
+fi
+
+for layout in $layouts
+do
+ for devs in 4 5
+ do
+  dl="$dev0 $dev1 $dev2 $dev3"
+  if [ $devs = 5 ]; then dl="$dl $dev4"; fi
+
+  mdadm -CR $md0 -l6 --layout $layout -n$devs $dl
+  check wait
+  tar cf - /etc > $md0
+  ./raid6check $md0 0 0 | grep 'Error detected' && exit 1
+  mdadm -S $md0
+ done
+done
+

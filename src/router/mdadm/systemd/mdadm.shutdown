@@ -1,0 +1,4 @@
+#!/bin/sh
+# We need to ensure all md arrays with external metadata
+# (e.g. IMSM, DDF) are clean before completing the shutdown.
+BINDIR/mdadm --wait-clean --scan

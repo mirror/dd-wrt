@@ -1,0 +1,17 @@
+set -x -e
+
+# Test interaction between -I and -A
+# there are locking issue too, but those are hard to test for.
+#
+# Here just test that a partly "-I" assembled array can
+# be completed with "-A"
+
+for l in 0 1 5 linear
+do
+  mdadm -CR $md0 -l $l -n5 $dev0 $dev1 $dev2 $dev3 $dev4 --assume-clean
+  mdadm -S md0
+  mdadm -I $dev1
+  mdadm -I $dev3
+  mdadm -A /dev/md0  $dev0 $dev1 $dev2 $dev3 $dev4
+  mdadm -S /dev/md0
+done

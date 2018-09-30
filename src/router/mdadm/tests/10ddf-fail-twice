@@ -1,0 +1,59 @@
+. tests/env-ddf-template
+
+num_disks=5
+mdadm -CR $container -e ddf -n $num_disks $dev8 $dev9 $dev10 $dev11 $dev12
+ddf_check container $num_disks
+
+mdadm -CR $member0 -n 2 -l 1 $container
+mdadm -CR $member1 -n 3 -l 5 $container
+
+mdadm --wait $member1 $member0 || mdadm --wait $member1 $member0 || true
+
+set -- $(get_raiddisks $member0)
+fail0=$1
+mdadm $member0 --fail $fail0
+set -- $(get_raiddisks $member1)
+fail1=$1
+mdadm $member1 --fail $fail1
+
+mdadm $container --add $dev13
+
+mdadm --wait $member1 $member0 || mdadm --wait $member1 $member0 || true
+
+
+devs0="$(get_raiddisks $member0)"
+devs1="$(get_raiddisks $member1)"
+
+present=$(($(get_present $member0) + $(get_present $member1)))
+[ $present -eq 4 ] || {
+    echo expected 4 present disks, got $present
+    devices for $member0: $devs0
+    devices for $member1: $devs1
+    exit 1
+}
+
+if echo "$devs0" | grep -q MISSING; then
+    good=1
+    bad=0
+else
+    good=0
+    bad=1
+fi
+
+# find a good device
+eval "set -- \$devs$good"
+check=$1
+
+tmp=$(mktemp /tmp/mdtest-XXXXXX)
+mdadm -E $check >$tmp
+
+{ grep -q 'state\['$bad'\] : Degraded, Consistent' $tmp &&
+  grep -q 'state\['$good'\] : Optimal, Consistent' $tmp; } || {
+     echo unexpected meta data state on $check
+     mdadm -E $check
+     rm -f $tmp
+     exit 1
+}
+
+rm -f $tmp
+exit 0

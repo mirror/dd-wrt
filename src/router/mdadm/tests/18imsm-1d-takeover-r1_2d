@@ -1,0 +1,20 @@
+. tests/env-imsm-template
+
+# Create RAID 1 from a single disk
+# POSITIVE test
+
+vol0_num_comps=1
+vol0_comp_size=$((10 * 1024))
+
+# Create container
+mdadm --create --run $container --auto=md --metadata=imsm --force --raid-disks=$vol0_num_comps $dev0
+check wait
+imsm_check container $vol0_num_comps
+
+# Create RAID 1 volume
+mdadm --create --run $member0 --auto=md --level=1 --size=$vol0_comp_size --chunk=64 --raid-disks=$((vol0_num_comps + 1)) $dev0 missing
+check wait
+
+# Test the member0
+imsm_check member $member0 $((vol_num_comps + 1)) 1 $vol0_comp_size $((vol0_num_comps * vol0_comp_size)) 0 64
+testdev $member0 $vol0_num_comps $vol0_comp_size 64

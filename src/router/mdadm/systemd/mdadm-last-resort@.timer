@@ -1,0 +1,7 @@
+[Unit]
+Description=Timer to wait for more drives before activating degraded array.
+DefaultDependencies=no
+Conflicts=sys-devices-virtual-block-%i.device
+
+[Timer]
+OnActiveSec=30

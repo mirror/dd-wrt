@@ -1,0 +1,213 @@
+ - add 'name' field to metadata type and use it.
+ - use validate_geometry more
+ - metadata should be able to check/reject bitmap stuff.
+
+DDF:
+  Three new metadata types:
+    ddf - used only to create a container.
+    ddf-bvd - used to create an array in a container
+    ddf-svd - used to create a secondary array from bvds.
+
+  Usage:
+    mdadm -C /dev/ddf1 /dev/sd[abcdef]
+    mdadm -C /dev/md1 -e ddf /dev/sd[a-f]
+    mdadm -C /dev/md1 -l container /dev/sd[a-f]
+
+        Each of these create a new ddf container using all those
+	devices.  The name 'ddf*' signals that ddf metadata should be used.
+	'-e ddf' only supports one level - 'container'.  'container' is only
+	supported by ddf.
+
+    mdadm -C /dev/md1 -l0 -n4 /dev/ddf1 # or maybe not ???
+    mdadm -C /dev/md1 -l1 -n2 /dev/sda /dev/sdb
+	If exactly one device is given, and it is a container, we select
+	devices from that container.
+	If devices are given that are already in use, they must be in use by
+	a container, and the array is created in the container.
+	If devices given are bvds, we slip under the hood to make
+	  the svd arrays.
+
+    mdadm -A /dev/ddf ......
+	base drives make a container.  Anything in that container is started
+	 auto-read-only.
+	 if /dev/ddf is already assembled, we assemble bvds and svds inside it.
+
+
+2005-dec-20
+  Want an incremental assembly mode to work nicely with udev.
+  Core usage would be something like
+       mdadm --incr-assemble /dev/newdevice
+  This would
+     - examine the device to determine  uuid etc.
+     - look for a match in /etc/mdadm.conf, abort if not found
+     - find that device and collect current contents
+     - perform an 'assemble' analysis to make sure we have the best set of devices.
+     - remove or add devices as appropriate
+     - possibly start the array if it was complete
+
+   Other usages could involve
+     - specify which array to auto-add to.
+       This requires an existing array for uuid matching... is there any point?
+
+     -
+
+
+2004-june-02
+  * Don't print 'errors' flag, it is meaningless. DONE
+  * Handle new superblock format
+  * create device file on demand, particularly partitionable devices. DONE
+      BUT figure a way to create the partition devices.
+              auto=partN
+  * Use Event: interface to listen for events. DONE, untested
+  * Make sure mdadm -As can assemble multi-level RAIDs ok.
+  * --build to build raid1 or multipath arrays 
+       clean or not ???
+  
+----------------------------------------------------------------------------
+* mdadm --monitor to monitor failed multipath paths and re-instate them.
+
+* Maybe make "--help" fit in 80x24 and have a --long-help with more info. DONE
+
+
+* maybe "missing" instead of <bold>missing</> in doco DONE
+* possibly wait for resync to start, or even finish while assembling.- NO
+
+* -Db should have a devices= entry if possible. - DONE
+* when assembling multipath arrays, ignore any error indicators. - DONE
+* rationalise --monitor usage:
+     mdadm --monitor
+  doesn't do as expected. DONE
+
+* --assemble could have a --update option. - DONE
+  following word can be:
+	sparc2.2
+	super-minor
+
+* mdadm /dev/md11, where md11 is raid0 can segfault, particularly when looking in the 
+   [UU_UUU] string ... which doesn't exist !
+It should be more sensible.  DONE
+
+Example:
+
+from  Raimund Sacherer <raimund.sacherer@ngit.at>
+
+mke2fs -m0 -q /dev/ram1 300
+mount -n -t ext2 /dev/ram1 /tmp
+echo DEVICE /dev/[sh]* >> /tmp/mdadm.conf
+mdadm -Esb /dev/[sh]* 2>/dev/null >> /tmp/mdadm.conf
+mdadm -ARsc /tmp/mdadm.conf
+umount /tmp
+
+
+?? Allow -S /dev/md? - current complains subsequent not a/d/r - DONE
+
+* new "Query" mode to subsume --detail and --examine.
+   --query or -Q, takes a device and tells if it is an MD device,
+   and also tells in a raid superblock is found. 
+ DONE
+
+* write mdstat.c to parse /proc/mdstat file
+   Build list of arrays:  name, rebuild-percent
+  DONE
+
+* parse /proc/partitions and map major/minor into /dev/* names,
+  and use that for default DEVICE list ????
+
+* --detail --scan to read /proc/mdstat, and then iterate over these,
+    but assume --brief.  --verbose can override
+    check each subdevice to see if it is in conf_get_devs.
+    Warn if not.
+  DONE, but don't warn yet...
+
+* Support multipath ... maybe...
+  maybe DONE
+
+* --follow to syslog 
+
+* --follow to move spares around DONE
+
+* --follow to notice other events: DONE
+     rebuild started
+     spare activated
+     spare removed
+     spare added
+
+------------------------------------
+- --examine --scan scans all drives and build an mdadm.conf file DONE
+
+- check superblock checksum in examine DONE
+- report "chunk" or "rounding" depending on raid level DONE
+- report "linear" instead of "-1" for raid level DONE
+- decode ayout depending on raid level DONE
+- --verbose and --force flags. DONE
+
+- set md_minor, *_disks for Create  - DONE
+- for create raid5, how to choose between 
+   all working, but not insync
+   one missing, one spare, insync  DONE (--force)
+- and for raid1 - some failed drives...  (missing)
+
+- when RUN_ARRAY, make sure *_disks counts are right
+
+- get --detail to extract extra stuff from superblock,
+   like uuid  DONE
+- --detail --brief to give a config file line DONE
+- parse config file. DONE
+- test...
+
+- when --assemble --scan, if an underlying device is an md device, 
+  then try to assemble that device first.
+
+
+- mdadm -S /dev/md0 /dev/md1 gives internal error FIXED
+
+- mdadm --detail --scan print summary of what it can find? DONE
+
+
+---------
+Assemble doesn't add spares. - DONE
+Create to allow "missing" name for devices.
+Create to accept "--force" for do exactly what is requested
+- get Assemble to upgrade devices if force flag.
+ARRAY lines in config file to have super_minor=n
+ARRAY lines in config file to have device=pattern, and only accept
+   those devices
+   If UUID given, insist on that
+   If not, but super_minor given, require all found with that minor
+    to have same uuid
+   If only device given, all valid supers on those devices must have 
+    same uuid
+allow /dev/mdX as first argument before any options
+Possible --dry-run option for create and assemble--force
+
+Assemble to check that all devices mentioned in superblock
+  are present.
+
+New mode: --Monitor (or --Follow)
+  Periodically check status of all arrays (listed in config file).
+  Log every event and apparent cause - or differences
+  Email and alert - or run a program - for important events
+  Move spares around if necessary.
+
+  An Array line can have a spare-group= field that indicates that
+   the array shares spares with other arrays with the same
+   spare-group name.
+   If an array has a failed and no spares, then check all other
+     arrays in the spare group.  If one has no failures and a spare,
+     then consider that spare.
+    Choose the smallest considered spare that is large enough.
+    If there is one, then hot-remove it from it's home, and
+    hot-add it to the array in question.
+
+  --mail-to address  
+  --alert-handler program
+  
+  Will also extract information from /proc/mdstat if present,
+  and consider 20% marks in rebuild as events.
+
+  Events are:
+     drive fails  - causes mail to be sent
+     rebuild started
+     spare activated
+     spare removed
+     spare added

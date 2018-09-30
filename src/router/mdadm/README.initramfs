@@ -1,0 +1,123 @@
+Assembling md arrays at boot time.
+---------------------------------
+December 2005
+
+These notes apply to 2.6 kernels only and, in some cases,
+to 2.6.15 or later.
+
+Md arrays can be assembled at boot time using the 'autodetect' functionality
+which is triggered by storing components of an array in partitions of type
+'fd' - Linux Raid Autodetect.
+They can also be assembled by specifying the component devices in a
+kernel parameter such as
+  md=0,/dev/sda,/dev/sdb
+In this case, /dev/md0 will be assembled (because of the 0) from the listed
+devices.
+
+These mechanisms, while useful, do not provide complete functionality
+and are unlikely to be extended.  The preferred way to assemble md
+arrays at boot time is using 'mdadm' or 'mdassemble' (which is a
+trimmed-down mdadm).  To assemble an array which contains the root
+filesystem, mdadm needs to be run before that filesystem is mounted,
+and so needs to be run from an initial-ram-fs.  It is how this can
+work that is the primary focus of this document.
+
+It should be noted up front that only the array containing the root
+filesystem should be assembled from the initramfs.  Any other arrays
+should be assembled under the control of files on the main filesystem
+as this enhanced flexibility and maintainability.
+
+A minimal initramfs for assembling md arrays can be created using 3
+files and one directory.  These are:
+
+/bin           Directory
+/bin/mdadm     statically linked mdadm binary
+/bin/busybox   statically linked busybox binary
+/bin/sh        hard link to /bin/busybox
+/init          a shell script which call mdadm appropriately.
+
+An example init script is:
+
+==============================================
+#!/bin/sh
+
+echo 'Auto-assembling boot md array'
+mkdir /proc
+mount -t proc proc /proc
+if [ -n "$rootuuid" ]
+then arg=--uuid=$rootuuid
+elif [ -n "$mdminor" ]
+then arg=--super-minor=$mdminor
+else arg=--super-minor=0
+fi
+echo "Using $arg"
+mdadm -Acpartitions $arg --auto=part /dev/mda
+cd /
+mount /dev/mda1 /root ||  mount /dev/mda /root
+umount /proc
+cd /root
+exec chroot . /sbin/init < /dev/console > /dev/console 2>&1
+=============================================
+
+This could certainly be extended, or merged into a larger init script.
+Though tested and in production use, it is not presented here as
+"The Right Way" to do it, but as a useful example.
+Some key points are:
+
+  /proc needs to be mounted so that /proc/partitions can be accessed
+  by mdadm, and so that /proc/filesystems can be accessed by mount.
+
+  The uuid of the array can be passed in as a kernel parameter
+  (rootuuid).  As the kernel doesn't use this value, it is made available
+  in the environment for /init
+
+  If no uuid is given, we default to md0, (--super-minor=0) which is a
+  commonly used to store the root filesystem.  This may not work in
+  all situations.
+
+  We assemble the array as a partitionable array (/dev/mda) even if we
+  end up using the whole array.  There is no cost in using the partitionable
+  interface, and in this context it is simpler.
+
+  We try mounting both /dev/mda1 and /dev/mda as they are the most like
+  part of the array to contain the root filesystem.
+
+  The --auto flag is given to mdadm so that it will create /dev/md*
+  files automatically.  This is needed as /dev will not contain
+  and md files, and udev will not create them (as udev only created device
+  files after the device exists, and mdadm need the device file to create
+  the device).  Note that the created md files may not exist in /dev
+  of the mounted root filesystem.  This needs to be deal with separately
+  from mdadm - possibly using udev.
+
+  We do not need to create device files for the components which will
+  be assembled into /dev/mda.  mdadm finds the major/minor numbers from
+  /proc/partitions and creates a temporary /dev file if one doesn't already
+  exist.
+
+The script "mkinitramfs" which is included with the mdadm distribution
+can be used to create a minimal initramfs.  It creates a file called
+'init.cpio.gz' which can be specified as an 'initrd' to lilo or grub
+(or whatever boot loader is being used).
+
+
+
+
+Resume from an md array
+-----------------------
+
+If you want to make use of the suspend-to-disk/resume functionality in Linux,
+and want to have swap on an md array, you will need to assemble the array
+before resume is possible.
+However, because the array is active in the resumed image, you do not want
+anything written to any drives during the resume process, such as superblock
+updates or array resync.
+
+This can be achieved in 2.6.15-rc1 and later kernels using the
+'start_readonly' module parameter.
+Simply include the command
+  echo 1 > /sys/module/md_mod/parameters/start_ro
+before assembling the array with 'mdadm'.
+You can then echo
+  9:0
+or whatever is appropriate to /sys/power/resume to trigger the resume.

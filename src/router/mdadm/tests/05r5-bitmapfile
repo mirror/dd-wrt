@@ -1,0 +1,49 @@
+
+#
+# create a raid1 with a bitmap file
+#
+bmf=$targetdir/bitmap
+rm -f $bmf
+mdadm --create --run $md0 --level=5 -n3 --delay=1  --bitmap $bmf $dev1 $dev2 $dev3
+check wait
+testdev $md0 2 $mdsize1 512
+mdadm -S $md0
+
+mdadm --assemble $md0 --bitmap=$bmf $dev1 $dev2 $dev3
+testdev $md0 2 $mdsize1 512
+dirty1=`mdadm -X $bmf | sed -n -e 's/.*Bitmap.* \([0-9]*\) dirty.*/\1/p'`
+sleep 4
+dirty2=`mdadm -X $bmf | sed -n -e 's/.*Bitmap.* \([0-9]*\) dirty.*/\1/p'`
+
+if [ $dirty1 -lt 400 -o $dirty2 -ne 0 ]
+then  echo >&2 "ERROR bad 'dirty' counts: $dirty1 and $dirty2"
+  exit 1
+fi
+mdadm $md0 -f $dev1
+testdev $md0 2 $mdsize1 512
+sleep 4
+dirty3=`mdadm -X $bmf | sed -n -e 's/.*Bitmap.* \([0-9]*\) dirty.*/\1/p'`
+if [ $dirty3 -lt 400 ]
+then
+   echo >&2 "ERROR dirty count $dirty3 is too small"
+   exit 2
+fi
+
+mdadm -S $md0
+
+mdadm --assemble -R $md0 --bitmap=$bmf $dev2 $dev3
+mdadm --zero $dev1 # force add, not re-add
+mdadm $md0 --add $dev1
+check recovery
+
+dirty4=`mdadm -X $bmf | sed -n -e 's/.*Bitmap.* \([0-9]*\) dirty.*/\1/p'`
+check wait
+sleep 4
+dirty5=`mdadm -X $bmf | sed -n -e 's/.*Bitmap.* \([0-9]*\) dirty.*/\1/p'`
+
+if [ $dirty4 -lt 400 -o $dirty5 -ne 0 ]
+then echo echo >&2 "ERROR bad 'dirty' counts at end: $dirty4 $dirty5"
+  exit 1
+fi
+
+mdadm -S $md0

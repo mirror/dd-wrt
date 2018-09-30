@@ -1,0 +1,34 @@
+
+# create a simple mirror
+# test version0, version1, and no super
+# test resync and recovery.
+
+mdadm -CR $md0 -l 1 -n2 $dev0 $dev1
+check resync
+check raid1
+testdev $md0 1 $mdsize1a 64
+mdadm -S $md0
+
+# now with version-0.90 superblock, spare
+mdadm -CR $md0 -e0.90 --level=raid1 -n3 -x2 $dev0 missing missing $dev1 $dev2
+check recovery
+check raid1
+testdev $md0 1 $mdsize0 64
+mdadm -S $md0
+
+# now with no superblock
+mdadm -B $md0 -l mirror  -n2 $dev0 $dev1
+check resync
+check raid1
+testdev $md0 1 $size 1
+mdadm -S $md0
+
+# again, but with no resync
+mdadm -B $md0 -l 1 --assume-clean -n2 $dev0 $dev1
+check raid1
+check nosync
+testdev $md0 1 $size 1
+mdadm -S $md0
+
+
+exit 0

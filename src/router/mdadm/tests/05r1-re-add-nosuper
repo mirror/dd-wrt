@@ -1,0 +1,38 @@
+
+#
+# create a raid1, remove a drive, and readd it.
+# resync should be instant.
+# Then do some IO first.  Resync should still be very fast
+#
+bmf=$targetdir/bitmap2
+rm -f $bmf
+mdadm -B $md0 -l1 -n2 -b$bmf -d1 $dev1 $dev2
+check resync
+check wait
+testdev $md0 1 $size 1
+sleep 4
+
+mdadm $md0 -f $dev2
+sleep 1
+mdadm $md0 -r $dev2
+mdadm $md0 --re-add $dev2
+check nosync
+
+mdadm $md0 -f $dev2
+sleep 1
+mdadm $md0 -r $dev2
+testdev $md0 1 $size 1
+mdadm $md0 --re-add $dev2
+check wait
+cmp --bytes=$[$mdsize0*1024] $dev1 $dev2
+
+mdadm $md0 -f $dev2; sleep 1
+mdadm $md0 -r $dev2
+if dd if=/dev/zero of=$md0 ; then : ; fi
+blockdev --flushbufs $md0 # make sure writes have been sent
+mdadm $md0 --re-add $dev2
+check recovery
+check wait
+# should BLKFLSBUF and then read $dev1/$dev2...
+cmp --bytes=$[$mdsize0*1024] $file1 $file2
+mdadm -S $md0

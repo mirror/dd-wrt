@@ -1,0 +1,191 @@
+# set of functions used to test policy framework with assemble, incremental and Monitor
+
+set +e
+#create links to be able to use domains
+for d in 0 1 2 3 4 5 6 7 8 9 10 11 12
+do
+       eval ln -s \$dev$d /dev/disk/by-path/loop$d
+       eval d$d="loop$d"
+       eval mdadm --zero-superblock \$dev$d
+done
+
+devices="/dev/loop[0-9] /dev/loop10 /dev/loop11 /dev/loop12"
+
+# on failure print out few things before exit
+# uses testdsc and platform global variables
+err(){
+       echo >&2 "ERROR: $*"
+       cat $config >&2 || true
+       cat /proc/mdstat >&2
+       [ -z "$testdsc" ] || { echo >&2 $platform: $testdsc "- failed"; }
+       ps -e | grep mdadm >&2 || true
+       if [ $listfailed == "yes" ]; then
+               [ "$verbose" != "yes" ] || echo ---FAILED---
+               flist="$flist \n $platform $testdsc"
+               failed=1
+       else
+               exit 1
+       fi
+}
+
+# set test description
+dsc(){
+       failed=0
+       testdsc="$*"
+       [ "$verbose" != "yes" ] || echo $testdsc
+}
+
+killmonitor(){
+       [ -z "$monitorpid" ] || { kill -9 $monitorpid; unset monitorpid; }
+}
+
+tidyup(){
+       killmonitor
+       mdadm -Ss || true
+       mdadm -Ss
+       mdadm --zero-superblock $devices || true
+       udevadm settle
+       rm -f $config
+}
+
+trap tidyup 0 1 2 3 15
+
+# create a RAID 1 array or container and subarray(s) on 2 disks
+# if platform not specified imsm is used
+# if subsize is given, first subarray is created with given size and second one on remaining space
+ccv(){
+       # mddevno used to name created array
+       local mddevno="$1"
+       # numbers of devices to be used in array
+       local devno1="$2"
+       local devno2="$3"
+       local platform="$4"
+       local subsize="$5"
+       local onearray="$6"
+       [ -n "$platform" ] || platform="imsm"
+       if [ "$platform" == "imsm" ] || [ "$platform" == "ddf" ]; then
+               eval mdadm -CR /dev/md/con$mddevno -e $platform -n 2 \$dev$devno1 \$dev$devno2
+               udevadm settle
+               [ -z "$subsize" ] || eval mdadm -CR sub$mddevno"_" -l 1 -n 2 /dev/md/con$mddevno -z $subsize
+               [ -n "$onearray" ] || eval mdadm -CR sub$mddevno -l 1 -n 2 /dev/md/con$mddevno
+       else
+               [ -z "$subsize" ] || sizepar="-z $subsize"
+               eval mdadm -CR arr$mddevno -e $platform -l 1 -n 2 \$dev$devno1 \$dev$devno2 $sizepar
+               unset sizepar
+       fi
+}
+
+# get container and subarray using given device from mdstat
+# sets global variables c and v
+getarray(){
+       local devname=`basename $1`
+       local platformtype=`grep -A 1 $devname /proc/mdstat | awk '/active/ {getline; print $4 }' | awk -F ":" 'END {print $1}'`
+       c=`grep "inactive.*$devname" /proc/mdstat | awk -F " " '{print $1}'`
+       v=`grep " active.*$devname" /proc/mdstat | awk -F " " '{print $1}'`
+       [ "$platformtype" == "external" ] || c=$v
+}
+
+# check if given device belongs to any container and subarray
+# if $2 given then only container checked
+chkarray(){
+       local devname="$1"
+       local subcheck="$2"
+       getarray $devname
+       [ -n "$c" ] || err "$devname not in any container"
+       [ -n "$subcheck" ] || [ -n "$v" ] || err " $devname not in subarray"
+}
+
+# test if two devices in the same container/subarray
+# $1 $2 - devices
+# $3 don't check subarrays, only containers
+tst(){
+       local device1=`basename $1`
+       local device2=`basename $2`
+       local subcheck="$3"
+       chkarray $device1 $subcheck
+       local x="$c"
+       local y="$v"
+       chkarray $device2 $subcheck
+       [ "$c" == "$x" ] || err "$device1 and $device2 not in the same container"
+       [ -n "$subcheck" ] || [ "$v" == "$y" ] || err "$device1 and $device2 not in the same subarray"
+}
+
+# same as tst, just use numbers of devices instead of names as parameters
+dtst(){
+       local devno1="$1"
+       local devno2="$2"
+       local subcheck="$3"
+       eval tst \$dev$devno1 \$dev$devno2 $subcheck
+}
+
+# create containers/subarrays, check if created properly,
+# set global variables c$mddevno v$mddevno, usually c0=md127, v0=md126 , etc.
+setupdevs(){
+       local mddevno="$1"
+       local devno1="$2"
+       local devno2="$3"
+       local p="$4"
+       local subsize="$5"
+       local onearray="$6"
+       [ -n "$p" ] || p=$platform
+       ccv $mddevno $devno1 $devno2 $p $subsize $onearray
+       dtst $devno1 $devno2
+       eval c$mddevno=\"$c\"
+       eval v$mddevno=\"$v\"
+}
+
+# check if given spare in container
+# usage: chkspare container spare [n]  (n if spare shouldn't be in container)
+chkspare(){
+       local container=`basename $1`
+       local spare=$2
+       local expected=$3
+       getarray $spare
+       [ -n "$expected" ] || expected="y"
+       if [ "$expected" == "y" ]; then
+               [ "$c" == "$container" ] || err "$spare not in container $container"
+       else
+               [ "$c" != "$container" ] || err "$spare in container $container"
+       fi
+}
+
+#check if spare was moved from one container to another
+# args: from_container to_container spare [yn]
+# n when spare should remain in original container
+chksparemoved(){
+       sleep $sleeptime
+       from_container="$1"
+       to_container="$2"
+       spare="$3"
+       expected="$4"
+       [ -n "$expected" ] || expected="y"
+       notexpected="n"; [ "$expected" == "y" ] || notexpected="y"
+       chkspare $from_container $spare $notexpected
+       [ $failed -eq 1 ] || chkspare $to_container $spare $expected
+}
+
+
+# for domains defined through policy
+createconfig(){
+if [ "$1" != "a" ]; then
+{
+       domain=$1
+       metadata=$2
+       action=$3
+       while [ -n "$4" ]; do
+               echo="policy domain=$domain"
+               [ "$metadata" == "noplatform" ] ||  echo="$echo metadata=$metadata"
+               echo="$echo path=loop$4"
+               echo="$echo action=$action"
+               echo "$echo"
+               shift
+       done
+} >> $config
+else
+{
+       echo "DEVICES $devlist /dev/md1*"
+       mdadm -Ebs
+} >  $config
+fi
+#[ "$verbose" != "yes" ] || cat $config | grep policy || true
+}

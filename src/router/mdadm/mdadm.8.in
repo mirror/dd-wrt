@@ -1,0 +1,3297 @@
+.\" -*- nroff -*-
+.\" Copyright Neil Brown and others.
+.\"   This program is free software; you can redistribute it and/or modify
+.\"   it under the terms of the GNU General Public License as published by
+.\"   the Free Software Foundation; either version 2 of the License, or
+.\"   (at your option) any later version.
+.\" See file COPYING in distribution for details.
+.TH MDADM 8 "" v4.0
+.SH NAME
+mdadm \- manage MD devices
+.I aka
+Linux Software RAID
+
+.SH SYNOPSIS
+
+.BI mdadm " [mode] <raiddevice> [options] <component-devices>"
+
+.SH DESCRIPTION
+RAID devices are virtual devices created from two or more
+real block devices.  This allows multiple devices (typically disk
+drives or partitions thereof) to be combined into a single device to
+hold (for example) a single filesystem.
+Some RAID levels include redundancy and so can survive some degree of
+device failure.
+
+Linux Software RAID devices are implemented through the md (Multiple
+Devices) device driver.
+
+Currently, Linux supports
+.B LINEAR
+md devices,
+.B RAID0
+(striping),
+.B RAID1
+(mirroring),
+.BR RAID4 ,
+.BR RAID5 ,
+.BR RAID6 ,
+.BR RAID10 ,
+.BR MULTIPATH ,
+.BR FAULTY ,
+and
+.BR CONTAINER .
+
+.B MULTIPATH
+is not a Software RAID mechanism, but does involve
+multiple devices:
+each device is a path to one common physical storage device.
+New installations should not use md/multipath as it is not well
+supported and has no ongoing development.  Use the Device Mapper based
+multipath-tools instead.
+
+.B FAULTY
+is also not true RAID, and it only involves one device.  It
+provides a layer over a true device that can be used to inject faults.
+
+.B CONTAINER
+is different again.  A
+.B CONTAINER
+is a collection of devices that are
+managed as a set.  This is similar to the set of devices connected to
+a hardware RAID controller.  The set of devices may contain a number
+of different RAID arrays each utilising some (or all) of the blocks from a
+number of the devices in the set.  For example, two devices in a 5-device set
+might form a RAID1 using the whole devices.  The remaining three might
+have a RAID5 over the first half of each device, and a RAID0 over the
+second half.
+
+With a
+.BR CONTAINER ,
+there is one set of metadata that describes all of
+the arrays in the container.  So when
+.I mdadm
+creates a
+.B CONTAINER
+device, the device just represents the metadata.  Other normal arrays (RAID1
+etc) can be created inside the container.
+
+.SH MODES
+mdadm has several major modes of operation:
+.TP
+.B Assemble
+Assemble the components of a previously created
+array into an active array.  Components can be explicitly given
+or can be searched for.
+.I mdadm
+checks that the components
+do form a bona fide array, and can, on request, fiddle superblock
+information so as to assemble a faulty array.
+
+.TP
+.B Build
+Build an array that doesn't have per-device metadata (superblocks).  For these
+sorts of arrays,
+.I mdadm
+cannot differentiate between initial creation and subsequent assembly
+of an array.  It also cannot perform any checks that appropriate
+components have been requested.  Because of this, the
+.B Build
+mode should only be used together with a complete understanding of
+what you are doing.
+
+.TP
+.B Create
+Create a new array with per-device metadata (superblocks).
+Appropriate metadata is written to each device, and then the array
+comprising those devices is activated.  A 'resync' process is started
+to make sure that the array is consistent (e.g. both sides of a mirror
+contain the same data) but the content of the device is left otherwise
+untouched.
+The array can be used as soon as it has been created.  There is no
+need to wait for the initial resync to finish.
+
+.TP
+.B "Follow or Monitor"
+Monitor one or more md devices and act on any state changes.  This is
+only meaningful for RAID1, 4, 5, 6, 10 or multipath arrays, as
+only these have interesting state.  RAID0 or Linear never have
+missing, spare, or failed drives, so there is nothing to monitor.
+
+.TP
+.B "Grow"
+Grow (or shrink) an array, or otherwise reshape it in some way.
+Currently supported growth options including changing the active size
+of component devices and changing the number of active devices in
+Linear and RAID levels 0/1/4/5/6,
+changing the RAID level between 0, 1, 5, and 6, and between 0 and 10,
+changing the chunk size and layout for RAID 0,4,5,6,10 as well as adding or
+removing a write-intent bitmap.
+
+.TP
+.B "Incremental Assembly"
+Add a single device to an appropriate array.  If the addition of the
+device makes the array runnable, the array will be started.
+This provides a convenient interface to a
+.I hot-plug
+system.  As each device is detected,
+.I mdadm
+has a chance to include it in some array as appropriate.
+Optionally, when the
+.I \-\-fail
+flag is passed in we will remove the device from any active array
+instead of adding it.
+
+If a
+.B CONTAINER
+is passed to
+.I mdadm
+in this mode, then any arrays within that container will be assembled
+and started.
+
+.TP
+.B Manage
+This is for doing things to specific components of an array such as
+adding new spares and removing faulty devices.
+
+.TP
+.B Misc
+This is an 'everything else' mode that supports operations on active
+arrays, operations on component devices such as erasing old superblocks, and
+information gathering operations.
+.\"This mode allows operations on independent devices such as examine MD
+.\"superblocks, erasing old superblocks and stopping active arrays.
+
+.TP
+.B Auto-detect
+This mode does not act on a specific device or array, but rather it
+requests the Linux Kernel to activate any auto-detected arrays.
+.SH OPTIONS
+
+.SH Options for selecting a mode are:
+
+.TP
+.BR \-A ", " \-\-assemble
+Assemble a pre-existing array.
+
+.TP
+.BR \-B ", " \-\-build
+Build a legacy array without superblocks.
+
+.TP
+.BR \-C ", " \-\-create
+Create a new array.
+
+.TP
+.BR \-F ", " \-\-follow ", " \-\-monitor
+Select
+.B Monitor
+mode.
+
+.TP
+.BR \-G ", " \-\-grow
+Change the size or shape of an active array.
+
+.TP
+.BR \-I ", " \-\-incremental
+Add/remove a single device to/from an appropriate array, and possibly start the array.
+
+.TP
+.B \-\-auto-detect
+Request that the kernel starts any auto-detected arrays.  This can only
+work if
+.I md
+is compiled into the kernel \(em not if it is a module.
+Arrays can be auto-detected by the kernel if all the components are in
+primary MS-DOS partitions with partition type
+.BR FD ,
+and all use v0.90 metadata.
+In-kernel autodetect is not recommended for new installations.  Using
+.I mdadm
+to detect and assemble arrays \(em possibly in an
+.I initrd
+\(em is substantially more flexible and should be preferred.
+
+.P
+If a device is given before any options, or if the first option is
+one of
+.BR \-\-add ,
+.BR \-\-re\-add ,
+.BR \-\-add\-spare ,
+.BR \-\-fail ,
+.BR \-\-remove ,
+or
+.BR \-\-replace ,
+then the MANAGE mode is assumed.
+Anything other than these will cause the
+.B Misc
+mode to be assumed.
+
+.SH Options that are not mode-specific are:
+
+.TP
+.BR \-h ", " \-\-help
+Display general help message or, after one of the above options, a
+mode-specific help message.
+
+.TP
+.B \-\-help\-options
+Display more detailed help about command line parsing and some commonly
+used options.
+
+.TP
+.BR \-V ", " \-\-version
+Print version information for mdadm.
+
+.TP
+.BR \-v ", " \-\-verbose
+Be more verbose about what is happening.  This can be used twice to be
+extra-verbose.
+The extra verbosity currently only affects
+.B \-\-detail \-\-scan
+and
+.BR "\-\-examine \-\-scan" .
+
+.TP
+.BR \-q ", " \-\-quiet
+Avoid printing purely informative messages.  With this,
+.I mdadm
+will be silent unless there is something really important to report.
+
+
+.TP
+.BR \-f ", " \-\-force
+Be more forceful about certain operations.  See the various modes for
+the exact meaning of this option in different contexts.
+
+.TP
+.BR \-c ", " \-\-config=
+Specify the config file or directory.  Default is to use
+.B /etc/mdadm.conf
+and
+.BR /etc/mdadm.conf.d ,
+or if those are missing then
+.B /etc/mdadm/mdadm.conf
+and
+.BR /etc/mdadm/mdadm.conf.d .
+If the config file given is
+.B "partitions"
+then nothing will be read, but
+.I mdadm
+will act as though the config file contained exactly
+.br
+.B "    DEVICE partitions containers"
+.br
+and will read
+.B /proc/partitions
+to find a list of devices to scan, and
+.B /proc/mdstat
+to find a list of containers to examine.
+If the word
+.B "none"
+is given for the config file, then
+.I mdadm
+will act as though the config file were empty.
+
+If the name given is of a directory, then
+.I mdadm
+will collect all the files contained in the directory with a name ending
+in
+.BR .conf ,
+sort them lexically, and process all of those files as config files.
+
+.TP
+.BR \-s ", " \-\-scan
+Scan config file or
+.B /proc/mdstat
+for missing information.
+In general, this option gives
+.I mdadm
+permission to get any missing information (like component devices,
+array devices, array identities, and alert destination) from the
+configuration file (see previous option);
+one exception is MISC mode when using
+.B \-\-detail
+or
+.B \-\-stop,
+in which case
+.B \-\-scan
+says to get a list of array devices from
+.BR /proc/mdstat .
+
+.TP
+.BR \-e ", " \-\-metadata=
+Declare the style of RAID metadata (superblock) to be used.  The
+default is {DEFAULT_METADATA} for
+.BR \-\-create ,
+and to guess for other operations.
+The default can be overridden by setting the
+.B metadata
+value for the
+.B CREATE
+keyword in
+.BR mdadm.conf .
+
+Options are:
+.RS
+.ie '{DEFAULT_METADATA}'0.90'
+.IP "0, 0.90, default"
+.el
+.IP "0, 0.90"
+Use the original 0.90 format superblock.  This format limits arrays to
+28 component devices and limits component devices of levels 1 and
+greater to 2 terabytes.  It is also possible for there to be confusion
+about whether the superblock applies to a whole device or just the
+last partition, if that partition starts on a 64K boundary.
+.ie '{DEFAULT_METADATA}'0.90'
+.IP "1, 1.0, 1.1, 1.2"
+.el
+.IP "1, 1.0, 1.1, 1.2 default"
+Use the new version-1 format superblock.  This has fewer restrictions.
+It can easily be moved between hosts with different endian-ness, and a
+recovery operation can be checkpointed and restarted.  The different
+sub-versions store the superblock at different locations on the
+device, either at the end (for 1.0), at the start (for 1.1) or 4K from
+the start (for 1.2).  "1" is equivalent to "1.2" (the commonly
+preferred 1.x format).
+'if '{DEFAULT_METADATA}'1.2'  "default" is equivalent to "1.2".
+.IP ddf
+Use the "Industry Standard" DDF (Disk Data Format) format defined by
+SNIA.
+When creating a DDF array a
+.B CONTAINER
+will be created, and normal arrays can be created in that container.
+.IP imsm
+Use the Intel(R) Matrix Storage Manager metadata format.  This creates a
+.B CONTAINER
+which is managed in a similar manner to DDF, and is supported by an
+option-rom on some platforms:
+.IP
+.B http://www.intel.com/design/chipsets/matrixstorage_sb.htm
+.PP
+.RE
+
+.TP
+.B \-\-homehost=
+This will override any
+.B HOMEHOST
+setting in the config file and provides the identity of the host which
+should be considered the home for any arrays.
+
+When creating an array, the
+.B homehost
+will be recorded in the metadata.  For version-1 superblocks, it will
+be prefixed to the array name.  For version-0.90 superblocks, part of
+the SHA1 hash of the hostname will be stored in the later half of the
+UUID.
+
+When reporting information about an array, any array which is tagged
+for the given homehost will be reported as such.
+
+When using Auto-Assemble, only arrays tagged for the given homehost
+will be allowed to use 'local' names (i.e. not ending in '_' followed
+by a digit string).  See below under
+.BR "Auto Assembly" .
+
+The special name "\fBany\fP" can be used as a wild card.  If an array
+is created with
+.B --homehost=any
+then the name "\fBany\fP" will be stored in the array and it can be
+assembled in the same way on any host.  If an array is assembled with
+this option, then the homehost recorded on the array will be ignored.
+
+.TP
+.B \-\-prefer=
+When
+.I mdadm
+needs to print the name for a device it normally finds the name in
+.B /dev
+which refers to the device and is shortest.  When a path component is
+given with
+.B \-\-prefer
+.I mdadm
+will prefer a longer name if it contains that component.  For example
+.B \-\-prefer=by-uuid
+will prefer a name in a subdirectory of
+.B /dev
+called
+.BR by-uuid .
+
+This functionality is currently only provided by
+.B \-\-detail
+and
+.BR \-\-monitor .
+
+.TP
+.B \-\-home\-cluster=
+specifies the cluster name for the md device. The md device can be assembled
+only on the cluster which matches the name specified. If this option is not
+provided, mdadm tries to detect the cluster name automatically.
+
+.SH For create, build, or grow:
+
+.TP
+.BR \-n ", " \-\-raid\-devices=
+Specify the number of active devices in the array.  This, plus the
+number of spare devices (see below) must equal the number of
+.I component-devices
+(including "\fBmissing\fP" devices)
+that are listed on the command line for
+.BR \-\-create .
+Setting a value of 1 is probably
+a mistake and so requires that
+.B \-\-force
+be specified first.  A value of 1 will then be allowed for linear,
+multipath, RAID0 and RAID1.  It is never allowed for RAID4, RAID5 or RAID6.
+.br
+This number can only be changed using
+.B \-\-grow
+for RAID1, RAID4, RAID5 and RAID6 arrays, and only on kernels which provide
+the necessary support.
+
+.TP
+.BR \-x ", " \-\-spare\-devices=
+Specify the number of spare (eXtra) devices in the initial array.
+Spares can also be added
+and removed later.  The number of component devices listed
+on the command line must equal the number of RAID devices plus the
+number of spare devices.
+
+.TP
+.BR \-z ", " \-\-size=
+Amount (in Kilobytes) of space to use from each drive in RAID levels 1/4/5/6.
+This must be a multiple of the chunk size, and must leave about 128Kb
+of space at the end of the drive for the RAID superblock.
+If this is not specified
+(as it normally is not) the smallest drive (or partition) sets the
+size, though if there is a variance among the drives of greater than 1%, a warning is
+issued.
+
+A suffix of 'K', 'M' or 'G' can be given to indicate Kilobytes, Megabytes or
+Gigabytes respectively.
+
+Sometimes a replacement drive can be a little smaller than the
+original drives though this should be minimised by IDEMA standards.
+Such a replacement drive will be rejected by
+.IR md .
+To guard against this it can be useful to set the initial size
+slightly smaller than the smaller device with the aim that it will
+still be larger than any replacement.
+
+This value can be set with
+.B \-\-grow
+for RAID level 1/4/5/6 though
+.B CONTAINER
+based arrays such as those with IMSM metadata may not be able to
+support this.
+If the array was created with a size smaller than the currently
+active drives, the extra space can be accessed using
+.BR \-\-grow .
+The size can be given as
+.B max
+which means to choose the largest size that fits on all current drives.
+
+Before reducing the size of the array (with
+.BR "\-\-grow \-\-size=" )
+you should make sure that space isn't needed.  If the device holds a
+filesystem, you would need to resize the filesystem to use less space.
+
+After reducing the array size you should check that the data stored in
+the device is still available.  If the device holds a filesystem, then
+an 'fsck' of the filesystem is a minimum requirement.  If there are
+problems the array can be made bigger again with no loss with another
+.B "\-\-grow \-\-size="
+command.
+
+This value cannot be used when creating a
+.B CONTAINER
+such as with DDF and IMSM metadata, though it perfectly valid when
+creating an array inside a container.
+
+.TP
+.BR \-Z ", " \-\-array\-size=
+This is only meaningful with
+.B \-\-grow
+and its effect is not persistent: when the array is stopped and
+restarted the default array size will be restored.
+
+Setting the array-size causes the array to appear smaller to programs
+that access the data.  This is particularly needed before reshaping an
+array so that it will be smaller.  As the reshape is not reversible,
+but setting the size with
+.B \-\-array-size
+is, it is required that the array size is reduced as appropriate
+before the number of devices in the array is reduced.
+
+Before reducing the size of the array you should make sure that space
+isn't needed.  If the device holds a filesystem, you would need to
+resize the filesystem to use less space.
+
+After reducing the array size you should check that the data stored in
+the device is still available.  If the device holds a filesystem, then
+an 'fsck' of the filesystem is a minimum requirement.  If there are
+problems the array can be made bigger again with no loss with another
+.B "\-\-grow \-\-array\-size="
+command.
+
+A suffix of 'K', 'M' or 'G' can be given to indicate Kilobytes, Megabytes or
+Gigabytes respectively.
+A value of
+.B max
+restores the apparent size of the array to be whatever the real
+amount of available space is.
+
+.TP
+.BR \-c ", " \-\-chunk=
+Specify chunk size of kilobytes.  The default when creating an
+array is 512KB.  To ensure compatibility with earlier versions, the
+default when building an array with no persistent metadata is 64KB.
+This is only meaningful for RAID0, RAID4, RAID5, RAID6, and RAID10.
+
+RAID4, RAID5, RAID6, and RAID10 require the chunk size to be a power
+of 2.  In any case it must be a multiple of 4KB.
+
+A suffix of 'K', 'M' or 'G' can be given to indicate Kilobytes, Megabytes or
+Gigabytes respectively.
+
+.TP
+.BR \-\-rounding=
+Specify rounding factor for a Linear array.  The size of each
+component will be rounded down to a multiple of this size.
+This is a synonym for
+.B \-\-chunk
+but highlights the different meaning for Linear as compared to other
+RAID levels.  The default is 64K if a kernel earlier than 2.6.16 is in
+use, and is 0K (i.e. no rounding) in later kernels.
+
+.TP
+.BR \-l ", " \-\-level=
+Set RAID level.  When used with
+.BR \-\-create ,
+options are: linear, raid0, 0, stripe, raid1, 1, mirror, raid4, 4,
+raid5, 5, raid6, 6, raid10, 10, multipath, mp, faulty, container.
+Obviously some of these are synonymous.
+
+When a
+.B CONTAINER
+metadata type is requested, only the
+.B container
+level is permitted, and it does not need to be explicitly given.
+
+When used with
+.BR \-\-build ,
+only linear, stripe, raid0, 0, raid1, multipath, mp, and faulty are valid.
+
+Can be used with
+.B \-\-grow
+to change the RAID level in some cases.  See LEVEL CHANGES below.
+
+.TP
+.BR \-p ", " \-\-layout=
+This option configures the fine details of data layout for RAID5, RAID6,
+and RAID10 arrays, and controls the failure modes for
+.IR faulty .
+
+The layout of the RAID5 parity block can be one of
+.BR left\-asymmetric ,
+.BR left\-symmetric ,
+.BR right\-asymmetric ,
+.BR right\-symmetric ,
+.BR la ", " ra ", " ls ", " rs .
+The default is
+.BR left\-symmetric .
+
+It is also possible to cause RAID5 to use a RAID4-like layout by
+choosing
+.BR parity\-first ,
+or
+.BR parity\-last .
+
+Finally for RAID5 there are DDF\-compatible layouts,
+.BR ddf\-zero\-restart ,
+.BR ddf\-N\-restart ,
+and
+.BR ddf\-N\-continue .
+
+These same layouts are available for RAID6.  There are also 4 layouts
+that will provide an intermediate stage for converting between RAID5
+and RAID6.  These provide a layout which is identical to the
+corresponding RAID5 layout on the first N\-1 devices, and has the 'Q'
+syndrome (the second 'parity' block used by RAID6) on the last device.
+These layouts are:
+.BR left\-symmetric\-6 ,
+.BR right\-symmetric\-6 ,
+.BR left\-asymmetric\-6 ,
+.BR right\-asymmetric\-6 ,
+and
+.BR parity\-first\-6 .
+
+When setting the failure mode for level
+.I faulty,
+the options are:
+.BR write\-transient ", " wt ,
+.BR read\-transient ", " rt ,
+.BR write\-persistent ", " wp ,
+.BR read\-persistent ", " rp ,
+.BR write\-all ,
+.BR read\-fixable ", " rf ,
+.BR clear ", " flush ", " none .
+
+Each failure mode can be followed by a number, which is used as a period
+between fault generation.  Without a number, the fault is generated
+once on the first relevant request.  With a number, the fault will be
+generated after that many requests, and will continue to be generated
+every time the period elapses.
+
+Multiple failure modes can be current simultaneously by using the
+.B \-\-grow
+option to set subsequent failure modes.
+
+"clear" or "none" will remove any pending or periodic failure modes,
+and "flush" will clear any persistent faults.
+
+Finally, the layout options for RAID10 are one of 'n', 'o' or 'f' followed
+by a small number.  The default is 'n2'.  The supported options are:
+
+.I 'n'
+signals 'near' copies.  Multiple copies of one data block are at
+similar offsets in different devices.
+
+.I 'o'
+signals 'offset' copies.  Rather than the chunks being duplicated
+within a stripe, whole stripes are duplicated but are rotated by one
+device so duplicate blocks are on different devices.  Thus subsequent
+copies of a block are in the next drive, and are one chunk further
+down.
+
+.I 'f'
+signals 'far' copies
+(multiple copies have very different offsets).
+See md(4) for more detail about 'near', 'offset', and 'far'.
+
+The number is the number of copies of each datablock.  2 is normal, 3
+can be useful.  This number can be at most equal to the number of
+devices in the array.  It does not need to divide evenly into that
+number (e.g. it is perfectly legal to have an 'n2' layout for an array
+with an odd number of devices).
+
+When an array is converted between RAID5 and RAID6 an intermediate
+RAID6 layout is used in which the second parity block (Q) is always on
+the last device.  To convert a RAID5 to RAID6 and leave it in this new
+layout (which does not require re-striping) use
+.BR \-\-layout=preserve .
+This will try to avoid any restriping.
+
+The converse of this is
+.B \-\-layout=normalise
+which will change a non-standard RAID6 layout into a more standard
+arrangement.
+
+.TP
+.BR \-\-parity=
+same as
+.B \-\-layout
+(thus explaining the p of
+.BR \-p ).
+
+.TP
+.BR \-b ", " \-\-bitmap=
+Specify a file to store a write-intent bitmap in.  The file should not
+exist unless
+.B \-\-force
+is also given.  The same file should be provided
+when assembling the array.  If the word
+.B "internal"
+is given, then the bitmap is stored with the metadata on the array,
+and so is replicated on all devices.  If the word
+.B "none"
+is given with
+.B \-\-grow
+mode, then any bitmap that is present is removed. If the word
+.B "clustered"
+is given, the array is created for a clustered environment. One bitmap
+is created for each node as defined by the
+.B \-\-nodes
+parameter and are stored internally.
+
+To help catch typing errors, the filename must contain at least one
+slash ('/') if it is a real file (not 'internal' or 'none').
+
+Note: external bitmaps are only known to work on ext2 and ext3.
+Storing bitmap files on other filesystems may result in serious problems.
+
+When creating an array on devices which are 100G or larger,
+.I mdadm
+automatically adds an internal bitmap as it will usually be
+beneficial.  This can be suppressed with
+.B "\-\-bitmap=none".
+
+.TP
+.BR \-\-bitmap\-chunk=
+Set the chunksize of the bitmap.  Each bit corresponds to that many
+Kilobytes of storage.
+When using a file based bitmap, the default is to use the smallest
+size that is at-least 4 and requires no more than 2^21 chunks.
+When using an
+.B internal
+bitmap, the chunksize defaults to 64Meg, or larger if necessary to
+fit the bitmap into the available space.
+
+A suffix of 'K', 'M' or 'G' can be given to indicate Kilobytes, Megabytes or
+Gigabytes respectively.
+
+.TP
+.BR \-W ", " \-\-write\-mostly
+subsequent devices listed in a
+.BR \-\-build ,
+.BR \-\-create ,
+or
+.B \-\-add
+command will be flagged as 'write\-mostly'.  This is valid for RAID1
+only and means that the 'md' driver will avoid reading from these
+devices if at all possible.  This can be useful if mirroring over a
+slow link.
+
+.TP
+.BR \-\-write\-behind=
+Specify that write-behind mode should be enabled (valid for RAID1
+only).  If an argument is specified, it will set the maximum number
+of outstanding writes allowed.  The default value is 256.
+A write-intent bitmap is required in order to use write-behind
+mode, and write-behind is only attempted on drives marked as
+.IR write-mostly .
+
+.TP
+.BR \-\-failfast
+subsequent devices listed in a
+.B \-\-create
+or
+.B \-\-add
+command will be flagged as  'failfast'.  This is valid for RAID1 and
+RAID10 only.  IO requests to these devices will be encouraged to fail
+quickly rather than cause long delays due to error handling.  Also no
+attempt is made to repair a read error on these devices.
+
+If an array becomes degraded so that the 'failfast' device is the only
+usable device, the 'failfast' flag will then be ignored and extended
+delays will be preferred to complete failure.
+
+The 'failfast' flag is appropriate for storage arrays which have a
+low probability of true failure, but which may sometimes
+cause unacceptable delays due to internal maintenance functions.
+
+.TP
+.BR \-\-assume\-clean
+Tell
+.I mdadm
+that the array pre-existed and is known to be clean.  It can be useful
+when trying to recover from a major failure as you can be sure that no
+data will be affected unless you actually write to the array.  It can
+also be used when creating a RAID1 or RAID10 if you want to avoid the
+initial resync, however this practice \(em while normally safe \(em is not
+recommended.  Use this only if you really know what you are doing.
+.IP
+When the devices that will be part of a new array were filled
+with zeros before creation the operator knows the array is
+actually clean. If that is the case, such as after running
+badblocks, this argument can be used to tell mdadm the
+facts the operator knows.
+.IP
+When an array is resized to a larger size with
+.B "\-\-grow \-\-size="
+the new space is normally resynced in that same way that the whole
+array is resynced at creation.  From Linux version 3.0,
+.B \-\-assume\-clean
+can be used with that command to avoid the automatic resync.
+
+.TP
+.BR \-\-backup\-file=
+This is needed when
+.B \-\-grow
+is used to increase the number of raid-devices in a RAID5 or RAID6 if
+there are no spare devices available, or to shrink, change RAID level
+or layout.  See the GROW MODE section below on RAID\-DEVICES CHANGES.
+The file must be stored on a separate device, not on the RAID array
+being reshaped.
+
+.TP
+.B \-\-data\-offset=
+Arrays with 1.x metadata can leave a gap between the start of the
+device and the start of array data.  This gap can be used for various
+metadata.  The start of data is known as the
+.IR data\-offset .
+Normally an appropriate data offset is computed automatically.
+However it can be useful to set it explicitly such as when re-creating
+an array which was originally created using a different version of
+.I mdadm
+which computed a different offset.
+
+Setting the offset explicitly over-rides the default.  The value given
+is in Kilobytes unless a suffix of 'K', 'M' or 'G' is used to explicitly
+indicate Kilobytes, Megabytes or Gigabytes respectively.
+
+Since Linux 3.4,
+.B \-\-data\-offset
+can also be used with
+.B --grow
+for some RAID levels (initially on RAID10).  This allows the
+data\-offset to be changed as part of the reshape process.  When the
+data offset is changed, no backup file is required as the difference
+in offsets is used to provide the same functionality.
+
+When the new offset is earlier than the old offset, the number of
+devices in the array cannot shrink.  When it is after the old offset,
+the number of devices in the array cannot increase.
+
+When creating an array,
+.B \-\-data\-offset
+can be specified as
+.BR variable .
+In the case each member device is expected to have a offset appended
+to the name, separated by a colon.  This makes it possible to recreate
+exactly an array which has varying data offsets (as can happen when
+different versions of
+.I mdadm
+are used to add different devices).
+
+.TP
+.BR \-\-continue
+This option is complementary to the
+.B \-\-freeze-reshape
+option for assembly. It is needed when
+.B \-\-grow
+operation is interrupted and it is not restarted automatically due to
+.B \-\-freeze-reshape
+usage during array assembly.  This option is used together with
+.BR \-G
+, (
+.BR \-\-grow
+) command and device for a pending reshape to be continued.
+All parameters required for reshape continuation will be read from array metadata.
+If initial
+.BR \-\-grow
+command had required
+.BR \-\-backup\-file=
+option to be set, continuation option will require to have exactly the same
+backup file given as well.
+.IP
+Any other parameter passed together with
+.BR \-\-continue
+option will be ignored.
+
+.TP
+.BR \-N ", " \-\-name=
+Set a
+.B name
+for the array.  This is currently only effective when creating an
+array with a version-1 superblock, or an array in a DDF container.
+The name is a simple textual string that can be used to identify array
+components when assembling.  If name is needed but not specified, it
+is taken from the basename of the device that is being created.
+e.g. when creating
+.I /dev/md/home
+the
+.B name
+will default to
+.IR home .
+
+.TP
+.BR \-R ", " \-\-run
+Insist that
+.I mdadm
+run the array, even if some of the components
+appear to be active in another array or filesystem.  Normally
+.I mdadm
+will ask for confirmation before including such components in an
+array.  This option causes that question to be suppressed.
+
+.TP
+.BR \-f ", " \-\-force
+Insist that
+.I mdadm
+accept the geometry and layout specified without question.  Normally
+.I mdadm
+will not allow creation of an array with only one device, and will try
+to create a RAID5 array with one missing drive (as this makes the
+initial resync work faster).  With
+.BR \-\-force ,
+.I mdadm
+will not try to be so clever.
+
+.TP
+.BR \-o ", " \-\-readonly
+Start the array
+.B read only
+rather than read-write as normal.  No writes will be allowed to the
+array, and no resync, recovery, or reshape will be started.
+
+.TP
+.BR \-a ", " "\-\-auto{=yes,md,mdp,part,p}{NN}"
+Instruct mdadm how to create the device file if needed, possibly allocating
+an unused minor number.  "md" causes a non-partitionable array
+to be used (though since Linux 2.6.28, these array devices are in fact
+partitionable).  "mdp", "part" or "p" causes a partitionable array (2.6 and
+later) to be used.  "yes" requires the named md device to have
+a 'standard' format, and the type and minor number will be determined
+from this.  With mdadm 3.0, device creation is normally left up to
+.I udev
+so this option is unlikely to be needed.
+See DEVICE NAMES below.
+
+The argument can also come immediately after
+"\-a".  e.g. "\-ap".
+
+If
+.B \-\-auto
+is not given on the command line or in the config file, then
+the default will be
+.BR \-\-auto=yes .
+
+If
+.B \-\-scan
+is also given, then any
+.I auto=
+entries in the config file will override the
+.B \-\-auto
+instruction given on the command line.
+
+For partitionable arrays,
+.I mdadm
+will create the device file for the whole array and for the first 4
+partitions.  A different number of partitions can be specified at the
+end of this option (e.g.
+.BR \-\-auto=p7 ).
+If the device name ends with a digit, the partition names add a 'p',
+and a number, e.g.
+.IR /dev/md/home1p3 .
+If there is no trailing digit, then the partition names just have a
+number added, e.g.
+.IR /dev/md/scratch3 .
+
+If the md device name is in a 'standard' format as described in DEVICE
+NAMES, then it will be created, if necessary, with the appropriate
+device number based on that name.  If the device name is not in one of these
+formats, then a unused device number will be allocated.  The device
+number will be considered unused if there is no active array for that
+number, and there is no entry in /dev for that number and with a
+non-standard name.  Names that are not in 'standard' format are only
+allowed in "/dev/md/".
+
+This is meaningful with
+.B \-\-create
+or
+.BR \-\-build .
+
+.TP
+.BR \-a ", " "\-\-add"
+This option can be used in Grow mode in two cases.
+
+If the target array is a Linear array, then
+.B \-\-add
+can be used to add one or more devices to the array.  They
+are simply catenated on to the end of the array.  Once added, the
+devices cannot be removed.
+
+If the
+.B \-\-raid\-disks
+option is being used to increase the number of devices in an array,
+then
+.B \-\-add
+can be used to add some extra devices to be included in the array.
+In most cases this is not needed as the extra devices can be added as
+spares first, and then the number of raid-disks can be changed.
+However for RAID0, it is not possible to add spares.  So to increase
+the number of devices in a RAID0, it is necessary to set the new
+number of devices, and to add the new devices, in the same command.
+
+.TP
+.BR \-\-nodes
+Only works when the array is for clustered environment. It specifies
+the maximum number of nodes in the cluster that will use this device
+simultaneously. If not specified, this defaults to 4.
+
+.TP
+.BR \-\-write-journal
+Specify journal device for the RAID-4/5/6 array. The journal device
+should be a SSD with reasonable lifetime.
+
+
+.SH For assemble:
+
+.TP
+.BR \-u ", " \-\-uuid=
+uuid of array to assemble.  Devices which don't have this uuid are
+excluded
+
+.TP
+.BR \-m ", " \-\-super\-minor=
+Minor number of device that array was created for.  Devices which
+don't have this minor number are excluded.  If you create an array as
+/dev/md1, then all superblocks will contain the minor number 1, even if
+the array is later assembled as /dev/md2.
+
+Giving the literal word "dev" for
+.B \-\-super\-minor
+will cause
+.I mdadm
+to use the minor number of the md device that is being assembled.
+e.g. when assembling
+.BR /dev/md0 ,
+.B \-\-super\-minor=dev
+will look for super blocks with a minor number of 0.
+
+.B \-\-super\-minor
+is only relevant for v0.90 metadata, and should not normally be used.
+Using
+.B \-\-uuid
+is much safer.
+
+.TP
+.BR \-N ", " \-\-name=
+Specify the name of the array to assemble.  This must be the name
+that was specified when creating the array.  It must either match
+the name stored in the superblock exactly, or it must match
+with the current
+.I homehost
+prefixed to the start of the given name.
+
+.TP
+.BR \-f ", " \-\-force
+Assemble the array even if the metadata on some devices appears to be
+out-of-date.  If
+.I mdadm
+cannot find enough working devices to start the array, but can find
+some devices that are recorded as having failed, then it will mark
+those devices as working so that the array can be started.
+An array which requires
+.B \-\-force
+to be started may contain data corruption.  Use it carefully.
+
+.TP
+.BR \-R ", " \-\-run
+Attempt to start the array even if fewer drives were given than were
+present last time the array was active.  Normally if not all the
+expected drives are found and
+.B \-\-scan
+is not used, then the array will be assembled but not started.
+With
+.B \-\-run
+an attempt will be made to start it anyway.
+
+.TP
+.B \-\-no\-degraded
+This is the reverse of
+.B \-\-run
+in that it inhibits the startup of array unless all expected drives
+are present.  This is only needed with
+.B \-\-scan,
+and can be used if the physical connections to devices are
+not as reliable as you would like.
+
+.TP
+.BR \-a ", " "\-\-auto{=no,yes,md,mdp,part}"
+See this option under Create and Build options.
+
+.TP
+.BR \-b ", " \-\-bitmap=
+Specify the bitmap file that was given when the array was created.  If
+an array has an
+.B internal
+bitmap, there is no need to specify this when assembling the array.
+
+.TP
+.BR \-\-backup\-file=
+If
+.B \-\-backup\-file
+was used while reshaping an array (e.g. changing number of devices or
+chunk size) and the system crashed during the critical section, then the same
+.B \-\-backup\-file
+must be presented to
+.B \-\-assemble
+to allow possibly corrupted data to be restored, and the reshape
+to be completed.
+
+.TP
+.BR \-\-invalid\-backup
+If the file needed for the above option is not available for any
+reason an empty file can be given together with this option to
+indicate that the backup file is invalid.  In this case the data that
+was being rearranged at the time of the crash could be irrecoverably
+lost, but the rest of the array may still be recoverable.  This option
+should only be used as a last resort if there is no way to recover the
+backup file.
+
+
+.TP
+.BR \-U ", " \-\-update=
+Update the superblock on each device while assembling the array.  The
+argument given to this flag can be one of
+.BR sparc2.2 ,
+.BR summaries ,
+.BR uuid ,
+.BR name ,
+.BR nodes ,
+.BR homehost ,
+.BR home-cluster ,
+.BR resync ,
+.BR byteorder ,
+.BR devicesize ,
+.BR no\-bitmap ,
+.BR bbl ,
+.BR no\-bbl ,
+.BR metadata ,
+or
+.BR super\-minor .
+
+The
+.B sparc2.2
+option will adjust the superblock of an array what was created on a Sparc
+machine running a patched 2.2 Linux kernel.  This kernel got the
+alignment of part of the superblock wrong.  You can use the
+.B "\-\-examine \-\-sparc2.2"
+option to
+.I mdadm
+to see what effect this would have.
+
+The
+.B super\-minor
+option will update the
+.B "preferred minor"
+field on each superblock to match the minor number of the array being
+assembled.
+This can be useful if
+.B \-\-examine
+reports a different "Preferred Minor" to
+.BR \-\-detail .
+In some cases this update will be performed automatically
+by the kernel driver.  In particular the update happens automatically
+at the first write to an array with redundancy (RAID level 1 or
+greater) on a 2.6 (or later) kernel.
+
+The
+.B uuid
+option will change the uuid of the array.  If a UUID is given with the
+.B \-\-uuid
+option that UUID will be used as a new UUID and will
+.B NOT
+be used to help identify the devices in the array.
+If no
+.B \-\-uuid
+is given, a random UUID is chosen.
+
+The
+.B name
+option will change the
+.I name
+of the array as stored in the superblock.  This is only supported for
+version-1 superblocks.
+
+The
+.B nodes
+option will change the
+.I nodes
+of the array as stored in the bitmap superblock. This option only
+works for a clustered environment.
+
+The
+.B homehost
+option will change the
+.I homehost
+as recorded in the superblock.  For version-0 superblocks, this is the
+same as updating the UUID.
+For version-1 superblocks, this involves updating the name.
+
+The
+.B home\-cluster
+option will change the cluster name as recorded in the superblock and
+bitmap. This option only works for clustered environment.
+
+The
+.B resync
+option will cause the array to be marked
+.I dirty
+meaning that any redundancy in the array (e.g. parity for RAID5,
+copies for RAID1) may be incorrect.  This will cause the RAID system
+to perform a "resync" pass to make sure that all redundant information
+is correct.
+
+The
+.B byteorder
+option allows arrays to be moved between machines with different
+byte-order.
+When assembling such an array for the first time after a move, giving
+.B "\-\-update=byteorder"
+will cause
+.I mdadm
+to expect superblocks to have their byteorder reversed, and will
+correct that order before assembling the array.  This is only valid
+with original (Version 0.90) superblocks.
+
+The
+.B summaries
+option will correct the summaries in the superblock.  That is the
+counts of total, working, active, failed, and spare devices.
+
+The
+.B devicesize
+option will rarely be of use.  It applies to version 1.1 and 1.2 metadata
+only (where the metadata is at the start of the device) and is only
+useful when the component device has changed size (typically become
+larger).  The version 1 metadata records the amount of the device that
+can be used to store data, so if a device in a version 1.1 or 1.2
+array becomes larger, the metadata will still be visible, but the
+extra space will not.  In this case it might be useful to assemble the
+array with
+.BR \-\-update=devicesize .
+This will cause
+.I mdadm
+to determine the maximum usable amount of space on each device and
+update the relevant field in the metadata.
+
+The
+.B metadata
+option only works on v0.90 metadata arrays and will convert them to
+v1.0 metadata.  The array must not be dirty (i.e. it must not need a
+sync) and it must not have a write-intent bitmap.
+
+The old metadata will remain on the devices, but will appear older
+than the new metadata and so will usually be ignored. The old metadata
+(or indeed the new metadata) can be removed by giving the appropriate
+.B \-\-metadata=
+option to
+.BR \-\-zero\-superblock .
+
+The
+.B no\-bitmap
+option can be used when an array has an internal bitmap which is
+corrupt in some way so that assembling the array normally fails.  It
+will cause any internal bitmap to be ignored.
+
+The
+.B bbl
+option will reserve space in each device for a bad block list.  This
+will be 4K in size and positioned near the end of any free space
+between the superblock and the data.
+
+The
+.B no\-bbl
+option will cause any reservation of space for a bad block list to be
+removed.  If the bad block list contains entries, this will fail, as
+removing the list could cause data corruption.
+
+.TP
+.BR \-\-freeze\-reshape
+Option is intended to be used in start-up scripts during initrd boot phase.
+When array under reshape is assembled during initrd phase, this option
+stops reshape after reshape critical section is being restored. This happens
+before file system pivot operation and avoids loss of file system context.
+Losing file system context would cause reshape to be broken.
+
+Reshape can be continued later using the
+.B \-\-continue
+option for the grow command.
+
+.SH For Manage mode:
+
+.TP
+.BR \-t ", " \-\-test
+Unless a more serious error occurred,
+.I mdadm
+will exit with a status of 2 if no changes were made to the array and
+0 if at least one change was made.
+This can be useful when an indirect specifier such as
+.BR missing ,
+.B detached
+or
+.B faulty
+is used in requesting an operation on the array.
+.B \-\-test
+will report failure if these specifiers didn't find any match.
+
+.TP
+.BR \-a ", " \-\-add
+hot-add listed devices.
+If a device appears to have recently been part of the array
+(possibly it failed or was removed) the device is re\-added as described
+in the next point.
+If that fails or the device was never part of the array, the device is
+added as a hot-spare.
+If the array is degraded, it will immediately start to rebuild data
+onto that spare.
+
+Note that this and the following options are only meaningful on array
+with redundancy.  They don't apply to RAID0 or Linear.
+
+.TP
+.BR \-\-re\-add
+re\-add a device that was previously removed from an array.
+If the metadata on the device reports that it is a member of the
+array, and the slot that it used is still vacant, then the device will
+be added back to the array in the same position.  This will normally
+cause the data for that device to be recovered.  However based on the
+event count on the device, the recovery may only require sections that
+are flagged a write-intent bitmap to be recovered or may not require
+any recovery at all.
+
+When used on an array that has no metadata (i.e. it was built with
+.BR \-\-build)
+it will be assumed that bitmap-based recovery is enough to make the
+device fully consistent with the array.
+
+When used with v1.x metadata,
+.B \-\-re\-add
+can be accompanied by
+.BR \-\-update=devicesize ,
+.BR \-\-update=bbl ", or"
+.BR \-\-update=no\-bbl .
+See the description of these option when used in Assemble mode for an
+explanation of their use.
+
+If the device name given is
+.B missing
+then
+.I mdadm
+will try to find any device that looks like it should be
+part of the array but isn't and will try to re\-add all such devices.
+
+If the device name given is
+.B faulty
+then
+.I mdadm
+will find all devices in the array that are marked
+.BR faulty ,
+remove them and attempt to immediately re\-add them.  This can be
+useful if you are certain that the reason for failure has been
+resolved.
+
+.TP
+.B \-\-add\-spare
+Add a device as a spare.  This is similar to
+.B \-\-add
+except that it does not attempt
+.B \-\-re\-add
+first.  The device will be added as a spare even if it looks like it
+could be an recent member of the array.
+
+.TP
+.BR \-r ", " \-\-remove
+remove listed devices.  They must not be active.  i.e. they should
+be failed or spare devices.
+
+As well as the name of a device file
+(e.g.
+.BR /dev/sda1 )
+the words
+.BR failed ,
+.B detached
+and names like
+.B set-A
+can be given to
+.BR \-\-remove .
+The first causes all failed device to be removed.  The second causes
+any device which is no longer connected to the system (i.e an 'open'
+returns
+.BR ENXIO )
+to be removed.
+The third will remove a set as describe below under
+.BR \-\-fail .
+
+.TP
+.BR \-f ", " \-\-fail
+Mark listed devices as faulty.
+As well as the name of a device file, the word
+.B detached
+or a set name like
+.B set\-A
+can be given.  The former will cause any device that has been detached from
+the system to be marked as failed.  It can then be removed.
+
+For RAID10 arrays where the number of copies evenly divides the number
+of devices, the devices can be conceptually divided into sets where
+each set contains a single complete copy of the data on the array.
+Sometimes a RAID10 array will be configured so that these sets are on
+separate controllers.  In this case all the devices in one set can be
+failed by giving a name like
+.B set\-A
+or
+.B set\-B
+to
+.BR \-\-fail .
+The appropriate set names are reported by
+.BR \-\-detail .
+
+.TP
+.BR \-\-set\-faulty
+same as
+.BR \-\-fail .
+
+.TP
+.B \-\-replace
+Mark listed devices as requiring replacement.  As soon as a spare is
+available, it will be rebuilt and will replace the marked device.
+This is similar to marking a device as faulty, but the device remains
+in service during the recovery process to increase resilience against
+multiple failures.  When the replacement process finishes, the
+replaced device will be marked as faulty.
+
+.TP
+.B \-\-with
+This can follow a list of
+.B \-\-replace
+devices.  The devices listed after
+.B \-\-with
+will be preferentially used to replace the devices listed after
+.BR \-\-replace .
+These device must already be spare devices in the array.
+
+.TP
+.BR \-\-write\-mostly
+Subsequent devices that are added or re\-added will have the 'write-mostly'
+flag set.  This is only valid for RAID1 and means that the 'md' driver
+will avoid reading from these devices if possible.
+.TP
+.BR \-\-readwrite
+Subsequent devices that are added or re\-added will have the 'write-mostly'
+flag cleared.
+.TP
+.BR \-\-cluster\-confirm
+Confirm the existence of the device. This is issued in response to an \-\-add
+request by a node in a cluster. When a node adds a device it sends a message
+to all nodes in the cluster to look for a device with a UUID. This translates
+to a udev notification with the UUID of the device to be added and the slot
+number. The receiving node must acknowledge this message
+with \-\-cluster\-confirm. Valid arguments are <slot>:<devicename> in case
+the device is found or <slot>:missing in case the device is not found.
+
+.TP
+.BR \-\-add-journal
+Recreate journal for RAID-4/5/6 array that lost a journal device. In the
+current implementation, this command cannot add a journal to an array
+that had a failed journal. To avoid interrupting on-going write opertions,
+.B \-\-add-journal
+only works for array in Read-Only state.
+
+.TP
+.BR \-\-failfast
+Subsequent devices that are added or re\-added will have
+the 'failfast' flag set.  This is only valid for RAID1 and RAID10 and
+means that the 'md' driver will avoid long timeouts on error handling
+where possible.
+.TP
+.BR \-\-nofailfast
+Subsequent devices that are re\-added will be re\-added without
+the 'failfast' flag set.
+
+.P
+Each of these options requires that the first device listed is the array
+to be acted upon, and the remainder are component devices to be added,
+removed, marked as faulty, etc.  Several different operations can be
+specified for different devices, e.g.
+.in +5
+mdadm /dev/md0 \-\-add /dev/sda1 \-\-fail /dev/sdb1 \-\-remove /dev/sdb1
+.in -5
+Each operation applies to all devices listed until the next
+operation.
+
+If an array is using a write-intent bitmap, then devices which have
+been removed can be re\-added in a way that avoids a full
+reconstruction but instead just updates the blocks that have changed
+since the device was removed.  For arrays with persistent metadata
+(superblocks) this is done automatically.  For arrays created with
+.B \-\-build
+mdadm needs to be told that this device we removed recently with
+.BR \-\-re\-add .
+
+Devices can only be removed from an array if they are not in active
+use, i.e. that must be spares or failed devices.  To remove an active
+device, it must first be marked as
+.B faulty.
+
+.SH For Misc mode:
+
+.TP
+.BR \-Q ", " \-\-query
+Examine a device to see
+(1) if it is an md device and (2) if it is a component of an md
+array.
+Information about what is discovered is presented.
+
+.TP
+.BR \-D ", " \-\-detail
+Print details of one or more md devices.
+
+.TP
+.BR \-\-detail\-platform
+Print details of the platform's RAID capabilities (firmware / hardware
+topology) for a given metadata format. If used without argument, mdadm
+will scan all controllers looking for their capabilities. Otherwise, mdadm
+will only look at the controller specified by the argument in form of an
+absolute filepath or a link, e.g.
+.IR /sys/devices/pci0000:00/0000:00:1f.2 .
+
+.TP
+.BR \-Y ", " \-\-export
+When used with
+.BR \-\-detail ,
+.BR \-\-detail-platform ,
+.BR \-\-examine ,
+or
+.B \-\-incremental
+output will be formatted as
+.B key=value
+pairs for easy import into the environment.
+
+With
+.B \-\-incremental
+The value
+.B MD_STARTED
+indicates whether an array was started
+.RB ( yes )
+or not, which may include a reason
+.RB ( unsafe ", " nothing ", " no ).
+Also the value
+.B MD_FOREIGN
+indicates if the array is expected on this host
+.RB ( no ),
+or seems to be from elsewhere
+.RB ( yes ).
+
+.TP
+.BR \-E ", " \-\-examine
+Print contents of the metadata stored on the named device(s).
+Note the contrast between
+.B \-\-examine
+and
+.BR \-\-detail .
+.B \-\-examine
+applies to devices which are components of an array, while
+.B \-\-detail
+applies to a whole array which is currently active.
+.TP
+.B \-\-sparc2.2
+If an array was created on a SPARC machine with a 2.2 Linux kernel
+patched with RAID support, the superblock will have been created
+incorrectly, or at least incompatibly with 2.4 and later kernels.
+Using the
+.B \-\-sparc2.2
+flag with
+.B \-\-examine
+will fix the superblock before displaying it.  If this appears to do
+the right thing, then the array can be successfully assembled using
+.BR "\-\-assemble \-\-update=sparc2.2" .
+
+.TP
+.BR \-X ", " \-\-examine\-bitmap
+Report information about a bitmap file.
+The argument is either an external bitmap file or an array component
+in case of an internal bitmap.  Note that running this on an array
+device (e.g.
+.BR /dev/md0 )
+does not report the bitmap for that array.
+
+.TP
+.B \-\-examine\-badblocks
+List the bad-blocks recorded for the device, if a bad-blocks list has
+been configured.  Currently only
+.B 1.x
+metadata supports bad-blocks lists.
+
+.TP
+.BI \-\-dump= directory
+.TP
+.BI \-\-restore= directory
+Save metadata from lists devices, or restore metadata to listed devices.
+
+.TP
+.BR \-R ", " \-\-run
+start a partially assembled array.  If
+.B \-\-assemble
+did not find enough devices to fully start the array, it might leaving
+it partially assembled.  If you wish, you can then use
+.B \-\-run
+to start the array in degraded mode.
+
+.TP
+.BR \-S ", " \-\-stop
+deactivate array, releasing all resources.
+
+.TP
+.BR \-o ", " \-\-readonly
+mark array as readonly.
+
+.TP
+.BR \-w ", " \-\-readwrite
+mark array as readwrite.
+
+.TP
+.B \-\-zero\-superblock
+If the device contains a valid md superblock, the block is
+overwritten with zeros.  With
+.B \-\-force
+the block where the superblock would be is overwritten even if it
+doesn't appear to be valid.
+
+.TP
+.B \-\-kill\-subarray=
+If the device is a container and the argument to \-\-kill\-subarray
+specifies an inactive subarray in the container, then the subarray is
+deleted.  Deleting all subarrays will leave an 'empty-container' or
+spare superblock on the drives.  See
+.B \-\-zero\-superblock
+for completely
+removing a superblock.  Note that some formats depend on the subarray
+index for generating a UUID, this command will fail if it would change
+the UUID of an active subarray.
+
+.TP
+.B \-\-update\-subarray=
+If the device is a container and the argument to \-\-update\-subarray
+specifies a subarray in the container, then attempt to update the given
+superblock field in the subarray. See below in
+.B MISC MODE
+for details.
+
+.TP
+.BR \-t ", " \-\-test
+When used with
+.BR \-\-detail ,
+the exit status of
+.I mdadm
+is set to reflect the status of the device.  See below in
+.B MISC MODE
+for details.
+
+.TP
+.BR \-W ", " \-\-wait
+For each md device given, wait for any resync, recovery, or reshape
+activity to finish before returning.
+.I mdadm
+will return with success if it actually waited for every device
+listed, otherwise it will return failure.
+
+.TP
+.BR \-\-wait\-clean
+For each md device given, or each device in /proc/mdstat if
+.B \-\-scan
+is given, arrange for the array to be marked clean as soon as possible.
+.I mdadm
+will return with success if the array uses external metadata and we
+successfully waited.  For native arrays this returns immediately as the
+kernel handles dirty-clean transitions at shutdown.  No action is taken
+if safe-mode handling is disabled.
+
+.TP
+.B \-\-action=
+Set the "sync_action" for all md devices given to one of
+.BR idle ,
+.BR frozen ,
+.BR check ,
+.BR repair .
+Setting to
+.B idle
+will abort any currently running action though some actions will
+automatically restart.
+Setting to
+.B frozen
+will abort any current action and ensure no other action starts
+automatically.
+
+Details of
+.B check
+and
+.B repair
+can be found it
+.IR md (4)
+under
+.BR "SCRUBBING AND MISMATCHES" .
+
+.SH For Incremental Assembly mode:
+.TP
+.BR \-\-rebuild\-map ", " \-r
+Rebuild the map file
+.RB ( {MAP_PATH} )
+that
+.I mdadm
+uses to help track which arrays are currently being assembled.
+
+.TP
+.BR \-\-run ", " \-R
+Run any array assembled as soon as a minimal number of devices are
+available, rather than waiting until all expected devices are present.
+
+.TP
+.BR \-\-scan ", " \-s
+Only meaningful with
+.B \-R
+this will scan the
+.B map
+file for arrays that are being incrementally assembled and will try to
+start any that are not already started.  If any such array is listed
+in
+.B mdadm.conf
+as requiring an external bitmap, that bitmap will be attached first.
+
+.TP
+.BR \-\-fail ", " \-f
+This allows the hot-plug system to remove devices that have fully disappeared
+from the kernel.  It will first fail and then remove the device from any
+array it belongs to.
+The device name given should be a kernel device name such as "sda",
+not a name in
+.IR /dev .
+
+.TP
+.BR \-\-path=
+Only used with \-\-fail.  The 'path' given will be recorded so that if
+a new device appears at the same location it can be automatically
+added to the same array.  This allows the failed device to be
+automatically replaced by a new device without metadata if it appears
+at specified path.   This option is normally only set by a
+.I udev
+script.
+
+.SH For Monitor mode:
+.TP
+.BR \-m ", " \-\-mail
+Give a mail address to send alerts to.
+
+.TP
+.BR \-p ", " \-\-program ", " \-\-alert
+Give a program to be run whenever an event is detected.
+
+.TP
+.BR \-y ", " \-\-syslog
+Cause all events to be reported through 'syslog'.  The messages have
+facility of 'daemon' and varying priorities.
+
+.TP
+.BR \-d ", " \-\-delay
+Give a delay in seconds.
+.I mdadm
+polls the md arrays and then waits this many seconds before polling
+again.  The default is 60 seconds.  Since 2.6.16, there is no need to
+reduce this as the kernel alerts
+.I mdadm
+immediately when there is any change.
+
+.TP
+.BR \-r ", " \-\-increment
+Give a percentage increment.
+.I mdadm
+will generate RebuildNN events with the given percentage increment.
+
+.TP
+.BR \-f ", " \-\-daemonise
+Tell
+.I mdadm
+to run as a background daemon if it decides to monitor anything.  This
+causes it to fork and run in the child, and to disconnect from the
+terminal.  The process id of the child is written to stdout.
+This is useful with
+.B \-\-scan
+which will only continue monitoring if a mail address or alert program
+is found in the config file.
+
+.TP
+.BR \-i ", " \-\-pid\-file
+When
+.I mdadm
+is running in daemon mode, write the pid of the daemon process to
+the specified file, instead of printing it on standard output.
+
+.TP
+.BR \-1 ", " \-\-oneshot
+Check arrays only once.  This will generate
+.B NewArray
+events and more significantly
+.B DegradedArray
+and
+.B SparesMissing
+events.  Running
+.in +5
+.B "   mdadm \-\-monitor \-\-scan \-1"
+.in -5
+from a cron script will ensure regular notification of any degraded arrays.
+
+.TP
+.BR \-t ", " \-\-test
+Generate a
+.B TestMessage
+alert for every array found at startup.  This alert gets mailed and
+passed to the alert program.  This can be used for testing that alert
+message do get through successfully.
+
+.TP
+.BR \-\-no\-sharing
+This inhibits the functionality for moving spares between arrays.
+Only one monitoring process started with
+.B \-\-scan
+but without this flag is allowed, otherwise the two could interfere
+with each other.
+
+.SH ASSEMBLE MODE
+
+.HP 12
+Usage:
+.B mdadm \-\-assemble
+.I md-device options-and-component-devices...
+.HP 12
+Usage:
+.B mdadm \-\-assemble \-\-scan
+.I md-devices-and-options...
+.HP 12
+Usage:
+.B mdadm \-\-assemble \-\-scan
+.I options...
+
+.PP
+This usage assembles one or more RAID arrays from pre-existing components.
+For each array, mdadm needs to know the md device, the identity of the
+array, and a number of component-devices.  These can be found in a number of ways.
+
+In the first usage example (without the
+.BR \-\-scan )
+the first device given is the md device.
+In the second usage example, all devices listed are treated as md
+devices and assembly is attempted.
+In the third (where no devices are listed) all md devices that are
+listed in the configuration file are assembled.  If no arrays are
+described by the configuration file, then any arrays that
+can be found on unused devices will be assembled.
+
+If precisely one device is listed, but
+.B \-\-scan
+is not given, then
+.I mdadm
+acts as though
+.B \-\-scan
+was given and identity information is extracted from the configuration file.
+
+The identity can be given with the
+.B \-\-uuid
+option, the
+.B \-\-name
+option, or the
+.B \-\-super\-minor
+option, will be taken from the md-device record in the config file, or
+will be taken from the super block of the first component-device
+listed on the command line.
+
+Devices can be given on the
+.B \-\-assemble
+command line or in the config file.  Only devices which have an md
+superblock which contains the right identity will be considered for
+any array.
+
+The config file is only used if explicitly named with
+.B \-\-config
+or requested with (a possibly implicit)
+.BR \-\-scan .
+In the later case,
+.B /etc/mdadm.conf
+or
+.B /etc/mdadm/mdadm.conf
+is used.
+
+If
+.B \-\-scan
+is not given, then the config file will only be used to find the
+identity of md arrays.
+
+Normally the array will be started after it is assembled.  However if
+.B \-\-scan
+is not given and not all expected drives were listed, then the array
+is not started (to guard against usage errors).  To insist that the
+array be started in this case (as may work for RAID1, 4, 5, 6, or 10),
+give the
+.B \-\-run
+flag.
+
+If
+.I udev
+is active,
+.I mdadm
+does not create any entries in
+.B /dev
+but leaves that to
+.IR udev .
+It does record information in
+.B {MAP_PATH}
+which will allow
+.I udev
+to choose the correct name.
+
+If
+.I mdadm
+detects that udev is not configured, it will create the devices in
+.B /dev
+itself.
+
+In Linux kernels prior to version 2.6.28 there were two distinctly
+different types of md devices that could be created: one that could be
+partitioned using standard partitioning tools and one that could not.
+Since 2.6.28 that distinction is no longer relevant as both type of
+devices can be partitioned.
+.I mdadm
+will normally create the type that originally could not be partitioned
+as it has a well defined major number (9).
+
+Prior to 2.6.28, it is important that mdadm chooses the correct type
+of array device to use.  This can be controlled with the
+.B \-\-auto
+option.  In particular, a value of "mdp" or "part" or "p" tells mdadm
+to use a partitionable device rather than the default.
+
+In the no-udev case, the value given to
+.B \-\-auto
+can be suffixed by a number.  This tells
+.I mdadm
+to create that number of partition devices rather than the default of 4.
+
+The value given to
+.B \-\-auto
+can also be given in the configuration file as a word starting
+.B auto=
+on the ARRAY line for the relevant array.
+
+.SS Auto Assembly
+When
+.B \-\-assemble
+is used with
+.B \-\-scan
+and no devices are listed,
+.I mdadm
+will first attempt to assemble all the arrays listed in the config
+file.
+
+If no arrays are listed in the config (other than those marked
+.BR <ignore> )
+it will look through the available devices for possible arrays and
+will try to assemble anything that it finds.  Arrays which are tagged
+as belonging to the given homehost will be assembled and started
+normally.  Arrays which do not obviously belong to this host are given
+names that are expected not to conflict with anything local, and are
+started "read-auto" so that nothing is written to any device until the
+array is written to. i.e.  automatic resync etc is delayed.
+
+If
+.I mdadm
+finds a consistent set of devices that look like they should comprise
+an array, and if the superblock is tagged as belonging to the given
+home host, it will automatically choose a device name and try to
+assemble the array.  If the array uses version-0.90 metadata, then the
+.B minor
+number as recorded in the superblock is used to create a name in
+.B /dev/md/
+so for example
+.BR /dev/md/3 .
+If the array uses version-1 metadata, then the
+.B name
+from the superblock is used to similarly create a name in
+.B /dev/md/
+(the name will have any 'host' prefix stripped first).
+
+This behaviour can be modified by the
+.I AUTO
+line in the
+.I mdadm.conf
+configuration file.  This line can indicate that specific metadata
+type should, or should not, be automatically assembled.  If an array
+is found which is not listed in
+.I mdadm.conf
+and has a metadata format that is denied by the
+.I AUTO
+line, then it will not be assembled.
+The
+.I AUTO
+line can also request that all arrays identified as being for this
+homehost should be assembled regardless of their metadata type.
+See
+.IR mdadm.conf (5)
+for further details.
+
+Note: Auto assembly cannot be used for assembling and activating some
+arrays which are undergoing reshape.  In particular as the
+.B backup\-file
+cannot be given, any reshape which requires a backup-file to continue
+cannot be started by auto assembly.  An array which is growing to more
+devices and has passed the critical section can be assembled using
+auto-assembly.
+
+.SH BUILD MODE
+
+.HP 12
+Usage:
+.B mdadm \-\-build
+.I md-device
+.BI \-\-chunk= X
+.BI \-\-level= Y
+.BI \-\-raid\-devices= Z
+.I devices
+
+.PP
+This usage is similar to
+.BR \-\-create .
+The difference is that it creates an array without a superblock.  With
+these arrays there is no difference between initially creating the array and
+subsequently assembling the array, except that hopefully there is useful
+data there in the second case.
+
+The level may raid0, linear, raid1, raid10, multipath, or faulty, or
+one of their synonyms.  All devices must be listed and the array will
+be started once complete.  It will often be appropriate to use
+.B \-\-assume\-clean
+with levels raid1 or raid10.
+
+.SH CREATE MODE
+
+.HP 12
+Usage:
+.B mdadm \-\-create
+.I md-device
+.BI \-\-chunk= X
+.BI \-\-level= Y
+.br
+.BI \-\-raid\-devices= Z
+.I devices
+
+.PP
+This usage will initialise a new md array, associate some devices with
+it, and activate the array.
+
+The named device will normally not exist when
+.I "mdadm \-\-create"
+is run, but will be created by
+.I udev
+once the array becomes active.
+
+As devices are added, they are checked to see if they contain RAID
+superblocks or filesystems.  They are also checked to see if the variance in
+device size exceeds 1%.
+
+If any discrepancy is found, the array will not automatically be run, though
+the presence of a
+.B \-\-run
+can override this caution.
+
+To create a "degraded" array in which some devices are missing, simply
+give the word "\fBmissing\fP"
+in place of a device name.  This will cause
+.I mdadm
+to leave the corresponding slot in the array empty.
+For a RAID4 or RAID5 array at most one slot can be
+"\fBmissing\fP"; for a RAID6 array at most two slots.
+For a RAID1 array, only one real device needs to be given.  All of the
+others can be
+"\fBmissing\fP".
+
+When creating a RAID5 array,
+.I mdadm
+will automatically create a degraded array with an extra spare drive.
+This is because building the spare into a degraded array is in general
+faster than resyncing the parity on a non-degraded, but not clean,
+array.  This feature can be overridden with the
+.B \-\-force
+option.
+
+When creating an array with version-1 metadata a name for the array is
+required.
+If this is not given with the
+.B \-\-name
+option,
+.I mdadm
+will choose a name based on the last component of the name of the
+device being created.  So if
+.B /dev/md3
+is being created, then the name
+.B 3
+will be chosen.
+If
+.B /dev/md/home
+is being created, then the name
+.B home
+will be used.
+
+When creating a partition based array, using
+.I mdadm
+with version-1.x metadata, the partition type should be set to
+.B 0xDA
+(non fs-data).  This type selection allows for greater precision since
+using any other [RAID auto-detect (0xFD) or a GNU/Linux partition (0x83)],
+might create problems in the event of array recovery through a live cdrom.
+
+A new array will normally get a randomly assigned 128bit UUID which is
+very likely to be unique.  If you have a specific need, you can choose
+a UUID for the array by giving the
+.B \-\-uuid=
+option.  Be warned that creating two arrays with the same UUID is a
+recipe for disaster.  Also, using
+.B \-\-uuid=
+when creating a v0.90 array will silently override any
+.B \-\-homehost=
+setting.
+.\"If the
+.\".B \-\-size
+.\"option is given, it is not necessary to list any component-devices in this command.
+.\"They can be added later, before a
+.\".B \-\-run.
+.\"If no
+.\".B \-\-size
+.\"is given, the apparent size of the smallest drive given is used.
+
+If the array type supports a write-intent bitmap, and if the devices
+in the array exceed 100G is size, an internal write-intent bitmap
+will automatically be added unless some other option is explicitly
+requested with the
+.B \-\-bitmap
+option.  In any case space for a bitmap will be reserved so that one
+can be added layer with
+.BR "\-\-grow \-\-bitmap=internal" .
+
+If the metadata type supports it (currently only 1.x metadata), space
+will be allocated to store a bad block list.  This allows a modest
+number of bad blocks to be recorded, allowing the drive to remain in
+service while only partially functional.
+
+When creating an array within a
+.B CONTAINER
+.I mdadm
+can be given either the list of devices to use, or simply the name of
+the container.  The former case gives control over which devices in
+the container will be used for the array.  The latter case allows
+.I mdadm
+to automatically choose which devices to use based on how much spare
+space is available.
+
+The General Management options that are valid with
+.B \-\-create
+are:
+.TP
+.B \-\-run
+insist on running the array even if some devices look like they might
+be in use.
+
+.TP
+.B \-\-readonly
+start the array readonly \(em not supported yet.
+
+.SH MANAGE MODE
+.HP 12
+Usage:
+.B mdadm
+.I device
+.I options... devices...
+.PP
+
+This usage will allow individual devices in an array to be failed,
+removed or added.  It is possible to perform multiple operations with
+on command.  For example:
+.br
+.B "  mdadm /dev/md0 \-f /dev/hda1 \-r /dev/hda1 \-a /dev/hda1"
+.br
+will firstly mark
+.B /dev/hda1
+as faulty in
+.B /dev/md0
+and will then remove it from the array and finally add it back
+in as a spare.  However only one md array can be affected by a single
+command.
+
+When a device is added to an active array, mdadm checks to see if it
+has metadata on it which suggests that it was recently a member of the
+array.  If it does, it tries to "re\-add" the device.  If there have
+been no changes since the device was removed, or if the array has a
+write-intent bitmap which has recorded whatever changes there were,
+then the device will immediately become a full member of the array and
+those differences recorded in the bitmap will be resolved.
+
+.SH MISC MODE
+.HP 12
+Usage:
+.B mdadm
+.I options ...
+.I devices ...
+.PP
+
+MISC mode includes a number of distinct operations that
+operate on distinct devices.  The operations are:
+.TP
+.B \-\-query
+The device is examined to see if it is
+(1) an active md array, or
+(2) a component of an md array.
+The information discovered is reported.
+
+.TP
+.B \-\-detail
+The device should be an active md device.
+.B mdadm
+will display a detailed description of the array.
+.B \-\-brief
+or
+.B \-\-scan
+will cause the output to be less detailed and the format to be
+suitable for inclusion in
+.BR mdadm.conf .
+The exit status of
+.I mdadm
+will normally be 0 unless
+.I mdadm
+failed to get useful information about the device(s); however, if the
+.B \-\-test
+option is given, then the exit status will be:
+.RS
+.TP
+0
+The array is functioning normally.
+.TP
+1
+The array has at least one failed device.
+.TP
+2
+The array has multiple failed devices such that it is unusable.
+.TP
+4
+There was an error while trying to get information about the device.
+.RE
+
+.TP
+.B \-\-detail\-platform
+Print detail of the platform's RAID capabilities (firmware / hardware
+topology).  If the metadata is specified with
+.B \-e
+or
+.B \-\-metadata=
+then the return status will be:
+.RS
+.TP
+0
+metadata successfully enumerated its platform components on this system
+.TP
+1
+metadata is platform independent
+.TP
+2
+metadata failed to find its platform components on this system
+.RE
+
+.TP
+.B \-\-update\-subarray=
+If the device is a container and the argument to \-\-update\-subarray
+specifies a subarray in the container, then attempt to update the given
+superblock field in the subarray.  Similar to updating an array in
+"assemble" mode, the field to update is selected by
+.B \-U
+or
+.B \-\-update=
+option.  Currently only
+.B name
+is supported.
+
+The
+.B name
+option updates the subarray name in the metadata, it may not affect the
+device node name or the device node symlink until the subarray is
+re\-assembled.  If updating
+.B name
+would change the UUID of an active subarray this operation is blocked,
+and the command will end in an error.
+
+.TP
+.B \-\-examine
+The device should be a component of an md array.
+.I mdadm
+will read the md superblock of the device and display the contents.
+If
+.B \-\-brief
+or
+.B \-\-scan
+is given, then multiple devices that are components of the one array
+are grouped together and reported in a single entry suitable
+for inclusion in
+.BR mdadm.conf .
+
+Having
+.B \-\-scan
+without listing any devices will cause all devices listed in the
+config file to be examined.
+
+.TP
+.BI \-\-dump= directory
+If the device contains RAID metadata, a file will be created in the
+.I directory
+and the metadata will be written to it.  The file will be the same
+size as the device and have the metadata written in the file at the
+same locate that it exists in the device.  However the file will be "sparse" so
+that only those blocks containing metadata will be allocated. The
+total space used will be small.
+
+The file name used in the
+.I directory
+will be the base name of the device.   Further if any links appear in
+.I /dev/disk/by-id
+which point to the device, then hard links to the file will be created
+in
+.I directory
+based on these
+.I by-id
+names.
+
+Multiple devices can be listed and their metadata will all be stored
+in the one directory.
+
+.TP
+.BI \-\-restore= directory
+This is the reverse of
+.BR \-\-dump .
+.I mdadm
+will locate a file in the directory that has a name appropriate for
+the given device and will restore metadata from it.  Names that match
+.I /dev/disk/by-id
+names are preferred, however if two of those refer to different files,
+.I mdadm
+will not choose between them but will abort the operation.
+
+If a file name is given instead of a
+.I directory
+then
+.I mdadm
+will restore from that file to a single device, always provided the
+size of the file matches that of the device, and the file contains
+valid metadata.
+.TP
+.B \-\-stop
+The devices should be active md arrays which will be deactivated, as
+long as they are not currently in use.
+
+.TP
+.B \-\-run
+This will fully activate a partially assembled md array.
+
+.TP
+.B \-\-readonly
+This will mark an active array as read-only, providing that it is
+not currently being used.
+
+.TP
+.B \-\-readwrite
+This will change a
+.B readonly
+array back to being read/write.
+
+.TP
+.B \-\-scan
+For all operations except
+.BR \-\-examine ,
+.B \-\-scan
+will cause the operation to be applied to all arrays listed in
+.BR /proc/mdstat .
+For
+.BR \-\-examine,
+.B \-\-scan
+causes all devices listed in the config file to be examined.
+
+.TP
+.BR \-b ", " \-\-brief
+Be less verbose.  This is used with
+.B \-\-detail
+and
+.BR \-\-examine .
+Using
+.B \-\-brief
+with
+.B \-\-verbose
+gives an intermediate level of verbosity.
+
+.SH MONITOR MODE
+
+.HP 12
+Usage:
+.B mdadm \-\-monitor
+.I options... devices...
+
+.PP
+This usage causes
+.I mdadm
+to periodically poll a number of md arrays and to report on any events
+noticed.
+.I mdadm
+will never exit once it decides that there are arrays to be checked,
+so it should normally be run in the background.
+
+As well as reporting events,
+.I mdadm
+may move a spare drive from one array to another if they are in the
+same
+.B spare-group
+or
+.B domain
+and if the destination array has a failed drive but no spares.
+
+If any devices are listed on the command line,
+.I mdadm
+will only monitor those devices.  Otherwise all arrays listed in the
+configuration file will be monitored.  Further, if
+.B \-\-scan
+is given, then any other md devices that appear in
+.B /proc/mdstat
+will also be monitored.
+
+The result of monitoring the arrays is the generation of events.
+These events are passed to a separate program (if specified) and may
+be mailed to a given E-mail address.
+
+When passing events to a program, the program is run once for each event,
+and is given 2 or 3 command-line arguments: the first is the
+name of the event (see below), the second is the name of the
+md device which is affected, and the third is the name of a related
+device if relevant (such as a component device that has failed).
+
+If
+.B \-\-scan
+is given, then a program or an E-mail address must be specified on the
+command line or in the config file.  If neither are available, then
+.I mdadm
+will not monitor anything.
+Without
+.B \-\-scan,
+.I mdadm
+will continue monitoring as long as something was found to monitor.  If
+no program or email is given, then each event is reported to
+.BR stdout .
+
+The different events are:
+
+.RS 4
+.TP
+.B DeviceDisappeared
+An md array which previously was configured appears to no longer be
+configured. (syslog priority: Critical)
+
+If
+.I mdadm
+was told to monitor an array which is RAID0 or Linear, then it will
+report
+.B DeviceDisappeared
+with the extra information
+.BR Wrong-Level .
+This is because RAID0 and Linear do not support the device-failed,
+hot-spare and resync operations which are monitored.
+
+.TP
+.B RebuildStarted
+An md array started reconstruction (e.g. recovery, resync, reshape,
+check, repair). (syslog priority: Warning)
+
+.TP
+.BI Rebuild NN
+Where
+.I NN
+is a two-digit number (ie. 05, 48). This indicates that rebuild
+has passed that many percent of the total. The events are generated
+with fixed increment since 0. Increment size may be specified with
+a commandline option (default is 20). (syslog priority: Warning)
+
+.TP
+.B RebuildFinished
+An md array that was rebuilding, isn't any more, either because it
+finished normally or was aborted. (syslog priority: Warning)
+
+.TP
+.B Fail
+An active component device of an array has been marked as
+faulty. (syslog priority: Critical)
+
+.TP
+.B FailSpare
+A spare component device which was being rebuilt to replace a faulty
+device has failed. (syslog priority: Critical)
+
+.TP
+.B SpareActive
+A spare component device which was being rebuilt to replace a faulty
+device has been successfully rebuilt and has been made active.
+(syslog priority: Info)
+
+.TP
+.B NewArray
+A new md array has been detected in the
+.B /proc/mdstat
+file.  (syslog priority: Info)
+
+.TP
+.B DegradedArray
+A newly noticed array appears to be degraded.  This message is not
+generated when
+.I mdadm
+notices a drive failure which causes degradation, but only when
+.I mdadm
+notices that an array is degraded when it first sees the array.
+(syslog priority: Critical)
+
+.TP
+.B MoveSpare
+A spare drive has been moved from one array in a
+.B spare-group
+or
+.B domain
+to another to allow a failed drive to be replaced.
+(syslog priority: Info)
+
+.TP
+.B SparesMissing
+If
+.I mdadm
+has been told, via the config file, that an array should have a certain
+number of spare devices, and
+.I mdadm
+detects that it has fewer than this number when it first sees the
+array, it will report a
+.B SparesMissing
+message.
+(syslog priority: Warning)
+
+.TP
+.B TestMessage
+An array was found at startup, and the
+.B \-\-test
+flag was given.
+(syslog priority: Info)
+.RE
+
+Only
+.B Fail,
+.B FailSpare,
+.B DegradedArray,
+.B SparesMissing
+and
+.B TestMessage
+cause Email to be sent.  All events cause the program to be run.
+The program is run with two or three arguments: the event
+name, the array device and possibly a second device.
+
+Each event has an associated array device (e.g.
+.BR /dev/md1 )
+and possibly a second device.  For
+.BR Fail ,
+.BR FailSpare ,
+and
+.B SpareActive
+the second device is the relevant component device.
+For
+.B MoveSpare
+the second device is the array that the spare was moved from.
+
+For
+.I mdadm
+to move spares from one array to another, the different arrays need to
+be labeled with the same
+.B spare-group
+or the spares must be allowed to migrate through matching POLICY domains
+in the configuration file.  The
+.B spare-group
+name can be any string; it is only necessary that different spare
+groups use different names.
+
+When
+.I mdadm
+detects that an array in a spare group has fewer active
+devices than necessary for the complete array, and has no spare
+devices, it will look for another array in the same spare group that
+has a full complement of working drive and a spare.  It will then
+attempt to remove the spare from the second drive and add it to the
+first.
+If the removal succeeds but the adding fails, then it is added back to
+the original array.
+
+If the spare group for a degraded array is not defined,
+.I mdadm
+will look at the rules of spare migration specified by POLICY lines in
+.B mdadm.conf
+and then follow similar steps as above if a matching spare is found.
+
+.SH GROW MODE
+The GROW mode is used for changing the size or shape of an active
+array.
+For this to work, the kernel must support the necessary change.
+Various types of growth are being added during 2.6 development.
+
+Currently the supported changes include
+.IP \(bu 4
+change the "size" attribute for RAID1, RAID4, RAID5 and RAID6.
+.IP \(bu 4
+increase or decrease the "raid\-devices" attribute of RAID0, RAID1, RAID4,
+RAID5, and RAID6.
+.IP \(bu 4
+change the chunk-size and layout of RAID0, RAID4, RAID5, RAID6 and RAID10.
+.IP \(bu 4
+convert between RAID1 and RAID5, between RAID5 and RAID6, between
+RAID0, RAID4, and RAID5, and between RAID0 and RAID10 (in the near-2 mode).
+.IP \(bu 4
+add a write-intent bitmap to any array which supports these bitmaps, or
+remove a write-intent bitmap from such an array.
+.PP
+
+Using GROW on containers is currently supported only for Intel's IMSM
+container format.  The number of devices in a container can be
+increased - which affects all arrays in the container - or an array
+in a container can be converted between levels where those levels are
+supported by the container, and the conversion is on of those listed
+above.  Resizing arrays in an IMSM container with
+.B "--grow --size"
+is not yet supported.
+
+Grow functionality (e.g. expand a number of raid devices) for Intel's
+IMSM container format has an experimental status. It is guarded by the
+.B MDADM_EXPERIMENTAL
+environment variable which must be set to '1' for a GROW command to
+succeed.
+This is for the following reasons:
+
+.IP 1.
+Intel's native IMSM check-pointing is not fully tested yet.
+This can causes IMSM incompatibility during the grow process: an array
+which is growing cannot roam between Microsoft Windows(R) and Linux
+systems.
+
+.IP 2.
+Interrupting a grow operation is not recommended, because it
+has not been fully tested for Intel's IMSM container format yet.
+
+.PP
+Note: Intel's native checkpointing doesn't use
+.B --backup-file
+option and it is transparent for assembly feature.
+
+.SS SIZE CHANGES
+Normally when an array is built the "size" is taken from the smallest
+of the drives.  If all the small drives in an arrays are, one at a
+time, removed and replaced with larger drives, then you could have an
+array of large drives with only a small amount used.  In this
+situation, changing the "size" with "GROW" mode will allow the extra
+space to start being used.  If the size is increased in this way, a
+"resync" process will start to make sure the new parts of the array
+are synchronised.
+
+Note that when an array changes size, any filesystem that may be
+stored in the array will not automatically grow or shrink to use or
+vacate the space.  The
+filesystem will need to be explicitly told to use the extra space
+after growing, or to reduce its size
+.B prior
+to shrinking the array.
+
+Also the size of an array cannot be changed while it has an active
+bitmap.  If an array has a bitmap, it must be removed before the size
+can be changed. Once the change is complete a new bitmap can be created.
+
+.SS RAID\-DEVICES CHANGES
+
+A RAID1 array can work with any number of devices from 1 upwards
+(though 1 is not very useful).  There may be times which you want to
+increase or decrease the number of active devices.  Note that this is
+different to hot-add or hot-remove which changes the number of
+inactive devices.
+
+When reducing the number of devices in a RAID1 array, the slots which
+are to be removed from the array must already be vacant.  That is, the
+devices which were in those slots must be failed and removed.
+
+When the number of devices is increased, any hot spares that are
+present will be activated immediately.
+
+Changing the number of active devices in a RAID5 or RAID6 is much more
+effort.  Every block in the array will need to be read and written
+back to a new location.  From 2.6.17, the Linux Kernel is able to
+increase the number of devices in a RAID5 safely, including restarting
+an interrupted "reshape".  From 2.6.31, the Linux Kernel is able to
+increase or decrease the number of devices in a RAID5 or RAID6.
+
+From 2.6.35, the Linux Kernel is able to convert a RAID0 in to a RAID4
+or RAID5.
+.I mdadm
+uses this functionality and the ability to add
+devices to a RAID4 to allow devices to be added to a RAID0.  When
+requested to do this,
+.I mdadm
+will convert the RAID0 to a RAID4, add the necessary disks and make
+the reshape happen, and then convert the RAID4 back to RAID0.
+
+When decreasing the number of devices, the size of the array will also
+decrease.  If there was data in the array, it could get destroyed and
+this is not reversible, so you should firstly shrink the filesystem on
+the array to fit within the new size.  To help prevent accidents,
+.I mdadm
+requires that the size of the array be decreased first with
+.BR "mdadm --grow --array-size" .
+This is a reversible change which simply makes the end of the array
+inaccessible.  The integrity of any data can then be checked before
+the non-reversible reduction in the number of devices is request.
+
+When relocating the first few stripes on a RAID5 or RAID6, it is not
+possible to keep the data on disk completely consistent and
+crash-proof.  To provide the required safety, mdadm disables writes to
+the array while this "critical section" is reshaped, and takes a
+backup of the data that is in that section.  For grows, this backup may be
+stored in any spare devices that the array has, however it can also be
+stored in a separate file specified with the
+.B \-\-backup\-file
+option, and is required to be specified for shrinks, RAID level
+changes and layout changes.  If this option is used, and the system
+does crash during the critical period, the same file must be passed to
+.B \-\-assemble
+to restore the backup and reassemble the array.  When shrinking rather
+than growing the array, the reshape is done from the end towards the
+beginning, so the "critical section" is at the end of the reshape.
+
+.SS LEVEL CHANGES
+
+Changing the RAID level of any array happens instantaneously.  However
+in the RAID5 to RAID6 case this requires a non-standard layout of the
+RAID6 data, and in the RAID6 to RAID5 case that non-standard layout is
+required before the change can be accomplished.  So while the level
+change is instant, the accompanying layout change can take quite a
+long time.  A
+.B \-\-backup\-file
+is required.  If the array is not simultaneously being grown or
+shrunk, so that the array size will remain the same - for example,
+reshaping a 3-drive RAID5 into a 4-drive RAID6 - the backup file will
+be used not just for a "cricital section" but throughout the reshape
+operation, as described below under LAYOUT CHANGES.
+
+.SS CHUNK-SIZE AND LAYOUT CHANGES
+
+Changing the chunk-size of layout without also changing the number of
+devices as the same time will involve re-writing all blocks in-place.
+To ensure against data loss in the case of a crash, a
+.B --backup-file
+must be provided for these changes.  Small sections of the array will
+be copied to the backup file while they are being rearranged.  This
+means that all the data is copied twice, once to the backup and once
+to the new layout on the array, so this type of reshape will go very
+slowly.
+
+If the reshape is interrupted for any reason, this backup file must be
+made available to
+.B "mdadm --assemble"
+so the array can be reassembled.  Consequently the file cannot be
+stored on the device being reshaped.
+
+
+.SS BITMAP CHANGES
+
+A write-intent bitmap can be added to, or removed from, an active
+array.  Either internal bitmaps, or bitmaps stored in a separate file,
+can be added.  Note that if you add a bitmap stored in a file which is
+in a filesystem that is on the RAID array being affected, the system
+will deadlock.  The bitmap must be on a separate filesystem.
+
+.SH INCREMENTAL MODE
+
+.HP 12
+Usage:
+.B mdadm \-\-incremental
+.RB [ \-\-run ]
+.RB [ \-\-quiet ]
+.I component-device
+.RI [ optional-aliases-for-device ]
+.HP 12
+Usage:
+.B mdadm \-\-incremental \-\-fail
+.I component-device
+.HP 12
+Usage:
+.B mdadm \-\-incremental \-\-rebuild\-map
+.HP 12
+Usage:
+.B mdadm \-\-incremental \-\-run \-\-scan
+
+.PP
+This mode is designed to be used in conjunction with a device
+discovery system.  As devices are found in a system, they can be
+passed to
+.B "mdadm \-\-incremental"
+to be conditionally added to an appropriate array.
+
+Conversely, it can also be used with the
+.B \-\-fail
+flag to do just the opposite and find whatever array a particular device
+is part of and remove the device from that array.
+
+If the device passed is a
+.B CONTAINER
+device created by a previous call to
+.IR mdadm ,
+then rather than trying to add that device to an array, all the arrays
+described by the metadata of the container will be started.
+
+.I mdadm
+performs a number of tests to determine if the device is part of an
+array, and which array it should be part of.  If an appropriate array
+is found, or can be created,
+.I mdadm
+adds the device to the array and conditionally starts the array.
+
+Note that
+.I mdadm
+will normally only add devices to an array which were previously working
+(active or spare) parts of that array.  The support for automatic
+inclusion of a new drive as a spare in some array requires
+a configuration through POLICY in config file.
+
+The tests that
+.I mdadm
+makes are as follow:
+.IP +
+Is the device permitted by
+.BR mdadm.conf ?
+That is, is it listed in a
+.B DEVICES
+line in that file.  If
+.B DEVICES
+is absent then the default it to allow any device.  Similarly if
+.B DEVICES
+contains the special word
+.B partitions
+then any device is allowed.  Otherwise the device name given to
+.IR mdadm ,
+or one of the aliases given, or an alias found in the filesystem,
+must match one of the names or patterns in a
+.B DEVICES
+line.
+
+This is the only context where the aliases are used.  They are
+usually provided by a
+.I udev
+rules mentioning
+.BR ${DEVLINKS} .
+
+.IP +
+Does the device have a valid md superblock?  If a specific metadata
+version is requested with
+.B \-\-metadata
+or
+.B \-e
+then only that style of metadata is accepted, otherwise
+.I mdadm
+finds any known version of metadata.  If no
+.I md
+metadata is found, the device may be still added to an array
+as a spare if POLICY allows.
+
+.ig
+.IP +
+Does the metadata match an expected array?
+The metadata can match in two ways.  Either there is an array listed
+in
+.B mdadm.conf
+which identifies the array (either by UUID, by name, by device list,
+or by minor-number), or the array was created with a
+.B homehost
+specified and that
+.B homehost
+matches the one in
+.B mdadm.conf
+or on the command line.
+If
+.I mdadm
+is not able to positively identify the array as belonging to the
+current host, the device will be rejected.
+..
+
+.PP
+.I mdadm
+keeps a list of arrays that it has partially assembled in
+.BR {MAP_PATH} .
+If no array exists which matches
+the metadata on the new device,
+.I mdadm
+must choose a device name and unit number.  It does this based on any
+name given in
+.B mdadm.conf
+or any name information stored in the metadata.  If this name
+suggests a unit number, that number will be used, otherwise a free
+unit number will be chosen.  Normally
+.I mdadm
+will prefer to create a partitionable array, however if the
+.B CREATE
+line in
+.B mdadm.conf
+suggests that a non-partitionable array is preferred, that will be
+honoured.
+
+If the array is not found in the config file and its metadata does not
+identify it as belonging to the "homehost", then
+.I mdadm
+will choose a name for the array which is certain not to conflict with
+any array which does belong to this host.  It does this be adding an
+underscore and a small number to the name preferred by the metadata.
+
+Once an appropriate array is found or created and the device is added,
+.I mdadm
+must decide if the array is ready to be started.  It will
+normally compare the number of available (non-spare) devices to the
+number of devices that the metadata suggests need to be active.  If
+there are at least that many, the array will be started.  This means
+that if any devices are missing the array will not be restarted.
+
+As an alternative,
+.B \-\-run
+may be passed to
+.I mdadm
+in which case the array will be run as soon as there are enough
+devices present for the data to be accessible.  For a RAID1, that
+means one device will start the array.  For a clean RAID5, the array
+will be started as soon as all but one drive is present.
+
+Note that neither of these approaches is really ideal.  If it can
+be known that all device discovery has completed, then
+.br
+.B "   mdadm \-IRs"
+.br
+can be run which will try to start all arrays that are being
+incrementally assembled.  They are started in "read-auto" mode in
+which they are read-only until the first write request.  This means
+that no metadata updates are made and no attempt at resync or recovery
+happens.  Further devices that are found before the first write can
+still be added safely.
+
+.SH ENVIRONMENT
+This section describes environment variables that affect how mdadm
+operates.
+
+.TP
+.B MDADM_NO_MDMON
+Setting this value to 1 will prevent mdadm from automatically launching
+mdmon.  This variable is intended primarily for debugging mdadm/mdmon.
+
+.TP
+.B MDADM_NO_UDEV
+Normally,
+.I mdadm
+does not create any device nodes in /dev, but leaves that task to
+.IR udev .
+If
+.I udev
+appears not to be configured, or if this environment variable is set
+to '1', the
+.I mdadm
+will create and devices that are needed.
+
+.TP
+.B MDADM_NO_SYSTEMCTL
+If
+.I mdadm
+detects that
+.I systemd
+is in use it will normally request
+.I systemd
+to start various background tasks (particularly
+.IR mdmon )
+rather than forking and running them in the background.  This can be
+suppressed by setting
+.BR MDADM_NO_SYSTEMCTL=1 .
+
+.TP
+.B IMSM_NO_PLATFORM
+A key value of IMSM metadata is that it allows interoperability with
+boot ROMs on Intel platforms, and with other major operating systems.
+Consequently,
+.I mdadm
+will only allow an IMSM array to be created or modified if detects
+that it is running on an Intel platform which supports IMSM, and
+supports the particular configuration of IMSM that is being requested
+(some functionality requires newer OROM support).
+
+These checks can be suppressed by setting IMSM_NO_PLATFORM=1 in the
+environment.  This can be useful for testing or for disaster
+recovery.  You should be aware that interoperability may be
+compromised by setting this value.
+
+.TP
+.B MDADM_GROW_ALLOW_OLD
+If an array is stopped while it is performing a reshape and that
+reshape was making use of a backup file, then when the array is
+re-assembled
+.I mdadm
+will sometimes complain that the backup file is too old.  If this
+happens and you are certain it is the right backup file, you can
+over-ride this check by setting
+.B MDADM_GROW_ALLOW_OLD=1
+in the environment.
+
+.TP
+.B MDADM_CONF_AUTO
+Any string given in this variable is added to the start of the
+.B AUTO
+line in the config file, or treated as the whole
+.B AUTO
+line if none is given.  It can be used to disable certain metadata
+types when
+.I mdadm
+is called from a boot script.  For example
+.br
+.B "    export MDADM_CONF_AUTO='-ddf -imsm'
+.br
+will make sure that
+.I mdadm
+does not automatically assemble any DDF or
+IMSM arrays that are found.  This can be useful on systems configured
+to manage such arrays with
+.BR dmraid .
+
+
+.SH EXAMPLES
+
+.B "  mdadm \-\-query /dev/name-of-device"
+.br
+This will find out if a given device is a RAID array, or is part of
+one, and will provide brief information about the device.
+
+.B "  mdadm \-\-assemble \-\-scan"
+.br
+This will assemble and start all arrays listed in the standard config
+file.  This command will typically go in a system startup file.
+
+.B "  mdadm \-\-stop \-\-scan"
+.br
+This will shut down all arrays that can be shut down (i.e. are not
+currently in use).  This will typically go in a system shutdown script.
+
+.B "  mdadm \-\-follow \-\-scan \-\-delay=120"
+.br
+If (and only if) there is an Email address or program given in the
+standard config file, then
+monitor the status of all arrays listed in that file by
+polling them ever 2 minutes.
+
+.B "  mdadm \-\-create /dev/md0 \-\-level=1 \-\-raid\-devices=2 /dev/hd[ac]1"
+.br
+Create /dev/md0 as a RAID1 array consisting of /dev/hda1 and /dev/hdc1.
+
+.br
+.B "  echo 'DEVICE /dev/hd*[0\-9] /dev/sd*[0\-9]' > mdadm.conf"
+.br
+.B "  mdadm \-\-detail \-\-scan >> mdadm.conf"
+.br
+This will create a prototype config file that describes currently
+active arrays that are known to be made from partitions of IDE or SCSI drives.
+This file should be reviewed before being used as it may
+contain unwanted detail.
+
+.B "  echo 'DEVICE /dev/hd[a\-z] /dev/sd*[a\-z]' > mdadm.conf"
+.br
+.B "  mdadm \-\-examine \-\-scan \-\-config=mdadm.conf >> mdadm.conf"
+.br
+This will find arrays which could be assembled from existing IDE and
+SCSI whole drives (not partitions), and store the information in the
+format of a config file.
+This file is very likely to contain unwanted detail, particularly
+the
+.B devices=
+entries.  It should be reviewed and edited before being used as an
+actual config file.
+
+.B "  mdadm \-\-examine \-\-brief \-\-scan \-\-config=partitions"
+.br
+.B "  mdadm \-Ebsc partitions"
+.br
+Create a list of devices by reading
+.BR /proc/partitions ,
+scan these for RAID superblocks, and printout a brief listing of all
+that were found.
+
+.B "  mdadm \-Ac partitions \-m 0 /dev/md0"
+.br
+Scan all partitions and devices listed in
+.BR /proc/partitions
+and assemble
+.B /dev/md0
+out of all such devices with a RAID superblock with a minor number of 0.
+
+.B "  mdadm \-\-monitor \-\-scan \-\-daemonise > /run/mdadm/mon.pid"
+.br
+If config file contains a mail address or alert program, run mdadm in
+the background in monitor mode monitoring all md devices.  Also write
+pid of mdadm daemon to
+.BR /run/mdadm/mon.pid .
+
+.B "  mdadm \-Iq /dev/somedevice"
+.br
+Try to incorporate newly discovered device into some array as
+appropriate.
+
+.B "  mdadm \-\-incremental \-\-rebuild\-map \-\-run \-\-scan"
+.br
+Rebuild the array map from any current arrays, and then start any that
+can be started.
+
+.B "  mdadm /dev/md4 --fail detached --remove detached"
+.br
+Any devices which are components of /dev/md4 will be marked as faulty
+and then remove from the array.
+
+.B "  mdadm --grow /dev/md4 --level=6 --backup-file=/root/backup-md4"
+.br
+The array
+.B /dev/md4
+which is currently a RAID5 array will be converted to RAID6.  There
+should normally already be a spare drive attached to the array as a
+RAID6 needs one more drive than a matching RAID5.
+
+.B "  mdadm --create /dev/md/ddf --metadata=ddf --raid-disks 6 /dev/sd[a-f]"
+.br
+Create a DDF array over 6 devices.
+
+.B "  mdadm --create /dev/md/home -n3 -l5 -z 30000000 /dev/md/ddf"
+.br
+Create a RAID5 array over any 3 devices in the given DDF set.  Use
+only 30 gigabytes of each device.
+
+.B "  mdadm -A /dev/md/ddf1 /dev/sd[a-f]"
+.br
+Assemble a pre-exist ddf array.
+
+.B "  mdadm -I /dev/md/ddf1"
+.br
+Assemble all arrays contained in the ddf array, assigning names as
+appropriate.
+
+.B "  mdadm \-\-create \-\-help"
+.br
+Provide help about the Create mode.
+
+.B "  mdadm \-\-config \-\-help"
+.br
+Provide help about the format of the config file.
+
+.B "  mdadm \-\-help"
+.br
+Provide general help.
+
+.SH FILES
+
+.SS /proc/mdstat
+
+If you're using the
+.B /proc
+filesystem,
+.B /proc/mdstat
+lists all active md devices with information about them.
+.I mdadm
+uses this to find arrays when
+.B \-\-scan
+is given in Misc mode, and to monitor array reconstruction
+on Monitor mode.
+
+.SS /etc/mdadm.conf
+
+The config file lists which devices may be scanned to see if
+they contain MD super block, and gives identifying information
+(e.g. UUID) about known MD arrays.  See
+.BR mdadm.conf (5)
+for more details.
+
+.SS /etc/mdadm.conf.d
+
+A directory containing configuration files which are read in lexical
+order.
+
+.SS {MAP_PATH}
+When
+.B \-\-incremental
+mode is used, this file gets a list of arrays currently being created.
+
+.SH DEVICE NAMES
+
+.I mdadm
+understand two sorts of names for array devices.
+
+The first is the so-called 'standard' format name, which matches the
+names used by the kernel and which appear in
+.IR /proc/mdstat .
+
+The second sort can be freely chosen, but must reside in
+.IR /dev/md/ .
+When giving a device name to
+.I mdadm
+to create or assemble an array, either full path name such as
+.I /dev/md0
+or
+.I /dev/md/home
+can be given, or just the suffix of the second sort of name, such as
+.I home
+can be given.
+
+When
+.I mdadm
+chooses device names during auto-assembly or incremental assembly, it
+will sometimes add a small sequence number to the end of the name to
+avoid conflicted between multiple arrays that have the same name.  If
+.I mdadm
+can reasonably determine that the array really is meant for this host,
+either by a hostname in the metadata, or by the presence of the array
+in
+.BR mdadm.conf ,
+then it will leave off the suffix if possible.
+Also if the homehost is specified as
+.B <ignore>
+.I mdadm
+will only use a suffix if a different array of the same name already
+exists or is listed in the config file.
+
+The standard names for non-partitioned arrays (the only sort of md
+array available in 2.4 and earlier) are of the form
+.IP
+.RB /dev/md NN
+.PP
+where NN is a number.
+The standard names for partitionable arrays (as available from 2.6
+onwards) are of the form:
+.IP
+.RB /dev/md_d NN
+.PP
+Partition numbers should be indicated by adding "pMM" to these, thus "/dev/md/d1p2".
+.PP
+From kernel version 2.6.28 the "non-partitioned array" can actually
+be partitioned.  So the "md_d\fBNN\fP"
+names are no longer needed, and
+partitions such as "/dev/md\fBNN\fPp\fBXX\fP"
+are possible.
+.PP
+From kernel version 2.6.29 standard names can be non-numeric following
+the form:
+.IP
+.RB /dev/md_ XXX
+.PP
+where
+.B XXX
+is any string.  These names are supported by
+.I mdadm
+since version 3.3 provided they are enabled in
+.IR mdadm.conf .
+
+.SH NOTE
+.I mdadm
+was previously known as
+.IR mdctl .
+
+.SH SEE ALSO
+For further information on mdadm usage, MD and the various levels of
+RAID, see:
+.IP
+.B http://raid.wiki.kernel.org/
+.PP
+(based upon Jakob \(/Ostergaard's Software\-RAID.HOWTO)
+.PP
+The latest version of
+.I mdadm
+should always be available from
+.IP
+.B http://www.kernel.org/pub/linux/utils/raid/mdadm/
+.PP
+Related man pages:
+.PP
+.IR mdmon (8),
+.IR mdadm.conf (5),
+.IR md (4).

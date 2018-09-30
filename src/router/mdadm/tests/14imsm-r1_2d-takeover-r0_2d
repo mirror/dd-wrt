@@ -1,0 +1,22 @@
+. tests/env-imsm-template
+
+# RAID 1 volume, 2 disks change to RAID 0 volume, 2 disks
+#
+#NEGATIVE test
+
+num_disks=2
+device_list="$dev0 $dev1"
+
+# Before: RAID 1 volume, 2 disks, 64k chunk size
+vol0_level=1
+vol0_comp_size=$((5 * 1024))
+vol0_chunk=64
+vol0_num_comps=$((num_disks - 1))
+vol0_offset=0
+
+# After: RAID 0 volume, 2 disks, 64k chunk size
+vol0_new_level=0
+vol0_new_num_comps=$num_disks
+vol0_new_chunk=64
+
+. tests/imsm-grow-template 1

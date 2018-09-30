@@ -1,0 +1,40 @@
+
+# Make a raid1,  add a device, then remove it again.
+
+mdadm -CR $md0 -l1 -n2 -x1 $dev0 $dev1 $dev2
+check resync
+check wait
+check state UU
+
+mdadm --grow $md0 -n 3
+check recovery
+check wait
+check state UUU
+
+mdadm $md0 --fail $dev0
+check state _UU
+
+mdadm --grow $md0 -n 2
+check state UU
+
+mdadm -S $md0
+# same again for version-1
+
+
+mdadm -CR $md0 -l1 -n2 -e1.2 -x1 $dev0 $dev1 $dev2
+check resync
+check wait
+check state UU
+
+mdadm --grow $md0 -n 3
+check recovery
+check wait
+check state UUU
+
+mdadm $md0 --fail $dev0
+check state _UU
+
+mdadm --grow $md0 -n 2
+check state UU
+
+mdadm -S $md0

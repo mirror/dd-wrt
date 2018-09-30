@@ -1,0 +1,55 @@
+#!/bin/sh
+
+# make sure we are being run in the right directory...
+if [ -f mkinitramfs ]
+then :
+else
+  echo >&2 mkinitramfs must be run from the mdadm source directory.
+  exit 1
+fi
+if [ -f /bin/busybox ]
+then : good, it exists
+  case `file /bin/busybox` in
+   *statically* ) : good ;;
+   * ) echo >&2 mkinitramfs: /bin/busybox is not statically linked: cannot proceed.
+       exit 1
+  esac
+else
+  echo >&2 "mkinitramfs: /bin/busybox doesn't exist - please install it statically linked."
+    exit 1
+fi
+
+rm -rf initramfs
+mkdir initramfs
+mkdir initramfs/bin
+make mdadm.static
+cp mdadm.static initramfs/bin/mdadm
+cp /bin/busybox initramfs/bin/busybox
+ln initramfs/bin/busybox initramfs/bin/sh
+cat <<- END > initramfs/init
+	#!/bin/sh
+
+	echo 'Auto-assembling boot md array'
+	mkdir /proc
+	mount -t proc proc /proc
+	if [ -n "$rootuuid" ]
+	then arg=--uuid=$rootuuid
+	elif [ -n "$mdminor" ]
+	then arg=--super-minor=$mdminor
+	else arg=--super-minor=0
+	fi
+	echo "Using $arg"
+	mdadm -Acpartitions $arg --auto=part /dev/mda
+	cd /
+	mount /dev/mda1 /root ||  mount /dev/mda /root
+	umount /proc
+	cd /root
+	exec chroot . /sbin/init < /dev/console > /dev/console 2>&1
+END
+chmod +x initramfs/init
+
+(cd initramfs
+ find init bin | cpio -o -H newc | gzip --best
+) > init.cpio.gz
+rm -rf initramfs
+ls -l init.cpio.gz

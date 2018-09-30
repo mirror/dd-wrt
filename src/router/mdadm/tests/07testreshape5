@@ -1,0 +1,45 @@
+
+#
+# test the reshape code by using test_reshape and the
+# kernel md code to move data into and out of variously
+# shaped md arrays.
+set -x
+layouts=(la ra ls rs)
+for level in 5 6
+do
+for chunk in 4 8 16 32 64 128
+do
+  devs="$dev1"
+  for disks in 2 3 4 5 6
+  do
+    eval devs=\"$devs \$dev$disks\"
+    if [ " $level $disks" = " 6 3" -o " $level $disks" = " 6 2" ]
+    then continue
+    fi
+    for nlayout in 0 1 2 3
+    do
+      layout=${layouts[$nlayout]}
+
+      size=$[chunk*(disks-(level-4))*disks]
+
+      # test restore: make a raid5 from a file, then do a compare
+      dd if=/dev/urandom of=/tmp/RandFile bs=1024 count=$size
+      $dir/test_stripe restore /tmp/RandFile $disks $[chunk*1024] $level $nlayout 0 $[size*1024] $devs
+      mdadm -CR -e 1.0 $md0 -amd -l$level -n$disks --assume-clean -c $chunk -p $layout $devs
+      cmp -s -n $[size*1024] $md0 /tmp/RandFile || { echo cmp failed ; exit 2; }
+
+      # FIXME check parity
+
+      # test save
+      dd if=/dev/urandom of=$md0 bs=1024 count=$size
+      blockdev --flushbufs $md0 $devs; sync
+      > /tmp/NewRand
+      $dir/test_stripe save /tmp/NewRand $disks $[chunk*1024] $level $nlayout 0 $[size*1024] $devs
+      cmp -s -n $[size*1024] $md0 /tmp/NewRand || { echo cmp failed ; exit 2; }
+      mdadm -S $md0
+      udevadm settle
+    done
+  done
+done
+done
+exit 0

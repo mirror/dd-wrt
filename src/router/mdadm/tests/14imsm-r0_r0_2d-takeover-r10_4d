@@ -1,0 +1,30 @@
+. tests/env-imsm-template
+
+
+# Two RAID 0 volumes (2 disks) migrate to RAID 10 volume (4 disks)
+# NEGATIVE test
+
+num_disks=2
+device_list="$dev0 $dev1"
+
+# Before: RAID 0 volume in slot #0, 2 disks, 64k chunk size
+#         RAID 0 volume in slot #1, 2 disks, 64k chunk size
+vol0_level=0
+vol0_comp_size=$((5 * 1024))
+vol0_chunk=64
+vol0_num_comps=$num_disks
+vol0_offset=0
+
+# Before: RAID 0 volume,  disks, 64k chunk size
+vol1_level=0
+vol1_comp_size=$((5 * 1024))
+vol1_chunk=64
+vol1_num_comps=num_disks
+vol1_offset=$(( $vol0_comp_size + 2048 ))
+
+# After: RAID 10, 4 disks, 64k chunk size
+vol0_new_level=10
+vol0_new_num_comps=$((num_disks - 1))
+vol0_new_chunk=64
+
+. tests/imsm-grow-template 1 1
