@@ -68,7 +68,7 @@ void start_raid(void)
 				drives++;
 			}
 			if (!strcmp(type, "md")) {
-				dd_loginfo("creating MD Raid /dev/md%d", i);
+				dd_loginfo("raid", "creating MD Raid /dev/md%d", i);
 				sysprintf("mdadm --create /dev/md%d --level=%s --raid-devices=%d %s", i, level, drives, raid);
 				if (nvram_nmatch("ext4", "raidfs%d", i))
 					sysprintf("mkfs.ext4 /dev/md%d", i);
@@ -83,7 +83,7 @@ void start_raid(void)
 			}
 			if (!strcmp(type, "zfs")) {
 				char *poolname = nvram_nget("raidname%d", i);
-				dd_loginfo("creating ZFS Pool %s", poolname);
+				dd_loginfo("raid", "creating ZFS Pool %s", poolname);
 				if (!strcmp(level, "mirror"))
 					sysprintf("zpool create %s mirror %s", poolname, raid);
 				if (!strcmp(level, "raidz1"))
@@ -95,6 +95,9 @@ void start_raid(void)
 				if (!strcmp(level, "stripe"))
 					sysprintf("zpool create %s %s", poolname, raid);
 				sysprintf("zfs create %s/fs1");
+				sysprintf("mkdir -p /tmp/mnt/%s", poolname);
+				sysprintf("zfs set mountpoint=/tmp/mnt/%s %s/fs1", poolname, poolname);
+				sysprintf("zfs mount %s/fs1", poolname);
 
 			}
 			nvram_nset("1", "raiddone%d", i);
