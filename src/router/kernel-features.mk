@@ -224,4 +224,56 @@ define kernelfeatures
 		echo "CONFIG_VIRTIO_VSOCKETS=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_VIRTIO_VSOCKETS_COMMON=m" >> $(LINUXDIR)/.config; \
 	fi
+	if [ "$(CONFIG_RAID)" = "y" ]; then \
+		sed -i 's/\# CONFIG_MD is not set/CONFIG_MD=y/g' $(LINUXDIR)/.config; \
+		echo "CONFIG_MD=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_BLK_DEV_MD=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_MD_AUTODETECT=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_MD_LINEAR=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_MD_RAID0=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_MD_RAID1=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_MD_RAID10=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_MD_RAID456=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_MD_MULTIPATH=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_MD_FAULTY=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_MD_CLUSTER=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_BCACHE=m" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_BCACHE_DEBUG is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_BCACHE_CLOSURES_DEBUG is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_BLK_DEV_DM_BUILTIN=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_BLK_DEV_DM=m" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DM_MQ_DEFAULT is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DM_DEBUG is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DM_DEBUG_BLOCK_STACK_TRACING is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DM_BUFIO=m" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DM_DEBUG_BLOCK_MANAGER_LOCKING is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DM_BIO_PRISON=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DM_PERSISTENT_DATA=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DM_CRYPT=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DM_SNAPSHOT=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DM_THIN_PROVISIONING=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DM_CACHE=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DM_CACHE_CLEANER=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DM_CACHE_SMQ=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DM_ERA=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DM_MIRROR=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DM_LOG_USERSPACE=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DM_RAID=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DM_ZERO=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DM_MULTIPATH=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DM_MULTIPATH_QL=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DM_MULTIPATH_ST=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DM_DELAY=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DM_UEVENT=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DM_FLAKEY=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DM_VERITY=m" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_DM_VERITY_FEC is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DM_SWITCH=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DM_LOG_WRITES=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DM_INTEGRITY=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DM_ZONED=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_ASYNC_RAID6_TEST=m" >> $(LINUXDIR)/.config; \
+	else \
+		sed -i 's/\CONFIG_MD=y/# CONFIG_MD is not set/g' $(LINUXDIR)/.config; \
+	fi
 endef
