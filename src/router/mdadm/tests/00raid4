@@ -1,0 +1,16 @@
+
+# create a simple raid4 set
+
+mdadm -CfR $md0 -l 4 -n3 $dev0 $dev1 $dev2
+check resync ; check raid[45]
+testdev $md0 2 $mdsize1 512
+mdadm -S $md0
+
+# now with version-1 superblock
+mdadm -CR $md0 -e1 --level=raid4 -n4 $dev0 $dev1 $dev2 $dev3
+check recovery; check raid[45]
+testdev $md0 3 $mdsize1 512
+mdadm -S $md0
+
+
+exit 0

@@ -1,0 +1,128 @@
+
+# create a v-1 raid5 array and assemble in various ways
+
+mdadm -CR -e1 --name one $md1 -l5 -n3 -x2 $dev0 $dev1 $dev2 $dev3 $dev4
+tst="check raid5 ;testdev $md1 2 $mdsize1 512 ; mdadm -S $md1"
+uuid=`mdadm -Db $md1 | sed 's/.*UUID=//'`
+check wait
+
+eval $tst
+
+mdadm -A $md1 $dev0 $dev1 $dev2
+mdadm $md1 --add $dev3 $dev4
+check spares 2
+eval $tst
+
+mdadm -A $md1 -u $uuid $devlist
+check spares 2
+eval $tst
+
+mdadm -A $md1 --name one $devlist
+check spares 2
+eval $tst
+
+
+conf=$targetdir/mdadm.conf
+{
+  echo DEVICE $devlist
+  echo array $md1 UUID=$uuid
+} > $conf
+
+mdadm -As -c $conf $md1
+eval $tst
+
+{
+  echo DEVICE $devlist
+  echo array $md1 name=one
+} > $conf
+
+mdadm -As -c $conf
+eval $tst
+
+{
+  echo DEVICE $devlist
+  echo array $md1 devices=$dev0,$dev1,$dev2,$dev3,$dev4
+} > $conf
+
+mdadm -As -c $conf
+
+echo "DEVICE $devlist" > $conf
+mdadm -Db $md1 >> $conf
+eval $tst
+mdadm --assemble --scan --config=$conf $md1
+eval $tst
+echo PING >&2
+
+echo "  metadata=1.0 devices=$dev0,$dev1,$dev2,$dev3,$dev4" >> $conf
+mdadm --assemble --scan --config=$conf $md1
+eval $tst
+
+### Now with a missing device
+# We don't want the recovery to complete while we are
+# messing about here.
+echo 100 > /proc/sys/dev/raid/speed_limit_max
+echo 100 > /proc/sys/dev/raid/speed_limit_min
+
+mdadm -AR $md1 $dev0 $dev2 $dev3 $dev4 #
+check state U_U
+check spares 1
+eval $tst
+
+mdadm -A $md1 -u $uuid $devlist
+check state U_U
+eval $tst
+
+mdadm -A $md1 --name=one $devlist
+check state U_U
+check spares 1
+eval $tst
+
+
+conf=$targetdir/mdadm.conf
+{
+  echo DEVICE $devlist
+  echo array $md1 UUID=$uuid
+} > $conf
+
+mdadm -As -c $conf $md1
+check state U_U
+eval $tst
+
+{
+  echo DEVICE $devlist
+  echo array $md1 name=one
+} > $conf
+
+mdadm -As -c $conf
+check state U_U
+eval $tst
+
+{
+  echo DEVICE $devlist
+  echo array $md1 devices=$dev0,$dev1,$dev2
+} > $conf
+
+mdadm -As -c $conf
+
+echo "DEVICE $devlist" > $conf
+mdadm -Db $md1 >> $conf
+check state U_U
+eval $tst
+
+mdadm --assemble --scan --config=$conf $md1
+check state U_U
+eval $tst
+
+echo "  metadata=1.0 devices=$dev0,$dev1,$dev2" >> $conf
+mdadm --assemble --scan --config=$conf $md1
+check state U_U
+eval $tst
+
+# And now assemble with -I
+mdadm -Ss
+mdadm -I -c $conf $dev0
+mdadm -I -c $conf $dev1
+mdadm -I -c $conf $dev2
+eval $tst
+echo 2000 > /proc/sys/dev/raid/speed_limit_max
+echo 1000 > /proc/sys/dev/raid/speed_limit_min

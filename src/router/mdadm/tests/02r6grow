@@ -1,0 +1,36 @@
+
+
+# create a small raid6 array, make it larger.  Then make it smaller
+
+mdadm -CR $md0 -e 0.90 --level raid6 --chunk=64 --raid-disks 4 --size $[size/2] $dev1 $dev2 $dev3 $dev4
+check wait
+check state UUUU
+testdev $md0 2 $[size/2] 32
+
+mdadm --grow $md0 --size max
+check resync
+check wait
+testdev $md0 2 $mdsize0 32
+
+mdadm --grow $md0 --size $[size/2]
+check nosync
+testdev $md0 2 $[size/2] 32
+
+mdadm -S $md0
+
+# same again with version 1.1 superblock
+mdadm -CR $md0 --level raid6 --metadata=1.1 --chunk=128 --raid-disks 4 --size $[size/2] $dev1 $dev2 $dev3 $dev4
+check wait
+check state UUUU
+testdev $md0 2 $[size/2] 128
+
+mdadm --grow $md0 --size max
+check resync
+check wait
+testdev $md0 2 $[mdsize1_l] 128
+
+mdadm --grow $md0 --size $[size/2]
+check nosync
+testdev $md0 2 $[size/2] 128
+
+mdadm -S $md0

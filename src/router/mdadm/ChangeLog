@@ -1,0 +1,306 @@
+Please see git logs for detailed change log.
+This file just contains highlight.
+
+Changes Prior to release 3.3
+- Some array reshapes can proceed without needing backup file.
+  This is done by changing the 'data_offset' so we never need to write
+  any data back over where it was before.  If there is no "head space"
+  or "tail space" to allow data_offset to change, the old mechanism
+  with a backup file can still be used.
+- RAID10 arrays can be reshaped to change the number of devices,
+  change the chunk size, or change the layout between 'near'
+  and 'offset'.
+  This will always change data_offset, and will fail if there is no
+  room for data_offset to be moved.
+- "--assemble --update=metadata" can convert a 0.90 array to a 1.0 array.
+- bad-block-logs are supported (but not heavily tested yet)
+- "--assemble --update=revert-reshape" can be used to undo a reshape
+  that has just been started but isn't really wanted.  This is very
+  new and while it passes basic tests it cannot be guaranteed.
+- improved locking between --incremental and --assemble
+- uses systemd to run "mdmon" if systemd is configured to do that.
+- kernel names of md devices can be non-numeric. e.g. "md_home" rather than
+  "md0".  This will probably confuse lots of other tools, so you need to
+       echo CREATE names=yes >> /etc/mdadm.conf
+  or the feature will not be used.  (you also need a reasonably new kernel).
+- "--stop" can be given a kernel name instead of a device name. i.e
+     mdadm --stop md4
+  will work even if /dev/md4 doesn't exist.
+- "--detail --export" has some information about the devices in the array
+- --dump and --restore can be used to backup and restore the metadata on an
+   array.
+- Hot-replace is supported with
+     mdadm /dev/mdX --replace /dev/foo
+  and
+     mdadm /dev/mdX --replace /dev/foo --with /dev/bar
+- Config file can be a directory in which case all "*.conf" files are
+  read in lexical order.
+  Default is to read /etc/mdadm.conf and then /etc/mdadm.conf.d
+  Thus
+      echo CREATE name=yes > /etc/mdadm.conf.d/names.conf
+  will also enable the use of named md devices.
+
+- Lots of improvements to DDF support including adding support for
+  RAID10 (thanks Martin Wilck).
+
+Changes Prior to release 3.2.6
+  - There are no real stand-out fixes, just lots of little bits and pieces.
+
+Changes Prior to release 3.2.5
+  - This release primarily fixes a serious regression in 3.2.4.
+    This regression does *not* cause any risk to data.  It simply
+    means that adding a device with "--add" would sometime fail
+    when it should not.
+
+  - The fix also includes a couple of minor fixes such as making
+    the "--layout=preserve" option to "--grow" work again.
+
+
+Changes Prior to release 3.2.4
+"--oneline" log of changes is below.  Some notable ones are:
+
+ - --offroot argument to improve interactions between mdmon and initrd
+ - --prefer argument to select which /dev names to display in some
+   circumstances.
+ - relax restructions on when "--add" will be allowed
+ - Fix bug with adding write-intent-bitmap to active array
+ - Now defaults to "/run/mdadm" for storing run-time files.
+
+Changes Prior to release 3.2.3
+  - The largest single area of change is support for reshape of Intel
+    IMSM arrays (OnLine Capacity Explansion and Level Migration).
+  - Among other fixes, this now has a better chance of surviving if a
+    device fails during reshape.
+
+Changes Prior to release 3.2.2
+  - reshaping IMSM (Intel metadata) arrays is no longer 'experimental',
+    it should work properly and be largely compatible with IMSM drivers in
+    other platforms.
+  - --assume-clean can be used with --grow --size to avoid resyncing the
+    new part of the array.  This is only support with very new kernels.
+  - RAID0 arrays can have chunksize which is not a power of 2.  This has been
+    supported in the kernel for a while but is only now supprted by
+    mdadm.
+
+  - A new tool 'raid6check' is available which can check a RAID6 array,
+    or part of it, and report which device is most inconsistent with the
+    others if any stripe is inconsistent.   This is still under development
+    and does not have a man page yet.  If anyone tries it out and has any
+    questions or experience to report, they would be most welcome on
+    linux-raid@vger.kernel.org.
+
+Changes Prior to release 3.2.1
+  - policy framework
+     Policy can be expressed for moving spare devices between arrays, and
+     for how to handle hot-plugged devices.  This policy can be different
+     for devices plugged in to different controllers etc.
+     This, for example, allows a configuration where when a device is plugged
+     in it is immediately included in an md array as a hot spare and
+     possibly starts recovery immediately if an array is degraded.
+
+  - some understanding of mbr and gpt paritition tables
+     This is primarly to support the new hot-plug support.  If a
+     device is plugged in and policy suggests it should have a partition table,
+     the partition table will be copied from a suitably similar device, and
+     then the partitions will hot-plug and can then be added to md arrays.
+
+  - "--incremental --remove" can remember where a device was removed from
+    so if a device gets plugged back in the same place, special policy applies
+    to it, allowing it to be included in an array even if a general hotplug
+    will not be included.
+
+  - enhanced reshape options, including growing a RAID0 by converting to RAID4,
+    restriping, and converting back.  Also convertions between RAID0 and
+    RAID10 and between RAID1 and RAID10 are possible (with a suitably recent
+    kernel).
+
+  - spare migration for IMSM arrays.
+     Spare migration can now work across 'containers' using non-native metadata
+     and specifically Intel's IMSM arrays support spare migrations.
+
+  - OLCE and level migration for Intel IMSM arrays.
+     OnLine Capacity Expansion and level migration (e.g. RAID0 -> RAID5) is
+     supported for Intel Matrix Storage Manager arrays.
+     This support is currently 'experimental' for technical reasons.  It can
+     be enabled with "export MDADM_EXPERIMENTAL=1"
+
+  - avoid including wayward devices
+     If you split a RAID1, mount the two halves as two separate degraded RAID1s,
+     and then later bring the two back together, it is possible that the md
+     metadata won't properly show that one must over-ride the other.
+     mdadm now does extra checking to detect this possibilty and avoid
+     potentially corrupting data.
+
+  - remove any possible confusion between similar options.
+     e.g. --brief and --bitmap were mapped to 'b' and mdadm wouldn't
+     notice if one was used where the other was expected.
+
+  - allow K,M,G suffixes on chunk sizes
+
+Changes Prior to release 3.2
+ - By far the most significant change in this release related to the
+   management of reshaping arrays.  This code has been substantially
+   re-written so that it can work with 'externally managed metadata' -
+   Intel's IMSM in particular.  We now support level migration and
+   OnLine Capacity Expansion on these arrays.
+ - Policy framework.
+   Various policy statements can be made in the mdadm.conf to guide
+   the behaviour of mdadm, particular with regards to how new devices
+   are treated by "mdadm -I".
+   Depending on the 'action' associated with a device (identified by
+   its 'path') such need devices can be automatically re-added to and
+   existing array that they previously fell out off, or automatically
+   added as a spare if they appear to contain no data.
+
+ - mdadm now has a limited understanding of partition tables.  This
+   allows the policy framework to make decisions about partitioned
+   devices as well.
+
+ - --incremental --remove can be told what --path the device was on,
+   and this info will be recorded so that another device appearing at
+   the same physical location can be preferentially added to the same
+   array (provides the spare-same-slot action policy applied to the
+   path).
+
+ - A new flags "--invalid-backup" flag is available in --assemble
+   mode.  This can be used to re-assemble an array which was stopping
+   in the middle of a reshape, and for which the 'backup file' is no
+   longer available or is corrupted.  The array may have some
+   corruption in it at the point where reshape was up to, but at least
+   the rest of the array will become available.
+
+
+ - Various internal restructuring - more is needed.
+
+Changes Prior to release 3.1.5
+  - Fixes for v1.x metadata on big-endian machines.
+  - man page improvements
+  - Improve '--detail --export' when run on partitions of an md array.
+  - Fix regression with removing 'failed' or 'detached' devices.
+  - Fixes for "--assemble --force" in various unusual cases.
+  - Allow '-Y' to mean --export.  This was documented but not implemented.
+  - Various fixed for handling 'ddf' metadata.  This is now more reliable
+    but could benefit from more interoperability testing.
+  - Correctly list subarrays of a container in "--detail" output.
+  - Improve checks on whether the requested number of devices is supported
+    by the metadata - both for --create and --grow.
+  - Don't remove partitions from a device that is being included in an
+    array until we are fully committed to including it.
+  - Allow "--assemble --update=no-bitmap" so an array with a corrupt
+    bitmap can still be assembled.
+  - Don't allow --add to succeed if it looks like a "--re-add" is probably
+    wanted, but cannot succeed.  This avoids inadvertently turning
+    devices into spares when an array is failed.
+
+Changes Prior to release 3.1.4
+  Two fixes related to configs that aren't using udev:
+   -    Don't remove md devices which 'standard' names on --stop
+   -    Allow dev_open to work on read-only /dev
+  And fixed regressions:
+   -    Allow --incremental to add spares to an array
+   -    Accept --no-degraded as a deprecated option rather than
+            throwing an error
+   -    Return correct success status when --incrmental assembling
+        a container which does not yet have enough devices.
+   -    Don't link mdadm with pthreads, only mdmon needs it.
+   -    Fix compiler warning due to bad use of snprintf
+
+Changes Prior to release 3.1.3
+   -    mapfile now lives in a fixed location which default to
+        /dev/.mdadm/map but can be changed at compile time.  This
+	location is choses and most distros provide it during early
+	boot and preserve it through.  As long a /dev exists and is
+	writable, /dev/.mdadm will be created.
+	Other files file communication with mdmon live here too.
+	This fixes a bug reported by Debian and Gentoo users where
+	udev would spin in early-boot.
+   -    IMSM and DDF metadata will not be recognised on partitions
+        as they should only be used on whole-disks.
+   -    Various overflows causes by 2G drives have been addressed.
+   -    A subarray of an IMSM contain can now be killed with
+        --kill-subarray.  Also subarrays can be renamed with
+	--update-subarray
+   -    -If (or --incremental --fail) can be used  from udev to
+        fail and remove from all arrays a device which has been
+	unplugged from the system.  i.e. hot-unplug-support.
+   -    "mdadm /dev/mdX --re-add missing" will look for any device
+        that looks like it should be a member of /dev/mdX but isn't
+	and will automatically --re-add it
+   -    Now compile with -Wextra to get extra warnings.
+   -    Lots of minor bug fixes, documentation improvements, etcc
+
+Changes Prior to release 3.1.2
+   -    The default metadata has change again (sorry about that).
+        It is now v1.2 and will hopefully stay that way.  It turned
+        out there with boot-block issues with v1.1 which make it
+        unsuitable for a default, though in many cases it is still
+        suitable to use.
+   -    Stopping a container is not permitted when members are still
+        active
+   -    Add 'homehost' to the valid words for the "AUTO" config file
+        line.  When followed by "-all", this causes mdadm to
+        auto-assemble any array belonging to this host, but not
+        auto-assemble anything else.
+   -    Fix some bugs with "--grow --chunksize=" for changing chunksize.
+   -    VAR_RUN can be easily changed at compile time just like ALT_RUN.
+        This gives distros more flexability in how to manage the
+        pid and sock files that mdmon needs.
+   -    Various mdmon fixes
+   -    Alway make bitmap 4K-aligned if at all possible.
+   -    If mdadm.conf lists arrays which have inter-dependencies,
+        the previously had to be listed in the "right" order.  Now
+        any order should work.
+   -    Fix --force assembly of v1.x arrays which are in the process
+        of recovering.
+   -    Add section on 'scrubbing' to 'md' man page.
+   -    Various command-line-option parsing improvements.
+   -    ... and lots of other bug fixes.
+
+Changes Prior to release 3.1.1
+   -    Multiple fixes for new --grow levels including fixes for
+	serious data corruption problems.
+   -    Change default metadata to v1.1
+   -    Change default chunk size to 512K
+   -    Change default bitmap chunk size to 64Meg
+   -    When --re-add is used, don't fall back to
+	--add if --re-add fails as this can destroy data.
+
+Changes Prior to release 3.1
+   -    Support --grow to change the layout of RAID4/5/6
+   -    Support --grow to change the chunksize of raid 4/5/6
+   -    Support --grow to change level from RAID1 -> RAID5 -> RAID6 and
+        back.
+   -    Support --grow to reduce the number of devices in RAID4/5/6.
+   -    Support restart of these grow options which assembling an array
+	which is partially grown.
+   -    Assorted tests of this code, and of different RAID6 layouts.
+
+Changes Prior to release 3.0.3
+   -    Improvements for creating arrays giving just a name, like 'foo',
+	rather than the full '/dev/md/foo'.
+   -    Improvements for assembling member arrays of containers.
+   -    Improvements to test suite
+   -    Add option to change increment for RebuildNN messages reported
+	by "mdadm --monitor"
+   -    Improvements to mdmon 'hand-over' from initrd to final root.
+   -    Handle merging of devices that have left an IMSM array and are
+	being re-incorporated.
+   -    Add missing space in "--detail --brief" output.
+
+Changes Prior to release 3.0.2
+   -    Fix crash when hosthost is not set, as often happens in
+	early boot.
+
+Changes Prior to release 3.0.1
+   -    Fix various segfaults
+   -    Fixed for --examine with containers
+   -    Lots of other little fixes.
+
+Changes Prior to release 3.0
+   -    Support for externally managed metadata, specifically DDF and IMSM.
+   -    Depend on udev to create entries in /dev, rather than creating them
+	ourselves.
+   -    remove --auto-update-home-hosts
+   -    new config file line "auto"
+   -    new "<ignore>" and "any" options for "homehost"
+   -    numerous bug fixes and minor enhancements.

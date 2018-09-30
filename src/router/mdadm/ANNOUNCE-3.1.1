@@ -1,0 +1,39 @@
+Subject:  ANNOUNCE: mdadm 3.1.1 - A tool for managing Soft RAID under Linux
+
+I am pleased to announce the availability of
+   mdadm version 3.1.1
+
+It is available at the usual places:
+   countrycode=xx.
+   http://www.${countrycode}kernel.org/pub/linux/utils/raid/mdadm/
+and via git at
+   git://neil.brown.name/mdadm
+   http://neil.brown.name/git?p=mdadm
+
+This is a bugfix release over 3.1, which was withdrawn due to serious
+bugs.  So it might be best to ignore 3.1 and say that this is a significant
+feature release over 3.0.x
+
+Significant changes are:
+  - RAID level conversion between RAID1, RAID5, and RAID6 are
+    possible were the kernel supports it (2.6.32 at least)
+  - online chunksize and layout changing for RAID5 and RAID6
+    where the kernel supports it.
+  - reduce the number of devices in a RAID4/5/6 array.
+
+  - The default metadata is not v1.1.  This metadata is stored at the
+    start of the device so is safer in many ways but could interfere with
+    boot loaded.  The old default (0.90) is still available and fully
+    supported.
+
+  - The default chunksize is now 512K rather than 64K.  This seems more
+    appropriate for modern devices.
+
+  - The default bitmap chunksize for internal bitmaps is now at least
+    64Meg as fine grained bitmaps tend to impact performance more for
+    little extra gain.
+
+This release is believed to be stable and you should feel free to
+upgrade to 3.1.1.
+
+NeilBrown 19th November 2009

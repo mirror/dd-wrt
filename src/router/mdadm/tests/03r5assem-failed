@@ -1,0 +1,12 @@
+
+# Create an array, fail one device while array is active, stop array,
+# then re-assemble listing the failed device first.
+
+mdadm -CR $md1 -l5 -n4 $dev0 $dev1 $dev2 $dev3
+check wait
+
+echo 2000 > /sys/block/md1/md/safe_mode_delay
+mkfs $md1
+mdadm $md1 -f $dev0
+mdadm -S $md1
+mdadm -A $md1 $dev0 $dev1 $dev2 $dev3 || exit 1

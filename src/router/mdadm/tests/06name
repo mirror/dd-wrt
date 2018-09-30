@@ -1,0 +1,12 @@
+set -x
+
+# create an array with a name
+
+mdadm -CR $md0 -l0 -n2 --metadata=1 --name="Fred" $dev0 $dev1
+mdadm -E $dev0 | grep 'Name : [^:]*:Fred ' > /dev/null || exit 1
+mdadm -D $md0 | grep 'Name : [^:]*:Fred ' > /dev/null || exit 1
+mdadm -S $md0
+
+mdadm -A $md0 --name="Fred" $devlist
+#mdadm -Db $md0
+mdadm -S $md0

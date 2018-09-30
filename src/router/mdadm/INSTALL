@@ -1,0 +1,13 @@
+
+To build mdadm, simply run:
+
+   make
+
+to install, run
+
+   make install
+
+as root.
+
+
+No configuration is necessary.

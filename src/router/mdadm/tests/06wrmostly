@@ -1,0 +1,13 @@
+
+# create a raid1 array with a wrmostly device
+
+mdadm -CR $md0 -l1 -n3 $dev0 $dev1 --write-mostly $dev2
+testdev $md0 1 $mdsize1a 64
+
+# unfortunately, we cannot measure if any read requests are going to $dev2
+
+mdadm -S $md0
+
+mdadm -CR $md0 -l1 -n3 --write-behind --bitmap=internal --bitmap-chunk=4 $dev0 $dev1 --write-mostly $dev2
+testdev $md0 1 $mdsize1a 64
+mdadm -S $md0

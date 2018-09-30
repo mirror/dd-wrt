@@ -1,0 +1,280 @@
+External Reshape
+
+1 Problem statement
+
+External (third-party metadata) reshape differs from native-metadata
+reshape in three key ways:
+
+1.1 Format specific constraints
+
+In the native case reshape is limited by what is implemented in the
+generic reshape routine (Grow_reshape()) and what is supported by the
+kernel.  There are exceptional cases where Grow_reshape() may block
+operations when it knows that the kernel implementation is broken, but
+otherwise the kernel is relied upon to be the final arbiter of what
+reshape operations are supported.
+
+In the external case the kernel, and the generic checks in
+Grow_reshape(), become the super-set of what reshapes are possible.  The
+metadata format may not support, or have yet to implement a given
+reshape type.  The implication for Grow_reshape() is that it must query
+the metadata handler and effect changes in the metadata before the new
+geometry is posted to the kernel.  The ->reshape_super method allows
+Grow_reshape() to validate the requested operation and post the metadata
+update.
+
+1.2 Scope of reshape
+
+Native metadata reshape is always performed at the array scope (no
+metadata relationship with sibling arrays on the same disks).  External
+reshape, depending on the format, may not allow the number of member
+disks to be changed in a subarray unless the change is simultaneously
+applied to all subarrays in the container.  For example the imsm format
+requires all member disks to be a member of all subarrays, so a 4-disk
+raid5 in a container that also houses a 4-disk raid10 array could not be
+reshaped to 5 disks as the imsm format does not support a 5-disk raid10
+representation.  This requires the ->reshape_super method to check the
+contents of the array and ask the user to run the reshape at container
+scope (if all subarrays are agreeable to the change), or report an
+error in the case where one subarray cannot support the change.
+
+1.3 Monitoring / checkpointing
+
+Reshape, unlike rebuild/resync, requires strict checkpointing to survive
+interrupted reshape operations.  For example when expanding a raid5
+array the first few stripes of the array will be overwritten in a
+destructive manner.  When restarting the reshape process we need to know
+the exact location of the last successfully written stripe, and we need
+to restore the data in any partially overwritten stripe.  Native
+metadata stores this backup data in the unused portion of spares that
+are being promoted to array members, or in an external backup file
+(located on a non-involved block device).
+
+The kernel is in charge of recording checkpoints of reshape progress,
+but mdadm is delegated the task of managing the backup space which
+involves:
+1/ Identifying what data will be overwritten in the next unit of reshape
+   operation
+2/ Suspending access to that region so that a snapshot of the data can
+   be transferred to the backup space.
+3/ Allowing the kernel to reshape the saved region and setting the
+   boundary for the next backup.
+
+In the external reshape case we want to preserve this mdadm
+'reshape-manager' arrangement, but have a third actor, mdmon, to
+consider.  It is tempting to give the role of managing reshape to mdmon,
+but that is counter to its role as a monitor, and conflicts with the
+existing capabilities and role of mdadm to manage the progress of
+reshape.  For clarity the external reshape implementation maintains the
+role of mdmon as a (mostly) passive recorder of raid events, and mdadm
+treats it as it would the kernel in the native reshape case (modulo
+needing to send explicit metadata update messages and checking that
+mdmon took the expected action).
+
+External reshape can use the generic md backup file as a fallback, but in the
+optimal/firmware-compatible case the reshape-manager will use the metadata
+specific areas for managing reshape.  The implementation also needs to spawn a
+reshape-manager per subarray when the reshape is being carried out at the
+container level.  For these two reasons the ->manage_reshape() method is
+introduced.  This method in addition to base tasks mentioned above:
+1/ Processed each subarray one at a time in series - where appropriate.
+2/ Uses either generic routines in Grow.c for md-style backup file
+   support, or uses the metadata-format specific location for storing
+   recovery data.
+This aims to avoid a "midlayer mistake"[1] and lets the metadata handler
+optionally take advantage of generic infrastructure in Grow.c
+
+2 Details for specific reshape requests
+
+There are quite a few moving pieces spread out across md, mdadm, and mdmon for
+the support of external reshape, and there are several different types of
+reshape that need to be comprehended by the implementation.  A rundown of
+these details follows.
+
+2.0 General provisions:
+
+Obtain an exclusive open on the container to make sure we are not
+running concurrently with a Create() event.
+
+2.1 Freezing sync_action
+
+   Before making any attempt at a reshape we 'freeze' every array in
+   the container to ensure no spare assignment or recovery happens.
+   This involves writing 'frozen' to sync_action and changing the '/'
+   after 'external:' in metadata_version to a '-'. mdmon knows that
+   this means not to perform any management.
+
+   Before doing this we check that all sync_actions are 'idle', which
+   is racy but still useful.
+   Afterwards we check that all member arrays have no spares
+   or partial spares (recovery_start != 'none') which would indicate a
+   race.  If they do, we unfreeze again.
+
+   Once this completes we know all the arrays are stable.  They may
+   still have failed devices as devices can fail at any time.  However
+   we treat those like failures that happen during the reshape.
+
+2.2 Reshape size
+
+   1/ mdadm::Grow_reshape(): checks if mdmon is running and optionally
+      initializes st->update_tail
+   2/ mdadm::Grow_reshape() calls ->reshape_super() to check that the size change
+      is allowed (being performed at subarray scope / enough room) prepares a
+      metadata update
+   3/ mdadm::Grow_reshape(): flushes the metadata update (via
+      flush_metadata_update(), or ->sync_metadata())
+   4/ mdadm::Grow_reshape(): post the new size to the kernel
+
+
+2.3 Reshape level (simple-takeover)
+
+"simple-takeover" implies the level change can be satisfied without touching
+sync_action
+
+    1/ mdadm::Grow_reshape(): checks if mdmon is running and optionally
+       initializes st->update_tail
+    2/ mdadm::Grow_reshape() calls ->reshape_super() to check that the level change
+       is allowed (being performed at subarray scope) prepares a
+       metadata update
+       2a/ raid10 --> raid0: degrade all mirror legs prior to calling
+           ->reshape_super
+    3/ mdadm::Grow_reshape(): flushes the metadata update (via
+       flush_metadata_update(), or ->sync_metadata())
+    4/ mdadm::Grow_reshape(): post the new level to the kernel
+
+2.4 Reshape chunk, layout
+
+2.5 Reshape raid disks (grow)
+
+    1/ mdadm::Grow_reshape(): unconditionally initializes st->update_tail
+       because only redundant raid levels can modify the number of raid disks
+    2/ mdadm::Grow_reshape(): calls ->reshape_super() to check that the level
+       change is allowed (being performed at proper scope / permissible
+       geometry / proper spares available in the container), chooses
+       the spares to use, and prepares a metadata update.
+    3/ mdadm::Grow_reshape(): Converts each subarray in the container to the
+       raid level that can perform the reshape and starts mdmon.
+    4/ mdadm::Grow_reshape(): Pushes the update to mdmon.
+    5/ mdadm::Grow_reshape(): uses container_content to find details of
+       the spares and passes them to the kernel.
+    6/ mdadm::Grow_reshape(): gives raid_disks update to the kernel,
+       sets sync_max, sync_min, suspend_lo, suspend_hi all to zero,
+       and starts the reshape by writing 'reshape' to sync_action.
+    7/ mdmon::monitor notices the sync_action change and tells
+       managemon to check for new devices.  managemon notices the new
+       devices, opens relevant sysfs file, and passes them all to
+       monitor.
+    8/ mdadm::Grow_reshape() calls ->manage_reshape to oversee the
+       rest of the reshape.
+
+    9/ mdadm::<format>->manage_reshape(): saves data that will be overwritten by
+       the kernel to either the backup file or the metadata specific location,
+       advances sync_max, waits for reshape, ping mdmon, repeat.
+       Meanwhile mdmon::read_and_act(): records checkpoints.
+       Specifically.
+
+       9a/ if the 'next' stripe to be reshaped will over-write
+           itself during reshape then:
+	9a.1/ increase suspend_hi to cover a suitable number of
+           stripes.
+	9a.2/ backup those stripes safely.
+	9a.3/ advance sync_max to allow those stripes to be backed up
+	9a.4/ when sync_completed indicates that those stripes have
+           been reshaped, manage_reshape must ping_manager
+	9a.5/ when mdmon notices that sync_completed has been updated,
+           it records the new checkpoint in the metadata
+	9a.6/ after the ping_manager, manage_reshape will increase
+           suspend_lo to allow access to those stripes again
+
+       9b/ if the 'next' stripe to be reshaped will over-write unused
+           space during reshape then we apply same process as above,
+	   except that there is no need to back anything up.
+	   Note that we *do* need to keep suspend_hi progressing as
+	   it is not safe to write to the area-under-reshape.  For
+	   kernel-managed-metadata this protection is provided by
+	   ->reshape_safe, but that does not protect us in the case
+	   of user-space-managed-metadata.
+
+   10/ mdadm::<format>->manage_reshape(): Once reshape completes changes the raid
+       level back to the nominal raid level (if necessary)
+
+       FIXME: native metadata does not have the capability to record the original
+       raid level in reshape-restart case because the kernel always records current
+       raid level to the metadata, whereas external metadata can masquerade at an
+       alternate level based on the reshape state.
+
+2.6 Reshape raid disks (shrink)
+
+3 Interaction with metadata handle.
+
+  The following calls are made into the metadata handler to assist
+  with initiating and monitoring a 'reshape'.
+
+  1/ ->reshape_super is called quite early (after only minimial
+     checks) to make sure that the metadata can record the new shape
+     and any necessary transitions.  It may be passed a 'container'
+     or an individual array within a container, and it should notice
+     the difference and act accordingly.
+     When a reshape is requested against a container it is expected
+     that it should be applied to every array in the container,
+     however it is up to the metadata handler to determine final
+     policy.
+
+     If the reshape is supportable, the internal copy of the metadata
+     should be updated, and a metadata update suitable for sending
+     to mdmon should be queued.
+
+     If the reshape will involve converting spares into array members,
+     this must be recorded in the metadata too.
+
+  2/ ->container_content will be called to find out the new state
+     of all the array, or all arrays in the container.  Any newly
+     added devices (with state==0 and raid_disk >= 0) will be added
+     to the array as spares with the relevant slot number.
+
+     It is likely that the info returned by  ->container_content will
+     have ->reshape_active set, ->reshape_progress set to e.g. 0, and
+     new_* set appropriately.  mdadm will use this information to
+     cause the correct reshape to start at an appropriate time.
+
+  3/ ->set_array_state will be called by mdmon when reshape has
+     started and again periodically as it progresses.  This should
+     record the ->last_checkpoint as the point where reshape has
+     progressed to.  When the reshape finished this will be called
+     again and it should notice that ->curr_action is no longer
+     'reshape' and so should record that the reshape has finished
+     providing 'last_checkpoint' has progressed suitably.
+
+  4/ ->manage_reshape will be called once the reshape has been set
+     up in the kernel but before sync_max has been moved from 0, so
+     no actual reshape will have happened.
+
+     ->manage_reshape should call progress_reshape() to allow the
+     reshape to progress, and should back-up any data as indicated
+     by the return value.  See the documentation of that function
+     for more details.
+     ->manage_reshape will be called multiple times when a
+     container is being reshaped, once for each member array in
+     the container.
+
+
+   The progress of the metadata is as follows:
+    1/ mdadm sends a metadata update to mdmon which marks the array
+       as undergoing a reshape. This is set up by
+       ->reshape_super and applied by ->process_update
+       For container-wide reshape, this happens once for the whole
+       container.
+    2/ mdmon notices progress via the sysfs files and calls
+       ->set_array_state to update the state periodically
+       For container-wide reshape, this happens repeatedly for
+       one array, then repeatedly for the next, etc.
+    3/ mdmon notices when reshape has finished and call
+       ->set_array_state to record the the reshape is complete.
+       For container-wide reshape, this happens once for each
+       member array.
+
+
+
+...
+
+[1]: Linux kernel design patterns - part 3, Neil Brown http://lwn.net/Articles/336262/

@@ -1,0 +1,8 @@
+[Unit]
+Description=Activate md array even though degraded
+DefaultDependencies=no
+Conflicts=sys-devices-virtual-block-%i.device
+
+[Service]
+Type=oneshot
+ExecStart=BINDIR/mdadm --run /dev/%i

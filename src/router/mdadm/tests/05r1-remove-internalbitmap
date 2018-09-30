@@ -1,0 +1,18 @@
+#
+# create a raid1 with bitmap, remove the bitmap and verify it is still
+# gone when re-assembling the array
+#
+mdadm --create --run $md0 --metadata=0.9 --level=1 -n2 --bitmap internal --bitmap-chunk=4 --delay=1 $dev1 $dev2
+check wait
+check bitmap
+testdev $md0 1 $mdsize1b 64
+mdadm -Gb none $md0
+check nobitmap
+testdev $md0 1 $mdsize1b 64
+mdadm -S $md0
+
+# Re-assemble the array and verify the bitmap is still present
+mdadm --assemble $md0 $dev1 $dev2
+check nobitmap
+testdev $md0 1 $mdsize1b 64
+mdadm -S $md0

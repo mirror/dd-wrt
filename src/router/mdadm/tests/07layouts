@@ -1,0 +1,91 @@
+
+# check that kernel an restripe interpret all the different layouts
+# the same
+# This involves changing the layout to each different possibility
+# while MDADM_GROW_VERIFY is set.
+
+testK=$[64*3*6]
+dd if=/dev/urandom of=/tmp/RandFile bs=1024 count=$testK
+export MDADM_GROW_VERITY=1
+
+
+dotest() {
+ sleep 0.5
+ check wait
+ testdev $md0 $1 $mdsize1 512 nd
+ blockdev --flushbufs $md0
+ cmp -s -n $[textK*1024] $md0 /tmp/RandFile || { echo cmp failed; exit 2; }
+ # write something new - shift chars 4 space
+ tr ' -~' '$-~ -#' < /tmp/RandFile > /tmp/RandFile2
+ mv /tmp/RandFile2 /tmp/RandFile
+ dd if=/tmp/RandFile of=$md0
+}
+
+checkgeo() {
+ # check the geometry of an array
+ # level raid_disks chunk_size layout
+ dev=$1
+ shift
+ sleep 0.5
+ check wait
+ for attr in level raid_disks chunk_size layout
+ do
+   if [ $# -gt 0 ] ; then
+      val=$1
+      shift
+      if [ " `sed 's/ .*//' /sys/block/$dev/md/$attr`" != " $val" ]
+      then echo "$attr doesn't match for $dev"
+           exit 1
+      fi
+   fi
+ done
+}
+
+
+bu=/tmp/md-test-backup
+rm -f $bu
+
+# first a degraded 5 device raid5
+mdadm -CR $md0 -l5 -n5 $dev0 $dev1 missing $dev2 $dev3
+dd if=/tmp/RandFile of=$md0
+dotest 4
+
+l5[0]=la
+l5[1]=ra
+l5[2]=ls
+l5[3]=rs
+l5[4]=parity-first
+l5[5]=parity-last
+for layout in 0 1 2 3 4 5 0
+do
+ mdadm -G $md0 --layout=${l5[$layout]} --backup-file $bu
+ checkgeo md0 raid5 5 $[512*1024] $layout
+ dotest 4
+done
+
+mdadm -S $md0
+# now a doubly degraded raid6
+mdadm -CR $md0 -l6 -n5 $dev0 missing $dev2 missing $dev4
+dd if=/tmp/RandFile of=$md0
+dotest 3
+
+l6[0]=la
+l6[1]=ra
+l6[2]=ls
+l6[3]=rs
+l6[4]=parity-first
+l6[5]=parity-last
+l6[8]=ddf-zero-restart
+l6[9]=ddf-N-restart
+l6[10]=ddf-N-continue
+l6[16]=left-asymmetric-6
+l6[17]=right-asymmetric-6
+l6[18]=left-symmetric-6
+l6[19]=right-symmetric-6
+l6[20]=parity-first-6
+for layout in 0 1 2 3 4 5 8 9 10 16 17 18 19 20 0
+do
+ mdadm -G $md0 --layout=${l6[$layout]} --backup-file $bu
+ checkgeo md0 raid6 5 $[512*1024] $layout
+ dotest 3
+done

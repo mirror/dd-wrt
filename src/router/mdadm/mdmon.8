@@ -1,0 +1,257 @@
+.\" See file COPYING in distribution for details.
+.TH MDMON 8 "" v4.0
+.SH NAME
+mdmon \- monitor MD external metadata arrays
+
+.SH SYNOPSIS
+
+.BI mdmon " [--all] [--takeover] [--foreground] CONTAINER"
+
+.SH OVERVIEW
+The 2.6.27 kernel brings the ability to support external metadata arrays.
+External metadata implies that user space handles all updates to the metadata.
+The kernel's responsibility is to notify user space when a "metadata event"
+occurs, like disk failures and clean-to-dirty transitions.  The kernel, in
+important cases, waits for user space to take action on these notifications.
+
+.SH DESCRIPTION
+.SS Metadata updates:
+To service metadata update requests a daemon,
+.IR mdmon ,
+is introduced.
+.I Mdmon
+is tasked with polling the sysfs namespace looking for changes in
+.BR array_state ,
+.BR sync_action ,
+and per disk
+.BR state
+attributes.  When a change is detected it calls a per metadata type
+handler to make modifications to the metadata.  The following actions
+are taken:
+.RS
+.TP
+.B array_state \- inactive
+Clear the dirty bit for the volume and let the array be stopped
+.TP
+.B array_state \- write pending
+Set the dirty bit for the array and then set
+.B array_state
+to
+.BR active .
+Writes
+are blocked until userspace writes
+.BR active.
+.TP
+.B array_state \- active-idle
+The safe mode timer has expired so set array state to clean to block writes to the array
+.TP
+.B array_state \- clean
+Clear the dirty bit for the volume
+.TP
+.B array_state \- read-only
+This is the initial state that all arrays start at.
+.I mdmon
+takes one of the three actions:
+.RS
+.TP
+1/
+Transition the array to read-auto keeping the dirty bit clear if the metadata
+handler determines that the array does not need resyncing or other modification
+.TP
+2/
+Transition the array to active if the metadata handler determines a resync or
+some other manipulation is necessary
+.TP
+3/
+Leave the array read\-only if the volume is marked to not be monitored; for
+example, the metadata version has been set to "external:\-dev/md127" instead of
+"external:/dev/md127"
+.RE
+.TP
+.B sync_action \- resync\-to\-idle
+Notify the metadata handler that a resync may have completed.  If a resync
+process is idled before it completes this event allows the metadata handler to
+checkpoint resync.
+.TP
+.B sync_action \- recover\-to\-idle
+A spare may have completed rebuilding so tell the metadata handler about the
+state of each disk.  This is the metadata handler's opportunity to clear
+any "out-of-sync" bits and clear the volume's degraded status.  If a recovery
+process is idled before it completes this event allows the metadata handler to
+checkpoint recovery.
+.TP
+.B <disk>/state \- faulty
+A disk failure kicks off a series of events.  First, notify the metadata
+handler that a disk has failed, and then notify the kernel that it can unblock
+writes that were dependent on this disk.  After unblocking the kernel this disk
+is set to be removed+ from the member array.  Finally the disk is marked failed
+in all other member arrays in the container.
+.IP
++ Note This behavior differs slightly from native MD arrays where
+removal is reserved for a
+.B mdadm --remove
+event.  In the external metadata case the container holds the final
+reference on a block device and a
+.B mdadm --remove <container> <victim>
+call is still required.
+.RE
+
+.SS Containers:
+.P
+External metadata formats, like DDF, differ from the native MD metadata
+formats in that they define a set of disks and a series of sub-arrays
+within those disks.  MD metadata in comparison defines a 1:1
+relationship between a set of block devices and a RAID array.  For
+example to create 2 arrays at different RAID levels on a single
+set of disks, MD metadata requires the disks be partitioned and then
+each array can be created with a subset of those partitions.  The
+supported external formats perform this disk carving internally.
+.P
+Container devices simply hold references to all member disks and allow
+tools like
+.I mdmon
+to determine which active arrays belong to which
+container.  Some array management commands like disk removal and disk
+add are now only valid at the container level.  Attempts to perform
+these actions on member arrays are blocked with error messages like:
+.IP
+"mdadm: Cannot remove disks from a \'member\' array, perform this
+operation on the parent container"
+.P
+Containers are identified in /proc/mdstat with a metadata version string
+"external:<metadata name>". Member devices are identified by
+"external:/<container device>/<member index>", or "external:-<container
+device>/<member index>" if the array is to remain readonly.
+
+.SH OPTIONS
+.TP
+CONTAINER
+The
+.B container
+device to monitor.  It can be a full path like /dev/md/container, or a
+simple md device name like md127.
+.TP
+.B \-\-foreground
+Normally,
+.I mdmon
+will fork and continue in the background.  Adding this option will
+skip that step and run
+.I mdmon
+in the foreground.
+.TP
+.B \-\-takeover
+This instructs
+.I mdmon
+to replace any active
+.I mdmon
+which is currently monitoring the array.  This is primarily used late
+in the boot process to replace any
+.I mdmon
+which was started from an
+.B initramfs
+before the root filesystem was mounted.  This avoids holding a
+reference on that
+.B initramfs
+indefinitely and ensures that the
+.I pid
+and
+.I sock
+files used to communicate with
+.I mdmon
+are in a standard place.
+.TP
+.B \-\-all
+This tells mdmon to find any active containers and start monitoring
+each of them if appropriate.  This is normally used with
+.B \-\-takeover
+late in the boot sequence.
+A separate
+.I mdmon
+process is started for each container as the
+.B \-\-all
+argument is over-written with the name of the container.  To allow for
+containers with names longer than 5 characters, this argument can be
+arbitrarily extended, e.g. to
+.BR \-\-all-active-arrays .
+.TP
+
+.PP
+Note that
+.I mdmon
+is automatically started by
+.I mdadm
+when needed and so does not need to be considered when working with
+RAID arrays.  The only times it is run other than by
+.I  mdadm
+is when the boot scripts need to restart it after mounting the new
+root filesystem.
+
+.SH START UP AND SHUTDOWN
+
+As
+.I mdmon
+needs to be running whenever any filesystem on the monitored device is
+mounted there are special considerations when the root filesystem is
+mounted from an
+.I mdmon
+monitored device.
+Note that in general
+.I mdmon
+is needed even if the filesystem is mounted read-only as some
+filesystems can still write to the device in those circumstances, for
+example to replay a journal after an unclean shutdown.
+
+When the array is assembled by the
+.B initramfs
+code, mdadm will automatically start
+.I mdmon
+as required.  This means that
+.I mdmon
+must be installed on the
+.B initramfs
+and there must be a writable filesystem (typically tmpfs) in which
+.B mdmon
+can create a
+.B .pid
+and
+.B .sock
+file.  The particular filesystem to use is given to mdmon at compile
+time and defaults to
+.BR /run/mdadm .
+
+This filesystem must persist through to shutdown time.
+
+After the final root filesystem has be instantiated (usually with
+.BR pivot_root )
+.I mdmon
+should be run with
+.I "\-\-all \-\-takeover"
+so that the
+.I mdmon
+running from the
+.B initramfs
+can be replaced with one running in the main root, and so the
+memory used by the initramfs can be released.
+
+At shutdown time,
+.I mdmon
+should not be killed along with other processes.  Also as it holds a
+file (socket actually) open in
+.B /dev
+(by default) it will not be possible to unmount
+.B /dev
+if it is a separate filesystem.
+
+.SH EXAMPLES
+
+.B "  mdmon \-\-all-active-arrays \-\-takeover"
+.br
+Any
+.I mdmon
+which is currently running is killed and a new instance is started.
+This should be run during in the boot sequence if an initramfs was
+used, so that any mdmon running from the initramfs will not hold
+the initramfs active.
+.SH SEE ALSO
+.IR mdadm (8),
+.IR md (4).

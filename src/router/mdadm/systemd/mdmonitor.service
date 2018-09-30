@@ -1,0 +1,16 @@
+#  This file is part of mdadm.
+#
+#  mdadm is free software; you can redistribute it and/or modify it
+#  under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+
+[Unit]
+Description=MD array monitor
+DefaultDependencies=no
+
+[Service]
+Environment=  MDADM_MONITOR_ARGS=--scan
+EnvironmentFile=-/run/sysconfig/mdadm
+ExecStartPre=-/usr/lib/systemd/scripts/mdadm_env.sh
+ExecStart=BINDIR/mdadm --monitor $MDADM_MONITOR_ARGS

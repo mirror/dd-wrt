@@ -1,0 +1,36 @@
+
+
+# create a small raid1 array, make it larger.  Then make it smaller
+
+mdadm -CR $md0 -e 0.90 --level raid1 --raid-disks 3 --size $[size/2] $dev1 $dev2 $dev3
+check wait
+check state UUU
+testdev $md0 1 $[size/2] 1
+
+mdadm --grow $md0 --size max
+check resync
+check wait
+testdev $md0 1 $mdsize0 1
+
+mdadm --grow $md0 --size $[size/2]
+check nosync
+testdev $md0 1 $[size/2] 1
+
+mdadm -S $md0
+
+# same again with version 1.1 superblock
+mdadm -CR $md0 --level raid1 --metadata=1.1 --raid-disks 3 --size $[size/2] $dev1 $dev2 $dev3
+check wait
+check state UUU
+testdev $md0 1 $[size/2] 1
+
+mdadm --grow $md0 --size max
+check resync
+check wait
+testdev $md0 1 $mdsize1_l 1
+
+mdadm --grow $md0 --size $[size/2]
+check nosync
+testdev $md0 1 $[size/2] 1
+
+mdadm -S $md0

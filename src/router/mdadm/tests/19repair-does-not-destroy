@@ -1,0 +1,28 @@
+number_of_disks=7
+chunksize_in_kib=512
+array_data_size_in_kib=$[chunksize_in_kib*(number_of_disks-2)*number_of_disks]
+array_data_size_in_b=$[array_data_size_in_kib*1024]
+devs="$dev0 $dev1 $dev2 $dev3 $dev4 $dev5 $dev6"
+
+dd if=/dev/urandom of=/tmp/RandFile bs=1024 count=$array_data_size_in_kib
+mdadm -CR $md0 -l6 -n$number_of_disks -c $chunksize_in_kib $devs
+dd if=/tmp/RandFile of=$md0 bs=1024 count=$array_data_size_in_kib
+blockdev --flushbufs $md0; sync
+check wait
+blockdev --flushbufs $devs; sync
+echo 3 > /proc/sys/vm/drop_caches
+$dir/raid6check $md0 repair  1 2 3 > /dev/null # D D
+$dir/raid6check $md0 repair  8 2 5 > /dev/null # D P
+$dir/raid6check $md0 repair 15 4 6 > /dev/null # D Q
+$dir/raid6check $md0 repair 22 5 6 > /dev/null # P Q
+$dir/raid6check $md0 repair  3 4 0 > /dev/null # Q D
+$dir/raid6check $md0 repair  3 3 1 > /dev/null # P D
+$dir/raid6check $md0 repair  6 4 5 > /dev/null # D<D
+$dir/raid6check $md0 repair 13 5 4 > /dev/null # D>D
+blockdev --flushbufs $devs; sync
+echo 3 > /proc/sys/vm/drop_caches
+$dir/raid6check $md0 0 0 2>&1 | grep -qs "Error" && { echo errors detected; exit 2; }
+cmp -s -n $array_data_size_in_b $md0 /tmp/RandFile || { echo should not mess up correct stripe ; exit 2; }
+
+mdadm -S $md0
+udevadm settle

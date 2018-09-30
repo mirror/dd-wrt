@@ -1,0 +1,20 @@
+. tests/env-imsm-template
+
+# RAID 0 volume, 2 disks grow to RAID 0 volume, 3 disks
+# POSITIVE test
+
+num_disks=2
+device_list="$dev0 $dev1"
+spare_list="$dev2"
+
+# Before: RAID 0 volume, 2 disks, 64k chunk size
+vol0_level=0
+vol0_comp_size=$((5 * 1024))
+vol0_chunk=64
+vol0_num_comps=$num_disks
+vol0_offset=0
+
+# After: RAID 0 volume, 3 disks, 64k chunk size
+vol0_new_num_comps=$((num_disks + 1))
+
+. tests/imsm-grow-template 0 0

@@ -1,0 +1,20 @@
+#
+# create a raid1 without any bitmap, add the bitmap and then write to
+# the device. This should catch the case where the bitmap is created
+# but not reloaded correctly, such as the case fixed by
+# 4474ca42e2577563a919fd3ed782e2ec55bf11a2
+#
+mdadm --create --run $md0 --metadata=1.0 --level=1 -n2 --delay=1 $dev1 $dev2
+check wait
+check nobitmap
+testdev $md0 1 $mdsize1b 64
+mdadm -Gb internal --bitmap-chunk=4 $md0
+check bitmap
+testdev $md0 1 $mdsize1b 64
+mdadm -S $md0
+
+# Re-assemble the array and verify the bitmap is still present
+mdadm --assemble $md0 $dev1 $dev2
+check bitmap
+testdev $md0 1 $mdsize1b 64
+mdadm -S $md0

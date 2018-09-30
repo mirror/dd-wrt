@@ -1,0 +1,28 @@
+#  This file is part of mdadm.
+#
+#  mdadm is free software; you can redistribute it and/or modify it
+#  under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+
+[Unit]
+Description=MD Metadata Monitor on /dev/%I
+DefaultDependencies=no
+Before=initrd-switch-root.target
+
+[Service]
+# mdmon should never complain due to lack of a platform,
+# that is mdadm's job if at all.
+Environment=IMSM_NO_PLATFORM=1
+# The mdmon starting in the initramfs (with dracut at least)
+# cannot see sysfs after root is mounted, so we will have to
+# 'takeover'.  As the '--offroot --takeover' don't hurt when
+# not necessary, are are useful with root-on-md in dracut,
+# have them always present.
+ExecStart=BINDIR/mdmon --offroot --takeover %I
+Type=forking
+# Don't set the PIDFile.  It isn't necessary (systemd can work
+# it out) and systemd will remove it when transitioning from
+# initramfs to rootfs.
+#PIDFile=/run/mdadm/%I.pid
+KillMode=none

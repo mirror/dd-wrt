@@ -1,0 +1,30 @@
+
+. tests/env-imsm-template
+
+# create raid arrays with varying degress of overlap
+mdadm -CR $container -e imsm -n 6 $dev0 $dev1 $dev2 $dev3 $dev4 $dev5
+imsm_check container 6
+
+size=1910
+level=1
+num_disks=2
+mdadm -CR $member0 $dev0 $dev1 -n $num_disks -l $level -z $size
+mdadm -CR $member1 $dev1 $dev2 -n $num_disks -l $level -z $size
+mdadm -CR $member2 $dev2 $dev3 -n $num_disks -l $level -z $size
+mdadm -CR $member3 $dev3 $dev4 -n $num_disks -l $level -z $size
+mdadm -CR $member4 $dev4 $dev5 -n $num_disks -l $level -z $size
+
+udevadm settle
+
+offset=0
+imsm_check member $member0 $num_disks $level $size 1024 $offset
+offset=$((offset+size+2048))
+imsm_check member $member1 $num_disks $level $size 1024 $offset
+offset=$((offset+size+2048))
+imsm_check member $member2 $num_disks $level $size 1024 $offset
+# at this point there should be more freespace at the start of the disk
+# than the end
+offset=0
+imsm_check member $member3 $num_disks $level $size 1024 $offset
+offset=$((offset+size+2048))
+imsm_check member $member4 $num_disks $level $size 1024 $offset

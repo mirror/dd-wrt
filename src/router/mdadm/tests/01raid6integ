@@ -1,0 +1,57 @@
+
+# Check integrity of raid6 in degraded modes
+# Create a 5 disk raid6, dump some data to it, then
+# sha1sum it with different pairs of devices failed
+
+if [ "$INTEGRITY" != "yes" ]; then
+  echo -ne 'skipping... '
+  exit 0
+fi
+
+layouts='ls rs la ra'
+lv=`uname -r`
+if expr $lv '>=' 2.6.30 > /dev/null
+then
+  layouts="$layouts parity-first ddf-zero-restart ddf-N-restart ddf-N-continue \
+	left-asymmetric-6 right-asymmetric-6 left-symmetric-6 right-symmetric-6 parity-first-6"
+fi
+
+for layout in $layouts
+do
+  mdadm -CR $md0 -l6 --layout $layout -n5 $dev0 $dev1 $dev2 $dev3 $dev4
+  check wait
+  tar cf - /etc > $md0
+  sum=`sha1sum $md0`
+
+  totest=
+  for second in $dev0 $dev1 $dev2 $dev3 $dev4
+  do
+    mdadm $md0 -f $second
+    mdadm $md0 -r $second
+    blockdev --flushbufs $md0
+    sum1=`sha1sum $md0`
+    if [ "$sum" != "$sum1" ]
+    then
+      echo $sum does not match $sum1 with $second missing
+      exit 1
+    fi
+    for first in $totest
+    do
+       mdadm $md0 -f $first
+       mdadm $md0 -r $first
+       blockdev --flushbufs $md0
+       sum1=`sha1sum $md0`
+       if [ "$sum" != "$sum1" ]
+       then
+         echo $sum does not match $sum1 with $first and $second missing
+         exit 1
+       fi
+       mdadm $md0 -a $first
+       while ! (check state 'U*_U*'); do check wait; sleep 0.2; done
+    done
+    mdadm $md0 -a $second
+    while ! (check state 'U*'); do check wait; sleep 0.2; done
+    totest="$totest $second"
+  done
+  mdadm -S $md0
+done

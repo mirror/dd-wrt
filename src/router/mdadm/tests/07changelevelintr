@@ -1,0 +1,61 @@
+
+#
+# test that we can stop and restart a level change.
+# just test a few in-place changes, and a few
+# size-reducing changes.
+
+
+checkgeo() {
+ # check the geometry of an array
+ # level raid_disks chunk_size layout
+ dev=$1
+ shift
+ sleep 0.5
+ check wait
+ sleep 1
+ for attr in level raid_disks chunk_size layout
+ do
+   if [ $# -gt 0 ] ; then
+      val=$1
+      shift
+      if [ " `cat /sys/block/$dev/md/$attr`" != " $val" ]
+      then echo "$attr doesn't match for $dev"
+           exit 1
+      fi
+   fi
+ done
+}
+
+restart() {
+ sleep 0.5
+ check reshape
+ mdadm -S $md0
+ mdadm -A $md0 $devs --backup-file=$bu
+ sleep 0.5
+ check reshape
+}
+
+bu=/tmp/md-backup
+rm -f $bu
+devs="$dev0 $dev1 $dev2 $dev3 $dev4"
+mdadm -CR $md0 -l5 -n5 -c 256 $devs
+checkgeo md0 raid5 5 $[256*1024] 2
+
+mdadm -G $md0 -c 128 --backup-file=$bu
+restart
+checkgeo md0 raid5 5 $[128*1024] 2
+
+mdadm -G $md0 --layout rs --backup-file=$bu
+restart
+checkgeo md0 raid5 5 $[128*1024] 3
+
+mdadm -G $md0 --array-size 58368
+mdadm -G $md0 --raid-disks 4 -c 64 --backup-file=$bu
+restart
+checkgeo md0 raid5 4 $[64*1024] 3
+
+devs="$dev0 $dev1 $dev2 $dev3"
+mdadm -G $md0 --array-size 19456
+mdadm -G $md0 -n 2 -c 256 --backup-file=$bu
+restart
+checkgeo md0 raid5 2 $[256*1024] 3

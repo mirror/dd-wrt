@@ -1,0 +1,46 @@
+Subject:  ANNOUNCE: mdadm 3.1.3 - A tool for managing Soft RAID under Linux
+
+I am pleased to announce the availability of
+   mdadm version 3.1.3
+
+It is available at the usual places:
+   countrycode=xx.
+   http://www.${countrycode}kernel.org/pub/linux/utils/raid/mdadm/
+and via git at
+   git://neil.brown.name/mdadm
+   http://neil.brown.name/git?p=mdadm
+
+This is a bugfix/stability release over 3.1.2
+
+Significant changes are:
+   -    mapfile now lives in a fixed location which default to
+        /dev/.mdadm/map but can be changed at compile time.  This
+	location is choses and most distros provide it during early
+	boot and preserve it through.  As long a /dev exists and is
+	writable, /dev/.mdadm will be created.
+	Other files file communication with mdmon live here too.
+	This fixes a bug reported by Debian and Gentoo users where
+	udev would spin in early-boot.
+   -    IMSM and DDF metadata will not be recognised on partitions
+        as they should only be used on whole-disks.
+   -    Various overflows causes by 2G drives have been addressed.
+   -    A subarray of an IMSM contain can now be killed with
+        --kill-subarray.  Also subarrays can be renamed with
+	--update-subarray
+   -    -If (or --incremental --fail) can be used  from udev to
+        fail and remove from all arrays a device which has been
+	unplugged from the system.  i.e. hot-unplug-support.
+   -    "mdadm /dev/mdX --re-add missing" will look for any device
+        that looks like it should be a member of /dev/mdX but isn't
+	and will automatically --re-add it
+   -    Now compile with -Wextra to get extra warnings.
+   -    Lots of minor bug fixes, documentation improvements, etcc
+
+This release is believed to be stable and you should feel free to
+upgrade to 3.1.3
+
+It is expected that the next release will be 3.2 with a number of new
+features.  3.1.4 will only happen if important bugs show up before 3.2
+is stable.
+
+NeilBrown 6th August 2010

@@ -1,0 +1,36 @@
+touch_mnt_namespace when the mount flags change
+
+From: Dan Williams <dan.j.williams@intel.com>
+
+Daemons that need to be launched while the rootfs is read-only can now
+poll /proc/mounts to be notified when their O_RDWR requests may no
+longer end in EROFS.
+
+Cc: Kay Sievers <kay.sievers@vrfy.org>
+Cc: Neil Brown <neilb@suse.de>
+Signed-off-by: Dan Williams <dan.j.williams@intel.com>
+---
+
+ fs/namespace.c |    7 ++++++-
+ 1 files changed, 6 insertions(+), 1 deletions(-)
+
+
+diff --git a/fs/namespace.c b/fs/namespace.c
+index 6e283c9..1bd5ba2 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -1553,8 +1553,13 @@ static noinline int do_remount(struct nameidata *nd, int flags, int mnt_flags,
+ 	if (!err)
+ 		nd->path.mnt->mnt_flags = mnt_flags;
+ 	up_write(&sb->s_umount);
+-	if (!err)
++	if (!err) {
+ 		security_sb_post_remount(nd->path.mnt, flags, data);
++
++		spin_lock(&vfsmount_lock);
++		touch_mnt_namespace(nd->path.mnt->mnt_ns);
++		spin_unlock(&vfsmount_lock);
++	}
+ 	return err;
+ }
+ 

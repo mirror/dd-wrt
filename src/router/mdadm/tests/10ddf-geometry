@@ -1,0 +1,82 @@
+#
+# Test various RAID geometries, creation and deletion of subarrays
+#
+
+assert_fail() {
+    if mdadm "$@"; then
+       echo mdadm "$@" must fail
+       return 1
+    else
+       return 0
+    fi
+}
+
+assert_kill() {
+    local dev=$1 n=$2
+    mdadm -S $dev
+    mdadm --kill-subarray=$n /dev/md/ddf0
+    if mdadm -Dbs | grep -q $dev; then
+        echo >&2 $dev should be deleted
+        return 1
+    fi
+    return 0
+}
+
+set -e
+mdadm -CR /dev/md/ddf0 -e ddf -n 6 $dev8 $dev9 $dev10 $dev11 $dev12 $dev13
+
+# RAID1 geometries
+# Use different sizes to make offset calculation harder
+mdadm -CR l1s -l1 -n2 /dev/md/ddf0 -z 8000
+mdadm -CR l1m -l1 -n3 $dev8 $dev9 $dev10 -z 10000
+assert_fail -CR badl1 -l1 -n4 /dev/md/ddf0
+
+# RAID10 geometries
+mdadm -CR l10_0 -l10 -n3 /dev/md/ddf0 -z 1000
+mdadm -CR l10_1 -l10 -n5 /dev/md/ddf0 -z 1000
+assert_fail mdadm -CR badl10 -l10 -n4 -pn3 /dev/md/ddf0
+mdadm -CR l10_2 -l10 -n6 -pn2 /dev/md/ddf0 -z 4000
+mdadm -CR l10_3 -l10 -n6 -pn3 /dev/md/ddf0 -z 4000
+
+assert_fail -CR l10_2 -l10 -n6 -pn2 /dev/md/ddf0 -z 5000
+assert_kill /dev/md/l10_2 4
+# gone now, must be able to create it again
+mdadm -CR l10_2 -l10 -n6 -pn2 /dev/md/ddf0 -z 5000
+
+# Now stop and reassemble
+mdadm -Ss
+mdadm -A /dev/md/ddf0 $dev8 $dev9 $dev10 $dev11 $dev12 $dev13
+
+# Same as above, on inactive container
+assert_fail -CR l10_3 -l10 -n6 -pn2 /dev/md/ddf0 -z 5000
+# Kill subarray without having started anything (no mdmon)
+mdadm --kill-subarray=5 /dev/md/ddf0
+mdadm -I /dev/md/ddf0
+mdadm -CR l10_3 -l10 -n6 -pn3 /dev/md/ddf0 -z 5000
+
+assert_kill /dev/md/l10_2 4
+assert_kill /dev/md/l10_3 5
+
+# RAID5 geometries
+mdadm -CR l5la -l5 -n3 --layout=ddf-N-restart /dev/md/ddf0 -z 5000
+mdadm -CR l5ra -l5 -n3 --layout=ddf-zero-restart /dev/md/ddf0 -z 5000
+mdadm -CR l5ls -l5 -n3 --layout=ddf-N-continue /dev/md/ddf0 -z 5000
+assert_fail -CR l5rs -l5 -n3 -prs /dev/md/ddf0 -z 5000
+
+# Stop and reassemble
+mdadm -Ss
+mdadm -A /dev/md/ddf0 $dev8 $dev9 $dev10 $dev11 $dev12 $dev13
+mdadm -I /dev/md/ddf0
+
+assert_kill /dev/md/l5la 4
+assert_kill /dev/md/l5ls 6
+assert_kill /dev/md/l5ra 5
+
+# RAID6 geometries
+assert_fail -CR l6la -l6 -n3 -pla /dev/md/ddf0 -z 5000
+assert_fail -CR l6rs -l5 -n4 -prs /dev/md/ddf0 -z 5000
+mdadm -CR l6la -l6 -n4 --layout=ddf-N-restart /dev/md/ddf0 -z 5000
+mdadm -CR l6ra -l6 -n4 --layout=ddf-zero-restart $dev8 $dev9 $dev10 $dev11 -z 5000
+mdadm -CR l6ls -l6 -n4 --layout=ddf-N-continue $dev13 $dev8 $dev9 $dev12 -z 5000
+
+mdadm -Ss

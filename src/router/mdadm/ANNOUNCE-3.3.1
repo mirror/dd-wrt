@@ -1,0 +1,23 @@
+Subject: ANNOUNCE: mdadm 3.3.1 - A tool for managing md Soft RAID under Linux
+
+I am pleased to announce the availability of
+   mdadm version 3.3.1
+
+It is available at the usual places:
+   http://www.kernel.org/pub/linux/utils/raid/mdadm/
+and via git at
+   git://github.com/neilbrown/mdadm
+   git://neil.brown.name/mdadm
+   http://git.neil.brown.name/git/mdadm.git
+
+The main changes are:
+ - lots of work on "DDF" support.  Hopefully it will be more stable
+   now.  Bug reports are always welcome.
+ - improved interactions with 'systemd'.  Where possible, background
+   tasks are run from systemd (if it is present) rather then forking
+   disassociationg from the session.  This is important because udev
+   doesn't really let you disassociate.
+
+though there are a number of other little bug fixes too.
+
+NeilBrown 5th June 2014

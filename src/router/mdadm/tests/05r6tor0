@@ -1,0 +1,27 @@
+set -x -e
+
+# reshape a RAID6 to RAID5 and then RAID0.
+# then reshape back up to RAID5 and RAID5
+
+mdadm -CR $md0 -l6 -n5 $dev0 $dev1 $dev2 $dev3 $dev4
+check wait; sleep 1
+check raid6
+testdev $md0 3 19456 512
+mdadm -G $md0 -l5
+check wait; sleep 1
+check raid5
+testdev $md0 3 19456 512
+mdadm -G $md0 -l0
+check wait; sleep 1
+check raid0
+testdev $md0 3 19456 512
+mdadm -G $md0 -l5 --add $dev3 $dev4
+check wait; sleep 1
+check raid5
+check algorithm 2
+testdev $md0 3 19456 512
+mdadm -G $md0 -l 6
+check wait; sleep 1
+check raid6
+check algorithm 2
+testdev $md0 3 19456 512

@@ -1,0 +1,15 @@
+set -i
+
+# create a raid1 array, let it sync, then re-assemble with a force-sync
+
+mdadm -CR $md0 -l1 -n2 $dev0 $dev1
+check wait
+mdadm -S $md0
+
+mdadm -A $md0 $dev0 $dev1
+check nosync
+mdadm -S $md0
+
+mdadm -A $md0 -U resync $dev0 $dev1
+check resync
+mdadm -S $md0

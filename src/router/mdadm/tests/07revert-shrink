@@ -1,0 +1,56 @@
+set -e -x
+
+# revert a reshape that is decreasing the number of devices,
+# raid5, raid6, and raid10
+
+bu=$targetdir/md-backup
+rm -f $bu
+# RAID5
+mdadm -CR --assume-clean $md0 -l5 -n5  $devlist4
+check raid5
+testdev $md0 4 $mdsize1 512
+mdadm --grow $md0 --array-size 56832
+testdev $md0 3 $mdsize1 512
+mdadm -G $md0 -n 4 --backup=$bu
+sleep 3
+mdadm -S $md0
+mdadm -A $md0 --update=revert-reshape $devlist4 --backup-file=$bu
+check wait
+check raid5
+fsck -f -n $md0
+testdev $md0 4 $mdsize1 512
+mdadm -S $md0
+
+#FIXME
+rm -f $bu
+# RAID6
+mdadm -CR --assume-clean $md0 -l6 -n5 $devlist4
+check raid6
+testdev $md0 3 $mdsize1 512
+mdadm --grow $md0 --array-size 37888
+testdev $md0 2 $mdsize1 512
+mdadm -G $md0 -n 4 --backup=$bu
+sleep 2
+mdadm -S $md0
+mdadm -A $md0 --update=revert-reshape $devlist4 --backup-file=$bu
+check wait
+check raid6
+fsck -f -n $md0
+testdev $md0 3 $mdsize1 512
+mdadm -S $md0
+
+# RAID10
+mdadm -CR --assume-clean $md0 -l10 -n6 $devlist5
+check raid10
+testdev $md0 3 $mdsize1 512
+mdadm --grow $md0 --array-size 36864
+testdev $md0 2 $mdsize1 512
+mdadm -G $md0 -n 4
+sleep 3
+mdadm -S $md0
+mdadm -A $md0 --update=revert-reshape $devlist5
+check wait
+check raid10
+fsck -f -n $md0
+testdev $md0 3 $mdsize1 512
+mdadm -S $md0

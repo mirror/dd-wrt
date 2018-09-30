@@ -1,0 +1,36 @@
+Subject:  ANNOUNCE: mdadm 3.2.2 - A tool for managing Soft RAID under Linux
+
+I am pleased to announce the availability of
+   mdadm version 3.2.2
+
+It is available at the usual places:
+   countrycode=xx.
+   http://www.${countrycode}kernel.org/pub/linux/utils/raid/mdadm/
+and via git at
+   git://neil.brown.name/mdadm
+   http://neil.brown.name/git/mdadm
+
+This release is largely a stablising release for the 3.2 series.
+Many of the changes just fix bugs introduces in 3.2 or 3.2.1.
+
+There are some new features.  They are:
+  - reshaping IMSM (Intel metadata) arrays is no longer 'experimental',
+    it should work properly and be largely compatible with IMSM drivers in
+    other platforms.
+  - --assume-clean can be used with --grow --size to avoid resyncing the
+    new part of the array.  This is only support with very new kernels.
+  - RAID0 arrays can have chunksize which is not a power of 2.  This has been
+    supported in the kernel for a while but is only now supprted by
+    mdadm.
+
+  - A new tool 'raid6check' is available which can check a RAID6 array,
+    or part of it, and report which device is most inconsistent with the
+    others if any stripe is inconsistent.   This is still under development
+    and does not have a man page yet.  If anyone tries it out and has any
+    questions or experience to report, they would be most welcome on
+    linux-raid@vger.kernel.org.
+
+Future releases in the 3.2 series will only be made if bugfixes are needed.
+The next release to add features is expected to be 3.3.
+
+NeilBrown 17th June 2011

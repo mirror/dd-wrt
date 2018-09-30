@@ -1,0 +1,18 @@
+
+# Create some raid10 arrays, all with 6 devices and one spare
+devs="$dev0 $dev1 $dev2 $dev3 $dev4 $dev5 $dev6"
+
+for lo in n2 n3 f2 f3
+do
+ cm=1
+ case $lo in
+   f2 ) m=3 cm=2;;
+   f3 ) m=2 cm=3;;
+   n2 ) m=3;;
+   n3 ) m=2;;
+ esac
+ mdadm --create --run --level=raid10 --layout $lo --raid-disks 6 -x 1 $md0 $devs
+ check resync ; check raid10
+ testdev $md0 $m $mdsize1 $[512*cm]
+ mdadm -S $md0
+done

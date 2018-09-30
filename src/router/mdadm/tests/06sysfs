@@ -1,0 +1,11 @@
+exit 0
+mdadm -CR $md0 -l1 -n3 $dev1 $dev2 $dev3
+
+ls -Rl /sys/block/md0
+
+cat /sys/block/md0/md/level
+cat /sys/block/md0/md/raid_disks
+
+mdadm -S $md0
+
+exit 1

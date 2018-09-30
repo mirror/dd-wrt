@@ -1,0 +1,52 @@
+set -e -x
+
+# revert a reshape that is increasing the number of devices,
+# raid5, raid6, and raid10
+
+# metadate 0.90 cannot handle RAID10 growth
+# metadata 1.0 doesn't get a default headspace, is don't try it either.
+
+for metadata in 0.90 1.1 1.2
+do
+# RAID5
+mdadm -CR --assume-clean $md0 -l5 -n4 -x1 $devlist4 --metadata=$metadata
+check raid5
+testdev $md0 3 $mdsize1 512
+mdadm -G $md0 -n 5
+sleep 3
+mdadm -S $md0
+mdadm -A $md0 --update=revert-reshape $devlist4 --backup-file=/tmp/md-backup
+check wait
+check raid5
+testdev $md0 3 $mdsize1 512
+mdadm -S $md0
+
+# RAID6
+mdadm -CR --assume-clean $md0 -l6 -n4 -x1 $devlist4 --metadata=$metadata
+check raid6
+testdev $md0 2 $mdsize1 512
+mdadm -G $md0 -n 5
+sleep 3
+mdadm -S $md0
+mdadm -A $md0 --update=revert-reshape $devlist4 --backup-file=/tmp/md-backup
+check wait
+check raid6
+testdev $md0 2 $mdsize1 512
+mdadm -S $md0
+
+if [ $metadata = 0.90 ]; then continue; fi
+
+# RAID10
+mdadm -CR --assume-clean $md0 -l10 -n4 -x1 $devlist4 --metadata=$metadata
+check raid10
+testdev $md0 2 $mdsize1 512
+mdadm -G $md0 -n 5
+sleep 3
+mdadm -S $md0
+strace -o /tmp/str ./mdadm -A $md0 --update=revert-reshape $devlist4
+check wait
+check raid10
+testdev $md0 2 $mdsize1 512
+mdadm -S $md0
+
+done
