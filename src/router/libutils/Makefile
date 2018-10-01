@@ -1492,29 +1492,20 @@ endif
 
 HFLAGS := $(CFLAGS)
 CFLAGS += $(COPTS)
-all: clean libshutils.so libutils.so libwireless.so libqos.so libdisc.so $(ADDLIB)
+
+C_LIBS :=libshutils.so libutils.so libwireless.so libqos.so $(ADDLIB)
+ifeq ($(CONFIG_USB),y)
+C_LIBS +=libdisc.so
+endif
+all: clean $(C_LIBS)
 
 install: all
 ifeq ($(CONFIG_XSCALE),y)
 	install -d $(INSTALLDIR)/libutils/lib
-	cp libqos.so $(INSTALLDIR)/libutils/lib
-	cp libsharetools.so $(INSTALLDIR)/libutils/lib
-	cp libshutils.so $(INSTALLDIR)/libutils/lib
-	cp libutils.so $(INSTALLDIR)/libutils/lib
-	cp libwireless.so $(INSTALLDIR)/libutils/lib
-ifeq ($(CONFIG_USB),y)
-	cp libdisc.so $(INSTALLDIR)/libutils/lib
-endif
+	cp $(C_LIBS) $(INSTALLDIR)/libutils/lib
 else
 	install -d $(INSTALLDIR)/libutils/usr/lib
-	cp libqos.so $(INSTALLDIR)/libutils/usr/lib
-	cp libsharetools.so $(INSTALLDIR)/libutils/usr/lib
-	cp libshutils.so $(INSTALLDIR)/libutils/usr/lib
-	cp libutils.so $(INSTALLDIR)/libutils/usr/lib
-	cp libwireless.so $(INSTALLDIR)/libutils/usr/lib
-ifeq ($(CONFIG_USB),y)
-	cp libdisc.so $(INSTALLDIR)/libutils/usr/lib
-endif
+	cp $(C_LIBS) $(INSTALLDIR)/libutils/usr/lib
 endif
 
 clean:
