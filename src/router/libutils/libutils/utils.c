@@ -1965,3 +1965,97 @@ char *get_hwaddr(const char *name, char *eabuf)
 	}
 	return NULL;
 }
+#ifdef HAVE_RAID
+char *getMountedDrives(void)
+{
+	FILE *in = fopen("/proc/mounts", "rb");
+	if (in == NULL)
+		return NULL;
+	char line[512];
+	char *drives = NULL;
+	while (fgets(line, sizeof(line), in)) {
+		char *dev = NULL;
+		char *mp = NULL;
+		char *fstype = NULL;
+		dev = strtok(line, " ");
+		if (dev)
+			mp = strtok(dev, " ");
+		if (mp)
+			fstype = strtok(mp, " ");
+		if (dev) {
+			if (!strncmp(dev, "/dev/", 5)) {
+#ifdef HAVE_ZFS
+				char *d = &dev[5];
+				FILE *p = popen("zpool status|grep %s", d);
+				char stats[512];
+				char *result = fgets(stats, sizeof(stats), p);
+				pclose(p);
+				if (result) {
+					if (strstr(result, d))
+						goto next;
+				}
+#endif
+				int c = 0;
+				if (drives)
+					c = 1;
+				drives = realloc(drives, drives ? strlen(dev) + 2 + strlen(drives) : strlen(dev + 1));
+				if (c)
+					strcat(drives, " ");
+				strcat(drives, dev);
+				continue;
+			}
+		}
+#ifdef HAVE_ZFS
+	      next:;
+		if (fstype) {
+			if (!strcmp(dev, "zfs")) {
+				int c = 0;
+				if (drives)
+					c = 1;
+				drives = realloc(drives, drives ? strlen(dev) + 2 + strlen(drives) : strlen(dev + 1));
+				if (c)
+					strcat(drives, " ");
+				strcat(drives, dev);
+			}
+		}
+#endif
+	}
+	return drives;
+}
+
+char *getUnmountedDrives(void)
+{
+	char *mounts = getMountedDrives();
+	DIR *dir;
+	char *drives = NULL;
+	struct dirent *file;
+	if (!(dir = opendir("/dev")))
+		return NULL;
+	while (dir && (file = readdir(dir))) {
+		char drv[128];
+		sprintf(drv, "/dev/%s", file->d_name);
+		if (!strncmp(file->d_name, "sd", 2) || !strncmp(file->d_name, "hd", 2) || !strncmp(file->d_name, "mmcblk", 6)) {
+			char var[64];
+			char *next;
+			if (mounts) {
+				foreach(var, mounts, next) {
+					if (!strcmp(drv, var))
+						goto next;
+				}
+			}
+		}
+		int c = 0;
+		if (drives)
+			c = 1;
+		drives = realloc(drives, drives ? strlen(drv) + 2 + strlen(drives) : strlen(drv + 1));
+		if (c)
+			strcat(drives, " ");
+		strcat(drives, drv);
+	      next:;
+	}
+	closedir(dir);
+	if (mounts)
+		free(mounts);
+	return drives;
+}
+#endif
