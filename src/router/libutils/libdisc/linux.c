@@ -236,7 +236,6 @@ static int zfs_process_value(int level, char *name, size_t namelen, void *value,
 
 		print_line(level + 1, "ZFS Label: %s", nvs->nvs_string);
 
-//              blkid_probe_set_label(pr, nvs->nvs_string, nvs_strlen);
 
 		return 1;
 	} else if (strncmp(name, "guid", namelen) == 0 && sizeof(struct nvuint64) <= max_value_size) {
@@ -250,12 +249,8 @@ static int zfs_process_value(int level, char *name, size_t namelen, void *value,
 		if (nvu_type != DATA_TYPE_UINT64)
 			return 0;
 
-//              DBG(LOWPROBE, ul_debug("nvuint64: type %u value %"PRIu64"\n",
-//                                     nvu_type, nvu_value));
 		print_line(level + 1, "ZFS UUID_SUB: %" PRIu64, nvu_value);
 
-//              blkid_probe_sprintf_value(pr, "UUID_SUB",
-//                                        "%"PRIu64, nvu_value);
 
 		return 1;
 	} else if (strncmp(name, "pool_guid", namelen) == 0 && sizeof(struct nvuint64) <= max_value_size) {
@@ -269,15 +264,10 @@ static int zfs_process_value(int level, char *name, size_t namelen, void *value,
 		if (nvu_type != DATA_TYPE_UINT64)
 			return 0;
 
-//              DBG(LOWPROBE, ul_debug("nvuint64: type %u value %"PRIu64"\n",
-//                                     nvu_type, nvu_value));
 		char s[256];
 		format_guid(&nvu_value, s);
 		print_line(level + 1, "ZFS POOL_GUID %s", s);
 
-//              blkid_probe_sprintf_uuid(pr, (unsigned char *) &nvu_value,
-//                                       sizeof(nvu_value),
-//                                       "%"PRIu64, nvu_value);
 		return 1;
 	}
 
@@ -301,8 +291,6 @@ static void zfs_extract_guid_name(SECTION * section, int level, loff_t offset)
 	if (get_buffer(section, offset, left, (void **)&p) < left)
 		return;
 
-//      DBG(LOWPROBE, ul_debug("zfs_extract: nvlist offset %jd\n",
-//                             (intmax_t)offset));
 
 	nvl = (struct nvlist *)p;
 	nvp = &nvl->nvl_nvpair;
@@ -315,17 +303,11 @@ static void zfs_extract_guid_name(SECTION * section, int level, loff_t offset)
 		size_t max_value_size;
 		void *value;
 
-//              DBG(LOWPROBE, ul_debug("left %zd nvp_size %u\n",
-//                                     left, nvp_size));
 
 		/* nvpair fits in buffer and name fits in nvpair? */
 		if (nvp_size > left || namesize + sizeof(*nvp) > nvp_size)
 			break;
 
-//              DBG(LOWPROBE,
-//                  ul_debug("nvlist: size %u, namelen %u, name %*s\n",
-//                           nvp_size, nvp_namelen, nvp_namelen,
-//                           nvp->nvp_name));
 
 		max_value_size = nvp_size - (namesize + sizeof(*nvp));
 		value = nvp->nvp_name + namesize;
