@@ -12,17 +12,12 @@ RM = rm -f
 #         linux.o unix.o beos.o archives.o \
 #         udf.o blank.o cloop.o
          
-OBJS   = main.o lib.o \
-         buffer.o file.o cdaccess.o cdimage.o vpc.o compressed.o \
-         detect.o dos.o cdrom.o \
-         linux.o unix.o archives.o \
-         udf.o blank.o cloop.o apple.o beos.o amiga.o atari.o
-
+OBJS   = main.o
 TARGET = disktype
 
 CPPFLAGS = -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
 CFLAGS   = -Wall $(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF
-LDFLAGS  =
+LDFLAGS  = -L$(TOP)/libutils -ldisc
 LIBS     =
 
 ifeq ($(NOSYS),)
