@@ -127,6 +127,8 @@ int detect_btrfs(SECTION * section, int level)
 #define VDEV_LABEL_NVPAIR	( 16 * 1024ULL)
 #define VDEV_LABEL_SIZE		(256 * 1024ULL)
 #define UBERBLOCK_MAGIC         0x00bab10c	/* oo-ba-bloc!  */
+#define UBERBLOCK_SIZE		1024ULL
+#define UBERBLOCKS_COUNT   128
 #define ZFS_TRIES	64
 #define ZFS_WANT	 4
 struct zfs_uberblock {
@@ -149,38 +151,75 @@ struct zfs_uberblock {
                       (((x) & 0xFF00000000000000ULL) >> 56))
 #endif
 
-int detect_zfs(SECTION * section, int level)
+static int find_uberblocks(const void *label, loff_t *ub_offset, int *swap_endian)
 {
-	uint64_t swab_magic = bswap_64(UBERBLOCK_MAGIC);
+	uint64_t swab_magic = bswap_64((uint64_t)UBERBLOCK_MAGIC);
 	struct zfs_uberblock *ub;
-	int swab_endian;
-	off_t offset, ub_offset = 0;
-	int tried;
-	int found;
+	int i, found = 0;
+	loff_t offset = VDEV_LABEL_UBERBLOCK;
 
-	for (tried = found = 0, offset = VDEV_LABEL_UBERBLOCK; tried < ZFS_TRIES && found < ZFS_WANT; tried++, offset += 4096) {
-		/* also try the second uberblock copy */
-		if (tried == (ZFS_TRIES / 2))
-			offset = VDEV_LABEL_SIZE + VDEV_LABEL_UBERBLOCK;
-		if (get_buffer(section, offset, sizeof(struct zfs_uberblock), (void **)&ub) < 1024)
-			return 0;
-
-		if (ub == NULL)
-			return 0;
+	for (i = 0; i < UBERBLOCKS_COUNT; i++, offset += UBERBLOCK_SIZE) {
+		ub = (struct zfs_uberblock *)((char *) label + offset);
 
 		if (ub->ub_magic == UBERBLOCK_MAGIC) {
-			ub_offset = offset;
+			*ub_offset = offset;
+			*swap_endian = 0;
 			found++;
 		}
 
-		if ((swab_endian = (ub->ub_magic == swab_magic))) {
-			ub_offset = offset;
+		if (ub->ub_magic == swab_magic) {
+			*ub_offset = offset;
+			*swap_endian = 1;
 			found++;
 		}
 	}
 
-	if (found < 4)
-		return 0;
+	return found;
+}
+
+int detect_zfs(SECTION * section, int level)
+{
+	int swab_endian = 0;
+	struct zfs_uberblock *ub;
+	loff_t offset, ub_offset = 0;
+	int label_no, found = 0, found_in_label;
+	void *label;
+	loff_t blk_align = (64*1024*1024 % (256 * 1024ULL));
+
+	/* Look for at least 4 uberblocks to ensure a positive match */
+	for (label_no = 0; label_no < 4; label_no++) {
+		switch(label_no) {
+		case 0: // jump to L0
+			offset = 0;
+			break;
+		case 1: // jump to L1
+			offset = VDEV_LABEL_SIZE;
+			break;
+		case 2: // jump to L2
+			offset = 64*1024*1024 - 2 * VDEV_LABEL_SIZE - blk_align;
+			break;
+		case 3: // jump to L3
+			offset = 64*1024*1024 - VDEV_LABEL_SIZE - blk_align;
+			break;
+		}
+
+		if (get_buffer(section, offset, VDEV_LABEL_SIZE, (void **)&label))
+			return 0;
+
+		found_in_label = find_uberblocks(label, &ub_offset, &swab_endian);
+
+		if (found_in_label > 0) {
+			found+= found_in_label;
+			ub = (struct zfs_uberblock *)((char *) label + ub_offset);
+			ub_offset += offset;
+
+			if (found >= ZFS_WANT)
+				break;
+		}
+	}
+
+	if (found < ZFS_WANT)
+		return 1;
 	print_line(level, "ZFS file system v%" PRIu64 " Endian: %s", swab_endian ? bswap_64(ub->ub_version) : ub->ub_version, swab_endian ? "big" : "little");
 	return 1;
 
