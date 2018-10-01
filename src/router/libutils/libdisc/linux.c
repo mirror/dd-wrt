@@ -406,7 +406,7 @@ int detect_zfs(SECTION * section, int level)
 	}
 
 	if (found < ZFS_WANT)
-		return 1;
+		return 0;
 	print_line(level, "ZFS file system v%" PRIu64 " Endian: %s", swab_endian ? bswap_64(ub->ub_version) : ub->ub_version, swab_endian ? "big" : "little");
 
 	zfs_extract_guid_name(section, level, offset);
