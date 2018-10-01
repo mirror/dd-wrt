@@ -55,7 +55,23 @@ void ej_compile_time(webs_t wp, int argc, char_t ** argv)
 void ej_get_backup_name(webs_t wp, int argc, char_t ** argv)
 {
 	char *name = nvram_safe_get("router_name");
-	websWrite(wp, "nvrambak_r%s%s%s_%s.bin", SVN_REVISION, strlen(name) ? "_" : "", strlen(name) ? name : "", nvram_safe_get("DD_BOARD"));
+	char *printname;
+	asprintf(&printname, "nvrambak_r%s%s%s_%s.bin", SVN_REVISION, strlen(name) ? "_" : "", strlen(name) ? name : "", nvram_safe_get("DD_BOARD"));
+	int len = strlen(printname);
+	char *target = malloc(len * 3 + 1);
+	int i, t = 0;
+	for (i = 0; i < len; i++) {
+		if (printname[i] == ' ') {
+			target[t++] = '%';
+			target[t++] = '2';
+			target[t++] = '0';
+		} else
+			target[t++] = printname[i];
+	}
+	target[t++] = 0;
+	free(printname);
+	websWrite(wp, "%s", target);
+	free(target);
 }
 
 #ifndef HAVE_SPECIALEDITION
