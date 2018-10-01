@@ -140,6 +140,8 @@ struct zfs_uberblock {
 	char ub_rootbp;		/* MOS objset_phys_t            */
 } __attribute__((packed));
 
+#include <endian.h>
+
 #ifndef bswap_64
 #define bswap_64(x) ((((x) & 0x00000000000000FFULL) << 56) | \
                       (((x) & 0x000000000000FF00ULL) << 40) | \
@@ -151,15 +153,200 @@ struct zfs_uberblock {
                       (((x) & 0xFF00000000000000ULL) >> 56))
 #endif
 
-static int find_uberblocks(const void *label, loff_t *ub_offset, int *swap_endian)
+#ifndef bswap_32
+#define bswap_32(x) ((uint32_t)( \
+	(((uint32_t)(x) & 0x000000FF) << 24) | \
+	(((uint32_t)(x) & 0x0000FF00) << 8)  | \
+	(((uint32_t)(x) & 0x00FF0000) >> 8)  | \
+	(((uint32_t)(x) & 0xFF000000) >> 24)))
+#endif
+
+#ifndef htobe16
+#if !defined(WORDS_BIGENDIAN)
+#define htobe16(x) bswap_16 (x)
+#define htole16(x) (x)
+#define be16toh(x) bswap_16 (x)
+#define le16toh(x) (x)
+#define htobe32(x) bswap_32 (x)
+#define htole32(x) (x)
+#define be32toh(x) bswap_32 (x)
+#define le32toh(x) (x)
+#define htobe64(x) bswap_64 (x)
+#define htole64(x) (x)
+#define be64toh(x) bswap_64 (x)
+#define le64toh(x) (x)
+#else
+#define htobe16(x) (x)
+#define htole16(x) bswap_16 (x)
+#define be16toh(x) (x)
+#define le16toh(x) bswap_16 (x)
+#define htobe32(x) (x)
+#define htole32(x) bswap_32 (x)
+#define be32toh(x) (x)
+#define le32toh(x) bswap_32 (x)
+#define htobe64(x) (x)
+#define htole64(x) bswap_64 (x)
+#define be64toh(x) (x)
+#define le64toh(x) bswap_64 (x)
+#endif
+#endif
+
+#define be32_to_cpu(x) ((uint32_t) be32toh(x))
+#define be64_to_cpu(x) ((uint64_t) be64toh(x))
+
+#define DATA_TYPE_UINT64 8
+#define DATA_TYPE_STRING 9
+
+struct nvpair {
+	uint32_t nvp_size;
+	uint32_t nvp_unkown;
+	uint32_t nvp_namelen;
+	char nvp_name[0];	/* aligned to 4 bytes */
+	/* aligned ptr array for string arrays */
+	/* aligned array of data for value */
+};
+
+struct nvstring {
+	uint32_t nvs_type;
+	uint32_t nvs_elem;
+	uint32_t nvs_strlen;
+	unsigned char nvs_string[0];
+};
+
+struct nvuint64 {
+	uint32_t nvu_type;
+	uint32_t nvu_elem;
+	uint64_t nvu_value;
+};
+
+struct nvlist {
+	uint32_t nvl_unknown[3];
+	struct nvpair nvl_nvpair;
+};
+
+static int zfs_process_value(int level, char *name, size_t namelen, void *value, size_t max_value_size)
 {
-	uint64_t swab_magic = bswap_64((uint64_t)UBERBLOCK_MAGIC);
+	if (strncmp(name, "name", namelen) == 0 && sizeof(struct nvstring) <= max_value_size) {
+		struct nvstring *nvs = value;
+		uint32_t nvs_type = be32_to_cpu(nvs->nvs_type);
+		uint32_t nvs_strlen = be32_to_cpu(nvs->nvs_strlen);
+
+		if (nvs_type != DATA_TYPE_STRING || (uint64_t) nvs_strlen + sizeof(*nvs) > max_value_size)
+			return 0;
+
+		print_line(level + 1, "ZFS Label: %s", nvs->nvs_string);
+
+//              blkid_probe_set_label(pr, nvs->nvs_string, nvs_strlen);
+
+		return 1;
+	} else if (strncmp(name, "guid", namelen) == 0 && sizeof(struct nvuint64) <= max_value_size) {
+		struct nvuint64 *nvu = value;
+		uint32_t nvu_type = be32_to_cpu(nvu->nvu_type);
+		uint64_t nvu_value;
+
+		memcpy(&nvu_value, &nvu->nvu_value, sizeof(nvu_value));
+		nvu_value = be64_to_cpu(nvu_value);
+
+		if (nvu_type != DATA_TYPE_UINT64)
+			return 0;
+
+//              DBG(LOWPROBE, ul_debug("nvuint64: type %u value %"PRIu64"\n",
+//                                     nvu_type, nvu_value));
+		print_line(level + 1, "ZFS UUID_SUB: %" PRIu64, nvu_value);
+
+//              blkid_probe_sprintf_value(pr, "UUID_SUB",
+//                                        "%"PRIu64, nvu_value);
+
+		return 1;
+	} else if (strncmp(name, "pool_guid", namelen) == 0 && sizeof(struct nvuint64) <= max_value_size) {
+		struct nvuint64 *nvu = value;
+		uint32_t nvu_type = be32_to_cpu(nvu->nvu_type);
+		uint64_t nvu_value;
+
+		memcpy(&nvu_value, &nvu->nvu_value, sizeof(nvu_value));
+		nvu_value = be64_to_cpu(nvu_value);
+
+		if (nvu_type != DATA_TYPE_UINT64)
+			return 0;
+
+//              DBG(LOWPROBE, ul_debug("nvuint64: type %u value %"PRIu64"\n",
+//                                     nvu_type, nvu_value));
+		char s[256];
+		format_guid(&nvu_value, s);
+		print_line(level + 1, "ZFS POOL_GUID %s", s);
+
+//              blkid_probe_sprintf_uuid(pr, (unsigned char *) &nvu_value,
+//                                       sizeof(nvu_value),
+//                                       "%"PRIu64, nvu_value);
+		return 1;
+	}
+
+	return 0;
+}
+
+static void zfs_extract_guid_name(SECTION * section, int level, loff_t offset)
+{
+	unsigned char *p;
+	struct nvlist *nvl;
+	struct nvpair *nvp;
+	size_t left = 4096;
+	int found = 0;
+
+	offset = (offset & ~(VDEV_LABEL_SIZE - 1)) + VDEV_LABEL_NVPAIR;
+
+	/* Note that we currently assume that the desired fields are within
+	 * the first 4k (left) of the nvlist.  This is true for all pools
+	 * I've seen, and simplifies this code somewhat, because we don't
+	 * have to handle an nvpair crossing a buffer boundary. */
+	if (get_buffer(section, offset, left, (void **)&p) < left)
+		return;
+
+//      DBG(LOWPROBE, ul_debug("zfs_extract: nvlist offset %jd\n",
+//                             (intmax_t)offset));
+
+	nvl = (struct nvlist *)p;
+	nvp = &nvl->nvl_nvpair;
+	left -= (unsigned char *)nvp - p;	/* Already used up 12 bytes */
+
+	while (left > sizeof(*nvp) && nvp->nvp_size != 0 && found < 3) {
+		uint32_t nvp_size = be32_to_cpu(nvp->nvp_size);
+		uint32_t nvp_namelen = be32_to_cpu(nvp->nvp_namelen);
+		uint64_t namesize = ((uint64_t) nvp_namelen + 3) & ~3;
+		size_t max_value_size;
+		void *value;
+
+//              DBG(LOWPROBE, ul_debug("left %zd nvp_size %u\n",
+//                                     left, nvp_size));
+
+		/* nvpair fits in buffer and name fits in nvpair? */
+		if (nvp_size > left || namesize + sizeof(*nvp) > nvp_size)
+			break;
+
+//              DBG(LOWPROBE,
+//                  ul_debug("nvlist: size %u, namelen %u, name %*s\n",
+//                           nvp_size, nvp_namelen, nvp_namelen,
+//                           nvp->nvp_name));
+
+		max_value_size = nvp_size - (namesize + sizeof(*nvp));
+		value = nvp->nvp_name + namesize;
+
+		found += zfs_process_value(level, nvp->nvp_name, nvp_namelen, value, max_value_size);
+
+		left -= nvp_size;
+
+		nvp = (struct nvpair *)((char *)nvp + nvp_size);
+	}
+}
+
+static int find_uberblocks(const void *label, loff_t * ub_offset, int *swap_endian)
+{
+	uint64_t swab_magic = bswap_64((uint64_t) UBERBLOCK_MAGIC);
 	struct zfs_uberblock *ub;
 	int i, found = 0;
 	loff_t offset = VDEV_LABEL_UBERBLOCK;
 
 	for (i = 0; i < UBERBLOCKS_COUNT; i++, offset += UBERBLOCK_SIZE) {
-		ub = (struct zfs_uberblock *)((char *) label + offset);
+		ub = (struct zfs_uberblock *)((char *)label + offset);
 
 		if (ub->ub_magic == UBERBLOCK_MAGIC) {
 			*ub_offset = offset;
@@ -184,33 +371,33 @@ int detect_zfs(SECTION * section, int level)
 	loff_t offset, ub_offset = 0;
 	int label_no, found = 0, found_in_label;
 	void *label;
-	loff_t blk_align = (64*1024*1024 % (256 * 1024ULL));
+	loff_t blk_align = (64 * 1024 * 1024 % (256 * 1024ULL));
 
 	/* Look for at least 4 uberblocks to ensure a positive match */
 	for (label_no = 0; label_no < 4; label_no++) {
-		switch(label_no) {
-		case 0: // jump to L0
+		switch (label_no) {
+		case 0:	// jump to L0
 			offset = 0;
 			break;
-		case 1: // jump to L1
+		case 1:	// jump to L1
 			offset = VDEV_LABEL_SIZE;
 			break;
-		case 2: // jump to L2
-			offset = 64*1024*1024 - 2 * VDEV_LABEL_SIZE - blk_align;
+		case 2:	// jump to L2
+			offset = 64 * 1024 * 1024 - 2 * VDEV_LABEL_SIZE - blk_align;
 			break;
-		case 3: // jump to L3
-			offset = 64*1024*1024 - VDEV_LABEL_SIZE - blk_align;
+		case 3:	// jump to L3
+			offset = 64 * 1024 * 1024 - VDEV_LABEL_SIZE - blk_align;
 			break;
 		}
 
-		if (get_buffer(section, offset, VDEV_LABEL_SIZE, (void **)&label) < VDEV_LABEL_SIZE) 
+		if (get_buffer(section, offset, VDEV_LABEL_SIZE, (void **)&label) < VDEV_LABEL_SIZE)
 			return 0;
 
 		found_in_label = find_uberblocks(label, &ub_offset, &swab_endian);
 
 		if (found_in_label > 0) {
-			found+= found_in_label;
-			ub = (struct zfs_uberblock *)((char *) label + ub_offset);
+			found += found_in_label;
+			ub = (struct zfs_uberblock *)((char *)label + ub_offset);
 			ub_offset += offset;
 
 			if (found >= ZFS_WANT)
@@ -221,6 +408,8 @@ int detect_zfs(SECTION * section, int level)
 	if (found < ZFS_WANT)
 		return 1;
 	print_line(level, "ZFS file system v%" PRIu64 " Endian: %s", swab_endian ? bswap_64(ub->ub_version) : ub->ub_version, swab_endian ? "big" : "little");
+
+	zfs_extract_guid_name(section, level, offset);
 	return 1;
 
 }
