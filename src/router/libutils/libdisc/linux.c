@@ -203,7 +203,7 @@ int detect_zfs(SECTION * section, int level)
 			break;
 		}
 
-		if (get_buffer(section, offset, VDEV_LABEL_SIZE, (void **)&label))
+		if (get_buffer(section, offset, VDEV_LABEL_SIZE, (void **)&label) < VDEV_LABEL_SIZE) 
 			return 0;
 
 		found_in_label = find_uberblocks(label, &ub_offset, &swab_endian);
