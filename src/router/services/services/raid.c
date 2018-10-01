@@ -104,8 +104,19 @@ void start_raid(void)
 					sysprintf("mkfs.xfs /dev/md%d", i);
 				if (nvram_nmatch("btrfs", "raidfs%d", i))
 					sysprintf("mkfs.btrfs /dev/md%d", i);
-				nvram_nset("1", "raiddone%d", i);
-				nvram_commit();
+			}
+			if (!strcmp(type, "btrfs")) {
+				if (!strcmp(level, "stripe"))
+				    sysprintf("mkfs.btrfs -d single %s", raid);
+				if (!strcmp(level, "raid0"))
+				    sysprintf("mkfs.btrfs -d raid0 %s", raid);
+				if (!strcmp(level, "raid10"))
+				    sysprintf("mkfs.btrfs -d raid10 %s", raid);
+				if (!strcmp(level, "raid5"))
+				    sysprintf("mkfs.btrfs -d raid5 %s", raid);
+				if (!strcmp(level, "raid6"))
+				    sysprintf("mkfs.btrfs -d raid6 %s", raid);
+
 			}
 			if (!strcmp(type, "zfs")) {
 				char *poolname = nvram_nget("raidname%d", i);
