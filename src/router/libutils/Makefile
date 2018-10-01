@@ -101,6 +101,12 @@ OBJS := libutils/utils.o libutils/ledconfig.o libutils/bridgetools.o libutils/de
 SHOBJS =  libshutils/timezones.o libshutils/shutils.o libshutils/sha1.o libshutils/list.o libshutils/list_sort.o
 WOBJS := libwireless/wl.o libwireless/wl_basic.o libwireless/wl_linux.o libwireless/country.o libwireless/wl_macfuncs.o
 
+DISCOBJS   = libdisc/lib.o \
+         libdisc/buffer.o libdisc/file.o libdisc/cdaccess.o libdisc/cdimage.o libdisc/vpc.o libdisc/compressed.o \
+         libdisc/dos.o libdisc/cdrom.o libdisc/detect.o \
+         libdisc/linux.o libdisc/unix.o libdisc/archives.o \
+         libdisc/udf.o libdisc/blank.o libdisc/cloop.o libdisc/apple.o libdisc/beos.o libdisc/amiga.o libdisc/atari.o
+
 ifneq ($(CONFIG_TW6600),y)
 ifeq ($(CONFIG_DIST),"micro")
 CFLAGS += -DHAVE_MICRO
@@ -436,6 +442,9 @@ ifeq ($(CONFIG_DHDAP),y)
 endif
 ifeq ($(CONFIG_E200),y)
   CFLAGS += -DHAVE_E200
+endif
+ifeq ($(CONFIG_ZFS),y)
+  CFLAGS += -DHAVE_ZFS
 endif
 ifeq ($(CONFIG_RUT500),y)
   CFLAGS += -DHAVE_RUT500
@@ -1483,25 +1492,39 @@ endif
 
 HFLAGS := $(CFLAGS)
 CFLAGS += $(COPTS)
-all: clean libshutils.so libutils.so libwireless.so libqos.so $(ADDLIB)
+all: clean libshutils.so libutils.so libwireless.so libqos.so libdisc.so $(ADDLIB)
 
 install: all
 ifeq ($(CONFIG_XSCALE),y)
 	install -d $(INSTALLDIR)/libutils/lib
-	cp *.so $(INSTALLDIR)/libutils/lib
+	cp libqos.so $(INSTALLDIR)/libutils/lib
+	cp libsharetools.so $(INSTALLDIR)/libutils/lib
+	cp libshutils.so $(INSTALLDIR)/libutils/lib
+	cp libutils.so $(INSTALLDIR)/libutils/lib
+	cp libwireless.so $(INSTALLDIR)/libutils/lib
+ifeq ($(CONFIG_USB),y)
+	cp libdisc.so $(INSTALLDIR)/libutils/lib
+endif
 else
 	install -d $(INSTALLDIR)/libutils/usr/lib
-	cp *.so $(INSTALLDIR)/libutils/usr/lib
+	cp libqos.so $(INSTALLDIR)/libutils/usr/lib
+	cp libsharetools.so $(INSTALLDIR)/libutils/usr/lib
+	cp libshutils.so $(INSTALLDIR)/libutils/usr/lib
+	cp libutils.so $(INSTALLDIR)/libutils/usr/lib
+	cp libwireless.so $(INSTALLDIR)/libutils/usr/lib
+ifeq ($(CONFIG_USB),y)
+	cp libdisc.so $(INSTALLDIR)/libutils/usr/lib
+endif
 endif
 
 clean:
 #	rm -f countrycode/countrycode_$(ARCH).o
-	rm -f libutils/*.o libqos/*.o libwireless/*.o libshutils/*.o libsharetools/*.o *.o *.so
+	rm -f libutils/*.o libqos/*.o libwireless/*.o libshutils/*.o libdisc/*.o libsharetools/*.o *.o *.so
 	rm -f $(TOP)/register/*.o
 	rm -f *.a
 	rm -f *.o
 	rm -f include/*.h~
-	rm -f libqos/*.c~ libwireless/*.c~ libshutils/*.c~ libsharetools/*.c~
+	rm -f libqos/*.c~ libwireless/*.c~ libshutils/*.c~ libutils/*.c~ libsharetools/*.c~ libdisc/*.c~
 	rm -f $(TOP)/private/telkom/*.o
 
 madwififiles:
@@ -1518,7 +1541,7 @@ endif
 
 %.o : %.c
 	@echo "[CC] $@"
-	@$(CC) $(CFLAGS) -c -o $@ $<
+	@$(CC) $(CFLAGS) -DUSE_IOCTL_LINUX -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -c -o $@ $<
 
 libsharetools.so: $(SHARETOOLSOBJS)
 	@echo "[LD] $@"
@@ -1539,6 +1562,10 @@ libutils.so: $(OBJS)
 libshutils.so: $(SHOBJS)
 	@echo "[LD] $@"
 	@$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -L../nvram -lnvram
+
+libdisc.so: $(DISCOBJS)
+	@echo "[LD] $@"
+	@$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^
 
 mchillispot.o: $(TOP)/private/telkom/mchillispot.c
 	@echo "[CC] $@"
