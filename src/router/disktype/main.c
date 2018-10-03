@@ -39,7 +39,7 @@ void analyze_file(const char *filename);
 void analyze_stdin(void);
 int analyze_stat(struct stat *sb, const char *filename);
 void analyze_fd(int fd, int filekind, const char *filename);
-static void print_kind(int filekind, u8 size, int size_known);
+void print_kind(int filekind, u8 size, int size_known);
 
 #ifdef USE_MACOS_TYPE
 static void show_macos_type(const char *filename);
@@ -73,37 +73,6 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
-
-/*
- * Analyze one file
- */
-
-
-static void print_kind(int filekind, u8 size, int size_known)
-{
-	char buf[256], *kindname;
-
-	if (filekind == 0)
-		kindname = "Regular file";
-	else if (filekind == 1)
-		kindname = "Block device";
-	else if (filekind == 2)
-		kindname = "Character device";
-	else if (filekind == 3)
-		kindname = "FIFO";
-	else if (filekind == 4)
-		kindname = "Socket";
-	else
-		kindname = "Unknown kind";
-
-	if (size_known) {
-		format_size_verbose(buf, size);
-		print_line(0, "%s, size %s", kindname, buf);
-	} else {
-		print_line(0, "%s, unknown size", kindname);
-	}
-}
-
 /*
  * Mac OS type & creator code
  */

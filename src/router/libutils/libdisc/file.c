@@ -59,7 +59,7 @@ typedef struct file_source {
 
 static void determine_file_size(FILE_SOURCE * fs, int filekind);
 
-static int analyze_file(SOURCE * s, int level);
+static int analyse_file(SOURCE * s, int level);
 static u8 read_file(SOURCE * s, u8 pos, u8 len, void *buf);
 static void close_file(SOURCE * s);
 
@@ -83,7 +83,7 @@ SOURCE *init_file_source(int fd, int filekind)
 	if (filekind >= 3)	/* pipe or similar, non-seekable */
 		fs->c.sequential = 1;
 	else if (filekind != 0)	/* special treatment hook for devices */
-		fs->c.analyze = analyze_file;
+		fs->c.analyze = analyse_file;
 	fs->c.read_bytes = read_file;
 	fs->c.close = close_file;
 	fs->fd = fd;
@@ -243,7 +243,7 @@ static void determine_file_size(FILE_SOURCE * fs, int filekind)
  * special handling hook: devices may have out-of-band structure
  */
 
-static int analyze_file(SOURCE * s, int level)
+static int analyse_file(SOURCE * s, int level)
 {
 	if (analyze_cdaccess(((FILE_SOURCE *) s)->fd, s, level))
 		return 1;
@@ -388,6 +388,36 @@ void analyze_stdin(void)
 	/* go for it */
 	analyze_fd(fd, filekind, filename);
 }
+
+/*
+ * Analyze one file
+ */
+
+void print_kind(int filekind, u8 size, int size_known)
+{
+	char buf[256], *kindname;
+
+	if (filekind == 0)
+		kindname = "Regular file";
+	else if (filekind == 1)
+		kindname = "Block device";
+	else if (filekind == 2)
+		kindname = "Character device";
+	else if (filekind == 3)
+		kindname = "FIFO";
+	else if (filekind == 4)
+		kindname = "Socket";
+	else
+		kindname = "Unknown kind";
+
+	if (size_known) {
+		format_size_verbose(buf, size);
+		print_line(0, "%s, size %s", kindname, buf);
+	} else {
+		print_line(0, "%s, unknown size", kindname);
+	}
+}
+
 
 int analyze_stat(struct stat *sb, const char *filename)
 {
