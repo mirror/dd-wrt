@@ -52,9 +52,11 @@ void start_raid(void)
 		i++;
 	}
 	if (md) {
+		insmod("libcrc32c crc32c_generic crc32_generic");
 		insmod("dm-mod");
 		insmod("async_tx");
 		insmod("async_memcpy");
+		insmod("xor-neon"); // for arm only
 		insmod("xor");
 		insmod("async_xor");
 		insmod("raid6_pq");
