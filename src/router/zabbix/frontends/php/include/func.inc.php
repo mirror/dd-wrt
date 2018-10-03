@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -293,14 +293,18 @@ function zbx_date2str($format, $value = null) {
 	return $prefix.$output;
 }
 
-// calculate and convert timestamp to string representation
-function zbx_date2age($startDate, $endDate = 0, $utime = false) {
-	if (!$utime) {
-		$startDate = date('U', $startDate);
-		$endDate = $endDate ? date('U', $endDate) : time();
-	}
+/**
+ * Calculates and converts timestamp to string represenation.
+ *
+ * @param int|string $start_date  Start date timestamp.
+ * @param int|string $end_date    End date timestamp.
+ *
+ * @return string
+ */
+function zbx_date2age($start_date, $end_date = 0) {
+	$end_date = ($end_date != 0) ? $end_date : time();
 
-	return convertUnitsS(abs($endDate - $startDate));
+	return convertUnitsS($end_date - $start_date);
 }
 
 function zbxDateToTime($strdate) {
@@ -373,6 +377,40 @@ function hex2rgb($color) {
 	}
 
 	return [hexdec($r), hexdec($g), hexdec($b)];
+}
+
+function getColorVariations($color, $variations_requested = 1) {
+	if ($variations_requested <= 1) {
+		return [$color];
+	}
+
+	$change = hex2rgb('#ffffff'); // Color which is increased/decreased in variations.
+	$max = 50;
+
+	$color = hex2rgb($color);
+	$variations = [];
+
+	$range = range(-1 * $max, $max, $max * 2 / $variations_requested);
+
+	// Remove redundant values.
+	while (count($range) > $variations_requested) {
+		(count($range) % 2) ? array_shift($range) : array_pop($range);
+	}
+
+	// Calculate colors.
+	foreach ($range as $var) {
+		$r = $color[0] + ($change[0] / 100 * $var);
+		$g = $color[1] + ($change[1] / 100 * $var);
+		$b = $color[2] + ($change[2] / 100 * $var);
+
+		$variations[] = '#' . rgb2hex([
+			$r < 0 ? 0 : ($r > 255 ? 255 : (int) $r),
+			$g < 0 ? 0 : ($g > 255 ? 255 : (int) $g),
+			$b < 0 ? 0 : ($b > 255 ? 255 : (int) $b)
+		]);
+	}
+
+	return $variations;
 }
 
 function zbx_num2bitstr($num, $rev = false) {
@@ -478,8 +516,8 @@ function convertUnitsUptime($value) {
  * If some value is equal to zero, it is omitted. For example, if the period is 1y 0m 4d, it will be displayed as
  * 1y 4d, not 1y 0m 4d or 1y 4d #h.
  *
- * @param int $value	time period in seconds
- * @param bool $ignore_millisec	without ms (1s 200 ms = 1.2s)
+ * @param int  $value            Time period in seconds.
+ * @param bool $ignore_millisec  Without ms (1s 200 ms = 1.2s).
  *
  * @return string
  */
@@ -570,15 +608,21 @@ function convertUnitsS($value, $ignore_millisec = false) {
 		}
 	}
 
-	$str .= isset($values['y']) ? $values['y']._x('y', 'year short').' ' : '';
-	$str .= isset($values['m']) ? $values['m']._x('m', 'month short').' ' : '';
-	$str .= isset($values['d']) ? $values['d']._x('d', 'day short').' ' : '';
-	$str .= isset($values['h']) ? $values['h']._x('h', 'hour short').' ' : '';
-	$str .= isset($values['mm']) ? $values['mm']._x('m', 'minute short').' ' : '';
-	$str .= isset($values['s']) ? $values['s']._x('s', 'second short').' ' : '';
-	$str .= isset($values['ms']) ? $values['ms']._x('ms', 'millisecond short') : '';
+	$units = [
+		'y' => _x('y', 'year short'),
+		'm' => _x('m', 'month short'),
+		'd' => _x('d', 'day short'),
+		'h' => _x('h', 'hour short'),
+		'mm' => _x('m', 'minute short'),
+		's' => _x('s', 'second short'),
+		'ms' => _x('ms', 'millisecond short')
+	];
 
-	return $str ? rtrim($str) : '0';
+	foreach (array_filter($values) as $unit => $value) {
+		$str .= ' '.$value.$units[$unit];
+	}
+
+	return $str ? trim($str) : '0';
 }
 
 /**
@@ -625,17 +669,23 @@ function convert_units($options = []) {
 		return convertUnitsS($options['value'], $options['ignoreMillisec']);
 	}
 
-	// any other unit
 	// black list of units that should have no multiplier prefix (K, M, G etc) applied
 	$blackList = ['%', 'ms', 'rpm', 'RPM'];
 
+	// add to the blacklist if unit is prefixed with '!'
+	if ($options['units'] !== null && $options['units'] !== '' && $options['units'][0] === '!') {
+		$options['units'] = substr($options['units'], 1);
+		$blackList[] = $options['units'];
+	}
+
+	// any other unit
 	if (in_array($options['units'], $blackList) || (zbx_empty($options['units'])
 			&& ($options['convert'] == ITEM_CONVERT_WITH_UNITS))) {
-		if (preg_match('/^\-?\d+\.\d+$/', $options['value'])) {
-			if (abs($options['value']) >= ZBX_UNITS_ROUNDOFF_THRESHOLD) {
-				$options['value'] = round($options['value'], ZBX_UNITS_ROUNDOFF_UPPER_LIMIT);
-			}
-			$options['value'] = sprintf('%.'.ZBX_UNITS_ROUNDOFF_LOWER_LIMIT.'f', $options['value']);
+		if (preg_match('/\.\d+$/', $options['value'])) {
+			$format = (abs($options['value']) >= ZBX_UNITS_ROUNDOFF_THRESHOLD)
+				? '%.'.ZBX_UNITS_ROUNDOFF_UPPER_LIMIT.'f'
+				: '%.'.ZBX_UNITS_ROUNDOFF_LOWER_LIMIT.'f';
+			$options['value'] = sprintf($format, $options['value']);
 		}
 		$options['value'] = preg_replace('/^([\-0-9]+)(\.)([0-9]*)[0]+$/U', '$1$2$3', $options['value']);
 		$options['value'] = rtrim($options['value'], '.');
@@ -757,19 +807,24 @@ function convert_units($options = []) {
  * Examples:
  *		10m = 600
  *		3d = 10800
+ *		-10m = -600
  *
  * @param string $time
  *
  * @return int
  */
 function timeUnitToSeconds($time) {
-	preg_match('/^((\d)+)(['.ZBX_TIME_SUFFIXES.'])?$/', $time, $matches);
+	preg_match('/^(?<sign>[\-+])?(?<number>(\d)+)(?<suffix>['.ZBX_TIME_SUFFIXES.'])?$/', $time, $matches);
 
-	if (array_key_exists(3, $matches)) {
-		$suffix = $matches[3];
-		$time = $matches[1];
+	$is_negative = (array_key_exists('sign', $matches) && $matches['sign'] === '-');
 
-		switch ($suffix) {
+	if (!array_key_exists('number', $matches)) {
+		return null;
+	}
+	elseif (array_key_exists('suffix', $matches)) {
+		$time = $matches['number'];
+
+		switch ($matches['suffix']) {
 			case 's':
 				$sec = $time;
 				break;
@@ -788,10 +843,10 @@ function timeUnitToSeconds($time) {
 		}
 	}
 	else {
-		$sec = $matches[0];
+		$sec = $matches['number'];
 	}
 
-	return $sec;
+	return $is_negative ? bcmul($sec, -1) : $sec;
 }
 
 /**
@@ -800,45 +855,48 @@ function timeUnitToSeconds($time) {
  * Supported metric suffixes: K, M, G, T
  *
  * @param string $value
+ * @param int    $scale  The number of digits after the decimal place in the result.
  *
  * @return string
  */
-function convertFunctionValue($value) {
-	$suffix = $value[strlen($value) - 1];
-	if (!ctype_digit($suffix)) {
-		$value = substr($value, 0, strlen($value) - 1);
+function convertFunctionValue($value, $scale = 0) {
+	$suffix = substr($value, -1);
 
-		switch ($suffix) {
-			case 's':
-				break;
-			case 'm':
-				$value = bcmul($value, '60');
-				break;
-			case 'h':
-				$value = bcmul($value, '3600');
-				break;
-			case 'd':
-				$value = bcmul($value, '86400');
-				break;
-			case 'w':
-				$value = bcmul($value, '604800');
-				break;
-			case 'K':
-				$value = bcmul($value, '1024');
-				break;
-			case 'M':
-				$value = bcmul($value, '1048576');
-				break;
-			case 'G':
-				$value = bcmul($value, '1073741824');
-				break;
-			case 'T':
-				$value = bcmul($value, '1099511627776');
-				break;
-		}
+	if (ctype_digit($suffix)) {
+		return $value;
 	}
 
-	return $value;
+	$value = substr($value, 0, -1);
+
+	switch ($suffix) {
+		case 'm':
+			return bcmul($value, '60', $scale);
+
+		case 'h':
+			return bcmul($value, '3600', $scale);
+
+		case 'd':
+			return bcmul($value, '86400', $scale);
+
+		case 'w':
+			return bcmul($value, '604800', $scale);
+
+		case 'K':
+			return bcmul($value, '1024', $scale);
+
+		case 'M':
+			return bcmul($value, '1048576', $scale);
+
+		case 'G':
+			return bcmul($value, '1073741824', $scale);
+
+		case 'T':
+			return bcmul($value, '1099511627776', $scale);
+
+		case 's':
+		default:
+			return $value;
+	}
 }
 
 /************* ZBX MISC *************/
@@ -1261,15 +1319,17 @@ function zbx_toHash($value, $field = null) {
  * key.
  *
  * E.g:
- * zbx_toObject(array(1, 2), 'hostid')  // returns array(array('hostid' => 1), array('hostid' => 2))
- * zbx_toObject(3, 'hostid')            // returns array(array('hostid' => 3))
+ * zbx_toObject(array(1, 2), 'hostid')            // returns array(array('hostid' => 1), array('hostid' => 2))
+ * zbx_toObject(3, 'hostid')                      // returns array(array('hostid' => 3))
+ * zbx_toObject(array('a' => 1), 'hostid', true)  // returns array('a' => array('hostid' => 1))
  *
  * @param $value
  * @param $field
+ * @param $preserve_keys
  *
  * @return array
  */
-function zbx_toObject($value, $field) {
+function zbx_toObject($value, $field, $preserve_keys = false) {
 	if (is_null($value)) {
 		return $value;
 	}
@@ -1280,10 +1340,14 @@ function zbx_toObject($value, $field) {
 		$result = [[$field => $value]];
 	}
 	elseif (!isset($value[$field])) {
-		foreach ($value as $val) {
+		foreach ($value as $key => $val) {
 			if (!is_array($val)) {
-				$result[] = [$field => $val];
+				$result[$key] = [$field => $val];
 			}
+		}
+
+		if (!$preserve_keys) {
+			$result = array_values($result);
 		}
 	}
 
@@ -1414,17 +1478,27 @@ function zbx_str2links($text) {
 	foreach (explode("\n", $text) as $line) {
 		$line = rtrim($line, "\r ");
 
-		preg_match_all('#https?://[^\n\t\r ]+#u', $line, $matches, PREG_OFFSET_CAPTURE);
+		preg_match_all('#https?://[^\n\t\r ]+#u', $line, $matches);
 
 		$start = 0;
+
 		foreach ($matches[0] as $match) {
-			$result[] = mb_substr($line, $start, $match[1] - $start);
-			$result[] = new CLink($match[0], $match[0]);
-			$start = $match[1] + mb_strlen($match[0]);
+			if (($pos = mb_strpos($line, $match, $start)) !== false) {
+				if ($pos != $start) {
+					$result[] = mb_substr($line, $start, $pos - $start);
+				}
+				$result[] = new CLink(CHTML::encode($match), $match);
+				$start = $pos + mb_strlen($match);
+			}
 		}
-		$result[] = mb_substr($line, $start);
+
+		if (mb_strlen($line) != $start) {
+			$result[] = mb_substr($line, $start);
+		}
+
 		$result[] = BR();
 	}
+
 	array_pop($result);
 
 	return $result;
@@ -1718,6 +1792,16 @@ function access_deny($mode = ACCESS_DENY_OBJECT) {
 	else {
 		// url to redirect the user to after he logs in
 		$url = (new CUrl(!empty($_REQUEST['request']) ? $_REQUEST['request'] : ''))->removeArgument('sid');
+		$config = select_config();
+
+		if ($config['http_login_form'] == ZBX_AUTH_FORM_HTTP && $config['http_auth_enabled'] == ZBX_AUTH_HTTP_ENABLED
+				&& (!CWebUser::isLoggedIn() || CWebUser::isGuest())) {
+			$redirect_to = (new CUrl('index_http.php'))->setArgument('request', $url->toString());
+			redirect($redirect_to->toString());
+
+			exit;
+		}
+
 		$url = urlencode($url->toString());
 
 		// if the user is logged in - render the access denied message
@@ -1786,16 +1870,25 @@ function detect_page_type($default = PAGE_TYPE_HTML) {
 function makeMessageBox($good, array $messages, $title = null, $show_close_box = true, $show_details = false)
 {
 	$class = $good ? ZBX_STYLE_MSG_GOOD : ZBX_STYLE_MSG_BAD;
-	$msg_box = (new CDiv($title))->addClass($class);
+	$msg_details = null;
+	$link_details = null;
 
 	if ($messages) {
-		$msg_details = (new CDiv())->addClass(ZBX_STYLE_MSG_DETAILS);
-
 		if ($title !== null) {
-			$link = (new CSpan(_('Details')))
-				->addClass(ZBX_STYLE_LINK_ACTION)
-				->onClick('javascript: showHide($(this).next(\'.'.ZBX_STYLE_MSG_DETAILS_BORDER.'\'));');
-			$msg_details->addItem($link);
+			$link_details = (new CLinkAction())
+				->addItem(_('Details'))
+				->addItem(' ') // space
+				->addItem((new CSpan())
+					->setId('details-arrow')
+					->addClass($show_details ? ZBX_STYLE_ARROW_UP : ZBX_STYLE_ARROW_DOWN)
+				)
+				->setAttribute('aria-expanded', $show_details ? 'true' : 'false')
+				->onClick('javascript: '.
+					'showHide(jQuery(this).siblings(\'.'.ZBX_STYLE_MSG_DETAILS.'\')'.
+						'.find(\'.'.ZBX_STYLE_MSG_DETAILS_BORDER.'\'));'.
+					'jQuery("#details-arrow", $(this)).toggleClass("'.ZBX_STYLE_ARROW_UP.' '.ZBX_STYLE_ARROW_DOWN.'");'.
+					'jQuery(this).attr(\'aria-expanded\', jQuery(this).find(\'.'.ZBX_STYLE_ARROW_DOWN.'\').length == 0)'
+				);
 		}
 
 		$list = new CList();
@@ -1811,16 +1904,20 @@ function makeMessageBox($good, array $messages, $title = null, $show_close_box =
 				$list->addItem($message_part);
 			}
 		}
-		$msg_details->addItem($list);
-
-		$msg_box->addItem($msg_details);
+		$msg_details = (new CDiv())->addClass(ZBX_STYLE_MSG_DETAILS)->addItem($list);
 	}
+
+	// Details link should be in front of title.
+	$msg_box = (new CTag('output', true, [$link_details, $title, $msg_details]))
+		->addClass($class)
+		->setAttribute('role', 'contentinfo')
+		->setAttribute('aria-label', $good ? _('Success message') : _('Error message'));
 
 	if ($show_close_box) {
 		$msg_box->addItem((new CSimpleButton())
 			->addClass(ZBX_STYLE_OVERLAY_CLOSE_BTN)
 			->onClick('jQuery(this).closest(\'.'.$class.'\').remove();')
-			->setAttribute('title', _('Close')));
+			->setTitle(_('Close')));
 	}
 
 	return $msg_box;
@@ -1859,16 +1956,19 @@ function filter_messages(array $messages = []) {
 /**
  * Returns the message box when messages are present; null otherwise
  *
- * @global array $ZBX_MESSAGES
+ * @param  boolean	$good			Parameter passed to makeMessageBox to specify message box style.
+ * @param  string	$title			Message box title.
+ * @global array	$ZBX_MESSAGES
  *
  * @return CDiv|null
  */
-function getMessages()
-{
+function getMessages($good = false, $title = null) {
 	global $ZBX_MESSAGES;
 
-	$message_box = (isset($ZBX_MESSAGES) && $ZBX_MESSAGES)
-		? makeMessageBox(false, filter_messages($ZBX_MESSAGES))
+	$messages = (isset($ZBX_MESSAGES) && $ZBX_MESSAGES) ? filter_messages($ZBX_MESSAGES) : [];
+
+	$message_box = ($title || $messages)
+		? makeMessageBox($good, $messages, $title)
 		: null;
 
 	$ZBX_MESSAGES = [];
@@ -2090,14 +2190,14 @@ function get_status() {
 	];
 
 	$server = new CZabbixServer($ZBX_SERVER, $ZBX_SERVER_PORT, ZBX_SOCKET_TIMEOUT, ZBX_SOCKET_BYTES_LIMIT);
-	$status['is_running'] = $server->isRunning(get_cookie('zbx_sessionid'));
+	$status['is_running'] = $server->isRunning(get_cookie(ZBX_SESSION_NAME));
 
 	if ($status['is_running'] === false) {
 		return $status;
 	}
 
 	$server = new CZabbixServer($ZBX_SERVER, $ZBX_SERVER_PORT, 15, ZBX_SOCKET_BYTES_LIMIT);
-	$server_status = $server->getStatus(get_cookie('zbx_sessionid'));
+	$server_status = $server->getStatus(get_cookie(ZBX_SESSION_NAME));
 	$status['has_status'] = (bool) $server_status;
 
 	if ($server_status === false) {
@@ -2299,23 +2399,6 @@ function hasErrorMesssages() {
 }
 
 /**
- * Get all messages as array.
- *
- * @return array
- */
-function getMessagesAsArray() {
-	global $ZBX_MESSAGES;
-
-	$result = [];
-	if (isset($ZBX_MESSAGES)) {
-		foreach ($ZBX_MESSAGES as $message) {
-			$result[] = $message['message'];
-		}
-	}
-	return $result;
-}
-
-/**
  * Clears table rows selection's cookies.
  *
  * @param string $cookieId		parent ID, is used as cookie suffix
@@ -2419,7 +2502,9 @@ function getUserGraphTheme() {
 		'gridbordercolor' => 'ACBBC2',
 		'nonworktimecolor' => 'EBEBEB',
 		'leftpercentilecolor' => '429E47',
-		'righttpercentilecolor' => 'E33734'
+		'righttpercentilecolor' => 'E33734',
+		'colorpalette' => '1A7C11,F63100,2774A4,A54F10,FC6EA3,6C59DC,AC8C14,611F27,F230E0,5CCD18,BB2A02,5A2B57,'.
+			'89ABF8,7EC25C,274482,2B5429,8048B4,FD5434,790E1F,87AC4D,E89DF4'
 	];
 }
 
@@ -2519,118 +2604,129 @@ function makeUpdateIntervalFilter($field_name, $values) {
 }
 
 /**
- * Calculate timeline data
+ * Update profile with new time selector range.
  *
- * @param array		$options
- * @param string	$options['profileIdx']
- * @param int		$options['profileIdx2']
- * @param boolean	$options['updateProfile']
- * @param int		$options['period']
- * @param string	$options['stime']
- * @param int		$options['isNow']
+ * @param array       $options
+ * @param string      $options['profileIdx']
+ * @param int         $options['profileIdx2']
+ * @param string|null $options['from']
+ * @param string|null $options['to']
+ */
+function updateTimeSelectorPeriod(array $options) {
+	if ($options['from'] !== null && $options['to'] !== null) {
+		CProfile::update($options['profileIdx'].'.from', $options['from'], PROFILE_TYPE_STR, $options['profileIdx2']);
+		CProfile::update($options['profileIdx'].'.to', $options['to'], PROFILE_TYPE_STR, $options['profileIdx2']);
+	}
+}
+
+/**
+ * Get profile stored 'from' and 'to'. If profileIdx is null then default values will be returned. If one of fields
+ * not exist in $options array 'from' and 'to' value will be read from user profile. Calculates from_ts, to_ts.
+ *
+ * @param array $options  Array with period fields data: profileIdx, profileIdx2, from, to.
  *
  * @return array
  */
-function calculateTime(array $options = []) {
-	$defOptions = [
-		'updateProfile' => false,
-		'profileIdx' => null,
-		'profileIdx2' => 0,
-		'period' => null,
-		'stime' => null,
-		'isNow' => null
+function getTimeSelectorPeriod(array $options) {
+	$profileIdx = array_key_exists('profileIdx', $options) ? $options['profileIdx'] : null;
+	$profileIdx2 = array_key_exists('profileIdx2', $options) ? $options['profileIdx2'] : null;
+
+	if ($profileIdx === null) {
+		$options['from'] = ZBX_PERIOD_DEFAULT_FROM;
+		$options['to'] = ZBX_PERIOD_DEFAULT_TO;
+	}
+	elseif (!array_key_exists('from', $options) || !array_key_exists('to', $options)
+			|| $options['from'] === null || $options['to'] === null) {
+		$options['from'] = CProfile::get($profileIdx.'.from', ZBX_PERIOD_DEFAULT_FROM, $profileIdx2);
+		$options['to'] = CProfile::get($profileIdx.'.to', ZBX_PERIOD_DEFAULT_TO, $profileIdx2);
+	}
+
+	$range_time_parser = new CRangeTimeParser();
+
+	$range_time_parser->parse($options['from']);
+	$options['from_ts'] = $range_time_parser->getDateTime(true)->getTimestamp();
+	$range_time_parser->parse($options['to']);
+	$options['to_ts'] = $range_time_parser->getDateTime(false)->getTimestamp();
+
+	return $options;
+}
+
+/**
+ * Convert relative date range string to translated string. Function does not check is passed date range correct.
+ *
+ * @param string $from     Start date of date range.
+ * @param string $to       End date of date range.
+ *
+ * @return string
+ */
+function relativeDateToText($from, $to) {
+	$key = $from.':'.$to;
+	$ranges = [
+		'now-1d/d:now-1d/d' => _('Yesterday'),
+		'now-2d/d:now-2d/d' => _('Day before yesterday'),
+		'now-1w/d:now-1w/d' => _('This day last week'),
+		'now-1w/w:now-1w/w' => _('Previous week'),
+		'now-1M/M:now-1M/M' => _('Previous month'),
+		'now-1y/y:now-1y/y' => _('Previous year'),
+		'now/d:now/d' => _('Today'),
+		'now/d:now' => _('Today so far'),
+		'now/w:now/w' => _('This week'),
+		'now/w:now' => _('This week so far'),
+		'now/M:now/M' => _('This month'),
+		'now/M:now' => _('This month so far'),
+		'now/y:now/y' => _('This year'),
+		'now/y:now' => _('This year so far')
 	];
-	$options = zbx_array_merge($defOptions, $options);
 
-	if ($options['profileIdx'] === '') {
-		$options['profileIdx'] = $defOptions['profileIdx'];
-	}
-	if ($options['profileIdx2'] === null || $options['profileIdx2'] === '') {
-		$options['profileIdx2'] = $defOptions['profileIdx2'];
-	}
-	if ($options['stime'] === '') {
-		$options['stime'] = $defOptions['stime'];
+	if (array_key_exists($key, $ranges)) {
+		return $ranges[$key];
 	}
 
-	if ($options['profileIdx'] === null) {
-		$options['updateProfile'] = false;
-	}
+	if ($to === 'now') {
+		$relative_time_parser = new CRelativeTimeParser();
 
-	// period
-	if ($options['period'] === null) {
-		$options['period'] = ($options['profileIdx'] !== null)
-			? CProfile::get($options['profileIdx'].'.period', ZBX_PERIOD_DEFAULT, $options['profileIdx2'])
-			: ZBX_PERIOD_DEFAULT;
-	}
-	else {
-		if ($options['period'] < ZBX_MIN_PERIOD) {
-			error(_n('Minimum time period to display is %1$s minute.',
-				'Minimum time period to display is %1$s minutes.',
-				(int) ZBX_MIN_PERIOD / SEC_PER_MIN
-			));
-			$options['period'] = ZBX_MIN_PERIOD;
-		}
-		elseif ($options['period'] > ZBX_MAX_PERIOD) {
-			error(_n('Maximum time period to display is %1$s day.',
-				'Maximum time period to display is %1$s days.',
-				(int) ZBX_MAX_PERIOD / SEC_PER_DAY
-			));
-			$options['period'] = ZBX_MAX_PERIOD;
-		}
-	}
+		if ($relative_time_parser->parse($from) == CParser::PARSE_SUCCESS) {
+			$tokens = $relative_time_parser->getTokens();
 
-	$time = time();
-	$usertime = null;
+			if (count($tokens) == 1 && $tokens[0]['type'] == CRelativeTimeParser::ZBX_TOKEN_OFFSET
+					&& $tokens[0]['sign'] === '-') {
+				$suffix = $tokens[0]['suffix'];
+				$value = (int) $tokens[0]['value'];
 
-	// isNow
-	if ($options['isNow'] === null) {
-		$options['isNow'] = ($options['stime'] !== null)
-			? 0
-			: ($options['profileIdx'] !== null)
-				? CProfile::get($options['profileIdx'].'.isnow', 1, $options['profileIdx2'])
-				: 1;
-	}
+				switch ($suffix) {
+					case 's':
+						if ($value < 60 || $value % 60 != 0) {
+							return _n('Last %1$d second', 'Last %1$d seconds', $value);
+						}
+						$value /= 60;
+						// break; is not missing here.
 
-	// stime
-	if ($options['isNow'] == 1) {
-		$options['stime'] = date(TIMESTAMP_FORMAT, $time - $options['period']);
-		$usertime = date(TIMESTAMP_FORMAT, $time);
-	}
-	else {
-		if ($options['stime'] === null) {
-			$options['stime'] = CProfile::get($options['profileIdx'].'.stime', null, $options['profileIdx2']);
+					case 'm':
+						if ($value < 60 || $value % 60 != 0) {
+							return _n('Last %1$d minute', 'Last %1$d minutes', $value);
+						}
+						$value /= 60;
+						// break; is not missing here.
 
-			if ($options['stime'] === null) {
-				$options['isNow'] = 1;
-				$options['stime'] = date(TIMESTAMP_FORMAT, $time - $options['period']);
+					case 'h':
+						if ($value < 24 || $value % 24 != 0) {
+							return _n('Last %1$d hour', 'Last %1$d hours', $value);
+						}
+						$value /= 24;
+						// break; is not missing here.
+
+					case 'd':
+						return _n('Last %1$d day', 'Last %1$d days', $value);
+
+					case 'M':
+						return _n('Last %1$d month', 'Last %1$d months', $value);
+
+					case 'y':
+						return _n('Last %1$d year', 'Last %1$d years', $value);
+				}
 			}
 		}
-
-		$stimeUnix = zbxDateToTime($options['stime']);
-
-		if (zbxAddSecondsToUnixtime($options['period'], $stimeUnix) >= $time) {
-			$options['isNow'] = 1;
-			$options['stime'] = date(TIMESTAMP_FORMAT, $time - $options['period']);
-			$usertime = date(TIMESTAMP_FORMAT, $time);
-		}
-		else {
-			$usertime = date(TIMESTAMP_FORMAT, zbxAddSecondsToUnixtime($options['period'], $stimeUnix));
-		}
 	}
 
-	if ($options['updateProfile']) {
-		CProfile::update($options['profileIdx'].'.period', $options['period'], PROFILE_TYPE_INT,
-			$options['profileIdx2']
-		);
-		CProfile::update($options['profileIdx'].'.stime', $options['stime'], PROFILE_TYPE_STR, $options['profileIdx2']);
-		CProfile::update($options['profileIdx'].'.isnow', $options['isNow'], PROFILE_TYPE_INT, $options['profileIdx2']);
-	}
-
-	return [
-		'period' => $options['period'],
-		'stime' => date(TIMESTAMP_FORMAT, zbxDateToTime($options['stime'])),
-		'starttime' => date(TIMESTAMP_FORMAT, $time - ZBX_MAX_PERIOD),
-		'usertime' => $usertime,
-		'isNow' => $options['isNow']
-	];
+	return $from.' – '.$to;
 }

@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -123,7 +123,7 @@ function check_type(&$field, $flags, &$var, $type, $caption = null) {
 		$caption = $field;
 	}
 
-	if (is_array($var)) {
+	if (is_array($var) && $type != T_ZBX_RANGE_TIME) {
 		$err = ZBX_VALID_OK;
 
 		foreach ($var as $v) {
@@ -227,6 +227,22 @@ function check_type(&$field, $flags, &$var, $type, $caption = null) {
 			$message = _s('Field "%1$s" is not correct: %2$s', $caption, _('a time unit is expected'));
 		}
 	}
+	elseif ($type == T_ZBX_RANGE_TIME) {
+		$range_time_parser = new CRangeTimeParser();
+
+		if (!is_string($var) || $range_time_parser->parse($var) != CParser::PARSE_SUCCESS) {
+			$error = true;
+			$message = _s('Field "%1$s" is not correct: %2$s', $caption, _('a time range is expected'));
+		}
+	}
+	elseif ($type == T_ZBX_ABS_TIME) {
+		$absolute_time_parser = new CAbsoluteTimeParser();
+
+		if (!is_string($var) || $absolute_time_parser->parse($var) != CParser::PARSE_SUCCESS) {
+			$error = true;
+			$message = _s('Field "%1$s" is not correct: %2$s', $caption, _('an explicit time is expected'));
+		}
+	}
 
 	if ($error) {
 		if ($flags & P_SYS) {
@@ -303,8 +319,8 @@ function check_field(&$fields, &$field, $checks) {
 		}
 		elseif ($flags & P_ACT) {
 			if (!isset($_REQUEST['sid'])
-					|| (isset($_COOKIE['zbx_sessionid'])
-							&& $_REQUEST['sid'] != substr($_COOKIE['zbx_sessionid'], 16, 16))) {
+					|| (array_key_exists(ZBX_SESSION_NAME, $_COOKIE)
+							&& $_REQUEST['sid'] != substr($_COOKIE[ZBX_SESSION_NAME], 16, 16))) {
 				info(_('Operation cannot be performed due to unauthorized request.'));
 				return ZBX_VALID_ERROR;
 			}
@@ -367,7 +383,7 @@ function invalid_url($msg = null) {
 	require_once dirname(__FILE__).'/page_footer.php';
 }
 
-function check_fields(&$fields, $show_messages = true) {
+function check_fields(&$fields, $show_messages = true, $add_messages_to_message_stack = false) {
 	// VAR	TYPE	OPTIONAL	FLAGS	VALIDATION	EXCEPTION
 	$system_fields = [
 		'sid' =>			[T_ZBX_STR, O_OPT, P_SYS, HEX(),		null],
@@ -399,8 +415,48 @@ function check_fields(&$fields, $show_messages = true) {
 	if ($show_messages && $err != ZBX_VALID_OK) {
 		show_messages(($err == ZBX_VALID_OK), null, _('Page received incorrect data'));
 	}
+	elseif ($add_messages_to_message_stack && $err != ZBX_VALID_OK) {
+		error(_('Page received incorrect data'));
+	}
 
 	return ($err == ZBX_VALID_OK);
+}
+
+/**
+ * Validate "from" and "to" parameters for allowed period.
+ *
+ * @param string|null from
+ * @param string|null to
+ */
+function validateTimeSelectorPeriod($from, $to) {
+	if ($from === null || $to === null) {
+		return;
+	}
+
+	$ts = [];
+	$range_time_parser = new CRangeTimeParser();
+
+	foreach (['from' => $from, 'to' => $to] as $field => $value) {
+		$range_time_parser->parse($value);
+		$ts[$field] = $range_time_parser->getDateTime($field === 'from')->getTimestamp();
+	}
+
+	$period = $ts['to'] - $ts['from'] + 1;
+
+	if ($period < ZBX_MIN_PERIOD) {
+		error(_n('Minimum time period to display is %1$s minute.',
+			'Minimum time period to display is %1$s minutes.', (int) ZBX_MIN_PERIOD / SEC_PER_MIN
+		));
+
+		invalid_url();
+	}
+	elseif ($period > ZBX_MAX_PERIOD) {
+		error(_n('Maximum time period to display is %1$s day.',
+			'Maximum time period to display is %1$s days.', (int) ZBX_MAX_PERIOD / SEC_PER_DAY
+		));
+
+		invalid_url();
+	}
 }
 
 function validatePortNumberOrMacro($port) {

@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -93,7 +93,6 @@ class ZBase {
 		require_once $this->getRootDir().'/include/db.inc.php';
 
 		// page specific includes
-		require_once $this->getRootDir().'/include/acknow.inc.php';
 		require_once $this->getRootDir().'/include/actions.inc.php';
 		require_once $this->getRootDir().'/include/discovery.inc.php';
 		require_once $this->getRootDir().'/include/draw.inc.php';
@@ -212,6 +211,7 @@ class ZBase {
 			$this->rootDir.'/include/classes/export',
 			$this->rootDir.'/include/classes/export/writers',
 			$this->rootDir.'/include/classes/export/elements',
+			$this->rootDir.'/include/classes/graph',
 			$this->rootDir.'/include/classes/graphdraw',
 			$this->rootDir.'/include/classes/import',
 			$this->rootDir.'/include/classes/import/converters',
@@ -231,6 +231,7 @@ class ZBase {
 			$this->rootDir.'/include/classes/tree',
 			$this->rootDir.'/include/classes/html',
 			$this->rootDir.'/include/classes/html/pageheader',
+			$this->rootDir.'/include/classes/html/svg',
 			$this->rootDir.'/include/classes/html/widget',
 			$this->rootDir.'/include/classes/html/interfaces',
 			$this->rootDir.'/include/classes/parsers',
@@ -243,7 +244,8 @@ class ZBase {
 			$this->rootDir.'/include/classes/regexp',
 			$this->rootDir.'/include/classes/ldap',
 			$this->rootDir.'/include/classes/pagefilter',
-			$this->rootDir.'/include/classes/widgetfields',
+			$this->rootDir.'/include/classes/widgets/fields',
+			$this->rootDir.'/include/classes/widgets/forms',
 			$this->rootDir.'/include/classes/widgets',
 			$this->rootDir.'/local/app/controllers',
 			$this->rootDir.'/app/controllers'
@@ -259,6 +261,8 @@ class ZBase {
 		return [
 			'blue-theme' => _('Blue'),
 			'dark-theme' => _('Dark'),
+			'hc-light' => _('High-contrast light'),
+			'hc-dark' => _('High-contrast dark')
 		];
 	}
 
@@ -354,14 +358,14 @@ class ZBase {
 	 * Authenticate user.
 	 */
 	protected function authenticateUser() {
-		$sessionId = CWebUser::checkAuthentication(CWebUser::getSessionCookie());
+		$sessionid = CWebUser::checkAuthentication(CWebUser::getSessionCookie());
 
-		if (!$sessionId) {
+		if (!$sessionid) {
 			CWebUser::setDefault();
 		}
 
 		// set the authentication token for the API
-		API::getWrapper()->auth = $sessionId;
+		API::getWrapper()->auth = $sessionid;
 
 		// enable debug mode in the API
 		API::getWrapper()->debug = CWebUser::getDebugMode();
@@ -393,7 +397,6 @@ class ZBase {
 				$data['page']['file'] = $response->getFileName();
 				$data['controller']['action'] = $router->getAction();
 				$data['main_block'] = $view->getOutput();
-				$data['fullscreen'] = isset($_REQUEST['fullscreen']) && $_REQUEST['fullscreen'] == 1 ? 1 : 0;
 				$data['javascript']['files'] = $view->getAddedJS();
 				$data['javascript']['pre'] = $view->getIncludedJS();
 				$data['javascript']['post'] = $view->getPostJS();
@@ -423,6 +426,13 @@ class ZBase {
 		// Controller returned fatal error
 		else if ($response instanceof CControllerResponseFatal) {
 			header('Content-Type: text/html; charset=UTF-8');
+
+			global $ZBX_MESSAGES;
+			$messages = (isset($ZBX_MESSAGES) && $ZBX_MESSAGES) ? filter_messages($ZBX_MESSAGES) : [];
+			foreach ($messages as $message) {
+				$response->addMessage($message['message']);
+			}
+
 			$response->addMessage('Controller: '.$router->getAction());
 			ksort($_REQUEST);
 			foreach ($_REQUEST as $key => $value) {

@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -325,8 +325,12 @@ class CIconMap extends CApiService {
 		foreach ($iconmaps as $iconmap) {
 			if (array_key_exists('mappings', $iconmap)) {
 				foreach ($iconmap['mappings'] as $mapping) {
-					if ($mapping['expression'][0] == '@') {
-						$names[substr($mapping['expression'], 1)] = true;
+					if ($mapping['expression'][0] === '@') {
+						/*
+						 * substr() performs differently on PHP < 7. Prior to PHP 7 version, FALSE was returned if
+						 * string is equal to start characters long. As of PHP 7, an empty string will be returned.
+						 */
+						$names[isset($mapping['expression'][1]) ? substr($mapping['expression'], 1) : ''] = true;
 					}
 				}
 			}

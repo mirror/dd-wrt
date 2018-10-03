@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -21,23 +21,28 @@
 
 class CCol extends CTag {
 
+	protected $tag = 'td';
+
 	public function __construct($item = null) {
-		parent::__construct('td', true);
+		parent::__construct($this->tag, true);
 		$this->addItem($item);
 	}
 
 	public function setRowSpan($value) {
 		$this->setAttribute('rowspan', $value);
+
 		return $this;
 	}
 
 	public function setColSpan($value) {
 		$this->setAttribute('colspan', $value);
+
 		return $this;
 	}
 
 	public function setWidth($value) {
 		$this->setAttribute('width', $value);
+
 		return $this;
 	}
 }

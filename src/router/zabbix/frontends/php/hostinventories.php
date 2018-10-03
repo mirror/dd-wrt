@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -26,6 +26,14 @@ require_once dirname(__FILE__).'/include/forms.inc.php';
 
 $page['title'] = _('Host inventory');
 $page['file'] = 'hostinventories.php';
+$page['scripts'] = ['layout.mode.js'];
+
+$hostId = getRequest('hostid', 0);
+
+if ($hostId > 0) {
+	CView::$has_web_layout_mode = true;
+	$page['web_layout_mode'] = CView::getLayoutMode();
+}
 
 require_once dirname(__FILE__).'/include/page_header.php';
 
@@ -64,14 +72,10 @@ $sortOrder = getRequest('sortorder', CProfile::get('web.'.$page['file'].'.sortor
 CProfile::update('web.'.$page['file'].'.sort', $sortField, PROFILE_TYPE_STR);
 CProfile::update('web.'.$page['file'].'.sortorder', $sortOrder, PROFILE_TYPE_STR);
 
-$hostId = getRequest('hostid', 0);
-
 /*
  * Display
  */
 if ($hostId > 0) {
-	$data = [];
-
 	// host scripts
 	$data['hostScripts'] = API::Script()->getScriptsByHosts([$hostId]);
 
@@ -137,7 +141,9 @@ else {
 		'config' => select_config(),
 		'hosts' => [],
 		'sort' => $sortField,
-		'sortorder' => $sortOrder
+		'sortorder' => $sortOrder,
+		'profileIdx' => 'web.hostinventories.filter',
+		'active_tab' => CProfile::get('web.hostinventories.filter.active', 1)
 	];
 
 	// filter

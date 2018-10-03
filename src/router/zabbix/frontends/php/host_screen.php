@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -26,8 +26,12 @@ require_once dirname(__FILE__).'/include/blocks.inc.php';
 
 $page['title'] = _('Host screens');
 $page['file'] = 'screens.php';
-$page['scripts'] = ['effects.js', 'dragdrop.js', 'class.calendar.js', 'gtlc.js', 'flickerfreescreen.js'];
+$page['scripts'] = ['effects.js', 'dragdrop.js', 'class.calendar.js', 'gtlc.js', 'flickerfreescreen.js',
+	'layout.mode.js'];
 $page['type'] = detect_page_type(PAGE_TYPE_HTML);
+
+CView::$has_web_layout_mode = true;
+$page['web_layout_mode'] = CView::getLayoutMode();
 
 define('ZBX_PAGE_DO_JS_REFRESH', 1);
 
@@ -35,18 +39,17 @@ require_once dirname(__FILE__).'/include/page_header.php';
 
 // VAR	TYPE	OPTIONAL	FLAGS	VALIDATION	EXCEPTION
 $fields = [
-	'hostid' =>		[T_ZBX_INT, O_OPT, P_SYS, DB_ID,		null],
-	'tr_groupid' =>	[T_ZBX_INT, O_OPT, P_SYS, DB_ID,		null],
-	'tr_hostid' =>	[T_ZBX_INT, O_OPT, P_SYS, DB_ID,		null],
-	'screenid' =>	[T_ZBX_INT, O_OPT, P_SYS|P_NZERO, DB_ID, null],
-	'step' =>		[T_ZBX_INT, O_OPT, P_SYS, BETWEEN(0, 65535), null],
-	'period' =>		[T_ZBX_INT, O_OPT, P_SYS, null,		null],
-	'stime' =>		[T_ZBX_STR, O_OPT, P_SYS, null,		null],
-	'isNow' =>		[T_ZBX_INT, O_OPT, P_SYS, IN('0,1'),	null],
-	'reset' =>		[T_ZBX_STR, O_OPT, P_SYS, IN('"reset"'), null],
-	'fullscreen' =>	[T_ZBX_INT, O_OPT, P_SYS, IN('0,1'),	null]
+	'hostid' =>		[T_ZBX_INT,			O_OPT, P_SYS, DB_ID,		null],
+	'tr_groupid' =>	[T_ZBX_INT,			O_OPT, P_SYS, DB_ID,		null],
+	'tr_hostid' =>	[T_ZBX_INT,			O_OPT, P_SYS, DB_ID,		null],
+	'screenid' =>	[T_ZBX_INT,			O_OPT, P_SYS|P_NZERO, DB_ID, null],
+	'step' =>		[T_ZBX_INT,			O_OPT, P_SYS, BETWEEN(0, 65535), null],
+	'from' =>		[T_ZBX_RANGE_TIME,	O_OPT, P_SYS, null,		null],
+	'to' =>			[T_ZBX_RANGE_TIME,	O_OPT, P_SYS, null,		null],
+	'reset' =>		[T_ZBX_STR,			O_OPT, P_SYS, IN('"reset"'), null]
 ];
 check_fields($fields);
+validateTimeSelectorPeriod(getRequest('from'), getRequest('to'));
 
 if ($page['type'] == PAGE_TYPE_JS || $page['type'] == PAGE_TYPE_HTML_BLOCK) {
 	require_once dirname(__FILE__).'/include/page_footer.php';
@@ -58,11 +61,8 @@ if ($page['type'] == PAGE_TYPE_JS || $page['type'] == PAGE_TYPE_HTML_BLOCK) {
  */
 $data = [
 	'hostid' => getRequest('hostid', 0),
-	'fullscreen' => getRequest('fullscreen', 0),
 	'screenid' => getRequest('screenid', CProfile::get('web.hostscreen.screenid', null)),
-	'period' => getRequest('period'),
-	'stime' => getRequest('stime'),
-	'isNow' => getRequest('isNow')
+	'active_tab' => CProfile::get('web.screens.filter.active', 1)
 ];
 CProfile::update('web.hostscreen.screenid', $data['screenid'], PROFILE_TYPE_ID);
 
@@ -94,6 +94,18 @@ $data['screen'] = reset($data['screen']);
 // get host
 if (!empty($data['screen']['hostid'])) {
 	$data['host'] = get_host_by_hostid($data['screen']['hostid']);
+}
+
+if ($data['screen']) {
+	$timeselector_options = [
+		'profileIdx' => 'web.screens.filter',
+		'profileIdx2' => $data['screen']['screenid'],
+		'from' => getRequest('from'),
+		'to' => getRequest('to')
+	];
+	updateTimeSelectorPeriod($timeselector_options);
+
+	$data += $timeselector_options;
 }
 
 // render view

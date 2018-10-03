@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ function audit_resource2str($resource_type = null) {
 		AUDIT_RESOURCE_ZABBIX_CONFIG => _('Configuration of Zabbix'),
 		AUDIT_RESOURCE_MEDIA_TYPE => _('Media type'),
 		AUDIT_RESOURCE_HOST => _('Host'),
+		AUDIT_RESOURCE_HOST_PROTOTYPE => _('Host prototype'),
 		AUDIT_RESOURCE_ACTION => _('Action'),
 		AUDIT_RESOURCE_GRAPH => _('Graph'),
 		AUDIT_RESOURCE_GRAPH_ELEMENT => _('Graph element'),
@@ -48,7 +49,8 @@ function audit_resource2str($resource_type = null) {
 		AUDIT_RESOURCE_SCRIPT => _('Script'),
 		AUDIT_RESOURCE_MACRO => _('Macro'),
 		AUDIT_RESOURCE_TEMPLATE => _('Template'),
-		AUDIT_RESOURCE_ICON_MAP => _('Icon mapping')
+		AUDIT_RESOURCE_ICON_MAP => _('Icon mapping'),
+		AUDIT_RESOURCE_CORRELATION => _('Event correlation')
 	];
 
 	if (is_null($resource_type)) {

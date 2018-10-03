@@ -100,7 +100,8 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ax_lib_ibm_db2.m4 \
 	$(top_srcdir)/m4/libopenssl.m4 $(top_srcdir)/m4/libssh2.m4 \
 	$(top_srcdir)/m4/libunixodbc.m4 $(top_srcdir)/m4/libxml2.m4 \
 	$(top_srcdir)/m4/netsnmp.m4 $(top_srcdir)/m4/openipmi.m4 \
-	$(top_srcdir)/m4/pcre.m4 $(top_srcdir)/m4/resolv.m4 \
+	$(top_srcdir)/m4/pcre.m4 $(top_srcdir)/m4/pthread.m4 \
+	$(top_srcdir)/m4/resolv.m4 $(top_srcdir)/m4/zlib.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -215,8 +216,10 @@ am__distuninstallcheck_listfiles = $(distuninstallcheck_listfiles) \
   | sed 's|^\./|$(prefix)/|' | grep -v '$(infodir)/dir$$'
 distcleancheck_listfiles = find . -type f -print
 ACLOCAL = @ACLOCAL@
+AGENT_CONFIG_FILE = @AGENT_CONFIG_FILE@
 AGENT_LDFLAGS = @AGENT_LDFLAGS@
 AGENT_LIBS = @AGENT_LIBS@
+ALERT_SCRIPTS_PATH = @ALERT_SCRIPTS_PATH@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 ARCH = @ARCH@
@@ -229,6 +232,8 @@ CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
+CURL_SSL_CERT_LOCATION = @CURL_SSL_CERT_LOCATION@
+CURL_SSL_KEY_LOCATION = @CURL_SSL_KEY_LOCATION@
 CYGPATH_W = @CYGPATH_W@
 DB_CFLAGS = @DB_CFLAGS@
 DB_LDFLAGS = @DB_LDFLAGS@
@@ -240,6 +245,7 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+EXTERNAL_SCRIPTS_PATH = @EXTERNAL_SCRIPTS_PATH@
 GNUTLS_CFLAGS = @GNUTLS_CFLAGS@
 GNUTLS_LDFLAGS = @GNUTLS_LDFLAGS@
 GNUTLS_LIBS = @GNUTLS_LIBS@
@@ -272,12 +278,16 @@ LIBOBJS = @LIBOBJS@
 LIBPCRE_CFLAGS = @LIBPCRE_CFLAGS@
 LIBPCRE_LDFLAGS = @LIBPCRE_LDFLAGS@
 LIBPCRE_LIBS = @LIBPCRE_LIBS@
+LIBPTHREAD_CFLAGS = @LIBPTHREAD_CFLAGS@
+LIBPTHREAD_LDFLAGS = @LIBPTHREAD_LDFLAGS@
+LIBPTHREAD_LIBS = @LIBPTHREAD_LIBS@
 LIBS = @LIBS@
 LIBXML2_CFLAGS = @LIBXML2_CFLAGS@
 LIBXML2_CONFIG = @LIBXML2_CONFIG@
 LIBXML2_LDFLAGS = @LIBXML2_LDFLAGS@
 LIBXML2_LIBS = @LIBXML2_LIBS@
 LIBXML2_VERSION = @LIBXML2_VERSION@
+LOAD_MODULE_PATH = @LOAD_MODULE_PATH@
 LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
 MBEDTLS_CFLAGS = @MBEDTLS_CFLAGS@
@@ -317,12 +327,14 @@ POSTGRESQL_CFLAGS = @POSTGRESQL_CFLAGS@
 POSTGRESQL_LDFLAGS = @POSTGRESQL_LDFLAGS@
 POSTGRESQL_LIBS = @POSTGRESQL_LIBS@
 POSTGRESQL_VERSION = @POSTGRESQL_VERSION@
+PROXY_CONFIG_FILE = @PROXY_CONFIG_FILE@
 PROXY_LDFLAGS = @PROXY_LDFLAGS@
 PROXY_LIBS = @PROXY_LIBS@
 RANLIB = @RANLIB@
 RESOLV_LIBS = @RESOLV_LIBS@
 SENDER_LDFLAGS = @SENDER_LDFLAGS@
 SENDER_LIBS = @SENDER_LIBS@
+SERVER_CONFIG_FILE = @SERVER_CONFIG_FILE@
 SERVER_LDFLAGS = @SERVER_LDFLAGS@
 SERVER_LIBS = @SERVER_LIBS@
 SET_MAKE = @SET_MAKE@
@@ -345,6 +357,9 @@ UNIXODBC_LIBS = @UNIXODBC_LIBS@
 VERSION = @VERSION@
 ZBXGET_LDFLAGS = @ZBXGET_LDFLAGS@
 ZBXGET_LIBS = @ZBXGET_LIBS@
+ZLIB_CFLAGS = @ZLIB_CFLAGS@
+ZLIB_LDFLAGS = @ZLIB_LDFLAGS@
+ZLIB_LIBS = @ZLIB_LIBS@
 _libcurl_config = @_libcurl_config@
 _libnetsnmp_config = @_libnetsnmp_config@
 abs_builddir = @abs_builddir@
@@ -403,8 +418,7 @@ SUBDIRS = \
 	src \
 	database \
 	man \
-	misc \
-	upgrades
+	misc
 
 EXTRA_DIST = \
 	bin \
@@ -415,6 +429,45 @@ EXTRA_DIST = \
 	sass
 
 TESTDIR = src
+@ZBXCMOCKA_TRUE@WRAP_DB_FUNCS = \
+@ZBXCMOCKA_TRUE@	-Wl,--wrap=zbx_db_vselect \
+@ZBXCMOCKA_TRUE@	-Wl,--wrap=zbx_db_select_n \
+@ZBXCMOCKA_TRUE@	-Wl,--wrap=zbx_db_fetch \
+@ZBXCMOCKA_TRUE@	-Wl,--wrap=__zbx_DBexecute \
+@ZBXCMOCKA_TRUE@	-Wl,--wrap=DBbegin \
+@ZBXCMOCKA_TRUE@	-Wl,--wrap=DBcommit \
+@ZBXCMOCKA_TRUE@	-Wl,--wrap=DBexecute_multiple_query \
+@ZBXCMOCKA_TRUE@	-Wl,--wrap=DBfree_result
+
+@ZBXCMOCKA_TRUE@WRAP_IO_FUNCS = \
+@ZBXCMOCKA_TRUE@	-Wl,--wrap=fopen \
+@ZBXCMOCKA_TRUE@	-Wl,--wrap=fclose \
+@ZBXCMOCKA_TRUE@	-Wl,--wrap=fgets
+
+@ZBXCMOCKA_TRUE@WRAP_FS_FUNCS = \
+@ZBXCMOCKA_TRUE@	-Wl,--wrap=opendir \
+@ZBXCMOCKA_TRUE@	-Wl,--wrap=readdir \
+@ZBXCMOCKA_TRUE@	-Wl,--wrap=stat \
+@ZBXCMOCKA_TRUE@	-Wl,--wrap=__xstat
+
+@ZBXCMOCKA_TRUE@WRAP_EXIT = \
+@ZBXCMOCKA_TRUE@	-Wl,--wrap=exit
+
+@ZBXCMOCKA_TRUE@WRAP_COMM_FUNCS = \
+@ZBXCMOCKA_TRUE@	-Wl,--wrap=read \
+@ZBXCMOCKA_TRUE@	-Wl,--wrap=connect
+
+@ZBXCMOCKA_TRUE@WRAP_LOG = \
+@ZBXCMOCKA_TRUE@	-Wl,--wrap=__zbx_zabbix_log
+
+@ZBXCMOCKA_TRUE@COMMON_WRAP_FUNCS = \
+@ZBXCMOCKA_TRUE@	$(WRAP_DB_FUNCS) \
+@ZBXCMOCKA_TRUE@	$(WRAP_IO_FUNCS) \
+@ZBXCMOCKA_TRUE@	$(WRAP_FS_FUNCS) \
+@ZBXCMOCKA_TRUE@	$(WRAP_EXIT) \
+@ZBXCMOCKA_TRUE@	$(WRAP_COMM_FUNCS) \
+@ZBXCMOCKA_TRUE@	$(WRAP_LOG)
+
 all: all-recursive
 
 .SUFFIXES:
@@ -890,7 +943,7 @@ uninstall-am:
 
 
 dist-hook:
-	@zabbix_revision=`svn info|grep "Last Changed Rev"|awk '{print $$4;}'`; \
+	@zabbix_revision=`svn info $(top_srcdir)|sed -n -e "/Last Changed Rev:/s/.*: \([[0-9]]*\)/\1/p"`; \
 	cat $(top_distdir)/include/version.h|sed "s/{ZABBIX_REVISION}/$$zabbix_revision/g" > $(top_distdir)/include/version.h.new; \
 	mv $(top_distdir)/include/version.h.new $(top_distdir)/include/version.h; \
 	cat $(top_distdir)/src/zabbix_java/src/com/zabbix/gateway/GeneralInformation.java|sed "s/{ZABBIX_REVISION}/$$zabbix_revision/g" > \
@@ -905,30 +958,36 @@ dist-hook:
 	rm -f $(top_distdir)/sass/*.html
 	rm -rf $(top_distdir)/sass/img_source
 
-dbschema_ibm_db2:
-	create/bin/gen_data.pl ibm_db2 > database/ibm_db2/data.sql
-	create/bin/gen_schema.pl ibm_db2 > database/ibm_db2/schema.sql
+@DBSCHEMA_TRUE@dbschema_ibm_db2:
+@DBSCHEMA_TRUE@	cd database/ibm_db2 && \
+@DBSCHEMA_TRUE@	$(MAKE) $(AM_MAKEFLAGS) data.sql && \
+@DBSCHEMA_TRUE@	$(MAKE) $(AM_MAKEFLAGS) schema.sql
 
-dbschema_mysql:
-	create/bin/gen_data.pl mysql > database/mysql/data.sql
-	create/bin/gen_schema.pl mysql > database/mysql/schema.sql
+@DBSCHEMA_TRUE@dbschema_mysql:
+@DBSCHEMA_TRUE@	cd database/mysql && \
+@DBSCHEMA_TRUE@	$(MAKE) $(AM_MAKEFLAGS) data.sql && \
+@DBSCHEMA_TRUE@	$(MAKE) $(AM_MAKEFLAGS) schema.sql
 
-dbschema_oracle:
-	create/bin/gen_data.pl oracle > database/oracle/data.sql
-	create/bin/gen_schema.pl oracle > database/oracle/schema.sql
+@DBSCHEMA_TRUE@dbschema_oracle:
+@DBSCHEMA_TRUE@	cd database/oracle && \
+@DBSCHEMA_TRUE@	$(MAKE) $(AM_MAKEFLAGS) data.sql && \
+@DBSCHEMA_TRUE@	$(MAKE) $(AM_MAKEFLAGS) schema.sql
 
-dbschema_postgresql:
-	create/bin/gen_data.pl postgresql > database/postgresql/data.sql
-	create/bin/gen_schema.pl postgresql > database/postgresql/schema.sql
+@DBSCHEMA_TRUE@dbschema_postgresql:
+@DBSCHEMA_TRUE@	cd database/postgresql && \
+@DBSCHEMA_TRUE@	$(MAKE) $(AM_MAKEFLAGS) data.sql && \
+@DBSCHEMA_TRUE@	$(MAKE) $(AM_MAKEFLAGS) schema.sql
 
-dbschema_sqlite3:
-	create/bin/gen_data.pl sqlite3 > database/sqlite3/data.sql
-	create/bin/gen_schema.pl sqlite3 > database/sqlite3/schema.sql
+@DBSCHEMA_TRUE@dbschema_sqlite3:
+@DBSCHEMA_TRUE@	cd database/sqlite3 && \
+@DBSCHEMA_TRUE@	$(MAKE) $(AM_MAKEFLAGS) data.sql && \
+@DBSCHEMA_TRUE@	$(MAKE) $(AM_MAKEFLAGS) schema.sql
 
-dbschema_c:
-	create/bin/gen_schema.pl c > src/libs/zbxdbhigh/dbschema.c
+@DBSCHEMA_TRUE@dbschema_c:
+@DBSCHEMA_TRUE@	cd src/libs/zbxdbhigh && \
+@DBSCHEMA_TRUE@	$(MAKE) $(AM_MAKEFLAGS) dbschema.c
 
-dbschema: dbschema_ibm_db2 dbschema_mysql dbschema_oracle dbschema_postgresql dbschema_sqlite3 dbschema_c
+@DBSCHEMA_TRUE@dbschema: dbschema_ibm_db2 dbschema_mysql dbschema_oracle dbschema_postgresql dbschema_sqlite3 dbschema_c
 
 gettext:
 	frontends/php/locale/make_mo.sh
@@ -941,6 +1000,14 @@ css_theme_dark:
 	sass --no-cache --sourcemap=none sass/stylesheets/sass/dark-theme.scss frontends/php/styles/dark-theme.css
 	cp frontends/php/styles/dark-theme.css sass/stylesheets/dark-theme.css
 
+css_hc_light:
+	sass --no-cache --sourcemap=none sass/stylesheets/sass/hc-light.scss frontends/php/styles/hc-light.css
+	cp frontends/php/styles/hc-light.css sass/stylesheets/hc-light.css
+
+css_hc_dark:
+	sass --no-cache --sourcemap=none sass/stylesheets/sass/hc-dark.scss frontends/php/styles/hc-dark.css
+	cp frontends/php/styles/hc-dark.css sass/stylesheets/hc-dark.css
+
 css_icons:
 	cp sass/img/icon-sprite.svg frontends/php/img/
 	cp sass/img/browser-sprite.png frontends/php/img/
@@ -952,12 +1019,20 @@ css_icons:
 	cp sass/touch-icon-192x192.png frontends/php/img/
 	cp sass/favicon.ico frontends/php/
 
-css: css_theme_blue css_theme_dark css_icons
+css: css_theme_blue css_theme_dark css_hc_light css_hc_dark css_icons
 
 test:
 	cd $(TESTDIR) && $(MAKE) $(AM_MAKEFLAGS) test
 
-.PHONY: test
+@ZBXCMOCKA_TRUE@tests_build:
+@ZBXCMOCKA_TRUE@	$(MAKE) $(AM_MAKEFLAGS) && \
+@ZBXCMOCKA_TRUE@	cd tests && \
+@ZBXCMOCKA_TRUE@	$(MAKE) $(AM_MAKEFLAGS) LDFLAGS="$(LDFLAGS) $(COMMON_WRAP_FUNCS)" LIBS="$(LIBS) -lcmocka -lyaml"
+
+@ZBXCMOCKA_TRUE@tests: tests_build
+@ZBXCMOCKA_TRUE@	tests/tests_run.pl
+
+.PHONY: test tests
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

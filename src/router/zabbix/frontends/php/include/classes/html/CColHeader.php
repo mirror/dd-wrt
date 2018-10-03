@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -19,20 +19,10 @@
 **/
 
 
-class CColHeader extends CTag {
+class CColHeader extends CCol {
 
 	public function __construct($item = null) {
-		parent::__construct('th', true);
-		$this->addItem($item);
-	}
-
-	public function setColSpan($value) {
-		$this->setAttribute('colspan', $value);
-		return $this;
-	}
-
-	public function setWidth($value) {
-		$this->setAttribute('width', $value);
-		return $this;
+		$this->tag = 'th';
+		parent::__construct($item);
 	}
 }

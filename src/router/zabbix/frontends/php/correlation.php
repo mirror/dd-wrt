@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -482,7 +482,9 @@ else {
 		'sort' => $sortField,
 		'sortorder' => $sortOrder,
 		'filter' => $filter,
-		'config' => $config
+		'config' => $config,
+		'profileIdx' => 'web.correlation.filter',
+		'active_tab' => CProfile::get('web.correlation.filter.active', 1)
 	];
 
 	$data['correlations'] = API::Correlation()->get([

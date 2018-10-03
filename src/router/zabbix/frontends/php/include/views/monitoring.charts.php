@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -18,49 +18,84 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
-$controls = (new CList())
-	->addItem([
-		new CLabel(_('Group'), 'groupid'),
-		(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
-		$this->data['pageFilter']->getGroupsCB()
-	])
-	->addItem([
-		new CLabel(_('Host'), 'hostid'),
-		(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
-		$this->data['pageFilter']->getHostsCB()
-	])
-	->addItem([
-		new CLabel(_('Graph'), 'graphid'),
-		(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
-		$this->data['pageFilter']->getGraphsCB()
-	]);
+
+$controls = (new CForm('get'))
+	->cleanItems()
+	->setAttribute('aria-label', _('Main filter'))
+	->addVar('page', 1)
+	->addItem((new CList())
+		->addItem([
+			new CLabel(_('Group'), 'groupid'),
+			(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
+			$this->data['pageFilter']->getGroupsCB()
+		])
+		->addItem([
+			new CLabel(_('Host'), 'hostid'),
+			(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
+			$this->data['pageFilter']->getHostsCB()
+		])
+		->addItem([
+			new CLabel(_('Graph'), 'graphid'),
+			(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
+			$this->data['pageFilter']->getGraphsCB()
+		])
+		->addItem([
+			new CLabel(_('View as'), 'action'),
+			(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
+			(new CComboBox('action', $data['action'], 'submit()', $data['actions']))->setEnabled((bool) $data['graphid'])
+		])
+	);
+
+$content_control = (new CList());
 
 if ($this->data['graphid']) {
-	$controls->addItem(get_icon('favourite', ['fav' => 'web.favorite.graphids', 'elname' => 'graphid', 'elid' => $this->data['graphid']]));
-	$controls->addItem(get_icon('reset', ['id' => $this->data['graphid']]));
+	$content_control->addItem(get_icon('favourite', ['fav' => 'web.favorite.graphids', 'elname' => 'graphid',
+		'elid' => $this->data['graphid']])
+	);
 }
 
-$controls->addItem(get_icon('fullscreen', ['fullscreen' => $this->data['fullscreen']]));
+$content_control->addItem(get_icon('fullscreen'));
+$content_control = (new CTag('nav', true, $content_control))->setAttribute('aria-label', _('Content controls'));
+
+$web_layout_mode = CView::getLayoutMode();
 
 $chartsWidget = (new CWidget())
 	->setTitle(_('Graphs'))
-	->setControls((new CForm('get'))
-		->cleanItems()
-		->addVar('fullscreen', $this->data['fullscreen'])
-		->addItem($controls)
-	);
+	->setWebLayoutMode($web_layout_mode)
+	->setControls(new CList([$controls, $content_control]));
 
-$filterForm = (new CFilter('web.charts.filter.state'))->addNavigator();
-$chartsWidget->addItem($filterForm);
+$filter = (new CFilter())
+	->setProfile($data['timeline']['profileIdx'], $data['timeline']['profileIdx2'])
+	->setActiveTab($data['active_tab'])
+	->addTimeSelector($data['timeline']['from'], $data['timeline']['to']);
+
+if ($web_layout_mode === ZBX_LAYOUT_KIOSKMODE) {
+	$filter->addClass(ZBX_STYLE_HIDDEN);
+}
+$chartsWidget->addItem($filter);
 
 if (!empty($this->data['graphid'])) {
 	// append chart to widget
-	$screen = CScreenBuilder::getScreen([
-		'resourcetype' => SCREEN_RESOURCE_CHART,
-		'graphid' => $this->data['graphid'],
-		'profileIdx' => 'web.graphs',
-		'profileIdx2' => $this->data['graphid']
-	]);
+
+	if ($data['action'] === HISTORY_VALUES) {
+		$screen = CScreenBuilder::getScreen([
+			'resourcetype' => SCREEN_RESOURCE_HISTORY,
+			'action' => HISTORY_VALUES,
+			'graphid' => $data['graphid'],
+			'profileIdx' => $data['timeline']['profileIdx'],
+			'profileIdx2' => $data['timeline']['profileIdx2'],
+			'from' => $data['timeline']['from'],
+			'to' => $data['timeline']['to']
+		]);
+	}
+	else {
+		$screen = CScreenBuilder::getScreen([
+			'resourcetype' => SCREEN_RESOURCE_CHART,
+			'graphid' => $this->data['graphid'],
+			'profileIdx' => $data['timeline']['profileIdx'],
+			'profileIdx2' => $data['timeline']['profileIdx2']
+		]);
+	}
 
 	$chartTable = (new CTable())
 		->setAttribute('style', 'width: 100%;')
@@ -68,17 +103,11 @@ if (!empty($this->data['graphid'])) {
 
 	$chartsWidget->addItem($chartTable);
 
-	CScreenBuilder::insertScreenStandardJs([
-		'timeline' => $screen->timeline,
-		'profileIdx' => $screen->profileIdx,
-		'profileIdx2' => $screen->profileIdx2
-	]);
+	CScreenBuilder::insertScreenStandardJs($screen->timeline);
 }
 else {
 	$screen = new CScreenBuilder();
-	CScreenBuilder::insertScreenStandardJs([
-		'timeline' => $screen->timeline
-	]);
+	CScreenBuilder::insertScreenStandardJs($screen->timeline);
 
 	$chartsWidget->addItem(new CTableInfo());
 }

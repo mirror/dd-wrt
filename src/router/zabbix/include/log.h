@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -59,9 +59,9 @@ zbx_err_codes_t;
 #endif
 
 int		zabbix_open_log(int type, int level, const char *filename, char **error);
-void		zabbix_errlog(zbx_err_codes_t err, ...);
-void		__zbx_zabbix_log(int level, const char *fmt, ...);
+void		__zbx_zabbix_log(int level, const char *fmt, ...) __zbx_attr_format_printf(2, 3);
 void		zabbix_close_log(void);
+
 #ifndef _WINDOWS
 int		zabbix_increase_log_level(void);
 int		zabbix_decrease_log_level(void);

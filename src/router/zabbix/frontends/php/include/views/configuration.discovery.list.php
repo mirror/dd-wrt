@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,23 +20,32 @@
 
 $widget = (new CWidget())
 	->setTitle(_('Discovery rules'))
-	->setControls((new CForm('get'))
-		->cleanItems()
-		->addItem((new CList())->addItem(new CSubmit('form', _('Create discovery rule'))))
+	->setControls((new CTag('nav', true,
+		(new CForm('get'))
+			->cleanItems()
+			->addItem((new CList())
+				->addItem(new CSubmit('form', _('Create discovery rule')))
+			)
+		))
+			->setAttribute('aria-label', _('Content controls'))
 	)
-	->addItem((new CFilter('web.discoveryconf.filter.state'))
-		->addColumn((new CFormList())->addRow(_('Name'),
-			(new CTextBox('filter_name', $data['filter']['name']))
-				->setWidth(ZBX_TEXTAREA_FILTER_SMALL_WIDTH)
-				->setAttribute('autofocus', 'autofocus')
-		))
-		->addColumn((new CFormList())->addRow(_('Status'),
-			(new CRadioButtonList('filter_status', (int) $data['filter']['status']))
-				->addValue(_('Any'), -1)
-				->addValue(_('Enabled'), DRULE_STATUS_ACTIVE)
-				->addValue(_('Disabled'), DRULE_STATUS_DISABLED)
-				->setModern(true)
-		))
+	->addItem((new CFilter())
+		->setProfile($data['profileIdx'])
+		->setActiveTab($data['active_tab'])
+		->addFilterTab(_('Filter'), [
+			(new CFormList())->addRow(_('Name'),
+				(new CTextBox('filter_name', $data['filter']['name']))
+					->setWidth(ZBX_TEXTAREA_FILTER_SMALL_WIDTH)
+					->setAttribute('autofocus', 'autofocus')
+			),
+			(new CFormList())->addRow(_('Status'),
+				(new CRadioButtonList('filter_status', (int) $data['filter']['status']))
+					->addValue(_('Any'), -1)
+					->addValue(_('Enabled'), DRULE_STATUS_ACTIVE)
+					->addValue(_('Disabled'), DRULE_STATUS_DISABLED)
+					->setModern(true)
+			)
+		])
 	);
 
 // create form
@@ -48,7 +57,7 @@ $discoveryTable = (new CTableInfo())
 		(new CColHeader(
 			(new CCheckBox('all_drules'))->onClick("checkAll('".$discoveryForm->getName()."', 'all_drules', 'g_druleid');")
 		))->addClass(ZBX_STYLE_CELL_WIDTH),
-		make_sorting_header(_('Name'), 'name', $this->data['sort'], $this->data['sortorder']),
+		make_sorting_header(_('Name'), 'name', $data['sort'], $data['sortorder'], 'discoveryconf.php'),
 		_('IP range'),
 		_('Interval'),
 		_('Checks'),

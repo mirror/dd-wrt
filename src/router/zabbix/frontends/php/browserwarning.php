@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -24,6 +24,11 @@ require_once dirname(__FILE__).'/include/func.inc.php';
 require_once dirname(__FILE__).'/include/html.inc.php';
 require_once dirname(__FILE__).'/include/defines.inc.php';
 require_once dirname(__FILE__).'/include/classes/mvc/CView.php';
+require_once dirname(__FILE__).'/include/classes/html/CObject.php';
+require_once dirname(__FILE__).'/include/classes/html/CTag.php';
+require_once dirname(__FILE__).'/include/classes/html/CLink.php';
+require_once dirname(__FILE__).'/include/classes/helpers/CBrandHelper.php';
+require_once dirname(__FILE__).'/include/html.inc.php';
 
 $browserWarningForm = new CView('general.browserwarning');
 $browserWarningForm->render();

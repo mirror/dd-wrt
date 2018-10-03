@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -21,8 +21,6 @@
 $auditWidget = (new CWidget())->setTitle(_('Action log'));
 
 // create filter
-$filterForm = new CFilter('web.auditacts.filter.state');
-
 $filterColumn = new CFormList();
 $filterColumn->addRow(_('Recipient'), [
 	(new CTextBox('alias', $this->data['alias']))
@@ -31,12 +29,23 @@ $filterColumn->addRow(_('Recipient'), [
 	(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
 	(new CButton('btn1', _('Select')))
 		->addClass(ZBX_STYLE_BTN_GREY)
-		->onClick('return PopUp("popup.php?dstfrm=zbx_filter&dstfld1=alias&srctbl=users&srcfld1=alias");')
+		->onClick('return PopUp("popup.generic",'.
+			CJs::encodeJson([
+				'srctbl' => 'users',
+				'srcfld1' => 'alias',
+				'dstfrm' => 'zbx_filter',
+				'dstfld1' => 'alias'
+			]).', null, this);'
+		)
 ]);
 
-$filterForm->addColumn($filterColumn);
-$filterForm->addNavigator();
-$auditWidget->addItem($filterForm);
+$auditWidget->addItem(
+	(new CFilter())
+		->setProfile($data['timeline']['profileIdx'])
+		->setActiveTab($data['active_tab'])
+		->addTimeSelector($data['timeline']['from'], $data['timeline']['to'])
+		->addFilterTab(_('Filter'), [$filterColumn])
+);
 
 // create form
 $auditForm = (new CForm('get'))->setName('auditForm');
@@ -95,8 +104,8 @@ foreach ($this->data['alerts'] as $alert) {
 	}
 
 	$recipient = (isset($alert['userid']) && $alert['userid'])
-		? [bold(getUserFullname($this->data['users'][$alert['userid']])), BR(), $alert['sendto']]
-		: $alert['sendto'];
+		? [bold(getUserFullname($this->data['users'][$alert['userid']])), BR(), zbx_nl2br($alert['sendto'])]
+		: zbx_nl2br($alert['sendto']);
 
 	$auditTable->addRow([
 		zbx_date2str(DATE_TIME_FORMAT_SECONDS, $alert['clock']),
@@ -118,15 +127,8 @@ $objData = [
 	'domid' => 'events',
 	'loadSBox' => 0,
 	'loadImage' => 0,
-	'loadScroll' => 1,
 	'dynamic' => 0,
-	'mainObject' => 1,
-	'periodFixed' => CProfile::get('web.auditacts.timelinefixed', 1),
-	'sliderMaximumTimePeriod' => ZBX_MAX_PERIOD,
-	'profile' => [
-		'idx' => 'web.auditacts',
-		'idx2' => 0
-	]
+	'mainObject' => 1
 ];
 zbx_add_post_js('timeControl.addObject("events", '.zbx_jsvalue($data['timeline']).', '.zbx_jsvalue($objData).');');
 zbx_add_post_js('timeControl.processObjects();');

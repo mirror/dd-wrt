@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -144,7 +144,7 @@ class CHttpTest extends CApiService {
 		if (!is_null($options['applicationids'])) {
 			zbx_value2array($options['applicationids']);
 
-			$sqlParts['where'][] = dbConditionInt('ht.applicationid', $options['applicationids']);
+			$sqlParts['where'][] = dbConditionId('ht.applicationid', $options['applicationids']);
 		}
 
 		// inherited
@@ -274,7 +274,7 @@ class CHttpTest extends CApiService {
 			'hostid' =>				['type' => API_ID, 'flags' => API_REQUIRED],
 			'name' =>				['type' => API_STRING_UTF8, 'flags' => API_REQUIRED | API_NOT_EMPTY, 'length' => DB::getFieldLength('httptest', 'name')],
 			'applicationid' =>		['type' => API_ID],
-			'delay' =>				['type' => API_TIME_UNIT, 'flags' => API_ALLOW_USER_MACRO, 'in' => '1:'.SEC_PER_DAY],
+			'delay' =>				['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY | API_ALLOW_USER_MACRO, 'in' => '1:'.SEC_PER_DAY],
 			'retries' =>			['type' => API_INT32, 'in' => '1:10'],
 			'agent' =>				['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('httptest', 'agent')],
 			'http_proxy' =>			['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('httptest', 'http_proxy')],
@@ -314,7 +314,7 @@ class CHttpTest extends CApiService {
 				]],
 				'follow_redirects' =>	['type' => API_INT32, 'in' => implode(',', [HTTPTEST_STEP_FOLLOW_REDIRECTS_OFF, HTTPTEST_STEP_FOLLOW_REDIRECTS_ON])],
 				'retrieve_mode' =>		['type' => API_INT32, 'in' => implode(',', [HTTPTEST_STEP_RETRIEVE_MODE_CONTENT, HTTPTEST_STEP_RETRIEVE_MODE_HEADERS])],
-				'timeout' =>			['type' => API_TIME_UNIT, 'flags' => API_ALLOW_USER_MACRO, 'in' => '0:'.SEC_PER_HOUR],
+				'timeout' =>			['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY | API_ALLOW_USER_MACRO, 'in' => '0:'.SEC_PER_HOUR],
 				'required' =>			['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('httpstep', 'required')],
 				'status_codes' =>		['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('httpstep', 'status_codes')]
 			]]
@@ -369,7 +369,7 @@ class CHttpTest extends CApiService {
 			'httptestid' =>			['type' => API_ID, 'flags' => API_REQUIRED],
 			'name' =>				['type' => API_STRING_UTF8, 'flags' => API_NOT_EMPTY, 'length' => DB::getFieldLength('httptest', 'name')],
 			'applicationid' =>		['type' => API_ID],
-			'delay' =>				['type' => API_TIME_UNIT, 'flags' => API_ALLOW_USER_MACRO, 'in' => '1:'.SEC_PER_DAY],
+			'delay' =>				['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY | API_ALLOW_USER_MACRO, 'in' => '1:'.SEC_PER_DAY],
 			'retries' =>			['type' => API_INT32, 'in' => '1:10'],
 			'agent' =>				['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('httptest', 'agent')],
 			'http_proxy' =>			['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('httptest', 'http_proxy')],
@@ -410,7 +410,7 @@ class CHttpTest extends CApiService {
 				]],
 				'follow_redirects' =>	['type' => API_INT32, 'in' => implode(',', [HTTPTEST_STEP_FOLLOW_REDIRECTS_OFF, HTTPTEST_STEP_FOLLOW_REDIRECTS_ON])],
 				'retrieve_mode' =>		['type' => API_INT32, 'in' => implode(',', [HTTPTEST_STEP_RETRIEVE_MODE_CONTENT, HTTPTEST_STEP_RETRIEVE_MODE_HEADERS])],
-				'timeout' =>			['type' => API_TIME_UNIT, 'flags' => API_ALLOW_USER_MACRO, 'in' => '0:'.SEC_PER_HOUR],
+				'timeout' =>			['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY | API_ALLOW_USER_MACRO, 'in' => '0:'.SEC_PER_HOUR],
 				'required' =>			['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('httpstep', 'required')],
 				'status_codes' =>		['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('httpstep', 'status_codes')]
 			]]
@@ -768,16 +768,16 @@ class CHttpTest extends CApiService {
 
 	/**
 	 * Validate http response code range.
-	 * Range can be empty string, can be set as user macro or be numeric and contain ',' and '-'.
+	 * Range can be empty string or list of comma separated numeric strings or user macroses.
 	 *
-	 * Examples: '100-199, 301, 404, 500-550' or '{$USER_MACRO123}'
+	 * Examples: '100-199, 301, 404, 500-550, {$MACRO}-200, {$MACRO}-{$MACRO}'
 	 *
 	 * @param array $httptests
 	 *
 	 * @throws APIException if the status code range is invalid.
 	 */
 	private function checkStatusCodes(array $httptests) {
-		$user_macro_parser = new CUserMacroParser();
+		$ranges_parser = new CRangesParser(['usermacros' => true]);
 
 		foreach ($httptests as $httptest) {
 			if (!array_key_exists('steps', $httptest)) {
@@ -785,29 +785,14 @@ class CHttpTest extends CApiService {
 			}
 
 			foreach ($httptest['steps'] as $httpstep) {
-				if (!array_key_exists('status_codes', $httpstep)) {
+				if (!array_key_exists('status_codes', $httpstep) || $httpstep['status_codes'] === '') {
 					continue;
 				}
 
-				$status_codes = $httpstep['status_codes'];
-
-				if ($status_codes === '' || $user_macro_parser->parse($status_codes) == CParser::PARSE_SUCCESS) {
-					continue;
-				}
-
-				foreach (explode(',', $status_codes) as $range) {
-					$range = explode('-', $range);
-					if (count($range) > 2) {
-						self::exception(ZBX_API_ERROR_PARAMETERS, _s('Invalid response code "%1$s".', $status_codes));
-					}
-
-					foreach ($range as $value) {
-						if (!is_numeric($value)) {
-							self::exception(ZBX_API_ERROR_PARAMETERS,
-								_s('Invalid response code "%1$s".', $status_codes)
-							);
-						}
-					}
+				if ($ranges_parser->parse($httpstep['status_codes']) != CParser::PARSE_SUCCESS) {
+					self::exception(ZBX_API_ERROR_PARAMETERS,
+						_s('Invalid response code "%1$s".', $httpstep['status_codes'])
+					);
 				}
 			}
 		}

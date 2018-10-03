@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -52,8 +52,8 @@ foreach ($data['alerts'] as $alert) {
 	}
 
 	$recipient = ($alert['userid'] != 0 && array_key_exists($alert['userid'], $data['db_users']))
-		? [bold(getUserFullname($data['db_users'][$alert['userid']])), BR(), $alert['sendto']]
-		: $alert['sendto'];
+		? [bold(getUserFullname($data['db_users'][$alert['userid']])), BR(), zbx_nl2br($alert['sendto'])]
+		: zbx_nl2br($alert['sendto']);
 
 	$info_icons = [];
 	if ($alert['error'] !== '') {
@@ -71,17 +71,9 @@ foreach ($data['alerts'] as $alert) {
 	]);
 }
 
-$footer = (new CList())
-	->addItem(_s('Updated: %s', zbx_date2str(TIME_FORMAT_SECONDS)))
-	->addClass(ZBX_STYLE_DASHBRD_WIDGET_FOOT);
-
 $output = [
 	'header' => $data['name'],
-	'body' => $table->toString(),
-	'footer' => (new CList())
-		->addItem(_s('Updated: %s', zbx_date2str(TIME_FORMAT_SECONDS)))
-		->addClass(ZBX_STYLE_DASHBRD_WIDGET_FOOT)
-		->toString()
+	'body' => $table->toString()
 ];
 
 if (($messages = getMessages()) !== null) {

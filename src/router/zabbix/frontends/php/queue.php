@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@ $queueRequests = [
 	QUEUE_OVERVIEW_BY_PROXY => CZabbixServer::QUEUE_OVERVIEW_BY_PROXY,
 	QUEUE_DETAILS => CZabbixServer::QUEUE_DETAILS
 ];
-$queueData = $zabbixServer->getQueue($queueRequests[$config], get_cookie('zbx_sessionid'), QUEUE_DETAIL_ITEM_COUNT);
+$queueData = $zabbixServer->getQueue($queueRequests[$config], get_cookie(ZBX_SESSION_NAME), QUEUE_DETAIL_ITEM_COUNT);
 
 // check for errors error
 if ($zabbixServer->getError()) {
@@ -64,15 +64,20 @@ if ($zabbixServer->getError()) {
 
 $widget = (new CWidget())
 	->setTitle(_('Queue of items to be updated'))
-	->setControls((new CForm('get'))
-		->cleanItems()
-		->addItem((new CList())
-			->addItem((new CComboBox('config', $config, 'submit();', [
-				QUEUE_OVERVIEW => _('Overview'),
-				QUEUE_OVERVIEW_BY_PROXY => _('Overview by proxy'),
-				QUEUE_DETAILS => _('Details')
-			])))
-		)
+	->setControls((new CTag('nav', true, [
+		(new CForm('get'))
+			->cleanItems()
+			->addItem((new CList())
+				->addItem(
+					(new CComboBox('config', $config, 'submit();', [
+						QUEUE_OVERVIEW => _('Overview'),
+						QUEUE_OVERVIEW_BY_PROXY => _('Overview by proxy'),
+						QUEUE_DETAILS => _('Details')
+					]))->removeId()
+				)
+			)
+		]))
+			->setAttribute('aria-label', _('Content controls'))
 	);
 
 $table = new CTableInfo();
@@ -267,7 +272,7 @@ elseif ($config == QUEUE_DETAILS) {
 		$table->addRow([
 			zbx_date2str(DATE_TIME_FORMAT_SECONDS, $itemData['nextcheck']),
 			zbx_date2age($itemData['nextcheck']),
-			(isset($proxies[$hosts[$item['hostid']]['proxy_hostid']]))
+			isset($proxies[$hosts[$item['hostid']]['proxy_hostid']])
 				? $proxies[$hosts[$item['hostid']]['proxy_hostid']]['host'].NAME_DELIMITER.$host['name']
 				: $host['name'],
 			$item['name_expanded']
