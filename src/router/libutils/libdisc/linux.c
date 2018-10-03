@@ -864,7 +864,7 @@ int detect_linux_misc(SECTION * section, int level)
 
 	/* Linux squashfs */
 	for (en = 0; en < 2; en++) {
-		if (get_ve_long(en, buf) == 0x73717368) {
+		if (get_ve_long(en, buf) == 0x73717368 || get_ve_long(en, buf) == 0x74717368) {
 			int major, minor;
 
 			major = get_ve_short(en, buf + 28);
