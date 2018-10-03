@@ -565,8 +565,9 @@ static int al_pcie_probe(struct platform_device *pdev)
 	of_id = of_match_device(al_pcie_of_match, &pdev->dev);
 	if (of_id)
 		type = (enum al_pci_type) of_id->data;
-	else
-		BUG();
+	else {
+		return -1;
+	}
 
 	pcie = devm_kzalloc(&pdev->dev, sizeof(*pcie), GFP_KERNEL);
 	if (!pcie)
