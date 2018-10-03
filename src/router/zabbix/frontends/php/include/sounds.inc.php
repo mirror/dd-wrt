@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -56,7 +56,8 @@ function getMessageSettings() {
 		'sounds.'.TRIGGER_SEVERITY_WARNING => 'alarm_warning.wav',
 		'sounds.'.TRIGGER_SEVERITY_AVERAGE => 'alarm_average.wav',
 		'sounds.'.TRIGGER_SEVERITY_HIGH => 'alarm_high.wav',
-		'sounds.'.TRIGGER_SEVERITY_DISASTER => 'alarm_disaster.wav'
+		'sounds.'.TRIGGER_SEVERITY_DISASTER => 'alarm_disaster.wav',
+		'show_suppressed' => 0
 	];
 
 	$dbProfiles = DBselect(

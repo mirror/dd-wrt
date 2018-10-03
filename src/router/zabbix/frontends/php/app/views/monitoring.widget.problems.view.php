@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -20,19 +20,17 @@
 
 
 // indicator of sort field
-$sort_div = (new CSpan())
-	->addClass(($data['sortorder'] === ZBX_SORT_DOWN) ? ZBX_STYLE_ARROW_DOWN : ZBX_STYLE_ARROW_UP);
+$sort_div = (new CSpan())->addClass(($data['sortorder'] === ZBX_SORT_DOWN) ? ZBX_STYLE_ARROW_DOWN : ZBX_STYLE_ARROW_UP);
 
 $backurl = (new CUrl('zabbix.php'))
 	->setArgument('action', 'dashboard.view')
-	->setArgument('fullscreen', $data['fullscreen'] ? '1' : null);
+	->getUrl();
 
 $url_details = (new CUrl('tr_events.php'))
 	->setArgument('triggerid', '')
-	->setArgument('eventid', '')
-	->setArgument('fullscreen', $data['fullscreen'] ? '1' : null);
+	->setArgument('eventid', '');
 
-$show_timeline = ($data['sortfield'] === 'clock');
+$show_timeline = ($data['sortfield'] === 'clock' && $data['fields']['show_timeline']);
 $show_recovery_data = in_array($data['fields']['show'], [TRIGGERS_OPTION_RECENT_PROBLEM, TRIGGERS_OPTION_ALL]);
 
 $header_time = new CColHeader(($data['sortfield'] === 'clock') ? [_('Time'), $sort_div] : _('Time'));
@@ -55,12 +53,12 @@ $table = (new CTableInfo())
 		_('Info'),
 		($data['sortfield'] === 'host') ? [_('Host'), $sort_div] : _('Host'),
 		[
-			($data['sortfield'] === 'problem') ? [_('Problem'), $sort_div] : _('Problem'),
+			($data['sortfield'] === 'name') ? [_('Problem'), $sort_div] : _('Problem'),
 			' &bullet; ',
-			($data['sortfield'] === 'priority') ? [_('Severity'), $sort_div] : _('Severity')
+			($data['sortfield'] === 'severity') ? [_('Severity'), $sort_div] : _('Severity')
 		],
 		_('Duration'),
-		$data['config']['event_ack_enable'] ? _('Ack') : null,
+		_('Ack'),
 		_('Actions'),
 		$data['fields']['show_tags'] ? _('Tags') : null
 	]));
@@ -71,10 +69,6 @@ $last_clock = 0;
 if ($data['data']['problems']) {
 	$triggers_hosts = makeTriggersHostsList($data['data']['triggers_hosts']);
 }
-if ($data['config']['event_ack_enable']) {
-	$acknowledges = makeEventsAcknowledges($data['data']['problems'], $backurl->getUrl());
-}
-$actions = makeEventsActions($data['data']['problems'], true);
 
 foreach ($data['data']['problems'] as $eventid => $problem) {
 	$trigger = $data['data']['triggers'][$problem['objectid']];
@@ -87,12 +81,10 @@ foreach ($data['data']['problems'] as $eventid => $problem) {
 	else {
 		$in_closing = false;
 
-		if ($data['config']['event_ack_enable']) {
-			foreach ($problem['acknowledges'] as $acknowledge) {
-				if ($acknowledge['action'] == ZBX_ACKNOWLEDGE_ACTION_CLOSE_PROBLEM) {
-					$in_closing = true;
-					break;
-				}
+		foreach ($problem['acknowledges'] as $acknowledge) {
+			if (($acknowledge['action'] & ZBX_PROBLEM_UPDATE_CLOSE) == ZBX_PROBLEM_UPDATE_CLOSE) {
+				$in_closing = true;
+				break;
 			}
 		}
 
@@ -109,6 +101,9 @@ foreach ($data['data']['problems'] as $eventid => $problem) {
 		? zbx_date2str(TIME_FORMAT_SECONDS, $problem['clock'])
 		: zbx_date2str(DATE_TIME_FORMAT_SECONDS, $problem['clock']);
 	$cell_clock = new CCol(new CLink($cell_clock, $url_details));
+
+	$is_acknowledged = $problem['acknowledged'] == EVENT_ACKNOWLEDGED;
+
 	if ($show_recovery_data) {
 		if ($problem['r_eventid'] != 0) {
 			$cell_r_clock = ($problem['r_clock'] >= $today)
@@ -125,9 +120,7 @@ foreach ($data['data']['problems'] as $eventid => $problem) {
 		$cell_status = new CSpan($value_str);
 
 		// Add colors and blinking to span depending on configuration and trigger parameters.
-		addTriggerValueStyle($cell_status, $value, $value_clock,
-			$data['config']['event_ack_enable'] && (bool) $problem['acknowledges']
-		);
+		addTriggerValueStyle($cell_status, $value, $value_clock, $is_acknowledged);
 	}
 
 	// Info.
@@ -151,33 +144,45 @@ foreach ($data['data']['problems'] as $eventid => $problem) {
 		}
 	}
 
-	$description_style = getSeverityStyle($trigger['priority'], $value == TRIGGER_VALUE_TRUE);
+	if (array_key_exists('suppression_data', $problem) && $problem['suppression_data']) {
+		$info_icons[] = makeSuppressedProblemIcon($problem['suppression_data']);
+	}
+
 	$description = (new CCol([
-		(new CSpan(CMacrosResolverHelper::resolveEventDescription(
-			$trigger + ['clock' => $problem['clock'], 'ns' => $problem['ns']]
-		)))
+		(new CLinkAction($problem['name']))
 			->setHint(
-				make_popup_eventlist($trigger, $eventid, $backurl->getUrl(), $data['config'], $data['fullscreen']), '',
+				make_popup_eventlist($trigger, $eventid, $backurl, $show_timeline,
+					$data['fields']['show_tags'], $data['fields']['tags'], $data['fields']['tag_name_format'],
+					$data['fields']['tag_priority']),
+				'',
 				true
 			)
-			->addClass(ZBX_STYLE_LINK_ACTION)
-	]))
-		->addClass($description_style);
+			->setAttribute('aria-label', _xs('%1$s, Severity, %2$s', 'screen reader',
+				$problem['name'], getSeverityName($problem['severity'], $data['config'])
+			))
+	]));
 
-	if (!$show_recovery_data) {
+	$description_style = getSeverityStyle($problem['severity']);
+
+	if ($value == TRIGGER_VALUE_TRUE) {
+		$description->addClass($description_style);
+	}
+
+	if (!$show_recovery_data && $data['config'][$is_acknowledged ? 'problem_ack_style' : 'problem_unack_style']) {
 		// blinking
 		$duration = time() - $problem['clock'];
 
 		if ($data['config']['blink_period'] != 0 && $duration < $data['config']['blink_period']) {
-			$description->addClass('blink');
-			$description->setAttribute('data-time-to-blink', $data['config']['blink_period'] - $duration);
-			$description->setAttribute('data-toggle-class', $description_style);
+			$description
+				->addClass('blink')
+				->setAttribute('data-time-to-blink', $data['config']['blink_period'] - $duration)
+				->setAttribute('data-toggle-class', ZBX_STYLE_BLINK_HIDDEN);
 		}
 	}
 
 	if ($show_timeline) {
 		if ($last_clock != 0) {
-			CScreenProblem::addTimelineBreakpoint($table, $last_clock, $problem['clock'], ZBX_SORT_DOWN);
+			CScreenProblem::addTimelineBreakpoint($table, $last_clock, $problem['clock'], $data['sortorder']);
 		}
 		$last_clock = $problem['clock'];
 
@@ -197,30 +202,43 @@ foreach ($data['data']['problems'] as $eventid => $problem) {
 		];
 	}
 
+	// Create acknowledge url.
+	$problem_update_url = (new CUrl('zabbix.php'))
+		->setArgument('action', 'acknowledge.edit')
+		->setArgument('eventids', [$problem['eventid']])
+		->setArgument('backurl', $backurl)
+		->getUrl();
+
 	$table->addRow(array_merge($row, [
 		$show_recovery_data ? $cell_r_clock : null,
 		$show_recovery_data ? $cell_status : null,
 		makeInformationList($info_icons),
 		$triggers_hosts[$trigger['triggerid']],
 		$description,
-		(new CCol(
-			($problem['r_eventid'] != 0)
-				? zbx_date2age($problem['clock'], $problem['r_clock'])
-				: zbx_date2age($problem['clock'])
-		))
+		(new CCol(zbx_date2age($problem['clock'], ($problem['r_eventid'] != 0) ? $problem['r_clock'] : 0)))
 			->addClass(ZBX_STYLE_NOWRAP),
-		$data['config']['event_ack_enable'] ? $acknowledges[$problem['eventid']] : null,
-		array_key_exists($eventid, $actions)
-			? (new CCol($actions[$eventid]))->addClass(ZBX_STYLE_NOWRAP)
-			: '',
+		(new CLink($problem['acknowledged'] == EVENT_ACKNOWLEDGED ? _('Yes') : _('No'), $problem_update_url))
+			->addClass($problem['acknowledged'] == EVENT_ACKNOWLEDGED ? ZBX_STYLE_GREEN : ZBX_STYLE_RED)
+			->addClass(ZBX_STYLE_LINK_ALT),
+		makeEventActionsIcons($problem['eventid'], $data['data']['actions'], $data['data']['mediatypes'],
+			$data['data']['users'], $data['config']
+		),
 		$data['fields']['show_tags'] ? $data['data']['tags'][$problem['eventid']] : null
 	]));
 }
 
+if ($data['info'] !== '') {
+	$table->setFooter([
+		(new CCol($data['info']))
+			->setColSpan($table->getNumCols())
+			->addClass(ZBX_STYLE_LIST_TABLE_FOOTER)
+	]);
+}
+
 $output = [
+	'aria_label' => _xs('%1$s widget', 'screen reader', $data['name']).', '.$data['info'],
 	'header' => $data['name'],
-	'body' => $table->toString(),
-	'footer' => (new CList([$data['info'], _s('Updated: %s', zbx_date2str(TIME_FORMAT_SECONDS))]))->toString()
+	'body' => $table->toString()
 ];
 
 if (($messages = getMessages()) !== null) {

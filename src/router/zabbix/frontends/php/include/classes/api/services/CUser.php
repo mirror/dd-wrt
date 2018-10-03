@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -266,21 +266,21 @@ class CUser extends CApiService {
 			'alias' =>			['type' => API_STRING_UTF8, 'flags' => API_REQUIRED | API_NOT_EMPTY, 'length' => DB::getFieldLength('users', 'alias')],
 			'name' =>			['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('users', 'name')],
 			'surname' =>		['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('users', 'surname')],
-			'passwd' =>			['type' => API_STRING_UTF8, 'flags' => API_REQUIRED, 'length' => 255],
+			'passwd' =>			['type' => API_STRING_UTF8, 'flags' => API_NOT_EMPTY, 'length' => 255],
 			'url' =>			['type' => API_URL, 'length' => DB::getFieldLength('users', 'url')],
 			'autologin' =>		['type' => API_INT32, 'in' => '0,1'],
-			'autologout' =>		['type' => API_TIME_UNIT, 'in' => '0,90:'.SEC_PER_DAY],
+			'autologout' =>		['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY, 'in' => '0,90:'.SEC_PER_DAY],
 			'lang' =>			['type' => API_STRING_UTF8, 'flags' => API_NOT_EMPTY, 'length' => DB::getFieldLength('users', 'lang')],
 			'theme' =>			['type' => API_STRING_UTF8, 'in' => $valid_themes, 'length' => DB::getFieldLength('users', 'theme')],
 			'type' =>			['type' => API_INT32, 'in' => implode(',', [USER_TYPE_ZABBIX_USER, USER_TYPE_ZABBIX_ADMIN, USER_TYPE_SUPER_ADMIN])],
-			'refresh' =>		['type' => API_TIME_UNIT, 'in' => '0:'.SEC_PER_HOUR],
+			'refresh' =>		['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY, 'in' => '0:'.SEC_PER_HOUR],
 			'rows_per_page' =>	['type' => API_INT32, 'in' => '1:999999'],
 			'usrgrps' =>		['type' => API_OBJECTS, 'flags' => API_REQUIRED | API_NOT_EMPTY, 'uniq' => [['usrgrpid']], 'fields' => [
 				'usrgrpid' =>		['type' => API_ID, 'flags' => API_REQUIRED]
 			]],
 			'user_medias' =>	['type' => API_OBJECTS, 'fields' => [
 				'mediatypeid' =>	['type' => API_ID, 'flags' => API_REQUIRED],
-				'sendto' =>			['type' => API_STRING_UTF8, 'flags' => API_REQUIRED | API_NOT_EMPTY, 'length' => DB::getFieldLength('media', 'sendto')],
+				'sendto' =>			['type' => API_STRINGS_UTF8, 'flags' => API_REQUIRED | API_NOT_EMPTY | API_NORMALIZE],
 				'active' =>			['type' => API_INT32, 'in' => implode(',', [MEDIA_STATUS_ACTIVE, MEDIA_STATUS_DISABLED])],
 				'severity' =>		['type' => API_INT32, 'in' => '0:63'],
 				'period' =>			['type' => API_TIME_PERIOD, 'flags' => API_ALLOW_USER_MACRO, 'length' => DB::getFieldLength('media', 'period')]
@@ -293,13 +293,18 @@ class CUser extends CApiService {
 		foreach ($users as &$user) {
 			$user = $this->checkLoginOptions($user);
 
-			$user['passwd'] = md5($user['passwd']);
+			/*
+			 * If user is created without a password (e.g. for GROUP_GUI_ACCESS_LDAP), store an empty string
+			 * as his password in database.
+			 */
+			$user['passwd'] = (array_key_exists('passwd', $user)) ? md5($user['passwd']) : '';
 		}
 		unset($user);
 
 		$this->checkDuplicates(zbx_objectValues($users, 'alias'));
-		$this->checkUserGroups($users);
-		$this->checkMediaTypes($users);
+		$this->checkUserGroups($users, []);
+		$db_mediatypes = $this->checkMediaTypes($users);
+		$this->validateMediaRecipients($users, $db_mediatypes);
 	}
 
 	/**
@@ -366,21 +371,21 @@ class CUser extends CApiService {
 			'alias' =>			['type' => API_STRING_UTF8, 'flags' => API_NOT_EMPTY, 'length' => DB::getFieldLength('users', 'alias')],
 			'name' =>			['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('users', 'name')],
 			'surname' =>		['type' => API_STRING_UTF8, 'length' => DB::getFieldLength('users', 'surname')],
-			'passwd' =>			['type' => API_STRING_UTF8, 'length' => 255],
+			'passwd' =>			['type' => API_STRING_UTF8, 'flags' => API_NOT_EMPTY, 'length' => 255],
 			'url' =>			['type' => API_URL, 'length' => DB::getFieldLength('users', 'url')],
 			'autologin' =>		['type' => API_INT32, 'in' => '0,1'],
-			'autologout' =>		['type' => API_TIME_UNIT, 'in' => '0,90:'.SEC_PER_DAY],
+			'autologout' =>		['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY, 'in' => '0,90:'.SEC_PER_DAY],
 			'lang' =>			['type' => API_STRING_UTF8, 'flags' => API_NOT_EMPTY, 'length' => DB::getFieldLength('users', 'lang')],
 			'theme' =>			['type' => API_STRING_UTF8, 'in' => $valid_themes, 'length' => DB::getFieldLength('users', 'theme')],
 			'type' =>			['type' => API_INT32, 'in' => implode(',', [USER_TYPE_ZABBIX_USER, USER_TYPE_ZABBIX_ADMIN, USER_TYPE_SUPER_ADMIN])],
-			'refresh' =>		['type' => API_TIME_UNIT, 'in' => '0:'.SEC_PER_HOUR],
+			'refresh' =>		['type' => API_TIME_UNIT, 'flags' => API_NOT_EMPTY, 'in' => '0:'.SEC_PER_HOUR],
 			'rows_per_page' =>	['type' => API_INT32, 'in' => '1:999999'],
 			'usrgrps' =>		['type' => API_OBJECTS, 'flags' => API_NOT_EMPTY, 'uniq' => [['usrgrpid']], 'fields' => [
 				'usrgrpid' =>		['type' => API_ID, 'flags' => API_REQUIRED]
 			]],
 			'user_medias' =>	['type' => API_OBJECTS, 'fields' => [
 				'mediatypeid' =>	['type' => API_ID, 'flags' => API_REQUIRED],
-				'sendto' =>			['type' => API_STRING_UTF8, 'flags' => API_REQUIRED | API_NOT_EMPTY, 'length' => DB::getFieldLength('media', 'sendto')],
+				'sendto' =>			['type' => API_STRINGS_UTF8, 'flags' => API_REQUIRED | API_NOT_EMPTY | API_NORMALIZE],
 				'active' =>			['type' => API_INT32, 'in' => implode(',', [MEDIA_STATUS_ACTIVE, MEDIA_STATUS_DISABLED])],
 				'severity' =>		['type' => API_INT32, 'in' => '0:63'],
 				'period' =>			['type' => API_TIME_PERIOD, 'flags' => API_ALLOW_USER_MACRO, 'length' => DB::getFieldLength('media', 'period')]
@@ -440,8 +445,9 @@ class CUser extends CApiService {
 		if ($aliases) {
 			$this->checkDuplicates($aliases);
 		}
-		$this->checkUserGroups($users);
-		$this->checkMediaTypes($users);
+		$this->checkUserGroups($users, $db_users);
+		$db_mediatypes = $this->checkMediaTypes($users);
+		$this->validateMediaRecipients($users, $db_mediatypes);
 		$this->checkHimself($users);
 	}
 
@@ -470,11 +476,14 @@ class CUser extends CApiService {
 	 * Check for valid user groups.
 	 *
 	 * @param array $users
+	 * @param array $users[]['passwd']  (optional)
 	 * @param array $users[]['usrgrps']  (optional)
+	 * @param array $db_users
+	 * @param array $db_users[]['passwd']
 	 *
 	 * @throws APIException  if user groups is not exists.
 	 */
-	private function checkUserGroups(array $users) {
+	private function checkUserGroups(array $users, array $db_users) {
 		$usrgrpids = [];
 
 		foreach ($users as $user) {
@@ -492,7 +501,7 @@ class CUser extends CApiService {
 		$usrgrpids = array_keys($usrgrpids);
 
 		$db_usrgrps = DB::select('usrgrp', [
-			'output' => [],
+			'output' => ['gui_access'],
 			'usrgrpids' => $usrgrpids,
 			'preservekeys' => true
 		]);
@@ -502,15 +511,71 @@ class CUser extends CApiService {
 				self::exception(ZBX_API_ERROR_PARAMETERS, _s('User group with ID "%1$s" is not available.', $usrgrpid));
 			}
 		}
+
+		foreach ($users as $user) {
+			if (array_key_exists('passwd', $user)) {
+				$passwd = $user['passwd'];
+			}
+			elseif (array_key_exists('userid', $user) && array_key_exists($user['userid'], $db_users)) {
+				$passwd = $db_users[$user['userid']]['passwd'];
+			}
+			else {
+				$passwd = '';
+			}
+
+			if ($passwd === '') {
+				$gui_access = self::getGroupGuiAccess($user, $db_usrgrps);
+
+				// Do not allow empty password for users with GROUP_GUI_ACCESS_INTERNAL.
+				if (in_array(GROUP_GUI_ACCESS_INTERNAL, $gui_access)) {
+					self::exception(ZBX_API_ERROR_PARAMETERS,
+						_s('Incorrect value for field "%1$s": %2$s.', 'passwd', _('cannot be empty'))
+					);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Get list of all current authentication options available to user.
+	 *
+	 * @param array  $user
+	 * @param string $user['usrgrps'][]['usrgrpid']
+	 * @param array  $db_usrgrps
+	 * @param int    $db_usrgrps[usrgrpid]['gui_access']
+	 *
+	 * @return array
+	 */
+	private static function getGroupGuiAccess($user, $db_usrgrps) {
+		$gui_access_arr = [];
+		$usrgrps = zbx_objectValues($user['usrgrps'], 'usrgrpid');
+
+		$config = select_config();
+		$system_gui_access = array_search($config['authentication_type'], [
+			GROUP_GUI_ACCESS_INTERNAL => ZBX_AUTH_INTERNAL,
+			GROUP_GUI_ACCESS_LDAP => ZBX_AUTH_LDAP
+		]);
+
+		foreach($usrgrps as $usergrp) {
+			if (array_key_exists($usergrp, $db_usrgrps)) {
+				$gui_access = (int) $db_usrgrps[$usergrp]['gui_access'];
+				$index = ($gui_access == GROUP_GUI_ACCESS_SYSTEM) ? $system_gui_access : $gui_access;
+				$gui_access_arr[$index] = '';
+			}
+		}
+
+		return array_keys($gui_access_arr);
 	}
 
 	/**
 	 * Check for valid media types.
 	 *
-	 * @param array $users
-	 * @param array $users[]['user_medias']  (optional)
+	 * @param array $users                               Array of users.
+	 * @param array $users[]['user_medias']  (optional)  Array of user medias.
 	 *
-	 * @throws APIException  if user media type is not exists.
+	 * @throws APIException if user media type does not exist.
+	 *
+	 * @return array                                     Returns valid media types.
 	 */
 	private function checkMediaTypes(array $users) {
 		$mediatypeids = [];
@@ -524,13 +589,13 @@ class CUser extends CApiService {
 		}
 
 		if (!$mediatypeids) {
-			return;
+			return [];
 		}
 
 		$mediatypeids = array_keys($mediatypeids);
 
 		$db_mediatypes = DB::select('media_type', [
-			'output' => [],
+			'output' => ['mediatypeid', 'type'],
 			'mediatypeids' => $mediatypeids,
 			'preservekeys' => true
 		]);
@@ -540,6 +605,89 @@ class CUser extends CApiService {
 				self::exception(ZBX_API_ERROR_PARAMETERS,
 					_s('Media type with ID "%1$s" is not available.', $mediatypeid)
 				);
+			}
+		}
+
+		return $db_mediatypes;
+	}
+
+	/**
+	 * Check if the passed 'sendto' value is a valid input according to the mediatype. Currently validates
+	 * only e-mail media types.
+	 *
+	 * @param array         $users                                    Array of users.
+	 * @param string        $users[]['user_medias'][]['mediatypeid']  Media type ID.
+	 * @param array|string  $users[]['user_medias'][]['sendto']       Address where to send the alert.
+	 * @param array         $db_mediatypes                            List of available media types.
+	 *
+	 * @throws APIException if e-mail is not valid or exeeds maximum DB field length.
+	 */
+	private function validateMediaRecipients(array $users, array $db_mediatypes) {
+		if ($db_mediatypes) {
+			$email_mediatypes = [];
+
+			foreach ($db_mediatypes as $db_mediatype) {
+				if ($db_mediatype['type'] == MEDIA_TYPE_EMAIL) {
+					$email_mediatypes[$db_mediatype['mediatypeid']] = true;
+				}
+			}
+
+			$max_length = DB::getFieldLength('media', 'sendto');
+			$email_validator = new CEmailValidator();
+
+			foreach ($users as $user) {
+				if (array_key_exists('user_medias', $user)) {
+					foreach ($user['user_medias'] as $media) {
+						/*
+						 * For non-email media types only one value allowed. Since value is normalized, need to validate
+						 * if array contains only one item. If there are more than one string, error message is
+						 * displayed, indicating that passed value is not a string.
+						 */
+						if (!array_key_exists($media['mediatypeid'], $email_mediatypes)
+								&& count($media['sendto']) > 1) {
+							self::exception(ZBX_API_ERROR_PARAMETERS,
+								_s('Invalid parameter "%1$s": %2$s.', 'sendto', _('a character string is expected'))
+							);
+						}
+
+						/*
+						 * If input value is an array with empty string, ApiInputValidator identifies it as valid since
+						 * values are normalized. That's why value must be revalidated.
+						 */
+						foreach ($media['sendto'] as $sendto) {
+							if ($sendto === '') {
+								self::exception(ZBX_API_ERROR_PARAMETERS,
+									_s('Invalid parameter "%1$s": %2$s.', 'sendto', _('cannot be empty'))
+								);
+							}
+						}
+
+						/*
+						 * If media type is email, validate each given string against email pattern.
+						 * Additionally, total lenght of emails must be checked, because all media type emails are
+						 * separated by newline and stored as a string in single database field. Newline characters
+						 * consumes extra space, so additional validation must be made.
+						 */
+						if (array_key_exists($media['mediatypeid'], $email_mediatypes)) {
+							foreach ($media['sendto'] as $sendto) {
+								if (!$email_validator->validate($sendto)) {
+									self::exception(ZBX_API_ERROR_PARAMETERS,
+										_s('Invalid email address for media type with ID "%1$s".',
+											$media['mediatypeid']
+										)
+									);
+								}
+								elseif (strlen(implode("\n", $media['sendto'])) > $max_length) {
+									self::exception(ZBX_API_ERROR_PARAMETERS,
+										_s('Maximum total length of email address exceeded for media type with ID "%1$s".',
+											$media['mediatypeid']
+										)
+									);
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 	}
@@ -702,6 +850,7 @@ class CUser extends CApiService {
 				$medias[$user['userid']] = [];
 
 				foreach ($user['user_medias'] as $media) {
+					$media['sendto'] = implode("\n", $media['sendto']);
 					$medias[$user['userid']][] = $media;
 				}
 			}
@@ -773,17 +922,6 @@ class CUser extends CApiService {
 		if ($del_mediaids) {
 			DB::delete('media', ['mediaid' => $del_mediaids]);
 		}
-	}
-
-	/**
-	 * @deprecated	As of version 3.4, use update() method instead.
-	 */
-	public function updateProfile($user) {
-		$this->deprecated('user.updateprofile method is deprecated.');
-
-		$user['userid'] = self::$userData['userid'];
-
-		return $this->update([$user]);
 	}
 
 	/**
@@ -919,355 +1057,6 @@ class CUser extends CApiService {
 	}
 
 	/**
-	 * Add user media.
-	 *
-	 * @deprecated	As of version 3.4, use update() method instead.
-	 *
-	 * @param array  $data['users']
-	 * @param string $data['users']['userid']
-	 * @param array  $data['medias']
-	 * @param string $data['medias']['mediatypeid']
-	 * @param string $data['medias']['address']
-	 * @param int    $data['medias']['severity']
-	 * @param int    $data['medias']['active']
-	 * @param string $data['medias']['period']
-	 *
-	 * @return array
-	 */
-	public function addMedia(array $data) {
-		$this->deprecated('user.addmedia method is deprecated.');
-
-		$this->validateAddMedia($data);
-		$mediaIds = $this->addMediaReal($data);
-
-		return ['mediaids' => $mediaIds];
-	}
-
-	/**
-	 * Validate add user media.
-	 *
-	 * @throws APIException if the input is invalid
-	 *
-	 * @param array  $data['users']
-	 * @param string $data['users']['userid']
-	 * @param array  $data['medias']
-	 * @param string $data['medias']['mediatypeid']
-	 * @param string $data['medias']['address']
-	 * @param int    $data['medias']['severity']
-	 * @param int    $data['medias']['active']
-	 * @param string $data['medias']['period']
-	 */
-	protected function validateAddMedia(array $data) {
-		if (self::$userData['type'] < USER_TYPE_ZABBIX_ADMIN) {
-			self::exception(ZBX_API_ERROR_PARAMETERS, _('Only Zabbix Admins can add user media.'));
-		}
-
-		if (!isset($data['users']) || !isset($data['medias'])) {
-			self::exception(ZBX_API_ERROR_PARAMETERS, _('Invalid method parameters.'));
-		}
-
-		$users = zbx_toArray($data['users']);
-		$media = zbx_toArray($data['medias']);
-
-		$this->checkPermissions(zbx_objectValues($users, 'userid'));
-
-		$mediaDBfields = [
-			'period' => null,
-			'mediatypeid' => null,
-			'sendto' => null,
-			'active' => null,
-			'severity' => null
-		];
-
-		foreach ($media as $mediaItem) {
-			if (!check_db_fields($mediaDBfields, $mediaItem)) {
-				self::exception(ZBX_API_ERROR_PARAMETERS, _('Invalid method parameters.'));
-			}
-		}
-
-		$time_periods_parser = new CTimePeriodsParser(['usermacros' => true]);
-
-		foreach ($media as $media_item) {
-			if ($time_periods_parser->parse($media_item['period']) != CParser::PARSE_SUCCESS) {
-				self::exception(ZBX_API_ERROR_PARAMETERS, _('Invalid time period.'));
-			}
-		}
-	}
-
-	/**
-	 * Create user media.
-	 *
-	 * @throws APIException if user media insert is fail.
-	 *
-	 * @param array  $data['users']
-	 * @param string $data['users']['userid']
-	 * @param array  $data['medias']
-	 * @param string $data['medias']['mediatypeid']
-	 * @param string $data['medias']['address']
-	 * @param int    $data['medias']['severity']
-	 * @param int    $data['medias']['active']
-	 * @param string $data['medias']['period']
-	 *
-	 * @return array
-	 */
-	protected function addMediaReal(array $data) {
-		$users = zbx_toArray($data['users']);
-		$media = zbx_toArray($data['medias']);
-
-		$mediaIds = [];
-
-		foreach ($users as $user) {
-			foreach ($media as $mediaItem) {
-				$mediaId = get_dbid('media', 'mediaid');
-
-				$sql = 'INSERT INTO media (mediaid,userid,mediatypeid,sendto,active,severity,period)'.
-						' VALUES ('.zbx_dbstr($mediaId).','.zbx_dbstr($user['userid']).','.zbx_dbstr($mediaItem['mediatypeid']).','.
-									zbx_dbstr($mediaItem['sendto']).','.zbx_dbstr($mediaItem['active']).','.zbx_dbstr($mediaItem['severity']).','.
-									zbx_dbstr($mediaItem['period']).')';
-
-				if (!DBexecute($sql)) {
-					self::exception(ZBX_API_ERROR_PARAMETERS, _('Cannot insert user media.'));
-				}
-
-				$mediaIds[] = $mediaId;
-			}
-		}
-
-		return $mediaIds;
-	}
-
-	/**
-	 * Update user media.
-	 *
-	 * @throws APIException if user media update is fail.
-	 *
-	 * @deprecated	As of version 3.4, use update() method instead.
-	 *
-	 * @param array  $data['users']
-	 * @param string $data['users']['userid']
-	 * @param array  $data['medias']
-	 * @param string $data['medias']['mediatypeid']
-	 * @param string $data['medias']['address']
-	 * @param int    $data['medias']['severity']
-	 * @param int    $data['medias']['active']
-	 * @param string $data['medias']['period']
-	 *
-	 * @return array
-	 */
-	public function updateMedia(array $data) {
-		$this->deprecated('user.updatemedia method is deprecated.');
-
-		$this->validateUpdateMedia($data);
-
-		$users = zbx_toArray($data['users']);
-		$media = zbx_toArray($data['medias']);
-
-		$userIds = array_keys(array_flip((zbx_objectValues($users, 'userid'))));
-
-		$dbMedia = API::UserMedia()->get([
-			'output' => ['mediaid'],
-			'userids' => $userIds,
-			'editable' => true,
-			'preservekeys' => true
-		]);
-
-		$mediaToCreate = $mediaToUpdate = $mediaToDelete = [];
-
-		foreach ($media as $mediaItem) {
-			if (isset($mediaItem['mediaid'])) {
-				$mediaToUpdate[$mediaItem['mediaid']] = $mediaItem;
-			}
-			else {
-				$mediaToCreate[] = $mediaItem;
-			}
-		}
-
-		foreach ($dbMedia as $dbMediaItem) {
-			if (!isset($mediaToUpdate[$dbMediaItem['mediaid']])) {
-				$mediaToDelete[$dbMediaItem['mediaid']] = $dbMediaItem['mediaid'];
-			}
-		}
-
-		// create
-		if ($mediaToCreate) {
-			$this->addMediaReal([
-				'users' => $users,
-				'medias' => $mediaToCreate
-			]);
-		}
-
-		// update
-		if ($mediaToUpdate) {
-			foreach ($mediaToUpdate as $media) {
-				$result = DBexecute(
-					'UPDATE media'.
-					' SET mediatypeid='.zbx_dbstr($media['mediatypeid']).','.
-						' sendto='.zbx_dbstr($media['sendto']).','.
-						' active='.zbx_dbstr($media['active']).','.
-						' severity='.zbx_dbstr($media['severity']).','.
-						' period='.zbx_dbstr($media['period']).
-					' WHERE mediaid='.zbx_dbstr($media['mediaid'])
-				);
-
-				if (!$result) {
-					self::exception(ZBX_API_ERROR_PARAMETERS, _('Cannot update user media.'));
-				}
-			}
-		}
-
-		// delete
-		if ($mediaToDelete) {
-			$this->deleteMediaReal($mediaToDelete);
-		}
-
-		return ['userids' => $userIds];
-	}
-
-	/**
-	 * Validate update user media.
-	 *
-	 * @throws APIException if the input is invalid
-	 *
-	 * @param array  $data['users']
-	 * @param string $data['users']['userid']
-	 * @param array  $data['medias']
-	 * @param string $data['medias']['mediatypeid']
-	 * @param string $data['medias']['address']
-	 * @param int    $data['medias']['severity']
-	 * @param int    $data['medias']['active']
-	 * @param string $data['medias']['period']
-	 */
-	protected function validateUpdateMedia(array $data) {
-		if (self::$userData['type'] < USER_TYPE_ZABBIX_ADMIN) {
-			self::exception(ZBX_API_ERROR_PERMISSIONS, _('Only Zabbix Admins can change user media.'));
-		}
-
-		if (!isset($data['users']) || !isset($data['medias'])) {
-			self::exception(ZBX_API_ERROR_PARAMETERS, _('Invalid method parameters.'));
-		}
-
-		$users = zbx_toArray($data['users']);
-		$media = zbx_toArray($data['medias']);
-
-		$this->checkPermissions(zbx_objectValues($users, 'userid'));
-
-		// validate media permissions
-		$mediaIds = [];
-
-		foreach ($media as $mediaItem) {
-			if (isset($mediaItem['mediaid'])) {
-				$mediaIds[$mediaItem['mediaid']] = $mediaItem['mediaid'];
-			}
-		}
-
-		if ($mediaIds) {
-			$dbUserMediaCount = API::UserMedia()->get([
-				'countOutput' => true,
-				'mediaids' => $mediaIds,
-				'editable' => true
-			]);
-
-			if ($dbUserMediaCount != count($mediaIds)) {
-				self::exception(ZBX_API_ERROR_PARAMETERS, _('No permissions to referred object or it does not exist!'));
-			}
-		}
-
-		// validate media parameters
-		$mediaDBfields = [
-			'period' => null,
-			'mediatypeid' => null,
-			'sendto' => null,
-			'active' => null,
-			'severity' => null
-		];
-
-		$time_periods_parser = new CTimePeriodsParser(['usermacros' => true]);
-
-		foreach ($media as $media_item) {
-			if (!check_db_fields($mediaDBfields, $mediaItem)) {
-				self::exception(ZBX_API_ERROR_PARAMETERS, _('Invalid method parameters.'));
-			}
-
-			if ($time_periods_parser->parse($media_item['period']) != CParser::PARSE_SUCCESS) {
-				self::exception(ZBX_API_ERROR_PARAMETERS, _('Invalid time period.'));
-			}
-		}
-	}
-
-	/**
-	 * Checks if the given users are editable.
-	 *
-	 * @param array $userids	user ids to check
-	 *
-	 * @throws APIException		if the user has no permissions to edit users or a user does not exist
-	 */
-	protected function checkPermissions(array $userids) {
-		$userids = array_unique($userids);
-
-		$count = $this->get([
-			'countOutput' => true,
-			'userids' => $userids,
-			'editable' => true
-		]);
-
-		if ($count != count($userids)) {
-			self::exception(ZBX_API_ERROR_PERMISSIONS, _('No permissions to referred object or it does not exist!'));
-		}
-	}
-
-	/**
-	 * Delete user media.
-	 *
-	 * @deprecated	As of version 3.4, use update() method instead.
-	 *
-	 * @param array $mediaIds
-	 *
-	 * @return array
-	 */
-	public function deleteMedia($mediaIds) {
-		$this->deprecated('user.deletemedia method is deprecated.');
-
-		$mediaIds = zbx_toArray($mediaIds);
-
-		$this->validateDeleteMedia($mediaIds);
-		$this->deleteMediaReal($mediaIds);
-
-		return ['mediaids' => $mediaIds];
-	}
-
-	/**
-	 * Validate delete user media.
-	 *
-	 * @throws APIException if the input is invalid
-	 */
-	protected function validateDeleteMedia(array $mediaIds) {
-		if (self::$userData['type'] < USER_TYPE_ZABBIX_ADMIN) {
-			self::exception(ZBX_API_ERROR_PARAMETERS, _('Only Zabbix Admins can remove user media.'));
-		}
-
-		$dbUserMediaCount = API::UserMedia()->get([
-			'countOutput' => true,
-			'mediaids' => $mediaIds,
-			'editable' => true
-		]);
-
-		if (count($mediaIds) != $dbUserMediaCount) {
-			self::exception(ZBX_API_ERROR_PARAMETERS, _('No permissions to referred object or it does not exist!'));
-		}
-	}
-
-	/**
-	 * Delete user media.
-	 *
-	 * @throws APIException if delete is fail
-	 */
-	protected function deleteMediaReal($mediaIds) {
-		if (!DBexecute('DELETE FROM media WHERE '.dbConditionInt('mediaid', $mediaIds))) {
-			self::exception(ZBX_API_ERROR_PARAMETERS, _('Cannot delete user media.'));
-		}
-	}
-
-	/**
 	 * Authenticate a user using LDAP.
 	 *
 	 * The $user array must have the following attributes:
@@ -1356,18 +1145,17 @@ class CUser extends CApiService {
 			self::exception(ZBX_API_ERROR_PARAMETERS, $error);
 		}
 
-		$db_users = DB::select('users', [
-			'output' => ['userid', 'alias', 'name', 'surname', 'url', 'autologin', 'autologout', 'lang', 'refresh',
-				'type', 'theme', 'attempt_failed', 'attempt_ip', 'attempt_clock', 'rows_per_page', 'passwd'
-			],
-			'filter' => ['alias' => $user['user']]
-		]);
+		$config = select_config();
+		$group_to_auth_map = [
+			GROUP_GUI_ACCESS_SYSTEM => $config['authentication_type'],
+			GROUP_GUI_ACCESS_INTERNAL => ZBX_AUTH_INTERNAL,
+			GROUP_GUI_ACCESS_LDAP => ZBX_AUTH_LDAP,
+			GROUP_GUI_ACCESS_DISABLED => null
+		];
 
-		if (!$db_users) {
-			self::exception(ZBX_API_ERROR_PARAMETERS, _('Login name or password is incorrect.'));
-		}
-
-		$db_user = $db_users[0];
+		$db_user = $this->findByAlias($user['user'], ($config['ldap_case_sensitive'] == ZBX_AUTH_CASE_SENSITIVE),
+			$config['authentication_type'], true
+		);
 
 		// Check if user is blocked.
 		if ($db_user['attempt_failed'] >= ZBX_LOGIN_ATTEMPTS) {
@@ -1385,41 +1173,8 @@ class CUser extends CApiService {
 			]);
 		}
 
-		$usrgrps = $this->getUserGroupsData($db_user['userid']);
-
-		$db_user['debug_mode'] = $usrgrps['debug_mode'];
-		$db_user['userip'] = $usrgrps['userip'];
-		$db_user['gui_access'] = $usrgrps['gui_access'];
-
-		// Check system permissions.
-		if ($usrgrps['users_status'] == GROUP_STATUS_DISABLED) {
-			self::exception(ZBX_API_ERROR_PARAMETERS, _('No permissions for system access.'));
-		}
-
-		$config = select_config();
-		$authentication_type = $config['authentication_type'];
-
-		if ($db_user['gui_access'] == GROUP_GUI_ACCESS_INTERNAL) {
-			$authentication_type = ($authentication_type == ZBX_AUTH_HTTP) ? ZBX_AUTH_HTTP : ZBX_AUTH_INTERNAL;
-		}
-
-		if ($authentication_type == ZBX_AUTH_HTTP) {
-			// if PHP_AUTH_USER is not set, it means that HTTP authentication is not enabled
-			if (!array_key_exists('PHP_AUTH_USER', $_SERVER)) {
-				self::exception(ZBX_API_ERROR_PARAMETERS, _('Cannot login.'));
-			}
-			// check if the user name used when calling the API matches the one used for HTTP authentication
-			elseif ($user['user'] !== $_SERVER['PHP_AUTH_USER']) {
-				self::exception(ZBX_API_ERROR_PARAMETERS,
-					_s('Login name "%1$s" does not match the name "%2$s" used to pass HTTP authentication.',
-						$user['user'], $_SERVER['PHP_AUTH_USER']
-					)
-				);
-			}
-		}
-
 		try {
-			switch ($authentication_type) {
+			switch ($group_to_auth_map[$db_user['gui_access']]) {
 				case ZBX_AUTH_LDAP:
 					$this->ldapLogin($user);
 					break;
@@ -1428,6 +1183,10 @@ class CUser extends CApiService {
 					if (md5($user['password']) !== $db_user['passwd']) {
 						self::exception(ZBX_API_ERROR_PARAMETERS, _('Login name or password is incorrect.'));
 					}
+					break;
+
+				default:
+					self::exception(ZBX_API_ERROR_PARAMETERS, _('No permissions for system access.'));
 					break;
 			}
 		}
@@ -1450,22 +1209,7 @@ class CUser extends CApiService {
 
 		// Start session.
 		unset($db_user['passwd']);
-		$db_user['sessionid'] = md5(microtime().md5($user['password']).$user['user'].mt_rand());
-
-		DB::insert('sessions', [[
-			'sessionid' => $db_user['sessionid'],
-			'userid' => $db_user['userid'],
-			'lastaccess' => time(),
-			'status' => ZBX_SESSION_ACTIVE
-		]], false);
-
-		if ($db_user['attempt_failed'] != 0) {
-			DB::update('users', [
-				'values' => ['attempt_failed' => 0],
-				'where' => ['userid' => $db_user['userid']]
-			]);
-		}
-
+		$db_user = $this->createSession($user, $db_user);
 		self::$userData = $db_user;
 
 		$this->addAuditDetails(AUDIT_ACTION_LOGIN, AUDIT_RESOURCE_USER);
@@ -1474,15 +1218,48 @@ class CUser extends CApiService {
 	}
 
 	/**
+	 * Method is ONLY for internal use!
+	 * Login user by alias. Return array with user data.
+	 *
+	 * @param string $alias      Authenticated user alias value.
+	 * @param bool   $api_call   Check is method called via API call or from local php file.
+	 *
+	 * @return array
+	 */
+	public function loginHttp($alias, $api_call = true) {
+		if ($api_call) {
+			return self::exception(ZBX_API_ERROR_PARAMETERS, _s('Incorrect method "%1$s.%2$s".', 'user', 'loginHttp'));
+		}
+
+		$config = select_config();
+		$db_user = $this->findByAlias($alias, ($config['http_case_sensitive'] == ZBX_AUTH_CASE_SENSITIVE),
+			$config['authentication_type'], false
+		);
+
+		unset($db_user['passwd']);
+		$db_user = $this->createSession([
+			'user' => $alias,
+			'password' => mt_rand()
+		], $db_user);
+		self::$userData = $db_user;
+
+		$this->addAuditDetails(AUDIT_ACTION_LOGIN, AUDIT_RESOURCE_USER);
+		return $db_user;
+	}
+
+	/**
 	 * Check if session id is authenticated.
 	 *
-	 * @param array $session
+	 * @param array  $session
+	 * @param string $session[]['sessionid']  (required) session id to be checked
+	 * @param bool   $session[]['extend']     (optional) extend session (update lastaccess time)
 	 *
 	 * @return array
 	 */
 	public function checkAuthentication(array $session) {
 		$api_input_rules = ['type' => API_OBJECT, 'fields' => [
 			'sessionid' =>	['type' => API_STRING_UTF8, 'flags' => API_REQUIRED, 'length' => DB::getFieldLength('sessions', 'sessionid')],
+			'extend' =>	['type' => API_BOOLEAN, 'default' => true]
 		]];
 		if (!CApiInputValidator::validate($api_input_rules, $session, '/', $error)) {
 			self::exception(ZBX_API_ERROR_PARAMETERS, $error);
@@ -1546,7 +1323,7 @@ class CUser extends CApiService {
 			self::exception(ZBX_API_ERROR_PARAMETERS, _('Session terminated, re-login, please.'));
 		}
 
-		if ($time != $db_session['lastaccess']) {
+		if ($session['extend'] && $time != $db_session['lastaccess']) {
 			DB::update('sessions', [
 				'values' => ['lastaccess' => $time],
 				'where' => ['sessionid' => $sessionid]
@@ -1611,14 +1388,36 @@ class CUser extends CApiService {
 		// adding medias
 		if ($options['selectMedias'] !== null && $options['selectMedias'] != API_OUTPUT_COUNT) {
 			$db_medias = API::getApiService()->select('media', [
-				'output' => $this->outputExtend($options['selectMedias'], ['userid', 'mediaid']),
+				'output' => $this->outputExtend($options['selectMedias'], ['userid', 'mediaid', 'mediatypeid']),
 				'filter' => ['userid' => $userIds],
 				'preservekeys' => true
 			]);
 
+			// 'sendto' parameter in media types with 'type' == MEDIA_TYPE_EMAIL are returned as array.
+			if (($options['selectMedias'] === API_OUTPUT_EXTEND || in_array('sendto', $options['selectMedias']))
+					&& $db_medias) {
+				$db_email_medias = DB::select('media_type', [
+					'output' => [],
+					'filter' => [
+						'mediatypeid' => zbx_objectValues($db_medias, 'mediatypeid'),
+						'type' => MEDIA_TYPE_EMAIL
+					],
+					'preservekeys' => true
+				]);
+
+				foreach ($db_medias as &$db_media) {
+					if (array_key_exists($db_media['mediatypeid'], $db_email_medias)) {
+						$db_media['sendto'] = explode("\n", $db_media['sendto']);
+					}
+				}
+				unset($db_media);
+			}
+
 			$relationMap = $this->createRelationMap($db_medias, 'userid', 'mediaid');
 
-			$db_medias = $this->unsetExtraFields($db_medias, ['userid', 'mediaid'], $options['selectMedias']);
+			$db_medias = $this->unsetExtraFields($db_medias, ['userid', 'mediaid', 'mediatypeid'],
+				$options['selectMedias']
+			);
 			$result = $relationMap->mapMany($result, $db_medias, 'medias');
 		}
 
@@ -1634,5 +1433,111 @@ class CUser extends CApiService {
 		}
 
 		return $result;
+	}
+
+	/**
+	 * Initialize session for user. Returns user data array with valid sessionid.
+	 *
+	 * @param array  $user              Authentication credentials.
+	 * @param string $user['user']      User alias value.
+	 * @param string $user['password']  User password, is used in sessionid generation.
+	 * @param array  $db_user           User data from database.
+	 *
+	 * @return array
+	 */
+	private function createSession($user, $db_user) {
+		$db_user['sessionid'] = md5(microtime().md5($user['password']).$user['user'].mt_rand());
+
+		DB::insert('sessions', [[
+			'sessionid' => $db_user['sessionid'],
+			'userid' => $db_user['userid'],
+			'lastaccess' => time(),
+			'status' => ZBX_SESSION_ACTIVE
+		]], false);
+
+		if ($db_user['attempt_failed'] != 0) {
+			DB::update('users', [
+				'values' => ['attempt_failed' => 0],
+				'where' => ['userid' => $db_user['userid']]
+			]);
+		}
+
+		return $db_user;
+	}
+
+	/**
+	 * Find user by alias. Return user data from database.
+	 *
+	 * @param string $alias             User alias to search for.
+	 * @param bool   $case_sensitive    Perform case sensitive search.
+	 * @param int    $default_auth      System default authentication type.
+	 * @param bool   $do_group_check    Is actual only when $case_sensitive equals false. In HTTP authentication case
+	 *                                  user alias string is case insensitive string even for groups with frontend
+	 *                                  access GROUP_GUI_ACCESS_INTERNAL.
+	 *
+	 * @return array
+	 */
+	private function findByAlias($alias, $case_sensitive, $default_auth, $do_group_check) {
+		$db_users = [];
+		$group_to_auth_map = [
+			GROUP_GUI_ACCESS_SYSTEM => $default_auth,
+			GROUP_GUI_ACCESS_INTERNAL => ZBX_AUTH_INTERNAL,
+			GROUP_GUI_ACCESS_LDAP => ZBX_AUTH_LDAP,
+			GROUP_GUI_ACCESS_DISABLED => null
+		];
+		$fields = ['userid', 'alias', 'name', 'surname', 'url', 'autologin', 'autologout', 'lang', 'refresh',
+			'type', 'theme', 'attempt_failed', 'attempt_ip', 'attempt_clock', 'rows_per_page', 'passwd'
+		];
+
+		if ($case_sensitive) {
+			$db_users = DB::select('users', [
+				'output' => $fields,
+				'filter' => ['alias' => $alias]
+			]);
+		}
+		else {
+			$db_users_rows = DBfetchArray(DBselect(
+				'SELECT '.implode(',', $fields).
+				' FROM users'.
+					' WHERE LOWER(alias)='.zbx_dbstr(strtolower($alias))
+			));
+
+			if ($do_group_check) {
+				// Users with ZBX_AUTH_INTERNAL access attribute 'alias' is always case sensitive.
+				foreach($db_users_rows as $db_user_row) {
+					$permissions = $this->getUserGroupsData($db_user_row['userid']);
+
+					if ($group_to_auth_map[$permissions['gui_access']] != ZBX_AUTH_INTERNAL
+							|| $db_user_row['alias'] === $alias) {
+						$db_users[] = $db_user_row;
+					}
+				}
+			}
+			else {
+				$db_users = $db_users_rows;
+			}
+		}
+
+		if (!$db_users) {
+			self::exception(ZBX_API_ERROR_PARAMETERS, _('Login name or password is incorrect.'));
+		}
+		elseif (count($db_users) > 1) {
+			self::exception(ZBX_API_ERROR_PARAMETERS,
+				_s('Authentication failed: %1$s.', _('supplied credentials are not unique'))
+			);
+		}
+
+		$db_user = reset($db_users);
+		$usrgrps = $this->getUserGroupsData($db_user['userid']);
+
+		if ($usrgrps['users_status'] == GROUP_STATUS_DISABLED) {
+			self::exception(ZBX_API_ERROR_PARAMETERS, _('No permissions for system access.'));
+		}
+
+		$db_user['debug_mode'] = $usrgrps['debug_mode'];
+		$db_user['userip'] = $usrgrps['userip'];
+		$db_user['gui_access'] = $usrgrps['gui_access'];
+
+		return $db_user;
 	}
 }

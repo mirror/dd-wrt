@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@ extern int	CONFIG_TIMEOUT;
 
 struct cfg_line
 {
-	char		*parameter;
+	const char	*parameter;
 	void		*variable;
 	int		type;
 	int		mandatory;

@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -52,8 +52,6 @@ class CScreenPlainText extends CScreenBase {
 		$table = (new CTableInfo())
 			->setHeader([_('Timestamp'), _('Value')]);
 
-		$stime = zbxDateToTime($this->timeline['stime']);
-
 		$histories = API::History()->get([
 			'history' => $item['value_type'],
 			'itemids' => $this->screenitem['resourceid'],
@@ -61,8 +59,8 @@ class CScreenPlainText extends CScreenBase {
 			'sortorder' => ZBX_SORT_DOWN,
 			'sortfield' => ['itemid', 'clock'],
 			'limit' => $this->screenitem['elements'],
-			'time_from' => $stime,
-			'time_till' => $stime + $this->timeline['period']
+			'time_from' => $this->timeline['from_ts'],
+			'time_till' => $this->timeline['to_ts']
 		]);
 		foreach ($histories as $history) {
 			switch ($item['value_type']) {

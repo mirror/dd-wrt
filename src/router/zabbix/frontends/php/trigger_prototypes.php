@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -559,9 +559,12 @@ else {
 		],
 		'selectHosts' => ['hostid', 'host'],
 		'selectDependencies' => ['triggerid', 'description'],
+		'selectTags' => ['tag', 'value'],
 		'triggerids' => zbx_objectValues($data['triggers'], 'triggerid')
 	]);
 	order_result($data['triggers'], $sortField, $sortOrder);
+
+	$data['tags'] = makeTags($data['triggers'], true, 'triggerid');
 
 	$depTriggerIds = [];
 	foreach ($data['triggers'] as $trigger) {

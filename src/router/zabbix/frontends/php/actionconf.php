@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -87,10 +87,10 @@ $fields = [
 	'cancel_new_ack_operation' =>		[T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null],
 	'add_opcondition' =>				[T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null],
 	'cancel_new_opcondition' =>			[T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null],
-	'maintenance_mode' =>				[T_ZBX_STR, O_OPT, null,
-											IN([ACTION_MAINTENANCE_MODE_NORMAL, ACTION_MAINTENANCE_MODE_PAUSE]),
+	'pause_suppressed' =>				[T_ZBX_STR, O_OPT, null,
+											IN([ACTION_PAUSE_SUPPRESSED_FALSE, ACTION_PAUSE_SUPPRESSED_TRUE]),
 											null,
-											_('Pause operations while in maintenance')
+											_('Pause operations for suppressed problems')
 										],
 	'add' =>							[T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null],
 	'update' =>							[T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null],
@@ -211,7 +211,7 @@ elseif (hasRequest('add') || hasRequest('update')) {
 	$eventsource = getRequest('eventsource', CProfile::get('web.actionconf.eventsource', EVENT_SOURCE_TRIGGERS));
 
 	if ($eventsource == EVENT_SOURCE_TRIGGERS) {
-		$action['maintenance_mode'] = getRequest('maintenance_mode', ACTION_MAINTENANCE_MODE_NORMAL);
+		$action['pause_suppressed'] = getRequest('pause_suppressed', ACTION_PAUSE_SUPPRESSED_FALSE);
 	}
 
 	DBstart();
@@ -262,8 +262,8 @@ elseif (hasRequest('add_condition') && hasRequest('new_condition')) {
 	if ($newCondition) {
 		$conditions = getRequest('conditions', []);
 
-		// when adding new maintenance, in order to check for an existing maintenance, it must have a not null value
-		if ($newCondition['conditiontype'] == CONDITION_TYPE_MAINTENANCE) {
+		// When adding new condition, in order to check for an existing condition, it must have a not null value.
+		if ($newCondition['conditiontype'] == CONDITION_TYPE_SUPPRESSED) {
 			$newCondition['value'] = '';
 		}
 
@@ -618,7 +618,7 @@ if (hasRequest('form')) {
 			$data['action']['ack_longdata'] = getRequest('ack_longdata', '');
 
 			if ($data['eventsource'] == EVENT_SOURCE_TRIGGERS) {
-				$data['action']['maintenance_mode'] = getRequest('maintenance_mode', ACTION_MAINTENANCE_MODE_NORMAL);
+				$data['action']['pause_suppressed'] = getRequest('pause_suppressed', ACTION_PAUSE_SUPPRESSED_FALSE);
 			}
 		}
 		else {
@@ -629,8 +629,8 @@ if (hasRequest('form')) {
 				$data['action']['r_longdata'] = getRequest('r_longdata', ACTION_DEFAULT_MSG_RECOVERY);
 				$data['action']['ack_shortdata'] = getRequest('ack_shortdata', ACTION_DEFAULT_SUBJ_ACKNOWLEDGE);
 				$data['action']['ack_longdata'] = getRequest('ack_longdata', ACTION_DEFAULT_MSG_ACKNOWLEDGE);
-				$data['action']['maintenance_mode'] = getRequest('maintenance_mode',
-					hasRequest('form_refresh') ? ACTION_MAINTENANCE_MODE_NORMAL : ACTION_MAINTENANCE_MODE_PAUSE
+				$data['action']['pause_suppressed'] = getRequest('pause_suppressed',
+					hasRequest('form_refresh') ? ACTION_PAUSE_SUPPRESSED_FALSE : ACTION_PAUSE_SUPPRESSED_TRUE
 				);
 			}
 			elseif ($data['eventsource'] == EVENT_SOURCE_DISCOVERY) {
@@ -650,15 +650,6 @@ if (hasRequest('form')) {
 				$data['action']['ack_longdata'] = getRequest('ack_longdata', '');
 			}
 		}
-	}
-
-	if (!$data['actionid'] && !hasRequest('form_refresh') && $data['eventsource'] == EVENT_SOURCE_TRIGGERS) {
-		$data['action']['filter']['conditions'] = [[
-			'formulaid' => 'A',
-			'conditiontype' => CONDITION_TYPE_MAINTENANCE,
-			'operator' => CONDITION_OPERATOR_NOT_IN,
-			'value' => ''
-		]];
 	}
 
 	$data['allowedConditions'] = get_conditions_by_eventsource($data['eventsource']);
@@ -807,7 +798,9 @@ else {
 		'sort' => $sortField,
 		'sortorder' => $sortOrder,
 		'filter' => $filter,
-		'config' => $config
+		'config' => $config,
+		'profileIdx' => 'web.actionconf.filter',
+		'active_tab' => CProfile::get('web.actionconf.filter.active', 1)
 	];
 
 	$data['actions'] = API::Action()->get([

@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -19,34 +19,37 @@
 **/
 
 
-$widget = (new CWidget())
-	->setTitle(_('Screens'))
-	->addItem((new CList())
-	->addClass(ZBX_STYLE_OBJECT_GROUP)
-	->addItem([
-		(new CSpan())->addItem(new CLink(_('All screens'), 'screenconf.php')),
-		'/',
-		(new CSpan())
-			->addClass(ZBX_STYLE_SELECTED)
-			->addItem(
-				new CLink($data['screen']['name'], 'screens.php?elementid='.$data['screen']['screenid'].
-					'&fullscreen='.$data['fullscreen']
-				)
-			)
-	]))
-	->addItem((new CFilter('web.screens.filter.state'))->addNavigator());
+$web_layout_mode = CView::getLayoutMode();
 
-$controls = (new CList())->addItem(
-	new CComboBox('config', 'screens.php', 'redirect(this.options[this.selectedIndex].value);', [
-		'screens.php' => _('Screens'),
-		'slides.php' => _('Slide shows')
-	])
+$widget = (new CWidget())->setWebLayoutMode($web_layout_mode);
+
+if (in_array($web_layout_mode, [ZBX_LAYOUT_NORMAL, ZBX_LAYOUT_FULLSCREEN])) {
+	$widget
+		->setTitle(_('Screens'))
+		->addItem((new CList())
+			->setAttribute('role', 'navigation')
+			->setAttribute('aria-label', _x('Hierarchy', 'screen reader'))
+			->addClass(ZBX_STYLE_OBJECT_GROUP)
+			->addClass(ZBX_STYLE_FILTER_BREADCRUMB)
+			->addItem([
+				(new CSpan())->addItem(new CLink(_('All screens'), 'screenconf.php')),
+				'/',
+				(new CSpan())
+					->addClass(ZBX_STYLE_SELECTED)
+					->addItem(
+						new CLink($data['screen']['name'], (new CUrl('screens.php'))
+							->setArgument('elementid', $data['screen']['screenid'])
+					))
+		]));
+}
+
+$controls = (new CList())
+	->addItem(
+		(new CComboBox('config', 'screens.php', 'redirect(this.options[this.selectedIndex].value);', [
+			'screens.php' => _('Screens'),
+			'slides.php' => _('Slide shows')
+		]))->removeId()
 );
-
-// Append screens combobox to page header.
-$form = (new CForm())
-	->setName('headerForm')
-	->addVar('fullscreen', $data['fullscreen']);
 
 if (check_dynamic_items($data['screen']['screenid'], 0)) {
 	$pageFilter = new CPageFilter([
@@ -78,47 +81,52 @@ if (check_dynamic_items($data['screen']['screenid'], 0)) {
 		]);
 }
 
-// page header
 $controls
 	->addItem($data['screen']['editable']
 		? (new CButton('edit', _('Edit screen')))
-			->onClick('redirect("screenedit.php?screenid='.$data['screen']['screenid'].'")')
+			->onClick('redirect("screenedit.php?screenid='.$data['screen']['screenid'].'", "get", "", false, false)')
 		: null
 	)
-	->addItem(get_icon('favourite',
-		[
+	->addItem(get_icon('favourite', [
 			'fav' => 'web.favorite.screenids',
 			'elname' => 'screenid',
 			'elid' => $data['screen']['screenid']
 		]
 	))
-	->addItem(get_icon('fullscreen', ['fullscreen' => $data['fullscreen']]));
+	->addItem(get_icon('fullscreen'));
 
-$form->addItem($controls);
-
-$widget->setControls($form);
+$widget->setControls((new CTag('nav', true, (new CList())
+	->addItem((new CForm('get'))
+		->setName('headerForm')
+		->addItem($controls)
+	)))
+		->setAttribute('aria-label', _('Content controls'))
+);
 
 // Append screens to widget.
 $screenBuilder = new CScreenBuilder([
 	'screenid' => $data['screen']['screenid'],
 	'mode' => SCREEN_MODE_PREVIEW,
-	'profileIdx' => 'web.screens',
-	'profileIdx2' => $data['screen']['screenid'],
 	'groupid' => getRequest('groupid'),
 	'hostid' => getRequest('hostid'),
-	'period' => $data['period'],
-	'stime' => $data['stime'],
-	'isNow' => $data['isNow'],
-	'updateProfile' => ($data['period'] !== null || $data['stime'] !== null || $data['isNow'] !== null)
+	'profileIdx' => $data['profileIdx'],
+	'profileIdx2' => $data['profileIdx2'],
+	'from' => $data['from'],
+	'to' => $data['to']
 ]);
-$widget->addItem(
-	(new CDiv($screenBuilder->show()))->addClass(ZBX_STYLE_TABLE_FORMS_CONTAINER)
-);
 
-CScreenBuilder::insertScreenStandardJs([
-	'timeline' => $screenBuilder->timeline,
-	'profileIdx' => $screenBuilder->profileIdx,
-	'profileIdx2' => $screenBuilder->profileIdx2
-]);
+$filter = (new CFilter())
+	->setProfile($data['profileIdx'], $data['profileIdx2'])
+	->setActiveTab($data['active_tab'])
+	->addTimeSelector($screenBuilder->timeline['from'], $screenBuilder->timeline['to']);
+
+if ($web_layout_mode === ZBX_LAYOUT_KIOSKMODE) {
+	$filter->addClass(ZBX_STYLE_HIDDEN);
+}
+$widget->addItem($filter);
+
+$widget->addItem((new CDiv($screenBuilder->show()))->addClass(ZBX_STYLE_TABLE_FORMS_CONTAINER));
+
+CScreenBuilder::insertScreenStandardJs($screenBuilder->timeline);
 
 return $widget;

@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -19,30 +19,16 @@
 **/
 
 
-class CRowHeader extends CTag {
+class CRowHeader extends CRow {
 
-	public function __construct($item = null) {
-		parent::__construct('tr', true);
-		$this->addItem($item);
-	}
-
-	public function addItem($item) {
-		if (is_object($item) && strtolower(get_class($item)) === 'ccolheader') {
-			parent::addItem($item);
-		}
-		elseif (is_array($item)) {
-			foreach ($item as $el) {
-				if (is_object($el) && strtolower(get_class($el)) === 'ccolheader') {
-					parent::addItem($el);
-				}
-				elseif (!is_null($el)) {
-					parent::addItem(new CColHeader($el));
-				}
-			}
-		}
-		elseif (!is_null($item)) {
-			parent::addItem(new CColHeader($item));
-		}
-		return $this;
+	/**
+	 * Create cell (th tag) with given content.
+	 *
+	 * @param CTag|array $item  Cell content.
+	 *
+	 * @return CCol
+	 */
+	protected function createCell($item) {
+		return (new CColHeader($item));
 	}
 }

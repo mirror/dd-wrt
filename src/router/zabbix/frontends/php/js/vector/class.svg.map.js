@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -753,7 +753,7 @@ SVGMapElement.prototype.updateLabel = function() {
 			'anchor': anchor,
 			background: {
 				fill: '#' + this.map.options.theme.backgroundcolor,
-				opacity: 0.5
+				opacity: 0.7
 			}
 		}, this.options.label);
 
@@ -1015,7 +1015,7 @@ SVGMapShape.prototype.update = function(options) {
 		];
 
 	mapping.forEach(function(map) {
-		if (typeof options[map.key] !== 'undefined' && options[map.key].trim() !== '') {
+		if (typeof options[map.key] !== 'undefined' && /[0-9A-F]{6}/g.test(options[map.key].trim())) {
 			attributes[map.value] = '#' + options[map.key];
 		}
 		else {
@@ -1152,7 +1152,7 @@ SVGMapShape.prototype.update = function(options) {
 		element.add('textarea', {
 			'x': x,
 			'y': y,
-			fill: '#' + options['font_color'],
+			fill: '#' + (/[0-9A-F]{6}/g.test(options['font_color'].trim()) ? options['font_color'] : '000000'),
 			'font-family': SVGMap.FONTS[parseInt(options.font)],
 			'font-size': parseInt(options['font_size']) + 'px',
 			'anchor': anchor,

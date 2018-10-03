@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -19,40 +19,22 @@
 **/
 
 
-$hostInventoryWidget = (new CWidget())->setTitle(_('Host inventory'));
-
-/*
- * Overview tab
- */
+// Overview tab.
 $overviewFormList = new CFormList();
 
-$host_name = (new CSpan($data['host']['host']))
-	->addClass(ZBX_STYLE_LINK_ACTION)
+$host_name = (new CLinkAction($data['host']['host']))
 	->setMenuPopup(CMenuPopupHelper::getHost(
 		$data['host'],
 		$data['hostScripts'][$data['host']['hostid']],
 		false
 	));
 
-if ($data['host']['maintenance_status'] == HOST_MAINTENANCE_STATUS_ON) {
-	$maintenance_icon = (new CSpan())
-		->addClass(ZBX_STYLE_ICON_MAINT)
-		->addClass(ZBX_STYLE_CURSOR_POINTER);
-
-	if (array_key_exists($data['host']['maintenanceid'], $data['maintenances'])) {
-		$maintenance = $data['maintenances'][$data['host']['maintenanceid']];
-
-		$hint = $maintenance['name'].' ['.($data['host']['maintenance_type']
-			? _('Maintenance without data collection')
-			: _('Maintenance with data collection')).']';
-
-		if ($maintenance['description']) {
-			$hint .= "\n".$maintenance['description'];
-		}
-
-		$maintenance_icon->setHint($hint);
-	}
-
+if ($data['host']['maintenance_status'] == HOST_MAINTENANCE_STATUS_ON
+		&& array_key_exists($data['host']['maintenanceid'], $data['maintenances'])) {
+	$maintenance = $data['maintenances'][$data['host']['maintenanceid']];
+	$maintenance_icon = makeMaintenanceIcon($data['host']['maintenance_type'], $maintenance['name'],
+		$maintenance['description']
+	);
 	$host_name = (new CSpan([$host_name, $maintenance_icon]))->addClass(ZBX_STYLE_REL_CONTAINER);
 }
 
@@ -136,13 +118,16 @@ if ($data['host']['description'] !== '') {
 // latest data
 $overviewFormList->addRow(_('Monitoring'),
 	new CHorList([
-		new CLink(_('Web'), 'zabbix.php?action=web.view&hostid='.$data['host']['hostid'].url_param('groupid')),
-		new CLink(_('Latest data'),
-			'latest.php?form=1&select=&show_details=1&filter_set=Filter&hostids[]='.$data['host']['hostid']
+		new CLink(_('Web'),
+			'zabbix.php?action=web.view&hostid='.$data['host']['hostid'].url_param('groupid')
 		),
-		new CLink(_('Triggers'),
-			'tr_status.php?filter_set=1&show_triggers=2&ack_status=1&show_events=1&show_events=0&show_details=1'.
-			'&txt_select=&show_maintenance=1&hostid='.$data['host']['hostid'].url_param('groupid')
+		new CLink(_('Latest data'),
+			(new CUrl('latest.php'))
+				->setArgument('form', '1')
+				->setArgument('select', '')
+				->setArgument('show_details', '1')
+				->setArgument('filter_set', 'Filter')
+				->setArgument('hostids[]', $data['host']['hostid'])
 		),
 		new CLink(_('Problems'),
 			(new CUrl('zabbix.php'))
@@ -151,7 +136,9 @@ $overviewFormList->addRow(_('Monitoring'),
 				->setArgument('filter_set', '1')
 		),
 		new CLink(_('Graphs'), 'charts.php?hostid='.$data['host']['hostid'].url_param('groupid')),
-		new CLink(_('Screens'), 'host_screen.php?hostid='.$data['host']['hostid'].url_param('groupid'))
+		new CLink(_('Screens'),
+			'host_screen.php?hostid='.$data['host']['hostid'].url_param('groupid')
+		)
 	])
 );
 
@@ -220,8 +207,11 @@ $hostInventoriesTab->addTab('detailsTab', _('Details'), $detailsFormList);
 // append tabs and form
 $hostInventoriesTab->setFooter(makeFormFooter(null, [new CButtonCancel(url_param('groupid'))]));
 
-$hostInventoryWidget->addItem(
-	(new CForm())->addItem($hostInventoriesTab)
-);
-
-return $hostInventoryWidget;
+return (new CWidget())
+	->setTitle(_('Host inventory'))
+	->setWebLayoutMode(CView::getLayoutMode())
+	->setControls((new CList())->addItem(get_icon('fullscreen')))
+	->addItem((new CForm())
+		->setAttribute('aria-labeledby', ZBX_STYLE_PAGE_TITLE)
+		->addItem($hostInventoriesTab)
+	);

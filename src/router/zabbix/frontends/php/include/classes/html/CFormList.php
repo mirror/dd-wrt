@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -73,7 +73,7 @@ class CFormList extends CList {
 	public function addInfo($text) {
 		$this->addItem(
 			[
-				(new CDiv(_('Info')))->addClass(ZBX_STYLE_TABLE_FORMS_TD_LEFT),
+				(new CDiv())->addClass(ZBX_STYLE_TABLE_FORMS_TD_LEFT),
 				(new CDiv(
 					(new CDiv($text))->addClass(ZBX_STYLE_TABLE_FORMS_SEPARATOR)
 				))->addClass(ZBX_STYLE_TABLE_FORMS_TD_RIGHT)

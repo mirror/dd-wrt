@@ -3,7 +3,7 @@ CREATE TABLE users (
 	alias                    varchar(100)    DEFAULT ''                NOT NULL,
 	name                     varchar(100)    DEFAULT ''                NOT NULL,
 	surname                  varchar(100)    DEFAULT ''                NOT NULL,
-	passwd                   char(32)        DEFAULT ''                NOT NULL,
+	passwd                   varchar(32)     DEFAULT ''                NOT NULL,
 	url                      varchar(255)    DEFAULT ''                NOT NULL,
 	autologin                integer         DEFAULT '0'               NOT NULL,
 	autologout               varchar(32)     DEFAULT '15m'             NOT NULL,
@@ -25,6 +25,7 @@ CREATE TABLE maintenances (
 	description              text            DEFAULT ''                NOT NULL,
 	active_since             integer         DEFAULT '0'               NOT NULL,
 	active_till              integer         DEFAULT '0'               NOT NULL,
+	tags_evaltype            integer         DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (maintenanceid)
 );
 CREATE INDEX maintenances_1 ON maintenances (active_since,active_till);
@@ -69,6 +70,8 @@ CREATE TABLE hosts (
 	tls_subject              varchar(1024)   DEFAULT ''                NOT NULL,
 	tls_psk_identity         varchar(128)    DEFAULT ''                NOT NULL,
 	tls_psk                  varchar(512)    DEFAULT ''                NOT NULL,
+	proxy_address            varchar(255)    DEFAULT ''                NOT NULL,
+	auto_compress            integer         DEFAULT '1'               NOT NULL,
 	PRIMARY KEY (hostid)
 );
 CREATE INDEX hosts_1 ON hosts (host);
@@ -76,14 +79,14 @@ CREATE INDEX hosts_2 ON hosts (status);
 CREATE INDEX hosts_3 ON hosts (proxy_hostid);
 CREATE INDEX hosts_4 ON hosts (name);
 CREATE INDEX hosts_5 ON hosts (maintenanceid);
-CREATE TABLE groups (
+CREATE TABLE hstgrp (
 	groupid                  bigint                                    NOT NULL,
 	name                     varchar(255)    DEFAULT ''                NOT NULL,
 	internal                 integer         DEFAULT '0'               NOT NULL,
 	flags                    integer         DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (groupid)
 );
-CREATE INDEX groups_1 ON groups (name);
+CREATE INDEX hstgrp_1 ON hstgrp (name);
 CREATE TABLE group_prototype (
 	group_prototypeid        bigint                                    NOT NULL,
 	hostid                   bigint                                    NOT NULL,
@@ -273,7 +276,7 @@ CREATE TABLE interface (
 	type                     integer         DEFAULT '0'               NOT NULL,
 	useip                    integer         DEFAULT '1'               NOT NULL,
 	ip                       varchar(64)     DEFAULT '127.0.0.1'       NOT NULL,
-	dns                      varchar(64)     DEFAULT ''                NOT NULL,
+	dns                      varchar(255)    DEFAULT ''                NOT NULL,
 	port                     varchar(64)     DEFAULT '10050'           NOT NULL,
 	bulk                     integer         DEFAULT '1'               NOT NULL,
 	PRIMARY KEY (interfaceid)
@@ -332,6 +335,24 @@ CREATE TABLE items (
 	evaltype                 integer         DEFAULT '0'               NOT NULL,
 	jmx_endpoint             varchar(255)    DEFAULT ''                NOT NULL,
 	master_itemid            bigint                                    NULL,
+	timeout                  varchar(255)    DEFAULT '3s'              NOT NULL,
+	url                      varchar(2048)   DEFAULT ''                NOT NULL,
+	query_fields             varchar(2048)   DEFAULT ''                NOT NULL,
+	posts                    text            DEFAULT ''                NOT NULL,
+	status_codes             varchar(255)    DEFAULT '200'             NOT NULL,
+	follow_redirects         integer         DEFAULT '1'               NOT NULL,
+	post_type                integer         DEFAULT '0'               NOT NULL,
+	http_proxy               varchar(255)    DEFAULT ''                NOT NULL,
+	headers                  text            DEFAULT ''                NOT NULL,
+	retrieve_mode            integer         DEFAULT '0'               NOT NULL,
+	request_method           integer         DEFAULT '0'               NOT NULL,
+	output_format            integer         DEFAULT '0'               NOT NULL,
+	ssl_cert_file            varchar(255)    DEFAULT ''                NOT NULL,
+	ssl_key_file             varchar(255)    DEFAULT ''                NOT NULL,
+	ssl_key_password         varchar(64)     DEFAULT ''                NOT NULL,
+	verify_peer              integer         DEFAULT '0'               NOT NULL,
+	verify_host              integer         DEFAULT '0'               NOT NULL,
+	allow_traps              integer         DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (itemid)
 );
 CREATE UNIQUE INDEX items_1 ON items (hostid,key_);
@@ -427,7 +448,7 @@ CREATE TABLE actions (
 	r_shortdata              varchar(255)    DEFAULT ''                NOT NULL,
 	r_longdata               text            DEFAULT ''                NOT NULL,
 	formula                  varchar(255)    DEFAULT ''                NOT NULL,
-	maintenance_mode         integer         DEFAULT '1'               NOT NULL,
+	pause_suppressed         integer         DEFAULT '1'               NOT NULL,
 	ack_shortdata            varchar(255)    DEFAULT ''                NOT NULL,
 	ack_longdata             text            DEFAULT ''                NOT NULL,
 	PRIMARY KEY (actionid)
@@ -542,9 +563,6 @@ CREATE TABLE config (
 	refresh_unsupported      varchar(32)     DEFAULT '10m'             NOT NULL,
 	work_period              varchar(255)    DEFAULT '1-5,09:00-18:00' NOT NULL,
 	alert_usrgrpid           bigint                                    NULL,
-	event_ack_enable         integer         DEFAULT '1'               NOT NULL,
-	event_expire             varchar(32)     DEFAULT '1w'              NOT NULL,
-	event_show_max           integer         DEFAULT '100'             NOT NULL,
 	default_theme            varchar(128)    DEFAULT 'blue-theme'      NOT NULL,
 	authentication_type      integer         DEFAULT '0'               NOT NULL,
 	ldap_host                varchar(255)    DEFAULT ''                NOT NULL,
@@ -570,12 +588,12 @@ CREATE TABLE config (
 	severity_name_3          varchar(32)     DEFAULT 'Average'         NOT NULL,
 	severity_name_4          varchar(32)     DEFAULT 'High'            NOT NULL,
 	severity_name_5          varchar(32)     DEFAULT 'Disaster'        NOT NULL,
-	ok_period                varchar(32)     DEFAULT '30m'             NOT NULL,
-	blink_period             varchar(32)     DEFAULT '30m'             NOT NULL,
-	problem_unack_color      varchar(6)      DEFAULT 'DC0000'          NOT NULL,
-	problem_ack_color        varchar(6)      DEFAULT 'DC0000'          NOT NULL,
-	ok_unack_color           varchar(6)      DEFAULT '00AA00'          NOT NULL,
-	ok_ack_color             varchar(6)      DEFAULT '00AA00'          NOT NULL,
+	ok_period                varchar(32)     DEFAULT '5m'              NOT NULL,
+	blink_period             varchar(32)     DEFAULT '2m'              NOT NULL,
+	problem_unack_color      varchar(6)      DEFAULT 'CC0000'          NOT NULL,
+	problem_ack_color        varchar(6)      DEFAULT 'CC0000'          NOT NULL,
+	ok_unack_color           varchar(6)      DEFAULT '009900'          NOT NULL,
+	ok_ack_color             varchar(6)      DEFAULT '009900'          NOT NULL,
 	problem_unack_style      integer         DEFAULT '1'               NOT NULL,
 	problem_ack_style        integer         DEFAULT '1'               NOT NULL,
 	ok_unack_style           integer         DEFAULT '1'               NOT NULL,
@@ -600,6 +618,13 @@ CREATE TABLE config (
 	hk_trends_global         integer         DEFAULT '0'               NOT NULL,
 	hk_trends                varchar(32)     DEFAULT '365d'            NOT NULL,
 	default_inventory_mode   integer         DEFAULT '-1'              NOT NULL,
+	custom_color             integer         DEFAULT '0'               NOT NULL,
+	http_auth_enabled        integer         DEFAULT '0'               NOT NULL,
+	http_login_form          integer         DEFAULT '0'               NOT NULL,
+	http_strip_domains       varchar(2048)   DEFAULT ''                NOT NULL,
+	http_case_sensitive      integer         DEFAULT '1'               NOT NULL,
+	ldap_configured          integer         DEFAULT '0'               NOT NULL,
+	ldap_case_sensitive      integer         DEFAULT '1'               NOT NULL,
 	PRIMARY KEY (configid)
 );
 CREATE INDEX config_1 ON config (alert_usrgrpid);
@@ -641,12 +666,12 @@ CREATE TABLE functions (
 	functionid               bigint                                    NOT NULL,
 	itemid                   bigint                                    NOT NULL,
 	triggerid                bigint                                    NOT NULL,
-	function                 varchar(12)     DEFAULT ''                NOT NULL,
+	name                     varchar(12)     DEFAULT ''                NOT NULL,
 	parameter                varchar(255)    DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (functionid)
 );
 CREATE INDEX functions_1 ON functions (triggerid);
-CREATE INDEX functions_2 ON functions (itemid,function,parameter);
+CREATE INDEX functions_2 ON functions (itemid,name,parameter);
 CREATE TABLE graphs (
 	graphid                  bigint                                    NOT NULL,
 	name                     varchar(128)    DEFAULT ''                NOT NULL,
@@ -700,6 +725,7 @@ CREATE TABLE graph_theme (
 	leftpercentilecolor      varchar(6)      DEFAULT ''                NOT NULL,
 	rightpercentilecolor     varchar(6)      DEFAULT ''                NOT NULL,
 	nonworktimecolor         varchar(6)      DEFAULT ''                NOT NULL,
+	colorpalette             varchar(255)    DEFAULT ''                NOT NULL,
 	PRIMARY KEY (graphthemeid)
 );
 CREATE UNIQUE INDEX graph_theme_1 ON graph_theme (theme);
@@ -754,7 +780,7 @@ CREATE TABLE media (
 	mediaid                  bigint                                    NOT NULL,
 	userid                   bigint                                    NOT NULL,
 	mediatypeid              bigint                                    NOT NULL,
-	sendto                   varchar(100)    DEFAULT ''                NOT NULL,
+	sendto                   varchar(1024)   DEFAULT ''                NOT NULL,
 	active                   integer         DEFAULT '0'               NOT NULL,
 	severity                 integer         DEFAULT '63'              NOT NULL,
 	period                   varchar(1024)   DEFAULT '1-7,00:00-24:00' NOT NULL,
@@ -852,6 +878,7 @@ CREATE TABLE sysmaps (
 	severity_min             integer         DEFAULT '0'               NOT NULL,
 	userid                   bigint                                    NOT NULL,
 	private                  integer         DEFAULT '1'               NOT NULL,
+	show_suppressed          integer         DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (sysmapid)
 );
 CREATE UNIQUE INDEX sysmaps_1 ON sysmaps (name);
@@ -1006,7 +1033,7 @@ CREATE TABLE alerts (
 	userid                   bigint                                    NULL,
 	clock                    integer         DEFAULT '0'               NOT NULL,
 	mediatypeid              bigint                                    NULL,
-	sendto                   varchar(100)    DEFAULT ''                NOT NULL,
+	sendto                   varchar(1024)   DEFAULT ''                NOT NULL,
 	subject                  varchar(255)    DEFAULT ''                NOT NULL,
 	message                  text            DEFAULT ''                NOT NULL,
 	status                   integer         DEFAULT '0'               NOT NULL,
@@ -1090,7 +1117,7 @@ CREATE TABLE proxy_dhistory (
 	value                    varchar(255)    DEFAULT ''                NOT NULL,
 	status                   integer         DEFAULT '0'               NOT NULL,
 	dcheckid                 bigint                                    NULL,
-	dns                      varchar(64)     DEFAULT ''                NOT NULL,
+	dns                      varchar(255)    DEFAULT ''                NOT NULL,
 	PRIMARY KEY (id)
 );
 CREATE INDEX proxy_dhistory_1 ON proxy_dhistory (clock);
@@ -1103,6 +1130,8 @@ CREATE TABLE events (
 	value                    integer         DEFAULT '0'               NOT NULL,
 	acknowledged             integer         DEFAULT '0'               NOT NULL,
 	ns                       integer         DEFAULT '0'               NOT NULL,
+	name                     varchar(2048)   DEFAULT ''                NOT NULL,
+	severity                 integer         DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (eventid)
 );
 CREATE INDEX events_1 ON events (source,object,objectid,clock);
@@ -1132,6 +1161,8 @@ CREATE TABLE acknowledges (
 	clock                    integer         DEFAULT '0'               NOT NULL,
 	message                  varchar(255)    DEFAULT ''                NOT NULL,
 	action                   integer         DEFAULT '0'               NOT NULL,
+	old_severity             integer         DEFAULT '0'               NOT NULL,
+	new_severity             integer         DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (acknowledgeid)
 );
 CREATE INDEX acknowledges_1 ON acknowledges (userid);
@@ -1176,18 +1207,19 @@ CREATE TABLE autoreg_host (
 	host                     varchar(64)     DEFAULT ''                NOT NULL,
 	listen_ip                varchar(39)     DEFAULT ''                NOT NULL,
 	listen_port              integer         DEFAULT '0'               NOT NULL,
-	listen_dns               varchar(64)     DEFAULT ''                NOT NULL,
+	listen_dns               varchar(255)    DEFAULT ''                NOT NULL,
 	host_metadata            varchar(255)    DEFAULT ''                NOT NULL,
 	PRIMARY KEY (autoreg_hostid)
 );
-CREATE INDEX autoreg_host_1 ON autoreg_host (proxy_hostid,host);
+CREATE INDEX autoreg_host_1 ON autoreg_host (host);
+CREATE INDEX autoreg_host_2 ON autoreg_host (proxy_hostid);
 CREATE TABLE proxy_autoreg_host (
 	id                       bigserial                                 NOT NULL,
 	clock                    integer         DEFAULT '0'               NOT NULL,
 	host                     varchar(64)     DEFAULT ''                NOT NULL,
 	listen_ip                varchar(39)     DEFAULT ''                NOT NULL,
 	listen_port              integer         DEFAULT '0'               NOT NULL,
-	listen_dns               varchar(64)     DEFAULT ''                NOT NULL,
+	listen_dns               varchar(255)    DEFAULT ''                NOT NULL,
 	host_metadata            varchar(255)    DEFAULT ''                NOT NULL,
 	PRIMARY KEY (id)
 );
@@ -1211,7 +1243,7 @@ CREATE TABLE dservices (
 	lastdown                 integer         DEFAULT '0'               NOT NULL,
 	dcheckid                 bigint                                    NOT NULL,
 	ip                       varchar(39)     DEFAULT ''                NOT NULL,
-	dns                      varchar(64)     DEFAULT ''                NOT NULL,
+	dns                      varchar(255)    DEFAULT ''                NOT NULL,
 	PRIMARY KEY (dserviceid)
 );
 CREATE UNIQUE INDEX dservices_1 ON dservices (dcheckid,ip,port);
@@ -1229,7 +1261,9 @@ CREATE TABLE escalations (
 	acknowledgeid            bigint                                    NULL,
 	PRIMARY KEY (escalationid)
 );
-CREATE UNIQUE INDEX escalations_1 ON escalations (actionid,triggerid,itemid,escalationid);
+CREATE UNIQUE INDEX escalations_1 ON escalations (triggerid,itemid,escalationid);
+CREATE INDEX escalations_2 ON escalations (eventid);
+CREATE INDEX escalations_3 ON escalations (nextcheck);
 CREATE TABLE globalvars (
 	globalvarid              bigint                                    NOT NULL,
 	snmp_lastsize            numeric(20)     DEFAULT '0'               NOT NULL,
@@ -1462,10 +1496,14 @@ CREATE TABLE problem (
 	r_ns                     integer         DEFAULT '0'               NOT NULL,
 	correlationid            bigint                                    NULL,
 	userid                   bigint                                    NULL,
+	name                     varchar(2048)   DEFAULT ''                NOT NULL,
+	acknowledged             integer         DEFAULT '0'               NOT NULL,
+	severity                 integer         DEFAULT '0'               NOT NULL,
 	PRIMARY KEY (eventid)
 );
 CREATE INDEX problem_1 ON problem (source,object,objectid);
 CREATE INDEX problem_2 ON problem (r_clock);
+CREATE INDEX problem_3 ON problem (r_eventid);
 CREATE TABLE problem_tag (
 	problemtagid             bigint                                    NOT NULL,
 	eventid                  bigint                                    NOT NULL,
@@ -1473,8 +1511,15 @@ CREATE TABLE problem_tag (
 	value                    varchar(255)    DEFAULT ''                NOT NULL,
 	PRIMARY KEY (problemtagid)
 );
-CREATE INDEX problem_tag_1 ON problem_tag (eventid);
-CREATE INDEX problem_tag_2 ON problem_tag (tag,value);
+CREATE INDEX problem_tag_1 ON problem_tag (eventid,tag,value);
+CREATE TABLE tag_filter (
+	tag_filterid             bigint                                    NOT NULL,
+	usrgrpid                 bigint                                    NOT NULL,
+	groupid                  bigint                                    NOT NULL,
+	tag                      varchar(255)    DEFAULT ''                NOT NULL,
+	value                    varchar(255)    DEFAULT ''                NOT NULL,
+	PRIMARY KEY (tag_filterid)
+);
 CREATE TABLE event_recovery (
 	eventid                  bigint                                    NOT NULL,
 	r_eventid                bigint                                    NOT NULL,
@@ -1689,18 +1734,42 @@ CREATE INDEX widget_field_3 ON widget_field (value_hostid);
 CREATE INDEX widget_field_4 ON widget_field (value_itemid);
 CREATE INDEX widget_field_5 ON widget_field (value_graphid);
 CREATE INDEX widget_field_6 ON widget_field (value_sysmapid);
+CREATE TABLE task_check_now (
+	taskid                   bigint                                    NOT NULL,
+	itemid                   bigint                                    NOT NULL,
+	PRIMARY KEY (taskid)
+);
+CREATE TABLE event_suppress (
+	event_suppressid         bigint                                    NOT NULL,
+	eventid                  bigint                                    NOT NULL,
+	maintenanceid            bigint                                    NULL,
+	suppress_until           integer         DEFAULT '0'               NOT NULL,
+	PRIMARY KEY (event_suppressid)
+);
+CREATE UNIQUE INDEX event_suppress_1 ON event_suppress (eventid,maintenanceid);
+CREATE INDEX event_suppress_2 ON event_suppress (suppress_until);
+CREATE INDEX event_suppress_3 ON event_suppress (maintenanceid);
+CREATE TABLE maintenance_tag (
+	maintenancetagid         bigint                                    NOT NULL,
+	maintenanceid            bigint                                    NOT NULL,
+	tag                      varchar(255)    DEFAULT ''                NOT NULL,
+	operator                 integer         DEFAULT '2'               NOT NULL,
+	value                    varchar(255)    DEFAULT ''                NOT NULL,
+	PRIMARY KEY (maintenancetagid)
+);
+CREATE INDEX maintenance_tag_1 ON maintenance_tag (maintenanceid);
 CREATE TABLE dbversion (
 	mandatory                integer         DEFAULT '0'               NOT NULL,
 	optional                 integer         DEFAULT '0'               NOT NULL
 );
-INSERT INTO dbversion VALUES ('3040000','3040005');
+INSERT INTO dbversion VALUES ('4000000','4000000');
 ALTER TABLE ONLY hosts ADD CONSTRAINT c_hosts_1 FOREIGN KEY (proxy_hostid) REFERENCES hosts (hostid);
 ALTER TABLE ONLY hosts ADD CONSTRAINT c_hosts_2 FOREIGN KEY (maintenanceid) REFERENCES maintenances (maintenanceid);
 ALTER TABLE ONLY hosts ADD CONSTRAINT c_hosts_3 FOREIGN KEY (templateid) REFERENCES hosts (hostid) ON DELETE CASCADE;
 ALTER TABLE ONLY group_prototype ADD CONSTRAINT c_group_prototype_1 FOREIGN KEY (hostid) REFERENCES hosts (hostid) ON DELETE CASCADE;
-ALTER TABLE ONLY group_prototype ADD CONSTRAINT c_group_prototype_2 FOREIGN KEY (groupid) REFERENCES groups (groupid);
+ALTER TABLE ONLY group_prototype ADD CONSTRAINT c_group_prototype_2 FOREIGN KEY (groupid) REFERENCES hstgrp (groupid);
 ALTER TABLE ONLY group_prototype ADD CONSTRAINT c_group_prototype_3 FOREIGN KEY (templateid) REFERENCES group_prototype (group_prototypeid) ON DELETE CASCADE;
-ALTER TABLE ONLY group_discovery ADD CONSTRAINT c_group_discovery_1 FOREIGN KEY (groupid) REFERENCES groups (groupid) ON DELETE CASCADE;
+ALTER TABLE ONLY group_discovery ADD CONSTRAINT c_group_discovery_1 FOREIGN KEY (groupid) REFERENCES hstgrp (groupid) ON DELETE CASCADE;
 ALTER TABLE ONLY group_discovery ADD CONSTRAINT c_group_discovery_2 FOREIGN KEY (parent_group_prototypeid) REFERENCES group_prototype (group_prototypeid);
 ALTER TABLE ONLY screens ADD CONSTRAINT c_screens_1 FOREIGN KEY (templateid) REFERENCES hosts (hostid) ON DELETE CASCADE;
 ALTER TABLE ONLY screens ADD CONSTRAINT c_screens_3 FOREIGN KEY (userid) REFERENCES users (userid);
@@ -1736,7 +1805,7 @@ ALTER TABLE ONLY httptestitem ADD CONSTRAINT c_httptestitem_2 FOREIGN KEY (itemi
 ALTER TABLE ONLY users_groups ADD CONSTRAINT c_users_groups_1 FOREIGN KEY (usrgrpid) REFERENCES usrgrp (usrgrpid) ON DELETE CASCADE;
 ALTER TABLE ONLY users_groups ADD CONSTRAINT c_users_groups_2 FOREIGN KEY (userid) REFERENCES users (userid) ON DELETE CASCADE;
 ALTER TABLE ONLY scripts ADD CONSTRAINT c_scripts_1 FOREIGN KEY (usrgrpid) REFERENCES usrgrp (usrgrpid);
-ALTER TABLE ONLY scripts ADD CONSTRAINT c_scripts_2 FOREIGN KEY (groupid) REFERENCES groups (groupid);
+ALTER TABLE ONLY scripts ADD CONSTRAINT c_scripts_2 FOREIGN KEY (groupid) REFERENCES hstgrp (groupid);
 ALTER TABLE ONLY operations ADD CONSTRAINT c_operations_1 FOREIGN KEY (actionid) REFERENCES actions (actionid) ON DELETE CASCADE;
 ALTER TABLE ONLY opmessage ADD CONSTRAINT c_opmessage_1 FOREIGN KEY (operationid) REFERENCES operations (operationid) ON DELETE CASCADE;
 ALTER TABLE ONLY opmessage ADD CONSTRAINT c_opmessage_2 FOREIGN KEY (mediatypeid) REFERENCES media_type (mediatypeid);
@@ -1749,15 +1818,15 @@ ALTER TABLE ONLY opcommand ADD CONSTRAINT c_opcommand_2 FOREIGN KEY (scriptid) R
 ALTER TABLE ONLY opcommand_hst ADD CONSTRAINT c_opcommand_hst_1 FOREIGN KEY (operationid) REFERENCES operations (operationid) ON DELETE CASCADE;
 ALTER TABLE ONLY opcommand_hst ADD CONSTRAINT c_opcommand_hst_2 FOREIGN KEY (hostid) REFERENCES hosts (hostid);
 ALTER TABLE ONLY opcommand_grp ADD CONSTRAINT c_opcommand_grp_1 FOREIGN KEY (operationid) REFERENCES operations (operationid) ON DELETE CASCADE;
-ALTER TABLE ONLY opcommand_grp ADD CONSTRAINT c_opcommand_grp_2 FOREIGN KEY (groupid) REFERENCES groups (groupid);
+ALTER TABLE ONLY opcommand_grp ADD CONSTRAINT c_opcommand_grp_2 FOREIGN KEY (groupid) REFERENCES hstgrp (groupid);
 ALTER TABLE ONLY opgroup ADD CONSTRAINT c_opgroup_1 FOREIGN KEY (operationid) REFERENCES operations (operationid) ON DELETE CASCADE;
-ALTER TABLE ONLY opgroup ADD CONSTRAINT c_opgroup_2 FOREIGN KEY (groupid) REFERENCES groups (groupid);
+ALTER TABLE ONLY opgroup ADD CONSTRAINT c_opgroup_2 FOREIGN KEY (groupid) REFERENCES hstgrp (groupid);
 ALTER TABLE ONLY optemplate ADD CONSTRAINT c_optemplate_1 FOREIGN KEY (operationid) REFERENCES operations (operationid) ON DELETE CASCADE;
 ALTER TABLE ONLY optemplate ADD CONSTRAINT c_optemplate_2 FOREIGN KEY (templateid) REFERENCES hosts (hostid);
 ALTER TABLE ONLY opconditions ADD CONSTRAINT c_opconditions_1 FOREIGN KEY (operationid) REFERENCES operations (operationid) ON DELETE CASCADE;
 ALTER TABLE ONLY conditions ADD CONSTRAINT c_conditions_1 FOREIGN KEY (actionid) REFERENCES actions (actionid) ON DELETE CASCADE;
 ALTER TABLE ONLY config ADD CONSTRAINT c_config_1 FOREIGN KEY (alert_usrgrpid) REFERENCES usrgrp (usrgrpid);
-ALTER TABLE ONLY config ADD CONSTRAINT c_config_2 FOREIGN KEY (discovery_groupid) REFERENCES groups (groupid);
+ALTER TABLE ONLY config ADD CONSTRAINT c_config_2 FOREIGN KEY (discovery_groupid) REFERENCES hstgrp (groupid);
 ALTER TABLE ONLY triggers ADD CONSTRAINT c_triggers_1 FOREIGN KEY (templateid) REFERENCES triggers (triggerid) ON DELETE CASCADE;
 ALTER TABLE ONLY trigger_depends ADD CONSTRAINT c_trigger_depends_1 FOREIGN KEY (triggerid_down) REFERENCES triggers (triggerid) ON DELETE CASCADE;
 ALTER TABLE ONLY trigger_depends ADD CONSTRAINT c_trigger_depends_2 FOREIGN KEY (triggerid_up) REFERENCES triggers (triggerid) ON DELETE CASCADE;
@@ -1770,7 +1839,7 @@ ALTER TABLE ONLY graphs_items ADD CONSTRAINT c_graphs_items_1 FOREIGN KEY (graph
 ALTER TABLE ONLY graphs_items ADD CONSTRAINT c_graphs_items_2 FOREIGN KEY (itemid) REFERENCES items (itemid) ON DELETE CASCADE;
 ALTER TABLE ONLY hostmacro ADD CONSTRAINT c_hostmacro_1 FOREIGN KEY (hostid) REFERENCES hosts (hostid) ON DELETE CASCADE;
 ALTER TABLE ONLY hosts_groups ADD CONSTRAINT c_hosts_groups_1 FOREIGN KEY (hostid) REFERENCES hosts (hostid) ON DELETE CASCADE;
-ALTER TABLE ONLY hosts_groups ADD CONSTRAINT c_hosts_groups_2 FOREIGN KEY (groupid) REFERENCES groups (groupid) ON DELETE CASCADE;
+ALTER TABLE ONLY hosts_groups ADD CONSTRAINT c_hosts_groups_2 FOREIGN KEY (groupid) REFERENCES hstgrp (groupid) ON DELETE CASCADE;
 ALTER TABLE ONLY hosts_templates ADD CONSTRAINT c_hosts_templates_1 FOREIGN KEY (hostid) REFERENCES hosts (hostid) ON DELETE CASCADE;
 ALTER TABLE ONLY hosts_templates ADD CONSTRAINT c_hosts_templates_2 FOREIGN KEY (templateid) REFERENCES hosts (hostid) ON DELETE CASCADE;
 ALTER TABLE ONLY items_applications ADD CONSTRAINT c_items_applications_1 FOREIGN KEY (applicationid) REFERENCES applications (applicationid) ON DELETE CASCADE;
@@ -1779,7 +1848,7 @@ ALTER TABLE ONLY mappings ADD CONSTRAINT c_mappings_1 FOREIGN KEY (valuemapid) R
 ALTER TABLE ONLY media ADD CONSTRAINT c_media_1 FOREIGN KEY (userid) REFERENCES users (userid) ON DELETE CASCADE;
 ALTER TABLE ONLY media ADD CONSTRAINT c_media_2 FOREIGN KEY (mediatypeid) REFERENCES media_type (mediatypeid) ON DELETE CASCADE;
 ALTER TABLE ONLY rights ADD CONSTRAINT c_rights_1 FOREIGN KEY (groupid) REFERENCES usrgrp (usrgrpid) ON DELETE CASCADE;
-ALTER TABLE ONLY rights ADD CONSTRAINT c_rights_2 FOREIGN KEY (id) REFERENCES groups (groupid) ON DELETE CASCADE;
+ALTER TABLE ONLY rights ADD CONSTRAINT c_rights_2 FOREIGN KEY (id) REFERENCES hstgrp (groupid) ON DELETE CASCADE;
 ALTER TABLE ONLY services ADD CONSTRAINT c_services_1 FOREIGN KEY (triggerid) REFERENCES triggers (triggerid) ON DELETE CASCADE;
 ALTER TABLE ONLY services_links ADD CONSTRAINT c_services_links_1 FOREIGN KEY (serviceupid) REFERENCES services (serviceid) ON DELETE CASCADE;
 ALTER TABLE ONLY services_links ADD CONSTRAINT c_services_links_2 FOREIGN KEY (servicedownid) REFERENCES services (serviceid) ON DELETE CASCADE;
@@ -1809,7 +1878,7 @@ ALTER TABLE ONLY sysmap_usrgrp ADD CONSTRAINT c_sysmap_usrgrp_2 FOREIGN KEY (usr
 ALTER TABLE ONLY maintenances_hosts ADD CONSTRAINT c_maintenances_hosts_1 FOREIGN KEY (maintenanceid) REFERENCES maintenances (maintenanceid) ON DELETE CASCADE;
 ALTER TABLE ONLY maintenances_hosts ADD CONSTRAINT c_maintenances_hosts_2 FOREIGN KEY (hostid) REFERENCES hosts (hostid) ON DELETE CASCADE;
 ALTER TABLE ONLY maintenances_groups ADD CONSTRAINT c_maintenances_groups_1 FOREIGN KEY (maintenanceid) REFERENCES maintenances (maintenanceid) ON DELETE CASCADE;
-ALTER TABLE ONLY maintenances_groups ADD CONSTRAINT c_maintenances_groups_2 FOREIGN KEY (groupid) REFERENCES groups (groupid) ON DELETE CASCADE;
+ALTER TABLE ONLY maintenances_groups ADD CONSTRAINT c_maintenances_groups_2 FOREIGN KEY (groupid) REFERENCES hstgrp (groupid) ON DELETE CASCADE;
 ALTER TABLE ONLY maintenances_windows ADD CONSTRAINT c_maintenances_windows_1 FOREIGN KEY (maintenanceid) REFERENCES maintenances (maintenanceid) ON DELETE CASCADE;
 ALTER TABLE ONLY maintenances_windows ADD CONSTRAINT c_maintenances_windows_2 FOREIGN KEY (timeperiodid) REFERENCES timeperiods (timeperiodid) ON DELETE CASCADE;
 ALTER TABLE ONLY expressions ADD CONSTRAINT c_expressions_1 FOREIGN KEY (regexpid) REFERENCES regexps (regexpid) ON DELETE CASCADE;
@@ -1857,13 +1926,15 @@ ALTER TABLE ONLY event_tag ADD CONSTRAINT c_event_tag_1 FOREIGN KEY (eventid) RE
 ALTER TABLE ONLY problem ADD CONSTRAINT c_problem_1 FOREIGN KEY (eventid) REFERENCES events (eventid) ON DELETE CASCADE;
 ALTER TABLE ONLY problem ADD CONSTRAINT c_problem_2 FOREIGN KEY (r_eventid) REFERENCES events (eventid) ON DELETE CASCADE;
 ALTER TABLE ONLY problem_tag ADD CONSTRAINT c_problem_tag_1 FOREIGN KEY (eventid) REFERENCES problem (eventid) ON DELETE CASCADE;
+ALTER TABLE ONLY tag_filter ADD CONSTRAINT c_tag_filter_1 FOREIGN KEY (usrgrpid) REFERENCES usrgrp (usrgrpid) ON DELETE CASCADE;
+ALTER TABLE ONLY tag_filter ADD CONSTRAINT c_tag_filter_2 FOREIGN KEY (groupid) REFERENCES hstgrp (groupid) ON DELETE CASCADE;
 ALTER TABLE ONLY event_recovery ADD CONSTRAINT c_event_recovery_1 FOREIGN KEY (eventid) REFERENCES events (eventid) ON DELETE CASCADE;
 ALTER TABLE ONLY event_recovery ADD CONSTRAINT c_event_recovery_2 FOREIGN KEY (r_eventid) REFERENCES events (eventid) ON DELETE CASCADE;
 ALTER TABLE ONLY event_recovery ADD CONSTRAINT c_event_recovery_3 FOREIGN KEY (c_eventid) REFERENCES events (eventid) ON DELETE CASCADE;
 ALTER TABLE ONLY corr_condition ADD CONSTRAINT c_corr_condition_1 FOREIGN KEY (correlationid) REFERENCES correlation (correlationid) ON DELETE CASCADE;
 ALTER TABLE ONLY corr_condition_tag ADD CONSTRAINT c_corr_condition_tag_1 FOREIGN KEY (corr_conditionid) REFERENCES corr_condition (corr_conditionid) ON DELETE CASCADE;
 ALTER TABLE ONLY corr_condition_group ADD CONSTRAINT c_corr_condition_group_1 FOREIGN KEY (corr_conditionid) REFERENCES corr_condition (corr_conditionid) ON DELETE CASCADE;
-ALTER TABLE ONLY corr_condition_group ADD CONSTRAINT c_corr_condition_group_2 FOREIGN KEY (groupid) REFERENCES groups (groupid);
+ALTER TABLE ONLY corr_condition_group ADD CONSTRAINT c_corr_condition_group_2 FOREIGN KEY (groupid) REFERENCES hstgrp (groupid);
 ALTER TABLE ONLY corr_condition_tagpair ADD CONSTRAINT c_corr_condition_tagpair_1 FOREIGN KEY (corr_conditionid) REFERENCES corr_condition (corr_conditionid) ON DELETE CASCADE;
 ALTER TABLE ONLY corr_condition_tagvalue ADD CONSTRAINT c_corr_condition_tagvalue_1 FOREIGN KEY (corr_conditionid) REFERENCES corr_condition (corr_conditionid) ON DELETE CASCADE;
 ALTER TABLE ONLY corr_operation ADD CONSTRAINT c_corr_operation_1 FOREIGN KEY (correlationid) REFERENCES correlation (correlationid) ON DELETE CASCADE;
@@ -1885,8 +1956,12 @@ ALTER TABLE ONLY dashboard_usrgrp ADD CONSTRAINT c_dashboard_usrgrp_1 FOREIGN KE
 ALTER TABLE ONLY dashboard_usrgrp ADD CONSTRAINT c_dashboard_usrgrp_2 FOREIGN KEY (usrgrpid) REFERENCES usrgrp (usrgrpid) ON DELETE CASCADE;
 ALTER TABLE ONLY widget ADD CONSTRAINT c_widget_1 FOREIGN KEY (dashboardid) REFERENCES dashboard (dashboardid) ON DELETE CASCADE;
 ALTER TABLE ONLY widget_field ADD CONSTRAINT c_widget_field_1 FOREIGN KEY (widgetid) REFERENCES widget (widgetid) ON DELETE CASCADE;
-ALTER TABLE ONLY widget_field ADD CONSTRAINT c_widget_field_2 FOREIGN KEY (value_groupid) REFERENCES groups (groupid) ON DELETE CASCADE;
+ALTER TABLE ONLY widget_field ADD CONSTRAINT c_widget_field_2 FOREIGN KEY (value_groupid) REFERENCES hstgrp (groupid) ON DELETE CASCADE;
 ALTER TABLE ONLY widget_field ADD CONSTRAINT c_widget_field_3 FOREIGN KEY (value_hostid) REFERENCES hosts (hostid) ON DELETE CASCADE;
 ALTER TABLE ONLY widget_field ADD CONSTRAINT c_widget_field_4 FOREIGN KEY (value_itemid) REFERENCES items (itemid) ON DELETE CASCADE;
 ALTER TABLE ONLY widget_field ADD CONSTRAINT c_widget_field_5 FOREIGN KEY (value_graphid) REFERENCES graphs (graphid) ON DELETE CASCADE;
 ALTER TABLE ONLY widget_field ADD CONSTRAINT c_widget_field_6 FOREIGN KEY (value_sysmapid) REFERENCES sysmaps (sysmapid) ON DELETE CASCADE;
+ALTER TABLE ONLY task_check_now ADD CONSTRAINT c_task_check_now_1 FOREIGN KEY (taskid) REFERENCES task (taskid) ON DELETE CASCADE;
+ALTER TABLE ONLY event_suppress ADD CONSTRAINT c_event_suppress_1 FOREIGN KEY (eventid) REFERENCES events (eventid) ON DELETE CASCADE;
+ALTER TABLE ONLY event_suppress ADD CONSTRAINT c_event_suppress_2 FOREIGN KEY (maintenanceid) REFERENCES maintenances (maintenanceid) ON DELETE CASCADE;
+ALTER TABLE ONLY maintenance_tag ADD CONSTRAINT c_maintenance_tag_1 FOREIGN KEY (maintenanceid) REFERENCES maintenances (maintenanceid) ON DELETE CASCADE;

@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ static char	data_static[ZBX_MAX_B64_LEN];
 int	xml_get_data_dyn(const char *xml, const char *tag, char **data)
 {
 	size_t	len, sz;
-	char	*start, *end;
+	const char	*start, *end;
 
 	sz = sizeof(data_static);
 
@@ -48,7 +48,7 @@ int	xml_get_data_dyn(const char *xml, const char *tag, char **data)
 	len = end - start;
 
 	if (len > sz - 1)
-		*data = zbx_malloc(*data, len + 1);
+		*data = (char *)zbx_malloc(*data, len + 1);
 	else
 		*data = data_static;
 
@@ -109,7 +109,7 @@ char	*xml_escape_dyn(const char *data)
 	}
 	size++;
 
-	out = zbx_malloc(NULL, size);
+	out = (char *)zbx_malloc(NULL, size);
 
 	for (ptr_out = out, ptr_in = data; '\0' != *ptr_in; ptr_in++)
 	{
@@ -158,4 +158,75 @@ char	*xml_escape_dyn(const char *data)
 	*ptr_out = '\0';
 
 	return out;
+}
+
+/**********************************************************************************
+ *                                                                                *
+ * Function: xml_escape_xpath_stringsize                                          *
+ *                                                                                *
+ * Purpose: calculate a string size after symbols escaping                        *
+ *                                                                                *
+ * Parameters: string - [IN] the string to check                                  *
+ *                                                                                *
+ * Return value: new size of the string                                           *
+ *                                                                                *
+ **********************************************************************************/
+static size_t	xml_escape_xpath_stringsize(const char *string)
+{
+	size_t		len = 0;
+	const char	*sptr;
+
+	if (NULL == string )
+		return 0;
+
+	for (sptr = string; '\0' != *sptr; sptr++)
+		len += (('"' == *sptr) ? 2 : 1);
+
+	return len;
+}
+
+/**********************************************************************************
+ *                                                                                *
+ * Function: xml_escape_xpath_insstring                                           *
+ *                                                                                *
+ * Purpose: replace " symbol in string with ""                                    *
+ *                                                                                *
+ * Parameters: string - [IN/OUT] the string to update                             *
+ *                                                                                *
+ **********************************************************************************/
+static void xml_escape_xpath_string(char *p, const char *string)
+{
+	const char	*sptr = string;
+
+	while ('\0' != *sptr)
+	{
+		if ('"' == *sptr)
+			*p++ = '"';
+
+		*p++ = *sptr++;
+	}
+}
+
+/**********************************************************************************
+ *                                                                                *
+ * Function: xml_escape_xpath                                                     *
+ *                                                                                *
+ * Purpose: escaping of symbols for using in xpath expression                     *
+ *                                                                                *
+ * Parameters: data - [IN/OUT] the string to update                               *
+ *                                                                                *
+ **********************************************************************************/
+void xml_escape_xpath(char **data)
+{
+	size_t	size;
+	char	*buffer;
+
+	if (0 == (size = xml_escape_xpath_stringsize(*data)))
+		return;
+
+	buffer = zbx_malloc(NULL, size + 1);
+	buffer[size] = '\0';
+	xml_escape_xpath_string(buffer, *data);
+	zbx_free(*data);
+	*data = buffer;
 }

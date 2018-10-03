@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -27,14 +27,12 @@ require_once dirname(__FILE__).'/include/forms.inc.php';
 
 $page['title'] = _('Configuration of maintenance periods');
 $page['file'] = 'maintenance.php';
-$page['scripts'] = ['class.calendar.js'];
+$page['scripts'] = ['class.calendar.js', 'multiselect.js'];
 
 require_once dirname(__FILE__).'/include/page_header.php';
 
 // VAR	TYPE	OPTIONAL	FLAGS	VALIDATION	EXCEPTION
 $fields = [
-	'hosts' =>								[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null],
-	'groups' =>								[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null],
 	'hostids' =>							[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null],
 	'groupids' =>							[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null],
 	'groupid' =>							[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null],
@@ -44,32 +42,23 @@ $fields = [
 	'mname' =>								[T_ZBX_STR, O_OPT, null,	NOT_EMPTY,	'isset({add}) || isset({update})', _('Name')],
 	'maintenance_type' =>					[T_ZBX_INT, O_OPT, null,	null,		'isset({add}) || isset({update})'],
 	'description' =>						[T_ZBX_STR, O_OPT, null,	null,		'isset({add}) || isset({update})'],
-	'active_since' =>						[T_ZBX_STR, O_OPT, null, 	NOT_EMPTY,	'isset({add}) || isset({update})'],
-	'active_till' =>						[T_ZBX_STR, O_OPT, null, 	NOT_EMPTY,	'isset({add}) || isset({update})'],
-	'active_since_day' =>					[T_ZBX_STR, O_OPT, null, 	NOT_EMPTY,	null],
-	'active_since_month' =>					[T_ZBX_STR, O_OPT, null, 	NOT_EMPTY,	null],
-	'active_since_year' =>					[T_ZBX_STR, O_OPT, null, 	NOT_EMPTY,	null],
-	'active_since_hour' =>					[T_ZBX_STR, O_OPT, null, 	NOT_EMPTY,	null],
-	'active_since_minute' =>				[T_ZBX_STR, O_OPT, null, 	NOT_EMPTY,	null],
-	'active_till_day' =>					[T_ZBX_STR, O_OPT, null, 	NOT_EMPTY,	null],
-	'active_till_month' =>					[T_ZBX_STR, O_OPT, null, 	NOT_EMPTY,	null],
-	'active_till_year' =>					[T_ZBX_STR, O_OPT, null, 	NOT_EMPTY,	null],
-	'active_till_hour' =>					[T_ZBX_STR, O_OPT, null, 	NOT_EMPTY,	null],
-	'active_till_minute' =>					[T_ZBX_STR, O_OPT, null, 	NOT_EMPTY,	null],
-	'new_timeperiod_start_date_day' =>		[T_ZBX_STR, O_OPT, null, 	NOT_EMPTY,	null],
-	'new_timeperiod_start_date_month' =>	[T_ZBX_STR, O_OPT, null, 	NOT_EMPTY,	null],
-	'new_timeperiod_start_date_year' =>		[T_ZBX_STR, O_OPT, null, 	NOT_EMPTY,	null],
-	'new_timeperiod_start_date_hour' =>		[T_ZBX_STR, O_OPT, null, 	NOT_EMPTY,	null],
-	'new_timeperiod_start_date_minute' =>	[T_ZBX_STR, O_OPT, null, 	NOT_EMPTY,	null],
+	'active_since' =>						[T_ZBX_ABS_TIME, O_OPT, null, NOT_EMPTY,
+												'isset({add}) || isset({update})', _('Active since')
+											],
+	'active_till' =>						[T_ZBX_ABS_TIME, O_OPT, null, NOT_EMPTY,
+												'isset({add}) || isset({update})', _('Active till')
+											],
+	'new_timeperiod_start_date' =>			[T_ZBX_ABS_TIME, O_OPT, null, 	NOT_EMPTY,	null, _('Date')],
 	'new_timeperiod' =>						[T_ZBX_STR, O_OPT, null,	null,		'isset({add_timeperiod})'],
 	'timeperiods' =>						[T_ZBX_STR, O_OPT, null,	null,		null],
 	'del_timeperiodid' =>					[T_ZBX_STR, O_OPT, P_ACT,	null,		null],
 	'edit_timeperiodid' =>					[T_ZBX_STR, O_OPT, P_ACT,	null,		null],
-	'twb_groupid' =>						[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null],
+	'tags_evaltype' =>						[T_ZBX_INT, O_OPT, null,	null,		null],
+	'tags' =>								[T_ZBX_STR, O_OPT, null,	null,		null],
 	// actions
 	'action' =>								[T_ZBX_STR, O_OPT, P_SYS|P_ACT, IN('"maintenance.massdelete"'), null],
 	'add_timeperiod' =>						[T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null],
-	'cancel_new_timeperiod' =>				[T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null],
+	'cancel_new_timeperiod' =>				[T_ZBX_STR, O_OPT, P_SYS, null,	null],
 	'add' =>								[T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null],
 	'update' =>								[T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null],
 	'clone' =>								[T_ZBX_STR, O_OPT, P_SYS|P_ACT, null,	null],
@@ -105,6 +94,7 @@ if (isset($_REQUEST['maintenanceid'])) {
 	$dbMaintenance = API::Maintenance()->get([
 		'output' => API_OUTPUT_EXTEND,
 		'selectTimeperiods' => API_OUTPUT_EXTEND,
+		'selectTags' => API_OUTPUT_EXTEND,
 		'editable' => true,
 		'maintenanceids' => getRequest('maintenanceid'),
 	]);
@@ -137,66 +127,62 @@ elseif (hasRequest('add') || hasRequest('update')) {
 	}
 
 	$result = true;
+	$absolute_time_parser = new CAbsoluteTimeParser();
 
-	if (!validateDateTime($_REQUEST['active_since_year'],
-			$_REQUEST['active_since_month'],
-			$_REQUEST['active_since_day'],
-			$_REQUEST['active_since_hour'],
-			$_REQUEST['active_since_minute'])) {
-		info(_s('Invalid date "%s".', _('Active since')));
-		$result = false;
-	}
-	if (!validateDateInterval($_REQUEST['active_since_year'],
-			$_REQUEST['active_since_month'],
-			$_REQUEST['active_since_day'])) {
+	$absolute_time_parser->parse(getRequest('active_since'));
+	$active_since_date = $absolute_time_parser->getDateTime(true);
+
+	$absolute_time_parser->parse(getRequest('active_till'));
+	$active_till_date = $absolute_time_parser->getDateTime(true);
+
+	if (!validateDateInterval($active_since_date->format('Y'), $active_since_date->format('m'),
+			$active_since_date->format('d'))) {
 		info(_s('"%s" must be between 1970.01.01 and 2038.01.18.', _('Active since')));
 		$result = false;
 	}
-	if (!validateDateTime($_REQUEST['active_till_year'],
-				$_REQUEST['active_till_month'],
-				$_REQUEST['active_till_day'],
-				$_REQUEST['active_till_hour'],
-				$_REQUEST['active_till_minute'])) {
-		info(_s('Invalid date "%s".', _('Active till')));
-		$result = false;
-	}
-	if (!validateDateInterval($_REQUEST['active_till_year'], $_REQUEST['active_till_month'], $_REQUEST['active_till_day'])) {
+
+	if (!validateDateInterval($active_till_date->format('Y'), $active_till_date->format('m'),
+			$active_till_date->format('d'))) {
 		info(_s('"%s" must be between 1970.01.01 and 2038.01.18.', _('Active till')));
 		$result = false;
 	}
 
 	if ($result) {
-		if (isset($_REQUEST['active_since'])) {
-			$activeSince = mktime(
-				$_REQUEST['active_since_hour'],
-				$_REQUEST['active_since_minute'],
-				0,
-				$_REQUEST['active_since_month'],
-				$_REQUEST['active_since_day'],
-				$_REQUEST['active_since_year']
-			);
+		$timeperiods = getRequest('timeperiods', []);
+
+		foreach ($timeperiods as &$timeperiod) {
+			if ($timeperiod['timeperiod_type'] == TIMEPERIOD_TYPE_ONETIME) {
+				$absolute_time_parser->parse($timeperiod['start_date']);
+				$timeperiod['start_date'] = $absolute_time_parser
+					->getDateTime(true)
+					->getTimestamp();
+			}
 		}
-		if (isset($_REQUEST['active_till'])) {
-			$activeTill = mktime(
-				$_REQUEST['active_till_hour'],
-				$_REQUEST['active_till_minute'],
-				0,
-				$_REQUEST['active_till_month'],
-				$_REQUEST['active_till_day'],
-				$_REQUEST['active_till_year']
-			);
-		}
+		unset($timeperiod);
 
 		$maintenance = [
 			'name' => $_REQUEST['mname'],
-			'maintenance_type' => $_REQUEST['maintenance_type'],
-			'description' => $_REQUEST['description'],
-			'active_since' => $activeSince,
-			'active_till' => $activeTill,
-			'timeperiods' => getRequest('timeperiods', []),
+			'maintenance_type' => getRequest('maintenance_type'),
+			'description' => getRequest('description'),
+			'active_since' => $active_since_date->getTimestamp(),
+			'active_till' => $active_till_date->getTimestamp(),
+			'timeperiods' => $timeperiods,
 			'hostids' => getRequest('hostids', []),
 			'groupids' => getRequest('groupids', [])
 		];
+
+		if ($maintenance['maintenance_type'] != MAINTENANCE_TYPE_NODATA) {
+			$maintenance += [
+				'tags_evaltype' => getRequest('tags_evaltype', MAINTENANCE_TAG_EVAL_TYPE_AND_OR),
+				'tags' => getRequest('tags', [])
+			];
+
+			foreach ($maintenance['tags'] as $tnum => $tag) {
+				if ($tag['tag'] === '' && $tag['value'] === '') {
+					unset($maintenance['tags'][$tnum]);
+				}
+			}
+		}
 
 		if (isset($_REQUEST['maintenanceid'])) {
 			$maintenance['maintenanceid'] = $_REQUEST['maintenanceid'];
@@ -230,15 +216,11 @@ elseif (hasRequest('delete') || (hasRequest('action') && getRequest('action') ==
 
 	show_messages($result, _('Maintenance deleted'), _('Cannot delete maintenance'));
 }
-elseif (isset($_REQUEST['add_timeperiod']) && isset($_REQUEST['new_timeperiod'])) {
-	$new_timeperiod = $_REQUEST['new_timeperiod'];
+elseif (hasRequest('add_timeperiod') && hasRequest('new_timeperiod')) {
+	$new_timeperiod = getRequest('new_timeperiod');
+
 	if ($new_timeperiod['timeperiod_type'] == TIMEPERIOD_TYPE_ONETIME) {
-		$new_timeperiod['start_date'] = mktime($_REQUEST['new_timeperiod_start_date_hour'],
-			$_REQUEST['new_timeperiod_start_date_minute'],
-			0,
-			$_REQUEST['new_timeperiod_start_date_month'],
-			$_REQUEST['new_timeperiod_start_date_day'],
-			$_REQUEST['new_timeperiod_start_date_year']);
+		$new_timeperiod['start_date'] = getRequest('new_timeperiod_start_date');
 	}
 
 	// start time
@@ -288,61 +270,56 @@ elseif (isset($_REQUEST['add_timeperiod']) && isset($_REQUEST['new_timeperiod'])
 
 	$_REQUEST['timeperiods'] = getRequest('timeperiods', []);
 
-	$result = false;
+	$result = true;
+
 	if ($new_timeperiod['period'] < 300) {
 		info(_('Incorrect maintenance period (minimum 5 minutes)'));
+		$result = false;
 	}
 	elseif ($new_timeperiod['hour'] > 23 || $new_timeperiod['minute'] > 59) {
 		info(_('Incorrect maintenance period'));
+		$result = false;
 	}
 	elseif ($new_timeperiod['timeperiod_type'] == TIMEPERIOD_TYPE_ONETIME) {
-		if (!validateDateTime($_REQUEST['new_timeperiod_start_date_year'],
-				$_REQUEST['new_timeperiod_start_date_month'],
-				$_REQUEST['new_timeperiod_start_date_day'],
-				$_REQUEST['new_timeperiod_start_date_hour'],
-				$_REQUEST['new_timeperiod_start_date_minute'])) {
-			error(_('Invalid maintenance period'));
-		}
-		elseif (!validateDateInterval($_REQUEST['new_timeperiod_start_date_year'],
-				$_REQUEST['new_timeperiod_start_date_month'],
-				$_REQUEST['new_timeperiod_start_date_day'])) {
+		$absolute_time_parser = new CAbsoluteTimeParser();
+		$absolute_time_parser->parse($new_timeperiod['start_date']);
+		$start_date = $absolute_time_parser->getDateTime(true);
+		$new_timeperiod['start_date'] = $start_date->format(ZBX_DATE_TIME);
+
+		if (!validateDateInterval($start_date->format('Y'), $start_date->format('m'), $start_date->format('d'))) {
 			error(_('Incorrect maintenance - date must be between 1970.01.01 and 2038.01.18'));
-		}
-		else {
-			$result = true;
+			$result = false;
 		}
 	}
 	elseif ($new_timeperiod['timeperiod_type'] == TIMEPERIOD_TYPE_DAILY && $new_timeperiod['every'] < 1) {
 		info(_('Incorrect maintenance day period'));
+		$result = false;
 	}
 	elseif ($new_timeperiod['timeperiod_type'] == TIMEPERIOD_TYPE_WEEKLY) {
 		if ($new_timeperiod['every'] < 1) {
 			info(_('Incorrect maintenance week period'));
+			$result = false;
 		}
 		elseif ($new_timeperiod['dayofweek'] < 1) {
 			info(_('Incorrect maintenance days of week'));
-		}
-		else {
-			$result = true;
+			$result = false;
 		}
 	}
 	elseif ($new_timeperiod['timeperiod_type'] == TIMEPERIOD_TYPE_MONTHLY) {
 		if ($new_timeperiod['month'] < 1) {
 			info(_('Incorrect maintenance month period'));
+			$result = false;
 		}
 		elseif ($new_timeperiod['day'] == 0 && $new_timeperiod['dayofweek'] < 1) {
 			info(_('Incorrect maintenance days of week'));
+			$result = false;
 		}
 		elseif (($new_timeperiod['day'] < 1 || $new_timeperiod['day'] > 31) && $new_timeperiod['dayofweek'] == 0) {
 			info(_('Incorrect maintenance date'));
-		}
-		else {
-			$result = true;
+			$result = false;
 		}
 	}
-	else {
-		$result = true;
-	}
+
 	show_messages();
 
 	if ($result) {
@@ -373,7 +350,7 @@ elseif (isset($_REQUEST['edit_timeperiodid'])) {
 	if (isset($_REQUEST['timeperiods'][$edit_timeperiodid])) {
 		$_REQUEST['new_timeperiod'] = $_REQUEST['timeperiods'][$edit_timeperiodid];
 		$_REQUEST['new_timeperiod']['id'] = $edit_timeperiodid;
-		$_REQUEST['new_timeperiod']['start_date'] = $_REQUEST['timeperiods'][$edit_timeperiodid]['start_date'];
+		$_REQUEST['new_timeperiod_start_date'] = $_REQUEST['new_timeperiod']['start_date'];
 	}
 }
 
@@ -388,107 +365,95 @@ $_REQUEST['groupid'] = $pageFilter->groupid;
  * Display
  */
 $data = [
-	'form' => getRequest('form')
+	'form' => getRequest('form'),
+	'new_timeperiod' => getRequest('new_timeperiod', []),
+	'add_timeperiod' => getRequest('add_timeperiod', 0),
+	'new_timeperiod_start_date' => getRequest('new_timeperiod_start_date')
 ];
 
 if (!empty($data['form'])) {
 	$data['maintenanceid'] = getRequest('maintenanceid');
 	$data['form_refresh'] = getRequest('form_refresh', 0);
 
-	if (isset($data['maintenanceid']) && !isset($_REQUEST['form_refresh'])) {
+	if (isset($data['maintenanceid']) && !hasRequest('form_refresh')) {
 		$dbMaintenance = reset($dbMaintenance);
 		$data['mname'] = $dbMaintenance['name'];
 		$data['maintenance_type'] = $dbMaintenance['maintenance_type'];
-		$data['active_since'] = $dbMaintenance['active_since'];
-		$data['active_till'] = $dbMaintenance['active_till'];
+		$data['active_since'] = date(ZBX_DATE_TIME, $dbMaintenance['active_since']);
+		$data['active_till'] = date(ZBX_DATE_TIME, $dbMaintenance['active_till']);
 		$data['description'] = $dbMaintenance['description'];
 
 		// time periods
 		$data['timeperiods'] = $dbMaintenance['timeperiods'];
 		CArrayHelper::sort($data['timeperiods'], ['timeperiod_type', 'start_date']);
 
-		// get hosts
-		$data['hostids'] = API::Host()->get([
-			'maintenanceids' => $data['maintenanceid'],
-			'real_hosts' => true,
-			'output' => ['hostid'],
-			'editable' => true
-		]);
-		$data['hostids'] = zbx_objectValues($data['hostids'], 'hostid');
+		foreach ($data['timeperiods'] as &$timeperiod) {
+			$timeperiod['start_date'] = date(ZBX_DATE_TIME, $timeperiod['start_date']);
+		}
+		unset($timeperiod);
 
-		// get groupids
-		$data['groupids'] = API::HostGroup()->get([
+		// get hosts
+		$db_hosts = API::Host()->get([
+			'output' => ['hostid', 'name'],
 			'maintenanceids' => $data['maintenanceid'],
-			'real_hosts' => true,
-			'output' => ['groupid'],
 			'editable' => true
 		]);
-		$data['groupids'] = zbx_objectValues($data['groupids'], 'groupid');
+
+		// get groups
+		$db_groups = API::HostGroup()->get([
+			'output' => ['groupid', 'name'],
+			'maintenanceids' => $data['maintenanceid'],
+			'editable' => true
+		]);
+
+		// tags
+		$data['tags_evaltype'] = $dbMaintenance['tags_evaltype'];
+		$data['tags'] = $dbMaintenance['tags'];
+		CArrayHelper::sort($data['tags'], ['tag', 'value']);
 	}
 	else {
-		$data['mname'] = getRequest('mname', '');
-		$data['maintenance_type'] = getRequest('maintenance_type', 0);
-		if (isset($_REQUEST['active_since'])) {
-			$data['active_since'] = mktime($_REQUEST['active_since_hour'],
-					$_REQUEST['active_since_minute'],
-					0,
-					$_REQUEST['active_since_month'],
-					$_REQUEST['active_since_day'],
-					$_REQUEST['active_since_year']);
+
+		if ($data['new_timeperiod'] != 1 && $data['new_timeperiod'] !== []
+				&& hasRequest('new_timeperiod_start_date')) {
+			$data['new_timeperiod']['start_date'] = getRequest('new_timeperiod_start_date');
 		}
-		else {
-			$data['active_since'] = strtotime('today');
-		}
-		if (isset($_REQUEST['active_till'])) {
-			$data['active_till'] = mktime($_REQUEST['active_till_hour'],
-					$_REQUEST['active_till_minute'],
-					0,
-					$_REQUEST['active_till_month'],
-					$_REQUEST['active_till_day'],
-					$_REQUEST['active_till_year']);
-		}
-		else {
-			$data['active_till'] = strtotime('tomorrow');
-		}
-		$data['description'] = getRequest('description', '');
-		$data['timeperiods'] = getRequest('timeperiods', []);
-		$data['hostids'] = getRequest('hostids', []);
-		$data['groupids'] = getRequest('groupids', []);
+
+		$data += [
+			'mname' => getRequest('mname', ''),
+			'maintenance_type' => getRequest('maintenance_type', 0),
+			'active_since' => getRequest('active_since', date(ZBX_DATE_TIME, strtotime('today'))),
+			'active_till' => getRequest('active_till', date(ZBX_DATE_TIME, strtotime('tomorrow'))),
+			'description' => getRequest('description', ''),
+			'timeperiods' => getRequest('timeperiods', []),
+			'tags_evaltype' => getRequest('tags_evaltype', MAINTENANCE_TAG_EVAL_TYPE_AND_OR),
+			'tags' => getRequest('tags', [])
+		];
+
+		$hostids = getRequest('hostids', []);
+		$groupids = getRequest('groupids', []);
+
+		$db_hosts = $hostids
+			? API::Host()->get([
+				'output' => ['hostid', 'name'],
+				'hostids' => $hostids,
+				'editable' => true
+			])
+			: [];
+
+		$db_groups = $groupids
+			? API::HostGroup()->get([
+				'output' => ['groupid', 'name'],
+				'groupids' => $groupids,
+				'editable' => true
+			])
+			: [];
 	}
 
-	// get groups
-	$data['all_groups'] = API::HostGroup()->get([
-		'editable' => true,
-		'output' => ['groupid', 'name'],
-		'real_hosts' => true,
-		'preservekeys' => true
-	]);
-	order_result($data['all_groups'], 'name');
+	$data['hosts_ms'] = CArrayHelper::renameObjectsKeys($db_hosts, ['hostid' => 'id']);
+	CArrayHelper::sort($data['hosts_ms'], ['name']);
 
-	$data['twb_groupid'] = getRequest('twb_groupid', 0);
-	if (!isset($data['all_groups'][$data['twb_groupid']])) {
-		$twb_groupid = reset($data['all_groups']);
-		$data['twb_groupid'] = $twb_groupid['groupid'];
-	}
-
-	// get hosts from selected twb group
-	$data['hosts'] = API::Host()->get([
-		'output' => ['hostid', 'name'],
-		'real_hosts' => true,
-		'editable' => true,
-		'groupids' => $data['twb_groupid']
-	]);
-
-	// selected hosts
-	$hostsSelected = API::Host()->get([
-		'output' => ['hostid', 'name'],
-		'real_hosts' => true,
-		'editable' => true,
-		'hostids' => $data['hostids']
-	]);
-	$data['hosts'] = array_merge($data['hosts'], $hostsSelected);
-	$data['hosts'] = zbx_toHash($data['hosts'], 'hostid');
-	order_result($data['hosts'], 'name');
+	$data['groups_ms'] = CArrayHelper::renameObjectsKeys($db_groups, ['groupid' => 'id']);
+	CArrayHelper::sort($data['groups_ms'], ['name']);
 
 	// render view
 	$maintenanceView = new CView('configuration.maintenance.edit', $data);
@@ -523,16 +488,20 @@ else {
 	$data = [
 		'sort' => $sortField,
 		'sortorder' => $sortOrder,
-		'filter' => $filter
+		'filter' => $filter,
+		'profileIdx' => 'web.maintenance.filter',
+		'active_tab' => CProfile::get('web.maintenance.filter.active', 1)
 	];
 
+	// Get list of maintenances.
 	$options = [
-		'output' => ['maintenanceid', $sortField],
+		'output' => ['maintenanceid', 'name', 'maintenance_type', 'active_since', 'active_till', 'description'],
 		'search' => [
 			'name' => ($filter['name'] === '') ? null : $filter['name']
 		],
 		'editable' => true,
 		'sortfield' => $sortField,
+		'sortorder' => $sortOrder,
 		'limit' => $config['search_limit'] + 1
 	];
 
@@ -544,19 +513,6 @@ else {
 	}
 
 	$data['maintenances'] = API::Maintenance()->get($options);
-
-	order_result($data['maintenances'], $sortField, $sortOrder);
-
-	$url = (new CUrl('maintenance.php'))
-		->setArgument('groupid', $pageFilter->groupid);
-
-	$data['paging'] = getPagingLine($data['maintenances'], $sortOrder, $url);
-
-	// get list of maintenances
-	$data['maintenances'] = API::Maintenance()->get([
-		'output' => ['maintenanceid', 'name', 'maintenance_type', 'active_since', 'active_till', 'description'],
-		'maintenanceids' => zbx_objectValues($data['maintenances'], 'maintenanceid')
-	]);
 
 	foreach ($data['maintenances'] as $key => $maintenance) {
 		if ($maintenance['active_till'] < time()) {
@@ -580,6 +536,11 @@ else {
 	}
 
 	order_result($data['maintenances'], $sortField, $sortOrder);
+
+	$url = (new CUrl('maintenance.php'))
+		->setArgument('groupid', $pageFilter->groupid);
+
+	$data['paging'] = getPagingLine($data['maintenances'], $sortOrder, $url);
 
 	$data['pageFilter'] = $pageFilter;
 

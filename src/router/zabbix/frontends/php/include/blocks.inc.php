@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -31,22 +31,20 @@ require_once dirname(__FILE__).'/users.inc.php';
  * @param array  $filter['hostids']            (optional)
  * @param string $filter['problem']            (optional)
  * @param array  $filter['severities']         (optional)
- * @param int    $filter['maintenance']        (optional)
+ * @param int    $filter['show_suppressed']    (optional)
  * @param int    $filter['hide_empty_groups']  (optional)
  * @param int    $filter['ext_ack']            (optional)
- * @param array  $config
- * @param int    $config['event_ack_enable']
  *
  * @return array
  */
-function getSystemStatusData(array $filter, array $config) {
+function getSystemStatusData(array $filter) {
 	$filter_groupids = (array_key_exists('groupids', $filter) && $filter['groupids']) ? $filter['groupids'] : null;
 	$filter_hostids = (array_key_exists('hostids', $filter) && $filter['hostids']) ? $filter['hostids'] : null;
 	$filter_triggerids = null;
 	$filter_severities = (array_key_exists('severities', $filter) && $filter['severities'])
 		? $filter['severities']
 		: range(TRIGGER_SEVERITY_NOT_CLASSIFIED, TRIGGER_SEVERITY_COUNT - 1);
-	$filter_ext_ack = $config['event_ack_enable'] && array_key_exists('ext_ack', $filter)
+	$filter_ext_ack = array_key_exists('ext_ack', $filter)
 		? $filter['ext_ack']
 		: EXTACK_OPTION_ALL;
 
@@ -121,12 +119,13 @@ function getSystemStatusData(array $filter, array $config) {
 	unset($group);
 
 	$options = [
-		'output' => ['eventid', 'objectid', 'clock', 'ns'],
+		'output' => ['eventid', 'objectid', 'clock', 'ns', 'name', 'acknowledged', 'severity'],
 		'groupids' => array_keys($data['groups']),
 		'hostids' => $filter_hostids,
 		'source' => EVENT_SOURCE_TRIGGERS,
 		'object' => EVENT_OBJECT_TRIGGER,
 		'objectids' => $filter_triggerids,
+		'suppressed' => false,
 		'sortfield' => ['eventid'],
 		'sortorder' => ZBX_SORT_DOWN,
 		'preservekeys' => true
@@ -138,6 +137,10 @@ function getSystemStatusData(array $filter, array $config) {
 		if ($filter_severities !== '' && $filter_severities !== $all_severities) {
 			$options['severities'] = $filter['severities'];
 		}
+	}
+	if (array_key_exists('show_suppressed', $filter) && $filter['show_suppressed']) {
+		unset($options['suppressed']);
+		$options['selectSuppressionData'] = ['maintenanceid', 'suppress_until'];
 	}
 	if ($filter_ext_ack == EXTACK_OPTION_UNACK) {
 		$options['acknowledged'] = false;
@@ -153,7 +156,7 @@ function getSystemStatusData(array $filter, array $config) {
 		}
 
 		$options = [
-			'output' => ['description', 'expression', 'priority'],
+			'output' => ['priority'],
 			'selectGroups' => ['groupid'],
 			'selectHosts' => ['name'],
 			'triggerids' => array_keys($triggerids),
@@ -161,9 +164,6 @@ function getSystemStatusData(array $filter, array $config) {
 			'skipDependent' => true,
 			'preservekeys' => true
 		];
-		if (array_key_exists('maintenance', $filter) && $filter['maintenance'] == 0) {
-			$options['maintenance'] = false;
-		}
 
 		$data['triggers'] = API::Trigger()->get($options);
 
@@ -178,25 +178,10 @@ function getSystemStatusData(array $filter, array $config) {
 			}
 		}
 
-		// Get acknowledges and tags.
-		$problems_data = ($config['event_ack_enable']
-				&& in_array($filter_ext_ack, [EXTACK_OPTION_ALL, EXTACK_OPTION_BOTH]))
-			? API::Problem()->get([
-				'output' => [],
-				'selectAcknowledges' => ['clock', 'message', 'action', 'alias', 'name', 'surname'],
-				'eventids' => array_keys($problems),
-				'preservekeys' => true
-			])
-			: [];
-
 		$visible_problems = [];
 
 		foreach ($problems as $eventid => $problem) {
 			$trigger = $data['triggers'][$problem['objectid']];
-
-			$problem['acknowledges'] = array_key_exists($eventid, $problems_data)
-				? $problems_data[$eventid]['acknowledges']
-				: [];
 
 			// groups
 			foreach ($trigger['groups'] as $trigger_group) {
@@ -207,21 +192,22 @@ function getSystemStatusData(array $filter, array $config) {
 				$group = &$data['groups'][$trigger_group['groupid']];
 
 				if (in_array($filter_ext_ack, [EXTACK_OPTION_ALL, EXTACK_OPTION_BOTH])) {
-					if ($group['stats'][$trigger['priority']]['count'] < ZBX_WIDGET_ROWS) {
-						$group['stats'][$trigger['priority']]['problems'][] = $problem;
+					if ($group['stats'][$problem['severity']]['count'] < ZBX_WIDGET_ROWS) {
+						$group['stats'][$problem['severity']]['problems'][] = $problem;
 						$visible_problems[$eventid] = ['eventid' => $eventid];
 					}
 
-					$group['stats'][$trigger['priority']]['count']++;
+					$group['stats'][$problem['severity']]['count']++;
 				}
 
-				if (in_array($filter_ext_ack, [EXTACK_OPTION_UNACK, EXTACK_OPTION_BOTH]) && !$problem['acknowledges']) {
-					if ($group['stats'][$trigger['priority']]['count_unack'] < ZBX_WIDGET_ROWS) {
-						$group['stats'][$trigger['priority']]['problems_unack'][] = $problem;
+				if (in_array($filter_ext_ack, [EXTACK_OPTION_UNACK, EXTACK_OPTION_BOTH])
+						&& $problem['acknowledged'] == EVENT_NOT_ACKNOWLEDGED) {
+					if ($group['stats'][$problem['severity']]['count_unack'] < ZBX_WIDGET_ROWS) {
+						$group['stats'][$problem['severity']]['problems_unack'][] = $problem;
 						$visible_problems[$eventid] = ['eventid' => $eventid];
 					}
 
-					$group['stats'][$trigger['priority']]['count_unack']++;
+					$group['stats'][$problem['severity']]['count_unack']++;
 				}
 
 				$group['has_problems'] = true;
@@ -229,17 +215,33 @@ function getSystemStatusData(array $filter, array $config) {
 			unset($group);
 		}
 
-		// actions
-		$data['actions'] = makeEventsActions($visible_problems);
-
-		// tags
+		// actions & tags
 		$problems_data = API::Problem()->get([
-			'output' => [],
+			'output' => ['eventid', 'r_eventid', 'clock', 'objectid', 'severity'],
 			'eventids' => array_keys($visible_problems),
+			'selectAcknowledges' => ['userid', 'clock', 'message', 'action', 'old_severity', 'new_severity'],
 			'selectTags' => ['tag', 'value'],
 			'preservekeys' => true
 		]);
 
+		// actions
+		// Possible performance improvement: one API call may be saved, if r_clock for problem will be used.
+		$actions = getEventsActionsIconsData($problems_data, $data['triggers']);
+		$data['actions'] = [
+			'all_actions' => $actions['data'],
+			'users' => API::User()->get([
+				'output' => ['alias', 'name', 'surname'],
+				'userids' => array_keys($actions['userids']),
+				'preservekeys' => true
+			]),
+			'mediatypes' => API::Mediatype()->get([
+				'output' => ['description', 'maxattempts'],
+				'mediatypeids' => array_keys($actions['mediatypeids']),
+				'preservekeys' => true
+			])
+		];
+
+		// tags
 		foreach ($data['groups'] as &$group) {
 			foreach ($group['stats'] as &$stat) {
 				foreach (['problems', 'problems_unack'] as $key) {
@@ -264,9 +266,10 @@ function getSystemStatusData(array $filter, array $config) {
  * @param array  $filter['hostids']            (optional)
  * @param string $filter['problem']            (optional)
  * @param array  $filter['severities']         (optional)
- * @param int    $filter['maintenance']        (optional)
+ * @param int    $filter['show_suppressed']    (optional)
  * @param int    $filter['hide_empty_groups']  (optional)
  * @param int    $filter['ext_ack']            (optional)
+ * @param int    $filter['show_timeline']      (optional)
  * @param array  $data
  * @param array  $data['groups']
  * @param string $data['groups'][]['groupid']
@@ -279,13 +282,7 @@ function getSystemStatusData(array $filter, array $config) {
  * @param string $data['groups'][]['stats']['problems'][]['objectid']
  * @param int    $data['groups'][]['stats']['problems'][]['clock']
  * @param int    $data['groups'][]['stats']['problems'][]['ns']
- * @param int    $data['groups'][]['stats']['problems'][]['acknowledges']
- * @param int    $data['groups'][]['stats']['problems'][]['acknowledges'][]['clock']
- * @param string $data['groups'][]['stats']['problems'][]['acknowledges'][]['message']
- * @param int    $data['groups'][]['stats']['problems'][]['acknowledges'][]['action']
- * @param string $data['groups'][]['stats']['problems'][]['acknowledges'][]['alias']
- * @param string $data['groups'][]['stats']['problems'][]['acknowledges'][]['name']
- * @param string $data['groups'][]['stats']['problems'][]['acknowledges'][]['surname']
+ * @param int    $data['groups'][]['stats']['problems'][]['acknowledged']
  * @param array  $data['groups'][]['stats']['problems'][]['tags']
  * @param string $data['groups'][]['stats']['problems'][]['tags'][]['tag']
  * @param string $data['groups'][]['stats']['problems'][]['tags'][]['value']
@@ -294,23 +291,20 @@ function getSystemStatusData(array $filter, array $config) {
  * @param array  $data['triggers']
  * @param string $data['triggers'][<triggerid>]['expression']
  * @param string $data['triggers'][<triggerid>]['description']
- * @param int    $data['triggers'][<triggerid>]['priority']
  * @param array  $data['triggers'][<triggerid>]['hosts']
  * @param string $data['triggers'][<triggerid>]['hosts'][]['name']
  * @param array  $config
- * @param int    $config['event_ack_enable']
  * @param string $config['severity_name_*']
  * @param string $backurl
- * @param int    $fullscreen
  *
  * @return CDiv
  */
-function makeSystemStatus(array $filter, array $data, array $config, $backurl, $fullscreen = 0) {
+function makeSystemStatus(array $filter, array $data, array $config, $backurl) {
 	$filter_severities = (array_key_exists('severities', $filter) && $filter['severities'])
 		? $filter['severities']
 		: range(TRIGGER_SEVERITY_NOT_CLASSIFIED, TRIGGER_SEVERITY_COUNT - 1);
 	$filter_hide_empty_groups = array_key_exists('hide_empty_groups', $filter) ? $filter['hide_empty_groups'] : 0;
-	$filter_ext_ack = $config['event_ack_enable'] && array_key_exists('ext_ack', $filter)
+	$filter_ext_ack = array_key_exists('ext_ack', $filter)
 		? $filter['ext_ack']
 		: EXTACK_OPTION_ALL;
 
@@ -326,7 +320,9 @@ function makeSystemStatus(array $filter, array $data, array $config, $backurl, $
 		}
 	}
 
-	$table = (new CTableInfo())->setHeader($header);
+	$table = (new CTableInfo())
+		->setHeader($header)
+		->setHeadingColumn(0);
 
 	$url_group = (new CUrl('zabbix.php'))
 		->setArgument('action', 'problem.view')
@@ -334,66 +330,60 @@ function makeSystemStatus(array $filter, array $data, array $config, $backurl, $
 		->setArgument('filter_show', TRIGGERS_OPTION_RECENT_PROBLEM)
 		->setArgument('filter_groupids', null)
 		->setArgument('filter_hostids', array_key_exists('hostids', $filter) ? $filter['hostids'] : null)
-		->setArgument('filter_problem', array_key_exists('problem', $filter) ? $filter['problem'] : null)
-		->setArgument('filter_maintenance', (array_key_exists('maintenance', $filter) && $filter['maintenance'])
-			? 1
-			: null
-		)
-		->setArgument('fullscreen', $fullscreen ? '1' : null);
+		->setArgument('filter_name', array_key_exists('problem', $filter) ? $filter['problem'] : null)
+		->setArgument('filter_show_suppressed',
+			(array_key_exists('show_suppressed', $filter) && $filter['show_suppressed'] == 1)
+				? 1
+				: null
+		);
 
 	foreach ($data['groups'] as $group) {
 		if ($filter_hide_empty_groups && !$group['has_problems']) {
 			continue;
 		}
 
-		$row = new CRow();
-
 		$url_group->setArgument('filter_groupids', [$group['groupid']]);
-		$name = new CLink($group['name'], $url_group->getUrl());
-
-		$row->addItem($name);
+		$row = [new CLink($group['name'], $url_group->getUrl())];
 
 		foreach ($group['stats'] as $severity => $stat) {
 			if ($stat['count'] == 0 && $stat['count_unack'] == 0) {
-				$row->addItem('');
+				$row[] = '';
 				continue;
 			}
 
 			$allTriggersNum = $stat['count'];
 			if ($allTriggersNum) {
-				$allTriggersNum = (new CSpan($allTriggersNum))
-					->addClass(ZBX_STYLE_LINK_ACTION)
+				$allTriggersNum = (new CLinkAction($allTriggersNum))
 					->setHint(makeProblemsPopup($stat['problems'], $data['triggers'], $backurl, $data['actions'],
-						$config
+						$config, $filter
 					));
 			}
 
 			$unackTriggersNum = $stat['count_unack'];
 			if ($unackTriggersNum) {
-				$unackTriggersNum = (new CSpan($unackTriggersNum))
-					->addClass(ZBX_STYLE_LINK_ACTION)
+				$unackTriggersNum = (new CLinkAction($unackTriggersNum))
 					->setHint(makeProblemsPopup($stat['problems_unack'], $data['triggers'], $backurl, $data['actions'],
-						$config
+						$config, $filter
 					));
 			}
 
 			switch ($filter_ext_ack) {
 				case EXTACK_OPTION_ALL:
-					$row->addItem(getSeverityCell($severity, null, $allTriggersNum));
+					$row[] = getSeverityCell($severity, null, $allTriggersNum);
 					break;
 
 				case EXTACK_OPTION_UNACK:
-					$row->addItem(getSeverityCell($severity, null, $unackTriggersNum));
+					$row[] = getSeverityCell($severity, null, $unackTriggersNum);
 					break;
 
 				case EXTACK_OPTION_BOTH:
 					if ($stat['count_unack'] != 0) {
-						$row->addItem(getSeverityCell($severity, $config, [
+						$row[] = getSeverityCell($severity, $config, [
 							$unackTriggersNum, ' '._('of').' ', $allTriggersNum
-						]));
+						]);
 					}
 					else {
-						$row->addItem(getSeverityCell($severity, $config, $allTriggersNum));
+						$row[] = getSeverityCell($severity, $config, $allTriggersNum);
 					}
 					break;
 			}
@@ -415,7 +405,9 @@ function make_status_of_zbx() {
 		$server_details = '';
 	}
 
-	$table = (new CTableInfo())->setHeader([_('Parameter'), _('Value'), _('Details')]);
+	$table = (new CTableInfo())
+		->setHeader([_('Parameter'), _('Value'), _('Details')])
+		->setHeadingColumn(0);
 
 	$status = get_status();
 
@@ -436,7 +428,7 @@ function make_status_of_zbx() {
 			: ''
 	]);
 	$title = (new CSpan(_('Number of items (enabled/disabled/not supported)')))
-		->setAttribute('title', _('Only items assigned to enabled hosts are counted'));
+		->setTitle(_('Only items assigned to enabled hosts are counted'));
 	$table->addRow([$title, $status['has_status'] ? $status['items_count'] : '',
 		$status['has_status']
 			? [
@@ -447,7 +439,7 @@ function make_status_of_zbx() {
 			: ''
 	]);
 	$title = (new CSpan(_('Number of triggers (enabled/disabled [problem/ok])')))
-		->setAttribute('title', _('Only triggers assigned to enabled hosts and depending on enabled items are counted'));
+		->setTitle(_('Only triggers assigned to enabled hosts and depending on enabled items are counted'));
 	$table->addRow([$title, $status['has_status'] ? $status['triggers_count'] : '',
 		$status['has_status']
 			? [
@@ -482,263 +474,6 @@ function make_status_of_zbx() {
 }
 
 /**
- * Create DIV with latest problem triggers.
- *
- * If no sortfield and sortorder are defined, the sort indicater in the column name will not be displayed.
- *
- * @param array  $filter['groupids']
- * @param array  $filter['hostids']
- * @param array  $filter['maintenance']
- * @param int    $filter['extAck']
- * @param int    $filter['severity']
- * @param int    $filter['limit']
- * @param string $filter['sortfield']
- * @param string $filter['sortorder']
- * @param string $backurl
- *
- * @return CDiv
- */
-function make_latest_issues(array $filter = [], $backurl) {
-	// hide the sort indicator if no sortfield and sortorder are given
-	$show_sort_indicator = isset($filter['sortfield']) || isset($filter['sortorder']);
-
-	if (isset($filter['sortfield']) && $filter['sortfield'] !== 'lastchange') {
-		$sort_field = [$filter['sortfield'], 'lastchange'];
-		$sort_order = [$filter['sortorder'], ZBX_SORT_DOWN];
-	}
-	else {
-		$sort_field = ['lastchange'];
-		$sort_order = [ZBX_SORT_DOWN];
-	}
-
-	$options = [
-		'groupids' => $filter['groupids'],
-		'hostids' => isset($filter['hostids']) ? $filter['hostids'] : null,
-		'monitored' => true,
-		'maintenance' => $filter['maintenance'],
-		'search' => ($filter['trigger_name'] !== '') ? ['description' => $filter['trigger_name']] : null,
-		'filter' => [
-			'priority' => $filter['severity'],
-			'value' => TRIGGER_VALUE_TRUE
-		]
-	];
-
-	$triggers = API::Trigger()->get(array_merge($options, [
-		'output' => [
-			'triggerid', 'expression', 'description', 'url', 'priority', 'lastchange', 'comments', 'error', 'state'
-		],
-		'selectHosts' => ['hostid'],
-		'withLastEventUnacknowledged' => (isset($filter['extAck']) && $filter['extAck'] == EXTACK_OPTION_UNACK)
-			? true
-			: null,
-		'skipDependent' => true,
-		'sortfield' => $sort_field,
-		'sortorder' => $sort_order,
-		'limit' => $filter['limit'],
-		'preservekeys' => true,
-		'expandComment' => true
-	]));
-
-	$triggers = CMacrosResolverHelper::resolveTriggerUrls($triggers);
-
-	// don't use withLastEventUnacknowledged and skipDependent because of performance issues
-	$triggers_total_count = API::Trigger()->get(array_merge($options, [
-		'countOutput' => true
-	]));
-
-	$problems = getTriggerLastProblems(array_keys($triggers), ['eventid', 'objectid', 'clock', 'acknowledged', 'ns']);
-
-	$events = [];
-	foreach ($problems as $problem) {
-		$triggers[$problem['objectid']]['lastEvent'] = $problem;
-		$events[$problem['eventid']] = ['eventid' => $problem['eventid']];
-	}
-
-	// get acknowledges
-	$hostids = [];
-	foreach ($triggers as $trigger) {
-		foreach ($trigger['hosts'] as $host) {
-			$hostids[$host['hostid']] = true;
-		}
-	}
-
-	$config = select_config();
-
-	if ($config['event_ack_enable'] && $events) {
-		$event_acknowledges = API::Event()->get([
-			'output' => ['eventid'],
-			'eventids' => array_keys($events),
-			'select_acknowledges' => ['clock', 'message', 'action', 'alias', 'name', 'surname'],
-			'preservekeys' => true
-		]);
-	}
-
-	// actions
-	$actions = makeEventsActions($events);
-
-	// indicator of sort field
-	if ($show_sort_indicator) {
-		$sort_div = (new CDiv())
-			->addClass(($filter['sortorder'] === ZBX_SORT_DOWN) ? ZBX_STYLE_ARROW_DOWN : ZBX_STYLE_ARROW_UP);
-	}
-
-	$table = (new CTableInfo())
-		->setHeader([
-			($show_sort_indicator && $filter['sortfield'] === 'hostname') ? [_('Host'), $sort_div] : _('Host'),
-			($show_sort_indicator && $filter['sortfield'] === 'priority') ? [_('Issue'), $sort_div] : _('Issue'),
-			($show_sort_indicator && $filter['sortfield'] === 'lastchange')
-				? [_('Last change'), $sort_div]
-				: _('Last change'),
-			_('Age'),
-			_('Info'),
-			$config['event_ack_enable'] ? _('Ack') : null,
-			_('Actions')
-		]);
-
-	$hostids = array_keys($hostids);
-
-	$scripts = API::Script()->getScriptsByHosts($hostids);
-
-	// get hosts
-	$hosts = API::Host()->get([
-		'hostids' => $hostids,
-		'output' => ['hostid', 'name', 'status', 'maintenance_status', 'maintenance_type', 'maintenanceid'],
-		'selectGraphs' => API_OUTPUT_COUNT,
-		'selectScreens' => API_OUTPUT_COUNT,
-		'preservekeys' => true
-	]);
-
-	$maintenanceids = [];
-	foreach ($hosts as $host) {
-		if ($host['maintenance_status'] == HOST_MAINTENANCE_STATUS_ON) {
-			$maintenanceids[$host['maintenanceid']] = true;
-		}
-	}
-
-	if ($maintenanceids) {
-		$maintenances = API::Maintenance()->get([
-			'maintenanceids' => array_keys($maintenanceids),
-			'output' => ['name', 'description'],
-			'preservekeys' => true
-		]);
-	}
-
-	// triggers
-	foreach ($triggers as $trigger) {
-		$host_list = [];
-		foreach ($trigger['hosts'] as $trigger_host) {
-			$host = $hosts[$trigger_host['hostid']];
-
-			$host_name = (new CSpan($host['name']))
-				->addClass(ZBX_STYLE_LINK_ACTION)
-				->setMenuPopup(CMenuPopupHelper::getHost($host, $scripts[$host['hostid']]));
-
-			if ($host['maintenance_status'] == HOST_MAINTENANCE_STATUS_ON) {
-				$maintenance_icon = (new CSpan())
-					->addClass(ZBX_STYLE_ICON_MAINT)
-					->addClass(ZBX_STYLE_CURSOR_POINTER);
-
-				if (array_key_exists($host['maintenanceid'], $maintenances)) {
-					$maintenance = $maintenances[$host['maintenanceid']];
-
-					$hint = $maintenance['name'].' ['.($host['maintenance_type']
-						? _('Maintenance without data collection')
-						: _('Maintenance with data collection')).']';
-
-					if ($maintenance['description']) {
-						$hint .= "\n".$maintenance['description'];
-					}
-
-					$maintenance_icon->setHint($hint);
-				}
-
-				$host_name = (new CSpan([$host_name, $maintenance_icon]))->addClass(ZBX_STYLE_REL_CONTAINER);
-			}
-
-			$host_list[] = $host_name;
-			$host_list[] = ', ';
-		}
-		array_pop($host_list);
-
-		// unknown triggers
-		$info_icons = [];
-		if ($trigger['state'] == TRIGGER_STATE_UNKNOWN) {
-			$info_icons[] = makeUnknownIcon($trigger['error']);
-		}
-
-		// trigger has events
-		if (array_key_exists('lastEvent', $trigger)) {
-			// description
-			$description = CMacrosResolverHelper::resolveEventDescription(zbx_array_merge($trigger, [
-				'clock' => $trigger['lastEvent']['clock'],
-				'ns' => $trigger['lastEvent']['ns']
-			]));
-		}
-		// trigger has no events
-		else {
-			// description
-			$description = CMacrosResolverHelper::resolveEventDescription(zbx_array_merge($trigger, [
-				'clock' => $trigger['lastchange'],
-				'ns' => '999999999'
-			]));
-		}
-
-		if ($config['event_ack_enable']) {
-			if (array_key_exists('lastEvent', $trigger)) {
-				$trigger['lastEvent']['acknowledges'] =
-					$event_acknowledges[$trigger['lastEvent']['eventid']]['acknowledges'];
-
-				$ack = getEventAckState($trigger['lastEvent'], $backurl);
-			}
-			else
-				$ack = (new CSpan(_('No events')))->addClass(ZBX_STYLE_GREY);
-		}
-		else {
-			$ack = null;
-		}
-
-		// description
-		if (array_key_exists('lastEvent', $trigger) || $trigger['comments'] !== '' || $trigger['url'] !== '') {
-			$eventid = array_key_exists('lastEvent', $trigger) ? $trigger['lastEvent']['eventid'] : 0;
-			$description = (new CSpan($description))
-				->setHint(make_popup_eventlist($trigger, $eventid, $backurl, $config),'', true, 'max-width: 500px')
-				->addClass(ZBX_STYLE_LINK_ACTION);
-		}
-		$description = (new CCol($description))->addClass(getSeverityStyle($trigger['priority']));
-
-		// clock
-		$clock = new CLink(zbx_date2str(DATE_TIME_FORMAT_SECONDS, $trigger['lastchange']),
-			(new CUrl('zabbix.php'))
-				->setArgument('action', 'problem.view')
-				->setArgument('filter_triggerids[]', $trigger['triggerid'])
-				->setArgument('filter_set', '1')
-		);
-
-		// actions
-		$action_hint = (array_key_exists('lastEvent', $trigger) && isset($actions[$trigger['lastEvent']['eventid']]))
-			? $actions[$trigger['lastEvent']['eventid']]
-			: SPACE;
-
-		$table->addRow([
-			(new CCol($host_list)),
-			$description,
-			$clock,
-			zbx_date2age($trigger['lastchange']),
-			makeInformationList($info_icons),
-			$ack,
-			(new CCol($action_hint))->addClass(ZBX_STYLE_NOWRAP)
-		]);
-	}
-
-	// initialize blinking
-	zbx_add_post_js('jqBlink.blink();');
-
-	$info = _n('%1$d of %2$d issue is shown', '%1$d of %2$d issues are shown', count($triggers), $triggers_total_count);
-
-	return [$table, $info];
-}
-
-/**
  * Generate table for dashboard triggers popup.
  *
  * @see makeSystemStatus
@@ -747,72 +482,130 @@ function make_latest_issues(array $filter = [], $backurl) {
  * @param string $problems[]['objectid']
  * @param int    $problems[]['clock']
  * @param int    $problems[]['ns']
- * @param array  $problems[]['acknowledges']
- * @param int    $problems[]['acknowledges'][]['clock']
- * @param string $problems[]['acknowledges'][]['message']
- * @param int    $problems[]['acknowledges'][]['action']
- * @param string $problems[]['acknowledges'][]['alias']
- * @param string $problems[]['acknowledges'][]['name']
- * @param string $problems[]['acknowledges'][]['surname']
+ * @param array  $problems[]['acknowledged']
+ * @param array  $problems[]['severity']
+ * @param array  $problems[]['suppression_data']
  * @param array  $problems[]['tags']
  * @param string $problems[]['tags'][]['tag']
  * @param string $problems[]['tags'][]['value']
  * @param array  $triggers
  * @param string $triggers[<triggerid>]['expression']
  * @param string $triggers[<triggerid>]['description']
- * @param int    $triggers[<triggerid>]['priority']
  * @param array  $triggers[<triggerid>]['hosts']
  * @param string $triggers[<triggerid>]['hosts'][]['name']
  * @param string $backurl
  * @param array  $actions
  * @param array  $config
- * @param int    $config['event_ack_enable']
+ * @param array  $filter
+ * @param array  $filter['show_suppressed']  (optional)
+ * @param array  $filter['show_timeline']    (optional)
  *
  * @return CTableInfo
  */
-function makeProblemsPopup(array $problems, array $triggers, $backurl, array $actions, array $config) {
-	if ($problems) {
-		$tags = makeEventsTags($problems);
+function makeProblemsPopup(array $problems, array $triggers, $backurl, array $actions, array $config, array $filter) {
+	$url_details = (new CUrl('tr_events.php'))
+		->setArgument('triggerid', '')
+		->setArgument('eventid', '');
+
+	$header_time = new CColHeader([_('Time'), (new CSpan())->addClass(ZBX_STYLE_ARROW_DOWN)]);
+
+	$show_timeline = (array_key_exists('show_timeline', $filter) && $filter['show_timeline']);
+
+	if ($show_timeline) {
+		$header = [
+			$header_time->addClass(ZBX_STYLE_RIGHT),
+			(new CColHeader())->addClass(ZBX_STYLE_TIMELINE_TH),
+			(new CColHeader())->addClass(ZBX_STYLE_TIMELINE_TH)
+		];
+	}
+	else {
+		$header = [$header_time];
 	}
 
 	$table = (new CTableInfo())
-		->setHeader([
+		->setHeader(array_merge($header, [
+			_('Info'),
 			_('Host'),
 			_('Problem'),
 			_('Duration'),
-			$config['event_ack_enable'] ? _('Ack') : null,
+			_('Ack'),
 			_('Actions'),
 			_('Tags')
-		]);
+		]));
+
+	$today = strtotime('today');
+	$last_clock = 0;
+
+	$triggers_hosts = getTriggersHostsList($triggers);
+	$triggers_hosts = makeTriggersHostsList($triggers_hosts);
+
+	$tags = makeTags($problems);
+
+	if (array_key_exists('show_suppressed', $filter) && $filter['show_suppressed']) {
+		CScreenProblem::addMaintenanceNames($problems);
+	}
 
 	foreach ($problems as $problem) {
 		$trigger = $triggers[$problem['objectid']];
 
-		$hosts = zbx_objectValues($trigger['hosts'], 'name');
+		$url_details
+			->setArgument('triggerid', $problem['objectid'])
+			->setArgument('eventid', $problem['eventid']);
 
-		$description = CMacrosResolverHelper::resolveEventDescription(
-			$trigger + ['clock' => $problem['clock'], 'ns' => $problem['ns']]
-		);
+		$cell_clock = ($problem['clock'] >= $today)
+			? zbx_date2str(TIME_FORMAT_SECONDS, $problem['clock'])
+			: zbx_date2str(DATE_TIME_FORMAT_SECONDS, $problem['clock']);
+		$cell_clock = new CCol(new CLink($cell_clock, $url_details));
 
-		// ack
-		if ($config['event_ack_enable']) {
-			$problem['acknowledged'] = $problem['acknowledges'] ? EVENT_ACKNOWLEDGED : EVENT_NOT_ACKNOWLEDGED;
-			$ack = getEventAckState($problem, $backurl);
+		if ($show_timeline) {
+			if ($last_clock != 0) {
+				CScreenProblem::addTimelineBreakpoint($table, $last_clock, $problem['clock'], ZBX_SORT_DOWN);
+			}
+			$last_clock = $problem['clock'];
+
+			$row = [
+				$cell_clock->addClass(ZBX_STYLE_TIMELINE_DATE),
+				(new CCol())
+					->addClass(ZBX_STYLE_TIMELINE_AXIS)
+					->addClass(ZBX_STYLE_TIMELINE_DOT),
+				(new CCol())->addClass(ZBX_STYLE_TIMELINE_TD)
+			];
 		}
 		else {
-			$ack = null;
+			$row = [
+				$cell_clock
+					->addClass(ZBX_STYLE_NOWRAP)
+					->addClass(ZBX_STYLE_RIGHT)
+			];
 		}
 
-		$table->addRow([
-			implode(', ', $hosts),
-			getSeverityCell($trigger['priority'], null, $description),
+		$info_icons = [];
+		if (array_key_exists('suppression_data', $problem) && $problem['suppression_data']) {
+			$info_icons[] = makeSuppressedProblemIcon($problem['suppression_data']);
+		}
+
+		// ack
+		$problem_update_url = (new CUrl('zabbix.php'))
+			->setArgument('action', 'acknowledge.edit')
+			->setArgument('eventids', [$problem['eventid']])
+			->setArgument('backurl', $backurl)
+			->getUrl();
+
+		$ack = (new CLink($problem['acknowledged'] == EVENT_ACKNOWLEDGED ? _('Yes') : _('No'), $problem_update_url))
+			->addClass($problem['acknowledged'] == EVENT_ACKNOWLEDGED ? ZBX_STYLE_GREEN : ZBX_STYLE_RED)
+			->addClass(ZBX_STYLE_LINK_ALT);
+
+		$table->addRow(array_merge($row, [
+			makeInformationList($info_icons),
+			$triggers_hosts[$trigger['triggerid']],
+			getSeverityCell($problem['severity'], null, $problem['name']),
 			zbx_date2age($problem['clock']),
 			$ack,
-			array_key_exists($problem['eventid'], $actions)
-				? (new CCol($actions[$problem['eventid']]))->addClass(ZBX_STYLE_NOWRAP)
-				: '',
+			makeEventActionsIcons($problem['eventid'], $actions['all_actions'], $actions['mediatypes'],
+				$actions['users'], $config
+			),
 			$tags[$problem['eventid']]
-		]);
+		]));
 	}
 
 	return $table;

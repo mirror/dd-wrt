@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -27,76 +27,85 @@ else {
 	$this->addJsFile('gtlc.js');
 	$this->addJsFile('dashboard.grid.js');
 	$this->addJsFile('class.calendar.js');
+	$this->addJsFile('multiselect.js');
+	$this->addJsFile('layout.mode.js');
+	$this->addJsFile('class.coverride.js');
+	$this->addJsFile('class.cverticalaccordion.js');
+	$this->addJsFile('class.crangecontrol.js');
+	$this->addJsFile('colorpicker.js');
+	$this->addJsFile('class.csvggraph.js');
+	$this->addJsFile('csvggraphwidget.js');
 
 	$this->includeJSfile('app/views/monitoring.dashboard.view.js.php');
 
-	$sharing_form = include 'monitoring.dashboard.sharing_form.php';
-	$edit_form = include 'monitoring.dashboard.edit_form.php';
 	$breadcrumbs = include 'monitoring.dashboard.breadcrumbs.php';
 
-	$item_groupid = null;
-	$item_hostid = null;
+	$main_filter_form = null;
 
 	if ($data['dynamic']['has_dynamic_widgets']) {
-		$item_groupid = [
-			new CLabel(_('Group'), 'groupid'),
-			(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
-			$data['pageFilter']->getGroupsCB()
-		];
-		$item_hostid = [
-			new CLabel(_('Host'), 'hostid'),
-			(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
-			$data['pageFilter']->getHostsCB()
-		];
+		$main_filter_form = (new CForm('get'))
+			->cleanItems()
+			->setAttribute('aria-label', _('Main filter'))
+			->addVar('action', 'dashboard.view')
+			->addItem((new CList())
+				->addItem([
+					new CLabel(_('Group'), 'groupid'),
+					(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
+					$data['pageFilter']->getGroupsCB()
+				])
+				->addItem([
+					new CLabel(_('Host'), 'hostid'),
+					(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
+					$data['pageFilter']->getHostsCB()
+				])
+		);
 	}
 
 	$url_create = (new CUrl('zabbix.php'))
 		->setArgument('action', 'dashboard.view')
-		->setArgument('new', '1')
-		->setArgument('fullscreen', $data['fullscreen'] ? '1' : null);
+		->setArgument('new', '1');
 	$url_clone = (new CUrl('zabbix.php'))
 		->setArgument('action', 'dashboard.view')
-		->setArgument('source_dashboardid', $data['dashboard']['dashboardid'])
-		->setArgument('fullscreen', $data['fullscreen'] ? '1' : null);
+		->setArgument('source_dashboardid', $data['dashboard']['dashboardid']);
 
 	if ($data['dashboard']['editable']) {
 		$url_delete = (new CUrl('zabbix.php'))
 			->setArgument('action', 'dashboard.delete')
 			->setArgument('dashboardids', [$data['dashboard']['dashboardid']])
-			->setArgument('fullscreen', $data['fullscreen'] ? '1' : null)
 			->setArgumentSID();
 	}
 
-	(new CWidget())
+	$web_layout_mode = CView::getLayoutMode();
+
+	$widget = (new CWidget())
 		->setTitle($data['dashboard']['name'])
-		->setControls((new CForm('get'))
-			->cleanItems()
-			->addVar('action', 'dashboard.view')
-			->addVar('fullscreen', $data['fullscreen'] ? '1' : null)
-			->addItem((new CList())
-				// $item_groupid and $item_hostid will be hidden, when 'Edit Dashboard' will be clicked.
-				->addItem($item_groupid)
-				->addItem($item_hostid)
-				/*
-				 * 'Edit dashboard' should be first one in list, because it will be visually replaced by last item of
-				 * new list, when clicked.
-				 */
-				->addItem((new CButton('dashbrd-edit', _('Edit dashboard')))->setEnabled($data['dashboard']['editable']))
-				->addItem((new CButton(SPACE))
-					->addClass(ZBX_STYLE_BTN_ACTION)
-					->setId('dashbrd-actions')
-					->setTitle(_('Actions'))
-					->setMenuPopup([
-						'type' => 'dashboard',
-						'label' => _('Actions'),
-						'items' => [
-							'sharing' => [
-								'label' => _('Sharing'),
-								'form_data' => [
-									'dashboardid' => $data['dashboard']['dashboardid']
+		->setWebLayoutMode($web_layout_mode)
+		->setControls((new CList())
+			->setId('dashbrd-control')
+			->addItem($main_filter_form)
+			->addItem((new CTag('nav', true, [
+				(new CList())
+					->addItem((
+						(new CButton('dashbrd-edit', _('Edit dashboard')))
+							->setEnabled($data['dashboard']['editable'])
+							->setAttribute('aria-disabled', !$data['dashboard']['editable'] ? 'true' : null)
+					))
+					->addItem((new CButton('', '&nbsp;'))
+						->addClass(ZBX_STYLE_BTN_ACTION)
+						->setId('dashbrd-actions')
+						->setTitle(_('Actions'))
+						->setAttribute('aria-haspopup', true)
+						->setMenuPopup([
+							'type' => 'dashboard',
+							'label' => _('Actions'),
+							'items' => [
+								'sharing' => [
+									'label' => _('Sharing'),
+									'form_data' => [
+										'dashboardid' => $data['dashboard']['dashboardid']
+									],
+									'disabled' => !$data['dashboard']['editable']
 								],
-								'disabled' => !$data['dashboard']['editable']
-							],
 							'create' => [
 								'label' => _('Create new'),
 								'url' => $url_create->getUrl()
@@ -117,17 +126,48 @@ else {
 						]
 					])
 				)
-				->addItem(get_icon('fullscreen', ['fullscreen' => $data['fullscreen']]))
-			)
+				->addItem(get_icon('fullscreen'))
+			]))->setAttribute('aria-label', _('Content controls'))
 		)
-		->addItem((new CList())
+		->addItem((new CListItem([
+			(new CTag('nav', true, [
+				new CList([
+					(new CButton('dashbrd-config'))->addClass(ZBX_STYLE_BTN_DASHBRD_CONF),
+					(new CButton('dashbrd-add-widget', [(new CSpan())->addClass(ZBX_STYLE_PLUS_ICON), _('Add widget')]))
+						->addClass(ZBX_STYLE_BTN_ALT),
+					(new CButton('dashbrd-save', _('Save changes'))),
+					(new CLink(_('Cancel'), '#'))->setId('dashbrd-cancel'),
+					''
+				])
+			]))
+				->setAttribute('aria-label', _('Content controls'))
+				->addClass(ZBX_STYLE_DASHBRD_EDIT)
+			]))
+				->addStyle('display: none')
+	))
+		->setBreadcrumbs((new CList())
+			->setAttribute('role', 'navigation')
+			->setAttribute('aria-label', _x('Hierarchy', 'screen reader'))
 			->addItem($breadcrumbs)
 			->addClass(ZBX_STYLE_OBJECT_GROUP)
-		)
-		->addItem(($data['show_timeline']) ? (new CFilter('web.dashbrd.filter.state'))->addNavigator() : null)
+			->addClass(ZBX_STYLE_FILTER_BREADCRUMB)
+		);
+
+	$timeline = null;
+	if ($data['show_timeselector']) {
+		$timeline = (new CFilter())
+			->setProfile($data['timeline']['profileIdx'], $data['timeline']['profileIdx2'])
+			->setActiveTab($data['active_tab'])
+			->addTimeSelector($data['timeline']['from'], $data['timeline']['to']);
+
+		if ($web_layout_mode === ZBX_LAYOUT_KIOSKMODE) {
+			$timeline = (new CDiv($timeline))->addStyle('display: none;');
+		}
+	}
+
+	$widget
+		->addItem($timeline)
 		->addItem((new CDiv())->addClass(ZBX_STYLE_DASHBRD_GRID_WIDGET_CONTAINER))
-		->addItem($edit_form)
-		->addItem($sharing_form)
 		->show();
 
 	/*
@@ -148,7 +188,6 @@ else {
 	}
 
 	$dashboard_options = [
-		'fullscreen' => $data['fullscreen'],
 		'max-rows' => DASHBOARD_MAX_ROWS,
 		'max-columns' => DASHBOARD_MAX_COLUMNS,
 		'editable' => $data['dashboard']['editable']
@@ -161,7 +200,7 @@ else {
 	}
 
 	// must be done before adding widgets, because it causes dashboard to resize.
-	if ($data['show_timeline']) {
+	if ($data['show_timeselector']) {
 		$this->addPostJS(
 			'timeControl.useTimeRefresh('.CWebUser::getRefresh().');'.
 			'timeControl.addObject("scrollbar", '.CJs::encodeJson($data['timeline']).', '.
@@ -169,6 +208,10 @@ else {
 			');'.
 			'timeControl.processObjects();'
 		);
+	}
+
+	if ($web_layout_mode === ZBX_LAYOUT_KIOSKMODE) {
+		$dashboard_options['kioskmode'] = true;
 	}
 
 	// Initialize dashboard grid.

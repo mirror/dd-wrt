@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -31,8 +31,7 @@ class CControllerMapView extends CController {
 		$fields = [
 			'sysmapid' =>		'db sysmaps.sysmapid',
 			'mapname' =>		'not_empty',
-			'severity_min' =>	'in 0,1,2,3,4,5',
-			'fullscreen' =>		'in 0,1'
+			'severity_min' =>	'in 0,1,2,3,4,5'
 		];
 
 		$ret = $this->validateInput($fields);
@@ -91,35 +90,34 @@ class CControllerMapView extends CController {
 	protected function doAction() {
 		CProfile::update('web.maps.sysmapid', $this->sysmapid, PROFILE_TYPE_ID);
 
-		$data = [
-			'fullscreen' => $this->getInput('fullscreen', 0)
-		];
-
 		$maps = API::Map()->get([
 			'output' => ['name', 'severity_min'],
 			'sysmapids' => [$this->sysmapid]
 		]);
-		$data['map'] = reset($maps);
 
-		$maps_rw = API::Map()->get([
+		$map = reset($maps);
+
+		$map['editable'] = (bool) API::Map()->get([
 			'output' => [],
 			'sysmapids' => [$this->sysmapid],
 			'editable' => true
 		]);
 
-		$data['map']['editable'] = (bool) $maps_rw;
-
-		$data['pageFilter'] = new CPageFilter([
+		$page_filter = new CPageFilter([
 			'severitiesMin' => [
-				'default' => $data['map']['severity_min'],
+				'default' => $map['severity_min'],
 				'mapId' => $this->sysmapid
 			],
 			'severityMin' => $this->hasInput('severity_min') ? $this->getInput('severity_min') : null
 		]);
 
-		$data['severity_min'] = $data['pageFilter']->severityMin;
+		CView::$has_web_layout_mode = true;
 
-		$response = new CControllerResponseData($data);
+		$response = new CControllerResponseData([
+			'map' => $map,
+			'pageFilter' => $page_filter,
+			'severity_min' => $page_filter->severityMin
+		]);
 		$response->setTitle(_('Network maps'));
 		$this->setResponse($response);
 	}
