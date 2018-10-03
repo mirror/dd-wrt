@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -25,9 +25,9 @@
 #ifdef HAVE_SYS_SWAP_SWAPTABLE
 static void	get_swapinfo(double *total, double *fr)
 {
-	register int cnt, i, page_size;
+	int	cnt, i, page_size;
 /* Support for >2Gb */
-/*	register int t, f;*/
+/*	int t, f;*/
 	double	t, f;
 	struct swaptable *swt;
 	struct swapent *ste;
@@ -186,9 +186,9 @@ static int	SYSTEM_SWAP_PFREE(AGENT_RESULT *result)
 	zbx_uint64_t	tot_val = 0;
 	zbx_uint64_t	free_val = 0;
 
-        init_result(&result_tmp);
+	init_result(&result_tmp);
 
-	if (SYSINFO_RET_OK != SYSTEM_SWAP_TOTAL(cmd, param, flags, &result_tmp) || !(result_tmp.type & AR_UINT64))
+	if (SYSINFO_RET_OK != SYSTEM_SWAP_TOTAL(&result_tmp) || !(result_tmp.type & AR_UINT64))
 		return SYSINFO_RET_FAIL;
 	tot_val = result_tmp.ui64;
 
@@ -199,7 +199,7 @@ static int	SYSTEM_SWAP_PFREE(AGENT_RESULT *result)
 		return SYSINFO_RET_FAIL;
 	}
 
-	if (SYSINFO_RET_OK != SYSTEM_SWAP_FREE(cmd, param, flags, &result_tmp) || !(result_tmp.type & AR_UINT64))
+	if (SYSINFO_RET_OK != SYSTEM_SWAP_FREE(&result_tmp) || !(result_tmp.type & AR_UINT64))
 		return SYSINFO_RET_FAIL;
 	free_val = result_tmp.ui64;
 
@@ -216,9 +216,9 @@ static int	SYSTEM_SWAP_PUSED(AGENT_RESULT *result)
 	zbx_uint64_t	tot_val = 0;
 	zbx_uint64_t	free_val = 0;
 
-        init_result(&result_tmp);
+	init_result(&result_tmp);
 
-	if (SYSINFO_RET_OK != SYSTEM_SWAP_TOTAL(cmd, param, flags, &result_tmp) || !(result_tmp.type & AR_UINT64))
+	if (SYSINFO_RET_OK != SYSTEM_SWAP_TOTAL(&result_tmp) || !(result_tmp.type & AR_UINT64))
 		return SYSINFO_RET_FAIL;
 	tot_val = result_tmp.ui64;
 
@@ -229,7 +229,7 @@ static int	SYSTEM_SWAP_PUSED(AGENT_RESULT *result)
 		return SYSINFO_RET_FAIL;
 	}
 
-	if (SYSINFO_RET_OK != SYSTEM_SWAP_FREE(cmd, param, flags, &result_tmp) || !(result_tmp.type & AR_UINT64))
+	if (SYSINFO_RET_OK != SYSTEM_SWAP_FREE(&result_tmp) || !(result_tmp.type & AR_UINT64))
 		return SYSINFO_RET_FAIL;
 	free_val = result_tmp.ui64;
 
@@ -237,7 +237,7 @@ static int	SYSTEM_SWAP_PUSED(AGENT_RESULT *result)
 
 	SET_DBL_RESULT(result, 100.0 - (100.0 * (double)free_val) / (double)tot_val);
 
-        return SYSINFO_RET_OK;
+	return SYSINFO_RET_OK;
 }
 
 int	SYSTEM_SWAP_SIZE(AGENT_REQUEST *request, AGENT_RESULT *result)

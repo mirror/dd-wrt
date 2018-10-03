@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -124,6 +124,7 @@ typedef struct
 	int		logeventid;
 	int		mtime;
 	unsigned char	flags;
+	zbx_uint64_t	id;
 }
 ZBX_ACTIVE_BUFFER_ELEMENT;
 

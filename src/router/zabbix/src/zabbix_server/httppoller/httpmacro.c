@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -158,7 +158,7 @@ static int	httpmacro_append_pair(zbx_httptest_t *httptest, const char *pkey, siz
 	}
 	zbx_vector_ptr_pair_append(&httptest->macros, pair);
 
-	zabbix_log(LOG_LEVEL_DEBUG, "append macro '%s'='%s' in cache", pair.first, pair.second);
+	zabbix_log(LOG_LEVEL_DEBUG, "append macro '%s'='%s' in cache", (char *)pair.first, (char *)pair.second);
 
 	ret = SUCCEED;
 out:
@@ -214,7 +214,7 @@ int	http_substitute_variables(const zbx_httptest_t *httptest, char **data)
 		if (FAIL == index)
 			continue;
 
-		substitute = httptest->macros.values[index].second;
+		substitute = (char *)httptest->macros.values[index].second;
 
 		if ('.' == replace_char && 1 == offset)
 		{
@@ -234,14 +234,14 @@ int	http_substitute_variables(const zbx_httptest_t *httptest, char **data)
 				/* http_variable_urlencode cannot fail (except for "out of memory") */
 				/* so no check is needed */
 				substitute = NULL;
-				zbx_http_url_encode(httptest->macros.values[index].second, &substitute);
+				zbx_http_url_encode((char *)httptest->macros.values[index].second, &substitute);
 			}
 			else if (ZBX_CONST_STRLEN("urldecode()") == len &&
 					0 == strncmp(*data + offset, "urldecode()", len))
 			{
 				/* on error substitute will remain unchanged */
 				substitute = NULL;
-				if (FAIL == (ret = zbx_http_url_decode(httptest->macros.values[index].second,
+				if (FAIL == (ret = zbx_http_url_decode((char *)httptest->macros.values[index].second,
 						&substitute)))
 				{
 					break;

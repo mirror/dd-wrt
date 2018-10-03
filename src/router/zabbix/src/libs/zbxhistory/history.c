@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 
 #include "../zbxalgo/vectorimpl.h"
 
-ZBX_VECTOR_IMPL(history_record, zbx_history_record_t);
+ZBX_VECTOR_IMPL(history_record, zbx_history_record_t)
 
 extern char	*CONFIG_HISTORY_STORAGE_URL;
 extern char	*CONFIG_HISTORY_STORAGE_OPTS;
@@ -46,6 +46,7 @@ zbx_history_iface_t	history_ifaces[ITEM_VALUE_TYPE_MAX];
 int	zbx_history_init(char **error)
 {
 	int		i, ret;
+
 	/* TODO: support per value type specific configuration */
 
 	const char	*opts[] = {"dbl", "str", "log", "uint", "text"};
@@ -74,7 +75,7 @@ int	zbx_history_init(char **error)
  *           here.                                                                  *
  *                                                                                  *
  ************************************************************************************/
-void	zbx_history_destroy()
+void	zbx_history_destroy(void)
 {
 	int	i;
 
@@ -97,10 +98,10 @@ void	zbx_history_destroy()
  * Comments: add history values to the configured storage backends                  *
  *                                                                                  *
  ************************************************************************************/
-void	zbx_history_add_values(const zbx_vector_ptr_t *history)
+int	zbx_history_add_values(const zbx_vector_ptr_t *history)
 {
 	const char	*__function_name = "zbx_history_add_values";
-	int		i, flags = 0;
+	int		i, flags = 0, ret = SUCCEED;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __function_name);
 
@@ -117,10 +118,12 @@ void	zbx_history_add_values(const zbx_vector_ptr_t *history)
 		zbx_history_iface_t	*writer = &history_ifaces[i];
 
 		if (0 != (flags & (1 << i)))
-			writer->flush(writer);
+			ret = writer->flush(writer);
 	}
 
 	zabbix_log(LOG_LEVEL_DEBUG, "End of %s()", __function_name);
+
+	return ret;
 }
 
 /************************************************************************************
@@ -270,7 +273,7 @@ void	zbx_history_record_clear(zbx_history_record_t *value, int value_type)
  *             value_type - [IN] the history value type                       *
  *                                                                            *
  ******************************************************************************/
-void	zbx_history_value2str(char *buffer, size_t size, history_value_t *value, int value_type)
+void	zbx_history_value2str(char *buffer, size_t size, const history_value_t *value, int value_type)
 {
 	switch (value_type)
 	{
@@ -318,3 +321,54 @@ void	zbx_history_record_vector_clean(zbx_vector_history_record_t *vector, int va
 
 	zbx_vector_history_record_clear(vector);
 }
+
+/******************************************************************************
+ *                                                                            *
+ * Function: zbx_history_record_compare_asc_func                              *
+ *                                                                            *
+ * Purpose: compares two cache values by their timestamps                     *
+ *                                                                            *
+ * Parameters: d1   - [IN] the first value                                    *
+ *             d2   - [IN] the second value                                   *
+ *                                                                            *
+ * Return value:   <0 - the first value timestamp is less than second         *
+ *                 =0 - the first value timestamp is equal to the second      *
+ *                 >0 - the first value timestamp is greater than second      *
+ *                                                                            *
+ * Comments: This function is commonly used to sort value vector in ascending *
+ *           order.                                                           *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_history_record_compare_asc_func(const zbx_history_record_t *d1, const zbx_history_record_t *d2)
+{
+	if (d1->timestamp.sec == d2->timestamp.sec)
+		return d1->timestamp.ns - d2->timestamp.ns;
+
+	return d1->timestamp.sec - d2->timestamp.sec;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: vc_history_record_compare_desc_func                              *
+ *                                                                            *
+ * Purpose: compares two cache values by their timestamps                     *
+ *                                                                            *
+ * Parameters: d1   - [IN] the first value                                    *
+ *             d2   - [IN] the second value                                   *
+ *                                                                            *
+ * Return value:   >0 - the first value timestamp is less than second         *
+ *                 =0 - the first value timestamp is equal to the second      *
+ *                 <0 - the first value timestamp is greater than second      *
+ *                                                                            *
+ * Comments: This function is commonly used to sort value vector in descending*
+ *           order.                                                           *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_history_record_compare_desc_func(const zbx_history_record_t *d1, const zbx_history_record_t *d2)
+{
+	if (d1->timestamp.sec == d2->timestamp.sec)
+		return d2->timestamp.ns - d1->timestamp.ns;
+
+	return d2->timestamp.sec - d1->timestamp.sec;
+}
+

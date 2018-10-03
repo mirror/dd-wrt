@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@
  * Author: Eugene Grigorjev                                                   *
  *                                                                            *
  ******************************************************************************/
-int	zbx_fork()
+int	zbx_fork(void)
 {
 	fflush(stdout);
 	fflush(stderr);
@@ -53,7 +53,7 @@ int	zbx_fork()
  * Comments: use this function only for forks from the main process           *
  *                                                                            *
  ******************************************************************************/
-int	zbx_child_fork()
+int	zbx_child_fork(void)
 {
 	pid_t		pid;
 	sigset_t	mask, orig_mask;
@@ -90,6 +90,11 @@ static ZBX_THREAD_ENTRY(zbx_win_thread_entry, args)
 	{
 		zbx_thread_exit(EXIT_SUCCESS);
 	}
+}
+
+void CALLBACK	ZBXEndThread(ULONG_PTR dwParam)
+{
+	_endthreadex(SUCCEED);
 }
 #endif
 
@@ -193,7 +198,46 @@ int	zbx_thread_wait(ZBX_THREAD_HANDLE thread)
 	return status;
 }
 
-long int	zbx_get_thread_id()
+/******************************************************************************
+ *                                                                            *
+ * Function: zbx_threads_wait                                                 *
+ *                                                                            *
+ * Purpose: Waits until the "threads" are in the signalled state              *
+ *                                                                            *
+ * Parameters: "threads" handles                                              *
+ *                                                                            *
+ *                                                                            *
+ ******************************************************************************/
+void	zbx_threads_wait(ZBX_THREAD_HANDLE *threads, int threads_num)
+{
+	int		i;
+#if !defined(_WINDOWS)
+	sigset_t	set;
+
+	/* ignore SIGCHLD signals in order for zbx_sleep() to work */
+	sigemptyset(&set);
+	sigaddset(&set, SIGCHLD);
+	sigprocmask(SIG_BLOCK, &set, NULL);
+#else
+	/* wait for threads to finish first. although listener threads will never end */
+	WaitForMultipleObjectsEx(threads_num, threads, TRUE, 1000, FALSE);
+#endif
+	for (i = 0; i < threads_num; i++)
+	{
+		if (threads[i])
+			zbx_thread_kill(threads[i]);
+	}
+
+	for (i = 0; i < threads_num; i++)
+	{
+		if (threads[i])
+			zbx_thread_wait(threads[i]);
+
+		threads[i] = ZBX_THREAD_HANDLE_NULL;
+	}
+}
+
+long int	zbx_get_thread_id(void)
 {
 #ifdef _WINDOWS
 	return (long int)GetCurrentThreadId();

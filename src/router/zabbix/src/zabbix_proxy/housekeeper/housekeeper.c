@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 #include "log.h"
 #include "daemon.h"
 #include "zbxself.h"
+#include "dbcache.h"
 
 #include "housekeeper.h"
 
@@ -33,7 +34,7 @@ static int	hk_period;
 /* the maximum number of housekeeping periods to be removed per single housekeeping cycle */
 #define HK_MAX_DELETE_PERIODS	4
 
-void	zbx_housekeeper_sigusr_handler(int flags)
+static void	zbx_housekeeper_sigusr_handler(int flags)
 {
 	if (ZBX_RTC_HOUSEKEEPER_EXECUTE == ZBX_RTC_GET_MSG(flags))
 	{
@@ -225,6 +226,8 @@ ZBX_THREAD_ENTRY(housekeeper_thread, args)
 		sec = zbx_time() - sec;
 
 		DBclose();
+
+		zbx_dc_cleanup_data_sessions();
 
 		zabbix_log(LOG_LEVEL_WARNING, "%s [deleted %d records in " ZBX_FS_DBL " sec, %s]",
 				get_process_type_string(process_type), records, sec, sleeptext);

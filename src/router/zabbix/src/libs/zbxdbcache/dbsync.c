@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 #include "log.h"
 #include "dbcache.h"
 #include "zbxserver.h"
+#include "mutexs.h"
 
 #define ZBX_DBCONFIG_IMPL
 #include "dbconfig.h"
@@ -167,7 +168,9 @@ static int	dbsync_compare_str(const char *value_raw, const char *value)
  * Parameter: sync  - [IN] the changeset                                      *
  *            rowid - [IN] the row identifier                                 *
  *            tag   - [IN] the row tag (see ZBX_DBSYNC_ROW_ defines)          *
- *            row   - [IN] the row contents (NULL for ZBX_DBSYNC_ROW_REMOVE)  *
+ *            row   - [IN] the row contents (depending on configuration cache *
+ *                         removal logic for the specific object it can be    *
+ *                         NULL when used with ZBX_DBSYNC_ROW_REMOVE tag)     *
  *                                                                            *
  ******************************************************************************/
 static void	dbsync_add_row(zbx_dbsync_t *sync, zbx_uint64_t rowid, unsigned char tag, const DB_ROW dbrow)
@@ -497,6 +500,7 @@ static int	dbsync_compare_host(ZBX_DC_HOST *host, const DB_ROW dbrow)
 	signed char	ipmi_authtype;
 	unsigned char	ipmi_privilege;
 	ZBX_DC_IPMIHOST	*ipmihost;
+	ZBX_DC_PROXY	*proxy;
 
 	if (FAIL == dbsync_compare_uint64(dbrow[1], host->proxy_hostid))
 	{
@@ -541,6 +545,7 @@ static int	dbsync_compare_host(ZBX_DC_HOST *host, const DB_ROW dbrow)
 		if (FAIL == dbsync_compare_str(dbrow[34], host->tls_dc_psk->tls_psk))
 			return FAIL;
 	}
+
 #endif
 	if (FAIL == dbsync_compare_uchar(dbrow[29], host->tls_connect))
 		return FAIL;
@@ -577,6 +582,16 @@ static int	dbsync_compare_host(ZBX_DC_HOST *host, const DB_ROW dbrow)
 	else if (NULL != zbx_hashset_search(&dbsync_env.cache->ipmihosts, &host->hostid))
 		return FAIL;
 
+	/* proxies */
+	if (NULL != (proxy = (ZBX_DC_PROXY *)zbx_hashset_search(&dbsync_env.cache->proxies, &host->hostid)))
+	{
+		if (FAIL == dbsync_compare_str(dbrow[31 + ZBX_HOST_TLS_OFFSET], proxy->proxy_address))
+			return FAIL;
+
+		if (FAIL == dbsync_compare_uchar(dbrow[32 + ZBX_HOST_TLS_OFFSET], proxy->auto_compress))
+			return FAIL;
+	}
+
 	return SUCCEED;
 }
 
@@ -610,7 +625,8 @@ int	zbx_dbsync_compare_hosts(zbx_dbsync_t *sync)
 				"snmp_available,snmp_disable_until,ipmi_errors_from,ipmi_available,"
 				"ipmi_disable_until,jmx_errors_from,jmx_available,jmx_disable_until,"
 				"status,name,lastaccess,error,snmp_error,ipmi_error,jmx_error,tls_connect,tls_accept"
-				",tls_issuer,tls_subject,tls_psk_identity,tls_psk"
+				",tls_issuer,tls_subject,tls_psk_identity,tls_psk,proxy_address,auto_compress,"
+				"maintenanceid"
 			" from hosts"
 			" where status in (%d,%d,%d,%d)"
 				" and flags<>%d",
@@ -621,7 +637,7 @@ int	zbx_dbsync_compare_hosts(zbx_dbsync_t *sync)
 		return FAIL;
 	}
 
-	dbsync_prepare(sync, 35, NULL);
+	dbsync_prepare(sync, 38, NULL);
 #else
 	if (NULL == (result = DBselect(
 			"select hostid,proxy_hostid,host,ipmi_authtype,ipmi_privilege,ipmi_username,"
@@ -629,7 +645,8 @@ int	zbx_dbsync_compare_hosts(zbx_dbsync_t *sync)
 				"errors_from,available,disable_until,snmp_errors_from,"
 				"snmp_available,snmp_disable_until,ipmi_errors_from,ipmi_available,"
 				"ipmi_disable_until,jmx_errors_from,jmx_available,jmx_disable_until,"
-				"status,name,lastaccess,error,snmp_error,ipmi_error,jmx_error,tls_connect,tls_accept"
+				"status,name,lastaccess,error,snmp_error,ipmi_error,jmx_error,tls_connect,tls_accept,"
+				"proxy_address,auto_compress,maintenanceid"
 			" from hosts"
 			" where status in (%d,%d,%d,%d)"
 				" and flags<>%d",
@@ -640,7 +657,7 @@ int	zbx_dbsync_compare_hosts(zbx_dbsync_t *sync)
 		return FAIL;
 	}
 
-	dbsync_prepare(sync, 31, NULL);
+	dbsync_prepare(sync, 34, NULL);
 #endif
 
 	if (ZBX_DBSYNC_INIT == sync->mode)
@@ -696,7 +713,18 @@ int	zbx_dbsync_compare_hosts(zbx_dbsync_t *sync)
  ******************************************************************************/
 static int	dbsync_compare_host_inventory(const ZBX_DC_HOST_INVENTORY *hi, const DB_ROW dbrow)
 {
-	return dbsync_compare_uchar(dbrow[1], hi->inventory_mode);
+	int	i;
+
+	if (SUCCEED != dbsync_compare_uchar(dbrow[1], hi->inventory_mode))
+		return FAIL;
+
+	for (i = 0; i < HOST_INVENTORY_FIELD_COUNT; i++)
+	{
+		if (FAIL == dbsync_compare_str(dbrow[i + 2], hi->values[i]))
+			return FAIL;
+	}
+
+	return SUCCEED;
 }
 
 /******************************************************************************
@@ -720,15 +748,25 @@ int	zbx_dbsync_compare_host_inventory(zbx_dbsync_t *sync)
 	zbx_hashset_iter_t	iter;
 	zbx_uint64_t		rowid;
 	ZBX_DC_HOST_INVENTORY	*hi;
+	const char		*sql;
 
-	if (NULL == (result = DBselect(
-			"select hostid,inventory_mode"
-			" from host_inventory")))
-	{
+	sql = "select hostid,inventory_mode,type,type_full,name,alias,os,os_full,os_short,serialno_a,"
+			"serialno_b,tag,asset_tag,macaddress_a,macaddress_b,hardware,hardware_full,software,"
+			"software_full,software_app_a,software_app_b,software_app_c,software_app_d,"
+			"software_app_e,contact,location,location_lat,location_lon,notes,chassis,model,"
+			"hw_arch,vendor,contract_number,installer_name,deployment_status,url_a,url_b,"
+			"url_c,host_networks,host_netmask,host_router,oob_ip,oob_netmask,oob_router,"
+			"date_hw_purchase,date_hw_install,date_hw_expiry,date_hw_decomm,site_address_a,"
+			"site_address_b,site_address_c,site_city,site_state,site_country,site_zip,site_rack,"
+			"site_notes,poc_1_name,poc_1_email,poc_1_phone_a,poc_1_phone_b,poc_1_cell,"
+			"poc_1_screen,poc_1_notes,poc_2_name,poc_2_email,poc_2_phone_a,poc_2_phone_b,"
+			"poc_2_cell,poc_2_screen,poc_2_notes"
+			" from host_inventory";
+
+	if (NULL == (result = DBselect("%s", sql)))
 		return FAIL;
-	}
 
-	dbsync_prepare(sync, 2, NULL);
+	dbsync_prepare(sync, 72, NULL);
 
 	if (ZBX_DBSYNC_INIT == sync->mode)
 	{
@@ -1241,6 +1279,7 @@ static int	dbsync_compare_item(const ZBX_DC_ITEM *item, const DB_ROW dbrow)
 	ZBX_DC_CALCITEM		*calcitem;
 	ZBX_DC_DEPENDENTITEM	*depitem;
 	ZBX_DC_HOST		*host;
+	ZBX_DC_HTTPITEM		*httpitem;
 	unsigned char		value_type, type, history, trends;
 	int			history_sec = 0;
 
@@ -1276,7 +1315,9 @@ static int	dbsync_compare_item(const ZBX_DC_ITEM *item, const DB_ROW dbrow)
 	}
 	else
 	{
-		is_time_suffix(dbrow[31], &history_sec, ZBX_LENGTH_UNLIMITED);
+		if (SUCCEED != is_time_suffix(dbrow[31], &history_sec, ZBX_LENGTH_UNLIMITED))
+			return FAIL;
+
 		history = zbx_time2bool(dbrow[31]);
 	}
 
@@ -1373,10 +1414,10 @@ static int	dbsync_compare_item(const ZBX_DC_ITEM *item, const DB_ROW dbrow)
 	trapitem = (ZBX_DC_TRAPITEM *)zbx_hashset_search(&dbsync_env.cache->trapitems, &item->itemid);
 	if (ITEM_TYPE_TRAPPER == item->type && '\0' != *dbrow[15])
 	{
+		zbx_trim_str_list(dbrow[15], ',');
+
 		if (NULL == trapitem)
 			return FAIL;
-
-		zbx_trim_str_list(dbrow[15], ',');
 
 		if (FAIL == dbsync_compare_str(dbrow[15], trapitem->trapper_hosts))
 			return FAIL;
@@ -1516,6 +1557,83 @@ static int	dbsync_compare_item(const ZBX_DC_ITEM *item, const DB_ROW dbrow)
 	else if (NULL != depitem)
 		return FAIL;
 
+	httpitem = (ZBX_DC_HTTPITEM *)zbx_hashset_search(&dbsync_env.cache->httpitems, &item->itemid);
+	if (ITEM_TYPE_HTTPAGENT == item->type)
+	{
+		zbx_trim_str_list(dbrow[15], ',');
+
+		if (NULL == httpitem)
+			return FAIL;
+
+		if (FAIL == dbsync_compare_str(dbrow[39], httpitem->timeout))
+			return FAIL;
+
+		if (FAIL == dbsync_compare_str(dbrow[40], httpitem->url))
+			return FAIL;
+
+		if (FAIL == dbsync_compare_str(dbrow[41], httpitem->query_fields))
+			return FAIL;
+
+		if (FAIL == dbsync_compare_str(dbrow[42], httpitem->posts))
+			return FAIL;
+
+		if (FAIL == dbsync_compare_str(dbrow[43], httpitem->status_codes))
+			return FAIL;
+
+		if (FAIL == dbsync_compare_uchar(dbrow[44], httpitem->follow_redirects))
+			return FAIL;
+
+		if (FAIL == dbsync_compare_uchar(dbrow[45], httpitem->post_type))
+			return FAIL;
+
+		if (FAIL == dbsync_compare_str(dbrow[46], httpitem->http_proxy))
+			return FAIL;
+
+		if (FAIL == dbsync_compare_str(dbrow[47], httpitem->headers))
+			return FAIL;
+
+		if (FAIL == dbsync_compare_uchar(dbrow[48], httpitem->retrieve_mode))
+			return FAIL;
+
+		if (FAIL == dbsync_compare_uchar(dbrow[49], httpitem->request_method))
+			return FAIL;
+
+		if (FAIL == dbsync_compare_uchar(dbrow[50], httpitem->output_format))
+			return FAIL;
+
+		if (FAIL == dbsync_compare_str(dbrow[51], httpitem->ssl_cert_file))
+			return FAIL;
+
+		if (FAIL == dbsync_compare_str(dbrow[52], httpitem->ssl_key_file))
+			return FAIL;
+
+		if (FAIL == dbsync_compare_str(dbrow[53], httpitem->ssl_key_password))
+			return FAIL;
+
+		if (FAIL == dbsync_compare_uchar(dbrow[54], httpitem->verify_peer))
+			return FAIL;
+
+		if (FAIL == dbsync_compare_uchar(dbrow[55], httpitem->verify_host))
+			return FAIL;
+
+		if (FAIL == dbsync_compare_uchar(dbrow[19], httpitem->authtype))
+			return FAIL;
+
+		if (FAIL == dbsync_compare_str(dbrow[20], httpitem->username))
+			return FAIL;
+
+		if (FAIL == dbsync_compare_str(dbrow[21], httpitem->password))
+			return FAIL;
+
+		if (FAIL == dbsync_compare_uchar(dbrow[56], httpitem->allow_traps))
+			return FAIL;
+
+		if (FAIL == dbsync_compare_str(dbrow[15], httpitem->trapper_hosts))
+			return FAIL;
+	}
+	else if (NULL != httpitem)
+		return FAIL;
+
 	return SUCCEED;
 }
 
@@ -1608,7 +1726,10 @@ int	zbx_dbsync_compare_items(zbx_dbsync_t *sync)
 				"i.publickey,i.privatekey,i.flags,i.interfaceid,i.snmpv3_authprotocol,"
 				"i.snmpv3_privprotocol,i.snmpv3_contextname,i.lastlogsize,i.mtime,"
 				"i.history,i.trends,i.inventory_link,i.valuemapid,i.units,i.error,i.jmx_endpoint,"
-				"i.master_itemid"
+				"i.master_itemid,i.timeout,i.url,i.query_fields,i.posts,i.status_codes,"
+				"i.follow_redirects,i.post_type,i.http_proxy,i.headers,i.retrieve_mode,"
+				"i.request_method,i.output_format,i.ssl_cert_file,i.ssl_key_file,i.ssl_key_password,"
+				"i.verify_peer,i.verify_host,i.allow_traps"
 			" from items i,hosts h"
 			" where i.hostid=h.hostid"
 				" and h.status in (%d,%d)"
@@ -1619,7 +1740,7 @@ int	zbx_dbsync_compare_items(zbx_dbsync_t *sync)
 		return FAIL;
 	}
 
-	dbsync_prepare(sync, 39, dbsync_item_preproc_row);
+	dbsync_prepare(sync, 57, dbsync_item_preproc_row);
 
 	if (ZBX_DBSYNC_INIT == sync->mode)
 	{
@@ -1993,7 +2114,7 @@ int	zbx_dbsync_compare_functions(zbx_dbsync_t *sync)
 	ZBX_DC_FUNCTION		*function;
 
 	if (NULL == (result = DBselect(
-			"select i.itemid,f.functionid,f.function,f.parameter,t.triggerid"
+			"select i.itemid,f.functionid,f.name,f.parameter,t.triggerid"
 			" from hosts h,items i,functions f,triggers t"
 			" where h.hostid=i.hostid"
 				" and i.itemid=f.itemid"
@@ -2953,7 +3074,7 @@ int	zbx_dbsync_compare_host_groups(zbx_dbsync_t *sync)
 	zbx_uint64_t		rowid;
 	zbx_dc_hostgroup_t	*group;
 
-	if (NULL == (result = DBselect("select groupid,name from groups")))
+	if (NULL == (result = DBselect("select groupid,name from hstgrp")))
 		return FAIL;
 
 	dbsync_prepare(sync, 2, NULL);
@@ -2994,6 +3115,36 @@ int	zbx_dbsync_compare_host_groups(zbx_dbsync_t *sync)
 	DBfree_result(result);
 
 	return SUCCEED;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: dbsync_item_pp_preproc_row                                       *
+ *                                                                            *
+ * Purpose: applies necessary preprocessing before row is compared/used       *
+ *                                                                            *
+ * Parameter: row - [IN] the row to preprocess                                *
+ *                                                                            *
+ * Return value: the preprocessed row of item_preproc table                   *
+ *                                                                            *
+ * Comments: The row preprocessing can be used to expand user macros in       *
+ *           some columns.                                                    *
+ *                                                                            *
+ ******************************************************************************/
+static char	**dbsync_item_pp_preproc_row(char **row)
+{
+	zbx_uint64_t	hostid;
+
+	if (SUCCEED == dbsync_check_row_macros(row, 3))
+	{
+		/* get associated host identifier */
+		ZBX_STR2UINT64(hostid, row[5]);
+
+		/* expand user macros */
+		row[3] = zbx_dc_expand_user_macros(row[3], &hostid, 1, NULL);
+	}
+
+	return row;
 }
 
 /******************************************************************************
@@ -3047,9 +3198,10 @@ int	zbx_dbsync_compare_item_preprocs(zbx_dbsync_t *sync)
 	zbx_hashset_iter_t	iter;
 	zbx_uint64_t		rowid;
 	zbx_dc_preproc_op_t	*preproc;
+	char			**row;
 
 	if (NULL == (result = DBselect(
-			"select pp.item_preprocid,pp.itemid,pp.type,pp.params,pp.step"
+			"select pp.item_preprocid,pp.itemid,pp.type,pp.params,pp.step,i.hostid"
 			" from item_preproc pp,items i,hosts h"
 			" where pp.itemid=i.itemid"
 				" and i.hostid=h.hostid"
@@ -3061,7 +3213,7 @@ int	zbx_dbsync_compare_item_preprocs(zbx_dbsync_t *sync)
 		return FAIL;
 	}
 
-	dbsync_prepare(sync, 5, NULL);
+	dbsync_prepare(sync, 6, dbsync_item_pp_preproc_row);
 
 	if (ZBX_DBSYNC_INIT == sync->mode)
 	{
@@ -3075,20 +3227,21 @@ int	zbx_dbsync_compare_item_preprocs(zbx_dbsync_t *sync)
 	while (NULL != (dbrow = DBfetch(result)))
 	{
 		unsigned char	tag = ZBX_DBSYNC_ROW_NONE;
-
 		ZBX_STR2UINT64(rowid, dbrow[0]);
 		zbx_hashset_insert(&ids, &rowid, sizeof(rowid));
+
+		row = dbsync_preproc_row(sync, dbrow);
 
 		if (NULL == (preproc = (zbx_dc_preproc_op_t *)zbx_hashset_search(&dbsync_env.cache->preprocops,
 				&rowid)))
 		{
 			tag = ZBX_DBSYNC_ROW_ADD;
 		}
-		else if (FAIL == dbsync_compare_item_preproc(preproc, dbrow))
+		else if (FAIL == dbsync_compare_item_preproc(preproc, row))
 			tag = ZBX_DBSYNC_ROW_UPDATE;
 
 		if (ZBX_DBSYNC_ROW_NONE != tag)
-			dbsync_add_row(sync, rowid, tag, dbrow);
+			dbsync_add_row(sync, rowid, tag, row);
 	}
 
 	zbx_hashset_iter_reset(&dbsync_env.cache->preprocops, &iter);
@@ -3100,6 +3253,563 @@ int	zbx_dbsync_compare_item_preprocs(zbx_dbsync_t *sync)
 
 	zbx_hashset_destroy(&ids);
 	DBfree_result(result);
+
+	return SUCCEED;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: dbsync_compare_maintenance                                       *
+ *                                                                            *
+ * Purpose: compares maintenance table row with cached configuration data     *
+ *                                                                            *
+ * Parameter: maintenance - [IN] the cached maintenance data                  *
+ *            row         - [IN] the database row                             *
+ *                                                                            *
+ * Return value: SUCCEED - the row matches configuration data                 *
+ *               FAIL    - otherwise                                          *
+ *                                                                            *
+ ******************************************************************************/
+static int	dbsync_compare_maintenance(const zbx_dc_maintenance_t *maintenance, const DB_ROW dbrow)
+{
+	if (FAIL == dbsync_compare_uchar(dbrow[1], maintenance->type))
+		return FAIL;
+
+	if (FAIL == dbsync_compare_int(dbrow[2], maintenance->active_since))
+		return FAIL;
+
+	if (FAIL == dbsync_compare_int(dbrow[3], maintenance->active_until))
+		return FAIL;
+
+	if (FAIL == dbsync_compare_uchar(dbrow[4], maintenance->tags_evaltype))
+		return FAIL;
+
+	return SUCCEED;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: zbx_dbsync_compare_maintenances                                  *
+ *                                                                            *
+ * Purpose: compares maintenances table with cached configuration data        *
+ *                                                                            *
+ * Parameter: cache - [IN] the configuration cache                            *
+ *            sync  - [OUT] the changeset                                     *
+ *                                                                            *
+ * Return value: SUCCEED - the changeset was successfully calculated          *
+ *               FAIL    - otherwise                                          *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_dbsync_compare_maintenances(zbx_dbsync_t *sync)
+{
+	DB_ROW			dbrow;
+	DB_RESULT		result;
+	zbx_hashset_t		ids;
+	zbx_hashset_iter_t	iter;
+	zbx_uint64_t		rowid;
+	zbx_dc_maintenance_t	*maintenance;
+
+	if (NULL == (result = DBselect("select maintenanceid,maintenance_type,active_since,active_till,tags_evaltype"
+						" from maintenances")))
+	{
+		return FAIL;
+	}
+
+	dbsync_prepare(sync, 5, NULL);
+
+	if (ZBX_DBSYNC_INIT == sync->mode)
+	{
+		sync->dbresult = result;
+		return SUCCEED;
+	}
+
+	zbx_hashset_create(&ids, dbsync_env.cache->maintenances.num_data, ZBX_DEFAULT_UINT64_HASH_FUNC,
+			ZBX_DEFAULT_UINT64_COMPARE_FUNC);
+
+	while (NULL != (dbrow = DBfetch(result)))
+	{
+		unsigned char	tag = ZBX_DBSYNC_ROW_NONE;
+
+		ZBX_STR2UINT64(rowid, dbrow[0]);
+		zbx_hashset_insert(&ids, &rowid, sizeof(rowid));
+
+		maintenance = (zbx_dc_maintenance_t *)zbx_hashset_search(&dbsync_env.cache->maintenances, &rowid);
+
+		if (NULL == maintenance)
+			tag = ZBX_DBSYNC_ROW_ADD;
+		else if (FAIL == dbsync_compare_maintenance(maintenance, dbrow))
+			tag = ZBX_DBSYNC_ROW_UPDATE;
+
+		if (ZBX_DBSYNC_ROW_NONE != tag)
+			dbsync_add_row(sync, rowid, tag, dbrow);
+	}
+
+	zbx_hashset_iter_reset(&dbsync_env.cache->maintenances, &iter);
+	while (NULL != (maintenance = (zbx_dc_maintenance_t *)zbx_hashset_iter_next(&iter)))
+	{
+		if (NULL == zbx_hashset_search(&ids, &maintenance->maintenanceid))
+			dbsync_add_row(sync, maintenance->maintenanceid, ZBX_DBSYNC_ROW_REMOVE, NULL);
+	}
+
+	zbx_hashset_destroy(&ids);
+	DBfree_result(result);
+
+	return SUCCEED;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: dbsync_compare_maintenance_tag                                   *
+ *                                                                            *
+ * Purpose: compares maintenance_tag table row with cached configuration data *
+ *                                                                            *
+ * Parameter: maintenance_tag - [IN] the cached maintenance tag               *
+ *            row             - [IN] the database row                         *
+ *                                                                            *
+ * Return value: SUCCEED - the row matches configuration data                 *
+ *               FAIL    - otherwise                                          *
+ *                                                                            *
+ ******************************************************************************/
+static int	dbsync_compare_maintenance_tag(const zbx_dc_maintenance_tag_t *maintenance_tag, const DB_ROW dbrow)
+{
+	if (FAIL == dbsync_compare_int(dbrow[2], maintenance_tag->operator))
+		return FAIL;
+
+	if (FAIL == dbsync_compare_str(dbrow[3], maintenance_tag->tag))
+		return FAIL;
+
+	if (FAIL == dbsync_compare_str(dbrow[4], maintenance_tag->value))
+		return FAIL;
+
+	return SUCCEED;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: zbx_dbsync_compare_maintenance_tags                              *
+ *                                                                            *
+ * Purpose: compares maintenances table with cached configuration data        *
+ *                                                                            *
+ * Parameter: cache - [IN] the configuration cache                            *
+ *            sync  - [OUT] the changeset                                     *
+ *                                                                            *
+ * Return value: SUCCEED - the changeset was successfully calculated          *
+ *               FAIL    - otherwise                                          *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_dbsync_compare_maintenance_tags(zbx_dbsync_t *sync)
+{
+	DB_ROW				dbrow;
+	DB_RESULT			result;
+	zbx_hashset_t			ids;
+	zbx_hashset_iter_t		iter;
+	zbx_uint64_t			rowid;
+	zbx_dc_maintenance_tag_t	*maintenance_tag;
+
+	if (NULL == (result = DBselect("select maintenancetagid,maintenanceid,operator,tag,value"
+						" from maintenance_tag")))
+	{
+		return FAIL;
+	}
+
+	dbsync_prepare(sync, 5, NULL);
+
+	if (ZBX_DBSYNC_INIT == sync->mode)
+	{
+		sync->dbresult = result;
+		return SUCCEED;
+	}
+
+	zbx_hashset_create(&ids, dbsync_env.cache->maintenance_tags.num_data, ZBX_DEFAULT_UINT64_HASH_FUNC,
+			ZBX_DEFAULT_UINT64_COMPARE_FUNC);
+
+	while (NULL != (dbrow = DBfetch(result)))
+	{
+		unsigned char	tag = ZBX_DBSYNC_ROW_NONE;
+
+		ZBX_STR2UINT64(rowid, dbrow[0]);
+		zbx_hashset_insert(&ids, &rowid, sizeof(rowid));
+
+		maintenance_tag = (zbx_dc_maintenance_tag_t *)zbx_hashset_search(&dbsync_env.cache->maintenance_tags,
+				&rowid);
+
+		if (NULL == maintenance_tag)
+			tag = ZBX_DBSYNC_ROW_ADD;
+		else if (FAIL == dbsync_compare_maintenance_tag(maintenance_tag, dbrow))
+			tag = ZBX_DBSYNC_ROW_UPDATE;
+
+		if (ZBX_DBSYNC_ROW_NONE != tag)
+			dbsync_add_row(sync, rowid, tag, dbrow);
+	}
+
+	zbx_hashset_iter_reset(&dbsync_env.cache->maintenance_tags, &iter);
+	while (NULL != (maintenance_tag = (zbx_dc_maintenance_tag_t *)zbx_hashset_iter_next(&iter)))
+	{
+		if (NULL == zbx_hashset_search(&ids, &maintenance_tag->maintenancetagid))
+			dbsync_add_row(sync, maintenance_tag->maintenancetagid, ZBX_DBSYNC_ROW_REMOVE, NULL);
+	}
+
+	zbx_hashset_destroy(&ids);
+	DBfree_result(result);
+
+	return SUCCEED;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: dbsync_compare_maintenance_period                                *
+ *                                                                            *
+ * Purpose: compares maintenance_period table row with cached configuration   *
+ *          dat                                                               *
+ *                                                                            *
+ * Parameter: maintenance_period - [IN] the cached maintenance period         *
+ *            row                - [IN] the database row                      *
+ *                                                                            *
+ * Return value: SUCCEED - the row matches configuration data                 *
+ *               FAIL    - otherwise                                          *
+ *                                                                            *
+ ******************************************************************************/
+static int	dbsync_compare_maintenance_period(const zbx_dc_maintenance_period_t *period, const DB_ROW dbrow)
+{
+	if (FAIL == dbsync_compare_uchar(dbrow[1], period->type))
+		return FAIL;
+
+	if (FAIL == dbsync_compare_int(dbrow[2], period->every))
+		return FAIL;
+
+	if (FAIL == dbsync_compare_int(dbrow[3], period->month))
+		return FAIL;
+
+	if (FAIL == dbsync_compare_int(dbrow[4], period->dayofweek))
+		return FAIL;
+
+	if (FAIL == dbsync_compare_int(dbrow[5], period->day))
+		return FAIL;
+
+	if (FAIL == dbsync_compare_int(dbrow[6], period->start_time))
+		return FAIL;
+
+	if (FAIL == dbsync_compare_int(dbrow[7], period->period))
+		return FAIL;
+
+	if (FAIL == dbsync_compare_int(dbrow[8], period->start_date))
+		return FAIL;
+
+	return SUCCEED;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: zbx_dbsync_compare_maintenance_periods                           *
+ *                                                                            *
+ * Purpose: compares timeperiods table with cached configuration data         *
+ *                                                                            *
+ * Parameter: cache - [IN] the configuration cache                            *
+ *            sync  - [OUT] the changeset                                     *
+ *                                                                            *
+ * Return value: SUCCEED - the changeset was successfully calculated          *
+ *               FAIL    - otherwise                                          *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_dbsync_compare_maintenance_periods(zbx_dbsync_t *sync)
+{
+	DB_ROW				dbrow;
+	DB_RESULT			result;
+	zbx_hashset_t			ids;
+	zbx_hashset_iter_t		iter;
+	zbx_uint64_t			rowid;
+	zbx_dc_maintenance_period_t	*period;
+
+	if (NULL == (result = DBselect("select t.timeperiodid,t.timeperiod_type,t.every,t.month,t.dayofweek,t.day,"
+						"t.start_time,t.period,t.start_date,m.maintenanceid"
+					" from maintenances_windows m,timeperiods t"
+					" where t.timeperiodid=m.timeperiodid")))
+	{
+		return FAIL;
+	}
+
+	dbsync_prepare(sync, 10, NULL);
+
+	if (ZBX_DBSYNC_INIT == sync->mode)
+	{
+		sync->dbresult = result;
+		return SUCCEED;
+	}
+
+	zbx_hashset_create(&ids, dbsync_env.cache->maintenance_periods.num_data, ZBX_DEFAULT_UINT64_HASH_FUNC,
+			ZBX_DEFAULT_UINT64_COMPARE_FUNC);
+
+	while (NULL != (dbrow = DBfetch(result)))
+	{
+		unsigned char	tag = ZBX_DBSYNC_ROW_NONE;
+
+		ZBX_STR2UINT64(rowid, dbrow[0]);
+		zbx_hashset_insert(&ids, &rowid, sizeof(rowid));
+
+		period = (zbx_dc_maintenance_period_t *)zbx_hashset_search(&dbsync_env.cache->maintenance_periods,
+				&rowid);
+
+		if (NULL == period)
+			tag = ZBX_DBSYNC_ROW_ADD;
+		else if (FAIL == dbsync_compare_maintenance_period(period, dbrow))
+			tag = ZBX_DBSYNC_ROW_UPDATE;
+
+		if (ZBX_DBSYNC_ROW_NONE != tag)
+			dbsync_add_row(sync, rowid, tag, dbrow);
+	}
+
+	zbx_hashset_iter_reset(&dbsync_env.cache->maintenance_periods, &iter);
+	while (NULL != (period = (zbx_dc_maintenance_period_t *)zbx_hashset_iter_next(&iter)))
+	{
+		if (NULL == zbx_hashset_search(&ids, &period->timeperiodid))
+			dbsync_add_row(sync, period->timeperiodid, ZBX_DBSYNC_ROW_REMOVE, NULL);
+	}
+
+	zbx_hashset_destroy(&ids);
+	DBfree_result(result);
+
+	return SUCCEED;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: zbx_dbsync_compare_maintenance_groups                            *
+ *                                                                            *
+ * Purpose: compares maintenances_groups table with cached configuration data *
+ *                                                                            *
+ * Parameter: cache - [IN] the configuration cache                            *
+ *            sync  - [OUT] the changeset                                     *
+ *                                                                            *
+ * Return value: SUCCEED - the changeset was successfully calculated          *
+ *               FAIL    - otherwise                                          *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_dbsync_compare_maintenance_groups(zbx_dbsync_t *sync)
+{
+	DB_ROW			dbrow;
+	DB_RESULT		result;
+	zbx_hashset_iter_t	iter;
+	zbx_dc_maintenance_t	*maintenance;
+	zbx_hashset_t		mgroups;
+	int			i;
+	zbx_uint64_pair_t	mg_local, *mg;
+	char			maintenanceid_s[MAX_ID_LEN + 1], groupid_s[MAX_ID_LEN + 1];
+	char			*del_row[2] = {maintenanceid_s, groupid_s};
+
+	if (NULL == (result = DBselect("select maintenanceid,groupid from maintenances_groups order by maintenanceid")))
+		return FAIL;
+
+	dbsync_prepare(sync, 2, NULL);
+
+	if (ZBX_DBSYNC_INIT == sync->mode)
+	{
+		sync->dbresult = result;
+		return SUCCEED;
+	}
+
+	zbx_hashset_create(&mgroups, 100, ZBX_DEFAULT_UINT64_PAIR_HASH_FUNC, ZBX_DEFAULT_UINT64_PAIR_COMPARE_FUNC);
+
+	/* index all maintenance->group links */
+	zbx_hashset_iter_reset(&dbsync_env.cache->maintenances, &iter);
+	while (NULL != (maintenance = (zbx_dc_maintenance_t *)zbx_hashset_iter_next(&iter)))
+	{
+		mg_local.first = maintenance->maintenanceid;
+
+		for (i = 0; i < maintenance->groupids.values_num; i++)
+		{
+			mg_local.second = maintenance->groupids.values[i];
+			zbx_hashset_insert(&mgroups, &mg_local, sizeof(mg_local));
+		}
+	}
+
+	/* add new rows, remove existing rows from index */
+	while (NULL != (dbrow = DBfetch(result)))
+	{
+		ZBX_STR2UINT64(mg_local.first, dbrow[0]);
+		ZBX_STR2UINT64(mg_local.second, dbrow[1]);
+
+		if (NULL == (mg = (zbx_uint64_pair_t *)zbx_hashset_search(&mgroups, &mg_local)))
+			dbsync_add_row(sync, 0, ZBX_DBSYNC_ROW_ADD, dbrow);
+		else
+			zbx_hashset_remove_direct(&mgroups, mg);
+	}
+
+	/* add removed rows */
+	zbx_hashset_iter_reset(&mgroups, &iter);
+	while (NULL != (mg = (zbx_uint64_pair_t *)zbx_hashset_iter_next(&iter)))
+	{
+		zbx_snprintf(maintenanceid_s, sizeof(maintenanceid_s), ZBX_FS_UI64, mg->first);
+		zbx_snprintf(groupid_s, sizeof(groupid_s), ZBX_FS_UI64, mg->second);
+		dbsync_add_row(sync, 0, ZBX_DBSYNC_ROW_REMOVE, del_row);
+	}
+
+	DBfree_result(result);
+	zbx_hashset_destroy(&mgroups);
+
+	return SUCCEED;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: zbx_dbsync_compare_maintenance_hosts                             *
+ *                                                                            *
+ * Purpose: compares maintenances_hosts table with cached configuration data  *
+ *                                                                            *
+ * Parameter: cache - [IN] the configuration cache                            *
+ *            sync  - [OUT] the changeset                                     *
+ *                                                                            *
+ * Return value: SUCCEED - the changeset was successfully calculated          *
+ *               FAIL    - otherwise                                          *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_dbsync_compare_maintenance_hosts(zbx_dbsync_t *sync)
+{
+	DB_ROW			dbrow;
+	DB_RESULT		result;
+	zbx_hashset_iter_t	iter;
+	zbx_dc_maintenance_t	*maintenance;
+	zbx_hashset_t		mhosts;
+	int			i;
+	zbx_uint64_pair_t	mh_local, *mh;
+	char			maintenanceid_s[MAX_ID_LEN + 1], hostid_s[MAX_ID_LEN + 1];
+	char			*del_row[2] = {maintenanceid_s, hostid_s};
+
+	if (NULL == (result = DBselect("select maintenanceid,hostid from maintenances_hosts order by maintenanceid")))
+		return FAIL;
+
+	dbsync_prepare(sync, 2, NULL);
+
+	if (ZBX_DBSYNC_INIT == sync->mode)
+	{
+		sync->dbresult = result;
+		return SUCCEED;
+	}
+
+	zbx_hashset_create(&mhosts, 100, ZBX_DEFAULT_UINT64_PAIR_HASH_FUNC, ZBX_DEFAULT_UINT64_PAIR_COMPARE_FUNC);
+
+	/* index all maintenance->host links */
+	zbx_hashset_iter_reset(&dbsync_env.cache->maintenances, &iter);
+	while (NULL != (maintenance = (zbx_dc_maintenance_t *)zbx_hashset_iter_next(&iter)))
+	{
+		mh_local.first = maintenance->maintenanceid;
+
+		for (i = 0; i < maintenance->hostids.values_num; i++)
+		{
+			mh_local.second = maintenance->hostids.values[i];
+			zbx_hashset_insert(&mhosts, &mh_local, sizeof(mh_local));
+		}
+	}
+
+	/* add new rows, remove existing rows from index */
+	while (NULL != (dbrow = DBfetch(result)))
+	{
+		ZBX_STR2UINT64(mh_local.first, dbrow[0]);
+		ZBX_STR2UINT64(mh_local.second, dbrow[1]);
+
+		if (NULL == (mh = (zbx_uint64_pair_t *)zbx_hashset_search(&mhosts, &mh_local)))
+			dbsync_add_row(sync, 0, ZBX_DBSYNC_ROW_ADD, dbrow);
+		else
+			zbx_hashset_remove_direct(&mhosts, mh);
+	}
+
+	/* add removed rows */
+	zbx_hashset_iter_reset(&mhosts, &iter);
+	while (NULL != (mh = (zbx_uint64_pair_t *)zbx_hashset_iter_next(&iter)))
+	{
+		zbx_snprintf(maintenanceid_s, sizeof(maintenanceid_s), ZBX_FS_UI64, mh->first);
+		zbx_snprintf(hostid_s, sizeof(hostid_s), ZBX_FS_UI64, mh->second);
+		dbsync_add_row(sync, 0, ZBX_DBSYNC_ROW_REMOVE, del_row);
+	}
+
+	DBfree_result(result);
+	zbx_hashset_destroy(&mhosts);
+
+	return SUCCEED;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: zbx_dbsync_compare_host_group_hosts                              *
+ *                                                                            *
+ * Purpose: compares hosts_groups table with cached configuration data        *
+ *                                                                            *
+ * Parameter: cache - [IN] the configuration cache                            *
+ *            sync  - [OUT] the changeset                                     *
+ *                                                                            *
+ * Return value: SUCCEED - the changeset was successfully calculated          *
+ *               FAIL    - otherwise                                          *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_dbsync_compare_host_group_hosts(zbx_dbsync_t *sync)
+{
+	DB_ROW			dbrow;
+	DB_RESULT		result;
+	zbx_hashset_iter_t	iter, iter_hosts;
+	zbx_dc_hostgroup_t	*group;
+	zbx_hashset_t		groups;
+	zbx_uint64_t		*phostid;
+	zbx_uint64_pair_t	gh_local, *gh;
+	char			groupid_s[MAX_ID_LEN + 1], hostid_s[MAX_ID_LEN + 1];
+	char			*del_row[2] = {groupid_s, hostid_s};
+
+	if (NULL == (result = DBselect(
+			"select hg.groupid,hg.hostid"
+			" from hosts_groups hg,hosts h"
+			" where hg.hostid=h.hostid"
+			" and h.status in (%d,%d)"
+			" and h.flags<>%d",
+			HOST_STATUS_MONITORED, HOST_STATUS_NOT_MONITORED, ZBX_FLAG_DISCOVERY_PROTOTYPE)))
+	{
+		return FAIL;
+	}
+
+	dbsync_prepare(sync, 2, NULL);
+
+	if (ZBX_DBSYNC_INIT == sync->mode)
+	{
+		sync->dbresult = result;
+		return SUCCEED;
+	}
+
+	zbx_hashset_create(&groups, 100, ZBX_DEFAULT_UINT64_PAIR_HASH_FUNC, ZBX_DEFAULT_UINT64_PAIR_COMPARE_FUNC);
+
+	/* index all group->host links */
+	zbx_hashset_iter_reset(&dbsync_env.cache->hostgroups, &iter);
+	while (NULL != (group = (zbx_dc_hostgroup_t *)zbx_hashset_iter_next(&iter)))
+	{
+		gh_local.first = group->groupid;
+
+		zbx_hashset_iter_reset(&group->hostids, &iter_hosts);
+		while (NULL != (phostid = (zbx_uint64_t *)zbx_hashset_iter_next(&iter_hosts)))
+		{
+			gh_local.second = *phostid;
+			zbx_hashset_insert(&groups, &gh_local, sizeof(gh_local));
+		}
+	}
+
+	/* add new rows, remove existing rows from index */
+	while (NULL != (dbrow = DBfetch(result)))
+	{
+		ZBX_STR2UINT64(gh_local.first, dbrow[0]);
+		ZBX_STR2UINT64(gh_local.second, dbrow[1]);
+
+		if (NULL == (gh = (zbx_uint64_pair_t *)zbx_hashset_search(&groups, &gh_local)))
+			dbsync_add_row(sync, 0, ZBX_DBSYNC_ROW_ADD, dbrow);
+		else
+			zbx_hashset_remove_direct(&groups, gh);
+	}
+
+	/* add removed rows */
+	zbx_hashset_iter_reset(&groups, &iter);
+	while (NULL != (gh = (zbx_uint64_pair_t *)zbx_hashset_iter_next(&iter)))
+	{
+		zbx_snprintf(groupid_s, sizeof(groupid_s), ZBX_FS_UI64, gh->first);
+		zbx_snprintf(hostid_s, sizeof(hostid_s), ZBX_FS_UI64, gh->second);
+		dbsync_add_row(sync, 0, ZBX_DBSYNC_ROW_REMOVE, del_row);
+	}
+
+	DBfree_result(result);
+	zbx_hashset_destroy(&groups);
 
 	return SUCCEED;
 }

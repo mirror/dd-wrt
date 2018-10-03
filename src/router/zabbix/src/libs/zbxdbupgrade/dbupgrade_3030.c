@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -1724,7 +1724,7 @@ static int	DBpatch_trailing_semicolon_remove(const char *table, const char *reci
 			continue;
 
 		zbx_snprintf_alloc(&sql, &sql_alloc, &sql_offset, "update %s set %s='%.*s' where %s=%s;\n",
-				table, field, semicolon - row[1], row[1], recid, row[0]);
+				table, field, (int)(semicolon - row[1]), row[1], recid, row[0]);
 
 		if (SUCCEED != DBexecute_overflowed_sql(&sql, &sql_alloc, &sql_offset))
 			goto out;

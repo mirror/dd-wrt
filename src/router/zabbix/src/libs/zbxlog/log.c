@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -25,17 +25,18 @@
 #ifdef _WINDOWS
 #	include "messages.h"
 #	include "service.h"
+#	include "sysinfo.h"
 static HANDLE		system_log_handle = INVALID_HANDLE_VALUE;
 #endif
 
 static char		log_filename[MAX_STRING_LEN];
 static int		log_type = LOG_TYPE_UNDEFINED;
-static ZBX_MUTEX	log_access = ZBX_MUTEX_NULL;
+static zbx_mutex_t	log_access = ZBX_MUTEX_NULL;
 static int		log_level = LOG_LEVEL_WARNING;
 
 #ifdef _WINDOWS
-#	define LOCK_LOG		zbx_mutex_lock(&log_access)
-#	define UNLOCK_LOG	zbx_mutex_unlock(&log_access)
+#	define LOCK_LOG		zbx_mutex_lock(log_access)
+#	define UNLOCK_LOG	zbx_mutex_unlock(log_access)
 #else
 #	define LOCK_LOG		lock_log()
 #	define UNLOCK_LOG	unlock_log()
@@ -242,15 +243,31 @@ static void	lock_log(void)
 	if (0 > sigprocmask(SIG_BLOCK, &mask, &orig_mask))
 		zbx_error("cannot set sigprocmask to block the user signal");
 
-	zbx_mutex_lock(&log_access);
+	zbx_mutex_lock(log_access);
 }
 
 static void	unlock_log(void)
 {
-	zbx_mutex_unlock(&log_access);
+	zbx_mutex_unlock(log_access);
 
 	if (0 > sigprocmask(SIG_SETMASK, &orig_mask, NULL))
 		zbx_error("cannot restore sigprocmask");
+}
+#else
+static void	lock_log(void)
+{
+#ifdef ZABBIX_AGENT
+	if (0 == (ZBX_MUTEX_LOGGING_DENIED & get_thread_global_mutex_flag()))
+#endif
+		LOCK_LOG;
+}
+
+static void	unlock_log(void)
+{
+#ifdef ZABBIX_AGENT
+	if (0 == (ZBX_MUTEX_LOGGING_DENIED & get_thread_global_mutex_flag()))
+#endif
+		UNLOCK_LOG;
 }
 #endif
 
@@ -341,48 +358,6 @@ void	zabbix_close_log(void)
 	{
 		zbx_mutex_destroy(&log_access);
 	}
-}
-
-void	zabbix_errlog(zbx_err_codes_t err, ...)
-{
-	const char	*msg;
-	char		*s = NULL;
-	va_list		ap;
-
-	switch (err)
-	{
-		case ERR_Z3001:
-			msg = "connection to database '%s' failed: [%d] %s";
-			break;
-		case ERR_Z3002:
-			msg = "cannot create database '%s': [%d] %s";
-			break;
-		case ERR_Z3003:
-			msg = "no connection to the database";
-			break;
-		case ERR_Z3004:
-			msg = "cannot close database: [%d] %s";
-			break;
-		case ERR_Z3005:
-			msg = "query failed: [%d] %s [%s]";
-			break;
-		case ERR_Z3006:
-			msg = "fetch failed: [%d] %s";
-			break;
-		case ERR_Z3007:
-			msg = "query failed: [%d] %s";
-			break;
-		default:
-			msg = "unknown error";
-	}
-
-	va_start(ap, err);
-	s = zbx_dvsprintf(s, msg, ap);
-	va_end(ap);
-
-	zabbix_log(LOG_LEVEL_ERR, "[Z%04d] %s", err, s);
-
-	zbx_free(s);
 }
 
 /******************************************************************************
@@ -595,9 +570,9 @@ void	__zbx_zabbix_log(int level, const char *fmt, ...)
 int	zbx_get_log_type(const char *logtype)
 {
 	const char	*logtypes[] = {ZBX_OPTION_LOGTYPE_SYSTEM, ZBX_OPTION_LOGTYPE_FILE, ZBX_OPTION_LOGTYPE_CONSOLE};
-	size_t		i;
+	int		i;
 
-	for (i = 0; i < ARRSIZE(logtypes); i++)
+	for (i = 0; i < (int)ARRSIZE(logtypes); i++)
 	{
 		if (0 == strcmp(logtype, logtypes[i]))
 			return i + 1;

@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@
 #include "ipmi_protocol.h"
 #include "checks_ipmi.h"
 #include "zbxserver.h"
+#include "ipmi.h"
 
 /******************************************************************************
  *                                                                            *
@@ -93,7 +94,7 @@ int	zbx_ipmi_execute_command(const DC_HOST *host, const char *command, char *err
 	DC_INTERFACE		interface;
 	zbx_timespec_t		ts;
 
-	zabbix_log(LOG_LEVEL_DEBUG, "In %s() host:\"%s\" command:%d", __function_name, host->host, command);
+	zabbix_log(LOG_LEVEL_DEBUG, "In %s() host:\"%s\" command:%s", __function_name, host->host, command);
 
 	if (SUCCEED != zbx_parse_ipmi_command(command, sensor, &op, error, max_error_len))
 		goto out;
