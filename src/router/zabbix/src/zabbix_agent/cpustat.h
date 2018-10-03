@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -28,8 +28,8 @@
 
 typedef struct
 {
-	PERF_COUNTER_DATA	**cpu_counter;
-	PERF_COUNTER_DATA	*queue_counter;
+	zbx_perf_counter_data_t	**cpu_counter;
+	zbx_perf_counter_data_t	*queue_counter;
 	int			count;
 }
 ZBX_CPUS_STAT_DATA;

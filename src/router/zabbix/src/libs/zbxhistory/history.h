@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ typedef void (*zbx_history_destroy_func_t)(struct zbx_history_iface *hist);
 typedef int (*zbx_history_add_values_func_t)(struct zbx_history_iface *hist, const zbx_vector_ptr_t *history);
 typedef int (*zbx_history_get_values_func_t)(struct zbx_history_iface *hist, zbx_uint64_t itemid, int start,
 		int count, int end, zbx_vector_history_record_t *values);
-typedef void (*zbx_history_flush_func_t)(struct zbx_history_iface *hist);
+typedef int (*zbx_history_flush_func_t)(struct zbx_history_iface *hist);
 
 struct zbx_history_iface
 {

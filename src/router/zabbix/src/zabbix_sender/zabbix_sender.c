@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -239,12 +239,12 @@ static char	*INPUT_FILE = NULL;
 static int	WITH_TIMESTAMPS = 0;
 static int	REAL_TIME = 0;
 
-static char	*CONFIG_SOURCE_IP = NULL;
-static char	*ZABBIX_SERVER = NULL;
-unsigned short	ZABBIX_SERVER_PORT = 0;
-static char	*ZABBIX_HOSTNAME = NULL;
-static char	*ZABBIX_KEY = NULL;
-static char	*ZABBIX_KEY_VALUE = NULL;
+static char		*CONFIG_SOURCE_IP = NULL;
+static char		*ZABBIX_SERVER = NULL;
+static unsigned short	ZABBIX_SERVER_PORT = 0;
+static char		*ZABBIX_HOSTNAME = NULL;
+static char		*ZABBIX_KEY = NULL;
+static char		*ZABBIX_KEY_VALUE = NULL;
 
 #if !defined(_WINDOWS)
 static void	send_signal_handler(int sig)
@@ -982,7 +982,7 @@ static char	*zbx_fgets_alloc(char **buffer, size_t *buffer_alloc, FILE *fp)
 		if (*buffer_alloc - buffer_offset < len + 1)
 		{
 			*buffer_alloc = (buffer_offset + len + 1) * 3 / 2;
-			*buffer = zbx_realloc(*buffer, *buffer_alloc);
+			*buffer = (char *)zbx_realloc(*buffer, *buffer_alloc);
 		}
 
 		memcpy(*buffer + buffer_offset, tmp, len);
@@ -1104,7 +1104,7 @@ int	main(int argc, char **argv)
 		}
 
 		sendval_args.sync_timestamp = WITH_TIMESTAMPS;
-		in_line = zbx_malloc(NULL, in_line_alloc);
+		in_line = (char *)zbx_malloc(NULL, in_line_alloc);
 
 		ret = SUCCEED;
 
@@ -1167,7 +1167,7 @@ int	main(int argc, char **argv)
 			if (key_value_alloc != in_line_alloc)
 			{
 				key_value_alloc = in_line_alloc;
-				key_value = zbx_realloc(key_value, key_value_alloc);
+				key_value = (char *)zbx_realloc(key_value, key_value_alloc);
 			}
 
 			if ('\0' != *p && '"' != *p)

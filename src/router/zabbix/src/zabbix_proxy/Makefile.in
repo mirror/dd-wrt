@@ -14,6 +14,7 @@
 
 @SET_MAKE@
 
+
 VPATH = @srcdir@
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
@@ -89,6 +90,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 sbin_PROGRAMS = zabbix_proxy$(EXEEXT)
+@HAVE_IPMI_TRUE@am__append_1 = $(top_srcdir)/src/zabbix_server/ipmi/libipmi.a
 subdir = src/zabbix_proxy
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_lib_ibm_db2.m4 \
@@ -102,7 +104,8 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ax_lib_ibm_db2.m4 \
 	$(top_srcdir)/m4/libopenssl.m4 $(top_srcdir)/m4/libssh2.m4 \
 	$(top_srcdir)/m4/libunixodbc.m4 $(top_srcdir)/m4/libxml2.m4 \
 	$(top_srcdir)/m4/netsnmp.m4 $(top_srcdir)/m4/openipmi.m4 \
-	$(top_srcdir)/m4/pcre.m4 $(top_srcdir)/m4/resolv.m4 \
+	$(top_srcdir)/m4/pcre.m4 $(top_srcdir)/m4/pthread.m4 \
+	$(top_srcdir)/m4/resolv.m4 $(top_srcdir)/m4/zlib.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -111,12 +114,22 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/include/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
+LIBRARIES = $(noinst_LIBRARIES)
+AR = ar
+ARFLAGS = cru
+AM_V_AR = $(am__v_AR_@AM_V@)
+am__v_AR_ = $(am__v_AR_@AM_DEFAULT_V@)
+am__v_AR_0 = @echo "  AR      " $@;
+am__v_AR_1 = 
+libzbxproxy_a_AR = $(AR) $(ARFLAGS)
+libzbxproxy_a_LIBADD =
+am_libzbxproxy_a_OBJECTS = libzbxproxy_a-servercomms.$(OBJEXT) \
+	libzbxproxy_a-events.$(OBJEXT) \
+	libzbxproxy_a-preprocessing.$(OBJEXT)
+libzbxproxy_a_OBJECTS = $(am_libzbxproxy_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(sbindir)"
 PROGRAMS = $(sbin_PROGRAMS)
-am_zabbix_proxy_OBJECTS = zabbix_proxy-servercomms.$(OBJEXT) \
-	zabbix_proxy-events.$(OBJEXT) \
-	zabbix_proxy-preprocessing.$(OBJEXT) \
-	zabbix_proxy-proxy.$(OBJEXT)
+am_zabbix_proxy_OBJECTS = zabbix_proxy-proxy.$(OBJEXT)
 zabbix_proxy_OBJECTS = $(am_zabbix_proxy_OBJECTS)
 zabbix_proxy_DEPENDENCIES = heart/libzbxheart.a \
 	$(top_srcdir)/src/zabbix_server/dbsyncer/libzbxdbsyncer.a \
@@ -128,7 +141,7 @@ zabbix_proxy_DEPENDENCIES = heart/libzbxheart.a \
 	$(top_srcdir)/src/zabbix_server/poller/libzbxpoller.a \
 	$(top_srcdir)/src/zabbix_server/trapper/libzbxtrapper.a \
 	$(top_srcdir)/src/zabbix_server/snmptrapper/libzbxsnmptrapper.a \
-	$(top_srcdir)/src/zabbix_server/ipmi/libipmi.a \
+	$(top_srcdir)/src/zabbix_server/odbc/libzbxodbc.a \
 	datasender/libzbxdatasender.a taskmanager/libzbxtaskmanager.a \
 	$(top_srcdir)/src/zabbix_server/selfmon/libzbxselfmon.a \
 	$(top_srcdir)/src/zabbix_server/vmware/libzbxvmware.a \
@@ -145,7 +158,6 @@ zabbix_proxy_DEPENDENCIES = heart/libzbxheart.a \
 	$(top_srcdir)/src/libs/zbxregexp/libzbxregexp.a \
 	$(top_srcdir)/src/libs/zbxself/libzbxself.a \
 	$(top_srcdir)/src/libs/zbxnix/libzbxnix.a $(LIBIPCSERVICE) \
-	$(top_srcdir)/src/libs/zbxalgo/libzbxalgo.a \
 	$(top_srcdir)/src/libs/zbxsys/libzbxsys.a \
 	$(top_srcdir)/src/libs/zbxconf/libzbxconf.a \
 	$(top_srcdir)/src/libs/zbxcommon/libzbxcommon.a \
@@ -160,7 +172,10 @@ zabbix_proxy_DEPENDENCIES = heart/libzbxheart.a \
 	$(top_srcdir)/src/libs/zbxdbhigh/libzbxdbhigh.a \
 	$(top_srcdir)/src/libs/zbxdb/libzbxdb.a \
 	$(top_srcdir)/src/libs/zbxmodules/libzbxmodules.a \
-	$(top_srcdir)/src/libs/zbxtasks/libzbxtasks.a
+	$(top_srcdir)/src/libs/zbxtasks/libzbxtasks.a \
+	$(top_srcdir)/src/libs/zbxcompress/libzbxcompress.a \
+	libzbxproxy.a $(top_srcdir)/src/libs/zbxalgo/libzbxalgo.a \
+	$(am__append_1)
 zabbix_proxy_LINK = $(CCLD) $(zabbix_proxy_CFLAGS) $(CFLAGS) \
 	$(zabbix_proxy_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
@@ -195,8 +210,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(zabbix_proxy_SOURCES)
-DIST_SOURCES = $(zabbix_proxy_SOURCES)
+SOURCES = $(libzbxproxy_a_SOURCES) $(zabbix_proxy_SOURCES)
+DIST_SOURCES = $(libzbxproxy_a_SOURCES) $(zabbix_proxy_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -266,8 +281,10 @@ am__relativize = \
   done; \
   reldir="$$dir2"
 ACLOCAL = @ACLOCAL@
+AGENT_CONFIG_FILE = @AGENT_CONFIG_FILE@
 AGENT_LDFLAGS = @AGENT_LDFLAGS@
 AGENT_LIBS = @AGENT_LIBS@
+ALERT_SCRIPTS_PATH = @ALERT_SCRIPTS_PATH@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 ARCH = @ARCH@
@@ -280,6 +297,8 @@ CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
+CURL_SSL_CERT_LOCATION = @CURL_SSL_CERT_LOCATION@
+CURL_SSL_KEY_LOCATION = @CURL_SSL_KEY_LOCATION@
 CYGPATH_W = @CYGPATH_W@
 DB_CFLAGS = @DB_CFLAGS@
 DB_LDFLAGS = @DB_LDFLAGS@
@@ -291,6 +310,7 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+EXTERNAL_SCRIPTS_PATH = @EXTERNAL_SCRIPTS_PATH@
 GNUTLS_CFLAGS = @GNUTLS_CFLAGS@
 GNUTLS_LDFLAGS = @GNUTLS_LDFLAGS@
 GNUTLS_LIBS = @GNUTLS_LIBS@
@@ -323,12 +343,16 @@ LIBOBJS = @LIBOBJS@
 LIBPCRE_CFLAGS = @LIBPCRE_CFLAGS@
 LIBPCRE_LDFLAGS = @LIBPCRE_LDFLAGS@
 LIBPCRE_LIBS = @LIBPCRE_LIBS@
+LIBPTHREAD_CFLAGS = @LIBPTHREAD_CFLAGS@
+LIBPTHREAD_LDFLAGS = @LIBPTHREAD_LDFLAGS@
+LIBPTHREAD_LIBS = @LIBPTHREAD_LIBS@
 LIBS = @LIBS@
 LIBXML2_CFLAGS = @LIBXML2_CFLAGS@
 LIBXML2_CONFIG = @LIBXML2_CONFIG@
 LIBXML2_LDFLAGS = @LIBXML2_LDFLAGS@
 LIBXML2_LIBS = @LIBXML2_LIBS@
 LIBXML2_VERSION = @LIBXML2_VERSION@
+LOAD_MODULE_PATH = @LOAD_MODULE_PATH@
 LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
 MBEDTLS_CFLAGS = @MBEDTLS_CFLAGS@
@@ -368,12 +392,14 @@ POSTGRESQL_CFLAGS = @POSTGRESQL_CFLAGS@
 POSTGRESQL_LDFLAGS = @POSTGRESQL_LDFLAGS@
 POSTGRESQL_LIBS = @POSTGRESQL_LIBS@
 POSTGRESQL_VERSION = @POSTGRESQL_VERSION@
+PROXY_CONFIG_FILE = @PROXY_CONFIG_FILE@
 PROXY_LDFLAGS = @PROXY_LDFLAGS@
 PROXY_LIBS = @PROXY_LIBS@
 RANLIB = @RANLIB@
 RESOLV_LIBS = @RESOLV_LIBS@
 SENDER_LDFLAGS = @SENDER_LDFLAGS@
 SENDER_LIBS = @SENDER_LIBS@
+SERVER_CONFIG_FILE = @SERVER_CONFIG_FILE@
 SERVER_LDFLAGS = @SERVER_LDFLAGS@
 SERVER_LIBS = @SERVER_LIBS@
 SET_MAKE = @SET_MAKE@
@@ -396,6 +422,9 @@ UNIXODBC_LIBS = @UNIXODBC_LIBS@
 VERSION = @VERSION@
 ZBXGET_LDFLAGS = @ZBXGET_LDFLAGS@
 ZBXGET_LIBS = @ZBXGET_LIBS@
+ZLIB_CFLAGS = @ZLIB_CFLAGS@
+ZLIB_LDFLAGS = @ZLIB_LDFLAGS@
+ZLIB_LIBS = @ZLIB_LIBS@
 _libcurl_config = @_libcurl_config@
 _libnetsnmp_config = @_libnetsnmp_config@
 abs_builddir = @abs_builddir@
@@ -456,12 +485,16 @@ SUBDIRS = \
 	datasender \
 	taskmanager
 
-zabbix_proxy_SOURCES = \
+noinst_LIBRARIES = libzbxproxy.a
+libzbxproxy_a_SOURCES = \
 	servercomms.c servercomms.h \
 	events.c \
-	preprocessing.c \
-	proxy.c
+	preprocessing.c
 
+libzbxproxy_a_CFLAGS = \
+	-DZABBIX_DAEMON
+
+zabbix_proxy_SOURCES = proxy.c
 @PROXY_IPCSERVICE_TRUE@LIBIPCSERVICE = $(top_srcdir)/src/libs/zbxipcservice/libzbxipcservice.a
 zabbix_proxy_LDADD = heart/libzbxheart.a \
 	$(top_srcdir)/src/zabbix_server/dbsyncer/libzbxdbsyncer.a \
@@ -473,7 +506,7 @@ zabbix_proxy_LDADD = heart/libzbxheart.a \
 	$(top_srcdir)/src/zabbix_server/poller/libzbxpoller.a \
 	$(top_srcdir)/src/zabbix_server/trapper/libzbxtrapper.a \
 	$(top_srcdir)/src/zabbix_server/snmptrapper/libzbxsnmptrapper.a \
-	$(top_srcdir)/src/zabbix_server/ipmi/libipmi.a \
+	$(top_srcdir)/src/zabbix_server/odbc/libzbxodbc.a \
 	datasender/libzbxdatasender.a taskmanager/libzbxtaskmanager.a \
 	$(top_srcdir)/src/zabbix_server/selfmon/libzbxselfmon.a \
 	$(top_srcdir)/src/zabbix_server/vmware/libzbxvmware.a \
@@ -490,7 +523,6 @@ zabbix_proxy_LDADD = heart/libzbxheart.a \
 	$(top_srcdir)/src/libs/zbxregexp/libzbxregexp.a \
 	$(top_srcdir)/src/libs/zbxself/libzbxself.a \
 	$(top_srcdir)/src/libs/zbxnix/libzbxnix.a ${LIBIPCSERVICE} \
-	$(top_srcdir)/src/libs/zbxalgo/libzbxalgo.a \
 	$(top_srcdir)/src/libs/zbxsys/libzbxsys.a \
 	$(top_srcdir)/src/libs/zbxconf/libzbxconf.a \
 	$(top_srcdir)/src/libs/zbxcommon/libzbxcommon.a \
@@ -505,18 +537,18 @@ zabbix_proxy_LDADD = heart/libzbxheart.a \
 	$(top_srcdir)/src/libs/zbxdbhigh/libzbxdbhigh.a \
 	$(top_srcdir)/src/libs/zbxdb/libzbxdb.a \
 	$(top_srcdir)/src/libs/zbxmodules/libzbxmodules.a \
-	$(top_srcdir)/src/libs/zbxtasks/libzbxtasks.a @PROXY_LIBS@
+	$(top_srcdir)/src/libs/zbxtasks/libzbxtasks.a \
+	$(top_srcdir)/src/libs/zbxcompress/libzbxcompress.a \
+	libzbxproxy.a $(top_srcdir)/src/libs/zbxalgo/libzbxalgo.a \
+	$(am__append_1) @PROXY_LIBS@
 zabbix_proxy_LDFLAGS = @PROXY_LDFLAGS@
 zabbix_proxy_CFLAGS = \
-	-DZABBIX_DAEMON \
-	-DSYSCONFDIR="\"@sysconfdir@\"" \
-	-DDATADIR="\"@datadir@\"" \
-	-DLIBDIR="\"@libdir@\""
+	-DDEFAULT_SSL_CERT_LOCATION="\"@CURL_SSL_CERT_LOCATION@\"" \
+	-DDEFAULT_SSL_KEY_LOCATION="\"@CURL_SSL_KEY_LOCATION@\"" \
+	-DDEFAULT_CONFIG_FILE="\"@PROXY_CONFIG_FILE@\"" \
+	-DDEFAULT_EXTERNAL_SCRIPTS_PATH="\"@EXTERNAL_SCRIPTS_PATH@\"" \
+	-DDEFAULT_LOAD_MODULE_PATH="\"@LOAD_MODULE_PATH@\""
 
-PROXY_CONFIG = zabbix_proxy.conf
-INCLUDE_DIR = $(DESTDIR)@sysconfdir@/$(PROXY_CONFIG).d
-EXSCRIPTS_DIR = $(DESTDIR)@datadir@/zabbix/externalscripts
-MODULES_DIR = $(DESTDIR)@libdir@
 all: all-recursive
 
 .SUFFIXES:
@@ -550,6 +582,14 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
+
+clean-noinstLIBRARIES:
+	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
+
+libzbxproxy.a: $(libzbxproxy_a_OBJECTS) $(libzbxproxy_a_DEPENDENCIES) $(EXTRA_libzbxproxy_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f libzbxproxy.a
+	$(AM_V_AR)$(libzbxproxy_a_AR) libzbxproxy.a $(libzbxproxy_a_OBJECTS) $(libzbxproxy_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libzbxproxy.a
 install-sbinPROGRAMS: $(sbin_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	@list='$(sbin_PROGRAMS)'; test -n "$(sbindir)" || list=; \
@@ -603,10 +643,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zabbix_proxy-events.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zabbix_proxy-preprocessing.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxproxy_a-events.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxproxy_a-preprocessing.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxproxy_a-servercomms.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zabbix_proxy-proxy.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zabbix_proxy-servercomms.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -624,47 +664,47 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-zabbix_proxy-servercomms.o: servercomms.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_proxy_CFLAGS) $(CFLAGS) -MT zabbix_proxy-servercomms.o -MD -MP -MF $(DEPDIR)/zabbix_proxy-servercomms.Tpo -c -o zabbix_proxy-servercomms.o `test -f 'servercomms.c' || echo '$(srcdir)/'`servercomms.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/zabbix_proxy-servercomms.Tpo $(DEPDIR)/zabbix_proxy-servercomms.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='servercomms.c' object='zabbix_proxy-servercomms.o' libtool=no @AMDEPBACKSLASH@
+libzbxproxy_a-servercomms.o: servercomms.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxproxy_a_CFLAGS) $(CFLAGS) -MT libzbxproxy_a-servercomms.o -MD -MP -MF $(DEPDIR)/libzbxproxy_a-servercomms.Tpo -c -o libzbxproxy_a-servercomms.o `test -f 'servercomms.c' || echo '$(srcdir)/'`servercomms.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxproxy_a-servercomms.Tpo $(DEPDIR)/libzbxproxy_a-servercomms.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='servercomms.c' object='libzbxproxy_a-servercomms.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_proxy_CFLAGS) $(CFLAGS) -c -o zabbix_proxy-servercomms.o `test -f 'servercomms.c' || echo '$(srcdir)/'`servercomms.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxproxy_a_CFLAGS) $(CFLAGS) -c -o libzbxproxy_a-servercomms.o `test -f 'servercomms.c' || echo '$(srcdir)/'`servercomms.c
 
-zabbix_proxy-servercomms.obj: servercomms.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_proxy_CFLAGS) $(CFLAGS) -MT zabbix_proxy-servercomms.obj -MD -MP -MF $(DEPDIR)/zabbix_proxy-servercomms.Tpo -c -o zabbix_proxy-servercomms.obj `if test -f 'servercomms.c'; then $(CYGPATH_W) 'servercomms.c'; else $(CYGPATH_W) '$(srcdir)/servercomms.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/zabbix_proxy-servercomms.Tpo $(DEPDIR)/zabbix_proxy-servercomms.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='servercomms.c' object='zabbix_proxy-servercomms.obj' libtool=no @AMDEPBACKSLASH@
+libzbxproxy_a-servercomms.obj: servercomms.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxproxy_a_CFLAGS) $(CFLAGS) -MT libzbxproxy_a-servercomms.obj -MD -MP -MF $(DEPDIR)/libzbxproxy_a-servercomms.Tpo -c -o libzbxproxy_a-servercomms.obj `if test -f 'servercomms.c'; then $(CYGPATH_W) 'servercomms.c'; else $(CYGPATH_W) '$(srcdir)/servercomms.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxproxy_a-servercomms.Tpo $(DEPDIR)/libzbxproxy_a-servercomms.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='servercomms.c' object='libzbxproxy_a-servercomms.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_proxy_CFLAGS) $(CFLAGS) -c -o zabbix_proxy-servercomms.obj `if test -f 'servercomms.c'; then $(CYGPATH_W) 'servercomms.c'; else $(CYGPATH_W) '$(srcdir)/servercomms.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxproxy_a_CFLAGS) $(CFLAGS) -c -o libzbxproxy_a-servercomms.obj `if test -f 'servercomms.c'; then $(CYGPATH_W) 'servercomms.c'; else $(CYGPATH_W) '$(srcdir)/servercomms.c'; fi`
 
-zabbix_proxy-events.o: events.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_proxy_CFLAGS) $(CFLAGS) -MT zabbix_proxy-events.o -MD -MP -MF $(DEPDIR)/zabbix_proxy-events.Tpo -c -o zabbix_proxy-events.o `test -f 'events.c' || echo '$(srcdir)/'`events.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/zabbix_proxy-events.Tpo $(DEPDIR)/zabbix_proxy-events.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='events.c' object='zabbix_proxy-events.o' libtool=no @AMDEPBACKSLASH@
+libzbxproxy_a-events.o: events.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxproxy_a_CFLAGS) $(CFLAGS) -MT libzbxproxy_a-events.o -MD -MP -MF $(DEPDIR)/libzbxproxy_a-events.Tpo -c -o libzbxproxy_a-events.o `test -f 'events.c' || echo '$(srcdir)/'`events.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxproxy_a-events.Tpo $(DEPDIR)/libzbxproxy_a-events.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='events.c' object='libzbxproxy_a-events.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_proxy_CFLAGS) $(CFLAGS) -c -o zabbix_proxy-events.o `test -f 'events.c' || echo '$(srcdir)/'`events.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxproxy_a_CFLAGS) $(CFLAGS) -c -o libzbxproxy_a-events.o `test -f 'events.c' || echo '$(srcdir)/'`events.c
 
-zabbix_proxy-events.obj: events.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_proxy_CFLAGS) $(CFLAGS) -MT zabbix_proxy-events.obj -MD -MP -MF $(DEPDIR)/zabbix_proxy-events.Tpo -c -o zabbix_proxy-events.obj `if test -f 'events.c'; then $(CYGPATH_W) 'events.c'; else $(CYGPATH_W) '$(srcdir)/events.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/zabbix_proxy-events.Tpo $(DEPDIR)/zabbix_proxy-events.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='events.c' object='zabbix_proxy-events.obj' libtool=no @AMDEPBACKSLASH@
+libzbxproxy_a-events.obj: events.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxproxy_a_CFLAGS) $(CFLAGS) -MT libzbxproxy_a-events.obj -MD -MP -MF $(DEPDIR)/libzbxproxy_a-events.Tpo -c -o libzbxproxy_a-events.obj `if test -f 'events.c'; then $(CYGPATH_W) 'events.c'; else $(CYGPATH_W) '$(srcdir)/events.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxproxy_a-events.Tpo $(DEPDIR)/libzbxproxy_a-events.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='events.c' object='libzbxproxy_a-events.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_proxy_CFLAGS) $(CFLAGS) -c -o zabbix_proxy-events.obj `if test -f 'events.c'; then $(CYGPATH_W) 'events.c'; else $(CYGPATH_W) '$(srcdir)/events.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxproxy_a_CFLAGS) $(CFLAGS) -c -o libzbxproxy_a-events.obj `if test -f 'events.c'; then $(CYGPATH_W) 'events.c'; else $(CYGPATH_W) '$(srcdir)/events.c'; fi`
 
-zabbix_proxy-preprocessing.o: preprocessing.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_proxy_CFLAGS) $(CFLAGS) -MT zabbix_proxy-preprocessing.o -MD -MP -MF $(DEPDIR)/zabbix_proxy-preprocessing.Tpo -c -o zabbix_proxy-preprocessing.o `test -f 'preprocessing.c' || echo '$(srcdir)/'`preprocessing.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/zabbix_proxy-preprocessing.Tpo $(DEPDIR)/zabbix_proxy-preprocessing.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='preprocessing.c' object='zabbix_proxy-preprocessing.o' libtool=no @AMDEPBACKSLASH@
+libzbxproxy_a-preprocessing.o: preprocessing.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxproxy_a_CFLAGS) $(CFLAGS) -MT libzbxproxy_a-preprocessing.o -MD -MP -MF $(DEPDIR)/libzbxproxy_a-preprocessing.Tpo -c -o libzbxproxy_a-preprocessing.o `test -f 'preprocessing.c' || echo '$(srcdir)/'`preprocessing.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxproxy_a-preprocessing.Tpo $(DEPDIR)/libzbxproxy_a-preprocessing.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='preprocessing.c' object='libzbxproxy_a-preprocessing.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_proxy_CFLAGS) $(CFLAGS) -c -o zabbix_proxy-preprocessing.o `test -f 'preprocessing.c' || echo '$(srcdir)/'`preprocessing.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxproxy_a_CFLAGS) $(CFLAGS) -c -o libzbxproxy_a-preprocessing.o `test -f 'preprocessing.c' || echo '$(srcdir)/'`preprocessing.c
 
-zabbix_proxy-preprocessing.obj: preprocessing.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_proxy_CFLAGS) $(CFLAGS) -MT zabbix_proxy-preprocessing.obj -MD -MP -MF $(DEPDIR)/zabbix_proxy-preprocessing.Tpo -c -o zabbix_proxy-preprocessing.obj `if test -f 'preprocessing.c'; then $(CYGPATH_W) 'preprocessing.c'; else $(CYGPATH_W) '$(srcdir)/preprocessing.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/zabbix_proxy-preprocessing.Tpo $(DEPDIR)/zabbix_proxy-preprocessing.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='preprocessing.c' object='zabbix_proxy-preprocessing.obj' libtool=no @AMDEPBACKSLASH@
+libzbxproxy_a-preprocessing.obj: preprocessing.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxproxy_a_CFLAGS) $(CFLAGS) -MT libzbxproxy_a-preprocessing.obj -MD -MP -MF $(DEPDIR)/libzbxproxy_a-preprocessing.Tpo -c -o libzbxproxy_a-preprocessing.obj `if test -f 'preprocessing.c'; then $(CYGPATH_W) 'preprocessing.c'; else $(CYGPATH_W) '$(srcdir)/preprocessing.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxproxy_a-preprocessing.Tpo $(DEPDIR)/libzbxproxy_a-preprocessing.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='preprocessing.c' object='libzbxproxy_a-preprocessing.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_proxy_CFLAGS) $(CFLAGS) -c -o zabbix_proxy-preprocessing.obj `if test -f 'preprocessing.c'; then $(CYGPATH_W) 'preprocessing.c'; else $(CYGPATH_W) '$(srcdir)/preprocessing.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxproxy_a_CFLAGS) $(CFLAGS) -c -o libzbxproxy_a-preprocessing.obj `if test -f 'preprocessing.c'; then $(CYGPATH_W) 'preprocessing.c'; else $(CYGPATH_W) '$(srcdir)/preprocessing.c'; fi`
 
 zabbix_proxy-proxy.o: proxy.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_proxy_CFLAGS) $(CFLAGS) -MT zabbix_proxy-proxy.o -MD -MP -MF $(DEPDIR)/zabbix_proxy-proxy.Tpo -c -o zabbix_proxy-proxy.o `test -f 'proxy.c' || echo '$(srcdir)/'`proxy.c
@@ -836,7 +876,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-recursive
-all-am: Makefile $(PROGRAMS)
+all-am: Makefile $(LIBRARIES) $(PROGRAMS)
 installdirs: installdirs-recursive
 installdirs-am:
 	for dir in "$(DESTDIR)$(sbindir)"; do \
@@ -874,7 +914,8 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-recursive
 
-clean-am: clean-generic clean-sbinPROGRAMS mostlyclean-am
+clean-am: clean-generic clean-noinstLIBRARIES clean-sbinPROGRAMS \
+	mostlyclean-am
 
 distclean: distclean-recursive
 	-rm -rf ./$(DEPDIR)
@@ -946,27 +987,28 @@ uninstall-am: uninstall-sbinPROGRAMS
 	install-strip
 
 .PHONY: $(am__recursive_targets) CTAGS GTAGS TAGS all all-am check \
-	check-am clean clean-generic clean-sbinPROGRAMS cscopelist-am \
-	ctags ctags-am distclean distclean-compile distclean-generic \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am \
-	install-data-hook install-dvi install-dvi-am install-exec \
-	install-exec-am install-html install-html-am install-info \
-	install-info-am install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-sbinPROGRAMS install-strip \
-	installcheck installcheck-am installdirs installdirs-am \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
-	tags tags-am uninstall uninstall-am uninstall-sbinPROGRAMS
+	check-am clean clean-generic clean-noinstLIBRARIES \
+	clean-sbinPROGRAMS cscopelist-am ctags ctags-am distclean \
+	distclean-compile distclean-generic distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-data-hook install-dvi \
+	install-dvi-am install-exec install-exec-am install-html \
+	install-html-am install-info install-info-am install-man \
+	install-pdf install-pdf-am install-ps install-ps-am \
+	install-sbinPROGRAMS install-strip installcheck \
+	installcheck-am installdirs installdirs-am maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags tags-am uninstall \
+	uninstall-am uninstall-sbinPROGRAMS
 
 .PRECIOUS: Makefile
 
 
 install-data-hook:
-	$(MKDIR_P) "$(INCLUDE_DIR)"
-	$(MKDIR_P) "$(EXSCRIPTS_DIR)"
-	$(MKDIR_P) "$(MODULES_DIR)"
-	test -f "$(DESTDIR)@sysconfdir@/$(PROXY_CONFIG)" || cp "../../conf/$(PROXY_CONFIG)" "$(DESTDIR)@sysconfdir@"
+	$(MKDIR_P) "$(DESTDIR)@PROXY_CONFIG_FILE@.d"
+	$(MKDIR_P) "$(DESTDIR)@EXTERNAL_SCRIPTS_PATH@"
+	$(MKDIR_P) "$(DESTDIR)@LOAD_MODULE_PATH@"
+	test -f "$(DESTDIR)@PROXY_CONFIG_FILE@" || cp "../../conf/zabbix_proxy.conf" "$(DESTDIR)@PROXY_CONFIG_FILE@"
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

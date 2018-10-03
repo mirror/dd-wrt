@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ zbx_sysinfo_proc_t;
  * Purpose: frees process data structure                                      *
  *                                                                            *
  ******************************************************************************/
-void	zbx_sysinfo_proc_free(zbx_sysinfo_proc_t *proc)
+static void	zbx_sysinfo_proc_free(zbx_sysinfo_proc_t *proc)
 {
 	zbx_free(proc->name);
 	zbx_free(proc->name_arg0);
@@ -62,7 +62,7 @@ static int	get_cmdline(FILE *f_cmd, char **line, size_t *line_offset)
 
 	rewind(f_cmd);
 
-	*line = zbx_malloc(*line, line_alloc + 2);
+	*line = (char *)zbx_malloc(*line, line_alloc + 2);
 	*line_offset = 0;
 
 	while (0 != (n = fread(*line + *line_offset, 1, line_alloc - *line_offset, f_cmd)))
@@ -73,7 +73,7 @@ static int	get_cmdline(FILE *f_cmd, char **line, size_t *line_offset)
 			break;
 
 		line_alloc *= 2;
-		*line = zbx_realloc(*line, line_alloc + 2);
+		*line = (char *)zbx_realloc(*line, line_alloc + 2);
 	}
 
 	if (0 == ferror(f_cmd))
@@ -521,7 +521,7 @@ int	PROC_MEM(AGENT_REQUEST *request, AGENT_RESULT *result)
 		zbx_fclose(f_cmd);
 		zbx_fclose(f_stat);
 
-		if (0 == strcmp(entries->d_name, "self"))
+		if (0 == atoi(entries->d_name))
 			continue;
 
 		zbx_snprintf(tmp, sizeof(tmp), "/proc/%s/cmdline", entries->d_name);
@@ -788,7 +788,7 @@ int	PROC_NUM(AGENT_REQUEST *request, AGENT_RESULT *result)
 		zbx_fclose(f_cmd);
 		zbx_fclose(f_stat);
 
-		if (0 == strcmp(entries->d_name, "self"))
+		if (0 == atoi(entries->d_name))
 			continue;
 
 		zbx_snprintf(tmp, sizeof(tmp), "/proc/%s/cmdline", entries->d_name);
@@ -898,7 +898,7 @@ static int	proc_get_process_cmdline(pid_t pid, char **cmdline, size_t *cmdline_n
 	if (-1 == (fd = open(tmp, O_RDONLY)))
 		return FAIL;
 
-	*cmdline = zbx_malloc(NULL, cmdline_alloc);
+	*cmdline = (char *)zbx_malloc(NULL, cmdline_alloc);
 
 	while (0 < (n = read(fd, *cmdline + *cmdline_nbytes, cmdline_alloc - *cmdline_nbytes)))
 	{
@@ -907,7 +907,7 @@ static int	proc_get_process_cmdline(pid_t pid, char **cmdline, size_t *cmdline_n
 		if (*cmdline_nbytes == cmdline_alloc)
 		{
 			cmdline_alloc *= 2;
-			*cmdline = zbx_realloc(*cmdline, cmdline_alloc);
+			*cmdline = (char *)zbx_realloc(*cmdline, cmdline_alloc);
 		}
 	}
 
@@ -921,7 +921,7 @@ static int	proc_get_process_cmdline(pid_t pid, char **cmdline, size_t *cmdline_n
 			if (*cmdline_nbytes == cmdline_alloc)
 			{
 				cmdline_alloc += 1;
-				*cmdline = zbx_realloc(*cmdline, cmdline_alloc);
+				*cmdline = (char *)zbx_realloc(*cmdline, cmdline_alloc);
 			}
 
 			(*cmdline)[*cmdline_nbytes] = '\0';
@@ -1319,7 +1319,7 @@ void	zbx_proc_get_matching_pids(const zbx_vector_ptr_t *processes, const char *p
 	int			i;
 	zbx_sysinfo_proc_t	*proc;
 
-	zabbix_log(LOG_LEVEL_TRACE, "In %s() procname:%s username:%s cmdline:%s zone:%d", __function_name,
+	zabbix_log(LOG_LEVEL_TRACE, "In %s() procname:%s username:%s cmdline:%s flags:" ZBX_FS_UI64, __function_name,
 			ZBX_NULL2EMPTY_STR(procname), ZBX_NULL2EMPTY_STR(username), ZBX_NULL2EMPTY_STR(cmdline), flags);
 
 	if (NULL != username)

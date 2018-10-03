@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -226,7 +226,7 @@ static void	lld_hosts_get(zbx_uint64_t parent_hostid, zbx_vector_ptr_t *hosts, z
 
 	while (NULL != (row = DBfetch(result)))
 	{
-		host = zbx_malloc(NULL, sizeof(zbx_lld_host_t));
+		host = (zbx_lld_host_t *)zbx_malloc(NULL, sizeof(zbx_lld_host_t));
 
 		ZBX_STR2UINT64(host->hostid, row[0]);
 		host->host_proto = zbx_strdup(NULL, row[1]);
@@ -297,7 +297,7 @@ static void	lld_hosts_get(zbx_uint64_t parent_hostid, zbx_vector_ptr_t *hosts, z
  * Parameters: hosts - [IN] list of hosts; should be sorted by hostid         *
  *                                                                            *
  ******************************************************************************/
-void	lld_hosts_validate(zbx_vector_ptr_t *hosts, char **error)
+static void	lld_hosts_validate(zbx_vector_ptr_t *hosts, char **error)
 {
 	const char		*__function_name = "lld_hosts_validate";
 
@@ -594,7 +594,7 @@ static zbx_lld_host_t	*lld_host_make(zbx_vector_ptr_t *hosts, const char *host_p
 
 	if (i == hosts->values_num)	/* no host found */
 	{
-		host = zbx_malloc(NULL, sizeof(zbx_lld_host_t));
+		host = (zbx_lld_host_t *)zbx_malloc(NULL, sizeof(zbx_lld_host_t));
 
 		host->hostid = 0;
 		host->host_proto = NULL;
@@ -646,7 +646,7 @@ static zbx_lld_host_t	*lld_host_make(zbx_vector_ptr_t *hosts, const char *host_p
 
 	zbx_free(buffer);
 
-	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%p", __function_name, host);
+	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%p", __function_name, (void *)host);
 
 	return host;
 }
@@ -825,7 +825,7 @@ static void	lld_group_prototypes_get(zbx_uint64_t parent_hostid, zbx_vector_ptr_
 
 	while (NULL != (row = DBfetch(result)))
 	{
-		group_prototype = zbx_malloc(NULL, sizeof(zbx_lld_group_prototype_t));
+		group_prototype = (zbx_lld_group_prototype_t *)zbx_malloc(NULL, sizeof(zbx_lld_group_prototype_t));
 
 		ZBX_STR2UINT64(group_prototype->group_prototypeid, row[0]);
 		group_prototype->name = zbx_strdup(NULL, row[1]);
@@ -862,7 +862,7 @@ static void	lld_groups_get(zbx_uint64_t parent_hostid, zbx_vector_ptr_t *groups)
 	result = DBselect(
 			"select gd.groupid,gp.group_prototypeid,gd.name,gd.lastcheck,gd.ts_delete,g.name"
 			" from group_prototype gp,group_discovery gd"
-				" join groups g"
+				" join hstgrp g"
 					" on gd.groupid=g.groupid"
 			" where gp.group_prototypeid=gd.parent_group_prototypeid"
 				" and gp.hostid=" ZBX_FS_UI64,
@@ -870,7 +870,7 @@ static void	lld_groups_get(zbx_uint64_t parent_hostid, zbx_vector_ptr_t *groups)
 
 	while (NULL != (row = DBfetch(result)))
 	{
-		group = zbx_malloc(NULL, sizeof(zbx_lld_group_t));
+		group = (zbx_lld_group_t *)zbx_malloc(NULL, sizeof(zbx_lld_group_t));
 
 		ZBX_STR2UINT64(group->groupid, row[0]);
 		ZBX_STR2UINT64(group->group_prototypeid, row[1]);
@@ -949,7 +949,7 @@ static zbx_lld_group_t	*lld_group_make(zbx_vector_ptr_t *groups, zbx_uint64_t gr
 
 		/* otherwise create a new group */
 
-		group = zbx_malloc(NULL, sizeof(zbx_lld_group_t));
+		group = (zbx_lld_group_t *)zbx_malloc(NULL, sizeof(zbx_lld_group_t));
 
 		group->groupid = 0;
 		group->group_prototypeid = group_prototypeid;
@@ -987,7 +987,7 @@ static zbx_lld_group_t	*lld_group_make(zbx_vector_ptr_t *groups, zbx_uint64_t gr
 out:
 	zbx_free(buffer);
 
-	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%p", __function_name, group);
+	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%p", __function_name, (void *)group);
 
 	return group;
 }
@@ -1164,7 +1164,7 @@ static void	lld_groups_validate(zbx_vector_ptr_t *groups, char **error)
 		char	*sql = NULL;
 		size_t	sql_alloc = 0, sql_offset = 0;
 
-		zbx_strcpy_alloc(&sql, &sql_alloc, &sql_offset, "select name from groups where");
+		zbx_strcpy_alloc(&sql, &sql_alloc, &sql_offset, "select name from hstgrp where");
 		DBadd_str_condition_alloc(&sql, &sql_alloc, &sql_offset, "name",
 				(const char **)names.values, names.values_num);
 
@@ -1323,7 +1323,7 @@ static void	lld_groups_save_rights(zbx_vector_ptr_t *groups)
 
 	zbx_db_insert_prepare(&db_insert, "rights", "rightid", "id", "permission", "groupid", NULL);
 	zbx_strcpy_alloc(&sql, &sql_alloc, &sql_offset,
-			"select g.name,r.permission,r.groupid from groups g,rights r"
+			"select g.name,r.permission,r.groupid from hstgrp g,rights r"
 				" where r.id=g.groupid"
 				" and");
 
@@ -1404,7 +1404,7 @@ static void	lld_groups_save_rights(zbx_vector_ptr_t *groups)
 
 	zbx_free(sql);
 	zbx_vector_ptr_clear_ext(&group_rights, (zbx_clean_func_t)lld_group_rights_free);
-	zbx_vector_str_clear_ext(&group_names, zbx_ptr_free);
+	zbx_vector_str_clear_ext(&group_names, zbx_str_free);
 out:
 	zbx_vector_ptr_destroy(&group_rights);
 	zbx_vector_str_destroy(&group_names);
@@ -1458,9 +1458,9 @@ static void	lld_groups_save(zbx_vector_ptr_t *groups, const zbx_vector_ptr_t *gr
 
 	if (0 != new_groups_num)
 	{
-		groupid = DBget_maxid_num("groups", new_groups_num);
+		groupid = DBget_maxid_num("hstgrp", new_groups_num);
 
-		zbx_db_insert_prepare(&db_insert, "groups", "groupid", "name", "flags", NULL);
+		zbx_db_insert_prepare(&db_insert, "hstgrp", "groupid", "name", "flags", NULL);
 
 		zbx_db_insert_prepare(&db_insert_gdiscovery, "group_discovery", "groupid", "parent_group_prototypeid",
 				"name", NULL);
@@ -1512,7 +1512,7 @@ static void	lld_groups_save(zbx_vector_ptr_t *groups, const zbx_vector_ptr_t *gr
 		{
 			if (0 != (group->flags & ZBX_FLAG_LLD_GROUP_UPDATE))
 			{
-				zbx_strcpy_alloc(&sql, &sql_alloc, &sql_offset, "update groups set ");
+				zbx_strcpy_alloc(&sql, &sql_alloc, &sql_offset, "update hstgrp set ");
 				if (0 != (group->flags & ZBX_FLAG_LLD_GROUP_UPDATE_NAME))
 				{
 					name_esc = DBdyn_escape_string(group->name);
@@ -1601,7 +1601,7 @@ static void	lld_hostmacros_get(zbx_uint64_t lld_ruleid, zbx_vector_ptr_t *hostma
 
 	while (NULL != (row = DBfetch(result)))
 	{
-		hostmacro = zbx_malloc(NULL, sizeof(zbx_lld_hostmacro_t));
+		hostmacro = (zbx_lld_hostmacro_t *)zbx_malloc(NULL, sizeof(zbx_lld_hostmacro_t));
 
 		hostmacro->macro = zbx_strdup(NULL, row[0]);
 		hostmacro->value = zbx_strdup(NULL, row[1]);
@@ -1653,7 +1653,7 @@ static void	lld_hostmacros_make(const zbx_vector_ptr_t *hostmacros, zbx_vector_p
 		zbx_vector_ptr_reserve(&host->new_hostmacros, hostmacros->values_num);
 		for (j = 0; j < hostmacros->values_num; j++)
 		{
-			hostmacro = zbx_malloc(NULL, sizeof(zbx_lld_hostmacro_t));
+			hostmacro = (zbx_lld_hostmacro_t *)zbx_malloc(NULL, sizeof(zbx_lld_hostmacro_t));
 
 			hostmacro->hostmacroid = 0;
 			hostmacro->macro = zbx_strdup(NULL, ((zbx_lld_hostmacro_t *)hostmacros->values[j])->macro);
@@ -2363,12 +2363,13 @@ out:
  * Function: lld_templates_link                                               *
  *                                                                            *
  ******************************************************************************/
-static void	lld_templates_link(const zbx_vector_ptr_t *hosts)
+static void	lld_templates_link(const zbx_vector_ptr_t *hosts, char **error)
 {
 	const char	*__function_name = "lld_templates_link";
 
 	int		i;
 	zbx_lld_host_t	*host;
+	char		*err;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __function_name);
 
@@ -2380,10 +2381,22 @@ static void	lld_templates_link(const zbx_vector_ptr_t *hosts)
 			continue;
 
 		if (0 != host->del_templateids.values_num)
-			DBdelete_template_elements(host->hostid, &host->del_templateids);
+		{
+			if (SUCCEED != DBdelete_template_elements(host->hostid, &host->del_templateids, &err))
+			{
+				*error = zbx_strdcatf(*error, "Cannot unlink template: %s.\n", err);
+				zbx_free(err);
+			}
+		}
 
 		if (0 != host->lnk_templateids.values_num)
-			DBcopy_template_elements(host->hostid, &host->lnk_templateids);
+		{
+			if (SUCCEED != DBcopy_template_elements(host->hostid, &host->lnk_templateids, &err))
+			{
+				*error = zbx_strdcatf(*error, "Cannot link template(s) %s.\n", err);
+				zbx_free(err);
+			}
+		}
 	}
 
 	zabbix_log(LOG_LEVEL_DEBUG, "End of %s()", __function_name);
@@ -2617,7 +2630,7 @@ static void	lld_interfaces_get(zbx_uint64_t lld_ruleid, zbx_vector_ptr_t *interf
 
 	while (NULL != (row = DBfetch(result)))
 	{
-		interface = zbx_malloc(NULL, sizeof(zbx_lld_interface_t));
+		interface = (zbx_lld_interface_t *)zbx_malloc(NULL, sizeof(zbx_lld_interface_t));
 
 		ZBX_STR2UINT64(interface->interfaceid, row[0]);
 		interface->type = (unsigned char)atoi(row[1]);
@@ -2661,7 +2674,7 @@ static void	lld_interface_make(zbx_vector_ptr_t *interfaces, zbx_uint64_t parent
 	if (i == interfaces->values_num)
 	{
 		/* interface which should be deleted */
-		interface = zbx_malloc(NULL, sizeof(zbx_lld_interface_t));
+		interface = (zbx_lld_interface_t *)zbx_malloc(NULL, sizeof(zbx_lld_interface_t));
 
 		interface->interfaceid = interfaceid;
 		interface->parent_interfaceid = 0;
@@ -2742,7 +2755,7 @@ static void	lld_interfaces_make(const zbx_vector_ptr_t *interfaces, zbx_vector_p
 		{
 			interface = (zbx_lld_interface_t *)interfaces->values[j];
 
-			new_interface = zbx_malloc(NULL, sizeof(zbx_lld_interface_t));
+			new_interface = (zbx_lld_interface_t *)zbx_malloc(NULL, sizeof(zbx_lld_interface_t));
 
 			new_interface->interfaceid = 0;
 			new_interface->parent_interfaceid = interface->interfaceid;
@@ -3152,7 +3165,7 @@ void	lld_update_hosts(zbx_uint64_t lld_ruleid, const zbx_vector_ptr_t *lld_rows,
 				&del_hostmacroids);
 
 		/* linking of the templates */
-		lld_templates_link(&hosts);
+		lld_templates_link(&hosts, error);
 
 		lld_hosts_remove(&hosts, lifetime, lastcheck);
 		lld_groups_remove(&groups, lifetime, lastcheck);

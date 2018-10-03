@@ -101,7 +101,8 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ax_lib_ibm_db2.m4 \
 	$(top_srcdir)/m4/libopenssl.m4 $(top_srcdir)/m4/libssh2.m4 \
 	$(top_srcdir)/m4/libunixodbc.m4 $(top_srcdir)/m4/libxml2.m4 \
 	$(top_srcdir)/m4/netsnmp.m4 $(top_srcdir)/m4/openipmi.m4 \
-	$(top_srcdir)/m4/pcre.m4 $(top_srcdir)/m4/resolv.m4 \
+	$(top_srcdir)/m4/pcre.m4 $(top_srcdir)/m4/pthread.m4 \
+	$(top_srcdir)/m4/resolv.m4 $(top_srcdir)/m4/zlib.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -123,7 +124,8 @@ am_libzbxdbcache_a_OBJECTS = libzbxdbcache_a-dbcache.$(OBJEXT) \
 	libzbxdbcache_a-dbconfig.$(OBJEXT) \
 	libzbxdbcache_a-dbsync.$(OBJEXT) \
 	libzbxdbcache_a-valuecache.$(OBJEXT) \
-	libzbxdbcache_a-dbconfig_dump.$(OBJEXT)
+	libzbxdbcache_a-dbconfig_dump.$(OBJEXT) \
+	libzbxdbcache_a-dbconfig_maintenance.$(OBJEXT)
 libzbxdbcache_a_OBJECTS = $(am_libzbxdbcache_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -186,8 +188,10 @@ CTAGS = ctags
 am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+AGENT_CONFIG_FILE = @AGENT_CONFIG_FILE@
 AGENT_LDFLAGS = @AGENT_LDFLAGS@
 AGENT_LIBS = @AGENT_LIBS@
+ALERT_SCRIPTS_PATH = @ALERT_SCRIPTS_PATH@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 ARCH = @ARCH@
@@ -200,6 +204,8 @@ CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
+CURL_SSL_CERT_LOCATION = @CURL_SSL_CERT_LOCATION@
+CURL_SSL_KEY_LOCATION = @CURL_SSL_KEY_LOCATION@
 CYGPATH_W = @CYGPATH_W@
 DB_CFLAGS = @DB_CFLAGS@
 DB_LDFLAGS = @DB_LDFLAGS@
@@ -211,6 +217,7 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+EXTERNAL_SCRIPTS_PATH = @EXTERNAL_SCRIPTS_PATH@
 GNUTLS_CFLAGS = @GNUTLS_CFLAGS@
 GNUTLS_LDFLAGS = @GNUTLS_LDFLAGS@
 GNUTLS_LIBS = @GNUTLS_LIBS@
@@ -243,12 +250,16 @@ LIBOBJS = @LIBOBJS@
 LIBPCRE_CFLAGS = @LIBPCRE_CFLAGS@
 LIBPCRE_LDFLAGS = @LIBPCRE_LDFLAGS@
 LIBPCRE_LIBS = @LIBPCRE_LIBS@
+LIBPTHREAD_CFLAGS = @LIBPTHREAD_CFLAGS@
+LIBPTHREAD_LDFLAGS = @LIBPTHREAD_LDFLAGS@
+LIBPTHREAD_LIBS = @LIBPTHREAD_LIBS@
 LIBS = @LIBS@
 LIBXML2_CFLAGS = @LIBXML2_CFLAGS@
 LIBXML2_CONFIG = @LIBXML2_CONFIG@
 LIBXML2_LDFLAGS = @LIBXML2_LDFLAGS@
 LIBXML2_LIBS = @LIBXML2_LIBS@
 LIBXML2_VERSION = @LIBXML2_VERSION@
+LOAD_MODULE_PATH = @LOAD_MODULE_PATH@
 LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
 MBEDTLS_CFLAGS = @MBEDTLS_CFLAGS@
@@ -288,12 +299,14 @@ POSTGRESQL_CFLAGS = @POSTGRESQL_CFLAGS@
 POSTGRESQL_LDFLAGS = @POSTGRESQL_LDFLAGS@
 POSTGRESQL_LIBS = @POSTGRESQL_LIBS@
 POSTGRESQL_VERSION = @POSTGRESQL_VERSION@
+PROXY_CONFIG_FILE = @PROXY_CONFIG_FILE@
 PROXY_LDFLAGS = @PROXY_LDFLAGS@
 PROXY_LIBS = @PROXY_LIBS@
 RANLIB = @RANLIB@
 RESOLV_LIBS = @RESOLV_LIBS@
 SENDER_LDFLAGS = @SENDER_LDFLAGS@
 SENDER_LIBS = @SENDER_LIBS@
+SERVER_CONFIG_FILE = @SERVER_CONFIG_FILE@
 SERVER_LDFLAGS = @SERVER_LDFLAGS@
 SERVER_LIBS = @SERVER_LIBS@
 SET_MAKE = @SET_MAKE@
@@ -316,6 +329,9 @@ UNIXODBC_LIBS = @UNIXODBC_LIBS@
 VERSION = @VERSION@
 ZBXGET_LDFLAGS = @ZBXGET_LDFLAGS@
 ZBXGET_LIBS = @ZBXGET_LIBS@
+ZLIB_CFLAGS = @ZLIB_CFLAGS@
+ZLIB_LDFLAGS = @ZLIB_LDFLAGS@
+ZLIB_LIBS = @ZLIB_LIBS@
 _libcurl_config = @_libcurl_config@
 _libnetsnmp_config = @_libnetsnmp_config@
 abs_builddir = @abs_builddir@
@@ -378,11 +394,13 @@ libzbxdbcache_a_SOURCES = \
 	dbsync.h \
 	valuecache.c \
 	valuecache.h \
-	dbconfig_dump.c
+	dbconfig_dump.c \
+	dbconfig_maintenance.c
 
 libzbxdbcache_a_CFLAGS = \
 	-I@top_srcdir@/src/zabbix_server/ \
-	-I@top_srcdir@/src/libs/zbxalgo
+	-I@top_srcdir@/src/libs/zbxalgo \
+	$(TEST_FLAGS)
 
 all: all-am
 
@@ -435,6 +453,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxdbcache_a-dbcache.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxdbcache_a-dbconfig.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxdbcache_a-dbconfig_dump.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxdbcache_a-dbconfig_maintenance.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxdbcache_a-dbsync.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxdbcache_a-valuecache.Po@am__quote@
 
@@ -523,6 +542,20 @@ libzbxdbcache_a-dbconfig_dump.obj: dbconfig_dump.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='dbconfig_dump.c' object='libzbxdbcache_a-dbconfig_dump.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxdbcache_a_CFLAGS) $(CFLAGS) -c -o libzbxdbcache_a-dbconfig_dump.obj `if test -f 'dbconfig_dump.c'; then $(CYGPATH_W) 'dbconfig_dump.c'; else $(CYGPATH_W) '$(srcdir)/dbconfig_dump.c'; fi`
+
+libzbxdbcache_a-dbconfig_maintenance.o: dbconfig_maintenance.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxdbcache_a_CFLAGS) $(CFLAGS) -MT libzbxdbcache_a-dbconfig_maintenance.o -MD -MP -MF $(DEPDIR)/libzbxdbcache_a-dbconfig_maintenance.Tpo -c -o libzbxdbcache_a-dbconfig_maintenance.o `test -f 'dbconfig_maintenance.c' || echo '$(srcdir)/'`dbconfig_maintenance.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxdbcache_a-dbconfig_maintenance.Tpo $(DEPDIR)/libzbxdbcache_a-dbconfig_maintenance.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='dbconfig_maintenance.c' object='libzbxdbcache_a-dbconfig_maintenance.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxdbcache_a_CFLAGS) $(CFLAGS) -c -o libzbxdbcache_a-dbconfig_maintenance.o `test -f 'dbconfig_maintenance.c' || echo '$(srcdir)/'`dbconfig_maintenance.c
+
+libzbxdbcache_a-dbconfig_maintenance.obj: dbconfig_maintenance.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxdbcache_a_CFLAGS) $(CFLAGS) -MT libzbxdbcache_a-dbconfig_maintenance.obj -MD -MP -MF $(DEPDIR)/libzbxdbcache_a-dbconfig_maintenance.Tpo -c -o libzbxdbcache_a-dbconfig_maintenance.obj `if test -f 'dbconfig_maintenance.c'; then $(CYGPATH_W) 'dbconfig_maintenance.c'; else $(CYGPATH_W) '$(srcdir)/dbconfig_maintenance.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxdbcache_a-dbconfig_maintenance.Tpo $(DEPDIR)/libzbxdbcache_a-dbconfig_maintenance.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='dbconfig_maintenance.c' object='libzbxdbcache_a-dbconfig_maintenance.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxdbcache_a_CFLAGS) $(CFLAGS) -c -o libzbxdbcache_a-dbconfig_maintenance.obj `if test -f 'dbconfig_maintenance.c'; then $(CYGPATH_W) 'dbconfig_maintenance.c'; else $(CYGPATH_W) '$(srcdir)/dbconfig_maintenance.c'; fi`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique

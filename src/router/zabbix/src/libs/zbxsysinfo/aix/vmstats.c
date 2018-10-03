@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -172,8 +172,19 @@ int	SYSTEM_STAT(AGENT_REQUEST *request, AGENT_RESULT *result)
 	}
 	else if (0 == strcmp(section, "memory"))
 	{
-		if (0 == strcmp(type, "avm") && collector->vmstat.aix52stats)
-			SET_UI64_RESULT(result, collector->vmstat.mem_avm);
+		if (0 == strcmp(type, "avm"))
+		{
+			if (0 != collector->vmstat.aix52stats)
+			{
+				SET_UI64_RESULT(result, collector->vmstat.mem_avm);
+			}
+			else
+			{
+				SET_MSG_RESULT(result, zbx_strdup(NULL, "Support for system.stat[memory,avm] was not"
+						" compiled in."));
+				return SYSINFO_RET_FAIL;
+			}
+		}
 		else if (0 == strcmp(type, "fre"))
 			SET_UI64_RESULT(result, collector->vmstat.mem_fre);
 		else
