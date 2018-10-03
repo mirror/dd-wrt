@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -19,24 +19,20 @@
 **/
 
 
-if ($data['only_footer']) {
-	$output = [
-		'footer' => (new CList([_s('Updated: %s', zbx_date2str(TIME_FORMAT_SECONDS))]))->toString()
-	];
-}
-elseif ($data['graph']['unavailable_object']) {
+if ($data['graph']['unavailable_object']) {
 	$item = (new CTableInfo())->setNoDataMessage(_('No permissions to referred object or it does not exist!'));
 
 	$output = [
 		'header' => $data['name'],
-		'body' => $item->toString(),
-		'footer' => (new CList([_s('Updated: %s', zbx_date2str(TIME_FORMAT_SECONDS))]))->toString()
+		'body' => $item->toString()
 	];
 }
 else {
-	$item = (new CDiv())->setId($data['graph']['containerid']);
-
-	$flickerfree_item = (new CDiv($item))
+	$flickerfree_item = (new CDiv())
+		->addItem((new CLink(null, $data['item_graph_url']))
+			->setId($data['graph']['containerid'])
+			->addClass(ZBX_STYLE_DASHBRD_WIDGET_GRAPH_LINK)
+		)
 		->addClass('flickerfreescreen')
 		->setAttribute('data-timestamp', $data['graph']['timestamp'])
 		->setId('flickerfreescreen_'.$data['graph']['dataid']);
@@ -53,7 +49,7 @@ if ($data['widget']['initial_load'] == 1) {
 			'function zbx_graph_widget_resize_end(img_id) {'.
 				'var content = jQuery("#"+img_id).closest(".dashbrd-grid-widget-content"),'.
 					'property_zone_height = timeControl.objectList[img_id]["objDims"]["graphPropertyZoneHeight"],'.
-					'new_width = content.width(),'.
+					'new_width = content.width() - 1,'.
 					'new_height = content.height() - 4,'.
 					'src = jQuery("#"+img_id).attr("src");'.
 
@@ -92,7 +88,6 @@ if ($data['widget']['initial_load'] == 1) {
 	$output = [
 		'header' => $data['name'],
 		'body' => $flickerfree_item->toString(),
-		'footer' => (new CList([_s('Updated: %s', zbx_date2str(TIME_FORMAT_SECONDS))]))->toString(),
 		'script_inline' => $script
 	];
 }

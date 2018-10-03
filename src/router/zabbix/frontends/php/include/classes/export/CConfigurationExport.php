@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -83,21 +83,30 @@ class CConfigurationExport {
 				'snmpv3_securitylevel', 'snmpv3_authprotocol', 'snmpv3_authpassphrase', 'snmpv3_privprotocol',
 				'snmpv3_privpassphrase', 'valuemapid', 'params', 'ipmi_sensor', 'authtype', 'username', 'password',
 				'publickey', 'privatekey', 'interfaceid', 'port', 'description', 'inventory_link', 'flags',
-				'logtimefmt', 'jmx_endpoint', 'master_itemid'
+				'logtimefmt', 'jmx_endpoint', 'master_itemid', 'timeout', 'url', 'query_fields', 'posts',
+				'status_codes', 'follow_redirects', 'post_type', 'http_proxy', 'headers', 'retrieve_mode',
+				'request_method', 'output_format', 'ssl_cert_file', 'ssl_key_file', 'ssl_key_password', 'verify_peer',
+				'verify_host', 'allow_traps'
 			],
 			'drule' => ['itemid', 'hostid', 'type', 'snmp_community', 'snmp_oid', 'name', 'key_', 'delay', 'history',
 				'trends', 'status', 'value_type', 'trapper_hosts', 'units', 'snmpv3_contextname', 'snmpv3_securityname',
 				'snmpv3_securitylevel', 'snmpv3_authprotocol', 'snmpv3_authpassphrase', 'snmpv3_privprotocol',
 				'snmpv3_privpassphrase', 'formula', 'valuemapid', 'params', 'ipmi_sensor', 'authtype', 'username',
 				'password', 'publickey', 'privatekey', 'interfaceid', 'port', 'description', 'inventory_link', 'flags',
-				'filter', 'lifetime', 'jmx_endpoint'
+				'filter', 'lifetime', 'jmx_endpoint', 'timeout', 'url', 'query_fields', 'posts', 'status_codes',
+				'follow_redirects', 'post_type', 'http_proxy', 'headers', 'retrieve_mode', 'request_method',
+				'output_format', 'ssl_cert_file', 'ssl_key_file', 'ssl_key_password', 'verify_peer', 'verify_host',
+				'allow_traps'
 			],
 			'item_prototype' => ['hostid', 'type', 'snmp_community', 'snmp_oid', 'name', 'key_', 'delay', 'history',
 				'trends', 'status', 'value_type', 'trapper_hosts', 'units', 'snmpv3_contextname', 'snmpv3_securityname',
 				'snmpv3_securitylevel', 'snmpv3_authprotocol', 'snmpv3_authpassphrase', 'snmpv3_privprotocol',
 				'snmpv3_privpassphrase', 'valuemapid', 'params', 'ipmi_sensor', 'authtype', 'username', 'password',
 				'publickey', 'privatekey', 'interfaceid', 'port', 'description', 'inventory_link', 'flags',
-				'logtimefmt', 'jmx_endpoint', 'master_itemid'
+				'logtimefmt', 'jmx_endpoint', 'master_itemid', 'timeout', 'url', 'query_fields', 'posts',
+				'status_codes', 'follow_redirects', 'post_type', 'http_proxy', 'headers', 'retrieve_mode',
+				'request_method', 'output_format', 'ssl_cert_file', 'ssl_key_file', 'ssl_key_password', 'verify_peer',
+				'verify_host', 'allow_traps'
 			]
 		];
 	}
@@ -420,11 +429,10 @@ class CConfigurationExport {
 			'selectPreprocessing' => ['type', 'params'],
 			'hostids' => array_keys($hosts),
 			'inherited' => false,
+			'webitems' => true,
 			'filter' => ['flags' => ZBX_FLAG_DISCOVERY_NORMAL],
 			'preservekeys' => true
 		]);
-
-		$template_itemids = [];
 
 		foreach ($items as $itemid => &$item) {
 			if ($item['type'] == ITEM_TYPE_DEPENDENT) {
@@ -438,6 +446,12 @@ class CConfigurationExport {
 			}
 		}
 		unset($item);
+
+		foreach ($items as $itemid => $item) {
+			if ($item['type'] == ITEM_TYPE_HTTPTEST) {
+				unset($items[$itemid]);
+			}
+		}
 
 		$items = $this->prepareItems($items);
 
@@ -555,7 +569,7 @@ class CConfigurationExport {
 		unset($item);
 
 		// gather item prototypes
-		$prototypes = API::ItemPrototype()->get([
+		$item_prototypes = API::ItemPrototype()->get([
 			'output' => $this->dataFields['item_prototype'],
 			'selectApplications' => ['name'],
 			'selectApplicationPrototypes' => ['name'],
@@ -566,15 +580,44 @@ class CConfigurationExport {
 			'preservekeys' => true
 		]);
 
-		$valuemapids = [];
+		$unresolved_master_itemids = [];
 
-		foreach ($prototypes as &$prototype) {
-			$valuemapids[$prototype['valuemapid']] = true;
-			if ($prototype['type'] == ITEM_TYPE_DEPENDENT) {
-				$prototype['master_item'] = ['key_' => $prototypes[$prototype['master_itemid']]['key_']];
+		// Gather all master item IDs and check if master item IDs already belong to item prototypes.
+		foreach ($item_prototypes as $item_prototype) {
+			if ($item_prototype['type'] == ITEM_TYPE_DEPENDENT
+					&& !array_key_exists($item_prototype['master_itemid'], $item_prototypes)) {
+				$unresolved_master_itemids[$item_prototype['master_itemid']] = true;
 			}
 		}
-		unset($prototype);
+
+		// Some leftover regular, non-lld and web items.
+		if ($unresolved_master_itemids) {
+			$master_items = API::Item()->get([
+				'output' => ['itemid', 'key_'],
+				'itemids' => array_keys($unresolved_master_itemids),
+				'filter' => ['flags' => ZBX_FLAG_DISCOVERY_NORMAL],
+				'webitems' => true,
+				'preservekeys' => true
+			]);
+		}
+
+		$valuemapids = [];
+
+		foreach ($item_prototypes as &$item_prototype) {
+			$valuemapids[$item_prototype['valuemapid']] = true;
+
+			if ($item_prototype['type'] == ITEM_TYPE_DEPENDENT) {
+				$master_itemid = $item_prototype['master_itemid'];
+
+				if (array_key_exists($master_itemid, $item_prototypes)) {
+					$item_prototype['master_item'] = ['key_' => $item_prototypes[$master_itemid]['key_']];
+				}
+				else {
+					$item_prototype['master_item'] = ['key_' => $master_items[$master_itemid]['key_']];
+				}
+			}
+		}
+		unset($item_prototype);
 
 		// Value map IDs that are zeroes, should be skipped.
 		unset($valuemapids[0]);
@@ -601,14 +644,14 @@ class CConfigurationExport {
 			]);
 		}
 
-		foreach ($prototypes as $prototype) {
-			$prototype['valuemap'] = [];
+		foreach ($item_prototypes as $item_prototype) {
+			$item_prototype['valuemap'] = [];
 
-			if ($prototype['valuemapid'] != 0) {
-				$prototype['valuemap']['name'] = $this->data['valueMaps'][$prototype['valuemapid']]['name'];
+			if ($item_prototype['valuemapid'] != 0) {
+				$item_prototype['valuemap']['name'] = $this->data['valueMaps'][$item_prototype['valuemapid']]['name'];
 			}
 
-			$items[$prototype['discoveryRule']['itemid']]['itemPrototypes'][] = $prototype;
+			$items[$item_prototype['discoveryRule']['itemid']]['itemPrototypes'][] = $item_prototype;
 		}
 
 		// gather graph prototypes

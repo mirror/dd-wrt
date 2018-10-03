@@ -86,7 +86,7 @@
 		<input type="hidden" id="items_#{number}_yaxisside" name="items[#{number}][yaxisside]" value="#{yaxisside}">
 	<?php endif ?>
 	<td>
-		<?= (new CColor('items[#{number}][color]', '000000'))->toString() ?>
+		<?= (new CColor('items[#{number}][color]', '#{color}'))->appendColorPickerJs(false)->toString() ?>
 	</td>
 	<?php if (!$readonly): ?>
 		<td class="<?= ZBX_STYLE_NOWRAP ?>">
@@ -96,6 +96,8 @@
 </tr>
 </script>
 <script type="text/javascript">
+	colorPalette.setThemeColors(<?= CJs::encodeJson(explode(',', getUserGraphTheme()['colorpalette'])) ?>);
+
 	function loadItem(number, gitemid, graphid, itemid, name, type, calc_fnc, drawtype, yaxisside, color, flags) {
 		var item = {
 				number: number,
@@ -112,18 +114,18 @@
 				flags: flags,
 				name: name
 			},
-			itemTpl = new Template(jQuery('#itemTpl').html());
+			itemTpl = new Template(jQuery('#itemTpl').html()),
+			row = jQuery(itemTpl.evaluate(item));
 
-		jQuery('#itemButtonsRow').before(itemTpl.evaluate(item));
+		jQuery('#itemButtonsRow').before(row);
 		jQuery('#items_' + number + '_type').val(type);
 		jQuery('#items_' + number + '_calc_fnc').val(calc_fnc);
 		jQuery('#items_' + number + '_drawtype').val(drawtype);
 		jQuery('#items_' + number + '_yaxisside').val(yaxisside);
-		jQuery('#items_' + number + '_color').val(color);
-		jQuery('#lbl_items_' + number + '_color').attr('title', '#' + color);
-		jQuery('#lbl_items_' + number + '_color').css('background-color', '#' + color);
+		row.find('.input-color-picker input').colorpicker();
 
 		colorPalette.incrementNextColor();
+
 		<?php if (!$readonly): ?>
 			rewriteNameLinks();
 		<?php endif ?>
@@ -133,6 +135,8 @@
 		if (!isset('object', list) || list.object != 'itemid') {
 			return false;
 		}
+		var itemTpl = new Template(jQuery('#itemTpl').html()),
+			row;
 
 		for (var i = 0; i < list.values.length; i++) {
 			var number = jQuery('#itemsTable tr.sortable').length,
@@ -150,14 +154,12 @@
 					flags: (typeof list.values[i].flags === 'undefined') ? 0 : list.values[i].flags,
 					color: colorPalette.getNextColor(),
 					name: list.values[i].name
-				},
-				itemTpl = new Template(jQuery('#itemTpl').html());
+				};
+			row = jQuery(itemTpl.evaluate(item));
 
-			jQuery('#itemButtonsRow').before(itemTpl.evaluate(item));
+			jQuery('#itemButtonsRow').before(row);
 			jQuery('#items_' + item['number'] + '_calc_fnc').val(<?= CALC_FNC_AVG ?>);
-			jQuery('#items_' + item['number'] + '_color').val(item['color']);
-			jQuery('#lbl_items_' + item['number'] + '_color').attr('title', '#' + item['color']);
-			jQuery('#lbl_items_' + item['number'] + '_color').css('background-color', '#' + item['color']);
+			row.find('.input-color-picker input').colorpicker();
 		}
 
 		<?php if (!$readonly): ?>
@@ -167,10 +169,10 @@
 	}
 
 	function getOnlyHostParam() {
-		<?php if ($this->data['is_template']): ?>
-			return '&only_hostid=<?= $this->data['hostid'] ?>';
+		<?php if ($data['is_template']): ?>
+			return {'only_hostid':'<?= $data['hostid'] ?>'};
 		<?php else: ?>
-			return '&real_hosts=1';
+			return {'real_hosts':'1'};
 		<?php endif ?>
 	}
 
@@ -179,18 +181,35 @@
 		var size = jQuery('#itemsTable tr.sortable').length;
 
 		for (var i = 0; i < size; i++) {
-			var nameLink = 'PopUp("popup.php?writeonly=1&numeric=1&dstfrm=graphForm'
-				+ '&dstfld1=items_' + i + '_itemid&dstfld2=items_' + i + '_name'
-				+ (jQuery('#items_' + i + '_flags').val() == <?= ZBX_FLAG_DISCOVERY_PROTOTYPE ?>
-					? '&srctbl=item_prototypes&parent_discoveryid=<?= $this->data['parent_discoveryid'] ?>'
-						+ '&srcfld3=flags&dstfld3=items_' + i + '_flags'
-					: '&srctbl=items')
-				+ '<?= !empty($this->data['normal_only']) ? '&normal_only=1' : '' ?>'
-				+ '<?= ((!$data['parent_discoveryid'] && $data['groupid'] && $data['hostid'])
-							? '&groupid='.$data['groupid'].'&hostid='.$data['hostid']
-							: ''
-						) ?>'
-				+ '&srcfld1=itemid&srcfld2=name" + getOnlyHostParam())';
+			var popup_options = {
+				srcfld1: 'itemid',
+				srcfld2: 'name',
+				dstfrm: 'graphForm',
+				dstfld1: 'items_' + i + '_itemid',
+				dstfld2: 'items_' + i + '_name',
+				numeric: 1,
+				with_webitems: 1,
+				writeonly: 1
+			};
+			if (jQuery('#items_' + i + '_flags').val() == <?= ZBX_FLAG_DISCOVERY_PROTOTYPE ?>) {
+				popup_options['srctbl'] = 'item_prototypes',
+				popup_options['srcfld3'] = 'flags',
+				popup_options['dstfld3'] = 'items_' + i + '_flags',
+				popup_options['parent_discoveryid'] = '<?= $data['parent_discoveryid'] ?>';
+			}
+			else {
+				popup_options['srctbl'] = 'items';
+			}
+			<?php if ($data['normal_only'] !== ''): ?>
+				popup_options['normal_only'] = '1';
+			<?php endif ?>
+			<?php if (!$data['parent_discoveryid'] && $data['groupid'] && $data['hostid']): ?>
+				popup_options['groupid'] = '<?= $data['groupid'] ?>',
+				popup_options['hostid'] = '<?= $data['hostid'] ?>';
+			<?php endif ?>
+
+			var nameLink = 'PopUp("popup.generic",'
+				+ 'jQuery.extend('+ JSON.stringify(popup_options) +',getOnlyHostParam()), null, this);';
 			jQuery('#items_' + i + '_name').attr('onclick', nameLink);
 		}
 	}
@@ -243,14 +262,6 @@
 				// set sortorder
 				if (part2 === 'sortorder') {
 					obj.val(i);
-				}
-
-				// rewrite color action
-				if (part1.substring(0, 3) === 'lbl') {
-					obj.attr('onclick', 'javascript: show_color_picker("items_' + i + '_color");');
-				}
-				else if (part2 === 'color') {
-					obj.attr('onchange', 'javascript: set_color_by_name("items_' + i + '_color", this.value);');
 				}
 			});
 
@@ -335,54 +346,60 @@
 <?php endif ?>
 
 	jQuery(function($) {
-		$('#tab_previewTab').click(function() {
-			var name = 'chart3.php';
-			var src = '&name=' + encodeURIComponent($('#name').val())
-						+ '&width=' + $('#width').val()
-						+ '&height=' + $('#height').val()
-						+ '&graphtype=' + $('#graphtype').val()
-						+ '&legend=' + ($('#show_legend').is(':checked') ? 1 : 0);
+		$('#tabs').on('tabsactivate', function(event, ui) {
+			if (ui.newPanel.selector === '#previewTab') {
+				var preview_chart = $('#previewChart'),
+					name = 'chart3.php',
+					src = '&name=' + encodeURIComponent($('#name').val()) +
+						'&width=' + $('#width').val() +
+						'&height=' + $('#height').val() +
+						'&graphtype=' + $('#graphtype').val() +
+						'&legend=' + ($('#show_legend').is(':checked') ? 1 : 0);
 
-			<?php if ($this->data['graphtype'] == GRAPH_TYPE_PIE || $this->data['graphtype'] == GRAPH_TYPE_EXPLODED): ?>
+				if (preview_chart.hasClass('preloader')) {
+					return false;
+				}
+
+				<?php if ($this->data['graphtype'] == GRAPH_TYPE_PIE || $this->data['graphtype'] == GRAPH_TYPE_EXPLODED): ?>
 				name = 'chart7.php';
 				src += '&graph3d=' + ($('#show_3d').is(':checked') ? 1 : 0);
 
-			<?php else: ?>
+				<?php else: ?>
 				<?php if ($this->data['graphtype'] == GRAPH_TYPE_NORMAL): ?>
-					src += '&percent_left=' + $('#percent_left').val()
-							+ '&percent_right=' + $('#percent_right').val();
+				src += '&percent_left=' + $('#percent_left').val()
+					+ '&percent_right=' + $('#percent_right').val();
 				<?php endif ?>
 
-				src += '&ymin_type=' + $('#ymin_type').val()
-							+ '&ymax_type=' + $('#ymax_type').val()
-							+ '&yaxismin=' + $('#yaxismin').val()
-							+ '&yaxismax=' + $('#yaxismax').val()
-							+ '&ymin_itemid=' + $('#ymin_itemid').val()
-							+ '&ymax_itemid=' + $('#ymax_itemid').val()
-							+ '&showworkperiod=' + ($('#show_work_period').is(':checked') ? 1 : 0)
-							+ '&showtriggers=' + ($('#show_triggers').is(':checked') ? 1 : 0);
-			<?php endif ?>
+				src += '&ymin_type=' + $('#ymin_type').val() +
+					'&ymax_type=' + $('#ymax_type').val() +
+					'&yaxismin=' + $('#yaxismin').val() +
+					'&yaxismax=' + $('#yaxismax').val() +
+					'&ymin_itemid=' + $('#ymin_itemid').val() +
+					'&ymax_itemid=' + $('#ymax_itemid').val() +
+					'&showworkperiod=' + ($('#show_work_period').is(':checked') ? 1 : 0) +
+					'&showtriggers=' + ($('#show_triggers').is(':checked') ? 1 : 0);
+				<?php endif ?>
 
-			$('#itemsTable tr.sortable').find('*[name]').each(function(index, value) {
-				if (!$.isEmptyObject(value) && value.name != null) {
-					src += '&' + value.name + '=' + value.value;
+				$('#itemsTable tr.sortable').find('*[name]').each(function(index, value) {
+					if (!$.isEmptyObject(value) && value.name != null) {
+						src += '&' + value.name + '=' + value.value;
+					}
+				});
+
+				var image = $('img', preview_chart);
+
+				if (image.length != 0) {
+					image.remove();
 				}
-			});
 
-			var image = $('#previewChar img');
+				preview_chart.attr('class', 'preloader');
 
-			if (image.length != 0) {
-				image.remove();
+				$('<img />').attr('src', name + '?period=3600' + src).load(function() {
+					preview_chart
+						.removeAttr('class')
+						.append($(this));
+				});
 			}
-
-			$('#previewChar')
-				.attr('class', 'preloader');
-
-			$('<img />').attr('src', name + '?period=3600' + src).load(function() {
-				$('#previewChar')
-					.removeAttr('class')
-					.append($(this));
-			});
 		});
 
 		<?php if ($readonly): ?>

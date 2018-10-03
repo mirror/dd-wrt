@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -61,7 +61,7 @@ static size_t		max_buffer_len;	/* error message buffer size */
  * Purpose: check whether the character delimits a numeric token              *
  *                                                                            *
  ******************************************************************************/
-int	is_number_delimiter(char c)
+static int	is_number_delimiter(char c)
 {
 	return 0 == isdigit(c) && '.' != c && 0 == isalpha(c) ? SUCCEED : FAIL;
 }
@@ -436,13 +436,13 @@ static double	evaluate_term4(int *unknown_idx)
 		else
 		{
 			if ('<' == op)
-				result = (result <= operand - ZBX_DOUBLE_EPSILON);
+				result = (result < operand - ZBX_DOUBLE_EPSILON);
 			else if ('l' == op)
-				result = (result < operand + ZBX_DOUBLE_EPSILON);
+				result = (result <= operand + ZBX_DOUBLE_EPSILON);
 			else if ('g' == op)
-				result = (result > operand - ZBX_DOUBLE_EPSILON);
+				result = (result >= operand - ZBX_DOUBLE_EPSILON);
 			else
-				result = (result >= operand + ZBX_DOUBLE_EPSILON);
+				result = (result > operand + ZBX_DOUBLE_EPSILON);
 		}
 	}
 
@@ -707,7 +707,7 @@ int	evaluate(double *value, const char *expression, char *error, size_t max_erro
 			else if (unknown_msgs->values_num > unknown_idx)
 			{
 				zbx_snprintf(error, max_error_len, "Cannot evaluate expression: \"%s\".",
-						unknown_msgs->values[unknown_idx]);
+						(char *)(unknown_msgs->values[unknown_idx]));
 			}
 			else
 			{

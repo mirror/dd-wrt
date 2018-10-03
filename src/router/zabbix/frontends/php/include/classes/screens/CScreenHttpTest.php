@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -90,8 +90,7 @@ class CScreenHttpTest extends CScreenBase {
 			$url = (new CUrl('zabbix.php'))
 				->setArgument('action', 'web.view')
 				->setArgument('groupid', $this->data['groupid'])
-				->setArgument('hostid', $this->hostid)
-				->setArgument('fullscreen', $this->data['fullscreen']);
+				->setArgument('hostid', $this->hostid);
 
 			$paging = getPagingLine($httptests, $sort_order, $url);
 			$httptests = resolveHttpTestMacros($httptests, true, false);
@@ -113,9 +112,7 @@ class CScreenHttpTest extends CScreenBase {
 		// Create table.
 		$table = (new CTableInfo())
 			->setHeader([
-				$this->hostid == 0
-					? make_sorting_header(_('Host'), 'hostname', $sort_field, $sort_order, 'zabbix.php?action=web.view')
-					: null,
+				make_sorting_header(_('Host'), 'hostname', $sort_field, $sort_order, 'zabbix.php?action=web.view'),
 				make_sorting_header(_('Name'), 'name', $sort_field, $sort_order, 'zabbix.php?action=web.view'),
 				_('Number of steps'),
 				_('Last check'),
@@ -123,17 +120,6 @@ class CScreenHttpTest extends CScreenBase {
 			]);
 
 		foreach ($httptests as $httptest) {
-			if ($this->hostid == 0) {
-				$hostname = $httptest['hostname'];
-
-				if ($httptest['host']['status'] == HOST_STATUS_NOT_MONITORED) {
-					$hostname = (new CSpan($hostname))->addClass(ZBX_STYLE_RED);
-				}
-			}
-			else {
-				$hostname = null;
-			}
-
 			if (array_key_exists('lastfailedstep', $httptest) && $httptest['lastfailedstep'] !== null) {
 				$lastcheck = zbx_date2str(DATE_TIME_FORMAT_SECONDS, $httptest['lastcheck']);
 
@@ -162,7 +148,9 @@ class CScreenHttpTest extends CScreenBase {
 			}
 
 			$table->addRow(new CRow([
-				$hostname,
+				($httptest['host']['status'] == HOST_STATUS_NOT_MONITORED)
+					? (new CSpan($httptest['hostname']))->addClass(ZBX_STYLE_RED)
+					: $httptest['hostname'],
 				new CLink($httptest['name'], 'httpdetails.php?httptestid='.$httptest['httptestid']),
 				$httptest['steps'],
 				$lastcheck,

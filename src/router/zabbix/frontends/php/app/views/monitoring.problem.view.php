@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@ $options = [
 	'page' => $data['page'],
 	'data' => [
 		'action' => $data['action'],
-		'fullscreen' => $data['fullscreen'],
 		'sort' => $data['sort'],
 		'sortorder' => $data['sortorder'],
 		'page' => $data['page'],
@@ -36,13 +35,20 @@ $options = [
 			'hostids' => $data['filter']['hostids'],
 			'application' => $data['filter']['application'],
 			'triggerids' => $data['filter']['triggerids'],
-			'problem' => $data['filter']['problem'],
+			'name' => $data['filter']['name'],
 			'severity' => $data['filter']['severity'],
 			'inventory' => $data['filter']['inventory'],
+			'evaltype' => $data['filter']['evaltype'],
 			'tags' => $data['filter']['tags'],
-			'maintenance' => $data['filter']['maintenance'],
+			'show_tags' => $data['filter']['show_tags'],
+			'tag_name_format' => $data['filter']['tag_name_format'],
+			'tag_priority' => $data['filter']['tag_priority'],
+			'show_suppressed' => $data['filter']['show_suppressed'],
 			'unacknowledged' => $data['filter']['unacknowledged'],
-			'details' => $data['filter']['details']
+			'compact_view' => $data['filter']['compact_view'],
+			'show_timeline' => $data['filter']['show_timeline'],
+			'details' => $data['filter']['details'],
+			'highlight_row' => $data['filter']['highlight_row']
 		]
 	]
 ];
@@ -57,10 +63,8 @@ switch ($data['filter']['show']) {
 	case TRIGGERS_OPTION_ALL:
 		$options['profileIdx'] = $data['profileIdx'];
 		$options['profileIdx2'] = $data['profileIdx2'];
-		$options['updateProfile'] = $data['updateProfile'];
-		$options['period'] = $data['period'];
-		$options['stime'] = $data['stime'];
-		$options['isNow'] = $data['isNow'];
+		$options['from'] = $data['from'];
+		$options['to'] = $data['to'];
 		break;
 }
 
@@ -73,6 +77,7 @@ if ($data['action'] == 'problem.view') {
 	$this->addJsFile('gtlc.js');
 	$this->addJsFile('flickerfreescreen.js');
 	$this->addJsFile('multiselect.js');
+	$this->addJsFile('layout.mode.js');
 	require_once dirname(__FILE__).'/monitoring.problem.view.js.php';
 
 	if ($data['uncheck']) {
@@ -87,25 +92,33 @@ if ($data['action'] == 'problem.view') {
 				->addValue(_('History'), TRIGGERS_OPTION_ALL)
 				->setModern(true)
 		)
-		->addRow(_('Host groups'),
+		->addRow((new CLabel(_('Host groups'), 'filter_groupids__ms')),
 			(new CMultiSelect([
 				'name' => 'filter_groupids[]',
-				'objectName' => 'hostGroup',
+				'object_name' => 'hostGroup',
 				'data' => $data['filter']['groups'],
 				'popup' => [
-					'parameters' => 'srctbl=host_groups&dstfrm=zbx_filter&dstfld1=filter_groupids_'.
-						'&srcfld1=groupid&multiselect=1'
+					'parameters' => [
+						'srctbl' => 'host_groups',
+						'srcfld1' => 'groupid',
+						'dstfrm' => 'zbx_filter',
+						'dstfld1' => 'filter_groupids_'
+					]
 				]
 			]))->setWidth(ZBX_TEXTAREA_FILTER_STANDARD_WIDTH)
 		)
-		->addRow(_('Hosts'),
+		->addRow((new CLabel(_('Hosts'), 'filter_hostids__ms')),
 			(new CMultiSelect([
 				'name' => 'filter_hostids[]',
-				'objectName' => 'hosts',
+				'object_name' => 'hosts',
 				'data' => $data['filter']['hosts'],
 				'popup' => [
-					'parameters' => 'srctbl=hosts&dstfrm=zbx_filter&dstfld1=filter_hostids_&srcfld1=hostid'.
-						'&real_hosts=1&multiselect=1'
+					'parameters' => [
+						'srctbl' => 'hosts',
+						'srcfld1' => 'hostid',
+						'dstfrm' => 'zbx_filter',
+						'dstfld1' => 'filter_hostids_'
+					]
 				]
 			]))->setWidth(ZBX_TEXTAREA_FILTER_STANDARD_WIDTH)
 		)
@@ -114,37 +127,40 @@ if ($data['action'] == 'problem.view') {
 				->setWidth(ZBX_TEXTAREA_FILTER_STANDARD_WIDTH),
 			(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
 			(new CButton('filter_application_select', _('Select')))
-				->onClick('return PopUp("'.
-					(new CUrl('popup.php'))
-						->setArgument('srctbl', 'applications')
-						->setArgument('srcfld1', 'name')
-						->setArgument('dstfrm', 'zbx_filter')
-						->setArgument('dstfld1', 'filter_application')
-						->setArgument('with_applications', '1')
-						->setArgument('real_hosts', '1')
-						->getUrl().
-					'");'
+				->onClick('return PopUp("popup.generic",'.
+					CJs::encodeJson([
+						'srctbl' => 'applications',
+						'srcfld1' => 'name',
+						'dstfrm' => 'zbx_filter',
+						'dstfld1' => 'filter_application',
+						'with_applications' => '1',
+						'real_hosts' => '1'
+					]).', null, this);'
 				)
 				->addClass(ZBX_STYLE_BTN_GREY)
 		])
-		->addRow(_('Triggers'),
+		->addRow((new CLabel(_('Triggers'), 'filter_triggerids__ms')),
 			(new CMultiSelect([
 				'name' => 'filter_triggerids[]',
-				'objectName' => 'triggers',
-				'objectOptions' => [
-					'monitored' => true
-				],
+				'object_name' => 'triggers',
 				'data' => $data['filter']['triggers'],
 				'popup' => [
-					'parameters' => 'srctbl=triggers&srcfld1=triggerid&dstfrm=zbx_filter&dstfld1=filter_triggerids_'.
-						'&monitored_hosts=1&with_monitored_triggers=1&multiselect=1&noempty=1'
+					'parameters' => [
+						'srctbl' => 'triggers',
+						'srcfld1' => 'triggerid',
+						'dstfrm' => 'zbx_filter',
+						'dstfld1' => 'filter_triggerids_',
+						'monitored_hosts' => true,
+						'with_monitored_triggers' => true,
+						'noempty' => true
+					]
 				]
 			]))->setWidth(ZBX_TEXTAREA_FILTER_STANDARD_WIDTH)
 		)
 		->addRow(_('Problem'),
-			(new CTextBox('filter_problem', $data['filter']['problem']))->setWidth(ZBX_TEXTAREA_FILTER_STANDARD_WIDTH)
+			(new CTextBox('filter_name', $data['filter']['name']))->setWidth(ZBX_TEXTAREA_FILTER_STANDARD_WIDTH)
 		)
-		->addRow(_('Minimum trigger severity'),
+		->addRow(_('Minimum severity'),
 			new CComboBox('filter_severity', $data['filter']['severity'], null, $data['filter']['severities'])
 		);
 
@@ -196,17 +212,31 @@ if ($data['action'] == 'problem.view') {
 
 	$filter_tags = $data['filter']['tags'];
 	if (!$filter_tags) {
-		$filter_tags = [['tag' => '', 'value' => '']];
+		$filter_tags = [['tag' => '', 'value' => '', 'operator' => TAG_OPERATOR_LIKE]];
 	}
 
 	$filter_tags_table = new CTable();
 	$filter_tags_table->setId('filter-tags');
+
+	$filter_tags_table->addRow(
+		(new CCol(
+			(new CRadioButtonList('filter_evaltype', (int) $data['filter']['evaltype']))
+				->addValue(_('And/Or'), TAG_EVAL_TYPE_AND_OR)
+				->addValue(_('Or'), TAG_EVAL_TYPE_OR)
+				->setModern(true)
+		))->setColSpan(4)
+	);
+
 	$i = 0;
 	foreach ($filter_tags as $tag) {
 		$filter_tags_table->addRow([
 			(new CTextBox('filter_tags['.$i.'][tag]', $tag['tag']))
 				->setAttribute('placeholder', _('tag'))
 				->setWidth(ZBX_TEXTAREA_FILTER_SMALL_WIDTH),
+			(new CRadioButtonList('filter_tags['.$i.'][operator]', (int) $tag['operator']))
+				->addValue(_('Contains'), TAG_OPERATOR_LIKE)
+				->addValue(_('Equals'), TAG_OPERATOR_EQUAL)
+				->setModern(true),
 			(new CTextBox('filter_tags['.$i.'][value]', $tag['value']))
 				->setAttribute('placeholder', _('value'))
 				->setWidth(ZBX_TEXTAREA_FILTER_SMALL_WIDTH),
@@ -226,52 +256,107 @@ if ($data['action'] == 'problem.view') {
 				->addClass('element-table-add')
 		))->setColSpan(3)
 	);
+
+	$tag_format_line = (new CHorList())
+		->addItem((new CRadioButtonList('filter_show_tags', (int) $data['filter']['show_tags']))
+				->addValue(_('None'), PROBLEMS_SHOW_TAGS_NONE)
+				->addValue(PROBLEMS_SHOW_TAGS_1, PROBLEMS_SHOW_TAGS_1)
+				->addValue(PROBLEMS_SHOW_TAGS_2, PROBLEMS_SHOW_TAGS_2)
+				->addValue(PROBLEMS_SHOW_TAGS_3, PROBLEMS_SHOW_TAGS_3)
+				->setModern(true)
+		)
+		->addItem((new CDiv())->setWidth(ZBX_STYLE_FORM_INPUT_MARGIN))
+		->addItem(_('Tag name'))
+		->addItem((new CRadioButtonList('filter_tag_name_format', (int) $data['filter']['tag_name_format']))
+				->addValue(_('Full'), PROBLEMS_TAG_NAME_FULL)
+				->addValue(_('Shortened'), PROBLEMS_TAG_NAME_SHORTENED)
+				->addValue(_('None'), PROBLEMS_TAG_NAME_NONE)
+				->setModern(true)
+				->setEnabled((int) $data['filter']['show_tags'] !== PROBLEMS_SHOW_TAGS_NONE)
+		);
+
 	$filter_column2 = (new CFormList())
 		->addRow(_('Host inventory'), $filter_inventory_table)
 		->addRow(_('Tags'), $filter_tags_table)
-		->addRow(_('Show hosts in maintenance'),
-			(new CCheckBox('filter_maintenance'))->setChecked($data['filter']['maintenance'] == 1)
-		);
+		->addRow(_('Show tags'), $tag_format_line)
+		->addRow(_('Tag display priority'),
+			(new CTextBox('filter_tag_priority', $data['filter']['tag_priority']))
+				->setWidth(ZBX_TEXTAREA_FILTER_STANDARD_WIDTH)
+				->setAttribute('placeholder', _('comma-separated list'))
+				->setEnabled((int) $data['filter']['show_tags'] !== PROBLEMS_SHOW_TAGS_NONE)
+		)
+		->addRow(_('Show suppressed problems'), [
+			(new CCheckBox('filter_show_suppressed'))
+				->setChecked($data['filter']['show_suppressed'] == ZBX_PROBLEM_SUPPRESSED_TRUE),
+			(new CDiv([
+				(new CLabel(_('Show unacknowledged only'), 'filter_unacknowledged'))
+					->addClass(ZBX_STYLE_SECOND_COLUMN_LABEL),
+				(new CCheckBox('filter_unacknowledged'))
+					->setChecked($data['filter']['unacknowledged'] == 1)
+			]))->addClass(ZBX_STYLE_TABLE_FORMS_SECOND_COLUMN)
+		])
+		->addRow(_('Compact view'), [
+			(new CCheckBox('filter_compact_view'))->setChecked($data['filter']['compact_view'] == 1),
+			(new CDiv([
+				(new CLabel(_('Show timeline'), 'filter_show_timeline'))->addClass(ZBX_STYLE_SECOND_COLUMN_LABEL),
+				(new CCheckBox('filter_show_timeline'))
+					->setChecked($data['filter']['show_timeline'] == 1)
+					->setEnabled($data['filter']['compact_view'] == 0),
+			]))->addClass(ZBX_STYLE_TABLE_FORMS_SECOND_COLUMN)
+		])
+		->addRow(_('Show details'), [
+			(new CCheckBox('filter_details'))
+				->setChecked($data['filter']['details'] == 1)
+				->setEnabled($data['filter']['compact_view'] == 0),
+			(new CDiv([
+				(new CLabel(_('Highlight whole row'), 'filter_highlight_row'))->addClass(ZBX_STYLE_SECOND_COLUMN_LABEL),
+				(new CCheckBox('filter_highlight_row'))
+					->setChecked($data['filter']['highlight_row'] == 1)
+					->setEnabled($data['filter']['compact_view'] == 1)
+			]))
+				->addClass(ZBX_STYLE_FILTER_HIGHLIGHT_ROW_CB)
+				->addClass(ZBX_STYLE_TABLE_FORMS_SECOND_COLUMN)
+		]);
 
-	if ($data['config']['event_ack_enable']) {
-		$filter_column2->addRow(_('Show unacknowledged only'),
-			(new CCheckBox('filter_unacknowledged'))->setChecked($data['filter']['unacknowledged'] == 1)
-		);
-	}
-
-	$filter_column2
-		->addRow(_('Show details'), (new CCheckBox('filter_details'))->setChecked($data['filter']['details'] == 1));
-
-	$filter = (new CFilter('web.problem.filter.state'))
-		->addVar('action', 'problem.view')
-		->addVar('fullscreen', $data['fullscreen'])
-		->addVar('page', $data['page'])
-		->addColumn($filter_column1)
-		->addColumn($filter_column2);
+	$filter = (new CFilter())
+		->setProfile($data['profileIdx'])
+		->setActiveTab($data['active_tab'])
+		->addFormItem((new CVar('action', 'problem.view'))->removeId())
+		->addFormItem((new CVar('page', $data['page']))->removeId());
 
 	if ($data['filter']['show'] == TRIGGERS_OPTION_ALL) {
-		$filter->addNavigator();
+		$filter->addTimeSelector($screen->timeline['from'], $screen->timeline['to']);
 	}
 
-	(new CWidget())
+	$filter->addFilterTab(_('Filter'), [$filter_column1, $filter_column2]);
+
+	$web_layout_mode = CView::getLayoutMode();
+
+	$widget = (new CWidget())
 		->setTitle(_('Problems'))
-		->setControls(
+		->setWebLayoutMode($web_layout_mode)
+		->setControls((new CTag('nav', true,
 			(new CForm('get'))
 				->cleanItems()
 				->addVar('action', 'problem.view')
-				->addVar('fullscreen', $data['fullscreen'])
 				->addVar('page', $data['page'])
-				->addItem(
-					(new CList())
-						->addItem(new CRedirectButton(_('Export to CSV'),
-							(new CUrl('zabbix.php'))
-								->setArgument('action', 'problem.view.csv')
-								->setArgument('page',  $data['page'])
-						))
-						->addItem(get_icon('fullscreen', ['fullscreen' => $data['fullscreen']]))
+				->addItem((new CList())
+					->addItem(new CRedirectButton(_('Export to CSV'),
+						(new CUrl('zabbix.php'))
+							->setArgument('action', 'problem.view.csv')
+							->setArgument('page',  $data['page'])
+					))
+					->addItem(get_icon('fullscreen'))
 				)
-		)
-		->addItem($filter)
+			))
+				->setAttribute('aria-label', _('Content controls'))
+		);
+
+	if (in_array($web_layout_mode, [ZBX_LAYOUT_NORMAL, ZBX_LAYOUT_FULLSCREEN])) {
+		$widget->addItem($filter);
+	}
+
+	$widget
 		->addItem($screen->get())
 		->show();
 
@@ -283,15 +368,8 @@ if ($data['action'] == 'problem.view') {
 			'id' => 'timeline_1',
 			'loadSBox' => 0,
 			'loadImage' => 0,
-			'loadScroll' => 1,
 			'dynamic' => 0,
-			'mainObject' => 1,
-			'periodFixed' => CProfile::get('web.problem.timelinefixed', 1),
-			'sliderMaximumTimePeriod' => ZBX_MAX_PERIOD,
-			'profile' => [
-				'idx' => 'web.problem.timeline',
-				'idx2' => 0,
-			]
+			'mainObject' => 1
 		];
 
 		$this->addPostJS('timeControl.useTimeRefresh('.zbx_jsvalue(CWebUser::getRefresh()).');');

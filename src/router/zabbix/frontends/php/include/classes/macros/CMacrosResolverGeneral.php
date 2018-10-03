@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -135,7 +135,7 @@ class CMacrosResolverGeneral {
 	 *
 	 * @return array
 	 */
-	protected function getMacroPositions($text, array $types) {
+	public function getMacroPositions($text, array $types) {
 		$macros = [];
 		$extract_usermacros = array_key_exists('usermacros', $types);
 		$extract_macros = array_key_exists('macros', $types);
@@ -168,6 +168,7 @@ class CMacrosResolverGeneral {
 
 		if ($extract_lldmacros) {
 			$lld_macro_parser = new CLLDMacroParser();
+			$lld_macro_function_parser = new CLLDMacroFunctionParser();
 		}
 
 		if ($extract_functionids) {
@@ -202,6 +203,10 @@ class CMacrosResolverGeneral {
 			elseif ($extract_lldmacros && $lld_macro_parser->parse($text, $pos) != CParser::PARSE_FAIL) {
 				$macros[$pos] = $lld_macro_parser->getMatch();
 				$pos += $lld_macro_parser->getLength() - 1;
+			}
+			elseif ($extract_lldmacros && $lld_macro_function_parser->parse($text, $pos) != CParser::PARSE_FAIL) {
+				$macros[$pos] = $lld_macro_function_parser->getMatch();
+				$pos += $lld_macro_function_parser->getLength() - 1;
 			}
 			elseif ($extract_functionids && $functionid_parser->parse($text, $pos) != CParser::PARSE_FAIL) {
 				$macros[$pos] = $functionid_parser->getMatch();
@@ -284,6 +289,7 @@ class CMacrosResolverGeneral {
 			$macros['lldmacros'] = [];
 
 			$lld_macro_parser = new CLLDMacroParser();
+			$lld_macro_function_parser = new CLLDMacroFunctionParser();
 		}
 
 		if ($extract_functionids) {
@@ -360,10 +366,17 @@ class CMacrosResolverGeneral {
 					continue;
 				}
 
-				if ($extract_lldmacros && $lld_macro_parser->parse($text, $pos) != CParser::PARSE_FAIL) {
-					$macros['lldmacros'][$lld_macro_parser->getMatch()] = null;
-					$pos += $lld_macro_parser->getLength() - 1;
-					continue;
+				if ($extract_lldmacros) {
+					if ($lld_macro_parser->parse($text, $pos) != CParser::PARSE_FAIL) {
+						$macros['lldmacros'][$lld_macro_parser->getMatch()] = null;
+						$pos += $lld_macro_parser->getLength() - 1;
+						continue;
+					}
+					elseif ($lld_macro_function_parser->parse($text, $pos) != CParser::PARSE_FAIL) {
+						$macros['lldmacros'][$lld_macro_function_parser->getMatch()] = null;
+						$pos += $lld_macro_function_parser->getLength() - 1;
+						continue;
+					}
 				}
 
 				if ($extract_functionids && $functionid_parser->parse($text, $pos) != CParser::PARSE_FAIL) {
@@ -673,13 +686,11 @@ class CMacrosResolverGeneral {
 	 * @param array $macros
 	 * @param array $macros[<functionid>]
 	 * @param array $macros[<functionid>][<macro>]  an array of the tokens
-	 * @param array $triggers
 	 * @param array $macro_values
-	 * @param bool  $events			resolve {ITEM.VALUE} macro using 'clock' and 'ns' fields
 	 *
 	 * @return array
 	 */
-	protected function getItemMacros(array $macros, array $triggers, array $macro_values, $events) {
+	protected function getItemMacros(array $macros, array $macro_values) {
 		if (!$macros) {
 			return $macro_values;
 		}
@@ -695,60 +706,48 @@ class CMacrosResolverGeneral {
 		// False passed to DBfetch to get data without null converted to 0, which is done by default.
 		foreach ($functions as $function) {
 			foreach ($macros[$function['functionid']] as $macro => $tokens) {
-				switch ($macro) {
-					case 'ITEM.VALUE':
-						if ($events) {
-							$trigger = $triggers[$function['triggerid']];
-							$value = Manager::History()->getValueAt($function, $trigger['clock'], $trigger['ns']);
-							break;
+				if ($macro === 'ITEM.VALUE' || $macro === 'ITEM.LASTVALUE') {
+					$history = Manager::History()->getLastValues([$function], 1, ZBX_HISTORY_PERIOD);
+
+					if (array_key_exists($function['itemid'], $history)) {
+						$value = $history[$function['itemid']][0]['value'];
+
+						foreach ($tokens as $token) {
+							if (array_key_exists('function', $token)) {
+								if ($token['function'] !== 'regsub' && $token['function'] !== 'iregsub') {
+									continue;
+								}
+
+								if (count($token['parameters']) != 2) {
+									continue;
+								}
+
+								$ci = ($token['function'] === 'iregsub') ? 'i' : '';
+
+								set_error_handler(function ($errno, $errstr) {});
+								$rc = preg_match('/'.$token['parameters'][0].'/'.$ci, $value, $matches);
+								restore_error_handler();
+
+								if ($rc === false) {
+									continue;
+								}
+
+								$macro_value = $token['parameters'][1];
+								$matched_macros = $this->getMacroPositions($macro_value, ['replacements' => true]);
+
+								foreach (array_reverse($matched_macros, true) as $pos => $macro) {
+									$macro_value = substr_replace($macro_value,
+										array_key_exists($macro[1], $matches) ? $matches[$macro[1]] : '',
+										$pos, strlen($macro)
+									);
+								}
+							}
+							else {
+								$macro_value = formatHistoryValue($value, $function);
+							}
+
+							$macro_values[$function['triggerid']][$token['token']] = $macro_value;
 						}
-						// break; is not missing here
-
-					case 'ITEM.LASTVALUE':
-						$history = Manager::History()->getLastValues([$function], 1, ZBX_HISTORY_PERIOD);
-
-						$value = array_key_exists($function['itemid'], $history)
-							? $history[$function['itemid']][0]['value']
-							: null;
-						break;
-				}
-
-				if ($value !== null) {
-					foreach ($tokens as $token) {
-						if (array_key_exists('function', $token)) {
-							if ($token['function'] !== 'regsub' && $token['function'] !== 'iregsub') {
-								continue;
-							}
-
-							if (count($token['parameters']) != 2) {
-								continue;
-							}
-
-							$ci = ($token['function'] === 'iregsub') ? 'i' : '';
-
-							set_error_handler(function ($errno, $errstr) {});
-							$rc = preg_match('/'.$token['parameters'][0].'/'.$ci, $value, $matches);
-							restore_error_handler();
-
-							if ($rc === false) {
-								continue;
-							}
-
-							$macro_value = $token['parameters'][1];
-							$matched_macros = $this->getMacroPositions($macro_value, ['replacements' => true]);
-
-							foreach (array_reverse($matched_macros, true) as $pos => $macro) {
-								$macro_value = substr_replace($macro_value,
-									array_key_exists($macro[1], $matches) ? $matches[$macro[1]] : '',
-									$pos, strlen($macro)
-								);
-							}
-						}
-						else {
-							$macro_value = formatHistoryValue($value, $function);
-						}
-
-						$macro_values[$function['triggerid']][$token['token']] = $macro_value;
 					}
 				}
 			}

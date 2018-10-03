@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -318,6 +318,7 @@ class CFunctionValidator extends CValidator {
 		$user_macro_parser = new CUserMacroParser();
 		if ($this->lldmacros) {
 			$lld_macro_parser = new CLLDMacroParser();
+			$lld_macro_function_parser = new CLLDMacroFunctionParser();
 		}
 
 		foreach ($this->allowed[$value['functionName']]['args'] as $aNum => $arg) {
@@ -342,7 +343,8 @@ class CFunctionValidator extends CValidator {
 			}
 
 			if ($this->lldmacros
-					&& $lld_macro_parser->parse($value['functionParamList'][$aNum]) == CParser::PARSE_SUCCESS) {
+					&& ($lld_macro_function_parser->parse($value['functionParamList'][$aNum]) == CParser::PARSE_SUCCESS
+						|| $lld_macro_parser->parse($value['functionParamList'][$aNum]) == CParser::PARSE_SUCCESS)) {
 				continue;
 			}
 

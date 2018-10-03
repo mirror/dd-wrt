@@ -1,6 +1,6 @@
 dnl
 dnl Zabbix
-dnl Copyright (C) 2001-2017 Zabbix SIA
+dnl Copyright (C) 2001-2018 Zabbix SIA
 dnl
 dnl This program is free software; you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@ dnl
 
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([Zabbix],[3.4.5])
+AC_INIT([Zabbix],[4.0.0])
 AC_CONFIG_SRCDIR(src/zabbix_server/server.c)
 AM_INIT_AUTOMAKE([subdir-objects])
 
@@ -37,7 +37,7 @@ dnl *                     Checks for programs                       *
 dnl *                                                               *
 dnl *****************************************************************
 
-AC_PROG_CC
+AC_PROG_CC([cc c99 gcc clang])
 AM_PROG_CC_C_O
 
 dnl *****************************************************************
@@ -58,11 +58,11 @@ AC_CHECK_HEADERS(stdio.h stdlib.h string.h unistd.h netdb.h signal.h \
   stdint.h mach/host_info.h mach/mach_host.h knlist.h pwd.h \
   sys/var.h arpa/nameser.h assert.h sys/dkstat.h sys/disk.h sys/sched.h \
   zone.h nlist.h kvm.h linux/kernel.h procinfo.h sys/dk.h \
-  sys/resource.h pthread.h windows.h process.h conio.h sys/wait.h pcreposix.h \
+  sys/resource.h pthread.h windows.h process.h conio.h sys/wait.h \
   stdarg.h winsock2.h pdh.h psapi.h sys/sem.h sys/ipc.h sys/shm.h Winldap.h \
   Winber.h lber.h ws2tcpip.h inttypes.h sys/file.h grp.h \
-  execinfo.h libperfstat.h sys/systemcfg.h sys/mnttab.h mntent.h sys/times.h \
-  dlfcn.h sys/utsname.h sys/un.h event.h)
+  execinfo.h sys/systemcfg.h sys/mnttab.h mntent.h sys/times.h \
+  dlfcn.h sys/utsname.h sys/un.h sys/protosw.h)
 AC_CHECK_HEADERS(resolv.h, [], [], [
 #ifdef HAVE_SYS_TYPES_H
 #  include <sys/types.h>
@@ -128,6 +128,11 @@ AC_CHECK_HEADERS(linux/netlink.h, [
 ], [], [
 #ifdef HAVE_SYS_SOCKET_H
 #  include <sys/socket.h>
+#endif
+])
+AC_CHECK_HEADERS(libperfstat.h, [], [], [
+#ifdef HAVE_SYS_PROTOSW_H
+#  include <sys/protosw.h>
 #endif
 ])
 
@@ -244,6 +249,69 @@ if test "x$zbx_sival_int" != "x"; then
 else
   AC_MSG_ERROR(Unable to find integer field name in union sigval of struct siginfo_t)
 fi
+
+AC_MSG_CHECKING(for res_ninit)
+AC_TRY_LINK(
+[
+#ifdef HAVE_SYS_TYPES_H
+#	include <sys/types.h>
+#endif
+#ifdef HAVE_NETINET_IN_H
+#	include <netinet/in.h>
+#endif
+#ifdef HAVE_ARPA_NAMESER_H
+#	include <arpa/nameser.h>
+#endif
+#ifdef HAVE_RESOLV_H
+#	include <resolv.h>
+#endif
+#ifndef C_IN
+#	define C_IN	ns_c_in
+#endif	/* C_IN */
+#ifndef T_SOA
+#	define T_SOA	ns_t_soa
+#endif	/* T_SOA */
+],
+[
+	struct __res_state	res_state_local;
+
+	res_ninit(&res_state_local);
+],
+AC_DEFINE(HAVE_RES_NINIT,1,[Define to 1 if 'res_ninit' exists.])
+AC_MSG_RESULT(yes),
+AC_MSG_RESULT(no))
+
+AC_MSG_CHECKING(for res_ndestroy)
+AC_TRY_LINK(
+[
+#ifdef HAVE_SYS_TYPES_H
+#	include <sys/types.h>
+#endif
+#ifdef HAVE_NETINET_IN_H
+#	include <netinet/in.h>
+#endif
+#ifdef HAVE_ARPA_NAMESER_H
+#	include <arpa/nameser.h>
+#endif
+#ifdef HAVE_RESOLV_H
+#	include <resolv.h>
+#endif
+#ifndef C_IN
+#	define C_IN	ns_c_in
+#endif	/* C_IN */
+#ifndef T_SOA
+#	define T_SOA	ns_t_soa
+#endif	/* T_SOA */
+],
+[
+	struct __res_state	res_state_local;
+
+	res_ninit(&res_state_local);
+	res_ndestroy(&res_state_local);
+],
+AC_DEFINE(HAVE_RES_NDESTROY,1,[Define to 1 if 'res_ndestroy' exists.])
+AC_MSG_RESULT(yes),
+AC_MSG_RESULT(no))
 
 AC_MSG_CHECKING(for union semun)
 AC_TRY_COMPILE(
@@ -876,7 +944,8 @@ dnl *                                                               *
 dnl *****************************************************************
 
 AC_MSG_CHECKING(for libperfstat 5.2.0.40 fileset)
-AC_TRY_COMPILE([#include <libperfstat.h>],
+AC_TRY_COMPILE([#include <sys/protosw.h>
+#include <libperfstat.h>],
 [perfstat_memory_total_t	memstats;
 memstats.virt_active = 0;
 ],
@@ -885,7 +954,8 @@ AC_MSG_RESULT(yes),
 AC_MSG_RESULT(no))
 
 AC_MSG_CHECKING(for libperfstat 5.3.0.60 fileset)
-AC_TRY_COMPILE([#include <libperfstat.h>],
+AC_TRY_COMPILE([#include <sys/protosw.h>
+#include <libperfstat.h>],
 [perfstat_partition_total_t	lparstats;
 lparstats.type.b.donate_enabled = 0;
 lparstats.idle_donated_purr = 0;
@@ -1089,7 +1159,11 @@ AC_ARG_ENABLE(ipv6,[  --enable-ipv6           Turn on support of IPv6],
 esac],
 [ipv6=no])
 
+AM_CONDITIONAL([DBSCHEMA], [test -d create])
+
 AM_CONDITIONAL([ZBXCUNIT], [test -f src/libs/zbxcunit/zbxcunit.c])
+
+AM_CONDITIONAL([ZBXCMOCKA], [(test -d tests/) && (test "x$server" = "xyes" || test "x$agent" = "xyes")])
 
 have_db="no"
 have_unixodbc="no"
@@ -1351,7 +1425,38 @@ if test "x$server" = "xyes" || test "x$proxy" = "xyes"; then
 	PROXY_LIBS="$PROXY_LIBS $OPENIPMI_LIBS"
 
 	AC_SUBST(OPENIPMI_CFLAGS)
+
+	dnl Check for zlib, used by Zabbix server-proxy communications
+	ZLIB_CHECK_CONFIG([no])
+	if test "x$found_zlib" != "xyes"; then
+		AC_MSG_ERROR([Unable to use zlib (zlib check failed)])
+	fi
+
+	AC_SUBST(ZLIB_CFLAGS)
+
+	dnl Check for 'libpthread' library that supports PTHREAD_PROCESS_SHARED flag
+	LIBPTHREAD_CHECK_CONFIG([no])
+	if test "x$found_libpthread" != "xyes"; then
+		AC_MSG_ERROR([Unable to use libpthread (libpthread check failed)])
+	fi
 fi
+
+SERVER_LDFLAGS="$SERVER_LDFLAGS $ZLIB_LDFLAGS $LIBPTHREAD_LDFLAGS"
+SERVER_LIBS="$SERVER_LIBS $ZLIB_LIBS $LIBPTHREAD_LIBS"
+
+PROXY_LDFLAGS="$PROXY_LDFLAGS $ZLIB_LDFLAGS $LIBPTHREAD_LDFLAGS"
+PROXY_LIBS="$PROXY_LIBS $ZLIB_LIBS $LIBPTHREAD_LIBS"
+
+AGENT_LDFLAGS="$AGENT_LDFLAGS $ZLIB_LDFLAGS $LIBPTHREAD_LDFLAGS"
+AGENT_LIBS="$AGENT_LIBS $ZLIB_LIBS $LIBPTHREAD_LIBS"
+
+ZBXGET_LDFLAGS="$ZBXGET_LDFLAGS $ZLIB_LDFLAGS $LIBPTHREAD_LDFLAGS"
+ZBXGET_LIBS="$ZBXGET_LIBS $ZLIB_LIBS $LIBPTHREAD_LIBS"
+
+SENDER_LDFLAGS="$SENDER_LDFLAGS $ZLIB_LDFLAGS $LIBPTHREAD_LDFLAGS"
+SENDER_LIBS="$SENDER_LIBS $ZLIB_LIBS $LIBPTHREAD_LIBS"
+
+AM_CONDITIONAL(HAVE_IPMI, [test "x$have_ipmi" = "xyes"])
 
 dnl Check if Zabbix internal IPC services are used
 have_ipcservice="no"
@@ -1373,7 +1478,7 @@ if test "x$have_ipcservice" = "xyes"; then
 	if test "x$found_libevent" != "xyes"; then
 		AC_MSG_ERROR([Unable to use libevent (libevent check failed)])
 	fi
-	
+
 	SERVER_LDFLAGS="$SERVER_LDFLAGS $LIBEVENT_LDFLAGS"
 	SERVER_LIBS="$SERVER_LIBS $LIBEVENT_LIBS"
 
@@ -1382,17 +1487,6 @@ if test "x$have_ipcservice" = "xyes"; then
 		PROXY_LIBS="$PROXY_LIBS $LIBEVENT_LIBS"
 	fi
 fi
-
-dnl Check for libpcre, used by Zabbix for regular expressions
-LIBPCRE_CHECK_CONFIG([no])
-if test "x$found_libpcre" != "xyes"; then
-	AC_MSG_ERROR([Unable to use libpcre (libpcre check failed)])
-fi
-CFLAGS="$CFLAGS $LIBPCRE_CFLAGS"
-LDFLAGS="$LDFLAGS $LIBPCRE_LDFLAGS"
-LIBS="$LIBS $LIBPCRE_LIBS"
-
-AC_SUBST(LIBPCRE_CFLAGS)
 
 dnl Check for mbed TLS (PolarSSL) libpolarssl [by default - skip]
 LIBMBEDTLS_CHECK_CONFIG([no])
@@ -1520,6 +1614,24 @@ dnl Starting from 2.0 agent can do web monitoring
 AGENT_LDFLAGS="$AGENT_LDFLAGS $LIBCURL_LDFLAGS"
 AGENT_LIBS="$AGENT_LIBS $LIBCURL_LIBS"
 
+dnl Check for libpcre, used by Zabbix for regular expressions
+if test "x$server" = "xyes" || test "x$proxy" = "xyes" || test "x$agent" = "xyes"; then
+	LIBPCRE_CHECK_CONFIG([no])
+	if test "x$found_libpcre" != "xyes"; then
+		AC_MSG_ERROR([Unable to use libpcre (libpcre check failed)])
+	fi
+fi
+
+CFLAGS="$CFLAGS $LIBPCRE_CFLAGS"
+LDFLAGS="$LDFLAGS $LIBPCRE_LDFLAGS"
+if test "x$ARCH" = "xosx"; then
+	LIBS="$LIBPCRE_LIBS $LIBS"
+else
+	LIBS="$LIBS $LIBPCRE_LIBS"
+fi
+
+AC_SUBST(LIBPCRE_CFLAGS)
+
 found_iconv="no"
 dnl Check for libiconv [by default - skip]
 LIBICONV_CHECK_CONFIG([no])
@@ -1533,6 +1645,18 @@ AC_SUBST(ICONV_CFLAGS)
 
 RANLIB="ranlib"
 AC_SUBST(RANLIB)
+
+SERVER_CONFIG_FILE="${sysconfdir}/zabbix_server.conf"
+PROXY_CONFIG_FILE="${sysconfdir}/zabbix_proxy.conf"
+AGENT_CONFIG_FILE="${sysconfdir}/zabbix_agentd.conf"
+
+EXTERNAL_SCRIPTS_PATH="${datadir}/zabbix/externalscripts"
+ALERT_SCRIPTS_PATH="${datadir}/zabbix/alertscripts"
+
+CURL_SSL_CERT_LOCATION="${datadir}/zabbix/ssl/certs"
+CURL_SSL_KEY_LOCATION="${datadir}/zabbix/ssl/keys"
+
+LOAD_MODULE_PATH="${libdir}/modules"
 
 AC_SUBST(SERVER_LDFLAGS)
 AC_SUBST(SERVER_LIBS)
@@ -1548,6 +1672,18 @@ AC_SUBST(ZBXGET_LIBS)
 
 AC_SUBST(SENDER_LDFLAGS)
 AC_SUBST(SENDER_LIBS)
+
+AC_SUBST(SERVER_CONFIG_FILE)
+AC_SUBST(PROXY_CONFIG_FILE)
+AC_SUBST(AGENT_CONFIG_FILE)
+
+AC_SUBST(EXTERNAL_SCRIPTS_PATH)
+AC_SUBST(ALERT_SCRIPTS_PATH)
+
+AC_SUBST(CURL_SSL_CERT_LOCATION)
+AC_SUBST(CURL_SSL_KEY_LOCATION)
+
+AC_SUBST(LOAD_MODULE_PATH)
 
 dnl *****************************************************************
 dnl *                                                               *
@@ -1572,16 +1708,39 @@ case "x$ARCH" in
 		;;
 esac
 
-
 dnl *****************************************************************
 dnl *                                                               *
 dnl *                 Output configuration results                  *
 dnl *                                                               *
 dnl *****************************************************************
 
+if test -d tests; then
+	AC_CONFIG_FILES(
+	tests/Makefile
+	tests/libs/Makefile
+	tests/libs/zbxcommon/Makefile
+	tests/libs/zbxconf/Makefile
+	tests/libs/zbxdbcache/Makefile
+	tests/libs/zbxdbhigh/Makefile
+	tests/libs/zbxhistory/Makefile
+	tests/libs/zbxjson/Makefile
+	tests/libs/zbxsysinfo/Makefile
+	tests/libs/zbxsysinfo/linux/Makefile
+	tests/libs/zbxsysinfo/common/Makefile
+	tests/libs/zbxcommshigh/Makefile
+	tests/libs/zbxalgo/Makefile
+	)
+	AC_DEFINE([HAVE_TESTS], [1], ["Define to 1 if tests directory is present"])
+fi
+
 AC_OUTPUT([
 	Makefile
 	database/Makefile
+	database/ibm_db2/Makefile
+	database/mysql/Makefile
+	database/oracle/Makefile
+	database/postgresql/Makefile
+	database/sqlite3/Makefile
 	misc/Makefile
 	src/Makefile
 	src/libs/Makefile
@@ -1625,6 +1784,7 @@ AC_OUTPUT([
 	src/libs/zbxtasks/Makefile
 	src/libs/zbxipcservice/Makefile
 	src/libs/zbxhistory/Makefile
+	src/libs/zbxcompress/Makefile
 	src/zabbix_agent/Makefile
 	src/zabbix_get/Makefile
 	src/zabbix_sender/Makefile
@@ -1646,6 +1806,7 @@ AC_OUTPUT([
 	src/zabbix_server/vmware/Makefile
 	src/zabbix_server/taskmanager/Makefile
 	src/zabbix_server/ipmi/Makefile
+	src/zabbix_server/odbc/Makefile
 	src/zabbix_server/scripts/Makefile
 	src/zabbix_server/preprocessor/Makefile
 	src/zabbix_proxy/Makefile
@@ -1655,9 +1816,39 @@ AC_OUTPUT([
 	src/zabbix_proxy/datasender/Makefile
 	src/zabbix_proxy/taskmanager/Makefile
 	src/zabbix_java/Makefile
-	upgrades/Makefile
 	man/Makefile
 	])
+
+dnl The following variables use autoconf variables such as
+dnl ${sysconfdir} and ${datadir} . Which in turn contain
+dnl variables such as ${prefix}. In order to completely
+dnl substitute all variables and output end-value in
+dnl Configuration output below it is required to perform 2
+dnl substitutions.
+
+SERVER_CONFIG_FILE=`eval echo "${SERVER_CONFIG_FILE}"`
+SERVER_CONFIG_FILE=`eval echo "${SERVER_CONFIG_FILE}"`
+
+PROXY_CONFIG_FILE=`eval echo "${PROXY_CONFIG_FILE}"`
+PROXY_CONFIG_FILE=`eval echo "${PROXY_CONFIG_FILE}"`
+
+AGENT_CONFIG_FILE=`eval echo "${AGENT_CONFIG_FILE}"`
+AGENT_CONFIG_FILE=`eval echo "${AGENT_CONFIG_FILE}"`
+
+EXTERNAL_SCRIPTS_PATH=`eval echo "${EXTERNAL_SCRIPTS_PATH}"`
+EXTERNAL_SCRIPTS_PATH=`eval echo "${EXTERNAL_SCRIPTS_PATH}"`
+
+ALERT_SCRIPTS_PATH=`eval echo "${ALERT_SCRIPTS_PATH}"`
+ALERT_SCRIPTS_PATH=`eval echo "${ALERT_SCRIPTS_PATH}"`
+
+CURL_SSL_CERT_LOCATION=`eval echo "${CURL_SSL_CERT_LOCATION}"`
+CURL_SSL_CERT_LOCATION=`eval echo "${CURL_SSL_CERT_LOCATION}"`
+
+CURL_SSL_KEY_LOCATION=`eval echo "${CURL_SSL_KEY_LOCATION}"`
+CURL_SSL_KEY_LOCATION=`eval echo "${CURL_SSL_KEY_LOCATION}"`
+
+LOAD_MODULE_PATH=`eval echo "${LOAD_MODULE_PATH}"`
+LOAD_MODULE_PATH=`eval echo "${LOAD_MODULE_PATH}"`
 
 echo "
 
@@ -1712,6 +1903,10 @@ if test "x$ICONV_CFLAGS" != "x"; then
 	echo "    iconv:                 ${ICONV_CFLAGS}"
 fi
 
+if test "x$LIBEVENT_CFLAGS" != "x"; then
+	echo "    libevent:              ${LIBEVENT_CFLAGS}"
+fi
+
 echo "
   Enable server:         ${server}"
 
@@ -1719,15 +1914,25 @@ if test "x$server" != "xno"; then
 
 echo "  Server details:
     With database:         ${have_db}
-    WEB Monitoring:        ${have_web_monitoring}
-    Native Jabber:         ${have_jabber}
+    WEB Monitoring:        ${have_web_monitoring}"
+
+if test "x$have_web_monitoring" = "xcURL"; then
+echo "      SSL certificates:      ${CURL_SSL_CERT_LOCATION}
+      SSL keys:              ${CURL_SSL_KEY_LOCATION}"
+fi
+
+echo "    Native Jabber:         ${have_jabber}
     SNMP:                  ${have_snmp}
     IPMI:                  ${have_ipmi}
     SSH:                   ${have_ssh2}
     TLS:                   ${have_tls}
     ODBC:                  ${have_unixodbc}
     Linker flags:          ${SERVER_LDFLAGS} ${LDFLAGS}
-    Libraries:             ${SERVER_LIBS} ${LIBS}"
+    Libraries:             ${SERVER_LIBS} ${LIBS}
+    Configuration file:    ${SERVER_CONFIG_FILE}
+    External scripts:      ${EXTERNAL_SCRIPTS_PATH}
+    Alert scripts:         ${ALERT_SCRIPTS_PATH}
+    Modules:               ${LOAD_MODULE_PATH}"
 
 fi
 
@@ -1738,14 +1943,23 @@ if test "x$proxy" != "xno"; then
 
 echo "  Proxy details:
     With database:         ${have_db}
-    WEB Monitoring:        ${have_web_monitoring}
-    SNMP:                  ${have_snmp}
+    WEB Monitoring:        ${have_web_monitoring}"
+
+if test "x$have_web_monitoring" = "xcURL"; then
+echo "      SSL certificates:      ${CURL_SSL_CERT_LOCATION}
+      SSL keys:              ${CURL_SSL_KEY_LOCATION}"
+fi
+
+echo "    SNMP:                  ${have_snmp}
     IPMI:                  ${have_ipmi}
     SSH:                   ${have_ssh2}
     TLS:                   ${have_tls}
     ODBC:                  ${have_unixodbc}
     Linker flags:          ${PROXY_LDFLAGS} ${LDFLAGS}
-    Libraries:             ${PROXY_LIBS} ${LIBS}"
+    Libraries:             ${PROXY_LIBS} ${LIBS}
+    Configuration file:    ${PROXY_CONFIG_FILE}
+    External scripts:      ${EXTERNAL_SCRIPTS_PATH}
+    Modules:               ${LOAD_MODULE_PATH}"
 
 fi
 
@@ -1757,7 +1971,9 @@ if test "x$agent" != "xno"; then
 echo "  Agent details:
     TLS:                   ${have_tls}
     Linker flags:          ${AGENT_LDFLAGS} ${LDFLAGS}
-    Libraries:             ${AGENT_LIBS} ${LIBS}"
+    Libraries:             ${AGENT_LIBS} ${LIBS}
+    Configuration file:    ${AGENT_CONFIG_FILE}
+    Modules:               ${LOAD_MODULE_PATH}"
 
 fi
 

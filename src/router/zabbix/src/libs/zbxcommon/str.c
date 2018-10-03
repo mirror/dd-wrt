@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
 #endif
 
 static const char	copyright_message[] =
-	"Copyright (C) 2017 Zabbix SIA\n"
+	"Copyright (C) 2018 Zabbix SIA\n"
 	"License GPLv2+: GNU GPL version 2 or later <http://gnu.org/licenses/gpl.html>.\n"
 	"This is free software: you are free to change and redistribute it according to\n"
 	"the license. There is NO WARRANTY, to the extent permitted by law.";
@@ -227,7 +227,7 @@ retry:
 		*alloc_len = vsnprintf(NULL, 0, fmt, args) + 2;	/* '\0' + one byte to prevent the operation retry */
 		va_end(args);
 		*offset = 0;
-		*str = zbx_malloc(*str, *alloc_len);
+		*str = (char *)zbx_malloc(*str, *alloc_len);
 	}
 
 	avail_len = *alloc_len - *offset;
@@ -238,7 +238,7 @@ retry:
 	if (written_len == avail_len - 1)
 	{
 		*alloc_len *= 2;
-		*str = zbx_realloc(*str, *alloc_len);
+		*str = (char *)zbx_realloc(*str, *alloc_len);
 
 		goto retry;
 	}
@@ -304,13 +304,13 @@ void	zbx_strncpy_alloc(char **str, size_t *alloc_len, size_t *offset, const char
 	{
 		*alloc_len = n + 1;
 		*offset = 0;
-		*str = zbx_malloc(*str, *alloc_len);
+		*str = (char *)zbx_malloc(*str, *alloc_len);
 	}
 	else if (*offset + n >= *alloc_len)
 	{
 		while (*offset + n >= *alloc_len)
 			*alloc_len *= 2;
-		*str = zbx_realloc(*str, *alloc_len);
+		*str = (char *)zbx_realloc(*str, *alloc_len);
 	}
 
 	while (0 != n && '\0' != *src)
@@ -319,6 +319,26 @@ void	zbx_strncpy_alloc(char **str, size_t *alloc_len, size_t *offset, const char
 		n--;
 	}
 
+	(*str)[*offset] = '\0';
+}
+
+void	zbx_str_memcpy_alloc(char **str, size_t *alloc_len, size_t *offset, const char *src, size_t n)
+{
+	if (NULL == *str)
+	{
+		*alloc_len = n + 1;
+		*offset = 0;
+		*str = (char *)zbx_malloc(*str, *alloc_len);
+	}
+	else if (*offset + n >= *alloc_len)
+	{
+		while (*offset + n >= *alloc_len)
+			*alloc_len *= 2;
+		*str = (char *)zbx_realloc(*str, *alloc_len);
+	}
+
+	memcpy(*str + *offset, src, n);
+	*offset += n;
 	(*str)[*offset] = '\0';
 }
 
@@ -359,7 +379,7 @@ char	*string_replace(const char *str, const char *sub_str1, const char *sub_str2
 	diff = (long)strlen(sub_str2) - len;
 
         /* allocate new memory */
-        new_str = zbx_malloc(new_str, (size_t)(strlen(str) + count*diff + 1)*sizeof(char));
+	new_str = (char *)zbx_malloc(new_str, (size_t)(strlen(str) + count*diff + 1)*sizeof(char));
 
         for (q=str,t=new_str,p=str; (p = strstr(p, sub_str1)); )
         {
@@ -513,9 +533,9 @@ void	zbx_lrtrim(char *str, const char *charlist)
  * Author: Alexander Vladishev                                                *
  *                                                                            *
  ******************************************************************************/
-void	zbx_remove_chars(register char *str, const char *charlist)
+void	zbx_remove_chars(char *str, const char *charlist)
 {
-	register char *p;
+	char	*p;
 
 	if (NULL == str || NULL == charlist || '\0' == *str || '\0' == *charlist)
 		return;
@@ -621,7 +641,7 @@ char	*zbx_dvsprintf(char *dest, const char *f, va_list args)
 
 	while (1)
 	{
-		string = zbx_malloc(string, size);
+		string = (char *)zbx_malloc(string, size);
 
 		va_copy(curr, args);
 		n = vsnprintf(string, size, f, curr);
@@ -698,7 +718,7 @@ char	*zbx_strdcat(char *dest, const char *src)
 	len_dest = strlen(dest);
 	len_src = strlen(src);
 
-	dest = zbx_realloc(dest, len_dest + len_src + 1);
+	dest = (char *)zbx_realloc(dest, len_dest + len_src + 1);
 
 	zbx_strlcpy(dest + len_dest, src, len_src + 1);
 
@@ -801,10 +821,15 @@ int	zbx_check_hostname(const char *hostname, char **error)
  *                                                                            *
  * Author: Aleksandrs Saveljevs                                               *
  *                                                                            *
+ * Comments: the pointer is advanced to the first invalid character even if   *
+ *           FAIL is returned (meaning there is a syntax error in item key).  *
+ *           If necessary, the caller must keep a copy of pointer original    *
+ *           value.                                                           *
+ *                                                                            *
  ******************************************************************************/
-int	parse_key(char **exp)
+int	parse_key(const char **exp)
 {
-	char	*s;
+	const char	*s;
 
 	for (s = *exp; SUCCEED == is_key_char(*s); s++)
 		;
@@ -825,31 +850,28 @@ int	parse_key(char **exp)
 				case 0:
 					if (',' == *s)
 						;
-					else if (']' == *s && '[' == s[1] && 0 == array)	/* Zapcat */
-						s++;
 					else if ('"' == *s)
 						state = 1;
 					else if ('[' == *s)
-						array++;
+					{
+						if (0 == array)
+							array = 1;
+						else
+							goto fail;	/* incorrect syntax: multi-level array */
+					}
 					else if (']' == *s && 0 != array)
 					{
-						array--;
+						array = 0;
+						s++;
 
-						/* skip spaces */
-						while (' ' == s[1])
+						while (' ' == *s)	/* skip trailing spaces after closing ']' */
 							s++;
 
-						if (0 == array && ']' == s[1])
-						{
-							s++;
+						if (']' == *s)
 							goto succeed;
-						}
 
-						if (',' != s[1] && !(0 != array && ']' == s[1]))
-						{
-							s++;
+						if (',' != *s)
 							goto fail;	/* incorrect syntax */
-						}
 					}
 					else if (']' == *s && 0 == array)
 						goto succeed;
@@ -860,15 +882,8 @@ int	parse_key(char **exp)
 				case 1:
 					if ('"' == *s)
 					{
-						/* skip spaces */
-						while (' ' == s[1])
+						while (' ' == s[1])	/* skip trailing spaces after closing quotes */
 							s++;
-
-						if (0 == array && ']' == s[1] && '[' == s[2])	/* Zapcat */
-						{
-							state = 0;
-							break;
-						}
 
 						if (0 == array && ']' == s[1])
 						{
@@ -889,12 +904,7 @@ int	parse_key(char **exp)
 					break;
 				/* unquoted */
 				case 2:
-					if (0 == array && ']' == *s && '[' == s[1])	/* Zapcat */
-					{
-						s--;
-						state = 0;
-					}
-					else if (',' == *s || (']' == *s && 0 != array))
+					if (',' == *s || (']' == *s && 0 != array))
 					{
 						s--;
 						state = 0;
@@ -964,807 +974,6 @@ int	parse_host_key(char *exp, char **host, char **key)
 
 /******************************************************************************
  *                                                                            *
- * Function: num_param                                                        *
- *                                                                            *
- * Purpose: calculate count of parameters from parameter list (param)         *
- *                                                                            *
- * Parameters:                                                                *
- *      param  - parameter list                                               *
- *                                                                            *
- * Return value: count of parameters                                          *
- *                                                                            *
- * Author: Alexei Vladishev                                                   *
- *                                                                            *
- * Comments:  delimeter for parameters is ','                                 *
- *                                                                            *
- ******************************************************************************/
-int	num_param(const char *p)
-{
-/* 0 - init, 1 - inside quoted param, 2 - inside unquoted param */
-	int	ret = 1, state, array;
-
-	if (p == NULL)
-		return 0;
-
-	for (state = 0, array = 0; '\0' != *p; p++)
-	{
-		switch (state) {
-		/* Init state */
-		case 0:
-			if (',' == *p)
-			{
-				if (0 == array)
-					ret++;
-			}
-			else if ('"' == *p)
-				state = 1;
-			else if ('[' == *p)
-				array++;
-			else if (']' == *p && 0 != array)
-			{
-				array--;
-
-				/* skip spaces */
-				while (' ' == p[1])
-					p++;
-
-				if (',' != p[1] && '\0' != p[1] && (0 == array || ']' != p[1]))
-					return 0;	/* incorrect syntax */
-			}
-			else if (' ' != *p)
-				state = 2;
-			break;
-		/* Quoted */
-		case 1:
-			if ('"' == *p)
-			{
-				/* skip spaces */
-				while (' ' == p[1])
-					p++;
-
-				if (',' != p[1] && '\0' != p[1] && (0 == array || ']' != p[1]))
-					return 0;	/* incorrect syntax */
-
-				state = 0;
-			}
-			else if ('\\' == *p && '"' == p[1])
-				p++;
-			break;
-		/* Unquoted */
-		case 2:
-			if (',' == *p || (']' == *p && 0 != array))
-			{
-				p--;
-				state = 0;
-			}
-			break;
-		}
-	}
-
-	/* missing terminating '"' character */
-	if (state == 1)
-		return 0;
-
-	/* missing terminating ']' character */
-	if (array != 0)
-		return 0;
-
-	return ret;
-}
-
-/******************************************************************************
- *                                                                            *
- * Function: get_param                                                        *
- *                                                                            *
- * Purpose: return parameter by index (num) from parameter list (param)       *
- *                                                                            *
- * Parameters:                                                                *
- *      p       - parameter list                                              *
- *      num     - requested parameter index                                   *
- *      buf     - pointer of output buffer                                    *
- *      max_len - size of output buffer                                       *
- *                                                                            *
- * Return value:                                                              *
- *      1 - requested parameter missing or buffer overflow                    *
- *      0 - requested parameter found (value - 'buf' can be empty string)     *
- *                                                                            *
- * Author: Eugene Grigorjev, rewritten by Alexei Vladishev                    *
- *                                                                            *
- * Comments:  delimeter for parameters is ','                                 *
- *                                                                            *
- ******************************************************************************/
-int	get_param(const char *p, int num, char *buf, size_t max_len)
-{
-#define ZBX_ASSIGN_PARAM				\
-{							\
-	if (buf_i == max_len)				\
-		return 1;	/* buffer overflow */	\
-	buf[buf_i++] = *p;				\
-}
-
-	int	state;	/* 0 - init, 1 - inside quoted param, 2 - inside unquoted param */
-	int	array, idx = 1;
-	size_t	buf_i = 0;
-
-	if (0 == max_len)
-		return 1;	/* buffer overflow */
-
-	max_len--;	/* '\0' */
-
-	for (state = 0, array = 0; '\0' != *p && idx <= num; p++)
-	{
-		switch (state)
-		{
-			/* init state */
-			case 0:
-				if (',' == *p)
-				{
-					if (0 == array)
-						idx++;
-					else if (idx == num)
-						ZBX_ASSIGN_PARAM;
-				}
-				else if ('"' == *p)
-				{
-					state = 1;
-					if (0 != array && idx == num)
-						ZBX_ASSIGN_PARAM;
-				}
-				else if ('[' == *p)
-				{
-					if (0 != array && idx == num)
-						ZBX_ASSIGN_PARAM;
-					array++;
-				}
-				else if (']' == *p && 0 != array)
-				{
-					array--;
-					if (0 != array && idx == num)
-						ZBX_ASSIGN_PARAM;
-
-					/* skip spaces */
-					while (' ' == p[1])
-						p++;
-
-					if (',' != p[1] && '\0' != p[1] && (0 == array || ']' != p[1]))
-						return 1;	/* incorrect syntax */
-				}
-				else if (' ' != *p)
-				{
-					if (idx == num)
-						ZBX_ASSIGN_PARAM;
-					state = 2;
-				}
-				break;
-			case 1:
-				/* quoted */
-
-				if ('"' == *p)
-				{
-					if (0 != array && idx == num)
-						ZBX_ASSIGN_PARAM;
-
-					/* skip spaces */
-					while (' ' == p[1])
-						p++;
-
-					if (',' != p[1] && '\0' != p[1] && (0 == array || ']' != p[1]))
-						return 1;	/* incorrect syntax */
-
-					state = 0;
-				}
-				else if ('\\' == *p && '"' == p[1])
-				{
-					if (idx == num && 0 != array)
-						ZBX_ASSIGN_PARAM;
-
-					p++;
-
-					if (idx == num)
-						ZBX_ASSIGN_PARAM;
-				}
-				else if (idx == num)
-					ZBX_ASSIGN_PARAM;
-				break;
-			case 2:
-				/* unquoted */
-
-				if (',' == *p || (']' == *p && 0 != array))
-				{
-					p--;
-					state = 0;
-				}
-				else if (idx == num)
-					ZBX_ASSIGN_PARAM;
-				break;
-		}
-
-		if (idx > num)
-			break;
-	}
-#undef ZBX_ASSIGN_PARAM
-
-	/* missing terminating '"' character */
-	if (1 == state)
-		return 1;
-
-	/* missing terminating ']' character */
-	if (0 != array)
-		return 1;
-
-	buf[buf_i] = '\0';
-
-	if (idx >= num)
-		return 0;
-
-	return 1;
-}
-
-/******************************************************************************
- *                                                                            *
- * Function: get_param_len                                                    *
- *                                                                            *
- * Purpose: return length of the parameter by index (num)                     *
- *          from parameter list (param)                                       *
- *                                                                            *
- * Parameters:                                                                *
- *      p   - [IN]  parameter list                                            *
- *      num - [IN]  requested parameter index                                 *
- *      sz  - [OUT] length of requested parameter                             *
- *                                                                            *
- * Return value:                                                              *
- *      1 - requested parameter missing                                       *
- *      0 - requested parameter found                                         *
- *          (for first parameter result is always 0)                          *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
- *                                                                            *
- * Comments: delimeter for parameters is ','                                  *
- *                                                                            *
- ******************************************************************************/
-static int	get_param_len(const char *p, int num, size_t *sz)
-{
-/* 0 - init, 1 - inside quoted param, 2 - inside unquoted param */
-	int	state, array, idx = 1;
-
-	*sz = 0;
-
-	for (state = 0, array = 0; '\0' != *p && idx <= num; p++)
-	{
-		switch (state) {
-		/* Init state */
-		case 0:
-			if (',' == *p)
-			{
-				if (0 == array)
-					idx++;
-				else if (idx == num)
-					(*sz)++;
-			}
-			else if ('"' == *p)
-			{
-				state = 1;
-				if (0 != array && idx == num)
-					(*sz)++;
-			}
-			else if ('[' == *p)
-			{
-				if (0 != array && idx == num)
-					(*sz)++;
-				array++;
-			}
-			else if (']' == *p && 0 != array)
-			{
-				array--;
-				if (0 != array && idx == num)
-					(*sz)++;
-
-				/* skip spaces */
-				while (' ' == p[1])
-					p++;
-
-				if (',' != p[1] && '\0' != p[1] && (0 == array || ']' != p[1]))
-					return 1;	/* incorrect syntax */
-			}
-			else if (' ' != *p)
-			{
-				if (idx == num)
-					(*sz)++;
-				state = 2;
-			}
-			break;
-		/* Quoted */
-		case 1:
-			if ('"' == *p)
-			{
-				if (0 != array && idx == num)
-					(*sz)++;
-
-				/* skip spaces */
-				while (' ' == p[1])
-					p++;
-
-				if (',' != p[1] && '\0' != p[1] && (0 == array || ']' != p[1]))
-					return 1;	/* incorrect syntax */
-
-				state = 0;
-			}
-			else if ('\\' == *p && '"' == p[1])
-			{
-				if (idx == num && 0 != array)
-					(*sz)++;
-
-				p++;
-
-				if (idx == num)
-					(*sz)++;
-			}
-			else if (idx == num)
-				(*sz)++;
-			break;
-		/* Unquoted */
-		case 2:
-			if (',' == *p || (']' == *p && 0 != array))
-			{
-				p--;
-				state = 0;
-			}
-			else if (idx == num)
-				(*sz)++;
-			break;
-		}
-
-		if (idx > num)
-			break;
-	}
-
-	/* missing terminating '"' character */
-	if (state == 1)
-		return 1;
-
-	/* missing terminating ']' character */
-	if (array != 0)
-		return 1;
-
-	if (idx >= num)
-		return 0;
-
-	return 1;
-}
-
-/******************************************************************************
- *                                                                            *
- * Function: get_param_dyn                                                    *
- *                                                                            *
- * Purpose: return parameter by index (num) from parameter list (param)       *
- *                                                                            *
- * Parameters:                                                                *
- *      p   - [IN] parameter list                                             *
- *      num - [IN] requested parameter index                                  *
- *                                                                            *
- * Return value:                                                              *
- *      NULL - requested parameter missing                                    *
- *      otherwise - requested parameter                                       *
- *          (for first parameter result is not NULL)                          *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
- *                                                                            *
- * Comments:  delimeter for parameters is ','                                 *
- *                                                                            *
- ******************************************************************************/
-char	*get_param_dyn(const char *p, int num)
-{
-	char	*buf = NULL;
-	size_t	sz;
-
-	if (0 != get_param_len(p, num, &sz))
-		return buf;
-
-	buf = zbx_malloc(buf, sz + 1);
-
-	if (0 != get_param(p, num, buf, sz + 1))
-		zbx_free(buf);
-
-	return buf;
-}
-
-/******************************************************************************
- *                                                                            *
- * Function: replace_key_param                                                *
- *                                                                            *
- * Purpose: replaces an item key, SNMP OID or their parameters when callback  *
- *          function returns a new string                                     *
- *                                                                            *
- * Comments: auxiliary function for replace_key_params_dyn()                  *
- *                                                                            *
- ******************************************************************************/
-static int	replace_key_param(char **data, int key_type, size_t l, size_t *r, int level, int num, int quoted,
-		replace_key_param_f cb, void *cb_data)
-{
-	char	c = (*data)[*r], *param = NULL;
-	int	ret;
-
-	(*data)[*r] = '\0';
-	ret = cb(*data + l, key_type, level, num, quoted, cb_data, &param);
-	(*data)[*r] = c;
-
-	if (NULL != param)
-	{
-		(*r)--;
-		zbx_replace_string(data, l, r, param);
-		(*r)++;
-
-		zbx_free(param);
-	}
-
-	return ret;
-}
-
-/******************************************************************************
- *                                                                            *
- * Function: replace_key_params_dyn                                           *
- *                                                                            *
- * Purpose: replaces an item key, SNMP OID or their parameters by using       *
- *          callback function                                                 *
- *                                                                            *
- * Parameters:                                                                *
- *      data      - [IN/OUT] item key or SNMP OID                             *
- *      key_type  - [IN] ZBX_KEY_TYPE_*                                       *
- *      cb        - [IN] callback function                                    *
- *      cb_data   - [IN] callback function custom data                        *
- *      error     - [OUT] error messsage                                      *
- *      maxerrlen - [IN] error size                                           *
- *                                                                            *
- * Return value: SUCCEED - function executed successfully                     *
- *               FAIL - otherwise, error will contain error message           *
- *                                                                            *
- ******************************************************************************/
-int	replace_key_params_dyn(char **data, int key_type, replace_key_param_f cb, void *cb_data, char *error,
-		size_t maxerrlen)
-{
-	typedef enum
-	{
-		ZBX_STATE_NEW,
-		ZBX_STATE_END,
-		ZBX_STATE_UNQUOTED,
-		ZBX_STATE_QUOTED
-	}
-	zbx_parser_state_t;
-
-	size_t			i, l = 0;
-	int			level = 0, num = 0, ret = SUCCEED;
-	zbx_parser_state_t	state = ZBX_STATE_END;
-
-	if (ZBX_KEY_TYPE_ITEM == key_type)
-	{
-		for (i = 0; SUCCEED == is_key_char((*data)[i]) && '\0' != (*data)[i]; i++)
-			;
-
-		if (0 == i)
-			goto clean;
-
-		if ('[' != (*data)[i] && '\0' != (*data)[i])
-			goto clean;
-	}
-	else
-	{
-		for (i = 0; '[' != (*data)[i] && '\0' != (*data)[i]; i++)
-			;
-	}
-
-	ret = replace_key_param(data, key_type, 0, &i, level, num, 0, cb, cb_data);
-
-	for (; '\0' != (*data)[i] && FAIL != ret; i++)
-	{
-		if (0 == level)
-		{
-			/* first square bracket + Zapcat compatibility */
-			if (ZBX_STATE_END == state && '[' == (*data)[i])
-				state = ZBX_STATE_NEW;
-			else
-				break;
-		}
-
-		switch (state)
-		{
-			case ZBX_STATE_NEW:	/* a new parameter started */
-				switch ((*data)[i])
-				{
-					case ' ':
-						break;
-					case ',':
-						ret = replace_key_param(data, key_type, i, &i, level, num, 0, cb,
-								cb_data);
-						if (1 == level)
-							num++;
-						break;
-					case '[':
-						level++;
-						if (1 == level)
-							num++;
-						break;
-					case ']':
-						ret = replace_key_param(data, key_type, i, &i, level, num, 0, cb,
-								cb_data);
-						level--;
-						state = ZBX_STATE_END;
-						break;
-					case '"':
-						state = ZBX_STATE_QUOTED;
-						l = i;
-						break;
-					default:
-						state = ZBX_STATE_UNQUOTED;
-						l = i;
-				}
-				break;
-			case ZBX_STATE_END:	/* end of parameter */
-				switch ((*data)[i])
-				{
-					case ' ':
-						break;
-					case ',':
-						state = ZBX_STATE_NEW;
-						if (1 == level)
-							num++;
-						break;
-					case ']':
-						level--;
-						break;
-					default:
-						goto clean;
-				}
-				break;
-			case ZBX_STATE_UNQUOTED:	/* an unquoted parameter */
-				if (']' == (*data)[i] || ',' == (*data)[i])
-				{
-					ret = replace_key_param(data, key_type, l, &i, level, num, 0, cb, cb_data);
-
-					i--;
-					state = ZBX_STATE_END;
-				}
-				break;
-			case ZBX_STATE_QUOTED:	/* a quoted parameter */
-				if ('"' == (*data)[i] && '\\' != (*data)[i - 1])
-				{
-					i++;
-					ret = replace_key_param(data, key_type, l, &i, level, num, 1, cb, cb_data);
-					i--;
-
-					state = ZBX_STATE_END;
-				}
-				break;
-		}
-	}
-clean:
-	if (0 == i || '\0' != (*data)[i] || 0 != level)
-	{
-		if (NULL != error)
-		{
-			zbx_snprintf(error, maxerrlen, "Invalid %s at position " ZBX_FS_SIZE_T,
-					(ZBX_KEY_TYPE_ITEM == key_type ? "item key" : "SNMP OID"), (zbx_fs_size_t)i);
-		}
-		ret = FAIL;
-	}
-
-	return ret;
-}
-
-/******************************************************************************
- *                                                                            *
- * Function: remove_param                                                     *
- *                                                                            *
- * Purpose: remove parameter by index (num) from parameter list (param)       *
- *                                                                            *
- * Parameters:                                                                *
- *      param  - parameter list                                               *
- *      num    - requested parameter index                                    *
- *                                                                            *
- * Return value:                                                              *
- *                                                                            *
- * Comments: delimiter for parameters is ','                                  *
- *                                                                            *
- ******************************************************************************/
-void	remove_param(char *param, int num)
-{
-	int	state = 0;	/* 0 - unquoted parameter, 1 - quoted parameter */
-	int	idx = 1, skip_char = 0;
-	char	*p;
-
-	for (p = param; '\0' != *p; p++)
-	{
-		switch (state)
-		{
-			case 0:			/* in unquoted parameter */
-				if (',' == *p)
-				{
-					if (1 == idx && 1 == num)
-						skip_char = 1;
-					idx++;
-				}
-				else if ('"' == *p)
-					state = 1;
-				break;
-			case 1:			/* in quoted parameter */
-				if ('"' == *p && '\\' != *(p - 1))
-					state = 0;
-				break;
-		}
-		if (idx != num && 0 == skip_char)
-			*param++ = *p;
-
-		skip_char = 0;
-	}
-
-	*param = '\0';
-}
-
-/******************************************************************************
- *                                                                            *
- * Function: zbx_num2hex                                                      *
- *                                                                            *
- * Purpose: convert parameter c (0-15) to hexadecimal value ('0'-'f')         *
- *                                                                            *
- * Parameters:                                                                *
- *      c - number 0-15                                                       *
- *                                                                            *
- * Return value:                                                              *
- *      '0'-'f'                                                               *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
- *                                                                            *
- ******************************************************************************/
-char	zbx_num2hex(u_char c)
-{
-	if (c >= 10)
-		return c + 0x57; /* a-f */
-	else
-		return c + 0x30; /* 0-9 */
-}
-
-/******************************************************************************
- *                                                                            *
- * Function: zbx_hex2num                                                      *
- *                                                                            *
- * Purpose: convert hexit c ('0'-'9''a'-'f') to number (0-15)                 *
- *                                                                            *
- * Parameters:                                                                *
- *      c - char ('0'-'9''a'-'f')                                             *
- *                                                                            *
- * Return value:                                                              *
- *      0-15                                                                  *
- *                                                                            *
- * Author: Alexander Vladishev                                                *
- *                                                                            *
- ******************************************************************************/
-u_char	zbx_hex2num(char c)
-{
-	if (c >= 'a')
-		return c - 0x57; /* a-f */
-	else
-		return c - 0x30; /* 0-9 */
-}
-
-/******************************************************************************
- *                                                                            *
- * Function: str_in_list                                                      *
- *                                                                            *
- * Purpose: check if string is contained in a list of delimited strings       *
- *                                                                            *
- * Parameters: list      - strings a,b,ccc,ddd                                *
- *             value     - value                                              *
- *             delimiter - delimiter                                          *
- *                                                                            *
- * Return value: SUCCEED - string is in the list, FAIL - otherwise            *
- *                                                                            *
- * Author: Alexei Vladishev, Aleksandrs Saveljevs                             *
- *                                                                            *
- ******************************************************************************/
-int	str_in_list(const char *list, const char *value, char delimiter)
-{
-	const char	*end;
-	int		ret = FAIL;
-	size_t		len;
-
-	len = strlen(value);
-
-	while (SUCCEED != ret)
-	{
-		if (NULL != (end = strchr(list, delimiter)))
-		{
-			ret = (len == (size_t)(end - list) && 0 == strncmp(list, value, len) ? SUCCEED : FAIL);
-			list = end + 1;
-		}
-		else
-		{
-			ret = (0 == strcmp(list, value) ? SUCCEED : FAIL);
-			break;
-		}
-	}
-
-	return ret;
-}
-
-/******************************************************************************
- *                                                                            *
- * Function: get_key_param                                                    *
- *                                                                            *
- * Purpose: return parameter by index (num) from parameter list (param)       *
- *          to be used for keys: key[param1,param2]                           *
- *                                                                            *
- * Parameters:                                                                *
- *      param   - parameter list                                              *
- *      num     - requested parameter index                                   *
- *      buf     - pointer of output buffer                                    *
- *      max_len - size of output buffer                                       *
- *                                                                            *
- * Return value:                                                              *
- *      1 - requested parameter missing                                       *
- *      0 - requested parameter found (value - 'buf' can be empty string)     *
- *                                                                            *
- * Author: Alexei Vladishev                                                   *
- *                                                                            *
- * Comments:  delimeter for parameters is ','                                 *
- *                                                                            *
- ******************************************************************************/
-int	get_key_param(char *param, int num, char *buf, size_t max_len)
-{
-	int	ret;
-	char	*pl, *pr;
-
-	pl = strchr(param, '[');
-	pr = strrchr(param, ']');
-
-	if (NULL == pl || NULL == pr || pl > pr)
-		return 1;
-
-	*pr = '\0';
-	ret = get_param(pl + 1, num, buf, max_len);
-	*pr = ']';
-
-	return ret;
-}
-
-/******************************************************************************
- *                                                                            *
- * Function: num_key_param                                                    *
- *                                                                            *
- * Purpose: calculate count of parameters from parameter list (param)         *
- *          to be used for keys: key[param1,param2]                           *
- *                                                                            *
- * Parameters:                                                                *
- *      param  - parameter list                                               *
- *                                                                            *
- * Return value: count of parameters                                          *
- *                                                                            *
- * Author: Alexei Vladishev                                                   *
- *                                                                            *
- * Comments:  delimeter for parameters is ','                                 *
- *                                                                            *
- ******************************************************************************/
-int	num_key_param(char *param)
-{
-	int	ret;
-	char	*pl, *pr;
-
-	if (NULL == param)
-		return 0;
-
-	pl = strchr(param, '[');
-	pr = strrchr(param, ']');
-
-	if (NULL == pl || NULL == pr || pl > pr)
-		return 0;
-
-	*pr = '\0';
-	ret = num_param(pl + 1);
-	*pr = ']';
-
-	return ret;
-}
-
-/******************************************************************************
- *                                                                            *
  * Function: zbx_get_escape_string_len                                        *
  *                                                                            *
  * Purpose: calculate the required size for the escaped string                *
@@ -1811,7 +1020,7 @@ char	*zbx_dyn_escape_string(const char *src, const char *charlist)
 
 	sz = zbx_get_escape_string_len(src, charlist) + 1;
 
-	dst = zbx_malloc(dst, sz);
+	dst = (char *)zbx_malloc(dst, sz);
 
 	for (d = dst; '\0' != *src; src++)
 	{
@@ -1930,6 +1139,99 @@ int	cmp_key_id(const char *key_1, const char *key_2)
 	return ('\0' == *p || '[' == *p) && ('\0' == *q || '[' == *q) ? SUCCEED : FAIL;
 }
 
+/******************************************************************************
+ *                                                                            *
+ * Function: get_process_type_string                                          *
+ *                                                                            *
+ * Purpose: Returns process name                                              *
+ *                                                                            *
+ * Parameters: process_type - [IN] process type; ZBX_PROCESS_TYPE_*           *
+ *                                                                            *
+ * Author: Alexander Vladishev                                                *
+ *                                                                            *
+ * Comments: used in internals checks zabbix["process",...], process titles   *
+ *           and log files                                                    *
+ *                                                                            *
+ ******************************************************************************/
+const char	*get_process_type_string(unsigned char proc_type)
+{
+	switch (proc_type)
+	{
+		case ZBX_PROCESS_TYPE_POLLER:
+			return "poller";
+		case ZBX_PROCESS_TYPE_UNREACHABLE:
+			return "unreachable poller";
+		case ZBX_PROCESS_TYPE_IPMIPOLLER:
+			return "ipmi poller";
+		case ZBX_PROCESS_TYPE_PINGER:
+			return "icmp pinger";
+		case ZBX_PROCESS_TYPE_JAVAPOLLER:
+			return "java poller";
+		case ZBX_PROCESS_TYPE_HTTPPOLLER:
+			return "http poller";
+		case ZBX_PROCESS_TYPE_TRAPPER:
+			return "trapper";
+		case ZBX_PROCESS_TYPE_SNMPTRAPPER:
+			return "snmp trapper";
+		case ZBX_PROCESS_TYPE_PROXYPOLLER:
+			return "proxy poller";
+		case ZBX_PROCESS_TYPE_ESCALATOR:
+			return "escalator";
+		case ZBX_PROCESS_TYPE_HISTSYNCER:
+			return "history syncer";
+		case ZBX_PROCESS_TYPE_DISCOVERER:
+			return "discoverer";
+		case ZBX_PROCESS_TYPE_ALERTER:
+			return "alerter";
+		case ZBX_PROCESS_TYPE_TIMER:
+			return "timer";
+		case ZBX_PROCESS_TYPE_HOUSEKEEPER:
+			return "housekeeper";
+		case ZBX_PROCESS_TYPE_DATASENDER:
+			return "data sender";
+		case ZBX_PROCESS_TYPE_CONFSYNCER:
+			return "configuration syncer";
+		case ZBX_PROCESS_TYPE_HEARTBEAT:
+			return "heartbeat sender";
+		case ZBX_PROCESS_TYPE_SELFMON:
+			return "self-monitoring";
+		case ZBX_PROCESS_TYPE_VMWARE:
+			return "vmware collector";
+		case ZBX_PROCESS_TYPE_COLLECTOR:
+			return "collector";
+		case ZBX_PROCESS_TYPE_LISTENER:
+			return "listener";
+		case ZBX_PROCESS_TYPE_ACTIVE_CHECKS:
+			return "active checks";
+		case ZBX_PROCESS_TYPE_TASKMANAGER:
+			return "task manager";
+		case ZBX_PROCESS_TYPE_IPMIMANAGER:
+			return "ipmi manager";
+		case ZBX_PROCESS_TYPE_ALERTMANAGER:
+			return "alert manager";
+		case ZBX_PROCESS_TYPE_PREPROCMAN:
+			return "preprocessing manager";
+		case ZBX_PROCESS_TYPE_PREPROCESSOR:
+			return "preprocessing worker";
+	}
+
+	THIS_SHOULD_NEVER_HAPPEN;
+	exit(EXIT_FAILURE);
+}
+
+int	get_process_type_by_name(const char *proc_type_str)
+{
+	int	i;
+
+	for (i = 0; i < ZBX_PROCESS_TYPE_COUNT; i++)
+	{
+		if (0 == strcmp(proc_type_str, get_process_type_string(i)))
+			return i;
+	}
+
+	return ZBX_PROCESS_TYPE_UNKNOWN;
+}
+
 const char	*get_program_type_string(unsigned char program_type)
 {
 	switch (program_type)
@@ -1998,23 +1300,6 @@ const char	*zbx_item_value_type_string(zbx_item_value_type_t value_type)
 			return "Numeric (unsigned)";
 		case ITEM_VALUE_TYPE_TEXT:
 			return "Text";
-		default:
-			return "unknown";
-	}
-}
-
-const char	*zbx_item_data_type_string(zbx_item_data_type_t data_type)
-{
-	switch (data_type)
-	{
-		case ITEM_DATA_TYPE_DECIMAL:
-			return "Decimal";
-		case ITEM_DATA_TYPE_OCTAL:
-			return "Octal";
-		case ITEM_DATA_TYPE_HEXADECIMAL:
-			return "Hexadecimal";
-		case ITEM_DATA_TYPE_BOOLEAN:
-			return "Boolean";
 		default:
 			return "unknown";
 	}
@@ -2510,7 +1795,7 @@ char	*convert_to_utf8(char *in, size_t in_size, const char *encoding)
 	char		*out = NULL, *p;
 
 	out_alloc = in_size + 1;
-	p = out = zbx_malloc(out, out_alloc);
+	p = out = (char *)zbx_malloc(out, out_alloc);
 
 	if ('\0' == *encoding || (iconv_t)-1 == (cd = iconv_open(to_code, encoding)))
 	{
@@ -2530,7 +1815,7 @@ char	*convert_to_utf8(char *in, size_t in_size, const char *encoding)
 		sz = (size_t)(p - out);
 		out_alloc += in_size;
 		out_size_left += in_size;
-		p = out = zbx_realloc(out, out_alloc);
+		p = out = (char *)zbx_realloc(out, out_alloc);
 		p += sz;
 	}
 
@@ -2647,7 +1932,7 @@ char	*zbx_replace_utf8(const char *text)
 	int	n;
 	char	*out, *p;
 
-	out = p = zbx_malloc(NULL, strlen(text) + 1);
+	out = p = (char *)zbx_malloc(NULL, strlen(text) + 1);
 
 	while ('\0' != *text)
 	{
@@ -2956,7 +2241,7 @@ char	*str_linefeed(const char *src, size_t maxline, const char *delim)
 	dst_size = src_size + feeds * delim_size + 1;
 
 	/* allocate memory for output */
-	dst = zbx_malloc(dst, dst_size);
+	dst = (char *)zbx_malloc(dst, dst_size);
 
 	p_src = src;
 	p_dst = dst;
@@ -3001,7 +2286,7 @@ char	*str_linefeed(const char *src, size_t maxline, const char *delim)
  ******************************************************************************/
 void	zbx_strarr_init(char ***arr)
 {
-	*arr = zbx_malloc(*arr, sizeof(char *));
+	*arr = (char **)zbx_malloc(*arr, sizeof(char *));
 	**arr = NULL;
 }
 
@@ -3030,7 +2315,7 @@ void	zbx_strarr_add(char ***arr, const char *entry)
 	for (i = 0; NULL != (*arr)[i]; i++)
 		;
 
-	*arr = zbx_realloc(*arr, sizeof(char *) * (i + 2));
+	*arr = (char **)zbx_realloc(*arr, sizeof(char *) * (i + 2));
 
 	(*arr)[i] = zbx_strdup((*arr)[i], entry);
 	(*arr)[++i] = NULL;
@@ -3086,7 +2371,7 @@ void	zbx_replace_string(char **data, size_t l, size_t *r, const char *value)
 		sz_data += sz_value - sz_block;
 
 		if (sz_value > sz_block)
-			*data = zbx_realloc(*data, sz_data + 1);
+			*data = (char *)zbx_realloc(*data, sz_data + 1);
 
 		src = *data + l + sz_block;
 		dst = *data + l + sz_value;
@@ -3286,7 +2571,8 @@ int	zbx_user_macro_parse(const char *macro, int *macro_r, int *context_l, int *c
 int	zbx_user_macro_parse_dyn(const char *macro, char **name, char **context, int *length)
 {
 	const char	*ptr;
-	int		macro_r, context_l, context_r, len;
+	int		macro_r, context_l, context_r;
+	size_t		len;
 
 	if (SUCCEED != zbx_user_macro_parse(macro, &macro_r, &context_l, &context_r))
 		return FAIL;
@@ -3303,7 +2589,7 @@ int	zbx_user_macro_parse_dyn(const char *macro, char **name, char **context, int
 
 		/* extract the macro name and close with '}' character */
 		len = ptr - macro + 1;
-		*name = zbx_realloc(*name, len + 1);
+		*name = (char *)zbx_realloc(*name, len + 1);
 		memcpy(*name, macro, len - 1);
 		(*name)[len - 1] = '}';
 		(*name)[len] = '\0';
@@ -3312,7 +2598,7 @@ int	zbx_user_macro_parse_dyn(const char *macro, char **name, char **context, int
 	}
 	else
 	{
-		*name = zbx_realloc(*name, macro_r + 2);
+		*name = (char *)zbx_realloc(*name, macro_r + 2);
 		zbx_strlcpy(*name, macro, macro_r + 2);
 	}
 
@@ -3344,7 +2630,7 @@ char	*zbx_user_macro_unquote_context_dyn(const char *context, int len)
 	int	quoted = 0;
 	char	*buffer, *ptr;
 
-	ptr = buffer = zbx_malloc(NULL, len + 1);
+	ptr = buffer = (char *)zbx_malloc(NULL, len + 1);
 
 	if ('"' == *context)
 	{
@@ -3410,8 +2696,8 @@ char	*zbx_user_macro_quote_context_dyn(const char *context, int force_quote)
 	if (0 == force_quote)
 		return zbx_strdup(NULL, context);
 
-	len = strlen(context) + 2 + quotes;
-	ptr_buffer = buffer = zbx_malloc(NULL, len + 1);
+	len = (int)strlen(context) + 2 + quotes;
+	ptr_buffer = buffer = (char *)zbx_malloc(NULL, len + 1);
 
 	*ptr_buffer++ = '"';
 
@@ -3453,7 +2739,7 @@ char	*zbx_dyn_escape_shell_single_quote(const char *arg)
 		len++;
 	}
 
-	pout = arg_esc = zbx_malloc(NULL, len);
+	pout = arg_esc = (char *)zbx_malloc(NULL, len);
 
 	for (pin = arg; '\0' != *pin; pin++)
 	{
@@ -3626,7 +2912,7 @@ int	zbx_function_param_quote(char **param, int forced)
 
 	sz_dst = zbx_get_escape_string_len(*param, "\"") + 3;
 
-	*param = zbx_realloc(*param, sz_dst);
+	*param = (char *)zbx_realloc(*param, sz_dst);
 
 	(*param)[--sz_dst] = '\0';
 	(*param)[--sz_dst] = '"';
@@ -3644,39 +2930,40 @@ int	zbx_function_param_quote(char **param, int forced)
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_no_function                                                  *
+ * Function: zbx_function_get_param_dyn                                       *
  *                                                                            *
- * Purpose: count calculated item (prototype) formula characters that can be  *
- *          skipped without the risk of missing a function                    *
+ * Purpose: return parameter by index (Nparam) from parameter list (params)   *
+ *                                                                            *
+ * Parameters:                                                                *
+ *      params - [IN] parameter list                                          *
+ *      Nparam - [IN] requested parameter index (from 1)                      *
+ *                                                                            *
+ * Return value:                                                              *
+ *      NULL - requested parameter missing                                    *
+ *      otherwise - requested parameter                                       *
  *                                                                            *
  ******************************************************************************/
-static size_t	zbx_no_function(const char *expr)
+char	*zbx_function_get_param_dyn(const char *params, int Nparam)
 {
-	const char	*ptr = expr;
-	int		len, c_l, c_r;
+	const char	*ptr;
+	size_t		sep_pos, params_len;
+	char		*out = NULL;
+	int		idx = 0;
 
-	while ('\0' != *ptr)
+	params_len = strlen(params) + 1;
+
+	for (ptr = params; ++idx <= Nparam && ptr < params + params_len; ptr += sep_pos + 1)
 	{
-		if ('{' == *ptr && '$' == *(ptr + 1) && SUCCEED == zbx_user_macro_parse(ptr, &len, &c_l, &c_r))
-		{
-			ptr += len + 1;	/* skip to the position after user macro */
-		}
-		else if (SUCCEED != is_function_char(*ptr))
-		{
-			ptr++;	/* skip one character which cannot belong to function name */
-		}
-		else if ((0 == strncmp("and", ptr, len = ZBX_CONST_STRLEN("and")) ||
-				0 == strncmp("not", ptr, len = ZBX_CONST_STRLEN("not")) ||
-				0 == strncmp("or", ptr, len = ZBX_CONST_STRLEN("or"))) &&
-				NULL != strchr("()" ZBX_WHITESPACE, ptr[len]))
-		{
-			ptr += len;	/* skip to the position after and/or/not operator */
-		}
-		else
-			break;
+		size_t	param_pos, param_len;
+		int	quoted;
+
+		zbx_function_param_parse(ptr, &param_pos, &param_len, &sep_pos);
+
+		if (idx == Nparam)
+			out = zbx_function_param_unquote_dyn(ptr + param_pos, param_len, &quoted);
 	}
 
-	return ptr - expr;
+	return out;
 }
 
 /******************************************************************************
@@ -3687,17 +2974,24 @@ static size_t	zbx_no_function(const char *expr)
  *          not quoted                                                        *
  *                                                                            *
  * Parameters: expr       - [IN] string to parse that contains parameters     *
- *             terminator - [IN] use ')' if parameters end with parenthesis   *
- *                               or '\0' if ends with NULL terminator         *
+ *                                                                            *
+ *             terminator - [IN] use ')' if parameters end with               *
+ *                               parenthesis or '\0' if ends with NULL        *
+ *                               terminator                                   *
  *             par_r      - [OUT] position of the terminator if found         *
+ *             lpp_offset - [OUT] offset of the last parsed parameter         *
+ *             lpp_len    - [OUT] length of the last parsed parameter         *
  *                                                                            *
  * Return value: SUCCEED -  closing parenthesis was found or other custom     *
- *                          terminator and not quoted                         *
- *               FAIL    -  does not look like a valid                        *
- *                          function parameter list                           *
+ *                          terminator and not quoted and return info about a *
+ *                          last processed parameter.                         *
+ *               FAIL    -  does not look like a valid function parameter     *
+ *                          list and return info about a last processed       *
+ *                          parameter.                                        *
  *                                                                            *
  ******************************************************************************/
-static int	function_validate_parameters(const char *expr, char terminator, size_t *par_r)
+static int	function_validate_parameters(const char *expr, char terminator, size_t *par_r, size_t *lpp_offset,
+		size_t *lpp_len)
 {
 #define ZBX_FUNC_PARAM_NEXT		0
 #define ZBX_FUNC_PARAM_QUOTED		1
@@ -3706,6 +3000,8 @@ static int	function_validate_parameters(const char *expr, char terminator, size_
 
 	const char	*ptr;
 	int		state = ZBX_FUNC_PARAM_NEXT;
+
+	*lpp_offset = 0;
 
 	for (ptr = expr; '\0' != *ptr; ptr++)
 	{
@@ -3718,6 +3014,7 @@ static int	function_validate_parameters(const char *expr, char terminator, size_
 		switch (state)
 		{
 			case ZBX_FUNC_PARAM_NEXT:
+				*lpp_offset = ptr - expr;
 				if ('"' == *ptr)
 					state = ZBX_FUNC_PARAM_QUOTED;
 				else if (' ' != *ptr && ',' != *ptr)
@@ -3733,14 +3030,21 @@ static int	function_validate_parameters(const char *expr, char terminator, size_
 				break;
 			case ZBX_FUNC_PARAM_POSTQUOTED:
 				if (',' == *ptr)
+				{
 					state = ZBX_FUNC_PARAM_NEXT;
+				}
 				else if (' ' != *ptr)
+				{
+					*lpp_len = ptr - (expr + *lpp_offset);
 					return FAIL;
+				}
 				break;
 			default:
 				THIS_SHOULD_NEVER_HAPPEN;
 		}
 	}
+
+	*lpp_len = ptr - (expr + *lpp_offset);
 
 	if (terminator == *ptr && ZBX_FUNC_PARAM_QUOTED != state)
 	{
@@ -3763,23 +3067,27 @@ static int	function_validate_parameters(const char *expr, char terminator, size_
  * Purpose: given the position of opening function parenthesis find the       *
  *          position of a closing one                                         *
  *                                                                            *
- * Parameters: expr     - [IN] string to parse                                *
- *             par_l    - [IN] position of the opening parenthesis            *
- *             par_r    - [OUT] position of the closing parenthesis           *
+ * Parameters: expr       - [IN] string to parse                              *
+ *             par_l      - [IN] position of the opening parenthesis          *
+ *             par_r      - [OUT] position of the closing parenthesis         *
+ *             lpp_offset - [OUT] offset of the last parsed parameter         *
+ *             lpp_len    - [OUT] length of the last parsed parameter         *
  *                                                                            *
  * Return value: SUCCEED - closing parenthesis was found                      *
  *               FAIL    - string after par_l does not look like a valid      *
  *                         function parameter list                            *
  *                                                                            *
  ******************************************************************************/
-static int	function_match_parenthesis(const char *expr, size_t par_l, size_t *par_r)
+static int	function_match_parenthesis(const char *expr, size_t par_l, size_t *par_r, size_t *lpp_offset,
+		size_t *lpp_len)
 {
-	if (SUCCEED == function_validate_parameters(expr + par_l + 1, ')', par_r))
+	if (SUCCEED == function_validate_parameters(expr + par_l + 1, ')', par_r, lpp_offset, lpp_len))
 	{
 		*par_r += par_l + 1;
 		return SUCCEED;
 	}
 
+	*lpp_offset += par_l + 1;
 	return FAIL;
 }
 
@@ -3800,7 +3108,9 @@ static int	function_match_parenthesis(const char *expr, size_t par_l, size_t *pa
  ******************************************************************************/
 int	zbx_function_validate_parameters(const char *expr, size_t *length)
 {
-	return function_validate_parameters(expr, '\0', length);
+	size_t offset, len;
+
+	return function_validate_parameters(expr, '\0', length, &offset, &len);
 }
 
 /******************************************************************************
@@ -3809,60 +3119,41 @@ int	zbx_function_validate_parameters(const char *expr, size_t *length)
  *                                                                            *
  * Purpose: check whether expression starts with a valid function             *
  *                                                                            *
- * Parameters: expr     - [IN] string to parse                                *
- *             par_l    - [OUT] position of the opening parenthesis or the    *
- *                              amount of characters to skip                  *
- *             par_r    - [OUT] position of the closing parenthesis           *
+ * Parameters: expr          - [IN] string to parse                           *
+ *             par_l         - [OUT] position of the opening parenthesis      *
+ *                                   or the amount of characters to skip      *
+ *             par_r         - [OUT] position of the closing parenthesis      *
+ *             error         - [OUT] error message                            *
+ *             max_error_len - [IN] error size                                *
  *                                                                            *
  * Return value: SUCCEED - string starts with a valid function                *
  *               FAIL    - string does not start with a function and par_l    *
  *                         characters can be safely skipped                   *
  *                                                                            *
  ******************************************************************************/
-static int	zbx_function_validate(const char *expr, size_t *par_l, size_t *par_r)
+static int	zbx_function_validate(const char *expr, size_t *par_l, size_t *par_r, char *error, int max_error_len)
 {
+	size_t	lpp_offset, lpp_len;
+
 	/* try to validate function name */
-	if (SUCCEED != function_parse_name(expr, par_l))
-		return FAIL;
-
-	/* now we know the position of '(', try to find ')' */
-	return function_match_parenthesis(expr, *par_l, par_r);
-}
-
-/******************************************************************************
- *                                                                            *
- * Function: zbx_function_find                                                *
- *                                                                            *
- * Purpose: find the location of the next function and its parameters in      *
- *          calculated item (prototype) formula                               *
- *                                                                            *
- * Parameters: expr     - [IN] string to parse                                *
- *             func_pos - [OUT] function position in the string               *
- *             par_l    - [OUT] position of the opening parenthesis           *
- *             par_r    - [OUT] position of the closing parenthesis           *
- *                                                                            *
- * Return value: SUCCEED - function was found at func_pos                     *
- *               FAIL    - there are no functions in the expression           *
- *                                                                            *
- ******************************************************************************/
-int	zbx_function_find(const char *expr, size_t *func_pos, size_t *par_l, size_t *par_r)
-{
-	const char	*ptr;
-
-	for (ptr = expr; '\0' != *ptr; ptr += *par_l)
+	if (SUCCEED == function_parse_name(expr, par_l))
 	{
-		/* skip the part of expression that is definitely not a function */
-		ptr += zbx_no_function(ptr);
+		/* now we know the position of '(', try to find ')' */
+		if (SUCCEED == function_match_parenthesis(expr, *par_l, par_r, &lpp_offset, &lpp_len))
+			return SUCCEED;
 
-		/* try to validate function candidate */
-		if (SUCCEED != zbx_function_validate(ptr, par_l, par_r))
-			continue;
+		if (NULL != error && *par_l > *par_r)
+		{
+			zbx_snprintf(error, max_error_len, "Incorrect function '%.*s' expression. "
+				"Check expression part starting from: %.*s",
+				(int)*par_l, expr, (int)lpp_len, expr + lpp_offset);
 
-		*func_pos = ptr - expr;
-		*par_l += *func_pos;
-		*par_r += *func_pos;
-		return SUCCEED;
+			return FAIL;
+		}
 	}
+
+	if (NULL != error)
+		zbx_snprintf(error, max_error_len, "Incorrect function expression: %s", expr);
 
 	return FAIL;
 }
@@ -3933,7 +3224,8 @@ int	zbx_strcmp_natural(const char *s1, const char *s2)
  ******************************************************************************/
 static int	zbx_token_parse_user_macro(const char *expression, const char *macro, zbx_token_t *token)
 {
-	int			macro_r, context_l, context_r, offset;
+	size_t			offset;
+	int			macro_r, context_l, context_r;
 	zbx_token_user_macro_t	*data;
 
 	if (SUCCEED != zbx_user_macro_parse(macro, &macro_r, &context_l, &context_r))
@@ -3994,7 +3286,7 @@ static int	zbx_token_parse_user_macro(const char *expression, const char *macro,
 static int	zbx_token_parse_lld_macro(const char *expression, const char *macro, zbx_token_t *token)
 {
 	const char		*ptr;
-	int			offset;
+	size_t			offset;
 	zbx_token_macro_t	*data;
 
 	/* find the end of lld macro by validating its name until the closing bracket } */
@@ -4047,7 +3339,7 @@ static int	zbx_token_parse_lld_macro(const char *expression, const char *macro, 
 static int	zbx_token_parse_objectid(const char *expression, const char *macro, zbx_token_t *token)
 {
 	const char		*ptr;
-	int			offset;
+	size_t			offset;
 	zbx_token_macro_t	*data;
 
 	/* find the end of object id by checking if it contains digits until the closing bracket } */
@@ -4101,7 +3393,7 @@ static int	zbx_token_parse_objectid(const char *expression, const char *macro, z
 static int	zbx_token_parse_macro(const char *expression, const char *macro, zbx_token_t *token)
 {
 	const char		*ptr;
-	int			offset;
+	size_t			offset;
 	zbx_token_macro_t	*data;
 
 	/* find the end of simple macro by validating its name until the closing bracket } */
@@ -4153,7 +3445,7 @@ static int	zbx_token_parse_function(const char *expression, const char *func,
 {
 	size_t	par_l, par_r;
 
-	if (SUCCEED != zbx_function_validate(func, &par_l, &par_r))
+	if (SUCCEED != zbx_function_validate(func, &par_l, &par_r, NULL, 0))
 		return FAIL;
 
 	func_loc->l = func - expression;
@@ -4176,23 +3468,26 @@ static int	zbx_token_parse_function(const char *expression, const char *func,
  *             func       - [IN] the beginning of the macro function in the   *
  *                               token                                        *
  *             token      - [OUT] the token data                              *
+ *             token_type - [IN] type flag ZBX_TOKEN_FUNC_MACRO or            *
+ *                               ZBX_TOKEN_LLD_FUNC_MACRO                     *
  *                                                                            *
  * Return value: SUCCEED - the function macro was parsed successfully         *
  *               FAIL    - macro does not point at valid function macro       *
  *                                                                            *
  * Comments: If the macro points at valid function macro in the expression    *
  *           then the generic token fields are set and the                    *
- *           token->data.func_macro structure is filled with function macro   *
+ *           token->data.func_macro or token->data.lld_func_macro structures  *
+ *           depending on token type flag are filled with function macro      *
  *           specific data.                                                   *
  *                                                                            *
  ******************************************************************************/
 static int	zbx_token_parse_func_macro(const char *expression, const char *macro, const char *func,
-		zbx_token_t *token)
+		zbx_token_t *token, int token_type)
 {
 	zbx_strloc_t		func_loc, func_param;
 	zbx_token_func_macro_t	*data;
 	const char		*ptr;
-	int			offset;
+	size_t			offset;
 
 	if ('\0' == *func)
 		return FAIL;
@@ -4213,12 +3508,12 @@ static int	zbx_token_parse_func_macro(const char *expression, const char *macro,
 	offset = macro - expression;
 
 	/* initialize token */
-	token->type = ZBX_TOKEN_FUNC_MACRO;
+	token->type = token_type;
 	token->token.l = offset;
 	token->token.r = ptr - expression;
 
 	/* initialize token data */
-	data = &token->data.func_macro;
+	data = ZBX_TOKEN_FUNC_MACRO == token_type ? &token->data.func_macro : &token->data.lld_func_macro;
 	data->macro.l = offset + 1;
 	data->macro.r = func_loc.l - 2;
 
@@ -4255,14 +3550,12 @@ static int	zbx_token_parse_func_macro(const char *expression, const char *macro,
 static int	zbx_token_parse_simple_macro_key(const char *expression, const char *macro, const char *key,
 		zbx_token_t *token)
 {
-	int				offset;
+	size_t				offset;
 	zbx_token_simple_macro_t	*data;
-	const char			*ptr;
+	const char			*ptr = key;
 	zbx_strloc_t			key_loc, func_loc, func_param;
 
-	ptr = key;
-
-	if (SUCCEED != parse_key((char **)&ptr))
+	if (SUCCEED != parse_key(&ptr))
 	{
 		zbx_token_t	key_token;
 
@@ -4378,23 +3671,30 @@ static int	zbx_token_parse_simple_macro(const char *expression, const char *macr
  *               FAIL    - macro does not point at valid function or simple   *
  *                         macro                                              *
  *                                                                            *
- * Comments: This function parses token with a macro inside it. There are two *
- *           types of nested macros - function macros and a specific case     *
- *           of simple macros where {HOST.HOSTn} macro is used as host name.  *
- *           In both cases another macro is found at the beginning of token.  *
+ * Comments: This function parses token with a macro inside it. There are     *
+ *           three types of nested macros - low-level discovery function      *
+ *           macros, function macros and a specific case of simple macros     *
+ *           where {HOST.HOSTn} macro is used as host name.                   *
  *                                                                            *
  *           If the macro points at valid macro in the expression then        *
  *           the generic token fields are set and either the                  *
- *           token->data.func_macro or token->data.simple_macro (depending on *
- *           token type) structure is filled with macro specific data.        *
+ *           token->data.lld_func_macro, token->data.func_macro or            *
+ *           token->data.simple_macro (depending on token type) structure is  *
+ *           filled with macro specific data.                                 *
  *                                                                            *
  ******************************************************************************/
 static int	zbx_token_parse_nested_macro(const char *expression, const char *macro, zbx_token_t *token)
 {
-	const char		*ptr;
+	const char	*ptr;
+	int		macro_offset;
+
+	if ('#' == macro[2])
+		macro_offset = 3;
+	else
+		macro_offset = 2;
 
 	/* find the end of the nested macro by validating its name until the closing bracket } */
-	for (ptr = macro + 2; '}' != *ptr; ptr++)
+	for (ptr = macro + macro_offset; '}' != *ptr; ptr++)
 	{
 		if ('\0' == *ptr)
 			return FAIL;
@@ -4404,15 +3704,20 @@ static int	zbx_token_parse_nested_macro(const char *expression, const char *macr
 	}
 
 	/* empty macro name */
-	if (2 == ptr - macro)
+	if (macro_offset == ptr - macro)
 		return FAIL;
 
-	/* Determine the token type by checking the next character after nested macro. */
-	/* Function macros have format {{MACRO}.function()} while simple macros        */
-	/* have format {{MACRO}:key.function()}.                                       */
+	/* Determine the token type.                                                   */
+	/* Nested macros formats:                                                      */
+	/*               low-level discovery function macros  {{#MACRO}.function()}    */
+	/*               function macros                      {{MACRO}.function()}     */
+	/*               simple macros                        {{MACRO}:key.function()} */
 	if ('.' == ptr[1])
-		return zbx_token_parse_func_macro(expression, macro, ptr + 2, token);
-	else if (':' == ptr[1])
+	{
+		return zbx_token_parse_func_macro(expression, macro, ptr + 2, token, '#' == macro[2] ?
+				ZBX_TOKEN_LLD_FUNC_MACRO : ZBX_TOKEN_FUNC_MACRO);
+	}
+	else if ('#' != macro[2] && ':' == ptr[1])
 		return zbx_token_parse_simple_macro_key(expression, macro, ptr + 2, token);
 
 	return FAIL;
@@ -4524,6 +3829,99 @@ int	zbx_token_find(const char *expression, int pos, zbx_token_t *token, zbx_toke
 	}
 
 	return ret;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: zbx_no_function                                                  *
+ *                                                                            *
+ * Purpose: count calculated item (prototype) formula characters that can be  *
+ *          skipped without the risk of missing a function                    *
+ *                                                                            *
+ ******************************************************************************/
+static size_t	zbx_no_function(const char *expr)
+{
+	const char	*ptr = expr;
+	int		len, c_l, c_r;
+	zbx_token_t	token;
+
+	while ('\0' != *ptr)
+	{
+		if ('{' == *ptr && '$' == *(ptr + 1) && SUCCEED == zbx_user_macro_parse(ptr, &len, &c_l, &c_r))
+		{
+			ptr += len + 1;	/* skip to the position after user macro */
+		}
+		else if ('{' == *ptr && '{' == *(ptr + 1) && '#' == *(ptr + 2) &&
+				SUCCEED == zbx_token_parse_nested_macro(ptr, ptr, &token))
+		{
+			ptr += token.token.r - token.token.l + 1;
+		}
+		else if (SUCCEED != is_function_char(*ptr))
+		{
+			ptr++;	/* skip one character which cannot belong to function name */
+		}
+		else if ((0 == strncmp("and", ptr, len = ZBX_CONST_STRLEN("and")) ||
+				0 == strncmp("not", ptr, len = ZBX_CONST_STRLEN("not")) ||
+				0 == strncmp("or", ptr, len = ZBX_CONST_STRLEN("or"))) &&
+				NULL != strchr("()" ZBX_WHITESPACE, ptr[len]))
+		{
+			ptr += len;	/* skip to the position after and/or/not operator */
+		}
+		else
+			break;
+	}
+
+	return ptr - expr;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: zbx_function_find                                                *
+ *                                                                            *
+ * Purpose: find the location of the next function and its parameters in      *
+ *          calculated item (prototype) formula                               *
+ *                                                                            *
+ * Parameters: expr          - [IN] string to parse                           *
+ *             func_pos      - [OUT] function position in the string          *
+ *             par_l         - [OUT] position of the opening parenthesis      *
+ *             par_r         - [OUT] position of the closing parenthesis      *
+ *             error         - [OUT] error message                            *
+ *             max_error_len - [IN] error size                                *
+ *                                                                            *
+ *                                                                            *
+ * Return value: SUCCEED - function was found at func_pos                     *
+ *               FAIL    - there are no functions in the expression           *
+ *                                                                            *
+ ******************************************************************************/
+int	zbx_function_find(const char *expr, size_t *func_pos, size_t *par_l, size_t *par_r, char *error,
+		int max_error_len)
+{
+	const char	*ptr;
+
+	for (ptr = expr; '\0' != *ptr; ptr += *par_l)
+	{
+		/* skip the part of expression that is definitely not a function */
+		ptr += zbx_no_function(ptr);
+		*par_r = 0;
+
+		/* try to validate function candidate */
+		if (SUCCEED != zbx_function_validate(ptr, par_l, par_r, error, max_error_len))
+		{
+			if (*par_l > *par_r)
+				return FAIL;
+
+			continue;
+		}
+
+		*func_pos = ptr - expr;
+		*par_l += *func_pos;
+		*par_r += *func_pos;
+		return SUCCEED;
+	}
+
+	zbx_snprintf(error, max_error_len, "Incorrect function expression: %s", expr);
+
+	return FAIL;
 }
 
 /******************************************************************************
@@ -4686,6 +4084,787 @@ int	zbx_number_find(const char *str, size_t pos, zbx_strloc_t *number_loc)
 	return FAIL;
 }
 
+
+/******************************************************************************
+ *                                                                            *
+ * Function: num_param                                                        *
+ *                                                                            *
+ * Purpose: find number of parameters in parameter list                       *
+ *                                                                            *
+ * Parameters:                                                                *
+ *      param  - parameter list                                               *
+ *                                                                            *
+ * Return value: number of parameters (starting from 1) or                    *
+ *               0 if syntax error                                            *
+ *                                                                            *
+ * Author: Alexei Vladishev                                                   *
+ *                                                                            *
+ * Comments:  delimiter for parameters is ','. Empty parameter list or a list *
+ *            containing only spaces is handled as having one empty parameter *
+ *            and 1 is returned.                                              *
+ *                                                                            *
+ ******************************************************************************/
+int	num_param(const char *p)
+{
+/* 0 - init, 1 - inside quoted param, 2 - inside unquoted param */
+	int	ret = 1, state, array;
+
+	if (p == NULL)
+		return 0;
+
+	for (state = 0, array = 0; '\0' != *p; p++)
+	{
+		switch (state) {
+		/* Init state */
+		case 0:
+			if (',' == *p)
+			{
+				if (0 == array)
+					ret++;
+			}
+			else if ('"' == *p)
+				state = 1;
+			else if ('[' == *p)
+			{
+				if (0 == array)
+					array = 1;
+				else
+					return 0;	/* incorrect syntax: multi-level array */
+			}
+			else if (']' == *p && 0 != array)
+			{
+				array = 0;
+
+				while (' ' == p[1])	/* skip trailing spaces after closing ']' */
+					p++;
+
+				if (',' != p[1] && '\0' != p[1])
+					return 0;	/* incorrect syntax */
+			}
+			else if (']' == *p && 0 == array)
+				return 0;		/* incorrect syntax */
+			else if (' ' != *p)
+				state = 2;
+			break;
+		/* Quoted */
+		case 1:
+			if ('"' == *p)
+			{
+				while (' ' == p[1])	/* skip trailing spaces after closing quotes */
+					p++;
+
+				if (',' != p[1] && '\0' != p[1] && (0 == array || ']' != p[1]))
+					return 0;	/* incorrect syntax */
+
+				state = 0;
+			}
+			else if ('\\' == *p && '"' == p[1])
+				p++;
+			break;
+		/* Unquoted */
+		case 2:
+			if (',' == *p || (']' == *p && 0 != array))
+			{
+				p--;
+				state = 0;
+			}
+			else if (']' == *p && 0 == array)
+				return 0;		/* incorrect syntax */
+			break;
+		}
+	}
+
+	/* missing terminating '"' character */
+	if (state == 1)
+		return 0;
+
+	/* missing terminating ']' character */
+	if (array != 0)
+		return 0;
+
+	return ret;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: get_param                                                        *
+ *                                                                            *
+ * Purpose: return parameter by index (num) from parameter list (param)       *
+ *                                                                            *
+ * Parameters:                                                                *
+ *      p       - parameter list                                              *
+ *      num     - requested parameter index                                   *
+ *      buf     - pointer of output buffer                                    *
+ *      max_len - size of output buffer                                       *
+ *                                                                            *
+ * Return value:                                                              *
+ *      1 - requested parameter missing or buffer overflow                    *
+ *      0 - requested parameter found (value - 'buf' can be empty string)     *
+ *                                                                            *
+ * Author: Eugene Grigorjev, rewritten by Alexei Vladishev                    *
+ *                                                                            *
+ * Comments:  delimeter for parameters is ','                                 *
+ *                                                                            *
+ ******************************************************************************/
+int	get_param(const char *p, int num, char *buf, size_t max_len)
+{
+#define ZBX_ASSIGN_PARAM				\
+{							\
+	if (buf_i == max_len)				\
+		return 1;	/* buffer overflow */	\
+	buf[buf_i++] = *p;				\
+}
+
+	int	state;	/* 0 - init, 1 - inside quoted param, 2 - inside unquoted param */
+	int	array, idx = 1;
+	size_t	buf_i = 0;
+
+	if (0 == max_len)
+		return 1;	/* buffer overflow */
+
+	max_len--;	/* '\0' */
+
+	for (state = 0, array = 0; '\0' != *p && idx <= num; p++)
+	{
+		switch (state)
+		{
+			/* init state */
+			case 0:
+				if (',' == *p)
+				{
+					if (0 == array)
+						idx++;
+					else if (idx == num)
+						ZBX_ASSIGN_PARAM;
+				}
+				else if ('"' == *p)
+				{
+					state = 1;
+					if (0 != array && idx == num)
+						ZBX_ASSIGN_PARAM;
+				}
+				else if ('[' == *p)
+				{
+					if (0 != array && idx == num)
+						ZBX_ASSIGN_PARAM;
+					array++;
+				}
+				else if (']' == *p && 0 != array)
+				{
+					array--;
+					if (0 != array && idx == num)
+						ZBX_ASSIGN_PARAM;
+
+					/* skip spaces */
+					while (' ' == p[1])
+						p++;
+
+					if (',' != p[1] && '\0' != p[1] && (0 == array || ']' != p[1]))
+						return 1;	/* incorrect syntax */
+				}
+				else if (' ' != *p)
+				{
+					if (idx == num)
+						ZBX_ASSIGN_PARAM;
+					state = 2;
+				}
+				break;
+			case 1:
+				/* quoted */
+
+				if ('"' == *p)
+				{
+					if (0 != array && idx == num)
+						ZBX_ASSIGN_PARAM;
+
+					/* skip spaces */
+					while (' ' == p[1])
+						p++;
+
+					if (',' != p[1] && '\0' != p[1] && (0 == array || ']' != p[1]))
+						return 1;	/* incorrect syntax */
+
+					state = 0;
+				}
+				else if ('\\' == *p && '"' == p[1])
+				{
+					if (idx == num && 0 != array)
+						ZBX_ASSIGN_PARAM;
+
+					p++;
+
+					if (idx == num)
+						ZBX_ASSIGN_PARAM;
+				}
+				else if (idx == num)
+					ZBX_ASSIGN_PARAM;
+				break;
+			case 2:
+				/* unquoted */
+
+				if (',' == *p || (']' == *p && 0 != array))
+				{
+					p--;
+					state = 0;
+				}
+				else if (idx == num)
+					ZBX_ASSIGN_PARAM;
+				break;
+		}
+
+		if (idx > num)
+			break;
+	}
+#undef ZBX_ASSIGN_PARAM
+
+	/* missing terminating '"' character */
+	if (1 == state)
+		return 1;
+
+	/* missing terminating ']' character */
+	if (0 != array)
+		return 1;
+
+	buf[buf_i] = '\0';
+
+	if (idx >= num)
+		return 0;
+
+	return 1;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: get_param_len                                                    *
+ *                                                                            *
+ * Purpose: return length of the parameter by index (num)                     *
+ *          from parameter list (param)                                       *
+ *                                                                            *
+ * Parameters:                                                                *
+ *      p   - [IN]  parameter list                                            *
+ *      num - [IN]  requested parameter index                                 *
+ *      sz  - [OUT] length of requested parameter                             *
+ *                                                                            *
+ * Return value:                                                              *
+ *      1 - requested parameter missing                                       *
+ *      0 - requested parameter found                                         *
+ *          (for first parameter result is always 0)                          *
+ *                                                                            *
+ * Author: Alexander Vladishev                                                *
+ *                                                                            *
+ * Comments: delimeter for parameters is ','                                  *
+ *                                                                            *
+ ******************************************************************************/
+static int	get_param_len(const char *p, int num, size_t *sz)
+{
+/* 0 - init, 1 - inside quoted param, 2 - inside unquoted param */
+	int	state, array, idx = 1;
+
+	*sz = 0;
+
+	for (state = 0, array = 0; '\0' != *p && idx <= num; p++)
+	{
+		switch (state) {
+		/* Init state */
+		case 0:
+			if (',' == *p)
+			{
+				if (0 == array)
+					idx++;
+				else if (idx == num)
+					(*sz)++;
+			}
+			else if ('"' == *p)
+			{
+				state = 1;
+				if (0 != array && idx == num)
+					(*sz)++;
+			}
+			else if ('[' == *p)
+			{
+				if (0 != array && idx == num)
+					(*sz)++;
+				array++;
+			}
+			else if (']' == *p && 0 != array)
+			{
+				array--;
+				if (0 != array && idx == num)
+					(*sz)++;
+
+				/* skip spaces */
+				while (' ' == p[1])
+					p++;
+
+				if (',' != p[1] && '\0' != p[1] && (0 == array || ']' != p[1]))
+					return 1;	/* incorrect syntax */
+			}
+			else if (' ' != *p)
+			{
+				if (idx == num)
+					(*sz)++;
+				state = 2;
+			}
+			break;
+		/* Quoted */
+		case 1:
+			if ('"' == *p)
+			{
+				if (0 != array && idx == num)
+					(*sz)++;
+
+				/* skip spaces */
+				while (' ' == p[1])
+					p++;
+
+				if (',' != p[1] && '\0' != p[1] && (0 == array || ']' != p[1]))
+					return 1;	/* incorrect syntax */
+
+				state = 0;
+			}
+			else if ('\\' == *p && '"' == p[1])
+			{
+				if (idx == num && 0 != array)
+					(*sz)++;
+
+				p++;
+
+				if (idx == num)
+					(*sz)++;
+			}
+			else if (idx == num)
+				(*sz)++;
+			break;
+		/* Unquoted */
+		case 2:
+			if (',' == *p || (']' == *p && 0 != array))
+			{
+				p--;
+				state = 0;
+			}
+			else if (idx == num)
+				(*sz)++;
+			break;
+		}
+
+		if (idx > num)
+			break;
+	}
+
+	/* missing terminating '"' character */
+	if (state == 1)
+		return 1;
+
+	/* missing terminating ']' character */
+	if (array != 0)
+		return 1;
+
+	if (idx >= num)
+		return 0;
+
+	return 1;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: get_param_dyn                                                    *
+ *                                                                            *
+ * Purpose: return parameter by index (num) from parameter list (param)       *
+ *                                                                            *
+ * Parameters:                                                                *
+ *      p   - [IN] parameter list                                             *
+ *      num - [IN] requested parameter index                                  *
+ *                                                                            *
+ * Return value:                                                              *
+ *      NULL - requested parameter missing                                    *
+ *      otherwise - requested parameter                                       *
+ *          (for first parameter result is not NULL)                          *
+ *                                                                            *
+ * Author: Alexander Vladishev                                                *
+ *                                                                            *
+ * Comments:  delimeter for parameters is ','                                 *
+ *                                                                            *
+ ******************************************************************************/
+char	*get_param_dyn(const char *p, int num)
+{
+	char	*buf = NULL;
+	size_t	sz;
+
+	if (0 != get_param_len(p, num, &sz))
+		return buf;
+
+	buf = (char *)zbx_malloc(buf, sz + 1);
+
+	if (0 != get_param(p, num, buf, sz + 1))
+		zbx_free(buf);
+
+	return buf;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: replace_key_param                                                *
+ *                                                                            *
+ * Purpose: replaces an item key, SNMP OID or their parameters when callback  *
+ *          function returns a new string                                     *
+ *                                                                            *
+ * Comments: auxiliary function for replace_key_params_dyn()                  *
+ *                                                                            *
+ ******************************************************************************/
+static int	replace_key_param(char **data, int key_type, size_t l, size_t *r, int level, int num, int quoted,
+		replace_key_param_f cb, void *cb_data)
+{
+	char	c = (*data)[*r], *param = NULL;
+	int	ret;
+
+	(*data)[*r] = '\0';
+	ret = cb(*data + l, key_type, level, num, quoted, cb_data, &param);
+	(*data)[*r] = c;
+
+	if (NULL != param)
+	{
+		(*r)--;
+		zbx_replace_string(data, l, r, param);
+		(*r)++;
+
+		zbx_free(param);
+	}
+
+	return ret;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: replace_key_params_dyn                                           *
+ *                                                                            *
+ * Purpose: replaces an item key, SNMP OID or their parameters by using       *
+ *          callback function                                                 *
+ *                                                                            *
+ * Parameters:                                                                *
+ *      data      - [IN/OUT] item key or SNMP OID                             *
+ *      key_type  - [IN] ZBX_KEY_TYPE_*                                       *
+ *      cb        - [IN] callback function                                    *
+ *      cb_data   - [IN] callback function custom data                        *
+ *      error     - [OUT] error messsage                                      *
+ *      maxerrlen - [IN] error size                                           *
+ *                                                                            *
+ * Return value: SUCCEED - function executed successfully                     *
+ *               FAIL - otherwise, error will contain error message           *
+ *                                                                            *
+ ******************************************************************************/
+int	replace_key_params_dyn(char **data, int key_type, replace_key_param_f cb, void *cb_data, char *error,
+		size_t maxerrlen)
+{
+	typedef enum
+	{
+		ZBX_STATE_NEW,
+		ZBX_STATE_END,
+		ZBX_STATE_UNQUOTED,
+		ZBX_STATE_QUOTED
+	}
+	zbx_parser_state_t;
+
+	size_t			i = 0, l = 0;
+	int			level = 0, num = 0, ret = SUCCEED;
+	zbx_parser_state_t	state = ZBX_STATE_NEW;
+
+	if (ZBX_KEY_TYPE_ITEM == key_type)
+	{
+		for (; SUCCEED == is_key_char((*data)[i]) && '\0' != (*data)[i]; i++)
+			;
+
+		if (0 == i)
+			goto clean;
+
+		if ('[' != (*data)[i] && '\0' != (*data)[i])
+			goto clean;
+	}
+	else
+	{
+		zbx_token_t	token;
+		int		len, c_l, c_r;
+
+		while ('\0' != (*data)[i])
+		{
+			if ('{' == (*data)[i] && '$' == (*data)[i + 1] &&
+					SUCCEED == zbx_user_macro_parse(&(*data)[i], &len, &c_l, &c_r))
+			{
+				i += len + 1;	/* skip to the position after user macro */
+			}
+			else if ('{' == (*data)[i] && '{' == (*data)[i + 1] && '#' == (*data)[i + 2] &&
+					SUCCEED == zbx_token_parse_nested_macro(&(*data)[i], &(*data)[i], &token))
+			{
+				i += token.token.r - token.token.l + 1;
+			}
+			else if ('[' != (*data)[i])
+			{
+				i++;
+			}
+			else
+				break;
+		}
+	}
+
+	ret = replace_key_param(data, key_type, 0, &i, level, num, 0, cb, cb_data);
+
+	for (; '\0' != (*data)[i] && FAIL != ret; i++)
+	{
+		switch (state)
+		{
+			case ZBX_STATE_NEW:	/* a new parameter started */
+				switch ((*data)[i])
+				{
+					case ' ':
+						break;
+					case ',':
+						ret = replace_key_param(data, key_type, i, &i, level, num, 0, cb,
+								cb_data);
+						if (1 == level)
+							num++;
+						break;
+					case '[':
+						if (2 == level)
+							goto clean;	/* incorrect syntax: multi-level array */
+						level++;
+						if (1 == level)
+							num++;
+						break;
+					case ']':
+						ret = replace_key_param(data, key_type, i, &i, level, num, 0, cb,
+								cb_data);
+						level--;
+						state = ZBX_STATE_END;
+						break;
+					case '"':
+						state = ZBX_STATE_QUOTED;
+						l = i;
+						break;
+					default:
+						state = ZBX_STATE_UNQUOTED;
+						l = i;
+				}
+				break;
+			case ZBX_STATE_END:	/* end of parameter */
+				switch ((*data)[i])
+				{
+					case ' ':
+						break;
+					case ',':
+						state = ZBX_STATE_NEW;
+						if (1 == level)
+							num++;
+						break;
+					case ']':
+						if (0 == level)
+							goto clean;	/* incorrect syntax: redundant ']' */
+						level--;
+						break;
+					default:
+						goto clean;
+				}
+				break;
+			case ZBX_STATE_UNQUOTED:	/* an unquoted parameter */
+				if (']' == (*data)[i] || ',' == (*data)[i])
+				{
+					ret = replace_key_param(data, key_type, l, &i, level, num, 0, cb, cb_data);
+
+					i--;
+					state = ZBX_STATE_END;
+				}
+				break;
+			case ZBX_STATE_QUOTED:	/* a quoted parameter */
+				if ('"' == (*data)[i] && '\\' != (*data)[i - 1])
+				{
+					i++;
+					ret = replace_key_param(data, key_type, l, &i, level, num, 1, cb, cb_data);
+					i--;
+
+					state = ZBX_STATE_END;
+				}
+				break;
+		}
+	}
+clean:
+	if (0 == i || '\0' != (*data)[i] || 0 != level)
+	{
+		if (NULL != error)
+		{
+			zbx_snprintf(error, maxerrlen, "Invalid %s at position " ZBX_FS_SIZE_T,
+					(ZBX_KEY_TYPE_ITEM == key_type ? "item key" : "SNMP OID"), (zbx_fs_size_t)i);
+		}
+		ret = FAIL;
+	}
+
+	return ret;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: remove_param                                                     *
+ *                                                                            *
+ * Purpose: remove parameter by index (num) from parameter list (param)       *
+ *                                                                            *
+ * Parameters:                                                                *
+ *      param  - parameter list                                               *
+ *      num    - requested parameter index                                    *
+ *                                                                            *
+ * Return value:                                                              *
+ *                                                                            *
+ * Comments: delimiter for parameters is ','                                  *
+ *                                                                            *
+ ******************************************************************************/
+void	remove_param(char *param, int num)
+{
+	int	state = 0;	/* 0 - unquoted parameter, 1 - quoted parameter */
+	int	idx = 1, skip_char = 0;
+	char	*p;
+
+	for (p = param; '\0' != *p; p++)
+	{
+		switch (state)
+		{
+			case 0:			/* in unquoted parameter */
+				if (',' == *p)
+				{
+					if (1 == idx && 1 == num)
+						skip_char = 1;
+					idx++;
+				}
+				else if ('"' == *p)
+					state = 1;
+				break;
+			case 1:			/* in quoted parameter */
+				if ('"' == *p && '\\' != *(p - 1))
+					state = 0;
+				break;
+		}
+		if (idx != num && 0 == skip_char)
+			*param++ = *p;
+
+		skip_char = 0;
+	}
+
+	*param = '\0';
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: str_in_list                                                      *
+ *                                                                            *
+ * Purpose: check if string is contained in a list of delimited strings       *
+ *                                                                            *
+ * Parameters: list      - strings a,b,ccc,ddd                                *
+ *             value     - value                                              *
+ *             delimiter - delimiter                                          *
+ *                                                                            *
+ * Return value: SUCCEED - string is in the list, FAIL - otherwise            *
+ *                                                                            *
+ * Author: Alexei Vladishev, Aleksandrs Saveljevs                             *
+ *                                                                            *
+ ******************************************************************************/
+int	str_in_list(const char *list, const char *value, char delimiter)
+{
+	const char	*end;
+	int		ret = FAIL;
+	size_t		len;
+
+	len = strlen(value);
+
+	while (SUCCEED != ret)
+	{
+		if (NULL != (end = strchr(list, delimiter)))
+		{
+			ret = (len == (size_t)(end - list) && 0 == strncmp(list, value, len) ? SUCCEED : FAIL);
+			list = end + 1;
+		}
+		else
+		{
+			ret = (0 == strcmp(list, value) ? SUCCEED : FAIL);
+			break;
+		}
+	}
+
+	return ret;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: get_key_param                                                    *
+ *                                                                            *
+ * Purpose: return parameter by index (num) from parameter list (param)       *
+ *          to be used for keys: key[param1,param2]                           *
+ *                                                                            *
+ * Parameters:                                                                *
+ *      param   - parameter list                                              *
+ *      num     - requested parameter index                                   *
+ *      buf     - pointer of output buffer                                    *
+ *      max_len - size of output buffer                                       *
+ *                                                                            *
+ * Return value:                                                              *
+ *      1 - requested parameter missing                                       *
+ *      0 - requested parameter found (value - 'buf' can be empty string)     *
+ *                                                                            *
+ * Author: Alexei Vladishev                                                   *
+ *                                                                            *
+ * Comments:  delimeter for parameters is ','                                 *
+ *                                                                            *
+ ******************************************************************************/
+int	get_key_param(char *param, int num, char *buf, size_t max_len)
+{
+	int	ret;
+	char	*pl, *pr;
+
+	pl = strchr(param, '[');
+	pr = strrchr(param, ']');
+
+	if (NULL == pl || NULL == pr || pl > pr)
+		return 1;
+
+	*pr = '\0';
+	ret = get_param(pl + 1, num, buf, max_len);
+	*pr = ']';
+
+	return ret;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: num_key_param                                                    *
+ *                                                                            *
+ * Purpose: calculate count of parameters from parameter list (param)         *
+ *          to be used for keys: key[param1,param2]                           *
+ *                                                                            *
+ * Parameters:                                                                *
+ *      param  - parameter list                                               *
+ *                                                                            *
+ * Return value: count of parameters                                          *
+ *                                                                            *
+ * Author: Alexei Vladishev                                                   *
+ *                                                                            *
+ * Comments:  delimeter for parameters is ','                                 *
+ *                                                                            *
+ ******************************************************************************/
+int	num_key_param(char *param)
+{
+	int	ret;
+	char	*pl, *pr;
+
+	if (NULL == param)
+		return 0;
+
+	pl = strchr(param, '[');
+	pr = strrchr(param, ']');
+
+	if (NULL == pl || NULL == pr || pl > pr)
+		return 0;
+
+	*pr = '\0';
+	ret = num_param(pl + 1);
+	*pr = ']';
+
+	return ret;
+}
+
 /******************************************************************************
  *                                                                            *
  * Function: zbx_replace_mem_dyn                                              *
@@ -4706,7 +4885,7 @@ int	zbx_number_find(const char *str, size_t pos, zbx_strloc_t *number_loc)
 int	zbx_replace_mem_dyn(char **data, size_t *data_alloc, size_t *data_len, size_t offset, size_t sz_to,
 		const char *from, size_t sz_from)
 {
-	int	sz_changed = sz_from - sz_to;
+	size_t	sz_changed = sz_from - sz_to;
 
 	if (0 != sz_changed)
 	{
@@ -4719,7 +4898,7 @@ int	zbx_replace_mem_dyn(char **data, size_t *data_alloc, size_t *data_len, size_
 			while (*data_len > *data_alloc)
 				*data_alloc *= 2;
 
-			*data = zbx_realloc(*data, *data_alloc);
+			*data = (char *)zbx_realloc(*data, *data_alloc);
 		}
 
 		to = *data + offset;
@@ -4728,5 +4907,5 @@ int	zbx_replace_mem_dyn(char **data, size_t *data_alloc, size_t *data_len, size_
 
 	memcpy(*data + offset, from, sz_from);
 
-	return sz_changed;
+	return (int)sz_changed;
 }

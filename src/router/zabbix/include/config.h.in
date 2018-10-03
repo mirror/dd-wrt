@@ -36,9 +36,6 @@
 /* Define to 1 if you have the <errno.h> header file. */
 #undef HAVE_ERRNO_H
 
-/* Define to 1 if you have the <event.h> header file. */
-#undef HAVE_EVENT_H
-
 /* Define to 1 if you have the <execinfo.h> header file. */
 #undef HAVE_EXECINFO_H
 
@@ -244,8 +241,8 @@
 /* Define to 1 if Oracle should be enabled. */
 #undef HAVE_ORACLE
 
-/* Define to 1 if you have the 'libpcre' library (-lpcreposix -lpcre) */
-#undef HAVE_PCREPOSIX_H
+/* Define to 1 if you have the 'libpcre' library (-lpcre) */
+#undef HAVE_PCRE_H
 
 /* Define to 1 if you have the <pdh.h> header file. */
 #undef HAVE_PDH_H
@@ -286,6 +283,10 @@
 /* Define to 1 if you have the <pthread.h> header file. */
 #undef HAVE_PTHREAD_H
 
+/* Define to 1 if you have the 'libpthread' library that supports
+   PTHREAD_PROCESS_SHARED flag (-lpthread) */
+#undef HAVE_PTHREAD_PROCESS_SHARED
+
 /* Define to 1 if you have the `putenv' function. */
 #undef HAVE_PUTENV
 
@@ -294,6 +295,12 @@
 
 /* Define to 1 if you have the <resolv.h> header file. */
 #undef HAVE_RESOLV_H
+
+/* Define to 1 if 'res_ndestroy' exists. */
+#undef HAVE_RES_NDESTROY
+
+/* Define to 1 if 'res_ninit' exists. */
+#undef HAVE_RES_NINIT
 
 /* Define to 1 if you have the DNS functions */
 #undef HAVE_RES_QUERY
@@ -397,6 +404,9 @@
 /* Define to 1 if you have the <sys/proc.h> header file. */
 #undef HAVE_SYS_PROC_H
 
+/* Define to 1 if you have the <sys/protosw.h> header file. */
+#undef HAVE_SYS_PROTOSW_H
+
 /* Define to 1 if you have the <sys/pstat.h> header file. */
 #undef HAVE_SYS_PSTAT_H
 
@@ -484,6 +494,9 @@
 /* Define to 1 if you have the <sys/wait.h> header file. */
 #undef HAVE_SYS_WAIT_H
 
+/* "Define to 1 if tests directory is present" */
+#undef HAVE_TESTS
+
 /* Define to 1 if function 'clock_gettime' exists. */
 #undef HAVE_TIME_CLOCK_GETTIME
 
@@ -499,7 +512,7 @@
 /* Define to 1 if function 'sysconf' exists. */
 #undef HAVE_UNISTD_SYSCONF
 
-/* Define to 1 if unixUNIXODBC Driver Manager should be used. */
+/* Define to 1 if unixODBC Driver Manager should be used. */
 #undef HAVE_UNIXODBC
 
 /* Define to 1 if you have the <vm/vm_param.h> header file. */
@@ -519,6 +532,9 @@
 
 /* Define to 1 if you have the <ws2tcpip.h> header file. */
 #undef HAVE_WS2TCPIP_H
+
+/* Define to 1 if you have the 'zlib' library (-lz) */
+#undef HAVE_ZLIB
 
 /* Define to 1 if you have the <zone.h> header file. */
 #undef HAVE_ZONE_H

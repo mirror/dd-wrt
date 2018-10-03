@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -188,6 +188,7 @@ class CConfigurationExportBuilder {
 				'markelements' => $map['markelements'],
 				'show_unack' => $map['show_unack'],
 				'severity_min' => $map['severity_min'],
+				'show_suppressed' => $map['show_suppressed'],
 				'grid_size' => $map['grid_size'],
 				'grid_show' => $map['grid_show'],
 				'grid_align' => $map['grid_align'],
@@ -345,11 +346,51 @@ class CConfigurationExportBuilder {
 				'trigger_prototypes' => $this->formatTriggers($discoveryRule['triggerPrototypes']),
 				'graph_prototypes' => $this->formatGraphs($discoveryRule['graphPrototypes']),
 				'host_prototypes' => $this->formatHostPrototypes($discoveryRule['hostPrototypes']),
-				'jmx_endpoint' => $discoveryRule['jmx_endpoint']
+				'jmx_endpoint' => $discoveryRule['jmx_endpoint'],
+				'timeout' => $discoveryRule['timeout'],
+				'url' => $discoveryRule['url'],
+				'query_fields' => $discoveryRule['query_fields'],
+				'posts' => $discoveryRule['posts'],
+				'status_codes' => $discoveryRule['status_codes'],
+				'follow_redirects' => $discoveryRule['follow_redirects'],
+				'post_type' => $discoveryRule['post_type'],
+				'http_proxy' => $discoveryRule['http_proxy'],
+				'headers' => $discoveryRule['headers'],
+				'retrieve_mode' => $discoveryRule['retrieve_mode'],
+				'request_method' => $discoveryRule['request_method'],
+				'allow_traps' => $discoveryRule['allow_traps'],
+				'ssl_cert_file' => $discoveryRule['ssl_cert_file'],
+				'ssl_key_file' => $discoveryRule['ssl_key_file'],
+				'ssl_key_password' => $discoveryRule['ssl_key_password'],
+				'verify_peer' => $discoveryRule['verify_peer'],
+				'verify_host' => $discoveryRule['verify_host']
 			];
 
 			if (isset($discoveryRule['interface_ref'])) {
 				$data['interface_ref'] = $discoveryRule['interface_ref'];
+			}
+
+			if ($discoveryRule['query_fields']) {
+				$query_fields = [];
+
+				foreach ($discoveryRule['query_fields'] as $query_field) {
+					$query_fields[] = [
+						'name' => key($query_field),
+						'value' => reset($query_field)
+					];
+				}
+
+				$data['query_fields'] = $query_fields;
+			}
+
+			if ($discoveryRule['headers']) {
+				$headers = [];
+
+				foreach ($discoveryRule['headers'] as $name => $value) {
+					$headers[] = compact('name', 'value');
+				}
+
+				$data['headers'] = $headers;
 			}
 
 			$result[] = $data;
@@ -696,21 +737,60 @@ class CConfigurationExportBuilder {
 				'valuemap' => $item['valuemap'],
 				'logtimefmt' => $item['logtimefmt'],
 				'preprocessing' => $item['preprocessing'],
-				'jmx_endpoint' => $item['jmx_endpoint']
+				'jmx_endpoint' => $item['jmx_endpoint'],
+				'timeout' => $item['timeout'],
+				'url' => $item['url'],
+				'query_fields' => $item['query_fields'],
+				'posts' => $item['posts'],
+				'status_codes' => $item['status_codes'],
+				'follow_redirects' => $item['follow_redirects'],
+				'post_type' => $item['post_type'],
+				'http_proxy' => $item['http_proxy'],
+				'headers' => $item['headers'],
+				'retrieve_mode' => $item['retrieve_mode'],
+				'request_method' => $item['request_method'],
+				'output_format' => $item['output_format'],
+				'allow_traps' => $item['allow_traps'],
+				'ssl_cert_file' => $item['ssl_cert_file'],
+				'ssl_key_file' => $item['ssl_key_file'],
+				'ssl_key_password' => $item['ssl_key_password'],
+				'verify_peer' => $item['verify_peer'],
+				'verify_host' => $item['verify_host']
 			];
 
 			$master_item = ($item['type'] == ITEM_TYPE_DEPENDENT) ? ['key' => $item['master_item']['key_']] : [];
 
 			if ($item['flags'] == ZBX_FLAG_DISCOVERY_PROTOTYPE) {
 				$data['application_prototypes'] = $this->formatApplications($item['applicationPrototypes']);
-				$data['master_item_prototype'] = $master_item;
 			}
-			else {
-				$data['master_item'] = $master_item;
-			}
+
+			$data['master_item'] = $master_item;
 
 			if (isset($item['interface_ref'])) {
 				$data['interface_ref'] = $item['interface_ref'];
+			}
+
+			if ($item['query_fields']) {
+				$query_fields = [];
+
+				foreach ($item['query_fields'] as $query_field) {
+					$query_fields[] = [
+						'name' => key($query_field),
+						'value' => reset($query_field)
+					];
+				}
+
+				$data['query_fields'] = $query_fields;
+			}
+
+			if ($item['headers']) {
+				$headers = [];
+
+				foreach ($item['headers'] as $name => $value) {
+					$headers[] = compact('name', 'value');
+				}
+
+				$data['headers'] = $headers;
 			}
 
 			$result[] = $data;

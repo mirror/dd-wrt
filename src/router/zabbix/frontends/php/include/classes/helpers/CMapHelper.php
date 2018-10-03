@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -27,7 +27,6 @@ class CMapHelper {
 	 * @param array $sysmapids					Map IDs.
 	 * @param array $options					Options used to retrieve actions.
 	 * @param int   $options['severity_min']	Minimum severity.
-	 * @param int   $options['fullscreen']		Fullscreen flag.
 	 *
 	 * @return array
 	 */
@@ -37,7 +36,7 @@ class CMapHelper {
 				'highlight', 'expandproblem', 'markelements', 'show_unack', 'label_format', 'label_type_host',
 				'label_type_hostgroup', 'label_type_trigger', 'label_type_map', 'label_type_image', 'label_string_host',
 				'label_string_hostgroup', 'label_string_trigger', 'label_string_map', 'label_string_image', 'iconmapid',
-				'severity_min'
+				'severity_min', 'show_suppressed'
 			],
 			'selectShapes' => ['sysmap_shapeid', 'type', 'x', 'y', 'width', 'height', 'text', 'font', 'font_size',
 				'font_color', 'text_halign', 'text_valign', 'border_type', 'border_width', 'border_color',
@@ -82,7 +81,8 @@ class CMapHelper {
 					'font_size' => 11,
 					'font_color' => 'FF0000',
 					'text' => _('No permissions to referred object or it does not exist!')
-				]]
+				]],
+				'aria_label' => ''
 			];
 		}
 		else {
@@ -106,10 +106,10 @@ class CMapHelper {
 			'refresh' => 'map.php?sysmapid='.$map['sysmapid'].'&severity_min='.$map['severity_min'],
 			'background' => $map['backgroundid'],
 			'label_location' => $map['label_location'],
-			'shapes' => array_values($map['shapes']),
 			'elements' => array_values($map['selements']),
 			'links' => array_values($map['links']),
 			'shapes' => array_values($map['shapes']),
+			'aria_label' => $map['aria_label'],
 			'timestamp' => zbx_date2str(DATE_TIME_FORMAT_SECONDS)
 		];
 	}
@@ -117,50 +117,42 @@ class CMapHelper {
 	/**
 	 * Resolve map element (selements and links) state.
 	 *
-	 * @param array $sysmap				Map data.
-	 * @param array $options					Options used to retrieve actions.
-	 * @param int   $options['severity_min']	Minimum severity.
-	 * @param int   $options['fullscreen']		Fullscreen flag.
-	 * @param int   $theme				Theme used to create missing elements (like hostgroup frame).
+	 * @param array $sysmap                   Map data.
+	 * @param array $options                  Options used to retrieve actions.
+	 * @param int   $options['severity_min']  Minimum severity.
+	 * @param array $theme                    Theme used to create missing elements (like hostgroup frame).
 	 */
-	protected static function resolveMapState(&$sysmap, $options, $theme) {
+	protected static function resolveMapState(array &$sysmap, array $options, array $theme) {
 		$map_info_options = [
 			'severity_min' => array_key_exists('severity_min', $options) ? $options['severity_min'] : null
 		];
 
-		if ($sysmap['selements']) {
-			foreach ($sysmap['selements'] as &$selement) {
-				// If user has no access to whole host group, always show it as a SYSMAP_ELEMENT_SUBTYPE_HOST_GROUP.
-				if ($selement['elementtype'] == SYSMAP_ELEMENT_TYPE_HOST_GROUP && $selement['permission'] < PERM_READ
-						&& $selement['elementsubtype'] == SYSMAP_ELEMENT_SUBTYPE_HOST_GROUP_ELEMENTS) {
-					$selement['elementsubtype'] = SYSMAP_ELEMENT_SUBTYPE_HOST_GROUP;
-				}
+		foreach ($sysmap['selements'] as &$selement) {
+			// If user has no access to whole host group, always show it as a SYSMAP_ELEMENT_SUBTYPE_HOST_GROUP.
+			if ($selement['elementtype'] == SYSMAP_ELEMENT_TYPE_HOST_GROUP && $selement['permission'] < PERM_READ
+					&& $selement['elementsubtype'] == SYSMAP_ELEMENT_SUBTYPE_HOST_GROUP_ELEMENTS) {
+				$selement['elementsubtype'] = SYSMAP_ELEMENT_SUBTYPE_HOST_GROUP;
 			}
-			unset($selement);
 		}
+		unset($selement);
 
 		$areas = populateFromMapAreas($sysmap, $theme);
 		$map_info = getSelementsInfo($sysmap, $map_info_options);
 		processAreasCoordinates($sysmap, $areas, $map_info);
-		add_elementNames($sysmap['selements']);
+		// Adding element names and removing inaccessible triggers from readable elements.
+		addElementNames($sysmap['selements']);
 
 		foreach ($sysmap['selements'] as $id => &$element) {
+			if ($element['permission'] < PERM_READ) {
+				continue;
+			}
+
 			switch ($element['elementtype']) {
 				case SYSMAP_ELEMENT_TYPE_IMAGE:
 					$map_info[$id]['name'] = _('Image');
 					break;
 
 				case SYSMAP_ELEMENT_TYPE_TRIGGER:
-					// Skip inaccessible elements.
-					$selements_accessible = array_filter($element['elements'], function($elmn) {
-						return array_key_exists('elementName', $elmn);
-					});
-					if (($selements_accessible = reset($selements_accessible)) !== false) {
-						$map_info[$id]['name'] = $selements_accessible['elementName'];
-					} else {
-						$map_info[$id]['name'] = '';
-					}
-
 					// Move the trigger with problem and highiest priority to the beginning of the trigger list.
 					if (array_key_exists('triggerid', $map_info[$id])) {
 						$trigger_pos = 0;
@@ -178,20 +170,22 @@ class CMapHelper {
 							array_unshift($element['elements'], $trigger);
 						}
 					}
-
-					break;
+					// break; is not missing here
 
 				default:
 					$map_info[$id]['name'] = $element['elements'][0]['elementName'];
-					break;
 			}
 		}
 		unset($element);
 
-		$labels = getMapLabels($sysmap, $map_info, true);
+		$labels = getMapLabels($sysmap, $map_info);
 		$highlights = getMapHighligts($sysmap, $map_info);
 		$actions = getActionsBySysmap($sysmap, $options);
 		$linktrigger_info = getMapLinktriggerInfo($sysmap, $options);
+
+		$problems_total = 0;
+		$status_problems = [];
+		$status_other = [];
 
 		foreach ($sysmap['selements'] as $id => &$element) {
 			$icon = null;
@@ -204,6 +198,32 @@ class CMapHelper {
 
 			$element['icon'] = $icon;
 			if ($element['permission'] >= PERM_READ) {
+				$label = str_replace(['.', ','], ' ', CMacrosResolverHelper::resolveMapLabelMacrosAll($element));
+
+				if ($map_info[$id]['problems_total'] > 0) {
+					$problems_total += $map_info[$id]['problems_total'];
+					$problem_desc = str_replace(['.', ','], ' ', $map_info[$id]['aria_label']);
+					$status_problems[] = sprintf('%1$s, %2$s, %3$s, %4$s. ',
+						sysmap_element_types($element['elementtype']), _('Status problem'), $label, $problem_desc
+					);
+				}
+				else {
+					$element_status = _('Status ok');
+
+					if (array_key_exists('info', $map_info[$id])
+							&& array_key_exists('maintenance', $map_info[$id]['info'])) {
+						$element_status = _('Status maintenance');
+					}
+					elseif (array_key_exists('info', $map_info[$id])
+							&& array_key_exists('status', $map_info[$id]['info'])) {
+						$element_status = _('Status disabled');
+					}
+
+					$status_other[] = sprintf('%1$s, %2$s, %3$s. ', sysmap_element_types($element['elementtype']),
+						$element_status, $label
+					);
+				}
+
 				$element['highlight'] = $highlights[$id];
 				$element['actions'] = $actions[$id];
 				$element['label'] = $labels[$id];
@@ -220,6 +240,14 @@ class CMapHelper {
 		}
 		unset($element);
 
+		$sysmap['aria_label'] = str_replace(['.', ','], ' ', $sysmap['name']).', '.
+			_n('%1$s of %2$s element in problem state', '%1$s of %2$s elements in problem state',
+				count($status_problems), count($sysmap['selements'])).
+			', '.
+			_n('%1$s problem in total', '%1$s problems in total', $problems_total).
+			'. '.
+			implode('', array_merge($status_problems, $status_other));
+
 		foreach ($sysmap['shapes'] as &$shape) {
 			if (array_key_exists('text', $shape)) {
 				$shape['text'] = CMacrosResolverHelper::resolveMapLabelMacros($shape['text']);
@@ -233,9 +261,9 @@ class CMapHelper {
 		}
 
 		foreach ($sysmap['links'] as &$link) {
-			if ($link['permission'] >= PERM_READ) {
-				$link['label'] = CMacrosResolverHelper::resolveMapLabelMacros($link['label']);
+			$link['label'] = CMacrosResolverHelper::resolveMapLabelMacros($link['label']);
 
+			if ($link['permission'] >= PERM_READ) {
 				if (empty($link['linktriggers'])) {
 					continue;
 				}
@@ -257,7 +285,8 @@ class CMapHelper {
 
 					$triggers[$id] = zbx_array_merge($link_trigger, $linktrigger_info[$link_trigger['triggerid']]);
 
-					if ($triggers[$id]['status'] == TRIGGER_STATUS_ENABLED && $triggers[$id]['value'] == TRIGGER_VALUE_TRUE
+					if ($triggers[$id]['status'] == TRIGGER_STATUS_ENABLED
+							&& $triggers[$id]['value'] == TRIGGER_VALUE_TRUE
 							&& $triggers[$id]['priority'] >= $max_severity) {
 						$drawtype = $triggers[$id]['drawtype'];
 						$color = $triggers[$id]['color'];

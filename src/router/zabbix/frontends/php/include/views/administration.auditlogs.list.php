@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -21,8 +21,6 @@
 $auditWidget = (new CWidget())->setTitle(_('Audit log'));
 
 // header
-// create filter
-$filterForm = new CFilter('web.auditlogs.filter.state');
 
 $filterColumn = new CFormList();
 $filterColumn->addRow(_('User'), [
@@ -32,7 +30,14 @@ $filterColumn->addRow(_('User'), [
 	(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
 	(new CButton('btn1', _('Select')))
 		->addClass(ZBX_STYLE_BTN_GREY)
-		->onClick('return PopUp("popup.php?dstfrm=zbx_filter&dstfld1=alias&srctbl=users&srcfld1=alias");')
+		->onClick('return PopUp("popup.generic",'.
+			CJs::encodeJson([
+				'srctbl' => 'users',
+				'srcfld1' => 'alias',
+				'dstfrm' => 'zbx_filter',
+				'dstfld1' => 'alias'
+			]).', null, this);'
+		)
 ]);
 $filterColumn->addRow(_('Action'), new CComboBox('action', $this->data['action'], null, [
 	-1 => _('All'),
@@ -48,9 +53,13 @@ $filterColumn->addRow(_('Resource'), new CComboBox('resourcetype', $this->data['
 	[-1 => _('All')] + audit_resource2str()
 ));
 
-$filterForm->addColumn($filterColumn)
-	->addNavigator();
-$auditWidget->addItem($filterForm);
+$auditWidget->addItem(
+	(new CFilter())
+		->setProfile($data['timeline']['profileIdx'])
+		->setActiveTab($data['active_tab'])
+		->addTimeSelector($data['timeline']['from'], $data['timeline']['to'])
+		->addFilterTab(_('Filter'), [$filterColumn])
+);
 
 // create form
 $auditForm = (new CForm('get'))->setName('auditForm');
@@ -99,15 +108,8 @@ $objData = [
 	'domid' => 'events',
 	'loadSBox' => 0,
 	'loadImage' => 0,
-	'loadScroll' => 1,
 	'dynamic' => 0,
-	'mainObject' => 1,
-	'periodFixed' => CProfile::get('web.auditlogs.timelinefixed', 1),
-	'sliderMaximumTimePeriod' => ZBX_MAX_PERIOD,
-	'profile' => [
-		'idx' => 'web.auditlogs',
-		'idx2' => 0,
-	]
+	'mainObject' => 1
 ];
 zbx_add_post_js('timeControl.addObject("events", '.zbx_jsvalue($this->data['timeline']).', '.zbx_jsvalue($objData).');');
 zbx_add_post_js('timeControl.processObjects();');

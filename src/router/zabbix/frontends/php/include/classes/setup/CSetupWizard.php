@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -94,7 +94,10 @@ class CSetupWizard extends CForm {
 
 	protected function bodyToString($destroy = true) {
 		$setup_left = (new CDiv([
-			(new CDiv())->addClass(ZBX_STYLE_SIGNIN_LOGO), $this->getList()
+			(new CDiv())
+				->addClass(ZBX_STYLE_SIGNIN_LOGO)
+				->addStyle(CBrandHelper::getLogoStyle()),
+			$this->getList()
 		]))->addClass(ZBX_STYLE_SETUP_LEFT);
 
 		$setup_right = (new CDiv($this->getStage()))->addClass(ZBX_STYLE_SETUP_RIGHT);

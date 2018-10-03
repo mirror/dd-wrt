@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -73,6 +73,7 @@ $fields = [
 	'label_location' =>			[T_ZBX_INT, O_OPT, null,	BETWEEN(0, 3),	'isset({add}) || isset({update})'],
 	'urls' =>					[T_ZBX_STR, O_OPT, null,	null,			null],
 	'severity_min' =>			[T_ZBX_INT, O_OPT, null,	IN('0,1,2,3,4,5'), null],
+	'show_suppressed' =>		[T_ZBX_INT, O_OPT, null,	BETWEEN(0, 1),	null],
 	'userid' =>					[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,			null],
 	'private' =>				[T_ZBX_INT, O_OPT, null,	BETWEEN(0, 1),	null],
 	'users' =>					[T_ZBX_INT, O_OPT, null,	null,			null],
@@ -163,6 +164,7 @@ if (hasRequest('add') || hasRequest('update')) {
 		'label_location' => getRequest('label_location'),
 		'show_unack' => getRequest('show_unack', 0),
 		'severity_min' => getRequest('severity_min', TRIGGER_SEVERITY_NOT_CLASSIFIED),
+		'show_suppressed' => getRequest('show_suppressed', 0),
 		'urls' => getRequest('urls', []),
 		'userid' => getRequest('userid', ''),
 		'private' => getRequest('private', PRIVATE_SHARING),
@@ -352,6 +354,7 @@ if (hasRequest('form')) {
 			'expandproblem' => getRequest('expandproblem', DB::getDefault('sysmaps', 'expandproblem')),
 			'show_unack' => getRequest('show_unack', 0),
 			'severity_min' => getRequest('severity_min', TRIGGER_SEVERITY_NOT_CLASSIFIED),
+			'show_suppressed' => getRequest('show_suppressed', 0),
 			'urls' => getRequest('urls', []),
 			'userid' => getRequest('userid', hasRequest('form_refresh') ? '' : $current_userid),
 			'private' => getRequest('private', PRIVATE_SHARING),
@@ -420,7 +423,9 @@ else {
 			'name' => CProfile::get('web.sysmapconf.filter_name', '')
 		],
 		'sort' => $sortField,
-		'sortorder' => $sortOrder
+		'sortorder' => $sortOrder,
+		'profileIdx' => 'web.sysmapconf.filter',
+		'active_tab' => CProfile::get('web.sysmapconf.filter.active', 1)
 	];
 
 	// get maps
@@ -434,8 +439,12 @@ else {
 		'preservekeys' => true
 	]);
 
-	$user_type = CWebUser::getType();
-	if ($user_type != USER_TYPE_SUPER_ADMIN) {
+	order_result($data['maps'], $sortField, $sortOrder);
+
+	// paging
+	$data['paging'] = getPagingLine($data['maps'], $sortOrder, new CUrl('sysmaps.php'));
+
+	if (CWebUser::getType() != USER_TYPE_SUPER_ADMIN) {
 		$editable_maps = API::Map()->get([
 			'output' => [],
 			'sysmapids' => array_keys($data['maps']),
@@ -448,11 +457,6 @@ else {
 		}
 		unset($map);
 	}
-
-	order_result($data['maps'], $sortField, $sortOrder);
-
-	// paging
-	$data['paging'] = getPagingLine($data['maps'], $sortOrder, new CUrl('sysmaps.php'));
 
 	// render view
 	$mapView = new CView('monitoring.sysmap.list', $data);

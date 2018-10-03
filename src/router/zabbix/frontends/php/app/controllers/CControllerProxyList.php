@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -80,7 +80,9 @@ class CControllerProxyList extends CController {
 			'filter' => $filter,
 			'config' => [
 				'max_in_table' => $config['max_in_table']
-			]
+			],
+			'profileIdx' => 'web.proxies.filter',
+			'active_tab' => CProfile::get('web.proxies.filter.active', 1)
 		];
 
 		$data['proxies'] = API::Proxy()->get([
@@ -105,7 +107,7 @@ class CControllerProxyList extends CController {
 		$data['paging'] = getPagingLine($data['proxies'], $sortOrder, $url);
 
 		$data['proxies'] = API::Proxy()->get([
-			'output' => ['proxyid', 'host', 'status', 'lastaccess', 'tls_connect', 'tls_accept'],
+			'output' => ['proxyid', 'host', 'status', 'lastaccess', 'tls_connect', 'tls_accept', 'auto_compress'],
 			'selectHosts' => ['hostid', 'name', 'status'],
 			'proxyids' => array_keys($data['proxies']),
 			'editable' => true,
@@ -123,7 +125,7 @@ class CControllerProxyList extends CController {
 			global $ZBX_SERVER, $ZBX_SERVER_PORT;
 
 			$server = new CZabbixServer($ZBX_SERVER, $ZBX_SERVER_PORT, ZBX_SOCKET_TIMEOUT, ZBX_SOCKET_BYTES_LIMIT);
-			$server_status = $server->getStatus(get_cookie('zbx_sessionid'));
+			$server_status = $server->getStatus(get_cookie(ZBX_SESSION_NAME));
 
 			if ($server_status !== false) {
 				$defaults = [

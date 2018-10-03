@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ class CRegexValidator extends CValidator
 			return false;
 		}
 
-		// escape '/' since Zabbix server threats them as literal characters.
+		// escape '/' since Zabbix server treats them as literal characters.
 		$value = str_replace('/', '\/', $value);
 
 		// validate through preg_match

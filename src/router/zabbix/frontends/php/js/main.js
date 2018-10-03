@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -16,6 +16,7 @@
 ** along with this program; if not, write to the Free Software
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
+
 
 // Array indexOf method for javascript<1.6 compatibility
 if (!Array.prototype.indexOf) {
@@ -111,10 +112,84 @@ var MMenu = {
 	timeout_reset:	null,
 	timeout_change:	null,
 
+	init: function() {
+		// Detects when none of the selected elements are focused.
+		var elems = jQuery('.top-nav a, .top-subnav a').on('keydown', function(event) {
+			clearTimeout(this.timeout_reset);
+
+			if (event.which == 9) {
+				setTimeout(function() {
+					if (elems.toArray().indexOf(document.querySelector(':focus')) == -1) {
+						clearTimeout(this.timeout_reset);
+						this.timeout_reset = setTimeout(function() {
+							if (elems.toArray().indexOf(document.querySelector(':focus')) == -1){
+								MMenu.showSubMenu(MMenu.def_label)
+							}
+						}, 2500);
+					}
+				});
+			}
+		});
+
+		if (SF) {
+			var nav_elems = jQuery('.top-subnav a, .search, .btn-search, .top-nav-zbbshare, .top-nav-help, .top-nav-profile, .top-nav-signout')
+					.on('keydown', function(event) {
+				if (event.which == 9) {
+					var visible_subnav_elems = nav_elems.filter(function() {
+						return jQuery(this).is(':visible');
+					});
+					var current = visible_subnav_elems.toArray().indexOf(this);
+
+					if (event.shiftKey && current > 0) {
+						visible_subnav_elems.get(current - 1).focus();
+					}
+					else if (!event.shiftKey && visible_subnav_elems.length > current + 1) {
+						visible_subnav_elems.get(current + 1).focus();
+					}
+					else if (event.shiftKey && current == 0) {
+						// Find the previous :focusable element to focus.
+						var active_element_index = jQuery('*', 'body').toArray().indexOf(document.activeElement),
+							prev_element = null;
+
+						jQuery('*', 'body').each(function(i) {
+							if (active_element_index > i && jQuery(this).is(':focusable')) {
+								prev_element = this;
+							};
+						});
+
+						if (prev_element) {
+							prev_element.focus();
+						}
+					}
+					else if (current + 1 == visible_subnav_elems.length) {
+						// If this is the last item in the sub-menu list, focus next :focusable element.
+						var active_element_index = jQuery('*', 'body').toArray().indexOf(document.activeElement);
+
+						jQuery('*', 'body').filter(function(i) {
+							return (i > active_element_index && jQuery(this).is(':focusable'));
+						}).get(0).focus();
+					}
+
+					event.preventDefault();
+
+					return false;
+				}
+			});
+		}
+	},
+
 	mouseOver: function(show_label) {
 		clearTimeout(this.timeout_reset);
-		this.timeout_change = setTimeout('MMenu.showSubMenu("' + show_label + '")', 10);
+		this.timeout_change = setTimeout('MMenu.showSubMenu("' + show_label + '", true)', 10);
 		PageRefresh.restart();
+	},
+
+	keyUp: function(show_label, event) {
+		if (event.which == 13) {
+			clearTimeout(this.timeout_reset);
+			this.timeout_change = setTimeout('MMenu.showSubMenu("' + show_label + '", true)', 10);
+			PageRefresh.restart();
+		}
 	},
 
 	submenu_mouseOver: function() {
@@ -128,11 +203,17 @@ var MMenu = {
 		this.timeout_reset = setTimeout('MMenu.showSubMenu("' + this.def_label + '")', 2500);
 	},
 
-	showSubMenu: function(show_label) {
-		var sub_menu = $('sub_' + show_label);
+	showSubMenu: function(show_label, focus_subitem) {
+		var sub_menu = $('sub_' + show_label),
+			focus_subitem = focus_subitem || false;
+
 		if (sub_menu !== null) {
 			$(show_label).className = 'selected';
 			sub_menu.show();
+
+			if (focus_subitem) {
+				jQuery('li:first > a', sub_menu).focus();
+			}
 
 			for (var key in this.menus) {
 				if (key == show_label) {
@@ -306,57 +387,40 @@ var AudioControl = {
  */
 var jqBlink = {
 	shown: true, // are objects currently shown or hidden?
-	blinkInterval: 1000, // how fast will they blink (ms)
-	secondsSinceInit: 0,
+	interval: 1000, // how fast will they blink (ms)
 
 	/**
 	 * Shows/hides the elements and repeats it self after 'this.blinkInterval' ms
 	 */
 	blink: function() {
-		var objects = jQuery('.blink');
-
-		// maybe some of the objects should not blink any more?
-		objects = this.filterOutNonBlinking(objects);
-
-		// changing visibility state
-		fun = this.shown ? 'removeClass' : 'addClass';
-		jQuery.each(objects, function() {
-			if (typeof jQuery(this).data('toggleClass') !== 'undefined') {
-				jQuery(this)[fun](jQuery(this).data('toggleClass'));
-			}
-			else {
-				jQuery(this).css('visibility', jqBlink.shown ? 'hidden' : 'visible');
-			}
-		})
-
-		// reversing the value of indicator attribute
-		this.shown = !this.shown;
-
-		// I close my eyes only for a moment, and a moment's gone
-		this.secondsSinceInit += this.blinkInterval / 1000;
-
-		// repeating this function with delay
-		setTimeout(jQuery.proxy(this.blink, this), this.blinkInterval);
-	},
-
-	/**
-	 * Check all currently found objects and exclude ones that should stop blinking by now
-	 */
-	filterOutNonBlinking: function(objects) {
 		var that = this;
 
-		return objects.filter(function() {
-			var obj = jQuery(this);
-			if (typeof obj.data('timeToBlink') !== 'undefined') {
-				var shouldBlink = parseInt(obj.data('timeToBlink'), 10) > that.secondsSinceInit;
+		setInterval(function() {
+			var $collection = jQuery('.blink');
 
-				return shouldBlink || !that.shown;
-			}
-			else {
-				// no time-to-blink attribute, should blink forever
-				return true;
-			}
-		});
+			$collection.each(function() {
+				var $el = jQuery(this),
+					blink = true;
+
+				if (typeof $el.data('timeToBlink') !== 'undefined') {
+					blink = (($el.data()['timeToBlink']--) > 0);
+				}
+
+				if (blink) {
+					if (typeof $el.data('toggleClass') !== 'undefined') {
+						$el[that.shown ? 'removeClass' : 'addClass']($el.data('toggleClass'));
+					}
+					else {
+						$el.css('visibility', that.shown ? 'visible' : 'hidden');
+					}
+				}
+				else if (that.shown) {
+					$el.removeClass('blink').removeClass($el.data('toggleClass')).css('visibility', '');
+				}
+			});
+
+			that.shown = !that.shown;
+		}, this.interval);
 	}
 };
 
@@ -365,8 +429,66 @@ var jqBlink = {
  */
 var hintBox = {
 
-	createBox: function(e, target, hintText, className, isStatic, styles) {
-		var box = jQuery('<div></div>').addClass('overlay-dialogue');
+	/**
+	 * Initialize hint box event handlers.
+	 *
+	 * Event 'remove' is triggered on:
+	 * - content update using flickerfreeScreen.refreshHtml()
+	 * - widget update by updateWidgetContent()
+	 * - widget remove by deleteWidget().
+	 *
+	 * Triggered events:
+	 * - onDeleteHint.hintBox 	- when removing a hintbox.
+	 */
+	bindEvents: function () {
+		jQuery(document).on('keydown click mouseenter mouseleave remove', '[data-hintbox=1]', function (e) {
+			var target = jQuery(this);
+
+			switch (e.type) {
+				case 'mouseenter':
+					hintBox.showHint(e, this, target.next('.hint-box').html(), target.data('hintbox-class'), false,
+						target.data('hintbox-style')
+					);
+					break;
+
+				case 'mouseleave':
+					hintBox.hideHint(e, this);
+					break;
+
+				case 'remove':
+					hintBox.deleteHint(this);
+					break;
+
+				case 'keydown':
+					if (e.which == 13 && target.data('hintbox-static') == 1) {
+						var offset = target.offset(),
+							w = jQuery(window);
+						// Emulate click on left middle point of link.
+						e.clientX = offset.left - w.scrollLeft();
+						e.clientY = offset.top - w.scrollTop() + (target.height() / 2);
+						e.preventDefault();
+
+						hintBox.showStaticHint(e, this, target.data('hintbox-class'), false,
+							target.data('hintbox-style')
+						);
+					}
+					break;
+
+				case 'click':
+					if (target.data('hintbox-static') == 1) {
+						hintBox.showStaticHint(e, this, target.data('hintbox-class'), false,
+							target.data('hintbox-style')
+						);
+					}
+					break;
+			}
+		});
+	},
+
+	createBox: function(e, target, hintText, className, isStatic, styles, appendTo) {
+		var hintboxid = hintBox.getUniqueId(),
+			box = jQuery('<div></div>', {'data-hintboxid': hintboxid}).addClass('overlay-dialogue'),
+			appendTo = appendTo || 'body';
 
 		if (styles) {
 			// property1: value1; property2: value2; property(n): value(n)
@@ -394,40 +516,23 @@ var hintBox = {
 		}
 
 		if (isStatic) {
+			target.hintboxid = hintboxid;
+			addToOverlaysStack(hintboxid, target, 'hintbox');
+
 			var close_link = jQuery('<button>', {
-					'class': 'overlay-close-btn'}
-				)
+					'class': 'overlay-close-btn',
+					'title': t('Close')
+				}
+			)
 				.click(function() {
 					hintBox.hideHint(e, target, true);
 				});
 			box.prepend(close_link);
 		}
 
-		jQuery('body').append(box);
+		jQuery(appendTo).append(box);
 
 		return box;
-	},
-
-	HintWrapper: function(e, target, className, styles) {
-		target.isStatic = false;
-
-		var	hintText = jQuery('.hint-box', target).html();
-
-		jQuery(target).on('mouseenter', function(e, d) {
-			if (d) {
-				e = d;
-			}
-			hintBox.showHint(e, target, hintText, className, false, styles);
-
-		}).on('mouseleave', function(e) {
-			hintBox.hideHint(e, target);
-
-		}).on('remove', function(e) {
-			hintBox.deleteHint(target);
-		});
-
-		jQuery(target).removeAttr('onmouseover');
-		jQuery(target).trigger('mouseenter', e);
 	},
 
 	showStaticHint: function(e, target, className, resizeAfterLoad, styles, hintText) {
@@ -436,7 +541,7 @@ var hintBox = {
 
 		if (!isStatic) {
 			if (typeof hintText === 'undefined') {
-				hintText = jQuery('.hint-box', target).html();
+				hintText = jQuery(target).next('.hint-box').html();
 			}
 
 			target.isStatic = true;
@@ -458,6 +563,10 @@ var hintBox = {
 		target.hintBoxItem = hintBox.createBox(e, target, hintText, className, isStatic, styles);
 		hintBox.positionHint(e, target);
 		target.hintBoxItem.show();
+
+		if (target.isStatic) {
+			overlayDialogueOnLoad(true, target.hintBoxItem);
+		}
 	},
 
 	positionHint: function(e, target) {
@@ -540,7 +649,12 @@ var hintBox = {
 	},
 
 	deleteHint: function(target) {
+		if (typeof target.hintboxid !== 'undefined') {
+			removeFromOverlaysStack(target.hintboxid);
+		}
+
 		if (target.hintBoxItem) {
+			target.hintBoxItem.trigger('onDeleteHint.hintBox');
 			target.hintBoxItem.remove();
 			delete target.hintBoxItem;
 
@@ -548,77 +662,17 @@ var hintBox = {
 				delete target.isStatic;
 			}
 		}
-	}
-};
+	},
 
-/*
- * Color picker
- */
-function hide_color_picker() {
-	if (!color_picker) {
-		return;
-	}
-
-	color_picker.style.zIndex = 1000;
-	color_picker.style.display = 'none';
-	color_picker.style.left = '-' + ((color_picker.style.width) ? color_picker.style.width : 100) + 'px';
-	curr_lbl = null;
-	curr_txt = null;
-}
-
-function show_color_picker(id) {
-	if (!color_picker) {
-		return;
-	}
-
-	curr_txt = document.getElementById(id);
-	if (curr_txt.hasAttribute('disabled')) {
-		return;
-	}
-	curr_lbl = document.getElementById('lbl_' + id);
-	var pos = getPosition(curr_lbl);
-	color_picker.x = pos.left;
-	color_picker.y = pos.top;
-	color_picker.style.left = (color_picker.x + 20) + 'px';
-	color_picker.style.top = color_picker.y + 'px';
-	color_picker.style.display = 'block';
-}
-
-function create_color_picker() {
-	if (color_picker) {
-		return;
-	}
-
-	color_picker = document.createElement('div');
-	color_picker.setAttribute('class', 'overlay-dialogue');
-	color_picker.innerHTML = color_table;
-	document.body.appendChild(color_picker);
-	hide_color_picker();
-}
-
-function set_color(color) {
-	var background = color;
-
-	if (curr_lbl) {
-		if (color.trim() !== '') {
-			background = '#' + color;
+	getUniqueId: function() {
+		var hintboxid = Math.random().toString(36).substring(7);
+		while (jQuery('[data-hintboxid="' + hintboxid + '"]').length) {
+			hintboxid = Math.random().toString(36).substring(7);
 		}
 
-		curr_lbl.style.color = background;
-		curr_lbl.style.background = background;
-		curr_lbl.title = background;
+		return hintboxid;
 	}
-	if (curr_txt) {
-		curr_txt.value = color.toString().toUpperCase();
-	}
-	hide_color_picker();
-}
-
-function set_color_by_name(id, color) {
-	curr_lbl = document.getElementById('lbl_' + id);
-	curr_txt = document.getElementById(id);
-	set_color(color);
-}
+};
 
 /**
  * Add object to the list of favourites.
@@ -652,7 +706,7 @@ function rm4favorites(object, objectid) {
  * @param {object} 	idx2				An array of IDs
  */
 function updateUserProfile(idx, value_int, idx2) {
-	sendAjaxData('zabbix.php?action=profile.update', {
+	return sendAjaxData('zabbix.php?action=profile.update', {
 		data: {
 			idx: idx,
 			value_int: value_int,
@@ -700,7 +754,7 @@ function sendAjaxData(url, options) {
 	options.type = 'post';
 	options.url = url.getUrl();
 
-	jQuery.ajax(options);
+	return jQuery.ajax(options);
 }
 
 /**
@@ -765,14 +819,14 @@ function getConditionFormula(conditions, evalType) {
 		case 1:
 			conditionOperator = 'and';
 			groupOperator = conditionOperator;
-
 			break;
+
 		// or
 		case 2:
 			conditionOperator = 'or';
 			groupOperator = conditionOperator;
-
 			break;
+
 		// and/or
 		default:
 			conditionOperator = 'or';
@@ -780,15 +834,17 @@ function getConditionFormula(conditions, evalType) {
 	}
 
 	var groupedFormulas = [];
+
 	for (var i = 0; i < conditions.length; i++) {
 		if (typeof conditions[i] === 'undefined') {
 			continue;
 		}
 
 		var groupedConditions = [];
+
 		groupedConditions.push(conditions[i].id);
 
-		// search for other conditions of the same type
+		// Search for other conditions of the same type.
 		for (var n = i + 1; n < conditions.length; n++) {
 			if (typeof conditions[n] !== 'undefined' && conditions[i].type == conditions[n].type) {
 				groupedConditions.push(conditions[n].id);
@@ -796,7 +852,7 @@ function getConditionFormula(conditions, evalType) {
 			}
 		}
 
-		// join conditions of the same type
+		// Join conditions of the same type.
 		if (groupedConditions.length > 1) {
 			groupedFormulas.push('(' + groupedConditions.join(' ' + conditionOperator + ' ') + ')');
 		}
@@ -807,7 +863,7 @@ function getConditionFormula(conditions, evalType) {
 
 	var formula = groupedFormulas.join(' ' + groupOperator + ' ');
 
-	// strip parentheses if there's only one condition group
+	// Strip parentheses if there's only one condition group.
 	if (groupedFormulas.length == 1) {
 		formula = formula.substr(1, formula.length - 2);
 	}
@@ -828,8 +884,10 @@ function getConditionFormula(conditions, evalType) {
 	 * - dataCallback	- function to generate the data passed to the template
 	 *
 	 * Triggered events:
-	 * - rowremove.dynamicRows 	- after removing a row (triggered before tableupdate.dynamicRows)
-	 * - tableupdate.dynamicRows 	- after adding or removing a row
+	 * - tableupdate.dynamicRows 	- after adding or removing a row.
+	 * - beforeadd.dynamicRows 	    - only before adding a new row.
+	 * - afteradd.dynamicRows 	    - only after adding a new row.
+	 * - afterremove.dynamicRows 	- only after removing a row.
 	 *
 	 * @param options
 	 */
@@ -840,6 +898,7 @@ function getConditionFormula(conditions, evalType) {
 			add: '.element-table-add',
 			remove: '.element-table-remove',
 			counter: null,
+			beforeRow: null,
 			dataCallback: function(data) {
 				return {};
 			}
@@ -854,8 +913,15 @@ function getConditionFormula(conditions, evalType) {
 
 			// add buttons
 			table.on('click', options.add, function() {
+				table.trigger('beforeadd.dynamicRows', options);
+
 				// add the new row before the row with the "Add" button
-				addRow(table, $(this).closest('tr'), options);
+				var beforeRow = (options['beforeRow'] !== null)
+					? $(options['beforeRow'], table)
+					:  $(this).closest('tr');
+				addRow(table, beforeRow, options);
+
+				table.trigger('afteradd.dynamicRows', options);
 			});
 
 			// remove buttons
@@ -896,8 +962,8 @@ function getConditionFormula(conditions, evalType) {
 	function removeRow(table, row, options) {
 		row.remove();
 
-		table.trigger('rowremove.dynamicRows', options);
 		table.trigger('tableupdate.dynamicRows', options);
+		table.trigger('afterremove.dynamicRows', options);
 	}
 }(jQuery));
 
@@ -976,4 +1042,83 @@ jQuery(function ($) {
 	if ((IE || ED) && typeof sessionStorage.scrollTop !== 'undefined') {
 		$(window).scrollTop(sessionStorage.scrollTop);
 	}
+});
+
+
+jQuery(function ($) {
+	"use strict";
+
+	function calcRows($obj, options) {
+		var max_height = (options && 'maxHeight' in options) ? options.maxHeight : null,
+			clone = $obj
+				.clone(false)
+				.css({'position': 'absolute', 'z-index': '-1'})
+				.removeClass('patternselect')
+				.insertAfter($obj),
+			padding = parseInt(clone.css('padding-top'), 10) + parseInt(clone.css('padding-bottom'), 10),
+			line_height = parseInt(clone.css('font-size'), 10) * 1.14,
+			rows = 0;
+
+		do {
+			rows++;
+			clone.height(rows * line_height);
+		}
+		while (clone[0].scrollHeight - padding > clone.innerHeight()
+			&& (max_height === null || rows * line_height + padding <= max_height));
+		clone.remove();
+
+		return rows;
+	}
+
+	var methods = {
+		init: function(options) {
+			options = $.extend({}, options);
+
+			this.each(function() {
+				if (typeof $(this).data('autogrow') === 'undefined') {
+					$(this)
+						.css({
+							'resize': 'none',
+							'overflow-x': 'hidden',
+							'white-space': 'pre-line'
+						})
+						.on('paste change keyup', function() {
+							var rows = calcRows($(this), options);
+
+							if (options && 'pair' in options) {
+								var pair_rows = calcRows($(options.pair), options);
+								if (pair_rows > rows) {
+									rows = pair_rows;
+								}
+								$(options.pair).attr('rows', rows);
+							}
+
+							$(this).attr('rows', rows);
+						})
+						.data('autogrow', options)
+						.trigger('keyup');
+				}
+
+				if ($(this).prop('maxlength') !== 'undefined' && !CR && !GK) {
+					$(this).bind('paste contextmenu change keydown keypress keyup', function() {
+						if ($(this).val().length > $(this).attr('maxlength')) {
+							$(this).val($(this).val().substr(0, $(this).attr('maxlength')));
+						}
+					});
+				}
+
+				if (options && 'pair' in options) {
+					$(options.pair).css({'resize': 'none'});
+				}
+			});
+		}
+	};
+
+	$.fn.autoGrowTextarea = function(method, options) {
+		if (methods[method]) {
+			return methods[method].apply(this, Array.prototype.slice.call(arguments, 1));
+		}
+
+		return methods.init.apply(this, arguments);
+	};
 });

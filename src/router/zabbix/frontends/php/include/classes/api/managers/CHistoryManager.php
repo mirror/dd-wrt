@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ class CHistoryManager {
 		$grouped_items = self::getItemsGroupedByStorage($items);
 
 		if (array_key_exists(ZBX_HISTORY_SOURCE_ELASTIC, $grouped_items)) {
-			$results += $this->getLastValuesFromElasticSearch($grouped_items[ZBX_HISTORY_SOURCE_ELASTIC], $limit,
+			$results += $this->getLastValuesFromElasticsearch($grouped_items[ZBX_HISTORY_SOURCE_ELASTIC], $limit,
 					$period
 			);
 		}
@@ -51,11 +51,11 @@ class CHistoryManager {
 	}
 
 	/**
-	 * ElasticSearch specific implementation of getLastValues.
+	 * Elasticsearch specific implementation of getLastValues.
 	 *
 	 * @see CHistoryManager::getLastValues
 	 */
-	private function getLastValuesFromElasticSearch($items, $limit, $period) {
+	private function getLastValuesFromElasticsearch($items, $limit, $period) {
 		$terms = [];
 		$results = [];
 		$filter = [];
@@ -95,7 +95,7 @@ class CHistoryManager {
 			];
 		}
 
-		foreach (self::getElasticSearchEndpoints(array_keys($terms)) as $type => $endpoint) {
+		foreach (self::getElasticsearchEndpoints(array_keys($terms)) as $type => $endpoint) {
 			$query['query']['bool']['must'] = array_merge([[
 				'terms' => [
 					'itemid' => $terms[$type]
@@ -103,7 +103,7 @@ class CHistoryManager {
 			]], $filter);
 			// Assure that aggregations for all terms are returned.
 			$query['aggs']['group_by_itemid']['terms']['size'] = count($terms[$type]);
-			$data = CElasticSearchHelper::query('POST', $endpoint, $query);
+			$data = CElasticsearchHelper::query('POST', $endpoint, $query);
 
 			if (!is_array($data) || !array_key_exists('group_by_itemid', $data)
 					|| !array_key_exists('buckets', $data['group_by_itemid'])
@@ -159,167 +159,6 @@ class CHistoryManager {
 	}
 
 	/**
-	 * Returns the history value of the item at the given time. If no value exists at the given time, the function
-	 * will return the previous value.
-	 *
-	 * The $item parameter must have the value_type and itemid properties set.
-	 *
-	 * @param array $item     item to get value for
-	 * @param int   $clock    timestamp (seconds)
-	 * @param int   $ns       timestamp (nanoseconds)
-	 *
-	 * @return string    value at specified time of first value before specified time
-	 */
-	public function getValueAt($item, $clock, $ns) {
-		switch (self::getDataSourceType($item['value_type'])) {
-			case ZBX_HISTORY_SOURCE_ELASTIC:
-				return $this->getValueAtFromElasticSearch($item, $clock, $ns);
-
-			default:
-				return $this->getValueAtFromSql($item, $clock, $ns);
-		}
-	}
-
-	/**
-	 * ElasticSearch specific implementation of getValueAt.
-	 *
-	 * @see CHistoryManager::getValueAt
-	 */
-	private function getValueAtFromElasticSearch($item, $clock, $ns) {
-		$query = [
-			'sort' => [
-				'clock' => ZBX_SORT_DOWN,
-				'ns' => ZBX_SORT_DOWN
-			],
-			'size' => 1
-		];
-
-		$filters = [
-			[
-				[
-					'term' => [
-						'itemid' => $item['itemid']
-					]
-				],
-				[
-					'term' => [
-						'clock' => $clock
-					]
-				],
-				[
-					'range' => [
-						'ns' => [
-							'lte' => $ns
-						]
-					]
-				]
-			],
-			[
-				[
-					'term' => [
-						'itemid' => $item['itemid']
-					]
-				],
-				[
-					'range' => [
-						'clock' => [
-							'lt' => $clock
-						]
-					]
-				]
-			]
-		];
-
-		foreach ($filters as $filter) {
-			$query['query']['bool']['must'] = $filter;
-			$endpoints = self::getElasticSearchEndpoints($item['value_type']);
-
-			if (count($endpoints) !== 1) {
-				break;
-			}
-
-			$result = CElasticSearchHelper::query('POST', reset($endpoints), $query);
-
-			if (count($result) === 1 && is_array($result[0]) && array_key_exists('value', $result[0])) {
-				return $result[0]['value'];
-			}
-		}
-
-		return null;
-	}
-
-	/**
-	 * SQL specific implementation of getValueAt.
-	 *
-	 * @see CHistoryManager::getValueAt
-	 */
-	private function getValueAtFromSql($item, $clock, $ns) {
-		$value = null;
-		$table = self::getTableName($item['value_type']);
-
-		$sql = 'SELECT value'.
-				' FROM '.$table.
-				' WHERE itemid='.zbx_dbstr($item['itemid']).
-					' AND clock='.zbx_dbstr($clock).
-					' AND ns='.zbx_dbstr($ns);
-
-		if (($row = DBfetch(DBselect($sql, 1))) !== false) {
-			$value = $row['value'];
-		}
-
-		if ($value !== null) {
-			return $value;
-		}
-
-		$max_clock = 0;
-		$sql = 'SELECT DISTINCT clock'.
-				' FROM '.$table.
-				' WHERE itemid='.zbx_dbstr($item['itemid']).
-					' AND clock='.zbx_dbstr($clock).
-					' AND ns<'.zbx_dbstr($ns);
-
-		if (($row = DBfetch(DBselect($sql))) !== false) {
-			$max_clock = $row['clock'];
-		}
-
-		if ($max_clock == 0) {
-			$sql = 'SELECT MAX(clock) AS clock'.
-					' FROM '.$table.
-					' WHERE itemid='.zbx_dbstr($item['itemid']).
-						' AND clock<'.zbx_dbstr($clock);
-
-			if (($row = DBfetch(DBselect($sql))) !== false) {
-				$max_clock = $row['clock'];
-			}
-		}
-
-		if ($max_clock == 0) {
-			return $value;
-		}
-
-		if ($clock == $max_clock) {
-			$sql = 'SELECT value'.
-					' FROM '.$table.
-					' WHERE itemid='.zbx_dbstr($item['itemid']).
-						' AND clock='.zbx_dbstr($clock).
-						' AND ns<'.zbx_dbstr($ns);
-		}
-		else {
-			$sql = 'SELECT value'.
-					' FROM '.$table.
-					' WHERE itemid='.zbx_dbstr($item['itemid']).
-						' AND clock='.zbx_dbstr($max_clock).
-					' ORDER BY itemid,clock desc,ns desc';
-		}
-
-		if (($row = DBfetch(DBselect($sql, 1))) !== false) {
-			$value = $row['value'];
-		}
-
-		return $value;
-	}
-
-	/**
 	 * Returns history value aggregation for graphs.
 	 *
 	 * The $item parameter must have the value_type, itemid and source properties set.
@@ -345,7 +184,7 @@ class CHistoryManager {
 
 		$results = [];
 		if (array_key_exists(ZBX_HISTORY_SOURCE_ELASTIC, $grouped_items)) {
-			$results += $this->getGraphAggregationFromElasticSearch($grouped_items[ZBX_HISTORY_SOURCE_ELASTIC],
+			$results += $this->getGraphAggregationFromElasticsearch($grouped_items[ZBX_HISTORY_SOURCE_ELASTIC],
 					$time_from, $time_to, $width, $size, $delta
 			);
 		}
@@ -360,11 +199,11 @@ class CHistoryManager {
 	}
 
 	/**
-	 * ElasticSearch specific implementation of getGraphAggregation.
+	 * Elasticsearch specific implementation of getGraphAggregation.
 	 *
 	 * @see CHistoryManager::getGraphAggregation
 	 */
-	private function getGraphAggregationFromElasticSearch(array $items, $time_from, $time_to, $width, $size, $delta) {
+	private function getGraphAggregationFromElasticsearch(array $items, $time_from, $time_to, $width, $size, $delta) {
 		$terms = [];
 
 		foreach ($items as $item) {
@@ -435,7 +274,7 @@ class CHistoryManager {
 			];
 
 			// Clock value is divided by 1000 as it is stored as milliseconds.
-			$formula = 'Math.floor((params.width*(((long)doc[\'clock\'].value/1000+params.delta)%params.size))'.
+			$formula = 'Math.floor((params.width*((doc[\'clock\'].date.getMillis()/1000+params.delta)%params.size))'.
 					'/params.size)';
 
 			$script = [
@@ -461,7 +300,7 @@ class CHistoryManager {
 
 		$results = [];
 
-		foreach (self::getElasticSearchEndpoints(array_keys($terms)) as $type => $endpoint) {
+		foreach (self::getElasticsearchEndpoints(array_keys($terms)) as $type => $endpoint) {
 			$query['query']['bool']['must'] = [
 				[
 					'terms' => [
@@ -478,7 +317,7 @@ class CHistoryManager {
 				]
 			];
 
-			$data = CElasticSearchHelper::query('POST', $endpoint, $query);
+			$data = CElasticsearchHelper::query('POST', $endpoint, $query);
 
 			if ($width !== null && $size !== null && $delta !== null) {
 				foreach ($data['group_by_itemid']['buckets'] as $item) {
@@ -546,10 +385,6 @@ class CHistoryManager {
 				$sql_from = ($item['value_type'] == ITEM_VALUE_TYPE_UINT64) ? 'history_uint' : 'history';
 			}
 			else {
-				if (!$item['has_scheduling_intervals'] || $item['delay'] != 0) {
-					$item['delay'] = max($item['delay'], SEC_PER_HOUR);
-				}
-
 				$sql_select = 'SUM(num) AS count,AVG(value_avg) AS avg,MIN(value_min) AS min,MAX(value_max) AS max';
 				$sql_from = ($item['value_type'] == ITEM_VALUE_TYPE_UINT64) ? 'trends_uint' : 'trends';
 			}
@@ -562,13 +397,6 @@ class CHistoryManager {
 					' AND clock<='.zbx_dbstr($time_to).
 				' GROUP BY '.$group_by
 			);
-
-			$sql = 'SELECT itemid,'.$sql_select.$sql_select_extra.',MAX(clock) AS clock'.
-				' FROM '.$sql_from.
-				' WHERE itemid='.zbx_dbstr($item['itemid']).
-					' AND clock>='.zbx_dbstr($time_from).
-					' AND clock<='.zbx_dbstr($time_to).
-				' GROUP BY '.$group_by;
 
 			$data = [];
 			while (($row = DBfetch($result)) !== false) {
@@ -596,7 +424,7 @@ class CHistoryManager {
 	public function getAggregatedValue(array $item, $aggregation, $time_from) {
 		switch (self::getDataSourceType($item['value_type'])) {
 			case ZBX_HISTORY_SOURCE_ELASTIC:
-				return $this->getAggregatedValueFromElasticSearch($item, $aggregation, $time_from);
+				return $this->getAggregatedValueFromElasticsearch($item, $aggregation, $time_from);
 
 			default:
 				return $this->getAggregatedValueFromSql($item, $aggregation, $time_from);
@@ -604,11 +432,11 @@ class CHistoryManager {
 	}
 
 	/**
-	 * ElasticSearch specific implementation of getAggregatedValue.
+	 * Elasticsearch specific implementation of getAggregatedValue.
 	 *
 	 * @see CHistoryManager::getAggregatedValue
 	 */
-	private function getAggregatedValueFromElasticSearch(array $item, $aggregation, $time_from) {
+	private function getAggregatedValueFromElasticsearch(array $item, $aggregation, $time_from) {
 		$query = [
 			'aggs' => [
 				$aggregation.'_value' => [
@@ -638,10 +466,10 @@ class CHistoryManager {
 			'size' => 0
 		];
 
-		$endpoints = self::getElasticSearchEndpoints($item['value_type']);
+		$endpoints = self::getElasticsearchEndpoints($item['value_type']);
 
 		if ($endpoints) {
-			$data = CElasticSearchHelper::query('POST', reset($endpoints), $query);
+			$data = CElasticsearchHelper::query('POST', reset($endpoints), $query);
 
 			if (array_key_exists($aggregation.'_value', $data)
 					&& array_key_exists('value', $data[$aggregation.'_value'])) {
@@ -674,193 +502,22 @@ class CHistoryManager {
 	}
 
 	/**
-	 * Return the time of the 1st appearance of items in history or trends.
-	 *
-	 * @param array $items
-	 * @param array $items[]['itemid']
-	 * @param array $items[]['hostid']
-	 * @param array $items[]['value_type']
-	 * @param array $items[]['history']
-	 * @param array $items[]['trends']
-	 *
-	 * @return int    timestamp (unixtime)
-	 */
-	public function getMinClock(array $items) {
-		$item_types = [
-			ITEM_VALUE_TYPE_FLOAT => [],
-			ITEM_VALUE_TYPE_STR => [],
-			ITEM_VALUE_TYPE_LOG => [],
-			ITEM_VALUE_TYPE_UINT64 => [],
-			ITEM_VALUE_TYPE_TEXT => []
-		];
-		$max = ['history' => 0, 'trends' => 0];
-		$simple_interval_parser = new CSimpleIntervalParser();
-
-		$items = CMacrosResolverHelper::resolveTimeUnitMacros($items, ['history', 'trends']);
-
-		foreach ($items as $item) {
-			$item_types[$item['value_type']][] = $item['itemid'];
-
-			if ($item['value_type'] == ITEM_VALUE_TYPE_FLOAT || $item['value_type'] == ITEM_VALUE_TYPE_UINT64) {
-				if ($simple_interval_parser->parse($item['history']) == CParser::PARSE_SUCCESS) {
-					$item['history'] = (int) timeUnitToSeconds($item['history']);
-					$max['history'] = max($max['history'], $item['history']);
-				}
-
-				if ($simple_interval_parser->parse($item['trends']) == CParser::PARSE_SUCCESS) {
-					$item['trends'] = (int) timeUnitToSeconds($item['trends']);
-					$max['trends'] = max($max['trends'], $item['trends']);
-				}
-			}
-		}
-
-		$source = ($max['history'] > $max['trends']) ? 'history' : 'trends';
-		$storage_items = [];
-
-		foreach ($item_types as $type => $itemids) {
-			if (!$itemids) {
-				continue;
-			}
-
-			$history_source = self::getDataSourceType($type);
-			$storage_items[$history_source][$type] = $itemids;
-		}
-
-		$min_clock = [];
-
-		if (array_key_exists(ZBX_HISTORY_SOURCE_ELASTIC, $storage_items)) {
-			$min_clock[] = $this->getMinClockFromElasticSearch($storage_items[ZBX_HISTORY_SOURCE_ELASTIC]);
-		}
-
-		if (array_key_exists(ZBX_HISTORY_SOURCE_SQL, $storage_items)) {
-			$min_clock[] = $this->getMinClockFromSql($storage_items[ZBX_HISTORY_SOURCE_SQL], $source);
-		}
-
-		$min_clock = min($min_clock);
-
-		// If DB clock column is corrupted having negative numbers, return min clock from max possible history storage.
-		if ($min_clock == 0) {
-			if ($item_types[ITEM_VALUE_TYPE_FLOAT] || $item_types[ITEM_VALUE_TYPE_UINT64]) {
-				$min_clock = time() - max($max['history'], $max['trends']);
-
-				/*
-				 * In case history storage exceeds the maximum time difference between current year and minimum 1970
-				 * (for example year 2014 - 200 years < year 1970), correct year to 1970 (unix time timestamp 0).
-				 */
-				if ($min_clock < 0) {
-					$min_clock = 0;
-				}
-			}
-			else {
-				$min_clock = time() - SEC_PER_YEAR;
-			}
-		}
-
-		return $min_clock;
-	}
-
-	/**
-	 * ElasticSearch specific implementation of getMinClock.
-	 *
-	 * @see CHistoryManager::getMinClock
-	 */
-	private function getMinClockFromElasticSearch(array $items) {
-		$query = [
-			'aggs'=> [
-				'min_clock' => [
-					'min' => [
-						'field' => 'clock'
-					]
-				]
-			],
-			'size'=> 0
-		];
-
-		$min_clock = [];
-
-		foreach (self::getElasticSearchEndpoints(array_keys($items)) as $type => $endpoint) {
-			$query['query']['terms']['itemid'] = $items[$type];
-			$data = CElasticSearchHelper::query('POST', $endpoint, $query);
-
-			// Field value_as_string is used as a workaround for date aggregation being presented as milliseconds.
-			if (array_key_exists('min_clock', $data) && array_key_exists('value_as_string', $data['min_clock'])) {
-				$min_clock[] = $data['min_clock']['value_as_string'];
-			}
-		}
-
-		if ($min_clock) {
-			return min($min_clock);
-		}
-
-		return null;
-	}
-
-	/**
-	 * SQL specific implementation of getMinClock.
-	 *
-	 * @see CHistoryManager::getMinClock
-	 */
-	private function getMinClockFromSql(array $items, $source) {
-		$sql_unions = [];
-
-		foreach ($items as $type => $itemids) {
-			if (!$itemids) {
-				continue;
-			}
-
-			switch ($type) {
-				case ITEM_VALUE_TYPE_FLOAT:
-					$sql_from = $source;
-					break;
-				case ITEM_VALUE_TYPE_STR:
-					$sql_from = 'history_str';
-					break;
-				case ITEM_VALUE_TYPE_LOG:
-					$sql_from = 'history_log';
-					break;
-				case ITEM_VALUE_TYPE_UINT64:
-					$sql_from = $source.'_uint';
-					break;
-				case ITEM_VALUE_TYPE_TEXT:
-					$sql_from = 'history_text';
-					break;
-				default:
-					$sql_from = 'history';
-			}
-
-			foreach ($itemids as $itemid) {
-				$sql_unions[] =
-					'SELECT MIN(h.clock) AS clock'.
-					' FROM '.$sql_from.' h'.
-					' WHERE h.itemid='.zbx_dbstr($itemid);
-			}
-		}
-
-		$row = DBfetch(DBselect(
-			'SELECT MIN(h.clock) AS min_clock'.
-			' FROM ('.implode(' UNION ALL ', $sql_unions).') h'
-		));
-
-		return $row['min_clock'];
-	}
-
-	/**
-	 * Clear item history and trends by provided item IDs. History is deleted from both SQL and ElasticSearch.
+	 * Clear item history and trends by provided item IDs. History is deleted from both SQL and Elasticsearch.
 	 *
 	 * @param array $itemids    item ids to delete history for
 	 *
 	 * @return bool
 	 */
 	public function deleteHistory(array $itemids) {
-		return $this->deleteHistoryFromSql($itemids) && $this->deleteHistoryFromElasticSearch($itemids);
+		return $this->deleteHistoryFromSql($itemids) && $this->deleteHistoryFromElasticsearch($itemids);
 	}
 
 	/**
-	 * ElasticSearch specific implementation of deleteHistory.
+	 * Elasticsearch specific implementation of deleteHistory.
 	 *
 	 * @see CHistoryManager::deleteHistory
 	 */
-	private function deleteHistoryFromElasticSearch(array $itemids) {
+	private function deleteHistoryFromElasticsearch(array $itemids) {
 		global $HISTORY;
 
 		if (is_array($HISTORY) && array_key_exists('types', $HISTORY) && is_array($HISTORY['types'])
@@ -879,8 +536,8 @@ class CHistoryManager {
 				$types[] = self::getTypeIdByTypeName($type);
 			}
 
-			foreach (self::getElasticSearchEndpoints($types, '_delete_by_query') as $endpoint) {
-				if (!CElasticSearchHelper::query('POST', $endpoint, $query)) {
+			foreach (self::getElasticsearchEndpoints($types, '_delete_by_query') as $endpoint) {
+				if (!CElasticsearchHelper::query('POST', $endpoint, $query)) {
 					return false;
 				}
 			}
@@ -953,7 +610,7 @@ class CHistoryManager {
 	}
 
 	/**
-	 * Get data source (SQL or ElasticSearch) type based on value type id.
+	 * Get data source (SQL or Elasticsearch) type based on value type id.
 	 *
 	 * @param int $value_type    value type id
 	 *
@@ -978,7 +635,7 @@ class CHistoryManager {
 		return $cache[$value_type];
 	}
 
-	private static function getElasticSearchUrl($value_name) {
+	private static function getElasticsearchUrl($value_name) {
 		static $urls = [];
 		static $invalid = [];
 
@@ -992,7 +649,7 @@ class CHistoryManager {
 
 			if (!is_array($HISTORY) || !array_key_exists('url', $HISTORY)) {
 				$invalid[$value_name] = true;
-				error(_s('ElasticSearch url is not set for type: %1$s.', $value_name));
+				error(_s('Elasticsearch url is not set for type: %1$s.', $value_name));
 
 				return null;
 			}
@@ -1001,7 +658,7 @@ class CHistoryManager {
 			if (is_array($url)) {
 				if (!array_key_exists($value_name, $url)) {
 					$invalid[$value_name] = true;
-					error(_s('ElasticSearch url is not set for type: %1$s.', $value_name));
+					error(_s('Elasticsearch url is not set for type: %1$s.', $value_name));
 
 					return null;
 				}
@@ -1020,13 +677,13 @@ class CHistoryManager {
 	}
 
 	/**
-	 * Get endpoints for ElasticSearch requests.
+	 * Get endpoints for Elasticsearch requests.
 	 *
 	 * @param mixed $value_types    value type(s)
 	 *
-	 * @return array    ElasticSearch query endpoints
+	 * @return array    Elasticsearch query endpoints
 	 */
-	public static function getElasticSearchEndpoints($value_types, $action = '_search') {
+	public static function getElasticsearchEndpoints($value_types, $action = '_search') {
 		if (!is_array($value_types)) {
 			$value_types = [$value_types];
 		}
@@ -1041,8 +698,8 @@ class CHistoryManager {
 		}
 
 		foreach ($indices as $type => $index) {
-			if (($url = self::getElasticSearchUrl($index)) !== null) {
-				$endponts[$type] = $url.$index.'/values/'.$action;
+			if (($url = self::getElasticsearchUrl($index)) !== null) {
+				$endponts[$type] = $url.$index.'*/values/'.$action;
 			}
 		}
 

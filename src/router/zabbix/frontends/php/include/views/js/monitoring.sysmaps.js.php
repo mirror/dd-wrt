@@ -123,21 +123,25 @@ function getFontComboBox($name) {
 							MAP_LABEL_LOC_TOP => _('Top')
 						])
 					)
-					->addRow(_('Host group'),
+					->addRow((new CLabel(_('Host group'), 'elementNameHostGroup_ms'))->setAsteriskMark(),
 						(new CMultiSelect([
 							'name' => 'elementNameHostGroup',
-							'objectName' => 'hostGroup'
-						]))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH),
+							'object_name' => 'hostGroup',
+							'multiple' => false
+						]))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
+							->setAriaRequired(),
 						'hostGroupSelectRow'
 					)
-					->addRow(_('Host'),
+					->addRow((new CLabel(_('Host'), 'elementNameHost_ms'))->setAsteriskMark(),
 						(new CMultiSelect([
 							'name' => 'elementNameHost',
-							'objectName' => 'hosts'
-						]))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH),
+							'object_name' => 'hosts',
+							'multiple' => false
+						]))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
+							->setAriaRequired(),
 						'hostSelectRow'
 					)
-					->addRow(_('Triggers'), [
+					->addRow((new CLabel(_('Triggers'), 'triggerContainer'))->setAsteriskMark(), [
 						(new CDiv([
 							(new CTable())
 								->setHeader(['', _('Name'), (new CColHeader(_('Action')))->addStyle('padding: 0 5px;')])
@@ -148,19 +152,23 @@ function getFontComboBox($name) {
 							->addClass(ZBX_STYLE_TABLE_FORMS_SEPARATOR)
 							->setAttribute('style', 'min-width: '.ZBX_TEXTAREA_BIG_WIDTH.'px;')
 					], 'triggerListRow')
-					->addRow(_('New triggers'),
+					->addRow((new CLabel(_('New triggers'), 'elementNameTriggers_ms')),
 						(new CDiv([
 							new CVar('elementExpressionTrigger', ''),
 							(new CMultiSelect([
 								'name' => 'elementNameTriggers',
-								'objectName' => 'triggers',
-								'objectOptions' => [
-									'editable' => true,
-									'real_hosts' => true
-								],
+								'object_name' => 'triggers',
 								'popup' => [
-									'parameters' => 'dstfrm=selementForm&dstfld1=elementNameTriggers&srctbl=triggers'.
-										'&srcfld1=triggerid&with_triggers=1&real_hosts=1&multiselect=1'
+									'parameters' => [
+										'srctbl' => 'triggers',
+										'srcfld1' => 'triggerid',
+										'dstfrm' => 'selementForm',
+										'dstfld1' => 'elementNameTriggers',
+										'with_triggers' => true,
+										'editable' => true,
+										'noempty' => true,
+										'real_hosts' => true
+									]
 								]
 							]))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH),
 							new CDiv(
@@ -172,18 +180,26 @@ function getFontComboBox($name) {
 							->setAttribute('style', 'min-width: '.ZBX_TEXTAREA_BIG_WIDTH.'px;'),
 						'triggerSelectRow'
 					)
-					->addRow(_('Map'), [
+					->addRow((new CLabel(_('Map'), 'elementName'))->setAsteriskMark(), [
 						(new CTextBox('elementName'))
 							->setReadonly(true)
 							->setId('elementNameMap')
-							->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH),
+							->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
+							->setAriaRequired(),
 						(new CVar('elements[0][sysmapid]', 0, 'sysmapid')),
 						(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
 						(new CButton(null, _('Select')))
 							->addClass(ZBX_STYLE_BTN_GREY)
-							->onClick('PopUp("popup.php?srctbl=sysmaps&srcfld1=sysmapid&srcfld2=name'.
-								'&dstfrm=selementForm&dstfld1=sysmapid&dstfld2=elementNameMap'.
-								'&excludeids[]=#{sysmapid}")'
+							->onClick('return PopUp("popup.generic",jQuery.extend('.
+								CJs::encodeJson([
+									'srctbl' => 'sysmaps',
+									'srcfld1' => 'sysmapid',
+									'srcfld2' => 'name',
+									'dstfrm' => 'selementForm',
+									'dstfld1' => 'sysmapid',
+									'dstfld2' => 'elementNameMap'
+								]).
+									',{excludeids: [#{sysmapid}]}), null, this);'
 							)
 					], 'mapSelectRow')
 					->addRow(_('Application'), [
@@ -283,9 +299,9 @@ function getFontComboBox($name) {
 				(new CFormList())
 					->addRow(_('Shape'), [
 						(new CRadioButtonList('type', SYSMAP_SHAPE_TYPE_RECTANGLE))
-							->addValue(_('Rectangle'), SYSMAP_SHAPE_TYPE_RECTANGLE)
-							->addValue(_('Ellipse'), SYSMAP_SHAPE_TYPE_ELLIPSE)
-							->addValue(_('Line'), SYSMAP_SHAPE_TYPE_LINE)
+							->addValue(_('Rectangle'), SYSMAP_SHAPE_TYPE_RECTANGLE, null, 'jQuery.colorpicker("hide")')
+							->addValue(_('Ellipse'), SYSMAP_SHAPE_TYPE_ELLIPSE, null, 'jQuery.colorpicker("hide")')
+							->addValue(_('Line'), SYSMAP_SHAPE_TYPE_LINE, null, 'jQuery.colorpicker("hide")')
 							->setModern(true),
 						new CVar('', '', 'last_shape_type')
 					])
@@ -306,7 +322,7 @@ function getFontComboBox($name) {
 							(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
 							_('Colour'),
 							(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
-							new CColor('font_color', '#{color}', false),
+							(new CColor('font_color', '#{color}'))->appendColorPickerJs(false),
 							BR(),
 							_('Horizontal align'),
 							(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
@@ -327,7 +343,7 @@ function getFontComboBox($name) {
 						(new CDiv([
 							_('Colour'),
 							(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
-							new CColor('background_color', '#{color}', false)
+							(new CColor('background_color', '#{color}'))->appendColorPickerJs(false),
 						]))->addClass(ZBX_STYLE_TABLE_FORMS_SEPARATOR),
 						'shape-background-row'
 					)
@@ -346,7 +362,7 @@ function getFontComboBox($name) {
 							(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
 							_('Colour'),
 							(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
-							new CColor('border_color', '#{color}', false)
+							(new CColor('border_color', '#{color}'))->appendColorPickerJs(false),
 						]))
 							->addClass(ZBX_STYLE_NOWRAP)
 							->addClass(ZBX_STYLE_TABLE_FORMS_SEPARATOR)
@@ -461,7 +477,7 @@ function getFontComboBox($name) {
 					->addRow((new CCheckBox('chkbox_font_color'))
 							->setId('chkboxFontColor')
 							->setLabel(_('Font colour')),
-						new CColor('mass_font_color', '#{color}', false),
+						(new CColor('mass_font_color', '#{color}'))->appendColorPickerJs(false),
 						null, 'shape_figure_row'
 					)
 					->addRow((new CCheckBox('chkbox_text_halign'))
@@ -483,7 +499,7 @@ function getFontComboBox($name) {
 					->addRow((new CCheckBox('chkbox_background'))
 							->setId('chkboxBackground')
 							->setLabel(_('Background colour')),
-						new CColor('mass_background_color', '#{color}', false),
+						(new CColor('mass_background_color', '#{color}'))->appendColorPickerJs(false),
 						null, 'shape_figure_row'
 					)
 					->addRow((new CCheckBox('chkbox_border_type'))
@@ -514,7 +530,7 @@ function getFontComboBox($name) {
 								->setAttribute('data-value', _('Border colour'))
 								->setAttribute('data-value-2', _('Line colour'))
 							),
-						new CColor('mass_border_color', '#{color}', false)
+						(new CColor('mass_border_color', '#{color}'))->appendColorPickerJs(false)
 					)
 					->addItem([
 						(new CDiv())->addClass(ZBX_STYLE_TABLE_FORMS_TD_LEFT),
@@ -687,7 +703,7 @@ function getFontComboBox($name) {
 						]))
 					)
 					->addRow(_('Colour (OK)'),
-						new CColor('color', '#{color}', false)
+						(new CColor('color', '#{color}'))->appendColorPickerJs(false)
 					)
 					->addRow(_('Link indicators'),
 						(new CDiv([
@@ -697,8 +713,16 @@ function getFontComboBox($name) {
 								->setId('linkTriggerscontainer'),
 							(new CButton(null, _('Add')))
 								->addClass(ZBX_STYLE_BTN_LINK)
-								->onClick('PopUp("popup.php?srctbl=triggers&srcfld1=triggerid&real_hosts=1'.
-									'&reference=linktrigger&multiselect=1&with_triggers=1&noempty=1");'
+								->onClick('return PopUp("popup.generic",'.
+									CJs::encodeJson([
+										'srctbl' => 'triggers',
+										'srcfld1' => 'triggerid',
+										'reference' => 'linktrigger',
+										'multiselect' => '1',
+										'real_hosts' => '1',
+										'with_triggers' => '1',
+										'noempty' => '1'
+									]).', null, this);'
 								)
 						]))
 							->addClass(ZBX_STYLE_TABLE_FORMS_SEPARATOR)
@@ -766,7 +790,7 @@ function getFontComboBox($name) {
 					GRAPH_ITEM_DRAWTYPE_DASHED_LINE => _('Dashed line')
 				]))
 			],
-			new CColor('linktrigger_#{linktriggerid}_color', '#{color}', false),
+			(new CColor('linktrigger_#{linktriggerid}_color', '#{color}'))->appendColorPickerJs(false),
 			(new CCol(
 				(new CButton(null, _('Remove')))
 					->addClass(ZBX_STYLE_BTN_LINK)
@@ -803,7 +827,8 @@ function getFontComboBox($name) {
 				(new CSpan())->addClass('ui-icon ui-icon-arrowthick-2-n-s move '.ZBX_STYLE_TD_DRAG_ICON)
 			]))->addClass(ZBX_STYLE_TD_DRAG_ICON),
 			(new CCol([(new CDiv('#{name}'))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)]))
-				->addStyle('background: ##{color}; padding: 0 5px;'),
+				->addStyle('padding: 0 5px;')
+				->addClass('#{class_name}'),
 			(new CCol([
 				(new CVar('element_id[#{triggerid}]', '#{triggerid}')),
 				(new CVar('element_name[#{triggerid}]', '#{name}')),

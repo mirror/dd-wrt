@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -46,8 +46,7 @@ function permission2str($permission) {
 function authentication2str($type) {
 	$authentications = [
 		ZBX_AUTH_INTERNAL => _('Zabbix internal authentication'),
-		ZBX_AUTH_LDAP => _('LDAP authentication'),
-		ZBX_AUTH_HTTP => _('HTTP authentication')
+		ZBX_AUTH_LDAP => _('LDAP authentication')
 	];
 
 	return $authentications[$type];
@@ -129,7 +128,10 @@ function getUserAuthenticationType($userId, $maxGuiAccess = null) {
 			return $config['authentication_type'];
 
 		case GROUP_GUI_ACCESS_INTERNAL:
-			return ($config['authentication_type'] == ZBX_AUTH_HTTP) ? ZBX_AUTH_HTTP : ZBX_AUTH_INTERNAL;
+			return ZBX_AUTH_INTERNAL;
+
+		case GROUP_GUI_ACCESS_LDAP:
+			return ZBX_AUTH_LDAP;
 
 		default:
 			return $config['authentication_type'];
@@ -153,29 +155,6 @@ function getGroupsGuiAccess($groupIds, $maxGuiAccess = null) {
 	));
 
 	return $guiAccess ? $guiAccess['gui_access'] : GROUP_GUI_ACCESS_SYSTEM;
-}
-
-/**
- * Get group authentication type.
- *
- * @param array $groupIds
- * @param int   $maxGuiAccess
- *
- * @return int
- */
-function getGroupAuthenticationType($groupIds, $maxGuiAccess = null) {
-	$config = select_config();
-
-	switch (getGroupsGuiAccess($groupIds, $maxGuiAccess)) {
-		case GROUP_GUI_ACCESS_SYSTEM:
-			return $config['authentication_type'];
-
-		case GROUP_GUI_ACCESS_INTERNAL:
-			return ($config['authentication_type'] == ZBX_AUTH_HTTP) ? ZBX_AUTH_HTTP : ZBX_AUTH_INTERNAL;
-
-		default:
-			return $config['authentication_type'];
-	}
 }
 
 /***********************************************
@@ -261,7 +240,7 @@ function get_accessible_groups_by_rights(&$rights, $user_type, $perm) {
 		$group_perm[$right['id']] = $right['permission'];
 	}
 
-	$dbHostGroups = DBselect('SELECT g.*,'.PERM_DENY.' AS permission FROM groups g');
+	$dbHostGroups = DBselect('SELECT g.*,'.PERM_DENY.' AS permission FROM hstgrp g');
 
 	while ($dbHostGroup = DBfetch($dbHostGroups)) {
 		if ($user_type == USER_TYPE_SUPER_ADMIN) {

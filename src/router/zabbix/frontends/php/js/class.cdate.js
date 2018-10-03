@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -71,8 +71,10 @@ CDate.prototype = {
 			sec = this.getSeconds();
 
 		/**
-		 * Append date suffix according to English rules e.g., 3 becomes 3rd
+		 * Append date suffix according to English rules e.g., 3 becomes 3rd.
+		 *
 		 * @param int date
+		 *
 		 * @return string
 		 */
 		var appSfx = function(date) {
@@ -86,9 +88,9 @@ CDate.prototype = {
 				return date + 'rd';
 			}
 			return date + 'th';
-		}
+		};
 
-		switch(format) {
+		switch (format) {
 			case 'd M Y H:i':
 				return appendZero(dt) + ' ' + shortMn[mnth] + ' ' + yr + ' ' + appendZero(hrs) + ':' + appendZero(mnts);
 			case 'j. M Y G:i':

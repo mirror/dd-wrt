@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -34,15 +34,13 @@ foreach ($data['screens'] as $screen) {
 		(new CButton())
 			->onClick($on_click)
 			->addClass(ZBX_STYLE_REMOVE_BTN)
+			->setAttribute('aria-label', _xs('Remove, %1$s', 'screen reader', $screen['label']))
 	]);
 }
 
 $output = [
 	'header' => $data['name'],
-	'body' => $table->toString(),
-	'footer' => (new CList([
-		_s('Updated: %s', zbx_date2str(TIME_FORMAT_SECONDS))
-	]))->toString()
+	'body' => $table->toString()
 ];
 
 if (($messages = getMessages()) !== null) {
