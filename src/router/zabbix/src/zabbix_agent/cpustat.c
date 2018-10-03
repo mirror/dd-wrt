@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -32,9 +32,9 @@
 #endif
 
 #if !defined(_WINDOWS)
-#	define LOCK_CPUSTATS	zbx_mutex_lock(&cpustats_lock)
-#	define UNLOCK_CPUSTATS	zbx_mutex_unlock(&cpustats_lock)
-static ZBX_MUTEX	cpustats_lock = ZBX_MUTEX_NULL;
+#	define LOCK_CPUSTATS	zbx_mutex_lock(cpustats_lock)
+#	define UNLOCK_CPUSTATS	zbx_mutex_unlock(cpustats_lock)
+static zbx_mutex_t	cpustats_lock = ZBX_MUTEX_NULL;
 #else
 #	define LOCK_CPUSTATS
 #	define UNLOCK_CPUSTATS
@@ -266,7 +266,7 @@ int	get_cpu_perf_counter_value(int cpu_num, int interval, double *value, char **
 	return get_perf_counter_value(collector->cpus.cpu_counter[idx], interval, value, error);
 }
 
-static int	get_cpu_perf_counter_status(int pc_status)
+static int	get_cpu_perf_counter_status(zbx_perf_counter_status_t pc_status)
 {
 	switch (pc_status)
 	{
@@ -365,7 +365,7 @@ static void	update_cpustats(ZBX_CPUS_STAT_DATA *pcpus)
 		goto exit;
 	}
 
-	cpu_status = zbx_malloc(cpu_status, sizeof(unsigned char) * (pcpus->count + 1));
+	cpu_status = (unsigned char *)zbx_malloc(cpu_status, sizeof(unsigned char) * (pcpus->count + 1));
 
 	for (idx = 0; idx <= pcpus->count; idx++)
 		cpu_status[idx] = SYSINFO_RET_FAIL;

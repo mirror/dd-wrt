@@ -101,7 +101,8 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ax_lib_ibm_db2.m4 \
 	$(top_srcdir)/m4/libopenssl.m4 $(top_srcdir)/m4/libssh2.m4 \
 	$(top_srcdir)/m4/libunixodbc.m4 $(top_srcdir)/m4/libxml2.m4 \
 	$(top_srcdir)/m4/netsnmp.m4 $(top_srcdir)/m4/openipmi.m4 \
-	$(top_srcdir)/m4/pcre.m4 $(top_srcdir)/m4/resolv.m4 \
+	$(top_srcdir)/m4/pcre.m4 $(top_srcdir)/m4/pthread.m4 \
+	$(top_srcdir)/m4/resolv.m4 $(top_srcdir)/m4/zlib.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -119,8 +120,10 @@ am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
 libipmi_a_AR = $(AR) $(ARFLAGS)
 libipmi_a_LIBADD =
-am_libipmi_a_OBJECTS = checks_ipmi.$(OBJEXT) ipmi_protocol.$(OBJEXT) \
-	ipmi_poller.$(OBJEXT) ipmi_manager.$(OBJEXT) ipmi.$(OBJEXT)
+am_libipmi_a_OBJECTS = libipmi_a-checks_ipmi.$(OBJEXT) \
+	libipmi_a-ipmi_protocol.$(OBJEXT) \
+	libipmi_a-ipmi_poller.$(OBJEXT) \
+	libipmi_a-ipmi_manager.$(OBJEXT) libipmi_a-ipmi.$(OBJEXT)
 libipmi_a_OBJECTS = $(am_libipmi_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -138,6 +141,10 @@ DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/include
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
+AM_V_lt = $(am__v_lt_@AM_V@)
+am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
+am__v_lt_0 = --silent
+am__v_lt_1 = 
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 AM_V_CC = $(am__v_CC_@AM_V@)
@@ -179,8 +186,10 @@ CTAGS = ctags
 am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+AGENT_CONFIG_FILE = @AGENT_CONFIG_FILE@
 AGENT_LDFLAGS = @AGENT_LDFLAGS@
 AGENT_LIBS = @AGENT_LIBS@
+ALERT_SCRIPTS_PATH = @ALERT_SCRIPTS_PATH@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 ARCH = @ARCH@
@@ -193,6 +202,8 @@ CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
+CURL_SSL_CERT_LOCATION = @CURL_SSL_CERT_LOCATION@
+CURL_SSL_KEY_LOCATION = @CURL_SSL_KEY_LOCATION@
 CYGPATH_W = @CYGPATH_W@
 DB_CFLAGS = @DB_CFLAGS@
 DB_LDFLAGS = @DB_LDFLAGS@
@@ -204,6 +215,7 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+EXTERNAL_SCRIPTS_PATH = @EXTERNAL_SCRIPTS_PATH@
 GNUTLS_CFLAGS = @GNUTLS_CFLAGS@
 GNUTLS_LDFLAGS = @GNUTLS_LDFLAGS@
 GNUTLS_LIBS = @GNUTLS_LIBS@
@@ -236,12 +248,16 @@ LIBOBJS = @LIBOBJS@
 LIBPCRE_CFLAGS = @LIBPCRE_CFLAGS@
 LIBPCRE_LDFLAGS = @LIBPCRE_LDFLAGS@
 LIBPCRE_LIBS = @LIBPCRE_LIBS@
+LIBPTHREAD_CFLAGS = @LIBPTHREAD_CFLAGS@
+LIBPTHREAD_LDFLAGS = @LIBPTHREAD_LDFLAGS@
+LIBPTHREAD_LIBS = @LIBPTHREAD_LIBS@
 LIBS = @LIBS@
 LIBXML2_CFLAGS = @LIBXML2_CFLAGS@
 LIBXML2_CONFIG = @LIBXML2_CONFIG@
 LIBXML2_LDFLAGS = @LIBXML2_LDFLAGS@
 LIBXML2_LIBS = @LIBXML2_LIBS@
 LIBXML2_VERSION = @LIBXML2_VERSION@
+LOAD_MODULE_PATH = @LOAD_MODULE_PATH@
 LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
 MBEDTLS_CFLAGS = @MBEDTLS_CFLAGS@
@@ -281,12 +297,14 @@ POSTGRESQL_CFLAGS = @POSTGRESQL_CFLAGS@
 POSTGRESQL_LDFLAGS = @POSTGRESQL_LDFLAGS@
 POSTGRESQL_LIBS = @POSTGRESQL_LIBS@
 POSTGRESQL_VERSION = @POSTGRESQL_VERSION@
+PROXY_CONFIG_FILE = @PROXY_CONFIG_FILE@
 PROXY_LDFLAGS = @PROXY_LDFLAGS@
 PROXY_LIBS = @PROXY_LIBS@
 RANLIB = @RANLIB@
 RESOLV_LIBS = @RESOLV_LIBS@
 SENDER_LDFLAGS = @SENDER_LDFLAGS@
 SENDER_LIBS = @SENDER_LIBS@
+SERVER_CONFIG_FILE = @SERVER_CONFIG_FILE@
 SERVER_LDFLAGS = @SERVER_LDFLAGS@
 SERVER_LIBS = @SERVER_LIBS@
 SET_MAKE = @SET_MAKE@
@@ -309,6 +327,9 @@ UNIXODBC_LIBS = @UNIXODBC_LIBS@
 VERSION = @VERSION@
 ZBXGET_LDFLAGS = @ZBXGET_LDFLAGS@
 ZBXGET_LIBS = @ZBXGET_LIBS@
+ZLIB_CFLAGS = @ZLIB_CFLAGS@
+ZLIB_LDFLAGS = @ZLIB_LDFLAGS@
+ZLIB_LIBS = @ZLIB_LIBS@
 _libcurl_config = @_libcurl_config@
 _libnetsnmp_config = @_libnetsnmp_config@
 abs_builddir = @abs_builddir@
@@ -370,6 +391,7 @@ libipmi_a_SOURCES = \
 	ipmi_manager.c ipmi_manager.h \
 	ipmi.c ipmi.h
 
+libipmi_a_CFLAGS = @OPENIPMI_CFLAGS@
 all: all-am
 
 .SUFFIXES:
@@ -418,11 +440,11 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/checks_ipmi.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ipmi.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ipmi_manager.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ipmi_poller.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ipmi_protocol.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libipmi_a-checks_ipmi.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libipmi_a-ipmi.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libipmi_a-ipmi_manager.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libipmi_a-ipmi_poller.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libipmi_a-ipmi_protocol.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -439,6 +461,76 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+libipmi_a-checks_ipmi.o: checks_ipmi.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libipmi_a_CFLAGS) $(CFLAGS) -MT libipmi_a-checks_ipmi.o -MD -MP -MF $(DEPDIR)/libipmi_a-checks_ipmi.Tpo -c -o libipmi_a-checks_ipmi.o `test -f 'checks_ipmi.c' || echo '$(srcdir)/'`checks_ipmi.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libipmi_a-checks_ipmi.Tpo $(DEPDIR)/libipmi_a-checks_ipmi.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='checks_ipmi.c' object='libipmi_a-checks_ipmi.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libipmi_a_CFLAGS) $(CFLAGS) -c -o libipmi_a-checks_ipmi.o `test -f 'checks_ipmi.c' || echo '$(srcdir)/'`checks_ipmi.c
+
+libipmi_a-checks_ipmi.obj: checks_ipmi.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libipmi_a_CFLAGS) $(CFLAGS) -MT libipmi_a-checks_ipmi.obj -MD -MP -MF $(DEPDIR)/libipmi_a-checks_ipmi.Tpo -c -o libipmi_a-checks_ipmi.obj `if test -f 'checks_ipmi.c'; then $(CYGPATH_W) 'checks_ipmi.c'; else $(CYGPATH_W) '$(srcdir)/checks_ipmi.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libipmi_a-checks_ipmi.Tpo $(DEPDIR)/libipmi_a-checks_ipmi.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='checks_ipmi.c' object='libipmi_a-checks_ipmi.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libipmi_a_CFLAGS) $(CFLAGS) -c -o libipmi_a-checks_ipmi.obj `if test -f 'checks_ipmi.c'; then $(CYGPATH_W) 'checks_ipmi.c'; else $(CYGPATH_W) '$(srcdir)/checks_ipmi.c'; fi`
+
+libipmi_a-ipmi_protocol.o: ipmi_protocol.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libipmi_a_CFLAGS) $(CFLAGS) -MT libipmi_a-ipmi_protocol.o -MD -MP -MF $(DEPDIR)/libipmi_a-ipmi_protocol.Tpo -c -o libipmi_a-ipmi_protocol.o `test -f 'ipmi_protocol.c' || echo '$(srcdir)/'`ipmi_protocol.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libipmi_a-ipmi_protocol.Tpo $(DEPDIR)/libipmi_a-ipmi_protocol.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='ipmi_protocol.c' object='libipmi_a-ipmi_protocol.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libipmi_a_CFLAGS) $(CFLAGS) -c -o libipmi_a-ipmi_protocol.o `test -f 'ipmi_protocol.c' || echo '$(srcdir)/'`ipmi_protocol.c
+
+libipmi_a-ipmi_protocol.obj: ipmi_protocol.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libipmi_a_CFLAGS) $(CFLAGS) -MT libipmi_a-ipmi_protocol.obj -MD -MP -MF $(DEPDIR)/libipmi_a-ipmi_protocol.Tpo -c -o libipmi_a-ipmi_protocol.obj `if test -f 'ipmi_protocol.c'; then $(CYGPATH_W) 'ipmi_protocol.c'; else $(CYGPATH_W) '$(srcdir)/ipmi_protocol.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libipmi_a-ipmi_protocol.Tpo $(DEPDIR)/libipmi_a-ipmi_protocol.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='ipmi_protocol.c' object='libipmi_a-ipmi_protocol.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libipmi_a_CFLAGS) $(CFLAGS) -c -o libipmi_a-ipmi_protocol.obj `if test -f 'ipmi_protocol.c'; then $(CYGPATH_W) 'ipmi_protocol.c'; else $(CYGPATH_W) '$(srcdir)/ipmi_protocol.c'; fi`
+
+libipmi_a-ipmi_poller.o: ipmi_poller.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libipmi_a_CFLAGS) $(CFLAGS) -MT libipmi_a-ipmi_poller.o -MD -MP -MF $(DEPDIR)/libipmi_a-ipmi_poller.Tpo -c -o libipmi_a-ipmi_poller.o `test -f 'ipmi_poller.c' || echo '$(srcdir)/'`ipmi_poller.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libipmi_a-ipmi_poller.Tpo $(DEPDIR)/libipmi_a-ipmi_poller.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='ipmi_poller.c' object='libipmi_a-ipmi_poller.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libipmi_a_CFLAGS) $(CFLAGS) -c -o libipmi_a-ipmi_poller.o `test -f 'ipmi_poller.c' || echo '$(srcdir)/'`ipmi_poller.c
+
+libipmi_a-ipmi_poller.obj: ipmi_poller.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libipmi_a_CFLAGS) $(CFLAGS) -MT libipmi_a-ipmi_poller.obj -MD -MP -MF $(DEPDIR)/libipmi_a-ipmi_poller.Tpo -c -o libipmi_a-ipmi_poller.obj `if test -f 'ipmi_poller.c'; then $(CYGPATH_W) 'ipmi_poller.c'; else $(CYGPATH_W) '$(srcdir)/ipmi_poller.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libipmi_a-ipmi_poller.Tpo $(DEPDIR)/libipmi_a-ipmi_poller.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='ipmi_poller.c' object='libipmi_a-ipmi_poller.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libipmi_a_CFLAGS) $(CFLAGS) -c -o libipmi_a-ipmi_poller.obj `if test -f 'ipmi_poller.c'; then $(CYGPATH_W) 'ipmi_poller.c'; else $(CYGPATH_W) '$(srcdir)/ipmi_poller.c'; fi`
+
+libipmi_a-ipmi_manager.o: ipmi_manager.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libipmi_a_CFLAGS) $(CFLAGS) -MT libipmi_a-ipmi_manager.o -MD -MP -MF $(DEPDIR)/libipmi_a-ipmi_manager.Tpo -c -o libipmi_a-ipmi_manager.o `test -f 'ipmi_manager.c' || echo '$(srcdir)/'`ipmi_manager.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libipmi_a-ipmi_manager.Tpo $(DEPDIR)/libipmi_a-ipmi_manager.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='ipmi_manager.c' object='libipmi_a-ipmi_manager.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libipmi_a_CFLAGS) $(CFLAGS) -c -o libipmi_a-ipmi_manager.o `test -f 'ipmi_manager.c' || echo '$(srcdir)/'`ipmi_manager.c
+
+libipmi_a-ipmi_manager.obj: ipmi_manager.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libipmi_a_CFLAGS) $(CFLAGS) -MT libipmi_a-ipmi_manager.obj -MD -MP -MF $(DEPDIR)/libipmi_a-ipmi_manager.Tpo -c -o libipmi_a-ipmi_manager.obj `if test -f 'ipmi_manager.c'; then $(CYGPATH_W) 'ipmi_manager.c'; else $(CYGPATH_W) '$(srcdir)/ipmi_manager.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libipmi_a-ipmi_manager.Tpo $(DEPDIR)/libipmi_a-ipmi_manager.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='ipmi_manager.c' object='libipmi_a-ipmi_manager.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libipmi_a_CFLAGS) $(CFLAGS) -c -o libipmi_a-ipmi_manager.obj `if test -f 'ipmi_manager.c'; then $(CYGPATH_W) 'ipmi_manager.c'; else $(CYGPATH_W) '$(srcdir)/ipmi_manager.c'; fi`
+
+libipmi_a-ipmi.o: ipmi.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libipmi_a_CFLAGS) $(CFLAGS) -MT libipmi_a-ipmi.o -MD -MP -MF $(DEPDIR)/libipmi_a-ipmi.Tpo -c -o libipmi_a-ipmi.o `test -f 'ipmi.c' || echo '$(srcdir)/'`ipmi.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libipmi_a-ipmi.Tpo $(DEPDIR)/libipmi_a-ipmi.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='ipmi.c' object='libipmi_a-ipmi.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libipmi_a_CFLAGS) $(CFLAGS) -c -o libipmi_a-ipmi.o `test -f 'ipmi.c' || echo '$(srcdir)/'`ipmi.c
+
+libipmi_a-ipmi.obj: ipmi.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libipmi_a_CFLAGS) $(CFLAGS) -MT libipmi_a-ipmi.obj -MD -MP -MF $(DEPDIR)/libipmi_a-ipmi.Tpo -c -o libipmi_a-ipmi.obj `if test -f 'ipmi.c'; then $(CYGPATH_W) 'ipmi.c'; else $(CYGPATH_W) '$(srcdir)/ipmi.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libipmi_a-ipmi.Tpo $(DEPDIR)/libipmi_a-ipmi.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='ipmi.c' object='libipmi_a-ipmi.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libipmi_a_CFLAGS) $(CFLAGS) -c -o libipmi_a-ipmi.obj `if test -f 'ipmi.c'; then $(CYGPATH_W) 'ipmi.c'; else $(CYGPATH_W) '$(srcdir)/ipmi.c'; fi`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique

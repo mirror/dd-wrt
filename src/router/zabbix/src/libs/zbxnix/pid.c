@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -80,20 +80,20 @@ int	create_pid_file(const char *pidfile)
 int	read_pid_file(const char *pidfile, pid_t *pid, char *error, size_t max_error_len)
 {
 	int	ret = FAIL;
-	FILE	*fpid;
+	FILE	*f_pid;
 
-	if (NULL == (fpid = fopen(pidfile, "r")))
+	if (NULL == (f_pid = fopen(pidfile, "r")))
 	{
 		zbx_snprintf(error, max_error_len, "cannot open PID file [%s]: %s", pidfile, zbx_strerror(errno));
 		return ret;
 	}
 
-	if (1 == fscanf(fpid, "%d", (int *)pid))
+	if (1 == fscanf(f_pid, "%d", (int *)pid))
 		ret = SUCCEED;
 	else
 		zbx_snprintf(error, max_error_len, "cannot retrieve PID from file [%s]", pidfile);
 
-	zbx_fclose(fpid);
+	zbx_fclose(f_pid);
 
 	return ret;
 }

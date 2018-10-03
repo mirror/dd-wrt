@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -96,8 +96,10 @@ static int	unpack_ntp(ntp_data *data, const unsigned char *request, const unsign
 	{
 		zabbix_log(LOG_LEVEL_DEBUG, "originate timestamp in the response does not match"
 				" transmit timestamp in the request: 0x%04x%04x 0x%04x%04x",
-				*(int *)&response[NTP_OFFSET_ORIGINATE], *(int *)&response[NTP_OFFSET_ORIGINATE + 4],
-				*(int *)&request[NTP_OFFSET_TRANSMIT], *(int *)&request[NTP_OFFSET_TRANSMIT + 4]);
+				*(const unsigned int *)&response[NTP_OFFSET_ORIGINATE],
+				*(const unsigned int *)&response[NTP_OFFSET_ORIGINATE + 4],
+				*(const unsigned int *)&request[NTP_OFFSET_TRANSMIT],
+				*(const unsigned int *)&request[NTP_OFFSET_TRANSMIT + 4]);
 		goto out;
 	}
 
@@ -161,7 +163,7 @@ int	check_ntp(char *host, unsigned short port, int timeout, int *value_int)
 			if (SUCCEED == (ret = zbx_udp_recv(&s, timeout)))
 			{
 				*value_int = (SUCCEED == unpack_ntp(&data, (unsigned char *)request,
-						(unsigned char *)s.buffer, s.read_bytes));
+						(unsigned char *)s.buffer, (int)s.read_bytes));
 			}
 		}
 

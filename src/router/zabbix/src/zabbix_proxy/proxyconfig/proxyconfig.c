@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@
 extern unsigned char	process_type, program_type;
 extern int		server_num, process_num;
 
-void	zbx_proxyconfig_sigusr_handler(int flags)
+static void	zbx_proxyconfig_sigusr_handler(int flags)
 {
 	if (ZBX_RTC_CONFIG_CACHE_RELOAD == ZBX_RTC_GET_MSG(flags))
 	{

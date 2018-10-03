@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -27,11 +27,13 @@ int	zbx_add_event(unsigned char source, unsigned char object, zbx_uint64_t objec
 		const char *trigger_expression, const char *trigger_recovery_expression, unsigned char trigger_priority,
 		unsigned char trigger_type, const zbx_vector_ptr_t *trigger_tags,
 		unsigned char trigger_correlation_mode, const char *trigger_correlation_tag,
-		unsigned char trigger_value);
+		unsigned char trigger_value, const char *error);
 
 int	zbx_close_problem(zbx_uint64_t triggerid, zbx_uint64_t eventid, zbx_uint64_t userid);
 
 int	zbx_process_events(zbx_vector_ptr_t *trigger_diff, zbx_vector_uint64_t *triggerids_lock);
-int	zbx_flush_correlated_events(void);
+void	zbx_clean_events(void);
+void	zbx_reset_event_recovery(void);
+void	zbx_export_events(void);
 
 #endif

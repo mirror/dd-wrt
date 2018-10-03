@@ -14,6 +14,7 @@
 
 @SET_MAKE@
 
+
 VPATH = @srcdir@
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
@@ -89,6 +90,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 sbin_PROGRAMS = zabbix_server$(EXEEXT)
+@HAVE_IPMI_TRUE@am__append_1 = ipmi/libipmi.a
 subdir = src/zabbix_server
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_lib_ibm_db2.m4 \
@@ -102,7 +104,8 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ax_lib_ibm_db2.m4 \
 	$(top_srcdir)/m4/libopenssl.m4 $(top_srcdir)/m4/libssh2.m4 \
 	$(top_srcdir)/m4/libunixodbc.m4 $(top_srcdir)/m4/libxml2.m4 \
 	$(top_srcdir)/m4/netsnmp.m4 $(top_srcdir)/m4/openipmi.m4 \
-	$(top_srcdir)/m4/pcre.m4 $(top_srcdir)/m4/resolv.m4 \
+	$(top_srcdir)/m4/pcre.m4 $(top_srcdir)/m4/pthread.m4 \
+	$(top_srcdir)/m4/resolv.m4 $(top_srcdir)/m4/zlib.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -111,11 +114,23 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/include/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
+LIBRARIES = $(noinst_LIBRARIES)
+AR = ar
+ARFLAGS = cru
+AM_V_AR = $(am__v_AR_@AM_V@)
+am__v_AR_ = $(am__v_AR_@AM_DEFAULT_V@)
+am__v_AR_0 = @echo "  AR      " $@;
+am__v_AR_1 = 
+libzbxserver_a_AR = $(AR) $(ARFLAGS)
+libzbxserver_a_LIBADD =
+am_libzbxserver_a_OBJECTS = libzbxserver_a-actions.$(OBJEXT) \
+	libzbxserver_a-operations.$(OBJEXT) \
+	libzbxserver_a-events.$(OBJEXT) \
+	libzbxserver_a-postinit.$(OBJEXT)
+libzbxserver_a_OBJECTS = $(am_libzbxserver_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(sbindir)"
 PROGRAMS = $(sbin_PROGRAMS)
-am_zabbix_server_OBJECTS = zabbix_server-actions.$(OBJEXT) \
-	zabbix_server-operations.$(OBJEXT) \
-	zabbix_server-events.$(OBJEXT) zabbix_server-server.$(OBJEXT)
+am_zabbix_server_OBJECTS = zabbix_server-server.$(OBJEXT)
 am__dirstamp = $(am__leading_dot)dirstamp
 @ZBXCUNIT_TRUE@nodist_zabbix_server_OBJECTS = ../libs/zbxcunit/zabbix_server-zbxcunit.$(OBJEXT)
 zabbix_server_OBJECTS = $(am_zabbix_server_OBJECTS) \
@@ -128,7 +143,7 @@ zabbix_server_DEPENDENCIES = alerter/libzbxalerter.a \
 	snmptrapper/libzbxsnmptrapper.a httppoller/libzbxhttppoller.a \
 	escalator/libzbxescalator.a proxypoller/libzbxproxypoller.a \
 	selfmon/libzbxselfmon.a vmware/libzbxvmware.a \
-	taskmanager/libzbxtaskmanager.a ipmi/libipmi.a \
+	taskmanager/libzbxtaskmanager.a odbc/libzbxodbc.a \
 	scripts/libzbxscripts.a preprocessor/libpreprocessor.a \
 	$(top_srcdir)/src/libs/zbxsysinfo/libzbxserversysinfo.a \
 	$(top_srcdir)/src/libs/zbxsysinfo/common/libcommonsysinfo.a \
@@ -158,7 +173,9 @@ zabbix_server_DEPENDENCIES = alerter/libzbxalerter.a \
 	$(top_srcdir)/src/libs/zbxdbhigh/libzbxdbhigh.a \
 	$(top_srcdir)/src/libs/zbxdb/libzbxdb.a \
 	$(top_srcdir)/src/libs/zbxmodules/libzbxmodules.a \
-	$(top_srcdir)/src/libs/zbxtasks/libzbxtasks.a
+	$(top_srcdir)/src/libs/zbxtasks/libzbxtasks.a \
+	$(top_srcdir)/src/libs/zbxcompress/libzbxcompress.a \
+	libzbxserver.a $(am__append_1)
 zabbix_server_LINK = $(CCLD) $(zabbix_server_CFLAGS) $(CFLAGS) \
 	$(zabbix_server_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
@@ -193,8 +210,9 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(zabbix_server_SOURCES) $(nodist_zabbix_server_SOURCES)
-DIST_SOURCES = $(zabbix_server_SOURCES)
+SOURCES = $(libzbxserver_a_SOURCES) $(zabbix_server_SOURCES) \
+	$(nodist_zabbix_server_SOURCES)
+DIST_SOURCES = $(libzbxserver_a_SOURCES) $(zabbix_server_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -264,8 +282,10 @@ am__relativize = \
   done; \
   reldir="$$dir2"
 ACLOCAL = @ACLOCAL@
+AGENT_CONFIG_FILE = @AGENT_CONFIG_FILE@
 AGENT_LDFLAGS = @AGENT_LDFLAGS@
 AGENT_LIBS = @AGENT_LIBS@
+ALERT_SCRIPTS_PATH = @ALERT_SCRIPTS_PATH@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 ARCH = @ARCH@
@@ -278,6 +298,8 @@ CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
+CURL_SSL_CERT_LOCATION = @CURL_SSL_CERT_LOCATION@
+CURL_SSL_KEY_LOCATION = @CURL_SSL_KEY_LOCATION@
 CYGPATH_W = @CYGPATH_W@
 DB_CFLAGS = @DB_CFLAGS@
 DB_LDFLAGS = @DB_LDFLAGS@
@@ -289,6 +311,7 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+EXTERNAL_SCRIPTS_PATH = @EXTERNAL_SCRIPTS_PATH@
 GNUTLS_CFLAGS = @GNUTLS_CFLAGS@
 GNUTLS_LDFLAGS = @GNUTLS_LDFLAGS@
 GNUTLS_LIBS = @GNUTLS_LIBS@
@@ -321,12 +344,16 @@ LIBOBJS = @LIBOBJS@
 LIBPCRE_CFLAGS = @LIBPCRE_CFLAGS@
 LIBPCRE_LDFLAGS = @LIBPCRE_LDFLAGS@
 LIBPCRE_LIBS = @LIBPCRE_LIBS@
+LIBPTHREAD_CFLAGS = @LIBPTHREAD_CFLAGS@
+LIBPTHREAD_LDFLAGS = @LIBPTHREAD_LDFLAGS@
+LIBPTHREAD_LIBS = @LIBPTHREAD_LIBS@
 LIBS = @LIBS@
 LIBXML2_CFLAGS = @LIBXML2_CFLAGS@
 LIBXML2_CONFIG = @LIBXML2_CONFIG@
 LIBXML2_LDFLAGS = @LIBXML2_LDFLAGS@
 LIBXML2_LIBS = @LIBXML2_LIBS@
 LIBXML2_VERSION = @LIBXML2_VERSION@
+LOAD_MODULE_PATH = @LOAD_MODULE_PATH@
 LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
 MBEDTLS_CFLAGS = @MBEDTLS_CFLAGS@
@@ -366,12 +393,14 @@ POSTGRESQL_CFLAGS = @POSTGRESQL_CFLAGS@
 POSTGRESQL_LDFLAGS = @POSTGRESQL_LDFLAGS@
 POSTGRESQL_LIBS = @POSTGRESQL_LIBS@
 POSTGRESQL_VERSION = @POSTGRESQL_VERSION@
+PROXY_CONFIG_FILE = @PROXY_CONFIG_FILE@
 PROXY_LDFLAGS = @PROXY_LDFLAGS@
 PROXY_LIBS = @PROXY_LIBS@
 RANLIB = @RANLIB@
 RESOLV_LIBS = @RESOLV_LIBS@
 SENDER_LDFLAGS = @SENDER_LDFLAGS@
 SENDER_LIBS = @SENDER_LIBS@
+SERVER_CONFIG_FILE = @SERVER_CONFIG_FILE@
 SERVER_LDFLAGS = @SERVER_LDFLAGS@
 SERVER_LIBS = @SERVER_LIBS@
 SET_MAKE = @SET_MAKE@
@@ -394,6 +423,9 @@ UNIXODBC_LIBS = @UNIXODBC_LIBS@
 VERSION = @VERSION@
 ZBXGET_LDFLAGS = @ZBXGET_LDFLAGS@
 ZBXGET_LIBS = @ZBXGET_LIBS@
+ZLIB_CFLAGS = @ZLIB_CFLAGS@
+ZLIB_LDFLAGS = @ZLIB_LDFLAGS@
+ZLIB_LIBS = @ZLIB_LIBS@
 _libcurl_config = @_libcurl_config@
 _libnetsnmp_config = @_libnetsnmp_config@
 abs_builddir = @abs_builddir@
@@ -465,15 +497,22 @@ SUBDIRS = \
 	vmware \
 	taskmanager \
 	ipmi \
+	odbc \
 	scripts \
 	preprocessor
 
-zabbix_server_SOURCES = \
+noinst_LIBRARIES = libzbxserver.a
+libzbxserver_a_SOURCES = \
 	actions.c actions.h \
 	operations.c operations.h \
 	events.c events.h \
-	server.c
+	postinit.c postinit.h
 
+libzbxserver_a_CFLAGS = \
+	-DZABBIX_DAEMON \
+	-I@top_srcdir@/src/libs/zbxdbcache
+
+zabbix_server_SOURCES = server.c
 @ZBXCUNIT_TRUE@nodist_zabbix_server_SOURCES = ../libs/zbxcunit/zbxcunit.c ../libs/zbxcunit/zbxcunit.h
 zabbix_server_LDADD = alerter/libzbxalerter.a \
 	dbsyncer/libzbxdbsyncer.a dbconfig/libzbxdbconfig.a \
@@ -483,7 +522,7 @@ zabbix_server_LDADD = alerter/libzbxalerter.a \
 	snmptrapper/libzbxsnmptrapper.a httppoller/libzbxhttppoller.a \
 	escalator/libzbxescalator.a proxypoller/libzbxproxypoller.a \
 	selfmon/libzbxselfmon.a vmware/libzbxvmware.a \
-	taskmanager/libzbxtaskmanager.a ipmi/libipmi.a \
+	taskmanager/libzbxtaskmanager.a odbc/libzbxodbc.a \
 	scripts/libzbxscripts.a preprocessor/libpreprocessor.a \
 	$(top_srcdir)/src/libs/zbxsysinfo/libzbxserversysinfo.a \
 	$(top_srcdir)/src/libs/zbxsysinfo/common/libcommonsysinfo.a \
@@ -513,21 +552,18 @@ zabbix_server_LDADD = alerter/libzbxalerter.a \
 	$(top_srcdir)/src/libs/zbxdbhigh/libzbxdbhigh.a \
 	$(top_srcdir)/src/libs/zbxdb/libzbxdb.a \
 	$(top_srcdir)/src/libs/zbxmodules/libzbxmodules.a \
-	$(top_srcdir)/src/libs/zbxtasks/libzbxtasks.a @SERVER_LIBS@ \
-	$(CUNIT_LDADD)
+	$(top_srcdir)/src/libs/zbxtasks/libzbxtasks.a \
+	$(top_srcdir)/src/libs/zbxcompress/libzbxcompress.a \
+	libzbxserver.a $(am__append_1) @SERVER_LIBS@ $(CUNIT_LDADD)
 zabbix_server_LDFLAGS = @SERVER_LDFLAGS@
 zabbix_server_CFLAGS = \
-	-DZABBIX_DAEMON \
-	-DSYSCONFDIR="\"@sysconfdir@\"" \
-	-DDATADIR="\"@datadir@\"" \
-	-DLIBDIR="\"@libdir@\"" \
-	-I@top_srcdir@/src/libs/zbxdbcache 
+	-DDEFAULT_SSL_CERT_LOCATION="\"@CURL_SSL_CERT_LOCATION@\"" \
+	-DDEFAULT_SSL_KEY_LOCATION="\"@CURL_SSL_KEY_LOCATION@\"" \
+	-DDEFAULT_CONFIG_FILE="\"@SERVER_CONFIG_FILE@\"" \
+	-DDEFAULT_EXTERNAL_SCRIPTS_PATH="\"@EXTERNAL_SCRIPTS_PATH@\"" \
+	-DDEFAULT_ALERT_SCRIPTS_PATH="\"@ALERT_SCRIPTS_PATH@\"" \
+	-DDEFAULT_LOAD_MODULE_PATH="\"@LOAD_MODULE_PATH@\""
 
-SERVER_CONFIG = zabbix_server.conf
-INCLUDE_DIR = $(DESTDIR)@sysconfdir@/$(SERVER_CONFIG).d
-EXSCRIPTS_DIR = $(DESTDIR)@datadir@/zabbix/externalscripts
-ALSCRIPTS_DIR = $(DESTDIR)@datadir@/zabbix/alertscripts
-MODULES_DIR = $(DESTDIR)@libdir@
 all: all-recursive
 
 .SUFFIXES:
@@ -561,6 +597,14 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
+
+clean-noinstLIBRARIES:
+	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
+
+libzbxserver.a: $(libzbxserver_a_OBJECTS) $(libzbxserver_a_DEPENDENCIES) $(EXTRA_libzbxserver_a_DEPENDENCIES) 
+	$(AM_V_at)-rm -f libzbxserver.a
+	$(AM_V_AR)$(libzbxserver_a_AR) libzbxserver.a $(libzbxserver_a_OBJECTS) $(libzbxserver_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libzbxserver.a
 install-sbinPROGRAMS: $(sbin_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	@list='$(sbin_PROGRAMS)'; test -n "$(sbindir)" || list=; \
@@ -625,9 +669,10 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@../libs/zbxcunit/$(DEPDIR)/zabbix_server-zbxcunit.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zabbix_server-actions.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zabbix_server-events.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zabbix_server-operations.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxserver_a-actions.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxserver_a-events.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxserver_a-operations.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxserver_a-postinit.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zabbix_server-server.Po@am__quote@
 
 .c.o:
@@ -646,47 +691,61 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-zabbix_server-actions.o: actions.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_server_CFLAGS) $(CFLAGS) -MT zabbix_server-actions.o -MD -MP -MF $(DEPDIR)/zabbix_server-actions.Tpo -c -o zabbix_server-actions.o `test -f 'actions.c' || echo '$(srcdir)/'`actions.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/zabbix_server-actions.Tpo $(DEPDIR)/zabbix_server-actions.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='actions.c' object='zabbix_server-actions.o' libtool=no @AMDEPBACKSLASH@
+libzbxserver_a-actions.o: actions.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxserver_a_CFLAGS) $(CFLAGS) -MT libzbxserver_a-actions.o -MD -MP -MF $(DEPDIR)/libzbxserver_a-actions.Tpo -c -o libzbxserver_a-actions.o `test -f 'actions.c' || echo '$(srcdir)/'`actions.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxserver_a-actions.Tpo $(DEPDIR)/libzbxserver_a-actions.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='actions.c' object='libzbxserver_a-actions.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_server_CFLAGS) $(CFLAGS) -c -o zabbix_server-actions.o `test -f 'actions.c' || echo '$(srcdir)/'`actions.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxserver_a_CFLAGS) $(CFLAGS) -c -o libzbxserver_a-actions.o `test -f 'actions.c' || echo '$(srcdir)/'`actions.c
 
-zabbix_server-actions.obj: actions.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_server_CFLAGS) $(CFLAGS) -MT zabbix_server-actions.obj -MD -MP -MF $(DEPDIR)/zabbix_server-actions.Tpo -c -o zabbix_server-actions.obj `if test -f 'actions.c'; then $(CYGPATH_W) 'actions.c'; else $(CYGPATH_W) '$(srcdir)/actions.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/zabbix_server-actions.Tpo $(DEPDIR)/zabbix_server-actions.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='actions.c' object='zabbix_server-actions.obj' libtool=no @AMDEPBACKSLASH@
+libzbxserver_a-actions.obj: actions.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxserver_a_CFLAGS) $(CFLAGS) -MT libzbxserver_a-actions.obj -MD -MP -MF $(DEPDIR)/libzbxserver_a-actions.Tpo -c -o libzbxserver_a-actions.obj `if test -f 'actions.c'; then $(CYGPATH_W) 'actions.c'; else $(CYGPATH_W) '$(srcdir)/actions.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxserver_a-actions.Tpo $(DEPDIR)/libzbxserver_a-actions.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='actions.c' object='libzbxserver_a-actions.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_server_CFLAGS) $(CFLAGS) -c -o zabbix_server-actions.obj `if test -f 'actions.c'; then $(CYGPATH_W) 'actions.c'; else $(CYGPATH_W) '$(srcdir)/actions.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxserver_a_CFLAGS) $(CFLAGS) -c -o libzbxserver_a-actions.obj `if test -f 'actions.c'; then $(CYGPATH_W) 'actions.c'; else $(CYGPATH_W) '$(srcdir)/actions.c'; fi`
 
-zabbix_server-operations.o: operations.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_server_CFLAGS) $(CFLAGS) -MT zabbix_server-operations.o -MD -MP -MF $(DEPDIR)/zabbix_server-operations.Tpo -c -o zabbix_server-operations.o `test -f 'operations.c' || echo '$(srcdir)/'`operations.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/zabbix_server-operations.Tpo $(DEPDIR)/zabbix_server-operations.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='operations.c' object='zabbix_server-operations.o' libtool=no @AMDEPBACKSLASH@
+libzbxserver_a-operations.o: operations.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxserver_a_CFLAGS) $(CFLAGS) -MT libzbxserver_a-operations.o -MD -MP -MF $(DEPDIR)/libzbxserver_a-operations.Tpo -c -o libzbxserver_a-operations.o `test -f 'operations.c' || echo '$(srcdir)/'`operations.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxserver_a-operations.Tpo $(DEPDIR)/libzbxserver_a-operations.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='operations.c' object='libzbxserver_a-operations.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_server_CFLAGS) $(CFLAGS) -c -o zabbix_server-operations.o `test -f 'operations.c' || echo '$(srcdir)/'`operations.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxserver_a_CFLAGS) $(CFLAGS) -c -o libzbxserver_a-operations.o `test -f 'operations.c' || echo '$(srcdir)/'`operations.c
 
-zabbix_server-operations.obj: operations.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_server_CFLAGS) $(CFLAGS) -MT zabbix_server-operations.obj -MD -MP -MF $(DEPDIR)/zabbix_server-operations.Tpo -c -o zabbix_server-operations.obj `if test -f 'operations.c'; then $(CYGPATH_W) 'operations.c'; else $(CYGPATH_W) '$(srcdir)/operations.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/zabbix_server-operations.Tpo $(DEPDIR)/zabbix_server-operations.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='operations.c' object='zabbix_server-operations.obj' libtool=no @AMDEPBACKSLASH@
+libzbxserver_a-operations.obj: operations.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxserver_a_CFLAGS) $(CFLAGS) -MT libzbxserver_a-operations.obj -MD -MP -MF $(DEPDIR)/libzbxserver_a-operations.Tpo -c -o libzbxserver_a-operations.obj `if test -f 'operations.c'; then $(CYGPATH_W) 'operations.c'; else $(CYGPATH_W) '$(srcdir)/operations.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxserver_a-operations.Tpo $(DEPDIR)/libzbxserver_a-operations.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='operations.c' object='libzbxserver_a-operations.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_server_CFLAGS) $(CFLAGS) -c -o zabbix_server-operations.obj `if test -f 'operations.c'; then $(CYGPATH_W) 'operations.c'; else $(CYGPATH_W) '$(srcdir)/operations.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxserver_a_CFLAGS) $(CFLAGS) -c -o libzbxserver_a-operations.obj `if test -f 'operations.c'; then $(CYGPATH_W) 'operations.c'; else $(CYGPATH_W) '$(srcdir)/operations.c'; fi`
 
-zabbix_server-events.o: events.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_server_CFLAGS) $(CFLAGS) -MT zabbix_server-events.o -MD -MP -MF $(DEPDIR)/zabbix_server-events.Tpo -c -o zabbix_server-events.o `test -f 'events.c' || echo '$(srcdir)/'`events.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/zabbix_server-events.Tpo $(DEPDIR)/zabbix_server-events.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='events.c' object='zabbix_server-events.o' libtool=no @AMDEPBACKSLASH@
+libzbxserver_a-events.o: events.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxserver_a_CFLAGS) $(CFLAGS) -MT libzbxserver_a-events.o -MD -MP -MF $(DEPDIR)/libzbxserver_a-events.Tpo -c -o libzbxserver_a-events.o `test -f 'events.c' || echo '$(srcdir)/'`events.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxserver_a-events.Tpo $(DEPDIR)/libzbxserver_a-events.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='events.c' object='libzbxserver_a-events.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_server_CFLAGS) $(CFLAGS) -c -o zabbix_server-events.o `test -f 'events.c' || echo '$(srcdir)/'`events.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxserver_a_CFLAGS) $(CFLAGS) -c -o libzbxserver_a-events.o `test -f 'events.c' || echo '$(srcdir)/'`events.c
 
-zabbix_server-events.obj: events.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_server_CFLAGS) $(CFLAGS) -MT zabbix_server-events.obj -MD -MP -MF $(DEPDIR)/zabbix_server-events.Tpo -c -o zabbix_server-events.obj `if test -f 'events.c'; then $(CYGPATH_W) 'events.c'; else $(CYGPATH_W) '$(srcdir)/events.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/zabbix_server-events.Tpo $(DEPDIR)/zabbix_server-events.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='events.c' object='zabbix_server-events.obj' libtool=no @AMDEPBACKSLASH@
+libzbxserver_a-events.obj: events.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxserver_a_CFLAGS) $(CFLAGS) -MT libzbxserver_a-events.obj -MD -MP -MF $(DEPDIR)/libzbxserver_a-events.Tpo -c -o libzbxserver_a-events.obj `if test -f 'events.c'; then $(CYGPATH_W) 'events.c'; else $(CYGPATH_W) '$(srcdir)/events.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxserver_a-events.Tpo $(DEPDIR)/libzbxserver_a-events.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='events.c' object='libzbxserver_a-events.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_server_CFLAGS) $(CFLAGS) -c -o zabbix_server-events.obj `if test -f 'events.c'; then $(CYGPATH_W) 'events.c'; else $(CYGPATH_W) '$(srcdir)/events.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxserver_a_CFLAGS) $(CFLAGS) -c -o libzbxserver_a-events.obj `if test -f 'events.c'; then $(CYGPATH_W) 'events.c'; else $(CYGPATH_W) '$(srcdir)/events.c'; fi`
+
+libzbxserver_a-postinit.o: postinit.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxserver_a_CFLAGS) $(CFLAGS) -MT libzbxserver_a-postinit.o -MD -MP -MF $(DEPDIR)/libzbxserver_a-postinit.Tpo -c -o libzbxserver_a-postinit.o `test -f 'postinit.c' || echo '$(srcdir)/'`postinit.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxserver_a-postinit.Tpo $(DEPDIR)/libzbxserver_a-postinit.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='postinit.c' object='libzbxserver_a-postinit.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxserver_a_CFLAGS) $(CFLAGS) -c -o libzbxserver_a-postinit.o `test -f 'postinit.c' || echo '$(srcdir)/'`postinit.c
+
+libzbxserver_a-postinit.obj: postinit.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxserver_a_CFLAGS) $(CFLAGS) -MT libzbxserver_a-postinit.obj -MD -MP -MF $(DEPDIR)/libzbxserver_a-postinit.Tpo -c -o libzbxserver_a-postinit.obj `if test -f 'postinit.c'; then $(CYGPATH_W) 'postinit.c'; else $(CYGPATH_W) '$(srcdir)/postinit.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxserver_a-postinit.Tpo $(DEPDIR)/libzbxserver_a-postinit.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='postinit.c' object='libzbxserver_a-postinit.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxserver_a_CFLAGS) $(CFLAGS) -c -o libzbxserver_a-postinit.obj `if test -f 'postinit.c'; then $(CYGPATH_W) 'postinit.c'; else $(CYGPATH_W) '$(srcdir)/postinit.c'; fi`
 
 zabbix_server-server.o: server.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(zabbix_server_CFLAGS) $(CFLAGS) -MT zabbix_server-server.o -MD -MP -MF $(DEPDIR)/zabbix_server-server.Tpo -c -o zabbix_server-server.o `test -f 'server.c' || echo '$(srcdir)/'`server.c
@@ -872,7 +931,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-recursive
-all-am: Makefile $(PROGRAMS)
+all-am: Makefile $(LIBRARIES) $(PROGRAMS)
 installdirs: installdirs-recursive
 installdirs-am:
 	for dir in "$(DESTDIR)$(sbindir)"; do \
@@ -912,7 +971,8 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-recursive
 
-clean-am: clean-generic clean-sbinPROGRAMS mostlyclean-am
+clean-am: clean-generic clean-noinstLIBRARIES clean-sbinPROGRAMS \
+	mostlyclean-am
 
 distclean: distclean-recursive
 	-rm -rf ../libs/zbxcunit/$(DEPDIR) ./$(DEPDIR)
@@ -984,28 +1044,29 @@ uninstall-am: uninstall-sbinPROGRAMS
 	install-strip
 
 .PHONY: $(am__recursive_targets) CTAGS GTAGS TAGS all all-am check \
-	check-am clean clean-generic clean-sbinPROGRAMS cscopelist-am \
-	ctags ctags-am distclean distclean-compile distclean-generic \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am \
-	install-data-hook install-dvi install-dvi-am install-exec \
-	install-exec-am install-html install-html-am install-info \
-	install-info-am install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-sbinPROGRAMS install-strip \
-	installcheck installcheck-am installdirs installdirs-am \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
-	tags tags-am uninstall uninstall-am uninstall-sbinPROGRAMS
+	check-am clean clean-generic clean-noinstLIBRARIES \
+	clean-sbinPROGRAMS cscopelist-am ctags ctags-am distclean \
+	distclean-compile distclean-generic distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-data-hook install-dvi \
+	install-dvi-am install-exec install-exec-am install-html \
+	install-html-am install-info install-info-am install-man \
+	install-pdf install-pdf-am install-ps install-ps-am \
+	install-sbinPROGRAMS install-strip installcheck \
+	installcheck-am installdirs installdirs-am maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic pdf pdf-am ps ps-am tags tags-am uninstall \
+	uninstall-am uninstall-sbinPROGRAMS
 
 .PRECIOUS: Makefile
 
 
 install-data-hook:
-	$(MKDIR_P) "$(INCLUDE_DIR)"
-	$(MKDIR_P) "$(EXSCRIPTS_DIR)"
-	$(MKDIR_P) "$(ALSCRIPTS_DIR)"
-	$(MKDIR_P) "$(MODULES_DIR)"
-	test -f "$(DESTDIR)@sysconfdir@/$(SERVER_CONFIG)" || cp "../../conf/$(SERVER_CONFIG)" "$(DESTDIR)@sysconfdir@"
+	$(MKDIR_P) "$(DESTDIR)@SERVER_CONFIG_FILE@.d"
+	$(MKDIR_P) "$(DESTDIR)@EXTERNAL_SCRIPTS_PATH@"
+	$(MKDIR_P) "$(DESTDIR)@ALERT_SCRIPTS_PATH@"
+	$(MKDIR_P) "$(DESTDIR)@LOAD_MODULE_PATH@"
+	test -f "$(DESTDIR)@SERVER_CONFIG_FILE@" || cp "../../conf/zabbix_server.conf" "$(DESTDIR)@SERVER_CONFIG_FILE@"
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -59,6 +59,21 @@ typedef struct
 }
 ZBX_USER_MSG;
 
+typedef struct
+{
+	zbx_uint64_t	hostgroupid;
+	char		*tag;
+	char		*value;
+}
+zbx_tag_filter_t;
+
+static void	zbx_tag_filter_free(zbx_tag_filter_t *tag_filter)
+{
+	zbx_free(tag_filter->tag);
+	zbx_free(tag_filter->value);
+	zbx_free(tag_filter);
+}
+
 extern unsigned char	process_type, program_type;
 extern int		server_num, process_num;
 
@@ -70,15 +85,11 @@ static void	add_message_alert(const DB_EVENT *event, const DB_EVENT *r_event, zb
  *                                                                            *
  * Function: check_perm2system                                                *
  *                                                                            *
- * Purpose: Checking user permissions to access system.                       *
+ * Purpose: Check user permissions to access system                           *
  *                                                                            *
  * Parameters: userid - user ID                                               *
  *                                                                            *
- * Return value: SUCCEED - permission is positive, FAIL - otherwise           *
- *                                                                            *
- * Author:                                                                    *
- *                                                                            *
- * Comments:                                                                  *
+ * Return value: SUCCEED - access allowed, FAIL - otherwise                   *
  *                                                                            *
  ******************************************************************************/
 static int	check_perm2system(zbx_uint64_t userid)
@@ -103,30 +114,11 @@ static int	check_perm2system(zbx_uint64_t userid)
 	return res;
 }
 
-/******************************************************************************
- *                                                                            *
- * Function: get_host_permission                                              *
- *                                                                            *
- * Purpose: Return user permissions for access to the host                    *
- *                                                                            *
- * Parameters:                                                                *
- *                                                                            *
- * Return value: PERM_DENY - if host or user not found,                       *
- *                   or permission otherwise                                  *
- *                                                                            *
- * Author:                                                                    *
- *                                                                            *
- * Comments:                                                                  *
- *                                                                            *
- ******************************************************************************/
-static int	get_host_permission(zbx_uint64_t userid, zbx_uint64_t hostid)
+static	int	get_user_type(zbx_uint64_t userid)
 {
-	const char	*__function_name = "get_host_permission";
+	int		user_type = -1;
 	DB_RESULT	result;
 	DB_ROW		row;
-	int		user_type = -1, perm = PERM_DENY;
-
-	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __function_name);
 
 	result = DBselect("select type from users where userid=" ZBX_FS_UI64, userid);
 
@@ -135,32 +127,146 @@ static int	get_host_permission(zbx_uint64_t userid, zbx_uint64_t hostid)
 
 	DBfree_result(result);
 
-	if (-1 == user_type)
+	return user_type;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: get_hostgroups_permission                                        *
+ *                                                                            *
+ * Purpose: Return user permissions for access to the host                    *
+ *                                                                            *
+ * Parameters:                                                                *
+ *                                                                            *
+ * Return value: PERM_DENY - if host or user not found,                       *
+ *                   or permission otherwise                                  *
+ *                                                                            *
+ ******************************************************************************/
+static int	get_hostgroups_permission(zbx_uint64_t userid, zbx_vector_uint64_t *hostgroupids)
+{
+	const char	*__function_name = "get_hostgroups_permission";
+	int		perm = PERM_DENY;
+	char		*sql = NULL;
+	size_t		sql_alloc = 0, sql_offset = 0;
+	DB_RESULT	result;
+	DB_ROW		row;
+
+	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __function_name);
+
+	if (0 == hostgroupids->values_num)
 		goto out;
 
-	if (USER_TYPE_SUPER_ADMIN == user_type)
-	{
-		perm = PERM_READ_WRITE;
-		goto out;
-	}
-
-	result = DBselect(
+	zbx_snprintf_alloc(&sql, &sql_alloc, &sql_offset,
 			"select min(r.permission)"
-			" from rights r,hosts_groups hg,users_groups ug"
-			" where r.groupid=ug.usrgrpid"
-				" and r.id=hg.groupid"
-				" and hg.hostid=" ZBX_FS_UI64
-				" and ug.userid=" ZBX_FS_UI64,
-			hostid, userid);
+			" from rights r"
+			" join users_groups ug on ug.usrgrpid=r.groupid"
+				" where ug.userid=" ZBX_FS_UI64 " and", userid);
+	DBadd_condition_alloc(&sql, &sql_alloc, &sql_offset, "r.id",
+			hostgroupids->values, hostgroupids->values_num);
+	result = DBselect("%s", sql);
 
 	if (NULL != (row = DBfetch(result)) && FAIL == DBis_null(row[0]))
 		perm = atoi(row[0]);
 
 	DBfree_result(result);
+	zbx_free(sql);
 out:
 	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%s", __function_name, zbx_permission_string(perm));
 
 	return perm;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: check_tag_based_permission                                       *
+ *                                                                            *
+ * Purpose: Check user access to event by tags                                *
+ *                                                                            *
+ * Parameters: userid       - user id                                         *
+ *             hostgroupids - list of host groups in which trigger was to     *
+ *                            be found                                        *
+ *             event        - checked event for access                        *
+ *                                                                            *
+ * Return value: SUCCEED - user has access                                    *
+ *               FAIL    - user does not have access                          *
+ *                                                                            *
+ ******************************************************************************/
+static int	check_tag_based_permission(zbx_uint64_t userid, zbx_vector_uint64_t *hostgroupids,
+		const DB_EVENT *event)
+{
+	const char		*__function_name = "get_tag_based_permission";
+	char			*sql = NULL, hostgroupid[ZBX_MAX_UINT64_LEN + 1];
+	size_t			sql_alloc = 0, sql_offset = 0;
+	DB_RESULT		result;
+	DB_ROW			row;
+	int			ret = FAIL, i;
+	zbx_vector_ptr_t	tag_filters;
+	zbx_tag_filter_t	*tag_filter;
+	DB_CONDITION		condition;
+
+	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __function_name);
+
+	zbx_vector_ptr_create(&tag_filters);
+
+	zbx_snprintf_alloc(&sql, &sql_alloc, &sql_offset,
+			"select tf.groupid,tf.tag,tf.value from tag_filter tf"
+			" join users_groups ug on ug.usrgrpid=tf.usrgrpid"
+				" where ug.userid=" ZBX_FS_UI64, userid);
+	result = DBselect("%s order by tf.groupid", sql);
+
+	while (NULL != (row = DBfetch(result)))
+	{
+		tag_filter = (zbx_tag_filter_t *)zbx_malloc(NULL, sizeof(zbx_tag_filter_t));
+		ZBX_STR2UINT64(tag_filter->hostgroupid, row[0]);
+		tag_filter->tag = zbx_strdup(NULL, row[1]);
+		tag_filter->value = zbx_strdup(NULL, row[2]);
+		zbx_vector_ptr_append(&tag_filters, tag_filter);
+	}
+	zbx_free(sql);
+	DBfree_result(result);
+
+	if (0 < tag_filters.values_num)
+		condition.op = CONDITION_OPERATOR_EQUAL;
+	else
+		ret = SUCCEED;
+
+	for (i = 0; i < tag_filters.values_num && SUCCEED != ret; i++)
+	{
+		tag_filter = (zbx_tag_filter_t *)tag_filters.values[i];
+
+		if (FAIL == zbx_vector_uint64_search(hostgroupids, tag_filter->hostgroupid,
+				ZBX_DEFAULT_UINT64_COMPARE_FUNC))
+		{
+			continue;
+		}
+
+		if (NULL != tag_filter->tag && 0 != strlen(tag_filter->tag))
+		{
+			zbx_snprintf(hostgroupid, sizeof(hostgroupid), ZBX_FS_UI64, tag_filter->hostgroupid);
+
+			if (NULL != tag_filter->value && 0 != strlen(tag_filter->value))
+			{
+				condition.conditiontype = CONDITION_TYPE_EVENT_TAG_VALUE;
+				condition.value2 = tag_filter->tag;
+				condition.value = tag_filter->value;
+			}
+			else
+			{
+				condition.conditiontype = CONDITION_TYPE_EVENT_TAG;
+				condition.value = tag_filter->tag;
+			}
+
+			ret = check_action_condition(event, &condition);
+		}
+		else
+			ret = SUCCEED;
+	}
+	zbx_vector_ptr_clear_ext(&tag_filters, (zbx_clean_func_t)zbx_tag_filter_free);
+	zbx_vector_ptr_destroy(&tag_filters);
+
+	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%s", __function_name, zbx_result_string(ret));
+
+	return ret;
 }
 
 /******************************************************************************
@@ -173,33 +279,49 @@ out:
  *                   or permission otherwise                                  *
  *                                                                            *
  ******************************************************************************/
-static int	get_trigger_permission(zbx_uint64_t userid, zbx_uint64_t triggerid)
+int	get_trigger_permission(zbx_uint64_t userid, const DB_EVENT *event)
 {
-	const char	*__function_name = "get_trigger_permission";
-	DB_RESULT	result;
-	DB_ROW		row;
-	int		perm = PERM_DENY, host_perm;
-	zbx_uint64_t	hostid;
+	const char		*__function_name = "get_trigger_permission";
+	int			perm = PERM_DENY;
+	DB_RESULT		result;
+	DB_ROW			row;
+	zbx_vector_uint64_t	hostgroupids;
+	zbx_uint64_t		hostgroupid;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __function_name);
 
+	if (USER_TYPE_SUPER_ADMIN == get_user_type(userid))
+	{
+		perm = PERM_READ_WRITE;
+		goto out;
+	}
+
+	zbx_vector_uint64_create(&hostgroupids);
+
 	result = DBselect(
-			"select distinct i.hostid"
-			" from items i,functions f"
-			" where i.itemid=f.itemid"
+			"select distinct hg.groupid from items i"
+			" join functions f on i.itemid=f.itemid"
+			" join hosts_groups hg on hg.hostid = i.hostid"
 				" and f.triggerid=" ZBX_FS_UI64,
-			triggerid);
+			event->objectid);
 
 	while (NULL != (row = DBfetch(result)))
 	{
-		ZBX_STR2UINT64(hostid, row[0]);
-		host_perm = get_host_permission(userid, hostid);
-
-		if (perm < host_perm)
-			perm = host_perm;
+		ZBX_STR2UINT64(hostgroupid, row[0]);
+		zbx_vector_uint64_append(&hostgroupids, hostgroupid);
 	}
 	DBfree_result(result);
 
+	zbx_vector_uint64_sort(&hostgroupids, ZBX_DEFAULT_UINT64_COMPARE_FUNC);
+
+	if (PERM_DENY < (perm = get_hostgroups_permission(userid, &hostgroupids)) &&
+			FAIL == check_tag_based_permission(userid, &hostgroupids, event))
+	{
+		perm = PERM_DENY;
+	}
+
+	zbx_vector_uint64_destroy(&hostgroupids);
+out:
 	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%s", __function_name, zbx_permission_string(perm));
 
 	return perm;
@@ -215,24 +337,42 @@ static int	get_trigger_permission(zbx_uint64_t userid, zbx_uint64_t triggerid)
  *                   or permission otherwise                                  *
  *                                                                            *
  ******************************************************************************/
-static int	get_item_permission(zbx_uint64_t userid, zbx_uint64_t itemid)
+int	get_item_permission(zbx_uint64_t userid, zbx_uint64_t itemid)
 {
-	const char	*__function_name = "get_item_permission";
-	DB_RESULT	result;
-	DB_ROW		row;
-	int		perm = PERM_DENY;
-	zbx_uint64_t	hostid;
+	const char		*__function_name = "get_item_permission";
+	DB_RESULT		result;
+	DB_ROW			row;
+	int			perm = PERM_DENY;
+	zbx_vector_uint64_t	hostgroupids;
+	zbx_uint64_t		hostgroupid;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __function_name);
 
-	result = DBselect("select hostid from items where itemid=" ZBX_FS_UI64, itemid);
+	zbx_vector_uint64_create(&hostgroupids);
+	zbx_vector_uint64_sort(&hostgroupids, ZBX_DEFAULT_UINT64_COMPARE_FUNC);
 
-	if (NULL != (row = DBfetch(result)))
+	if (USER_TYPE_SUPER_ADMIN == get_user_type(userid))
 	{
-		ZBX_STR2UINT64(hostid, row[0]);
-		perm = get_host_permission(userid, hostid);
+		perm = PERM_READ_WRITE;
+		goto out;
+	}
+
+	result = DBselect(
+			"select hg.groupid from items i"
+			" join hosts_groups hg on hg.hostid=i.hostid"
+			" where i.itemid=" ZBX_FS_UI64,
+			itemid);
+
+	while (NULL != (row = DBfetch(result)))
+	{
+		ZBX_STR2UINT64(hostgroupid, row[0]);
+		zbx_vector_uint64_append(&hostgroupids, hostgroupid);
 	}
 	DBfree_result(result);
+
+	perm = get_hostgroups_permission(userid, &hostgroupids);
+out:
+	zbx_vector_uint64_destroy(&hostgroupids);
 
 	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%s", __function_name, zbx_permission_string(perm));
 
@@ -254,7 +394,7 @@ static void	add_user_msg(zbx_uint64_t userid, zbx_uint64_t mediatypeid, ZBX_USER
 			if (p->userid == userid && p->ackid == ackid && 0 == strcmp(p->subject, subject) &&
 					0 == strcmp(p->message, message) && 0 != p->mediatypeid)
 			{
-				*pnext = p->next;
+				*pnext = (ZBX_USER_MSG *)p->next;
 
 				zbx_free(p->subject);
 				zbx_free(p->message);
@@ -265,7 +405,7 @@ static void	add_user_msg(zbx_uint64_t userid, zbx_uint64_t mediatypeid, ZBX_USER
 		}
 	}
 
-	for (p = *user_msg; NULL != p; p = p->next)
+	for (p = *user_msg; NULL != p; p = (ZBX_USER_MSG *)p->next)
 	{
 		if (p->userid == userid && p->ackid == ackid && 0 == strcmp(p->subject, subject) &&
 				0 == strcmp(p->message, message) &&
@@ -277,7 +417,7 @@ static void	add_user_msg(zbx_uint64_t userid, zbx_uint64_t mediatypeid, ZBX_USER
 
 	if (NULL == p)
 	{
-		p = zbx_malloc(p, sizeof(ZBX_USER_MSG));
+		p = (ZBX_USER_MSG *)zbx_malloc(p, sizeof(ZBX_USER_MSG));
 
 		p->userid = userid;
 		p->mediatypeid = mediatypeid;
@@ -295,13 +435,10 @@ static void	add_user_msg(zbx_uint64_t userid, zbx_uint64_t mediatypeid, ZBX_USER
 static void	add_object_msg(zbx_uint64_t actionid, zbx_uint64_t operationid, zbx_uint64_t mediatypeid,
 		ZBX_USER_MSG **user_msg, const char *subject, const char *message, const DB_EVENT *event,
 		const DB_EVENT *r_event, const DB_ACKNOWLEDGE *ack, int macro_type)
-
 {
 	const char	*__function_name = "add_object_msg";
 	DB_RESULT	result;
 	DB_ROW		row;
-	zbx_uint64_t	userid;
-	char		*subject_dyn, *message_dyn;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __function_name);
 
@@ -318,9 +455,12 @@ static void	add_object_msg(zbx_uint64_t actionid, zbx_uint64_t operationid, zbx_
 
 	while (NULL != (row = DBfetch(result)))
 	{
+		zbx_uint64_t	userid;
+		char		*subject_dyn, *message_dyn;
+
 		ZBX_STR2UINT64(userid, row[0]);
 
-		/* exclude acknowledgment author from the recipient list */
+		/* exclude acknowledgement author from the recipient list */
 		if (NULL != ack && ack->userid == userid)
 			continue;
 
@@ -330,7 +470,7 @@ static void	add_object_msg(zbx_uint64_t actionid, zbx_uint64_t operationid, zbx_
 		switch (event->object)
 		{
 			case EVENT_OBJECT_TRIGGER:
-				if (PERM_READ > get_trigger_permission(userid, event->objectid))
+				if (PERM_READ > get_trigger_permission(userid, event))
 					continue;
 				break;
 			case EVENT_OBJECT_ITEM:
@@ -364,7 +504,8 @@ static void	add_object_msg(zbx_uint64_t actionid, zbx_uint64_t operationid, zbx_
  * Function: add_sentusers_msg                                                *
  *                                                                            *
  * Purpose: adds message to be sent to all recipients of messages previously  *
- *          generated by the same action and event                            *
+ *          generated by action operations or acknowledgement operations,     *
+ *          which is related with an event or recovery event                  *
  *                                                                            *
  * Parameters: user_msg - [IN/OUT] the message list                           *
  *             actionid - [IN] the action identifier                          *
@@ -372,6 +513,7 @@ static void	add_object_msg(zbx_uint64_t actionid, zbx_uint64_t operationid, zbx_
  *             r_event  - [IN] the recover event (optional, can be NULL)      *
  *             subject  - [IN] the message subject                            *
  *             message  - [IN] the message body                               *
+ *             ack      - [IN] the acknowledge (optional, can be NULL)        *
  *                                                                            *
  ******************************************************************************/
 static void	add_sentusers_msg(ZBX_USER_MSG **user_msg, zbx_uint64_t actionid, const DB_EVENT *event,
@@ -382,7 +524,6 @@ static void	add_sentusers_msg(ZBX_USER_MSG **user_msg, zbx_uint64_t actionid, co
 	DB_RESULT	result;
 	DB_ROW		row;
 	zbx_uint64_t	userid, mediatypeid;
-	const DB_EVENT	*c_event;
 	int		message_type;
 	size_t		sql_alloc = 0, sql_offset = 0;
 
@@ -400,15 +541,11 @@ static void	add_sentusers_msg(ZBX_USER_MSG **user_msg, zbx_uint64_t actionid, co
 
 	if (NULL != r_event)
 	{
-		c_event = r_event;
 		message_type = MACRO_TYPE_MESSAGE_RECOVERY;
 		zbx_snprintf_alloc(&sql, &sql_alloc, &sql_offset, " or eventid=" ZBX_FS_UI64, r_event->eventid);
 	}
 	else
-	{
-		c_event = event;
 		message_type = MACRO_TYPE_MESSAGE_NORMAL;
-	}
 
 	zbx_chrcpy_alloc(&sql, &sql_alloc, &sql_offset, ')');
 
@@ -421,7 +558,7 @@ static void	add_sentusers_msg(ZBX_USER_MSG **user_msg, zbx_uint64_t actionid, co
 	{
 		ZBX_DBROW2UINT64(userid, row[0]);
 
-		/* exclude acknowledgment author from the recipient list */
+		/* exclude acknowledgement author from the recipient list */
 		if (NULL != ack && ack->userid == userid)
 			continue;
 
@@ -430,15 +567,15 @@ static void	add_sentusers_msg(ZBX_USER_MSG **user_msg, zbx_uint64_t actionid, co
 
 		ZBX_STR2UINT64(mediatypeid, row[1]);
 
-		switch (c_event->object)
+		switch (event->object)
 		{
 			case EVENT_OBJECT_TRIGGER:
-				if (PERM_READ > get_trigger_permission(userid, c_event->objectid))
+				if (PERM_READ > get_trigger_permission(userid, event))
 					continue;
 				break;
 			case EVENT_OBJECT_ITEM:
 			case EVENT_OBJECT_LLDRULE:
-				if (PERM_READ > get_item_permission(userid, c_event->objectid))
+				if (PERM_READ > get_item_permission(userid, event->objectid))
 					continue;
 				break;
 		}
@@ -502,11 +639,11 @@ static void	add_sentusers_ack_msg(ZBX_USER_MSG **user_msg, zbx_uint64_t actionid
 	{
 		ZBX_DBROW2UINT64(userid, row[0]);
 
-		/* exclude acknowledgment author from the recipient list */
+		/* exclude acknowledgement author from the recipient list */
 		if (ack->userid == userid)
 			continue;
 
-		if (SUCCEED != check_perm2system(userid) || PERM_READ > get_trigger_permission(userid, event->objectid))
+		if (SUCCEED != check_perm2system(userid) || PERM_READ > get_trigger_permission(userid, event))
 			continue;
 
 		subject_dyn = zbx_strdup(NULL, subject);
@@ -535,7 +672,7 @@ static void	flush_user_msg(ZBX_USER_MSG **user_msg, int esc_step, const DB_EVENT
 	while (NULL != *user_msg)
 	{
 		p = *user_msg;
-		*user_msg = (*user_msg)->next;
+		*user_msg = (ZBX_USER_MSG *)(*user_msg)->next;
 
 		add_message_alert(event, r_event, actionid, esc_step, p->userid, p->mediatypeid, p->subject,
 				p->message, p->ackid);
@@ -564,7 +701,7 @@ static void	add_command_alert(zbx_db_insert_t *db_insert, int alerts_num, zbx_ui
 	}
 
 	now = (int)time(NULL);
-	tmp = zbx_dsprintf(tmp, "%s:%s", host->host, NULL == command ? "" : command);
+	tmp = zbx_dsprintf(tmp, "%s:%s", host->host, ZBX_NULL2EMPTY_STR(command));
 
 	if (NULL == r_event)
 	{
@@ -760,7 +897,7 @@ static void	execute_commands(const DB_EVENT *event, const DB_EVENT *r_event, con
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __function_name);
 
-	buffer = zbx_malloc(buffer, buffer_alloc);
+	buffer = (char *)zbx_malloc(buffer, buffer_alloc);
 
 	/* get hosts operation's hosts */
 
@@ -906,6 +1043,8 @@ static void	execute_commands(const DB_EVENT *event, const DB_EVENT *r_event, con
 				zbx_vector_uint64_append(&executed_on_hosts, host.hostid);
 			}
 		}
+		else
+			zbx_strlcpy(host.host, "Zabbix server", sizeof(host.host));
 
 		alertid = DBget_maxid("alerts");
 
@@ -973,8 +1112,7 @@ static void	add_message_alert(const DB_EVENT *event, const DB_EVENT *r_event, zb
 
 	DB_RESULT	result;
 	DB_ROW		row;
-	int		now, severity, medias_num = 0, status, res;
-	char		error[MAX_STRING_LEN], *perror, *period = NULL;
+	int		now, priority, have_alerts = 0, res;
 	zbx_db_insert_t	db_insert;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __function_name);
@@ -984,39 +1122,48 @@ static void	add_message_alert(const DB_EVENT *event, const DB_EVENT *r_event, zb
 	if (0 == mediatypeid)
 	{
 		result = DBselect(
-				"select m.mediatypeid,m.sendto,m.severity,m.period,mt.status"
+				"select m.mediatypeid,m.sendto,m.severity,m.period,mt.status,m.active"
 				" from media m,media_type mt"
 				" where m.mediatypeid=mt.mediatypeid"
-					" and m.active=%d"
 					" and m.userid=" ZBX_FS_UI64,
-				MEDIA_STATUS_ACTIVE, userid);
+				userid);
 	}
 	else
 	{
 		result = DBselect(
-				"select m.mediatypeid,m.sendto,m.severity,m.period,mt.status"
+				"select m.mediatypeid,m.sendto,m.severity,m.period,mt.status,m.active"
 				" from media m,media_type mt"
 				" where m.mediatypeid=mt.mediatypeid"
-					" and m.active=%d"
 					" and m.userid=" ZBX_FS_UI64
 					" and m.mediatypeid=" ZBX_FS_UI64,
-				MEDIA_STATUS_ACTIVE, userid, mediatypeid);
+				userid, mediatypeid);
 	}
 
 	mediatypeid = 0;
+	priority = EVENT_SOURCE_TRIGGERS == event->source ? event->trigger.priority : TRIGGER_SEVERITY_NOT_CLASSIFIED;
 
 	while (NULL != (row = DBfetch(result)))
 	{
+		int		severity, status;
+		const char	*perror;
+		char		*period = NULL;
+
 		ZBX_STR2UINT64(mediatypeid, row[0]);
 		severity = atoi(row[2]);
 		period = zbx_strdup(period, row[3]);
 		substitute_simple_macros(NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &period,
 				MACRO_TYPE_COMMON, NULL, 0);
 
-		zabbix_log(LOG_LEVEL_DEBUG, "trigger severity:%d, media severity:%d, period:'%s'",
-				(int)event->trigger.priority, severity, period);
+		zabbix_log(LOG_LEVEL_DEBUG, "severity:%d, media severity:%d, period:'%s', userid:" ZBX_FS_UI64,
+				priority, severity, period, userid);
 
-		if (((1 << event->trigger.priority) & severity) == 0)
+		if (MEDIA_STATUS_DISABLED == atoi(row[5]))
+		{
+			zabbix_log(LOG_LEVEL_DEBUG, "will not send message (user media disabled)");
+			continue;
+		}
+
+		if (((1 << priority) & severity) == 0)
 		{
 			zabbix_log(LOG_LEVEL_DEBUG, "will not send message (severity)");
 			continue;
@@ -1040,11 +1187,12 @@ static void	add_message_alert(const DB_EVENT *event, const DB_EVENT *r_event, zb
 		else
 		{
 			status = ALERT_STATUS_FAILED;
-			perror = "Media type disabled";
+			perror = "Media type disabled.";
 		}
 
-		if (0 == medias_num++)
+		if (0 == have_alerts)
 		{
+			have_alerts = 1;
 			zbx_db_insert_prepare(&db_insert, "alerts", "alertid", "actionid", "eventid", "userid",
 					"clock", "mediatypeid", "sendto", "subject", "message", "status", "error",
 					"esc_step", "alerttype", "acknowledgeid",
@@ -1064,14 +1212,16 @@ static void	add_message_alert(const DB_EVENT *event, const DB_EVENT *r_event, zb
 					(int)ALERT_TYPE_MESSAGE, ackid);
 		}
 
+		zbx_free(period);
 	}
 
 	DBfree_result(result);
-	zbx_free(period);
 
 	if (0 == mediatypeid)
 	{
-		medias_num++;
+		char	error[MAX_STRING_LEN];
+
+		have_alerts = 1;
 
 		zbx_snprintf(error, sizeof(error), "No media defined for user.");
 
@@ -1093,7 +1243,7 @@ static void	add_message_alert(const DB_EVENT *event, const DB_EVENT *r_event, zb
 		}
 	}
 
-	if (0 != medias_num)
+	if (0 != have_alerts)
 	{
 		zbx_db_insert_autoincrement(&db_insert, "alertid");
 		zbx_db_insert_execute(&db_insert);
@@ -1115,8 +1265,6 @@ static void	add_message_alert(const DB_EVENT *event, const DB_EVENT *r_event, zb
  * Return value: SUCCEED - matches, FAIL - otherwise                          *
  *                                                                            *
  * Author: Alexei Vladishev                                                   *
- *                                                                            *
- * Comments:                                                                  *
  *                                                                            *
  ******************************************************************************/
 static int	check_operation_conditions(const DB_EVENT *event, zbx_uint64_t operationid, unsigned char evaltype)
@@ -1143,7 +1291,7 @@ static int	check_operation_conditions(const DB_EVENT *event, zbx_uint64_t operat
 	{
 		memset(&condition, 0, sizeof(condition));
 		condition.conditiontype	= (unsigned char)atoi(row[0]);
-		condition.operator = (unsigned char)atoi(row[1]);
+		condition.op = (unsigned char)atoi(row[1]);
 		condition.value = row[2];
 
 		switch (evaltype)
@@ -1579,10 +1727,6 @@ static void	escalation_execute_acknowledge_operations(const DB_EVENT *event, con
  *                                     of dependent trigger being in PROBLEM  *
  *                                     state,                                 *
  *                                 0 - otherwise                              *
- *             maintenance - [OUT] HOST_MAINTENANCE_STATUS_ON - if at least   *
- *                                 one of hosts used in expression is in      *
- *                                 maintenance mode,                          *
- *                                 HOST_MAINTENANCE_STATUS_OFF - otherwise    *
  *             error       - [OUT] message in case escalation is cancelled    *
  *                                                                            *
  * Return value: FAIL if dependent trigger is in PROBLEM state                *
@@ -1590,7 +1734,7 @@ static void	escalation_execute_acknowledge_operations(const DB_EVENT *event, con
  *                                                                            *
  ******************************************************************************/
 static int	check_escalation_trigger(zbx_uint64_t triggerid, unsigned char source, unsigned char *ignore,
-		unsigned char *maintenance, char **error)
+		char **error)
 {
 	DC_TRIGGER		trigger;
 	zbx_vector_uint64_t	functionids, itemids;
@@ -1624,8 +1768,8 @@ static int	check_escalation_trigger(zbx_uint64_t triggerid, unsigned char source
 
 	get_functionids(&functionids, trigger.expression_orig);
 
-	functions = zbx_malloc(functions, sizeof(DC_FUNCTION) * functionids.values_num);
-	errcodes = zbx_malloc(errcodes, sizeof(int) * functionids.values_num);
+	functions = (DC_FUNCTION *)zbx_malloc(functions, sizeof(DC_FUNCTION) * functionids.values_num);
+	errcodes = (int *)zbx_malloc(errcodes, sizeof(int) * functionids.values_num);
 
 	DCconfig_get_functions_by_functionids(functions, functionids.values, errcodes, functionids.values_num);
 
@@ -1641,12 +1785,10 @@ static int	check_escalation_trigger(zbx_uint64_t triggerid, unsigned char source
 	zbx_vector_uint64_sort(&itemids, ZBX_DEFAULT_UINT64_COMPARE_FUNC);
 	zbx_vector_uint64_uniq(&itemids, ZBX_DEFAULT_UINT64_COMPARE_FUNC);
 
-	items = zbx_malloc(items, sizeof(DC_ITEM) * itemids.values_num);
-	errcodes = zbx_realloc(errcodes, sizeof(int) * itemids.values_num);
+	items = (DC_ITEM *)zbx_malloc(items, sizeof(DC_ITEM) * itemids.values_num);
+	errcodes = (int *)zbx_realloc(errcodes, sizeof(int) * itemids.values_num);
 
 	DCconfig_get_items_by_itemids(items, itemids.values, errcodes, itemids.values_num);
-
-	*maintenance = HOST_MAINTENANCE_STATUS_OFF;
 
 	for (i = 0; i < itemids.values_num; i++)
 	{
@@ -1666,9 +1808,6 @@ static int	check_escalation_trigger(zbx_uint64_t triggerid, unsigned char source
 			*error = zbx_dsprintf(*error, "host \"%s\" disabled.", items[i].host.host);
 			break;
 		}
-
-		if (HOST_MAINTENANCE_STATUS_ON == items[i].host.maintenance_status)
-			*maintenance = HOST_MAINTENANCE_STATUS_ON;
 	}
 
 	DCconfig_clean_items(items, errcodes, itemids.values_num);
@@ -1741,8 +1880,11 @@ static int	check_escalation(const DB_ESCALATION *escalation, const DB_ACTION *ac
 
 	if (EVENT_OBJECT_TRIGGER == event->object)
 	{
-		if (SUCCEED != check_escalation_trigger(escalation->triggerid, event->source, &skip, &maintenance, error))
+		if (SUCCEED != check_escalation_trigger(escalation->triggerid, event->source, &skip, error))
 			goto out;
+
+		maintenance = (ZBX_PROBLEM_SUPPRESSED_TRUE == event->suppressed ? HOST_MAINTENANCE_STATUS_ON :
+				HOST_MAINTENANCE_STATUS_OFF);
 	}
 	else if (EVENT_SOURCE_INTERNAL == event->source)
 	{
@@ -1774,7 +1916,7 @@ static int	check_escalation(const DB_ESCALATION *escalation, const DB_ACTION *ac
 	}
 
 	if (EVENT_SOURCE_TRIGGERS == action->eventsource &&
-			ACTION_MAINTENANCE_MODE_PAUSE == action->maintenance_mode &&
+			ACTION_PAUSE_SUPPRESSED_TRUE == action->pause_suppressed &&
 			HOST_MAINTENANCE_STATUS_ON == maintenance &&
 			escalation->acknowledgeid == 0)
 	{
@@ -1935,30 +2077,31 @@ static void	escalation_acknowledge(DB_ESCALATION *escalation, const DB_ACTION *a
 
 	DB_ROW		row;
 	DB_RESULT	result;
-	DB_ACKNOWLEDGE	ack;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s() escalationid:" ZBX_FS_UI64 " acknowledgeid:" ZBX_FS_UI64 " status:%s",
 			__function_name, escalation->escalationid, escalation->acknowledgeid,
 			zbx_escalation_status_string(escalation->status));
 
-	memset(&ack, 0, sizeof(ack));
-
 	result = DBselect(
-			"select message,userid,clock from acknowledges"
+			"select message,userid,clock,action,old_severity,new_severity from acknowledges"
 			" where acknowledgeid=" ZBX_FS_UI64,
 			escalation->acknowledgeid);
 
 	if (NULL != (row = DBfetch(result)))
 	{
-		ack.message = zbx_strdup(NULL, row[0]);
+		DB_ACKNOWLEDGE	ack;
+
+		ack.message = row[0];
 		ZBX_STR2UINT64(ack.userid, row[1]);
 		ack.clock = atoi(row[2]);
 		ack.acknowledgeid = escalation->acknowledgeid;
+		ack.action = atoi(row[3]);
+		ack.old_severity = atoi(row[4]);
+		ack.new_severity = atoi(row[5]);
 
 		escalation_execute_acknowledge_operations(event, r_event, action, &ack);
 	}
 
-	zbx_free(ack.message);
 	DBfree_result(result);
 
 	escalation->status = ESCALATION_STATUS_COMPLETED;
@@ -2024,7 +2167,7 @@ static void	escalation_update_diff(const DB_ESCALATION *escalation, zbx_escalati
  *                                                                            *
  * Function: add_ack_escalation_r_eventids                                    *
  *                                                                            *
- * Purpose: check if acknowledgment events of current escalation has related  *
+ * Purpose: check if acknowledgement events of current escalation has related *
  *          recovery events and add those recovery event IDs to array of      *
  *          event IDs if this escalation                                      *
  *                                                                            *
@@ -2033,7 +2176,7 @@ static void	escalation_update_diff(const DB_ESCALATION *escalation, zbx_escalati
  *             event_pairs - [OUT] the array of event ID and recovery event   *
  *                                 pairs                                      *
  *                                                                            *
- * Comments: additionally acknowledgment event IDs are mapped with related    *
+ * Comments: additionally acknowledgement event IDs are mapped with related   *
  *           recovery event IDs in get_db_eventid_r_eventid_pairs()           *
  *                                                                            *
  ******************************************************************************/
@@ -2060,7 +2203,8 @@ static void	add_ack_escalation_r_eventids(zbx_vector_ptr_t *escalations, zbx_vec
 	{
 		zbx_db_get_eventid_r_eventid_pairs(&ack_eventids, event_pairs, &r_eventids);
 
-		zbx_vector_uint64_append_array(eventids, r_eventids.values, r_eventids.values_num);
+		if (0 < r_eventids.values_num)
+			zbx_vector_uint64_append_array(eventids, r_eventids.values, r_eventids.values_num);
 	}
 
 	zbx_vector_uint64_destroy(&ack_eventids);
@@ -2242,7 +2386,7 @@ cancel_warning:
 		char	*sql = NULL;
 		size_t	sql_alloc = ZBX_KIBIBYTE, sql_offset = 0;
 
-		sql = zbx_malloc(sql, sql_alloc);
+		sql = (char *)zbx_malloc(sql, sql_alloc);
 
 		zbx_vector_ptr_sort(&diffs, ZBX_DEFAULT_UINT64_PTR_COMPARE_FUNC);
 
@@ -2287,7 +2431,7 @@ cancel_warning:
 			if (0 != (diff->flags & ZBX_DIFF_ESCALATION_UPDATE_STATUS))
 			{
 				zbx_snprintf_alloc(&sql, &sql_alloc, &sql_offset, "%cstatus=%d", separator,
-						diff->status);
+						(int)diff->status);
 			}
 
 			zbx_snprintf_alloc(&sql, &sql_alloc, &sql_offset, " where escalationid=" ZBX_FS_UI64 ";\n",
@@ -2395,7 +2539,8 @@ static int	process_escalations(int now, int *nextcheck, unsigned int escalation_
 			}
 			break;
 		case ZBX_ESCALATION_SOURCE_ITEM:
-			zbx_strcpy_alloc(&filter, &filter_alloc, &filter_offset, "itemid is not null");
+			zbx_strcpy_alloc(&filter, &filter_alloc, &filter_offset, "triggerid is null and"
+					" itemid is not null");
 			if (1 < CONFIG_ESCALATOR_FORKS)
 			{
 				zbx_snprintf_alloc(&filter, &filter_alloc, &filter_offset,

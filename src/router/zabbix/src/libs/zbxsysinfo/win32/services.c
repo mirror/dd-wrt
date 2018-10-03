@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -407,7 +407,6 @@ int	SERVICE_INFO(AGENT_REQUEST *request, AGENT_RESULT *result)
 {
 	SERVICE_STATUS		status;
 	SC_HANDLE		h_mgr, h_srv;
-	DWORD			sz = 0;
 	int			param_type;
 	char			*name, *param;
 	wchar_t			*wname, service_name[MAX_STRING_LEN];

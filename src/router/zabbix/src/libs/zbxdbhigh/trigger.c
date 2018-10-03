@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -122,13 +122,13 @@ static int	zbx_process_trigger(struct _DC_TRIGGER *trigger, zbx_vector_ptr_t *di
 				&trigger->timespec, new_value, trigger->description,
 				trigger->expression_orig, trigger->recovery_expression_orig,
 				trigger->priority, trigger->type, &trigger->tags,
-				trigger->correlation_mode, trigger->correlation_tag, trigger->value);
+				trigger->correlation_mode, trigger->correlation_tag, trigger->value, NULL);
 	}
 
 	if (0 != (event_flags & ZBX_FLAGS_TRIGGER_CREATE_INTERNAL_EVENT))
 	{
 		zbx_add_event(EVENT_SOURCE_INTERNAL, EVENT_OBJECT_TRIGGER, trigger->triggerid,
-				&trigger->timespec, new_state, NULL, NULL, NULL, 0, 0, NULL, 0, NULL, 0);
+				&trigger->timespec, new_state, NULL, NULL, NULL, 0, 0, NULL, 0, NULL, 0, new_error);
 	}
 
 	zbx_append_trigger_diff(diffs, trigger->triggerid, trigger->priority, flags, trigger->value, new_state,
@@ -144,16 +144,16 @@ out:
 
 /******************************************************************************
  *                                                                            *
- * Function: zbx_save_trigger_changes                                         *
+ * Function: zbx_db_save_trigger_changes                                      *
  *                                                                            *
  * Purpose: save the trigger changes to database                              *
  *                                                                            *
  * Parameters:trigger_diff - [IN] the trigger changeset                       *
  *                                                                            *
  ******************************************************************************/
-void	zbx_save_trigger_changes(const zbx_vector_ptr_t *trigger_diff)
+void	zbx_db_save_trigger_changes(const zbx_vector_ptr_t *trigger_diff)
 {
-	const char			*__function_name = "zbx_save_trigger_changes";
+	const char			*__function_name = "zbx_db_save_trigger_changes";
 
 	int				i;
 	char				*sql = NULL;
@@ -274,7 +274,7 @@ void	zbx_process_triggers(zbx_vector_ptr_t *triggers, zbx_vector_ptr_t *trigger_
 	zbx_vector_ptr_sort(triggers, zbx_trigger_topoindex_compare);
 
 	for (i = 0; i < triggers->values_num; i++)
-		zbx_process_trigger(triggers->values[i], trigger_diff);
+		zbx_process_trigger((struct _DC_TRIGGER *)triggers->values[i], trigger_diff);
 
 	zbx_vector_ptr_sort(trigger_diff, ZBX_DEFAULT_UINT64_PTR_COMPARE_FUNC);
 out:

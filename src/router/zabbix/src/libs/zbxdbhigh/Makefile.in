@@ -101,7 +101,8 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ax_lib_ibm_db2.m4 \
 	$(top_srcdir)/m4/libopenssl.m4 $(top_srcdir)/m4/libssh2.m4 \
 	$(top_srcdir)/m4/libunixodbc.m4 $(top_srcdir)/m4/libxml2.m4 \
 	$(top_srcdir)/m4/netsnmp.m4 $(top_srcdir)/m4/openipmi.m4 \
-	$(top_srcdir)/m4/pcre.m4 $(top_srcdir)/m4/resolv.m4 \
+	$(top_srcdir)/m4/pcre.m4 $(top_srcdir)/m4/pthread.m4 \
+	$(top_srcdir)/m4/resolv.m4 $(top_srcdir)/m4/zlib.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -120,8 +121,7 @@ am__v_AR_1 =
 libzbxdbhigh_a_AR = $(AR) $(ARFLAGS)
 libzbxdbhigh_a_LIBADD =
 am_libzbxdbhigh_a_OBJECTS = libzbxdbhigh_a-host.$(OBJEXT) \
-	libzbxdbhigh_a-odbc.$(OBJEXT) libzbxdbhigh_a-db.$(OBJEXT) \
-	libzbxdbhigh_a-dbschema.$(OBJEXT) \
+	libzbxdbhigh_a-db.$(OBJEXT) libzbxdbhigh_a-dbschema.$(OBJEXT) \
 	libzbxdbhigh_a-proxy.$(OBJEXT) \
 	libzbxdbhigh_a-discovery.$(OBJEXT) \
 	libzbxdbhigh_a-lld.$(OBJEXT) \
@@ -133,7 +133,8 @@ am_libzbxdbhigh_a_OBJECTS = libzbxdbhigh_a-host.$(OBJEXT) \
 	libzbxdbhigh_a-itservices.$(OBJEXT) \
 	libzbxdbhigh_a-template_item.$(OBJEXT) \
 	libzbxdbhigh_a-trigger.$(OBJEXT) \
-	libzbxdbhigh_a-event.$(OBJEXT)
+	libzbxdbhigh_a-event.$(OBJEXT) libzbxdbhigh_a-export.$(OBJEXT) \
+	libzbxdbhigh_a-maintenance.$(OBJEXT)
 libzbxdbhigh_a_OBJECTS = $(am_libzbxdbhigh_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -196,8 +197,10 @@ CTAGS = ctags
 am__DIST_COMMON = $(srcdir)/Makefile.in $(top_srcdir)/depcomp
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+AGENT_CONFIG_FILE = @AGENT_CONFIG_FILE@
 AGENT_LDFLAGS = @AGENT_LDFLAGS@
 AGENT_LIBS = @AGENT_LIBS@
+ALERT_SCRIPTS_PATH = @ALERT_SCRIPTS_PATH@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 ARCH = @ARCH@
@@ -210,6 +213,8 @@ CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
+CURL_SSL_CERT_LOCATION = @CURL_SSL_CERT_LOCATION@
+CURL_SSL_KEY_LOCATION = @CURL_SSL_KEY_LOCATION@
 CYGPATH_W = @CYGPATH_W@
 DB_CFLAGS = @DB_CFLAGS@
 DB_LDFLAGS = @DB_LDFLAGS@
@@ -221,6 +226,7 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+EXTERNAL_SCRIPTS_PATH = @EXTERNAL_SCRIPTS_PATH@
 GNUTLS_CFLAGS = @GNUTLS_CFLAGS@
 GNUTLS_LDFLAGS = @GNUTLS_LDFLAGS@
 GNUTLS_LIBS = @GNUTLS_LIBS@
@@ -253,12 +259,16 @@ LIBOBJS = @LIBOBJS@
 LIBPCRE_CFLAGS = @LIBPCRE_CFLAGS@
 LIBPCRE_LDFLAGS = @LIBPCRE_LDFLAGS@
 LIBPCRE_LIBS = @LIBPCRE_LIBS@
+LIBPTHREAD_CFLAGS = @LIBPTHREAD_CFLAGS@
+LIBPTHREAD_LDFLAGS = @LIBPTHREAD_LDFLAGS@
+LIBPTHREAD_LIBS = @LIBPTHREAD_LIBS@
 LIBS = @LIBS@
 LIBXML2_CFLAGS = @LIBXML2_CFLAGS@
 LIBXML2_CONFIG = @LIBXML2_CONFIG@
 LIBXML2_LDFLAGS = @LIBXML2_LDFLAGS@
 LIBXML2_LIBS = @LIBXML2_LIBS@
 LIBXML2_VERSION = @LIBXML2_VERSION@
+LOAD_MODULE_PATH = @LOAD_MODULE_PATH@
 LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
 MBEDTLS_CFLAGS = @MBEDTLS_CFLAGS@
@@ -298,12 +308,14 @@ POSTGRESQL_CFLAGS = @POSTGRESQL_CFLAGS@
 POSTGRESQL_LDFLAGS = @POSTGRESQL_LDFLAGS@
 POSTGRESQL_LIBS = @POSTGRESQL_LIBS@
 POSTGRESQL_VERSION = @POSTGRESQL_VERSION@
+PROXY_CONFIG_FILE = @PROXY_CONFIG_FILE@
 PROXY_LDFLAGS = @PROXY_LDFLAGS@
 PROXY_LIBS = @PROXY_LIBS@
 RANLIB = @RANLIB@
 RESOLV_LIBS = @RESOLV_LIBS@
 SENDER_LDFLAGS = @SENDER_LDFLAGS@
 SENDER_LIBS = @SENDER_LIBS@
+SERVER_CONFIG_FILE = @SERVER_CONFIG_FILE@
 SERVER_LDFLAGS = @SERVER_LDFLAGS@
 SERVER_LIBS = @SERVER_LIBS@
 SET_MAKE = @SET_MAKE@
@@ -326,6 +338,9 @@ UNIXODBC_LIBS = @UNIXODBC_LIBS@
 VERSION = @VERSION@
 ZBXGET_LDFLAGS = @ZBXGET_LDFLAGS@
 ZBXGET_LIBS = @ZBXGET_LIBS@
+ZLIB_CFLAGS = @ZLIB_CFLAGS@
+ZLIB_LDFLAGS = @ZLIB_LDFLAGS@
+ZLIB_LIBS = @ZLIB_LIBS@
 _libcurl_config = @_libcurl_config@
 _libnetsnmp_config = @_libnetsnmp_config@
 abs_builddir = @abs_builddir@
@@ -382,7 +397,6 @@ top_srcdir = @top_srcdir@
 noinst_LIBRARIES = libzbxdbhigh.a
 libzbxdbhigh_a_SOURCES = \
 	host.c \
-	odbc.c \
 	db.c \
 	dbschema.c \
 	proxy.c \
@@ -397,9 +411,11 @@ libzbxdbhigh_a_SOURCES = \
 	template_item.c \
 	template.h \
 	trigger.c \
-	event.c
+	event.c \
+	export.c \
+	maintenance.c
 
-libzbxdbhigh_a_CFLAGS = -I@top_srcdir@/src/zabbix_server/ @UNIXODBC_CFLAGS@
+libzbxdbhigh_a_CFLAGS = -I@top_srcdir@/src/zabbix_server/
 all: all-am
 
 .SUFFIXES:
@@ -452,6 +468,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxdbhigh_a-dbschema.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxdbhigh_a-discovery.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxdbhigh_a-event.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxdbhigh_a-export.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxdbhigh_a-host.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxdbhigh_a-itservices.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxdbhigh_a-lld.Po@am__quote@
@@ -460,7 +477,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxdbhigh_a-lld_host.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxdbhigh_a-lld_item.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxdbhigh_a-lld_trigger.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxdbhigh_a-odbc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxdbhigh_a-maintenance.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxdbhigh_a-proxy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxdbhigh_a-template_item.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libzbxdbhigh_a-trigger.Po@am__quote@
@@ -494,20 +511,6 @@ libzbxdbhigh_a-host.obj: host.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='host.c' object='libzbxdbhigh_a-host.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxdbhigh_a_CFLAGS) $(CFLAGS) -c -o libzbxdbhigh_a-host.obj `if test -f 'host.c'; then $(CYGPATH_W) 'host.c'; else $(CYGPATH_W) '$(srcdir)/host.c'; fi`
-
-libzbxdbhigh_a-odbc.o: odbc.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxdbhigh_a_CFLAGS) $(CFLAGS) -MT libzbxdbhigh_a-odbc.o -MD -MP -MF $(DEPDIR)/libzbxdbhigh_a-odbc.Tpo -c -o libzbxdbhigh_a-odbc.o `test -f 'odbc.c' || echo '$(srcdir)/'`odbc.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxdbhigh_a-odbc.Tpo $(DEPDIR)/libzbxdbhigh_a-odbc.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='odbc.c' object='libzbxdbhigh_a-odbc.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxdbhigh_a_CFLAGS) $(CFLAGS) -c -o libzbxdbhigh_a-odbc.o `test -f 'odbc.c' || echo '$(srcdir)/'`odbc.c
-
-libzbxdbhigh_a-odbc.obj: odbc.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxdbhigh_a_CFLAGS) $(CFLAGS) -MT libzbxdbhigh_a-odbc.obj -MD -MP -MF $(DEPDIR)/libzbxdbhigh_a-odbc.Tpo -c -o libzbxdbhigh_a-odbc.obj `if test -f 'odbc.c'; then $(CYGPATH_W) 'odbc.c'; else $(CYGPATH_W) '$(srcdir)/odbc.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxdbhigh_a-odbc.Tpo $(DEPDIR)/libzbxdbhigh_a-odbc.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='odbc.c' object='libzbxdbhigh_a-odbc.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxdbhigh_a_CFLAGS) $(CFLAGS) -c -o libzbxdbhigh_a-odbc.obj `if test -f 'odbc.c'; then $(CYGPATH_W) 'odbc.c'; else $(CYGPATH_W) '$(srcdir)/odbc.c'; fi`
 
 libzbxdbhigh_a-db.o: db.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxdbhigh_a_CFLAGS) $(CFLAGS) -MT libzbxdbhigh_a-db.o -MD -MP -MF $(DEPDIR)/libzbxdbhigh_a-db.Tpo -c -o libzbxdbhigh_a-db.o `test -f 'db.c' || echo '$(srcdir)/'`db.c
@@ -704,6 +707,34 @@ libzbxdbhigh_a-event.obj: event.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='event.c' object='libzbxdbhigh_a-event.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxdbhigh_a_CFLAGS) $(CFLAGS) -c -o libzbxdbhigh_a-event.obj `if test -f 'event.c'; then $(CYGPATH_W) 'event.c'; else $(CYGPATH_W) '$(srcdir)/event.c'; fi`
+
+libzbxdbhigh_a-export.o: export.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxdbhigh_a_CFLAGS) $(CFLAGS) -MT libzbxdbhigh_a-export.o -MD -MP -MF $(DEPDIR)/libzbxdbhigh_a-export.Tpo -c -o libzbxdbhigh_a-export.o `test -f 'export.c' || echo '$(srcdir)/'`export.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxdbhigh_a-export.Tpo $(DEPDIR)/libzbxdbhigh_a-export.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='export.c' object='libzbxdbhigh_a-export.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxdbhigh_a_CFLAGS) $(CFLAGS) -c -o libzbxdbhigh_a-export.o `test -f 'export.c' || echo '$(srcdir)/'`export.c
+
+libzbxdbhigh_a-export.obj: export.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxdbhigh_a_CFLAGS) $(CFLAGS) -MT libzbxdbhigh_a-export.obj -MD -MP -MF $(DEPDIR)/libzbxdbhigh_a-export.Tpo -c -o libzbxdbhigh_a-export.obj `if test -f 'export.c'; then $(CYGPATH_W) 'export.c'; else $(CYGPATH_W) '$(srcdir)/export.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxdbhigh_a-export.Tpo $(DEPDIR)/libzbxdbhigh_a-export.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='export.c' object='libzbxdbhigh_a-export.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxdbhigh_a_CFLAGS) $(CFLAGS) -c -o libzbxdbhigh_a-export.obj `if test -f 'export.c'; then $(CYGPATH_W) 'export.c'; else $(CYGPATH_W) '$(srcdir)/export.c'; fi`
+
+libzbxdbhigh_a-maintenance.o: maintenance.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxdbhigh_a_CFLAGS) $(CFLAGS) -MT libzbxdbhigh_a-maintenance.o -MD -MP -MF $(DEPDIR)/libzbxdbhigh_a-maintenance.Tpo -c -o libzbxdbhigh_a-maintenance.o `test -f 'maintenance.c' || echo '$(srcdir)/'`maintenance.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxdbhigh_a-maintenance.Tpo $(DEPDIR)/libzbxdbhigh_a-maintenance.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='maintenance.c' object='libzbxdbhigh_a-maintenance.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxdbhigh_a_CFLAGS) $(CFLAGS) -c -o libzbxdbhigh_a-maintenance.o `test -f 'maintenance.c' || echo '$(srcdir)/'`maintenance.c
+
+libzbxdbhigh_a-maintenance.obj: maintenance.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxdbhigh_a_CFLAGS) $(CFLAGS) -MT libzbxdbhigh_a-maintenance.obj -MD -MP -MF $(DEPDIR)/libzbxdbhigh_a-maintenance.Tpo -c -o libzbxdbhigh_a-maintenance.obj `if test -f 'maintenance.c'; then $(CYGPATH_W) 'maintenance.c'; else $(CYGPATH_W) '$(srcdir)/maintenance.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libzbxdbhigh_a-maintenance.Tpo $(DEPDIR)/libzbxdbhigh_a-maintenance.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='maintenance.c' object='libzbxdbhigh_a-maintenance.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libzbxdbhigh_a_CFLAGS) $(CFLAGS) -c -o libzbxdbhigh_a-maintenance.obj `if test -f 'maintenance.c'; then $(CYGPATH_W) 'maintenance.c'; else $(CYGPATH_W) '$(srcdir)/maintenance.c'; fi`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique
@@ -907,6 +938,9 @@ uninstall-am:
 
 .PRECIOUS: Makefile
 
+
+@DBSCHEMA_TRUE@dbschema.c: $(top_srcdir)/create/src/schema.tmpl
+@DBSCHEMA_TRUE@	$(top_srcdir)/create/bin/gen_schema.pl c > dbschema.c
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

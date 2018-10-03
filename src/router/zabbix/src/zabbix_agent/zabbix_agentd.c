@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -24,7 +24,53 @@
 #include "log.h"
 #include "zbxconf.h"
 #include "zbxgetopt.h"
-#include "zbxself.h"
+#include "comms.h"
+
+char	*CONFIG_HOSTS_ALLOWED		= NULL;
+char	*CONFIG_HOSTNAME		= NULL;
+char	*CONFIG_HOSTNAME_ITEM		= NULL;
+char	*CONFIG_HOST_METADATA		= NULL;
+char	*CONFIG_HOST_METADATA_ITEM	= NULL;
+
+int	CONFIG_ENABLE_REMOTE_COMMANDS	= 0;
+int	CONFIG_LOG_REMOTE_COMMANDS	= 0;
+int	CONFIG_UNSAFE_USER_PARAMETERS	= 0;
+int	CONFIG_LISTEN_PORT		= ZBX_DEFAULT_AGENT_PORT;
+int	CONFIG_REFRESH_ACTIVE_CHECKS	= 120;
+char	*CONFIG_LISTEN_IP		= NULL;
+char	*CONFIG_SOURCE_IP		= NULL;
+int	CONFIG_LOG_LEVEL		= LOG_LEVEL_WARNING;
+
+int	CONFIG_BUFFER_SIZE		= 100;
+int	CONFIG_BUFFER_SEND		= 5;
+
+int	CONFIG_MAX_LINES_PER_SECOND	= 20;
+
+char	*CONFIG_LOAD_MODULE_PATH	= NULL;
+
+char	**CONFIG_ALIASES		= NULL;
+char	**CONFIG_LOAD_MODULE		= NULL;
+char	**CONFIG_USER_PARAMETERS	= NULL;
+#if defined(_WINDOWS)
+char	**CONFIG_PERF_COUNTERS		= NULL;
+#endif
+
+char	*CONFIG_USER			= NULL;
+
+/* TLS parameters */
+unsigned int	configured_tls_connect_mode = ZBX_TCP_SEC_UNENCRYPTED;
+unsigned int	configured_tls_accept_modes = ZBX_TCP_SEC_UNENCRYPTED;
+
+char	*CONFIG_TLS_CONNECT		= NULL;
+char	*CONFIG_TLS_ACCEPT		= NULL;
+char	*CONFIG_TLS_CA_FILE		= NULL;
+char	*CONFIG_TLS_CRL_FILE		= NULL;
+char	*CONFIG_TLS_SERVER_CERT_ISSUER	= NULL;
+char	*CONFIG_TLS_SERVER_CERT_SUBJECT	= NULL;
+char	*CONFIG_TLS_CERT_FILE		= NULL;
+char	*CONFIG_TLS_KEY_FILE		= NULL;
+char	*CONFIG_TLS_PSK_IDENTITY	= NULL;
+char	*CONFIG_TLS_PSK_FILE		= NULL;
 
 #ifndef _WINDOWS
 #	include "../libs/zbxnix/control.h"
@@ -56,13 +102,6 @@
 #include "../libs/zbxcrypto/tls.h"
 
 const char	*progname = NULL;
-
-/* default config file location */
-#ifdef _WINDOWS
-#	define DEFAULT_CONFIG_FILE	"C:\\zabbix_agentd.conf"
-#else
-#	define DEFAULT_CONFIG_FILE	SYSCONFDIR "/zabbix_agentd.conf"
-#endif
 
 /* application TITLE */
 const char	title_message[] = "zabbix_agentd"
@@ -140,6 +179,11 @@ const char	*help_message[] = {
 	"  -h --help                      Display this help message",
 	"  -V --version                   Display version number",
 	"",
+#ifndef _WINDOWS
+	"Default loadable module location:",
+	"  LoadModulePath                 \"" DEFAULT_LOAD_MODULE_PATH "\"",
+	"",
+#endif
 #ifdef _WINDOWS
 	"Example: zabbix_agentd -c C:\\zabbix\\zabbix_agentd.conf",
 #else
@@ -192,7 +236,7 @@ ZBX_THREAD_LOCAL unsigned char	process_type	= 255;	/* ZBX_PROCESS_TYPE_UNKNOWN *
 ZBX_THREAD_LOCAL int		process_num;
 ZBX_THREAD_LOCAL int		server_num	= 0;
 
-ZBX_THREAD_ACTIVECHK_ARGS	*CONFIG_ACTIVE_ARGS = NULL;
+static ZBX_THREAD_ACTIVECHK_ARGS	*CONFIG_ACTIVE_ARGS = NULL;
 
 int	CONFIG_ALERTER_FORKS		= 0;
 int	CONFIG_DISCOVERER_FORKS		= 0;
@@ -522,10 +566,10 @@ static void	set_defaults(void)
 
 #ifndef _WINDOWS
 	if (NULL == CONFIG_LOAD_MODULE_PATH)
-		CONFIG_LOAD_MODULE_PATH = zbx_strdup(CONFIG_LOAD_MODULE_PATH, LIBDIR "/modules");
+		CONFIG_LOAD_MODULE_PATH = zbx_strdup(CONFIG_LOAD_MODULE_PATH, DEFAULT_LOAD_MODULE_PATH);
 
 	if (NULL == CONFIG_PID_FILE)
-		CONFIG_PID_FILE = "/tmp/zabbix_agentd.pid";
+		CONFIG_PID_FILE = (char *)"/tmp/zabbix_agentd.pid";
 #endif
 	if (NULL == CONFIG_LOG_TYPE_STR)
 		CONFIG_LOG_TYPE_STR = zbx_strdup(CONFIG_LOG_TYPE_STR, ZBX_OPTION_LOGTYPE_FILE);
@@ -622,7 +666,7 @@ static int	add_activechk_host(const char *host, unsigned short port)
 	}
 
 	CONFIG_ACTIVE_FORKS++;
-	CONFIG_ACTIVE_ARGS = zbx_realloc(CONFIG_ACTIVE_ARGS, sizeof(ZBX_THREAD_ACTIVECHK_ARGS) * CONFIG_ACTIVE_FORKS);
+	CONFIG_ACTIVE_ARGS = (ZBX_THREAD_ACTIVECHK_ARGS *)zbx_realloc(CONFIG_ACTIVE_ARGS, sizeof(ZBX_THREAD_ACTIVECHK_ARGS) * CONFIG_ACTIVE_FORKS);
 	CONFIG_ACTIVE_ARGS[CONFIG_ACTIVE_FORKS - 1].host = zbx_strdup(NULL, host);
 	CONFIG_ACTIVE_ARGS[CONFIG_ACTIVE_FORKS - 1].port = port;
 
@@ -878,7 +922,14 @@ int	MAIN_ZABBIX_ENTRY(int flags)
 		printf("Starting Zabbix Agent [%s]. Zabbix %s (revision %s).\nPress Ctrl+C to exit.\n\n",
 				CONFIG_HOSTNAME, ZABBIX_VERSION, ZABBIX_REVISION);
 	}
-
+#ifndef _WINDOWS
+	if (SUCCEED != zbx_locks_create(&error))
+	{
+		zbx_error("cannot create locks: %s", error);
+		zbx_free(error);
+		exit(EXIT_FAILURE);
+	}
+#endif
 	if (SUCCEED != zabbix_open_log(CONFIG_LOG_TYPE, CONFIG_LOG_LEVEL, CONFIG_LOG_FILE, &error))
 	{
 		zbx_error("cannot open log: %s", error);
@@ -965,7 +1016,7 @@ int	MAIN_ZABBIX_ENTRY(int flags)
 		exit(EXIT_FAILURE);
 	}
 #endif
-	threads = zbx_calloc(threads, threads_num, sizeof(ZBX_THREAD_HANDLE));
+	threads = (ZBX_THREAD_HANDLE *)zbx_calloc(threads, threads_num, sizeof(ZBX_THREAD_HANDLE));
 
 	zabbix_log(LOG_LEVEL_INFORMATION, "agent #0 started [main process]");
 
@@ -998,6 +1049,9 @@ int	MAIN_ZABBIX_ENTRY(int flags)
 				threads[i] = zbx_thread_start(active_checks_thread, thread_args);
 				break;
 		}
+#ifndef _WINDOWS
+		zbx_free(thread_args);
+#endif
 	}
 
 #ifdef _WINDOWS
@@ -1054,35 +1108,12 @@ void	zbx_free_service_resources(void)
 {
 	if (NULL != threads)
 	{
-		int		i;
-#if !defined(_WINDOWS)
-		sigset_t	set;
-
-		/* ignore SIGCHLD signals in order for zbx_sleep() to work */
-		sigemptyset(&set);
-		sigaddset(&set, SIGCHLD);
-		sigprocmask(SIG_BLOCK, &set, NULL);
-#else
-		/* wait for threads to finish first. although listener threads will never end */
-		WaitForMultipleObjectsEx(threads_num, threads, TRUE, 1000, FALSE);
-#endif
-		for (i = 0; i < threads_num; i++)
-		{
-			if (threads[i])
-				zbx_thread_kill(threads[i]);
-		}
-
-		for (i = 0; i < threads_num; i++)
-		{
-			if (threads[i])
-				zbx_thread_wait(threads[i]);
-
-			threads[i] = ZBX_THREAD_HANDLE_NULL;
-		}
-
+		zbx_threads_wait(threads, threads_num);	/* wait for all child processes to exit */
 		zbx_free(threads);
 	}
-
+#ifdef HAVE_PTHREAD_PROCESS_SHARED
+	zbx_locks_disable();
+#endif
 	free_metrics();
 	alias_list_free();
 	free_collector_data();

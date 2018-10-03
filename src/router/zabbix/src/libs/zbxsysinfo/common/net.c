@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -188,14 +188,20 @@ static int	dns_query(AGENT_REQUEST *request, AGENT_RESULT *result, int short_ans
 	char			*ip, zone[MAX_STRING_LEN], buffer[MAX_STRING_LEN], *zone_str, *param;
 	struct in_addr		inaddr;
 #ifndef _WINDOWS
+#if defined(HAVE_RES_NINIT) && !defined(_AIX)
+	/* It seems that on some AIX systems with no updates installed res_ninit() can */
+	/* corrupt stack (see ZBX-14559). Use res_init() on AIX. */
+	struct __res_state	res_state_local;
+#else	/* thread-unsafe resolver API */
 	int			saved_nscount = 0, saved_retrans, saved_retry;
 	unsigned long		saved_options;
 	struct sockaddr_in	saved_ns;
 #endif
+#endif
 	typedef struct
 	{
-		char	*name;
-		int	type;
+		const char	*name;
+		int		type;
 	}
 	resolv_querytype_t;
 
@@ -465,14 +471,22 @@ static int	dns_query(AGENT_REQUEST *request, AGENT_RESULT *result, int short_ans
 		pDnsRecord = pDnsRecord->pNext;
 	}
 #else	/* not _WINDOWS */
+#if defined(HAVE_RES_NINIT) && !defined(_AIX)
+	memset(&res_state_local, 0, sizeof(res_state_local));
+	if (-1 == res_ninit(&res_state_local))	/* initialize always, settings might have changed */
+#else
 	if (-1 == res_init())	/* initialize always, settings might have changed */
+#endif
 	{
 		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot initialize DNS subsystem: %s", zbx_strerror(errno)));
 		return SYSINFO_RET_FAIL;
 	}
 
-#if defined(HAVE_RES_MKQUERY) && defined(HAVE_RES_SEND) 
+#if defined(HAVE_RES_NINIT) && !defined(_AIX)
+	if (-1 == (res = res_nmkquery(&res_state_local, QUERY, zone, C_IN, type, NULL, 0, NULL, buf, sizeof(buf))))
+#else
 	if (-1 == (res = res_mkquery(QUERY, zone, C_IN, type, NULL, 0, NULL, buf, sizeof(buf))))
+#endif
 	{
 		SET_MSG_RESULT(result, zbx_dsprintf(NULL, "Cannot create DNS query: %s", zbx_strerror(errno)));
 		return SYSINFO_RET_FAIL;
@@ -486,6 +500,12 @@ static int	dns_query(AGENT_REQUEST *request, AGENT_RESULT *result, int short_ans
 			return SYSINFO_RET_FAIL;
 		}
 
+#if defined(HAVE_RES_NINIT) && !defined(_AIX)
+		res_state_local.nsaddr_list[0].sin_addr = inaddr;
+		res_state_local.nsaddr_list[0].sin_family = AF_INET;
+		res_state_local.nsaddr_list[0].sin_port = htons(ZBX_DEFAULT_DNS_PORT);
+		res_state_local.nscount = 1;
+#else	/* thread-unsafe resolver API */
 		memcpy(&saved_ns, &(_res.nsaddr_list[0]), sizeof(struct sockaddr_in));
 		saved_nscount = _res.nscount;
 
@@ -493,8 +513,23 @@ static int	dns_query(AGENT_REQUEST *request, AGENT_RESULT *result, int short_ans
 		_res.nsaddr_list[0].sin_family = AF_INET;
 		_res.nsaddr_list[0].sin_port = htons(ZBX_DEFAULT_DNS_PORT);
 		_res.nscount = 1;
+#endif
 	}
 
+#if defined(HAVE_RES_NINIT) && !defined(_AIX)
+	if (0 != use_tcp)
+		res_state_local.options |= RES_USEVC;
+
+	res_state_local.retrans = retrans;
+	res_state_local.retry = retry;
+
+	res = res_nsend(&res_state_local, buf, res, answer.buffer, sizeof(answer.buffer));
+#	ifdef HAVE_RES_NDESTROY
+	res_ndestroy(&res_state_local);
+#	else
+	res_nclose(&res_state_local);
+#	endif
+#else	/* thread-unsafe resolver API */
 	saved_options = _res.options;
 	saved_retrans = _res.retrans;
 	saved_retry = _res.retry;
@@ -506,11 +541,6 @@ static int	dns_query(AGENT_REQUEST *request, AGENT_RESULT *result, int short_ans
 	_res.retry = retry;
 
 	res = res_send(buf, res, answer.buffer, sizeof(answer.buffer));
-#else /* defined(HAVE_RES_QUERY) && defined(HAVE_RES_SEND) */
-	/* retrand and retry are ignored */
-	if (-1 == (res = res_query(zone, C_IN, type, answer.buffer, sizeof(answer.buffer))))
-	return SYSINFO_RET_FAIL;
-#endif 
 
 	_res.options = saved_options;
 	_res.retrans = saved_retrans;
@@ -522,6 +552,7 @@ static int	dns_query(AGENT_REQUEST *request, AGENT_RESULT *result, int short_ans
 		_res.nscount = saved_nscount;
 	}
 
+#endif
 	hp = (HEADER *)answer.buffer;
 
 	if (1 == short_answer)

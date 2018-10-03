@@ -1,10 +1,14 @@
 ## Process this file with automake to produce Makefile.in
 
+if DBSCHEMA
+dbschema.c: $(top_srcdir)/create/src/schema.tmpl
+	$(top_srcdir)/create/bin/gen_schema.pl c > dbschema.c
+endif
+
 noinst_LIBRARIES = libzbxdbhigh.a
 
 libzbxdbhigh_a_SOURCES = \
 	host.c \
-	odbc.c \
 	db.c \
 	dbschema.c \
 	proxy.c \
@@ -19,6 +23,8 @@ libzbxdbhigh_a_SOURCES = \
 	template_item.c \
 	template.h \
 	trigger.c \
-	event.c
+	event.c \
+	export.c \
+	maintenance.c
 
-libzbxdbhigh_a_CFLAGS = -I@top_srcdir@/src/zabbix_server/ @UNIXODBC_CFLAGS@
+libzbxdbhigh_a_CFLAGS = -I@top_srcdir@/src/zabbix_server/

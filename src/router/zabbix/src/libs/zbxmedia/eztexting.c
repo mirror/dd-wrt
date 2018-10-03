@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2017 Zabbix SIA
+** Copyright (C) 2001-2018 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -47,10 +47,10 @@ static size_t	WRITEFUNCTION2(void *ptr, size_t size, size_t nmemb, void *userdat
 	{
 		page.allocated = MAX(64, r_size);
 		page.offset = 0;
-		page.data = zbx_malloc(page.data, page.allocated);
+		page.data = (char *)zbx_malloc(page.data, page.allocated);
 	}
 
-	zbx_strncpy_alloc(&page.data, &page.allocated, &page.offset, ptr, r_size);
+	zbx_strncpy_alloc(&page.data, &page.allocated, &page.offset, (char *)ptr, r_size);
 
 	return r_size;
 }
@@ -102,11 +102,13 @@ int	send_ez_texting(const char *username, const char *password, const char *send
 
 	int		ret = FAIL;
 	int		max_message_len;
-	int		i, len, opt, err;
+	int		i, len;
 	char		*sendto_digits = NULL, *message_ascii = NULL;
 	char		*username_esc = NULL, *password_esc = NULL, *sendto_esc = NULL, *message_esc = NULL;
 	char		postfields[MAX_STRING_LEN];
 	CURL		*easy_handle = NULL;
+	CURLoption	opt;
+	CURLcode	err;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s() sendto:'%s' message:'%s'", __function_name, sendto, message);
 
@@ -216,7 +218,8 @@ int	send_ez_texting(const char *username, const char *password, const char *send
 			CURLE_OK != (err = curl_easy_setopt(easy_handle, opt = CURLOPT_URL, EZ_TEXTING_API_URL)) ||
 			CURLE_OK != (err = curl_easy_setopt(easy_handle, opt = CURLOPT_TIMEOUT, (long)EZ_TEXTING_TIMEOUT)))
 	{
-		zbx_snprintf(error, max_error_len, "Could not set cURL option %d: [%s]", opt, curl_easy_strerror(err));
+		zbx_snprintf(error, max_error_len, "Could not set cURL option %d: [%s]", (int)opt,
+				curl_easy_strerror(err));
 		goto clean;
 	}
 
@@ -225,7 +228,7 @@ int	send_ez_texting(const char *username, const char *password, const char *send
 		if (CURLE_OK != (err = curl_easy_setopt(easy_handle, opt = CURLOPT_INTERFACE, CONFIG_SOURCE_IP)))
 		{
 			zbx_snprintf(error, max_error_len, "Could not set cURL option %d: [%s]",
-					opt, curl_easy_strerror(err));
+					(int)opt, curl_easy_strerror(err));
 			goto clean;
 		}
 	}
