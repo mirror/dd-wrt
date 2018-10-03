@@ -328,4 +328,124 @@ static int check_position(int fd, u8 pos)
 }
 #endif
 
+void analyze_file(const char *filename)
+{
+	int fd, filekind;
+	struct stat sb;
+
+	/* accept '-' as an alias for stdin */
+	if (strcmp(filename, "-") == 0) {
+		analyze_stdin();
+		return;
+	}
+
+	print_line(0, "--- %s", filename);
+
+	/* stat check */
+	if (stat(filename, &sb) < 0) {
+		errore("Can't stat %.300s", filename);
+		return;
+	}
+	filekind = analyze_stat(&sb, filename);
+	if (filekind < 0)
+		return;
+
+	/* Mac OS type & creator code (if running on Mac OS X) */
+#ifdef USE_MACOS_TYPE
+	if (filekind == 0)
+		show_macos_type(filename);
+#endif
+
+	/* open for reading */
+	fd = open(filename, O_RDONLY);
+	if (fd < 0) {
+		errore("Can't open %.300s", filename);
+		return;
+	}
+
+	/* go for it */
+	analyze_fd(fd, filekind, filename);
+}
+
+void analyze_stdin(void)
+{
+	int fd = 0;
+	int filekind;
+	const char *filename = "stdin";
+	struct stat sb;
+
+	print_line(0, "--- Standard Input");
+
+	/* stat check */
+	if (fstat(fd, &sb) < 0) {
+		errore("Can't stat %.300s", filename);
+		return;
+	}
+	filekind = analyze_stat(&sb, filename);
+	if (filekind < 0)
+		return;
+
+	/* go for it */
+	analyze_fd(fd, filekind, filename);
+}
+
+int analyze_stat(struct stat *sb, const char *filename)
+{
+	int filekind = 0;
+	u8 filesize;
+	char *reason;
+
+	reason = NULL;
+	if (S_ISREG(sb->st_mode)) {
+		filesize = sb->st_size;
+		print_kind(filekind, filesize, 1);
+	} else if (S_ISBLK(sb->st_mode))
+		filekind = 1;
+	else if (S_ISCHR(sb->st_mode))
+		filekind = 2;
+	else if (S_ISDIR(sb->st_mode))
+		reason = "Is a directory";
+	else if (S_ISFIFO(sb->st_mode))
+		filekind = 3;
+#ifdef S_ISSOCK
+	else if (S_ISSOCK(sb->st_mode))
+		filekind = 4;
+#endif
+	else
+		reason = "Is an unknown kind of special file";
+
+	if (reason != NULL) {
+		error("%.300s: %s", filename, reason);
+		return -1;
+	}
+
+	return filekind;
+}
+
+void analyze_fd(int fd, int filekind, const char *filename)
+{
+	SOURCE *s;
+
+	/* (try to) guard against TTY character devices */
+	if (filekind == 2) {
+		if (isatty(fd)) {
+			error("%.300s: Is a TTY device", filename);
+			return;
+		}
+	}
+
+	/* create a source */
+	s = init_file_source(fd, filekind);
+
+	/* tell the user what it is */
+	if (filekind != 0)
+		print_kind(filekind, s->size, s->size_known);
+
+	/* now analyze it */
+	analyze_source(s, 0);
+
+	/* finish it up */
+	close_source(s);
+}
+
 /* EOF */

@@ -236,7 +236,6 @@ static int zfs_process_value(int level, char *name, size_t namelen, void *value,
 
 		print_line(level + 1, "ZFS Label: %s", nvs->nvs_string);
 
-
 		return 1;
 	} else if (strncmp(name, "guid", namelen) == 0 && sizeof(struct nvuint64) <= max_value_size) {
 		struct nvuint64 *nvu = value;
@@ -250,7 +249,6 @@ static int zfs_process_value(int level, char *name, size_t namelen, void *value,
 			return 0;
 
 		print_line(level + 1, "ZFS UUID_SUB: %" PRIu64, nvu_value);
-
 
 		return 1;
 	} else if (strncmp(name, "pool_guid", namelen) == 0 && sizeof(struct nvuint64) <= max_value_size) {
@@ -291,7 +289,6 @@ static void zfs_extract_guid_name(SECTION * section, int level, loff_t offset)
 	if (get_buffer(section, offset, left, (void **)&p) < left)
 		return;
 
-
 	nvl = (struct nvlist *)p;
 	nvp = &nvl->nvl_nvpair;
 	left -= (unsigned char *)nvp - p;	/* Already used up 12 bytes */
@@ -303,11 +300,9 @@ static void zfs_extract_guid_name(SECTION * section, int level, loff_t offset)
 		size_t max_value_size;
 		void *value;
 
-
 		/* nvpair fits in buffer and name fits in nvpair? */
 		if (nvp_size > left || namesize + sizeof(*nvp) > nvp_size)
 			break;
-
 
 		max_value_size = nvp_size - (namesize + sizeof(*nvp));
 		value = nvp->nvp_name + namesize;

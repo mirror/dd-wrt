@@ -423,7 +423,7 @@ int detect_bsd_loader(SECTION * section, int level)
 			}
 		}
 	}
-return found;
+	return found;
 }
 
 /*
