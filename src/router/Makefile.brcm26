@@ -41,6 +41,7 @@ endif
 
 export LINUXVER = $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/null)
 
+export KERNELRELEASE = $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/null)
 
 ifeq ($(PLATFORM),mipsel)
 export CROSS_COMPILE := mipsel-linux-
@@ -418,7 +419,7 @@ endif
 #	tar -cvf $(TARGETDIR)/lib/modules/modules.tar $(TARGETDIR)/lib/modules/$(LINUXVER)/* 
 #	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)
 
-	find $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KERNELRELEASE) \;
+	-find $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KERNELRELEASE) \;
 	-find $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/net -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KERNELRELEASE) \;
 	-find $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/extra -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KERNELRELEASE) \;
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel
