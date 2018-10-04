@@ -29,8 +29,9 @@
 #include "transaction.h"
 #include "list.h"
 #include "utils.h"
+#include "help.h"
 
-#define BUFFER_SIZE (64 * 1024)
+#define BUFFER_SIZE SZ_64K
 
 /* we write the mirror info to stdout unless they are dumping the data
  * to stdout
@@ -38,7 +39,7 @@
 static FILE *info_file;
 
 static int map_one_extent(struct btrfs_fs_info *fs_info,
-			  u64 *logical_ret, u64 *len_ret, int search_foward)
+			  u64 *logical_ret, u64 *len_ret, int search_forward)
 {
 	struct btrfs_path *path;
 	struct btrfs_key key;
@@ -66,22 +67,23 @@ static int map_one_extent(struct btrfs_fs_info *fs_info,
 
 again:
 	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
-	if ((search_foward && key.objectid < logical) ||
-	    (!search_foward && key.objectid > logical) ||
+	if ((search_forward && key.objectid < logical) ||
+	    (!search_forward && key.objectid > logical) ||
 	    (key.type != BTRFS_EXTENT_ITEM_KEY &&
 	     key.type != BTRFS_METADATA_ITEM_KEY)) {
-		if (!search_foward)
+		if (!search_forward)
 			ret = btrfs_previous_extent_item(fs_info->extent_root,
 							 path, 0);
 		else
-			ret = btrfs_next_item(fs_info->extent_root, path);
+			ret = btrfs_next_extent_item(fs_info->extent_root,
+						     path, 0);
 		if (ret)
 			goto out;
 		goto again;
 	}
 	logical = key.objectid;
 	if (key.type == BTRFS_METADATA_ITEM_KEY)
-		len = fs_info->tree_root->nodesize;
+		len = fs_info->nodesize;
 	else
 		len = key.offset;
 
@@ -108,9 +110,8 @@ static int __print_mapping_info(struct btrfs_fs_info *fs_info, u64 logical,
 		int i;
 
 		cur_len = len - cur_offset;
-		ret = btrfs_map_block(&fs_info->mapping_tree, READ,
-				logical + cur_offset, &cur_len,
-				&multi, mirror_num, NULL);
+		ret = btrfs_map_block(fs_info, READ, logical + cur_offset,
+				      &cur_len, &multi, mirror_num, NULL);
 		if (ret) {
 			fprintf(info_file,
 				"Error: fails to map mirror%d logical %llu: %s\n",
@@ -149,7 +150,7 @@ static int print_mapping_info(struct btrfs_fs_info *fs_info, u64 logical,
 	int mirror_num;
 	int ret = 0;
 
-	num_copies = btrfs_num_copies(&fs_info->mapping_tree, logical, len);
+	num_copies = btrfs_num_copies(fs_info, logical, len);
 	for (mirror_num = 1; mirror_num <= num_copies; mirror_num++) {
 		ret = __print_mapping_info(fs_info, logical, len, mirror_num);
 		if (ret < 0)
@@ -169,7 +170,7 @@ static int write_extent_content(struct btrfs_fs_info *fs_info, int out_fd,
 
 	while (cur_offset < length) {
 		cur_len = min_t(u64, length - cur_offset, BUFFER_SIZE);
-		ret = read_extent_data(fs_info->tree_root, buffer,
+		ret = read_extent_data(fs_info, buffer,
 				       logical + cur_offset, &cur_len, mirror);
 		if (ret < 0) {
 			fprintf(stderr,
@@ -190,7 +191,7 @@ static int write_extent_content(struct btrfs_fs_info *fs_info, int out_fd,
 	return ret;
 }
 
-static void print_usage(void) __attribute__((noreturn));
+__attribute__((noreturn))
 static void print_usage(void)
 {
 	printf("usage: btrfs-map-logical [options] device\n");
@@ -285,7 +286,7 @@ int main(int argc, char **argv)
 	}
 
 	if (bytes == 0)
-		bytes = root->nodesize;
+		bytes = root->fs_info->nodesize;
 	cur_logical = logical;
 	cur_len = bytes;
 

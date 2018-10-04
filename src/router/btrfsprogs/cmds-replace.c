@@ -37,7 +37,8 @@
 #include "disk-io.h"
 
 #include "commands.h"
-
+#include "help.h"
+#include "mkfs/common.h"
 
 static int print_replace_status(int fd, const char *path, int once);
 static char *time2string(char *buf, size_t s, __u64 t);
@@ -133,6 +134,7 @@ static int cmd_replace_start(int argc, char **argv)
 	u64 srcdev_size;
 	u64 dstdev_size;
 
+	optind = 0;
 	while ((c = getopt(argc, argv, "Brf")) != -1) {
 		switch (c) {
 		case 'B':
@@ -168,8 +170,8 @@ static int cmd_replace_start(int argc, char **argv)
 	ret = ioctl(fdmnt, BTRFS_IOC_DEV_REPLACE, &status_args);
 	if (ret < 0) {
 		fprintf(stderr,
-			"ERROR: ioctl(DEV_REPLACE_STATUS) failed on \"%s\": %s",
-			path, strerror(errno));
+			"ERROR: ioctl(DEV_REPLACE_STATUS) failed on \"%s\": %m",
+			path);
 		if (status_args.result != BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_RESULT)
 			fprintf(stderr, ", %s\n",
 				replace_dev_result2string(status_args.result));
@@ -193,8 +195,8 @@ static int cmd_replace_start(int argc, char **argv)
 	srcdev = argv[optind];
 	dstdev = canonicalize_path(argv[optind + 1]);
 	if (!dstdev) {
-		error("cannot canonicalize path '%s': %s",
-			argv[optind + 1], strerror(errno));
+		error("cannot canonicalize path '%s': %m",
+			argv[optind + 1]);
 		goto leave_with_error;
 	}
 
@@ -249,7 +251,7 @@ static int cmd_replace_start(int argc, char **argv)
 
 	fddstdev = open(dstdev, O_RDWR);
 	if (fddstdev < 0) {
-		error("unable to open %s: %s", dstdev, strerror(errno));
+		error("unable to open %s: %m", dstdev);
 		goto leave_with_error;
 	}
 	strncpy((char *)start_args.start.tgtdev_name, dstdev,
@@ -267,7 +269,7 @@ static int cmd_replace_start(int argc, char **argv)
 	dev_replace_handle_sigint(fdmnt);
 	if (!do_not_background) {
 		if (daemon(0, 0) < 0) {
-			error("backgrounding failed: %s", strerror(errno));
+			error("backgrounding failed: %m");
 			goto leave_with_error;
 		}
 	}
@@ -278,8 +280,8 @@ static int cmd_replace_start(int argc, char **argv)
 	if (do_not_background) {
 		if (ret < 0) {
 			fprintf(stderr,
-				"ERROR: ioctl(DEV_REPLACE_START) failed on \"%s\": %s",
-				path, strerror(errno));
+				"ERROR: ioctl(DEV_REPLACE_START) failed on \"%s\": %m",
+				path);
 			if (start_args.result != BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_RESULT)
 				fprintf(stderr, ", %s\n",
 					replace_dev_result2string(start_args.result));
@@ -332,6 +334,7 @@ static int cmd_replace_status(int argc, char **argv)
 	int ret;
 	DIR *dirstream = NULL;
 
+	optind = 0;
 	while ((c = getopt(argc, argv, "1")) != -1) {
 		switch (c) {
 		case '1':
@@ -373,8 +376,8 @@ static int print_replace_status(int fd, const char *path, int once)
 		args.result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_RESULT;
 		ret = ioctl(fd, BTRFS_IOC_DEV_REPLACE, &args);
 		if (ret < 0) {
-			fprintf(stderr, "ERROR: ioctl(DEV_REPLACE_STATUS) failed on \"%s\": %s",
-				path, strerror(errno));
+			fprintf(stderr, "ERROR: ioctl(DEV_REPLACE_STATUS) failed on \"%s\": %m",
+				path);
 			if (args.result != BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_RESULT)
 				fprintf(stderr, ", %s\n",
 					replace_dev_result2string(args.result));
@@ -497,10 +500,10 @@ static int cmd_replace_cancel(int argc, char **argv)
 	int ret;
 	int c;
 	int fd;
-	int e;
 	char *path;
 	DIR *dirstream = NULL;
 
+	optind = 0;
 	while ((c = getopt(argc, argv, "")) != -1) {
 		switch (c) {
 		case '?':
@@ -520,11 +523,10 @@ static int cmd_replace_cancel(int argc, char **argv)
 	args.cmd = BTRFS_IOCTL_DEV_REPLACE_CMD_CANCEL;
 	args.result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_RESULT;
 	ret = ioctl(fd, BTRFS_IOC_DEV_REPLACE, &args);
-	e = errno;
 	close_file_or_dir(fd, dirstream);
 	if (ret < 0) {
-		fprintf(stderr, "ERROR: ioctl(DEV_REPLACE_CANCEL) failed on \"%s\": %s",
-			path, strerror(e));
+		fprintf(stderr, "ERROR: ioctl(DEV_REPLACE_CANCEL) failed on \"%s\": %m",
+			path);
 		if (args.result != BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_RESULT)
 			fprintf(stderr, ", %s\n",
 				replace_dev_result2string(args.result));

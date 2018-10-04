@@ -75,6 +75,7 @@ struct extent_io_tree {
 	struct cache_tree cache;
 	struct list_head lru;
 	u64 cache_size;
+	u64 max_cache_size;
 };
 
 struct extent_state {
@@ -90,13 +91,14 @@ struct extent_buffer {
 	struct cache_extent cache_node;
 	u64 start;
 	u64 dev_bytenr;
-	u32 len;
 	struct extent_io_tree *tree;
 	struct list_head lru;
 	struct list_head recow;
+	u32 len;
 	int refs;
 	u32 flags;
 	int fd;
+	struct btrfs_fs_info *fs_info;
 	char data[] __attribute__((aligned(8)));
 };
 
@@ -106,19 +108,17 @@ static inline void extent_buffer_get(struct extent_buffer *eb)
 }
 
 void extent_io_tree_init(struct extent_io_tree *tree);
+void extent_io_tree_init_cache_max(struct extent_io_tree *tree,
+				   u64 max_cache_size);
 void extent_io_tree_cleanup(struct extent_io_tree *tree);
-int set_extent_bits(struct extent_io_tree *tree, u64 start,
-		    u64 end, int bits, gfp_t mask);
-int clear_extent_bits(struct extent_io_tree *tree, u64 start,
-		      u64 end, int bits, gfp_t mask);
+int set_extent_bits(struct extent_io_tree *tree, u64 start, u64 end, int bits);
+int clear_extent_bits(struct extent_io_tree *tree, u64 start, u64 end, int bits);
 int find_first_extent_bit(struct extent_io_tree *tree, u64 start,
 			  u64 *start_ret, u64 *end_ret, int bits);
 int test_range_bit(struct extent_io_tree *tree, u64 start, u64 end,
 		   int bits, int filled);
-int set_extent_dirty(struct extent_io_tree *tree, u64 start,
-		     u64 end, gfp_t mask);
-int clear_extent_dirty(struct extent_io_tree *tree, u64 start,
-		       u64 end, gfp_t mask);
+int set_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end);
+int clear_extent_dirty(struct extent_io_tree *tree, u64 start, u64 end);
 static inline int set_extent_buffer_uptodate(struct extent_buffer *eb)
 {
 	eb->flags |= EXTENT_UPTODATE;
@@ -146,10 +146,11 @@ struct extent_buffer *find_extent_buffer(struct extent_io_tree *tree,
 					 u64 bytenr, u32 blocksize);
 struct extent_buffer *find_first_extent_buffer(struct extent_io_tree *tree,
 					       u64 start);
-struct extent_buffer *alloc_extent_buffer(struct extent_io_tree *tree,
+struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
 					  u64 bytenr, u32 blocksize);
 struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src);
 void free_extent_buffer(struct extent_buffer *eb);
+void free_extent_buffer_nocache(struct extent_buffer *eb);
 int read_extent_from_disk(struct extent_buffer *eb,
 			  unsigned long offset, unsigned long len);
 int write_extent_to_disk(struct extent_buffer *eb);

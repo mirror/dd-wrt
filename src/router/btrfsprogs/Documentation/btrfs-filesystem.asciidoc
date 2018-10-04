@@ -3,7 +3,7 @@ btrfs-filesystem(8)
 
 NAME
 ----
-btrfs-filesystem - command group of btrfs that usually work on the whole filesystem
+btrfs-filesystem - command group that primarily does work on the whole filesystems
 
 SYNOPSIS
 --------
@@ -14,7 +14,7 @@ DESCRIPTION
 *btrfs filesystem* is used to perform several whole filesystem level tasks,
 including all the regular filesystem operations like resizing, space stats,
 label setting/getting, and defragmentation. There are other whole filesystem
-taks like scrub or balance that are grouped in separate commands.
+tasks like scrub or balance that are grouped in separate commands.
 
 SUBCOMMAND
 ----------
@@ -53,8 +53,9 @@ not total size of filesystem.
 when the filesystem is full. Its 'total' size is dynamic based on the
 filesystem size, usually not larger than 512MiB, 'used' may fluctuate.
 +
-The global block reserve is accounted within Metadata. In case the filesystem
-metadata are exhausted, 'GlobalReserve/total + Metadata/used = Metadata/total'.
+The GlobalReserve is a portion of Metadata. In case the filesystem metadata is
+exhausted, 'GlobalReserve/total + Metadata/used = Metadata/total'. Otherwise
+there appears to be some unused space of Metadata.
 +
 `Options`
 +
@@ -80,7 +81,7 @@ show sizes in TiB, or TB with --si
 If conflicting options are passed, the last one takes precedence.
 
 *defragment* [options] <file>|<dir> [<file>|<dir>...]::
-Defragment file data on a mounted filesystem.
+Defragment file data on a mounted filesystem. Requires kernel 2.6.33 and newer.
 +
 If '-r' is passed, files in dir will be defragmented recursively.
 The start position and the number of bytes to defragment can be specified by
@@ -93,10 +94,10 @@ You can also turn on compression in defragment operations.
 +
 WARNING: Defragmenting with Linux kernel versions < 3.9 or ≥ 3.14-rc2 as well as
 with Linux stable kernel versions ≥ 3.10.31, ≥ 3.12.12 or ≥ 3.13.4 will break up
-the ref-links of COW data (for example files copied with `cp --reflink`,
+the reflinks of COW data (for example files copied with `cp --reflink`,
 snapshots or de-duplicated data).
 This may cause considerable increase of space usage depending on the broken up
-ref-links.
+reflinks.
 +
 NOTE: Directory arguments without '-r' do not defragment files recursively but will
 defragment certain internal trees (extent tree and the subvolume tree). This has been
@@ -112,7 +113,7 @@ KiB, MiB, GiB, TiB, PiB, or EiB, respectively (case does not matter).
 be verbose, print file names as they're submitted for defragmentation
 -c[<algo>]::::
 compress file contents while defragmenting. Optional argument selects the compression
-algorithm, 'zlib' (default) or 'lzo'. Currently it's not possible to select no
+algorithm, 'zlib' (default), 'lzo' or 'zstd'. Currently it's not possible to select no
 compression. See also section 'EXAMPLES'.
 -r::::
 defragment files recursively in given directories
@@ -120,7 +121,7 @@ defragment files recursively in given directories
 flush data for each file before going to the next file.
 +
 This will limit the amount of dirty data to current file, otherwise the amount
-cumulates from several files and will increase system load. This can also lead
+accumulates from several files and will increase system load. This can also lead
 to ENOSPC if there's too much dirty data to write and it's not possible to make
 the reservations for the new data (ie. how the COW design works).
 +
@@ -141,7 +142,7 @@ files, it will report a count of total bytes, and exclusive (not
 shared) bytes. We also calculate a 'set shared' value which is
 described below.
 +
-Each argument to 'btrfs fi du' will have a 'set shared' value
+Each argument to 'btrfs filesystem du' will have a 'set shared' value
 calculated for it. We define each 'set' as those files found by a
 recursive search of an argument. The 'set shared' value
 then is a sum of all shared space referenced by the set.
@@ -170,11 +171,11 @@ show sizes in GiB, or GB with --si.
 --tbytes::::
 show sizes in TiB, or TB with --si.
 
-*label* [<dev>|<mountpoint>] [<newlabel>]::
+*label* [<device>|<mountpoint>] [<newlabel>]::
 Show or update the label of a filesystem. This works on a mounted filesystem or
 a filesystem image.
 +
-The 'newlabel' argument is optional. Current label is printed if the the argument
+The 'newlabel' argument is optional. Current label is printed if the argument
 is omitted.
 +
 NOTE: the maximum allowable length shall be less than 256 chars and must not contain
@@ -196,7 +197,7 @@ If the prefix '+' or '-' is present the size is increased or decreased
 by the quantity 'size'.
 If no units are specified, bytes are assumed for 'size'.
 Optionally, the size parameter may be suffixed by one of the following
-units designators: \'K', \'M', \'G', \'T', \'P', or \'E', which represent
+unit designators: \'K', \'M', \'G', \'T', \'P', or \'E', which represent
 KiB, MiB, GiB, TiB, PiB, or EiB, respectively (case does not matter).
 +
 If 'max' is passed, the filesystem will occupy all available space on the
@@ -262,7 +263,7 @@ root user (due to use of restricted ioctl). For both there's a summary section
 with information about space usage:
 +
 -------------------------
-$ btrfs fi usage /path
+$ btrfs filesystem usage /path
 WARNING: cannot read detailed chunk info, RAID5/6 numbers will be incorrect, run as root
 Overall:
     Device size:                   1.82TiB
@@ -359,9 +360,9 @@ specify the devid though.
 
 *$ btrfs filesystem resize 1:max /path*
 
-Let's assume that devid 1 exists, the filesystem does not occupy the whole block
-device, eg. it has been enlarged and we wan the grow the filesystem. Simply using
-'max' as size we will achieve that.
+Let's assume that devid 1 exists and the filesystem does not occupy the whole
+block device, eg. it has been enlarged and we want to grow the filesystem. By
+simply using 'max' as size we will achieve that.
 
 NOTE: There are two ways to minimize the filesystem on a given device. The
 *btrfs inspect-internal min-dev-size* command, or iteratively shrink in steps.

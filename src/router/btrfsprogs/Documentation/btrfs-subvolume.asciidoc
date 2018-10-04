@@ -17,7 +17,7 @@ snapshots.
 SUBVOLUME AND SNAPSHOT
 ----------------------
 
-A subvolume is a part of filesystem with it's own and independent
+A subvolume is a part of filesystem with its own independent
 file/directory hierarchy. Subvolumes can share file extents. A snapshot is
 also subvolume, but with a given initial content of the original subvolume.
 
@@ -66,10 +66,13 @@ If <subvolume> is not a subvolume, btrfs returns an error but continues if
 there are more arguments to process.
 +
 The corresponding directory is removed instantly but the data blocks are
-removed later.  The deletion does not involve full commit by default due to
-performance reasons (as a consequence, the subvolume may appear again after a
-crash).  Use one of the '--commit' options to wait until the operation is safely
-stored on the media.
+removed later in the background. The command returns immediately. See `btrfs
+subvolume sync` how to wait until the subvolume gets completely removed.
++
+The deletion does not involve full transaction commit by default due to
+performance reasons.  As a consequence, the subvolume may appear again after a
+crash.  Use one of the '--commit' options to wait until the operation is
+safely stored on the device.
 +
 `Options`
 +
@@ -139,29 +142,37 @@ you can add \'\+' or \'-' in front of each items, \'+' means ascending,
 for --sort you can combine some items together by \',', just like
 --sort=+ogen,-gen,path,rootid.
 
-*set-default* <id> <path>::
-Set the subvolume of the filesystem <path> which is mounted as
-default.
+*set-default* [<subvolume>|<id> <path>]::
+Set the default subvolume for the (mounted) filesystem.
+
+Set the default subvolume for the (mounted) filesystem at <path>. This will hide
+the top-level subvolume (ie. the one mounted with 'subvol=/' or 'subvolid=5').
+Takes action on next mount.
 +
-The subvolume is identified by <id>, which is returned by the *subvolume list*
-command.
+There are two ways how to specify the subvolume, by <id> or by the <subvolume>
+path.
+The id can be obtained from *btrfs subvolume list*, *btrfs subvolume show* or
+*btrfs inspect-internal rootid*.
 
 *show* <path>::
 Show information of a given subvolume in the <path>.
 
 *snapshot* [-r] <source> <dest>|[<dest>/]<name>::
-Create a writable/readonly snapshot of the subvolume <source> with the
+Create a snapshot of the subvolume <source> with the
 name <name> in the <dest> directory.
 +
 If only <dest> is given, the subvolume will be named the basename of <source>.
 If <source> is not a subvolume, btrfs returns an error.
-If '-r' is given, the snapshot will be readonly.
++
+`Options`
++
+-r::::
+Make the new snapshot read only.
 
 *sync* <path> [subvolid...]::
-Wait until given subvolume(s) are completely removed from the filesystem
-after deletion. If no subvolume id is given, wait until all current  deletion
-requests are completed, but do not wait for subvolumes deleted meanwhile.
-The status of subvolume ids is checked periodically.
+Wait until given subvolume(s) are completely removed from the filesystem after
+deletion. If no subvolume id is given, wait until all current deletion requests
+are completed, but do not wait for subvolumes deleted in the meantime.
 +
 `Options`
 +

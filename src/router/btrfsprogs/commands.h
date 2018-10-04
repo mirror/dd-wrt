@@ -65,24 +65,10 @@ struct cmd_group {
 	const struct cmd_struct commands[];
 };
 
-/* btrfs.c */
-int prefixcmp(const char *str, const char *prefix);
-
 int handle_command_group(const struct cmd_group *grp, int argc,
 			 char **argv);
 
-/* help.c */
 extern const char * const generic_cmd_help_usage[];
-
-void usage(const char * const *usagestr) __attribute__((noreturn));
-void usage_command(const struct cmd_struct *cmd, int full, int err);
-void usage_command_group(const struct cmd_group *grp, int all, int err);
-void usage_command_group_short(const struct cmd_group *grp);
-
-void help_unknown_token(const char *arg, const struct cmd_group *grp) __attribute__((noreturn));
-void help_ambiguous_token(const char *arg, const struct cmd_group *grp) __attribute__((noreturn));
-
-void help_command_group(const struct cmd_group *grp, int argc, char **argv);
 
 extern const struct cmd_group subvolume_cmd_group;
 extern const struct cmd_group filesystem_cmd_group;
@@ -103,9 +89,16 @@ extern const char * const cmd_chunk_recover_usage[];
 extern const char * const cmd_super_recover_usage[];
 extern const char * const cmd_restore_usage[];
 extern const char * const cmd_rescue_usage[];
+extern const char * const cmd_inspect_dump_super_usage[];
+extern const char * const cmd_inspect_dump_tree_usage[];
+extern const char * const cmd_inspect_tree_stats_usage[];
+extern const char * const cmd_filesystem_du_usage[];
+extern const char * const cmd_filesystem_usage_usage[];
 
 int cmd_subvolume(int argc, char **argv);
 int cmd_filesystem(int argc, char **argv);
+int cmd_filesystem_du(int argc, char **argv);
+int cmd_filesystem_usage(int argc, char **argv);
 int cmd_balance(int argc, char **argv);
 int cmd_device(int argc, char **argv);
 int cmd_scrub(int argc, char **argv);
@@ -113,6 +106,9 @@ int cmd_check(int argc, char **argv);
 int cmd_chunk_recover(int argc, char **argv);
 int cmd_super_recover(int argc, char **argv);
 int cmd_inspect(int argc, char **argv);
+int cmd_inspect_dump_super(int argc, char **argv);
+int cmd_inspect_dump_tree(int argc, char **argv);
+int cmd_inspect_tree_stats(int argc, char **argv);
 int cmd_property(int argc, char **argv);
 int cmd_send(int argc, char **argv);
 int cmd_receive(int argc, char **argv);

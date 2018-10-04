@@ -33,17 +33,18 @@ Reporting bugs
 --------------
 
 There are several ways, each has its own specifics and audience that can give
-feedback or work on a fix.
+feedback or work on a fix. The following list is sorted in the order of
+preference:
 
+* [github issue tracker](https://github.com/kdave/btrfs-progs/issues)
+* to the mailing list *linux-btrfs@vger.kernel.org* -- (not required to
+  subscribe), beware that the mail might get overlooked in other traffic
+* IRC (irc.freenode.net #btrfs) -- good for discussions eg. if a bug is already
+  known, but reports could miss developers' attention
 * [bugzilla.kernel.org](https://bugzilla.kernel.org) -- (requires
   registration), set the product to Filesystems and component Btrfs, please put
   'btrfs-progs' into the subject so it's clear that it's not a kernel bug
   report
-* to the mailing list *linux-btrfs@vger.kernel.org* -- (not required to
-  subscribe), beware that the mail might get overlooked in other traffic
-* [github issue tracker](https://github.com/kdave/btrfs-sprogs/issues)
-* IRC (irc.freenode.net #btrfs) -- good for discussions eg. if a bug is already
-  known, but reports could miss developers' attention
 
 
 Development
@@ -70,7 +71,12 @@ the patches meet some criteria (often lacking in github contributions):
   effects of the bug or the fix, _how_ does an improvement help or the intended
   _usecase_
 * the **Signed-off-by** line: this documents who authored the change, you can read
-  more about the _The Developer's Certificate of Origin_ [here (chapter 11)](https://www.kernel.org/doc/Documentation/SubmittingPatches)
+  more about the
+  [The Developer's Certificate of Origin (chapter 11)](https://www.kernel.org/doc/html/latest/process/submitting-patches.html#sign-your-work-the-developer-s-certificate-of-origin)
+  * if you are not used to the signed-off style, your contributions won't be
+    rejected just because of it's missing, the _Author:_ tag will be added as a
+    substitute in order to allow contributions without much bothering with
+    formalities
 
 Documentation updates
 ---------------------

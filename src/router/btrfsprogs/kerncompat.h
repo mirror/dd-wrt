@@ -93,19 +93,28 @@ static inline void warning_trace(const char *assertion, const char *filename,
 {
 	if (!val)
 		return;
-	if (assertion)
-		fprintf(stderr,
-			"%s:%d: %s: Warning: assertion `%s` failed, value %ld\n",
-			filename, line, func, assertion, val);
-	else
-		fprintf(stderr,
-			"%s:%d: %s: Warning: assertion failed, value %ld.\n",
-			filename, line, func, val);
+	fprintf(stderr,
+		"%s:%d: %s: Warning: assertion `%s` failed, value %ld\n",
+		filename, line, func, assertion, val);
 #ifndef BTRFS_DISABLE_BACKTRACE
 	print_trace();
 #endif
 }
 
+static inline void bugon_trace(const char *assertion, const char *filename,
+			      const char *func, unsigned line, long val)
+{
+	if (!val)
+		return;
+	fprintf(stderr,
+		"%s:%d: %s: BUG_ON `%s` triggered, value %ld\n",
+		filename, line, func, assertion, val);
+#ifndef BTRFS_DISABLE_BACKTRACE
+	print_trace();
+#endif
+	abort();
+	exit(1);
+}
 
 #ifdef __CHECKER__
 #define __force    __attribute__((force))
@@ -285,32 +294,36 @@ static inline int IS_ERR_OR_NULL(const void *ptr)
 static inline void assert_trace(const char *assertion, const char *filename,
 			      const char *func, unsigned line, long val)
 {
-	if (!val)
+	if (val)
 		return;
-	warning_trace(assertion, filename, func, line, val);
+	fprintf(stderr,
+		"%s:%d: %s: Assertion `%s` failed, value %ld\n",
+		filename, line, func, assertion, val);
+#ifndef BTRFS_DISABLE_BACKTRACE
+	print_trace();
+#endif
 	abort();
 	exit(1);
 }
-
-#define BUG_ON(c) assert_trace(#c, __FILE__, __func__, __LINE__, (long)(c))
-#define WARN_ON(c) warning_trace(#c, __FILE__, __func__, __LINE__, (long)(c))
-#define	ASSERT(c) assert_trace(#c, __FILE__, __func__, __LINE__, (long)!(c))
-#define BUG() assert_trace(NULL, __FILE__, __func__, __LINE__, 1)
+#define	ASSERT(c) assert_trace(#c, __FILE__, __func__, __LINE__, (long)(c))
 #else
-#define BUG_ON(c) assert(!(c))
-#define WARN_ON(c) warning_trace(#c, __FILE__, __func__, __LINE__, (long)(c))
-#define ASSERT(c) assert(!(c))
-#define BUG() assert(0)
+#define ASSERT(c) assert(c)
 #endif
+
+#define BUG_ON(c) bugon_trace(#c, __FILE__, __func__, __LINE__, (long)(c))
+#define BUG() BUG_ON(1)
+#define WARN_ON(c) warning_trace(#c, __FILE__, __func__, __LINE__, (long)(c))
 
 #define container_of(ptr, type, member) ({                      \
         const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
 	        (type *)( (char *)__mptr - offsetof(type,member) );})
+#ifndef __bitwise
 #ifdef __CHECKER__
 #define __bitwise __bitwise__
 #else
 #define __bitwise
-#endif
+#endif /* __CHECKER__ */
+#endif	/* __bitwise */
 
 /* Alignment check */
 #define IS_ALIGNED(x, a)                (((x) & ((typeof(x))(a) - 1)) == 0)

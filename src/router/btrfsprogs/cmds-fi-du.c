@@ -40,6 +40,8 @@
 #include "rbtree.h"
 
 #include "interval_tree_generic.h"
+#include "help.h"
+#include "fsfeatures.h"
 
 static int summarize = 0;
 static unsigned unit_mode = UNITS_RAW;
@@ -401,6 +403,7 @@ static int du_walk_dir(struct du_dir_ctxt *ctxt, struct rb_root *shared_extents)
 						  shared_extents, &tot, &shr,
 						  0);
 				if (ret == -ENOTTY) {
+					ret = 0;
 					continue;
 				} else if (ret) {
 					fprintf(stderr,
@@ -430,7 +433,6 @@ static int du_add_file(const char *filename, int dirfd,
 	u64 file_total = 0;
 	u64 file_shared = 0;
 	u64 dir_set_shared = 0;
-	u64 subvol;
 	int fd;
 	DIR *dirstream = NULL;
 
@@ -447,7 +449,7 @@ static int du_add_file(const char *filename, int dirfd,
 	}
 
 	pathtmp = pathp;
-	if (pathp == path)
+	if (pathp == path || *(pathp - 1) == '/')
 		ret = sprintf(pathp, "%s", filename);
 	else
 		ret = sprintf(pathp, "/%s", filename);
@@ -459,16 +461,24 @@ static int du_add_file(const char *filename, int dirfd,
 		goto out;
 	}
 
-	ret = lookup_path_rootid(fd, &subvol);
-	if (ret)
-		goto out_close;
+	/*
+	 * If st.st_ino == BTRFS_EMPTY_SUBVOL_DIR_OBJECTID ==2, there is no any
+	 * related tree
+	 */
+	if (st.st_ino != BTRFS_EMPTY_SUBVOL_DIR_OBJECTID) {
+		u64 subvol;
 
-	if (inode_seen(st.st_ino, subvol))
-		goto out_close;
+		ret = lookup_path_rootid(fd, &subvol);
+		if (ret)
+			goto out_close;
 
-	ret = mark_inode_seen(st.st_ino, subvol);
-	if (ret)
-		goto out_close;
+		if (inode_seen(st.st_ino, subvol))
+			goto out_close;
+
+		ret = mark_inode_seen(st.st_ino, subvol);
+		if (ret)
+			goto out_close;
+	}
 
 	if (S_ISREG(st.st_mode)) {
 		ret = du_calc_file_space(fd, shared_extents, &file_total,
@@ -555,6 +565,7 @@ int cmd_filesystem_du(int argc, char **argv)
 
 	unit_mode = get_unit_mode_from_arg(&argc, argv, 1);
 
+	optind = 0;
 	while (1) {
 		static const struct option long_options[] = {
 			{ "summarize", no_argument, NULL, 's'},

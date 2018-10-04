@@ -1,5 +1,5 @@
 AC_INIT([btrfs-progs],
-	m4_esyscmd([./version.sh --configure]),
+	m4_flatten(m4_include([VERSION])),
 	[linux-btrfs@vger.kernel.org],,
 	[http://btrfs.wiki.kernel.org])
 
@@ -26,6 +26,7 @@ AC_CONFIG_SRCDIR([btrfs.c])
 AC_PREFIX_DEFAULT([/usr/local])
 
 AC_PROG_CC
+BTRFS_DETECT_CSTD
 AC_CANONICAL_HOST
 AC_C_CONST
 AC_C_VOLATILE
@@ -39,8 +40,11 @@ AC_CHECK_TOOL([AR], [ar])
 AC_PATH_PROG([RM], [rm], [rm])
 AC_PATH_PROG([RMDIR], [rmdir], [rmdir])
 
+
 AC_CHECK_FUNCS([openat], [],
 	[AC_MSG_ERROR([cannot find openat() function])])
+
+AC_CHECK_FUNCS([reallocarray])
 
 m4_ifndef([PKG_PROG_PKG_CONFIG],
   [m4_fatal([Could not locate the pkg-config autoconf
@@ -55,8 +59,8 @@ dnl
 dnl Calls pkg-config --static
 dnl
 AC_DEFUN([PKG_STATIC], [
-  if AC_RUN_LOG([pkg-config --exists --print-errors "$2"]); then
-    $1=`pkg-config --libs --static "$2"`
+  if AC_RUN_LOG([${PKG_CONFIG} --exists --print-errors "$2"]); then
+    $1=`${PKG_CONFIG} --libs --static "$2"`
     AC_SUBST([$1])
   else
     AC_MSG_ERROR([pkg-config description of $2, needed for static build, is not available])
@@ -88,17 +92,56 @@ AS_IF([test "x$enable_documentation" = xyes], [DISABLE_DOCUMENTATION=0], [DISABL
 AC_SUBST([DISABLE_DOCUMENTATION])
 
 dnl detect tools to build documentation
+ASCIIDOC_TOOL="none"
 if test "x$enable_documentation" = xyes; then
-	AC_PATH_PROG([ASCIIDOC], [asciidoc], [asciidoc])
-	AC_PATH_PROG([XMLTO], [xmlto], [xmlto])
+	AC_PATH_PROG([XMLTO], [xmlto])
+	if test -z "$XMLTO"; then
+		AC_MSG_ERROR([cannot find xmlto, cannot build documentation])
+	fi
+
 	AC_PATH_PROG([GZIP], [gzip], [gzip])
 	AC_PATH_PROG([MV], [mv], [mv])
 	AC_PROG_SED
+	AC_PATH_PROG([ASCIIDOC], [asciidoc])
+	AC_PATH_PROG([ASCIIDOCTOR], [asciidoctor])
+
+	dnl asciidoc is preferred
+	if test -n "$ASCIIDOC"; then
+		ASCIIDOC_TOOL="asciidoc"
+	else
+		if test -n "$ASCIIDOCTOR"; then
+			ASCIIDOC_TOOL="asciidoctor"
+		else
+			AC_MSG_ERROR([cannot find asciidoc or asciidoctor, cannot build documentation])
+		fi
+	fi
 fi
+AC_SUBST([ASCIIDOC_TOOL])
+
+AC_ARG_ENABLE([programs],
+	      AS_HELP_STRING([--disable-programs], [do not build utility programs]),
+	      [], [enable_programs=yes]
+)
+AS_IF([test "x$enable_programs" = xyes], [BUILD_PROGRAMS=1], [BUILD_PROGRAMS=0])
+AC_SUBST([BUILD_PROGRAMS])
+
+AC_ARG_ENABLE([shared],
+	      AS_HELP_STRING([--disable-shared], [do not build shared libraries]),
+	      [], [enable_shared=yes]
+)
+AS_IF([test "x$enable_shared" = xyes], [BUILD_SHARED_LIBRARIES=1], [BUILD_SHARED_LIBRARIES=0])
+AC_SUBST([BUILD_SHARED_LIBRARIES])
+
+AC_ARG_ENABLE([static],
+	      AS_HELP_STRING([--disable-static], [do not build static libraries]),
+	      [], [enable_static=yes]
+)
+AS_IF([test "x$enable_static" = xyes], [BUILD_STATIC_LIBRARIES=1], [BUILD_STATIC_LIBRARIES=0])
+AC_SUBST([BUILD_STATIC_LIBRARIES])
 
 AC_ARG_ENABLE([convert],
 	      AS_HELP_STRING([--disable-convert], [do not build btrfs-convert]),
-  [], [enable_convert=yes]
+  [], [enable_convert=$enable_programs]
 )
 
 AS_IF([test "x$enable_convert" = xyes], [DISABLE_BTRFSCONVERT=0], [DISABLE_BTRFSCONVERT=1])
@@ -106,7 +149,7 @@ AC_SUBST([DISABLE_BTRFSCONVERT])
 
 AC_ARG_WITH([convert],
 	    AS_HELP_STRING([[[]--with-convert[[=auto]]]], [built-in filesystems for convert (default: auto)
-supported (comma separated list): ext2]),
+supported (comma separated list): ext2,reiserfs]),
   [], [with_convert=auto]
 )
 
@@ -120,22 +163,31 @@ fi
 
 convertfs=
 BTRFSCONVERT_EXT2=0
+BTRFSCONVERT_REISERFS=0
 if test "x$enable_convert" = xyes; then
 	if test "x$with_convert" = "xauto" || echo "$with_convert" | grep -q "ext2"; then
-		PKG_CHECK_MODULES(EXT2FS, [ext2fs >= 1.42],,
-			[PKG_CHECK_MODULES(EXT2FS, [ext2fs],
-				[AC_DEFINE([HAVE_OLD_E2FSPROGS], [1],
-					  [E2fsprogs does not support BIGALLOC])]
-				)])
+		PKG_CHECK_MODULES(EXT2FS, [ext2fs])
 		PKG_CHECK_MODULES(COM_ERR, [com_err])
 		convertfs="${convertfs:+$convertfs,}ext2"
 		BTRFSCONVERT_EXT2=1
 	fi
+	if test "x$with_convert" = "xauto"; then
+		PKG_CHECK_MODULES(REISERFS, [reiserfscore >= 3.6.27],
+				  [BTRFSCONVERT_REISERFS=1],
+				  [BTRFSCONVERT_REISERFS=0])
+	elif echo "$with_convert" | grep -q "reiserfs"; then
+		PKG_CHECK_MODULES(REISERFS, [reiserfscore >= 3.6.27],
+				  [BTRFSCONVERT_REISERFS=1],[])
+	fi
+	if test "$BTRFSCONVERT_REISERFS" = 1; then
+		convertfs="${convertfs:+$convertfs,}reiserfs"
+	fi
 fi
 AC_SUBST([BTRFSCONVERT_EXT2])
+AC_SUBST([BTRFSCONVERT_REISERFS])
 
 # catch typos
-tmp=$(echo "$with_convert" | sed -e 's/auto//' | sed -e 's/ext2//' | sed -e 's/,\+/,/')
+tmp=$(echo "$with_convert" | sed -e 's/auto//' | sed -e 's/ext2//' | sed -e 's/reiserfs//' | sed -e 's/,\+//')
 if ! test "x$tmp" = "x"; then
 	AC_MSG_ERROR([unknown tokens for --with-convert: $tmp])
 fi
@@ -169,12 +221,39 @@ PKG_CHECK_MODULES(UUID, [uuid])
 PKG_CHECK_MODULES(ZLIB, [zlib])
 #PKG_STATIC(ZLIB_LIBS_STATIC, [zlib])
 
+AC_ARG_ENABLE([zstd],
+	AS_HELP_STRING([--disable-zstd], [build without zstd support]),
+	[], [enable_zstd=yes]
+)
+
+if test "x$enable_zstd" = xyes; then
+	PKG_CHECK_MODULES(ZSTD, [libzstd >= 1.0.0])
+	PKG_STATIC(ZSTD_LIBS_STATIC, [libzstd])
+fi
+
+AS_IF([test "x$enable_zstd" = xyes], [BTRFSRESTORE_ZSTD=1], [BTRFSRESTORE_ZSTD=0])
+AC_SUBST(BTRFSRESTORE_ZSTD)
+
+AC_ARG_ENABLE([python],
+	AS_HELP_STRING([--disable-python], [do not build libbtrfsutil Python bindings]),
+	[], [enable_python=$enable_shared]
+)
+
+if test "x$enable_python" = xyes; then
+	AM_PATH_PYTHON([3.4])
+	PKG_CHECK_MODULES(PYTHON, [python-${PYTHON_VERSION}])
+fi
+
+AS_IF([test "x$enable_python" = xyes], [PYTHON_BINDINGS=1], [PYTHON_BINDINGS=0])
+AC_SUBST(PYTHON_BINDINGS)
+AC_SUBST(PYTHON)
+
 # udev v190 introduced the btrfs builtin and a udev rule to use it.
 # Our udev rule gives us the friendly dm names but isn't required (or valid)
 # on earlier releases.
 UDEVDIR=
-if pkg-config udev --atleast-version 190; then
-	UDEVDIR="$(pkg-config udev --variable=udevdir)"
+if ${PKG_CONFIG} udev --atleast-version 190; then
+	UDEVDIR="$(${PKG_CONFIG} udev --variable=udevdir)"
 fi
 AC_SUBST(UDEVDIR)
 
@@ -198,7 +277,7 @@ AC_SUBST([LIBBTRFS_PATCHLEVEL])
 AC_CONFIG_HEADERS([config.h])
 
 AC_CONFIG_FILES([
-Makefile
+Makefile.inc
 Documentation/Makefile
 version.h
 ])
@@ -208,21 +287,27 @@ AC_OUTPUT
 AC_MSG_RESULT([
 	${PACKAGE_NAME} ${PACKAGE_VERSION}
 
-	prefix:            ${prefix}
-	exec prefix:       ${exec_prefix}
+	prefix:             ${prefix}
+	exec prefix:        ${exec_prefix}
 
-	bindir:            ${bindir}
-	libdir:            ${libdir}
-	includedir:        ${includedir}
+	bindir:             ${bindir}
+	libdir:             ${libdir}
+	includedir:         ${includedir}
 
-	compiler:          ${CC}
-	cflags:            ${CFLAGS}
-	ldflags:           ${LDFLAGS}
+	compiler:           ${CC}
+	cflags:             ${CFLAGS}
+	ldflags:            ${LDFLAGS}
 
-	documentation:     ${enable_documentation}
-	backtrace support: ${enable_backtrace}
-	btrfs-convert:     ${enable_convert} ${convertfs:+($convertfs)}
+	programs:           ${enable_programs}
+	shared libraries:   ${enable_shared}
+	static libraries:   ${enable_static}
+	documentation:      ${enable_documentation}
+	doc generator:      ${ASCIIDOC_TOOL}
+	backtrace support:  ${enable_backtrace}
+	btrfs-convert:      ${enable_convert} ${convertfs:+($convertfs)}
+	btrfs-restore zstd: ${enable_zstd}
+	Python bindings:    ${enable_python}
+	Python interpreter: ${PYTHON}
 
 	Type 'make' to compile.
 ])
-

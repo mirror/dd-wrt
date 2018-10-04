@@ -21,13 +21,8 @@ mount option. See section *MULTIPLE DEVICES* for more details.
 
 OPTIONS
 -------
-*-A|--alloc-start <offset>*::
-(An option to help debugging chunk allocator.)
-Specify the (physical) offset from the start of the device at which allocations
-start.  The default value is zero.
-
 *-b|--byte-count <size>*::
-Specify the size of the filesystem. If this option is not used,
+Specify the size of the filesystem. If this option is not used, then
 mkfs.btrfs uses the entire device space for the filesystem.
 
 *-d|--data <profile>*::
@@ -76,10 +71,10 @@ Alias for --nodesize. Deprecated.
 *-n|--nodesize <size>*::
 Specify the nodesize, the tree block size in which btrfs stores metadata. The
 default value is 16KiB (16384) or the page size, whichever is bigger. Must be a
-multiple of the sectorsize, but not larger than 64KiB (65536).  Leafsize always
-equals nodesize and the options are aliases.
+multiple of the sectorsize and a power of 2, but not larger than 64KiB (65536).
+Leafsize always equals nodesize and the options are aliases.
 +
-Smaller node size increases fragmentation but lead to higher b-trees which in
+Smaller node size increases fragmentation but leads to taller b-trees which in
 turn leads to lower locking contention. Higher node sizes give better packing
 and less fragmentation at the cost of more expensive memory operations while
 updating the metadata blocks.
@@ -105,7 +100,21 @@ Please see the mount option 'discard' for that in `btrfs`(5).
 
 *-r|--rootdir <rootdir>*::
 Populate the toplevel subvolume with files from 'rootdir'.  This does not
-require root permissions and does not mount the filesystem.
+require root permissions to write the new files or to mount the filesystem.
++
+NOTE: This option may enlarge the image or file to ensure it's big enough to
+contain the files from 'rootdir'. Since version 4.14.1 the filesystem size is
+not minimized. Please see option '--shrink' if you need that functionality.
+
+*--shrink*::
+Shrink the filesystem to its minimal size, only works with '--rootdir' option.
++
+If the destination is a regular file, this option will also truncate the
+file to the minimal size. Otherwise it will reduce the filesystem available
+space.  Extra space will not be usable unless the filesystem is mounted and
+resized using 'btrfs filesystem resize'.
++
+NOTE: prior to version 4.14.1, the shrinking was done automatically.
 
 *-O|--features <feature1>[,<feature2>...]*::
 A list of filesystem features turned on at mkfs time. Not all features are
@@ -134,6 +143,12 @@ Print the *mkfs.btrfs* version and exit.
 
 *--help*::
 Print help.
+
+*-A|--alloc-start <offset>*::
+*deprecated, will be removed*
+(An option to help debugging chunk allocator.)
+Specify the (physical) offset from the start of the device at which allocations
+start.  The default value is zero.
 
 SIZE UNITS
 ----------
@@ -166,7 +181,7 @@ root partition created with RAID1/10/5/6 profiles. The mount action can happen
 before all block devices are discovered. The waiting is usually done on the
 initramfs/initrd systems.
 
-As of kernel 4.9, RAID5/6 is still considered experimental and shouldn't be
+As of kernel 4.14, RAID5/6 is still considered experimental and shouldn't be
 employed for production use.
 
 FILESYSTEM FEATURES
@@ -281,9 +296,9 @@ The mkfs utility will let the user create a filesystem with profiles that write
 the logical blocks to 2 physical locations. Whether there are really 2
 physical copies highly depends on the underlying device type.
 
-For example, a SSD drive can remap the blocks internally to a single copy thus
+For example, a SSD drive can remap the blocks internally to a single copy--thus
 deduplicating them. This negates the purpose of increased redundancy and just
-wastes filesystem space without the expected level of redundancy.
+wastes filesystem space without providing the expected level of redundancy.
 
 The duplicated data/metadata may still be useful to statistically improve the
 chances on a device that might perform some internal optimizations. The actual
