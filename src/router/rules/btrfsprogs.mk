@@ -1,6 +1,29 @@
 btrfsprogs-configure: lzo
 	cd btrfsprogs && ./autogen.sh
-	cd btrfsprogs && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/btrfsprogs -I$(TOP)/$(ARCH)-uclibc/install/util-linux/usr/include -I$(TOP)/e2fsprogs/lib -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -I$(TOP)/zlib -I$(TOP)/lzo/include -DNEED_PRINTF" LDFLAGS="-L$(TOP)/zlib -L$(TOP)/$(ARCH)-uclibc/install/util-linux/usr/lib  -L$(TOP)/e2fsprogs/lib -L$(TOP)/lzo/src/.libs -lz  -ffunction-sections -fdata-sections -Wl,--gc-sections" CC="$(CC) $(COPTS)" --disable-backtrace --disable-documentation root_prefix=$(INSTALLDIR)/btrfsprogs  ZLIB_CFLAGS=" " ZLIB_LIBS="-lz" EXT2FS_CFLAGS=" " EXT2FS_LIBS="-lext2fs" COM_ERR_CFLAGS=" " COM_ERR_LIBS="-lcom_err" UUID_CFLAGS=" " UUID_LIBS="-luuid" BLKID_CFLAGS=" " BLKID_LIBS="-lblkid" BLKID_LIBS_STATIC="-lblkid"
+	cd btrfsprogs && ./configure --host=$(ARCH)-linux \
+		CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/btrfsprogs -I$(TOP)/$(ARCH)-uclibc/install/util-linux/usr/include -I$(TOP)/e2fsprogs/lib -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -I$(TOP)/zlib -I$(TOP)/lzo/include -DNEED_PRINTF -I$(TOP)/zstd/lib" \
+		LDFLAGS="-L$(TOP)/zlib -L$(TOP)/$(ARCH)-uclibc/install/util-linux/usr/lib  -L$(TOP)/e2fsprogs/lib -L$(TOP)/lzo/src/.libs -lz -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		CC="$(CC) $(COPTS)" \
+		--disable-static \
+		--enable-shared \
+		--disable-python \
+		--disable-backtrace \
+		--disable-documentation \
+		root_prefix=$(INSTALLDIR)/btrfsprogs \
+		ZLIB_CFLAGS=" " \
+		ZLIB_LIBS="-lz" \
+		EXT2FS_CFLAGS=" " \
+		EXT2FS_LIBS="-lext2fs" \
+		COM_ERR_CFLAGS=" " \
+		COM_ERR_LIBS="-lcom_err" \
+		UUID_CFLAGS=" " \
+		UUID_LIBS="-luuid" \
+		BLKID_CFLAGS=" " \
+		BLKID_LIBS="-lblkid" \
+		BLKID_LIBS_STATIC="-lblkid" \
+		ZSTD_CFLAGS="-I$(TOP)/zstd/lib" \
+		ZSTD_LIBS="-L$(TOP)/zstd/lib -lzstd"
+
 
 btrfsprogs: lzo util-linux
 	make -C util-linux
@@ -87,9 +110,11 @@ endif
 	-rm -rf $(INSTALLDIR)/btrfsprogs/usr/lib
 	-rm -rf $(INSTALLDIR)/btrfsprogs/usr/lib64
 	-rm -rf $(INSTALLDIR)/btrfsprogs/usr/share
+	rm -f $(INSTALLDIR)/btrfsprogs/usr/bin/btrfs-*
 	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
 	rm -rf $(INSTALLDIR)/util-linux/usr/bin
 	rm -rf $(INSTALLDIR)/util-linux/bin
+	rm -rf $(INSTALLDIR)/util-linux/etc
 	rm -rf $(INSTALLDIR)/util-linux/sbin
 	rm -rf $(INSTALLDIR)/util-linux/usr/share
 	rm -rf $(INSTALLDIR)/util-linux/usr/include
