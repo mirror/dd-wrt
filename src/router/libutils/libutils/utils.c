@@ -2034,7 +2034,7 @@ char *getUnmountedDrives(void)
 	while (dir && (file = readdir(dir))) {
 		char drv[128];
 		sprintf(drv, "/dev/%s", file->d_name);
-		if (!strncmp(file->d_name, "sd", 2) || !strncmp(file->d_name, "hd", 2) || !strncmp(file->d_name, "mmcblk", 6)) {
+		if (!strncmp(file->d_name, "sd", 2) || !strncmp(file->d_name, "hd", 2) || !strncmp(file->d_name, "md", 2) || !strncmp(file->d_name, "mmcblk", 6)) {
 			char var[64];
 			char *next;
 			if (mounts) {
