@@ -33,14 +33,14 @@
 #include "utils.h"
 #include "commands.h"
 #include "crc32c.h"
-#include "cmds-inspect-dump-super.h"
+#include "help.h"
 
 static int check_csum_sblock(void *sb, int csum_size)
 {
 	u8 result[BTRFS_CSUM_SIZE];
 	u32 crc = ~(u32)0;
 
-	crc = btrfs_csum_data(NULL, (char *)sb + BTRFS_CSUM_SIZE,
+	crc = btrfs_csum_data((char *)sb + BTRFS_CSUM_SIZE,
 				crc, BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
 	btrfs_csum_final(crc, result);
 
@@ -64,13 +64,21 @@ static void print_sys_chunk_array(struct btrfs_super_block *sb)
 	buf = malloc(sizeof(*buf) + sizeof(*sb));
 	if (!buf) {
 		error("not enough memory");
-		goto out;
+		return;
 	}
 	write_extent_buffer(buf, sb, 0, sizeof(*sb));
+	buf->len = sizeof(*sb);
 	array_size = btrfs_super_sys_array_size(sb);
 
 	array_ptr = sb->sys_chunk_array;
 	sb_array_offset = offsetof(struct btrfs_super_block, sys_chunk_array);
+
+	if (array_size > BTRFS_SYSTEM_CHUNK_ARRAY_SIZE) {
+		error("sys_array_size %u shouldn't exceed %u bytes",
+				array_size, BTRFS_SYSTEM_CHUNK_ARRAY_SIZE);
+		goto out;
+	}
+
 	cur_offset = 0;
 	item = 0;
 
@@ -110,7 +118,7 @@ static void print_sys_chunk_array(struct btrfs_super_block *sb)
 			len = btrfs_chunk_item_size(num_stripes);
 			if (cur_offset + len > array_size)
 				goto out_short_read;
-			print_chunk(buf, chunk);
+			print_chunk_item(buf, chunk);
 		} else {
 			error("unexpected item type %u in sys_array at offset %u",
 				(u32)key.type, cur_offset);
@@ -123,8 +131,8 @@ static void print_sys_chunk_array(struct btrfs_super_block *sb)
 		item++;
 	}
 
-	free(buf);
 out:
+	free(buf);
 	return;
 
 out_short_read:
@@ -215,7 +223,7 @@ static struct readable_flag_entry incompat_flags_array[] = {
 	DEF_INCOMPAT_FLAG_ENTRY(DEFAULT_SUBVOL),
 	DEF_INCOMPAT_FLAG_ENTRY(MIXED_GROUPS),
 	DEF_INCOMPAT_FLAG_ENTRY(COMPRESS_LZO),
-	DEF_INCOMPAT_FLAG_ENTRY(COMPRESS_LZOv2),
+	DEF_INCOMPAT_FLAG_ENTRY(COMPRESS_ZSTD),
 	DEF_INCOMPAT_FLAG_ENTRY(BIG_METADATA),
 	DEF_INCOMPAT_FLAG_ENTRY(EXTENDED_IREF),
 	DEF_INCOMPAT_FLAG_ENTRY(RAID56),
@@ -331,7 +339,10 @@ static void dump_superblock(struct btrfs_super_block *sb, int full)
 	printf("csum\t\t\t0x");
 	for (i = 0, p = sb->csum; i < csum_size; i++)
 		printf("%02x", p[i]);
-	if (check_csum_sblock(sb, csum_size))
+	if (csum_type != BTRFS_CSUM_TYPE_CRC32 ||
+	    csum_size != btrfs_csum_sizes[BTRFS_CSUM_TYPE_CRC32])
+		printf(" [UNKNOWN CSUM TYPE OR SIZE]");
+	else if (check_csum_sblock(sb, csum_size))
 		printf(" [match]");
 	else
 		printf(" [DON'T MATCH]");
@@ -388,8 +399,8 @@ static void dump_superblock(struct btrfs_super_block *sb, int full)
 	       (unsigned long long)btrfs_super_sectorsize(sb));
 	printf("nodesize\t\t%llu\n",
 	       (unsigned long long)btrfs_super_nodesize(sb));
-	printf("leafsize\t\t%llu\n",
-	       (unsigned long long)btrfs_super_leafsize(sb));
+	printf("leafsize (deprecated)\t\t%u\n",
+	       le32_to_cpu(sb->__unused_leafsize));
 	printf("stripesize\t\t%llu\n",
 	       (unsigned long long)btrfs_super_stripesize(sb));
 	printf("root_dir\t\t%llu\n",
@@ -464,7 +475,7 @@ static int load_and_dump_sb(char *filename, int fd, u64 sb_bytenr, int full,
 
 		error("failed to read the superblock on %s at %llu",
 				filename, (unsigned long long)sb_bytenr);
-		error("error = '%s', errno = %d", strerror(errno), errno);
+		error("error = '%m', errno = %d", errno);
 		return 1;
 	}
 	printf("superblock: bytenr=%llu, device=%s\n", sb_bytenr, filename);
@@ -510,8 +521,10 @@ int cmd_inspect_dump_super(int argc, char **argv)
 
 	while (1) {
 		int c;
+		enum { GETOPT_VAL_BYTENR = 257 };
 		static const struct option long_options[] = {
 			{"all", no_argument, NULL, 'a'},
+			{"bytenr", required_argument, NULL, GETOPT_VAL_BYTENR },
 			{"full", no_argument, NULL, 'f'},
 			{"force", no_argument, NULL, 'F'},
 			{"super", required_argument, NULL, 's' },
@@ -556,6 +569,11 @@ int cmd_inspect_dump_super(int argc, char **argv)
 			}
 			all = 0;
 			break;
+		case GETOPT_VAL_BYTENR:
+			arg = arg_strtou64(optarg);
+			sb_bytenr = arg;
+			all = 0;
+			break;
 		default:
 			usage(cmd_inspect_dump_super_usage);
 		}
@@ -568,7 +586,7 @@ int cmd_inspect_dump_super(int argc, char **argv)
 		filename = argv[i];
 		fd = open(filename, O_RDONLY);
 		if (fd < 0) {
-			error("cannot open %s: %s", filename, strerror(errno));
+			error("cannot open %s: %m", filename);
 			ret = 1;
 			goto out;
 		}

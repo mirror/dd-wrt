@@ -1,6 +1,39 @@
 #!/bin/bash
 # helpers for btrfs-convert tests
 
+# mount image of converted filesystem of a given type
+# $1: type of the filesystem
+run_check_mount_convert_dev()
+{
+	local fstype
+	local loop_opt
+
+	setup_root_helper
+
+	fstype="$1"
+	shift
+	if [ -z "$fstype" ]; then
+		_fail "Missing source filesystem type"
+	fi
+	if [ "$fstype" = 'btrfs' ]; then
+		_fail "Incorrect type for converted filesystem: btrfs"
+	fi
+
+	if [[ -b "$TEST_DEV" ]]; then
+		loop_opt=""
+	elif [[ -f "$TEST_DEV" ]]; then
+		loop_opt="-o loop"
+	else
+		_fail "Invalid \$TEST_DEV: $TEST_DEV"
+	fi
+
+	[[ -d "$TEST_MNT" ]] || {
+		_fail "Invalid \$TEST_MNT: $TEST_MNT"
+	}
+
+	run_check $SUDO_HELPER mount $loop_opt -t "$fstype" "$@" "$TEST_DEV" "$TEST_MNT"
+}
+
 populate_fs() {
 
         for dataset_type in 'small' 'hardlink' 'fast_symlink' 'brokenlink' 'perm' 'sparse' 'acls' 'fifo' 'slow_symlink'; do
@@ -17,22 +50,40 @@ convert_test_preamble() {
 	msg="$2"
 	shift 3
 	echo "    [TEST/conv]     $msg, btrfs" "${features:-defaults}"
-	echo "creating ext image with: $@" >> "$RESULTS"
+	echo "creating test image with: $@" >> "$RESULTS"
 }
 
 #  prepare TEST_DEV before conversion, create filesystem and mount it, image
 #  size is 512MB
-#  $@: free form, command to create the filesystem, with appended -F
+#  $1: type of the filesystem
+#  $2+: free form, command to create the filesystem, with appended -F
 convert_test_prep_fs() {
+	local fstype
+	local force
+	local mountopts
+
+	fstype="$1"
+	shift
 	# TEST_DEV not removed as the file might have special permissions, eg.
 	# when test image is on NFS and would not be writable for root
 	run_check truncate -s 0 "$TEST_DEV"
 	# 256MB is the smallest acceptable btrfs image.
 	run_check truncate -s 512M "$TEST_DEV"
-	run_check "$@" -F "$TEST_DEV"
+	force=
+	mountopts=
+	case "$fstype" in
+	ext[234])
+		force=-F ;;
+	reiserfs)
+		force=-ff
+		mountopts="-o acl,user_xattr,attrs" ;;
+	*)
+		_fail "unknown filesystem to convert: $fstype"
+	esac
+	run_check "$@" $force "$TEST_DEV"
 
 	# create a file to check btrfs-convert can convert regular file correct
-	run_check_mount_test_dev
+	run_check_mount_convert_dev "$fstype" $mountopts
 
 	# create a file inside the fs before convert, to make sure there is
 	# data covering btrfs backup superblock range (64M)
@@ -167,17 +218,31 @@ convert_test_post_checks_all() {
 }
 
 # do rollback and fsck
+# $1: filesystem name or alias (ext2 includes ext3 and ext4),
 convert_test_post_rollback() {
+	local types
+
 	run_check "$TOP/btrfs-convert" --rollback "$TEST_DEV"
-	run_check fsck -n -t ext2,ext3,ext4 "$TEST_DEV"
+	if [ -z "$1" ]; then
+		_fail "missing filesystem type to check"
+	fi
+	case "$1" in
+		ext[234]) types=ext2,ext3,ext4 ;;
+		reiserfs) types=reiserfs ;;
+		*) _fail "unknown filesystem type to check: $1" ;;
+	esac
+
+	run_check fsck -n -t "$types" "$TEST_DEV"
 }
 
 # simple wrapper for a convert test
-# $1: btrfs features, argument to -O
-# $2: description of the test "ext2 8k nodesize"
-# $3: nodesize value
-# $4 + rest: command to create the ext2 image
+# $1: type of the converted filesystem
+# $2: btrfs features, argument to -O
+# $3: description of the test "ext2 8k nodesize"
+# $4: nodesize value
+# $5 + rest: command to create the ext2 image
 convert_test() {
+	local fstype
 	local features
 	local nodesize
 	local msg
@@ -185,12 +250,13 @@ convert_test() {
 	local EXT_PERMTMP
 	local EXT_ACLTMP
 
-	features="$1"
-	msg="$2"
-	nodesize="$3"
-	shift 3
+	fstype="$1"
+	features="$2"
+	msg="$3"
+	nodesize="$4"
+	shift 4
 	convert_test_preamble "$features" "$msg" "$nodesize" "$@"
-	convert_test_prep_fs "$@"
+	convert_test_prep_fs "$fstype" "$@"
 	populate_fs
 	CHECKSUMTMP=$(mktemp --tmpdir btrfs-progs-convert.XXXXXXXXXX)
 	EXT_PERMTMP=$(mktemp --tmpdir btrfs-progs-convert.permXXXXXX)
@@ -207,5 +273,19 @@ convert_test() {
 	rm -- "$EXT_PERMTMP"
 	rm -- "$EXT_ACLTMP"
 
-	convert_test_post_rollback
+	convert_test_post_rollback "$fstype"
+}
+
+load_module_reiserfs()
+{
+	$SUDO_HELPER modprobe reiserfs
+}
+
+check_kernel_support_reiserfs()
+{
+	if ! grep -iq 'reiserfs' /proc/filesystems; then
+		echo "WARNING: reiserfs filesystem not listed in /proc/filesystems, some tests might be skipped"
+		return 1
+	fi
+	return 0
 }

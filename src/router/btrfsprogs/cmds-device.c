@@ -32,6 +32,8 @@
 #include "cmds-fi-usage.h"
 
 #include "commands.h"
+#include "help.h"
+#include "mkfs/common.h"
 
 static const char * const device_cmd_group_usage[] = {
 	"btrfs device <command> [<args>]",
@@ -55,6 +57,7 @@ static int cmd_device_add(int argc, char **argv)
 	int force = 0;
 	int last_dev;
 
+	optind = 0;
 	while (1) {
 		int c;
 		static const struct option long_options[] = {
@@ -118,8 +121,8 @@ static int cmd_device_add(int argc, char **argv)
 
 		path = canonicalize_path(argv[i]);
 		if (!path) {
-			error("could not canonicalize pathname '%s': %s",
-				argv[i], strerror(errno));
+			error("could not canonicalize pathname '%s': %m",
+				argv[i]);
 			ret++;
 			goto error_out;
 		}
@@ -128,8 +131,7 @@ static int cmd_device_add(int argc, char **argv)
 		strncpy_null(ioctl_args.name, path);
 		res = ioctl(fdmnt, BTRFS_IOC_ADD_DEV, &ioctl_args);
 		if (res < 0) {
-			error("error adding device '%s': %s",
-				path, strerror(errno));
+			error("error adding device '%s': %m", path);
 			ret++;
 		}
 		free(path);
@@ -190,8 +192,7 @@ static int _cmd_device_remove(int argc, char **argv,
 		 */
 		if (res < 0 && (errno == ENOTTY || errno == EOPNOTSUPP)) {
 			if (is_devid) {
-				error("device delete by id failed: %s",
-							strerror(errno));
+				error("device delete by id failed: %m");
 				ret++;
 				continue;
 			}
@@ -222,9 +223,16 @@ static int _cmd_device_remove(int argc, char **argv,
 	return !!ret;
 }
 
+#define COMMON_USAGE_REMOVE_DELETE					\
+	"If 'missing' is specified for <device>, the first device that is",	\
+	"described by the filesystem metadata, but not present at the mount",	\
+	"time will be removed. (only in degraded mode)"
+
 static const char * const cmd_device_remove_usage[] = {
 	"btrfs device remove <device>|<devid> [<device>|<devid>...] <path>",
 	"Remove a device from a filesystem",
+	"",
+	COMMON_USAGE_REMOVE_DELETE,
 	NULL
 };
 
@@ -235,7 +243,9 @@ static int cmd_device_remove(int argc, char **argv)
 
 static const char * const cmd_device_delete_usage[] = {
 	"btrfs device delete <device>|<devid> [<device>|<devid>...] <path>",
-	"Remove a device from a filesystem",
+	"Remove a device from a filesystem (alias of \"btrfs device remove\")",
+	"",
+	COMMON_USAGE_REMOVE_DELETE,
 	NULL
 };
 
@@ -258,6 +268,7 @@ static int cmd_device_scan(int argc, char **argv)
 	int all = 0;
 	int ret = 0;
 
+	optind = 0;
 	while (1) {
 		int c;
 		static const struct option long_options[] = {
@@ -300,8 +311,7 @@ static int cmd_device_scan(int argc, char **argv)
 		}
 		path = canonicalize_path(argv[i]);
 		if (!path) {
-			error("could not canonicalize path '%s': %s",
-				argv[i], strerror(errno));
+			error("could not canonicalize path '%s': %m", argv[i]);
 			ret = 1;
 			goto out;
 		}
@@ -344,8 +354,8 @@ static int cmd_device_ready(int argc, char **argv)
 
 	path = canonicalize_path(argv[optind]);
 	if (!path) {
-		error("could not canonicalize pathname '%s': %s",
-			argv[optind], strerror(errno));
+		error("could not canonicalize pathname '%s': %m",
+			argv[optind]);
 		ret = 1;
 		goto out;
 	}
@@ -360,8 +370,8 @@ static int cmd_device_ready(int argc, char **argv)
 	strncpy_null(args.name, path);
 	ret = ioctl(fd, BTRFS_IOC_DEVICES_READY, &args);
 	if (ret < 0) {
-		error("unable to determine if device '%s' is ready for mount: %s",
-			path, strerror(errno));
+		error("unable to determine if device '%s' is ready for mount: %m",
+			path);
 		ret = 1;
 	}
 
@@ -395,9 +405,11 @@ static int cmd_device_stats(int argc, char **argv)
 	__u64 flags = 0;
 	DIR *dirstream = NULL;
 
+	optind = 0;
 	while (1) {
 		int c;
 		static const struct option long_options[] = {
+			{"check", no_argument, NULL, 'c'},
 			{"reset", no_argument, NULL, 'z'},
 			{NULL, 0, NULL, 0}
 		};
@@ -454,8 +466,8 @@ static int cmd_device_stats(int argc, char **argv)
 		args.flags = flags;
 
 		if (ioctl(fdmnt, BTRFS_IOC_GET_DEV_STATS, &args) < 0) {
-			error("device stats ioctl failed on %s: %s",
-			      path, strerror(errno));
+			error("device stats ioctl failed on %s: %m",
+			      path);
 			err |= 1;
 		} else {
 			char *canonical_path;
@@ -517,7 +529,7 @@ static const char * const cmd_device_usage_usage[] = {
 	NULL
 };
 
-static int _cmd_device_usage(int fd, char *path, unsigned unit_mode)
+static int _cmd_device_usage(int fd, const char *path, unsigned unit_mode)
 {
 	int i;
 	int ret = 0;
@@ -533,8 +545,8 @@ static int _cmd_device_usage(int fd, char *path, unsigned unit_mode)
 
 	for (i = 0; i < devcount; i++) {
 		printf("%s, ID: %llu\n", devinfo[i].path, devinfo[i].devid);
-		print_device_sizes(fd, &devinfo[i], unit_mode);
-		print_device_chunks(fd, &devinfo[i], chunkinfo, chunkcount,
+		print_device_sizes(&devinfo[i], unit_mode);
+		print_device_chunks(&devinfo[i], chunkinfo, chunkcount,
 				unit_mode);
 		printf("\n");
 	}

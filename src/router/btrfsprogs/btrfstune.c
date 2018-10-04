@@ -32,6 +32,7 @@
 #include "transaction.h"
 #include "utils.h"
 #include "volumes.h"
+#include "help.h"
 
 static char *device;
 static int force = 0;
@@ -65,6 +66,7 @@ static int update_seeding_flag(struct btrfs_root *root, int set_flag)
 	}
 
 	trans = btrfs_start_transaction(root, 1);
+	BUG_ON(IS_ERR(trans));
 	btrfs_set_super_flags(disk_super, super_flags);
 	ret = btrfs_commit_transaction(trans, root);
 
@@ -82,6 +84,7 @@ static int set_super_incompat_flags(struct btrfs_root *root, u64 flags)
 	super_flags = btrfs_super_incompat_flags(disk_super);
 	super_flags |= flags;
 	trans = btrfs_start_transaction(root, 1);
+	BUG_ON(IS_ERR(trans));
 	btrfs_set_super_incompat_flags(disk_super, super_flags);
 	ret = btrfs_commit_transaction(trans, root);
 
@@ -110,7 +113,7 @@ static int change_header_uuid(struct btrfs_root *root, struct extent_buffer *eb)
 		write_extent_buffer(eb, fs_info->new_chunk_tree_uuid,
 				    btrfs_header_chunk_tree_uuid(eb),
 				    BTRFS_UUID_SIZE);
-	ret = write_tree_block(NULL, root, eb);
+	ret = write_tree_block(NULL, fs_info, eb);
 
 	return ret;
 }
@@ -148,7 +151,7 @@ static int change_extents_uuid(struct btrfs_fs_info *fs_info)
 			goto next;
 
 		bytenr = key.objectid;
-		eb = read_tree_block(root, bytenr, root->nodesize, 0);
+		eb = read_tree_block(fs_info, bytenr, 0);
 		if (IS_ERR(eb)) {
 			error("failed to read tree block: %llu", bytenr);
 			ret = PTR_ERR(eb);
@@ -176,10 +179,9 @@ out:
 	return ret;
 }
 
-static int change_device_uuid(struct btrfs_root *root, struct extent_buffer *eb,
+static int change_device_uuid(struct btrfs_fs_info *fs_info, struct extent_buffer *eb,
 			      int slot)
 {
-	struct btrfs_fs_info *fs_info = root->fs_info;
 	struct btrfs_dev_item *di;
 	int ret = 0;
 
@@ -192,7 +194,7 @@ static int change_device_uuid(struct btrfs_root *root, struct extent_buffer *eb,
 	write_extent_buffer(eb, fs_info->new_fsid,
 			    (unsigned long)btrfs_device_fsid(di),
 			    BTRFS_FSID_SIZE);
-	ret = write_tree_block(NULL, root, eb);
+	ret = write_tree_block(NULL, fs_info, eb);
 
 	return ret;
 }
@@ -215,7 +217,7 @@ static int change_devices_uuid(struct btrfs_fs_info *fs_info)
 		if (key.type != BTRFS_DEV_ITEM_KEY ||
 		    key.objectid != BTRFS_DEV_ITEMS_OBJECTID)
 			goto next;
-		ret = change_device_uuid(root, path.nodes[0], path.slots[0]);
+		ret = change_device_uuid(fs_info, path.nodes[0], path.slots[0]);
 		if (ret < 0)
 			goto out;
 next:
@@ -242,7 +244,7 @@ static int change_fsid_prepare(struct btrfs_fs_info *fs_info)
 	btrfs_set_super_flags(fs_info->super_copy, flags);
 
 	memcpy(fs_info->super_copy->fsid, fs_info->new_fsid, BTRFS_FSID_SIZE);
-	ret = write_all_supers(tree_root);
+	ret = write_all_supers(fs_info);
 	if (ret < 0)
 		return ret;
 
@@ -250,7 +252,7 @@ static int change_fsid_prepare(struct btrfs_fs_info *fs_info)
 	write_extent_buffer(tree_root->node, fs_info->new_chunk_tree_uuid,
 			    btrfs_header_chunk_tree_uuid(tree_root->node),
 			    BTRFS_UUID_SIZE);
-	return write_tree_block(NULL, tree_root, tree_root->node);
+	return write_tree_block(NULL, fs_info, tree_root->node);
 }
 
 static int change_fsid_done(struct btrfs_fs_info *fs_info)
@@ -260,7 +262,7 @@ static int change_fsid_done(struct btrfs_fs_info *fs_info)
 	flags &= ~BTRFS_SUPER_FLAG_CHANGING_FSID;
 	btrfs_set_super_flags(fs_info->super_copy, flags);
 
-	return write_all_supers(fs_info->tree_root);
+	return write_all_supers(fs_info);
 }
 
 /*
@@ -354,7 +356,7 @@ static int change_uuid(struct btrfs_fs_info *fs_info, const char *new_fsid_str)
 	       BTRFS_FSID_SIZE);
 	memcpy(fs_info->super_copy->fsid, fs_info->new_fsid,
 	       BTRFS_FSID_SIZE);
-	ret = write_all_supers(fs_info->tree_root);
+	ret = write_all_supers(fs_info);
 	if (ret < 0)
 		goto out;
 
@@ -392,6 +394,7 @@ int main(int argc, char *argv[])
 	char *new_fsid_str = NULL;
 	int ret;
 	u64 super_flags = 0;
+	int fd = -1;
 
 	while(1) {
 		static const struct option long_options[] = {
@@ -465,17 +468,25 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	ret = check_mounted(device);
-	if (ret < 0) {
-		error("could not check mount status of %s: %s", device,
-			strerror(-ret));
-		return 1;
-	} else if (ret) {
-		error("%s is mounted", device);
+	fd = open(device, O_RDWR);
+	if (fd < 0) {
+		error("mount check: cannot open %s: %m", device);
 		return 1;
 	}
 
-	root = open_ctree(device, 0, ctree_flags);
+	ret = check_mounted_where(fd, device, NULL, 0, NULL, SBREAD_DEFAULT);
+	if (ret < 0) {
+		error("could not check mount status of %s: %s", device,
+			strerror(-ret));
+		close(fd);
+		return 1;
+	} else if (ret) {
+		error("%s is mounted", device);
+		close(fd);
+		return 1;
+	}
+
+	root = open_ctree_fd(fd, device, 0, ctree_flags);
 
 	if (!root) {
 		error("open ctree failed");

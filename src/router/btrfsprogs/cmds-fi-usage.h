@@ -22,9 +22,6 @@
 #include "kerncompat.h"
 #include "ioctl.h"
 
-extern const char * const cmd_filesystem_usage_usage[];
-int cmd_filesystem_usage(int argc, char **argv);
-
 struct device_info {
 	u64	devid;
 	char	path[BTRFS_DEVICE_PATH_NAME_MAX];
@@ -49,9 +46,10 @@ struct chunk_info {
 
 int load_chunk_and_device_info(int fd, struct chunk_info **chunkinfo,
 		int *chunkcount, struct device_info **devinfo, int *devcount);
-void print_device_chunks(int fd, struct device_info *devinfo,
+void print_device_chunks(struct device_info *devinfo,
 		struct chunk_info *chunks_info_ptr,
 		int chunks_info_count, unsigned unit_mode);
-void print_device_sizes(int fd, struct device_info *devinfo, unsigned unit_mode);
+void print_device_sizes(struct device_info *devinfo, unsigned unit_mode);
+int dev_to_fsid(const char *dev, u8 *fsid);
 
 #endif

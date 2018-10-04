@@ -56,6 +56,7 @@ int main(int ac, char **av) {
 		exit(1);
 	}
 	trans = btrfs_start_transaction(root, 1);
+	BUG_ON(IS_ERR(trans));
 	srand(55);
 	ins.type = BTRFS_STRING_ITEM_KEY;
 	for (i = 0; i < run_size; i++) {
@@ -72,6 +73,7 @@ int main(int ac, char **av) {
 		if (i == run_size - 5) {
 			btrfs_commit_transaction(trans, root);
 			trans = btrfs_start_transaction(root, 1);
+			BUG_ON(IS_ERR(trans));
 		}
 	}
 	btrfs_commit_transaction(trans, root);
@@ -92,7 +94,7 @@ int main(int ac, char **av) {
 			fprintf(stderr, "search %d:%d\n", num, i);
 		ret = btrfs_search_slot(NULL, root, &ins, &path, 0, 0);
 		if (ret) {
-			btrfs_print_tree(root, root->node, 1);
+			btrfs_print_tree(root->node, 1);
 			printf("unable to find %d\n", num);
 			exit(1);
 		}
@@ -108,12 +110,13 @@ int main(int ac, char **av) {
 	printf("node %p level %d total ptrs %d free spc %lu\n", root->node,
 	        btrfs_header_level(root->node),
 		btrfs_header_nritems(root->node),
-		(unsigned long)BTRFS_NODEPTRS_PER_BLOCK(root) -
+		(unsigned long)BTRFS_NODEPTRS_PER_BLOCK(root->fs_info) -
 		btrfs_header_nritems(root->node));
 	printf("all searches good, deleting some items\n");
 	i = 0;
 	srand(55);
 	trans = btrfs_start_transaction(root, 1);
+	BUG_ON(IS_ERR(trans));
 	for (i = 0 ; i < run_size/4; i++) {
 		num = next_key(i, max_key);
 		ins.objectid = num;
@@ -138,6 +141,7 @@ int main(int ac, char **av) {
 		exit(1);
 	}
 	trans = btrfs_start_transaction(root, 1);
+	BUG_ON(IS_ERR(trans));
 	srand(128);
 	for (i = 0; i < run_size; i++) {
 		num = next_key(i, max_key);
@@ -167,7 +171,7 @@ int main(int ac, char **av) {
 			fprintf(stderr, "search %d:%d\n", num, i);
 		ret = btrfs_search_slot(NULL, root, &ins, &path, 0, 0);
 		if (ret) {
-			btrfs_print_tree(root, root->node, 1);
+			btrfs_print_tree(root->node, 1);
 			printf("unable to find %d\n", num);
 			exit(1);
 		}
@@ -175,6 +179,7 @@ int main(int ac, char **av) {
 	}
 	printf("starting big long delete run\n");
 	trans = btrfs_start_transaction(root, 1);
+	BUG_ON(IS_ERR(trans));
 	while(root->node && btrfs_header_nritems(root->node) > 0) {
 		struct extent_buffer *leaf;
 		int slot;
@@ -215,7 +220,7 @@ int main(int ac, char **av) {
 	btrfs_commit_transaction(trans, root);
 	printf("tree size is now %d\n", tree_size);
 	printf("root %p commit root %p\n", root->node, root->commit_root);
-	btrfs_print_tree(root, root->node, 1);
+	btrfs_print_tree(root->node, 1);
 	close_ctree(root);
 	return 0;
 }

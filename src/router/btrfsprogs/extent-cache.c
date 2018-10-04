@@ -93,24 +93,22 @@ void cache_tree_init(struct cache_tree *tree)
 	tree->root = RB_ROOT;
 }
 
-static struct cache_extent *
-alloc_cache_extent(u64 objectid, u64 start, u64 size)
+static struct cache_extent *alloc_cache_extent(u64 start, u64 size)
 {
 	struct cache_extent *pe = malloc(sizeof(*pe));
 
 	if (!pe)
 		return pe;
 
-	pe->objectid = objectid;
+	pe->objectid = 0;
 	pe->start = start;
 	pe->size = size;
 	return pe;
 }
 
-static int __add_cache_extent(struct cache_tree *tree,
-			      u64 objectid, u64 start, u64 size)
+int add_cache_extent(struct cache_tree *tree, u64 start, u64 size)
 {
-	struct cache_extent *pe = alloc_cache_extent(objectid, start, size);
+	struct cache_extent *pe = alloc_cache_extent(start, size);
 	int ret;
 
 	if (!pe) {
@@ -123,17 +121,6 @@ static int __add_cache_extent(struct cache_tree *tree,
 		free(pe);
 
 	return ret;
-}
-
-int add_cache_extent(struct cache_tree *tree, u64 start, u64 size)
-{
-	return __add_cache_extent(tree, 0, start, size);
-}
-
-int add_cache_extent2(struct cache_tree *tree,
-		      u64 objectid, u64 start, u64 size)
-{
-	return __add_cache_extent(tree, objectid, start, size);
 }
 
 int insert_cache_extent(struct cache_tree *tree, struct cache_extent *pe)

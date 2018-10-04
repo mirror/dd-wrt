@@ -21,6 +21,27 @@ _assert_path()
 	exit 1
 }
 
+# $1: this string gets matched to files, absolute or relative path, or a
+# systemwide command available via $PATH
+_is_file_or_command()
+{
+	local msg
+
+	msg="$1"
+	if [ -z "$msg" ]; then
+		return 1
+	fi
+
+	if [ -f "$msg" -o -d "$msg" -o -b "$msg" ]; then
+		return 0
+	fi
+	msg=$(type -p -- "$msg")
+	if [ -f "$msg" ]; then
+		return 0
+	fi
+	return 1
+}
+
 _fail()
 {
 	echo "$*" | tee -a "$RESULTS"
@@ -31,6 +52,13 @@ _fail()
 _log()
 {
 	echo "$*" | tee -a "$RESULTS"
+}
+
+# copy stdout to log and pass to stdout, eg. another stdout consumer, commands
+# should redirect stderr to stdout if this is consmed by further commands
+_log_stdout()
+{
+	tee -a "$RESULTS"
 }
 
 _not_run()
@@ -106,9 +134,9 @@ run_check()
 	ins=$(_get_spec_ins "$@")
 	spec=$(($ins-1))
 	cmd=$(eval echo "\${$spec}")
-	spec=$(_cmd_spec "$cmd")
+	spec=$(_cmd_spec "${@:$spec}")
 	set -- "${@:1:$(($ins-1))}" $spec "${@: $ins}"
-	echo "############### $@" >> "$RESULTS" 2>&1
+	echo "====== RUN CHECK $@" >> "$RESULTS" 2>&1
 	if [[ $TEST_LOG =~ tty ]]; then echo "CMD: $@" > /dev/tty; fi
 	if [ "$1" = 'root_helper' ]; then
 		"$@" >> "$RESULTS" 2>&1 || _fail "failed: $@"
@@ -128,14 +156,17 @@ run_check_stdout()
 	ins=$(_get_spec_ins "$@")
 	spec=$(($ins-1))
 	cmd=$(eval echo "\${$spec}")
-	spec=$(_cmd_spec "$cmd")
+	spec=$(_cmd_spec "${@:$spec}")
 	set -- "${@:1:$(($ins-1))}" $spec "${@: $ins}"
-	echo "############### $@" >> "$RESULTS" 2>&1
+	echo "====== RUN CHECK $@" >> "$RESULTS" 2>&1
 	if [[ $TEST_LOG =~ tty ]]; then echo "CMD(stdout): $@" > /dev/tty; fi
 	if [ "$1" = 'root_helper' ]; then
-		"$@" 2>&1 | tee -a "$RESULTS" || _fail "failed: $@"
+		"$@" 2>&1 | tee -a "$RESULTS"
 	else
-		$INSTRUMENT "$@" 2>&1 | tee -a "$RESULTS" || _fail "failed: $@"
+		$INSTRUMENT "$@" 2>&1 | tee -a "$RESULTS"
+	fi
+	if [ ${PIPESTATUS[0]} -ne 0 ]; then
+		_fail "failed: $@"
 	fi
 }
 
@@ -152,9 +183,9 @@ run_mayfail()
 	ins=$(_get_spec_ins "$@")
 	spec=$(($ins-1))
 	cmd=$(eval echo "\${$spec}")
-	spec=$(_cmd_spec "$cmd")
+	spec=$(_cmd_spec "${@:$spec}")
 	set -- "${@:1:$(($ins-1))}" $spec "${@: $ins}"
-	echo "############### $@" >> "$RESULTS" 2>&1
+	echo "====== RUN MAYFAIL $@" >> "$RESULTS" 2>&1
 	if [[ $TEST_LOG =~ tty ]]; then echo "CMD(mayfail): $@" > /dev/tty; fi
 	if [ "$1" = 'root_helper' ]; then
 		"$@" >> "$RESULTS" 2>&1
@@ -185,12 +216,17 @@ run_mustfail()
 	msg="$1"
 	shift
 
+	if _is_file_or_command "$msg"; then
+		echo "ASSERTION FAIL: 1st argument of run_mustfail must be a message"
+		exit 1
+	fi
+
 	ins=$(_get_spec_ins "$@")
 	spec=$(($ins-1))
 	cmd=$(eval echo "\${$spec}")
-	spec=$(_cmd_spec "$cmd")
+	spec=$(_cmd_spec "${@:$spec}")
 	set -- "${@:1:$(($ins-1))}" $spec "${@: $ins}"
-	echo "############### $@" >> "$RESULTS" 2>&1
+	echo "====== RUN MUSTFAIL $@" >> "$RESULTS" 2>&1
 	if [[ $TEST_LOG =~ tty ]]; then echo "CMD(mustfail): $@" > /dev/tty; fi
 	if [ "$1" = 'root_helper' ]; then
 		"$@" >> "$RESULTS" 2>&1
@@ -207,10 +243,66 @@ run_mustfail()
 	fi
 }
 
+# The first parameter is error message to print if it fails, just like
+# run_must_fail().
+# NOTE: we don't use pipefail to avoid disturbing other script, so here we
+# use a temporary output file.
+# So it doesn't support pipeline in the @cmd
+run_mustfail_stdout()
+{
+	local spec
+	local ins
+	local cmd
+	local msg
+	local ret
+	local tmp_output
+
+	tmp_output=$(mktemp --tmpdir btrfs-progs-test--mustfail-stdtout.XXXXXX)
+
+	msg="$1"
+	shift
+
+	if _is_file_or_command "$msg"; then
+		echo "ASSERTION FAIL: 1st argument of run_mustfail_stdout must be a message"
+		exit 1
+	fi
+
+	ins=$(_get_spec_ins "$@")
+	spec=$(($ins-1))
+	cmd=$(eval echo "\${$spec}")
+	spec=$(_cmd_spec "${@:$spec}")
+	set -- "${@:1:$(($ins-1))}" $spec "${@: $ins}"
+	echo "====== RUN MUSTFAIL $@" >> "$RESULTS" 2>&1
+	if [[ $TEST_LOG =~ tty ]]; then echo "CMD(mustfail): $@" > /dev/tty; fi
+	if [ "$1" = 'root_helper' ]; then
+		"$@" 2>&1 > "$tmp_output"
+	else
+		$INSTRUMENT "$@" 2>&1 > "$tmp_output"
+	fi
+	ret=$?
+
+	cat "$tmp_output" >> "$RESULTS"
+	cat "$tmp_output"
+	rm "$tmp_output"
+
+	if [ "$ret" != 0 ]; then
+		echo "failed (expected): $@" >> "$RESULTS"
+		return 0
+	else
+		echo "succeeded (unexpected!): $@" >> "$RESULTS"
+		_fail "unexpected success: $msg"
+		return 1
+	fi
+}
+
 check_prereq()
 {
-	if ! [ -f "$TOP/$1" ]; then
-		_fail "Failed prerequisites: $1";
+	if [ "$1" = "btrfs-corrupt-block" -o "$1" = "fssum" ]; then
+		if ! [ -f "$INTERNAL_BIN/$1" ]; then
+			_fail "Failed prerequisites: $INTERNAL_BIN/$1";
+		fi
+	elif ! [ -f "$TOP/$1" ]; then
+		_fail "Failed prerequisites: $TOP/$1";
 	fi
 }
 
@@ -250,7 +342,7 @@ extract_image()
 	case "$image" in
 	*.img)
 		rm -f "$image.restored"
-		: ;;
+		;;
 	*.img.xz)
 		xz --decompress --keep "$image" || \
 			_fail "failed to decompress image $image" >&2
@@ -360,13 +452,19 @@ prepare_test_dev()
 	# num[K/M/G/T...]
 	local size="$1"
 
-	[[ "$TEST_DEV" ]] && return
 	[[ "$size" ]] || size='2G'
+	# Still truncate it to new size
+	if [ -n "$TEST_DEV" ]; then
+		truncate -s 0 "$TEST_DEV"
+		truncate -s "$size" "$TEST_DEV"
+		return;
+	fi
 
-	echo "\$TEST_DEV not given, use $TOP/test/test.img as fallback" >> \
+	echo "\$TEST_DEV not given, using $TEST_TOP/test.img as fallback" >> \
 		"$RESULTS"
-	TEST_DEV="$TOP/tests/test.img"
+	TEST_DEV="$TEST_TOP/test.img"
 
+	truncate -s 0 "$TEST_DEV"
 	truncate -s "$size" "$TEST_DEV" || _not_run "create file for loop device failed"
 }
 
@@ -387,20 +485,28 @@ run_check_mount_test_dev()
 		_fail "Invalid \$TEST_MNT: $TEST_MNT"
 	}
 
-	run_check $SUDO_HELPER mount $loop_opt "$@" "$TEST_DEV" "$TEST_MNT"
+	run_check $SUDO_HELPER mount -t btrfs $loop_opt "$@" "$TEST_DEV" "$TEST_MNT"
 }
 
+# $1-$n: optional paths to unmount, otherwise fallback to TEST_DEV
 run_check_umount_test_dev()
 {
 	setup_root_helper
-	run_check $SUDO_HELPER umount "$@" "$TEST_DEV"
+	if [ "$#" = 0 ]; then
+		set -- "$TEST_DEV"
+	fi
+	run_check $SUDO_HELPER umount "$@"
 }
 
 check_kernel_support()
 {
 	if ! grep -iq 'btrfs' /proc/filesystems; then
-		echo "WARNING: btrfs filesystem not listed in /proc/filesystems, some tests might fail"
-		return 1
+		run_check $SUDO_HELPER modprobe btrfs
+			if ! grep -iq 'btrfs' /proc/filesystems; then
+				echo \
+"WARNING: btrfs filesystem not found in /proc/filesystems, some tests might fail"
+				return 1
+			fi
 	fi
 	return 0
 }
@@ -480,7 +586,7 @@ generate_dataset() {
 			;;
 
 		slow_symlink)
-			long_filename=`date +%s | sha256sum | cut -f1 -d'-'`
+			long_filename=`date +%s | sha256sum | cut -f1 -d ' '`
 			run_check $SUDO_HELPER touch "$dirpath/$long_filename"
 			for num in $(seq 1 "$DATASET_SIZE"); do
 				run_check $SUDO_HELPER ln -s "$dirpath/$long_filename" "$dirpath/slow_slink.$num"
@@ -493,13 +599,55 @@ generate_dataset() {
 	esac
 }
 
+# prepare environment for loop devices, set up the following variables
+# - nloopdevs -- number of desired devices
+# - loopdevs  -- array containing paths to all devices (after prepare is called)
+# - loopdev_prefix -- file backed images starting with this string, 'img' by default
+#
+# $1: number of loop devices to be set up
+setup_loopdevs()
+{
+	if [ -z "$1" ]; then
+		_fail "setup_loopdevs needs a number"
+	fi
+	nloopdevs="$1"
+	loopdev_prefix=img
+	declare -a loopdevs
+
+}
+
+# create all loop devices from a given loopdev environment
+prepare_loopdevs()
+{
+	for i in `seq $nloopdevs`; do
+		touch $loopdev_prefix$i
+		chmod a+rw $loopdev_prefix$i
+		truncate -s0 $loopdev_prefix$i
+		truncate -s2g $loopdev_prefix$i
+		loopdevs[$i]=`run_check_stdout $SUDO_HELPER losetup --find --show $loopdev_prefix$i`
+	done
+}
+
+# detach loop devices and reset their size to 0, delete the files afterwards
+cleanup_loopdevs()
+{
+	for dev in ${loopdevs[@]}; do
+		run_check $SUDO_HELPER losetup -d $dev
+	done
+	for i in `seq $nloopdevs`; do
+		truncate -s0 $loopdev_prefix$i
+		rm -- "$loopdev_prefix$i"
+	done
+	run_check $SUDO_HELPER losetup --all
+}
+
 init_env()
 {
-	TEST_MNT="${TEST_MNT:-$TOP/tests/mnt}"
+	TEST_MNT="${TEST_MNT:-$TEST_TOP/mnt}"
 	export TEST_MNT
 	mkdir -p "$TEST_MNT" || { echo "Failed mkdir -p $TEST_MNT"; exit 1; }
 
-	source $TOP/tests/common.local
+	source $TEST_TOP/common.local
 
 	if [ "$TEST_ENABLE_OVERRIDE" = 'true' -a -n "$RESULTS" ]; then
 		echo "INCLUDE common.local" >> "$RESULTS"

@@ -25,9 +25,9 @@ page `btrfs`(5).
 COMMAND SYNTAX
 --------------
 
-Any command name can be shortened as far as it stays unambiguous,
-however it is recommended to use full command names in scripts.
-All command groups have their manual page named *btrfs-<group>*.
+Any command name can be shortened so long as the shortened form is unambiguous,
+however, it is recommended to use full command names in scripts.  All command
+groups have their manual page named *btrfs-<group>*.
 
 For example: it is possible to run *btrfs sub snaps* instead of
 *btrfs subvolume snapshot*.
@@ -106,10 +106,10 @@ COMMANDS
 STANDALONE TOOLS
 ----------------
 
-There are several standalone tools to provide certain functionality. If the
-functionality proves to be useful, the standalone tools are declared obsolete
-and their functionality copied to the main tool. The deprecation period is long
-(years) and the obsolete binaries are still provided.
+New functionality could be provided using a standalone tool. If the functionality
+proves to be useful, then the standalone tool is declared obsolete and its
+functionality is copied to the main tool. Obsolete tools are removed after a
+long (years) depreciation period.
 
 Tools that are still in active use without an equivalent in *btrfs*:
 
@@ -120,9 +120,11 @@ Tools that are still in active use without an equivalent in *btrfs*:
 
 Deprecated and obsolete tools:
 
-*btrfs-debug-tree*:: moved to *btrfs inspect-internal dump-tree*
-*btrfs-show-super*:: moved to *btrfs inspect-internal dump-super*
-*btrfs-zero-log*:: moved to *btrfs rescue zero-log*
+*btrfs-debug-tree*:: moved to *btrfs inspect-internal dump-tree*. Removed from
+source distribution.
+*btrfs-show-super*:: moved to *btrfs inspect-internal dump-super*, standalone
+removed.
+*btrfs-zero-log*:: moved to *btrfs rescue zero-log*, standalone removed.
 
 EXIT STATUS
 -----------
