@@ -228,7 +228,6 @@ AC_ARG_ENABLE([zstd],
 
 if test "x$enable_zstd" = xyes; then
 	PKG_CHECK_MODULES(ZSTD, [libzstd >= 1.0.0])
-	PKG_STATIC(ZSTD_LIBS_STATIC, [libzstd])
 fi
 
 AS_IF([test "x$enable_zstd" = xyes], [BTRFSRESTORE_ZSTD=1], [BTRFSRESTORE_ZSTD=0])
