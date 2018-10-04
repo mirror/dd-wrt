@@ -1,4 +1,4 @@
-btrfsprogs-configure: lzo
+btrfsprogs-configure: lzo zstd
 	cd btrfsprogs && ./autogen.sh
 	cd btrfsprogs && ./configure --host=$(ARCH)-linux \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/btrfsprogs -I$(TOP)/$(ARCH)-uclibc/install/util-linux/usr/include -I$(TOP)/e2fsprogs/lib -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64 -D_GNU_SOURCE -I$(TOP)/zlib -I$(TOP)/lzo/include -DNEED_PRINTF -I$(TOP)/zstd/lib" \
@@ -25,7 +25,7 @@ btrfsprogs-configure: lzo
 		ZSTD_LIBS="-L$(TOP)/zstd/lib -lzstd"
 
 
-btrfsprogs: lzo util-linux
+btrfsprogs: zstd lzo util-linux
 	make -C util-linux
 	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
 	mkdir -p $(INSTALLDIR)/util-linux/usr/lib
