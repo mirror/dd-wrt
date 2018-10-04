@@ -1,0 +1,118 @@
+/*
+ * raid.c
+ *
+ * Copyright (C) 2005 - 2018 Sebastian Gottschall <gottschall@dd-wrt.com>
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ *
+ * $Id:
+ */
+#ifdef HAVE_RAID
+
+#define VISUALSOURCE 1
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <string.h>
+#include <unistd.h>
+#include <ctype.h>
+#include <signal.h>
+#include <time.h>
+
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/socket.h>
+#include <sys/statfs.h>
+#include <sys/sysinfo.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <broadcom.h>
+
+#include <wlutils.h>
+#include <bcmparams.h>
+#include <dirent.h>
+#include <netdb.h>
+#include <utils.h>
+#include <wlutils.h>
+#include <bcmnvram.h>
+
+void ej_show_raid(webs_t wp, int argc, char_t ** argv)
+{
+	websWrite(wp, "<fieldset>\n");
+	websWrite(wp, "<legend>Raid Storage Manager</legend>");
+	int i = 0;
+	while (1) {
+		char *raid = nvram_nget("raid%d", i);
+		char *raidname = nvram_nget("raidname%d", i);
+		if (!strlen(raidname))
+			break;
+		char type[32];
+		sprintf(type, "raidtype%d", i);
+
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp, "<input name=\"raidname%d\" size=\"32\" value=\"%s\" />", i, raidname);
+		websWrite(wp, "<select name=\"raidtype%d\">\n", i);
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<option value=\\\"md\\\" %s >Linux Raid</option>\");\n", nvram_match(type, "md") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"btrfs\\\" %s >BTRFS</option>\");\n", nvram_match(type, "btrfs") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"zfs\\\" %s >ZFS</option>\");\n", nvram_match(type, "zfs") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "//]]>\n</script>Raid Method</select>\n");
+
+		if (nvram_match(type, "md")) {
+			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+			websWrite(wp, "document.write(\"<option value=\\\"linear\\\" %s >Linear</option>\");\n", nvram_match(type, "linear") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"stripe\\\" %s >Stripe</option>\");\n", nvram_match(type, "stripe") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"mirror\\\" %s >Mirror</option>\");\n", nvram_match(type, "mirror") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"4\\\" %s >Raid4</option>\");\n", nvram_match(type, "4") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >Raid5</option>\");\n", nvram_match(type, "5") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"6\\\" %s >Raid6</option>\");\n", nvram_match(type, "6") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"10\\\" %s >Raid10</option>\");\n", nvram_match(type, "10") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "//]]>\n</script>Raid Type</select>\n");
+		}
+		if (nvram_match(type, "btrfs")) {
+			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Stripe</option>\");\n", nvram_match(type, "0") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Mirror</option>\");\n", nvram_match(type, "1") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >Raid5</option>\");\n", nvram_match(type, "5") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"6\\\" %s >Raid6</option>\");\n", nvram_match(type, "6") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"10\\\" %s >Raid10</option>\");\n", nvram_match(type, "10") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "//]]>\n</script>Raid Type</select>\n");
+		}
+		if (nvram_match(type, "zfs")) {
+			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Stripe</option>\");\n", nvram_match(type, "0") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Mirror</option>\");\n", nvram_match(type, "1") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >Raid-Z1 (Raid 5)</option>\");\n", nvram_match(type, "5") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"6\\\" %s >Raid-Z2 (Raid 6)</option>\");\n", nvram_match(type, "6") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"z3\\\" %s >Raid-Z3</option>\");\n", nvram_match(type, "z3") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "//]]>\n</script>Raid Type</select>\n");
+		}
+		websWrite(wp,
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"raid_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+			  i);
+		websWrite(wp, "</div>\n");
+
+		i++;
+	}
+
+	websWrite(wp,
+		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"raid_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
+
+	websWrite(wp, "</fieldset>\n");
+}
+
+#endif
