@@ -26,7 +26,7 @@ Show btrfs superblock information stored on given devices in textual form.
 By default the first superblock is printed, more details about all copies or
 additional backup data can be printed.
 +
-Besides verifictaion of the filesystem signature, there are no other sanity
+Besides verification of the filesystem signature, there are no other sanity
 checks. The superblock checksum status is reported, the device item and
 filesystem UUIDs are checked and reported.
 +
@@ -51,8 +51,8 @@ for debugging (disables the '-f' option)
 If there are multiple options specified, only the last one applies.
 +
 -F|--force::::
-attempt to print the superblock even if thre's no valid BTRFS signature found,
-the result may be completely wrong if the data do not resemble a superblock
+attempt to print the superblock even if a valid BTRFS signature is not found;
+the result may be completely wrong if the data does not resemble a superblock
 +
 -s|--super <bytenr>::::
 (see compatibility note above)
@@ -87,6 +87,8 @@ the respective tree root block offset
 print only the uuid tree information, empty output if the tree does not exist
 -b <block_num>::::
 print info of the specified block only
+--follow::::
+use with '-b', print all children tree blocks of '<block_num>'
 -t <tree_id>::::
 print only the tree with the specified ID, where the ID can be numerical or
 common name in a flexible human readable form
@@ -136,16 +138,16 @@ resize operation, this may be useful before executing the actual resize operatio
 specify the device 'id' to query, default is 1 if this option is not used
 
 *rootid* <path>::
-for a given file or directory, return the containing tree root id, for a
-subvolume itself return it's own tree id (ie. subvol id)
+for a given file or directory, return the containing tree root id, but for a
+subvolume itself return its own tree id (ie. subvol id)
 +
 NOTE: The result is undefined for the so-called empty subvolumes (identified by
-inode number 2), but such subvolume does not contain any files anyway
+inode number 2), but such a subvolume does not contain any files anyway
 
 *subvolid-resolve* <subvolid> <path>::
 (needs root privileges)
 +
-resolve the absolute path of a the subvolume id 'subvolid'
+resolve the absolute path of the subvolume id 'subvolid'
 
 *tree-stats* [options] <device>::
 (needs root privileges)

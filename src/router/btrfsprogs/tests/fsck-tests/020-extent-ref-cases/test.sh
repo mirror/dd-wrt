@@ -1,6 +1,6 @@
 #!/bin/bash
-# In order to confirm that btrfsck supports to check a variety of refs, add the
-# following cases:
+# In order to confirm that 'btrfs check' supports checking a variety of refs,
+# add the following cases:
 #
 # * keyed_block_ref
 # * keyed_data_ref
@@ -8,16 +8,19 @@
 # * shared_data_ref
 # * no_inline_ref (a extent item without inline ref)
 # * no_skinny_ref
+#
+# Special check for lowmem regression
+# * block_group_item_false_alert
+#   Containing a block group and its first extent at
+#   the beginning of leaf.
+#   Which caused false alert for lowmem mode.
 
-source $TOP/tests/common
+source "$TEST_TOP/common"
 
 check_prereq btrfs
 
-for img in *.img
-do
-	image=$(extract_image $img)
-	run_check_stdout $TOP/btrfs check "$image" 2>&1 |
-		grep -q "Errors found in extent allocation tree or chunk allocation" &&
-		_fail "unexpected error occurred when checking $img"
-	rm -f "$image"
-done
+check_image() {
+	run_check "$TOP/btrfs" check "$1"
+}
+
+check_all_images

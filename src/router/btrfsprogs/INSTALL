@@ -7,10 +7,12 @@ The Btrfs utility programs require the following libraries/tools to build:
 - libblkid - block device id library
 - liblzo2 - LZO data compression library
 - zlib - ZLIB data compression library
+- libzstd - ZSTD data compression library version >= 1.0.0
 
 For the btrfs-convert utility:
 
 - e2fsprogs - ext2/ext3/ext4 file system libraries, or called e2fslibs
+- libreiserfscore - reiserfs file system library version >= 3.6.27
 
 Generating documentation:
 
@@ -38,6 +40,10 @@ To build from the released tarballs:
     $ ./configure
     $ make
     $ make install
+
+To install the libbtrfsutil Python bindings:
+
+    $ make install_python
 
 You may disable building some parts like documentation, btrfs-convert or
 backtrace support. See ./configure --help for more.

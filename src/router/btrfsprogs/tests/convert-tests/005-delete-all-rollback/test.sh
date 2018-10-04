@@ -2,12 +2,13 @@
 # create a base image, convert to btrfs, remove all files, rollback the ext4 image
 # note: ext4 only
 
-source $TOP/tests/common
-source $TOP/tests/common.convert
+source "$TEST_TOP/common"
+source "$TEST_TOP/common.convert"
 
 setup_root_helper
-prepare_test_dev 512M
+prepare_test_dev
 check_prereq btrfs-convert
+check_global_prereq mke2fs
 
 # simple wrapper for a convert test
 # $1: btrfs features, argument to -O
@@ -26,7 +27,7 @@ do_test() {
 	nodesize="$3"
 	shift 3
 	convert_test_preamble "$features" "$msg" "$nodesize" "$@"
-	convert_test_prep_fs "$@"
+	convert_test_prep_fs ext4 "$@"
 	populate_fs
 	CHECKSUMTMP=$(mktemp --tmpdir btrfs-progs-convert.XXXXXXXXXX)
 	convert_test_gen_checksums "$CHECKSUMTMP"
@@ -43,16 +44,16 @@ do_test() {
 	# ext2_saved/image must not be deleted
 	run_mayfail $SUDO_HELPER find "$TEST_MNT"/ -mindepth 1 -path '*ext2_saved' -prune -o -exec rm -vrf "{}" \;
 	cd "$here"
-	run_check $TOP/btrfs filesystem sync "$TEST_MNT"
+	run_check "$TOP/btrfs" filesystem sync "$TEST_MNT"
 	run_check_umount_test_dev
-	convert_test_post_rollback
+	convert_test_post_rollback ext4
 
-	run_check_mount_test_dev
+	run_check_mount_convert_dev ext4
 	convert_test_post_check_checksums "$CHECKSUMTMP"
 	run_check_umount_test_dev
 
 	# mount again and verify checksums
-	run_check_mount_test_dev
+	run_check_mount_convert_dev ext4
 	convert_test_post_check_checksums "$CHECKSUMTMP"
 	run_check_umount_test_dev
 

@@ -22,6 +22,7 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <getopt.h>
+#include <fcntl.h>
 
 #include "utils.h"
 #include "kerncompat.h"
@@ -29,8 +30,10 @@
 #include "string-table.h"
 #include "cmds-fi-usage.h"
 #include "commands.h"
+#include "disk-io.h"
 
 #include "version.h"
+#include "help.h"
 
 /*
  * Add the chunk info to the chunk_info list
@@ -161,8 +164,7 @@ static int load_chunk_info(int fd, struct chunk_info **info_ptr, int *info_count
 			return -e;
 
 		if (ret < 0) {
-			error("cannot look up chunk tree info: %s",
-				strerror(e));
+			error("cannot look up chunk tree info: %m");
 			return 1;
 		}
 		/* the ioctl returns the number of item it found in nr_items */
@@ -225,7 +227,7 @@ static int cmp_btrfs_ioctl_space_info(const void *a, const void *b)
 /*
  * This function load all the information about the space usage
  */
-static struct btrfs_ioctl_space_args *load_space_info(int fd, char *path)
+static struct btrfs_ioctl_space_args *load_space_info(int fd, const char *path)
 {
 	struct btrfs_ioctl_space_args *sargs = NULL, *sargs_orig = NULL;
 	int ret, count;
@@ -241,8 +243,7 @@ static struct btrfs_ioctl_space_args *load_space_info(int fd, char *path)
 
 	ret = ioctl(fd, BTRFS_IOC_SPACE_INFO, sargs);
 	if (ret < 0) {
-		error("cannot get space info on '%s': %s", path,
-			strerror(errno));
+		error("cannot get space info on '%s': %m", path);
 		free(sargs);
 		return NULL;
 	}
@@ -267,8 +268,8 @@ static struct btrfs_ioctl_space_args *load_space_info(int fd, char *path)
 
 	ret = ioctl(fd, BTRFS_IOC_SPACE_INFO, sargs);
 	if (ret < 0) {
-		error("cannot get space info with %u slots: %s",
-			count, strerror(errno));
+		error("cannot get space info with %u slots: %m",
+			count);
 		free(sargs);
 		return NULL;
 	}
@@ -285,7 +286,7 @@ static struct btrfs_ioctl_space_args *load_space_info(int fd, char *path)
  * which compose the chunk, which could be different from the number of devices
  * if a disk is added later.
  */
-static void get_raid56_used(int fd, struct chunk_info *chunks, int chunkcount,
+static void get_raid56_used(struct chunk_info *chunks, int chunkcount,
 		u64 *raid5_used, u64 *raid6_used)
 {
 	struct chunk_info *info_ptr = chunks;
@@ -301,10 +302,10 @@ static void get_raid56_used(int fd, struct chunk_info *chunks, int chunkcount,
 	}
 }
 
-#define	MIN_UNALOCATED_THRESH	(16 * 1024 * 1024)
+#define	MIN_UNALOCATED_THRESH	SZ_16M
 static int print_filesystem_usage_overall(int fd, struct chunk_info *chunkinfo,
 		int chunkcount, struct device_info *devinfo, int devcount,
-		char *path, unsigned unit_mode)
+		const char *path, unsigned unit_mode)
 {
 	struct btrfs_ioctl_space_args *sargs = NULL;
 	int i;
@@ -353,13 +354,12 @@ static int print_filesystem_usage_overall(int fd, struct chunk_info *chunkinfo,
 	}
 
 	if (r_total_size == 0) {
-		error("cannot get space info on '%s': %s",
-			path, strerror(errno));
+		error("cannot get space info on '%s': %m", path);
 
 		ret = 1;
 		goto exit;
 	}
-	get_raid56_used(fd, chunkinfo, chunkcount, &raid5_used, &raid6_used);
+	get_raid56_used(chunkinfo, chunkcount, &raid5_used, &raid6_used);
 
 	for (i = 0; i < sargs->total_spaces; i++) {
 		int ratio;
@@ -471,7 +471,7 @@ static int print_filesystem_usage_overall(int fd, struct chunk_info *chunkinfo,
 	printf("    Device allocated:\t\t%*s\n", width,
 		pretty_size_mode(r_total_chunks, unit_mode));
 	printf("    Device unallocated:\t\t%*s\n", width,
-		pretty_size_mode(r_total_unused, unit_mode));
+		pretty_size_mode(r_total_unused, unit_mode | UNITS_NEGATIVE));
 	printf("    Device missing:\t\t%*s\n", width,
 		pretty_size_mode(r_total_missing, unit_mode));
 	printf("    Used:\t\t\t%*s\n", width,
@@ -505,6 +505,33 @@ static int cmp_device_info(const void *a, const void *b)
 			((struct device_info *)b)->path);
 }
 
+int dev_to_fsid(const char *dev, u8 *fsid)
+{
+	struct btrfs_super_block *disk_super;
+	char buf[BTRFS_SUPER_INFO_SIZE];
+	int ret;
+	int fd;
+
+	fd = open(dev, O_RDONLY);
+	if (fd < 0) {
+		ret = -errno;
+		return ret;
+	}
+
+	disk_super = (struct btrfs_super_block *)buf;
+	ret = btrfs_read_dev_super(fd, disk_super,
+				   BTRFS_SUPER_INFO_OFFSET, SBREAD_DEFAULT);
+	if (ret)
+		goto out;
+
+	memcpy(fsid, disk_super->fsid, BTRFS_FSID_SIZE);
+	ret = 0;
+
+out:
+	close(fd);
+	return ret;
+}
+
 /*
  *  This function loads the device_info structure and put them in an array
  */
@@ -515,6 +542,7 @@ static int load_device_info(int fd, struct device_info **device_info_ptr,
 	struct btrfs_ioctl_fs_info_args fi_args;
 	struct btrfs_ioctl_dev_info_args dev_info;
 	struct device_info *info;
+	u8 fsid[BTRFS_UUID_SIZE];
 
 	*device_info_count = 0;
 	*device_info_ptr = NULL;
@@ -523,8 +551,7 @@ static int load_device_info(int fd, struct device_info **device_info_ptr,
 	if (ret < 0) {
 		if (errno == EPERM)
 			return -errno;
-		error("cannot get filesystem info: %s",
-				strerror(errno));
+		error("cannot get filesystem info: %m");
 		return 1;
 	}
 
@@ -538,6 +565,8 @@ static int load_device_info(int fd, struct device_info **device_info_ptr,
 		if (ndevs >= fi_args.num_devices) {
 			error("unexpected number of devices: %d >= %llu", ndevs,
 				(unsigned long long)fi_args.num_devices);
+			error(
+		"if seed device is used, try running this command as root");
 			goto out;
 		}
 		memset(&dev_info, 0, sizeof(dev_info));
@@ -549,6 +578,17 @@ static int load_device_info(int fd, struct device_info **device_info_ptr,
 			error("cannot get info about device devid=%d", i);
 			goto out;
 		}
+
+		/*
+		 * Skip seed device by checking device's fsid (requires root).
+		 * And we will skip only if dev_to_fsid is successful and dev
+		 * is a seed device.
+		 * Ignore any other error including -EACCES, which is seen when
+		 * a non-root process calls dev_to_fsid(path)->open(path).
+		 */
+		ret = dev_to_fsid((const char *)dev_info.path, fsid);
+		if (!ret && memcmp(fi_args.fsid, fsid, BTRFS_FSID_SIZE) != 0)
+			continue;
 
 		info[ndevs].devid = dev_info.devid;
 		if (!dev_info.path[0]) {
@@ -589,7 +629,7 @@ int load_chunk_and_device_info(int fd, struct chunk_info **chunkinfo,
 	ret = load_chunk_info(fd, chunkinfo, chunkcount);
 	if (ret == -EPERM) {
 		warning(
-"cannot read detailed chunk info, RAID5/6 numbers will be incorrect, run as root");
+"cannot read detailed chunk info, per-device usage will not be shown, run as root");
 	} else if (ret) {
 		return ret;
 	}
@@ -620,7 +660,7 @@ static u64 calc_chunk_size(struct chunk_info *ci)
 	else if (ci->type & BTRFS_BLOCK_GROUP_RAID6)
 		return ci->size / (ci->num_stripes -2);
 	else if (ci->type & BTRFS_BLOCK_GROUP_RAID10)
-		return ci->size / ci->num_stripes;
+		return ci->size / (ci->num_stripes / 2);
 	return ci->size;
 }
 
@@ -736,8 +776,8 @@ static void _cmd_filesystem_usage_tabular(unsigned unit_mode,
 		unused = get_partition_size(device_info_ptr[i].path)
 				- total_allocated;
 
-		table_printf(matrix, unallocated_col, vhdr_skip + i,
-			       ">%s", pretty_size_mode(unused, unit_mode));
+		table_printf(matrix, unallocated_col, vhdr_skip + i, ">%s",
+			pretty_size_mode(unused, unit_mode | UNITS_NEGATIVE));
 		total_unused += unused;
 
 	}
@@ -771,7 +811,8 @@ static void _cmd_filesystem_usage_tabular(unsigned unit_mode,
 	}
 
 	table_printf(matrix, unallocated_col, vhdr_skip + device_info_count + 1,
-			">%s", pretty_size_mode(total_unused, unit_mode));
+		">%s",
+		pretty_size_mode(total_unused, unit_mode | UNITS_NEGATIVE));
 
 	table_printf(matrix, 1, vhdr_skip + device_info_count + 2, "<Used");
 	for (i = 0, col = spaceinfos_col; i < sargs->total_spaces; i++) {
@@ -882,21 +923,20 @@ static void _cmd_filesystem_usage_linear(unsigned unit_mode,
 		printf("\n");
 	}
 
-	printf("Unallocated:\n");
-	print_unused(info_ptr, info_count, device_info_ptr, device_info_count,
-			unit_mode);
+	if (info_count) {
+		printf("Unallocated:\n");
+		print_unused(info_ptr, info_count, device_info_ptr,
+				device_info_count, unit_mode | UNITS_NEGATIVE);
+	}
 }
 
 static int print_filesystem_usage_by_chunk(int fd,
 		struct chunk_info *chunkinfo, int chunkcount,
 		struct device_info *devinfo, int devcount,
-		char *path, unsigned unit_mode, int tabular)
+		const char *path, unsigned unit_mode, int tabular)
 {
 	struct btrfs_ioctl_space_args *sargs;
 	int ret = 0;
-
-	if (!chunkinfo)
-		return 0;
 
 	sargs = load_space_info(fd, path);
 	if (!sargs) {
@@ -934,6 +974,7 @@ int cmd_filesystem_usage(int argc, char **argv)
 
 	unit_mode = get_unit_mode_from_arg(&argc, argv, 1);
 
+	optind = 0;
 	while (1) {
 		int c;
 
@@ -995,7 +1036,7 @@ out:
 	return !!ret;
 }
 
-void print_device_chunks(int fd, struct device_info *devinfo,
+void print_device_chunks(struct device_info *devinfo,
 		struct chunk_info *chunks_info_ptr,
 		int chunks_info_count, unsigned unit_mode)
 {
@@ -1027,16 +1068,18 @@ void print_device_chunks(int fd, struct device_info *devinfo,
 	}
 	printf("   Unallocated: %*s%10s\n",
 		(int)(20 - strlen("Unallocated")), "",
-		pretty_size_mode(devinfo->size - allocated, unit_mode));
+		pretty_size_mode(devinfo->size - allocated,
+			unit_mode | UNITS_NEGATIVE));
 }
 
-void print_device_sizes(int fd, struct device_info *devinfo, unsigned unit_mode)
+void print_device_sizes(struct device_info *devinfo, unsigned unit_mode)
 {
 	printf("   Device size: %*s%10s\n",
 		(int)(20 - strlen("Device size")), "",
 		pretty_size_mode(devinfo->device_size, unit_mode));
 	printf("   Device slack: %*s%10s\n",
 		(int)(20 - strlen("Device slack")), "",
-		pretty_size_mode(devinfo->device_size - devinfo->size,
+		pretty_size_mode(devinfo->device_size > 0 ?
+			devinfo->device_size - devinfo->size : 0,
 			unit_mode));
 }

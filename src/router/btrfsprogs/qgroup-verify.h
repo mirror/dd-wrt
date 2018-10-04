@@ -23,11 +23,13 @@
 #include "ctree.h"
 
 int qgroup_verify_all(struct btrfs_fs_info *info);
-void report_qgroups(int all);
+int report_qgroups(int all);
 int repair_qgroups(struct btrfs_fs_info *info, int *repaired);
 
 int print_extent_state(struct btrfs_fs_info *info, u64 subvol);
 
 void free_qgroup_counts(void);
+
+void qgroup_set_item_count_ptr(u64 *item_count_ptr);
 
 #endif

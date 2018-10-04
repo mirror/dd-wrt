@@ -7,11 +7,11 @@ btrfstune - tune various filesystem parameters
 
 SYNOPSIS
 --------
-*btrfstune* [options] <dev> [<dev>...]
+*btrfstune* [options] <device> [<device>...]
 
 DESCRIPTION
 -----------
-*btrfstune* can be used to enable, disable or set various filesystem
+*btrfstune* can be used to enable, disable, or set various filesystem
 parameters. The filesystem must be unmounted.
 
 The common usecase is to enable features that were not enabled at mkfs time.
@@ -20,8 +20,8 @@ complete list of features and kernel version of their introduction at
 https://btrfs.wiki.kernel.org/index.php/Changelog#By_feature .  Also, the
 manual page `mkfs.btrfs`(8) contains more details about the features.
 
-Some of the features could be enabled on a mounted filesystem. Please refer to
-the respective section in `btrfs`(5).
+Some of the features could be also enabled on a mounted filesystem by other
+means.  Please refer to the 'FILESYSTEM FEATURES' in `btrfs`(5).
 
 OPTIONS
 -------
@@ -29,11 +29,13 @@ OPTIONS
 Enable seeding on a given device. Value 1 will enable seeding, 0 will disable it. +
 A seeding filesystem is forced to be mounted read-only. A new device can be added
 to the filesystem and will capture all writes keeping the seeding device intact.
+
 -r::
 (since kernel: 3.7)
 +
 Enable extended inode refs (hardlink limit per file in a directory is 65536),
 enabled by mkfs feature 'extref'.
+
 -x::
 (since kernel: 3.10)
 +
@@ -43,17 +45,21 @@ enabled by mkfs feature 'skinny-metadata'.
 All newly created extents will use the new representation. To completely switch
 the entire filesystem, run a full balance of the metadata. Please refer to
 `btrfs-balance`(8).
+
 -n::
 (since kernel: 3.14)
 +
 Enable no-holes feature (more efficient representation of file holes), enabled
 by mkfs feature 'no-holes'.
+
 -f::
 Allow dangerous changes, e.g. clear the seeding flag or change fsid. Make sure
 that you are aware of the dangers.
+
 -u::
 Change fsid to a randomly generated UUID or continue previous fsid change
 operation in case it was interrupted.
+
 -U <UUID>::
 Change fsid to 'UUID'.
 +
@@ -80,9 +86,10 @@ EXIT STATUS
 
 COMPATIBILITY NOTE
 ------------------
-This tool exists for historical reasons but is still in use today.  The
-functionality is about to be merged to the main tool someday and *btrfstune*
-will become deprecated and removed afterwards.
+
+This deprecated tool exists for historical reasons but is still in use today.
+Its functionality will be merged to the main tool, at which time *btrfstune*
+will be declared obsolete and scheduled for removal.
 
 SEE ALSO
 --------

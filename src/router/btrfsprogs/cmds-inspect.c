@@ -31,9 +31,7 @@
 #include "disk-io.h"
 #include "commands.h"
 #include "btrfs-list.h"
-#include "cmds-inspect-dump-tree.h"
-#include "cmds-inspect-dump-super.h"
-#include "cmds-inspect-tree-stats.h"
+#include "help.h"
 
 static const char * const inspect_cmd_group_usage[] = {
 	"btrfs inspect-internal <command> <args>",
@@ -54,7 +52,7 @@ static int __ino_to_path_fd(u64 inum, int fd, int verbose, const char *prepend)
 
 	ret = ioctl(fd, BTRFS_IOC_INO_PATHS, &ipa);
 	if (ret < 0) {
-		error("ino paths ioctl: %s", strerror(errno));
+		error("ino paths ioctl: %m");
 		goto out;
 	}
 
@@ -96,6 +94,7 @@ static int cmd_inspect_inode_resolve(int argc, char **argv)
 	int ret;
 	DIR *dirstream = NULL;
 
+	optind = 0;
 	while (1) {
 		int c = getopt(argc, argv, "v");
 		if (c < 0)
@@ -150,6 +149,7 @@ static int cmd_inspect_logical_resolve(int argc, char **argv)
 	char *path_ptr;
 	DIR *dirstream = NULL;
 
+	optind = 0;
 	while (1) {
 		int c = getopt(argc, argv, "Pvs:");
 		if (c < 0)
@@ -173,7 +173,7 @@ static int cmd_inspect_logical_resolve(int argc, char **argv)
 	if (check_argc_exact(argc - optind, 2))
 		usage(cmd_inspect_logical_resolve_usage);
 
-	size = min(size, (u64)64 * 1024);
+	size = min(size, (u64)SZ_64K);
 	inodes = malloc(size);
 	if (!inodes)
 		return 1;
@@ -191,7 +191,7 @@ static int cmd_inspect_logical_resolve(int argc, char **argv)
 
 	ret = ioctl(fd, BTRFS_IOC_LOGICAL_INO, &loi);
 	if (ret < 0) {
-		error("logical ino ioctl: %s", strerror(errno));
+		error("logical ino ioctl: %m");
 		goto out;
 	}
 
@@ -211,6 +211,7 @@ static int cmd_inspect_logical_resolve(int argc, char **argv)
 		error("path buffer too small: %d bytes", bytes_left);
 		goto out;
 	}
+	ret = 0;
 
 	for (i = 0; i < inodes->elem_cnt; i += 3) {
 		u64 inum = inodes->val[i];
@@ -245,7 +246,8 @@ static int cmd_inspect_logical_resolve(int argc, char **argv)
 					goto out;
 				}
 			}
-			__ino_to_path_fd(inum, path_fd, verbose, full_path);
+			ret = __ino_to_path_fd(inum, path_fd, verbose,
+						full_path);
 			if (path_fd != fd)
 				close_file_or_dir(path_fd, dirs);
 		} else {
@@ -320,7 +322,7 @@ static int cmd_inspect_rootid(int argc, char **argv)
 	if (check_argc_exact(argc - optind, 1))
 		usage(cmd_inspect_rootid_usage);
 
-	fd = btrfs_open_dir(argv[optind], &dirstream, 1);
+	fd = btrfs_open_file_or_dir(argv[optind], &dirstream, 1);
 	if (fd < 0) {
 		ret = -ENOENT;
 		goto out;
@@ -486,7 +488,7 @@ static void adjust_dev_min_size(struct list_head *extents,
 		 * chunk tree, so often this can lead to the need of allocating
 		 * a new system chunk too, which has a maximum size of 32Mb.
 		 */
-		*min_size += 32 * 1024 * 1024;
+		*min_size += SZ_32M;
 	}
 }
 
@@ -500,7 +502,7 @@ static int print_min_dev_size(int fd, u64 devid)
 	 * possibility of deprecating/removing it has been discussed, so we
 	 * ignore it here.
 	 */
-	u64 min_size = 1 * 1024 * 1024ull;
+	u64 min_size = SZ_1M;
 	struct btrfs_ioctl_search_args args;
 	struct btrfs_ioctl_search_key *sk = &args.key;
 	u64 last_pos = (u64)-1;
@@ -526,7 +528,7 @@ static int print_min_dev_size(int fd, u64 devid)
 
 		ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
 		if (ret < 0) {
-			error("tree search ioctl: %s", strerror(errno));
+			error("tree search ioctl: %m");
 			ret = 1;
 			goto out;
 		}
@@ -593,6 +595,7 @@ static int cmd_inspect_min_dev_size(int argc, char **argv)
 	DIR *dirstream = NULL;
 	u64 devid = 1;
 
+	optind = 0;
 	while (1) {
 		int c;
 		enum { GETOPT_VAL_DEVID = 256 };

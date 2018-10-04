@@ -135,7 +135,7 @@ int btrfs_clear_free_space_tree(struct btrfs_fs_info *fs_info)
 
 	list_del(&free_space_root->dirty_list);
 
-	ret = clean_tree_block(trans, tree_root, free_space_root->node);
+	ret = clean_tree_block(free_space_root->node);
 	if (ret)
 		goto abort;
 	ret = btrfs_free_tree_block(trans, free_space_root,
@@ -205,7 +205,7 @@ static int load_free_space_bitmaps(struct btrfs_fs_info *fs_info,
 		offset = key.objectid;
 		while (offset < key.objectid + key.offset) {
 			bit = free_space_test_bit(block_group, path, offset,
-						  root->sectorsize);
+						  fs_info->sectorsize);
 			if (prev_bit == 0 && bit == 1) {
 				extent_start = offset;
 			} else if (prev_bit == 1 && bit == 0) {
@@ -213,7 +213,7 @@ static int load_free_space_bitmaps(struct btrfs_fs_info *fs_info,
 				extent_count++;
 			}
 			prev_bit = bit;
-			offset += root->sectorsize;
+			offset += fs_info->sectorsize;
 		}
 	}
 
@@ -276,7 +276,7 @@ static int load_free_space_extents(struct btrfs_fs_info *fs_info,
 		if (key.objectid + key.offset > end) {
 			fprintf(stderr,
 	"free space extent ends at %llu, beyond end of block group %llu-%llu\n",
-				key.objectid, start, end);
+				key.objectid + key.offset, start, end);
 			(*errors)++;
 			break;
 		}

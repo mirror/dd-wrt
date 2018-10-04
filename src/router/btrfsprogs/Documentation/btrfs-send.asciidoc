@@ -3,7 +3,7 @@ btrfs-send(8)
 
 NAME
 ----
-btrfs-send - generate a stream of changes between two subvolumes
+btrfs-send - generate a stream of changes between two subvolume snapshots
 
 SYNOPSIS
 --------
@@ -13,27 +13,29 @@ DESCRIPTION
 -----------
 
 This command will generate a stream of instructions that describe changes
-between two subvolumes. The stream can be consumed by the *btrfs receive*
-command to replicate the sent subvolume on a different filesystem.
+between two subvolume snapshots. The stream can be consumed by the *btrfs
+receive* command to replicate the sent snapshot on a different filesystem.
 The command operates in two modes: full and incremental.
 
-All subvolumes involved in one send command must be read-only (ie. the
-read-only snapshots and this status cannot be changed if there's a running send
-operation that uses the subvolume).
+All snapshots involved in one send command must be read-only, and this status
+cannot be changed as long as there's a running send operation that uses the
+snapshot.
 
-In the full mode, the entire subvolume data and metadata will end up in the
+In the full mode, the entire snapshot data and metadata will end up in the
 stream.
 
-In the incremental mode (options '-p' and '-c'), there can be one or more
-parent subvolumes that will establish the base for determining the changes.
-The final stream will be smaller compared to the full mode.
+In the incremental mode (options '-p' and '-c'), previously sent snapshots that
+are available on both the sending and receiving side can be used to reduce the
+amount of information that has to be sent to reconstruct the sent snapshot on a
+different filesystem.
 
-It is allowed to omit the '-p <parent>' option when '-c <clone-src>' options
-are given, in which case *btrfs send* will determine a suitable parent among the
-clone sources itself.
+The '-p <parent>' option can be omitted when '-c <clone-src>' options are
+given, in which case *btrfs send* will determine a suitable parent from among
+the clone sources.
 
 You must not specify clone sources unless you guarantee that these snapshots
-are exactly in the same state on both sides, the sender and the receiver.
+are exactly in the same state on both sides--both for the sender and the
+receiver.
 
 `Options`
 
@@ -45,20 +47,20 @@ send an incremental stream from 'parent' to 'subvol'
 -c <clone-src>::
 use this snapshot as a clone source for an incremental send (multiple allowed)
 -f <outfile>::
-output is normally written to standard outout so it can be eg. piped to
-receive, use this option to write it to a file
+output is normally written to standard output so it can be, for example, piped
+to btrfs receive. Use this option to write it to a file instead.
 --no-data::
 send in 'NO_FILE_DATA' mode
 +
 The output stream does not contain any file
 data and thus cannot be used to transfer changes. This mode is faster and
-useful to show the differences in metadata.
+is useful to show the differences in metadata.
 
 -v|--verbose::
 enable verbose output, print generated commands in a readable form, (each
 occurrence of this option increases the verbosity level)
 -q|--quiet::
-suppress all messagese except errors
+suppress all messages except errors
 
 EXIT STATUS
 -----------

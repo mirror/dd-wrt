@@ -35,53 +35,11 @@
 #include "utils.h"
 #include "volumes.h"
 #include "extent_io.h"
-
-#define HEADER_MAGIC		0xbd5c25e27295668bULL
-#define MAX_PENDING_SIZE	(256 * 1024)
-#define BLOCK_SIZE		1024
-#define BLOCK_MASK		(BLOCK_SIZE - 1)
-
-#define COMPRESS_NONE		0
-#define COMPRESS_ZLIB		1
+#include "help.h"
+#include "image/metadump.h"
+#include "image/sanitize.h"
 
 #define MAX_WORKER_THREADS	(32)
-
-struct meta_cluster_item {
-	__le64 bytenr;
-	__le32 size;
-} __attribute__ ((__packed__));
-
-struct meta_cluster_header {
-	__le64 magic;
-	__le64 bytenr;
-	__le32 nritems;
-	u8 compress;
-} __attribute__ ((__packed__));
-
-/* cluster header + index items + buffers */
-struct meta_cluster {
-	struct meta_cluster_header header;
-	struct meta_cluster_item items[];
-} __attribute__ ((__packed__));
-
-#define ITEMS_PER_CLUSTER ((BLOCK_SIZE - sizeof(struct meta_cluster)) / \
-			   sizeof(struct meta_cluster_item))
-
-struct fs_chunk {
-	u64 logical;
-	u64 physical;
-	/*
-	 * physical_dup only store additonal physical for BTRFS_BLOCK_GROUP_DUP
-	 * currently restore only support single and DUP
-	 * TODO: modify this structure and the function related to this
-	 * structure for support RAID*
-	 */
-	u64 physical_dup;
-	u64 bytes;
-	struct rb_node l;
-	struct rb_node p;
-	struct list_head list;
-};
 
 struct async_work {
 	struct list_head list;
@@ -119,16 +77,9 @@ struct metadump_struct {
 	int compress_level;
 	int done;
 	int data;
-	int sanitize_names;
+	enum sanitize_mode sanitize_names;
 
 	int error;
-};
-
-struct name {
-	struct rb_node n;
-	char *val;
-	char *sub;
-	u32 len;
 };
 
 struct mdrestore_struct {
@@ -168,11 +119,11 @@ static struct extent_buffer *alloc_dummy_eb(u64 bytenr, u32 size);
 
 static void csum_block(u8 *buf, size_t len)
 {
-	u8 result[BTRFS_CRC32_SIZE];
+	u8 result[btrfs_csum_sizes[BTRFS_CSUM_TYPE_CRC32]];
 	u32 crc = ~(u32)0;
 	crc = crc32c(crc, buf + BTRFS_CSUM_SIZE, len - BTRFS_CSUM_SIZE);
 	btrfs_csum_final(crc, result);
-	memcpy(buf, result, BTRFS_CRC32_SIZE);
+	memcpy(buf, result, btrfs_csum_sizes[BTRFS_CSUM_TYPE_CRC32]);
 }
 
 static int has_name(struct btrfs_key *key)
@@ -189,35 +140,6 @@ static int has_name(struct btrfs_key *key)
 	}
 
 	return 0;
-}
-
-static char *generate_garbage(u32 name_len)
-{
-	char *buf = malloc(name_len);
-	int i;
-
-	if (!buf)
-		return NULL;
-
-	for (i = 0; i < name_len; i++) {
-		char c = rand_range(94) + 33;
-
-		if (c == '/')
-			c++;
-		buf[i] = c;
-	}
-
-	return buf;
-}
-
-static int name_cmp(struct rb_node *a, struct rb_node *b, int fuzz)
-{
-	struct name *entry = rb_entry(a, struct name, n);
-	struct name *ins = rb_entry(b, struct name, n);
-	u32 len;
-
-	len = min(ins->len, entry->len);
-	return memcmp(ins->val, entry->val, len);
 }
 
 static int chunk_cmp(struct rb_node *a, struct rb_node *b, int fuzz)
@@ -337,243 +259,6 @@ static u64 logical_to_physical(struct mdrestore_struct *mdres, u64 logical,
 	return fs_chunk->physical + offset;
 }
 
-
-static char *find_collision(struct metadump_struct *md, char *name,
-			    u32 name_len)
-{
-	struct name *val;
-	struct rb_node *entry;
-	struct name tmp;
-	unsigned long checksum;
-	int found = 0;
-	int i;
-
-	tmp.val = name;
-	tmp.len = name_len;
-	entry = tree_search(&md->name_tree, &tmp.n, name_cmp, 0);
-	if (entry) {
-		val = rb_entry(entry, struct name, n);
-		free(name);
-		return val->sub;
-	}
-
-	val = malloc(sizeof(struct name));
-	if (!val) {
-		error("cannot sanitize name, not enough memory");
-		free(name);
-		return NULL;
-	}
-
-	memset(val, 0, sizeof(*val));
-
-	val->val = name;
-	val->len = name_len;
-	val->sub = malloc(name_len);
-	if (!val->sub) {
-		error("cannot sanitize name, not enough memory");
-		free(val);
-		free(name);
-		return NULL;
-	}
-
-	checksum = crc32c(~1, val->val, name_len);
-	memset(val->sub, ' ', name_len);
-	i = 0;
-	while (1) {
-		if (crc32c(~1, val->sub, name_len) == checksum &&
-		    memcmp(val->sub, val->val, val->len)) {
-			found = 1;
-			break;
-		}
-
-		if (val->sub[i] == 127) {
-			do {
-				i++;
-				if (i >= name_len)
-					break;
-			} while (val->sub[i] == 127);
-
-			if (i >= name_len)
-				break;
-			val->sub[i]++;
-			if (val->sub[i] == '/')
-				val->sub[i]++;
-			memset(val->sub, ' ', i);
-			i = 0;
-			continue;
-		} else {
-			val->sub[i]++;
-			if (val->sub[i] == '/')
-				val->sub[i]++;
-		}
-	}
-
-	if (!found) {
-		warning(
-"cannot find a hash collision for '%.*s', generating garbage, it won't match indexes",
-			val->len, val->val);
-		for (i = 0; i < name_len; i++) {
-			char c = rand_range(94) + 33;
-
-			if (c == '/')
-				c++;
-			val->sub[i] = c;
-		}
-	}
-
-	tree_insert(&md->name_tree, &val->n, name_cmp);
-	return val->sub;
-}
-
-static void sanitize_dir_item(struct metadump_struct *md, struct extent_buffer *eb,
-			      int slot)
-{
-	struct btrfs_dir_item *dir_item;
-	char *buf;
-	char *garbage;
-	unsigned long name_ptr;
-	u32 total_len;
-	u32 cur = 0;
-	u32 this_len;
-	u32 name_len;
-	int free_garbage = (md->sanitize_names == 1);
-
-	dir_item = btrfs_item_ptr(eb, slot, struct btrfs_dir_item);
-	total_len = btrfs_item_size_nr(eb, slot);
-	while (cur < total_len) {
-		this_len = sizeof(*dir_item) +
-			btrfs_dir_name_len(eb, dir_item) +
-			btrfs_dir_data_len(eb, dir_item);
-		name_ptr = (unsigned long)(dir_item + 1);
-		name_len = btrfs_dir_name_len(eb, dir_item);
-
-		if (md->sanitize_names > 1) {
-			buf = malloc(name_len);
-			if (!buf) {
-				error("cannot sanitize name, not enough memory");
-				return;
-			}
-			read_extent_buffer(eb, buf, name_ptr, name_len);
-			garbage = find_collision(md, buf, name_len);
-		} else {
-			garbage = generate_garbage(name_len);
-		}
-		if (!garbage) {
-			error("cannot sanitize name, not enough memory");
-			return;
-		}
-		write_extent_buffer(eb, garbage, name_ptr, name_len);
-		cur += this_len;
-		dir_item = (struct btrfs_dir_item *)((char *)dir_item +
-						     this_len);
-		if (free_garbage)
-			free(garbage);
-	}
-}
-
-static void sanitize_inode_ref(struct metadump_struct *md,
-			       struct extent_buffer *eb, int slot, int ext)
-{
-	struct btrfs_inode_extref *extref;
-	struct btrfs_inode_ref *ref;
-	char *garbage, *buf;
-	unsigned long ptr;
-	unsigned long name_ptr;
-	u32 item_size;
-	u32 cur_offset = 0;
-	int len;
-	int free_garbage = (md->sanitize_names == 1);
-
-	item_size = btrfs_item_size_nr(eb, slot);
-	ptr = btrfs_item_ptr_offset(eb, slot);
-	while (cur_offset < item_size) {
-		if (ext) {
-			extref = (struct btrfs_inode_extref *)(ptr +
-							       cur_offset);
-			name_ptr = (unsigned long)(&extref->name);
-			len = btrfs_inode_extref_name_len(eb, extref);
-			cur_offset += sizeof(*extref);
-		} else {
-			ref = (struct btrfs_inode_ref *)(ptr + cur_offset);
-			len = btrfs_inode_ref_name_len(eb, ref);
-			name_ptr = (unsigned long)(ref + 1);
-			cur_offset += sizeof(*ref);
-		}
-		cur_offset += len;
-
-		if (md->sanitize_names > 1) {
-			buf = malloc(len);
-			if (!buf) {
-				error("cannot sanitize name, not enough memory");
-				return;
-			}
-			read_extent_buffer(eb, buf, name_ptr, len);
-			garbage = find_collision(md, buf, len);
-		} else {
-			garbage = generate_garbage(len);
-		}
-
-		if (!garbage) {
-			error("cannot sanitize name, not enough memory");
-			return;
-		}
-		write_extent_buffer(eb, garbage, name_ptr, len);
-		if (free_garbage)
-			free(garbage);
-	}
-}
-
-static void sanitize_xattr(struct metadump_struct *md,
-			   struct extent_buffer *eb, int slot)
-{
-	struct btrfs_dir_item *dir_item;
-	unsigned long data_ptr;
-	u32 data_len;
-
-	dir_item = btrfs_item_ptr(eb, slot, struct btrfs_dir_item);
-	data_len = btrfs_dir_data_len(eb, dir_item);
-
-	data_ptr = (unsigned long)((char *)(dir_item + 1) +
-				   btrfs_dir_name_len(eb, dir_item));
-	memset_extent_buffer(eb, 0, data_ptr, data_len);
-}
-
-static void sanitize_name(struct metadump_struct *md, u8 *dst,
-			  struct extent_buffer *src, struct btrfs_key *key,
-			  int slot)
-{
-	struct extent_buffer *eb;
-
-	eb = alloc_dummy_eb(src->start, src->len);
-	if (!eb) {
-		error("cannot sanitize name, not enough memory");
-		return;
-	}
-
-	memcpy(eb->data, dst, eb->len);
-
-	switch (key->type) {
-	case BTRFS_DIR_ITEM_KEY:
-	case BTRFS_DIR_INDEX_KEY:
-		sanitize_dir_item(md, eb, slot);
-		break;
-	case BTRFS_INODE_REF_KEY:
-		sanitize_inode_ref(md, eb, slot, 0);
-		break;
-	case BTRFS_INODE_EXTREF_KEY:
-		sanitize_inode_ref(md, eb, slot, 1);
-		break;
-	case BTRFS_XATTR_ITEM_KEY:
-		sanitize_xattr(md, eb, slot);
-		break;
-	default:
-		break;
-	}
-
-	memcpy(dst, eb->data, eb->len);
-	free(eb);
-}
-
 /*
  * zero inline extents and csum items
  */
@@ -599,7 +284,8 @@ static void zero_items(struct metadump_struct *md, u8 *dst,
 		}
 
 		if (md->sanitize_names && has_name(&key)) {
-			sanitize_name(md, dst, src, &key, i);
+			sanitize_name(md->sanitize_names, &md->name_tree, dst,
+					src, &key, i);
 			continue;
 		}
 
@@ -745,7 +431,7 @@ static void metadump_destroy(struct metadump_struct *md, int num_threads)
 
 static int metadump_init(struct metadump_struct *md, struct btrfs_root *root,
 			 FILE *out, int num_threads, int compress_level,
-			 int sanitize_names)
+			 enum sanitize_mode sanitize_names)
 {
 	int i, ret = 0;
 
@@ -757,7 +443,7 @@ static int metadump_init(struct metadump_struct *md, struct btrfs_root *root,
 	md->pending_start = (u64)-1;
 	md->compress_level = compress_level;
 	md->sanitize_names = sanitize_names;
-	if (sanitize_names > 1)
+	if (sanitize_names == SANITIZE_COLLISIONS)
 		crc32c_optimization_init();
 
 	md->name_tree.rb_node = NULL;
@@ -828,7 +514,7 @@ static int write_buffers(struct metadump_struct *md, u64 *next)
 
 	ret = fwrite(&md->cluster, BLOCK_SIZE, 1, md->out);
 	if (ret != 1) {
-		error("unable to write out cluster: %s", strerror(errno));
+		error("unable to write out cluster: %m");
 		return -errno;
 	}
 
@@ -844,8 +530,7 @@ static int write_buffers(struct metadump_struct *md, u64 *next)
 			ret = fwrite(async->buffer, async->bufsize, 1,
 				     md->out);
 		if (ret != 1) {
-			error("unable to write out cluster: %s",
-				strerror(errno));
+			error("unable to write out cluster: %m");
 			err = -errno;
 			ret = 0;
 		}
@@ -861,8 +546,7 @@ static int write_buffers(struct metadump_struct *md, u64 *next)
 		bytenr += size;
 		ret = write_zero(md->out, size);
 		if (ret != 1) {
-			error("unable to zero out buffer: %s",
-				strerror(errno));
+			error("unable to zero out buffer: %m");
 			err = -errno;
 		}
 	}
@@ -875,6 +559,7 @@ static int read_data_extent(struct metadump_struct *md,
 			    struct async_work *async)
 {
 	struct btrfs_root *root = md->root;
+	struct btrfs_fs_info *fs_info = root->fs_info;
 	u64 bytes_left = async->size;
 	u64 logical = async->start;
 	u64 offset = 0;
@@ -883,14 +568,13 @@ static int read_data_extent(struct metadump_struct *md,
 	int cur_mirror;
 	int ret;
 
-	num_copies = btrfs_num_copies(&root->fs_info->mapping_tree, logical,
-				      bytes_left);
+	num_copies = btrfs_num_copies(root->fs_info, logical, bytes_left);
 
 	/* Try our best to read data, just like read_tree_block() */
-	for (cur_mirror = 0; cur_mirror < num_copies; cur_mirror++) {
+	for (cur_mirror = 1; cur_mirror <= num_copies; cur_mirror++) {
 		while (bytes_left) {
 			read_len = bytes_left;
-			ret = read_extent_data(root,
+			ret = read_extent_data(fs_info,
 					(char *)(async->buffer + offset),
 					logical, &read_len, cur_mirror);
 			if (ret < 0)
@@ -918,7 +602,6 @@ static int flush_pending(struct metadump_struct *md, int done)
 {
 	struct async_work *async = NULL;
 	struct extent_buffer *eb;
-	u64 blocksize = md->root->nodesize;
 	u64 start = 0;
 	u64 size;
 	size_t offset;
@@ -961,9 +644,8 @@ static int flush_pending(struct metadump_struct *md, int done)
 			if (ret < size) {
 				free(async->buffer);
 				free(async);
-				error("unable to read superblock at %llu: %s",
-						(unsigned long long)start,
-						strerror(errno));
+				error("unable to read superblock at %llu: %m",
+						(unsigned long long)start);
 				return -errno;
 			}
 			size = 0;
@@ -971,8 +653,10 @@ static int flush_pending(struct metadump_struct *md, int done)
 		}
 
 		while (!md->data && size > 0) {
-			u64 this_read = min(blocksize, size);
-			eb = read_tree_block(md->root, start, this_read, 0);
+			u64 this_read = min((u64)md->root->fs_info->nodesize,
+					size);
+
+			eb = read_tree_block(md->root->fs_info, start, 0);
 			if (!extent_buffer_uptodate(eb)) {
 				free(async->buffer);
 				free(async);
@@ -1027,7 +711,7 @@ static int add_extent(u64 start, u64 size, struct metadump_struct *md,
 			return ret;
 		md->pending_start = start;
 	}
-	readahead_tree_block(md->root, start, size, 0);
+	readahead_tree_block(md->root->fs_info, start, 0);
 	md->pending_size += size;
 	md->data = data;
 	return 0;
@@ -1076,13 +760,15 @@ static int copy_tree_blocks(struct btrfs_root *root, struct extent_buffer *eb,
 	struct extent_buffer *tmp;
 	struct btrfs_root_item *ri;
 	struct btrfs_key key;
+	struct btrfs_fs_info *fs_info = root->fs_info;
 	u64 bytenr;
 	int level;
 	int nritems = 0;
 	int i = 0;
 	int ret;
 
-	ret = add_extent(btrfs_header_bytenr(eb), root->nodesize, metadump, 0);
+	ret = add_extent(btrfs_header_bytenr(eb), fs_info->nodesize,
+			 metadump, 0);
 	if (ret) {
 		error("unable to add metadata block %llu: %d",
 				btrfs_header_bytenr(eb), ret);
@@ -1101,7 +787,7 @@ static int copy_tree_blocks(struct btrfs_root *root, struct extent_buffer *eb,
 				continue;
 			ri = btrfs_item_ptr(eb, i, struct btrfs_root_item);
 			bytenr = btrfs_disk_root_bytenr(eb, ri);
-			tmp = read_tree_block(root, bytenr, root->nodesize, 0);
+			tmp = read_tree_block(fs_info, bytenr, 0);
 			if (!extent_buffer_uptodate(tmp)) {
 				error("unable to read log root block");
 				return -EIO;
@@ -1112,7 +798,7 @@ static int copy_tree_blocks(struct btrfs_root *root, struct extent_buffer *eb,
 				return ret;
 		} else {
 			bytenr = btrfs_node_blockptr(eb, i);
-			tmp = read_tree_block(root, bytenr, root->nodesize, 0);
+			tmp = read_tree_block(fs_info, bytenr, 0);
 			if (!extent_buffer_uptodate(tmp)) {
 				error("unable to read log root block");
 				return -EIO;
@@ -1128,8 +814,7 @@ static int copy_tree_blocks(struct btrfs_root *root, struct extent_buffer *eb,
 }
 
 static int copy_log_trees(struct btrfs_root *root,
-			  struct metadump_struct *metadump,
-			  struct btrfs_path *path)
+			  struct metadump_struct *metadump)
 {
 	u64 blocknr = btrfs_super_log_root(root->fs_info->super_copy);
 
@@ -1260,7 +945,7 @@ static int copy_from_extent_tree(struct metadump_struct *metadump,
 
 		bytenr = key.objectid;
 		if (key.type == BTRFS_METADATA_ITEM_KEY) {
-			num_bytes = extent_root->nodesize;
+			num_bytes = extent_root->fs_info->nodesize;
 		} else {
 			num_bytes = key.offset;
 		}
@@ -1320,7 +1005,8 @@ static int copy_from_extent_tree(struct metadump_struct *metadump,
 }
 
 static int create_metadump(const char *input, FILE *out, int num_threads,
-			   int compress_level, int sanitize, int walk_trees)
+			   int compress_level, enum sanitize_mode sanitize,
+			   int walk_trees)
 {
 	struct btrfs_root *root;
 	struct btrfs_path path;
@@ -1374,7 +1060,7 @@ static int create_metadump(const char *input, FILE *out, int num_threads,
 		}
 	}
 
-	ret = copy_log_trees(root, &metadump, &path);
+	ret = copy_log_trees(root, &metadump);
 	if (ret) {
 		err = ret;
 		goto out;
@@ -1500,6 +1186,7 @@ static int update_super(struct mdrestore_struct *mdres, u8 *buffer)
 	flags |= BTRFS_SUPER_FLAG_METADUMP_V2;
 	btrfs_set_super_flags(super, flags);
 	btrfs_set_super_sys_array_size(super, new_array_size);
+	btrfs_set_super_num_devices(super, 1);
 	csum_block(buffer, BTRFS_SUPER_INFO_SIZE);
 
 	return 0;
@@ -1651,8 +1338,7 @@ static void write_backup_supers(int fd, u8 *buf)
 
 	if (fstat(fd, &st)) {
 		error(
-	"cannot stat restore point, won't be able to write backup supers: %s",
-			strerror(errno));
+	"cannot stat restore point, won't be able to write backup supers: %m");
 		return;
 	}
 
@@ -1668,8 +1354,7 @@ static void write_backup_supers(int fd, u8 *buf)
 		if (ret < BTRFS_SUPER_INFO_SIZE) {
 			if (ret < 0)
 				error(
-				"problem writing out backup super block %d: %s",
-						i, strerror(errno));
+				"problem writing out backup super block %d: %m", i);
 			else
 				error("short write writing out backup super block");
 			break;
@@ -1714,14 +1399,15 @@ static void *restore_worker(void *data)
 		}
 		async = list_entry(mdres->list.next, struct async_work, list);
 		list_del_init(&async->list);
-		pthread_mutex_unlock(&mdres->mutex);
 
 		if (mdres->compress_method == COMPRESS_ZLIB) {
 			size = compress_size; 
+			pthread_mutex_unlock(&mdres->mutex);
 			ret = uncompress(buffer, (unsigned long *)&size,
 					 async->buffer, async->bufsize);
+			pthread_mutex_lock(&mdres->mutex);
 			if (ret != Z_OK) {
-				error("decompressiion failed with %d", ret);
+				error("decompression failed with %d", ret);
 				err = -EIO;
 			}
 			outbuf = buffer;
@@ -1776,8 +1462,7 @@ static void *restore_worker(void *data)
 
 error:
 				if (ret < 0) {
-					error("unable to write to device: %s",
-							strerror(errno));
+					error("unable to write to device: %m");
 					err = errno;
 				} else {
 					error("short write");
@@ -1797,7 +1482,6 @@ error:
 		if (!mdres->multi_devices && async->start == BTRFS_SUPER_INFO_OFFSET)
 			write_backup_supers(outfd, outbuf);
 
-		pthread_mutex_lock(&mdres->mutex);
 		if (err && !mdres->error)
 			mdres->error = err;
 		mdres->num_items--;
@@ -1898,7 +1582,7 @@ static int fill_mdres_info(struct mdrestore_struct *mdres,
 		ret = uncompress(buffer, (unsigned long *)&size,
 				 async->buffer, async->bufsize);
 		if (ret != Z_OK) {
-			error("decompressiion failed with %d", ret);
+			error("decompression failed with %d", ret);
 			free(buffer);
 			return -EIO;
 		}
@@ -1927,7 +1611,9 @@ static int add_cluster(struct meta_cluster *cluster,
 	u32 i, nritems;
 	int ret;
 
+	pthread_mutex_lock(&mdres->mutex);
 	mdres->compress_method = header->compress;
+	pthread_mutex_unlock(&mdres->mutex);
 
 	bytenr = le64_to_cpu(header->bytenr) + BLOCK_SIZE;
 	nritems = le32_to_cpu(header->nritems);
@@ -1948,7 +1634,7 @@ static int add_cluster(struct meta_cluster *cluster,
 		}
 		ret = fread(async->buffer, async->bufsize, 1, mdres->in);
 		if (ret != 1) {
-			error("unable to read buffer: %s", strerror(errno));
+			error("unable to read buffer: %m");
 			free(async->buffer);
 			free(async);
 			return -EIO;
@@ -1978,7 +1664,7 @@ static int add_cluster(struct meta_cluster *cluster,
 		bytenr += size;
 		ret = fread(buffer, size, 1, mdres->in);
 		if (ret != 1) {
-			error("failed to read buffer: %s", strerror(errno));
+			error("failed to read buffer: %m");
 			return -EIO;
 		}
 	}
@@ -2156,7 +1842,7 @@ static int search_for_chunk_blocks(struct mdrestore_struct *mdres,
 	bytenr = current_cluster;
 	while (1) {
 		if (fseek(mdres->in, current_cluster, SEEK_SET)) {
-			error("seek failed: %s", strerror(errno));
+			error("seek failed: %m");
 			ret = -EIO;
 			break;
 		}
@@ -2170,14 +1856,13 @@ static int search_for_chunk_blocks(struct mdrestore_struct *mdres,
 				continue;
 			}
 			error(
-	"unknown state after reading cluster at %llu, probably crrupted data",
+	"unknown state after reading cluster at %llu, probably corrupted data",
 					cluster_bytenr);
 			ret = -EIO;
 			break;
 		} else if (ret < 0) {
-			error("unable to read image at %llu: %s",
-					(unsigned long long)cluster_bytenr,
-					strerror(errno));
+			error("unable to read image at %llu: %m",
+					(unsigned long long)cluster_bytenr);
 			break;
 		}
 		ret = 0;
@@ -2209,7 +1894,7 @@ static int search_for_chunk_blocks(struct mdrestore_struct *mdres,
 			if (mdres->compress_method == COMPRESS_ZLIB) {
 				ret = fread(tmp, bufsize, 1, mdres->in);
 				if (ret != 1) {
-					error("read error: %s", strerror(errno));
+					error("read error: %m");
 					ret = -EIO;
 					break;
 				}
@@ -2219,7 +1904,7 @@ static int search_for_chunk_blocks(struct mdrestore_struct *mdres,
 						 (unsigned long *)&size, tmp,
 						 bufsize);
 				if (ret != Z_OK) {
-					error("decompressiion failed with %d",
+					error("decompression failed with %d",
 							ret);
 					ret = -EIO;
 					break;
@@ -2227,8 +1912,7 @@ static int search_for_chunk_blocks(struct mdrestore_struct *mdres,
 			} else {
 				ret = fread(buffer, bufsize, 1, mdres->in);
 				if (ret != 1) {
-					error("read error: %s",
-							strerror(errno));
+					error("read error: %m");
 					ret = -EIO;
 					break;
 				}
@@ -2281,7 +1965,7 @@ static int build_chunk_tree(struct mdrestore_struct *mdres,
 
 	ret = fread(cluster, BLOCK_SIZE, 1, mdres->in);
 	if (ret <= 0) {
-		error("unable to read cluster: %s", strerror(errno));
+		error("unable to read cluster: %m");
 		return -EIO;
 	}
 	ret = 0;
@@ -2303,7 +1987,7 @@ static int build_chunk_tree(struct mdrestore_struct *mdres,
 			break;
 		bytenr += le32_to_cpu(item->size);
 		if (fseek(mdres->in, le32_to_cpu(item->size), SEEK_CUR)) {
-			error("seek failed: %s", strerror(errno));
+			error("seek failed: %m");
 			return -EIO;
 		}
 	}
@@ -2322,7 +2006,7 @@ static int build_chunk_tree(struct mdrestore_struct *mdres,
 
 	ret = fread(buffer, le32_to_cpu(item->size), 1, mdres->in);
 	if (ret != 1) {
-		error("unable to read buffer: %s", strerror(errno));
+		error("unable to read buffer: %m");
 		free(buffer);
 		return -EIO;
 	}
@@ -2339,7 +2023,7 @@ static int build_chunk_tree(struct mdrestore_struct *mdres,
 		ret = uncompress(tmp, (unsigned long *)&size,
 				 buffer, le32_to_cpu(item->size));
 		if (ret != Z_OK) {
-			error("decompressiion failed with %d", ret);
+			error("decompression failed with %d", ret);
 			free(buffer);
 			free(tmp);
 			return -EIO;
@@ -2504,8 +2188,7 @@ static int restore_metadump(const char *input, FILE *out, int old_restore,
 	} else {
 		in = fopen(input, "r");
 		if (!in) {
-			error("unable to open metadump image: %s",
-					strerror(errno));
+			error("unable to open metadump image: %m");
 			return 1;
 		}
 	}
@@ -2533,7 +2216,7 @@ static int restore_metadump(const char *input, FILE *out, int old_restore,
 	ret = mdrestore_init(&mdrestore, in, out, old_restore, num_threads,
 			     fixup_offset, info, multi_devices);
 	if (ret) {
-		error("failed to intialize metadata restore state: %d", ret);
+		error("failed to initialize metadata restore state: %d", ret);
 		goto failed_cluster;
 	}
 
@@ -2546,7 +2229,7 @@ static int restore_metadump(const char *input, FILE *out, int old_restore,
 	}
 
 	if (in != stdin && fseek(in, 0, SEEK_SET)) {
-		error("seek failed: %s", strerror(errno));
+		error("seek failed: %m");
 		goto out;
 	}
 
@@ -2586,7 +2269,7 @@ static int restore_metadump(const char *input, FILE *out, int old_restore,
 		info = root->fs_info;
 
 		if (stat(target, &st)) {
-			error("stat %s failed: %s", target, strerror(errno));
+			error("stat %s failed: %m", target);
 			close_ctree(info->chunk_root);
 			free(cluster);
 			return 1;
@@ -2667,7 +2350,7 @@ static int update_disk_super_on_device(struct btrfs_fs_info *info,
 	/* update other devices' super block */
 	fp = open(other_dev, O_CREAT | O_RDWR, 0600);
 	if (fp < 0) {
-		error("could not open %s: %s", other_dev, strerror(errno));
+		error("could not open %s: %m", other_dev);
 		ret = -EIO;
 		goto out;
 	}
@@ -2733,7 +2416,7 @@ int main(int argc, char *argv[])
 	int walk_trees = 0;
 	int multi_devices = 0;
 	int ret;
-	int sanitize = 0;
+	enum sanitize_mode sanitize = SANITIZE_NONE;
 	int dev_cnt = 0;
 	int usage_error = 0;
 	FILE *out;
@@ -2771,7 +2454,10 @@ int main(int argc, char *argv[])
 			old_restore = 1;
 			break;
 		case 's':
-			sanitize++;
+			if (sanitize == SANITIZE_NONE)
+				sanitize = SANITIZE_NAMES;
+			else if (sanitize == SANITIZE_NAMES)
+				sanitize = SANITIZE_COLLISIONS;
 			break;
 		case 'w':
 			walk_trees = 1;
@@ -2799,7 +2485,7 @@ int main(int argc, char *argv[])
 			usage_error++;
 		}
 	} else {
-		if (walk_trees || sanitize || compress_level) {
+		if (walk_trees || sanitize != SANITIZE_NONE || compress_level) {
 			error(
 			"useing -w, -s, -c options for restore makes no sense");
 			usage_error++;
@@ -2859,8 +2545,7 @@ int main(int argc, char *argv[])
 				       0, target, multi_devices);
 	}
 	if (ret) {
-		error("%s failed: %s", (create) ? "create" : "restore",
-		       strerror(errno));
+		error("%s failed: %m", (create) ? "create" : "restore");
 		goto out;
 	}
 
@@ -2918,8 +2603,8 @@ out:
 
 			unlink_ret = unlink(target);
 			if (unlink_ret)
-				error("unlink output file %s failed: %s",
-						target, strerror(errno));
+				error("unlink output file %s failed: %m",
+						target);
 		}
 	}
 

@@ -20,18 +20,20 @@
 
 #include <getopt.h>
 #include "ctree.h"
+#include "volumes.h"
 #include "transaction.h"
 #include "disk-io.h"
 #include "commands.h"
 #include "utils.h"
+#include "help.h"
 
 static const char * const rescue_cmd_group_usage[] = {
 	"btrfs rescue <command> [options] <path>",
 	NULL
 };
 
-int btrfs_recover_chunk_tree(char *path, int verbose, int yes);
-int btrfs_recover_superblocks(char *path, int verbose, int yes);
+int btrfs_recover_chunk_tree(const char *path, int verbose, int yes);
+int btrfs_recover_superblocks(const char *path, int verbose, int yes);
 
 static const char * const cmd_rescue_chunk_recover_usage[] = {
 	"btrfs rescue chunk-recover [options] <device>",
@@ -50,6 +52,7 @@ static int cmd_rescue_chunk_recover(int argc, char *argv[])
 	int yes = 0;
 	int verbose = 0;
 
+	optind = 0;
 	while (1) {
 		int c = getopt(argc, argv, "yvh");
 		if (c < 0)
@@ -117,6 +120,7 @@ static int cmd_rescue_super_recover(int argc, char **argv)
 	int yes = 0;
 	char *dname;
 
+	optind = 0;
 	while (1) {
 		int c = getopt(argc, argv, "vy");
 		if (c < 0)
@@ -176,6 +180,7 @@ static int cmd_rescue_zero_log(int argc, char **argv)
 	} else if (ret) {
 		error("%s is currently mounted", devname);
 		ret = -EBUSY;
+		goto out;
 	}
 
 	root = open_ctree(devname, 0, OPEN_CTREE_WRITES | OPEN_CTREE_PARTIAL);
@@ -190,11 +195,57 @@ static int cmd_rescue_zero_log(int argc, char **argv)
 			(unsigned long long)btrfs_super_log_root(sb),
 			(unsigned)btrfs_super_log_root_level(sb));
 	trans = btrfs_start_transaction(root, 1);
+	BUG_ON(IS_ERR(trans));
 	btrfs_set_super_log_root(sb, 0);
 	btrfs_set_super_log_root_level(sb, 0);
 	btrfs_commit_transaction(trans, root);
 	close_ctree(root);
 
+out:
+	return !!ret;
+}
+
+static const char * const cmd_rescue_fix_device_size_usage[] = {
+	"btrfs rescue fix-device-size <device>",
+	"Re-align device and super block sizes. Usable if newer kernel refuse to mount it due to mismatch super size",
+	"",
+	NULL
+};
+
+static int cmd_rescue_fix_device_size(int argc, char **argv)
+{
+	struct btrfs_fs_info *fs_info;
+	char *devname;
+	int ret;
+
+	clean_args_no_options(argc, argv, cmd_rescue_fix_device_size_usage);
+
+	if (check_argc_exact(argc, 2))
+		usage(cmd_rescue_fix_device_size_usage);
+
+	devname = argv[optind];
+	ret = check_mounted(devname);
+	if (ret < 0) {
+		error("could not check mount status: %s", strerror(-ret));
+		goto out;
+	} else if (ret) {
+		error("%s is currently mounted", devname);
+		ret = -EBUSY;
+		goto out;
+	}
+
+	fs_info = open_ctree_fs_info(devname, 0, 0, 0, OPEN_CTREE_WRITES |
+				     OPEN_CTREE_PARTIAL);
+	if (!fs_info) {
+		error("could not open btrfs");
+		ret = -EIO;
+		goto out;
+	}
+
+	ret = btrfs_fix_device_and_super_size(fs_info);
+	if (ret > 0)
+		ret = 0;
+	close_ctree(fs_info->tree_root);
 out:
 	return !!ret;
 }
@@ -209,6 +260,8 @@ const struct cmd_group rescue_cmd_group = {
 		{ "super-recover", cmd_rescue_super_recover,
 			cmd_rescue_super_recover_usage, NULL, 0},
 		{ "zero-log", cmd_rescue_zero_log, cmd_rescue_zero_log_usage, NULL, 0},
+		{ "fix-device-size", cmd_rescue_fix_device_size,
+			cmd_rescue_fix_device_size_usage, NULL, 0},
 		NULL_CMD_STRUCT
 	}
 };
