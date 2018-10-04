@@ -108,30 +108,30 @@ void start_raid(void)
 					sysprintf("mkfs.btrfs /dev/md%d", i);
 			}
 			if (!strcmp(type, "btrfs")) {
-				if (!strcmp(level, "stripe"))
-				    sysprintf("mkfs.btrfs -d single %s", raid);
-				if (!strcmp(level, "raid0"))
+				if (!strcmp(level, "0"))
 				    sysprintf("mkfs.btrfs -d raid0 %s", raid);
-				if (!strcmp(level, "raid10"))
-				    sysprintf("mkfs.btrfs -d raid10 %s", raid);
-				if (!strcmp(level, "raid5"))
+				if (!strcmp(level, "1"))
+				    sysprintf("mkfs.btrfs -d raid1 %s", raid);
+				if (!strcmp(level, "5"))
 				    sysprintf("mkfs.btrfs -d raid5 %s", raid);
-				if (!strcmp(level, "raid6"))
+				if (!strcmp(level, "6"))
 				    sysprintf("mkfs.btrfs -d raid6 %s", raid);
+				if (!strcmp(level, "10"))
+				    sysprintf("mkfs.btrfs -d raid10 %s", raid);
 
 			}
 			if (!strcmp(type, "zfs")) {
 				char *poolname = nvram_nget("raidname%d", i);
 				dd_loginfo("raid", "creating ZFS Pool %s", poolname);
-				if (!strcmp(level, "mirror"))
+				if (!strcmp(level, "1"))
 					sysprintf("zpool create %s mirror %s", poolname, raid);
-				if (!strcmp(level, "raidz1"))
+				if (!strcmp(level, "5"))
 					sysprintf("zpool create %s raidz1 %s", poolname, raid);
-				if (!strcmp(level, "raidz2"))
+				if (!strcmp(level, "6"))
 					sysprintf("zpool create %s raidz2 %s", poolname, raid);
-				if (!strcmp(level, "raidz3"))
+				if (!strcmp(level, "z3"))
 					sysprintf("zpool create %s raidz3 %s", poolname, raid);
-				if (!strcmp(level, "stripe"))
+				if (!strcmp(level, "0"))
 					sysprintf("zpool create %s %s", poolname, raid);
 				sysprintf("zfs create %s/fs1");
 				sysprintf("mkdir -p /tmp/mnt/%s", poolname);
