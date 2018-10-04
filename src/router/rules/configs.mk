@@ -301,7 +301,7 @@ obj-$(CONFIG_ZFS) += util-linux spl zlib zfs
 obj-$(CONFIG_SCREEN) += ncurses screen
 obj-$(CONFIG_DDRESCUE) += ddrescue
 obj-$(CONFIG_I2CTOOLS) += i2ctools
-obj-$(CONFIG_RAID) += mdadm
+obj-$(CONFIG_RAID) += mdadm raidmanager
 
 obj-y+=configs
 
