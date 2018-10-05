@@ -60,7 +60,7 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		char *raidname = nvram_nget("raidname%d", i);
 		char *raidtype = nvram_nget("raidtype%d", i);
 		char *raidlevel = nvram_nget("raidlevel%d", i);
-		if (!strlen(raidname))
+		if (!strlen(raidtype))
 			break;
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<input name=\"raidname%d\" size=\"32\" value=\"%s\" />", i, raidname);
@@ -118,7 +118,6 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<tr>\n");
 			websWrite(wp, "<td>\n");
 			websWrite(wp, "<select name=\"raid%dmember%d\">\n", i, midx);
-			websWrite(wp, "<option value=\"None\" >None</option>\n");
 			if (drives) {
 				foreach(drive, drives, dnext) {
 					websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", drive, !strcmp(drive, var) ? "selected=\"selected\"" : "", drive);
