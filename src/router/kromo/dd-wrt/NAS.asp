@@ -455,7 +455,7 @@ function checkSambaUsers() {
 function raid_del_submit(F,I) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "del_raid";
-	F.del_value.value=I;
+	F.raid_del_value.value=I;
 	F.submit();
 }
 
