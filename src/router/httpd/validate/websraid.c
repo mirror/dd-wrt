@@ -1,7 +1,7 @@
 /*
- * websfreeradius.c
+ * websraid.c
  *
- * Copyright (C) 2005 - 2018 Sebastian Gottschall <sebastian.gottschall@newmedia-net.de>
+ * Copyright (C) 2018 Sebastian Gottschall <sebastian.gottschall@newmedia-net.de>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -81,7 +81,7 @@ void del_raid(webs_t wp)
 
 	int cnt = 0;
 	while (1) {
-		char *type = nvram_nget("raidtype%d", idx);
+		char *type = nvram_nget("raidtype%d", cnt);
 		if (!strlen(type)) {
 			break;
 		}
@@ -107,4 +107,55 @@ void del_raid(webs_t wp)
 	}
 }
 
+void add_raid_member(webs_t wp)
+{
+	char *val = websGetVar(wp, "raid_member_add_value", NULL);
+	if (!val)
+		return;
+	int idx = atoi(val);
+	char *raid = nvram_nget("raid%d", idx);
+	char *newv = NULL;
+	if (!strlen(raid))
+		asprintf(&newv, "none");
+	else
+		asprintf(&newv, "%s none", raid);
+	nvram_nset(newv, "raid%d", idx);
+	free(newv);
+}
+
+void del_raid_member(webs_t wp)
+{
+	char *val = websGetVar(wp, "raid_member_add_value", NULL);
+	char *del = websGetVar(wp, "raid_member_del_value", NULL);
+	if (!val)
+		return;
+	if (!del)
+		return;
+	int idx = atoi(val);
+	int didx = atoi(del);
+	fprintf(stderr, "del from %d with %d\n", idx, didx);
+	char *raid = nvram_nget("raid%d", idx);
+	char *next;
+	char drive[128];
+	char *a = NULL;
+	int cnt = 0;
+	foreach(drive, raid, next) {
+		a = realloc(a, cnt ? strlen(drive) + 2 : strlen(drive) + 1);
+		if (cnt != didx) {
+			if (cnt) {
+				strcat(a, " ");
+				strcat(a, drive);
+			} else {
+				a[0] = 0;
+				strcpy(a, drive);
+			}
+		} else {
+			if (!cnt)
+				a[0] = 0;
+		}
+		cnt++;
+	}
+	nvram_nset(a, "raid%d", idx);
+	free(a);
+}
 #endif
