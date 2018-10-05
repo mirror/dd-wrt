@@ -766,6 +766,7 @@ nas.dlna_cleandb="Datenbank jetzt leeren";
 nas.dlna_metadata="Metadatan Behalten";
 nas.dlna_rescan="Zyklisches neu Scannen";
 nas.format="Formatieren";
+nas.raidmember="Raid Mitglied";
 
 //** Privoxy.asp **//
 privoxy.titl="Werbefilter";
