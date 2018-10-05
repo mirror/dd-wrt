@@ -1212,6 +1212,7 @@ static struct gozila_action gozila_actions[] = {
 	{"NAS", "del_raid", "nassrv", 1, REFRESH, "del_raid"},
 	{"NAS", "add_raid_member", "nassrv", 1, REFRESH, "add_raid_member"},
 	{"NAS", "del_raid_member", "nassrv", 1, REFRESH, "del_raid_member"},
+	{"NAS", "format_raid", "nassrv", 1, REFRESH, "format_raid"},
 
 #endif
 #if defined(HAVE_WPS) || defined(HAVE_AOSS)
