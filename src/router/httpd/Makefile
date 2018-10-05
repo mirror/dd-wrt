@@ -483,6 +483,7 @@ endif
 ifeq ($(CONFIG_RAID),y)
 CFLAGS += -DHAVE_RAID
 VISOBJS += raid.o
+WEBSOBJS += websraid.o
 endif
 ifeq ($(CONFIG_ZFS),y)
 CFLAGS += -DHAVE_ZFS
