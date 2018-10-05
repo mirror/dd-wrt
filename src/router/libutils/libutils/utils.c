@@ -2100,12 +2100,12 @@ static char *s_getDrives(int type)
 
 char *getUnmountedDrives(void)
 {
-	return getDrives(1);
+	return s_getDrives(1);
 }
 
 char *getAllDrives(void)
 {
-	return getDrives(0);
+	return s_getDrives(0);
 }
 
 #endif
