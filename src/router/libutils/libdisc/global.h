@@ -1,4 +1,4 @@
-#define DNEED_PRINTF
+#define NEED_PRINTF
 /*
  * global.h
  * Common header file.
