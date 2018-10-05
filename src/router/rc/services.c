@@ -101,6 +101,9 @@ static int start_services_main(int argc, char **argv)
 #ifdef HAVE_MACTELNET
 	start_service_f("mactelnetd");
 #endif
+#ifdef HAVE_RAID
+	start_service_f("raid");
+#endif
 #ifdef HAVE_FTP
 	start_service_f("ftpsrv");
 #endif
@@ -310,6 +313,9 @@ static int stop_services_main(int argc, char **argv)
 #endif
 #ifdef HAVE_MINIDLNA
 	stop_service_f("dlna");
+#endif
+#ifdef HAVE_RAID
+	stop_service_f("raid");
 #endif
 #ifdef HAVE_TOR
 	stop_service_f("tor");
@@ -754,12 +760,18 @@ static void handle_nassrv(void)
 #ifdef HAVE_MINIDLNA
 	stop_service_f("dlna");
 #endif
+#ifdef HAVE_RAID
+	stop_service_f("raid");
+#endif
 #ifdef HAVE_TRANSMISSION
 	stop_service_f("transmission");
 #endif
 
 	stop_running_main(0, NULL);
 
+#ifdef HAVE_RAID
+	start_service_f("raid");
+#endif
 #ifdef HAVE_SAMBA3
 	start_service_f("samba3");
 #endif
@@ -1378,7 +1390,7 @@ static struct SERVICES services_def[] = {
 	{"hotspot", handle_hotspot},
 //      {"anchorfree", handle_anchorfree},
 	{"services", handle_services},
-#if defined(HAVE_FTP) || defined(HAVE_SAMBA3) || defined(HAVE_MINIDLNA)
+#if defined(HAVE_FTP) || defined(HAVE_SAMBA3) || defined(HAVE_MINIDLNA)  || defined(HAVE_RAID)
 	{"nassrv", handle_nassrv},
 #endif
 	{"management", handle_management},
