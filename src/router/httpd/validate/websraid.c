@@ -74,7 +74,7 @@ void add_raid(webs_t wp)
 
 void del_raid(webs_t wp)
 {
-	char *val = websGetVar(wp, "del_value", NULL);
+	char *val = websGetVar(wp, "raid_del_value", NULL);
 	if (!val)
 		return;
 	int idx = atoi(val);
