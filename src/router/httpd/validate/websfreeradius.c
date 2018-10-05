@@ -60,7 +60,6 @@
 #include <stdarg.h>
 #include <sha1.h>
 
-
 void radius_generate_certificate(webs_t wp)
 {
 	nvram_set("radius_enabled", websGetVar(wp, "radius_enabled", "0"));
