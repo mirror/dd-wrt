@@ -56,6 +56,8 @@ static int checkfs(char *type)
 	sprintf(fscheck, "/sbin/mkfs.%s", type);
 	char fscheck2[32];
 	sprintf(fscheck2, "/usr/bin/mkfs.%s", type);
+	char fscheck3[32];
+	sprintf(fscheck2, "/usr/sbin/mkfs.%s", type);
 
 	FILE *p = fopen(fscheck, "rb");
 	if (p) {
@@ -63,6 +65,11 @@ static int checkfs(char *type)
 		return 1;
 	}
 	p = fopen(fscheck2, "rb");
+	if (p) {
+		fclose(p);
+		return 1;
+	}
+	p = fopen(fscheck3, "rb");
 	if (p) {
 		fclose(p);
 		return 1;
@@ -96,8 +103,11 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<select name=\"raidtype%d\">\n", i);
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 		websWrite(wp, "document.write(\"<option value=\\\"md\\\" %s >Linux Raid</option>\");\n", !strcmp(raidtype, "md") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"btrfs\\\" %s >BTRFS</option>\");\n", !strcmp(raidtype, "btrfs") ? "selected=\\\"selected\\\"" : "");
+		if (btrfs)
+			websWrite(wp, "document.write(\"<option value=\\\"btrfs\\\" %s >BTRFS</option>\");\n", !strcmp(raidtype, "btrfs") ? "selected=\\\"selected\\\"" : "");
+#ifdef HAVE_ZFS
 		websWrite(wp, "document.write(\"<option value=\\\"zfs\\\" %s >ZFS</option>\");\n", !strcmp(raidtype, "zfs") ? "selected=\\\"selected\\\"" : "");
+#endif
 		websWrite(wp, "//]]>\n</script></select>\n");
 		if (!strcmp(raidtype, "md")) {
 			websWrite(wp, "Level\n");
@@ -137,6 +147,7 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "document.write(\"<option value=\\\"10\\\" %s >Raid10</option>\");\n", !strcmp(raidlevel, "10") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "//]]>\n</script></select>\n");
 		}
+#ifdef HAVE_ZFS
 		if (!strcmp(raidtype, "zfs")) {
 			websWrite(wp, "Level\n");
 			websWrite(wp, "<select name=\"raidlevel%d\">\n", i);
@@ -152,6 +163,7 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "LZ4\n");
 			websWrite(wp, "<input type=\"checkbox\" name=\"raidlz%d\" value=\"1\" %s/>", i, !strcmp(raidlz, "1") ? "checked=\"checked\"" : "");
 		}
+#endif
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"raid_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 			  i);
