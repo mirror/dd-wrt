@@ -1982,40 +1982,31 @@ static char *strstrtok(char *str, char del)
 
 char *getMountedDrives(void)
 {
-fprintf(stderr, "%d\n", __LINE__);
 	FILE *in = fopen("/proc/mounts", "rb");
-fprintf(stderr, "%d\n", __LINE__);
 	if (in == NULL)
 		return NULL;
 	char line[512];
 	char *drives = NULL;
-fprintf(stderr, "%d\n", __LINE__);
 	while (fgets(line, sizeof(line), in)) {
 		char *dev = NULL;
 		char *mp = NULL;
 		char *fstype = NULL;
-fprintf(stderr, "%d\n", __LINE__);
 		dev = strstrtok(line, ' ');
 		if (dev)
 			mp = strstrtok(dev, ' ');
 		if (mp)
 			fstype = strstrtok(mp, ' ');
-fprintf(stderr, "%d\n", __LINE__);
 		if (dev) {
 			if (!strncmp(line, "/dev/", 5)) {
 				int c = 0;
 				if (drives)
 					c = 1;
-fprintf(stderr, "%d\n", __LINE__);
 				drives = realloc(drives, drives ? strlen(dev) + 2 + strlen(drives) : strlen(dev) + 1);
-fprintf(stderr, "%d\n", __LINE__);
 				if (c)
 					strcat(drives, " ");
 				else
 					drives[0] = 0;
-fprintf(stderr, "%d\n", __LINE__);
 				strcat(drives, dev);
-fprintf(stderr, "%d\n", __LINE__);
 				continue;
 			}
 		}
@@ -2026,15 +2017,12 @@ fprintf(stderr, "%d\n", __LINE__);
 				int c = 0;
 				if (drives)
 					c = 1;
-fprintf(stderr, "%d\n", __LINE__);
 				drives = realloc(drives, drives ? strlen(dev) + 2 + strlen(drives) : strlen(dev + 1));
 				if (c)
 					strcat(drives, " ");
 				else
 					drives[0] = 0;
-fprintf(stderr, "%d\n", __LINE__);
 				strcat(drives, dev);
-fprintf(stderr, "%d\n", __LINE__);
 			}
 		}
 #endif
@@ -2044,37 +2032,28 @@ fprintf(stderr, "%d\n", __LINE__);
 
 char *getUnmountedDrives(void)
 {
-fprintf(stderr, "%d\n", __LINE__);
 	char *mounts = getMountedDrives();
-fprintf(stderr, "%d\n", __LINE__);
 	DIR *dir;
 	char *drives = NULL;
 	struct dirent *file;
-fprintf(stderr, "%d\n", __LINE__);
 	if (!(dir = opendir("/dev")))
 		return NULL;
-fprintf(stderr, "%d\n", __LINE__);
 	while (dir && (file = readdir(dir))) {
 		char drv[128];
-fprintf(stderr, "%d\n", __LINE__);
 		sprintf(drv, "/dev/%s", file->d_name);
-fprintf(stderr, "%d\n", __LINE__);
 		if (!strncmp(file->d_name, "sd", 2) || !strncmp(file->d_name, "hd", 2) || !strncmp(file->d_name, "md", 2) || !strncmp(file->d_name, "mmcblk", 6)) {
 			char var[64];
 			char *next;
-fprintf(stderr, "%d\n", __LINE__);
 			if (mounts) {
 				foreach(var, mounts, next) {
 					if (!strcmp(drv, var))
 						goto next;
 				}
 			}
-fprintf(stderr, "%d\n", __LINE__);
 #ifdef HAVE_ZFS
 			char *d = &file->d_name;
 			char stats[512];
 			char cmp[32];
-fprintf(stderr, "%d\n", __LINE__);
 			if (d && strlen(d)) {
 				strcpy(cmp, d);
 				if (!strncmp(cmp, "sd", 2))
@@ -2083,45 +2062,35 @@ fprintf(stderr, "%d\n", __LINE__);
 					cmp[3] = 0;
 				else if (!strncmp(cmp, "mmcblk", 6))
 					cmp[7] = 0;
-fprintf(stderr, "%d\n", __LINE__);
 			}
 			char grep[128];
 			sprintf(grep, "zpool status|grep %s", cmp);
-fprintf(stderr, "%d\n", __LINE__);
 			FILE *p = popen(grep, "rb");
-fprintf(stderr, "%d\n", __LINE__);
 			char *result = NULL;
 			if (p) {
 				result = fgets(stats, sizeof(stats), p);
 				pclose(p);
 			}
-fprintf(stderr, "%d\n", __LINE__);
 			if (result) {
 				if (strstr(result, cmp))
 					goto next;
 			}
-fprintf(stderr, "%d\n", __LINE__);
 #endif
 			int c = 0;
 			if (drives)
 				c = 1;
-fprintf(stderr, "%d\n", __LINE__);
 			drives = realloc(drives, drives ? strlen(drv) + 2 + strlen(drives) : strlen(drv) + 1);
 			if (c)
 				strcat(drives, " ");
 			else
 				drives[0] = 0;
-fprintf(stderr, "%d\n", __LINE__);
 			strcat(drives, drv);
-fprintf(stderr, "%d\n", __LINE__);
 		}
 	      next:;
 	}
 	closedir(dir);
-fprintf(stderr, "%d\n", __LINE__);
 	if (mounts)
 		free(mounts);
-fprintf(stderr, "%d\n", __LINE__);
 	return drives;
 }
 #endif
