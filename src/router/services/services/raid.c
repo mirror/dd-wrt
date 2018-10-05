@@ -149,6 +149,7 @@ void start_raid(void)
 			else
 				sysprintf("zfs set dedup=off %s", poolname);
 			sysprintf("mkdir -p /tmp/mnt/%s", poolname);
+			sysprintf("zpool import -a -d /dev", poolname);
 			sysprintf("zfs mount %s", poolname);
 		}
 
