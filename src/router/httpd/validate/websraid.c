@@ -72,6 +72,17 @@ void add_raid(webs_t wp)
 	nvram_nset("md", "raidtype%d", idx);
 }
 
+void format_raid(webs_t wp)
+{
+	char *val = websGetVar(wp, "raid_del_value", NULL);
+	if (!val)
+		return;
+	int idx = atoi(val);
+	nvram_nset("0", "raiddone%d", idx);
+	eval("stopservice", "raid");
+	eval("startservice", "raid");
+}
+
 void del_raid(webs_t wp)
 {
 	char *val = websGetVar(wp, "raid_del_value", NULL);
@@ -154,10 +165,10 @@ void del_raid_member(webs_t wp)
 		}
 		cnt++;
 	}
-	
+
 	nvram_nset(a, "raid%d", idx);
 	if (a)
-	free(a);
+		free(a);
 }
 
 void raid_save(webs_t wp)
@@ -169,7 +180,7 @@ void raid_save(webs_t wp)
 		char *rn = websGetVar(wp, raidname, NULL);
 		if (!rn)
 			break;
-		nvram_nset(rn, "raidtype%d", idx);
+		nvram_nset(rn, "raidname%d", idx);
 
 		char raidtype[32];
 		sprintf(raidtype, "raidtype%d", idx);
@@ -185,20 +196,22 @@ void raid_save(webs_t wp)
 			break;
 		nvram_nset(rl, "raidlevel%d", idx);
 
-		char raidlz[32];
-		sprintf(raidlz, "raidlz%d", idx);
-		char *rlz = websGetVar(wp, raidlz, NULL);
-		nvram_nset(rlz, "raidlz%d", idx);
+		if (!strcmp(rt, "zfs")) {
+			char raidlz[32];
+			sprintf(raidlz, "raidlz%d", idx);
+			char *rlz = websGetVar(wp, raidlz, NULL);
+			nvram_nset(rlz, "raidlz%d", idx);
 
-		char raiddedup[32];
-		sprintf(raidlz, "raiddedup%d", idx);
-		char *rdd = websGetVar(wp, raiddedup, NULL);
-		nvram_nset(rdd, "raiddedup%d", idx);
+			char raiddedup[32];
+			sprintf(raiddedup, "raiddedup%d", idx);
+			char *rdd = websGetVar(wp, raiddedup, "0");
+			nvram_nset(rdd, "raiddedup%d", idx);
+		}
 
 		char raidfs[32];
 		sprintf(raidfs, "raidfs%d", idx);
-		char *rfs = websGetVar(wp, raidfs, NULL);
-		nvram_nset(rfs, "raiddedup%d", idx);
+		char *rfs = websGetVar(wp, raidfs, "0");
+		nvram_nset(rfs, "raidfs%d", idx);
 
 		int midx = 0;
 		char *a = NULL;
@@ -220,7 +233,7 @@ void raid_save(webs_t wp)
 		}
 		nvram_nset(a, "raid%d", idx);
 		if (a)
-		    free(a);
+			free(a);
 		idx++;
 
 	}
