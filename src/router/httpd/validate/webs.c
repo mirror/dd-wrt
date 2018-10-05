@@ -4786,6 +4786,9 @@ void nassrv_save(webs_t wp)
 #ifdef HAVE_MINIDLNA
 	dlna_save(wp);
 #endif
+#ifdef HAVE_RAID
+	raid_save(wp);
+#endif
 
 	applytake(value);
 }

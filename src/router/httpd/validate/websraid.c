@@ -133,7 +133,6 @@ void del_raid_member(webs_t wp)
 		return;
 	int idx = atoi(val);
 	int didx = atoi(del);
-	fprintf(stderr, "del from %d with %d\n", idx, didx);
 	char *raid = nvram_nget("raid%d", idx);
 	char *next;
 	char drive[128];
@@ -157,5 +156,71 @@ void del_raid_member(webs_t wp)
 	}
 	nvram_nset(a, "raid%d", idx);
 	free(a);
+}
+
+void raid_save(webs_t wp)
+{
+	int idx = 0;
+	while (1) {
+		char raidname[32];
+		sprintf(raidname, "raidname%d", idx);
+		char *rn = websGetVar(wp, raidname, NULL);
+		if (!rn)
+			break;
+		nvram_nset(rn, "raidtype%d", idx);
+
+		char raidtype[32];
+		sprintf(raidtype, "raidtype%d", idx);
+		char *rt = websGetVar(wp, raidtype, NULL);
+		if (!rt)
+			break;
+		nvram_nset(rt, "raidtype%d", idx);
+
+		char raidlevel[32];
+		sprintf(raidlevel, "raidlevel%d", idx);
+		char *rl = websGetVar(wp, raidlevel, NULL);
+		if (!rl)
+			break;
+		nvram_nset(rl, "raidlevel%d", idx);
+
+		char raidlz[32];
+		sprintf(raidlz, "raidlz%d", idx);
+		char *rlz = websGetVar(wp, raidlz, NULL);
+		nvram_nset(rlz, "raidlz%d", idx);
+
+		char raiddedup[32];
+		sprintf(raidlz, "raiddedup%d", idx);
+		char *rdd = websGetVar(wp, raiddedup, NULL);
+		nvram_nset(rdd, "raiddedup%d", idx);
+
+		char raidfs[32];
+		sprintf(raidfs, "raidfs%d", idx);
+		char *rfs = websGetVar(wp, raidfs, NULL);
+		nvram_nset(rfs, "raiddedup%d", idx);
+
+		int midx = 0;
+		char *a = NULL;
+		while (1) {
+			char member[32];
+			sprintf(member, "raid%dmember%d", idx, midx);
+			char *mb = websGetVar(wp, member, NULL);
+			if (!mb)
+				break;
+			a = realloc(a, a ? strlen(mb) + 2 : strlen(mb) + 2);
+			if (midx) {
+				strcat(a, " ");
+				strcat(a, mb);
+			} else {
+				a[0] = 0;
+				strcpy(a, mb);
+			}
+			midx++;
+		}
+		nvram_nset(a, "raid%d", idx);
+		free(a);
+		idx++;
+
+	}
+
 }
 #endif
