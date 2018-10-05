@@ -1988,10 +1988,18 @@ char *getMountedDrives(void)
 				char *d = &dev[5];
 				FILE *p = popen("zpool status|grep %s", d);
 				char stats[512];
+				char cmp[32];
+				strcpy(cmp, d);
+				if (!strncmp(cmp, "sd", 2))
+				    cmp[3]=0;
+				if (!strncmp(cmp, "hd", 2))
+				    cmp[3]=0;
+				if (!strncmp(cmp, "mmcblk", 6))
+				    cmp[7]=0;
 				char *result = fgets(stats, sizeof(stats), p);
 				pclose(p);
 				if (result) {
-					if (strstr(result, d))
+					if (strstr(result, cmp))
 						goto next;
 				}
 #endif
