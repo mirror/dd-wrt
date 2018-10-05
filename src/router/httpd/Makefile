@@ -480,6 +480,10 @@ endif
 ifeq ($(CONFIG_ATH10K),y)
 CFLAGS += -DHAVE_ATH10K
 endif
+ifeq ($(CONFIG_RAID),y)
+CFLAGS += -DHAVE_RAID
+VISOBJS += raid.o
+endif
 ifeq ($(CONFIG_ERC),y)
 CFLAGS += -DHAVE_ERC
 endif
