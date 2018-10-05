@@ -52,8 +52,8 @@
 
 void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 {
+	websWrite(wp, "<h2>Raid Storage Manager</h2>");
 	websWrite(wp, "<fieldset>\n");
-	websWrite(wp, "<legend>Raid Storage Manager</legend>");
 	int i = 0;
 	while (1) {
 		char *raid = nvram_nget("raid%d", i);
