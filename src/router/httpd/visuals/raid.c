@@ -111,7 +111,7 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		char var[128];
 		char *next;
 		int midx = 0;
-		char *drives = getUnmountedDrives();
+		char *drives = getAllDrives();
 		foreach(var, raid, next) {
 			char drive[128];
 			char *dnext;
