@@ -69,7 +69,7 @@ void add_raid(webs_t wp)
 			break;
 		idx++;
 	}
-	nvram_nset("mp", "raidtype%d", idx);
+	nvram_nset("md", "raidtype%d", idx);
 }
 
 void del_raid(webs_t wp)
@@ -139,7 +139,7 @@ void del_raid_member(webs_t wp)
 	char *a = NULL;
 	int cnt = 0;
 	foreach(drive, raid, next) {
-		a = realloc(a, cnt ? strlen(drive) + 2 : strlen(drive) + 1);
+		a = realloc(a, cnt ? strlen(a) + strlen(drive) + 2 : strlen(drive) + 1);
 		if (cnt != didx) {
 			if (cnt) {
 				strcat(a, " ");
@@ -154,7 +154,9 @@ void del_raid_member(webs_t wp)
 		}
 		cnt++;
 	}
+	
 	nvram_nset(a, "raid%d", idx);
+	if (a)
 	free(a);
 }
 
@@ -206,7 +208,7 @@ void raid_save(webs_t wp)
 			char *mb = websGetVar(wp, member, NULL);
 			if (!mb)
 				break;
-			a = realloc(a, a ? strlen(mb) + 2 : strlen(mb) + 2);
+			a = realloc(a, a ? strlen(a) + strlen(mb) + 2 : strlen(mb) + 1);
 			if (midx) {
 				strcat(a, " ");
 				strcat(a, mb);
@@ -217,7 +219,8 @@ void raid_save(webs_t wp)
 			midx++;
 		}
 		nvram_nset(a, "raid%d", idx);
-		free(a);
+		if (a)
+		    free(a);
 		idx++;
 
 	}
