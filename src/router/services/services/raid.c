@@ -123,6 +123,7 @@ void start_raid(void)
 			if (!strcmp(type, "zfs")) {
 				char *poolname = nvram_nget("raidname%d", i);
 				dd_loginfo("raid", "creating ZFS Pool %s", poolname);
+				sysprintf("mkdir -p /tmp/mnt/%s", poolname);
 				if (!strcmp(level, "1"))
 					sysprintf("zpool create -f -m /tmp/mnt/%s %s mirror %s", poolname, poolname, raid);
 				if (!strcmp(level, "5"))
@@ -133,7 +134,6 @@ void start_raid(void)
 					sysprintf("zpool create -f -m /tmp/mnt/%s %s raidz3 %s", poolname, poolname, raid);
 				if (!strcmp(level, "0"))
 					sysprintf("zpool create -f -m /tmp/mnt/%s %s %s", poolname, poolname, raid);
-				sysprintf("mkdir -p /tmp/mnt/%s", poolname);
 			}
 			nvram_nset("1", "raiddone%d", i);
 			nvram_commit();
