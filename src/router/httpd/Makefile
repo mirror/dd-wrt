@@ -484,6 +484,9 @@ ifeq ($(CONFIG_RAID),y)
 CFLAGS += -DHAVE_RAID
 VISOBJS += raid.o
 endif
+ifeq ($(CONFIG_ZFS),y)
+CFLAGS += -DHAVE_ZFS
+endif
 ifeq ($(CONFIG_ERC),y)
 CFLAGS += -DHAVE_ERC
 endif
