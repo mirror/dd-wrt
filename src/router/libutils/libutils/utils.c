@@ -1998,9 +1998,11 @@ char *getMountedDrives(void)
 				int c = 0;
 				if (drives)
 					c = 1;
-				drives = realloc(drives, drives ? strlen(dev) + 2 + strlen(drives) : strlen(dev + 1));
+				drives = realloc(drives, drives ? strlen(dev) + 2 + strlen(drives) : strlen(dev) + 1);
 				if (c)
 					strcat(drives, " ");
+				else
+					drives[0] = 0;
 				strcat(drives, dev);
 				continue;
 			}
@@ -2015,6 +2017,8 @@ char *getMountedDrives(void)
 				drives = realloc(drives, drives ? strlen(dev) + 2 + strlen(drives) : strlen(dev + 1));
 				if (c)
 					strcat(drives, " ");
+				else
+					drives[0] = 0;
 				strcat(drives, dev);
 			}
 		}
@@ -2043,14 +2047,16 @@ char *getUnmountedDrives(void)
 						goto next;
 				}
 			}
-		}
 		int c = 0;
 		if (drives)
 			c = 1;
-		drives = realloc(drives, drives ? strlen(drv) + 2 + strlen(drives) : strlen(drv + 1));
+		drives = realloc(drives, drives ? strlen(drv) + 2 + strlen(drives) : strlen(drv) + 1);
 		if (c)
 			strcat(drives, " ");
+		else
+			drives[0] = 0;
 		strcat(drives, drv);
+		}
 	      next:;
 	}
 	closedir(dir);
