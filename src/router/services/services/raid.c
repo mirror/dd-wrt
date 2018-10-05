@@ -124,18 +124,16 @@ void start_raid(void)
 				char *poolname = nvram_nget("raidname%d", i);
 				dd_loginfo("raid", "creating ZFS Pool %s", poolname);
 				if (!strcmp(level, "1"))
-					sysprintf("zpool create %s mirror %s", poolname, raid);
+					sysprintf("zpool create -f -m /tmp/mnt/%s %s mirror %s", poolname, poolname, raid);
 				if (!strcmp(level, "5"))
-					sysprintf("zpool create %s raidz1 %s", poolname, raid);
+					sysprintf("zpool create -f -m /tmp/mnt/%s %s raidz1 %s", poolname, poolname, raid);
 				if (!strcmp(level, "6"))
-					sysprintf("zpool create %s raidz2 %s", poolname, raid);
+					sysprintf("zpool create -f -m /tmp/mnt/%s %s raidz2 %s", poolname, poolname, raid);
 				if (!strcmp(level, "z3"))
-					sysprintf("zpool create %s raidz3 %s", poolname, raid);
+					sysprintf("zpool create -f -m /tmp/mnt/%s %s raidz3 %s", poolname, poolname, raid);
 				if (!strcmp(level, "0"))
-					sysprintf("zpool create %s %s", poolname, raid);
-				sysprintf("zfs create %s/fs1");
+					sysprintf("zpool create -f -m /tmp/mnt/%s %s %s", poolname, poolname, raid);
 				sysprintf("mkdir -p /tmp/mnt/%s", poolname);
-				sysprintf("zfs set mountpoint=/tmp/mnt/%s %s/fs1", poolname, poolname);
 			}
 			nvram_nset("1", "raiddone%d", i);
 			nvram_commit();
@@ -143,15 +141,15 @@ void start_raid(void)
 		if (!strcmp(type, "zfs")) {
 			char *poolname = nvram_nget("raidname%d", i);
 			if (nvram_nmatch("1", "raidlz%d", i))
-				sysprintf("zfs set compression=lz4 %s/fs1", poolname);
+				sysprintf("zfs set compression=lz4 %s", poolname);
 			else
-				sysprintf("zfs set compression=off %s/fs1", poolname);
+				sysprintf("zfs set compression=off %s", poolname);
 			if (nvram_nmatch("1", "raiddedup%d", i))
-				sysprintf("zfs set dedup=on %s/fs1", poolname);
+				sysprintf("zfs set dedup=on %s", poolname);
 			else
-				sysprintf("zfs set dedup=off %s/fs1", poolname);
+				sysprintf("zfs set dedup=off %s", poolname);
 			sysprintf("mkdir -p /tmp/mnt/%s", poolname);
-			sysprintf("zfs mount %s/fs1", poolname);
+			sysprintf("zfs mount %s", poolname);
 		}
 
 		i++;
