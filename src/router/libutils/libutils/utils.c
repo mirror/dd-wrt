@@ -1965,6 +1965,7 @@ char *get_hwaddr(const char *name, char *eabuf)
 	}
 	return NULL;
 }
+
 #ifdef HAVE_RAID
 char *getMountedDrives(void)
 {
@@ -1991,11 +1992,11 @@ char *getMountedDrives(void)
 				char cmp[32];
 				strcpy(cmp, d);
 				if (!strncmp(cmp, "sd", 2))
-				    cmp[3]=0;
+					cmp[3] = 0;
 				if (!strncmp(cmp, "hd", 2))
-				    cmp[3]=0;
+					cmp[3] = 0;
 				if (!strncmp(cmp, "mmcblk", 6))
-				    cmp[7]=0;
+					cmp[7] = 0;
 				char *result = fgets(stats, sizeof(stats), p);
 				pclose(p);
 				if (result) {
@@ -2055,15 +2056,15 @@ char *getUnmountedDrives(void)
 						goto next;
 				}
 			}
-		int c = 0;
-		if (drives)
-			c = 1;
-		drives = realloc(drives, drives ? strlen(drv) + 2 + strlen(drives) : strlen(drv) + 1);
-		if (c)
-			strcat(drives, " ");
-		else
-			drives[0] = 0;
-		strcat(drives, drv);
+			int c = 0;
+			if (drives)
+				c = 1;
+			drives = realloc(drives, drives ? strlen(drv) + 2 + strlen(drives) : strlen(drv) + 1);
+			if (c)
+				strcat(drives, " ");
+			else
+				drives[0] = 0;
+			strcat(drives, drv);
 		}
 	      next:;
 	}
