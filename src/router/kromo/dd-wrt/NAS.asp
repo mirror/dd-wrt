@@ -451,6 +451,43 @@ function checkSambaUsers() {
 	
 	return true;
 }
+
+function raid_del_submit(F,I) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "del_radius_user";
+	F.del_value.value=I;
+	F.submit();
+}
+
+function raid_add_submit(F) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "del_radius_user";
+	F.submit();
+}
+
+function raid_del_submit(F,I) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "del_radius_user";
+	F.raid_del_value.value=I;
+	F.submit();
+}
+
+function member_del_submit(F,I,M) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "del_radius_user";
+	F.raid_del_value.value=I;
+	F.raid_member_del_value.value=M;
+	F.submit();
+}
+
+function member_add_submit(F,I) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "del_radius_user";
+	F.raid_member_add_value.value=I;
+	F.submit();
+}
+
+
 function to_submit(F) {
 	if($('samba_shares')) {
 		if(!checkSambaShares() || !checkSambaUsers())
@@ -532,6 +569,9 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
+							<input type="hidden" name="raid_del_value" />
+							<input type="hidden" name="raid_member_del_value" />
+							<input type="hidden" name="raid_member_add_value" />
 							<input type="hidden" name="commit" value="1"/>
 							
 						<% show_modules(".webnas"); %>
