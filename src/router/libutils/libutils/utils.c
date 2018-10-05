@@ -1967,6 +1967,19 @@ char *get_hwaddr(const char *name, char *eabuf)
 }
 
 #ifdef HAVE_RAID
+static char *strstrtok(char *str, char del)
+{
+	int s = strlen(str);
+	int i;
+	for (i = 0; i < s; i++) {
+		if (str[i] == del) {
+			str[i] = 0;
+			return &str[i + 1];
+		}
+	}
+
+}
+
 char *getMountedDrives(void)
 {
 	FILE *in = fopen("/proc/mounts", "rb");
@@ -1978,32 +1991,13 @@ char *getMountedDrives(void)
 		char *dev = NULL;
 		char *mp = NULL;
 		char *fstype = NULL;
-		dev = strtok(line, " ");
+		dev = strstrtok(line, ' ');
 		if (dev)
-			mp = strtok(dev, " ");
+			mp = strstrtok(dev, ' ');
 		if (mp)
-			fstype = strtok(mp, " ");
+			fstype = strstrtok(mp, ' ');
 		if (dev) {
-			if (!strncmp(dev, "/dev/", 5)) {
-#ifdef HAVE_ZFS
-				char *d = &dev[5];
-				FILE *p = popen("zpool status|grep %s", d);
-				char stats[512];
-				char cmp[32];
-				strcpy(cmp, d);
-				if (!strncmp(cmp, "sd", 2))
-					cmp[3] = 0;
-				if (!strncmp(cmp, "hd", 2))
-					cmp[3] = 0;
-				if (!strncmp(cmp, "mmcblk", 6))
-					cmp[7] = 0;
-				char *result = fgets(stats, sizeof(stats), p);
-				pclose(p);
-				if (result) {
-					if (strstr(result, cmp))
-						goto next;
-				}
-#endif
+			if (!strncmp(line, "/dev/", 5)) {
 				int c = 0;
 				if (drives)
 					c = 1;
@@ -2056,6 +2050,32 @@ char *getUnmountedDrives(void)
 						goto next;
 				}
 			}
+#ifdef HAVE_ZFS
+			char *d = &file->d_name;
+			char grep[128];
+			sprintf(grep, "zpool status|grep %s", d);
+			FILE *p = popen(grep, "rb");
+			char stats[512];
+			char cmp[32];
+			if (d && strlen(d)) {
+				strcpy(cmp, d);
+				if (!strncmp(cmp, "sd", 2))
+					cmp[3] = 0;
+				else if (!strncmp(cmp, "hd", 2))
+					cmp[3] = 0;
+				else if (!strncmp(cmp, "mmcblk", 6))
+					cmp[7] = 0;
+			}
+			char *result = NULL;
+			if (p) {
+				result = fgets(stats, sizeof(stats), p);
+				pclose(p);
+			}
+			if (result) {
+				if (strstr(result, cmp))
+					goto next;
+			}
+#endif
 			int c = 0;
 			if (drives)
 				c = 1;
