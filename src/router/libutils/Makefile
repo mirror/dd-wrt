@@ -446,6 +446,9 @@ endif
 ifeq ($(CONFIG_ZFS),y)
   CFLAGS += -DHAVE_ZFS
 endif
+ifeq ($(CONFIG_RAID),y)
+  CFLAGS += -DHAVE_RAID
+endif
 ifeq ($(CONFIG_RUT500),y)
   CFLAGS += -DHAVE_RUT500
 endif
