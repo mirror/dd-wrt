@@ -2030,9 +2030,11 @@ char *getMountedDrives(void)
 	return drives;
 }
 
-char *getUnmountedDrives(void)
+static char *s_getDrives(int type)
 {
-	char *mounts = getMountedDrives();
+	char *mounts = NULL;
+	if (type)
+		mounts = getMountedDrives();
 	DIR *dir;
 	char *drives = NULL;
 	struct dirent *file;
@@ -2051,29 +2053,31 @@ char *getUnmountedDrives(void)
 				}
 			}
 #ifdef HAVE_ZFS
-			char *d = &file->d_name;
-			char stats[512];
-			char cmp[32];
-			if (d && strlen(d)) {
-				strcpy(cmp, d);
-				if (!strncmp(cmp, "sd", 2))
-					cmp[3] = 0;
-				else if (!strncmp(cmp, "hd", 2))
-					cmp[3] = 0;
-				else if (!strncmp(cmp, "mmcblk", 6))
-					cmp[7] = 0;
-			}
-			char grep[128];
-			sprintf(grep, "zpool status|grep %s", cmp);
-			FILE *p = popen(grep, "rb");
-			char *result = NULL;
-			if (p) {
-				result = fgets(stats, sizeof(stats), p);
-				pclose(p);
-			}
-			if (result) {
-				if (strstr(result, cmp))
-					goto next;
+			if (type) {
+				char *d = &file->d_name;
+				char stats[512];
+				char cmp[32];
+				if (d && strlen(d)) {
+					strcpy(cmp, d);
+					if (!strncmp(cmp, "sd", 2))
+						cmp[3] = 0;
+					else if (!strncmp(cmp, "hd", 2))
+						cmp[3] = 0;
+					else if (!strncmp(cmp, "mmcblk", 6))
+						cmp[7] = 0;
+				}
+				char grep[128];
+				sprintf(grep, "zpool status|grep %s", cmp);
+				FILE *p = popen(grep, "rb");
+				char *result = NULL;
+				if (p) {
+					result = fgets(stats, sizeof(stats), p);
+					pclose(p);
+				}
+				if (result) {
+					if (strstr(result, cmp))
+						goto next;
+				}
 			}
 #endif
 			int c = 0;
@@ -2093,4 +2097,15 @@ char *getUnmountedDrives(void)
 		free(mounts);
 	return drives;
 }
+
+char *getUnmountedDrives(void)
+{
+	return getDrives(1);
+}
+
+char *getAllDrives(void)
+{
+	return getDrives(0);
+}
+
 #endif
