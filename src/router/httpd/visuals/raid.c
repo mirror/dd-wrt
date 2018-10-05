@@ -58,60 +58,92 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 	while (1) {
 		char *raid = nvram_nget("raid%d", i);
 		char *raidname = nvram_nget("raidname%d", i);
+		char *raidtype = nvram_nget("raidtype%d", i);
+		char *raidlevel = nvram_nget("raidlevel%d", i);
 		if (!strlen(raidname))
 			break;
-		char type[32];
-		sprintf(type, "raidtype%d", i);
-
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<input name=\"raidname%d\" size=\"32\" value=\"%s\" />", i, raidname);
 		websWrite(wp, "<select name=\"raidtype%d\">\n", i);
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		websWrite(wp, "document.write(\"<option value=\\\"md\\\" %s >Linux Raid</option>\");\n", nvram_match(type, "md") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"btrfs\\\" %s >BTRFS</option>\");\n", nvram_match(type, "btrfs") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"zfs\\\" %s >ZFS</option>\");\n", nvram_match(type, "zfs") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"md\\\" %s >Linux Raid</option>\");\n", !strcmp(raidtype, "md") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"btrfs\\\" %s >BTRFS</option>\");\n", !strcmp(raidtype, "btrfs") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"zfs\\\" %s >ZFS</option>\");\n", !strcmp(raidtype, "zfs") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "//]]>\n</script>Raid Method</select>\n");
-
-		if (nvram_match(type, "md")) {
+		if (!strcmp(raidtype, "md")) {
+			websWrite(wp, "<select name=\"raidlevel%d\">\n", i);
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-			websWrite(wp, "document.write(\"<option value=\\\"linear\\\" %s >Linear</option>\");\n", nvram_match(type, "linear") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"stripe\\\" %s >Stripe</option>\");\n", nvram_match(type, "stripe") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"mirror\\\" %s >Mirror</option>\");\n", nvram_match(type, "mirror") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"4\\\" %s >Raid4</option>\");\n", nvram_match(type, "4") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >Raid5</option>\");\n", nvram_match(type, "5") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"6\\\" %s >Raid6</option>\");\n", nvram_match(type, "6") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"10\\\" %s >Raid10</option>\");\n", nvram_match(type, "10") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"linear\\\" %s >Linear</option>\");\n", !strcmp(raidlevel, "linear") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"stripe\\\" %s >Stripe</option>\");\n", !strcmp(raidlevel, "stripe") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"mirror\\\" %s >Mirror</option>\");\n", !strcmp(raidlevel, "mirror") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"4\\\" %s >Raid4</option>\");\n", !strcmp(raidlevel, "4") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >Raid5</option>\");\n", !strcmp(raidlevel, "5") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"6\\\" %s >Raid6</option>\");\n", !strcmp(raidlevel, "6") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"10\\\" %s >Raid10</option>\");\n", !strcmp(raidlevel, "10") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "//]]>\n</script>Raid Type</select>\n");
 		}
-		if (nvram_match(type, "btrfs")) {
+		if (!strcmp(raidtype, "btrfs")) {
+			websWrite(wp, "<select name=\"raidlevel%d\">\n", i);
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Stripe</option>\");\n", nvram_match(type, "0") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Mirror</option>\");\n", nvram_match(type, "1") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >Raid5</option>\");\n", nvram_match(type, "5") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"6\\\" %s >Raid6</option>\");\n", nvram_match(type, "6") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"10\\\" %s >Raid10</option>\");\n", nvram_match(type, "10") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Stripe</option>\");\n", !strcmp(raidlevel, "0") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Mirror</option>\");\n", !strcmp(raidlevel, "1") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >Raid5</option>\");\n", !strcmp(raidlevel, "5") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"6\\\" %s >Raid6</option>\");\n", !strcmp(raidlevel, "6") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"10\\\" %s >Raid10</option>\");\n", !strcmp(raidlevel, "10") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "//]]>\n</script>Raid Type</select>\n");
 		}
-		if (nvram_match(type, "zfs")) {
+		if (!strcmp(raidtype, "zfs")) {
+			websWrite(wp, "<select name=\"raidlevel%d\">\n", i);
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Stripe</option>\");\n", nvram_match(type, "0") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Mirror</option>\");\n", nvram_match(type, "1") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >Raid-Z1 (Raid 5)</option>\");\n", nvram_match(type, "5") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"6\\\" %s >Raid-Z2 (Raid 6)</option>\");\n", nvram_match(type, "6") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"z3\\\" %s >Raid-Z3</option>\");\n", nvram_match(type, "z3") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Stripe</option>\");\n", !strcmp(raidlevel, "0") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >Mirror</option>\");\n", !strcmp(raidlevel, "1") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >Raid-Z1 (Raid 5)</option>\");\n", !strcmp(raidlevel, "5") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"6\\\" %s >Raid-Z2 (Raid 6)</option>\");\n", !strcmp(raidlevel, "6") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"z3\\\" %s >Raid-Z3</option>\");\n", !strcmp(raidlevel, "z3") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "//]]>\n</script>Raid Type</select>\n");
 		}
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"raid_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 			  i);
-		websWrite(wp, "</div>\n");
+		websWrite(wp, "<fieldset>\n");
+		websWrite(wp, "<table class=\"table\" summary=\"Raid Members\">\n");
+		websWrite(wp, "<tr>\n" "<th>Raid Member</th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
+		char var[128];
+		char *next;
+		int midx = 0;
+		char *drives = getUnmountedDrives();
+		foreach(var, raid, next) {
+			char drive[128];
+			char *dnext;
+			websWrite(wp, "<tr>\n");
+			websWrite(wp, "<td>\n");
+			websWrite(wp, "<select name=\"raid%dmember%d\">\n", i, midx);
+			if (drives) {
+				foreach(drive, drives, dnext) {
+					websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", drive, !strcmp(drive, var) ? "selected=\"selected\"" : "", drive);
+				}
+			}
 
+			websWrite(wp, "</td>\n");
+			websWrite(wp, "<td>\n");
+			websWrite(wp,
+				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"member_del_submit(this.form,%d, %d)\\\" />\");\n//]]>\n</script>\n",
+				  i, midx);
+			websWrite(wp, "</td>\n");
+			websWrite(wp, "</tr>\n");
+			midx++;
+		}
+		websWrite(wp, "</table>\n");
+		websWrite(wp,
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"member_add_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+			  i);
+		websWrite(wp, "</fieldset>\n");
+		websWrite(wp, "</div>\n");
 		i++;
 	}
 
 	websWrite(wp,
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"raid_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
-
 	websWrite(wp, "</fieldset>\n");
 }
 
