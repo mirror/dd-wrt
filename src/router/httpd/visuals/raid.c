@@ -118,6 +118,8 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<tr>\n");
 			websWrite(wp, "<td>\n");
 			websWrite(wp, "<select name=\"raid%dmember%d\">\n", i, midx);
+			if (!strcmp(var, "none"))
+				websWrite(wp, "<option value=\"none\">None</option>\n");
 			if (drives) {
 				foreach(drive, drives, dnext) {
 					websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", drive, !strcmp(drive, var) ? "selected=\"selected\"" : "", drive);
