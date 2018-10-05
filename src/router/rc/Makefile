@@ -800,6 +800,9 @@ endif
 ifeq ($(CONFIG_SAMBA3),y)
 CFLAGS += -DHAVE_SAMBA3
 endif
+ifeq ($(CONFIG_RAID),y)
+CFLAGS += -DHAVE_RAID
+endif
 ifeq ($(CONFIG_MINIDLNA),y)
 CFLAGS += -DHAVE_MINIDLNA
 endif
