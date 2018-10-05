@@ -454,27 +454,20 @@ function checkSambaUsers() {
 
 function raid_del_submit(F,I) {
 	F.change_action.value="gozila_cgi";
-	F.submit_type.value = "del_radius_user";
+	F.submit_type.value = "del_raid";
 	F.del_value.value=I;
 	F.submit();
 }
 
 function raid_add_submit(F) {
 	F.change_action.value="gozila_cgi";
-	F.submit_type.value = "del_radius_user";
-	F.submit();
-}
-
-function raid_del_submit(F,I) {
-	F.change_action.value="gozila_cgi";
-	F.submit_type.value = "del_radius_user";
-	F.raid_del_value.value=I;
+	F.submit_type.value = "add_raid";
 	F.submit();
 }
 
 function member_del_submit(F,I,M) {
 	F.change_action.value="gozila_cgi";
-	F.submit_type.value = "del_radius_user";
+	F.submit_type.value = "del_raid_member";
 	F.raid_del_value.value=I;
 	F.raid_member_del_value.value=M;
 	F.submit();
@@ -482,7 +475,7 @@ function member_del_submit(F,I,M) {
 
 function member_add_submit(F,I) {
 	F.change_action.value="gozila_cgi";
-	F.submit_type.value = "del_radius_user";
+	F.submit_type.value = "add_raid_member";
 	F.raid_member_add_value.value=I;
 	F.submit();
 }
