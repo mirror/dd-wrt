@@ -56,7 +56,7 @@ void start_raid(void)
 		insmod("dm-mod");
 		insmod("async_tx");
 		insmod("async_memcpy");
-		insmod("xor-neon"); // for arm only
+		insmod("xor-neon");	// for arm only
 		insmod("xor");
 		insmod("async_xor");
 		insmod("raid6_pq");
@@ -80,7 +80,7 @@ void start_raid(void)
 		insmod("zfs");
 		dd_loginfo("raid", "ZFS modules successfully loaded\n");
 	}
-	i=0;
+	i = 0;
 	while (1) {
 		char *raid = nvram_nget("raid%d", i);
 		if (!strlen(raid))
@@ -88,6 +88,7 @@ void start_raid(void)
 		char *level = nvram_nget("raidlevel%d", i);
 		char *done = nvram_nget("raiddone%d", i);
 		char *type = nvram_nget("raidtype%d", i);
+		char *poolname = nvram_nget("raidname%d", i);
 		if (strcmp(done, "1")) {
 			char *next;
 			char drive[64];
@@ -97,32 +98,38 @@ void start_raid(void)
 			}
 			if (!strcmp(type, "md")) {
 				dd_loginfo("raid", "creating MD Raid /dev/md%d", i);
-				sysprintf("mdadm --stop /dev/md%d\n",i);
+				sysprintf("mdadm --stop /dev/md%d\n", i);
 				sysprintf("mdadm --create /dev/md%d --level=%s --raid-devices=%d --run %s", i, level, drives, raid);
-				if (nvram_nmatch("ext4", "raidfs%d", i))
+				if (nvram_nmatch("ext4", "raidfs%d", i)) {
 					sysprintf("mkfs.ext4 /dev/md%d", i);
-				if (nvram_nmatch("ext2", "raidfs%d", i))
+				}
+				if (nvram_nmatch("ext2", "raidfs%d", i)) {
 					sysprintf("mkfs.ext2 /dev/md%d", i);
-				if (nvram_nmatch("xfs", "raidfs%d", i))
+				}
+				if (nvram_nmatch("ext3", "raidfs%d", i)) {
+					sysprintf("mkfs.ext3 /dev/md%d", i);
+				}
+				if (nvram_nmatch("xfs", "raidfs%d", i)) {
 					sysprintf("mkfs.xfs /dev/md%d", i);
-				if (nvram_nmatch("btrfs", "raidfs%d", i))
+				}
+				if (nvram_nmatch("btrfs", "raidfs%d", i)) {
 					sysprintf("mkfs.btrfs /dev/md%d", i);
+				}
 			}
 			if (!strcmp(type, "btrfs")) {
 				if (!strcmp(level, "0"))
-				    sysprintf("mkfs.btrfs -d raid0 %s", raid);
+					sysprintf("mkfs.btrfs -d raid0 %s", raid);
 				if (!strcmp(level, "1"))
-				    sysprintf("mkfs.btrfs -d raid1 %s", raid);
+					sysprintf("mkfs.btrfs -d raid1 %s", raid);
 				if (!strcmp(level, "5"))
-				    sysprintf("mkfs.btrfs -d raid5 %s", raid);
+					sysprintf("mkfs.btrfs -d raid5 %s", raid);
 				if (!strcmp(level, "6"))
-				    sysprintf("mkfs.btrfs -d raid6 %s", raid);
+					sysprintf("mkfs.btrfs -d raid6 %s", raid);
 				if (!strcmp(level, "10"))
-				    sysprintf("mkfs.btrfs -d raid10 %s", raid);
+					sysprintf("mkfs.btrfs -d raid10 %s", raid);
 
 			}
 			if (!strcmp(type, "zfs")) {
-				char *poolname = nvram_nget("raidname%d", i);
 				dd_loginfo("raid", "creating ZFS Pool %s", poolname);
 				sysprintf("zpool destroy %s", poolname);
 				sysprintf("mkdir -p /tmp/mnt/%s", poolname);
@@ -141,7 +148,6 @@ void start_raid(void)
 			nvram_commit();
 		}
 		if (!strcmp(type, "zfs")) {
-			char *poolname = nvram_nget("raidname%d", i);
 			if (nvram_nmatch("1", "raidlz%d", i))
 				sysprintf("zfs set compression=lz4 %s", poolname);
 			else
@@ -153,7 +159,32 @@ void start_raid(void)
 			sysprintf("mkdir -p /tmp/mnt/%s", poolname);
 			sysprintf("zpool import -a -d /dev", poolname);
 		}
-
+		if (!strcmp(type, "md")) {
+			sysprintf("mkdir -p /tmp/mnt/%s", poolname);
+			if (nvram_nmatch("ext4", "raidfs%d", i)) {
+				sysprintf("mount -t ext4 /dev/md%d /tmp/mnt/%s", i, poolname);
+			}
+			if (nvram_nmatch("ext2", "raidfs%d", i)) {
+				sysprintf("mount -t ext2 /dev/md%d /tmp/mnt/%s", i, poolname);
+			}
+			if (nvram_nmatch("ext3", "raidfs%d", i)) {
+				sysprintf("mount -t ext3 /dev/md%d /tmp/mnt/%s", i, poolname);
+			}
+			if (nvram_nmatch("xfs", "raidfs%d", i)) {
+				sysprintf("mount -t xfs /dev/md%d /tmp/mnt/%s", i, poolname);
+			}
+			if (nvram_nmatch("btrfs", "raidfs%d", i)) {
+				sysprintf("mount -t btrfs /dev/md%d /tmp/mnt/%s", i, poolname);
+			}
+		}
+		if (!strcmp(type, "btrfs")) {
+			char *r = malloc(strlen(raid) + 1);
+			strcpy(r, raid);
+			strstrtok(r, ' ');
+			sysprintf("mkdir -p /tmp/mnt/%s", poolname);
+			sysprintf("mount -t btrfs /dev/md%d /tmp/mnt/%s", r, poolname);
+			free(r);
+		}
 		i++;
 	}
 
