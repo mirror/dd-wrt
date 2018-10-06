@@ -1298,6 +1298,7 @@ extern int inet_cidr_to_addr(char *cidr_str, struct in_addr *addr, struct in_add
 char *getUnmountedDrives(void);
 char *getMountedDrives(void);
 char *getAllDrives(void);
+char *strstrtok(char *str, char del);
 
 #define ETHER_ADDR_STR_LEN	18	/* 18-bytes of Ethernet address buffer length */
 #ifndef ETHER_ADDR_LEN
