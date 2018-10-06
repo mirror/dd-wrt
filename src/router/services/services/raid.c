@@ -39,13 +39,27 @@ void start_raid(void)
 	int zfs = 0;
 	int md = 0;
 	int btrfs = 0;
+	int xfs = 0;
+	int ext2 = 0;
+	int ext4 = 0;
 	if (!nvram_matchi("raid_enable", 1))
 		return;
 	while (1) {
 		char *raid = nvram_nget("raid%d", i);
 		char *type = nvram_nget("raidtype%d", i);
-		if (!strcmp(type, "md"))
+		char *fs = nvram_nget("raidfs%d", i);
+		if (!strcmp(type, "md")) {
 			md = 1;
+			if (!strcmp(fs, "btrfs"))
+				btrfs = 1;
+			if (!strcmp(fs, "xfs"))
+				xfs = 1;
+			if (!strcmp(fs, "ext2"))
+				ext2 = 1;
+			else if (!strncmp(fs, "ext", 3))
+				ext4 = 1;
+
+		}
 		if (!strcmp(type, "zfs"))
 			zfs = 1;
 		if (!strcmp(type, "btrfs"))
@@ -86,6 +100,18 @@ void start_raid(void)
 	if (btrfs) {
 		insmod("libcrc32c crc32c_generic crc32_generic lzo_compress lzo_decompress xxhash zstd_compress zstd_decompress raid6_pq xor-neon xor btrfs");
 		dd_loginfo("raid", "BTRFS modules successfully loaded\n");
+	}
+	if (xfs) {
+		insmod("xfs");
+		dd_loginfo("raid", "XFS modules successfully loaded\n");
+	}
+	if (ext4) {
+		insmod("crc16 mbcache ext2 jbd jbd2 ext3 ext4");
+		dd_loginfo("raid", "EXT4 modules successfully loaded\n");
+	}
+	if (ext2) {
+		insmod("mbcache ext2");
+		dd_loginfo("raid", "EXT2 modules successfully loaded\n");
 	}
 	i = 0;
 	while (1) {
