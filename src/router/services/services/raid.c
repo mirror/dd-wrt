@@ -38,6 +38,7 @@ void start_raid(void)
 	int i = 0;
 	int zfs = 0;
 	int md = 0;
+	int btrfs = 0;
 	if (!nvram_matchi("raid_enable", 1))
 		return;
 	while (1) {
@@ -47,6 +48,8 @@ void start_raid(void)
 			md = 1;
 		if (!strcmp(type, "zfs"))
 			zfs = 1;
+		if (!strcmp(type, "btrfs"))
+			btrfs = 1;
 		if (!strlen(raid))
 			break;
 		i++;
@@ -79,6 +82,10 @@ void start_raid(void)
 		insmod("zavl");
 		insmod("zfs");
 		dd_loginfo("raid", "ZFS modules successfully loaded\n");
+	}
+	if (btrfs) {
+		insmod("libcrc32c crc32c_generic crc32_generic lzo_compress lzo_decompress xxhash zstd_compress zstd_decompress raid6_pq xor-neon xor btrfs");
+		dd_loginfo("raid", "BTRFS modules successfully loaded\n");
 	}
 	i = 0;
 	while (1) {
@@ -118,15 +125,15 @@ void start_raid(void)
 			}
 			if (!strcmp(type, "btrfs")) {
 				if (!strcmp(level, "0"))
-					sysprintf("mkfs.btrfs -d raid0 %s", raid);
+					sysprintf("mkfs.btrfs -f -d raid0 %s", raid);
 				if (!strcmp(level, "1"))
-					sysprintf("mkfs.btrfs -d raid1 %s", raid);
+					sysprintf("mkfs.btrfs -f -d raid1 %s", raid);
 				if (!strcmp(level, "5"))
-					sysprintf("mkfs.btrfs -d raid5 %s", raid);
+					sysprintf("mkfs.btrfs -f -d raid5 %s", raid);
 				if (!strcmp(level, "6"))
-					sysprintf("mkfs.btrfs -d raid6 %s", raid);
+					sysprintf("mkfs.btrfs -f -d raid6 %s", raid);
 				if (!strcmp(level, "10"))
-					sysprintf("mkfs.btrfs -d raid10 %s", raid);
+					sysprintf("mkfs.btrfs -f -d raid10 %s", raid);
 
 			}
 			if (!strcmp(type, "zfs")) {
@@ -160,6 +167,7 @@ void start_raid(void)
 			sysprintf("zpool import -a -d /dev", poolname);
 		}
 		if (!strcmp(type, "md")) {
+			sysprintf("mdadm --assemble /dev/md%d %s", i, raid);
 			sysprintf("mkdir -p /tmp/mnt/%s", poolname);
 			if (nvram_nmatch("ext4", "raidfs%d", i)) {
 				sysprintf("mount -t ext4 /dev/md%d /tmp/mnt/%s", i, poolname);
@@ -182,7 +190,7 @@ void start_raid(void)
 			strcpy(r, raid);
 			strstrtok(r, ' ');
 			sysprintf("mkdir -p /tmp/mnt/%s", poolname);
-			sysprintf("mount -t btrfs /dev/md%d /tmp/mnt/%s", r, poolname);
+			sysprintf("mount -t btrfs %s /tmp/mnt/%s", r, poolname);
 			free(r);
 		}
 		i++;
