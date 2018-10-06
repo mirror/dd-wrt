@@ -1966,8 +1966,7 @@ char *get_hwaddr(const char *name, char *eabuf)
 	return NULL;
 }
 
-#ifdef HAVE_RAID
-static char *strstrtok(char *str, char del)
+char *strstrtok(char *str, char del)
 {
 	int s = strlen(str);
 	int i;
@@ -1977,8 +1976,10 @@ static char *strstrtok(char *str, char del)
 			return &str[i + 1];
 		}
 	}
-
+	return str;
 }
+
+#ifdef HAVE_RAID
 
 char *getMountedDrives(void)
 {
