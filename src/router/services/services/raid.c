@@ -97,7 +97,8 @@ void start_raid(void)
 			}
 			if (!strcmp(type, "md")) {
 				dd_loginfo("raid", "creating MD Raid /dev/md%d", i);
-				sysprintf("mdadm --create /dev/md%d --level=%s --raid-devices=%d %s", i, level, drives, raid);
+				sysprintf("mdadm --stop /dev/md%d\n",i);
+				sysprintf("mdadm --create /dev/md%d --level=%s --raid-devices=%d --run %s", i, level, drives, raid);
 				if (nvram_nmatch("ext4", "raidfs%d", i))
 					sysprintf("mkfs.ext4 /dev/md%d", i);
 				if (nvram_nmatch("ext2", "raidfs%d", i))
