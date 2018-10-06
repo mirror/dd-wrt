@@ -50,6 +50,7 @@
 #include <wlutils.h>
 #include <bcmnvram.h>
 
+/* simply check for availability of the required filesystem tools */
 static int checkfs(char *type)
 {
 	char fscheck[32];
