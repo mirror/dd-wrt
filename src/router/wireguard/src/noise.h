@@ -93,37 +93,38 @@ struct noise_handshake {
 
 static struct wireguard_device;
 
-static void noise_init(void);
-static bool noise_handshake_init(struct noise_handshake *handshake,
-			  struct noise_static_identity *static_identity,
-			  const u8 peer_public_key[NOISE_PUBLIC_KEY_LEN],
-			  const u8 peer_preshared_key[NOISE_SYMMETRIC_KEY_LEN],
-			  struct wireguard_peer *peer);
-static void noise_handshake_clear(struct noise_handshake *handshake);
-static void noise_keypair_put(struct noise_keypair *keypair, bool unreference_now);
-static struct noise_keypair *noise_keypair_get(struct noise_keypair *keypair);
-static void noise_keypairs_clear(struct noise_keypairs *keypairs);
-static bool noise_received_with_keypair(struct noise_keypairs *keypairs,
-				 struct noise_keypair *received_keypair);
+static void wg_noise_init(void);
+static bool wg_noise_handshake_init(struct noise_handshake *handshake,
+			   struct noise_static_identity *static_identity,
+			   const u8 peer_public_key[NOISE_PUBLIC_KEY_LEN],
+			   const u8 peer_preshared_key[NOISE_SYMMETRIC_KEY_LEN],
+			   struct wireguard_peer *peer);
+static void wg_noise_handshake_clear(struct noise_handshake *handshake);
+static void wg_noise_keypair_put(struct noise_keypair *keypair, bool unreference_now);
+static struct noise_keypair *wg_noise_keypair_get(struct noise_keypair *keypair);
+static void wg_noise_keypairs_clear(struct noise_keypairs *keypairs);
+static bool wg_noise_received_with_keypair(struct noise_keypairs *keypairs,
+				    struct noise_keypair *received_keypair);
 
-static void noise_set_static_identity_private_key(
+static void wg_noise_set_static_identity_private_key(
 	struct noise_static_identity *static_identity,
 	const u8 private_key[NOISE_PUBLIC_KEY_LEN]);
-static bool noise_precompute_static_static(struct wireguard_peer *peer);
+static bool wg_noise_precompute_static_static(struct wireguard_peer *peer);
 
-static bool noise_handshake_create_initiation(struct message_handshake_initiation *dst,
-				       struct noise_handshake *handshake);
-static struct wireguard_peer *
-noise_handshake_consume_initiation(struct message_handshake_initiation *src,
-				   struct wireguard_device *wg);
-
-static bool noise_handshake_create_response(struct message_handshake_response *dst,
+static bool
+wg_noise_handshake_create_initiation(struct message_handshake_initiation *dst,
 				     struct noise_handshake *handshake);
 static struct wireguard_peer *
-noise_handshake_consume_response(struct message_handshake_response *src,
-				 struct wireguard_device *wg);
+wg_noise_handshake_consume_initiation(struct message_handshake_initiation *src,
+				      struct wireguard_device *wg);
 
-static bool noise_handshake_begin_session(struct noise_handshake *handshake,
-				   struct noise_keypairs *keypairs);
+static bool wg_noise_handshake_create_response(struct message_handshake_response *dst,
+					struct noise_handshake *handshake);
+static struct wireguard_peer *
+wg_noise_handshake_consume_response(struct message_handshake_response *src,
+				    struct wireguard_device *wg);
+
+static bool wg_noise_handshake_begin_session(struct noise_handshake *handshake,
+				      struct noise_keypairs *keypairs);
 
 #endif /* _WG_NOISE_H */

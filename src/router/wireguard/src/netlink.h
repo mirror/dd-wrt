@@ -6,7 +6,7 @@
 #ifndef _WG_NETLINK_H
 #define _WG_NETLINK_H
 
-static int genetlink_init(void);
-static void genetlink_uninit(void);
+static int wg_genetlink_init(void);
+static void wg_genetlink_uninit(void);
 
 #endif /* _WG_NETLINK_H */

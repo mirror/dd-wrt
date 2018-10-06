@@ -10,11 +10,13 @@
 #include <zinc/chacha20poly1305.h>
 #include <zinc/chacha20.h>
 #include <zinc/poly1305.h>
+#include "selftest/run.h"
+
 #include <asm/unaligned.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/init.h>
-#include <crypto/scatterwalk.h>
+#include <crypto/scatterwalk.h> // For blkcipher_walk.
 
 static const u8 pad0[16] = { 0 };
 
@@ -339,7 +341,7 @@ bool xchacha20poly1305_decrypt(u8 *dst, const u8 *src, const size_t src_len,
 }
 EXPORT_SYMBOL(xchacha20poly1305_decrypt);
 
-#include "selftest/chacha20poly1305.h"
+//#include "selftest/chacha20poly1305.c"
 
 #ifndef COMPAT_ZINC_IS_A_MODULE
 int __init chacha20poly1305_mod_init(void)
@@ -347,10 +349,9 @@ int __init chacha20poly1305_mod_init(void)
 static int __init mod_init(void)
 #endif
 {
-#ifdef DEBUG
-	if (!chacha20poly1305_selftest())
-		return -ENOTRECOVERABLE;
-#endif
+//	if (!selftest_run("chacha20poly1305", chacha20poly1305_selftest,
+//			  NULL, 0))
+//		return -ENOTRECOVERABLE;
 	return 0;
 }
 
