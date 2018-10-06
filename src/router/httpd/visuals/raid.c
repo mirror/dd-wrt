@@ -57,7 +57,7 @@ static int checkfs(char *type)
 	char fscheck2[32];
 	sprintf(fscheck2, "/usr/bin/mkfs.%s", type);
 	char fscheck3[32];
-	sprintf(fscheck2, "/usr/sbin/mkfs.%s", type);
+	sprintf(fscheck3, "/usr/sbin/mkfs.%s", type);
 
 	FILE *p = fopen(fscheck, "rb");
 	if (p) {
@@ -97,9 +97,23 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		if (!strlen(raidtype))
 			break;
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "Name\n");
+		websWrite(wp, "<table class=\"table center\" summary=\"Raid\">\n");
+
+		if (!strcmp(raidtype, "md")) {
+			websWrite(wp, "<tr>\n" "<th>Name</th>\n" "<th>Type</th>\n" "<th>Level</th>\n" "<th>FS</th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
+		}
+		if (!strcmp(raidtype, "btrfs")) {
+			websWrite(wp, "<tr>\n" "<th>Name</th>\n" "<th>Type</th>\n" "<th>Level</th>\n " "<th>&nbsp;</th>\n" "</tr>\n");
+		}
+		if (!strcmp(raidtype, "zfs")) {
+			websWrite(wp, "<tr>\n" "<th>Name</th>\n" "<th>Type</th>\n" "<th>Level</th>\n" "<th>Dedup</th>\n" "<th>LZ</th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
+		}
+
+		websWrite(wp, "<tr>\n");
+		websWrite(wp, "<td>\n");
 		websWrite(wp, "<input name=\"raidname%d\" size=\"12\" value=\"%s\" />", i, raidname);
-		websWrite(wp, "Type\n");
+		websWrite(wp, "</td>\n");
+		websWrite(wp, "<td>\n");
 		websWrite(wp, "<select name=\"raidtype%d\">\n", i);
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 		websWrite(wp, "document.write(\"<option value=\\\"md\\\" %s >Linux Raid</option>\");\n", !strcmp(raidtype, "md") ? "selected=\\\"selected\\\"" : "");
@@ -109,8 +123,9 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "document.write(\"<option value=\\\"zfs\\\" %s >ZFS</option>\");\n", !strcmp(raidtype, "zfs") ? "selected=\\\"selected\\\"" : "");
 #endif
 		websWrite(wp, "//]]>\n</script></select>\n");
+		websWrite(wp, "</td>\n");
 		if (!strcmp(raidtype, "md")) {
-			websWrite(wp, "Level\n");
+			websWrite(wp, "<td>\n");
 			websWrite(wp, "<select name=\"raidlevel%d\">\n", i);
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 			websWrite(wp, "document.write(\"<option value=\\\"linear\\\" %s >Linear</option>\");\n", !strcmp(raidlevel, "linear") ? "selected=\\\"selected\\\"" : "");
@@ -121,7 +136,8 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "document.write(\"<option value=\\\"6\\\" %s >Raid6</option>\");\n", !strcmp(raidlevel, "6") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"10\\\" %s >Raid10</option>\");\n", !strcmp(raidlevel, "10") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "//]]>\n</script></select>\n");
-			websWrite(wp, "FS\n");
+			websWrite(wp, "</td>\n");
+			websWrite(wp, "<td>\n");
 			websWrite(wp, "<select name=\"raidfs%d\">\n", i);
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 			if (ext2)
@@ -135,9 +151,10 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			if (btrfs)
 				websWrite(wp, "document.write(\"<option value=\\\"btrfs\\\" %s >BTRFS</option>\");\n", !strcmp(raidlevel, "btrfs") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "//]]>\n</script></select>\n");
+			websWrite(wp, "</td>\n");
 		}
 		if (!strcmp(raidtype, "btrfs")) {
-			websWrite(wp, "Level\n");
+			websWrite(wp, "<td>\n");
 			websWrite(wp, "<select name=\"raidlevel%d\">\n", i);
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Stripe</option>\");\n", !strcmp(raidlevel, "0") ? "selected=\\\"selected\\\"" : "");
@@ -146,10 +163,11 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "document.write(\"<option value=\\\"6\\\" %s >Raid6</option>\");\n", !strcmp(raidlevel, "6") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"10\\\" %s >Raid10</option>\");\n", !strcmp(raidlevel, "10") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "//]]>\n</script></select>\n");
+			websWrite(wp, "</td>\n");
 		}
 #ifdef HAVE_ZFS
 		if (!strcmp(raidtype, "zfs")) {
-			websWrite(wp, "Level\n");
+			websWrite(wp, "<td>\n");
 			websWrite(wp, "<select name=\"raidlevel%d\">\n", i);
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Stripe</option>\");\n", !strcmp(raidlevel, "0") ? "selected=\\\"selected\\\"" : "");
@@ -158,17 +176,24 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "document.write(\"<option value=\\\"6\\\" %s >Raid-Z2 (Raid 6)</option>\");\n", !strcmp(raidlevel, "6") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"z3\\\" %s >Raid-Z3</option>\");\n", !strcmp(raidlevel, "z3") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "//]]>\n</script></select>\n");
-			websWrite(wp, "Dedup\n");
+			websWrite(wp, "</td>\n");
+			websWrite(wp, "<td>\n");
 			websWrite(wp, "<input type=\"checkbox\" name=\"raiddedup%d\" value=\"1\" %s/>", i, !strcmp(raiddedup, "1") ? "checked=\"checked\"" : "");
-			websWrite(wp, "LZ4\n");
+			websWrite(wp, "</td>\n");
+			websWrite(wp, "<td>\n");
 			websWrite(wp, "<input type=\"checkbox\" name=\"raidlz%d\" value=\"1\" %s/>", i, !strcmp(raidlz, "1") ? "checked=\"checked\"" : "");
+			websWrite(wp, "</td>\n");
 		}
 #endif
+		websWrite(wp, "<td>\n");
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.del + \"\\\" onclick=\\\"raid_del_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 			  i);
+		websWrite(wp, "</td>\n");
+		websWrite(wp, "</tr>\n");
+		websWrite(wp, "</table>\n");
 		websWrite(wp, "<fieldset>\n");
-		websWrite(wp, "<table class=\"table\" summary=\"Raid Members\">\n");
+		websWrite(wp, "<table class=\"table center\" summary=\"Raid Members\">\n");
 		websWrite(wp, "<tr>\n" "<th><script type=\"text/javascript\">Capture(nas.raidmember)</script></th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
 		char var[128];
 		char *next;
@@ -203,13 +228,14 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			  i);
 		websWrite(wp, "</fieldset>\n");
 		websWrite(wp, "</div>\n");
+		websWrite(wp,
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + nas.format + \"\\\" onclick=\\\"raid_format_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+			  i);
 		i++;
 	}
-
 	websWrite(wp,
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"raid_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
-	websWrite(wp,
-		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + nas.format + \"\\\" onclick=\\\"raid_format_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
+
 	websWrite(wp, "</fieldset>\n");
 }
 
