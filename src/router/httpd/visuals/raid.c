@@ -100,13 +100,13 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<table class=\"table center\" summary=\"Raid\">\n");
 
 		if (!strcmp(raidtype, "md")) {
-			websWrite(wp, "<tr>\n" "<th>Name</th>\n" "<th>Type</th>\n" "<th>Level</th>\n" "<th>FS</th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
+			websWrite(wp, "<tr>\n" "<th>Name</th>\n" "<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n" "<th>Level</th>\n" "<th><script type=\"text/javascript\">Capture(nas.fs)</script></th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
 		}
 		if (!strcmp(raidtype, "btrfs")) {
-			websWrite(wp, "<tr>\n" "<th>Name</th>\n" "<th>Type</th>\n" "<th>Level</th>\n " "<th>&nbsp;</th>\n" "</tr>\n");
+			websWrite(wp, "<tr>\n" "<th>Name</th>\n" "<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n" "<th>Level</th>\n " "<th>&nbsp;</th>\n" "</tr>\n");
 		}
 		if (!strcmp(raidtype, "zfs")) {
-			websWrite(wp, "<tr>\n" "<th>Name</th>\n" "<th>Type</th>\n" "<th>Level</th>\n" "<th>Dedup</th>\n" "<th>LZ</th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
+			websWrite(wp, "<tr>\n" "<th>Name</th>\n" "<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n" "<th>Level</th>\n" "<th>Dedup</th>\n" "<th>LZ</th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
 		}
 
 		websWrite(wp, "<tr>\n");
@@ -229,7 +229,7 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "</fieldset>\n");
 		websWrite(wp, "</div>\n");
 		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + nas.format + \"\\\" onclick=\\\"raid_format_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" name=\\\"reboot_button\\\" type=\\\"button\\\" value=\\\"\" + nas.format + \"\\\" onclick=\\\"raid_format_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
 			  i);
 		i++;
 	}
