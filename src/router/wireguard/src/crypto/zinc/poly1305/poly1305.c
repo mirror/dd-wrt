@@ -8,6 +8,7 @@
  */
 
 #include <zinc/poly1305.h>
+#include "../selftest/run.h"
 
 #include <asm/unaligned.h>
 #include <linux/kernel.h>
@@ -16,11 +17,11 @@
 #include <linux/init.h>
 
 #if defined(CONFIG_ZINC_ARCH_X86_64)
-#include "poly1305-x86_64-glue.h"
+#include "poly1305-x86_64-glue.c"
 #elif defined(CONFIG_ZINC_ARCH_ARM) || defined(CONFIG_ZINC_ARCH_ARM64)
-#include "poly1305-arm-glue.h"
+#include "poly1305-arm-glue.c"
 #elif defined(CONFIG_ZINC_ARCH_MIPS) || defined(CONFIG_ZINC_ARCH_MIPS64)
-#include "poly1305-mips-glue.h"
+#include "poly1305-mips-glue.c"
 #else
 static inline bool poly1305_init_arch(void *ctx,
 				      const u8 key[POLY1305_KEY_SIZE])
@@ -28,7 +29,7 @@ static inline bool poly1305_init_arch(void *ctx,
 	return false;
 }
 static inline bool poly1305_blocks_arch(void *ctx, const u8 *input,
-					const size_t len, const u32 padbit,
+					size_t len, const u32 padbit,
 					simd_context_t *simd_context)
 {
 	return false;
@@ -39,7 +40,8 @@ static inline bool poly1305_emit_arch(void *ctx, u8 mac[POLY1305_MAC_SIZE],
 {
 	return false;
 }
-void __init poly1305_fpu_init(void)
+static bool *const poly1305_nobs[] __initconst = { };
+static void __init poly1305_fpu_init(void)
 {
 }
 #endif
@@ -134,7 +136,7 @@ void poly1305_final(struct poly1305_ctx *ctx, u8 mac[POLY1305_MAC_SIZE],
 }
 EXPORT_SYMBOL(poly1305_final);
 
-#include "../selftest/poly1305.h"
+//#include "../selftest/poly1305.c"
 
 //static bool nosimd __initdata = false;
 
@@ -146,10 +148,9 @@ static int __init mod_init(void)
 {
 	if (!nosimd)
 		poly1305_fpu_init();
-#ifdef DEBUG
-	if (!poly1305_selftest())
-		return -ENOTRECOVERABLE;
-#endif
+//	if (!selftest_run("poly1305", poly1305_selftest, poly1305_nobs,
+//			  ARRAY_SIZE(poly1305_nobs)))
+//		return -ENOTRECOVERABLE;
 	return 0;
 }
 
