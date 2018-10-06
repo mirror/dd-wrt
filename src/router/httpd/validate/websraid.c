@@ -109,13 +109,18 @@ void del_raid(webs_t wp)
 	if (cnt == 0)
 		return;
 	int i;
-	for (i = idx; i < cnt; i++) {
-		nvram_nset(nvram_nget("raidtype%d", i), "raidtype%d", i);
-		nvram_nset(nvram_nget("raidname%d", i), "raidname%d", i);
-		nvram_nset(nvram_nget("raidlevel%d", i), "raidlevel%d", i);
-		nvram_nset(nvram_nget("raidraid%d", i), "raidraid%d", i);
-		nvram_nset(nvram_nget("raidfs%d", i), "raidfs%d", i);
+	for (i = idx; i < cnt-1; i++) {
+		nvram_nset(nvram_nget("raidtype%d", i), "raidtype%d", i+1);
+		nvram_nset(nvram_nget("raidname%d", i), "raidname%d", i+1);
+		nvram_nset(nvram_nget("raidlevel%d", i), "raidlevel%d", i+1);
+		nvram_nset(nvram_nget("raid%d", i), "raid%d", i+1);
+		nvram_nset(nvram_nget("raidfs%d", i), "raidfs%d", i+1);
 	}
+	nvram_nset(NULL, "raidtype%d", i);
+	nvram_nset(NULL, "raidname%d", i);
+	nvram_nset(NULL, "raidlevel%d", i);
+	nvram_nset(NULL, "raid%d", i);
+	nvram_nset(NULL, "raidfs%d", i);
 }
 
 void add_raid_member(webs_t wp)
