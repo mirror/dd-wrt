@@ -768,6 +768,7 @@ nas.dlna_rescan="Zyklisches neu Scannen";
 nas.format="Formatieren";
 nas.raidmember="Raid Mitglied";
 nas.mirror="Spiegeln";
+nas.fs="Dateisystem";
 
 //** Privoxy.asp **//
 privoxy.titl="Werbefilter";
