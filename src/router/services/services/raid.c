@@ -180,6 +180,7 @@ void start_raid(void)
 			nvram_nset("1", "raiddone%d", i);
 			nvram_commit();
 		}
+		raid = nvram_nget("raid%d", i);
 		type = nvram_nget("raidtype%d", i);
 		poolname = nvram_nget("raidname%d", i);
 		if (!strcmp(type, "zfs")) {
