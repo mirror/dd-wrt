@@ -8,24 +8,27 @@
  */
 
 #include <zinc/chacha20.h>
+#include "../selftest/run.h"
 
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/init.h>
-#include <crypto/algapi.h>
+#include <linux/vmalloc.h>
+#include <crypto/algapi.h> // For crypto_xor_cpy.
 
 #if defined(CONFIG_ZINC_ARCH_X86_64)
-#include "chacha20-x86_64-glue.h"
+#include "chacha20-x86_64-glue.c"
 #elif defined(CONFIG_ZINC_ARCH_ARM) || defined(CONFIG_ZINC_ARCH_ARM64)
-#include "chacha20-arm-glue.h"
+#include "chacha20-arm-glue.c"
 #elif defined(CONFIG_ZINC_ARCH_MIPS)
-#include "chacha20-mips-glue.h"
+#include "chacha20-mips-glue.c"
 #else
-void __init chacha20_fpu_init(void)
+static bool *const chacha20_nobs[] __initconst = { };
+static void __init chacha20_fpu_init(void)
 {
 }
-static inline bool chacha20_arch(struct chacha20_ctx *state, u8 *out,
-				 const u8 *in, const size_t len,
+static inline bool chacha20_arch(struct chacha20_ctx *ctx, u8 *dst,
+				 const u8 *src, size_t len,
 				 simd_context_t *simd_context)
 {
 	return false;
@@ -78,45 +81,45 @@ static inline bool hchacha20_arch(u32 derived_key[CHACHA20_KEY_WORDS],
 	DOUBLE_ROUND(x) \
 )
 
-static void chacha20_block_generic(__le32 *stream, u32 *state)
+static void chacha20_block_generic(struct chacha20_ctx *ctx, __le32 *stream)
 {
 	u32 x[CHACHA20_BLOCK_WORDS];
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(x); ++i)
-		x[i] = state[i];
+		x[i] = ctx->state[i];
 
 	TWENTY_ROUNDS(x);
 
 	for (i = 0; i < ARRAY_SIZE(x); ++i)
-		stream[i] = cpu_to_le32(x[i] + state[i]);
+		stream[i] = cpu_to_le32(x[i] + ctx->state[i]);
 
-	++state[12];
+	ctx->counter[0] += 1;
 }
 
-static void chacha20_generic(struct chacha20_ctx *state, u8 *out, const u8 *in,
+static void chacha20_generic(struct chacha20_ctx *ctx, u8 *out, const u8 *in,
 			     u32 len)
 {
 	__le32 buf[CHACHA20_BLOCK_WORDS];
 
 	while (len >= CHACHA20_BLOCK_SIZE) {
-		chacha20_block_generic(buf, (u32 *)state);
+		chacha20_block_generic(ctx, buf);
 		crypto_xor_cpy(out, in, (u8 *)buf, CHACHA20_BLOCK_SIZE);
 		len -= CHACHA20_BLOCK_SIZE;
 		out += CHACHA20_BLOCK_SIZE;
 		in += CHACHA20_BLOCK_SIZE;
 	}
 	if (len) {
-		chacha20_block_generic(buf, (u32 *)state);
+		chacha20_block_generic(ctx, buf);
 		crypto_xor_cpy(out, in, (u8 *)buf, len);
 	}
 }
 
-void chacha20(struct chacha20_ctx *state, u8 *dst, const u8 *src, u32 len,
+void chacha20(struct chacha20_ctx *ctx, u8 *dst, const u8 *src, u32 len,
 	      simd_context_t *simd_context)
 {
-	if (!chacha20_arch(state, dst, src, len, simd_context))
-		chacha20_generic(state, dst, src, len);
+	if (!chacha20_arch(ctx, dst, src, len, simd_context))
+		chacha20_generic(ctx, dst, src, len);
 }
 EXPORT_SYMBOL(chacha20);
 
@@ -158,7 +161,7 @@ void hchacha20(u32 derived_key[CHACHA20_KEY_WORDS],
 }
 EXPORT_SYMBOL(hchacha20);
 
-#include "../selftest/chacha20.h"
+//#include "../selftest/chacha20.c"
 
 static bool nosimd __initdata = false;
 
@@ -170,10 +173,9 @@ static int __init mod_init(void)
 {
 	if (!nosimd)
 		chacha20_fpu_init();
-#ifdef DEBUG
-	if (!chacha20_selftest())
-		return -ENOTRECOVERABLE;
-#endif
+//	if (!selftest_run("chacha20", chacha20_selftest, chacha20_nobs,
+//			  ARRAY_SIZE(chacha20_nobs)))
+//		return -ENOTRECOVERABLE;
 	return 0;
 }
 

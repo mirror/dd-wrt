@@ -8,12 +8,12 @@
 
 #include <linux/skbuff.h>
 
-static int ratelimiter_init(void);
-static void ratelimiter_uninit(void);
-static bool ratelimiter_allow(struct sk_buff *skb, struct net *net);
+static int wg_ratelimiter_init(void);
+static void wg_ratelimiter_uninit(void);
+static bool wg_ratelimiter_allow(struct sk_buff *skb, struct net *net);
 
 #ifdef DEBUG
-static bool ratelimiter_selftest(void);
+static bool wg_ratelimiter_selftest(void);
 #endif
 
 #endif /* _WG_RATELIMITER_H */
