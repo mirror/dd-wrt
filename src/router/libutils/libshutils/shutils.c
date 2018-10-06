@@ -126,7 +126,7 @@ int system2(char *command)
 
 #if (!defined(HAVE_X86) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)	//we must disable this on x86 since nvram is not available at startup
 
-	dd_debug(DEBUG_CONSOLE, "%s:%s", __func__, command);
+	dd_debug(DEBUG_CONSOLE, "%s:%s\n", __func__, command);
 	if (nvram_match("debug_delay", "1")) {
 		sleep(1);
 	}
