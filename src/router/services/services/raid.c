@@ -180,6 +180,8 @@ void start_raid(void)
 			nvram_nset("1", "raiddone%d", i);
 			nvram_commit();
 		}
+		type = nvram_nget("raidtype%d", i);
+		poolname = nvram_nget("raidname%d", i);
 		if (!strcmp(type, "zfs")) {
 			if (nvram_nmatch("1", "raidlz%d", i))
 				sysprintf("zfs set compression=lz4 %s", poolname);
