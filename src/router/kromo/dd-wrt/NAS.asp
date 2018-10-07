@@ -472,6 +472,14 @@ function raid_format_submit(F, I) {
 	F.submit();
 }
 
+
+function drive_format_submit(F, I) {
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "format_drive";
+	F.raid_del_value.value=I;
+	F.submit();
+}
+
 function member_del_submit(F,I,M) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "del_raid_member";
