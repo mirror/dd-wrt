@@ -336,11 +336,14 @@ int detect_bsd_disklabel(SECTION * section, int level)
 			print_line(level + 1, "Includes the disklabel and boot code");
 
 			/* recurse for content detection, but carefully */
-			analyze_recursive(section, level + 1, offset - base_offset, (u8)sizes[i] * 512, FLAG_IN_DISKLABEL);
-			did_recurse = 1;
+			if (level >= 0) {
+				analyze_recursive(section, level + 1, offset - base_offset, (u8)sizes[i] * 512, FLAG_IN_DISKLABEL);
+				did_recurse = 1;
+			}
 		} else {
 			/* recurse for content detection */
-			analyze_recursive(section, level + 1, offset - base_offset, (u8)sizes[i] * 512, 0);
+			if (level >= 0)
+				analyze_recursive(section, level + 1, offset - base_offset, (u8)sizes[i] * 512, 0);
 		}
 	}
 
@@ -476,11 +479,15 @@ int detect_solaris_disklabel(SECTION * section, int level)
 			print_line(level + 1, "Includes the disklabel");
 
 			/* recurse for content detection, but carefully */
-			analyze_recursive(section, level + 1, offset, (u8)sizes[i] * 512, FLAG_IN_DISKLABEL);
-			did_recurse = 1;
+			if (level >= 0) {
+				analyze_recursive(section, level + 1, offset, (u8)sizes[i] * 512, FLAG_IN_DISKLABEL);
+				did_recurse = 1;
+			}
 		} else {
 			/* recurse for content detection */
-			analyze_recursive(section, level + 1, offset, (u8)sizes[i] * 512, 0);
+			if (level >= 0) {
+				analyze_recursive(section, level + 1, offset, (u8)sizes[i] * 512, 0);
+			}
 		}
 	}
 
@@ -577,11 +584,16 @@ int detect_solaris_vtoc(SECTION * section, int level)
 			print_line(level + 1, "Includes the disklabel");
 
 			/* recurse for content detection, but carefully */
-			analyze_recursive(section, level + 1, offset, (u8)sizes[i] * 512, FLAG_IN_DISKLABEL);
-			did_recurse = 1;
+			if (level >= 0) {
+				analyze_recursive(section, level + 1, offset, (u8)sizes[i] * 512, FLAG_IN_DISKLABEL);
+				did_recurse = 1;
+			}
 		} else {
 			/* recurse for content detection */
-			analyze_recursive(section, level + 1, offset, (u8)sizes[i] * 512, 0);
+			if (level >= 0) {
+				analyze_recursive(section, level + 1, offset, (u8)sizes[i] * 512, 0);
+			}
+
 		}
 		found = 1;
 	}
