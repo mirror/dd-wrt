@@ -157,4 +157,6 @@ void errore(const char *msg, ...);
 void bailout(const char *msg, ...);
 void bailoute(const char *msg, ...);
 
+void set_discmessage_on(void);
+void set_discmessage_off(void);
 /* EOF */
