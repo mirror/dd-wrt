@@ -310,6 +310,7 @@ include rules/aircrack-ng.mk
 include rules/ddrescue.mk
 include rules/xz.mk
 include rules/zstd.mk
+include rules/exfat-utils.mk
 
 #
 # Generic rules
