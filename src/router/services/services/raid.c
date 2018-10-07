@@ -42,6 +42,7 @@ void start_raid(void)
 	int xfs = 0;
 	int ext2 = 0;
 	int ext4 = 0;
+	int exfat = 0;
 	if (!nvram_matchi("raid_enable", 1))
 		return;
 	while (1) {
@@ -52,6 +53,8 @@ void start_raid(void)
 			md = 1;
 			if (!strcmp(fs, "btrfs"))
 				btrfs = 1;
+			if (!strcmp(fs, "exfat"))
+				exfat = 1;
 			if (!strcmp(fs, "xfs"))
 				xfs = 1;
 			if (!strcmp(fs, "ext2"))
@@ -112,6 +115,11 @@ void start_raid(void)
 	if (ext2) {
 		insmod("mbcache ext2");
 		dd_loginfo("raid", "EXT2 modules successfully loaded\n");
+	}
+	if (exfat) {
+		insmod("nls_base nls_cp932 nls_cp936 nls_cp950 nls_cp437 nls_iso8859-1 nls_iso8859-2 nls_utf8");
+		insmod("exfat");
+		dd_loginfo("raid", "EXFAT modules successfully loaded\n");
 	}
 	i = 0;
 	while (1) {
