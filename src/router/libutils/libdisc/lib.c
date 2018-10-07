@@ -46,11 +46,24 @@ static const char *insets[LEVELS] = {
 };
 
 static char line_akku[4096];
+static int diskmessage = 1;
+int set_discmessage_off(void)
+{
+	diskmessage = 0;
+}
+
+int set_discmessage_on(void)
+{
+	diskmessage = 1;
+}
 
 void print_line(int level, const char *fmt, ...)
 {
+	if (!diskmessage)
+		return;
 	va_list par;
-
+	if (level < 0)
+		level = 0;
 	va_start(par, fmt);
 	vsnprintf(line_akku, 4096, fmt, par);
 	va_end(par);
@@ -62,6 +75,8 @@ void print_line(int level, const char *fmt, ...)
 
 void start_line(const char *fmt, ...)
 {
+	if (!diskmessage)
+		return;
 	va_list par;
 
 	va_start(par, fmt);
@@ -71,6 +86,8 @@ void start_line(const char *fmt, ...)
 
 void continue_line(const char *fmt, ...)
 {
+	if (!diskmessage)
+		return;
 	va_list par;
 	int len = strlen(line_akku);
 
@@ -81,6 +98,8 @@ void continue_line(const char *fmt, ...)
 
 void finish_line(int level)
 {
+	if (!diskmessage)
+		return;
 	if (level >= LEVELS)
 		bailout("Recursion loop caught");
 	printf("%s%s\n", insets[level], line_akku);
