@@ -273,6 +273,7 @@ define kernelfeatures
 		echo "CONFIG_DM_LOG_WRITES=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_DM_INTEGRITY=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_DM_ZONED=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_DM_CACHE_MQ=m" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_ASYNC_RAID6_TEST is not set" >> $(LINUXDIR)/.config; \
 	else \
 		sed -i 's/\CONFIG_MD=y/# CONFIG_MD is not set/g' $(LINUXDIR)/.config; \
