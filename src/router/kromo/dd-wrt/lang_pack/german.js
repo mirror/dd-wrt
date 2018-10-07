@@ -769,6 +769,8 @@ nas.format="Formatieren";
 nas.raidmember="Raid Mitglied";
 nas.mirror="Spiegeln";
 nas.fs="Dateisystem";
+nas.drivemanager="Laufwerksverwaltung";
+nsa.drive="Laufwerk";
 
 //** Privoxy.asp **//
 privoxy.titl="Werbefilter";
