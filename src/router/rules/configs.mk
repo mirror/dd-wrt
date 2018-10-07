@@ -280,6 +280,7 @@ obj-$(CONFIG_MTDUTILS) += mtd-utils
 obj-$(CONFIG_LSOF) += lsof
 obj-$(CONFIG_LIBMNL) += libmnl
 obj-$(CONFIG_WIREGUARD) += libmnl wireguard
+obj-$(CONFIG_EXFAT) += exfat-utils
 #obj-$(CONFIG_OPROFILE) += oprofile
 ifeq ($(CONFIG_BCMMODERN),y)
 obj-$(CONFIG_WPS) += brcmwps
