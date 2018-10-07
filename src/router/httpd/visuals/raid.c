@@ -88,6 +88,7 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 	int ext3 = checkfs("ext3");
 	int ext4 = checkfs("ext4");
 	int btrfs = checkfs("btrfs");
+	int exfat = checkfs("exfat");
 	while (1) {
 		char *raid = nvram_nget("raid%d", i);
 		char *raidname = nvram_nget("raidname%d", i);
@@ -147,6 +148,8 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "document.write(\"<option value=\\\"ext3\\\" %s >EXT3</option>\");\n", !strcmp(raidlevel, "ext3") ? "selected=\\\"selected\\\"" : "");
 			if (ext4)
 				websWrite(wp, "document.write(\"<option value=\\\"ext4\\\" %s >EXT4</option>\");\n", !strcmp(raidlevel, "ext4") ? "selected=\\\"selected\\\"" : "");
+			if (exfat)
+				websWrite(wp, "document.write(\"<option value=\\\"exfat\\\" %s >EXFAT</option>\");\n", !strcmp(raidlevel, "exfat") ? "selected=\\\"selected\\\"" : "");
 			if (xfs)
 				websWrite(wp, "document.write(\"<option value=\\\"xfs\\\" %s >XFS</option>\");\n", !strcmp(raidlevel, "xfs") ? "selected=\\\"selected\\\"" : "");
 			if (btrfs)
