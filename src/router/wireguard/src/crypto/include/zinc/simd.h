@@ -33,7 +33,17 @@ typedef enum {
 
 static inline void simd_get(simd_context_t *ctx)
 {
-	*ctx = !IS_ENABLED(CONFIG_PREEMPT_RT_BASE) && may_use_simd() ? HAVE_FULL_SIMD : HAVE_NO_SIMD;
+	bool have_simd = false;
+#if defined(CONFIG_X86_64) && !defined(CONFIG_UML)
+	have_simd = irq_fpu_usable();
+#elif IS_ENABLED(CONFIG_KERNEL_MODE_NEON)
+#if defined(CONFIG_ARM64)
+	have_simd = true; /* ARM64 supports NEON in any context. */
+#elif defined(CONFIG_ARM)
+	have_simd = may_use_simd(); /* ARM doesn't support NEON in interrupt context. */
+#endif
+#endif
+	*ctx = !IS_ENABLED(CONFIG_PREEMPT_RT_BASE) && have_simd ? HAVE_FULL_SIMD : HAVE_NO_SIMD;
 }
 
 static inline void simd_put(simd_context_t *ctx)
