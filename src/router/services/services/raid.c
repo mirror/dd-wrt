@@ -114,7 +114,6 @@ void start_raid(void)
 		dd_loginfo("raid", "EXT2 modules successfully loaded\n");
 	}
 	i = 0;
-	int done = 0;
 	while (1) {
 		char *raid = nvram_nget("raid%d", i);
 		if (!strlen(raid))
@@ -181,7 +180,6 @@ void start_raid(void)
 				if (!strcmp(level, "0"))
 					sysprintf("zpool create -f -m /tmp/mnt/%s %s %s", poolname, poolname, raid);
 			}
-			done = 1;
 		}
 		if (!strcmp(type, "zfs")) {
 			if (nvram_nmatch("1", "raidlz%d", i))
@@ -226,7 +224,7 @@ void start_raid(void)
 			free(r);
 		}
 
-		if (done) {
+		if (!strcmp(done, "0")) {
 			nvram_nset("1", "raiddone%d", i);
 			nvram_commit();
 		}
