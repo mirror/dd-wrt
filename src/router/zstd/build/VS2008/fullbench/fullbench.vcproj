@@ -333,6 +333,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\lib\compress\hist.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\lib\common\error_private.c"
 				>
 			</File>
@@ -382,6 +386,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\programs\datagen.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\programs\bench.c"
 				>
 			</File>
 			<File
