@@ -113,6 +113,7 @@ static char *getfsname(char *drive)
 	section.flags = 0;
 	set_discmessage_off();
 	char *retvalue = "Empty";
+	/* first look if the drive contains partions, if yes, ignore them to ensure to keep them*/
 	if (detect_linux_raid(&section, -1)) {
 		retvalue = NULL;
 		goto ret;
@@ -142,7 +143,7 @@ static char *getfsname(char *drive)
 		goto ret;
 	}
 	if (detect_linux_misc(&section, -1)) {
-		retvalue = NULL;
+		retvalue = NULL; // ignore squashfs / cramfs drives since its likelly just the boot device
 		goto ret;
 	}
 	if (detect_dos_partmap(&section, -1)) {
