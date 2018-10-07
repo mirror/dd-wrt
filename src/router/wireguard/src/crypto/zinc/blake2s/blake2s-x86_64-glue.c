@@ -3,7 +3,10 @@
  * Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  */
 
-#include <linux/simd.h>
+#ifndef SIMD_INC
+#define SIMD_INC
+#include <asm/simd.h>
+#endif
 #include <asm/cpufeature.h>
 #include <asm/processor.h>
 #include <asm/fpu/api.h>
