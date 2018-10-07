@@ -4573,7 +4573,6 @@ void start_wan_done(char *wan_ifname)
 	start_set_routes();
 	cprintf("routes done\n");
 
-	start_wan_service();
 
 #ifdef HAVE_UPNP
 	stop_upnp();
@@ -4799,6 +4798,7 @@ void start_wan_done(char *wan_ifname)
 	start_duallink();
 #endif
 #endif
+	start_wan_service();
 	if (nvram_matchi("ipv6_enable", 1) && nvram_match("ipv6_typ", "ipv6in4")) {
 #ifdef HAVE_CURL
 		eval("/usr/bin/curl", "-s", "-k", nvram_safe_get("ipv6_tun_upd_url"), "-o", "/tmp/tunnelstat");
