@@ -33,6 +33,24 @@ struct mon {
 	int (*checkfunc) (void);
 };
 
+
+static int search_process(char *name, int count)
+{
+	int c = 0;
+
+	c = count_processes(name);
+	if (!c) {
+		printf("Can't find %s\n", name);
+		return 0;
+	} else {
+		printf("Find %s which count is %d\n", name, c);
+		if (c < count) {
+			return 0;
+		}
+		return 1;
+	}
+}
+
 static int check_igmprt(void)
 {
 	if (nvram_match("wan_proto", "disabled") || !strlen(get_wan_face()))	// todo: add upstream 
@@ -90,23 +108,6 @@ struct mon mons[] = {
 	{"ddns", M_LAN, "ddns_enable", "1", NULL, NULL, &check_ddns},
 	{NULL, 0, NULL, NULL, NULL, NULL}
 };
-
-static int search_process(char *name, int count)
-{
-	int c = 0;
-
-	c = count_processes(name);
-	if (!c) {
-		printf("Can't find %s\n", name);
-		return 0;
-	} else {
-		printf("Find %s which count is %d\n", name, c);
-		if (c < count) {
-			return 0;
-		}
-		return 1;
-	}
-}
 
 static void checknas(void)	// for broadcom v24 only
 {
