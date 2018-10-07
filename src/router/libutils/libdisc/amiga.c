@@ -213,7 +213,7 @@ int detect_amiga_partmap(SECTION * section, int level)
 		print_line(level + 1, "Type \"%s\" (%s)", s, get_name_for_dostype(buf + 192));
 
 		/* detect contents */
-		if (size > 0 && start > 0) {
+		if (level >= 0 && size > 0 && start > 0) {
 			analyze_recursive(section, level + 1, start * 512, size * 512, 0);
 		}
 	}

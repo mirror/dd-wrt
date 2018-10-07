@@ -91,7 +91,7 @@ int detect_apple_partmap(SECTION * section, int level)
 			print_line(level + 1, "Type \"%s\"", s);
 
 			/* recurse for content detection */
-			if (start > count && size > 0) {	/* avoid recursion on self */
+			if (level >= 0 && start > count && size > 0) {	/* avoid recursion on self */
 				analyze_recursive(section, level + 1, start * sectorsize, size * sectorsize, 0);
 			}
 		}
@@ -136,13 +136,14 @@ int detect_apple_volume(SECTION * section, int level)
 		format_blocky_size(s, blockcount, blocksize, "blocks", NULL);
 		print_line(level + 1, "Volume size %s", s);
 
-		if (get_be_short(buf + 0x7c) == 0x482B) {
+		if (level >= 0 && get_be_short(buf + 0x7c) == 0x482B) {
 			print_line(level, "HFS wrapper for HFS Plus");
 
 			offset = (u8)get_be_short(buf + 0x7e) * blocksize + (u8)blockstart *512;
 			/* TODO: size */
 
-			analyze_recursive(section, level + 1, offset, 0, 0);
+			if (level >= 0)
+				analyze_recursive(section, level + 1, offset, 0, 0);
 		}
 		return 1;
 

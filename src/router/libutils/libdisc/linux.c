@@ -652,7 +652,7 @@ int detect_linux_lvm(SECTION * section, int level)
 	}
 
 	/* try to detect from first PE */
-	if (pe_start > 0) {
+	if (level >= 0 && pe_start > 0) {
 		analyze_recursive(section, level + 1, pe_start, 0, 0);
 		/* TODO: elaborate on this by reading the PE allocation map */
 	}

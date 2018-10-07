@@ -222,7 +222,7 @@ static int dump_boot_catalog(SECTION * section, u8 pos, int level)
 			format_size(s, preload * 512);
 			print_line(level, "%s %s image, starts at %lu, preloads %s", bootable ? "Bootable" : "Non-bootable", media_types[media], start, s);
 			print_line(level + 1, "Platform 0x%02X (%s), System Type 0x%02X (%s)", platform, get_name_for_eltorito_platform(platform), system_type, get_name_for_mbrtype(system_type));
-			if (start > 0) {
+			if (level >= 0 && start > 0) {
 				analyze_recursive(section, level + 1, (u8)start * 2048, 0, 0);
 				/* TODO: calculate size in some way */
 			}
