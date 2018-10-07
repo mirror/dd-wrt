@@ -49,6 +49,7 @@
 #include <utils.h>
 #include <wlutils.h>
 #include <bcmnvram.h>
+#include <disc.h>
 
 /* simply check for availability of the required filesystem tools */
 static int checkfs(char *type)
@@ -78,6 +79,86 @@ static int checkfs(char *type)
 	return 0;
 }
 
+static char *getfsname(char *drive)
+{
+	int fd, filekind;
+	struct stat sb;
+	SOURCE *s;
+	SECTION section;
+	char *fs;
+
+	if (stat(drive, &sb) < 0) {
+		return NULL;
+	}
+	filekind = analyze_stat(&sb, drive);
+	if (filekind < 0)
+		return NULL;
+
+	fd = open(drive, O_RDONLY);
+	if (fd < 0) {
+		return NULL;
+	}
+	/* (try to) guard against TTY character devices */
+	if (filekind == 2) {
+		if (isatty(fd)) {
+			return NULL;
+		}
+	}
+
+	/* create a source */
+	s = init_file_source(fd, filekind);
+	section.source = s;
+	section.pos = 0;
+	section.size = s->size_known ? s->size : 0;
+	section.flags = 0;
+
+	if (detect_ntfs(&section, 0))
+		return "NTFS";
+	int fslevel = detect_ext234(&section, 0);
+	if (fslevel == 2)
+		return "EXT2";
+	if (fslevel == 3)
+		return "EXT3";
+	if (fslevel == 4)
+		return "EXT4";
+	if (detect_btrfs(&section, 0))
+		return "BTRFS";
+	if (detect_zfs(&section, 0))
+		return "ZFS";
+	if (detect_exfat(&section, 0))
+		return "EXFAT";
+	if (detect_hpfs(&section, 0))
+		return "HPFS";
+	if (detect_xfs(&section, 0))
+		return "XFS";
+	fslevel = detect_fat(&section, 0);
+	if (fslevel == 1)
+		return "FAT12";
+	if (fslevel == 2)
+		return "FAT16";
+	if (fslevel == 3)
+		return "FAT32";
+
+	if (detect_linux_raid(&section, 0))
+		return NULL;	//ignore
+	if (detect_linux_lvm(&section, 0))
+		return NULL;	//ignore
+	if (detect_linux_lvm2(&section, 0))
+		return NULL;	//ignore
+	if (detect_linux_swap(&section, 0))
+		return NULL;	//ignore
+	if (detect_linux_misc(&section, 0))
+		return NULL;	//ignore
+	if (detect_dos_partmap(&section, 0))
+		return NULL;	//ignore
+	if (detect_gpt_partmap(&section, 0))
+		return NULL;	//ignore
+
+	/* finish it up */
+	close_source(s);
+	return "Unknown";
+}
+
 void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(nas.raidmanager)</script></h2>");
@@ -90,6 +171,9 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 	int btrfs = checkfs("btrfs");
 	int exfat = checkfs("exfat");
 	int ntfs = checkfs("ntfs");
+	char *drives = getAllDrives();
+	char drive[128];
+	char *dnext;
 	while (1) {
 		char *raid = nvram_nget("raid%d", i);
 		char *raidname = nvram_nget("raidname%d", i);
@@ -103,13 +187,16 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<table class=\"table center\" summary=\"Raid\">\n");
 
 		if (!strcmp(raidtype, "md")) {
-			websWrite(wp, "<tr>\n" "<th>Name</th>\n" "<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n" "<th>Level</th>\n" "<th><script type=\"text/javascript\">Capture(nas.fs)</script></th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
+			websWrite(wp,
+				  "<tr>\n" "<th>Name</th>\n" "<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n" "<th>Level</th>\n"
+				  "<th><script type=\"text/javascript\">Capture(nas.fs)</script></th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
 		}
 		if (!strcmp(raidtype, "btrfs")) {
 			websWrite(wp, "<tr>\n" "<th>Name</th>\n" "<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n" "<th>Level</th>\n " "<th>&nbsp;</th>\n" "</tr>\n");
 		}
 		if (!strcmp(raidtype, "zfs")) {
-			websWrite(wp, "<tr>\n" "<th>Name</th>\n" "<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n" "<th>Level</th>\n" "<th>Dedup</th>\n" "<th>LZ</th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
+			websWrite(wp,
+				  "<tr>\n" "<th>Name</th>\n" "<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n" "<th>Level</th>\n" "<th>Dedup</th>\n" "<th>LZ</th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
 		}
 
 		websWrite(wp, "<tr>\n");
@@ -205,10 +292,7 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		char var[128];
 		char *next;
 		int midx = 0;
-		char *drives = getAllDrives();
 		foreach(var, raid, next) {
-			char drive[128];
-			char *dnext;
 			websWrite(wp, "<tr>\n");
 			websWrite(wp, "<td>\n");
 			websWrite(wp, "<select name=\"raid%dmember%d\">\n", i, midx);
@@ -242,6 +326,51 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 	}
 	websWrite(wp,
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"raid_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
+
+	websWrite(wp, "</fieldset>\n");
+
+	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(nas.drivemanager)</script></h2>");
+	websWrite(wp, "<fieldset>\n");
+	websWrite(wp, "<table class=\"table center\" summary=\"Drive List\">\n");
+	websWrite(wp, "<tr>\n" "<th><script type=\"text/javascript\">Capture(nas.drive)</script></th>\n" "<th><script type=\"text/javascript\">Capture(nas.fs)</script></th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
+	int idx = 0;
+	foreach(drive, drives, dnext) {
+		websWrite(wp, "<tr>\n");
+		websWrite(wp, "<td>\n");
+		websWrite(wp, "<input name=\"fs%d\" size=\"32\" value=\"%s\" />", idx, drive);
+		websWrite(wp, "</td>\n");
+		websWrite(wp, "<td>\n");
+		websWrite(wp, "<select name=\"format%d\">\n", idx);
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		int canformat = 0;
+		char *fs = getfsname(drive);
+		if (!fs)
+			continue;
+
+		websWrite(wp, "document.write(\"<option value=\\\"unk\\\" >Unknown</option>\");\n");
+		websWrite(wp, "document.write(\"<option value=\\\"ext2\\\" %s >EXT2</option>\");\n", !strcmp(fs, "EXT2") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"ext3\\\" %s >EXT3</option>\");\n", !strcmp(fs, "EXT3") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"ext4\\\" %s >EXT4</option>\");\n", !strcmp(fs, "EXT4") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"exfat\\\" %s >EXFAT</option>\");\n", !strcmp(fs, "EXFAT") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"xfs\\\" %s >XFS</option>\");\n", !strcmp(fs, "XFS") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"btrfs\\\" %s >BTRFS</option>\");\n", !strcmp(fs, "BTRFS") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"ntfs\\\" %s >NTFS</option>\");\n", !strcmp(fs, "NTFS") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"fat32\\\" %s >FAT32</option>\");\n", !strcmp(fs, "FAT32") ? "selected=\\\"selected\\\"" : "");
+
+		websWrite(wp, "//]]>\n</script></select>\n");
+		websWrite(wp, "</td>\n");
+
+		websWrite(wp, "<td>\n");
+		websWrite(wp,
+			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" name=\\\"reboot_button\\\" type=\\\"button\\\" value=\\\"\" + nas.format + \"\\\" onclick=\\\"drive_format_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+			  idx);
+		websWrite(wp, "</td>\n");
+
+		websWrite(wp, "</tr>\n");
+		idx++;
+	}
+
+	websWrite(wp, "</table>\n");
 
 	websWrite(wp, "</fieldset>\n");
 }
