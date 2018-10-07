@@ -439,7 +439,7 @@ int detect_gpt_partmap(SECTION * section, int level)
 
 			/* recurse for content detection */
 
-			if (line >= 0 && start > 0 && size > 0) {	/* avoid recursion on self */
+			if (level >= 0 && start > 0 && size > 0) {	/* avoid recursion on self */
 				analyze_recursive(section, level + 1, start * blocksize, size * blocksize, 0);
 			}
 		}
