@@ -101,11 +101,13 @@ int detect_atari_partmap(SECTION * section, int level)
 
 		if (memcmp(type, "XGM", 3) == 0) {
 			/* extended partition */
-			detect_atari_partmap_ext(section, start, level + 1);
+			if (level >= 0)
+				detect_atari_partmap_ext(section, start, level + 1);
 			found = 1;
 		} else {
 			/* recurse for content detection */
-			analyze_recursive(section, level + 1, (u8)start * 512, (u8)size * 512, 0);
+			if (level >= 0)
+				analyze_recursive(section, level + 1, (u8)start * 512, (u8)size * 512, 0);
 			found = 1;
 		}
 	}
@@ -161,7 +163,8 @@ static int detect_atari_partmap_ext(SECTION * section, u8 extbase, int level)
 				print_line(level + 1, "Type \"%s\" (%s)", type, get_name_for_type(type));
 
 				/* recurse for content detection */
-				analyze_recursive(section, level + 1, (tablebase + start) * 512, (u8)size * 512, 0);
+				if (level >= 0)
+					analyze_recursive(section, level + 1, (tablebase + start) * 512, (u8)size * 512, 0);
 				found = 1;
 			}
 		}

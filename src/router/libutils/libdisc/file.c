@@ -418,7 +418,6 @@ void print_kind(int filekind, u8 size, int size_known)
 	}
 }
 
-
 int analyze_stat(struct stat *sb, const char *filename)
 {
 	int filekind = 0;
