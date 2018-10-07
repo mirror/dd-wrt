@@ -545,7 +545,7 @@ int detect_fat(SECTION * section, int level)
 				s[i] = 0;
 			if (strcmp(s, "NO NAME") != 0)
 				print_line(level + 1, "Volume name \"%s\"", s);
-			return 1;
+			return fattype+1;
 		}
 	} else {
 		if (buf[66] == 0x29) {
@@ -555,7 +555,7 @@ int detect_fat(SECTION * section, int level)
 				s[i] = 0;
 			if (strcmp(s, "NO NAME") != 0)
 				print_line(level + 1, "Volume name \"%s\"", s);
-			return 1;
+			return fattype+1;
 		}
 	}
 	return 0;

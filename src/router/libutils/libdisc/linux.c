@@ -89,7 +89,7 @@ int detect_ext234(SECTION * section, int level)
 		/* 62 2 s_minor_rev_level */
 		/* 72 4 s_creator_os */
 		/* 92 3x4 s_feature_compat, s_feature_incompat, s_feature_ro_compat */
-		return 1;
+		return fslevel;
 	}
 	return 0;
 }
