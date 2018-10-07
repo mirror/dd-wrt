@@ -148,6 +148,9 @@ void start_raid(void)
 				if (nvram_nmatch("btrfs", "raidfs%d", i)) {
 					sysprintf("mkfs.btrfs /dev/md%d", i);
 				}
+				if (nvram_nmatch("exfat", "raidfs%d", i)) {
+					sysprintf("mkfs.exfat /dev/md%d", i);
+				}
 			}
 			if (!strcmp(type, "btrfs")) {
 				if (!strcmp(level, "0"))
@@ -212,6 +215,9 @@ void start_raid(void)
 			}
 			if (nvram_nmatch("btrfs", "raidfs%d", i)) {
 				sysprintf("mount -t btrfs /dev/md%d /tmp/mnt/%s", i, poolname);
+			}
+			if (nvram_nmatch("exfat", "raidfs%d", i)) {
+				sysprintf("mount -t exfat /dev/md%d /tmp/mnt/%s", i, poolname);
 			}
 		}
 		if (!strcmp(type, "btrfs")) {
