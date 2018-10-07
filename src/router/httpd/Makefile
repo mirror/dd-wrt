@@ -482,6 +482,7 @@ CFLAGS += -DHAVE_ATH10K
 endif
 ifeq ($(CONFIG_RAID),y)
 CFLAGS += -DHAVE_RAID
+WEBSLDFLAGS += -ldisc
 VISOBJS += raid.o
 WEBSOBJS += websraid.o
 endif
