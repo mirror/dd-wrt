@@ -803,6 +803,9 @@ endif
 ifeq ($(CONFIG_RAID),y)
 CFLAGS += -DHAVE_RAID
 endif
+ifeq ($(CONFIG_DDNS),y)
+CFLAGS += -DHAVE_DDNS
+endif
 ifeq ($(CONFIG_MINIDLNA),y)
 CFLAGS += -DHAVE_MINIDLNA
 endif

@@ -40,6 +40,13 @@ static int check_igmprt(void)
 	return 1;
 }
 
+static int check_ddns(void)
+{
+	if (nvram_match("wan_proto", "disabled") || !strlen(get_wan_face()))	// todo: add upstream 
+		return 0;
+	return !search_process("inadyn", 1);
+}
+
 enum { M_LAN, M_WAN };
 
 struct mon mons[] = {
@@ -80,6 +87,7 @@ struct mon mons[] = {
 	{"openvpn", M_LAN, "openvpncl_enable", "1", NULL, NULL, NULL},
 #endif
 #endif
+	{"ddns", M_LAN, "ddns_enable", "1", NULL, NULL, &check_ddns},
 	{NULL, 0, NULL, NULL, NULL, NULL}
 };
 
