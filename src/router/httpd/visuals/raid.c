@@ -112,51 +112,62 @@ static char *getfsname(char *drive)
 	section.size = s->size_known ? s->size : 0;
 	section.flags = 0;
 
-	if (detect_ntfs(&section, 0))
+	if (detect_linux_raid(&section, -1))
+		return NULL;	//ignore
+	if (detect_solaris_vtoc(&section, -1))
+		return NULL;	//ignore
+	if (detect_solaris_disklabel(&section, -1))
+		return NULL;	//ignore
+	if (detect_bsd_disklabel(&section, -1))
+		return NULL;	//ignore
+	if (detect_linux_lvm(&section, -1))
+		return NULL;	//ignore
+	if (detect_linux_lvm2(&section, -1))
+		return NULL;	//ignore
+	if (detect_linux_swap(&section, -1))
+		return NULL;	//ignore
+	if (detect_linux_misc(&section, -1))
+		return NULL;	//ignore
+	if (detect_dos_partmap(&section, -1))
+		return NULL;	//ignore
+	if (detect_gpt_partmap(&section, -1))
+		return NULL;	//ignore
+	if (detect_apple_partmap(&section, -1))
+		return NULL;	//ignore
+
+	if (detect_ntfs(&section, -1))
 		return "NTFS";
-	int fslevel = detect_ext234(&section, 0);
+	int fslevel = detect_ext234(&section, -1);
 	if (fslevel == 2)
 		return "EXT2";
 	if (fslevel == 3)
 		return "EXT3";
 	if (fslevel == 4)
 		return "EXT4";
-	if (detect_btrfs(&section, 0))
+	if (detect_btrfs(&section, -1))
 		return "BTRFS";
-	if (detect_zfs(&section, 0))
+	if (detect_zfs(&section, -1))
 		return "ZFS";
-	if (detect_exfat(&section, 0))
+	if (detect_exfat(&section, -1))
 		return "EXFAT";
-	if (detect_hpfs(&section, 0))
+	if (detect_hpfs(&section, -1))
 		return "HPFS";
-	if (detect_xfs(&section, 0))
+	if (detect_xfs(&section, -1))
 		return "XFS";
-	fslevel = detect_fat(&section, 0);
+	fslevel = detect_fat(&section, -1);
 	if (fslevel == 1)
 		return "FAT12";
 	if (fslevel == 2)
 		return "FAT16";
 	if (fslevel == 3)
 		return "FAT32";
+	if (detect_apple_volume(&section, -1))
+		return "HFS";	//ignore
 
-	if (detect_linux_raid(&section, 0))
-		return NULL;	//ignore
-	if (detect_linux_lvm(&section, 0))
-		return NULL;	//ignore
-	if (detect_linux_lvm2(&section, 0))
-		return NULL;	//ignore
-	if (detect_linux_swap(&section, 0))
-		return NULL;	//ignore
-	if (detect_linux_misc(&section, 0))
-		return NULL;	//ignore
-	if (detect_dos_partmap(&section, 0))
-		return NULL;	//ignore
-	if (detect_gpt_partmap(&section, 0))
-		return NULL;	//ignore
 
 	/* finish it up */
 	close_source(s);
-	return "Unknown";
+	return "Empty";
 }
 
 void ej_show_raid(webs_t wp, int argc, char_t ** argv)
@@ -335,6 +346,10 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<tr>\n" "<th><script type=\"text/javascript\">Capture(nas.drive)</script></th>\n" "<th><script type=\"text/javascript\">Capture(nas.fs)</script></th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
 	int idx = 0;
 	foreach(drive, drives, dnext) {
+		int canformat = 0;
+		char *fs = getfsname(drive);
+		if (!fs)
+			continue;
 		websWrite(wp, "<tr>\n");
 		websWrite(wp, "<td>\n");
 		websWrite(wp, "<input name=\"fs%d\" size=\"32\" value=\"%s\" />", idx, drive);
@@ -342,10 +357,6 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<td>\n");
 		websWrite(wp, "<select name=\"format%d\">\n", idx);
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-		int canformat = 0;
-		char *fs = getfsname(drive);
-		if (!fs)
-			continue;
 
 		websWrite(wp, "document.write(\"<option value=\\\"unk\\\" >Unknown</option>\");\n");
 		websWrite(wp, "document.write(\"<option value=\\\"ext2\\\" %s >EXT2</option>\");\n", !strcmp(fs, "EXT2") ? "selected=\\\"selected\\\"" : "");
