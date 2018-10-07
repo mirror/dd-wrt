@@ -1,0 +1,195 @@
+1.3.0 (2018-09-15)
+
+* exfatfsck can now repair some errors.
+* Added experimental Android support for exfat-utils [liminghao, LongPingWEI,
+Pablo Mendez Hernandez, Pierre-Hugues Husson].
+* Cleaned up FUSE code preparing for FUSE 3 support.
+* Removed OpenBSD support as it does not handle -o option in fuse_main().
+* Re-introduced FreeBSD support [Oleksii Samorukov].
+* Fixed DragonFly BSD support [Tomohiro Kusumi].
+* dirent->d_type in now filled on readdir() [Mark Browning].
+
+1.2.8 (2018-02-03)
+
+* Fixed new files or directories creation in the root directory: ensure there
+are no 0x00 entries before valid ones; otherwise Windows can corrupt them.
+* Fixed compilation on GNU/HURD platform.
+
+1.2.7 (2017-06-05)
+
+* Fixed handling of two last clusters: operations with files that occupy these
+clusters could fail.
+* Fixed crash when started with stdin, stdout or stderr closed.
+
+1.2.6 (2017-01-28)
+
+* Operations with directories (except initial listing) now make less
+read/write system calls.
+* Fixed handling of files with optional tail entries (0xe0-0xff): videoclip
+files created by Sony cameras were missing.
+* Write operations now correctly return ENOSPC (instead of EIO) when there is
+no free disk space left.
+* Fixed max file name length: it's 255 16-bit code units (not 256).
+
+1.2.5 (2016-12-05)
+
+* Added an option for dumpexfat to show file fragments [Daniel Drake].
+* Fixed crash when directory starts with an invalid cluster.
+* Daylight saving time in now properly reflected in file timestamps.
+
+1.2.4 (2016-06-03)
+
+* Fixed wrong files names hashes when upper case table is compressed.
+* Man pages are now installed by default.
+* Commas and backslashes in device names are now escaped.
+
+1.2.3 (2015-12-19)
+
+* Fixed clusters loss when file renaming replaces target.
+
+1.2.2 (2015-11-09)
+
+* Improved reliability in case of a sudden unplug: FS will be in a clean state
+after closing all files and performing sync(1).
+* Fixed compilation on Debian GNU/kFreeBSD and GNU/Hurd platforms.
+* Updated mount.exfat-fuse man page.
+
+1.2.1 (2015-09-24)
+
+* Fixed compatibility with Zalman VE-200: now newly created directories do not
+have archive bit set.
+* Fixed heap corruption: malformed FS can use invalid sector or cluster size.
+* Fixed hang on mount: malformed FS can have cyclic references in the clusters
+map.
+
+1.2.0 (2015-08-26)
+
+* Switched from SCons to autotools.
+* Added musl libc support [Brendan Heading].
+* Worked around "FS is larger than device" error for memory cards formatted by
+Panasonic Lumix cameras.
+* Worked around "unknown entry type 0xe1" error for memory cards formatted by
+Sony cameras.
+
+1.1.1 (2014-11-15)
+
+* Fixed mkfs crash on some sectors-per-cluster (-s option) values.
+
+1.1.0 (2014-07-08)
+
+* Relicensed the project from GPLv3+ to GPLv2+.
+* OpenBSD support [Helg Bredow].
+* Improved I/O errors handling.
+* Implemented fsync() and fsyncdir().
+* Fixed crash on Mac OS X 10.5 caused by non-standard use of realpath(). Also
+fixed TrueCrypt disks unmounting.
+* Avoid extra erase on writes to the end of a file. This should improve linear
+write speed.
+* Allow arbitrary changing of lower 9 bits of mode. Allow owner/group changing
+to the same owner/group. This fixes rsync.
+* Fixed buffers overflows when handling lengthy file names.
+* Fixed "real size does not equal to size" error on volumes with pagefile.sys.
+* Fixed negative IUsed in "df -i" output.
+
+1.0.1 (2013-02-02)
+
+* Fixed unexpected removal of a directory if it is moved into itself.
+* Fixed "Operation not permitted" error on reading an empty file.
+
+1.0.0 (2013-01-19)
+
+* Fixed crash when renaming a file within a single directory and a new name
+differs only in case.
+* Fixed clusters allocation: a cluster beyond valid clusters range could be
+allocated.
+* Fixed crash when a volume is unmounted while some files are open.
+* SConscript now respects AR and RANLIB environment variables.
+* Improved error handling.
+
+Linux:
+
+* Enabled big_writes. This improves write speed (larger block size means less
+switches between kernel- and user-space).
+* Do BLKROGET ioctl to make sure the device is not read-only: after
+"blockdev --setro" kernel still allows to open the device in read-write mode
+but fails writes.
+
+OS X:
+
+* Fixed OS X 10.8 support.
+* Switched to 64-bit inode numbers (now Mac OS X 10.5 or later is required).
+* Switched from unmaintained MacFUSE to OSXFUSE (http://osxfuse.github.com).
+* Fixed device size detection. Now mkfs works.
+* Workarounded some utilities failures due to missing chmod() support.
+* Disabled (senseless) permission checks made by FUSE.
+
+0.9.8 (2012-08-09)
+
+* The mkfs utility can now create huge file systems (up to several exabytes).
+* Fixed handling of characters beyond Basic Multilingual Plane.
+* Echo messages to syslog only if stderr is not connected to a terminal.
+
+0.9.7 (2012-03-08)
+
+* Out-of-the-box FreeBSD support (via ublio library).
+* Fixed "missing EOD entry" error (could happen while reading directory that
+consists of several clusters).
+* Fixed interpretation of minutes field in files timestamps (minutes could be
+displayed incorrectly).
+* Fixed mtime seconds field initialization for newly created file (mtime could
+be 1 sec less than creation time).
+* SConscript now respects CC, CCFLAGS and LDFLAGS environment variables.
+
+0.9.6 (2012-01-14)
+
+* Fixed write performance regression introduced in 0.9.4.
+* Mount in read-only mode if the device is write-protected.
+* Set ctime to mtime to ensure we don't break programs that rely on ctime
+(e.g. rsync considered that all files are outdated) [Eldad Zack].
+* Indicate that FS in not clean when it was not cleanly unmounted.
+* Utilities are now compatible with GNU/Hurd.
+* Fixed several memory leaks that could occur on error handling paths.
+* Improved handling of corrupted file systems.
+
+0.9.5 (2011-05-15)
+
+* Fixed erasing of the root directory cluster when creating a new FS with
+mkexfatfs. This bug could cause mkexfatfs to produce invalid FS.
+* Utilities are not linked with libfuse anymore.
+* Ensure that the path being opened is either a device or a regular file.
+
+0.9.4 (2011-03-05)
+
+* Introduced exfat-utils: dumpexfat, exfatfsck, mkexfatfs, exfatlabel.
+* Fixed "Invalid argument" error while mounting a volume from a disk with sector size greater than 512 bytes.
+* Wait for all data to be flushed to disk on unmount.
+* Kernel cache is no longer flushed on open. This can slightly improve read performance by avoiding extra read requests from kernel to user-space.
+* Allow to unmount volumes as user (fusermount -u) if they were mounted from the very same user [Tino Lange].
+* Errors and warnings are now duplicated to syslog.
+
+0.9.3 (2010-09-25)
+
+* Directories now can shrink.
+* Improved timestamps resolution from 2 sec to 1 sec.
+* Fixed timestamps displaying under Mac OS X when compiled for i386 or ppc.
+* Fixed FS size displaying for non-GNU systems.
+
+0.9.2 (2010-07-24)
+
+* Fixed a bug which could cause the whole directory to become unreadable after renaming a file in it.
+* Support for Solaris and various *BSD [Albert Lee].
+* Improved error handling on corrupted volumes.
+* Improved allowed file name characters filter.
+* Added man page.
+
+0.9.1 (2010-06-12)
+
+* Implemented automounting (util-linux-ng 2.18 or later is required).
+* Fixed mounting when cluster bitmap is larger than expected.
+* Fixed crash on statfs() when root directory contains error.
+* Fixed bugs specific to big-endian machines.
+* Other bugfixes.
+
+0.9.0 (2010-03-21)
+
+* Initial release.
