@@ -111,63 +111,113 @@ static char *getfsname(char *drive)
 	section.pos = 0;
 	section.size = s->size_known ? s->size : 0;
 	section.flags = 0;
+	set_discmessage_off();
+	char *retvalue = "Empty";
+	if (detect_linux_raid(&section, -1)) {
+		retvalue = NULL;
+		goto ret;
+	}
+	if (detect_solaris_vtoc(&section, -1)) {
+		retvalue = NULL;
+		goto ret;
+	}
+	if (detect_solaris_disklabel(&section, -1)) {
+		retvalue = NULL;
+		goto ret;
+	}
+	if (detect_bsd_disklabel(&section, -1)) {
+		retvalue = NULL;
+		goto ret;
+	}
+	if (detect_linux_lvm(&section, -1)) {
+		retvalue = NULL;
+		goto ret;
+	}
+	if (detect_linux_lvm2(&section, -1)) {
+		retvalue = NULL;
+		goto ret;
+	}
+	if (detect_linux_swap(&section, -1)) {
+		retvalue = NULL;
+		goto ret;
+	}
+	if (detect_linux_misc(&section, -1)) {
+		retvalue = NULL;
+		goto ret;
+	}
+	if (detect_dos_partmap(&section, -1)) {
+		retvalue = NULL;
+		goto ret;
+	}
+	if (detect_gpt_partmap(&section, -1)) {
+		retvalue = NULL;
+		goto ret;
+	}
+	if (detect_apple_partmap(&section, -1)) {
+		retvalue = NULL;
+		goto ret;
+	}
 
-	if (detect_linux_raid(&section, -1))
-		return NULL;	//ignore
-	if (detect_solaris_vtoc(&section, -1))
-		return NULL;	//ignore
-	if (detect_solaris_disklabel(&section, -1))
-		return NULL;	//ignore
-	if (detect_bsd_disklabel(&section, -1))
-		return NULL;	//ignore
-	if (detect_linux_lvm(&section, -1))
-		return NULL;	//ignore
-	if (detect_linux_lvm2(&section, -1))
-		return NULL;	//ignore
-	if (detect_linux_swap(&section, -1))
-		return NULL;	//ignore
-	if (detect_linux_misc(&section, -1))
-		return NULL;	//ignore
-	if (detect_dos_partmap(&section, -1))
-		return NULL;	//ignore
-	if (detect_gpt_partmap(&section, -1))
-		return NULL;	//ignore
-	if (detect_apple_partmap(&section, -1))
-		return NULL;	//ignore
-
-	if (detect_ntfs(&section, -1))
-		return "NTFS";
+	if (detect_ntfs(&section, -1)) {
+		retvalue = "NTFS";
+		goto ret;
+	}
 	int fslevel = detect_ext234(&section, -1);
-	if (fslevel == 2)
-		return "EXT2";
-	if (fslevel == 3)
-		return "EXT3";
-	if (fslevel == 4)
-		return "EXT4";
-	if (detect_btrfs(&section, -1))
-		return "BTRFS";
-	if (detect_zfs(&section, -1))
-		return "ZFS";
-	if (detect_exfat(&section, -1))
-		return "EXFAT";
-	if (detect_hpfs(&section, -1))
-		return "HPFS";
-	if (detect_xfs(&section, -1))
-		return "XFS";
+	if (fslevel == 2) {
+		retvalue = "EXT2";
+		goto ret;
+	}
+	if (fslevel == 3) {
+		retvalue = "EXT3";
+		goto ret;
+	}
+	if (fslevel == 4) {
+		retvalue = "EXT4";
+		goto ret;
+	}
+	if (detect_btrfs(&section, -1)) {
+		retvalue = "BTRFS";
+		goto ret;
+	}
+	if (detect_zfs(&section, -1)) {
+		retvalue = "ZFS";
+		goto ret;
+	}
+	if (detect_exfat(&section, -1)) {
+		retvalue = "EXFAT";
+		goto ret;
+	}
+	if (detect_hpfs(&section, -1)) {
+		retvalue = "HPFS";
+		goto ret;
+	}
+	if (detect_xfs(&section, -1)) {
+		retvalue = "XFS";
+		goto ret;
+	}
 	fslevel = detect_fat(&section, -1);
-	if (fslevel == 1)
-		return "FAT12";
-	if (fslevel == 2)
-		return "FAT16";
-	if (fslevel == 3)
-		return "FAT32";
-	if (detect_apple_volume(&section, -1))
-		return "HFS";	//ignore
+	if (fslevel == 1) {
+		retvalue = "FAT12";
+		goto ret;
+	}
+	if (fslevel == 2) {
+		retvalue = "FAT16";
+		goto ret;
+	}
+	if (fslevel == 3) {
+		retvalue = "FAT32";
+		goto ret;
+	}
+	if (detect_apple_volume(&section, -1)) {
+		retvalue = "HFS";
+	}
 
+      ret:;
+	set_discmessage_on();
 
 	/* finish it up */
 	close_source(s);
-	return "Empty";
+	return retvalue;
 }
 
 void ej_show_raid(webs_t wp, int argc, char_t ** argv)
