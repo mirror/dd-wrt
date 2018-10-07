@@ -337,6 +337,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\lib\dictBuilder\fastcover.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\lib\dictBuilder\divsufsort.c"
 				>
 			</File>
@@ -350,6 +354,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\lib\common\entropy_common.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\lib\compress\hist.c"
 				>
 			</File>
 			<File
@@ -476,6 +484,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\lib\dictBuilder\zdict.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\lib\dictBuilder\cover.h"
 				>
 			</File>
 			<File
