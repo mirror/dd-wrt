@@ -114,6 +114,7 @@ void start_raid(void)
 		dd_loginfo("raid", "EXT2 modules successfully loaded\n");
 	}
 	i = 0;
+	int done = 0;
 	while (1) {
 		char *raid = nvram_nget("raid%d", i);
 		if (!strlen(raid))
@@ -134,22 +135,22 @@ void start_raid(void)
 				sysprintf("mdadm --stop /dev/md%d\n", i);
 				sysprintf("mdadm --create /dev/md%d --level=%s --raid-devices=%d --run %s", i, level, drives, raid);
 				if (nvram_nmatch("ext4", "raidfs%d", i)) {
-					sysprintf("mkfs.ext4 /dev/md%d", i);
+					sysprintf("mkfs.ext4 -L \"%s\" /dev/md%d", poolname, i);
 				}
 				if (nvram_nmatch("ext2", "raidfs%d", i)) {
-					sysprintf("mkfs.ext2 /dev/md%d", i);
+					sysprintf("mkfs.ext2 -L \"%s\" /dev/md%d", poolname, i);
 				}
 				if (nvram_nmatch("ext3", "raidfs%d", i)) {
-					sysprintf("mkfs.ext3 /dev/md%d", i);
+					sysprintf("mkfs.ext3 -L \"%s\" /dev/md%d", poolname, i);
 				}
 				if (nvram_nmatch("xfs", "raidfs%d", i)) {
-					sysprintf("mkfs.xfs /dev/md%d", i);
+					sysprintf("mkfs.xfs -L \"%s\" /dev/md%d", poolname, i);
 				}
 				if (nvram_nmatch("btrfs", "raidfs%d", i)) {
-					sysprintf("mkfs.btrfs /dev/md%d", i);
+					sysprintf("mkfs.btrfs -L \"%s\" /dev/md%d", poolname, i);
 				}
 				if (nvram_nmatch("exfat", "raidfs%d", i)) {
-					sysprintf("mkfs.exfat /dev/md%d", i);
+					sysprintf("mkfs.exfat -n \"%s\" /dev/md%d", poolname, i);
 				}
 			}
 			if (!strcmp(type, "btrfs")) {
@@ -180,12 +181,8 @@ void start_raid(void)
 				if (!strcmp(level, "0"))
 					sysprintf("zpool create -f -m /tmp/mnt/%s %s %s", poolname, poolname, raid);
 			}
-			nvram_nset("1", "raiddone%d", i);
-			nvram_commit();
+			done = 1;
 		}
-		raid = nvram_nget("raid%d", i);
-		type = nvram_nget("raidtype%d", i);
-		poolname = nvram_nget("raidname%d", i);
 		if (!strcmp(type, "zfs")) {
 			if (nvram_nmatch("1", "raidlz%d", i))
 				sysprintf("zfs set compression=lz4 %s", poolname);
@@ -227,6 +224,11 @@ void start_raid(void)
 			sysprintf("mkdir -p /tmp/mnt/%s", poolname);
 			sysprintf("mount -t btrfs %s /tmp/mnt/%s", r, poolname);
 			free(r);
+		}
+
+		if (done) {
+			nvram_nset("1", "raiddone%d", i);
+			nvram_commit();
 		}
 		i++;
 	}
