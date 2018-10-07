@@ -47,12 +47,12 @@ static const char *insets[LEVELS] = {
 
 static char line_akku[4096];
 static int diskmessage = 1;
-int set_discmessage_off(void)
+void set_discmessage_off(void)
 {
 	diskmessage = 0;
 }
 
-int set_discmessage_on(void)
+void set_discmessage_on(void)
 {
 	diskmessage = 1;
 }
