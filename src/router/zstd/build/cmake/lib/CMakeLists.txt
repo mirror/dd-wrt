@@ -14,7 +14,7 @@ OPTION(ZSTD_BUILD_STATIC "BUILD STATIC LIBRARIES" ON)
 OPTION(ZSTD_BUILD_SHARED "BUILD SHARED LIBRARIES" ON)
 
 IF(NOT ZSTD_BUILD_SHARED AND NOT ZSTD_BUILD_STATIC)
-    MESSAGE(SEND_ERROR "You need to build at least one flavor of libstd")
+    MESSAGE(SEND_ERROR "You need to build at least one flavor of libzstd")
 ENDIF()
 
 # Define library directory, where sources and header files are located
@@ -34,6 +34,7 @@ SET(Sources
         ${LIBRARY_DIR}/common/zstd_common.c
         ${LIBRARY_DIR}/common/error_private.c
         ${LIBRARY_DIR}/common/xxhash.c
+        ${LIBRARY_DIR}/compress/hist.c
         ${LIBRARY_DIR}/compress/fse_compress.c
         ${LIBRARY_DIR}/compress/huf_compress.c
         ${LIBRARY_DIR}/compress/zstd_compress.c
@@ -46,6 +47,7 @@ SET(Sources
         ${LIBRARY_DIR}/decompress/huf_decompress.c
         ${LIBRARY_DIR}/decompress/zstd_decompress.c
         ${LIBRARY_DIR}/dictBuilder/cover.c
+        ${LIBRARY_DIR}/dictBuilder/fastcover.c
         ${LIBRARY_DIR}/dictBuilder/divsufsort.c
         ${LIBRARY_DIR}/dictBuilder/zdict.c
         ${LIBRARY_DIR}/deprecated/zbuff_common.c
@@ -54,6 +56,7 @@ SET(Sources
 
 SET(Headers
         ${LIBRARY_DIR}/zstd.h
+        ${LIBRARY_DIR}/common/debug.h
         ${LIBRARY_DIR}/common/pool.h
         ${LIBRARY_DIR}/common/threading.h
         ${LIBRARY_DIR}/common/bitstream.h
@@ -63,6 +66,7 @@ SET(Headers
         ${LIBRARY_DIR}/common/huf.h
         ${LIBRARY_DIR}/common/mem.h
         ${LIBRARY_DIR}/common/zstd_internal.h
+        ${LIBRARY_DIR}/compress/hist.h
         ${LIBRARY_DIR}/compress/zstd_compress_internal.h
         ${LIBRARY_DIR}/compress/zstd_fast.h
         ${LIBRARY_DIR}/compress/zstd_double_fast.h
@@ -71,6 +75,7 @@ SET(Headers
         ${LIBRARY_DIR}/compress/zstd_ldm.h
         ${LIBRARY_DIR}/compress/zstdmt_compress.h
         ${LIBRARY_DIR}/dictBuilder/zdict.h
+        ${LIBRARY_DIR}/dictBuilder/cover.h
         ${LIBRARY_DIR}/deprecated/zbuff.h)
 
 IF (ZSTD_LEGACY_SUPPORT)
@@ -105,9 +110,21 @@ ENDIF (MSVC)
 # Split project to static and shared libraries build
 IF (ZSTD_BUILD_SHARED)
     ADD_LIBRARY(libzstd_shared SHARED ${Sources} ${Headers} ${PlatformDependResources})
+    IF (ZSTD_MULTITHREAD_SUPPORT)
+        SET_PROPERTY(TARGET libzstd_shared APPEND PROPERTY COMPILE_DEFINITIONS "ZSTD_MULTITHREAD")
+        IF (UNIX)
+            TARGET_LINK_LIBRARIES(libzstd_shared ${THREADS_LIBS})
+        ENDIF ()
+    ENDIF()
 ENDIF (ZSTD_BUILD_SHARED)
 IF (ZSTD_BUILD_STATIC)
     ADD_LIBRARY(libzstd_static STATIC ${Sources} ${Headers})
+    IF (ZSTD_MULTITHREAD_SUPPORT)
+        SET_PROPERTY(TARGET libzstd_static APPEND PROPERTY COMPILE_DEFINITIONS "ZSTD_MULTITHREAD")
+        IF (UNIX)
+            TARGET_LINK_LIBRARIES(libzstd_static ${THREADS_LIBS})
+        ENDIF ()
+    ENDIF ()
 ENDIF (ZSTD_BUILD_STATIC)
 
 # Add specific compile definitions for MSVC project
@@ -119,17 +136,6 @@ IF (MSVC)
         SET_PROPERTY(TARGET libzstd_static APPEND PROPERTY COMPILE_DEFINITIONS "ZSTD_HEAPMODE=0;_CRT_SECURE_NO_WARNINGS")
     ENDIF (ZSTD_BUILD_STATIC)
 ENDIF (MSVC)
-
-# Add multi-threading support definitions
-
-IF (ZSTD_MULTITHREAD_SUPPORT AND ZSTD_BUILD_SHARED AND ZSTD_BUILD_STATIC)
-    SET_PROPERTY(TARGET libzstd_shared libzstd_static APPEND PROPERTY COMPILE_DEFINITIONS "ZSTD_MULTITHREAD")
-
-    IF (UNIX)
-        TARGET_LINK_LIBRARIES(libzstd_shared ${THREADS_LIBS})
-        TARGET_LINK_LIBRARIES(libzstd_static ${THREADS_LIBS})
-    ENDIF ()
-ENDIF (ZSTD_MULTITHREAD_SUPPORT AND ZSTD_BUILD_SHARED AND ZSTD_BUILD_STATIC)
 
 # With MSVC static library needs to be renamed to avoid conflict with import library
 IF (MSVC)
@@ -174,6 +180,7 @@ INSTALL(FILES
     ${LIBRARY_DIR}/zstd.h
     ${LIBRARY_DIR}/deprecated/zbuff.h
     ${LIBRARY_DIR}/dictBuilder/zdict.h
+    ${LIBRARY_DIR}/dictBuilder/cover.h
     ${LIBRARY_DIR}/common/zstd_errors.h
     DESTINATION "include")
 

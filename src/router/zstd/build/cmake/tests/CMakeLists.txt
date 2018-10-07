@@ -1,6 +1,6 @@
 # ################################################################
 # zstd - Makefile
-# Copyright (C) Yann Collet 2014-2016
+# Copyright (C) Yann Collet 2014-present
 # All rights reserved.
 #
 # BSD license
@@ -40,16 +40,16 @@ SET(PROGRAMS_DIR ${ZSTD_SOURCE_DIR}/programs)
 SET(TESTS_DIR ${ZSTD_SOURCE_DIR}/tests)
 INCLUDE_DIRECTORIES(${TESTS_DIR} ${PROGRAMS_DIR} ${LIBRARY_DIR} ${LIBRARY_DIR}/common ${LIBRARY_DIR}/compress ${LIBRARY_DIR}/dictBuilder)
 
-ADD_EXECUTABLE(fullbench ${PROGRAMS_DIR}/datagen.c ${TESTS_DIR}/fullbench.c)
+ADD_EXECUTABLE(datagen ${PROGRAMS_DIR}/datagen.c ${TESTS_DIR}/datagencli.c)
+TARGET_LINK_LIBRARIES(datagen libzstd_static)
+
+ADD_EXECUTABLE(fullbench ${PROGRAMS_DIR}/datagen.c ${PROGRAMS_DIR}/bench.c ${TESTS_DIR}/fullbench.c)
 TARGET_LINK_LIBRARIES(fullbench libzstd_static)
 
 ADD_EXECUTABLE(fuzzer ${PROGRAMS_DIR}/datagen.c ${TESTS_DIR}/fuzzer.c)
 TARGET_LINK_LIBRARIES(fuzzer libzstd_static)
 
 IF (UNIX)
-    ADD_EXECUTABLE(paramgrill ${PROGRAMS_DIR}/datagen.c ${TESTS_DIR}/paramgrill.c)
+    ADD_EXECUTABLE(paramgrill ${PROGRAMS_DIR}/bench.c ${PROGRAMS_DIR}/datagen.c ${TESTS_DIR}/paramgrill.c)
     TARGET_LINK_LIBRARIES(paramgrill libzstd_static m) #m is math library
-
-    ADD_EXECUTABLE(datagen ${PROGRAMS_DIR}/datagen.c ${TESTS_DIR}/datagencli.c)
-    TARGET_LINK_LIBRARIES(datagen libzstd_static)
 ENDIF (UNIX)
