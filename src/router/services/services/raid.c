@@ -131,7 +131,7 @@ void start_raid(void)
 		insmod("xfs");
 		dd_loginfo("raid", "XFS modules successfully loaded\n");
 	}
-	if (ext4) {
+	if (ext4 || ext2) {
 		insmod("crc16 mbcache ext2 jbd jbd2 ext3 ext4");
 		dd_loginfo("raid", "EXT4 modules successfully loaded\n");
 	}
