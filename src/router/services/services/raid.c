@@ -58,6 +58,8 @@ void start_raid(void)
 				exfat = 1;
 			if (!strcmp(fs, "xfs"))
 				xfs = 1;
+			if (!strcmp(fs, "ntfs"))
+				ntfs = 1;
 			if (!strcmp(fs, "ext2"))
 				ext2 = 1;
 			else if (!strncmp(fs, "ext", 3))
@@ -66,8 +68,6 @@ void start_raid(void)
 		}
 		if (!strcmp(type, "zfs"))
 			zfs = 1;
-		if (!strcmp(type, "ntfs"))
-			ntfs = 1;
 		if (!strcmp(type, "btrfs"))
 			btrfs = 1;
 		if (!strlen(raid))
