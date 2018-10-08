@@ -180,7 +180,7 @@ static char *getfsname(char *drive)
 		retvalue = "BTRFS";
 		goto ret;
 	}
-	if (detect_zfs(&section, -1)) {
+	if (detect_zfs(&section, -1)) {  // shall we skip that to to prevent damages?
 		retvalue = "ZFS";
 		goto ret;
 	}
@@ -418,6 +418,7 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "document.write(\"<option value=\\\"btrfs\\\" %s >BTRFS</option>\");\n", !strcmp(fs, "BTRFS") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "document.write(\"<option value=\\\"ntfs\\\" %s >NTFS</option>\");\n", !strcmp(fs, "NTFS") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "document.write(\"<option value=\\\"fat32\\\" %s >FAT32</option>\");\n", !strcmp(fs, "FAT32") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"zfs\\\" %s >ZFS</option>\");\n", !strcmp(fs, "ZFS") ? "selected=\\\"selected\\\"" : "");
 
 		websWrite(wp, "//]]>\n</script></select>\n");
 		websWrite(wp, "</td>\n");
