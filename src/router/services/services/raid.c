@@ -43,8 +43,6 @@ void start_raid(void)
 	int ext2 = 0;
 	int ext4 = 0;
 	int exfat = 0;
-	if (!nvram_matchi("raid_enable", 1))
-		return;
 	while (1) {
 		char *raid = nvram_nget("raid%d", i);
 		char *type = nvram_nget("raidtype%d", i);
@@ -71,6 +69,8 @@ void start_raid(void)
 			break;
 		i++;
 	}
+	if (i == 0)
+		return;
 	if (md) {
 		insmod("libcrc32c crc32c_generic crc32_generic");
 		insmod("dm-mod");
