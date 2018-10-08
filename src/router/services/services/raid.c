@@ -124,7 +124,7 @@ void start_raid(void)
 		dd_loginfo("raid", "BTRFS modules successfully loaded\n");
 	}
 	if (ntfs) {
-		insmod("ntfs");
+		insmod("fuse");
 		dd_loginfo("raid", "NTFS / FUSE modules successfully loaded\n");
 	}
 	if (xfs) {
