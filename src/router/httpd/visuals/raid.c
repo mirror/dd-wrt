@@ -242,6 +242,7 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		char *raidtype = nvram_nget("raidtype%d", i);
 		char *raidlevel = nvram_nget("raidlevel%d", i);
 		char *raidlz = nvram_nget("raidlz%d", i);
+		char *raidfs = nvram_nget("raidfs%d", i);
 		char *raiddedup = nvram_nget("raiddedup%d", i);
 		if (!strlen(raidtype))
 			break;
@@ -293,19 +294,19 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<select name=\"raidfs%d\">\n", i);
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 			if (ext2)
-				websWrite(wp, "document.write(\"<option value=\\\"ext2\\\" %s >EXT2</option>\");\n", !strcmp(raidlevel, "ext2") ? "selected=\\\"selected\\\"" : "");
+				websWrite(wp, "document.write(\"<option value=\\\"ext2\\\" %s >EXT2</option>\");\n", !strcmp(raidfs, "ext2") ? "selected=\\\"selected\\\"" : "");
 			if (ext3)
-				websWrite(wp, "document.write(\"<option value=\\\"ext3\\\" %s >EXT3</option>\");\n", !strcmp(raidlevel, "ext3") ? "selected=\\\"selected\\\"" : "");
+				websWrite(wp, "document.write(\"<option value=\\\"ext3\\\" %s >EXT3</option>\");\n", !strcmp(raidfs, "ext3") ? "selected=\\\"selected\\\"" : "");
 			if (ext4)
-				websWrite(wp, "document.write(\"<option value=\\\"ext4\\\" %s >EXT4</option>\");\n", !strcmp(raidlevel, "ext4") ? "selected=\\\"selected\\\"" : "");
+				websWrite(wp, "document.write(\"<option value=\\\"ext4\\\" %s >EXT4</option>\");\n", !strcmp(raidfs, "ext4") ? "selected=\\\"selected\\\"" : "");
 			if (exfat)
-				websWrite(wp, "document.write(\"<option value=\\\"exfat\\\" %s >EXFAT</option>\");\n", !strcmp(raidlevel, "exfat") ? "selected=\\\"selected\\\"" : "");
+				websWrite(wp, "document.write(\"<option value=\\\"exfat\\\" %s >EXFAT</option>\");\n", !strcmp(raidfs, "exfat") ? "selected=\\\"selected\\\"" : "");
 			if (xfs)
-				websWrite(wp, "document.write(\"<option value=\\\"xfs\\\" %s >XFS</option>\");\n", !strcmp(raidlevel, "xfs") ? "selected=\\\"selected\\\"" : "");
+				websWrite(wp, "document.write(\"<option value=\\\"xfs\\\" %s >XFS</option>\");\n", !strcmp(raidfs, "xfs") ? "selected=\\\"selected\\\"" : "");
 			if (btrfs)
-				websWrite(wp, "document.write(\"<option value=\\\"btrfs\\\" %s >BTRFS</option>\");\n", !strcmp(raidlevel, "btrfs") ? "selected=\\\"selected\\\"" : "");
+				websWrite(wp, "document.write(\"<option value=\\\"btrfs\\\" %s >BTRFS</option>\");\n", !strcmp(raidfs, "btrfs") ? "selected=\\\"selected\\\"" : "");
 			if (ntfs)
-				websWrite(wp, "document.write(\"<option value=\\\"ntfs\\\" %s >NTFS</option>\");\n", !strcmp(raidlevel, "ntfs") ? "selected=\\\"selected\\\"" : "");
+				websWrite(wp, "document.write(\"<option value=\\\"ntfs\\\" %s >NTFS</option>\");\n", !strcmp(raidfs, "ntfs") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "//]]>\n</script></select>\n");
 			websWrite(wp, "</td>\n");
 		}
