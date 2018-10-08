@@ -107,6 +107,8 @@ void format_drive(webs_t wp)
 	sprintf(name, "mkfs.%s", format);
 	if (!strcmp(format, "xfs") || !strcmp(format, "btrfs"))
 		eval(name, "-f", fs);
+	else if (!strcmp(format, "ntfs"))
+		eval(name, "-f", "-Q", "-F", fs);
 	else if (!strcmp(format, "exfat"))
 		eval(name, fs);
 	else
