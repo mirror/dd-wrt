@@ -43,6 +43,7 @@ void start_raid(void)
 	int ext2 = 0;
 	int ext4 = 0;
 	int exfat = 0;
+	int ntfs = 0;
 	int todo = 0;
 	while (1) {
 		char *raid = nvram_nget("raid%d", i);
@@ -65,6 +66,8 @@ void start_raid(void)
 		}
 		if (!strcmp(type, "zfs"))
 			zfs = 1;
+		if (!strcmp(type, "ntfs"))
+			ntfs = 1;
 		if (!strcmp(type, "btrfs"))
 			btrfs = 1;
 		if (!strlen(raid))
@@ -119,6 +122,10 @@ void start_raid(void)
 	if (btrfs) {
 		insmod("libcrc32c crc32c_generic crc32_generic lzo_compress lzo_decompress xxhash zstd_compress zstd_decompress raid6_pq xor-neon xor btrfs");
 		dd_loginfo("raid", "BTRFS modules successfully loaded\n");
+	}
+	if (ntfs) {
+		insmod("ntfs");
+		dd_loginfo("raid", "NTFS / FUSE modules successfully loaded\n");
 	}
 	if (xfs) {
 		insmod("xfs");
@@ -179,7 +186,7 @@ void start_raid(void)
 					sysprintf("mkfs.exfat -n \"%s\" /dev/md%d", poolname, i);
 				}
 				if (nvram_nmatch("ntfs", "raidfs%d", i)) {
-					sysprintf("mkfs.ntfs -F -L \"%s\" /dev/md%d", poolname, i);
+					sysprintf("mkfs.ntfs -Q -F -L \"%s\" /dev/md%d", poolname, i);
 				}
 			}
 			if (!strcmp(type, "btrfs")) {
@@ -244,7 +251,7 @@ void start_raid(void)
 				sysprintf("mount -t exfat /dev/md%d /tmp/mnt/%s", i, poolname);
 			}
 			if (nvram_nmatch("ntfs", "raidfs%d", i)) {
-				sysprintf("ntfs-3g -o compression,direct_io,big_writes /dev/md/%d %s", i, poolname);
+				sysprintf("ntfs-3g -o compression,direct_io,big_writes /dev/md%d /tmp/mnt/%s", i, poolname);
 			}
 		}
 		if (!strcmp(type, "btrfs")) {
