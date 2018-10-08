@@ -263,7 +263,7 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		}
 		if (!strcmp(raidtype, "zfs")) {
 			websWrite(wp,
-				  "<tr>\n" "<th>Name</th>\n" "<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n" "<th>Level</th>\n" "<th>Dedup</th>\n" "<th>LZ</th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
+				  "<tr>\n" "<th>Name</th>\n" "<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n" "<th>Level</th>\n" "<th>Dedup</th>\n" "<th>LZ4</th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
 		}
 
 		websWrite(wp, "<tr>\n");
