@@ -168,13 +168,13 @@ void start_raid(void)
 				dd_loginfo("raid", "creating MD Raid /dev/md%d", i);
 				sysprintf("mdadm --create /dev/md%d --level=%s --raid-devices=%d --run %s", i, level, drives, raid);
 				if (nvram_nmatch("ext4", "raidfs%d", i)) {
-					sysprintf("mkfs.ext4 -F -L \"%s\" /dev/md%d", poolname, i);
+					sysprintf("mkfs.ext4 -F -E lazy_itable_init=1 -L \"%s\" /dev/md%d", poolname, i);
 				}
 				if (nvram_nmatch("ext2", "raidfs%d", i)) {
-					sysprintf("mkfs.ext2 -F -L \"%s\" /dev/md%d", poolname, i);
+					sysprintf("mkfs.ext2 -F -E lazy_itable_init=1 -L \"%s\" /dev/md%d", poolname, i);
 				}
 				if (nvram_nmatch("ext3", "raidfs%d", i)) {
-					sysprintf("mkfs.ext3 -F -L \"%s\" /dev/md%d", poolname, i);
+					sysprintf("mkfs.ext3 -F -E lazy_itable_init=1 -L \"%s\" /dev/md%d", poolname, i);
 				}
 				if (nvram_nmatch("xfs", "raidfs%d", i)) {
 					sysprintf("mkfs.xfs -f -L \"%s\" /dev/md%d", poolname, i);
