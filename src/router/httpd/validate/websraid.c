@@ -78,6 +78,17 @@ void format_raid(webs_t wp)
 	if (!val)
 		return;
 	int idx = atoi(val);
+	nvram_nset("0", "raiddone%d", idx);
+	eval("stopservice", "raid");
+	eval("startservice", "raid");
+}
+
+void format_drive(webs_t wp)
+{
+	char *val = websGetVar(wp, "raid_del_value", NULL);
+	if (!val)
+		return;
+	int idx = atoi(val);
 	char s_fs[32];
 	sprintf(s_fs, "fs%d", idx);
 	char s_format[32];
