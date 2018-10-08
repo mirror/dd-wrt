@@ -206,15 +206,15 @@ void start_raid(void)
 				dd_loginfo("raid", "creating ZFS Pool %s", poolname);
 				sysprintf("mkdir -p /tmp/mnt/%s", poolname);
 				if (!strcmp(level, "1"))
-					sysprintf("zpool create -f -m /tmp/mnt/%s %s mirror %s", poolname, poolname, raid);
+					sysprintf("zpool create -f -m \"/tmp/mnt/%s\" \"%s\" mirror %s", poolname, poolname, raid);
 				if (!strcmp(level, "5"))
-					sysprintf("zpool create -f -m /tmp/mnt/%s %s raidz1 %s", poolname, poolname, raid);
+					sysprintf("zpool create -f -m \"/tmp/mnt/%s\" \"%s\" raidz1 %s", poolname, poolname, raid);
 				if (!strcmp(level, "6"))
-					sysprintf("zpool create -f -m /tmp/mnt/%s %s raidz2 %s", poolname, poolname, raid);
+					sysprintf("zpool create -f -m \"/tmp/mnt/%s\" \"%s\" raidz2 %s", poolname, poolname, raid);
 				if (!strcmp(level, "z3"))
-					sysprintf("zpool create -f -m /tmp/mnt/%s %s raidz3 %s", poolname, poolname, raid);
+					sysprintf("zpool create -f -m \"/tmp/mnt/%s\" \"%s\" raidz3 %s", poolname, poolname, raid);
 				if (!strcmp(level, "0"))
-					sysprintf("zpool create -f -m /tmp/mnt/%s %s %s", poolname, poolname, raid);
+					sysprintf("zpool create -f -m \"/tmp/mnt/%s\" \"%s\" %s", poolname, poolname, raid);
 			}
 		}
 		if (!strcmp(type, "zfs")) {
@@ -226,40 +226,40 @@ void start_raid(void)
 				sysprintf("zfs set dedup=on %s", poolname);
 			else
 				sysprintf("zfs set dedup=off %s", poolname);
-			sysprintf("mkdir -p /tmp/mnt/%s", poolname);
+			sysprintf("mkdir -p \"/tmp/mnt/%s\"", poolname);
 			sysprintf("zpool import -a -d /dev", poolname);
 		}
 		if (!strcmp(type, "md")) {
 			sysprintf("mdadm --assemble /dev/md%d %s", i, raid);
-			sysprintf("mkdir -p /tmp/mnt/%s", poolname);
+			sysprintf("mkdir -p \"/tmp/mnt/%s\"", poolname);
 			if (nvram_nmatch("ext4", "raidfs%d", i)) {
-				sysprintf("mount -t ext4 /dev/md%d /tmp/mnt/%s", i, poolname);
+				sysprintf("mount -t ext4 /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
 			}
 			if (nvram_nmatch("ext2", "raidfs%d", i)) {
-				sysprintf("mount -t ext2 /dev/md%d /tmp/mnt/%s", i, poolname);
+				sysprintf("mount -t ext2 /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
 			}
 			if (nvram_nmatch("ext3", "raidfs%d", i)) {
-				sysprintf("mount -t ext3 /dev/md%d /tmp/mnt/%s", i, poolname);
+				sysprintf("mount -t ext3 /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
 			}
 			if (nvram_nmatch("xfs", "raidfs%d", i)) {
-				sysprintf("mount -t xfs /dev/md%d /tmp/mnt/%s", i, poolname);
+				sysprintf("mount -t xfs /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
 			}
 			if (nvram_nmatch("btrfs", "raidfs%d", i)) {
-				sysprintf("mount -t btrfs /dev/md%d /tmp/mnt/%s", i, poolname);
+				sysprintf("mount -t btrfs /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
 			}
 			if (nvram_nmatch("exfat", "raidfs%d", i)) {
-				sysprintf("mount -t exfat /dev/md%d /tmp/mnt/%s", i, poolname);
+				sysprintf("mount -t exfat /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
 			}
 			if (nvram_nmatch("ntfs", "raidfs%d", i)) {
-				sysprintf("ntfs-3g -o compression,direct_io,big_writes /dev/md%d /tmp/mnt/%s", i, poolname);
+				sysprintf("ntfs-3g -o compression,direct_io,big_writes /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
 			}
 		}
 		if (!strcmp(type, "btrfs")) {
 			char *r = malloc(strlen(raid) + 1);
 			strcpy(r, raid);
 			strstrtok(r, ' ');
-			sysprintf("mkdir -p /tmp/mnt/%s", poolname);
-			sysprintf("mount -t btrfs %s /tmp/mnt/%s", r, poolname);
+			sysprintf("mkdir -p \"/tmp/mnt/%s\"", poolname);
+			sysprintf("mount -t btrfs %s \"/tmp/mnt/%s\"", r, poolname);
 			free(r);
 		}
 
