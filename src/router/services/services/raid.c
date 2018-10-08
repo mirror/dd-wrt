@@ -142,25 +142,25 @@ void start_raid(void)
 				sysprintf("mdadm --stop /dev/md%d\n", i);
 				sysprintf("mdadm --create /dev/md%d --level=%s --raid-devices=%d --run %s", i, level, drives, raid);
 				if (nvram_nmatch("ext4", "raidfs%d", i)) {
-					sysprintf("mkfs.ext4 -L \"%s\" /dev/md%d", poolname, i);
+					sysprintf("mkfs.ext4 -F -L \"%s\" /dev/md%d", poolname, i);
 				}
 				if (nvram_nmatch("ext2", "raidfs%d", i)) {
-					sysprintf("mkfs.ext2 -L \"%s\" /dev/md%d", poolname, i);
+					sysprintf("mkfs.ext2 -F -L \"%s\" /dev/md%d", poolname, i);
 				}
 				if (nvram_nmatch("ext3", "raidfs%d", i)) {
-					sysprintf("mkfs.ext3 -L \"%s\" /dev/md%d", poolname, i);
+					sysprintf("mkfs.ext3 -F -L \"%s\" /dev/md%d", poolname, i);
 				}
 				if (nvram_nmatch("xfs", "raidfs%d", i)) {
-					sysprintf("mkfs.xfs -L \"%s\" /dev/md%d", poolname, i);
+					sysprintf("mkfs.xfs -f -L \"%s\" /dev/md%d", poolname, i);
 				}
 				if (nvram_nmatch("btrfs", "raidfs%d", i)) {
-					sysprintf("mkfs.btrfs -L \"%s\" /dev/md%d", poolname, i);
+					sysprintf("mkfs.btrfs -f -L \"%s\" /dev/md%d", poolname, i);
 				}
 				if (nvram_nmatch("exfat", "raidfs%d", i)) {
 					sysprintf("mkfs.exfat -n \"%s\" /dev/md%d", poolname, i);
 				}
 				if (nvram_nmatch("ntfs", "raidfs%d", i)) {
-					sysprintf("mkfs.ntfs -L \"%s\" /dev/md%d", poolname, i);
+					sysprintf("mkfs.ntfs -F -L \"%s\" /dev/md%d", poolname, i);
 				}
 			}
 			if (!strcmp(type, "btrfs")) {
