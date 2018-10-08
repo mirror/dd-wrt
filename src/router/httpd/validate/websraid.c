@@ -96,6 +96,8 @@ void format_drive(webs_t wp)
 		eval(name, "-f", "-Q", "-F", fs);
 	else if (!strcmp(format, "exfat"))
 		eval(name, fs);
+	else if (!strncmp(format, "ext", 3))
+		eval(name, "-F", "-E", "lazy_itable_init=1", fs);
 	else
 		eval(name, "-F", fs);
 }
