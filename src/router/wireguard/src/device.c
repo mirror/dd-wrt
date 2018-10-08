@@ -26,14 +26,14 @@
 
 static LIST_HEAD(device_list);
 
-static int open(struct net_device *dev)
+static int wg_open(struct net_device *dev)
 {
 	struct in_device *dev_v4 = __in_dev_get_rtnl(dev);
-	struct wireguard_device *wg = netdev_priv(dev);
 #ifndef COMPAT_CANNOT_USE_IN6_DEV_GET
 	struct inet6_dev *dev_v6 = __in6_dev_get(dev);
 #endif
-	struct wireguard_peer *peer;
+	struct wg_device *wg = netdev_priv(dev);
+	struct wg_peer *peer;
 	int ret;
 
 	if (dev_v4) {
@@ -67,11 +67,11 @@ static int open(struct net_device *dev)
 }
 
 #if defined(CONFIG_PM_SLEEP) && !defined(CONFIG_ANDROID)
-static int pm_notification(struct notifier_block *nb, unsigned long action,
-			   void *data)
+static int wg_pm_notification(struct notifier_block *nb, unsigned long action,
+			      void *data)
 {
-	struct wireguard_device *wg;
-	struct wireguard_peer *peer;
+	struct wg_device *wg;
+	struct wg_peer *peer;
 
 	if (action != PM_HIBERNATION_PREPARE && action != PM_SUSPEND_PREPARE)
 		return 0;
@@ -91,13 +91,13 @@ static int pm_notification(struct notifier_block *nb, unsigned long action,
 	rcu_barrier_bh();
 	return 0;
 }
-static struct notifier_block pm_notifier = { .notifier_call = pm_notification };
+static struct notifier_block pm_notifier = { .notifier_call = wg_pm_notification };
 #endif
 
-static int stop(struct net_device *dev)
+static int wg_stop(struct net_device *dev)
 {
-	struct wireguard_device *wg = netdev_priv(dev);
-	struct wireguard_peer *peer;
+	struct wg_device *wg = netdev_priv(dev);
+	struct wg_peer *peer;
 
 	mutex_lock(&wg->device_update_lock);
 	list_for_each_entry (peer, &wg->peer_list, peer_list) {
@@ -115,12 +115,12 @@ static int stop(struct net_device *dev)
 	return 0;
 }
 
-static netdev_tx_t xmit(struct sk_buff *skb, struct net_device *dev)
+static netdev_tx_t wg_xmit(struct sk_buff *skb, struct net_device *dev)
 {
-	struct wireguard_device *wg = netdev_priv(dev);
-	struct wireguard_peer *peer;
-	struct sk_buff *next;
+	struct wg_device *wg = netdev_priv(dev);
 	struct sk_buff_head packets;
+	struct wg_peer *peer;
+	struct sk_buff *next;
 	sa_family_t family;
 	u32 mtu;
 	int ret;
@@ -212,15 +212,15 @@ err:
 }
 
 static const struct net_device_ops netdev_ops = {
-	.ndo_open		= open,
-	.ndo_stop		= stop,
-	.ndo_start_xmit		= xmit,
+	.ndo_open		= wg_open,
+	.ndo_stop		= wg_stop,
+	.ndo_start_xmit		= wg_xmit,
 	.ndo_get_stats64	= ip_tunnel_get_stats64
 };
 
-static void destruct(struct net_device *dev)
+static void wg_destruct(struct net_device *dev)
 {
-	struct wireguard_device *wg = netdev_priv(dev);
+	struct wg_device *wg = netdev_priv(dev);
 
 	rtnl_lock();
 	list_del(&wg->device_list);
@@ -252,9 +252,9 @@ static void destruct(struct net_device *dev)
 
 static const struct device_type device_type = { .name = KBUILD_MODNAME };
 
-static void setup(struct net_device *dev)
+static void wg_setup(struct net_device *dev)
 {
-	struct wireguard_device *wg = netdev_priv(dev);
+	struct wg_device *wg = netdev_priv(dev);
 	enum { WG_NETDEV_FEATURES = NETIF_F_HW_CSUM | NETIF_F_RXCSUM |
 				    NETIF_F_SG | NETIF_F_GSO |
 				    NETIF_F_GSO_SOFTWARE | NETIF_F_HIGHDMA };
@@ -288,12 +288,12 @@ static void setup(struct net_device *dev)
 	wg->dev = dev;
 }
 
-static int newlink(struct net *src_net, struct net_device *dev,
-		   struct nlattr *tb[], struct nlattr *data[],
-		   struct netlink_ext_ack *extack)
+static int wg_newlink(struct net *src_net, struct net_device *dev,
+		      struct nlattr *tb[], struct nlattr *data[],
+		      struct netlink_ext_ack *extack)
 {
+	struct wg_device *wg = netdev_priv(dev);
 	int ret = -ENOMEM;
-	struct wireguard_device *wg = netdev_priv(dev);
 
 	wg->creating_net = src_net;
 	init_rwsem(&wg->static_identity.lock);
@@ -353,7 +353,7 @@ static int newlink(struct net *src_net, struct net_device *dev,
 	/* We wait until the end to assign priv_destructor, so that
 	 * register_netdevice doesn't call it for us if it fails.
 	 */
-	dev->priv_destructor = destruct;
+	dev->priv_destructor = wg_destruct;
 
 	pr_debug("%s: Interface created\n", dev->name);
 	return ret;
@@ -380,16 +380,16 @@ error_1:
 
 static struct rtnl_link_ops link_ops __read_mostly = {
 	.kind			= KBUILD_MODNAME,
-	.priv_size		= sizeof(struct wireguard_device),
-	.setup			= setup,
-	.newlink		= newlink,
+	.priv_size		= sizeof(struct wg_device),
+	.setup			= wg_setup,
+	.newlink		= wg_newlink,
 };
 
-static int netdevice_notification(struct notifier_block *nb,
-				  unsigned long action, void *data)
+static int wg_netdevice_notification(struct notifier_block *nb,
+				     unsigned long action, void *data)
 {
 	struct net_device *dev = ((struct netdev_notifier_info *)data)->dev;
-	struct wireguard_device *wg = netdev_priv(dev);
+	struct wg_device *wg = netdev_priv(dev);
 
 	ASSERT_RTNL();
 
@@ -408,7 +408,7 @@ static int netdevice_notification(struct notifier_block *nb,
 }
 
 static struct notifier_block netdevice_notifier = {
-	.notifier_call = netdevice_notification
+	.notifier_call = wg_netdevice_notification
 };
 
 int __init wg_device_init(void)

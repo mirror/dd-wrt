@@ -7,7 +7,7 @@
 #define _ZINC_CHACHA20_H
 
 #include <asm/unaligned.h>
-#include "simd.h"
+#include <linux/simd.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
 
