@@ -100,7 +100,12 @@ void format_drive(webs_t wp)
 		return;
 	char name[32];
 	sprintf(name, "mkfs.%s", format);
-	eval(name, fs);
+	if (!strcmp(format, "xfs") || !strcmp(format, "btrfs"))
+		eval(name, "-f", fs);
+	else if (!strcmp(format, "exfat"))
+		eval(name, fs);
+	else
+		eval(name, "-F", fs);
 }
 
 void del_raid(webs_t wp)
