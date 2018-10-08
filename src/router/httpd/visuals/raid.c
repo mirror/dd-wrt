@@ -113,7 +113,11 @@ static char *getfsname(char *drive)
 	section.flags = 0;
 	set_discmessage_off();
 	char *retvalue = "Empty";
-	/* first look if the drive contains partions, if yes, ignore them to ensure to keep them*/
+	/* first look if the drive contains partions, if yes, ignore them to ensure to keep them */
+	if (s->size == 0) {
+		retvalue = NULL;
+		goto ret;
+	}
 	if (detect_linux_raid(&section, -1)) {
 		retvalue = NULL;
 		goto ret;
@@ -143,7 +147,7 @@ static char *getfsname(char *drive)
 		goto ret;
 	}
 	if (detect_linux_misc(&section, -1)) {
-		retvalue = NULL; // ignore squashfs / cramfs drives since its likelly just the boot device
+		retvalue = NULL;	// ignore squashfs / cramfs drives since its likelly just the boot device
 		goto ret;
 	}
 	if (detect_dos_partmap(&section, -1)) {
@@ -180,7 +184,7 @@ static char *getfsname(char *drive)
 		retvalue = "BTRFS";
 		goto ret;
 	}
-	if (detect_zfs(&section, -1)) {  // shall we skip that to to prevent damages?
+	if (detect_zfs(&section, -1)) {	// shall we skip that to to prevent damages?
 		retvalue = "ZFS";
 		goto ret;
 	}
