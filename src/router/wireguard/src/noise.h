@@ -87,18 +87,19 @@ struct noise_handshake {
 	__le32 remote_index;
 
 	/* Protects all members except the immutable (after noise_handshake_
-	 * init): remote_static, precomputed_static_static, static_identity. */
+	 * init): remote_static, precomputed_static_static, static_identity.
+	 */
 	struct rw_semaphore lock;
 };
 
-static struct wireguard_device;
+static struct wg_device;
 
 static void wg_noise_init(void);
 static bool wg_noise_handshake_init(struct noise_handshake *handshake,
 			   struct noise_static_identity *static_identity,
 			   const u8 peer_public_key[NOISE_PUBLIC_KEY_LEN],
 			   const u8 peer_preshared_key[NOISE_SYMMETRIC_KEY_LEN],
-			   struct wireguard_peer *peer);
+			   struct wg_peer *peer);
 static void wg_noise_handshake_clear(struct noise_handshake *handshake);
 static void wg_noise_keypair_put(struct noise_keypair *keypair, bool unreference_now);
 static struct noise_keypair *wg_noise_keypair_get(struct noise_keypair *keypair);
@@ -109,20 +110,20 @@ static bool wg_noise_received_with_keypair(struct noise_keypairs *keypairs,
 static void wg_noise_set_static_identity_private_key(
 	struct noise_static_identity *static_identity,
 	const u8 private_key[NOISE_PUBLIC_KEY_LEN]);
-static bool wg_noise_precompute_static_static(struct wireguard_peer *peer);
+static bool wg_noise_precompute_static_static(struct wg_peer *peer);
 
 static bool
 wg_noise_handshake_create_initiation(struct message_handshake_initiation *dst,
 				     struct noise_handshake *handshake);
-static struct wireguard_peer *
+static struct wg_peer *
 wg_noise_handshake_consume_initiation(struct message_handshake_initiation *src,
-				      struct wireguard_device *wg);
+				      struct wg_device *wg);
 
 static bool wg_noise_handshake_create_response(struct message_handshake_response *dst,
 					struct noise_handshake *handshake);
-static struct wireguard_peer *
+static struct wg_peer *
 wg_noise_handshake_consume_response(struct message_handshake_response *src,
-				    struct wireguard_device *wg);
+				    struct wg_device *wg);
 
 static bool wg_noise_handshake_begin_session(struct noise_handshake *handshake,
 				      struct noise_keypairs *keypairs);

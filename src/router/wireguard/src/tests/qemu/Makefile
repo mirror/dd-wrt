@@ -23,8 +23,8 @@ NR_CPUS ?= 4
 MIRROR := https://download.wireguard.com/qemu-test/distfiles/
 
 rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
-WIREGUARD_SOURCES := $(wildcard ../../Kbuild ../../Kconfig ../../*.c ../../*.h ../../selftest/*.h ../../uapi/*.h) $(call rwildcard,../../crypto/,*.c *.h *.S *.include) $(call rwildcard,../../compat/,*.c *.h *.include)
-TOOLS_SOURCES := $(wildcard ../../tools/*.c ../../tools/*.h ../../uapi/*.h ../../crypto/zinc/curve25519/curve25519-hacl64.h ../../crypto/zinc/curve25519/curve25519-fiat32.h)
+WIREGUARD_SOURCES := ../../Kbuild ../../Kconfig $(filter-out ../../tools/% ../../tests/%,$(call rwildcard,../../,*.c *.h *.S *.include))
+TOOLS_SOURCES := $(wildcard ../../tools/*.c ../../tools/*.h ../../uapi/*.h ../../crypto/zinc/curve25519/curve25519-hacl64.c ../../crypto/zinc/curve25519/curve25519-fiat32.c)
 
 default: qemu
 
@@ -223,7 +223,7 @@ USERSPACE_DEPS := $(MUSL_CC) $(BUILD_PATH)/include/.installed $(BUILD_PATH)/incl
 build: $(KERNEL_BZIMAGE)
 qemu: $(KERNEL_BZIMAGE)
 	rm -f $(BUILD_PATH)/result
-	qemu-system-$(QEMU_ARCH) \
+	timeout --foreground 20m qemu-system-$(QEMU_ARCH) \
 		-nodefaults \
 		-nographic \
 		-smp $(NR_CPUS) \

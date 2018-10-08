@@ -6,7 +6,7 @@
 #ifndef _ZINC_CHACHA20POLY1305_H
 #define _ZINC_CHACHA20POLY1305_H
 
-#include "simd.h"
+#include <linux/simd.h>
 #include <linux/types.h>
 
 struct scatterlist;
