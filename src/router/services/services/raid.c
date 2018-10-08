@@ -43,10 +43,12 @@ void start_raid(void)
 	int ext2 = 0;
 	int ext4 = 0;
 	int exfat = 0;
+	int todo = 0;
 	while (1) {
 		char *raid = nvram_nget("raid%d", i);
 		char *type = nvram_nget("raidtype%d", i);
 		char *fs = nvram_nget("raidfs%d", i);
+		char *done = nvram_nget("raiddone%d", i);
 		if (!strcmp(type, "md")) {
 			md = 1;
 			if (!strcmp(fs, "btrfs"))
@@ -67,10 +69,24 @@ void start_raid(void)
 			btrfs = 1;
 		if (!strlen(raid))
 			break;
+		if (!strcmp(done, "0"))
+			todo = 1;
 		i++;
 	}
 	if (i == 0)
 		return;
+	if (todo) {
+		eval("stopservice", "cron", "-f");
+		eval("stopservice", "samba3", "-f");
+		eval("stopservice", "dlna", "-f");
+		eval("stopservice", "ftpsrv", "-f");
+#ifdef HAVE_WEBSERVER
+		eval("stopservice", "lighttpd", "-f");
+#endif
+#ifdef HAVE_TRANSMISSION
+		eval("stopservice", "transmission", "-f");
+#endif
+	}
 	if (md) {
 		insmod("libcrc32c crc32c_generic crc32_generic");
 		insmod("dm-mod");
@@ -136,7 +152,7 @@ void start_raid(void)
 			int drives = 0;
 			foreach(drive, raid, next) {
 				drives++;
-				sysprintf("unmount %s",drive);
+				sysprintf("unmount %s", drive);
 			}
 			sysprintf("umount /dev/md%d\n", i);
 			sysprintf("mdadm --stop /dev/md%d\n", i);
@@ -245,6 +261,18 @@ void start_raid(void)
 			nvram_commit();
 		}
 		i++;
+	}
+	if (todo) {
+		eval("startservice_f", "cron", "-f");
+		eval("startservice_f", "samba3", "-f");
+		eval("startservice_f", "dlna", "-f");
+		eval("startservice_f", "ftpsrv", "-f");
+#ifdef HAVE_WEBSERVER
+		eval("startservice_f", "lighttpd", "-f");
+#endif
+#ifdef HAVE_TRANSMISSION
+		eval("startservice_f", "transmission", "-f");
+#endif
 	}
 
 }
