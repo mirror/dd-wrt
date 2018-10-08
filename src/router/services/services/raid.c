@@ -152,7 +152,7 @@ void start_raid(void)
 			int drives = 0;
 			foreach(drive, raid, next) {
 				drives++;
-				sysprintf("unmount %s", drive);
+				sysprintf("umount %s", drive);
 			}
 			sysprintf("umount /dev/md%d\n", i);
 			sysprintf("mdadm --stop /dev/md%d\n", i);
