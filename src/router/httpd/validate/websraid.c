@@ -72,21 +72,6 @@ void add_raid(webs_t wp)
 	nvram_nset("md", "raidtype%d", idx);
 }
 
-void format_raid(webs_t wp)
-{
-	char *val = websGetVar(wp, "raid_del_value", NULL);
-	if (!val)
-		return;
-	int idx = atoi(val);
-	nvram_nset("0", "raiddone%d", idx);
-	char raidfs[32];
-	sprintf(raidfs, "raidfs%d", idx);
-	char *rfs = websGetVar(wp, raidfs, NULL);
-	if (rfs)
-		nvram_nset(rfs, "raidfs%d", idx);
-	eval("stopservice", "raid");
-	eval("startservice", "raid");
-}
 
 void format_drive(webs_t wp)
 {
@@ -277,4 +262,17 @@ void raid_save(webs_t wp)
 	}
 
 }
+void format_raid(webs_t wp)
+{
+	char *val = websGetVar(wp, "raid_del_value", NULL);
+	if (!val)
+		return;
+	int idx = atoi(val);
+	nvram_nset("0", "raiddone%d", idx);
+	raid_save(wp);
+	eval("stopservice", "raid");
+	eval("startservice", "raid");
+}
+
+
 #endif
