@@ -10,7 +10,7 @@
 #include <linux/ip.h>
 #include <linux/ipv6.h>
 
-static struct wireguard_peer;
+static struct wg_peer;
 static struct allowedips_node;
 
 struct allowedips {
@@ -29,24 +29,22 @@ struct allowedips_cursor {
 static void wg_allowedips_init(struct allowedips *table);
 static void wg_allowedips_free(struct allowedips *table, struct mutex *mutex);
 static int wg_allowedips_insert_v4(struct allowedips *table, const struct in_addr *ip,
-			    u8 cidr, struct wireguard_peer *peer,
-			    struct mutex *lock);
+			    u8 cidr, struct wg_peer *peer, struct mutex *lock);
 static int wg_allowedips_insert_v6(struct allowedips *table, const struct in6_addr *ip,
-			    u8 cidr, struct wireguard_peer *peer,
-			    struct mutex *lock);
+			    u8 cidr, struct wg_peer *peer, struct mutex *lock);
 static void wg_allowedips_remove_by_peer(struct allowedips *table,
-				  struct wireguard_peer *peer,
-				  struct mutex *lock);
+				  struct wg_peer *peer, struct mutex *lock);
 static int wg_allowedips_walk_by_peer(struct allowedips *table,
 			       struct allowedips_cursor *cursor,
-			       struct wireguard_peer *peer,
-			       int (*func)(void *ctx, const u8 *ip, u8 cidr, int family),
+			       struct wg_peer *peer,
+			       int (*func)(void *ctx, const u8 *ip, u8 cidr,
+					   int family),
 			       void *ctx, struct mutex *lock);
 
 /* These return a strong reference to a peer: */
-static struct wireguard_peer *wg_allowedips_lookup_dst(struct allowedips *table,
+static struct wg_peer *wg_allowedips_lookup_dst(struct allowedips *table,
 						struct sk_buff *skb);
-static struct wireguard_peer *wg_allowedips_lookup_src(struct allowedips *table,
+static struct wg_peer *wg_allowedips_lookup_src(struct allowedips *table,
 						struct sk_buff *skb);
 
 #ifdef DEBUG

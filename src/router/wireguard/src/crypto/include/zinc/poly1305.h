@@ -6,7 +6,7 @@
 #ifndef _ZINC_POLY1305_H
 #define _ZINC_POLY1305_H
 
-#include "simd.h"
+#include <linux/simd.h>
 #include <linux/types.h>
 
 enum poly1305_lengths {

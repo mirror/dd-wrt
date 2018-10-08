@@ -3,10 +3,7 @@
  * Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  */
 
-#ifndef SIMD_INC
-#define SIMD_INC
-#include <asm/simd.h>
-#endif
+#include <linux/simd.h>
 #include <asm/hwcap.h>
 #include <asm/neon.h>
 
