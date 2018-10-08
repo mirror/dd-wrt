@@ -79,6 +79,11 @@ void format_raid(webs_t wp)
 		return;
 	int idx = atoi(val);
 	nvram_nset("0", "raiddone%d", idx);
+	char raidfs[32];
+	sprintf(raidfs, "raidfs%d", idx);
+	char *rfs = websGetVar(wp, raidfs, NULL);
+	if (rfs)
+		nvram_nset(rfs, "raidfs%d", idx);
 	eval("stopservice", "raid");
 	eval("startservice", "raid");
 }
@@ -240,8 +245,9 @@ void raid_save(webs_t wp)
 
 		char raidfs[32];
 		sprintf(raidfs, "raidfs%d", idx);
-		char *rfs = websGetVar(wp, raidfs, "0");
-		nvram_nset(rfs, "raidfs%d", idx);
+		char *rfs = websGetVar(wp, raidfs, NULL);
+		if (rfs)
+			nvram_nset(rfs, "raidfs%d", idx);
 
 		int midx = 0;
 		char *a = NULL;
