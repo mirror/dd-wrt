@@ -264,11 +264,9 @@ char *getKey(char *prefix)
 	char akm[32];
 
 	sprintf(akm, "%s_akm", prefix);
-	if (nvram_match(akm, "wpa") || nvram_match(akm, "radius")
-	    || nvram_match(akm, "wpa2") || nvram_match(akm, "wpa wpa2"))
+	if (nvhas(akm, "wpa") || nvhas(akm, "wpa2") || nvhas(akm, "radius")) {
 		return nvram_nget("%s_radius_key", prefix);
-	else if (nvram_match(akm, "psk") || nvram_match(akm, "psk2")
-		 || nvram_match(akm, "psk psk2"))
+	else if (nvhas(akm, "psk") || nvhas(akm, "psk2"))
 		return nvram_nget("%s_wpa_psk", prefix);
 	else
 		return "";
