@@ -219,6 +219,7 @@ void start_raid(void)
 				if (!strcmp(level, "0"))
 					sysprintf("zpool create -f -m \"/tmp/mnt/%s\" \"%s\" %s", poolname, poolname, raid);
 			}
+			/* reread partition table */
 			foreach(drive, raid, next) {
 				int fd = open(drive, O_RDONLY | O_NONBLOCK);
 				ioctl(fd, BLKRRPART, NULL);
