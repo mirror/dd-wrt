@@ -220,7 +220,7 @@ void start_raid(void)
 					sysprintf("zpool create -f -m \"/tmp/mnt/%s\" \"%s\" %s", poolname, poolname, raid);
 			}
 			foreach(drive, raid, next) {
-				int fd = open(drive, O_RDONLY);
+				int fd = open(drive, O_RDONLY | O_NONBLOCK);
 				ioctl(fd, BLKRRPART, NULL);
 				close(fd);
 			}
