@@ -81,7 +81,12 @@ void start_raid(void)
 	}
 	if (i == 0)
 		return;
-	if (todo) {
+#ifdef _SC_NPROCESSORS_ONLN
+	int cpucount = sysconf(_SC_NPROCESSORS_ONLN);
+#else
+	int cpucount = 1
+#endif
+	    if (todo) {
 		eval("stopservice", "cron", "-f");
 		eval("stopservice", "samba3", "-f");
 		eval("stopservice", "dlna", "-f");
@@ -119,8 +124,10 @@ void start_raid(void)
 		insmod("zcommon");
 		insmod("zunicode");
 		insmod("zavl");
-		insmod("zfs");
-		dd_loginfo("raid", "ZFS modules successfully loaded\n");
+		char zfs_threads[32];
+		sprintf(zfs_threads, "zvol_threads=%d", cpucount);
+		eval("insmod", "zfs", zfs_threads);
+		dd_loginfo("raid", "ZFS modules successfully loaded (%d threads)\n", cpucount);
 	}
 	if (btrfs) {
 		insmod("libcrc32c crc32c_generic crc32_generic lzo_compress lzo_decompress xxhash zstd_compress zstd_decompress raid6_pq xor-neon xor btrfs");
