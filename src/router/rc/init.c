@@ -236,7 +236,16 @@ static void unmount_fs(void)
 		eval("umount", "-r", "-f", mpoint);
 	}
 	fclose(fp);
-
+#ifdef HAVE_RAID
+	while (1) {
+		char *raid = nvram_nget("raid%d", i);
+		if (!strlen(raid))
+			break;
+		char *poolname = nvram_nget("raidname%d", i);
+		sysprintf("mdadm --stop /dev/md%d", i);
+		sysprintf("zpool destroy %s", poolname);
+	}
+#endif
 }
 
 void shutdown_system(void)
