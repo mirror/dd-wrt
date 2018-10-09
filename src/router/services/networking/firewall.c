@@ -1641,6 +1641,7 @@ static void lan2wan_chains(char *lan_cclass)
 }
 
 #ifndef HAVE_MICRO
+#include <pthread.h>
 static pthread_mutex_t mutex_unl = PTHREAD_MUTEX_INITIALIZER;
 static char *lastlock;
 static char *lastunlock;
