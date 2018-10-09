@@ -113,6 +113,14 @@ input[name="reboot_button"]:hover{
 background: none repeat scroll 0 0 #FF7C7C;
 color:#000;
 }
+input[id="format_button"]{
+background: none repeat scroll 0 0 #FF0000;
+color:#FFF;
+}
+input[id="format_button"]:hover{
+background: none repeat scroll 0 0 #FF7C7C;
+color:#000;
+}
 input:focus,
 input.focus {
 border: solid 1px #707070;
