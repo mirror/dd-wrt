@@ -92,6 +92,15 @@ body input[name="reboot_button"]:hover{
 	background: none repeat scroll 0 0 #FF7C7C;
 	color:#eee;
 }
+
+body input[id="format"]:hover {
+	background: none repeat scroll 0 0 #FFA500;
+	color: #fff;
+}
+body input[id="format"]:hover{
+	background: none repeat scroll 0 0 #FF7C7C;
+	color:#eee;
+}
  
 textarea {
 	color: #e0e0e0;
