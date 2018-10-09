@@ -1650,20 +1650,17 @@ static int update_filter(int mode, int seq)
 	char target_ip[20];
 	char order[10];
 	int ord;
-	if ((ord = update_bitmap(mode, seq)) < 0)
-		return -1;
+	ord = update_bitmap(mode, seq);
 	sprintf(target_ip, "grp_%d", seq);
 	sprintf(order, "%d", ord * 1 + 1);
-	DEBUG("order=%s\n", order);
 	/*
 	 * iptables -t mangle -I lan2wan 3 -j macgrp_9 
 	 */
 	if (mode == 1) {	/* insert */
-		DEBUG("iptables -I lan2wan %s -j %s\n", order, target_ip);
-		eval("iptables", "-I", "lan2wan", order, "-j", target_ip);
+		eval("iptables", "-D", "lan2wan", "-j", target_ip);
+		eval("iptables", "-I", "lan2wan", "-j", target_ip);
 	} else {		/* delete */
-		DEBUG("iptables -D lan2wan %s\n", order);
-		eval("iptables", "-D", "lan2wan", order);
+		eval("iptables", "-D", "lan2wan", "-j", target_ip);
 	}
 
 	cprintf("done\n");
