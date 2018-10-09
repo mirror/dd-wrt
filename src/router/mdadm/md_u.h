@@ -21,26 +21,19 @@
 #define RAID_VERSION		_IOR (MD_MAJOR, 0x10, mdu_version_t)
 #define GET_ARRAY_INFO		_IOR (MD_MAJOR, 0x11, mdu_array_info_t)
 #define GET_DISK_INFO		_IOR (MD_MAJOR, 0x12, mdu_disk_info_t)
-#define PRINT_RAID_DEBUG	_IO (MD_MAJOR, 0x13)
 #define RAID_AUTORUN		_IO (MD_MAJOR, 0x14)
 #define GET_BITMAP_FILE		_IOR (MD_MAJOR, 0x15, mdu_bitmap_file_t)
 
 /* configuration */
-#define CLEAR_ARRAY		_IO (MD_MAJOR, 0x20)
 #define ADD_NEW_DISK		_IOW (MD_MAJOR, 0x21, mdu_disk_info_t)
 #define HOT_REMOVE_DISK		_IO (MD_MAJOR, 0x22)
 #define SET_ARRAY_INFO		_IOW (MD_MAJOR, 0x23, mdu_array_info_t)
-#define SET_DISK_INFO		_IO (MD_MAJOR, 0x24)
-#define WRITE_RAID_INFO		_IO (MD_MAJOR, 0x25)
-#define UNPROTECT_ARRAY		_IO (MD_MAJOR, 0x26)
-#define PROTECT_ARRAY		_IO (MD_MAJOR, 0x27)
 #define HOT_ADD_DISK		_IO (MD_MAJOR, 0x28)
 #define SET_DISK_FAULTY		_IO (MD_MAJOR, 0x29)
 #define SET_BITMAP_FILE		_IOW (MD_MAJOR, 0x2b, int)
 
 /* usage */
 #define RUN_ARRAY		_IOW (MD_MAJOR, 0x30, mdu_param_t)
-#define START_ARRAY		_IO (MD_MAJOR, 0x31)
 #define STOP_ARRAY		_IO (MD_MAJOR, 0x32)
 #define STOP_ARRAY_RO		_IO (MD_MAJOR, 0x33)
 #define RESTART_ARRAY_RW	_IO (MD_MAJOR, 0x34)

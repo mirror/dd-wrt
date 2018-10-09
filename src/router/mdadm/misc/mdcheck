@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2014 Neil Brown <neilb@suse.de>
+# Copyright (C) 2014-2017 Neil Brown <neilb@suse.de>
 #
 #
 #    This program is free software; you can redistribute it and/or modify
@@ -14,7 +14,7 @@
 #    GNU General Public License for more details.
 #
 #    Author: Neil Brown
-#    Email: <neilb@suse.de>
+#    Email: <neilb@suse.com>
 
 # This script should be run periodically to automatically
 # perform a 'check' on any md arrays.
@@ -66,7 +66,7 @@ shift
 
 # We need a temp file occasionally...
 tmp=/var/lib/mdcheck/.md-check-$$
-trap 'rm -f "$tmp"' 0
+trap 'rm -f "$tmp"' 0 2 3 15
 
 
 # firstly, clean out really old state files
@@ -94,17 +94,20 @@ do
 	if [ -z "$cont" ]
 	then
 		start=0
+		logger -p daemon.info mdcheck start checking $dev
 	elif [ -z "$MD_UUID" -o ! -f "$fl" ]
 	then
 		# Nothing to continue here
 		continue
 	else
 		start=`cat "$fl"`
+		logger -p daemon.info mdcheck continue checking $dev from $start
 	fi
 
 	cnt=$[cnt+1]
 	eval MD_${cnt}_fl=\$fl
 	eval MD_${cnt}_sys=\$sys
+	eval MD_${cnt}_dev=\$dev
 	echo $start > $fl
 	echo $start > $sys/md/sync_min
 	echo check > $sys/md/sync_action
@@ -145,6 +148,7 @@ for i in `eval echo {1..$cnt}`
 do
 	eval fl=\$MD_${i}_fl
 	eval sys=\$MD_${i}_sys
+	eval dev=\$MD_${i}_dev
 
 	if [ -z "$fl" ]; then continue; fi
 
@@ -156,4 +160,5 @@ do
 	fi
 	echo idle > $sys/md/sync_action
 	cat $sys/md/sync_min > $fl
+	logger -p daemon.info pause checking $dev at `cat $fl`
 done

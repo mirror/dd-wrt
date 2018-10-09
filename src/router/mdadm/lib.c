@@ -61,7 +61,7 @@ int get_mdp_major(void)
 	return mdp_major;
 }
 
-char *devid2kname(int devid)
+char *devid2kname(dev_t devid)
 {
 	char path[30];
 	char link[PATH_MAX];
@@ -73,8 +73,7 @@ char *devid2kname(int devid)
 	 * /sys/dev/block/%d:%d link which must look like
 	 * and take the last component.
 	 */
-	sprintf(path, "/sys/dev/block/%d:%d", major(devid),
-		minor(devid));
+	sprintf(path, "/sys/dev/block/%d:%d", major(devid), minor(devid));
 	n = readlink(path, link, sizeof(link) - 1);
 	if (n > 0) {
 		link[n] = 0;
@@ -161,6 +160,35 @@ char *fd2devnm(int fd)
 		return stat2devnm(&stb);
 
 	return NULL;
+}
+
+/* When we create a new array, we don't want the content to
+ * be immediately examined by udev - it is probably meaningless.
+ * So create /run/mdadm/creating-mdXXX and expect that a udev
+ * rule will noticed this and act accordingly.
+ */
+static char block_path[] = "/run/mdadm/creating-%s";
+static char *unblock_path = NULL;
+void udev_block(char *devnm)
+{
+	int fd;
+	char *path = NULL;
+
+	xasprintf(&path, block_path, devnm);
+	fd = open(path, O_CREAT|O_RDWR, 0600);
+	if (fd >= 0) {
+		close(fd);
+		unblock_path = path;
+	} else
+		free(path);
+}
+
+void udev_unblock(void)
+{
+	if (unblock_path)
+		unlink(unblock_path);
+	free(unblock_path);
+	unblock_path = NULL;
 }
 
 /*

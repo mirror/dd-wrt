@@ -30,6 +30,7 @@
 #include	<sys/un.h>
 #include	<sys/resource.h>
 #include	<sys/vfs.h>
+#include	<sys/mman.h>
 #include	<linux/magic.h>
 #include	<poll.h>
 #include	<ctype.h>
@@ -89,7 +90,6 @@ int dlm_funs_ready(void)
 	return is_dlm_hooks_ready ? 1 : 0;
 }
 
-#ifndef MDASSEMBLE
 static struct dlm_hooks *dlm_hooks = NULL;
 struct dlm_lock_resource *dlm_lock_res = NULL;
 static int ast_called = 0;
@@ -128,11 +128,17 @@ static void dlm_ast(void *arg)
 
 static char *cluster_name = NULL;
 /* Create the lockspace, take bitmapXXX locks on all the bitmaps. */
-int cluster_get_dlmlock(int *lockid)
+int cluster_get_dlmlock(void)
 {
 	int ret = -1;
 	char str[64];
 	int flags = LKF_NOQUEUE;
+	int retry_count = 0;
+
+	if (!dlm_funs_ready()) {
+		pr_err("Something wrong with dlm library\n");
+		return -1;
+	}
 
 	ret = get_cluster_name(&cluster_name);
 	if (ret) {
@@ -141,38 +147,57 @@ int cluster_get_dlmlock(int *lockid)
 	}
 
 	dlm_lock_res = xmalloc(sizeof(struct dlm_lock_resource));
-	dlm_lock_res->ls = dlm_hooks->create_lockspace(cluster_name, O_RDWR);
+	dlm_lock_res->ls = dlm_hooks->open_lockspace(cluster_name);
 	if (!dlm_lock_res->ls) {
-		pr_err("%s failed to create lockspace\n", cluster_name);
-		return -ENOMEM;
+		dlm_lock_res->ls = dlm_hooks->create_lockspace(cluster_name, O_RDWR);
+		if (!dlm_lock_res->ls) {
+			pr_err("%s failed to create lockspace\n", cluster_name);
+			return -ENOMEM;
+		}
+	} else {
+		pr_err("open existed %s lockspace\n", cluster_name);
 	}
 
 	snprintf(str, 64, "bitmap%s", cluster_name);
-	ret = dlm_hooks->ls_lock(dlm_lock_res->ls, LKM_PWMODE, &dlm_lock_res->lksb,
-			  flags, str, strlen(str), 0, dlm_ast,
-			  dlm_lock_res, NULL, NULL);
+retry:
+	ret = dlm_hooks->ls_lock(dlm_lock_res->ls, LKM_PWMODE,
+				 &dlm_lock_res->lksb, flags, str, strlen(str),
+				 0, dlm_ast, dlm_lock_res, NULL, NULL);
 	if (ret) {
 		pr_err("error %d when get PW mode on lock %s\n", errno, str);
+		/* let's try several times if EAGAIN happened */
+		if (dlm_lock_res->lksb.sb_status == EAGAIN && retry_count < 10) {
+			sleep(10);
+			retry_count++;
+			goto retry;
+		}
 		dlm_hooks->release_lockspace(cluster_name, dlm_lock_res->ls, 1);
 		return ret;
 	}
 
 	/* Wait for it to complete */
 	poll_for_ast(dlm_lock_res->ls);
-	*lockid = dlm_lock_res->lksb.sb_lkid;
 
-	return dlm_lock_res->lksb.sb_status;
+	if (dlm_lock_res->lksb.sb_status) {
+		pr_err("failed to lock cluster\n");
+		return -1;
+	}
+	return 1;
 }
 
-int cluster_release_dlmlock(int lockid)
+int cluster_release_dlmlock(void)
 {
 	int ret = -1;
 
 	if (!cluster_name)
-		return -1;
+                goto out;
 
-	ret = dlm_hooks->ls_unlock(dlm_lock_res->ls, lockid, 0,
-				     &dlm_lock_res->lksb, dlm_lock_res);
+	if (!dlm_lock_res->lksb.sb_lkid)
+                goto out;
+
+	ret = dlm_hooks->ls_unlock_wait(dlm_lock_res->ls,
+					dlm_lock_res->lksb.sb_lkid, 0,
+					&dlm_lock_res->lksb);
 	if (ret) {
 		pr_err("error %d happened when unlock\n", errno);
 		/* XXX make sure the lock is unlocked eventually */
@@ -184,7 +209,8 @@ int cluster_release_dlmlock(int lockid)
 
 	errno =	dlm_lock_res->lksb.sb_status;
 	if (errno != EUNLOCK) {
-		pr_err("error %d happened in ast when unlock lockspace\n", errno);
+		pr_err("error %d happened in ast when unlock lockspace\n",
+		       errno);
 		/* XXX make sure the lockspace is unlocked eventually */
                 goto out;
 	}
@@ -200,16 +226,85 @@ int cluster_release_dlmlock(int lockid)
 out:
 	return ret;
 }
-#else
-int cluster_get_dlmlock(int *lockid)
+
+int md_array_valid(int fd)
 {
-	return -1;
+	struct mdinfo *sra;
+	int ret;
+
+	sra = sysfs_read(fd, NULL, GET_ARRAY_STATE);
+	if (sra) {
+		if (sra->array_state != ARRAY_UNKNOWN_STATE)
+			ret = 0;
+		else
+			ret = -ENODEV;
+
+		free(sra);
+	} else {
+		/*
+		 * GET_ARRAY_INFO doesn't provide access to the proper state
+		 * information, so fallback to a basic check for raid_disks != 0
+		 */
+		ret = ioctl(fd, RAID_VERSION);
+	}
+
+	return !ret;
 }
-int cluster_release_dlmlock(int lockid)
+
+int md_array_active(int fd)
 {
-	return -1;
+	struct mdinfo *sra;
+	struct mdu_array_info_s array;
+	int ret = 0;
+
+	sra = sysfs_read(fd, NULL, GET_ARRAY_STATE);
+	if (sra) {
+		if (!md_array_is_active(sra))
+			ret = -ENODEV;
+
+		free(sra);
+	} else {
+		/*
+		 * GET_ARRAY_INFO doesn't provide access to the proper state
+		 * information, so fallback to a basic check for raid_disks != 0
+		 */
+		ret = ioctl(fd, GET_ARRAY_INFO, &array);
+	}
+
+	return !ret;
 }
-#endif
+
+int md_array_is_active(struct mdinfo *info)
+{
+	return (info->array_state != ARRAY_CLEAR &&
+		info->array_state != ARRAY_INACTIVE &&
+		info->array_state != ARRAY_UNKNOWN_STATE);
+}
+
+/*
+ * Get array info from the kernel. Longer term we want to deprecate the
+ * ioctl and get it from sysfs.
+ */
+int md_get_array_info(int fd, struct mdu_array_info_s *array)
+{
+	return ioctl(fd, GET_ARRAY_INFO, array);
+}
+
+/*
+ * Set array info
+ */
+int md_set_array_info(int fd, struct mdu_array_info_s *array)
+{
+	return ioctl(fd, SET_ARRAY_INFO, array);
+}
+
+/*
+ * Get disk info from the kernel.
+ */
+int md_get_disk_info(int fd, struct mdu_disk_info_s *disk)
+{
+	return ioctl(fd, GET_DISK_INFO, disk);
+}
 
 /*
  * Parse a 128 bit uuid in 4 integers
@@ -248,35 +343,6 @@ int parse_uuid(char *str, int uuid[4])
 	return 0;
 }
 
-/*
- * Get the md version number.
- * We use the RAID_VERSION ioctl if it is supported
- * If not, but we have a block device with major '9', we assume
- * 0.36.0
- *
- * Return version number as 24 but number - assume version parts
- * always < 255
- */
-
-int md_get_version(int fd)
-{
-	struct stat stb;
-	mdu_version_t vers;
-
-	if (fstat(fd, &stb)<0)
-		return -1;
-	if ((S_IFMT&stb.st_mode) != S_IFBLK)
-		return -1;
-
-	if (ioctl(fd, RAID_VERSION, &vers) == 0)
-		return  (vers.major*10000) + (vers.minor*100) + vers.patchlevel;
-	if (errno == EACCES)
-		return -1;
-	if (major(stb.st_rdev) == MD_MAJOR)
-		return (3600);
-	return -1;
-}
-
 int get_linux_version()
 {
 	struct utsname name;
@@ -295,7 +361,6 @@ int get_linux_version()
 	return (a*1000000)+(b*1000)+c;
 }
 
-#ifndef MDASSEMBLE
 int mdadm_version(char *version)
 {
 	int a, b, c;
@@ -357,6 +422,17 @@ unsigned long long parse_size(char *size)
 	return s;
 }
 
+int is_near_layout_10(int layout)
+{
+	int fc, fo;
+
+	fc = (layout >> 8) & 255;
+	fo = layout & (1 << 16);
+	if (fc > 1 || fo > 0)
+		return 0;
+	return 1;
+}
+
 int parse_layout_10(char *layout)
 {
 	int copies, rv;
@@ -401,7 +477,6 @@ long parse_num(char *num)
 	else
 		return rv;
 }
-#endif
 
 int parse_cluster_confirm_arg(char *input, char **devname, int *slot)
 {
@@ -532,38 +607,6 @@ int enough(int level, int raid_disks, int layout, int clean, char *avail)
 	}
 }
 
-int enough_fd(int fd)
-{
-	struct mdu_array_info_s array;
-	struct mdu_disk_info_s disk;
-	int i, rv;
-	char *avail;
-
-	if (ioctl(fd, GET_ARRAY_INFO, &array) != 0 ||
-	    array.raid_disks <= 0)
-		return 0;
-	avail = xcalloc(array.raid_disks, 1);
-	for (i = 0; i < MAX_DISKS && array.nr_disks > 0; i++) {
-		disk.number = i;
-		if (ioctl(fd, GET_DISK_INFO, &disk) != 0)
-			continue;
-		if (disk.major == 0 && disk.minor == 0)
-			continue;
-		array.nr_disks--;
-
-		if (! (disk.state & (1<<MD_DISK_SYNC)))
-			continue;
-		if (disk.raid_disk < 0 || disk.raid_disk >= array.raid_disks)
-			continue;
-		avail[disk.raid_disk] = 1;
-	}
-	/* This is used on an active array, so assume it is clean */
-	rv = enough(array.level, array.raid_disks, array.layout,
-		    1, avail);
-	free(avail);
-	return rv;
-}
-
 const int uuid_zero[4] = { 0, 0, 0, 0 };
 
 int same_uuid(int a[4], int b[4], int swapuuid)
@@ -634,17 +677,18 @@ char *__fname_from_uuid(int id[4], int swap, char *buf, char sep)
 
 }
 
-char *fname_from_uuid(struct supertype *st, struct mdinfo *info, char *buf, char sep)
+char *fname_from_uuid(struct supertype *st, struct mdinfo *info,
+		      char *buf, char sep)
 {
 	// dirty hack to work around an issue with super1 superblocks...
 	// super1 superblocks need swapuuid set in order for assembly to
 	// work, but can't have it set if we want this printout to match
 	// all the other uuid printouts in super1.c, so we force swapuuid
 	// to 1 to make our printout match the rest of super1
-	return __fname_from_uuid(info->uuid, (st->ss == &super1) ? 1 : st->ss->swapuuid, buf, sep);
+	return __fname_from_uuid(info->uuid, (st->ss == &super1) ? 1 :
+				 st->ss->swapuuid, buf, sep);
 }
 
-#ifndef MDASSEMBLE
 int check_ext2(int fd, char *name)
 {
 	/*
@@ -729,6 +773,40 @@ int check_raid(int fd, char *name)
 	return 1;
 }
 
+int fstat_is_blkdev(int fd, char *devname, dev_t *rdev)
+{
+	struct stat stb;
+
+	if (fstat(fd, &stb) != 0) {
+		pr_err("fstat failed for %s: %s\n", devname, strerror(errno));
+		return 0;
+	}
+	if ((S_IFMT & stb.st_mode) != S_IFBLK) {
+		pr_err("%s is not a block device.\n", devname);
+		return 0;
+	}
+	if (rdev)
+		*rdev = stb.st_rdev;
+	return 1;
+}
+
+int stat_is_blkdev(char *devname, dev_t *rdev)
+{
+	struct stat stb;
+
+	if (stat(devname, &stb) != 0) {
+		pr_err("stat failed for %s: %s\n", devname, strerror(errno));
+		return 0;
+	}
+	if ((S_IFMT & stb.st_mode) != S_IFBLK) {
+		pr_err("%s is not a block device.\n", devname);
+		return 0;
+	}
+	if (rdev)
+		*rdev = stb.st_rdev;
+	return 1;
+}
+
 int ask(char *mesg)
 {
 	char *add = "";
@@ -748,7 +826,6 @@ int ask(char *mesg)
 	pr_err("assuming 'no'\n");
 	return 0;
 }
-#endif /* MDASSEMBLE */
 
 int is_standard(char *dev, int *nump)
 {
@@ -808,10 +885,9 @@ unsigned long calc_csum(void *super, int bytes)
 	return csum;
 }
 
-#ifndef MDASSEMBLE
 char *human_size(long long bytes)
 {
-	static char buf[30];
+	static char buf[47];
 
 	/* We convert bytes to either centi-M{ega,ibi}bytes or
 	 * centi-G{igi,ibi}bytes, with appropriate rounding,
@@ -828,14 +904,12 @@ char *human_size(long long bytes)
 		long cMiB = (bytes * 200LL / (1LL<<20) + 1) / 2;
 		long cMB  = (bytes / ( 1000000LL / 200LL ) +1) /2;
 		snprintf(buf, sizeof(buf), " (%ld.%02ld MiB %ld.%02ld MB)",
-			cMiB/100 , cMiB % 100,
-			cMB/100, cMB % 100);
+			cMiB/100, cMiB % 100, cMB/100, cMB % 100);
 	} else {
 		long cGiB = (bytes * 200LL / (1LL<<30) +1) / 2;
 		long cGB  = (bytes / (1000000000LL/200LL ) +1) /2;
 		snprintf(buf, sizeof(buf), " (%ld.%02ld GiB %ld.%02ld GB)",
-			cGiB/100 , cGiB % 100,
-			cGB/100, cGB % 100);
+			cGiB/100, cGiB % 100, cGB/100, cGB % 100);
 	}
 	return buf;
 }
@@ -862,22 +936,22 @@ char *human_size_brief(long long bytes, int prefix)
 		if (bytes < 2*1024LL*1024LL*1024LL) {
 			long cMiB = (bytes * 200LL / (1LL<<20) +1) /2;
 			snprintf(buf, sizeof(buf), "%ld.%02ldMiB",
-				cMiB/100 , cMiB % 100);
+				 cMiB/100, cMiB % 100);
 		} else {
 			long cGiB = (bytes * 200LL / (1LL<<30) +1) /2;
 			snprintf(buf, sizeof(buf), "%ld.%02ldGiB",
-					cGiB/100 , cGiB % 100);
+				 cGiB/100, cGiB % 100);
 		}
 	}
 	else if (prefix == JEDEC) {
 		if (bytes < 2*1024LL*1024LL*1024LL) {
 			long cMB  = (bytes / ( 1000000LL / 200LL ) +1) /2;
 			snprintf(buf, sizeof(buf), "%ld.%02ldMB",
-					cMB/100, cMB % 100);
+				 cMB/100, cMB % 100);
 		} else {
 			long cGB  = (bytes / (1000000000LL/200LL ) +1) /2;
 			snprintf(buf, sizeof(buf), "%ld.%02ldGB",
-					cGB/100 , cGB % 100);
+				 cGB/100, cGB % 100);
 		}
 	}
 	else
@@ -902,7 +976,6 @@ void print_r10_layout(int layout)
 	if (near*far == 1)
 		printf("NO REDUNDANCY");
 }
-#endif
 
 unsigned long long calc_array_size(int level, int raid_disks, int layout,
 				   int chunksize, unsigned long long devsize)
@@ -969,7 +1042,6 @@ dev_t devnm2devid(char *devnm)
 	return 0;
 }
 
-#if !defined(MDASSEMBLE) || defined(MDASSEMBLE) && defined(MDASSEMBLE_AUTO)
 char *get_md_name(char *devnm)
 {
 	/* find /dev/md%d or /dev/md/%d or make a device /dev/.tmp.md%d */
@@ -985,21 +1057,18 @@ char *get_md_name(char *devnm)
 	if (strncmp(devnm, "md_", 3) == 0) {
 		snprintf(devname, sizeof(devname), "/dev/md/%s",
 			devnm + 3);
-		if (stat(devname, &stb) == 0
-		    && (S_IFMT&stb.st_mode) == S_IFBLK
-		    && (stb.st_rdev == rdev))
+		if (stat(devname, &stb) == 0 &&
+		    (S_IFMT&stb.st_mode) == S_IFBLK && (stb.st_rdev == rdev))
 			return devname;
 	}
 	snprintf(devname, sizeof(devname), "/dev/%s", devnm);
-	if (stat(devname, &stb) == 0
-	    && (S_IFMT&stb.st_mode) == S_IFBLK
-	    && (stb.st_rdev == rdev))
+	if (stat(devname, &stb) == 0 && (S_IFMT&stb.st_mode) == S_IFBLK &&
+	    (stb.st_rdev == rdev))
 		return devname;
 
 	snprintf(devname, sizeof(devname), "/dev/md/%s", devnm+2);
-	if (stat(devname, &stb) == 0
-	    && (S_IFMT&stb.st_mode) == S_IFBLK
-	    && (stb.st_rdev == rdev))
+	if (stat(devname, &stb) == 0 && (S_IFMT&stb.st_mode) == S_IFBLK &&
+	    (stb.st_rdev == rdev))
 		return devname;
 
 	dn = map_dev(major(rdev), minor(rdev), 0);
@@ -1010,9 +1079,8 @@ char *get_md_name(char *devnm)
 		if (errno != EEXIST)
 			return NULL;
 
-	if (stat(devname, &stb) == 0
-	    && (S_IFMT&stb.st_mode) == S_IFBLK
-	    && (stb.st_rdev == rdev))
+	if (stat(devname, &stb) == 0 && (S_IFMT&stb.st_mode) == S_IFBLK &&
+	    (stb.st_rdev == rdev))
 		return devname;
 	unlink(devname);
 	return NULL;
@@ -1023,7 +1091,6 @@ void put_md_name(char *name)
 	if (strncmp(name, "/dev/.tmp.md", 12) == 0)
 		unlink(name);
 }
-#endif /* !defined(MDASSEMBLE) || defined(MDASSEMBLE) && defined(MDASSEMBLE_AUTO) */
 
 int get_maj_min(char *dev, int *major, int *minor)
 {
@@ -1057,9 +1124,11 @@ int dev_open(char *dev, int flags)
 		}
 		if (fd < 0) {
 			/* Try /tmp as /dev appear to be read-only */
-			snprintf(devname, sizeof(devname), "/tmp/.tmp.md.%d:%d:%d",
+			snprintf(devname, sizeof(devname),
+				 "/tmp/.tmp.md.%d:%d:%d",
 				 (int)getpid(), major, minor);
-			if (mknod(devname, S_IFBLK|0600, makedev(major, minor)) == 0) {
+			if (mknod(devname, S_IFBLK|0600,
+				  makedev(major, minor)) == 0) {
 				fd = open(devname, flags);
 				unlink(devname);
 			}
@@ -1093,7 +1162,7 @@ int open_dev_excl(char *devnm)
 	long delay = 1000;
 
 	sprintf(buf, "%d:%d", major(devid), minor(devid));
-	for (i = 0 ; i < 25 ; i++) {
+	for (i = 0; i < 25; i++) {
 		int fd = dev_open(buf, flags|O_EXCL);
 		if (fd >= 0)
 			return fd;
@@ -1134,7 +1203,7 @@ void wait_for(char *dev, int fd)
 	    (stb_want.st_mode & S_IFMT) != S_IFBLK)
 		return;
 
-	for (i = 0 ; i < 25 ; i++) {
+	for (i = 0; i < 25; i++) {
 		struct stat stb;
 		if (stat(dev, &stb) == 0 &&
 		    (stb.st_mode & S_IFMT) == S_IFBLK &&
@@ -1145,7 +1214,7 @@ void wait_for(char *dev, int fd)
 			delay *= 2;
 	}
 	if (i == 25)
-		dprintf("timeout waiting for %s\n", dev);
+		pr_err("timeout waiting for %s\n", dev);
 }
 
 struct superswitch *superlist[] =
@@ -1153,9 +1222,8 @@ struct superswitch *superlist[] =
 	&super0, &super1,
 	&super_ddf, &super_imsm,
 	&mbr, &gpt,
-	NULL };
-
-#if !defined(MDASSEMBLE) || defined(MDASSEMBLE) && defined(MDASSEMBLE_AUTO)
+	NULL
+};
 
 struct supertype *super_by_fd(int fd, char **subarrayp)
 {
@@ -1177,7 +1245,7 @@ struct supertype *super_by_fd(int fd, char **subarrayp)
 		minor = sra->array.minor_version;
 		verstr = sra->text_version;
 	} else {
-		if (ioctl(fd, GET_ARRAY_INFO, &array))
+		if (md_get_array_info(fd, &array))
 			array.major_version = array.minor_version = 0;
 		vers = array.major_version;
 		minor = array.minor_version;
@@ -1205,7 +1273,7 @@ struct supertype *super_by_fd(int fd, char **subarrayp)
 			verstr = "-no-metadata-";
 	}
 
-	for (i = 0; st == NULL && superlist[i] ; i++)
+	for (i = 0; st == NULL && superlist[i]; i++)
 		st = superlist[i]->match_metadata_desc(verstr);
 
 	sysfs_free(sra);
@@ -1220,7 +1288,6 @@ struct supertype *super_by_fd(int fd, char **subarrayp)
 
 	return st;
 }
-#endif /* !defined(MDASSEMBLE) || defined(MDASSEMBLE) && defined(MDASSEMBLE_AUTO) */
 
 int dev_size_from_id(dev_t id, unsigned long long *size)
 {
@@ -1232,6 +1299,23 @@ int dev_size_from_id(dev_t id, unsigned long long *size)
 	if (fd < 0)
 		return 0;
 	if (get_dev_size(fd, NULL, size)) {
+		close(fd);
+		return 1;
+	}
+	close(fd);
+	return 0;
+}
+
+int dev_sector_size_from_id(dev_t id, unsigned int *size)
+{
+	char buf[20];
+	int fd;
+
+	sprintf(buf, "%d:%d", major(id), minor(id));
+	fd = dev_open(buf, O_RDONLY);
+	if (fd < 0)
+		return 0;
+	if (get_dev_sector_size(fd, NULL, size)) {
 		close(fd);
 		return 1;
 	}
@@ -1270,7 +1354,7 @@ struct supertype *guess_super_type(int fd, enum guess_types guess_type)
 	st = xcalloc(1, sizeof(*st));
 	st->container_devnm[0] = 0;
 
-	for (i = 0 ; superlist[i]; i++) {
+	for (i = 0; superlist[i]; i++) {
 		int rv;
 		ss = superlist[i];
 		if (guess_type == guess_array && ss->add_to_super == NULL)
@@ -1354,9 +1438,14 @@ int get_dev_sector_size(int fd, char *dname, unsigned int *sectsizep)
  */
 int must_be_container(int fd)
 {
+	struct mdinfo *mdi;
 	unsigned long long size;
-	if (md_get_version(fd) < 0)
+
+	mdi = sysfs_read(fd, NULL, GET_VERSION);
+	if (!mdi)
 		return 0;
+	sysfs_free(mdi);
+
 	if (get_dev_size(fd, NULL, &size) == 0)
 		return 1;
 	if (size == 0)
@@ -1755,7 +1844,7 @@ int add_disk(int mdfd, struct supertype *st,
 {
 	/* Add a device to an array, in one of 2 ways. */
 	int rv;
-#ifndef MDASSEMBLE
+
 	if (st->ss->external) {
 		if (info->disk.state & (1<<MD_DISK_SYNC))
 			info->recovery_start = MaxSector;
@@ -1775,7 +1864,6 @@ int add_disk(int mdfd, struct supertype *st,
 			}
 		}
 	} else
-#endif
 		rv = ioctl(mdfd, ADD_NEW_DISK, &info->disk);
 	return rv;
 }
@@ -1784,15 +1872,44 @@ int remove_disk(int mdfd, struct supertype *st,
 		struct mdinfo *sra, struct mdinfo *info)
 {
 	int rv;
+
 	/* Remove the disk given by 'info' from the array */
-#ifndef MDASSEMBLE
 	if (st->ss->external)
 		rv = sysfs_set_str(sra, info, "slot", "none");
 	else
-#endif
 		rv = ioctl(mdfd, HOT_REMOVE_DISK, makedev(info->disk.major,
 							  info->disk.minor));
 	return rv;
+}
+
+int hot_remove_disk(int mdfd, unsigned long dev, int force)
+{
+	int cnt = force ? 500 : 5;
+	int ret;
+
+	/* HOT_REMOVE_DISK can fail with EBUSY if there are
+	 * outstanding IO requests to the device.
+	 * In this case, it can be helpful to wait a little while,
+	 * up to 5 seconds if 'force' is set, or 50 msec if not.
+	 */
+	while ((ret = ioctl(mdfd, HOT_REMOVE_DISK, dev)) == -1 &&
+	       errno == EBUSY &&
+	       cnt-- > 0)
+		usleep(10000);
+
+	return ret;
+}
+
+int sys_hot_remove_disk(int statefd, int force)
+{
+	int cnt = force ? 500 : 5;
+	int ret;
+
+	while ((ret = write(statefd, "remove", 6)) == -1 &&
+	       errno == EBUSY &&
+	       cnt-- > 0)
+		usleep(10000);
+	return ret == 6 ? 0 : -1;
 }
 
 int set_array_info(int mdfd, struct supertype *st, struct mdinfo *info)
@@ -1801,22 +1918,17 @@ int set_array_info(int mdfd, struct supertype *st, struct mdinfo *info)
 	 * This varies between externally managed arrays
 	 * and older kernels
 	 */
-	int vers = md_get_version(mdfd);
+	mdu_array_info_t inf;
 	int rv;
 
-#ifndef MDASSEMBLE
 	if (st->ss->external)
-		rv = sysfs_set_array(info, vers);
-	else
-#endif
-		if ((vers % 100) >= 1) { /* can use different versions */
-		mdu_array_info_t inf;
-		memset(&inf, 0, sizeof(inf));
-		inf.major_version = info->array.major_version;
-		inf.minor_version = info->array.minor_version;
-		rv = ioctl(mdfd, SET_ARRAY_INFO, &inf);
-	} else
-		rv = ioctl(mdfd, SET_ARRAY_INFO, NULL);
+		return sysfs_set_array(info, 9003);
+		
+	memset(&inf, 0, sizeof(inf));
+	inf.major_version = info->array.major_version;
+	inf.minor_version = info->array.minor_version;
+	rv = md_set_array_info(mdfd, &inf);
+
 	return rv;
 }
 
@@ -1990,7 +2102,6 @@ use_random:
 	memcpy(buf, r, 16);
 }
 
-#ifndef MDASSEMBLE
 int flush_metadata_updates(struct supertype *st)
 {
 	int sfd;
@@ -2032,22 +2143,11 @@ void append_metadata_update(struct supertype *st, void *buf, int len)
 	*st->update_tail = mu;
 	st->update_tail = &mu->next;
 }
-#endif /* MDASSEMBLE */
 
 #ifdef __TINYC__
 /* tinyc doesn't optimize this check in ioctl.h out ... */
 unsigned int __invalid_size_argument_for_IOC = 0;
 #endif
-
-int experimental(void)
-{
-	if (check_env("MDADM_EXPERIMENTAL"))
-		return 1;
-	else {
-		pr_err("To use this feature MDADM_EXPERIMENTAL environment variable has to be defined.\n");
-		return 0;
-	}
-}
 
 /* Pick all spares matching given criteria from a container
  * if min_size == 0 do not check size
@@ -2055,7 +2155,7 @@ int experimental(void)
  * if spare_group given add it to domains of each spare
  * metadata allows to test domains using metadata of destination array */
 struct mdinfo *container_choose_spares(struct supertype *st,
-				       unsigned long long min_size,
+				       struct spare_criteria *criteria,
 				       struct domainlist *domlist,
 				       char *spare_group,
 				       const char *metadata, int get_one)
@@ -2077,12 +2177,24 @@ struct mdinfo *container_choose_spares(struct supertype *st,
 		if (d->disk.state == 0) {
 			/* check if size is acceptable */
 			unsigned long long dev_size;
+			unsigned int dev_sector_size;
+			int size_valid = 0;
+			int sector_size_valid = 0;
+
 			dev_t dev = makedev(d->disk.major,d->disk.minor);
 
-			if (!min_size ||
+			if (!criteria->min_size ||
 			   (dev_size_from_id(dev,  &dev_size) &&
-			    dev_size >= min_size))
-				found = 1;
+			    dev_size >= criteria->min_size))
+				size_valid = 1;
+
+			if (!criteria->sector_size ||
+			    (dev_sector_size_from_id(dev, &dev_sector_size) &&
+			     criteria->sector_size == dev_sector_size))
+				sector_size_valid = 1;
+
+			found = size_valid && sector_size_valid;
+
 			/* check if domain matches */
 			if (found && domlist) {
 				struct dev_policy *pol = devid_policy(dev);
@@ -2136,8 +2248,7 @@ void enable_fds(int devices)
 {
 	unsigned int fds = 20 + devices;
 	struct rlimit lim;
-	if (getrlimit(RLIMIT_NOFILE, &lim) != 0
-	    || lim.rlim_cur >= fds)
+	if (getrlimit(RLIMIT_NOFILE, &lim) != 0 || lim.rlim_cur >= fds)
 		return;
 	if (lim.rlim_max < fds)
 		lim.rlim_max = fds;
@@ -2172,7 +2283,6 @@ void reopen_mddev(int mdfd)
 		dup2(fd, mdfd);
 }
 
-#ifndef MDASSEMBLE
 static struct cmap_hooks *cmap_hooks = NULL;
 static int is_cmap_hooks_ready = 0;
 
@@ -2183,8 +2293,10 @@ void set_cmap_hooks(void)
 	if (!cmap_hooks->cmap_handle)
 		return;
 
-	cmap_hooks->initialize = dlsym(cmap_hooks->cmap_handle, "cmap_initialize");
-	cmap_hooks->get_string = dlsym(cmap_hooks->cmap_handle, "cmap_get_string");
+	cmap_hooks->initialize =
+		dlsym(cmap_hooks->cmap_handle, "cmap_initialize");
+	cmap_hooks->get_string =
+		dlsym(cmap_hooks->cmap_handle, "cmap_get_string");
 	cmap_hooks->finalize = dlsym(cmap_hooks->cmap_handle, "cmap_finalize");
 
 	if (!cmap_hooks->initialize || !cmap_hooks->get_string ||
@@ -2227,16 +2339,22 @@ void set_dlm_hooks(void)
 	if (!dlm_hooks->dlm_handle)
 		return;
 
-	dlm_hooks->create_lockspace = dlsym(dlm_hooks->dlm_handle, "dlm_create_lockspace");
-	dlm_hooks->release_lockspace = dlsym(dlm_hooks->dlm_handle, "dlm_release_lockspace");
+	dlm_hooks->open_lockspace =
+		dlsym(dlm_hooks->dlm_handle, "dlm_open_lockspace");
+	dlm_hooks->create_lockspace =
+		dlsym(dlm_hooks->dlm_handle, "dlm_create_lockspace");
+	dlm_hooks->release_lockspace =
+		dlsym(dlm_hooks->dlm_handle, "dlm_release_lockspace");
 	dlm_hooks->ls_lock = dlsym(dlm_hooks->dlm_handle, "dlm_ls_lock");
-	dlm_hooks->ls_unlock = dlsym(dlm_hooks->dlm_handle, "dlm_ls_unlock");
+	dlm_hooks->ls_unlock_wait =
+		dlsym(dlm_hooks->dlm_handle, "dlm_ls_unlock_wait");
 	dlm_hooks->ls_get_fd = dlsym(dlm_hooks->dlm_handle, "dlm_ls_get_fd");
 	dlm_hooks->dispatch = dlsym(dlm_hooks->dlm_handle, "dlm_dispatch");
 
-	if (!dlm_hooks->create_lockspace || !dlm_hooks->ls_lock ||
-	    !dlm_hooks->ls_unlock || !dlm_hooks->release_lockspace ||
-	    !dlm_hooks->ls_get_fd || !dlm_hooks->dispatch)
+	if (!dlm_hooks->open_lockspace || !dlm_hooks->create_lockspace ||
+	    !dlm_hooks->ls_lock || !dlm_hooks->ls_unlock_wait ||
+	    !dlm_hooks->release_lockspace || !dlm_hooks->ls_get_fd ||
+	    !dlm_hooks->dispatch)
 		dlclose(dlm_hooks->dlm_handle);
 	else
 		is_dlm_hooks_ready = 1;
@@ -2247,4 +2365,51 @@ void set_hooks(void)
 	set_dlm_hooks();
 	set_cmap_hooks();
 }
-#endif
+
+int zero_disk_range(int fd, unsigned long long sector, size_t count)
+{
+	int ret = 0;
+	int fd_zero;
+	void *addr = NULL;
+	size_t written = 0;
+	size_t len = count * 512;
+	ssize_t n;
+
+	fd_zero = open("/dev/zero", O_RDONLY);
+	if (fd_zero < 0) {
+		pr_err("Cannot open /dev/zero\n");
+		return -1;
+	}
+
+	if (lseek64(fd, sector * 512, SEEK_SET) < 0) {
+		ret = -errno;
+		pr_err("Failed to seek offset for zeroing\n");
+		goto out;
+	}
+
+	addr = mmap(NULL, len, PROT_READ, MAP_PRIVATE, fd_zero, 0);
+
+	if (addr == MAP_FAILED) {
+		ret = -errno;
+		pr_err("Mapping /dev/zero failed\n");
+		goto out;
+	}
+
+	do {
+		n = write(fd, addr + written, len - written);
+		if (n < 0) {
+			if (errno == EINTR)
+				continue;
+			ret = -errno;
+			pr_err("Zeroing disk range failed\n");
+			break;
+		}
+		written += n;
+	} while (written != len);
+
+	munmap(addr, len);
+
+out:
+	close(fd_zero);
+	return ret;
+}

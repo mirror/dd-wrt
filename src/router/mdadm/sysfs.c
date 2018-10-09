@@ -78,24 +78,36 @@ int sysfs_open(char *devnm, char *devname, char *attr)
 	return fd;
 }
 
-void sysfs_init_dev(struct mdinfo *mdi, unsigned long devid)
+void sysfs_init_dev(struct mdinfo *mdi, dev_t devid)
 {
 	snprintf(mdi->sys_name,
 		 sizeof(mdi->sys_name), "dev-%s", devid2kname(devid));
 }
 
-void sysfs_init(struct mdinfo *mdi, int fd, char *devnm)
+int sysfs_init(struct mdinfo *mdi, int fd, char *devnm)
 {
+	struct stat stb;
+	char fname[MAX_SYSFS_PATH_LEN];
+	int retval = -ENODEV;
+
 	mdi->sys_name[0] = 0;
-	if (fd >= 0) {
-		mdu_version_t vers;
-		if (ioctl(fd, RAID_VERSION, &vers) != 0)
-			return;
+	if (fd >= 0)
 		devnm = fd2devnm(fd);
-	}
+
 	if (devnm == NULL)
-		return;
+		goto out;
+
+	snprintf(fname, MAX_SYSFS_PATH_LEN, "/sys/block/%s/md", devnm);
+
+	if (stat(fname, &stb))
+		goto out;
+	if (!S_ISDIR(stb.st_mode))
+		goto out;
 	strcpy(mdi->sys_name, devnm);
+
+	retval = 0;
+out:
+	return retval;
 }
 
 struct mdinfo *sysfs_read(int fd, char *devnm, unsigned long options)
@@ -110,8 +122,7 @@ struct mdinfo *sysfs_read(int fd, char *devnm, unsigned long options)
 	struct dirent *de;
 
 	sra = xcalloc(1, sizeof(*sra));
-	sysfs_init(sra, fd, devnm);
-	if (sra->sys_name[0] == 0) {
+	if (sysfs_init(sra, fd, devnm)) {
 		free(sra);
 		return NULL;
 	}
@@ -151,17 +162,11 @@ struct mdinfo *sysfs_read(int fd, char *devnm, unsigned long options)
 			goto abort;
 		sra->array.layout = strtoul(buf, NULL, 0);
 	}
-	if (options & GET_DISKS) {
+	if (options & (GET_DISKS|GET_STATE)) {
 		strcpy(base, "raid_disks");
 		if (load_sys(fname, buf, sizeof(buf)))
 			goto abort;
 		sra->array.raid_disks = strtoul(buf, NULL, 0);
-	}
-	if (options & GET_DEGRADED) {
-		strcpy(base, "degraded");
-		if (load_sys(fname, buf, sizeof(buf)))
-			goto abort;
-		sra->array.failed_disks = strtoul(buf, NULL, 0);
 	}
 	if (options & GET_COMPONENT) {
 		strcpy(base, "component_size");
@@ -236,11 +241,19 @@ struct mdinfo *sysfs_read(int fd, char *devnm, unsigned long options)
 
 	if (options & GET_ARRAY_STATE) {
 		strcpy(base, "array_state");
-		if (load_sys(fname, sra->sysfs_array_state,
-			     sizeof(sra->sysfs_array_state)))
+		if (load_sys(fname, buf, sizeof(buf)))
 			goto abort;
-	} else
-		sra->sysfs_array_state[0] = 0;
+		sra->array_state = map_name(sysfs_array_states, buf);
+	}
+
+	if (options & GET_CONSISTENCY_POLICY) {
+		strcpy(base, "consistency_policy");
+		if (load_sys(fname, buf, sizeof(buf)))
+			sra->consistency_policy = CONSISTENCY_POLICY_UNKNOWN;
+		else
+			sra->consistency_policy = map_name(consistency_policies,
+							   buf);
+	}
 
 	if (! (options & GET_DEVS))
 		return sra;
@@ -251,6 +264,9 @@ struct mdinfo *sysfs_read(int fd, char *devnm, unsigned long options)
 	if (!dir)
 		goto abort;
 	sra->array.spare_disks = 0;
+	sra->array.active_disks = 0;
+	sra->array.failed_disks = 0;
+	sra->array.working_disks = 0;
 
 	devp = &sra->devs;
 	sra->devs = NULL;
@@ -291,6 +307,7 @@ struct mdinfo *sysfs_read(int fd, char *devnm, unsigned long options)
 		dev->disk.raid_disk = strtoul(buf, &ep, 10);
 		if (*ep) dev->disk.raid_disk = -1;
 
+		sra->array.nr_disks++;
 		strcpy(dbase, "block/dev");
 		if (load_sys(fname, buf, sizeof(buf))) {
 			/* assume this is a stale reference to a hot
@@ -299,7 +316,6 @@ struct mdinfo *sysfs_read(int fd, char *devnm, unsigned long options)
 			free(dev);
 			continue;
 		}
-		sra->array.nr_disks++;
 		sscanf(buf, "%d:%d", &dev->disk.major, &dev->disk.minor);
 
 		/* special case check for block devices that can go 'offline' */
@@ -337,12 +353,17 @@ struct mdinfo *sysfs_read(int fd, char *devnm, unsigned long options)
 			strcpy(dbase, "state");
 			if (load_sys(fname, buf, sizeof(buf)))
 				goto abort;
-			if (strstr(buf, "in_sync"))
-				dev->disk.state |= (1<<MD_DISK_SYNC);
 			if (strstr(buf, "faulty"))
 				dev->disk.state |= (1<<MD_DISK_FAULTY);
-			if (dev->disk.state == 0)
-				sra->array.spare_disks++;
+			else {
+				sra->array.working_disks++;
+				if (strstr(buf, "in_sync")) {
+					dev->disk.state |= (1<<MD_DISK_SYNC);
+					sra->array.active_disks++;
+				}
+				if (dev->disk.state == 0)
+					sra->array.spare_disks++;
+			}
 		}
 		if (options & GET_ERROR) {
 			strcpy(buf, "errors");
@@ -351,6 +372,11 @@ struct mdinfo *sysfs_read(int fd, char *devnm, unsigned long options)
 			dev->errors = strtoul(buf, NULL, 0);
 		}
 	}
+
+	if ((options & GET_STATE) && sra->array.raid_disks)
+		sra->array.failed_disks = sra->array.raid_disks -
+			sra->array.active_disks - sra->array.spare_disks;
+
 	closedir(dir);
 	return sra;
 
@@ -678,6 +704,16 @@ int sysfs_set_array(struct mdinfo *info, int vers)
 		 * once the reshape completes.
 		 */
 	}
+
+	if (info->consistency_policy == CONSISTENCY_POLICY_PPL) {
+		if (sysfs_set_str(info, NULL, "consistency_policy",
+				  map_num(consistency_policies,
+					  info->consistency_policy))) {
+			pr_err("This kernel does not support PPL. Falling back to consistency-policy=resync.\n");
+			info->consistency_policy = CONSISTENCY_POLICY_RESYNC;
+		}
+	}
+
 	return rv;
 }
 
@@ -709,6 +745,10 @@ int sysfs_add_disk(struct mdinfo *sra, struct mdinfo *sd, int resume)
 	rv = sysfs_set_num(sra, sd, "offset", sd->data_offset);
 	rv |= sysfs_set_num(sra, sd, "size", (sd->component_size+1) / 2);
 	if (sra->array.level != LEVEL_CONTAINER) {
+		if (sra->consistency_policy == CONSISTENCY_POLICY_PPL) {
+			rv |= sysfs_set_num(sra, sd, "ppl_sector", sd->ppl_sector);
+			rv |= sysfs_set_num(sra, sd, "ppl_size", sd->ppl_size);
+		}
 		if (sd->recovery_start == MaxSector)
 			/* This can correctly fail if array isn't started,
 			 * yet, so just ignore status for now.

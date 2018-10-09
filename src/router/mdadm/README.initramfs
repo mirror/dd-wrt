@@ -16,11 +16,10 @@ devices.
 
 These mechanisms, while useful, do not provide complete functionality
 and are unlikely to be extended.  The preferred way to assemble md
-arrays at boot time is using 'mdadm' or 'mdassemble' (which is a
-trimmed-down mdadm).  To assemble an array which contains the root
-filesystem, mdadm needs to be run before that filesystem is mounted,
-and so needs to be run from an initial-ram-fs.  It is how this can
-work that is the primary focus of this document.
+arrays at boot time is using 'mdadm'.  To assemble an array which
+contains the root filesystem, mdadm needs to be run before that
+filesystem is mounted, and so needs to be run from an initial-ram-fs.
+It is how this can work that is the primary focus of this document.
 
 It should be noted up front that only the array containing the root
 filesystem should be assembled from the initramfs.  Any other arrays

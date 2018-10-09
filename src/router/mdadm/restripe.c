@@ -581,14 +581,16 @@ int save_stripes(int *source, unsigned long long *offsets,
 				       raid_disks, level, layout);
 			if (dnum < 0) abort();
 			if (source[dnum] < 0 ||
-			    lseek64(source[dnum], offsets[dnum]+offset, 0) < 0 ||
-			    read(source[dnum], buf+disk * chunk_size, chunk_size)
-			    != chunk_size)
+			    lseek64(source[dnum],
+				    offsets[dnum] + offset, 0) < 0 ||
+			    read(source[dnum], buf+disk * chunk_size,
+				 chunk_size) != chunk_size) {
 				if (failed <= 2) {
 					fdisk[failed] = dnum;
 					fblock[failed] = disk;
 					failed++;
 				}
+			}
 		}
 		if (failed == 0 || fblock[0] >= data_disks)
 			/* all data disks are good */
@@ -731,8 +733,8 @@ int restore_stripes(int *dest, unsigned long long *offsets,
 		zero_size = chunk_size;
 	}
 
-	if (stripe_buf == NULL || stripes == NULL || blocks == NULL
-	    || zero == NULL) {
+	if (stripe_buf == NULL || stripes == NULL || blocks == NULL ||
+	    zero == NULL) {
 		rv = -2;
 		goto abort;
 	}

@@ -1,7 +1,7 @@
 . tests/env-imsm-template
 
 # RAID 5 volume (3 disks) migrate to RAID 0 volume (2 disks)
-# POSITIVE test
+# NEGATIVE test
 
 num_disks=3
 device_list="$dev0 $dev1 $dev2"
@@ -18,4 +18,4 @@ vol0_new_level=0
 vol0_new_num_comps=$((num_disks-1))
 vol0_new_chunk=64
 
-. tests/imsm-grow-template 0 1
+. tests/imsm-grow-template 1 1

@@ -5,7 +5,7 @@
 .\"   the Free Software Foundation; either version 2 of the License, or
 .\"   (at your option) any later version.
 .\" See file COPYING in distribution for details.
-.TH MDADM 8 "" v4.0
+.TH MDADM 8 "" v4.1-rc2
 .SH NAME
 mdadm \- manage MD devices
 .I aka
@@ -126,7 +126,7 @@ of component devices and changing the number of active devices in
 Linear and RAID levels 0/1/4/5/6,
 changing the RAID level between 0, 1, 5, and 6, and between 0 and 10,
 changing the chunk size and layout for RAID 0,4,5,6,10 as well as adding or
-removing a write-intent bitmap.
+removing a write-intent bitmap and changing the array's consistency policy.
 
 .TP
 .B "Incremental Assembly"
@@ -541,6 +541,8 @@ A value of
 restores the apparent size of the array to be whatever the real
 amount of available space is.
 
+Clustered arrays do not support this parameter yet.
+
 .TP
 .BR \-c ", " \-\-chunk=
 Specify chunk size of kilobytes.  The default when creating an
@@ -724,7 +726,9 @@ When creating an array on devices which are 100G or larger,
 .I mdadm
 automatically adds an internal bitmap as it will usually be
 beneficial.  This can be suppressed with
-.B "\-\-bitmap=none".
+.B "\-\-bitmap=none"
+or by selecting a different consistency policy with
+.BR \-\-consistency\-policy .
 
 .TP
 .BR \-\-bitmap\-chunk=
@@ -923,7 +927,8 @@ will not try to be so clever.
 Start the array
 .B read only
 rather than read-write as normal.  No writes will be allowed to the
-array, and no resync, recovery, or reshape will be started.
+array, and no resync, recovery, or reshape will be started. It works with
+Create, Assemble, Manage and Misc mode.
 
 .TP
 .BR \-a ", " "\-\-auto{=yes,md,mdp,part,p}{NN}"
@@ -1014,6 +1019,45 @@ simultaneously. If not specified, this defaults to 4.
 .BR \-\-write-journal
 Specify journal device for the RAID-4/5/6 array. The journal device
 should be a SSD with reasonable lifetime.
+
+.TP
+.BR \-\-symlinks
+Auto creation of symlinks in /dev to /dev/md, option --symlinks must
+be 'no' or 'yes' and work with --create and --build.
+
+.TP
+.BR \-k ", " \-\-consistency\-policy=
+Specify how the array maintains consistency in case of unexpected shutdown.
+Only relevant for RAID levels with redundancy.
+Currently supported options are:
+.RS
+
+.TP
+.B resync
+Full resync is performed and all redundancy is regenerated when the array is
+started after unclean shutdown.
+
+.TP
+.B bitmap
+Resync assisted by a write-intent bitmap. Implicitly selected when using
+.BR \-\-bitmap .
+
+.TP
+.B journal
+For RAID levels 4/5/6, journal device is used to log transactions and replay
+after unclean shutdown. Implicitly selected when using
+.BR \-\-write\-journal .
+
+.TP
+.B ppl
+For RAID5 only, Partial Parity Log is used to close the write hole and
+eliminate resync. PPL is stored in the metadata region of RAID member drives,
+no additional journal drive is needed.
+
+.PP
+Can be used with \-\-grow to change the consistency policy of an active array
+in some cases. See CONSISTENCY POLICY CHANGES below.
+.RE
 
 
 .SH For assemble:
@@ -1139,6 +1183,8 @@ argument given to this flag can be one of
 .BR no\-bitmap ,
 .BR bbl ,
 .BR no\-bbl ,
+.BR ppl ,
+.BR no\-ppl ,
 .BR metadata ,
 or
 .BR super\-minor .
@@ -1218,7 +1264,8 @@ is correct.
 The
 .B byteorder
 option allows arrays to be moved between machines with different
-byte-order.
+byte-order, such as from a big-endian machine like a Sparc or some
+MIPS machines, to a little-endian x86_64 machine.
 When assembling such an array for the first time after a move, giving
 .B "\-\-update=byteorder"
 will cause
@@ -1279,6 +1326,16 @@ option will cause any reservation of space for a bad block list to be
 removed.  If the bad block list contains entries, this will fail, as
 removing the list could cause data corruption.
 
+The
+.B ppl
+option will enable PPL for a RAID5 array and reserve space for PPL on each
+device. There must be enough free space between the data and superblock and a
+write-intent bitmap or journal must not be used.
+
+The
+.B no\-ppl
+option will disable PPL in the superblock.
+
 .TP
 .BR \-\-freeze\-reshape
 Option is intended to be used in start-up scripts during initrd boot phase.
@@ -1290,6 +1347,10 @@ Losing file system context would cause reshape to be broken.
 Reshape can be continued later using the
 .B \-\-continue
 option for the grow command.
+
+.TP
+.BR \-\-symlinks
+See this option under Create and Build options.
 
 .SH For Manage mode:
 
@@ -1465,9 +1526,8 @@ the device is found or <slot>:missing in case the device is not found.
 
 .TP
 .BR \-\-add-journal
-Recreate journal for RAID-4/5/6 array that lost a journal device. In the
-current implementation, this command cannot add a journal to an array
-that had a failed journal. To avoid interrupting on-going write opertions,
+Add journal to an existing array, or recreate journal for RAID-4/5/6 array
+that lost a journal device. To avoid interrupting on-going write opertions,
 .B \-\-add-journal
 only works for array in Read-Only state.
 
@@ -1630,6 +1690,10 @@ overwritten with zeros.  With
 .B \-\-force
 the block where the superblock would be is overwritten even if it
 doesn't appear to be valid.
+
+.B Note:
+Be careful to call \-\-zero\-superblock with clustered raid, make sure
+array isn't used or assembled in other cluster node before execute it.
 
 .TP
 .B \-\-kill\-subarray=
@@ -2144,12 +2208,14 @@ in the array exceed 100G is size, an internal write-intent bitmap
 will automatically be added unless some other option is explicitly
 requested with the
 .B \-\-bitmap
-option.  In any case space for a bitmap will be reserved so that one
-can be added layer with
+option or a different consistency policy is selected with the
+.B \-\-consistency\-policy
+option. In any case space for a bitmap will be reserved so that one
+can be added later with
 .BR "\-\-grow \-\-bitmap=internal" .
 
-If the metadata type supports it (currently only 1.x metadata), space
-will be allocated to store a bad block list.  This allows a modest
+If the metadata type supports it (currently only 1.x and IMSM metadata),
+space will be allocated to store a bad block list.  This allows a modest
 number of bad blocks to be recorded, allowing the drive to remain in
 service while only partially functional.
 
@@ -2173,7 +2239,7 @@ be in use.
 
 .TP
 .B \-\-readonly
-start the array readonly \(em not supported yet.
+start the array in readonly mode.
 
 .SH MANAGE MODE
 .HP 12
@@ -2284,9 +2350,11 @@ superblock field in the subarray.  Similar to updating an array in
 .B \-U
 or
 .B \-\-update=
-option.  Currently only
-.B name
-is supported.
+option. The supported options are
+.BR name ,
+.B ppl
+and
+.BR no\-ppl .
 
 The
 .B name
@@ -2296,6 +2364,13 @@ re\-assembled.  If updating
 .B name
 would change the UUID of an active subarray this operation is blocked,
 and the command will end in an error.
+
+The
+.B ppl
+and
+.B no\-ppl
+options enable and disable PPL in the metadata. Currently supported only for
+IMSM subarrays.
 
 .TP
 .B \-\-examine
@@ -2630,6 +2705,8 @@ RAID0, RAID4, and RAID5, and between RAID0 and RAID10 (in the near-2 mode).
 .IP \(bu 4
 add a write-intent bitmap to any array which supports these bitmaps, or
 remove a write-intent bitmap from such an array.
+.IP \(bu 4
+change the array's consistency policy.
 .PP
 
 Using GROW on containers is currently supported only for Intel's IMSM
@@ -2641,27 +2718,15 @@ above.  Resizing arrays in an IMSM container with
 .B "--grow --size"
 is not yet supported.
 
-Grow functionality (e.g. expand a number of raid devices) for Intel's
-IMSM container format has an experimental status. It is guarded by the
-.B MDADM_EXPERIMENTAL
-environment variable which must be set to '1' for a GROW command to
-succeed.
-This is for the following reasons:
-
-.IP 1.
-Intel's native IMSM check-pointing is not fully tested yet.
-This can causes IMSM incompatibility during the grow process: an array
-which is growing cannot roam between Microsoft Windows(R) and Linux
-systems.
-
-.IP 2.
-Interrupting a grow operation is not recommended, because it
-has not been fully tested for Intel's IMSM container format yet.
-
 .PP
-Note: Intel's native checkpointing doesn't use
+Notes:
+.IP \(bu 4
+Intel's native checkpointing doesn't use
 .B --backup-file
 option and it is transparent for assembly feature.
+.IP \(bu 4
+Roaming between Windows(R) and Linux systems for IMSM metadata is not
+supported during grow process.
 
 .SS SIZE CHANGES
 Normally when an array is built the "size" is taken from the smallest
@@ -2684,6 +2749,11 @@ to shrinking the array.
 Also the size of an array cannot be changed while it has an active
 bitmap.  If an array has a bitmap, it must be removed before the size
 can be changed. Once the change is complete a new bitmap can be created.
+
+.PP
+Note:
+.B "--grow --size"
+is not yet supported for external file bitmap.
 
 .SS RAID\-DEVICES CHANGES
 
@@ -2786,6 +2856,16 @@ can be added.  Note that if you add a bitmap stored in a file which is
 in a filesystem that is on the RAID array being affected, the system
 will deadlock.  The bitmap must be on a separate filesystem.
 
+.SS CONSISTENCY POLICY CHANGES
+
+The consistency policy of an active array can be changed by using the
+.B \-\-consistency\-policy
+option in Grow mode. Currently this works only for the
+.B ppl
+and
+.B resync
+policies and allows to enable or disable the RAID5 Partial Parity Log (PPL).
+
 .SH INCREMENTAL MODE
 
 .HP 12
@@ -2864,7 +2944,7 @@ This is the only context where the aliases are used.  They are
 usually provided by a
 .I udev
 rules mentioning
-.BR ${DEVLINKS} .
+.BR $env{DEVLINKS} .
 
 .IP +
 Does the device have a valid md superblock?  If a specific metadata

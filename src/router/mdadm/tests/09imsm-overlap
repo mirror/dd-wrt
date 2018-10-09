@@ -5,7 +5,7 @@
 mdadm -CR $container -e imsm -n 6 $dev0 $dev1 $dev2 $dev3 $dev4 $dev5
 imsm_check container 6
 
-size=1910
+size=1024
 level=1
 num_disks=2
 mdadm -CR $member0 $dev0 $dev1 -n $num_disks -l $level -z $size
@@ -18,13 +18,11 @@ udevadm settle
 
 offset=0
 imsm_check member $member0 $num_disks $level $size 1024 $offset
-offset=$((offset+size+2048))
+offset=$((offset+size+4096))
 imsm_check member $member1 $num_disks $level $size 1024 $offset
-offset=$((offset+size+2048))
+offset=$((offset+size+4096))
 imsm_check member $member2 $num_disks $level $size 1024 $offset
-# at this point there should be more freespace at the start of the disk
-# than the end
-offset=0
+offset=$((offset+size+4096))
 imsm_check member $member3 $num_disks $level $size 1024 $offset
-offset=$((offset+size+2048))
+offset=$((offset+size+4096))
 imsm_check member $member4 $num_disks $level $size 1024 $offset

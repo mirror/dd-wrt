@@ -562,7 +562,7 @@ int main(int argc, char *argv[])
 			  GET_LEVEL|
 			  GET_LAYOUT|
 			  GET_DISKS|
-			  GET_DEGRADED |
+			  GET_STATE |
 			  GET_COMPONENT|
 			  GET_CHUNK|
 			  GET_DEVS|

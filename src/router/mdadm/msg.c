@@ -171,8 +171,6 @@ int connect_monitor(char *devname)
 	addr.sun_family = PF_LOCAL;
 	strcpy(addr.sun_path, path);
 	if (connect(sfd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
-		pr_err("Error connecting monitor with %s: %s\n",
-			addr.sun_path, strerror(errno));
 		close(sfd);
 		return -1;
 	}

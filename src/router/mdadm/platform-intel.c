@@ -371,6 +371,9 @@ static int scan(const void *start, const void *end, const void *data)
 	if (__le16_to_cpu(ptr->vendorID) != 0x8086)
 		return 0;
 
+	if (get_orom_by_device_id(ptr->deviceID))
+		return 0;
+
 	for (offset = 0; offset < len; offset += 4) {
 		const void *mem = start + offset;
 
@@ -548,8 +551,8 @@ static int read_efi_variable(void *buffer, ssize_t buf_size, char *variable_name
 
 	errno = 0;
 	var_data_len = strtoul(buf, NULL, 16);
-	if ((errno == ERANGE && (var_data_len == LONG_MAX))
-	    || (errno != 0 && var_data_len == 0))
+	if ((errno == ERANGE && (var_data_len == LONG_MAX)) ||
+	    (errno != 0 && var_data_len == 0))
 		return 1;
 
 	/* get data */

@@ -46,6 +46,9 @@ int scsi_get_serial(int fd, void *buf, size_t buf_len)
 	if (rv)
 		return rv;
 
+	if ((io_hdr.info & SG_INFO_OK_MASK) != SG_INFO_OK)
+		return -1;
+
 	rsp_len = rsp_buf[3];
 
 	if (!rsp_len || buf_len < rsp_len)

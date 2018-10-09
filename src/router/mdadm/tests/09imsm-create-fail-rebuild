@@ -36,7 +36,7 @@ mdadm -CR $member0 $dev0 $dev1 -n $num_disks -l $level -z $size -c $chunk
 imsm_check member $member0 $num_disks $level $size $((size*2)) $offset $chunk
 testdev $member0 $num_disks $size $chunk
 
-offset=$(((size & ~(chunk - 1)) + 2048))
+offset=$(((size & ~(1024 - 1)) + 4096))
 size=4000
 level=1
 chunk=0
@@ -60,7 +60,7 @@ mdadm -CR $member0 $dev0 $dev1 $dev2 $dev3 -n $num_disks -l $level -z $size -c $
 imsm_check member $member0 $num_disks $level $size $((size*2)) $offset $chunk
 testdev $member0 $((num_disks-2)) $size $chunk
 
-offset=$(((size & ~(chunk - 1)) + 2048))
+offset=$(((size & ~(1024 - 1)) + 4096))
 size=4000
 level=5
 mdadm -CR $member1 $dev0 $dev1 $dev2 $dev3 -n $num_disks -l $level -z $size -c $chunk
