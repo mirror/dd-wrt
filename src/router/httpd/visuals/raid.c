@@ -112,7 +112,7 @@ static char *getfsname(char *drive)
 	section.size = s->size_known ? s->size : 0;
 	section.flags = 0;
 	set_discmessage_off();
-	char *retvalue = "Empty";
+	char *retvalue = "Unknown";
 	/* first look if the drive contains partions, if yes, ignore them to ensure to keep them */
 	if (s->size == 0) {
 		retvalue = NULL;
@@ -275,7 +275,7 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<input name=\"raidname%d\" size=\"12\" value=\"%s\" />", i, raidname);
 		websWrite(wp, "</td>\n");
 		websWrite(wp, "<td>\n");
-		websWrite(wp, "<select name=\"raidtype%d\">\n", i);
+		websWrite(wp, "<select name=\"raidtype%d\"> onchange=\"raid_save_submit(this.form)\"\n", i);
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 		websWrite(wp, "document.write(\"<option value=\\\"md\\\" %s >Linux Raid</option>\");\n", !strcmp(raidtype, "md") ? "selected=\\\"selected\\\"" : "");
 		if (btrfs)
@@ -290,8 +290,8 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<select name=\"raidlevel%d\">\n", i);
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 			websWrite(wp, "document.write(\"<option value=\\\"linear\\\" %s >Linear</option>\");\n", !strcmp(raidlevel, "linear") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"stripe\\\" %s >Stripe</option>\");\n", !strcmp(raidlevel, "stripe") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"mirror\\\" %s >\" + nas.mirror + \"</option>\");\n", !strcmp(raidlevel, "mirror") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >Stripe</option>\");\n", !strcmp(raidlevel, "0") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >\" + nas.mirror + \"</option>\");\n", !strcmp(raidlevel, "1") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"4\\\" %s >Raid4</option>\");\n", !strcmp(raidlevel, "4") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >Raid5</option>\");\n", !strcmp(raidlevel, "5") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"6\\\" %s >Raid6</option>\");\n", !strcmp(raidlevel, "6") ? "selected=\\\"selected\\\"" : "");
