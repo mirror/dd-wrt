@@ -27,6 +27,9 @@
 #include <syslog.h>
 #include <signal.h>
 #include <services.h>
+#include <sys/ioctl.h>
+#include <linux/fs.h>
+#include <fcntl.h>
 
 void stop_raid(void)
 {
@@ -216,6 +219,11 @@ void start_raid(void)
 				if (!strcmp(level, "0"))
 					sysprintf("zpool create -f -m \"/tmp/mnt/%s\" \"%s\" %s", poolname, poolname, raid);
 			}
+			foreach(drive, raid, next) {
+				int fd = open(drive, O_RDONLY);
+				ioctl(fd, BLKRRPART, NULL);
+				close(fd);
+			}
 		}
 		if (!strcmp(type, "zfs")) {
 			if (nvram_nmatch("1", "raidlz%d", i))
@@ -267,7 +275,9 @@ void start_raid(void)
 			nvram_nset("1", "raiddone%d", i);
 			nvram_commit();
 		}
+
 		i++;
+
 	}
 	if (todo) {
 		eval("startservice_f", "cron", "-f");
