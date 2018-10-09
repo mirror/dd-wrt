@@ -161,8 +161,8 @@ void start_raid(void)
 				drives++;
 				sysprintf("umount %s", drive);
 			}
-			sysprintf("umount /dev/md%d\n", i);
-			sysprintf("mdadm --stop /dev/md%d\n", i);
+			sysprintf("umount /dev/md%d", i);
+			sysprintf("mdadm --stop /dev/md%d", i);
 			sysprintf("zpool destroy %s", poolname);
 			if (!strcmp(type, "md")) {
 				dd_loginfo("raid", "creating MD Raid /dev/md%d", i);
