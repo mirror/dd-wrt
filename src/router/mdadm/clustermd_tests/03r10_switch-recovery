@@ -1,0 +1,21 @@
+#!/bin/bash
+
+mdadm -CR $md0 -l10 -b clustered --layout n2 -n2 -x1 $dev0 $dev1 $dev2 --assume-clean
+ssh $NODE2 mdadm -A $md0 $dev0 $dev1 $dev2
+check all nosync
+check all raid10
+check all bitmap
+check all spares 1
+check all state UU
+check all dmesg
+mdadm --manage $md0 --fail $dev0
+sleep 0.2
+check $NODE1 recovery
+stop_md $NODE1 $md0
+check $NODE2 recovery
+check $NODE2 wait
+check $NODE2 state UU
+check all dmesg
+stop_md $NODE2 $md0
+
+exit 0
