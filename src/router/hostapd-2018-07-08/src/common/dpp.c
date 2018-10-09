@@ -840,6 +840,7 @@ static int dpp_parse_uri_pk(struct dpp_bootstrap_info *bi, const char *info)
 	if (sha256_vector(1, (const u8 **) &data, &data_len,
 			  bi->pubkey_hash) < 0) {
 		wpa_printf(MSG_DEBUG, "DPP: Failed to hash public key");
+		os_free(data);
 		return -1;
 	}
 	wpa_hexdump(MSG_DEBUG, "DPP: Public key hash",
@@ -2601,6 +2602,7 @@ static int dpp_auth_derive_l_initiator(struct dpp_authentication *auth)
 	ret = 0;
 fail:
 	EC_POINT_clear_free(l);
+	EC_POINT_clear_free(sum);
 	EC_KEY_free(bI);
 	EC_KEY_free(BR);
 	EC_KEY_free(PR);
@@ -5562,6 +5564,7 @@ dpp_keygen_configurator(const char *curve, const u8 *privkey,
 		if (!conf->curve) {
 			wpa_printf(MSG_INFO, "DPP: Unsupported curve: %s",
 				   curve);
+			os_free(conf);
 			return NULL;
 		}
 	}
