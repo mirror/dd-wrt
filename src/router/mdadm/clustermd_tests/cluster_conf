@@ -1,0 +1,43 @@
+# Prerequisite:
+# 1. The clustermd_tests/ cases only support to test 2-node-cluster, cluster
+#    requires packages: 'pacemaker+corosync+sbd+crmsh', all packages link at
+#    "https://github.com/ClusterLabs/", and also requires dlm resource running
+#    on each node of cluster.
+#    For quick start HA-cluster with SUSE distributions, refer to the chapter 6-8:
+#    https://www.suse.com/documentation/sle-ha-12/install-quick/data/install-quick.html
+#    For Redhat distributions, please refer to:
+#    https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html-single/high_availability_add-on_administration/index
+# 2. Setup ssh-access with no-authorized mode, it should be:
+#    # 'ssh $node1 -l root ls' and 'ssh $node2 -l root ls' success on any node.
+# 3. Fill-up node-ip part and disks part as following.
+
+# Set node1 as the master node, the cluster-md cases should run on this node,
+# and node2 is the slave node.
+# For example:
+# NODE1=192.168.1.100 (testing run here)
+# NODE2=192.168.1.101
+NODE1=
+NODE2=
+
+# Provide the devlist for clustermd-testing, alternative: if set the step 1,
+# don't set step 2, and vice versa.
+# 1. Use ISCSI service to provide shared storage, then login ISCSI target via
+#    to ISCSI_TARGET_ID and ISCSI_TARGET_IP on iscsi clients, commands like:
+#    Execute on iscsi clients:
+#    1) discover the iscsi server.
+#    # iscsiadm -m discovery -t st -p $ISCSI_TARGET_IP
+#    2) login and establish connection.
+#    # iscsiadm -m node -T $ISCSI_TARGET_ID -p $ISCSI_TARGET_IP -l
+# Note:
+#    On ISCSI server, must create all iscsi-luns in one target_id, recommend more
+#    than 6 luns/disks for testing, and each disk should be: 100M < disk < 800M.
+# 2. If all cluster-nodes mounted the same disks directly, and the devname are
+#    the same on all nodes, then put them to 'devlist'.
+
+# For example: (Only set $ISCSI_TARGET_ID is enough if iscsi has already connected)
+# ISCSI_TARGET_ID=iqn.2018-01.example.com:clustermd-testing
+# ISCSI_TARGET_IP=192.168.1.102
+ISCSI_TARGET_ID=
+
+#devlist=/dev/sda /dev/sdb /dev/sdc /dev/sdd
+devlist=
