@@ -3,6 +3,10 @@
 # test version0, version1, and no super
 # test resync and recovery.
 
+# It's just a sanity check. This command shouldn't run successfully
+mdadm -CR $md0 -l 1 -n2 missing missing
+check opposite_result
+
 mdadm -CR $md0 -l 1 -n2 $dev0 $dev1
 check resync
 check raid1

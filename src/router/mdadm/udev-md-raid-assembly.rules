@@ -7,6 +7,9 @@ ENV{ANACONDA}=="?*", GOTO="md_inc_end"
 
 SUBSYSTEM!="block", GOTO="md_inc_end"
 
+# skip non-initialized devices
+ENV{SYSTEMD_READY}=="0", GOTO="md_inc_end"
+
 # handle potential components of arrays (the ones supported by md)
 ENV{ID_FS_TYPE}=="linux_raid_member", GOTO="md_inc"
 
@@ -27,7 +30,7 @@ LABEL="md_inc"
 
 # remember you can limit what gets auto/incrementally assembled by
 # mdadm.conf(5)'s 'AUTO' and selectively whitelist using 'ARRAY'
-ACTION=="add|change", IMPORT{program}="BINDIR/mdadm --incremental --export $devnode --offroot ${DEVLINKS}"
+ACTION=="add|change", IMPORT{program}="BINDIR/mdadm --incremental --export $devnode --offroot $env{DEVLINKS}"
 ACTION=="add|change", ENV{MD_STARTED}=="*unsafe*", ENV{MD_FOREIGN}=="no", ENV{SYSTEMD_WANTS}+="mdadm-last-resort@$env{MD_DEVICE}.timer"
 ACTION=="remove", ENV{ID_PATH}=="?*", RUN+="BINDIR/mdadm -If $name --path $env{ID_PATH}"
 ACTION=="remove", ENV{ID_PATH}!="?*", RUN+="BINDIR/mdadm -If $name"

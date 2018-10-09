@@ -32,54 +32,69 @@ int Query(char *dev)
 	 * whether it is an md device and whether it has
 	 * a superblock
 	 */
-	int fd = open(dev, O_RDONLY);
-	int vers;
-	int ioctlerr;
+	int fd;
+	int ioctlerr, staterr;
 	int superror;
+	int level, raid_disks, spare_disks;
 	struct mdinfo info;
-	mdu_array_info_t array;
+	struct mdinfo *sra;
 	struct supertype *st = NULL;
-
 	unsigned long long larray_size;
 	struct stat stb;
 	char *mddev;
 	mdu_disk_info_t disc;
 	char *activity;
 
+	fd = open(dev, O_RDONLY);
 	if (fd < 0){
-		pr_err("cannot open %s: %s\n",
-			dev, strerror(errno));
+		pr_err("cannot open %s: %s\n", dev, strerror(errno));
 		return 1;
 	}
 
-	vers = md_get_version(fd);
-	if (ioctl(fd, GET_ARRAY_INFO, &array)<0)
-		ioctlerr = errno;
-	else ioctlerr = 0;
+	if (fstat(fd, &stb) < 0)
+		staterr = errno;
+	else
+		staterr = 0;
 
-	fstat(fd, &stb);
+	ioctlerr = 0;
 
-	if (vers>=9000 && !ioctlerr) {
+	sra = sysfs_read(fd, dev, GET_DISKS | GET_LEVEL | GET_DEVS | GET_STATE);
+	if (sra) {
+		level = sra->array.level;
+		raid_disks = sra->array.raid_disks;
+		spare_disks = sra->array.spare_disks;
+	} else {
+		mdu_array_info_t array;
+
+		if (md_get_array_info(fd, &array) < 0) {
+			ioctlerr = errno;
+			level = -1;
+			raid_disks = -1;
+			spare_disks = -1;
+		} else {
+			level = array.level;
+			raid_disks = array.raid_disks;
+			spare_disks = array.spare_disks;
+		}
+	}
+
+	if (!ioctlerr && !staterr) {
 		if (!get_dev_size(fd, NULL, &larray_size))
 			larray_size = 0;
 	}
 
-	if (vers < 0)
-		printf("%s: is not an md array\n", dev);
-	else if (vers < 9000)
-		printf("%s: is an md device, but kernel cannot provide details\n", dev);
-	else if (ioctlerr == ENODEV)
+	if (ioctlerr == ENODEV)
 		printf("%s: is an md device which is not active\n", dev);
+	else if (ioctlerr && major(stb.st_rdev) != MD_MAJOR)
+		printf("%s: is not an md array\n", dev);
 	else if (ioctlerr)
 		printf("%s: is an md device, but gives \"%s\" when queried\n",
 		       dev, strerror(ioctlerr));
 	else {
 		printf("%s: %s %s %d devices, %d spare%s. Use mdadm --detail for more detail.\n",
-		       dev,
-		       human_size_brief(larray_size,IEC),
-		       map_num(pers, array.level),
-		       array.raid_disks,
-		       array.spare_disks, array.spare_disks==1?"":"s");
+		       dev, human_size_brief(larray_size,IEC),
+		       map_num(pers, level), raid_disks,
+		       spare_disks, spare_disks == 1 ? "" : "s");
 	}
 	st = guess_super(fd);
 	if (st && st->ss->compare_super != NULL)
@@ -99,9 +114,8 @@ int Query(char *dev)
 			disc.number = info.disk.number;
 			activity = "undetected";
 			if (mddev && (fd = open(mddev, O_RDONLY))>=0) {
-				if (md_get_version(fd) >= 9000 &&
-				    ioctl(fd, GET_ARRAY_INFO, &array)>= 0) {
-					if (ioctl(fd, GET_DISK_INFO, &disc) >= 0 &&
+				if (md_array_active(fd)) {
+					if (md_get_disk_info(fd, &disc) >= 0 &&
 					    makedev((unsigned)disc.major,(unsigned)disc.minor) == stb.st_rdev)
 						activity = "active";
 					else

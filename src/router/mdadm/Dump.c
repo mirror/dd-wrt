@@ -301,6 +301,9 @@ int Restore_metadata(char *dev, char *dir, struct context *c,
 	}
 	if (c->verbose >= 0)
 		printf("%s restored from %s.\n", dev, fname);
+	close(fl);
+	close(fd);
+	free(fname);
 	return 0;
 
 err:

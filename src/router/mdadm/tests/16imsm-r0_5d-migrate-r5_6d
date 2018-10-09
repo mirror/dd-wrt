@@ -17,5 +17,6 @@ vol0_offset=0
 vol0_new_level=5
 vol0_new_num_comps=$num_disks
 vol0_new_chunk=64
+new_num_disks=6
 
 . tests/imsm-grow-template 0 1

@@ -44,7 +44,7 @@ else { cat inventory ; echo ANNOUNCE-$version ; } | sort -o inventory
 fi
 
 echo version = $version
-base=mdadm-$version.tar.gz
+base=mdadm-$rpmv.tar.gz
 if [ " $arg" != " diff" ]
 then
   if [ -f $target/$base ]
@@ -53,7 +53,7 @@ then
     exit 1
   fi
   trap "rm $target/$base; exit" 1 2 3
-  git archive --prefix=mdadm-$version/ HEAD | gzip --best > $target/$base
+  git archive --prefix=mdadm-$rpmv/ HEAD | gzip --best > $target/$base
   chmod a+r $target/$base
   ls -l $target/$base
   if tar tzf $target/$base | sed 's,[^/]*/,,' | sort | diff -u inventory -
@@ -63,7 +63,7 @@ then
        exit 1
   fi
   rpmbuild -ta $target/$base || exit 1
-  find /home/neilb/src/RPM -name "*mdadm-$version-*" \
+  find ~/rpmbuild/RPMS -name "*mdadm-$version-*" \
      -exec cp {} $target/RPM \;
   cp ANNOUNCE-$version $target/ANNOUNCE
   cp ChangeLog $target/ChangeLog

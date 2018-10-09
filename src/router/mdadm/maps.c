@@ -44,7 +44,7 @@ mapping_t r5layout[] = {
 	{ "ddf-N-restart", ALGORITHM_LEFT_ASYMMETRIC},
 	{ "ddf-N-continue", ALGORITHM_LEFT_SYMMETRIC},
 
-	{ NULL, 0}
+	{ NULL, UnSet }
 };
 mapping_t r6layout[] = {
 	{ "left-asymmetric", ALGORITHM_LEFT_ASYMMETRIC},
@@ -70,7 +70,7 @@ mapping_t r6layout[] = {
 	{ "right-symmetric-6", ALGORITHM_RIGHT_SYMMETRIC_6},
 	{ "parity-first-6", ALGORITHM_PARITY_0_6},
 
-	{ NULL, 0}
+	{ NULL, UnSet }
 };
 
 mapping_t pers[] = {
@@ -93,7 +93,7 @@ mapping_t pers[] = {
 	{ "10", 10},
 	{ "faulty", LEVEL_FAULTY},
 	{ "container", LEVEL_CONTAINER},
-	{ NULL, 0}
+	{ NULL, UnSet }
 };
 
 mapping_t modes[] = {
@@ -106,6 +106,7 @@ mapping_t modes[] = {
 	{ "grow", GROW},
 	{ "incremental", INCREMENTAL},
 	{ "auto-detect", AUTODETECT},
+	{ NULL, UnSet }
 };
 
 mapping_t faultylayout[] = {
@@ -126,7 +127,30 @@ mapping_t faultylayout[] = {
 	{ "flush", ClearFaults},
 	{ "none", ClearErrors},
 	{ "default", ClearErrors},
-	{ NULL, 0}
+	{ NULL, UnSet }
+};
+
+mapping_t consistency_policies[] = {
+	{ "unknown", CONSISTENCY_POLICY_UNKNOWN},
+	{ "none", CONSISTENCY_POLICY_NONE},
+	{ "resync", CONSISTENCY_POLICY_RESYNC},
+	{ "bitmap", CONSISTENCY_POLICY_BITMAP},
+	{ "journal", CONSISTENCY_POLICY_JOURNAL},
+	{ "ppl", CONSISTENCY_POLICY_PPL},
+	{ NULL, CONSISTENCY_POLICY_UNKNOWN }
+};
+
+mapping_t sysfs_array_states[] = {
+	{ "active-idle", ARRAY_ACTIVE_IDLE },
+	{ "active", ARRAY_ACTIVE },
+	{ "clear", ARRAY_CLEAR },
+	{ "inactive", ARRAY_INACTIVE },
+	{ "suspended", ARRAY_SUSPENDED },
+	{ "readonly", ARRAY_READONLY },
+	{ "read-auto", ARRAY_READ_AUTO },
+	{ "clean", ARRAY_CLEAN },
+	{ "write-pending", ARRAY_WRITE_PENDING },
+	{ NULL, ARRAY_UNKNOWN_STATE }
 };
 
 char *map_num(mapping_t *map, int num)
@@ -141,10 +165,8 @@ char *map_num(mapping_t *map, int num)
 
 int map_name(mapping_t *map, char *name)
 {
-	while (map->name) {
-		if (strcmp(map->name, name)==0)
-			return map->num;
+	while (map->name && strcmp(map->name, name) != 0)
 		map++;
-	}
-	return UnSet;
+
+	return map->num;
 }

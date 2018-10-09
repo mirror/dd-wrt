@@ -1,5 +1,5 @@
 [Unit]
-Description=Timer to wait for more drives before activating degraded array.
+Description=Timer to wait for more drives before activating degraded array %I.
 DefaultDependencies=no
 Conflicts=sys-devices-virtual-block-%i.device
 

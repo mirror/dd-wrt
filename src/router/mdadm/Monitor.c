@@ -125,8 +125,9 @@ int Monitor(struct mddev_dev *devlist,
 	struct state *st2;
 	int finished = 0;
 	struct mdstat_ent *mdstat = NULL;
-	char *mailfrom = NULL;
+	char *mailfrom;
 	struct alert_info info;
+	struct mddev_ident *mdlist;
 
 	if (!mailaddr) {
 		mailaddr = conf_get_mailaddr();
@@ -138,7 +139,7 @@ int Monitor(struct mddev_dev *devlist,
 
 	if (!alert_cmd) {
 		alert_cmd = conf_get_program();
-		if (alert_cmd && ! c->scan)
+		if (alert_cmd && !c->scan)
 			pr_err("Monitor using program \"%s\" from config file\n",
 			       alert_cmd);
 	}
@@ -162,9 +163,10 @@ int Monitor(struct mddev_dev *devlist,
 			return 1;
 
 	if (devlist == NULL) {
-		struct mddev_ident *mdlist = conf_get_ident(NULL);
-		for (; mdlist; mdlist=mdlist->next) {
+		mdlist = conf_get_ident(NULL);
+		for (; mdlist; mdlist = mdlist->next) {
 			struct state *st;
+
 			if (mdlist->devname == NULL)
 				continue;
 			if (strcasecmp(mdlist->devname, "<ignore>") == 0)
@@ -188,9 +190,10 @@ int Monitor(struct mddev_dev *devlist,
 		}
 	} else {
 		struct mddev_dev *dv;
-		for (dv=devlist ; dv; dv=dv->next) {
-			struct mddev_ident *mdlist = conf_get_ident(dv->devname);
+
+		for (dv = devlist; dv; dv = dv->next) {
 			struct state *st = xcalloc(1, sizeof *st);
+			mdlist = conf_get_ident(dv->devname);
 			st->devname = xstrdup(dv->devname);
 			st->next = statelist;
 			st->devnm[0] = 0;
@@ -205,18 +208,18 @@ int Monitor(struct mddev_dev *devlist,
 		}
 	}
 
-	while (! finished) {
+	while (!finished) {
 		int new_found = 0;
 		struct state *st, **stp;
 		int anydegraded = 0;
 
 		if (mdstat)
 			free_mdstat(mdstat);
-		mdstat = mdstat_read(oneshot?0:1, 0);
+		mdstat = mdstat_read(oneshot ? 0 : 1, 0);
 		if (!mdstat)
 			mdstat_close();
 
-		for (st=statelist; st; st=st->next)
+		for (st = statelist; st; st = st->next)
 			if (check_array(st, mdstat, c->test, &info,
 					increments, c->prefer))
 				anydegraded = 1;
@@ -290,8 +293,8 @@ static int make_daemon(char *pidfile)
 	}
 	close(0);
 	open("/dev/null", O_RDWR);
-	dup2(0,1);
-	dup2(0,2);
+	dup2(0, 1);
+	dup2(0, 2);
 	setsid();
 	return -1;
 }
@@ -322,8 +325,7 @@ static int check_one_sharer(int scan)
 		fclose(fp);
 	}
 	if (scan) {
-		if (mkdir(MDMON_DIR, S_IRWXU) < 0 &&
-		    errno != EEXIST) {
+		if (mkdir(MDMON_DIR, S_IRWXU) < 0 && errno != EEXIST) {
 			pr_err("Can't create autorebuild.pid file\n");
 		} else {
 			fp = fopen(path, "w");
@@ -346,7 +348,8 @@ static void alert(char *event, char *dev, char *disc, struct alert_info *info)
 	if (!info->alert_cmd && !info->mailaddr && !info->dosyslog) {
 		time_t now = time(0);
 
-		printf("%1.15s: %s on %s %s\n", ctime(&now)+4, event, dev, disc?disc:"unknown device");
+		printf("%1.15s: %s on %s %s\n", ctime(&now) + 4,
+		       event, dev, disc?disc:"unknown device");
 	}
 	if (info->alert_cmd) {
 		int pid = fork();
@@ -362,11 +365,10 @@ static void alert(char *event, char *dev, char *disc, struct alert_info *info)
 			exit(2);
 		}
 	}
-	if (info->mailaddr &&
-	    (strncmp(event, "Fail", 4)==0 ||
-	     strncmp(event, "Test", 4)==0 ||
-	     strncmp(event, "Spares", 6)==0 ||
-	     strncmp(event, "Degrade", 7)==0)) {
+	if (info->mailaddr && (strncmp(event, "Fail", 4) == 0 ||
+			       strncmp(event, "Test", 4) == 0 ||
+			       strncmp(event, "Spares", 6) == 0 ||
+			       strncmp(event, "Degrade", 7) == 0)) {
 		FILE *mp = popen(Sendmail, "w");
 		if (mp) {
 			FILE *mdstat;
@@ -376,7 +378,8 @@ static void alert(char *event, char *dev, char *disc, struct alert_info *info)
 			if (info->mailfrom)
 				fprintf(mp, "From: %s\n", info->mailfrom);
 			else
-				fprintf(mp, "From: %s monitoring <root>\n", Name);
+				fprintf(mp, "From: %s monitoring <root>\n",
+					Name);
 			fprintf(mp, "To: %s\n", info->mailaddr);
 			fprintf(mp, "Subject: %s event on %s:%s\n\n",
 				event, dev, hname);
@@ -402,8 +405,9 @@ static void alert(char *event, char *dev, char *disc, struct alert_info *info)
 				int n;
 				fprintf(mp,
 					"\nP.S. The /proc/mdstat file currently contains the following:\n\n");
-				while ( (n=fread(buf, 1, sizeof(buf), mdstat)) > 0)
-					n=fwrite(buf, 1, n, mp);
+				while ((n = fread(buf, 1, sizeof(buf),
+						  mdstat)) > 0)
+					n = fwrite(buf, 1, n, mp);
 				fclose(mdstat);
 			}
 			pclose(mp);
@@ -415,13 +419,13 @@ static void alert(char *event, char *dev, char *disc, struct alert_info *info)
 		/* Log at a different severity depending on the event.
 		 *
 		 * These are the critical events:  */
-		if (strncmp(event, "Fail", 4)==0 ||
-		    strncmp(event, "Degrade", 7)==0 ||
-		    strncmp(event, "DeviceDisappeared", 17)==0)
+		if (strncmp(event, "Fail", 4) == 0 ||
+		    strncmp(event, "Degrade", 7) == 0 ||
+		    strncmp(event, "DeviceDisappeared", 17) == 0)
 			priority = LOG_CRIT;
 		/* Good to know about, but are not failures: */
-		else if (strncmp(event, "Rebuild", 7)==0 ||
-			 strncmp(event, "MoveSpare", 9)==0 ||
+		else if (strncmp(event, "Rebuild", 7) == 0 ||
+			 strncmp(event, "MoveSpare", 9) == 0 ||
 			 strncmp(event, "Spares", 6) != 0)
 			priority = LOG_WARNING;
 		/* Everything else: */
@@ -451,73 +455,32 @@ static int check_array(struct state *st, struct mdstat_ent *mdstat,
 	 * '1' if the array is degraded, or '0' if it is optimal (or dead).
 	 */
 	struct { int state, major, minor; } info[MAX_DISKS];
+	struct mdinfo *sra = NULL;
 	mdu_array_info_t array;
 	struct mdstat_ent *mse = NULL, *mse2;
 	char *dev = st->devname;
-	int fd = -1;
+	int fd;
 	int i;
 	int remaining_disks;
 	int last_disk;
 	int new_array = 0;
+	int retval;
+	int is_container = 0;
+	unsigned long redundancy_only_flags = 0;
 
 	if (test)
 		alert("TestMessage", dev, NULL, ainfo);
-	if (st->devnm[0])
-		fd = open("/sys/block", O_RDONLY|O_DIRECTORY);
-	if (fd >= 0) {
-		/* Don't open the device unless it is present and
-		 * active in sysfs.
-		 */
-		char buf[10];
-		close(fd);
-		fd = sysfs_open(st->devnm, NULL, "array_state");
-		if (fd < 0 ||
-		    read(fd, buf, 10) < 5 ||
-		    strncmp(buf,"clear",5) == 0 ||
-		    strncmp(buf,"inact",5) == 0) {
-			if (fd >= 0)
-				close(fd);
-			fd = sysfs_open(st->devnm, NULL, "level");
-			if (fd < 0 || read(fd, buf, 10) != 0) {
-				if (fd >= 0)
-					close(fd);
-				if (!st->err)
-					alert("DeviceDisappeared", dev, NULL, ainfo);
-				st->err++;
-				return 0;
-			}
-		}
-		close(fd);
-	}
+
+	retval = 0;
+
 	fd = open(dev, O_RDONLY);
-	if (fd < 0) {
-		if (!st->err)
-			alert("DeviceDisappeared", dev, NULL, ainfo);
-		st->err++;
-		return 0;
-	}
-	fcntl(fd, F_SETFD, FD_CLOEXEC);
-	if (ioctl(fd, GET_ARRAY_INFO, &array)<0) {
-		if (!st->err)
-			alert("DeviceDisappeared", dev, NULL, ainfo);
-		st->err++;
-		close(fd);
-		return 0;
-	}
-	/* It's much easier to list what array levels can't
-	 * have a device disappear than all of them that can
-	 */
-	if (array.level == 0 || array.level == -1) {
-		if (!st->err && !st->from_config)
-			alert("DeviceDisappeared", dev, " Wrong-Level", ainfo);
-		st->err++;
-		close(fd);
-		return 0;
-	}
+	if (fd < 0)
+		goto disappeared;
+
 	if (st->devnm[0] == 0)
 		strcpy(st->devnm, fd2devnm(fd));
 
-	for (mse2 = mdstat ; mse2 ; mse2=mse2->next)
+	for (mse2 = mdstat; mse2; mse2 = mse2->next)
 		if (strcmp(mse2->devnm, st->devnm) == 0) {
 			mse2->devnm[0] = 0; /* flag it as "used" */
 			mse = mse2;
@@ -525,11 +488,41 @@ static int check_array(struct state *st, struct mdstat_ent *mdstat,
 
 	if (!mse) {
 		/* duplicated array in statelist
-		 * or re-created after reading mdstat*/
+		 * or re-created after reading mdstat
+		 */
 		st->err++;
-		close(fd);
-		return 0;
+		goto out;
 	}
+
+	if (mse->level == NULL)
+		is_container = 1;
+
+	if (!is_container && !md_array_active(fd))
+		goto disappeared;
+
+	fcntl(fd, F_SETFD, FD_CLOEXEC);
+	if (md_get_array_info(fd, &array) < 0)
+		goto disappeared;
+
+	if (!is_container && map_name(pers, mse->level) > 0)
+		redundancy_only_flags |= GET_MISMATCH;
+
+	sra = sysfs_read(-1, st->devnm, GET_LEVEL | GET_DISKS | GET_DEVS |
+			GET_STATE | redundancy_only_flags);
+
+	if (!sra)
+		goto disappeared;
+
+	/* It's much easier to list what array levels can't
+	 * have a device disappear than all of them that can
+	 */
+	if (sra->array.level == 0 || sra->array.level == -1) {
+		if (!st->err && !st->from_config)
+			alert("DeviceDisappeared", dev, " Wrong-Level", ainfo);
+		st->err++;
+		goto out;
+	}
+
 	/* this array is in /proc/mdstat */
 	if (array.utime == 0)
 		/* external arrays don't update utime, so
@@ -544,71 +537,62 @@ static int check_array(struct state *st, struct mdstat_ent *mdstat,
 		alert("NewArray", st->devname, NULL, ainfo);
 	}
 
-	if (st->utime == array.utime &&
-	    st->failed == array.failed_disks &&
-	    st->working == array.working_disks &&
-	    st->spare == array.spare_disks &&
-	    (mse == NULL  || (
-		    mse->percent == st->percent
-		    ))) {
-		close(fd);
+	if (st->utime == array.utime && st->failed == sra->array.failed_disks &&
+	    st->working == sra->array.working_disks &&
+	    st->spare == sra->array.spare_disks &&
+	    (mse == NULL || (mse->percent == st->percent))) {
 		if ((st->active < st->raid) && st->spare == 0)
-			return 1;
-		else
-			return 0;
+			retval = 1;
+		goto out;
 	}
 	if (st->utime == 0 && /* new array */
-	    mse->pattern && strchr(mse->pattern, '_') /* degraded */
-		)
+	    mse->pattern && strchr(mse->pattern, '_') /* degraded */)
 		alert("DegradedArray", dev, NULL, ainfo);
 
-	if (st->utime == 0 && /* new array */
-	    st->expected_spares > 0 &&
-	    array.spare_disks < st->expected_spares)
+	if (st->utime == 0 && /* new array */ st->expected_spares > 0 &&
+	    sra->array.spare_disks < st->expected_spares)
 		alert("SparesMissing", dev, NULL, ainfo);
 	if (st->percent < 0 && st->percent != RESYNC_UNKNOWN &&
 	    mse->percent >= 0)
 		alert("RebuildStarted", dev, NULL, ainfo);
-	if (st->percent >= 0 &&
-	    mse->percent >= 0 &&
+	if (st->percent >= 0 && mse->percent >= 0 &&
 	    (mse->percent / increments) > (st->percent / increments)) {
-		char percentalert[15]; // "RebuildNN" (10 chars) or "RebuildStarted" (15 chars)
+		char percentalert[18];
+		/*
+		 * "RebuildNN" (10 chars) or "RebuildStarted" (15 chars)
+		 */
 
 		if((mse->percent / increments) == 0)
-			snprintf(percentalert, sizeof(percentalert), "RebuildStarted");
+			snprintf(percentalert, sizeof(percentalert),
+				 "RebuildStarted");
 		else
-			snprintf(percentalert, sizeof(percentalert), "Rebuild%02d", mse->percent);
+			snprintf(percentalert, sizeof(percentalert),
+				 "Rebuild%02d", mse->percent);
 
 		alert(percentalert, dev, NULL, ainfo);
 	}
 
-	if (mse->percent == RESYNC_NONE &&
-	    st->percent >= 0) {
+	if (mse->percent == RESYNC_NONE && st->percent >= 0) {
 		/* Rebuild/sync/whatever just finished.
 		 * If there is a number in /mismatch_cnt,
 		 * we should report that.
 		 */
-		struct mdinfo *sra =
-			sysfs_read(-1, st->devnm, GET_MISMATCH);
 		if (sra && sra->mismatch_cnt > 0) {
 			char cnt[80];
 			snprintf(cnt, sizeof(cnt),
 				 " mismatches found: %d (on raid level %d)",
-				sra->mismatch_cnt, array.level);
+				 sra->mismatch_cnt, sra->array.level);
 			alert("RebuildFinished", dev, cnt, ainfo);
 		} else
 			alert("RebuildFinished", dev, NULL, ainfo);
-		if (sra)
-			sysfs_free(sra);
 	}
 	st->percent = mse->percent;
 
-	remaining_disks = array.nr_disks;
-	for (i=0; i<MAX_DISKS && remaining_disks > 0;
-	     i++) {
+	remaining_disks = sra->array.nr_disks;
+	for (i = 0; i < MAX_DISKS && remaining_disks > 0; i++) {
 		mdu_disk_info_t disc;
 		disc.number = i;
-		if (ioctl(fd, GET_DISK_INFO, &disc) >= 0) {
+		if (md_get_disk_info(fd, &disc) >= 0) {
 			info[i].state = disc.state;
 			info[i].major = disc.major;
 			info[i].minor = disc.minor;
@@ -623,31 +607,25 @@ static int check_array(struct state *st, struct mdstat_ent *mdstat,
 	    strncmp(mse->metadata_version, "external:", 9) == 0 &&
 	    is_subarray(mse->metadata_version+9)) {
 		char *sl;
-		strcpy(st->parent_devnm,
-		       mse->metadata_version+10);
+		strcpy(st->parent_devnm, mse->metadata_version + 10);
 		sl = strchr(st->parent_devnm, '/');
 		if (sl)
 			*sl = 0;
 	} else
 		st->parent_devnm[0] = 0;
-	if (st->metadata == NULL &&
-	    st->parent_devnm[0] == 0)
+	if (st->metadata == NULL && st->parent_devnm[0] == 0)
 		st->metadata = super_by_fd(fd, NULL);
 
-	close(fd);
-
-	for (i=0; i<MAX_DISKS; i++) {
-		mdu_disk_info_t disc = {0,0,0,0,0};
-		int newstate=0;
+	for (i = 0; i < MAX_DISKS; i++) {
+		mdu_disk_info_t disc = {0, 0, 0, 0, 0};
+		int newstate = 0;
 		int change;
 		char *dv = NULL;
 		disc.number = i;
-		if (i < last_disk &&
-		    (info[i].major || info[i].minor)) {
+		if (i < last_disk && (info[i].major || info[i].minor)) {
 			newstate = info[i].state;
-			dv = map_dev_preferred(
-				info[i].major, info[i].minor, 1,
-				prefer);
+			dv = map_dev_preferred(info[i].major, info[i].minor, 1,
+					       prefer);
 			disc.state = newstate;
 			disc.major = info[i].major;
 			disc.minor = info[i].minor;
@@ -655,33 +633,45 @@ static int check_array(struct state *st, struct mdstat_ent *mdstat,
 			newstate = (1 << MD_DISK_REMOVED);
 
 		if (dv == NULL && st->devid[i])
-			dv = map_dev_preferred(
-				major(st->devid[i]),
-				minor(st->devid[i]), 1, prefer);
+			dv = map_dev_preferred(major(st->devid[i]),
+					       minor(st->devid[i]), 1, prefer);
 		change = newstate ^ st->devstate[i];
 		if (st->utime && change && !st->err && !new_array) {
-			if ((st->devstate[i]&change)&(1<<MD_DISK_SYNC))
+			if ((st->devstate[i]&change) & (1 << MD_DISK_SYNC))
 				alert("Fail", dev, dv, ainfo);
-			else if ((newstate & (1<<MD_DISK_FAULTY)) &&
+			else if ((newstate & (1 << MD_DISK_FAULTY)) &&
 				 (disc.major || disc.minor) &&
-				 st->devid[i] == makedev(disc.major, disc.minor))
+				 st->devid[i] == makedev(disc.major,
+							 disc.minor))
 				alert("FailSpare", dev, dv, ainfo);
-			else if ((newstate&change)&(1<<MD_DISK_SYNC))
+			else if ((newstate&change) & (1 << MD_DISK_SYNC))
 				alert("SpareActive", dev, dv, ainfo);
 		}
 		st->devstate[i] = newstate;
 		st->devid[i] = makedev(disc.major, disc.minor);
 	}
-	st->active = array.active_disks;
-	st->working = array.working_disks;
-	st->spare = array.spare_disks;
-	st->failed = array.failed_disks;
+	st->active = sra->array.active_disks;
+	st->working = sra->array.working_disks;
+	st->spare = sra->array.spare_disks;
+	st->failed = sra->array.failed_disks;
 	st->utime = array.utime;
-	st->raid = array.raid_disks;
+	st->raid = sra->array.raid_disks;
 	st->err = 0;
 	if ((st->active < st->raid) && st->spare == 0)
-		return 1;
-	return 0;
+		retval = 1;
+
+ out:
+	if (sra)
+		sysfs_free(sra);
+	if (fd >= 0)
+		close(fd);
+	return retval;
+
+ disappeared:
+	if (!st->err)
+		alert("DeviceDisappeared", dev, NULL, ainfo);
+	st->err++;
+	goto out;
 }
 
 static int add_new_arrays(struct mdstat_ent *mdstat, struct state **statelist,
@@ -691,12 +681,10 @@ static int add_new_arrays(struct mdstat_ent *mdstat, struct state **statelist,
 	int new_found = 0;
 	char *name;
 
-	for (mse=mdstat; mse; mse=mse->next)
-		if (mse->devnm[0] &&
-		    (!mse->level  || /* retrieve containers */
-		     (strcmp(mse->level, "raid0") != 0 &&
-		      strcmp(mse->level, "linear") != 0))
-			) {
+	for (mse = mdstat; mse; mse = mse->next)
+		if (mse->devnm[0] && (!mse->level || /* retrieve containers */
+				      (strcmp(mse->level, "raid0") != 0 &&
+				       strcmp(mse->level, "linear") != 0))) {
 			struct state *st = xcalloc(1, sizeof *st);
 			mdu_array_info_t array;
 			int fd;
@@ -709,9 +697,10 @@ static int add_new_arrays(struct mdstat_ent *mdstat, struct state **statelist,
 
 			st->devname = xstrdup(name);
 			if ((fd = open(st->devname, O_RDONLY)) < 0 ||
-			    ioctl(fd, GET_ARRAY_INFO, &array)< 0) {
+			    md_get_array_info(fd, &array) < 0) {
 				/* no such array */
-				if (fd >=0) close(fd);
+				if (fd >= 0)
+					close(fd);
 				put_md_name(st->devname);
 				free(st->devname);
 				if (st->metadata) {
@@ -729,7 +718,8 @@ static int add_new_arrays(struct mdstat_ent *mdstat, struct state **statelist,
 			st->percent = RESYNC_UNKNOWN;
 			st->expected_spares = -1;
 			if (mse->metadata_version &&
-			    strncmp(mse->metadata_version, "external:", 9) == 0 &&
+			    strncmp(mse->metadata_version,
+				    "external:", 9) == 0 &&
 			    is_subarray(mse->metadata_version+9)) {
 				char *sl;
 				strcpy(st->parent_devnm,
@@ -746,13 +736,14 @@ static int add_new_arrays(struct mdstat_ent *mdstat, struct state **statelist,
 	return new_found;
 }
 
-static int get_min_spare_size_required(struct state *st, unsigned long long *sizep)
+static int get_required_spare_criteria(struct state *st,
+				       struct spare_criteria *sc)
 {
 	int fd;
 
-	if (!st->metadata ||
-	    !st->metadata->ss->min_acceptable_spare_size) {
-		*sizep = 0;
+	if (!st->metadata || !st->metadata->ss->get_spare_criteria) {
+		sc->min_size = 0;
+		sc->sector_size = 0;
 		return 0;
 	}
 
@@ -766,7 +757,8 @@ static int get_min_spare_size_required(struct state *st, unsigned long long *siz
 	close(fd);
 	if (!st->metadata->sb)
 		return 1;
-	*sizep = st->metadata->ss->min_acceptable_spare_size(st->metadata);
+
+	st->metadata->ss->get_spare_criteria(st->metadata, sc);
 	st->metadata->ss->free_super(st->metadata);
 
 	return 0;
@@ -798,31 +790,38 @@ static int check_donor(struct state *from, struct state *to)
 }
 
 static dev_t choose_spare(struct state *from, struct state *to,
-			struct domainlist *domlist, unsigned long long min_size)
+			  struct domainlist *domlist, struct spare_criteria *sc)
 {
 	int d;
 	dev_t dev = 0;
 
 	for (d = from->raid; !dev && d < MAX_DISKS; d++) {
-		if (from->devid[d] > 0 &&
-		    from->devstate[d] == 0) {
+		if (from->devid[d] > 0 && from->devstate[d] == 0) {
 			struct dev_policy *pol;
 			unsigned long long dev_size;
+			unsigned int dev_sector_size;
 
 			if (to->metadata->ss->external &&
 			    test_partition_from_id(from->devid[d]))
 				continue;
 
-			if (min_size &&
+			if (sc->min_size &&
 			    dev_size_from_id(from->devid[d], &dev_size) &&
-			    dev_size < min_size)
+			    dev_size < sc->min_size)
+				continue;
+
+			if (sc->sector_size &&
+			    dev_sector_size_from_id(from->devid[d],
+						    &dev_sector_size) &&
+			    sc->sector_size != dev_sector_size)
 				continue;
 
 			pol = devid_policy(from->devid[d]);
 			if (from->spare_group)
 				pol_add(&pol, pol_domain,
 					from->spare_group, NULL);
-			if (domain_test(domlist, pol, to->metadata->ss->name) == 1)
+			if (domain_test(domlist, pol,
+					to->metadata->ss->name) == 1)
 			    dev = from->devid[d];
 			dev_policy_free(pol);
 		}
@@ -832,7 +831,7 @@ static dev_t choose_spare(struct state *from, struct state *to,
 
 static dev_t container_choose_spare(struct state *from, struct state *to,
 				    struct domainlist *domlist,
-				    unsigned long long min_size, int active)
+				    struct spare_criteria *sc, int active)
 {
 	/* This is similar to choose_spare, but we cannot trust devstate,
 	 * so we need to read the metadata instead
@@ -869,8 +868,8 @@ static dev_t container_choose_spare(struct state *from, struct state *to,
 		}
 		dp = list->devs;
 		while (dp) {
-			if (dp->disk.state & (1<<MD_DISK_SYNC) &&
-			    !(dp->disk.state & (1<<MD_DISK_FAULTY)))
+			if (dp->disk.state & (1 << MD_DISK_SYNC) &&
+			    !(dp->disk.state & (1 << MD_DISK_FAULTY)))
 				active_cnt++;
 			dp = dp->next;
 		}
@@ -883,7 +882,7 @@ static dev_t container_choose_spare(struct state *from, struct state *to,
 	}
 
 	/* We only need one spare so full list not needed */
-	list = container_choose_spares(st, min_size, domlist, from->spare_group,
+	list = container_choose_spares(st, sc, domlist, from->spare_group,
 				       to->metadata->ss->name, 1);
 	if (list) {
 		struct mdinfo *disks = list->devs;
@@ -899,15 +898,14 @@ static void try_spare_migration(struct state *statelist, struct alert_info *info
 {
 	struct state *from;
 	struct state *st;
+	struct spare_criteria sc;
 
 	link_containers_with_subarrays(statelist);
 	for (st = statelist; st; st = st->next)
-		if (st->active < st->raid &&
-		    st->spare == 0 && !st->err) {
+		if (st->active < st->raid && st->spare == 0 && !st->err) {
 			struct domainlist *domlist = NULL;
 			int d;
 			struct state *to = st;
-			unsigned long long min_size;
 
 			if (to->parent_devnm[0] && !to->parent)
 				/* subarray monitored without parent container
@@ -918,14 +916,14 @@ static void try_spare_migration(struct state *statelist, struct alert_info *info
 				/* member of a container */
 				to = to->parent;
 
-			if (get_min_spare_size_required(to, &min_size))
+			if (get_required_spare_criteria(to, &sc))
 				continue;
 			if (to->metadata->ss->external) {
 				/* We must make sure there is
 				 * no suitable spare in container already.
 				 * If there is we don't add more */
 				dev_t devid = container_choose_spare(
-					to, to, NULL, min_size, st->active);
+					to, to, NULL, &sc, st->active);
 				if (devid > 0)
 					continue;
 			}
@@ -948,13 +946,15 @@ static void try_spare_migration(struct state *statelist, struct alert_info *info
 					continue;
 				if (from->metadata->ss->external)
 					devid = container_choose_spare(
-						from, to, domlist, min_size, 0);
+						from, to, domlist, &sc, 0);
 				else
 					devid = choose_spare(from, to, domlist,
-							     min_size);
-				if (devid > 0
-				    && move_spare(from->devname, to->devname, devid)) {
-					alert("MoveSpare", to->devname, from->devname, info);
+							     &sc);
+				if (devid > 0 &&
+				    move_spare(from->devname, to->devname,
+					       devid)) {
+					alert("MoveSpare", to->devname,
+					      from->devname, info);
 					break;
 				}
 			}
@@ -979,8 +979,7 @@ static void link_containers_with_subarrays(struct state *list)
 	for (st = list; st; st = st->next)
 		if (st->parent_devnm[0])
 			for (cont = list; cont; cont = cont->next)
-				if (!cont->err &&
-				    cont->parent_devnm[0] == 0 &&
+				if (!cont->err && cont->parent_devnm[0] == 0 &&
 				    strcmp(cont->devnm, st->parent_devnm) == 0) {
 					st->parent = cont;
 					st->subarray = cont->subarray;
@@ -992,23 +991,28 @@ static void link_containers_with_subarrays(struct state *list)
 /* Not really Monitor but ... */
 int Wait(char *dev)
 {
-	struct stat stb;
 	char devnm[32];
+	dev_t rdev;
+	char *tmp;
 	int rv = 1;
 	int frozen_remaining = 3;
 
-	if (stat(dev, &stb) != 0) {
-		pr_err("Cannot find %s: %s\n", dev,
-			strerror(errno));
+	if (!stat_is_blkdev(dev, &rdev))
+		return 2;
+
+	tmp = devid2devnm(rdev);
+	if (!tmp) {
+		pr_err("Cannot get md device name.\n");
 		return 2;
 	}
-	strcpy(devnm, stat2devnm(&stb));
+
+	strcpy(devnm, tmp);
 
 	while(1) {
 		struct mdstat_ent *ms = mdstat_read(1, 0);
 		struct mdstat_ent *e;
 
-		for (e=ms ; e; e=e->next)
+		for (e = ms; e; e = e->next)
 			if (strcmp(e->devnm, devnm) == 0)
 				break;
 
@@ -1019,7 +1023,9 @@ int Wait(char *dev)
 			 */
 			struct mdinfo mdi;
 			char buf[21];
-			sysfs_init(&mdi, -1, devnm);
+
+			if (sysfs_init(&mdi, -1, devnm))
+				return 2;
 			if (sysfs_get_str(&mdi, NULL, "sync_action",
 					  buf, 20) > 0 &&
 			    strcmp(buf,"idle\n") != 0) {
@@ -1049,18 +1055,18 @@ int Wait(char *dev)
 	}
 }
 
-#ifndef MDASSEMBLE
-
 static char *clean_states[] = {
 	"clear", "inactive", "readonly", "read-auto", "clean", NULL };
 
-int WaitClean(char *dev, int sock, int verbose)
+int WaitClean(char *dev, int verbose)
 {
 	int fd;
 	struct mdinfo *mdi;
 	int rv = 1;
 	char devnm[32];
 
+	if (!stat_is_blkdev(dev, NULL))
+		return 2;
 	fd = open(dev, O_RDONLY);
 	if (fd < 0) {
 		if (verbose)
@@ -1119,18 +1125,18 @@ int WaitClean(char *dev, int sock, int verbose)
 		}
 		if (rv < 0)
 			rv = 1;
-		else if (fping_monitor(sock) == 0 ||
-			 ping_monitor(mdi->text_version) == 0) {
+		else if (ping_monitor(mdi->text_version) == 0) {
 			/* we need to ping to close the window between array
 			 * state transitioning to clean and the metadata being
 			 * marked clean
 			 */
 			rv = 0;
-		} else
+		} else {
 			rv = 1;
+			pr_err("Error connecting monitor with %s\n", dev);
+		}
 		if (rv && verbose)
-			pr_err("Error waiting for %s to be clean\n",
-				dev);
+			pr_err("Error waiting for %s to be clean\n", dev);
 
 		/* restore the original safe_mode_delay */
 		sysfs_set_safemode(mdi, mdi->safe_mode_delay);
@@ -1142,4 +1148,3 @@ int WaitClean(char *dev, int sock, int verbose)
 
 	return rv;
 }
-#endif /* MDASSEMBLE */

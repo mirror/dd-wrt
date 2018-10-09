@@ -53,7 +53,6 @@ int Examine(struct mddev_dev *devlist,
 	 */
 	int fd;
 	int rv = 0;
-	int err = 0;
 
 	struct array {
 		struct supertype *st;
@@ -66,6 +65,8 @@ int Examine(struct mddev_dev *devlist,
 	for (; devlist ; devlist = devlist->next) {
 		struct supertype *st;
 		int have_container = 0;
+		int err = 0;
+		int container = 0;
 
 		fd = dev_open(devlist->devname, O_RDONLY);
 		if (fd < 0) {
@@ -74,44 +75,46 @@ int Examine(struct mddev_dev *devlist,
 				       devlist->devname, strerror(errno));
 				rv = 1;
 			}
+			continue;
+		}
+
+		if (forcest)
+			st = dup_super(forcest);
+		else if (must_be_container(fd)) {
+			/* might be a container */
+			st = super_by_fd(fd, NULL);
+			container = 1;
+		} else
+			st = guess_super(fd);
+		if (st) {
+			err = 1;
+			st->ignore_hw_compat = 1;
+			if (!container)
+				err = st->ss->load_super(st, fd,
+							 (c->brief||c->scan) ? NULL
+							 :devlist->devname);
+			if (err && st->ss->load_container) {
+				err = st->ss->load_container(st, fd,
+							     (c->brief||c->scan) ? NULL
+							     :devlist->devname);
+				if (!err)
+					have_container = 1;
+			}
+			st->ignore_hw_compat = 0;
+		} else {
+			if (!c->brief) {
+				pr_err("No md superblock detected on %s.\n", devlist->devname);
+				rv = 1;
+			}
 			err = 1;
 		}
-		else {
-			int container = 0;
-			if (forcest)
-				st = dup_super(forcest);
-			else if (must_be_container(fd)) {
-				/* might be a container */
-				st = super_by_fd(fd, NULL);
-				container = 1;
-			} else
-				st = guess_super(fd);
-			if (st) {
-				err = 1;
-				st->ignore_hw_compat = 1;
-				if (!container)
-					err = st->ss->load_super(st, fd,
-								 (c->brief||c->scan) ? NULL
-								 :devlist->devname);
-				if (err && st->ss->load_container) {
-					err = st->ss->load_container(st, fd,
-								 (c->brief||c->scan) ? NULL
-								 :devlist->devname);
-					if (!err)
-						have_container = 1;
-				}
-				st->ignore_hw_compat = 0;
-			} else {
-				if (!c->brief) {
-					pr_err("No md superblock detected on %s.\n", devlist->devname);
-					rv = 1;
-				}
-				err = 1;
-			}
-			close(fd);
-		}
-		if (err)
+		close(fd);
+
+		if (err) {
+			if (st)
+				st->ss->free_super(st);
 			continue;
+		}
 
 		if (c->SparcAdjust)
 			st->ss->update_super(st, NULL, "sparc2.2",
@@ -121,7 +124,7 @@ int Examine(struct mddev_dev *devlist,
 		if (c->brief && st->ss->brief_examine_super == NULL) {
 			if (!c->scan)
 				pr_err("No brief listing for %s on %s\n",
-					st->ss->name, devlist->devname);
+				       st->ss->name, devlist->devname);
 		} else if (c->brief) {
 			struct array *ap;
 			char *d;

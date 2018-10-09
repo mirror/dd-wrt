@@ -13,10 +13,15 @@ function grow_member() {
 	local size=$5
 	local offset=$6
 	local chunk=$7
+	local old_chunk=$8
 	local array_size=$((comps * size))
 
 	rm -f $backup_imsm
-	( set -ex; mdadm --grow $member --chunk=$chunk --level=$level )
+	if [ $chunk -eq $old_chunk ]; then
+		( set -ex; mdadm --grow $member --level=$level )
+	else
+		( set -ex; mdadm --grow $member --chunk=$chunk )
+	fi
 	local status=$?
 	if [ $negative_test -ne 0 ]; then
 		if [ $status -eq 0 ]; then
@@ -76,9 +81,9 @@ if [ $migration_test -ne 0 ]; then
 	if [ -z $new_num_disks ]; then
 		new_num_disks=$num_disks
 	fi
-	grow_member $member0 $new_num_disks $vol0_new_num_comps $vol0_new_level $vol0_comp_size $vol0_offset $vol0_new_chunk
+	grow_member $member0 $new_num_disks $vol0_new_num_comps $vol0_new_level $vol0_comp_size $vol0_offset $vol0_new_chunk $vol0_chunk
 	if [[ $vol1_new_chunk -ne 0 ]] ; then
-		grow_member $member1 $new_num_disks $vol1_new_num_comps $vol1_new_level $vol1_comp_size $vol1_offset $vol1_new_chunk
+		grow_member $member1 $new_num_disks $vol1_new_num_comps $vol1_new_level $vol1_comp_size $vol1_offset $vol1_new_chunk $vol1_chunk
 	fi
 else
 	rm -f $backup_imsm

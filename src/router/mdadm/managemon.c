@@ -129,6 +129,8 @@ static void close_aa(struct active_array *aa)
 		close(aa->metadata_fd);
 	if (aa->sync_completed_fd >= 0)
 		close(aa->sync_completed_fd);
+	if (aa->safe_mode_delay_fd >= 0)
+		close(aa->safe_mode_delay_fd);
 }
 
 static void free_aa(struct active_array *aa)
@@ -264,9 +266,7 @@ static void add_disk_to_container(struct supertype *st, struct mdinfo *sd)
 {
 	int dfd;
 	char nm[20];
-	struct supertype *st2;
 	struct metadata_update *update = NULL;
-	struct mdinfo info;
 	mdu_disk_info_t dk = {
 		.number = -1,
 		.major = sd->disk.major,
@@ -284,25 +284,6 @@ static void add_disk_to_container(struct supertype *st, struct mdinfo *sd)
 	dfd = dev_open(nm, O_RDWR);
 	if (dfd < 0)
 		return;
-
-	/* Check the metadata and see if it is already part of this
-	 * array
-	 */
-	st2 = dup_super(st);
-	if (st2->ss->load_super(st2, dfd, NULL) == 0) {
-		st2->ss->getinfo_super(st2, &info, NULL);
-		if (st->ss->compare_super(st, st2) == 0 &&
-		    info.disk.raid_disk >= 0) {
-			/* Looks like a good member of array.
-			 * Just accept it.
-			 * mdadm will incorporate any parts into
-			 * active arrays.
-			 */
-			st2->ss->free_super(st2);
-			return;
-		}
-	}
-	st2->ss->free_super(st2);
 
 	st->update_tail = &update;
 	st->ss->add_to_super(st, &dk, dfd, NULL, INVALID_SECTORS);
@@ -477,7 +458,7 @@ static void manage_member(struct mdstat_ent *mdstat,
 	char buf[64];
 	int frozen;
 	struct supertype *container = a->container;
-	unsigned long long int component_size = 0;
+	struct mdinfo *mdi;
 
 	if (container == NULL)
 		/* Raced with something */
@@ -489,8 +470,13 @@ static void manage_member(struct mdstat_ent *mdstat,
 		// MORE
 	}
 
-	if (sysfs_get_ll(&a->info, NULL, "component_size", &component_size) >= 0)
-		a->info.component_size = component_size << 1;
+	mdi = sysfs_read(-1, mdstat->devnm,
+			 GET_COMPONENT|GET_CONSISTENCY_POLICY);
+	if (mdi) {
+		a->info.component_size = mdi->component_size;
+		a->info.consistency_policy = mdi->consistency_policy;
+		sysfs_free(mdi);
+	}
 
 	/* honor 'frozen' */
 	if (sysfs_get_str(&a->info, NULL, "metadata_version", buf, sizeof(buf)) > 0)
@@ -499,9 +485,9 @@ static void manage_member(struct mdstat_ent *mdstat,
 		frozen = 1; /* can't read metadata_version assume the worst */
 
 	/* If sync_action is not 'idle' then don't try recovery now */
-	if (!frozen
-	    && sysfs_get_str(&a->info, NULL, "sync_action", buf, sizeof(buf)) > 0
-	    && strncmp(buf, "idle", 4) != 0)
+	if (!frozen &&
+	    sysfs_get_str(&a->info, NULL, "sync_action",
+			  buf, sizeof(buf)) > 0 && strncmp(buf, "idle", 4) != 0)
 		frozen = 1;
 
 	if (mdstat->level) {
@@ -527,9 +513,15 @@ static void manage_member(struct mdstat_ent *mdstat,
 	if (a->container == NULL)
 		return;
 
-	if (sigterm && a->info.safe_mode_delay != 1) {
-		sysfs_set_safemode(&a->info, 1);
-		a->info.safe_mode_delay = 1;
+	if (sigterm && a->info.safe_mode_delay != 1 &&
+	    a->safe_mode_delay_fd >= 0) {
+		long int new_delay = 1;
+		char delay[10];
+		ssize_t len;
+
+		len = snprintf(delay, sizeof(delay), "0.%03ld\n", new_delay);
+		if (write(a->safe_mode_delay_fd, delay, len) == len)
+			a->info.safe_mode_delay = new_delay;
 	}
 
 	/* We don't check the array while any update is pending, as it
@@ -580,8 +572,8 @@ static void manage_member(struct mdstat_ent *mdstat,
 			usleep(15*1000);
 		}
 		replace_array(container, a, newa);
-		if (sysfs_set_str(&a->info, NULL, "sync_action", "recover")
-		    == 0)
+		if (sysfs_set_str(&a->info, NULL,
+				  "sync_action", "recover") == 0)
 			newa->prev_action = recover;
 		dprintf("recovery started on %s\n", a->info.sys_name);
  out:
@@ -626,8 +618,8 @@ static void manage_member(struct mdstat_ent *mdstat,
 			newd = xmalloc(sizeof(*newd));
 			disk_init_and_add(newd, d, newa);
 		}
-		if (sysfs_get_ll(info, NULL, "array_size", &array_size) == 0
-		    && a->info.custom_array_size > array_size*2) {
+		if (sysfs_get_ll(info, NULL, "array_size", &array_size) == 0 &&
+		    a->info.custom_array_size > array_size*2) {
 			sysfs_set_num(info, NULL, "array_size",
 				      a->info.custom_array_size/2);
 		}
@@ -685,8 +677,8 @@ static void manage_new(struct mdstat_ent *mdstat,
 
 	mdi = sysfs_read(-1, mdstat->devnm,
 			 GET_LEVEL|GET_CHUNK|GET_DISKS|GET_COMPONENT|
-			 GET_DEGRADED|GET_SAFEMODE|
-			 GET_DEVS|GET_OFFSET|GET_SIZE|GET_STATE|GET_LAYOUT);
+			 GET_SAFEMODE|GET_DEVS|GET_OFFSET|GET_SIZE|GET_STATE|
+			 GET_LAYOUT);
 
 	if (!mdi)
 		return;
@@ -729,6 +721,8 @@ static void manage_new(struct mdstat_ent *mdstat,
 	new->resync_start_fd = sysfs_open2(new->info.sys_name, NULL, "resync_start");
 	new->metadata_fd = sysfs_open2(new->info.sys_name, NULL, "metadata_version");
 	new->sync_completed_fd = sysfs_open2(new->info.sys_name, NULL, "sync_completed");
+	new->safe_mode_delay_fd = sysfs_open2(new->info.sys_name, NULL,
+					      "safe_mode_delay");
 
 	dprintf("inst: %s action: %d state: %d\n", inst,
 		new->action_fd, new->info.state_fd);
