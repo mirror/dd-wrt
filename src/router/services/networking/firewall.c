@@ -1640,6 +1640,17 @@ static void lan2wan_chains(char *lan_cclass)
 	}
 }
 
+#ifndef HAVE_MICRO
+static pthread_mutex_t mutex_unl = PTHREAD_MUTEX_INITIALIZER;
+static char *lastlock;
+static char *lastunlock;
+#define lock() pthread_mutex_lock(&mutex_unl)
+#define unlock() pthread_mutex_unlock(&mutex_unl)
+#else
+#define lock()
+#define unlock()
+#endif
+
 /*
  *
  * mode 0 : delete
@@ -1650,6 +1661,7 @@ static int update_filter(int mode, int seq)
 	char target_ip[20];
 	char order[10];
 	int ord;
+	lock();
 	ord = update_bitmap(mode, seq);
 	sprintf(target_ip, "grp_%d", seq);
 	sprintf(order, "%d", ord * 1 + 1);
@@ -1662,7 +1674,7 @@ static int update_filter(int mode, int seq)
 	} else {		/* delete */
 		eval("iptables", "-D", "lan2wan", "-j", target_ip);
 	}
-
+	unlock();
 	cprintf("done\n");
 	return 0;
 }
