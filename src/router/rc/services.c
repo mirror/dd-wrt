@@ -859,6 +859,9 @@ static void handle_management(void)
 	start_service("nas");
 	start_service("guest_nas");
 #endif
+#ifdef HAVE_JFFS2
+	FORK(eval("/etc/config/jffs2.startup"));
+#endif
 //      start_service_f("anchorfreednat");
 
 }
