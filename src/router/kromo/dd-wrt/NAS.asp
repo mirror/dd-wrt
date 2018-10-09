@@ -501,6 +501,38 @@ function member_add_submit(F,I) {
 	F.submit();
 }
 
+function drive_fs_changed(F,formatindex, selectedindex) {
+
+	var xfs = <% support_fs("xfs") %>;
+	var ext2 = <% support_fs("ext2") %>;
+	var ext3 = <% support_fs("ext3") %>;
+	var ext4 = <% support_fs("ext4") %>;
+	var btrfs = <% support_fs("btrfs") %>;
+	var exfat = <% support_fs("exfat") %>;
+	var ntfs = <% support_fs("ntfs") %>;
+
+	var value = F.wk_mode.options[selectedindex].value;
+	var format = 'drive_format' + formatindex;
+
+
+	if (value == "xfs" && xfs == 0)
+	    format.disabled = true; 
+	else if (value == "ext2" && ext2 == 0)
+	    format.disabled = true; 
+	else if (value == "ext3" && ext3 == 0)
+	    format.disabled = true; 
+	else if (value == "ext4" && ext4 == 0)
+	    format.disabled = true; 
+	else if (value == "btrfs" && btrfs == 0)
+	    format.disabled = true; 
+	else if (value == "exfat" && exfat == 0)
+	    format.disabled = true; 
+	else if (value == "ntfs" && ntfs == 0)
+	    format.disabled = true; 
+	else
+	    format.disabled = false; 
+}	
+
 
 function to_submit(F) {
 	if($('samba_shares')) {

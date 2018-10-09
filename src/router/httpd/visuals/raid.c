@@ -229,6 +229,15 @@ static char *getfsname(char *drive)
 	return retvalue;
 }
 
+void ej_support_fs(webs_t wp, int argc, char_t ** argv)
+{
+	if (argc < 1) {
+		websWrite(wp, "0");
+		return;
+	}
+	websWrite(wp, "%d", checkfs(argv[0]));
+}
+
 void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(nas.raidmanager)</script></h2>");
@@ -256,7 +265,6 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			break;
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<table class=\"table center\" summary=\"Raid\">\n");
-
 		if (!strcmp(raidtype, "md")) {
 			websWrite(wp,
 				  "<tr>\n" "<th>Name</th>\n" "<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n" "<th>Level</th>\n"
@@ -275,7 +283,7 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<input name=\"raidname%d\" size=\"12\" value=\"%s\" />", i, raidname);
 		websWrite(wp, "</td>\n");
 		websWrite(wp, "<td>\n");
-		websWrite(wp, "<select name=\"raidtype%d\"> onchange=\"raid_save_submit(this.form)\"\n", i);
+		websWrite(wp, "<select name=\"raidtype%d\" onchange=\"raid_save_submit(this.form)\">\n", i);
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 		websWrite(wp, "document.write(\"<option value=\\\"md\\\" %s >Linux Raid</option>\");\n", !strcmp(raidtype, "md") ? "selected=\\\"selected\\\"" : "");
 		if (btrfs)
@@ -397,12 +405,10 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 	}
 	websWrite(wp,
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"raid_add_submit(this.form)\\\" />\");\n//]]>\n</script>\n");
-
 	websWrite(wp, "</fieldset>\n");
-
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(nas.drivemanager)</script></h2>");
 	websWrite(wp, "<fieldset>\n");
-	websWrite(wp, "<table class=\"table center\" summary=\"Drive List\">\n");
+	websWrite(wp, "<table id=\"drives\" class=\"table center\" summary=\"Drive List\">\n");
 	websWrite(wp, "<tr>\n" "<th><script type=\"text/javascript\">Capture(nas.drive)</script></th>\n" "<th><script type=\"text/javascript\">Capture(nas.fs)</script></th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
 	int idx = 0;
 	if (drives) {
@@ -416,9 +422,8 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<input name=\"fs%d\" size=\"32\" value=\"%s\" />", idx, drive);
 			websWrite(wp, "</td>\n");
 			websWrite(wp, "<td>\n");
-			websWrite(wp, "<select name=\"format%d\">\n", idx);
+			websWrite(wp, "<select name=\"format%d\" onchange=\"drive_fs_changed(this.form,%d, this.form.format%d.selectedIndex)\">\n", idx, idx,idx);
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-
 			websWrite(wp, "document.write(\"<option value=\\\"unk\\\" >Unknown</option>\");\n");
 			websWrite(wp, "document.write(\"<option value=\\\"unk\\\" >Empty</option>\");\n", !strcmp(fs, "Empty") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"ext2\\\" %s >EXT2</option>\");\n", !strcmp(fs, "EXT2") ? "selected=\\\"selected\\\"" : "");
@@ -430,22 +435,19 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "document.write(\"<option value=\\\"ntfs\\\" %s >NTFS</option>\");\n", !strcmp(fs, "NTFS") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"fat32\\\" %s >FAT32</option>\");\n", !strcmp(fs, "FAT32") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"zfs\\\" %s >ZFS</option>\");\n", !strcmp(fs, "ZFS") ? "selected=\\\"selected\\\"" : "");
-
 			websWrite(wp, "//]]>\n</script></select>\n");
 			websWrite(wp, "</td>\n");
-
 			websWrite(wp, "<td>\n");
 			websWrite(wp,
-				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" name=\\\"reboot_button\\\" type=\\\"button\\\" value=\\\"\" + nas.format + \"\\\" onclick=\\\"drive_format_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
-				  idx);
+				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" id=\\\"format\\\" name=\\\"drive_format%d\\\" type=\\\"button\\\" value=\\\"\" + nas.format + \"\\\" onclick=\\\"drive_format_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+				  idx, idx);
 			websWrite(wp, "</td>\n");
-
 			websWrite(wp, "</tr>\n");
 			idx++;
 		}
 	}
 	websWrite(wp, "</table>\n");
-
+	websWrite(wp, "<input type=\"hidden\" name=\"drivecount\" id=\"drivecount\" value=\"%d\"\n", idx);
 	websWrite(wp, "</fieldset>\n");
 }
 
