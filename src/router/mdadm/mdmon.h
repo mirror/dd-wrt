@@ -35,6 +35,7 @@ struct active_array {
 	int resync_start_fd;
 	int metadata_fd; /* for monitoring rw/ro status */
 	int sync_completed_fd; /* for checkpoint notification events */
+	int safe_mode_delay_fd;
 	unsigned long long last_checkpoint; /* sync_completed fires for many
 					     * reasons this field makes sure the
 					     * kernel has made progress before

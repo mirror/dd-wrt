@@ -18,7 +18,7 @@ vol0_offset=0
 vol1_level=0
 vol1_comp_size=$((5 * 1024))
 vol1_chunk=64
-vol1_offset=$((vol0_comp_size + 2048))
+vol1_offset=$((vol0_comp_size + 4096))
 vol1_num_comps=$num_disks
 
 # After: RAID 5 volume in slot #0, 4 disks, 64k chunk size

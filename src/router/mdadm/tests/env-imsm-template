@@ -14,13 +14,31 @@ imsm_check() {
         t_offset=$7
         t_chunk=$8
 
-	if [ $t_level -ne 1 ]; then
-	   t_rd_size=$((t_rd_size & ~(t_chunk - 1)))
-	else
+	t_rd_size=$((t_rd_size & ~(1024 - 1)))
+
+	if [ $t_level -eq 1 ]; then
 	   t_chunk=64
 	fi
-	t_size=$((t_size/1024))
-	t_size=$((t_size*1024))
+
+	t_num_data_disks=0
+
+	case $t_level in
+	0)
+		t_num_data_disks=$t_num_disks
+		;;
+	1)
+		t_num_data_disks=1
+		;;
+	5)
+		t_num_data_disks=$((t_num_disks-1))
+		;;
+	10)
+		t_num_data_disks=$((t_num_disks/2))
+		;;
+	esac
+
+	t_size=$((t_rd_size*t_num_data_disks))
+
         err=0
 
         eval `stat -L -c "let major=0x%t; let minor=0x%T;" $t_member`
@@ -30,7 +48,7 @@ imsm_check() {
         fi
         _chunk=`cat ${sysfs}/md/chunk_size`
         if [ $t_chunk -ne $((_chunk/1024)) ]; then
-            echo "**Error**: Chunk size mismatch - expected $t_chunk, actual $_chunk" >&2
+            echo "**Error**: Chunk size mismatch - expected $t_chunk, actual $(($_chunk/1024))" >&2
             err=$((err + 1))
         fi
         for i in `seq 0 $((t_num_disks - 1))`; do
@@ -65,7 +83,6 @@ imsm_check() {
 export IMSM_NO_PLATFORM=1
 export IMSM_DEVNAME_AS_SERIAL=1
 export IMSM_TEST_OROM=1
-export MDADM_EXPERIMENTAL=1
 container=/dev/md/container
 member0=/dev/md/vol0
 member1=/dev/md/vol1

@@ -31,6 +31,23 @@ testdev $md0 3 $[mdsize1_l] 128
 
 mdadm --grow $md0 --size $[size/2]
 check nosync
-sh tests/testdev $md0 3 $[size/2] 128
+testdev $md0 3 $[size/2] 128
 
+mdadm -S $md0
+
+# create a raid5 array and change the chunk
+mdadm -CR $md0 --level raid5 --metadata=1.1 --chunk=32 --raid-disks 3 --size $[size/2] $dev1 $dev2 $dev3
+check wait
+check state UUU
+check chunk 32
+
+mdadm $md0 --grow --chunk=64
+check reshape
+check wait
+check chunk 64
+
+mdadm -S $md0
+mdadm -A $md0 $dev1 $dev2 $dev3
+check state UUU
+check chunk 64
 mdadm -S $md0

@@ -576,8 +576,8 @@ static int read_and_act(struct active_array *a, fd_set *fds)
 		a->last_checkpoint = sync_completed;
 		a->container->ss->set_array_state(a, a->curr_state <= clean);
 	} else if ((a->curr_action == idle && a->prev_action == reshape) ||
-		   (a->curr_action == reshape
-		    && sync_completed > a->last_checkpoint) ) {
+		   (a->curr_action == reshape &&
+		    sync_completed > a->last_checkpoint)) {
 		/* Reshape has progressed or completed so we need to
 		 * update the array state - and possibly the array size
 		 */

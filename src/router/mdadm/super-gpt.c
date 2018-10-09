@@ -47,7 +47,6 @@ static void free_gpt(struct supertype *st)
 	st->sb = NULL;
 }
 
-#ifndef MDASSEMBLE
 static void examine_gpt(struct supertype *st, char *homehost)
 {
 	struct GPT *gpt = st->sb + 512;
@@ -66,7 +65,6 @@ static void examine_gpt(struct supertype *st, char *homehost)
 			);
 	}
 }
-#endif /* MDASSEMBLE */
 
 static int load_gpt(struct supertype *st, int fd, char *devname)
 {
@@ -199,24 +197,20 @@ static struct supertype *match_metadata_desc(char *arg)
 	return st;
 }
 
-#ifndef MDASSEMBLE
 static int validate_geometry(struct supertype *st, int level,
 			     int layout, int raiddisks,
 			     int *chunk, unsigned long long size,
 			     unsigned long long data_offset,
 			     char *subdev, unsigned long long *freesize,
-			     int verbose)
+			     int consistency_policy, int verbose)
 {
 	pr_err("gpt metadata cannot be used this way\n");
 	return 0;
 }
-#endif
 
 struct superswitch gpt = {
-#ifndef MDASSEMBLE
 	.examine_super = examine_gpt,
 	.validate_geometry = validate_geometry,
-#endif
 	.match_metadata_desc = match_metadata_desc,
 	.load_super = load_gpt,
 	.store_super = store_gpt,

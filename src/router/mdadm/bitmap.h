@@ -46,7 +46,7 @@
  *
  * The counter counts pending write requests, plus the on-disk bit.
  * When the counter is '1' and the resync bits are clear, the on-disk
- * bit can be cleared aswell, thus setting the counter to 0.
+ * bit can be cleared as well, thus setting the counter to 0.
  * When we set a bit, or in the counter (to start a write), if the fields is
  * 0, we first set the disk bit and set the counter to 1.
  *
@@ -185,7 +185,7 @@ struct bitmap_page {
 	 */
 	char *map;
 	/*
-	 * in emergencies (when map cannot be alloced), hijack the map
+	 * in emergencies (when map cannot be allocated), hijack the map
 	 * pointer and use it as two counters itself
 	 */
 	unsigned int hijacked;
