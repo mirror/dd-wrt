@@ -422,7 +422,7 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<input name=\"fs%d\" size=\"32\" value=\"%s\" />", idx, drive);
 			websWrite(wp, "</td>\n");
 			websWrite(wp, "<td>\n");
-			websWrite(wp, "<select name=\"format%d\" onchange=\"drive_fs_changed(this.form,%d, this.form.format%d.selectedIndex)\">\n", idx, idx,idx);
+			websWrite(wp, "<select id=\"format%d\" name=\"format%d\" onchange=\"drive_fs_changed(this.form,%d, this.form.format%d.selectedIndex)\">\n", idx, idx, idx, idx);
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 			websWrite(wp, "document.write(\"<option value=\\\"unk\\\" >Unknown</option>\");\n");
 			websWrite(wp, "document.write(\"<option value=\\\"unk\\\" >Empty</option>\");\n", !strcmp(fs, "Empty") ? "selected=\\\"selected\\\"" : "");
@@ -438,9 +438,24 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "//]]>\n</script></select>\n");
 			websWrite(wp, "</td>\n");
 			websWrite(wp, "<td>\n");
+			int dis = 1;
+			if (!strcmp(fs, "xfs") && xfs)
+				dis = 0;
+			else if (!strcmp(fs, "ext2") && ext2)
+				dis = 0;
+			else if (!strcmp(fs, "ext3") && ext3)
+				dis = 0;
+			else if (!strcmp(fs, "ext4") && ext4)
+				dis = 0;
+			else if (!strcmp(fs, "btrfs") && btrfs)
+				dis = 0;
+			else if (!strcmp(fs, "exfat") && exfat)
+				dis = 0;
+			else if (!strcmp(fs, "ntfs") && ntfs)
+				dis = 0;
+
 			websWrite(wp,
-				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" id=\\\"format\\\" name=\\\"drive_format%d\\\" type=\\\"button\\\" value=\\\"\" + nas.format + \"\\\" onclick=\\\"drive_format_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
-				  idx, idx);
+				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" id=\\\"drive_format%d\\\" name=\\\"reboot_button\\\" type=\\\"button\\\" value=\\\"\" + nas.format + \"\\\" onclick=\\\"drive_format_submit(this.form,%d)\\\" %s />\");\n//]]>\n</script>\n", idx, idx, !dis ? "" : "disabled=\\\"true\\\"");
 			websWrite(wp, "</td>\n");
 			websWrite(wp, "</tr>\n");
 			idx++;
