@@ -405,44 +405,45 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<table class=\"table center\" summary=\"Drive List\">\n");
 	websWrite(wp, "<tr>\n" "<th><script type=\"text/javascript\">Capture(nas.drive)</script></th>\n" "<th><script type=\"text/javascript\">Capture(nas.fs)</script></th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
 	int idx = 0;
-	foreach(drive, drives, dnext) {
-		int canformat = 0;
-		char *fs = getfsname(drive);
-		if (!fs)
-			continue;
-		websWrite(wp, "<tr>\n");
-		websWrite(wp, "<td>\n");
-		websWrite(wp, "<input name=\"fs%d\" size=\"32\" value=\"%s\" />", idx, drive);
-		websWrite(wp, "</td>\n");
-		websWrite(wp, "<td>\n");
-		websWrite(wp, "<select name=\"format%d\">\n", idx);
-		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+	if (drives) {
+		foreach(drive, drives, dnext) {
+			int canformat = 0;
+			char *fs = getfsname(drive);
+			if (!fs)
+				continue;
+			websWrite(wp, "<tr>\n");
+			websWrite(wp, "<td>\n");
+			websWrite(wp, "<input name=\"fs%d\" size=\"32\" value=\"%s\" />", idx, drive);
+			websWrite(wp, "</td>\n");
+			websWrite(wp, "<td>\n");
+			websWrite(wp, "<select name=\"format%d\">\n", idx);
+			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 
-		websWrite(wp, "document.write(\"<option value=\\\"unk\\\" >Unknown</option>\");\n");
-		websWrite(wp, "document.write(\"<option value=\\\"unk\\\" >Empty</option>\");\n", !strcmp(fs, "Empty") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"ext2\\\" %s >EXT2</option>\");\n", !strcmp(fs, "EXT2") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"ext3\\\" %s >EXT3</option>\");\n", !strcmp(fs, "EXT3") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"ext4\\\" %s >EXT4</option>\");\n", !strcmp(fs, "EXT4") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"exfat\\\" %s >EXFAT</option>\");\n", !strcmp(fs, "EXFAT") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"xfs\\\" %s >XFS</option>\");\n", !strcmp(fs, "XFS") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"btrfs\\\" %s >BTRFS</option>\");\n", !strcmp(fs, "BTRFS") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"ntfs\\\" %s >NTFS</option>\");\n", !strcmp(fs, "NTFS") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"fat32\\\" %s >FAT32</option>\");\n", !strcmp(fs, "FAT32") ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"zfs\\\" %s >ZFS</option>\");\n", !strcmp(fs, "ZFS") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"unk\\\" >Unknown</option>\");\n");
+			websWrite(wp, "document.write(\"<option value=\\\"unk\\\" >Empty</option>\");\n", !strcmp(fs, "Empty") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"ext2\\\" %s >EXT2</option>\");\n", !strcmp(fs, "EXT2") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"ext3\\\" %s >EXT3</option>\");\n", !strcmp(fs, "EXT3") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"ext4\\\" %s >EXT4</option>\");\n", !strcmp(fs, "EXT4") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"exfat\\\" %s >EXFAT</option>\");\n", !strcmp(fs, "EXFAT") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"xfs\\\" %s >XFS</option>\");\n", !strcmp(fs, "XFS") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"btrfs\\\" %s >BTRFS</option>\");\n", !strcmp(fs, "BTRFS") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"ntfs\\\" %s >NTFS</option>\");\n", !strcmp(fs, "NTFS") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"fat32\\\" %s >FAT32</option>\");\n", !strcmp(fs, "FAT32") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"zfs\\\" %s >ZFS</option>\");\n", !strcmp(fs, "ZFS") ? "selected=\\\"selected\\\"" : "");
 
-		websWrite(wp, "//]]>\n</script></select>\n");
-		websWrite(wp, "</td>\n");
+			websWrite(wp, "//]]>\n</script></select>\n");
+			websWrite(wp, "</td>\n");
 
-		websWrite(wp, "<td>\n");
-		websWrite(wp,
-			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" name=\\\"reboot_button\\\" type=\\\"button\\\" value=\\\"\" + nas.format + \"\\\" onclick=\\\"drive_format_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
-			  idx);
-		websWrite(wp, "</td>\n");
+			websWrite(wp, "<td>\n");
+			websWrite(wp,
+				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" name=\\\"reboot_button\\\" type=\\\"button\\\" value=\\\"\" + nas.format + \"\\\" onclick=\\\"drive_format_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+				  idx);
+			websWrite(wp, "</td>\n");
 
-		websWrite(wp, "</tr>\n");
-		idx++;
+			websWrite(wp, "</tr>\n");
+			idx++;
+		}
 	}
-
 	websWrite(wp, "</table>\n");
 
 	websWrite(wp, "</fieldset>\n");
