@@ -1,0 +1,51 @@
+#!/bin/bash
+
+mdadm -CR $md0 -l1 -b clustered -n2 $dev0 $dev1 --assume-clean
+ssh $NODE2 mdadm -A $md0 $dev0 $dev1
+check all nosync
+check all raid1
+check all bitmap
+check all state UU
+
+# switch 'clustered' bitmap to 'none', and then 'none' to 'internal'
+stop_md $NODE2 $md0
+mdadm --grow $md0 --bitmap=none
+[ $? -eq '0' ] ||
+	die "$NODE1: change bitmap 'clustered' to 'none' failed."
+mdadm -X $dev0 $dev1 &> /dev/null
+[ $? -eq '0' ] &&
+	die "$NODE1: bitmap still exists in member_disks."
+check all nobitmap
+mdadm --grow $md0 --bitmap=internal
+[ $? -eq '0' ] ||
+	die "$NODE1: change bitmap 'none' to 'internal' failed."
+sleep 2
+mdadm -X $dev0 $dev1 &> /dev/null
+[ $? -eq '0' ] ||
+	die "$NODE1: create 'internal' bitmap failed."
+check $NODE1 bitmap
+
+# switch 'internal' bitmap to 'none', and then 'none' to 'clustered'
+mdadm --grow $md0 --bitmap=none
+[ $? -eq '0' ] ||
+	die "$NODE1: change bitmap 'internal' to 'none' failed."
+mdadm -X $dev0 $dev1 &> /dev/null
+[ $? -eq '0' ] &&
+	die "$NODE1: bitmap still exists in member_disks."
+check $NODE1 nobitmap
+mdadm --grow $md0 --bitmap=clustered
+[ $? -eq '0' ] ||
+	die "$NODE1: change bitmap 'none' to 'clustered' failed."
+ssh $NODE2 mdadm -A $md0 $dev0 $dev1
+sleep 2
+for ip in $NODES
+do
+	ssh $ip "mdadm -X $dev0 $dev1 | grep -q 'Cluster name'" ||
+		die "$ip: create 'clustered' bitmap failed."
+done
+check all bitmap
+check all state UU
+check all dmesg
+stop_md all $md0
+
+exit 0

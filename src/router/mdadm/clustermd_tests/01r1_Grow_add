@@ -1,0 +1,68 @@
+#!/bin/bash
+
+mdadm -CR $md0 -l1 -b clustered -n2 $dev0 $dev1 --assume-clean
+ssh $NODE2 mdadm -A $md0 $dev0 $dev1
+check all nosync
+check all raid1
+check all bitmap
+check all state UU
+check all dmesg
+mdadm --grow $md0 --raid-devices=3 --add $dev2
+sleep 0.3
+grep recovery /proc/mdstat
+if [ $? -eq '0' ]
+then
+	check $NODE1 wait
+else
+	check $NODE2 recovery
+	check $NODE2 wait
+fi
+check all state UUU
+check all dmesg
+stop_md all $md0
+
+mdadm -CR $md0 -l1 -b clustered -n2 -x1 $dev0 $dev1 $dev2 --assume-clean
+ssh $NODE2 mdadm -A $md0 $dev0 $dev1 $dev2
+check all nosync
+check all raid1
+check all bitmap
+check all spares 1
+check all state UU
+check all dmesg
+mdadm --grow $md0 --raid-devices=3 --add $dev3
+sleep 0.3
+grep recovery /proc/mdstat
+if [ $? -eq '0' ]
+then
+	check $NODE1 wait
+else
+	check $NODE2 recovery
+	check $NODE2 wait
+fi
+check all state UUU
+check all dmesg
+stop_md all $md0
+
+mdadm -CR $md0 -l1 -b clustered -n2 -x1 $dev0 $dev1 $dev2 --assume-clean
+ssh $NODE2 mdadm -A $md0 $dev0 $dev1 $dev2
+check all nosync
+check all raid1
+check all bitmap
+check all spares 1
+check all state UU
+check all dmesg
+mdadm --grow $md0 --raid-devices=3
+sleep 0.3
+grep recovery /proc/mdstat
+if [ $? -eq '0' ]
+then
+	check $NODE1 wait
+else
+	check $NODE2 recovery
+	check $NODE2 wait
+fi
+check all state UUU
+check all dmesg
+stop_md all $md0
+
+exit 0

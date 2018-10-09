@@ -1,0 +1,50 @@
+#!/bin/bash
+
+mdadm -CR $md0 -l1 -b clustered -n2 $dev0 $dev1
+ssh $NODE2 mdadm -A $md0 $dev0 $dev1
+check $NODE1 resync
+check $NODE2 PENDING
+check all wait
+check all raid1
+check all bitmap
+check all nosync
+check all state UU
+check all dmesg
+stop_md all $md0
+
+mdadm -CR $md0 -l1 -b clustered -n2 $dev0 $dev1 --assume-clean
+ssh $NODE2 mdadm -A $md0 $dev0 $dev1
+check all nosync
+check all raid1
+check all bitmap
+check all state UU
+check all dmesg
+stop_md all $md0
+
+mdadm -CR $md0 -l1 -b clustered -n2 -x1 $dev0 $dev1 $dev2 --assume-clean
+ssh $NODE2 mdadm -A $md0 $dev0 $dev1 $dev2
+check all nosync
+check all raid1
+check all bitmap
+check all spares 1
+check all state UU
+check all dmesg
+stop_md all $md0
+
+name=tstmd
+mdadm -CR $md0 -l1 -b clustered -n2 $dev0 $dev1 --name=$name --assume-clean
+ssh $NODE2 mdadm -A $md0 $dev0 $dev1
+check all nosync
+check all raid1
+check all bitmap
+check all state UU
+for ip in $NODE1 $NODE2
+do
+	ssh $ip "mdadm -D $md0 | grep 'Name' | grep -q $name"
+	[ $? -ne '0' ] &&
+		die "$ip: check --name=$name failed."
+done
+check all dmesg
+stop_md all $md0
+
+exit 0

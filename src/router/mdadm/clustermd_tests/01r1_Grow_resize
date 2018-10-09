@@ -1,0 +1,23 @@
+#!/bin/bash
+
+size=10000
+
+mdadm -CR $md0 -l1 -b clustered --size $size -n2 $dev0 $dev1 --assume-clean
+ssh $NODE2 mdadm -A $md0 $dev0 $dev1
+check all nosync
+check all raid1
+check all bitmap
+check all state UU
+
+mdadm --grow $md0 --size max
+check $NODE1 resync
+check $NODE1 wait
+check all state UU
+
+mdadm --grow $md0 --size $size
+check all nosync
+check all state UU
+check all dmesg
+stop_md all $md0
+
+exit 0

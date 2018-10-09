@@ -1,0 +1,22 @@
+#!/bin/bash
+
+for metadata in 0.9 1.0 1.1 1.2
+do
+	for level in linear raid0 raid1 raid4 raid5 raid6 raid10
+	do
+		mdadm -CR $md0 -l $level -n 4 --metadata=$metadata \
+			$dev1 $dev2 $dev3 $dev4 --assume-clean
+		check nosync
+		check $level
+		mdadm -ro $md0
+		check readonly
+		state=$(cat /sys/block/md0/md/array_state)
+		[ "$state" == "readonly" ] ||
+			die "array_state should be 'readonly', but is $state"
+		mdadm -w $md0
+		check $level
+		mdadm -S $md0
+	done
+done
+
+exit 0

@@ -1,0 +1,61 @@
+# Copyright (C) 2017 by Jonathan G. Underwood
+# This file is part of mdraid-safe-timeouts.
+#
+# mdraid-safe-timeouts is free software: you can redistribute it
+# and/or modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation, either version 3 of
+# the License, or (at your option) any later version.
+#
+# Foobar is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with mdraid-safe-timeouts.  If not, see
+# <http://www.gnu.org/licenses/>.
+
+# This file causes block devices with Linux RAID (mdadm) signatures to
+# attempt to set safe timeouts for the drives involved
+# See udev(8) for syntax
+
+# Don't process any events if anaconda is running as anaconda brings up
+# raid devices manually
+ENV{ANACONDA}=="?*", GOTO="md_timeouts_end"
+
+SUBSYSTEM!="block|machinecheck", GOTO="md_timeouts_end"
+
+# "noiswmd" on kernel command line stops mdadm from handling
+# "isw" (aka IMSM - Intel RAID).
+# "nodmraid" on kernel command line stops mdadm from handling
+# "isw" or "ddf".
+IMPORT{cmdline}="nodmraid"
+ENV{nodmraid}=="?*", GOTO="md_timeouts_end"
+IMPORT{cmdline}="noiswmd"
+ENV{noiswmd}=="?*", GOTO="md_timeouts_end"
+
+# Set controller timeout for parent disk of each partition if the
+# partition is a mdraid partition of higher than raid 0, and the disk
+# doesn't have scterc turned on (i.e. if it's disabled or the disk
+# doesn't support it). We determine if the disk has SCTERC turned on
+# by examining the output of smartctl and seeing if it contains the
+# word "seconds". If the word "seconds" is found we take this to imply
+# STCERC is turned on, and take no action. Otherwise we set the drive
+# controller timeout to 180 seconds. It would be better to check the
+# exit status code of smartctl rather than grepping for "seconds", but
+# it's not clear what that will be in the three cases (supported and
+# turned on, supported but disabled, not supported).
+
+ENV{DEVTYPE}!="partition", GOTO="md_timeouts_end"
+
+IMPORT{program}="/sbin/mdadm --examine --export $devnode"
+
+ACTION=="add|change", \
+  ENV{ID_FS_TYPE}=="linux_raid_member", \
+  ENV{MD_LEVEL}=="raid[1-9]*", \
+  TEST=="/sys/block/$parent/device/timeout", \
+  TEST=="/usr/sbin/smartctl", \
+  PROGRAM!="/bin/sh -c '/usr/sbin/smartctl -l scterc /dev/$parent | grep -q seconds && exit 0 || exit 1'", \
+  RUN+="/bin/sh -c 'echo 180 > /sys/block/$parent/device/timeout && /usr/bin/logger timeout for /dev/$parent set to 180 secs'"
+
+LABEL="md_timeouts_end"
