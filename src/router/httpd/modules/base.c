@@ -1208,12 +1208,13 @@ static struct gozila_action gozila_actions[] = {
 	{"NAS", "save", "nassrv", 1, REFRESH, "dlna_save"},
 #endif
 #ifdef HAVE_RAID
-	{"NAS", "add_raid", "nassrv", 1, REFRESH, "add_raid"},
-	{"NAS", "del_raid", "nassrv", 1, REFRESH, "del_raid"},
-	{"NAS", "add_raid_member", "nassrv", 1, REFRESH, "add_raid_member"},
-	{"NAS", "del_raid_member", "nassrv", 1, REFRESH, "del_raid_member"},
-	{"NAS", "format_raid", "nassrv", 1, REFRESH, "format_raid"},
-	{"NAS", "format_drive", "nassrv", 1, REFRESH, "format_drive"},
+	{"NAS", "add_raid", "nassrv", 0, REFRESH, "add_raid"},
+	{"NAS", "del_raid", "nassrv", 0, REFRESH, "del_raid"},
+	{"NAS", "add_raid_member", "nassrv", 0, REFRESH, "add_raid_member"},
+	{"NAS", "del_raid_member", "nassrv", 0, REFRESH, "del_raid_member"},
+	{"NAS", "format_raid", "nassrv", 0, REFRESH, "format_raid"},
+	{"NAS", "format_drive", "nassrv", 0, REFRESH, "format_drive"},
+	{"NAS", "raid_save", "nassrv", 0, REFRESH, "raid_save"},
 #endif
 #if defined(HAVE_WPS) || defined(HAVE_AOSS)
 	{"AOSS", "save", "aoss", 1, REFRESH, "aoss_save"},
