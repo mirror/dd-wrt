@@ -311,6 +311,7 @@ include rules/ddrescue.mk
 include rules/xz.mk
 include rules/zstd.mk
 include rules/exfat-utils.mk
+include rules/dosfstools.mk
 
 #
 # Generic rules
