@@ -210,7 +210,7 @@ int nvram_commit(void)
 		len = 0;
 		ret = mtd_read(nvram_mtd, offset, i, &len, buf);
 		if (ret || len != i) {
-			printk("nvram_commit: read error ret = %d, len = %ld/%d\n", ret, len, i);
+			printk("nvram_commit: read error ret = %d, len = %lu/%d\n", ret, len, i);
 			ret = -EIO;
 			goto done;
 		}
