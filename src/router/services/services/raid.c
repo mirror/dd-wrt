@@ -46,6 +46,7 @@ void start_raid(void)
 	int ext2 = 0;
 	int ext4 = 0;
 	int exfat = 0;
+	int fat32 = 0;
 	int ntfs = 0;
 	int todo = 0;
 	while (1) {
@@ -59,6 +60,8 @@ void start_raid(void)
 				btrfs = 1;
 			if (!strcmp(fs, "exfat"))
 				exfat = 1;
+			if (!strcmp(fs, "fat32"))
+				fat32 = 1;
 			if (!strcmp(fs, "xfs"))
 				xfs = 1;
 			if (!strcmp(fs, "ntfs"))
@@ -154,6 +157,14 @@ void start_raid(void)
 		insmod("exfat");
 		dd_loginfo("raid", "EXFAT modules successfully loaded\n");
 	}
+	if (fat32) {
+		insmod("nls_base nls_cp932 nls_cp936 nls_cp950 nls_cp437 nls_iso8859-1 nls_iso8859-2 nls_utf8");
+		insmod("fat");
+		insmod("vfat");
+		insmod("msdos");
+		dd_loginfo("raid", "FAT32 modules successfully loaded\n");
+	}
+
 	i = 0;
 	while (1) {
 		char *raid = nvram_nget("raid%d", i);
@@ -194,6 +205,9 @@ void start_raid(void)
 				}
 				if (nvram_nmatch("exfat", "raidfs%d", i)) {
 					sysprintf("mkfs.exfat -n \"%s\" /dev/md%d", poolname, i);
+				}
+				if (nvram_nmatch("fat32", "raidfs%d", i)) {
+					sysprintf("mkfs.fat -F 32 -n \"%s\" /dev/md%d", poolname, i);
 				}
 				if (nvram_nmatch("ntfs", "raidfs%d", i)) {
 					sysprintf("mkfs.ntfs -Q -F -L \"%s\" /dev/md%d", poolname, i);
@@ -265,6 +279,9 @@ void start_raid(void)
 			}
 			if (nvram_nmatch("exfat", "raidfs%d", i)) {
 				sysprintf("mount -t exfat /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
+			}
+			if (nvram_nmatch("fat32", "raidfs%d", i)) {
+				sysprintf("mount -t vfat -o iocharset=utf8 /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
 			}
 			if (nvram_nmatch("ntfs", "raidfs%d", i)) {
 				sysprintf("ntfs-3g -o compression,direct_io,big_writes /dev/md%d \"/tmp/mnt/%s\"", i, poolname);
