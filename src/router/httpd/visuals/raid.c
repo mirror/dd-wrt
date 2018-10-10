@@ -250,6 +250,7 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 	int btrfs = checkfs("btrfs");
 	int exfat = checkfs("exfat");
 	int ntfs = checkfs("ntfs");
+	int fat32 = checkfs("fat");
 	char *drives = getAllDrives();
 	char drive[128];
 	char *dnext;
@@ -452,6 +453,8 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			else if (!strcmp(fs, "EXFAT") && exfat)
 				dis = 0;
 			else if (!strcmp(fs, "NTFS") && ntfs)
+				dis = 0;
+			else if (!strcmp(fs, "FAT32") && fat32)
 				dis = 0;
 
 			websWrite(wp,
