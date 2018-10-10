@@ -324,6 +324,7 @@ man_pages = [
     ('pimd', 'pimd', fwfrr.format("a PIM "), [], 8),
     ('pbrd', 'pbrd', fwfrr.format("a PBR "), [], 8),
     ('sharpd', 'sharpd', fwfrr.format("a SHARP "), [], 8),
+    ('staticd', 'staticd', fwfrr.format("a static route manager "), [], 8),
     ('mtracebis', 'mtracebis', "a multicast trace client", [], 8),
     ('ripd', 'ripd', fwfrr.format("a RIP "), [], 8),
     ('ripngd', 'ripngd', fwfrr.format("a RIPNG "), [], 8),
@@ -331,6 +332,7 @@ man_pages = [
     ('watchfrr', 'watchfrr', 'a program to monitor the status of FRRouting daemons', [], 8),
     ('vtysh', 'vtysh', 'an integrated shell for FRRouting.', [], 1),
     ('frr', 'frr', 'a systemd interaction script', [], 1),
+    ('bfdd', 'bfdd', fwfrr.format("a bfd"), [], 8),
 ]
 
 # -- Options for Texinfo output -------------------------------------------

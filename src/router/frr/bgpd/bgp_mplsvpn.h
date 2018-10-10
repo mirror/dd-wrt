@@ -151,6 +151,12 @@ static inline int vpn_leak_from_vpn_active(struct bgp *bgp_vrf, afi_t afi,
 		return 0;
 	}
 
+	if (bgp_vrf->vrf_id == VRF_UNKNOWN) {
+		if (pmsg)
+			*pmsg = "destination bgp instance vrf is VRF_UNKNOWN";
+		return 0;
+	}
+
 	/* Is vrf configured to import from vpn? */
 	if (!CHECK_FLAG(bgp_vrf->af_flags[afi][SAFI_UNICAST],
 			BGP_CONFIG_MPLSVPN_TO_VRF_IMPORT)
@@ -182,6 +188,10 @@ static inline void vpn_leak_prechange(vpn_policy_direction_t direction,
 				      afi_t afi, struct bgp *bgp_vpn,
 				      struct bgp *bgp_vrf)
 {
+	/* Detect when default bgp instance is not (yet) defined by config */
+	if (!bgp_vpn)
+		return;
+
 	if ((direction == BGP_VPN_POLICY_DIR_FROMVPN) &&
 		vpn_leak_from_vpn_active(bgp_vrf, afi, NULL)) {
 
@@ -198,6 +208,10 @@ static inline void vpn_leak_postchange(vpn_policy_direction_t direction,
 				       afi_t afi, struct bgp *bgp_vpn,
 				       struct bgp *bgp_vrf)
 {
+	/* Detect when default bgp instance is not (yet) defined by config */
+	if (!bgp_vpn)
+		return;
+
 	if (direction == BGP_VPN_POLICY_DIR_FROMVPN)
 		vpn_leak_to_vrf_update_all(bgp_vrf, bgp_vpn, afi);
 	if (direction == BGP_VPN_POLICY_DIR_TOVPN) {
@@ -215,5 +229,7 @@ static inline void vpn_leak_postchange(vpn_policy_direction_t direction,
 extern void vpn_policy_routemap_event(const char *rmap_name);
 
 extern vrf_id_t get_first_vrf_for_redirect_with_rt(struct ecommunity *eckey);
+
+extern void vpn_leak_postchange_all(void);
 
 #endif /* _QUAGGA_BGP_MPLSVPN_H */

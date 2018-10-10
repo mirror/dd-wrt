@@ -10,41 +10,44 @@
 
 #################### FRRouting (FRR) configure options #####################
 # with-feature options
-%{!?with_pam:           %global  with_pam           0 }
-%{!?with_ospfclient:    %global  with_ospfclient    1 }
-%{!?with_ospfapi:       %global  with_ospfapi       1 }
-%{!?with_rtadv:         %global  with_rtadv         1 }
-%{!?with_ldpd:          %global  with_ldpd          1 }
-%{!?with_nhrpd:         %global  with_nhrpd         1 }
-%{!?with_eigrpd:        %global  with_eigrpd        1 }
 %{!?with_babeld:        %global  with_babeld        1 }
-%{!?with_shared:        %global  with_shared        1 }
-%{!?with_multipath:     %global  with_multipath     256 }
-%{!?frr_user:           %global  frr_user           frr }
-%{!?vty_group:          %global  vty_group          frrvty }
-%{!?with_fpm:           %global  with_fpm           1 }
-%{!?with_watchfrr:      %global  with_watchfrr      1 }
+%{!?with_bfdd:          %global  with_bfdd          1 }
 %{!?with_bgp_vnc:       %global  with_bgp_vnc       0 }
+%{!?with_cumulus:       %global  with_cumulus       0 }
+%{!?with_eigrpd:        %global  with_eigrpd        1 }
+%{!?with_fpm:           %global  with_fpm           1 }
+%{!?with_ldpd:          %global  with_ldpd          1 }
+%{!?with_multipath:     %global  with_multipath     256 }
+%{!?with_nhrpd:         %global  with_nhrpd         1 }
+%{!?with_ospfapi:       %global  with_ospfapi       1 }
+%{!?with_ospfclient:    %global  with_ospfclient    1 }
+%{!?with_pam:           %global  with_pam           0 }
+%{!?with_pbrd:          %global  with_pbrd          1 }
 %{!?with_pimd:          %global  with_pimd          1 }
 %{!?with_rpki:          %global  with_rpki          0 }
-%{!?with_pbrd:          %global  with_pbrd          1 }
+%{!?with_rtadv:         %global  with_rtadv         1 }
+%{!?with_watchfrr:      %global  with_watchfrr      1 }
+
+# user and group
+%{!?frr_user:           %global  frr_user           frr }
+%{!?vty_group:          %global  vty_group          frrvty }
 
 # path defines
-%define     _sysconfdir   /etc/frr
-%define     _sbindir      /usr/lib/frr
-%define     zeb_src       %{_builddir}/%{name}-%{frrversion}
-%define     zeb_rh_src    %{zeb_src}/redhat
-%define     zeb_docs      %{zeb_src}/doc
-%define     frr_tools     %{zeb_src}/tools
+%define     configdir   %{_sysconfdir}/%{name}
+%define     _sbindir    /usr/lib/frr
+%define     zeb_src     %{_builddir}/%{name}-%{frrversion}
+%define     zeb_rh_src  %{zeb_src}/redhat
+%define     zeb_docs    %{zeb_src}/doc
+%define     frr_tools   %{zeb_src}/tools
 
 # defines for configure
-%define     _localstatedir  /var/run/frr
+%define     rundir  %{_localstatedir}/run/%{name}
 
 # define for sphinx-build binary
 %if 0%{?rhel} && 0%{?rhel} < 7
-%define     sphinx sphinx-build2.7
+    %define sphinx sphinx-build2.7
 %else
-%define     sphinx sphinx-build
+    %define sphinx sphinx-build
 %endif
 ############################################################################
 
@@ -55,26 +58,22 @@
 
 #### Check for systemd or init.d (upstart)
 # Check for init.d (upstart) as used in CentOS 6 or systemd (ie CentOS 7)
-%if 0%{?fedora} >= 15 || 0%{?rhel} >= 7 || 0%{?suse_version} >= 1210
+%if 0%{?fedora} || 0%{?rhel} >= 7 || 0%{?suse_version} >= 1210
     %global initsystem systemd
 %else
-%if (0%{?fedora} && 0%{?fedora} < 15) || (0%{?rhel} && 0%{?rhel} < 7)
+%if 0%{?rhel} && 0%{?rhel} < 7
     %global initsystem upstart
 %else
     %{expand: %%global initsystem %(if [[ `/sbin/init --version 2> /dev/null` =~ upstart ]]; then echo upstart; elif [[ `readlink -f /sbin/init` = /usr/lib/systemd/systemd ]]; then echo systemd; elif [[ `systemctl` =~ -\.mount ]]; then echo systemd; fi)}
 %endif
 %endif
-#
-# If init system is systemd, then always disable watchfrr
-#
+
+# If init system is systemd, then always enable watchfrr
 %if "%{initsystem}" == "systemd"
-    # Note: For systems with systemd, watchfrr will NOT be built. Systemd
-    # takes over the role of restarting crashed processes. Value will
-    # be overwritten with 0 below for systemd independent on the setting here
     %global with_watchfrr 1
 %endif
 
-#### Check for RedHat 6.x or CentOS 6.x - they are too old to support PIM. 
+#### Check for RedHat 6.x or CentOS 6.x - they are too old to support PIM.
 ####   Always disable it on these old systems unconditionally
 #
 # if CentOS / RedHat and version < 7, then disable PIMd (too old, won't work)
@@ -87,54 +86,57 @@
 %{!?frr_gid:            %global  frr_gid            92 }
 %{!?vty_gid:            %global  vty_gid            85 }
 
-%define     daemon_list zebra ripd ospfd bgpd isisd ripngd ospf6d pbrd
+%define daemon_list zebra ripd ospfd bgpd isisd ripngd ospf6d pbrd staticd bfdd
 
 %if %{with_ldpd}
-%define     daemon_ldpd ldpd
+    %define daemon_ldpd ldpd
 %else
-%define     daemon_ldpd ""
+    %define daemon_ldpd ""
 %endif
 
 %if %{with_pimd}
-%define     daemon_pimd pimd
+    %define daemon_pimd pimd
 %else
-%define     daemon_pimd ""
+    %define daemon_pimd ""
 %endif
 
 %if %{with_pbrd}
-%define     daemon_pbrd pbrd
+    %define daemon_pbrd pbrd
 %else
-%define     daemon_pbrd ""
+    %define daemon_pbrd ""
 %endif
 
 %if %{with_nhrpd}
-%define         daemon_nhrpd	nhrpd
+    %define daemon_nhrpd nhrpd
 %else
-%define		daemon_nhrpd	""
+    %define daemon_nhrpd ""
 %endif
 
 %if %{with_eigrpd}
-%define         daemon_eigrpd	eigrpd
+    %define daemon_eigrpd eigrpd
 %else
-%define		daemon_eigrpd	""
+    %define daemon_eigrpd ""
 %endif
 
 %if %{with_babeld}
-%define         daemon_babeld	babeld
+    %define daemon_babeld babeld
 %else
-%define		daemon_babeld	""
+    %define daemon_babeld ""
 %endif
 
 %if %{with_watchfrr}
-%define     daemon_watchfrr watchfrr
+    %define daemon_watchfrr watchfrr
 %else
-%define     daemon_watchfrr ""
+    %define daemon_watchfrr ""
 %endif
 
-%define     all_daemons %{daemon_list} %{daemon_ldpd} %{daemon_pimd} %{daemon_nhrpd} %{daemon_eigrpd} %{daemon_babeld} %{daemon_watchfrr} %{daemon_pbrd}
+%if %{with_bfdd}
+    %define daemon_bfdd bfdd
+%else
+    %define daemon_bfdd ""
+%endif
 
-# allow build dir to be kept
-%{!?keep_build:         %global  keep_build         0 }
+%define all_daemons %{daemon_list} %{daemon_ldpd} %{daemon_pimd} %{daemon_nhrpd} %{daemon_eigrpd} %{daemon_babeld} %{daemon_watchfrr} %{daemon_pbrd} %{daemon_bfdd}
 
 #release sub-revision (the two digits after the CONFDATE)
 %{!?release_rev:        %global  release_rev        01 }
@@ -145,43 +147,52 @@ Version:        %{rpmversion}
 Release:        @CONFDATE@%{release_rev}%{?dist}
 License:        GPLv2+
 Group:          System Environment/Daemons
-Source0:        http://www.frrouting.org/releases/frr/%{name}-%{frrversion}.tar.gz
-URL:            http://www.frrouting.org
-Requires(pre):  /sbin/install-info
-Requires(preun): /sbin/install-info
-Requires(post): /sbin/install-info
-BuildRequires:  gcc patch libcap-devel
-BuildRequires:  readline readline-devel ncurses ncurses-devel
-BuildRequires:  json-c-devel bison >= 2.7 flex make
-BuildRequires:  c-ares-devel texinfo
+Source0:        https://github.com/FRRouting/frr/archive/%{name}-%{frrversion}.tar.gz
+URL:            https://www.frrouting.org
+Requires(pre):  shadow-utils
+Requires(preun): info
+Requires(post): info
+BuildRequires:  bison >= 2.7
+BuildRequires:  c-ares-devel
+BuildRequires:  flex
+BuildRequires:  gcc
+BuildRequires:  json-c-devel
+BuildRequires:  libcap-devel
+BuildRequires:  make
+BuildRequires:  ncurses-devel
+BuildRequires:  readline-devel
+BuildRequires:  texinfo
 %if 0%{?rhel} && 0%{?rhel} < 7
 #python27-devel is available from ius community repo for RedHat/CentOS 6
-BuildRequires:  python27-devel python27-sphinx
+BuildRequires:  python27-devel
+BuildRequires:  python27-sphinx
 %else
-BuildRequires:  python-devel >= 2.7 python-sphinx
+BuildRequires:  python-devel >= 2.7
+BuildRequires:  python-sphinx
 %endif
-Requires:       ncurses json-c initscripts
 %if %{with_pam}
 BuildRequires:  pam-devel
-Requires:       pam
 %endif
 %if %{with_rpki}
 BuildRequires:  librtr-devel >= 0.5
-Requires:       librtr >= 0.5
 %endif
 %if "%{initsystem}" == "systemd"
-BuildRequires:      systemd systemd-devel
+BuildRequires:      systemd
+BuildRequires:      systemd-devel
 Requires(post):     systemd
 Requires(preun):    systemd
 Requires(postun):   systemd
 %else
+Requires(post):     chkconfig
+Requires(preun):    chkconfig
 # Initscripts > 5.60 is required for IPv6 support
 Requires(pre):      initscripts >= 5.60
+Requires:           initscripts
 %endif
 Provides:           routingdaemon = %{version}-%{release}
-BuildRoot:          %{_tmppath}/%{name}-%{version}-root
 Obsoletes:          gated mrt zebra frr-sysvinit
 Conflicts:          bird
+
 
 %description
 FRRouting is a free software that manages TCP/IP based routing
@@ -189,9 +200,10 @@ protocol. It takes multi-server and multi-thread approach to resolve
 the current complexity of the Internet.
 
 FRRouting supports BGP4, OSPFv2, OSPFv3, ISIS, RIP, RIPng, PIM, LDP
-NHRP, Babel, PBR and EIGRP.
+NHRP, Babel, PBR, EIGRP and BFD.
 
 FRRouting is a fork of Quagga.
+
 
 %package contrib
 Summary: contrib tools for frr
@@ -200,14 +212,16 @@ Group: System Environment/Daemons
 %description contrib
 Contributed/3rd party tools which may be of use with frr.
 
+
 %package pythontools
 Summary: python tools for frr
 BuildRequires: python
-Requires: python python-ipaddr
+Requires: python-ipaddr
 Group: System Environment/Daemons
 
 %description pythontools
 Contributed python 2.7 tools which may be of use with frr.
+
 
 %package devel
 Summary: Header and object files for frr development
@@ -218,8 +232,10 @@ Requires: %{name} = %{version}-%{release}
 The frr-devel package contains the header and object files neccessary for
 developing OSPF-API and frr applications.
 
+
 %prep
-%setup  -q -n frr-%{frrversion}
+%setup -q -n frr-%{frrversion}
+
 
 %build
 
@@ -235,15 +251,11 @@ developing OSPF-API and frr applications.
 
 %configure \
     --sbindir=%{_sbindir} \
-    --sysconfdir=%{_sysconfdir} \
-    --libdir=%{_libdir} \
-    --libexecdir=%{_libexecdir} \
-    --localstatedir=%{_localstatedir} \
+    --sysconfdir=%{configdir} \
+    --localstatedir=%{rundir} \
+    --disable-static \
     --disable-werror \
     --enable-irdp \
-%if !%{with_shared}
-    --disable-shared \
-%endif
 %if %{with_multipath}
     --enable-multipath=%{with_multipath} \
 %endif
@@ -254,14 +266,14 @@ developing OSPF-API and frr applications.
     --disable-ospfclient\
 %endif
 %if %{with_ospfapi}
-    --enable-ospfapi=yes \
+    --enable-ospfapi \
 %else
-    --enable-ospfapi=no \
+    --disable-ospfapi \
 %endif
 %if %{with_rtadv}
-    --enable-rtadv=yes \
+    --enable-rtadv \
 %else
-    --enable-rtadv=no \
+    --disable-rtadv \
 %endif
 %if %{with_ldpd}
     --enable-ldpd \
@@ -279,29 +291,29 @@ developing OSPF-API and frr applications.
     --disable-pbrd \
 %endif
 %if %{with_nhrpd}
-	--enable-nhrpd \
+    --enable-nhrpd \
 %else
-	--disable-nhrpd \
+    --disable-nhrpd \
 %endif
 %if %{with_eigrpd}
-	--enable-eigrpd \
+    --enable-eigrpd \
 %else
-	--disable-eigrpd \
+    --disable-eigrpd \
 %endif
 %if %{with_babeld}
-	--enable-babeld \
+    --enable-babeld \
 %else
-	--disable-babeld \
+    --disable-babeld \
 %endif
 %if %{with_pam}
     --with-libpam \
 %endif
 %if 0%{?frr_user:1}
-    --enable-user=%frr_user \
-    --enable-group=%frr_user \
+    --enable-user=%{frr_user} \
+    --enable-group=%{frr_user} \
 %endif
 %if 0%{?vty_group:1}
-    --enable-vty-group=%vty_group \
+    --enable-vty-group=%{vty_group} \
 %endif
 %if %{with_fpm}
     --enable-fpm \
@@ -313,19 +325,28 @@ developing OSPF-API and frr applications.
 %else
     --disable-watchfrr \
 %endif
+%if %{with_cumulus}
+    --enable-cumulus \
+%endif
 %if %{with_bgp_vnc}
     --enable-bgp-vnc \
 %else
     --disable-bgp-vnc \
 %endif
-    --enable-isisd=yes \
+    --enable-isisd \
 %if "%{initsystem}" == "systemd"
-    --enable-systemd=yes \
+    --enable-systemd \
 %endif
 %if %{with_rpki}
     --enable-rpki \
+%else
+    --disable-rpki \
 %endif
-    --enable-poll=yes
+%if %{with_bfdd}
+    --enable-bfdd
+%else
+    --disable-bfdd
+%endif
 
 make %{?_smp_mflags} MAKEINFO="makeinfo --no-split" SPHINXBUILD=%{sphinx}
 
@@ -333,9 +354,10 @@ pushd doc
 make SPHINXBUILD=%{sphinx} info
 popd
 
+
 %install
-mkdir -p %{buildroot}/etc/{frr,sysconfig,logrotate.d,pam.d,default} \
-         %{buildroot}/var/log/frr %{buildroot}%{_infodir}
+mkdir -p %{buildroot}%{_sysconfdir}/{frr,sysconfig,logrotate.d,pam.d,default} \
+         %{buildroot}%{_localstatedir}/log/frr %{buildroot}%{_infodir}
 make DESTDIR=%{buildroot} INSTALL="install -p" CP="cp -p" SPHINXBUILD=%{sphinx} install
 
 # Remove this file, as it is uninstalled and causes errors when building on RH9
@@ -344,53 +366,51 @@ rm -rf %{buildroot}/usr/share/info/dir
 # Remove debian init script if it was installed
 rm -f %{buildroot}%{_sbindir}/frr
 
-# kill bogus libtool files for modules
-rm -f %{buildroot}%{_libdir}/frr/modules/*.la
+# kill bogus libtool files
+rm -vf %{buildroot}%{_libdir}/frr/modules/*.la
+rm -vf %{buildroot}%{_libdir}/*.la
 
 # install /etc sources
 %if "%{initsystem}" == "systemd"
 mkdir -p %{buildroot}%{_unitdir}
-install -m644 %{zeb_rh_src}/frr.service \
-    %{buildroot}%{_unitdir}/frr.service
-install %{zeb_rh_src}/frr.init \
-    %{buildroot}%{_sbindir}/frr
+install -m644 %{zeb_rh_src}/frr.service %{buildroot}%{_unitdir}/frr.service
+install %{zeb_rh_src}/frr.init %{buildroot}%{_sbindir}/frr
 %else
-mkdir -p %{buildroot}/etc/rc.d/init.d
-install %{zeb_rh_src}/frr.init \
-    %{buildroot}%{_sbindir}/frr
-ln -s %{_sbindir}/frr \
-    %{buildroot}/etc/rc.d/init.d/frr
+mkdir -p %{buildroot}%{_initddir}
+install %{zeb_rh_src}/frr.init %{buildroot}%{_sbindir}/frr
+ln -s %{_sbindir}/frr %{buildroot}%{_initddir}/frr
 %endif
 
-install %{zeb_rh_src}/daemons %{buildroot}/etc/frr
-install -m644 %{zeb_rh_src}/frr.pam \
-    %{buildroot}/etc/pam.d/frr
-install -m644 %{zeb_rh_src}/frr.logrotate \
-    %{buildroot}/etc/logrotate.d/frr
-install -d -m750  %{buildroot}/var/run/frr
+install %{zeb_rh_src}/daemons %{buildroot}%{_sysconfdir}/frr
+# add rpki module to daemon
+%if %{with_rpki}
+    sed -i -e 's/^\(bgpd_options=\)\(.*\)\(".*\)/\1\2 -M rpki\3/' %{buildroot}%{_sysconfdir}/frr/daemons
+%endif
+install -m644 %{zeb_rh_src}/frr.pam %{buildroot}%{_sysconfdir}/pam.d/frr
+install -m644 %{zeb_rh_src}/frr.logrotate %{buildroot}%{_sysconfdir}/logrotate.d/frr
+install -d -m750 %{buildroot}%{rundir}
+
 
 %pre
 # add vty_group
 %if 0%{?vty_group:1}
-if getent group %vty_group > /dev/null ; then : ; else \
- /usr/sbin/groupadd -r -g %vty_gid %vty_group > /dev/null || : ; fi
+    getent group %{vty_group} >/dev/null || groupadd -r -g %{vty_gid} %{vty_group}
 %endif
 
 # add frr user and group
 %if 0%{?frr_user:1}
-# Ensure that frr_gid gets correctly allocated
-if getent group %frr_user >/dev/null; then : ; else \
- /usr/sbin/groupadd -g %frr_gid %frr_user > /dev/null || : ; \
-fi
-if getent passwd %frr_user >/dev/null ; then : ; else \
- /usr/sbin/useradd  -u %frr_uid -g %frr_gid \
-  -M -r -s /sbin/nologin -c "FRRouting suite" \
-  -d %_localstatedir %frr_user 2> /dev/null || : ; \
-fi
-%if 0%{?vty_group:1}
-/usr/sbin/usermod -a -G %vty_group %frr_user
+    # Ensure that frr_gid gets correctly allocated
+    getent group %{frr_user} >/dev/null || groupadd -g %{frr_gid} %{frr_user}
+    getent passwd %{frr_user} >/dev/null || \
+    useradd -r -u %{frr_uid} -g %{frr_user} \
+        -s /sbin/nologin -c "FRRouting suite" \
+        -d %{rundir} %{frr_user}
+
+    %if 0%{?vty_group:1}
+        usermod -a -G %{vty_group} %{frr_user}
+    %endif
 %endif
-%endif
+exit 0
 
 
 %post
@@ -399,99 +419,104 @@ fi
 
 zebra_spec_add_service ()
 {
-    # Add port /etc/services entry if it isn't already there 
-    if [ -f /etc/services ] && \
-        ! %__sed -e 's/#.*$//' /etc/services | %__grep -wq $1 ; then
-        echo "$1        $2          # $3"  >> /etc/services
+    # Add port /etc/services entry if it isn't already there
+    if [ -f %{_sysconfdir}/services ] && \
+        ! %__sed -e 's/#.*$//' %{_sysconfdir}/services | %__grep -wq $1 ; then
+        echo "$1        $2          # $3"  >> %{_sysconfdir}/services
     fi
 }
 
 zebra_spec_add_service zebrasrv 2600/tcp "zebra service"
 zebra_spec_add_service zebra    2601/tcp "zebra vty"
+zebra_spec_add_service staticd  2616/tcp "staticd vty"
 zebra_spec_add_service ripd     2602/tcp "RIPd vty"
 zebra_spec_add_service ripngd   2603/tcp "RIPngd vty"
 zebra_spec_add_service ospfd    2604/tcp "OSPFd vty"
 zebra_spec_add_service bgpd     2605/tcp "BGPd vty"
 zebra_spec_add_service ospf6d   2606/tcp "OSPF6d vty"
-%if %{with_ospfapi}
-zebra_spec_add_service ospfapi  2607/tcp "OSPF-API"
-%endif
 zebra_spec_add_service isisd    2608/tcp "ISISd vty"
+%if %{with_ospfapi}
+    zebra_spec_add_service ospfapi  2607/tcp "OSPF-API"
+%endif
 %if %{with_babeld}
-zebra_spec_add_service babeld   2609/tcp "BABELd vty"
+    zebra_spec_add_service babeld   2609/tcp "BABELd vty"
 %endif
 %if %{with_nhrpd}
-zebra_spec_add_service nhrpd    2610/tcp "NHRPd vty"
+    zebra_spec_add_service nhrpd    2610/tcp "NHRPd vty"
 %endif
 %if %{with_pimd}
-zebra_spec_add_service pimd     2611/tcp "PIMd vty"
+    zebra_spec_add_service pimd     2611/tcp "PIMd vty"
 %endif
 %if %{with_pbrd}
-zebra_spec_add_service pbrd     2615/tcp "PBRd vty"
+    zebra_spec_add_service pbrd     2615/tcp "PBRd vty"
 %endif
 %if %{with_ldpd}
-zebra_spec_add_service ldpd     2612/tcp "LDPd vty"
+    zebra_spec_add_service ldpd     2612/tcp "LDPd vty"
 %endif
 %if %{with_eigrpd}
-zebra_spec_add_service eigrpd   2613/tcp "EIGRPd vty"
+    zebra_spec_add_service eigrpd   2613/tcp "EIGRPd vty"
+%endif
+%if %{with_bfdd}
+    zebra_spec_add_service bfdd     2617/tcp "BFDd vty"
 %endif
 
 %if "%{initsystem}" == "systemd"
-for daemon in %all_daemons ; do
-    %systemd_post frr.service
-done
+    for daemon in %all_daemons ; do
+        %systemd_post frr.service
+    done
 %else
-/sbin/chkconfig --add frr
+    /sbin/chkconfig --add frr
 %endif
 
 # Fix bad path in previous config files
 #  Config files won't get replaced by default, so we do this ugly hack to fix it
-%__sed -i 's|/etc/init.d/|%{_sbindir}/|g' %{_sysconfdir}/daemons 2> /dev/null || true
+%__sed -i 's|/etc/init.d/|%{_sbindir}/|g' %{configdir}/daemons 2> /dev/null || true
 
 # With systemd, watchfrr is mandatory. Fix config to make sure it's enabled if
 # we install or upgrade to a frr built with systemd
 %if "%{initsystem}" == "systemd"
-    %__sed -i 's|watchfrr_enable=no|watchfrr_enable=yes|g' %{_sysconfdir}/daemons 2> /dev/null || true
+    %__sed -i 's|watchfrr_enable=no|watchfrr_enable=yes|g' %{configdir}/daemons 2> /dev/null || true
 %endif
 
 /sbin/install-info %{_infodir}/frr.info.gz %{_infodir}/dir
 
 # Create dummy files if they don't exist so basic functions can be used.
-if [ ! -e %{_sysconfdir}/zebra.conf ]; then
-    echo "hostname `hostname`" > %{_sysconfdir}/zebra.conf
+if [ ! -e %{configdir}/zebra.conf ]; then
+    echo "hostname `hostname`" > %{configdir}/zebra.conf
 %if 0%{?frr_user:1}
-    chown %frr_user:%frr_user %{_sysconfdir}/zebra.conf*
+    chown %{frr_user}:%{frr_user} %{configdir}/zebra.conf*
 %endif
-    chmod 640 %{_sysconfdir}/zebra.conf*
+    chmod 640 %{configdir}/zebra.conf*
 fi
 for daemon in %{all_daemons} ; do
     if [ x"${daemon}" != x"" ] ; then
-        if [ ! -e %{_sysconfdir}/${daemon}.conf ]; then
-            touch %{_sysconfdir}/${daemon}.conf
+        if [ ! -e %{configdir}/${daemon}.conf ]; then
+            touch %{configdir}/${daemon}.conf
             %if 0%{?frr_user:1}
-                chown %frr_user:%frr_user %{_sysconfdir}/${daemon}.conf*
+                chown %{frr_user}:%{frr_user} %{configdir}/${daemon}.conf*
             %endif
         fi
     fi
 done
 %if 0%{?frr_user:1}
-    chown %frr_user:%frr_user %{_sysconfdir}/daemons
+    chown %{frr_user}:%{frr_user} %{configdir}/daemons
 %endif
 
 %if %{with_watchfrr}
     # No config for watchfrr - this is part of /etc/sysconfig/frr
-    rm -f %{_sysconfdir}/watchfrr.*
+    rm -f %{configdir}/watchfrr.*
 %endif
 
-if [ ! -e %{_sysconfdir}/vtysh.conf ]; then
-    touch %{_sysconfdir}/vtysh.conf
-    chmod 640 %{_sysconfdir}/vtysh.conf
+if [ ! -e %{configdir}/vtysh.conf ]; then
+    touch %{configdir}/vtysh.conf
+    chmod 640 %{configdir}/vtysh.conf
 %if 0%{?frr_user:1}
-%if 0%{?vty_group:1}
-    chown %{frr_user}:%{vty_group} %{_sysconfdir}/vtysh.conf*
-%endif
+    %if 0%{?vty_group:1}
+        chown %{frr_user}:%{vty_group} %{configdir}/vtysh.conf*
+    %endif
 %endif
 fi
+
 
 %postun
 if [ "$1" -ge 1 ]; then
@@ -507,10 +532,11 @@ if [ "$1" -ge 1 ]; then
         ##
         ## init.d Version
         ##
-        /etc/rc.d/init.d/frr restart >/dev/null 2>&1
+        service frr restart >/dev/null 2>&1
     %endif
     :
 fi
+
 
 %preun
 %if "%{initsystem}" == "systemd"
@@ -525,37 +551,33 @@ fi
     ## init.d Version
     ##
     if [ $1 -eq 0 ] ; then
-        /etc/rc.d/init.d/frr stop  >/dev/null 2>&1
+        service frr stop  >/dev/null 2>&1
         /sbin/chkconfig --del frr
     fi
 %endif
 /sbin/install-info --delete %{_infodir}/frr.info.gz %{_infodir}/dir
 
-%clean
-%if !0%{?keep_build:1}
-rm -rf %{buildroot}
-%endif
 
 %files
-%defattr(-,root,root)
 %doc */*.sample* AUTHORS COPYING
 %doc doc/mpls
-%doc ChangeLog INSTALL NEWS README REPORTING-BUGS SERVICES
+%doc ChangeLog NEWS README
 %if 0%{?frr_user:1}
-%dir %attr(751,%frr_user,%frr_user) %{_sysconfdir}
-%dir %attr(750,%frr_user,%frr_user) /var/log/frr 
-%dir %attr(751,%frr_user,%frr_user) /var/run/frr
+    %dir %attr(751,%{frr_user},%{frr_user}) %{configdir}
+    %dir %attr(750,%{frr_user},%{frr_user}) %{_localstatedir}/log/frr
+    %dir %attr(751,%{frr_user},%{frr_user}) %{rundir}
 %else
-%dir %attr(750,root,root) %{_sysconfdir}
-%dir %attr(750,root,root) /var/log/frr
-%dir %attr(750,root,root) /var/run/frr
+    %dir %attr(750,root,root) %{configdir}
+    %dir %attr(750,root,root) %{_localstatedir}/log/frr
+    %dir %attr(750,root,root) %{rundir}
 %endif
 %if 0%{?vty_group:1}
-%attr(750,%frr_user,%vty_group) %{_sysconfdir}/vtysh.conf.sample
+    %attr(750,%{frr_user},%{vty_group}) %{configdir}/vtysh.conf.sample
 %endif
 %{_infodir}/frr.info.gz
 %{_mandir}/man*/*
 %{_sbindir}/zebra
+%{_sbindir}/staticd
 %{_sbindir}/ospfd
 %{_sbindir}/ripd
 %{_sbindir}/bgpd
@@ -584,64 +606,70 @@ rm -rf %{buildroot}
 %if %{with_babeld}
     %{_sbindir}/babeld
 %endif
-%if %{with_shared}
-%{_libdir}/lib*.so
-%{_libdir}/lib*.so.0
-%attr(755,root,root) %{_libdir}/lib*.so.0.*
+%if %{with_bfdd}
+    %{_sbindir}/bfdd
 %endif
+%{_libdir}/lib*.so.0
+%{_libdir}/lib*.so.0.*
 %if %{with_fpm}
-%attr(755,root,root) %{_libdir}/frr/modules/zebra_fpm.so
+    %{_libdir}/frr/modules/zebra_fpm.so
 %endif
 %if %{with_rpki}
-%attr(755,root,root) %{_libdir}/frr/modules/bgpd_rpki.so
+    %{_libdir}/frr/modules/bgpd_rpki.so
 %endif
-%attr(755,root,root) %{_libdir}/frr/modules/zebra_irdp.so
+%{_libdir}/frr/modules/zebra_irdp.so
 %{_bindir}/*
-%config(noreplace) /etc/frr/[!v]*.conf*
-%config(noreplace) %attr(750,%frr_user,%frr_user) /etc/frr/daemons
+%config(noreplace) %{configdir}/[!v]*.conf*
+%config(noreplace) %attr(750,%{frr_user},%{frr_user}) %{configdir}/daemons
 %if "%{initsystem}" == "systemd"
-    %attr(644,root,root) %{_unitdir}/frr.service
-    %{_sbindir}/frr
+    %{_unitdir}/frr.service
 %else
-    /etc/rc.d/init.d/frr
-    %{_sbindir}/frr
+    %{_initddir}/frr
 %endif
-%config(noreplace) /etc/pam.d/frr
-%config(noreplace) %attr(640,root,root) /etc/logrotate.d/*
+%{_sbindir}/frr
+%config(noreplace) %{_sysconfdir}/pam.d/frr
+%config(noreplace) %{_sysconfdir}/logrotate.d/frr
 %{_sbindir}/frr-reload
 
+
 %files contrib
-%defattr(-,root,root)
 %doc tools
 
+
 %files pythontools
-%defattr(-,root,root)
 %{_sbindir}/frr-reload.py
 %{_sbindir}/frr-reload.pyc
 %{_sbindir}/frr-reload.pyo
 
+
 %files devel
-%defattr(-,root,root)
+%{_libdir}/lib*.so
 %if %{with_ospfclient}
-%{_sbindir}/ospfclient
+    %{_sbindir}/ospfclient
 %endif
-%{_libdir}/*.a
-%{_libdir}/*.la
-%dir %attr(755,root,root) %{_includedir}/%{name}
-%{_includedir}/%name/*.h
-%dir %attr(755,root,root) %{_includedir}/%{name}/ospfd
-%{_includedir}/%name/ospfd/*.h
+%dir %{_includedir}/%{name}
+%{_includedir}/%{name}/*.h
+%dir %{_includedir}/%{name}/ospfd
+%{_includedir}/%{name}/ospfd/*.h
 %if %{with_ospfapi}
-%dir %attr(755,root,root) %{_includedir}/%{name}/ospfapi
-%{_includedir}/%name/ospfapi/*.h
+    %dir %{_includedir}/%{name}/ospfapi
+    %{_includedir}/%{name}/ospfapi/*.h
 %endif
 %if %{with_eigrpd}
-%dir %attr(755,root,root) %{_includedir}/%{name}/eigrpd
-%{_includedir}/%name/eigrpd/*.h
+    %dir %{_includedir}/%{name}/eigrpd
+    %{_includedir}/%{name}/eigrpd/*.h
 %endif
 
+
 %changelog
-* Thu Jul  5 2018 Martin Winter <mwinter@opensourcerouting.org> - %{version}
+* Sun Oct  7 2018 Martin Winter <mwinter@opensourcerouting.org> - %{version}
+- Staticd: New daemon responsible for management of static routes
+- ISISd: Implement dst-src routing as per draft-ietf-isis-ipv6-dst-src-routing
+- BFDd: new daemon for BFD (Bidrectional Forwarding Detection). Responsiblei
+  for notifying link changes to make routing protocols converge faster.
+- various bug fixes
+
+* Thu Jul  5 2018 Martin Winter <mwinter@opensourcerouting.org> - 5.0.1
 - Support Automake 1.16.1
 - BGPd: Support for flowspec ICMP, DSCP, packet length, fragment and tcp flags
 - BGPd: fix rpki validation for ipv6
@@ -661,6 +689,9 @@ rm -rf %{buildroot}
 - BGPD: Implement VRF with NETNS backend
 - BGPD: Flowspec
 - PBRD: Add a new Policy Based Routing Daemon
+
+* Sun May 28 2018 Rafael Zalamena <rzalamena@opensourcerouting.org> - %{version}
+- Add BFDd support
 
 * Sun May 20 2018 Martin Winter <mwinter@opensourcerouting.org> - 4.0.1
 - Fixed RPKI RPM build
@@ -695,13 +726,13 @@ rm -rf %{buildroot}
 - new subpackage frr-pythontools with python 2.7 restart script
 - remove PIMd from CentOS/RedHat 6 RPM packages (won't work - too old)
 - converted to single frr init script (not per daemon) based on debian init script
-- created systemd service file for systemd based systems (which uses init script) 
+- created systemd service file for systemd based systems (which uses init script)
 - Various other RPM package fixes for FRR 2.0
 
 * Fri Jan  6 2017 Martin Winter <mwinter@opensourcerouting.org>
 - Renamed to frr for FRRouting fork of Quagga
 
-* Thu Feb 11 2016 Paul Jakma <paul@jakma.org> 
+* Thu Feb 11 2016 Paul Jakma <paul@jakma.org>
 - remove with_ipv6 conditionals, always build v6
 - Fix UTF-8 char in spec changelog
 - remove quagga.pam.stack, long deprecated.
@@ -712,7 +743,7 @@ rm -rf %{buildroot}
 - Remove support for old fedora 4/5
 - Fix for package nameing
 - Fix Weekdays of previous changelogs (bogus dates)
-- Add conditional logic to only build tex footnotes with supported texi2html 
+- Add conditional logic to only build tex footnotes with supported texi2html
 - Added pimd to files section and fix double listing of /var/lib*/quagga
 - Numerous fixes to unify upstart/systemd startup into same spec file
 - Only allow use of watchfrr for non-systemd systems. no need with systemd
@@ -805,7 +836,7 @@ rm -rf %{buildroot}
 - walk up tree - 17218
 - ospfd NSSA fixes - 16681
 - ospfd nsm fixes - 16824
-- ospfd OLSA fixes and new feature - 16823 
+- ospfd OLSA fixes and new feature - 16823
 - KAME and ifindex fixes - 16525
 - spec file changes to allow redhat files to be in tree
 
@@ -863,7 +894,7 @@ rm -rf %{buildroot}
 * Tue Feb  6 2001 Tim Powers <timp@redhat.com>
 - built for Powertools
 
-* Sun Feb  4 2001 Pekka Savola <pekkas@netcore.fi> 
+* Sun Feb  4 2001 Pekka Savola <pekkas@netcore.fi>
 - Hacked up from PLD Linux 0.90-1, Mandrake 0.90-1mdk and one from zebra.org.
 - Update to 0.91a
 - Very heavy modifications to init.d/*, .spec, pam, i18n, logrotate, etc.

@@ -10,12 +10,12 @@
 WANT_LDP ?= 1
 WANT_PIM ?= 1
 WANT_OSPFAPI ?= 1
-WANT_TCP_ZEBRA ?= 0
 WANT_BGP_VNC ?= 1
 WANT_CUMULUS_MODE ?= 0
 WANT_MULTIPATH ?= 1
 WANT_SNMP ?= 0
 WANT_RPKI ?= 0
+WANT_BFD ?= 1
 
 # NOTES:
 #
@@ -74,12 +74,6 @@ else
   USE_OSPFAPI=--enable-ospfapi=no
 endif
 
-ifeq ($(WANT_TCP_ZEBRA),1)
-  USE_TCP_ZEBRA=--enable-tcp-zebra
-else
-  USE_TCP_ZEBRA=--disable-tcp-zebra
-endif
-
 ifeq ($(WANT_BGP_VNC), 1)
   USE_BGP_VNC=--enable-bgp-vnc=yes
 else
@@ -106,6 +100,12 @@ ifeq ($(WANT_RPKI), 1)
   USE_RPKI=--enable-rpki
 else
   USE_RPKI=--disable-rpki
+endif
+
+ifeq ($(WANT_BFD), 1)
+  USE_BFD=--enable-bfdd
+else
+  USE_BFD=--disable-bfdd
 endif
 
 ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
@@ -145,7 +145,6 @@ override_dh_auto_configure:
 		$(USE_OSPFAPI) \
 		$(USE_MULTIPATH) \
 		$(USE_LDP) \
-		$(USE_TCP_ZEBRA) \
 		--enable-fpm \
 		$(USE_FRR_USER) $(USE_FRR_GROUP) \
 		$(USE_FRR_VTY_GROUP) \
@@ -159,6 +158,7 @@ override_dh_auto_configure:
 		--enable-dependency-tracking \
 		$(USE_BGP_VNC) \
 		$(USE_RPKI) \
+		$(USE_BFD) \
 		$(shell dpkg-buildflags --export=configure); \
 	fi
 
@@ -188,12 +188,8 @@ override_dh_auto_install:
 	mkdir -p debian/tmp/etc/frr/
 	perl -pi -e 's#^!log file #!log file /var/log/frr/#' debian/tmp/usr/share/doc/frr/examples/*sample*
 
-	# installing the Frr specific SNMP MIB
-ifeq ($(WANT_SNMP), 1)
-	install -D -m 644 ./zebra/GNOME-PRODUCT-ZEBRA-MIB debian/tmp/usr/share/snmp/mibs/GNOME-PRODUCT-ZEBRA-MIB
-else
+	# leftover from previously shipping SMUX client OID MIB
 	mkdir -p debian/tmp/usr/share/snmp/mibs/
-endif
 
 	# cleaning .la files
 	sed -i "/dependency_libs/ s/'.*'/''/" debian/tmp/usr/lib/*.la

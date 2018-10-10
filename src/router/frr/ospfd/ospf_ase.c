@@ -288,6 +288,7 @@ int ospf_ase_calculate_route(struct ospf *ospf, struct ospf_lsa *lsa)
 	struct prefix_ipv4 asbr, p;
 	struct route_node *rn;
 	struct ospf_route *new, * or ;
+	char buf1[INET_ADDRSTRLEN];
 	int ret;
 
 	assert(lsa);
@@ -304,10 +305,14 @@ int ospf_ase_calculate_route(struct ospf *ospf, struct ospf_lsa *lsa)
 		return 0;
 	}
 
-	if (IS_DEBUG_OSPF(lsa, LSA))
+	if (IS_DEBUG_OSPF(lsa, LSA)) {
+		snprintf(buf1, INET_ADDRSTRLEN, "%s",
+			 inet_ntoa(al->header.adv_router));
 		zlog_debug(
-			"Route[External]: Calculate AS-external-LSA to %s/%d",
-			inet_ntoa(al->header.id), ip_masklen(al->mask));
+			"Route[External]: Calculate AS-external-LSA to %s/%d adv_router %s",
+			inet_ntoa(al->header.id), ip_masklen(al->mask), buf1);
+	}
+
 	/* (1) If the cost specified by the LSA is LSInfinity, or if the
 	       LSA's LS age is equal to MaxAge, then examine the next LSA. */
 	if ((metric = GET_METRIC(al->e[0].metric)) >= OSPF_LS_INFINITY) {
@@ -459,8 +464,9 @@ int ospf_ase_calculate_route(struct ospf *ospf, struct ospf_lsa *lsa)
 
 	if (!rn || (or = rn->info) == NULL) {
 		if (IS_DEBUG_OSPF(lsa, LSA))
-			zlog_debug("Route[External]: Adding a new route %s/%d",
-				   inet_ntoa(p.prefix), p.prefixlen);
+			zlog_debug("Route[External]: Adding a new route %s/%d with paths %u",
+				   inet_ntoa(p.prefix), p.prefixlen,
+				   listcount(asbr_route->paths));
 
 		ospf_route_add(ospf->new_external_route, &p, new, asbr_route);
 
@@ -543,7 +549,7 @@ static int ospf_ase_route_match_same(struct route_table *rt,
 				     struct ospf_route *newor)
 {
 	struct route_node *rn;
-	struct ospf_route * or ;
+	struct ospf_route *or;
 	struct ospf_path *op;
 	struct ospf_path *newop;
 	struct listnode *n1;
@@ -559,6 +565,9 @@ static int ospf_ase_route_match_same(struct route_table *rt,
 	route_unlock_node(rn);
 
 	or = rn->info;
+
+	assert(or);
+
 	if (or->path_type != newor->path_type)
 		return 0;
 
@@ -577,12 +586,14 @@ static int ospf_ase_route_match_same(struct route_table *rt,
 		return 0;
 	}
 
+	assert(or->paths);
+
 	if (or->paths->count != newor->paths->count)
 		return 0;
 
 	/* Check each path. */
 	for (n1 = listhead(or->paths), n2 = listhead(newor->paths); n1 && n2;
-	     n1 = listnextnode(n1), n2 = listnextnode(n2)) {
+	     n1 = listnextnode_unchecked(n1), n2 = listnextnode_unchecked(n2)) {
 		op = listgetdata(n1);
 		newop = listgetdata(n2);
 

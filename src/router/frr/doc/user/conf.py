@@ -131,7 +131,8 @@ language = None
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build', 'rpki.rst', 'routeserver.rst', 'ospf_fundamentals.rst']
+exclude_patterns = ['_build', 'rpki.rst', 'routeserver.rst',
+                    'ospf_fundamentals.rst', 'flowspec.rst']
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -357,6 +358,7 @@ def setup(app):
     app.add_object_type('clicmd', 'clicmd')
     # css overrides for HTML theme
     app.add_stylesheet('overrides.css')
+    app.add_javascript('overrides.js')
     # load Pygments lexer for FRR config syntax
     #
     # NB: in Pygments 2.2+ this can be done with `load_lexer_from_file`, but we

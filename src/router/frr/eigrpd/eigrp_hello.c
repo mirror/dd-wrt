@@ -54,6 +54,7 @@
 #include "eigrpd/eigrp_vty.h"
 #include "eigrpd/eigrp_dump.h"
 #include "eigrpd/eigrp_macros.h"
+#include "eigrpd/eigrp_errors.h"
 
 /* Packet Type String. */
 static const struct message eigrp_general_tlv_type_str[] = {
@@ -417,10 +418,12 @@ void eigrp_sw_version_initialize(void)
 	if (dash)
 		dash[0] = '\0';
 
-	ret = sscanf(ver_string, "%d.%d", &FRR_MAJOR, &FRR_MINOR);
+	ret = sscanf(ver_string, "%" SCNu32 ".%" SCNu32, &FRR_MAJOR,
+		     &FRR_MINOR);
 	if (ret != 2)
-		zlog_err("Did not Properly parse %s, please fix VERSION string",
-			 VERSION);
+		flog_err(EIGRP_ERR_PACKET,
+			  "Did not Properly parse %s, please fix VERSION string",
+			  VERSION);
 }
 
 /**
@@ -630,7 +633,7 @@ static struct eigrp_packet *eigrp_hello_encode(struct eigrp_interface *ei,
 	uint16_t length = EIGRP_HEADER_LEN;
 
 	// allocate a new packet to be sent
-	ep = eigrp_packet_new(ei->ifp->mtu, NULL);
+	ep = eigrp_packet_new(EIGRP_PACKET_MTU(ei->ifp->mtu), NULL);
 
 	if (ep) {
 		// encode common header feilds

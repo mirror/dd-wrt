@@ -33,12 +33,12 @@
 #include "if.h"
 #include "vrf.h"
 #include "sockopt.h"
+#include "lib_errors.h"
 
 #include "pimd.h"
 #include "pim_mroute.h"
 #include "pim_sock.h"
 #include "pim_str.h"
-#include "pim_igmp_join.h"
 
 /* GLOBAL VARS */
 
@@ -46,15 +46,11 @@ int pim_socket_raw(int protocol)
 {
 	int fd;
 
-	if (pimd_privs.change(ZPRIVS_RAISE))
-		zlog_err("pim_sockek_raw: could not raise privs, %s",
-			 safe_strerror(errno));
+	frr_elevate_privs(&pimd_privs) {
 
-	fd = socket(AF_INET, SOCK_RAW, protocol);
+		fd = socket(AF_INET, SOCK_RAW, protocol);
 
-	if (pimd_privs.change(ZPRIVS_LOWER))
-		zlog_err("pim_socket_raw: could not lower privs, %s",
-			 safe_strerror(errno));
+	}
 
 	if (fd < 0) {
 		zlog_warn("Could not create raw socket: errno=%d: %s", errno,
@@ -69,17 +65,13 @@ void pim_socket_ip_hdr(int fd)
 {
 	const int on = 1;
 
-	if (pimd_privs.change(ZPRIVS_RAISE))
-		zlog_err("%s: could not raise privs, %s", __PRETTY_FUNCTION__,
-			 safe_strerror(errno));
+	frr_elevate_privs(&pimd_privs) {
 
-	if (setsockopt(fd, IPPROTO_IP, IP_HDRINCL, &on, sizeof(on)))
-		zlog_err("%s: Could not turn on IP_HDRINCL option: %s",
-			 __PRETTY_FUNCTION__, safe_strerror(errno));
+		if (setsockopt(fd, IPPROTO_IP, IP_HDRINCL, &on, sizeof(on)))
+			zlog_err("%s: Could not turn on IP_HDRINCL option: %s",
+				 __PRETTY_FUNCTION__, safe_strerror(errno));
 
-	if (pimd_privs.change(ZPRIVS_LOWER))
-		zlog_err("%s: could not lower privs, %s", __PRETTY_FUNCTION__,
-			 safe_strerror(errno));
+	}
 }
 
 /*
@@ -91,16 +83,12 @@ int pim_socket_bind(int fd, struct interface *ifp)
 	int ret = 0;
 #ifdef SO_BINDTODEVICE
 
-	if (pimd_privs.change(ZPRIVS_RAISE))
-		zlog_err("%s: could not raise privs, %s", __PRETTY_FUNCTION__,
-			 safe_strerror(errno));
+	frr_elevate_privs(&pimd_privs) {
 
-	ret = setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, ifp->name,
-			 strlen(ifp->name));
+		ret = setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, ifp->name,
+				 strlen(ifp->name));
 
-	if (pimd_privs.change(ZPRIVS_LOWER))
-		zlog_err("%s: could not lower privs, %s", __PRETTY_FUNCTION__,
-			 safe_strerror(errno));
+	}
 
 #endif
 	return ret;
@@ -162,7 +150,8 @@ int pim_socket_mcast(int protocol, struct in_addr ifaddr, struct interface *ifp,
 				fd, errno, safe_strerror(errno));
 		}
 #else
-		zlog_err(
+		flog_err(
+			LIB_ERR_DEVELOPMENT,
 			"%s %s: Missing IP_PKTINFO and IP_RECVDSTADDR: unable to get dst addr from recvmsg()",
 			__FILE__, __PRETTY_FUNCTION__);
 		close(fd);
@@ -299,7 +288,8 @@ int pim_socket_join(int fd, struct in_addr group, struct in_addr ifaddr,
 			       sizeof(ifaddr_str)))
 			sprintf(ifaddr_str, "<ifaddr?>");
 
-		zlog_err(
+		flog_err(
+			LIB_ERR_SOCKET,
 			"Failure socket joining fd=%d group %s on interface address %s: errno=%d: %s",
 			fd, group_str, ifaddr_str, errno, safe_strerror(errno));
 		return ret;
@@ -320,26 +310,6 @@ int pim_socket_join(int fd, struct in_addr group, struct in_addr ifaddr,
 	}
 
 	return ret;
-}
-
-int pim_socket_join_source(int fd, ifindex_t ifindex, struct in_addr group_addr,
-			   struct in_addr source_addr, const char *ifname)
-{
-	if (pim_igmp_join_source(fd, ifindex, group_addr, source_addr)) {
-		char group_str[INET_ADDRSTRLEN];
-		char source_str[INET_ADDRSTRLEN];
-		pim_inet4_dump("<grp?>", group_addr, group_str,
-			       sizeof(group_str));
-		pim_inet4_dump("<src?>", source_addr, source_str,
-			       sizeof(source_str));
-		zlog_warn(
-			"%s: setsockopt(fd=%d) failure for IGMP group %s source %s ifindex %d on interface %s: errno=%d: %s",
-			__PRETTY_FUNCTION__, fd, group_str, source_str, ifindex,
-			ifname, errno, safe_strerror(errno));
-		return -1;
-	}
-
-	return 0;
 }
 
 int pim_socket_recvfromto(int fd, uint8_t *buf, size_t len,

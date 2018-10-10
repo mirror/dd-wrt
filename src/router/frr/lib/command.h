@@ -33,9 +33,6 @@
 DECLARE_MTYPE(HOST)
 DECLARE_MTYPE(COMPLETION)
 
-/* for test-commands.c */
-DECLARE_MTYPE(STRVEC)
-
 /* Host configuration variable */
 struct host {
 	/* Host name of this router. */
@@ -85,6 +82,7 @@ enum node_type {
 	KEYCHAIN_NODE,		 /* Key-chain node. */
 	KEYCHAIN_KEY_NODE,       /* Key-chain key node. */
 	LOGICALROUTER_NODE,      /* Logical-Router node. */
+	IP_NODE,		 /* Static ip route node. */
 	VRF_NODE,		 /* VRF mode node. */
 	INTERFACE_NODE,		 /* Interface mode node. */
 	NH_GROUP_NODE,		 /* Nexthop-Group mode node. */
@@ -119,7 +117,6 @@ enum node_type {
 	LDP_L2VPN_NODE,		 /* LDP L2VPN node */
 	LDP_PSEUDOWIRE_NODE,     /* LDP Pseudowire node */
 	ISIS_NODE,		 /* ISIS protocol mode */
-	IP_NODE,		 /* Static ip route node. */
 	ACCESS_NODE,		 /* Access list node. */
 	PREFIX_NODE,		 /* Prefix list node. */
 	ACCESS_IPV6_NODE,	/* Access list node. */
@@ -142,6 +139,8 @@ enum node_type {
 			  connections.*/
 	BGP_FLOWSPECV4_NODE,	/* BGP IPv4 FLOWSPEC Address-Family */
 	BGP_FLOWSPECV6_NODE,	/* BGP IPv6 FLOWSPEC Address-Family */
+	BFD_NODE,		 /* BFD protocol mode. */
+	BFD_PEER_NODE,		 /* BFD peer configuration mode. */
 	NODE_TYPE_MAX, /* maximum */
 };
 
@@ -223,6 +222,9 @@ struct cmd_node {
 	DEFUN_CMD_ELEMENT(funcname, cmdname, cmdstr, helpstr, 0, 0)            \
 	funcdecl_##funcname
 
+#define DEFPY_NOSH(funcname, cmdname, cmdstr, helpstr)                         \
+	DEFPY(funcname, cmdname, cmdstr, helpstr)
+
 #define DEFPY_ATTR(funcname, cmdname, cmdstr, helpstr, attr)                   \
 	DEFUN_CMD_ELEMENT(funcname, cmdname, cmdstr, helpstr, attr, 0)         \
 	funcdecl_##funcname
@@ -242,9 +244,6 @@ struct cmd_node {
 
 #define DEFUN_HIDDEN(funcname, cmdname, cmdstr, helpstr)                       \
 	DEFUN_ATTR(funcname, cmdname, cmdstr, helpstr, CMD_ATTR_HIDDEN)
-
-#define DEFUN_DEPRECATED(funcname, cmdname, cmdstr, helpstr)                   \
-	DEFUN_ATTR(funcname, cmdname, cmdstr, helpstr, CMD_ATTR_DEPRECATED)
 
 /* DEFUN_NOSH for commands that vtysh should ignore */
 #define DEFUN_NOSH(funcname, cmdname, cmdstr, helpstr)                         \
@@ -308,6 +307,9 @@ struct cmd_node {
 #define DEFPY(funcname, cmdname, cmdstr, helpstr)                              \
 	DEFUN(funcname, cmdname, cmdstr, helpstr)
 
+#define DEFPY_NOSH(funcname, cmdname, cmdstr, helpstr)                         \
+	DEFUN_NOSH(funcname, cmdname, cmdstr, helpstr)
+
 #define DEFPY_ATTR(funcname, cmdname, cmdstr, helpstr, attr)                   \
 	DEFUN_ATTR(funcname, cmdname, cmdstr, helpstr, attr)
 #endif /* VTYSH_EXTRACT_PL */
@@ -344,6 +346,7 @@ struct cmd_node {
 #define UNDEBUG_STR "Disable debugging functions (see also 'debug')\n"
 #define ROUTER_STR "Enable a routing process\n"
 #define AS_STR "AS number\n"
+#define MAC_STR "MAC address\n"
 #define MBGP_STR "MBGP information\n"
 #define MATCH_STR "Match values from routing table\n"
 #define SET_STR "Set values in destination routing protocol\n"
@@ -419,6 +422,28 @@ extern int command_config_read_one_line(struct vty *vty,
 					int use_config_node);
 extern int config_from_file(struct vty *, FILE *, unsigned int *line_num);
 extern enum node_type node_parent(enum node_type);
+/*
+ * Execute command under the given vty context.
+ *
+ * vty
+ *    The vty context to execute under.
+ *
+ * cmd
+ *    The command string to execute.
+ *
+ * matched
+ *    If non-null and a match was found, the address of the matched command is
+ *    stored here. No action otherwise.
+ *
+ * vtysh
+ *    Whether or not this is being called from vtysh. If this is nonzero,
+ *    XXX: then what?
+ *
+ * Returns:
+ *    XXX: what does it return
+ */
+extern int cmd_execute(struct vty *vty, const char *cmd,
+		       const struct cmd_element **matched, int vtysh);
 extern int cmd_execute_command(vector, struct vty *,
 			       const struct cmd_element **, int);
 extern int cmd_execute_command_strict(vector, struct vty *,
@@ -460,4 +485,5 @@ extern void
 cmd_variable_handler_register(const struct cmd_variable_handler *cvh);
 extern char *cmd_variable_comp2str(vector comps, unsigned short cols);
 
+extern void command_setup_early_logging(const char *dest, const char *level);
 #endif /* _ZEBRA_COMMAND_H */

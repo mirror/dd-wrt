@@ -28,6 +28,7 @@
 #include "hash.h"
 #include "jhash.h"
 #include "vrf.h"
+#include "lib_errors.h"
 
 #include "pimd.h"
 #include "pim_cmd.h"
@@ -53,8 +54,6 @@ int qpim_t_periodic =
 struct pim_assert_metric qpim_infinite_assert_metric;
 long qpim_rpf_cache_refresh_delay_msec = 50;
 int qpim_packet_process = PIM_DEFAULT_PACKET_PROCESS;
-uint8_t qpim_ecmp_enable = 0;
-uint8_t qpim_ecmp_rebalance_enable = 0;
 struct pim_instance *pimg = NULL;
 
 int32_t qpim_register_suppress_time = PIM_REGISTER_SUPPRESSION_TIME_DEFAULT;
@@ -81,14 +80,13 @@ static void pim_free()
 	pim_route_map_terminate();
 
 	zclient_lookup_free();
-
-	zprivs_terminate(&pimd_privs);
 }
 
 void pim_init()
 {
 	if (!inet_aton(PIM_ALL_PIM_ROUTERS, &qpim_all_pim_routers_addr)) {
-		zlog_err(
+		flog_err(
+			LIB_ERR_SOCKET,
 			"%s %s: could not solve %s to group address: errno=%d: %s",
 			__FILE__, __PRETTY_FUNCTION__, PIM_ALL_PIM_ROUTERS,
 			errno, safe_strerror(errno));

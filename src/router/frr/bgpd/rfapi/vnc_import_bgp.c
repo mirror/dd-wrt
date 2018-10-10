@@ -32,6 +32,7 @@
 #include "lib/linklist.h"
 #include "lib/plist.h"
 #include "lib/routemap.h"
+#include "lib/lib_errors.h"
 
 #include "bgpd/bgpd.h"
 #include "bgpd/bgp_ecommunity.h"
@@ -557,7 +558,6 @@ static void vnc_import_bgp_add_route_mode_resolve_nve(
 	struct bgp_info *info)			/* unicast info */
 {
 	afi_t afi = family2afi(prefix->family);
-	struct rfapi_cfg *hc = NULL;
 
 	struct prefix pfx_unicast_nexthop = {0}; /* happy valgrind */
 
@@ -603,11 +603,12 @@ static void vnc_import_bgp_add_route_mode_resolve_nve(
 	 */
 
 	if (!afi) {
-		zlog_err("%s: can't get afi of prefix", __func__);
+		flog_err(LIB_ERR_DEVELOPMENT, "%s: can't get afi of prefix",
+			  __func__);
 		return;
 	}
 
-	if (!(hc = bgp->rfapi_cfg)) {
+	if (!(bgp->rfapi_cfg)) {
 		vnc_zlog_debug_verbose("%s: bgp->rfapi_cfg is NULL, skipping",
 				       __func__);
 		return;
@@ -698,7 +699,7 @@ static void vnc_import_bgp_add_route_mode_plain(struct bgp *bgp,
 	struct peer *peer = info->peer;
 	struct attr *attr = info->attr;
 	struct attr hattr;
-	struct rfapi_cfg *hc = NULL;
+	struct rfapi_cfg *hc = bgp->rfapi_cfg;
 	struct attr *iattr = NULL;
 
 	struct rfapi_ip_addr vnaddr;
@@ -719,11 +720,12 @@ static void vnc_import_bgp_add_route_mode_plain(struct bgp *bgp,
 	}
 
 	if (!afi) {
-		zlog_err("%s: can't get afi of prefix", __func__);
+		flog_err(LIB_ERR_DEVELOPMENT, "%s: can't get afi of prefix",
+			  __func__);
 		return;
 	}
 
-	if (!(hc = bgp->rfapi_cfg)) {
+	if (!hc) {
 		vnc_zlog_debug_verbose("%s: bgp->rfapi_cfg is NULL, skipping",
 				       __func__);
 		return;
@@ -886,7 +888,6 @@ vnc_import_bgp_add_route_mode_nvegroup(struct bgp *bgp, struct prefix *prefix,
 	struct peer *peer = info->peer;
 	struct attr *attr = info->attr;
 	struct attr hattr;
-	struct rfapi_cfg *hc = NULL;
 	struct attr *iattr = NULL;
 
 	struct rfapi_ip_addr vnaddr;
@@ -907,11 +908,12 @@ vnc_import_bgp_add_route_mode_nvegroup(struct bgp *bgp, struct prefix *prefix,
 	assert(rfg);
 
 	if (!afi) {
-		zlog_err("%s: can't get afi of prefix", __func__);
+		flog_err(LIB_ERR_DEVELOPMENT, "%s: can't get afi of prefix",
+			  __func__);
 		return;
 	}
 
-	if (!(hc = bgp->rfapi_cfg)) {
+	if (!(bgp->rfapi_cfg)) {
 		vnc_zlog_debug_verbose("%s: bgp->rfapi_cfg is NULL, skipping",
 				       __func__);
 		return;
@@ -2630,7 +2632,8 @@ void vnc_import_bgp_add_route(struct bgp *bgp, struct prefix *prefix,
 	VNC_RHNCK(enter);
 
 	if (!afi) {
-		zlog_err("%s: can't get afi of prefix", __func__);
+		flog_err(LIB_ERR_DEVELOPMENT, "%s: can't get afi of prefix",
+			  __func__);
 		return;
 	}
 
@@ -2903,6 +2906,8 @@ void vnc_import_bgp_redist_disable(struct bgp *bgp, afi_t afi)
 
 						struct rfapi_descriptor *rfd;
 						vncHDBgpDirect.peer = bi->peer;
+
+						assert(bi->extra);
 
 						rfd = bi->extra->vnc.export
 							      .rfapi_handle;

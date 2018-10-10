@@ -4,64 +4,64 @@
 Overview
 ********
 
-`FRR`_ is a routing software package that provides TCP/IP based
-routing services with routing protocols support such as RIPv1, RIPv2, RIPng,
-OSPFv2, OSPFv3, IS-IS, BGP-4, and BGP-4+ (:ref:`supported-rfcs`). FRR also
-supports special BGP Route Reflector and Route Server behavior.  In addition to
+`FRR`_ is a routing software package that provides TCP/IP based routing
+services with routing protocols support such as BGP, RIP, OSPF, IS-IS and more
+(see :ref:`supported-protocols`). FRR also supports
+special BGP Route Reflector and Route Server behavior.  In addition to
 traditional IPv4 routing protocols, FRR also supports IPv6 routing protocols.
-With SNMP daemon which supports SMUX and AgentX protocol, FRR provides routing
-protocol MIBs (:ref:`snmp-support`).
+With an SNMP daemon that supports the AgentX protocol, FRR provides routing
+protocol MIB read-only access (:ref:`snmp-support`).
 
-FRR uses an advanced software architecture to provide you with a high
-quality, multi server routing engine. FRR has an interactive user
-interface for each routing protocol and supports common client commands.
-Due to this design, you can add new protocol daemons to FRR easily.  You
-can use FRR library as your program's client user interface.
+FRR uses an advanced software architecture to provide you with a high quality,
+multi server routing engine. FRR has an interactive user interface for each
+routing protocol and supports common client commands.  Due to this design, you
+can add new protocol daemons to FRR easily.  You can use FRR library as your
+program's client user interface.
 
 FRR is distributed under the GNU General Public License.
+
+FRR is a fork of `Quagga <http://www.quagga.net/>`_.
 
 .. _about-frr:
 
 About FRR
 =========
 
-Today, TCP/IP networks are covering all of the world.  The Internet has
-been deployed in many countries, companies, and to the home.  When you
-connect to the Internet your packet will pass many routers which have TCP/IP
-routing functionality.
+Today, TCP/IP networks are covering all of the world.  The Internet has been
+deployed in many countries, companies, and to the home.  When you connect to
+the Internet your packet will pass many routers which have TCP/IP routing
+functionality.
 
-A system with FRR installed acts as a dedicated router.  With FRR,
-your machine exchanges routing information with other routers using routing
-protocols.  FRR uses this information to update the kernel routing table
-so that the right data goes to the right place.  You can dynamically change
-the configuration and you may view routing table information from the FRR
-terminal interface.
+A system with FRR installed acts as a dedicated router.  With FRR, your machine
+exchanges routing information with other routers using routing protocols.  FRR
+uses this information to update the kernel routing table so that the right data
+goes to the right place.  You can dynamically change the configuration and you
+may view routing table information from the FRR terminal interface.
 
 Adding to routing protocol support, FRR can setup interface's flags,
-interface's address, static routes and so on.  If you have a small network,
-or a stub network, or xDSL connection, configuring the FRR routing
-software is very easy.  The only thing you have to do is to set up the
-interfaces and put a few commands about static routes and/or default routes.
-If the network is rather large, or if the network structure changes
-frequently, you will want to take advantage of FRR's dynamic routing
-protocol support for protocols such as RIP, OSPF, IS-IS or BGP.
+interface's address, static routes and so on.  If you have a small network, or
+a stub network, or xDSL connection, configuring the FRR routing software is
+very easy.  The only thing you have to do is to set up the interfaces and put a
+few commands about static routes and/or default routes.  If the network is
+rather large, or if the network structure changes frequently, you will want to
+take advantage of FRR's dynamic routing protocol support for protocols such as
+RIP, OSPF, IS-IS or BGP.
 
-Traditionally, UNIX based router configuration is done by
-*ifconfig* and *route* commands.  Status of routing
-table is displayed by *netstat* utility.  Almost of these commands
-work only if the user has root privileges.  FRR has a different system
-administration method.  There are two user modes in FRR.  One is normal
-mode, the other is enable mode.  Normal mode user can only view system
-status, enable mode user can change system configuration.  This UNIX account
-independent feature will be great help to the router administrator.
+Traditionally, UNIX based router configuration is done by *ifconfig* and
+*route* commands.  Status of routing table is displayed by *netstat* utility.
+Almost of these commands work only if the user has root privileges.  FRR has a
+different system administration method.  There are two user modes in FRR.  One
+is normal mode, the other is enable mode.  Normal mode user can only view
+system status, enable mode user can change system configuration.  This UNIX
+account independent feature will be great help to the router administrator.
 
-Currently, FRR supports common unicast routing protocols, that is BGP,
-OSPF, RIP and IS-IS.  Upcoming for MPLS support, an implementation of LDP is
+Currently, FRR supports common unicast routing protocols, that is BGP, OSPF,
+RIP and IS-IS.  Upcoming for MPLS support, an implementation of LDP is
 currently being prepared for merging.  Implementations of BFD and PIM-SSM
 (IPv4) also exist, but are not actively being worked on.
 
-The ultimate goal of the FRR project is making a productive, quality, free
-TCP/IP routing software package.
+The ultimate goal of the FRR project is making a production-grade, high
+quality, featureful and free IP routing software suite.
 
 
 System Architecture
@@ -73,79 +73,61 @@ System Architecture
 
 .. index:: Software internals
 
-Traditional routing software is made as a one process program which
-provides all of the routing protocol functionalities.  FRR takes a
-different approach.  It is made from a collection of several daemons that
-work together to build the routing table.  There may be several
-protocol-specific routing daemons and zebra the kernel routing manager.
+Traditional routing software is made as a one process program which provides
+all of the routing protocol functionalities. FRR takes a different approach.
+FRR is a suite of daemons that work together to build the routing table. There
+is a daemon for each major supported protocol as well as a middleman daemon
+(*Zebra*) which serves as the broker between these daemons and the kernel.
 
-The *ripd* daemon handles the RIP protocol, while
-*ospfd* is a daemon which supports OSPF version 2.
-*bgpd* supports the BGP-4 protocol.  For changing the kernel
-routing table and for redistribution of routes between different routing
-protocols, there is a kernel routing table manager *zebra* daemon.
-It is easy to add a new routing protocol daemons to the entire routing
-system without affecting any other software.  You need to run only the
-protocol daemon associated with routing protocols in use.  Thus, user may
-run a specific daemon and send routing reports to a central routing console.
+This architecture allows for high resiliency, since an error, crash or exploit
+in one protocol daemon will generally not affect the others.  It is also
+flexible and extensible since the modularity makes it easy to implement new
+protocols and tie them into the suite.
 
-There is no need for these daemons to be running on the same machine. You
-can even run several same protocol daemons on the same machine.  This
-architecture creates new possibilities for the routing system.
+An illustration of the large scale architecture is given below.
 
 ::
 
-   +----+  +----+  +-----+  +-----+
-   |bgpd|  |ripd|  |ospfd|  |zebra|
-   +----+  +----+  +-----+  +-----+
-                               |
-   +---------------------------|--+
-   |                           v  |
-   |  UNIX Kernel  routing table  |
-   |                              |
-   +------------------------------+
+   +----+  +----+  +-----+  +----+  +----+  +----+  +-----+
+   |bgpd|  |ripd|  |ospfd|  |ldpd|  |pbrd|  |pimd|  |.....|
+   +----+  +----+  +-----+  +----+  +----+  +----+  +-----+
+        |       |        |       |       |       |        |
+   +----v-------v--------v-------v-------v-------v--------v
+   |                                                      |
+   |                         Zebra                        |
+   |                                                      |
+   +------------------------------------------------------+
+          |                    |                   |
+          |                    |                   |
+   +------v------+   +---------v--------+   +------v------+
+   |             |   |                  |   |             |
+   | *NIX Kernel |   | Remote dataplane |   | ........... |
+   |             |   |                  |   |             |
+   +-------------+   +------------------+   +-------------+
 
-       FRR System Architecture
 
-
-Multi-process architecture brings extensibility, modularity and
-maintainability.  At the same time it also brings many configuration files
-and terminal interfaces.  Each daemon has it's own configuration file and
-terminal interface.  When you configure a static route, it must be done in
-*zebra* configuration file.  When you configure BGP network it must
-be done in *bgpd* configuration file.  This can be a very annoying
-thing.  To resolve the problem, FRR provides integrated user interface
-shell called *vtysh*.  *vtysh* connects to each daemon with
-UNIX domain socket and then works as a proxy for user input.
-
-FRR was planned to use multi-threaded mechanism when it runs with a
-kernel that supports multi-threads.  But at the moment, the thread library
-which comes with GNU/Linux or FreeBSD has some problems with running
-reliable services such as routing software, so we don't use threads at all.
-Instead we use the *select(2)* system call for multiplexing the
-events.
-
+The multi-process architecture brings extensibility, modularity and
+maintainability. At the same time it also brings many configuration files and
+terminal interfaces. Each daemon has its own configuration file and terminal
+interface. When you configure a static route, it must be done in the *Zebra*
+configuration file. When you configure BGP network it must be done in the
+*bgpd* configuration file. This can become difficult to manage. To resolve the
+problem, FRR provides integrated user interface shell called *vtysh*. *vtysh*
+connects to each daemon with UNIX domain socket and then works as a proxy for
+user input.
 
 Supported Platforms
 ===================
 
 .. index:: Supported platforms
-
 .. index:: FRR on other systems
-
 .. index:: Compatibility with other systems
-
 .. index:: Operating systems that support FRR
 
-Currently FRR supports GNU/Linux and BSD. Porting FRR
-to other platforms is not too difficult as platform dependent code should
-most be limited to the *zebra* daemon.  Protocol daemons are mostly
-platform independent. Please let us know when you find out FRR runs on a
-platform which is not listed below.
-
-The list of officially supported platforms are listed below. Note that
-FRR may run correctly on other platforms, and may run with partial
-functionality on further platforms.
+Currently FRR supports GNU/Linux and BSD. Porting FRR to other platforms is not
+too difficult as platform dependent code should be mostly limited to the
+*Zebra* daemon. Protocol daemons are largely platform independent. Please let
+us know if you can get FRR to run on a platform which is not listed below:
 
 - GNU/Linux
 - FreeBSD
@@ -154,27 +136,116 @@ functionality on further platforms.
 
 Versions of these platforms that are older than around 2 years from the point
 of their original release (in case of GNU/Linux, this is since the kernel's
-release on https://kernel.org/) may need some work.  Similarly, the following platforms
-may work with some effort:
+release on https://kernel.org/) may need some work.  Similarly, the following
+platforms may work with some effort:
 
 - Solaris
 - MacOS
 
-Also note that, in particular regarding proprietary platforms, compiler
-and C library choice will affect FRR.  Only recent versions of the
-following C compilers are well-tested:
+Recent versions of the following compilers are well tested:
 
 - GNU's GCC
-- LLVM's clang
+- LLVM's Clang
 - Intel's ICC
 
+.. _supported-protocols:
+
+Supported Protocols vs. Platform
+================================
+
+The following table lists all protocols cross-refrenced to all operating
+systems that have at least CI build tests.  Note that for features, only
+features with system dependencies are included here.
+
+.. role:: mark
+
+.. comment - the :mark:`X` pieces mesh with a little bit of JavaScript and
+   CSS in _static/overrides.{js,css} respectively.  The JS code looks at the
+   presence of the 'Y' 'N' '≥' '†' or 'CP' strings.  This seemed to be the
+   best / least intrusive way of getting a nice table in HTML.  The table
+   will look somewhat shoddy on other sphinx targets like PDF or info (but
+   should still be readable.)
+
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+| Daemon / Feature                  | Linux          | OpenBSD      | FreeBSD    | NetBSD     | Solaris    |
++==+================================+================+==============+============+============+============+
+| FRR Core                                                                                                 |
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+| `zebra`                           | :mark:`Y`      | :mark:`Y`    | :mark:`Y`  | :mark:`Y`  | :mark:`Y`  |
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+|  | VRF                            | :mark:`≥4.8`   | :mark:`N`    | :mark:`N`  | :mark:`N`  | :mark:`N`  |
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+|  | MPLS                           | :mark:`≥4.5`   | :mark:`Y`    | :mark:`N`  | :mark:`N`  | :mark:`N`  |
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+| `pbrd` (Policy Routing)           | :mark:`Y`      | :mark:`N`    | :mark:`N`  | :mark:`N`  | :mark:`N`  |
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+| WAN / Carrier protocols                                                                                  |
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+| `bgpd` (BGP)                      | :mark:`Y`      | :mark:`Y`    | :mark:`Y`  | :mark:`Y`  | :mark:`Y`  |
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+|  | VRF / L3VPN                    | :mark:`≥4.8`   | :mark:`CP`   | :mark:`CP` | :mark:`CP` | :mark:`CP` |
+|  |                                | :mark:`†4.3`   |              |            |            |            |
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+|  | EVPN                           | :mark:`≥4.18`  | :mark:`CP`   | :mark:`CP` | :mark:`CP` | :mark:`CP` |
+|  |                                | :mark:`†4.9`   |              |            |            |            |
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+|  | VNC (Virtual Network Control)  | :mark:`CP`     | :mark:`CP`   | :mark:`CP` | :mark:`CP` | :mark:`CP` |
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+|  | Flowspec                       | :mark:`CP`     | :mark:`CP`   | :mark:`CP` | :mark:`CP` | :mark:`CP` |
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+| `ldpd` (LDP)                      | :mark:`≥4.5`   | :mark:`Y`    | :mark:`N`  | :mark:`N`  | :mark:`N`  |
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+|  | VPWS / PW                      | :mark:`N`      | :mark:`≥5.8` | :mark:`N`  | :mark:`N`  | :mark:`N`  |
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+|  | VPLS                           | :mark:`N`      | :mark:`≥5.8` | :mark:`N`  | :mark:`N`  | :mark:`N`  |
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+| `nhrpd` (NHRP)                    | :mark:`Y`      | :mark:`N`    | :mark:`N`  | :mark:`N`  | :mark:`N`  |
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+| Link-State Routing                                                                                       |
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+| `ospfd` (OSPFv2)                  | :mark:`Y`      | :mark:`Y`    | :mark:`Y`  | :mark:`Y`  | :mark:`Y`  |
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+|  | Segment Routing                | :mark:`≥4.12`  | :mark:`N`    | :mark:`N`  | :mark:`N`  | :mark:`N`  |
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+| `ospf6d` (OSPFv3)                 | :mark:`Y`      | :mark:`Y`    | :mark:`Y`  | :mark:`Y`  | :mark:`Y`  |
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+| `isisd` (IS-IS)                   | :mark:`Y`      | :mark:`Y`    | :mark:`Y`  | :mark:`Y`  | :mark:`Y`  |
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+| Distance-Vector Routing                                                                                  |
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+| `ripd` (RIPv2)                    | :mark:`Y`      | :mark:`Y`    | :mark:`Y`  | :mark:`Y`  | :mark:`Y`  |
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+| `ripngd` (RIPng)                  | :mark:`Y`      | :mark:`Y`    | :mark:`Y`  | :mark:`Y`  | :mark:`Y`  |
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+| `babeld` (BABEL)                  | :mark:`Y`      | :mark:`Y`    | :mark:`Y`  | :mark:`Y`  | :mark:`Y`  |
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+| `eigrpd` (EIGRP)                  | :mark:`Y`      | :mark:`Y`    | :mark:`Y`  | :mark:`Y`  | :mark:`Y`  |
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+| Multicast Routing                                                                                        |
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+| `pimd` (PIM)                      | :mark:`≥4.18`  | :mark:`N`    | :mark:`Y`  | :mark:`Y`  | :mark:`Y`  |
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+|  | SSM (Source Specific)          | :mark:`Y`      | :mark:`N`    | :mark:`Y`  | :mark:`Y`  | :mark:`Y`  |
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+|  | ASM (Any Source)               | :mark:`Y`      | :mark:`N`    | :mark:`N`  | :mark:`N`  | :mark:`N`  |
++--+--------------------------------+----------------+--------------+------------+------------+------------+
+
+The indicators have the following semantics:
+
+* :mark:`Y` - daemon/feature fully functional
+* :mark:`≥X.X` - fully functional with kernel version X.X or newer
+* :mark:`†X.X` - restricted functionality or impaired performance with kernel version X.X or newer
+* :mark:`CP` - control plane only (i.e. BGP route server / route reflector)
+* :mark:`N` - daemon/feature not supported by operating system
 
 .. _supported-rfcs:
 
 Supported RFCs
-==============
+--------------
 
 FRR implements the following RFCs:
+
+.. note:: This list is incomplete.
 
 - :rfc:`1058`
   :t:`Routing Information Protocol. C.L. Hedrick. Jun-01-1988.`
@@ -212,6 +283,42 @@ FRR implements the following RFCs:
 - :rfc:`3137`
   :t:`OSPF Stub Router Advertisement, A. Retana, L. Nguyen, R. White, A. Zinin,
   D. McPherson. June 2001`
+- :rfc:`4447`
+  :t:`Pseudowire Setup and Maintenance Using the Label Distribution Protocol
+  (LDP), L. Martini, E. Rosen, N. El-Aawar, T. Smith, and G. Heron. April
+  2006.`
+- :rfc:`4762`
+  :t:`Virtual Private LAN Service (VPLS) Using Label Distribution Protocol
+  (LDP) Signaling, M. Lasserre and V. Kompella. January 2007.`
+- :rfc:`5036`
+  :t:`LDP Specification, L. Andersson, I. Minei, and B. Thomas. October 2007.`
+- :rfc:`5561`
+  :t:`LDP Capabilities, B. Thomas, K. Raza, S. Aggarwal, R. Aggarwal, and
+  JL. Le Roux. July 2009.`
+- :rfc:`5918`
+  :t:`Label Distribution Protocol (LDP) 'Typed Wildcard' Forward Equivalence
+  Class (FEC), R. Asati, I. Minei, and B. Thomas. August 2010.`
+- :rfc:`5919`
+  :t:`Signaling LDP Label Advertisement Completion, R. Asati, P. Mohapatra,
+  E. Chen, and B. Thomas. August 2010.`
+- :rfc:`6667`
+  :t:`LDP 'Typed Wildcard' Forwarding Equivalence Class (FEC) for PWid and
+  Generalized PWid FEC Elements, K. Raza, S. Boutros, and C. Pignataro. July
+  2012.`
+- :rfc:`6720`
+  :t:`The Generalized TTL Security Mechanism (GTSM) for the Label Distribution
+  Protocol (LDP), C. Pignataro and R. Asati. August 2012.`
+- :rfc:`7552`
+  :t:`Updates to LDP for IPv6, R. Asati, C. Pignataro, K. Raza, V. Manral,
+  and R. Papneja. June 2015.`
+- :rfc:`5880`
+  :t:`Bidirectional Forwarding Detection (BFD), D. Katz, D. Ward. June 2010`
+- :rfc:`5881`
+  :t:`Bidirectional Forwarding Detection (BFD) for IPv4 and IPv6 (Single Hop),
+  D. Katz, D. Ward. June 2010`
+- :rfc:`5883`
+  :t:`Bidirectional Forwarding Detection (BFD) for Multihop Paths, D. Katz,
+  D. Ward. June 2010`
 
 **When SNMP support is enabled, the following RFCs are also supported:**
 
@@ -235,7 +342,8 @@ How to get FRR
 The official FRR website is located at |PACKAGE_URL| and contains further
 information, as well as links to additional resources.
 
-FRR is a fork of `Quagga <http://www.quagga.net/>`_.
+Several distributions provide packages for FRR. Check your distribution's
+repositories to find out if a suitable version is available.
 
 Mailing Lists
 =============
@@ -269,32 +377,10 @@ results of such discussions are reflected in updates, as appropriate, to code
 changes, updates to the Development list and either this file or information
 posted at `FRR`_.
 
-.. index:: Bug Reports
-.. index:: Bug hunting
-.. index:: Found a bug?
-.. index:: Reporting bugs
-.. index:: Reporting software errors
-.. index:: Errors in the software
-
-.. _bug-reports:
-
 Bug Reports
 ===========
 
-If you think you have found a bug, please file a bug report on our
-`GitHub issues`_ page.
-
-When you send a bug report, please be careful about the points below.
-
-- Please note what kind of OS you are using.  If you use the IPv6 stack
-  please note that as well.
-- Please show us the results of `netstat -rn` and `ifconfig -a`.
-  Information from zebra's VTY command `show ip route` will also be
-  helpful.
-- Please send your configuration file with the report.  If you specify
-  arguments to the configure script please note that too.
-
-Bug reports help us improve FRR and are very much appreciated.
+For information on reporting bugs, please see :ref:`bug-reports`.
 
 .. _frr: |package-url|
 .. _github: https://github.com/frrouting/frr/

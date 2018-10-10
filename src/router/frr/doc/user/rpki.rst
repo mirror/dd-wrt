@@ -44,6 +44,9 @@ In a nutshell, the current implementation provides the following features
 - Route maps can be configured to match a specific RPKI validation state. This
   allows the creation of local policies, which handle BGP routes based on the
   outcome of the Prefix Origin Validation.
+- Updates from the RPKI cache servers are directly applied and path selection
+  is updated accordingly. (Soft reconfiguration **must** be enabled for this
+  to work).
 
 
 .. _enabling-rpki:
@@ -57,11 +60,39 @@ Enabling RPKI
    This command enables the RPKI configuration mode. Most commands that start
    with *rpki* can only be used in this mode.
 
-   When it is used in a telnet session, leaving of this mode cause rpki to be initialized.
+   When it is used in a telnet session, leaving of this mode cause rpki to be
+   initialized.
 
    Executing this command alone does not activate prefix validation. You need
    to configure at least one reachable cache server. See section
    :ref:`configuring-rpki-rtr-cache-servers` for configuring a cache server.
+
+.. index:: RPKI and daemons.conf
+
+When first installing FRR with RPKI support from the pre-packaged binaries.
+Remember to add ``-M rpki`` to the variable ``bgpd_options`` in
+:file:`/etc/frr/daemons.conf` , like so::
+
+   bgpd_options="   --daemon -A 127.0.0.1 -M rpki"
+
+instead of the default setting::
+
+   bgpd_options="   --daemon -A 127.0.0.1"
+
+Otherwise you will encounter an error when trying to enter RPKI
+configuration mode due to the ``rpki`` module not being loaded when the BGP
+daemon is initialized.
+
+Examples of the error::
+
+   router(config)# debug rpki
+   % [BGP] Unknown command: debug rpki
+
+   router(config)# rpki
+   % [BGP] Unknown command: rpki
+
+Note that the RPKI commands will be available in vtysh when running
+``find rpki`` regardless of whether the module is loaded.
 
 .. _configuring-rpki-rtr-cache-servers:
 

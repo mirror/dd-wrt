@@ -27,6 +27,7 @@
 #include "memory.h"
 #include "log.h"
 #include "jhash.h"
+#include "lib_errors.h"
 
 DEFINE_MTYPE_STATIC(LIB, PREFIX, "Prefix")
 
@@ -429,6 +430,15 @@ static const struct in6_addr maskbytes6[] = {
 
 #define MASKBIT(offset)  ((0xff << (PNBBY - (offset))) & 0xff)
 
+void prefix_hexdump(const struct prefix *p)
+{
+	char buf[PREFIX_STRLEN];
+
+	zlog_debug("prefix: %s",
+		   prefix2str(p, buf, sizeof(buf)));
+	zlog_hexdump(p, sizeof(struct prefix));
+}
+
 int is_zero_mac(struct ethaddr *mac)
 {
 	int i = 0;
@@ -575,8 +585,8 @@ int prefix_match(const struct prefix *n, const struct prefix *p)
 	}
 
 	/* Set both prefix's head pointer. */
-	np = (const uint8_t *)&n->u.prefix;
-	pp = (const uint8_t *)&p->u.prefix;
+	np = n->u.val;
+	pp = p->u.val;
 
 	offset = n->prefixlen / PNBBY;
 	shift = n->prefixlen % PNBBY;
@@ -600,8 +610,8 @@ int prefix_match_network_statement(const struct prefix *n,
 	const uint8_t *np, *pp;
 
 	/* Set both prefix's head pointer. */
-	np = (const uint8_t *)&n->u.prefix;
-	pp = (const uint8_t *)&p->u.prefix;
+	np = n->u.val;
+	pp = p->u.val;
 
 	offset = n->prefixlen / PNBBY;
 	shift = n->prefixlen % PNBBY;
@@ -647,8 +657,9 @@ void prefix_copy(struct prefix *dest, const struct prefix *src)
 		memcpy((void *)dest->u.prefix_flowspec.ptr,
 		       (void *)src->u.prefix_flowspec.ptr, len);
 	} else {
-		zlog_err("prefix_copy(): Unknown address family %d",
-			 src->family);
+		flog_err(LIB_ERR_DEVELOPMENT,
+			  "prefix_copy(): Unknown address family %d",
+			  src->family);
 		assert(0);
 	}
 }
@@ -733,8 +744,8 @@ int prefix_cmp(const struct prefix *p1, const struct prefix *p2)
 				return 1;
 		return 0;
 	}
-	pp1 = (const uint8_t *)&p1->u.prefix;
-	pp2 = (const uint8_t *)&p2->u.prefix;
+	pp1 = p1->u.val;
+	pp2 = p2->u.val;
 
 	if (p1->prefixlen != p2->prefixlen)
 		return 1;
@@ -765,8 +776,8 @@ int prefix_common_bits(const struct prefix *p1, const struct prefix *p2)
 	uint8_t xor ;
 
 	/* Set both prefix's head pointer. */
-	const uint8_t *pp1 = (const uint8_t *)&p1->u.prefix;
-	const uint8_t *pp2 = (const uint8_t *)&p2->u.prefix;
+	const uint8_t *pp1 = p1->u.val;
+	const uint8_t *pp2 = p2->u.val;
 
 	if (p1->family == AF_INET)
 		length = IPV4_MAX_BYTELEN;
@@ -1188,6 +1199,9 @@ int str2prefix(const char *str, struct prefix *p)
 {
 	int ret;
 
+	if (!str || !p)
+		return 0;
+
 	/* First we try to convert string to struct prefix_ipv4. */
 	ret = str2prefix_ipv4(str, (struct prefix_ipv4 *)p);
 	if (ret)
@@ -1206,54 +1220,109 @@ int str2prefix(const char *str, struct prefix *p)
 	return 0;
 }
 
-static const char *prefixevpn2str(const struct prefix *p, char *str, int size)
+static const char *prefixevpn_ead2str(const struct prefix_evpn *p, char *str,
+				      int size)
+{
+	snprintf(str, size, "Unsupported EVPN prefix");
+	return str;
+}
+
+static const char *prefixevpn_macip2str(const struct prefix_evpn *p, char *str,
+					int size)
 {
 	uint8_t family;
 	char buf[PREFIX2STR_BUFFER];
 	char buf2[ETHER_ADDR_STRLEN];
 
-	if (p->u.prefix_evpn.route_type == 2) {
-		if (IS_EVPN_PREFIX_IPADDR_NONE((struct prefix_evpn *)p))
-			snprintf(str, size, "[%d]:[%s]/%d",
-				 p->u.prefix_evpn.route_type,
-				 prefix_mac2str(&p->u.prefix_evpn.mac, buf2,
-						sizeof(buf2)),
-				 p->prefixlen);
-		else {
-			family = IS_EVPN_PREFIX_IPADDR_V4(
-					 (struct prefix_evpn *)p)
-					 ? AF_INET
-					 : AF_INET6;
-			snprintf(str, size, "[%d]:[%s]:[%s]/%d",
-				 p->u.prefix_evpn.route_type,
-				 prefix_mac2str(&p->u.prefix_evpn.mac, buf2,
-						sizeof(buf2)),
-				 inet_ntop(family, &p->u.prefix_evpn.ip.ip.addr,
-					   buf, PREFIX2STR_BUFFER),
-				 p->prefixlen);
-		}
-	} else if (p->u.prefix_evpn.route_type == 3) {
-		family = IS_EVPN_PREFIX_IPADDR_V4((struct prefix_evpn *)p)
-				 ? AF_INET
-				 : AF_INET6;
-		snprintf(str, size, "[%d]:[%s]/%d", p->u.prefix_evpn.route_type,
-			 inet_ntop(family, &p->u.prefix_evpn.ip.ip.addr, buf,
-				   PREFIX2STR_BUFFER),
+	if (is_evpn_prefix_ipaddr_none(p))
+		snprintf(str, size, "[%d]:[%s]/%d",
+			 p->prefix.route_type,
+			 prefix_mac2str(&p->prefix.macip_addr.mac,
+					buf2, sizeof(buf2)),
 			 p->prefixlen);
-	} else if (p->u.prefix_evpn.route_type == 5) {
-		family = IS_EVPN_PREFIX_IPADDR_V4((struct prefix_evpn *)p)
+	else {
+		family = is_evpn_prefix_ipaddr_v4(p)
 				 ? AF_INET
 				 : AF_INET6;
-		snprintf(str, size, "[%d]:[%u][%s/%d]/%d",
-			 p->u.prefix_evpn.route_type, p->u.prefix_evpn.eth_tag,
-			 inet_ntop(family, &p->u.prefix_evpn.ip.ip.addr, buf,
-				   PREFIX2STR_BUFFER),
-			 p->u.prefix_evpn.ip_prefix_length, p->prefixlen);
-	} else {
-		sprintf(str, "Unsupported EVPN route type %d",
-			p->u.prefix_evpn.route_type);
+		snprintf(str, size, "[%d]:[%s]:[%s]/%d",
+			 p->prefix.route_type,
+			 prefix_mac2str(&p->prefix.macip_addr.mac,
+					buf2, sizeof(buf2)),
+			 inet_ntop(family,
+				   &p->prefix.macip_addr.ip.ip.addr,
+				   buf, PREFIX2STR_BUFFER),
+			 p->prefixlen);
 	}
+	return str;
+}
 
+static const char *prefixevpn_imet2str(const struct prefix_evpn *p, char *str,
+				       int size)
+{
+	uint8_t family;
+	char buf[PREFIX2STR_BUFFER];
+
+	family = is_evpn_prefix_ipaddr_v4(p)
+			 ? AF_INET
+			 : AF_INET6;
+	snprintf(str, size, "[%d]:[%s]/%d", p->prefix.route_type,
+		 inet_ntop(family,
+			   &p->prefix.imet_addr.ip.ip.addr, buf,
+			   PREFIX2STR_BUFFER),
+		 p->prefixlen);
+	return str;
+}
+
+static const char *prefixevpn_es2str(const struct prefix_evpn *p, char *str,
+				     int size)
+{
+	char buf[ESI_STR_LEN];
+
+	snprintf(str, size, "[%d]:[%s]:[%s]/%d", p->prefix.route_type,
+		 esi_to_str(&p->prefix.es_addr.esi, buf, sizeof(buf)),
+		 inet_ntoa(p->prefix.es_addr.ip.ipaddr_v4),
+		 p->prefixlen);
+	return str;
+}
+
+static const char *prefixevpn_prefix2str(const struct prefix_evpn *p, char *str,
+					 int size)
+{
+	uint8_t family;
+	char buf[PREFIX2STR_BUFFER];
+
+	family = is_evpn_prefix_ipaddr_v4(p)
+			 ? AF_INET
+			 : AF_INET6;
+	snprintf(str, size, "[%d]:[%u][%s/%d]/%d",
+		 p->prefix.route_type,
+		 p->prefix.prefix_addr.eth_tag,
+		 inet_ntop(family,
+			   &p->prefix.prefix_addr.ip.ip.addr, buf,
+			   PREFIX2STR_BUFFER),
+		 p->prefix.prefix_addr.ip_prefix_length,
+		 p->prefixlen);
+	return str;
+}
+
+static const char *prefixevpn2str(const struct prefix_evpn *p, char *str,
+				  int size)
+{
+	switch (p->prefix.route_type) {
+	case 1:
+		return prefixevpn_ead2str(p, str, size);
+	case 2:
+		return prefixevpn_macip2str(p, str, size);
+	case 3:
+		return prefixevpn_imet2str(p, str, size);
+	case 4:
+		return prefixevpn_es2str(p, str, size);
+	case 5:
+		return prefixevpn_prefix2str(p, str, size);
+	default:
+		snprintf(str, size, "Unsupported EVPN prefix");
+		break;
+	}
 	return str;
 }
 
@@ -1277,7 +1346,7 @@ const char *prefix2str(union prefixconstptr pu, char *str, int size)
 		break;
 
 	case AF_EVPN:
-		prefixevpn2str(p, str, size);
+		prefixevpn2str((const struct prefix_evpn *)p, str, size);
 		break;
 
 	case AF_FLOWSPEC:
@@ -1304,17 +1373,6 @@ struct prefix *prefix_new()
 void prefix_free(struct prefix *p)
 {
 	XFREE(MTYPE_PREFIX, p);
-}
-
-/* Utility function.  Check the string only contains digit
- * character.
- * FIXME str.[c|h] would be better place for this function. */
-int all_digit(const char *str)
-{
-	for (; *str != '\0'; str++)
-		if (!isdigit((int)*str))
-			return 0;
-	return 1;
 }
 
 /* Utility function to convert ipv4 prefixes to Classful prefixes */
@@ -1489,4 +1547,57 @@ unsigned prefix_hash_key(void *pp)
 	return jhash(&copy,
 		     offsetof(struct prefix, u.prefix) + PSIZE(copy.prefixlen),
 		     0x55aa5a5a);
+}
+
+/* converts to internal representation of esi
+ * returns 1 on success, 0 otherwise
+ * format accepted: aa:aa:aa:aa:aa:aa:aa:aa:aa:aa
+ * if esi parameter is null, then check only
+ */
+int str_to_esi(const char *str, esi_t *esi)
+{
+	int i;
+	unsigned int a[ESI_BYTES];
+
+	if (!str)
+		return 0;
+
+	if (sscanf(str, "%2x:%2x:%2x:%2x:%2x:%2x:%2x:%2x:%2x:%2x",
+		   a + 0, a + 1, a + 2, a + 3,
+		   a + 4, a + 5, a + 6, a + 7,
+		   a + 8, a + 9)
+	    != ESI_BYTES) {
+		/* error in incoming str length */
+		return 0;
+	}
+
+	/* valid ESI */
+	if (!esi)
+		return 1;
+	for (i = 0; i < ESI_BYTES; ++i)
+		esi->val[i] = a[i] & 0xff;
+	return 1;
+}
+
+char *esi_to_str(const esi_t *esi, char *buf, int size)
+{
+	char *ptr;
+
+	if (!esi)
+		return NULL;
+	if (!buf)
+		ptr = (char *)XMALLOC(MTYPE_TMP,
+				      ESI_STR_LEN * sizeof(char));
+	else {
+		assert(size >= ESI_STR_LEN);
+		ptr = buf;
+	}
+
+	snprintf(ptr, ESI_STR_LEN,
+		 "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
+		 esi->val[0], esi->val[1], esi->val[2],
+		 esi->val[3], esi->val[4], esi->val[5],
+		 esi->val[6], esi->val[7], esi->val[8],
+		 esi->val[9]);
+	return ptr;
 }

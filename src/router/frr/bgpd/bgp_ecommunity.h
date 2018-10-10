@@ -48,8 +48,11 @@
 #define ECOMMUNITY_EVPN_SUBTYPE_ES_IMPORT_RT 0x02
 #define ECOMMUNITY_EVPN_SUBTYPE_ROUTERMAC    0x03
 #define ECOMMUNITY_EVPN_SUBTYPE_DEF_GW       0x0d
+#define ECOMMUNITY_EVPN_SUBTYPE_ND           0x08
 
 #define ECOMMUNITY_EVPN_SUBTYPE_MACMOBILITY_FLAG_STICKY 0x01
+#define ECOMMUNITY_EVPN_SUBTYPE_ND_ROUTER_FLAG		0x01
+#define ECOMMUNITY_EVPN_SUBTYPE_ND_OVERRIDE_FLAG	0x02
 
 /* Low-order octet of the Extended Communities type field for OPAQUE types */
 #define ECOMMUNITY_OPAQUE_SUBTYPE_ENCAP     0x0c
@@ -156,6 +159,7 @@ extern void ecommunity_unintern(struct ecommunity **);
 extern unsigned int ecommunity_hash_make(void *);
 extern struct ecommunity *ecommunity_str2com(const char *, int, int);
 extern char *ecommunity_ecom2str(struct ecommunity *, int, int);
+extern void ecommunity_strfree(char **s);
 extern int ecommunity_match(const struct ecommunity *,
 			    const struct ecommunity *);
 extern char *ecommunity_str(struct ecommunity *);

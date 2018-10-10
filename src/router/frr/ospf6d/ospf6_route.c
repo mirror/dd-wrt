@@ -574,8 +574,8 @@ static void route_table_assert(struct ospf6_route_table *table)
 	if (link_error == 0 && num == table->count)
 		return;
 
-	zlog_err("PANIC !!");
-	zlog_err("Something has gone wrong with ospf6_route_table[%p]", table);
+	flog_err(LIB_ERR_DEVELOPMENT, "PANIC !!");
+	flog_err(LIB_ERR_DEVELOPMENT, "Something has gone wrong with ospf6_route_table[%p]", table);
 	zlog_debug("table count = %d, real number = %d", table->count, num);
 	zlog_debug("DUMP START");
 	for (r = ospf6_route_head(table); r; r = ospf6_route_next(r)) {
@@ -611,9 +611,10 @@ struct ospf6_route *ospf6_route_add(struct ospf6_route *route,
 		prefix2str(&route->prefix, buf, sizeof(buf));
 
 	if (IS_OSPF6_DEBUG_ROUTE(MEMORY))
-		zlog_debug("%s %p: route add %p: %s",
+		zlog_debug("%s %p: route add %p: %s paths %u nh %u",
 			   ospf6_route_table_name(table), (void *)table,
-			   (void *)route, buf);
+			   (void *)route, buf, listcount(route->paths),
+			   listcount(route->nh_list));
 	else if (IS_OSPF6_DEBUG_ROUTE(TABLE))
 		zlog_debug("%s: route add: %s", ospf6_route_table_name(table),
 			   buf);
@@ -664,11 +665,13 @@ struct ospf6_route *ospf6_route_add(struct ospf6_route *route,
 
 		if (IS_OSPF6_DEBUG_ROUTE(MEMORY))
 			zlog_debug(
-				"%s %p: route add %p cost %u nh %u: update of %p old cost %u nh %u",
+				"%s %p: route add %p cost %u paths %u nh %u: update of %p cost %u paths %u nh %u",
 				ospf6_route_table_name(table), (void *)table,
 				(void *)route, route->path.cost,
+				listcount(route->paths),
 				listcount(route->nh_list), (void *)old,
-				old->path.cost, listcount(old->nh_list));
+				old->path.cost, listcount(old->paths),
+				listcount(old->nh_list));
 		else if (IS_OSPF6_DEBUG_ROUTE(TABLE))
 			zlog_debug("%s: route add: update",
 				   ospf6_route_table_name(table));
@@ -922,10 +925,11 @@ struct ospf6_route *ospf6_route_next(struct ospf6_route *route)
 	struct ospf6_route *next = route->next;
 
 	if (IS_OSPF6_DEBUG_ROUTE(MEMORY))
-		zlog_info("%s %p: route next: %p<-[%p]->%p",
+		zlog_info("%s %p: route next: %p<-[%p]->%p , route ref count %u",
 			  ospf6_route_table_name(route->table),
 			  (void *)route->table, (void *)route->prev,
-			  (void *)route, (void *)route->next);
+			  (void *)route, (void *)route->next,
+			  route->lock);
 
 	ospf6_route_unlock(route);
 	if (next)

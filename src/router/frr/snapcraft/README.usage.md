@@ -18,7 +18,7 @@ ie for `ospf6d` (OSPFv3):
     systemctl enable snap.frr.ospf6d.service
 
 The daemons are: `ripd`, `ripngd`, `ospfd`, `ospf6d`, `isisd`, `bgpd`, 
-`pimd`, `zebra`
+`pimd`, `ldpd`, `eigrpd`, `babeld`, `nhrpd`, `bfdd`, `zebra`
 
 Commands defined by this snap
 -----------------------------
@@ -31,7 +31,7 @@ Commands defined by this snap
 - `frr.readme`:
 	Returns this document `cat README_usage.md`
 - `frr.set`:
-	Allows to enable `FPM` module. See FPM section below
+	Allows to enable `FPM` and/or disable RPKIi module. See Module section below
 
 and for debugging defined at this time (May get removed later - do not 
 depend on them). These are mainly intended to debug the Snap
@@ -53,7 +53,19 @@ depend on them). These are mainly intended to debug the Snap
 - `frr.pimd-debug`:
 	Starts pimd daemon in foreground
 - `frr.ldpd-debug`:
-    Starts ldpd daemon in foreground
+        Starts ldpd daemon in foreground
+- `frr.nhrpd-debug`:
+        Starts nhrpd daemon in foreground
+- `frr.babeld-debug`:
+        Starts babeld daemon in foreground
+- `frr.eigrpd-debug`:
+        Starts eigrpd daemon in foreground
+- `frr.pbrd-debug`:
+        Starts pbrd daemon in foreground
+- `frr.staticd-debug`:
+        Starts staticd daemon in foreground
+- `frr.bfdd-debug`:
+        Starts bfdd daemon in foreground
 
 MPLS (LDP)
 ----------
@@ -88,13 +100,13 @@ are named `eth0`, `eth1` and `eth2`, then the additional lines in
 These settings require either a reboot or a manual configuration with
 `sysctl` as well.
 
-FPM Module
+Modules
 ----------
-The `frr.set` allows to turn FPM module on or off.
+The `frr.set` allows to turn FPM module ond the RPKI module on or off.
 
     frr.set fpm {disable|protobuf|netlink}
     
-    Disables FPM or enables FPM with selected mode
+    Disables FPM or enables FPM with selected mode (default: disabled)
 
 By default, the FPM module is disabled, but installed with netlink and
 protobuf support. To enable the FPM module, use the `frr.set fpm protobuf`
@@ -102,13 +114,24 @@ or `frr.set fpm netlink` command. The command will only enable the mode
 for the next restart of zebra. Please reboot or restart zebra after
 changing the mode to become effective.
 
+    frr.set rpki {enable|disable}
+   
+    Disables or enables BGP RPKI (default: enabled)
+
+By default, the RPKI module is enabled. To disable the RPKI module
+use the `frr.set rpki disable` command. The command will only enable
+the module after the next restart of the bgp daemon. Please reboot or 
+restart bgpd after changing the mode to become effective.
+(Normally, there is no need to disable the module as it has no effect
+if there are no RPKI configurations in BGP)
+
 FAQ
 ---
 - frr.vtysh displays `--MORE--` on long output. How to suppress this?
     - Define `VTYSH_PAGER` to `cat` (default is `more`). (Ie add 
       `export VTYSH_PAGER=cat` to the end of your `.profile`)
 
-- ospfd / ospf6d are not running after installation
+- bfdd / ospfd / ospf6d / nhrpd are not running after installation
     - Installing a new snap starts the daemons, but at this time they
       may not have the required privileged access. Make sure you 
       issue the `snap connect` command as given above (can be verified

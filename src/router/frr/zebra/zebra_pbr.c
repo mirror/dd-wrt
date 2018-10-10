@@ -30,6 +30,7 @@
 #include "zebra/rt.h"
 #include "zebra/zapi_msg.h"
 #include "zebra/zebra_memory.h"
+#include "zebra/zserv.h"
 
 /* definitions */
 DEFINE_MTYPE_STATIC(ZEBRA, PBR_IPTABLE_IFNAME, "PBR interface list")
@@ -135,7 +136,7 @@ void zebra_pbr_rules_free(void *arg)
 
 	rule = (struct zebra_pbr_rule *)arg;
 
-	kernel_del_pbr_rule(rule);
+	(void)kernel_del_pbr_rule(rule);
 	XFREE(MTYPE_TMP, rule);
 }
 
@@ -443,7 +444,7 @@ void zebra_pbr_add_rule(struct zebra_ns *zns, struct zebra_pbr_rule *rule)
 		pbr_rule_lookup_unique(zns, rule->rule.unique, rule->ifp);
 
 	(void)hash_get(zns->rules_hash, rule, pbr_rule_alloc_intern);
-	kernel_add_pbr_rule(rule);
+	(void)kernel_add_pbr_rule(rule);
 	/*
 	 * Rule Replace semantics, if we have an old, install the
 	 * new rule, look above, and then delete the old
@@ -457,7 +458,7 @@ void zebra_pbr_del_rule(struct zebra_ns *zns, struct zebra_pbr_rule *rule)
 	struct zebra_pbr_rule *lookup;
 
 	lookup = hash_lookup(zns->rules_hash, rule);
-	kernel_del_pbr_rule(rule);
+	(void)kernel_del_pbr_rule(rule);
 
 	if (lookup) {
 		hash_release(zns->rules_hash, lookup);
@@ -474,7 +475,7 @@ static void zebra_pbr_cleanup_rules(struct hash_backet *b, void *data)
 	int *sock = data;
 
 	if (rule->sock == *sock) {
-		kernel_del_pbr_rule(rule);
+		(void)kernel_del_pbr_rule(rule);
 		hash_release(zns->rules_hash, rule);
 		XFREE(MTYPE_TMP, rule);
 	}
@@ -524,6 +525,8 @@ static int zebra_pbr_client_close_cleanup(struct zserv *client)
 	int sock = client->sock;
 	struct zebra_ns *zns = zebra_ns_lookup(NS_DEFAULT);
 
+	if (!sock)
+		return 0;
 	hash_iterate(zns->rules_hash, zebra_pbr_cleanup_rules, &sock);
 	hash_iterate(zns->iptable_hash,
 		     zebra_pbr_cleanup_iptable, &sock);
@@ -536,7 +539,7 @@ static int zebra_pbr_client_close_cleanup(struct zserv *client)
 
 void zebra_pbr_init(void)
 {
-	hook_register(zapi_client_close, zebra_pbr_client_close_cleanup);
+	hook_register(zserv_client_close, zebra_pbr_client_close_cleanup);
 }
 
 static void *pbr_ipset_alloc_intern(void *arg)
@@ -562,8 +565,8 @@ void zebra_pbr_create_ipset(struct zebra_ns *zns,
 	ret = hook_call(zebra_pbr_ipset_wrap_script_update,
 		  zns, 1, ipset);
 	kernel_pbr_ipset_add_del_status(ipset,
-					ret ? SOUTHBOUND_INSTALL_SUCCESS
-					: SOUTHBOUND_INSTALL_FAILURE);
+					ret ? DP_INSTALL_SUCCESS
+					: DP_INSTALL_FAILURE);
 }
 
 void zebra_pbr_destroy_ipset(struct zebra_ns *zns,
@@ -646,8 +649,8 @@ void zebra_pbr_add_ipset_entry(struct zebra_ns *zns,
 	ret = hook_call(zebra_pbr_ipset_entry_wrap_script_update,
 		  zns, 1, ipset);
 	kernel_pbr_ipset_entry_add_del_status(ipset,
-					ret ? SOUTHBOUND_INSTALL_SUCCESS
-					: SOUTHBOUND_INSTALL_FAILURE);
+					ret ? DP_INSTALL_SUCCESS
+					: DP_INSTALL_FAILURE);
 }
 
 void zebra_pbr_del_ipset_entry(struct zebra_ns *zns,
@@ -689,8 +692,8 @@ void zebra_pbr_add_iptable(struct zebra_ns *zns,
 		       pbr_iptable_alloc_intern);
 	ret = hook_call(zebra_pbr_iptable_wrap_script_update, zns, 1, iptable);
 	kernel_pbr_iptable_add_del_status(iptable,
-					  ret ? SOUTHBOUND_INSTALL_SUCCESS
-					  : SOUTHBOUND_INSTALL_FAILURE);
+					  ret ? DP_INSTALL_SUCCESS
+					  : DP_INSTALL_FAILURE);
 }
 
 void zebra_pbr_del_iptable(struct zebra_ns *zns,
@@ -721,19 +724,19 @@ void zebra_pbr_del_iptable(struct zebra_ns *zns,
  * Handle success or failure of rule (un)install in the kernel.
  */
 void kernel_pbr_rule_add_del_status(struct zebra_pbr_rule *rule,
-				    enum southbound_results res)
+				    enum dp_results res)
 {
 	switch (res) {
-	case SOUTHBOUND_INSTALL_SUCCESS:
+	case DP_INSTALL_SUCCESS:
 		zsend_rule_notify_owner(rule, ZAPI_RULE_INSTALLED);
 		break;
-	case SOUTHBOUND_INSTALL_FAILURE:
+	case DP_INSTALL_FAILURE:
 		zsend_rule_notify_owner(rule, ZAPI_RULE_FAIL_INSTALL);
 		break;
-	case SOUTHBOUND_DELETE_SUCCESS:
+	case DP_DELETE_SUCCESS:
 		zsend_rule_notify_owner(rule, ZAPI_RULE_REMOVED);
 		break;
-	case SOUTHBOUND_DELETE_FAILURE:
+	case DP_DELETE_FAILURE:
 		zsend_rule_notify_owner(rule, ZAPI_RULE_FAIL_REMOVE);
 		break;
 	}
@@ -743,19 +746,19 @@ void kernel_pbr_rule_add_del_status(struct zebra_pbr_rule *rule,
  * Handle success or failure of ipset (un)install in the kernel.
  */
 void kernel_pbr_ipset_add_del_status(struct zebra_pbr_ipset *ipset,
-				    enum southbound_results res)
+				    enum dp_results res)
 {
 	switch (res) {
-	case SOUTHBOUND_INSTALL_SUCCESS:
+	case DP_INSTALL_SUCCESS:
 		zsend_ipset_notify_owner(ipset, ZAPI_IPSET_INSTALLED);
 		break;
-	case SOUTHBOUND_INSTALL_FAILURE:
+	case DP_INSTALL_FAILURE:
 		zsend_ipset_notify_owner(ipset, ZAPI_IPSET_FAIL_INSTALL);
 		break;
-	case SOUTHBOUND_DELETE_SUCCESS:
+	case DP_DELETE_SUCCESS:
 		zsend_ipset_notify_owner(ipset, ZAPI_IPSET_REMOVED);
 		break;
-	case SOUTHBOUND_DELETE_FAILURE:
+	case DP_DELETE_FAILURE:
 		zsend_ipset_notify_owner(ipset, ZAPI_IPSET_FAIL_REMOVE);
 		break;
 	}
@@ -766,22 +769,22 @@ void kernel_pbr_ipset_add_del_status(struct zebra_pbr_ipset *ipset,
  */
 void kernel_pbr_ipset_entry_add_del_status(
 			struct zebra_pbr_ipset_entry *ipset,
-			enum southbound_results res)
+			enum dp_results res)
 {
 	switch (res) {
-	case SOUTHBOUND_INSTALL_SUCCESS:
+	case DP_INSTALL_SUCCESS:
 		zsend_ipset_entry_notify_owner(ipset,
 					       ZAPI_IPSET_ENTRY_INSTALLED);
 		break;
-	case SOUTHBOUND_INSTALL_FAILURE:
+	case DP_INSTALL_FAILURE:
 		zsend_ipset_entry_notify_owner(ipset,
 					       ZAPI_IPSET_ENTRY_FAIL_INSTALL);
 		break;
-	case SOUTHBOUND_DELETE_SUCCESS:
+	case DP_DELETE_SUCCESS:
 		zsend_ipset_entry_notify_owner(ipset,
 					       ZAPI_IPSET_ENTRY_REMOVED);
 		break;
-	case SOUTHBOUND_DELETE_FAILURE:
+	case DP_DELETE_FAILURE:
 		zsend_ipset_entry_notify_owner(ipset,
 					       ZAPI_IPSET_ENTRY_FAIL_REMOVE);
 		break;
@@ -792,20 +795,20 @@ void kernel_pbr_ipset_entry_add_del_status(
  * Handle success or failure of ipset (un)install in the kernel.
  */
 void kernel_pbr_iptable_add_del_status(struct zebra_pbr_iptable *iptable,
-				       enum southbound_results res)
+				       enum dp_results res)
 {
 	switch (res) {
-	case SOUTHBOUND_INSTALL_SUCCESS:
+	case DP_INSTALL_SUCCESS:
 		zsend_iptable_notify_owner(iptable, ZAPI_IPTABLE_INSTALLED);
 		break;
-	case SOUTHBOUND_INSTALL_FAILURE:
+	case DP_INSTALL_FAILURE:
 		zsend_iptable_notify_owner(iptable, ZAPI_IPTABLE_FAIL_INSTALL);
 		break;
-	case SOUTHBOUND_DELETE_SUCCESS:
+	case DP_DELETE_SUCCESS:
 		zsend_iptable_notify_owner(iptable,
 					   ZAPI_IPTABLE_REMOVED);
 		break;
-	case SOUTHBOUND_DELETE_FAILURE:
+	case DP_DELETE_FAILURE:
 		zsend_iptable_notify_owner(iptable,
 					   ZAPI_IPTABLE_FAIL_REMOVE);
 		break;
@@ -829,6 +832,7 @@ struct zebra_pbr_ipset_entry_unique_display {
 struct zebra_pbr_env_display {
 	struct zebra_ns *zns;
 	struct vty *vty;
+	char *name;
 };
 
 static const char *zebra_pbr_prefix2str(union prefixconstptr pu,
@@ -1034,6 +1038,7 @@ void zebra_pbr_show_ipset_list(struct vty *vty, char *ipsetname)
 	}
 	uniqueipset.zns = zns;
 	uniqueipset.vty = vty;
+	uniqueipset.name = NULL;
 	hash_walk(zns->ipset_hash, zebra_pbr_show_ipset_walkcb,
 		  &uniqueipset);
 }
@@ -1057,19 +1062,25 @@ static int zebra_pbr_rule_lookup_fwmark_walkcb(struct hash_backet *backet,
 	return HASHWALK_CONTINUE;
 }
 
-static int zebra_pbr_show_iptable_walkcb(struct hash_backet *backet, void *arg)
+static void zebra_pbr_show_iptable_unit(struct zebra_pbr_iptable *iptable,
+				       struct vty *vty,
+				       struct zebra_ns *zns)
 {
-	struct zebra_pbr_iptable *iptable =
-		(struct zebra_pbr_iptable *)backet->data;
-	struct zebra_pbr_env_display *env = (struct zebra_pbr_env_display *)arg;
-	struct vty *vty = env->vty;
-	struct zebra_ns *zns = env->zns;
 	int ret;
 	uint64_t pkts = 0, bytes = 0;
 
 	vty_out(vty, "IPtable %s action %s (%u)\n", iptable->ipset_name,
 		iptable->action == ZEBRA_IPTABLES_DROP ? "drop" : "redirect",
 		iptable->unique);
+	if (iptable->type == IPSET_NET_PORT ||
+	    iptable->type == IPSET_NET_PORT_NET) {
+		if (!(iptable->filter_bm & MATCH_ICMP_SET)) {
+			if (iptable->filter_bm & PBR_FILTER_DST_PORT)
+				vty_out(vty, "\t lookup dst port\n");
+			else if (iptable->filter_bm & PBR_FILTER_SRC_PORT)
+				vty_out(vty, "\t lookup src port\n");
+		}
+	}
 	if (iptable->pkt_len_min || iptable->pkt_len_max) {
 		if (!iptable->pkt_len_max)
 			vty_out(vty, "\t pkt len %u\n",
@@ -1126,17 +1137,34 @@ static int zebra_pbr_show_iptable_walkcb(struct hash_backet *backet, void *arg)
 				prfl.fwmark);
 		}
 	}
+}
+
+static int zebra_pbr_show_iptable_walkcb(struct hash_backet *backet, void *arg)
+{
+	struct zebra_pbr_iptable *iptable =
+		(struct zebra_pbr_iptable *)backet->data;
+	struct zebra_pbr_env_display *env = (struct zebra_pbr_env_display *)arg;
+	struct vty *vty = env->vty;
+	struct zebra_ns *zns = env->zns;
+	char *iptable_name = env->name;
+
+	if (!iptable_name)
+		zebra_pbr_show_iptable_unit(iptable, vty, zns);
+	else if (!strncmp(iptable_name,
+			  iptable->ipset_name,
+			  ZEBRA_IPSET_NAME_SIZE))
+		zebra_pbr_show_iptable_unit(iptable, vty, zns);
 	return HASHWALK_CONTINUE;
 }
 
-void zebra_pbr_show_iptable(struct vty *vty)
+void zebra_pbr_show_iptable(struct vty *vty, char *iptable_name)
 {
 	struct zebra_ns *zns = zebra_ns_lookup(NS_DEFAULT);
 	struct zebra_pbr_env_display env;
 
 	env.vty = vty;
 	env.zns = zns;
-
+	env.name = iptable_name;
 	hash_walk(zns->iptable_hash, zebra_pbr_show_iptable_walkcb,
 		  &env);
 }

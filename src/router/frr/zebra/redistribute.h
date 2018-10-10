@@ -36,9 +36,11 @@ extern void zebra_redistribute_default_add(ZAPI_HANDLER_ARGS);
 extern void zebra_redistribute_default_delete(ZAPI_HANDLER_ARGS);
 /* ----------------- */
 
-extern void redistribute_update(struct prefix *, struct prefix *,
+extern void redistribute_update(const struct prefix *p,
+				const struct prefix *src_p,
 				struct route_entry *, struct route_entry *);
-extern void redistribute_delete(struct prefix *, struct prefix *,
+extern void redistribute_delete(const struct prefix *p,
+				const struct prefix *src_p,
 				struct route_entry *);
 
 extern void zebra_interface_up_update(struct interface *);
@@ -69,6 +71,5 @@ extern int is_zebra_import_table_enabled(afi_t, uint32_t table_id);
 
 extern int zebra_import_table_config(struct vty *);
 
-extern void zebra_import_table_rm_update(void);
-
+extern void zebra_import_table_rm_update(const char *rmap);
 #endif /* _ZEBRA_REDISTRIBUTE_H */

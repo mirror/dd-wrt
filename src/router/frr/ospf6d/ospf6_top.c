@@ -97,7 +97,8 @@ static void ospf6_top_route_hook_remove(struct ospf6_route *route)
 
 static void ospf6_top_brouter_hook_add(struct ospf6_route *route)
 {
-	if (IS_OSPF6_DEBUG_EXAMIN(AS_EXTERNAL)) {
+	if (IS_OSPF6_DEBUG_EXAMIN(AS_EXTERNAL) ||
+	    IS_OSPF6_DEBUG_BROUTER) {
 		uint32_t brouter_id;
 		char brouter_name[16];
 
@@ -116,15 +117,17 @@ static void ospf6_top_brouter_hook_add(struct ospf6_route *route)
 
 static void ospf6_top_brouter_hook_remove(struct ospf6_route *route)
 {
-	if (IS_OSPF6_DEBUG_EXAMIN(AS_EXTERNAL)) {
+	if (IS_OSPF6_DEBUG_EXAMIN(AS_EXTERNAL) ||
+	    IS_OSPF6_DEBUG_BROUTER) {
 		uint32_t brouter_id;
 		char brouter_name[16];
 
 		brouter_id = ADV_ROUTER_IN_PREFIX(&route->prefix);
 		inet_ntop(AF_INET, &brouter_id, brouter_name,
 			  sizeof(brouter_name));
-		zlog_debug("%s: brouter %s del with nh count %u",
-			   __PRETTY_FUNCTION__, brouter_name,
+		zlog_debug("%s: brouter %p %s del with adv router %x nh %u",
+			   __PRETTY_FUNCTION__, (void *)route, brouter_name,
+			   route->path.origin.adv_router,
 			   listcount(route->nh_list));
 	}
 	route->flag |= OSPF6_ROUTE_REMOVE;
@@ -422,13 +425,13 @@ DEFUN(no_ospf6_router_id,
 	return CMD_SUCCESS;
 }
 
-#if defined(VERSION_TYPE_DEV) && CONFDATE > 20180828
+#if CONFDATE > 20180828
 CPP_NOTICE("ospf6: `router-id A.B.C.D` deprecated 2017/08/28")
 #endif
 ALIAS_HIDDEN(ospf6_router_id, ospf6_router_id_hdn_cmd, "router-id A.B.C.D",
 	     "Configure OSPF6 Router-ID\n" V4NOTATION_STR)
 
-#if defined(VERSION_TYPE_DEV) && CONFDATE > 20180828
+#if CONFDATE > 20180828
 CPP_NOTICE("ospf6: `no router-id A.B.C.D` deprecated 2017/08/28")
 #endif
 ALIAS_HIDDEN(no_ospf6_router_id, no_ospf6_router_id_hdn_cmd,

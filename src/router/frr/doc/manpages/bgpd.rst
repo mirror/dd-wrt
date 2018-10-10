@@ -21,13 +21,6 @@ OPTIONS available for the |DAEMON| command:
 
 .. include:: common-options.rst
 
-LABEL MANAGER
--------------
-
-.. option:: -I, --int_num
-
-   Set zclient id. This is required when using Zebra label manager in proxy mode.
-
 FILES
 =====
 

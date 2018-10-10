@@ -215,6 +215,15 @@ static inline void zl3vni_get_rmac(zebra_l3vni_t *zl3vni, struct ethaddr *rmac)
 		memcpy(rmac->octet, zl3vni->svi_if->hw_addr, ETH_ALEN);
 }
 
+struct host_rb_entry {
+	RB_ENTRY(host_rb_entry) hl_entry;
+
+	struct prefix p;
+};
+
+RB_HEAD(host_rb_tree_entry, host_rb_entry);
+RB_PROTOTYPE(host_rb_tree_entry, host_rb_entry, hl_entry,
+	     host_rb_entry_compare);
 /*
  * MAC hash table.
  *
@@ -238,6 +247,8 @@ struct zebra_mac_t_ {
 #define ZEBRA_MAC_STICKY  0x08  /* Static MAC */
 #define ZEBRA_MAC_REMOTE_RMAC  0x10  /* remote router mac */
 #define ZEBRA_MAC_DEF_GW  0x20
+/* remote VTEP advertised MAC as default GW */
+#define ZEBRA_MAC_REMOTE_DEF_GW	0x40
 
 	/* Local or remote info. */
 	union {
@@ -253,7 +264,7 @@ struct zebra_mac_t_ {
 	struct list *neigh_list;
 
 	/* list of hosts pointing to this remote RMAC */
-	struct list *host_list;
+	struct host_rb_tree_entry host_rb;
 };
 
 /*
@@ -320,6 +331,7 @@ struct zebra_neigh_t_ {
 #define ZEBRA_NEIGH_REMOTE    0x02
 #define ZEBRA_NEIGH_REMOTE_NH    0x04 /* neigh entry for remote vtep */
 #define ZEBRA_NEIGH_DEF_GW    0x08
+#define ZEBRA_NEIGH_ROUTER_FLAG 0x10
 
 	enum zebra_neigh_state state;
 
@@ -327,7 +339,7 @@ struct zebra_neigh_t_ {
 	struct in_addr r_vtep_ip;
 
 	/* list of hosts pointing to this remote NH entry */
-	struct list *host_list;
+	struct host_rb_tree_entry host_rb;
 };
 
 /*

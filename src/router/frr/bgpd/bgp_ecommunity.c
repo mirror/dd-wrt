@@ -52,6 +52,11 @@ struct ecommunity *ecommunity_new(void)
 					    sizeof(struct ecommunity));
 }
 
+void ecommunity_strfree(char **s)
+{
+	XFREE(MTYPE_ECOMMUNITY_STR, *s);
+}
+
 /* Allocate ecommunities.  */
 void ecommunity_free(struct ecommunity **ecom)
 {
@@ -60,7 +65,6 @@ void ecommunity_free(struct ecommunity **ecom)
 	if ((*ecom)->str)
 		XFREE(MTYPE_ECOMMUNITY_STR, (*ecom)->str);
 	XFREE(MTYPE_ECOMMUNITY, *ecom);
-	ecom = NULL;
 }
 
 static void ecommunity_hash_free(struct ecommunity *ecom)
@@ -735,6 +739,13 @@ char *ecommunity_ecom2str(struct ecommunity *ecom, int format, int filter)
 				else
 					len = sprintf(str_buf + str_pnt,
 						      "MM:%u", seqnum);
+			} else if (*pnt == ECOMMUNITY_EVPN_SUBTYPE_ND) {
+				uint8_t flags = *++pnt;
+
+				if (flags
+				    & ECOMMUNITY_EVPN_SUBTYPE_ND_ROUTER_FLAG)
+					len = sprintf(str_buf + str_pnt,
+						      "ND:Router Flag");
 			} else
 				unk_ecom = 1;
 		} else if (type == ECOMMUNITY_ENCODE_REDIRECT_IP_NH) {
@@ -796,6 +807,21 @@ char *ecommunity_ecom2str(struct ecommunity *ecom, int format, int filter)
 				len = sprintf(
 					str_buf + str_pnt,
 					"FS:marking %u", *(pnt+5));
+			} else if (*pnt
+				   == ECOMMUNITY_EVPN_SUBTYPE_ES_IMPORT_RT) {
+				struct ethaddr mac;
+
+				pnt++;
+				memcpy(&mac, pnt, ETH_ALEN);
+				len = sprintf(
+					str_buf + str_pnt,
+					"ES-Import-Rt:%02x:%02x:%02x:%02x:%02x:%02x",
+					(uint8_t)mac.octet[0],
+					(uint8_t)mac.octet[1],
+					(uint8_t)mac.octet[2],
+					(uint8_t)mac.octet[3],
+					(uint8_t)mac.octet[4],
+					(uint8_t)mac.octet[5]);
 			} else
 				unk_ecom = 1;
 		} else {

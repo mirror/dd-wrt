@@ -179,6 +179,9 @@ void vtysh_config_parse_line(void *arg, const char *line)
 					   strlen(" ip multicast boundary"))
 				   == 0) {
 				config_add_line_end(config->line, line);
+			} else if (strncmp(line, " ip igmp query-interval",
+					   strlen(" ip igmp query-interval")) == 0) {
+				config_add_line_end(config->line, line);
 			} else if (config->index == LINK_PARAMS_NODE
 				   && strncmp(line, "  exit-link-params",
 					      strlen("  exit"))
@@ -315,6 +318,8 @@ void vtysh_config_parse_line(void *arg, const char *line)
 			config = config_get(PROTOCOL_NODE, line);
 		else if (strncmp(line, "mpls", strlen("mpls")) == 0)
 			config = config_get(MPLS_NODE, line);
+		else if (strncmp(line, "bfd", strlen("bfd")) == 0)
+			config = config_get(BFD_NODE, line);
 		else {
 			if (strncmp(line, "log", strlen("log")) == 0
 			    || strncmp(line, "hostname", strlen("hostname"))
@@ -342,7 +347,7 @@ void vtysh_config_parse_line(void *arg, const char *line)
 	 || (I) == MPLS_NODE)
 
 /* Display configuration to file pointer. */
-void vtysh_config_dump(FILE *fp)
+void vtysh_config_dump(void)
 {
 	struct listnode *node, *nnode;
 	struct listnode *mnode, *mnnode;
@@ -351,12 +356,10 @@ void vtysh_config_dump(FILE *fp)
 	char *line;
 	unsigned int i;
 
-	for (ALL_LIST_ELEMENTS(config_top, node, nnode, line)) {
-		fprintf(fp, "%s\n", line);
-		fflush(fp);
-	}
-	fprintf(fp, "!\n");
-	fflush(fp);
+	for (ALL_LIST_ELEMENTS(config_top, node, nnode, line))
+		vty_out(vty, "%s\n", line);
+
+	vty_out(vty, "!\n");
 
 	for (i = 0; i < vector_active(configvec); i++)
 		if ((master = vector_slot(configvec, i)) != NULL) {
@@ -373,23 +376,16 @@ void vtysh_config_dump(FILE *fp)
 				    && list_isempty(config->line))
 					continue;
 
-				fprintf(fp, "%s\n", config->name);
-				fflush(fp);
+				vty_out(vty, "%s\n", config->name);
 
 				for (ALL_LIST_ELEMENTS(config->line, mnode,
-						       mnnode, line)) {
-					fprintf(fp, "%s\n", line);
-					fflush(fp);
-				}
-				if (!NO_DELIMITER(i)) {
-					fprintf(fp, "!\n");
-					fflush(fp);
-				}
+						       mnnode, line))
+					vty_out(vty, "%s\n", line);
+				if (!NO_DELIMITER(i))
+					vty_out(vty, "!\n");
 			}
-			if (NO_DELIMITER(i)) {
-				fprintf(fp, "!\n");
-				fflush(fp);
-			}
+			if (NO_DELIMITER(i))
+				vty_out(vty, "!\n");
 		}
 
 	for (i = 0; i < vector_active(configvec); i++)

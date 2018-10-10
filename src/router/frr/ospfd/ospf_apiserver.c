@@ -1176,13 +1176,11 @@ int ospf_apiserver_handle_register_event(struct ospf_apiserver *apiserv,
 
 	apiserv->filter =
 		XMALLOC(MTYPE_OSPF_APISERVER_MSGFILTER, ntohs(msg->hdr.msglen));
-	if (apiserv->filter) {
-		/* copy it over. */
-		memcpy(apiserv->filter, &rmsg->filter, ntohs(msg->hdr.msglen));
-		rc = OSPF_API_OK;
-	} else {
-		rc = OSPF_API_NOMEMORY;
-	}
+
+	/* copy it over. */
+	memcpy(apiserv->filter, &rmsg->filter, ntohs(msg->hdr.msglen));
+	rc = OSPF_API_OK;
+
 	/* Send a reply back to client with return code */
 	rc = ospf_apiserver_send_reply(apiserv, seqnum, rc);
 	return rc;
@@ -1427,19 +1425,7 @@ struct ospf_lsa *ospf_apiserver_opaque_lsa_new(struct ospf_area *area,
 	newlsa->length = htons(length);
 
 	/* Create OSPF LSA. */
-	if ((new = ospf_lsa_new()) == NULL) {
-		zlog_warn("ospf_apiserver_opaque_lsa_new: ospf_lsa_new() ?");
-		stream_free(s);
-		return NULL;
-	}
-
-	if ((new->data = ospf_lsa_data_new(length)) == NULL) {
-		zlog_warn(
-			"ospf_apiserver_opaque_lsa_new: ospf_lsa_data_new() ?");
-		ospf_lsa_unlock(&new);
-		stream_free(s);
-		return NULL;
-	}
+	new = ospf_lsa_new_and_data(length);
 
 	new->area = area;
 	new->oi = oi;
@@ -1741,6 +1727,8 @@ struct ospf_lsa *ospf_apiserver_lsa_refresher(struct ospf_lsa *lsa)
 	struct ospf_lsa *new = NULL;
 	struct ospf *ospf;
 
+	assert(lsa);
+
 	ospf = ospf_lookup_by_vrf_id(VRF_DEFAULT);
 	assert(ospf);
 
@@ -1751,6 +1739,7 @@ struct ospf_lsa *ospf_apiserver_lsa_refresher(struct ospf_lsa *lsa)
 			dump_lsa_key(lsa));
 		lsa->data->ls_age =
 			htons(OSPF_LSA_MAXAGE); /* Flush it anyway. */
+		goto out;
 	}
 
 	if (IS_LSA_MAXAGE(lsa)) {

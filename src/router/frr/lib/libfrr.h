@@ -50,11 +50,16 @@ struct frr_daemon_info {
 	bool dryrun;
 	bool daemon_mode;
 	bool terminal;
+
+	struct thread *read_in;
 	const char *config_file;
+	const char *backup_config_file;
 	const char *pid_file;
 	const char *vty_path;
 	const char *module_path;
 	const char *pathspace;
+	const char *early_logging;
+	const char *early_loglevel;
 
 	const char *proghelp;
 	void (*printhelp)(FILE *target);
@@ -113,7 +118,7 @@ extern void frr_early_fini(void);
 DECLARE_KOOH(frr_fini, (), ())
 extern void frr_fini(void);
 
-extern char config_default[256];
+extern char config_default[512];
 extern char frr_zclientpath[256];
 extern const char frr_sysconfdir[];
 extern const char frr_vtydir[];

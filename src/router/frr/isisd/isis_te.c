@@ -87,9 +87,6 @@ struct mpls_te_circuit *mpls_te_circuit_new()
 
 	mtc = XCALLOC(MTYPE_ISIS_MPLS_TE, sizeof(struct mpls_te_circuit));
 
-	if (mtc == NULL)
-		return NULL;
-
 	mtc->status = disable;
 	mtc->type = STD_TE;
 	mtc->length = 0;
@@ -884,7 +881,7 @@ static uint8_t print_subtlv_use_bw(struct sbuf *buf, int indent,
 static uint8_t print_unknown_tlv(struct sbuf *buf, int indent,
 				 struct subtlv_header *tlvh)
 {
-	int i, rtn = 1;
+	int i, rtn;
 	uint8_t *v = (uint8_t *)tlvh;
 
 	if (tlvh->length != 0) {

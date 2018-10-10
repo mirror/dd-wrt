@@ -214,10 +214,10 @@ int pim_global_config_write_worker(struct pim_instance *pim, struct vty *vty)
 				spaces);
 		++writes;
 	}
-	if (qpim_ecmp_rebalance_enable) {
+	if (pim->ecmp_rebalance_enable) {
 		vty_out(vty, "%sip pim ecmp rebalance\n", spaces);
 		++writes;
-	} else if (qpim_ecmp_enable) {
+	} else if (pim->ecmp_enable) {
 		vty_out(vty, "%sip pim ecmp\n", spaces);
 		++writes;
 	}
@@ -257,6 +257,11 @@ int pim_interface_config_write(struct vty *vty)
 				vty_frame(vty, "interface %s vrf %s\n",
 					  ifp->name, vrf->name);
 			++writes;
+
+			if (ifp->desc) {
+				vty_out(vty, " description %s\n", ifp->desc);
+				++writes;
+			}
 
 			if (ifp->info) {
 				struct pim_interface *pim_ifp = ifp->info;
@@ -313,21 +318,21 @@ int pim_interface_config_write(struct vty *vty)
 					++writes;
 				}
 
-				/* IF ip igmp query-interval */
-				if (pim_ifp->igmp_default_query_interval
-				    != IGMP_GENERAL_QUERY_INTERVAL) {
-					vty_out(vty,
-						" ip igmp query-interval %d\n",
-						pim_ifp->igmp_default_query_interval);
-					++writes;
-				}
-
 				/* IF ip igmp query-max-response-time */
 				if (pim_ifp->igmp_query_max_response_time_dsec
 				    != IGMP_QUERY_MAX_RESPONSE_TIME_DSEC) {
 					vty_out(vty,
 						" ip igmp query-max-response-time %d\n",
 						pim_ifp->igmp_query_max_response_time_dsec);
+					++writes;
+				}
+
+				/* IF ip igmp query-interval */
+				if (pim_ifp->igmp_default_query_interval
+				    != IGMP_GENERAL_QUERY_INTERVAL) {
+					vty_out(vty,
+						" ip igmp query-interval %d\n",
+						pim_ifp->igmp_default_query_interval);
 					++writes;
 				}
 

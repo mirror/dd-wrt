@@ -46,6 +46,7 @@
 
 #include "bgpd/bgpd.h"
 #include "bgpd/bgp_debug.h"
+#include "bgpd/bgp_errors.h"
 #include "bgpd/bgp_fsm.h"
 #include "bgpd/bgp_route.h"
 #include "bgpd/bgp_packet.h"
@@ -397,7 +398,7 @@ struct stream *bpacket_reformat_for_peer(struct bpacket *pkt,
 	vec = &pkt->arr.entries[BGP_ATTR_VEC_NH];
 	if (CHECK_FLAG(vec->flags, BPKT_ATTRVEC_FLAGS_UPDATED)) {
 		uint8_t nhlen;
-		afi_t nhafi = AFI_MAX; /* NH AFI is based on nhlen! */
+		afi_t nhafi;
 		int route_map_sets_nh;
 		nhlen = stream_getc_from(s, vec->offset);
 		if (peer_cap_enhe(peer, paf->afi, paf->safi))
@@ -467,13 +468,12 @@ struct stream *bpacket_reformat_for_peer(struct bpacket *pkt,
 				nh_modified = 1;
 			} else if (
 				peer->sort == BGP_PEER_EBGP
-				&& paf->safi != SAFI_EVPN
 				&& (bgp_multiaccess_check_v4(v4nh, peer) == 0)
 				&& !CHECK_FLAG(
 					   vec->flags,
 					   BPKT_ATTRVEC_FLAGS_RMAP_NH_UNCHANGED)
 				&& !peer_af_flag_check(
-					   peer, nhafi, paf->safi,
+					   peer, paf->afi, paf->safi,
 					   PEER_FLAG_NEXTHOP_UNCHANGED)) {
 				/* NOTE: not handling case where NH has new AFI
 				 */
@@ -787,7 +787,8 @@ struct bpacket *subgroup_update_packet(struct update_subgroup *subgrp)
 			 * NLRI then
 			 * return */
 			if (space_remaining < space_needed) {
-				zlog_err(
+				flog_err(
+					BGP_ERR_UPDGRP_ATTR_LEN,
 					"u%" PRIu64 ":s%" PRIu64
 					" attributes too long, cannot send UPDATE",
 					subgrp->update_group->id, subgrp->id);

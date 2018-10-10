@@ -662,7 +662,8 @@ static int rfapi_str2route_type(const char *l3str, const char *pstr, afi_t *afi,
 			vnc_import_bgp_exterior_redist_enable((bgp), (afi));   \
 			break;                                                 \
 		default:                                                       \
-			vnc_redistribute_set((bgp), (afi), (type));            \
+			if ((type) < ZEBRA_ROUTE_MAX)			       \
+				vnc_redistribute_set((bgp), (afi), (type));    \
 			break;                                                 \
 		}                                                              \
 	} while (0)
@@ -677,7 +678,8 @@ static int rfapi_str2route_type(const char *l3str, const char *pstr, afi_t *afi,
 			vnc_import_bgp_exterior_redist_disable((bgp), (afi));  \
 			break;                                                 \
 		default:                                                       \
-			vnc_redistribute_unset((bgp), (afi), (type));          \
+			if ((type) < ZEBRA_ROUTE_MAX)			       \
+				vnc_redistribute_unset((bgp), (afi), (type));  \
 			break;                                                 \
 		}                                                              \
 	} while (0)
@@ -1389,43 +1391,6 @@ DEFUN (vnc_export_mode,
 		vty_out(vty,
 			"Changing modes for zebra export not implemented yet\n");
 		return CMD_WARNING_CONFIG_FAILED;
-
-		oldmode = bgp->rfapi_cfg->flags
-			  & BGP_VNC_CONFIG_EXPORT_ZEBRA_MODE_BITS;
-		bgp->rfapi_cfg->flags &= ~BGP_VNC_CONFIG_EXPORT_ZEBRA_MODE_BITS;
-		switch (argv[4]->arg[0]) {
-		case 'g':
-			if (oldmode == BGP_VNC_CONFIG_EXPORT_ZEBRA_MODE_RH) {
-				/* TBD */
-			}
-			bgp->rfapi_cfg->flags |=
-				BGP_VNC_CONFIG_EXPORT_ZEBRA_MODE_GRP;
-			if (oldmode != BGP_VNC_CONFIG_EXPORT_ZEBRA_MODE_GRP) {
-				/* TBD */
-			}
-			break;
-		case 'n':
-			if (oldmode == BGP_VNC_CONFIG_EXPORT_ZEBRA_MODE_RH) {
-				/* TBD */
-			}
-			if (oldmode == BGP_VNC_CONFIG_EXPORT_ZEBRA_MODE_GRP) {
-				/* TBD */
-			}
-			break;
-		case 'r':
-			if (oldmode == BGP_VNC_CONFIG_EXPORT_ZEBRA_MODE_GRP) {
-				/* TBD */
-			}
-			bgp->rfapi_cfg->flags |=
-				BGP_VNC_CONFIG_EXPORT_ZEBRA_MODE_RH;
-			if (oldmode != BGP_VNC_CONFIG_EXPORT_ZEBRA_MODE_RH) {
-				/* TBD */
-			}
-			break;
-		default:
-			vty_out(vty, "Invalid mode\n");
-			return CMD_WARNING_CONFIG_FAILED;
-		}
 	}
 
 	return CMD_SUCCESS;
@@ -1461,7 +1426,8 @@ DEFUN (vnc_export_nvegroup,
 	if (rfg_new == NULL) {
 		rfg_new = bgp_rfapi_cfg_match_byname(bgp, argv[5]->arg,
 						     RFAPI_GROUP_CFG_VRF);
-		vnc_add_vrf_opener(bgp, rfg_new);
+		if (rfg_new)
+			vnc_add_vrf_opener(bgp, rfg_new);
 	}
 
 	if (rfg_new == NULL) {
@@ -4553,7 +4519,7 @@ void bgp_rfapi_show_summary(struct bgp *bgp, struct vty *vty)
 	if (VNC_EXPORT_ZEBRA_GRP_ENABLED(hc)) {
 		redist++;
 		vty_out(vty, "%sToZebra Groups={", (redist == 1 ? "" : " "));
-		if (hc->rfg_export_direct_bgp_l) {
+		if (hc->rfg_export_zebra_l) {
 			int cnt = 0;
 			struct listnode *node, *nnode;
 			struct rfapi_rfg_name *rfgn;

@@ -7,7 +7,7 @@
 ##
 AC_PREREQ(2.60)
 
-AC_INIT(frr, 5.0.1, [https://github.com/frrouting/frr/issues])
+AC_INIT(frr, 6.0, [https://github.com/frrouting/frr/issues])
 PACKAGE_URL="https://frrouting.org/"
 AC_SUBST(PACKAGE_URL)
 PACKAGE_FULLNAME="FRRouting"
@@ -190,8 +190,11 @@ AC_ARG_ENABLE([address-sanitizer], AS_HELP_STRING([--enable-address-sanitizer], 
               [enabled AddressSanitizer support for detecting a wide variety of \
                memory allocation and deallocation errors]), \
               [AC_DEFINE(HAVE_ADDRESS_SANITIZER, 1, [enable AddressSanitizer])
-              CFLAGS="$CFLAGS -fsanitize=address"
-              CXXFLAGS="$CXXFLAGS -fsanitize=address"
+              ASAN_FLAGS="-fsanitize=address"
+              SAN_CLIPPY_FLAGS="-fno-sanitize=all"
+              AC_SUBST([ASAN_FLAGS])
+              AC_SUBST([SAN_CLIPPY_FLAGS])
+              LIBS="-ldl $LIBS"
               AC_TRY_COMPILE([],[const int i=0;],[AC_MSG_NOTICE([Address Sanitizer Enabled])],
                                                  [AC_MSG_ERROR([Address Sanitizer not available])])
               ])
@@ -200,8 +203,11 @@ dnl ThreadSanitizer support
 AC_ARG_ENABLE([thread-sanitizer], AS_HELP_STRING([--enable-thread-sanitizer], \
               [enabled ThreadSanitizer support for detecting data races]), \
               [AC_DEFINE(HAVE_THREAD_SANITIZER, 1, [enable ThreadSanitizer])
-              CFLAGS="$CFLAGS -fsanitize=thread"
-              CXXFLAGS="$CXXFLAGS -fsanitize=thread"
+              TSAN_FLAGS="-fsanitize=thread"
+              SAN_CLIPPY_FLAGS="-fno-sanitize=all"
+              AC_SUBST([TSAN_FLAGS])
+              AC_SUBST([SAN_CLIPPY_FLAGS])
+              LIBS="-ldl $LIBS"
               AC_TRY_COMPILE([],[const int i=0;],[AC_MSG_NOTICE([Thread Sanitizer Enabled])],
                                                  [AC_MSG_ERROR([Thread Sanitizer not available])])
               ])
@@ -210,14 +216,24 @@ dnl MemorySanitizer support
 AC_ARG_ENABLE([memory-sanitizer], AS_HELP_STRING([--enable-memory-sanitizer], \
               [enabled MemorySanitizer support for detecting uninitialized memory reads]), \
               [AC_DEFINE(HAVE_THREAD_SANITIZER, 1, [enable MemorySanitizer])
-              CFLAGS="$CFLAGS -fsanitize=memory -fPIE -pie"
-              CXXFLAGS="$CXXFLAGS -fsanitize=memory -fPIE -pie"
+              MSAN_FLAGS="-fsanitize=memory -fPIE -pie"
+              SAN_CLIPPY_FLAGS="-fno-sanitize=all"
+              AC_SUBST([MSAN_FLAGS])
+              AC_SUBST([SAN_CLIPPY_FLAGS])
+              LIBS="-ldl $LIBS"
               AC_TRY_COMPILE([],[const int i=0;],[AC_MSG_NOTICE([Memory Sanitizer Enabled])],
                                                  [AC_MSG_ERROR([Memory Sanitizer not available])])
               ])
 
 dnl if the user has specified any CFLAGS, override our settings
-if test "x${enable_dev_build}" = "xyes"; then
+if test "x${enable_gcov}" = "xyes"; then
+   if test "z$orig_cflags" = "z"; then
+      AC_C_FLAG([-coverage])
+      AC_C_FLAG([-O0])
+   fi
+
+   LDFLAGS="${LDFLAGS} -lgcov"
+elif test "x${enable_dev_build}" = "xyes"; then
    AC_DEFINE(DEV_BUILD,,Build for development)
    if test "z$orig_cflags" = "z"; then
       AC_C_FLAG([-g3])
@@ -340,7 +356,7 @@ AC_ARG_ENABLE(ospfd,
 AC_ARG_ENABLE(ospf6d,
   AS_HELP_STRING([--disable-ospf6d], [do not build ospf6d]))
 AC_ARG_ENABLE(ldpd,
-  AS_HELP_STRING([--enable-ldpd], [build ldpd]))
+  AS_HELP_STRING([--disable-ldpd], [do not build ldpd]))
 AC_ARG_ENABLE(nhrpd,
   AS_HELP_STRING([--disable-nhrpd], [do not build nhrpd]))
 AC_ARG_ENABLE(eigrpd,
@@ -356,7 +372,9 @@ AC_ARG_ENABLE(pimd,
 AC_ARG_ENABLE(pbrd,
   AS_HELP_STRING([--disable-pbrd], [do not build pbrd]))
 AC_ARG_ENABLE(sharpd,
-  AS_HELP_STRING([--enable-sharpd], [do not build sharpd]))
+  AS_HELP_STRING([--enable-sharpd], [build sharpd]))
+AC_ARG_ENABLE(staticd,
+  AS_HELP_STRING([--disable-staticd], [do not build staticd]))
 AC_ARG_ENABLE(bgp-announce,
   AS_HELP_STRING([--disable-bgp-announce,], [turn off BGP route announcement]))
 AC_ARG_ENABLE(bgp-vnc,
@@ -364,7 +382,7 @@ AC_ARG_ENABLE(bgp-vnc,
 AC_ARG_WITH(rfp-path,
   AS_HELP_STRING([--with-rfp-path[=DIR]],[path to replaced stub RFP used with BGP VNC]))
 AC_ARG_ENABLE(snmp,
-  AS_HELP_STRING([--enable-snmp=ARG], [enable SNMP support (smux or agentx)]))
+  AS_HELP_STRING([--enable-snmp], [enable SNMP support for agentx]))
 AC_ARG_ENABLE(zeromq,
   AS_HELP_STRING([--enable-zeromq], [enable ZeroMQ handler (libfrrzmq)]))
 AC_ARG_WITH(libpam,
@@ -400,8 +418,6 @@ AC_ARG_ENABLE(rusage,
   AS_HELP_STRING([--disable-rusage], [disable using getrusage]))
 AC_ARG_ENABLE(gcc_ultra_verbose,
   AS_HELP_STRING([--enable-gcc-ultra-verbose], [enable ultra verbose GCC warnings]))
-AC_ARG_ENABLE(linux24_tcp_md5,
-  AS_HELP_STRING([--enable-linux24-tcp-md5], [enable support for old, Linux-2.4 RFC2385 patch]))
 AC_ARG_ENABLE(backtrace,
   AS_HELP_STRING([--disable-backtrace,], [disable crash backtraces (default autodetect)]))
 AC_ARG_ENABLE(time-check,
@@ -420,6 +436,8 @@ AC_ARG_ENABLE(datacenter,
   AS_HELP_STRING([--enable-datacenter], [enable Compilation for Data Center Extensions]))
 AC_ARG_ENABLE(fuzzing,
   AS_HELP_STRING([--enable-fuzzing], [enable ability to fuzz various parts of FRR]))
+AC_ARG_ENABLE(netlink_fuzzing,
+  AS_HELP_STRING([--enable-netlink-fuzzing], [enable ability to fuzz netlink listening socket in zebra]))
 AC_ARG_ENABLE(rr-semantics,
   AS_HELP_STRING([--disable-rr-semantics], [disable the v6 Route Replace semantics]))
 AC_ARG_ENABLE([protobuf],
@@ -432,6 +450,10 @@ AC_ARG_ENABLE([clippy-only],
   AS_HELP_STRING([--enable-clippy-only], [Only build clippy]))
 AC_ARG_ENABLE([numeric_version],
   AS_HELP_STRING([--enable-numeric-version], [Only numeric digits allowed in version (for Alpine)]))
+AC_ARG_ENABLE([gcov],
+  AS_HELP_STRING([--enable-gcov], [Add code coverage information]))
+AC_ARG_ENABLE(bfdd,
+  AS_HELP_STRING([--disable-bfdd], [do not build bfdd]))
 
 AS_IF([test "${enable_clippy_only}" != "yes"], [
 AC_CHECK_HEADERS(json-c/json.h)
@@ -481,6 +503,10 @@ fi
 
 if test "${enable_fuzzing}" = "yes" ; then
   AC_DEFINE(HANDLE_ZAPI_FUZZING,,Compile extensions to use with a fuzzer)
+fi
+
+if test "${enable_netlink_fuzzing}" = "yes" ; then
+  AC_DEFINE(HANDLE_NETLINK_FUZZING,,Compile extensions to use with a fuzzer for netlink)
 fi
 
 if test "${enable_cumulus}" = "yes" ; then
@@ -616,10 +642,6 @@ AM_CONDITIONAL([HAVE_PROTOBUF], [test "x$have_protobuf" = "xyes"])
 # End of logic for protobuf support.
 #
 
-if test "${enable_linux24_tcp_md5}" = "yes"; then
-  AC_DEFINE(HAVE_TCP_MD5_LINUX24,,Old Linux 2.4 TCP MD5 Signature Patch)
-fi
-
 AC_MSG_CHECKING(if zebra should be configurable to send Route Advertisements)
 if test "${enable_rtadv}" != "no"; then
   AC_MSG_RESULT(yes)
@@ -682,6 +704,11 @@ esac
 AC_DEFINE_UNQUOTED(MULTIPATH_NUM, $MPATH_NUM, Maximum number of paths for a route)
 
 AC_DEFINE_UNQUOTED(VTYSH_PAGER, "$VTYSH_PAGER", [What pager to use])
+
+dnl --------------------
+dnl Enable code coverage
+dnl --------------------
+AM_CONDITIONAL([HAVE_GCOV],[test '!' "$enable_gcov" = no])
 
 dnl ------------------------------------
 dnl Alpine only accepts numeric versions
@@ -917,8 +944,6 @@ case "$host_os" in
     dnl how to fix it but no real progress on implementation
     dnl when they fix it, remove this
     AC_DEFINE(IPV6_MINHOPCOUNT, 73, Linux ipv6 Min Hop Count)
-
-    AC_CHECK_DECLS([IFLA_INFO_SLAVE_KIND], [], [], [#include <linux/if_link.h>])
     ;;
   openbsd*)
     AC_MSG_RESULT([OpenBSD])
@@ -1163,33 +1188,6 @@ case "$host_os" in
 esac
 AC_DEFINE_UNQUOTED(ISIS_METHOD, $ISIS_METHOD_MACRO, [ selected method for isis, == one of the constants ])
 
-dnl ------------------------------------
-dnl check for broken CMSG_FIRSTHDR macro
-dnl ------------------------------------
-AC_MSG_CHECKING(for broken CMSG_FIRSTHDR)
-AC_RUN_IFELSE([AC_LANG_SOURCE([[
-#ifdef SUNOS_5
-#define _XPG4_2
-#define __EXTENSIONS__
-#endif
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-
-main()
-{
-  struct msghdr msg;
-  char buf[4];
-
-  msg.msg_control = buf;
-  msg.msg_controllen = 0;
-
-  if (CMSG_FIRSTHDR(&msg) != NULL)
-    exit(0);
-  exit (1);
-}]])],[AC_MSG_RESULT(yes - using workaround) AC_DEFINE(HAVE_BROKEN_CMSG_FIRSTHDR,,Broken CMSG_FIRSTHDR)],
-[AC_MSG_RESULT(no)],[AC_MSG_RESULT(no)])
-
 dnl ---------------------------------------------------------------
 dnl figure out how to specify an interface in multicast sockets API
 dnl ---------------------------------------------------------------
@@ -1318,6 +1316,7 @@ dnl disable doc check
 if test "${enable_doc}" = "no";then
   DOC=""
 else
+  AC_CHECK_PROGS([SPHINXBUILD], [sphinx-build sphinx-build3 sphinx-build2], [no])
   DOC="doc"
 fi
 
@@ -1340,6 +1339,30 @@ AM_CONDITIONAL(LDPD, test "${enable_ldpd}" != "no")
 AS_IF([test "${enable_ldpd}" != "no"], [
   AC_DEFINE(HAVE_LDPD, 1, ldpd)
 ])
+
+if test "$enable_bfdd" = "no"; then
+  AC_DEFINE(HAVE_BFDD, 0, bfdd)
+  BFDD=""
+else
+  AC_DEFINE(HAVE_BFDD, 1, bfdd)
+  BFDD="bfdd"
+
+  case $host_os in
+    linux*)
+      AC_DEFINE(BFD_LINUX, 1, bfdd)
+      ;;
+
+    *)
+      AC_DEFINE(BFD_BSD, 1, bfdd)
+      ;;
+  esac
+fi
+
+AM_CONDITIONAL(BFDD, [test "x$BFDD" = "xbfdd"])
+
+if test $ac_cv_lib_json_c_json_object_get = no -a "x$BFDD" = "xbfdd"; then
+  AC_MSG_ERROR(["you must use json-c library to use bfdd"])
+fi
 
 NHRPD=""
 case "$host_os" in
@@ -1382,6 +1405,7 @@ AM_CONDITIONAL(ISISD, test "${enable_isisd}" != "no")
 AM_CONDITIONAL(PIMD, test "${enable_pimd}" != "no")
 AM_CONDITIONAL(PBRD, test "${enable_pbrd}" != "no")
 AM_CONDITIONAL(SHARPD, test "${enable_sharpd}" = "yes")
+AM_CONDITIONAL(STATICD, test "${enable_staticd}" != "no")
 
 if test "${enable_bgp_announce}" = "no";then
   AC_DEFINE(DISABLE_BGP_ANNOUNCE,1,Disable BGP installation to zebra)
@@ -1466,14 +1490,13 @@ int main(void);
      yes)
       SNMP_METHOD=agentx
       ;;
-     smux|agentx)
+     agentx)
       SNMP_METHOD="${enable_snmp}"
       ;;
      *)
-      AC_MSG_ERROR([--enable-snmp given with an unknown method (${enable_snmp}). Use smux or agentx])
+      AC_MSG_ERROR([--enable-snmp given with an unknown method (${enable_snmp}). Use yes or agentx])
       ;;
    esac
-   AH_TEMPLATE([SNMP_SMUX], [Use SNMP SMUX to interface with snmpd])
    AH_TEMPLATE([SNMP_AGENTX], [Use SNMP AgentX to interface with snmpd])
    AC_DEFINE_UNQUOTED(AS_TR_CPP(SNMP_${SNMP_METHOD}),,SNMP method to interface with snmpd)
 fi
@@ -1783,15 +1806,58 @@ dnl order to check no alternative allocator
 dnl has been specified, which might not provide
 dnl mallinfo, e.g. such as Umem on Solaris.
 dnl -----------------------------------------
-AC_CHECK_HEADER([malloc.h],
- [AC_MSG_CHECKING(whether mallinfo is available)
-  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <malloc.h>]],
-                        [[struct mallinfo ac_x; ac_x = mallinfo ();]])],
-      [AC_MSG_RESULT(yes)
-       AC_DEFINE(HAVE_MALLINFO,,mallinfo)],
-       AC_MSG_RESULT(no)
-  )
- ], [], FRR_INCLUDES)
+AC_CHECK_HEADERS([malloc.h malloc/malloc.h],,, [FRR_INCLUDES])
+
+AC_MSG_CHECKING(whether mallinfo is available)
+AC_LINK_IFELSE([AC_LANG_PROGRAM([FRR_INCLUDES [
+#ifdef HAVE_MALLOC_H
+#include <malloc.h>
+#endif
+#ifdef HAVE_MALLOC_MALLOC_H
+#include <malloc/malloc.h>
+#endif
+]], [[
+struct mallinfo ac_x; ac_x = mallinfo ();
+]])], [
+  AC_MSG_RESULT(yes)
+  AC_DEFINE(HAVE_MALLINFO,,mallinfo)
+], [
+  AC_MSG_RESULT(no)
+])
+
+AC_MSG_CHECKING(whether malloc_usable_size is available)
+AC_LINK_IFELSE([AC_LANG_PROGRAM([FRR_INCLUDES [
+#ifdef HAVE_MALLOC_H
+#include <malloc.h>
+#endif
+#ifdef HAVE_MALLOC_MALLOC_H
+#include <malloc/malloc.h>
+#endif
+]], [[
+size_t ac_x; ac_x = malloc_usable_size(NULL);
+]])], [
+  AC_MSG_RESULT(yes)
+  AC_DEFINE(HAVE_MALLOC_USABLE_SIZE,,malloc_usable_size)
+], [
+  AC_MSG_RESULT(no)
+
+  AC_MSG_CHECKING(whether malloc_size is available)
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+#ifdef HAVE_MALLOC_H
+#include <malloc.h>
+#endif
+#ifdef HAVE_MALLOC_MALLOC_H
+#include <malloc/malloc.h>
+#endif
+]], [[
+size_t ac_x; ac_x = malloc_size(NULL);
+]])], [
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(HAVE_MALLOC_SIZE,,malloc_size)
+  ], [
+    AC_MSG_RESULT(no)
+  ])
+])
 
 dnl ------
 dnl ZeroMQ
@@ -1811,7 +1877,13 @@ AM_CONDITIONAL([ZEROMQ], test "x$ZEROMQ" = "xtrue")
 dnl ----------
 dnl configure date
 dnl ----------
-CONFDATE=`date '+%Y%m%d'`
+dev_version=`echo $VERSION | grep dev`
+#don't expire deprecated code in non 'dev' branch
+if test "${dev_version}" = ""; then
+   CONFDATE=0
+else
+   CONFDATE=`date '+%Y%m%d'`
+fi
 AC_SUBST(CONFDATE)
 
 dnl ------------------------------
@@ -1846,6 +1918,7 @@ AC_SUBST(frr_statedir)
 
 AC_DEFINE_UNQUOTED(LDPD_SOCKET, "$frr_statedir/ldpd.sock",ldpd control socket)
 AC_DEFINE_UNQUOTED(ZEBRA_SERV_PATH, "$frr_statedir/zserv.api",zebra api socket)
+AC_DEFINE_UNQUOTED(BFDD_CONTROL_SOCKET, "$frr_statedir/bfdd.sock", bfdd control socket)
 AC_DEFINE_UNQUOTED(DAEMON_VTY_DIR, "$frr_statedir",daemon vty directory)
 
 dnl autoconf does this, but it does it too late...
@@ -1996,3 +2069,8 @@ zebra protobuf enabled  : ${have_protobuf:-no}
 
 The above user and group must have read/write access to the state file
 directory and to the config files in the config file directory."
+
+if test "${enable_doc}" != "no";then
+  AS_IF([test "x$SPHINXBUILD" = xno],
+     AC_MSG_WARN(sphinx-build is missing but required to build documentation))
+fi

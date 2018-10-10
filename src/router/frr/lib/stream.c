@@ -21,15 +21,16 @@
 
 #include <zebra.h>
 #include <stddef.h>
+#include <pthread.h>
 
 #include "stream.h"
 #include "memory.h"
 #include "network.h"
 #include "prefix.h"
 #include "log.h"
+#include "lib_errors.h"
 
 DEFINE_MTYPE_STATIC(LIB, STREAM, "Stream")
-DEFINE_MTYPE_STATIC(LIB, STREAM_DATA, "Stream data")
 DEFINE_MTYPE_STATIC(LIB, STREAM_FIFO, "Stream FIFO")
 
 /* Tests whether a position is valid */
@@ -99,16 +100,10 @@ struct stream *stream_new(size_t size)
 
 	assert(size > 0);
 
-	s = XCALLOC(MTYPE_STREAM, sizeof(struct stream));
+	s = XMALLOC(MTYPE_STREAM, sizeof(struct stream) + size);
 
-	if (s == NULL)
-		return s;
-
-	if ((s->data = XMALLOC(MTYPE_STREAM_DATA, size)) == NULL) {
-		XFREE(MTYPE_STREAM, s);
-		return NULL;
-	}
-
+	s->getp = s->endp = 0;
+	s->next = NULL;
 	s->size = size;
 	return s;
 }
@@ -119,7 +114,6 @@ void stream_free(struct stream *s)
 	if (!s)
 		return;
 
-	XFREE(MTYPE_STREAM_DATA, s->data);
 	XFREE(MTYPE_STREAM, s);
 }
 
@@ -169,27 +163,33 @@ struct stream *stream_dupcat(struct stream *s1, struct stream *s2,
 	return new;
 }
 
-size_t stream_resize(struct stream *s, size_t newsize)
+size_t stream_resize_inplace(struct stream **sptr, size_t newsize)
 {
-	uint8_t *newdata;
-	STREAM_VERIFY_SANE(s);
+	struct stream *orig = *sptr;
 
-	newdata = XREALLOC(MTYPE_STREAM_DATA, s->data, newsize);
+	STREAM_VERIFY_SANE(orig);
 
-	if (newdata == NULL)
-		return s->size;
+	orig = XREALLOC(MTYPE_STREAM, orig, sizeof(struct stream) + newsize);
 
-	s->data = newdata;
-	s->size = newsize;
+	orig->size = newsize;
 
-	if (s->endp > s->size)
-		s->endp = s->size;
-	if (s->getp > s->endp)
-		s->getp = s->endp;
+	if (orig->endp > orig->size)
+		orig->endp = orig->size;
+	if (orig->getp > orig->endp)
+		orig->getp = orig->endp;
 
-	STREAM_VERIFY_SANE(s);
+	STREAM_VERIFY_SANE(orig);
 
-	return s->size;
+	*sptr = orig;
+	return orig->size;
+}
+
+size_t __attribute__((deprecated))stream_resize_orig(struct stream *s,
+						     size_t newsize)
+{
+	assert("stream_resize: Switch code to use stream_resize_inplace" == NULL);
+
+	return stream_resize_inplace(&s, newsize);
 }
 
 size_t stream_get_getp(struct stream *s)
@@ -1101,12 +1101,17 @@ struct stream_fifo *stream_fifo_new(void)
 	struct stream_fifo *new;
 
 	new = XCALLOC(MTYPE_STREAM_FIFO, sizeof(struct stream_fifo));
+	pthread_mutex_init(&new->mtx, NULL);
 	return new;
 }
 
 /* Add new stream to fifo. */
 void stream_fifo_push(struct stream_fifo *fifo, struct stream *s)
 {
+#if defined DEV_BUILD
+	size_t max, curmax;
+#endif
+
 	if (fifo->tail)
 		fifo->tail->next = s;
 	else
@@ -1114,8 +1119,24 @@ void stream_fifo_push(struct stream_fifo *fifo, struct stream *s)
 
 	fifo->tail = s;
 	fifo->tail->next = NULL;
+#if !defined DEV_BUILD
+	atomic_fetch_add_explicit(&fifo->count, 1, memory_order_release);
+#else
+	max = atomic_fetch_add_explicit(&fifo->count, 1, memory_order_release);
+	curmax = atomic_load_explicit(&fifo->max_count, memory_order_relaxed);
+	if (max > curmax)
+		atomic_store_explicit(&fifo->max_count, max,
+				      memory_order_relaxed);
+#endif
+}
 
-	fifo->count++;
+void stream_fifo_push_safe(struct stream_fifo *fifo, struct stream *s)
+{
+	pthread_mutex_lock(&fifo->mtx);
+	{
+		stream_fifo_push(fifo, s);
+	}
+	pthread_mutex_unlock(&fifo->mtx);
 }
 
 /* Delete first stream from fifo. */
@@ -1131,7 +1152,8 @@ struct stream *stream_fifo_pop(struct stream_fifo *fifo)
 		if (fifo->head == NULL)
 			fifo->tail = NULL;
 
-		fifo->count--;
+		atomic_fetch_sub_explicit(&fifo->count, 1,
+					  memory_order_release);
 
 		/* ensure stream is scrubbed of references to this fifo */
 		s->next = NULL;
@@ -1140,10 +1162,35 @@ struct stream *stream_fifo_pop(struct stream_fifo *fifo)
 	return s;
 }
 
-/* Return first fifo entry. */
+struct stream *stream_fifo_pop_safe(struct stream_fifo *fifo)
+{
+	struct stream *ret;
+
+	pthread_mutex_lock(&fifo->mtx);
+	{
+		ret = stream_fifo_pop(fifo);
+	}
+	pthread_mutex_unlock(&fifo->mtx);
+
+	return ret;
+}
+
 struct stream *stream_fifo_head(struct stream_fifo *fifo)
 {
 	return fifo->head;
+}
+
+struct stream *stream_fifo_head_safe(struct stream_fifo *fifo)
+{
+	struct stream *ret;
+
+	pthread_mutex_lock(&fifo->mtx);
+	{
+		ret = stream_fifo_head(fifo);
+	}
+	pthread_mutex_unlock(&fifo->mtx);
+
+	return ret;
 }
 
 void stream_fifo_clean(struct stream_fifo *fifo)
@@ -1156,11 +1203,26 @@ void stream_fifo_clean(struct stream_fifo *fifo)
 		stream_free(s);
 	}
 	fifo->head = fifo->tail = NULL;
-	fifo->count = 0;
+	atomic_store_explicit(&fifo->count, 0, memory_order_release);
+}
+
+void stream_fifo_clean_safe(struct stream_fifo *fifo)
+{
+	pthread_mutex_lock(&fifo->mtx);
+	{
+		stream_fifo_clean(fifo);
+	}
+	pthread_mutex_unlock(&fifo->mtx);
+}
+
+size_t stream_fifo_count_safe(struct stream_fifo *fifo)
+{
+	return atomic_load_explicit(&fifo->count, memory_order_acquire);
 }
 
 void stream_fifo_free(struct stream_fifo *fifo)
 {
 	stream_fifo_clean(fifo);
+	pthread_mutex_destroy(&fifo->mtx);
 	XFREE(MTYPE_STREAM_FIFO, fifo);
 }

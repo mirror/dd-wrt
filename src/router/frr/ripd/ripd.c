@@ -40,9 +40,11 @@
 #include "md5.h"
 #include "keychain.h"
 #include "privs.h"
+#include "lib_errors.h"
 
 #include "ripd/ripd.h"
 #include "ripd/rip_debug.h"
+#include "ripd/rip_errors.h"
 
 DEFINE_QOBJ_TYPE(rip)
 
@@ -799,11 +801,11 @@ static int rip_auth_simple_password(struct rte *rte, struct sockaddr_in *from,
 				    struct interface *ifp)
 {
 	struct rip_interface *ri;
-	char *auth_str = (char *)&rte->prefix;
+	char *auth_str = (char *)rte + offsetof(struct rte, prefix);
 	int i;
 
 	/* reject passwords with zeros in the middle of the string */
-	for (i = strlen(auth_str); i < 16; i++) {
+	for (i = strnlen(auth_str, 16); i < 16; i++) {
 		if (auth_str[i] != '\0')
 			return 0;
 	}
@@ -828,7 +830,7 @@ static int rip_auth_simple_password(struct rte *rte, struct sockaddr_in *from,
 		struct key *key;
 
 		keychain = keychain_lookup(ri->key_chain);
-		if (keychain == NULL)
+		if (keychain == NULL || keychain->key == NULL)
 			return 0;
 
 		key = key_match_for_accept(keychain, auth_str);
@@ -902,7 +904,7 @@ static int rip_auth_md5(struct rip_packet *packet, struct sockaddr_in *from,
 			return 0;
 
 		key = key_lookup_for_accept(keychain, md5->keyid);
-		if (key == NULL)
+		if (key == NULL || key->string == NULL)
 			return 0;
 
 		strncpy(auth_str, key->string, RIP_AUTH_MD5_SIZE);
@@ -1056,9 +1058,9 @@ static void rip_auth_md5_set(struct stream *s, struct rip_interface *ri,
 
 	/* Check packet length. */
 	if (len < (RIP_HEADER_SIZE + RIP_RTE_SIZE)) {
-		zlog_err(
-			"rip_auth_md5_set(): packet length %ld is less than minimum length.",
-			len);
+		flog_err(RIP_ERR_PACKET,
+			  "rip_auth_md5_set(): packet length %ld is less than minimum length.",
+			  len);
 		return;
 	}
 
@@ -1339,7 +1341,8 @@ static int rip_create_socket(void)
 	/* Make datagram socket. */
 	sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (sock < 0) {
-		zlog_err("Cannot create UDP socket: %s", safe_strerror(errno));
+		flog_err_sys(LIB_ERR_SOCKET, "Cannot create UDP socket: %s",
+			     safe_strerror(errno));
 		exit(1);
 	}
 
@@ -1354,26 +1357,19 @@ static int rip_create_socket(void)
 	setsockopt_ipv4_tos(sock, IPTOS_PREC_INTERNETCONTROL);
 #endif
 
-	if (ripd_privs.change(ZPRIVS_RAISE))
-		zlog_err("rip_create_socket: could not raise privs");
-	setsockopt_so_recvbuf(sock, RIP_UDP_RCV_BUF);
-	if ((ret = bind(sock, (struct sockaddr *)&addr, sizeof(addr))) < 0)
+	frr_elevate_privs(&ripd_privs) {
+		setsockopt_so_recvbuf(sock, RIP_UDP_RCV_BUF);
+		if ((ret = bind(sock, (struct sockaddr *)&addr, sizeof(addr)))
+		    < 0) {
+			zlog_err("%s: Can't bind socket %d to %s port %d: %s",
+				 __func__, sock, inet_ntoa(addr.sin_addr),
+				 (int)ntohs(addr.sin_port),
+				 safe_strerror(errno));
 
-	{
-		int save_errno = errno;
-		if (ripd_privs.change(ZPRIVS_LOWER))
-			zlog_err("rip_create_socket: could not lower privs");
-
-		zlog_err("%s: Can't bind socket %d to %s port %d: %s", __func__,
-			 sock, inet_ntoa(addr.sin_addr),
-			 (int)ntohs(addr.sin_port), safe_strerror(save_errno));
-
-		close(sock);
-		return ret;
+			close(sock);
+			return ret;
+		}
 	}
-
-	if (ripd_privs.change(ZPRIVS_LOWER))
-		zlog_err("rip_create_socket: could not lower privs");
 
 	return sock;
 }
@@ -1641,7 +1637,7 @@ static void rip_request_process(struct rip_packet *packet, int size,
 		}
 		packet->command = RIP_RESPONSE;
 
-		rip_send_packet((uint8_t *)packet, size, from, ifc);
+		(void)rip_send_packet((uint8_t *)packet, size, from, ifc);
 	}
 	rip_global_queries++;
 }
@@ -2101,6 +2097,8 @@ void rip_output_process(struct connected *ifc, struct sockaddr_in *to,
 		/* to be passed to auth functions later */
 		rip_auth_prepare_str_send(ri, key, auth_str,
 					  RIP_AUTH_SIMPLE_SIZE);
+		if (strlen(auth_str) == 0)
+			return;
 	}
 
 	if (version == RIPv1) {
@@ -2810,6 +2808,7 @@ DEFUN_NOSH (router_rip,
 			return CMD_WARNING_CONFIG_FAILED;
 		}
 	}
+
 	VTY_PUSH_CONTEXT(RIP_NODE, rip);
 
 	return CMD_SUCCESS;

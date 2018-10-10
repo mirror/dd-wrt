@@ -323,8 +323,8 @@ static void pim_show_assert_winner_metric_helper(struct vty *vty,
 	char addr_str[INET_ADDRSTRLEN];
 	struct pim_assert_metric *am;
 	struct in_addr ifaddr;
-	char pref_str[5];
-	char metr_str[7];
+	char pref_str[16];
+	char metr_str[16];
 
 	ifaddr = pim_ifp->primary_address;
 
@@ -1294,6 +1294,76 @@ static void pim_show_interfaces_single(struct pim_instance *pim,
 	}
 }
 
+static void igmp_show_statistics(struct pim_instance *pim, struct vty *vty,
+				 const char *ifname, uint8_t uj)
+{
+	struct interface *ifp;
+	struct igmp_stats rx_stats;
+
+	igmp_stats_init(&rx_stats);
+
+	FOR_ALL_INTERFACES (pim->vrf, ifp) {
+		struct pim_interface *pim_ifp;
+		struct listnode *sock_node;
+		struct igmp_sock *igmp;
+
+		pim_ifp = ifp->info;
+
+		if (!pim_ifp)
+			continue;
+
+		if (ifname && strcmp(ifname, ifp->name))
+			continue;
+
+		for (ALL_LIST_ELEMENTS_RO(pim_ifp->igmp_socket_list, sock_node,
+					  igmp)) {
+			igmp_stats_add(&rx_stats, &igmp->rx_stats);
+		}
+	}
+	if (uj) {
+		json_object *json = NULL;
+		json_object *json_row = NULL;
+
+		json = json_object_new_object();
+		json_row = json_object_new_object();
+
+		json_object_string_add(json_row, "name", ifname ? ifname :
+				       "global");
+		json_object_int_add(json_row, "queryV1", rx_stats.query_v1);
+		json_object_int_add(json_row, "queryV2", rx_stats.query_v2);
+		json_object_int_add(json_row, "queryV3", rx_stats.query_v3);
+		json_object_int_add(json_row, "leaveV3", rx_stats.leave_v2);
+		json_object_int_add(json_row, "reportV1", rx_stats.report_v1);
+		json_object_int_add(json_row, "reportV2", rx_stats.report_v2);
+		json_object_int_add(json_row, "reportV3", rx_stats.report_v3);
+		json_object_int_add(json_row, "mtraceResponse",
+				    rx_stats.mtrace_rsp);
+		json_object_int_add(json_row, "mtraceRequest",
+				    rx_stats.mtrace_req);
+		json_object_int_add(json_row, "unsupported",
+				    rx_stats.unsupported);
+		json_object_object_add(json, ifname ? ifname : "global",
+				       json_row);
+		vty_out(vty, "%s\n", json_object_to_json_string_ext(
+					     json, JSON_C_TO_STRING_PRETTY));
+		json_object_free(json);
+	} else {
+		vty_out(vty, "IGMP RX statistics\n");
+		vty_out(vty, "Interface       : %s\n",
+			ifname ? ifname : "global");
+		vty_out(vty, "V1 query        : %u\n", rx_stats.query_v1);
+		vty_out(vty, "V2 query        : %u\n", rx_stats.query_v2);
+		vty_out(vty, "V3 query        : %u\n", rx_stats.query_v3);
+		vty_out(vty, "V2 leave        : %u\n", rx_stats.leave_v2);
+		vty_out(vty, "V1 report       : %u\n", rx_stats.report_v1);
+		vty_out(vty, "V2 report       : %u\n", rx_stats.report_v2);
+		vty_out(vty, "V3 report       : %u\n", rx_stats.report_v3);
+		vty_out(vty, "mtrace response : %u\n", rx_stats.mtrace_rsp);
+		vty_out(vty, "mtrace request  : %u\n", rx_stats.mtrace_req);
+		vty_out(vty, "unsupported     : %u\n", rx_stats.unsupported);
+	}
+}
+
 static void pim_show_interfaces(struct pim_instance *pim, struct vty *vty,
 				uint8_t uj)
 {
@@ -1968,7 +2038,7 @@ static void pim_show_state(struct pim_instance *pim, struct vty *vty,
 		} else {
 			vty_out(vty, "%-9d %-15s  %-15s  %-7s  ",
 				c_oil->installed, src_str, grp_str,
-				ifp_in->name);
+				in_ifname);
 		}
 
 		for (oif_vif_index = 0; oif_vif_index < MAXVIFS;
@@ -2724,9 +2794,6 @@ static int pim_print_pnc_cache_walkcb(struct hash_backet *backet, void *arg)
 	struct nexthop *nh_node = NULL;
 	ifindex_t first_ifindex;
 	struct interface *ifp = NULL;
-
-	if (!pnc)
-		return CMD_SUCCESS;
 
 	for (nh_node = pnc->nexthop; nh_node; nh_node = nh_node->next) {
 		first_ifindex = nh_node->ifindex;
@@ -3527,6 +3594,33 @@ DEFUN (show_ip_igmp_sources_retransmissions,
 	return CMD_SUCCESS;
 }
 
+DEFUN (show_ip_igmp_statistics,
+       show_ip_igmp_statistics_cmd,
+       "show ip igmp [vrf NAME] statistics [interface WORD] [json]",
+       SHOW_STR
+       IP_STR
+       IGMP_STR
+       VRF_CMD_HELP_STR
+       "IGMP statistics\n"
+       "interface\n"
+       "IGMP interface\n"
+       JSON_STR)
+{
+	int idx = 2;
+	struct vrf *vrf = pim_cmd_lookup_vrf(vty, argv, argc, &idx);
+	uint8_t uj = use_json(argc, argv);
+
+	if (!vrf)
+		return CMD_WARNING;
+
+	if (argv_find(argv, argc, "WORD", &idx))
+		igmp_show_statistics(vrf->info, vty, argv[idx]->arg, uj);
+	else
+		igmp_show_statistics(vrf->info, vty, NULL, uj);
+
+	return CMD_SUCCESS;
+}
+
 DEFUN (show_ip_pim_assert,
        show_ip_pim_assert_cmd,
        "show ip pim [vrf NAME] assert",
@@ -4155,7 +4249,7 @@ DEFUN (show_ip_pim_nexthop_lookup,
        "Source/RP address\n"
        "Multicast Group address\n")
 {
-	struct pim_nexthop_cache pnc;
+	struct pim_nexthop_cache *pnc = NULL;
 	struct prefix nht_p;
 	int result = 0;
 	struct in_addr src_addr, grp_addr;
@@ -4167,6 +4261,7 @@ DEFUN (show_ip_pim_nexthop_lookup,
 	char grp_str[PREFIX_STRLEN];
 	int idx = 2;
 	struct vrf *vrf = pim_cmd_lookup_vrf(vty, argv, argc, &idx);
+	struct pim_rpf rpf;
 
 	if (!vrf)
 		return CMD_WARNING;
@@ -4204,7 +4299,6 @@ DEFUN (show_ip_pim_nexthop_lookup,
 				      grp_addr))
 		return CMD_SUCCESS;
 
-	memset(&pnc, 0, sizeof(struct pim_nexthop_cache));
 	nht_p.family = AF_INET;
 	nht_p.prefixlen = IPV4_MAX_BITLEN;
 	nht_p.u.prefix4 = vif_source;
@@ -4213,12 +4307,18 @@ DEFUN (show_ip_pim_nexthop_lookup,
 	grp.u.prefix4 = grp_addr;
 	memset(&nexthop, 0, sizeof(nexthop));
 
-	if (pim_find_or_track_nexthop(vrf->info, &nht_p, NULL, NULL, &pnc))
-		result = pim_ecmp_nexthop_search(vrf->info, &pnc, &nexthop,
+	memset(&rpf, 0, sizeof(struct pim_rpf));
+	rpf.rpf_addr.family = AF_INET;
+	rpf.rpf_addr.prefixlen = IPV4_MAX_BITLEN;
+	rpf.rpf_addr.u.prefix4 = vif_source;
+
+	pnc = pim_nexthop_cache_find(vrf->info, &rpf);
+	if (pnc)
+		result = pim_ecmp_nexthop_search(vrf->info, pnc, &nexthop,
 						 &nht_p, &grp, 0);
 	else
-		result = pim_ecmp_nexthop_lookup(vrf->info, &nexthop,
-						 vif_source, &nht_p, &grp, 0);
+		result = pim_ecmp_nexthop_lookup(vrf->info, &nexthop, &nht_p,
+						 &grp, 0);
 
 	if (!result) {
 		vty_out(vty,
@@ -4331,9 +4431,9 @@ static void pim_cmd_show_ip_multicast_helper(struct pim_instance *pim,
 	vty_out(vty, "\n");
 	vty_out(vty, "Upstream Join Timer: %d secs\n", qpim_t_periodic);
 	vty_out(vty, "Join/Prune Holdtime: %d secs\n", PIM_JP_HOLDTIME);
-	vty_out(vty, "PIM ECMP: %s\n", qpim_ecmp_enable ? "Enable" : "Disable");
+	vty_out(vty, "PIM ECMP: %s\n", pim->ecmp_enable ? "Enable" : "Disable");
 	vty_out(vty, "PIM ECMP Rebalance: %s\n",
-		qpim_ecmp_rebalance_enable ? "Enable" : "Disable");
+		pim->ecmp_rebalance_enable ? "Enable" : "Disable");
 
 	vty_out(vty, "\n");
 
@@ -4407,8 +4507,8 @@ static void show_mroute(struct pim_instance *pim, struct vty *vty, bool fill,
 	json_object *json_source = NULL;
 	json_object *json_oil = NULL;
 	json_object *json_ifp_out = NULL;
-	int found_oif = 0;
-	int first = 1;
+	int found_oif;
+	int first;
 	char grp_str[INET_ADDRSTRLEN];
 	char src_str[INET_ADDRSTRLEN];
 	char in_ifname[INTERFACE_NAMSIZ + 1];
@@ -5002,11 +5102,6 @@ static int pim_rp_cmd_worker(struct pim_instance *pim, struct vty *vty,
 	int result;
 
 	result = pim_rp_new(pim, rp, group, plist);
-
-	if (result == PIM_MALLOC_FAIL) {
-		vty_out(vty, "%% Out of memory\n");
-		return CMD_WARNING_CONFIG_FAILED;
-	}
 
 	if (result == PIM_GROUP_BAD_ADDRESS) {
 		vty_out(vty, "%% Bad group address specified: %s\n", group);
@@ -5637,7 +5732,7 @@ DEFUN (ip_pim_ecmp,
        "Enable PIM ECMP \n")
 {
 	PIM_DECLVAR_CONTEXT(vrf, pim);
-	qpim_ecmp_enable = 1;
+	pim->ecmp_enable = true;
 
 	return CMD_SUCCESS;
 }
@@ -5651,7 +5746,7 @@ DEFUN (no_ip_pim_ecmp,
        "Disable PIM ECMP \n")
 {
 	PIM_DECLVAR_CONTEXT(vrf, pim);
-	qpim_ecmp_enable = 0;
+	pim->ecmp_enable = false;
 
 	return CMD_SUCCESS;
 }
@@ -5665,8 +5760,8 @@ DEFUN (ip_pim_ecmp_rebalance,
        "Enable PIM ECMP Rebalance\n")
 {
 	PIM_DECLVAR_CONTEXT(vrf, pim);
-	qpim_ecmp_enable = 1;
-	qpim_ecmp_rebalance_enable = 1;
+	pim->ecmp_enable = true;
+	pim->ecmp_rebalance_enable = true;
 
 	return CMD_SUCCESS;
 }
@@ -5681,7 +5776,7 @@ DEFUN (no_ip_pim_ecmp_rebalance,
        "Disable PIM ECMP Rebalance\n")
 {
 	PIM_DECLVAR_CONTEXT(vrf, pim);
-	qpim_ecmp_rebalance_enable = 0;
+	pim->ecmp_rebalance_enable = false;
 
 	return CMD_SUCCESS;
 }
@@ -5694,7 +5789,8 @@ static int pim_cmd_igmp_start(struct vty *vty, struct interface *ifp)
 	pim_ifp = ifp->info;
 
 	if (!pim_ifp) {
-		pim_ifp = pim_if_new(ifp, 1 /* igmp=true */, 0 /* pim=false */);
+		pim_ifp = pim_if_new(ifp, 1 /* igmp=true */, 0 /* pim=false */,
+				     false);
 		if (!pim_ifp) {
 			vty_out(vty, "Could not enable IGMP on interface %s\n",
 				ifp->name);
@@ -6305,7 +6401,8 @@ static int pim_cmd_interface_add(struct interface *ifp)
 	struct pim_interface *pim_ifp = ifp->info;
 
 	if (!pim_ifp) {
-		pim_ifp = pim_if_new(ifp, 0 /* igmp=false */, 1 /* pim=true */);
+		pim_ifp = pim_if_new(ifp, 0 /* igmp=false */, 1 /* pim=true */,
+				     false);
 		if (!pim_ifp) {
 			return 0;
 		}
@@ -7444,7 +7541,12 @@ DEFUN (no_ip_pim_bfd,
 	return CMD_SUCCESS;
 }
 
-DEFUN (ip_pim_bfd_param,
+#if HAVE_BFDD > 0
+DEFUN_HIDDEN(
+#else
+DEFUN(
+#endif /* HAVE_BFDD */
+       ip_pim_bfd_param,
        ip_pim_bfd_param_cmd,
        "ip pim bfd (2-255) (50-60000) (50-60000)",
        IP_STR
@@ -7482,12 +7584,14 @@ DEFUN (ip_pim_bfd_param,
 	return CMD_SUCCESS;
 }
 
+#if HAVE_BFDD == 0
 ALIAS(no_ip_pim_bfd, no_ip_pim_bfd_param_cmd,
       "no ip pim bfd (2-255) (50-60000) (50-60000)", NO_STR IP_STR PIM_STR
       "Enables BFD support\n"
       "Detect Multiplier\n"
       "Required min receive interval\n"
       "Desired min transmit interval\n")
+#endif /* !HAVE_BFDD */
 
 static int ip_msdp_peer_cmd_worker(struct pim_instance *pim, struct vty *vty,
 				   const char *peer, const char *local)
@@ -8644,6 +8748,7 @@ void pim_cmd_init(void)
 	install_element(VIEW_NODE, &show_ip_igmp_groups_retransmissions_cmd);
 	install_element(VIEW_NODE, &show_ip_igmp_sources_cmd);
 	install_element(VIEW_NODE, &show_ip_igmp_sources_retransmissions_cmd);
+	install_element(VIEW_NODE, &show_ip_igmp_statistics_cmd);
 	install_element(VIEW_NODE, &show_ip_pim_assert_cmd);
 	install_element(VIEW_NODE, &show_ip_pim_assert_internal_cmd);
 	install_element(VIEW_NODE, &show_ip_pim_assert_metric_cmd);
@@ -8802,5 +8907,7 @@ void pim_cmd_init(void)
 	install_element(INTERFACE_NODE, &ip_pim_bfd_cmd);
 	install_element(INTERFACE_NODE, &ip_pim_bfd_param_cmd);
 	install_element(INTERFACE_NODE, &no_ip_pim_bfd_cmd);
+#if HAVE_BFDD == 0
 	install_element(INTERFACE_NODE, &no_ip_pim_bfd_param_cmd);
+#endif /* !HAVE_BFDD */
 }

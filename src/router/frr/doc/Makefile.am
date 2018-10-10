@@ -86,6 +86,14 @@ if SHARPD
 man_MANS += $(MANPAGE_BUILDDIR)/sharpd.8
 endif
 
+if STATICD
+man_MANS += $(MANPAGE_BUILDDIR)/staticd.8
+endif
+
+if BFDD
+man_MANS += $(MANPAGE_BUILDDIR)/bfdd.8
+endif
+
 # Automake is particular about manpages. It is aware of them and has some
 # special facilities for handling them, but it assumes that manpages are always
 # given in groff source and so these facilities are limited to simply
@@ -140,7 +148,7 @@ EXTRA_DIST = frr-sphinx.mk \
 	manpages/index.rst \
 	manpages/isisd.rst \
 	manpages/ldpd.rst \
-	manpages/Makefile \
+	manpages/Makefile.am \
 	manpages/mtracebis.rst \
 	manpages/nhrpd.rst \
 	manpages/ospf6d.rst \
@@ -151,9 +159,12 @@ EXTRA_DIST = frr-sphinx.mk \
 	manpages/pbrd.rst \
 	manpages/ripngd.rst \
 	manpages/sharpd.rst \
+	manpages/staticd.rst \
 	manpages/vtysh.rst \
 	manpages/watchfrr.rst \
 	manpages/zebra.rst \
+	manpages/bfdd.rst \
+	manpages/bfd-options.rst \
 	developer/bgpd.rst \
 	developer/bgp-typecodes.rst \
 	developer/building-frr-on-alpine.rst \
@@ -182,7 +193,9 @@ EXTRA_DIST = frr-sphinx.mk \
 	developer/index.rst \
 	developer/ldpd-basic-test-setup.md \
 	developer/library.rst \
-	developer/Makefile \
+	developer/logging.rst \
+	developer/Makefile.in \
+	developer/maintainer-release-build.rst \
 	developer/memtypes.rst \
 	developer/modules.rst \
 	developer/next-hop-tracking.rst \
@@ -191,10 +204,11 @@ EXTRA_DIST = frr-sphinx.mk \
 	developer/ospf-sr.rst \
 	developer/workflow.rst \
 	developer/zebra.rst \
-	user/appendix.rst \
 	user/babeld.rst \
+	user/ldpd.rst \
 	user/basic.rst \
 	user/bgp.rst \
+	user/bugs.rst \
 	user/conf.py \
 	user/eigrpd.rst \
 	user/filter.rst \
@@ -204,12 +218,13 @@ EXTRA_DIST = frr-sphinx.mk \
 	user/ipv6.rst \
 	user/isisd.rst \
 	user/kernel.rst \
-	user/Makefile \
+	user/Makefile.am \
 	user/nhrpd.rst \
 	user/ospf6d.rst \
 	user/ospfd.rst \
 	user/ospf_fundamentals.rst \
 	user/overview.rst \
+	user/packet-dumps.rst \
 	user/pim.rst \
 	user/ripd.rst \
 	user/pbr.rst \
@@ -217,13 +232,17 @@ EXTRA_DIST = frr-sphinx.mk \
 	user/routemap.rst \
 	user/routeserver.rst \
 	user/rpki.rst \
+	user/setup.rst \
 	user/sharp.rst \
 	user/snmp.rst \
 	user/snmptrap.rst \
+	user/static.rst \
 	user/Useful_Sysctl_Settings.md \
 	user/vnc.rst \
 	user/vtysh.rst \
 	user/zebra.rst \
+	user/bfd.rst \
+	user/flowspec.rst \
 	mpls/ChangeLog.opaque.txt \
 	mpls/ospfd.conf \
 	mpls/cli_summary.txt \

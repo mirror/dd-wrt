@@ -258,11 +258,11 @@ static void add_namespace(const char *path)
 		nsname = cur;
 	}
 
-	if (!memcmp(nsdirname, "ipcns/", strlen("ipcns/")))
+	if (!strncmp(nsdirname, "ipcns/", strlen("ipcns/")))
 		nstype = CLONE_NEWIPC;
-	else if (!memcmp(nsdirname, "netns/", strlen("netns/")))
+	else if (!strncmp(nsdirname, "netns/", strlen("netns/")))
 		nstype = CLONE_NEWNET;
-	else if (!memcmp(nsdirname, "utcns/", strlen("utcns/")))
+	else if (!strncmp(nsdirname, "utcns/", strlen("utcns/")))
 		nstype = CLONE_NEWUTS;
 	else
 		badusage("invalid namepspace path");
@@ -1024,14 +1024,18 @@ int main(int argc, char **argv)
 			close(i);
 		/* change tty */
 		fd = open("/dev/tty", O_RDWR);
-		ioctl(fd, TIOCNOTTY, 0);
-		close(fd);
+		if (fd >= 0) {
+			ioctl(fd, TIOCNOTTY, 0);
+			close(fd);
+		}
 		chdir("/");
 		umask(022);    /* set a default for dumb programs */
 		setpgid(0, 0); /* set the process group */
 		fd = open("/dev/null", O_RDWR); /* stdin */
-		dup(fd);			/* stdout */
-		dup(fd);			/* stderr */
+		if (fd >= 0) {
+			dup(fd);		/* stdout */
+			dup(fd);		/* stderr */
+		}
 	}
 	if (nicelevel) {
 		errno = 0;

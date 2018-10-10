@@ -24,6 +24,9 @@
 #if __clang_major__ > 3 || (__clang_major__ == 3 && __clang_minor__ >= 5)
 #  define _RET_NONNULL    , returns_nonnull
 #endif
+#if __has_attribute(fallthrough)
+#  define _FALLTHROUGH __attribute__((fallthrough));
+#endif
 # define _CONSTRUCTOR(x)  constructor(x)
 #elif defined(__GNUC__)
 #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 9)
@@ -33,6 +36,9 @@
 #  define _CONSTRUCTOR(x) constructor(x)
 #  define _DESTRUCTOR(x)  destructor(x)
 #  define _ALLOC_SIZE(x)  alloc_size(x)
+#endif
+#if __GNUC__ >= 7
+#  define _FALLTHROUGH __attribute__((fallthrough));
 #endif
 #endif
 
@@ -55,6 +61,9 @@
 #ifndef _ALLOC_SIZE
 # define _ALLOC_SIZE(x)
 #endif
+#ifndef _FALLTHROUGH
+#define _FALLTHROUGH
+#endif
 
 /*
  * for warnings on macros, put in the macro content like this:
@@ -76,6 +85,7 @@
 
 #else
 #define CPP_WARN(text)
+#define CPP_NOTICE(text)
 #endif
 
 #endif /* _FRR_COMPILER_H */

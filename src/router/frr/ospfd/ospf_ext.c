@@ -545,11 +545,6 @@ static int ospf_ext_link_new_if(struct interface *ifp)
 	}
 
 	new = XCALLOC(MTYPE_OSPF_EXT_PARAMS, sizeof(struct ext_itf));
-	if (new == NULL) {
-		zlog_warn("EXT (%s): XCALLOC: %s", __func__,
-			  safe_strerror(errno));
-		return rc;
-	}
 
 	/* initialize new information and link back the interface */
 	new->ifp = ifp;
@@ -982,20 +977,7 @@ static struct ospf_lsa *ospf_ext_pref_lsa_new(struct ospf_area *area,
 	lsah->length = htons(length);
 
 	/* Now, create an OSPF LSA instance. */
-	new = ospf_lsa_new();
-	if (new == NULL) {
-		zlog_warn("EXT (%s): ospf_lsa_new() error", __func__);
-		stream_free(s);
-		return NULL;
-	}
-	new->data = ospf_lsa_data_new(length);
-	if (new->data == NULL) {
-		zlog_warn("EXT (%s): ospf_lsa_data_new() error", __func__);
-		ospf_lsa_unlock(&new);
-		new = NULL;
-		stream_free(s);
-		return NULL;
-	}
+	new = ospf_lsa_new_and_data(length);
 
 	/* Segment Routing belongs only to default VRF */
 	new->vrf_id = VRF_DEFAULT;
@@ -1061,20 +1043,7 @@ static struct ospf_lsa *ospf_ext_link_lsa_new(struct ospf_area *area,
 	lsah->length = htons(length);
 
 	/* Now, create an OSPF LSA instance. */
-	new = ospf_lsa_new();
-	if (new == NULL) {
-		zlog_warn("EXT (%s): ospf_lsa_new() error", __func__);
-		stream_free(s);
-		return NULL;
-	}
-	new->data = ospf_lsa_data_new(length);
-	if (new->data == NULL) {
-		zlog_warn("EXT (%s): ospf_lsa_data_new() error", __func__);
-		ospf_lsa_unlock(&new);
-		new = NULL;
-		stream_free(s);
-		return NULL;
-	}
+	new = ospf_lsa_new_and_data(length);
 
 	/* Segment Routing belongs only to default VRF */
 	new->vrf_id = VRF_DEFAULT;
@@ -1125,7 +1094,7 @@ static int ospf_ext_pref_lsa_originate1(struct ospf_area *area,
 	if (IS_DEBUG_OSPF(lsa, LSA_GENERATE)) {
 		char area_id[INET_ADDRSTRLEN];
 
-		strncpy(area_id, inet_ntoa(area->area_id), INET_ADDRSTRLEN);
+		inet_ntop(AF_INET, &area->area_id, area_id, sizeof(area_id));
 		zlog_debug(
 			"EXT (%s): LSA[Type%u:%s]: Originate Opaque-LSA "
 			"Extended Prefix Opaque LSA: Area(%s), Link(%s)",
@@ -1175,7 +1144,7 @@ static int ospf_ext_link_lsa_originate1(struct ospf_area *area,
 	if (IS_DEBUG_OSPF(lsa, LSA_GENERATE)) {
 		char area_id[INET_ADDRSTRLEN];
 
-		strncpy(area_id, inet_ntoa(area->area_id), INET_ADDRSTRLEN);
+		inet_ntop(AF_INET, &area->area_id, area_id, sizeof(area_id));
 		zlog_debug(
 			"EXT (%s): LSA[Type%u:%s]: Originate Opaque-LSA "
 			"Extended Link Opaque LSA: Area(%s), Link(%s)",

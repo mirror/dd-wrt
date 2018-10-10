@@ -180,6 +180,12 @@ void *bgp_keepalives_start(void *arg)
 	pthread_cond_init(peerhash_cond, &attrs);
 	pthread_condattr_destroy(&attrs);
 
+#ifdef GNU_LINUX
+	pthread_setname_np(fpt->thread, "bgpd_ka");
+#elif defined(OPEN_BSD)
+	pthread_set_name_np(fpt->thread, "bgpd_ka");
+#endif
+
 	/* initialize peer hashtable */
 	peerhash = hash_create_size(2048, peer_hash_key, peer_hash_cmp, NULL);
 	pthread_mutex_lock(peerhash_mtx);
@@ -233,10 +239,10 @@ void bgp_keepalives_on(struct peer *peer)
 	/* placeholder bucket data to use for fast key lookups */
 	static struct pkat holder = {0};
 
-	if (!peerhash_mtx) {
-		zlog_warn("%s: call bgp_keepalives_init() first", __func__);
-		return;
-	}
+	/*
+	 * We need to ensure that bgp_keepalives_init was called first
+	 */
+	assert(peerhash_mtx);
 
 	pthread_mutex_lock(peerhash_mtx);
 	{
@@ -263,10 +269,10 @@ void bgp_keepalives_off(struct peer *peer)
 	/* placeholder bucket data to use for fast key lookups */
 	static struct pkat holder = {0};
 
-	if (!peerhash_mtx) {
-		zlog_warn("%s: call bgp_keepalives_init() first", __func__);
-		return;
-	}
+	/*
+	 * We need to ensure that bgp_keepalives_init was called first
+	 */
+	assert(peerhash_mtx);
 
 	pthread_mutex_lock(peerhash_mtx);
 	{

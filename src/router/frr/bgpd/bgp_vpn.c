@@ -125,7 +125,7 @@ int show_adj_route_vpn(struct vty *vty, struct peer *peer,
 
 					if (rd_header) {
 						uint16_t type;
-						struct rd_as rd_as;
+						struct rd_as rd_as = {0};
 						struct rd_ip rd_ip = {0};
 #if ENABLE_BGP_VNC
 						struct rd_vnc_eth rd_vnc_eth = {
@@ -223,22 +223,26 @@ int show_adj_route_vpn(struct vty *vty, struct peer *peer,
 						}
 						rd_header = 0;
 					}
-					route_vty_out_tmp(vty, &rm->p, attr,
-							  SAFI_MPLS_VPN,
-							  use_json, json_array);
+					if (use_json) {
+						char buf_a[BUFSIZ];
+						char buf_b[BUFSIZ];
+
+						sprintf(buf_a, "%s/%d",
+							inet_ntop(rm->p.family,
+								  rm->p.u.val,
+								  buf_b,
+								  BUFSIZ),
+							rm->p.prefixlen);
+						json_object_object_add(
+							json_routes, buf_a,
+							json_array);
+					} else {
+						route_vty_out_tmp(
+							vty, &rm->p, attr,
+							SAFI_MPLS_VPN, use_json,
+							json_array);
+					}
 				}
-			}
-			if (use_json) {
-				struct prefix *p;
-				char buf_a[BUFSIZ];
-				char buf_b[BUFSIZ];
-				p = &rm->p;
-				sprintf(buf_a, "%s/%d",
-					inet_ntop(p->family, &p->u.prefix,
-						  buf_b, BUFSIZ),
-					p->prefixlen);
-				json_object_object_add(json_routes, buf_a,
-						       json_array);
 			}
 		}
 	}

@@ -35,6 +35,7 @@
 #include "ns.h"
 #include "privs.h"
 #include "nexthop_group.h"
+#include "lib_errors.h"
 
 /* default VRF ID value used when VRF backend is not NETNS */
 #define VRF_DEFAULT_INTERNAL 0
@@ -341,91 +342,103 @@ void *vrf_info_lookup(vrf_id_t vrf_id)
 }
 
 /*
- * VRF bit-map
+ * VRF hash for storing set or not.
  */
-
-#define VRF_BITMAP_NUM_OF_GROUPS            1024
-#define VRF_BITMAP_NUM_OF_BITS_IN_GROUP (UINT32_MAX / VRF_BITMAP_NUM_OF_GROUPS)
-#define VRF_BITMAP_NUM_OF_BYTES_IN_GROUP                                       \
-	(VRF_BITMAP_NUM_OF_BITS_IN_GROUP / CHAR_BIT + 1) /* +1 for ensure */
-
-#define VRF_BITMAP_GROUP(_id) ((_id) / VRF_BITMAP_NUM_OF_BITS_IN_GROUP)
-#define VRF_BITMAP_BIT_OFFSET(_id) ((_id) % VRF_BITMAP_NUM_OF_BITS_IN_GROUP)
-
-#define VRF_BITMAP_INDEX_IN_GROUP(_bit_offset) ((_bit_offset) / CHAR_BIT)
-#define VRF_BITMAP_FLAG(_bit_offset)                                           \
-	(((uint8_t)1) << ((_bit_offset) % CHAR_BIT))
-
-struct vrf_bitmap {
-	uint8_t *groups[VRF_BITMAP_NUM_OF_GROUPS];
+struct vrf_bit_set {
+	vrf_id_t vrf_id;
+	bool set;
 };
+
+static unsigned int vrf_hash_bitmap_key(void *data)
+{
+	struct vrf_bit_set *bit = data;
+
+	return bit->vrf_id;
+}
+
+static int vrf_hash_bitmap_cmp(const void *a, const void *b)
+{
+	const struct vrf_bit_set *bit1 = a;
+	const struct vrf_bit_set *bit2 = b;
+
+	return bit1->vrf_id == bit2->vrf_id;
+}
+
+static void *vrf_hash_bitmap_alloc(void *data)
+{
+	struct vrf_bit_set *copy = data;
+	struct vrf_bit_set *bit;
+
+	bit = XMALLOC(MTYPE_VRF_BITMAP, sizeof(*bit));
+	bit->vrf_id = copy->vrf_id;
+
+	return bit;
+}
+
+static void vrf_hash_bitmap_free(void *data)
+{
+	struct vrf_bit_set *bit = data;
+
+	XFREE(MTYPE_VRF_BITMAP, bit);
+}
 
 vrf_bitmap_t vrf_bitmap_init(void)
 {
-	return (vrf_bitmap_t)XCALLOC(MTYPE_VRF_BITMAP,
-				     sizeof(struct vrf_bitmap));
+	return hash_create_size(32, vrf_hash_bitmap_key, vrf_hash_bitmap_cmp,
+				"VRF BIT HASH");
 }
 
 void vrf_bitmap_free(vrf_bitmap_t bmap)
 {
-	struct vrf_bitmap *bm = (struct vrf_bitmap *)bmap;
-	int i;
+	struct hash *vrf_hash = bmap;
 
-	if (bmap == VRF_BITMAP_NULL)
+	if (vrf_hash == NULL)
 		return;
 
-	for (i = 0; i < VRF_BITMAP_NUM_OF_GROUPS; i++)
-		if (bm->groups[i])
-			XFREE(MTYPE_VRF_BITMAP, bm->groups[i]);
-
-	XFREE(MTYPE_VRF_BITMAP, bm);
+	hash_clean(vrf_hash, vrf_hash_bitmap_free);
+	hash_free(vrf_hash);
 }
 
 void vrf_bitmap_set(vrf_bitmap_t bmap, vrf_id_t vrf_id)
 {
-	struct vrf_bitmap *bm = (struct vrf_bitmap *)bmap;
-	uint8_t group = VRF_BITMAP_GROUP(vrf_id);
-	uint8_t offset = VRF_BITMAP_BIT_OFFSET(vrf_id);
+	struct vrf_bit_set lookup = { .vrf_id = vrf_id };
+	struct hash *vrf_hash = bmap;
+	struct vrf_bit_set *bit;
 
-	if (bmap == VRF_BITMAP_NULL || vrf_id == VRF_UNKNOWN)
+	if (vrf_hash == NULL || vrf_id == VRF_UNKNOWN)
 		return;
 
-	if (bm->groups[group] == NULL)
-		bm->groups[group] = XCALLOC(MTYPE_VRF_BITMAP,
-					    VRF_BITMAP_NUM_OF_BYTES_IN_GROUP);
-
-	SET_FLAG(bm->groups[group][VRF_BITMAP_INDEX_IN_GROUP(offset)],
-		 VRF_BITMAP_FLAG(offset));
+	bit = hash_get(vrf_hash, &lookup, vrf_hash_bitmap_alloc);
+	bit->set = true;
 }
 
 void vrf_bitmap_unset(vrf_bitmap_t bmap, vrf_id_t vrf_id)
 {
-	struct vrf_bitmap *bm = (struct vrf_bitmap *)bmap;
-	uint8_t group = VRF_BITMAP_GROUP(vrf_id);
-	uint8_t offset = VRF_BITMAP_BIT_OFFSET(vrf_id);
+	struct vrf_bit_set lookup = { .vrf_id = vrf_id };
+	struct hash *vrf_hash = bmap;
+	struct vrf_bit_set *bit;
 
-	if (bmap == VRF_BITMAP_NULL || vrf_id == VRF_UNKNOWN
-	    || bm->groups[group] == NULL)
+	if (vrf_hash == NULL || vrf_id == VRF_UNKNOWN)
 		return;
 
-	UNSET_FLAG(bm->groups[group][VRF_BITMAP_INDEX_IN_GROUP(offset)],
-		   VRF_BITMAP_FLAG(offset));
+	bit = hash_get(vrf_hash, &lookup, vrf_hash_bitmap_alloc);
+	bit->set = false;
 }
 
 int vrf_bitmap_check(vrf_bitmap_t bmap, vrf_id_t vrf_id)
 {
-	struct vrf_bitmap *bm = (struct vrf_bitmap *)bmap;
-	uint8_t group = VRF_BITMAP_GROUP(vrf_id);
-	uint8_t offset = VRF_BITMAP_BIT_OFFSET(vrf_id);
+	struct vrf_bit_set lookup = { .vrf_id = vrf_id };
+	struct hash *vrf_hash = bmap;
+	struct vrf_bit_set *bit;
 
-	if (bmap == VRF_BITMAP_NULL || vrf_id == VRF_UNKNOWN
-	    || bm->groups[group] == NULL)
+	if (vrf_hash == NULL || vrf_id == VRF_UNKNOWN)
 		return 0;
 
-	return CHECK_FLAG(bm->groups[group][VRF_BITMAP_INDEX_IN_GROUP(offset)],
-			  VRF_BITMAP_FLAG(offset))
-		       ? 1
-		       : 0;
+	bit = hash_lookup(vrf_hash, &lookup);
+	if (bit)
+		return bit->set;
+
+	return 0;
 }
 
 static void vrf_autocomplete(vector comps, struct cmd_token *token)
@@ -466,13 +479,15 @@ void vrf_init(int (*create)(struct vrf *), int (*enable)(struct vrf *),
 	/* The default VRF always exists. */
 	default_vrf = vrf_get(VRF_DEFAULT, VRF_DEFAULT_NAME);
 	if (!default_vrf) {
-		zlog_err("vrf_init: failed to create the default VRF!");
+		flog_err(LIB_ERR_VRF_START,
+			  "vrf_init: failed to create the default VRF!");
 		exit(1);
 	}
 
 	/* Enable the default VRF. */
 	if (!vrf_enable(default_vrf)) {
-		zlog_err("vrf_init: failed to enable the default VRF!");
+		flog_err(LIB_ERR_VRF_START,
+			  "vrf_init: failed to enable the default VRF!");
 		exit(1);
 	}
 
@@ -542,20 +557,23 @@ int vrf_socket(int domain, int type, int protocol, vrf_id_t vrf_id,
 
 	ret = vrf_switch_to_netns(vrf_id);
 	if (ret < 0)
-		zlog_err("%s: Can't switch to VRF %u (%s)", __func__, vrf_id,
-			 safe_strerror(errno));
+		flog_err_sys(LIB_ERR_SOCKET, "%s: Can't switch to VRF %u (%s)",
+			     __func__, vrf_id, safe_strerror(errno));
+
 	if (ret > 0 && interfacename && vrf_default_accepts_vrf(type)) {
 		zlog_err("VRF socket not used since net.ipv4.%s_l3mdev_accept != 0",
 			  (type == SOCK_STREAM ? "tcp" : "udp"));
 		errno = EEXIST; /* not sure if this is the best error... */
 		return -2;
 	}
+
 	ret = socket(domain, type, protocol);
 	save_errno = errno;
 	ret2 = vrf_switchback_to_initial();
 	if (ret2 < 0)
-		zlog_err("%s: Can't switchback from VRF %u (%s)", __func__,
-			 vrf_id, safe_strerror(errno));
+		flog_err_sys(LIB_ERR_SOCKET,
+			     "%s: Can't switchback from VRF %u (%s)", __func__,
+			     vrf_id, safe_strerror(errno));
 	errno = save_errno;
 	if (ret <= 0)
 		return ret;
@@ -628,7 +646,7 @@ int vrf_netns_handler_create(struct vty *vty, struct vrf *vrf, char *pathname,
 	}
 	if (vrf->ns_ctxt != NULL) {
 		ns = (struct ns *)vrf->ns_ctxt;
-		if (ns && 0 != strcmp(ns->name, pathname)) {
+		if (!strcmp(ns->name, pathname)) {
 			if (vty)
 				vty_out(vty,
 					"VRF %u already configured with NETNS %s\n",
@@ -661,8 +679,7 @@ int vrf_netns_handler_create(struct vty *vty, struct vrf *vrf, char *pathname,
 	ns->vrf_ctxt = (void *)vrf;
 	vrf->ns_ctxt = (void *)ns;
 	/* update VRF netns NAME */
-	if (vrf)
-		strlcpy(vrf->data.l.netns_name, basename(pathname), NS_NAMSIZ);
+	strlcpy(vrf->data.l.netns_name, basename(pathname), NS_NAMSIZ);
 
 	if (!ns_enable(ns, vrf_update_vrf_id)) {
 		if (vty)
@@ -677,10 +694,8 @@ int vrf_netns_handler_create(struct vty *vty, struct vrf *vrf, char *pathname,
 	return CMD_SUCCESS;
 }
 
-int vrf_is_mapped_on_netns(vrf_id_t vrf_id)
+int vrf_is_mapped_on_netns(struct vrf *vrf)
 {
-	struct vrf *vrf = vrf_lookup_by_id(vrf_id);
-
 	if (!vrf || vrf->data.l.netns_name[0] == '\0')
 		return 0;
 	if (vrf->vrf_id == VRF_DEFAULT)
@@ -712,12 +727,12 @@ DEFUN_NOSH (vrf,
 	return vrf_handler_create(vty, vrfname, NULL);
 }
 
-DEFUN_NOSH (no_vrf,
-           no_vrf_cmd,
-           "no vrf NAME",
-           NO_STR
-           "Delete a pseudo VRF's configuration\n"
-           "VRF's name\n")
+DEFUN (no_vrf,
+       no_vrf_cmd,
+       "no vrf NAME",
+       NO_STR
+       "Delete a pseudo VRF's configuration\n"
+       "VRF's name\n")
 {
 	const char *vrfname = argv[2]->arg;
 
@@ -746,10 +761,10 @@ DEFUN_NOSH (no_vrf,
 struct cmd_node vrf_node = {VRF_NODE, "%s(config-vrf)# ", 1};
 
 DEFUN_NOSH (vrf_netns,
-	    vrf_netns_cmd,
-	    "netns NAME",
-	    "Attach VRF to a Namespace\n"
-	    "The file name in " NS_RUN_DIR ", or a full pathname\n")
+       vrf_netns_cmd,
+       "netns NAME",
+       "Attach VRF to a Namespace\n"
+       "The file name in " NS_RUN_DIR ", or a full pathname\n")
 {
 	int idx_name = 1, ret;
 	char *pathname = ns_netns_pathname(vty, argv[idx_name]->arg);
@@ -759,20 +774,14 @@ DEFUN_NOSH (vrf_netns,
 	if (!pathname)
 		return CMD_WARNING_CONFIG_FAILED;
 
-	if (vrf_daemon_privs &&
-	    vrf_daemon_privs->change(ZPRIVS_RAISE))
-		zlog_err("%s: Can't raise privileges", __func__);
-
-	ret = vrf_netns_handler_create(vty, vrf, pathname,
-				       NS_UNKNOWN, NS_UNKNOWN);
-
-	if (vrf_daemon_privs &&
-	    vrf_daemon_privs->change(ZPRIVS_LOWER))
-		zlog_err("%s: Can't lower privileges", __func__);
+	frr_elevate_privs(vrf_daemon_privs) {
+		ret = vrf_netns_handler_create(vty, vrf, pathname,
+					       NS_UNKNOWN, NS_UNKNOWN);
+	}
 	return ret;
 }
 
-DEFUN (no_vrf_netns,
+DEFUN_NOSH (no_vrf_netns,
 	no_vrf_netns_cmd,
 	"no netns [NAME]",
 	NO_STR
@@ -888,7 +897,7 @@ int vrf_bind(vrf_id_t vrf_id, int fd, char *name)
 
 	if (fd < 0 || name == NULL)
 		return fd;
-	if (vrf_is_mapped_on_netns(vrf_id))
+	if (vrf_is_mapped_on_netns(vrf_lookup_by_id(vrf_id)))
 		return fd;
 #ifdef SO_BINDTODEVICE
 	ret = setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, name, strlen(name)+1);
@@ -906,14 +915,15 @@ int vrf_getaddrinfo(const char *node, const char *service,
 
 	ret = vrf_switch_to_netns(vrf_id);
 	if (ret < 0)
-		zlog_err("%s: Can't switch to VRF %u (%s)", __func__, vrf_id,
-			 safe_strerror(errno));
+		flog_err_sys(LIB_ERR_SOCKET, "%s: Can't switch to VRF %u (%s)",
+			     __func__, vrf_id, safe_strerror(errno));
 	ret = getaddrinfo(node, service, hints, res);
 	save_errno = errno;
 	ret2 = vrf_switchback_to_initial();
 	if (ret2 < 0)
-		zlog_err("%s: Can't switchback from VRF %u (%s)", __func__,
-			 vrf_id, safe_strerror(errno));
+		flog_err_sys(LIB_ERR_SOCKET,
+			     "%s: Can't switchback from VRF %u (%s)", __func__,
+			     vrf_id, safe_strerror(errno));
 	errno = save_errno;
 	return ret;
 }
@@ -924,16 +934,17 @@ int vrf_ioctl(vrf_id_t vrf_id, int d, unsigned long request, char *params)
 
 	ret = vrf_switch_to_netns(vrf_id);
 	if (ret < 0) {
-		zlog_err("%s: Can't switch to VRF %u (%s)", __func__, vrf_id,
-			 safe_strerror(errno));
+		flog_err_sys(LIB_ERR_SOCKET, "%s: Can't switch to VRF %u (%s)",
+			     __func__, vrf_id, safe_strerror(errno));
 		return 0;
 	}
 	rc = ioctl(d, request, params);
 	saved_errno = errno;
 	ret = vrf_switchback_to_initial();
 	if (ret < 0)
-		zlog_err("%s: Can't switchback from VRF %u (%s)", __func__,
-			 vrf_id, safe_strerror(errno));
+		flog_err_sys(LIB_ERR_SOCKET,
+			     "%s: Can't switchback from VRF %u (%s)", __func__,
+			     vrf_id, safe_strerror(errno));
 	errno = saved_errno;
 	return rc;
 }
@@ -945,14 +956,15 @@ int vrf_sockunion_socket(const union sockunion *su, vrf_id_t vrf_id,
 
 	ret = vrf_switch_to_netns(vrf_id);
 	if (ret < 0)
-		zlog_err("%s: Can't switch to VRF %u (%s)", __func__, vrf_id,
-			 safe_strerror(errno));
+		flog_err_sys(LIB_ERR_SOCKET, "%s: Can't switch to VRF %u (%s)",
+			     __func__, vrf_id, safe_strerror(errno));
 	ret = sockunion_socket(su);
 	save_errno = errno;
 	ret2 = vrf_switchback_to_initial();
 	if (ret2 < 0)
-		zlog_err("%s: Can't switchback from VRF %u (%s)", __func__,
-			 vrf_id, safe_strerror(errno));
+		flog_err_sys(LIB_ERR_SOCKET,
+			     "%s: Can't switchback from VRF %u (%s)", __func__,
+			     vrf_id, safe_strerror(errno));
 	errno = save_errno;
 
 	if (ret <= 0)

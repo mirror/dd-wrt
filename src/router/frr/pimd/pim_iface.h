@@ -154,7 +154,8 @@ struct pim_interface {
 void pim_if_init(struct pim_instance *pim);
 void pim_if_terminate(struct pim_instance *pim);
 
-struct pim_interface *pim_if_new(struct interface *ifp, int igmp, int pim);
+struct pim_interface *pim_if_new(struct interface *ifp, int igmp, int pim,
+				 bool ispimreg);
 void pim_if_delete(struct interface *ifp);
 void pim_if_addr_add(struct connected *ifc);
 void pim_if_addr_del(struct connected *ifc, int force_prim_as_any);
@@ -163,7 +164,7 @@ void pim_if_addr_del_all(struct interface *ifp);
 void pim_if_addr_del_all_igmp(struct interface *ifp);
 void pim_if_addr_del_all_pim(struct interface *ifp);
 
-int pim_if_add_vif(struct interface *ifp);
+int pim_if_add_vif(struct interface *ifp, bool ispimreg);
 int pim_if_del_vif(struct interface *ifp);
 void pim_if_add_vif_all(struct pim_instance *pim);
 void pim_if_del_vif_all(struct pim_instance *pim);
@@ -207,9 +208,7 @@ void pim_if_create_pimreg(struct pim_instance *pim);
 int pim_if_connected_to_source(struct interface *ifp, struct in_addr src);
 int pim_update_source_set(struct interface *ifp, struct in_addr source);
 
-int pim_if_is_loopback(struct pim_instance *pim, struct interface *ifp);
-
-int pim_if_is_vrf_device(struct interface *ifp);
+bool pim_if_is_vrf_device(struct interface *ifp);
 
 int pim_if_ifchannel_count(struct pim_interface *pim_ifp);
 #endif /* PIM_IFACE_H */

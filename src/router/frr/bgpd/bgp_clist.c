@@ -274,8 +274,7 @@ static void community_list_entry_add(struct community_list *list,
 
 /* Delete community-list entry from the list.  */
 static void community_list_entry_delete(struct community_list *list,
-					struct community_entry *entry,
-					int style)
+					struct community_entry *entry)
 {
 	if (entry->next)
 		entry->next->prev = entry->prev;
@@ -333,70 +332,69 @@ community_list_entry_lookup(struct community_list *list, const void *arg,
 
 static char *community_str_get(struct community *com, int i)
 {
-	int len;
 	uint32_t comval;
 	uint16_t as;
 	uint16_t val;
 	char *str;
-	char *pnt;
 
 	memcpy(&comval, com_nthval(com, i), sizeof(uint32_t));
 	comval = ntohl(comval);
 
 	switch (comval) {
 	case COMMUNITY_INTERNET:
-		len = strlen(" internet");
-		break;
-	case COMMUNITY_NO_EXPORT:
-		len = strlen(" no-export");
-		break;
-	case COMMUNITY_NO_ADVERTISE:
-		len = strlen(" no-advertise");
-		break;
-	case COMMUNITY_LOCAL_AS:
-		len = strlen(" local-AS");
+		str = XSTRDUP(MTYPE_COMMUNITY_STR, "internet");
 		break;
 	case COMMUNITY_GSHUT:
-		len = strlen(" graceful-shutdown");
+		str = XSTRDUP(MTYPE_COMMUNITY_STR, "graceful-shutdown");
 		break;
-	default:
-		len = strlen(" 65536:65535");
+	case COMMUNITY_ACCEPT_OWN:
+		str = XSTRDUP(MTYPE_COMMUNITY_STR, "accept-own");
 		break;
-	}
-
-	/* Allocate memory.  */
-	str = pnt = XMALLOC(MTYPE_COMMUNITY_STR, len);
-
-	switch (comval) {
-	case COMMUNITY_INTERNET:
-		strcpy(pnt, "internet");
-		pnt += strlen("internet");
+	case COMMUNITY_ROUTE_FILTER_TRANSLATED_v4:
+		str = XSTRDUP(MTYPE_COMMUNITY_STR,
+			      "route-filter-translated-v4");
+		break;
+	case COMMUNITY_ROUTE_FILTER_v4:
+		str = XSTRDUP(MTYPE_COMMUNITY_STR, "route-filter-v4");
+		break;
+	case COMMUNITY_ROUTE_FILTER_TRANSLATED_v6:
+		str = XSTRDUP(MTYPE_COMMUNITY_STR,
+			      "route-filter-translated-v6");
+		break;
+	case COMMUNITY_ROUTE_FILTER_v6:
+		str = XSTRDUP(MTYPE_COMMUNITY_STR, "route-filter-v6");
+		break;
+	case COMMUNITY_LLGR_STALE:
+		str = XSTRDUP(MTYPE_COMMUNITY_STR, "llgr-stale");
+		break;
+	case COMMUNITY_NO_LLGR:
+		str = XSTRDUP(MTYPE_COMMUNITY_STR, "no-llgr");
+		break;
+	case COMMUNITY_ACCEPT_OWN_NEXTHOP:
+		str = XSTRDUP(MTYPE_COMMUNITY_STR, "accept-own-nexthop");
+		break;
+	case COMMUNITY_BLACKHOLE:
+		str = XSTRDUP(MTYPE_COMMUNITY_STR, "blackhole");
 		break;
 	case COMMUNITY_NO_EXPORT:
-		strcpy(pnt, "no-export");
-		pnt += strlen("no-export");
+		str = XSTRDUP(MTYPE_COMMUNITY_STR, "no-export");
 		break;
 	case COMMUNITY_NO_ADVERTISE:
-		strcpy(pnt, "no-advertise");
-		pnt += strlen("no-advertise");
+		str = XSTRDUP(MTYPE_COMMUNITY_STR, "no-advertise");
 		break;
 	case COMMUNITY_LOCAL_AS:
-		strcpy(pnt, "local-AS");
-		pnt += strlen("local-AS");
+		str = XSTRDUP(MTYPE_COMMUNITY_STR, "local-AS");
 		break;
-	case COMMUNITY_GSHUT:
-		strcpy(pnt, "graceful-shutdown");
-		pnt += strlen("graceful-shutdown");
+	case COMMUNITY_NO_PEER:
+		str = XSTRDUP(MTYPE_COMMUNITY_STR, "no-peer");
 		break;
 	default:
+		str = XSTRDUP(MTYPE_COMMUNITY_STR, "65536:65535");
 		as = (comval >> 16) & 0xFFFF;
 		val = comval & 0xFFFF;
-		sprintf(pnt, "%u:%d", as, val);
-		pnt += strlen(pnt);
+		snprintf(str, strlen(str), "%u:%d", as, val);
 		break;
 	}
-
-	*pnt = '\0';
 
 	return str;
 }
@@ -548,47 +546,77 @@ static int ecommunity_regexp_match(struct ecommunity *ecom, regex_t *reg)
 static struct community *
 community_regexp_delete (struct community *com, regex_t * reg)
 {
-  int i;
-  uint32_t comval;
-  /* Maximum is "65535:65535" + '\0'. */
-  char c[12];
-  const char *str;
+	int i;
+	uint32_t comval;
+	/* Maximum is "65535:65535" + '\0'. */
+	char c[12];
+	const char *str;
 
-  if (!com)
-    return NULL;
+	if (!com)
+		return NULL;
 
-  i = 0;
-  while (i < com->size)
-    {
-      memcpy (&comval, com_nthval (com, i), sizeof (uint32_t));
-      comval = ntohl (comval);
+	i = 0;
+	while (i < com->size)
+	{
+		memcpy (&comval, com_nthval (com, i), sizeof (uint32_t));
+		comval = ntohl (comval);
 
-      switch (comval)
-        {
-        case COMMUNITY_INTERNET:
-          str = "internet";
-          break;
-        case COMMUNITY_NO_EXPORT:
-          str = "no-export";
-          break;
-        case COMMUNITY_NO_ADVERTISE:
-          str = "no-advertise";
-          break;
-        case COMMUNITY_LOCAL_AS:
-          str = "local-AS";
-          break;
-        default:
-          sprintf (c, "%d:%d", (comval >> 16) & 0xFFFF, comval & 0xFFFF);
-          str = c;
-          break;
-        }
+		switch (comval) {
+		case COMMUNITY_INTERNET:
+			str = "internet";
+			break;
+		case COMMUNITY_ACCEPT_OWN:
+			str = "accept-own";
+			break;
+		case COMMUNITY_ROUTE_FILTER_TRANSLATED_v4:
+			str = "route-filter-translated-v4";
+			break;
+		case COMMUNITY_ROUTE_FILTER_v4:
+			str = "route-filter-v4";
+			break;
+		case COMMUNITY_ROUTE_FILTER_TRANSLATED_v6:
+			str = "route-filter-translated-v6";
+			break;
+		case COMMUNITY_ROUTE_FILTER_v6:
+			str = "route-filter-v6";
+			break;
+		case COMMUNITY_LLGR_STALE:
+			str = "llgr-stale";
+			break;
+		case COMMUNITY_NO_LLGR:
+			str = "no-llgr";
+			break;
+		case COMMUNITY_ACCEPT_OWN_NEXTHOP:
+			str = "accept-own-nexthop";
+			break;
+		case COMMUNITY_BLACKHOLE:
+			str = "blackhole";
+			break;
+		case COMMUNITY_NO_EXPORT:
+			str = "no-export";
+			break;
+		case COMMUNITY_NO_ADVERTISE:
+			str = "no-advertise";
+			break;
+		case COMMUNITY_LOCAL_AS:
+			str = "local-AS";
+			break;
+		case COMMUNITY_NO_PEER:
+			str = "no-peer";
+			break;
+		default:
+			sprintf (c, "%d:%d", (comval >> 16) & 0xFFFF,
+			 comval & 0xFFFF);
+			str = c;
+			break;
+		}
 
-      if (regexec (reg, str, 0, NULL, 0) == 0)
-        community_del_val (com, com_nthval (com, i));
-      else
-        i++;
-    }
-  return com;
+		if (regexec (reg, str, 0, NULL, 0) == 0)
+			community_del_val (com, com_nthval (com, i));
+		else
+			i++;
+	}
+	return com;
 }
 #endif
 
@@ -882,7 +910,7 @@ int community_list_unset(struct community_list_handler *ch, const char *name,
 	if (!entry)
 		return COMMUNITY_LIST_ERR_CANT_FIND_LIST;
 
-	community_list_entry_delete(list, entry, style);
+	community_list_entry_delete(list, entry);
 	route_map_notify_dependencies(name, RMAP_EVENT_CLIST_DELETED);
 
 	return 0;
@@ -1040,7 +1068,7 @@ int lcommunity_list_unset(struct community_list_handler *ch, const char *name,
 	if (!entry)
 		return COMMUNITY_LIST_ERR_CANT_FIND_LIST;
 
-	community_list_entry_delete(list, entry, style);
+	community_list_entry_delete(list, entry);
 
 	return 0;
 }
@@ -1054,7 +1082,8 @@ int extcommunity_list_set(struct community_list_handler *ch, const char *name,
 	struct ecommunity *ecom = NULL;
 	regex_t *regex = NULL;
 
-	entry = NULL;
+	if (str == NULL)
+		return COMMUNITY_LIST_ERR_MALFORMED_VAL;
 
 	/* Get community list. */
 	list = community_list_get(ch, name, EXTCOMMUNITY_LIST_MASTER);
@@ -1089,7 +1118,7 @@ int extcommunity_list_set(struct community_list_handler *ch, const char *name,
 	entry = community_entry_new();
 	entry->direct = direct;
 	entry->style = style;
-	entry->any = (str ? 0 : 1);
+	entry->any = 0;
 	if (ecom)
 		entry->config = ecommunity_ecom2str(
 			ecom, ECOMMUNITY_FORMAT_COMMUNITY_LIST, 0);
@@ -1146,7 +1175,7 @@ int extcommunity_list_unset(struct community_list_handler *ch, const char *name,
 	if (!entry)
 		return COMMUNITY_LIST_ERR_CANT_FIND_LIST;
 
-	community_list_entry_delete(list, entry, style);
+	community_list_entry_delete(list, entry);
 	route_map_notify_dependencies(name, RMAP_EVENT_ECLIST_DELETED);
 
 	return 0;

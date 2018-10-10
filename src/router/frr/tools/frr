@@ -21,7 +21,7 @@ V_PATH=/var/run/frr
 # Local Daemon selection may be done by using /etc/frr/daemons.
 # See /usr/share/doc/frr/README.Debian.gz for further information.
 # Keep zebra first and do not list watchfrr!
-DAEMONS="zebra bgpd ripd ripngd ospfd ospf6d isisd babeld pimd ldpd nhrpd eigrpd sharpd pbrd"
+DAEMONS="zebra bgpd ripd ripngd ospfd ospf6d isisd babeld pimd ldpd nhrpd eigrpd sharpd pbrd staticd bfdd"
 MAX_INSTANCES=5
 RELOAD_SCRIPT=/usr/lib/frr/frr-reload.py
 
@@ -170,6 +170,22 @@ start()
                `eval echo "$""$1""_options"`
            fi
         fi
+
+	# Start the staticd automatically
+	if [ "$1" = "zebra" ]; then
+	    echo -n "starting staticd since zebra is running"
+	    if ! check_daemon staticd ; then
+		echo -n " (binary does not exist)"
+		return;
+	    fi
+
+	    ${SSD} \
+		--start \
+		--pidfile=`pidfile staticd` \
+		--exec "$D_PATH/staticd" \
+		-- \
+		`eval echo "$"staticd"_options"`
+	fi
 }
 
 # Stop the daemon given in the parameter, printing its name to the terminal.
@@ -210,6 +226,11 @@ stop()
         echo -n " $inst"
         rm -f `pidfile $inst`
         rm -f `vtyfile $inst`
+
+	if [ "$1" = "zebra" ]; then
+	    echo -n "Stopping staticd since zebra is running"
+	    stop staticd
+	fi
     fi
 }
 
@@ -574,7 +595,11 @@ case "$1" in
 
     reload)
        # Just apply the commands that have changed, no restart necessary
-       [ ! -x "$RELOAD_SCRIPT" ] && echo "frr-reload script not available" && exit 0
+       if [ ! -x "$RELOAD_SCRIPT" ]; then
+          echo "Please install frr-pythontools package. Required for reload"
+          exit 0
+       fi
+
        NEW_CONFIG_FILE="${2:-$C_PATH/frr.conf}"
        [ ! -r $NEW_CONFIG_FILE ] && echo "Unable to read new configuration file $NEW_CONFIG_FILE" && exit 1
        echo "Applying only incremental changes to running configuration from frr.conf"

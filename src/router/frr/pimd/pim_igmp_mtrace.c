@@ -671,6 +671,9 @@ int igmp_mtrace_recv_qry_req(struct igmp_sock *igmp, struct ip *ip_hdr,
 		return -1;
 	}
 
+	/* Collecting IGMP Rx stats */
+	igmp->rx_stats.mtrace_req++;
+
 	if (PIM_DEBUG_MTRACE)
 		mtrace_debug(pim_ifp, mtracep, igmp_msg_len);
 
@@ -814,7 +817,7 @@ int igmp_mtrace_recv_qry_req(struct igmp_sock *igmp, struct ip *ip_hdr,
 		 * Previous-hop router not known,
 		 * packet is sent to an appropriate multicast address
 		 */
-		inet_aton(MCAST_ALL_ROUTERS, &nh_addr);
+		(void)inet_aton(MCAST_ALL_ROUTERS, &nh_addr);
 	}
 
 	/* 6.2.2 8. If this router is the Rendez-vous Point */
@@ -880,6 +883,9 @@ int igmp_mtrace_recv_response(struct igmp_sock *igmp, struct ip *ip_hdr,
 	}
 
 	mtracep->checksum = checksum;
+
+	/* Collecting IGMP Rx stats */
+	igmp->rx_stats.mtrace_rsp++;
 
 	if (PIM_DEBUG_MTRACE)
 		mtrace_debug(pim_ifp, mtracep, igmp_msg_len);
