@@ -63,7 +63,6 @@ zebra_zebra_SOURCES = \
 	zebra/zebra_rib.c \
 	zebra/zebra_rnh.c \
 	zebra/zebra_routemap.c \
-	zebra/zebra_static.c \
 	zebra/zebra_vrf.c \
 	zebra/zebra_vty.c \
 	zebra/zebra_vxlan.c \
@@ -72,6 +71,7 @@ zebra_zebra_SOURCES = \
 	zebra/zebra_netns_notify.c \
 	zebra/table_manager.c \
 	zebra/zapi_msg.c \
+	zebra/zebra_errors.c \
 	# end
 
 zebra/zebra_vty_clippy.c: $(CLIPPY_DEPS)
@@ -108,7 +108,6 @@ noinst_HEADERS += \
 	zebra/zebra_pw.h \
 	zebra/zebra_rnh.h \
 	zebra/zebra_routemap.h \
-	zebra/zebra_static.h \
 	zebra/zebra_vrf.h \
 	zebra/zebra_vxlan.h \
 	zebra/zebra_vxlan_private.h \
@@ -117,6 +116,7 @@ noinst_HEADERS += \
 	zebra/zebra_netns_notify.h \
 	zebra/table_manager.h \
 	zebra/zapi_msg.h \
+	zebra/zebra_errors.h \
 	# end
 
 zebra_zebra_irdp_la_SOURCES = \
@@ -127,7 +127,7 @@ zebra_zebra_irdp_la_SOURCES = \
 zebra_zebra_irdp_la_LDFLAGS = -avoid-version -module -shared -export-dynamic
 
 zebra_zebra_snmp_la_SOURCES = zebra/zebra_snmp.c
-zebra_zebra_snmp_la_CFLAGS = $(WERROR) $(SNMP_CFLAGS)
+zebra_zebra_snmp_la_CFLAGS = $(WERROR) $(SNMP_CFLAGS) -std=gnu99
 zebra_zebra_snmp_la_LDFLAGS = -avoid-version -module -shared -export-dynamic
 zebra_zebra_snmp_la_LIBADD = lib/libfrrsnmp.la
 
@@ -141,13 +141,3 @@ if DEV_BUILD
 zebra_zebra_fpm_la_SOURCES += zebra/zebra_fpm_dt.c
 endif
 endif
-
-EXTRA_DIST += \
-	zebra/GNOME-SMI \
-	zebra/GNOME-PRODUCT-ZEBRA-MIB \
-	# end
-
-# -- unmaintained --
-# noinst_PROGRAMS += zebra/client
-# zebra_client_SOURCES = zebra/client_main.c
-# zebra_client_LDADD = lib/libfrr.la

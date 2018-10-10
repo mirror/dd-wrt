@@ -54,11 +54,13 @@
 #include "bgpd/bgp_regex.h"
 #include "bgpd/bgp_clist.h"
 #include "bgpd/bgp_debug.h"
+#include "bgpd/bgp_errors.h"
 #include "bgpd/bgp_filter.h"
 #include "bgpd/bgp_zebra.h"
 #include "bgpd/bgp_packet.h"
 #include "bgpd/bgp_keepalives.h"
 #include "bgpd/bgp_network.h"
+#include "bgpd/bgp_errors.h"
 
 #ifdef ENABLE_BGP_VNC
 #include "bgpd/rfapi/rfapi_backend.h"
@@ -68,11 +70,13 @@
 static const struct option longopts[] = {
 	{"bgp_port", required_argument, NULL, 'p'},
 	{"listenon", required_argument, NULL, 'l'},
+#if CONFDATE > 20190521
+	CPP_NOTICE("-r / --retain has reached deprecation EOL, remove")
+#endif
 	{"retain", no_argument, NULL, 'r'},
 	{"no_kernel", no_argument, NULL, 'n'},
 	{"skip_runas", no_argument, NULL, 'S'},
 	{"ecmp", required_argument, NULL, 'e'},
-	{"int_num", required_argument, NULL, 'I'},
 	{0}};
 
 /* signal definitions */
@@ -101,9 +105,6 @@ static struct quagga_signal_t bgp_signals[] = {
 		.handler = &sigint,
 	},
 };
-
-/* Route retain mode flag. */
-static int retain_mode = 0;
 
 /* privileges */
 static zebra_capabilities_t _caps_p[] = {ZCAP_BIND, ZCAP_NET_RAW,
@@ -144,9 +145,10 @@ void sighup(void)
 __attribute__((__noreturn__)) void sigint(void)
 {
 	zlog_notice("Terminating on signal");
+	assert(bm->terminating == false);
+	bm->terminating = true;	/* global flag that shutting down */
 
-	if (!retain_mode)
-		bgp_terminate();
+	bgp_terminate();
 
 	bgp_exit(0);
 
@@ -168,7 +170,7 @@ void sigusr1(void)
 */
 static __attribute__((__noreturn__)) void bgp_exit(int status)
 {
-	struct bgp *bgp;
+	struct bgp *bgp, *bgp_default;
 	struct listnode *node, *nnode;
 
 	/* it only makes sense for this to be called on a clean exit */
@@ -180,9 +182,16 @@ static __attribute__((__noreturn__)) void bgp_exit(int status)
 
 	bgp_close();
 
+	bgp_default = bgp_get_default();
+
 	/* reverse bgp_master_init */
-	for (ALL_LIST_ELEMENTS(bm->bgp, node, nnode, bgp))
+	for (ALL_LIST_ELEMENTS(bm->bgp, node, nnode, bgp)) {
+		if (bgp_default == bgp)
+			continue;
 		bgp_delete(bgp);
+	}
+	if (bgp_default)
+		bgp_delete(bgp_default);
 
 	/* reverse bgp_dump_init */
 	bgp_dump_finish();
@@ -268,6 +277,14 @@ static int bgp_vrf_enable(struct vrf *vrf)
 		bgp_instance_up(bgp);
 		vpn_leak_zebra_vrf_label_update(bgp, AFI_IP);
 		vpn_leak_zebra_vrf_label_update(bgp, AFI_IP6);
+		vpn_leak_postchange(BGP_VPN_POLICY_DIR_TOVPN, AFI_IP,
+				    bgp_get_default(), bgp);
+		vpn_leak_postchange(BGP_VPN_POLICY_DIR_FROMVPN, AFI_IP,
+				    bgp_get_default(), bgp);
+		vpn_leak_postchange(BGP_VPN_POLICY_DIR_TOVPN, AFI_IP6,
+				    bgp_get_default(), bgp);
+		vpn_leak_postchange(BGP_VPN_POLICY_DIR_FROMVPN, AFI_IP6,
+				    bgp_get_default(), bgp);
 	}
 
 	return 0;
@@ -289,6 +306,14 @@ static int bgp_vrf_disable(struct vrf *vrf)
 
 		vpn_leak_zebra_vrf_label_withdraw(bgp, AFI_IP);
 		vpn_leak_zebra_vrf_label_withdraw(bgp, AFI_IP6);
+		vpn_leak_prechange(BGP_VPN_POLICY_DIR_TOVPN, AFI_IP,
+				   bgp_get_default(), bgp);
+		vpn_leak_prechange(BGP_VPN_POLICY_DIR_FROMVPN, AFI_IP,
+				   bgp_get_default(), bgp);
+		vpn_leak_prechange(BGP_VPN_POLICY_DIR_TOVPN, AFI_IP6,
+				   bgp_get_default(), bgp);
+		vpn_leak_prechange(BGP_VPN_POLICY_DIR_FROMVPN, AFI_IP6,
+				   bgp_get_default(), bgp);
 
 		old_vrf_id = bgp->vrf_id;
 		bgp_handle_socket(bgp, vrf, VRF_UNKNOWN, false);
@@ -323,6 +348,11 @@ FRR_DAEMON_INFO(bgpd, BGP, .vty_port = BGP_VTY_PORT,
 
 		.privs = &bgpd_privs, )
 
+#if CONFDATE > 20190521
+CPP_NOTICE("-r / --retain has reached deprecation EOL, remove")
+#endif
+#define DEPRECATED_OPTIONS "r"
+
 /* Main routine of bgpd. Treatment of argument and start bgp finite
    state machine is handled at here. */
 int main(int argc, char **argv)
@@ -334,22 +364,26 @@ int main(int argc, char **argv)
 	char *bgp_address = NULL;
 	int no_fib_flag = 0;
 	int skip_runas = 0;
-	int instance = 0;
 
 	frr_preinit(&bgpd_di, argc, argv);
 	frr_opt_add(
-		"p:l:rSne:I:", longopts,
+		"p:l:Sne:" DEPRECATED_OPTIONS, longopts,
 		"  -p, --bgp_port     Set BGP listen port number (0 means do not listen).\n"
 		"  -l, --listenon     Listen on specified address (implies -n)\n"
-		"  -r, --retain       When program terminates, retain added route by bgpd.\n"
 		"  -n, --no_kernel    Do not install route to kernel.\n"
 		"  -S, --skip_runas   Skip capabilities checks, and changing user and group IDs.\n"
-		"  -e, --ecmp         Specify ECMP to use.\n"
-		"  -I, --int_num      Set instance number (label-manager)\n");
+		"  -e, --ecmp         Specify ECMP to use.\n");
 
 	/* Command line argument treatment. */
 	while (1) {
 		opt = frr_getopt(argc, argv, 0);
+
+		if (opt && opt < 128 && strchr(DEPRECATED_OPTIONS, opt)) {
+			fprintf(stderr,
+				"The -%c option no longer exists.\nPlease refer to the manual.\n",
+				opt);
+			continue;
+		}
 
 		if (opt == EOF)
 			break;
@@ -368,14 +402,12 @@ int main(int argc, char **argv)
 			multipath_num = atoi(optarg);
 			if (multipath_num > MULTIPATH_NUM
 			    || multipath_num <= 0) {
-				zlog_err(
+				flog_err(
+					BGP_ERR_MULTIPATH,
 					"Multipath Number specified must be less than %d and greater than 0",
 					MULTIPATH_NUM);
 				return 1;
 			}
-			break;
-		case 'r':
-			retain_mode = 1;
 			break;
 		case 'l':
 			bgp_address = optarg;
@@ -386,12 +418,6 @@ int main(int argc, char **argv)
 			break;
 		case 'S':
 			skip_runas = 1;
-			break;
-		case 'I':
-			instance = atoi(optarg);
-			if (instance > (unsigned short)-1)
-				zlog_err("Instance %i out of range (0..%u)",
-					 instance, (unsigned short)-1);
 			break;
 		default:
 			frr_help_exit(1);
@@ -410,11 +436,12 @@ int main(int argc, char **argv)
 	if (no_fib_flag)
 		bgp_option_set(BGP_OPT_NO_FIB);
 
+	bgp_error_init();
 	/* Initializations. */
 	bgp_vrf_init();
 
 	/* BGP related initialization.  */
-	bgp_init((unsigned short)instance);
+	bgp_init();
 
 	snprintf(bgpd_di.startinfo, sizeof(bgpd_di.startinfo), ", bgp@%s:%d",
 		 (bm->address ? bm->address : "<all>"), bm->port);

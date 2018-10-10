@@ -33,6 +33,7 @@
 #include "bgpd/bgp_zebra.h"
 #include "bgpd/bgp_mplsvpn.h"
 #include "bgpd/bgp_flowspec_private.h"
+#include "bgpd/bgp_errors.h"
 
 DEFINE_MTYPE_STATIC(BGPD, PBR_MATCH_ENTRY, "PBR match entry")
 DEFINE_MTYPE_STATIC(BGPD, PBR_MATCH, "PBR match")
@@ -231,6 +232,8 @@ static void bgp_pbr_policyroute_add_to_zebra_unit(struct bgp *bgp,
 						  struct nexthop *nh,
 						  float *rate);
 
+static void bgp_pbr_dump_entry(struct bgp_pbr_filter *bpf, bool add);
+
 static bool bgp_pbr_extract_enumerate_unary_opposite(
 				 uint8_t unary_operator,
 				 struct bgp_pbr_val_mask *and_valmask,
@@ -348,7 +351,7 @@ static bool bgp_pbr_extract_enumerate(struct bgp_pbr_match_val list[],
 				      void *valmask, uint8_t type_entry)
 {
 	bool ret;
-	uint8_t unary_operator_val = unary_operator;
+	uint8_t unary_operator_val;
 	bool double_check = false;
 
 	if ((unary_operator & OPERATOR_UNARY_OR) &&
@@ -650,8 +653,9 @@ static int bgp_pbr_build_and_validate_entry(struct prefix *p,
 			action_count++;
 			if (action_count > ACTIONS_MAX_NUM) {
 				if (BGP_DEBUG(pbr, PBR_ERROR))
-					zlog_err("%s: flowspec actions exceeds limit (max %u)",
-						 __func__, action_count);
+					flog_err(BGP_ERR_FLOWSPEC_PACKET,
+						  "%s: flowspec actions exceeds limit (max %u)",
+						  __func__, action_count);
 				break;
 			}
 			api_action = &api->actions[action_count - 1];
@@ -833,12 +837,12 @@ uint32_t bgp_pbr_match_hash_key(void *arg)
 
 	key = jhash_1word(pbm->vrf_id, 0x4312abde);
 	key = jhash_1word(pbm->flags, key);
-	key = jhash_1word(pbm->pkt_len_min, key);
-	key = jhash_1word(pbm->pkt_len_max, key);
-	key = jhash_1word(pbm->tcp_flags, key);
-	key = jhash_1word(pbm->tcp_mask_flags, key);
-	key = jhash_1word(pbm->dscp_value, key);
-	key = jhash_1word(pbm->fragment, key);
+	key = jhash(&pbm->pkt_len_min, 2, key);
+	key = jhash(&pbm->pkt_len_max, 2, key);
+	key = jhash(&pbm->tcp_flags, 2, key);
+	key = jhash(&pbm->tcp_mask_flags, 2, key);
+	key = jhash(&pbm->dscp_value, 1, key);
+	key = jhash(&pbm->fragment, 1, key);
 	return jhash_1word(pbm->type, key);
 }
 
@@ -1225,7 +1229,8 @@ static void bgp_pbr_flush_entry(struct bgp *bgp, struct bgp_pbr_action *bpa,
 			/* unlink bgp_info to bpme */
 			bgp_info = (struct bgp_info *)bpme->bgp_info;
 			extra = bgp_info_extra_get(bgp_info);
-			extra->bgp_fs_pbr = NULL;
+			if (extra->bgp_fs_pbr)
+				listnode_delete(extra->bgp_fs_pbr, bpme);
 			bpme->bgp_info = NULL;
 		}
 	}
@@ -1282,7 +1287,13 @@ static int bgp_pbr_get_remaining_entry(struct hash_backet *backet, void *arg)
 	bpm_temp = bpme->backpointer;
 	if (bpm_temp->vrf_id != bpm->vrf_id ||
 	    bpm_temp->type != bpm->type ||
-	    bpm_temp->flags != bpm->flags)
+	    bpm_temp->flags != bpm->flags ||
+	    bpm_temp->tcp_flags != bpm->tcp_flags ||
+	    bpm_temp->tcp_mask_flags != bpm->tcp_mask_flags ||
+	    bpm_temp->pkt_len_min != bpm->pkt_len_min ||
+	    bpm_temp->pkt_len_max != bpm->pkt_len_max ||
+	    bpm_temp->dscp_value != bpm->dscp_value ||
+	    bpm_temp->fragment != bpm->fragment)
 		return HASHWALK_CONTINUE;
 
 	/* look for remaining bpme */
@@ -1310,6 +1321,9 @@ static void bgp_pbr_policyroute_remove_from_zebra_unit(struct bgp *bgp,
 	src_port = bpf->src_port;
 	dst_port = bpf->dst_port;
 	pkt_len = bpf->pkt_len;
+
+	if (BGP_DEBUG(zebra, ZEBRA))
+		bgp_pbr_dump_entry(bpf, false);
 
 	/* as we don't know information from EC
 	 * look for bpm that have the bpm
@@ -1581,6 +1595,101 @@ static void bgp_pbr_policyroute_remove_from_zebra(struct bgp *bgp,
 		list_delete_all_node(bpof->fragment);
 }
 
+static void bgp_pbr_dump_entry(struct bgp_pbr_filter *bpf, bool add)
+{
+	struct bgp_pbr_range_port *src_port;
+	struct bgp_pbr_range_port *dst_port;
+	struct bgp_pbr_range_port *pkt_len;
+	char bufsrc[64], bufdst[64];
+	char buffer[64];
+	int remaining_len = 0;
+	char protocol_str[16];
+
+	if (!bpf)
+		return;
+	src_port = bpf->src_port;
+	dst_port = bpf->dst_port;
+	pkt_len = bpf->pkt_len;
+
+	protocol_str[0] = '\0';
+	if (bpf->tcp_flags && bpf->tcp_flags->mask)
+		bpf->protocol = IPPROTO_TCP;
+	if (bpf->protocol)
+		snprintf(protocol_str, sizeof(protocol_str),
+			 "proto %d", bpf->protocol);
+	buffer[0] = '\0';
+	if (bpf->protocol == IPPROTO_ICMP && src_port && dst_port)
+		remaining_len += snprintf(buffer, sizeof(buffer),
+					  "type %d, code %d",
+					  src_port->min_port,
+					  dst_port->min_port);
+	else if (bpf->protocol == IPPROTO_UDP ||
+		 bpf->protocol == IPPROTO_TCP) {
+
+		if (src_port && src_port->min_port)
+			remaining_len += snprintf(buffer,
+						  sizeof(buffer),
+						  "from [%u:%u]",
+						  src_port->min_port,
+						  src_port->max_port ?
+						  src_port->max_port :
+						  src_port->min_port);
+		if (dst_port && dst_port->min_port)
+			remaining_len += snprintf(buffer +
+						  remaining_len,
+						  sizeof(buffer)
+						  - remaining_len,
+						  "to [%u:%u]",
+						  dst_port->min_port,
+						  dst_port->max_port ?
+						  dst_port->max_port :
+						  dst_port->min_port);
+	}
+	if (pkt_len && (pkt_len->min_port || pkt_len->max_port)) {
+		remaining_len += snprintf(buffer + remaining_len,
+					  sizeof(buffer)
+					  - remaining_len,
+					  " len [%u:%u]",
+					  pkt_len->min_port,
+					  pkt_len->max_port ?
+					  pkt_len->max_port :
+					  pkt_len->min_port);
+	} else if (bpf->pkt_len_val) {
+		remaining_len += snprintf(buffer + remaining_len,
+					  sizeof(buffer)
+					  - remaining_len,
+					  " %s len %u",
+					  bpf->pkt_len_val->mask
+					  ? "!" : "",
+					  bpf->pkt_len_val->val);
+	}
+	if (bpf->tcp_flags) {
+		remaining_len += snprintf(buffer + remaining_len,
+					  sizeof(buffer)
+					  - remaining_len,
+					  "tcpflags %x/%x",
+					  bpf->tcp_flags->val,
+					  bpf->tcp_flags->mask);
+	}
+	if (bpf->dscp) {
+		snprintf(buffer + remaining_len,
+			 sizeof(buffer)
+			 - remaining_len,
+			 "%s dscp %d",
+			 bpf->dscp->mask
+			 ? "!" : "",
+			 bpf->dscp->val);
+	}
+	zlog_debug("BGP: %s FS PBR from %s to %s, %s %s",
+		  add ? "adding" : "removing",
+		  bpf->src == NULL ? "<all>" :
+		  prefix2str(bpf->src, bufsrc, sizeof(bufsrc)),
+		  bpf->dst == NULL ? "<all>" :
+		  prefix2str(bpf->dst, bufdst, sizeof(bufdst)),
+		  protocol_str, buffer);
+
+}
+
 static void bgp_pbr_policyroute_add_to_zebra_unit(struct bgp *bgp,
 				     struct bgp_info *binfo,
 				     struct bgp_pbr_filter *bpf,
@@ -1597,6 +1706,7 @@ static void bgp_pbr_policyroute_add_to_zebra_unit(struct bgp *bgp,
 	struct bgp_pbr_range_port *src_port;
 	struct bgp_pbr_range_port *dst_port;
 	struct bgp_pbr_range_port *pkt_len;
+	bool bpme_found = false;
 
 	if (!bpf)
 		return;
@@ -1604,87 +1714,9 @@ static void bgp_pbr_policyroute_add_to_zebra_unit(struct bgp *bgp,
 	dst_port = bpf->dst_port;
 	pkt_len = bpf->pkt_len;
 
-	if (BGP_DEBUG(zebra, ZEBRA)) {
-		char bufsrc[64], bufdst[64];
-		char buffer[64];
-		int remaining_len = 0;
-		char protocol_str[16];
+	if (BGP_DEBUG(zebra, ZEBRA))
+		bgp_pbr_dump_entry(bpf, true);
 
-		protocol_str[0] = '\0';
-		if (bpf->tcp_flags && bpf->tcp_flags->mask)
-			bpf->protocol = IPPROTO_TCP;
-		if (bpf->protocol)
-			snprintf(protocol_str, sizeof(protocol_str),
-				 "proto %d", bpf->protocol);
-		buffer[0] = '\0';
-		if (bpf->protocol == IPPROTO_ICMP && src_port && dst_port)
-			remaining_len += snprintf(buffer, sizeof(buffer),
-						  "type %d, code %d",
-				 src_port->min_port, dst_port->min_port);
-		else if (bpf->protocol == IPPROTO_UDP ||
-			 bpf->protocol == IPPROTO_TCP) {
-
-			if (src_port && src_port->min_port)
-				remaining_len += snprintf(buffer,
-							  sizeof(buffer),
-							  "from [%u:%u]",
-							  src_port->min_port,
-							  src_port->max_port ?
-							  src_port->max_port :
-							  src_port->min_port);
-			if (dst_port && dst_port->min_port)
-				remaining_len += snprintf(buffer +
-							  remaining_len,
-							  sizeof(buffer)
-							  - remaining_len,
-							  "to [%u:%u]",
-							  dst_port->min_port,
-							  dst_port->max_port ?
-							  dst_port->max_port :
-							  dst_port->min_port);
-		}
-		if (pkt_len && (pkt_len->min_port || pkt_len->max_port)) {
-			remaining_len += snprintf(buffer + remaining_len,
-						  sizeof(buffer)
-						  - remaining_len,
-						  " len [%u:%u]",
-						  pkt_len->min_port,
-						  pkt_len->max_port ?
-						  pkt_len->max_port :
-						  pkt_len->min_port);
-		} else if (bpf->pkt_len_val) {
-			remaining_len += snprintf(buffer + remaining_len,
-						  sizeof(buffer)
-						  - remaining_len,
-						  " %s len %u",
-						  bpf->pkt_len_val->mask
-						  ? "!" : "",
-						  bpf->pkt_len_val->val);
-		}
-		if (bpf->tcp_flags) {
-			remaining_len += snprintf(buffer + remaining_len,
-						  sizeof(buffer)
-						  - remaining_len,
-						  "tcpflags %x/%x",
-						  bpf->tcp_flags->val,
-						  bpf->tcp_flags->mask);
-		}
-		if (bpf->dscp) {
-			snprintf(buffer + remaining_len,
-				 sizeof(buffer)
-				 - remaining_len,
-				 "%s dscp %d",
-				 bpf->dscp->mask
-				 ? "!" : "",
-				 bpf->dscp->val);
-		}
-		zlog_info("BGP: adding FS PBR from %s to %s, %s %s",
-			  bpf->src == NULL ? "<all>" :
-			  prefix2str(bpf->src, bufsrc, sizeof(bufsrc)),
-			  bpf->dst == NULL ? "<all>" :
-			  prefix2str(bpf->dst, bufdst, sizeof(bufdst)),
-			  protocol_str, buffer);
-	}
 	/* look for bpa first */
 	memset(&temp3, 0, sizeof(temp3));
 	if (rate)
@@ -1775,7 +1807,7 @@ static void bgp_pbr_policyroute_add_to_zebra_unit(struct bgp *bgp,
 		       bgp_pbr_match_alloc_intern);
 
 	/* new, then self allocate ipset_name and unique */
-	if (bpm && bpm->unique == 0) {
+	if (bpm->unique == 0) {
 		bpm->unique = ++bgp_pbr_match_counter_unique;
 		/* 0 value is forbidden */
 		sprintf(bpm->ipset_name, "match%p", bpm);
@@ -1806,10 +1838,9 @@ static void bgp_pbr_policyroute_add_to_zebra_unit(struct bgp *bgp,
 	temp2.src_port_max = src_port ? src_port->max_port : 0;
 	temp2.dst_port_max = dst_port ? dst_port->max_port : 0;
 	temp2.proto = bpf->protocol;
-	if (bpm)
-		bpme = hash_get(bpm->entry_hash, &temp2,
-				bgp_pbr_match_entry_alloc_intern);
-	if (bpme && bpme->unique == 0) {
+	bpme = hash_get(bpm->entry_hash, &temp2,
+			bgp_pbr_match_entry_alloc_intern);
+	if (bpme->unique == 0) {
 		bpme->unique = ++bgp_pbr_match_entry_counter_unique;
 		/* 0 value is forbidden */
 		bpme->backpointer = bpm;
@@ -1817,8 +1848,21 @@ static void bgp_pbr_policyroute_add_to_zebra_unit(struct bgp *bgp,
 		bpme->install_in_progress = false;
 		/* link bgp info to bpme */
 		bpme->bgp_info = (void *)binfo;
-	}
+	} else
+		bpme_found = true;
 
+	/* already installed */
+	if (bpme_found) {
+		struct bgp_info_extra *extra = bgp_info_extra_get(binfo);
+
+		if (extra && extra->bgp_fs_pbr &&
+		    listnode_lookup(extra->bgp_fs_pbr, bpme)) {
+			if (BGP_DEBUG(pbr, PBR_ERROR))
+				zlog_err("%s: entry %p/%p already installed in bgp pbr",
+					 __func__, binfo, bpme);
+			return;
+		}
+	}
 	/* BGP FS: append entry to zebra
 	 * - policies are not routing entries and as such
 	 * route replace semantics don't necessarily follow
@@ -2195,7 +2239,6 @@ void bgp_pbr_update_entry(struct bgp *bgp, struct prefix *p,
 			 bool nlri_update)
 {
 	struct bgp_pbr_entry_main api;
-	struct bgp_info_extra *extra = bgp_info_extra_get(info);
 
 	if (afi == AFI_IP6)
 		return; /* IPv6 not supported */
@@ -2208,22 +2251,17 @@ void bgp_pbr_update_entry(struct bgp *bgp, struct prefix *p,
 
 	if (!bgp_zebra_tm_chunk_obtained()) {
 		if (BGP_DEBUG(pbr, PBR_ERROR))
-			zlog_err("%s: table chunk not obtained yet",
-				 __func__);
-		return;
-	}
-	/* already installed */
-	if (nlri_update && extra->bgp_fs_pbr) {
-		if (BGP_DEBUG(pbr, PBR_ERROR))
-			zlog_err("%s: entry %p already installed in bgp pbr",
-				 __func__, info);
+			flog_err(BGP_ERR_TABLE_CHUNK,
+				  "%s: table chunk not obtained yet",
+				  __func__);
 		return;
 	}
 
 	if (bgp_pbr_build_and_validate_entry(p, info, &api) < 0) {
 		if (BGP_DEBUG(pbr, PBR_ERROR))
-			zlog_err("%s: cancel updating entry %p in bgp pbr",
-				 __func__, info);
+			flog_err(BGP_ERR_FLOWSPEC_INSTALLATION,
+				  "%s: cancel updating entry %p in bgp pbr",
+				  __func__, info);
 		return;
 	}
 	bgp_pbr_handle_entry(bgp, info, &api, nlri_update);

@@ -28,6 +28,7 @@
 #include "zebra/rib.h"
 #include "zebra/zserv.h"
 #include "zebra/zebra_pbr.h"
+#include "zebra/zebra_errors.h"
 
 /*
  * This is called to process inbound ZAPI messages.
@@ -35,17 +36,10 @@
  * client
  *    the client datastructure
  *
- * hdr
- *    the message header
- *
  * msg
- *    the message contents, without the header
- *
- * zvrf
- *    the vrf
+ *    the message
  */
-extern void zserv_handle_commands(struct zserv *client, struct zmsghdr *hdr,
-				  struct stream *msg, struct zebra_vrf *zvrf);
+extern void zserv_handle_commands(struct zserv *client, struct stream *msg);
 
 extern int zsend_vrf_add(struct zserv *zclient, struct zebra_vrf *zvrf);
 extern int zsend_vrf_delete(struct zserv *zclient, struct zebra_vrf *zvrf);
@@ -63,7 +57,8 @@ extern void nbr_connected_delete_ipv6(struct interface *ifp,
 extern int zsend_interface_update(int cmd, struct zserv *client,
 				  struct interface *ifp);
 extern int zsend_redistribute_route(int cmd, struct zserv *zclient,
-				    struct prefix *p, struct prefix *src_p,
+				    const struct prefix *p,
+				    const struct prefix *src_p,
 				    struct route_entry *re);
 extern int zsend_router_id_update(struct zserv *zclient, struct prefix *p,
 				  vrf_id_t vrf_id);
@@ -72,7 +67,8 @@ extern int zsend_interface_vrf_update(struct zserv *zclient,
 extern int zsend_interface_link_params(struct zserv *zclient,
 				       struct interface *ifp);
 extern int zsend_pw_update(struct zserv *client, struct zebra_pw *pw);
-extern int zsend_route_notify_owner(struct route_entry *re, struct prefix *p,
+extern int zsend_route_notify_owner(struct route_entry *re,
+				    const struct prefix *p,
 				    enum zapi_route_notify_owner note);
 
 extern void zsend_rule_notify_owner(struct zebra_pbr_rule *rule,

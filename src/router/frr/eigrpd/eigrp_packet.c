@@ -42,6 +42,7 @@
 #include "checksum.h"
 #include "md5.h"
 #include "sha256.h"
+#include "lib_errors.h"
 
 #include "eigrpd/eigrp_structs.h"
 #include "eigrpd/eigrpd.h"
@@ -51,10 +52,12 @@
 #include "eigrpd/eigrp_zebra.h"
 #include "eigrpd/eigrp_vty.h"
 #include "eigrpd/eigrp_dump.h"
+#include "eigrpd/eigrp_macros.h"
 #include "eigrpd/eigrp_network.h"
 #include "eigrpd/eigrp_topology.h"
 #include "eigrpd/eigrp_fsm.h"
 #include "eigrpd/eigrp_memory.h"
+#include "eigrpd/eigrp_errors.h"
 
 /* Packet Type String. */
 const struct message eigrp_packet_type_str[] = {
@@ -345,12 +348,14 @@ int eigrp_write(struct thread *thread)
 	/* Get one packet from queue. */
 	ep = eigrp_fifo_next(ei->obuf);
 	if (!ep) {
-		zlog_err("%s: Interface %s no packet on queue?",
-			 __PRETTY_FUNCTION__, ei->ifp->name);
+		flog_err(LIB_ERR_DEVELOPMENT,
+			  "%s: Interface %s no packet on queue?",
+			  __PRETTY_FUNCTION__, ei->ifp->name);
 		goto out;
 	}
 	if (ep->length < EIGRP_HEADER_LEN) {
-		zlog_err("%s: Packet just has a header?", __PRETTY_FUNCTION__);
+		flog_err(EIGRP_ERR_PACKET,
+			  "%s: Packet just has a header?", __PRETTY_FUNCTION__);
 		eigrp_header_dump((struct eigrp_header *)ep->s->data);
 		eigrp_packet_delete(ei);
 		goto out;
@@ -565,7 +570,7 @@ int eigrp_read(struct thread *thread)
 	//    return -1;
 
 	/* If incoming interface is passive one, ignore it. */
-	if (ei && eigrp_if_is_passive(ei)) {
+	if (eigrp_if_is_passive(ei)) {
 		char buf[3][INET_ADDRSTRLEN];
 
 		if (IS_DEBUG_EIGRP_TRANSMIT(0, RECV))
@@ -724,12 +729,12 @@ static struct stream *eigrp_recv_packet(int fd, struct interface **ifp,
 		zlog_warn("stream_recvmsg failed: %s", safe_strerror(errno));
 		return NULL;
 	}
-	if ((unsigned int)ret < sizeof(iph)) /* ret must be > 0 now */
+	if ((unsigned int)ret < sizeof(*iph)) /* ret must be > 0 now */
 	{
 		zlog_warn(
 			"eigrp_recv_packet: discarding runt packet of length %d "
 			"(ip header size is %u)",
-			ret, (unsigned int)sizeof(iph));
+			ret, (unsigned int)sizeof(*iph));
 		return NULL;
 	}
 
@@ -943,8 +948,6 @@ void eigrp_packet_free(struct eigrp_packet *ep)
 	THREAD_OFF(ep->t_retrans_timer);
 
 	XFREE(MTYPE_EIGRP_PACKET, ep);
-
-	ep = NULL;
 }
 
 /* EIGRP Header verification. */
@@ -1088,7 +1091,7 @@ struct eigrp_packet *eigrp_packet_duplicate(struct eigrp_packet *old,
 {
 	struct eigrp_packet *new;
 
-	new = eigrp_packet_new(nbr->ei->ifp->mtu, nbr);
+	new = eigrp_packet_new(EIGRP_PACKET_MTU(nbr->ei->ifp->mtu), nbr);
 	new->length = old->length;
 	new->retrans_counter = old->retrans_counter;
 	new->dst = old->dst;
@@ -1211,8 +1214,9 @@ uint16_t eigrp_add_internalTLV_to_stream(struct stream *s,
 		stream_putw(s, length);
 		break;
 	default:
-		zlog_err("%s: Unexpected prefix length: %d",
-			 __PRETTY_FUNCTION__, pe->destination->prefixlen);
+		flog_err(LIB_ERR_DEVELOPMENT,
+			  "%s: Unexpected prefix length: %d",
+			  __PRETTY_FUNCTION__, pe->destination->prefixlen);
 		return 0;
 	}
 	stream_putl(s, 0x00000000);

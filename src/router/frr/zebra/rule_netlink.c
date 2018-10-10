@@ -142,27 +142,31 @@ static int netlink_rule_update(int cmd, struct zebra_pbr_rule *rule)
  * goes in the rule to denote relative ordering; it may or may not be the
  * same as the rule's user-defined sequence number.
  */
-void kernel_add_pbr_rule(struct zebra_pbr_rule *rule)
+enum dp_req_result kernel_add_pbr_rule(struct zebra_pbr_rule *rule)
 {
 	int ret = 0;
 
 	ret = netlink_rule_update(RTM_NEWRULE, rule);
 	kernel_pbr_rule_add_del_status(rule,
-				       (!ret) ? SOUTHBOUND_INSTALL_SUCCESS
-					      : SOUTHBOUND_INSTALL_FAILURE);
+				       (!ret) ? DP_INSTALL_SUCCESS
+					      : DP_INSTALL_FAILURE);
+
+	return DP_REQUEST_SUCCESS;
 }
 
 /*
  * Uninstall specified rule for a specific interface.
  */
-void kernel_del_pbr_rule(struct zebra_pbr_rule *rule)
+enum dp_req_result kernel_del_pbr_rule(struct zebra_pbr_rule *rule)
 {
 	int ret = 0;
 
 	ret = netlink_rule_update(RTM_DELRULE, rule);
 	kernel_pbr_rule_add_del_status(rule,
-				       (!ret) ? SOUTHBOUND_DELETE_SUCCESS
-					      : SOUTHBOUND_DELETE_FAILURE);
+				       (!ret) ? DP_DELETE_SUCCESS
+					      : DP_DELETE_FAILURE);
+
+	return DP_REQUEST_SUCCESS;
 }
 
 /*
@@ -172,8 +176,7 @@ void kernel_del_pbr_rule(struct zebra_pbr_rule *rule)
  * notification of interest. The expectation is that if this corresponds
  * to a PBR rule added by FRR, it will be readded.
  */
-int netlink_rule_change(struct sockaddr_nl *snl, struct nlmsghdr *h,
-			ns_id_t ns_id, int startup)
+int netlink_rule_change(struct nlmsghdr *h, ns_id_t ns_id, int startup)
 {
 	struct zebra_ns *zns;
 	struct fib_rule_hdr *frh;
@@ -193,12 +196,20 @@ int netlink_rule_change(struct sockaddr_nl *snl, struct nlmsghdr *h,
 		return 0;
 
 	len = h->nlmsg_len - NLMSG_LENGTH(sizeof(struct fib_rule_hdr));
-	if (len < 0)
+	if (len < 0) {
+		zlog_err("%s: Message received from netlink is of a broken size: %d %zu",
+			 __PRETTY_FUNCTION__, h->nlmsg_len,
+			 (size_t)NLMSG_LENGTH(sizeof(struct fib_rule_hdr)));
 		return -1;
+	}
 
 	frh = NLMSG_DATA(h);
-	if (frh->family != AF_INET && frh->family != AF_INET6)
+	if (frh->family != AF_INET && frh->family != AF_INET6) {
+		zlog_warn(
+			"Invalid address family: %u received from kernel rule change: %u",
+			frh->family, h->nlmsg_type);
 		return 0;
+	}
 	if (frh->action != FR_ACT_TO_TBL)
 		return 0;
 

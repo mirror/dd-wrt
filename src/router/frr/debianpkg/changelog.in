@@ -1,5 +1,15 @@
 frr (@VERSION@) RELEASED; urgency=medium
 
+  * Staticd: New daemon responsible for management of static routes
+  * ISISd: Implement dst-src routing as per draft-ietf-isis-ipv6-dst-src-routing
+  * BFDd: new daemon for BFD (Bidrectional Forwarding Detection). Responsible
+    for notifying link changes to make routing protocols converge faster.
+  * various bug fixes
+
+ -- FRRouting-Dev <dev@lists.frrouting.org>  Sun,  7 Oct 2018 08:10:00 -0700
+
+frr (5.0.1-0) RELEASED; urgency=medium
+
   * Support Automake 1.16.1
   * BGPd: Support for flowspec ICMP, DSCP, packet length, fragment and tcp flags
   * BGPd: fix rpki validation for ipv6

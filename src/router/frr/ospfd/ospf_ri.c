@@ -516,12 +516,13 @@ static void unset_sr_node_msd(void)
 	TLV_LEN(OspfRI.sr_info.msd) = htons(0);
 }
 
-static void unset_param(struct tlv_header *tlv)
+static void unset_param(void *tlv_buffer)
 {
+	struct tlv_header *tlv = (struct tlv_header *)tlv_buffer;
 
 	tlv->type = 0;
 	/* Fill the Value to 0 */
-	memset(TLV_DATA(tlv), 0, TLV_BODY_SIZE(tlv));
+	memset(TLV_DATA(tlv_buffer), 0, TLV_BODY_SIZE(tlv));
 	tlv->length = 0;
 
 	return;
@@ -774,18 +775,7 @@ static struct ospf_lsa *ospf_router_info_lsa_new()
 	lsah->length = htons(length);
 
 	/* Now, create an OSPF LSA instance. */
-	if ((new = ospf_lsa_new()) == NULL) {
-		zlog_warn("ospf_router_info_lsa_new: ospf_lsa_new() ?");
-		stream_free(s);
-		return NULL;
-	}
-	if ((new->data = ospf_lsa_data_new(length)) == NULL) {
-		zlog_warn("ospf_router_info_lsa_new: ospf_lsa_data_new() ?");
-		ospf_lsa_unlock(&new);
-		new = NULL;
-		stream_free(s);
-		return new;
-	}
+	new = ospf_lsa_new_and_data(length);
 
 	new->area = OspfRI.area; /* Area must be null if the Opaque type is AS
 				    scope, fulfill otherwise */
@@ -1571,7 +1561,7 @@ DEFUN (no_pce_address,
        "PCE address in IPv4 address format\n")
 {
 
-	unset_param(&OspfRI.pce_info.pce_address.header);
+	unset_param(&OspfRI.pce_info.pce_address);
 
 	/* Refresh RI LSA if already engaged */
 	if (CHECK_FLAG(OspfRI.flags, RIFLG_LSA_ENGAGED))
@@ -1621,7 +1611,7 @@ DEFUN (no_pce_path_scope,
        "32-bit Hexadecimal value\n")
 {
 
-	unset_param(&OspfRI.pce_info.pce_address.header);
+	unset_param(&OspfRI.pce_info.pce_address);
 
 	/* Refresh RI LSA if already engaged */
 	if (CHECK_FLAG(OspfRI.flags, RIFLG_LSA_ENGAGED))
@@ -1648,7 +1638,7 @@ DEFUN (pce_domain,
 	if (!ospf_ri_enabled(vty))
 		return CMD_WARNING_CONFIG_FAILED;
 
-	if (sscanf(argv[idx_number]->arg, "%d", &as) != 1) {
+	if (sscanf(argv[idx_number]->arg, "%" SCNu32, &as) != 1) {
 		vty_out(vty, "pce_domain: fscanf: %s\n", safe_strerror(errno));
 		return CMD_WARNING_CONFIG_FAILED;
 	}
@@ -1683,7 +1673,7 @@ DEFUN (no_pce_domain,
 	uint32_t as;
 	struct ospf_pce_info *pce = &OspfRI.pce_info;
 
-	if (sscanf(argv[idx_number]->arg, "%d", &as) != 1) {
+	if (sscanf(argv[idx_number]->arg, "%" SCNu32, &as) != 1) {
 		vty_out(vty, "no_pce_domain: fscanf: %s\n",
 			safe_strerror(errno));
 		return CMD_WARNING_CONFIG_FAILED;
@@ -1717,7 +1707,7 @@ DEFUN (pce_neigbhor,
 	if (!ospf_ri_enabled(vty))
 		return CMD_WARNING_CONFIG_FAILED;
 
-	if (sscanf(argv[idx_number]->arg, "%d", &as) != 1) {
+	if (sscanf(argv[idx_number]->arg, "%" SCNu32, &as) != 1) {
 		vty_out(vty, "pce_neighbor: fscanf: %s\n",
 			safe_strerror(errno));
 		return CMD_WARNING_CONFIG_FAILED;
@@ -1753,7 +1743,7 @@ DEFUN (no_pce_neighbor,
 	uint32_t as;
 	struct ospf_pce_info *pce = &OspfRI.pce_info;
 
-	if (sscanf(argv[idx_number]->arg, "%d", &as) != 1) {
+	if (sscanf(argv[idx_number]->arg, "%" SCNu32, &as) != 1) {
 		vty_out(vty, "no_pce_neighbor: fscanf: %s\n",
 			safe_strerror(errno));
 		return CMD_WARNING_CONFIG_FAILED;
@@ -1810,7 +1800,7 @@ DEFUN (no_pce_cap_flag,
        "Disable PCE capabilities\n")
 {
 
-	unset_param(&OspfRI.pce_info.pce_cap_flag.header);
+	unset_param(&OspfRI.pce_info.pce_cap_flag);
 
 	/* Refresh RI LSA if already engaged */
 	if (CHECK_FLAG(OspfRI.flags, RIFLG_LSA_ENGAGED))

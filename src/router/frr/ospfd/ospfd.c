@@ -38,6 +38,7 @@
 #include "bfd.h"
 #include "libfrr.h"
 #include "defaults.h"
+#include "lib_errors.h"
 
 #include "ospfd/ospfd.h"
 #include "ospfd/ospf_network.h"
@@ -51,10 +52,10 @@
 #include "ospfd/ospf_spf.h"
 #include "ospfd/ospf_packet.h"
 #include "ospfd/ospf_dump.h"
+#include "ospfd/ospf_route.h"
 #include "ospfd/ospf_zebra.h"
 #include "ospfd/ospf_abr.h"
 #include "ospfd/ospf_flood.h"
-#include "ospfd/ospf_route.h"
 #include "ospfd/ospf_ase.h"
 
 
@@ -243,13 +244,14 @@ static struct ospf *ospf_new(unsigned short instance, const char *name)
 			zlog_debug(
 				"%s: Create new ospf instance with vrf_name %s vrf_id %u",
 				__PRETTY_FUNCTION__, name, new->vrf_id);
-		if (vrf)
-			ospf_vrf_link(new, vrf);
 	} else {
 		new->vrf_id = VRF_DEFAULT;
 		vrf = vrf_lookup_by_id(VRF_DEFAULT);
-		ospf_vrf_link(new, vrf);
 	}
+
+	if (vrf)
+		ospf_vrf_link(new, vrf);
+
 	ospf_zebra_vrf_register(new);
 
 	new->abr_type = OSPF_ABR_DEFAULT;
@@ -560,9 +562,6 @@ void ospf_terminate(void)
 		ospf_finish(ospf);
 
 	/* Cleanup route maps */
-	route_map_add_hook(NULL);
-	route_map_delete_hook(NULL);
-	route_map_event_hook(NULL);
 	route_map_finish();
 
 	/* reverse prefix_list_init */
@@ -2089,25 +2088,17 @@ static int ospf_vrf_enable(struct vrf *vrf)
 				old_vrf_id);
 
 		if (old_vrf_id != ospf->vrf_id) {
-			if (ospfd_privs.change(ZPRIVS_RAISE)) {
-				zlog_err(
-					"ospf_sock_init: could not raise privs, %s",
-					safe_strerror(errno));
-			}
+			frr_elevate_privs(&ospfd_privs) {
+				/* stop zebra redist to us for old vrf */
+				zclient_send_dereg_requests(zclient,
+							    old_vrf_id);
 
-			/* stop zebra redist to us for old vrf */
-			zclient_send_dereg_requests(zclient, old_vrf_id);
+				ospf_set_redist_vrf_bitmaps(ospf);
 
-			ospf_set_redist_vrf_bitmaps(ospf);
+				/* start zebra redist to us for new vrf */
+				ospf_zebra_vrf_register(ospf);
 
-			/* start zebra redist to us for new vrf */
-			ospf_zebra_vrf_register(ospf);
-
-			ret = ospf_sock_init(ospf);
-			if (ospfd_privs.change(ZPRIVS_LOWER)) {
-				zlog_err(
-					"ospf_sock_init: could not lower privs, %s",
-					safe_strerror(errno));
+				ret = ospf_sock_init(ospf);
 			}
 			if (ret < 0 || ospf->fd <= 0)
 				return 0;

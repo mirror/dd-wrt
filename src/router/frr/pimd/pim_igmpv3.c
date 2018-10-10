@@ -21,6 +21,7 @@
 #include "log.h"
 #include "memory.h"
 #include "if.h"
+#include "lib_errors.h"
 
 #include "pimd.h"
 #include "pim_iface.h"
@@ -457,11 +458,6 @@ struct igmp_source *source_new(struct igmp_group *group,
 	}
 
 	src = XCALLOC(MTYPE_PIM_IGMP_GROUP_SOURCE, sizeof(*src));
-	if (!src) {
-		zlog_warn("%s %s: XCALLOC() failure", __FILE__,
-			  __PRETTY_FUNCTION__);
-		return 0; /* error, not found, could not create */
-	}
 
 	src->t_source_timer = NULL;
 	src->source_group = group; /* back pointer */
@@ -491,9 +487,6 @@ static struct igmp_source *add_source_by_addr(struct igmp_sock *igmp,
 	}
 
 	src = source_new(group, src_addr);
-	if (!src) {
-		return 0;
-	}
 
 	return src;
 }
@@ -584,10 +577,6 @@ static void isex_excl(struct igmp_group *group, int num_sources,
 			/* E.4: if not found, create source with timer=GMI:
 			 * (A-X-Y) */
 			source = source_new(group, *src_addr);
-			if (!source) {
-				/* ugh, internal malloc failure, skip source */
-				continue;
-			}
 			zassert(!source->t_source_timer); /* timer == 0 */
 			igmp_source_reset_gmi(group->group_igmp_sock, group,
 					      source);
@@ -642,10 +631,6 @@ static void isex_incl(struct igmp_group *group, int num_sources,
 			/* I.4: if not found, create source with timer=0 (B-A)
 			 */
 			source = source_new(group, *src_addr);
-			if (!source) {
-				/* ugh, internal malloc failure, skip source */
-				continue;
-			}
 			zassert(!source->t_source_timer); /* (B-A) timer=0 */
 		}
 
@@ -725,10 +710,6 @@ static void toin_incl(struct igmp_group *group, int num_sources,
 		} else {
 			/* If not found, create new source */
 			source = source_new(group, *src_addr);
-			if (!source) {
-				/* ugh, internal malloc failure, skip source */
-				continue;
-			}
 		}
 
 		/* (B)=GMI */
@@ -770,10 +751,6 @@ static void toin_excl(struct igmp_group *group, int num_sources,
 		} else {
 			/* If not found, create new source */
 			source = source_new(group, *src_addr);
-			if (!source) {
-				/* ugh, internal malloc failure, skip source */
-				continue;
-			}
 		}
 
 		/* (A)=GMI */
@@ -859,10 +836,6 @@ static void toex_incl(struct igmp_group *group, int num_sources,
 			/* If source not found, create source with timer=0:
 			 * (B-A)=0 */
 			source = source_new(group, *src_addr);
-			if (!source) {
-				/* ugh, internal malloc failure, skip source */
-				continue;
-			}
 			zassert(!source->t_source_timer); /* (B-A) timer=0 */
 		}
 
@@ -922,10 +895,6 @@ static void toex_excl(struct igmp_group *group, int num_sources,
 			 * (A-X-Y)=Group Timer */
 			long group_timer_msec;
 			source = source_new(group, *src_addr);
-			if (!source) {
-				/* ugh, internal malloc failure, skip source */
-				continue;
-			}
 
 			zassert(!source->t_source_timer); /* timer == 0 */
 			group_timer_msec = igmp_group_timer_remain_msec(group);
@@ -1436,10 +1405,6 @@ static void block_excl(struct igmp_group *group, int num_sources,
 			 * (A-X-Y)=Group Timer */
 			long group_timer_msec;
 			source = source_new(group, *src_addr);
-			if (!source) {
-				/* ugh, internal malloc failure, skip source */
-				continue;
-			}
 
 			zassert(!source->t_source_timer); /* timer == 0 */
 			group_timer_msec = igmp_group_timer_remain_msec(group);
@@ -1619,7 +1584,8 @@ void igmp_v3_send_query(struct igmp_group *group, int fd, const char *ifname,
 
 	msg_size = IGMP_V3_SOURCES_OFFSET + (num_sources << 2);
 	if (msg_size > query_buf_size) {
-		zlog_err(
+		flog_err(
+			LIB_ERR_DEVELOPMENT,
 			"%s %s: unable to send: msg_size=%zd larger than query_buf_size=%d",
 			__FILE__, __PRETTY_FUNCTION__, msg_size,
 			query_buf_size);
@@ -1899,6 +1865,9 @@ int igmp_v3_recv_report(struct igmp_sock *igmp, struct in_addr from,
 			from_str, ifp->name, recv_checksum, checksum);
 		return -1;
 	}
+
+	/* Collecting IGMP Rx stats */
+	igmp->rx_stats.report_v3++;
 
 	num_groups = ntohs(
 		*(uint16_t *)(igmp_msg + IGMP_V3_REPORT_NUMGROUPS_OFFSET));

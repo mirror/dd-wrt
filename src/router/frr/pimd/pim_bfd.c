@@ -51,10 +51,12 @@ void pim_bfd_write_config(struct vty *vty, struct interface *ifp)
 	if (!bfd_info)
 		return;
 
+#if HAVE_BFDD == 0
 	if (CHECK_FLAG(bfd_info->flags, BFD_FLAG_PARAM_CFG))
 		vty_out(vty, " ip pim bfd %d %d %d\n", bfd_info->detect_mult,
 			bfd_info->required_min_rx, bfd_info->desired_min_tx);
 	else
+#endif /* ! HAVE_BFDD */
 		vty_out(vty, " ip pim bfd\n");
 }
 
@@ -99,9 +101,9 @@ void pim_bfd_info_nbr_create(struct pim_interface *pim_ifp,
 /*
  * pim_bfd_info_free - Free BFD info structure
  */
-void pim_bfd_info_free(void **bfd_info)
+void pim_bfd_info_free(struct bfd_info **bfd_info)
 {
-	bfd_info_free((struct bfd_info **)bfd_info);
+	bfd_info_free(bfd_info);
 }
 
 static void pim_bfd_reg_dereg_nbr(struct pim_neighbor *nbr, int command)
@@ -151,7 +153,7 @@ int pim_bfd_reg_dereg_all_nbr(struct interface *ifp, int command)
 		if (command != ZEBRA_BFD_DEST_DEREGISTER)
 			pim_bfd_info_nbr_create(pim_ifp, neigh);
 		else
-			bfd_info_free((struct bfd_info **)&neigh->bfd_info);
+			pim_bfd_info_free((struct bfd_info **)&neigh->bfd_info);
 
 		pim_bfd_reg_dereg_nbr(neigh, command);
 	}
@@ -170,7 +172,7 @@ void pim_bfd_trigger_event(struct pim_interface *pim_ifp,
 		pim_bfd_info_nbr_create(pim_ifp, nbr);
 		pim_bfd_reg_dereg_nbr(nbr, ZEBRA_BFD_DEST_REGISTER);
 	} else {
-		pim_bfd_info_free((void *)&nbr->bfd_info);
+		pim_bfd_info_free(&nbr->bfd_info);
 		pim_bfd_reg_dereg_nbr(nbr, ZEBRA_BFD_DEST_DEREGISTER);
 	}
 }

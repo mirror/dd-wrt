@@ -80,11 +80,20 @@ extern void closezlog(void);
 #endif /* __GNUC__ */
 
 /* Handy zlog functions. */
+extern void zlog_err_id(uint32_t id, const char *format, ...)
+	PRINTF_ATTRIBUTE(2, 3);
 extern void zlog_err(const char *format, ...) PRINTF_ATTRIBUTE(1, 2);
 extern void zlog_warn(const char *format, ...) PRINTF_ATTRIBUTE(1, 2);
 extern void zlog_info(const char *format, ...) PRINTF_ATTRIBUTE(1, 2);
 extern void zlog_notice(const char *format, ...) PRINTF_ATTRIBUTE(1, 2);
 extern void zlog_debug(const char *format, ...) PRINTF_ATTRIBUTE(1, 2);
+
+/* For logs which have error codes associated with them */
+#define flog_err(ferr_id, format, ...)                                        \
+	zlog_err_id(ferr_id, format, ##__VA_ARGS__)
+#define flog_err_sys(ferr_id, format, ...)                                     \
+	flog_err(ferr_id, format, ##__VA_ARGS__)
+
 
 extern void zlog_thread_info(int log_level);
 

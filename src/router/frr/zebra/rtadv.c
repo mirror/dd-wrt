@@ -35,6 +35,7 @@
 #include "privs.h"
 #include "vrf.h"
 #include "ns.h"
+#include "lib_errors.h"
 
 #include "zebra/interface.h"
 #include "zebra/rtadv.h"
@@ -123,7 +124,7 @@ static int rtadv_recv_packet(struct zebra_ns *zns, int sock, uint8_t *buf,
 	if (ret < 0)
 		return ret;
 
-	for (cmsgptr = ZCMSG_FIRSTHDR(&msg); cmsgptr != NULL;
+	for (cmsgptr = CMSG_FIRSTHDR(&msg); cmsgptr != NULL;
 	     cmsgptr = CMSG_NXTHDR(&msg, cmsgptr)) {
 		/* I want interface index which this packet comes from. */
 		if (cmsgptr->cmsg_level == IPPROTO_IPV6
@@ -180,7 +181,7 @@ static void rtadv_send_packet(int sock, struct interface *ifp)
 		adata = calloc(1, CMSG_SPACE(sizeof(struct in6_pktinfo)));
 
 		if (adata == NULL) {
-			zlog_err(
+			zlog_warn(
 				"rtadv_send_packet: can't malloc control data");
 			exit(-1);
 		}
@@ -362,7 +363,7 @@ static void rtadv_send_packet(int sock, struct interface *ifp)
 	iov.iov_base = buf;
 	iov.iov_len = len;
 
-	cmsgptr = ZCMSG_FIRSTHDR(&msg);
+	cmsgptr = CMSG_FIRSTHDR(&msg);
 	cmsgptr->cmsg_len = CMSG_LEN(sizeof(struct in6_pktinfo));
 	cmsgptr->cmsg_level = IPPROTO_IPV6;
 	cmsgptr->cmsg_type = IPV6_PKTINFO;
@@ -373,9 +374,10 @@ static void rtadv_send_packet(int sock, struct interface *ifp)
 
 	ret = sendmsg(sock, &msg, 0);
 	if (ret < 0) {
-		zlog_err("%s(%u): Tx RA failed, socket %u error %d (%s)",
-			 ifp->name, ifp->ifindex, sock, errno,
-			 safe_strerror(errno));
+		flog_err_sys(LIB_ERR_SOCKET,
+			     "%s(%u): Tx RA failed, socket %u error %d (%s)",
+			     ifp->name, ifp->ifindex, sock, errno,
+			     safe_strerror(errno));
 	} else
 		zif->ra_sent++;
 }
@@ -518,7 +520,7 @@ static void rtadv_process_advert(uint8_t *msg, unsigned int len,
 
 	/* Create entry for neighbor if not known. */
 	p.family = AF_INET6;
-	IPV6_ADDR_COPY(&p.u.prefix, &addr->sin6_addr);
+	IPV6_ADDR_COPY(&p.u.prefix6, &addr->sin6_addr);
 	p.prefixlen = IPV6_MAX_PREFIXLEN;
 
 	if (!nbr_connected_check(ifp, &p))
@@ -624,19 +626,15 @@ static int rtadv_read(struct thread *thread)
 
 static int rtadv_make_socket(ns_id_t ns_id)
 {
-	int sock;
+	int sock = -1;
 	int ret = 0;
 	struct icmp6_filter filter;
 
-	if (zserv_privs.change(ZPRIVS_RAISE))
-		zlog_err("rtadv_make_socket: could not raise privs, %s",
-			 safe_strerror(errno));
+	frr_elevate_privs(&zserv_privs) {
 
-	sock = ns_socket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6, ns_id);
+		sock = ns_socket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6, ns_id);
 
-	if (zserv_privs.change(ZPRIVS_LOWER))
-		zlog_err("rtadv_make_socket: could not lower privs, %s",
-			 safe_strerror(errno));
+	}
 
 	if (sock < 0) {
 		return -1;

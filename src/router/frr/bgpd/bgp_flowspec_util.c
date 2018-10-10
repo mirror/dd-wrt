@@ -21,11 +21,13 @@
 #include "zebra.h"
 
 #include "prefix.h"
+#include "lib_errors.h"
 
 #include "bgp_table.h"
 #include "bgp_flowspec_util.h"
 #include "bgp_flowspec_private.h"
 #include "bgp_pbr.h"
+#include "bgp_errors.h"
 
 static void hex2bin(uint8_t *hex, int *bin)
 {
@@ -66,16 +68,17 @@ static int bgp_flowspec_call_non_opaque_decode(uint8_t *nlri_content, int len,
 			     len,
 			     mval, error);
 	if (*error < 0)
-		zlog_err("%s: flowspec_op_decode error %d",
-			 __func__, *error);
+		flog_err(BGP_ERR_FLOWSPEC_PACKET,
+			  "%s: flowspec_op_decode error %d",
+			  __func__, *error);
 	else
 		*match_num = *error;
 	return ret;
 }
 
-static bool bgp_flowspec_contains_prefix(struct prefix *pfs,
-					 struct prefix *input,
-					 int prefix_check)
+bool bgp_flowspec_contains_prefix(struct prefix *pfs,
+				 struct prefix *input,
+				 int prefix_check)
 {
 	uint32_t offset = 0;
 	int type;
@@ -444,8 +447,9 @@ int bgp_flowspec_match_rules_fill(uint8_t *nlri_content, int len,
 					len - offset,
 					prefix, &error);
 			if (error < 0)
-				zlog_err("%s: flowspec_ip_address error %d",
-					 __func__, error);
+				flog_err(BGP_ERR_FLOWSPEC_PACKET,
+					  "%s: flowspec_ip_address error %d",
+					  __func__, error);
 			else
 				bpem->match_bitmask |= bitmask;
 			offset += ret;
@@ -538,8 +542,9 @@ int bgp_flowspec_match_rules_fill(uint8_t *nlri_content, int len,
 					len - offset,
 					&bpem->tcpflags, &error);
 			if (error < 0)
-				zlog_err("%s: flowspec_tcpflags_decode error %d",
-					 __func__, error);
+				flog_err(BGP_ERR_FLOWSPEC_PACKET,
+					  "%s: flowspec_tcpflags_decode error %d",
+					  __func__, error);
 			else
 				bpem->match_tcpflags_num = error;
 			/* contains the number of slots used */
@@ -552,36 +557,17 @@ int bgp_flowspec_match_rules_fill(uint8_t *nlri_content, int len,
 					len - offset, &bpem->fragment,
 					&error);
 			if (error < 0)
-				zlog_err("%s: flowspec_fragment_type_decode error %d",
-					 __func__, error);
+				flog_err(BGP_ERR_FLOWSPEC_PACKET,
+					  "%s: flowspec_fragment_type_decode error %d",
+					  __func__, error);
 			else
 				bpem->match_fragment_num = error;
 			offset += ret;
 			break;
 		default:
-			zlog_err("%s: unknown type %d\n", __func__, type);
+			flog_err(LIB_ERR_DEVELOPMENT, "%s: unknown type %d\n",
+				  __func__, type);
 		}
 	}
 	return error;
-}
-
-
-struct bgp_node *bgp_flowspec_get_match_per_ip(afi_t afi,
-					       struct bgp_table *rib,
-					       struct prefix *match,
-					       int prefix_check)
-{
-	struct bgp_node *rn;
-	struct prefix *prefix;
-
-	for (rn = bgp_table_top(rib); rn; rn = bgp_route_next(rn)) {
-		prefix = &rn->p;
-
-		if (prefix->family != AF_FLOWSPEC)
-			continue;
-
-		if (bgp_flowspec_contains_prefix(prefix, match, prefix_check))
-			return rn;
-	}
-	return NULL;
 }

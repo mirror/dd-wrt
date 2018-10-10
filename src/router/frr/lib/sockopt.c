@@ -27,6 +27,7 @@
 #include "log.h"
 #include "sockopt.h"
 #include "sockunion.h"
+#include "lib_errors.h"
 
 void setsockopt_so_recvbuf(int sock, int size)
 {
@@ -61,8 +62,9 @@ int getsockopt_so_sendbuf(const int sock)
 	int ret = getsockopt(sock, SOL_SOCKET, SO_SNDBUF, (char *)&optval,
 			     &optlen);
 	if (ret < 0) {
-		zlog_err("fd %d: can't getsockopt SO_SNDBUF: %d (%s)", sock,
-			 errno, safe_strerror(errno));
+		flog_err_sys(LIB_ERR_SYSTEM_CALL,
+			     "fd %d: can't getsockopt SO_SNDBUF: %d (%s)", sock,
+			     errno, safe_strerror(errno));
 		return ret;
 	}
 	return optval;
@@ -73,9 +75,9 @@ static void *getsockopt_cmsg_data(struct msghdr *msgh, int level, int type)
 	struct cmsghdr *cmsg;
 	void *ptr = NULL;
 
-	for (cmsg = ZCMSG_FIRSTHDR(msgh); cmsg != NULL;
+	for (cmsg = CMSG_FIRSTHDR(msgh); cmsg != NULL;
 	     cmsg = CMSG_NXTHDR(msgh, cmsg))
-		if (cmsg->cmsg_level == level && cmsg->cmsg_type)
+		if (cmsg->cmsg_level == level && cmsg->cmsg_type == type)
 			return (ptr = CMSG_DATA(cmsg));
 
 	return NULL;
@@ -457,8 +459,7 @@ int setsockopt_ifindex(int af, int sock, ifindex_t val)
  */
 static ifindex_t getsockopt_ipv4_ifindex(struct msghdr *msgh)
 {
-	/* XXX: initialize to zero?  (Always overwritten, so just cosmetic.) */
-	ifindex_t ifindex = -1;
+	ifindex_t ifindex;
 
 #if defined(IP_PKTINFO)
 	/* Linux pktinfo based ifindex retrieval */
@@ -466,7 +467,11 @@ static ifindex_t getsockopt_ipv4_ifindex(struct msghdr *msgh)
 
 	pktinfo = (struct in_pktinfo *)getsockopt_cmsg_data(msgh, IPPROTO_IP,
 							    IP_PKTINFO);
-	/* XXX Can pktinfo be NULL?  Clean up post 0.98. */
+
+	/* getsockopt_ifindex() will forward this, being 0 "not found" */
+	if (pktinfo == NULL)
+		return 0;
+
 	ifindex = pktinfo->ipi_ifindex;
 
 #elif defined(IP_RECVIF)
@@ -575,31 +580,7 @@ int sockopt_tcp_rtt(int sock)
 
 int sockopt_tcp_signature(int sock, union sockunion *su, const char *password)
 {
-#if defined(HAVE_TCP_MD5_LINUX24) && defined(GNU_LINUX)
-/* Support for the old Linux 2.4 TCP-MD5 patch, taken from Hasso Tepper's
- * version of the Quagga patch (based on work by Rick Payne, and Bruce
- * Simpson)
- */
-#define TCP_MD5_AUTH 13
-#define TCP_MD5_AUTH_ADD 1
-#define TCP_MD5_AUTH_DEL 2
-	struct tcp_rfc2385_cmd {
-		uint8_t command;  /* Command - Add/Delete */
-		uint32_t address; /* IPV4 address associated */
-		uint8_t keylen;   /* MD5 Key len (do NOT assume 0 terminated
-				      ascii) */
-		void *key;	 /* MD5 Key */
-	} cmd;
-	struct in_addr *addr = &su->sin.sin_addr;
-
-	cmd.command = (password != NULL ? TCP_MD5_AUTH_ADD : TCP_MD5_AUTH_DEL);
-	cmd.address = addr->s_addr;
-	cmd.keylen = (password != NULL ? strlen(password) : 0);
-	cmd.key = password;
-
-	return setsockopt(sock, IPPROTO_TCP, TCP_MD5_AUTH, &cmd, sizeof cmd);
-
-#elif HAVE_DECL_TCP_MD5SIG
+#if HAVE_DECL_TCP_MD5SIG
 	int ret;
 #ifndef GNU_LINUX
 	/*
@@ -667,8 +648,10 @@ int sockopt_tcp_signature(int sock, union sockunion *su, const char *password)
 		if (ENOENT == errno)
 			ret = 0;
 		else
-			zlog_err("sockopt_tcp_signature: setsockopt(%d): %s",
-				 sock, safe_strerror(errno));
+			flog_err_sys(
+				LIB_ERR_SYSTEM_CALL,
+				"sockopt_tcp_signature: setsockopt(%d): %s",
+				sock, safe_strerror(errno));
 	}
 	return ret;
 #else  /* HAVE_TCP_MD5SIG */

@@ -113,7 +113,7 @@ static void zebra_redistribute(struct zserv *client, int type,
 
 	for (rn = route_top(table); rn; rn = srcdest_route_next(rn))
 		RNODE_FOREACH_RE (rn, newre) {
-			struct prefix *dst_p, *src_p;
+			const struct prefix *dst_p, *src_p;
 			char buf[PREFIX_STRLEN];
 
 			srcdest_rnode_prefixes(rn, &dst_p, &src_p);
@@ -147,7 +147,7 @@ static void zebra_redistribute(struct zserv *client, int type,
 
 /* Either advertise a route for redistribution to registered clients or */
 /* withdraw redistribution if add cannot be done for client */
-void redistribute_update(struct prefix *p, struct prefix *src_p,
+void redistribute_update(const struct prefix *p, const struct prefix *src_p,
 			 struct route_entry *re, struct route_entry *prev_re)
 {
 	struct listnode *node, *nnode;
@@ -216,7 +216,7 @@ void redistribute_update(struct prefix *p, struct prefix *src_p,
 	}
 }
 
-void redistribute_delete(struct prefix *p, struct prefix *src_p,
+void redistribute_delete(const struct prefix *p, const struct prefix *src_p,
 			 struct route_entry *re)
 {
 	struct listnode *node, *nnode;
@@ -274,7 +274,7 @@ void zebra_redistribute_add(ZAPI_HANDLER_ARGS)
 			__func__, zebra_route_string(client->proto), afi,
 			zebra_route_string(type), zvrf_id(zvrf), instance);
 
-	if (afi == 0 || afi > AFI_MAX) {
+	if (afi == 0 || afi >= AFI_MAX) {
 		zlog_warn("%s: Specified afi %d does not exist",
 			  __PRETTY_FUNCTION__, afi);
 		return;
@@ -320,7 +320,7 @@ void zebra_redistribute_delete(ZAPI_HANDLER_ARGS)
 	STREAM_GETC(msg, type);
 	STREAM_GETW(msg, instance);
 
-	if (afi == 0 || afi > AFI_MAX) {
+	if (afi == 0 || afi >= AFI_MAX) {
 		zlog_warn("%s: Specified afi %d does not exist",
 			  __PRETTY_FUNCTION__, afi);
 		return;
@@ -597,7 +597,7 @@ int zebra_del_import_table_entry(struct route_node *rn, struct route_entry *re)
 
 	rib_delete(afi, SAFI_UNICAST, re->vrf_id, ZEBRA_ROUTE_TABLE, re->table,
 		   re->flags, &p, NULL, re->ng.nexthop,
-		   zebrad.rtm_table_default, re->metric, false, NULL);
+		   zebrad.rtm_table_default, re->metric, re->distance, false);
 
 	return 0;
 }
@@ -715,7 +715,7 @@ int zebra_import_table_config(struct vty *vty)
 	return write;
 }
 
-void zebra_import_table_rm_update()
+void zebra_import_table_rm_update(const char *rmap)
 {
 	afi_t afi;
 	int i;
@@ -730,9 +730,8 @@ void zebra_import_table_rm_update()
 				continue;
 
 			rmap_name = zebra_get_import_table_route_map(afi, i);
-			if (!rmap_name)
-				return;
-
+			if ((!rmap_name) || (strcmp(rmap_name, rmap) != 0))
+				continue;
 			table = zebra_vrf_other_route_table(afi, i,
 							    VRF_DEFAULT);
 			for (rn = route_top(table); rn; rn = route_next(rn)) {

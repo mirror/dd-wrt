@@ -34,6 +34,7 @@
 #include "bgpd/bgpd.h"
 #include "bgpd/bgp_attr.h"
 #include "bgpd/bgp_debug.h"
+#include "bgpd/bgp_errors.h"
 #include "bgpd/bgp_fsm.h"
 #include "bgpd/bgp_packet.h"
 #include "bgpd/bgp_open.h"
@@ -80,8 +81,9 @@ void bgp_capability_vty_out(struct vty *vty, struct peer *peer,
 			afi_t afi;
 			safi_t safi;
 
-			bgp_map_afi_safi_iana2int(ntohs(mpc.afi), mpc.safi,
-						  &afi, &safi);
+			(void)bgp_map_afi_safi_iana2int(ntohs(mpc.afi),
+							mpc.safi, &afi, &safi);
+
 			if (use_json) {
 				switch (afi) {
 				case AFI_IP:
@@ -519,8 +521,9 @@ static as_t bgp_capability_as4(struct peer *peer, struct capability_header *hdr)
 	SET_FLAG(peer->cap, PEER_CAP_AS4_RCV);
 
 	if (hdr->length != CAPABILITY_CODE_AS4_LEN) {
-		zlog_err("%s AS4 capability has incorrect data length %d",
-			 peer->host, hdr->length);
+		flog_err(BGP_ERR_PKT_OPEN,
+			  "%s AS4 capability has incorrect data length %d",
+			  peer->host, hdr->length);
 		return 0;
 	}
 
@@ -1183,10 +1186,10 @@ int bgp_open_option_parse(struct peer *peer, uint8_t length, int *mp_capability)
 		    && !peer->afc_nego[AFI_IP6][SAFI_ENCAP]
 		    && !peer->afc_nego[AFI_IP6][SAFI_FLOWSPEC]
 		    && !peer->afc_nego[AFI_L2VPN][SAFI_EVPN]) {
-			zlog_err(
-				"%s [Error] Configured AFI/SAFIs do not "
-				"overlap with received MP capabilities",
-				peer->host);
+			flog_err(BGP_ERR_PKT_OPEN,
+				  "%s [Error] Configured AFI/SAFIs do not "
+				  "overlap with received MP capabilities",
+				  peer->host);
 
 			if (error != error_data)
 				bgp_notify_send_with_data(

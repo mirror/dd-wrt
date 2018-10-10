@@ -52,8 +52,8 @@ static gid_t elevgid, realgid;
 #define FRR_CONFIG_NAME "frr.conf"
 
 /* Configuration file name and directory. */
-static char vtysh_config[MAXPATHLEN];
-char frr_config[MAXPATHLEN];
+static char vtysh_config[MAXPATHLEN * 3];
+char frr_config[MAXPATHLEN * 3];
 char vtydir[MAXPATHLEN];
 static char history_file[MAXPATHLEN];
 
@@ -356,7 +356,7 @@ int main(int argc, char **argv, char **env)
 			break;
 		case OPTION_CONFDIR:
 			ditch_suid = 1; /* option disables SUID */
-			strlcpy(sysconfdir, optarg, sizeof(sysconfdir));
+			snprintf(sysconfdir, sizeof(sysconfdir), "%s/", optarg);
 			break;
 		case 'N':
 			if (strchr(optarg, '/') || strchr(optarg, '.')) {
@@ -471,7 +471,8 @@ int main(int argc, char **argv, char **env)
 	}
 
 	if (dryrun && cmd && cmd->line) {
-		vtysh_execute("enable");
+		if (!user_mode)
+			vtysh_execute("enable");
 		while (cmd) {
 			struct cmd_rec *cr;
 			char *cmdnow = cmd->line, *next;
@@ -527,6 +528,14 @@ int main(int argc, char **argv, char **env)
 	suid_off();
 
 	if (writeconfig) {
+		if (user_mode) {
+			fprintf(stderr,
+				"writeconfig cannot be used when running as an unprivileged user.\n");
+			if (no_error)
+				exit(0);
+			else
+				exit(1);
+		}
 		vtysh_execute("enable");
 		return vtysh_write_config_integrated();
 	}
@@ -573,7 +582,8 @@ int main(int argc, char **argv, char **env)
 	/* If eval mode. */
 	if (cmd && cmd->line) {
 		/* Enter into enable node. */
-		vtysh_execute("enable");
+		if (!user_mode)
+			vtysh_execute("enable");
 
 		while (cmd != NULL) {
 			int ret;
@@ -611,7 +621,17 @@ int main(int argc, char **argv, char **env)
 			if (logfile)
 				log_it(cmd->line);
 
-			ret = vtysh_execute_no_pager(cmd->line);
+			/*
+			 * Parsing logic for regular commands will be different
+			 * than for those commands requiring further
+			 * processing, such as cli instructions terminating
+			 * with question-mark character.
+			 */
+			if (!vtysh_execute_command_questionmark(cmd->line))
+				ret = CMD_SUCCESS;
+			else
+				ret = vtysh_execute_no_pager(cmd->line);
+
 			if (!no_error
 			    && !(ret == CMD_SUCCESS || ret == CMD_SUCCESS_DAEMON
 				 || ret == CMD_WARNING))
@@ -653,7 +673,8 @@ int main(int argc, char **argv, char **env)
 	vty_hello(vty);
 
 	/* Enter into enable node. */
-	vtysh_execute("enable");
+	if (!user_mode)
+		vtysh_execute("enable");
 
 	/* Preparation for longjmp() in sigtstp(). */
 	sigsetjmp(jmpbuf, 1);

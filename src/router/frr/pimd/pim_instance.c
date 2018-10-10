@@ -22,6 +22,7 @@
 
 #include "hash.h"
 #include "vrf.h"
+#include "lib_errors.h"
 
 #include "pimd.h"
 #include "pim_ssm.h"
@@ -35,13 +36,6 @@
 
 static void pim_instance_terminate(struct pim_instance *pim)
 {
-	/* Traverse and cleanup rpf_hash */
-	if (pim->rpf_hash) {
-		hash_clean(pim->rpf_hash, (void *)pim_rp_list_hash_clean);
-		hash_free(pim->rpf_hash);
-		pim->rpf_hash = NULL;
-	}
-
 	if (pim->ssm_info) {
 		pim_ssm_terminate(pim->ssm_info);
 		pim->ssm_info = NULL;
@@ -54,9 +48,16 @@ static void pim_instance_terminate(struct pim_instance *pim)
 
 	pim_upstream_terminate(pim);
 
-	pim_oil_terminate(pim);
+	/* Traverse and cleanup rpf_hash */
+	if (pim->rpf_hash) {
+		hash_clean(pim->rpf_hash, (void *)pim_rp_list_hash_clean);
+		hash_free(pim->rpf_hash);
+		pim->rpf_hash = NULL;
+	}
 
 	pim_if_terminate(pim);
+
+	pim_oil_terminate(pim);
 
 	pim_msdp_exit(pim);
 
@@ -69,14 +70,14 @@ static struct pim_instance *pim_instance_init(struct vrf *vrf)
 	char hash_name[64];
 
 	pim = XCALLOC(MTYPE_PIM_PIM_INSTANCE, sizeof(struct pim_instance));
-	if (!pim)
-		return NULL;
 
 	pim_if_init(pim);
 
 	pim->keep_alive_time = PIM_KEEPALIVE_PERIOD;
 	pim->rp_keep_alive_time = PIM_RP_KEEPALIVE_PERIOD;
 
+	pim->ecmp_enable = false;
+	pim->ecmp_rebalance_enable = false;
 
 	pim->vrf_id = vrf->vrf_id;
 	pim->vrf = vrf;
@@ -94,18 +95,8 @@ static struct pim_instance *pim_instance_init(struct vrf *vrf)
 		zlog_debug("%s: NHT rpf hash init ", __PRETTY_FUNCTION__);
 
 	pim->ssm_info = pim_ssm_init();
-	if (!pim->ssm_info) {
-		pim_instance_terminate(pim);
-		return NULL;
-	}
 
 	pim->static_routes = list_new();
-	if (!pim->static_routes) {
-		zlog_err("%s %s: failure: static_routes=list_new()", __FILE__,
-			 __PRETTY_FUNCTION__);
-		pim_instance_terminate(pim);
-		return NULL;
-	}
 	pim->static_routes->del = (void (*)(void *))pim_static_route_free;
 
 	pim->send_v6_secondary = 1;
@@ -138,14 +129,6 @@ static int pim_vrf_new(struct vrf *vrf)
 	struct pim_instance *pim = pim_instance_init(vrf);
 
 	zlog_debug("VRF Created: %s(%u)", vrf->name, vrf->vrf_id);
-	if (pim == NULL) {
-		zlog_err("%s %s: pim class init failure ", __FILE__,
-			 __PRETTY_FUNCTION__);
-		/*
-		 * We will crash and burn otherwise
-		 */
-		exit(1);
-	}
 
 	vrf->info = (void *)pim;
 

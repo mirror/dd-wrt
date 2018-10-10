@@ -12,7 +12,10 @@
 
 #include "vector.h"
 #include "thread.h"
+#include "lib_errors.h"
+
 #include "nhrpd.h"
+#include "nhrp_errors.h"
 
 struct resolver_state {
 	ares_channel channel;
@@ -164,7 +167,7 @@ static void ares_address_cb(void *arg, int status, int timeouts,
 		return;
 	}
 
-	for (i = 0; he->h_addr_list[i] != NULL && i < ZEBRA_NUM_OF(addr); i++) {
+	for (i = 0; i < ZEBRA_NUM_OF(addr) && he->h_addr_list[i] != NULL; i++) {
 		memset(&addr[i], 0, sizeof(addr[i]));
 		addr[i].sa.sa_family = he->h_addrtype;
 		switch (he->h_addrtype) {
@@ -191,9 +194,9 @@ void resolver_resolve(struct resolver_query *query, int af,
 				       union sockunion *))
 {
 	if (query->callback != NULL) {
-		zlog_err(
-			"Trying to resolve '%s', but previous query was not finished yet",
-			hostname);
+		flog_err(NHRP_ERR_RESOLVER,
+			  "Trying to resolve '%s', but previous query was not finished yet",
+			  hostname);
 		return;
 	}
 

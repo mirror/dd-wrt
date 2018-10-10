@@ -47,6 +47,7 @@
 #include "ospfd/ospf_flood.h"
 #include "ospfd/ospf_ism.h"
 #include "ospfd/ospf_dump.h"
+#include "ospfd/ospf_route.h"
 #include "ospfd/ospf_zebra.h"
 
 /* OSPF2-MIB. */
@@ -1626,7 +1627,7 @@ static struct ospf_interface *ospfIfLookup(struct variable *v, oid *name,
 		len = *length - v->namelen;
 		if (len >= IN_ADDR_SIZE)
 			len = IN_ADDR_SIZE;
-		if (len <= 0)
+		if (len == 0)
 			ifaddr_next = 1;
 
 		oid2in_addr(name + v->namelen, len, ifaddr);
@@ -1990,7 +1991,7 @@ ospfVirtIfLookup(struct variable *v, oid *name, size_t *length,
 		first = 0;
 
 		len = *length - v->namelen;
-		if (len <= 0)
+		if (len == 0)
 			first = 1;
 		if (len > IN_ADDR_SIZE)
 			len = IN_ADDR_SIZE;
@@ -2176,7 +2177,7 @@ static struct ospf_neighbor *ospfNbrLookup(struct variable *v, oid *name,
 		first = 0;
 		len = *length - v->namelen;
 
-		if (len <= 0)
+		if (len == 0)
 			first = 1;
 
 		if (len > IN_ADDR_SIZE)

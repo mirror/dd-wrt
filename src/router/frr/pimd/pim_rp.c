@@ -31,6 +31,7 @@
 #include "plist.h"
 #include "nexthop.h"
 #include "table.h"
+#include "lib_errors.h"
 
 #include "pimd.h"
 #include "pim_vty.h"
@@ -56,12 +57,17 @@ void pim_rp_list_hash_clean(void *data)
 	hash_clean(pnc->upstream_hash, NULL);
 	hash_free(pnc->upstream_hash);
 	pnc->upstream_hash = NULL;
+	if (pnc->nexthop)
+		nexthops_free(pnc->nexthop);
 
 	XFREE(MTYPE_PIM_NEXTHOP_CACHE, pnc);
 }
 
 static void pim_rp_info_free(struct rp_info *rp_info)
 {
+	if (rp_info->plist)
+		XFREE(MTYPE_PIM_FILTER_NAME, rp_info->plist);
+
 	XFREE(MTYPE_PIM_RP, rp_info);
 }
 
@@ -99,31 +105,16 @@ void pim_rp_init(struct pim_instance *pim)
 	struct route_node *rn;
 
 	pim->rp_list = list_new();
-	if (!pim->rp_list) {
-		zlog_err("Unable to alloc rp_list");
-		return;
-	}
 	pim->rp_list->del = (void (*)(void *))pim_rp_info_free;
 	pim->rp_list->cmp = pim_rp_list_cmp;
 
 	pim->rp_table = route_table_init();
-	if (!pim->rp_table) {
-		zlog_err("Unable to alloc rp_table");
-		list_delete_and_null(&pim->rp_list);
-		return;
-	}
 
 	rp_info = XCALLOC(MTYPE_PIM_RP, sizeof(*rp_info));
 
-	if (!rp_info) {
-		zlog_err("Unable to alloc rp_info");
-		route_table_finish(pim->rp_table);
-		list_delete_and_null(&pim->rp_list);
-		return;
-	}
-
 	if (!str2prefix("224.0.0.0/4", &rp_info->group)) {
-		zlog_err("Unable to convert 224.0.0.0/4 to prefix");
+		flog_err(LIB_ERR_DEVELOPMENT,
+			  "Unable to convert 224.0.0.0/4 to prefix");
 		list_delete_and_null(&pim->rp_list);
 		route_table_finish(pim->rp_table);
 		XFREE(MTYPE_PIM_RP, rp_info);
@@ -137,14 +128,6 @@ void pim_rp_init(struct pim_instance *pim)
 	listnode_add(pim->rp_list, rp_info);
 
 	rn = route_node_get(pim->rp_table, &rp_info->group);
-	if (!rn) {
-		zlog_err("Failure to get route node for pim->rp_table");
-		list_delete_and_null(&pim->rp_list);
-		route_table_finish(pim->rp_table);
-		XFREE(MTYPE_PIM_RP, rp_info);
-		return;
-	}
-
 	rn->info = rp_info;
 	if (PIM_DEBUG_TRACE)
 		zlog_debug(
@@ -201,7 +184,7 @@ static int pim_rp_prefix_list_used(struct pim_instance *pim, const char *plist)
  */
 static struct rp_info *pim_rp_find_exact(struct pim_instance *pim,
 					 struct in_addr rp,
-					 struct prefix *group)
+					 const struct prefix *group)
 {
 	struct listnode *node;
 	struct rp_info *rp_info;
@@ -219,13 +202,13 @@ static struct rp_info *pim_rp_find_exact(struct pim_instance *pim,
  * Given a group, return the rp_info for that group
  */
 static struct rp_info *pim_rp_find_match_group(struct pim_instance *pim,
-					       struct prefix *group)
+					       const struct prefix *group)
 {
 	struct listnode *node;
 	struct rp_info *best = NULL;
 	struct rp_info *rp_info;
 	struct prefix_list *plist;
-	struct prefix *p, *bp;
+	const struct prefix *p, *bp;
 	struct route_node *rn;
 
 	bp = NULL;
@@ -252,7 +235,8 @@ static struct rp_info *pim_rp_find_match_group(struct pim_instance *pim,
 
 	rn = route_node_match(pim->rp_table, group);
 	if (!rn) {
-		zlog_err(
+		flog_err(
+			LIB_ERR_DEVELOPMENT,
 			"%s: BUG We should have found default group information\n",
 			__PRETTY_FUNCTION__);
 		return best;
@@ -365,8 +349,6 @@ int pim_rp_new(struct pim_instance *pim, const char *rp,
 	struct route_node *rn;
 
 	rp_info = XCALLOC(MTYPE_PIM_RP, sizeof(*rp_info));
-	if (!rp_info)
-		return PIM_MALLOC_FAIL;
 
 	if (group_range == NULL)
 		result = str2prefix("224.0.0.0/4", &rp_info->group);
@@ -486,10 +468,9 @@ int pim_rp_new(struct pim_instance *pim, const char *rp,
 					    &rp_all->group, 1))
 					return PIM_RP_NO_PATH;
 			} else {
-				if (pim_nexthop_lookup(
+				if (!pim_ecmp_nexthop_lookup(
 					    pim, &rp_all->rp.source_nexthop,
-					    rp_all->rp.rpf_addr.u.prefix4, 1)
-				    != 0)
+					    &nht_p, &rp_all->group, 1))
 					return PIM_RP_NO_PATH;
 			}
 			pim_rp_check_interfaces(pim, rp_all);
@@ -534,12 +515,6 @@ int pim_rp_new(struct pim_instance *pim, const char *rp,
 
 	listnode_add_sort(pim->rp_list, rp_info);
 	rn = route_node_get(pim->rp_table, &rp_info->group);
-	if (!rn) {
-		char buf[PREFIX_STRLEN];
-		zlog_err("Failure to get route node for pim->rp_table: %s",
-			 prefix2str(&rp_info->group, buf, sizeof(buf)));
-		return PIM_MALLOC_FAIL;
-	}
 	rn->info = rp_info;
 
 	if (PIM_DEBUG_TRACE) {
@@ -571,9 +546,8 @@ int pim_rp_new(struct pim_instance *pim, const char *rp,
 					     &nht_p, &rp_info->group, 1))
 			return PIM_RP_NO_PATH;
 	} else {
-		if (pim_nexthop_lookup(pim, &rp_info->rp.source_nexthop,
-				       rp_info->rp.rpf_addr.u.prefix4, 1)
-		    != 0)
+		if (!pim_ecmp_nexthop_lookup(pim, &rp_info->rp.source_nexthop,
+					     &nht_p, &rp_info->group, 1))
 			return PIM_RP_NO_PATH;
 	}
 
@@ -617,7 +591,6 @@ int pim_rp_del(struct pim_instance *pim, const char *rp,
 
 	if (rp_info->plist) {
 		XFREE(MTYPE_PIM_FILTER_NAME, rp_info->plist);
-		rp_info->plist = NULL;
 		was_plist = true;
 	}
 
@@ -651,7 +624,9 @@ int pim_rp_del(struct pim_instance *pim, const char *rp,
 		rn = route_node_get(pim->rp_table, &rp_info->group);
 		if (rn) {
 			if (rn->info != rp_info)
-				zlog_err("WTF matey");
+				flog_err(
+					LIB_ERR_DEVELOPMENT,
+					"Expected rn->info to be equal to rp_info");
 
 			if (PIM_DEBUG_TRACE) {
 				char buf[PREFIX_STRLEN];
@@ -702,9 +677,9 @@ void pim_rp_setup(struct pim_instance *pim)
 					"%s: NHT Local Nexthop not found for RP %s ",
 					__PRETTY_FUNCTION__, buf);
 			}
-			if (!pim_nexthop_lookup(
-				    pim, &rp_info->rp.source_nexthop,
-				    rp_info->rp.rpf_addr.u.prefix4, 1))
+			if (!pim_ecmp_nexthop_lookup(pim,
+						     &rp_info->rp.source_nexthop,
+						      &nht_p, &rp_info->group, 1))
 				if (PIM_DEBUG_PIM_NHT_RP)
 					zlog_debug(
 						"Unable to lookup nexthop for rp specified");
@@ -869,8 +844,9 @@ struct pim_rpf *pim_rp_g(struct pim_instance *pim, struct in_addr group)
 					__PRETTY_FUNCTION__, buf, buf1);
 			}
 			pim_rpf_set_refresh_time(pim);
-			pim_nexthop_lookup(pim, &rp_info->rp.source_nexthop,
-					   rp_info->rp.rpf_addr.u.prefix4, 1);
+			(void)pim_ecmp_nexthop_lookup(
+				pim, &rp_info->rp.source_nexthop, &nht_p,
+				&rp_info->group, 1);
 		}
 		return (&rp_info->rp);
 	}

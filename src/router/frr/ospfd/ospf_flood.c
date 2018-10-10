@@ -91,7 +91,7 @@ struct external_info *ospf_external_info_check(struct ospf *ospf,
 	p.prefix = lsa->data->id;
 	p.prefixlen = ip_masklen(al->mask);
 
-	for (type = 0; type <= ZEBRA_ROUTE_MAX; type++) {
+	for (type = 0; type < ZEBRA_ROUTE_MAX; type++) {
 		int redist_on = 0;
 
 		redist_on =
@@ -319,7 +319,7 @@ int ospf_flood(struct ospf *ospf, struct ospf_neighbor *nbr,
 
 	/* Do some internal house keeping that is needed here */
 	SET_FLAG(new->flags, OSPF_LSA_RECEIVED);
-	ospf_lsa_is_self_originated(ospf, new); /* Let it set the flag */
+	(void)ospf_lsa_is_self_originated(ospf, new); /* Let it set the flag */
 
 	/* Install the new LSA in the link state database
 	   (replacing the current database copy).  This may cause the
@@ -810,8 +810,7 @@ struct ospf_lsa *ospf_ls_request_new(struct lsa_header *lsah)
 {
 	struct ospf_lsa *new;
 
-	new = ospf_lsa_new();
-	new->data = ospf_lsa_data_new(OSPF_LSA_HEADER_SIZE);
+	new = ospf_lsa_new_and_data(OSPF_LSA_HEADER_SIZE);
 	memcpy(new->data, lsah, OSPF_LSA_HEADER_SIZE);
 
 	return new;

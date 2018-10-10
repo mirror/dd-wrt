@@ -23,6 +23,7 @@
 
 #include "linklist.h"
 #include "vector.h"
+#include "lib_errors.h"
 #include "vty.h"
 #include "command.h"
 #include "vrf.h"
@@ -222,18 +223,6 @@ struct interface *if_lookup_by_index(ifindex_t ifindex, vrf_id_t vrf_id)
 	struct vrf *vrf;
 	struct interface if_tmp;
 
-	if (vrf_id == VRF_UNKNOWN) {
-		struct interface *ifp;
-
-		RB_FOREACH (vrf, vrf_id_head, &vrfs_by_id) {
-			ifp = if_lookup_by_index(ifindex, vrf->vrf_id);
-			if (ifp)
-				return ifp;
-		}
-
-		return NULL;
-	}
-
 	vrf = vrf_lookup_by_id(vrf_id);
 	if (!vrf)
 		return NULL;
@@ -404,7 +393,8 @@ struct interface *if_get_by_name(const char *name, vrf_id_t vrf_id, int vty)
 	 * this should not be considered as an update
 	 * then create the new interface
 	 */
-	if (ifp->vrf_id != vrf_id && vrf_is_mapped_on_netns(vrf_id))
+	if (ifp->vrf_id != vrf_id && vrf_is_mapped_on_netns(
+					vrf_lookup_by_id(vrf_id)))
 		return if_create(name, vrf_id);
 	/* If it came from the kernel
 	 * or by way of zclient, believe it and update
@@ -480,6 +470,14 @@ int if_is_loopback(struct interface *ifp)
 int if_is_vrf(struct interface *ifp)
 {
 	return CHECK_FLAG(ifp->status, ZEBRA_INTERFACE_VRF_LOOPBACK);
+}
+
+bool if_is_loopback_or_vrf(struct interface *ifp)
+{
+	if (if_is_loopback(ifp) || if_is_vrf(ifp))
+		return true;
+
+	return false;
 }
 
 /* Does this interface support broadcast ? */
@@ -638,7 +636,7 @@ static struct interface *if_sunwzebra_get(char *name, vrf_id_t vrf_id)
 }
 #endif /* SUNOS_5 */
 
-DEFUN (interface,
+DEFUN_NOSH (interface,
        interface_cmd,
        "interface IFNAME [vrf NAME]",
        "Select an interface to configure\n"
@@ -664,7 +662,7 @@ DEFUN (interface,
 	/*Pending: need proper vrf name based lookup/(possible creation of VRF)
 	 Imagine forward reference of a vrf by name in this interface config */
 	if (vrfname)
-		VRF_GET_ID(vrf_id, vrfname);
+		VRF_GET_ID(vrf_id, vrfname, false);
 
 #ifdef SUNOS_5
 	ifp = if_sunwzebra_get(ifname, vrf_id);
@@ -681,13 +679,13 @@ DEFUN (interface,
 	return CMD_SUCCESS;
 }
 
-DEFUN_NOSH (no_interface,
-           no_interface_cmd,
-           "no interface IFNAME [vrf NAME]",
-           NO_STR
-           "Delete a pseudo interface's configuration\n"
-           "Interface's name\n"
-           VRF_CMD_HELP_STR)
+DEFUN (no_interface,
+       no_interface_cmd,
+       "no interface IFNAME [vrf NAME]",
+       NO_STR
+       "Delete a pseudo interface's configuration\n"
+       "Interface's name\n"
+       VRF_CMD_HELP_STR)
 {
 	int idx_vrf = 4;
 	const char *ifname = argv[2]->arg;
@@ -698,7 +696,7 @@ DEFUN_NOSH (no_interface,
 	vrf_id_t vrf_id = VRF_DEFAULT;
 
 	if (argc > 3)
-		VRF_GET_ID(vrf_id, vrfname);
+		VRF_GET_ID(vrf_id, vrfname, false);
 
 	ifp = if_lookup_by_name(ifname, vrf_id);
 
@@ -1151,7 +1149,7 @@ const char *if_link_type_str(enum zebra_link_type llt)
 		llts(ZEBRA_LLT_IEEE802154, "IEEE 802.15.4");
 		llts(ZEBRA_LLT_IEEE802154_PHY, "IEEE 802.15.4 Phy");
 	default:
-		zlog_warn("Unknown value %d", llt);
+		flog_err(LIB_ERR_DEVELOPMENT, "Unknown value %d", llt);
 		return "Unknown type!";
 #undef llts
 	}

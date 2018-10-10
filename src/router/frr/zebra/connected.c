@@ -403,10 +403,10 @@ void connected_down(struct interface *ifp, struct connected *ifc)
 	 * head.
 	 */
 	rib_delete(afi, SAFI_UNICAST, ifp->vrf_id, ZEBRA_ROUTE_CONNECT, 0, 0,
-		   &p, NULL, &nh, 0, 0, false, NULL);
+		   &p, NULL, &nh, 0, 0, 0, false);
 
 	rib_delete(afi, SAFI_MULTICAST, ifp->vrf_id, ZEBRA_ROUTE_CONNECT, 0, 0,
-		   &p, NULL, &nh, 0, 0, false, NULL);
+		   &p, NULL, &nh, 0, 0, 0, false);
 
 	if (IS_ZEBRA_DEBUG_RIB_DETAILED) {
 		char buf[PREFIX_STRLEN];
@@ -564,7 +564,7 @@ void connected_delete_ipv6(struct interface *ifp, struct in6_addr *address,
 	if (broad) {
 		memset(&d, 0, sizeof(struct prefix));
 		d.family = AF_INET6;
-		IPV6_ADDR_COPY(&d.u.prefix, broad);
+		IPV6_ADDR_COPY(&d.u.prefix6, broad);
 		d.prefixlen = prefixlen;
 		ifc = connected_check_ptp(ifp, &p, &d);
 	} else

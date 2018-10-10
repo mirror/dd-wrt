@@ -24,6 +24,7 @@
 #include "memory.h"
 #include "sockopt.h"
 #include "vrf.h"
+#include "lib_errors.h"
 
 #include "pimd.h"
 #include "pim_ssmpingd.h"
@@ -82,8 +83,9 @@ static int ssmpingd_socket(struct in_addr addr, int port, int mttl)
 
 	fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 	if (fd < 0) {
-		zlog_err("%s: could not create socket: errno=%d: %s",
-			 __PRETTY_FUNCTION__, errno, safe_strerror(errno));
+		flog_err_sys(LIB_ERR_SOCKET,
+			     "%s: could not create socket: errno=%d: %s",
+			     __PRETTY_FUNCTION__, errno, safe_strerror(errno));
 		return -1;
 	}
 
@@ -124,7 +126,8 @@ static int ssmpingd_socket(struct in_addr addr, int port, int mttl)
 				safe_strerror(errno));
 		}
 #else
-		zlog_err(
+		flog_err(
+			LIB_ERR_DEVELOPMENT,
 			"%s %s: missing IP_PKTINFO and IP_RECVDSTADDR: unable to get dst addr from recvmsg()",
 			__FILE__, __PRETTY_FUNCTION__);
 		close(fd);
@@ -348,12 +351,6 @@ static struct ssmpingd_sock *ssmpingd_new(struct pim_instance *pim,
 
 	if (!pim->ssmpingd_list) {
 		pim->ssmpingd_list = list_new();
-		if (!pim->ssmpingd_list) {
-			zlog_err(
-				"%s %s: failure: qpim_ssmpingd_list=list_new()",
-				__FILE__, __PRETTY_FUNCTION__);
-			return 0;
-		}
 		pim->ssmpingd_list->del = (void (*)(void *))ssmpingd_free;
 	}
 
@@ -369,15 +366,6 @@ static struct ssmpingd_sock *ssmpingd_new(struct pim_instance *pim,
 	}
 
 	ss = XCALLOC(MTYPE_PIM_SSMPINGD, sizeof(*ss));
-	if (!ss) {
-		char source_str[INET_ADDRSTRLEN];
-		pim_inet4_dump("<src?>", source_addr, source_str,
-			       sizeof(source_str));
-		zlog_err("%s: XCALLOC(%zu) failure for ssmpingd source %s",
-			 __PRETTY_FUNCTION__, sizeof(*ss), source_str);
-		close(sock_fd);
-		return 0;
-	}
 
 	ss->pim = pim;
 	ss->sock_fd = sock_fd;

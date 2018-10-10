@@ -22,6 +22,9 @@
 #ifndef _ZEBRA_STREAM_H
 #define _ZEBRA_STREAM_H
 
+#include <pthread.h>
+
+#include "frratomic.h"
 #include "mpls.h"
 #include "prefix.h"
 
@@ -95,19 +98,27 @@
 struct stream {
 	struct stream *next;
 
-	/* Remainder is ***private*** to stream
+	/*
+	 * Remainder is ***private*** to stream
 	 * direct access is frowned upon!
 	 * Use the appropriate functions/macros
 	 */
-	size_t getp;	 /* next get position */
-	size_t endp;	 /* last valid data position */
-	size_t size;	 /* size of data segment */
-	unsigned char *data; /* data pointer */
+	size_t getp;	       /* next get position */
+	size_t endp;	       /* last valid data position */
+	size_t size;	       /* size of data segment */
+	unsigned char data[0]; /* data pointer */
 };
 
 /* First in first out queue structure. */
 struct stream_fifo {
-	size_t count;
+	/* lock for mt-safe operations */
+	pthread_mutex_t mtx;
+
+	/* number of streams in this fifo */
+	_Atomic size_t count;
+#if defined DEV_BUILD
+	_Atomic size_t max_count;
+#endif
 
 	struct stream *head;
 	struct stream *tail;
@@ -123,7 +134,7 @@ struct stream_fifo {
 #define STREAM_CONCAT_REMAIN(S1, S2, size) ((size) - (S1)->endp - (S2)->endp)
 
 /* deprecated macros - do not use in new code */
-#if defined(VERSION_TYPE_DEV) && CONFDATE > 20181128
+#if CONFDATE > 20181128
 CPP_NOTICE("lib: time to remove deprecated stream.h macros")
 #endif
 #define STREAM_PNT(S)   stream_pnt((S))
@@ -144,7 +155,14 @@ extern struct stream *stream_new(size_t);
 extern void stream_free(struct stream *);
 extern struct stream *stream_copy(struct stream *, struct stream *src);
 extern struct stream *stream_dup(struct stream *);
-extern size_t stream_resize(struct stream *, size_t);
+
+#if CONFDATE > 20190821
+CPP_NOTICE("lib: time to remove stream_resize_orig")
+#endif
+extern size_t stream_resize_orig(struct stream *s, size_t newsize);
+#define stream_resize stream_resize_orig
+extern size_t stream_resize_inplace(struct stream **sptr, size_t newsize);
+
 extern size_t stream_get_getp(struct stream *);
 extern size_t stream_get_endp(struct stream *);
 extern size_t stream_get_size(struct stream *);
@@ -240,12 +258,94 @@ extern int stream_empty(struct stream *); /* is the stream empty? */
 /* deprecated */
 extern uint8_t *stream_pnt(struct stream *);
 
-/* Stream fifo. */
+/*
+ * Operations on struct stream_fifo.
+ *
+ * Each function has a safe variant, which ensures that the operation performed
+ * is atomic with respect to the operations performed by all other safe
+ * variants. In other words, the safe variants lock the stream_fifo's mutex
+ * before performing their action. These are provided for convenience when
+ * using stream_fifo in a multithreaded context, to alleviate the need for the
+ * caller to implement their own synchronization around the stream_fifo.
+ *
+ * The following functions do not have safe variants. The caller must ensure
+ * that these operations are performed safely in a multithreaded context:
+ * - stream_fifo_new
+ * - stream_fifo_free
+ */
+
+/*
+ * Create a new stream_fifo.
+ *
+ * Returns:
+ *    newly created stream_fifo
+ */
 extern struct stream_fifo *stream_fifo_new(void);
+
+/*
+ * Push a stream onto a stream_fifo.
+ *
+ * fifo
+ *    the stream_fifo to push onto
+ *
+ * s
+ *    the stream to push onto the stream_fifo
+ */
 extern void stream_fifo_push(struct stream_fifo *fifo, struct stream *s);
+extern void stream_fifo_push_safe(struct stream_fifo *fifo, struct stream *s);
+
+/*
+ * Pop a stream off a stream_fifo.
+ *
+ * fifo
+ *    the stream_fifo to pop from
+ *
+ * Returns:
+ *    the next stream in the stream_fifo
+ */
 extern struct stream *stream_fifo_pop(struct stream_fifo *fifo);
+extern struct stream *stream_fifo_pop_safe(struct stream_fifo *fifo);
+
+/*
+ * Retrieve the next stream from a stream_fifo without popping it.
+ *
+ * fifo
+ *    the stream_fifo to operate on
+ *
+ * Returns:
+ *    the next stream that would be returned from stream_fifo_pop
+ */
 extern struct stream *stream_fifo_head(struct stream_fifo *fifo);
+extern struct stream *stream_fifo_head_safe(struct stream_fifo *fifo);
+
+/*
+ * Remove all streams from a stream_fifo.
+ *
+ * fifo
+ *    the stream_fifo to clean
+ */
 extern void stream_fifo_clean(struct stream_fifo *fifo);
+extern void stream_fifo_clean_safe(struct stream_fifo *fifo);
+
+/*
+ * Retrieve number of streams on a stream_fifo.
+ *
+ * fifo
+ *    the stream_fifo to retrieve the count for
+ *
+ * Returns:
+ *    the number of streams on the stream_fifo
+ */
+extern size_t stream_fifo_count_safe(struct stream_fifo *fifo);
+
+/*
+ * Free a stream_fifo.
+ *
+ * Calls stream_fifo_clean, then deinitializes the stream_fifo and frees it.
+ *
+ * fifo
+ *    the stream_fifo to free
+ */
 extern void stream_fifo_free(struct stream_fifo *fifo);
 
 /* This is here because "<< 24" is particularly problematic in C.

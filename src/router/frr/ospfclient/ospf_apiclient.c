@@ -46,6 +46,7 @@
 #include "ospfd/ospf_lsdb.h"
 #include "ospfd/ospf_neighbor.h"
 #include "ospfd/ospf_dump.h"
+#include "ospfd/ospf_route.h"
 #include "ospfd/ospf_zebra.h"
 #include "ospfd/ospf_api.h"
 
@@ -570,10 +571,7 @@ static void ospf_apiclient_handle_lsa_update(struct ospf_apiclient *oclient,
 	/* Extract LSA from message */
 	lsalen = ntohs(cn->data.length);
 	lsa = XMALLOC(MTYPE_OSPF_APICLIENT, lsalen);
-	if (!lsa) {
-		fprintf(stderr, "LSA update: Cannot allocate memory for LSA\n");
-		return;
-	}
+
 	memcpy(lsa, &(cn->data), lsalen);
 
 	/* Invoke registered update callback function */
@@ -598,10 +596,7 @@ static void ospf_apiclient_handle_lsa_delete(struct ospf_apiclient *oclient,
 	/* Extract LSA from message */
 	lsalen = ntohs(cn->data.length);
 	lsa = XMALLOC(MTYPE_OSPF_APICLIENT, lsalen);
-	if (!lsa) {
-		fprintf(stderr, "LSA delete: Cannot allocate memory for LSA\n");
-		return;
-	}
+
 	memcpy(lsa, &(cn->data), lsalen);
 
 	/* Invoke registered update callback function */

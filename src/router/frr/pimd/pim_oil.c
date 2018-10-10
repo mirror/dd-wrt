@@ -37,20 +37,20 @@
 
 char *pim_channel_oil_dump(struct channel_oil *c_oil, char *buf, size_t size)
 {
+	char *out;
 	struct prefix_sg sg;
 	int i;
 
-	memset(buf, 0, size);
 	sg.src = c_oil->oil.mfcc_origin;
 	sg.grp = c_oil->oil.mfcc_mcastgrp;
-	sprintf(buf, "%s IIF: %d, OIFS: ", pim_str_sg_dump(&sg),
-		c_oil->oil.mfcc_parent);
+	snprintf(buf, size, "%s IIF: %d, OIFS: ", pim_str_sg_dump(&sg),
+		 c_oil->oil.mfcc_parent);
 
+	out = buf + strlen(buf);
 	for (i = 0; i < MAXVIFS; i++) {
 		if (c_oil->oil.mfcc_ttls[i] != 0) {
-			char buf1[10];
-			sprintf(buf1, "%d ", i);
-			strcat(buf, buf1);
+			snprintf(out, buf + size - out, "%d ", i);
+			out += strlen(out);
 		}
 	}
 
@@ -108,11 +108,6 @@ void pim_oil_init(struct pim_instance *pim)
 						 pim_oil_equal, hash_name);
 
 	pim->channel_oil_list = list_new();
-	if (!pim->channel_oil_list) {
-		zlog_err("%s %s: failure: channel_oil_list=list_new()",
-			 __FILE__, __PRETTY_FUNCTION__);
-		return;
-	}
 	pim->channel_oil_list->del = (void (*)(void *))pim_channel_oil_free;
 	pim->channel_oil_list->cmp =
 		(int (*)(void *, void *))pim_channel_oil_compare;
@@ -183,10 +178,6 @@ struct channel_oil *pim_channel_oil_add(struct pim_instance *pim,
 	}
 
 	c_oil = XCALLOC(MTYPE_PIM_CHANNEL_OIL, sizeof(*c_oil));
-	if (!c_oil) {
-		zlog_err("PIM XCALLOC(%zu) failure", sizeof(*c_oil));
-		return NULL;
-	}
 
 	c_oil->oil.mfcc_mcastgrp = sg->grp;
 	c_oil->oil.mfcc_origin = sg->src;

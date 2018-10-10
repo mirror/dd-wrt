@@ -246,9 +246,35 @@ static vrf_id_t vrf_lookup_by_table(uint32_t table_id, ns_id_t ns_id)
 	return VRF_DEFAULT;
 }
 
+/**
+ * @parse_encap_mpls() - Parses encapsulated mpls attributes
+ * @tb:         Pointer to rtattr to look for nested items in.
+ * @labels:     Pointer to store labels in.
+ *
+ * Return:      Number of mpls labels found.
+ */
+static int parse_encap_mpls(struct rtattr *tb, mpls_label_t *labels)
+{
+	struct rtattr *tb_encap[MPLS_IPTUNNEL_MAX + 1] = {0};
+	mpls_lse_t *lses = NULL;
+	int num_labels = 0;
+	uint32_t ttl = 0;
+	uint32_t bos = 0;
+	uint32_t exp = 0;
+	mpls_label_t label = 0;
+
+	netlink_parse_rtattr_nested(tb_encap, MPLS_IPTUNNEL_MAX, tb);
+	lses = (mpls_lse_t *)RTA_DATA(tb_encap[MPLS_IPTUNNEL_DST]);
+	while (!bos && num_labels < MPLS_MAX_LABELS) {
+		mpls_lse_decode(lses[num_labels], &label, &ttl, &exp, &bos);
+		labels[num_labels++] = label;
+	}
+
+	return num_labels;
+}
+
 /* Looking up routing table by netlink interface. */
-static int netlink_route_change_read_unicast(struct sockaddr_nl *snl,
-					     struct nlmsghdr *h, ns_id_t ns_id,
+static int netlink_route_change_read_unicast(struct nlmsghdr *h, ns_id_t ns_id,
 					     int startup)
 {
 	int len;
@@ -275,6 +301,10 @@ static int netlink_route_change_read_unicast(struct sockaddr_nl *snl,
 	void *src = NULL;     /* IPv6 srcdest   source prefix */
 	enum blackhole_type bh_type = BLACKHOLE_UNSPEC;
 
+	/* MPLS labels */
+	mpls_label_t labels[MPLS_MAX_LABELS] = {0};
+	int num_labels = 0;
+
 	rtm = NLMSG_DATA(h);
 
 	if (startup && h->nlmsg_type != RTM_NEWROUTE)
@@ -296,8 +326,12 @@ static int netlink_route_change_read_unicast(struct sockaddr_nl *snl,
 	}
 
 	len = h->nlmsg_len - NLMSG_LENGTH(sizeof(struct rtmsg));
-	if (len < 0)
+	if (len < 0) {
+		zlog_err("%s: Message received from netlink is of a broken size %d %zu",
+			 __PRETTY_FUNCTION__, h->nlmsg_len,
+			 (size_t)NLMSG_LENGTH(sizeof(struct rtmsg)));
 		return -1;
+	}
 
 	memset(tb, 0, sizeof tb);
 	netlink_parse_rtattr(tb, RTA_MAX, RTM_RTA(rtm), len);
@@ -381,27 +415,44 @@ static int netlink_route_change_read_unicast(struct sockaddr_nl *snl,
 
 	if (rtm->rtm_family == AF_INET) {
 		p.family = AF_INET;
+		if (rtm->rtm_dst_len > IPV4_MAX_BITLEN) {
+			zlog_err(
+				"Invalid destination prefix length: %u received from kernel route change",
+				rtm->rtm_dst_len);
+			return -1;
+		}
 		memcpy(&p.u.prefix4, dest, 4);
 		p.prefixlen = rtm->rtm_dst_len;
 
-		src_p.prefixlen =
-			0; // Forces debug below to not display anything
+		if (rtm->rtm_src_len != 0) {
+			char buf[PREFIX_STRLEN];
+			zlog_warn("unsupported IPv4 sourcedest route (dest %s vrf %u)",
+				  prefix2str(&p, buf, sizeof(buf)), vrf_id);
+			return 0;
+		}
+
+		/* Force debug below to not display anything for source */
+		src_p.prefixlen = 0;
 	} else if (rtm->rtm_family == AF_INET6) {
 		p.family = AF_INET6;
+		if (rtm->rtm_dst_len > IPV6_MAX_BITLEN) {
+			zlog_err(
+				"Invalid destination prefix length: %u received from kernel route change",
+				rtm->rtm_dst_len);
+			return -1;
+		}
 		memcpy(&p.u.prefix6, dest, 16);
 		p.prefixlen = rtm->rtm_dst_len;
 
 		src_p.family = AF_INET6;
+		if (rtm->rtm_src_len > IPV6_MAX_BITLEN) {
+			zlog_err(
+				"Invalid source prefix length: %u received from kernel route change",
+				rtm->rtm_src_len);
+			return -1;
+		}
 		memcpy(&src_p.prefix, src, 16);
 		src_p.prefixlen = rtm->rtm_src_len;
-	}
-
-	if (rtm->rtm_src_len != 0) {
-		char buf[PREFIX_STRLEN];
-		zlog_warn(
-			"unsupported IPv[4|6] sourcedest route (dest %s vrf %u)",
-			prefix2str(&p, buf, sizeof(buf)), vrf_id);
-		return 0;
 	}
 
 	/*
@@ -480,14 +531,27 @@ static int netlink_route_change_read_unicast(struct sockaddr_nl *snl,
 				memcpy(&nh.gate, gate, sz);
 
 			if (index) {
-				ifp = if_lookup_by_index(index, VRF_UNKNOWN);
+				ifp = if_lookup_by_index_per_ns(
+						zebra_ns_lookup(ns_id),
+						index);
 				if (ifp)
 					nh_vrf_id = ifp->vrf_id;
 			}
 			nh.vrf_id = nh_vrf_id;
 
+			if (tb[RTA_ENCAP] && tb[RTA_ENCAP_TYPE]
+			    && *(uint16_t *)RTA_DATA(tb[RTA_ENCAP_TYPE])
+				       == LWTUNNEL_ENCAP_MPLS) {
+				num_labels =
+					parse_encap_mpls(tb[RTA_ENCAP], labels);
+			}
+
+			if (num_labels)
+				nexthop_add_labels(&nh, ZEBRA_LSP_STATIC,
+						   num_labels, labels);
+
 			rib_add(afi, SAFI_UNICAST, vrf_id, proto, 0, flags, &p,
-				NULL, &nh, table, metric, mtu, distance, tag);
+				&src_p, &nh, table, metric, mtu, distance, tag);
 		} else {
 			/* This is a multipath route */
 
@@ -510,6 +574,7 @@ static int netlink_route_change_read_unicast(struct sockaddr_nl *snl,
 			re->tag = tag;
 
 			for (;;) {
+				struct nexthop *nh = NULL;
 				vrf_id_t nh_vrf_id;
 				if (len < (int)sizeof(*rtnh)
 				    || rtnh->rtnh_len > len)
@@ -523,8 +588,9 @@ static int netlink_route_change_read_unicast(struct sockaddr_nl *snl,
 					 * using the last one looked
 					 * up right now
 					 */
-					ifp = if_lookup_by_index(index,
-								 VRF_UNKNOWN);
+					ifp = if_lookup_by_index_per_ns(
+							zebra_ns_lookup(ns_id),
+							index);
 					if (ifp)
 						nh_vrf_id = ifp->vrf_id;
 					else {
@@ -546,34 +612,48 @@ static int netlink_route_change_read_unicast(struct sockaddr_nl *snl,
 					if (tb[RTA_GATEWAY])
 						gate = RTA_DATA(
 							tb[RTA_GATEWAY]);
+					if (tb[RTA_ENCAP] && tb[RTA_ENCAP_TYPE]
+					    && *(uint16_t *)RTA_DATA(
+						       tb[RTA_ENCAP_TYPE])
+						       == LWTUNNEL_ENCAP_MPLS) {
+						num_labels = parse_encap_mpls(
+							tb[RTA_ENCAP], labels);
+					}
 				}
 
 				if (gate) {
 					if (rtm->rtm_family == AF_INET) {
 						if (index)
-							route_entry_nexthop_ipv4_ifindex_add(
+							nh = route_entry_nexthop_ipv4_ifindex_add(
 								re, gate,
 								prefsrc, index,
 								nh_vrf_id);
 						else
-							route_entry_nexthop_ipv4_add(
+							nh = route_entry_nexthop_ipv4_add(
 								re, gate,
 								prefsrc,
 								nh_vrf_id);
 					} else if (rtm->rtm_family
 						   == AF_INET6) {
 						if (index)
-							route_entry_nexthop_ipv6_ifindex_add(
+							nh = route_entry_nexthop_ipv6_ifindex_add(
 								re, gate, index,
 								nh_vrf_id);
 						else
-							route_entry_nexthop_ipv6_add(
+							nh = route_entry_nexthop_ipv6_add(
 								re, gate,
 								nh_vrf_id);
 					}
 				} else
-					route_entry_nexthop_ifindex_add(
+					nh = route_entry_nexthop_ifindex_add(
 						re, index, nh_vrf_id);
+
+				if (nh && num_labels)
+					nexthop_add_labels(nh, ZEBRA_LSP_STATIC,
+							   num_labels, labels);
+
+				if (rtnh->rtnh_len == 0)
+					break;
 
 				len -= NLMSG_ALIGN(rtnh->rtnh_len);
 				rtnh = RTNH_NEXT(rtnh);
@@ -585,8 +665,8 @@ static int netlink_route_change_read_unicast(struct sockaddr_nl *snl,
 			if (re->nexthop_num == 0)
 				XFREE(MTYPE_RE, re);
 			else
-				rib_add_multipath(afi, SAFI_UNICAST, &p, NULL,
-						  re);
+				rib_add_multipath(afi, SAFI_UNICAST, &p,
+						  &src_p, re);
 		}
 	} else {
 		if (!tb[RTA_MULTIPATH]) {
@@ -618,12 +698,14 @@ static int netlink_route_change_read_unicast(struct sockaddr_nl *snl,
 			if (gate)
 				memcpy(&nh.gate, gate, sz);
 			rib_delete(afi, SAFI_UNICAST, vrf_id, proto, 0, flags,
-				   &p, NULL, &nh, table, metric, true, NULL);
+				   &p, &src_p, &nh, table, metric, distance,
+				   true);
 		} else {
 			/* XXX: need to compare the entire list of nexthops
 			 * here for NLM_F_APPEND stupidity */
 			rib_delete(afi, SAFI_UNICAST, vrf_id, proto, 0, flags,
-				   &p, NULL, NULL, table, metric, true, NULL);
+				   &p, &src_p, NULL, table, metric, distance,
+				   true);
 		}
 	}
 
@@ -632,8 +714,7 @@ static int netlink_route_change_read_unicast(struct sockaddr_nl *snl,
 
 static struct mcast_route_data *mroute = NULL;
 
-static int netlink_route_change_read_multicast(struct sockaddr_nl *snl,
-					       struct nlmsghdr *h,
+static int netlink_route_change_read_multicast(struct nlmsghdr *h,
 					       ns_id_t ns_id, int startup)
 {
 	int len;
@@ -696,6 +777,9 @@ static int netlink_route_change_read_multicast(struct sockaddr_nl *snl,
 			oif[oif_count] = rtnh->rtnh_ifindex;
 			oif_count++;
 
+			if (rtnh->rtnh_len == 0)
+				break;
+
 			len -= NLMSG_ALIGN(rtnh->rtnh_len);
 			rtnh = RTNH_NEXT(rtnh);
 		}
@@ -709,21 +793,22 @@ static int netlink_route_change_read_multicast(struct sockaddr_nl *snl,
 			ifp = if_lookup_by_index(oif[count], vrf);
 			char temp[256];
 
-			sprintf(temp, "%s ", ifp->name);
+			sprintf(temp, "%s(%d) ", ifp ? ifp->name : "Unknown",
+				oif[count]);
 			strcat(oif_list, temp);
 		}
 		struct zebra_vrf *zvrf = zebra_vrf_lookup_by_id(vrf);
 		ifp = if_lookup_by_index(iif, vrf);
-		zlog_debug(
-			"MCAST VRF: %s(%d) %s (%s,%s) IIF: %s OIF: %s jiffies: %lld",
-			zvrf->vrf->name, vrf, nl_msg_type_to_str(h->nlmsg_type),
-			sbuf, gbuf, ifp->name, oif_list, m->lastused);
+		zlog_debug("MCAST VRF: %s(%d) %s (%s,%s) IIF: %s(%d) OIF: %s jiffies: %lld",
+			   zvrf->vrf->name, vrf,
+			   nl_msg_type_to_str(h->nlmsg_type),
+			   sbuf, gbuf, ifp ? ifp->name : "Unknown", iif,
+			   oif_list, m->lastused);
 	}
 	return 0;
 }
 
-int netlink_route_change(struct sockaddr_nl *snl, struct nlmsghdr *h,
-			 ns_id_t ns_id, int startup)
+int netlink_route_change(struct nlmsghdr *h, ns_id_t ns_id, int startup)
 {
 	int len;
 	struct rtmsg *rtm;
@@ -736,6 +821,13 @@ int netlink_route_change(struct sockaddr_nl *snl, struct nlmsghdr *h,
 		return 0;
 	}
 
+	if (!(rtm->rtm_family == AF_INET || rtm->rtm_family == AF_INET6)) {
+		zlog_warn(
+			"Invalid address family: %u received from kernel route change: %u",
+			rtm->rtm_family, h->nlmsg_type);
+		return 0;
+	}
+
 	/* Connected route. */
 	if (IS_ZEBRA_DEBUG_KERNEL)
 		zlog_debug("%s %s %s proto %s NS %u",
@@ -744,19 +836,20 @@ int netlink_route_change(struct sockaddr_nl *snl, struct nlmsghdr *h,
 			   nl_rttype_to_str(rtm->rtm_type),
 			   nl_rtproto_to_str(rtm->rtm_protocol), ns_id);
 
-	/* We don't care about change notifications for the MPLS table. */
-	/* TODO: Revisit this. */
-	if (rtm->rtm_family == AF_MPLS)
-		return 0;
 
 	len = h->nlmsg_len - NLMSG_LENGTH(sizeof(struct rtmsg));
-	if (len < 0)
+	if (len < 0) {
+		zlog_err("%s: Message received from netlink is of a broken size: %d %zu",
+			 __PRETTY_FUNCTION__,
+			 h->nlmsg_len,
+			 (size_t)NLMSG_LENGTH(sizeof(struct rtmsg)));
 		return -1;
+	}
 
 	if (rtm->rtm_type == RTN_MULTICAST)
-		netlink_route_change_read_multicast(snl, h, ns_id, startup);
+		netlink_route_change_read_multicast(h, ns_id, startup);
 	else
-		netlink_route_change_read_unicast(snl, h, ns_id, startup);
+		netlink_route_change_read_unicast(h, ns_id, startup);
 	return 0;
 }
 
@@ -1238,14 +1331,6 @@ static void _netlink_route_build_multipath(const char *routedesc, int bytelen,
 				"netlink_route_multipath() (%s): "
 				"nexthop via if %u",
 				routedesc, nexthop->ifindex);
-	} else if (nexthop->type == NEXTHOP_TYPE_IPV6_IFINDEX) {
-		if (IS_ZEBRA_DEBUG_KERNEL)
-			zlog_debug(
-				"netlink_route_multipath() (%s): "
-				"nexthop via if %u",
-				routedesc, nexthop->ifindex);
-	} else {
-		rtnh->rtnh_ifindex = 0;
 	}
 }
 
@@ -1289,8 +1374,8 @@ _netlink_mpls_build_multipath(const char *routedesc, zebra_nhlfe_t *nhlfe,
  * @param zvrf: The vrf we are in
  * @param tableid: The table we are working on
  */
-static void _netlink_route_debug(int cmd, struct prefix *p,
-				 int family, struct zebra_vrf *zvrf,
+static void _netlink_route_debug(int cmd, const struct prefix *p,
+				 int family, vrf_id_t vrfid,
 				 uint32_t tableid)
 {
 	if (IS_ZEBRA_DEBUG_KERNEL) {
@@ -1299,7 +1384,7 @@ static void _netlink_route_debug(int cmd, struct prefix *p,
 			"netlink_route_multipath(): %s %s vrf %u(%u)",
 			nl_msg_type_to_str(cmd),
 			prefix2str(p, buf, sizeof(buf)),
-			zvrf_id(zvrf), tableid);
+			vrfid, tableid);
 	}
 }
 
@@ -1321,8 +1406,7 @@ static int netlink_neigh_update(int cmd, int ifindex, uint32_t addr, char *lla,
 
 	struct zebra_ns *zns = zebra_ns_lookup(ns_id);
 
-	memset(&req.n, 0, sizeof(req.n));
-	memset(&req.ndm, 0, sizeof(req.ndm));
+	memset(&req, 0, sizeof(req));
 
 	req.n.nlmsg_len = NLMSG_LENGTH(sizeof(struct ndmsg));
 	req.n.nlmsg_flags = NLM_F_CREATE | NLM_F_REQUEST;
@@ -1343,8 +1427,9 @@ static int netlink_neigh_update(int cmd, int ifindex, uint32_t addr, char *lla,
 
 /* Routing table change via netlink interface. */
 /* Update flag indicates whether this is a "replace" or not. */
-static int netlink_route_multipath(int cmd, struct prefix *p,
-				   struct prefix *src_p, struct route_entry *re,
+static int netlink_route_multipath(int cmd, const struct prefix *p,
+				   const struct prefix *src_p,
+				   struct route_entry *re,
 				   int update)
 {
 	int bytelen;
@@ -1419,7 +1504,7 @@ static int netlink_route_multipath(int cmd, struct prefix *p,
 		addattr32(&req.n, sizeof req, RTA_TABLE, re->table);
 	}
 
-	_netlink_route_debug(cmd, p, family, zvrf, re->table);
+	_netlink_route_debug(cmd, p, family, zvrf_id(zvrf), re->table);
 
 	/*
 	 * If we are not updating the route and we have received
@@ -1667,6 +1752,7 @@ skip:
 
 int kernel_get_ipmr_sg_stats(struct zebra_vrf *zvrf, void *in)
 {
+	uint32_t actual_table;
 	int suc = 0;
 	struct mcast_route_data *mr = (struct mcast_route_data *)in;
 	struct {
@@ -1679,8 +1765,7 @@ int kernel_get_ipmr_sg_stats(struct zebra_vrf *zvrf, void *in)
 	struct zebra_ns *zns;
 
 	zns = zvrf->zns;
-	memset(&req.n, 0, sizeof(req.n));
-	memset(&req.ndm, 0, sizeof(req.ndm));
+	memset(&req, 0, sizeof(req));
 
 	req.n.nlmsg_len = NLMSG_LENGTH(sizeof(struct ndmsg));
 	req.n.nlmsg_flags = NLM_F_REQUEST;
@@ -1693,7 +1778,23 @@ int kernel_get_ipmr_sg_stats(struct zebra_vrf *zvrf, void *in)
 	addattr_l(&req.n, sizeof(req), RTA_OIF, &mroute->ifindex, 4);
 	addattr_l(&req.n, sizeof(req), RTA_SRC, &mroute->sg.src.s_addr, 4);
 	addattr_l(&req.n, sizeof(req), RTA_DST, &mroute->sg.grp.s_addr, 4);
-	addattr_l(&req.n, sizeof(req), RTA_TABLE, &zvrf->table_id, 4);
+	/*
+	 * What?
+	 *
+	 * So during the namespace cleanup we started storing
+	 * the zvrf table_id for the default table as RT_TABLE_MAIN
+	 * which is what the normal routing table for ip routing is.
+	 * This change caused this to break our lookups of sg data
+	 * because prior to this change the zvrf->table_id was 0
+	 * and when the pim multicast kernel code saw a 0,
+	 * it was auto-translated to RT_TABLE_DEFAULT.  But since
+	 * we are now passing in RT_TABLE_MAIN there is no auto-translation
+	 * and the kernel goes screw you and the delicious cookies you
+	 * are trying to give me.  So now we have this little hack.
+	 */
+	actual_table = (zvrf->table_id == RT_TABLE_MAIN) ? RT_TABLE_DEFAULT :
+		zvrf->table_id;
+	addattr_l(&req.n, sizeof(req), RTA_TABLE, &actual_table, 4);
 
 	suc = netlink_talk(netlink_route_change_read_multicast, &req.n,
 			   &zns->netlink_cmd, zns, 0);
@@ -1702,16 +1803,18 @@ int kernel_get_ipmr_sg_stats(struct zebra_vrf *zvrf, void *in)
 	return suc;
 }
 
-void kernel_route_rib(struct route_node *rn, struct prefix *p,
-		      struct prefix *src_p, struct route_entry *old,
-		      struct route_entry *new)
+enum dp_req_result kernel_route_rib(struct route_node *rn,
+				    const struct prefix *p,
+				    const struct prefix *src_p,
+				    struct route_entry *old,
+				    struct route_entry *new)
 {
 	int ret = 0;
 
 	assert(old || new);
 
 	if (new) {
-		if (p->family == AF_INET)
+		if (p->family == AF_INET || v6_rr_semantics)
 			ret = netlink_route_multipath(RTM_NEWROUTE, p, src_p,
 						      new, (old) ? 1 : 0);
 		else {
@@ -1734,18 +1837,20 @@ void kernel_route_rib(struct route_node *rn, struct prefix *p,
 						      new, 0);
 		}
 		kernel_route_rib_pass_fail(rn, p, new,
-					   (!ret) ? SOUTHBOUND_INSTALL_SUCCESS
-						  : SOUTHBOUND_INSTALL_FAILURE);
-		return;
+					   (!ret) ? DP_INSTALL_SUCCESS
+						  : DP_INSTALL_FAILURE);
+		return DP_REQUEST_SUCCESS;
 	}
 
 	if (old) {
 		ret = netlink_route_multipath(RTM_DELROUTE, p, src_p, old, 0);
 
 		kernel_route_rib_pass_fail(rn, p, old,
-					   (!ret) ? SOUTHBOUND_DELETE_SUCCESS
-						  : SOUTHBOUND_DELETE_FAILURE);
+					   (!ret) ? DP_DELETE_SUCCESS
+						  : DP_DELETE_FAILURE);
 	}
+
+	return DP_REQUEST_SUCCESS;
 }
 
 int kernel_neigh_update(int add, int ifindex, uint32_t addr, char *lla,
@@ -1772,8 +1877,7 @@ static int netlink_vxlan_flood_list_update(struct interface *ifp,
 	struct zebra_vrf *zvrf = zebra_vrf_lookup_by_id(ifp->vrf_id);
 
 	zns = zvrf->zns;
-	memset(&req.n, 0, sizeof(req.n));
-	memset(&req.ndm, 0, sizeof(req.ndm));
+	memset(&req, 0, sizeof(req));
 
 	req.n.nlmsg_len = NLMSG_LENGTH(sizeof(struct ndmsg));
 	req.n.nlmsg_flags = NLM_F_REQUEST;
@@ -1826,8 +1930,7 @@ int kernel_del_vtep(vni_t vni, struct interface *ifp, struct in_addr *vtep_ip)
 	((struct rtattr *)(((char *)(r)) + NLMSG_ALIGN(sizeof(struct ndmsg))))
 #endif
 
-static int netlink_macfdb_change(struct sockaddr_nl *snl, struct nlmsghdr *h,
-				 int len, ns_id_t ns_id)
+static int netlink_macfdb_change(struct nlmsghdr *h, int len, ns_id_t ns_id)
 {
 	struct ndmsg *ndm;
 	struct interface *ifp;
@@ -1962,8 +2065,7 @@ static int netlink_macfdb_change(struct sockaddr_nl *snl, struct nlmsghdr *h,
 	return zebra_vxlan_local_mac_del(ifp, br_if, &mac, vid);
 }
 
-static int netlink_macfdb_table(struct sockaddr_nl *snl, struct nlmsghdr *h,
-				ns_id_t ns_id, int startup)
+static int netlink_macfdb_table(struct nlmsghdr *h, ns_id_t ns_id, int startup)
 {
 	int len;
 	struct ndmsg *ndm;
@@ -1981,7 +2083,7 @@ static int netlink_macfdb_table(struct sockaddr_nl *snl, struct nlmsghdr *h,
 	if (ndm->ndm_family != AF_BRIDGE)
 		return 0;
 
-	return netlink_macfdb_change(snl, h, len, ns_id);
+	return netlink_macfdb_change(h, len, ns_id);
 }
 
 /* Request for MAC FDB information from the kernel */
@@ -2088,8 +2190,7 @@ static int netlink_macfdb_update(struct interface *ifp, vlanid_t vid,
 		return -1;
 	}
 
-	memset(&req.n, 0, sizeof(req.n));
-	memset(&req.ndm, 0, sizeof(req.ndm));
+	memset(&req, 0, sizeof(req));
 
 	req.n.nlmsg_len = NLMSG_LENGTH(sizeof(struct ndmsg));
 	req.n.nlmsg_flags = NLM_F_REQUEST;
@@ -2138,8 +2239,7 @@ static int netlink_macfdb_update(struct interface *ifp, vlanid_t vid,
 	(NUD_PERMANENT | NUD_NOARP | NUD_REACHABLE | NUD_PROBE | NUD_STALE     \
 	 | NUD_DELAY)
 
-static int netlink_ipneigh_change(struct sockaddr_nl *snl, struct nlmsghdr *h,
-				  int len, ns_id_t ns_id)
+static int netlink_ipneigh_change(struct nlmsghdr *h, int len, ns_id_t ns_id)
 {
 	struct ndmsg *ndm;
 	struct interface *ifp;
@@ -2152,6 +2252,7 @@ static int netlink_ipneigh_change(struct sockaddr_nl *snl, struct nlmsghdr *h,
 	char buf2[INET6_ADDRSTRLEN];
 	int mac_present = 0;
 	uint8_t ext_learned;
+	uint8_t router_flag;
 
 	ndm = NLMSG_DATA(h);
 
@@ -2242,6 +2343,7 @@ static int netlink_ipneigh_change(struct sockaddr_nl *snl, struct nlmsghdr *h,
 		}
 
 		ext_learned = (ndm->ndm_flags & NTF_EXT_LEARNED) ? 1 : 0;
+		router_flag = (ndm->ndm_flags & NTF_ROUTER) ? 1 : 0;
 
 		if (IS_ZEBRA_DEBUG_KERNEL)
 			zlog_debug(
@@ -2264,7 +2366,7 @@ static int netlink_ipneigh_change(struct sockaddr_nl *snl, struct nlmsghdr *h,
 		if (ndm->ndm_state & NUD_VALID)
 			return zebra_vxlan_handle_kernel_neigh_update(
 				ifp, link_if, &ip, &mac, ndm->ndm_state,
-				ext_learned);
+				ext_learned, router_flag);
 
 		return zebra_vxlan_handle_kernel_neigh_del(ifp, link_if, &ip);
 	}
@@ -2282,8 +2384,7 @@ static int netlink_ipneigh_change(struct sockaddr_nl *snl, struct nlmsghdr *h,
 	return zebra_vxlan_handle_kernel_neigh_del(ifp, link_if, &ip);
 }
 
-static int netlink_neigh_table(struct sockaddr_nl *snl, struct nlmsghdr *h,
-			       ns_id_t ns_id, int startup)
+static int netlink_neigh_table(struct nlmsghdr *h, ns_id_t ns_id, int startup)
 {
 	int len;
 	struct ndmsg *ndm;
@@ -2301,7 +2402,7 @@ static int netlink_neigh_table(struct sockaddr_nl *snl, struct nlmsghdr *h,
 	if (ndm->ndm_family != AF_INET && ndm->ndm_family != AF_INET6)
 		return 0;
 
-	return netlink_neigh_change(snl, h, len);
+	return netlink_neigh_change(h, len);
 }
 
 /* Request for IP neighbor information from the kernel */
@@ -2361,8 +2462,7 @@ int netlink_neigh_read_for_vlan(struct zebra_ns *zns, struct interface *vlan_if)
 	return ret;
 }
 
-int netlink_neigh_change(struct sockaddr_nl *snl, struct nlmsghdr *h,
-			 ns_id_t ns_id)
+int netlink_neigh_change(struct nlmsghdr *h, ns_id_t ns_id)
 {
 	int len;
 	struct ndmsg *ndm;
@@ -2372,25 +2472,36 @@ int netlink_neigh_change(struct sockaddr_nl *snl, struct nlmsghdr *h,
 
 	/* Length validity. */
 	len = h->nlmsg_len - NLMSG_LENGTH(sizeof(struct ndmsg));
-	if (len < 0)
+	if (len < 0) {
+		zlog_err("%s: Message received from netlink is of a broken size %d %zu",
+			 __PRETTY_FUNCTION__, h->nlmsg_len,
+			 (size_t)NLMSG_LENGTH(sizeof(struct ndmsg)));
 		return -1;
+	}
 
 	/* Is this a notification for the MAC FDB or IP neighbor table? */
 	ndm = NLMSG_DATA(h);
 	if (ndm->ndm_family == AF_BRIDGE)
-		return netlink_macfdb_change(snl, h, len, ns_id);
+		return netlink_macfdb_change(h, len, ns_id);
 
 	if (ndm->ndm_type != RTN_UNICAST)
 		return 0;
 
 	if (ndm->ndm_family == AF_INET || ndm->ndm_family == AF_INET6)
-		return netlink_ipneigh_change(snl, h, len, ns_id);
+		return netlink_ipneigh_change(h, len, ns_id);
+	else {
+		zlog_warn(
+			"Invalid address family: %u received from kernel neighbor change: %u",
+			ndm->ndm_family, h->nlmsg_type);
+		return 0;
+	}
 
 	return 0;
 }
 
 static int netlink_neigh_update2(struct interface *ifp, struct ipaddr *ip,
-				 struct ethaddr *mac, uint32_t flags, int cmd)
+				 struct ethaddr *mac, uint8_t flags,
+				 uint16_t state, int cmd)
 {
 	struct {
 		struct nlmsghdr n;
@@ -2405,8 +2516,7 @@ static int netlink_neigh_update2(struct interface *ifp, struct ipaddr *ip,
 	struct zebra_vrf *zvrf = zebra_vrf_lookup_by_id(ifp->vrf_id);
 
 	zns = zvrf->zns;
-	memset(&req.n, 0, sizeof(req.n));
-	memset(&req.ndm, 0, sizeof(req.ndm));
+	memset(&req, 0, sizeof(req));
 
 	req.n.nlmsg_len = NLMSG_LENGTH(sizeof(struct ndmsg));
 	req.n.nlmsg_flags = NLM_F_REQUEST;
@@ -2414,11 +2524,10 @@ static int netlink_neigh_update2(struct interface *ifp, struct ipaddr *ip,
 		req.n.nlmsg_flags |= (NLM_F_CREATE | NLM_F_REPLACE);
 	req.n.nlmsg_type = cmd; // RTM_NEWNEIGH or RTM_DELNEIGH
 	req.ndm.ndm_family = IS_IPADDR_V4(ip) ? AF_INET : AF_INET6;
-	req.ndm.ndm_state = flags;
+	req.ndm.ndm_state = state;
 	req.ndm.ndm_ifindex = ifp->ifindex;
 	req.ndm.ndm_type = RTN_UNICAST;
-	req.ndm.ndm_flags = NTF_EXT_LEARNED;
-
+	req.ndm.ndm_flags = flags;
 
 	ipa_len = IS_IPADDR_V4(ip) ? IPV4_MAX_BYTELEN : IPV6_MAX_BYTELEN;
 	addattr_l(&req.n, sizeof(req), NDA_DST, &ip->ip.addr, ipa_len);
@@ -2426,12 +2535,12 @@ static int netlink_neigh_update2(struct interface *ifp, struct ipaddr *ip,
 		addattr_l(&req.n, sizeof(req), NDA_LLADDR, mac, 6);
 
 	if (IS_ZEBRA_DEBUG_KERNEL)
-		zlog_debug("Tx %s family %s IF %s(%u) Neigh %s MAC %s",
+		zlog_debug("Tx %s family %s IF %s(%u) Neigh %s MAC %s flags 0x%x",
 			   nl_msg_type_to_str(cmd),
 			   nl_family_to_str(req.ndm.ndm_family), ifp->name,
 			   ifp->ifindex, ipaddr2str(ip, buf, sizeof(buf)),
 			   mac ? prefix_mac2str(mac, buf2, sizeof(buf2))
-			       : "null");
+			       : "null", flags);
 
 	return netlink_talk(netlink_talk_filter, &req.n, &zns->netlink_cmd, zns,
 			    0);
@@ -2452,14 +2561,15 @@ int kernel_del_mac(struct interface *ifp, vlanid_t vid, struct ethaddr *mac,
 }
 
 int kernel_add_neigh(struct interface *ifp, struct ipaddr *ip,
-		     struct ethaddr *mac)
+		     struct ethaddr *mac, uint8_t flags)
 {
-	return netlink_neigh_update2(ifp, ip, mac, NUD_NOARP, RTM_NEWNEIGH);
+	return netlink_neigh_update2(ifp, ip, mac, flags,
+				     NUD_NOARP, RTM_NEWNEIGH);
 }
 
 int kernel_del_neigh(struct interface *ifp, struct ipaddr *ip)
 {
-	return netlink_neigh_update2(ifp, ip, NULL, 0, RTM_DELNEIGH);
+	return netlink_neigh_update2(ifp, ip, NULL, 0, 0, RTM_DELNEIGH);
 }
 
 /*

@@ -34,6 +34,7 @@
 #include "bgpd/bgpd.h"
 #include "bgpd/bgp_labelpool.h"
 #include "bgpd/bgp_debug.h"
+#include "bgpd/bgp_errors.h"
 
 /*
  * Definitions and external declarations.
@@ -126,7 +127,8 @@ static wq_item_status lp_cbq_docallback(struct work_queue *wq, void *data)
 
 	if (lcbq->label == MPLS_LABEL_NONE) {
 		/* shouldn't happen */
-		zlog_err("%s: error: label==MPLS_LABEL_NONE", __func__);
+		flog_err(BGP_ERR_LABEL, "%s: error: label==MPLS_LABEL_NONE",
+			  __func__);
 		return WQ_SUCCESS;
 	}
 
@@ -202,10 +204,6 @@ void bgp_lp_init(struct thread_master *master, struct labelpool *pool)
 	lp->requests = XCALLOC(MTYPE_BGP_LABEL_FIFO, sizeof(struct lp_fifo));
 	LABEL_FIFO_INIT(lp->requests);
 	lp->callback_q = work_queue_new(master, "label callbacks");
-	if (!lp->callback_q) {
-		zlog_err("%s: Failed to allocate work queue", __func__);
-		exit(1);
-	}
 
 	lp->callback_q->spec.workfunc = lp_cbq_docallback;
 	lp->callback_q->spec.del_item_data = lp_cbq_item_free;
@@ -340,8 +338,9 @@ void bgp_lp_get(
 
 		if (rc) {
 			/* shouldn't happen */
-			zlog_err("%s: can't insert new LCB into ledger list",
-				__func__);
+			flog_err(BGP_ERR_LABEL,
+				  "%s: can't insert new LCB into ledger list",
+				  __func__);
 			XFREE(MTYPE_BGP_LABEL_CB, lcb);
 			return;
 		}
@@ -428,8 +427,9 @@ void bgp_lp_event_chunk(uint8_t keep, uint32_t first, uint32_t last)
 	struct lp_fifo *lf;
 
 	if (last < first) {
-		zlog_err("%s: zebra label chunk invalid: first=%u, last=%u",
-			__func__, first, last);
+		flog_err(BGP_ERR_LABEL,
+			  "%s: zebra label chunk invalid: first=%u, last=%u",
+			  __func__, first, last);
 		return;
 	}
 
@@ -530,7 +530,6 @@ void bgp_lp_event_zebra_up(void)
 	int chunks_needed;
 	void *labelid;
 	struct lp_lcb *lcb;
-	int lm_init_ok;
 
 	/*
 	 * Get label chunk allocation request dispatched to zebra
@@ -541,11 +540,6 @@ void bgp_lp_event_zebra_up(void)
 	/* round up */
 	chunks_needed = (labels_needed / LP_CHUNK_SIZE) + 1;
 	labels_needed = chunks_needed * LP_CHUNK_SIZE;
-
-	lm_init_ok = lm_label_manager_connect(zclient, 1) == 0;
-
-	if (!lm_init_ok)
-		zlog_err("%s: label manager connection error", __func__);
 
 	zclient_send_get_label_chunk(zclient, 0, labels_needed);
 	lp->pending_count = labels_needed;
