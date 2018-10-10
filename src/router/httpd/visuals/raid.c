@@ -439,19 +439,19 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "</td>\n");
 			websWrite(wp, "<td>\n");
 			int dis = 1;
-			if (!strcmp(fs, "xfs") && xfs)
+			if (!strcmp(fs, "XFS") && xfs)
 				dis = 0;
-			else if (!strcmp(fs, "ext2") && ext2)
+			else if (!strcmp(fs, "EXT2") && ext2)
 				dis = 0;
-			else if (!strcmp(fs, "ext3") && ext3)
+			else if (!strcmp(fs, "EXT3") && ext3)
 				dis = 0;
-			else if (!strcmp(fs, "ext4") && ext4)
+			else if (!strcmp(fs, "EXT4") && ext4)
 				dis = 0;
-			else if (!strcmp(fs, "btrfs") && btrfs)
+			else if (!strcmp(fs, "BTRFS") && btrfs)
 				dis = 0;
-			else if (!strcmp(fs, "exfat") && exfat)
+			else if (!strcmp(fs, "EXFAT") && exfat)
 				dis = 0;
-			else if (!strcmp(fs, "ntfs") && ntfs)
+			else if (!strcmp(fs, "NTFS") && ntfs)
 				dis = 0;
 
 			websWrite(wp,
