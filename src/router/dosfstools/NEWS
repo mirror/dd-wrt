@@ -1,0 +1,104 @@
+dosfstools 4.1 - released 2017-01-24
+====================================
+
+A test suite is now included and can be run with "make check". The test suite
+requires xxd from the vim distribution to recreate image files from hexdumps and
+also adds a dependency on automake 1.11 or later for building from sources other
+than the release tarball.
+
+Now the default for mkfs for filesystems smaller than 512 MB is 64 heads / 32
+sectors to make the defaults a bit more in line with the old defaults used up to
+3.0.28.
+
+Other changes are fixes, some of them user visible, such as setting the sector
+size by command line option for mkfs working again after being broken in 4.0.
+
+Fixed a possible fatlabel crash when writing a label to an unlabelled filesystem
+and the given label contains printf style format specifiers.
+
+When circular cluster chains were detected and the -t option was not given, fsck
+used to truncate the file to zero length while not updating the free cluster
+count. This required a second fsck run to clear. Now it always truncates to the
+last cluster that begins the loop, as it is supposed to.
+
+The parsing of octal character specifications for filenames in the -u and -d
+options of fsck now works. It was broken in some ancient version and would
+always fail.
+
+
+dosfstools 4.0 - released 2016-05-06
+====================================
+
+The programs are now portable to non-Linux operating systems. To that end, the
+build system has been converted to use autotools. There have been Linux
+specifics in a lot of places which have been either eliminated or should have
+equivalents so that it should now work in other Unix-like environments. It has
+been tested on FreeBSD and OS X.
+
+As part of making it portable all the code that assumed 8 bit major/minor
+numbers - and in fact masked out all other bits - has been cleaned up. Now
+mkfs.vfat should not misidentify devices anymore and require the -I option to
+override. The new device probing uses libudev (if available) to collect more
+information.
+
+Fixed data corruption errors in fsck.fat: Writing to the third to last cluster
+on FAT12 with an odd number of clusters would corrupt the following cluster. In
+mkfs.fat, long existing bugs in bad cluster marking (from scanning or user
+supplied bad blocks list) were fixed so that it actually marks the correct
+clusters.
+
+The automatic alignment of data clusters that was added in 3.0.8 and broken for
+FAT32 starting with 3.0.20 has been reinstated. If you need to create file
+systems for finicky devices that have broken FAT implementations use the option
+-a to disable alignment.
+
+
+dosfstools 3.0.28 - released 2015-05-16
+=======================================
+
+The major user visible change in this release is that fsck.fat now defaults to
+interactive repair mode which previously had to be selected with -r. The
+previous default of a read only check mode was confusing to users who had to
+repeat a potentially lengthy fsck.fat run with the right option in order to
+actually fix their file system. It was also pointless – the interactive repair
+mode already won't write anything without asking for confirmation.
+
+mkfs.fat now allows choosing 0xF0 as the media byte which was previously
+rejected.
+
+mkfs.fat now supports the --invariant option to facilitate testing mkfs.fat
+itself. It will reproducibly generate filesystems without random or time based
+differences between them when all else is identical.
+
+Bugs fixed in fsck.fat are a read one byte beyond the end of an allocated array
+when checking some FAT12 filesystems, and checking that the first cluster of a
+file as specified in the directory entry is not 1. Previously it could attempt
+to follow a block chain starting on cluster 1 and segfault when the conditions
+are right.
+
+
+dosfstools 3.0.27 - released 2014-11-12
+=======================================
+
+This is a pure bug fix release. The major bugs fixed:
+
+* fatlabel did not recognize long file names and mistook long file name
+  segments in the root directory for labels. This caused output of garbage when
+  asked to print the label and damage to the root directory (loss of long file
+  name after fsck) when used to set the label.
+
+* A fsck.fat check introduced in 3.0.26 triggered use of uninitialized fields
+  in the constructed root directory entry, which randomly caused the code
+  checking file names to consider the empty "file name" of the root directory
+  to be bad:
+
+    $ /sbin/fsck.fat -y bad.img
+    fsck.fat 3.0.26 (2014-03-07)
+    /
+    Bad short file name ().
+    Auto-renaming it.
+    Renamed to
+    bad.img: 14 files, 19388/403266 clusters
+
+* And finally fsck.fat will not print the version string anymore every time the
+  -v option is encountered.

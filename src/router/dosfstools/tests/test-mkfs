@@ -1,0 +1,79 @@
+#!/bin/sh
+# Copyright (C) 2016  Andreas Bombe <aeb@debian.org>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#
+# This script expects a testname.mkfs file as its sole argument. It must
+# be a shell snippet setting the variables ARGS, SIZE and CMP_LIMIT. ARGS and
+# SIZE are used in the mkfs invocation and the result is compared against a
+# reference image generated from the hexdump in testname.xxd. The comparison
+# is stopped after CMP_LIMIT since freshly build FAT filesystems are just
+# zeros after the initial info sectors, FATs and root directory.
+
+
+run_mkfs () {
+	"../src/mkfs.fat" "$@"
+}
+
+run_fsck () {
+	"../src/fsck.fat" "$@"
+}
+
+
+if [ $# -ne 1 ]; then
+	echo "$0 called with wrong number of arguments"
+	exit 99
+fi
+testname=$(basename "$1" .mkfs)
+
+
+if [ "$XXD_FOUND" != "yes" ]; then
+	echo "xxd not available, required by test"
+	exit 77  # report test skipped
+fi
+
+
+. "$1" || exit 99
+echo "Test $testname"
+
+# make sure there aren't files remaining from earlier run
+rm -f "${testname}.out" "${testname}.refimg"
+
+xxd -r "${srcdir}/${testname}.xxd" "${testname}.refimg" || exit 99
+run_mkfs -C -v --invariant $ARGS "${testname}.out" $SIZE || exit 99
+
+echo
+echo "Comparing..."
+limitarg=
+if [ -n "$CMP_LIMIT" ]; then
+	limitarg="--bytes=$CMP_LIMIT"
+fi
+cmp $limitarg "${testname}.out" "${testname}.refimg"
+success=$?
+
+if [ $success -eq 0 ]; then
+	echo
+	echo "Testing fsck..."
+	run_fsck -n "${testname}.out"
+	success=$?
+fi
+
+rm -f "${testname}.out" "${testname}.refimg"
+
+if [ $success -eq 2 ]; then
+	# cmp reported error
+	exit 99
+fi
+exit $success
