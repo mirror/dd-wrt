@@ -1734,6 +1734,9 @@ zpool_find_import_scan(libzfs_handle_t *hdl, kmutex_t *lock,
 			    (name[1] == 0 || (name[1] == '.' && name[2] == 0)))
 				continue;
 
+			if (!strncmp(name, "mtd", 3))
+				continue;
+
 			slice = zfs_alloc(hdl, sizeof (rdsk_node_t));
 			error = asprintf(&slice->rn_name, "%s/%s", path, name);
 			if (error == -1) {
