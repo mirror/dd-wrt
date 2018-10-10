@@ -180,12 +180,6 @@ struct ospf6_interface *ospf6_interface_create(struct interface *ifp)
 	oi = (struct ospf6_interface *)XCALLOC(MTYPE_OSPF6_IF,
 					       sizeof(struct ospf6_interface));
 
-	if (!oi) {
-		zlog_err("Can't malloc ospf6_interface for ifindex %d",
-			 ifp->ifindex);
-		return (struct ospf6_interface *)NULL;
-	}
-
 	oi->area = (struct ospf6_area *)NULL;
 	oi->neighbor_list = list_new();
 	oi->neighbor_list->cmp = ospf6_neighbor_cmp;
@@ -864,7 +858,6 @@ static int ospf6_interface_show(struct vty *vty, struct interface *ifp)
 	struct prefix *p;
 	struct listnode *i;
 	char strbuf[PREFIX2STR_BUFFER], drouter[32], bdrouter[32];
-	const char *updown[3] = {"down", "up", NULL};
 	const char *type;
 	struct timeval res, now;
 	char duration[32];
@@ -881,7 +874,7 @@ static int ospf6_interface_show(struct vty *vty, struct interface *ifp)
 		type = "UNKNOWN";
 
 	vty_out(vty, "%s is %s, type %s\n", ifp->name,
-		updown[if_is_operative(ifp)], type);
+		(if_is_operative(ifp) ? "up" : "down"), type);
 	vty_out(vty, "  Interface ID: %d\n", ifp->ifindex);
 
 	if (ifp->info == NULL) {

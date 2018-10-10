@@ -57,6 +57,7 @@
 #include "isisd/isis_events.h"
 #include "isisd/isis_te.h"
 #include "isisd/isis_mt.h"
+#include "isisd/isis_errors.h"
 
 DEFINE_QOBJ_TYPE(isis_circuit)
 
@@ -73,10 +74,6 @@ struct isis_circuit *isis_circuit_new()
 	int i;
 
 	circuit = XCALLOC(MTYPE_ISIS_CIRCUIT, sizeof(struct isis_circuit));
-	if (circuit == NULL) {
-		zlog_err("Can't malloc isis circuit");
-		return NULL;
-	}
 
 	/*
 	 * Default values
@@ -357,14 +354,14 @@ void isis_circuit_del_addr(struct isis_circuit *circuit,
 			for (ALL_LIST_ELEMENTS_RO(circuit->ipv6_link, node,
 						  ip6)) {
 				prefix2str((struct prefix *)ip6, (char *)buf,
-					   BUFSIZ);
+					   sizeof(buf));
 				zlog_warn("  %s", buf);
 			}
 			zlog_warn(" -----");
 			for (ALL_LIST_ELEMENTS_RO(circuit->ipv6_non_link, node,
 						  ip6)) {
 				prefix2str((struct prefix *)ip6, (char *)buf,
-					   BUFSIZ);
+					   sizeof(buf));
 				zlog_warn("  %s", buf);
 			}
 			zlog_warn("End of addresses");
@@ -539,7 +536,7 @@ void isis_circuit_stream(struct isis_circuit *circuit, struct stream **stream)
 		*stream = stream_new(stream_size);
 	} else {
 		if (STREAM_SIZE(*stream) != stream_size)
-			stream_resize(*stream, stream_size);
+			stream_resize_inplace(stream, stream_size);
 		stream_reset(*stream);
 	}
 }
@@ -570,7 +567,8 @@ int isis_circuit_up(struct isis_circuit *circuit)
 		return ISIS_OK;
 
 	if (circuit->area->lsp_mtu > isis_circuit_pdu_size(circuit)) {
-		zlog_err(
+		flog_err(
+			ISIS_ERR_CONFIG,
 			"Interface MTU %zu on %s is too low to support area lsp mtu %u!",
 			isis_circuit_pdu_size(circuit),
 			circuit->interface->name, circuit->area->lsp_mtu);
@@ -581,7 +579,9 @@ int isis_circuit_up(struct isis_circuit *circuit)
 	if (circuit->circ_type == CIRCUIT_T_BROADCAST) {
 		circuit->circuit_id = isis_circuit_id_gen(isis, circuit->interface);
 		if (!circuit->circuit_id) {
-			zlog_err("There are already 255 broadcast circuits active!");
+			flog_err(
+				ISIS_ERR_CONFIG,
+				"There are already 255 broadcast circuits active!");
 			return ISIS_ERROR;
 		}
 
@@ -638,7 +638,7 @@ int isis_circuit_up(struct isis_circuit *circuit)
 			thread_add_timer(master, isis_run_dr_l2, circuit,
 					 2 * circuit->hello_interval[1],
 					 &circuit->u.bc.t_run_dr[1]);
-	} else {
+	} else if (circuit->circ_type == CIRCUIT_T_P2P) {
 		/* initializing the hello send threads
 		 * for a ptp IF
 		 */
@@ -682,9 +682,6 @@ int isis_circuit_up(struct isis_circuit *circuit)
 
 void isis_circuit_down(struct isis_circuit *circuit)
 {
-	if (circuit->state != C_STATE_UP)
-		return;
-
 	/* Clear the flags for all the lsps of the circuit. */
 	isis_circuit_update_all_srmflags(circuit, 0);
 
@@ -756,10 +753,12 @@ void isis_circuit_down(struct isis_circuit *circuit)
 	}
 
 	/* send one gratuitous hello to spead up convergence */
-	if (circuit->is_type & IS_LEVEL_1)
-		send_hello(circuit, IS_LEVEL_1);
-	if (circuit->is_type & IS_LEVEL_2)
-		send_hello(circuit, IS_LEVEL_2);
+	if (circuit->state == C_STATE_UP) {
+		if (circuit->is_type & IS_LEVEL_1)
+			send_hello(circuit, IS_LEVEL_1);
+		if (circuit->is_type & IS_LEVEL_2)
+			send_hello(circuit, IS_LEVEL_2);
+	}
 
 	circuit->upadjcount[0] = 0;
 	circuit->upadjcount[1] = 0;

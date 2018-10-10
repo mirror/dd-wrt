@@ -37,6 +37,8 @@
 #include "checksum.h"
 #include "md5.h"
 #include "table.h"
+#include "srcdest_table.h"
+#include "lib_errors.h"
 
 #include "isisd/dict.h"
 #include "isisd/isis_constants.h"
@@ -54,9 +56,6 @@
 #include "isisd/isis_te.h"
 #include "isisd/isis_mt.h"
 #include "isisd/isis_tlvs.h"
-
-/* staticly assigned vars for printing purposes */
-char lsp_bits_string[200]; /* FIXME: enough ? */
 
 static int lsp_l1_refresh(struct thread *thread);
 static int lsp_l2_refresh(struct thread *thread);
@@ -455,7 +454,8 @@ void lsp_update(struct isis_lsp *lsp, struct isis_lsp_hdr *hdr,
 		struct isis_area *area, int level, bool confusion)
 {
 	if (lsp->own_lsp) {
-		zlog_err(
+		flog_err(
+			LIB_ERR_DEVELOPMENT,
 			"ISIS-Upd (%s): BUG updating LSP %s still marked as own LSP",
 			area->area_tag, rawlspid_print(lsp->hdr.lsp_id));
 		lsp_clear_data(lsp);
@@ -608,12 +608,15 @@ static void lspid_print(uint8_t *lsp_id, uint8_t *trg, char dynhost, char frag)
 }
 
 /* Convert the lsp attribute bits to attribute string */
-static const char *lsp_bits2string(uint8_t lsp_bits)
+static const char *lsp_bits2string(uint8_t lsp_bits, char *buf, size_t buf_size)
 {
-	char *pos = lsp_bits_string;
+	char *pos = buf;
 
 	if (!lsp_bits)
 		return " none";
+
+	if (buf_size < 2 * 3)
+		return " error";
 
 	/* we only focus on the default metric */
 	pos += sprintf(pos, "%d/",
@@ -622,11 +625,9 @@ static const char *lsp_bits2string(uint8_t lsp_bits)
 	pos += sprintf(pos, "%d/",
 		       ISIS_MASK_LSP_PARTITION_BIT(lsp_bits) ? 1 : 0);
 
-	pos += sprintf(pos, "%d", ISIS_MASK_LSP_OL_BIT(lsp_bits) ? 1 : 0);
+	sprintf(pos, "%d", ISIS_MASK_LSP_OL_BIT(lsp_bits) ? 1 : 0);
 
-	*(pos) = '\0';
-
-	return lsp_bits_string;
+	return buf;
 }
 
 /* this function prints the lsp on show isis database */
@@ -634,6 +635,7 @@ void lsp_print(struct isis_lsp *lsp, struct vty *vty, char dynhost)
 {
 	uint8_t LSPid[255];
 	char age_out[8];
+	char b[200];
 
 	lspid_print(lsp->hdr.lsp_id, LSPid, dynhost, 1);
 	vty_out(vty, "%-21s%c  ", LSPid, lsp->own_lsp ? '*' : ' ');
@@ -646,7 +648,7 @@ void lsp_print(struct isis_lsp *lsp, struct vty *vty, char dynhost)
 		vty_out(vty, "%7s   ", age_out);
 	} else
 		vty_out(vty, " %5" PRIu16 "    ", lsp->hdr.rem_lifetime);
-	vty_out(vty, "%s\n", lsp_bits2string(lsp->hdr.lsp_bits));
+	vty_out(vty, "%s\n", lsp_bits2string(lsp->hdr.lsp_bits, b, sizeof(b)));
 }
 
 void lsp_print_detail(struct isis_lsp *lsp, struct vty *vty, char dynhost)
@@ -766,18 +768,28 @@ static void lsp_build_ext_reach_ipv6(struct isis_lsp *lsp,
 		return;
 
 	for (struct route_node *rn = route_top(er_table); rn;
-	     rn = route_next(rn)) {
+	     rn = srcdest_route_next(rn)) {
 		if (!rn->info)
 			continue;
-
-		struct prefix_ipv6 *ipv6 = (struct prefix_ipv6 *)&rn->p;
 		struct isis_ext_info *info = rn->info;
+
+		struct prefix_ipv6 *p, *src_p;
+		srcdest_rnode_prefixes(rn, (const struct prefix **)&p,
+				       (const struct prefix **)&src_p);
 
 		uint32_t metric = info->metric;
 		if (info->metric > MAX_WIDE_PATH_METRIC)
 			metric = MAX_WIDE_PATH_METRIC;
-		isis_tlvs_add_ipv6_reach(
-			lsp->tlvs, isis_area_ipv6_topology(area), ipv6, metric);
+
+		if (!src_p || !src_p->prefixlen) {
+			isis_tlvs_add_ipv6_reach(lsp->tlvs,
+						 isis_area_ipv6_topology(area),
+						 p, metric);
+		} else if (isis_area_ipv6_dstsrc_enabled(area)) {
+			isis_tlvs_add_ipv6_dstsrc_reach(lsp->tlvs,
+							ISIS_MT_IPV6_DSTSRC,
+							p, src_p, metric);
+		}
 	}
 }
 
@@ -1053,6 +1065,7 @@ static void lsp_build(struct isis_lsp *lsp, struct isis_area *area)
 					uint8_t subtlv_len;
 
 					if (IS_MPLS_TE(isisMplsTE)
+					    && circuit->interface != NULL
 					    && HAS_LINK_PARAMS(
 						       circuit->interface))
 						/* Update Local and Remote IP
@@ -1231,8 +1244,9 @@ static int lsp_regenerate(struct isis_area *area, int level)
 	lsp = lsp_search(lspid, lspdb);
 
 	if (!lsp) {
-		zlog_err("ISIS-Upd (%s): lsp_regenerate: no L%d LSP found!",
-			 area->area_tag, level);
+		flog_err(LIB_ERR_DEVELOPMENT,
+			  "ISIS-Upd (%s): lsp_regenerate: no L%d LSP found!",
+			  area->area_tag, level);
 		return ISIS_ERROR;
 	}
 
@@ -1599,8 +1613,9 @@ static int lsp_regenerate_pseudo(struct isis_circuit *circuit, int level)
 	lsp = lsp_search(lsp_id, lspdb);
 
 	if (!lsp) {
-		zlog_err("lsp_regenerate_pseudo: no l%d LSP %s found!", level,
-			 rawlspid_print(lsp_id));
+		flog_err(LIB_ERR_DEVELOPMENT,
+			  "lsp_regenerate_pseudo: no l%d LSP %s found!", level,
+			  rawlspid_print(lsp_id));
 		return ISIS_ERROR;
 	}
 

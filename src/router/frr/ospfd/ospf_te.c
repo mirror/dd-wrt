@@ -857,11 +857,6 @@ static int ospf_mpls_te_new_if(struct interface *ifp)
 	}
 
 	new = XCALLOC(MTYPE_OSPF_MPLS_TE, sizeof(struct mpls_te_link));
-	if (new == NULL) {
-		zlog_warn("ospf_mpls_te_new_if: XMALLOC: %s",
-			  safe_strerror(errno));
-		return rc;
-	}
 
 	new->instance = get_mpls_te_instance_value();
 	new->ifp = ifp;
@@ -1206,18 +1201,7 @@ static struct ospf_lsa *ospf_mpls_te_lsa_new(struct ospf *ospf,
 	lsah->length = htons(length);
 
 	/* Now, create an OSPF LSA instance. */
-	if ((new = ospf_lsa_new()) == NULL) {
-		zlog_warn("%s: ospf_lsa_new() ?", __func__);
-		stream_free(s);
-		return NULL;
-	}
-	if ((new->data = ospf_lsa_data_new(length)) == NULL) {
-		zlog_warn("%s: ospf_lsa_data_new() ?", __func__);
-		ospf_lsa_unlock(&new);
-		new = NULL;
-		stream_free(s);
-		return new;
-	}
+	new = ospf_lsa_new_and_data(length);
 
 	new->vrf_id = ospf->vrf_id;
 	if (area && area->ospf)
@@ -1451,6 +1435,8 @@ static struct ospf_lsa *ospf_mpls_te_lsa_refresh(struct ospf_lsa *lsa)
 		zlog_warn("ospf_mpls_te_lsa_refresh: Invalid parameter?");
 		lsa->data->ls_age =
 			htons(OSPF_LSA_MAXAGE); /* Flush it anyway. */
+		ospf_opaque_lsa_flush_schedule(lsa);
+		return NULL;
 	}
 
 	/* Check if lp was not disable in the interval */
@@ -1463,8 +1449,7 @@ static struct ospf_lsa *ospf_mpls_te_lsa_refresh(struct ospf_lsa *lsa)
 
 	/* If the lsa's age reached to MaxAge, start flushing procedure. */
 	if (IS_LSA_MAXAGE(lsa)) {
-		if (lp)
-			UNSET_FLAG(lp->flags, LPFLG_LSA_ENGAGED);
+		UNSET_FLAG(lp->flags, LPFLG_LSA_ENGAGED);
 		ospf_opaque_lsa_flush_schedule(lsa);
 		return NULL;
 	}
@@ -2050,12 +2035,11 @@ static uint16_t ospf_mpls_te_show_link_subtlv(struct vty *vty,
 					      struct tlv_header *tlvh0,
 					      uint16_t subtotal, uint16_t total)
 {
-	struct tlv_header *tlvh, *next;
+	struct tlv_header *tlvh;
 	uint16_t sum = subtotal;
 
 	for (tlvh = tlvh0; sum < total;
-	     tlvh = (next ? next : TLV_HDR_NEXT(tlvh))) {
-		next = NULL;
+	     tlvh = TLV_HDR_NEXT(tlvh)) {
 		switch (ntohs(tlvh->type)) {
 		case TE_LINK_SUBTLV_LINK_TYPE:
 			sum += show_vty_link_subtlv_link_type(vty, tlvh);

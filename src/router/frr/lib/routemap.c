@@ -751,7 +751,7 @@ struct route_map *route_map_lookup_by_name(const char *name)
 	return map;
 }
 
-int route_map_mark_updated(const char *name, int del_later)
+int route_map_mark_updated(const char *name)
 {
 	struct route_map *map;
 	int ret = -1;
@@ -781,7 +781,7 @@ int route_map_mark_updated(const char *name, int del_later)
 	return (ret);
 }
 
-int route_map_clear_updated(struct route_map *map)
+static int route_map_clear_updated(struct route_map *map)
 {
 	int ret = -1;
 
@@ -807,7 +807,7 @@ static struct route_map *route_map_get(const char *name)
 	return map;
 }
 
-void route_map_walk_update_list(int (*route_map_update_fn)(char *name))
+void route_map_walk_update_list(void (*route_map_update_fn)(char *name))
 {
 	struct route_map *node;
 	struct route_map *nnode = NULL;
@@ -1387,7 +1387,7 @@ int route_map_delete_set(struct route_map_index *index, const char *set_name,
 
 static route_map_result_t
 route_map_apply_match(struct route_map_rule_list *match_list,
-		      struct prefix *prefix, route_map_object_t type,
+		      const struct prefix *prefix, route_map_object_t type,
 		      void *object)
 {
 	route_map_result_t ret = RMAP_NOMATCH;
@@ -1417,7 +1417,8 @@ route_map_apply_match(struct route_map_rule_list *match_list,
 }
 
 /* Apply route map to the object. */
-route_map_result_t route_map_apply(struct route_map *map, struct prefix *prefix,
+route_map_result_t route_map_apply(struct route_map *map,
+				   const struct prefix *prefix,
 				   route_map_object_t type, void *object)
 {
 	static int recursion = 0;
@@ -1544,7 +1545,7 @@ static void route_map_clear_reference(struct hash_backet *backet, void *arg)
 	struct route_map_dep *dep = (struct route_map_dep *)backet->data;
 	char *rmap_name;
 
-	if (dep && arg) {
+	if (arg) {
 		rmap_name =
 			(char *)hash_release(dep->dep_rmap_hash, (void *)arg);
 		if (rmap_name) {
@@ -1600,9 +1601,8 @@ static void route_map_print_dependency(struct hash_backet *backet, void *data)
 	char *rmap_name = (char *)backet->data;
 	char *dep_name = (char *)data;
 
-	if (rmap_name)
-		zlog_debug("%s: Dependency for %s: %s", __FUNCTION__, dep_name,
-			   rmap_name);
+	zlog_debug("%s: Dependency for %s: %s", __FUNCTION__, dep_name,
+		   rmap_name);
 }
 
 static int route_map_dep_update(struct hash *dephash, const char *dep_name,
@@ -1724,18 +1724,14 @@ static struct hash *route_map_get_dep_hash(route_map_event_t event)
 
 static void route_map_process_dependency(struct hash_backet *backet, void *data)
 {
-	char *rmap_name;
+	char *rmap_name = (char *)backet->data;
 	route_map_event_t type = (route_map_event_t)(ptrdiff_t)data;
 
-	rmap_name = (char *)backet->data;
-
-	if (rmap_name) {
-		if (rmap_debug)
-			zlog_debug("%s: Notifying %s of dependency",
-				   __FUNCTION__, rmap_name);
-		if (route_map_master.event_hook)
-			(*route_map_master.event_hook)(type, rmap_name);
-	}
+	if (rmap_debug)
+		zlog_debug("%s: Notifying %s of dependency",
+			   __FUNCTION__, rmap_name);
+	if (route_map_master.event_hook)
+		(*route_map_master.event_hook)(type, rmap_name);
 }
 
 void route_map_upd8_dependency(route_map_event_t type, const char *arg,
@@ -2739,6 +2735,15 @@ void route_map_finish(void)
 	route_match_vec = NULL;
 	vector_free(route_set_vec);
 	route_set_vec = NULL;
+
+	/*
+	 * All protocols are setting these to NULL
+	 * by default on shutdown( route_map_finish )
+	 * Why are we making them do this work?
+	 */
+	route_map_master.add_hook = NULL;
+	route_map_master.delete_hook = NULL;
+	route_map_master.event_hook = NULL;
 
 	/* cleanup route_map */
 	while (route_map_master.head) {

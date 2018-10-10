@@ -48,6 +48,7 @@
 #include "vty.h"
 #include "zclient.h"
 #include <lib/json.h>
+#include "ospf_errors.h"
 
 #include "ospfd/ospfd.h"
 #include "ospfd/ospf_interface.h"
@@ -127,12 +128,6 @@ static struct sr_node *sr_node_new(struct in_addr *rid)
 
 	/* Allocate Segment Routing node memory */
 	new = XCALLOC(MTYPE_OSPF_SR_PARAMS, sizeof(struct sr_node));
-
-	/* Sanity Check */
-	if (new == NULL) {
-		zlog_err("SR (%s): Abort! can't create new SR node", __func__);
-		return NULL;
-	}
 
 	/* Default Algorithm, SRGB and MSD */
 	for (int i = 0; i < ALGORITHM_COUNT; i++)
@@ -735,9 +730,6 @@ static struct sr_link *get_ext_link_sid(struct tlv_header *tlvh)
 
 	srl = XCALLOC(MTYPE_OSPF_SR_PARAMS, sizeof(struct sr_link));
 
-	if (srl == NULL)
-		return NULL;
-
 	/* Initialize TLV browsing */
 	length = ntohs(tlvh->length) - EXT_TLV_LINK_SIZE;
 	sub_tlvh = (struct tlv_header *)((char *)(tlvh) + TLV_HDR_SIZE
@@ -820,9 +812,6 @@ static struct sr_prefix *get_ext_prefix_sid(struct tlv_header *tlvh)
 
 	srp = XCALLOC(MTYPE_OSPF_SR_PARAMS, sizeof(struct sr_prefix));
 
-	if (srp == NULL)
-		return NULL;
-
 	/* Initialize TLV browsing */
 	length = ntohs(tlvh->length) - EXT_TLV_PREFIX_SIZE;
 	sub_tlvh = (struct tlv_header *)((char *)(tlvh) + TLV_HDR_SIZE
@@ -832,8 +821,9 @@ static struct sr_prefix *get_ext_prefix_sid(struct tlv_header *tlvh)
 		case EXT_SUBTLV_PREFIX_SID:
 			psid = (struct ext_subtlv_prefix_sid *)sub_tlvh;
 			if (psid->algorithm != SR_ALGORITHM_SPF) {
-				zlog_err("SR (%s): Unsupported Algorithm",
-					 __func__);
+				flog_err(OSPF_ERR_SR_INVALID_ALGORITHM,
+					  "SR (%s): Unsupported Algorithm",
+					  __func__);
 				XFREE(MTYPE_OSPF_SR_PARAMS, srp);
 				return NULL;
 			}
@@ -1112,7 +1102,8 @@ void ospf_sr_ri_lsa_update(struct ospf_lsa *lsa)
 		return;
 
 	if (OspfSR.neighbors == NULL) {
-		zlog_err("SR (%s): Abort! no valid SR DataBase", __func__);
+		flog_err(OSPF_ERR_SR_INVALID_DB,
+			  "SR (%s): Abort! no valid SR DataBase", __func__);
 		return;
 	}
 
@@ -1122,17 +1113,18 @@ void ospf_sr_ri_lsa_update(struct ospf_lsa *lsa)
 
 	/* Sanity check */
 	if (srn == NULL) {
-		zlog_err("SR (%s): Abort! can't create SR node in hash table",
-			 __func__);
+		flog_err(OSPF_ERR_SR_NODE_CREATE,
+			  "SR (%s): Abort! can't create SR node in hash table",
+			  __func__);
 		return;
 	}
 
 	if ((srn->instance != 0) && (srn->instance != ntohl(lsah->id.s_addr))) {
-		zlog_err(
-			"SR (%s): Abort! Wrong "
-			"LSA ID 4.0.0.%u for SR node %s/%u",
-			__func__, GET_OPAQUE_ID(ntohl(lsah->id.s_addr)),
-			inet_ntoa(lsah->adv_router), srn->instance);
+		flog_err(OSPF_ERR_SR_INVALID_LSA_ID,
+			  "SR (%s): Abort! Wrong "
+			  "LSA ID 4.0.0.%u for SR node %s/%u",
+			  __func__, GET_OPAQUE_ID(ntohl(lsah->id.s_addr)),
+			  inet_ntoa(lsah->adv_router), srn->instance);
 		return;
 	}
 
@@ -1221,7 +1213,8 @@ void ospf_sr_ri_lsa_delete(struct ospf_lsa *lsa)
 
 	/* Sanity check */
 	if (OspfSR.neighbors == NULL) {
-		zlog_err("SR (%s): Abort! no valid SR Data Base", __func__);
+		flog_err(OSPF_ERR_SR_INVALID_DB,
+			  "SR (%s): Abort! no valid SR Data Base", __func__);
 		return;
 	}
 
@@ -1230,15 +1223,18 @@ void ospf_sr_ri_lsa_delete(struct ospf_lsa *lsa)
 
 	/* Sanity check */
 	if (srn == NULL) {
-		zlog_err("SR (%s): Abort! no entry in SRDB for SR Node %s",
-			 __func__, inet_ntoa(lsah->adv_router));
+		flog_err(OSPF_ERR_SR_NODE_CREATE,
+			  "SR (%s): Abort! no entry in SRDB for SR Node %s",
+			  __func__, inet_ntoa(lsah->adv_router));
 		return;
 	}
 
 	if ((srn->instance != 0) && (srn->instance != ntohl(lsah->id.s_addr))) {
-		zlog_err("SR (%s): Abort! Wrong LSA ID 4.0.0.%u for SR node %s",
-			 __func__, GET_OPAQUE_ID(ntohl(lsah->id.s_addr)),
-			 inet_ntoa(lsah->adv_router));
+		flog_err(
+			OSPF_ERR_SR_INVALID_LSA_ID,
+			"SR (%s): Abort! Wrong LSA ID 4.0.0.%u for SR node %s",
+			__func__, GET_OPAQUE_ID(ntohl(lsah->id.s_addr)),
+			inet_ntoa(lsah->adv_router));
 		return;
 	}
 
@@ -1264,7 +1260,8 @@ void ospf_sr_ext_link_lsa_update(struct ospf_lsa *lsa)
 
 	/* Sanity check */
 	if (OspfSR.neighbors == NULL) {
-		zlog_err("SR (%s): Abort! no valid SR DataBase", __func__);
+		flog_err(OSPF_ERR_SR_INVALID_DB,
+			  "SR (%s): Abort! no valid SR DataBase", __func__);
 		return;
 	}
 
@@ -1275,8 +1272,9 @@ void ospf_sr_ext_link_lsa_update(struct ospf_lsa *lsa)
 
 	/* Sanity check */
 	if (srn == NULL) {
-		zlog_err("SR (%s): Abort! can't create SR node in hash table",
-			 __func__);
+		flog_err(OSPF_ERR_SR_NODE_CREATE,
+			  "SR (%s): Abort! can't create SR node in hash table",
+			  __func__);
 		return;
 	}
 
@@ -1314,7 +1312,8 @@ void ospf_sr_ext_link_lsa_delete(struct ospf_lsa *lsa)
 
 	/* Sanity check */
 	if (OspfSR.neighbors == NULL) {
-		zlog_err("SR (%s): Abort! no valid SR DataBase", __func__);
+		flog_err(OSPF_ERR_SR_INVALID_DB,
+			  "SR (%s): Abort! no valid SR DataBase", __func__);
 		return;
 	}
 
@@ -1371,7 +1370,8 @@ void ospf_sr_ext_prefix_lsa_update(struct ospf_lsa *lsa)
 
 	/* Sanity check */
 	if (OspfSR.neighbors == NULL) {
-		zlog_err("SR (%s): Abort! no valid SR DataBase", __func__);
+		flog_err(OSPF_ERR_SR_INVALID_DB,
+			  "SR (%s): Abort! no valid SR DataBase", __func__);
 		return;
 	}
 
@@ -1382,8 +1382,9 @@ void ospf_sr_ext_prefix_lsa_update(struct ospf_lsa *lsa)
 
 	/* Sanity check */
 	if (srn == NULL) {
-		zlog_err("SR (%s): Abort! can't create SR node in hash table",
-			 __func__);
+		flog_err(OSPF_ERR_SR_NODE_CREATE,
+			  "SR (%s): Abort! can't create SR node in hash table",
+			  __func__);
 		return;
 	}
 
@@ -1422,7 +1423,8 @@ void ospf_sr_ext_prefix_lsa_delete(struct ospf_lsa *lsa)
 
 	/* Sanity check */
 	if (OspfSR.neighbors == NULL) {
-		zlog_err("SR (%s): Abort! no valid SR DataBase", __func__);
+		flog_err(OSPF_ERR_SR_INVALID_DB,
+			  "SR (%s): Abort! no valid SR DataBase", __func__);
 		return;
 	}
 
@@ -1535,10 +1537,6 @@ static void ospf_sr_nhlfe_update(struct hash_backet *backet, void *args)
 	struct sr_prefix *srp;
 	struct sr_nhlfe old;
 	int rc;
-
-	/* Sanity Check */
-	if (srn == NULL)
-		return;
 
 	if (IS_DEBUG_OSPF_SR)
 		zlog_debug("  |-  Update Prefix for SR Node %s",

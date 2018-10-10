@@ -35,6 +35,7 @@
 #include "checksum.h"
 #include "md5.h"
 #include "vrf.h"
+#include "ospf_errors.h"
 
 #include "ospfd/ospfd.h"
 #include "ospfd/ospf_network.h"
@@ -144,8 +145,6 @@ void ospf_packet_free(struct ospf_packet *op)
 		stream_free(op->s);
 
 	XFREE(MTYPE_OSPF_PACKET, op);
-
-	op = NULL;
 }
 
 struct ospf_fifo *ospf_fifo_new()
@@ -232,7 +231,8 @@ void ospf_fifo_free(struct ospf_fifo *fifo)
 void ospf_packet_add(struct ospf_interface *oi, struct ospf_packet *op)
 {
 	if (!oi->obuf) {
-		zlog_err(
+		flog_err(
+			OSPF_ERR_PKT_PROCESS,
 			"ospf_packet_add(interface %s in state %d [%s], packet type %s, "
 			"destination %s) called with NULL obuf, ignoring "
 			"(please report this bug)!\n",
@@ -255,7 +255,8 @@ static void ospf_packet_add_top(struct ospf_interface *oi,
 				struct ospf_packet *op)
 {
 	if (!oi->obuf) {
-		zlog_err(
+		flog_err(
+			OSPF_ERR_PKT_PROCESS,
 			"ospf_packet_add(interface %s in state %d [%s], packet type %s, "
 			"destination %s) called with NULL obuf, ignoring "
 			"(please report this bug)!\n",
@@ -1741,7 +1742,7 @@ static struct list *ospf_ls_upd_list_lsa(struct ospf_neighbor *nbr,
 		}
 
 		/* Create OSPF LSA instance. */
-		lsa = ospf_lsa_new();
+		lsa = ospf_lsa_new_and_data(length);
 
 		lsa->vrf_id = oi->ospf->vrf_id;
 		/* We may wish to put some error checking if type NSSA comes in
@@ -1760,7 +1761,6 @@ static struct list *ospf_ls_upd_list_lsa(struct ospf_neighbor *nbr,
 			break;
 		}
 
-		lsa->data = ospf_lsa_data_new(length);
 		memcpy(lsa->data, lsah, length);
 
 		if (IS_DEBUG_OSPF_EVENT)
@@ -1917,17 +1917,18 @@ static void ospf_ls_upd(struct ospf *ospf, struct ip *iph,
 				char buf2[INET_ADDRSTRLEN];
 				char buf3[INET_ADDRSTRLEN];
 
-				zlog_err(
-					"Incoming Router-LSA from %s with "
-					"Adv-ID[%s] != LS-ID[%s]",
-					inet_ntop(AF_INET, &ospfh->router_id,
-						  buf1, INET_ADDRSTRLEN),
-					inet_ntop(AF_INET, &lsa->data->id, buf2,
-						  INET_ADDRSTRLEN),
-					inet_ntop(AF_INET,
-						  &lsa->data->adv_router, buf3,
-						  INET_ADDRSTRLEN));
-				zlog_err(
+				flog_err(OSPF_ERR_ROUTER_LSA_MISMATCH,
+					  "Incoming Router-LSA from %s with "
+					  "Adv-ID[%s] != LS-ID[%s]",
+					  inet_ntop(AF_INET, &ospfh->router_id,
+						    buf1, INET_ADDRSTRLEN),
+					  inet_ntop(AF_INET, &lsa->data->id,
+						    buf2, INET_ADDRSTRLEN),
+					  inet_ntop(AF_INET,
+						    &lsa->data->adv_router,
+						    buf3, INET_ADDRSTRLEN));
+				flog_err(
+					OSPF_ERR_DOMAIN_CORRUPT,
 					"OSPF domain compromised by attack or corruption. "
 					"Verify correct operation of -ALL- OSPF routers.");
 				DISCARD_LSA(lsa, 0);

@@ -44,6 +44,7 @@
 #include "bgpd/bgp_zebra.h"
 #include "bgpd/bgp_fsm.h"
 #include "bgpd/bgp_debug.h"
+#include "bgpd/bgp_errors.h"
 #include "bgpd/bgp_mpath.h"
 #include "bgpd/bgp_nexthop.h"
 #include "bgpd/bgp_nht.h"
@@ -1016,7 +1017,7 @@ static int bgp_zebra_tm_connect(struct thread *t)
 		ret = tm_table_manager_connect(zclient);
 	}
 	if (ret < 0) {
-		zlog_warn("Error connecting to table manager!");
+		zlog_info("Error connecting to table manager!");
 		bgp_tm_status_connected = false;
 	} else {
 		if (!bgp_tm_status_connected)
@@ -1077,7 +1078,8 @@ int bgp_zebra_get_table_range(uint32_t chunk_size,
 		return -1;
 	ret = tm_get_table_chunk(zclient, chunk_size, start, end);
 	if (ret < 0) {
-		zlog_err("BGP: Error getting table chunk %u", chunk_size);
+		flog_err(BGP_ERR_TABLE_CHUNK,
+			  "BGP: Error getting table chunk %u", chunk_size);
 		return -1;
 	}
 	zlog_info("BGP: Table Manager returns range from chunk %u is [%u %u]",
@@ -1190,7 +1192,7 @@ void bgp_zebra_announce(struct bgp_node *rn, struct prefix *p,
 	mpls_label_t label;
 	int nh_othervrf = 0;
 	char buf_prefix[PREFIX_STRLEN];	/* filled in if we are debugging */
-	bool is_evpn = false;
+	bool is_evpn;
 	int nh_updated;
 
 	/* Don't try to install if we're not connected to Zebra or Zebra doesn't
@@ -1203,7 +1205,7 @@ void bgp_zebra_announce(struct bgp_node *rn, struct prefix *p,
 		return;
 
 	if (bgp_debug_zebra(p))
-		prefix2str(&api.prefix, buf_prefix, sizeof(buf_prefix));
+		prefix2str(p, buf_prefix, sizeof(buf_prefix));
 
 	if (safi == SAFI_FLOWSPEC)
 		return bgp_pbr_update_entry(bgp, &rn->p,
@@ -1217,7 +1219,6 @@ void bgp_zebra_announce(struct bgp_node *rn, struct prefix *p,
 
 	/* Make Zebra API structure. */
 	memset(&api, 0, sizeof(api));
-	memcpy(&api.rmac, &(info->attr->rmac), sizeof(struct ethaddr));
 	api.vrf_id = bgp->vrf_id;
 	api.type = ZEBRA_ROUTE_BGP;
 	api.safi = safi;
@@ -1235,13 +1236,6 @@ void bgp_zebra_announce(struct bgp_node *rn, struct prefix *p,
 	}
 
 	tag = info->attr->tag;
-
-	/*
-	 * When we create an aggregate route we must also install a
-	 * Null0 route in the RIB
-	 */
-	if (info->sub_type == BGP_ROUTE_AGGREGATE)
-		zapi_route_set_blackhole(&api, BLACKHOLE_NULL);
 
 	/* If the route's source is EVPN, flag as such. */
 	is_evpn = is_route_parent_evpn(info);
@@ -1298,17 +1292,11 @@ void bgp_zebra_announce(struct bgp_node *rn, struct prefix *p,
 				}
 			}
 
-			if (bgp->table_map[afi][safi].name || nh_othervrf) {
+			if (bgp->table_map[afi][safi].name) {
 				/* Copy info and attributes, so the route-map
 				   apply doesn't modify the BGP route info. */
 				local_attr = *mpinfo->attr;
 				mpinfo_cp->attr = &local_attr;
-				if (nh_othervrf) {
-					/* allow route-map to modify */
-					local_attr.nexthop =
-						info->extra->nexthop_orig.u
-							.prefix4;
-				}
 			}
 
 			if (bgp->table_map[afi][safi].name) {
@@ -1330,22 +1318,14 @@ void bgp_zebra_announce(struct bgp_node *rn, struct prefix *p,
 					&mpinfo_cp->attr->nexthop,
 					mpinfo_cp->attr, is_evpn, api_nh);
 		} else {
-			ifindex_t ifindex;
+			ifindex_t ifindex = IFINDEX_INTERNAL;
 			struct in6_addr *nexthop;
 
-			if (bgp->table_map[afi][safi].name || nh_othervrf) {
+			if (bgp->table_map[afi][safi].name) {
 				/* Copy info and attributes, so the route-map
 				   apply doesn't modify the BGP route info. */
 				local_attr = *mpinfo->attr;
 				mpinfo_cp->attr = &local_attr;
-				if (nh_othervrf) {
-					/* allow route-map to modify */
-					local_attr.mp_nexthop_global =
-						info->extra->nexthop_orig.u
-							.prefix6;
-					local_attr.mp_nexthop_len =
-						BGP_ATTR_NHLEN_IPV6_GLOBAL;
-				}
 			}
 
 			if (bgp->table_map[afi][safi].name) {
@@ -1386,6 +1366,8 @@ void bgp_zebra_announce(struct bgp_node *rn, struct prefix *p,
 			api_nh->label_num = 1;
 			api_nh->labels[0] = label;
 		}
+		memcpy(&api_nh->rmac, &(mpinfo->attr->rmac),
+		       sizeof(struct ethaddr));
 		valid_nh_count++;
 	}
 
@@ -1394,7 +1376,14 @@ void bgp_zebra_announce(struct bgp_node *rn, struct prefix *p,
 	if (has_valid_label && !(CHECK_FLAG(api.flags, ZEBRA_FLAG_EVPN_ROUTE)))
 		SET_FLAG(api.message, ZAPI_MESSAGE_LABEL);
 
-	if (info->sub_type != BGP_ROUTE_AGGREGATE)
+	/*
+	 * When we create an aggregate route we must also
+	 * install a Null0 route in the RIB, so overwrite
+	 * what was written into api with a blackhole route
+	 */
+	if (info->sub_type == BGP_ROUTE_AGGREGATE)
+		zapi_route_set_blackhole(&api, BLACKHOLE_NULL);
+	else
 		api.nexthop_num = valid_nh_count;
 
 	SET_FLAG(api.message, ZAPI_MESSAGE_METRIC);
@@ -1510,7 +1499,6 @@ void bgp_zebra_withdraw(struct prefix *p, struct bgp_info *info,
 	}
 
 	memset(&api, 0, sizeof(api));
-	memcpy(&api.rmac, &(info->attr->rmac), sizeof(struct ethaddr));
 	api.vrf_id = bgp->vrf_id;
 	api.type = ZEBRA_ROUTE_BGP;
 	api.safi = safi;
@@ -1588,8 +1576,14 @@ static void bgp_redist_del(struct bgp *bgp, afi_t afi, uint8_t type,
 
 /* Other routes redistribution into BGP. */
 int bgp_redistribute_set(struct bgp *bgp, afi_t afi, int type,
-			 unsigned short instance)
+			 unsigned short instance, bool changed)
 {
+	/* If redistribute options are changed call
+	 * bgp_redistribute_unreg() to reset the option and withdraw
+	 * the routes
+	 */
+	if (changed)
+		bgp_redistribute_unreg(bgp, afi, type, instance);
 
 	/* Return if already redistribute flag is set. */
 	if (instance) {
@@ -1923,7 +1917,7 @@ int bgp_zebra_advertise_gw_macip(struct bgp *bgp, int advertise, vni_t vni)
 
 	zclient_create_header(s, ZEBRA_ADVERTISE_DEFAULT_GW, bgp->vrf_id);
 	stream_putc(s, advertise);
-	stream_put3(s, vni);
+	stream_putl(s, vni);
 	stream_putw_at(s, 0, stream_get_endp(s));
 
 	return zclient_send_message(zclient);
@@ -2012,7 +2006,7 @@ static int ipset_notify_owner(int command, struct zclient *zclient,
 	bgp_pbim = bgp_pbr_match_ipset_lookup(vrf_id, unique);
 	if (!bgp_pbim) {
 		if (BGP_DEBUG(zebra, ZEBRA))
-			zlog_debug("%s: Fail to look BGP match ( %u %u)",
+			zlog_debug("%s: Fail to look BGP match ( %u, ID %u)",
 				   __PRETTY_FUNCTION__, note, unique);
 		return 0;
 	}
@@ -2062,7 +2056,7 @@ static int ipset_entry_notify_owner(int command, struct zclient *zclient,
 						     unique);
 	if (!bgp_pbime) {
 		if (BGP_DEBUG(zebra, ZEBRA))
-			zlog_debug("%s: Fail to look BGP match entry (%u %u)",
+			zlog_debug("%s: Fail to look BGP match entry (%u, ID %u)",
 				   __PRETTY_FUNCTION__, note, unique);
 		return 0;
 	}
@@ -2088,7 +2082,9 @@ static int ipset_entry_notify_owner(int command, struct zclient *zclient,
 			/* link bgp_info to bpme */
 			bgp_info = (struct bgp_info *)bgp_pbime->bgp_info;
 			extra = bgp_info_extra_get(bgp_info);
-			extra->bgp_fs_pbr = (void *)bgp_pbime;
+			if (extra->bgp_fs_pbr == NULL)
+				extra->bgp_fs_pbr = list_new();
+			listnode_add(extra->bgp_fs_pbr, bgp_pbime);
 		}
 		break;
 	case ZAPI_IPSET_ENTRY_FAIL_REMOVE:
@@ -2269,6 +2265,40 @@ static void bgp_zebra_connected(struct zclient *zclient)
 	 */
 }
 
+static int bgp_zebra_process_local_es(int cmd, struct zclient *zclient,
+				      zebra_size_t length, vrf_id_t vrf_id)
+{
+	esi_t esi;
+	struct bgp *bgp = NULL;
+	struct stream *s = NULL;
+	char buf[ESI_STR_LEN];
+	char buf1[INET6_ADDRSTRLEN];
+	struct ipaddr originator_ip;
+
+	memset(&esi, 0, sizeof(esi_t));
+	memset(&originator_ip, 0, sizeof(struct ipaddr));
+
+	bgp = bgp_lookup_by_vrf_id(vrf_id);
+	if (!bgp)
+		return 0;
+
+	s = zclient->ibuf;
+	stream_get(&esi, s, sizeof(esi_t));
+	stream_get(&originator_ip, s, sizeof(struct ipaddr));
+
+	if (BGP_DEBUG(zebra, ZEBRA))
+		zlog_debug("Rx %s ESI %s originator-ip %s",
+			   (cmd == ZEBRA_LOCAL_ES_ADD) ? "add" : "del",
+			   esi_to_str(&esi, buf, sizeof(buf)),
+			   ipaddr2str(&originator_ip, buf1, sizeof(buf1)));
+
+	if (cmd == ZEBRA_LOCAL_ES_ADD)
+		bgp_evpn_local_es_add(bgp, &esi, &originator_ip);
+	else
+		bgp_evpn_local_es_del(bgp, &esi, &originator_ip);
+	return 0;
+}
+
 static int bgp_zebra_process_local_l3vni(int cmd, struct zclient *zclient,
 					 zebra_size_t length, vrf_id_t vrf_id)
 {
@@ -2359,9 +2389,10 @@ static int bgp_zebra_process_local_macip(int command, struct zclient *zclient,
 	ipa_len = stream_getl(s);
 	if (ipa_len != 0 && ipa_len != IPV4_MAX_BYTELEN
 	    && ipa_len != IPV6_MAX_BYTELEN) {
-		zlog_err("%u:Recv MACIP %s with invalid IP addr length %d",
-			 vrf_id, (command == ZEBRA_MACIP_ADD) ? "Add" : "Del",
-			 ipa_len);
+		flog_err(BGP_ERR_MACIP_LEN,
+			  "%u:Recv MACIP %s with invalid IP addr length %d",
+			  vrf_id, (command == ZEBRA_MACIP_ADD) ? "Add" : "Del",
+			  ipa_len);
 		return -1;
 	}
 
@@ -2451,11 +2482,13 @@ static void bgp_zebra_process_label_chunk(
 	STREAM_GETL(s, last);
 
 	if (zclient->redist_default != proto) {
-		zlog_err("Got LM msg with wrong proto %u", proto);
+		flog_err(BGP_ERR_LM_ERROR, "Got LM msg with wrong proto %u",
+			  proto);
 		return;
 	}
 	if (zclient->instance != instance) {
-		zlog_err("Got LM msg with wrong instance %u", proto);
+		flog_err(BGP_ERR_LM_ERROR, "Got LM msg with wrong instance %u",
+			  proto);
 		return;
 	}
 
@@ -2463,8 +2496,8 @@ static void bgp_zebra_process_label_chunk(
 		first < MPLS_LABEL_UNRESERVED_MIN ||
 		last > MPLS_LABEL_UNRESERVED_MAX) {
 
-		zlog_err("%s: Invalid Label chunk: %u - %u",
-			__func__, first, last);
+		flog_err(BGP_ERR_LM_ERROR, "%s: Invalid Label chunk: %u - %u",
+			  __func__, first, last);
 		return;
 	}
 	if (BGP_DEBUG(zebra, ZEBRA)) {
@@ -2480,7 +2513,7 @@ stream_failure:		/* for STREAM_GETX */
 
 extern struct zebra_privs_t bgpd_privs;
 
-void bgp_zebra_init(struct thread_master *master, unsigned short instance)
+void bgp_zebra_init(struct thread_master *master)
 {
 	zclient_num_connects = 0;
 
@@ -2504,6 +2537,8 @@ void bgp_zebra_init(struct thread_master *master, unsigned short instance)
 	zclient->nexthop_update = bgp_read_nexthop_update;
 	zclient->import_check_update = bgp_read_import_check_update;
 	zclient->fec_update = bgp_read_fec_update;
+	zclient->local_es_add = bgp_zebra_process_local_es;
+	zclient->local_es_del = bgp_zebra_process_local_es;
 	zclient->local_vni_add = bgp_zebra_process_local_vni;
 	zclient->local_vni_del = bgp_zebra_process_local_vni;
 	zclient->local_macip_add = bgp_zebra_process_local_macip;
@@ -2517,7 +2552,6 @@ void bgp_zebra_init(struct thread_master *master, unsigned short instance)
 	zclient->ipset_notify_owner = ipset_notify_owner;
 	zclient->ipset_entry_notify_owner = ipset_entry_notify_owner;
 	zclient->iptable_notify_owner = iptable_notify_owner;
-	zclient->instance = instance;
 }
 
 void bgp_zebra_destroy(void)
@@ -2566,9 +2600,10 @@ void bgp_send_pbr_ipset_match(struct bgp_pbr_match *pbrim, bool install)
 	if (pbrim->install_in_progress)
 		return;
 	if (BGP_DEBUG(zebra, ZEBRA))
-		zlog_debug("%s: name %s type %d %d",
+		zlog_debug("%s: name %s type %d %d, ID %u",
 			   __PRETTY_FUNCTION__,
-			   pbrim->ipset_name, pbrim->type, install);
+			   pbrim->ipset_name, pbrim->type,
+			   install, pbrim->unique);
 	s = zclient->obuf;
 	stream_reset(s);
 
@@ -2594,9 +2629,9 @@ void bgp_send_pbr_ipset_entry_match(struct bgp_pbr_match_entry *pbrime,
 	if (pbrime->install_in_progress)
 		return;
 	if (BGP_DEBUG(zebra, ZEBRA))
-		zlog_debug("%s: name %s %d %d", __PRETTY_FUNCTION__,
+		zlog_debug("%s: name %s %d %d, ID %u", __PRETTY_FUNCTION__,
 			   pbrime->backpointer->ipset_name,
-			   pbrime->unique, install);
+			   pbrime->unique, install, pbrime->unique);
 	s = zclient->obuf;
 	stream_reset(s);
 
@@ -2661,9 +2696,10 @@ void bgp_send_pbr_iptable(struct bgp_pbr_action *pba,
 	if (pbm->install_iptable_in_progress)
 		return;
 	if (BGP_DEBUG(zebra, ZEBRA))
-		zlog_debug("%s: name %s type %d mark %d %d",
+		zlog_debug("%s: name %s type %d mark %d %d, ID %u",
 			   __PRETTY_FUNCTION__, pbm->ipset_name,
-			   pbm->type, pba->fwmark, install);
+			   pbm->type, pba->fwmark, install,
+			   pbm->unique2);
 	s = zclient->obuf;
 	stream_reset(s);
 

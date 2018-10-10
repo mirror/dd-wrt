@@ -30,6 +30,7 @@
 #include "pqueue.h"
 #include "linklist.h"
 #include "thread.h"
+#include "lib_errors.h"
 
 #include "ospf6_lsa.h"
 #include "ospf6_lsdb.h"
@@ -272,7 +273,8 @@ static void ospf6_nexthop_calc(struct ospf6_vertex *w, struct ospf6_vertex *v,
 	ifindex = (VERTEX_IS_TYPE(NETWORK, v) ? ospf6_spf_get_ifindex_from_nh(v)
 					      : ROUTER_LSDESC_GET_IFID(lsdesc));
 	if (ifindex == 0) {
-		zlog_err("No nexthop ifindex at vertex %s", v->name);
+		flog_err(LIB_ERR_DEVELOPMENT,
+			  "No nexthop ifindex at vertex %s", v->name);
 		return;
 	}
 
@@ -677,6 +679,10 @@ void ospf6_spf_schedule(struct ospf6 *ospf6, unsigned int reason)
 {
 	unsigned long delay, elapsed, ht;
 
+	/* OSPF instance does not exist. */
+	if (ospf6 == NULL)
+		return;
+
 	ospf6_set_spf_reason(ospf6, reason);
 
 	if (IS_OSPF6_DEBUG_SPF(PROCESS) || IS_OSPF6_DEBUG_SPF(TIME)) {
@@ -685,10 +691,6 @@ void ospf6_spf_schedule(struct ospf6 *ospf6, unsigned int reason)
 		zlog_debug("SPF: calculation timer scheduled (reason %s)",
 			   rbuf);
 	}
-
-	/* OSPF instance does not exist. */
-	if (ospf6 == NULL)
-		return;
 
 	/* SPF calculation timer is already scheduled. */
 	if (ospf6->t_spf_calc) {
@@ -1012,16 +1014,10 @@ struct ospf6_lsa *ospf6_create_single_router_lsa(struct ospf6_area *area,
 
 	/* Allocate memory for this LSA */
 	new_header = XMALLOC(MTYPE_OSPF6_LSA_HEADER, total_lsa_length);
-	if (!new_header)
-		return NULL;
 
 	/* LSA information structure */
 	lsa = (struct ospf6_lsa *)XCALLOC(MTYPE_OSPF6_LSA,
 					  sizeof(struct ospf6_lsa));
-	if (!lsa) {
-		free(new_header);
-		return NULL;
-	}
 
 	lsa->header = (struct ospf6_lsa_header *)new_header;
 

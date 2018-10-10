@@ -123,8 +123,10 @@ These following options control the daemon's VTY (interactive command line) inte
       ldpd            2612
       eigrpd          2613
       pbrd            2615
+      staticd         2616
+      bfdd            2617
 
-   Port 2607 is used for ospfd's Opaque LSA API, while port 2600 is used for the (insecure) TCP-ZEBRA interface.
+   Port 2607 is used for ospfd's Opaque LSA API.
 
 .. option:: --vty_socket vty-path
 
@@ -156,11 +158,4 @@ frr supports optional dynamically loadable modules, although these can only be l
    Look for modules in the module-path directory instead of the default /usr/lib/frr/modules.  (This path is not affected by the -N option.)
 
 The list of loaded modules can be inspected at runtime with the show modules VTY command.
-
-ROUTES
-------
-
-.. option:: -r, --retain
-
-   When the program terminates, retain routes added by the daemon.
 

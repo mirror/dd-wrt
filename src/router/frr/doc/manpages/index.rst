@@ -6,6 +6,7 @@
 .. toctree::
    :maxdepth: 2
 
+   bfdd
    bgpd
    eigrpd
    isisd
@@ -20,6 +21,7 @@
    ripd
    ripngd
    sharpd
+   staticd
    watchfrr
    zebra
    vtysh

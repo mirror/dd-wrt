@@ -1,11 +1,26 @@
 FRRouting User Guide
 ====================
 
+############
+Introduction
+############
+
+.. _introduction:
 .. toctree::
    :maxdepth: 2
 
    overview
    installation
+   setup
+
+######
+Basics
+######
+
+.. _basics:
+.. toctree::
+   :maxdepth: 2
+
    basic
    vtysh
    filter
@@ -13,9 +28,21 @@ FRRouting User Guide
    ipv6
    kernel
    snmp
+.. modules
+
+#########
+Protocols
+#########
+
+.. _protocols:
+.. toctree::
+   :maxdepth: 2
+
    zebra
+   bfd
    bgp
    babeld
+   ldpd
    eigrpd
    isisd
    nhrpd
@@ -26,7 +53,17 @@ FRRouting User Guide
    ripd
    ripngd
    sharp
+   static
    vnc
-   glossary
-   appendix
 
+########
+Appendix
+########
+
+.. _appendix:
+.. toctree::
+   :maxdepth: 2
+
+   bugs
+   packet-dumps
+   glossary

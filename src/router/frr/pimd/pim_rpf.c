@@ -77,7 +77,7 @@ int pim_nexthop_lookup(struct pim_instance *pim, struct pim_nexthop *nexthop,
 			pim_addr_dump("<nexthop?>", &nexthop->mrib_nexthop_addr,
 				      nexthop_str, sizeof(nexthop_str));
 			zlog_debug(
-				"%s: Using last lookup for %s at %lld, %" PRId64 " addr%s",
+				"%s: Using last lookup for %s at %lld, %" PRId64 " addr %s",
 				__PRETTY_FUNCTION__, addr_str,
 				nexthop->last_lookup_time,
 				pim->last_route_change_time, nexthop_str);
@@ -170,7 +170,7 @@ int pim_nexthop_lookup(struct pim_instance *pim, struct pim_nexthop *nexthop,
 				nexthop_tab[i].route_metric,
 				nexthop_tab[i].protocol_distance);
 		}
-		/* update nextop data */
+		/* update nexthop data */
 		nexthop->interface = ifp;
 		nexthop->mrib_nexthop_addr = nexthop_tab[i].nexthop_addr;
 		nexthop->mrib_metric_preference =
@@ -203,6 +203,7 @@ enum pim_rpf_result pim_rpf_update(struct pim_instance *pim,
 	struct prefix nht_p;
 	struct pim_nexthop_cache pnc;
 	struct prefix src, grp;
+	bool neigh_needed = true;
 
 	saved.source_nexthop = rpf->source_nexthop;
 	saved.rpf_addr = rpf->rpf_addr;
@@ -226,23 +227,20 @@ enum pim_rpf_result pim_rpf_update(struct pim_instance *pim,
 	grp.prefixlen = IPV4_MAX_BITLEN;
 	grp.u.prefix4 = up->sg.grp;
 	memset(&pnc, 0, sizeof(struct pim_nexthop_cache));
+
+	if ((up->sg.src.s_addr == INADDR_ANY && I_am_RP(pim, up->sg.grp)) ||
+	    PIM_UPSTREAM_FLAG_TEST_FHR(up->flags))
+		neigh_needed = FALSE;
 	if (pim_find_or_track_nexthop(pim, &nht_p, up, NULL, &pnc)) {
 		if (pnc.nexthop_num) {
-			if (!pim_ecmp_nexthop_search(
-				    pim, &pnc, &up->rpf.source_nexthop, &src,
-				    &grp,
-				    !PIM_UPSTREAM_FLAG_TEST_FHR(up->flags)
-					    && !PIM_UPSTREAM_FLAG_TEST_SRC_IGMP(
-						       up->flags)))
+			if (!pim_ecmp_nexthop_search(pim, &pnc,
+						     &up->rpf.source_nexthop,
+						     &src, &grp, neigh_needed))
 				return PIM_RPF_FAILURE;
 		}
 	} else {
-		if (!pim_ecmp_nexthop_lookup(
-			    pim, &rpf->source_nexthop, up->upstream_addr, &src,
-			    &grp,
-			    !PIM_UPSTREAM_FLAG_TEST_FHR(up->flags)
-				    && !PIM_UPSTREAM_FLAG_TEST_SRC_IGMP(
-					       up->flags)))
+		if (!pim_ecmp_nexthop_lookup(pim, &rpf->source_nexthop, &src,
+					     &grp, neigh_needed))
 			return PIM_RPF_FAILURE;
 	}
 

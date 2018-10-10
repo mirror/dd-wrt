@@ -29,11 +29,54 @@ Besides the common invocation options (:ref:`common-invocation-options`), the
 
 .. option:: -r, --retain
 
-   When program terminates, retain routes added by zebra.
+   When program terminates, do not flush routes installed by *zebra* from the
+   kernel.
 
-.. program:: configure
+.. option:: -e X, --ecmp X
+
+   Run zebra with a limited ecmp ability compared to what it is compiled to.
+   If you are running zebra on hardware limited functionality you can
+   force zebra to limit the maximum ecmp allowed to X.  This number
+   is bounded by what you compiled FRR with as the maximum number.
+
+.. option:: -n, --vrfwnetns
+
+   When *Zebra* starts with this option, the VRF backend is based on Linux
+   network namespaces. That implies that all network namespaces discovered by
+   ZEBRA will create an associated VRF. The other daemons will operate on the VRF
+   VRF defined by *Zebra*, as usual.
+
+   .. seealso:: :ref:`zebra-vrf`
+
+.. option:: --v6-rr-semantics
+
+   The linux kernel is receiving the ability to use the same route
+   replacement semantics for v6 that v4 uses.  If you are using a
+   kernel that supports this functionality then run *Zebra* with this
+   option and we will use Route Replace Semantics instead of delete
+   than add.
 
 .. _interface-commands:
+
+Configuration Addresses behaviour
+=================================
+
+At startup, *Zebra* will first discover the underlying networking objects
+from the operating system. This includes interfaces, addresses of
+interfaces, static routes, etc. Then, it will read the configuration
+file, including its own interface addresses, static routes, etc. All this
+information comprises the operational context from *Zebra*. But
+configuration context from *Zebra* will remain the same as the one from
+:file:`zebra.conf` config file. As an example, executing the following
+:clicmd:`show running-config` will reflect what was in :file:`zebra.conf`.
+In a similar way, networking objects that are configured outside of the
+*Zebra* like *iproute2* will not impact the configuration context from
+*Zebra*. This behaviour permits you to continue saving your own config
+file, and decide what is really to be pushed on the config file, and what
+is dependent on the underlying system.
+Note that inversely, from *Zebra*, you will not be able to delete networking
+objects that were previously configured outside of *Zebra*.
+
 
 Interface Commands
 ==================
@@ -46,6 +89,10 @@ Standard Commands
 .. index:: interface IFNAME
 
 .. clicmd:: interface IFNAME
+
+.. index:: interface IFNAME vrf VRF
+
+.. clicmd:: interface IFNAME vrf VRF
 
 .. index:: shutdown
 
@@ -222,132 +269,180 @@ Link Parameters Commands
    for InterASv2 link in OSPF (RFC5392).  Note that this option is not yet
    supported for ISIS (RFC5316).
 
-.. _static-route-commands:
-
-Static Route Commands
-=====================
-
-Static routing is a very fundamental feature of routing technology. It
-defines static prefix and gateway.
-
-.. index:: ip route NETWORK GATEWAY
-.. clicmd:: ip route NETWORK GATEWAY
-
-   NETWORK is destination prefix with format of A.B.C.D/M. GATEWAY is gateway
-   for the prefix. When GATEWAY is A.B.C.D format. It is taken as a IPv4
-   address gateway. Otherwise it is treated as an interface name. If the
-   interface name is ``null0`` then zebra installs a blackhole route.
-
-   Some example configuration:
-
-   .. code-block:: frr
-
-      ip route 10.0.0.0/8 10.0.0.2
-      ip route 10.0.0.0/8 ppp0
-      ip route 10.0.0.0/8 null0
-
-   First example defines 10.0.0.0/8 static route with gateway 10.0.0.2.
-   Second one defines the same prefix but with gateway to interface ppp0. The
-   third install a blackhole route.
-
-.. index:: ip route NETWORK NETMASK GATEWAY
-.. clicmd:: ip route NETWORK NETMASK GATEWAY
-
-   This is alternate version of above command. When NETWORK is
-   A.B.C.D format, user must define NETMASK value with A.B.C.D
-   format. GATEWAY is same option as above command.
-
-   .. code-block:: frr
-
-      ip route 10.0.0.0 255.255.255.0 10.0.0.2
-      ip route 10.0.0.0 255.255.255.0 ppp0
-      ip route 10.0.0.0 255.255.255.0 null0
-
-
-   These statements are equivalent to those in the previous example.
-
-.. index:: ip route NETWORK GATEWAY DISTANCE
-.. clicmd:: ip route NETWORK GATEWAY DISTANCE
-
-   Installs the route with the specified distance.
-
-Multiple nexthop static route:
-
-.. code-block:: frr
-
-   ip route 10.0.0.1/32 10.0.0.2
-   ip route 10.0.0.1/32 10.0.0.3
-   ip route 10.0.0.1/32 eth0
-
-
-If there is no route to 10.0.0.2 and 10.0.0.3, and interface eth0
-is reachable, then the last route is installed into the kernel.
-
-If zebra has been compiled with multipath support, and both 10.0.0.2 and
-10.0.0.3 are reachable, zebra will install a multipath route via both
-nexthops, if the platform supports this.
-
-::
-
-   zebra> show ip route
-   S>  10.0.0.1/32 [1/0] via 10.0.0.2 inactive
-       via 10.0.0.3 inactive
-     *       is directly connected, eth0
-
-
-.. code-block:: frr
-
-   ip route 10.0.0.0/8 10.0.0.2
-   ip route 10.0.0.0/8 10.0.0.3
-   ip route 10.0.0.0/8 null0 255
-
-
-This will install a multihop route via the specified next-hops if they are
-reachable, as well as a high-metric blackhole route, which can be useful to
-prevent traffic destined for a prefix to match less-specific routes (e.g.
-default) should the specified gateways not be reachable. E.g.:
-
-::
-
-   zebra> show ip route 10.0.0.0/8
-   Routing entry for 10.0.0.0/8
-     Known via "static", distance 1, metric 0
-       10.0.0.2 inactive
-       10.0.0.3 inactive
-
-   Routing entry for 10.0.0.0/8
-     Known via "static", distance 255, metric 0
-       directly connected, Null0
-
-
-.. index:: ipv6 route NETWORK GATEWAY
-.. clicmd:: ipv6 route NETWORK GATEWAY
-
-.. index:: ipv6 route NETWORK GATEWAY DISTANCE
-.. clicmd:: ipv6 route NETWORK GATEWAY DISTANCE
-
-   These behave similarly to their ipv4 counterparts.
-
-.. index:: ipv6 route NETWORK from SRCPREFIX GATEWAY
-.. clicmd:: ipv6 route NETWORK from SRCPREFIX GATEWAY
-
-.. index:: ipv6 route NETWORK from SRCPREFIX GATEWAY DISTANCE
-.. clicmd:: ipv6 route NETWORK from SRCPREFIX GATEWAY DISTANCE
-
-   Install a static source-specific route. These routes are currently supported
-   on Linux operating systems only, and perform AND matching on packet's
-   destination and source addresses in the kernel's forwarding path. Note that
-   destination longest-prefix match is "more important" than source LPM, e.g.
-   *"2001:db8:1::/64 from 2001:db8::/48"* will win over
-   *"2001:db8::/48 from 2001:db8:1::/64"* if both match.
-
 .. index:: table TABLENO
 .. clicmd:: table TABLENO
 
-   Select the primary kernel routing table to be used. This only works
-   for kernels supporting multiple routing tables (like GNU/Linux 2.2.x
-   and later). After setting TABLENO with this command,
-   static routes defined after this are added to the specified table.
+   Select the primary kernel routing table to be used. This only works for
+   kernels supporting multiple routing tables (like GNU/Linux 2.2.x and later).
+   After setting TABLENO with this command, static routes defined after this
+   are added to the specified table.
+
+.. _zebra-vrf:
+
+Virtual Routing and Forwarding
+==============================
+
+FRR supports :abbr:`VRF (Virtual Routing and Forwarding)`. VRF is a way to
+separate networking contexts on the same machine. Those networking contexts are
+associated with separate interfaces, thus making it possible to associate one
+interface with a specific VRF.
+
+VRF can be used, for example, when instantiating per enterprise networking
+services, without having to instantiate the physical host machine or the
+routing management daemons for each enterprise. As a result, interfaces are
+separate for each set of VRF, and routing daemons can have their own context
+for each VRF.
+
+This conceptual view introduces the *Default VRF* case. If the user does not
+configure any specific VRF, then by default, FRR uses the *Default VRF*.
+
+Configuring VRF networking contexts can be done in various ways on FRR. The VRF
+interfaces can be configured by entering in interface configuration mode
+:clicmd:`interface IFNAME vrf VRF`.
+
+A VRF backend mode is chosen when running *Zebra*.
+
+If no option is chosen, then the *Linux VRF* implementation as references in
+https://www.kernel.org/doc/Documentation/networking/vrf.txt will be mapped over
+the *Zebra* VRF. The routing table associated to that VRF is a Linux table
+identifier located in the same *Linux network namespace* where *Zebra* started.
+
+If the :option:`-n` option is chosen, then the *Linux network namespace* will
+be mapped over the *Zebra* VRF. That implies that *Zebra* is able to configure
+several *Linux network namespaces*.  The routing table associated to that VRF
+is the whole routing tables located in that namespace. For instance, this mode
+matches OpenStack Network Namespaces. It matches also OpenFastPath. The default
+behavior remains Linux VRF which is supported by the Linux kernel community,
+see https://www.kernel.org/doc/Documentation/networking/vrf.txt.
+
+Because of that difference, there are some subtle differences when running some
+commands in relationship to VRF. Here is an extract of some of those commands:
+
+.. index:: vrf VRF
+.. clicmd:: vrf VRF
+
+   This command is available on configuration mode. By default, above command
+   permits accessing the VRF configuration mode. This mode is available for
+   both VRFs. It is to be noted that *Zebra* does not create Linux VRF.
+   The network administrator can however decide to provision this command in
+   configuration file to provide more clarity about the intended configuration.
+
+.. index:: netns NAMESPACE
+.. clicmd:: netns NAMESPACE
+
+   This command is based on VRF configuration mode. This command is available
+   when *Zebra* is run in :option:`-n` mode. This command reflects which *Linux
+   network namespace* is to be mapped with *Zebra* VRF. It is to be noted that
+   *Zebra* creates and detects added/suppressed VRFs from the Linux environment
+   (in fact, those managed with iproute2). The network administrator can however
+   decide to provision this command in configuration file to provide more clarity
+   about the intended configuration.
+
+.. index:: show ip route vrf VRF
+.. clicmd:: show ip route vrf VRF
+
+   The show command permits dumping the routing table associated to the VRF. If
+   *Zebra* is launched with default settings, this will be the ``TABLENO`` of
+   the VRF configured on the kernel, thanks to information provided in
+   https://www.kernel.org/doc/Documentation/networking/vrf.txt. If *Zebra* is
+   launched with :option:`-n` option, this will be the default routing table of
+   the *Linux network namespace* ``VRF``.
+
+.. index:: show ip route vrf VRF table TABLENO
+.. clicmd:: show ip route vrf VRF table TABLENO
+
+   The show command is only available with :option:`-n` option. This command
+   will dump the routing table ``TABLENO`` of the *Linux network namespace*
+   ``VRF``.
+
+
+.. _zebra-mpls:
+
+MPLS Commands
+=============
+
+You can configure static mpls entries in zebra. Basically, handling MPLS
+consists of popping, swapping or pushing labels to IP packets.
+
+MPLS Acronyms
+-------------
+
+:abbr:`LSR (Labeled Switch Router)`
+   Networking devices handling labels used to forward traffic between and through
+   them.
+
+:abbr:`LER (Labeled Edge Router)`
+   A Labeled edge router is located at the edge of an MPLS network, generally
+   between an IP network and an MPLS network.
+
+MPLS Push Action
+----------------
+
+The push action is generally used for LER devices, which want to encapsulate
+all traffic for a wished destination into an MPLS label. This action is stored
+in routing entry, and can be configured like a route:
+
+.. index:: [no] ip route NETWORK MASK GATEWAY|INTERFACE label LABEL
+.. clicmd:: [no] ip route NETWORK MASK GATEWAY|INTERFACE label LABEL
+
+   NETWORK ans MASK stand for the IP prefix entry to be added as static
+   route entry.
+   GATEWAY is the gateway IP address to reach, in order to reach the prefix.
+   INTERFACE is the interface behind which the prefix is located.
+   LABEL is the MPLS label to use to reach the prefix abovementioned.
+
+   You can check that the static entry is stored in the zebra RIB database, by
+   looking at the presence of the entry.
+
+   ::
+
+      zebra(configure)# ip route 1.1.1.1/32 10.0.1.1 label 777
+      zebra# show ip route
+      Codes: K - kernel route, C - connected, S - static, R - RIP,
+      O - OSPF, I - IS-IS, B - BGP, E - EIGRP, N - NHRP,
+      T - Table, v - VNC, V - VNC-Direct, A - Babel, D - SHARP,
+      F - PBR,
+      > - selected route, * - FIB route
+
+      S>* 1.1.1.1/32 [1/0] via 10.0.1.1, r2-eth0, label 777, 00:39:42
+
+MPLS Swap and Pop Action
+------------------------
+
+The swap action is generally used for LSR devices, which swap a packet with a
+label, with an other label. The Pop action is used on LER devices, at the
+termination of the MPLS traffic; this is used to remove MPLS header.
+
+.. index:: [no] mpls lsp INCOMING_LABEL GATEWAY OUTGOING_LABEL|explicit-null|implicit-null
+.. clicmd:: [no] mpls lsp INCOMING_LABEL GATEWAY OUTGOING_LABEL|explicit-null|implicit-null
+
+   INCOMING_LABEL and OUTGOING_LABEL are MPLS labels with values ranging from 16
+   to 1048575.
+   GATEWAY is the gateway IP address where to send MPLS packet.
+   The outgoing label can either be a value or have an explicit-null label header. This
+   specific header can be read by IP devices. The incoming label can also be removed; in
+   that case the implicit-null keyword is used, and the outgoing packet emitted is an IP
+   packet without MPLS header.
+
+You can check that the MPLS actions are stored in the zebra MPLS table, by looking at the
+presence of the entry.
+
+.. index:: show mpls table
+.. clicmd:: show mpls table
+
+::
+
+   zebra(configure)# mpls lsp 18 10.125.0.2 implicit-null
+   zebra(configure)# mpls lsp 19 10.125.0.2 20
+   zebra(configure)# mpls lsp 21 10.125.0.2 explicit-null
+   zebra# show mpls table
+   Inbound                            Outbound
+   Label     Type          Nexthop     Label
+   --------  -------  ---------------  --------
+   18     Static       10.125.0.2  implicit-null
+   19     Static       10.125.0.2  20
+   21     Static       10.125.0.2  IPv4 Explicit Null
+
 
 .. _multicast-rib-commands:
 
@@ -518,6 +613,8 @@ as well. We refer to the component that programs the forwarding plane
 The FIB push interface comprises of a TCP connection between zebra and
 the FPM. The connection is initiated by zebra -- that is, the FPM acts
 as the TCP server.
+
+.. program:: configure
 
 The relevant zebra code kicks in when zebra is configured with the
 :option:`--enable-fpm` flag. Zebra periodically attempts to connect to

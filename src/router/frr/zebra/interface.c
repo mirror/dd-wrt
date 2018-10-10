@@ -22,6 +22,7 @@
 #include <zebra.h>
 
 #include "if.h"
+#include "lib_errors.h"
 #include "vty.h"
 #include "sockunion.h"
 #include "prefix.h"
@@ -48,7 +49,6 @@
 #include "zebra/rt_netlink.h"
 #include "zebra/interface.h"
 #include "zebra/zebra_vxlan.h"
-#include "zebra/zebra_static.h"
 
 #define ZEBRA_PTM_SUPPORT
 
@@ -577,7 +577,6 @@ void if_add_update(struct interface *ifp)
 				"interface %s vrf %u index %d becomes active.",
 				ifp->name, ifp->vrf_id, ifp->ifindex);
 
-		static_ifindex_update(ifp, true);
 	} else {
 		if (IS_ZEBRA_DEBUG_KERNEL)
 			zlog_debug("interface %s vrf %u index %d is added.",
@@ -720,7 +719,8 @@ void if_delete_update(struct interface *ifp)
 	struct zebra_if *zif;
 
 	if (if_is_up(ifp)) {
-		zlog_err(
+		flog_err(
+			LIB_ERR_INTERFACE,
 			"interface %s vrf %u index %d is still up while being deleted.",
 			ifp->name, ifp->vrf_id, ifp->ifindex);
 		return;
@@ -735,8 +735,6 @@ void if_delete_update(struct interface *ifp)
 	if (IS_ZEBRA_DEBUG_KERNEL)
 		zlog_debug("interface %s vrf %u index %d is now inactive.",
 			   ifp->name, ifp->vrf_id, ifp->ifindex);
-
-	static_ifindex_update(ifp, false);
 
 	/* Delete connected routes from the kernel. */
 	if_delete_connected(ifp);
@@ -777,8 +775,6 @@ void if_handle_vrf_change(struct interface *ifp, vrf_id_t vrf_id)
 
 	old_vrf_id = ifp->vrf_id;
 
-	static_ifindex_update(ifp, false);
-
 	/* Uninstall connected routes. */
 	if_uninstall_connected(ifp);
 
@@ -802,8 +798,6 @@ void if_handle_vrf_change(struct interface *ifp, vrf_id_t vrf_id)
 	/* Install connected routes (in new VRF). */
 	if (if_is_operative(ifp))
 		if_install_connected(ifp);
-
-	static_ifindex_update(ifp, true);
 
 	/* Due to connected route change, schedule RIB processing for both old
 	 * and new VRF.
@@ -1228,8 +1222,13 @@ static void if_dump_vty(struct vty *vty, struct interface *ifp)
 				br_slave->bridge_ifindex);
 	}
 
-	if (zebra_if->link_ifindex != IFINDEX_INTERNAL)
-		vty_out(vty, "  Link ifindex %u\n", zebra_if->link_ifindex);
+	if (zebra_if->link_ifindex != IFINDEX_INTERNAL) {
+		vty_out(vty, "  Link ifindex %u", zebra_if->link_ifindex);
+		if (zebra_if->link)
+			vty_out(vty, "(%s)\n", zebra_if->link->name);
+		else
+			vty_out(vty, "(Unknown)\n");
+	}
 
 	if (HAS_LINK_PARAMS(ifp)) {
 		int i;
@@ -1406,7 +1405,7 @@ DEFUN (show_interface,
 	interface_update_stats();
 
 	if (argc > 2)
-		VRF_GET_ID(vrf_id, argv[3]->arg);
+		VRF_GET_ID(vrf_id, argv[3]->arg, false);
 
 	/* All interface print. */
 	vrf = vrf_lookup_by_id(vrf_id);
@@ -1455,7 +1454,7 @@ DEFUN (show_interface_name_vrf,
 
 	interface_update_stats();
 
-	VRF_GET_ID(vrf_id, argv[idx_name]->arg);
+	VRF_GET_ID(vrf_id, argv[idx_name]->arg, false);
 
 	/* Specified interface print. */
 	ifp = if_lookup_by_name(argv[idx_ifname]->arg, vrf_id);
@@ -1549,7 +1548,7 @@ DEFUN (show_interface_desc,
 	vrf_id_t vrf_id = VRF_DEFAULT;
 
 	if (argc > 3)
-		VRF_GET_ID(vrf_id, argv[4]->arg);
+		VRF_GET_ID(vrf_id, argv[4]->arg, false);
 
 	if_show_description(vty, vrf_id);
 

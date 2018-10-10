@@ -242,23 +242,6 @@ size_t strlcpy(char *__restrict dest,
 	       const char *__restrict src, size_t destsize);
 #endif
 
-#ifdef HAVE_BROKEN_CMSG_FIRSTHDR
-/* This bug is present in Solaris 8 and pre-patch Solaris 9 <sys/socket.h>;
-   please refer to http://bugzilla.quagga.net/show_bug.cgi?id=142 */
-
-/* Check that msg_controllen is large enough. */
-#define ZCMSG_FIRSTHDR(mhdr)                                                   \
-	(((size_t)((mhdr)->msg_controllen) >= sizeof(struct cmsghdr))          \
-		 ? CMSG_FIRSTHDR(mhdr)                                         \
-		 : (struct cmsghdr *)NULL)
-
-#warning "CMSG_FIRSTHDR is broken on this platform, using a workaround"
-
-#else  /* HAVE_BROKEN_CMSG_FIRSTHDR */
-#define ZCMSG_FIRSTHDR(M) CMSG_FIRSTHDR(M)
-#endif /* HAVE_BROKEN_CMSG_FIRSTHDR */
-
-
 /* GCC have printf type attribute check.  */
 #ifdef __GNUC__
 #define PRINTF_ATTRIBUTE(a,b) __attribute__ ((__format__ (__printf__, a, b)))
@@ -365,6 +348,22 @@ struct in_pktinfo {
 		_a < _b ? _a : _b;                                             \
 	})
 
+#ifndef offsetof
+#ifdef __compiler_offsetof
+#define offsetof(TYPE,MEMBER) __compiler_offsetof(TYPE,MEMBER)
+#else
+#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+#endif
+#endif
+
+#ifndef container_of
+#define container_of(ptr, type, member)                                        \
+	({                                                                     \
+		const typeof(((type *)0)->member) *__mptr = (ptr);             \
+		(type *)((char *)__mptr - offsetof(type, member));             \
+	})
+#endif
+
 #define ZEBRA_NUM_OF(x) (sizeof (x) / sizeof (x[0]))
 
 /* For old definition. */
@@ -380,6 +379,12 @@ struct in_pktinfo {
  * Zserv headers to be distinguished from each other.
  */
 #define ZEBRA_HEADER_MARKER              254
+
+/*
+ * The compiler.h header is used for anyone using the CPP_NOTICE
+ * since this is universally needed, let's add it to zebra.h
+ */
+#include "compiler.h"
 
 /* Zebra route's types are defined in route_types.h */
 #include "route_types.h"
@@ -414,6 +419,7 @@ extern const char *zserv_command_string(unsigned int command);
 #define ZEBRA_FLAG_SCOPE_LINK         0x100
 #define ZEBRA_FLAG_FIB_OVERRIDE       0x200
 #define ZEBRA_FLAG_EVPN_ROUTE         0x400
+#define ZEBRA_FLAG_RR_USE_DISTANCE    0x800
 /* ZEBRA_FLAG_BLACKHOLE was 0x04 */
 /* ZEBRA_FLAG_REJECT was 0x80 */
 

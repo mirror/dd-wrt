@@ -26,8 +26,8 @@
 #include "nexthop.h"
 #include "nexthop_group.h"
 #include "log.h"
-#include "json.h"
 #include "debug.h"
+#include "pbr.h"
 
 #include "pbrd/pbr_nht.h"
 #include "pbrd/pbr_map.h"
@@ -38,7 +38,7 @@
 #include "pbrd/pbr_vty_clippy.c"
 #endif
 
-DEFUN_NOSH(pbr_map, pbr_map_cmd, "pbr-map WORD seq (1-1000)",
+DEFUN_NOSH(pbr_map, pbr_map_cmd, "pbr-map WORD seq (1-700)",
 	   "Create pbr-map or enter pbr-map command mode\n"
 	   "The name of the PBR MAP\n"
 	   "Sequence to insert in existing pbr-map entry\n"
@@ -54,7 +54,7 @@ DEFUN_NOSH(pbr_map, pbr_map_cmd, "pbr-map WORD seq (1-1000)",
 	return CMD_SUCCESS;
 }
 
-DEFUN_NOSH(no_pbr_map, no_pbr_map_cmd, "no pbr-map WORD [seq (1-65535)]",
+DEFUN_NOSH(no_pbr_map, no_pbr_map_cmd, "no pbr-map WORD [seq (1-700)]",
 	   NO_STR
 	   "Delete pbr-map\n"
 	   "The name of the PBR MAP\n"
@@ -84,6 +84,34 @@ DEFUN_NOSH(no_pbr_map, no_pbr_map_cmd, "no pbr-map WORD [seq (1-65535)]",
 
 	return CMD_SUCCESS;
 }
+
+DEFPY(pbr_set_table_range,
+      pbr_set_table_range_cmd,
+      "[no] pbr table range (10000-4294966272)$lb (10000-4294966272)$ub",
+      NO_STR
+      PBR_STR
+      "Set table ID range\n"
+      "Set table ID range\n"
+      "Lower bound for table ID range\n"
+      "Upper bound for table ID range\n")
+{
+	/* upper bound is 2^32 - 2^10 */
+	int ret = CMD_WARNING;
+	const int minrange = 1000;
+
+	/* validate given bounds */
+	if (lb > ub)
+		vty_out(vty, "%% Lower bound must be less than upper bound\n");
+	else if (ub - lb < minrange)
+		vty_out(vty, "%% Range breadth must be at least %d\n", minrange);
+	else {
+		ret = CMD_SUCCESS;
+		pbr_nht_set_tableid_range((uint32_t) lb, (uint32_t) ub);
+	}
+
+	return ret;
+}
+
 
 DEFPY(pbr_map_match_src, pbr_map_match_src_cmd,
 	"[no] match src-ip <A.B.C.D/M|X:X::X:X/M>$prefix",
@@ -355,10 +383,9 @@ DEFPY (pbr_policy,
 
 DEFPY (show_pbr,
 	show_pbr_cmd,
-	"show pbr [json$json]",
+	"show pbr",
 	SHOW_STR
-	"Policy Based Routing\n"
-	JSON_STR)
+	PBR_STR)
 {
 	pbr_nht_write_table_range(vty);
 	pbr_nht_write_rule_range(vty);
@@ -368,13 +395,12 @@ DEFPY (show_pbr,
 
 DEFPY (show_pbr_map,
 	show_pbr_map_cmd,
-	"show pbr map [NAME$name] [detail$detail] [json$json]",
+	"show pbr map [NAME$name] [detail$detail]",
 	SHOW_STR
-	"Policy Based Routing\n"
+	PBR_STR
 	"PBR Map\n"
 	"PBR Map Name\n"
-	"Detailed information\n"
-	JSON_STR)
+	"Detailed information\n")
 {
 	struct pbr_map_sequence *pbrms;
 	struct pbr_map *pbrm;
@@ -439,7 +465,7 @@ DEFPY(show_pbr_nexthop_group,
       show_pbr_nexthop_group_cmd,
       "show pbr nexthop-groups [WORD$word]",
       SHOW_STR
-      "Policy Based Routing\n"
+      PBR_STR
       "Nexthop Groups\n"
       "Optional Name of the nexthop group\n")
 {
@@ -450,12 +476,11 @@ DEFPY(show_pbr_nexthop_group,
 
 DEFPY (show_pbr_interface,
 	show_pbr_interface_cmd,
-	"show pbr interface [NAME$name] [json$json]",
+	"show pbr interface [NAME$name]",
 	SHOW_STR
-	"Policy Based Routing\n"
+	PBR_STR
 	"PBR Interface\n"
-	"PBR Interface Name\n"
-	JSON_STR)
+	"PBR Interface Name\n")
 {
 	struct interface *ifp;
 	struct vrf *vrf;
@@ -489,7 +514,6 @@ DEFPY (show_pbr_interface,
 }
 
 /* PBR debugging CLI ------------------------------------------------------- */
-/* clang-format off */
 
 static struct cmd_node debug_node = {DEBUG_NODE, "", 1};
 
@@ -498,7 +522,7 @@ DEFPY(debug_pbr,
       "[no] debug pbr [{map$map|zebra$zebra|nht$nht|events$events}]",
       NO_STR
       DEBUG_STR
-      "Policy Based Routing\n"
+      PBR_STR
       "Policy maps\n"
       "PBRD <-> Zebra communications\n"
       "Nexthop tracking\n"
@@ -527,7 +551,7 @@ DEFUN_NOSH(show_debugging_pbr,
 	   "show debugging [pbr]",
 	   SHOW_STR
 	   DEBUG_STR
-	   "Policy Based Routing\n")
+	   PBR_STR)
 {
 	vty_out(vty, "PBR debugging status:\n");
 
@@ -536,7 +560,6 @@ DEFUN_NOSH(show_debugging_pbr,
 	return CMD_SUCCESS;
 }
 
-/* clang-format on */
 /* ------------------------------------------------------------------------- */
 
 
@@ -556,6 +579,9 @@ static int pbr_interface_config_write(struct vty *vty)
 			else
 				vty_frame(vty, "interface %s vrf %s\n",
 					  ifp->name, vrf->name);
+
+			if (ifp->desc)
+				vty_out(vty, " description %s\n", ifp->desc);
 
 			pbr_map_write_interfaces(vty, ifp);
 
@@ -634,6 +660,7 @@ void pbr_vty_init(void)
 
 	install_element(CONFIG_NODE, &pbr_map_cmd);
 	install_element(CONFIG_NODE, &no_pbr_map_cmd);
+	install_element(CONFIG_NODE, &pbr_set_table_range_cmd);
 	install_element(INTERFACE_NODE, &pbr_policy_cmd);
 	install_element(PBRMAP_NODE, &pbr_map_match_src_cmd);
 	install_element(PBRMAP_NODE, &pbr_map_match_dst_cmd);

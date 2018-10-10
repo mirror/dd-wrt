@@ -263,6 +263,9 @@ struct ospf_interface *ospf_if_new(struct ospf *ospf, struct interface *ifp,
 	ospf_opaque_type9_lsa_init(oi);
 
 	oi->ospf = ospf;
+
+	ospf_if_stream_set(oi);
+
 	QOBJ_REG(oi, ospf_interface);
 
 	if (IS_DEBUG_OSPF_EVENT)
@@ -321,6 +324,9 @@ void ospf_if_cleanup(struct ospf_interface *oi)
 void ospf_if_free(struct ospf_interface *oi)
 {
 	ospf_if_down(oi);
+
+	if (oi->obuf)
+		ospf_fifo_free(oi->obuf);
 
 	assert(oi->state == ISM_Down);
 
@@ -496,9 +502,8 @@ void ospf_if_stream_unset(struct ospf_interface *oi)
 	struct ospf *ospf = oi->ospf;
 
 	if (oi->obuf) {
-		ospf_fifo_free(oi->obuf);
-		oi->obuf = NULL;
-
+		/* flush the interface packet queue */
+		ospf_fifo_flush(oi->obuf);
 		/*reset protocol stats */
 		ospf_if_reset_stats(oi);
 
@@ -517,9 +522,6 @@ static struct ospf_if_params *ospf_new_if_params(void)
 	struct ospf_if_params *oip;
 
 	oip = XCALLOC(MTYPE_OSPF_IF_PARAMS, sizeof(struct ospf_if_params));
-
-	if (!oip)
-		return NULL;
 
 	UNSET_IF_PARAM(oip, output_cost_cmd);
 	UNSET_IF_PARAM(oip, transmit_delay);
@@ -781,7 +783,6 @@ int ospf_if_up(struct ospf_interface *oi)
 	if (oi->type == OSPF_IFTYPE_LOOPBACK)
 		OSPF_ISM_EVENT_SCHEDULE(oi, ISM_LoopInd);
 	else {
-		ospf_if_stream_set(oi);
 		OSPF_ISM_EVENT_SCHEDULE(oi, ISM_InterfaceUp);
 	}
 
@@ -853,7 +854,7 @@ struct ospf_interface *ospf_vl_new(struct ospf *ospf,
 			"ospf_vl_new(): creating pseudo zebra interface vrf id %u",
 			ospf->vrf_id);
 
-	snprintf(ifname, sizeof(ifname), "VLINK%d", vlink_count);
+	snprintf(ifname, sizeof(ifname), "VLINK%u", vlink_count);
 	vi = if_create(ifname, ospf->vrf_id);
 	/*
 	 * if_create sets ZEBRA_INTERFACE_LINKDETECTION

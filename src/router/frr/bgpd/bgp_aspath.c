@@ -214,16 +214,11 @@ static struct assegment *assegment_append_asns(struct assegment *seg,
 	newas = XREALLOC(MTYPE_AS_SEG_DATA, seg->as,
 			 ASSEGMENT_DATA_SIZE(seg->length + num, 1));
 
-	if (newas) {
-		seg->as = newas;
-		memcpy(seg->as + seg->length, asnos,
-		       ASSEGMENT_DATA_SIZE(num, 1));
-		seg->length += num;
-		return seg;
-	}
-
-	assegment_free_all(seg);
-	return NULL;
+	seg->as = newas;
+	memcpy(seg->as + seg->length, asnos,
+	       ASSEGMENT_DATA_SIZE(num, 1));
+	seg->length += num;
+	return seg;
 }
 
 static int int_cmp(const void *p1, const void *p2)
@@ -904,7 +899,7 @@ size_t aspath_put(struct stream *s, struct aspath *as, int use32bit)
 			while ((seg->length - written) > AS_SEGMENT_MAX) {
 				assegment_header_put(s, seg->type,
 						     AS_SEGMENT_MAX);
-				assegment_data_put(s, seg->as, AS_SEGMENT_MAX,
+				assegment_data_put(s, (seg->as + written), AS_SEGMENT_MAX,
 						   use32bit);
 				written += AS_SEGMENT_MAX;
 				bytes += ASSEGMENT_SIZE(AS_SEGMENT_MAX,
@@ -1632,7 +1627,7 @@ struct aspath *aspath_reconcile_as4(struct aspath *aspath,
 	struct aspath *newpath = NULL, *mergedpath;
 	int hops, cpasns = 0;
 
-	if (!aspath)
+	if (!aspath || !as4path)
 		return NULL;
 
 	seg = aspath->segments;

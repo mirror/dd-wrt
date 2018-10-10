@@ -42,11 +42,17 @@
  */
 
 
-enum southbound_results {
-	SOUTHBOUND_INSTALL_SUCCESS,
-	SOUTHBOUND_INSTALL_FAILURE,
-	SOUTHBOUND_DELETE_SUCCESS,
-	SOUTHBOUND_DELETE_FAILURE,
+enum dp_results {
+	DP_INSTALL_SUCCESS,
+	DP_INSTALL_FAILURE,
+	DP_DELETE_SUCCESS,
+	DP_DELETE_FAILURE,
+};
+
+enum dp_req_result {
+	DP_REQUEST_QUEUED,
+	DP_REQUEST_SUCCESS,
+	DP_REQUEST_FAILURE,
 };
 
 /*
@@ -60,18 +66,21 @@ enum southbound_results {
  * semantics so we will end up with a delete than
  * a re-add.
  */
-extern void kernel_route_rib(struct route_node *rn, struct prefix *p,
-			     struct prefix *src_p, struct route_entry *old,
-			     struct route_entry *new);
+extern enum dp_req_result kernel_route_rib(struct route_node *rn,
+					   const struct prefix *p,
+					   const struct prefix *src_p,
+					   struct route_entry *old,
+					   struct route_entry *new);
 
 /*
  * So route install/failure may not be immediately known
  * so let's separate it out and allow the result to
  * be passed back up.
  */
-extern void kernel_route_rib_pass_fail(struct route_node *rn, struct prefix *p,
+extern void kernel_route_rib_pass_fail(struct route_node *rn,
+				       const struct prefix *p,
 				       struct route_entry *re,
-				       enum southbound_results res);
+				       enum dp_results res);
 
 extern int kernel_address_add_ipv4(struct interface *, struct connected *);
 extern int kernel_address_delete_ipv4(struct interface *, struct connected *);
@@ -82,9 +91,9 @@ extern int kernel_neigh_update(int cmd, int ifindex, uint32_t addr, char *lla,
 extern int kernel_interface_set_master(struct interface *master,
 				       struct interface *slave);
 
-extern void kernel_add_lsp(zebra_lsp_t *lsp);
-extern void kernel_upd_lsp(zebra_lsp_t *lsp);
-extern void kernel_del_lsp(zebra_lsp_t *lsp);
+extern enum dp_req_result kernel_add_lsp(zebra_lsp_t *lsp);
+extern enum dp_req_result kernel_upd_lsp(zebra_lsp_t *lsp);
+extern enum dp_req_result kernel_del_lsp(zebra_lsp_t *lsp);
 
 /*
  * Add the ability to pass back up the lsp install/delete
@@ -95,7 +104,7 @@ extern void kernel_del_lsp(zebra_lsp_t *lsp);
  * the install/failure to set/unset flags and to notify
  * as needed.
  */
-extern void kernel_lsp_pass_fail(zebra_lsp_t *lsp, enum southbound_results res);
+extern void kernel_lsp_pass_fail(zebra_lsp_t *lsp, enum dp_results res);
 
 extern int mpls_kernel_init(void);
 
@@ -113,7 +122,7 @@ extern int kernel_del_mac(struct interface *ifp, vlanid_t vid,
 			  int local);
 
 extern int kernel_add_neigh(struct interface *ifp, struct ipaddr *ip,
-			    struct ethaddr *mac);
+			    struct ethaddr *mac, uint8_t flags);
 extern int kernel_del_neigh(struct interface *ifp, struct ipaddr *ip);
 
 /*

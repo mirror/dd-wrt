@@ -25,6 +25,7 @@
 #include "vty.h"
 #include "plist.h"
 #include "sockopt.h"
+#include "lib_errors.h"
 
 #include "pimd.h"
 #include "pim_rpf.h"
@@ -55,27 +56,22 @@ static int pim_mroute_set(struct pim_instance *pim, int enable)
 	 * We need to create the VRF table for the pim mroute_socket
 	 */
 	if (pim->vrf_id != VRF_DEFAULT) {
-		if (pimd_privs.change(ZPRIVS_RAISE))
-			zlog_err(
-				"pim_mroute_socket_enable: could not raise privs, %s",
-				safe_strerror(errno));
+		frr_elevate_privs(&pimd_privs) {
 
-		opt = pim->vrf->data.l.table_id;
-		err = setsockopt(pim->mroute_socket, IPPROTO_IP, MRT_TABLE,
-				 &opt, opt_len);
-		if (err) {
-			zlog_warn(
-				"%s %s: failure: setsockopt(fd=%d,IPPROTO_IP, MRT_TABLE=%d): errno=%d: %s",
-				__FILE__, __PRETTY_FUNCTION__,
-				pim->mroute_socket, opt, errno,
-				safe_strerror(errno));
-			return -1;
+			opt = pim->vrf->data.l.table_id;
+			err = setsockopt(pim->mroute_socket, IPPROTO_IP,
+					 MRT_TABLE,
+					 &opt, opt_len);
+			if (err) {
+				zlog_warn(
+					  "%s %s: failure: setsockopt(fd=%d,IPPROTO_IP, MRT_TABLE=%d): errno=%d: %s",
+					  __FILE__, __PRETTY_FUNCTION__,
+					  pim->mroute_socket, opt, errno,
+					  safe_strerror(errno));
+				return -1;
+			}
+
 		}
-
-		if (pimd_privs.change(ZPRIVS_LOWER))
-			zlog_err(
-				"pim_mroute_socket_enable: could not lower privs, %s",
-				safe_strerror(errno));
 	}
 
 	opt = enable ? MRT_INIT : MRT_DONE;
@@ -152,13 +148,13 @@ static int pim_mroute_msg_nocache(int fd, struct interface *ifp,
 	struct pim_rpf *rpg;
 	struct prefix_sg sg;
 
-	rpg = RP(pim_ifp->pim, msg->im_dst);
+	rpg = pim_ifp ? RP(pim_ifp->pim, msg->im_dst) : NULL;
 	/*
 	 * If the incoming interface is unknown OR
 	 * the Interface type is SSM we don't need to
 	 * do anything here
 	 */
-	if ((pim_rpf_addr_is_inaddr_none(rpg)) || (!pim_ifp)
+	if (!rpg || (pim_rpf_addr_is_inaddr_none(rpg))
 	    || (!(PIM_I_am_DR(pim_ifp)))) {
 		if (PIM_DEBUG_MROUTE_DETAIL)
 			zlog_debug(
@@ -278,7 +274,7 @@ static int pim_mroute_msg_wholepkt(int fd, struct interface *ifp,
 
 	pim_ifp = up->rpf.source_nexthop.interface->info;
 
-	rpg = RP(pim_ifp->pim, sg.grp);
+	rpg = pim_ifp ? RP(pim_ifp->pim, sg.grp) : NULL;
 
 	if ((pim_rpf_addr_is_inaddr_none(rpg)) || (!pim_ifp)
 	    || (!(PIM_I_am_DR(pim_ifp)))) {
@@ -708,32 +704,29 @@ int pim_mroute_socket_enable(struct pim_instance *pim)
 {
 	int fd;
 
-	if (pimd_privs.change(ZPRIVS_RAISE))
-		zlog_err("pim_mroute_socket_enable: could not raise privs, %s",
-			 safe_strerror(errno));
+	frr_elevate_privs(&pimd_privs) {
 
-	fd = socket(AF_INET, SOCK_RAW, IPPROTO_IGMP);
+		fd = socket(AF_INET, SOCK_RAW, IPPROTO_IGMP);
 
-	if (fd < 0) {
-		zlog_warn("Could not create mroute socket: errno=%d: %s", errno,
-			  safe_strerror(errno));
-		return -2;
-	}
+		if (fd < 0) {
+			zlog_warn("Could not create mroute socket: errno=%d: %s",
+				  errno,
+				  safe_strerror(errno));
+			return -2;
+		}
 
 #ifdef SO_BINDTODEVICE
-	if (pim->vrf->vrf_id != VRF_DEFAULT
-	    && setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE, pim->vrf->name,
-			  strlen(pim->vrf->name))) {
-		zlog_warn("Could not setsockopt SO_BINDTODEVICE: %s",
-			  safe_strerror(errno));
-		close(fd);
-		return -3;
-	}
+		if (pim->vrf->vrf_id != VRF_DEFAULT
+		    && setsockopt(fd, SOL_SOCKET, SO_BINDTODEVICE,
+				  pim->vrf->name, strlen(pim->vrf->name))) {
+			zlog_warn("Could not setsockopt SO_BINDTODEVICE: %s",
+				  safe_strerror(errno));
+			close(fd);
+			return -3;
+		}
 #endif
 
-	if (pimd_privs.change(ZPRIVS_LOWER))
-		zlog_err("pim_mroute_socket_enable: could not lower privs, %s",
-			 safe_strerror(errno));
+	}
 
 	pim->mroute_socket = fd;
 	if (pim_mroute_set(pim, 1)) {

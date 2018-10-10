@@ -47,6 +47,7 @@
 #include "bgpd/bgpd.h"
 #include "bgpd/bgp_table.h"
 #include "bgpd/bgp_debug.h"
+#include "bgpd/bgp_errors.h"
 #include "bgpd/bgp_fsm.h"
 #include "bgpd/bgp_advertise.h"
 #include "bgpd/bgp_packet.h"
@@ -812,7 +813,7 @@ static void update_subgroup_delete(struct update_subgroup *subgrp)
 		THREAD_TIMER_OFF(subgrp->t_coalesce);
 	sync_delete(subgrp);
 
-	if (BGP_DEBUG(update_groups, UPDATE_GROUPS))
+	if (BGP_DEBUG(update_groups, UPDATE_GROUPS) && subgrp->update_group)
 		zlog_debug("delete subgroup u%" PRIu64 ":s%" PRIu64,
 			   subgrp->update_group->id, subgrp->id);
 
@@ -905,7 +906,7 @@ static void update_subgroup_add_peer(struct update_subgroup *subgrp,
 static void update_subgroup_remove_peer_internal(struct update_subgroup *subgrp,
 						 struct peer_af *paf)
 {
-	assert(subgrp && paf);
+	assert(subgrp && paf && subgrp->update_group);
 
 	if (bgp_debug_peer_updout_enabled(paf->peer->host)) {
 		UPDGRP_PEER_DBG_DIS(subgrp->update_group);
@@ -1630,8 +1631,9 @@ void update_group_adjust_peer(struct peer_af *paf)
 	if (!updgrp) {
 		updgrp = update_group_create(paf);
 		if (!updgrp) {
-			zlog_err("couldn't create update group for peer %s",
-				 paf->peer->host);
+			flog_err(BGP_ERR_UPDGRP_CREATE,
+				  "couldn't create update group for peer %s",
+				  paf->peer->host);
 			return;
 		}
 	}

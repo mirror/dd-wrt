@@ -140,12 +140,6 @@ static struct pim_upstream *pim_upstream_find_parent(struct pim_instance *pim,
 	return NULL;
 }
 
-void pim_upstream_free(struct pim_upstream *up)
-{
-	XFREE(MTYPE_PIM_UPSTREAM, up);
-	up = NULL;
-}
-
 static void upstream_channel_oil_detach(struct pim_upstream *up)
 {
 	if (up->channel_oil) {
@@ -161,6 +155,8 @@ static void upstream_channel_oil_detach(struct pim_upstream *up)
 struct pim_upstream *pim_upstream_del(struct pim_instance *pim,
 				      struct pim_upstream *up, const char *name)
 {
+	struct listnode *node, *nnode;
+	struct pim_ifchannel *ch;
 	bool notify_msdp = false;
 	struct prefix nht_p;
 
@@ -170,6 +166,8 @@ struct pim_upstream *pim_upstream_del(struct pim_instance *pim,
 			__PRETTY_FUNCTION__, name, up->sg_str, pim->vrf->name,
 			up->ref_count, up->flags,
 			up->channel_oil->oil_ref_count);
+
+	 assert(up->ref_count > 0);
 
 	--up->ref_count;
 
@@ -196,24 +194,22 @@ struct pim_upstream *pim_upstream_del(struct pim_instance *pim,
 	up->rpf.source_nexthop.interface = NULL;
 
 	if (up->sg.src.s_addr != INADDR_ANY) {
-		wheel_remove_item(pim->upstream_sg_wheel, up);
+		if (pim->upstream_sg_wheel)
+			wheel_remove_item(pim->upstream_sg_wheel, up);
 		notify_msdp = true;
 	}
+
+	pim_mroute_del(up->channel_oil, __PRETTY_FUNCTION__);
+	upstream_channel_oil_detach(up);
+
+	for (ALL_LIST_ELEMENTS(up->ifchannels, node, nnode, ch))
+		pim_ifchannel_delete(ch);
+	list_delete_and_null(&up->ifchannels);
 
 	pim_upstream_remove_children(pim, up);
 	if (up->sources)
 		list_delete_and_null(&up->sources);
 
-	pim_mroute_del(up->channel_oil, __PRETTY_FUNCTION__);
-	upstream_channel_oil_detach(up);
-
-	list_delete_and_null(&up->ifchannels);
-
-	/*
-	  notice that listnode_delete() can't be moved
-	  into pim_upstream_free() because the later is
-	  called by list_delete_all_node()
-	*/
 	if (up->parent && up->parent->sources)
 		listnode_delete(up->parent->sources, up);
 	up->parent = NULL;
@@ -237,7 +233,7 @@ struct pim_upstream *pim_upstream_del(struct pim_instance *pim,
 	}
 	pim_delete_tracked_nexthop(pim, &nht_p, up, NULL);
 
-	pim_upstream_free(up);
+	XFREE(MTYPE_PIM_UPSTREAM, up);
 
 	return NULL;
 }
@@ -610,11 +606,6 @@ static struct pim_upstream *pim_upstream_new(struct pim_instance *pim,
 	struct pim_upstream *up;
 
 	up = XCALLOC(MTYPE_PIM_UPSTREAM, sizeof(*up));
-	if (!up) {
-		zlog_err("%s: PIM XCALLOC(%zu) failure", __PRETTY_FUNCTION__,
-			 sizeof(*up));
-		return NULL;
-	}
 
 	up->sg = *sg;
 	pim_str_sg_set(sg, up->sg_str);
@@ -1545,12 +1536,23 @@ unsigned int pim_upstream_hash_key(void *arg)
 
 void pim_upstream_terminate(struct pim_instance *pim)
 {
-	if (pim->upstream_list)
+	struct listnode *node, *nnode;
+	struct pim_upstream *up;
+
+	if (pim->upstream_list) {
+		for (ALL_LIST_ELEMENTS(pim->upstream_list, node, nnode, up))
+			pim_upstream_del(pim, up, __PRETTY_FUNCTION__);
+
 		list_delete_and_null(&pim->upstream_list);
+	}
 
 	if (pim->upstream_hash)
 		hash_free(pim->upstream_hash);
 	pim->upstream_hash = NULL;
+
+	if (pim->upstream_sg_wheel)
+		wheel_delete(pim->upstream_sg_wheel);
+	pim->upstream_sg_wheel = NULL;
 }
 
 int pim_upstream_equal(const void *arg1, const void *arg2)
@@ -1773,6 +1775,5 @@ void pim_upstream_init(struct pim_instance *pim)
 					      pim_upstream_equal, hash_name);
 
 	pim->upstream_list = list_new();
-	pim->upstream_list->del = (void (*)(void *))pim_upstream_free;
 	pim->upstream_list->cmp = pim_upstream_compare;
 }

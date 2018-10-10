@@ -145,6 +145,7 @@ struct bgp_master {
 	/* dynamic mpls label allocation pool */
 	struct labelpool labelpool;
 
+	bool terminating;	/* global flag that sigint terminate seen */
 	QOBJ_FIELDS
 };
 DECLARE_QOBJ_TYPE(bgp_master)
@@ -481,6 +482,9 @@ struct bgp {
 	/* EVPN enable - advertise local VNIs and their MACs etc. */
 	int advertise_all_vni;
 
+	/* EVPN - use RFC 8365 to auto-derive RT */
+	int advertise_autort_rfc8365;
+
 	/* Hash table of Import RTs to EVIs */
 	struct hash *import_rt_hash;
 
@@ -529,6 +533,9 @@ struct bgp {
 	struct vpn_policy vpn_policy[AFI_MAX];
 
 	struct bgp_pbr_config *bgp_pbr_cfg;
+
+	/* local esi hash table */
+	struct hash *esihash;
 
 	QOBJ_FIELDS
 };
@@ -583,13 +590,7 @@ struct bgp_nexthop {
 
 #define BGP_ADDPATH_TX_ID_FOR_DEFAULT_ORIGINATE 1
 
-/* BGP router distinguisher value.  */
-#define BGP_RD_SIZE                8
-
-struct bgp_rd {
-	uint8_t val[BGP_RD_SIZE];
-};
-
+/* Route map direction */
 #define RMAP_IN  0
 #define RMAP_OUT 1
 #define RMAP_MAX 2
@@ -1492,7 +1493,6 @@ extern struct peer_group *peer_group_lookup_dynamic_neighbor(struct bgp *,
 							     struct prefix **);
 extern struct peer *peer_lookup_dynamic_neighbor(struct bgp *,
 						 union sockunion *);
-extern void peer_drop_dynamic_neighbor(struct peer *);
 
 /*
  * Peers are incredibly easy to memory leak
@@ -1519,7 +1519,7 @@ extern int bgp_config_write(struct vty *);
 
 extern void bgp_master_init(struct thread_master *master);
 
-extern void bgp_init(unsigned short instance);
+extern void bgp_init(void);
 extern void bgp_pthreads_run(void);
 extern void bgp_pthreads_finish(void);
 extern void bgp_route_map_init(void);
@@ -1584,7 +1584,6 @@ extern int peer_afc_set(struct peer *, afi_t, safi_t, int);
 
 extern int peer_group_bind(struct bgp *, union sockunion *, struct peer *,
 			   struct peer_group *, as_t *);
-extern int peer_group_unbind(struct bgp *, struct peer *, struct peer_group *);
 
 extern int peer_flag_set(struct peer *, uint32_t);
 extern int peer_flag_unset(struct peer *, uint32_t);

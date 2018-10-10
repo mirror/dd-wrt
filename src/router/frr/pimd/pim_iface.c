@@ -46,6 +46,7 @@
 #include "pim_rp.h"
 #include "pim_nht.h"
 #include "pim_jp_agg.h"
+#include "pim_igmp_join.h"
 
 static void pim_if_igmp_join_del_all(struct interface *ifp);
 static int igmp_join_sock(const char *ifname, ifindex_t ifindex,
@@ -62,38 +63,17 @@ void pim_if_init(struct pim_instance *pim)
 
 void pim_if_terminate(struct pim_instance *pim)
 {
-	// Nothing to do at this moment
-	return;
-}
+	struct interface *ifp;
 
-static void *if_list_clean(struct pim_interface *pim_ifp)
-{
-	struct pim_ifchannel *ch;
+	FOR_ALL_INTERFACES (pim->vrf, ifp) {
+		struct pim_interface *pim_ifp = ifp->info;
 
-	if (pim_ifp->igmp_join_list)
-		list_delete_and_null(&pim_ifp->igmp_join_list);
+		if (!pim_ifp)
+			continue;
 
-	if (pim_ifp->igmp_socket_list)
-		list_delete_and_null(&pim_ifp->igmp_socket_list);
-
-	if (pim_ifp->pim_neighbor_list)
-		list_delete_and_null(&pim_ifp->pim_neighbor_list);
-
-	if (pim_ifp->upstream_switch_list)
-		list_delete_and_null(&pim_ifp->upstream_switch_list);
-
-	if (pim_ifp->sec_addr_list)
-		list_delete_and_null(&pim_ifp->sec_addr_list);
-
-	while (!RB_EMPTY(pim_ifchannel_rb, &pim_ifp->ifchannel_rb)) {
-		ch = RB_ROOT(pim_ifchannel_rb, &pim_ifp->ifchannel_rb);
-
-		pim_ifchannel_delete(ch);
+		pim_if_delete(ifp);
 	}
-
-	XFREE(MTYPE_PIM_INTERFACE, pim_ifp);
-
-	return 0;
+	return;
 }
 
 static void pim_sec_addr_free(struct pim_secondary_addr *sec_addr)
@@ -128,7 +108,8 @@ static int pim_sec_addr_comp(const void *p1, const void *p2)
 	return 0;
 }
 
-struct pim_interface *pim_if_new(struct interface *ifp, int igmp, int pim)
+struct pim_interface *pim_if_new(struct interface *ifp, int igmp, int pim,
+				 bool ispimreg)
 {
 	struct pim_interface *pim_ifp;
 
@@ -136,10 +117,6 @@ struct pim_interface *pim_if_new(struct interface *ifp, int igmp, int pim)
 	zassert(!ifp->info);
 
 	pim_ifp = XCALLOC(MTYPE_PIM_INTERFACE, sizeof(*pim_ifp));
-	if (!pim_ifp) {
-		zlog_err("PIM XCALLOC(%zu) failure", sizeof(*pim_ifp));
-		return 0;
-	}
 
 	pim_ifp->options = 0;
 	pim_ifp->pim = pim_get_pim_instance(ifp->vrf_id);
@@ -177,38 +154,18 @@ struct pim_interface *pim_if_new(struct interface *ifp, int igmp, int pim)
 
 	/* list of struct igmp_sock */
 	pim_ifp->igmp_socket_list = list_new();
-	if (!pim_ifp->igmp_socket_list) {
-		zlog_err("%s: failure: igmp_socket_list=list_new()",
-			 __PRETTY_FUNCTION__);
-		return if_list_clean(pim_ifp);
-	}
 	pim_ifp->igmp_socket_list->del = (void (*)(void *))igmp_sock_free;
 
 	/* list of struct pim_neighbor */
 	pim_ifp->pim_neighbor_list = list_new();
-	if (!pim_ifp->pim_neighbor_list) {
-		zlog_err("%s: failure: pim_neighbor_list=list_new()",
-			 __PRETTY_FUNCTION__);
-		return if_list_clean(pim_ifp);
-	}
 	pim_ifp->pim_neighbor_list->del = (void (*)(void *))pim_neighbor_free;
 
 	pim_ifp->upstream_switch_list = list_new();
-	if (!pim_ifp->upstream_switch_list) {
-		zlog_err("%s: failure: upstream_switch_list=list_new()",
-			 __PRETTY_FUNCTION__);
-		return if_list_clean(pim_ifp);
-	}
 	pim_ifp->upstream_switch_list->del =
 		(void (*)(void *))pim_jp_agg_group_list_free;
 	pim_ifp->upstream_switch_list->cmp = pim_jp_agg_group_list_cmp;
 
 	pim_ifp->sec_addr_list = list_new();
-	if (!pim_ifp->sec_addr_list) {
-		zlog_err("%s: failure: secondary addresslist",
-			 __PRETTY_FUNCTION__);
-		return if_list_clean(pim_ifp);
-	}
 	pim_ifp->sec_addr_list->del = (void (*)(void *))pim_sec_addr_free;
 	pim_ifp->sec_addr_list->cmp =
 		(int (*)(void *, void *))pim_sec_addr_comp;
@@ -219,7 +176,7 @@ struct pim_interface *pim_if_new(struct interface *ifp, int igmp, int pim)
 
 	pim_sock_reset(ifp);
 
-	pim_if_add_vif(ifp);
+	pim_if_add_vif(ifp, ispimreg);
 
 	return pim_ifp;
 }
@@ -395,8 +352,6 @@ static int pim_sec_addr_add(struct pim_interface *pim_ifp, struct prefix *addr)
 	}
 
 	sec_addr = XCALLOC(MTYPE_PIM_SEC_ADDR, sizeof(*sec_addr));
-	if (!sec_addr)
-		return changed;
 
 	changed = 1;
 	sec_addr->addr = *addr;
@@ -672,7 +627,7 @@ void pim_if_addr_add(struct connected *ifc)
 	  address assigned, then try to create a vif_index.
 	*/
 	if (pim_ifp->mroute_vif_index < 0) {
-		pim_if_add_vif(ifp);
+		pim_if_add_vif(ifp, false);
 	}
 	pim_ifchannel_scan_forward_start(ifp);
 }
@@ -805,7 +760,7 @@ void pim_if_addr_add_all(struct interface *ifp)
 	 * address assigned, then try to create a vif_index.
 	 */
 	if (pim_ifp->mroute_vif_index < 0) {
-		pim_if_add_vif(ifp);
+		pim_if_add_vif(ifp, false);
 	}
 	pim_ifchannel_scan_forward_start(ifp);
 
@@ -970,7 +925,7 @@ static int pim_iface_next_vif_index(struct interface *ifp)
 
   see also pim_if_find_vifindex_by_ifindex()
  */
-int pim_if_add_vif(struct interface *ifp)
+int pim_if_add_vif(struct interface *ifp, bool ispimreg)
 {
 	struct pim_interface *pim_ifp = ifp->info;
 	struct in_addr ifaddr;
@@ -992,8 +947,7 @@ int pim_if_add_vif(struct interface *ifp)
 	}
 
 	ifaddr = pim_ifp->primary_address;
-	if (ifp->ifindex != PIM_OIF_PIM_REGISTER_VIF
-	    && PIM_INADDR_IS_ANY(ifaddr)) {
+	if (!ispimreg && PIM_INADDR_IS_ANY(ifaddr)) {
 		zlog_warn(
 			"%s: could not get address for interface %s ifindex=%d",
 			__PRETTY_FUNCTION__, ifp->name, ifp->ifindex);
@@ -1241,8 +1195,18 @@ static int igmp_join_sock(const char *ifname, ifindex_t ifindex,
 		return -1;
 	}
 
-	if (pim_socket_join_source(join_fd, ifindex, group_addr, source_addr,
-				   ifname)) {
+	if (pim_igmp_join_source(join_fd, ifindex, group_addr, source_addr)) {
+		char group_str[INET_ADDRSTRLEN];
+		char source_str[INET_ADDRSTRLEN];
+		pim_inet4_dump("<grp?>", group_addr, group_str,
+			       sizeof(group_str));
+		pim_inet4_dump("<src?>", source_addr, source_str,
+			       sizeof(source_str));
+		zlog_warn(
+			"%s: setsockopt(fd=%d) failure for IGMP group %s source %s ifindex %d on interface %s: errno=%d: %s",
+			__PRETTY_FUNCTION__, join_fd, group_str, source_str,
+			ifindex, ifname, errno, safe_strerror(errno));
+
 		close(join_fd);
 		return -2;
 	}
@@ -1266,6 +1230,7 @@ static struct igmp_join *igmp_join_new(struct interface *ifp,
 	if (join_fd < 0) {
 		char group_str[INET_ADDRSTRLEN];
 		char source_str[INET_ADDRSTRLEN];
+
 		pim_inet4_dump("<grp?>", group_addr, group_str,
 			       sizeof(group_str));
 		pim_inet4_dump("<src?>", source_addr, source_str,
@@ -1277,20 +1242,6 @@ static struct igmp_join *igmp_join_new(struct interface *ifp,
 	}
 
 	ij = XCALLOC(MTYPE_PIM_IGMP_JOIN, sizeof(*ij));
-	if (!ij) {
-		char group_str[INET_ADDRSTRLEN];
-		char source_str[INET_ADDRSTRLEN];
-		pim_inet4_dump("<grp?>", group_addr, group_str,
-			       sizeof(group_str));
-		pim_inet4_dump("<src?>", source_addr, source_str,
-			       sizeof(source_str));
-		zlog_err(
-			"%s: XCALLOC(%zu) failure for IGMP group %s source %s on interface %s",
-			__PRETTY_FUNCTION__, sizeof(*ij), group_str, source_str,
-			ifp->name);
-		close(join_fd);
-		return 0;
-	}
 
 	ij->sock_fd = join_fd;
 	ij->group_addr = group_addr;
@@ -1316,9 +1267,6 @@ ferr_r pim_if_igmp_join_add(struct interface *ifp, struct in_addr group_addr,
 
 	if (!pim_ifp->igmp_join_list) {
 		pim_ifp->igmp_join_list = list_new();
-		if (!pim_ifp->igmp_join_list) {
-			return ferr_cfg_invalid("Insufficient memory");
-		}
 		pim_ifp->igmp_join_list->del = (void (*)(void *))igmp_join_free;
 	}
 
@@ -1520,7 +1468,7 @@ void pim_if_create_pimreg(struct pim_instance *pim)
 		pim->regiface = if_create(pimreg_name, pim->vrf_id);
 		pim->regiface->ifindex = PIM_OIF_PIM_REGISTER_VIF;
 
-		pim_if_new(pim->regiface, 0, 0);
+		pim_if_new(pim->regiface, 0, 0, true);
 	}
 }
 
@@ -1547,27 +1495,12 @@ int pim_if_connected_to_source(struct interface *ifp, struct in_addr src)
 	return 0;
 }
 
-int pim_if_is_loopback(struct pim_instance *pim, struct interface *ifp)
+bool pim_if_is_vrf_device(struct interface *ifp)
 {
-	if (if_is_loopback(ifp))
-		return 1;
+	if (if_is_vrf(ifp))
+		return true;
 
-	if (strcmp(ifp->name, pim->vrf->name) == 0)
-		return 1;
-
-	return 0;
-}
-
-int pim_if_is_vrf_device(struct interface *ifp)
-{
-	struct vrf *vrf;
-
-	RB_FOREACH (vrf, vrf_name_head, &vrfs_by_name) {
-		if (strncmp(ifp->name, vrf->name, strlen(ifp->name)) == 0)
-			return 1;
-	}
-
-	return 0;
+	return false;
 }
 
 int pim_if_ifchannel_count(struct pim_interface *pim_ifp)

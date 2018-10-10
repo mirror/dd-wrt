@@ -59,6 +59,7 @@
 #include "eigrpd/eigrp_topology.h"
 #include "eigrpd/eigrp_fsm.h"
 #include "eigrpd/eigrp_memory.h"
+#include "eigrpd/eigrp_errors.h"
 
 void eigrp_send_reply(struct eigrp_neighbor *nbr, struct eigrp_prefix_entry *pe)
 {
@@ -85,7 +86,7 @@ void eigrp_send_reply(struct eigrp_neighbor *nbr, struct eigrp_prefix_entry *pe)
 	 * End of filtering
 	 */
 
-	ep = eigrp_packet_new(ei->ifp->mtu, nbr);
+	ep = eigrp_packet_new(EIGRP_PACKET_MTU(ei->ifp->mtu), nbr);
 
 	/* Prepare EIGRP INIT UPDATE header */
 	eigrp_packet_header_init(EIGRP_OPC_REPLY, eigrp, ep->s, 0,
@@ -169,10 +170,10 @@ void eigrp_reply_receive(struct eigrp *eigrp, struct ip *iph,
 		if (!dest) {
 			char buf[PREFIX_STRLEN];
 
-			zlog_err(
-				"%s: Received prefix %s which we do not know about",
-				__PRETTY_FUNCTION__,
-				prefix2str(&dest_addr, buf, sizeof(buf)));
+			flog_err(EIGRP_ERR_PACKET,
+				  "%s: Received prefix %s which we do not know about",
+				  __PRETTY_FUNCTION__,
+				  prefix2str(&dest_addr, buf, sizeof(buf)));
 			eigrp_IPv4_InternalTLV_free(tlv);
 			continue;
 		}
