@@ -1,0 +1,70 @@
+#!/bin/sh
+# Copyright (C) 2016  Andreas Bombe <aeb@debian.org>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+#
+# This script expects a testname.fsck file as its sole argument. It must
+# be a hex dump that can be converted to a filesystem image with xxd.
+# fsck.fat is run on that image to attempt to fix the problem and then
+# it is run a second time to determine if the problem has been fixed.
+# The test fails if the first run does not detect an error or if the
+# second run still detects an error.
+
+
+run_fsck () {
+	"../src/fsck.fat" "$@"
+}
+
+
+if [ $# -ne 1 ]; then
+	echo "$0 called with wrong number of arguments"
+	exit 99
+fi
+testname=$(basename "$1" .fsck)
+
+
+if [ "$XXD_FOUND" != "yes" ]; then
+	echo "xxd not available, required by test"
+	exit 77  # report test skipped
+fi
+
+
+echo "Test $testname"
+
+# make sure there aren't files remaining from earlier run
+rm -f "${testname}.img"
+
+xxd -r "${srcdir}/${testname}.fsck" "${testname}.img" || exit 99
+
+
+echo "First fsck run to check and fix error..."
+run_fsck -a "${testname}.img"
+success=$?
+if [ $success -eq 0 ]; then
+	echo "*** Error was not detected by fsck."
+	success=100
+elif [ $success -eq 1 ]; then
+	echo "Second fsck run to check if error was fixed..."
+	run_fsck -n "${testname}.img"
+	success=$?
+
+	if [ $success -ne 0 ]; then
+		echo "*** Error was not fixed by fsck."
+	fi
+fi
+
+
+rm -f "${testname}.img"
+exit $success
