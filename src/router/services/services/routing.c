@@ -49,41 +49,40 @@ static int zebra_init(void)
 #else
 	sprintf(daemons, "watchquagga -dz -r '%%s -d' zebra");
 #endif
-#ifdef HAVE_FRR
-	eval("zebra", "-d");
-#endif
 	sub = nvram_safe_get("wk_mode");
 	foreach(var, sub, next) {
 		if (!strcmp(var, "ospf")) {
 			services++;
 			zebra_ospf_init();
 			strcat(daemons, " ospfd");
-#ifdef HAVE_FRR
-			eval("ospfd", "-d");
-#endif
 		} else if (!strcmp(var, "ospf6")) {
 			services++;
 			zebra_ospf6_init();
 			strcat(daemons, " ospf6d");
-#ifdef HAVE_FRR
-			eval("ospf6d", "-d");
-#endif
 		} else if (!strcmp(var, "bgp")) {
 			services++;
 			zebra_bgp_init();
 			strcat(daemons, " bgpd");
-#ifdef HAVE_FRR
-			eval("bgpd", "-d");
-#endif
 		} else if (!strcmp(var, "router")) {
 			services++;
 			zebra_ripd_init();
 			strcat(daemons, " ripd");
-#ifdef HAVE_FRR
-			eval("ripd", "-d");
-#endif
 		}
 	}
+#ifdef HAVE_FRR
+	eval("zebra", "-d");
+	foreach(var, sub, next) {
+		if (!strcmp(var, "ospf")) {
+		} else if (!strcmp(var, "ospf6")) {
+			eval("ospf6d", "-d");
+		} else if (!strcmp(var, "bgp")) {
+			eval("bgpd", "-d");
+		} else if (!strcmp(var, "router")) {
+			eval("ripd", "-d");
+		}
+	}
+#endif
+
 	if (services) {
 		dd_loginfo("zebra", "(%s) successfully initiated\n", daemons);
 		system(daemons);
@@ -706,7 +705,7 @@ static int bird_init(void)
 void start_zebra(void)
 {
 
-	if (!nvram_invmatchi("zebra_enable", 0))
+	if (!nvram_matchi("zebra_enable", 1))
 		return;
 
 #ifdef HAVE_BIRD
