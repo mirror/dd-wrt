@@ -173,7 +173,7 @@ int _nvram_read(char *buf)
 		wr += PAGE_SIZE;
 	}
 	if (!offs || header->magic != NVRAM_MAGIC) {
-		printk(KERN_EMERG "Broken NVRAM found, recovering it (header error) len = %d\n", offs);
+		printk(KERN_EMERG "Broken NVRAM found, recovering it (header error) len = %lu\n", offs);
 		/* Maybe we can recover some data from early initialization */
 		memcpy(buf, nvram_buf, NVRAM_SPACE);
 		memset(buf, 0, NVRAM_SPACE);
@@ -329,7 +329,7 @@ int nvram_commit(void)
 		offs += len;
 		wr += PAGE_SIZE;
 	}
-	printk(KERN_EMERG "nvram_commit: %d bytes written\n", offs);
+	printk(KERN_EMERG "nvram_commit: %lu bytes written\n", offs);
 	filp_close(srcf, NULL);
 	set_fs(old_fs);
 done:
