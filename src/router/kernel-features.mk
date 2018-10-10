@@ -224,6 +224,22 @@ define kernelfeatures
 		echo "CONFIG_VIRTIO_VSOCKETS=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_VIRTIO_VSOCKETS_COMMON=m" >> $(LINUXDIR)/.config; \
 	fi
+	if [ "$(CONFIG_BTRFSPROGS)" = "y" ]; then \
+		sed -i 's/\# CONFIG_BTRFS_FS is not set/CONFIG_BTRFS_FS=m/g' $(LINUXDIR)/.config; \
+		echo "# CONFIG_BTRFS_FS_POSIX_ACL is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_BTRFS_FS_CHECK_INTEGRITY is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_BTRFS_FS_RUN_SANITY_TESTS is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_BTRFS_DEBUG is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_BTRFS_ASSERT is not set" >> $(LINUXDIR)/.config; \
+	fi
+	if [ "$(CONFIG_XFSPROGS)" = "y" ]; then \
+		sed -i 's/\# CONFIG_XFS_FS is not set/CONFIG_XFS_FS=m/g' $(LINUXDIR)/.config; \
+		echo "# CONFIG_XFS_QUOTA is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_XFS_POSIX_ACL is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_XFS_RT is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_XFS_WARN is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_XFS_DEBUG is not set" >> $(LINUXDIR)/.config; \
+	fi
 	if [ "$(CONFIG_RAID)" = "y" ]; then \
 		sed -i 's/\# CONFIG_MD is not set/CONFIG_MD=y/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_RAID6_PQ is not set/CONFIG_RAID6_PQ=y/g' $(LINUXDIR)/.config; \
