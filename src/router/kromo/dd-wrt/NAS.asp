@@ -510,6 +510,7 @@ function drive_fs_changed(F,formatindex, selectedindex) {
 	var btrfs = <% support_fs("btrfs"); %>;
 	var exfat = <% support_fs("exfat"); %>;
 	var ntfs = <% support_fs("ntfs"); %>;
+	var fat32 = <% support_fs("fat"); %>;
 	var opt = $('format' + formatindex);
 	var value = opt.options[selectedindex].value;
 	
@@ -528,6 +529,8 @@ function drive_fs_changed(F,formatindex, selectedindex) {
 	} else if (value == "exfat" && exfat == 1) {
 	    format.disabled = false; 
 	} else if (value == "ntfs" && ntfs == 1) {
+	    format.disabled = false; 
+	} else if (value == "fat32" && fat32 == 1) {
 	    format.disabled = false; 
 	} else {
 	    format.disabled = true; 
