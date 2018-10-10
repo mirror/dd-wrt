@@ -529,8 +529,10 @@ function drive_fs_changed(F,formatindex, selectedindex) {
 	    format.disabled = true; 
 	} else if (value == "ntfs" && ntfs == 0) {
 	    format.disabled = true; 
+	} else if (value == "unk") {
+	    format.disabled = true; 
 	} else {
- 	    format.disabled = false; 
+	    format.disabled = false; 
 	}
 }	
 
