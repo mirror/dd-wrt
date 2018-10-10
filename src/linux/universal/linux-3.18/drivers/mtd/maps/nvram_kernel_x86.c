@@ -323,7 +323,7 @@ int nvram_commit(void)
 		len = srcf->f_op->write(srcf, wr, PAGE_SIZE, &srcf->f_pos);
 		wr += PAGE_SIZE;
 	}
-	printk(KERN_EMERG "nvram_commit: %d bytes written\n", len);
+	printk(KERN_EMERG "nvram_commit: %lu bytes written\n", len);
 	filp_close(srcf, NULL);
 	set_fs(old_fs);
 done:
