@@ -515,24 +515,22 @@ function drive_fs_changed(F,formatindex, selectedindex) {
 	
 	var format = $('drive_format' + formatindex);
 
-	if (value == "xfs" && xfs == 0) {
-	    format.disabled = true; 
-	} else if (value == "ext2" && ext2 == 0) {
-	    format.disabled = true; 
-	} else if (value == "ext3" && ext3 == 0) {
-	    format.disabled = true; 
-	} else if (value == "ext4" && ext4 == 0) {
-	    format.disabled = true; 
-	} else if (value == "btrfs" && btrfs == 0) {
-	    format.disabled = true; 
-	} else if (value == "exfat" && exfat == 0) {
-	    format.disabled = true; 
-	} else if (value == "ntfs" && ntfs == 0) {
-	    format.disabled = true; 
-	} else if (value == "unk") {
-	    format.disabled = true; 
-	} else {
+	if (value == "xfs" && xfs == 1) {
 	    format.disabled = false; 
+	} else if (value == "ext2" && ext2 == 1) {
+	    format.disabled = false; 
+	} else if (value == "ext3" && ext3 == 1) {
+	    format.disabled = false; 
+	} else if (value == "ext4" && ext4 == 1) {
+	    format.disabled = false; 
+	} else if (value == "btrfs" && btrfs == 1) {
+	    format.disabled = false; 
+	} else if (value == "exfat" && exfat == 1) {
+	    format.disabled = false; 
+	} else if (value == "ntfs" && ntfs == 1) {
+	    format.disabled = false; 
+	} else {
+	    format.disabled = true; 
 	}
 }	
 
