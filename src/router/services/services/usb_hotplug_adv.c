@@ -428,14 +428,18 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 		sysprintf("echo \"<b>%s</b> not mounted <b>%s</b><hr>\"  >> /tmp/disk/%s", path, "Unsupported Filesystem", dev);
 		return 1;
 	}
+	char *mntlabel = nvram_nget("%s_label", dev);
+	if (strlen(mntlabel)) {
+		sprintf(mount_point, "/tmp/mnt/%s", mntlabel);
+	} else {
+		/* strategy one: mount to default location */
+		if (host == -1)	//K3
+		{
+			sprintf(mount_point, "/tmp/mnt/%s", dev);
 
-	/* strategy one: mount to default location */
-	if (host == -1)		//K3
-	{
-		sprintf(mount_point, "/tmp/mnt/%s", dev);
-
-	} else {		//K2.6
-		sprintf(mount_point, "/tmp/mnt/disc%d-%s", host, part);
+		} else {	//K2.6
+			sprintf(mount_point, "/tmp/mnt/disc%d-%s", host, part);
+		}
 	}
 
 	/* strategy two: mount by partition label, overrides strategy one */
