@@ -114,6 +114,7 @@ endif
 	rm -f $(INSTALLDIR)/btrfsprogs/usr/bin/btrfck
 	rm -f $(INSTALLDIR)/btrfsprogs/usr/bin/btrfs
 	rm -f $(INSTALLDIR)/btrfsprogs/usr/bin/fsck.btrfs
+	rm -f $(INSTALLDIR)/btrfsprogs/usr/bin/btrfsck
 	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
 	rm -rf $(INSTALLDIR)/util-linux/usr/bin
 	rm -rf $(INSTALLDIR)/util-linux/bin
