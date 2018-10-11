@@ -7,7 +7,7 @@ xfsprogs:
 
 
 xfsprogs-clean:
-	make -C xfsprogs DEBUG= Q= clean
+	make -C xfsprogs clean
 
 xfsprogs-install:
 	-make -C xfsprogs install DESTDIR=$(INSTALLDIR)/xfsprogs PKG_SBIN_DIR=/usr/sbin PKG_ROOT_SBIN_DIR=/sbin PKG_ROOT_LIB_DIR=/lib PKG_LIB_DIR=/usr/lib	\
@@ -17,3 +17,7 @@ xfsprogs-install:
 	rm -rf $(INSTALLDIR)/xfsprogs/usr/share
 	rm -rf $(INSTALLDIR)/xfsprogs/usr/man
 	rm -rf $(INSTALLDIR)/xfsprogs/usr/include
+	rm -rf $(INSTALLDIR)/xfsprogs/usr
+	rm -rf $(INSTALLDIR)/xfsprogs/lib
+	rm -f $(INSTALLDIR)/xfsprogs/sbin/fsck.xfs
+	rm -f $(INSTALLDIR)/xfsprogs/sbin/xfs_repair
