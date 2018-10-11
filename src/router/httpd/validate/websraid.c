@@ -59,6 +59,8 @@
 #include <utils.h>
 #include <stdarg.h>
 #include <sha1.h>
+#include <linux/fs.h>
+#include <fcntl.h>
 
 void add_raid(webs_t wp)
 {
@@ -75,19 +77,19 @@ void add_raid(webs_t wp)
 void format_drive(webs_t wp)
 {
 	char *val = websGetVar(wp, "raid_del_value", NULL);
+	fprintf(stderr, "value %s\n", val?val:"null");
 	if (!val)
 		return;
 	int idx = atoi(val);
-	char s_fs[32];
-	sprintf(s_fs, "fs%d", idx);
 	char s_format[32];
 	sprintf(s_format, "format%d", idx);
 	char s_label[32];
 	sprintf(s_label, "label%d", idx);
 
-	char *fs = websGetVar(wp, s_fs, NULL);
+	char *fs = websGetVar(wp, "format_drive", NULL);
 	char *format = websGetVar(wp, s_format, NULL);
 	char *label = websGetVar(wp, s_label, NULL);
+//	fprintf(stderr, "%d: %s %s %s\n",idx, fs?fs:"NULL",format?format:"",label);
 	if (!fs || !format)
 		return;
 	if (!label)
@@ -131,6 +133,9 @@ void format_drive(webs_t wp)
 		else
 			eval(name, "-F", fs);
 	}
+	int fd = open(fs, O_RDONLY | O_NONBLOCK);
+	ioctl(fd, BLKRRPART, NULL);
+	close(fd);
 }
 
 void del_raid(webs_t wp)
