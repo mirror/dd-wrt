@@ -77,7 +77,6 @@ void add_raid(webs_t wp)
 void format_drive(webs_t wp)
 {
 	char *val = websGetVar(wp, "raid_del_value", NULL);
-	fprintf(stderr, "value %s\n", val?val:"null");
 	if (!val)
 		return;
 	int idx = atoi(val);
@@ -89,7 +88,6 @@ void format_drive(webs_t wp)
 	char *fs = websGetVar(wp, "do_format_drive", NULL);
 	char *format = websGetVar(wp, s_format, NULL);
 	char *label = websGetVar(wp, s_label, NULL);
-//	fprintf(stderr, "%d: %s %s %s\n",idx, fs?fs:"NULL",format?format:"",label);
 	if (!fs || !format)
 		return;
 	if (!label)
