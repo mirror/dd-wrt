@@ -161,6 +161,7 @@ endif
 	ln -sf /tmp/cron.d $(INSTALLDIR)/etc/cron.d
 	ln -sf /tmp/etc/passwd $(INSTALLDIR)/etc/passwd
 	ln -sf /tmp/etc/group $(INSTALLDIR)/etc/group
+	ln -sf /proc/mounts $(INSTALLDIR)/etc/mtab
 ifndef CONFIG_GATEWORX
 	ln -sf /usr/local/nvram $(INSTALLDIR)/etc/nvram	
 else
