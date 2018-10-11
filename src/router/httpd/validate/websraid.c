@@ -82,25 +82,55 @@ void format_drive(webs_t wp)
 	sprintf(s_fs, "fs%d", idx);
 	char s_format[32];
 	sprintf(s_format, "format%d", idx);
+	char s_label[32];
+	sprintf(s_format, "label%d", idx);
 
 	char *fs = websGetVar(wp, s_fs, NULL);
 	char *format = websGetVar(wp, s_format, NULL);
+	char *label = websGetVar(wp, s_label, NULL);
 	if (!fs || !format)
 		return;
+	if (!label)
+		label = "";
+	if (strlen(label)) {
+		char labelstr[32];
+		sprintf(labelstr, "%s_label", &fs[5]);
+		nvram_set(labelstr, label);
+		nvram_commit();
+	}
 	char name[32];
 	sprintf(name, "mkfs.%s", format);
-	if (!strcmp(format, "xfs") || !strcmp(format, "btrfs"))
-		eval(name, "-f", fs);
-	else if (!strcmp(format, "ntfs"))
-		eval(name, "-f", "-Q", "-F", fs);
-	else if (!strcmp(format, "exfat"))
-		eval(name, fs);
-	else if (!strcmp(format, "fat32"))
-		eval("mkfs.fat", "-F", "32", fs);
-	else if (!strncmp(format, "ext", 3))
-		eval(name, "-F", "-E", "lazy_itable_init=1", fs);
-	else
-		eval(name, "-F", fs);
+	if (!strcmp(format, "xfs") || !strcmp(format, "btrfs")) {
+		if (strlen(label))
+			eval(name, "-f", "-L", label, fs);
+		else
+			eval(name, "-f", fs);
+	} else if (!strcmp(format, "ntfs")) {
+		if (strlen(label))
+			eval(name, "-f", "-L", label, "-Q", "-F", fs);
+		else
+			eval(name, "-f", "-Q", "-F", fs);
+	} else if (!strcmp(format, "exfat")) {
+		if (strlen(label))
+			eval(name, "-n", label, fs);
+		else
+			eval(name, fs);
+	} else if (!strcmp(format, "fat32")) {
+		if (strlen(label))
+			eval("mkfs.fat", "-n", label, "-F", "32", fs);
+		else
+			eval("mkfs.fat", "-F", "32", fs);
+	} else if (!strncmp(format, "ext", 3)) {
+		if (strlen(label))
+			eval(name, "-F", "-L", label, "-E", "lazy_itable_init=1", fs);
+		else
+			eval(name, "-F", "-E", "lazy_itable_init=1", fs);
+	} else {
+		if (strlen(label))
+			eval(name, "-F", "-L", label, fs);
+		else
+			eval(name, "-F", fs);
+	}
 }
 
 void del_raid(webs_t wp)
