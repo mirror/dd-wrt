@@ -420,7 +420,7 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 				continue;
 			websWrite(wp, "<tr>\n");
 			websWrite(wp, "<td>\n");
-			websWrite(wp, "<input name=\"fs%d\" size=\"14\" value=\"%s\" disabled=\"disabled\" />", idx, drive);
+			websWrite(wp, "<input name=\"fs%d\" size=\"14\" value=\"%s\" disabled=\"disabled\"/>", idx, drive);
 			websWrite(wp, "</td>\n");
 			websWrite(wp, "<td>\n");
 			websWrite(wp, "<input name=\"label%d\" size=\"12\" value=\"%s\"/>", idx, nvram_nget("%s_label", &drive[5]));
@@ -461,8 +461,8 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			else if (!strcmp(fs, "FAT32") && fat32)
 				dis = 0;
 			websWrite(wp,
-				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" id=\\\"drive_format%d\\\" name=\\\"reboot_button\\\" type=\\\"button\\\" value=\\\"\" + nas.format + \"\\\" onclick=\\\"drive_format_submit(this.form,%d)\\\" %s />\");\n//]]>\n</script>\n",
-				  idx, idx, !dis ? "" : "disabled=\\\"true\\\"");
+				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" id=\\\"drive_format%d\\\" name=\\\"reboot_button\\\" type=\\\"button\\\" value=\\\"\" + nas.format + \"\\\" onclick=\\\"drive_format_submit(this.form,%d,%s)\\\" %s />\");\n//]]>\n</script>\n",
+				  idx, idx, drive, !dis ? "" : "disabled=\\\"true\\\"");
 			websWrite(wp, "</td>\n");
 			websWrite(wp, "</tr>\n");
 			idx++;
