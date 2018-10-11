@@ -13,7 +13,7 @@ e2fsprogs-clean:
 e2fsprogs-install:
 	-make -C e2fsprogs install DESTDIR=$(INSTALLDIR)/e2fsprogs
 
-ifneq ($(CONFIG_E2FSPROGS_ADV),y)
+#ifneq ($(CONFIG_E2FSPROGS_ADV),y)
 	-rm -f $(INSTALLDIR)/e2fsprogs/sbin/*fsck*
 	rm -rf $(INSTALLDIR)/e2fsprogs/usr/bin
 	rm -rf $(INSTALLDIR)/e2fsprogs/usr/sbin
@@ -29,8 +29,12 @@ ifneq ($(CONFIG_E2FSPROGS_ADV),y)
 	rm -f $(INSTALLDIR)/e2fsprogs/sbin/e2undo
 	rm -f $(INSTALLDIR)/e2fsprogs/sbin/e2label
 	rm -f $(INSTALLDIR)/e2fsprogs/sbin/findfs
-endif
+	rm -f $(INSTALLDIR)/e2fsprogs/sbin/fsck*
+	rm -f $(INSTALLDIR)/e2fsprogs/lib/libss*
+	rm -f $(INSTALLDIR)/e2fsprogs/lib/e2initrd_helper	
+#endif
 	rm -rf $(INSTALLDIR)/e2fsprogs/usr/share
 	rm -rf $(INSTALLDIR)/e2fsprogs/usr/man
+	rm -rf $(INSTALLDIR)/e2fsprogs/usr
 	-cd $(INSTALLDIR)/e2fsprogs/etc && ln -sf /proc/mounts mtab
 	true
