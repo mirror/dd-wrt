@@ -432,7 +432,7 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 			websWrite(wp, "document.write(\"<option value=\\\"unk\\\" >Unknown</option>\");\n");
 			websWrite(wp, "document.write(\"<option value=\\\"unk\\\" >Empty</option>\");\n", !strcmp(fs, "Empty") ? "selected=\\\"selected\\\"" : "");
-			websWrite(wp, "document.write(\"<option value=\\\"unk\\\" >Partition</option>\");\n", !strcmp(fs, "Partition") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"unk\\\" %s>Partition</option>\");\n", !strcmp(fs, "Partition") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"ext2\\\" %s >EXT2</option>\");\n", !strcmp(fs, "EXT2") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"ext3\\\" %s >EXT3</option>\");\n", !strcmp(fs, "EXT3") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"ext4\\\" %s >EXT4</option>\");\n", !strcmp(fs, "EXT4") ? "selected=\\\"selected\\\"" : "");
