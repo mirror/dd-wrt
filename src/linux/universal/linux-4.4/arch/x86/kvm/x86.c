@@ -7895,15 +7895,14 @@ int kvm_arch_create_memslot(struct kvm *kvm, struct kvm_memory_slot *slot,
 		lpages = gfn_to_index(slot->base_gfn + npages - 1,
 				      slot->base_gfn, level) + 1;
 
-		slot->arch.rmap[i] =
-			kvm_kvzalloc(lpages * sizeof(*slot->arch.rmap[i]));
+		slot->arch.rmap[i] = kvzalloc(lpages * sizeof(*slot->arch.rmap[i]), GFP_KERNEL);
 		if (!slot->arch.rmap[i])
 			goto out_free;
 		if (i == 0)
 			continue;
 
-		slot->arch.lpage_info[i - 1] = kvm_kvzalloc(lpages *
-					sizeof(*slot->arch.lpage_info[i - 1]));
+		slot->arch.lpage_info[i - 1] = kvzalloc(lpages *
+					sizeof(*slot->arch.lpage_info[i - 1]), GFP_KERNEL);
 		if (!slot->arch.lpage_info[i - 1])
 			goto out_free;
 
