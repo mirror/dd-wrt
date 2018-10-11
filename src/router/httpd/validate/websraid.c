@@ -86,7 +86,7 @@ void format_drive(webs_t wp)
 	char s_label[32];
 	sprintf(s_label, "label%d", idx);
 
-	char *fs = websGetVar(wp, "format_drive", NULL);
+	char *fs = websGetVar(wp, "do_format_drive", NULL);
 	char *format = websGetVar(wp, s_format, NULL);
 	char *label = websGetVar(wp, s_label, NULL);
 //	fprintf(stderr, "%d: %s %s %s\n",idx, fs?fs:"NULL",format?format:"",label);
