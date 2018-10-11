@@ -476,7 +476,7 @@ function raid_format_submit(F, I) {
 function drive_format_submit(F, I, drive) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "format_drive";
-	F.format_drive = drive;
+	F.do_format_drive.value = drive;
 	F.raid_del_value.value=I;
 	F.submit();
 }
@@ -621,7 +621,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="raid_del_value" />
-							<input type="hidden" name="format_drive" />
+							<input type="hidden" name="do_format_drive" />
 							<input type="hidden" name="raid_member_del_value" />
 							<input type="hidden" name="raid_member_add_value" />
 							<input type="hidden" name="commit" value="1"/>
