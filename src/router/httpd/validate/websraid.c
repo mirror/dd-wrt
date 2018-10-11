@@ -72,7 +72,6 @@ void add_raid(webs_t wp)
 	nvram_nset("md", "raidtype%d", idx);
 }
 
-
 void format_drive(webs_t wp)
 {
 	char *val = websGetVar(wp, "raid_del_value", NULL);
@@ -110,6 +109,19 @@ void del_raid(webs_t wp)
 	if (!val)
 		return;
 	int idx = atoi(val);
+
+	char *raid = nvram_nget("raid%d", idx);
+	char *poolname = nvram_nget("raidname%d", idx);
+	char *next;
+	char drive[64];
+	int drives = 0;
+	foreach(drive, raid, next) {
+		drives++;
+		sysprintf("umount %s", drive);
+	}
+	sysprintf("umount /dev/md%d", idx);
+	sysprintf("mdadm --stop /dev/md%d", idx);
+	sysprintf("zpool destroy %s", poolname);
 
 	int cnt = 0;
 	while (1) {
@@ -266,6 +278,7 @@ void raid_save(webs_t wp)
 	}
 
 }
+
 void format_raid(webs_t wp)
 {
 	char *val = websGetVar(wp, "raid_del_value", NULL);
@@ -277,6 +290,5 @@ void format_raid(webs_t wp)
 	eval("stopservice", "raid");
 	eval("startservice", "raid");
 }
-
 
 #endif
