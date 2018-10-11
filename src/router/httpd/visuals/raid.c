@@ -410,7 +410,9 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(nas.drivemanager)</script></h2>");
 	websWrite(wp, "<fieldset>\n");
 	websWrite(wp, "<table id=\"drives\" class=\"table center\" summary=\"Drive List\">\n");
-	websWrite(wp, "<tr>\n" "<th><script type=\"text/javascript\">Capture(nas.drive)</script></th>\n""<th><script type=\"text/javascript\">Capture(idx.label)</script></th>\n" "<th><script type=\"text/javascript\">Capture(nas.fs)</script></th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
+	websWrite(wp,
+		  "<tr>\n" "<th><script type=\"text/javascript\">Capture(nas.drive)</script></th>\n" "<th><script type=\"text/javascript\">Capture(idx.label)</script></th>\n"
+		  "<th><script type=\"text/javascript\">Capture(nas.fs)</script></th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
 	int idx = 0;
 	if (drives) {
 		foreach(drive, drives, dnext) {
