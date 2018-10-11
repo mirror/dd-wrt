@@ -420,7 +420,7 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 				continue;
 			websWrite(wp, "<tr>\n");
 			websWrite(wp, "<td>\n");
-			websWrite(wp, "<input name=\"fs%d\" size=\"32\" value=\"%s\" />", idx, drive);
+			websWrite(wp, "<input name=\"fs%d\" size=\"14\" value=\"%s\" disabled=\"disabled\"/>", idx, drive);
 			websWrite(wp, "</td>\n");
 			websWrite(wp, "<td>\n");
 			websWrite(wp, "<select id=\"format%d\" name=\"format%d\" onchange=\"drive_fs_changed(this.form,%d, this.form.format%d.selectedIndex)\">\n", idx, idx, idx, idx);
