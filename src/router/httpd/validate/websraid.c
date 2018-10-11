@@ -98,6 +98,7 @@ void format_drive(webs_t wp)
 		nvram_set(labelstr, label);
 		nvram_commit();
 	}
+	eval("umount", fs);
 	char name[32];
 	sprintf(name, "mkfs.%s", format);
 	if (!strcmp(format, "xfs") || !strcmp(format, "btrfs")) {
