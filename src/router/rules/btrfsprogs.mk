@@ -111,6 +111,9 @@ endif
 	-rm -rf $(INSTALLDIR)/btrfsprogs/usr/lib64
 	-rm -rf $(INSTALLDIR)/btrfsprogs/usr/share
 	rm -f $(INSTALLDIR)/btrfsprogs/usr/bin/btrfs-*
+	rm -f $(INSTALLDIR)/btrfsprogs/usr/bin/btrfck
+	rm -f $(INSTALLDIR)/btrfsprogs/usr/bin/btrfs
+	rm -f $(INSTALLDIR)/btrfsprogs/usr/bin/fsck.btrfs
 	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
 	rm -rf $(INSTALLDIR)/util-linux/usr/bin
 	rm -rf $(INSTALLDIR)/util-linux/bin
