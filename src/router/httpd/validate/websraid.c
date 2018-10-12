@@ -310,7 +310,21 @@ void raid_save(webs_t wp)
 		idx++;
 
 	}
-
+	idx = 0;
+	while (1) {
+		char drivename[32];
+		sprintf(drivename, "drivename%d", idx);
+		char label[32];
+		sprintf(label, "label%d", idx);
+		char *dn = websGetVar(wp, drivename, NULL);
+		if (!dn)
+			break;
+		char *l = websGetVar(wp, label, NULL);
+		if (!l || !strlen(l))
+			continue;
+		nvram_nset(l, "%s_label", dn);
+		idx++;
+	}
 }
 
 void format_raid(webs_t wp)
