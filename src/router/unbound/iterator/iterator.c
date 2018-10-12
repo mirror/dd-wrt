@@ -1125,7 +1125,7 @@ forward_request(struct module_qstate* qstate, struct iter_qstate* iq)
 	struct delegpt* dp;
 	uint8_t* delname = iq->qchase.qname;
 	size_t delnamelen = iq->qchase.qname_len;
-	if(iq->refetch_glue) {
+	if(iq->refetch_glue && iq->dp) {
 		delname = iq->dp->name;
 		delnamelen = iq->dp->namelen;
 	}
@@ -2174,7 +2174,8 @@ processQueryTargets(struct module_qstate* qstate, struct iter_qstate* iq,
 		return 0;
 	}
 
-	if(iq->minimisation_state == INIT_MINIMISE_STATE) {
+	if(iq->minimisation_state == INIT_MINIMISE_STATE
+		&& !(iq->chase_flags & BIT_RD)) {
 		/* (Re)set qinfo_out to (new) delegation point, except when
 		 * qinfo_out is already a subdomain of dp. This happens when
 		 * increasing by more than one label at once (QNAMEs with more
@@ -2715,7 +2716,8 @@ processQueryResponse(struct module_qstate* qstate, struct iter_qstate* iq,
 			sock_list_insert(&qstate->reply_origin, 
 				&qstate->reply->addr, qstate->reply->addrlen, 
 				qstate->region);
-		if(iq->minimisation_state != DONOT_MINIMISE_STATE) {
+		if(iq->minimisation_state != DONOT_MINIMISE_STATE
+			&& !(iq->chase_flags & BIT_RD)) {
 			if(FLAGS_GET_RCODE(iq->response->rep->flags) != 
 				LDNS_RCODE_NOERROR) {
 				if(qstate->env->cfg->qname_minimisation_strict)
@@ -2999,7 +3001,7 @@ processQueryResponse(struct module_qstate* qstate, struct iter_qstate* iq,
 			iq->dp->name, iq->dp->namelen, qstate->qinfo.qclass)) {
 			verbose(VERB_ALGO, "auth zone response bad, and no"
 				" fallback possible, servfail");
-			errinf_dname(qstate, "reponse is bad, no fallback, "
+			errinf_dname(qstate, "response is bad, no fallback, "
 				"for auth zone", iq->dp->name);
 			return error_response(qstate, id, LDNS_RCODE_SERVFAIL);
 		}
