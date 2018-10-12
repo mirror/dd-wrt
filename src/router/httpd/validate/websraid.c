@@ -319,11 +319,11 @@ void raid_save(webs_t wp)
 		char *dn = websGetVar(wp, drivename, NULL);
 		if (!dn)
 			break;
+		idx++;
 		char *l = websGetVar(wp, label, NULL);
 		if (!l || !strlen(l))
 			continue;
 		nvram_nset(l, "%s_label", dn);
-		idx++;
 	}
 }
 
