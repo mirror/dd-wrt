@@ -420,6 +420,7 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			char *fs = getfsname(drive);
 			if (!fs)
 				continue;
+			websWrite(wp, "<input type=\"hidden\" name=\"drivename%d\" value=\"%s\"\n", idx, &drive[5]);
 			websWrite(wp, "<tr>\n");
 			websWrite(wp, "<td>\n");
 			websWrite(wp, "<input name=\"fs%d\" size=\"14\" value=\"%s\" disabled=\"disabled\"/>", idx, drive);
@@ -469,8 +470,18 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "</tr>\n");
 			idx++;
 		}
+
 	}
 	websWrite(wp, "</table>\n");
+
+	if (drives) {
+		foreach(drive, drives, dnext) {
+			char *fs = getfsname(drive);
+			if (!fs)
+				continue;
+			websWrite(wp, "<input type=\"hidden\" name=\"drivename%d\" value=\"%s\"\n", idx, &drive[5]);
+		}
+	}
 	websWrite(wp, "<input type=\"hidden\" name=\"drivecount\" id=\"drivecount\" value=\"%d\"\n", idx);
 	websWrite(wp, "</fieldset>\n");
 }
