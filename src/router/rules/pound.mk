@@ -13,4 +13,4 @@ pound:
 
 pound-install:
 	make -C pound install DESTDIR=$(INSTALLDIR)/pound
-	rm -rf $(INSTALLDIR)/usr/share
+	rm -rf $(INSTALLDIR)/pound/usr/share
