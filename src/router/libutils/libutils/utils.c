@@ -509,6 +509,9 @@ int check_wan_link(int num)
 				// by link file still exist.
 				unlink(filename);
 			}
+		} else {
+			wan_link = 0;
+			return wan_link;
 		}
 	}
 #ifdef HAVE_IPETH
