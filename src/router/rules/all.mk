@@ -312,6 +312,7 @@ include rules/xz.mk
 include rules/zstd.mk
 include rules/exfat-utils.mk
 include rules/dosfstools.mk
+include rules/zfs.mk
 
 #
 # Generic rules

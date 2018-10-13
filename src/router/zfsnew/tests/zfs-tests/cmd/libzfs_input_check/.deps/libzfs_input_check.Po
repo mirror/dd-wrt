@@ -1,0 +1,563 @@
+libzfs_input_check.o: libzfs_input_check.c ../../../../zfs_config.h \
+ ../../../../lib/libspl/include/stdio.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/stdio.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/features.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/uClibc_config.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/cdefs.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/lib/gcc/powerpc-openwrt-linux-uclibc/4.8.3/include/stddef.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/types.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/wordsize.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/typesizes.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/pthreadtypes.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/uClibc_stdio.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/wchar.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/wchar.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/uClibc_mutex.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/pthread.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/endian.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/endian.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/byteswap.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/byteswap.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/byteswap-common.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sched.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/time.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/sched.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/time.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/uClibc_clk_tck.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/signal.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/sigset.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/setjmp.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/uClibc_pthread.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/lib/gcc/powerpc-openwrt-linux-uclibc/4.8.3/include/stdarg.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/stdio_lim.h \
+ ../../../../lib/libspl/include/stdlib.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/stdlib.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/waitflags.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/waitstatus.h \
+ ../../../../lib/libspl/include/sys/types.h \
+ ../../../../lib/libspl/include/sys/sysmacros.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/sysmacros.h \
+ ../../../../lib/libspl/include/sys/isa_defs.h \
+ ../../../../lib/libspl/include/sys/feature_tests.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/types.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/select.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/select.h \
+ ../../../../lib/libspl/include/sys/types32.h \
+ ../../../../lib/libspl/include/sys/inttypes.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/inttypes.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/lib/gcc/powerpc-openwrt-linux-uclibc/4.8.3/include/stdint.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/stdint.h \
+ ../../../../lib/libspl/include/sys/va_list.h \
+ ../../../../lib/libspl/include/sys/stdtypes.h \
+ ../../../../lib/libspl/include/sys/param.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/param.h \
+ ../../../../lib/libspl/include/limits.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/lib/gcc/powerpc-openwrt-linux-uclibc/4.8.3/include-fixed/limits.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/lib/gcc/powerpc-openwrt-linux-uclibc/4.8.3/include-fixed/syslimits.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/limits.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/posix1_lim.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/local_lim.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/linux/limits.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/uClibc_local_lim.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/posix2_lim.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/xopen_lim.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/linux/param.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm/param.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm-generic/param.h \
+ ../../../../lib/libspl/include/unistd.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/unistd.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/posix_opt.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/environments.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/confname.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/getopt.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/ioctl.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/ioctls.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm/ioctls.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm/ioctl.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm-generic/ioctl.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/ioctl-types.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/termios.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/termios.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/ttydefaults.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/alloca.h \
+ ../../../../lib/libspl/include/string.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/string.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/strings.h \
+ ../../../../include/libzfs_core.h ../../../../include/libnvpair.h \
+ ../../../../include/sys/nvpair.h \
+ ../../../../lib/libspl/include/sys/time.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/time.h \
+ ../../../../lib/libspl/include/sys/errno.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/errno.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/errno.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/linux/errno.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm/errno.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm-generic/errno.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm-generic/errno-base.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/regex.h \
+ ../../../../include/sys/fs/zfs.h ../../../../include/sys/zio_priority.h \
+ ../../../../include/sys/zfs_ioctl.h \
+ ../../../../lib/libspl/include/sys/cred.h ../../../../include/sys/dmu.h \
+ ../../../../include/sys/zfs_context.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/fcntl.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/fcntl.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/uio.h \
+ ../../../../lib/libspl/include/sys/stat.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/stat.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/stat.h \
+ ../../../../lib/libspl/include/sys/mount.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/mount.h \
+ ../../../../lib/libspl/include/assert.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/assert.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/setjmp.h \
+ ../../../../lib/libspl/include/umem.h \
+ ../../../../lib/libspl/include/atomic.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/dirent.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/dirent.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/ctype.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/uClibc_touplow.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/signum.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/siginfo.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/sigaction.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/sigcontext.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm/sigcontext.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm/ptrace.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/linux/types.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm/types.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm-generic/int-ll64.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm/bitsperlong.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm-generic/bitsperlong.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/linux/posix_types.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/linux/stddef.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm/posix_types.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm-generic/posix_types.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/sigstack.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/ucontext.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/sigthread.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/mman.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/mman.h \
+ ../../../../include/sys/note.h \
+ ../../../../lib/libspl/include/sys/bitmap.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/resource.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/resource.h \
+ ../../../../lib/libspl/include/sys/byteorder.h \
+ ../../../../lib/libspl/include/sys/int_types.h \
+ ../../../../lib/libspl/include/sys/list.h \
+ ../../../../lib/libspl/include/sys/list_impl.h \
+ ../../../../lib/libspl/include/sys/uio.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/uio.h \
+ ../../../../include/sys/zfs_debug.h ../../../../include/sys/sdt.h \
+ ../../../../lib/libspl/include/sys/kstat.h \
+ ../../../../include/sys/u8_textprep.h ../../../../include/sys/sysevent.h \
+ ../../../../include/sys/sysevent/eventdefs.h \
+ ../../../../lib/libspl/include/sys/sunddi.h \
+ ../../../../lib/libspl/include/sys/debug.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/utsname.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/utsname.h \
+ ../../../../lib/libspl/include/sys/file.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/file.h \
+ /home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/user.h \
+ ../../../../include/sys/zio_compress.h ../../../../include/sys/abd.h \
+ ../../../../include/sys/refcount.h ../../../../include/sys/zio.h \
+ ../../../../include/sys/spa.h ../../../../include/sys/avl.h \
+ ../../../../include/sys/avl_impl.h \
+ ../../../../include/sys/spa_checksum.h ../../../../include/sys/txg.h \
+ ../../../../include/sys/zio_impl.h ../../../../include/sys/dsl_deleg.h \
+ ../../../../include/sys/dsl_pool.h ../../../../include/sys/txg_impl.h \
+ ../../../../include/sys/dnode.h ../../../../include/sys/dmu_zfetch.h \
+ ../../../../include/sys/zrlock.h ../../../../include/sys/multilist.h \
+ ../../../../include/sys/ddt.h ../../../../include/sys/arc.h \
+ ../../../../include/sys/bpobj.h ../../../../include/sys/bptree.h \
+ ../../../../include/sys/rrwlock.h ../../../../include/sys/dsl_synctask.h \
+ ../../../../include/sys/mmp.h ../../../../include/sys/uberblock_impl.h \
+ ../../../../include/sys/uberblock.h ../../../../include/sys/vdev.h \
+ ../../../../include/sys/space_map.h ../../../../include/sys/range_tree.h \
+ ../../../../include/sys/zfs_stat.h
+
+../../../../zfs_config.h:
+
+../../../../lib/libspl/include/stdio.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/stdio.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/features.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/uClibc_config.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/cdefs.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/lib/gcc/powerpc-openwrt-linux-uclibc/4.8.3/include/stddef.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/types.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/wordsize.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/typesizes.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/pthreadtypes.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/uClibc_stdio.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/wchar.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/wchar.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/uClibc_mutex.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/pthread.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/endian.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/endian.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/byteswap.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/byteswap.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/byteswap-common.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sched.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/time.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/sched.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/time.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/uClibc_clk_tck.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/signal.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/sigset.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/setjmp.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/uClibc_pthread.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/lib/gcc/powerpc-openwrt-linux-uclibc/4.8.3/include/stdarg.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/stdio_lim.h:
+
+../../../../lib/libspl/include/stdlib.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/stdlib.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/waitflags.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/waitstatus.h:
+
+../../../../lib/libspl/include/sys/types.h:
+
+../../../../lib/libspl/include/sys/sysmacros.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/sysmacros.h:
+
+../../../../lib/libspl/include/sys/isa_defs.h:
+
+../../../../lib/libspl/include/sys/feature_tests.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/types.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/select.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/select.h:
+
+../../../../lib/libspl/include/sys/types32.h:
+
+../../../../lib/libspl/include/sys/inttypes.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/inttypes.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/lib/gcc/powerpc-openwrt-linux-uclibc/4.8.3/include/stdint.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/stdint.h:
+
+../../../../lib/libspl/include/sys/va_list.h:
+
+../../../../lib/libspl/include/sys/stdtypes.h:
+
+../../../../lib/libspl/include/sys/param.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/param.h:
+
+../../../../lib/libspl/include/limits.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/lib/gcc/powerpc-openwrt-linux-uclibc/4.8.3/include-fixed/limits.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/lib/gcc/powerpc-openwrt-linux-uclibc/4.8.3/include-fixed/syslimits.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/limits.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/posix1_lim.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/local_lim.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/linux/limits.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/uClibc_local_lim.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/posix2_lim.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/xopen_lim.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/linux/param.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm/param.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm-generic/param.h:
+
+../../../../lib/libspl/include/unistd.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/unistd.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/posix_opt.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/environments.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/confname.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/getopt.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/ioctl.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/ioctls.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm/ioctls.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm/ioctl.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm-generic/ioctl.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/ioctl-types.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/termios.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/termios.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/ttydefaults.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/alloca.h:
+
+../../../../lib/libspl/include/string.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/string.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/strings.h:
+
+../../../../include/libzfs_core.h:
+
+../../../../include/libnvpair.h:
+
+../../../../include/sys/nvpair.h:
+
+../../../../lib/libspl/include/sys/time.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/time.h:
+
+../../../../lib/libspl/include/sys/errno.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/errno.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/errno.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/linux/errno.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm/errno.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm-generic/errno.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm-generic/errno-base.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/regex.h:
+
+../../../../include/sys/fs/zfs.h:
+
+../../../../include/sys/zio_priority.h:
+
+../../../../include/sys/zfs_ioctl.h:
+
+../../../../lib/libspl/include/sys/cred.h:
+
+../../../../include/sys/dmu.h:
+
+../../../../include/sys/zfs_context.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/fcntl.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/fcntl.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/uio.h:
+
+../../../../lib/libspl/include/sys/stat.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/stat.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/stat.h:
+
+../../../../lib/libspl/include/sys/mount.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/mount.h:
+
+../../../../lib/libspl/include/assert.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/assert.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/setjmp.h:
+
+../../../../lib/libspl/include/umem.h:
+
+../../../../lib/libspl/include/atomic.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/dirent.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/dirent.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/ctype.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/uClibc_touplow.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/signum.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/siginfo.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/sigaction.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/sigcontext.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm/sigcontext.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm/ptrace.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/linux/types.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm/types.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm-generic/int-ll64.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm/bitsperlong.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm-generic/bitsperlong.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/linux/posix_types.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/linux/stddef.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm/posix_types.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/asm-generic/posix_types.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/sigstack.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/ucontext.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/sigthread.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/mman.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/mman.h:
+
+../../../../include/sys/note.h:
+
+../../../../lib/libspl/include/sys/bitmap.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/resource.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/resource.h:
+
+../../../../lib/libspl/include/sys/byteorder.h:
+
+../../../../lib/libspl/include/sys/int_types.h:
+
+../../../../lib/libspl/include/sys/list.h:
+
+../../../../lib/libspl/include/sys/list_impl.h:
+
+../../../../lib/libspl/include/sys/uio.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/uio.h:
+
+../../../../include/sys/zfs_debug.h:
+
+../../../../include/sys/sdt.h:
+
+../../../../lib/libspl/include/sys/kstat.h:
+
+../../../../include/sys/u8_textprep.h:
+
+../../../../include/sys/sysevent.h:
+
+../../../../include/sys/sysevent/eventdefs.h:
+
+../../../../lib/libspl/include/sys/sunddi.h:
+
+../../../../lib/libspl/include/sys/debug.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/utsname.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/bits/utsname.h:
+
+../../../../lib/libspl/include/sys/file.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/file.h:
+
+/home/xfs/toolchains/toolchain-powerpc_e300c3_gcc-4.8-linaro_uClibc-0.9.33.2/include/sys/user.h:
+
+../../../../include/sys/zio_compress.h:
+
+../../../../include/sys/abd.h:
+
+../../../../include/sys/refcount.h:
+
+../../../../include/sys/zio.h:
+
+../../../../include/sys/spa.h:
+
+../../../../include/sys/avl.h:
+
+../../../../include/sys/avl_impl.h:
+
+../../../../include/sys/spa_checksum.h:
+
+../../../../include/sys/txg.h:
+
+../../../../include/sys/zio_impl.h:
+
+../../../../include/sys/dsl_deleg.h:
+
+../../../../include/sys/dsl_pool.h:
+
+../../../../include/sys/txg_impl.h:
+
+../../../../include/sys/dnode.h:
+
+../../../../include/sys/dmu_zfetch.h:
+
+../../../../include/sys/zrlock.h:
+
+../../../../include/sys/multilist.h:
+
+../../../../include/sys/ddt.h:
+
+../../../../include/sys/arc.h:
+
+../../../../include/sys/bpobj.h:
+
+../../../../include/sys/bptree.h:
+
+../../../../include/sys/rrwlock.h:
+
+../../../../include/sys/dsl_synctask.h:
+
+../../../../include/sys/mmp.h:
+
+../../../../include/sys/uberblock_impl.h:
+
+../../../../include/sys/uberblock.h:
+
+../../../../include/sys/vdev.h:
+
+../../../../include/sys/space_map.h:
+
+../../../../include/sys/range_tree.h:
+
+../../../../include/sys/zfs_stat.h:
