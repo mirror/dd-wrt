@@ -242,7 +242,7 @@ int main (int argc, char **argv)
 
       /* Create a serial at startup if not configured. */
 #ifdef HAVE_BROKEN_RTC
-      if (daemon_>soa_sn == 0)
+      if (daemon->soa_sn == 0)
 	die(_("zone serial must be configured in --auth-soa"), NULL, EC_BADCONF);
 #else
       if (daemon->soa_sn == 0)
