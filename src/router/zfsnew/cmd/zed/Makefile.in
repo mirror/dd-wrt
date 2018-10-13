@@ -256,7 +256,8 @@ am_zed_OBJECTS = $(am__objects_1) $(am__objects_2)
 zed_OBJECTS = $(am_zed_OBJECTS)
 zed_DEPENDENCIES = $(top_builddir)/lib/libnvpair/libnvpair.la \
 	$(top_builddir)/lib/libuutil/libuutil.la \
-	$(top_builddir)/lib/libzfs/libzfs.la
+	$(top_builddir)/lib/libzfs/libzfs.la \
+	$(top_builddir)/lib/libzfs_core/libzfs_core.la
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -645,7 +646,9 @@ FMA_SRC = \
 zed_SOURCES = $(ZED_SRC) $(FMA_SRC)
 zed_LDADD = $(top_builddir)/lib/libnvpair/libnvpair.la \
 	$(top_builddir)/lib/libuutil/libuutil.la \
-	$(top_builddir)/lib/libzfs/libzfs.la -lrt
+	$(top_builddir)/lib/libzfs/libzfs.la \
+	$(top_builddir)/lib/libzfs_core/libzfs_core.la -lssl -lcrypto \
+	-ltirpc -luutil -lrt
 zed_LDFLAGS = -pthread
 zedconfdir = $(sysconfdir)/zfs/zed.d
 dist_zedconf_DATA = \

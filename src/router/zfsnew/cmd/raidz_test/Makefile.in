@@ -241,7 +241,8 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_raidz_test_OBJECTS = raidz_test.$(OBJEXT) raidz_bench.$(OBJEXT)
 raidz_test_OBJECTS = $(am_raidz_test_OBJECTS)
-raidz_test_DEPENDENCIES = $(top_builddir)/lib/libzpool/libzpool.la
+raidz_test_DEPENDENCIES = $(top_builddir)/lib/libnvpair/libnvpair.la \
+	$(top_builddir)/lib/libzpool/libzpool.la
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -573,7 +574,8 @@ raidz_test_SOURCES = \
 	raidz_test.c \
 	raidz_bench.c
 
-raidz_test_LDADD = $(top_builddir)/lib/libzpool/libzpool.la -lm -ldl
+raidz_test_LDADD = $(top_builddir)/lib/libnvpair/libnvpair.la \
+	$(top_builddir)/lib/libzpool/libzpool.la -ltirpc -lm -ldl
 all: all-am
 
 .SUFFIXES:
