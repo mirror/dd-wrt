@@ -1796,6 +1796,9 @@ zpool_find_import_scan_dir(libzfs_handle_t *hdl, pthread_mutex_t *lock,
 		    (name[1] == 0 || (name[1] == '.' && name[2] == 0)))
 			continue;
 
+		if (!strncmp(name, "mtd", 3))
+			continue;
+
 		zpool_find_import_scan_add_slice(hdl, lock, cache, path, name,
 		    order);
 	}
