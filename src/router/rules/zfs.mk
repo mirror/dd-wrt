@@ -8,17 +8,28 @@ libtirpc:
 libtirpc-clean:
 	make -C libtirpc clean
 
+libtirpc-install:
+	make -C libtirpc install DESTDIR=$(INSTALLDIR)/libtirpc
+	rm -rf $(INSTALLDIR)/zfs/usr/include
+	rm -rf $(INSTALLDIR)/zfs/usr/lib/pkgconfig
+	rm -rf $(INSTALLDIR)/zfs/usr/share
+	rm -f $(INSTALLDIR)/zfs/usr/lib/*.a
+	rm -f $(INSTALLDIR)/zfs/usr/lib/*.la
 
-zfs-configure:
+
+zfs-configure: libtirpc-configure libtirpc
+	cd zfsnew && autoreconf
 	cd zfsnew && ./configure \
 		--prefix=/usr \
 		--host=$(ARCH)-linux \
-		CC="$(CC) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		CC="$(CC) -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		CFLAGS="-I$(TOP)/zlib -I$(TOP)/e2fsprogs/lib  -I$(TOP)/libtirpc -I$(TOP)/libtirpc/tirpc -I$(TOP)/openssl/include" \
-		LDFLAGS="-L$(TOP)/zlib  -L$(TOP)/e2fsprogs/lib/blkid -L$(TOP)/e2fsprogs/lib/uuid -L$(TOP)/libtirpc/src/.libs -L$(TOP)/openssl" \
+		LDFLAGS="-L$(TOP)/zlib  -L$(TOP)/e2fsprogs/lib/blkid -L$(TOP)/e2fsprogs/lib/uuid -L$(TOP)/libtirpc/src/.libs -L$(TOP)/zfsnew/lib/libuutil/.libs -L$(TOP)/openssl" \
 		--with-linux=$(LINUXDIR)
+	find . -name *.la -exec sed -i 's/relink_command/# relink_command/g' {} +
+	find . -name *.la -exec touch {} +
 
-zfs:
+zfs: libtirpc
 	$(MAKE) -j 4 -C zfsnew
 
 zfs-clean:
@@ -26,5 +37,15 @@ zfs-clean:
 	
 
 zfs-install:
-	make -C libtirpc install DESTDIR=$(INSTALLDIR)
-	make -C zfs install DESTDIR=$(INSTALLDIR)
+	make -C zfsnew install DESTDIR=$(INSTALLDIR)/zfs
+	rm -rf $(INSTALLDIR)/zfs/usr/include
+	rm -rf $(INSTALLDIR)/zfs/usr/lib/pkgconfig
+	rm -rf $(INSTALLDIR)/zfs/usr/share
+	rm -rf $(INSTALLDIR)/zfs/usr/etc
+	rm -rf $(INSTALLDIR)/zfs/usr/lib/dracut
+	rm -rf $(INSTALLDIR)/zfs/usr/lib/systemd
+	rm -rf $(INSTALLDIR)/zfs/usr/lib/modules-load.d
+	rm -rf $(INSTALLDIR)/zfs/usr/libexec
+	rm -rf $(INSTALLDIR)/zfs/usr/src
+	rm -f $(INSTALLDIR)/zfs/usr/lib/*.a
+	rm -f $(INSTALLDIR)/zfs/usr/lib/*.la
