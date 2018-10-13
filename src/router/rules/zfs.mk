@@ -26,8 +26,8 @@ zfs-configure: libtirpc-configure libtirpc
 		CFLAGS="-I$(TOP)/zlib -I$(TOP)/e2fsprogs/lib  -I$(TOP)/libtirpc -I$(TOP)/libtirpc/tirpc -I$(TOP)/openssl/include" \
 		LDFLAGS="-L$(TOP)/zlib  -L$(TOP)/e2fsprogs/lib/blkid -L$(TOP)/e2fsprogs/lib/uuid -L$(TOP)/libtirpc/src/.libs -L$(TOP)/zfsnew/lib/libuutil/.libs -L$(TOP)/openssl" \
 		--with-linux=$(LINUXDIR)
-	find . -name *.la -exec sed -i 's/relink_command/# relink_command/g' {} +
-	find . -name *.la -exec touch {} +
+	cd zfsnew && find . -name *.la -exec sed -i 's/relink_command/# relink_command/g' {} +
+	cd zfsnew && find . -name *.la -exec touch {} +
 
 zfs: libtirpc
 	$(MAKE) -j 4 -C zfsnew
