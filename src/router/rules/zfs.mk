@@ -10,11 +10,11 @@ libtirpc-clean:
 
 libtirpc-install:
 	make -C libtirpc install DESTDIR=$(INSTALLDIR)/libtirpc
-	rm -rf $(INSTALLDIR)/zfs/usr/include
-	rm -rf $(INSTALLDIR)/zfs/usr/lib/pkgconfig
-	rm -rf $(INSTALLDIR)/zfs/usr/share
-	rm -f $(INSTALLDIR)/zfs/usr/lib/*.a
-	rm -f $(INSTALLDIR)/zfs/usr/lib/*.la
+	rm -rf $(INSTALLDIR)/libtirpc/usr/include
+	rm -rf $(INSTALLDIR)/libtirpc/usr/lib/pkgconfig
+	rm -rf $(INSTALLDIR)/libtirpc/usr/share
+	rm -f $(INSTALLDIR)/libtirpc/usr/lib/*.a
+	rm -f $(INSTALLDIR)/libtirpc/usr/lib/*.la
 
 
 zfs-configure: libtirpc-configure libtirpc
