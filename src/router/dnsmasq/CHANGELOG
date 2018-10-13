@@ -59,7 +59,16 @@ version 2.80
 	Returning null addresses is a useful technique for ad-blocking.
 	Thanks to Peter Russell for the suggestion.
 	
+	Change anti cache-snooping behaviour with queries with the
+	recursion-desired bit unset. Instead to returning SERVFAIL, we
+	now always forward, and never answer from the cache. This
+	allows "dig +trace" command to work. 
+	
+	Include in the example config file a formulation which
+	stops DHCP clients from claiming the DNS name "wpad".
+	This is a fix for the CERT Vulnerability VU#598349.
 
+	
 version 2.79
 	Fix parsing of CNAME arguments, which are confused by extra spaces.
 	Thanks to Diego Aguirre for spotting the bug.
