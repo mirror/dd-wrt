@@ -1293,16 +1293,14 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
   struct mx_srv_record *rec;
   size_t len;
 
-  if (ntohs(header->ancount) != 0 ||
+  /* never answer queries with RD unset, to avoid cache snooping. */
+  if (!(header->hb3 & HB3_RD) ||
+      ntohs(header->ancount) != 0 ||
       ntohs(header->nscount) != 0 ||
       ntohs(header->qdcount) == 0 || 
       OPCODE(header) != QUERY )
     return 0;
 
-  /* always servfail queries with RD unset, to avoid cache snooping. */
-  if (!(header->hb3 & HB3_RD))
-    return setup_reply(header, qlen, NULL, F_SERVFAIL, 0);
-  
   /* Don't return AD set if checking disabled. */
   if (header->hb4 & HB4_CD)
     sec_data = 0;
