@@ -123,6 +123,7 @@ void start_raid(void)
 	if (zfs) {
 		insmod("spl");
 		insmod("icp");
+		insmod("zlua");
 		insmod("znvpair");
 		insmod("zcommon");
 		insmod("zunicode");
