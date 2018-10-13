@@ -247,7 +247,9 @@ zpool_OBJECTS = $(am_zpool_OBJECTS)
 am__DEPENDENCIES_1 =
 zpool_DEPENDENCIES = $(top_builddir)/lib/libnvpair/libnvpair.la \
 	$(top_builddir)/lib/libuutil/libuutil.la \
-	$(top_builddir)/lib/libzfs/libzfs.la $(am__DEPENDENCIES_1)
+	$(top_builddir)/lib/libzfs/libzfs.la \
+	$(top_builddir)/lib/libzfs_core/libzfs_core.la \
+	$(am__DEPENDENCIES_1)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -606,7 +608,9 @@ zpool_SOURCES = \
 
 zpool_LDADD = $(top_builddir)/lib/libnvpair/libnvpair.la \
 	$(top_builddir)/lib/libuutil/libuutil.la \
-	$(top_builddir)/lib/libzfs/libzfs.la -lm $(LIBBLKID)
+	$(top_builddir)/lib/libzfs/libzfs.la \
+	$(top_builddir)/lib/libzfs_core/libzfs_core.la -lssl -lcrypto \
+	-ltirpc -luutil -lm $(LIBBLKID)
 zpoolconfdir = $(sysconfdir)/zfs/zpool.d
 zpoolexecdir = $(zfsexecdir)/zpool.d
 EXTRA_DIST = zpool.d/README
