@@ -47,23 +47,41 @@ unsigned long zio_decompress_fail_fraction = 0;
  * Compression vectors.
  */
 zio_compress_info_t zio_compress_table[ZIO_COMPRESS_FUNCTIONS] = {
-	{"inherit",		0,	NULL,		NULL},
-	{"on",			0,	NULL,		NULL},
-	{"uncompressed",	0,	NULL,		NULL},
-	{"lzjb",		0,	lzjb_compress,	lzjb_decompress},
-	{"empty",		0,	NULL,		NULL},
-	{"gzip-1",		1,	gzip_compress,	gzip_decompress},
-	{"gzip-2",		2,	gzip_compress,	gzip_decompress},
-	{"gzip-3",		3,	gzip_compress,	gzip_decompress},
-	{"gzip-4",		4,	gzip_compress,	gzip_decompress},
-	{"gzip-5",		5,	gzip_compress,	gzip_decompress},
-	{"gzip-6",		6,	gzip_compress,	gzip_decompress},
-	{"gzip-7",		7,	gzip_compress,	gzip_decompress},
-	{"gzip-8",		8,	gzip_compress,	gzip_decompress},
-	{"gzip-9",		9,	gzip_compress,	gzip_decompress},
-	{"zle",			64,	zle_compress,	zle_decompress},
-	{"lz4",			0,	lz4_compress_zfs, lz4_decompress_zfs}
+	{"inherit",		0,	NULL,		NULL, NULL},
+	{"on",			0,	NULL,		NULL, NULL},
+	{"uncompressed",	0,	NULL,		NULL, NULL},
+	{"lzjb",		0,	lzjb_compress,	lzjb_decompress, NULL},
+	{"empty",		0,	NULL,		NULL, NULL},
+	{"gzip-1",		1,	gzip_compress,	gzip_decompress, NULL},
+	{"gzip-2",		2,	gzip_compress,	gzip_decompress, NULL},
+	{"gzip-3",		3,	gzip_compress,	gzip_decompress, NULL},
+	{"gzip-4",		4,	gzip_compress,	gzip_decompress, NULL},
+	{"gzip-5",		5,	gzip_compress,	gzip_decompress, NULL},
+	{"gzip-6",		6,	gzip_compress,	gzip_decompress, NULL},
+	{"gzip-7",		7,	gzip_compress,	gzip_decompress, NULL},
+	{"gzip-8",		8,	gzip_compress,	gzip_decompress, NULL},
+	{"gzip-9",		9,	gzip_compress,	gzip_decompress, NULL},
+	{"zle",			64,	zle_compress,	zle_decompress, NULL},
+	{"lz4",			0,	lz4_compress_zfs, lz4_decompress_zfs, NULL},
+	{"zstd",		0,	zstd_compress, zstd_decompress, zstd_getlevel}
 };
+
+enum zio_zstd_levels
+zio_zstd_level_select(spa_t *spa, enum zio_zstd_levels child,
+    enum zio_zstd_levels parent)
+{
+	enum zio_zstd_levels result;
+
+	ASSERT(child < ZIO_ZSTDLVL_LEVELS);
+	ASSERT(parent < ZIO_ZSTDLVL_LEVELS);
+	ASSERT(parent != ZIO_ZSTDLVL_INHERIT);
+
+	result = child;
+	if (result == ZIO_ZSTDLVL_INHERIT)
+		result = parent;
+
+	return (result);
+}
 
 enum zio_compress
 zio_compress_select(spa_t *spa, enum zio_compress child,
@@ -102,9 +120,11 @@ zio_compress_zeroed_cb(void *data, size_t len, void *private)
 }
 
 size_t
-zio_compress_data(enum zio_compress c, abd_t *src, void *dst, size_t s_len)
+zio_compress_data(enum zio_compress c, abd_t *src, void *dst, size_t s_len,
+    zio_prop_t *zp)
 {
 	size_t c_len, d_len;
+	int level;
 	zio_compress_info_t *ci = &zio_compress_table[c];
 
 	ASSERT((uint_t)c < ZIO_COMPRESS_FUNCTIONS);
@@ -123,9 +143,19 @@ zio_compress_data(enum zio_compress c, abd_t *src, void *dst, size_t s_len)
 	/* Compress at least 12.5% */
 	d_len = s_len - (s_len >> 3);
 
+	level = ci->ci_level;
+
+	if (c == ZIO_COMPRESS_ZSTD) {
+		ASSERT(zp != NULL);
+		if (zp->zp_zstd_level == ZIO_ZSTDLVL_DEFAULT)
+			level = ZIO_ZSTD_LEVEL_DEFAULT;
+		else
+			level = zp->zp_zstd_level;
+	}
+
 	/* No compression algorithms can read from ABDs directly */
 	void *tmp = abd_borrow_buf_copy(src, s_len);
-	c_len = ci->ci_compress(tmp, dst, s_len, d_len, ci->ci_level);
+	c_len = ci->ci_compress(tmp, dst, s_len, d_len, level);
 	abd_return_buf(src, tmp, s_len);
 
 	if (c_len > d_len)
@@ -165,4 +195,51 @@ zio_decompress_data(enum zio_compress c, abd_t *src, void *dst,
 		ret = SET_ERROR(EINVAL);
 
 	return (ret);
+}
+int
+zio_getcomplevel(enum zio_compress c, abd_t *src, size_t s_len)
+{
+	void *tmp = abd_borrow_buf_copy(src, s_len);
+	zio_compress_info_t *ci = &zio_compress_table[c];
+	int ret;
+
+	if ((uint_t)c >= ZIO_COMPRESS_FUNCTIONS || ci->ci_getlevel == NULL)
+		return (-1);
+
+	ret = ci->ci_getlevel(tmp, s_len);
+
+	abd_return_buf(src, tmp, s_len);
+
+	return (ret);
+}
+
+int
+zio_decompress_getlevel(enum zio_compress c, abd_t *src, void *dst,
+    size_t s_len, size_t d_len, enum zio_zstd_levels *level)
+{
+	void *tmp = abd_borrow_buf_copy(src, s_len);
+	int ret = zio_decompress_data_buf(c, tmp, dst, s_len, d_len);
+
+	zio_compress_info_t *ci = &zio_compress_table[c];
+	if ((uint_t)c >= ZIO_COMPRESS_FUNCTIONS || ci->ci_getlevel == NULL)
+		return (-1);
+
+	*level = ci->ci_getlevel(tmp, s_len);
+
+	abd_return_buf(src, tmp, s_len);
+
+	return (ret);
+}
+
+int
+zio_compress_to_feature(enum zio_compress comp)
+{
+
+	switch (comp) {
+	case ZIO_COMPRESS_ZSTD:
+		return (SPA_FEATURE_ZSTD_COMPRESS);
+	default:
+	break;
+	}
+	return (SPA_FEATURE_NONE);
 }
