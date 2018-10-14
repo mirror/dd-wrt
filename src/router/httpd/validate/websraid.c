@@ -232,13 +232,11 @@ void del_raid_member(webs_t wp)
 	foreach(drive, raid, next) {
 		a = realloc(a, cnt ? strlen(a) + strlen(drive) + 2 : strlen(drive) + 1);
 		if (cnt != didx) {
-			if (cnt) {
-				strcat(a, " ");
-				strcat(a, drive);
-			} else {
+			if (!cnt)
 				a[0] = 0;
-				strcpy(a, drive);
-			}
+			else
+				strcat(a, " ");
+			strcat(a, drive);
 		} else {
 			if (!cnt)
 				a[0] = 0;
@@ -303,13 +301,11 @@ void raid_save(webs_t wp)
 			if (!mb)
 				break;
 			a = realloc(a, a ? strlen(a) + strlen(mb) + 2 : strlen(mb) + 1);
-			if (midx) {
-				strcat(a, " ");
-				strcat(a, mb);
-			} else {
+			if (!midx)
 				a[0] = 0;
-				strcpy(a, mb);
-			}
+			else
+				strcat(a, " ");
+			strcat(a, mb);
 			midx++;
 		}
 		nvram_nset(a, "raid%d", idx);
