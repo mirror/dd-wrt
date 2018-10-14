@@ -286,10 +286,10 @@ void raid_save(webs_t wp)
 			nvram_nset(rlz, "raidlz%d", idx);
 
 			char raidlzlevel[32];
-			sprintf(raidlz, "raidlzlevel%d", idx);
-			char *rlzlevel = websGetVar(wp, raidlz, NULL);
+			sprintf(raidlzlevel, "raidlzlevel%d", idx);
+			char *rlzlevel = websGetVar(wp, raidlzlevel, NULL);
 			if (rlzlevel)
-				nvram_nset(rlz, "raidlzlevel%d", idx);
+				nvram_nset(rlzlevel, "raidlzlevel%d", idx);
 
 			char raiddedup[32];
 			sprintf(raiddedup, "raiddedup%d", idx);
