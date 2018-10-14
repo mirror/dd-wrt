@@ -153,6 +153,7 @@ $(MODULE)-objs += zstd/common/fse_decompress.o
 $(MODULE)-objs += zstd/common/entropy_common.o
 $(MODULE)-objs += zstd/common/error_private.o
 $(MODULE)-objs += zstd/common/xxhash.o
+$(MODULE)-objs += zstd/compress/hist.o
 $(MODULE)-objs += zstd/compress/zstd_compress.o
 $(MODULE)-objs += zstd/compress/fse_compress.o
 $(MODULE)-objs += zstd/compress/huf_compress.o
