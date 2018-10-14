@@ -863,6 +863,7 @@ nas.mirror="Mirror";
 nas.fs="Filesystem";
 nas.drivemanager="Drive Manager";
 nas.drive="Drive";
+nas.compression="Compression";
 var hnas=new Object();
 hnas.right2="In order to share resources add new shares by supplying path and share name. Define users that can access the share through ftp or samba.<br><p><b>Minidlna Warning:</b> Unless you mount a partition to /jffs the index db will be stored in ram. This can fill up your ram and will cause a reindex at every boot.";
 
