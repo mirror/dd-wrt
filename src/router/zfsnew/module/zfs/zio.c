@@ -1576,7 +1576,7 @@ zio_write_compress(zio_t *zio)
 		void *cbuf = zio_buf_alloc(lsize);
 		psize = zio_compress_data(compress, zio->io_abd, cbuf, lsize,
 		    zp);
-		if (psize == 0 || psize == lsize) {
+		if (psize == 0 || psize >= lsize) {
 			compress = ZIO_COMPRESS_OFF;
 			zio_buf_free(cbuf, lsize);
 		} else if (!zp->zp_dedup && !zp->zp_encrypt &&
@@ -1639,7 +1639,7 @@ zio_write_compress(zio_t *zio)
 		 */
 		psize = zio_compress_data(ZIO_COMPRESS_EMPTY,
 		    zio->io_abd, NULL, lsize, &zio->io_prop);
-		if (psize == 0)
+		if (psize == 0 || psize >= lsize)
 			compress = ZIO_COMPRESS_OFF;
 	} else {
 		ASSERT3U(psize, !=, 0);
