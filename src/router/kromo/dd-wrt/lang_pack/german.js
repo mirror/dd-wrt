@@ -771,6 +771,7 @@ nas.mirror="Spiegeln";
 nas.fs="Dateisystem";
 nas.drivemanager="Laufwerksverwaltung";
 nsa.drive="Laufwerk";
+nas.compression="Kompression";
 
 //** Privoxy.asp **//
 privoxy.titl="Werbefilter";
