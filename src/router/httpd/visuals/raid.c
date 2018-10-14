@@ -276,7 +276,7 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		}
 		if (!strcmp(raidtype, "zfs")) {
 			websWrite(wp,
-				  "<tr>\n" "<th>Name</th>\n" "<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n" "<th>Level</th>\n" "<th>Dedup</th>\n" "<th>LZ4</th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
+				  "<tr>\n" "<th>Name</th>\n" "<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n" "<th>Level</th>\n" "<th>Dedup</th>\n" "<th><script type=\"text/javascript\">Capture(nas.compression)</script></th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
 		}
 
 		websWrite(wp, "<tr>\n");
@@ -355,7 +355,16 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<input type=\"checkbox\" name=\"raiddedup%d\" value=\"1\" %s/>", i, !strcmp(raiddedup, "1") ? "checked=\"checked\"" : "");
 			websWrite(wp, "</td>\n");
 			websWrite(wp, "<td>\n");
-			websWrite(wp, "<input type=\"checkbox\" name=\"raidlz%d\" value=\"1\" %s/>", i, !strcmp(raidlz, "1") ? "checked=\"checked\"" : "");
+
+			websWrite(wp, "<select name=\"raidlz%d\">\n", i);
+			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + service.vpnd_lzooff + \"</option>\");\n", !strcmp(raidlz, "0") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"gzip\\\" %s >gzip</option>\");\n", !strcmp(raidlz, "gzip") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"lz4\\\" %s >lz4</option>\");\n", !strcmp(raidlz, "lz4") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"lzjb\\\" %s >lzjb</option>\");\n", !strcmp(raidlz, "lzjb") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"zle\\\" %s >zle</option>\");\n", !strcmp(raidlz, "zle") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"zstd\\\" %s >zstd</option>\");\n", !strcmp(raidlz, "zstd") ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "//]]>\n</script></select>\n");
 			websWrite(wp, "</td>\n");
 		}
 #endif
