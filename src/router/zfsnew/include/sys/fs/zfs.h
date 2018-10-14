@@ -183,6 +183,7 @@ typedef enum {
 	ZFS_PROP_KEYSTATUS,
 	ZFS_PROP_REMAPTXG,		/* not exposed to the user */
 	ZFS_PROP_SPECIAL_SMALL_BLOCKS,
+	ZFS_PROP_ZSTD_LEVEL,		/* not exposed to the user */
 	ZFS_NUM_PROPS
 } zfs_prop_t;
 

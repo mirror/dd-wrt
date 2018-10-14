@@ -145,6 +145,7 @@ enum zio_encrypt {
 #define	BOOTFS_COMPRESS_VALID(compress)			\
 	((compress) == ZIO_COMPRESS_LZJB ||		\
 	(compress) == ZIO_COMPRESS_LZ4 ||		\
+	(compress) == ZIO_COMPRESS_ZSTD ||		\
 	(compress) == ZIO_COMPRESS_GZIP_1 ||		\
 	(compress) == ZIO_COMPRESS_GZIP_2 ||		\
 	(compress) == ZIO_COMPRESS_GZIP_3 ||		\
@@ -342,6 +343,7 @@ struct zbookmark_phys {
 typedef struct zio_prop {
 	enum zio_checksum	zp_checksum;
 	enum zio_compress	zp_compress;
+	enum zio_zstd_levels	zp_zstd_level;
 	dmu_object_type_t	zp_type;
 	uint8_t			zp_level;
 	uint8_t			zp_copies;
@@ -620,6 +622,8 @@ extern enum zio_checksum zio_checksum_dedup_select(spa_t *spa,
     enum zio_checksum child, enum zio_checksum parent);
 extern enum zio_compress zio_compress_select(spa_t *spa,
     enum zio_compress child, enum zio_compress parent);
+extern enum zio_zstd_levels zio_zstd_level_select(spa_t *spa,
+    enum zio_zstd_levels child, enum zio_zstd_levels parent);
 
 extern void zio_suspend(spa_t *spa, zio_t *zio, zio_suspend_reason_t);
 extern int zio_resume(spa_t *spa);

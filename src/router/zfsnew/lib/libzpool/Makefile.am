@@ -16,7 +16,12 @@ AM_CFLAGS += -DLIB_ZPOOL_BUILD
 
 DEFAULT_INCLUDES += \
 	-I$(top_srcdir)/include \
-	-I$(top_srcdir)/lib/libspl/include
+	-I$(top_srcdir)/lib/libspl/include \
+	-I$(top_srcdir)/module/zfs/zstd \
+	-I$(top_srcdir)/module/zfs/zstd/lib \
+	-I$(top_srcdir)/module/zfs/zstd/common \
+	-I$(top_srcdir)/module/zfs/zstd/compress \
+	-I$(top_srcdir)/module/zfs/zstd/decompress
 
 lib_LTLIBRARIES = libzpool.la
 
@@ -153,7 +158,24 @@ KERNEL_C = \
 	zio_inject.c \
 	zle.c \
 	zrlock.c \
-	zthr.c
+	zstd.c \
+	zthr.c \
+	zstd/freebsd/zstd_kmalloc.c \
+	zstd/common/zstd_common.c \
+	zstd/common/fse_decompress.c \
+	zstd/common/entropy_common.c \
+	zstd/common/error_private.c \
+	zstd/common/xxhash.c \
+	zstd/compress/zstd_compress.c \
+	zstd/compress/fse_compress.c \
+	zstd/compress/huf_compress.c \
+	zstd/compress/zstd_double_fast.c \
+	zstd/compress/zstd_fast.c \
+	zstd/compress/zstd_lazy.c \
+	zstd/compress/zstd_ldm.c \
+	zstd/compress/zstd_opt.c \
+	zstd/decompress/zstd_decompress.c \
+	zstd/decompress/huf_decompress.c
 
 LUA_C = \
 	lapi.c \
