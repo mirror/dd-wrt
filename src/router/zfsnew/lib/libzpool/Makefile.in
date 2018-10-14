@@ -309,8 +309,8 @@ am__objects_2 = zfeature_common.lo zfs_comutil.lo zfs_deleg.lo \
 	zstd/freebsd/zstd_kmalloc.lo zstd/common/zstd_common.lo \
 	zstd/common/fse_decompress.lo zstd/common/entropy_common.lo \
 	zstd/common/error_private.lo zstd/common/xxhash.lo \
-	zstd/compress/zstd_compress.lo zstd/compress/fse_compress.lo \
-	zstd/compress/huf_compress.lo \
+	zstd/compress/hist.lo zstd/compress/zstd_compress.lo \
+	zstd/compress/fse_compress.lo zstd/compress/huf_compress.lo \
 	zstd/compress/zstd_double_fast.lo zstd/compress/zstd_fast.lo \
 	zstd/compress/zstd_lazy.lo zstd/compress/zstd_ldm.lo \
 	zstd/compress/zstd_opt.lo zstd/decompress/zstd_decompress.lo \
@@ -654,7 +654,7 @@ AM_LIBTOOLFLAGS = --silent
 AM_CFLAGS = -std=gnu99 -Wall -Wstrict-prototypes -fno-strict-aliasing \
 	$(DEBUG_CFLAGS) $(ASAN_CFLAGS) $(CODE_COVERAGE_CFLAGS) \
 	$(NO_UNUSED_BUT_SET_VARIABLE) $(FRAME_LARGER_THAN) \
-	-DLIB_ZPOOL_BUILD
+	-DLIB_ZPOOL_BUILD -Wframe-larger-than=32768
 AM_CPPFLAGS = -D_GNU_SOURCE -D_REENTRANT -D_FILE_OFFSET_BITS=64 \
 	-D_LARGEFILE64_SOURCE -DHAVE_LARGE_STACKS=1 \
 	-DTEXT_DOMAIN=\"zfs-linux-user\" \
@@ -805,6 +805,7 @@ KERNEL_C = \
 	zstd/common/entropy_common.c \
 	zstd/common/error_private.c \
 	zstd/common/xxhash.c \
+	zstd/compress/hist.c \
 	zstd/compress/zstd_compress.c \
 	zstd/compress/fse_compress.c \
 	zstd/compress/huf_compress.c \
@@ -953,6 +954,8 @@ zstd/compress/$(am__dirstamp):
 zstd/compress/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) zstd/compress/$(DEPDIR)
 	@: > zstd/compress/$(DEPDIR)/$(am__dirstamp)
+zstd/compress/hist.lo: zstd/compress/$(am__dirstamp) \
+	zstd/compress/$(DEPDIR)/$(am__dirstamp)
 zstd/compress/zstd_compress.lo: zstd/compress/$(am__dirstamp) \
 	zstd/compress/$(DEPDIR)/$(am__dirstamp)
 zstd/compress/fse_compress.lo: zstd/compress/$(am__dirstamp) \
@@ -1159,6 +1162,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@zstd/common/$(DEPDIR)/xxhash.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@zstd/common/$(DEPDIR)/zstd_common.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@zstd/compress/$(DEPDIR)/fse_compress.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@zstd/compress/$(DEPDIR)/hist.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@zstd/compress/$(DEPDIR)/huf_compress.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@zstd/compress/$(DEPDIR)/zstd_compress.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@zstd/compress/$(DEPDIR)/zstd_double_fast.Plo@am__quote@
