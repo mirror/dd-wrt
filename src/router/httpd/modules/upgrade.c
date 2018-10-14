@@ -199,7 +199,11 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	write_argv[1] = upload_fifo;
 	write_argv[2] = WRITEPART;
 	write_argv[3] = NULL;
-	eval("fischecksum");
+	FILE *check = fopen("/usr/sbin/fischecksum","rb");
+	if (check) {
+	    fclose(check);
+	    eval("fischecksum");
+	}
 	if (url)
 		return eval("write", url, WRITEPART);
 	// diag_led(DIAG, START_LED); // blink the diag led
