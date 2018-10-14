@@ -1531,6 +1531,10 @@ service.vpn_bridge="&Uuml;berbr&uuml;cke TAP und br0";
 service.vpn_adv="Erweiterte Einstellungen";
 service.vpn_tlscip="TLS Verschl&uuml;sselung";
 service.vpn_route="Richtlinienbasiertes Routen";
+service.vpnd_lzoyes="Ja";
+service.vpnd_lzono="Nein";
+service.vpnd_lzooff="Aus";
+service.vpnd_lzoadaptive="Adaptiv";
 
 //help container
 hstatus_vpn.right1="Richtlinienbasiertes Routing:<br><i>IP/Netze der Form 0.0.0.0/0 erzwingen das Verwenden der Standartgateways an den Klienten. Eine Zeile pro IP/Netz!<br><i>IP Adresse/Netzmaske:</i><br>Muss bei der Verwendung eines DHCP-Proxy angegeben werden, wenn das lokale TAP Ger&auml;t nicht &uuml;berbr&uuml;ckt ist.</i>";
