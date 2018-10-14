@@ -172,6 +172,7 @@ void del_raid(webs_t wp)
 		nvram_nset(NULL, "raid%d", idx);
 		nvram_nset(NULL, "raidfs%d", idx);
 		nvram_nset(NULL, "raidlz%d", idx);
+		nvram_nset(NULL, "raidlzlevel%d", idx);
 		nvram_nset(NULL, "raiddedup%d", idx);
 		return;
 	}
@@ -187,6 +188,9 @@ void del_raid(webs_t wp)
 		if (nvram_nmatch("zfs", "raidtype%d", i + 1)) {
 			nvram_nset(nvram_nget("raidlz%d", i), "raidlz%d", i + 1);
 			nvram_nset(nvram_nget("raiddedup%d", i), "raiddedup%d", i + 1);
+			if (nvram_nmatch("gzip", "raidlzlevel%d", i) || nvram_nmatch("zstd", "raidlzlevel%d", i))
+				nvram_nset(nvram_nget("raidlzlevel%d", i), "raidlzlevel%d", i + 1);
+
 		}
 	}
 	nvram_nset(NULL, "raidtype%d", i);
@@ -195,6 +199,7 @@ void del_raid(webs_t wp)
 	nvram_nset(NULL, "raid%d", i);
 	nvram_nset(NULL, "raidfs%d", i);
 	nvram_nset(NULL, "raidlz%d", i);
+	nvram_nset(NULL, "raidlzlevel%d", i);
 	nvram_nset(NULL, "raiddedup%d", i);
 }
 
@@ -279,6 +284,12 @@ void raid_save(webs_t wp)
 			sprintf(raidlz, "raidlz%d", idx);
 			char *rlz = websGetVar(wp, raidlz, NULL);
 			nvram_nset(rlz, "raidlz%d", idx);
+
+			char raidlzlevel[32];
+			sprintf(raidlz, "raidlzlevel%d", idx);
+			char *rlzlevel = websGetVar(wp, raidlz, NULL);
+			if (rlzlevel)
+				nvram_nset(rlz, "raidlzlevel%d", idx);
 
 			char raiddedup[32];
 			sprintf(raiddedup, "raiddedup%d", idx);
