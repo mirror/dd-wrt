@@ -253,13 +253,19 @@ void start_raid(void)
 				sysprintf("zfs set compression=zle %s", poolname);
 			else if (nvram_nmatch("lz4", "raidlz%d", i))
 				sysprintf("zfs set compression=lz4 %s", poolname);
-			else if (nvram_nmatch("gzip", "raidlz%d", i))
-				sysprintf("zfs set compression=gzip %s", poolname);
-			else if (nvram_nmatch("lzjb", "raidlz%d", i))
+			else if (nvram_nmatch("gzip", "raidlz%d", i)) {
+				if (nvram_nmatch("0", "raidlzlevel%d", i))
+					sysprintf("zfs set compression=gzip %s", poolname);
+				else
+					sysprintf("zfs set compression=gzip-%s %s", nvram_nget("raidlzlevel%d", i), poolname);
+			} else if (nvram_nmatch("lzjb", "raidlz%d", i))
 				sysprintf("zfs set compression=lzjb %s", poolname);
-			else if (nvram_nmatch("zstd", "raidlz%d", i))
-				sysprintf("zfs set compression=zstd %s", poolname);
-			else
+			else if (nvram_nmatch("zstd", "raidlz%d", i)) {
+				if (nvram_nmatch("0", "raidlzlevel%d", i))
+					sysprintf("zfs set compression=zstd %s", poolname);
+				else
+					sysprintf("zfs set compression=zstd-%s %s", nvram_nget("raidlzlevel%d", i), poolname);
+			} else
 				sysprintf("zfs set compression=off %s", poolname);
 			if (nvram_nmatch("1", "raiddedup%d", i))
 				sysprintf("zfs set dedup=on %s", poolname);
