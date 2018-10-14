@@ -1,3 +1,4 @@
+/* vim: set et sw=4 sts=4 ts=4 : */
 /********************************************************************\
  * This program is free software; you can redistribute it and/or    *
  * modify it under the terms of the GNU General Public License as   *
@@ -18,9 +19,6 @@
  *                                                                  *
  \********************************************************************/
 
-/*
- * $Id: util.c 1429 2009-11-04 14:21:07Z gbastien $
- */
 /**
   @file util.c
   @brief Misc utility functions
@@ -35,58 +33,59 @@
 #include <syslog.h>
 #include <errno.h>
 #include <pthread.h>
+#include <unistd.h>
 #include <sys/wait.h>
 #include <sys/types.h>
-#include <unistd.h>
+#include <sys/time.h>
 #include <netinet/in.h>
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
 
-#if defined(__NetBSD__)
-#include <sys/socket.h>
-#include <ifaddrs.h>
 #include <net/if.h>
-#include <net/if_dl.h>
-#include <util.h>
-#endif
 
-#ifdef __linux__
-#include <netinet/in.h>
-#include <net/if.h>
-#endif
+#include <fcntl.h>
+#include <net/ethernet.h>
+#include <netinet/ip.h>
+#include <netinet/ip_icmp.h>
+#include <netpacket/packet.h>
 
 #include <string.h>
-#include <pthread.h>
 #include <netdb.h>
 
 #include "common.h"
-#include "client_list.h"
 #include "safe.h"
 #include "util.h"
-#include "conf.h"
 #include "debug.h"
+#include "pstring.h"
 
 #include "../config.h"
 
+#define LOCK_GHBN() do { \
+	debug(LOG_DEBUG, "Locking wd_gethostbyname()"); \
+	pthread_mutex_lock(&ghbn_mutex); \
+	debug(LOG_DEBUG, "wd_gethostbyname() locked"); \
+} while (0)
+
+#define UNLOCK_GHBN() do { \
+	debug(LOG_DEBUG, "Unlocking wd_gethostbyname()"); \
+	pthread_mutex_unlock(&ghbn_mutex); \
+	debug(LOG_DEBUG, "wd_gethostbyname() unlocked"); \
+} while (0)
+
+#include "../config.h"
+#ifdef __ANDROID__
+#define WD_SHELL_PATH "/system/bin/sh"
+#else
+#define WD_SHELL_PATH "/bin/sh"
+#endif
+
+/** @brief FD for icmp raw socket */
+static int icmp_fd;
+
+/** @brief Mutex to protect gethostbyname since not reentrant */
 static pthread_mutex_t ghbn_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-/* Defined in ping_thread.c */
-extern time_t started_time;
-
-/* Defined in clientlist.c */
-extern	pthread_mutex_t	client_list_mutex;
-extern	pthread_mutex_t	config_mutex;
-
-/* Defined in commandline.c */
-extern pid_t restart_orig_pid;
-
-/* XXX Do these need to be locked ? */
-static time_t last_online_time = 0;
-static time_t last_offline_time = 0;
-static time_t last_auth_online_time = 0;
-static time_t last_auth_offline_time = 0;
-
-long served_this_session = 0;
+static unsigned short rand16(void);
 
 /** Fork a child and execute a shell command, the parent
  * process waits for the child to return and returns the child's exit()
@@ -94,450 +93,321 @@ long served_this_session = 0;
  * @return Return code of the command
  */
 int
-execute(char *cmd_line, int quiet)
+execute(const char *cmd_line, int quiet)
 {
-        int pid,
-            status,
-            rc;
+    int pid, status, rc;
 
-        const char *new_argv[4];
-        new_argv[0] = "/bin/sh";
-        new_argv[1] = "-c";
-        new_argv[2] = cmd_line;
-        new_argv[3] = NULL;
+    const char *new_argv[4];
+    new_argv[0] = WD_SHELL_PATH;
+    new_argv[1] = "-c";
+    new_argv[2] = cmd_line;
+    new_argv[3] = NULL;
 
-        pid = safe_fork();
-        if (pid == 0) {    /* for the child process:         */
-                /* We don't want to see any errors if quiet flag is on */
-                if (quiet) close(2);
-                if (execvp("/bin/sh", (char *const *)new_argv) == -1) {    /* execute the command  */
-                        debug(LOG_ERR, "execvp(): %s", strerror(errno));
-                } else {
-                        debug(LOG_ERR, "execvp() failed");
-                }
-                exit(1);
+    pid = safe_fork();
+    if (pid == 0) {             /* for the child process:         */
+        /* We don't want to see any errors if quiet flag is on */
+        if (quiet)
+            close(2);
+        if (execvp(WD_SHELL_PATH, (char *const *)new_argv) == -1) { /* execute the command  */
+            debug(LOG_ERR, "execvp(): %s", strerror(errno));
+        } else {
+            debug(LOG_ERR, "execvp() failed");
         }
+        exit(1);
+    }
 
-        /* for the parent:      */
-	debug(LOG_DEBUG, "Waiting for PID %d to exit", pid);
-	rc = waitpid(pid, &status, 0);
-	debug(LOG_DEBUG, "Process PID %d exited", rc);
+    /* for the parent:      */
+    debug(LOG_DEBUG, "Waiting for PID %d to exit", pid);
+    rc = waitpid(pid, &status, 0);
+    debug(LOG_DEBUG, "Process PID %d exited", rc);
+    
+    if (-1 == rc) {
+        debug(LOG_ERR, "waitpid() failed (%s)", strerror(errno));
+        return 1; /* waitpid failed. */
+    }
 
+    if (WIFEXITED(status)) {
         return (WEXITSTATUS(status));
+    } else {
+        /* If we get here, child did not exit cleanly. Will return non-zero exit code to caller*/
+        debug(LOG_DEBUG, "Child may have been killed.");
+        return 1;
+    }
 }
 
-	struct in_addr *
+struct in_addr *
 wd_gethostbyname(const char *name)
 {
-	struct hostent *he;
-	struct in_addr *h_addr, *in_addr_temp;
+    struct hostent *he = NULL;
+    struct in_addr *addr = NULL;
+    struct in_addr *in_addr_temp = NULL;
 
-	/* XXX Calling function is reponsible for free() */
+    /* XXX Calling function is reponsible for free() */
 
-	h_addr = safe_malloc(sizeof(struct in_addr));
+    addr = safe_malloc(sizeof(*addr));
 
-	LOCK_GHBN();
+    LOCK_GHBN();
 
-	he = gethostbyname(name);
+    he = gethostbyname(name);
 
-	if (he == NULL) {
-		free(h_addr);
-		UNLOCK_GHBN();
-		return NULL;
-	}
+    if (he == NULL) {
+        free(addr);
+        UNLOCK_GHBN();
+        return NULL;
+    }
 
-	mark_online();
+    in_addr_temp = (struct in_addr *)he->h_addr_list[0];
+    addr->s_addr = in_addr_temp->s_addr;
 
-	in_addr_temp = (struct in_addr *)he->h_addr_list[0];
-	h_addr->s_addr = in_addr_temp->s_addr;
+    UNLOCK_GHBN();
 
-	UNLOCK_GHBN();
-
-	return h_addr;
+    return addr;
 }
 
-	char *
+char *
 get_iface_ip(const char *ifname)
 {
-#if defined(__linux__)
-	struct ifreq if_data;
-	struct in_addr in;
-	char *ip_str;
-	int sockd;
-	u_int32_t ip;
+    struct ifreq if_data;
+    struct in_addr in;
+    char *ip_str;
+    int sockd;
+    u_int32_t ip;
 
-	/* Create a socket */
-	if ((sockd = socket (AF_INET, SOCK_PACKET, htons(0x8086))) < 0) {
-		debug(LOG_ERR, "socket(): %s", strerror(errno));
-		return NULL;
-	}
+    /* Create a socket */
+    if ((sockd = socket(AF_INET, SOCK_RAW, htons(0x8086))) < 0) {
+        debug(LOG_ERR, "socket(): %s", strerror(errno));
+        return NULL;
+    }
 
-	/* Get IP of internal interface */
-	strcpy (if_data.ifr_name, ifname);
+    /* Get IP of internal interface */
+    strncpy(if_data.ifr_name, ifname, 15);
+    if_data.ifr_name[15] = '\0';
 
-	/* Get the IP address */
-	if (ioctl (sockd, SIOCGIFADDR, &if_data) < 0) {
-		debug(LOG_ERR, "ioctl(): SIOCGIFADDR %s", strerror(errno));
-		return NULL;
-	}
-	memcpy ((void *) &ip, (void *) &if_data.ifr_addr.sa_data + 2, 4);
-	in.s_addr = ip;
+    /* Get the IP address */
+    if (ioctl(sockd, SIOCGIFADDR, &if_data) < 0) {
+        debug(LOG_ERR, "ioctl(): SIOCGIFADDR %s", strerror(errno));
+        close(sockd);
+        return NULL;
+    }
+    memcpy((void *)&ip, (void *)&if_data.ifr_addr.sa_data + 2, 4);
+    in.s_addr = ip;
 
-	ip_str = inet_ntoa(in);
-	close(sockd);
-	return safe_strdup(ip_str);
-#elif defined(__NetBSD__)
-	struct ifaddrs *ifa, *ifap;
-	char *str = NULL;
-
-	if (getifaddrs(&ifap) == -1) {
-		debug(LOG_ERR, "getifaddrs(): %s", strerror(errno));
-		return NULL;
-	}
-	/* XXX arbitrarily pick the first IPv4 address */
-	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
-		if (strcmp(ifa->ifa_name, ifname) == 0 &&
-				ifa->ifa_addr->sa_family == AF_INET)
-			break;
-	}
-	if (ifa == NULL) {
-		debug(LOG_ERR, "%s: no IPv4 address assigned");
-		goto out;
-	}
-	str = safe_strdup(inet_ntoa(
-				((struct sockaddr_in *)ifa->ifa_addr)->sin_addr));
-out:
-	freeifaddrs(ifap);
-	return str;
-#else
-	return safe_strdup("0.0.0.0");
-#endif
+    ip_str = inet_ntoa(in);
+    close(sockd);
+    return safe_strdup(ip_str);
 }
 
-	char *
+char *
 get_iface_mac(const char *ifname)
 {
-#if defined(__linux__)
-	int r, s;
-	struct ifreq ifr;
-	char *hwaddr, mac[13];
+    int r, s;
+    struct ifreq ifr;
+    char *hwaddr, mac[13];
 
-	strcpy(ifr.ifr_name, ifname);
+    strncpy(ifr.ifr_name, ifname, 15);
+    ifr.ifr_name[15] = '\0';
 
-	s = socket(PF_INET, SOCK_DGRAM, 0);
-	if (-1 == s) {
-		debug(LOG_ERR, "get_iface_mac socket: %s", strerror(errno));
-		return NULL;
-	}
+    s = socket(AF_INET, SOCK_DGRAM, 0);
+    if (-1 == s) {
+        debug(LOG_ERR, "get_iface_mac socket: %s", strerror(errno));
+        return NULL;
+    }
 
-	r = ioctl(s, SIOCGIFHWADDR, &ifr);
-	if (r == -1) {
-		debug(LOG_ERR, "get_iface_mac ioctl(SIOCGIFHWADDR): %s", strerror(errno));
-		close(s);
-		return NULL;
-	}
+    r = ioctl(s, SIOCGIFHWADDR, &ifr);
+    if (r == -1) {
+        debug(LOG_ERR, "get_iface_mac ioctl(SIOCGIFHWADDR): %s", strerror(errno));
+        close(s);
+        return NULL;
+    }
 
-	hwaddr = ifr.ifr_hwaddr.sa_data;
-	close(s);
-	snprintf(mac, sizeof(mac), "%02X%02X%02X%02X%02X%02X", 
-			hwaddr[0] & 0xFF,
-			hwaddr[1] & 0xFF,
-			hwaddr[2] & 0xFF,
-			hwaddr[3] & 0xFF,
-			hwaddr[4] & 0xFF,
-			hwaddr[5] & 0xFF
-		);
+    hwaddr = ifr.ifr_hwaddr.sa_data;
+    close(s);
+    snprintf(mac, sizeof(mac), "%02X%02X%02X%02X%02X%02X",
+             hwaddr[0] & 0xFF,
+             hwaddr[1] & 0xFF, hwaddr[2] & 0xFF, hwaddr[3] & 0xFF, hwaddr[4] & 0xFF, hwaddr[5] & 0xFF);
 
-	return safe_strdup(mac);
-#elif defined(__NetBSD__)
-	struct ifaddrs *ifa, *ifap;
-	const char *hwaddr;
-	char mac[13], *str = NULL;
-	struct sockaddr_dl *sdl;
-
-	if (getifaddrs(&ifap) == -1) {
-		debug(LOG_ERR, "getifaddrs(): %s", strerror(errno));
-		return NULL;
-	}
-	for (ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
-		if (strcmp(ifa->ifa_name, ifname) == 0 &&
-				ifa->ifa_addr->sa_family == AF_LINK)
-			break;
-	}
-	if (ifa == NULL) {
-		debug(LOG_ERR, "%s: no link-layer address assigned");
-		goto out;
-	}
-	sdl = (struct sockaddr_dl *)ifa->ifa_addr;
-	hwaddr = LLADDR(sdl);
-	snprintf(mac, sizeof(mac), "%02X%02X%02X%02X%02X%02X",
-			hwaddr[0] & 0xFF, hwaddr[1] & 0xFF,
-			hwaddr[2] & 0xFF, hwaddr[3] & 0xFF,
-			hwaddr[4] & 0xFF, hwaddr[5] & 0xFF);
-
-	str = safe_strdup(mac);
-out:
-	freeifaddrs(ifap);
-	return str;
-#else
-	return NULL;
-#endif
+    return safe_strdup(mac);
 }
 
-	char *
+char *
 get_ext_iface(void)
 {
-#ifdef __linux__
-	FILE *input;
-	char *device, *gw;
-	int i = 1;
-	int keep_detecting = 1;
-	pthread_cond_t		cond = PTHREAD_COND_INITIALIZER;
-	pthread_mutex_t		cond_mutex = PTHREAD_MUTEX_INITIALIZER;
-	struct	timespec	timeout;
-	device = (char *)malloc(16);
-	gw = (char *)malloc(16);
-	debug(LOG_DEBUG, "get_ext_iface(): Autodectecting the external interface from routing table");
-	while(keep_detecting) {
-		input = fopen("/proc/net/route", "r");
-		while (!feof(input)) {
-			/* XXX scanf(3) is unsafe, risks overrun */ 
-			fscanf(input, "%s %s %*s %*s %*s %*s %*s %*s %*s %*s %*s\n", device, gw);
-			if (strcmp(gw, "00000000") == 0) {
-				free(gw);
-				debug(LOG_INFO, "get_ext_iface(): Detected %s as the default interface after try %d", device, i);
-				return device;
-			}
-		}
-		fclose(input);
-		debug(LOG_ERR, "get_ext_iface(): Failed to detect the external interface after try %d (maybe the interface is not up yet?).  Retry limit: %d", i, NUM_EXT_INTERFACE_DETECT_RETRY);
-		/* Sleep for EXT_INTERFACE_DETECT_RETRY_INTERVAL seconds */
-		timeout.tv_sec = time(NULL) + EXT_INTERFACE_DETECT_RETRY_INTERVAL;
-		timeout.tv_nsec = 0;
-		/* Mutex must be locked for pthread_cond_timedwait... */
-		pthread_mutex_lock(&cond_mutex);	
-		/* Thread safe "sleep" */
-		pthread_cond_timedwait(&cond, &cond_mutex, &timeout);
-		/* No longer needs to be locked */
-		pthread_mutex_unlock(&cond_mutex);
-		//for (i=1; i<=NUM_EXT_INTERFACE_DETECT_RETRY; i++) {
-		if (NUM_EXT_INTERFACE_DETECT_RETRY != 0 && i>NUM_EXT_INTERFACE_DETECT_RETRY) {
-			keep_detecting = 0;
-		}
-		i++;
-	}
-	debug(LOG_ERR, "get_ext_iface(): Failed to detect the external interface after %d tries, aborting", i);
-	exit(1);
-	free(device);
-	free(gw);
+    FILE *input;
+    char *device, *gw;
+    int i = 1;
+    int keep_detecting = 1;
+    pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+    pthread_mutex_t cond_mutex = PTHREAD_MUTEX_INITIALIZER;
+    struct timespec timeout;
+    device = (char *)safe_malloc(16);   /* XXX Why 16? */
+    gw = (char *)safe_malloc(16);
+    debug(LOG_DEBUG, "get_ext_iface(): Autodectecting the external interface from routing table");
+    while (keep_detecting) {
+        input = fopen("/proc/net/route", "r");
+        if (NULL == input) {
+            debug(LOG_ERR, "Could not open /proc/net/route (%s).", strerror(errno));
+            free(gw);
+            free(device);
+            return NULL;
+        }
+        while (!feof(input)) {
+            /* XXX scanf(3) is unsafe, risks overrun */
+            if ((fscanf(input, "%15s %15s %*s %*s %*s %*s %*s %*s %*s %*s %*s\n", device, gw) == 2)
+                && strcmp(gw, "00000000") == 0) {
+                free(gw);
+                debug(LOG_INFO, "get_ext_iface(): Detected %s as the default interface after trying %d", device, i);
+                fclose(input);
+                return device;
+            }
+        }
+        fclose(input);
+        debug(LOG_ERR,
+              "get_ext_iface(): Failed to detect the external interface after try %d (maybe the interface is not up yet?).  Retry limit: %d",
+              i, NUM_EXT_INTERFACE_DETECT_RETRY);
+        /* Sleep for EXT_INTERFACE_DETECT_RETRY_INTERVAL seconds */
+        timeout.tv_sec = time(NULL) + EXT_INTERFACE_DETECT_RETRY_INTERVAL;
+        timeout.tv_nsec = 0;
+        /* Mutex must be locked for pthread_cond_timedwait... */
+        pthread_mutex_lock(&cond_mutex);
+        /* Thread safe "sleep" */
+        pthread_cond_timedwait(&cond, &cond_mutex, &timeout);   /* XXX need to possibly add this thread to termination_handler */
+        /* No longer needs to be locked */
+        pthread_mutex_unlock(&cond_mutex);
+        //for (i=1; i<=NUM_EXT_INTERFACE_DETECT_RETRY; i++) {
+        if (NUM_EXT_INTERFACE_DETECT_RETRY != 0 && i > NUM_EXT_INTERFACE_DETECT_RETRY) {
+            keep_detecting = 0;
+        }
+        i++;
+    }
+    debug(LOG_ERR, "get_ext_iface(): Failed to detect the external interface after %d tries, aborting", i);
+    exit(1);                    /* XXX Should this be termination handler? */
+    free(device);
+    free(gw);
+    return NULL;
+}
+
+/** Initialize the ICMP socket
+ * @return A boolean of the success
+ */
+int
+init_icmp_socket(void)
+{
+    int flags, oneopt = 1, zeroopt = 0;
+
+    debug(LOG_INFO, "Creating ICMP socket");
+    if ((icmp_fd = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) == -1 ||
+        (flags = fcntl(icmp_fd, F_GETFL, 0)) == -1 ||
+        fcntl(icmp_fd, F_SETFL, flags | O_NONBLOCK) == -1 ||
+        setsockopt(icmp_fd, SOL_SOCKET, SO_RCVBUF, &oneopt, sizeof(oneopt)) ||
+        setsockopt(icmp_fd, SOL_SOCKET, SO_DONTROUTE, &zeroopt, sizeof(zeroopt)) == -1) {
+        debug(LOG_ERR, "Cannot create ICMP raw socket.");
+        return 0;
+    }
+    return 1;
+}
+
+/** Close the ICMP socket. */
+void
+close_icmp_socket(void)
+{
+    debug(LOG_INFO, "Closing ICMP socket");
+    close(icmp_fd);
+}
+
+/**
+ * Ping an IP.
+ * @param IP/host as string, will be sent to gethostbyname
+ */
+void
+icmp_ping(const char *host)
+{
+    struct sockaddr_in saddr;
+    struct {
+        struct ip ip;
+        struct icmp icmp;
+    } packet;
+    unsigned int i, j;
+    int opt = 2000;
+    unsigned short id = rand16();
+
+    memset(&saddr, 0, sizeof(saddr));
+    saddr.sin_family = AF_INET;
+    inet_aton(host, &saddr.sin_addr);
+#if defined(HAVE_SOCKADDR_SA_LEN)
+    saddr.sin_len = sizeof(struct sockaddr_in);
 #endif
-	return NULL;
-	}
 
-	void mark_online() {
-		int before;
-		int after;
+    memset(&packet.icmp, 0, sizeof(packet.icmp));
+    packet.icmp.icmp_type = ICMP_ECHO;
+    packet.icmp.icmp_id = id;
 
-		before = is_online();
-		time(&last_online_time);
-		after = is_online();
+    for (j = 0, i = 0; i < sizeof(struct icmp) / 2; i++)
+        j += ((unsigned short *)&packet.icmp)[i];
 
-		if (before != after) {
-			debug(LOG_INFO, "ONLINE status became %s", (after ? "ON" : "OFF"));
-		}
+    while (j >> 16)
+        j = (j & 0xffff) + (j >> 16);
 
-	}
+    packet.icmp.icmp_cksum = (j == 0xffff) ? j : ~j;
 
-	void mark_offline() {
-		int before;
-		int after;
+    if (setsockopt(icmp_fd, SOL_SOCKET, SO_RCVBUF, &opt, sizeof(opt)) == -1)
+        debug(LOG_ERR, "setsockopt(): %s", strerror(errno));
 
-		before = is_online();
-		time(&last_offline_time);
-		after = is_online();
+    if (sendto(icmp_fd, (char *)&packet.icmp, sizeof(struct icmp), 0,
+               (const struct sockaddr *)&saddr, sizeof(saddr)) == -1)
+        debug(LOG_ERR, "sendto(): %s", strerror(errno));
 
-		if (before != after) {
-			debug(LOG_INFO, "ONLINE status became %s", (after ? "ON" : "OFF"));
-		}
+    opt = 1;
+    if (setsockopt(icmp_fd, SOL_SOCKET, SO_RCVBUF, &opt, sizeof(opt)) == -1)
+        debug(LOG_ERR, "setsockopt(): %s", strerror(errno));
 
-		/* If we're offline it definately means the auth server is offline */
-		mark_auth_offline();
+    return;
+}
 
-	}
+/** Get a 16-bit unsigned random number.
+ * @return unsigned short a random number
+ */
+static unsigned short
+rand16(void)
+{
+    static int been_seeded = 0;
 
-	int is_online() {
-		if (last_online_time == 0 || (last_offline_time - last_online_time) >= (config_get_config()->checkinterval * 2) ) {
-			/* We're probably offline */
-			return (0);
-		}
-		else {
-			/* We're probably online */
-			return (1);
-		}
-	}
+    if (!been_seeded) {
+        unsigned int seed = 0;
+        struct timeval now;
 
-	void mark_auth_online() {
-		int before;
-		int after;
+        /* not a very good seed but what the heck, it needs to be quickly acquired */
+        gettimeofday(&now, NULL);
+        seed = now.tv_sec ^ now.tv_usec ^ (getpid() << 16);
 
-		before = is_auth_online();
-		time(&last_auth_online_time);
-		after = is_auth_online();
+        srand(seed);
+        been_seeded = 1;
+    }
 
-		if (before != after) {
-			debug(LOG_INFO, "AUTH_ONLINE status became %s", (after ? "ON" : "OFF"));
-		}
+    /* Some rand() implementations have less randomness in low bits
+     * than in high bits, so we only pay attention to the high ones.
+     * But most implementations don't touch the high bit, so we
+     * ignore that one. */
+    return ((unsigned short)(rand() >> 15));
+}
 
-		/* If auth server is online it means we're definately online */
-		mark_online();
+/*
+ * Save pid of this wifidog in pid file
+ * @param 'pf' as string, it is the pid file absolutely path
+ */
+void
+save_pid_file(const char *pf)
+{
+    if (pf) {
+        FILE *f = fopen(pf, "w");
+        if (f) {
+            fprintf(f, "%d\n", getpid());
 
-	}
+            int ret = fclose(f);
+            if (ret == EOF) /* check the return value of fclose */
+                debug(LOG_ERR, "fclose() on file %s was failed (%s)", pf, strerror(errno));
+        } else /* fopen return NULL, open file failed */
+            debug(LOG_ERR, "fopen() on flie %s was failed (%s)", pf, strerror(errno));
+    }
 
-	void mark_auth_offline() {
-		int before;
-		int after;
-
-		before = is_auth_online();
-		time(&last_auth_offline_time);
-		after = is_auth_online();
-
-		if (before != after) {
-			debug(LOG_INFO, "AUTH_ONLINE status became %s", (after ? "ON" : "OFF"));
-		}
-
-	}
-
-	int is_auth_online() {
-		if (!is_online()) {
-			/* If we're not online auth is definately not online :) */
-			return (0);
-		}
-		else if (last_auth_online_time == 0 || (last_auth_offline_time - last_auth_online_time) >= (config_get_config()->checkinterval * 2) ) {
-			/* Auth is  probably offline */
-			return (0);
-		}
-		else {
-			/* Auth is probably online */
-			return (1);
-		}
-	}
-
-	/*
-	 * @return A string containing human-readable status text. MUST BE free()d by caller
-	 */
-	char * get_status_text() {
-		char buffer[STATUS_BUF_SIZ];
-		ssize_t len;
-		s_config *config;
-		t_auth_serv *auth_server;
-		t_client	*first;
-		int		count;
-		unsigned long int uptime = 0;
-		unsigned int days = 0, hours = 0, minutes = 0, seconds = 0;
-		t_trusted_mac *p;
-
-		len = 0;
-		snprintf(buffer, (sizeof(buffer) - len), "WiFiDog status\n\n");
-		len = strlen(buffer);
-
-		uptime = time(NULL) - started_time;
-		days    = uptime / (24 * 60 * 60);
-		uptime -= days * (24 * 60 * 60);
-		hours   = uptime / (60 * 60);
-		uptime -= hours * (60 * 60);
-		minutes = uptime / 60;
-		uptime -= minutes * 60;
-		seconds = uptime;
-
-		snprintf((buffer + len), (sizeof(buffer) - len), "Version: " VERSION "\n");
-		len = strlen(buffer);
-
-		snprintf((buffer + len), (sizeof(buffer) - len), "Uptime: %ud %uh %um %us\n", days, hours, minutes, seconds);
-		len = strlen(buffer);
-
-		snprintf((buffer + len), (sizeof(buffer) - len), "Has been restarted: ");
-		len = strlen(buffer);
-		if (restart_orig_pid) {
-			snprintf((buffer + len), (sizeof(buffer) - len), "yes (from PID %d)\n", restart_orig_pid);
-			len = strlen(buffer);
-		}
-		else {
-			snprintf((buffer + len), (sizeof(buffer) - len), "no\n");
-			len = strlen(buffer);
-		}
-
-		snprintf((buffer + len), (sizeof(buffer) - len), "Internet Connectivity: %s\n", (is_online() ? "yes" : "no"));
-		len = strlen(buffer);
-
-		snprintf((buffer + len), (sizeof(buffer) - len), "Auth server reachable: %s\n", (is_auth_online() ? "yes" : "no"));
-		len = strlen(buffer);
-
-		snprintf((buffer + len), (sizeof(buffer) - len), "Clients served this session: %lu\n\n", served_this_session);
-		len = strlen(buffer);
-
-		LOCK_CLIENT_LIST();
-
-		first = client_get_first_client();
-
-		if (first == NULL) {
-			count = 0;
-		} else {
-			count = 1;
-			while (first->next != NULL) {
-				first = first->next;
-				count++;
-			}
-		}
-
-		snprintf((buffer + len), (sizeof(buffer) - len), "%d clients "
-				"connected.\n", count);
-		len = strlen(buffer);
-
-		first = client_get_first_client();
-
-		count = 0;
-		while (first != NULL) {
-			snprintf((buffer + len), (sizeof(buffer) - len), "\nClient %d\n", count);
-			len = strlen(buffer);
-
-			snprintf((buffer + len), (sizeof(buffer) - len), "  IP: %s MAC: %s\n", first->ip, first->mac);
-			len = strlen(buffer);
-
-			snprintf((buffer + len), (sizeof(buffer) - len), "  Token: %s\n", first->token);
-			len = strlen(buffer);
-
-			snprintf((buffer + len), (sizeof(buffer) - len), "  Downloaded: %llu\n  Uploaded: %llu\n" , first->counters.incoming, first->counters.outgoing);
-			len = strlen(buffer);
-
-			count++;
-			first = first->next;
-		}
-
-		UNLOCK_CLIENT_LIST();
-
-		config = config_get_config();
-
-		if (config->trustedmaclist != NULL) {
-			snprintf((buffer + len), (sizeof(buffer) - len), "\nTrusted MAC addresses:\n");
-			len = strlen(buffer);
-
-			for (p = config->trustedmaclist; p != NULL; p = p->next) {
-				snprintf((buffer + len), (sizeof(buffer) - len), "  %s\n", p->mac);
-				len = strlen(buffer);
-			}
-		}
-
-		snprintf((buffer + len), (sizeof(buffer) - len), "\nAuthentication servers:\n");
-		len = strlen(buffer);
-
-		LOCK_CONFIG();
-
-		for (auth_server = config->auth_servers; auth_server != NULL; auth_server = auth_server->next) {
-			snprintf((buffer + len), (sizeof(buffer) - len), "  Host: %s (%s)\n", auth_server->authserv_hostname, auth_server->last_ip);
-			len = strlen(buffer);
-		}
-
-		UNLOCK_CONFIG();
-
-		return safe_strdup(buffer);
-	}
+    return;
+}

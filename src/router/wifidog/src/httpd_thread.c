@@ -18,7 +18,7 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: httpd_thread.c 901 2006-01-17 18:58:13Z mina $ */
+/* $Id$ */
 
 /** @file httpd_thread.c
     @brief Handles on web request.
