@@ -1,16 +1,23 @@
 #
-# $Id: Makefile.am 1121 2006-10-27 06:11:22Z benoitg $
+# $Id$
 #
+
+noinst_LIBRARIES = libgateway.a
 
 bin_PROGRAMS = wifidog \
 	wdctl
  
 AM_CPPFLAGS = \
 	-I${top_srcdir}/libhttpd/ \
-	-DSYSCONFDIR='"$(sysconfdir)"' 
-wifidog_LDADD = $(top_builddir)/libhttpd/libhttpd.la
+	-DSYSCONFDIR='"$(sysconfdir)"' \
+	-Wall \
+	-Wextra \
+	-Wno-unused-parameter
+wifidog_LDADD = libgateway.a $(top_builddir)/libhttpd/libhttpd.la
 
-wifidog_SOURCES = commandline.c \
+wifidog_SOURCES = main.c
+
+libgateway_a_SOURCES = commandline.c \
 	conf.c \
 	debug.c \
 	fw_iptables.c \
@@ -24,7 +31,10 @@ wifidog_SOURCES = commandline.c \
 	wdctl_thread.c \
 	ping_thread.c \
 	safe.c \
-	httpd_thread.c
+	httpd_thread.c \
+	simple_http.c \
+	pstring.c \
+	wd_util.c
 
 noinst_HEADERS = commandline.h \
 	common.h \
@@ -42,6 +52,11 @@ noinst_HEADERS = commandline.h \
 	wdctl.h \
 	ping_thread.h \
 	safe.h \
-	httpd_thread.h
+	httpd_thread.h \
+	simple_http.h \
+	pstring.h \
+	wd_util.h
+
+wdctl_LDADD = libgateway.a
 
 wdctl_SOURCES = wdctl.c

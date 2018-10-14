@@ -1,3 +1,4 @@
+/* vim: set et ts=4 sts=4 sw=4 : */
 /********************************************************************\
  * This program is free software; you can redistribute it and/or    *
  * modify it under the terms of the GNU General Public License as   *
@@ -18,7 +19,7 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: fw_iptables.h 1375 2008-09-30 10:20:06Z wichert $ */
+/* $Id$ */
 /** @file fw_iptables.h
     @brief Firewall iptables functions
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
@@ -29,20 +30,21 @@
 
 #include "firewall.h"
 
-/*@{*/ 
-/**Iptable table names used by WifiDog */
-#define TABLE_WIFIDOG_OUTGOING  "WiFiDog_$ID$_Outgoing"
-#define TABLE_WIFIDOG_WIFI_TO_INTERNET "WiFiDog_$ID$_WIFI2Internet"
-#define TABLE_WIFIDOG_WIFI_TO_ROUTER "WiFiDog_$ID$_WIFI2Router"
-#define TABLE_WIFIDOG_INCOMING  "WiFiDog_$ID$_Incoming"
-#define TABLE_WIFIDOG_AUTHSERVERS "WiFiDog_$ID$_AuthServers"
-#define TABLE_WIFIDOG_GLOBAL  "WiFiDog_$ID$_Global"
-#define TABLE_WIFIDOG_VALIDATE  "WiFiDog_$ID$_Validate"
-#define TABLE_WIFIDOG_KNOWN     "WiFiDog_$ID$_Known"
-#define TABLE_WIFIDOG_UNKNOWN   "WiFiDog_$ID$_Unknown"
-#define TABLE_WIFIDOG_LOCKED    "WiFiDog_$ID$_Locked"
-#define TABLE_WIFIDOG_TRUSTED    "WiFiDog_$ID$_Trusted"
-/*@}*/ 
+/*@{*/
+/**Iptable chain names used by WifiDog */
+#define CHAIN_OUTGOING  "WiFiDog_$ID$_Outgoing"
+#define CHAIN_TO_INTERNET "WiFiDog_$ID$_Internet"
+#define CHAIN_TO_ROUTER "WiFiDog_$ID$_Router"
+#define CHAIN_INCOMING  "WiFiDog_$ID$_Incoming"
+#define CHAIN_AUTHSERVERS "WiFiDog_$ID$_AuthServers"
+#define CHAIN_GLOBAL  "WiFiDog_$ID$_Global"
+#define CHAIN_VALIDATE  "WiFiDog_$ID$_Validate"
+#define CHAIN_KNOWN     "WiFiDog_$ID$_Known"
+#define CHAIN_UNKNOWN   "WiFiDog_$ID$_Unknown"
+#define CHAIN_LOCKED    "WiFiDog_$ID$_Locked"
+#define CHAIN_TRUSTED    "WiFiDog_$ID$_Trusted"
+#define CHAIN_AUTH_IS_DOWN "WiFiDog_$ID$_AuthIsDown"
+/*@}*/
 
 /** Used by iptables_fw_access to select if the client should be granted of denied access */
 typedef enum fw_access_t_ {
@@ -63,12 +65,21 @@ void iptables_fw_clear_authservers(void);
 int iptables_fw_destroy(void);
 
 /** @brief Helper function for iptables_fw_destroy */
-int iptables_fw_destroy_mention( const char * table, const char * chain, const char * mention);
+int iptables_fw_destroy_mention(const char *table, const char *chain, const char *mention);
 
 /** @brief Define the access of a specific client */
 int iptables_fw_access(fw_access_t type, const char *ip, const char *mac, int tag);
 
+/** @brief Define the access of a host */
+int iptables_fw_access_host(fw_access_t type, const char *host);
+
+/** @brief Set a mark when auth server is not reachable */
+int iptables_fw_auth_unreachable(int tag);
+
+/** @brief Remove mark when auth server is reachable again */
+int iptables_fw_auth_reachable(void);
+
 /** @brief All counters in the client list */
 int iptables_fw_counters_update(void);
 
-#endif /* _IPTABLES_H_ */
+#endif                          /* _IPTABLES_H_ */

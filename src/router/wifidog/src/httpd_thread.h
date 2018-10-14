@@ -18,7 +18,7 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: httpd_thread.h 901 2006-01-17 18:58:13Z mina $ */
+/* $Id$ */
 /** @file httpd_thread.h
     @brief WiFiDog httpd worker thread
     @author Copyright (C) 2004 Alexandre Carmel-Veilleux <acv@acv.ca>

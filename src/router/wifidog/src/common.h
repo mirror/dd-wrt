@@ -18,7 +18,7 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: common.h 901 2006-01-17 18:58:13Z mina $ */
+/* $Id$ */
 /** @file common.h
     @brief Common constants and other bits
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
