@@ -30,4 +30,4 @@ automake -a
 echo "Running autoconf"
 autoconf
 echo "Running ./configure ${POSTCONF} --enable-maintainer-mode  $conf_flags $@"
-./configure ${POSTCONF} --enable-maintainer-mode $conf_flags "$@"
+#./configure ${POSTCONF} --enable-maintainer-mode $conf_flags "$@"
