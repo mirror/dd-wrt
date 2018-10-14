@@ -13,6 +13,7 @@
 #include <linux/cpufreq.h>
 #include <linux/module.h>
 #include <linux/slab.h>
+#include <linux/cputime.h>
 
 static DEFINE_SPINLOCK(cpufreq_stats_lock);
 
