@@ -249,8 +249,16 @@ void start_raid(void)
 			}
 		}
 		if (!strcmp(type, "zfs")) {
-			if (nvram_nmatch("1", "raidlz%d", i))
+			if (nvram_nmatch("zle", "raidlz%d", i))
+				sysprintf("zfs set compression=zle %s", poolname);
+			else if (nvram_nmatch("lz4", "raidlz%d", i))
 				sysprintf("zfs set compression=lz4 %s", poolname);
+			else if (nvram_nmatch("gzip", "raidlz%d", i))
+				sysprintf("zfs set compression=gzip %s", poolname);
+			else if (nvram_nmatch("lzjb", "raidlz%d", i))
+				sysprintf("zfs set compression=lzjb %s", poolname);
+			else if (nvram_nmatch("zstd", "raidlz%d", i))
+				sysprintf("zfs set compression=zstd %s", poolname);
 			else
 				sysprintf("zfs set compression=off %s", poolname);
 			if (nvram_nmatch("1", "raiddedup%d", i))
