@@ -363,7 +363,7 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "</td>\n");
 
 			websWrite(wp, "<td>\n");
-			websWrite(wp, "<select name=\"raidlz%d\">\n", i);
+			websWrite(wp, "<select name=\"raidlz%d\"> onchange=\"raid_save_submit(this.form)\"\n", i);
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 			websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + service.vpnd_lzooff + \"</option>\");\n", !strcmp(raidlz, "0") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"gzip\\\" %s >gzip</option>\");\n", !strcmp(raidlz, "gzip") ? "selected=\\\"selected\\\"" : "");
@@ -387,7 +387,7 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 					char num[16];
 					sprintf(num, "%d", level);
 					if (!level)
-						websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.share.deflt + \"</option>\");\n", !strcmp(raidlzlevel, "0") ? "selected=\\\"selected\\\"" : "");
+						websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\" + share.deflt + \"</option>\");\n", !strcmp(raidlzlevel, "0") ? "selected=\\\"selected\\\"" : "");
 					else
 						websWrite(wp, "document.write(\"<option value=\\\"%d\\\" %s >%d</option>\");\n", level, !strcmp(raidlzlevel, num) ? "selected=\\\"selected\\\"" : "", level);
 				}
