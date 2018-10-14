@@ -1,3 +1,4 @@
+/* vim: set et sw=4 ts=4 sts=4 : */
 /********************************************************************\
  * This program is free software; you can redistribute it and/or    *
  * modify it under the terms of the GNU General Public License as   *
@@ -18,7 +19,7 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: gateway.h 901 2006-01-17 18:58:13Z mina $ */
+/* $Id$ */
 /** @file gateway.h
     @brief Main loop
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
@@ -26,8 +27,20 @@
 
 #ifndef _GATEWAY_H_
 #define _GATEWAY_H_
- 
+
+#include <stdio.h>
+
+#include "httpd.h"
+
+extern time_t started_time;
+
+/** @brief The internal web server */
+extern httpd *webserver;
+
+/** @brief actual program entry point. */
+int gw_main(int, char **);
+
 /** @brief exits cleanly and clear the firewall rules. */
 void termination_handler(int s);
 
-#endif /* _GATEWAY_H_ */
+#endif                          /* _GATEWAY_H_ */

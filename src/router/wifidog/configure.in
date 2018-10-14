@@ -1,5 +1,5 @@
 ## -*-m4-*-
-# $Id: configure.in 1422 2009-09-25 22:38:13Z gbastien $
+# $Id$
 
 dnl Process this file with autoconf to produce a configure script.
 
@@ -18,10 +18,11 @@ AC_PROG_CXX
 
 AC_SUBST(BUILDROOT)
 
+# we use Semantic Versioning x.y.z tag for release, docs: http://semver.org/
 WIFIDOG_MAJOR_VERSION=1
-WIFIDOG_MINOR_VERSION=1
-WIFIDOG_MICRO_VERSION=5
-WIFIDOG_VERSION=20090925
+WIFIDOG_MINOR_VERSION=3
+WIFIDOG_MICRO_VERSION=0
+WIFIDOG_VERSION=$WIFIDOG_MAJOR_VERSION.$WIFIDOG_MINOR_VERSION.$WIFIDOG_MICRO_VERSION
 
 AC_SUBST(WIFIDOG_MAJOR_VERSION)
 AC_SUBST(WIFIDOG_MINOR_VERSION)
@@ -84,6 +85,51 @@ AC_SUBST(enable_latex_docs)
 # Acutally perform the doxygen check
 BB_ENABLE_DOXYGEN
 
+# Enable cyassl?
+AC_DEFUN([BB_CYASSL],
+[
+AC_ARG_ENABLE(cyassl, [  --enable-cyassl        enable TLS support for auth server communication (no)], [], [enable_cyassl=no])
+if test "x$enable_cyassl" = xyes; then
+        # CyaSSL has been renamed wolfSSL. Old method names are still available
+        # via cyassl/ssl.h, which maps old methods to new methods via macros.
+        # To find the proper lib to link against (cyassl or wolfssl), we do have
+        # the use the new naming scheme below as cyassl/ssl.h is not available for
+        # AC_SEARCH_LIBS
+        AC_CHECK_HEADERS(cyassl/ssl.h)
+        AC_SEARCH_LIBS([CyaTLSv1_client_method], [cyassl], [], [
+            AC_SEARCH_LIBS([wolfTLSv1_client_method], [wolfssl], [], [
+                            AC_MSG_ERROR([unable to locate SSL lib: either wolfSSL or CyaSSL needed.])
+            ])
+        ])
+
+        AC_MSG_CHECKING([for the CyaSSL SNI enabled])
+        AC_LINK_IFELSE([AC_LANG_PROGRAM(
+        [[
+                #define HAVE_SNI
+                #include <cyassl/ssl.h>
+        ]], [[
+                CYASSL_CTX *ctx;
+                CyaSSL_Init();
+                ctx = CyaSSL_CTX_new(CyaTLSv1_client_method());
+                CyaSSL_CTX_UseSNI(ctx, CYASSL_SNI_HOST_NAME, "wifidog.org", 11);
+        ]])], [enabled_sni=yes], [enabled_sni=no])
+
+        if test "x$enabled_sni" = xyes; then
+                AC_MSG_RESULT([yes])
+                AC_DEFINE([HAVE_SNI],, "Compile with CyaSSL SNI support")
+        else
+                AC_MSG_RESULT([no])
+        fi
+
+        AC_DEFINE(USE_CYASSL,, "Compile with CyaSSL support")
+fi
+])
+
+# Actually perform the cyassl check
+BB_CYASSL
+
+
+
 # check for pthread
 AC_CHECK_HEADER(pthread.h, , AC_MSG_ERROR(You need the pthread headers) )
 AC_CHECK_LIB(pthread, pthread_create, , AC_MSG_ERROR(You need the pthread library) )
@@ -97,7 +143,7 @@ echo "libhttpd dependencies check complete"
 
 AC_OUTPUT( 		Makefile 
 	   		wifidog.spec
-                        wifidog-msg.html
+			wifidog-msg.html
 			src/Makefile
 			libhttpd/Makefile
 			doc/Makefile

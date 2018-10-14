@@ -1,3 +1,4 @@
+/* vim: set sw=4 ts=4 sts=4 et : */
 /********************************************************************\
  * This program is free software; you can redistribute it and/or    *
  * modify it under the terms of the GNU General Public License as   *
@@ -18,7 +19,7 @@
  *                                                                  *
  \********************************************************************/
 
-/* $Id: centralserver.c 1377 2008-09-30 10:36:25Z wichert $ */
+/* $Id$ */
 /** @file centralserver.c
   @brief Functions to talk to the central server (auth/send stats/get rules/etc...)
   @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
@@ -42,6 +43,7 @@
 #include "common.h"
 #include "safe.h"
 #include "util.h"
+#include "wd_util.h"
 #include "auth.h"
 #include "conf.h"
 #include "debug.h"
@@ -49,7 +51,7 @@
 #include "firewall.h"
 #include "../config.h"
 
-extern pthread_mutex_t	config_mutex;
+#include "simple_http.h"
 
 /** Initiates a transaction with the auth server, either to authenticate or to
  * update the traffic counters at the server
@@ -62,302 +64,282 @@ extern pthread_mutex_t	config_mutex;
 @param outgoing Current counter of the client's total outgoing traffic, in bytes 
 */
 t_authcode
-auth_server_request(t_authresponse *authresponse, const char *request_type, const char *ip, const char *mac, const char *token, unsigned long long int incoming, unsigned long long int outgoing)
+auth_server_request(t_authresponse * authresponse, const char *request_type, const char *ip, const char *mac,
+                    const char *token, unsigned long long int incoming, unsigned long long int outgoing, unsigned long long int incoming_delta, unsigned long long int outgoing_delta)
 {
-	int sockfd;
-	ssize_t	numbytes;
-	size_t totalbytes;
-	char buf[MAX_BUF];
-	char *tmp;
-        char *safe_token;
-	int done, nfds;
-	fd_set			readfds;
-	struct timeval		timeout;
-	t_auth_serv	*auth_server = NULL;
-	auth_server = get_auth_server();
-	
-	/* Blanket default is error. */
-	authresponse->authcode = AUTH_ERROR;
-	
-	sockfd = connect_auth_server();
-	if (sockfd == -1) {
-		/* Could not connect to any auth server */
-		return (AUTH_ERROR);
-	}
+    s_config *config = config_get_config();
+    int sockfd;
+    char buf[MAX_BUF];
+    char *tmp;
+    char *safe_token;
+    t_auth_serv *auth_server = NULL;
+    auth_server = get_auth_server();
 
-	/**
+    /* Blanket default is error. */
+    authresponse->authcode = AUTH_ERROR;
+
+    sockfd = connect_auth_server();
+
+        /**
 	 * TODO: XXX change the PHP so we can harmonize stage as request_type
 	 * everywhere.
 	 */
-	memset(buf, 0, sizeof(buf));
-        safe_token=httpdUrlEncode(token);
-	snprintf(buf, (sizeof(buf) - 1),
-		"GET %s%sstage=%s&ip=%s&mac=%s&token=%s&incoming=%llu&outgoing=%llu&gw_id=%s HTTP/1.0\r\n"
-		"User-Agent: WiFiDog %s\r\n"
-		"Host: %s\r\n"
-		"\r\n",
-		auth_server->authserv_path,
-		auth_server->authserv_auth_script_path_fragment,
-		request_type,
-		ip,
-		mac,
-		safe_token,
-		incoming,
-		outgoing,
-                config_get_config()->gw_id,
-		VERSION,
-		auth_server->authserv_hostname
-	);
+    memset(buf, 0, sizeof(buf));
+    safe_token = httpdUrlEncode(token);
+    if(config -> deltatraffic) {
+           snprintf(buf, (sizeof(buf) - 1),
+             "GET %s%sstage=%s&ip=%s&mac=%s&token=%s&incoming=%llu&outgoing=%llu&incomingdelta=%llu&outgoingdelta=%llu&gw_id=%s HTTP/1.0\r\n"
+             "User-Agent: WiFiDog %s\r\n"
+             "Host: %s\r\n"
+             "\r\n",
+             auth_server->authserv_path,
+             auth_server->authserv_auth_script_path_fragment,
+             request_type,
+             ip, mac, safe_token, 
+             incoming, 
+             outgoing, 
+             incoming_delta, 
+             outgoing_delta,
+             config->gw_id, VERSION, auth_server->authserv_hostname);
+    } else {
+            snprintf(buf, (sizeof(buf) - 1),
+             "GET %s%sstage=%s&ip=%s&mac=%s&token=%s&incoming=%llu&outgoing=%llu&gw_id=%s HTTP/1.0\r\n"
+             "User-Agent: WiFiDog %s\r\n"
+             "Host: %s\r\n"
+             "\r\n",
+             auth_server->authserv_path,
+             auth_server->authserv_auth_script_path_fragment,
+             request_type,
+             ip,
+             mac, safe_token, incoming, outgoing, config->gw_id, VERSION, auth_server->authserv_hostname);
+        }
+    free(safe_token);
 
-        free(safe_token);
+    char *res;
+#ifdef USE_CYASSL
+    if (auth_server->authserv_use_ssl) {
+        res = https_get(sockfd, buf, auth_server->authserv_hostname);
+    } else {
+        res = http_get(sockfd, buf);
+    }
+#endif
+#ifndef USE_CYASSL
+    res = http_get(sockfd, buf);
+#endif
+    if (NULL == res) {
+        debug(LOG_ERR, "There was a problem talking to the auth server!");
+        return (AUTH_ERROR);
+    }
 
-	debug(LOG_DEBUG, "Sending HTTP request to auth server: [%s]\n", buf);
-	send(sockfd, buf, strlen(buf), 0);
-
-	debug(LOG_DEBUG, "Reading response");
-	numbytes = totalbytes = 0;
-	done = 0;
-	do {
-		FD_ZERO(&readfds);
-		FD_SET(sockfd, &readfds);
-		timeout.tv_sec = 30; /* XXX magic... 30 second is as good a timeout as any */
-		timeout.tv_usec = 0;
-		nfds = sockfd + 1;
-
-		nfds = select(nfds, &readfds, NULL, NULL, &timeout);
-
-		if (nfds > 0) {
-			/** We don't have to use FD_ISSET() because there
-			 *  was only one fd. */
-			numbytes = read(sockfd, buf + totalbytes, MAX_BUF - (totalbytes + 1));
-			if (numbytes < 0) {
-				debug(LOG_ERR, "An error occurred while reading from auth server: %s", strerror(errno));
-				/* FIXME */
-				close(sockfd);
-				return (AUTH_ERROR);
-			}
-			else if (numbytes == 0) {
-				done = 1;
-			}
-			else {
-				totalbytes += numbytes;
-				debug(LOG_DEBUG, "Read %d bytes, total now %d", numbytes, totalbytes);
-			}
-		}
-		else if (nfds == 0) {
-			debug(LOG_ERR, "Timed out reading data via select() from auth server");
-			/* FIXME */
-			close(sockfd);
-			return (AUTH_ERROR);
-		}
-		else if (nfds < 0) {
-			debug(LOG_ERR, "Error reading data via select() from auth server: %s", strerror(errno));
-			/* FIXME */
-			close(sockfd);
-			return (AUTH_ERROR);
-		}
-	} while (!done);
-
-	close(sockfd);
-
-	buf[totalbytes] = '\0';
-	debug(LOG_DEBUG, "HTTP Response from Server: [%s]", buf);
-	
-	if ((tmp = strstr(buf, "Auth: "))) {
-		if (sscanf(tmp, "Auth: %d", (int *)&authresponse->authcode) == 1) {
-			debug(LOG_INFO, "Auth server returned authentication code %d", authresponse->authcode);
-			return(authresponse->authcode);
-		} else {
-			debug(LOG_WARNING, "Auth server did not return expected authentication code");
-			return(AUTH_ERROR);
-		}
-	}
-	else {
-		return(AUTH_ERROR);
-	}
-
-	/* XXX Never reached because of the above if()/else pair. */
-	return(AUTH_ERROR);
+    if ((tmp = strstr(res, "Auth: "))) {
+        if (sscanf(tmp, "Auth: %d", (int *)&authresponse->authcode) == 1) {
+            debug(LOG_INFO, "Auth server returned authentication code %d", authresponse->authcode);
+            free(res);
+            return (authresponse->authcode);
+        } else {
+            debug(LOG_WARNING, "Auth server did not return expected authentication code");
+            free(res);
+            return (AUTH_ERROR);
+        }
+    }
+    free(res);
+    return (AUTH_ERROR);
 }
 
 /* Tries really hard to connect to an auth server. Returns a file descriptor, -1 on error
  */
-int connect_auth_server() {
-	int sockfd;
+int
+connect_auth_server()
+{
+    int sockfd;
 
-	LOCK_CONFIG();
-	sockfd = _connect_auth_server(0);
-	UNLOCK_CONFIG();
+    LOCK_CONFIG();
+    sockfd = _connect_auth_server(0);
+    UNLOCK_CONFIG();
 
-	if (sockfd == -1) {
-		debug(LOG_ERR, "Failed to connect to any of the auth servers");
-		mark_auth_offline();
-	}
-	else {
-		debug(LOG_DEBUG, "Connected to auth server");
-		mark_auth_online();
-	}
-	return (sockfd);
+    if (sockfd == -1) {
+        debug(LOG_ERR, "Failed to connect to any of the auth servers");
+        mark_auth_offline();
+    } else {
+        debug(LOG_DEBUG, "Connected to auth server");
+        mark_auth_online();
+    }
+    return (sockfd);
 }
 
 /* Helper function called by connect_auth_server() to do the actual work including recursion
  * DO NOT CALL DIRECTLY
  @param level recursion level indicator must be 0 when not called by _connect_auth_server()
  */
-int _connect_auth_server(int level) {
-	s_config *config = config_get_config();
-	t_auth_serv *auth_server = NULL;
-	struct in_addr *h_addr;
-	int num_servers = 0;
-	char * hostname = NULL;
-	char * popular_servers[] = {
-		  "www.google.com",
-		  "www.yahoo.com",
-		  NULL
-	};
-	char ** popularserver;
-	char * ip;
-	struct sockaddr_in their_addr;
-	int sockfd;
+int
+_connect_auth_server(int level)
+{
+    s_config *config = config_get_config();
+    t_auth_serv *auth_server = NULL;
+    t_popular_server *popular_server = NULL;
+    struct in_addr *h_addr;
+    int num_servers = 0;
+    char *hostname = NULL;
+    char *ip;
+    struct sockaddr_in their_addr;
+    int sockfd;
 
-	/* XXX level starts out at 0 and gets incremented by every iterations. */
-	level++;
+    /* If there are no auth servers, error out, from scan-build warning. */
+    if (NULL == config->auth_servers) {
+        return (-1);
+    }
 
-	/*
-	 * Let's calculate the number of servers we have
-	 */
-	for (auth_server = config->auth_servers; auth_server; auth_server = auth_server->next) {
-		num_servers++;
-	}
-	debug(LOG_DEBUG, "Level %d: Calculated %d auth servers in list", level, num_servers);
+    /* XXX level starts out at 0 and gets incremented by every iterations. */
+    level++;
 
-	if (level > num_servers) {
-		/*
-		 * We've called ourselves too many times
-		 * This means we've cycled through all the servers in the server list
-		 * at least once and none are accessible
-		 */
-		return (-1);
-	}
+    /*
+     * Let's calculate the number of servers we have
+     */
+    for (auth_server = config->auth_servers; auth_server; auth_server = auth_server->next) {
+        num_servers++;
+    }
+    debug(LOG_DEBUG, "Level %d: Calculated %d auth servers in list", level, num_servers);
 
-	/*
-	 * Let's resolve the hostname of the top server to an IP address
-	 */
-	auth_server = config->auth_servers;
-	hostname = auth_server->authserv_hostname;
-	debug(LOG_DEBUG, "Level %d: Resolving auth server [%s]", level, hostname);
-	h_addr = wd_gethostbyname(hostname);
-	if (!h_addr) {
-		/*
-		 * DNS resolving it failed
-		 *
-		 * Can we resolve any of the popular servers ?
-		 */
-		debug(LOG_DEBUG, "Level %d: Resolving auth server [%s] failed", level, hostname);
+    if (level > num_servers) {
+        /*
+         * We've called ourselves too many times
+         * This means we've cycled through all the servers in the server list
+         * at least once and none are accessible
+         */
+        return (-1);
+    }
 
-		for (popularserver = popular_servers; *popularserver; popularserver++) {
-			debug(LOG_DEBUG, "Level %d: Resolving popular server [%s]", level, *popularserver);
-			h_addr = wd_gethostbyname(*popularserver);
-			if (h_addr) {
-				debug(LOG_DEBUG, "Level %d: Resolving popular server [%s] succeeded = [%s]", level, *popularserver, inet_ntoa(*h_addr));
-				break;
-			}
-			else {
-				debug(LOG_DEBUG, "Level %d: Resolving popular server [%s] failed", level, *popularserver);
-			}
-		}
+    /*
+     * Let's resolve the hostname of the top server to an IP address
+     */
+    auth_server = config->auth_servers;
+    hostname = auth_server->authserv_hostname;
+    debug(LOG_DEBUG, "Level %d: Resolving auth server [%s]", level, hostname);
+    h_addr = wd_gethostbyname(hostname);
+    if (!h_addr) {
+        /*
+         * DNS resolving it failed
+         */
+        debug(LOG_DEBUG, "Level %d: Resolving auth server [%s] failed", level, hostname);
 
-		/* 
-		 * If we got any h_addr buffer for one of the popular servers, in other
-		 * words, if one of the popular servers resolved, we'll assume the DNS
-		 * works, otherwise we'll deal with net connection or DNS failure.
-		 */
-		if (h_addr) {
-			free (h_addr);
-			/*
-			 * Yes
-			 *
-			 * The auth server's DNS server is probably dead. Try the next auth server
-			 */
-			debug(LOG_DEBUG, "Level %d: Marking auth server [%s] as bad and trying next if possible", level, hostname);
-			if (auth_server->last_ip) {
-				free(auth_server->last_ip);
-				auth_server->last_ip = NULL;
-			}
-			mark_auth_server_bad(auth_server);
-			return _connect_auth_server(level);
-		}
-		else {
-			/*
-			 * No
-			 *
-			 * It's probably safe to assume that the internet connection is malfunctioning
-			 * and nothing we can do will make it work
-			 */
-			mark_offline();
-			debug(LOG_DEBUG, "Level %d: Failed to resolve auth server and all popular servers. "
-					"The internet connection is probably down", level);
-			return(-1);
-		}
-	}
-	else {
-		/*
-		 * DNS resolving was successful
-		 */
-		ip = safe_strdup(inet_ntoa(*h_addr));
-		debug(LOG_DEBUG, "Level %d: Resolving auth server [%s] succeeded = [%s]", level, hostname, ip);
+        for (popular_server = config->popular_servers; popular_server; popular_server = popular_server->next) {
+            debug(LOG_DEBUG, "Level %d: Resolving popular server [%s]", level, popular_server->hostname);
+            h_addr = wd_gethostbyname(popular_server->hostname);
+            if (h_addr) {
+                debug(LOG_DEBUG, "Level %d: Resolving popular server [%s] succeeded = [%s]", level, popular_server->hostname,
+                      inet_ntoa(*h_addr));
+                break;
+            } else {
+                debug(LOG_DEBUG, "Level %d: Resolving popular server [%s] failed", level, popular_server->hostname);
+            }
+        }
 
-		if (!auth_server->last_ip || strcmp(auth_server->last_ip, ip) != 0) {
-			/*
-			 * But the IP address is different from the last one we knew
-			 * Update it
-			 */
-			debug(LOG_DEBUG, "Level %d: Updating last_ip IP of server [%s] to [%s]", level, hostname, ip);
-			if (auth_server->last_ip) free(auth_server->last_ip);
-			auth_server->last_ip = ip;
+        /* 
+         * If we got any h_addr buffer for one of the popular servers, in other
+         * words, if one of the popular servers resolved, we'll assume the DNS
+         * works, otherwise we'll deal with net connection or DNS failure.
+         */
+        if (h_addr) {
+            free(h_addr);
+            /*
+             * Yes
+             *
+             * The auth server's DNS server is probably dead. Try the next auth server
+             */
+            debug(LOG_DEBUG, "Level %d: Marking auth server [%s] as bad and trying next if possible", level, hostname);
+            if (auth_server->last_ip) {
+                free(auth_server->last_ip);
+                auth_server->last_ip = NULL;
+            }
+            mark_auth_server_bad(auth_server);
+            return _connect_auth_server(level);
+        } else {
+            /*
+             * No
+             *
+             * It's probably safe to assume that the internet connection is malfunctioning
+             * and nothing we can do will make it work
+             */
+            mark_offline();
+            debug(LOG_DEBUG, "Level %d: Failed to resolve auth server and all popular servers. "
+                  "The internet connection is probably down", level);
+            return (-1);
+        }
+    } else {
+        /*
+         * DNS resolving was successful
+         */
+        mark_online();
+        ip = safe_strdup(inet_ntoa(*h_addr));
+        debug(LOG_DEBUG, "Level %d: Resolving auth server [%s] succeeded = [%s]", level, hostname, ip);
 
-			/* Update firewall rules */
-			fw_clear_authservers();
-			fw_set_authservers();
-		}
-		else {
-			/*
-			 * IP is the same as last time
-			 */
-			free(ip);
-		}
+        if (!auth_server->last_ip || strcmp(auth_server->last_ip, ip) != 0) {
+            /*
+             * But the IP address is different from the last one we knew
+             * Update it
+             */
+            debug(LOG_DEBUG, "Level %d: Updating last_ip IP of server [%s] to [%s]", level, hostname, ip);
+            if (auth_server->last_ip)
+                free(auth_server->last_ip);
+            auth_server->last_ip = ip;
 
-		/*
-		 * Connect to it
-		 */
-		debug(LOG_DEBUG, "Level %d: Connecting to auth server %s:%d", level, hostname, auth_server->authserv_http_port);
-		their_addr.sin_family = AF_INET;
-		their_addr.sin_port = htons(auth_server->authserv_http_port);
-		their_addr.sin_addr = *h_addr;
-		memset(&(their_addr.sin_zero), '\0', sizeof(their_addr.sin_zero));
-		free (h_addr);
+            /* Update firewall rules */
+            fw_clear_authservers();
+            fw_set_authservers();
+        } else {
+            /*
+             * IP is the same as last time
+             */
+            free(ip);
+        }
 
-		if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-			debug(LOG_ERR, "Level %d: Failed to create a new SOCK_STREAM socket: %s", strerror(errno));
-			return(-1);
-		}
+        /*
+         * Connect to it
+         */
+        int port = 0;
+#ifdef USE_CYASSL
+        if (auth_server->authserv_use_ssl) {
+            debug(LOG_DEBUG, "Level %d: Connecting to SSL auth server %s:%d", level, hostname,
+                  auth_server->authserv_ssl_port);
+            port = htons(auth_server->authserv_ssl_port);
+        } else {
+            debug(LOG_DEBUG, "Level %d: Connecting to auth server %s:%d", level, hostname,
+                  auth_server->authserv_http_port);
+            port = htons(auth_server->authserv_http_port);
+        }
+#endif
+#ifndef USE_CYASSL
+        debug(LOG_DEBUG, "Level %d: Connecting to auth server %s:%d", level, hostname, auth_server->authserv_http_port);
+        port = htons(auth_server->authserv_http_port);
+#endif
+        their_addr.sin_port = port;
+        their_addr.sin_family = AF_INET;
+        their_addr.sin_addr = *h_addr;
+        memset(&(their_addr.sin_zero), '\0', sizeof(their_addr.sin_zero));
+        free(h_addr);
 
-		if (connect(sockfd, (struct sockaddr *)&their_addr, sizeof(struct sockaddr)) == -1) {
-			/*
-			 * Failed to connect
-			 * Mark the server as bad and try the next one
-			 */
-			debug(LOG_DEBUG, "Level %d: Failed to connect to auth server %s:%d (%s). Marking it as bad and trying next if possible", level, hostname, auth_server->authserv_http_port, strerror(errno));
-			close(sockfd);
-			mark_auth_server_bad(auth_server);
-			return _connect_auth_server(level); /* Yay recursion! */
-		}
-		else {
-			/*
-			 * We have successfully connected
-			 */
-			debug(LOG_DEBUG, "Level %d: Successfully connected to auth server %s:%d", level, hostname, auth_server->authserv_http_port);
-			return sockfd;
-		}
-	}
+        if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+            debug(LOG_ERR, "Level %d: Failed to create a new SOCK_STREAM socket: %s", strerror(errno));
+            return (-1);
+        }
+
+        if (connect(sockfd, (struct sockaddr *)&their_addr, sizeof(struct sockaddr)) == -1) {
+            /*
+             * Failed to connect
+             * Mark the server as bad and try the next one
+             */
+            debug(LOG_DEBUG,
+                  "Level %d: Failed to connect to auth server %s:%d (%s). Marking it as bad and trying next if possible",
+                  level, hostname, ntohs(port), strerror(errno));
+            close(sockfd);
+            mark_auth_server_bad(auth_server);
+            return _connect_auth_server(level); /* Yay recursion! */
+        } else {
+            /*
+             * We have successfully connected
+             */
+            debug(LOG_DEBUG, "Level %d: Successfully connected to auth server %s:%d", level, hostname, ntohs(port));
+            return sockfd;
+        }
+    }
 }

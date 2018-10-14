@@ -1,3 +1,4 @@
+/* vim: set et sw=4 ts=4 sts=4 : */
 /********************************************************************\
  * This program is free software; you can redistribute it and/or    *
  * modify it under the terms of the GNU General Public License as   *
@@ -18,7 +19,7 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: firewall.h 1241 2007-06-24 04:13:13Z benoitg $ */
+/* $Id$ */
 /** @file firewall.h
     @brief Firewall update functions
     @author Copyright (C) 2004 Philippe April <papril777@yahoo.com>
@@ -27,14 +28,15 @@
 #ifndef _FIREWALL_H_
 #define _FIREWALL_H_
 
-int icmp_fd;
+#include "client_list.h"
 
 /** Used by fw_iptables.c */
 typedef enum _t_fw_marks {
-    FW_NONE = 0, /**< @brief The client is unknown to the firewall */
+    FW_MARK_NONE = 0, /**< @brief No mark set. */
     FW_MARK_PROBATION = 1, /**< @brief The client is in probation period and must be authenticated 
 			    @todo: VERIFY THAT THIS IS ACCURATE*/
-    FW_MARK_KNOWN = 2,  /**< @brief The client is known to the firewall */ 
+    FW_MARK_KNOWN = 2,  /**< @brief The client is known to the firewall */
+    FW_MARK_AUTH_IS_DOWN = 253, /**< @brief The auth servers are down */
     FW_MARK_LOCKED = 254 /**< @brief The client has been locked out */
 } t_fw_marks;
 
@@ -51,21 +53,24 @@ void fw_set_authservers(void);
 int fw_destroy(void);
 
 /** @brief Allow a user through the firewall*/
-int fw_allow(char *ip, char *mac, int profile);
+int fw_allow(t_client *, int);
+
+/** @brief Allow a host through the firewall*/
+int fw_allow_host(const char *);
 
 /** @brief Deny a client access through the firewall*/
-int fw_deny(char *ip, char *mac, int profile);
+int fw_deny(t_client *);
+
+/** @brief Passthrough for clients when auth server is down */
+int fw_set_authdown(void);
+
+/** @brief Remove passthrough for clients when auth server is up */
+int fw_set_authup(void);
 
 /** @brief Refreshes the entire client list */
 void fw_sync_with_authserver(void);
 
 /** @brief Get an IP's MAC address from the ARP cache.*/
-char *arp_get(char *req_ip);
+char *arp_get(const char *);
 
-/** @brief ICMP Ping an IP */
-void icmp_ping(char *host);
-
-/** @brief cheap random */
-unsigned short rand16(void);
-
-#endif /* _FIREWALL_H_ */
+#endif                          /* _FIREWALL_H_ */

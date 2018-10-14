@@ -18,7 +18,7 @@
  *                                                                  *
 \********************************************************************/
 
-/* $Id: wdctl.h 901 2006-01-17 18:58:13Z mina $ */
+/* $Id$ */
 /** @file wdctl.h
     @brief WiFiDog monitoring client
     @author Copyright (C) 2004 Alexandre Carmel-Veilleux <acv@acv.ca>
@@ -36,8 +36,8 @@
 #define WDCTL_RESTART	4
 
 typedef struct {
-	char	*socket;
-	int	command;
-	char	*param;
+    char *socket;
+    int command;
+    char *param;
 } s_config;
 #endif
