@@ -120,6 +120,7 @@ dsl_dataset_block_born(dsl_dataset_t *ds, const blkptr_t *bp, dmu_tx_t *tx)
 {
 	int used, compressed, uncompressed;
 	int64_t delta;
+	spa_feature_t f;
 
 	used = bp_get_dsize_sync(tx->tx_pool->dp_spa, bp);
 	compressed = BP_GET_PSIZE(bp);
@@ -153,7 +154,11 @@ dsl_dataset_block_born(dsl_dataset_t *ds, const blkptr_t *bp, dmu_tx_t *tx)
 		    B_TRUE;
 	}
 
-	spa_feature_t f = zio_checksum_to_feature(BP_GET_CHECKSUM(bp));
+	f = zio_checksum_to_feature(BP_GET_CHECKSUM(bp));
+	if (f != SPA_FEATURE_NONE)
+		ds->ds_feature_activation_needed[f] = B_TRUE;
+
+	f = zio_compress_to_feature(BP_GET_COMPRESS(bp));
 	if (f != SPA_FEATURE_NONE)
 		ds->ds_feature_activation_needed[f] = B_TRUE;
 

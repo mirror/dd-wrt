@@ -430,6 +430,11 @@ zpool_feature_init(void)
 	    "Support for separate allocation classes.",
 	    ZFEATURE_FLAG_READONLY_COMPAT, NULL);
 	}
+
+	zfeature_register(SPA_FEATURE_ZSTD_COMPRESS,
+	    "org.freebsd:zstd_compress", "zstd_compress",
+	    "zstd compression algorithm support.",
+	    ZFEATURE_FLAG_PER_DATASET, NULL);
 }
 
 #if defined(_KERNEL)

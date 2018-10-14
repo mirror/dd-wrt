@@ -2156,6 +2156,7 @@ dmu_write_policy(objset_t *os, dnode_t *dn, int level, int wp, zio_prop_t *zp)
 	enum zio_checksum checksum = os->os_checksum;
 	enum zio_compress compress = os->os_compress;
 	enum zio_checksum dedup_checksum = os->os_dedup_checksum;
+	enum zio_zstd_levels zstd_level = os->os_zstd_level;
 	boolean_t dedup = B_FALSE;
 	boolean_t nopwrite = B_FALSE;
 	boolean_t dedup_verify = os->os_dedup_verify;
@@ -2285,6 +2286,8 @@ dmu_write_policy(objset_t *os, dnode_t *dn, int level, int wp, zio_prop_t *zp)
 	    os->os_zpl_special_smallblock : 0;
 
 	ASSERT3U(zp->zp_compress, !=, ZIO_COMPRESS_INHERIT);
+	zp->zp_zstd_level = zstd_level;
+	ASSERT(zp->zp_zstd_level != ZIO_ZSTDLVL_INHERIT);
 }
 
 /*

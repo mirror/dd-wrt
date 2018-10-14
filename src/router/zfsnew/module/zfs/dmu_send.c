@@ -1042,6 +1042,9 @@ dmu_send_impl(void *tag, dsl_pool_t *dp, dsl_dataset_t *to_ds,
 	/* raw send implies compressok */
 	if (compressok || rawok)
 		featureflags |= DMU_BACKUP_FEATURE_COMPRESSED;
+	if ((compressok || embedok) &&
+	    to_ds->ds_feature_inuse[SPA_FEATURE_ZSTD_COMPRESS])
+		featureflags |= DMU_BACKUP_FEATURE_ZSTD;
 	if (rawok && os->os_encrypted)
 		featureflags |= DMU_BACKUP_FEATURE_RAW;
 
@@ -1710,6 +1713,12 @@ dmu_recv_begin_check(void *arg, dmu_tx_t *tx)
 	if ((featureflags & DMU_BACKUP_FEATURE_LARGE_DNODE) &&
 	    !spa_feature_is_enabled(dp->dp_spa, SPA_FEATURE_LARGE_DNODE))
 		return (SET_ERROR(ENOTSUP));
+	if ((featureflags & DMU_BACKUP_FEATURE_ZSTD) &&
+	    !spa_feature_is_enabled(dp->dp_spa, SPA_FEATURE_ZSTD_COMPRESS))
+		return (SET_ERROR(ENOTSUP));
+
+	if (!(DMU_STREAM_SUPPORTED(featureflags)))
+ 		return (SET_ERROR(ENOTSUP));
 
 	if (featureflags & DMU_BACKUP_FEATURE_RAW) {
 		/* raw receives require the encryption feature */

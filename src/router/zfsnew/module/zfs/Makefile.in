@@ -6,12 +6,13 @@ MODULE := zfs
 
 obj-$(CONFIG_ZFS) := $(MODULE).o
 
-ccflags-y := $(ZFS_MODULE_CFLAGS) $(ZFS_MODULE_CPPFLAGS)
+ccflags-y := $(ZFS_MODULE_CFLAGS) $(ZFS_MODULE_CPPFLAGS) -I$(src)/zstd -I$(src)/zstd/lib -I$(src)/zstd/common -I$(src)/zstd/compress -I$(src)/zstd/decompress -I$(src)/zstd/freebsd
 
 # Suppress unused-value warnings in sparc64 architecture headers
 ifeq ($(target_cpu),sparc64)
 ccflags-y += -Wno-unused-value
 endif
+ccflags-y += -Wframe-larger-than=32768
 
 # Suppress unused but set variable warnings often due to ASSERTs
 ccflags-y += $(NO_UNUSED_BUT_SET_VARIABLE)
@@ -138,6 +139,7 @@ $(MODULE)-objs += zpl_inode.o
 $(MODULE)-objs += zpl_super.o
 $(MODULE)-objs += zpl_xattr.o
 $(MODULE)-objs += zrlock.o
+$(MODULE)-objs += zstd.o
 $(MODULE)-objs += zthr.o
 $(MODULE)-objs += zvol.o
 $(MODULE)-objs += dsl_destroy.o
@@ -145,6 +147,22 @@ $(MODULE)-objs += dsl_userhold.o
 $(MODULE)-objs += qat.o
 $(MODULE)-objs += qat_compress.o
 $(MODULE)-objs += qat_crypt.o
+$(MODULE)-objs += zstd/freebsd/zstd_kmalloc.o
+$(MODULE)-objs += zstd/common/zstd_common.o
+$(MODULE)-objs += zstd/common/fse_decompress.o
+$(MODULE)-objs += zstd/common/entropy_common.o
+$(MODULE)-objs += zstd/common/error_private.o
+$(MODULE)-objs += zstd/common/xxhash.o
+$(MODULE)-objs += zstd/compress/zstd_compress.o
+$(MODULE)-objs += zstd/compress/fse_compress.o
+$(MODULE)-objs += zstd/compress/huf_compress.o
+$(MODULE)-objs += zstd/compress/zstd_double_fast.o
+$(MODULE)-objs += zstd/compress/zstd_fast.o
+$(MODULE)-objs += zstd/compress/zstd_lazy.o
+$(MODULE)-objs += zstd/compress/zstd_ldm.o
+$(MODULE)-objs += zstd/compress/zstd_opt.o
+$(MODULE)-objs += zstd/decompress/zstd_decompress.o
+$(MODULE)-objs += zstd/decompress/huf_decompress.o
 
 # Suppress incorrect warnings from versions of objtool which are not
 # aware of x86 EVEX prefix instructions used for AVX512.

@@ -240,6 +240,7 @@ struct arc_buf_hdr {
 	arc_buf_contents_t	b_type;
 	arc_buf_hdr_t		*b_hash_next;
 	arc_flags_t		b_flags;
+	uint8_t			b_complevel;
 
 	/*
 	 * This field stores the size of the data buffer after
