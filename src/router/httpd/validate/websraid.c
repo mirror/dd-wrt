@@ -336,7 +336,7 @@ void raid_save(webs_t wp)
 			break;
 		idx++;
 		char *l = websGetVar(wp, label, NULL);
-		if (!l || !strlen(l))
+		if (!l)
 			continue;
 		nvram_nset(l, "%s_label", dn);
 	}
