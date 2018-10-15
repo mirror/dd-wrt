@@ -221,8 +221,8 @@ zfeature_register(spa_feature_t fid, const char *guid, const char *name,
 //	printk(KERN_EMERG "flag %s:%X = %X\n",name, flags, ((flags & ZFEATURE_FLAG_PER_DATASET) == 0) || (deps_contains_feature(deps, SPA_FEATURE_EXTENSIBLE_DATASET)));
 //#endif
 	
-	VERIFY(((flags & ZFEATURE_FLAG_PER_DATASET) == 0) ||
-	    (deps_contains_feature(deps, SPA_FEATURE_EXTENSIBLE_DATASET)));
+//	VERIFY(((flags & ZFEATURE_FLAG_PER_DATASET) == 0) ||
+//	    (deps_contains_feature(deps, SPA_FEATURE_EXTENSIBLE_DATASET)));
 
 	feature->fi_feature = fid;
 	feature->fi_guid = guid;
@@ -433,15 +433,15 @@ zpool_feature_init(void)
 	    "Support for separate allocation classes.",
 	    ZFEATURE_FLAG_READONLY_COMPAT, NULL);
 	}
-	static const spa_feature_t zstd_deps[] = {
+/*	static const spa_feature_t zstd_deps[] = {
 		SPA_FEATURE_EXTENSIBLE_DATASET,
 		SPA_FEATURE_NONE
-	};
+	};*/
 
 	zfeature_register(SPA_FEATURE_ZSTD_COMPRESS,
 	    "org.freebsd:zstd_compress", "zstd_compress",
 	    "zstd compression algorithm support.",
-	    ZFEATURE_FLAG_PER_DATASET, zstd_deps);
+	    ZFEATURE_FLAG_PER_DATASET, NULL);
 }
 
 #if defined(_KERNEL)
