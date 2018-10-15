@@ -2175,6 +2175,7 @@ static int
 zfs_ioc_objset_stats_impl(zfs_cmd_t *zc, objset_t *os)
 {
 	int error = 0;
+	int zstd_error = 0;
 	nvlist_t *nv;
 
 	dmu_objset_fast_stat(os, &zc->zc_objset_stats);
@@ -2208,9 +2209,9 @@ zfs_ioc_objset_stats_impl(zfs_cmd_t *zc, objset_t *os)
 		uint64_t compval, levelval;
 		
 		if (get_prop_uint64(nv, "compression", &cnv, &compval) != 0)
-			error = EINVAL;
+			zstd_error = EINVAL;
 		
-		if (error == 0 && compval == ZIO_COMPRESS_ZSTD &&
+		if (zstd_error == 0 && compval == ZIO_COMPRESS_ZSTD &&
 		    get_prop_uint64(nv, "zstd_compress_level", NULL,
 		    &levelval) == 0) {
 			if (levelval == ZIO_ZSTDLVL_DEFAULT)
