@@ -898,8 +898,12 @@ _8021xprv
 	sprintf(n, "%s_config", p2);
 	sprintf(n2, "%s_config", prefix);
 	v = websGetVar(wp, n, NULL);
-	if (v && strlen(v) > 0)
+	if (v && strlen(v) > 0){
 		nvram_set(n2, v);
+	} else {
+		nvram_unset(n2);
+	}
+	
 #endif
 
 }
