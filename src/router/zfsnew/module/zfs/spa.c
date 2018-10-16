@@ -22,13 +22,13 @@
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2011, 2017 by Delphix. All rights reserved.
- * Copyright (c) 2015, Nexenta Systems, Inc.  All rights reserved.
- * Copyright (c) 2013, 2014, Nexenta Systems, Inc.  All rights reserved.
+ * Copyright (c) 2018, Nexenta Systems, Inc.  All rights reserved.
  * Copyright (c) 2014 Spectra Logic Corporation, All rights reserved.
  * Copyright 2013 Saso Kiselkov. All rights reserved.
  * Copyright (c) 2014 Integros [integros.com]
  * Copyright 2016 Toomas Soome <tsoome@me.com>
  * Copyright (c) 2016 Actifio, Inc. All rights reserved.
+ * Copyright 2018 Joyent, Inc.
  * Copyright (c) 2017 Datto Inc.
  * Copyright 2017 Joyent, Inc.
  * Copyright (c) 2017, Intel Corporation.
@@ -2372,7 +2372,7 @@ spa_load(spa_t *spa, spa_load_state_t state, spa_import_type_t type)
 	 * and are making their way through the eviction process.
 	 */
 	spa_evicting_os_wait(spa);
-	spa->spa_minref = refcount_count(&spa->spa_refcount);
+	spa->spa_minref = zfs_refcount_count(&spa->spa_refcount);
 	if (error) {
 		if (error != EEXIST) {
 			spa->spa_loaded_ts.tv_sec = 0;
@@ -4995,7 +4995,7 @@ spa_create(const char *pool, nvlist_t *nvroot, nvlist_t *props,
 	uint64_t txg = TXG_INITIAL;
 	nvlist_t **spares, **l2cache;
 	uint_t nspares, nl2cache;
-	uint64_t version, obj, root_dsobj = 0;
+	uint64_t version, obj;
 	boolean_t has_features;
 	boolean_t has_encryption;
 	spa_feature_t feat;
@@ -5249,26 +5249,10 @@ spa_create(const char *pool, nvlist_t *nvroot, nvlist_t *props,
 
 	dmu_tx_commit(tx);
 
-	/*
-	 * If the root dataset is encrypted we will need to create key mappings
-	 * for the zio layer before we start to write any data to disk and hold
-	 * them until after the first txg has been synced. Waiting for the first
-	 * transaction to complete also ensures that our bean counters are
-	 * appropriately updated.
-	 */
-	if (dp->dp_root_dir->dd_crypto_obj != 0) {
-		root_dsobj = dsl_dir_phys(dp->dp_root_dir)->dd_head_dataset_obj;
-		VERIFY0(spa_keystore_create_mapping_impl(spa, root_dsobj,
-		    dp->dp_root_dir, FTAG));
-	}
-
 	spa->spa_sync_on = B_TRUE;
 	txg_sync_start(dp);
 	mmp_thread_start(spa);
 	txg_wait_synced(dp, txg);
-
-	if (dp->dp_root_dir->dd_crypto_obj != 0)
-		VERIFY0(spa_keystore_remove_mapping(spa, root_dsobj, FTAG));
 
 	spa_spawn_aux_threads(spa);
 
@@ -5279,7 +5263,7 @@ spa_create(const char *pool, nvlist_t *nvroot, nvlist_t *props,
 	 * and are making their way through the eviction process.
 	 */
 	spa_evicting_os_wait(spa);
-	spa->spa_minref = refcount_count(&spa->spa_refcount);
+	spa->spa_minref = zfs_refcount_count(&spa->spa_refcount);
 	spa->spa_load_state = SPA_LOAD_NONE;
 
 	mutex_exit(&spa_namespace_lock);
@@ -6485,7 +6469,8 @@ spa_vdev_split_mirror(spa_t *spa, char *newname, nvlist_t *config,
 			break;
 		}
 
-		if (vdev_dtl_required(vml[c])) {
+		if (vdev_dtl_required(vml[c]) ||
+		    vdev_resilver_needed(vml[c], NULL, NULL)) {
 			error = SET_ERROR(EBUSY);
 			break;
 		}
@@ -6703,6 +6688,7 @@ spa_vdev_resilver_done_hunt(vdev_t *vd)
 
 	/*
 	 * Check for a completed resilver with the 'unspare' flag set.
+	 * Also potentially update faulted state.
 	 */
 	if (vd->vdev_ops == &vdev_spare_ops) {
 		vdev_t *first = vd->vdev_child[0];
@@ -6723,6 +6709,8 @@ spa_vdev_resilver_done_hunt(vdev_t *vd)
 		    vdev_dtl_empty(newvd, DTL_OUTAGE) &&
 		    !vdev_dtl_required(oldvd))
 			return (oldvd);
+
+		vdev_propagate_state(vd);
 
 		/*
 		 * If there are more than two spares attached to a disk,
@@ -7626,14 +7614,15 @@ vdev_indirect_state_sync_verify(vdev_t *vd)
 		ASSERT(vib != NULL);
 	}
 
-	if (vdev_obsolete_sm_object(vd) != 0) {
+	uint64_t obsolete_sm_object = 0;
+	ASSERT0(vdev_obsolete_sm_object(vd, &obsolete_sm_object));
+	if (obsolete_sm_object != 0) {
 		ASSERT(vd->vdev_obsolete_sm != NULL);
 		ASSERT(vd->vdev_removing ||
 		    vd->vdev_ops == &vdev_indirect_ops);
 		ASSERT(vdev_indirect_mapping_num_entries(vim) > 0);
 		ASSERT(vdev_indirect_mapping_bytes_mapped(vim) > 0);
-
-		ASSERT3U(vdev_obsolete_sm_object(vd), ==,
+		ASSERT3U(obsolete_sm_object, ==,
 		    space_map_object(vd->vdev_obsolete_sm));
 		ASSERT3U(vdev_indirect_mapping_bytes_mapped(vim), >=,
 		    space_map_allocated(vd->vdev_obsolete_sm));
@@ -7769,7 +7758,8 @@ spa_sync(spa_t *spa, uint64_t txg)
 		 * allocations all happen from spa_sync().
 		 */
 		for (int i = 0; i < spa->spa_alloc_count; i++)
-			ASSERT0(refcount_count(&(mg->mg_alloc_queue_depth[i])));
+			ASSERT0(zfs_refcount_count(
+			    &(mg->mg_alloc_queue_depth[i])));
 		mg->mg_max_alloc_queue_depth = max_queue_depth;
 
 		for (int i = 0; i < spa->spa_alloc_count; i++) {
@@ -7780,9 +7770,9 @@ spa_sync(spa_t *spa, uint64_t txg)
 	}
 
 	for (int i = 0; i < spa->spa_alloc_count; i++) {
-		ASSERT0(refcount_count(&normal->mc_alloc_slots[i]));
-		ASSERT0(refcount_count(&special->mc_alloc_slots[i]));
-		ASSERT0(refcount_count(&dedup->mc_alloc_slots[i]));
+		ASSERT0(zfs_refcount_count(&normal->mc_alloc_slots[i]));
+		ASSERT0(zfs_refcount_count(&special->mc_alloc_slots[i]));
+		ASSERT0(zfs_refcount_count(&dedup->mc_alloc_slots[i]));
 		normal->mc_alloc_max_slots[i] = slots_per_allocator;
 		special->mc_alloc_max_slots[i] = slots_per_allocator;
 		dedup->mc_alloc_max_slots[i] = slots_per_allocator;

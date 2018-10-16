@@ -29,7 +29,8 @@
  * Copyright (c) 2013 Steven Hartland. All rights reserved.
  * Copyright 2017 Nexenta Systems, Inc.
  * Copyright 2016 Igor Kozhukhov <ikozhukhov@gmail.com>
- * Copyright 2017 RackTop Systems.
+ * Copyright 2017-2018 RackTop Systems.
+ * Copyright (c) 2018 Datto Inc.
  */
 
 #include <ctype.h>
@@ -1939,13 +1940,18 @@ zfs_prop_set_list(zfs_handle_t *zhp, nvlist_t *props)
 	ret = zfs_ioctl(hdl, ZFS_IOC_SET_PROP, &zc);
 
 	if (ret != 0) {
+		if (zc.zc_nvlist_dst_filled == B_FALSE) {
+			(void) zfs_standard_error(hdl, errno, errbuf);
+			goto error;
+		}
+
 		/* Get the list of unset properties back and report them. */
 		nvlist_t *errorprops = NULL;
 		if (zcmd_read_dst_nvlist(hdl, &zc, &errorprops) != 0)
 			goto error;
-		for (elem = nvlist_next_nvpair(nvl, NULL);
+		for (nvpair_t *elem = nvlist_next_nvpair(errorprops, NULL);
 		    elem != NULL;
-		    elem = nvlist_next_nvpair(nvl, elem)) {
+		    elem = nvlist_next_nvpair(errorprops, elem)) {
 			prop = zfs_name_to_prop(nvpair_name(elem));
 			zfs_setprop_error(hdl, prop, errno, errbuf);
 		}
@@ -4543,7 +4549,8 @@ zfs_rename(zfs_handle_t *zhp, const char *target, boolean_t recursive,
 			goto error;
 		}
 	} else if (zhp->zfs_type != ZFS_TYPE_SNAPSHOT) {
-		if ((cl = changelist_gather(zhp, ZFS_PROP_NAME, 0,
+		if ((cl = changelist_gather(zhp, ZFS_PROP_NAME,
+		    CL_GATHER_ITER_MOUNTED,
 		    force_unmount ? MS_FORCE : 0)) == NULL)
 			return (-1);
 
