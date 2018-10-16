@@ -55,7 +55,7 @@ endif
 
 FALLTHROUGH := $(shell gcc -v --help 2>&1 | grep "implicit-fallthrough" | wc -l)
 ifneq "$(FALLTHROUGH)"  "0"
-CWFLAGS += -Wimplicit-fallthrough=0
+CWFLAGS += -Wno-implicit-fallthrough
 endif
 
 ifdef DEBIAN
