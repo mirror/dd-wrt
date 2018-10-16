@@ -1037,7 +1037,7 @@ dmu_send_impl(void *tag, dsl_pool_t *dp, dsl_dataset_t *to_ds,
 	if (compressok || rawok)
 		featureflags |= DMU_BACKUP_FEATURE_COMPRESSED;
 	if ((compressok || embedok) &&
-	    to_ds->ds_feature_inuse[SPA_FEATURE_ZSTD_COMPRESS])
+	    dsl_dataset_feature_is_active(to_ds, SPA_FEATURE_ZSTD_COMPRESS))
 		featureflags |= DMU_BACKUP_FEATURE_ZSTD;
 	if (rawok && os->os_encrypted)
 		featureflags |= DMU_BACKUP_FEATURE_RAW;
