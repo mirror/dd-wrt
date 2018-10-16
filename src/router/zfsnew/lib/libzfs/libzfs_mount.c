@@ -25,6 +25,7 @@
  * Copyright (c) 2014, 2015 by Delphix. All rights reserved.
  * Copyright 2016 Igor Kozhukhov <ikozhukhov@gmail.com>
  * Copyright 2017 RackTop Systems.
+ * Copyright (c) 2018 Datto Inc.
  */
 
 /*
@@ -664,7 +665,7 @@ zfs_unmount(zfs_handle_t *zhp, const char *mountpoint, int flags)
 		 * then get freed later. We strdup it to play it safe.
 		 */
 		if (mountpoint == NULL)
-			mntpt = zfs_strdup(hdl, entry.mnt_special);
+			mntpt = zfs_strdup(hdl, entry.mnt_mountp);
 		else
 			mntpt = zfs_strdup(hdl, mountpoint);
 
@@ -699,7 +700,8 @@ zfs_unmountall(zfs_handle_t *zhp, int flags)
 	prop_changelist_t *clp;
 	int ret;
 
-	clp = changelist_gather(zhp, ZFS_PROP_MOUNTPOINT, 0, flags);
+	clp = changelist_gather(zhp, ZFS_PROP_MOUNTPOINT,
+	    CL_GATHER_ITER_MOUNTED, 0);
 	if (clp == NULL)
 		return (-1);
 

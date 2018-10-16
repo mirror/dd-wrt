@@ -160,6 +160,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-get-link.m4 \
 	$(top_srcdir)/config/kernel-global_page_state.m4 \
 	$(top_srcdir)/config/kernel-group-info.m4 \
+	$(top_srcdir)/config/kernel-in-compat-syscall.m4 \
 	$(top_srcdir)/config/kernel-inode-getattr.m4 \
 	$(top_srcdir)/config/kernel-inode-lock.m4 \
 	$(top_srcdir)/config/kernel-inode-set-flags.m4 \
@@ -350,9 +351,10 @@ am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/config/deb.am \
 	$(top_srcdir)/module/spl/Makefile.in \
 	$(top_srcdir)/module/unicode/Makefile.in \
 	$(top_srcdir)/module/zcommon/Makefile.in \
-	$(top_srcdir)/module/zfs/Makefile.in AUTHORS config/compile \
-	config/config.guess config/config.sub config/depcomp \
-	config/install-sh config/ltmain.sh config/missing
+	$(top_srcdir)/module/zfs/Makefile.in AUTHORS NEWS \
+	config/compile config/config.guess config/config.sub \
+	config/depcomp config/install-sh config/ltmain.sh \
+	config/missing
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -646,8 +648,9 @@ SUBDIRS = include rpm $(am__append_1) $(am__append_2)
 AUTOMAKE_OPTIONS = foreign
 EXTRA_DIST = autogen.sh copy-builtin config/config.awk config/rpm.am \
 	config/deb.am config/tgz.am META AUTHORS COPYRIGHT LICENSE \
-	NOTICE README.md
-all: zfs_config.h
+	NEWS NOTICE README.md
+BUILT_SOURCES = gitrev
+all: $(BUILT_SOURCES) zfs_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
 .SUFFIXES:
@@ -1068,14 +1071,16 @@ distcleancheck: distclean
 	       $(distcleancheck_listfiles) ; \
 	       exit 1; } >&2
 check-am: all-am
-check: check-recursive
+check: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) check-recursive
 all-am: Makefile $(HEADERS) zfs_config.h all-local
 installdirs: installdirs-recursive
 installdirs-am:
 	for dir in "$(DESTDIR)$(extradir)" "$(DESTDIR)$(kerneldir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
-install: install-recursive
+install: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) install-recursive
 install-exec: install-exec-recursive
 install-data: install-data-recursive
 uninstall: uninstall-recursive
@@ -1105,6 +1110,7 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 @CONFIG_KERNEL_FALSE@install-data-hook:
 clean: clean-recursive
 
@@ -1177,8 +1183,8 @@ ps-am:
 
 uninstall-am: uninstall-extraHEADERS uninstall-nodist_kernelHEADERS
 
-.MAKE: $(am__recursive_targets) all install-am install-data-am \
-	install-strip
+.MAKE: $(am__recursive_targets) all check install install-am \
+	install-data-am install-strip
 
 .PHONY: $(am__recursive_targets) CTAGS GTAGS TAGS all all-am all-local \
 	am--refresh check check-am clean clean-cscope clean-generic \
@@ -1378,6 +1384,10 @@ tgz: tgz-kmod tgz-utils
 
 @CODE_COVERAGE_RULES@
 
+.PHONY: gitrev
+gitrev:
+	-${top_srcdir}/scripts/make_gitrev.sh
+
 distclean-local::
 	-$(RM) -R autom4te*.cache
 	-find . \( -name SCCS -o -name BitKeeper -o -name .svn -o -name CVS \
@@ -1393,7 +1403,8 @@ distclean-local::
 all-local:
 	-${top_srcdir}/scripts/zfs-tests.sh -c
 
-dist-hook:
+dist-hook: gitrev
+	cp ${top_srcdir}/include/zfs_gitrev.h $(distdir)/include; \
 	sed -i 's/Release:[[:print:]]*/Release:      $(RELEASE)/' \
 		$(distdir)/META
 
@@ -1412,7 +1423,9 @@ dist-hook:
 @CONFIG_KERNEL_TRUE@	ln -fs zfs_config.h spl_config.h && \
 @CONFIG_KERNEL_TRUE@	ln -fs zfs.release spl.release
 
-checkstyle: cstyle shellcheck flake8 commitcheck mancheck testscheck
+codecheck: cstyle shellcheck flake8 mancheck testscheck
+
+checkstyle: codecheck commitcheck
 
 commitcheck:
 	@if git rev-parse --git-dir > /dev/null 2>&1; then \
@@ -1430,6 +1443,8 @@ shellcheck:
 			$$(find ${top_srcdir}/scripts/*.sh -type f) \
 			$$(find ${top_srcdir}/cmd/zed/zed.d/*.sh -type f) \
 			$$(find ${top_srcdir}/cmd/zpool/zpool.d/* -executable); \
+	else \
+		echo "skipping shellcheck because shellcheck is not installed"; \
 	fi
 
 mancheck:
@@ -1438,6 +1453,8 @@ mancheck:
 			-o -name 'zpool.8' -o -name 'zdb.8' \
 			-o -name 'zgenhostid.8' | \
 			xargs mandoc -Tlint -Werror; \
+	else \
+		echo "skipping mancheck because mandoc is not installed"; \
 	fi
 
 testscheck:
@@ -1456,16 +1473,22 @@ cppcheck:
 			--suppressions-list=.github/suppressions.txt \
 			-UHAVE_SSE2 -UHAVE_AVX512F -UHAVE_UIO_ZEROCOPY \
 			-UHAVE_DNLC ${top_srcdir}; \
+	else \
+		echo "skipping cppcheck because cppcheck is not installed"; \
 	fi
 
 paxcheck:
 	@if type scanelf > /dev/null 2>&1; then \
 		${top_srcdir}/scripts/paxcheck.sh ${top_srcdir}; \
+	else \
+		echo "skipping paxcheck because scanelf is not installed"; \
 	fi
 
 flake8:
 	@if type flake8 > /dev/null 2>&1; then \
 		flake8 ${top_srcdir}; \
+	else \
+		echo "skipping flake8 because flake8 is not installed"; \
 	fi
 
 ctags:

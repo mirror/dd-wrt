@@ -57,7 +57,7 @@
 #include <sys/dsl_userhold.h>
 #include <sys/dsl_bookmark.h>
 #include <sys/policy.h>
-#include <sys/dmu_send.h>
+#include <sys/dmu_recv.h>
 #include <sys/zio_compress.h>
 #include <zfs_fletcher.h>
 #include <sys/zio_checksum.h>
@@ -344,7 +344,7 @@ dsl_dataset_evict_async(void *dbu)
 	mutex_destroy(&ds->ds_opening_lock);
 	mutex_destroy(&ds->ds_sendstream_lock);
 	mutex_destroy(&ds->ds_remap_deadlist_lock);
-	refcount_destroy(&ds->ds_longholds);
+	zfs_refcount_destroy(&ds->ds_longholds);
 	rrw_destroy(&ds->ds_bp_rwlock);
 
 	kmem_free(ds, sizeof (dsl_dataset_t));
@@ -443,8 +443,8 @@ dsl_dataset_try_add_ref(dsl_pool_t *dp, dsl_dataset_t *ds, void *tag)
 }
 
 int
-dsl_dataset_hold_obj_flags(dsl_pool_t *dp, uint64_t dsobj,
-    ds_hold_flags_t flags, void *tag, dsl_dataset_t **dsp)
+dsl_dataset_hold_obj(dsl_pool_t *dp, uint64_t dsobj, void *tag,
+    dsl_dataset_t **dsp)
 {
 	objset_t *mos = dp->dp_meta_objset;
 	dmu_buf_t *dbuf;
@@ -489,7 +489,7 @@ dsl_dataset_hold_obj_flags(dsl_pool_t *dp, uint64_t dsobj,
 		mutex_init(&ds->ds_remap_deadlist_lock,
 		    NULL, MUTEX_DEFAULT, NULL);
 		rrw_init(&ds->ds_bp_rwlock, B_FALSE);
-		refcount_create(&ds->ds_longholds);
+		zfs_refcount_create(&ds->ds_longholds);
 
 		bplist_create(&ds->ds_pending_deadlist);
 
@@ -582,7 +582,7 @@ dsl_dataset_hold_obj_flags(dsl_pool_t *dp, uint64_t dsobj,
 			mutex_destroy(&ds->ds_lock);
 			mutex_destroy(&ds->ds_opening_lock);
 			mutex_destroy(&ds->ds_sendstream_lock);
-			refcount_destroy(&ds->ds_longholds);
+			zfs_refcount_destroy(&ds->ds_longholds);
 			kmem_free(ds, sizeof (dsl_dataset_t));
 			if (err != 0) {
 				dmu_buf_rele(dbuf, tag);
@@ -604,6 +604,7 @@ dsl_dataset_hold_obj_flags(dsl_pool_t *dp, uint64_t dsobj,
 			}
 		}
 	}
+
 	ASSERT3P(ds->ds_dbuf, ==, dbuf);
 	ASSERT3P(dsl_dataset_phys(ds), ==, dbuf->db_data);
 	ASSERT(dsl_dataset_phys(ds)->ds_prev_snap_obj != 0 ||
@@ -611,22 +612,40 @@ dsl_dataset_hold_obj_flags(dsl_pool_t *dp, uint64_t dsobj,
 	    dp->dp_origin_snap == NULL || ds == dp->dp_origin_snap);
 	*dsp = ds;
 
-	if ((flags & DS_HOLD_FLAG_DECRYPT) && ds->ds_dir->dd_crypto_obj != 0) {
-		err = spa_keystore_create_mapping(dp->dp_spa, ds, ds);
-		if (err != 0) {
-			dsl_dataset_rele(ds, tag);
-			return (SET_ERROR(EACCES));
-		}
-	}
-
 	return (0);
 }
 
 int
-dsl_dataset_hold_obj(dsl_pool_t *dp, uint64_t dsobj, void *tag,
-    dsl_dataset_t **dsp)
+dsl_dataset_create_key_mapping(dsl_dataset_t *ds)
 {
-	return (dsl_dataset_hold_obj_flags(dp, dsobj, 0, tag, dsp));
+	dsl_dir_t *dd = ds->ds_dir;
+
+	if (dd->dd_crypto_obj == 0)
+		return (0);
+
+	return (spa_keystore_create_mapping(dd->dd_pool->dp_spa,
+	    ds, ds, &ds->ds_key_mapping));
+}
+
+int
+dsl_dataset_hold_obj_flags(dsl_pool_t *dp, uint64_t dsobj,
+    ds_hold_flags_t flags, void *tag, dsl_dataset_t **dsp)
+{
+	int err;
+
+	err = dsl_dataset_hold_obj(dp, dsobj, tag, dsp);
+	if (err != 0)
+		return (err);
+
+	ASSERT3P(*dsp, !=, NULL);
+
+	if (flags & DS_HOLD_FLAG_DECRYPT) {
+		err = dsl_dataset_create_key_mapping(*dsp);
+		if (err != 0)
+			dsl_dataset_rele(*dsp, tag);
+	}
+
+	return (err);
 }
 
 int
@@ -732,20 +751,20 @@ void
 dsl_dataset_long_hold(dsl_dataset_t *ds, void *tag)
 {
 	ASSERT(dsl_pool_config_held(ds->ds_dir->dd_pool));
-	(void) refcount_add(&ds->ds_longholds, tag);
+	(void) zfs_refcount_add(&ds->ds_longholds, tag);
 }
 
 void
 dsl_dataset_long_rele(dsl_dataset_t *ds, void *tag)
 {
-	(void) refcount_remove(&ds->ds_longholds, tag);
+	(void) zfs_refcount_remove(&ds->ds_longholds, tag);
 }
 
 /* Return B_TRUE if there are any long holds on this dataset. */
 boolean_t
 dsl_dataset_long_held(dsl_dataset_t *ds)
 {
-	return (!refcount_is_zero(&ds->ds_longholds));
+	return (!zfs_refcount_is_zero(&ds->ds_longholds));
 }
 
 void
@@ -793,21 +812,30 @@ dsl_dataset_namelen(dsl_dataset_t *ds)
 }
 
 void
-dsl_dataset_rele_flags(dsl_dataset_t *ds, ds_hold_flags_t flags, void *tag)
+dsl_dataset_rele(dsl_dataset_t *ds, void *tag)
 {
-	if (ds->ds_dir != NULL && ds->ds_dir->dd_crypto_obj != 0 &&
-	    (flags & DS_HOLD_FLAG_DECRYPT)) {
-		(void) spa_keystore_remove_mapping(ds->ds_dir->dd_pool->dp_spa,
-		    ds->ds_object, ds);
-	}
-
 	dmu_buf_rele(ds->ds_dbuf, tag);
 }
 
 void
-dsl_dataset_rele(dsl_dataset_t *ds, void *tag)
+dsl_dataset_remove_key_mapping(dsl_dataset_t *ds)
 {
-	dsl_dataset_rele_flags(ds, 0, tag);
+	dsl_dir_t *dd = ds->ds_dir;
+
+	if (dd == NULL || dd->dd_crypto_obj == 0)
+		return;
+
+	(void) spa_keystore_remove_mapping(dd->dd_pool->dp_spa,
+	    ds->ds_object, ds);
+}
+
+void
+dsl_dataset_rele_flags(dsl_dataset_t *ds, ds_hold_flags_t flags, void *tag)
+{
+	if (flags & DS_HOLD_FLAG_DECRYPT)
+		dsl_dataset_remove_key_mapping(ds);
+
+	dsl_dataset_rele(ds, tag);
 }
 
 void
@@ -1159,8 +1187,18 @@ dsl_dataset_dirty(dsl_dataset_t *ds, dmu_tx_t *tx)
 
 	dp = ds->ds_dir->dd_pool;
 	if (txg_list_add(&dp->dp_dirty_datasets, ds, tx->tx_txg)) {
+		objset_t *os = ds->ds_objset;
+
 		/* up the hold count until we can be written out */
 		dmu_buf_add_ref(ds->ds_dbuf, ds);
+
+		/* if this dataset is encrypted, grab a reference to the DCK */
+		if (ds->ds_dir->dd_crypto_obj != 0 &&
+		    !os->os_raw_receive &&
+		    !os->os_next_write_raw[tx->tx_txg & TXG_MASK]) {
+			ASSERT3P(ds->ds_key_mapping, !=, NULL);
+			key_mapping_add_ref(ds->ds_key_mapping, ds);
+		}
 	}
 }
 
@@ -1804,6 +1842,11 @@ dsl_dataset_sync_done(dsl_dataset_t *ds, dmu_tx_t *tx)
 		multilist_destroy(os->os_synced_dnodes);
 		os->os_synced_dnodes = NULL;
 	}
+
+	if (os->os_encrypted)
+		os->os_next_write_raw[tx->tx_txg & TXG_MASK] = B_FALSE;
+	else
+		ASSERT0(os->os_next_write_raw[tx->tx_txg & TXG_MASK]);
 
 	ASSERT(!dmu_objset_is_dirty(os, dmu_tx_get_txg(tx)));
 

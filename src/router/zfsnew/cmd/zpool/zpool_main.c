@@ -536,7 +536,6 @@ add_prop_list(const char *propname, char *propval, nvlist_t **props,
     boolean_t poolprop)
 {
 	zpool_prop_t prop = ZPOOL_PROP_INVAL;
-	zfs_prop_t fprop;
 	nvlist_t *proplist;
 	const char *normnm;
 	char *strval;
@@ -580,10 +579,18 @@ add_prop_list(const char *propname, char *propval, nvlist_t **props,
 		else
 			normnm = zpool_prop_to_name(prop);
 	} else {
-		if ((fprop = zfs_name_to_prop(propname)) != ZPROP_INVAL) {
-			normnm = zfs_prop_to_name(fprop);
-		} else {
+		zfs_prop_t fsprop = zfs_name_to_prop(propname);
+
+		if (zfs_prop_valid_for_type(fsprop, ZFS_TYPE_FILESYSTEM,
+		    B_FALSE)) {
+			normnm = zfs_prop_to_name(fsprop);
+		} else if (zfs_prop_user(propname) ||
+		    zfs_prop_userquota(propname)) {
 			normnm = propname;
+		} else {
+			(void) fprintf(stderr, gettext("property '%s' is "
+			    "not a valid filesystem property\n"), propname);
+			return (2);
 		}
 	}
 
@@ -1735,7 +1742,7 @@ static void
 print_status_config(zpool_handle_t *zhp, status_cbdata_t *cb, const char *name,
     nvlist_t *nv, int depth, boolean_t isspare)
 {
-	nvlist_t **child;
+	nvlist_t **child, *root;
 	uint_t c, children;
 	pool_scan_stat_t *ps = NULL;
 	vdev_stat_t *vs;
@@ -1861,7 +1868,10 @@ print_status_config(zpool_handle_t *zhp, status_cbdata_t *cb, const char *name,
 		}
 	}
 
-	(void) nvlist_lookup_uint64_array(nv, ZPOOL_CONFIG_SCAN_STATS,
+	/* The root vdev has the scrub/resilver stats */
+	root = fnvlist_lookup_nvlist(zpool_get_config(zhp, NULL),
+	    ZPOOL_CONFIG_VDEV_TREE);
+	(void) nvlist_lookup_uint64_array(root, ZPOOL_CONFIG_SCAN_STATS,
 	    (uint64_t **)&ps, &c);
 
 	if (ps != NULL && ps->pss_state == DSS_SCANNING &&
@@ -1896,6 +1906,7 @@ print_status_config(zpool_handle_t *zhp, status_cbdata_t *cb, const char *name,
 
 		vname = zpool_vdev_name(g_zfs, zhp, child[c],
 		    cb->cb_name_flags | VDEV_NAME_TYPE_ID);
+
 		print_status_config(zhp, cb, vname, child[c], depth + 2,
 		    isspare);
 		free(vname);
@@ -3748,7 +3759,7 @@ single_histo_average(uint64_t *histo, unsigned int buckets)
 
 static void
 print_iostat_queues(iostat_cbdata_t *cb, nvlist_t *oldnv,
-    nvlist_t *newnv, double scale)
+    nvlist_t *newnv)
 {
 	int i;
 	uint64_t val;
@@ -3778,7 +3789,7 @@ print_iostat_queues(iostat_cbdata_t *cb, nvlist_t *oldnv,
 		format = ZFS_NICENUM_1024;
 
 	for (i = 0; i < ARRAY_SIZE(names); i++) {
-		val = nva[i].data[0] * scale;
+		val = nva[i].data[0];
 		print_one_stat(val, format, column_width, cb->cb_scripted);
 	}
 
@@ -3787,7 +3798,7 @@ print_iostat_queues(iostat_cbdata_t *cb, nvlist_t *oldnv,
 
 static void
 print_iostat_latency(iostat_cbdata_t *cb, nvlist_t *oldnv,
-    nvlist_t *newnv, double scale)
+    nvlist_t *newnv)
 {
 	int i;
 	uint64_t val;
@@ -3817,7 +3828,7 @@ print_iostat_latency(iostat_cbdata_t *cb, nvlist_t *oldnv,
 	/* Print our avg latencies on the line */
 	for (i = 0; i < ARRAY_SIZE(names); i++) {
 		/* Compute average latency for a latency histo */
-		val = single_histo_average(nva[i].data, nva[i].count) * scale;
+		val = single_histo_average(nva[i].data, nva[i].count);
 		print_one_stat(val, format, column_width, cb->cb_scripted);
 	}
 	free_calc_stats(nva, ARRAY_SIZE(names));
@@ -3965,9 +3976,9 @@ print_vdev_stats(zpool_handle_t *zhp, const char *name, nvlist_t *oldnv,
 		print_iostat_default(calcvs, cb, scale);
 	}
 	if (cb->cb_flags & IOS_LATENCY_M)
-		print_iostat_latency(cb, oldnv, newnv, scale);
+		print_iostat_latency(cb, oldnv, newnv);
 	if (cb->cb_flags & IOS_QUEUES_M)
-		print_iostat_queues(cb, oldnv, newnv, scale);
+		print_iostat_queues(cb, oldnv, newnv);
 	if (cb->cb_flags & IOS_ANYHISTO_M) {
 		printf("\n");
 		print_iostat_histos(cb, oldnv, newnv, scale, name);

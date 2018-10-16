@@ -150,6 +150,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-get-link.m4 \
 	$(top_srcdir)/config/kernel-global_page_state.m4 \
 	$(top_srcdir)/config/kernel-group-info.m4 \
+	$(top_srcdir)/config/kernel-in-compat-syscall.m4 \
 	$(top_srcdir)/config/kernel-inode-getattr.m4 \
 	$(top_srcdir)/config/kernel-inode-lock.m4 \
 	$(top_srcdir)/config/kernel-inode-set-flags.m4 \
@@ -278,6 +279,7 @@ am__kernel_HEADERS_DIST = $(top_srcdir)/include/sys/abd.h \
 	$(top_srcdir)/include/sys/dmu.h \
 	$(top_srcdir)/include/sys/dmu_impl.h \
 	$(top_srcdir)/include/sys/dmu_objset.h \
+	$(top_srcdir)/include/sys/dmu_recv.h \
 	$(top_srcdir)/include/sys/dmu_send.h \
 	$(top_srcdir)/include/sys/dmu_traverse.h \
 	$(top_srcdir)/include/sys/dmu_tx.h \
@@ -442,6 +444,7 @@ am__libzfs_HEADERS_DIST = $(top_srcdir)/include/sys/abd.h \
 	$(top_srcdir)/include/sys/dmu.h \
 	$(top_srcdir)/include/sys/dmu_impl.h \
 	$(top_srcdir)/include/sys/dmu_objset.h \
+	$(top_srcdir)/include/sys/dmu_recv.h \
 	$(top_srcdir)/include/sys/dmu_send.h \
 	$(top_srcdir)/include/sys/dmu_traverse.h \
 	$(top_srcdir)/include/sys/dmu_tx.h \
@@ -874,6 +877,7 @@ COMMON_H = \
 	$(top_srcdir)/include/sys/dmu.h \
 	$(top_srcdir)/include/sys/dmu_impl.h \
 	$(top_srcdir)/include/sys/dmu_objset.h \
+	$(top_srcdir)/include/sys/dmu_recv.h \
 	$(top_srcdir)/include/sys/dmu_send.h \
 	$(top_srcdir)/include/sys/dmu_traverse.h \
 	$(top_srcdir)/include/sys/dmu_tx.h \

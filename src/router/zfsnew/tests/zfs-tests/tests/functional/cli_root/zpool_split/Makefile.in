@@ -154,6 +154,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-get-link.m4 \
 	$(top_srcdir)/config/kernel-global_page_state.m4 \
 	$(top_srcdir)/config/kernel-group-info.m4 \
+	$(top_srcdir)/config/kernel-in-compat-syscall.m4 \
 	$(top_srcdir)/config/kernel-inode-getattr.m4 \
 	$(top_srcdir)/config/kernel-inode-lock.m4 \
 	$(top_srcdir)/config/kernel-inode-set-flags.m4 \
@@ -549,7 +550,8 @@ dist_pkgdata_SCRIPTS = \
 	zpool_split_devices.ksh \
 	zpool_split_encryption.ksh \
 	zpool_split_props.ksh \
-	zpool_split_vdevs.ksh
+	zpool_split_vdevs.ksh \
+	zpool_split_resilver.ksh
 
 all: all-am
 
