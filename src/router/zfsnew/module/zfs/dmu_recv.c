@@ -257,9 +257,9 @@ dmu_recv_begin_check(void *arg, dmu_tx_t *tx)
 	if ((featureflags & DMU_BACKUP_FEATURE_ZSTD) &&
 	    !spa_feature_is_enabled(dp->dp_spa, SPA_FEATURE_ZSTD_COMPRESS))
 		return (SET_ERROR(ENOTSUP));
- 
+
 	if (!(DMU_STREAM_SUPPORTED(featureflags)))
- 		return (SET_ERROR(ENOTSUP));
+		return (SET_ERROR(ENOTSUP));
 
 	if (featureflags & DMU_BACKUP_FEATURE_RAW) {
 		/* raw receives require the encryption feature */

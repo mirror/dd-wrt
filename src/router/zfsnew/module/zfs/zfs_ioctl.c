@@ -2208,10 +2208,10 @@ zfs_ioc_objset_stats_impl(zfs_cmd_t *zc, objset_t *os)
 		 */
 		nvlist_t *cnv;
 		uint64_t compval, levelval;
-		
+
 		if (get_prop_uint64(nv, "compression", &cnv, &compval) != 0)
 			zstd_error = EINVAL;
-		
+
 		if (zstd_error == 0 && compval == ZIO_COMPRESS_ZSTD &&
 		    get_prop_uint64(nv, "zstd_compress_level", NULL,
 		    &levelval) == 0) {
@@ -2632,7 +2632,7 @@ zfs_prop_set_special(const char *dsname, zprop_source_t source,
 		 * property in its own hidden property.
 		 */
 		uint64_t levelval;
-		
+
 		if (intval == ZIO_COMPRESS_ZSTD) {
 			levelval = ZIO_ZSTDLVL_DEFAULT;
 		} else {
