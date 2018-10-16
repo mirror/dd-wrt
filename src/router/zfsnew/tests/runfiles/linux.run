@@ -166,7 +166,8 @@ tests = ['zfs_get_001_pos', 'zfs_get_002_pos', 'zfs_get_003_pos',
 tags = ['functional', 'cli_root', 'zfs_get']
 
 [tests/functional/cli_root/zfs_inherit]
-tests = ['zfs_inherit_001_neg', 'zfs_inherit_002_neg', 'zfs_inherit_003_pos']
+tests = ['zfs_inherit_001_neg', 'zfs_inherit_002_neg', 'zfs_inherit_003_pos',
+    'zfs_inherit_mountpoint']
 tags = ['functional', 'cli_root', 'zfs_inherit']
 
 [tests/functional/cli_root/zfs_load-key]
@@ -218,7 +219,7 @@ tests = ['zfs_rename_001_pos', 'zfs_rename_002_pos', 'zfs_rename_003_pos',
     'zfs_rename_007_pos', 'zfs_rename_008_pos', 'zfs_rename_009_neg',
     'zfs_rename_010_neg', 'zfs_rename_011_pos', 'zfs_rename_012_neg',
     'zfs_rename_013_pos', 'zfs_rename_014_neg', 'zfs_rename_encrypted_child',
-    'zfs_rename_to_encrypted']
+    'zfs_rename_to_encrypted', 'zfs_rename_mountpoint']
 tags = ['functional', 'cli_root', 'zfs_rename']
 
 [tests/functional/cli_root/zfs_reservation]
@@ -277,12 +278,13 @@ tags = ['functional', 'cli_root', 'zfs_unload-key']
 tests = ['zfs_unmount_001_pos', 'zfs_unmount_002_pos', 'zfs_unmount_003_pos',
     'zfs_unmount_004_pos', 'zfs_unmount_005_pos', 'zfs_unmount_006_pos',
     'zfs_unmount_007_neg', 'zfs_unmount_008_neg', 'zfs_unmount_009_pos',
-    'zfs_unmount_all_001_pos']
+    'zfs_unmount_all_001_pos', 'zfs_unmount_nested']
 tags = ['functional', 'cli_root', 'zfs_unmount']
 
 [tests/functional/cli_root/zfs_unshare]
 tests = ['zfs_unshare_001_pos', 'zfs_unshare_002_pos', 'zfs_unshare_003_pos',
-    'zfs_unshare_004_neg', 'zfs_unshare_005_neg', 'zfs_unshare_006_pos']
+    'zfs_unshare_004_neg', 'zfs_unshare_005_neg', 'zfs_unshare_006_pos',
+    'zfs_unshare_007_pos']
 tags = ['functional', 'cli_root', 'zfs_unshare']
 
 [tests/functional/cli_root/zfs_upgrade]
@@ -422,7 +424,8 @@ tags = ['functional', 'cli_root', 'zpool_replace']
 [tests/functional/cli_root/zpool_scrub]
 tests = ['zpool_scrub_001_neg', 'zpool_scrub_002_pos', 'zpool_scrub_003_pos',
     'zpool_scrub_004_pos', 'zpool_scrub_005_pos',
-    'zpool_scrub_encrypted_unloaded', 'zpool_scrub_offline_device']
+    'zpool_scrub_encrypted_unloaded', 'zpool_scrub_print_repairing',
+    'zpool_scrub_offline_device']
 tags = ['functional', 'cli_root', 'zpool_scrub']
 
 [tests/functional/cli_root/zpool_set]
@@ -432,7 +435,8 @@ tags = ['functional', 'cli_root', 'zpool_set']
 
 [tests/functional/cli_root/zpool_split]
 tests = ['zpool_split_cliargs', 'zpool_split_devices',
-    'zpool_split_encryption', 'zpool_split_props', 'zpool_split_vdevs']
+    'zpool_split_encryption', 'zpool_split_props', 'zpool_split_vdevs',
+    'zpool_split_resilver']
 tags = ['functional', 'cli_root', 'zpool_split']
 
 [tests/functional/cli_root/zpool_status]
@@ -583,10 +587,6 @@ tests = ['inuse_001_pos', 'inuse_003_pos', 'inuse_004_pos',
 post =
 tags = ['functional', 'inuse']
 
-[tests/functional/kstat]
-tests = ['state']
-tags = ['functional', 'kstat']
-
 [tests/functional/large_files]
 tests = ['large_files_001_pos', 'large_files_002_pos']
 tags = ['functional', 'large_files']
@@ -670,6 +670,11 @@ tags = ['functional', 'poolversion']
 [tests/functional/privilege]
 tests = ['privilege_001_pos', 'privilege_002_pos']
 tags = ['functional', 'privilege']
+
+[tests/functional/procfs]
+tests = ['procfs_list_basic', 'procfs_list_concurrent_readers',
+    'procfs_list_stale_read', 'pool_state']
+tags = ['functional', 'procfs']
 
 [tests/functional/projectquota]
 tests = ['projectid_001_pos', 'projectid_002_pos', 'projectid_003_pos',

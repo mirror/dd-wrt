@@ -149,6 +149,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/always-arch.m4 \
 	$(top_srcdir)/config/kernel-get-link.m4 \
 	$(top_srcdir)/config/kernel-global_page_state.m4 \
 	$(top_srcdir)/config/kernel-group-info.m4 \
+	$(top_srcdir)/config/kernel-in-compat-syscall.m4 \
 	$(top_srcdir)/config/kernel-inode-getattr.m4 \
 	$(top_srcdir)/config/kernel-inode-lock.m4 \
 	$(top_srcdir)/config/kernel-inode-set-flags.m4 \
@@ -607,8 +608,8 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-@PYZFS_ENABLED_FALSE@install-exec-local:
 @PYZFS_ENABLED_FALSE@clean-local:
+@PYZFS_ENABLED_FALSE@install-exec-local:
 @PYZFS_ENABLED_FALSE@clean: clean-am
 
 clean-am: clean-generic clean-libtool clean-local mostlyclean-am
