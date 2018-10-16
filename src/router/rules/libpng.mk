@@ -19,3 +19,5 @@ libpng-configure: zlib
 	-cp $(TOP)/libpng/*.h $(TOP)/libpng/.libs/include
 	-cp $(TOP)/libpng/.libs/libpng16.a $(TOP)/libpng/.libs/libpng.a
 
+libpng-install:
+	@true
