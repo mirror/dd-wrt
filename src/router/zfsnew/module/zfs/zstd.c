@@ -30,15 +30,15 @@
 #include <sys/zio_compress.h>
 #include <sys/spa.h>
 
-#define ZSTD_STATIC_LINKING_ONLY
+#define	ZSTD_STATIC_LINKING_ONLY
 #include <zstd.h>
 #include <zstd_errors.h>
 
 #define	ZSTD_KMEM_MAGIC		0x20160831
 
- /* for BSD compat */
-#define	roundup2(x,m)	((((x) - 1) | ((m) - 1)) + 1)
-#define __unused			__attribute__((unused))
+/* for BSD compat */
+#define	roundup2(x, m)	((((x) - 1) | ((m) - 1)) + 1)
+#define	__unused			__attribute__((unused))
 typedef int		 cmp_t(const void *, const void *);
 static inline char	*med3(char *, char *, char *, cmp_t *, void *);
 #ifndef MIN
@@ -61,13 +61,11 @@ swapfunc(char *a, char *b, size_t es)
 #define	CMP(t, x, y) (cmp((x), (y)))
 
 static inline char *
-med3(char *a, char *b, char *c, cmp_t *cmp, void *thunk
-__unused
-)
+med3(char *a, char *b, char *c, cmp_t *cmp, void *thunk __unused)
 {
 	return CMP(thunk, a, b) < 0 ?
-	       (CMP(thunk, b, c) < 0 ? b : (CMP(thunk, a, c) < 0 ? c : a ))
-	      :(CMP(thunk, b, c) > 0 ? b : (CMP(thunk, a, c) < 0 ? a : c ));
+	    (CMP(thunk, b, c) < 0 ? b : (CMP(thunk, a, c) < 0 ? c : a))
+	    :(CMP(thunk, b, c) > 0 ? b : (CMP(thunk, a, c) < 0 ? a : c));
 }
 
 #define	thunk NULL
@@ -83,9 +81,9 @@ loop:
 	swap_cnt = 0;
 	if (n < 7) {
 		for (pm = (char *)a + es; pm < (char *)a + n * es; pm += es)
-			for (pl = pm; 
-			     pl > (char *)a && CMP(thunk, pl - es, pl) > 0;
-			     pl -= es)
+			for (pl = pm;
+			    pl > (char *)a && CMP(thunk, pl - es, pl) > 0;
+			    pl -= es)
 				swapfunc(pl, pl - es, es);
 		return;
 	}
@@ -132,9 +130,9 @@ loop:
 	}
 	if (swap_cnt == 0) {  /* Switch to insertion sort */
 		for (pm = (char *)a + es; pm < (char *)a + n * es; pm += es)
-			for (pl = pm; 
-			     pl > (char *)a && CMP(thunk, pl - es, pl) > 0;
-			     pl -= es)
+			for (pl = pm;
+			    pl > (char *)a && CMP(thunk, pl - es, pl) > 0;
+			    pl -= es)
 				swapfunc(pl, pl - es, es);
 		return;
 	}
@@ -217,12 +215,12 @@ struct zstd_kmem {
 struct zstd_kmem_config {
 	size_t			block_size;
 	int			compress_level;
-	char*			cache_name;
+	char			*cache_name;
 };
 
 static kmem_cache_t *zstd_kmem_cache[ZSTD_KMEM_COUNT] = { NULL };
 static struct zstd_kmem zstd_cache_size[ZSTD_KMEM_COUNT] = {
-    { ZSTD_KMEM_MAGIC, 0, 0 } };
+	{ ZSTD_KMEM_MAGIC, 0, 0 } };
 static struct zstd_kmem_config zstd_cache_config[ZSTD_KMEM_COUNT] = {
 	{ 0, 0, "zstd_unknown" },
 	{ 0, 0, "zstd_cctx" },
@@ -240,15 +238,15 @@ static struct zstd_kmem_config zstd_cache_config[ZSTD_KMEM_COUNT] = {
 	{ SPA_MAXBLOCKSIZE, ZIO_ZSTD_LEVEL_DEFAULT, "zstd_wrkspc_mbs_def" },
 	{ SPA_MAXBLOCKSIZE, ZIO_ZSTD_LEVEL_MAX, "zstd_wrkspc_mbs_max" },
 	{ 0, 0, "zstd_dctx" },
-    };
+};
 
 static int
 zstd_compare(const void *a, const void *b)
 {
 	struct zstd_kmem *x, *y;
 
-	x = (struct zstd_kmem*)a;
-	y = (struct zstd_kmem*)b;
+	x = (struct zstd_kmem *)a;
+	y = (struct zstd_kmem *)b;
 
 	ASSERT(x->kmem_magic == ZSTD_KMEM_MAGIC);
 	ASSERT(y->kmem_magic == ZSTD_KMEM_MAGIC);
@@ -377,7 +375,6 @@ zstd_enum_to_level(enum zio_zstd_levels elevel)
 				return (-1000);
 			default:
 			break;
-	
 		}
 	}
 
@@ -450,7 +447,8 @@ zstd_decompress(void *s_start, void *d_start, size_t s_len, size_t d_len, int n)
 	 * and non-zero on failure (decompression function returned negative.
 	 */
 	if (ZSTD_isError(real_zstd_decompress(
-	    &src[sizeof (bufsiz) + sizeof (zstdlevel)], d_start, bufsiz, d_len)))
+	    &src[sizeof (bufsiz) + sizeof (zstdlevel)], \
+	    d_start, bufsiz, d_len)))
 		return (1);
 
 	return (0);
@@ -514,7 +512,7 @@ real_zstd_decompress(const char *source, char *dest, int isize, int maxosize)
 extern void *
 zstd_alloc(void *opaque __unused, size_t size)
 {
-	size_t nbytes = sizeof(struct zstd_kmem) + size;
+	size_t nbytes = sizeof (struct zstd_kmem) + size;
 	struct zstd_kmem *z;
 	enum zstd_kmem_type type;
 	int i;
@@ -523,7 +521,8 @@ zstd_alloc(void *opaque __unused, size_t size)
 	for (i = 0; i < ZSTD_KMEM_COUNT; i++) {
 		if (nbytes <= zstd_cache_size[i].kmem_size) {
 			type = zstd_cache_size[i].kmem_type;
-			z = kmem_cache_zalloc(zstd_kmem_cache[type], KM_NOSLEEP);
+			z = kmem_cache_zalloc(zstd_kmem_cache[type], \
+			    KM_NOSLEEP);
 			break;
 		}
 	}
@@ -539,13 +538,13 @@ zstd_alloc(void *opaque __unused, size_t size)
 	z->kmem_type = type;
 	z->kmem_size = nbytes;
 
-	return ((void*)z + (sizeof(struct zstd_kmem)));
+	return ((void*)z + (sizeof (struct zstd_kmem)));
 }
 
 extern void
 zstd_free(void *opaque __unused, void *ptr)
 {
-	struct zstd_kmem *z = ptr - sizeof(struct zstd_kmem);
+	struct zstd_kmem *z = ptr - sizeof (struct zstd_kmem);
 
 	ASSERT(z->kmem_magic == ZSTD_KMEM_MAGIC);
 	ASSERT(z->kmem_type < ZSTD_KMEM_COUNT);
@@ -567,7 +566,7 @@ zstd_init(void)
 	zstd_cache_size[1].kmem_magic = ZSTD_KMEM_MAGIC;
 	zstd_cache_size[1].kmem_type = 1;
 	zstd_cache_size[1].kmem_size = roundup2(zstd_cache_config[1].block_size
-	    + sizeof(struct zstd_kmem), PAGESIZE);
+	    + sizeof (struct zstd_kmem), PAGESIZE);
 	zstd_kmem_cache[1] = kmem_cache_create(
 	    zstd_cache_config[1].cache_name, zstd_cache_size[1].kmem_size,
 	    0, NULL, NULL, NULL, NULL, NULL, 0);
@@ -582,9 +581,9 @@ zstd_init(void)
 		zstd_cache_size[i].kmem_type = i;
 		zstd_cache_size[i].kmem_size = roundup2(
 		    ZSTD_estimateCCtxSize_usingCParams(
-		        ZSTD_getCParams(zstd_cache_config[i].compress_level,
-			zstd_cache_config[i].block_size, 0)) +
-			sizeof(struct zstd_kmem), PAGESIZE);
+		    ZSTD_getCParams(zstd_cache_config[i].compress_level,
+		    zstd_cache_config[i].block_size, 0)) +
+		    sizeof (struct zstd_kmem), PAGESIZE);
 		zstd_kmem_cache[i] = kmem_cache_create(
 		    zstd_cache_config[i].cache_name,
 		    zstd_cache_size[i].kmem_size,
@@ -594,12 +593,12 @@ zstd_init(void)
 	zstd_cache_size[i].kmem_magic = ZSTD_KMEM_MAGIC;
 	zstd_cache_size[i].kmem_type = i;
 	zstd_cache_size[i].kmem_size = roundup2(ZSTD_estimateDCtxSize() +
-	    sizeof(struct zstd_kmem), PAGESIZE);
+	    sizeof (struct zstd_kmem), PAGESIZE);
 	zstd_kmem_cache[i] = kmem_cache_create(zstd_cache_config[i].cache_name,
 	    zstd_cache_size[i].kmem_size, 0, NULL, NULL, NULL, NULL, NULL, 0);
 
 	/* Sort the kmem caches for later searching */
-	zstd_qsort(zstd_cache_size, ZSTD_KMEM_COUNT, sizeof(struct zstd_kmem),
+	zstd_qsort(zstd_cache_size, ZSTD_KMEM_COUNT, sizeof (struct zstd_kmem),
 	    zstd_compare);
 
 }

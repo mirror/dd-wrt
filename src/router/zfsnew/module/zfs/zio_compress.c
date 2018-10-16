@@ -62,8 +62,8 @@ zio_compress_info_t zio_compress_table[ZIO_COMPRESS_FUNCTIONS] = {
 	{"gzip-8",		8,	gzip_compress,	gzip_decompress, NULL},
 	{"gzip-9",		9,	gzip_compress,	gzip_decompress, NULL},
 	{"zle",			64,	zle_compress,	zle_decompress, NULL},
-	{"lz4",			0,	lz4_compress_zfs, lz4_decompress_zfs, NULL},
-	{"zstd",		0,	zstd_compress, zstd_decompress, zstd_getlevel}
+	{"lz4",		0,	lz4_compress_zfs, lz4_decompress_zfs, NULL},
+	{"zstd",	0,	zstd_compress, zstd_decompress, zstd_getlevel}
 };
 
 enum zio_zstd_levels
