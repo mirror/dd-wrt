@@ -237,7 +237,7 @@ static void unmount_fs(void)
 	}
 	fclose(fp);
 #ifdef HAVE_RAID
-	int i;
+	int i = 0;
 	while (1) {
 		char *raid = nvram_nget("raid%d", i);
 		if (!strlen(raid))
