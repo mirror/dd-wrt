@@ -19,7 +19,6 @@
  *
  * $Id:
  */
-#ifdef HAVE_RAID
 
 #define VISUALSOURCE 1
 
@@ -78,6 +77,17 @@ static int checkfs(char *type)
 	}
 	return 0;
 }
+
+void ej_support_fs(webs_t wp, int argc, char_t ** argv)
+{
+	if (argc < 1) {
+		websWrite(wp, "0");
+		return;
+	}
+	websWrite(wp, "%d", checkfs(argv[0]));
+}
+
+#ifdef HAVE_RAID
 
 static char *getfsname(char *drive)
 {
@@ -229,14 +239,6 @@ static char *getfsname(char *drive)
 	return retvalue;
 }
 
-void ej_support_fs(webs_t wp, int argc, char_t ** argv)
-{
-	if (argc < 1) {
-		websWrite(wp, "0");
-		return;
-	}
-	websWrite(wp, "%d", checkfs(argv[0]));
-}
 
 void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 {
