@@ -3,14 +3,104 @@
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
+#include "zbuild.h"
 #include "zutil.h"
 #include "inftrees.h"
 #include "inflate.h"
 #include "inffast.h"
+#include "memcopy.h"
 
-#ifdef ASMINF
-#  pragma message("Assembler code may have bugs -- use at your own risk")
-#else
+/* Return the low n bits of the bit accumulator (n < 16) */
+#define BITS(n) \
+    (hold & ((1U << (n)) - 1))
+
+/* Remove n bits from the bit accumulator */
+#define DROPBITS(n) \
+    do { \
+        hold >>= (n); \
+        bits -= (unsigned)(n); \
+    } while (0)
+
+#ifdef INFFAST_CHUNKSIZE
+/*
+   Ask the compiler to perform a wide, unaligned load with an machine
+   instruction appropriate for the inffast_chunk_t type.
+ */
+static inline inffast_chunk_t loadchunk(unsigned char const* s) {
+    inffast_chunk_t c;
+    __builtin_memcpy(&c, s, sizeof(c));
+    return c;
+}
+
+/*
+   Ask the compiler to perform a wide, unaligned store with an machine
+   instruction appropriate for the inffast_chunk_t type.
+ */
+static inline void storechunk(unsigned char* d, inffast_chunk_t c) {
+    __builtin_memcpy(d, &c, sizeof(c));
+}
+
+/*
+   Behave like memcpy, but assume that it's OK to overwrite at least
+   INFFAST_CHUNKSIZE bytes of output even if the length is shorter than this,
+   that the length is non-zero, and that `from` lags `out` by at least
+   INFFAST_CHUNKSIZE bytes (or that they don't overlap at all or simply that
+   the distance is less than the length of the copy).
+
+   Aside from better memory bus utilisation, this means that short copies
+   (INFFAST_CHUNKSIZE bytes or fewer) will fall straight through the loop
+   without iteration, which will hopefully make the branch prediction more
+   reliable.
+ */
+static inline unsigned char* chunkcopy(unsigned char *out, unsigned char const *from, unsigned len) {
+    --len;
+    storechunk(out, loadchunk(from));
+    out += (len % INFFAST_CHUNKSIZE) + 1;
+    from += (len % INFFAST_CHUNKSIZE) + 1;
+    len /= INFFAST_CHUNKSIZE;
+    while (len-- > 0) {
+        storechunk(out, loadchunk(from));
+        out += INFFAST_CHUNKSIZE;
+        from += INFFAST_CHUNKSIZE;
+    }
+    return out;
+}
+
+/*
+   Behave like chunkcopy, but avoid writing beyond of legal output.
+ */
+static inline unsigned char* chunkcopysafe(unsigned char *out, unsigned char const *from, unsigned len,
+                                           unsigned char *safe) {
+    if (out > safe) {
+        while (len-- > 0) {
+          *out++ = *from++;
+        }
+        return out;
+    }
+    return chunkcopy(out, from, len);
+}
+
+/*
+   Perform short copies until distance can be rewritten as being at least
+   INFFAST_CHUNKSIZE.
+
+   This assumes that it's OK to overwrite at least the first
+   2*INFFAST_CHUNKSIZE bytes of output even if the copy is shorter than this.
+   This assumption holds because inflate_fast() starts every iteration with at
+   least 258 bytes of output space available (258 being the maximum length
+   output from a single token; see inflate_fast()'s assumptions below).
+ */
+static inline unsigned char* chunkunroll(unsigned char *out, unsigned *dist, unsigned *len) {
+    unsigned char const *from = out - *dist;
+    while (*dist < *len && *dist < INFFAST_CHUNKSIZE) {
+        storechunk(out, loadchunk(from));
+        out += *dist;
+        *len -= *dist;
+        *dist += *dist;
+    }
+    return out;
+}
+#endif
 
 /*
    Decode literal, length, and distance codes and write out the resulting
@@ -47,27 +137,28 @@
       requires strm->avail_out >= 258 for each loop to avoid checking for
       output space.
  */
-void ZLIB_INTERNAL inflate_fast(strm, start)
-z_streamp strm;
-unsigned start;         /* inflate()'s starting value for strm->avail_out */
-{
-    struct inflate_state FAR *state;
-    z_const unsigned char FAR *in;      /* local strm->next_in */
-    z_const unsigned char FAR *last;    /* have enough input while in < last */
-    unsigned char FAR *out;     /* local strm->next_out */
-    unsigned char FAR *beg;     /* inflate()'s initial strm->next_out */
-    unsigned char FAR *end;     /* while out < end, enough space available */
+void ZLIB_INTERNAL inflate_fast(PREFIX3(stream) *strm, unsigned long start) {
+    /* start: inflate()'s starting value for strm->avail_out */
+    struct inflate_state *state;
+    const unsigned char *in;    /* local strm->next_in */
+    const unsigned char *last;  /* have enough input while in < last */
+    unsigned char *out;         /* local strm->next_out */
+    unsigned char *beg;         /* inflate()'s initial strm->next_out */
+    unsigned char *end;         /* while out < end, enough space available */
+#ifdef INFFAST_CHUNKSIZE
+    unsigned char *safe;        /* can use chunkcopy provided out < safe */
+#endif
 #ifdef INFLATE_STRICT
     unsigned dmax;              /* maximum distance from zlib header */
 #endif
     unsigned wsize;             /* window size or zero if not using window */
     unsigned whave;             /* valid bytes in the window */
     unsigned wnext;             /* window write index */
-    unsigned char FAR *window;  /* allocated sliding window, if wsize != 0 */
-    unsigned long hold;         /* local strm->hold */
+    unsigned char *window;      /* allocated sliding window, if wsize != 0 */
+    uint32_t hold;              /* local strm->hold */
     unsigned bits;              /* local strm->bits */
-    code const FAR *lcode;      /* local strm->lencode */
-    code const FAR *dcode;      /* local strm->distcode */
+    code const *lcode;          /* local strm->lencode */
+    code const *dcode;          /* local strm->distcode */
     unsigned lmask;             /* mask for first level of length codes */
     unsigned dmask;             /* mask for first level of distance codes */
     code here;                  /* retrieved table entry */
@@ -75,15 +166,19 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
                                 /*  window position, window bytes to copy */
     unsigned len;               /* match length, unused bytes */
     unsigned dist;              /* match distance */
-    unsigned char FAR *from;    /* where to copy match from */
+    unsigned char *from;        /* where to copy match from */
 
     /* copy state to local variables */
-    state = (struct inflate_state FAR *)strm->state;
+    state = (struct inflate_state *)strm->state;
     in = strm->next_in;
     last = in + (strm->avail_in - 5);
     out = strm->next_out;
     beg = out - (start - strm->avail_out);
     end = out + (strm->avail_out - 257);
+
+#ifdef INFFAST_CHUNKSIZE
+    safe = out + (strm->avail_out - INFFAST_CHUNKSIZE);
+#endif
 #ifdef INFLATE_STRICT
     dmax = state->dmax;
 #endif
@@ -102,60 +197,52 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
        input data or output space */
     do {
         if (bits < 15) {
-            hold += (unsigned long)(*in++) << bits;
-            bits += 8;
-            hold += (unsigned long)(*in++) << bits;
-            bits += 8;
+            hold += load_short(in, bits);
+            in += 2;
+            bits += 16;
         }
         here = lcode[hold & lmask];
       dolen:
-        op = (unsigned)(here.bits);
-        hold >>= op;
-        bits -= op;
-        op = (unsigned)(here.op);
+        DROPBITS(here.bits);
+        op = here.op;
         if (op == 0) {                          /* literal */
             Tracevv((stderr, here.val >= 0x20 && here.val < 0x7f ?
                     "inflate:         literal '%c'\n" :
                     "inflate:         literal 0x%02x\n", here.val));
             *out++ = (unsigned char)(here.val);
-        }
-        else if (op & 16) {                     /* length base */
-            len = (unsigned)(here.val);
+        } else if (op & 16) {                     /* length base */
+            len = here.val;
             op &= 15;                           /* number of extra bits */
             if (op) {
                 if (bits < op) {
-                    hold += (unsigned long)(*in++) << bits;
+                    hold += (uint32_t)(*in++) << bits;
                     bits += 8;
                 }
-                len += (unsigned)hold & ((1U << op) - 1);
-                hold >>= op;
-                bits -= op;
+                len += BITS(op);
+                DROPBITS(op);
             }
             Tracevv((stderr, "inflate:         length %u\n", len));
             if (bits < 15) {
-                hold += (unsigned long)(*in++) << bits;
-                bits += 8;
-                hold += (unsigned long)(*in++) << bits;
-                bits += 8;
+                hold += load_short(in, bits);
+                in += 2;
+                bits += 16;
             }
             here = dcode[hold & dmask];
           dodist:
-            op = (unsigned)(here.bits);
-            hold >>= op;
-            bits -= op;
-            op = (unsigned)(here.op);
+            DROPBITS(here.bits);
+            op = here.op;
             if (op & 16) {                      /* distance base */
-                dist = (unsigned)(here.val);
+                dist = here.val;
                 op &= 15;                       /* number of extra bits */
                 if (bits < op) {
-                    hold += (unsigned long)(*in++) << bits;
+                    hold += (uint32_t)(*in++) << bits;
                     bits += 8;
                     if (bits < op) {
-                        hold += (unsigned long)(*in++) << bits;
+                        hold += (uint32_t)(*in++) << bits;
                         bits += 8;
                     }
                 }
-                dist += (unsigned)hold & ((1U << op) - 1);
+                dist += BITS(op);
 #ifdef INFLATE_STRICT
                 if (dist > dmax) {
                     strm->msg = (char *)"invalid distance too far back";
@@ -163,16 +250,14 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
                     break;
                 }
 #endif
-                hold >>= op;
-                bits -= op;
+                DROPBITS(op);
                 Tracevv((stderr, "inflate:         distance %u\n", dist));
                 op = (unsigned)(out - beg);     /* max distance in output */
                 if (dist > op) {                /* see if copy from window */
                     op = dist - op;             /* distance back in window */
                     if (op > whave) {
                         if (state->sane) {
-                            strm->msg =
-                                (char *)"invalid distance too far back";
+                            strm->msg = (char *)"invalid distance too far back";
                             state->mode = BAD;
                             break;
                         }
@@ -196,6 +281,42 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
                         }
 #endif
                     }
+#ifdef INFFAST_CHUNKSIZE
+                    from = window;
+                    if (wnext == 0) {           /* very common case */
+                        from += wsize - op;
+                    } else if (wnext >= op) {   /* contiguous in window */
+                        from += wnext - op;
+                    } else {                    /* wrap around window */
+                        op -= wnext;
+                        from += wsize - op;
+                        if (op < len) {         /* some from end of window */
+                            len -= op;
+                            out = chunkcopysafe(out, from, op, safe);
+                            from = window;      /* more from start of window */
+                            op = wnext;
+                            /* This (rare) case can create a situation where
+                               the first chunkcopy below must be checked.
+                             */
+                        }
+                    }
+                    if (op < len) {             /* still need some from output */
+                        len -= op;
+                        out = chunkcopysafe(out, from, op, safe);
+                        if (dist == 1) {
+                            out = byte_memset(out, len);
+                        } else {
+                            out = chunkunroll(out, &dist, &len);
+                            out = chunkcopysafe(out, out - dist, len, safe);
+                        }
+                    } else {
+                        if (from - out == 1) {
+                            out = byte_memset(out, len);
+                        } else {
+                            out = chunkcopysafe(out, from, len, safe);
+                        }
+                    }
+#else
                     from = window;
                     if (wnext == 0) {           /* very common case */
                         from += wsize - op;
@@ -206,8 +327,7 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
                             } while (--op);
                             from = out - dist;  /* rest from output */
                         }
-                    }
-                    else if (wnext < op) {      /* wrap around window */
+                    } else if (wnext < op) {      /* wrap around window */
                         from += wsize + wnext - op;
                         op -= wnext;
                         if (op < len) {         /* some from end of window */
@@ -225,8 +345,7 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
                                 from = out - dist;      /* rest from output */
                             }
                         }
-                    }
-                    else {                      /* contiguous in window */
+                    } else {                      /* contiguous in window */
                         from += wnext - op;
                         if (op < len) {         /* some from window */
                             len -= op;
@@ -236,53 +355,48 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
                             from = out - dist;  /* rest from output */
                         }
                     }
-                    while (len > 2) {
-                        *out++ = *from++;
-                        *out++ = *from++;
-                        *out++ = *from++;
-                        len -= 3;
+
+                    out = chunk_copy(out, from, (int) (out - from), len);
+#endif
+                } else {
+#ifdef INFFAST_CHUNKSIZE
+                    if (dist == 1 && len >= sizeof(uint64_t)) {
+                        out = byte_memset(out, len);
+                    } else {
+                        /* Whole reference is in range of current output.  No
+                           range checks are necessary because we start with room
+                           for at least 258 bytes of output, so unroll and roundoff
+                           operations can write beyond `out+len` so long as they
+                           stay within 258 bytes of `out`.
+                         */
+                        out = chunkunroll(out, &dist, &len);
+                        out = chunkcopy(out, out - dist, len);
                     }
-                    if (len) {
-                        *out++ = *from++;
-                        if (len > 1)
-                            *out++ = *from++;
-                    }
+#else
+                    if (len < sizeof(uint64_t))
+                      out = set_bytes(out, out - dist, dist, len);
+                    else if (dist == 1)
+                      out = byte_memset(out, len);
+                    else
+                      out = chunk_memset(out, out - dist, dist, len);
+#endif
                 }
-                else {
-                    from = out - dist;          /* copy direct from output */
-                    do {                        /* minimum length is three */
-                        *out++ = *from++;
-                        *out++ = *from++;
-                        *out++ = *from++;
-                        len -= 3;
-                    } while (len > 2);
-                    if (len) {
-                        *out++ = *from++;
-                        if (len > 1)
-                            *out++ = *from++;
-                    }
-                }
-            }
-            else if ((op & 64) == 0) {          /* 2nd level distance code */
-                here = dcode[here.val + (hold & ((1U << op) - 1))];
+            } else if ((op & 64) == 0) {          /* 2nd level distance code */
+                here = dcode[here.val + BITS(op)];
                 goto dodist;
-            }
-            else {
+            } else {
                 strm->msg = (char *)"invalid distance code";
                 state->mode = BAD;
                 break;
             }
-        }
-        else if ((op & 64) == 0) {              /* 2nd level length code */
-            here = lcode[here.val + (hold & ((1U << op) - 1))];
+        } else if ((op & 64) == 0) {              /* 2nd level length code */
+            here = lcode[here.val + BITS(op)];
             goto dolen;
-        }
-        else if (op & 32) {                     /* end-of-block */
+        } else if (op & 32) {                     /* end-of-block */
             Tracevv((stderr, "inflate:         end of block\n"));
             state->mode = TYPE;
             break;
-        }
-        else {
+        } else {
             strm->msg = (char *)"invalid literal/length code";
             state->mode = BAD;
             break;
@@ -299,8 +413,7 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
     strm->next_in = in;
     strm->next_out = out;
     strm->avail_in = (unsigned)(in < last ? 5 + (last - in) : 5 - (in - last));
-    strm->avail_out = (unsigned)(out < end ?
-                                 257 + (end - out) : 257 - (out - end));
+    strm->avail_out = (unsigned)(out < end ? 257 + (end - out) : 257 - (out - end));
     state->hold = hold;
     state->bits = bits;
     return;
@@ -319,5 +432,3 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
    - Larger unrolled copy loops (three is about right)
    - Moving len -= 3 statement into middle of loop
  */
-
-#endif /* !ASMINF */
