@@ -84,6 +84,17 @@ void start_raid(void)
 	}
 	if (i == 0)
 		return;
+
+#ifdef HAVE_80211AC
+	writeprocsys("vm/min_free_kbytes", "20480");
+#elif HAVE_MVEBU
+	writeprocsys("vm/min_free_kbytes", "65536");
+#elif HAVE_IPQ806X
+	writeprocsys("vm/min_free_kbytes", "65536");
+#else
+	writeprocsys("vm/min_free_kbytes", "4096");
+#endif
+
 #ifdef _SC_NPROCESSORS_ONLN
 	int cpucount = sysconf(_SC_NPROCESSORS_ONLN);
 #else
