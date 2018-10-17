@@ -244,7 +244,7 @@ static void unmount_fs(void)
 			break;
 		char *poolname = nvram_nget("raidname%d", i);
 		sysprintf("mdadm --stop /dev/md%d", i);
-		sysprintf("zpool destroy %s", poolname);
+		sysprintf("zfs unmount %s", poolname);
 		i++;
 	}
 #endif
