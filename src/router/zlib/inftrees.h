@@ -1,3 +1,6 @@
+#ifndef INFTREES_H_
+#define INFTREES_H_
+
 /* inftrees.h -- header to use inftrees.c
  * Copyright (C) 1995-2005, 2010 Mark Adler
  * For conditions of distribution and use, see copyright notice in zlib.h
@@ -22,9 +25,9 @@
    of a literal, the base length or distance, or the offset from
    the current table to the next table.  Each entry is four bytes. */
 typedef struct {
-    unsigned char op;           /* operation, extra bits, table bits */
-    unsigned char bits;         /* bits in this part of the code */
-    unsigned short val;         /* offset in table or code value */
+    unsigned char op;         /* operation, extra bits, table bits */
+    unsigned char bits;       /* bits in this part of the code */
+    uint16_t val;             /* offset in table or code value */
 } code;
 
 /* op values as set by inflate_table():
@@ -57,6 +60,7 @@ typedef enum {
     DISTS
 } codetype;
 
-int ZLIB_INTERNAL inflate_table OF((codetype type, unsigned short FAR *lens,
-                             unsigned codes, code FAR * FAR *table,
-                             unsigned FAR *bits, unsigned short FAR *work));
+int ZLIB_INTERNAL inflate_table (codetype type, uint16_t *lens, unsigned codes,
+                                  code * *table, unsigned *bits, uint16_t *work);
+
+#endif /* INFTREES_H_ */

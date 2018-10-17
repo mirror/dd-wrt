@@ -1,15 +1,15 @@
 /* inftrees.c -- generate Huffman trees for efficient decoding
- * Copyright (C) 1995-2017 Mark Adler
+ * Copyright (C) 1995-2016 Mark Adler
  * For conditions of distribution and use, see copyright notice in zlib.h
  */
 
+#include "zbuild.h"
 #include "zutil.h"
 #include "inftrees.h"
 
 #define MAXBITS 15
 
-const char inflate_copyright[] =
-   " inflate 1.2.11 Copyright 1995-2017 Mark Adler ";
+const char inflate_copyright[] = " inflate 1.2.11.f Copyright 1995-2016 Mark Adler ";
 /*
   If you use the zlib library in a product, an acknowledgment is welcome
   in the documentation of your product. If for some reason you cannot
@@ -29,14 +29,8 @@ const char inflate_copyright[] =
    table index bits.  It will differ if the request is greater than the
    longest code or if it is less than the shortest code.
  */
-int ZLIB_INTERNAL inflate_table(type, lens, codes, table, bits, work)
-codetype type;
-unsigned short FAR *lens;
-unsigned codes;
-code FAR * FAR *table;
-unsigned FAR *bits;
-unsigned short FAR *work;
-{
+int ZLIB_INTERNAL inflate_table(codetype type, uint16_t *lens, unsigned codes,
+                                code * *table, unsigned *bits, uint16_t  *work) {
     unsigned len;               /* a code's length in bits */
     unsigned sym;               /* index of code symbols */
     unsigned min, max;          /* minimum and maximum code lengths */
@@ -51,23 +45,23 @@ unsigned short FAR *work;
     unsigned low;               /* low bits for current root entry */
     unsigned mask;              /* mask for low root bits */
     code here;                  /* table entry for duplication */
-    code FAR *next;             /* next available space in table */
-    const unsigned short FAR *base;     /* base value table to use */
-    const unsigned short FAR *extra;    /* extra bits table to use */
+    code *next;                 /* next available space in table */
+    const uint16_t *base;       /* base value table to use */
+    const uint16_t *extra;      /* extra bits table to use */
     unsigned match;             /* use base and extra for symbol >= match */
-    unsigned short count[MAXBITS+1];    /* number of codes of each length */
-    unsigned short offs[MAXBITS+1];     /* offsets in table for each length */
-    static const unsigned short lbase[31] = { /* Length codes 257..285 base */
+    uint16_t count[MAXBITS+1];  /* number of codes of each length */
+    uint16_t offs[MAXBITS+1];   /* offsets in table for each length */
+    static const uint16_t lbase[31] = { /* Length codes 257..285 base */
         3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31,
         35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258, 0, 0};
-    static const unsigned short lext[31] = { /* Length codes 257..285 extra */
+    static const uint16_t lext[31] = { /* Length codes 257..285 extra */
         16, 16, 16, 16, 16, 16, 16, 16, 17, 17, 17, 17, 18, 18, 18, 18,
         19, 19, 19, 19, 20, 20, 20, 20, 21, 21, 21, 21, 16, 77, 202};
-    static const unsigned short dbase[32] = { /* Distance codes 0..29 base */
+    static const uint16_t dbase[32] = { /* Distance codes 0..29 base */
         1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193,
         257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145,
         8193, 12289, 16385, 24577, 0, 0};
-    static const unsigned short dext[32] = { /* Distance codes 0..29 extra */
+    static const uint16_t dext[32] = { /* Distance codes 0..29 extra */
         16, 16, 16, 16, 17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 22, 22,
         23, 23, 24, 24, 25, 25, 26, 26, 27, 27,
         28, 28, 29, 29, 64, 64};
@@ -117,7 +111,7 @@ unsigned short FAR *work;
     if (max == 0) {                     /* no symbols to code at all */
         here.op = (unsigned char)64;    /* invalid code marker */
         here.bits = (unsigned char)1;
-        here.val = (unsigned short)0;
+        here.val = (uint16_t)0;
         *(*table)++ = here;             /* make a table to force an error */
         *(*table)++ = here;
         *bits = 1;
@@ -144,7 +138,7 @@ unsigned short FAR *work;
 
     /* sort symbols by length, by symbol order within each length */
     for (sym = 0; sym < codes; sym++)
-        if (lens[sym] != 0) work[offs[lens[sym]]++] = (unsigned short)sym;
+        if (lens[sym] != 0) work[offs[lens[sym]]++] = (uint16_t)sym;
 
     /*
        Create and fill in decoding tables.  In this loop, the table being
@@ -217,12 +211,10 @@ unsigned short FAR *work;
         if (work[sym] + 1U < match) {
             here.op = (unsigned char)0;
             here.val = work[sym];
-        }
-        else if (work[sym] >= match) {
+        } else if (work[sym] >= match) {
             here.op = (unsigned char)(extra[work[sym] - match]);
             here.val = base[work[sym] - match];
-        }
-        else {
+        } else {
             here.op = (unsigned char)(32 + 64);         /* end of block */
             here.val = 0;
         }
@@ -243,14 +235,15 @@ unsigned short FAR *work;
         if (incr != 0) {
             huff &= incr - 1;
             huff += incr;
-        }
-        else
+        } else {
             huff = 0;
+        }
 
         /* go to next symbol, update count, len */
         sym++;
         if (--(count[len]) == 0) {
-            if (len == max) break;
+            if (len == max)
+                break;
             len = lens[work[sym]];
         }
 
@@ -268,22 +261,22 @@ unsigned short FAR *work;
             left = (int)(1 << curr);
             while (curr + drop < max) {
                 left -= count[curr + drop];
-                if (left <= 0) break;
+                if (left <= 0)
+                    break;
                 curr++;
                 left <<= 1;
             }
 
             /* check for enough space */
             used += 1U << curr;
-            if ((type == LENS && used > ENOUGH_LENS) ||
-                (type == DISTS && used > ENOUGH_DISTS))
+            if ((type == LENS && used > ENOUGH_LENS) || (type == DISTS && used > ENOUGH_DISTS))
                 return 1;
 
             /* point entry in root table to sub-table */
             low = huff & mask;
             (*table)[low].op = (unsigned char)curr;
             (*table)[low].bits = (unsigned char)root;
-            (*table)[low].val = (unsigned short)(next - *table);
+            (*table)[low].val = (uint16_t)(next - *table);
         }
     }
 
@@ -293,7 +286,7 @@ unsigned short FAR *work;
     if (huff != 0) {
         here.op = (unsigned char)64;            /* invalid code marker */
         here.bits = (unsigned char)(len - drop);
-        here.val = (unsigned short)0;
+        here.val = (uint16_t)0;
         next[huff] = here;
     }
 
