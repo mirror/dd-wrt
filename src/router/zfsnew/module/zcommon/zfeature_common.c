@@ -219,6 +219,9 @@ zfeature_register(spa_feature_t fid, const char *guid, const char *name,
 	if (deps == NULL)
 		deps = nodeps;
 
+	VERIFY(((flags & ZFEATURE_FLAG_PER_DATASET) == 0) ||
+	    (deps_contains_feature(deps, SPA_FEATURE_EXTENSIBLE_DATASET)));
+
 	feature->fi_feature = fid;
 	feature->fi_guid = guid;
 	feature->fi_uname = name;
@@ -443,10 +446,14 @@ zpool_feature_init(void)
 	    ZFEATURE_FLAG_READONLY_COMPAT, ZFEATURE_TYPE_BOOLEAN, NULL);
 	}
 
+	static const spa_feature_t zstd_deps[] = {
+		SPA_FEATURE_EXTENSIBLE_DATASET,
+		SPA_FEATURE_NONE
+	};
 	zfeature_register(SPA_FEATURE_ZSTD_COMPRESS,
 	    "org.freebsd:zstd_compress", "zstd_compress",
 	    "zstd compression algorithm support.",
-	    ZFEATURE_FLAG_PER_DATASET, ZFEATURE_TYPE_BOOLEAN, NULL);
+	    ZFEATURE_FLAG_PER_DATASET, ZFEATURE_TYPE_BOOLEAN, zstd_deps);
 }
 
 #if defined(_KERNEL)
