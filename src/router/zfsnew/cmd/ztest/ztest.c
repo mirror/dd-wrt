@@ -2554,7 +2554,8 @@ ztest_io(ztest_ds_t *zd, uint64_t object, uint64_t offset)
 		VERIFY(err == 0 || err == ENOSPC);
 		err = ztest_dsl_prop_set_uint64(zd->zd_name,
 		    ZFS_PROP_COMPRESSION,
-		    ztest_random_dsl_prop(ZFS_PROP_COMPRESSION),
+		    ztest_random_dsl_prop(ZFS_PROP_COMPRESSION)
+		    & SPA_COMPRESSMASK,
 		    B_FALSE);
 		VERIFY(err == 0 || err == ENOSPC);
 		(void) pthread_rwlock_unlock(&ztest_name_lock);

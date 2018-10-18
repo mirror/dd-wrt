@@ -4119,6 +4119,7 @@ zfs_check_settable(const char *dsname, nvpair_t *pair, cred_t *cr)
 		 * we'll catch them later.
 		 */
 		if (nvpair_value_uint64(pair, &intval) == 0) {
+			intval &= SPA_COMPRESSMASK;
 			if (intval >= ZIO_COMPRESS_GZIP_1 &&
 			    intval <= ZIO_COMPRESS_GZIP_9 &&
 			    zfs_earlier_version(dsname,
@@ -4145,7 +4146,7 @@ zfs_check_settable(const char *dsname, nvpair_t *pair, cred_t *cr)
 				spa_close(spa, FTAG);
 			}
 
-			if (intval == ZIO_COMPRESS_ZSTD) {
+			if ((intval & SPA_COMPRESSMASK) == ZIO_COMPRESS_ZSTD) {
 				spa_t *spa;
 
 				if ((err = spa_open(dsname, &spa, FTAG)) != 0)
