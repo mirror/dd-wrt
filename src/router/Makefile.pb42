@@ -698,7 +698,7 @@ ifneq ($(CONFIG_UQMI),y)
 	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/usb/qmi_wwan.ko
 endif
 ifeq ($(CONFIG_3G_ONLY),y)
-	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/nls
+#	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/nls
 endif
 ifneq ($(CONFIG_USB_ADVANCED),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/ext3
