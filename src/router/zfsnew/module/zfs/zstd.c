@@ -378,10 +378,7 @@ zstd_enum_to_level(enum zio_zstd_levels elevel)
 		}
 	}
 
-	/* This shouldn't happen. Cause a panic. */
-	panic("Invalid ZSTD enum level encountered: %d", elevel);
-
-	return (0);
+	return (ZIO_ZSTD_LEVEL_DEFAULT);
 }
 
 size_t
