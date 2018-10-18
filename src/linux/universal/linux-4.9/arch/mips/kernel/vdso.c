@@ -16,7 +16,6 @@
 #include <linux/irqchip/mips-gic.h>
 #include <linux/kernel.h>
 #include <linux/mm.h>
-#include <linux/random.h>
 #include <linux/sched.h>
 #include <linux/slab.h>
 #include <linux/timekeeper_internal.h>
@@ -98,21 +97,6 @@ void update_vsyscall_tz(void)
 	}
 }
 
-static unsigned long vdso_base(void)
-{
-	unsigned long base;
-
-	/* Skip the delay slot emulation page */
-	base = STACK_TOP + PAGE_SIZE;
-
-	if (current->flags & PF_RANDOMIZE) {
-		base += get_random_int() & (VDSO_RANDOMIZE_SIZE - 1);
-		base = PAGE_ALIGN(base);
-	}
-
-	return base;
-}
-
 int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
 {
 	struct mips_vdso_image *image = current->thread.abi->vdso;
@@ -154,7 +138,7 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
 	if (cpu_has_dc_aliases)
 		size += shm_align_mask + 1;
 
-	base = get_unmapped_area(NULL, vdso_base(), size, 0, 0);
+	base = get_unmapped_area(NULL, 0, size, 0, 0);
 	if (IS_ERR_VALUE(base)) {
 		ret = base;
 		goto out;
