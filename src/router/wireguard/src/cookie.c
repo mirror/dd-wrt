@@ -169,7 +169,7 @@ void wg_cookie_add_mac_to_packet(void *message, size_t len,
 	down_read(&peer->latest_cookie.lock);
 	if (peer->latest_cookie.is_valid &&
 	    !wg_birthdate_has_expired(peer->latest_cookie.birthdate,
-			 COOKIE_SECRET_MAX_AGE - COOKIE_SECRET_LATENCY))
+				COOKIE_SECRET_MAX_AGE - COOKIE_SECRET_LATENCY))
 		compute_mac2(macs->mac2, message, len,
 			     peer->latest_cookie.cookie);
 	else
@@ -226,9 +226,10 @@ void wg_cookie_message_consume(struct message_handshake_cookie *src,
 		peer->latest_cookie.is_valid = true;
 		peer->latest_cookie.have_sent_mac1 = false;
 		up_write(&peer->latest_cookie.lock);
-	} else
+	} else {
 		net_dbg_ratelimited("%s: Could not decrypt invalid cookie response\n",
 				    wg->dev->name);
+	}
 
 out:
 	wg_peer_put(peer);

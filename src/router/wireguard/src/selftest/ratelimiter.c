@@ -34,11 +34,12 @@ static __init int timings_test(struct sk_buff *skb4, struct iphdr *hdr4,
 			       struct sk_buff *skb6, struct ipv6hdr *hdr6,
 			       int *test)
 {
-	unsigned long loop_start_time = jiffies;
+	unsigned long loop_start_time;
 	int i;
 
 	wg_ratelimiter_gc_entries(NULL);
 	rcu_barrier();
+	loop_start_time = jiffies;
 
 	for (i = 0; i < ARRAY_SIZE(expected_results); ++i) {
 		if (expected_results[i].msec_to_sleep_before)
@@ -57,7 +58,7 @@ static __init int timings_test(struct sk_buff *skb4, struct iphdr *hdr4,
 					   maximum_jiffies_at_index(i)))
 			return -ETIMEDOUT;
 		if (!wg_ratelimiter_allow(skb4, &init_net))
-			return-EXFULL;
+			return -EXFULL;
 		++(*test);
 
 		hdr4->saddr = htonl(ntohl(hdr4->saddr) - i - 1);
@@ -77,7 +78,7 @@ static __init int timings_test(struct sk_buff *skb4, struct iphdr *hdr4,
 			htonl(ntohl(hdr6->saddr.in6_u.u6_addr32[0]) + i + 1);
 		if (time_is_before_jiffies(loop_start_time +
 					   maximum_jiffies_at_index(i)))
-			return ETIMEDOUT;
+			return -ETIMEDOUT;
 		if (!wg_ratelimiter_allow(skb6, &init_net))
 			return -EXFULL;
 		++(*test);
@@ -193,7 +194,7 @@ bool __init wg_ratelimiter_selftest(void)
 		int test_count = 0;
 
 		if (capacity_test(skb4, hdr4, &test_count) < 0) {
-			if (!--trials) {
+			if (!trials--) {
 				test += test_count;
 				goto err;
 			}
