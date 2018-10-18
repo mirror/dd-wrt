@@ -72,6 +72,7 @@ static __init void print_node(struct allowedips_node *node, u8 bits)
 		print_node(node->bit[1], bits);
 	}
 }
+
 static __init void print_tree(struct allowedips_node *top, u8 bits)
 {
 	printk(KERN_DEBUG "digraph trie {\n");
@@ -94,7 +95,7 @@ struct horrible_allowedips_node {
 	struct hlist_node table;
 	union nf_inet_addr ip;
 	union nf_inet_addr mask;
-	uint8_t ip_version;
+	u8 ip_version;
 	void *value;
 };
 
@@ -108,13 +109,13 @@ static __init void horrible_allowedips_free(struct horrible_allowedips *table)
 	struct horrible_allowedips_node *node;
 	struct hlist_node *h;
 
-	hlist_for_each_entry_safe (node, h, &table->head, table) {
+	hlist_for_each_entry_safe(node, h, &table->head, table) {
 		hlist_del(&node->table);
 		kfree(node);
 	}
 }
 
-static __init inline union nf_inet_addr horrible_cidr_to_mask(uint8_t cidr)
+static __init inline union nf_inet_addr horrible_cidr_to_mask(u8 cidr)
 {
 	union nf_inet_addr mask;
 
@@ -126,7 +127,7 @@ static __init inline union nf_inet_addr horrible_cidr_to_mask(uint8_t cidr)
 	return mask;
 }
 
-static __init inline uint8_t horrible_mask_to_cidr(union nf_inet_addr subnet)
+static __init inline u8 horrible_mask_to_cidr(union nf_inet_addr subnet)
 {
 	return hweight32(subnet.all[0]) + hweight32(subnet.all[1]) +
 	       hweight32(subnet.all[2]) + hweight32(subnet.all[3]);
@@ -135,9 +136,9 @@ static __init inline uint8_t horrible_mask_to_cidr(union nf_inet_addr subnet)
 static __init inline void
 horrible_mask_self(struct horrible_allowedips_node *node)
 {
-	if (node->ip_version == 4)
+	if (node->ip_version == 4) {
 		node->ip.ip &= node->mask.ip;
-	else if (node->ip_version == 6) {
+	} else if (node->ip_version == 6) {
 		node->ip.ip6[0] &= node->mask.ip6[0];
 		node->ip.ip6[1] &= node->mask.ip6[1];
 		node->ip.ip6[2] &= node->mask.ip6[2];
@@ -170,9 +171,9 @@ horrible_insert_ordered(struct horrible_allowedips *table,
 			struct horrible_allowedips_node *node)
 {
 	struct horrible_allowedips_node *other = NULL, *where = NULL;
-	uint8_t my_cidr = horrible_mask_to_cidr(node->mask);
+	u8 my_cidr = horrible_mask_to_cidr(node->mask);
 
-	hlist_for_each_entry (other, &table->head, table) {
+	hlist_for_each_entry(other, &table->head, table) {
 		if (!memcmp(&other->mask, &node->mask,
 			    sizeof(union nf_inet_addr)) &&
 		    !memcmp(&other->ip, &node->ip,
@@ -196,7 +197,7 @@ horrible_insert_ordered(struct horrible_allowedips *table,
 
 static __init int
 horrible_allowedips_insert_v4(struct horrible_allowedips *table,
-			      struct in_addr *ip, uint8_t cidr, void *value)
+			      struct in_addr *ip, u8 cidr, void *value)
 {
 	struct horrible_allowedips_node *node = kzalloc(sizeof(*node),
 							GFP_KERNEL);
@@ -214,7 +215,7 @@ horrible_allowedips_insert_v4(struct horrible_allowedips *table,
 
 static __init int
 horrible_allowedips_insert_v6(struct horrible_allowedips *table,
-			      struct in6_addr *ip, uint8_t cidr, void *value)
+			      struct in6_addr *ip, u8 cidr, void *value)
 {
 	struct horrible_allowedips_node *node = kzalloc(sizeof(*node),
 							GFP_KERNEL);
@@ -237,7 +238,7 @@ horrible_allowedips_lookup_v4(struct horrible_allowedips *table,
 	struct horrible_allowedips_node *node;
 	void *ret = NULL;
 
-	hlist_for_each_entry (node, &table->head, table) {
+	hlist_for_each_entry(node, &table->head, table) {
 		if (node->ip_version != 4)
 			continue;
 		if (horrible_match_v4(node, ip)) {
@@ -255,7 +256,7 @@ horrible_allowedips_lookup_v6(struct horrible_allowedips *table,
 	struct horrible_allowedips_node *node;
 	void *ret = NULL;
 
-	hlist_for_each_entry (node, &table->head, table) {
+	hlist_for_each_entry(node, &table->head, table) {
 		if (node->ip_version != 6)
 			continue;
 		if (horrible_match_v6(node, ip)) {
@@ -428,8 +429,8 @@ free:
 static __init inline struct in_addr *ip4(u8 a, u8 b, u8 c, u8 d)
 {
 	static struct in_addr ip;
-
 	u8 *split = (u8 *)&ip;
+
 	split[0] = a;
 	split[1] = b;
 	split[2] = c;
@@ -440,8 +441,8 @@ static __init inline struct in_addr *ip4(u8 a, u8 b, u8 c, u8 d)
 static __init inline struct in6_addr *ip6(u32 a, u32 b, u32 c, u32 d)
 {
 	static struct in6_addr ip;
-
 	__be32 *split = (__be32 *)&ip;
+
 	split[0] = cpu_to_be32(a);
 	split[1] = cpu_to_be32(b);
 	split[2] = cpu_to_be32(c);
@@ -484,11 +485,14 @@ static __init int walk_callback(void *ctx, const u8 *ip, u8 cidr, int family)
 	return 0;
 }
 
-#define init_peer(name) do {                               \
-		name = kzalloc(sizeof(*name), GFP_KERNEL); \
-		if (name)                                  \
-			kref_init(&name->refcount);        \
-	} while (0)
+static __init struct wg_peer *init_peer(void)
+{
+	struct wg_peer *peer = kzalloc(sizeof(*peer), GFP_KERNEL);
+
+	if (peer)
+		kref_init(&peer->refcount);
+	return peer;
+}
 
 #define insert(version, mem, ipa, ipb, ipc, ipd, cidr)                       \
 	wg_allowedips_insert_v##version(&t, ip##version(ipa, ipb, ipc, ipd), \
@@ -502,16 +506,16 @@ static __init int walk_callback(void *ctx, const u8 *ip, u8 cidr, int family)
 		}                                                       \
 	} while (0)
 
-#define test(version, mem, ipa, ipb, ipc, ipd) do {                        \
-		bool _s = lookup(t.root##version, version == 4 ? 32 : 128, \
-				 ip##version(ipa, ipb, ipc, ipd)) == mem;  \
-		maybe_fail();                                              \
+#define test(version, mem, ipa, ipb, ipc, ipd) do {                          \
+		bool _s = lookup(t.root##version, (version) == 4 ? 32 : 128, \
+				 ip##version(ipa, ipb, ipc, ipd)) == (mem);  \
+		maybe_fail();                                                \
 	} while (0)
 
-#define test_negative(version, mem, ipa, ipb, ipc, ipd) do {               \
-		bool _s = lookup(t.root##version, version == 4 ? 32 : 128, \
-				 ip##version(ipa, ipb, ipc, ipd)) != mem;  \
-		maybe_fail();                                              \
+#define test_negative(version, mem, ipa, ipb, ipc, ipd) do {                 \
+		bool _s = lookup(t.root##version, (version) == 4 ? 32 : 128, \
+				 ip##version(ipa, ipb, ipc, ipd)) != (mem);  \
+		maybe_fail();                                                \
 	} while (0)
 
 #define test_boolean(cond) do {   \
@@ -521,9 +525,10 @@ static __init int walk_callback(void *ctx, const u8 *ip, u8 cidr, int family)
 
 bool __init wg_allowedips_selftest(void)
 {
-	struct wg_peer *a = NULL, *b = NULL, *c = NULL, *d = NULL, *e = NULL,
-		       *f = NULL, *g = NULL, *h = NULL;
-	struct allowedips_cursor *cursor = NULL;
+	struct allowedips_cursor *cursor = kzalloc(sizeof(*cursor), GFP_KERNEL);
+	struct wg_peer *a = init_peer(), *b = init_peer(), *c = init_peer(),
+		       *d = init_peer(), *e = init_peer(), *f = init_peer(),
+		       *g = init_peer(), *h = init_peer();
 	struct walk_ctx wctx = { 0 };
 	bool success = false;
 	struct allowedips t;
@@ -534,17 +539,7 @@ bool __init wg_allowedips_selftest(void)
 
 	mutex_init(&mutex);
 	mutex_lock(&mutex);
-
 	wg_allowedips_init(&t);
-	init_peer(a);
-	init_peer(b);
-	init_peer(c);
-	init_peer(d);
-	init_peer(e);
-	init_peer(f);
-	init_peer(g);
-	init_peer(h);
-	cursor = kzalloc(sizeof(*cursor), GFP_KERNEL);
 
 	if (!cursor || !a || !b || !c || !d || !e || !f || !g || !h) {
 		pr_err("allowedips self-test malloc: FAIL\n");
@@ -682,6 +677,7 @@ free:
 
 	return success;
 }
+
 #undef test_negative
 #undef test
 #undef remove

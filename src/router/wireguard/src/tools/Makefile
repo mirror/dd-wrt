@@ -38,7 +38,7 @@ endif
 PLATFORM ?= $(shell uname -s | tr '[:upper:]' '[:lower:]')
 
 CFLAGS ?= -O3
-CFLAGS += -std=gnu11 -D_GNU_SOURCE -DNEED_PRINTF
+CFLAGS += -std=gnu99 -D_GNU_SOURCE -DNEED_PRINTF
 CFLAGS += -Wall -Wextra
 CFLAGS += -MMD -MP
 CFLAGS += -DRUNSTATEDIR="\"$(RUNSTATEDIR)\""

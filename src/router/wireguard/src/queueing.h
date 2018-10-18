@@ -61,8 +61,8 @@ struct packet_cb {
 	u8 ds;
 };
 
-#define PACKET_PEER(skb) (((struct packet_cb *)skb->cb)->keypair->entry.peer)
-#define PACKET_CB(skb) ((struct packet_cb *)skb->cb)
+#define PACKET_CB(skb) ((struct packet_cb *)((skb)->cb))
+#define PACKET_PEER(skb) (PACKET_CB(skb)->keypair->entry.peer)
 
 /* Returns either the correct skb->protocol value, or 0 if invalid. */
 static inline __be16 wg_skb_examine_untrusted_ip_hdr(struct sk_buff *skb)
