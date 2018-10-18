@@ -260,6 +260,9 @@ void start_raid(void)
 			}
 		}
 		if (!strcmp(type, "zfs")) {
+			sysprintf("mkdir -p \"/tmp/mnt/%s\"", poolname);
+			sysprintf("zpool import -a -d /dev");
+			sysprintf("zfs mount %s", poolname);
 			if (nvram_nmatch("zle", "raidlz%d", i))
 				sysprintf("zfs set compression=zle %s", poolname);
 			else if (nvram_nmatch("lz4", "raidlz%d", i))
@@ -282,8 +285,6 @@ void start_raid(void)
 				sysprintf("zfs set dedup=on %s", poolname);
 			else
 				sysprintf("zfs set dedup=off %s", poolname);
-			sysprintf("mkdir -p \"/tmp/mnt/%s\"", poolname);
-			sysprintf("zpool import -a -d /dev", poolname);
 		}
 		if (!strcmp(type, "md")) {
 			sysprintf("mdadm --assemble /dev/md%d %s", i, raid);
