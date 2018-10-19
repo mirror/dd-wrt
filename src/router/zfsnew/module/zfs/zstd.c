@@ -518,8 +518,12 @@ zstd_alloc(void *opaque __unused, size_t size)
 	for (i = 0; i < ZSTD_KMEM_COUNT; i++) {
 		if (nbytes <= zstd_cache_size[i].kmem_size) {
 			type = zstd_cache_size[i].kmem_type;
-			z = kmem_cache_zalloc(zstd_kmem_cache[type], \
+			z = kmem_cache_alloc(zstd_kmem_cache[type], \
 			    KM_NOSLEEP);
+			if (z)
+				memset(z, 0, \
+				zstd_kmem_cache[type]->cache_bufsize);
+
 			break;
 		}
 	}
