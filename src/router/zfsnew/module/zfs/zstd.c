@@ -521,8 +521,7 @@ zstd_alloc(void *opaque __unused, size_t size)
 			z = kmem_cache_alloc(zstd_kmem_cache[type], \
 			    KM_NOSLEEP);
 			if (z)
-				memset(z, 0, \
-				zstd_kmem_cache[type]->cache_bufsize);
+				memset(z, 0, nbytes);
 
 			break;
 		}
