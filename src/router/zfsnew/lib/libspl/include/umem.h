@@ -184,25 +184,6 @@ umem_cache_alloc(umem_cache_t *cp, int flags)
 	return (ptr);
 }
 
-static inline void *
-umem_cache_zalloc(umem_cache_t *cp, int flags)
-{
-	void *ptr = NULL;
-
-	if (cp->cache_align != 0)
-		ptr = umem_alloc_aligned(
-		    cp->cache_bufsize, cp->cache_align, flags);
-	else
-		ptr = umem_alloc(cp->cache_bufsize, flags);
-	if (ptr)
-		memset(ptr, 0, cp->cache_bufsize);
-
-	if (ptr && cp->cache_constructor)
-		cp->cache_constructor(ptr, cp->cache_private, UMEM_DEFAULT);
-
-	return (ptr);
-}
-
 static inline void
 umem_cache_free(umem_cache_t *cp, void *ptr)
 {

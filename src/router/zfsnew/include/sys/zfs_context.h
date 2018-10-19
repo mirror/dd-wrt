@@ -403,7 +403,6 @@ void procfs_list_add(procfs_list_t *procfs_list, void *p);
 	umem_cache_create(_a, _b, _c, _d, _e, _f, _g, _h, _i)
 #define	kmem_cache_destroy(_c)	umem_cache_destroy(_c)
 #define	kmem_cache_alloc(_c, _f) umem_cache_alloc(_c, _f)
-#define	kmem_cache_zalloc(_c, _f) umem_cache_zalloc(_c, _f)
 #define	kmem_cache_free(_c, _b)	umem_cache_free(_c, _b)
 #define	kmem_debugging()	0
 #define	kmem_cache_reap_now(_c)	umem_cache_reap_now(_c);
