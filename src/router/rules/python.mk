@@ -38,6 +38,7 @@ python: libffi
 python-install:
 	make -C libffi install DESTDIR=$(INSTALLDIR)/libffi
 	make -C python install DESTDIR=$(INSTALLDIR)/python
+	cd $(INSTALLDIR)/python/usr/bin && ln -sf /usr/bin/python3 python
 	rm -rf $(INSTALLDIR)/python/usr/include
 	rm -rf $(INSTALLDIR)/python/usr/share
 	rm -f $(INSTALLDIR)/python/usr/lib/python3.6/config-3.6m/*.a
