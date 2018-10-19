@@ -1,4 +1,6 @@
 python-configure: libffi-configure libffi libffi-install
+	cd python && cp Modules/Setup.dist Modules/Setup
+	cd python && echo "# bogus" > Modules/Setup.local 
 	cd python && ./configure  --host=$(ARCH)-linux --build=$(ARCH) --sysconfdir=/etc \
 		--enable-shared \
 		--enable-static \
