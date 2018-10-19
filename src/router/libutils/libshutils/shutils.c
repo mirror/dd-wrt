@@ -1150,6 +1150,44 @@ int nvram_commit(void)
 	return _nvram_commit();
 }
 
+int writeproc(char *path, char *value)
+{
+	int fd;
+	fd = open(path, O_WRONLY);
+	if (fd == -1) {
+		fprintf(stderr, "cannot open %s\n", path);
+		return -1;
+	}
+	write(fd, value, strlen(value));
+	close(fd);
+	return 0;
+}
+
+int writeprocsysnet(char *path, char *value)
+{
+	char syspath[128];
+	snprintf(syspath, sizeof(syspath), "/proc/sys/net/%s", path);
+	return writeproc(syspath, value);
+}
+
+int writeprocsys(char *path, char *value)
+{
+	char syspath[128];
+	snprintf(syspath, sizeof(syspath), "/proc/sys/%s", path);
+	return writeproc(syspath, value);
+}
+
+int writevaproc(char *value, char *fmt, ...)
+{
+	char varbuf[256];
+	va_list args;
+
+	va_start(args, (char *)fmt);
+	vsnprintf(varbuf, sizeof(varbuf), fmt, args);
+	va_end(args);
+	return writeproc(varbuf, value);
+}
+
 #ifdef MEMDEBUG
 #define MEMDEBUGSIZE 1024
 typedef struct MEMENTRY {
