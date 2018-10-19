@@ -167,6 +167,9 @@ endif
 ifeq ($(CONFIG_USB),y)
 CFLAGS += -DHAVE_USB
 endif
+ifeq ($(CONFIG_3G_ONLY),y)
+CFLAGS += -DHAVE_3G_ONLY
+endif
 ifeq ($(CONFIG_WZRG300NH),y)
 CFLAGS += -DHAVE_WZRG300NH
 endif
