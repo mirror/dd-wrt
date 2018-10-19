@@ -150,12 +150,12 @@ static void watchdog(void)
 
 		}
 #endif
-#ifdef HAVE_USB
-#ifndef HAVE_3G_ONLY
-	if ((dropcounter++) % 4 == 0)
-		writeprocsys("vm/drop_caches", "3");	// flush fs cache
-#endif
-#endif
+//#ifdef HAVE_USB
+//#ifndef HAVE_3G_ONLY
+//	if ((dropcounter++) % 4 == 0)
+//		writeprocsys("vm/drop_caches", "3");	// flush fs cache
+//#endif
+//#endif
 #ifdef HAVE_R9000
 		int cpu, wifi1, wifi2, wifi3_mac = 0, wifi3_phy = 0;
 		FILE *tempfp;
