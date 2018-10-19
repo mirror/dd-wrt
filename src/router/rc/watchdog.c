@@ -19,7 +19,7 @@ static void watchdog(void)
 	int radiostate2 = -1;
 	int oldstate2 = -1;
 	int counter = 0;
-
+	int dropcounter = 0;
 	static int lasttarget = 0;
 	int radioledinitcount = 0;
 	int fd = open("/dev/misc/watchdog", O_WRONLY);
@@ -149,6 +149,10 @@ static void watchdog(void)
 			}
 
 		}
+#endif
+#ifdef HAVE_RAID
+	if ((dropcounter++) % 4 == 0)
+		writeprocsys("vm/drop_caches", "3");	// flush fs cache
 #endif
 #ifdef HAVE_R9000
 		int cpu, wifi1, wifi2, wifi3_mac = 0, wifi3_phy = 0;
