@@ -95,6 +95,8 @@ void start_raid(void)
 	writeprocsys("vm/min_free_kbytes", "4096");
 #endif
 	writeprocsys("vm/vfs_cache_pressure", "10000");
+	writeprocsys("vm/dirty_expire_centisecs", "100");
+	writeprocsys("vm/dirty_writeback_centisecs", "100");
 
 #ifdef _SC_NPROCESSORS_ONLN
 	int cpucount = sysconf(_SC_NPROCESSORS_ONLN);
