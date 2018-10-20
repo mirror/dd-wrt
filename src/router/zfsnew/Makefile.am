@@ -79,7 +79,7 @@ commitcheck:
 
 cstyle:
 	@find ${top_srcdir} -name '*.[hc]' ! -name 'zfs_config.*' \
-		! -name '*.mod.c' ! -wholename './module/zfs/zstd/*' -type f \
+		! -name '*.mod.c' -type f \
 		-exec ${top_srcdir}/scripts/cstyle.pl -cpP {} \+
 
 shellcheck:
