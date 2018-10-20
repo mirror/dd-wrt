@@ -138,6 +138,7 @@ void start_raid(void)
 		insmod("spl");
 		insmod("icp");
 		insmod("zlua");
+		insmod("zzstd");
 		insmod("znvpair");
 		insmod("zcommon");
 		insmod("zunicode");
