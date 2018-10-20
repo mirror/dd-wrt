@@ -4,6 +4,11 @@ VPATH = \
 	$(top_srcdir)/module/zfs \
 	$(top_srcdir)/module/zcommon \
 	$(top_srcdir)/module/lua \
+	$(top_srcdir)/module/zstd \
+	$(top_srcdir)/module/zstd/common \
+	$(top_srcdir)/module/zstd/compress \
+	$(top_srcdir)/module/zstd/decompress \
+	$(top_srcdir)/module/zstd/freebsd \
 	$(top_srcdir)/lib/libzpool
 
 # Suppress unused but set variable warnings often due to ASSERTs
@@ -159,25 +164,25 @@ KERNEL_C = \
 	zio_inject.c \
 	zle.c \
 	zrlock.c \
-	zstd.c \
-	zthr.c \
-	zstd/freebsd/zstd_kmalloc.c \
-	zstd/common/zstd_common.c \
-	zstd/common/fse_decompress.c \
-	zstd/common/entropy_common.c \
-	zstd/common/error_private.c \
-	zstd/common/xxhash.c \
-	zstd/compress/hist.c \
-	zstd/compress/zstd_compress.c \
-	zstd/compress/fse_compress.c \
-	zstd/compress/huf_compress.c \
-	zstd/compress/zstd_double_fast.c \
-	zstd/compress/zstd_fast.c \
-	zstd/compress/zstd_lazy.c \
-	zstd/compress/zstd_ldm.c \
-	zstd/compress/zstd_opt.c \
-	zstd/decompress/zstd_decompress.c \
-	zstd/decompress/huf_decompress.c
+	zthr.c
+
+ZSTD_C = \
+	zstd_common.c \
+	fse_decompress.c \
+	entropy_common.c \
+	xxhash.c \
+	hist.c \
+	zstd_compress.c \
+	fse_compress.c \
+	huf_compress.c \
+	zstd_double_fast.c \
+	zstd_fast.c \
+	zstd_lazy.c \
+	zstd_ldm.c \
+	zstd_opt.c \
+	zstd_decompress.c \
+	huf_decompress.c \
+	zstd.c
 
 LUA_C = \
 	lapi.c \
@@ -208,7 +213,8 @@ LUA_C = \
 nodist_libzpool_la_SOURCES = \
 	$(USER_C) \
 	$(KERNEL_C) \
-	$(LUA_C)
+	$(LUA_C) \
+	$(ZSTD_C)
 
 libzpool_la_LIBADD = \
 	$(top_builddir)/lib/libavl/libavl.la \
