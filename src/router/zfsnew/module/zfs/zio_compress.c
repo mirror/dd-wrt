@@ -72,9 +72,9 @@ zio_zstd_level_select(spa_t *spa, enum zio_zstd_levels child,
 {
 	enum zio_zstd_levels result;
 
-	ASSERT(child < ZIO_ZSTDLVL_LEVELS);
-	ASSERT(parent < ZIO_ZSTDLVL_LEVELS);
-	ASSERT(parent != ZIO_ZSTDLVL_INHERIT);
+	ASSERT3U(child, <, ZIO_ZSTDLVL_LEVELS);
+	ASSERT3U(parent, <, ZIO_ZSTDLVL_LEVELS);
+	ASSERT3U(parent, !=, ZIO_ZSTDLVL_INHERIT);
 
 	result = child;
 	if (result == ZIO_ZSTDLVL_INHERIT)

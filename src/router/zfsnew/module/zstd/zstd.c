@@ -37,7 +37,6 @@
 #define	ZSTD_KMEM_MAGIC		0x20160831
 
 /* for BSD compat */
-#define	roundup2(x, m)	((((x) - 1) | ((m) - 1)) + 1)
 #define	__unused			__attribute__((unused))
 typedef int		 cmp_t(const void *, const void *);
 static inline char	*med3(char *, char *, char *, cmp_t *, void *);
@@ -248,16 +247,10 @@ zstd_compare(const void *a, const void *b)
 	x = (struct zstd_kmem *)a;
 	y = (struct zstd_kmem *)b;
 
-	ASSERT(x->kmem_magic == ZSTD_KMEM_MAGIC);
-	ASSERT(y->kmem_magic == ZSTD_KMEM_MAGIC);
+	ASSERT3U(x->kmem_magic, ==, ZSTD_KMEM_MAGIC);
+	ASSERT3U(y->kmem_magic, ==, ZSTD_KMEM_MAGIC);
 
-	if (x->kmem_size > y->kmem_size) {
-		return (1);
-	} else if (x->kmem_size == y->kmem_size) {
-		return (0);
-	} else {
-		return (-1);
-	}
+	return AVL_CMP(x->kmem_size, y->kmem_size);
 }
 
 static enum zio_zstd_levels
@@ -546,9 +539,9 @@ zstd_free(void *opaque __unused, void *ptr)
 {
 	struct zstd_kmem *z = ptr - sizeof (struct zstd_kmem);
 
-	ASSERT(z->kmem_magic == ZSTD_KMEM_MAGIC);
-	ASSERT(z->kmem_type < ZSTD_KMEM_COUNT);
-	ASSERT(z->kmem_type >= ZSTD_KMEM_UNKNOWN);
+	ASSERT3U(z->kmem_magic, ==, ZSTD_KMEM_MAGIC);
+	ASSERT3U(z->kmem_type, <, ZSTD_KMEM_COUNT);
+	ASSERT3U(z->kmem_type, >=, ZSTD_KMEM_UNKNOWN);
 
 	if (z->kmem_type == ZSTD_KMEM_UNKNOWN) {
 		kmem_free(z, z->kmem_size);
@@ -556,8 +549,12 @@ zstd_free(void *opaque __unused, void *ptr)
 		kmem_cache_free(zstd_kmem_cache[z->kmem_type], z);
 	}
 }
+#ifndef _KERNEL
+#define __init
+#define __exit
+#endif
 
-extern void
+extern int __init
 zstd_init(void)
 {
 	int i;
@@ -565,7 +562,7 @@ zstd_init(void)
 	/* There is no estimate function for the CCtx itself */
 	zstd_cache_size[1].kmem_magic = ZSTD_KMEM_MAGIC;
 	zstd_cache_size[1].kmem_type = 1;
-	zstd_cache_size[1].kmem_size = roundup2(zstd_cache_config[1].block_size
+	zstd_cache_size[1].kmem_size = P2ROUNDUP(zstd_cache_config[1].block_size
 	    + sizeof (struct zstd_kmem), PAGESIZE);
 	zstd_kmem_cache[1] = kmem_cache_create(
 	    zstd_cache_config[1].cache_name, zstd_cache_size[1].kmem_size,
@@ -579,7 +576,7 @@ zstd_init(void)
 		ASSERT(zstd_cache_config[i].cache_name != NULL);
 		zstd_cache_size[i].kmem_magic = ZSTD_KMEM_MAGIC;
 		zstd_cache_size[i].kmem_type = i;
-		zstd_cache_size[i].kmem_size = roundup2(
+		zstd_cache_size[i].kmem_size = P2ROUNDUP(
 		    ZSTD_estimateCCtxSize_usingCParams(
 		    ZSTD_getCParams(zstd_cache_config[i].compress_level,
 		    zstd_cache_config[i].block_size, 0)) +
@@ -592,7 +589,7 @@ zstd_init(void)
 	/* Estimate the size of the decompression context */
 	zstd_cache_size[i].kmem_magic = ZSTD_KMEM_MAGIC;
 	zstd_cache_size[i].kmem_type = i;
-	zstd_cache_size[i].kmem_size = roundup2(ZSTD_estimateDCtxSize() +
+	zstd_cache_size[i].kmem_size = P2ROUNDUP(ZSTD_estimateDCtxSize() +
 	    sizeof (struct zstd_kmem), PAGESIZE);
 	zstd_kmem_cache[i] = kmem_cache_create(zstd_cache_config[i].cache_name,
 	    zstd_cache_size[i].kmem_size, 0, NULL, NULL, NULL, NULL, NULL, 0);
@@ -600,10 +597,10 @@ zstd_init(void)
 	/* Sort the kmem caches for later searching */
 	zstd_qsort(zstd_cache_size, ZSTD_KMEM_COUNT, sizeof (struct zstd_kmem),
 	    zstd_compare);
-
+	return 0;
 }
 
-extern void
+extern void __exit
 zstd_fini(void)
 {
 	int i, type;
@@ -615,7 +612,11 @@ zstd_fini(void)
 		}
 	}
 }
+
+
 #if defined(_KERNEL)
+module_init(zstd_init);
+module_exit(zstd_fini);
 EXPORT_SYMBOL(zstd_fini);
 EXPORT_SYMBOL(zstd_init);
 EXPORT_SYMBOL(zstd_compress);
