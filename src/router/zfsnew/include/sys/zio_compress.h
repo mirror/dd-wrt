@@ -171,7 +171,7 @@ extern int lz4_decompress_zfs(void *src, void *dst, size_t s_len, size_t d_len,
     int level);
 extern int lz4_decompress_abd(abd_t *src, void *dst, size_t s_len, size_t d_len,
     int level);
-extern void zstd_init(void);
+extern int zstd_init(void);
 extern void zstd_fini(void);
 extern size_t zstd_compress(void *src, void *dst, size_t s_len, size_t d_len,
     int level);
