@@ -2053,7 +2053,7 @@ spa_init(int mode)
 	metaslab_alloc_trace_init();
 	ddt_init();
 	zio_init();
-#ifndef __KERNEL
+#ifndef _KERNEL
 	zstd_init();
 #endif
 	dmu_init();
@@ -2084,7 +2084,7 @@ spa_fini(void)
 	vdev_raidz_math_fini();
 	zil_fini();
 	dmu_fini();
-#ifndef __KERNEL
+#ifndef _KERNEL
 	zstd_fini();
 #endif
 	zio_fini();
