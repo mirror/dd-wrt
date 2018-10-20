@@ -496,7 +496,7 @@ get_special_prop(lua_State *state, dsl_dataset_t *ds, const char *dsname,
 			if (levelval == ZIO_ZSTDLVL_DEFAULT)
 				break;
 			numval = (numval & SPA_COMPRESSMASK) | \
-				    levelval << SPA_COMPRESSBITS;
+			    levelval << SPA_COMPRESSBITS;
 		}
 		break;
 
