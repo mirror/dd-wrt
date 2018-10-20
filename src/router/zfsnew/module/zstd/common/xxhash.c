@@ -1,3 +1,4 @@
+/* BEGIN CSTYLED */
 /*
 *  xxHash - Fast Hash algorithm
 *  Copyright (C) 2012-2016, Yann Collet
@@ -32,6 +33,7 @@
 *  - xxHash source repository : https://github.com/Cyan4973/xxHash
 */
 
+#include <sys/zstd/mem.h>
 
 /* *************************************
 *  Tuning parameters
@@ -97,7 +99,6 @@
 ***************************************/
 /* Modify the local functions below should you wish to use some other memory routines */
 /* for malloc(), free() */
-#include <sys/zstd/mem.h>
 static void* XXH_malloc(size_t s) { return malloc(s); }
 static void  XXH_free  (void* p)  { free(p); }
 static void* XXH_memcpy(void* dest, const void* src, size_t size) { return memcpy(dest,src,size); }
@@ -130,27 +131,6 @@ static void* XXH_memcpy(void* dest, const void* src, size_t size) { return memcp
 
 #ifdef _MSC_VER
 #  pragma warning(disable : 4127)      /* disable: C4127: conditional expression is constant */
-#endif
-
-
-/* *************************************
-*  Basic Types
-***************************************/
-#ifndef MEM_MODULE
-# define MEM_MODULE
-# if !defined (__VMS) && (defined (__cplusplus) || (defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) /* C99 */) )
-    typedef uint8_t  BYTE;
-    typedef uint16_t U16;
-    typedef uint32_t U32;
-    typedef  int32_t S32;
-    typedef uint64_t U64;
-#  else
-    typedef unsigned char      BYTE;
-    typedef unsigned short     U16;
-    typedef unsigned int       U32;
-    typedef   signed int       S32;
-    typedef unsigned long long U64;   /* if your compiler doesn't support unsigned long long, replace by another 64-bit type here. Note that xxhash.h will also need to be updated. */
-#  endif
 #endif
 
 
@@ -844,3 +824,4 @@ XXH_PUBLIC_API XXH64_hash_t XXH64_hashFromCanonical(const XXH64_canonical_t* src
 {
     return XXH_readBE64(src);
 }
+/* END CSTYLED */
