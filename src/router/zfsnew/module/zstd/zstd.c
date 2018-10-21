@@ -34,6 +34,22 @@
 #include <sys/zstd/zstd.h>
 #include <sys/zstd/zstd_errors.h>
 
+#include "common/zstd_common.c"
+#include "common/fse_decompress.c"
+#include "common/entropy_common.c"
+#include "common/xxhash.c"
+#include "compress/hist.c"
+#include "compress/zstd_compress.c"
+#include "compress/fse_compress.c"
+#include "compress/huf_compress.c"
+#include "compress/zstd_double_fast.c"
+#include "compress/zstd_fast.c"
+#include "compress/zstd_lazy.c"
+#include "compress/zstd_ldm.c"
+#include "compress/zstd_opt.c"
+#include "decompress/zstd_decompress.c"
+#include "decompress/huf_decompress.c"
+
 
 #define	ZSTD_KMEM_MAGIC		0x20160831
 
@@ -53,7 +69,7 @@ static size_t real_zstd_compress(const char *source, char *dest, int isize,
 static size_t real_zstd_decompress(const char *source, char *dest, int isize,
     int maxosize);
 
-void *zstd_alloc(void *opaque, size_t size);
+static void *zstd_alloc(void *opaque, size_t size);
 void zstd_free(void *opaque, void *ptr);
 
 static const ZSTD_customMem zstd_malloc = {
