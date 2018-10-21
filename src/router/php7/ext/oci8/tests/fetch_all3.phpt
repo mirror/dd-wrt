@@ -122,10 +122,10 @@ $stmtarray = array(
 );
 
 oci8_test_sql_execute($c, $stmtarray);
-    
+
 echo "Done\n";
 ?>
---EXPECTF--
+--EXPECT--
 None
 int(4)
 array(2) {

@@ -9,7 +9,7 @@ ashnazg@php.net
 if (!extension_loaded('mbstring')) die('skip mbstring is not enabled');
 $target_dbs = array('oracledb' => true, 'timesten' => false);  // test runs on these DBs
 require(dirname(__FILE__).'/skipif.inc');
-?> 
+?>
 --ENV--
 NLS_LANG=.AL32UTF8
 --FILE--
@@ -155,7 +155,7 @@ echo 'size of stream4a is ', strlen($stream4a), ' bytes, ', mb_strlen($stream4a)
 echo 'beg of stream4a is ', $start4a, PHP_EOL;
 echo 'end of stream4a is ', $ending4a, PHP_EOL;
 
---EXPECTF--
+--EXPECT--
 
 Test 1: j
 size of string1 is 1000006 bytes, 1000006 chars.
