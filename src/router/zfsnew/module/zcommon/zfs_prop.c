@@ -674,7 +674,7 @@ zfs_prop_init(void)
 	    "PRIV_PROP");
 
 	zprop_register_impl(ZFS_PROP_ZSTD_LEVEL, "zstd_compress_level",
-	    PROP_TYPE_NUMBER, ZIO_ZSTDLVL_DEFAULT, NULL, PROP_INHERIT,
+	    PROP_TYPE_NUMBER, ZIO_ZSTDLVL_DEFAULT, NULL, PROP_READONLY,
 	    ZFS_TYPE_DATASET, "<zio_zstd_levels>", "ZSTDLEVEL", B_TRUE,
 	    B_FALSE, NULL);
 	/* oddball properties */
