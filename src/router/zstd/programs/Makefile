@@ -134,11 +134,14 @@ else
 LZ4_MSG := $(NO_LZ4_MSG)
 endif
 
-# enable backtrace symbol names for Linux/Darwin
-ALL_SYMBOLS := 0
+# explicit backtrace enable/disable for Linux & Darwin
+ifeq ($(BACKTRACE), 0)
+DEBUGFLAGS += -DBACKTRACE_ENABLE=0
+endif
 ifeq (,$(filter Windows%, $(OS)))
-ifeq ($(ALL_SYMBOLS), 1)
-DEBUGFLAGS_LD+=-rdynamic
+ifeq ($(BACKTRACE), 1)
+DEBUGFLAGS += -DBACKTRACE_ENABLE=1
+DEBUGFLAGS_LD += -rdynamic
 endif
 endif
 
@@ -168,12 +171,12 @@ endif
 	$(CC) $(FLAGS) $^ $(RES_FILE) -o $@$(EXT) $(LDFLAGS)
 
 .PHONY: zstd-release
-zstd-release: DEBUGFLAGS :=
+zstd-release: DEBUGFLAGS := -DBACKTRACE_ENABLE=0
 zstd-release: DEBUGFLAGS_LD :=
 zstd-release: zstd
 
 zstd32 : CPPFLAGS += $(THREAD_CPP)
-zstd32 : LDFLAGS += $(THREAD_LD)
+zstd32 : LDFLAGS  += $(THREAD_LD)
 zstd32 : CPPFLAGS += -DZSTD_LEGACY_SUPPORT=$(ZSTD_LEGACY_SUPPORT)
 zstd32 : $(ZSTDLIB_FILES) zstdcli.c fileio.c bench.c datagen.c dibio.c
 ifneq (,$(filter Windows%,$(OS)))
@@ -185,17 +188,17 @@ zstd-nolegacy : $(ZSTD_FILES) $(ZDICT_FILES) zstdcli.o fileio.c bench.o datagen.
 	$(CC) $(FLAGS) $^ -o $@$(EXT) $(LDFLAGS)
 
 zstd-nomt : THREAD_CPP :=
-zstd-nomt : THREAD_LD :=
+zstd-nomt : THREAD_LD  :=
 zstd-nomt : THREAD_MSG := - multi-threading disabled
 zstd-nomt : zstd
 
 zstd-nogz : ZLIBCPP :=
-zstd-nogz : ZLIBLD :=
+zstd-nogz : ZLIBLD  :=
 zstd-nogz : ZLIB_MSG := - gzip support is disabled
 zstd-nogz : zstd
 
 zstd-noxz : LZMACPP :=
-zstd-noxz : LZMALD :=
+zstd-noxz : LZMALD  :=
 zstd-noxz : LZMA_MSG := - xz/lzma support is disabled
 zstd-noxz : zstd
 
@@ -246,16 +249,26 @@ MD2ROFF_FLAGS = --roff --warnings --manual="User Commands" --organization="zstd 
 zstd.1: zstd.1.md ../lib/zstd.h
 	cat $< | $(MD2ROFF) $(MD2ROFF_FLAGS) | sed -n '/^\.\\\".*/!p' > $@
 
+zstdgrep.1: zstdgrep.1.md ../lib/zstd.h
+	cat $< | $(MD2ROFF) $(MD2ROFF_FLAGS) | sed -n '/^\.\\\".*/!p' > $@
+
+zstdless.1: zstdless.1.md ../lib/zstd.h
+	cat $< | $(MD2ROFF) $(MD2ROFF_FLAGS) | sed -n '/^\.\\\".*/!p' > $@
+
 .PHONY: man
-man: zstd.1
+man: zstd.1 zstdgrep.1 zstdless.1
 
 .PHONY: clean-man
 clean-man:
 	rm zstd.1
+	rm zstdgrep.1
+	rm zstdless.1
 
 .PHONY: preview-man
 preview-man: clean-man man
 	man ./zstd.1
+	man ./zstdgrep.1
+	man ./zstdless.1
 
 #-----------------------------------------------------------------------------
 # make install is validated only for Linux, macOS, BSD, Hurd and Solaris targets
@@ -329,6 +342,8 @@ install: zstd
 	@$(INSTALL_MAN) zstd.1 $(DESTDIR)$(MAN1DIR)/zstd.1
 	@ln -sf zstd.1 $(DESTDIR)$(MAN1DIR)/zstdcat.1
 	@ln -sf zstd.1 $(DESTDIR)$(MAN1DIR)/unzstd.1
+	@$(INSTALL_MAN) zstdgrep.1 $(DESTDIR)$(MAN1DIR)/zstdgrep.1
+	@$(INSTALL_MAN) zstdless.1 $(DESTDIR)$(MAN1DIR)/zstdless.1
 	@echo zstd installation completed
 
 .PHONY: uninstall
@@ -338,6 +353,8 @@ uninstall:
 	@$(RM) $(DESTDIR)$(BINDIR)/zstdcat
 	@$(RM) $(DESTDIR)$(BINDIR)/unzstd
 	@$(RM) $(DESTDIR)$(BINDIR)/zstd
+	@$(RM) $(DESTDIR)$(MAN1DIR)/zstdless.1
+	@$(RM) $(DESTDIR)$(MAN1DIR)/zstdgrep.1
 	@$(RM) $(DESTDIR)$(MAN1DIR)/zstdcat.1
 	@$(RM) $(DESTDIR)$(MAN1DIR)/unzstd.1
 	@$(RM) $(DESTDIR)$(MAN1DIR)/zstd.1
