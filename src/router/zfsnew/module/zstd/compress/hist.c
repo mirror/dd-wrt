@@ -40,9 +40,6 @@
 #include <sys/zstd/hist.h>
 
 
-/* --- Error management --- */
-unsigned HIST_isError(size_t code) { return ERR_isError(code); }
-
 /*-**************************************************************
  *  Histogram functions
  ****************************************************************/
@@ -72,8 +69,6 @@ unsigned HIST_count_simple(unsigned* count, unsigned* maxSymbolValuePtr,
 
     return largestCount;
 }
-
-
 /* HIST_count_parallel_wksp() :
  * store histogram into 4 intermediate tables, recombined at the end.
  * this design makes better use of OoO cpus,
@@ -167,14 +162,6 @@ size_t HIST_countFast_wksp(unsigned* count, unsigned* maxSymbolValuePtr,
     return HIST_count_parallel_wksp(count, maxSymbolValuePtr, source, sourceSize, 0, workSpace);
 }
 
-/* fast variant (unsafe : won't check if src contains values beyond count[] limit) */
-size_t HIST_countFast(unsigned* count, unsigned* maxSymbolValuePtr,
-                     const void* source, size_t sourceSize)
-{
-    unsigned tmpCounters[HIST_WKSP_SIZE_U32];
-    return HIST_countFast_wksp(count, maxSymbolValuePtr, source, sourceSize, tmpCounters);
-}
-
 /* HIST_count_wksp() :
  * Same as HIST_count(), but using an externally provided scratch buffer.
  * `workSpace` size must be table of >= HIST_WKSP_SIZE_U32 unsigned */
@@ -185,11 +172,4 @@ size_t HIST_count_wksp(unsigned* count, unsigned* maxSymbolValuePtr,
         return HIST_count_parallel_wksp(count, maxSymbolValuePtr, source, sourceSize, 1, workSpace);
     *maxSymbolValuePtr = 255;
     return HIST_countFast_wksp(count, maxSymbolValuePtr, source, sourceSize, workSpace);
-}
-
-size_t HIST_count(unsigned* count, unsigned* maxSymbolValuePtr,
-                 const void* src, size_t srcSize)
-{
-    unsigned tmpCounters[HIST_WKSP_SIZE_U32];
-    return HIST_count_wksp(count, maxSymbolValuePtr, src, srcSize, tmpCounters);
 }

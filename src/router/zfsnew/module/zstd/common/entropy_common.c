@@ -42,17 +42,6 @@
 #define HUF_STATIC_LINKING_ONLY  /* HUF_TABLELOG_ABSOLUTEMAX */
 #include <sys/zstd/huf.h>
 
-
-/*===   Version   ===*/
-unsigned FSE_versionNumber(void) { return FSE_VERSION_NUMBER; }
-
-
-/*===   Error Management   ===*/
-unsigned FSE_isError(size_t code) { return ERR_isError(code); }
-
-unsigned HUF_isError(size_t code) { return ERR_isError(code); }
-
-
 /*-**************************************************************
 *  FSE NCount encoding-decoding
 ****************************************************************/
