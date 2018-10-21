@@ -4,7 +4,7 @@ Test piecewise fetch of CLOBs equal to, and larger than PHP_OCI_LOB_BUFFER_SIZE
 <?php
 $target_dbs = array('oracledb' => true, 'timesten' => false);  // test runs on these DBs
 require(dirname(__FILE__).'/skipif.inc');
-?> 
+?>
 --FILE--
 <?php
 
@@ -62,7 +62,7 @@ require dirname(__FILE__).'/drop_table.inc';
 echo "Done\n";
 
 ?>
---EXPECTF--
+--EXPECT--
 Test 1: A CLOB with an even number of bytes
 int(1050000)
 Test 2: A CLOB with an odd number of bytes

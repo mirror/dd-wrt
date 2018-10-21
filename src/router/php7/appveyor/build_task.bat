@@ -10,6 +10,18 @@ if "%APPVEYOR%" equ "True" rmdir /s /q C:\mingw-w64 >NUL 2>NUL
 if %errorlevel% neq 0 exit /b 3
 if "%APPVEYOR%" equ "True" rmdir /s /q C:\msys64 >NUL 2>NUL
 if %errorlevel% neq 0 exit /b 3
+if "%APPVEYOR%" equ "True" rmdir /s /q c:\OpenSSL-Win32 >NUL 2>NUL
+if %errorlevel% neq 0 exit /b 3
+if "%APPVEYOR%" equ "True" rmdir /s /q c:\OpenSSL-Win64 >NUL 2>NUL
+if %errorlevel% neq 0 exit /b 3
+if "%APPVEYOR%" equ "True" rmdir /s /q c:\OpenSSL-v11-Win32 >NUL 2>NUL
+if %errorlevel% neq 0 exit /b 3
+if "%APPVEYOR%" equ "True" rmdir /s /q c:\OpenSSL-v11-Win64 >NUL 2>NUL
+if %errorlevel% neq 0 exit /b 3
+if "%APPVEYOR%" equ "True" del /f /q C:\Windows\System32\libcrypto-1_1-x64.dll >NUL 2>NUL
+if %errorlevel% neq 0 exit /b 3
+if "%APPVEYOR%" equ "True" del /f /q C:\Windows\System32\libssl-1_1-x64.dll >NUL 2>NUL
+if %errorlevel% neq 0 exit /b 3
 
 cd /D %APPVEYOR_BUILD_FOLDER%
 if %errorlevel% neq 0 exit /b 3
@@ -19,7 +31,7 @@ if /i "%APPVEYOR_REPO_BRANCH:~0,4%" equ "php-" (
 ) else (
 	set BRANCH=master
 )
-set STABILITY=stable
+set STABILITY=staging
 set DEPS_DIR=%PHP_BUILD_CACHE_BASE_DIR%\deps-%BRANCH%-%PHP_SDK_VC%-%PHP_SDK_ARCH%
 rem SDK is cached, deps info is cached as well
 echo Updating dependencies in %DEPS_DIR%
