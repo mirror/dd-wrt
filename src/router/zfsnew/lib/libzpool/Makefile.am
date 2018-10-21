@@ -167,21 +167,6 @@ KERNEL_C = \
 	zthr.c
 
 ZSTD_C = \
-	zstd_common.c \
-	fse_decompress.c \
-	entropy_common.c \
-	xxhash.c \
-	hist.c \
-	zstd_compress.c \
-	fse_compress.c \
-	huf_compress.c \
-	zstd_double_fast.c \
-	zstd_fast.c \
-	zstd_lazy.c \
-	zstd_ldm.c \
-	zstd_opt.c \
-	zstd_decompress.c \
-	huf_decompress.c \
 	zstd.c
 
 LUA_C = \
