@@ -49,3 +49,7 @@ zfs-install:
 	rm -rf $(INSTALLDIR)/zfs/usr/src
 	rm -f $(INSTALLDIR)/zfs/usr/lib/*.a
 	rm -f $(INSTALLDIR)/zfs/usr/lib/*.la
+	mkdir -p $(INSTALLDIR)/zfs/lib2/modules/$(KERNELRELEASE)
+	find $(INSTALLDIR)/zfs/lib/modules  -name *.ko -exec mv {} $(INSTALLDIR)/zfs/lib2/modules/$(KERNELRELEASE) \;
+	rm -rf $(INSTALLDIR)/zfs/lib
+	mv $(INSTALLDIR)/zfs/lib2 $(INSTALLDIR)/zfs/lib
