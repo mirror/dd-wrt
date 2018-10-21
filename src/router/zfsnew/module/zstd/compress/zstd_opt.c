@@ -1,3 +1,4 @@
+/* BEGIN CSTYLED */
 /*
  * Copyright (c) 2016-present, Przemyslaw Skibinski, Yann Collet, Facebook, Inc.
  * All rights reserved.
@@ -1132,3 +1133,4 @@ size_t ZSTD_compressBlock_btultra_extDict(
 {
     return ZSTD_compressBlock_opt_generic(ms, seqStore, rep, src, srcSize, 2 /*optLevel*/, ZSTD_extDict);
 }
+/* END CSTYLED */

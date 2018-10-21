@@ -1,3 +1,4 @@
+/* BEGIN CSTYLED */
 /*
  * Copyright (c) 2016-present, Yann Collet, Facebook, Inc.
  * All rights reserved.
@@ -43,3 +44,4 @@ void ZSTD_free(void* ptr, ZSTD_customMem customMem)
             free(ptr);
     }
 }
+/* END CSTYLED */
