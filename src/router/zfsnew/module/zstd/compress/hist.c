@@ -1,3 +1,4 @@
+/* BEGIN CSTYLED */
 /* ******************************************************************
    hist : Histogram functions
    part of Finite State Entropy project
@@ -173,3 +174,4 @@ size_t HIST_count_wksp(unsigned* count, unsigned* maxSymbolValuePtr,
     *maxSymbolValuePtr = 255;
     return HIST_countFast_wksp(count, maxSymbolValuePtr, source, sourceSize, workSpace);
 }
+/* END CSTYLED */

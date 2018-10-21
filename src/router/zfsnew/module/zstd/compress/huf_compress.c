@@ -1,3 +1,4 @@
+/* BEGIN CSTYLED */
 /* ******************************************************************
    Huffman encoder, part of New Generation Entropy library
    Copyright (C) 2013-2016, Yann Collet.
@@ -721,3 +722,4 @@ size_t HUF_compress4X_repeat (void* dst, size_t dstSize,
                                  workSpace, wkspSize,
                                  hufTable, repeat, preferRepeat, bmi2);
 }
+/* END CSTYLED */

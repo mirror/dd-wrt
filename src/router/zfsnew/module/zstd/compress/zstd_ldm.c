@@ -1,3 +1,4 @@
+/* BEGIN CSTYLED */
 /*
  * Copyright (c) 2016-present, Yann Collet, Facebook, Inc.
  * All rights reserved.
@@ -644,3 +645,4 @@ size_t ZSTD_ldm_blockCompress(rawSeqStore_t* rawSeqStore,
     /* Compress the last literals */
     return blockCompressor(ms, seqStore, rep, ip, iend - ip);
 }
+/* END CSTYLED */
