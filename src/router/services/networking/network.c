@@ -4573,7 +4573,6 @@ void start_wan_done(char *wan_ifname)
 	start_set_routes();
 	cprintf("routes done\n");
 
-
 #ifdef HAVE_UPNP
 	stop_upnp();
 #endif
@@ -5071,33 +5070,30 @@ void start_hotplug_net(void)
 #ifdef _SC_NPROCESSORS_ONLN
 	int cpucount = sysconf(_SC_NPROCESSORS_ONLN);
 #else
-	int cpucount = 1
+	int cpucount = 1;
 #endif
-	    if (!strcmp(action, "add")) {
-		int cpumask = 0;
-#ifdef	HAVE_IPQ806X	
+
+	if (!strcmp(action, "add")) {
 		if (cpucount > 1) {
-#else
-		if (cpucount > 1 && nvram_matchi("wshaper_enable", 0)) {
-#endif
+			int cpumask = 0;
 			cpumask = (1 << cpucount) - 1;
+			writenet("queues/rx-0/rps_cpus", cpumask, interface);
+			writenet("queues/rx-1/rps_cpus", cpumask, interface);
+			writenet("queues/rx-2/rps_cpus", cpumask, interface);
+			writenet("queues/rx-3/rps_cpus", cpumask, interface);
+			writenet("queues/rx-4/rps_cpus", cpumask, interface);
+			writenet("queues/rx-5/rps_cpus", cpumask, interface);
+			writenet("queues/rx-6/rps_cpus", cpumask, interface);
+			writenet("queues/rx-7/rps_cpus", cpumask, interface);
+			writenet("queues/tx-0/xps_cpus", cpumask, interface);
+			writenet("queues/tx-1/xps_cpus", cpumask, interface);
+			writenet("queues/tx-2/xps_cpus", cpumask, interface);
+			writenet("queues/tx-3/xps_cpus", cpumask, interface);
+			writenet("queues/tx-4/xps_cpus", cpumask, interface);
+			writenet("queues/tx-5/xps_cpus", cpumask, interface);
+			writenet("queues/tx-6/xps_cpus", cpumask, interface);
+			writenet("queues/tx-7/xps_cpus", cpumask, interface);
 		}
-		writenet("queues/rx-0/rps_cpus", cpumask, interface);
-		writenet("queues/rx-1/rps_cpus", cpumask, interface);
-		writenet("queues/rx-2/rps_cpus", cpumask, interface);
-		writenet("queues/rx-3/rps_cpus", cpumask, interface);
-		writenet("queues/rx-4/rps_cpus", cpumask, interface);
-		writenet("queues/rx-5/rps_cpus", cpumask, interface);
-		writenet("queues/rx-6/rps_cpus", cpumask, interface);
-		writenet("queues/rx-7/rps_cpus", cpumask, interface);
-		writenet("queues/tx-0/xps_cpus", cpumask, interface);
-		writenet("queues/tx-1/xps_cpus", cpumask, interface);
-		writenet("queues/tx-2/xps_cpus", cpumask, interface);
-		writenet("queues/tx-3/xps_cpus", cpumask, interface);
-		writenet("queues/tx-4/xps_cpus", cpumask, interface);
-		writenet("queues/tx-5/xps_cpus", cpumask, interface);
-		writenet("queues/tx-6/xps_cpus", cpumask, interface);
-		writenet("queues/tx-7/xps_cpus", cpumask, interface);
 	}
 #ifdef HAVE_MADWIFI
 	// sysprintf("echo \"Hotplug %s=%s\" > /dev/console\n",action,interface);
