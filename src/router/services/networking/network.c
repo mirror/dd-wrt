@@ -4728,6 +4728,10 @@ void start_wan_done(char *wan_ifname)
 	cprintf("done\n");
 
 #endif
+#ifdef HAVE_STRONGSWAN
+	stop_strongswan();
+	start_strongswan();
+#endif
 #ifdef HAVE_OPENVPN
 	stop_openvpnserverwan();
 	start_openvpnserverwan();
@@ -5071,7 +5075,11 @@ void start_hotplug_net(void)
 #endif
 	    if (!strcmp(action, "add")) {
 		int cpumask = 0;
+#ifdef	HAVE_IPQ806X	
+		if (cpucount > 1) {
+#else
 		if (cpucount > 1 && nvram_matchi("wshaper_enable", 0)) {
+#endif
 			cpumask = (1 << cpucount) - 1;
 		}
 		writenet("queues/rx-0/rps_cpus", cpumask, interface);
