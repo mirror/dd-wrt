@@ -35,6 +35,11 @@
 #include <sys/zstd/xxhash.h>                /* XXH_reset, update, digest */
 
 
+#define ZSTD_isError ERR_isError   /* for inlining */
+#define FSE_isError  ERR_isError
+#define HUF_isError  ERR_isError
+#define HIST_isError  ERR_isError
+
 #if defined (__cplusplus)
 extern "C" {
 #endif
@@ -198,13 +203,12 @@ typedef struct {
     U32   longLengthPos;
 } seqStore_t;
 
-const seqStore_t* ZSTD_getSeqStore(const ZSTD_CCtx* ctx);   /* compress & dictBuilder */
-void ZSTD_seqToCodes(const seqStore_t* seqStorePtr);   /* compress, dictBuilder, decodeCorpus (shouldn't get its definition from here) */
+static void ZSTD_seqToCodes(const seqStore_t* seqStorePtr);   /* compress, dictBuilder, decodeCorpus (shouldn't get its definition from here) */
 
 /* custom memory allocation functions */
-void* ZSTD_malloc(size_t size, ZSTD_customMem customMem);
-void* ZSTD_calloc(size_t size, ZSTD_customMem customMem);
-void ZSTD_free(void* ptr, ZSTD_customMem customMem);
+static void* ZSTD_malloc(size_t size, ZSTD_customMem customMem);
+static void* ZSTD_calloc(size_t size, ZSTD_customMem customMem);
+static void ZSTD_free(void* ptr, ZSTD_customMem customMem);
 
 
 MEM_STATIC U32 ZSTD_highbit32(U32 val)   /* compress, dictBuilder, decodeCorpus */
@@ -216,13 +220,6 @@ MEM_STATIC U32 ZSTD_highbit32(U32 val)   /* compress, dictBuilder, decodeCorpus 
 }
 
 
-/* ZSTD_invalidateRepCodes() :
- * ensures next compression will not use repcodes from previous block.
- * Note : only works with regular variant;
- *        do not use with extDict variant ! */
-void ZSTD_invalidateRepCodes(ZSTD_CCtx* cctx);   /* zstdmt, adaptive_compression (shouldn't get this definition from here) */
-
-
 typedef struct {
     blockType_e blockType;
     U32 lastBlock;
@@ -232,7 +229,7 @@ typedef struct {
 /*! ZSTD_getcBlockSize() :
  *  Provides the size of compressed block from block header `src` */
 /* Used by: decompress, fullbench (does not get its definition from here) */
-size_t ZSTD_getcBlockSize(const void* src, size_t srcSize,
+static size_t ZSTD_getcBlockSize(const void* src, size_t srcSize,
                           blockProperties_t* bpPtr);
 
 #if defined (__cplusplus)
