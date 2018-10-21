@@ -4,10 +4,10 @@ Test LOB->read(), LOB->seek() and LOB->tell() with nul bytes in data
 <?php
 $target_dbs = array('oracledb' => true, 'timesten' => false);  // test runs on these DBs
 require(dirname(__FILE__).'/skipif.inc');
-?> 
+?>
 --FILE--
 <?php
-	
+
 require dirname(__FILE__).'/connect.inc';
 require dirname(__FILE__).'/create_table.inc';
 
@@ -91,7 +91,7 @@ require dirname(__FILE__).'/drop_table.inc';
 echo "Done\n";
 
 ?>
---EXPECTF--
+--EXPECT--
  1. 3
  2. 6
  3. 9

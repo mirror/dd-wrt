@@ -20,7 +20,7 @@
    +----------------------------------------------------------------------+
 */
 
-/* $Id: a0d4ebb4a00a610b72686facdf62693a7855fc2b $ */
+/* $Id: 3bd31e48a84f686e08d99aa98943ae42bea65682 $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -3010,8 +3010,10 @@ ZEND_METHOD(reflection_method, __construct)
 	switch (Z_TYPE_P(classname)) {
 		case IS_STRING:
 			if ((ce = zend_lookup_class(Z_STR_P(classname))) == NULL) {
-				zend_throw_exception_ex(reflection_exception_ptr, 0,
-						"Class %s does not exist", Z_STRVAL_P(classname));
+				if (!EG(exception)) {
+					zend_throw_exception_ex(reflection_exception_ptr, 0,
+							"Class %s does not exist", Z_STRVAL_P(classname));
+				}
 				if (classname == &ztmp) {
 					zval_dtor(&ztmp);
 				}
@@ -6825,7 +6827,7 @@ PHP_MINFO_FUNCTION(reflection) /* {{{ */
 	php_info_print_table_start();
 	php_info_print_table_header(2, "Reflection", "enabled");
 
-	php_info_print_table_row(2, "Version", "$Id: a0d4ebb4a00a610b72686facdf62693a7855fc2b $");
+	php_info_print_table_row(2, "Version", "$Id: 3bd31e48a84f686e08d99aa98943ae42bea65682 $");
 
 	php_info_print_table_end();
 } /* }}} */

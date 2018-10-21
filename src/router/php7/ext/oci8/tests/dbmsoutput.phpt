@@ -4,7 +4,7 @@ PL/SQL: dbms_output
 <?php
 $target_dbs = array('oracledb' => true, 'timesten' => false);  // test runs on these DBs
 require(dirname(__FILE__).'/skipif.inc');
-?> 
+?>
 --FILE--
 <?php
 
@@ -132,7 +132,7 @@ oci8_test_sql_execute($c, $stmtarray);
 ?>
 ===DONE===
 <?php exit(0); ?>
---EXPECTF--
+--EXPECT--
 Test 1
 array(1) {
   [0]=>

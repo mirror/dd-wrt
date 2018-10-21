@@ -16,7 +16,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: c3261323fa6808fa0c785f00c0741892d57ef0c4 $ */
+/* $Id: 0a764bab332255746424a1e6cfbaaeebab998e4c $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -51,6 +51,9 @@
 #include <pwd.h>
 #if HAVE_SYS_MKDEV_H
 # include <sys/mkdev.h>
+#endif
+#if HAVE_SYS_SYSMACROS_H
+# include <sys/sysmacros.h>
 #endif
 
 ZEND_DECLARE_MODULE_GLOBALS(posix)
@@ -321,7 +324,7 @@ const zend_function_entry posix_functions[] = {
 static PHP_MINFO_FUNCTION(posix)
 {
 	php_info_print_table_start();
-	php_info_print_table_row(2, "Revision", "$Id: c3261323fa6808fa0c785f00c0741892d57ef0c4 $");
+	php_info_print_table_row(2, "Revision", "$Id: 0a764bab332255746424a1e6cfbaaeebab998e4c $");
 	php_info_print_table_end();
 }
 /* }}} */
@@ -1082,9 +1085,15 @@ PHP_FUNCTION(posix_getgrnam)
 		RETURN_FALSE;
 	}
 	buf = emalloc(buflen);
+try_again:
 	g = &gbuf;
 
 	if (getgrnam_r(name, g, buf, buflen, &g) || g == NULL) {
+		if (errno == ERANGE) {
+			buflen *= 2;
+			buf = erealloc(buf, buflen);
+			goto try_again;
+		}
 		POSIX_G(last_error) = errno;
 		efree(buf);
 		RETURN_FALSE;
