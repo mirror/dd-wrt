@@ -445,9 +445,12 @@ zstd_free(void *opaque __unused, void *ptr)
 #ifndef _KERNEL
 #define	__init
 #define	__exit
+#define	STATIC
+#else
+#define	STATIC static
 #endif
 
-extern int __init
+STATIC int __init
 zstd_init(void)
 {
 	int i;
@@ -493,7 +496,7 @@ zstd_init(void)
 	return (0);
 }
 
-extern void __exit
+STATIC void __exit
 zstd_fini(void)
 {
 	int i, type;
