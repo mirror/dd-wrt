@@ -1,3 +1,4 @@
+/* BEGIN CSTYLED */
 /* ******************************************************************
    FSE : Finite State Entropy encoder
    Copyright (C) 2013-present, Yann Collet.
@@ -589,3 +590,4 @@ typedef struct {
     BYTE scratchBuffer[1 << FSE_MAX_TABLELOG];
 } fseWkspMax_t;
 #endif   /* FSE_COMMONDEFS_ONLY */
+/* END CSTYLED */

@@ -1,3 +1,4 @@
+/* BEGIN CSTYLED */
 /* ******************************************************************
    FSE : Finite State Entropy decoder
    Copyright (C) 2013-2015, Yann Collet.
@@ -242,3 +243,4 @@ typedef FSE_DTable DTable_max_t[FSE_DTABLE_SIZE_U32(FSE_MAX_TABLELOG)];
 
 
 #endif   /* FSE_COMMONDEFS_ONLY */
+/* END CSTYLED */

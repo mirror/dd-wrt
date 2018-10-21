@@ -1,3 +1,4 @@
+/* BEGIN CSTYLED */
 /*
  * Copyright (c) 2016-present, Yann Collet, Facebook, Inc.
  * All rights reserved.
@@ -1985,3 +1986,5 @@ size_t ZSTD_freeDDict(ZSTD_DDict* ddict)
         return 0;
     }
 }
+
+/* END CSTYLED */
