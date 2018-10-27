@@ -65,7 +65,8 @@ void wg_packet_send_queued_handshake_initiation(struct wg_peer *peer,
 	 * necessary:
 	 */
 	if (!wg_birthdate_has_expired(atomic64_read(&peer->last_sent_handshake),
-				      REKEY_TIMEOUT) || unlikely(peer->is_dead))
+				      REKEY_TIMEOUT) ||
+			unlikely(READ_ONCE(peer->is_dead)))
 		goto out;
 
 	wg_peer_get(peer);
@@ -128,7 +129,7 @@ static void keep_key_fresh(struct wg_peer *peer)
 
 	rcu_read_lock_bh();
 	keypair = rcu_dereference_bh(peer->keypairs.current_keypair);
-	if (likely(keypair && keypair->sending.is_valid) &&
+	if (likely(keypair && READ_ONCE(keypair->sending.is_valid)) &&
 	    (unlikely(atomic64_read(&keypair->sending.counter.counter) >
 		      REKEY_AFTER_MESSAGES) ||
 	     (keypair->i_am_the_initiator &&
@@ -186,11 +187,10 @@ static bool encrypt_packet(struct sk_buff *skb, struct noise_keypair *keypair,
 	if (unlikely(skb_cow_head(skb, DATA_PACKET_HEAD_ROOM) < 0))
 		return false;
 
-	/* We have to remember to add the checksum to the innerpacket, in case
-	 * the receiver forwards it.
-	 */
-	if (likely(!skb_checksum_setup(skb, true)))
-		skb_checksum_help(skb);
+	/* Finalize checksum calculation for the inner packet, if required. */
+	if (unlikely(skb->ip_summed == CHECKSUM_PARTIAL &&
+		     skb_checksum_help(skb)))
+		return false;
 
 	/* Only after checksumming can we safely add on the padding at the end
 	 * and the header.
@@ -327,7 +327,7 @@ static void wg_packet_create_data(struct sk_buff *first)
 	int ret = -EINVAL;
 
 	rcu_read_lock_bh();
-	if (unlikely(peer->is_dead))
+	if (unlikely(READ_ONCE(peer->is_dead)))
 		goto err;
 
 	ret = wg_queue_enqueue_per_device_and_peer(&wg->encrypt_queue,
@@ -344,6 +344,14 @@ err:
 	wg_noise_keypair_put(PACKET_CB(first)->keypair, false);
 	wg_peer_put(peer);
 	skb_free_null_queue(first);
+}
+
+void wg_packet_purge_staged_packets(struct wg_peer *peer)
+{
+	spin_lock_bh(&peer->staged_packet_queue.lock);
+	peer->device->dev->stats.tx_dropped += peer->staged_packet_queue.qlen;
+	__skb_queue_purge(&peer->staged_packet_queue);
+	spin_unlock_bh(&peer->staged_packet_queue.lock);
 }
 
 void wg_packet_send_staged_packets(struct wg_peer *peer)
@@ -369,7 +377,7 @@ void wg_packet_send_staged_packets(struct wg_peer *peer)
 	if (unlikely(!keypair))
 		goto out_nokey;
 	key = &keypair->sending;
-	if (unlikely(!key->is_valid))
+	if (unlikely(!READ_ONCE(key->is_valid)))
 		goto out_nokey;
 	if (unlikely(wg_birthdate_has_expired(key->birthdate,
 					      REJECT_AFTER_TIME)))
@@ -398,7 +406,7 @@ void wg_packet_send_staged_packets(struct wg_peer *peer)
 	return;
 
 out_invalid:
-	key->is_valid = false;
+	WRITE_ONCE(key->is_valid, false);
 out_nokey:
 	wg_noise_keypair_put(keypair, false);
 
