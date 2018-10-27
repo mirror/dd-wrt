@@ -37,7 +37,7 @@ Sub-commands that take an INTERFACE must be passed a WireGuard interface.
 
 .TP
 \fBshow\fP { \fI<interface>\fP | \fIall\fP | \fIinterfaces\fP } [\fIpublic-key\fP | \fIprivate-key\fP | \fIlisten-port\fP | \fIfwmark\fP | \fIpeers\fP | \fIpreshared-keys\fP | \fIendpoints\fP | \fIallowed-ips\fP | \fIlatest-handshakes\fP | \fIpersistent-keepalive\fP | \fItransfer\fP | \fIdump\fP]
-Shows current WireGuard configuration of specified \fI<interface>\fP.
+Shows current WireGuard configuration and runtime information of specified \fI<interface>\fP.
 If no \fI<interface>\fP is specified, \fI<interface>\fP defaults to \fIall\fP.
 If \fIinterfaces\fP is specified, prints a list of all WireGuard interfaces,
 one per line, and quit. If no options are given after the interface
@@ -148,7 +148,7 @@ CIDR masks from which incoming traffic for this peer is allowed and to
 which outgoing traffic for this peer is directed. The catch-all
 \fI0.0.0.0/0\fP may be specified for matching all IPv4 addresses, and
 \fI::/0\fP may be specified for matching all IPv6 addresses. May be specified
-multiple times. Required.
+multiple times.
 .IP \(bu
 Endpoint \(em an endpoint IP or hostname, followed by a colon, and then a
 port number. This endpoint will be updated automatically to the most recent

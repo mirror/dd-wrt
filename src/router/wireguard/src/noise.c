@@ -159,18 +159,26 @@ void wg_noise_keypairs_clear(struct noise_keypairs *keypairs)
 	struct noise_keypair *old;
 
 	spin_lock_bh(&keypairs->keypair_update_lock);
-	old = rcu_dereference_protected(keypairs->previous_keypair,
-		lockdep_is_held(&keypairs->keypair_update_lock));
-	RCU_INIT_POINTER(keypairs->previous_keypair, NULL);
-	wg_noise_keypair_put(old, true);
+
+	/* We zero the next_keypair before zeroing the others, so that
+	 * wg_noise_received_with_keypair returns early before subsequent ones
+	 * are zeroed.
+	 */
 	old = rcu_dereference_protected(keypairs->next_keypair,
 		lockdep_is_held(&keypairs->keypair_update_lock));
 	RCU_INIT_POINTER(keypairs->next_keypair, NULL);
 	wg_noise_keypair_put(old, true);
+
+	old = rcu_dereference_protected(keypairs->previous_keypair,
+		lockdep_is_held(&keypairs->keypair_update_lock));
+	RCU_INIT_POINTER(keypairs->previous_keypair, NULL);
+	wg_noise_keypair_put(old, true);
+
 	old = rcu_dereference_protected(keypairs->current_keypair,
 		lockdep_is_held(&keypairs->keypair_update_lock));
 	RCU_INIT_POINTER(keypairs->current_keypair, NULL);
 	wg_noise_keypair_put(old, true);
+
 	spin_unlock_bh(&keypairs->keypair_update_lock);
 }
 
@@ -767,8 +775,8 @@ bool wg_noise_handshake_begin_session(struct noise_handshake *handshake,
 
 	handshake_zero(handshake);
 	rcu_read_lock_bh();
-	if (likely(!container_of(handshake, struct wg_peer,
-				 handshake)->is_dead)) {
+	if (likely(!READ_ONCE(container_of(handshake, struct wg_peer,
+					   handshake)->is_dead))) {
 		add_new_keypair(keypairs, new_keypair);
 		net_dbg_ratelimited("%s: Keypair %llu created for peer %llu\n",
 				    handshake->entry.peer->device->dev->name,
