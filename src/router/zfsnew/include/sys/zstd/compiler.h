@@ -1,3 +1,4 @@
+/* BEGIN CSTYLED */
 /*
  * Copyright (c) 2016-present, Yann Collet, Facebook, Inc.
  * All rights reserved.
@@ -10,8 +11,6 @@
 
 #ifndef ZSTD_COMPILER_H
 #define ZSTD_COMPILER_H
-
-#include <sys/zfs_context.h>
 
 /*-*******************************************************
 *  Compiler specifics
@@ -43,12 +42,22 @@
 #  define HINT_INLINE static INLINE_KEYWORD FORCE_INLINE_ATTR
 #endif
 
+#ifdef _KERNEL
+/* force no inlining */
 #  ifdef __GNUC__
 #    define FORCE_NOINLINE static noinline
 #  else
 #    define FORCE_NOINLINE static
 #  endif
+#else
+#  ifdef __GNUC__
+#    define FORCE_NOINLINE static __attribute__((noinline))
+#  else
+#    define FORCE_NOINLINE static
+#  endif
 
+
+#endif
 
 /* target attribute */
 #ifndef __has_attribute
@@ -109,3 +118,4 @@
 }
 
 #endif /* ZSTD_COMPILER_H */
+/* END CSTYLED */

@@ -1,3 +1,4 @@
+/* BEGIN CSTYLED */
 /* ******************************************************************
    bitstream
    Part of FSE library
@@ -435,3 +436,4 @@ MEM_STATIC unsigned BIT_endOfDStream(const BIT_DStream_t* DStream)
 #endif
 
 #endif /* BITSTREAM_H_MODULE */
+/* END CSTYLED */
