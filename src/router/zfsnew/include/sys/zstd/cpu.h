@@ -1,3 +1,4 @@
+/* BEGIN CSTYLED */
 /*
  * Copyright (c) 2018-present, Facebook, Inc.
  * All rights reserved.
@@ -208,3 +209,4 @@ MEM_STATIC ZSTD_cpuid_t ZSTD_cpuid(void) {
 #undef X
 
 #endif /* ZSTD_COMMON_CPU_H */
+/* END CSTYLED */

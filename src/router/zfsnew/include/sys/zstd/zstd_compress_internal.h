@@ -1,3 +1,4 @@
+/* BEGIN CSTYLED */
 /*
  * Copyright (c) 2016-present, Yann Collet, Facebook, Inc.
  * All rights reserved.
@@ -266,7 +267,7 @@ typedef enum { ZSTD_noDict = 0, ZSTD_extDict = 1, ZSTD_dictMatchState = 2 } ZSTD
 typedef size_t (*ZSTD_blockCompressor) (
         ZSTD_matchState_t* bs, seqStore_t* seqStore, U32 rep[ZSTD_REP_NUM],
         void const* src, size_t srcSize);
-static ZSTD_blockCompressor ZSTD_selectBlockCompressor(ZSTD_strategy strat, ZSTD_dictMode_e dictMode);
+ZSTD_blockCompressor ZSTD_selectBlockCompressor(ZSTD_strategy strat, ZSTD_dictMode_e dictMode);
 
 
 MEM_STATIC U32 ZSTD_LLcode(U32 litLength)
@@ -729,7 +730,7 @@ MEM_STATIC void ZSTD_debugTable(const U32* table, U32 max)
  * cParams are built depending on compressionLevel, src size hints,
  * LDM and manually set compression parameters.
  */
-static ZSTD_compressionParameters ZSTD_getCParamsFromCCtxParams(
+ZSTD_compressionParameters ZSTD_getCParamsFromCCtxParams(
         const ZSTD_CCtx_params* CCtxParams, U64 srcSizeHint, size_t dictSize);
 
 /*! ZSTD_initCStream_internal() :
@@ -737,27 +738,27 @@ static ZSTD_compressionParameters ZSTD_getCParamsFromCCtxParams(
  *  expects params to be valid.
  *  must receive dict, or cdict, or none, but not both.
  *  @return : 0, or an error code */
-static size_t ZSTD_initCStream_internal(ZSTD_CStream* zcs,
+size_t ZSTD_initCStream_internal(ZSTD_CStream* zcs,
                      const void* dict, size_t dictSize,
                      const ZSTD_CDict* cdict,
                      ZSTD_CCtx_params  params, unsigned long long pledgedSrcSize);
 
-static void ZSTD_resetSeqStore(seqStore_t* ssPtr);
+void ZSTD_resetSeqStore(seqStore_t* ssPtr);
 
 /*! ZSTD_compressStream_generic() :
  *  Private use only. To be called from zstdmt_compress.c in single-thread mode. */
-static size_t ZSTD_compressStream_generic(ZSTD_CStream* zcs,
+size_t ZSTD_compressStream_generic(ZSTD_CStream* zcs,
                                    ZSTD_outBuffer* output,
                                    ZSTD_inBuffer* input,
                                    ZSTD_EndDirective const flushMode);
 
 /*! ZSTD_getCParamsFromCDict() :
  *  as the name implies */
-static ZSTD_compressionParameters ZSTD_getCParamsFromCDict(const ZSTD_CDict* cdict);
+ZSTD_compressionParameters ZSTD_getCParamsFromCDict(const ZSTD_CDict* cdict);
 
 /* ZSTD_compressBegin_advanced_internal() :
  * Private use only. To be called from zstdmt_compress.c. */
-static size_t ZSTD_compressBegin_advanced_internal(ZSTD_CCtx* cctx,
+size_t ZSTD_compressBegin_advanced_internal(ZSTD_CCtx* cctx,
                                     const void* dict, size_t dictSize,
                                     ZSTD_dictContentType_e dictContentType,
                                     ZSTD_dictTableLoadMethod_e dtlm,
@@ -767,11 +768,19 @@ static size_t ZSTD_compressBegin_advanced_internal(ZSTD_CCtx* cctx,
 
 /* ZSTD_compress_advanced_internal() :
  * Private use only. To be called from zstdmt_compress.c. */
-static size_t ZSTD_compress_advanced_internal(ZSTD_CCtx* cctx,
+size_t ZSTD_compress_advanced_internal(ZSTD_CCtx* cctx,
                                        void* dst, size_t dstCapacity,
                                  const void* src, size_t srcSize,
                                  const void* dict,size_t dictSize,
                                  ZSTD_CCtx_params params);
+
+
+/* ZSTD_writeLastEmptyBlock() :
+ * output an empty Block with end-of-frame mark to complete a frame
+ * @return : size of data written into `dst` (== ZSTD_blockHeaderSize (defined in zstd_internal.h))
+ *           or an error code if `dstCapcity` is too small (<ZSTD_blockHeaderSize)
+ */
+size_t ZSTD_writeLastEmptyBlock(void* dst, size_t dstCapacity);
 
 
 /* ZSTD_referenceExternalSequences() :
@@ -784,7 +793,8 @@ static size_t ZSTD_compress_advanced_internal(ZSTD_CCtx* cctx,
  * NOTE: seqs are not verified! Invalid sequences can cause out-of-bounds memory
  * access and data corruption.
  */
-static size_t ZSTD_referenceExternalSequences(ZSTD_CCtx* cctx, rawSeq* seq, size_t nbSeq);
+size_t ZSTD_referenceExternalSequences(ZSTD_CCtx* cctx, rawSeq* seq, size_t nbSeq);
 
 
 #endif /* ZSTD_COMPRESS_H */
+/* END CSTYLED */

@@ -2282,7 +2282,7 @@ dmu_write_policy(objset_t *os, dnode_t *dn, int level, int wp, zio_prop_t *zp)
 
 	ASSERT3U(zp->zp_compress, !=, ZIO_COMPRESS_INHERIT);
 	zp->zp_zstd_level = zstd_level;
-	ASSERT(zp->zp_zstd_level != ZIO_ZSTDLVL_INHERIT);
+	ASSERT3U(zp->zp_zstd_level, !=, ZIO_ZSTDLVL_INHERIT);
 }
 
 /*

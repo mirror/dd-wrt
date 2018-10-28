@@ -1,3 +1,4 @@
+/* BEGIN CSTYLED */
 /*
  * Copyright (c) 2016-present, Yann Collet, Facebook, Inc.
  * All rights reserved.
@@ -32,8 +33,6 @@ extern "C" {
 #  define ERR_STATIC static __attribute__((unused))
 #elif defined (__cplusplus) || (defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) /* C99 */)
 #  define ERR_STATIC static inline
-#elif defined(_MSC_VER)
-#  define ERR_STATIC static __inline
 #else
 #  define ERR_STATIC static  /* this version may generate warnings for unused static functions; disable the relevant warning */
 #endif
@@ -68,3 +67,4 @@ ERR_STATIC ERR_enum ERR_getErrorCode(size_t code) { if (!ERR_isError(code)) retu
 #endif
 
 #endif /* ERROR_H_MODULE */
+/* END CSTYLED */
