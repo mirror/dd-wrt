@@ -396,7 +396,7 @@ extern void *
 zstd_alloc(void *opaque __unused, size_t size)
 {
 	size_t nbytes = sizeof (struct zstd_kmem) + size;
-	struct zstd_kmem *z;
+	struct zstd_kmem *z = NULL;
 	enum zstd_kmem_type type;
 	int i;
 
@@ -404,17 +404,31 @@ zstd_alloc(void *opaque __unused, size_t size)
 	for (i = 0; i < ZSTD_KMEM_COUNT; i++) {
 		if (nbytes <= zstd_cache_size[i].kmem_size) {
 			type = zstd_cache_size[i].kmem_type;
+#ifdef _KERNEL
+			if (nbytes > spl_kmem_alloc_max ||
+			    nbytes > spl_kmem_alloc_warn)
+				break;
+#endif
 			z = kmem_cache_alloc(zstd_kmem_cache[type], \
 			    KM_NOSLEEP);
 			if (z)
 				memset(z, 0, nbytes);
-
 			break;
 		}
 	}
 	/* No matching cache */
-	if (type == ZSTD_KMEM_UNKNOWN) {
-		z = kmem_zalloc(nbytes, KM_NOSLEEP);
+	if (type == ZSTD_KMEM_UNKNOWN || z == NULL) {
+		type = ZSTD_KMEM_UNKNOWN;
+		/*
+		 * consider max allocation size
+		 * so we need to use standard vmem allocator
+		 */
+#ifdef _KERNEL
+		if (nbytes > spl_kmem_alloc_max || nbytes > spl_kmem_alloc_warn)
+			z = vmem_zalloc(nbytes, KM_NOSLEEP);
+		else
+#endif
+			z = kmem_zalloc(nbytes, KM_NOSLEEP);
 	}
 	if (z == NULL) {
 		return (NULL);
