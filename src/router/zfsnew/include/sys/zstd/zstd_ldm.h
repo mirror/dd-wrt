@@ -1,3 +1,4 @@
+/* BEGIN CSTYLED */
 /*
  * Copyright (c) 2016-present, Yann Collet, Facebook, Inc.
  * All rights reserved.
@@ -37,7 +38,7 @@ extern "C" {
  * NOTE: This function returns an error if it runs out of space to store
  *       sequences.
  */
-static size_t ZSTD_ldm_generateSequences(
+size_t ZSTD_ldm_generateSequences(
             ldmState_t* ldms, rawSeqStore_t* sequences,
             ldmParams_t const* params, void const* src, size_t srcSize);
 
@@ -59,7 +60,7 @@ static size_t ZSTD_ldm_generateSequences(
  * two. We handle that case correctly, and update `rawSeqStore` appropriately.
  * NOTE: This function does not return any errors.
  */
-static size_t ZSTD_ldm_blockCompress(rawSeqStore_t* rawSeqStore,
+size_t ZSTD_ldm_blockCompress(rawSeqStore_t* rawSeqStore,
             ZSTD_matchState_t* ms, seqStore_t* seqStore, U32 rep[ZSTD_REP_NUM],
             void const* src, size_t srcSize);
 
@@ -70,7 +71,7 @@ static size_t ZSTD_ldm_blockCompress(rawSeqStore_t* rawSeqStore,
  * Avoids emitting matches less than `minMatch` bytes.
  * Must be called for data with is not passed to ZSTD_ldm_blockCompress().
  */
-static void ZSTD_ldm_skipSequences(rawSeqStore_t* rawSeqStore, size_t srcSize,
+void ZSTD_ldm_skipSequences(rawSeqStore_t* rawSeqStore, size_t srcSize,
     U32 const minMatch);
 
 
@@ -78,17 +79,17 @@ static void ZSTD_ldm_skipSequences(rawSeqStore_t* rawSeqStore, size_t srcSize,
  *  Estimate the space needed for long distance matching tables or 0 if LDM is
  *  disabled.
  */
-static size_t ZSTD_ldm_getTableSize(ldmParams_t params);
+size_t ZSTD_ldm_getTableSize(ldmParams_t params);
 
 /** ZSTD_ldm_getSeqSpace() :
  *  Return an upper bound on the number of sequences that can be produced by
  *  the long distance matcher, or 0 if LDM is disabled.
  */
-static size_t ZSTD_ldm_getMaxNbSeq(ldmParams_t params, size_t maxChunkSize);
+size_t ZSTD_ldm_getMaxNbSeq(ldmParams_t params, size_t maxChunkSize);
 
 /** ZSTD_ldm_getTableSize() :
  *  Return prime8bytes^(minMatchLength-1) */
-static U64 ZSTD_ldm_getHashPower(U32 minMatchLength);
+U64 ZSTD_ldm_getHashPower(U32 minMatchLength);
 
 /** ZSTD_ldm_adjustParameters() :
  *  If the params->hashEveryLog is not set, set it to its default value based on
@@ -99,7 +100,7 @@ static U64 ZSTD_ldm_getHashPower(U32 minMatchLength);
  *
  *  Ensures that the minMatchLength >= targetLength during optimal parsing.
  */
-static void ZSTD_ldm_adjustParameters(ldmParams_t* params,
+void ZSTD_ldm_adjustParameters(ldmParams_t* params,
                                ZSTD_compressionParameters const* cParams);
 
 #if defined (__cplusplus)
@@ -107,3 +108,4 @@ static void ZSTD_ldm_adjustParameters(ldmParams_t* params,
 #endif
 
 #endif /* ZSTD_FAST_H */
+/* END CSTYLED */

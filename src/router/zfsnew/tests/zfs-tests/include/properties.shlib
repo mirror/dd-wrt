@@ -22,8 +22,7 @@ typeset -a compress_prop_vals=('on' 'off' 'lzjb' 'gzip' 'gzip-1' 'gzip-2'
     'zstd-fast-5' 'zstd-fast-6' 'zstd-fast-7' 'zstd-fast-8' 'zstd-fast-9'
     'zstd-fast-10' 'zstd-fast-20' 'zstd-fast-30' 'zstd-fast-40'
     'zstd-fast-50' 'zstd-fast-60' 'zstd-fast-70' 'zstd-fast-80'
-    'zstd-fast-90' 'zstd-fast-100' 'zstd-fast-200' 'zstd-fast-300'
-    'zstd-fast-400' 'zstd-fast-500' 'zstd-fast-1000')
+    'zstd-fast-90' 'zstd-fast-100' 'zstd-fast-500' 'zstd-fast-1000')
 typeset -a checksum_prop_vals=('on' 'off' 'fletcher2' 'fletcher4' 'sha256'
     'noparity' 'sha512' 'skein' 'edonr')
 typeset -a recsize_prop_vals=('512' '1024' '2048' '4096' '8192' '16384'

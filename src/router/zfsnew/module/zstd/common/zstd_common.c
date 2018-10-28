@@ -17,6 +17,7 @@
 #include <sys/zstd/mem.h>
 #include <sys/zstd/error_private.h>
 #include <sys/zstd/zstd_internal.h>
+#include <sys/zfs_context.h>
 
 /*! g_debuglog_enable :
  *  turn on/off debug traces (global switch) */
@@ -32,7 +33,7 @@ void* ZSTD_malloc(size_t size, ZSTD_customMem customMem)
 {
     if (customMem.customAlloc)
         return customMem.customAlloc(customMem.opaque, size);
-    return malloc(size);
+    return kmem_alloc((size), KM_SLEEP); //should be never reached
 }
 
 void ZSTD_free(void* ptr, ZSTD_customMem customMem)
@@ -41,7 +42,7 @@ void ZSTD_free(void* ptr, ZSTD_customMem customMem)
         if (customMem.customFree)
             customMem.customFree(customMem.opaque, ptr);
         else
-            free(ptr);
+            kmem_free((ptr), 0); //should be never reached
     }
 }
 /* END CSTYLED */

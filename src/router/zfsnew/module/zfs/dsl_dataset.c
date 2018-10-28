@@ -162,7 +162,6 @@ dsl_dataset_block_born(dsl_dataset_t *ds, const blkptr_t *bp, dmu_tx_t *tx)
 		    ZFEATURE_TYPE_BOOLEAN);
 		ds->ds_feature_activation[f] = (void *)B_TRUE;
 	}
-
 	f = zio_compress_to_feature(BP_GET_COMPRESS(bp));
 	if (f != SPA_FEATURE_NONE)
 		ds->ds_feature_activation[f] = (void *)B_TRUE;

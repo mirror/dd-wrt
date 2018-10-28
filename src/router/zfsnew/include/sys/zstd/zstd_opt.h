@@ -1,3 +1,4 @@
+/* BEGIN CSTYLED */
 /*
  * Copyright (c) 2016-present, Yann Collet, Facebook, Inc.
  * All rights reserved.
@@ -18,26 +19,26 @@ extern "C" {
 #include "zstd_compress_internal.h"
 
 /* used in ZSTD_loadDictionaryContent() */
-static void ZSTD_updateTree(ZSTD_matchState_t* ms, const BYTE* ip, const BYTE* iend);
+void ZSTD_updateTree(ZSTD_matchState_t* ms, const BYTE* ip, const BYTE* iend);
 
-static size_t ZSTD_compressBlock_btopt(
+size_t ZSTD_compressBlock_btopt(
         ZSTD_matchState_t* ms, seqStore_t* seqStore, U32 rep[ZSTD_REP_NUM],
         void const* src, size_t srcSize);
-static size_t ZSTD_compressBlock_btultra(
-        ZSTD_matchState_t* ms, seqStore_t* seqStore, U32 rep[ZSTD_REP_NUM],
-        void const* src, size_t srcSize);
-
-static size_t ZSTD_compressBlock_btopt_dictMatchState(
-        ZSTD_matchState_t* ms, seqStore_t* seqStore, U32 rep[ZSTD_REP_NUM],
-        void const* src, size_t srcSize);
-static size_t ZSTD_compressBlock_btultra_dictMatchState(
+size_t ZSTD_compressBlock_btultra(
         ZSTD_matchState_t* ms, seqStore_t* seqStore, U32 rep[ZSTD_REP_NUM],
         void const* src, size_t srcSize);
 
-static size_t ZSTD_compressBlock_btopt_extDict(
+size_t ZSTD_compressBlock_btopt_dictMatchState(
         ZSTD_matchState_t* ms, seqStore_t* seqStore, U32 rep[ZSTD_REP_NUM],
         void const* src, size_t srcSize);
-static size_t ZSTD_compressBlock_btultra_extDict(
+size_t ZSTD_compressBlock_btultra_dictMatchState(
+        ZSTD_matchState_t* ms, seqStore_t* seqStore, U32 rep[ZSTD_REP_NUM],
+        void const* src, size_t srcSize);
+
+size_t ZSTD_compressBlock_btopt_extDict(
+        ZSTD_matchState_t* ms, seqStore_t* seqStore, U32 rep[ZSTD_REP_NUM],
+        void const* src, size_t srcSize);
+size_t ZSTD_compressBlock_btultra_extDict(
         ZSTD_matchState_t* ms, seqStore_t* seqStore, U32 rep[ZSTD_REP_NUM],
         void const* src, size_t srcSize);
 
@@ -46,3 +47,4 @@ static size_t ZSTD_compressBlock_btultra_extDict(
 #endif
 
 #endif /* ZSTD_OPT_H */
+/* END CSTYLED */

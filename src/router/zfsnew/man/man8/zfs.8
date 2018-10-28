@@ -1204,7 +1204,8 @@ for more information on these algorithms.
 Changing this property affects only newly-written data.
 .It Xo
 .Sy compression Ns = Ns Sy on Ns | Ns Sy off Ns | Ns Sy gzip Ns | Ns
-.Sy gzip- Ns Em N Ns | Ns Sy lz4 Ns | Ns Sy lzjb Ns | Ns Sy zle
+.Sy gzip- Ns Em N Ns | Ns Sy lz4 Ns | Ns Sy lzjb Ns | Ns Sy zle Ns | Ns
+.Sy zstd Ns | Ns Sy zstd- Ns Em N Ns | Ns Sy zstd-fast- Ns Em N Ns
 .Xc
 Controls the compression algorithm used for this dataset.
 .Pp
@@ -1274,6 +1275,43 @@ is equivalent to
 The
 .Sy zle
 compression algorithm compresses runs of zeros.
+.Pp
+.Sy zstd
+is a high-performance compression algorithm that features a combination
+of high compression ratios and high speed.
+Compared to
+.Sy gzip ,
+.Sy zstd
+offers slighty better compression at much higher speeds.
+Compared to
+.Sy lz4 ,
+.Sy zstd
+offers much better compression while being only modestly slower.
+Typically,
+.Sy zstd
+compression speed is approximately 250 megabytes/second/thread, and
+decompression speed is 1 gigabyte/second/thread.
+.Pp
+When the
+.Sy zstd
+feature is set to
+.Sy enabled ,
+the administrator can turn on
+.Sy zstd
+compression of any dataset using the
+.Dl # zfs set compress=zstd Ar dataset
+command.
+This feature becomes
+.Sy active
+once a
+.Sy compress
+property has been set to
+.Sy zstd ,
+and will return to being
+.Sy enabled
+once all filesystems that have ever had their compress property set to
+.Sy zstd
+are destroyed.
 .Pp
 This property can also be referred to by its shortened column name
 .Sy compress .

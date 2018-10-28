@@ -1,3 +1,4 @@
+/* BEGIN CSTYLED */
 /*
  * Copyright (c) 2016-present, Yann Collet, Facebook, Inc.
  * All rights reserved.
@@ -382,3 +383,4 @@ MEM_STATIC void MEM_writeBEST(void* memPtr, size_t val)
 #endif
 
 #endif /* MEM_H_MODULE */
+/* END CSTYLED */

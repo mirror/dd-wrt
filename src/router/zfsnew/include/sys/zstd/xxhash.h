@@ -1,3 +1,4 @@
+/* BEGIN CSTYLED */
 /*
    xxHash - Extremely Fast Hash algorithm
    Header File
@@ -151,7 +152,7 @@ regular symbol name will be automatically translated by this header.
 #define XXH_VERSION_MINOR    6
 #define XXH_VERSION_RELEASE  2
 #define XXH_VERSION_NUMBER  (XXH_VERSION_MAJOR *100*100 + XXH_VERSION_MINOR *100 + XXH_VERSION_RELEASE)
-static XXH_PUBLIC_API unsigned XXH_versionNumber (void);
+XXH_PUBLIC_API unsigned XXH_versionNumber (void);
 
 
 /* ****************************
@@ -160,8 +161,8 @@ static XXH_PUBLIC_API unsigned XXH_versionNumber (void);
 typedef unsigned int       XXH32_hash_t;
 typedef unsigned long long XXH64_hash_t;
 
-static XXH_PUBLIC_API XXH32_hash_t XXH32 (const void* input, size_t length, unsigned int seed);
-static XXH_PUBLIC_API XXH64_hash_t XXH64 (const void* input, size_t length, unsigned long long seed);
+XXH_PUBLIC_API XXH32_hash_t XXH32 (const void* input, size_t length, unsigned int seed);
+XXH_PUBLIC_API XXH64_hash_t XXH64 (const void* input, size_t length, unsigned long long seed);
 
 /*!
 XXH32() :
@@ -184,22 +185,22 @@ typedef struct XXH64_state_s XXH64_state_t;   /* incomplete type */
 
 /*! State allocation, compatible with dynamic libraries */
 
-static XXH_PUBLIC_API XXH32_state_t* XXH32_createState(void);
-static XXH_PUBLIC_API XXH_errorcode  XXH32_freeState(XXH32_state_t* statePtr);
+XXH_PUBLIC_API XXH32_state_t* XXH32_createState(void);
+XXH_PUBLIC_API XXH_errorcode  XXH32_freeState(XXH32_state_t* statePtr);
 
-static XXH_PUBLIC_API XXH64_state_t* XXH64_createState(void);
-static XXH_PUBLIC_API XXH_errorcode  XXH64_freeState(XXH64_state_t* statePtr);
+XXH_PUBLIC_API XXH64_state_t* XXH64_createState(void);
+XXH_PUBLIC_API XXH_errorcode  XXH64_freeState(XXH64_state_t* statePtr);
 
 
 /* hash streaming */
 
-static XXH_PUBLIC_API XXH_errorcode XXH32_reset  (XXH32_state_t* statePtr, unsigned int seed);
-static XXH_PUBLIC_API XXH_errorcode XXH32_update (XXH32_state_t* statePtr, const void* input, size_t length);
-static XXH_PUBLIC_API XXH32_hash_t  XXH32_digest (const XXH32_state_t* statePtr);
+XXH_PUBLIC_API XXH_errorcode XXH32_reset  (XXH32_state_t* statePtr, unsigned int seed);
+XXH_PUBLIC_API XXH_errorcode XXH32_update (XXH32_state_t* statePtr, const void* input, size_t length);
+XXH_PUBLIC_API XXH32_hash_t  XXH32_digest (const XXH32_state_t* statePtr);
 
-static XXH_PUBLIC_API XXH_errorcode XXH64_reset  (XXH64_state_t* statePtr, unsigned long long seed);
-static XXH_PUBLIC_API XXH_errorcode XXH64_update (XXH64_state_t* statePtr, const void* input, size_t length);
-static XXH_PUBLIC_API XXH64_hash_t  XXH64_digest (const XXH64_state_t* statePtr);
+XXH_PUBLIC_API XXH_errorcode XXH64_reset  (XXH64_state_t* statePtr, unsigned long long seed);
+XXH_PUBLIC_API XXH_errorcode XXH64_update (XXH64_state_t* statePtr, const void* input, size_t length);
+XXH_PUBLIC_API XXH64_hash_t  XXH64_digest (const XXH64_state_t* statePtr);
 
 /*
 These functions generate the xxHash of an input provided in multiple segments.
@@ -231,8 +232,8 @@ When done, free XXH state space if it was allocated dynamically.
 #  define restrict   /* disable restrict */
 #endif
 
-static XXH_PUBLIC_API void XXH32_copyState(XXH32_state_t* restrict dst_state, const XXH32_state_t* restrict src_state);
-static XXH_PUBLIC_API void XXH64_copyState(XXH64_state_t* restrict dst_state, const XXH64_state_t* restrict src_state);
+XXH_PUBLIC_API void XXH32_copyState(XXH32_state_t* restrict dst_state, const XXH32_state_t* restrict src_state);
+XXH_PUBLIC_API void XXH64_copyState(XXH64_state_t* restrict dst_state, const XXH64_state_t* restrict src_state);
 
 
 /* **************************
@@ -246,11 +247,11 @@ static XXH_PUBLIC_API void XXH64_copyState(XXH64_state_t* restrict dst_state, co
 typedef struct { unsigned char digest[4]; } XXH32_canonical_t;
 typedef struct { unsigned char digest[8]; } XXH64_canonical_t;
 
-static XXH_PUBLIC_API void XXH32_canonicalFromHash(XXH32_canonical_t* dst, XXH32_hash_t hash);
-static XXH_PUBLIC_API void XXH64_canonicalFromHash(XXH64_canonical_t* dst, XXH64_hash_t hash);
+XXH_PUBLIC_API void XXH32_canonicalFromHash(XXH32_canonical_t* dst, XXH32_hash_t hash);
+XXH_PUBLIC_API void XXH64_canonicalFromHash(XXH64_canonical_t* dst, XXH64_hash_t hash);
 
-static XXH_PUBLIC_API XXH32_hash_t XXH32_hashFromCanonical(const XXH32_canonical_t* src);
-static XXH_PUBLIC_API XXH64_hash_t XXH64_hashFromCanonical(const XXH64_canonical_t* src);
+XXH_PUBLIC_API XXH32_hash_t XXH32_hashFromCanonical(const XXH32_canonical_t* src);
+XXH_PUBLIC_API XXH64_hash_t XXH64_hashFromCanonical(const XXH64_canonical_t* src);
 
 #endif /* XXHASH_H_5627135585666179 */
 
@@ -299,3 +300,4 @@ static XXH_PUBLIC_API XXH64_hash_t XXH64_hashFromCanonical(const XXH64_canonical
 #if defined (__cplusplus)
 }
 #endif
+/* END CSTYLED */

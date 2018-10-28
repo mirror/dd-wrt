@@ -72,7 +72,7 @@ main(int argc, char **argv)
 		usage(argv[0]);
 	}
 
-//	(void) sigset(SIGXFSZ, sigxfsz);
+	(void) sigset(SIGXFSZ, sigxfsz);
 
 	testfile = strdup(argv[1]);
 
