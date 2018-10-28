@@ -18,6 +18,7 @@ libtirpc-install:
 
 
 zfs-configure: libtirpc-configure libtirpc
+	cd zfsnew && ./autogen.sh
 	cd zfsnew && autoreconf
 	cd zfsnew && ./configure \
 		--prefix=/usr \
@@ -34,6 +35,9 @@ zfs: libtirpc
 
 zfs-clean:
 	if test -e "zfsnew/Makefile"; then make -C zfsnew clean; fi
+
+zfs-distclean:
+	if test -e "zfsnew/Makefile"; then make -C zfsnew distclean; fi
 	
 
 zfs-install:
