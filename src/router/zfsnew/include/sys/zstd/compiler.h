@@ -42,6 +42,10 @@
 #  define HINT_INLINE static INLINE_KEYWORD FORCE_INLINE_ATTR
 #endif
 
+#ifdef noinline
+#define FORCE_NOINLINE noinline
+#else
+
 #ifdef _KERNEL
 /* force no inlining */
 #  ifdef __GNUC__
@@ -55,7 +59,7 @@
 #  else
 #    define FORCE_NOINLINE static
 #  endif
-
+#endif
 
 #endif
 
