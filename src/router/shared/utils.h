@@ -784,7 +784,7 @@ static inline int startswith(char *source, char *cmp)
 }
 
 typedef struct {
-	char *tz_name;
+	const char *tz_name;
 	const char *tz_string;
 } TIMEZONE_TO_TZSTRING;
 
