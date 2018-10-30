@@ -192,6 +192,10 @@ ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.ventana wireguard
 	-$(MAKE) -f Makefile.ventana wireguard-install
 endif
+ifeq ($(CONFIG_I2C_GPIO_CUSTOM),y)
+	-$(MAKE) -f Makefile.ventana i2c-custom-gpio
+	-$(MAKE) -f Makefile.ventana i2c-custom-gpio-install
+endif
 	-$(MAKE) -f Makefile.ventana uniwip-gpio
 	-$(MAKE) -f Makefile.ventana uniwip-gpio-install
 
