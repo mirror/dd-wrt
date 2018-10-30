@@ -53,7 +53,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"Africa/Cairo", "EET-2"}
 	,
-	{"Africa/Casablanca", "WET0WEST,M3.5.0,M10.5.0/3"}
+	{"Africa/Casablanca", "<+01>-1"}
 	,
 	{"Africa/Ceuta", "CET-1CEST,M3.5.0,M10.5.0/3"}
 	,
@@ -67,7 +67,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"Africa/Douala", "WAT-1"}
 	,
-	{"Africa/El_Aaiun", "WET0WEST,M3.5.0,M10.5.0/3"}
+	{"Africa/El_Aaiun", "<+01>-1"}
 	,
 	{"Africa/Freetown", "GMT0"}
 	,
@@ -81,7 +81,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"Africa/Kampala", "EAT-3"}
 	,
-	{"Africa/Khartoum", "EAT-3"}
+	{"Africa/Khartoum", "CAT-2"}
 	,
 	{"Africa/Kigali", "CAT-2"}
 	,
@@ -123,7 +123,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"Africa/Porto-Novo", "WAT-1"}
 	,
-	{"Africa/Sao_Tome", "GMT0"}
+	{"Africa/Sao_Tome", "WAT-1"}
 	,
 	{"Africa/Timbuktu", "GMT0"}
 	,
@@ -131,7 +131,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"Africa/Tunis", "CET-1"}
 	,
-	{"Africa/Windhoek", "WAT-1WAST,M9.1.0,M4.1.0"}
+	{"Africa/Windhoek", "CAT-2"}
 	,
 	{"America/Adak", "HST10HDT,M3.2.0,M11.1.0"}
 	,
@@ -141,73 +141,73 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"America/Antigua", "AST4"}
 	,
-	{"America/Araguaina", "BRT3"}
+	{"America/Araguaina", "<-03>3"}
 	,
-	{"America/Argentina/Buenos_Aires", "ART3"}
+	{"America/Argentina/Buenos_Aires", "<-03>3"}
 	,
-	{"America/Argentina/Catamarca", "ART3"}
+	{"America/Argentina/Catamarca", "<-03>3"}
 	,
-	{"America/Argentina/ComodRivadavia", "ART3"}
+	{"America/Argentina/ComodRivadavia", "<-03>3"}
 	,
-	{"America/Argentina/Cordoba", "ART3"}
+	{"America/Argentina/Cordoba", "<-03>3"}
 	,
-	{"America/Argentina/Jujuy", "ART3"}
+	{"America/Argentina/Jujuy", "<-03>3"}
 	,
-	{"America/Argentina/La_Rioja", "ART3"}
+	{"America/Argentina/La_Rioja", "<-03>3"}
 	,
-	{"America/Argentina/Mendoza", "ART3"}
+	{"America/Argentina/Mendoza", "<-03>3"}
 	,
-	{"America/Argentina/Rio_Gallegos", "ART3"}
+	{"America/Argentina/Rio_Gallegos", "<-03>3"}
 	,
-	{"America/Argentina/Salta", "ART3"}
+	{"America/Argentina/Salta", "<-03>3"}
 	,
-	{"America/Argentina/San_Juan", "ART3"}
+	{"America/Argentina/San_Juan", "<-03>3"}
 	,
-	{"America/Argentina/San_Luis", "ART3"}
+	{"America/Argentina/San_Luis", "<-03>3"}
 	,
-	{"America/Argentina/Tucuman", "ART3"}
+	{"America/Argentina/Tucuman", "<-03>3"}
 	,
-	{"America/Argentina/Ushuaia", "ART3"}
+	{"America/Argentina/Ushuaia", "<-03>3"}
 	,
 	{"America/Aruba", "AST4"}
 	,
-	{"America/Asuncion", "PYT4PYST,M10.1.0/0,M3.4.0/0"}
+	{"America/Asuncion", "<-04>4<-03>,M10.1.0/0,M3.4.0/0"}
 	,
 	{"America/Atikokan", "EST5"}
 	,
 	{"America/Atka", "HST10HDT,M3.2.0,M11.1.0"}
 	,
-	{"America/Bahia", "BRT3"}
+	{"America/Bahia", "<-03>3"}
 	,
 	{"America/Bahia_Banderas", "CST6CDT,M4.1.0,M10.5.0"}
 	,
 	{"America/Barbados", "AST4"}
 	,
-	{"America/Belem", "BRT3"}
+	{"America/Belem", "<-03>3"}
 	,
 	{"America/Belize", "CST6"}
 	,
 	{"America/Blanc-Sablon", "AST4"}
 	,
-	{"America/Boa_Vista", "AMT4"}
+	{"America/Boa_Vista", "<-04>4"}
 	,
-	{"America/Bogota", "COT5"}
+	{"America/Bogota", "<-05>5"}
 	,
 	{"America/Boise", "MST7MDT,M3.2.0,M11.1.0"}
 	,
-	{"America/Buenos_Aires", "ART3"}
+	{"America/Buenos_Aires", "<-03>3"}
 	,
 	{"America/Cambridge_Bay", "MST7MDT,M3.2.0,M11.1.0"}
 	,
-	{"America/Campo_Grande", "AMT4AMST,M10.3.0/0,M2.3.0/0"}
+	{"America/Campo_Grande", "<-04>4<-03>,M11.1.0/0,M2.3.0/0"}
 	,
 	{"America/Cancun", "EST5"}
 	,
-	{"America/Caracas", "VET4"}
+	{"America/Caracas", "<-04>4"}
 	,
-	{"America/Catamarca", "ART3"}
+	{"America/Catamarca", "<-03>3"}
 	,
-	{"America/Cayenne", "GFT3"}
+	{"America/Cayenne", "<-03>3"}
 	,
 	{"America/Cayman", "EST5"}
 	,
@@ -217,13 +217,13 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"America/Coral_Harbour", "EST5"}
 	,
-	{"America/Cordoba", "ART3"}
+	{"America/Cordoba", "<-03>3"}
 	,
 	{"America/Costa_Rica", "CST6"}
 	,
 	{"America/Creston", "MST7"}
 	,
-	{"America/Cuiaba", "AMT4AMST,M10.3.0/0,M2.3.0/0"}
+	{"America/Cuiaba", "<-04>4<-03>,M11.1.0/0,M2.3.0/0"}
 	,
 	{"America/Curacao", "AST4"}
 	,
@@ -241,7 +241,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"America/Edmonton", "MST7MDT,M3.2.0,M11.1.0"}
 	,
-	{"America/Eirunepe", "ACT5"}
+	{"America/Eirunepe", "<-05>5"}
 	,
 	{"America/El_Salvador", "CST6"}
 	,
@@ -251,15 +251,15 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"America/Fort_Wayne", "EST5EDT,M3.2.0,M11.1.0"}
 	,
-	{"America/Fortaleza", "BRT3"}
+	{"America/Fortaleza", "<-03>3"}
 	,
 	{"America/Glace_Bay", "AST4ADT,M3.2.0,M11.1.0"}
 	,
-	{"America/Godthab", "WGT3WGST,M3.5.0/-2,M10.5.0/-1"}
+	{"America/Godthab", "<-03>3<-02>,M3.5.0/-2,M10.5.0/-1"}
 	,
 	{"America/Goose_Bay", "AST4ADT,M3.2.0,M11.1.0"}
 	,
-	{"America/Grand_Turk", "AST4"}
+	{"America/Grand_Turk", "EST5EDT,M3.2.0,M11.1.0"}
 	,
 	{"America/Grenada", "AST4"}
 	,
@@ -267,9 +267,9 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"America/Guatemala", "CST6"}
 	,
-	{"America/Guayaquil", "ECT5"}
+	{"America/Guayaquil", "<-05>5"}
 	,
-	{"America/Guyana", "GYT4"}
+	{"America/Guyana", "<-04>4"}
 	,
 	{"America/Halifax", "AST4ADT,M3.2.0,M11.1.0"}
 	,
@@ -301,7 +301,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"America/Jamaica", "EST5"}
 	,
-	{"America/Jujuy", "ART3"}
+	{"America/Jujuy", "<-03>3"}
 	,
 	{"America/Juneau", "AKST9AKDT,M3.2.0,M11.1.0"}
 	,
@@ -313,9 +313,9 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"America/Kralendijk", "AST4"}
 	,
-	{"America/La_Paz", "BOT4"}
+	{"America/La_Paz", "<-04>4"}
 	,
-	{"America/Lima", "PET5"}
+	{"America/Lima", "<-05>5"}
 	,
 	{"America/Los_Angeles", "PST8PDT,M3.2.0,M11.1.0"}
 	,
@@ -323,11 +323,11 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"America/Lower_Princes", "AST4"}
 	,
-	{"America/Maceio", "BRT3"}
+	{"America/Maceio", "<-03>3"}
 	,
 	{"America/Managua", "CST6"}
 	,
-	{"America/Manaus", "AMT4"}
+	{"America/Manaus", "<-04>4"}
 	,
 	{"America/Marigot", "AST4"}
 	,
@@ -337,7 +337,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"America/Mazatlan", "MST7MDT,M4.1.0,M10.5.0"}
 	,
-	{"America/Mendoza", "ART3"}
+	{"America/Mendoza", "<-03>3"}
 	,
 	{"America/Menominee", "CST6CDT,M3.2.0,M11.1.0"}
 	,
@@ -347,13 +347,13 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"America/Mexico_City", "CST6CDT,M4.1.0,M10.5.0"}
 	,
-	{"America/Miquelon", "PMST3PMDT,M3.2.0,M11.1.0"}
+	{"America/Miquelon", "<-03>3<-02>,M3.2.0,M11.1.0"}
 	,
 	{"America/Moncton", "AST4ADT,M3.2.0,M11.1.0"}
 	,
 	{"America/Monterrey", "CST6CDT,M4.1.0,M10.5.0"}
 	,
-	{"America/Montevideo", "UYT3"}
+	{"America/Montevideo", "<-03>3"}
 	,
 	{"America/Montreal", "EST5EDT,M3.2.0,M11.1.0"}
 	,
@@ -367,7 +367,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"America/Nome", "AKST9AKDT,M3.2.0,M11.1.0"}
 	,
-	{"America/Noronha", "FNT2"}
+	{"America/Noronha", "<-02>2"}
 	,
 	{"America/North_Dakota/Beulah", "CST6CDT,M3.2.0,M11.1.0"}
 	,
@@ -381,45 +381,47 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"America/Pangnirtung", "EST5EDT,M3.2.0,M11.1.0"}
 	,
-	{"America/Paramaribo", "SRT3"}
+	{"America/Paramaribo", "<-03>3"}
 	,
 	{"America/Phoenix", "MST7"}
 	,
-	{"America/Port-au-Prince", "EST5"}
+	{"America/Port-au-Prince", "EST5EDT,M3.2.0,M11.1.0"}
 	,
 	{"America/Port_of_Spain", "AST4"}
 	,
-	{"America/Porto_Acre", "ACT5"}
+	{"America/Porto_Acre", "<-05>5"}
 	,
-	{"America/Porto_Velho", "AMT4"}
+	{"America/Porto_Velho", "<-04>4"}
 	,
 	{"America/Puerto_Rico", "AST4"}
+	,
+	{"America/Punta_Arenas", "<-03>3"}
 	,
 	{"America/Rainy_River", "CST6CDT,M3.2.0,M11.1.0"}
 	,
 	{"America/Rankin_Inlet", "CST6CDT,M3.2.0,M11.1.0"}
 	,
-	{"America/Recife", "BRT3"}
+	{"America/Recife", "<-03>3"}
 	,
 	{"America/Regina", "CST6"}
 	,
 	{"America/Resolute", "CST6CDT,M3.2.0,M11.1.0"}
 	,
-	{"America/Rio_Branco", "ACT5"}
+	{"America/Rio_Branco", "<-05>5"}
 	,
-	{"America/Rosario", "ART3"}
+	{"America/Rosario", "<-03>3"}
 	,
 	{"America/Santa_Isabel", "PST8PDT,M3.2.0,M11.1.0"}
 	,
-	{"America/Santarem", "BRT3"}
+	{"America/Santarem", "<-03>3"}
 	,
-	{"America/Santiago", "CLT4CLST,M8.2.6/24,M5.2.6/24"}
+	{"America/Santiago", "<-04>4<-03>,M9.1.6/24,M4.1.6/24"}
 	,
 	{"America/Santo_Domingo", "AST4"}
 	,
-	{"America/Sao_Paulo", "BRT3BRST,M10.3.0/0,M2.3.0/0"}
+	{"America/Sao_Paulo", "<-03>3<-02>,M11.1.0/0,M2.3.0/0"}
 	,
-	{"America/Scoresbysund", "EGT1EGST,M3.5.0/0,M10.5.0/1"}
+	{"America/Scoresbysund", "<-01>1<+00>,M3.5.0/0,M10.5.0/1"}
 	,
 	{"America/Shiprock", "MST7MDT,M3.2.0,M11.1.0"}
 	,
@@ -463,19 +465,19 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"America/Yellowknife", "MST7MDT,M3.2.0,M11.1.0"}
 	,
-	{"Antarctica/Casey", "<+11>-11"}
+	{"Antarctica/Casey", "<+08>-8"}
 	,
 	{"Antarctica/Davis", "<+07>-7"}
 	,
 	{"Antarctica/DumontDUrville", "<+10>-10"}
 	,
-	{"Antarctica/Macquarie", "MIST-11"}
+	{"Antarctica/Macquarie", "<+11>-11"}
 	,
 	{"Antarctica/Mawson", "<+05>-5"}
 	,
 	{"Antarctica/McMurdo", "NZST-12NZDT,M9.5.0,M4.1.0/3"}
 	,
-	{"Antarctica/Palmer", "CLT4CLST,M8.2.6/24,M5.2.6/24"}
+	{"Antarctica/Palmer", "<-03>3"}
 	,
 	{"Antarctica/Rothera", "<-03>3"}
 	,
@@ -489,7 +491,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"Arctic/Longyearbyen", "CET-1CEST,M3.5.0,M10.5.0/3"}
 	,
-	{"Asia/Aden", "AST-3"}
+	{"Asia/Aden", "<+03>-3"}
 	,
 	{"Asia/Almaty", "<+06>-6"}
 	,
@@ -507,27 +509,29 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"Asia/Atyrau", "<+05>-5"}
 	,
-	{"Asia/Baghdad", "AST-3"}
+	{"Asia/Baghdad", "<+03>-3"}
 	,
-	{"Asia/Bahrain", "AST-3"}
+	{"Asia/Bahrain", "<+03>-3"}
 	,
 	{"Asia/Baku", "<+04>-4"}
 	,
-	{"Asia/Bangkok", "ICT-7"}
+	{"Asia/Bangkok", "<+07>-7"}
 	,
 	{"Asia/Barnaul", "<+07>-7"}
+	,
+	{"Asia/Beijing", "CST-8"}
 	,
 	{"Asia/Beirut", "EET-2EEST,M3.5.0/0,M10.5.0/0"}
 	,
 	{"Asia/Bishkek", "<+06>-6"}
 	,
-	{"Asia/Brunei", "BNT-8"}
+	{"Asia/Brunei", "<+08>-8"}
 	,
 	{"Asia/Calcutta", "IST-5:30"}
 	,
 	{"Asia/Chita", "<+09>-9"}
 	,
-	{"Asia/Choibalsan", "CHOT-8CHOST,M3.5.6,M9.5.6/0"}
+	{"Asia/Choibalsan", "<+08>-8"}
 	,
 	{"Asia/Chongqing", "CST-8"}
 	,
@@ -535,31 +539,31 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"Asia/Colombo", "<+0530>-5:30"}
 	,
-	{"Asia/Dacca", "BDT-6"}
+	{"Asia/Dacca", "<+06>-6"}
 	,
 	{"Asia/Damascus", "EET-2EEST,M3.5.5/0,M10.5.5/0"}
 	,
-	{"Asia/Dhaka", "BDT-6"}
+	{"Asia/Dhaka", "<+06>-6"}
 	,
-	{"Asia/Dili", "TLT-9"}
+	{"Asia/Dili", "<+09>-9"}
 	,
-	{"Asia/Dubai", "GST-4"}
+	{"Asia/Dubai", "<+04>-4"}
 	,
 	{"Asia/Dushanbe", "<+05>-5"}
 	,
-	{"Asia/Famagusta", "<+03>-3"}
+	{"Asia/Famagusta", "EET-2EEST,M3.5.0/3,M10.5.0/4"}
 	,
-	{"Asia/Gaza", "EET-2EEST,M3.5.6/1,M10.5.6/1"}
+	{"Asia/Gaza", "EET-2EEST,M3.4.6/1,M10.5.6/1"}
 	,
 	{"Asia/Harbin", "CST-8"}
 	,
-	{"Asia/Hebron", "EET-2EEST,M3.5.6/1,M10.5.6/1"}
+	{"Asia/Hebron", "EET-2EEST,M3.4.6/1,M10.5.6/1"}
 	,
-	{"Asia/Ho_Chi_Minh", "ICT-7"}
+	{"Asia/Ho_Chi_Minh", "<+07>-7"}
 	,
 	{"Asia/Hong_Kong", "HKT-8"}
 	,
-	{"Asia/Hovd", "HOVT-7HOVST,M3.5.6,M9.5.6/0"}
+	{"Asia/Hovd", "<+07>-7"}
 	,
 	{"Asia/Irkutsk", "<+08>-8"}
 	,
@@ -571,17 +575,17 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"Asia/Jerusalem", "IST-2IDT,M3.4.4/26,M10.5.0"}
 	,
-	{"Asia/Kabul", "AFT-4:30"}
+	{"Asia/Kabul", "<+0430>-4:30"}
 	,
 	{"Asia/Kamchatka", "<+12>-12"}
 	,
 	{"Asia/Karachi", "PKT-5"}
 	,
-	{"Asia/Kashgar", "XJT-6"}
+	{"Asia/Kashgar", "<+06>-6"}
 	,
-	{"Asia/Kathmandu", "NPT-5:45"}
+	{"Asia/Kathmandu", "<+0545>-5:45"}
 	,
-	{"Asia/Katmandu", "NPT-5:45"}
+	{"Asia/Katmandu", "<+0545>-5:45"}
 	,
 	{"Asia/Khandyga", "<+09>-9"}
 	,
@@ -589,11 +593,11 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"Asia/Krasnoyarsk", "<+07>-7"}
 	,
-	{"Asia/Kuala_Lumpur", "MYT-8"}
+	{"Asia/Kuala_Lumpur", "<+08>-8"}
 	,
-	{"Asia/Kuching", "MYT-8"}
+	{"Asia/Kuching", "<+08>-8"}
 	,
-	{"Asia/Kuwait", "AST-3"}
+	{"Asia/Kuwait", "<+03>-3"}
 	,
 	{"Asia/Macao", "CST-8"}
 	,
@@ -603,9 +607,9 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"Asia/Makassar", "WITA-8"}
 	,
-	{"Asia/Manila", "PHT-8"}
+	{"Asia/Manila", "PST-8"}
 	,
-	{"Asia/Muscat", "GST-4"}
+	{"Asia/Muscat", "<+04>-4"}
 	,
 	{"Asia/Nicosia", "EET-2EEST,M3.5.0/3,M10.5.0/4"}
 	,
@@ -617,21 +621,21 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"Asia/Oral", "<+05>-5"}
 	,
-	{"Asia/Phnom_Penh", "ICT-7"}
+	{"Asia/Phnom_Penh", "<+07>-7"}
 	,
 	{"Asia/Pontianak", "WIB-7"}
 	,
-	{"Asia/Pyongyang", "KST-8:30"}
+	{"Asia/Pyongyang", "KST-9"}
 	,
-	{"Asia/Qatar", "AST-3"}
+	{"Asia/Qatar", "<+03>-3"}
 	,
 	{"Asia/Qyzylorda", "<+06>-6"}
 	,
-	{"Asia/Rangoon", "MMT-6:30"}
+	{"Asia/Rangoon", "<+0630>-6:30"}
 	,
-	{"Asia/Riyadh", "AST-3"}
+	{"Asia/Riyadh", "<+03>-3"}
 	,
-	{"Asia/Saigon", "ICT-7"}
+	{"Asia/Saigon", "<+07>-7"}
 	,
 	{"Asia/Sakhalin", "<+11>-11"}
 	,
@@ -641,7 +645,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"Asia/Shanghai", "CST-8"}
 	,
-	{"Asia/Singapore", "SGT-8"}
+	{"Asia/Singapore", "<+08>-8"}
 	,
 	{"Asia/Srednekolymsk", "<+11>-11"}
 	,
@@ -651,13 +655,13 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"Asia/Tbilisi", "<+04>-4"}
 	,
-	{"Asia/Tehran", "IRST-3:30IRDT,J80/0,J264/0"}
+	{"Asia/Tehran", "<+0330>-3:30<+0430>,J80/0,J264/0"}
 	,
 	{"Asia/Tel_Aviv", "IST-2IDT,M3.4.4/26,M10.5.0"}
 	,
-	{"Asia/Thimbu", "BTT-6"}
+	{"Asia/Thimbu", "<+06>-6"}
 	,
-	{"Asia/Thimphu", "BTT-6"}
+	{"Asia/Thimphu", "<+06>-6"}
 	,
 	{"Asia/Tokyo", "JST-9"}
 	,
@@ -665,33 +669,33 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"Asia/Ujung_Pandang", "WITA-8"}
 	,
-	{"Asia/Ulaanbaatar", "ULAT-8ULAST,M3.5.6,M9.5.6/0"}
+	{"Asia/Ulaanbaatar", "<+08>-8"}
 	,
-	{"Asia/Ulan_Bator", "ULAT-8ULAST,M3.5.6,M9.5.6/0"}
+	{"Asia/Ulan_Bator", "<+08>-8"}
 	,
-	{"Asia/Urumqi", "XJT-6"}
+	{"Asia/Urumqi", "<+06>-6"}
 	,
 	{"Asia/Ust-Nera", "<+10>-10"}
 	,
-	{"Asia/Vientiane", "ICT-7"}
+	{"Asia/Vientiane", "<+07>-7"}
 	,
 	{"Asia/Vladivostok", "<+10>-10"}
 	,
 	{"Asia/Yakutsk", "<+09>-9"}
 	,
-	{"Asia/Yangon", "MMT-6:30"}
+	{"Asia/Yangon", "<+0630>-6:30"}
 	,
 	{"Asia/Yekaterinburg", "<+05>-5"}
 	,
 	{"Asia/Yerevan", "<+04>-4"}
 	,
-	{"Atlantic/Azores", "AZOT1AZOST,M3.5.0/0,M10.5.0/1"}
+	{"Atlantic/Azores", "<-01>1<+00>,M3.5.0/0,M10.5.0/1"}
 	,
 	{"Atlantic/Bermuda", "AST4ADT,M3.2.0,M11.1.0"}
 	,
 	{"Atlantic/Canary", "WET0WEST,M3.5.0/1,M10.5.0"}
 	,
-	{"Atlantic/Cape_Verde", "CVT1"}
+	{"Atlantic/Cape_Verde", "<-01>1"}
 	,
 	{"Atlantic/Faeroe", "WET0WEST,M3.5.0/1,M10.5.0"}
 	,
@@ -703,11 +707,11 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"Atlantic/Reykjavik", "GMT0"}
 	,
-	{"Atlantic/South_Georgia", "GST2"}
+	{"Atlantic/South_Georgia", "<-02>2"}
 	,
 	{"Atlantic/St_Helena", "GMT0"}
 	,
-	{"Atlantic/Stanley", "FKST3"}
+	{"Atlantic/Stanley", "<-03>3"}
 	,
 	{"Australia/ACT", "AEST-10AEDT,M10.1.0,M4.1.0/3"}
 	,
@@ -723,15 +727,15 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"Australia/Darwin", "ACST-9:30"}
 	,
-	{"Australia/Eucla", "ACWST-8:45"}
+	{"Australia/Eucla", "<+0845>-8:45"}
 	,
 	{"Australia/Hobart", "AEST-10AEDT,M10.1.0,M4.1.0/3"}
 	,
-	{"Australia/LHI", "LHST-10:30LHDT-11,M10.1.0,M4.1.0"}
+	{"Australia/LHI", "<+1030>-10:30<+11>-11,M10.1.0,M4.1.0"}
 	,
 	{"Australia/Lindeman", "AEST-10"}
 	,
-	{"Australia/Lord_Howe", "LHST-10:30LHDT-11,M10.1.0,M4.1.0"}
+	{"Australia/Lord_Howe", "<+1030>-10:30<+11>-11,M10.1.0,M4.1.0"}
 	,
 	{"Australia/Melbourne", "AEST-10AEDT,M10.1.0,M4.1.0/3"}
 	,
@@ -755,13 +759,13 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"Australia/Yancowinna", "ACST-9:30ACDT,M10.1.0,M4.1.0/3"}
 	,
-	{"Brazil/Acre", "ACT5"}
+	{"Brazil/Acre", "<-05>5"}
 	,
-	{"Brazil/DeNoronha", "FNT2"}
+	{"Brazil/DeNoronha", "<-02>2"}
 	,
-	{"Brazil/East", "BRT3BRST,M10.3.0/0,M2.3.0/0"}
+	{"Brazil/East", "<-03>3<-02>,M11.1.0/0,M2.3.0/0"}
 	,
-	{"Brazil/West", "AMT4"}
+	{"Brazil/West", "<-04>4"}
 	,
 	{"Canada/Atlantic", "AST4ADT,M3.2.0,M11.1.0"}
 	,
@@ -781,15 +785,15 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"Canada/Yukon", "PST8PDT,M3.2.0,M11.1.0"}
 	,
-	{"Chile/Continental", "CLT4CLST,M8.2.6/24,M5.2.6/24"}
+	{"Chile/Continental", "<-04>4<-03>,M9.1.6/24,M4.1.6/24"}
 	,
-	{"Chile/EasterIsland", "EAST6EASST,M8.2.6/22,M5.2.6/22"}
+	{"Chile/EasterIsland", "<-06>6<-05>,M9.1.6/22,M4.1.6/22"}
 	,
 	{"Cuba", "CST5CDT,M3.2.0/0,M11.1.0/1"}
 	,
 	{"Egypt", "EET-2"}
 	,
-	{"Eire", "GMT0IST,M3.5.0/1,M10.5.0"}
+	{"Eire", "IST-1GMT0,M10.5.0,M3.5.0/1"}
 	,
 	{"Etc/GMT+1", "<-01>1"}
 	,
@@ -875,7 +879,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"Europe/Copenhagen", "CET-1CEST,M3.5.0,M10.5.0/3"}
 	,
-	{"Europe/Dublin", "GMT0IST,M3.5.0/1,M10.5.0"}
+	{"Europe/Dublin", "IST-1GMT0,M10.5.0,M3.5.0/1"}
 	,
 	{"Europe/Gibraltar", "CET-1CEST,M3.5.0,M10.5.0/3"}
 	,
@@ -963,7 +967,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"Europe/Vilnius", "EET-2EEST,M3.5.0/3,M10.5.0/4"}
 	,
-	{"Europe/Volgograd", "<+03>-3"}
+	{"Europe/Volgograd", "<+04>-4"}
 	,
 	{"Europe/Warsaw", "CET-1CEST,M3.5.0,M10.5.0/3"}
 	,
@@ -987,27 +991,27 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"Indian/Antananarivo", "EAT-3"}
 	,
-	{"Indian/Chagos", "IOT-6"}
+	{"Indian/Chagos", "<+06>-6"}
 	,
-	{"Indian/Christmas", "CXT-7"}
+	{"Indian/Christmas", "<+07>-7"}
 	,
-	{"Indian/Cocos", "CCT-6:30"}
+	{"Indian/Cocos", "<+0630>-6:30"}
 	,
 	{"Indian/Comoro", "EAT-3"}
 	,
 	{"Indian/Kerguelen", "<+05>-5"}
 	,
-	{"Indian/Mahe", "SCT-4"}
+	{"Indian/Mahe", "<+04>-4"}
 	,
-	{"Indian/Maldives", "MVT-5"}
+	{"Indian/Maldives", "<+05>-5"}
 	,
-	{"Indian/Mauritius", "MUT-4"}
+	{"Indian/Mauritius", "<+04>-4"}
 	,
 	{"Indian/Mayotte", "EAT-3"}
 	,
-	{"Indian/Reunion", "RET-4"}
+	{"Indian/Reunion", "<+04>-4"}
 	,
-	{"Iran", "IRST-3:30IRDT,J80/0,J264/0"}
+	{"Iran", "<+0330>-3:30<+0430>,J80/0,J264/0"}
 	,
 	{"Israel", "IST-2IDT,M3.4.4/26,M10.5.0"}
 	,
@@ -1015,7 +1019,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"Japan", "JST-9"}
 	,
-	{"Kwajalein", "MHT-12"}
+	{"Kwajalein", "<+12>-12"}
 	,
 	{"Libya", "EET-2"}
 	,
@@ -1027,39 +1031,39 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"NZ", "NZST-12NZDT,M9.5.0,M4.1.0/3"}
 	,
-	{"NZ-CHAT", "CHAST-12:45CHADT,M9.5.0/2:45,M4.1.0/3:45"}
+	{"NZ-CHAT", "<+1245>-12:45<+1345>,M9.5.0/2:45,M4.1.0/3:45"}
 	,
 	{"Navajo", "MST7MDT,M3.2.0,M11.1.0"}
 	,
 	{"PRC", "CST-8"}
 	,
-	{"Pacific/Apia", "WSST-13WSDT,M9.5.0/3,M4.1.0/4"}
+	{"Pacific/Apia", "<+13>-13<+14>,M9.5.0/3,M4.1.0/4"}
 	,
 	{"Pacific/Auckland", "NZST-12NZDT,M9.5.0,M4.1.0/3"}
 	,
-	{"Pacific/Bougainville", "BST-11"}
+	{"Pacific/Bougainville", "<+11>-11"}
 	,
-	{"Pacific/Chatham", "CHAST-12:45CHADT,M9.5.0/2:45,M4.1.0/3:45"}
+	{"Pacific/Chatham", "<+1245>-12:45<+1345>,M9.5.0/2:45,M4.1.0/3:45"}
 	,
-	{"Pacific/Chuuk", "CHUT-10"}
+	{"Pacific/Chuuk", "<+10>-10"}
 	,
-	{"Pacific/Easter", "EAST6EASST,M8.2.6/22,M5.2.6/22"}
+	{"Pacific/Easter", "<-06>6<-05>,M9.1.6/22,M4.1.6/22"}
 	,
-	{"Pacific/Efate", "VUT-11"}
+	{"Pacific/Efate", "<+11>-11"}
 	,
-	{"Pacific/Enderbury", "PHOT-13"}
+	{"Pacific/Enderbury", "<+13>-13"}
 	,
-	{"Pacific/Fakaofo", "TKT-13"}
+	{"Pacific/Fakaofo", "<+13>-13"}
 	,
-	{"Pacific/Fiji", "FJT-12FJST,M11.1.0,M1.3.0/3"}
+	{"Pacific/Fiji", "<+12>-12<+13>,M11.1.0,M1.2.2/123"}
 	,
-	{"Pacific/Funafuti", "TVT-12"}
+	{"Pacific/Funafuti", "<+12>-12"}
 	,
-	{"Pacific/Galapagos", "GALT6"}
+	{"Pacific/Galapagos", "<-06>6"}
 	,
-	{"Pacific/Gambier", "GAMT9"}
+	{"Pacific/Gambier", "<-09>9"}
 	,
-	{"Pacific/Guadalcanal", "SBT-11"}
+	{"Pacific/Guadalcanal", "<+11>-11"}
 	,
 	{"Pacific/Guam", "ChST-10"}
 	,
@@ -1067,57 +1071,57 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"Pacific/Johnston", "HST10"}
 	,
-	{"Pacific/Kiritimati", "LINT-14"}
+	{"Pacific/Kiritimati", "<+14>-14"}
 	,
-	{"Pacific/Kosrae", "KOST-11"}
+	{"Pacific/Kosrae", "<+11>-11"}
 	,
-	{"Pacific/Kwajalein", "MHT-12"}
+	{"Pacific/Kwajalein", "<+12>-12"}
 	,
-	{"Pacific/Majuro", "MHT-12"}
+	{"Pacific/Majuro", "<+12>-12"}
 	,
-	{"Pacific/Marquesas", "MART9:30"}
+	{"Pacific/Marquesas", "<-0930>9:30"}
 	,
 	{"Pacific/Midway", "SST11"}
 	,
-	{"Pacific/Nauru", "NRT-12"}
+	{"Pacific/Nauru", "<+12>-12"}
 	,
-	{"Pacific/Niue", "NUT11"}
+	{"Pacific/Niue", "<-11>11"}
 	,
-	{"Pacific/Norfolk", "NFT-11"}
+	{"Pacific/Norfolk", "<+11>-11"}
 	,
-	{"Pacific/Noumea", "NCT-11"}
+	{"Pacific/Noumea", "<+11>-11"}
 	,
 	{"Pacific/Pago_Pago", "SST11"}
 	,
-	{"Pacific/Palau", "PWT-9"}
+	{"Pacific/Palau", "<+09>-9"}
 	,
-	{"Pacific/Pitcairn", "PST8"}
+	{"Pacific/Pitcairn", "<-08>8"}
 	,
-	{"Pacific/Pohnpei", "PONT-11"}
+	{"Pacific/Pohnpei", "<+11>-11"}
 	,
-	{"Pacific/Ponape", "PONT-11"}
+	{"Pacific/Ponape", "<+11>-11"}
 	,
-	{"Pacific/Port_Moresby", "PGT-10"}
+	{"Pacific/Port_Moresby", "<+10>-10"}
 	,
-	{"Pacific/Rarotonga", "CKT10"}
+	{"Pacific/Rarotonga", "<-10>10"}
 	,
 	{"Pacific/Saipan", "ChST-10"}
 	,
 	{"Pacific/Samoa", "SST11"}
 	,
-	{"Pacific/Tahiti", "TAHT10"}
+	{"Pacific/Tahiti", "<-10>10"}
 	,
-	{"Pacific/Tarawa", "GILT-12"}
+	{"Pacific/Tarawa", "<+12>-12"}
 	,
-	{"Pacific/Tongatapu", "<+13>-13<+14>,M11.1.0,M1.3.0/3"}
+	{"Pacific/Tongatapu", "<+13>-13"}
 	,
-	{"Pacific/Truk", "CHUT-10"}
+	{"Pacific/Truk", "<+10>-10"}
 	,
-	{"Pacific/Wake", "WAKT-12"}
+	{"Pacific/Wake", "<+12>-12"}
 	,
-	{"Pacific/Wallis", "WFT-12"}
+	{"Pacific/Wallis", "<+12>-12"}
 	,
-	{"Pacific/Yap", "CHUT-10"}
+	{"Pacific/Yap", "<+10>-10"}
 	,
 	{"Poland", "CET-1CEST,M3.5.0,M10.5.0/3"}
 	,
@@ -1127,7 +1131,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{"ROK", "KST-9"}
 	,
-	{"Singapore", "SGT-8"}
+	{"Singapore", "<+08>-8"}
 	,
 	{"Turkey", "<+03>-3"}
 	,
