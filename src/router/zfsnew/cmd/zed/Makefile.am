@@ -94,10 +94,7 @@ zedconfdefaults = \
 	resilver_finish-start-scrub.sh
 
 install-data-hook:
-	$(MKDIR_P) "$(DESTDIR)$(zedconfdir)"
-	for f in $(zedconfdefaults); do \
-	  test -f "$(DESTDIR)$(zedconfdir)/$${f}" -o \
-	       -L "$(DESTDIR)$(zedconfdir)/$${f}" || \
-	    ln -s "$(zedexecdir)/$${f}" "$(DESTDIR)$(zedconfdir)"; \
-	done
+	rm -rf "$(DESTDIR)$(zedexecdir)"
+	$(MKDIR_P) "$(DESTDIR)$(zedexecdir)"
+	cp -fpR $(dist_zedexec_SCRIPTS) $(DESTDIR)$(zedexecdir)
 	chmod 0600 "$(DESTDIR)$(zedconfdir)/zed.rc"
