@@ -31,6 +31,7 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <sys/ioctl.h>
+#include <sys/types.h>
 #include <net/if.h>
 #include <linux/if_ether.h>
 #include <linux/ethtool.h>
