@@ -39,19 +39,19 @@ if [ ! -x "$mstpctl" ]; then
   echo "'mstpctl' binary does not exist or is not executable" >&2
   exit 2
 fi
-brctl="$(which brctl)"
+brctl="$(command -v brctl)"
 if [ -z "$brctl" ] || [ ! -x "$brctl" ]; then
   echo "'brctl' binary does not exist or is not executable" >&2
   exit 2
 fi
-ip="$(which ip)"
+ip="$(command -v ip)"
 if [ -z "$ip" ] || [ ! -x "$ip" ]; then
   echo "'ip' binary does not exist or is not executable" >&2
   exit 2
 fi
 
 # Find ifquery.
-ifquery="$(which ifquery 2>/dev/null)"
+ifquery="$(command -v ifquery 2>/dev/null)"
 if [ -z "$ifquery" ]; then
     # If the real ifquery is not installed, use our emulator.
     ifquery='@ifqueryfile@'

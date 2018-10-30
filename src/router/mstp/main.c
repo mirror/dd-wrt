@@ -87,33 +87,35 @@ int signal_init(void)
     return 0;
 }
 
+static int sanity_check(void)
+{
+    bridge_identifier_t BridgeIdentifier;
+    mst_configuration_identifier_t MST_ConfigurationIdentifier;
+
+    TST(sizeof(BridgeIdentifier) == 8, -1);
+    TST(sizeof(BridgeIdentifier.u) == 8, -1);
+    TST(sizeof(BridgeIdentifier.s) == 8, -1);
+    TST(sizeof(BridgeIdentifier.s.priority) == 2, -1);
+    TST(sizeof(BridgeIdentifier.s.mac_address) == 6, -1);
+    TST(sizeof(MST_ConfigurationIdentifier) == 51, -1);
+    TST(sizeof(MST_ConfigurationIdentifier.a) == 51, -1);
+    TST(sizeof(MST_ConfigurationIdentifier.s) == 51, -1);
+
+#ifdef HMAC_MDS_TEST_FUNCTIONS
+    TST(MD5TestSuite(), -1);
+#endif /* HMAC_MDS_TEST_FUNCTIONS */
+#ifdef MISC_TEST_FUNCS
+    TST(test_ports_trees_mesh(), -1);
+#endif /* MISC_TEST_FUNCS */
+
+    INFO("Sanity checks succeeded");
+    return 0;
+}
+
 int main(int argc, char *argv[])
 {
     int c;
     int daemonize = 1;
-
-    INFO("Version - " PACKAGE_VERSION "\n");
-
-    /* Sanity check */
-    {
-        bridge_identifier_t BridgeIdentifier;
-        mst_configuration_identifier_t MST_ConfigurationIdentifier;
-        TST(sizeof(BridgeIdentifier) == 8, -1);
-        TST(sizeof(BridgeIdentifier.u) == 8, -1);
-        TST(sizeof(BridgeIdentifier.s) == 8, -1);
-        TST(sizeof(BridgeIdentifier.s.priority) == 2, -1);
-        TST(sizeof(BridgeIdentifier.s.mac_address) == 6, -1);
-        TST(sizeof(MST_ConfigurationIdentifier) == 51, -1);
-        TST(sizeof(MST_ConfigurationIdentifier.a) == 51, -1);
-        TST(sizeof(MST_ConfigurationIdentifier.s) == 51, -1);
-#ifdef HMAC_MDS_TEST_FUNCTIONS
-        TST(MD5TestSuite(), -1);
-#endif /* HMAC_MDS_TEST_FUNCTIONS */
-#ifdef MISC_TEST_FUNCS
-        TST(test_ports_trees_mesh(), -1);
-#endif /* MISC_TEST_FUNCS */
-        INFO("Sanity checks succeeded");
-    }
 
     while((c = getopt(argc, argv, "Vdsv:")) != -1)
     {
@@ -147,6 +149,17 @@ int main(int argc, char *argv[])
     }
 
     if(daemonize)
+        print_to_syslog = 1;
+
+    if(print_to_syslog)
+        openlog(APP_NAME, LOG_PID, LOG_DAEMON);
+
+    INFO("Version - " PACKAGE_VERSION "\n");
+
+    if (sanity_check() < 0)
+	return EXIT_FAILURE;
+
+    if(daemonize)
     {
         FILE *f = fopen(MSTPD_PID_FILE, "w");
         if(!f)
@@ -157,16 +170,12 @@ int main(int argc, char *argv[])
         if(daemon(0, 0))
         {
             ERROR("can't daemonize");
+            fclose(f);
             return -1;
         }
         fprintf(f, "%d", getpid());
         fclose(f);
-        print_to_syslog = 1;
     }
-
-    if(print_to_syslog)
-        openlog(APP_NAME, 0, LOG_DAEMON);
-
 
     TST(signal_init() == 0, -1);
     TST(driver_mstp_init() == 0, -1);
@@ -178,6 +187,7 @@ int main(int argc, char *argv[])
 
     c = epoll_main_loop(&quit);
     bridge_track_fini();
+    ctl_socket_cleanup();
     driver_mstp_fini();
 
     return c;
