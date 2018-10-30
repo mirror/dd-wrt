@@ -20,14 +20,13 @@
   file called LICENSE.
 
   Authors: Srinivas Aji <Aji_Srinivas@emc.com>
-  Authors: Vitalii Demianets <vitas@nppfactor.kiev.ua>
+  Authors: Vitalii Demianets <dvitasgs@gmail.com>
 
 ******************************************************************************/
 
 #include <sys/un.h>
 #include <unistd.h>
 #include <poll.h>
-#include <string.h>
 
 #include "ctl_functions.h"
 #define NO_DAEMON
@@ -93,11 +92,10 @@ int send_ctl_message(int cmd, void *inbuf, int lin, void *outbuf, int lout,
 
     msg.msg_name = NULL;
     msg.msg_namelen = 0;
-    msg.msg_iov = &iov[0];
+    msg.msg_iov = iov;
     msg.msg_iovlen = 3;
     msg.msg_control = NULL;
     msg.msg_controllen = 0;
-    msg.msg_flags = 0;
 
     mhdr.cmd = cmd;
     mhdr.lin = lin;

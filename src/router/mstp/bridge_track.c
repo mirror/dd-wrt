@@ -148,6 +148,9 @@ static bool delete_br_byindex(int if_index)
     bridge_t *br;
     if(!(br = find_br(if_index)))
         return false;
+
+    INFO("Delete bridge %s (%d)", br->sysdeps.name, if_index);
+
     list_del(&br->list);
     MSTP_IN_delete_bridge(br);
     free(br);
@@ -707,7 +710,7 @@ int CTL_set_cist_bridge_config(int br_index, CIST_BridgeConfig *cfg)
     return MSTP_IN_set_cist_bridge_config(br, cfg);
 }
 
-int CTL_set_msti_bridge_config(int br_index, __u16 mstid, __u16 bridge_priority)
+int CTL_set_msti_bridge_config(int br_index, __u16 mstid, __u8 bridge_priority)
 {
     CTL_CHECK_BRIDGE_TREE;
     return MSTP_IN_set_msti_bridge_config(tree, bridge_priority);
