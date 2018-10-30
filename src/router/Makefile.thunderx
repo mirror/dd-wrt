@@ -194,6 +194,10 @@ ifeq ($(CONFIG_ZFS),y)
 	-$(MAKE) -f Makefile.thunderx zfs
 	-$(MAKE) -f Makefile.thunderx zfs-install
 endif
+ifeq ($(CONFIG_I2C_GPIO_CUSTOM),y)
+	-$(MAKE) -f Makefile.thunderx i2c-custom-gpio
+	-$(MAKE) -f Makefile.thunderx i2c-custom-gpio-install
+endif
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.thunderx wireguard
 	-$(MAKE) -f Makefile.thunderx wireguard-install
