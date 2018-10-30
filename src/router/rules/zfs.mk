@@ -22,6 +22,7 @@ zfs-configure: libtirpc-configure libtirpc
 	cd zfsnew && autoreconf
 	cd zfsnew && ./configure \
 		--prefix=/usr \
+		--libdir=/usr/lib \
 		--host=$(ARCH)-linux \
 		CC="$(CC) -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		CFLAGS="-I$(TOP)/zlib -I$(TOP)/e2fsprogs/lib  -I$(TOP)/libtirpc -I$(TOP)/libtirpc/tirpc -I$(TOP)/openssl/include" \
@@ -41,6 +42,8 @@ zfs-distclean:
 	
 
 zfs-install:
+	cd zfsnew && find . -name *.la -exec sed -i 's/relink_command/# relink_command/g' {} +
+	cd zfsnew && find . -name *.la -exec touch {} +
 	make -C zfsnew install DESTDIR=$(INSTALLDIR)/zfs
 	rm -rf $(INSTALLDIR)/zfs/usr/include
 	rm -rf $(INSTALLDIR)/zfs/usr/lib/pkgconfig
