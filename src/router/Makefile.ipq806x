@@ -168,6 +168,10 @@ ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.ipq806x wireguard
 	-$(MAKE) -f Makefile.ipq806x wireguard-install
 endif
+ifeq ($(CONFIG_I2C_GPIO_CUSTOM),y)
+	-$(MAKE) -f Makefile.ipq806x i2c-custom-gpio
+	-$(MAKE) -f Makefile.ipq806x i2c-custom-gpio-install
+endif
 #	-$(MAKE) -f Makefile.ipq806x uniwip-gpio
 #	-$(MAKE) -f Makefile.ipq806x uniwip-gpio-install
 

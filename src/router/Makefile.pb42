@@ -659,7 +659,10 @@ ifeq ($(CONFIG_SERVICEGATE),y)
 	-$(MAKE) -f Makefile.pb42 servicegate
 	-$(MAKE) -f Makefile.pb42 servicegate-install
 endif
-
+ifeq ($(CONFIG_I2C_GPIO_CUSTOM),y)
+	-$(MAKE) -f Makefile.pb42 i2c-custom-gpio
+	-$(MAKE) -f Makefile.pb42 i2c-custom-gpio-install
+endif
 ifneq ($(CONFIG_SAMBA),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/cifs
 endif
