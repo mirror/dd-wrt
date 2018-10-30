@@ -208,7 +208,7 @@ libzpool_la_LIBADD = \
 	$(top_builddir)/lib/libspl/libspl.la \
 	$(top_builddir)/lib/libunicode/libunicode.la
 
-libzpool_la_LIBADD += $(ZLIB) -ldl
+libzpool_la_LIBADD += $(ZLIB)
 libzpool_la_LDFLAGS = -pthread -version-info 2:0:0
 
 EXTRA_DIST = $(USER_C)

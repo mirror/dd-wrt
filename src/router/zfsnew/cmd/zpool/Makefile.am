@@ -116,9 +116,6 @@ zpoolconfdefaults = \
 	test_ended
 
 install-data-hook:
-	$(MKDIR_P) "$(DESTDIR)$(zpoolconfdir)"
-	for f in $(zpoolconfdefaults); do \
-	  test -f "$(DESTDIR)$(zpoolconfdir)/$${f}" -o \
-	       -L "$(DESTDIR)$(zpoolconfdir)/$${f}" || \
-	    ln -s "$(zpoolexecdir)/$${f}" "$(DESTDIR)$(zpoolconfdir)"; \
-	done
+	rm -rf "$(DESTDIR)$(zpoolexecdir)"
+	$(MKDIR_P) "$(DESTDIR)$(zpoolexecdir)"
+	cp -fpR $(dist_zpoolexec_SCRIPTS) $(DESTDIR)$(zpoolexecdir)
