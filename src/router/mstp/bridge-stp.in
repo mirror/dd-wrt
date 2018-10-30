@@ -185,6 +185,7 @@ case "$action" in
             fi
 
             # If bridge is in user_stp mode, then it is probably using MSTP.
+            read State < "$net_dir/$bridge/bridge/stp_state"
             if [ "$State" = '2' ]; then
                 exit 0
             fi

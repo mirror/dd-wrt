@@ -14,7 +14,6 @@
 
 #include <sys/types.h>
 #include <stdlib.h>
-#include <sys/types.h>
 
 #include "bridge_ctl.h"
 #include "list.h"
@@ -478,7 +477,6 @@ typedef struct
     bool NetworkPort;
     bool BaInconsistent;
     bool dontTxmtBpdu;
-    bool bpduFilterPort;
 
     unsigned int rapidAgeingWhile;
     unsigned int brAssuRcvdInfoWhile;
@@ -668,7 +666,7 @@ int MSTP_IN_set_cist_bridge_config(bridge_t *br, CIST_BridgeConfig *cfg);
 /* 12.8.1.4 Set MSTI Bridge Protocol Parameters */
     /* No need in special structure for single parameter Bridge Priority */
 
-int MSTP_IN_set_msti_bridge_config(tree_t *tree, __u16 bridge_priority);
+int MSTP_IN_set_msti_bridge_config(tree_t *tree, __u8 bridge_priority);
 
 /* 12.8.2.1 Read CIST Port Parameters */
 typedef struct
@@ -702,7 +700,6 @@ typedef struct
     __u32 internal_port_path_cost; /* not in standard */
     bool bpdu_guard_port;
     bool bpdu_guard_error;
-    bool bpdu_filter_port;
     bool network_port;
     bool ba_inconsistent;
     unsigned int num_rx_bpdu;
@@ -777,9 +774,6 @@ typedef struct
 
     bool dont_txmt;
     bool set_dont_txmt;
-
-    bool bpdu_filter_port;
-    bool set_bpdu_filter_port;
 } CIST_PortConfig;
 
 int MSTP_IN_set_cist_port_config(port_t *prt, CIST_PortConfig *cfg);

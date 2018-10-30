@@ -26,7 +26,6 @@
 
 #include <sys/un.h>
 #include <unistd.h>
-#include <string.h>
 
 #include "ctl_socket_client.h"
 #include "epoll_loop.h"
@@ -211,11 +210,10 @@ static void ctl_rcv_handler(uint32_t events, struct epoll_event_handler *p)
 
     msg.msg_name = &sa;
     msg.msg_namelen = sizeof(sa);
-    msg.msg_iov = &iov[0];
+    msg.msg_iov = iov;
     msg.msg_iovlen = 3;
     msg.msg_control = NULL;
     msg.msg_controllen = 0;
-    msg.msg_flags = 0;
     iov[0].iov_base = &mhdr;
     iov[0].iov_len = sizeof(mhdr);
     iov[1].iov_base = msg_inbuf;

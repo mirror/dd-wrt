@@ -30,9 +30,7 @@
 #include <stdbool.h>
 #include <fcntl.h>
 #include <limits.h>
-#include <errno.h>
 #include <sys/ioctl.h>
-#include <sys/types.h>
 #include <net/if.h>
 #include <linux/if_ether.h>
 #include <linux/ethtool.h>
@@ -115,12 +113,6 @@ int ethtool_get_speed_duplex(char *ifname, int *speed, int *duplex)
     ifr.ifr_data = (caddr_t)&ecmd;
     if(0 > ioctl(netsock, SIOCETHTOOL, &ifr))
     {
-        if (errno == EOPNOTSUPP) {
-            LOG("unsupported: get speed/duplex for %s: %m\n", ifname);
-            *speed = 10000;
-            *duplex = 1;
-            return 0;
-        }
         ERROR("Cannot get speed/duplex for %s: %m\n", ifname);
         return -1;
     }

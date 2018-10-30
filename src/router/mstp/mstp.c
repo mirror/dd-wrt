@@ -300,7 +300,6 @@ bool MSTP_IN_port_create_and_add_tail(port_t *prt, __u16 portno)
     prt->BpduGuardError = false;
     prt->NetworkPort = false;
     prt->dontTxmtBpdu = false;
-    prt->bpduFilterPort = false;
     prt->deleted = false;
 
     port_default_internal_vars(prt);
@@ -345,11 +344,6 @@ void MSTP_IN_delete_port(port_t *prt)
     if(prt->portEnabled)
     {
         prt->portEnabled = false;
-        FOREACH_PTP_IN_PORT(ptp, prt)
-        {
-            ptp->selected = false;
-            ptp->reselect = true;
-        }
         br_state_machines_run(br);
     }
 
@@ -582,11 +576,6 @@ void MSTP_IN_rx_bpdu(port_t *prt, bpdu_t *bpdu, int size)
 {
     int mstis_size;
     bridge_t *br = prt->bridge;
-
-    if(prt->bpduFilterPort)
-    {
-        return;
-    }
 
     ++(prt->num_rx_bpdu);
 
@@ -966,28 +955,20 @@ int MSTP_IN_set_cist_bridge_config(bridge_t *br, CIST_BridgeConfig *cfg)
 }
 
 /* 12.8.1.4 Set MSTI Bridge Protocol Parameters */
-int MSTP_IN_set_msti_bridge_config(tree_t *tree, __u16 bridge_priority)
+int MSTP_IN_set_msti_bridge_config(tree_t *tree, __u8 bridge_priority)
 {
     per_tree_port_t *ptp;
     __u8 valuePri;
 
-    if(65535 < bridge_priority)
+    if(15 < bridge_priority)
     {
         ERROR_BRNAME(tree->bridge,
-                     "MSTI %hu: Bridge Priority must be between 0 and 65535",
+                     "MSTI %hu: Bridge Priority must be between 0 and 15",
                      __be16_to_cpu(tree->MSTID));
         return -1;
     }
 
-    if(bridge_priority % 4096)
-    {
-        ERROR_BRNAME(tree->bridge,
-                     "MSTI %hu: Bridge Priority must be a multiple of 4096",
-                     __be16_to_cpu(tree->MSTID));
-        return -1;
-    }
-
-    valuePri = (bridge_priority/4096) << 4;
+    valuePri = bridge_priority << 4;
     if(GET_PRIORITY_FROM_IDENTIFIER(tree->BridgeIdentifier) == valuePri)
         return 0;
     SET_PRIORITY_IN_IDENTIFIER(valuePri, tree->BridgeIdentifier);
@@ -1042,7 +1023,6 @@ void MSTP_IN_get_cist_port_status(port_t *prt, CIST_PortStatus *status)
     status->bpdu_guard_error = prt->BpduGuardError;
     status->network_port = prt->NetworkPort;
     status->ba_inconsistent = prt->BaInconsistent;
-    status->bpdu_filter_port = prt->bpduFilterPort;
     status->num_rx_bpdu = prt->num_rx_bpdu;
     status->num_rx_tcn = prt->num_rx_tcn;
     status->num_tx_bpdu = prt->num_tx_bpdu;
@@ -1216,15 +1196,6 @@ int MSTP_IN_set_cist_port_config(port_t *prt, CIST_PortConfig *cfg)
         }
     }
 
-    if(cfg->set_bpdu_filter_port)
-    {
-        if (prt->bpduFilterPort != cfg->bpdu_filter_port)
-        {
-            prt->bpduFilterPort = cfg->bpdu_filter_port;
-            INFO_PRTNAME(br, prt,"bpduFilterPort new-%d", prt->bpduFilterPort);
-        }
-    }
-
     if(changed && prt->portEnabled)
         br_state_machines_run(prt->bridge);
 
@@ -1242,20 +1213,13 @@ int MSTP_IN_set_msti_port_config(per_tree_port_t *ptp, MSTI_PortConfig *cfg)
 
     if(cfg->set_port_priority)
     {
-        if(240 < cfg->port_priority)
+        if(15 < cfg->port_priority)
         {
             ERROR_MSTINAME(br, prt, ptp,
                            "Port Priority must be between 0 and 15");
             return -1;
         }
-        if((cfg->port_priority % 16))
-        {
-            ERROR_MSTINAME(br, prt, ptp,
-                           "Port Priority must be a multiple of 16");
-            return -1;
-        }
-
-        valuePri = (cfg->port_priority/16) << 4;
+        valuePri = cfg->port_priority << 4;
         if(GET_PRIORITY_FROM_IDENTIFIER(ptp->portId) != valuePri)
         {
             SET_PRIORITY_IN_IDENTIFIER(valuePri, ptp->portId);
@@ -3101,9 +3065,9 @@ static bool BDSM_run(port_t *prt, bool dry_run)
     switch(prt->BDSM_state)
     {
         case BDSM_EDGE:
-            if((((!prt->portEnabled) || (!prt->bridge->bridgeEnabled) ||
-                (!prt->AutoEdge)) &&
-                 !prt->AdminEdgePort) || !prt->operEdge)
+            if(((!prt->portEnabled || !prt->AutoEdge) && !prt->AdminEdgePort)
+               || !prt->operEdge
+              )
             {
                 if(dry_run) /* state change */
                     return true;
@@ -3268,14 +3232,6 @@ static bool PTSM_run(port_t *prt, bool dry_run)
                 return false;
             }
             cistRole = ptp->role;
-            /* Dont send BPDU in disabled role, this happens when port
-             * is just enabled */
-            if (cistRole == roleDisabled)
-            {
-                INFO_PRTNAME(prt->bridge, prt,
-                        "not send from port with Disabled role");
-                return false;
-            }
             mstiMasterPort = false;
             list_for_each_entry_continue(ptp, &prt->trees, port_list)
             {
@@ -3298,10 +3254,9 @@ static bool PTSM_run(port_t *prt, bool dry_run)
                 return false;
             if(prt->sendRSTP)
             { /* implement MSTP */
-                if(!prt->dontTxmtBpdu && !prt->bpduFilterPort &&
-                   (prt->newInfo || (prt->newInfoMsti && !mstiMasterPort)
+                if(prt->newInfo || (prt->newInfoMsti && !mstiMasterPort)
                    || assurancePort(prt)
-                  ))
+                  )
                 {
                     if(dry_run) /* state change */
                         return true;
@@ -3311,9 +3266,6 @@ static bool PTSM_run(port_t *prt, bool dry_run)
             }
             else
             { /* fallback to STP */
-                if (prt->bpduFilterPort)
-                    return false;
-
                 if(prt->newInfo && (roleDesignated == cistRole))
                 {
                     if(dry_run) /* state change */
@@ -4523,12 +4475,12 @@ static bool PRTSM_runr(per_tree_port_t *ptp, bool recursive_call, bool dry_run)
                 }
             }
             /* Transition to discarding when BA inconsistent */
-            if((((ptp->sync && !ptp->synced)
+            if(((ptp->sync && !ptp->synced)
                 || (ptp->reRoot && (0 != ptp->rrWhile))
                 || ptp->disputed
+                || ptp->port->BaInconsistent
                )
                && !prt->operEdge && (ptp->learn || ptp->forward)
-               ) || (ptp->port->BaInconsistent && (ptp->learn || ptp->forward))
               )
             {
                 if(dry_run) /* state change */
