@@ -306,6 +306,7 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 #endif
 	 },
 #endif
+#ifndef CONFIG_PERU
 	{
 	 .name = "generic_2",
 	 .gpio = 2,
@@ -316,6 +317,7 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	 .gpio = 3,
 	 .active_low = 0,
 	 },
+#endif
 	{
 	 .name = "generic_4",
 	 .gpio = 4,
