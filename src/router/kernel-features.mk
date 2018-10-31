@@ -291,6 +291,7 @@ define kernelfeatures
 		echo "CONFIG_DM_ZONED=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_DM_CACHE_MQ=m" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_ASYNC_RAID6_TEST is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_BCACHE_EDEBUG is not set" >> $(LINUXDIR)/.config; \
 	else \
 		sed -i 's/\CONFIG_MD=y/# CONFIG_MD is not set/g' $(LINUXDIR)/.config; \
 		sed -i 's/\CONFIG_RAID6_PQ=m/# CONFIG_RAID6_PQ is not set/g' $(LINUXDIR)/.config; \
