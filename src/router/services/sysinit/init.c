@@ -39,7 +39,6 @@
 extern int file2nvram(char *filename, char *varname);
 extern int nvram2file(char *varname, char *filename);
 
-
 #define start_single_service() eval("start_single_service");
 #define stop_services() eval("stopservices");
 #define start_services() eval("startservices");
@@ -404,7 +403,7 @@ void start_init_start(void)
 	int c;
 	int cnt = get_wl_instances();
 	for (c = 0; c < cnt; c++) {
-		syslog(LOG_INFO, "Reinitialize Wifi%d\n",c);
+		syslog(LOG_INFO, "Reinitialize Wifi%d\n", c);
 
 		char *iface = get_wl_instance_name(c);
 		wlconf_up(iface);	// touble tip
@@ -448,7 +447,6 @@ void start_modules_wait(void)
 		start_run_rc_startup();
 	}
 #endif
-
 
 }
 
