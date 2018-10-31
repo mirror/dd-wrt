@@ -127,7 +127,7 @@ void start_sysinit(void)
 	if (!strcmp(modelname, "Gateworks Laguna GW2388"))
 		eval("gsp_updater", "-f", "/etc/gsc_2388_v50.txt", "50");
 	if (!strcmp(modelname, "Gateworks Laguna GW2387"))
-	 	eval("gsp_updater", "-f", "/etc/gsc_2387_v46.txt", "46");
+		eval("gsp_updater", "-f", "/etc/gsc_2387_v46.txt", "46");
 	if (!strcmp(modelname, "Gateworks Laguna GW2386"))
 		eval("gsp_updater", "-f", "/etc/gsc_2386_v50.txt", "50");
 	if (!strcmp(modelname, "Gateworks Laguna GW2384"))

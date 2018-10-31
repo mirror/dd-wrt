@@ -555,7 +555,7 @@ void start_sysinit(void)
 
 	eval("ifconfig", "eth1", "up");
 	eval("ifconfig", "eth0", "up");
-	
+
 	writeproc("/proc/irq/101/smp_affinity", "2");
 	writeproc("/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq", "800000");
 	writeproc("/sys/devices/system/cpu/cpu1/cpufreq/scaling_min_freq", "800000");
