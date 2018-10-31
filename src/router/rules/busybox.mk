@@ -453,6 +453,11 @@ endif
 ifeq ($(CONFIG_BUSYBOX_INETD),y)
 	sed -i 's/\# CONFIG_INETD is not set/CONFIG_INETD=y/g' busybox/.config
 endif
+ifeq ($(CONFIG_HWCLOCK),y)
+	sed -i 's/\# CONFIG_HWCLOCK is not set/CONFIG_HWCLOCK=y/g' busybox/.config
+	echo "# CONFIG_FEATURE_HWCLOCK_LONG_OPTIONS is not set" >> busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_HWCLOCK_ADJTIME_FHS is not set/CONFIG_FEATURE_HWCLOCK_ADJTIME_FHS=y/g' busybox/.config
+endif
 ifeq ($(CONFIG_EOP_TUNNEL),y)
 	sed -i 's/\# CONFIG_SEQ is not set/CONFIG_SEQ=y/g' busybox/.config
 endif
