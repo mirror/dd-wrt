@@ -206,13 +206,20 @@ void stop_dhcp6s(void)
 	stop_process("dhcp6s", "daemon");
 }
 
+static int nvram_change(const char *name, char *value)
+{
+	if (nvram_match(name, value))
+		return 0;
+	nvram_set(name, value);
+}
+
 int dhcp6c_state_main(int argc, char **argv)
 {
 	char prefix[INET6_ADDRSTRLEN];
 	struct in6_addr addr;
 	int i, r;
 
-	nvram_set("ipv6_rtr_addr", getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, 0));
+	int c |= nvram_change("ipv6_rtr_addr", getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, 0));
 
 	// extract prefix from configured IPv6 address
 	if (inet_pton(AF_INET6, nvram_safe_get("ipv6_rtr_addr"), &addr) > 0) {
@@ -226,21 +233,23 @@ int dhcp6c_state_main(int argc, char **argv)
 		}
 		inet_ntop(AF_INET6, &addr, prefix, sizeof(prefix));
 
-		nvram_set("ipv6_prefix", prefix);
+		c |= nvram_change("ipv6_prefix", prefix);
 	}
 
-	nvram_set("ipv6_get_dns", getenv("new_domain_name_servers"));
-	nvram_set("ipv6_get_domain", getenv("new_domain_name"));
-	nvram_set("ipv6_get_sip_name", getenv("new_sip_name"));
-	nvram_set("ipv6_get_sip_servers", getenv("new_sip_servers"));
+	c |= nvram_change("ipv6_get_dns", getenv("new_domain_name_servers"));
+	c |= nvram_change("ipv6_get_domain", getenv("new_domain_name"));
+	c |= nvram_change("ipv6_get_sip_name", getenv("new_sip_name"));
+	c |= nvram_change("ipv6_get_sip_servers", getenv("new_sip_servers"));
 
-	dns_to_resolv();
+	if (c) {
+		dns_to_resolv();
 
 #ifdef HAVE_RADVD
-	stop_radvd();
-	start_radvd();
+		stop_radvd();
+		start_radvd();
 #endif
-	stop_dhcp6s();
-	start_dhcp6s();
+		stop_dhcp6s();
+		start_dhcp6s();
+	}
 	return 0;
 }
