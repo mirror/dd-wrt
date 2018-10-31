@@ -85,6 +85,12 @@ static int ledtool_main(int argc, char **argv)
 			led_control(LED_SES, LED_OFF);
 			usleep(100000);
 			break;
+		case 4:
+			led_control(BEEPER, LED_ON);
+			usleep(500000);
+			led_control(BEEPER, LED_OFF);
+			usleep(500000);
+			break;
 
 		default:
 			led_control(LED_DIAG, LED_ON);
