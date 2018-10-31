@@ -33,7 +33,6 @@ struct mon {
 	int (*checkfunc) (void);
 };
 
-
 static int search_process(char *name, int count)
 {
 	int c = 0;
@@ -55,7 +54,7 @@ static int check_igmprt(void)
 {
 	if (nvram_match("wan_proto", "disabled") || !strlen(get_wan_face()))	// todo: add upstream 
 		return 0;
-	return 1;
+	return !search_process("igmprt", 1);
 }
 
 static int check_ddns(void)
