@@ -141,6 +141,7 @@ ifeq ($(CONFIG_UQMI),y)
 CFLAGS += -DHAVE_UQMI
 endif
 ifeq ($(CONFIG_PERU),y)
+CFLAGS += -DHAVE_WLANLED -D_GNU_SOURCE  -I$(TOP)/libubox  -I$(TOP)/libnl-tiny/include
 CFLAGS += -DHAVE_PERU
 endif
 ifeq ($(CONFIG_LIMA),y)
@@ -1096,6 +1097,9 @@ ifeq ($(CONFIG_GPIOWATCHER),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc gpiowatcher
 endif
 ifeq ($(CONFIG_UBNTM),y)
+	cd $(INSTALLDIR)/sbin && ln -sf rc wlanled
+endif
+ifeq ($(CONFIG_PERU),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc wlanled
 endif
 ifeq ($(CONFIG_ALFANX),y)

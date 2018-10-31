@@ -144,7 +144,7 @@ static int do_ntp(void)		// called from ntp_main and
 		nvram_seti("start_time", time(NULL));
 	nvram_set("ntp_done", "1");
 
-#if defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || defined(HAVE_LAGUNA) || defined(HAVE_STORM) || (defined(HAVE_GATEWORX) && !defined(HAVE_NOP8670))
+#if defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || defined(HAVE_LAGUNA) || defined(HAVE_STORM) || defined(HAVE_PERU) || (defined(HAVE_GATEWORX) && !defined(HAVE_NOP8670))
 	eval("hwclock", "-w", "-u");
 #endif
 	dd_syslog(LOG_INFO, "cyclic NTP Update success (servers %s)\n", servers);
