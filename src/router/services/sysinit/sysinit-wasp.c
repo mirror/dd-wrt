@@ -443,10 +443,10 @@ void start_sysinit(void)
 #endif
 #ifdef HAVE_PERU
 	insmod("ledtrig-netdev");
-	setEthLinkLED(16, "eth0");
-	setEthLinkLED(14, "eth1");
-	setEthLED(0, "eth0");
-	setEthLED(15, "eth1");
+	setEthLinkLED(16, "eth1");
+	setEthLinkLED(14, "eth0");
+	setEthLED(0, "eth1");
+	setEthLED(15, "eth0");
 
 	if (!nvram_matchi("wlanled", 0))
 		eval("/sbin/wlanled", "-l", "generic_12:-94", "-l", "generic_11:-76", "-l", "generic_13:-65");
