@@ -152,8 +152,8 @@ static void watchdog(void)
 #endif
 //#ifdef HAVE_USB
 //#ifndef HAVE_3G_ONLY
-//	if ((dropcounter++) % 4 == 0)
-//		writeprocsys("vm/drop_caches", "3");	// flush fs cache
+//      if ((dropcounter++) % 4 == 0)
+//              writeprocsys("vm/drop_caches", "3");    // flush fs cache
 //#endif
 //#endif
 #ifdef HAVE_R9000
