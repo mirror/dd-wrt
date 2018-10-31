@@ -298,6 +298,9 @@ endif
 ifeq ($(CONFIG_WASP),y)
 	cp $(LINUXDIR)/.config_wasp $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_PERU),y)
+	cp $(LINUXDIR)/.config_peru $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_RAMBUTAN),y)
 	cp $(LINUXDIR)/.config_rambutan $(LINUXDIR)/.config
 endif
@@ -549,6 +552,11 @@ ifeq ($(CONFIG_LIMA),y)
 	echo CONFIG_LIMA=y >> $(LINUXDIR)/.config
 else
 	echo "# CONFIG_LIMA is not set" >> $(LINUXDIR)/.config
+endif
+ifeq ($(CONFIG_PERU),y)
+	echo CONFIG_PERU=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_PERU is not set" >> $(LINUXDIR)/.config
 endif
 ifeq ($(CONFIG_RAMBUTAN),y)
 	echo CONFIG_RAMBUTAN=y >> $(LINUXDIR)/.config
