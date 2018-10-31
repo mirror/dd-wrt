@@ -236,6 +236,13 @@ static void detect_wireless_devices(void)
 				sprintf(overdrive, "overdrive=%d", od);
 #ifdef HAVE_WZRG450
 				eval("insmod", "ath9k", overdrive, "blink=1");
+#elif HAVE_PERU
+				char *dis = getUEnv("rndis");
+				if (dis && !strcmp(dis, "1"))
+					eval("insmod", "ath9k", overdrive, "no_pci=1");
+				else
+					eval("insmod", "ath9k", overdrive);
+
 #else
 				eval("insmod", "ath9k", overdrive);
 #endif
