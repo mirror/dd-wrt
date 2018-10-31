@@ -34,3 +34,10 @@ static void setEthLED(int gpio, char *eth)
 	sysprintf("echo %s > /sys/class/leds/generic_%d/device_name", eth, gpio);
 	sysprintf("echo \"link tx rx\" > /sys/class/leds/generic_%d/mode", gpio);
 }
+
+static void setEthLinkLED(int gpio, char *eth)
+{
+	sysprintf("echo netdev > /sys/class/leds/generic_%d/trigger", gpio);
+	sysprintf("echo %s > /sys/class/leds/generic_%d/device_name", eth, gpio);
+	sysprintf("echo \"link\" > /sys/class/leds/generic_%d/mode", gpio);
+}
