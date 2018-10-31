@@ -70,7 +70,6 @@ void start_sysinit(void)
 	char mtdpath[64];
 	int board = getRouterBrand();
 
-
 	int mtd = getMTD("ART");
 	char *maddr = NULL;
 	sprintf(mtdpath, "/dev/mtdblock/%d", mtd);

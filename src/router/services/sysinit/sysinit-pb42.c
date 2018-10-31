@@ -81,7 +81,6 @@ void start_sysinit(void)
 		nvram_set("et0macaddr", macaddr);
 		nvram_set("et0macaddr_safe", macaddr);
 	}
-
 	// eval ("ifconfig", "wifi0", "up");
 
 	/*

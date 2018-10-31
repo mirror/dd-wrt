@@ -202,11 +202,11 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 1 2 3 4");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 5");
-	setSwitchLED(15, 0x20); // wan
-	setSwitchLED(9, 0x10);  // lan1
-	setSwitchLED(14, 0x08); // lan2
-	setSwitchLED(21, 0x04); // lan3
-	setSwitchLED(20, 0x02); // lan4
+	setSwitchLED(15, 0x20);	// wan
+	setSwitchLED(9, 0x10);	// lan1
+	setSwitchLED(14, 0x08);	// lan2
+	setSwitchLED(21, 0x04);	// lan3
+	setSwitchLED(20, 0x02);	// lan4
 #elif defined (HAVE_ARCHERC7V4)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
@@ -444,7 +444,11 @@ void start_sysinit(void)
 #ifdef HAVE_PERU
 	if (!nvram_matchi("wlanled", 0))
 		eval("/sbin/wlanled", "-L", "generic_12:-94", "-l", "generic_11:-76", "-L", "generic_13:-65");
-	eval("ledtool","1","4"); //buzzer
+	eval("ledtool", "1", "4");	//buzzer
+	eval("insmod", "i2c-gpio-custom", "bus0=0,3,2");
+	eval("insmod", "rtc-pcf8523");
+	sysprintf("echo pcf8523 0x68 > /sys/class/i2c-dev/i2c-0/device/new_device");
+
 #elifif !defined(HAVE_WR810N) && !defined(HAVE_LIMA) && !defined(HAVE_RAMBUTAN)
 
 #ifdef HAVE_WNDR3700V4
