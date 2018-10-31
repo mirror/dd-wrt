@@ -22,3 +22,9 @@ clean:
 		$(MAKE_OPTS) \
 		clean
 
+install:
+	$(MAKE) -C "$(LINUXDIR)" \
+		$(MAKE_OPTS) \
+		INSTALL_MOD_PATH=$(INSTALLDIR) INSTALL_MOD_DIR= modules_install
+	rm -f $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)/modules.*
+
