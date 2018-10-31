@@ -349,6 +349,9 @@ config WR841V9
 config LIMA
 	bool "support for 8devices Lima"
 	depends on WR841V8
+config PERU
+	bool "support for Antaira Peru"
+	depends on LIMA
 config RAMBUTAN
 	bool "support for 8devices Rambutan"
 	depends on WR841V8
