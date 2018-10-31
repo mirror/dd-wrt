@@ -441,7 +441,11 @@ void start_sysinit(void)
 #ifdef HAVE_RAMBUTAN
 	mount("/dev/ubi0_2", "/jffs", "ubifs", MS_MGC_VAL, NULL);
 #endif
-#if !defined(HAVE_WR810N) && !defined(HAVE_LIMA) && !defined(HAVE_RAMBUTAN)
+#ifdef HAVE_PERU
+	if (!nvram_matchi("wlanled", 0))
+		eval("/sbin/wlanled", "-L", "generic_12:-94", "-l", "generic_11:-76", "-L", "generic_13:-65");
+	eval("ledtool","1","4"); //buzzer
+#elifif !defined(HAVE_WR810N) && !defined(HAVE_LIMA) && !defined(HAVE_RAMBUTAN)
 
 #ifdef HAVE_WNDR3700V4
 	setWirelessLed(0, 11);

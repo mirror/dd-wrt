@@ -407,6 +407,9 @@ endif
 ifeq ($(CONFIG_LIMA),y)
   CFLAGS += -DHAVE_LIMA
 endif
+ifeq ($(CONFIG_PERU),y)
+  CFLAGS += -DHAVE_PERU
+endif
 ifeq ($(CONFIG_RAMBUTAN),y)
   CFLAGS += -DHAVE_RAMBUTAN
 endif

@@ -277,6 +277,9 @@ static void getledconfig(struct ledconfig *cfg)
 #ifdef HAVE_DAP2230
 		cfg->diag_gpio = 0x00b;
 		cfg->power_gpio = 0x10b;
+#elif HAVE_PERU
+		cfg->diag_gpio = 0x10c;
+		cfg->beeper_gpio = 0x104;
 #elif HAVE_LIMA
 //              cfg->disconnected_gpio = 0x00f;
 //              cfg->power_gpio = 0x105;
