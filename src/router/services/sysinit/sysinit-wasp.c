@@ -443,12 +443,12 @@ void start_sysinit(void)
 #endif
 #ifdef HAVE_PERU
 	if (!nvram_matchi("wlanled", 0))
-		eval("/sbin/wlanled", "-L", "generic_12:-94", "-l", "generic_11:-76", "-L", "generic_13:-65");
-	eval("ledtool", "1", "4");	//buzzer
+		eval("/sbin/wlanled", "-l", "generic_12:-94", "-l", "generic_11:-76", "-l", "generic_13:-65");
 	eval("insmod", "i2c-gpio-custom", "bus0=0,3,2");
 	eval("insmod", "rtc-pcf8523");
 	sysprintf("echo pcf8523 0x68 > /sys/class/i2c-dev/i2c-0/device/new_device");
-
+	eval("hwclock", "-s", "-u");
+	eval("ledtool", "1", "4");	//buzzer
 #elifif !defined(HAVE_WR810N) && !defined(HAVE_LIMA) && !defined(HAVE_RAMBUTAN)
 
 #ifdef HAVE_WNDR3700V4
