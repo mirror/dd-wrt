@@ -141,7 +141,7 @@ ifeq ($(CONFIG_UQMI),y)
 CFLAGS += -DHAVE_UQMI
 endif
 ifeq ($(CONFIG_PERU),y)
-CFLAGS += -DHAVE_LIMA
+CFLAGS += -DHAVE_PERU
 endif
 ifeq ($(CONFIG_LIMA),y)
 CFLAGS += -DHAVE_LIMA
