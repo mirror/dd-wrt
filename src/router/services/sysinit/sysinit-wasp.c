@@ -449,7 +449,7 @@ void start_sysinit(void)
 	sysprintf("echo pcf8523 0x68 > /sys/class/i2c-dev/i2c-0/device/new_device");
 	eval("hwclock", "-s", "-u");
 	eval("ledtool", "1", "4");	//buzzer
-#elifif !defined(HAVE_WR810N) && !defined(HAVE_LIMA) && !defined(HAVE_RAMBUTAN)
+#elif !defined(HAVE_WR810N) && !defined(HAVE_LIMA) && !defined(HAVE_RAMBUTAN)
 
 #ifdef HAVE_WNDR3700V4
 	setWirelessLed(0, 11);
