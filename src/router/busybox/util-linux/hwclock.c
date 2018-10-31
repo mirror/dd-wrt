@@ -98,7 +98,7 @@ static void show_clock(const char **pp_rtcname, int utc)
 #endif
 
 #if !SHOW_HWCLOCK_DIFF
-	printf("%s  0.000000 seconds\n", cp);
+	fprintf(stdout,"%s  0.000000 seconds\n", cp);
 #else
 	{
 		long diff = sys_tv.tv_sec - t;
@@ -112,7 +112,7 @@ static void show_clock(const char **pp_rtcname, int utc)
 			/* Should be 1000000 - tv.tv_usec, but then we must check tv.tv_usec != 0 */
 			sys_tv.tv_usec = 999999 - sys_tv.tv_usec;
 		}
-		printf("%s  %ld.%06lu seconds\n", cp, diff, (unsigned long)sys_tv.tv_usec);
+		fprintf(stdout,"%s  %ld.%06lu seconds\n", cp, diff, (unsigned long)sys_tv.tv_usec);
 	}
 #endif
 }
