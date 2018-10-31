@@ -442,6 +442,11 @@ void start_sysinit(void)
 	mount("/dev/ubi0_2", "/jffs", "ubifs", MS_MGC_VAL, NULL);
 #endif
 #ifdef HAVE_PERU
+	setEthLinkLED(16, "eth0");
+	setEthLinkLED(14, "eth1");
+	setEthLED(0, "eth0");
+	setEthLED(15, "eth1");
+
 	if (!nvram_matchi("wlanled", 0))
 		eval("/sbin/wlanled", "-l", "generic_12:-94", "-l", "generic_11:-76", "-l", "generic_13:-65");
 	eval("insmod", "i2c-gpio-custom", "bus0=0,3,2");
