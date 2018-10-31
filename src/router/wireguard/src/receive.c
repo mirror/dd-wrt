@@ -386,7 +386,9 @@ static void wg_packet_consume_data_done(struct wg_peer *peer,
 	 * again in software.
 	 */
 	skb->ip_summed = CHECKSUM_UNNECESSARY;
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3, 12, 0)
 	skb->csum_level = ~0; /* All levels */
+#endif
 	skb->protocol = wg_skb_examine_untrusted_ip_hdr(skb);
 	if (skb->protocol == htons(ETH_P_IP)) {
 		len = ntohs(ip_hdr(skb)->tot_len);
