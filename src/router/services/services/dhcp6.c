@@ -211,6 +211,7 @@ static int nvram_change(const char *name, char *value)
 	if (nvram_match(name, value))
 		return 0;
 	nvram_set(name, value);
+	return 1;
 }
 
 int dhcp6c_state_main(int argc, char **argv)
@@ -218,8 +219,8 @@ int dhcp6c_state_main(int argc, char **argv)
 	char prefix[INET6_ADDRSTRLEN];
 	struct in6_addr addr;
 	int i, r;
-
-	int c |= nvram_change("ipv6_rtr_addr", getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, 0));
+	int c;
+	c |= nvram_change("ipv6_rtr_addr", getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, 0));
 
 	// extract prefix from configured IPv6 address
 	if (inet_pton(AF_INET6, nvram_safe_get("ipv6_rtr_addr"), &addr) > 0) {
