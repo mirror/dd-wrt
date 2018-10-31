@@ -907,6 +907,9 @@ void __init ar71xx_gpio_init(void)
 	ar71xx_gpio_direction_output(NULL, 17, 1);
 
 #endif
+#ifdef CONFIG_PERU
+	ar71xx_gpio_function_enable(AR934X_GPIO_FUNC_JTAG_DISABLE);
+#endif
 #ifdef CONFIG_MACH_HORNET
 	t = ar71xx_reset_rr(AR933X_RESET_REG_BOOTSTRAP);
 	t |= AR933X_BOOTSTRAP_MDIO_GPIO_EN;
