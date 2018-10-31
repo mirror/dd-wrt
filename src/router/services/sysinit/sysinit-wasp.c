@@ -442,6 +442,7 @@ void start_sysinit(void)
 	mount("/dev/ubi0_2", "/jffs", "ubifs", MS_MGC_VAL, NULL);
 #endif
 #ifdef HAVE_PERU
+	insmod("ledtrig-netdev");
 	setEthLinkLED(16, "eth0");
 	setEthLinkLED(14, "eth1");
 	setEthLED(0, "eth0");
