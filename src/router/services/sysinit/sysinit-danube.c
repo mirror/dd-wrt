@@ -229,7 +229,7 @@ void start_sysinit(void)
 		set_hwaddr("wifi0", mac1);
 	}
 #ifdef HAVE_ATH9K
-	sysprintf("echo phy0tpt > /sys/devices/platform/leds-gpio/leds/soc:green:wlan/trigger");
+	writestr("/sys/devices/platform/leds-gpio/leds/soc:green:wlan/trigger", "phy0tpt");
 #else
 	writeprocsys("dev/wifi0/ledpin", "15");
 	writeprocsys("dev/wifi0/softled", "1");
