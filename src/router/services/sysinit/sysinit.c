@@ -2943,7 +2943,6 @@ void start_restore_defaults(void)
 	nvram_unset("ipv6_get_sip_name");
 	nvram_unset("ipv6_get_sip_servers");
 
-
 	cprintf("check CFE nv\n");
 	if (check_now_boot() == PMON_BOOT)
 		check_pmon_nv();
