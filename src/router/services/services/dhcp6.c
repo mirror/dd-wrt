@@ -208,7 +208,10 @@ void stop_dhcp6s(void)
 
 static int nvram_change(const char *name, char *value)
 {
-	if (nvram_match(name, value))
+	char *oldval = nvram_get(name);
+	if (value == NULL && oldval == NULL)
+		return 0;
+	if (value && oldval && !strcmp(oldval, value)
 		return 0;
 	nvram_set(name, value);
 	return 1;
