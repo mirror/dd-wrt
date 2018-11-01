@@ -244,7 +244,6 @@ int dhcp6c_state_main(int argc, char **argv)
 
 	if (c) {
 		dns_to_resolv();
-
 #ifdef HAVE_RADVD
 		stop_radvd();
 		start_radvd();
