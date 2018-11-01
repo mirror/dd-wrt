@@ -454,27 +454,6 @@ void start_sysinit(void)
 	sysprintf("echo pcf8523 0x68 > /sys/class/i2c-dev/i2c-0/device/new_device");
 	eval("hwclock", "-s", "-u");
 
-	char *dis = getUEnv("rndis");
-	if (dis && !strcmp(dis, "1")) {
-		nvram_default_get("ath0_rxantenna", "7");
-		nvram_default_get("ath0_txantenna", "7");
-		char *ssid = nvram_get("ath0_ssid");
-		if (!ssid || !strcmp(ssid, "dd-wrt"))
-			nvram_set("ath0_ssid", "Antaira_AC");
-	} else {
-		nvram_default_get("ath0_rxantenna", "3");
-		nvram_default_get("ath0_txantenna", "3");
-		nvram_default_get("ath1_rxantenna", "7");
-		nvram_default_get("ath1_txantenna", "7");
-		char *ssid = nvram_get("ath0_ssid");
-		if (!ssid || !strcmp(ssid, "dd-wrt"))
-			nvram_set("ath0_ssid", "Antaira_N");
-		ssid = nvram_get("ath1_ssid");
-		if (!ssid || !strcmp(ssid, "dd-wrt"))
-			nvram_set("ath1_ssid", "Antaira_AC");
-
-	}
-
 	eval("ledtool", "1", "4");	//buzzer
 #elif !defined(HAVE_WR810N) && !defined(HAVE_LIMA) && !defined(HAVE_RAMBUTAN)
 
