@@ -2994,6 +2994,28 @@ void start_restore_defaults(void)
 			del_wds_wsec(1, i);
 		}
 	}
+#ifdef HAVE_PERU
+	char *dis = getUEnv("rndis");
+	if (dis && !strcmp(dis, "1")) {
+		nvram_default_get("ath0_rxantenna", "7");
+		nvram_default_get("ath0_txantenna", "7");
+		char *ssid = nvram_get("ath0_ssid");
+		if (!ssid || !strcmp(ssid, "dd-wrt"))
+			nvram_set("ath0_ssid", "Antaira_AC");
+	} else {
+		nvram_default_get("ath0_rxantenna", "3");
+		nvram_default_get("ath0_txantenna", "3");
+		nvram_default_get("ath1_rxantenna", "7");
+		nvram_default_get("ath1_txantenna", "7");
+		char *ssid = nvram_get("ath0_ssid");
+		if (!ssid || !strcmp(ssid, "dd-wrt"))
+			nvram_set("ath0_ssid", "Antaira_N");
+		ssid = nvram_get("ath1_ssid");
+		if (!ssid || !strcmp(ssid, "dd-wrt"))
+			nvram_set("ath1_ssid", "Antaira_AC");
+
+	}
+#endif
 }
 
 void stop_drivers(void)
