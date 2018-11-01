@@ -248,12 +248,12 @@ static int update_bitmap(int mode, int seq)
 	 * Modify setting 
 	 */
 	if (mode == 1) {	/* add */
-//		if (array[seq] == 1)
-//			return -1;
+//              if (array[seq] == 1)
+//                      return -1;
 		array[seq] = 1;
 	} else {		/* delete */
-//		if (array[seq] == 0)
-//			return -1;
+//              if (array[seq] == 0)
+//                      return -1;
 		array[seq] = 0;
 	}
 
