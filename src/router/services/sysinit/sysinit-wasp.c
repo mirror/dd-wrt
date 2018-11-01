@@ -451,7 +451,7 @@ void start_sysinit(void)
 		eval("/sbin/wlanled", "-l", "generic_12:-94", "-l", "generic_11:-76", "-l", "generic_13:-65");
 	eval("insmod", "i2c-gpio-custom", "bus0=0,3,2");
 	eval("insmod", "rtc-pcf8523");
-	sysprintf("echo pcf8523 0x68 > /sys/class/i2c-dev/i2c-0/device/new_device");
+	writestr("/sys/class/i2c-dev/i2c-0/device/new_device","pcf8523 0x68");
 	eval("hwclock", "-s", "-u");
 
 	eval("ledtool", "1", "4");	//buzzer
@@ -467,7 +467,7 @@ void start_sysinit(void)
 	if (!nvram_matchi("wlanled", 0))
 		eval("/sbin/wlanled", "-l", "generic_17:-94", "-l", "generic_20:-80", "-l", "generic_21:-73", "-l", "generic_22:-65");
 #elif HAVE_CPE890
-	sysprintf("echo phy0tpt > /sys/class/leds/ath10k-phy0/trigger");
+	writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
 	if (!nvram_matchi("wlanled", 0))
 		eval("/sbin/wlanled", "-L", "generic_17:-94", "-L", "generic_16:-80", "-L", "generic_15:-73", "-L", "generic_14:-65");
 #elif  HAVE_JWAP606
@@ -498,7 +498,7 @@ void start_sysinit(void)
 	setWirelessLed(0, 0);
 #elif HAVE_SR3200
 	setWirelessLed(0, 19);
-	sysprintf("echo phy1tpt > /sys/class/leds/ath10k-phy1/trigger");
+	writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
 #elif  HAVE_E380AC
 	setWirelessLed(0, 0);
 	setWirelessLed(1, 2);
