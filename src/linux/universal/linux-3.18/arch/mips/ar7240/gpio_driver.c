@@ -384,7 +384,9 @@ static struct gpio_led generic_leds_gpio[] __initdata = {
 	{
 	 .name = "generic_12",
 	 .gpio = 12,
-#if defined(CONFIG_WR841V8)
+#if defined(CONFIG_PERU)
+	 .active_low = 0,
+#elif defined(CONFIG_WR841V8)
 	 .active_low = 1,
 #elif defined(CONFIG_CPE880)
 	 .active_low = 1,
