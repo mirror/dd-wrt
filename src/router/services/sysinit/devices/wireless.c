@@ -239,7 +239,7 @@ static void detect_wireless_devices(void)
 #elif HAVE_PERU
 				char *dis = getUEnv("rndis");
 				if (dis && !strcmp(dis, "1"))
-					eval("insmod", "ath9k", overdrive, "no_pci=1");
+					eval("insmod", "ath9k", overdrive, "no_ahb=1");
 				else
 					eval("insmod", "ath9k", overdrive);
 
@@ -256,10 +256,6 @@ static void detect_wireless_devices(void)
 	fprintf(stderr, "load ATH/QCA 802.11ac Driver\n");
 	insmod("hwmon");
 	insmod("thermal_sys");
-#ifdef HAVE_PERU
-	char *adis = getUEnv("rndis");
-	if (!adis || strcmp(adis, "1"))
-#endif
 	insmod("ath10k");
 #endif
 #ifdef HAVE_WIL6210
