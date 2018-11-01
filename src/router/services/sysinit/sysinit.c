@@ -2933,10 +2933,16 @@ void start_restore_defaults(void)
 		nvram_seti("nvram_ver", 3);
 		nvram_seti("block_multicast", 1);
 	}
-	nvram_seti("gozila_action", 0);
-	nvram_seti("generate_key", 0);
-	nvram_seti("clone_wan_mac", 0);
 	nvram_unset("flash_active");
+	nvram_seti("ntp_success", 0);
+	nvram_seti("wanup", 0);
+	nvram_unset("rc_opt_run");
+
+	nvram_unset("ipv6_get_dns");
+	nvram_unset("ipv6_get_domain");
+	nvram_unset("ipv6_get_sip_name");
+	nvram_unset("ipv6_get_sip_servers");
+
 
 	cprintf("check CFE nv\n");
 	if (check_now_boot() == PMON_BOOT)
