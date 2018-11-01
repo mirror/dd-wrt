@@ -132,7 +132,7 @@ void start_sysinit(void)
 	nvram_set("wl0_ifname", "ath0");
 	nvram_set("wl1_ifname", "ath1");
 
-	sysprintf("echo 0 > /sys/class/hwmon/hwmon0/pwm1");
+	writeint("/sys/class/hwmon/hwmon0/pwm1", 0);
 	char line[256];
 	char *mac;
 	if ((fp = fopen("/dev/mtdblock3", "r"))) {
@@ -163,23 +163,22 @@ void start_sysinit(void)
 	set_gpio(8, 0);		//disable usb ss led as initial value
 
 	if (brand == ROUTER_WRT_1900AC) {
-		sysprintf("echo disk-activity > /sys/class/leds/mamba\\:white\\:esata/trigger");
+		writestr("/sys/class/leds/mamba\\:white\\:esata/trigger","disk-activity"); 
 	}
 	if (brand == ROUTER_WRT_1200AC) {
-		sysprintf("echo disk-activity > /sys/class/leds/caiman\\:white\\:sata/trigger");
+		writestr("/sys/class/leds/caiman\\:white\\:sata/trigger","disk-activity"); 
 	}
 	if (brand == ROUTER_WRT_1900ACV2) {
-		sysprintf("echo disk-activity > /sys/class/leds/cobra\\:white\\:sata/brightness");
-
+		writestr("/sys/class/leds/cobra\\:white\\:sata/trigger","disk-activity"); 
 	}
 	if (brand == ROUTER_WRT_1900ACS) {
-		sysprintf("echo disk-activity > /sys/class/leds/shelby\\:white\\:sata/brightness");
+		writestr("/sys/class/leds/shelby\\:white\\:sata/trigger","disk-activity"); 
 	}
 	if (brand == ROUTER_WRT_3200ACM) {
-		sysprintf("echo disk-activity > /sys/class/leds/rango\\:white\\:sata/brightness");
+		writestr("/sys/class/leds/rango\\:white\\:sata/trigger","disk-activity"); 
 	}
 	if (brand == ROUTER_WRT_32X) {
-		sysprintf("echo disk-activity > /sys/class/leds/venom\\:white\\:sata/brightness");
+		writestr("/sys/class/leds/venom\\:blue\\:sata/trigger","disk-activity"); 
 	}
 
 	return;
