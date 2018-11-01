@@ -384,7 +384,7 @@ int activateRoute(uint32_t group, uint32_t originAddr) {
         // If the origin address is set, update the route data.
         if(originAddr > 0) {
             if(croute->originAddr > 0 && croute->originAddr!=originAddr) {
-                my_log(LOG_WARNING, 0, "The origin for route %s changed from %s to %s",
+                my_log(LOG_INFO, 0, "The origin for route %s changed from %s to %s",
                     inetFmt(croute->group, s1),
                     inetFmt(croute->originAddr, s2),
                     inetFmt(originAddr, s3));
