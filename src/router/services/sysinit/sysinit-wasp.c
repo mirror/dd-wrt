@@ -447,13 +447,28 @@ void start_sysinit(void)
 	setEthLinkLED(16, "eth1");
 	setEthLED(15, "eth0");
 	setEthLinkLED(14, "eth0");
-
 	if (!nvram_matchi("wlanled", 0))
 		eval("/sbin/wlanled", "-l", "generic_12:-94", "-l", "generic_11:-76", "-l", "generic_13:-65");
 	eval("insmod", "i2c-gpio-custom", "bus0=0,3,2");
 	eval("insmod", "rtc-pcf8523");
 	sysprintf("echo pcf8523 0x68 > /sys/class/i2c-dev/i2c-0/device/new_device");
 	eval("hwclock", "-s", "-u");
+
+	char *dis = getUEnv("rndis");
+	if (dis && !strcmp(dis, "1")) {
+		char *ssid = nvram_get("ath0_ssid");
+		if (!ssid)
+			nvram_set("ath0_ssid", "Antaira_AC");
+	} else {
+		char *ssid = nvram_get("ath0_ssid");
+		if (!ssid)
+			nvram_set("ath0_ssid", "Antaira_N");
+		ssid = nvram_get("ath1_ssid");
+		if (!ssid)
+			nvram_set("ath1_ssid", "Antaira_AC");
+
+	}
+
 	eval("ledtool", "1", "4");	//buzzer
 #elif !defined(HAVE_WR810N) && !defined(HAVE_LIMA) && !defined(HAVE_RAMBUTAN)
 
