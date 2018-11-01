@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 3.18.108 Kernel Configuration
+# Linux/mips 3.18.124 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -862,7 +862,10 @@ CONFIG_UEVENT_HELPER_PATH="/sbin/hotplug"
 # CONFIG_DEVTMPFS is not set
 CONFIG_STANDALONE=y
 CONFIG_PREVENT_FIRMWARE_BUILD=y
-# CONFIG_FW_LOADER is not set
+CONFIG_FW_LOADER=y
+# CONFIG_FIRMWARE_IN_KERNEL is not set
+CONFIG_EXTRA_FIRMWARE=""
+# CONFIG_FW_LOADER_USER_HELPER_FALLBACK is not set
 # CONFIG_ALLOW_DEV_COREDUMP is not set
 # CONFIG_SYS_HYPERVISOR is not set
 # CONFIG_GENERIC_CPU_DEVICES is not set
@@ -935,6 +938,7 @@ CONFIG_MTD_CFI_I2=y
 # CONFIG_MTD_DOCG3 is not set
  
 # CONFIG_DIR825C1 is not set
+ 
  
  
  
@@ -1086,7 +1090,6 @@ CONFIG_MII=y
 # CONFIG_IFB is not set
 # CONFIG_NET_TEAM is not set
 # CONFIG_MACVLAN is not set
-# CONFIG_MACVTAP is not set
 # CONFIG_VXLAN is not set
 # CONFIG_NETCONSOLE is not set
 # CONFIG_NETPOLL is not set
@@ -2026,6 +2029,7 @@ CONFIG_TRACING_SUPPORT=y
 # CONFIG_TEST_LKM is not set
 # CONFIG_TEST_USER_COPY is not set
 # CONFIG_TEST_BPF is not set
+# CONFIG_TEST_FIRMWARE is not set
 # CONFIG_TEST_UDELAY is not set
 # CONFIG_SAMPLES is not set
 CONFIG_HAVE_ARCH_KGDB=y
@@ -2217,4 +2221,3 @@ CONFIG_AVERAGE=y
 # CONFIG_ARCH_HAS_SG_CHAIN is not set
 CONFIG_HAVE_KVM=y
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_CRYPTO_DRBG_CTR is not set
