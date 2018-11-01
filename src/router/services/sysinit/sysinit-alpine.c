@@ -255,8 +255,8 @@ void start_sysinit(void)
 		set_gpio(29, 1);	//WIFI button led
 		set_gpio(30, 1);	//10G led
 		set_gpio(434, 1);
-		sysprintf("echo phy0tpt > /sys/class/leds/ath10k-phy0/trigger");
-		sysprintf("echo phy1tpt > /sys/class/leds/ath10k-phy1/trigger");
+	writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
+	writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
 		break;
 	default:
 		break;

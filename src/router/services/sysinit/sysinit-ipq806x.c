@@ -550,8 +550,8 @@ void start_sysinit(void)
 		eval("ifconfig", "eth1", "up");
 		break;
 	}
-	sysprintf("echo phy0tpt > /sys/class/leds/ath10k-phy0/trigger");
-	sysprintf("echo phy1tpt > /sys/class/leds/ath10k-phy1/trigger");
+	writestr("/sys/class/leds/ath10k-phy0/trigger", "phy0tpt");
+	writestr("/sys/class/leds/ath10k-phy1/trigger", "phy1tpt");
 
 	eval("ifconfig", "eth1", "up");
 	eval("ifconfig", "eth0", "up");
