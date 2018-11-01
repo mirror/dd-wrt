@@ -211,7 +211,7 @@ static int nvram_change(const char *name, char *value)
 	char *oldval = nvram_get(name);
 	if (value == NULL && oldval == NULL)
 		return 0;
-	if (value && oldval && !strcmp(oldval, value)
+	if (value && oldval && !strcmp(oldval, value))
 		return 0;
 	nvram_set(name, value);
 	return 1;
