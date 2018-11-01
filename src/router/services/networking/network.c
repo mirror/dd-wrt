@@ -2253,26 +2253,16 @@ void start_lan(void)
 	 * Bring up and configure LAN interface 
 	 */
 
-	char staticlan[32];
-
 	eval("ifconfig", lan_ifname, "promisc");
-	sprintf(staticlan, "%s:0", lan_ifname);
 #if defined(HAVE_FONERA) || defined(HAVE_CA8) && !defined(HAVE_MR3202A)
 	if (getRouterBrand() != ROUTER_BOARD_FONERA2200 && getRouterBrand() != ROUTER_BOARD_CA8PRO && getRouterBrand() != ROUTER_BOARD_RCAA01)
 		if (nvram_match("ath0_mode", "sta")
 		    || nvram_match("ath0_mode", "wdssta")
 		    || nvram_match("ath0_mode", "wet")
-		    || CANBRIDGE()) {
+		    || CANBRIDGE())
 #endif
-
 			eval("ifconfig", "eth0:0", "down");
-			// add fallback ip
-			eval("ifconfig", staticlan, "169.254.255.1", "netmask", "255.255.0.0");
 
-#if defined(HAVE_FONERA) || defined(HAVE_CA8) && !defined(HAVE_MR3202A)
-		} else
-			eval("ifconfig", staticlan, "0.0.0.0", "down");
-#endif
 	close(s);
 
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
@@ -3136,22 +3126,6 @@ void start_wan(int status)
 	bzero(ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
 
 	ifconfig(ethname, 0, NULL, NULL);
-#if defined(HAVE_FONERA) || defined(HAVE_CA8) && !defined(HAVE_MR3202A)
-	if (getRouterBrand() != ROUTER_BOARD_FONERA2200 && getRouterBrand() != ROUTER_BOARD_CA8PRO) {
-		char staticlan[32];
-
-		sprintf(staticlan, "%s:0", wan_ifname);
-		if (!nvram_match("ath0_mode", "sta")
-		    && !nvram_match("ath0_mode", "wdssta")
-		    && !nvram_match("ath0_mode", "wet")
-		    && !CANBRIDGE()) {
-			eval("ifconfig", "br0:0", "down");
-			eval("ifconfig", staticlan, "169.254.255.1", "netmask", "255.255.0.0");
-		} else
-			eval("ifconfig", staticlan, "0.0.0.0", "down");
-	}
-#endif
-
 	// fprintf(stderr,"%s %s\n", wan_ifname, wan_proto);
 	char *wlifname = getSTA();
 
