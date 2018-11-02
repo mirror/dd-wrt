@@ -2665,8 +2665,8 @@ void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 			if ((strlen(mac) != 17)
 			    || (strcmp(mac, "00:00:00:00:00:00") == 0))
 				continue;
-			if (strcmp(landev, nvram_safe_get("wan_iface")) == 0)
-				continue;	// skip all but LAN arp entries
+//			if (strcmp(landev, nvram_safe_get("wan_iface")) == 0)
+//				continue;	// skip all but LAN arp entries
 			strcpy(hostname, "*");	// set name to *
 
 			/*
@@ -2761,7 +2761,7 @@ void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 			len = strlen(mac);
 			for (i = 0; i < len; i++)
 				mac[i] = toupper(mac[i]);
-			websWrite(wp, "%c'%s','%s','%s','%d'", (count ? ',' : ' '), hostname, ip, mac, conn_count);
+			websWrite(wp, "%c'%s','%s','%s','%d', '%s'", (count ? ',' : ' '), hostname, ip, mac, conn_count, landev);
 			++count;
 			conn_count = 0;
 		}
