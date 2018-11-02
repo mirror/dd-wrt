@@ -1858,7 +1858,7 @@ status_lan.legend3="DHCP Clients";
 status_lan.legend4="Clients Attivi";
 status_lan.legend5="Clients PPTP Connessi";
 status_lan.legend6="Clients PPPOE Connessi";
-status_lan.concount="Conn. Count";
+status_lan.concount="Connections";
 status_lan.conratio="Ratio";
 
 //help container
