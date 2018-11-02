@@ -51,6 +51,15 @@ char xml_InternetGatewayDevice[] =
 	"\t\t<modelNumber>V24</modelNumber>\r\n"
 	"\t\t<serialNumber>0000001</serialNumber>\r\n"
 	"\t\t<modelURL>http://www.buffalo.jp</modelURL>\r\n"
+#elif HAVE_ANTAIRA
+	"\t\t<manufacturer>Antaira</manufacturer>\r\n"
+	"\t\t<manufacturerURL>http://antaira.com</manufacturerURL>\r\n"
+	"\t\t<modelDescription>Gateway</modelDescription>\r\n"
+	"\t\t<friendlyName>Industrial Router</friendlyName>\r\n"
+	"\t\t<modelName>Industrial Router</modelName>\r\n"
+	"\t\t<modelNumber>V24</modelNumber>\r\n"
+	"\t\t<serialNumber>0000001</serialNumber>\r\n"
+	"\t\t<modelURL>http://www.antaira.com</modelURL>\r\n"
 #else
 	"\t\t<manufacturer>DD-WRT</manufacturer>\r\n"
 	"\t\t<manufacturerURL>http://www.dd-wrt.com</manufacturerURL>\r\n"
