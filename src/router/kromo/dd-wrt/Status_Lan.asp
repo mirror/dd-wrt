@@ -260,10 +260,10 @@ addEvent(window, "unload", function() {
 								<legend><% tran("status_lan.legend4"); %></legend>
 								<table class="table center" cellspacing="5" id="active_clients_table" summary="active clients in arp table">
 									<tr>
-										<th width="32%"><% tran("share.hostname"); %></th>
+										<th width="25%"><% tran("share.hostname"); %></th>
 										<th width="17%"><% tran("share.ip"); %></th>
 										<th width="16%"><% tran("share.mac"); %></th>
-										<th width="20%"><% tran("share.intrface"); %></th>
+										<th width="10%"><% tran("share.intrface"); %></th>
 										<th width="15%"><% tran("status_lan.concount"); %></th>
 										<th width="20%"><% tran("status_lan.conratio"); %> [<% nvg("ip_conntrack_max"); %>]</th>
 									</tr>
