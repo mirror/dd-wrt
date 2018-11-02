@@ -127,7 +127,7 @@ function setARPTable() {
 		cell.innerHTML = "- " + share.none + " -";
 		return;
 	}
-	for(var i = 0; i < val.length; i = i + 4) {
+	for(var i = 0; i < val.length; i = i + 5) {
 		var row = table.insertRow(-1);
 		row.style.height = "15px";
 		row.insertCell(-1).innerHTML = val[i];
@@ -138,7 +138,11 @@ function setARPTable() {
 		cellmac.style.textDecoration = "underline";
 		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + val[i+2] + "') })");
 		cellmac.innerHTML = val[i+2];
-		
+
+		var cellif = row.insertCell(-1);
+		cellif.style.textAlign = 'center';
+		cellif.innerHTML = val[i+4];
+
 		var cellcount = row.insertCell(-1);
 		cellcount.style.textAlign = 'center';
 		cellcount.innerHTML = val[i+3];
@@ -259,6 +263,7 @@ addEvent(window, "unload", function() {
 										<th width="32%"><% tran("share.hostname"); %></th>
 										<th width="17%"><% tran("share.ip"); %></th>
 										<th width="16%"><% tran("share.mac"); %></th>
+										<th width="20%"><% tran("share.intrface"); %></th>
 										<th width="15%"><% tran("status_lan.concount"); %></th>
 										<th width="20%"><% tran("status_lan.conratio"); %> [<% nvg("ip_conntrack_max"); %>]</th>
 									</tr>
