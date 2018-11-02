@@ -822,6 +822,11 @@ ifeq ($(CONFIG_ANTAIRA),y)
 	cp -f kmt/defaults/sbin/* $(INSTALLDIR)/sbin/
 	cp -f kmt/defaults/sbin/*default* $(INSTALLDIR)/sbin/
 	cp -f kmt/defaults/sbin/getmtd-for-backup.sh $(INSTALLDIR)/sbin/
+	cat common.js | sed -e 's/About\.htm/http:\/\/www.antaira.com/g' -e 's/DDWRT_About/Antaira_About/g' >$(INSTALLDIR)/www/common.js
+	cat SuperChannel.asp | sed -e 's/DD-WRT \/ NewMedia-NET GmbH/Antaira Technologies/g' >$(INSTALLDIR)/www/SuperChannel.asp
+	cat Wiviz_Survey.asp | sed -e 's/<br>Powered by DD-WRT//g' >$(INSTALLDIR)/www/Wiviz_Survey.asp
+	cat help/HManagement.asp | sed -e 's/DD-WRT/Antaria/g' >$(INSTALLDIR)/www/help/HManagement.asp
+	cat help/HPPTP.asp | sed -e 's/DD-WRT/Antaria/g' >$(INSTALLDIR)/www/help/HPPTP.asp
 endif
 
 ifneq ($(CONFIG_USB),y)
