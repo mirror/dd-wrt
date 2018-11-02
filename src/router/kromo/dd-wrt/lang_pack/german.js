@@ -1728,7 +1728,7 @@ status_lan.legend3="DHCP-Clients";
 status_lan.legend4="Active Clients";
 status_lan.legend5="Verbundene PPTP Clients";
 status_lan.legend6="Verbundene PPPOE Clients";
-status_lan.concount="Verb. Anzahl";
+status_lan.concount="Verbindungen";
 status_lan.conratio="Verh&auml;ltnis";
 
 //help container
