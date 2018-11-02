@@ -1715,6 +1715,15 @@ struct nvram_param srouter_defaults[] = {
 	{"router_name", "WDSL-Modem XXX"},
 #elif  HAVE_TMK
 	{"router_name", "KMT-WAS"},
+#elif  HAVE_ANTAIRA
+	{"router_name", "Antaira"},
+	{"radius_country", "US"},
+	{"radius_state", "California"},
+	{"radius_locality", "none"},
+	{"radius_organisation", "Antaira"},
+	{"radius_email", "info@antaira.com"},
+	{"radius_common", "Antaira FreeRadius Certificate"},
+	{"radius_passphrase", "none"},
 #elif  HAVE_BKM
 	{"router_name", "BKM-HSDL"},
 #elif  HAVE_ERC
