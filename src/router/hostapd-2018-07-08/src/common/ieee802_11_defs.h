@@ -922,6 +922,16 @@ struct ieee80211_mgmt {
 					u8 variable[];
 				} STRUCT_PACKED bss_tm_query;
 				struct {
+					u8 action; /* 11 */
+					u8 dialog_token;
+					u8 req_info;
+				} STRUCT_PACKED coloc_intf_req;
+				struct {
+					u8 action; /* 12 */
+					u8 dialog_token;
+					u8 variable[];
+				} STRUCT_PACKED coloc_intf_report;
+				struct {
 					u8 action; /* 15 */
 					u8 variable[];
 				} STRUCT_PACKED slf_prot_action;
@@ -1331,6 +1341,7 @@ enum wmm_ac {
 #define HS20_STYPE_ICON_REQUEST 10
 #define HS20_STYPE_ICON_BINARY_FILE 11
 #define HS20_STYPE_OPERATOR_ICON_METADATA 12
+#define HS20_STYPE_OSU_PROVIDERS_NAI_LIST 13
 
 #define HS20_DGAF_DISABLED 0x01
 #define HS20_PPS_MO_ID_PRESENT 0x02

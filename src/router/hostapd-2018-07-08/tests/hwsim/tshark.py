@@ -70,6 +70,17 @@ def _run_tshark(filename, filter, display=None, wait=True):
                                stderr=open('/dev/null', 'w'))
         out = cmd.communicate()[0]
         cmd.wait()
+    if res == 2:
+        if "tshark: Neither" in output[1] and "are field or protocol names" in output[1]:
+            errors = output[1].split('\n')
+            fields = []
+            for f in errors:
+                if f.startswith("tshark: Neither "):
+                    f = f.split(' ')[2].strip('"')
+                    if f:
+                        fields.append(f)
+                    continue
+            raise UnknownFieldsException(fields)
 
     return out
 
@@ -88,3 +99,19 @@ def run_tshark(filename, filter, display=None, wait=True):
         return _run_tshark(filename, filter.replace('wlan_mgt', 'wlan'),
                            [x.replace('wlan_mgt', 'wlan') for x in display],
                            wait)
+
+def run_tshark_json(filename, filter):
+    arg = [ "tshark", "-r", filename,
+            _tshark_filter_arg, filter ]
+    arg.append('-Tjson')
+    arg.append('-x')
+    try:
+        cmd = subprocess.Popen(arg, stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)
+    except Exception, e:
+        logger.info("Could run run tshark: " + str(e))
+        return None
+    output = cmd.communicate()
+    out = output[0]
+    res = cmd.wait()
+    return out
