@@ -23,7 +23,8 @@ CREATE TABLE sessions(
 	devdetail TEXT,
 	cert TEXT,
 	cert_pem TEXT,
-	mac_addr TEXT
+	mac_addr TEXT,
+	test TEXT
 );
 
 CREATE index sessions_id_index ON sessions(id);
@@ -53,7 +54,9 @@ CREATE TABLE users(
 	cert TEXT,
 	cert_pem TEXT,
 	t_c_timestamp INTEGER,
-	mac_addr TEXT
+	mac_addr TEXT,
+	last_msk TEXT,
+	polupd_done TEXT,
 );
 
 CREATE TABLE wildcards(

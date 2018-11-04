@@ -750,6 +750,15 @@ static int wpa_supplicant_ctrl_iface_set(struct wpa_supplicant *wpa_s,
 		ret = wpas_ctrl_iface_set_ric_ies(wpa_s, value);
 	} else if (os_strcasecmp(cmd, "roaming") == 0) {
 		ret = wpa_drv_roaming(wpa_s, atoi(value), NULL);
+#ifdef CONFIG_WNM
+	} else if (os_strcasecmp(cmd, "coloc_intf_elems") == 0) {
+		struct wpabuf *elems;
+
+		elems = wpabuf_parse_bin(value);
+		if (!elems)
+			return -1;
+		wnm_set_coloc_intf_elems(wpa_s, elems);
+#endif /* CONFIG_WNM */
 	} else {
 		value[-1] = '=';
 		ret = wpa_config_process_global(wpa_s->conf, cmd, -1);
@@ -4809,6 +4818,8 @@ static int print_bss_info(struct wpa_supplicant *wpa_s, struct wpa_bss *bss,
 				   anqp->hs20_osu_providers_list);
 		pos = anqp_add_hex(pos, end, "hs20_operator_icon_metadata",
 				   anqp->hs20_operator_icon_metadata);
+		pos = anqp_add_hex(pos, end, "hs20_osu_providers_nai_list",
+				   anqp->hs20_osu_providers_nai_list);
 #endif /* CONFIG_HS20 */
 
 		dl_list_for_each(elem, &anqp->anqp_elems,
@@ -7433,6 +7444,22 @@ static int wpas_ctrl_iface_wnm_bss_query(struct wpa_supplicant *wpa_s, char *cmd
 	return wnm_send_bss_transition_mgmt_query(wpa_s, query_reason,
 						  btm_candidates,
 						  list);
+}
+
+
+static int wpas_ctrl_iface_coloc_intf_report(struct wpa_supplicant *wpa_s,
+					     char *cmd)
+{
+	struct wpabuf *elems;
+	int ret;
+
+	elems = wpabuf_parse_bin(cmd);
+	if (!elems)
+		return -1;
+
+	ret = wnm_send_coloc_intf_report(wpa_s, 0, elems);
+	wpabuf_free(elems);
+	return ret;
 }
 
 #endif /* CONFIG_WNM */
@@ -10427,6 +10454,9 @@ char * wpa_supplicant_ctrl_iface_process(struct wpa_supplicant *wpa_s,
 	} else if (os_strncmp(buf, "WNM_BSS_QUERY ", 14) == 0) {
 		if (wpas_ctrl_iface_wnm_bss_query(wpa_s, buf + 14))
 				reply_len = -1;
+	} else if (os_strncmp(buf, "COLOC_INTF_REPORT ", 18) == 0) {
+		if (wpas_ctrl_iface_coloc_intf_report(wpa_s, buf + 18))
+			reply_len = -1;
 #endif /* CONFIG_WNM */
 	} else if (os_strcmp(buf, "FLUSH") == 0) {
 		wpa_supplicant_ctrl_iface_flush(wpa_s);

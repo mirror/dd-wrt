@@ -2075,6 +2075,24 @@ static int hs20_parse_osu_nai(struct hostapd_bss_config *bss,
 }
 
 
+static int hs20_parse_osu_nai2(struct hostapd_bss_config *bss,
+			       char *pos, int line)
+{
+	if (bss->last_osu == NULL) {
+		wpa_printf(MSG_ERROR, "Line %d: Unexpected OSU field", line);
+		return -1;
+	}
+
+	os_free(bss->last_osu->osu_nai2);
+	bss->last_osu->osu_nai2 = os_strdup(pos);
+	if (bss->last_osu->osu_nai2 == NULL)
+		return -1;
+	bss->hs20_osu_providers_nai_count++;
+
+	return 0;
+}
+
+
 static int hs20_parse_osu_method_list(struct hostapd_bss_config *bss, char *pos,
 				      int line)
 {
@@ -3814,6 +3832,9 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 	} else if (os_strcmp(buf, "osu_nai") == 0) {
 		if (hs20_parse_osu_nai(bss, pos, line) < 0)
 			return 1;
+	} else if (os_strcmp(buf, "osu_nai2") == 0) {
+		if (hs20_parse_osu_nai2(bss, pos, line) < 0)
+			return 1;
 	} else if (os_strcmp(buf, "osu_method_list") == 0) {
 		if (hs20_parse_osu_method_list(bss, pos, line) < 0)
 			return 1;
@@ -4140,6 +4161,8 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 				   line, pos);
 			return 1;
 		}
+	} else if (os_strcmp(buf, "coloc_intf_reporting") == 0) {
+		bss->coloc_intf_reporting = atoi(pos);
 #endif /* CONFIG_OWE */
 	} else {
 		wpa_printf(MSG_ERROR,

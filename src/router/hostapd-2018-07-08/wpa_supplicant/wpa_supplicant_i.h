@@ -750,6 +750,8 @@ struct wpa_supplicant {
 	unsigned int mac_addr_changed:1;
 	unsigned int added_vif:1;
 	unsigned int wnmsleep_used:1;
+	unsigned int owe_transition_select:1;
+	unsigned int owe_transition_search:1;
 
 	struct os_reltime last_mac_addr_change;
 	int last_mac_addr_style;
@@ -1064,6 +1066,10 @@ struct wpa_supplicant {
 	struct neighbor_report *wnm_neighbor_report_elements;
 	struct os_reltime wnm_cand_valid_until;
 	u8 wnm_cand_from_bss[ETH_ALEN];
+	struct wpabuf *coloc_intf_elems;
+	u8 coloc_intf_dialog_token;
+	u8 coloc_intf_auto_report;
+	u8 coloc_intf_timeout;
 #ifdef CONFIG_MBO
 	unsigned int wnm_mbo_trans_reason_present:1;
 	u8 wnm_mbo_transition_reason;

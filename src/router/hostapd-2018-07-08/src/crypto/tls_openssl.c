@@ -111,6 +111,12 @@ static int RSA_bits(const RSA *r)
 	return BN_num_bits(r->n);
 }
 #endif /* CONFIG_SUITEB */
+
+
+static const unsigned char * ASN1_STRING_get0_data(const ASN1_STRING *x)
+{
+	return ASN1_STRING_data((ASN1_STRING *) x);
+}
 #endif
 
 #ifdef ANDROID
@@ -1540,6 +1546,31 @@ int tls_connection_established(void *ssl_ctx, struct tls_connection *conn)
 }
 
 
+char * tls_connection_peer_serial_num(void *tls_ctx,
+				      struct tls_connection *conn)
+{
+	ASN1_INTEGER *ser;
+	char *serial_num;
+	size_t len;
+
+	if (!conn->peer_cert)
+		return NULL;
+
+	ser = X509_get_serialNumber(conn->peer_cert);
+	if (!ser)
+		return NULL;
+
+	len = ASN1_STRING_length(ser) * 2 + 1;
+	serial_num = os_malloc(len);
+	if (!serial_num)
+		return NULL;
+	wpa_snprintf_hex_uppercase(serial_num, len,
+				   ASN1_STRING_get0_data(ser),
+				   ASN1_STRING_length(ser));
+	return serial_num;
+}
+
+
 int tls_connection_shutdown(void *ssl_ctx, struct tls_connection *conn)
 {
 	if (conn == NULL)
@@ -1824,6 +1855,8 @@ static void openssl_tls_cert_event(struct tls_connection *conn,
 	GENERAL_NAME *gen;
 	void *ext;
 	stack_index_t i;
+	ASN1_INTEGER *ser;
+	char serial_num[128];
 #ifdef CONFIG_SHA256
 	u8 hash[32];
 #endif /* CONFIG_SHA256 */
@@ -1851,6 +1884,14 @@ static void openssl_tls_cert_event(struct tls_connection *conn,
 #endif /* CONFIG_SHA256 */
 	ev.peer_cert.depth = depth;
 	ev.peer_cert.subject = subject;
+
+	ser = X509_get_serialNumber(err_cert);
+	if (ser) {
+		wpa_snprintf_hex_uppercase(serial_num, sizeof(serial_num),
+					   ASN1_STRING_get0_data(ser),
+					   ASN1_STRING_length(ser));
+		ev.peer_cert.serial_num = serial_num;
+	}
 
 	ext = X509_get_ext_d2i(err_cert, NID_subject_alt_name, NULL, NULL);
 	for (i = 0; ext && i < sk_GENERAL_NAME_num(ext); i++) {

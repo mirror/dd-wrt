@@ -436,7 +436,7 @@ static int cmd_dl_polupd_ca(struct hs20_osu_client *ctx, const char *pps_fname,
 	if (node == NULL) {
 		wpa_printf(MSG_INFO, "No Policy/PolicyUpdate/TrustRoot/CertURL found from PPS");
 		xml_node_free(ctx->xml, pps);
-		return -1;
+		return -2;
 	}
 
 	ret = download_cert(ctx, node, ca_fname);
@@ -463,7 +463,7 @@ static int cmd_dl_aaa_ca(struct hs20_osu_client *ctx, const char *pps_fname,
 	if (node == NULL) {
 		wpa_printf(MSG_INFO, "No AAAServerTrustRoot/CertURL found from PPS");
 		xml_node_free(ctx->xml, pps);
-		return -1;
+		return -2;
 	}
 
 	aaa = xml_node_first_child(ctx->xml, node);
@@ -485,7 +485,7 @@ static int download_trust_roots(struct hs20_osu_client *ctx,
 {
 	char *dir, *pos;
 	char fname[300];
-	int ret;
+	int ret, ret1;
 
 	dir = os_strdup(pps_fname);
 	if (dir == NULL)
@@ -500,9 +500,13 @@ static int download_trust_roots(struct hs20_osu_client *ctx,
 	snprintf(fname, sizeof(fname), "%s/ca.pem", dir);
 	ret = cmd_dl_osu_ca(ctx, pps_fname, fname);
 	snprintf(fname, sizeof(fname), "%s/polupd-ca.pem", dir);
-	cmd_dl_polupd_ca(ctx, pps_fname, fname);
+	ret1 = cmd_dl_polupd_ca(ctx, pps_fname, fname);
+	if (ret == 0 && ret1 == -1)
+		ret = -1;
 	snprintf(fname, sizeof(fname), "%s/aaa-ca.pem", dir);
-	cmd_dl_aaa_ca(ctx, pps_fname, fname);
+	ret1 = cmd_dl_aaa_ca(ctx, pps_fname, fname);
+	if (ret == 0 && ret1 == -1)
+		ret = -1;
 
 	os_free(dir);
 
@@ -1987,6 +1991,7 @@ struct osu_data {
 	char osu_ssid[33];
 	char osu_ssid2[33];
 	char osu_nai[256];
+	char osu_nai2[256];
 	struct osu_lang_text friendly_name[MAX_OSU_VALS];
 	size_t friendly_name_count;
 	struct osu_lang_text serv_desc[MAX_OSU_VALS];
@@ -2054,6 +2059,12 @@ static struct osu_data * parse_osu_providers(const char *fname, size_t *count)
 		if (os_strncmp(buf, "osu_nai=", 8) == 0) {
 			os_snprintf(last->osu_nai, sizeof(last->osu_nai),
 				    "%s", buf + 8);
+			continue;
+		}
+
+		if (os_strncmp(buf, "osu_nai2=", 9) == 0) {
+			os_snprintf(last->osu_nai2, sizeof(last->osu_nai2),
+				    "%s", buf + 9);
 			continue;
 		}
 
@@ -2134,7 +2145,7 @@ static struct osu_data * parse_osu_providers(const char *fname, size_t *count)
 static int osu_connect(struct hs20_osu_client *ctx, const char *bssid,
 		       const char *ssid, const char *ssid2, const char *url,
 		       unsigned int methods, int no_prod_assoc,
-		       const char *osu_nai)
+		       const char *osu_nai, const char *osu_nai2)
 {
 	int id;
 	const char *ifname = ctx->ifname;
@@ -2166,6 +2177,8 @@ static int osu_connect(struct hs20_osu_client *ctx, const char *bssid,
 		return -1;
 	if (set_network_quoted(ifname, id, "ssid", ssid) < 0)
 		return -1;
+	if (ssid2)
+		osu_nai = osu_nai2;
 	if (osu_nai && os_strlen(osu_nai) > 0) {
 		char dir[255], fname[300];
 		if (getcwd(dir, sizeof(dir)) == NULL)
@@ -2184,6 +2197,10 @@ static int osu_connect(struct hs20_osu_client *ctx, const char *bssid,
 		    set_network_quoted(ifname, id, "identity", osu_nai) < 0 ||
 		    set_network_quoted(ifname, id, "ca_cert", fname) < 0)
 			return -1;
+	} else if (ssid2) {
+		wpa_printf(MSG_INFO, "No OSU_NAI set for RSN[OSEN]");
+		write_summary(ctx, "No OSU_NAI set for RSN[OSEN]");
+		return -1;
 	} else {
 		if (set_network(ifname, id, "key_mgmt", "NONE") < 0)
 			return -1;
@@ -2363,6 +2380,8 @@ static int cmd_osu_select(struct hs20_osu_client *ctx, const char *dir,
 			fprintf(f, "SSID2: %s<br>\n", last->osu_ssid2);
 		if (last->osu_nai[0])
 			fprintf(f, "NAI: %s<br>\n", last->osu_nai);
+		if (last->osu_nai2[0])
+			fprintf(f, "NAI2: %s<br>\n", last->osu_nai2);
 		fprintf(f, "URL: %s<br>\n"
 			"methods:%s%s<br>\n"
 			"</small></p>\n",
@@ -2449,7 +2468,8 @@ selected:
 			ret = osu_connect(ctx, last->bssid, last->osu_ssid,
 					  last->osu_ssid2,
 					  last->url, last->methods,
-					  no_prod_assoc, last->osu_nai);
+					  no_prod_assoc, last->osu_nai,
+					  last->osu_nai2);
 		}
 	} else
 		ret = -1;
@@ -3048,24 +3068,17 @@ static int init_ctx(struct hs20_osu_client *ctx)
 		return -1;
 
 	devinfo = node_from_file(ctx->xml, "devinfo.xml");
-	if (!devinfo) {
-		wpa_printf(MSG_ERROR, "devinfo.xml not found");
-		return -1;
-	}
+	if (devinfo) {
+		devid = get_node(ctx->xml, devinfo, "DevId");
+		if (devid) {
+			char *tmp = xml_node_get_text(ctx->xml, devid);
 
-	devid = get_node(ctx->xml, devinfo, "DevId");
-	if (devid) {
-		char *tmp = xml_node_get_text(ctx->xml, devid);
-		if (tmp) {
-			ctx->devid = os_strdup(tmp);
-			xml_node_get_text_free(ctx->xml, tmp);
+			if (tmp) {
+				ctx->devid = os_strdup(tmp);
+				xml_node_get_text_free(ctx->xml, tmp);
+			}
 		}
-	}
-	xml_node_free(ctx->xml, devinfo);
-
-	if (ctx->devid == NULL) {
-		wpa_printf(MSG_ERROR, "Could not fetch DevId from devinfo.xml");
-		return -1;
+		xml_node_free(ctx->xml, devinfo);
 	}
 
 	ctx->http = http_init_ctx(ctx, ctx->xml);
