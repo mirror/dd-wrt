@@ -593,10 +593,12 @@ struct hostapd_bss_config {
 		char **icons;
 		size_t icons_count;
 		char *osu_nai;
+		char *osu_nai2;
 		unsigned int service_desc_count;
 		struct hostapd_lang_string *service_desc;
 	} *hs20_osu_providers, *last_osu;
 	size_t hs20_osu_providers_count;
+	size_t hs20_osu_providers_nai_count;
 	char **hs20_operator_icon;
 	size_t hs20_operator_icon_count;
 	unsigned int hs20_deauth_req_timeout;
@@ -690,6 +692,8 @@ struct hostapd_bss_config {
 	char owe_transition_ifname[IFNAMSIZ + 1];
 	int *owe_groups;
 #endif /* CONFIG_OWE */
+
+	int coloc_intf_reporting;
 };
 
 /**

@@ -1094,6 +1094,42 @@ fail:
 	return ret;
 }
 
+
+static int hostapd_ctrl_iface_coloc_intf_req(struct hostapd_data *hapd,
+					     const char *cmd)
+{
+	u8 addr[ETH_ALEN];
+	struct sta_info *sta;
+	const char *pos;
+	unsigned int auto_report, timeout;
+
+	if (hwaddr_aton(cmd, addr)) {
+		wpa_printf(MSG_DEBUG, "Invalid STA MAC address");
+		return -1;
+	}
+
+	sta = ap_get_sta(hapd, addr);
+	if (!sta) {
+		wpa_printf(MSG_DEBUG, "Station " MACSTR
+			   " not found for Collocated Interference Request",
+			   MAC2STR(addr));
+		return -1;
+	}
+
+	pos = cmd + 17;
+	if (*pos != ' ')
+		return -1;
+	pos++;
+	auto_report = atoi(pos);
+	pos = os_strchr(pos, ' ');
+	if (!pos)
+		return -1;
+	pos++;
+	timeout = atoi(pos);
+
+	return wnm_send_coloc_intf_req(hapd, sta, auto_report, timeout);
+}
+
 #endif /* CONFIG_WNM_AP */
 
 
@@ -1488,6 +1524,12 @@ static int hostapd_ctrl_iface_set(struct hostapd_data *hapd, char *cmd)
 			hostapd_disassoc_deny_mac(hapd);
 		} else if (os_strcasecmp(cmd, "accept_mac_file") == 0) {
 			hostapd_disassoc_accept_mac(hapd);
+		} else if (os_strncmp(cmd, "wme_ac_", 7) == 0 ||
+			   os_strncmp(cmd, "wmm_ac_", 7) == 0) {
+			hapd->parameter_set_count++;
+			if (ieee802_11_update_beacons(hapd->iface))
+				wpa_printf(MSG_DEBUG,
+					   "Failed to update beacons with WMM parameters");
 		}
 	}
 
@@ -3058,6 +3100,9 @@ static int hostapd_ctrl_iface_receive_process(struct hostapd_data *hapd,
 			reply_len = -1;
 	} else if (os_strncmp(buf, "BSS_TM_REQ ", 11) == 0) {
 		if (hostapd_ctrl_iface_bss_tm_req(hapd, buf + 11))
+			reply_len = -1;
+	} else if (os_strncmp(buf, "COLOC_INTF_REQ ", 15) == 0) {
+		if (hostapd_ctrl_iface_coloc_intf_req(hapd, buf + 15))
 			reply_len = -1;
 #endif /* CONFIG_WNM_AP */
 	} else if (os_strcmp(buf, "GET_CONFIG") == 0) {

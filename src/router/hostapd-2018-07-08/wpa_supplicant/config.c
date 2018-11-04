@@ -3316,14 +3316,16 @@ static int wpa_config_set_cred_roaming_consortiums(struct wpa_cred *cred,
 		}
 		roaming_consortiums_len[num_roaming_consortiums] = len / 2;
 		num_roaming_consortiums++;
-		if (num_roaming_consortiums > MAX_ROAMING_CONS) {
+
+		if (!end)
+			break;
+
+		if (num_roaming_consortiums >= MAX_ROAMING_CONS) {
 			wpa_printf(MSG_INFO,
 				   "Too many roaming_consortiums OIs");
 			return -1;
 		}
 
-		if (!end)
-			break;
 		pos = end + 1;
 	}
 
@@ -4914,6 +4916,7 @@ static const struct global_parse_data global_fields[] = {
 	{ INT(gas_rand_addr_lifetime), 0 },
 	{ INT_RANGE(gas_rand_mac_addr, 0, 2), 0 },
 	{ INT_RANGE(dpp_config_processing, 0, 2), 0 },
+	{ INT_RANGE(coloc_intf_reporting, 0, 1), 0 },
 };
 
 #undef FUNC
