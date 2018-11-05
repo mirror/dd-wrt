@@ -279,7 +279,7 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->power_gpio = 0x10b;
 #elif HAVE_PERU
 		cfg->diag_gpio = 0x00c;
-		cfg->beeper_gpio = 0x104;
+		cfg->beeper_gpio = 0x004;
 #elif HAVE_LIMA
 //              cfg->disconnected_gpio = 0x00f;
 //              cfg->power_gpio = 0x105;
