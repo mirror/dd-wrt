@@ -6,6 +6,9 @@ ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
 endif
 
 MOTD_ADD:=
+ifdef CONFIG_ANTAIRA
+ MOTD_ADD:=.antaira
+endif
 ifdef CONFIG_TMK
  MOTD_ADD:=.kmt
 endif
