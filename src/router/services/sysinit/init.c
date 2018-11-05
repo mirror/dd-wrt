@@ -178,6 +178,8 @@ void start_post_sysinit(void)
 #endif
 #elif HAVE_RAYTRONIK
 	fprintf(fp, "RAYTRONIK %s (c) 2018 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+#elif HAVE_ANTAIRA
+	fprintf(fp, "Antaira %s (c) 2018 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 #elif HAVE_HDWIFI
 	fprintf(fp, "HDWIFI %s (c) 2018 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 #else
