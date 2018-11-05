@@ -178,6 +178,8 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, " KORENRON %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
 #elif HAVE_TESTEM
 		websWrite(wp, " TESTEM %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
+#elif HAVE_ANTAIRA
+		websWrite(wp, " Antaira %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
 #elif HAVE_SANSFIL
 		websWrite(wp, " SANSFIL %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);
 #elif HAVE_HOBBIT
