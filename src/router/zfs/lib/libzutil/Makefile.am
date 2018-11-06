@@ -7,7 +7,7 @@ DEFAULT_INCLUDES += \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/lib/libspl/include
 
-noinst_LTLIBRARIES = libzutil.la
+lib_LTLIBRARIES = libzutil.la
 
 USER_C = \
 	zutil_device_path.c \
