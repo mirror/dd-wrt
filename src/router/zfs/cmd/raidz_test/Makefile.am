@@ -20,6 +20,7 @@ raidz_test_SOURCES = \
 raidz_test_LDADD = \
 	$(top_builddir)/lib/libnvpair/libnvpair.la \
 	$(top_builddir)/lib/libzpool/libzpool.la \
+	$(top_builddir)/lib/libzutil/libzutil.la \
 	-ltirpc
 
 raidz_test_LDADD += -lm -ldl
