@@ -1724,6 +1724,7 @@ struct nvram_param srouter_defaults[] = {
 	{"radius_email", "info@antaira.com"},
 	{"radius_common", "Antaira FreeRadius Certificate"},
 	{"radius_passphrase", "none"},
+	{"wan_proto", "none"},
 #elif  HAVE_BKM
 	{"router_name", "BKM-HSDL"},
 #elif  HAVE_ERC
