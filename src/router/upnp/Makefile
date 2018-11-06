@@ -26,6 +26,10 @@ CFLAGS  += -D__BCMIGD__
 endif
 DEBUG	:= 0
 
+ifeq ($(CONFIG_ANTAIRA),y)
+CFLAGS += -DHAVE_ANTAIRA
+endif
+
 ifeq ($(CONFIG_BUFFALO),y)
 CFLAGS += -DHAVE_BUFFALO
 ifeq ($(CONFIG_WZRG300NH),y)
