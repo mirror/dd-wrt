@@ -19,4 +19,5 @@ zfs_LDADD = \
 	$(top_builddir)/lib/libuutil/libuutil.la \
 	$(top_builddir)/lib/libzfs/libzfs.la \
 	$(top_builddir)/lib/libzfs_core/libzfs_core.la \
+	$(top_builddir)/lib/libzutil/libzutil.la \
 	-lssl -lcrypto -ltirpc -luutil
