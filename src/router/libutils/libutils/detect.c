@@ -146,15 +146,12 @@ void setRouter(char *name)
 #elif HAVE_SANSFIL
 	nvram_set(NVROUTER_ALT, "SANSFIL");
 #elif HAVE_ONNET
-#if HAVE_CPE880
-	nvram_set(NVROUTER_ALT, "5900AC");
-#elif HAVE_MMS344
+#ifdef HAVE_MMS344
 #ifdef HAVE_WILLY
 	nvram_set(NVROUTER_ALT, "9342-AN4g");
 #else
 	nvram_set(NVROUTER_ALT, "DBDC344");
 #endif
-#else
 #endif
 #elif HAVE_RAYTRONIK
 #ifdef HAVE_AC722
