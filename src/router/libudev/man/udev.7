@@ -1,0 +1,604 @@
+'\" t
+.\"     Title: udev
+.\"    Author: Greg Kroah-Hartmann <greg@kroah.com>
+.\" Generator: DocBook XSL Stylesheets v1.79.0 <http://docbook.sf.net/>
+.\"      Date: 06/01/2016
+.\"    Manual: udev
+.\"    Source: udev
+.\"  Language: English
+.\"
+.TH "UDEV" "7" "" "udev" "udev"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+udev \- Dynamic device management
+.SH "DESCRIPTION"
+.PP
+udev supplies the system software with device events, manages permissions of device nodes and may create additional symlinks in the
+/dev
+directory, or renames network interfaces\&. The kernel usually just assigns unpredictable device names based on the order of discovery\&. Meaningful symlinks or network device names provide a way to reliably identify devices based on their properties or current configuration\&.
+.PP
+The udev daemon,
+\fBudevd\fR(8), receives device uevents directly from the kernel whenever a device is added or removed from the system, or it changes its state\&. When udev receives a device event, it matches its configured set of rules against various device attributes to identify the device\&. Rules that match may provide additional device information to be stored in the udev database or to be used to create meaningful symlink names\&.
+.PP
+All device information udev processes is stored in the udev database and sent out to possible event subscribers\&. Access to all stored data and the event sources is provided by the library libudev\&.
+.SH "RULES FILES"
+.PP
+The udev rules are read from the files located in the system rules directory
+/lib/udev/rules\&.d, the volatile runtime directory
+/run/udev/rules\&.d
+and the local administration directory
+/etc/udev/rules\&.d\&. All rules files are collectively sorted and processed in lexical order, regardless of the directories in which they live\&. However, files with identical filenames replace each other\&. Files in
+/etc
+have the highest priority, files in
+/run
+take precedence over files with the same name in
+/lib\&. This can be used to override a system\-supplied rules file with a local file if needed; a symlink in
+/etc
+with the same name as a rules file in
+/lib, pointing to
+/dev/null, disables the rules file entirely\&. Rule files must have the extension
+\&.rules; other extensions are ignored\&.
+.PP
+Every line in the rules file contains at least one key\-value pair\&. Except for empty lines or lines beginning with
+#, which are ignored\&. There are two kinds of keys: match and assignment\&. If all match keys match against their values, the rule gets applied and the assignment keys get the specified values assigned\&.
+.PP
+A matching rule may rename a network interface, add symlinks pointing to the device node, or run a specified program as part of the event handling\&.
+.PP
+A rule consists of a comma\-separated list of one or more key\-value pairs\&. Each key has a distinct operation, depending on the used operator\&. Valid operators are:
+.PP
+==
+.RS 4
+Compare for equality\&.
+.RE
+.PP
+!=
+.RS 4
+Compare for inequality\&.
+.RE
+.PP
+=
+.RS 4
+Assign a value to a key\&. Keys that represent a list are reset and only this single value is assigned\&.
+.RE
+.PP
++=
+.RS 4
+Add the value to a key that holds a list of entries\&.
+.RE
+.PP
+\-=
+.RS 4
+Remove the value from a key that holds a list of entries\&.
+.RE
+.PP
+:=
+.RS 4
+Assign a value to a key finally; disallow any later changes\&.
+.RE
+.PP
+The following key names can be used to match against device properties\&. Some of the keys also match against properties of the parent devices in sysfs, not only the device that has generated the event\&. If multiple keys that match a parent device are specified in a single rule, all these keys must match at one and the same parent device\&.
+.PP
+\fIACTION\fR
+.RS 4
+Match the name of the event action\&.
+.RE
+.PP
+\fIDEVPATH\fR
+.RS 4
+Match the devpath of the event device\&.
+.RE
+.PP
+\fIKERNEL\fR
+.RS 4
+Match the name of the event device\&.
+.RE
+.PP
+\fINAME\fR
+.RS 4
+Match the name of a network interface\&. It can be used once the NAME key has been set in one of the preceding rules\&.
+.RE
+.PP
+\fISYMLINK\fR
+.RS 4
+Match the name of a symlink targeting the node\&. It can be used once a SYMLINK key has been set in one of the preceding rules\&. There may be multiple symlinks; only one needs to match\&.
+.RE
+.PP
+\fISUBSYSTEM\fR
+.RS 4
+Match the subsystem of the event device\&.
+.RE
+.PP
+\fIDRIVER\fR
+.RS 4
+Match the driver name of the event device\&. Only set this key for devices which are bound to a driver at the time the event is generated\&.
+.RE
+.PP
+\fIATTR{\fR\fI\fIfilename\fR\fR\fI}\fR, \fISYSCTL{\fR\fI\fIkernel parameter\fR\fR\fI}\fR
+.RS 4
+Match sysfs attribute values of the event device\&. Trailing whitespace in the attribute values is ignored unless the specified match value itself contains trailing whitespace\&.
+Match a kernel parameter value\&.
+.RE
+.PP
+\fIKERNELS\fR
+.RS 4
+Search the devpath upwards for a matching device name\&.
+.RE
+.PP
+\fISUBSYSTEMS\fR
+.RS 4
+Search the devpath upwards for a matching device subsystem name\&.
+.RE
+.PP
+\fIDRIVERS\fR
+.RS 4
+Search the devpath upwards for a matching device driver name\&.
+.RE
+.PP
+\fIATTRS{\fR\fI\fIfilename\fR\fR\fI}\fR
+.RS 4
+Search the devpath upwards for a device with matching sysfs attribute values\&. If multiple
+\fIATTRS\fR
+matches are specified, all of them must match on the same device\&. Trailing whitespace in the attribute values is ignored unless the specified match value itself contains trailing whitespace\&.
+.RE
+.PP
+\fITAGS\fR
+.RS 4
+Search the devpath upwards for a device with matching tag\&.
+.RE
+.PP
+\fIENV{\fR\fI\fIkey\fR\fR\fI}\fR
+.RS 4
+Match against a device property value\&.
+.RE
+.PP
+\fITAG\fR
+.RS 4
+Match against a device tag\&.
+.RE
+.PP
+\fITEST{\fR\fI\fIoctal mode mask\fR\fR\fI}\fR
+.RS 4
+Test the existence of a file\&. An octal mode mask can be specified if needed\&.
+.RE
+.PP
+\fIPROGRAM\fR
+.RS 4
+Execute a program to determine whether there is a match; the key is true if the program returns successfully\&. The device properties are made available to the executed program in the environment\&. The program\*(Aqs standard output is available in the
+\fIRESULT\fR
+key\&.
+.sp
+This can only be used for very short\-running foreground tasks\&. For details, see
+\fIRUN\fR\&.
+.RE
+.PP
+\fIRESULT\fR
+.RS 4
+Match the returned string of the last
+\fIPROGRAM\fR
+call\&. This key can be used in the same or in any later rule after a
+\fIPROGRAM\fR
+call\&.
+.RE
+.PP
+Most of the fields support shell glob pattern matching and alternate patterns\&. The following special characters are supported:
+.PP
+*
+.RS 4
+Matches zero or more characters\&.
+.RE
+.PP
+?
+.RS 4
+Matches any single character\&.
+.RE
+.PP
+[]
+.RS 4
+Matches any single character specified within the brackets\&. For example, the pattern string
+tty[SR]
+would match either
+ttyS
+or
+ttyR\&. Ranges are also supported via the
+\-
+character\&. For example, to match on the range of all digits, the pattern
+[0\-9]
+could be used\&. If the first character following the
+[
+is a
+!, any characters not enclosed are matched\&.
+.RE
+.PP
+|
+.RS 4
+Separates alternative patterns\&. For example, the pattern string
+abc|x*
+would match either
+abc
+or
+x*\&.
+.RE
+.PP
+The following keys can get values assigned:
+.PP
+\fINAME\fR
+.RS 4
+The name to use for a network interface\&. The name of a device node cannot be changed by udev, only additional symlinks can be created\&.
+.RE
+.PP
+\fISYMLINK\fR
+.RS 4
+The name of a symlink targeting the node\&. Every matching rule adds this value to the list of symlinks to be created\&.
+.sp
+The set of characters to name a symlink is limited\&. Allowed characters are
+0\-9A\-Za\-z#+\-\&.:=@_/, valid UTF\-8 character sequences, and
+\ex00
+hex encoding\&. All other characters are replaced by a
+_
+character\&.
+.sp
+Multiple symlinks may be specified by separating the names by the space character\&. In case multiple devices claim the same name, the link always points to the device with the highest link_priority\&. If the current device goes away, the links are re\-evaluated and the device with the next highest link_priority becomes the owner of the link\&. If no link_priority is specified, the order of the devices (and which one of them owns the link) is undefined\&.
+.sp
+Symlink names must never conflict with the kernel\*(Aqs default device node names, as that would result in unpredictable behavior\&.
+.RE
+.PP
+\fIOWNER\fR, \fIGROUP\fR, \fIMODE\fR
+.RS 4
+The permissions for the device node\&. Every specified value overrides the compiled\-in default value\&.
+.RE
+.PP
+\fISECLABEL{\fR\fI\fImodule\fR\fR\fI}\fR
+.RS 4
+Applies the specified Linux Security Module label to the device node\&.
+.RE
+.PP
+\fIATTR{\fR\fI\fIkey\fR\fR\fI}\fR
+.RS 4
+The value that should be written to a sysfs attribute of the event device\&.
+.RE
+.PP
+\fISYSCTL{\fR\fI\fIkernel parameter\fR\fR\fI}\fR
+.RS 4
+The value that should be written to kernel parameter\&.
+.RE
+.PP
+\fIENV{\fR\fI\fIkey\fR\fR\fI}\fR
+.RS 4
+Set a device property value\&. Property names with a leading
+\&.
+are neither stored in the database nor exported to events or external tools (run by, for example, the
+\fIPROGRAM\fR
+match key)\&.
+.RE
+.PP
+\fITAG\fR
+.RS 4
+Attach a tag to a device\&. This is used to filter events for users of libudev\*(Aqs monitor functionality, or to enumerate a group of tagged devices\&. The implementation can only work efficiently if only a few tags are attached to a device\&. It is only meant to be used in contexts with specific device filter requirements, and not as a general\-purpose flag\&. Excessive use might result in inefficient event handling\&.
+.RE
+.PP
+\fIRUN{\fR\fI\fItype\fR\fR\fI}\fR
+.RS 4
+Add a program to the list of programs to be executed after processing all the rules for a specific event, depending on
+type:
+.PP
+program
+.RS 4
+Execute an external program specified as the assigned value\&. If no absolute path is given, the program is expected to live in
+/lib/udev, otherwise, the absolute path must be specified\&.
+.sp
+This is the default if no
+\fItype\fR
+is specified\&.
+.RE
+.PP
+builtin
+.RS 4
+As
+\fIprogram\fR, but use one of the built\-in programs rather than an external one\&.
+.RE
+.sp
+The program name and following arguments are separated by spaces\&. Single quotes can be used to specify arguments with spaces\&.
+.sp
+This can only be used for very short\-running foreground tasks\&. Running an event process for a long period of time may block all further events for this or a dependent device\&.
+.sp
+Starting daemons or other long\-running processes is not appropriate for udev; the forked processes, detached or not, will be unconditionally killed after the event handling has finished\&.
+.RE
+.PP
+\fILABEL\fR
+.RS 4
+A named label to which a
+\fIGOTO\fR
+may jump\&.
+.RE
+.PP
+\fIGOTO\fR
+.RS 4
+Jumps to the next
+\fILABEL\fR
+with a matching name\&.
+.RE
+.PP
+\fIIMPORT{\fR\fI\fItype\fR\fR\fI}\fR
+.RS 4
+Import a set of variables as device properties, depending on
+type:
+.PP
+program
+.RS 4
+Execute an external program specified as the assigned value and import its output, which must be in environment key format\&. Path specification, command/argument separation, and quoting work like in
+\fIRUN\fR\&.
+.RE
+.PP
+builtin
+.RS 4
+Similar to
+program, but use one of the built\-in programs rather than an external one\&.
+.RE
+.PP
+file
+.RS 4
+Import a text file specified as the assigned value, the content of which must be in environment key format\&.
+.RE
+.PP
+db
+.RS 4
+Import a single property specified as the assigned value from the current device database\&. This works only if the database is already populated by an earlier event\&.
+.RE
+.PP
+cmdline
+.RS 4
+Import a single property from the kernel command line\&. For simple flags the value of the property is set to
+1\&.
+.RE
+.PP
+parent
+.RS 4
+Import the stored keys from the parent device by reading the database entry of the parent device\&. The value assigned to
+\fBIMPORT{parent}\fR
+is used as a filter of key names to import (with the same shell glob pattern matching used for comparisons)\&.
+.RE
+.sp
+This can only be used for very short\-running foreground tasks\&. For details see
+\fBRUN\fR\&.
+.RE
+.PP
+\fIWAIT_FOR\fR
+.RS 4
+Wait for a file to become available or until a timeout of 10 seconds expires\&. The path is relative to the sysfs device; if no path is specified, this waits for an attribute to appear\&.
+.RE
+.PP
+\fIOPTIONS\fR
+.RS 4
+Rule and device options:
+.PP
+\fBlink_priority=\fR\fB\fIvalue\fR\fR
+.RS 4
+Specify the priority of the created symlinks\&. Devices with higher priorities overwrite existing symlinks of other devices\&. The default is 0\&.
+.RE
+.PP
+\fBstring_escape=\fR\fB\fInone|replace\fR\fR
+.RS 4
+Usually control and other possibly unsafe characters are replaced in strings used for device naming\&. The mode of replacement can be specified with this option\&.
+.RE
+.PP
+\fBstatic_node=\fR
+.RS 4
+Apply the permissions specified in this rule to the static device node with the specified name\&. Static device node creation can be requested by kernel modules\&. These nodes might not have a corresponding kernel device at the time udevd is started; they can trigger automatic kernel module loading\&.
+.RE
+.PP
+\fBwatch\fR
+.RS 4
+Watch the device node with inotify; when the node is closed after being opened for writing, a change uevent is synthesized\&.
+.RE
+.PP
+\fBnowatch\fR
+.RS 4
+Disable the watching of a device node with inotify\&.
+.RE
+.RE
+.PP
+The
+\fINAME\fR,
+\fISYMLINK\fR,
+\fIPROGRAM\fR,
+\fIOWNER\fR,
+\fIGROUP\fR,
+\fIMODE\fR, and
+\fIRUN\fR
+fields support simple string substitutions\&. The
+\fIRUN\fR
+substitutions are performed after all rules have been processed, right before the program is executed, allowing for the use of device properties set by earlier matching rules\&. For all other fields, substitutions are performed while the individual rule is being processed\&. The available substitutions are:
+.PP
+\fB$kernel\fR, \fB%k\fR
+.RS 4
+The kernel name for this device\&.
+.RE
+.PP
+\fB$number\fR, \fB%n\fR
+.RS 4
+The kernel number for this device\&. For example,
+sda3
+has kernel number
+3\&.
+.RE
+.PP
+\fB$devpath\fR, \fB%p\fR
+.RS 4
+The devpath of the device\&.
+.RE
+.PP
+\fB$id\fR, \fB%b\fR
+.RS 4
+The name of the device matched while searching the devpath upwards for
+\fBSUBSYSTEMS\fR,
+\fBKERNELS\fR,
+\fBDRIVERS\fR, and
+\fBATTRS\fR\&.
+.RE
+.PP
+\fB$driver\fR
+.RS 4
+The driver name of the device matched while searching the devpath upwards for
+\fBSUBSYSTEMS\fR,
+\fBKERNELS\fR,
+\fBDRIVERS\fR, and
+\fBATTRS\fR\&.
+.RE
+.PP
+\fB$attr{\fR\fB\fIfile\fR\fR\fB}\fR, \fB%s{\fR\fB\fIfile\fR\fR\fB}\fR
+.RS 4
+The value of a sysfs attribute found at the device where all keys of the rule have matched\&. If the matching device does not have such an attribute, and a previous
+\fBKERNELS\fR,
+\fBSUBSYSTEMS\fR,
+\fBDRIVERS\fR, or
+\fBATTRS\fR
+test selected a parent device, then the attribute from that parent device is used\&.
+.sp
+If the attribute is a symlink, the last element of the symlink target is returned as the value\&.
+.RE
+.PP
+\fB$env{\fR\fB\fIkey\fR\fR\fB}\fR, \fB%E{\fR\fB\fIkey\fR\fR\fB}\fR
+.RS 4
+A device property value\&.
+.RE
+.PP
+\fB$major\fR, \fB%M\fR
+.RS 4
+The kernel major number for the device\&.
+.RE
+.PP
+\fB$minor\fR, \fB%m\fR
+.RS 4
+The kernel minor number for the device\&.
+.RE
+.PP
+\fB$result\fR, \fB%c\fR
+.RS 4
+The string returned by the external program requested with
+\fIPROGRAM\fR\&. A single part of the string, separated by a space character, may be selected by specifying the part number as an attribute:
+%c{N}\&. If the number is followed by the
++
+character, this part plus all remaining parts of the result string are substituted:
+%c{N+}\&.
+.RE
+.PP
+\fB$parent\fR, \fB%P\fR
+.RS 4
+The node name of the parent device\&.
+.RE
+.PP
+\fB$name\fR
+.RS 4
+The current name of the device\&. If not changed by a rule, it is the name of the kernel device\&.
+.RE
+.PP
+\fB$links\fR
+.RS 4
+A space\-separated list of the current symlinks\&. The value is only set during a remove event or if an earlier rule assigned a value\&.
+.RE
+.PP
+\fB$sys\fR, \fB%S\fR
+.RS 4
+The sysfs mount point\&.
+.RE
+.PP
+\fB$devnode\fR, \fB%N\fR
+.RS 4
+The name of the device node\&.
+.RE
+.PP
+\fB%%\fR
+.RS 4
+The
+%
+character itself\&.
+.RE
+.PP
+\fB$$\fR
+.RS 4
+The
+$
+character itself\&.
+.RE
+.SH "HARDWARE DATABASE FILES"
+.PP
+The hwdb files are read from the files located in the system hwdb directory
+/lib/udev/hwdb\&.d, the volatile runtime directory
+/run/udev/hwdb\&.d
+and the local administration directory
+/etc/udev/hwdb\&.d\&. All hwdb files are collectively sorted and processed in lexical order, regardless of the directories in which they live\&. However, files with identical filenames replace each other\&. Files in
+/etc
+have the highest priority, files in
+/run
+take precedence over files with the same name in
+/lib\&. This can be used to override an hwdb file with a local file if needed; a symlink in
+/etc
+with the same name as a hwdb file in
+/lib, pointing to
+/dev/null, disables the hwdb file entirely\&. hwdb files must have the extension
+\&.hwdb; other extensions are ignored\&.
+.PP
+The hwdb file contains data records consisting of matches and associated key\-value pairs\&. Every record in the hwdb starts with one or more match string, specifying a shell glob to compare the database lookup string against\&. Multiple match lines are specified in additional consecutive lines\&. Every match line is compared indivdually, they are combined by OR\&. Every match line must start at the first character of the line\&.
+.PP
+The match lines are followed by one or more key\-value pair lines, which are recognized by a leading space character\&. The key name and value are separated by
+=\&. An empty line signifies the end of a record\&. Lines beginning with
+#
+are ignored\&.
+.PP
+The content of all hwdb files is read by
+\fBudevadm\fR(8)
+and compiled to a binary database located at
+/etc/udev/hwdb\&.bin\&. During runtime only the binary database is used\&.
+.SH "HARDWARE DATABASE FILES"
+.PP
+The hwdb files are read from the files located in the system hwdb directory
+/usr/lib/udev/hwdb\&.d, the volatile runtime directory
+/run/udev/hwdb\&.d
+and the local administration directory
+/etc/udev/hwdb\&.d\&. All hwdb files are collectively sorted and processed in lexical order, regardless of the directories in which they live\&. However, files with identical filenames replace each other\&. Files in
+/etc
+have the highest priority, files in
+/run
+take precedence over files with the same name in
+/usr/lib\&. This can be used to override a system\-supplied hwdb file with a local file if needed; a symlink in
+/etc
+with the same name as a hwdb file in
+/usr/lib, pointing to
+/dev/null, disables the hwdb file entirely\&. hwdb files must have the extension
+\&.hwdb; other extensions are ignored\&.
+.PP
+The hwdb file contains data records consisting of matches and associated key\-value pairs\&. Every record in the hwdb starts with one or more match string, specifying a shell glob to compare the database lookup string against\&. Multiple match lines are specified in additional consecutive lines\&. Every match line is compared indivdually, they are combined by OR\&. Every match line must start at the first character of the line\&.
+.PP
+The match lines are followed by one or more key\-value pair lines, which are recognized by a leading space character\&. The key name and value are separated by
+=\&. An empty line signifies the end of a record\&. Lines beginning with
+#
+are ignored\&.
+.PP
+The content of all hwdb files is read by
+\fBudevadm\fR(8)
+and compiled to a binary database located at
+/etc/udev/hwdb\&.bin, or alternatively
+/usr/lib/udev/hwdb\&.bin
+if you want ship the compiled database in an immutable image\&. During runtime only the binary database is used\&.
+.SH "SEE ALSO"
+.PP
+\fBudevd\fR(8),
+\fBudevadm\fR(8)
