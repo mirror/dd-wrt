@@ -17,7 +17,7 @@ libtirpc-install:
 	rm -f $(INSTALLDIR)/libtirpc/usr/lib/*.la
 
 
-zfs-configure: libtirpc-configure libtirpc
+zfs-configure: libtirpc-configure libtirpc libudev
 	cd zfs && ./autogen.sh
 	cd zfs && autoreconf
 	cd zfs && ./configure \
@@ -25,13 +25,13 @@ zfs-configure: libtirpc-configure libtirpc
 		--libdir=/usr/lib \
 		--host=$(ARCH)-linux \
 		CC="$(CC) -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		CFLAGS="-I$(TOP)/zlib -I$(TOP)/e2fsprogs/lib  -I$(TOP)/libtirpc -I$(TOP)/libtirpc/tirpc -I$(TOP)/openssl/include" \
-		LDFLAGS="-L$(TOP)/zlib  -L$(TOP)/e2fsprogs/lib/blkid -L$(TOP)/e2fsprogs/lib/uuid -L$(TOP)/libtirpc/src/.libs -L$(TOP)/zfs/lib/libuutil/.libs -L$(TOP)/openssl" \
+		CFLAGS="-I$(TOP)/zlib -I$(TOP)/e2fsprogs/lib  -I$(TOP)/libtirpc -I$(TOP)/libtirpc/tirpc -I$(TOP)/openssl/include  -I$(TOP)/libudev/src/libudev" \
+		LDFLAGS="-L$(TOP)/zlib  -L$(TOP)/e2fsprogs/lib/blkid -L$(TOP)/e2fsprogs/lib/uuid -L$(TOP)/libtirpc/src/.libs -L$(TOP)/zfs/lib/libuutil/.libs -L$(TOP)/openssl -L$(TOP)/libudev/src/libudev/.libs -ludev" \
 		--with-linux=$(LINUXDIR)
 	cd zfs && find . -name *.la -exec sed -i 's/relink_command/# relink_command/g' {} +
 	cd zfs && find . -name *.la -exec touch {} +
 
-zfs: libtirpc
+zfs: libtirpc libudev
 	$(MAKE) -j 4 -C zfs
 
 zfs-clean:
