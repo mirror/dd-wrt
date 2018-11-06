@@ -128,7 +128,7 @@
 #include <sys/fs/zfs.h>
 #include <zfs_fletcher.h>
 #include <libnvpair.h>
-#include <libzfs.h>
+#include <libzutil.h>
 #include <sys/crypto/icp.h>
 #ifdef __GLIBC__
 #include <execinfo.h> /* for backtrace() */
@@ -201,7 +201,7 @@ static const ztest_shared_opts_t ztest_opts_defaults = {
 	.zo_init = 1,
 	.zo_time = 300,			/* 5 minutes */
 	.zo_maxloops = 50,		/* max loops during spa_freeze() */
-	.zo_metaslab_force_ganging = 32 << 10,
+	.zo_metaslab_force_ganging = 64 << 10,
 	.zo_special_vdevs = ZTEST_VDEV_CLASS_RND,
 };
 
@@ -7066,7 +7066,6 @@ make_random_props(void)
 static void
 ztest_import(ztest_shared_t *zs)
 {
-	libzfs_handle_t *hdl;
 	importargs_t args = { 0 };
 	spa_t *spa;
 	nvlist_t *cfg = NULL;
@@ -7081,14 +7080,14 @@ ztest_import(ztest_shared_t *zs)
 	VERIFY0(pthread_rwlock_init(&ztest_name_lock, NULL));
 
 	kernel_init(FREAD | FWRITE);
-	hdl = libzfs_init();
 
 	searchdirs[0] = ztest_opts.zo_dir;
 	args.paths = nsearch;
 	args.path = searchdirs;
 	args.can_be_active = B_FALSE;
 
-	error = zpool_tryimport(hdl, name, &cfg, &args);
+	error = zpool_find_config(NULL, name, &cfg, &args,
+	    &libzpool_config_ops);
 	if (error)
 		(void) fatal(0, "No pools found\n");
 
@@ -7098,7 +7097,6 @@ ztest_import(ztest_shared_t *zs)
 	    1ULL << spa->spa_root_vdev->vdev_child[0]->vdev_ms_shift;
 	spa_close(spa, FTAG);
 
-	libzfs_fini(hdl);
 	kernel_fini();
 
 	if (!ztest_opts.zo_mmp_test) {
