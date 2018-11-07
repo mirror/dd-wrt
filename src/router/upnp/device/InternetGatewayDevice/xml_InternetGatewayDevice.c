@@ -90,6 +90,12 @@ char xml_InternetGatewayDevice[] =
 	"\t\t\t\t<modelDescription>Gateway</modelDescription>\r\n"
 	"\t\t\t\t<modelName>router</modelName>\r\n"
 	"\t\t\t\t<modelURL>http://www.buffalo.jp</modelURL>\r\n"
+#elif HAVE_ANTAIRA
+	"\t\t\t\t<manufacturer>Antaira</manufacturer>\r\n"
+	"\t\t\t\t<manufacturerURL>http://www.antaira.com</manufacturerURL>\r\n"
+	"\t\t\t\t<modelDescription>Gateway</modelDescription>\r\n"
+	"\t\t\t\t<modelName>Industrial Router</modelName>\r\n"
+	"\t\t\t\t<modelURL>http://www.antaira.com</modelURL>\r\n"
 #else
 	"\t\t\t\t<manufacturer>DD-WRT</manufacturer>\r\n"
 	"\t\t\t\t<manufacturerURL>http://www.dd-wrt.com</manufacturerURL>\r\n"
@@ -117,6 +123,12 @@ char xml_InternetGatewayDevice[] =
 	"\t\t\t\t\t\t<modelDescription>Gateway</modelDescription>\r\n"
 	"\t\t\t\t\t\t<modelName>router</modelName>\r\n"
 	"\t\t\t\t\t\t<modelURL>http://www.buffalo.jp</modelURL>\r\n"
+#elif HAVE_ANTAIRA
+	"\t\t\t\t\t\t<manufacturer>Antaira</manufacturer>\r\n"
+	"\t\t\t\t\t\t<manufacturerURL>http://www.antaira.com</manufacturerURL>\r\n"
+	"\t\t\t\t\t\t<modelDescription>Gateway</modelDescription>\r\n"
+	"\t\t\t\t\t\t<modelName>Industrial Router</modelName>\r\n"
+	"\t\t\t\t\t\t<modelURL>http://www.antaira.com</modelURL>\r\n"
 #else
 	"\t\t\t\t\t\t<manufacturer>DD-WRT</manufacturer>\r\n"
 	"\t\t\t\t\t\t<manufacturerURL>http://www.dd-wrt.com</manufacturerURL>\r\n"
@@ -140,11 +152,19 @@ char xml_InternetGatewayDevice[] =
 	"\t\t\t<device>\r\n"
 	"\t\t\t\t<deviceType>urn:schemas-upnp-org:device:LANDevice:1</deviceType>\r\n"
 	"\t\t\t\t<friendlyName>LANDevice</friendlyName>\r\n"
+#ifdef HAVE_ANTAIRA
+	"\t\t\t\t<manufacturer>Antaira</manufacturer>\r\n"
+	"\t\t\t\t<manufacturerURL>http://www.antaira.com</manufacturerURL>\r\n"
+	"\t\t\t\t<modelDescription>Gateway</modelDescription>\r\n"
+	"\t\t\t\t<modelName>Industrial Router</modelName>\r\n"
+	"\t\t\t\t<modelURL>http://www.antaira.com</modelURL>\r\n"
+#else
 	"\t\t\t\t<manufacturer>DD-WRT</manufacturer>\r\n"
 	"\t\t\t\t<manufacturerURL>http://www.dd-wrt.com</manufacturerURL>\r\n"
 	"\t\t\t\t<modelDescription>Gateway</modelDescription>\r\n"
 	"\t\t\t\t<modelName>router</modelName>\r\n"
 	"\t\t\t\t<modelURL>http://www.dd-wrt.com</modelURL>\r\n"
+#endif
 	"\t\t\t\t<UDN>uuid:f9e2cf4a-99e3-429e-b2dd-57e3c03ae597</UDN>\r\n"
 	"\t\t\t\t<serviceList>\r\n"
 	"\t\t\t\t\t<service>\r\n"
