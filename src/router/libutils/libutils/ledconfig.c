@@ -277,9 +277,6 @@ static void getledconfig(struct ledconfig *cfg)
 #ifdef HAVE_DAP2230
 		cfg->diag_gpio = 0x00b;
 		cfg->power_gpio = 0x10b;
-#elif HAVE_PERU
-		cfg->diag_gpio = 0x00c;
-		cfg->beeper_gpio = 0x104;
 #elif HAVE_LIMA
 //              cfg->disconnected_gpio = 0x00f;
 //              cfg->power_gpio = 0x105;
@@ -585,6 +582,11 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->ses_gpio = 0x105;	//correct state missing
 		cfg->usb_gpio = 0x108;
 //              cfg->sec0_gpio = 0x104;
+		break;
+#elif HAVE_PERU
+	case ROUTER_BOARD_WHRHPGN:
+		cfg->diag_gpio = 0x00c;
+		cfg->beeper_gpio = 0x004;
 		break;
 #elif HAVE_WNR2000
 	case ROUTER_BOARD_WHRHPGN:
