@@ -1212,7 +1212,9 @@ static void resetbtn_period_check(int sig)
 #elif defined(HAVE_DIR825C1)
 	sesgpio = 0x110;
 	val |= get_gpio(16) << 16;	//aoss pushbutton
-#elif defined(HAVE_WASP) && !defined(HAVE_PERU)
+#elif defined(HAVE_PERU)
+	//not
+#elif defined(HAVE_WASP)
 	sesgpio = 0x00b;
 	val |= get_gpio(11) << 11;	//aoss pushbutton
 #elif defined(HAVE_WNR2200)
