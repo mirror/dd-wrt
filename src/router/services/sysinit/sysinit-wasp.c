@@ -455,6 +455,7 @@ void start_sysinit(void)
 	eval("hwclock", "-s", "-u");
 
 	eval("ledtool", "1", "4");	//buzzer
+	eval("ledtool", "12", "0");	//diag ~12sec
 #elif !defined(HAVE_WR810N) && !defined(HAVE_LIMA) && !defined(HAVE_RAMBUTAN)
 
 #ifdef HAVE_WNDR3700V4
