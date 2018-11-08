@@ -1725,6 +1725,12 @@ struct nvram_param srouter_defaults[] = {
 	{"radius_common", "Antaira FreeRadius Certificate"},
 	{"radius_passphrase", "none"},
 	{"wan_proto", "none"},
+	{"ath0_security_mode", "psk2"},
+	{"ath0_akm", "psk2"}.
+	{"ath0_wpa_psk","12345678"},
+	{"ath1_security_mode", "psk2"},
+	{"ath1_akm", "psk2"}.
+	{"ath1_wpa_psk","12345678"},
 #elif  HAVE_BKM
 	{"router_name", "BKM-HSDL"},
 #elif  HAVE_ERC
