@@ -127,7 +127,8 @@ static inline int IP6_ECN_set_ce(struct sk_buff *skb, struct ipv6hdr *iph)
 	to = from | htonl(INET_ECN_CE << 20);
 	net_hdr_word(iph) = to;
 	if (skb->ip_summed == CHECKSUM_COMPLETE)
-		skb->csum = csum_add(csum_sub(skb->csum, from), to);
+		skb->csum = csum_add(csum_sub(skb->csum, (__force __wsum)from),
+				     (__force __wsum)to);
 	return 1;
 }
 

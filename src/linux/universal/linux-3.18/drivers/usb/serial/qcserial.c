@@ -232,6 +232,10 @@ static int qcprobe(struct usb_serial *serial, const struct usb_device_id *id)
 	if (intf->desc.bInterfaceClass != USB_CLASS_VENDOR_SPEC)
 		goto done;
 
+	/* we only support vendor specific functions */
+	if (intf->desc.bInterfaceClass != USB_CLASS_VENDOR_SPEC)
+		goto done;
+
 	nintf = serial->dev->actconfig->desc.bNumInterfaces;
 	dev_dbg(dev, "Num Interfaces = %d\n", nintf);
 	ifnum = intf->desc.bInterfaceNumber;
