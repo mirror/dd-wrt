@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r4205 | brainslayer | 2018-11-09 07:03:46 +0000 (Fri, 09 Nov 2018) | 1 line
+
+fix 4addr learning issue in ath10k which caused gtk rekeying to fail on 9984 chipsets
+------------------------------------------------------------------------
 r4204 | brainslayer | 2018-11-01 19:16:11 +0000 (Thu, 01 Nov 2018) | 1 line
 
 update ath10k firmwares
