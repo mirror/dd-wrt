@@ -140,9 +140,11 @@ static int __xfrm6_output(struct sk_buff *skb)
 
 	if (skb->len > mtu && xfrm6_local_dontfrag(skb)) {
 		xfrm6_local_rxpmtu(skb, mtu);
+		kfree_skb(skb);
 		return -EMSGSIZE;
 	} else if (!skb->local_df && skb->len > mtu && skb->sk) {
 		xfrm6_local_error(skb, mtu);
+		kfree_skb(skb);
 		return -EMSGSIZE;
 	}
 
