@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r4207 | brainslayer | 2018-11-10 14:15:07 +0000 (Sat, 10 Nov 2018) | 1 line
+
+add debug output
+------------------------------------------------------------------------
+r4206 | brainslayer | 2018-11-10 11:36:20 +0000 (Sat, 10 Nov 2018) | 1 line
+
+remove wrong assignment
+------------------------------------------------------------------------
 r4205 | brainslayer | 2018-11-09 07:03:46 +0000 (Fri, 09 Nov 2018) | 1 line
 
 fix 4addr learning issue in ath10k which caused gtk rekeying to fail on 9984 chipsets
