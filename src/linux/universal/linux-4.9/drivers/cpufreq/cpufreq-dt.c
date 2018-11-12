@@ -334,14 +334,14 @@ static int cpufreq_init(struct cpufreq_policy *policy)
 	if (IS_ERR(opp_srcu_head)) {
 		ret = PTR_ERR(opp_srcu_head);
 		rcu_read_unlock();
-		goto out_free_priv;
+		goto out_free_opp;
 	}
 
 	priv->opp_nb.notifier_call = opp_notifier;
 	ret = srcu_notifier_chain_register(opp_srcu_head, &priv->opp_nb);
 	rcu_read_unlock();
 	if (ret)
-		goto out_free_priv;
+		goto out_free_opp;
 
 	ret = dev_pm_opp_init_cpufreq_table(cpu_dev, &freq_table);
 	if (ret) {
