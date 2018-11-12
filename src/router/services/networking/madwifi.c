@@ -1144,8 +1144,6 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 				sprintf(pwstring, "%s %s", pwstring, "CCMP");
 			}
 			if (nvram_nmatch("1", "%s_tkip", prefix)) {
-				if (!isfirst)
-					fprintf(fp, "ieee80211n=0\n");
 				sprintf(pwstring, "%s %s", pwstring, "TKIP");
 			}
 			if (nvram_nmatch("1", "%s_ccmp-256", prefix)) {
@@ -1178,8 +1176,6 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 				}
 				if (nvram_match(psk, "tkip")) {
 					nvram_nset("1", "%s_tkip", prefix);
-					if (!isfirst)
-						fprintf(fp, "ieee80211n=0\n");
 					fprintf(fp, "wpa_pairwise=TKIP\n");
 				}
 				if (nvram_match(psk, "tkip+aes")) {
