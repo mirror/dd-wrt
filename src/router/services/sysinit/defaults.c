@@ -1,4 +1,4 @@
-/*7
+/*
  * defaults.c
  *
  * Copyright (C) 2007 Sebastian Gottschall <gottschall@dd-wrt.com>
@@ -1056,7 +1056,7 @@ struct nvram_param srouter_defaults[] = {
 	{"wl0_ssid", "Carlson"},	/* Service set ID (network name) */
 	{"ath0_ssid", "Carlson"},	/* Service set ID (network name) */
 	{"ath0_nctrlsb", "upper"},	/* ath0 11n sub channel */
-	{"ath0_crypto", "aes"},	/* ath0 encryption type */
+	{"ath0_ccmp", "1"},	/* ath0 encryption type */
 	{"ath0_security_mode", "psk2"},	/* ath0 encryption type */
 	{"ath0_txpwrdbm", "19"},	/* ath0 transmit power */
 #elif defined(HAVE_IMMERSIVE)
@@ -1118,7 +1118,7 @@ struct nvram_param srouter_defaults[] = {
 	{"ath0_regulatory", "1"},
 	{"ath0_channel", "6000"},	/* 6000/chan 200 -ath0 frequency */
 	{"ath0_txpwrdbm", "6"},
-	{"ath0_crypto", "aes"},	/* ath0 encryption type */
+	{"ath0_ccmp", "aes"},	/* ath0 encryption type */
 	{"ath0_security_mode", "psk2"},	/* ath0 encryption type */
 	{"ath0_wpa_psk", "marcomarco14"},	/* ath0 encryption key */
 #elif defined(HAVE_KORENRON)
@@ -1127,13 +1127,16 @@ struct nvram_param srouter_defaults[] = {
 #elif HAVE_IDEXX
 	{"wl0_ssid", "IDEXXw1"},	/* Service set ID (network name) */
 	{"ath0_ssid", "IDEXXw1"},	/* Service set ID (network name) */
-	{"ath0_crypto", "tkip+aes"},	/* ath0 encryption type */
+	{"ath0_ccmp", "1"},	/* ath0 encryption type */
+	{"ath0_tkip", "1"},	/* ath0 encryption type */
 	{"wl1_ssid", "IDEXXw2"},	/* Service set ID (network name) */
+	{"ath1_ccmp", "1"},	/* ath0 encryption type */
+	{"ath1_tkip", "1"},	/* ath0 encryption type */
 	{"ath1_ssid", "IDEXXw2"},	/* Service set ID (network name) */
-	{"ath1_crypto", "tkip+aes"},	/* ath0 encryption type */
 	{"ath0_vifs", "ath0.1"},
+	{"ath0.1_ccmp", "1"},	/* ath0 encryption type */
+	{"ath0.1_tkip", "1"},	/* ath0 encryption type */
 	{"ath0.1_ssid", "LabStation Guest"},	/* Service set ID (network name) */
-	{"ath0.1_crypto", "tkip+aes"},	/* ath0 encryption type */
 #else
 #if !defined(HAVE_BUFFALO) && !defined(HAVE_AXTEL)
 	{"wl0_ssid", "dd-wrt"},	/* Service set ID (network name) */
