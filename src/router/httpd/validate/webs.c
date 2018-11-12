@@ -796,8 +796,15 @@ _8021xprv
 	copytonv(wp, "%s_leap8021xaddopt", prefix);
 
 #endif
-
+#ifdef HAVE_MADWIFI
+	copytonv(wp, "%s_ccmp", prefix);
+	copytonv(wp, "%s_tkip", prefix);
+	copytonv(wp, "%s_ccmp-256", prefix);
+	copytonv(wp, "%s_gcmp-256", prefix);
+	copytonv(wp, "%s_gcmp", prefix);
+#else
 	copytonv(wp, "%s_crypto", prefix);
+#endif
 	copytonv(wp, "%s_wpa_psk", prefix);
 	copytonv(wp, "%s_disable_eapol_key_retries", prefix);
 #ifdef HAVE_80211R
@@ -2452,9 +2459,15 @@ void add_vifs_single(char *prefix, int device)
 		sprintf(v2, "%s_akm", v);
 		nvram_set(v2, "psk psk2");
 
+#ifdef HAVE_MADWIFI
+		sprintf(v2, "%s_tkip", v);
+		nvram_set(v2, "1");
+		sprintf(v2, "%s_aes", v);
+		nvram_set(v2, "1");
+#else
 		sprintf(v2, "%s_crypto", v);
 		nvram_set(v2, "tkip+aes");
-
+#endif
 		sprintf(v2, "%s_wpa_psk", v);
 #ifdef HAVE_WZRHPAG300NH
 		if (has_5ghz(prefix))
@@ -2474,9 +2487,6 @@ void add_vifs_single(char *prefix, int device)
 
 		sprintf(v2, "%s_security_mode", v);
 		nvram_set(v2, "psk psk2");
-
-		sprintf(v2, "%s_crypto", v);
-		nvram_set(v2, "tkip+aes");
 	}
 	gp_action = 0;
 #endif
