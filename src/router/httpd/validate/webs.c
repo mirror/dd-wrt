@@ -2410,6 +2410,8 @@ void add_vifs_single(char *prefix, int device)
 	nvram_set(v2, "RN-150M");
 #elif defined(HAVE_HOBBIT)
 	nvram_set(v2, "hobb-it_vap");
+#elif defined(HAVE_ANTAIRA)
+	nvram_set(v2, "antaira_vap");
 #else
 	nvram_set(v2, "dd-wrt_vap");
 #endif
