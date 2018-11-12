@@ -329,7 +329,7 @@ static int cpufreq_init(struct cpufreq_policy *policy)
 	ret = dev_pm_opp_register_notifier(cpu_dev, &priv->opp_nb);
 	rcu_read_unlock();
 	if (ret)
-		goto out_free_priv;
+		goto out_free_opp;
 
 	ret = dev_pm_opp_init_cpufreq_table(cpu_dev, &freq_table);
 	if (ret) {
