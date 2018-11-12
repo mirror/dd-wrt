@@ -281,7 +281,7 @@ static int getbuttonstate()
 #elif defined(HAVE_PERU)
 static int getbuttonstate()
 {
-	return !get_gpio(1);
+	return 0;	//return !get_gpio(1);
 }
 #elif defined(HAVE_LIMA)
 static int getbuttonstate()
