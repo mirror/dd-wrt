@@ -177,11 +177,11 @@ void setWifiPass(void)
 #endif
 #else
 		nvram_set("ath0_security_mode", "psk2");
-		nvram_set("ath0_crypto", "aes");
+		nvram_set("ath0_ccmp", "1");
 		nvram_set("ath0_wpa_psk", pass);
 		nvram_set("ath0_akm", "psk2");
 		nvram_set("ath1_security_mode", "psk2");
-		nvram_set("ath1_crypto", "aes");
+		nvram_set("ath1_ccmp", "1");
 		nvram_set("ath1_wpa_psk", pass);
 		nvram_set("ath1_akm", "psk2");
 #endif
