@@ -1279,22 +1279,57 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			}
 		}
 		if (nvram_invmatch(akm, "radius")) {
-			sprintf(psk, "%s_crypto", ifname);
-			if (nvram_match(psk, "aes"))
-				fprintf(fp, "wpa_pairwise=CCMP\n");
-			if (nvram_match(psk, "ccmp-256"))
-				fprintf(fp, "wpa_pairwise=CCMP-256\n");
-			if (nvram_match(psk, "gcmp"))
-				fprintf(fp, "wpa_pairwise=GCMP\n");
-			if (nvram_match(psk, "gcmp-256"))
-				fprintf(fp, "wpa_pairwise=GCMP-256\n");
-			if (nvram_match(psk, "tkip")) {
+			char pwstring[128] = { 0 };
+			if (nvram_nmatch("1", "%s_ccmp", ifname)) {
+				sprintf(pwstring, "%s %s", pwstring, "CCMP");
+			}
+			if (nvram_nmatch("1", "%s_tkip", ifname)) {
 				if (!isfirst)
 					fprintf(fp, "ieee80211n=0\n");
-				fprintf(fp, "wpa_pairwise=TKIP\n");
+				sprintf(pwstring, "%s %s", pwstring, "TKIP");
 			}
-			if (nvram_match(psk, "tkip+aes"))
-				fprintf(fp, "wpa_pairwise=TKIP CCMP\n");
+			if (nvram_nmatch("1", "%s_ccmp-256", ifname)) {
+				sprintf(pwstring, "%s %s", pwstring, "CCMP-256");
+			}
+			if (nvram_nmatch("1", "%s_gcmp-256", ifname)) {
+				sprintf(pwstring, "%s %s", pwstring, "GCMP-256");
+			}
+			if (nvram_nmatch("1", "%s_gcmp", ifname)) {
+				sprintf(pwstring, "%s %s", pwstring, "GCMP");
+			}
+
+			if (!strlen(pwstring)) {
+				sprintf(psk, "%s_crypto", ifname);
+				if (nvram_match(psk, "aes")) {
+					nvram_nset("1", "%s_ccmp", ifname);
+					fprintf(fp, "wpa_pairwise=CCMP\n");
+				}
+				if (nvram_match(psk, "ccmp-256")) {
+					nvram_nset("1", "%s_ccmp-256", ifname);
+					fprintf(fp, "wpa_pairwise=CCMP-256\n");
+				}
+				if (nvram_match(psk, "gcmp")) {
+					nvram_nset("1", "%s_gcmp", ifname);
+					fprintf(fp, "wpa_pairwise=GCMP\n");
+				}
+				if (nvram_match(psk, "gcmp-256")) {
+					nvram_nset("1", "%s_gcmp-256", ifname);
+					fprintf(fp, "wpa_pairwise=GCMP-256\n");
+				}
+				if (nvram_match(psk, "tkip")) {
+					nvram_nset("1", "%s_tkip", ifname);
+					if (!isfirst)
+						fprintf(fp, "ieee80211n=0\n");
+					fprintf(fp, "wpa_pairwise=TKIP\n");
+				}
+				if (nvram_match(psk, "tkip+aes")) {
+					nvram_nset("1", "%s_ccmp", ifname);
+					nvram_nset("1", "%s_tkip", ifname);
+					fprintf(fp, "wpa_pairwise=TKIP CCMP\n");
+				}
+			} else {
+				fprintf(fp, "wpa_pairwise=%s\n", pwstring);
+			}
 			fprintf(fp, "wpa_group_rekey=%s\n", nvram_nget("%s_wpa_gtk_rekey", ifname));
 		}
 		// fprintf (fp, "jumpstart_p1=1\n");
@@ -1551,15 +1586,32 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 #endif
 		fprintf(fp, "\n");
 
-		sprintf(psk, "%s_crypto", prefix);
-		if (nvram_match(psk, "aes")) {
-			fprintf(fp, "\tpairwise=CCMP\n");
+		char pwstring[128] = { 0 };
+		char grpstring[128] = { 0 };
+		if (nvram_nmatch("1", "%s_ccmp", prefix)) {
+			sprintf(pwstring, "%s %s", pwstring, "CCMP");
 #if defined(HAVE_MAKSAT) || defined(HAVE_TMK) || defined(HAVE_BKM)
 			if (isadhoc)
-				fprintf(fp, "\tgroup=CCMP\n");
+				sprintf(grpstring, "%s %s", grpstring, "CCMP");
 			else
 #endif
-				fprintf(fp, "\tgroup=CCMP TKIP\n");
+				sprintf(grpstring, "%s %s", grpstring, "CCMP TKIP");
+		}
+		if (nvram_nmatch("1", "%s_tkip", prefix)) {
+			sprintf(pwstring, "%s %s", pwstring, "TKIP");
+			sprintf(grpstring, "%s %s", grpstring, "TKIP");
+		}
+		if (nvram_nmatch("1", "%s_ccmp-256", prefix)) {
+			sprintf(pwstring, "%s %s", pwstring, "CCMP-256");
+			sprintf(grpstring, "%s %s", grpstring, "CCMP-256");
+		}
+		if (nvram_nmatch("1", "%s_gcmp-256", prefix)) {
+			sprintf(pwstring, "%s %s", pwstring, "GCMP-256");
+			sprintf(grpstring, "%s %s", grpstring, "GCMP-256");
+		}
+		if (nvram_nmatch("1", "%s_gcmp", prefix)) {
+			sprintf(pwstring, "%s %s", pwstring, "GCMP");
+			sprintf(grpstring, "%s %s", grpstring, "GCMP");
 		}
 #ifdef HAVE_80211W
 		if (nvram_default_matchi(mfp, -1, 0))
@@ -1569,25 +1621,48 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		if (nvram_default_matchi(mfp, 1, 0))
 			fprintf(fp, "ieee80211w=2\n");
 #endif
-		if (nvram_match(psk, "tkip")) {
-			fprintf(fp, "\tpairwise=TKIP\n");
-			fprintf(fp, "\tgroup=TKIP\n");
-		}
-		if (nvram_match(psk, "ccmp-256")) {
-			fprintf(fp, "\tpairwise=CCMP-256\n");
-			fprintf(fp, "\tgroup=CCMP-256\n");
-		}
-		if (nvram_match(psk, "gcmp")) {
-			fprintf(fp, "\tpairwise=GCMP\n");
-			fprintf(fp, "\tgroup=GCMP\n");
-		}
-		if (nvram_match(psk, "gcmp-256")) {
-			fprintf(fp, "\tpairwise=GCMP-256\n");
-			fprintf(fp, "\tgroup=GCMP-256\n");
-		}
-		if (nvram_match(psk, "tkip+aes")) {
-			fprintf(fp, "\tpairwise=CCMP TKIP\n");
-			fprintf(fp, "\tgroup=CCMP TKIP\n");
+		if (!strlen(pwstring)) {
+			sprintf(psk, "%s_crypto", prefix);
+			if (nvram_match(psk, "aes")) {
+				nvram_nset("1", "%s_ccmp", prefix);
+				fprintf(fp, "\tpairwise=CCMP\n");
+#if defined(HAVE_MAKSAT) || defined(HAVE_TMK) || defined(HAVE_BKM)
+				if (isadhoc)
+					fprintf(fp, "\tgroup=CCMP\n");
+				else
+#endif
+					fprintf(fp, "\tgroup=CCMP TKIP\n");
+			}
+			if (nvram_match(psk, "tkip")) {
+				nvram_nset("1", "%s_tkip", prefix);
+				fprintf(fp, "\tpairwise=TKIP\n");
+				fprintf(fp, "\tgroup=TKIP\n");
+			}
+			if (nvram_match(psk, "ccmp-256")) {
+				nvram_nset("1", "%s_ccmp-256", prefix);
+				fprintf(fp, "\tpairwise=CCMP-256\n");
+				fprintf(fp, "\tgroup=CCMP-256\n");
+			}
+			if (nvram_match(psk, "gcmp")) {
+				nvram_nset("1", "%s_gcmp", prefix);
+				fprintf(fp, "\tpairwise=GCMP\n");
+				fprintf(fp, "\tgroup=GCMP\n");
+			}
+			if (nvram_match(psk, "gcmp-256")) {
+				nvram_nset("1", "%s_gcmp-256", prefix);
+				fprintf(fp, "\tpairwise=GCMP-256\n");
+				fprintf(fp, "\tgroup=GCMP-256\n");
+			}
+			if (nvram_match(psk, "tkip+aes")) {
+				nvram_nset("1", "%s_tkip", prefix);
+				nvram_nset("1", "%s_ccmp", prefix);
+				fprintf(fp, "\tpairwise=CCMP TKIP\n");
+				fprintf(fp, "\tgroup=CCMP TKIP\n");
+			}
+		} else {
+			fprintf(fp, "\tpairwise=%s\n", pwstring);
+			fprintf(fp, "\tgroup=%s\n", grpstring);
+
 		}
 		if (nvram_match(akm, "psk"))
 			fprintf(fp, "\tproto=WPA\n");
