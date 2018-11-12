@@ -4375,10 +4375,40 @@ void show_addconfig(webs_t wp, char *prefix)
 #endif
 }
 
+static void show_cryptovar(webs_t wp, char *prefix, char *name, char *var)
+{
+
+	char nvar[80];
+	websWrite(wp, "<div class=\"setting\">\n");
+	show_caption(wp, "label", name, NULL);
+	sprintf(nvar, "%s_%s", prefix, var);
+	websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s />\n", nvar, selmatch(nvar, "1", "checked=\"checked\""));
+	websWrite(wp, "</div>\n");
+
+}
+
 void show_preshared(webs_t wp, char *prefix)
 {
 	char var[80];
 	cprintf("show preshared");
+#ifdef HAVE_MADWIFI
+	websWrite(wp, "<fieldset>\n");
+	show_caption_legend(wp, "wpa.algorithms");
+
+	if (has_ad(prefix)) {
+		show_cryptovar(wp, prefix, "GCMP", "gcmp");
+	} else {
+		show_cryptovar(wp, prefix, "AES", "ccmp");
+		show_cryptovar(wp, prefix, "TKIP", "tkip");
+		if (has_gcmp(prefix)) {
+			show_cryptovar(wp, prefix, "CCMP-256", "ccmp-256");
+			show_cryptovar(wp, prefix, "GCMP", "gcmp");
+			show_cryptovar(wp, prefix, "GCMP-256", "gcmp-256");
+		}
+	}
+
+	websWrite(wp, "</fieldset>\n");
+#else
 	sprintf(var, "%s_crypto", prefix);
 	websWrite(wp, "<div><div class=\"setting\">\n");
 	show_caption(wp, "label", "wpa.algorithms", NULL);
@@ -4397,9 +4427,9 @@ void show_preshared(webs_t wp, char *prefix)
 		}
 
 	}
-
 	websWrite(wp, "</select>\n");
 	websWrite(wp, "</div>\n");
+#endif
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "wpa.shared_key", NULL);
 	sprintf(var, "%s_wpa_psk", prefix);
