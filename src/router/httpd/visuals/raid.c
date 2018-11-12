@@ -239,7 +239,6 @@ static char *getfsname(char *drive)
 	return retvalue;
 }
 
-
 void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 {
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(nas.raidmanager)</script></h2>");
