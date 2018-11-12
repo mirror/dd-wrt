@@ -827,6 +827,9 @@ ifeq ($(CONFIG_ANTAIRA),y)
 	sed -e 's/www.dd-wrt.com/www.antaira.com/g' -e 's/DD-WRT/Antaira/g' help/index.asp >$(INSTALLDIR)/www/help/index.asp 
 	sed -e 's/dd-wrt/Antaira/g' help/HWireless.asp > $(INSTALLDIR)/www/help/HWireless.asp 
 	sed -e 's/dd-wrt/Antaira/g' help/HUpgrade.asp > $(INSTALLDIR)/www/help/HUpgrade.asp 
+	cp -f antaira/defaults/config/* $(INSTALLDIR)/etc/config
+	mkdir -p $(INSTALLDIR)/sbin
+	cp -f antaira/defaults/sbin/* $(INSTALLDIR)/sbin
 endif
 
 ifneq ($(CONFIG_USB),y)
