@@ -681,6 +681,21 @@ void generate_wep_key(webs_t wp)
 	generate_wep_key_single(wp, prefix, passphrase, bit, tx);
 }
 
+static char *_copytonv(webs_t wp, const char *fmt, ...)
+{
+	char varbuf[64];
+	va_list args;
+
+	va_start(args, (char *)fmt);
+	vsnprintf(varbuf, sizeof(varbuf), fmt, args);
+	va_end(args);
+
+	char *wl = websGetVar(wp, varbuf, NULL);
+	dd_debug(DEBUG_HTTPD, "save %s with value %s\n", varbuf, wl);
+	nvram_set(varbuf, wl);
+	return wl;
+}
+
 char *copytonv(webs_t wp, const char *fmt, ...)
 {
 	char varbuf[64];
@@ -797,11 +812,11 @@ _8021xprv
 
 #endif
 #ifdef HAVE_MADWIFI
-	copytonv(wp, "%s_ccmp", prefix);
-	copytonv(wp, "%s_tkip", prefix);
-	copytonv(wp, "%s_ccmp-256", prefix);
-	copytonv(wp, "%s_gcmp-256", prefix);
-	copytonv(wp, "%s_gcmp", prefix);
+	_copytonv(wp, "%s_ccmp", prefix);
+	_copytonv(wp, "%s_tkip", prefix);
+	_copytonv(wp, "%s_ccmp-256", prefix);
+	_copytonv(wp, "%s_gcmp-256", prefix);
+	_copytonv(wp, "%s_gcmp", prefix);
 #else
 	copytonv(wp, "%s_crypto", prefix);
 #endif
@@ -905,12 +920,12 @@ _8021xprv
 	sprintf(n, "%s_config", p2);
 	sprintf(n2, "%s_config", prefix);
 	v = websGetVar(wp, n, NULL);
-	if (v && strlen(v) > 0){
+	if (v && strlen(v) > 0) {
 		nvram_set(n2, v);
 	} else {
 		nvram_unset(n2);
 	}
-	
+
 #endif
 
 }
