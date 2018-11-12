@@ -258,8 +258,8 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		fprintf(fp, "\tscan_ssid=1\n");
 		fprintf(fp, "\tkey_mgmt=WPA-PSK\n");
 
-		char pwstring[128] = { 0 };
-		char grpstring[128] = { 0 };
+		char pwstring[128] = { 0, 0 };
+		char grpstring[128] = { 0, 0 };
 		if (nvram_nmatch("1", "%s_ccmp", prefix)) {
 			sprintf(pwstring, "%s %s", pwstring, "CCMP");
 #if defined(HAVE_MAKSAT) || defined(HAVE_TMK) || defined(HAVE_BKM)
@@ -325,8 +325,8 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 				fprintf(fp, "\tgroup=CCMP TKIP\n");
 			}
 		} else {
-			fprintf(fp, "\tpairwise=%s\n", pwstring);
-			fprintf(fp, "\tgroup=%s\n", grpstring);
+			fprintf(fp, "\tpairwise=%s\n", &pwstring[1]);
+			fprintf(fp, "\tgroup=%s\n", &grpstring[1]);
 
 		}
 		if (nvram_match(akm, "psk"))
@@ -1139,7 +1139,7 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 			}
 		}
 		if (nvram_invmatch(akm, "radius")) {
-			char pwstring[128] = { 0 };
+			char pwstring[128] = { 0, 0 };
 			if (nvram_nmatch("1", "%s_ccmp", prefix)) {
 				sprintf(pwstring, "%s %s", pwstring, "CCMP");
 			}
@@ -1188,7 +1188,7 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 					fprintf(fp, "wpa_pairwise=TKIP CCMP\n");
 				}
 			} else {
-				fprintf(fp, "wpa_pairwise=%s\n", pwstring);
+				fprintf(fp, "wpa_pairwise=%s\n", &pwstring[1]);
 			}
 			fprintf(fp, "wpa_group_rekey=%s\n", nvram_nget("%s_wpa_gtk_rekey", prefix));
 		}
