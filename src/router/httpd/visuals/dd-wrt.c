@@ -4882,7 +4882,22 @@ void show_80211X(webs_t wp, char *prefix)
 void show_wparadius(webs_t wp, char *prefix)
 {
 	char var[80];
-	websWrite(wp, "<div>\n");
+#ifdef HAVE_MADWIFI
+	websWrite(wp, "<fieldset>\n");
+	show_caption_legend(wp, "wpa.algorithms");
+	if (has_ad(prefix)) {
+		show_cryptovar(wp, prefix, "GCMP", "gcmp");
+	} else {
+		show_cryptovar(wp, prefix, "AES", "ccmp");
+		show_cryptovar(wp, prefix, "TKIP", "tkip");
+		if (has_gcmp(prefix)) {
+			show_cryptovar(wp, prefix, "CCMP-256", "ccmp-256");
+			show_cryptovar(wp, prefix, "GCMP", "gcmp");
+			show_cryptovar(wp, prefix, "GCMP-256", "gcmp-256");
+		}
+	}
+	websWrite(wp, "</fieldset>\n");
+#else
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "wpa.algorithms", NULL);
 	websWrite(wp, "<select name=\"%s_crypto\">\n", prefix);
@@ -4891,6 +4906,7 @@ void show_wparadius(webs_t wp, char *prefix)
 	websWrite(wp, "<option value=\"tkip+aes\" %s>TKIP+AES</option>\n", selmatch(var, "tkip+aes", "selected=\"selected\""));
 	websWrite(wp, "<option value=\"tkip\" %s>TKIP</option>\n", selmatch(var, "tkip", "selected=\"selected\""));
 	websWrite(wp, "</select></div>\n");
+#endif
 #ifdef HAVE_MADWIFI
 	show_radius(wp, prefix, 0, 1);
 #else
@@ -4931,7 +4947,6 @@ void show_wparadius(webs_t wp, char *prefix)
 	show_caption(wp, "label", "wpa.rekey", NULL);
 	sprintf(var, "%s_wpa_gtk_rekey", prefix);
 	websWrite(wp, "<input name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"10\" onblur=\"valid_range(this,0,99999,wpa.rekey)\" value=\"%s\" />", prefix, nvram_default_get(var, "3600"));
-	websWrite(wp, "</div>\n");
 	websWrite(wp, "</div>\n");
 #ifdef HAVE_MADWIFI
 	//only for madwifi, ath9k, ath10k, mwlwifi etc. right now.
