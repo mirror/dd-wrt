@@ -4380,9 +4380,8 @@ static void show_cryptovar(webs_t wp, char *prefix, char *name, char *var)
 
 	char nvar[80];
 	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\">%s</div>\n", name);
 	sprintf(nvar, "%s_%s", prefix, var);
-	websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s />\n", nvar, selmatch(nvar, "1", "checked=\"checked\""));
+	websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s />%s\n", nvar, selmatch(nvar, "1", "checked=\"checked\""), name);
 	websWrite(wp, "</div>\n");
 
 }
