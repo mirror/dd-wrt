@@ -607,11 +607,15 @@ static void buffalo_defaults(int force)
 					} else {
 						if (!strcmp(mode, "psk")) {
 							nvram_set("ath0_akm", "psk psk2");
-							nvram_set("ath0_security_mode", "psk psk2");
+							nvram_set("ath0_psk","1");
+							nvram_set("ath0_psk2","1");
+							nvram_set("ath0_security_mode", "psk");
 						}
 						if (!strcmp(mode, "psk2")) {
 							nvram_set("ath0_akm", "psk psk2");
-							nvram_set("ath0_security_mode", "psk psk2");
+							nvram_set("ath0_psk","1");
+							nvram_set("ath0_psk2","1");
+							nvram_set("ath0_security_mode", "psk");
 						}
 					}
 				} else if (mode_ex && !strcmp(mode_ex, "wpa2-psk")) {
@@ -624,11 +628,13 @@ static void buffalo_defaults(int force)
 					} else {
 						if (!strcmp(mode, "psk")) {
 							nvram_set("ath0_akm", "psk2");
-							nvram_set("ath0_security_mode", "psk2");
+							nvram_set("ath0_psk2","1");
+							nvram_set("ath0_security_mode", "psk");
 						}
 						if (!strcmp(mode, "psk2")) {
 							nvram_set("ath0_akm", "psk2");
-							nvram_set("ath0_security_mode", "psk2");
+							nvram_set("ath0_psk2","1");
+							nvram_set("ath0_security_mode", "psk");
 						}
 					}
 				} else {
@@ -670,11 +676,15 @@ static void buffalo_defaults(int force)
 					} else {
 						if (!strcmp(mode, "psk")) {
 							nvram_set("ath1_akm", "psk psk2");
-							nvram_set("ath1_security_mode", "psk psk2");
+							nvram_set("ath1_psk","1");
+							nvram_set("ath1_psk2","1");
+							nvram_set("ath1_security_mode", "psk");
 						}
 						if (!strcmp(mode, "psk2")) {
 							nvram_set("ath1_akm", "psk psk2");
-							nvram_set("ath1_security_mode", "psk psk2");
+							nvram_set("ath1_psk","1");
+							nvram_set("ath1_psk2","1");
+							nvram_set("ath1_security_mode", "psk");
 						}
 					}
 				} else {

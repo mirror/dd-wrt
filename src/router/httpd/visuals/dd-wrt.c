@@ -4422,13 +4422,13 @@ static void show_authtable(webs_t wp, char *prefix)
 	struct pair eap_authpair[] = {
 		{"WPA-EAP", "wpa", dummy},
 		{"WPA2-EAP", "wpa2", dummy},
-		{"WPA3-EAP-SUITE-B", "wpa3-suite-b", has_wpa3},
-		{"WPA3-EAP-SUITE-B-192", "wpa3-suite-b-192", has_wpa3}
+		{"WPA3-EAP-SUITE-B", "wpa3", has_wpa3},
+		{"WPA3-EAP-SUITE-B-192", "wpa3-192", has_wpa3}
 	};
 
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<table class=\"table center\" summary=\"WPA Algorithms\">\n");
-	websWrite(wp, "<tr>\n" "<th><script type=\"text/javascript\">Capture(wpa.secmode)</script></th>\n" "<th><script type=\"text/javascript\">Capture(wpa.algorithms)</script></th>\n" "</tr>\n");
+	websWrite(wp, "<tr>\n" "<th><script type=\"text/javascript\">Capture(wpa.auth_mode)</script></th>\n" "<th><script type=\"text/javascript\">Capture(wpa.algorithms)</script></th>\n" "</tr>\n");
 	int count = 0;
 	sprintf(var, "%s_security_mode", prefix);
 	int s = 0;

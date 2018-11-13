@@ -1057,7 +1057,9 @@ struct nvram_param srouter_defaults[] = {
 	{"ath0_ssid", "Carlson"},	/* Service set ID (network name) */
 	{"ath0_nctrlsb", "upper"},	/* ath0 11n sub channel */
 	{"ath0_ccmp", "1"},	/* ath0 encryption type */
-	{"ath0_security_mode", "psk2"},	/* ath0 encryption type */
+	{"ath0_security_mode", "psk"},	/* ath0 encryption type */
+	{"ath0_akm", "psk2"},	/* ath0 encryption type */
+	{"ath0_psk2", "1"},	/* ath0 encryption type */
 	{"ath0_txpwrdbm", "19"},	/* ath0 transmit power */
 #elif defined(HAVE_IMMERSIVE)
 	{"ath0_ssid", "imm"},
@@ -1119,7 +1121,9 @@ struct nvram_param srouter_defaults[] = {
 	{"ath0_channel", "6000"},	/* 6000/chan 200 -ath0 frequency */
 	{"ath0_txpwrdbm", "6"},
 	{"ath0_ccmp", "aes"},	/* ath0 encryption type */
-	{"ath0_security_mode", "psk2"},	/* ath0 encryption type */
+	{"ath0_security_mode", "psk"},	/* ath0 encryption type */
+	{"ath0_akm", "psk2"},	/* ath0 encryption type */
+	{"ath0_psk2", "1"},	/* ath0 encryption type */
 	{"ath0_wpa_psk", "marcomarco14"},	/* ath0 encryption key */
 #elif defined(HAVE_KORENRON)
 	{"wl0_ssid", "WBR2000"},	/* Service set ID (network name) */
@@ -1550,17 +1554,24 @@ struct nvram_param srouter_defaults[] = {
 
 #else
 #ifdef HAVE_IDEXX
-	{"ath0_security_mode", "psk psk2"},	/* WPA mode */
+	{"ath0_security_mode", "psk"},	/* WPA mode */
+	{"ath0_akm", "psk psk2"},	/* WPA mode */
+	{"ath0_psk", "1"},	/* WPA mode */
+	{"ath0_psk2", "1"},	/* WPA mode */
 	{"ath0_auth_mode", "psk psk2"},	/* WPA mode (disabled|radius|wpa|psk)  */
 	{"ath0.1_security_mode", "psk psk2"},	/* WPA mode */
 	{"ath0X1_security_mode", "psk psk2"},	/* WPA mode */
-	{"ath1_security_mode", "psk psk2"},	/* WPA mode */
+	{"ath1_security_mode", "psk"},	/* WPA mode */
+	{"ath1_akm", "psk psk2"},	/* WPA mode */
+	{"ath1_psk", "1"},	/* WPA mode */
+	{"ath1_psk2", "1"},	/* WPA mode */
 #else
 	{"ath0_auth_mode", "disabled"},	/* WPA mode (disabled|radius|wpa|psk)  */
 #endif
 #if !defined(HAVE_BUFFALO) && !defined(HAVE_AXTEL)
 #ifdef HAVE_CARLSONWIRELESS
 	{"ath0_akm", "psk2"},
+	{"ath0_psk2", "1"},
 	{"ath0_wpa_psk", "7078227000"},	/* ath0 encryption key */
 #else
 	{"ath0_akm", "disabled"},
@@ -1569,6 +1580,8 @@ struct nvram_param srouter_defaults[] = {
 #endif
 #ifdef HAVE_IDEXX
 	{"ath0_akm", "psk psk2"},
+	{"ath0_psk", "1"},
+	{"ath0_psk2", "1"},
 	{"ath0_wpa_psk", "IDEXXwlan1234"},	/* ath0 encryption key */
 	{"ath0.1_akm", "psk psk2"},
 	{"ath0.1_wpa_psk", "IDEXXguest1234"},	/* ath0 encryption key */
@@ -1730,9 +1743,11 @@ struct nvram_param srouter_defaults[] = {
 	{"wan_proto", "none"},
 	{"ath0_security_mode", "psk2"},
 	{"ath0_akm", "psk2"},
+	{"ath0_psk2", "1"},
 	{"ath0_wpa_psk","12345678"},
 	{"ath1_security_mode", "psk2"},
 	{"ath1_akm", "psk2"},
+	{"ath1_psk2", "1"},
 	{"ath1_wpa_psk","12345678"},
 	{"resetbutton_enable", "0"},
 #elif  HAVE_BKM

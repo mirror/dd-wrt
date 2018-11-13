@@ -329,12 +329,12 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 			fprintf(fp, "\tgroup=%s\n", &grpstring[1]);
 
 		}
-		if (nvram_match(akm, "psk"))
-			fprintf(fp, "\tproto=WPA\n");
-		if (nvram_match(akm, "psk2"))
-			fprintf(fp, "\tproto=RSN\n");
-		if (nvram_match(akm, "psk psk2"))
+		if ((nvhas(akm, "psk2") || nvhas(akm, "psk3")) && nvhas(akm, "psk"))
 			fprintf(fp, "\tproto=WPA RSN\n");
+		else if (nvhas(akm, "psk"))
+			fprintf(fp, "\tproto=WPA\n");
+		else if (nvhas(akm, "psk2") || nvhas(akm, "psk3"))
+			fprintf(fp, "\tproto=RSN\n");
 		char *wpa_psk = nvram_nget("%s_wpa_psk", prefix);
 		if (strlen(wpa_psk) == 64)
 			fprintf(fp, "\tpsk=%s\n", wpa_psk);
@@ -1067,14 +1067,12 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		if (nvram_default_matchi(eap_key_retries, 1, 0)) {
 			fprintf(fp, "wpa_disable_eapol_key_retries=1\n");
 		}
-		if (nvram_match(akm, "psk") || nvram_match(akm, "wpa"))
-			fprintf(fp, "wpa=1\n");
-		if (nvram_match(akm, "psk2")
-		    || nvram_match(akm, "wpa2"))
-			fprintf(fp, "wpa=2\n");
-		if (nvram_match(akm, "psk psk2")
-		    || nvram_match(akm, "wpa wpa2"))
-			fprintf(fp, "wpa=3\n");
+		int wpamask = 0;
+		if (nvhas(akm, "psk") || nvhas(akm, "wpa"))
+			wpamask |= 1;
+		if (nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3") || nvhas(akm, "wpa3-192"))
+			wpamask |= 2;
+		fprintf(fp, "wpa=%d\n", wpamask);
 
 		if (nvhas(akm, "psk") || nvhas(akm, "psk2")) {
 			if (strlen(nvram_nget("%s_wpa_psk", prefix)) == 64)
