@@ -882,6 +882,7 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 		}
 	}
 	websWrite(wp, "<option value=\"psk\" %s>%s</option>\n", selmatch(var, "psk", "selected=\"selected\""), wpa_enc_label(buf, "psk"));
+#ifndef HAVE_MADWIFI
 	websWrite(wp, "<option value=\"psk2\" %s>%s</option>\n", selmatch(var, "psk2", "selected=\"selected\""), wpa_enc_label(buf, "psk2"));
 	if (has_wpa3(prefix))
 		websWrite(wp, "<option value=\"psk3\" %s>%s</option>\n", selmatch(var, "psk3", "selected=\"selected\""), wpa_enc_label(buf, "psk3"));
@@ -894,9 +895,11 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 			websWrite(wp, "<option value=\"psk2 psk3\" %s>%s</option>\n", selmatch(var, "psk2 psk3", "selected=\"selected\""), wpa_enc_label(buf, "psk2 psk3"));
 
 	}
+#endif
 	if (!has_qtn(prefix)) {
 		if (!primary || nvram_match(sta, "ap") || nvram_match(sta, "wdsap")) {
 			websWrite(wp, "<option value=\"wpa\" %s>%s</option>\n", selmatch(var, "wpa", "selected=\"selected\""), wpa_enc_label(buf, "wpa"));
+#ifndef HAVE_MADWIFI
 			websWrite(wp, "<option value=\"wpa2\" %s>%s</option>\n", selmatch(var, "wpa2", "selected=\"selected\""), wpa_enc_label(buf, "wpa2"));
 			if (has_wpa3(prefix)) {
 				websWrite(wp, "<option value=\"wpa3\" %s>%s</option>\n", selmatch(var, "wpa3", "selected=\"selected\""), wpa_enc_label(buf, "wpa3"));
@@ -907,6 +910,7 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 				websWrite(wp, "<option value=\"wpa2 wpa3\" %s>%s</option>\n", selmatch(var, "wpa2 wpa3", "selected=\"selected\""), wpa_enc_label(buf, "wpa2 wpa3"));
 				websWrite(wp, "<option value=\"wpa2 wpa3-192\" %s>%s</option>\n", selmatch(var, "wpa2 wpa3-192", "selected=\"selected\""), wpa_enc_label(buf, "wpa2 wpa3-192"));
 			}
+#endif
 			websWrite(wp, "<option value=\"radius\" %s>%s</option>\n", selmatch(var, "radius", "selected=\"selected\""), wpa_enc_label(buf, "radius"));
 		}
 		websWrite(wp, "<option value=\"wep\" %s>%s</option>\n", selmatch(var, "wep", "selected=\"selected\""), wpa_enc_label(buf, "wep"));
@@ -4379,34 +4383,102 @@ static void show_cryptovar(webs_t wp, char *prefix, char *name, char *var)
 {
 
 	char nvar[80];
-	websWrite(wp, "<div class=\"setting\">\n");
 	sprintf(nvar, "%s_%s", prefix, var);
 	websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s />%s\n", nvar, selmatch(nvar, "1", "checked=\"checked\""), name);
-	websWrite(wp, "</div>\n");
 
 }
+
+typedef struct pair {
+	char *name;
+	char *nvname;
+	int (*valid) (char *prefix);
+};
+
+static int dummy(char *prefix)
+{
+
+	return 1;
+}
+
+#ifdef HAVE_MADWIFI
+static void show_authtable(webs_t wp, char *prefix)
+{
+	char var[80];
+	struct pair cryptopair[] = {
+		{"CCMP (AES)", "ccmp", dummy},
+		{"CCMP-256", "ccmp-256", has_gcmp},
+		{"TKIP", "tkip", dummy},
+		{"GCMP", "gcmp", has_ad},
+		{"GCMP", "gcmp", has_gcmp},
+		{"GCMP-256", "gcmp-256", has_gcmp}
+	};
+
+	struct pair psk_authpair[] = {
+		{"WPA-PSK", "psk", dummy},
+		{"WPA2-PSK", "psk2", dummy},
+		{"WPA3-PSK", "psk3", has_wpa3}
+	};
+
+	struct pair eap_authpair[] = {
+		{"WPA-EAP", "wpa", dummy},
+		{"WPA2-EAP", "wpa2", dummy},
+		{"WPA3-EAP-SUITE-B", "wpa3-suite-b", has_wpa3},
+		{"WPA3-EAP-SUITE-B-192", "wpa3-suite-b-192", has_wpa3}
+	};
+
+	websWrite(wp, "<div class=\"setting\">\n");
+	websWrite(wp, "<table class=\"table center\" summary=\"WPA Algorithms\">\n");
+	websWrite(wp, "<tr>\n" "<th><script type=\"text/javascript\">Capture(wpa.secmode)</script></th>\n" "<th><script type=\"text/javascript\">Capture(wpa.algorithms)</script></th>\n" "</tr>\n");
+	int count = 0;
+	sprintf(var, "%s_security_mode", prefix);
+	int s = 0;
+	while (1) {
+		websWrite(wp, "<tr>\n");
+		websWrite(wp, "<td>\n");
+		s = 0;
+		if (nvhas(var, "psk")  || nvhas(var, "psk2") || nvhas(var, "psk3")) {
+			if (count < (sizeof(psk_authpair) / sizeof(struct pair)) && psk_authpair[count].valid(prefix)) {
+				s = 1;
+				show_cryptovar(wp, prefix, psk_authpair[count].name, psk_authpair[count].nvname);
+			} else
+				websWrite(wp, "&nbsp;\n");
+		}
+		if (nvhas(var, "wpa") || nvhas(var, "wpa2") || nvhas(var, "wpa3-suite-b") || nvhas(var, "wpa3-suite-b-192")) {
+			if (count < (sizeof(eap_authpair) / sizeof(struct pair)) && eap_authpair[count].valid(prefix)) {
+				s = 1;
+				show_cryptovar(wp, prefix, eap_authpair[count].name, eap_authpair[count].nvname);
+			} else
+				websWrite(wp, "&nbsp;\n");
+		}
+		websWrite(wp, "</td>\n");
+		websWrite(wp, "<td>\n");
+		if (count < (sizeof(cryptopair) / sizeof(struct pair)) && cryptopair[count].valid(prefix)) {
+			s = 1;
+			show_cryptovar(wp, prefix, cryptopair[count].name, cryptopair[count].nvname);
+		} else
+			websWrite(wp, "&nbsp;\n");
+
+		websWrite(wp, "</td>\n");
+		websWrite(wp, "</tr>\n");
+		if (!s)
+			break;
+		count++;
+	}
+
+	websWrite(wp, "</table>");
+	websWrite(wp, "</div>");
+
+}
+
+#endif
 
 void show_preshared(webs_t wp, char *prefix)
 {
 	char var[80];
 	cprintf("show preshared");
+
 #ifdef HAVE_MADWIFI
-	websWrite(wp, "<fieldset>\n");
-	show_caption_legend(wp, "wpa.algorithms");
-
-	if (has_ad(prefix)) {
-		show_cryptovar(wp, prefix, "GCMP", "gcmp");
-	} else {
-		show_cryptovar(wp, prefix, "AES", "ccmp");
-		show_cryptovar(wp, prefix, "TKIP", "tkip");
-		if (has_gcmp(prefix)) {
-			show_cryptovar(wp, prefix, "CCMP-256", "ccmp-256");
-			show_cryptovar(wp, prefix, "GCMP", "gcmp");
-			show_cryptovar(wp, prefix, "GCMP-256", "gcmp-256");
-		}
-	}
-
-	websWrite(wp, "</fieldset>\n");
+	show_authtable(wp, prefix);
 #else
 	sprintf(var, "%s_crypto", prefix);
 	websWrite(wp, "<div><div class=\"setting\">\n");
@@ -4882,20 +4954,7 @@ void show_wparadius(webs_t wp, char *prefix)
 {
 	char var[80];
 #ifdef HAVE_MADWIFI
-	websWrite(wp, "<fieldset>\n");
-	show_caption_legend(wp, "wpa.algorithms");
-	if (has_ad(prefix)) {
-		show_cryptovar(wp, prefix, "GCMP", "gcmp");
-	} else {
-		show_cryptovar(wp, prefix, "AES", "ccmp");
-		show_cryptovar(wp, prefix, "TKIP", "tkip");
-		if (has_gcmp(prefix)) {
-			show_cryptovar(wp, prefix, "CCMP-256", "ccmp-256");
-			show_cryptovar(wp, prefix, "GCMP", "gcmp");
-			show_cryptovar(wp, prefix, "GCMP-256", "gcmp-256");
-		}
-	}
-	websWrite(wp, "</fieldset>\n");
+	show_authtable(wp, prefix);
 #else
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "wpa.algorithms", NULL);
