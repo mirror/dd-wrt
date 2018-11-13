@@ -893,7 +893,6 @@ _8021xprv
 	sprintf(n, "%s_security_mode", p2);
 	char n2[80];
 
-	sprintf(n2, "%s_akm", prefix);
 	char *v = websGetVar(wp, n, NULL);
 
 	if (v) {
@@ -912,9 +911,37 @@ _8021xprv
 			nvram_set(auth, "none");
 			nvram_set(wep, "disabled");
 		}
+#ifndef HAVE_MADWIFI
+		sprintf(n2, "%s_akm", prefix);
 		nvram_set(n2, v);
+#endif
 	}
+#ifdef HAVE_MADWIFI
+	_copytonv(wp, "%s_psk", prefix);
+	_copytonv(wp, "%s_psk2", prefix);
+	_copytonv(wp, "%s_psk3", prefix);
+	_copytonv(wp, "%s_wpa", prefix);
+	_copytonv(wp, "%s_wpa2", prefix);
+	_copytonv(wp, "%s_wpa3", prefix);
+	_copytonv(wp, "%s_wpa3-192", prefix);
+	char akm[128] = { 0, 0 };
+	if (nvram_nmatch("1", "%s_psk", prefix))
+		sprintf(akm, "%s %s", akm, "psk");
+	if (nvram_nmatch("1", "%s_psk2", prefix))
+		sprintf(akm, "%s %s", akm, "psk2");
+	if (nvram_nmatch("1", "%s_psk3", prefix))
+		sprintf(akm, "%s %s", akm, "psk3");
+	if (nvram_nmatch("1", "%s_wpa", prefix))
+		sprintf(akm, "%s %s", akm, "wpa");
+	if (nvram_nmatch("1", "%s_wpa2", prefix))
+		sprintf(akm, "%s %s", akm, "wpa2");
+	if (nvram_nmatch("1", "%s_wpa3", prefix))
+		sprintf(akm, "%s %s", akm, "wpa3");
+	if (nvram_nmatch("1", "%s_wpa3-192", prefix))
+		sprintf(akm, "%s %s", akm, "wpa3-192");
 
+	nvram_set(n2, &akm[1]);
+#endif
 	copytonv(wp, n);
 #ifdef HAVE_MADWIFI
 	sprintf(n, "%s_config", p2);

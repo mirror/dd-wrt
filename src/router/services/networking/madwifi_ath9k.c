@@ -1163,14 +1163,12 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		if (nvram_default_matchi(eap_key_retries, 1, 0)) {
 			fprintf(fp, "wpa_disable_eapol_key_retries=1\n");
 		}
-		if (nvram_match(akm, "psk") || nvram_match(akm, "wpa"))
-			fprintf(fp, "wpa=1\n");
-		if (nvram_match(akm, "psk2")
-		    || nvram_match(akm, "wpa2") || nvram_match(akm, "wpa3") || nvram_match(akm, "wpa3-192") || nvram_match(akm, "psk3"))
-			fprintf(fp, "wpa=2\n");
-		if (nvram_match(akm, "psk psk2")
-		    || nvram_match(akm, "wpa wpa2") || nvram_match(akm, "wpa2 wpa3") || nvram_match(akm, "wpa2 wpa3-192") || nvram_match(akm, "psk2 psk3"))
-			fprintf(fp, "wpa=3\n");
+		int wpamask = 0;
+		if (nvhas(akm, "psk") || nvhas(akm, "wpa"))
+			wpamask |= 1;
+		if (nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3") || nvhas(akm, "wpa3-192"))
+			wpamask |= 2;
+		fprintf(fp, "wpa=%d\n", wpamask);
 #ifdef HAVE_80211W
 		if (nvram_default_matchi(mfp, -1, 0))
 			fprintf(fp, "ieee80211w=1\n");
@@ -1664,13 +1662,11 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			fprintf(fp, "\tgroup=%s\n", &grpstring[1]);
 
 		}
-		if (nvram_match(akm, "psk"))
-			fprintf(fp, "\tproto=WPA\n");
-		if (nvram_match(akm, "psk2"))
-			fprintf(fp, "\tproto=RSN\n");
-		if (nvram_match(akm, "psk psk2"))
+		if ((nvhas(akm, "psk2") || nvhas(akm, "psk3")) && nvhas(akm, "psk"))
 			fprintf(fp, "\tproto=WPA RSN\n");
-		if (nvhas(akm, "psk2") || nvhas(akm, "psk3"))
+		else if (nvhas(akm, "psk"))
+			fprintf(fp, "\tproto=WPA\n");
+		else if (nvhas(akm, "psk2") || nvhas(akm, "psk3"))
 			fprintf(fp, "\tproto=RSN\n");
 		char *wpa_psk = nvram_nget("%s_wpa_psk", prefix);
 		if (strlen(wpa_psk) == 64)
