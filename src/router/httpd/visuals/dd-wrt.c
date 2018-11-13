@@ -4571,71 +4571,6 @@ void show_preshared(webs_t wp, char *prefix)
 		  "<input type=\"checkbox\" name=\"%s_wl_unmask\" value=\"0\" onclick=\"setElementMask('%s_wpa_psk', this.checked)\" >&nbsp;<script type=\"text/javascript\">Capture(share.unmask)</script></input>\n",
 		  prefix, prefix);
 	websWrite(wp, "</div>\n");
-	if (nvram_nmatch("ap", "%s_mode", prefix)
-	    || nvram_nmatch("wdsap", "%s_mode", prefix)) {
-		websWrite(wp, "<div class=\"setting\">\n");
-		show_caption(wp, "label", "wpa.rekey", NULL);
-		sprintf(var, "%s_wpa_gtk_rekey", prefix);
-		websWrite(wp, "<input class=\"num\" name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"5\" onblur=\"valid_range(this,0,99999,wpa.rekey)\" value=\"%s\" />\n", prefix, nvram_default_get(var, "3600"));
-		websWrite(wp,
-#ifdef HAVE_BUFFALO
-			  "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 3600, \" + share.range + \": 0 - 99999)\");\n//]]>\n</script></span>\n");
-#else
-			  "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 3600, \" + share.range + \": 1 - 99999)\");\n//]]>\n</script></span>\n");
-#endif
-		websWrite(wp, "</div>\n");
-	}
-#ifdef HAVE_MADWIFI
-#ifdef HAVE_80211R
-	char vvar[32];
-	strcpy(vvar, prefix);
-	rep(vvar, '.', 'X');
-	char bssft[64];
-	sprintf(bssft, "%s_ft", prefix);
-	websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.ft)</script></div>\n");
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idnas', true);\" name=\"%s_acct\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>\n",
-		  vvar, prefix, nvram_default_matchi(bssft, 1, 0) ? "checked=\"checked\"" : "");
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idnas', false);\" name=\"%s_acct\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-		  vvar, prefix, nvram_default_matchi(bssft, 0, 0) ? "checked=\"checked\"" : "");
-	websWrite(wp, "</div>\n");
-
-	websWrite(wp, "<div id=\"%s_idnas\">\n", vvar);
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "wpa.nas", NULL);
-	sprintf(var, "%s_nas", prefix);
-	websWrite(wp, "<input id=\"%s_nas\" name=\"%s_nas\" maxlength=\"48\" size=\"32\" value=\"%s\" />\n", prefix, prefix, nvram_nget("%s_nas", prefix));
-	websWrite(wp, "</div>\n");
-
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "wpa.domain", NULL);
-	sprintf(var, "%s_nas", prefix);
-	websWrite(wp, "<input id=\"%s_domain\" name=\"%s_domain\" maxlength=\"4\" size=\"6\" onblur=\"valid_domain(this)\" value=\"%s\" />\n", prefix, prefix, nvram_nget("%s_domain", prefix));
-	websWrite(wp, "</div>\n");
-	websWrite(wp, "</div>\n");
-
-	websWrite(wp, "<script>\n//<![CDATA[\n ");
-	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_ft\"), \"%s_idnas\", %s);\n", prefix, vvar, nvram_matchi(bssft, 1) ? "true" : "false");
-	websWrite(wp, "//]]>\n</script>\n");
-#endif
-#endif
-#ifdef HAVE_MADWIFI
-	if (nvram_nmatch("ap", "%s_mode", prefix)
-	    || nvram_nmatch("wdsap", "%s_mode", prefix)) {
-		//only for madwifi, ath9k, ath10k, mwlwifi etc. right now.
-#ifdef HAVE_80211W
-		char mfp[64];
-		sprintf(mfp, "%s_mfp", prefix);
-		nvram_default_get(mfp, "0");
-		showAutoOption(wp, "wpa.mfp", mfp);
-#endif
-		char eap_key_retries[64];
-		sprintf(eap_key_retries, "%s_disable_eapol_key_retries", prefix);
-		showRadio(wp, "wpa.eapol_key_retries", eap_key_retries);
-	}
-	show_addconfig(wp, prefix);
-#endif
 }
 
 void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
@@ -4663,7 +4598,11 @@ void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 	show_caption(wp, "label", "radius.label4", NULL);
 	sprintf(var, "%s_radius_port", prefix);
 	websWrite(wp, "<input name=\"%s_radius_port\" size=\"3\" maxlength=\"5\" onblur=\"valid_range(this,1,65535,radius.label4)\" value=\"%s\" />\n", prefix, nvram_default_get(var, "1812"));
-	websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 1812)\");\n//]]>\n</script></span>\n</div>\n");
+	websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n");
+	websWrite(wp, "//<![CDATA[\n");
+	websWrite(wp, "document.write(\"(\" + share.deflt + \": 1812)\");\n");
+	websWrite(wp, "//]]>\n");
+	websWrite(wp, "</script></span>\n</div>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "radius.label7", NULL);
 	sprintf(var, "%s_radius_key", prefix);
@@ -4673,6 +4612,7 @@ void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 	websWrite(wp,
 		  "<input type=\"checkbox\" name=\"%s_radius_unmask\" value=\"0\" onclick=\"setElementMask('%s_radius_key', this.checked)\" >&nbsp;<script type=\"text/javascript\">Capture(share.unmask)</script></input>\n",
 		  prefix, prefix);
+	websWrite(wp, "</div>\n");
 	if (backup) {
 #ifdef HAVE_MADWIFI
 		sprintf(var, "%s_radius_retry", prefix);
@@ -4700,8 +4640,8 @@ void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 		websWrite(wp,
 			  "<input type=\"checkbox\" name=\"%s_radius2_unmask\" value=\"0\" onclick=\"setElementMask('%s_radius2_key', this.checked)\" >&nbsp;<script type=\"text/javascript\">Capture(share.unmask)</script></input>\n",
 			  prefix, prefix);
+		websWrite(wp, "</div>\n");
 	}
-	websWrite(wp, "</div>\n");
 #ifdef HAVE_MADWIFI
 	if (!showmacformat) {
 		char acct[32];
@@ -5025,60 +4965,6 @@ void show_wparadius(webs_t wp, char *prefix)
 	show_radius(wp, prefix, 0, 1);
 #else
 	show_radius(wp, prefix, 0, 0);
-#endif
-#ifdef HAVE_MADWIFI
-#ifdef HAVE_80211R
-	char vvar[32];
-	strcpy(vvar, prefix);
-	rep(vvar, '.', 'X');
-	char bssft[64];
-	sprintf(bssft, "%s_ft", prefix);
-	websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.ft)</script></div>\n");
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idradnas', true);\" name=\"%s_acct\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>\n",
-		  vvar, prefix, nvram_default_matchi(bssft, 1, 0) ? "checked=\"checked\"" : "");
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idradnas', false);\" name=\"%s_acct\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-		  vvar, prefix, nvram_default_matchi(bssft, 0, 0) ? "checked=\"checked\"" : "");
-	websWrite(wp, "</div>\n");
-
-	websWrite(wp, "<div id=\"%s_idradnas\">\n", vvar);
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "wpa.nas", NULL);
-	sprintf(var, "%s_nas", prefix);
-	websWrite(wp, "<input id=\"%s_nas\" name=\"%s_nas\" maxlength=\"48\" size=\"32\" value=\"%s\"", prefix, prefix, nvram_nget("%s_nas", prefix));
-	websWrite(wp, "</div>\n");
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "wpa.domain", NULL);
-	sprintf(var, "%s_nas", prefix);
-	websWrite(wp, "<input id=\"%s_domain\" name=\"%s_domain\" maxlength=\"4\" size=\"6\" onblur=\"valid_domain(this)\" value=\"%s\" />\n", prefix, prefix, nvram_nget("%s_domain", prefix));
-	websWrite(wp, "</div>\n");
-	websWrite(wp, "</div>\n");
-
-	websWrite(wp, "<script>\n//<![CDATA[\n ");
-	websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_ft\"), \"%s_idradnas\", %s);\n", prefix, vvar, nvram_matchi(bssft, 1) ? "true" : "false");
-	websWrite(wp, "//]]>\n</script>\n");
-#endif
-#endif
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "wpa.rekey", NULL);
-	sprintf(var, "%s_wpa_gtk_rekey", prefix);
-	websWrite(wp, "<input name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"10\" onblur=\"valid_range(this,0,99999,wpa.rekey)\" value=\"%s\" />", prefix, nvram_default_get(var, "3600"));
-	websWrite(wp, "</div>\n");
-#ifdef HAVE_MADWIFI
-	//only for madwifi, ath9k, ath10k, mwlwifi etc. right now.
-#ifdef HAVE_80211W
-	char mfp[64];
-	sprintf(mfp, "%s_mfp", prefix);
-	nvram_default_get(mfp, "0");
-	showAutoOption(wp, "wpa.mfp", mfp);
-#endif
-	char eap_key_retries[64];
-	sprintf(eap_key_retries, "%s_disable_eapol_key_retries", prefix);
-	showRadio(wp, "wpa.eapol_key_retries", eap_key_retries);
-#endif
-#ifdef HAVE_MADWIFI
-	show_addconfig(wp, prefix);
 #endif
 }
 
