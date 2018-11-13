@@ -4431,7 +4431,7 @@ static int noad(char *prefix)
 
 static int aponly(char *prefix)
 {
-	return !(nvram_nmatch("ap", "%s_mode", prefix) || nvram_nmatch("wdsap", "%s_mode", prefix));
+	return (nvram_nmatch("ap", "%s_mode", prefix) || nvram_nmatch("wdsap", "%s_mode", prefix));
 }
 
 static int aponly_wpa3(char *prefix)
@@ -4442,8 +4442,7 @@ static int aponly_wpa3(char *prefix)
 #ifdef HAVE_MADWIFI
 void show_authtable(webs_t wp, char *prefix)
 {
-	char var[80];
-	struct pair cryptopair[] = {
+	struct pair s_cryptopair[] = {
 		{"CCMP (AES)", "ccmp", noad},
 		{"CCMP-256", "ccmp-256", has_gcmp},
 		{"TKIP", "tkip", noad},
@@ -4452,7 +4451,7 @@ void show_authtable(webs_t wp, char *prefix)
 		{"GCMP-256", "gcmp-256", has_gcmp}
 	};
 
-	struct pair authpair[] = {
+	struct pair s_authpair[] = {
 		{"WPA-PSK", "psk", dummy},
 		{"WPA2-PSK", "psk2", dummy},
 		{"WPA2-PSK-SHA256", "psk2-sha256", has_wpa3},
@@ -4463,42 +4462,54 @@ void show_authtable(webs_t wp, char *prefix)
 		{"WPA3-EAP-SUITE-B", "wpa3", aponly_wpa3},
 		{"WPA3-EAP-SUITE-B-192", "wpa3-192", aponly_wpa3}
 	};
+	struct pair cryptopair[(sizeof(s_cryptopair) / sizeof(struct pair))];
+	struct pair authpair[(sizeof(s_authpair) / sizeof(struct pair))];
+	int i, cnt = 0;
+	int alen = 0;
+	int clen = 0;
+	memset(cryptopair, 0, sizeof(cryptopair));
+	memset(authpair, 0, sizeof(authpair));
+	for (i = 0; i < sizeof(s_cryptopair) / sizeof(struct pair); i++) {
+		if (s_cryptopair[i].valid(prefix)) {
+			memcpy(&cryptopair[cnt], &s_cryptopair[i], sizeof(struct pair));
+			cnt++;
+		}
+	}
+	clen = cnt;
+	cnt = 0;
+	for (i = 0; i < sizeof(s_authpair) / sizeof(struct pair); i++) {
+		if (s_authpair[i].valid(prefix)) {
+			memcpy(&authpair[cnt], &s_authpair[i], sizeof(struct pair));
+			cnt++;
+		}
+	}
+	alen = cnt;
 
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<table class=\"table center\" summary=\"WPA Algorithms\">\n");
 	websWrite(wp, "<tr>\n" "<th><script type=\"text/javascript\">Capture(wpa.auth_mode)</script></th>\n" "<th><script type=\"text/javascript\">Capture(wpa.algorithms)</script></th>\n" "</tr>\n");
 	int count = 0;
-	sprintf(var, "%s_security_mode", prefix);
 	while (1) {
-		int skip = 0;
 		int s = 0;
 		int c = 0;
-		int se = 0;
-		int ce = 0;
-		if (count < (sizeof(authpair) / sizeof(struct pair))) {
+		if (count < alen) {
 			s = 1;
-			if (!authpair[count].valid(prefix))
-				se = 1;
 		}
 
-		if (count < (sizeof(cryptopair) / sizeof(struct pair))) {
+		if (count < clen) {
 			c = 1;
-			if (!cryptopair[count].valid(prefix))
-				ce = 1;
 		}
-		if ((!se && s) || (!ce && c)) {
+		if (s || c) {
 			websWrite(wp, "<tr>\n");
 			websWrite(wp, "<td>\n");
-			if (!se && s) {
+			if (s) {
 				show_cryptovar(wp, prefix, authpair[count].name, authpair[count].nvname, 1);
 			} else {
 				websWrite(wp, "&nbsp;\n");
 			}
 			websWrite(wp, "</td>\n");
-		}
-		if ((!ce && c) || (!se && s)) {
 			websWrite(wp, "<td>\n");
-			if (!ce && c) {
+			if (c) {
 				show_cryptovar(wp, prefix, cryptopair[count].name, cryptopair[count].nvname, 0);
 			} else
 				websWrite(wp, "&nbsp;\n");
