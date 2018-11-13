@@ -827,8 +827,13 @@ static char *wpa_enc_label(char *buf, char *value)
 			return "WPA2-PSK/WPA-PSK";
 		} else if (!strcmp(value, "psk2 psk3")) {
 			return "WPA2-PSK/WPA3-PSK";
+#ifndef HAVE_MADWIFI
 		} else if (!strcmp(value, "wpa")) {
 			return "WPA-EAP";
+#else
+		} else if (!strcmp(value, "wpa")) {
+			return "WPA";
+#endif
 		} else if (!strcmp(value, "wpa2")) {
 			return "WPA2-EAP";
 		} else if (!strcmp(value, "wpa3")) {
@@ -884,10 +889,10 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 #ifndef HAVE_MADWIFI
 	websWrite(wp, "<option value=\"psk\" %s>%s</option>\n", selmatch(var, "psk", "selected=\"selected\""), wpa_enc_label(buf, "psk"));
 #else
-	if (nvhas(var, "psk") || nvhas(var, "psk2") || nvhas(var, "psk3"))
-		websWrite(wp, "<option value=\"psk\" %s>%s</option>\n", "selected=\"selected\"", wpa_enc_label(buf, "psk"));
+	if (nvhas(var, "psk") || nvhas(var, "psk2") || nvhas(var, "psk3") nvhas(var, "wpa") || nvhas(var, "wpa2") || nvhas(var, "wpa3") || nvhas(var, "wpa3-192"))
+		websWrite(wp, "<option value=\"wpa\" %s>%s</option>\n", "selected=\"selected\"", wpa_enc_label(buf, "wpa"));
 	else
-		websWrite(wp, "<option value=\"psk\" %s>%s</option>\n", "", wpa_enc_label(buf, "psk"));
+		websWrite(wp, "<option value=\"wpa\" %s>%s</option>\n", "", wpa_enc_label(buf, "wpa"));
 #endif
 #ifndef HAVE_MADWIFI
 	websWrite(wp, "<option value=\"psk2\" %s>%s</option>\n", selmatch(var, "psk2", "selected=\"selected\""), wpa_enc_label(buf, "psk2"));
@@ -905,9 +910,7 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 #endif
 	if (!has_qtn(prefix)) {
 		if (!primary || nvram_match(sta, "ap") || nvram_match(sta, "wdsap")) {
-#ifndef HAVE_MADWIFI
-			websWrite(wp, "<option value=\"wpa\" %s>%s</option>\n", selmatch(var, "wpa", "selected=\"selected\""), wpa_enc_label(buf, "wpa"));
-#else
+#ifdef HAVE_MADWIFI
 			if (nvhas(var, "wpa") || nvhas(var, "wpa2") || nvhas(var, "wpa3") || nvhas(var, "wpa3-192"))
 				websWrite(wp, "<option value=\"wpa\" %s>%s</option>\n", "selected=\"selected\"", wpa_enc_label(buf, "wpa"));
 			else
