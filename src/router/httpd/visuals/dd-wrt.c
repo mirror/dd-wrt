@@ -4395,9 +4395,13 @@ static void show_cryptovar(webs_t wp, char *prefix, char *name, char *var, int s
 {
 
 	char nvar[80];
+	char gvar[80];
+	strcpy(gvar,prefix);
+	rep(gvar, '.', 'X');
+
 	sprintf(nvar, "%s_%s", prefix, var);
 	if (selmode)
-		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" onclick=\"SelMode('%s', '%s_security_mode',this.form.%s_security_mode.selectedIndex,this.form)\" %s />%s\n", nvar, prefix, prefix, prefix,
+		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" onclick=\"SelMode('%s', '%s_security_mode',this.form.%s_security_mode.selectedIndex,this.form)\" %s />%s\n", nvar, prefix, gvar, gvar,
 			  selmatch(nvar, "1", "checked=\"checked\""), name);
 	else
 		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s />%s\n", nvar, selmatch(nvar, "1", "checked=\"checked\""), name);
