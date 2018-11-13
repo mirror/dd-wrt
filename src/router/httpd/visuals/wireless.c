@@ -709,16 +709,23 @@ void ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix)
 		security_mode = nvram_safe_get(var);
 	rep(var, 'X', '.');
 	cprintf("security mode %s = %s\n", security_mode, var);
-
 #ifdef HAVE_MADWIFI
-	if (strstr(security_mode, "psk") || strstr(security_mode, "psk2") || strstr(security_mode, "psk3") || strstr(security_mode, "wpa") || strstr(security_mode, "wpa2") || strstr(security_mode, "wpa3")
-	    || strstr(security_mode, "wpa3-192"))
+	char vakm[32];
+	sprintf(vakm, "%s_akm", prefix);
+	char *akm = nvram_safe_get(vakm);
+	if ((strstr(security_mode, "wpa") || strstr(akm, "psk") || strstr(akm, "psk2") || strstr(akm, "psk3") || strstr(akm, "wpa") || strstr(akm, "wpa2") || strstr(akm, "wpa3")
+	     || strstr(akm, "wpa3-192")) && !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X")))
 		show_authtable(wp, prefix);
-#endif
+	if ((strstr(akm, "psk") || strstr(akm, "psk2") || strstr(akm, "psk3")) && !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X")))
+		show_preshared(wp, prefix);
+	if ((strstr(akm, "wpa") || strstr(akm, "wpa2") || strstr(akm, "wpa3") || strstr(akm, "wpa3-192")) && !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X")))
+		show_wparadius(wp, prefix);
+#else
 	if (strstr(security_mode, "psk") || strstr(security_mode, "psk2") || strstr(security_mode, "psk3"))
 		show_preshared(wp, prefix);
 	else if (strstr(security_mode, "wpa") || strstr(security_mode, "wpa2") || strstr(security_mode, "wpa3") || strstr(security_mode, "wpa3-192"))
 		show_wparadius(wp, prefix);
+#endif
 	else if (strstr(security_mode, "wep"))
 		show_wep(wp, prefix);
 	else if (strstr(security_mode, "radius"))
