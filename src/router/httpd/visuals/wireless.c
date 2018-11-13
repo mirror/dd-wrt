@@ -717,6 +717,7 @@ void ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix)
 	     || strstr(akm, "wpa3-192")) && !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X")))
 		show_authtable(wp, prefix);
 	websWrite(wp, "</fieldset>\n");
+	websWrite(wp, "<fieldset>\n");
 	if ((strstr(akm, "psk") || strstr(akm, "psk2") || strstr(akm, "psk3")) && !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X")))
 		show_preshared(wp, prefix);
 	if ((strstr(akm, "wpa") || strstr(akm, "wpa2") || strstr(akm, "wpa3") || strstr(akm, "wpa3-192")) && !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X")))
@@ -736,6 +737,9 @@ void ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix)
 	else if (strstr(security_mode, "8021X"))
 		show_80211X(wp, prefix);
 #endif
+#endif
+#ifdef HAVE_MADWIFI
+	websWrite(wp, "</fieldset>\n");
 #endif
 	return;
 }

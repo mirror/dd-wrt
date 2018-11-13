@@ -4424,14 +4424,20 @@ static int dummy(char *prefix)
 	return 1;
 }
 
+static int noad(char *prefix)
+{
+
+	return !has_ad(prefix);
+}
+
 #ifdef HAVE_MADWIFI
 void show_authtable(webs_t wp, char *prefix)
 {
 	char var[80];
 	struct pair cryptopair[] = {
-		{"CCMP (AES)", "ccmp", dummy, 0},
+		{"CCMP (AES)", "ccmp", noad, 0},
 		{"CCMP-256", "ccmp-256", has_gcmp, 0},
-		{"TKIP", "tkip", dummy, 0},
+		{"TKIP", "tkip", noad, 0},
 		{"GCMP", "gcmp", has_ad, 0},
 		{"GCMP", "gcmp", has_gcmp, 0},
 		{"GCMP-256", "gcmp-256", has_gcmp, 0}
