@@ -889,7 +889,7 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 #ifndef HAVE_MADWIFI
 	websWrite(wp, "<option value=\"psk\" %s>%s</option>\n", selmatch(var, "psk", "selected=\"selected\""), wpa_enc_label(buf, "psk"));
 #else
-	if (nvhas(var, "psk") || nvhas(var, "psk2") || nvhas(var, "psk3") nvhas(var, "wpa") || nvhas(var, "wpa2") || nvhas(var, "wpa3") || nvhas(var, "wpa3-192"))
+	if (nvhas(var, "psk") || nvhas(var, "psk2") || nvhas(var, "psk3") || nvhas(var, "wpa") || nvhas(var, "wpa2") || nvhas(var, "wpa3") || nvhas(var, "wpa3-192"))
 		websWrite(wp, "<option value=\"wpa\" %s>%s</option>\n", "selected=\"selected\"", wpa_enc_label(buf, "wpa"));
 	else
 		websWrite(wp, "<option value=\"wpa\" %s>%s</option>\n", "", wpa_enc_label(buf, "wpa"));
