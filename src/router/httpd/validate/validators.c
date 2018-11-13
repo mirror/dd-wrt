@@ -1673,13 +1673,6 @@ void validate_wl_gmode(webs_t wp, char *value, struct variable *v)
 		nvram_seti("wl0_lazywds", 0);
 		nvram_set("wl0_wds", "");
 		nvram_set("wl0_mode", "ap");
-		/*
-		 * if(nvram_invmatch("security_mode", "disabled") &&
-		 * nvram_invmatch("security_mode", "wep")){
-		 * nvram_set("security_mode", "disabled");
-		 * nvram_set("security_mode_last", nvram_safe_get("security_mode"));
-		 * nvram_set("security_mode", "disabled"); } 
-		 */
 	}
 	nvram_set(v->name, value);
 
