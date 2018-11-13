@@ -1169,6 +1169,20 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		if (nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3") || nvhas(akm, "wpa3-192"))
 			wpamask |= 2;
 		fprintf(fp, "wpa=%d\n", wpamask);
+		if (nvhas(akm, "psk"))
+			nvram_nset("1", "%s_psk");
+		if (nvhas(akm, "psk2"))
+			nvram_nset("1", "%s_psk2");
+		if (nvhas(akm, "psk3"))
+			nvram_nset("1", "%s_psk3");
+		if (nvhas(akm, "wpa"))
+			nvram_nset("1", "%s_wpa3");
+		if (nvhas(akm, "wpa2"))
+			nvram_nset("1", "%s_wpa2");
+		if (nvhas(akm, "wpa3"))
+			nvram_nset("1", "%s_wpa3");
+		if (nvhas(akm, "wpa3-192"))
+			nvram_nset("1", "%s_wpa3-192");
 #ifdef HAVE_80211W
 		if (nvram_default_matchi(mfp, -1, 0))
 			fprintf(fp, "ieee80211w=1\n");
@@ -1194,9 +1208,9 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 				fprintf(fp, "FT-PSK ");
 #endif
 			fprintf(fp, "\n");
-
 #ifdef HAVE_80211R
-			if (nvram_matchi(ft, 1) && (nvhas(akm, "psk3") || nvhas(akm, "psk") || nvhas(akm, "psk2"))) {
+			if (nvram_matchi(ft, 1)
+			    && (nvhas(akm, "psk3") || nvhas(akm, "psk") || nvhas(akm, "psk2"))) {
 				fprintf(fp, "nas_identifier=%s\n", nvram_nget("%s_nas", ifname));
 				fprintf(fp, "mobility_domain=%s\n", nvram_nget("%s_domain", ifname));
 				fprintf(fp, "ft_over_ds=1\n");
@@ -1221,10 +1235,10 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 #endif
 			fprintf(fp, "\n");
 #ifdef HAVE_80211R
-			if (nvram_matchi(ft, 1) && nvhas(akm, "psk3") || nvhas(akm, "psk") || nvhas(akm, "psk2"))
+			if (nvram_matchi(ft, 1) && nvhas(akm, "psk3") || nvhas(akm, "psk")
+			    || nvhas(akm, "psk2"))
 				fprintf(fp, "nas_identifier=%s\n", nvram_nget("%s_nas", ifname));
 #endif
-
 			// else
 			// fprintf (fp, "macaddr_acl=2\n");
 			fprintf(fp, "ieee8021x=1\n");
@@ -1277,7 +1291,9 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			}
 		}
 		if (nvram_invmatch(akm, "radius")) {
-			char pwstring[128] = { 0, 0 };
+			char pwstring[128] = {
+				0, 0
+			};
 			if (nvram_nmatch("1", "%s_ccmp", ifname)) {
 				sprintf(pwstring, "%s %s", pwstring, "CCMP");
 			}
@@ -1342,7 +1358,6 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	fprintf(fp, "signal_poll_time=%s\n", nvram_default_get(signal, "10"));
 	sprintf(signal, "%s_strikes", ifname);
 	fprintf(fp, "signal_strikes=%s\n", nvram_default_get(signal, "3"));
-
 #ifdef HAVE_HOTSPOT20
 	setupHS20(fp, ifname);
 #endif
@@ -1459,7 +1474,6 @@ static char *makescanlist(char *value)
 	}
 	free(clone);
 	return new;
-
 }
 
 void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
@@ -1502,10 +1516,13 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		fprintf(fp, "network={\n");
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		char *channelbw = nvram_nget("%s_channelbw", prefix);
-		if (strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed") && strcmp(netmode, "mixed")) {
+		if (strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed")
+		    && strcmp(netmode, "mixed")) {
 
 			fprintf(fp, "disable_vht=1\n");
-			if (strcmp(netmode, "n-only") && strcmp(netmode, "n2-only") && strcmp(netmode, "n5-only") && strcmp(netmode, "na-only") && strcmp(netmode, "ng-only") && strcmp(netmode, "mixed")) {
+			if (strcmp(netmode, "n-only") && strcmp(netmode, "n2-only")
+			    && strcmp(netmode, "n5-only") && strcmp(netmode, "na-only")
+			    && strcmp(netmode, "ng-only") && strcmp(netmode, "mixed")) {
 				fprintf(fp, "disable_ht=1\n");
 			} else {
 				if (atoi(channelbw) < 40) {
@@ -1570,7 +1587,6 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 #endif
 		// fprintf (fp, "\tmode=0\n");
 		fprintf(fp, "\tscan_ssid=1\n");
-
 		fprintf(fp, "\tkey_mgmt=");
 		if (nvhas(akm, "psk2") || nvhas(akm, "psk"))
 			fprintf(fp, "WPA-PSK ");
@@ -1583,9 +1599,12 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			fprintf(fp, "FT-PSK ");
 #endif
 		fprintf(fp, "\n");
-
-		char pwstring[128] = { 0, 0 };
-		char grpstring[128] = { 0, 0 };
+		char pwstring[128] = {
+			0, 0
+		};
+		char grpstring[128] = {
+			0, 0
+		};
 		if (nvram_nmatch("1", "%s_ccmp", prefix)) {
 			sprintf(pwstring, "%s %s", pwstring, "CCMP");
 #if defined(HAVE_MAKSAT) || defined(HAVE_TMK) || defined(HAVE_BKM)
@@ -1660,8 +1679,13 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		} else {
 			fprintf(fp, "\tpairwise=%s\n", &pwstring[1]);
 			fprintf(fp, "\tgroup=%s\n", &grpstring[1]);
-
 		}
+		if (nvhas(akm, "psk"))
+			nvram_nset("1", "%s_psk");
+		if (nvhas(akm, "psk2"))
+			nvram_nset("1", "%s_psk2");
+		if (nvhas(akm, "psk3"))
+			nvram_nset("1", "%s_psk3");
 		if ((nvhas(akm, "psk2") || nvhas(akm, "psk3")) && nvhas(akm, "psk"))
 			fprintf(fp, "\tproto=WPA RSN\n");
 		else if (nvhas(akm, "psk"))
@@ -1992,7 +2016,8 @@ void ath9k_start_supplicant(int count)
 			background = "-Bddd";
 	}
 #endif
-	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "infra")
+	if (strcmp(apm, "sta") && strcmp(apm, "wdssta")
+	    && strcmp(apm, "infra")
 	    && strcmp(apm, "wet")) {
 		sprintf(fstr, "/tmp/%s_hostap.conf", dev);
 		do_hostapd(fstr, dev);
