@@ -910,13 +910,8 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 #endif
 	if (!has_qtn(prefix)) {
 		if (!primary || nvram_match(sta, "ap") || nvram_match(sta, "wdsap")) {
-#ifdef HAVE_MADWIFI
-			if (nvhas(var, "wpa") || nvhas(var, "wpa2") || nvhas(var, "wpa3") || nvhas(var, "wpa3-192"))
-				websWrite(wp, "<option value=\"wpa\" %s>%s</option>\n", "selected=\"selected\"", wpa_enc_label(buf, "wpa"));
-			else
-				websWrite(wp, "<option value=\"wpa\" %s>%s</option>\n", "", wpa_enc_label(buf, "wpa"));
-#endif
 #ifndef HAVE_MADWIFI
+			websWrite(wp, "<option value=\"wpa\" %s>%s</option>\n", selmatch(var, "wpa", "selected=\"selected\""), wpa_enc_label(buf, "wpa"));
 			websWrite(wp, "<option value=\"wpa2\" %s>%s</option>\n", selmatch(var, "wpa2", "selected=\"selected\""), wpa_enc_label(buf, "wpa2"));
 			if (has_wpa3(prefix)) {
 				websWrite(wp, "<option value=\"wpa3\" %s>%s</option>\n", selmatch(var, "wpa3", "selected=\"selected\""), wpa_enc_label(buf, "wpa3"));
