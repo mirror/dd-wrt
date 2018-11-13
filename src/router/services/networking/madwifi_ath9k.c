@@ -1170,19 +1170,19 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			wpamask |= 2;
 		fprintf(fp, "wpa=%d\n", wpamask);
 		if (nvhas(akm, "psk"))
-			nvram_nset("1", "%s_psk");
+			nvram_nset("1", "%s_psk", ifname);
 		if (nvhas(akm, "psk2"))
-			nvram_nset("1", "%s_psk2");
+			nvram_nset("1", "%s_psk2", ifname);
 		if (nvhas(akm, "psk3"))
-			nvram_nset("1", "%s_psk3");
+			nvram_nset("1", "%s_psk3", ifname);
 		if (nvhas(akm, "wpa"))
-			nvram_nset("1", "%s_wpa3");
+			nvram_nset("1", "%s_wpa3", ifname);
 		if (nvhas(akm, "wpa2"))
-			nvram_nset("1", "%s_wpa2");
+			nvram_nset("1", "%s_wpa2", ifname);
 		if (nvhas(akm, "wpa3"))
-			nvram_nset("1", "%s_wpa3");
+			nvram_nset("1", "%s_wpa3", ifname);
 		if (nvhas(akm, "wpa3-192"))
-			nvram_nset("1", "%s_wpa3-192");
+			nvram_nset("1", "%s_wpa3-192", ifname);
 #ifdef HAVE_80211W
 		if (nvram_default_matchi(mfp, -1, 0))
 			fprintf(fp, "ieee80211w=1\n");
@@ -1681,11 +1681,11 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			fprintf(fp, "\tgroup=%s\n", &grpstring[1]);
 		}
 		if (nvhas(akm, "psk"))
-			nvram_nset("1", "%s_psk");
+			nvram_nset("1", "%s_psk", prefix);
 		if (nvhas(akm, "psk2"))
-			nvram_nset("1", "%s_psk2");
+			nvram_nset("1", "%s_psk2", prefix);
 		if (nvhas(akm, "psk3"))
-			nvram_nset("1", "%s_psk3");
+			nvram_nset("1", "%s_psk3", prefix);
 		if ((nvhas(akm, "psk2") || nvhas(akm, "psk3")) && nvhas(akm, "psk"))
 			fprintf(fp, "\tproto=WPA RSN\n");
 		else if (nvhas(akm, "psk"))
