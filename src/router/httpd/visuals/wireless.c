@@ -795,7 +795,8 @@ void ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix)
 		show_80211X(wp, prefix);
 #endif
 #endif
-	show_addconfig(wp, prefix);
+	if (show)
+		show_addconfig(wp, prefix);
 #else
 	if (strstr(security_mode, "psk") || strstr(security_mode, "psk2") || strstr(security_mode, "psk3")) {
 		show_preshared(wp, prefix);
