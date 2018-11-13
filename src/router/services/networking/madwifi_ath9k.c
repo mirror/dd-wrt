@@ -1331,6 +1331,54 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			fprintf(fp, "wpa_pairwise=%s\n", &pwstring[1]);
 		}
 		fprintf(fp, "wpa_group_rekey=%s\n", nvram_nget("%s_wpa_gtk_rekey", ifname));
+	} else if (nvhas(akm, "radius")) {
+		fprintf(fp, "ieee8021x=1\n");
+		char local_ip[32];
+		sprintf(local_ip, "%s_local_ip", ifname);
+		char *lip = nvram_default_get(local_ip, "0.0.0.0");
+		if (strcmp(lip, "0.0.0.0")) {
+			fprintf(fp, "radius_client_addr=%s\n", lip);
+			fprintf(fp, "own_ip_addr=%s\n", lip);
+		} else {
+			if (nvram_match("wan_proto", "disabled"))
+				fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
+			else {
+				char *wip = get_wan_ipaddr();
+				if (strlen(wip))
+					fprintf(fp, "own_ip_addr=%s\n", wip);
+				else
+					fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
+			}
+
+		}
+
+		fprintf(fp, "eap_server=0\n");
+		fprintf(fp, "auth_algs=1\n");
+		char retry[32];
+		sprintf(retry, "%s_radius_retry", ifname);
+		fprintf(fp, "radius_retry_primary_interval=%s\n", nvram_default_get(retry, "600"));
+		types = hostapd_eap_get_types();
+		fprintf(fp, "%s", types);
+		free(types);
+		fprintf(fp, "auth_server_addr=%s\n", nvram_nget("%s_radius_ipaddr", ifname));
+		fprintf(fp, "auth_server_port=%s\n", nvram_nget("%s_radius_port", ifname));
+		fprintf(fp, "auth_server_shared_secret=%s\n", nvram_nget("%s_radius_key", ifname));
+		char check[64];
+		sprintf(check, "%s_radius2_ipaddr", ifname);
+		nvram_default_get(check, "0.0.0.0");
+		if (!nvram_nmatch("", "%s_radius2_ipaddr", ifname)
+		    && !nvram_nmatch("0.0.0.0", "%s_radius2_ipaddr", ifname)
+		    && !nvram_nmatch("", "%s_radius2_port", ifname)) {
+			fprintf(fp, "auth_server_addr=%s\n", nvram_nget("%s_radius2_ipaddr", ifname));
+			fprintf(fp, "auth_server_port=%s\n", nvram_nget("%s_radius2_port", ifname));
+			fprintf(fp, "auth_server_shared_secret=%s\n", nvram_nget("%s_radius2_key", ifname));
+		}
+		if (nvram_nmatch("1", "%s_acct", ifname)) {
+			fprintf(fp, "acct_server_addr=%s\n", nvram_nget("%s_acct_ipaddr", ifname));
+			fprintf(fp, "acct_server_port=%s\n", nvram_nget("%s_acct_port", ifname));
+			fprintf(fp, "acct_server_shared_secret=%s\n", nvram_nget("%s_acct_key", ifname));
+		}
+
 	}
 	// fprintf (fp, "jumpstart_p1=1\n");
 
