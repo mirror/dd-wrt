@@ -1095,67 +1095,70 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 			wpamask |= 2;
 		fprintf(fp, "wpa=%d\n", wpamask);
 
-		if (nvhas(akm, "psk") || nvhas(akm, "psk2")) {
+		if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "wpa") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3") || nvhas(akm, "wpa3-192")) {
 			if (strlen(nvram_nget("%s_wpa_psk", prefix)) == 64)
 				fprintf(fp, "wpa_psk=%s\n", nvram_nget("%s_wpa_psk", prefix));
 			else
 				fprintf(fp, "wpa_passphrase=%s\n", nvram_nget("%s_wpa_psk", prefix));
-			fprintf(fp, "wpa_key_mgmt=WPA-PSK\n");
-			addWPS(fp, prefix, 1);
-		} else {
-			// if (nvram_invmatch (akm, "radius"))
-			fprintf(fp, "wpa_key_mgmt=WPA-EAP\n");
-			// else
-			// fprintf (fp, "macaddr_acl=2\n");
-			fprintf(fp, "ieee8021x=1\n");
-			// fprintf (fp, "accept_mac_file=/tmp/hostapd.accept\n");
-			// fprintf (fp, "deny_mac_file=/tmp/hostapd.deny\n");
-			char local_ip[32];
-			sprintf(local_ip, "%s_local_ip", prefix);
-			char *lip = nvram_default_get(local_ip, "0.0.0.0");
-			if (strcmp(lip, "0.0.0.0")) {
-				fprintf(fp, "radius_client_addr=%s\n", lip);
-				fprintf(fp, "own_ip_addr=%s\n", lip);
-			} else {
-				if (nvram_match("wan_proto", "disabled"))
-					fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
-				else {
-					char *wip = get_wan_ipaddr();
-					if (strlen(wip))
-						fprintf(fp, "own_ip_addr=%s\n", wip);
-					else
+			fprintf(fp, "wpa_key_mgmt=");
+			if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3"))
+				fprintf(fp, "WPA-PSK ");
+			if (nvhas(akm, "wpa") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3") || nvhas(akm, "wpa3-192"))
+				fprintf(fp, "WPA-EAP ");
+
+			fprintf(fp, "\n");
+
+			if (nvhas(akm, "wpa") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3") || nvhas(akm, "wpa3-192")) {
+				fprintf(fp, "ieee8021x=1\n");
+				char local_ip[32];
+				sprintf(local_ip, "%s_local_ip", prefix);
+				char *lip = nvram_default_get(local_ip, "0.0.0.0");
+				if (strcmp(lip, "0.0.0.0")) {
+					fprintf(fp, "radius_client_addr=%s\n", lip);
+					fprintf(fp, "own_ip_addr=%s\n", lip);
+				} else {
+					if (nvram_match("wan_proto", "disabled"))
 						fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
+					else {
+						char *wip = get_wan_ipaddr();
+						if (strlen(wip))
+							fprintf(fp, "own_ip_addr=%s\n", wip);
+						else
+							fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
+					}
+
 				}
 
-			}
+				fprintf(fp, "eap_server=0\n");
+				fprintf(fp, "auth_algs=1\n");
+				char retry[32];
+				sprintf(retry, "%s_radius_retry", prefix);
+				fprintf(fp, "radius_retry_primary_interval=%s\n", nvram_default_get(retry, "600"));
+				types = hostapd_eap_get_types();
+				fprintf(fp, "%s", types);
+				free(types);
+				fprintf(fp, "auth_server_addr=%s\n", nvram_nget("%s_radius_ipaddr", prefix));
+				fprintf(fp, "auth_server_port=%s\n", nvram_nget("%s_radius_port", prefix));
+				fprintf(fp, "auth_server_shared_secret=%s\n", nvram_nget("%s_radius_key", prefix));
+				char check[64];
+				sprintf(check, "%s_radius2_ipaddr", prefix);
+				nvram_default_get(check, "0.0.0.0");
 
-			fprintf(fp, "eap_server=0\n");
-			fprintf(fp, "auth_algs=1\n");
-			char retry[32];
-			sprintf(retry, "%s_radius_retry", prefix);
-			fprintf(fp, "radius_retry_primary_interval=%s\n", nvram_default_get(retry, "600"));
-			types = hostapd_eap_get_types();
-			fprintf(fp, "%s", types);
-			free(types);
-			fprintf(fp, "auth_server_addr=%s\n", nvram_nget("%s_radius_ipaddr", prefix));
-			fprintf(fp, "auth_server_port=%s\n", nvram_nget("%s_radius_port", prefix));
-			fprintf(fp, "auth_server_shared_secret=%s\n", nvram_nget("%s_radius_key", prefix));
-			char check[64];
-			sprintf(check, "%s_radius2_ipaddr", prefix);
-			nvram_default_get(check, "0.0.0.0");
-
-			if (!nvram_nmatch("", "%s_radius2_ipaddr", prefix)
-			    && !nvram_nmatch("0.0.0.0", "%s_radius2_ipaddr", prefix)
-			    && !nvram_nmatch("", "%s_radius2_port", prefix)) {
-				fprintf(fp, "auth_server_addr=%s\n", nvram_nget("%s_radius2_ipaddr", prefix));
-				fprintf(fp, "auth_server_port=%s\n", nvram_nget("%s_radius2_port", prefix));
-				fprintf(fp, "auth_server_shared_secret=%s\n", nvram_nget("%s_radius2_key", prefix));
+				if (!nvram_nmatch("", "%s_radius2_ipaddr", prefix)
+				    && !nvram_nmatch("0.0.0.0", "%s_radius2_ipaddr", prefix)
+				    && !nvram_nmatch("", "%s_radius2_port", prefix)) {
+					fprintf(fp, "auth_server_addr=%s\n", nvram_nget("%s_radius2_ipaddr", prefix));
+					fprintf(fp, "auth_server_port=%s\n", nvram_nget("%s_radius2_port", prefix));
+					fprintf(fp, "auth_server_shared_secret=%s\n", nvram_nget("%s_radius2_key", prefix));
+				}
+				if (nvram_nmatch("1", "%s_acct", prefix)) {
+					fprintf(fp, "acct_server_addr=%s\n", nvram_nget("%s_acct_ipaddr", prefix));
+					fprintf(fp, "acct_server_port=%s\n", nvram_nget("%s_acct_port", prefix));
+					fprintf(fp, "acct_server_shared_secret=%s\n", nvram_nget("%s_acct_key", prefix));
+				}
 			}
-			if (nvram_nmatch("1", "%s_acct", prefix)) {
-				fprintf(fp, "acct_server_addr=%s\n", nvram_nget("%s_acct_ipaddr", prefix));
-				fprintf(fp, "acct_server_port=%s\n", nvram_nget("%s_acct_port", prefix));
-				fprintf(fp, "acct_server_shared_secret=%s\n", nvram_nget("%s_acct_key", prefix));
-			}
+			if (nvhas(akm, "psk3") || nvhas(akm, "psk") || nvhas(akm, "psk2"))
+				addWPS(fp, prefix, 1);
 		}
 		if (nvram_invmatch(akm, "radius")) {
 			char pwstring[128] = { 0, 0 };
