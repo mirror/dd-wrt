@@ -881,7 +881,14 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 			}
 		}
 	}
+#ifndef HAVE_MADWIFI
 	websWrite(wp, "<option value=\"psk\" %s>%s</option>\n", selmatch(var, "psk", "selected=\"selected\""), wpa_enc_label(buf, "psk"));
+#else
+	if (nvhas(var, "psk") || nvhas(var, "psk2") || nvhas(var, "psk3"))
+		websWrite(wp, "<option value=\"psk\" %s>%s</option>\n", "selected=\"selected\"", wpa_enc_label(buf, "psk"));
+	else
+		websWrite(wp, "<option value=\"psk\" %s>%s</option>\n", "", wpa_enc_label(buf, "psk"));
+#endif
 #ifndef HAVE_MADWIFI
 	websWrite(wp, "<option value=\"psk2\" %s>%s</option>\n", selmatch(var, "psk2", "selected=\"selected\""), wpa_enc_label(buf, "psk2"));
 	if (has_wpa3(prefix))
@@ -898,7 +905,14 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 #endif
 	if (!has_qtn(prefix)) {
 		if (!primary || nvram_match(sta, "ap") || nvram_match(sta, "wdsap")) {
+#ifndef HAVE_MADWIFI
 			websWrite(wp, "<option value=\"wpa\" %s>%s</option>\n", selmatch(var, "wpa", "selected=\"selected\""), wpa_enc_label(buf, "wpa"));
+#else
+			if (nvhas(var, "wpa") || nvhas(var, "wpa2") || nvhas(var, "wpa3") || nvhas(var, "wpa3-192"))
+				websWrite(wp, "<option value=\"wpa\" %s>%s</option>\n", "selected=\"selected\"", wpa_enc_label(buf, "wpa"));
+			else
+				websWrite(wp, "<option value=\"wpa\" %s>%s</option>\n", "", wpa_enc_label(buf, "wpa"));
+#endif
 #ifndef HAVE_MADWIFI
 			websWrite(wp, "<option value=\"wpa2\" %s>%s</option>\n", selmatch(var, "wpa2", "selected=\"selected\""), wpa_enc_label(buf, "wpa2"));
 			if (has_wpa3(prefix)) {
@@ -4436,7 +4450,7 @@ static void show_authtable(webs_t wp, char *prefix)
 		websWrite(wp, "<tr>\n");
 		websWrite(wp, "<td>\n");
 		s = 0;
-		if (nvhas(var, "psk")  || nvhas(var, "psk2") || nvhas(var, "psk3")) {
+		if (nvhas(var, "psk") || nvhas(var, "psk2") || nvhas(var, "psk3")) {
 			if (count < (sizeof(psk_authpair) / sizeof(struct pair)) && psk_authpair[count].valid(prefix)) {
 				s = 1;
 				show_cryptovar(wp, prefix, psk_authpair[count].name, psk_authpair[count].nvname);
