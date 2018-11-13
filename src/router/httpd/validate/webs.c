@@ -4264,6 +4264,11 @@ void set_security(webs_t wp)
 	if (ifname) {
 		char n2[32];
 		sprintf(n2, "%s_akm", ifname);
+		_copytonv(wp, "%s_ccmp", ifname);
+		_copytonv(wp, "%s_tkip", ifname);
+		_copytonv(wp, "%s_ccmp-256", ifname);
+		_copytonv(wp, "%s_gcmp-256", ifname);
+		_copytonv(wp, "%s_gcmp", ifname);
 		_copytonv(wp, "%s_psk", ifname);
 		_copytonv(wp, "%s_psk2", ifname);
 		_copytonv(wp, "%s_psk3", ifname);
