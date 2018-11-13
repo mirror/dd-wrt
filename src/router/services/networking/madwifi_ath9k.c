@@ -1131,7 +1131,6 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 #endif
 		fprintf(fp, "wpa_key_mgmt=OWE\n");
 		fprintf(fp, "rsn_pairwise=CCMP\n");
-		addWPS(fp, ifname, 0);
 	} else if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "wpa") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3") || nvhas(akm, "wpa3-192")) {
 
 		if (!strncmp(ifname, "ath0", 4))
@@ -1275,7 +1274,8 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 				}
 
 			}
-			addWPS(fp, ifname, 1);
+			if (nvhas(akm, "psk3") || nvhas(akm, "psk") || nvhas(akm, "psk2"))
+				addWPS(fp, ifname, 1);
 		}
 		if (nvram_invmatch(akm, "radius")) {
 			char pwstring[128] = {
