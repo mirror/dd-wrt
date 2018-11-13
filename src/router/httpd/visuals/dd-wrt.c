@@ -4415,7 +4415,6 @@ typedef struct pair {
 	char *name;
 	char *nvname;
 	int (*valid) (char *prefix);
-	int aponly;
 };
 
 static int dummy(char *prefix)
@@ -4430,27 +4429,39 @@ static int noad(char *prefix)
 	return !has_ad(prefix);
 }
 
+static int aponly(char *prefix)
+{
+	return !(nvram_nmatch("ap", "%s_mode", prefix) || nvram_nmatch("wdsap", "%s_mode", prefix))
+}
+
+static int aponly_wpa3(char *prefix)
+{
+	return (aponly(prefix) && has_wpa3(prefix));
+}
+
 #ifdef HAVE_MADWIFI
 void show_authtable(webs_t wp, char *prefix)
 {
 	char var[80];
 	struct pair cryptopair[] = {
-		{"CCMP (AES)", "ccmp", noad, 0},
-		{"CCMP-256", "ccmp-256", has_gcmp, 0},
-		{"TKIP", "tkip", noad, 0},
-		{"GCMP", "gcmp", has_ad, 0},
-		{"GCMP", "gcmp", has_gcmp, 0},
-		{"GCMP-256", "gcmp-256", has_gcmp, 0}
+		{"CCMP (AES)", "ccmp", noad},
+		{"CCMP-256", "ccmp-256", has_gcmp},
+		{"TKIP", "tkip", noad},
+		{"GCMP", "gcmp", has_ad},
+		{"GCMP", "gcmp", has_gcmp},
+		{"GCMP-256", "gcmp-256", has_gcmp}
 	};
 
 	struct pair authpair[] = {
-		{"WPA-PSK", "psk", dummy, 0},
-		{"WPA2-PSK", "psk2", dummy, 0},
-		{"WPA3-PSK", "psk3", has_wpa3, 0},
-		{"WPA-EAP", "wpa", dummy, 1},
-		{"WPA2-EAP", "wpa2", dummy, 1},
-		{"WPA3-EAP-SUITE-B", "wpa3", has_wpa3, 1},
-		{"WPA3-EAP-SUITE-B-192", "wpa3-192", has_wpa3, 1}
+		{"WPA-PSK", "psk", dummy},
+		{"WPA2-PSK", "psk2", dummy},
+		{"WPA2-PSK-SHA256", "psk2-sha256", has_wpa3},
+		{"WPA3-PSK", "psk3", has_wpa3},
+		{"WPA-EAP", "wpa", aponly},
+		{"WPA2-EAP", "wpa2", aponly},
+		{"WPA2-EAP-SHA256", "wpa2-sha256", aponly_wpa3},
+		{"WPA3-EAP-SUITE-B", "wpa3", aponly_wpa3},
+		{"WPA3-EAP-SUITE-B-192", "wpa3-192", aponly_wpa3}
 	};
 
 	websWrite(wp, "<div class=\"setting\">\n");
@@ -4458,9 +4469,6 @@ void show_authtable(webs_t wp, char *prefix)
 	websWrite(wp, "<tr>\n" "<th><script type=\"text/javascript\">Capture(wpa.auth_mode)</script></th>\n" "<th><script type=\"text/javascript\">Capture(wpa.algorithms)</script></th>\n" "</tr>\n");
 	int count = 0;
 	sprintf(var, "%s_security_mode", prefix);
-	int apmode = 0;
-	if (nvram_nmatch("ap", "%s_mode", prefix) || nvram_nmatch("wdsap", "%s_mode", prefix))
-		apmode = 1;
 	while (1) {
 		int skip = 0;
 		int s = 0;
@@ -4469,7 +4477,7 @@ void show_authtable(webs_t wp, char *prefix)
 		int ce = 0;
 		if (count < (sizeof(authpair) / sizeof(struct pair))) {
 			s = 1;
-			if (!authpair[count].valid(prefix) || (!apmode && authpair[count].aponly))
+			if (!authpair[count].valid(prefix))
 				se = 1;
 		}
 
