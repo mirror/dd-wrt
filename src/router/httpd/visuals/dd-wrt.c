@@ -4431,7 +4431,7 @@ static int noad(char *prefix)
 
 static int aponly(char *prefix)
 {
-	return !(nvram_nmatch("ap", "%s_mode", prefix) || nvram_nmatch("wdsap", "%s_mode", prefix))
+	return !(nvram_nmatch("ap", "%s_mode", prefix) || nvram_nmatch("wdsap", "%s_mode", prefix));
 }
 
 static int aponly_wpa3(char *prefix)
