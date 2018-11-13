@@ -709,6 +709,12 @@ void ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix)
 		security_mode = nvram_safe_get(var);
 	rep(var, 'X', '.');
 	cprintf("security mode %s = %s\n", security_mode, var);
+
+#ifdef HAVE_MADWIFI
+	if (strstr(security_mode, "psk") || strstr(security_mode, "psk2") || strstr(security_mode, "psk3") || strstr(security_mode, "wpa") || strstr(security_mode, "wpa2") || strstr(security_mode, "wpa3")
+	    || strstr(security_mode, "wpa3-192"))
+		show_authtable(wp, prefix);
+#endif
 	if (strstr(security_mode, "psk") || strstr(security_mode, "psk2") || strstr(security_mode, "psk3"))
 		show_preshared(wp, prefix);
 	else if (strstr(security_mode, "wpa") || strstr(security_mode, "wpa2") || strstr(security_mode, "wpa3") || strstr(security_mode, "wpa3-192"))

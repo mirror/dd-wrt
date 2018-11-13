@@ -2,10 +2,11 @@
 		<script type="text/javascript">
 		//<![CDATA[
 
-function SelMode(varname,num,F)	{
+function SelMode(prefix, varname,num,F)	{
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "security";
 	F.security_varname.value = varname;
+	F.ifname.value = prefix;
 	F.submit();
 }
 
@@ -310,6 +311,7 @@ addEvent(window, "unload", function() {
 				<input type="hidden" name="submit_type" value="save" />
 				
 				<input type="hidden" name="security_varname" />
+				<input type="hidden" name="ifname" />
 				<input type="hidden" name="security_mode_last" />
 				<input type="hidden" name="wl_wep_last" />
 				<input type="hidden" name="filter_mac_value" />

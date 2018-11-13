@@ -894,6 +894,7 @@ _8021xprv
 	char n2[80];
 
 	char *v = websGetVar(wp, n, NULL);
+	sprintf(n2, "%s_akm", prefix);
 
 	if (v) {
 		char auth[32];
@@ -912,7 +913,6 @@ _8021xprv
 			nvram_set(wep, "disabled");
 		}
 #ifndef HAVE_MADWIFI
-		sprintf(n2, "%s_akm", prefix);
 		nvram_set(n2, v);
 #endif
 	}
@@ -4252,14 +4252,45 @@ void milkfish_sip_message(webs_t wp)
 
 void set_security(webs_t wp)
 {
-	char *var = websGetVar(wp, "security_varname", "security_mode");
+	char *prefix = websGetVar(wp, "security_varname", "security_mode");
+	char *ifname = websGetVar(wp, "ifname", NULL);
+	cprintf("set security to %s\n", prefix);
+	cprintf("security prefix = %s\n", websGetVar(wp, prefix, "disabled"));
+	char *prefix2 = websGetVar(wp, prefix, "disabled");
 
-	cprintf("set security to %s\n", var);
-	cprintf("security var = %s\n", websGetVar(wp, var, "disabled"));
-	char *var2 = websGetVar(wp, var, "disabled");
+	// rep(prefix,'X','.');
+	nvram_set(prefix, prefix2);
+#ifdef HAVE_MADWIFI
+	if (ifname) {
+		char n2[32];
+		sprintf(n2, "%s_akm", ifname);
+		_copytonv(wp, "%s_psk", ifname);
+		_copytonv(wp, "%s_psk2", ifname);
+		_copytonv(wp, "%s_psk3", ifname);
+		_copytonv(wp, "%s_wpa", ifname);
+		_copytonv(wp, "%s_wpa2", ifname);
+		_copytonv(wp, "%s_wpa3", ifname);
+		_copytonv(wp, "%s_wpa3-192", ifname);
+		char akm[128] = { 0, 0 };
+		if (nvram_nmatch("1", "%s_psk", ifname))
+			sprintf(akm, "%s %s", akm, "psk");
+		if (nvram_nmatch("1", "%s_psk2", ifname))
+			sprintf(akm, "%s %s", akm, "psk2");
+		if (nvram_nmatch("1", "%s_psk3", ifname))
+			sprintf(akm, "%s %s", akm, "psk3");
+		if (nvram_nmatch("1", "%s_wpa", ifname))
+			sprintf(akm, "%s %s", akm, "wpa");
+		if (nvram_nmatch("1", "%s_wpa2", ifname))
+			sprintf(akm, "%s %s", akm, "wpa2");
+		if (nvram_nmatch("1", "%s_wpa3", ifname))
+			sprintf(akm, "%s %s", akm, "wpa3");
+		if (nvram_nmatch("1", "%s_wpa3-192", ifname))
+			sprintf(akm, "%s %s", akm, "wpa3-192");
 
-	// rep(var,'X','.');
-	nvram_set(var, var2);
+		nvram_set(n2, &akm[1]);
+	}
+#endif
+
 }
 
 void base64_encode(const unsigned char *in, size_t inlen, unsigned char *out, size_t outlen)
