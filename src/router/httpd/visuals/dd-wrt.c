@@ -4445,36 +4445,40 @@ static void show_authtable(webs_t wp, char *prefix)
 	websWrite(wp, "<tr>\n" "<th><script type=\"text/javascript\">Capture(wpa.auth_mode)</script></th>\n" "<th><script type=\"text/javascript\">Capture(wpa.algorithms)</script></th>\n" "</tr>\n");
 	int count = 0;
 	sprintf(var, "%s_security_mode", prefix);
-	int s = 0;
 	while (1) {
 		websWrite(wp, "<tr>\n");
 		websWrite(wp, "<td>\n");
-		s = 0;
+		int s = 0;
+		int c = 0;
+
 		if (nvhas(var, "psk") || nvhas(var, "psk2") || nvhas(var, "psk3")) {
-			if (count < (sizeof(psk_authpair) / sizeof(struct pair)) && psk_authpair[count].valid(prefix)) {
+			if (count < (sizeof(psk_authpair) / sizeof(struct pair)))
 				s = 1;
+			if (s && psk_authpair[count].valid(prefix)) {
 				show_cryptovar(wp, prefix, psk_authpair[count].name, psk_authpair[count].nvname);
 			} else
 				websWrite(wp, "&nbsp;\n");
 		}
 		if (nvhas(var, "wpa") || nvhas(var, "wpa2") || nvhas(var, "wpa3-suite-b") || nvhas(var, "wpa3-suite-b-192")) {
-			if (count < (sizeof(eap_authpair) / sizeof(struct pair)) && eap_authpair[count].valid(prefix)) {
+			if (count < (sizeof(eap_authpair) / sizeof(struct pair)))
 				s = 1;
+			if (s && eap_authpair[count].valid(prefix)) {
 				show_cryptovar(wp, prefix, eap_authpair[count].name, eap_authpair[count].nvname);
 			} else
 				websWrite(wp, "&nbsp;\n");
 		}
 		websWrite(wp, "</td>\n");
 		websWrite(wp, "<td>\n");
-		if (count < (sizeof(cryptopair) / sizeof(struct pair)) && cryptopair[count].valid(prefix)) {
-			s = 1;
+		if (count < (sizeof(cryptopair) / sizeof(struct pair)))
+			c = 1;
+		if (s && cryptopair[count].valid(prefix)) {
 			show_cryptovar(wp, prefix, cryptopair[count].name, cryptopair[count].nvname);
 		} else
 			websWrite(wp, "&nbsp;\n");
 
 		websWrite(wp, "</td>\n");
 		websWrite(wp, "</tr>\n");
-		if (!s)
+		if (!s && !c)
 			break;
 		count++;
 	}
