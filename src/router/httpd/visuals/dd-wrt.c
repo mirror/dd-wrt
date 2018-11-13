@@ -4396,13 +4396,16 @@ void show_addconfig(webs_t wp, char *prefix)
 #endif
 }
 
-static void show_cryptovar(webs_t wp, char *prefix, char *name, char *var)
+static void show_cryptovar(webs_t wp, char *prefix, char *name, char *var, int selmode)
 {
 
 	char nvar[80];
 	sprintf(nvar, "%s_%s", prefix, var);
-	websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" onclick=\"SelMode('%s', '%s_security_mode',this.form.%s_security_mode.selectedIndex,this.form)\" %s />%s\n", nvar, prefix, prefix, prefix,
-		  selmatch(nvar, "1", "checked=\"checked\""), name);
+	if (selmode)
+		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" onclick=\"SelMode('%s', '%s_security_mode',this.form.%s_security_mode.selectedIndex,this.form)\" %s />%s\n", nvar, prefix, prefix, prefix,
+			  selmatch(nvar, "1", "checked=\"checked\""), name);
+	else
+		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s />%s\n", nvar, selmatch(nvar, "1", "checked=\"checked\""), name);
 
 }
 
@@ -4471,7 +4474,7 @@ void show_authtable(webs_t wp, char *prefix)
 			websWrite(wp, "<tr>\n");
 			websWrite(wp, "<td>\n");
 			if (!se && s) {
-				show_cryptovar(wp, prefix, authpair[count].name, authpair[count].nvname);
+				show_cryptovar(wp, prefix, authpair[count].name, authpair[count].nvname, 1);
 			} else {
 				websWrite(wp, "&nbsp;\n");
 			}
@@ -4480,7 +4483,7 @@ void show_authtable(webs_t wp, char *prefix)
 		if ((!ce && c) || (!se && s)) {
 			websWrite(wp, "<td>\n");
 			if (!ce && c) {
-				show_cryptovar(wp, prefix, cryptopair[count].name, cryptopair[count].nvname);
+				show_cryptovar(wp, prefix, cryptopair[count].name, cryptopair[count].nvname, 0);
 			} else
 				websWrite(wp, "&nbsp;\n");
 			websWrite(wp, "</td>\n");
