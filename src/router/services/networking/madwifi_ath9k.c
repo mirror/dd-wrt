@@ -1131,7 +1131,8 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 #endif
 		fprintf(fp, "wpa_key_mgmt=OWE\n");
 		fprintf(fp, "rsn_pairwise=CCMP\n");
-	} else if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "wpa") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3") || nvhas(akm, "wpa3-192")) {
+	} else if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "wpa") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3") || nvhas(akm, "wpa3-192") || nvhas(akm, "wpa2-sha256")
+		   || nvhas(akm, "psk2-sha256")) {
 
 		if (!strncmp(ifname, "ath0", 4))
 			led_control(LED_SEC0, LED_ON);
@@ -1165,19 +1166,23 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		int wpamask = 0;
 		if (nvhas(akm, "psk") || nvhas(akm, "wpa"))
 			wpamask |= 1;
-		if (nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3") || nvhas(akm, "wpa3-192"))
+		if (nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3") || nvhas(akm, "wpa3-192") || nvhas(akm, "wpa2-sha256") || nvhas(akm, "psk2-sha256"))
 			wpamask |= 2;
 		fprintf(fp, "wpa=%d\n", wpamask);
 		if (nvhas(akm, "psk"))
 			nvram_nset("1", "%s_psk", ifname);
 		if (nvhas(akm, "psk2"))
 			nvram_nset("1", "%s_psk2", ifname);
+		if (nvhas(akm, "psk2-sha256"))
+			nvram_nset("1", "%s_psk2-sha256", ifname);
 		if (nvhas(akm, "psk3"))
 			nvram_nset("1", "%s_psk3", ifname);
 		if (nvhas(akm, "wpa"))
 			nvram_nset("1", "%s_wpa3", ifname);
 		if (nvhas(akm, "wpa2"))
 			nvram_nset("1", "%s_wpa2", ifname);
+		if (nvhas(akm, "wpa2-sha256"))
+			nvram_nset("1", "%s_wpa2-sha256", ifname);
 		if (nvhas(akm, "wpa3"))
 			nvram_nset("1", "%s_wpa3", ifname);
 		if (nvhas(akm, "wpa3-192"))
@@ -1190,7 +1195,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		if (nvram_default_matchi(mfp, 1, 0))
 			fprintf(fp, "ieee80211w=2\n");
 #endif
-		if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3")) {
+		if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk2-sha256") || nvhas(akm, "psk3")) {
 			if (strlen(nvram_nget("%s_wpa_psk", ifname)) == 64)
 				fprintf(fp, "wpa_psk=%s\n", nvram_nget("%s_wpa_psk", ifname));
 			else
@@ -1201,8 +1206,12 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			fprintf(fp, "WPA-PSK ");
 		if (has_wpa3(ifname) && nvhas(akm, "psk3"))
 			fprintf(fp, "SAE ");
+		if (has_wpa3(ifname) && nvhas(akm, "psk2-sha256"))
+			fprintf(fp, "WPA-PSK-SHA256 ");
 		if (nvhas(akm, "wpa2") || nvhas(akm, "wpa"))
 			fprintf(fp, "WPA-EAP ");
+		if (has_wpa3(ifname) && nvhas(akm, "wpa2-sha256"))
+			fprintf(fp, "WPA-SHA256 ");
 		if (has_wpa3(ifname) && nvhas(akm, "wpa3"))
 			fprintf(fp, "WPA-EAP-SUITE-B ");
 		if (has_wpa3(ifname) && nvhas(akm, "wpa3-192"))
@@ -1218,7 +1227,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fprintf(fp, "\n");
 #ifdef HAVE_80211R
 		if (nvram_matchi(ft, 1)
-		    && (nvhas(akm, "psk3") || nvhas(akm, "psk") || nvhas(akm, "psk2"))) {
+		    && (nvhas(akm, "psk3") || nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk2-sha256"))) {
 			fprintf(fp, "nas_identifier=%s\n", nvram_nget("%s_nas", ifname));
 			fprintf(fp, "mobility_domain=%s\n", nvram_nget("%s_domain", ifname));
 			fprintf(fp, "ft_over_ds=1\n");
@@ -1226,7 +1235,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			// todo. add key holders
 		}
 #endif
-		if (nvhas(akm, "wpa") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3") || nvhas(akm, "wpa3-192")) {
+		if (nvhas(akm, "wpa") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3") || nvhas(akm, "wpa3-192") || nvhas(akm, "wpa2-sha256")) {
 			fprintf(fp, "ieee8021x=1\n");
 			char local_ip[32];
 			sprintf(local_ip, "%s_local_ip", ifname);
@@ -1275,7 +1284,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			}
 
 		}
-		if (nvhas(akm, "psk3") || nvhas(akm, "psk") || nvhas(akm, "psk2"))
+		if (nvhas(akm, "psk3") || nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk2-sha256"))
 			addWPS(fp, ifname, 1);
 		char pwstring[128] = {
 			0, 0
@@ -1530,7 +1539,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 	sprintf(akm, "%s_akm", prefix);
 	sprintf(ft, "%s_ft", prefix);
 	sprintf(mfp, "%s_mfp", prefix);
-	if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3")) {
+	if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "psk2-sha256")) {
 		char fstr[32];
 		char psk[16];
 		if (!strncmp(prefix, "ath0", 4))
@@ -1624,6 +1633,8 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		fprintf(fp, "\tkey_mgmt=");
 		if (nvhas(akm, "psk2") || nvhas(akm, "psk"))
 			fprintf(fp, "WPA-PSK ");
+		if (has_wpa3(prefix) && nvhas(akm, "psk2-sha256"))
+			fprintf(fp, "WPA-PSK-SHA256 ");
 		if (has_wpa3(prefix) && nvhas(akm, "psk3"))
 			fprintf(fp, "SAE ");
 #ifdef HAVE_80211R
@@ -1718,13 +1729,15 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			nvram_nset("1", "%s_psk", prefix);
 		if (nvhas(akm, "psk2"))
 			nvram_nset("1", "%s_psk2", prefix);
+		if (nvhas(akm, "psk2-sha256"))
+			nvram_nset("1", "%s_psk2-sha256", prefix);
 		if (nvhas(akm, "psk3"))
 			nvram_nset("1", "%s_psk3", prefix);
-		if ((nvhas(akm, "psk2") || nvhas(akm, "psk3")) && nvhas(akm, "psk"))
+		if ((nvhas(akm, "psk2") || nvhas(akm, "psk2-sha256") || nvhas(akm, "psk3")) && nvhas(akm, "psk"))
 			fprintf(fp, "\tproto=WPA RSN\n");
 		else if (nvhas(akm, "psk"))
 			fprintf(fp, "\tproto=WPA\n");
-		else if (nvhas(akm, "psk2") || nvhas(akm, "psk3"))
+		else if (nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "psk2-sha256"))
 			fprintf(fp, "\tproto=RSN\n");
 		char *wpa_psk = nvram_nget("%s_wpa_psk", prefix);
 		if (strlen(wpa_psk) == 64)
@@ -1774,12 +1787,23 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 				sprintf(wpaOpts, "\tpairwise=CCMP TKIP\n\tgroup=CCMP TKIP\n");
 			if (strcmp("wpa", keyExchng) == 0)
 				sprintf(wpaOpts, "\tpairwise=TKIP\n\tgroup=TKIP\n");
+
+			if (!has_wpa3(prefix)) {
 #ifdef HAVE_80211R
-			if (nvram_matchi(ft, 1))
-				fprintf(fp, "\tkey_mgmt=WPA-EAP FT-EAP\n");
-			else
+				if (nvram_matchi(ft, 1))
+					fprintf(fp, "\tkey_mgmt=WPA-EAP FT-EAP\n");
+				else
 #endif
-				fprintf(fp, "\tkey_mgmt=%s\n%s", (strlen(wpaOpts) == 0 ? "IEEE8021X" : "WPA-EAP"), wpaOpts);
+					fprintf(fp, "\tkey_mgmt=%s\n%s", (strlen(wpaOpts) == 0 ? "IEEE8021X" : "WPA-EAP"), wpaOpts);
+			} else {
+#ifdef HAVE_80211R
+				if (nvram_matchi(ft, 1))
+					fprintf(fp, "\tkey_mgmt=WPA-EAP WPA-EAP-SHA256 WPA-EAP-SUITE-B WPA-EAP-SUITE-B-192 FT-EAP\n");
+				else
+#endif
+					fprintf(fp, "\tkey_mgmt=%s\n%s", (strlen(wpaOpts) == 0 ? "IEEE8021X" : "WPA-EAP WPA-EAP-SHA256 WPA-EAP-SUITE-B WPA-EAP-SUITE-B-192"), wpaOpts);
+
+			}
 // <- added habeIchVergessen
 			fprintf(fp, "\teap=TLS\n");
 			fprintf(fp, "\tidentity=\"%s\"\n", nvram_prefix_get("tls8021xuser", prefix));
@@ -1814,12 +1838,21 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		}
 		if (nvram_prefix_match("8021xtype", prefix, "peap")) {
 
+			if (!has_wpa3(prefix)) {
 #ifdef HAVE_80211R
-			if (nvram_matchi(ft, 1))
-				fprintf(fp, "\tkey_mgmt=WPA-EAP FT-EAP\n");
-			else
+				if (nvram_matchi(ft, 1))
+					fprintf(fp, "\tkey_mgmt=WPA-EAP FT-EAP\n");
+				else
 #endif
-				fprintf(fp, "\tkey_mgmt=WPA-EAP\n");
+					fprintf(fp, "\tkey_mgmt=WPA-EAP\n");
+			} else {
+#ifdef HAVE_80211R
+				if (nvram_matchi(ft, 1))
+					fprintf(fp, "\tkey_mgmt=WPA-EAP WPA-EAP-SHA256 WPA-EAP-SUITE-B WPA-EAP-SUITE-B-192 FT-EAP\n");
+				else
+#endif
+					fprintf(fp, "\tkey_mgmt=WPA-EAP WPA-EAP-SHA256 WPA-EAP-SUITE-B WPA-EAP-SUITE-B-192\n");
+			}
 			fprintf(fp, "\teap=PEAP\n");
 			fprintf(fp, "\tpairwise=CCMP TKIP\n");
 			fprintf(fp, "\tgroup=CCMP TKIP\n");
@@ -1848,12 +1881,23 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			}
 		}
 		if (nvram_prefix_match("8021xtype", prefix, "ttls")) {
+
+			if (!has_wpa3(prefix)) {
 #ifdef HAVE_80211R
-			if (nvram_matchi(ft, 1))
-				fprintf(fp, "\tkey_mgmt=WPA-EAP FT-EAP\n");
-			else
+				if (nvram_matchi(ft, 1))
+					fprintf(fp, "\tkey_mgmt=WPA-EAP FT-EAP\n");
+				else
 #endif
-				fprintf(fp, "\tkey_mgmt=WPA-EAP\n");
+					fprintf(fp, "\tkey_mgmt=WPA-EAP\n");
+			} else {
+#ifdef HAVE_80211R
+				if (nvram_matchi(ft, 1))
+					fprintf(fp, "\tkey_mgmt=WPA-EAP WPA-EAP-SHA256 WPA-EAP-SUITE-B WPA-EAP-SUITE-B-192 FT-EAP\n");
+				else
+#endif
+					fprintf(fp, "\tkey_mgmt=WPA-EAP WPA-EAP-SHA256 WPA-EAP-SUITE-B WPA-EAP-SUITE-B-192\n");
+			}
+
 #ifdef HAVE_80211W
 			if (nvram_default_matchi(mfp, -1, 0))
 				fprintf(fp, "ieee80211w=1\n");
@@ -1889,12 +1933,21 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			}
 		}
 		if (nvram_prefix_match("8021xtype", prefix, "leap")) {
+			if (!has_wpa3(prefix)) {
 #ifdef HAVE_80211R
-			if (nvram_matchi(ft, 1))
-				fprintf(fp, "\tkey_mgmt=WPA-EAP FT-EAP\n");
-			else
+				if (nvram_matchi(ft, 1))
+					fprintf(fp, "\tkey_mgmt=WPA-EAP FT-EAP\n");
+				else
 #endif
-				fprintf(fp, "\tkey_mgmt=WPA-EAP\n");
+					fprintf(fp, "\tkey_mgmt=WPA-EAP\n");
+			} else {
+#ifdef HAVE_80211R
+				if (nvram_matchi(ft, 1))
+					fprintf(fp, "\tkey_mgmt=WPA-EAP WPA-EAP-SHA256 WPA-EAP-SUITE-B WPA-EAP-SUITE-B-192 FT-EAP\n");
+				else
+#endif
+					fprintf(fp, "\tkey_mgmt=WPA-EAP WPA-EAP-SHA256 WPA-EAP-SUITE-B WPA-EAP-SUITE-B-192\n");
+			}
 			fprintf(fp, "\teap=LEAP\n");
 			fprintf(fp, "\tauth_alg=LEAP\n");
 			fprintf(fp, "\tproto=WPA RSN\n");
