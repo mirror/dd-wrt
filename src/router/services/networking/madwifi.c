@@ -1160,56 +1160,54 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 			if (nvhas(akm, "psk3") || nvhas(akm, "psk") || nvhas(akm, "psk2"))
 				addWPS(fp, prefix, 1);
 		}
-		if (nvram_invmatch(akm, "radius")) {
-			char pwstring[128] = { 0, 0 };
-			if (nvram_nmatch("1", "%s_ccmp", prefix)) {
-				sprintf(pwstring, "%s %s", pwstring, "CCMP");
-			}
-			if (nvram_nmatch("1", "%s_tkip", prefix)) {
-				sprintf(pwstring, "%s %s", pwstring, "TKIP");
-			}
-			if (nvram_nmatch("1", "%s_ccmp-256", prefix)) {
-				sprintf(pwstring, "%s %s", pwstring, "CCMP-256");
-			}
-			if (nvram_nmatch("1", "%s_gcmp-256", prefix)) {
-				sprintf(pwstring, "%s %s", pwstring, "GCMP-256");
-			}
-			if (nvram_nmatch("1", "%s_gcmp", prefix)) {
-				sprintf(pwstring, "%s %s", pwstring, "GCMP");
-			}
-
-			if (!strlen(pwstring)) {
-				sprintf(psk, "%s_crypto", prefix);
-				if (nvram_match(psk, "aes")) {
-					nvram_nset("1", "%s_ccmp", prefix);
-					fprintf(fp, "wpa_pairwise=CCMP\n");
-				}
-				if (nvram_match(psk, "ccmp-256")) {
-					nvram_nset("1", "%s_ccmp-256", prefix);
-					fprintf(fp, "wpa_pairwise=CCMP-256\n");
-				}
-				if (nvram_match(psk, "gcmp")) {
-					nvram_nset("1", "%s_gcmp", prefix);
-					fprintf(fp, "wpa_pairwise=GCMP\n");
-				}
-				if (nvram_match(psk, "gcmp-256")) {
-					nvram_nset("1", "%s_gcmp-256", prefix);
-					fprintf(fp, "wpa_pairwise=GCMP-256\n");
-				}
-				if (nvram_match(psk, "tkip")) {
-					nvram_nset("1", "%s_tkip", prefix);
-					fprintf(fp, "wpa_pairwise=TKIP\n");
-				}
-				if (nvram_match(psk, "tkip+aes")) {
-					nvram_nset("1", "%s_ccmp", prefix);
-					nvram_nset("1", "%s_tkip", prefix);
-					fprintf(fp, "wpa_pairwise=TKIP CCMP\n");
-				}
-			} else {
-				fprintf(fp, "wpa_pairwise=%s\n", &pwstring[1]);
-			}
-			fprintf(fp, "wpa_group_rekey=%s\n", nvram_nget("%s_wpa_gtk_rekey", prefix));
+		char pwstring[128] = { 0, 0 };
+		if (nvram_nmatch("1", "%s_ccmp", prefix)) {
+			sprintf(pwstring, "%s %s", pwstring, "CCMP");
 		}
+		if (nvram_nmatch("1", "%s_tkip", prefix)) {
+			sprintf(pwstring, "%s %s", pwstring, "TKIP");
+		}
+		if (nvram_nmatch("1", "%s_ccmp-256", prefix)) {
+			sprintf(pwstring, "%s %s", pwstring, "CCMP-256");
+		}
+		if (nvram_nmatch("1", "%s_gcmp-256", prefix)) {
+			sprintf(pwstring, "%s %s", pwstring, "GCMP-256");
+		}
+		if (nvram_nmatch("1", "%s_gcmp", prefix)) {
+			sprintf(pwstring, "%s %s", pwstring, "GCMP");
+		}
+
+		if (!strlen(pwstring)) {
+			sprintf(psk, "%s_crypto", prefix);
+			if (nvram_match(psk, "aes")) {
+				nvram_nset("1", "%s_ccmp", prefix);
+				fprintf(fp, "wpa_pairwise=CCMP\n");
+			}
+			if (nvram_match(psk, "ccmp-256")) {
+				nvram_nset("1", "%s_ccmp-256", prefix);
+				fprintf(fp, "wpa_pairwise=CCMP-256\n");
+			}
+			if (nvram_match(psk, "gcmp")) {
+				nvram_nset("1", "%s_gcmp", prefix);
+				fprintf(fp, "wpa_pairwise=GCMP\n");
+			}
+			if (nvram_match(psk, "gcmp-256")) {
+				nvram_nset("1", "%s_gcmp-256", prefix);
+				fprintf(fp, "wpa_pairwise=GCMP-256\n");
+			}
+			if (nvram_match(psk, "tkip")) {
+				nvram_nset("1", "%s_tkip", prefix);
+				fprintf(fp, "wpa_pairwise=TKIP\n");
+			}
+			if (nvram_match(psk, "tkip+aes")) {
+				nvram_nset("1", "%s_ccmp", prefix);
+				nvram_nset("1", "%s_tkip", prefix);
+				fprintf(fp, "wpa_pairwise=TKIP CCMP\n");
+			}
+		} else {
+			fprintf(fp, "wpa_pairwise=%s\n", &pwstring[1]);
+		}
+		fprintf(fp, "wpa_group_rekey=%s\n", nvram_nget("%s_wpa_gtk_rekey", prefix));
 		// fprintf (fp, "jumpstart_p1=1\n");
 #ifdef HAVE_HOTSPOT20
 		setupHS20(fp, prefix);
