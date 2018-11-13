@@ -709,31 +709,17 @@ void ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix)
 		security_mode = nvram_safe_get(var);
 	rep(var, 'X', '.');
 	cprintf("security mode %s = %s\n", security_mode, var);
-	if (!strcmp(security_mode, "psk")
-	    || !strcmp(security_mode, "psk2")
-	    || !strcmp(security_mode, "psk3")
-	    || !strcmp(security_mode, "psk2 psk3")
-	    || !strcmp(security_mode, "psk psk2"))
+	if (strstr(security_mode, "psk") || strstr(security_mode, "psk2") || strstr(security_mode, "psk3"))
 		show_preshared(wp, prefix);
-#if UI_STYLE != CISCO
-	else if (!strcmp(security_mode, "disabled"))
-		show_preshared(wp, prefix);
-#endif
-	else if (!strcmp(security_mode, "radius"))
-		show_radius(wp, prefix, 1, 0);
-	else if (!strcmp(security_mode, "wpa")
-		 || !strcmp(security_mode, "wpa2")
-		 || !strcmp(security_mode, "wpa3")
-		 || !strcmp(security_mode, "wpa3-192")
-		 || !strcmp(security_mode, "wpa2 wpa3")
-		 || !strcmp(security_mode, "wpa2 wpa3-192")
-		 || !strcmp(security_mode, "wpa wpa2"))
+	else if (strstr(security_mode, "wpa") || strstr(security_mode, "wpa2") || strstr(security_mode, "wpa3") || strstr(security_mode, "wpa3-192"))
 		show_wparadius(wp, prefix);
-	else if (!strcmp(security_mode, "wep"))
+	else if (strstr(security_mode, "wep"))
 		show_wep(wp, prefix);
+	else if (strstr(security_mode, "radius"))
+		show_radius(wp, prefix, 1, 0);
 #ifdef HAVE_WPA_SUPPLICANT
 #ifndef HAVE_MICRO
-	else if (!strcmp(security_mode, "8021X"))
+	else if (strstr(security_mode, "8021X"))
 		show_80211X(wp, prefix);
 #endif
 #endif
@@ -747,17 +733,13 @@ void ej_wl_ioctl(webs_t wp, int argc, char_t ** argv)
 	char tmp[100], prefix[] = "wlXXXXXXXXXX_";
 	char *op, *type, *var;
 	char *name;
-
 	op = argv[0];
 	type = argv[1];
 	var = argv[2];
-
 	if ((unit = nvram_geti("wl_unit")) < 0)
 		return;
-
 	snprintf(prefix, sizeof(prefix), "wl%d_", unit);
 	name = nvram_safe_get(strcat_r(prefix, "ifname", tmp));
-
 	if (strcmp(op, "get") == 0) {
 		if (strcmp(type, "int") == 0) {
 			websWrite(wp, "%u", wl_iovar_getint(name, var, &val) == 0 ? val : 0);
@@ -770,9 +752,7 @@ void ej_wl_ioctl(webs_t wp, int argc, char_t ** argv)
 void ej_wme_match_op(webs_t wp, int argc, char_t ** argv)
 {
 	char word[256], *next;
-
 	char *list = nvram_safe_get(argv[0]);
-
 	foreach(word, list, next) {
 		if (!strcmp(word, argv[1])) {
 			websWrite(wp, argv[2]);
