@@ -873,7 +873,9 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 	// rep(p2,'X','.');
 	// websWrite (wp, "<input type=\"hidden\"
 	// name=\"%s_security_mode\"/>\n",p2);
+#ifdef HAVE_MADWIFI
 	websWrite(wp, "<fieldset>\n");
+#endif
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "wpa.secmode", NULL);
 	websWrite(wp, "<select name=\"%s_security_mode\" onchange=\"SelMode('%s', '%s_security_mode',this.form.%s_security_mode.selectedIndex,this.form)\">\n", prefix, prefix, prefix, prefix);
@@ -949,7 +951,6 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 	rep(prefix, 'X', '.');
 	cprintf("ej show wpa\n");
 	ej_show_wpa_setting(wp, argc, argv, prefix);
-	websWrite(wp, "</fieldset>\n");
 
 }
 
@@ -4398,7 +4399,7 @@ static void show_cryptovar(webs_t wp, char *prefix, char *name, char *var, int s
 
 	char nvar[80];
 	char gvar[80];
-	strcpy(gvar,prefix);
+	strcpy(gvar, prefix);
 	rep(gvar, '.', 'X');
 
 	sprintf(nvar, "%s_%s", prefix, var);
