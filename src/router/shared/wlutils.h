@@ -152,11 +152,10 @@ struct mac80211_info {
 	uint32_t frequency;
 };
 
-
 void mac80211_lock(void);
 void mac80211_unlock(void);
 struct mac80211_info *getcurrentsurvey_mac80211(char *interface, struct mac80211_info *mac80211_info);
-int getsurveystats(struct dd_list_head *frequencies,struct wifi_channels **channels, char *interface, char *freq_range, int scans,int bw);
+int getsurveystats(struct dd_list_head *frequencies, struct wifi_channels **channels, char *interface, char *freq_range, int scans, int bw);
 
 int getassoclist(char *name, unsigned char *list);
 
@@ -174,7 +173,7 @@ int getWifiInfo(char *ifname, unsigned char *mac, int field);
 #define getTxRate(ifname, mac) getWifiInfo(ifname, mac, INFO_TXRATE)
 #define getRxRate(ifname, mac) getWifiInfo(ifname, mac, INFO_RXRATE)
 #define getUptime(ifname, mac) getWifiInfo(ifname, mac, INFO_UPTIME)
-int getValueFromPath(char *path, int dev, char *fmt, int *err); // internal
+int getValueFromPath(char *path, int dev, char *fmt, int *err);	// internal
 
 int getassoclist_11n(char *name, unsigned char *list);
 int getNoise_11n(char *ifname, unsigned char *mac);
@@ -188,7 +187,10 @@ extern int has_ac(char *prefix);
 #ifdef HAVE_WIL6210
 extern int has_ad(char *prefix);
 #else
-#define has_ad(prefix) (0)
+static inline int has_ad(char *prefix)
+{
+	return 0;
+}
 #endif
 extern int has_gcmp(char *prefix);
 #ifdef HAVE_QTN
@@ -229,7 +231,7 @@ struct site_survey_list {
 	uint rate_count;	/* # rates in this set */
 	uint8 dtim_period;	/* DTIM period */
 	unsigned long long active;	/* channel active time */
-	unsigned long long busy;		/* channel busy time */
+	unsigned long long busy;	/* channel busy time */
 };
 
 struct wifi_interface {
@@ -292,7 +294,6 @@ extern unsigned int get_ath10kdistance(char *ifname);
 #define has_vht80plus80(interface) 0
 #endif
 
-
 struct unl;
 extern int mac80211_check_band(char *interface, int checkband);
 struct wifi_channels *mac80211_get_channels(struct unl *unl, char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband);
@@ -314,7 +315,6 @@ extern int mac80211_check_valid_frequency(char *interface, char *country, int fr
 extern int getFrequency_mac80211(char *interface);
 extern int mac80211_get_phyidx_by_vifname(char *vif);
 
-
 struct mac80211_ac {
 	int freq;
 	int8_t noise;
@@ -334,9 +334,15 @@ extern void free_mac80211_ac(struct mac80211_ac *ac);
 #endif
 
 #ifdef HAVE_WPA3
-#define has_wpa3(prefix) 1
+static inline int has_wpa3(char *prefix)
+{
+	return 1;
+}
 #else
-#define has_wpa3(prefix) 0
+static inline int has_wpa3(char *prefix)
+{
+	return 0;
+}
 #endif
 
 char *getCountryList(void);
@@ -413,9 +419,9 @@ int wl_getbssid(char *wl, char *mac);
 
 /* tag_ID/length/value_buffer tuple */
 typedef struct bcm_tlv {
-	uint8_t	id;
-	uint8_t	len;
-	uint8_t	data[1];
+	uint8_t id;
+	uint8_t len;
+	uint8_t data[1];
 } bcm_tlv_t;
 
 #endif				/* _wlutils_h_ */
