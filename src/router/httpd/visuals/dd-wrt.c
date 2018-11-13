@@ -873,6 +873,7 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 	// rep(p2,'X','.');
 	// websWrite (wp, "<input type=\"hidden\"
 	// name=\"%s_security_mode\"/>\n",p2);
+	websWrite(wp, "<fieldset>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "wpa.secmode", NULL);
 	websWrite(wp, "<select name=\"%s_security_mode\" onchange=\"SelMode('%s', '%s_security_mode',this.form.%s_security_mode.selectedIndex,this.form)\">\n", prefix, prefix, prefix, prefix);
@@ -948,6 +949,7 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 	rep(prefix, 'X', '.');
 	cprintf("ej show wpa\n");
 	ej_show_wpa_setting(wp, argc, argv, prefix);
+	websWrite(wp, "</fieldset>\n");
 
 }
 
