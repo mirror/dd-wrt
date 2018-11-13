@@ -718,26 +718,105 @@ void ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix)
 		show_authtable(wp, prefix);
 	websWrite(wp, "</fieldset>\n");
 	websWrite(wp, "<fieldset>\n");
-	if ((strstr(akm, "psk") || strstr(akm, "psk2") || strstr(akm, "psk3")) && !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X")))
+	int show = 0;
+	if ((strstr(akm, "psk") || strstr(akm, "psk2") || strstr(akm, "psk3")) && !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X"))) {
+		show = 1;
 		show_preshared(wp, prefix);
-	if ((strstr(akm, "wpa") || strstr(akm, "wpa2") || strstr(akm, "wpa3") || strstr(akm, "wpa3-192")) && !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X")))
+	}
+	if ((strstr(akm, "wpa") || strstr(akm, "wpa2") || strstr(akm, "wpa3") || strstr(akm, "wpa3-192")) && !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X"))) {
+		show = 1;
 		show_wparadius(wp, prefix);
-#else
-	if (strstr(security_mode, "psk") || strstr(security_mode, "psk2") || strstr(security_mode, "psk3"))
-		show_preshared(wp, prefix);
-	else if (strstr(security_mode, "wpa") || strstr(security_mode, "wpa2") || strstr(security_mode, "wpa3") || strstr(security_mode, "wpa3-192"))
-		show_wparadius(wp, prefix);
+	}
+	websWrite(wp, "<div class=\"setting\">\n");
+	show_caption(wp, "label", "wpa.rekey", NULL);
+	sprintf(var, "%s_wpa_gtk_rekey", prefix);
+	websWrite(wp, "<input name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"10\" onblur=\"valid_range(this,0,99999,wpa.rekey)\" value=\"%s\" />", prefix, nvram_default_get(var, "3600"));
+	websWrite(wp, "</div>\n");
+
+#ifdef HAVE_80211R
+	if (show) {
+		char vvar[32];
+		strcpy(vvar, prefix);
+		rep(vvar, '.', 'X');
+		char bssft[64];
+		sprintf(bssft, "%s_ft", prefix);
+		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.ft)</script></div>\n");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" onclick=\"show_layer_ext(this, '%s_idnas', true);\" name=\"%s_ft\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>\n",
+			  vvar, prefix, nvram_default_matchi(bssft, 1, 0) ? "checked=\"checked\"" : "");
+		websWrite(wp,
+			  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" onclick=\"show_layer_ext(this, '%s_idnas', false);\" name=\"%s_ft\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+			  vvar, prefix, nvram_default_matchi(bssft, 0, 0) ? "checked=\"checked\"" : "");
+		websWrite(wp, "</div>\n");
+
+		websWrite(wp, "<div id=\"%s_idnas\">\n", vvar);
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "wpa.nas", NULL);
+		sprintf(var, "%s_nas", prefix);
+		websWrite(wp, "<input id=\"%s_nas\" name=\"%s_nas\" maxlength=\"48\" size=\"32\" value=\"%s\" />\n", prefix, prefix, nvram_nget("%s_nas", prefix));
+		websWrite(wp, "</div>\n");
+
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "wpa.domain", NULL);
+		sprintf(var, "%s_nas", prefix);
+		websWrite(wp, "<input id=\"%s_domain\" name=\"%s_domain\" maxlength=\"4\" size=\"6\" onblur=\"valid_domain(this)\" value=\"%s\" />\n", prefix, prefix, nvram_nget("%s_domain", prefix));
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "</div>\n");
+
+		websWrite(wp, "<script>\n//<![CDATA[\n ");
+		websWrite(wp, "show_layer_ext(document.getElementsByName(\"%s_ft\"), \"%s_idnas\", %s);\n", prefix, vvar, nvram_matchi(bssft, 1) ? "true" : "false");
+		websWrite(wp, "//]]>\n</script>\n");
+
+		if (nvram_nmatch("ap", "%s_mode", prefix)
+		    || nvram_nmatch("wdsap", "%s_mode", prefix)) {
+			//only for madwifi, ath9k, ath10k, mwlwifi etc. right now.
+#ifdef HAVE_80211W
+			char mfp[64];
+			sprintf(mfp, "%s_mfp", prefix);
+			nvram_default_get(mfp, "0");
+			showAutoOption(wp, "wpa.mfp", mfp);
 #endif
-	else if (strstr(security_mode, "wep"))
+			char eap_key_retries[64];
+			sprintf(eap_key_retries, "%s_disable_eapol_key_retries", prefix);
+			showRadio(wp, "wpa.eapol_key_retries", eap_key_retries);
+		}
+	}
+#endif
+	if (strstr(security_mode, "wep"))
 		show_wep(wp, prefix);
-	else if (strstr(security_mode, "radius"))
+	if (strstr(security_mode, "radius"))
 		show_radius(wp, prefix, 1, 0);
+#ifdef HAVE_WPA_SUPPLICANT
+#ifndef HAVE_MICRO
+	if (strstr(security_mode, "8021X"))
+		show_80211X(wp, prefix);
+#endif
+#endif
+	show_addconfig(wp, prefix);
+#else
+	if (strstr(security_mode, "psk") || strstr(security_mode, "psk2") || strstr(security_mode, "psk3")) {
+		show_preshared(wp, prefix);
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "wpa.rekey", NULL);
+		sprintf(var, "%s_wpa_gtk_rekey", prefix);
+		websWrite(wp, "<input name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"10\" onblur=\"valid_range(this,0,99999,wpa.rekey)\" value=\"%s\" />", prefix, nvram_default_get(var, "3600"));
+		websWrite(wp, "</div>\n");
+	} else if (strstr(security_mode, "wpa") || strstr(security_mode, "wpa2") || strstr(security_mode, "wpa3") || strstr(security_mode, "wpa3-192")) {
+		show_wparadius(wp, prefix);
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "wpa.rekey", NULL);
+		sprintf(var, "%s_wpa_gtk_rekey", prefix);
+		websWrite(wp, "<input name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"10\" onblur=\"valid_range(this,0,99999,wpa.rekey)\" value=\"%s\" />", prefix, nvram_default_get(var, "3600"));
+		websWrite(wp, "</div>\n");
+	}
 #ifdef HAVE_WPA_SUPPLICANT
 #ifndef HAVE_MICRO
 	else if (strstr(security_mode, "8021X"))
 		show_80211X(wp, prefix);
 #endif
 #endif
+#endif
+
 #ifdef HAVE_MADWIFI
 	websWrite(wp, "</fieldset>\n");
 #endif
