@@ -1833,42 +1833,97 @@ static int match_cipher(char *prefix, __u32 cipher)
 
 int has_cmac(char *prefix)
 {
-	return match_cipher(prefix, 0x000fac06);
+	INITVALUECACHE();
+	ret = match_cipher(prefix, 0x000fac06);
+	EXITVALUECACHE();
 }
 
 int has_gcmp_128(char *prefix)
 {
-	return match_cipher(prefix, 0x000fac08);
+	INITVALUECACHE();
+	ret = match_cipher(prefix, 0x000fac08);
+	EXITVALUECACHE();
+	return ret;
 }
 
 int has_gcmp(char *prefix)
 {
-	return match_cipher(prefix, 0x000fac08);
+	INITVALUECACHE();
+	ret = match_cipher(prefix, 0x000fac08);
+	EXITVALUECACHE();
+	return ret;
 }
 
 int has_gcmp_256(char *prefix)
 {
-	return match_cipher(prefix, 0x000fac09);
+	INITVALUECACHE();
+	ret = match_cipher(prefix, 0x000fac09);
+	EXITVALUECACHE();
+	return ret;
 }
 
 int has_ccmp_256(char *prefix)
 {
-	return match_cipher(prefix, 0x000fac0a);
+	INITVALUECACHE();
+	ret = match_cipher(prefix, 0x000fac0a);
+	EXITVALUECACHE();
+	return ret;
 }
 
 int has_gmac_128(char *prefix)
 {
-	return match_cipher(prefix, 0x000fac0b);
+	INITVALUECACHE();
+	ret = match_cipher(prefix, 0x000fac0b);
+	EXITVALUECACHE();
+	return ret;
 }
 
 int has_gmac_256(char *prefix)
 {
-	return match_cipher(prefix, 0x000fac0c);
+	INITVALUECACHE();
+	ret = match_cipher(prefix, 0x000fac0c);
+	EXITVALUECACHE();
+	return ret;
 }
 
 int has_cmac_256(char *prefix)
 {
-	return match_cipher(prefix, 0x000fac0d);
+	INITVALUECACHE();
+	ret = match_cipher(prefix, 0x000fac0d);
+	EXITVALUECACHE();
+	return ret;
+}
+
+int has_sms4(char *prefix)
+{
+	INITVALUECACHE();
+	ret = match_cipher(prefix, 0x00147201);
+	EXITVALUECACHE();
+	return ret;
+}
+
+int has_ckip(char *prefix)
+{
+	INITVALUECACHE();
+	ret = match_cipher(prefix, 0x00409600);
+	EXITVALUECACHE();
+	return ret;
+}
+
+int has_ckip_cmic(char *prefix)
+{
+	INITVALUECACHE();
+	ret = match_cipher(prefix, 0x00409601);
+	EXITVALUECACHE();
+	return ret;
+}
+
+int has_cmic(char *prefix)
+{
+	INITVALUECACHE();
+	ret = match_cipher(prefix, 0x00409602);
+	EXITVALUECACHE();
+	return ret;
 }
 
 int mac80211_get_avail_tx_antenna(int phy)
