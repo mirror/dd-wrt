@@ -821,6 +821,8 @@ static char *wpa_enc_label(char *buf, char *value)
 			return "WPA-PSK";
 		} else if (!strcmp(value, "psk2")) {
 			return "WPA2-PSK";
+		} else if (!strcmp(value, "psk2-sha256")) {
+			return "WPA2-PSK-SHA256";
 		} else if (!strcmp(value, "psk3")) {
 			return "WPA3-PSK";
 		} else if (!strcmp(value, "psk psk2")) {
@@ -836,6 +838,8 @@ static char *wpa_enc_label(char *buf, char *value)
 #endif
 		} else if (!strcmp(value, "wpa2")) {
 			return "WPA2-EAP";
+		} else if (!strcmp(value, "wpa2-sha256")) {
+			return "WPA2-EAP-SHA256";
 		} else if (!strcmp(value, "wpa3")) {
 			return "WPA3-EAP-SUITE-B";
 		} else if (!strcmp(value, "wpa3-192")) {
