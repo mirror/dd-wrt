@@ -4453,10 +4453,10 @@ void show_authtable(webs_t wp, char *prefix)
 		{"GCMP", "gcmp", has_ad},
 		{"GCMP", "gcmp", has_gcmp_128},
 		{"GCMP-256", "gcmp-256", has_gcmp_256},
-		{"CMAC", "cmac", has_cmac},
-		{"CMAC256", "cmac-256", has_cmac_256},
-		{"GMAC128", "gmac-128", has_gmac_128},
-		{"GMAC256", "gmac-256", has_gmac_256},
+		{"CMAC-128", "cmac", has_cmac},
+		{"CMAC-256", "cmac-256", has_cmac_256},
+		{"GMAC-128", "gmac-128", has_gmac_128},
+		{"GMAC-256", "gmac-256", has_gmac_256},
 	};
 
 	struct pair s_authpair[] = {
