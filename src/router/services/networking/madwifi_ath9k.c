@@ -1197,7 +1197,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		if (iswpa3_192)
 			nvram_nset("1", "%s_wpa3-192", ifname);
 #ifdef HAVE_80211W
-		if (nvram_default_matchi(mfp, 1, 0) || ispsk3 || iswpa3 || iswpa3_192)
+		if (nvram_default_matchi(mfp, 1, 0) || ispsk3 || iswpa3 || iswpa3_192 || ispsk2sha256 || iswpa2sha256)
 			fprintf(fp, "ieee80211w=2\n");
 		else if (nvram_default_matchi(mfp, -1, 0))
 			fprintf(fp, "ieee80211w=1\n");
@@ -1721,7 +1721,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			fprintf(fp, "ieee80211w=1\n");
 		if (nvram_default_matchi(mfp, 0, 0))
 			fprintf(fp, "ieee80211w=0\n");
-		if (nvram_default_matchi(mfp, 1, 0))
+		if (nvram_default_matchi(mfp, 1, 0) || ispsk2sha256 || ispsk3)
 			fprintf(fp, "ieee80211w=2\n");
 #endif
 		if (!strlen(pwstring)) {
