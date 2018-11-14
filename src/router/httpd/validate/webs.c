@@ -817,6 +817,10 @@ _8021xprv
 	_copytonv(wp, "%s_ccmp-256", prefix);
 	_copytonv(wp, "%s_gcmp-256", prefix);
 	_copytonv(wp, "%s_gcmp", prefix);
+	_copytonv(wp, "%s_cmac", prefix);
+	_copytonv(wp, "%s_cmac-256", prefix);
+	_copytonv(wp, "%s_gmac-128", prefix);
+	_copytonv(wp, "%s_gmac-256", prefix);
 #else
 	copytonv(wp, "%s_crypto", prefix);
 #endif
@@ -4275,6 +4279,10 @@ void set_security(webs_t wp)
 		_copytonv(wp, "%s_ccmp-256", ifname);
 		_copytonv(wp, "%s_gcmp-256", ifname);
 		_copytonv(wp, "%s_gcmp", ifname);
+		_copytonv(wp, "%s_cmac", prefix);
+		_copytonv(wp, "%s_cmac-256", prefix);
+		_copytonv(wp, "%s_gmac-128", prefix);
+		_copytonv(wp, "%s_gmac-256", prefix);
 		_copytonv(wp, "%s_psk", ifname);
 		_copytonv(wp, "%s_psk2", ifname);
 		_copytonv(wp, "%s_psk2-sha256", ifname);
