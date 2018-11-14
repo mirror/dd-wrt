@@ -1314,7 +1314,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			sprintf(pwstring, "%s %s", pwstring, "GCMP");
 		}
 		if (nvram_nmatch("1", "%s_cmac", ifname)) {
-			sprintf(pwstring, "%s %s", pwstring, "BIP");
+			sprintf(pwstring, "%s %s", pwstring, "AES-128-CMAC");
 		}
 		if (nvram_nmatch("1", "%s_cmac-256", ifname)) {
 			sprintf(pwstring, "%s %s", pwstring, "BIP-CMAC-256");
@@ -1701,8 +1701,8 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			sprintf(grpstring, "%s %s", grpstring, "GCMP");
 		}
 		if (nvram_nmatch("1", "%s_cmac", ifname)) {
-			sprintf(pwstring, "%s %s", pwstring, "BIP");
-			sprintf(grpstring, "%s %s", grpstring, "BIP");
+			sprintf(pwstring, "%s %s", pwstring, "AES-128-CMAC");
+			sprintf(grpstring, "%s %s", grpstring, "AES-128-CMAC");
 		}
 		if (nvram_nmatch("1", "%s_cmac-256", ifname)) {
 			sprintf(pwstring, "%s %s", pwstring, "BIP-CMAC-256");
