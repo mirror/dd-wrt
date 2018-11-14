@@ -2244,12 +2244,16 @@ static void showencstatus(webs_t wp, char *prefix)
 		enc = "WPA-PSK";
 	if (nvram_match(akm, "psk2"))
 		enc = "WPA2-PSK";
+	if (nvram_match(akm, "psk2-sha256"))
+		enc = "WPA2-PSK-SHA256";
 	if (nvram_match(akm, "psk3"))
 		enc = "WPA3-PSK";
 	if (nvram_match(akm, "wpa"))
 		enc = "WPA-EAP";
 	if (nvram_match(akm, "wpa2"))
 		enc = "WPA2-EAP";
+	if (nvram_match(akm, "wpa2-sha256"))
+		enc = "WPA2-EAP-SHA256";
 	if (nvram_match(akm, "wpa3"))
 		enc = "WPA3-EAP-SUITE-B";
 	if (nvram_match(akm, "wpa3-192"))

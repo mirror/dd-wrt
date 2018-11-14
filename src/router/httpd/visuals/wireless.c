@@ -713,17 +713,20 @@ void ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix)
 	char vakm[32];
 	sprintf(vakm, "%s_akm", prefix);
 	char *akm = nvram_safe_get(vakm);
-	if ((strstr(security_mode, "wpa") || strstr(akm, "psk") || strstr(akm, "psk2") || strstr(akm, "psk3") || strstr(akm, "wpa") || strstr(akm, "wpa2") || strstr(akm, "wpa3")
-	     || strstr(akm, "wpa3-192")) && !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X")))
+	if ((strstr(security_mode, "wpa") || strstr(akm, "psk") || strstr(akm, "psk2") || strstr(akm, "psk2-sha256") || strstr(akm, "psk3") || strstr(akm, "wpa") || strstr(akm, "wpa2") || strstr(akm, "wpa2-sha256")
+	     || strstr(akm, "wpa3")
+	     || strstr(akm, "wpa3-192")) && !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X") || strstr(security_mode, "disabled") || strstr(security_mode, "owe")))
 		show_authtable(wp, prefix);
 	websWrite(wp, "</fieldset>\n");
 	websWrite(wp, "<fieldset>\n");
 	int show = 0;
-	if ((strstr(akm, "psk") || strstr(akm, "psk2") || strstr(akm, "psk3")) && !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X"))) {
+	if ((strstr(akm, "psk") || strstr(akm, "psk2") || strstr(akm, "psk2-sha256") || strstr(akm, "psk3"))
+	    && !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X") || strstr(security_mode, "disabled") || strstr(security_mode, "owe"))) {
 		show = 1;
 		show_preshared(wp, prefix);
 	}
-	if ((strstr(akm, "wpa") || strstr(akm, "wpa2") || strstr(akm, "wpa3") || strstr(akm, "wpa3-192")) && !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X"))) {
+	if ((strstr(akm, "wpa") || strstr(akm, "wpa2") || strstr(akm, "wpa2-sha256") || strstr(akm, "wpa3") || strstr(akm, "wpa3-192"))
+	    && !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X") || strstr(security_mode, "disabled") || strstr(security_mode, "owe"))) {
 		show = 1;
 		show_wparadius(wp, prefix);
 	}
@@ -798,14 +801,14 @@ void ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix)
 	if (show)
 		show_addconfig(wp, prefix);
 #else
-	if (strstr(security_mode, "psk") || strstr(security_mode, "psk2") || strstr(security_mode, "psk3")) {
+	if (strstr(security_mode, "psk") || strstr(security_mode, "psk2") || strstr(security_mode, "psk2-sha256") || strstr(security_mode, "psk3")) {
 		show_preshared(wp, prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wpa.rekey", NULL);
 		sprintf(var, "%s_wpa_gtk_rekey", prefix);
 		websWrite(wp, "<input name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"10\" onblur=\"valid_range(this,0,99999,wpa.rekey)\" value=\"%s\" />", prefix, nvram_default_get(var, "3600"));
 		websWrite(wp, "</div>\n");
-	} else if (strstr(security_mode, "wpa") || strstr(security_mode, "wpa2") || strstr(security_mode, "wpa3") || strstr(security_mode, "wpa3-192")) {
+	} else if (strstr(security_mode, "wpa") || strstr(security_mode, "wpa2") || strstr(security_mode, "wpa2-sha256") || strstr(security_mode, "wpa3") || strstr(security_mode, "wpa3-192")) {
 		show_wparadius(wp, prefix);
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wpa.rekey", NULL);
