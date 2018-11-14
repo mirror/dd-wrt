@@ -283,12 +283,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		char grpstring[128] = { 0, 0 };
 		if (nvram_nmatch("1", "%s_ccmp", prefix)) {
 			sprintf(pwstring, "%s %s", pwstring, "CCMP");
-#if defined(HAVE_MAKSAT) || defined(HAVE_TMK) || defined(HAVE_BKM)
-			if (isadhoc)
-				sprintf(grpstring, "%s %s", grpstring, "CCMP");
-			else
-#endif
-				sprintf(grpstring, "%s %s", grpstring, "CCMP TKIP");
+			sprintf(grpstring, "%s %s", grpstring, "CCMP TKIP");
 		}
 		if (nvram_nmatch("1", "%s_tkip", prefix)) {
 			sprintf(pwstring, "%s %s", pwstring, "TKIP");
