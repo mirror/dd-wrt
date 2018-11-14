@@ -1797,11 +1797,11 @@ static __u32 *mac80211_get_ciphers(int phy, __u32 *num)
 	gnlh = nlmsg_data(nlmsg_hdr(msg));
 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 
-	if (tb_msg[NL80211_ATTR_CIPHER_SUITES]) {
-		*num = nla_len(tb_msg[NL80211_ATTR_CIPHER_SUITES]) / sizeof(__u32);
+	if (tb[NL80211_ATTR_CIPHER_SUITES]) {
+		*num = nla_len(tb[NL80211_ATTR_CIPHER_SUITES]) / sizeof(__u32);
 		if (*num > 0) {
-			ciphers = malloc(num * sizeof(__u32));
-			memcpy(ciphers, nla_data(tb_msg[NL80211_ATTR_CIPHER_SUITES]), num * sizeof(__u32));
+			ciphers = malloc(*num * sizeof(__u32));
+			memcpy(ciphers, nla_data(tb[NL80211_ATTR_CIPHER_SUITES]), *num * sizeof(__u32));
 		}
 	}
 	nlmsg_free(msg);

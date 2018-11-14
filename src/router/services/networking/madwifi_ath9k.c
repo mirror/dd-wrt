@@ -1313,6 +1313,18 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		if (nvram_nmatch("1", "%s_gcmp", ifname)) {
 			sprintf(pwstring, "%s %s", pwstring, "GCMP");
 		}
+		if (nvram_nmatch("1", "%s_cmac", ifname)) {
+			sprintf(pwstring, "%s %s", pwstring, "BIP");
+		}
+		if (nvram_nmatch("1", "%s_cmac-256", ifname)) {
+			sprintf(pwstring, "%s %s", pwstring, "BIP-CMAC-256");
+		}
+		if (nvram_nmatch("1", "%s_gmac-128", ifname)) {
+			sprintf(pwstring, "%s %s", pwstring, "BIP-CMAC-128");
+		}
+		if (nvram_nmatch("1", "%s_gmac-256", ifname)) {
+			sprintf(pwstring, "%s %s", pwstring, "BIP-CMAC-256");
+		}
 
 		if (!strlen(pwstring)) {
 			sprintf(psk, "%s_crypto", ifname);
