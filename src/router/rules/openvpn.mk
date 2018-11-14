@@ -47,11 +47,12 @@ CONFIGURE_ARGS_OVPN += \
 	ac_cv_func_epoll_create=yes \
 	ac_cv_path_IFCONFIG=/sbin/ifconfig \
 	ac_cv_path_ROUTE=/sbin/route \
-	ac_cv_path_IPROUTE=/usr/sbin/ip
+	ac_cv_path_IPROUTE=/usr/sbin/ip 
 
 openvpn-conf-prep:
 	-rm -f openvpn/Makefile
 	cd openvpn && aclocal
+	cd openvpn && autoconf
 	cd openvpn && automake
 
 openvpn-conf: $(SSL_DEP)
