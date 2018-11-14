@@ -1320,10 +1320,10 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			sprintf(pwstring, "%s %s", pwstring, "BIP-CMAC-256");
 		}
 		if (nvram_nmatch("1", "%s_gmac-128", ifname)) {
-			sprintf(pwstring, "%s %s", pwstring, "BIP-CMAC-128");
+			sprintf(pwstring, "%s %s", pwstring, "BIP-GMAC-128");
 		}
 		if (nvram_nmatch("1", "%s_gmac-256", ifname)) {
-			sprintf(pwstring, "%s %s", pwstring, "BIP-CMAC-256");
+			sprintf(pwstring, "%s %s", pwstring, "BIP-GMAC-256");
 		}
 
 		if (!strlen(pwstring)) {
@@ -1699,6 +1699,22 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		if (nvram_nmatch("1", "%s_gcmp", prefix)) {
 			sprintf(pwstring, "%s %s", pwstring, "GCMP");
 			sprintf(grpstring, "%s %s", grpstring, "GCMP");
+		}
+		if (nvram_nmatch("1", "%s_cmac", ifname)) {
+			sprintf(pwstring, "%s %s", pwstring, "BIP");
+			sprintf(grpstring, "%s %s", grpstring, "BIP");
+		}
+		if (nvram_nmatch("1", "%s_cmac-256", ifname)) {
+			sprintf(pwstring, "%s %s", pwstring, "BIP-CMAC-256");
+			sprintf(grpstring, "%s %s", grpstring, "BIP-CMAC-256");
+		}
+		if (nvram_nmatch("1", "%s_gmac-128", ifname)) {
+			sprintf(pwstring, "%s %s", pwstring, "BIP-CMAC-128");
+			sprintf(grpstring, "%s %s", grpstring, "BIP-CMAC-128");
+		}
+		if (nvram_nmatch("1", "%s_gmac-256", ifname)) {
+			sprintf(pwstring, "%s %s", pwstring, "BIP-GMAC-256");
+			sprintf(grpstring, "%s %s", grpstring, "BIP-GMAC-256");
 		}
 #ifdef HAVE_80211W
 		if (nvram_default_matchi(mfp, -1, 0))
