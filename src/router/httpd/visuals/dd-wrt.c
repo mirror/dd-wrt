@@ -4448,11 +4448,15 @@ void show_authtable(webs_t wp, char *prefix)
 {
 	struct pair s_cryptopair[] = {
 		{"CCMP (AES)", "ccmp", noad},
-		{"CCMP-256", "ccmp-256", has_gcmp},
+		{"CCMP-256", "ccmp-256", has_ccmp_256},
 		{"TKIP", "tkip", noad},
 		{"GCMP", "gcmp", has_ad},
-		{"GCMP", "gcmp", has_gcmp},
-		{"GCMP-256", "gcmp-256", has_gcmp}
+		{"GCMP", "gcmp", has_gcmp_128},
+		{"GCMP-256", "gcmp-256", has_gcmp_256}
+		{"CMAC", "cmac", has_cmac},
+		{"CMAC256", "cmac-256", has_cmac_256},
+		{"GMAC128", "gmac-128", has_gmac_128},
+		{"GMAC256", "gmac-256", has_gmac_256},
 	};
 
 	struct pair s_authpair[] = {
