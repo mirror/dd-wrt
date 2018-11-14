@@ -1776,6 +1776,101 @@ nla_put_failure:
 	return 0;
 }
 
+static __u32 *mac80211_get_ciphers(int phy, __u32 *num)
+{
+	struct nlattr *tb[NL80211_ATTR_MAX + 1];
+	struct nl_msg *msg;
+	struct genlmsghdr *gnlh;
+	int ret = 0;
+	__u32 *ciphers;
+	lock();
+	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
+	if (!msg) {
+		unlock();
+		return 0;
+	}
+	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
+	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
+		unlock();
+		return 0;
+	}
+	gnlh = nlmsg_data(nlmsg_hdr(msg));
+	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
+
+	if (tb_msg[NL80211_ATTR_CIPHER_SUITES]) {
+		*num = nla_len(tb_msg[NL80211_ATTR_CIPHER_SUITES]) / sizeof(__u32);
+		if (*num > 0) {
+			ciphers = malloc(num * sizeof(__u32));
+			memcpy(ciphers, nla_data(tb_msg[NL80211_ATTR_CIPHER_SUITES]), num * sizeof(__u32));
+		}
+	}
+	nlmsg_free(msg);
+	unlock();
+	return ciphers;
+nla_put_failure:
+	nlmsg_free(msg);
+	unlock();
+	return NULL;
+}
+
+static int match_cipher(char *prefix, __u32 cipher)
+{
+	int phy = get_ath9k_phy_ifname(prefix);
+	__u32 num;
+	__u32 *ciphers = mac80211_get_ciphers(phy, &num);
+	if (!ciphers)
+		return 0;
+	int i;
+	for (i = 0; i < num; i++) {
+		if (ciphers[i] == cipher) {
+			free(ciphers);
+			return 1;
+		}
+	}
+	free(ciphers);
+	return 0;
+}
+
+int has_cmac(char *prefix)
+{
+	return match_cipher(prefix, 0x000fac06);
+}
+
+int has_gcmp_128(char *prefix)
+{
+	return match_cipher(prefix, 0x000fac08);
+}
+
+int has_gcmp(char *prefix)
+{
+	return match_cipher(prefix, 0x000fac08);
+}
+
+int has_gcmp_256(char *prefix)
+{
+	return match_cipher(prefix, 0x000fac09);
+}
+
+int has_ccmp_256(char *prefix)
+{
+	return match_cipher(prefix, 0x000fac0a);
+}
+
+int has_gmac_128(char *prefix)
+{
+	return match_cipher(prefix, 0x000fac0b);
+}
+
+int has_gmac_256(char *prefix)
+{
+	return match_cipher(prefix, 0x000fac0c);
+}
+
+int has_cmac_256(char *prefix)
+{
+	return match_cipher(prefix, 0x000fac0d);
+}
+
 int mac80211_get_avail_tx_antenna(int phy)
 {
 	int ret = mac80211_get_antennas(phy, 0, 0);
