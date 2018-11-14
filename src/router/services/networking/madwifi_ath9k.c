@@ -1700,19 +1700,19 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			sprintf(pwstring, "%s %s", pwstring, "GCMP");
 			sprintf(grpstring, "%s %s", grpstring, "GCMP");
 		}
-		if (nvram_nmatch("1", "%s_cmac", ifname)) {
+		if (nvram_nmatch("1", "%s_cmac", prefix)) {
 			sprintf(pwstring, "%s %s", pwstring, "AES-128-CMAC");
 			sprintf(grpstring, "%s %s", grpstring, "AES-128-CMAC");
 		}
-		if (nvram_nmatch("1", "%s_cmac-256", ifname)) {
+		if (nvram_nmatch("1", "%s_cmac-256", prefix)) {
 			sprintf(pwstring, "%s %s", pwstring, "BIP-CMAC-256");
 			sprintf(grpstring, "%s %s", grpstring, "BIP-CMAC-256");
 		}
-		if (nvram_nmatch("1", "%s_gmac-128", ifname)) {
+		if (nvram_nmatch("1", "%s_gmac-128", prefix)) {
 			sprintf(pwstring, "%s %s", pwstring, "BIP-CMAC-128");
 			sprintf(grpstring, "%s %s", grpstring, "BIP-CMAC-128");
 		}
-		if (nvram_nmatch("1", "%s_gmac-256", ifname)) {
+		if (nvram_nmatch("1", "%s_gmac-256", prefix)) {
 			sprintf(pwstring, "%s %s", pwstring, "BIP-GMAC-256");
 			sprintf(grpstring, "%s %s", grpstring, "BIP-GMAC-256");
 		}
