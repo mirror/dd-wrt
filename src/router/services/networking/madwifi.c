@@ -1131,12 +1131,12 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 			wpamask |= 2;
 		fprintf(fp, "wpa=%d\n", wpamask);
 #ifdef HAVE_80211W
-		if (nvram_default_matchi(mfp, -1, 0))
-			fprintf(fp, "ieee80211w=1\n");
-		if (nvram_default_matchi(mfp, 0, 0))
-			fprintf(fp, "ieee80211w=0\n");
-		if (nvram_default_matchi(mfp, 1, 0))
+		if (nvram_default_matchi(mfp, 1, 0) || ispsk3 || iswpa3 || iswpa3_192)
 			fprintf(fp, "ieee80211w=2\n");
+		else if (nvram_default_matchi(mfp, -1, 0))
+			fprintf(fp, "ieee80211w=1\n");
+		else if (nvram_default_matchi(mfp, 0, 0))
+			fprintf(fp, "ieee80211w=0\n");
 #endif
 		if (ispsk || ispsk2 || ispsk2sha256 || ispsk3) {
 			if (strlen(nvram_nget("%s_wpa_psk", prefix)) == 64)
