@@ -192,7 +192,64 @@ static inline int has_ad(char *prefix)
 	return 0;
 }
 #endif
+
+#ifdef HAVE_ATH19K
 extern int has_gcmp(char *prefix);
+extern int has_cmac(char *prefix);
+extern int has_gcmp_128(char *prefix);
+extern int has_gcmp(char *prefix);
+extern int has_gcmp_256(char *prefix);
+extern int has_ccmp_256(char *prefix);
+extern int has_gmac_128(char *prefix);
+extern int has_gmac_256(char *prefix);
+extern int has_cmac_256(char *prefix);
+#else
+static inline int has_gcmp(char *prefix)
+{
+	return 0;
+}
+
+static inline int has_cmac(char *prefix)
+{
+	return 0;
+}
+
+static inline int has_gcmp_128(char *prefix)
+{
+	return 0;
+}
+
+static inline int has_gcmp(char *prefix)
+{
+	return 0;
+}
+
+static inline int has_gcmp_256(char *prefix)
+{
+	return 0;
+}
+
+static inline int has_ccmp_256(char *prefix)
+{
+	return 0;
+}
+
+static inline int has_gmac_128(char *prefix)
+{
+	return 0;
+}
+
+static inline int has_gmac_256(char *prefix)
+{
+	return 0;
+}
+
+static inline int has_cmac_256(char *prefix)
+{
+	return 0;
+}
+#endif
+
 #ifdef HAVE_QTN
 extern int has_qtn(char *prefix);
 #else
