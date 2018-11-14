@@ -315,12 +315,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 			if (nvram_match(psk, "aes")) {
 				nvram_nset("1", "%s_ccmp", prefix);
 				fprintf(fp, "\tpairwise=CCMP\n");
-#if defined(HAVE_MAKSAT) || defined(HAVE_TMK) || defined(HAVE_BKM)
-				if (isadhoc)
-					fprintf(fp, "\tgroup=CCMP\n");
-				else
-#endif
-					fprintf(fp, "\tgroup=CCMP TKIP\n");
+				fprintf(fp, "\tgroup=CCMP TKIP\n");
 			}
 			if (nvram_match(psk, "tkip")) {
 				nvram_nset("1", "%s_tkip", prefix);
