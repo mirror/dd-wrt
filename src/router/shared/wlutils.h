@@ -193,11 +193,10 @@ static inline int has_ad(char *prefix)
 }
 #endif
 
-#ifdef HAVE_ATH19K
+#ifdef HAVE_ATH9K
 extern int has_gcmp(char *prefix);
 extern int has_cmac(char *prefix);
 extern int has_gcmp_128(char *prefix);
-extern int has_gcmp(char *prefix);
 extern int has_gcmp_256(char *prefix);
 extern int has_ccmp_256(char *prefix);
 extern int has_gmac_128(char *prefix);
@@ -215,11 +214,6 @@ static inline int has_cmac(char *prefix)
 }
 
 static inline int has_gcmp_128(char *prefix)
-{
-	return 0;
-}
-
-static inline int has_gcmp(char *prefix)
 {
 	return 0;
 }
