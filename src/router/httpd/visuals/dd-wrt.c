@@ -4452,15 +4452,15 @@ void show_authtable(webs_t wp, char *prefix)
 	};
 
 	struct pair s_authpair[] = {
-		{"WPA-PSK", "psk", dummy},
-		{"WPA2-PSK", "psk2", dummy},
-		{"WPA2-PSK-SHA256", "psk2-sha256", has_wpa3},
-		{"WPA3-PSK", "psk3", has_wpa3},
-		{"WPA-EAP", "wpa", aponly},
-		{"WPA2-EAP", "wpa2", aponly},
-		{"WPA2-EAP-SHA256", "wpa2-sha256", aponly_wpa3},
-		{"WPA3-EAP-SUITE-B", "wpa3", aponly_wpa3},
-		{"WPA3-EAP-SUITE-B-192", "wpa3-192", aponly_wpa3}
+		{"WPA Personal", "psk", dummy},
+		{"WPA2 Personal", "psk2", dummy},
+		{"WPA2 Personal with SHA256", "psk2-sha256", has_wpa3},
+		{"WPA3 Personal", "psk3", has_wpa3},
+		{"WPA Enterprise", "wpa", aponly},
+		{"WPA2 Enterprise", "wpa2", aponly},
+		{"WPA2 Enterprise with SHA256", "wpa2-sha256", aponly_wpa3},
+		{"WPA3 Enterprise", "wpa3", aponly_wpa3},
+		{"WPA3 Enterprise CNSA 192-Bit", "wpa3-192", aponly_wpa3}
 	};
 	struct pair cryptopair[(sizeof(s_cryptopair) / sizeof(struct pair))];
 	struct pair authpair[(sizeof(s_authpair) / sizeof(struct pair))];
