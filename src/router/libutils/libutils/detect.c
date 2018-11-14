@@ -596,7 +596,7 @@ int internal_getRouterBrand()
 
 	if (boardnum == 32 && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1601")) {
-		if (nvram_match("board_id", "U12H270T20")) {
+		if (nvram_match("board_id", "U12H270T20_NETGEAR")) {
 			setRouter("Netgear R7000P");
 			return ROUTER_NETGEAR_R7000P;
 		} else if (nvram_match("board_id", "U12H332T20_NETGEAR") 
