@@ -1728,26 +1728,26 @@ int internal_getRouterBrand()
 		{-1, "NanoStation M365", 0xe003, 3, 3, 0, 0, ROUTER_BOARD_NS5M, M365, 10},	//
 		{-1, "NanoStation M900", 0xe2b9, 3, 3, 0, 0, ROUTER_BOARD_NS5M, M900, 10},	//
 //              {-1,"NanoStation M900 GPS", 0xe0b9, 3, 3, ROUTER_BOARD_NS5M, M900},       //
-		{-1, "Rocket M2", 0xe102, 3, 3, 0, 0, ROUTER_BOARD_R2M, 0, 10},	//
-		{-1, "Rocket M2", 0xe112, 3, 3, 0, 0, ROUTER_BOARD_R2M, 0, 10},	//
-		{-1, "Rocket M2", 0xe1b2, 3, 3, 0, 0, ROUTER_BOARD_R2M, 0, 10},	//
-		{-1, "Rocket M2", 0xe1c2, 3, 3, 0, 0, ROUTER_BOARD_R2M, 0, 10},	//
-		{-1, "Rocket M2 Titanium XW", 0xe1d2, 3, 3, 0, 0, ROUTER_BOARD_TI, 0, 10},	// Titanium
-		{-1, "Rocket M5 Titanium XW", 0xe4d5, 3, 3, 0, 0, ROUTER_BOARD_TI, 0, 10},	// Titanium
-		{-1, "Rocket M5", 0xe105, 3, 3, 0, 0, ROUTER_BOARD_R5M, 0, 10},	//
-		{-1, "Rocket M5", 0xe1b5, 3, 3, 0, 0, ROUTER_BOARD_R5M, 0, 10},	//
-		{-1, "Rocket M5 XW", 0xe6b5, 3, 3, 0, 0, ROUTER_BOARD_R5M, 0, 10},	//
-		{-1, "Rocket M5", 0xe8b5, 3, 3, 0, 0, ROUTER_BOARD_R5M, 0, 10},	//
-		{-1, "Rocket M5", 0xe1c5, 3, 3, 0, 0, ROUTER_BOARD_R5M, 0, 10},	//
-		{-1, "Rocket M5 Titanium XW", 0xe1d5, 3, 3, 0, 0, ROUTER_BOARD_TI, 0, 10},	// Titanium
-		{-1, "Rocket M6", 0xe1b6, 3, 3, 0, 0, ROUTER_BOARD_R5M, 0, 10},	//
-		{-1, "Rocket M3", 0xe1c3, 3, 3, 0, 0, ROUTER_BOARD_R5M, M35, 10},	//
-		{-1, "Rocket M3", 0xe1e3, 3, 3, 0, 0, ROUTER_BOARD_R5M, M35, 10},	//
-		{-1, "Rocket M5 X3 XW", 0xe3b5, 3, 3, 0, 0, ROUTER_BOARD_R5M, 0, 10},	//
-		{-1, "Rocket M365", 0xe1b3, 3, 3, 0, 0, ROUTER_BOARD_R5M, M365, 10},	//
-		{-1, "Rocket M365", 0xe1d3, 3, 3, 0, 0, ROUTER_BOARD_R5M, M365, 10},	//
-		{-1, "Rocket M900", 0xe1b9, 3, 3, 0, 0, ROUTER_BOARD_R2M, M900, 10},	//
-		{-1, "Rocket M900", 0xe1d9, 3, 3, 0, 0, ROUTER_BOARD_R2M, M900, 10},	//
+		{-1, "Rocket M2", 0xe102, 3, 3, 0, 0, ROUTER_BOARD_R2M, 0, 0},	//
+		{-1, "Rocket M2", 0xe112, 3, 3, 0, 0, ROUTER_BOARD_R2M, 0, 0},	//
+		{-1, "Rocket M2", 0xe1b2, 3, 3, 0, 0, ROUTER_BOARD_R2M, 0, 0},	//
+		{-1, "Rocket M2", 0xe1c2, 3, 3, 0, 0, ROUTER_BOARD_R2M, 0, 0},	//
+		{-1, "Rocket M2 Titanium XW", 0xe1d2, 3, 3, 0, 0, ROUTER_BOARD_TI, 0, 0},	// Titanium
+		{-1, "Rocket M5 Titanium XW", 0xe4d5, 3, 3, 0, 0, ROUTER_BOARD_TI, 0, 0},	// Titanium
+		{-1, "Rocket M5", 0xe105, 3, 3, 0, 0, ROUTER_BOARD_R5M, 0, 0},	//
+		{-1, "Rocket M5", 0xe1b5, 3, 3, 0, 0, ROUTER_BOARD_R5M, 0, 0},	//
+		{-1, "Rocket M5 XW", 0xe6b5, 3, 3, 0, 0, ROUTER_BOARD_R5M, 0, 0},	//
+		{-1, "Rocket M5", 0xe8b5, 3, 3, 0, 0, ROUTER_BOARD_R5M, 0, 0},	//
+		{-1, "Rocket M5", 0xe1c5, 3, 3, 0, 0, ROUTER_BOARD_R5M, 0, 0},	//
+		{-1, "Rocket M5 Titanium XW", 0xe1d5, 3, 3, 0, 0, ROUTER_BOARD_TI, 0, 0},	// Titanium
+		{-1, "Rocket M6", 0xe1b6, 3, 3, 0, 0, ROUTER_BOARD_R5M, 0, 0},	//
+		{-1, "Rocket M3", 0xe1c3, 3, 3, 0, 0, ROUTER_BOARD_R5M, M35, 0},	//
+		{-1, "Rocket M3", 0xe1e3, 3, 3, 0, 0, ROUTER_BOARD_R5M, M35, 0},	//
+		{-1, "Rocket M5 X3 XW", 0xe3b5, 3, 3, 0, 0, ROUTER_BOARD_R5M, 0, 0},	//
+		{-1, "Rocket M365", 0xe1b3, 3, 3, 0, 0, ROUTER_BOARD_R5M, M365, 0},	//
+		{-1, "Rocket M365", 0xe1d3, 3, 3, 0, 0, ROUTER_BOARD_R5M, M365, 0},	//
+		{-1, "Rocket M900", 0xe1b9, 3, 3, 0, 0, ROUTER_BOARD_R2M, M900, 0},	//
+		{-1, "Rocket M900", 0xe1d9, 3, 3, 0, 0, ROUTER_BOARD_R2M, M900, 0},	//
 		{-1, "Airbeam 5", 0xe1e5, 3, 3, 0, 0, ROUTER_BOARD_R5M, 0, 10},	//
 		{-1, "Bullet M2", 0xe202, 1, 1, 0, 0, ROUTER_BOARD_BS5M, 0, 10},	//
 		{-1, "Bullet M5", 0xe205, 1, 1, 0, 0, ROUTER_BOARD_BS5M, 0, 10},	//
