@@ -483,7 +483,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 			if (nvram_matchi(ft, 1) && (iswpa || iswpa2))
 				fprintf(fp, "FT-EAP ");
 #endif
-			if (has_wpa3(prefix) && iswep)
+			if (iswep)
 				fprintf(fp, "IEEE8021X ");
 			fprintf(fp, "\n");
 #ifdef HAVE_80211W
@@ -562,7 +562,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 			if (nvram_matchi(ft, 1) && (iswpa || iswpa2))
 				fprintf(fp, "FT-EAP ");
 #endif
-			if (has_wpa3(prefix) && iswep)
+			if (iswep)
 				fprintf(fp, "IEEE8021X ");
 			fprintf(fp, "\n");
 #ifdef HAVE_80211W
@@ -634,7 +634,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 			if (nvram_matchi(ft, 1) && (iswpa || iswpa2))
 				fprintf(fp, "FT-EAP ");
 #endif
-			if (has_wpa3(prefix) && iswep)
+			if (iswep)
 				fprintf(fp, "IEEE8021X ");
 			fprintf(fp, "\n");
 #ifdef HAVE_80211W
@@ -705,7 +705,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 			if (nvram_matchi(ft, 1) && (iswpa || iswpa2))
 				fprintf(fp, "FT-EAP ");
 #endif
-			if (has_wpa3(prefix) && iswep)
+			if (iswep)
 				fprintf(fp, "IEEE8021X ");
 			fprintf(fp, "\n");
 #ifdef HAVE_80211W
