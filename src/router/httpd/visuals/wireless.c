@@ -821,15 +821,16 @@ void ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix)
 	}
 #ifdef HAVE_WPA_SUPPLICANT
 #ifndef HAVE_MICRO
-	else if (strstr(security_mode, "8021X"))
+	else if (strstr(security_mode, "8021X")) {
 		show_80211X(wp, prefix);
+	}
 #endif
 #endif
 #endif
 
 #ifdef HAVE_MADWIFI
-	if (!strstr(security_mode, "disabled"));
-	    websWrite(wp, "</fieldset>\n");
+	if (!strstr(security_mode, "disabled")) ;
+	websWrite(wp, "</fieldset>\n");
 #endif
 	return;
 }
