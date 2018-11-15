@@ -2088,6 +2088,10 @@ sec80211x.clientcertif="Client Zertifikat";
 sec80211x.phase2="Phase 2";
 sec80211x.anon="Anonyme Identit&auml;t";
 sec80211x.options="Erweiterte Netzwerk Optionen";
+sec80211x.leap="EAP-LEAP Einstellungen";
+sec80211x.peap="EAP-PEAP Einstellungen";
+sec80211x.tls="EAP-TLS Einstellungen";
+sec80211x.ttls="EAP-TTLS Einstellungen";
 
 
 //help container
