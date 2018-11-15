@@ -716,9 +716,10 @@ void ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix)
 	if ((strstr(security_mode, "wpa") || strstr(akm, "psk") || strstr(akm, "psk2") || strstr(akm, "psk2-sha256") || strstr(akm, "psk3") || strstr(akm, "wpa") || strstr(akm, "wpa2") || strstr(akm, "wpa2-sha256")
 	     || strstr(akm, "wpa3")
 	     || strstr(akm, "wpa3-192")) && !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X") || strstr(security_mode, "disabled") || strstr(security_mode, "owe")))
-		show_authtable(wp, prefix);
+		show_authtable(wp, prefix, 0);
 	websWrite(wp, "</fieldset>\n");
-	websWrite(wp, "<fieldset>\n");
+	if (!strstr(security_mode, "disabled"))
+		websWrite(wp, "<fieldset>\n");
 	int show = 0;
 	if ((strstr(akm, "psk") || strstr(akm, "psk2") || strstr(akm, "psk2-sha256") || strstr(akm, "psk3"))
 	    && !(strstr(security_mode, "wep") || strstr(security_mode, "radius") || strstr(security_mode, "8021X") || strstr(security_mode, "disabled") || strstr(security_mode, "owe"))) {
@@ -794,8 +795,10 @@ void ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix)
 		show_radius(wp, prefix, 1, 0);
 #ifdef HAVE_WPA_SUPPLICANT
 #ifndef HAVE_MICRO
-	if (strstr(security_mode, "8021X"))
+	if (strstr(security_mode, "8021X")) {
+		show_authtable(wp, prefix, 1);
 		show_80211X(wp, prefix);
+	}
 #endif
 #endif
 	if (show)
@@ -825,7 +828,8 @@ void ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix)
 #endif
 
 #ifdef HAVE_MADWIFI
-	websWrite(wp, "</fieldset>\n");
+	if (!strstr(security_mode, "disabled"));
+	    websWrite(wp, "</fieldset>\n");
 #endif
 	return;
 }
