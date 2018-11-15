@@ -2437,7 +2437,10 @@ sec80211x.clientcertif="Client Certificate";
 sec80211x.phase2="Phase2";
 sec80211x.anon="Anonymous Identity";
 sec80211x.options="Additional Network Options";
-
+sec80211x.leap="EAP-LEAP Settings";
+sec80211x.peap="EAP-PEAP Settings";
+sec80211x.tls="EAP-TLS Settings";
+sec80211x.ttls="EAP-TTLS Settings";
 //help container
 var hwpa=new Object();
 hwpa.right2="You may choose from Disable, WEP, WPA Personal, WPA Enterprise, or RADIUS. All devices on your network must use the same security mode. With N-Mode you must use WPA2/AES.";
