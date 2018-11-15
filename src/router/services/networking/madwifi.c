@@ -244,9 +244,9 @@ void get_pairwise(char *prefix, char *pwstring, char *grpstring, int isadhoc)
 			sprintf(grpstring, "%s %s", grpstring, "BIP-CMAC-256");
 	}
 	if (nvram_nmatch("1", "%s_gmac-128", prefix)) {
-		sprintf(pwstring, "%s %s", pwstring, "BIP-CMAC-128");
+		sprintf(pwstring, "%s %s", pwstring, "BIP-GMAC-128");
 		if (grpstring)
-			sprintf(grpstring, "%s %s", grpstring, "BIP-CMAC-128");
+			sprintf(grpstring, "%s %s", grpstring, "BIP-GMAC-128");
 	}
 	if (nvram_nmatch("1", "%s_gmac-256", prefix)) {
 		sprintf(pwstring, "%s %s", pwstring, "BIP-GMAC-256");
