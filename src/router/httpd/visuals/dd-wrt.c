@@ -939,7 +939,15 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 #ifndef HAVE_RT2880
 	if (nvram_match(sta, "sta") || nvram_match(sta, "wdssta")
 	    || nvram_match(sta, "apsta") || nvram_match(sta, "wet")) {
+#ifdef HAVE_MADWIFI
+		if (nvhas(var, "peap") || nvhas(var, "leap") || nvhas(var, "tls") || nvhas(var, "ttls") || nvhas(var, "8021X"))
+			websWrite(wp, "<option value=\"8021X\" %s>802.1x</option>\n", "selected=\"selected\"");
+		else
+			websWrite(wp, "<option value=\"8021X\" %s>802.1x</option>\n", "");
+
+#else
 		websWrite(wp, "<option value=\"8021X\" %s>802.1x</option>\n", selmatch(var, "8021X", "selected=\"selected\""));
+#endif
 	}
 #else
 #ifndef HAVE_RT61
@@ -4444,7 +4452,7 @@ static int aponly_wpa3(char *prefix)
 }
 
 #ifdef HAVE_MADWIFI
-void show_authtable(webs_t wp, char *prefix)
+void show_authtable(webs_t wp, char *prefix, int show80211x)
 {
 	struct pair s_cryptopair[] = {
 		{"CCMP-128 (AES)", "ccmp", noad},
@@ -4459,7 +4467,7 @@ void show_authtable(webs_t wp, char *prefix)
 		{"GMAC-256", "gmac-256", has_gmac_256},
 	};
 
-	struct pair s_authpair[] = {
+	struct pair s_authpair_wpa[] = {
 		{"WPA Personal", "psk", dummy},
 		{"WPA2 Personal", "psk2", dummy},
 		{"WPA2 Personal with SHA256", "psk2-sha256", has_wpa3},
@@ -4470,13 +4478,36 @@ void show_authtable(webs_t wp, char *prefix)
 		{"WPA3 Enterprise", "wpa3", aponly_wpa3},
 		{"WPA3 Enterprise CNSA 192-Bit", "wpa3-192", aponly_wpa3}
 	};
-	struct pair cryptopair[(sizeof(s_cryptopair) / sizeof(struct pair))];
-	struct pair authpair[(sizeof(s_authpair) / sizeof(struct pair))];
+	struct pair s_authpair_80211x[] = {
+		{"WPA Enterprise", "wpa", dummy},
+		{"WPA2 Enterprise", "wpa2", dummy},
+		{"WPA2 Enterprise with SHA256", "wpa2-sha256", has_wpa3},
+		{"WPA3 Enterprise", "wpa3", has_wpa3},
+		{"WPA3 Enterprise CNSA 192-Bit", "wpa3-192", has_wpa3},
+		{"802.1x / WEP", "802.1x", has_wpa3}
+	};
+	struct pair s_authmethod[] = {
+		{"EAP-PEAP", "peap", dummy},
+		{"EAP-LEAP", "leap", dummy},
+		{"EAP-TLS", "tls", dummy},
+		{"EAP-TTLS", "ttls", dummy},
+	};
+	struct pair *cryptopair;
+	struct pair *authpair_wpa;
+	struct pair *authmethod;
+
+	cryptopair = malloc(sizeof(s_cryptopair));
+	if (show80211x)
+		authpair_wpa = malloc(sizeof(s_authpair_80211x));
+	else
+		authpair_wpa = malloc(sizeof(s_authpair_wpa));
+	authmethod = malloc(sizeof(s_authmethod));
+
 	int i, cnt = 0;
 	int alen = 0;
 	int clen = 0;
-	memset(cryptopair, 0, sizeof(cryptopair));
-	memset(authpair, 0, sizeof(authpair));
+	int mlen = 0;
+
 	for (i = 0; i < sizeof(s_cryptopair) / sizeof(struct pair); i++) {
 		if (s_cryptopair[i].valid(prefix)) {
 			memcpy(&cryptopair[cnt], &s_cryptopair[i], sizeof(struct pair));
@@ -4485,21 +4516,48 @@ void show_authtable(webs_t wp, char *prefix)
 	}
 	clen = cnt;
 	cnt = 0;
-	for (i = 0; i < sizeof(s_authpair) / sizeof(struct pair); i++) {
-		if (s_authpair[i].valid(prefix)) {
-			memcpy(&authpair[cnt], &s_authpair[i], sizeof(struct pair));
+
+	for (i = 0; i < sizeof(s_authmethod) / sizeof(struct pair); i++) {
+		if (s_authmethod[i].valid(prefix)) {
+			memcpy(&authmethod[cnt], &s_authmethod[i], sizeof(struct pair));
 			cnt++;
 		}
+	}
+	mlen = cnt;
+	cnt = 0;
+
+	if (!show80211x) {
+		for (i = 0; i < sizeof(s_authpair_wpa) / sizeof(struct pair); i++) {
+			if (s_authpair_wpa[i].valid(prefix)) {
+				memcpy(&authpair_wpa[cnt], &s_authpair_wpa[i], sizeof(struct pair));
+				cnt++;
+			}
+		}
+	} else {
+		for (i = 0; i < sizeof(s_authpair_80211x) / sizeof(struct pair); i++) {
+			if (s_authpair_80211x[i].valid(prefix)) {
+				memcpy(&authpair_wpa[cnt], &s_authpair_80211x[i], sizeof(struct pair));
+				cnt++;
+			}
+		}
+
 	}
 	alen = cnt;
 
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<table class=\"table center\" summary=\"WPA Algorithms\">\n");
-	websWrite(wp, "<tr>\n" "<th><script type=\"text/javascript\">Capture(wpa.auth_mode)</script></th>\n" "<th><script type=\"text/javascript\">Capture(wpa.algorithms)</script></th>\n" "</tr>\n");
+	if (show80211x) {
+		websWrite(wp,
+			  "<tr>\n" "<th><script type=\"text/javascript\">Capture(sec80211x.xsuptype)</script></th>\n" "<th><script type=\"text/javascript\">Capture(wpa.auth_mode)</script></th>\n"
+			  "<th><script type=\"text/javascript\">Capture(wpa.algorithms)</script></th>\n" "</tr>\n");
+	} else {
+		websWrite(wp, "<tr>\n" "<th><script type=\"text/javascript\">Capture(wpa.auth_mode)</script></th>\n" "<th><script type=\"text/javascript\">Capture(wpa.algorithms)</script></th>\n" "</tr>\n");
+	}
 	int count = 0;
 	while (1) {
 		int s = 0;
 		int c = 0;
+		int m = 0;
 		if (count < alen) {
 			s = 1;
 		}
@@ -4507,11 +4565,24 @@ void show_authtable(webs_t wp, char *prefix)
 		if (count < clen) {
 			c = 1;
 		}
-		if (s || c) {
+
+		if (show80211x && count < mlen) {
+			m = 1;
+		}
+		if (s || c || m) {
 			websWrite(wp, "<tr>\n");
+			if (show80211x) {
+				websWrite(wp, "<td>\n");
+				if (m) {
+					show_cryptovar(wp, prefix, authmethod[count].name, authmethod[count].nvname, 1);
+				} else {
+					websWrite(wp, "&nbsp;\n");
+				}
+				websWrite(wp, "</td>\n");
+			}
 			websWrite(wp, "<td>\n");
 			if (s) {
-				show_cryptovar(wp, prefix, authpair[count].name, authpair[count].nvname, 1);
+				show_cryptovar(wp, prefix, authpair_wpa[count].name, authpair_wpa[count].nvname, 1);
 			} else {
 				websWrite(wp, "&nbsp;\n");
 			}
@@ -4524,14 +4595,16 @@ void show_authtable(webs_t wp, char *prefix)
 			websWrite(wp, "</td>\n");
 			websWrite(wp, "</tr>\n");
 		}
-		if (!s && !c)
+		if (!s && !c && !m)
 			break;
 		count++;
 	}
 
 	websWrite(wp, "</table>");
 	websWrite(wp, "</div>");
-
+	free(authpair_wpa);
+	free(authmethod);
+	free(cryptopair);
 }
 
 #endif
@@ -4702,77 +4775,15 @@ void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
 
 #ifdef HAVE_WPA_SUPPLICANT
 #ifndef HAVE_MICRO
-static void init_80211x_layers(webs_t wp, char *prefix)
-{
-	if (nvram_prefix_match("8021xtype", prefix, "tls")) {
-		websWrite(wp, "enable_idtls(\"%s\");\n", prefix);
-	}
-	if (nvram_prefix_match("8021xtype", prefix, "leap")) {
-		websWrite(wp, "enable_idleap(\"%s\");\n", prefix);
-	}
-	if (nvram_prefix_match("8021xtype", prefix, "ttls")) {
-		websWrite(wp, "enable_idttls(\"%s\");\n", prefix);
-	}
-	if (nvram_prefix_match("8021xtype", prefix, "peap")) {
-		websWrite(wp, "enable_idpeap(\"%s\");\n", prefix);
-	}
-}
-
 void ej_init_80211x_layers(webs_t wp, int argc, char_t ** argv)
 {
-#ifndef HAVE_MADWIFI
-	int c = get_wl_instances();
-	int i;
-	for (i = 0; i < c; i++) {
-		char buf[16];
-		sprintf(buf, "wl%d", i);
-		init_80211x_layers(wp, buf);
-	}
-	return;
-#else
-	int c = getdevicecount();
-	int i;
-	for (i = 0; i < c; i++) {
-		char buf[16];
-		sprintf(buf, "ath%d", i);
-		if (nvram_nmatch("8021X", "%s_security_mode", buf))
-			init_80211x_layers(wp, buf);
-	}
-	return;
-#endif
 }
 
 void show_80211X(webs_t wp, char *prefix)
 {
-	/*
-	 * fields
-	 * _8021xtype
-	 * _8021xuser
-	 * _8021xpasswd
-	 * _8021xca
-	 * _8021xpem
-	 * _8021xprv
-	 * _8021xaddopt
-	 */
 	char type[32];
 	char var[80];
-	sprintf(type, "%s_8021xtype", prefix);
-	nvram_default_get(type, "ttls");
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "sec80211x.xsuptype", NULL);
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" name=\"%s_8021xtype\" value=\"peap\" onclick=\"enable_idpeap('%s')\" %s />Peap&nbsp;\n",
-		  prefix, prefix, nvram_prefix_match("8021xtype", prefix, "peap") ? "checked=\"checked\"" : "");
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" name=\"%s_8021xtype\" value=\"leap\" onclick=\"enable_idleap('%s')\" %s />Leap&nbsp;\n",
-		  prefix, prefix, nvram_prefix_match("8021xtype", prefix, "leap") ? "checked=\"checked\"" : "");
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" name=\"%s_8021xtype\" value=\"tls\" onclick=\"enable_idtls('%s')\" %s />TLS&nbsp;\n",
-		  prefix, prefix, nvram_prefix_match("8021xtype", prefix, "tls") ? "checked=\"checked\"" : "");
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" name=\"%s_8021xtype\" value=\"ttls\" onclick=\"enable_idttls('%s')\" %s />TTLS&nbsp;\n",
-		  prefix, prefix, nvram_prefix_match("8021xtype", prefix, "ttls") ? "checked=\"checked\"" : "");
-	websWrite(wp, "</div>\n");
+	char namebuf[64];
 #ifdef HAVE_MADWIFI
 #ifdef HAVE_80211R
 	char bssft[64];
@@ -4780,178 +4791,172 @@ void show_80211X(webs_t wp, char *prefix)
 	showRadio(wp, "wpa.ft", bssft);
 #endif
 #endif
+	char akm[32];
+	sprintf(akm, "%s_akm", prefix);
+
 	// ttls authentication
-	websWrite(wp, "<div id=\"idttls%s\">\n", prefix);
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "share.user", NULL);
-	websWrite(wp, "<input name=\"%s_ttls8021xuser\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("ttls8021xuser", prefix));
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "sec80211x.anon", NULL);
-	websWrite(wp, "<input name=\"%s_ttls8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("ttls8021xanon", prefix));
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "share.passwd", NULL);
-	websWrite(wp, "<input name=\"%s_ttls8021xpasswd\" type=\"password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("ttls8021xpasswd", prefix));
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "sec80211x.phase2", NULL);
-	websWrite(wp, "<input name=\"%s_ttls8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("ttls8021xphase2", prefix));
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "sec80211x.servercertif", NULL);
-	websWrite(wp, "<textarea cols=\"60\" rows=\"6\" id=\"%s_ttls8021xca\" name=\"%s_ttls8021xca\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ", prefix, prefix);
-	websWrite(wp, "var %s_ttls8021xca = fix_cr( '", prefix);
-	char namebuf[64];
-	sprintf(namebuf, "%s_ttls8021xca", prefix);
-	tf_webWriteESCNV(wp, namebuf);
-	websWrite(wp, "' );\n");
-	websWrite(wp, "document.getElementById(\"%s_ttls8021xca\").value = %s_ttls8021xca;\n", prefix, prefix);
-	websWrite(wp, "//]]>\n</script>\n");
-	websWrite(wp, "</div>\n");
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "sec80211x.options", NULL);
-	websWrite(wp, "<textarea cols=\"60\" rows=\"3\" id=\"%s_ttls8021xaddopt\" name=\"%s_ttls8021xaddopt\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ", prefix, prefix);
-	websWrite(wp, "var %s_ttls8021xaddopt = fix_cr( '", prefix);
-	sprintf(namebuf, "%s_ttls8021xaddopt", prefix);
-	tf_webWriteESCNV(wp, namebuf);
-	websWrite(wp, "' );\n");
-	websWrite(wp, "document.getElementById(\"%s_ttls8021xaddopt\").value = %s_ttls8021xaddopt;\n", prefix, prefix);
-	websWrite(wp, "//]]>\n</script>\n");
-	websWrite(wp, "</div>\n");
-	websWrite(wp, "</div>\n");
+
+	if (nvhas(akm, "ttls")) {
+		websWrite(wp, "<fieldset>\n");
+		show_caption_legend(wp, "sec80211x.ttls");
+
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "share.user", NULL);
+		websWrite(wp, "<input name=\"%s_ttls8021xuser\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("ttls8021xuser", prefix));
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "sec80211x.anon", NULL);
+		websWrite(wp, "<input name=\"%s_ttls8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("ttls8021xanon", prefix));
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "share.passwd", NULL);
+		websWrite(wp, "<input name=\"%s_ttls8021xpasswd\" type=\"password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("ttls8021xpasswd", prefix));
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "sec80211x.phase2", NULL);
+		websWrite(wp, "<input name=\"%s_ttls8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("ttls8021xphase2", prefix));
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "sec80211x.servercertif", NULL);
+		websWrite(wp, "<textarea cols=\"60\" rows=\"6\" id=\"%s_ttls8021xca\" name=\"%s_ttls8021xca\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ", prefix, prefix);
+		websWrite(wp, "var %s_ttls8021xca = fix_cr( '", prefix);
+		sprintf(namebuf, "%s_ttls8021xca", prefix);
+		tf_webWriteESCNV(wp, namebuf);
+		websWrite(wp, "' );\n");
+		websWrite(wp, "document.getElementById(\"%s_ttls8021xca\").value = %s_ttls8021xca;\n", prefix, prefix);
+		websWrite(wp, "//]]>\n</script>\n");
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "sec80211x.options", NULL);
+		websWrite(wp, "<textarea cols=\"60\" rows=\"3\" id=\"%s_ttls8021xaddopt\" name=\"%s_ttls8021xaddopt\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ", prefix, prefix);
+		websWrite(wp, "var %s_ttls8021xaddopt = fix_cr( '", prefix);
+		sprintf(namebuf, "%s_ttls8021xaddopt", prefix);
+		tf_webWriteESCNV(wp, namebuf);
+		websWrite(wp, "' );\n");
+		websWrite(wp, "document.getElementById(\"%s_ttls8021xaddopt\").value = %s_ttls8021xaddopt;\n", prefix, prefix);
+		websWrite(wp, "//]]>\n</script>\n");
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "</fieldset>\n");
+	}
 	// peap authentication
-	websWrite(wp, "<div id=\"idpeap%s\">\n", prefix);
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "share.user", NULL);
-	websWrite(wp, "<input name=\"%s_peap8021xuser\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("peap8021xuser", prefix));
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "sec80211x.anon", NULL);
-	websWrite(wp, "<input name=\"%s_peap8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("peap8021xanon", prefix));
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "share.passwd", NULL);
-	websWrite(wp, "<input name=\"%s_peap8021xpasswd\" type=\"password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("peap8021xpasswd", prefix));
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "sec80211x.phase2", NULL);
-	websWrite(wp, "<input name=\"%s_peap8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("peap8021xphase2", prefix));
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "sec80211x.servercertif", NULL);
-	websWrite(wp, "<textarea cols=\"60\" rows=\"6\" id=\"%s_peap8021xca\" name=\"%s_peap8021xca\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ", prefix, prefix);
-	websWrite(wp, "var %s_peap8021xca = fix_cr( '", prefix);
-	sprintf(namebuf, "%s_peap8021xca", prefix);
-	tf_webWriteESCNV(wp, namebuf);
-	websWrite(wp, "' );\n");
-	websWrite(wp, "document.getElementById(\"%s_peap8021xca\").value = %s_peap8021xca;\n", prefix, prefix);
-	websWrite(wp, "//]]>\n</script>\n");
-	websWrite(wp, "</div>\n");
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "sec80211x.options", NULL);
-	websWrite(wp, "<textarea cols=\"60\" rows=\"3\" id=\"%s_peap8021xaddopt\" name=\"%s_peap8021xaddopt\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ", prefix, prefix);
-	websWrite(wp, "var %s_peap8021xaddopt = fix_cr( '", prefix);
-	sprintf(namebuf, "%s_peap8021xaddopt", prefix);
-	tf_webWriteESCNV(wp, namebuf);
-	websWrite(wp, "' );\n");
-	websWrite(wp, "document.getElementById(\"%s_peap8021xaddopt\").value = %s_peap8021xaddopt;\n", prefix, prefix);
-	websWrite(wp, "//]]>\n</script>\n");
-	websWrite(wp, "</div>\n");
-	websWrite(wp, "</div>\n");
+	if (nvhas(akm, "peap")) {
+		websWrite(wp, "<fieldset>\n");
+		show_caption_legend(wp, "sec80211x.peap");
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "share.user", NULL);
+		websWrite(wp, "<input name=\"%s_peap8021xuser\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("peap8021xuser", prefix));
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "sec80211x.anon", NULL);
+		websWrite(wp, "<input name=\"%s_peap8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("peap8021xanon", prefix));
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "share.passwd", NULL);
+		websWrite(wp, "<input name=\"%s_peap8021xpasswd\" type=\"password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("peap8021xpasswd", prefix));
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "sec80211x.phase2", NULL);
+		websWrite(wp, "<input name=\"%s_peap8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("peap8021xphase2", prefix));
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "sec80211x.servercertif", NULL);
+		websWrite(wp, "<textarea cols=\"60\" rows=\"6\" id=\"%s_peap8021xca\" name=\"%s_peap8021xca\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ", prefix, prefix);
+		websWrite(wp, "var %s_peap8021xca = fix_cr( '", prefix);
+		sprintf(namebuf, "%s_peap8021xca", prefix);
+		tf_webWriteESCNV(wp, namebuf);
+		websWrite(wp, "' );\n");
+		websWrite(wp, "document.getElementById(\"%s_peap8021xca\").value = %s_peap8021xca;\n", prefix, prefix);
+		websWrite(wp, "//]]>\n</script>\n");
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "sec80211x.options", NULL);
+		websWrite(wp, "<textarea cols=\"60\" rows=\"3\" id=\"%s_peap8021xaddopt\" name=\"%s_peap8021xaddopt\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ", prefix, prefix);
+		websWrite(wp, "var %s_peap8021xaddopt = fix_cr( '", prefix);
+		sprintf(namebuf, "%s_peap8021xaddopt", prefix);
+		tf_webWriteESCNV(wp, namebuf);
+		websWrite(wp, "' );\n");
+		websWrite(wp, "document.getElementById(\"%s_peap8021xaddopt\").value = %s_peap8021xaddopt;\n", prefix, prefix);
+		websWrite(wp, "//]]>\n</script>\n");
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "</fieldset>\n");
+	}
 	// leap authentication
-	websWrite(wp, "<div id=\"idleap%s\">\n", prefix);
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "share.user", NULL);
-	websWrite(wp, "<input name=\"%s_leap8021xuser\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("leap8021xuser", prefix));
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "sec80211x.anon", NULL);
-	websWrite(wp, "<input name=\"%s_leap8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("leap8021xanon", prefix));
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "share.passwd", NULL);
-	websWrite(wp, "<input name=\"%s_leap8021xpasswd\" type=\"password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("leap8021xpasswd", prefix));
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "sec80211x.phase2", NULL);
-	websWrite(wp, "<input name=\"%s_leap8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("leap8021xphase2", prefix));
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "sec80211x.options", NULL);
-	websWrite(wp, "<textarea cols=\"60\" rows=\"3\" id=\"%s_leap8021xaddopt\" name=\"%s_leap8021xaddopt\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ", prefix, prefix);
-	websWrite(wp, "var %s_leap8021xaddopt = fix_cr( '", prefix);
-	sprintf(namebuf, "%s_leap8021xaddopt", prefix);
-	tf_webWriteESCNV(wp, namebuf);
-	websWrite(wp, "' );\n");
-	websWrite(wp, "document.getElementById(\"%s_leap8021xaddopt\").value = %s_leap8021xaddopt;\n", prefix, prefix);
-	websWrite(wp, "//]]>\n</script>\n");
-	websWrite(wp, "</div>\n");
-	websWrite(wp, "</div>\n");
+	if (nvhas(akm, "leap")) {
+		websWrite(wp, "<fieldset>\n");
+		show_caption_legend(wp, "sec80211x.leap");
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "share.user", NULL);
+		websWrite(wp, "<input name=\"%s_leap8021xuser\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("leap8021xuser", prefix));
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "sec80211x.anon", NULL);
+		websWrite(wp, "<input name=\"%s_leap8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("leap8021xanon", prefix));
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "share.passwd", NULL);
+		websWrite(wp, "<input name=\"%s_leap8021xpasswd\" type=\"password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("leap8021xpasswd", prefix));
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "sec80211x.phase2", NULL);
+		websWrite(wp, "<input name=\"%s_leap8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("leap8021xphase2", prefix));
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "sec80211x.options", NULL);
+		websWrite(wp, "<textarea cols=\"60\" rows=\"3\" id=\"%s_leap8021xaddopt\" name=\"%s_leap8021xaddopt\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ", prefix, prefix);
+		websWrite(wp, "var %s_leap8021xaddopt = fix_cr( '", prefix);
+		sprintf(namebuf, "%s_leap8021xaddopt", prefix);
+		tf_webWriteESCNV(wp, namebuf);
+		websWrite(wp, "' );\n");
+		websWrite(wp, "document.getElementById(\"%s_leap8021xaddopt\").value = %s_leap8021xaddopt;\n", prefix, prefix);
+		websWrite(wp, "//]]>\n</script>\n");
+		websWrite(wp, "</div>\n");
+	}
 	// tls authentication
-	websWrite(wp, "<div id=\"idtls%s\">\n", prefix);
-	websWrite(wp, "<div class=\"setting\">\n");
-	sprintf(var, "%s_tls8021xkeyxchng", prefix);
-	nvram_default_get(var, "wep");
-	show_caption(wp, "label", "sec80211x.keyxchng", NULL);
-	websWrite(wp, "<select name=\"%s_tls8021xkeyxchng\"> size=\"1\"\n", prefix);
-	websWrite(wp, "<option value=\"wep\" %s>Radius/WEP</option>\n", selmatch(var, "wep", "selected=\"selected\""));
-	websWrite(wp, "<option value=\"wpa2\" %s>WPA2 Enterprise</option>\n", selmatch(var, "wpa2", "selected=\"selected\""));
-	websWrite(wp, "<option value=\"wpa2mixed\" %s>WPA2 Enterprise (Mixed)</option>\n", selmatch(var, "wpa2mixed", "selected=\"selected\""));
-	websWrite(wp, "<option value=\"wpa\" %s>WPA Enterprise</option>\n", selmatch(var, "wpa", "selected=\"selected\""));
-	websWrite(wp, "</select></div>\n");
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "share.user", NULL);
-	websWrite(wp, "<input name=\"%s_tls8021xuser\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("tls8021xuser", prefix));
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "sec80211x.anon", NULL);
-	websWrite(wp, "<input name=\"%s_tls8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("tls8021xanon", prefix));
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "share.passwd", NULL);
-	websWrite(wp, "<input name=\"%s_tls8021xpasswd\" type=\"password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("tls8021xpasswd", prefix));
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "sec80211x.phase2", NULL);
-	websWrite(wp, "<input name=\"%s_tls8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("tls8021xphase2", prefix));
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "sec80211x.servercertif", NULL);
-	websWrite(wp, "<textarea cols=\"60\" rows=\"6\" id=\"%s_tls8021xca\" name=\"%s_tls8021xca\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ", prefix, prefix);
-	websWrite(wp, "var %s_tls8021xca = fix_cr( '", prefix);
-	sprintf(namebuf, "%s_tls8021xca", prefix);
-	tf_webWriteESCNV(wp, namebuf);
-	websWrite(wp, "' );\n");
-	websWrite(wp, "document.getElementById(\"%s_tls8021xca\").value = %s_tls8021xca;\n", prefix, prefix);
-	websWrite(wp, "//]]>\n</script>\n");
-	websWrite(wp, "</div>\n");
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "sec80211x.clientcertif", NULL);
-	websWrite(wp, "<textarea cols=\"60\" rows=\"6\" id=\"%s_tls8021xpem\" name=\"%s_tls8021xpem\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ", prefix, prefix);
-	websWrite(wp, "var %s_tls8021xpem = fix_cr( '", prefix);
-	sprintf(namebuf, "%s_tls8021xpem", prefix);
-	tf_webWriteESCNV(wp, namebuf);
-	websWrite(wp, "' );\n");
-	websWrite(wp, "document.getElementById(\"%s_tls8021xpem\").value = %s_tls8021xpem;\n", prefix, prefix);
-	websWrite(wp, "//]]>\n</script>\n");
-	websWrite(wp, "</div>\n");
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "share.privatekey", NULL);
-	websWrite(wp, "<textarea cols=\"60\" rows=\"6\" id=\"%s_tls8021xprv\" name=\"%s_tls8021xprv\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ", prefix, prefix);
-	websWrite(wp, "var %s_tls8021xprv = fix_cr( '", prefix);
-	sprintf(namebuf, "%s_tls8021xprv", prefix);
-	tf_webWriteESCNV(wp, namebuf);
-	websWrite(wp, "' );\n");
-	websWrite(wp, "document.getElementById(\"%s_tls8021xprv\").value = %s_tls8021xprv;\n", prefix, prefix);
-	websWrite(wp, "//]]>\n</script>\n");
-	websWrite(wp, "</div>\n");
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", "sec80211x.options", NULL);
-	websWrite(wp, "<textarea cols=\"60\" rows=\"3\" id=\"%s_tls8021xaddopt\" name=\"%s_tls8021xaddopt\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ", prefix, prefix);
-	websWrite(wp, "var %s_tls8021xaddopt = fix_cr( '", prefix);
-	sprintf(namebuf, "%s_tls8021xaddopt", prefix);
-	tf_webWriteESCNV(wp, namebuf);
-	websWrite(wp, "' );\n");
-	websWrite(wp, "document.getElementById(\"%s_tls8021xaddopt\").value = %s_tls8021xaddopt;\n", prefix, prefix);
-	websWrite(wp, "//]]>\n</script>\n");
-	websWrite(wp, "</div>\n");
-	websWrite(wp, "</div>\n");
-	websWrite(wp, "<script>\n//<![CDATA[\n ");
-	// websWrite
-	// (wp,"show_layer_ext(document.getElementsByName(\"%s_bridged\"),
-	// \"%s_idnetvifs\", %s);\n",var, vvar, nvram_match (ssid, "0") ? "true"
-	// : "false");
-	char peap[32];
-	sprintf(peap, "%s_8021xtype", prefix);
-	websWrite(wp, "show_layer_ext(document.wpa.%s_8021xtype, 'idpeap%s', %s);\n", prefix, prefix, nvram_match(peap, "peap") ? "true" : "false");
-	websWrite(wp, "show_layer_ext(document.wpa.%s_8021xtype, 'idtls%s', %s);\n", prefix, prefix, nvram_match(peap, "tls") ? "true" : "false");
-	websWrite(wp, "show_layer_ext(document.wpa.%s_8021xtype, 'idleap%s', %s);\n", prefix, prefix, nvram_match(peap, "leap") ? "true" : "false");
-	websWrite(wp, "//]]>\n</script>\n");
+	if (nvhas(akm, "tls")) {
+		websWrite(wp, "<fieldset>\n");
+		show_caption_legend(wp, "sec80211x.tls");
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "share.user", NULL);
+		websWrite(wp, "<input name=\"%s_tls8021xuser\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("tls8021xuser", prefix));
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "sec80211x.anon", NULL);
+		websWrite(wp, "<input name=\"%s_tls8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("tls8021xanon", prefix));
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "share.passwd", NULL);
+		websWrite(wp, "<input name=\"%s_tls8021xpasswd\" type=\"password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("tls8021xpasswd", prefix));
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "sec80211x.phase2", NULL);
+		websWrite(wp, "<input name=\"%s_tls8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("tls8021xphase2", prefix));
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "sec80211x.servercertif", NULL);
+		websWrite(wp, "<textarea cols=\"60\" rows=\"6\" id=\"%s_tls8021xca\" name=\"%s_tls8021xca\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ", prefix, prefix);
+		websWrite(wp, "var %s_tls8021xca = fix_cr( '", prefix);
+		sprintf(namebuf, "%s_tls8021xca", prefix);
+		tf_webWriteESCNV(wp, namebuf);
+		websWrite(wp, "' );\n");
+		websWrite(wp, "document.getElementById(\"%s_tls8021xca\").value = %s_tls8021xca;\n", prefix, prefix);
+		websWrite(wp, "//]]>\n</script>\n");
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "sec80211x.clientcertif", NULL);
+		websWrite(wp, "<textarea cols=\"60\" rows=\"6\" id=\"%s_tls8021xpem\" name=\"%s_tls8021xpem\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ", prefix, prefix);
+		websWrite(wp, "var %s_tls8021xpem = fix_cr( '", prefix);
+		sprintf(namebuf, "%s_tls8021xpem", prefix);
+		tf_webWriteESCNV(wp, namebuf);
+		websWrite(wp, "' );\n");
+		websWrite(wp, "document.getElementById(\"%s_tls8021xpem\").value = %s_tls8021xpem;\n", prefix, prefix);
+		websWrite(wp, "//]]>\n</script>\n");
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "share.privatekey", NULL);
+		websWrite(wp, "<textarea cols=\"60\" rows=\"6\" id=\"%s_tls8021xprv\" name=\"%s_tls8021xprv\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ", prefix, prefix);
+		websWrite(wp, "var %s_tls8021xprv = fix_cr( '", prefix);
+		sprintf(namebuf, "%s_tls8021xprv", prefix);
+		tf_webWriteESCNV(wp, namebuf);
+		websWrite(wp, "' );\n");
+		websWrite(wp, "document.getElementById(\"%s_tls8021xprv\").value = %s_tls8021xprv;\n", prefix, prefix);
+		websWrite(wp, "//]]>\n</script>\n");
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "sec80211x.options", NULL);
+		websWrite(wp, "<textarea cols=\"60\" rows=\"3\" id=\"%s_tls8021xaddopt\" name=\"%s_tls8021xaddopt\"></textarea>\n<script type=\"text/javascript\">\n//<![CDATA[\n ", prefix, prefix);
+		websWrite(wp, "var %s_tls8021xaddopt = fix_cr( '", prefix);
+		sprintf(namebuf, "%s_tls8021xaddopt", prefix);
+		tf_webWriteESCNV(wp, namebuf);
+		websWrite(wp, "' );\n");
+		websWrite(wp, "document.getElementById(\"%s_tls8021xaddopt\").value = %s_tls8021xaddopt;\n", prefix, prefix);
+		websWrite(wp, "//]]>\n</script>\n");
+		websWrite(wp, "</div>\n");
+		websWrite(wp, "</fieldset>\n");
+	}
 }
 #endif
 #endif
