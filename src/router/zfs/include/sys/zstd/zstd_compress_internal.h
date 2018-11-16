@@ -49,12 +49,6 @@ extern "C" {
 typedef enum { ZSTDcs_created=0, ZSTDcs_init, ZSTDcs_ongoing, ZSTDcs_ending } ZSTD_compressionStage_e;
 typedef enum { zcss_init=0, zcss_load, zcss_flush } ZSTD_cStreamStage;
 
-typedef enum {
-    ZSTD_dictDefaultAttach = 0,
-    ZSTD_dictForceAttach = 1,
-    ZSTD_dictForceCopy = -1,
-} ZSTD_dictAttachPref_e;
-
 typedef struct ZSTD_prefixDict_s {
     const void* dict;
     size_t dictSize;
@@ -140,7 +134,7 @@ struct ZSTD_matchState_t {
     U32* hashTable3;
     U32* chainTable;
     optState_t opt;         /* optimal parser state */
-    const ZSTD_matchState_t *dictMatchState;
+    const ZSTD_matchState_t * dictMatchState;
     ZSTD_compressionParameters cParams;
 };
 
@@ -200,6 +194,7 @@ struct ZSTD_CCtx_params_s {
     unsigned nbWorkers;
     unsigned jobSize;
     unsigned overlapSizeLog;
+    unsigned rsyncable;
 
     /* Long distance matching parameters */
     ldmParams_t ldmParams;
@@ -499,6 +494,64 @@ MEM_STATIC size_t ZSTD_hashPtr(const void* p, U32 hBits, U32 mls)
     }
 }
 
+/** ZSTD_ipow() :
+ * Return base^exponent.
+ */
+static U64 ZSTD_ipow(U64 base, U64 exponent)
+{
+    U64 power = 1;
+    while (exponent) {
+      if (exponent & 1) power *= base;
+      exponent >>= 1;
+      base *= base;
+    }
+    return power;
+}
+
+#define ZSTD_ROLL_HASH_CHAR_OFFSET 10
+
+/** ZSTD_rollingHash_append() :
+ * Add the buffer to the hash value.
+ */
+static U64 ZSTD_rollingHash_append(U64 hash, void const* buf, size_t size)
+{
+    BYTE const* istart = (BYTE const*)buf;
+    size_t pos;
+    for (pos = 0; pos < size; ++pos) {
+        hash *= prime8bytes;
+        hash += istart[pos] + ZSTD_ROLL_HASH_CHAR_OFFSET;
+    }
+    return hash;
+}
+
+/** ZSTD_rollingHash_compute() :
+ * Compute the rolling hash value of the buffer.
+ */
+MEM_STATIC U64 ZSTD_rollingHash_compute(void const* buf, size_t size)
+{
+    return ZSTD_rollingHash_append(0, buf, size);
+}
+
+/** ZSTD_rollingHash_primePower() :
+ * Compute the primePower to be passed to ZSTD_rollingHash_rotate() for a hash
+ * over a window of length bytes.
+ */
+MEM_STATIC U64 ZSTD_rollingHash_primePower(U32 length)
+{
+    return ZSTD_ipow(prime8bytes, length - 1);
+}
+
+/** ZSTD_rollingHash_rotate() :
+ * Rotate the rolling hash by one byte.
+ */
+MEM_STATIC U64 ZSTD_rollingHash_rotate(U64 hash, BYTE toRemove, BYTE toAdd, U64 primePower)
+{
+    hash -= (toRemove + ZSTD_ROLL_HASH_CHAR_OFFSET) * primePower;
+    hash *= prime8bytes;
+    hash += toAdd + ZSTD_ROLL_HASH_CHAR_OFFSET;
+    return hash;
+}
+
 /*-*************************************
 *  Round buffer management
 ***************************************/
@@ -730,7 +783,7 @@ MEM_STATIC void ZSTD_debugTable(const U32* table, U32 max)
  * cParams are built depending on compressionLevel, src size hints,
  * LDM and manually set compression parameters.
  */
-ZSTD_compressionParameters ZSTD_getCParamsFromCCtxParams(
+static ZSTD_compressionParameters ZSTD_getCParamsFromCCtxParams(
         const ZSTD_CCtx_params* CCtxParams, U64 srcSizeHint, size_t dictSize);
 
 /*! ZSTD_initCStream_internal() :
@@ -738,27 +791,27 @@ ZSTD_compressionParameters ZSTD_getCParamsFromCCtxParams(
  *  expects params to be valid.
  *  must receive dict, or cdict, or none, but not both.
  *  @return : 0, or an error code */
-size_t ZSTD_initCStream_internal(ZSTD_CStream* zcs,
+static size_t ZSTD_initCStream_internal(ZSTD_CStream* zcs,
                      const void* dict, size_t dictSize,
                      const ZSTD_CDict* cdict,
                      ZSTD_CCtx_params  params, unsigned long long pledgedSrcSize);
 
-void ZSTD_resetSeqStore(seqStore_t* ssPtr);
+static void ZSTD_resetSeqStore(seqStore_t* ssPtr);
 
 /*! ZSTD_compressStream_generic() :
  *  Private use only. To be called from zstdmt_compress.c in single-thread mode. */
-size_t ZSTD_compressStream_generic(ZSTD_CStream* zcs,
+static size_t ZSTD_compressStream_generic(ZSTD_CStream* zcs,
                                    ZSTD_outBuffer* output,
                                    ZSTD_inBuffer* input,
                                    ZSTD_EndDirective const flushMode);
 
 /*! ZSTD_getCParamsFromCDict() :
  *  as the name implies */
-ZSTD_compressionParameters ZSTD_getCParamsFromCDict(const ZSTD_CDict* cdict);
+static ZSTD_compressionParameters ZSTD_getCParamsFromCDict(const ZSTD_CDict* cdict);
 
 /* ZSTD_compressBegin_advanced_internal() :
  * Private use only. To be called from zstdmt_compress.c. */
-size_t ZSTD_compressBegin_advanced_internal(ZSTD_CCtx* cctx,
+static size_t ZSTD_compressBegin_advanced_internal(ZSTD_CCtx* cctx,
                                     const void* dict, size_t dictSize,
                                     ZSTD_dictContentType_e dictContentType,
                                     ZSTD_dictTableLoadMethod_e dtlm,
@@ -768,7 +821,7 @@ size_t ZSTD_compressBegin_advanced_internal(ZSTD_CCtx* cctx,
 
 /* ZSTD_compress_advanced_internal() :
  * Private use only. To be called from zstdmt_compress.c. */
-size_t ZSTD_compress_advanced_internal(ZSTD_CCtx* cctx,
+static size_t ZSTD_compress_advanced_internal(ZSTD_CCtx* cctx,
                                        void* dst, size_t dstCapacity,
                                  const void* src, size_t srcSize,
                                  const void* dict,size_t dictSize,
@@ -780,7 +833,7 @@ size_t ZSTD_compress_advanced_internal(ZSTD_CCtx* cctx,
  * @return : size of data written into `dst` (== ZSTD_blockHeaderSize (defined in zstd_internal.h))
  *           or an error code if `dstCapcity` is too small (<ZSTD_blockHeaderSize)
  */
-size_t ZSTD_writeLastEmptyBlock(void* dst, size_t dstCapacity);
+static size_t ZSTD_writeLastEmptyBlock(void* dst, size_t dstCapacity);
 
 
 /* ZSTD_referenceExternalSequences() :
@@ -793,7 +846,7 @@ size_t ZSTD_writeLastEmptyBlock(void* dst, size_t dstCapacity);
  * NOTE: seqs are not verified! Invalid sequences can cause out-of-bounds memory
  * access and data corruption.
  */
-size_t ZSTD_referenceExternalSequences(ZSTD_CCtx* cctx, rawSeq* seq, size_t nbSeq);
+static size_t ZSTD_referenceExternalSequences(ZSTD_CCtx* cctx, rawSeq* seq, size_t nbSeq);
 
 
 #endif /* ZSTD_COMPRESS_H */

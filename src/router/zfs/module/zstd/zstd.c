@@ -47,7 +47,9 @@
 #include "compress/zstd_lazy.c"
 #include "compress/zstd_ldm.c"
 #include "compress/zstd_opt.c"
+#include "decompress/zstd_ddict.c"
 #include "decompress/zstd_decompress.c"
+#include "decompress/zstd_decompress_block.c"
 #include "decompress/huf_decompress.c"
 
 

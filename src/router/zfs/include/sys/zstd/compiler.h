@@ -41,11 +41,9 @@
 #else
 #  define HINT_INLINE static INLINE_KEYWORD FORCE_INLINE_ATTR
 #endif
-
-#ifdef noinline
+#ifdef noinline 
 #define FORCE_NOINLINE noinline
 #else
-
 #ifdef _KERNEL
 /* force no inlining */
 #  ifdef __GNUC__
@@ -59,10 +57,10 @@
 #  else
 #    define FORCE_NOINLINE static
 #  endif
-#endif
+
 
 #endif
-
+#endif
 /* target attribute */
 #ifndef __has_attribute
   #define __has_attribute(x) 0  /* Compatibility with non-clang compilers. */
@@ -87,22 +85,18 @@
   #  define DYNAMIC_BMI2 0
   #endif
 #endif
-
-/* prefetch
- * can be disabled, by declaring NO_PREFETCH macro
- * All prefetch invocations use a single default locality 2,
- * generating instruction prefetcht1,
- * which, according to Intel, means "load data into L2 cache".
- * This is a good enough "middle ground" for the time being,
- * though in theory, it would be better to specialize locality depending on data being prefetched.
- * Tests could not determine any sensible difference based on locality value. */
+/* prefetch 
+ * can be disabled, by declaring NO_PREFETCH build macro */
 #if defined(NO_PREFETCH)
-#  define PREFETCH(ptr)     (void)(ptr)  /* disabled */
+#  define PREFETCH_L1(ptr)  (void)(ptr)  /* disabled */
+#  define PREFETCH_L2(ptr)  (void)(ptr)  /* disabled */
 #else
 #  if defined(__GNUC__) && ( (__GNUC__ >= 4) || ( (__GNUC__ == 3) && (__GNUC_MINOR__ >= 1) ) )
-#    define PREFETCH(ptr)   __builtin_prefetch((ptr), 0 /* rw==read */, 2 /* locality */)
+#    define PREFETCH_L1(ptr)  __builtin_prefetch((ptr), 0 /* rw==read */, 3 /* locality */)
+#    define PREFETCH_L2(ptr)  __builtin_prefetch((ptr), 0 /* rw==read */, 2 /* locality */)
 #  else
-#    define PREFETCH(ptr)   (void)(ptr)  /* disabled */
+#    define PREFETCH_L1(ptr) (void)(ptr)  /* disabled */
+#    define PREFETCH_L2(ptr) (void)(ptr)  /* disabled */
 #  endif
 #endif  /* NO_PREFETCH */
 
@@ -117,7 +111,7 @@
     size_t const _size = (size_t)(s);     \
     size_t _pos;                          \
     for (_pos=0; _pos<_size; _pos+=CACHELINE_SIZE) {  \
-        PREFETCH(_ptr + _pos);            \
+        PREFETCH_L2(_ptr + _pos);         \
     }                                     \
 }
 
