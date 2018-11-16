@@ -1407,60 +1407,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	fclose(fp);
 }
 
-static void addvhtcaps(char *prefix, FILE * fp)
-{
-
-/* must use integer mask */
-#define IEEE80211_VHT_CAP_SU_BEAMFORMER_CAPABLE			0x00000800
-#define IEEE80211_VHT_CAP_SU_BEAMFORMEE_CAPABLE			0x00001000
-#define IEEE80211_VHT_CAP_MU_BEAMFORMER_CAPABLE			0x00080000
-#define IEEE80211_VHT_CAP_MU_BEAMFORMEE_CAPABLE			0x00100000
-#define IEEE80211_VHT_CAP_SHORT_GI_80				0x00000020
-#define IEEE80211_VHT_CAP_SHORT_GI_160				0x00000040
-#define IEEE80211_VHT_CAP_BEAMFORMEE_STS_SHIFT                  13
-#define IEEE80211_VHT_CAP_BEAMFORMEE_STS_MASK			\
-		(7 << IEEE80211_VHT_CAP_BEAMFORMEE_STS_SHIFT)
-#define IEEE80211_VHT_CAP_SOUNDING_DIMENSIONS_SHIFT		16
-#define IEEE80211_VHT_CAP_SOUNDING_DIMENSIONS_MASK		\
-		(7 << IEEE80211_VHT_CAP_SOUNDING_DIMENSIONS_SHIFT)
-
-	unsigned int mask;
-#ifdef HAVE_ATH10K
-	if (has_ac(prefix)) {
-		char shortgi[32];
-		sprintf(shortgi, "%s_shortgi", prefix);
-		char mubf[32];
-		sprintf(mubf, "%s_mubf", prefix);
-		char subf[32];
-		sprintf(subf, "%s_subf", prefix);
-		mask = 0;
-		if (nvram_default_matchi(subf, 0, 0)) {
-			mask |= IEEE80211_VHT_CAP_SU_BEAMFORMER_CAPABLE;
-			mask |= IEEE80211_VHT_CAP_SU_BEAMFORMEE_CAPABLE;
-			mask |= IEEE80211_VHT_CAP_BEAMFORMEE_STS_MASK;
-			mask |= IEEE80211_VHT_CAP_SOUNDING_DIMENSIONS_MASK;
-		}
-		if (nvram_default_matchi(mubf, 0, 0)) {
-			mask |= IEEE80211_VHT_CAP_MU_BEAMFORMER_CAPABLE;
-			mask |= IEEE80211_VHT_CAP_MU_BEAMFORMEE_CAPABLE;
-		}
-		if (nvram_default_matchi(shortgi, 0, 1)) {
-			mask |= IEEE80211_VHT_CAP_SHORT_GI_80;
-			mask |= IEEE80211_VHT_CAP_SHORT_GI_160;
-		}
-		if (mask) {
-			fprintf(fp, "\tvht_capa=0\n");
-			fprintf(fp, "\tvht_capa_mask=%d\n", mask);
-		}
-	}
-#endif
-	if (is_ath9k(prefix)) {
-		char shortgi[32];
-		sprintf(shortgi, "%s_shortgi", prefix);
-		if (nvram_matchi(shortgi, 0))
-			fprintf(fp, "\tdisable_sgi=1\n");
-	}
-}
+void addvhtcaps(char *prefix, FILE * fp);
 
 static char *makescanlist(char *value)
 {
