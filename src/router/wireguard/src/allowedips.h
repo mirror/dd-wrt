@@ -43,9 +43,9 @@ static int wg_allowedips_walk_by_peer(struct allowedips *table,
 
 /* These return a strong reference to a peer: */
 static struct wg_peer *wg_allowedips_lookup_dst(struct allowedips *table,
-						struct sk_buff *skb);
+					 struct sk_buff *skb);
 static struct wg_peer *wg_allowedips_lookup_src(struct allowedips *table,
-						struct sk_buff *skb);
+					 struct sk_buff *skb);
 
 #ifdef DEBUG
 static bool wg_allowedips_selftest(void);
