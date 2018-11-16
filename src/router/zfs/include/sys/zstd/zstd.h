@@ -20,6 +20,7 @@ extern "C" {
 
 
 /* =====   ZSTDLIB_API : control library symbols visibility   ===== */
+#if 0
 #ifndef ZSTDLIB_VISIBILITY
 #  if defined(__GNUC__) && (__GNUC__ >= 4)
 #    define ZSTDLIB_VISIBILITY __attribute__ ((visibility ("default")))
@@ -34,6 +35,8 @@ extern "C" {
 #else
 #  define ZSTDLIB_API ZSTDLIB_VISIBILITY
 #endif
+#endif
+#  define ZSTDLIB_API static
 
 
 /*******************************************************************************
@@ -72,7 +75,7 @@ extern "C" {
 /*------   Version   ------*/
 #define ZSTD_VERSION_MAJOR    1
 #define ZSTD_VERSION_MINOR    3
-#define ZSTD_VERSION_RELEASE  7
+#define ZSTD_VERSION_RELEASE  8
 
 #define ZSTD_VERSION_NUMBER  (ZSTD_VERSION_MAJOR *100*100 + ZSTD_VERSION_MINOR *100 + ZSTD_VERSION_RELEASE)
 ZSTDLIB_API unsigned ZSTD_versionNumber(void);   /**< useful to check dll version */
@@ -474,7 +477,7 @@ typedef struct {
 typedef struct ZSTD_CCtx_params_s ZSTD_CCtx_params;
 
 typedef enum {
-    ZSTD_dct_auto=0,      /* dictionary is "full" when starting with ZSTD_MAGIC_DICTIONARY, otherwise it is "rawContent" */
+    ZSTD_dct_auto = 0,    /* dictionary is "full" when starting with ZSTD_MAGIC_DICTIONARY, otherwise it is "rawContent" */
     ZSTD_dct_rawContent,  /* ensures dictionary is always loaded as rawContent, even if it starts with ZSTD_MAGIC_DICTIONARY */
     ZSTD_dct_fullDict     /* refuses to load a dictionary if it does not respect Zstandard's specification */
 } ZSTD_dictContentType_e;
@@ -998,6 +1001,38 @@ typedef enum {
 } ZSTD_format_e;
 
 typedef enum {
+    /* Note: this enum and the behavior it controls are effectively internal
+     * implementation details of the compressor. They are expected to continue
+     * to evolve and should be considered only in the context of extremely
+     * advanced performance tuning.
+     *
+     * Zstd currently supports the use of a CDict in two ways:
+     *
+     * - The contents of the CDict can be copied into the working context. This
+     *   means that the compression can search both the dictionary and input
+     *   while operating on a single set of internal tables. This makes
+     *   the compression faster per-byte of input. However, the initial copy of
+     *   the CDict's tables incurs a fixed cost at the beginning of the
+     *   compression. For small compressions (< 8 KB), that copy can dominate
+     *   the cost of the compression.
+     *
+     * - The CDict's tables can be used in-place. In this model, compression is
+     *   slower per input byte, because the compressor has to search two sets of
+     *   tables. However, this model incurs no start-up cost (as long as the
+     *   working context's tables can be reused). For small inputs, this can be
+     *   faster than copying the CDict's tables.
+     *
+     * Zstd has a simple internal heuristic that selects which strategy to use
+     * at the beginning of a compression. However, if experimentation shows that
+     * Zstd is making poor choices, it is possible to override that choice with
+     * this enum.
+     */
+    ZSTD_dictDefaultAttach = 0, /* Use the default heuristic. */
+    ZSTD_dictForceAttach   = 1, /* Never copy the dictionary. */
+    ZSTD_dictForceCopy     = 2, /* Always copy the dictionary. */
+} ZSTD_dictAttachPref_e;
+
+typedef enum {
     /* compression format */
     ZSTD_p_format = 10,      /* See ZSTD_format_e enum definition.
                               * Cast selected format as unsigned for ZSTD_CCtx_setParameter() compatibility. */
@@ -1110,29 +1145,35 @@ typedef enum {
 
     ZSTD_p_forceMaxWindow=1100, /* Force back-reference distances to remain < windowSize,
                               * even when referencing into Dictionary content (default:0) */
-    ZSTD_p_forceAttachDict,  /* ZSTD supports usage of a CDict in-place
-                              * (avoiding having to copy the compression tables
-                              * from the CDict into the working context). Using
-                              * a CDict in this way saves an initial setup step,
-                              * but comes at the cost of more work per byte of
-                              * input. ZSTD has a simple internal heuristic that
-                              * guesses which strategy will be faster. You can
-                              * use this flag to override that guess.
+    ZSTD_p_forceAttachDict,  /* Controls whether the contents of a CDict are
+                              * used in place, or whether they are copied into
+                              * the working context.
                               *
-                              * Note that the by-reference, in-place strategy is
-                              * only used when reusing a compression context
-                              * with compatible compression parameters. (If
-                              * incompatible / uninitialized, the working
-                              * context needs to be cleared anyways, which is
-                              * about as expensive as overwriting it with the
-                              * dictionary context, so there's no savings in
-                              * using the CDict by-ref.)
-                              *
-                              * Values greater than 0 force attaching the dict.
-                              * Values less than 0 force copying the dict.
-                              * 0 selects the default heuristic-guided behavior.
+                              * Accepts values from the ZSTD_dictAttachPref_e
+                              * enum. See the comments on that enum for an
+                              * explanation of the feature.
                               */
-
+    ZSTD_p_rsyncable,        /* Enables rsyncable mode, which makes compressed
+                              * files more rsync friendly by adding periodic
+                              * synchronization points to the compressed data.
+                              * The target average block size is
+                              * ZSTD_p_jobSize / 2. You can modify the job size
+                              * to increase or decrease the granularity of the
+                              * synchronization point. Once the jobSize is
+                              * smaller than the window size, you will start to
+                              * see degraded compression ratio.
+                              * NOTE: This only works when multithreading is
+                              * enabled.
+                              * NOTE: You probably don't want to use this with
+                              * long range mode, since that will decrease the
+                              * effectiveness of the synchronization points,
+                              * but your milage may vary.
+                              * NOTE: Rsyncable mode will limit the maximum
+                              * compression speed to approximately 400 MB/s.
+                              * If your compression level is already running
+                              * significantly slower than that (< 200 MB/s),
+                              * the speed won't be significantly impacted.
+                              */
 } ZSTD_cParameter;
 
 

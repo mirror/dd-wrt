@@ -493,7 +493,7 @@ static size_t ZSTD_resetCCtx_internal(ZSTD_CCtx* zc,
         ZSTD_ldm_adjustParameters(&params.ldmParams, &params.cParams);
         assert(params.ldmParams.hashLog >= params.ldmParams.bucketSizeLog);
         assert(params.ldmParams.hashEveryLog < 32);
-        zc->ldmState.hashPower = ZSTD_ldm_getHashPower(params.ldmParams.minMatchLength);
+        zc->ldmState.hashPower = ZSTD_rollingHash_primePower(params.ldmParams.minMatchLength);
     }
 
     {   size_t const windowSize = MAX(1, (size_t)MIN(((U64)1 << params.cParams.windowLog), pledgedSrcSize));
@@ -927,7 +927,8 @@ static size_t ZSTD_compressLiterals (ZSTD_hufCTables_t const* prevHuf,
                                      ZSTD_strategy strategy, int disableLiteralCompression,
                                      void* dst, size_t dstCapacity,
                                const void* src, size_t srcSize,
-                                     U32* workspace, const int bmi2)
+                                     void* workspace, size_t wkspSize,
+                               const int bmi2)
 {
     size_t const minGain = ZSTD_minGain(srcSize, strategy);
     size_t const lhSize = 3 + (srcSize >= 1 KB) + (srcSize >= 16 KB);
@@ -956,9 +957,9 @@ static size_t ZSTD_compressLiterals (ZSTD_hufCTables_t const* prevHuf,
         int const preferRepeat = strategy < ZSTD_lazy ? srcSize <= 1024 : 0;
         if (repeat == HUF_repeat_valid && lhSize == 3) singleStream = 1;
         cLitSize = singleStream ? HUF_compress1X_repeat(ostart+lhSize, dstCapacity-lhSize, src, srcSize, 255, 11,
-                                      workspace, HUF_WORKSPACE_SIZE, (HUF_CElt*)nextHuf->CTable, &repeat, preferRepeat, bmi2)
+                                      workspace, wkspSize, (HUF_CElt*)nextHuf->CTable, &repeat, preferRepeat, bmi2)
                                 : HUF_compress4X_repeat(ostart+lhSize, dstCapacity-lhSize, src, srcSize, 255, 11,
-                                      workspace, HUF_WORKSPACE_SIZE, (HUF_CElt*)nextHuf->CTable, &repeat, preferRepeat, bmi2);
+                                      workspace, wkspSize, (HUF_CElt*)nextHuf->CTable, &repeat, preferRepeat, bmi2);
         if (repeat != HUF_repeat_none) {
             /* reused the existing table */
             hType = set_repeat;
@@ -1255,11 +1256,13 @@ ZSTD_buildCTable(void* dst, size_t dstCapacity,
 {
     BYTE* op = (BYTE*)dst;
     const BYTE* const oend = op + dstCapacity;
+    DEBUGLOG(6, "ZSTD_buildCTable (dstCapacity=%u)", (unsigned)dstCapacity);
 
     switch (type) {
     case set_rle:
-        *op = codeTable[0];
         CHECK_F(FSE_buildCTable_rle(nextCTable, (BYTE)max));
+        if (dstCapacity==0) return ERROR(dstSize_tooSmall);
+        *op = codeTable[0];
         return 1;
     case set_repeat:
         memcpy(nextCTable, prevCTable, prevCTableSize);
@@ -1301,6 +1304,9 @@ ZSTD_encodeSequences_body(
     FSE_CState_t  stateLitLength;
 
     CHECK_E(BIT_initCStream(&blockStream, dst, dstCapacity), dstSize_tooSmall); /* not enough space remaining */
+    DEBUGLOG(6, "available space for bitstream : %i  (dstCapacity=%u)",
+                (int)(blockStream.endPtr - blockStream.startPtr),
+                (unsigned)dstCapacity);
 
     /* first symbols */
     FSE_initCState2(&stateMatchLength, CTable_MatchLength, mlCodeTable[nbSeq-1]);
@@ -1360,6 +1366,7 @@ ZSTD_encodeSequences_body(
                 BIT_addBits(&blockStream, sequences[n].offset, ofBits);     /* 31 */
             }
             BIT_flushBits(&blockStream);                                    /* (7)*/
+            DEBUGLOG(7, "remaining space : %i", (int)(blockStream.endPtr - blockStream.ptr));
     }   }
 
     DEBUGLOG(6, "ZSTD_encodeSequences: flushing ML state with %u bits", stateMatchLength.stateLog);
@@ -1417,6 +1424,7 @@ static size_t ZSTD_encodeSequences(
             FSE_CTable const* CTable_LitLength, BYTE const* llCodeTable,
             seqDef const* sequences, size_t nbSeq, int longOffsets, int bmi2)
 {
+    DEBUGLOG(5, "ZSTD_encodeSequences: dstCapacity = %u", (unsigned)dstCapacity);
 #if DYNAMIC_BMI2
     if (bmi2) {
         return ZSTD_encodeSequences_bmi2(dst, dstCapacity,
@@ -1434,11 +1442,13 @@ static size_t ZSTD_encodeSequences(
                                         sequences, nbSeq, longOffsets);
 }
 
-MEM_STATIC size_t ZSTD_compressSequences_internal(seqStore_t* seqStorePtr,
+MEM_STATIC size_t
+ZSTD_compressSequences_internal(seqStore_t* seqStorePtr,
                               ZSTD_entropyCTables_t const* prevEntropy,
                               ZSTD_entropyCTables_t* nextEntropy,
                               ZSTD_CCtx_params const* cctxParams,
-                              void* dst, size_t dstCapacity, U32* workspace,
+                              void* dst, size_t dstCapacity,
+                              void* workspace, size_t wkspSize,
                               const int bmi2)
 {
     const int longOffsets = cctxParams->cParams.windowLog > STREAM_ACCUMULATOR_MIN;
@@ -1470,7 +1480,8 @@ MEM_STATIC size_t ZSTD_compressSequences_internal(seqStore_t* seqStorePtr,
                                     cctxParams->cParams.strategy, disableLiteralCompression,
                                     op, dstCapacity,
                                     literals, litSize,
-                                    workspace, bmi2);
+                                    workspace, wkspSize,
+                                    bmi2);
         if (ZSTD_isError(cSize))
           return cSize;
         assert(cSize <= dstCapacity);
@@ -1498,7 +1509,7 @@ MEM_STATIC size_t ZSTD_compressSequences_internal(seqStore_t* seqStorePtr,
     ZSTD_seqToCodes(seqStorePtr);
     /* build CTable for Literal Lengths */
     {   U32 max = MaxLL;
-        size_t const mostFrequent = HIST_countFast_wksp(count, &max, llCodeTable, nbSeq, workspace);   /* can't fail */
+        size_t const mostFrequent = HIST_countFast_wksp(count, &max, llCodeTable, nbSeq, workspace, wkspSize);   /* can't fail */
         DEBUGLOG(5, "Building LL table");
         nextEntropy->fse.litlength_repeatMode = prevEntropy->fse.litlength_repeatMode;
         LLtype = ZSTD_selectEncodingType(&nextEntropy->fse.litlength_repeatMode, count, max, mostFrequent, nbSeq, LLFSELog, prevEntropy->fse.litlengthCTable, LL_defaultNorm, LL_defaultNormLog, ZSTD_defaultAllowed, strategy);
@@ -1507,7 +1518,7 @@ MEM_STATIC size_t ZSTD_compressSequences_internal(seqStore_t* seqStorePtr,
         {   size_t const countSize = ZSTD_buildCTable(op, oend - op, CTable_LitLength, LLFSELog, (symbolEncodingType_e)LLtype,
                                                     count, max, llCodeTable, nbSeq, LL_defaultNorm, LL_defaultNormLog, MaxLL,
                                                     prevEntropy->fse.litlengthCTable, sizeof(prevEntropy->fse.litlengthCTable),
-                                                    workspace, HUF_WORKSPACE_SIZE);
+                                                    workspace, wkspSize);
             if (ZSTD_isError(countSize)) return countSize;
             if (LLtype == set_compressed)
                 lastNCount = op;
@@ -1515,7 +1526,7 @@ MEM_STATIC size_t ZSTD_compressSequences_internal(seqStore_t* seqStorePtr,
     }   }
     /* build CTable for Offsets */
     {   U32 max = MaxOff;
-        size_t const mostFrequent = HIST_countFast_wksp(count, &max, ofCodeTable, nbSeq, workspace);  /* can't fail */
+        size_t const mostFrequent = HIST_countFast_wksp(count, &max, ofCodeTable, nbSeq, workspace, wkspSize);  /* can't fail */
         /* We can only use the basic table if max <= DefaultMaxOff, otherwise the offsets are too large */
         ZSTD_defaultPolicy_e const defaultPolicy = (max <= DefaultMaxOff) ? ZSTD_defaultAllowed : ZSTD_defaultDisallowed;
         DEBUGLOG(5, "Building OF table");
@@ -1525,7 +1536,7 @@ MEM_STATIC size_t ZSTD_compressSequences_internal(seqStore_t* seqStorePtr,
         {   size_t const countSize = ZSTD_buildCTable(op, oend - op, CTable_OffsetBits, OffFSELog, (symbolEncodingType_e)Offtype,
                                                     count, max, ofCodeTable, nbSeq, OF_defaultNorm, OF_defaultNormLog, DefaultMaxOff,
                                                     prevEntropy->fse.offcodeCTable, sizeof(prevEntropy->fse.offcodeCTable),
-                                                    workspace, HUF_WORKSPACE_SIZE);
+                                                    workspace, wkspSize);
             if (ZSTD_isError(countSize)) return countSize;
             if (Offtype == set_compressed)
                 lastNCount = op;
@@ -1533,15 +1544,15 @@ MEM_STATIC size_t ZSTD_compressSequences_internal(seqStore_t* seqStorePtr,
     }   }
     /* build CTable for MatchLengths */
     {   U32 max = MaxML;
-        size_t const mostFrequent = HIST_countFast_wksp(count, &max, mlCodeTable, nbSeq, workspace);   /* can't fail */
-        DEBUGLOG(5, "Building ML table");
+        size_t const mostFrequent = HIST_countFast_wksp(count, &max, mlCodeTable, nbSeq, workspace, wkspSize);   /* can't fail */
+        DEBUGLOG(5, "Building ML table (remaining space : %i)", (int)(oend-op));
         nextEntropy->fse.matchlength_repeatMode = prevEntropy->fse.matchlength_repeatMode;
         MLtype = ZSTD_selectEncodingType(&nextEntropy->fse.matchlength_repeatMode, count, max, mostFrequent, nbSeq, MLFSELog, prevEntropy->fse.matchlengthCTable, ML_defaultNorm, ML_defaultNormLog, ZSTD_defaultAllowed, strategy);
         assert(!(MLtype < set_compressed && nextEntropy->fse.matchlength_repeatMode != FSE_repeat_none)); /* We don't copy tables */
         {   size_t const countSize = ZSTD_buildCTable(op, oend - op, CTable_MatchLength, MLFSELog, (symbolEncodingType_e)MLtype,
                                                     count, max, mlCodeTable, nbSeq, ML_defaultNorm, ML_defaultNormLog, MaxML,
                                                     prevEntropy->fse.matchlengthCTable, sizeof(prevEntropy->fse.matchlengthCTable),
-                                                    workspace, HUF_WORKSPACE_SIZE);
+                                                    workspace, wkspSize);
             if (ZSTD_isError(countSize)) return countSize;
             if (MLtype == set_compressed)
                 lastNCount = op;
@@ -1579,16 +1590,20 @@ MEM_STATIC size_t ZSTD_compressSequences_internal(seqStore_t* seqStorePtr,
     return op - ostart;
 }
 
-MEM_STATIC size_t ZSTD_compressSequences(seqStore_t* seqStorePtr,
-                        const ZSTD_entropyCTables_t* prevEntropy,
-                              ZSTD_entropyCTables_t* nextEntropy,
-                        const ZSTD_CCtx_params* cctxParams,
-                              void* dst, size_t dstCapacity,
-                              size_t srcSize, U32* workspace, int bmi2)
+MEM_STATIC size_t
+ZSTD_compressSequences(seqStore_t* seqStorePtr,
+                       const ZSTD_entropyCTables_t* prevEntropy,
+                             ZSTD_entropyCTables_t* nextEntropy,
+                       const ZSTD_CCtx_params* cctxParams,
+                             void* dst, size_t dstCapacity,
+                             size_t srcSize,
+                             void* workspace, size_t wkspSize,
+                             int bmi2)
 {
     size_t const cSize = ZSTD_compressSequences_internal(
-            seqStorePtr, prevEntropy, nextEntropy, cctxParams, dst, dstCapacity,
-            workspace, bmi2);
+                            seqStorePtr, prevEntropy, nextEntropy, cctxParams,
+                            dst, dstCapacity,
+                            workspace, wkspSize, bmi2);
     if (cSize == 0) return 0;
     /* When srcSize <= dstCapacity, there is enough space to write a raw uncompressed block.
      * Since we ran out of space, block must be not compressible, so fall back to raw uncompressed block.
@@ -1743,7 +1758,9 @@ static size_t ZSTD_compressBlock_internal(ZSTD_CCtx* zc,
             &zc->blockState.prevCBlock->entropy, &zc->blockState.nextCBlock->entropy,
             &zc->appliedParams,
             dst, dstCapacity,
-            srcSize, zc->entropyWorkspace, zc->bmi2);
+            srcSize,
+            zc->entropyWorkspace, HUF_WORKSPACE_SIZE /* statically allocated in resetCCtx */,
+            zc->bmi2);
 
 out:
     if (!ZSTD_isError(cSize) && cSize != 0) {
