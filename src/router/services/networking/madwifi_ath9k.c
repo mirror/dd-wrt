@@ -1514,6 +1514,9 @@ static char *makescanlist(char *value)
 	return new;
 }
 
+void eap_sta_key_mgmt(FILE * fp, char *prefix);
+void eap_sta_config(FILE * fp, char *prefix, char *ssidoverride, int addvht);
+
 void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 {
 #ifdef HAVE_REGISTER
@@ -1542,12 +1545,6 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 	int ispeap = nvhas(akm, "peap");
 	int istls = nvhas(akm, "tls");
 	int isttls = nvhas(akm, "ttls");
-	int iswep = nvhas(akm, "802.1x");
-	int iswpa = nvhas(akm, "wpa");
-	int iswpa2 = nvhas(akm, "wpa2");
-	int iswpa3 = nvhas(akm, "wpa3");
-	int iswpa3_192 = nvhas(akm, "wpa3-192");
-	int iswpa2sha256 = nvhas(akm, "wpa2-sha256");
 
 	if (ispsk || ispsk2 || ispsk3 || ispsk2sha256) {
 		char fstr[32];
@@ -1662,12 +1659,12 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		};
 		get_pairwise(prefix, pwstring, grpstring, isadhoc);
 #ifdef HAVE_80211W
-		if (nvram_default_matchi(mfp, -1, 0))
-			fprintf(fp, "ieee80211w=1\n");
-		if (nvram_default_matchi(mfp, 0, 0))
-			fprintf(fp, "ieee80211w=0\n");
 		if (nvram_default_matchi(mfp, 1, 0) || ispsk2sha256 || ispsk3)
 			fprintf(fp, "ieee80211w=2\n");
+		else if (nvram_default_matchi(mfp, -1, 0))
+			fprintf(fp, "ieee80211w=1\n");
+		else if (nvram_default_matchi(mfp, 0, 0))
+			fprintf(fp, "ieee80211w=0\n");
 #endif
 		if (!strlen(pwstring)) {
 			sprintf(psk, "%s_crypto", prefix);
@@ -1750,297 +1747,8 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		fprintf(fp, "eapol_version=1\n");
 		// fprintf (fp, "ctrl_interface_group=0\n");
 		// fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
+		eap_sta_config(fp, prefix, ssidoverride, 1);
 
-		if (istls) {
-			fprintf(fp, "network={\n");
-			addvhtcaps(prefix, fp);
-			if (!ssidoverride)
-				ssidoverride = nvram_nget("%s_ssid", prefix);
-			fprintf(fp, "\tssid=\"%s\"\n", ssidoverride);
-#ifdef HAVE_UNIWIP
-			fprintf(fp, "\tbgscan=\"simple:30:-45:300\"\n");
-#endif
-			fprintf(fp, "\tscan_ssid=1\n");
-			char pwstring[128] = {
-				0, 0
-			};
-			char grpstring[128] = {
-				0, 0
-			};
-			get_pairwise(prefix, pwstring, grpstring, 0);
-			if (strlen(pwstring)) {
-				fprintf(fp, "\tpairwise=%s", &pwstring[1]);
-				fprintf(fp, "\tgroup=%s", &grpstring[1]);
-			}
-
-			fprintf(fp, "wpa_key_mgmt=");
-			if (iswpa2 || iswpa)
-				fprintf(fp, "WPA-EAP ");
-			if (has_wpa3(prefix) && iswpa2sha256)
-				fprintf(fp, "WPA-SHA256 ");
-			if (has_wpa3(prefix) && iswpa3)
-				fprintf(fp, "WPA-EAP-SUITE-B ");
-			if (has_wpa3(prefix) && iswpa3_192)
-				fprintf(fp, "WPA-EAP-SUITE-B-192 ");
-#ifdef HAVE_80211R
-			if (nvram_matchi(ft, 1) && (iswpa || iswpa2))
-				fprintf(fp, "FT-EAP ");
-#endif
-			if (has_wpa3(prefix) && iswep)
-				fprintf(fp, "IEEE8021X ");
-			fprintf(fp, "\n");
-#ifdef HAVE_80211W
-			if (nvram_default_matchi(mfp, 1, 0) || iswpa3 || iswpa3_192)
-				fprintf(fp, "ieee80211w=2\n");
-			else if (nvram_default_matchi(mfp, -1, 0))
-				fprintf(fp, "ieee80211w=1\n");
-			else if (nvram_default_matchi(mfp, 0, 0))
-				fprintf(fp, "ieee80211w=0\n");
-#endif
-
-			fprintf(fp, "\teap=TLS\n");
-			fprintf(fp, "\tidentity=\"%s\"\n", nvram_prefix_get("tls8021xuser", prefix));
-			sprintf(psk, "/tmp/%s", prefix);
-			mkdir(psk, 0700);
-			sprintf(psk, "/tmp/%s/ca.pem", prefix);
-			sprintf(ath, "%s_tls8021xca", prefix);
-			write_nvram(psk, ath);
-			sprintf(psk, "/tmp/%s/user.pem", prefix);
-			sprintf(ath, "%s_tls8021xpem", prefix);
-			write_nvram(psk, ath);
-			sprintf(psk, "/tmp/%s/user.prv", prefix);
-			sprintf(ath, "%s_tls8021xprv", prefix);
-			write_nvram(psk, ath);
-			fprintf(fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix);
-			fprintf(fp, "\tclient_cert=\"/tmp/%s/user.pem\"\n", prefix);
-			fprintf(fp, "\tprivate_key=\"/tmp/%s/user.prv\"\n", prefix);
-			fprintf(fp, "\tprivate_key_passwd=\"%s\"\n", nvram_prefix_get("tls8021xpasswd", prefix));
-			fprintf(fp, "\teapol_flags=3\n");
-			if (strlen(nvram_nget("%s_tls8021xphase2", prefix))) {
-				fprintf(fp, "\tphase2=\"%s\"\n", nvram_nget("%s_tls8021xphase2", prefix));
-			}
-			if (strlen(nvram_nget("%s_tls8021xanon", prefix))) {
-				fprintf(fp, "\tanonymous_identity=\"%s\"\n", nvram_nget("%s_tls8021xanon", prefix));
-			}
-			if (strlen(nvram_nget("%s_tls8021xaddopt", prefix))) {
-				sprintf(ath, "%s_tls8021xaddopt", prefix);
-				fprintf(fp, "\t");	// tab
-				fwritenvram(ath, fp);
-				fprintf(fp, "\n");	// extra new line at the end
-			}
-			fprintf(fp, "}\n");
-		}
-
-		if (ispeap) {
-			fprintf(fp, "network={\n");
-			addvhtcaps(prefix, fp);
-			if (!ssidoverride)
-				ssidoverride = nvram_nget("%s_ssid", prefix);
-			fprintf(fp, "\tssid=\"%s\"\n", ssidoverride);
-#ifdef HAVE_UNIWIP
-			fprintf(fp, "\tbgscan=\"simple:30:-45:300\"\n");
-#endif
-			fprintf(fp, "\tscan_ssid=1\n");
-			char pwstring[128] = {
-				0, 0
-			};
-			char grpstring[128] = {
-				0, 0
-			};
-			get_pairwise(prefix, pwstring, grpstring, 0);
-			if (strlen(pwstring)) {
-				fprintf(fp, "\tpairwise=%s", &pwstring[1]);
-				fprintf(fp, "\tgroup=%s", &grpstring[1]);
-			}
-
-			fprintf(fp, "wpa_key_mgmt=");
-			if (iswpa2 || iswpa)
-				fprintf(fp, "WPA-EAP ");
-			if (has_wpa3(prefix) && iswpa2sha256)
-				fprintf(fp, "WPA-SHA256 ");
-			if (has_wpa3(prefix) && iswpa3)
-				fprintf(fp, "WPA-EAP-SUITE-B ");
-			if (has_wpa3(prefix) && iswpa3_192)
-				fprintf(fp, "WPA-EAP-SUITE-B-192 ");
-#ifdef HAVE_80211R
-			if (nvram_matchi(ft, 1) && (iswpa || iswpa2))
-				fprintf(fp, "FT-EAP ");
-#endif
-			if (iswep)
-				fprintf(fp, "IEEE8021X ");
-			fprintf(fp, "\n");
-#ifdef HAVE_80211W
-			if (nvram_default_matchi(mfp, 1, 0) || iswpa3 || iswpa3_192)
-				fprintf(fp, "ieee80211w=2\n");
-			else if (nvram_default_matchi(mfp, -1, 0))
-				fprintf(fp, "ieee80211w=1\n");
-			else if (nvram_default_matchi(mfp, 0, 0))
-				fprintf(fp, "ieee80211w=0\n");
-#endif
-			fprintf(fp, "\teap=PEAP\n");
-			fprintf(fp, "\tphase1=\"peapver=0\"\n");
-			fprintf(fp, "\tidentity=\"%s\"\n", nvram_prefix_get("peap8021xuser", prefix));
-			fprintf(fp, "\tpassword=\"%s\"\n", nvram_prefix_get("peap8021xpasswd", prefix));
-			sprintf(psk, "/tmp/%s", prefix);
-			mkdir(psk, 0700);
-			sprintf(psk, "/tmp/%s/ca.pem", prefix);
-			sprintf(ath, "%s_peap8021xca", prefix);
-			if (!nvram_match(ath, "")) {
-				write_nvram(psk, ath);
-				fprintf(fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix);
-			}
-			if (strlen(nvram_nget("%s_peap8021xphase2", prefix))) {
-				fprintf(fp, "\tphase2=\"%s\"\n", nvram_nget("%s_peap8021xphase2", prefix));
-			}
-			if (strlen(nvram_nget("%s_peap8021xanon", prefix))) {
-				fprintf(fp, "\tanonymous_identity=\"%s\"\n", nvram_nget("%s_peap8021xanon", prefix));
-			}
-			if (strlen(nvram_nget("%s_peap8021xaddopt", prefix))) {
-				sprintf(ath, "%s_peap8021xaddopt", prefix);
-				fprintf(fp, "\t");	// tab
-				fwritenvram(ath, fp);
-				fprintf(fp, "\n");	// extra new line at the end
-			}
-			fprintf(fp, "}\n");
-		}
-
-		if (isttls) {
-			fprintf(fp, "network={\n");
-			addvhtcaps(prefix, fp);
-			if (!ssidoverride)
-				ssidoverride = nvram_nget("%s_ssid", prefix);
-			fprintf(fp, "\tssid=\"%s\"\n", ssidoverride);
-#ifdef HAVE_UNIWIP
-			fprintf(fp, "\tbgscan=\"simple:30:-45:300\"\n");
-#endif
-			fprintf(fp, "\tscan_ssid=1\n");
-			char pwstring[128] = {
-				0, 0
-			};
-			char grpstring[128] = {
-				0, 0
-			};
-			get_pairwise(prefix, pwstring, grpstring, 0);
-			if (strlen(pwstring)) {
-				fprintf(fp, "\tpairwise=%s", &pwstring[1]);
-				fprintf(fp, "\tgroup=%s", &grpstring[1]);
-			}
-
-			fprintf(fp, "wpa_key_mgmt=");
-			if (iswpa2 || iswpa)
-				fprintf(fp, "WPA-EAP ");
-			if (has_wpa3(prefix) && iswpa2sha256)
-				fprintf(fp, "WPA-SHA256 ");
-			if (has_wpa3(prefix) && iswpa3)
-				fprintf(fp, "WPA-EAP-SUITE-B ");
-			if (has_wpa3(prefix) && iswpa3_192)
-				fprintf(fp, "WPA-EAP-SUITE-B-192 ");
-#ifdef HAVE_80211R
-			if (nvram_matchi(ft, 1) && (iswpa || iswpa2))
-				fprintf(fp, "FT-EAP ");
-#endif
-			if (iswep)
-				fprintf(fp, "IEEE8021X ");
-			fprintf(fp, "\n");
-#ifdef HAVE_80211W
-			if (nvram_default_matchi(mfp, 1, 0) || iswpa3 || iswpa3_192)
-				fprintf(fp, "ieee80211w=2\n");
-			else if (nvram_default_matchi(mfp, -1, 0))
-				fprintf(fp, "ieee80211w=1\n");
-			else if (nvram_default_matchi(mfp, 0, 0))
-				fprintf(fp, "ieee80211w=0\n");
-#endif
-			fprintf(fp, "\teap=TTLS\n");
-			fprintf(fp, "\tidentity=\"%s\"\n", nvram_prefix_get("ttls8021xuser", prefix));
-			fprintf(fp, "\tpassword=\"%s\"\n", nvram_prefix_get("ttls8021xpasswd", prefix));
-			if (strlen(nvram_nget("%s_ttls8021xca", prefix))) {
-				sprintf(psk, "/tmp/%s", prefix);
-				mkdir(psk, 0700);
-				sprintf(psk, "/tmp/%s/ca.pem", prefix);
-				sprintf(ath, "%s_ttls8021xca", prefix);
-				write_nvram(psk, ath);
-				fprintf(fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix);
-			}
-			if (strlen(nvram_nget("%s_ttls8021xphase2", prefix))) {
-				fprintf(fp, "\tphase2=\"%s\"\n", nvram_nget("%s_ttls8021xphase2", prefix));
-			}
-			if (strlen(nvram_nget("%s_ttls8021xanon", prefix))) {
-				fprintf(fp, "\tanonymous_identity=\"%s\"\n", nvram_nget("%s_ttls8021xanon", prefix));
-			}
-			if (strlen(nvram_nget("%s_ttls8021xaddopt", prefix))) {
-				sprintf(ath, "%s_ttls8021xaddopt", prefix);
-				fprintf(fp, "\t");	// tab
-				fwritenvram(ath, fp);
-				fprintf(fp, "\n");	// extra new line at the end
-			}
-			fprintf(fp, "}\n");
-		}
-
-		if (isleap) {
-			fprintf(fp, "network={\n");
-			addvhtcaps(prefix, fp);
-			if (!ssidoverride)
-				ssidoverride = nvram_nget("%s_ssid", prefix);
-			fprintf(fp, "\tssid=\"%s\"\n", ssidoverride);
-#ifdef HAVE_UNIWIP
-			fprintf(fp, "\tbgscan=\"simple:30:-45:300\"\n");
-#endif
-			fprintf(fp, "\tscan_ssid=1\n");
-			char pwstring[128] = {
-				0, 0
-			};
-			char grpstring[128] = {
-				0, 0
-			};
-			get_pairwise(prefix, pwstring, grpstring, 0);
-			if (strlen(pwstring)) {
-				fprintf(fp, "\tpairwise=%s", &pwstring[1]);
-				fprintf(fp, "\tgroup=%s", &grpstring[1]);
-			}
-
-			fprintf(fp, "wpa_key_mgmt=");
-			if (iswpa2 || iswpa)
-				fprintf(fp, "WPA-EAP ");
-			if (has_wpa3(prefix) && iswpa2sha256)
-				fprintf(fp, "WPA-SHA256 ");
-			if (has_wpa3(prefix) && iswpa3)
-				fprintf(fp, "WPA-EAP-SUITE-B ");
-			if (has_wpa3(prefix) && iswpa3_192)
-				fprintf(fp, "WPA-EAP-SUITE-B-192 ");
-#ifdef HAVE_80211R
-			if (nvram_matchi(ft, 1) && (iswpa || iswpa2))
-				fprintf(fp, "FT-EAP ");
-#endif
-			if (iswep)
-				fprintf(fp, "IEEE8021X ");
-			fprintf(fp, "\n");
-#ifdef HAVE_80211W
-			if (nvram_default_matchi(mfp, 1, 0) || iswpa3 || iswpa3_192)
-				fprintf(fp, "ieee80211w=2\n");
-			else if (nvram_default_matchi(mfp, -1, 0))
-				fprintf(fp, "ieee80211w=1\n");
-			else if (nvram_default_matchi(mfp, 0, 0))
-				fprintf(fp, "ieee80211w=0\n");
-#endif
-			fprintf(fp, "\teap=LEAP\n");
-			fprintf(fp, "\tauth_alg=LEAP\n");
-			fprintf(fp, "\tproto=WPA RSN\n");
-			fprintf(fp, "\tidentity=\"%s\"\n", nvram_prefix_get("leap8021xuser", prefix));
-			fprintf(fp, "\tpassword=\"%s\"\n", nvram_prefix_get("leap8021xpasswd", prefix));
-			if (strlen(nvram_nget("%s_leap8021xphase2", prefix))) {
-				fprintf(fp, "\tphase2=\"%s\"\n", nvram_nget("%s_leap8021xphase2", prefix));
-			}
-			if (strlen(nvram_nget("%s_leap8021xanon", prefix))) {
-				fprintf(fp, "\tanonymous_identity=\"%s\"\n", nvram_nget("%s_leap8021xanon", prefix));
-			}
-			if (strlen(nvram_nget("%s_leap8021xaddopt", prefix))) {
-				sprintf(ath, "%s_leap8021xaddopt", prefix);
-				fprintf(fp, "\t");	// tab
-				fwritenvram(ath, fp);
-				fprintf(fp, "\n");	// extra new line at the end
-			}
-			fprintf(fp, "}\n");
-		}
 		char extra[32];
 		sprintf(extra, "%s_supplicantext", prefix);
 		fwritenvram(extra, fp);
