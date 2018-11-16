@@ -24,6 +24,7 @@ extern "C" {
 #define	HUF_isError  ERR_isError
 #define	HIST_isError  ERR_isError
 
+#if 0
 /* =====   ZSTDERRORLIB_API : control library symbols visibility   ===== */
 #ifndef ZSTDERRORLIB_VISIBILITY
 #  if defined(__GNUC__) && (__GNUC__ >= 4)
@@ -39,6 +40,8 @@ extern "C" {
 #else
 #  define ZSTDERRORLIB_API ZSTDERRORLIB_VISIBILITY
 #endif
+#endif
+#define ZSTDERRORLIB_API static
 
 /*-*********************************************
  *  Error codes list
@@ -77,6 +80,7 @@ typedef enum {
   ZSTD_error_workSpace_tooSmall= 66,
   ZSTD_error_dstSize_tooSmall = 70,
   ZSTD_error_srcSize_wrong    = 72,
+  ZSTD_error_dstBuffer_null   = 74,
   /* following error codes are __NOT STABLE__, they can be removed or changed in future versions */
   ZSTD_error_frameIndex_tooLarge = 100,
   ZSTD_error_seekableIO          = 102,
