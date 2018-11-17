@@ -434,6 +434,14 @@ static struct ar8327_led_cfg wr1043nd_v2_ar8327_led_cfg = {
 	.open_drain = true,
 };
 
+static struct ar8327_led_cfg archer_c7_ar8327_led_cfg = {
+	.led_ctrl0 = 0xc737c737,
+	.led_ctrl1 = 0x00000000,
+	.led_ctrl2 = 0x00000000,
+	.led_ctrl3 = 0x0030c300,
+	.open_drain = false,
+};
+
 static struct ar8327_pad_cfg ap136_ar8327_pad0_cfg;
 static struct ar8327_pad_cfg ap136_ar8327_pad6_cfg;
 
@@ -454,7 +462,9 @@ static struct ar8327_platform_data ap136_ar8327_data = {
 		.txpause = 1,
 		.rxpause = 1,
 	},
-#ifdef CONFIG_WR1043V2
+#ifdef CONFIG_ARCHERC7
+	.led_cfg = &archer_c7_ar8327_led_cfg,
+#elif defined(CONFIG_WR1043V2)
 	.led_cfg = &wr1043nd_v2_ar8327_led_cfg,
 #endif
 };
