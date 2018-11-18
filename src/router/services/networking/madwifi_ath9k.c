@@ -440,6 +440,19 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	if (nvram_match(bw, "80+80"))
 		usebw = 8080;
 
+	if (has_ac(prefix)) {
+		if (!strcmp(netmode, "na-only")
+		    ! strcmp(netmode, "ng-only") ||	//
+		    !strcmp(netmode, "n2-only") ||	//
+		    !strcmp(netmode, "g-only") ||	//
+		    !strcmp(netmode, "b-only") ||	//
+		    !strcmp(netmode, "bg-mixed") ||	//
+		    !strcmp(netmode, "a-only") ||	//
+		    !strcmp(netmode, "na-only") ||	//
+		    !strcmp(netmode, "n5-only")) {
+			fprintf(fp, "ieee80211ac=0\n");
+		}
+	}
 	if ((!strcmp(netmode, "ng-only") ||	//
 	     !strcmp(netmode, "na-only") ||	//
 	     !strcmp(netmode, "n2-only") ||	//
@@ -454,10 +467,6 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		    && strcmp(netmode, "na-only")) {
 			if (!isath5k)
 				fprintf(fp, "require_ht=1\n");
-		}
-		if( !strcmp(netmode, "g-only") || !strcmp(netmode, "a-only")){
-			fprintf(fp, "basic_rates=60 120 240\n");
-			fprintf(fp, "supported_rates=60 90 120 180 240 360 480 540\n");
 		}
 		if (!isath5k && !has_ad(prefix)) {
 			fprintf(fp, "ieee80211n=1\n");
@@ -804,8 +813,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			if (strlen(caps)) {
 				fprintf(fp, "vht_capab=%s\n", caps);
 				free(caps);
-				fprintf(fp, "ieee80211ac=1\n");
 				if (!strcmp(netmode, "ac-only")) {
+					fprintf(fp, "ieee80211ac=1\n");
 					fprintf(fp, "require_vht=1\n");
 					fprintf(fp, "ieee80211d=1\n");
 					fprintf(fp, "ieee80211h=1\n");
@@ -815,12 +824,16 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 				}
 
 				if (!strcmp(netmode, "acn-mixed")) {
+					fprintf(fp, "ieee80211ac=1\n");
 					fprintf(fp, "require_ht=1\n");
 					fprintf(fp, "ieee80211d=1\n");
 					fprintf(fp, "ieee80211h=1\n");
-					//might be needed for dfs
-					//fprintf(fp, "spectrum_mgmt_required=1\n");
-					//fprintf(fp, "local_pwr_constraint=3\n");
+				}
+
+				if (!strcmp(netmode, "mixed")) {
+					fprintf(fp, "ieee80211ac=1\n");
+					fprintf(fp, "ieee80211d=1\n");
+					fprintf(fp, "ieee80211h=1\n");
 				}
 				switch (usebw) {
 				case 40:
@@ -859,11 +872,14 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			fprintf(fp, "hw_mode=b\n");
 			fprintf(fp, "supported_rates=10 20 55 110\n");
 		} else {
+			fprintf(fp, "basic_rates=60 120 240\n");
+			fprintf(fp, "supported_rates=60 90 120 180 240 360 480 540\n");
 			fprintf(fp, "hw_mode=g\n");
 		}
 	} else {
 		fprintf(fp, "hw_mode=a\n");
 		if (!strcmp(netmode, "a-only")) {
+			fprintf(fp, "basic_rates=60 120 240\n");
 			fprintf(fp, "supported_rates=60 90 120 180 240 360 480 540\n");
 		}
 
@@ -977,7 +993,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	sprintf(ft, "%s_ft", ifname);
 	sprintf(mfp, "%s_mfp", ifname);
 	sprintf(preamble, "%s_preamble", ifname);
-	
+
 	if (nvram_match(akm, "8021X"))
 		return;
 	sprintf(fstr, "/tmp/%s_hostap.conf", maininterface);
