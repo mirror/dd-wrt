@@ -7,7 +7,6 @@
 
 use libc::{c_char, c_int, uint32_t};
 use std::ffi::CStr;
-use std::ffi::CString;
 
 use smartlist::*;
 use tor_allocate::allocate_and_copy_string;
@@ -65,12 +64,10 @@ pub extern "C" fn protover_all_supported(
 
     if maybe_unsupported.is_some() {
         let unsupported: UnvalidatedProtoEntry = maybe_unsupported.unwrap();
-        let c_unsupported: CString = match CString::new(unsupported.to_string()) {
-            Ok(n) => n,
-            Err(_) => return 1,
-        };
-
-        let ptr = c_unsupported.into_raw();
+        if missing_out.is_null() {
+            return 0;
+        }
+        let ptr = allocate_and_copy_string(&unsupported.to_string());
         unsafe { *missing_out = ptr };
 
         return 0;
@@ -193,8 +190,7 @@ pub extern "C" fn protover_get_supported_protocols() -> *const c_char {
 #[no_mangle]
 pub extern "C" fn protover_compute_vote(
     list: *const Stringlist,
-    threshold: c_int,
-    allow_long_proto_names: bool,
+    threshold: c_int
 ) -> *mut c_char {
 
     if list.is_null() {
@@ -209,13 +205,9 @@ pub extern "C" fn protover_compute_vote(
     let mut proto_entries: Vec<UnvalidatedProtoEntry> = Vec::new();
 
     for datum in data {
-        let entry: UnvalidatedProtoEntry = match allow_long_proto_names {
-            true => match UnvalidatedProtoEntry::from_str_any_len(datum.as_str()) {
-                Ok(n)  => n,
-                Err(_) => continue},
-            false => match datum.parse() {
-                Ok(n)  => n,
-                Err(_) => continue},
+        let entry: UnvalidatedProtoEntry = match datum.parse() {
+            Ok(n)  => n,
+            Err(_) => continue
         };
         proto_entries.push(entry);
     }
