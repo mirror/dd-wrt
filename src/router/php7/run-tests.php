@@ -24,7 +24,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: f4720f5b76a811a5f7ee1b19ce15e4c68ecf7307 $ */
+/* $Id: 2801959f10f4e09ef49cf8f1abbef8e2ce0992ab $ */
 
 /* Sanity check to ensure that pcre extension needed by this script is available.
  * In the event it is not, print a nice error message indicating that this script will
@@ -102,7 +102,7 @@ if (empty($environment)) {
 }
 if (empty($environment['TEMP'])) {
 	$environment['TEMP'] = sys_get_temp_dir();
-	
+
 	if (empty($environment['TEMP'])) {
 		// for example, OpCache on Windows will fail in this case because child processes (for tests) will not get
 		// a TEMP variable, so GetTempPath() will fallback to c:\windows, while GetTempPath() will return %TEMP% for parent
@@ -110,7 +110,7 @@ if (empty($environment['TEMP'])) {
 		// the OpCache because it will be using the wrong path.
 		die("TEMP environment is NOT set");
 	} else if (count($environment)==1) {
-		// not having other environment variables, only having TEMP, is probably ok, but strange and may make a 
+		// not having other environment variables, only having TEMP, is probably ok, but strange and may make a
 		// difference in the test pass rate, so warn the user.
 		echo "WARNING: Only 1 environment variable will be available to tests(TEMP environment variable)".PHP_EOL;
 	}
@@ -697,7 +697,7 @@ if (isset($argc) && $argc > 1) {
 					$html_output = is_resource($html_file);
 					break;
 				case '--version':
-					echo '$Id: f4720f5b76a811a5f7ee1b19ce15e4c68ecf7307 $' . "\n";
+					echo '$Id: 2801959f10f4e09ef49cf8f1abbef8e2ce0992ab $' . "\n";
 					exit(1);
 
 				default:

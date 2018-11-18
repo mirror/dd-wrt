@@ -64,7 +64,7 @@ static void _php_intlgregcal_constructor_body(
 			zend_get_parameters_array_ex(ZEND_NUM_ARGS(), args) == FAILURE) {
 		intl_error_set(NULL, U_ILLEGAL_ARGUMENT_ERROR,
 			"intlgregcal_create_instance: too many arguments", 0);
-		if (!is_constructor) {		
+		if (!is_constructor) {
 			zval_dtor(return_value);
 			RETVAL_NULL();
 		}
@@ -77,7 +77,7 @@ static void _php_intlgregcal_constructor_body(
 		intl_error_set(NULL, U_ILLEGAL_ARGUMENT_ERROR,
 			"intlgregcal_create_instance: no variant with 4 arguments "
 			"(excluding trailing NULLs)", 0);
-		if (!is_constructor) {		
+		if (!is_constructor) {
 			zval_dtor(return_value);
 			RETVAL_NULL();
 		}
@@ -90,7 +90,7 @@ static void _php_intlgregcal_constructor_body(
 				"|z!s!", &tz_object, &locale, &locale_len) == FAILURE) {
 			intl_error_set(NULL, U_ILLEGAL_ARGUMENT_ERROR,
 				"intlgregcal_create_instance: bad arguments", 0);
-			if (!is_constructor) {		
+			if (!is_constructor) {
 				zval_dtor(return_value);
 				RETVAL_NULL();
 			}
@@ -102,7 +102,7 @@ static void _php_intlgregcal_constructor_body(
 			&largs[5]) == FAILURE) {
 		intl_error_set(NULL, U_ILLEGAL_ARGUMENT_ERROR,
 			"intlgregcal_create_instance: bad arguments", 0);
-		if (!is_constructor) {		
+		if (!is_constructor) {
 			zval_dtor(return_value);
 			RETVAL_NULL();
 		}
@@ -120,7 +120,7 @@ static void _php_intlgregcal_constructor_body(
 			if (!EG(exception)) {
 				zend_throw_exception(IntlException_ce_ptr, "Constructor failed", 0);
 			}
-			if (!is_constructor) {		
+			if (!is_constructor) {
 				zval_dtor(return_value);
 				RETVAL_NULL();
 			}
@@ -139,7 +139,7 @@ static void _php_intlgregcal_constructor_body(
 				delete gcal;
 			}
 			delete tz;
-			if (!is_constructor) {		
+			if (!is_constructor) {
 				zval_dtor(return_value);
 				RETVAL_NULL();
 			}
@@ -152,7 +152,7 @@ static void _php_intlgregcal_constructor_body(
 				intl_error_set(NULL, U_ILLEGAL_ARGUMENT_ERROR,
 					"intlgregcal_create_instance: at least one of the arguments"
 					" has an absolute value that is too large", 0);
-				if (!is_constructor) {		
+				if (!is_constructor) {
 					zval_dtor(return_value);
 					RETVAL_NULL();
 				}
@@ -177,7 +177,7 @@ static void _php_intlgregcal_constructor_body(
 			if (gcal) {
 				delete gcal;
 			}
-			if (!is_constructor) {		
+			if (!is_constructor) {
 				zval_dtor(return_value);
 				RETVAL_NULL();
 			}
@@ -197,7 +197,7 @@ static void _php_intlgregcal_constructor_body(
 				"from PHP's default timezone name (see date_default_timezone_get())",
 				0);
 			delete gcal;
-			if (!is_constructor) {		
+			if (!is_constructor) {
 				zval_dtor(return_value);
 				RETVAL_NULL();
 			}

@@ -2143,6 +2143,9 @@
 /* */
 #undef HAVE_XMLRPC
 
+/* */
+#undef HAVE_XMLRPC_BUNDLED
+
 /* Define to 1 if you have the <xmltok.h> header file. */
 #undef HAVE_XMLTOK_H
 
