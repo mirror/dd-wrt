@@ -467,6 +467,11 @@ ifeq ($(CONFIG_ARCHERC7V4),y)
 else
 	echo "# CONFIG_ARCHERC7V4 is not set" >> $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_ARCHERC7V5),y)
+	echo CONFIG_ARCHERC7V5=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_ARCHERC7V5 is not set" >> $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_UBNTM),y)
 	echo CONFIG_UBNTFIX=y >> $(LINUXDIR)/.config
 else
@@ -668,8 +673,8 @@ ifeq ($(CONFIG_SERVICEGATE),y)
 	-$(MAKE) -f Makefile.pb42 servicegate-install
 endif
 ifeq ($(CONFIG_I2C_GPIO_CUSTOM),y)
-	-$(MAKE) -f Makefile.pb42 i2c-custom-gpio
-	-$(MAKE) -f Makefile.pb42 i2c-custom-gpio-install
+	-$(MAKE) -f Makefile.pb42 i2c-gpio-custom
+	-$(MAKE) -f Makefile.pb42 i2c-gpio-custom-install
 endif
 ifneq ($(CONFIG_SAMBA),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/fs/cifs
