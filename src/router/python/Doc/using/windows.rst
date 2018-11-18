@@ -147,7 +147,7 @@ of available options is shown below.
 |                           | ``.pyc``.                            |                          |
 +---------------------------+--------------------------------------+--------------------------+
 | PrependPath               | Add install and Scripts directories  | 0                        |
-|                           | tho :envvar:`PATH` and ``.PY`` to    |                          |
+|                           | to :envvar:`PATH` and ``.PY`` to     |                          |
 |                           | :envvar:`PATHEXT`                    |                          |
 +---------------------------+--------------------------------------+--------------------------+
 | Shortcuts                 | Create shortcuts for the interpreter,| 1                        |
@@ -193,13 +193,13 @@ of available options is shown below.
 For example, to silently install a default, system-wide Python installation,
 you could use the following command (from an elevated command prompt)::
 
-    python-3.6.0.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0
+    python-3.7.0.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0
 
 To allow users to easily install a personal copy of Python without the test
 suite, you could provide a shortcut with the following command. This will
 display a simplified initial page and disallow customization::
 
-    python-3.6.0.exe InstallAllUsers=0 Include_launcher=0 Include_test=0
+    python-3.7.0.exe InstallAllUsers=0 Include_launcher=0 Include_test=0
         SimpleInstall=1 SimpleInstallDescription="Just for me, no test suite."
 
 (Note that omitting the launcher also omits file associations, and is only
@@ -210,7 +210,7 @@ The options listed above can also be provided in a file named ``unattend.xml``
 alongside the executable. This file specifies a list of options and values.
 When a value is provided as an attribute, it will be converted to a number if
 possible. Values provided as element text are always left as strings. This
-example file sets the same options and the previous example:
+example file sets the same options as the previous example:
 
 .. code-block:: xml
 
@@ -236,13 +236,13 @@ where a large number of installations are going to be performed it is very
 useful to have a locally cached copy.
 
 Execute the following command from Command Prompt to download all possible
-required files.  Remember to substitute ``python-3.6.0.exe`` for the actual
+required files.  Remember to substitute ``python-3.7.0.exe`` for the actual
 name of your installer, and to create layouts in their own directories to
 avoid collisions between files with the same name.
 
 ::
 
-    python-3.6.0.exe /layout [optional target directory]
+    python-3.7.0.exe /layout [optional target directory]
 
 You may also specify the ``/quiet`` option to hide the progress display.
 
@@ -349,7 +349,7 @@ To temporarily set environment variables, open Command Prompt and use the
 
 .. code-block:: doscon
 
-    C:\>set PATH=C:\Program Files\Python 3.6;%PATH%
+    C:\>set PATH=C:\Program Files\Python 3.7;%PATH%
     C:\>set PYTHONPATH=%PYTHONPATH%;C:\My_python_lib
     C:\>python
 
@@ -381,7 +381,7 @@ System variables, you need non-restricted access to your machine
 
 .. seealso::
 
-    https://support.microsoft.com/en-us/help/100843/environment-variables-in-windows-nt
+    https://www.microsoft.com/en-us/wdsi/help/folder-variables
       Environment variables in Windows NT
 
     https://technet.microsoft.com/en-us/library/cc754250.aspx
@@ -422,7 +422,7 @@ of your Python installation, delimited by a semicolon from other entries.  An
 example variable could look like this (assuming the first two entries already
 existed)::
 
-    C:\WINDOWS\system32;C:\WINDOWS;C:\Program Files\Python 3.6
+    C:\WINDOWS\system32;C:\WINDOWS;C:\Program Files\Python 3.7
 
 .. _launcher:
 
@@ -610,7 +610,7 @@ Customization via INI files
 
 Two .ini files will be searched by the launcher - ``py.ini`` in the current
 user's "application data" directory (i.e. the directory returned by calling the
-Windows function SHGetFolderPath with CSIDL_LOCAL_APPDATA) and ``py.ini`` in the
+Windows function ``SHGetFolderPath`` with ``CSIDL_LOCAL_APPDATA``) and ``py.ini`` in the
 same directory as the launcher. The same .ini files are used for both the
 'console' version of the launcher (i.e. py.exe) and for the 'windows' version
 (i.e. pyw.exe)
@@ -816,7 +816,7 @@ following advice will prevent conflicts with other installations:
 These will ensure that the files in a system-wide installation will not take
 precedence over the copy of the standard library bundled with your application.
 Otherwise, your users may experience problems using your application. Note that
-the first suggestion is the best, as the other may still be susceptible to
+the first suggestion is the best, as the others may still be susceptible to
 non-standard paths in the registry and user site-packages.
 
 .. versionchanged::
