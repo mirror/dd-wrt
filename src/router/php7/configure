@@ -3655,7 +3655,7 @@ ac_config_headers="$ac_config_headers main/php_config.h"
 
 PHP_MAJOR_VERSION=7
 PHP_MINOR_VERSION=2
-PHP_RELEASE_VERSION=11
+PHP_RELEASE_VERSION=12
 PHP_EXTRA_VERSION=""
 PHP_VERSION="$PHP_MAJOR_VERSION.$PHP_MINOR_VERSION.$PHP_RELEASE_VERSION$PHP_EXTRA_VERSION"
 PHP_VERSION_ID=`expr $PHP_MAJOR_VERSION \* 10000 + $PHP_MINOR_VERSION \* 100 + $PHP_RELEASE_VERSION`
@@ -5971,7 +5971,6 @@ fi
 
 
 
-
 if test "$beos_threads" = "1"; then
   pthreads_working="yes"
   ac_cv_pthreads_cflags=""
@@ -7515,7 +7514,6 @@ else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
-
 
 
 
@@ -20202,7 +20200,6 @@ $as_echo "$PHP_PCRE_VALGRIND_INCDIR" >&6; }
       fi
     fi
   fi
-
 
 
 
@@ -58443,7 +58440,6 @@ fi
 
 
 
-
 php_with_pdo_dblib=no
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PDO_DBLIB support via FreeTDS" >&5
@@ -63737,7 +63733,6 @@ fi
 
 
 
-
 php_with_pdo_odbc=no
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ODBC v3 support for PDO" >&5
@@ -68975,8 +68970,6 @@ EOF
   fi
 
 fi
-
-
 
 
 
@@ -88769,6 +88762,9 @@ EOF
 
   XMLRPC_MODULE_TYPE=builtin
 
+$as_echo "#define HAVE_XMLRPC_BUNDLED 1" >>confdefs.h
+
+
 elif test "$PHP_XMLRPC" != "no"; then
 
   if test -r $PHP_XMLRPC/include/xmlrpc.h; then
@@ -95294,7 +95290,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 95297 "configure"
+#line 95293 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -97333,7 +97329,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 97336 "configure"' > conftest.$ac_ext
+  echo '#line 97332 "configure"' > conftest.$ac_ext
   if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -98731,7 +98727,7 @@ else
       LDFLAGS="$LDFLAGS -Wl,-exported_symbols_list,conftest.sym"
 
 cat > conftest.$ac_ext <<EOF
-#line 98734 "configure"
+#line 98730 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -98889,11 +98885,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:98892: $lt_compile\"" >&5)
+   (eval echo "\"configure:98888: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "configure:98896: \$? = $ac_status" >&5
+   echo "configure:98892: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -99187,11 +99183,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:99190: $lt_compile\"" >&5)
+   (eval echo "\"configure:99186: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "configure:99194: \$? = $ac_status" >&5
+   echo "configure:99190: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -99291,11 +99287,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:99294: $lt_compile\"" >&5)
+   (eval echo "\"configure:99290: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "configure:99298: \$? = $ac_status" >&5
+   echo "configure:99294: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -99755,7 +99751,7 @@ _LT_EOF
        # Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 99758 "configure"
+#line 99754 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -99797,7 +99793,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
 	 # Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 99800 "configure"
+#line 99796 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -101314,7 +101310,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 101317 "configure"
+#line 101313 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -101414,7 +101410,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 101417 "configure"
+#line 101413 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -102479,7 +102475,7 @@ case $host_os in
       # Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 102482 "configure"
+#line 102478 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -102522,7 +102518,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
 	# Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 102525 "configure"
+#line 102521 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -103774,11 +103770,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:103777: $lt_compile\"" >&5)
+   (eval echo "\"configure:103773: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "configure:103781: \$? = $ac_status" >&5
+   echo "configure:103777: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -103878,11 +103874,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:103881: $lt_compile\"" >&5)
+   (eval echo "\"configure:103877: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "configure:103885: \$? = $ac_status" >&5
+   echo "configure:103881: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized

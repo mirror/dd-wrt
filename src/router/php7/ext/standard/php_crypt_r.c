@@ -427,4 +427,3 @@ char * php_md5_crypt_r(const char *pw, const char *salt, char *out)
 #undef MD5_MAGIC
 #undef MD5_MAGIC_LEN
 #endif
-

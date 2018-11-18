@@ -230,9 +230,10 @@ static php_cgi_globals_struct php_cgi_globals;
 #ifdef PHP_WIN32
 #define WIN32_MAX_SPAWN_CHILDREN 64
 HANDLE kid_cgi_ps[WIN32_MAX_SPAWN_CHILDREN];
-int kids;
+int kids, cleaning_up = 0;
 HANDLE job = NULL;
 JOBOBJECT_EXTENDED_LIMIT_INFORMATION job_info = { 0 };
+CRITICAL_SECTION cleanup_lock;
 #endif
 
 #ifndef HAVE_ATTRIBUTE_WEAK
@@ -1496,6 +1497,10 @@ BOOL WINAPI fastcgi_cleanup(DWORD sig)
 {
 	int i = kids;
 
+	EnterCriticalSection(&cleanup_lock);
+	cleaning_up = 1;
+	LeaveCriticalSection(&cleanup_lock);
+
 	while (0 < i--) {
 		if (NULL == kid_cgi_ps[i]) {
 				continue;
@@ -1734,9 +1739,9 @@ static void add_response_header(sapi_header_struct *h, zval *return_value) /* {{
 			len = p - h->header;
 		}
 		if (len > 0) {
-			do {
+			while (len != 0 && (h->header[len-1] == ' ' || h->header[len-1] == '\t')) {
 				len--;
-			} while (len != 0 && (h->header[len-1] == ' ' || h->header[len-1] == '\t'));
+			}
 			if (len) {
 				s = do_alloca(len + 1, use_heap);
 				memcpy(s, h->header, len);
@@ -2178,8 +2183,9 @@ consult the installation file that came with this distribution, or visit \n\
 			int i;
 
 			ZeroMemory(&kid_cgi_ps, sizeof(kid_cgi_ps));
-			kids = children < WIN32_MAX_SPAWN_CHILDREN ? children : WIN32_MAX_SPAWN_CHILDREN; 
-			
+			kids = children < WIN32_MAX_SPAWN_CHILDREN ? children : WIN32_MAX_SPAWN_CHILDREN;
+
+			InitializeCriticalSection(&cleanup_lock);
 			SetConsoleCtrlHandler(fastcgi_cleanup, TRUE);
 
 			/* kids will inherit the env, don't let them spawn */
@@ -2228,6 +2234,12 @@ consult the installation file that came with this distribution, or visit \n\
 			}
 
 			while (parent) {
+				EnterCriticalSection(&cleanup_lock);
+				if (cleaning_up) {
+					goto parent_loop_end;
+				}
+				LeaveCriticalSection(&cleanup_lock);
+
 				i = kids;
 				while (0 < i--) {
 					DWORD status;
@@ -2276,12 +2288,15 @@ consult the installation file that came with this distribution, or visit \n\
 						fprintf(stderr, "unable to spawn: [0x%08lx]: %s\n", err, err_text);
 					}
 				}
-				
+
 				WaitForMultipleObjects(kids, kid_cgi_ps, FALSE, INFINITE);
 			}
-			
+
+parent_loop_end:
 			/* restore my env */
 			SetEnvironmentVariable("PHP_FCGI_CHILDREN", kid_buf);
+
+			DeleteCriticalSection(&cleanup_lock);
 
 			goto parent_out;
 		} else {
@@ -2760,7 +2775,7 @@ fastcgi_request_done:
 			}
 			/* end of fastcgi loop */
 		}
-		
+
 		if (request) {
 			fcgi_destroy_request(request);
 		}

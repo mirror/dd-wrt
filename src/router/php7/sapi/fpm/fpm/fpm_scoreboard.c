@@ -1,4 +1,3 @@
-
 	/* $Id: fpm_status.c 312399 2011-06-23 08:03:52Z fat $ */
 	/* (c) 2009 Jerome Loyet */
 
@@ -247,7 +246,7 @@ void fpm_scoreboard_free(struct fpm_scoreboard_s *scoreboard) /* {{{ */
 
 	scoreboard_size        = sizeof(struct fpm_scoreboard_s) + (scoreboard->nprocs) * sizeof(struct fpm_scoreboard_proc_s *);
 	scoreboard_nprocs_size = sizeof(struct fpm_scoreboard_proc_s) * scoreboard->nprocs;
-	
+
 	fpm_shm_free(scoreboard, scoreboard_size + scoreboard_nprocs_size);
 }
 /* }}} */
@@ -336,4 +335,3 @@ float fpm_scoreboard_get_tick() /* {{{ */
 }
 /* }}} */
 #endif
-

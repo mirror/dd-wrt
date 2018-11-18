@@ -7,10 +7,10 @@ Test session_id() function : error functionality
 
 ob_start();
 
-/* 
+/*
  * Prototype : string session_id([string $id])
  * Description : Get and/or set the current session id
- * Source code : ext/session/session.c 
+ * Source code : ext/session/session.c
  */
 
 echo "*** Testing session_id() : error functionality ***\n";
@@ -38,4 +38,3 @@ string(10) "1234567890"
 bool(true)
 string(0) ""
 Done
-
