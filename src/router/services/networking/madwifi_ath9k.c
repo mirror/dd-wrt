@@ -441,15 +441,9 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		usebw = 8080;
 
 	if (has_ac(prefix)) {
-		if (!strcmp(netmode, "na-only") ||	//
-		    !strcmp(netmode, "ng-only") ||	//
-		    !strcmp(netmode, "n2-only") ||	//
-		    !strcmp(netmode, "g-only") ||	//
-		    !strcmp(netmode, "b-only") ||	//
-		    !strcmp(netmode, "bg-mixed") ||	//
-		    !strcmp(netmode, "a-only") ||	//
-		    !strcmp(netmode, "na-only") ||	//
-		    !strcmp(netmode, "n5-only")) {
+		if (strcmp(netmode, "acn-mixed") &&	//
+		    strcmp(netmode, "ac-only ") &&	//
+		    strcmp(netmode, "mixed")) {
 			fprintf(fp, "ieee80211ac=0\n");
 		}
 	}
