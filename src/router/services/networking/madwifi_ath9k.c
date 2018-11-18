@@ -455,7 +455,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			if (!isath5k)
 				fprintf(fp, "require_ht=1\n");
 		}
-		if(!strcmp(netmode, "g-only")){
+		if( !strcmp(netmode, "g-only") || !strcmp(netmode, "a-only")){
 			fprintf(fp, "basic_rates=60 120 240\n");
 			fprintf(fp, "supported_rates=60 90 120 180 240 360 480 540\n");
 		}
