@@ -13,10 +13,10 @@ session.cookie_httponly=0
 
 ob_start();
 
-/* 
+/*
  * Prototype : array session_get_cookie_params(void)
  * Description : Get the session cookie parameters
- * Source code : ext/session/session.c 
+ * Source code : ext/session/session.c
  */
 
 echo "*** Testing session_get_cookie_params() : variation ***\n";
@@ -111,4 +111,3 @@ array(5) {
   bool(true)
 }
 Done
-

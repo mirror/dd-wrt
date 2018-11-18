@@ -11,6 +11,5 @@ $class = new ReflectionClass("Foo");
 $props = $class->getDefaultProperties();
 echo $props["test"];
 ?>
---EXPECT--	
+--EXPECT--
 ok
-

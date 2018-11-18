@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 
 #include <windows.h>
@@ -165,7 +164,7 @@ static const struct cp cp_map[] = {
 	{ 65001,	"utf-8", "UTF-8", "Unicode (UTF-8)" },
 	{ 0,	NULL, NULL },
 };
-	
+
 
 
 

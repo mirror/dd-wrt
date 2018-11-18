@@ -20,7 +20,7 @@
    +----------------------------------------------------------------------+
 */
 
-/* $Id: 3bd31e48a84f686e08d99aa98943ae42bea65682 $ */
+/* $Id: f1096fbe817b0413895286a603375570e78fb553 $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -1577,7 +1577,7 @@ ZEND_METHOD(reflection_function, __construct)
 	if (zend_parse_parameters_ex(ZEND_PARSE_PARAMS_QUIET, ZEND_NUM_ARGS(), "O", &closure, zend_ce_closure) == SUCCESS) {
 		fptr = (zend_function*)zend_get_closure_method_def(closure);
 		Z_ADDREF_P(closure);
-	} else { 
+	} else {
 		if (zend_parse_parameters_throw(ZEND_NUM_ARGS(), "s", &name_str, &name_len) == FAILURE) {
 			return;
 		}
@@ -1897,6 +1897,11 @@ ZEND_METHOD(reflection_function, invoke)
 	fcc.called_scope = NULL;
 	fcc.object = NULL;
 
+	if (!Z_ISUNDEF(intern->obj)) {
+		Z_OBJ_HT(intern->obj)->get_closure(
+			&intern->obj, &fcc.called_scope, &fcc.function_handler, &fcc.object);
+	}
+
 	result = zend_call_function(&fci, &fcc);
 
 	if (result == FAILURE) {
@@ -1957,6 +1962,11 @@ ZEND_METHOD(reflection_function, invokeArgs)
 	fcc.calling_scope = zend_get_executed_scope();
 	fcc.called_scope = NULL;
 	fcc.object = NULL;
+
+	if (!Z_ISUNDEF(intern->obj)) {
+		Z_OBJ_HT(intern->obj)->get_closure(
+			&intern->obj, &fcc.called_scope, &fcc.function_handler, &fcc.object);
+	}
 
 	result = zend_call_function(&fci, &fcc);
 
@@ -2938,7 +2948,7 @@ ZEND_METHOD(reflection_type, __toString)
 		return;
 	}
 	GET_REFLECTION_OBJECT_PTR(param);
-	
+
 	RETURN_STR(reflection_type_name(param));
 }
 /* }}} */
@@ -2949,12 +2959,12 @@ ZEND_METHOD(reflection_named_type, getName)
 {
 	reflection_object *intern;
 	type_reference *param;
-	
+
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
 	}
 	GET_REFLECTION_OBJECT_PTR(param);
-	
+
 	RETURN_STR(reflection_type_name(param));
 }
 /* }}} */
@@ -3211,13 +3221,11 @@ static void reflection_method_invoke(INTERNAL_FUNCTION_PARAMETERS, int variadic)
 	fcc.called_scope = intern->ce;
 	fcc.object = object ? Z_OBJ_P(object) : NULL;
 
-	if (!variadic) {
-		/*
-		 * Copy the zend_function when calling via handler (e.g. Closure::__invoke())
-		 */
-		if ((mptr->internal_function.fn_flags & ZEND_ACC_CALL_VIA_TRAMPOLINE)) {
-			fcc.function_handler = _copy_function(mptr);
-		}
+	/*
+	 * Copy the zend_function when calling via handler (e.g. Closure::__invoke())
+	 */
+	if ((mptr->internal_function.fn_flags & ZEND_ACC_CALL_VIA_TRAMPOLINE)) {
+		fcc.function_handler = _copy_function(mptr);
 	}
 
 	result = zend_call_function(&fci, &fcc);
@@ -6756,7 +6764,7 @@ PHP_MINIT_FUNCTION(reflection) /* {{{ */
 	INIT_CLASS_ENTRY(_reflection_entry, "ReflectionType", reflection_type_functions);
 	_reflection_entry.create_object = reflection_objects_new;
 	reflection_type_ptr = zend_register_internal_class(&_reflection_entry);
-	
+
 	INIT_CLASS_ENTRY(_reflection_entry, "ReflectionNamedType", reflection_named_type_functions);
 	_reflection_entry.create_object = reflection_objects_new;
 	reflection_named_type_ptr = zend_register_internal_class_ex(&_reflection_entry, reflection_type_ptr);
@@ -6827,7 +6835,7 @@ PHP_MINFO_FUNCTION(reflection) /* {{{ */
 	php_info_print_table_start();
 	php_info_print_table_header(2, "Reflection", "enabled");
 
-	php_info_print_table_row(2, "Version", "$Id: 3bd31e48a84f686e08d99aa98943ae42bea65682 $");
+	php_info_print_table_row(2, "Version", "$Id: f1096fbe817b0413895286a603375570e78fb553 $");
 
 	php_info_print_table_end();
 } /* }}} */
