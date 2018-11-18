@@ -1110,11 +1110,13 @@ int __init ar7240_platform_init(void)
 #ifdef CONFIG_WASP_SUPPORT
 #define DB120_MAC0_OFFSET	0
 #define DB120_MAC1_OFFSET	6
-    #ifdef CONFIG_DIR825C1
+    #ifdef CONFIG_ARCHERC7V5
+	u8 *art = (u8 *)KSEG1ADDR(0x1f050000);     
+    #elif defined(CONFIG_DIR825C1)
 	u8 *art = (u8 *)KSEG1ADDR(0x1fff1000);
-    #elif CONFIG_WR841V8
+    #elif defined(CONFIG_WR841V8)
 //              u8 *art = (u8 *) KSEG1ADDR(0x1fff1000);
-    #elif CONFIG_WR810N
+    #elif defined(CONFIG_WR810N)
 //              u8 *art = (u8 *) KSEG1ADDR(0x1fff1000);
     #else
 	u8 *art = (u8 *)KSEG1ADDR(0x1fff0000);
@@ -1215,6 +1217,10 @@ int __init ar7240_platform_init(void)
 		scanmac(mac0,(u8 *)KSEG1ADDR(0x1f040000),"lan_mac=");
 		scanmac(mac1,(u8 *)KSEG1ADDR(0x1f040000),"wan_mac=");
 	}
+    #elif CONFIG_ARCHERC7V5
+	mac = (u8 *)KSEG1ADDR(0x1f060008);
+	ath79_init_mac(mac0, mac, -1);
+	ath79_init_mac(mac1, mac, 0);
     #elif CONFIG_ARCHERC7V4
 	mac = (u8 *)KSEG1ADDR(0x1ff00008);
 	ath79_init_mac(mac0, mac, -1);
