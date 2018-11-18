@@ -441,8 +441,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		usebw = 8080;
 
 	if (has_ac(prefix)) {
-		if (!strcmp(netmode, "na-only")
-		    ! strcmp(netmode, "ng-only") ||	//
+		if (!strcmp(netmode, "na-only") ||	//
+		    !strcmp(netmode, "ng-only") ||	//
 		    !strcmp(netmode, "n2-only") ||	//
 		    !strcmp(netmode, "g-only") ||	//
 		    !strcmp(netmode, "b-only") ||	//
