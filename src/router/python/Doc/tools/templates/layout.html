@@ -101,6 +101,14 @@
     </script>
     {% endif %}
     {% endif %}
+    {# custom CSS; used in asyncio docs! #}
+    <style>
+      @media only screen {{ "{" }}
+        table.full-width-table {{ "{" }}
+            width: 100%;
+        {{ "}" }}
+      {{ "}" }}
+    </style>
 {{ super() }}
 {% endblock %}
 {% block footer %}
