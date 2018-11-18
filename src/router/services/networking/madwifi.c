@@ -1182,9 +1182,228 @@ void start_ses_led_control(void)
 	}
 }
 
+extern char *hostapd_eap_get_types(void);
+
+void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
+{
+	char akm[16];
+	char mfp[16];
+	char ft[16];
+	char tmp[256];
+	char *debug;
+	char *types;
+
+	sprintf(akm, "%s_akm", prefix);
+	sprintf(ft, "%s_ft", prefix);
+	sprintf(mfp, "%s_mfp", prefix);
+
+	int ispsk2 = nvhas(akm, "psk2");
+	int ispsk = nvhas(akm, "psk");
+	int ispsk3 = nvhas(akm, "psk3");
+	int iswpa = nvhas(akm, "wpa");
+	int iswpa2 = nvhas(akm, "wpa2");
+	int iswpa3 = nvhas(akm, "wpa3");
+	int iswpa3_192 = nvhas(akm, "wpa3-192");
+	int iswpa2sha256 = nvhas(akm, "wpa2-sha256");
+	int ispsk2sha256 = nvhas(akm, "psk2-sha256");
+	int iswep = nvhas(akm, "wep");
+
+	if (!strncmp(prefix, "ath0", 4))
+		led_control(LED_SEC0, LED_ON);
+	if (!strncmp(prefix, "ath1", 4))
+		led_control(LED_SEC1, LED_ON);
+	// sprintf(buf, "rsn_preauth_interfaces=%s\n", "br0");
+	if (nvram_nmatch("1", "%s_bridged", prefix))
+		fprintf(fp, "bridge=%s\n", getBridge(prefix, tmp));
+	fprintf(fp, "logger_syslog=-1\n");
+	debug = nvram_nget("%s_wpa_debug", prefix);
+	if (debug != NULL) {
+		if (!strcmp(debug, "1"))
+			fprintf(fp, "logger_syslog_level=1\n");
+		else if (!strcmp(debug, "2"))
+			fprintf(fp, "logger_syslog_level=2\n");
+		else if (!strcmp(debug, "3"))
+			fprintf(fp, "logger_syslog_level=0\n");
+	} else
+		fprintf(fp, "logger_syslog_level=2\n");
+	fprintf(fp, "logger_stdout=-1\n");
+	fprintf(fp, "logger_stdout_level=2\n");
+	// fprintf (fp, "eap_server=0\n");
+	// fprintf (fp, "own_ip_addr=127.0.0.1\n");
+	fprintf(fp, "eapol_version=1\n");
+	fprintf(fp, "eapol_key_index_workaround=0\n");
+	char eap_key_retries[32];
+	sprintf(eap_key_retries, "%s_disable_eapol_key_retries", prefix);
+	if (nvram_default_matchi(eap_key_retries, 1, 0)) {
+		fprintf(fp, "wpa_disable_eapol_key_retries=1\n");
+	}
+	int wpamask = 0;
+	if (ispsk || iswpa)
+		wpamask |= 1;
+	if (ispsk2 || ispsk3 || iswpa2 || iswpa3 || iswpa3_192 || iswpa2sha256 || ispsk2sha256)
+		wpamask |= 2;
+	fprintf(fp, "wpa=%d\n", wpamask);
+	if (ispsk)
+		nvram_nset("1", "%s_psk", prefix);
+	if (ispsk2)
+		nvram_nset("1", "%s_psk2", prefix);
+	if (ispsk2sha256)
+		nvram_nset("1", "%s_psk2-sha256", prefix);
+	if (ispsk3)
+		nvram_nset("1", "%s_psk3", prefix);
+	if (iswpa)
+		nvram_nset("1", "%s_wpa3", prefix);
+	if (iswpa2)
+		nvram_nset("1", "%s_wpa2", prefix);
+	if (iswpa2sha256)
+		nvram_nset("1", "%s_wpa2-sha256", prefix);
+	if (iswpa3)
+		nvram_nset("1", "%s_wpa3", prefix);
+	if (iswpa3_192)
+		nvram_nset("1", "%s_wpa3-192", prefix);
+#ifdef HAVE_80211W
+	if (nvram_default_matchi(mfp, 1, 0) || ispsk3 || iswpa3 || iswpa3_192 || ispsk2sha256 || iswpa2sha256)
+		fprintf(fp, "ieee80211w=2\n");
+	else if (nvram_default_matchi(mfp, -1, 0))
+		fprintf(fp, "ieee80211w=1\n");
+	else if (nvram_default_matchi(mfp, 0, 0))
+		fprintf(fp, "ieee80211w=0\n");
+#endif
+	if (ispsk || ispsk2 || ispsk2sha256 || ispsk3) {
+		if (strlen(nvram_nget("%s_wpa_psk", prefix)) == 64)
+			fprintf(fp, "wpa_psk=%s\n", nvram_nget("%s_wpa_psk", prefix));
+		else
+			fprintf(fp, "wpa_passphrase=%s\n", nvram_nget("%s_wpa_psk", prefix));
+	}
+	fprintf(fp, "wpa_key_mgmt=");
+	if (ispsk2 || ispsk)
+		fprintf(fp, "WPA-PSK ");
+	if (has_wpa3(prefix) && ispsk3)
+		fprintf(fp, "SAE ");
+	if (has_wpa3(prefix) && ispsk2sha256)
+		fprintf(fp, "WPA-PSK-SHA256 ");
+	if (iswpa2 || iswpa)
+		fprintf(fp, "WPA-EAP ");
+	if (has_wpa3(prefix) && iswpa2sha256)
+		fprintf(fp, "WPA-SHA256 ");
+	if (has_wpa3(prefix) && iswpa3)
+		fprintf(fp, "WPA-EAP-SUITE-B ");
+	if (has_wpa3(prefix) && iswpa3_192)
+		fprintf(fp, "WPA-EAP-SUITE-B-192 ");
+#ifdef HAVE_80211R
+	if (has_wpa3(prefix) && nvram_matchi(ft, 1) && ispsk3)
+		fprintf(fp, "FT-SAE ");
+	if (nvram_matchi(ft, 1) && (ispsk2 || ispsk))
+		fprintf(fp, "FT-PSK ");
+	if (nvram_matchi(ft, 1) && (iswpa || iswpa2))
+		fprintf(fp, "FT-EAP ");
+#endif
+	fprintf(fp, "\n");
+#ifdef HAVE_80211R
+	if (nvram_matchi(ft, 1)
+	    && (ispsk3 || ispsk || ispsk2 || ispsk2sha256)) {
+		fprintf(fp, "nas_identifier=%s\n", nvram_nget("%s_nas", prefix));
+		fprintf(fp, "mobility_domain=%s\n", nvram_nget("%s_domain", prefix));
+		fprintf(fp, "ft_over_ds=1\n");
+		fprintf(fp, "pmk_r1_push=1\n");
+		// todo. add key holders
+	}
+#endif
+	if (iswpa || iswpa2 || iswpa3 || iswpa3_192 || iswpa2sha256) {
+		fprintf(fp, "ieee8021x=1\n");
+		char local_ip[32];
+		sprintf(local_ip, "%s_local_ip", prefix);
+		char *lip = nvram_default_get(local_ip, "0.0.0.0");
+		if (strcmp(lip, "0.0.0.0")) {
+			fprintf(fp, "radius_client_addr=%s\n", lip);
+			fprintf(fp, "own_ip_addr=%s\n", lip);
+		} else {
+			if (nvram_match("wan_proto", "disabled"))
+				fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
+			else {
+				char *wip = get_wan_ipaddr();
+				if (strlen(wip))
+					fprintf(fp, "own_ip_addr=%s\n", wip);
+				else
+					fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
+			}
+
+		}
+
+		fprintf(fp, "eap_server=0\n");
+		fprintf(fp, "auth_algs=1\n");
+		char retry[32];
+		sprintf(retry, "%s_radius_retry", prefix);
+		fprintf(fp, "radius_retry_primary_interval=%s\n", nvram_default_get(retry, "600"));
+		types = hostapd_eap_get_types();
+		fprintf(fp, "%s", types);
+		free(types);
+		fprintf(fp, "auth_server_addr=%s\n", nvram_nget("%s_radius_ipaddr", prefix));
+		fprintf(fp, "auth_server_port=%s\n", nvram_nget("%s_radius_port", prefix));
+		fprintf(fp, "auth_server_shared_secret=%s\n", nvram_nget("%s_radius_key", prefix));
+		char check[64];
+		sprintf(check, "%s_radius2_ipaddr", prefix);
+		nvram_default_get(check, "0.0.0.0");
+		if (!nvram_nmatch("", "%s_radius2_ipaddr", prefix)
+		    && !nvram_nmatch("0.0.0.0", "%s_radius2_ipaddr", prefix)
+		    && !nvram_nmatch("", "%s_radius2_port", prefix)) {
+			fprintf(fp, "auth_server_addr=%s\n", nvram_nget("%s_radius2_ipaddr", prefix));
+			fprintf(fp, "auth_server_port=%s\n", nvram_nget("%s_radius2_port", prefix));
+			fprintf(fp, "auth_server_shared_secret=%s\n", nvram_nget("%s_radius2_key", prefix));
+		}
+		if (nvram_nmatch("1", "%s_acct", prefix)) {
+			fprintf(fp, "acct_server_addr=%s\n", nvram_nget("%s_acct_ipaddr", prefix));
+			fprintf(fp, "acct_server_port=%s\n", nvram_nget("%s_acct_port", prefix));
+			fprintf(fp, "acct_server_shared_secret=%s\n", nvram_nget("%s_acct_key", prefix));
+		}
+
+	}
+	char pwstring[128] = {
+		0, 0
+	};
+	get_pairwise(prefix, pwstring, NULL, 0);
+
+	if (!strlen(pwstring)) {
+		char psk[32];
+		sprintf(psk, "%s_crypto", prefix);
+		if (nvram_match(psk, "aes")) {
+			nvram_nset("1", "%s_ccmp", prefix);
+			fprintf(fp, "wpa_pairwise=CCMP\n");
+		}
+		if (nvram_match(psk, "ccmp-256")) {
+			nvram_nset("1", "%s_ccmp-256", prefix);
+			fprintf(fp, "wpa_pairwise=CCMP-256\n");
+		}
+		if (nvram_match(psk, "gcmp")) {
+			nvram_nset("1", "%s_gcmp", prefix);
+			fprintf(fp, "wpa_pairwise=GCMP\n");
+		}
+		if (nvram_match(psk, "gcmp-256")) {
+			nvram_nset("1", "%s_gcmp-256", prefix);
+			fprintf(fp, "wpa_pairwise=GCMP-256\n");
+		}
+		if (nvram_match(psk, "tkip")) {
+			nvram_nset("1", "%s_tkip", prefix);
+			if (!isfirst)
+				fprintf(fp, "ieee80211n=0\n");
+			fprintf(fp, "wpa_pairwise=TKIP\n");
+		}
+		if (nvram_match(psk, "tkip+aes")) {
+			nvram_nset("1", "%s_ccmp", prefix);
+			nvram_nset("1", "%s_tkip", prefix);
+			fprintf(fp, "wpa_pairwise=TKIP CCMP\n");
+		}
+	} else {
+		fprintf(fp, "wpa_pairwise=%s\n", &pwstring[1]);
+	}
+	fprintf(fp, "wpa_group_rekey=%s\n", nvram_nget("%s_wpa_gtk_rekey", prefix));
+	if (ispsk3 || ispsk || ispsk2 || ispsk2sha256)
+		addWPS(fp, prefix, 1);
+
+}
+
 #ifdef HAVE_MADWIFI
 
-extern char *hostapd_eap_get_types(void);
 void setupHostAP(char *prefix, char *driver, int iswan)
 {
 #ifdef HAVE_REGISTER
@@ -1251,179 +1470,11 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 		do_hostapd(fstr, prefix);
 
 	} else if (ispsk || ispsk2 || ispsk3 || iswpa || iswpa2 || iswpa3 || iswpa3_192 || iswpa2sha256 || ispsk2sha256) {
-		if (!strncmp(prefix, "ath0", 4))
-			led_control(LED_SEC0, LED_ON);
-		if (!strncmp(prefix, "ath1", 4))
-			led_control(LED_SEC1, LED_ON);
-
 		sprintf(fstr, "/tmp/%s_hostap.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
-
 		fprintf(fp, "interface=%s\n", prefix);
-		// sprintf(buf, "rsn_preauth_interfaces=%s\n", "br0");
-		if (nvram_nmatch("1", "%s_bridged", prefix))
-			fprintf(fp, "bridge=%s\n", getBridge(prefix, tmp));
 		fprintf(fp, "driver=%s\n", driver);
-		fprintf(fp, "logger_syslog=-1\n");
-		fprintf(fp, "logger_syslog_level=2\n");
-		fprintf(fp, "logger_stdout=-1\n");
-		fprintf(fp, "logger_stdout_level=2\n");
-		fprintf(fp, "debug=0\n");
-		// fprintf (fp, "eap_server=0\n");
-		// fprintf (fp, "own_ip_addr=127.0.0.1\n");
-		fprintf(fp, "eapol_version=1\n");
-		fprintf(fp, "eapol_key_index_workaround=0\n");
-		char eap_key_retries[32];
-		sprintf(eap_key_retries, "%s_wpa_disable_eapol_key_retries", prefix);
-		if (nvram_default_matchi(eap_key_retries, 1, 0)) {
-			fprintf(fp, "wpa_disable_eapol_key_retries=1\n");
-		}
-		if (ispsk)
-			nvram_nset("1", "%s_psk", prefix);
-		if (ispsk2)
-			nvram_nset("1", "%s_psk2", prefix);
-		if (ispsk3)
-			nvram_nset("1", "%s_psk3", prefix);
-		if (iswpa)
-			nvram_nset("1", "%s_wpa3", prefix);
-		if (iswpa2)
-			nvram_nset("1", "%s_wpa2", prefix);
-		if (iswpa3)
-			nvram_nset("1", "%s_wpa3", prefix);
-		if (iswpa3_192)
-			nvram_nset("1", "%s_wpa3-192", prefix);
-
-		int wpamask = 0;
-		if (ispsk || iswpa)
-			wpamask |= 1;
-		if (ispsk2 || ispsk3 || iswpa2 || iswpa3 || iswpa3_192 || iswpa2sha256 || ispsk2sha256)
-			wpamask |= 2;
-		fprintf(fp, "wpa=%d\n", wpamask);
-#ifdef HAVE_80211W
-		if (nvram_default_matchi(mfp, 1, 0) || ispsk3 || iswpa3 || iswpa3_192)
-			fprintf(fp, "ieee80211w=2\n");
-		else if (nvram_default_matchi(mfp, -1, 0))
-			fprintf(fp, "ieee80211w=1\n");
-		else if (nvram_default_matchi(mfp, 0, 0))
-			fprintf(fp, "ieee80211w=0\n");
-#endif
-		if (ispsk || ispsk2 || ispsk2sha256 || ispsk3) {
-			if (strlen(nvram_nget("%s_wpa_psk", prefix)) == 64)
-				fprintf(fp, "wpa_psk=%s\n", nvram_nget("%s_wpa_psk", prefix));
-			else
-				fprintf(fp, "wpa_passphrase=%s\n", nvram_nget("%s_wpa_psk", prefix));
-		}
-		fprintf(fp, "wpa_key_mgmt=");
-		if (ispsk2 || ispsk)
-			fprintf(fp, "WPA-PSK ");
-		if (has_wpa3(prefix) && ispsk3)
-			fprintf(fp, "SAE ");
-		if (has_wpa3(prefix) && ispsk2sha256)
-			fprintf(fp, "WPA-PSK-SHA256 ");
-		if (iswpa2 || iswpa)
-			fprintf(fp, "WPA-EAP ");
-		if (has_wpa3(prefix) && iswpa2sha256)
-			fprintf(fp, "WPA-SHA256 ");
-		if (has_wpa3(prefix) && iswpa3)
-			fprintf(fp, "WPA-EAP-SUITE-B ");
-		if (has_wpa3(prefix) && iswpa3_192)
-			fprintf(fp, "WPA-EAP-SUITE-B-192 ");
-
-#ifdef HAVE_80211R
-		if (has_wpa3(prefix) && nvram_matchi(ft, 1) && ispsk3)
-			fprintf(fp, "FT-SAE ");
-		if (nvram_matchi(ft, 1) && (ispsk2 || ispsk))
-			fprintf(fp, "FT-PSK ");
-		if (nvram_matchi(ft, 1) && (iswpa || iswpa2))
-			fprintf(fp, "FT-EAP ");
-#endif
-		fprintf(fp, "\n");
-
-		if (iswpa || iswpa2 || iswpa3 || iswpa3_192 || iswpa2sha256) {
-			fprintf(fp, "ieee8021x=1\n");
-			char local_ip[32];
-			sprintf(local_ip, "%s_local_ip", prefix);
-			char *lip = nvram_default_get(local_ip, "0.0.0.0");
-			if (strcmp(lip, "0.0.0.0")) {
-				fprintf(fp, "radius_client_addr=%s\n", lip);
-				fprintf(fp, "own_ip_addr=%s\n", lip);
-			} else {
-				if (nvram_match("wan_proto", "disabled"))
-					fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
-				else {
-					char *wip = get_wan_ipaddr();
-					if (strlen(wip))
-						fprintf(fp, "own_ip_addr=%s\n", wip);
-					else
-						fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
-				}
-
-			}
-
-			fprintf(fp, "eap_server=0\n");
-			fprintf(fp, "auth_algs=1\n");
-			char retry[32];
-			sprintf(retry, "%s_radius_retry", prefix);
-			fprintf(fp, "radius_retry_primary_interval=%s\n", nvram_default_get(retry, "600"));
-			types = hostapd_eap_get_types();
-			fprintf(fp, "%s", types);
-			free(types);
-			fprintf(fp, "auth_server_addr=%s\n", nvram_nget("%s_radius_ipaddr", prefix));
-			fprintf(fp, "auth_server_port=%s\n", nvram_nget("%s_radius_port", prefix));
-			fprintf(fp, "auth_server_shared_secret=%s\n", nvram_nget("%s_radius_key", prefix));
-			char check[64];
-			sprintf(check, "%s_radius2_ipaddr", prefix);
-			nvram_default_get(check, "0.0.0.0");
-
-			if (!nvram_nmatch("", "%s_radius2_ipaddr", prefix)
-			    && !nvram_nmatch("0.0.0.0", "%s_radius2_ipaddr", prefix)
-			    && !nvram_nmatch("", "%s_radius2_port", prefix)) {
-				fprintf(fp, "auth_server_addr=%s\n", nvram_nget("%s_radius2_ipaddr", prefix));
-				fprintf(fp, "auth_server_port=%s\n", nvram_nget("%s_radius2_port", prefix));
-				fprintf(fp, "auth_server_shared_secret=%s\n", nvram_nget("%s_radius2_key", prefix));
-			}
-			if (nvram_nmatch("1", "%s_acct", prefix)) {
-				fprintf(fp, "acct_server_addr=%s\n", nvram_nget("%s_acct_ipaddr", prefix));
-				fprintf(fp, "acct_server_port=%s\n", nvram_nget("%s_acct_port", prefix));
-				fprintf(fp, "acct_server_shared_secret=%s\n", nvram_nget("%s_acct_key", prefix));
-			}
-		}
-		char pwstring[128] = { 0, 0 };
-		get_pairwise(prefix, pwstring, NULL, 0);
-
-		if (!strlen(pwstring)) {
-			sprintf(psk, "%s_crypto", prefix);
-			if (nvram_match(psk, "aes")) {
-				nvram_nset("1", "%s_ccmp", prefix);
-				fprintf(fp, "wpa_pairwise=CCMP\n");
-			}
-			if (nvram_match(psk, "ccmp-256")) {
-				nvram_nset("1", "%s_ccmp-256", prefix);
-				fprintf(fp, "wpa_pairwise=CCMP-256\n");
-			}
-			if (nvram_match(psk, "gcmp")) {
-				nvram_nset("1", "%s_gcmp", prefix);
-				fprintf(fp, "wpa_pairwise=GCMP\n");
-			}
-			if (nvram_match(psk, "gcmp-256")) {
-				nvram_nset("1", "%s_gcmp-256", prefix);
-				fprintf(fp, "wpa_pairwise=GCMP-256\n");
-			}
-			if (nvram_match(psk, "tkip")) {
-				nvram_nset("1", "%s_tkip", prefix);
-				fprintf(fp, "wpa_pairwise=TKIP\n");
-			}
-			if (nvram_match(psk, "tkip+aes")) {
-				nvram_nset("1", "%s_ccmp", prefix);
-				nvram_nset("1", "%s_tkip", prefix);
-				fprintf(fp, "wpa_pairwise=TKIP CCMP\n");
-			}
-		} else {
-			fprintf(fp, "wpa_pairwise=%s\n", &pwstring[1]);
-		}
-		fprintf(fp, "wpa_group_rekey=%s\n", nvram_nget("%s_wpa_gtk_rekey", prefix));
-		if (ispsk3 || ispsk || ispsk2)
-			addWPS(fp, prefix, 1);
+		setupHostAPPSK(fp, prefix, 1);
 
 		// fprintf (fp, "jumpstart_p1=1\n");
 #ifdef HAVE_HOTSPOT20
