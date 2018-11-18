@@ -690,6 +690,17 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->usb_power = 0x008;
 
 		break;
+#elif HAVE_ARCHERC7V5
+	case ROUTER_BOARD_WHRHPGN:
+		cfg->diag_gpio = 0x006;
+		cfg->connected_gpio = 0x115;
+		cfg->disconnected_gpio = 0x114;
+		cfg->ses_gpio = 0x101;
+		cfg->sec0_gpio = 0x101;
+                cfg->usb_power = 0x013;
+		cfg->usb_gpio = 0x107;
+
+		break;
 #elif HAVE_ARCHERC7V4
 	case ROUTER_BOARD_WHRHPGN:
 		cfg->diag_gpio = 0x006;
