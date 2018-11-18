@@ -483,6 +483,9 @@ void start_sysinit(void)
 #endif
 #ifdef HAVE_WR1043V4
 	setWirelessLed(0, 19);
+#elif defined(HAVE_ARCHERC7V5)
+	setWirelessLed(0, 14);
+	setWirelessLed(1, 9);
 #elif defined(HAVE_ARCHERC7V4)
 	setWirelessLed(0, 24);
 	setWirelessLed(1, 9);
