@@ -455,6 +455,10 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			if (!isath5k)
 				fprintf(fp, "require_ht=1\n");
 		}
+		if(!strcmp(netmode, "ng-only")){
+			fprintf(fp, "basic_rates=60\n");
+			fprintf(fp, "supported_rates=60 90 120 180 240 360 480 540\n");
+		}
 		if (!isath5k && !has_ad(prefix)) {
 			fprintf(fp, "ieee80211n=1\n");
 			if (nvram_matchi(bw, 2040)) {
@@ -939,6 +943,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	char mfp[16];
 	char ft[16];
 	char fstr[32];
+	char preamble[16];
 	FILE *fp = NULL;
 	char *ssid;
 	char nssid[16];
@@ -970,6 +975,8 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	sprintf(akm, "%s_akm", ifname);
 	sprintf(ft, "%s_ft", ifname);
 	sprintf(mfp, "%s_mfp", ifname);
+	sprintf(preamble, "%s_preamble", ifname);
+	
 	if (nvram_match(akm, "8021X"))
 		return;
 	sprintf(fstr, "/tmp/%s_hostap.conf", maininterface);
@@ -985,6 +992,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fprintf(stderr, "setup vap %d bss %s\n", vapid, ifname);
 		fprintf(fp, "bss=%s\n", ifname);
 	}
+	fprintf(fp, "preamble=%s\n", nvram_default_get(preamble, "0"));
 	fprintf(fp, "disassoc_low_ack=1\n");
 	char *mode = nvram_nget("%s_mode", ifname);
 	if (!strcmp(mode, "wdsap"))
