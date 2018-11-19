@@ -162,6 +162,18 @@ void start_sysinit(void)
 			eval("rm", "-f", "/tmp/ath10k-board.bin");
 			eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
 		}
+
+		if (nvram_match("DD_BOARD", "UniFi UAP-AC-Pro")) {
+			eval("swconfig", "dev", "eth0", "set", "reset", "1");
+			eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
+			eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 3");
+			eval("swconfig", "dev", "eth0", "set", "apply");
+			eval("ifconfig", "eth0", "up");
+			eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+			eval("vconfig", "add", "eth0", "1");
+			eval("vconfig", "add", "eth0", "2");
+		}
 	}
 
 	if (brand == ROUTER_BOARD_NS5MXW) {
