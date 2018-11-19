@@ -71,6 +71,7 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->sec0_gpio = 0x001;
 		break;
 	case ROUTER_UBNT_UAPAC:
+	case ROUTER_UBNT_UAPACPRO:
 		cfg->ses_gpio = 0x007;
 		cfg->sec0_gpio = 0x007;
 		break;
