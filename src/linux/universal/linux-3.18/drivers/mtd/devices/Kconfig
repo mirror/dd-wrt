@@ -335,6 +335,9 @@ config XWM400
 config UAPAC
 	bool "support for UBNT UAP AC"
 	depends on UBNTXW
+config UAPACPRO
+	bool "support for UBNT UAP AC PRO"
+	depends on UAPAC
 config DAP3310
 	bool "support for Dlink DAP3310"
 	depends on UBNTXW

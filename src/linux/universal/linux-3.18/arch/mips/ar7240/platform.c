@@ -829,6 +829,30 @@ static struct mdio_board_info rambutan_mdio1_info[] = {
 	},
 };
 
+static struct ar8327_pad_cfg ubnt_unifiac_pro_ar8327_pad0_cfg = {
+	.mode = AR8327_PAD_MAC_SGMII,
+	.sgmii_delay_en = true,
+};
+
+static struct ar8327_platform_data ubnt_unifiac_pro_ar8327_data = {
+	.pad0_cfg = &ubnt_unifiac_pro_ar8327_pad0_cfg,
+	.port0_cfg = {
+		.force_link = 1,
+		.speed = AR8327_PORT_SPEED_1000,
+		.duplex = 1,
+		.txpause = 1,
+		.rxpause = 1,
+	},
+};
+
+
+static struct mdio_board_info ubnt_unifiac_pro_mdio0_info[] = {
+	{
+		.bus_id = "ag71xx-mdio.0",
+		.mdio_addr = 0,
+		.platform_data = &ubnt_unifiac_pro_ar8327_data,
+	},
+};
 
 
 #define ALFA_AP120C_LAN_PHYMASK		BIT(5)
@@ -1543,6 +1567,19 @@ int __init ar7240_platform_init(void)
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;
 	ar71xx_eth1_pll_data.pll_1000 = 0x03000101;
 	ar71xx_add_device_eth(1);
+    #elif CONFIG_UAPACPRO
+	ar71xx_add_device_mdio(0, 0);	
+
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_SGMII;
+	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
+	ar71xx_eth0_data.phy_mask = BIT(0);
+	ar71xx_eth0_pll_data.pll_10 = 0x00001313;
+
+
+	mdiobus_register_board_info(ubnt_unifiac_pro_mdio0_info,
+	                            ARRAY_SIZE(ubnt_unifiac_pro_mdio0_info));
+
+	ar71xx_add_device_eth(0);
     #elif CONFIG_UAPAC
 	ar71xx_add_device_mdio(0, ~BIT(4));	
 
