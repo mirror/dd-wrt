@@ -919,9 +919,7 @@ _8021xprv
 			nvram_set(auth, "none");
 			nvram_set(wep, "disabled");
 		}
-#ifndef HAVE_MADWIFI
 		nvram_set(n2, v);
-#endif
 	}
 #ifdef HAVE_MADWIFI
 
