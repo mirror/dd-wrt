@@ -461,7 +461,7 @@ void start_sysinit(void)
 		eval("/sbin/wlanled", "-l", "generic_12:-94", "-l", "generic_13:-76", "-l", "generic_11:-65");
 	eval("insmod", "i2c-gpio-custom", "bus0=0,3,2");
 	eval("insmod", "rtc-pcf8523");
-	writestr("/sys/class/i2c-dev/i2c-0/device/new_device","pcf8523 0x68");
+	writestr("/sys/class/i2c-dev/i2c-0/device/new_device", "pcf8523 0x68");
 	eval("hwclock", "-s", "-u");
 
 	eval("ledtool", "1", "4");	//buzzer

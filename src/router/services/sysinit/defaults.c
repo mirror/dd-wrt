@@ -1744,11 +1744,11 @@ struct nvram_param srouter_defaults[] = {
 	{"ath0_security_mode", "psk2"},
 	{"ath0_akm", "psk2"},
 	{"ath0_psk2", "1"},
-	{"ath0_wpa_psk","12345678"},
+	{"ath0_wpa_psk", "12345678"},
 	{"ath1_security_mode", "psk2"},
 	{"ath1_akm", "psk2"},
 	{"ath1_psk2", "1"},
-	{"ath1_wpa_psk","12345678"},
+	{"ath1_wpa_psk", "12345678"},
 	{"resetbutton_enable", "0"},
 #elif  HAVE_BKM
 	{"router_name", "BKM-HSDL"},
