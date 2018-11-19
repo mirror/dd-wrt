@@ -1722,9 +1722,18 @@ int internal_getRouterBrand()
 		{-1, "NanoBeam M2 XW", 0xe2c2, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10},	//
 		{-1, "NanoBeam M5 XW", 0xe3e5, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10},	//
 		{-1, "NanoBeam M5 XW", 0xe4e5, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10},	// // gigabit
+		{-1, "NanoBeam M2 XW", 0xe812, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10},	//
 		{-1, "NanoBeam M5 XW", 0xe815, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10},	//
 		{-1, "NanoBeam M5 XW", 0xe825, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10},	//
-
+		{-1, "NanoBeam M5 XW", 0xe875, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10},	//
+		{-1, "LiteBeam M5 XW", 0xe865, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10},	//
+		{-1, "LiteBeam M5 XW", 0xe895, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10},	//
+		{-1, "PowerBeam M2 XW", 0xe2c2, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10},	//
+		{-1, "PowerBeam M5 XW", 0xe3e5, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10},	//
+		{-1, "PowerBeam M5 XW", 0xe4e5, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10},	//
+		{-1, "PowerBeam M5 XW", 0xe5e5, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10},	//
+		{-1, "PowerBeam M5 XW", 0xe885, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10},	//
+		{-1, "ISO Station M5", 0xe7f8, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10},	//
 		{-1, "NanoStation M2", 0xe002, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10},	//
 		{-1, "NanoStation M2", 0xe012, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10},	//
 		{-1, "NanoStation M5", 0xe005, 3, 3, 0, 0, ROUTER_BOARD_NS5M, 0, 10},	//
@@ -1740,6 +1749,7 @@ int internal_getRouterBrand()
 		{-1, "Rocket M2", 0xe112, 3, 3, 0, 0, ROUTER_BOARD_R2M, 0, 0},	//
 		{-1, "Rocket M2", 0xe1b2, 3, 3, 0, 0, ROUTER_BOARD_R2M, 0, 0},	//
 		{-1, "Rocket M2", 0xe1c2, 3, 3, 0, 0, ROUTER_BOARD_R2M, 0, 0},	//
+		{-1, "Rocket M2 XW", 0xe868, 3, 3, 0, 0, ROUTER_BOARD_R2M, 0, 0},	//
 		{-1, "Rocket M2 Titanium XW", 0xe1d2, 3, 3, 0, 0, ROUTER_BOARD_TI, 0, 0},	// Titanium
 		{-1, "Rocket M5 Titanium XW", 0xe4d5, 3, 3, 0, 0, ROUTER_BOARD_TI, 0, 0},	// Titanium
 		{-1, "Rocket M5", 0xe105, 3, 3, 0, 0, ROUTER_BOARD_R5M, 0, 0},	//
@@ -1758,9 +1768,14 @@ int internal_getRouterBrand()
 		{-1, "Rocket M900", 0xe1d9, 3, 3, 0, 0, ROUTER_BOARD_R2M, M900, 0},	//
 		{-1, "Airbeam 5", 0xe1e5, 3, 3, 0, 0, ROUTER_BOARD_R5M, 0, 10},	//
 		{-1, "Bullet M2", 0xe202, 1, 1, 0, 0, ROUTER_BOARD_BS5M, 0, 10},	//
+		{-1, "Bullet M2", 0xe2c3, 1, 1, 0, 0, ROUTER_BOARD_BS5M, 0, 10},	//
+		{-1, "Bullet M2", 0xe2c4, 1, 1, 0, 0, ROUTER_BOARD_BS5M, 0, 10},	//
+		{-1, "Bullet M2 XW", 0xe869, 1, 1, 0, 0, ROUTER_BOARD_BS5M, 0, 10},	//
+		{-1, "Bullet M2", 0xe2d2, 3, 3, 0, 0, ROUTER_BOARD_TI, 0, 10},	// Titanium
+		{-1, "Bullet M2", 0xe2d4, 3, 3, 0, 0, ROUTER_BOARD_TI, 0, 10},	// Titanium
 		{-1, "Bullet M5", 0xe205, 1, 1, 0, 0, ROUTER_BOARD_BS5M, 0, 10},	//
-		{-1, "Bullet M2 Titanium", 0xe2d2, 3, 3, 0, 0, ROUTER_BOARD_TI, 0, 10},	// Titanium
-		{-1, "Bullet M5 Titanium", 0xe2d5, 3, 3, 0, 0, ROUTER_BOARD_TI, 0, 10},	// Titanium
+		{-1, "Bullet M5", 0xe2d5, 3, 3, 0, 0, ROUTER_BOARD_TI, 0, 10},	// Titanium
+		{-1, "Bullet M2 Titanium", 0xe879, 3, 3, 0, 0, ROUTER_BOARD_TI, 0, 10},	// Titanium
 		{-1, "Airgrid M2", 0xe212, 1, 1, 0, 0, ROUTER_BOARD_BS2M, 0, 10},	//
 		{-1, "Airgrid M2", 0xe242, 1, 1, 0, 0, ROUTER_BOARD_BS2M, 0, 10},	//
 		{-1, "Airgrid M2HP", 0xe252, 1, 1, 0, 0, ROUTER_BOARD_BS2M, 0, 10},	//
@@ -1774,11 +1789,11 @@ int internal_getRouterBrand()
 		{-1, "Pico M5", 0xe305, 1, 1, 0, 0, ROUTER_BOARD_BS5M, 0, 10},	//
 		{-1, "Airwire", 0xe405, 3, 3, 0, 0, ROUTER_BOARD_BS5M, 0, 10},	//
 		{-1, "Airwire", 0xe4a5, 3, 3, 0, 0, ROUTER_BOARD_BS5M, 0, 10},	//
+		{-1, "Loco M2", 0xe0a2, 3, 3, 0, 0, ROUTER_BOARD_NS5M, 0, 10},	//
+		{-1, "Loco M2 XW", 0xe867, 3, 3, 0, 0, ROUTER_BOARD_NS5M, 0, 10},	//
 		{-1, "Loco M5", 0xe0a5, 3, 3, 0, 0, ROUTER_BOARD_NS5M, 0, 10},	//
 		{-1, "Loco M5", 0xe8a5, 3, 3, 0, 0, ROUTER_BOARD_NS5M, 0, 10},	//
 		{-1, "Loco M5 XW", 0xe845, 3, 3, 0, 0, ROUTER_BOARD_NS5M, 0, 10},	//
-		{-1, "Loco M2", 0xe0a2, 3, 3, 0, 0, ROUTER_BOARD_NS5M, 0, 10},	//
-//              {-1,"Loco M2", 0xe8a2, 3, 3, 0, 0, ROUTER_BOARD_NS5M, 0},   //
 		{-1, "Loco M900", 0xe009, 3, 3, 0, 0, ROUTER_BOARD_NS5M, M900, 10},	//
 		{-1, "NanoStation M900 Sector", 0xe0b9, 3, 3, 0, 0, ROUTER_BOARD_NS5M, M900, 10},	//
 		{-1, "LiteStation M25", 0xe115, 3, 3, 0, 0, ROUTER_BOARD_NS5M, 0, 10},	//
