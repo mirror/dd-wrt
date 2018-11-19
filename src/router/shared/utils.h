@@ -775,6 +775,8 @@
 
 #define ROUTER_NETGEAR_R6700V3 0x106105
 
+#define ROUTER_UBNT_UAPACPRO 0x107102
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 
