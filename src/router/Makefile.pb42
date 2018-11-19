@@ -380,6 +380,11 @@ ifeq ($(CONFIG_UAPAC),y)
 else
 	echo "# CONFIG_UAPAC is not set" >> $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_UAPACPRO),y)
+	echo CONFIG_UAPACPRO=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_UAPACPRO is not set" >> $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_DIR859),y)
 	echo CONFIG_DIR859=y >> $(LINUXDIR)/.config
 else
