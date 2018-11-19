@@ -1731,6 +1731,7 @@ int internal_getRouterBrand()
 		{-1, "NanoStation M6", 0xe006, 3, 3, 0, 0, ROUTER_BOARD_NS5M, 0, 10},	//
 		{-1, "NanoStation M5", 0xe805, 3, 3, 0, 0, ROUTER_BOARD_NS5M, 0, 10},	//
 		{-1, "NanoStation M5 XW", 0xe855, 3, 3, 0, 0, ROUTER_BOARD_NS5MXW, 0, 10},	//
+		{-1, "NanoStation M2 XW", 0xe866, 3, 3, 0, 0, ROUTER_BOARD_NS5MXW, 0, 10},	//
 		{-1, "NanoStation M3", 0xe035, 3, 3, 0, 0, ROUTER_BOARD_NS5M, M35, 10},	//
 		{-1, "NanoStation M365", 0xe003, 3, 3, 0, 0, ROUTER_BOARD_NS5M, M365, 10},	//
 		{-1, "NanoStation M900", 0xe2b9, 3, 3, 0, 0, ROUTER_BOARD_NS5M, M900, 10},	//
