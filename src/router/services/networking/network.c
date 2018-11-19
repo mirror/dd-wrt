@@ -1467,6 +1467,7 @@ void start_lan(void)
 	case ROUTER_BOARD_NS2M:
 	case ROUTER_BOARD_NS5M:
 	case ROUTER_BOARD_AIRROUTER:
+	case ROUTER_UBNT_UAPACPRO:
 		devnum = 2;
 		break;
 	case ROUTER_BOARD_NS5MXW:
