@@ -75,6 +75,7 @@ do
 	    echo CONFIG_DAP2330=y >> .config
 	    echo CONFIG_JWAP606=y >> .config
 	    echo CONFIG_UAPAC=y >> .config
+	    echo CONFIG_UAPACPRO=y >> .config
 	    echo CONFIG_XWLOCO=y >> .config
 	    echo CONFIG_WR710=y >> .config
 	    echo CONFIG_GL150=y >> .config
@@ -122,6 +123,7 @@ do
 	    sed -i 's/\CONFIG_DAP2230=y/ /g' .config	    
 	    sed -i 's/\CONFIG_DAP2330=y/ /g' .config	    
 	    sed -i 's/\CONFIG_UAPAC=y/ /g' .config	    
+	    sed -i 's/\CONFIG_UAPACPRO=y/ /g' .config	    
 	    sed -i 's/\CONFIG_XWLOCO=y/ /g' .config	    
 	    sed -i 's/\CONFIG_GL150=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WR650AC=y/ /g' .config	    
