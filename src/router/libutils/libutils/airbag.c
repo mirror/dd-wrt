@@ -140,8 +140,7 @@ static const char *sigNames[MAX_SIGNALS] = {
 #endif
 	/*[SIGSEGV  ] = */ "SEGV",
 #if defined(__mips__)
-					/*[SIGSYS  ] =  */ "USR2",
-					// 12
+	/*[SIGSYS  ] =  */ "USR2",
 #else
 	/*[SIGUSR2  ] = */ "USR2",
 #endif
