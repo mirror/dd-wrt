@@ -95,6 +95,8 @@ void start_sysinit(void)
 	insmod("ocf");
 	insmod("cryptodev");
 	insmod("cryptocteon");
+	insmod("hwmon");
+	insmod("tmp421");
 	/*
 	 * network drivers 
 	 */
