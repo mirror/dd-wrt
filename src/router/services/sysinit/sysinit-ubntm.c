@@ -164,15 +164,15 @@ void start_sysinit(void)
 		}
 	}
 	if (brand == ROUTER_UBNT_UAPACPRO) {
-			eval("swconfig", "dev", "eth0", "set", "reset", "1");
-			eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
-			eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
-			eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 3");
-			eval("swconfig", "dev", "eth0", "set", "apply");
-			eval("ifconfig", "eth0", "up");
-			eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
-			eval("vconfig", "add", "eth0", "1");
-			eval("vconfig", "add", "eth0", "2");
+		eval("swconfig", "dev", "eth0", "set", "reset", "1");
+		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
+		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 3");
+		eval("swconfig", "dev", "eth0", "set", "apply");
+		eval("ifconfig", "eth0", "up");
+		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+		eval("vconfig", "add", "eth0", "1");
+		eval("vconfig", "add", "eth0", "2");
 	}
 
 	if (brand == ROUTER_BOARD_NS5MXW) {
@@ -214,7 +214,7 @@ void start_sysinit(void)
 	if (!nvram_matchi("wlanled", 0))
 		eval("/sbin/wlanled", "-L", "generic_14:-94", "-L", "generic_15:-76", "-L", "generic_16:-65");
 #elif HAVE_UBNTXW
-	if (brand == ROUTER_UBNT_UAPAC || brand == ROUTER_UBNT_UAPACPRO){
+	if (brand == ROUTER_UBNT_UAPAC || brand == ROUTER_UBNT_UAPACPRO) {
 		setWirelessLed(0, 7);
 		setWirelessLed(1, 8);
 	} else {
