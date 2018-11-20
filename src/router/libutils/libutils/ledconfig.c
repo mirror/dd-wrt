@@ -698,7 +698,7 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->disconnected_gpio = 0x114;
 		cfg->ses_gpio = 0x101;
 		cfg->sec0_gpio = 0x101;
-                cfg->usb_power = 0x013;
+		cfg->usb_power = 0x013;
 		cfg->usb_gpio = 0x107;
 
 		break;
