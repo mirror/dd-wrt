@@ -21,7 +21,7 @@
 #define RESET_WAIT		5	/* seconds */
 #else
 #define RESET_WAIT		3	/* seconds */
-#endif /*HAVE_ANTAIRA*/
+#endif				/*HAVE_ANTAIRA */
 
 #define RESET_WAIT_COUNT	RESET_WAIT * 10	/* 10 times a second */
 
@@ -281,7 +281,7 @@ static int getbuttonstate()
 #elif defined(HAVE_PERU)
 static int getbuttonstate()
 {
-	return 0;	//return !get_gpio(1);
+	return 0;		//return !get_gpio(1);
 }
 #elif defined(HAVE_LIMA)
 static int getbuttonstate()
