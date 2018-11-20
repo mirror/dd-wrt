@@ -132,10 +132,10 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	return;
 #endif
 #ifdef HAVE_OCTEON
-		show_temp(wp, 0, 1 "B1 %d.%d &#176;C");
-		show_temp(wp, 1, 1 "/ B2 %d.%d &#176;C");
-		show_temp(wp, 0, 2 "/ PHY1 %d.%d &#176;C");
-		show_temp(wp, 1, 2 "/ PHY2 %d.%d &#176;C");
+		show_temp(wp, 0, 1, "B1 %d.%d &#176;C");
+		show_temp(wp, 1, 1, "/ B2 %d.%d &#176;C");
+		show_temp(wp, 0, 2, "/ PHY1 %d.%d &#176;C");
+		show_temp(wp, 1, 2, "/ PHY2 %d.%d &#176;C");
 #endif
 #ifdef HAVE_ALPINE
 	show_temp(wp, 1, 1, "CPU %d.%d &#176;C");
