@@ -34,9 +34,9 @@ static int show_temp(webs_t wp, int mon, int input, char *fmt)
 		if (cpu > 0)
 			websWrite(wp, fmt, cpu / 1000, (cpu % 1000) / 100);
 		else
-			return -1;
+			return 0;
 	}
-	return 0;
+	return 1;
 }
 
 #elif defined(HAVE_ALPINE)
@@ -123,7 +123,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		show_temp(wp, 2, 2, " / WL1 %d.%d &#176;C");
 	} else {
 		int cpuresult = show_temp(wp, 0, 1, "CPU %d.%d &#176;C");
-		if (cpuresult)
+		if (!cpuresult)
 			show_temp(wp, 1, 1, "WL0 %d.%d &#176;C");
 		else
 			show_temp(wp, 1, 1, " / WL0 %d.%d &#176;C");
@@ -132,10 +132,10 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	return;
 #endif
 #ifdef HAVE_OCTEON
-		show_temp(wp, 0, 1, "B1 %d.%d &#176;C");
-		show_temp(wp, 1, 1, "/ B2 %d.%d &#176;C");
-		show_temp(wp, 0, 2, "/ PHY1 %d.%d &#176;C");
-		show_temp(wp, 1, 2, "/ PHY2 %d.%d &#176;C");
+	cpufound |= show_temp(wp, 0, 1, "B1 %d.%d &#176;C");
+	cpufound |= show_temp(wp, 1, 1, "/ B2 %d.%d &#176;C");
+	cpufound |= show_temp(wp, 0, 2, "/ PHY1 %d.%d &#176;C");
+	cpufound |= show_temp(wp, 1, 2, "/ PHY2 %d.%d &#176;C");
 #endif
 #ifdef HAVE_ALPINE
 	show_temp(wp, 1, 1, "CPU %d.%d &#176;C");
