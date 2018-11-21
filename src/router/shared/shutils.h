@@ -125,6 +125,9 @@ extern int f_exists(const char *path);	// note: anything but a directory
 
 extern int get_ifname_unit(const char *ifname, int *unit, int *subunit);
 
+
+extern int strhas(char *list, char *key);
+
 /*
  * Concatenate two strings together into a caller supplied buffer
  * @param       s1      first string
