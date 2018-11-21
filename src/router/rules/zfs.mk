@@ -17,7 +17,7 @@ libtirpc-install:
 	rm -f $(INSTALLDIR)/libtirpc/usr/lib/*.la
 
 
-zfs-configure: libtirpc-configure libtirpc libudev
+zfs-configure: libtirpc-configure libtirpc libudev openssl
 	cd zfs && ./autogen.sh
 	cd zfs && autoreconf
 	cd zfs && ./configure \
@@ -31,7 +31,7 @@ zfs-configure: libtirpc-configure libtirpc libudev
 	cd zfs && find . -name *.la -exec sed -i 's/relink_command/# relink_command/g' {} +
 	cd zfs && find . -name *.la -exec touch {} +
 
-zfs: libtirpc libudev
+zfs: libtirpc libudev openssl
 	$(MAKE) -j 4 -C zfs
 
 zfs-clean:
