@@ -2029,7 +2029,8 @@ wpa.radius_ipaddr="RADIUS-Server-IP";
 wpa.radius_port="RADIUS-Server-Port";
 wpa.radius_key="RADIUS-Key";
 wpa.algorithms="WPA-Algorithmus";
-wpa.shared_key="WPA gemeinsamer Schl&uuml;ssel";
+wpa.shared_key="gemeinsamer WPA Schl&uuml;ssel";
+wpa.sae_key="SAE Passwort";
 wpa.eapol_key_retries="EAPOL Schlüssel Wiederholung abschalten";
 wpa.ft="802.11r / Fast BSS Transission Unterstützung";
 
