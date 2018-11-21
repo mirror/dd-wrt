@@ -812,6 +812,9 @@ _8021xprv
 
 #endif
 	copytonv(wp, "%s_wpa_psk", prefix);
+#ifdef HAVE_MADWIFI
+	copytonv(wp, "%s_sae_key", prefix);
+#endif
 	copytonv(wp, "%s_disable_eapol_key_retries", prefix);
 #ifdef HAVE_80211R
 	copytonv(wp, "%s_ft", prefix);
