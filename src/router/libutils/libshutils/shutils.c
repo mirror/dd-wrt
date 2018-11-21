@@ -738,10 +738,9 @@ char *strcat_r(const char *s1, const char *s2, char *buf)
 	return buf;
 }
 
-int isListed(char *listname, char *value)
+int strhas(char *list, char *key)
 {
 	char *next, word[32];
-	char *list = nvram_get(listname);
 
 	if (!list)
 		return 0;
@@ -750,6 +749,11 @@ int isListed(char *listname, char *value)
 			return 1;
 	}
 	return 0;
+}
+
+int isListed(char *listname, char *value)
+{
+	return strhas(nvram_get(listname), value);
 }
 
 void addList(char *listname, char *value)
