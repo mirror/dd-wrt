@@ -202,58 +202,76 @@ void setupKey(char *prefix)
 
 void get_pairwise(char *prefix, char *pwstring, char *grpstring, int isadhoc)
 {
+	char temp_grpstring[256];
 	if (nvram_nmatch("1", "%s_ccmp", prefix)) {
 		sprintf(pwstring, "%s %s", pwstring, "CCMP");
 		if (grpstring) {
 #if defined(HAVE_MAKSAT) || defined(HAVE_TMK) || defined(HAVE_BKM)
 			if (isadhoc)
-				sprintf(grpstring, "%s %s", grpstring, "CCMP");
+				sprintf(temp_grpstring, "%s %s", temp_grpstring, "CCMP");
 			else
 #endif
-				sprintf(grpstring, "%s %s", grpstring, "CCMP TKIP");
+				sprintf(temp_grpstring, "%s %s", temp_grpstring, "CCMP TKIP");
 		}
 	}
 	if (nvram_nmatch("1", "%s_tkip", prefix)) {
 		sprintf(pwstring, "%s %s", pwstring, "TKIP");
 		if (grpstring)
-			sprintf(grpstring, "%s %s", grpstring, "TKIP");
+			sprintf(temp_grpstring, "%s %s", temp_grpstring, "TKIP");
 	}
 	if (nvram_nmatch("1", "%s_ccmp-256", prefix)) {
 		sprintf(pwstring, "%s %s", pwstring, "CCMP-256");
 		if (grpstring)
-			sprintf(grpstring, "%s %s", grpstring, "CCMP-256");
+			sprintf(temp_grpstring, "%s %s", temp_grpstring, "CCMP-256 GCMP-256 GCMP CCMP TKIP");
 	}
 	if (nvram_nmatch("1", "%s_gcmp-256", prefix)) {
 		sprintf(pwstring, "%s %s", pwstring, "GCMP-256");
 		if (grpstring)
-			sprintf(grpstring, "%s %s", grpstring, "GCMP-256");
+			sprintf(temp_grpstring, "%s %s", temp_grpstring, "GCMP-256 GCMP CCMP TKIP");
 	}
 	if (nvram_nmatch("1", "%s_gcmp", prefix)) {
 		sprintf(pwstring, "%s %s", pwstring, "GCMP");
-		if (grpstring)
-			sprintf(grpstring, "%s %s", grpstring, "GCMP");
+		if (grpstring) {
+			if (has_ad(prefix))
+				sprintf(temp_grpstring, "%s %s", temp_grpstring, "GCMP");
+			else
+				sprintf(temp_grpstring, "%s %s", temp_grpstring, "GCMP CCMP TKIP");
+		}
 	}
 	if (nvram_nmatch("1", "%s_cmac", prefix)) {
 		sprintf(pwstring, "%s %s", pwstring, "AES-128-CMAC");
 		if (grpstring)
-			sprintf(grpstring, "%s %s", grpstring, "AES-128-CMAC");
+			sprintf(temp_grpstring, "%s %s", temp_grpstring, "AES-128-CMAC CCMP TKIP");
 	}
 	if (nvram_nmatch("1", "%s_cmac-256", prefix)) {
 		sprintf(pwstring, "%s %s", pwstring, "BIP-CMAC-256");
 		if (grpstring)
-			sprintf(grpstring, "%s %s", grpstring, "BIP-CMAC-256");
+			sprintf(temp_grpstring, "%s %s", temp_grpstring, "BIP-CMAC-256 CCMP TKIP");
 	}
 	if (nvram_nmatch("1", "%s_gmac-128", prefix)) {
 		sprintf(pwstring, "%s %s", pwstring, "BIP-GMAC-128");
 		if (grpstring)
-			sprintf(grpstring, "%s %s", grpstring, "BIP-GMAC-128");
+			sprintf(temp_grpstring, "%s %s", temp_grpstring, "BIP-GMAC-128 CCMP TKIP");
 	}
 	if (nvram_nmatch("1", "%s_gmac-256", prefix)) {
 		sprintf(pwstring, "%s %s", pwstring, "BIP-GMAC-256");
 		if (grpstring)
-			sprintf(grpstring, "%s %s", grpstring, "BIP-GMAC-256");
+			sprintf(temp_grpstring, "%s %s", temp_grpstring, "BIP-GMAC-256 CCMP TKIP");
 	}
 
+	/* remove duplicates and recreate group string */
+	if (grpstring) {
+		char *next;
+		char var[32];
+		foreach(var, temp_grpstring, next) {
+			if (!strhas(grpstring, var)) {
+				if (strlen(grpstring))
+					sprintf(grpstring, "%s %s", grpstring, var);
+				else
+					strcpy(grpstring, var);
+			}
+		}
+	}
 }
 
 void eap_sta_key_mgmt(FILE * fp, char *prefix)
@@ -616,8 +634,12 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 #endif
 		fprintf(fp, "\n");
 
-		char pwstring[128] = { 0, 0 };
-		char grpstring[128] = { 0, 0 };
+		char pwstring[128] = {
+			0, 0
+		};
+		char grpstring[128] = {
+			0, 0
+		};
 		get_pairwise(prefix, pwstring, grpstring, 0);
 #ifdef HAVE_80211W
 		if (nvram_default_matchi(mfp, -1, 0))
@@ -680,11 +702,16 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 			fprintf(fp, "\tproto=WPA\n");
 		else if (ispsk2 || ispsk3 || ispsk2sha256)
 			fprintf(fp, "\tproto=RSN\n");
-		char *wpa_psk = nvram_nget("%s_wpa_psk", prefix);
-		if (strlen(wpa_psk) == 64)
-			fprintf(fp, "\tpsk=%s\n", wpa_psk);
-		else
-			fprintf(fp, "\tpsk=\"%s\"\n", wpa_psk);
+		if (ispsk3 && !ispsk && !ispsk2 && !ispsk2sha256) {
+			char *sae_key = nvram_nget("%s_sae_key", prefix);
+			fprintf(fp, "\tsae_password=%s\n", sae_key);
+		} else {
+			char *wpa_psk = nvram_nget("%s_wpa_psk", prefix);
+			if (strlen(wpa_psk) == 64)
+				fprintf(fp, "\tpsk=%s\n", wpa_psk);
+			else
+				fprintf(fp, "\tpsk=\"%s\"\n", wpa_psk);
+		}
 		fprintf(fp, "}\n");
 		char extra[32];
 		sprintf(extra, "%s_supplicantext", prefix);
@@ -832,7 +859,9 @@ void do_hostapd(char *fstr, char *prefix)
 			kill(pid, SIGTERM);
 	}
 
-	char *argv[] = { "hostapd", "-B", "-P", fname, NULL, NULL, NULL, NULL, NULL };
+	char *argv[] = {
+		"hostapd", "-B", "-P", fname, NULL, NULL, NULL, NULL, NULL
+	};
 	int argc = 4;
 	debug = nvram_nget("%s_wpa_debug", prefix);
 	char file[64];
@@ -951,11 +980,7 @@ void get_uuid(char *uuid_str)
 	unsigned int len[2];
 	unsigned char hash[20];
 	unsigned char nsid[16] = {
-		0x52, 0x64, 0x80, 0xf8,
-		0xc9, 0x9b,
-		0x4b, 0xe5,
-		0xa6, 0x55,
-		0x58, 0xed, 0x5f, 0x5d, 0x60, 0x84
+		0x52, 0x64, 0x80, 0xf8, 0xc9, 0x9b, 0x4b, 0xe5, 0xa6, 0x55, 0x58, 0xed, 0x5f, 0x5d, 0x60, 0x84
 	};
 	unsigned char bin[16];
 	sha1_ctx_t ctx;
@@ -1269,7 +1294,10 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 	else if (nvram_default_matchi(mfp, 0, 0))
 		fprintf(fp, "ieee80211w=0\n");
 #endif
-	if (ispsk || ispsk2 || ispsk2sha256 || ispsk3) {
+	if (ispsk3 && !ispsk && !ispsk2 && !ispsk2sha256) {
+		char *sae_key = nvram_nget("%s_sae_key", prefix);
+		fprintf(fp, "\tsae_password=%s\n", sae_key);
+	} else if (ispsk || ispsk2 || ispsk2sha256 || ispsk3) {
 		if (strlen(nvram_nget("%s_wpa_psk", prefix)) == 64)
 			fprintf(fp, "wpa_psk=%s\n", nvram_nget("%s_wpa_psk", prefix));
 		else
@@ -1361,6 +1389,7 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 	char pwstring[128] = {
 		0, 0
 	};
+
 	get_pairwise(prefix, pwstring, NULL, 0);
 
 	if (!strlen(pwstring)) {
@@ -1395,7 +1424,11 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 		}
 	} else {
 		fprintf(fp, "wpa_pairwise=%s\n", &pwstring[1]);
+		if (iswpa3_192)
+			fprintf(fp, "group_mgmt_cipher=BIP-GMAC-256\n", &pwstring[1]);
+
 	}
+
 	fprintf(fp, "wpa_group_rekey=%s\n", nvram_nget("%s_wpa_gtk_rekey", prefix));
 	if (ispsk3 || ispsk || ispsk2 || ispsk2sha256)
 		addWPS(fp, prefix, 1);
@@ -1888,7 +1921,9 @@ static void configure_single(int count)
 		vapcount = countvaps;
 
 	setsysctrl(wif, "maxvaps", vapcount);
-	char primary[32] = { 0 };
+	char primary[32] = {
+		0
+	};
 	// create original primary interface
 	apm = nvram_default_get(wl, "ap");
 	if (!strcmp(apm, "ap") || !strcmp(apm, "wdsap")) {
@@ -2550,9 +2585,15 @@ static void configure_single(int count)
 		}
 
 	for (s = 1; s <= 10; s++) {
-		char wdsvarname[32] = { 0 };
-		char wdsdevname[32] = { 0 };
-		char wdsmacname[32] = { 0 };
+		char wdsvarname[32] = {
+			0
+		};
+		char wdsdevname[32] = {
+			0
+		};
+		char wdsmacname[32] = {
+			0
+		};
 		char *wdsdev;
 		char *hwaddr;
 
@@ -2572,9 +2613,15 @@ static void configure_single(int count)
 	}
 
 	for (s = 1; s <= 10; s++) {
-		char wdsvarname[32] = { 0 };
-		char wdsdevname[32] = { 0 };
-		char wdsmacname[32] = { 0 };
+		char wdsvarname[32] = {
+			0
+		};
+		char wdsdevname[32] = {
+			0
+		};
+		char wdsmacname[32] = {
+			0
+		};
 		char *wdsdev;
 		char *hwaddr;
 
@@ -2850,8 +2897,12 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	for (c = 0; c < cnt; c++) {
 
 		for (s = 1; s <= MAX_WDS_DEVS; s++) {
-			char wdsvarname[32] = { 0 };
-			char wdsdevname[32] = { 0 };
+			char wdsvarname[32] = {
+				0
+			};
+			char wdsdevname[32] = {
+				0
+			};
 			char *dev;
 
 			char br1enable[32];
@@ -2870,7 +2921,9 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 			if (nvram_matchi(wdsvarname, 1)) {
 				char *wdsip;
 				char *wdsnm;
-				char wdsbc[32] = { 0 };
+				char wdsbc[32] = {
+					0
+				};
 				wdsip = nvram_nget("ath%d_wds%d_ipaddr", c, s);
 				wdsnm = nvram_nget("ath%d_wds%d_netmask", c, s);
 
