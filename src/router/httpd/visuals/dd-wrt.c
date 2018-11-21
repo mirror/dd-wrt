@@ -4467,20 +4467,25 @@ static int no_suiteb(char *prefix)
 	return !nvram_nmatch("1", "%s_wpa3-192", prefix);
 }
 
+static int no_suiteb_no_wpa3(char *prefix)
+{
+	return (!nvram_nmatch("1", "%s_wpa3-192", prefix) && !nvram_nmatch("1", "%s_wpa3", prefix) && !nvram_nmatch("1", "%s_psk3", prefix));
+}
+
 #ifdef HAVE_MADWIFI
 void show_authtable(webs_t wp, char *prefix, int show80211x)
 {
 	struct pair s_cryptopair[] = {
-		{"CCMP-128 (AES)", "ccmp", noad, nosuiteb},
-		{"CCMP-256", "ccmp-256", has_ccmp_256, nosuiteb},
-		{"TKIP", "tkip", noad, nosuiteb},
-		{"GCMP-128", "gcmp", has_ad, nosuiteb},
-		{"GCMP-128", "gcmp", has_gcmp_128, nosuiteb},
+		{"CCMP-128 (AES)", "ccmp", noad, no_suiteb},
+		{"CCMP-256", "ccmp-256", has_ccmp_256, no_suiteb},
+		{"TKIP", "tkip", noad, no_suiteb_no_wpa3},
+		{"GCMP-128", "gcmp", has_ad, no_suiteb},
+		{"GCMP-128", "gcmp", has_gcmp_128, no_suiteb},
 		{"GCMP-256", "gcmp-256", has_gcmp_256, alwaystrue},
-		{"CMAC-128", "cmac", has_cmac, nosuiteb},
-		{"CMAC-256", "cmac-256", has_cmac_256, nosuiteb},
-		{"GMAC-128", "gmac-128", has_gmac_128, nosuiteb},
-		{"GMAC-256", "gmac-256", has_gmac_256, nosuiteb},
+		{"CMAC-128", "cmac", has_cmac, no_suiteb},
+		{"CMAC-256", "cmac-256", has_cmac_256, no_suiteb},
+		{"GMAC-128", "gmac-128", has_gmac_128, no_suiteb},
+		{"GMAC-256", "gmac-256", has_gmac_256, no_suiteb},
 	};
 
 	struct pair s_authpair_wpa[] = {
