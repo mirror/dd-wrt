@@ -30,6 +30,7 @@
 #include_next <string.h>
 #include <sys/types.h>
 
+#if 0
 /*
  * Appends src to the dstsize buffer at dst. The append will never
  * overflow the destination buffer and the buffer will always be null
@@ -79,5 +80,5 @@ strlcpy(char *dst, const char *src, size_t len)
 
 	return (slen);
 }
-
+#endif
 #endif
