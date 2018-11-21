@@ -883,8 +883,8 @@ static struct device_info boards[] = {
 		*/
 		
 		.partitions = {
-			{"factory-boot base", 0x00000, 0x20000},
-			{"fs-uboot base", 0x20000, 0x20000},
+			{"factory-boot", 0x00000, 0x20000},
+			{"fs-uboot", 0x20000, 0x20000},
 			{"os-image", 0xc0000, 0x120000},	/* Stock: base 0x30000 size 0x100000 */
 			{"file-system", 0x1e0000, 0xde0000},	/* Stock: base 0x130000 size 0x6a0000 */
 			{"default-mac", 0x60000, 0x00200},
@@ -897,10 +897,10 @@ static struct device_info boards[] = {
 			{"profile", 0x7c000, 0x04000},
 			{"default-config", 0xff0000, 0x10000},
 			{"user-config", 0x80000, 0x40000},
-			{"certificate base", 0xfe0000, 0x10000},
-			{"partition-table base", 0x40000, 0x10000},
-			{"log base", 0xfc0000, 0x20000},
-			{"radio base", 0x50000, 0x10000},
+			{"certificate", 0xfe0000, 0x10000},
+			{"partition-table", 0x40000, 0x10000},
+			{"log", 0xfc0000, 0x20000},
+			{"radio", 0x50000, 0x10000},
 			{NULL, 0, 0}
 		},
 
@@ -1296,7 +1296,6 @@ static void put_partitions(uint8_t *buffer, const struct flash_partition_entry *
 				break;
 			}
 		}
-
 		assert(flash_parts[j].name);
 
 		memcpy(buffer + base, parts[i].data, parts[i].size);
