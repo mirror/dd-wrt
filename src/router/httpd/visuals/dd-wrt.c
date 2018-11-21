@@ -4656,7 +4656,6 @@ void show_preshared(webs_t wp, char *prefix)
 	}
 	websWrite(wp, "</select>\n");
 	websWrite(wp, "</div>\n");
-#endif
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", "wpa.shared_key", NULL);
 	sprintf(var, "%s_wpa_psk", prefix);
@@ -4673,6 +4672,39 @@ void show_preshared(webs_t wp, char *prefix)
 		  "<input type=\"checkbox\" name=\"%s_wl_unmask\" value=\"0\" onclick=\"setElementMask('%s_wpa_psk', this.checked)\" >&nbsp;<script type=\"text/javascript\">Capture(share.unmask)</script></input>\n",
 		  prefix, prefix);
 	websWrite(wp, "</div>\n");
+#else
+	if (nvram_nmatch("1", "%s_psk3", prefix) && !nvram_nmatch("1", "%s_psk", prefix) && !nvram_nmatch("1", "%s_psk2", prefix)) {
+
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "wpa.sae_key", NULL);
+		sprintf(var, "%s_sae_key", prefix);
+		websWrite(wp, "<input type=\"password\" id=\"%s_sae_key\" name=\"%s_sae_key\" class=\"no-check\" size=\"32\" value=\"", prefix, prefix);
+		tf_webWriteESCNV(wp, var);
+		websWrite(wp, "\" />&nbsp;&nbsp;&nbsp;\n");
+		websWrite(wp,
+			  "<input type=\"checkbox\" name=\"%s_wl_unmask\" value=\"0\" onclick=\"setElementMask('%s_sae_key', this.checked)\" >&nbsp;<script type=\"text/javascript\">Capture(share.unmask)</script></input>\n",
+			  prefix, prefix);
+		websWrite(wp, "</div>\n");
+
+	} else {
+
+		websWrite(wp, "<div class=\"setting\">\n");
+		show_caption(wp, "label", "wpa.shared_key", NULL);
+		sprintf(var, "%s_wpa_psk", prefix);
+		websWrite(wp,
+#ifdef HAVE_BUFFALO
+			  "<input type=\"password\" id=\"%s_wpa_psk\" name=\"%s_wpa_psk\" class=\"no-check\" onblur=\"valid_wpa_psk(this, true);\" maxlength=\"64\" size=\"32\" value=\"",
+#else
+			  "<input type=\"password\" id=\"%s_wpa_psk\" name=\"%s_wpa_psk\" class=\"no-check\" onblur=\"valid_psk_length(this);\" maxlength=\"64\" size=\"32\" value=\"",
+#endif
+			  prefix, prefix);
+		tf_webWriteESCNV(wp, var);
+		websWrite(wp, "\" />&nbsp;&nbsp;&nbsp;\n");
+		websWrite(wp,
+			  "<input type=\"checkbox\" name=\"%s_wl_unmask\" value=\"0\" onclick=\"setElementMask('%s_wpa_psk', this.checked)\" >&nbsp;<script type=\"text/javascript\">Capture(share.unmask)</script></input>\n",
+			  prefix, prefix);
+		websWrite(wp, "</div>\n");
+	}
 }
 
 void show_radius(webs_t wp, char *prefix, int showmacformat, int backup)
