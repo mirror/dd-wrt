@@ -4416,10 +4416,10 @@ static void show_cryptovar(webs_t wp, char *prefix, char *name, char *var, int s
 
 	sprintf(nvar, "%s_%s", prefix, var);
 	if (selmode)
-		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" onclick=\"SelMode('%s', '%s_security_mode',this.form.%s_security_mode.selectedIndex,this.form)\" %s />%s\n", nvar, prefix, gvar, gvar,
+		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" onclick=\"SelMode('%s', '%s_security_mode',this.form.%s_security_mode.selectedIndex,this.form)\" %s />%s", nvar, prefix, gvar, gvar,
 			  selmatch(nvar, "1", "checked=\"checked\""), name);
 	else
-		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s />%s\n", nvar, selmatch(nvar, "1", "checked=\"checked\""), name);
+		websWrite(wp, "<input type=\"checkbox\" name=\"%s\" value=\"1\" %s />%s", nvar, selmatch(nvar, "1", "checked=\"checked\""), name);
 
 }
 
@@ -4538,36 +4538,30 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 	int mlen = 0;
 
 	for (i = 0; i < sizeof(s_cryptopair) / sizeof(struct pair); i++) {
-		if (s_cryptopair[i].valid(prefix) && s_cryptopair[i].valid2(prefix)) {
-			memcpy(&cryptopair[cnt], &s_cryptopair[i], sizeof(struct pair));
-			cnt++;
-		}
+		if (s_cryptopair[i].valid(prefix) && s_cryptopair[i].valid2(prefix))
+			memcpy(&cryptopair[cnt++], &s_cryptopair[i], sizeof(struct pair));
+
 	}
 	clen = cnt;
 	cnt = 0;
 
 	for (i = 0; i < sizeof(s_authmethod) / sizeof(struct pair); i++) {
-		if (s_authmethod[i].valid(prefix) && s_authmethod[i].valid2(prefix)) {
-			memcpy(&authmethod[cnt], &s_authmethod[i], sizeof(struct pair));
-			cnt++;
-		}
+		if (s_authmethod[i].valid(prefix) && s_authmethod[i].valid2(prefix))
+			memcpy(&authmethod[cnt++], &s_authmethod[i], sizeof(struct pair));
+
 	}
 	mlen = cnt;
 	cnt = 0;
 
 	if (!show80211x) {
 		for (i = 0; i < sizeof(s_authpair_wpa) / sizeof(struct pair); i++) {
-			if (s_authpair_wpa[i].valid(prefix) && s_authpair_wpa[i].valid2(prefix)) {
-				memcpy(&authpair_wpa[cnt], &s_authpair_wpa[i], sizeof(struct pair));
-				cnt++;
-			}
+			if (s_authpair_wpa[i].valid(prefix) && s_authpair_wpa[i].valid2(prefix))
+				memcpy(&authpair_wpa[cnt++], &s_authpair_wpa[i], sizeof(struct pair));
 		}
 	} else {
 		for (i = 0; i < sizeof(s_authpair_80211x) / sizeof(struct pair); i++) {
-			if (s_authpair_80211x[i].valid(prefix) && s_authpair_80211x[i].valid2(prefix)) {
-				memcpy(&authpair_wpa[cnt], &s_authpair_80211x[i], sizeof(struct pair));
-				cnt++;
-			}
+			if (s_authpair_80211x[i].valid(prefix) && s_authpair_80211x[i].valid2(prefix))
+				memcpy(&authpair_wpa[cnt++], &s_authpair_80211x[i], sizeof(struct pair));
 		}
 
 	}
@@ -4577,10 +4571,10 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 	websWrite(wp, "<table class=\"table center\" summary=\"WPA Algorithms\">\n");
 	if (show80211x) {
 		websWrite(wp,
-			  "<tr>\n" "<th><script type=\"text/javascript\">Capture(sec80211x.xsuptype)</script></th>\n" "<th><script type=\"text/javascript\">Capture(wpa.auth_mode)</script></th>\n"
-			  "<th><script type=\"text/javascript\">Capture(wpa.algorithms)</script></th>\n" "</tr>\n");
+			  "<tr><th><script type=\"text/javascript\">Capture(sec80211x.xsuptype)</script></th><th><script type=\"text/javascript\">Capture(wpa.auth_mode)</script></th>"
+			  "<th><script type=\"text/javascript\">Capture(wpa.algorithms)</script></th></tr>\n");
 	} else {
-		websWrite(wp, "<tr>\n" "<th><script type=\"text/javascript\">Capture(wpa.auth_mode)</script></th>\n" "<th><script type=\"text/javascript\">Capture(wpa.algorithms)</script></th>\n" "</tr>\n");
+		websWrite(wp, "<tr><th><script type=\"text/javascript\">Capture(wpa.auth_mode)</script></th><th><script type=\"text/javascript\">Capture(wpa.algorithms)</script></th></tr>\n");
 	}
 	int count = 0;
 	while (1) {
@@ -4601,26 +4595,26 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 		if (s || c || m) {
 			websWrite(wp, "<tr>\n");
 			if (show80211x) {
-				websWrite(wp, "<td>\n");
+				websWrite(wp, "<td>");
 				if (m) {
 					show_cryptovar(wp, prefix, authmethod[count].name, authmethod[count].nvname, 1);
 				} else {
-					websWrite(wp, "&nbsp;\n");
+					websWrite(wp, "&nbsp;");
 				}
 				websWrite(wp, "</td>\n");
 			}
-			websWrite(wp, "<td>\n");
+			websWrite(wp, "<td>");
 			if (s) {
 				show_cryptovar(wp, prefix, authpair_wpa[count].name, authpair_wpa[count].nvname, 1);
 			} else {
-				websWrite(wp, "&nbsp;\n");
+				websWrite(wp, "&nbsp;");
 			}
 			websWrite(wp, "</td>\n");
-			websWrite(wp, "<td>\n");
+			websWrite(wp, "<td>");
 			if (c) {
 				show_cryptovar(wp, prefix, cryptopair[count].name, cryptopair[count].nvname, 0);
 			} else
-				websWrite(wp, "&nbsp;\n");
+				websWrite(wp, "&nbsp;");
 			websWrite(wp, "</td>\n");
 			websWrite(wp, "</tr>\n");
 		}
@@ -4629,8 +4623,8 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 		count++;
 	}
 
-	websWrite(wp, "</table>");
-	websWrite(wp, "</div>");
+	websWrite(wp, "</table>\n");
+	websWrite(wp, "</div>\n");
 	free(authpair_wpa);
 	free(authmethod);
 	free(cryptopair);
