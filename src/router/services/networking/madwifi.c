@@ -320,11 +320,11 @@ void eap_sta_key_mgmt(FILE * fp, char *prefix)
 	fprintf(fp, "\n");
 #ifdef HAVE_80211W
 	if (nvram_default_matchi(mfp, 1, 0) || iswpa3 || iswpa3_192)
-		fprintf(fp, "ieee80211w=2\n");
+		fprintf(fp, "\tieee80211w=2\n");
 	else if (nvram_default_matchi(mfp, -1, 0))
-		fprintf(fp, "ieee80211w=1\n");
+		fprintf(fp, "\tieee80211w=1\n");
 	else if (nvram_default_matchi(mfp, 0, 0))
-		fprintf(fp, "ieee80211w=0\n");
+		fprintf(fp, "\tieee80211w=0\n");
 #endif
 
 }
@@ -645,11 +645,11 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		get_pairwise(prefix, pwstring, grpstring, 0);
 #ifdef HAVE_80211W
 		if (nvram_default_matchi(mfp, -1, 0))
-			fprintf(fp, "ieee80211w=1\n");
+			fprintf(fp, "\tieee80211w=1\n");
 		if (nvram_default_matchi(mfp, 0, 0))
-			fprintf(fp, "ieee80211w=0\n");
+			fprintf(fp, "\tieee80211w=0\n");
 		if (nvram_default_matchi(mfp, 1, 0))
-			fprintf(fp, "ieee80211w=2\n");
+			fprintf(fp, "\tieee80211w=2\n");
 #endif
 
 		if (!strlen(pwstring)) {
