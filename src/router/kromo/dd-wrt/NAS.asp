@@ -615,7 +615,7 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="main">
 					<div id="contents">
-						<form name="setup" action="apply.cgi" method="post">
+						<form name="setup" action="apply.cgi" method="post" autocomplete="off">
 							<input type="hidden" name="submit_button" value="NAS" />
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="change_action" />
