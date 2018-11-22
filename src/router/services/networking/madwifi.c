@@ -296,9 +296,9 @@ void eap_sta_key_mgmt(FILE * fp, char *prefix)
 		fprintf(fp, "IEEE8021X ");
 	fprintf(fp, "\n");
 #ifdef HAVE_80211W
-	if (nvram_default_matchi(mfp, 1, 0) || iswpa3 || iswpa3_192)
+	if (nvram_default_matchi(mfp, 1, 0) || ((iswpa3 || iswpa3_192 || iswpa2sha256) && (!iswpa && !iswpa2)))
 		fprintf(fp, "\tieee80211w=2\n");
-	else if (nvram_default_matchi(mfp, -1, 0))
+	else if (nvram_default_matchi(mfp, -1, 0) || iswpa3 || iswpa3_192 || iswpa2sha256)
 		fprintf(fp, "\tieee80211w=1\n");
 	else if (nvram_default_matchi(mfp, 0, 0))
 		fprintf(fp, "\tieee80211w=0\n");
@@ -1266,9 +1266,9 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 	if (iswpa3_192)
 		nvram_nset("1", "%s_wpa3-192", prefix);
 #ifdef HAVE_80211W
-	if (nvram_default_matchi(mfp, 1, 0) || ispsk3 || iswpa3 || iswpa3_192 || ispsk2sha256 || iswpa2sha256)
+	if (nvram_default_matchi(mfp, 1, 0) || ((ispsk3 || iswpa3 || iswpa3_192 || ispsk2sha256 || iswpa2sha256) && (!ispsk && !ispsk2 && !iswpa && !iswpa2))
 		fprintf(fp, "ieee80211w=2\n");
-	else if (nvram_default_matchi(mfp, -1, 0))
+	else if (nvram_default_matchi(mfp, -1, 0) || ispsk3 || iswpa3 || iswpa3_192 || ispsk2sha256 || iswpa2sha256)
 		fprintf(fp, "ieee80211w=1\n");
 	else if (nvram_default_matchi(mfp, 0, 0))
 		fprintf(fp, "ieee80211w=0\n");
