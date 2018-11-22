@@ -738,7 +738,7 @@ char *strcat_r(const char *s1, const char *s2, char *buf)
 	return buf;
 }
 
-int strhas(char *list, char *key)
+int strhas(char *list, char *value)
 {
 	char *next, word[32];
 
