@@ -206,6 +206,7 @@ void get_pairwise(char *prefix, char *pwstring, char *grpstring, int isadhoc)
 	char akm[16];
 	sprintf(akm, "%s_akm", prefix);
 	int iswpa3_192 = nvhas(akm, "wpa3-192");
+	int iswpa3 = nvhas(akm, "wpa3");
 	if (nvram_nmatch("1", "%s_ccmp", prefix)) {
 		sprintf(pwstring, "%s %s", pwstring, "CCMP");
 		if (grpstring) {
@@ -232,7 +233,7 @@ void get_pairwise(char *prefix, char *pwstring, char *grpstring, int isadhoc)
 		if (grpstring)
 			sprintf(temp_grpstring, "%s %s", temp_grpstring, "GCMP-256 GCMP CCMP TKIP");
 	}
-	if (nvram_nmatch("1", "%s_gcmp", prefix)) {
+	if (nvram_nmatch("1", "%s_gcmp", prefix) || iswpa3) {
 		sprintf(pwstring, "%s %s", pwstring, "GCMP");
 		if (grpstring) {
 			if (has_ad(prefix))
@@ -1405,6 +1406,8 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 		fprintf(fp, "wpa_pairwise=%s\n", &pwstring[1]);
 		if (iswpa3_192)
 			fprintf(fp, "group_mgmt_cipher=BIP-GMAC-256\n");
+		else if (iswpa3)
+			fprintf(fp, "group_mgmt_cipher=BIP-GMAC-128\n");
 
 	}
 

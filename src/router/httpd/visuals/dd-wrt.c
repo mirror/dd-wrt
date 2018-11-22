@@ -4457,9 +4457,19 @@ static int aponly_wpa3_gcmp256(char *prefix)
 	return (aponly(prefix) && has_wpa3(prefix) && has_gcmp_256(prefix));
 }
 
+static int aponly_wpa3_gcmp128(char *prefix)
+{
+	return (aponly(prefix) && has_wpa3(prefix) && has_gcmp_128(prefix));
+}
+
 static int wpa3_gcmp256(char *prefix)
 {
 	return (has_wpa3(prefix) && has_gcmp_256(prefix));
+}
+
+static int wpa3_gcmp128(char *prefix)
+{
+	return (has_wpa3(prefix) && has_gcmp_128(prefix));
 }
 
 static int no_suiteb(char *prefix)
@@ -4492,15 +4502,15 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 		{"WPA Enterprise", "wpa", aponly, alwaystrue},
 		{"WPA2 Enterprise", "wpa2", aponly, alwaystrue},
 		{"WPA2 Enterprise with SHA256", "wpa2-sha256", aponly_wpa3, alwaystrue},
-		{"WPA3 Enterprise", "wpa3", aponly_wpa3, alwaystrue},
-		{"WPA3 Enterprise CNSA 192-Bit", "wpa3-192", aponly_wpa3_gcmp256, has_cmac_256}
+		{"WPA3 Enterprise Suite-B", "wpa3", aponly_wpa3_gcmp128, has_gmac_128},
+		{"WPA3 Enterprise CNSA Suite-B 192-Bit", "wpa3-192", aponly_wpa3_gcmp256, has_gmac_256}
 	};
 	struct pair s_authpair_80211x[] = {
 		{"WPA Enterprise", "wpa", alwaystrue, alwaystrue},
 		{"WPA2 Enterprise", "wpa2", alwaystrue, alwaystrue},
 		{"WPA2 Enterprise with SHA256", "wpa2-sha256", has_wpa3, alwaystrue},
-		{"WPA3 Enterprise", "wpa3", has_wpa3, alwaystrue},
-		{"WPA3 Enterprise CNSA 192-Bit", "wpa3-192", wpa3_gcmp256, has_cmac_256},
+		{"WPA3 Enterprise Suite-B", "wpa3", has_wpa3_gcmp128,, has_gmac_128},
+		{"WPA3 Enterprise CNSA Suite-B 192-Bit", "wpa3-192", wpa3_gcmp256, has_gmac_256},
 		{"802.1x / WEP", "802.1x", has_wpa3, alwaystrue}
 	};
 	struct pair s_authmethod[] = {
