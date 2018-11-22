@@ -1446,11 +1446,11 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		get_pairwise(prefix, pwstring, grpstring, isadhoc);
 #ifdef HAVE_80211W
 		if (nvram_default_matchi(mfp, 1, 0) || ispsk2sha256 || ispsk3)
-			fprintf(fp, "ieee80211w=2\n");
+			fprintf(fp, "\tieee80211w=2\n");
 		else if (nvram_default_matchi(mfp, -1, 0))
-			fprintf(fp, "ieee80211w=1\n");
+			fprintf(fp, "\tieee80211w=1\n");
 		else if (nvram_default_matchi(mfp, 0, 0))
-			fprintf(fp, "ieee80211w=0\n");
+			fprintf(fp, "\tieee80211w=0\n");
 #endif
 		if (!strlen(pwstring)) {
 			sprintf(psk, "%s_crypto", prefix);
