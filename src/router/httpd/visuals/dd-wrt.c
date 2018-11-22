@@ -4511,7 +4511,7 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 		{"WPA2 Enterprise", "wpa2", alwaystrue, alwaystrue},
 		{"WPA2 Enterprise with SHA256", "wpa2-sha256", has_wpa3, alwaystrue},
 		{"WPA3 Enterprise", "wpa3", has_wpa3, alwaystrue},
-		{"WPA3 Enterprise Suite-B", "wpa3-128", wpa3_gcmp128,, has_gmac_128},
+		{"WPA3 Enterprise Suite-B", "wpa3-128", wpa3_gcmp128, has_gmac_128},
 		{"WPA3 Enterprise CNSA Suite-B 192-Bit", "wpa3-192", wpa3_gcmp256, has_gmac_256},
 		{"802.1x / WEP", "802.1x", has_wpa3, alwaystrue}
 	};
