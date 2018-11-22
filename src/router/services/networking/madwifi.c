@@ -240,37 +240,13 @@ void get_pairwise(char *prefix, char *pwstring, char *grpstring, int isadhoc)
 				sprintf(temp_grpstring, "%s %s", temp_grpstring, "GCMP CCMP TKIP");
 		}
 	}
-	if (nvram_nmatch("1", "%s_cmac", prefix)) {
-		sprintf(pwstring, "%s %s", pwstring, "AES-128-CMAC");
-		if (grpstring)
-			sprintf(temp_grpstring, "%s %s", temp_grpstring, "AES-128-CMAC CCMP TKIP");
-	}
-	if (nvram_nmatch("1", "%s_cmac-256", prefix)) {
-		sprintf(pwstring, "%s %s", pwstring, "BIP-CMAC-256");
-		if (grpstring)
-			sprintf(temp_grpstring, "%s %s", temp_grpstring, "BIP-CMAC-256 CCMP TKIP");
-	}
-	if (nvram_nmatch("1", "%s_gmac-128", prefix)) {
-		sprintf(pwstring, "%s %s", pwstring, "BIP-GMAC-128");
-		if (grpstring)
-			sprintf(temp_grpstring, "%s %s", temp_grpstring, "BIP-GMAC-128 CCMP TKIP");
-	}
-	if (nvram_nmatch("1", "%s_gmac-256", prefix)) {
-		sprintf(pwstring, "%s %s", pwstring, "BIP-GMAC-256");
-		if (grpstring)
-			sprintf(temp_grpstring, "%s %s", temp_grpstring, "BIP-GMAC-256 CCMP TKIP");
-	}
-
 	/* remove duplicates and recreate group string */
 	if (grpstring) {
 		char *next;
 		char var[32];
 		foreach(var, temp_grpstring, next) {
 			if (!strhas(grpstring, var)) {
-				if (strlen(grpstring))
-					sprintf(grpstring, "%s %s", grpstring, var);
-				else
-					strcpy(grpstring, var);
+				sprintf(grpstring, "%s %s", grpstring, var);
 			}
 		}
 	}
