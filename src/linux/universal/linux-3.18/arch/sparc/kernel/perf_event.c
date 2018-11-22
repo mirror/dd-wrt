@@ -23,7 +23,7 @@
 #include <asm/cpudata.h>
 #include <asm/uaccess.h>
 #include <linux/atomic.h>
-#include <linux/sched/clock.h>
+#include <linux/sched_clock.h>
 #include <asm/nmi.h>
 #include <asm/pcr.h>
 #include <asm/cacheflush.h>
