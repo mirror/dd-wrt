@@ -1275,7 +1275,7 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 #endif
 	if (ispsk3 && !ispsk && !ispsk2 && !ispsk2sha256) {
 		char *sae_key = nvram_nget("%s_sae_key", prefix);
-		fprintf(fp, "\tsae_password=%s\n", sae_key);
+		fprintf(fp, "sae_password=%s\n", sae_key);
 	} else if (ispsk || ispsk2 || ispsk2sha256 || ispsk3) {
 		if (strlen(nvram_nget("%s_wpa_psk", prefix)) == 64)
 			fprintf(fp, "wpa_psk=%s\n", nvram_nget("%s_wpa_psk", prefix));
