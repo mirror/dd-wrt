@@ -932,6 +932,7 @@ _8021xprv
 		_copytonv(wp, "%s_wpa2-sha256", prefix);
 		_copytonv(wp, "%s_wpa3", prefix);
 		_copytonv(wp, "%s_wpa3-192", prefix);
+		_copytonv(wp, "%s_wpa3-128", prefix);
 		char akm[128] = { 0, 0 };
 		if (nvram_nmatch("1", "%s_psk", prefix))
 			sprintf(akm, "%s %s", akm, "psk");
@@ -951,6 +952,8 @@ _8021xprv
 			sprintf(akm, "%s %s", akm, "wpa3");
 		if (nvram_nmatch("1", "%s_wpa3-192", prefix))
 			sprintf(akm, "%s %s", akm, "wpa3-192");
+		if (nvram_nmatch("1", "%s_wpa3-128", prefix))
+			sprintf(akm, "%s %s", akm, "wpa3-128");
 
 		nvram_set(n2, &akm[1]);
 	}
@@ -966,6 +969,7 @@ _8021xprv
 		_copytonv(wp, "%s_wpa2-sha256", prefix);
 		_copytonv(wp, "%s_wpa3", prefix);
 		_copytonv(wp, "%s_wpa3-192", prefix);
+		_copytonv(wp, "%s_wpa3-128", prefix);
 		char akm[128] = { 0, 0 };
 		if (nvram_nmatch("1", "%s_leap", prefix))
 			sprintf(akm, "%s %s", akm, "leap");
@@ -985,6 +989,8 @@ _8021xprv
 			sprintf(akm, "%s %s", akm, "wpa3");
 		if (nvram_nmatch("1", "%s_wpa3-192", prefix))
 			sprintf(akm, "%s %s", akm, "wpa3-192");
+		if (nvram_nmatch("1", "%s_wpa3-128", prefix))
+			sprintf(akm, "%s %s", akm, "wpa3-128");
 		nvram_set(n2, &akm[1]);
 	}
 
@@ -4336,6 +4342,7 @@ void set_security(webs_t wp)
 		_copytonv(wp, "%s_wpa2-sha256", ifname);
 		_copytonv(wp, "%s_wpa3", ifname);
 		_copytonv(wp, "%s_wpa3-192", ifname);
+		_copytonv(wp, "%s_wpa3-128", ifname);
 		if (nvram_nmatch("1", "%s_leap", ifname))
 			sprintf(akm, "%s %s", akm, "leap");
 		if (nvram_nmatch("1", "%s_peap", ifname))
@@ -4358,6 +4365,7 @@ void set_security(webs_t wp)
 		_copytonv(wp, "%s_wpa2-sha256", ifname);
 		_copytonv(wp, "%s_wpa3", ifname);
 		_copytonv(wp, "%s_wpa3-192", ifname);
+		_copytonv(wp, "%s_wpa3-128", ifname);
 		if (nvram_nmatch("1", "%s_wpa", ifname))
 			sprintf(akm, "%s %s", akm, "wpa");
 		if (nvram_nmatch("1", "%s_wpa2", ifname))
@@ -4368,6 +4376,8 @@ void set_security(webs_t wp)
 			sprintf(akm, "%s %s", akm, "wpa3");
 		if (nvram_nmatch("1", "%s_wpa3-192", ifname))
 			sprintf(akm, "%s %s", akm, "wpa3-192");
+		if (nvram_nmatch("1", "%s_wpa3-128", ifname))
+			sprintf(akm, "%s %s", akm, "wpa3-128");
 		nvram_set(n2, &akm[1]);
 	}
 #endif

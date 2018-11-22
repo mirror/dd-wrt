@@ -2255,6 +2255,8 @@ static void showencstatus(webs_t wp, char *prefix)
 	if (nvram_match(akm, "wpa2-sha256"))
 		enc = "WPA2-EAP-SHA256";
 	if (nvram_match(akm, "wpa3"))
+		enc = "WPA3-EAP";
+	if (nvram_match(akm, "wpa3-128"))
 		enc = "WPA3-EAP-SUITE-B";
 	if (nvram_match(akm, "wpa3-192"))
 		enc = "WPA3-EAP-SUITE-B-192";
