@@ -329,7 +329,7 @@ static int write_main(int argc, char *argv[])
 	case ROUTER_LINKSYS_EA6350:
 	case ROUTER_LINKSYS_EA6400:
 	case ROUTER_LINKSYS_EA6500V2:
-	case ROUTER_TRENDNET_TEW828:
+	case ROUTER_TRENDNET_TEW827:
 		if (nvram_matchi("bootpartition", 1)) {
 			mtd = "linux2";
 			nvram_seti("bootpartition", 0);
