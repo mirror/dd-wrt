@@ -1511,7 +1511,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			fprintf(fp, "\tproto=RSN\n");
 		if (ispsk3 && !ispsk && !ispsk2 && !ispsk2sha256) {
 			char *sae_key = nvram_nget("%s_sae_key", prefix);
-			fprintf(fp, "\tsae_password=%s\n", sae_key);
+			fprintf(fp, "\tsae_password=\"%s\"\n", sae_key);
 		} else {
 			char *wpa_psk = nvram_nget("%s_wpa_psk", prefix);
 			if (strlen(wpa_psk) == 64)
