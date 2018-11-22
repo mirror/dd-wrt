@@ -1088,6 +1088,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	int iswpa = nvhas(akm, "wpa");
 	int iswpa2 = nvhas(akm, "wpa2");
 	int iswpa3 = nvhas(akm, "wpa3");
+	int iswpa3_128 = nvhas(akm, "wpa3-128");
 	int iswpa3_192 = nvhas(akm, "wpa3-192");
 	int iswpa2sha256 = nvhas(akm, "wpa2-sha256");
 	int ispsk2sha256 = nvhas(akm, "psk2-sha256");
@@ -1172,7 +1173,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 #endif
 		fprintf(fp, "wpa_key_mgmt=OWE\n");
 		fprintf(fp, "rsn_pairwise=CCMP\n");
-	} else if (ispsk || ispsk2 || ispsk3 || iswpa || iswpa2 || iswpa3 || iswpa3_192 || iswpa2sha256 || ispsk2sha256) {
+	} else if (ispsk || ispsk2 || ispsk3 || iswpa || iswpa2 || iswpa3 || iswpa3_128 || iswpa3_192 || iswpa2sha256 || ispsk2sha256) {
 		setupHostAPPSK(fp, ifname, isfirst);
 	} else if (nvhas(akm, "radius")) {
 		fprintf(fp, "ieee8021x=1\n");
