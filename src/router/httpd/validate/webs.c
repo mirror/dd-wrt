@@ -4323,6 +4323,7 @@ void set_security(webs_t wp)
 			sprintf(akm, "%s %s", akm, "psk2-256");
 		if (nvram_nmatch("1", "%s_psk3", ifname))
 			sprintf(akm, "%s %s", akm, "psk3");
+		nvram_set(n2, &akm[1]);
 	}
 	if (ifname && !strcmp(prefix2, "8021X")) {
 		sprintf(n2, "%s_akm", ifname);
