@@ -4314,7 +4314,6 @@ void set_security(webs_t wp)
 		_copytonv(wp, "%s_psk2", ifname);
 		_copytonv(wp, "%s_psk2-sha256", ifname);
 		_copytonv(wp, "%s_psk3", ifname);
-		char akm[128] = { 0, 0 };
 		if (nvram_nmatch("1", "%s_psk", ifname))
 			sprintf(akm, "%s %s", akm, "psk");
 		if (nvram_nmatch("1", "%s_psk2", ifname))
