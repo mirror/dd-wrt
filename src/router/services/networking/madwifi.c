@@ -827,7 +827,7 @@ void supplicant_main(int argc, char *argv[])
 void do_hostapd(char *fstr, char *prefix)
 {
 	char fname[32];
-	char *debug;
+	int debug;
 	FILE *fp;
 	int pid;
 
@@ -845,19 +845,20 @@ void do_hostapd(char *fstr, char *prefix)
 		"hostapd", "-B", "-P", fname, NULL, NULL, NULL, NULL, NULL
 	};
 	int argc = 4;
-	debug = nvram_nget("%s_wpa_debug", prefix);
+	debug = nvram_ngeti("%s_wpa_debug", prefix);
 	char file[64];
-	if (debug != NULL && strlen(debug) > 0) {
-		if (!strcmp(debug, "1"))
+	if (debug > 0 && debug < 4) {
+		if (debug == 1)
 			argv[argc++] = "-d";
-		else if (!strcmp(debug, "2"))
+		else if (debug == 2)
 			argv[argc++] = "-dd";
-		else if (!strcmp(debug, "3"))
+		else if (debug == 3)
 			argv[argc++] = "-ddd";
 		argv[argc++] = "-f";
 		sprintf(file, "/tmp/%s_debug", prefix);
 		argv[argc++] = file;
 	}
+
 	argv[argc++] = fstr;
 
 	_evalpid(argv, NULL, 0, NULL);
@@ -1161,7 +1162,8 @@ void start_ses_led_control(void)
 		if (nvram_nmatch("ap", "%s_mode", ath)
 		    || nvram_nmatch("wdsap", "%s_mode", ath)) {
 			sprintf(akm, "%s_akm", ath);
-			if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "psk2-sha256") || nvhas(akm, "wpa") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3")|| nvhas(akm, "wpa3-128") || nvhas(akm, "wpa3-192")
+			if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "psk2-sha256") || nvhas(akm, "wpa") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3") || nvhas(akm, "wpa3-128")
+			    || nvhas(akm, "wpa3-192")
 			    || nvhas(akm, "wpa3-sha256")
 			    || nvram_match(akm, "wep")) {
 				if (!strncmp(ath, "ath0", 4))
@@ -1176,7 +1178,8 @@ void start_ses_led_control(void)
 		if (vifs != NULL)
 			foreach(var, vifs, next) {
 			sprintf(akm, "%s_akm", var);
-			if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "psk2-sha256") || nvhas(akm, "wpa") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3") || nvhas(akm, "wpa3-128") || nvhas(akm, "wpa3-192")
+			if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3") || nvhas(akm, "psk2-sha256") || nvhas(akm, "wpa") || nvhas(akm, "wpa2") || nvhas(akm, "wpa3") || nvhas(akm, "wpa3-128")
+			    || nvhas(akm, "wpa3-192")
 			    || nvhas(akm, "wpa3-sha256")
 			    || nvram_match(akm, "wep")) {
 				if (!strncmp(var, "ath0", 4))
@@ -1248,7 +1251,7 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 	int wpamask = 0;
 	if (ispsk || iswpa)
 		wpamask |= 1;
-	if (ispsk2 || ispsk3 || iswpa2 || iswpa3  || iswpa3_192|| iswpa3_128 || iswpa2sha256 || ispsk2sha256)
+	if (ispsk2 || ispsk3 || iswpa2 || iswpa3 || iswpa3_192 || iswpa3_128 || iswpa2sha256 || ispsk2sha256)
 		wpamask |= 2;
 	fprintf(fp, "wpa=%d\n", wpamask);
 	if (ispsk)
