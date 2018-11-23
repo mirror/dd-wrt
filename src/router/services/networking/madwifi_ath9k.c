@@ -1614,12 +1614,8 @@ void ath9k_start_supplicant(int count)
 	char ctrliface[32] = "";
 	char wifivifs[16];
 	char tmp[256];
-#ifdef HAVE_CONFIG_DEBUG_SYSLOG
-	char *background = "-Bs";
-#else
 	char *background = "-B";
-#endif
-	char *debug;
+	int debug;
 	char psk[16];
 	char net[16];
 	char wmode[16];
@@ -1641,25 +1637,21 @@ void ath9k_start_supplicant(int count)
 		sprintf(psk, "-igiwifi0");
 	sprintf(wmode, "%s_mode", dev);
 	sprintf(bridged, "%s_bridged", dev);
-	debug = nvram_nget("%s_wpa_debug", dev);
+	debug = nvram_ngeti("%s_wpa_debug", dev);
 #ifdef HAVE_CONFIG_DEBUG_SYSLOG
-	if (debug != NULL) {
-		if (!strcmp(debug, "1"))
-			background = "-Bds";
-		else if (!strcmp(debug, "2"))
-			background = "-Bdds";
-		else if (!strcmp(debug, "3"))
-			background = "-Bddds";
-	}
+	if (debug == 1)
+		background = "-Bds";
+	else if (debug == 2)
+		background = "-Bdds";
+	else if (debug == 3)
+		background = "-Bddds";
 #else
-	if (debug != NULL) {
-		if (!strcmp(debug, "1"))
-			background = "-Bd";
-		else if (!strcmp(debug, "2"))
-			background = "-Bdd";
-		else if (!strcmp(debug, "3"))
-			background = "-Bddd";
-	}
+	if (debug == 1)
+		background = "-Bd";
+	else if (debug == 2)
+		background = "-Bdd";
+	else if (debug == 3)
+		background = "-Bddd";
 #endif
 	if (strcmp(apm, "sta") && strcmp(apm, "wdssta")
 	    && strcmp(apm, "infra")

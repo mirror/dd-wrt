@@ -92,7 +92,7 @@ static void print_vht_capa(const uint8_t type, uint8_t len, const uint8_t * data
 static void print_vht_oper(const uint8_t type, uint8_t len, const uint8_t * data);
 static void print_capabilities(const uint8_t type, uint8_t len, const uint8_t * data);
 static int print_bss_handler(struct nl_msg *msg, void *arg);
-static void print_rsn_ie(const char *defcipher, const char *defauth, uint8_t len, const uint8_t * data);
+static void print_rsn_ie(const char *defcipher, const char *defauth, uint8_t len, const uint8_t * data, int type);
 static void print_ies(unsigned char *ie, int ielen, bool unknown, enum print_ie_type ptype);
 
 static void tab_on_first(bool * first);
@@ -328,8 +328,7 @@ static void print_ht_mcs(const __u8 *mcs)
 
 static void print_wifi_wpa(const uint8_t type, uint8_t len, const uint8_t * data)
 {
-	fillENC("WPA", " ");
-	print_rsn_ie("TKIP", "IEEE 802.1X", len, data);
+	print_rsn_ie("TKIP", "IEEE 802.1X", len, data, 0);
 }
 
 static bool print_wifi_wmm_param(const uint8_t * data, uint8_t len)
@@ -985,17 +984,24 @@ static void print_cipher(const uint8_t * data)
 		printf("%.02x-%.02x-%.02x:%d", data[0], data[1], data[2], data[3]);
 }
 
-static void print_auth(const uint8_t * data)
+static void print_auth(const uint8_t * data, int type)
 {
 	if (memcmp(data, ieee80211_oui, 3) == 0 || memcmp(data, wifi_oui, 3) == 0) {
 		switch (data[3]) {
 		case 1:
 			printf("EAP");
-			fillENC("EAP", " ");
+			if (type)
+				fillENC("EAP/WPA2", " ");
+			else
+				fillENC("EAP/WPA", " ");
+			break;
 			break;
 		case 2:
 			printf("PSK");
-			fillENC("PSK", " ");
+			if (type)
+				fillENC("PSK2", " ");
+			else
+				fillENC("PSK", " ");
 			break;
 		case 3:
 			printf("FT/EAP");
@@ -1057,7 +1063,7 @@ static void print_auth(const uint8_t * data)
 		printf("%.02x-%.02x-%.02x:%d", data[0], data[1], data[2], data[3]);
 }
 
-static void print_rsn_ie(const char *defcipher, const char *defauth, uint8_t len, const uint8_t * data)
+static void print_rsn_ie(const char *defcipher, const char *defauth, uint8_t len, const uint8_t * data, int type)
 {
 	bool first = true;
 	__u16 version, count, capa;
@@ -1122,7 +1128,7 @@ static void print_rsn_ie(const char *defcipher, const char *defauth, uint8_t len
 	printf("\t * Authentication suites:");
 	for (i = 0; i < count; i++) {
 		printf(" ");
-		print_auth(data + 2 + (i * 4));
+		print_auth(data + 2 + (i * 4), type);
 	}
 	printf("\n");
 
@@ -1214,8 +1220,7 @@ invalid:
 
 static void print_rsn(const uint8_t type, uint8_t len, const uint8_t * data)
 {
-	fillENC("WPA2", " ");
-	print_rsn_ie("CCMP", "IEEE 802.1X", len, data);
+	print_rsn_ie("CCMP", "IEEE 802.1X", len, data, 1);
 }
 
 void print_vht_info(__u32 capa, const __u8 *mcs)
