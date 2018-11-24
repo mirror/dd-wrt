@@ -111,6 +111,7 @@ void start_privoxy(void)
 			"enable-remote-toggle  0\n"
 			"enable-remote-http-toggle  0\n"
 			"enable-edit-actions 0\n"
+			"tolerate-pipelining 1\n"
 			"buffer-limit 4096\n"
 			"accept-intercepted-requests %d\n" "split-large-forms 0\n" "socket-timeout 60\n" "handle-as-empty-doc-returns-ok 1\n", whitelist ? "/tmp/user.action" : "user.action", ip, mode);
 	}
