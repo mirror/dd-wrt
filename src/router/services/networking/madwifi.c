@@ -1321,6 +1321,7 @@ void setupHostAPPSK(FILE * fp, char *prefix, int isfirst)
 		fprintf(fp, "nas_identifier=%s\n", nvram_nget("%s_nas", prefix));
 		fprintf(fp, "mobility_domain=%s\n", nvram_nget("%s_domain", prefix));
 		fprintf(fp, "ft_over_ds=1\n");
+		fprintf(fp, "ft_psk_generate_local=1\n");
 		fprintf(fp, "pmk_r1_push=1\n");
 		// todo. add key holders
 	}
