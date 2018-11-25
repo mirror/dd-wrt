@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.9.86 Kernel Configuration
+# Linux/mips 4.9.140 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -985,6 +985,7 @@ CONFIG_MTD_FLASH_8MB=y
  
  
  
+ 
 # CONFIG_WZRG450NH is not set
 CONFIG_MTD_AR7240_SPI_FLASH=y
 # CONFIG_MTD_NAND is not set
@@ -1101,7 +1102,6 @@ CONFIG_MII=y
 # CONFIG_IFB is not set
 # CONFIG_NET_TEAM is not set
 # CONFIG_MACVLAN is not set
-# CONFIG_MACVTAP is not set
 # CONFIG_VXLAN is not set
 # CONFIG_GENEVE is not set
 # CONFIG_GTP is not set
@@ -2045,6 +2045,3 @@ CONFIG_GENERIC_ATOMIC64=y
 CONFIG_SBITMAP=y
 CONFIG_HAVE_KVM=y
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_CRYPTO_DRBG_HASH is not set
-# CONFIG_CRYPTO_DRBG_CTR is not set
-CONFIG_BTRFS_FS_REF_VERIFY=y
