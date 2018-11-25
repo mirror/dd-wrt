@@ -886,6 +886,7 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 	websWrite(wp, "<option value=\"disabled\" %s>%s</option>\n", selmatch(var, "psk", "selected=\"selected\""), wpa_enc_label(buf, "disabled"));
 
 	sprintf(sta, "%s_mode", prefix);
+#if 0
 	if (has_wpa3(prefix)) {
 		if (!has_qtn(prefix)) {
 			if (!primary || nvram_match(sta, "ap") || nvram_match(sta, "wdsap")) {
@@ -893,6 +894,7 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 			}
 		}
 	}
+#endif
 #ifndef HAVE_MADWIFI
 	websWrite(wp, "<option value=\"psk\" %s>%s</option>\n", selmatch(var, "psk", "selected=\"selected\""), wpa_enc_label(buf, "psk"));
 #else
