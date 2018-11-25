@@ -3031,5 +3031,8 @@ void start_deconfigurewifi(void)
 
 void start_configurewifi(void)
 {
+	if (has_wpa3(NULL)) {
+		insmod("crypto_hash crypto_null aead gf128mul ctr ghash-generic gcm");
+	}
 	configure_wifi();
 }
