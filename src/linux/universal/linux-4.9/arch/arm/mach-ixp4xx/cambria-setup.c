@@ -359,6 +359,7 @@ err_free_leds:
 static void __init cambria_init(void)
 {
 	ixp4xx_sys_init();
+	*IXP4XX_EXP_CS3 = 0xBFFF3C43; // bit0 = 16bit vs 8bit bus
 
 	cambria_flash_resource.start = IXP4XX_EXP_BUS_BASE(0);
 	cambria_flash_resource.end = IXP4XX_EXP_BUS_BASE(0) + ixp4xx_exp_bus_size + ixp4xx_exp_bus_size - 1;
