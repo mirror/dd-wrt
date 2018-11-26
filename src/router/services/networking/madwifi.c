@@ -202,7 +202,7 @@ void setupKey(char *prefix)
 
 void get_pairwise(char *prefix, char *pwstring, char *grpstring, int isadhoc)
 {
-	char temp_grpstring[256];
+	char temp_grpstring[256] = { 0, 0 };
 	char akm[16];
 	sprintf(akm, "%s_akm", prefix);
 	int iswpa3_192 = nvhas(akm, "wpa3-192");
