@@ -586,18 +586,6 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		nvram_nset("1", "%s_psk2-sha256", prefix);
 	if (ispsk3)
 		nvram_nset("1", "%s_psk3", prefix);
-	if (iswpa)
-		nvram_nset("1", "%s_wpa3", prefix);
-	if (iswpa2)
-		nvram_nset("1", "%s_wpa2", prefix);
-	if (iswpa2sha256)
-		nvram_nset("1", "%s_wpa2-sha256", prefix);
-	if (iswpa3)
-		nvram_nset("1", "%s_wpa3", prefix);
-	if (iswpa3_128)
-		nvram_nset("1", "%s_wpa3-128", prefix);
-	if (iswpa3_192)
-		nvram_nset("1", "%s_wpa3-192", prefix);
 
 	if (ispsk || ispsk2 || ispsk3 || ispsk2sha256) {
 		char fstr[32];
