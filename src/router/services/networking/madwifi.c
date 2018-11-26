@@ -2746,6 +2746,9 @@ extern void adjust_regulatory(int count);
 void configure_wifi(void)	// madwifi implementation for atheros based
 	    // cards
 {
+	if (has_wpa3(NULL)) {
+		insmod("crypto_hash crypto_null aead gf128mul ctr ghash-generic gcm");
+	}
 #ifdef HAVE_NLD
 	eval("/usr/sbin/nldstop.sh");
 #endif
@@ -3031,8 +3034,5 @@ void start_deconfigurewifi(void)
 
 void start_configurewifi(void)
 {
-	if (has_wpa3(NULL)) {
-		insmod("crypto_hash crypto_null aead gf128mul ctr ghash-generic gcm");
-	}
 	configure_wifi();
 }
