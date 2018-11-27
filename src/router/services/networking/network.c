@@ -1492,8 +1492,12 @@ void start_lan(void)
 		PORTSETUPWAN("");
 	} else {
 		if (vlan) {
+			if (!strlen("wan_ifname2"))
+				nvram_set("wan_ifname2", "vlan2");
 			PORTSETUPWAN("vlan2");
 		} else {
+			if (!strlen("wan_ifname2"))
+				nvram_set("wan_ifname2", "eth0");
 			PORTSETUPWAN("eth0");
 		}
 	}
