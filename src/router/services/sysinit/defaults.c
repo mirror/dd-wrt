@@ -3582,32 +3582,46 @@ void load_defaults(void)
 	FILE *in = fopen("/etc/defaults.bin", "rb");
 	if (in == NULL)
 		return;
+	unsigned int stores, i;
 	defaultnum = (unsigned int)getc(in);
 	defaultnum |= (unsigned int)getc(in) << 8;
 	defaultnum |= (unsigned int)getc(in) << 16;
 	defaultnum |= (unsigned int)getc(in) << 24;
-	//fread(&defaultnum, 4, 1, in);
-	int i;
+	stores = getc(in);	// count of unique values
+
+	unsigned char *index;
+	index = malloc(sizeof(char) * defaultnum);
+	fread(index, defaultnum, 1, in);
+
+	unsigned char **values = malloc(sizeof(char *) * stores);
+	for (i = 0; i < stores; i++) {
+		char temp[4096];
+		int c;
+		int a = 0;
+		while ((c = getc(in)) != 0) {
+			temp[a++] = c;
+		}
+		temp[a] = 0;
+
+		values[i] = strdup(temp);
+	}
 	srouter_defaults = (struct nvram_param *)malloc(sizeof(struct nvram_param) * defaultnum);
 	for (i = 0; i < defaultnum; i++) {
-		unsigned int vl = (unsigned int)getc(in);
-		if (vl) {
-			srouter_defaults[i].name = malloc(vl + 1);
-			fread(srouter_defaults[i].name, vl, 1, in);
-			srouter_defaults[i].name[vl] = 0;
-			vl = (unsigned int)getc(in);
-			if (vl & 128) {
-				vl &= 127;
-				vl |= (unsigned int)getc(in) << 7;
-			}
-			srouter_defaults[i].value = malloc(vl + 1);
-			fread(srouter_defaults[i].value, vl, 1, in);
-			srouter_defaults[i].value[vl] = 0;
-		} else {
-			srouter_defaults[i].name = NULL;
-			srouter_defaults[i].value = NULL;
+		char temp[4096];
+		int c;
+		int a = 0;
+		while ((c = getc(in)) != 0) {
+			temp[a++] = c;
 		}
+		temp[a++] = 0;
+		srouter_defaults[i].name = strdup(temp);
+		srouter_defaults[i].value = strdup(values[index[i]]);
 	}
+	for (i = 0; i < stores; i++) {
+		free(values[i]);
+	}
+	free(values);
+	free(index);
 	fclose(in);
 }
 
