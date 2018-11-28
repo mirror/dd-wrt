@@ -3631,11 +3631,11 @@ void free_defaults(void)
 			free(srouter_defaults[i].name);
 		}
 	}
+	free(srouter_defaults);
 	for (i = stores - 1; i > -1; i--) {
 		free(values[i]);
 	}
 	free(values);
-	free(srouter_defaults);
 
 }
 #endif
