@@ -533,6 +533,22 @@ void eap_sta_config(FILE * fp, char *prefix, char *ssidoverride, int addvht)
 
 }
 
+void check_cryptomod(char *prefix)
+{
+
+	if (has_wpa3(NULL)) {
+		char mfp[16];
+		char akm[16];
+		sprintf(mfp, "%s_mfp", prefix);
+		sprintf(akm, "%s_akm", prefix);
+		int w = nvram_default_geti(mfp, 0);
+
+		if (w == 1 || w == -1 || nvhas(akm, "psk3") || nvhas(akm, "wpa3") || nvhas(akm, "wpa3-192") || nvhas(akm, "wpa3-128") || nvhas(akm, "wpa2-sha256") || nvhas(akm, "psk2-sha256"))
+			insmod("crypto_hash crypto_null aead gf128mul ctr ghash-generic gcm");
+	}
+
+}
+
 /*
  * MADWIFI Encryption Setup 
  */
@@ -586,6 +602,7 @@ void setupSupplicant(char *prefix, char *ssidoverride)
 		nvram_nset("1", "%s_psk2-sha256", prefix);
 	if (ispsk3)
 		nvram_nset("1", "%s_psk3", prefix);
+	check_cryptomod(prefix);
 
 	if (ispsk || ispsk2 || ispsk3 || ispsk2sha256) {
 		char fstr[32];
@@ -1467,6 +1484,8 @@ void setupHostAP(char *prefix, char *driver, int iswan)
 	int iswpa3_192 = nvhas(akm, "wpa3-192");
 	int iswpa3_128 = nvhas(akm, "wpa3-128");
 	int iswep = nvhas(akm, "wep");
+	check_cryptomod(prefix);
+
 	// wep key support
 	if (iswep) {
 		if (!strncmp(prefix, "ath0", 4))
@@ -2755,9 +2774,6 @@ extern void adjust_regulatory(int count);
 void configure_wifi(void)	// madwifi implementation for atheros based
 	    // cards
 {
-	if (has_wpa3(NULL)) {
-		insmod("crypto_hash crypto_null aead gf128mul ctr ghash-generic gcm");
-	}
 #ifdef HAVE_NLD
 	eval("/usr/sbin/nldstop.sh");
 #endif
