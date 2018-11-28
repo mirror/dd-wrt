@@ -50,6 +50,8 @@
 #include "unl.h"
 #include <nl80211.h>
 
+void check_cryptomod(char *prefix);
+
 void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss);
 static void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc);
 void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss);
@@ -997,7 +999,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	sprintf(ft, "%s_ft", ifname);
 	sprintf(mfp, "%s_mfp", ifname);
 	sprintf(preamble, "%s_preamble", ifname);
-
+	check_cryptomod(ifname);
 	if (nvram_match(akm, "8021X"))
 		return;
 	sprintf(fstr, "/tmp/%s_hostap.conf", maininterface);
@@ -1341,7 +1343,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		nvram_nset("1", "%s_psk2-sha256", prefix);
 	if (ispsk3)
 		nvram_nset("1", "%s_psk3", prefix);
-
+	check_cryptomod(prefix);
 	if (ispsk || ispsk2 || ispsk3 || ispsk2sha256) {
 		char fstr[32];
 		char psk[16];
