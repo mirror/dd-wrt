@@ -21,10 +21,69 @@
  * $Id:
  */
 
-
 #define STORE_DEFAULTS
 
 #include "../sysinit/defaults.c"
+
+typedef struct NV {
+	char *value;
+	int index;
+	struct NV *next;
+};
+
+int hasstored(struct NV *head, char *value)
+{
+	struct NV *cur = head;
+	while ((cur = cur->next) != NULL) {
+		if (!strcmp(cur->value, value))
+			return cur->index;
+	}
+	return -1;
+}
+
+void recover(void)
+{
+	FILE *in = fopen("defaults.bin", "rb");
+	int len, counts, stores;
+	fread(&len, 4, 1, in);	// total count of pairs
+	stores = getc(in);	// count of unique values
+	unsigned char *index;
+	index = malloc(sizeof(char) * len);
+	int i;
+	fread(index, len, 1, in);
+
+	unsigned char **values = malloc(sizeof(char *) * stores);
+	for (i = 0; i < stores; i++) {
+		char temp[4096];
+		int c;
+		int a = 0;
+		while ((c = getc(in)) != 0) {
+			temp[a++] = c;
+		}
+		temp[a] = 0;
+		values[i] = strdup(temp);
+	}
+	for (i = 0; i < len; i++) {
+		char temp[4096];
+		int c;
+		int a = 0;
+		while ((c = getc(in)) != 0) {
+			temp[a++] = c;
+		}
+		temp[a] = 0;
+		fprintf(stderr, "name %s=%s\n", temp, values[index[i]]);
+		if (strcmp(srouter_defaults[i].value, values[index[i]])) {
+			fprintf(stderr, "error while validating\n");
+			exit(1);
+		}
+	}
+	for (i = 0; i < stores; i++) {
+		free(values[i]);
+	}
+	free(values);
+	free(index);
+
+}
 
 int main(int argc, char *argv[])
 {
@@ -32,30 +91,56 @@ int main(int argc, char *argv[])
 	out = fopen("defaults.bin", "wb");
 	int i;
 	int len = sizeof(srouter_defaults) / sizeof(struct nvram_param);
-	fwrite(&len, 4, 1, out);
-	for (i = 0; i < sizeof(srouter_defaults) / sizeof(struct nvram_param);
-	     i++) {
-		if (srouter_defaults[i].name) {
-			putc(strlen(srouter_defaults[i].name), out);
-			fwrite(srouter_defaults[i].name,
-			       strlen(srouter_defaults[i].name), 1, out);
-			len = strlen(srouter_defaults[i].value);
-			if (len > 127) {
-				len |= 128;
-				putc(len & 0xff, out);
-				putc(strlen(srouter_defaults[i].value) >> 7,
-				     out);
-			} else {
-				putc(len, out);
-			}
-			fwrite(srouter_defaults[i].value,
-			       strlen(srouter_defaults[i].value), 1, out);
+	struct NV head;
+	struct NV *cur = &head;
+	memset(&head, 0, sizeof(head));
+	int counts = 0;
+	int stored = 0;
+	for (i = 0; i < len - 1; i++) {
+		int f;
+
+		if ((f = hasstored(&head, srouter_defaults[i].value)) == -1) {
+			struct NV *next = malloc(sizeof(struct NV));
+			memset(next, 0, sizeof(*next));
+			next->value = srouter_defaults[i].value;
+			next->next = NULL;
+			fprintf(stderr, "%s: store %s\n", srouter_defaults[i].name, srouter_defaults[i].value);
+			next->index = counts++;
+			stored++;
+			cur->next = next;
+			cur = next;
 		} else {
-			putc(0, out);
-			putc(0, out);
+			fprintf(stderr, "%s: reuse %s (%d)\n", srouter_defaults[i].name, srouter_defaults[i].value, f);
 		}
 
 	}
+	fprintf(stderr, "stored %d\n", stored);
+	len -= 1;
+	fwrite(&len, 4, 1, out);	// total count of pairs
+	putc(stored, out);	// amount of unique values
+	cur = &head;
+
+	for (i = 0; i < len; i++) {
+		int v = hasstored(&head, srouter_defaults[i].value);
+		if (v == -1) {
+			fprintf(stderr, "this should never happen\n");
+			exit(-1);
+		}
+		putc(v, out);
+	}
+
+	while ((cur = cur->next) != NULL) {
+		fprintf(out, "%s", cur->value);
+		putc(0, out);
+	}
+
+	for (i = 0; i < len; i++) {
+		fprintf(out, "%s", srouter_defaults[i].name);
+		putc(0, out);
+
+	}
+
 	fclose(out);
+	recover();
 	return 0;
 }
