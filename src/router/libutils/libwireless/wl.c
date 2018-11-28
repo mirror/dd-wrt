@@ -2345,9 +2345,9 @@ static struct wifidevices wdevices[] = {
 	{"Ubiquiti UB5", NONE, 0x168c, 0x001b, 0x0777, 0x1107},	//UBNT UB5 
 	{"Ubiquiti SR71A", CHANNELSURVEY, 0x168c, 0x0027, 0x0777, 0x4082},	//UBNT SR71A offset 10
 	{"Ubiquiti SR71", CHANNELSURVEY, 0x168c, 0x0027, 0x168c, 0x2082},	//UBNT SR71 offset 10
-	{"Ubiquiti SR71-E", CHANNELSURVEY, 0x168c, 0x0027, 0x168c, 0x4e05},	//UBNT SR71-E offset 10
-	{"Ubiquiti SR71-15", CHANNELSURVEY, 0x168c, 0x0027, 0x168c, 0x4005},	//UBNT SR71-15 offset 10
-	{"Ubiquiti SR71-12", CHANNELSURVEY, 0x168c, 0x0027, 0x168c, 0x4002},	//UBNT SR71-12 offset 10
+	{"Ubiquiti SR71-E", CHANNELSURVEY, 0x168c, 0x0029, 0x168c, 0x4e05},	//UBNT SR71-E offset 10
+	{"Ubiquiti SR71-15", CHANNELSURVEY, 0x168c, 0x0029, 0x168c, 0x4005},	//UBNT SR71-15 offset 10
+	{"Ubiquiti SR71-12", CHANNELSURVEY, 0x168c, 0x0029, 0x168c, 0x4002},	//UBNT SR71-12 offset 10
 	{"Ubiquiti SR9", NONE, 0x168c, 0x0013, 0x0777, 0x2009},	//UBNT SR9 
 	{"Ubiquiti SR9", NONE, 0x168c, 0x0013, 0x7777, 0x2009},	//UBNT SR9 offset 12 
 	{"Ubiquiti SR4", NONE, 0x168c, 0x0013, 0x7777, 0x2004},	//UBNT SR4 offset 6
