@@ -5,8 +5,12 @@
 # This software may be distributed under the terms of the BSD license.
 # See README for more details.
 
+import base64
+import binascii
+import hashlib
 import logging
 logger = logging.getLogger()
+import struct
 import subprocess
 import time
 
@@ -14,6 +18,12 @@ import hostapd
 import hwsim_utils
 from utils import HwsimSkip, alloc_fail, fail_test, wait_fail_trigger
 from wpasupplicant import WpaSupplicant
+
+try:
+    import OpenSSL
+    openssl_imported = True
+except ImportError:
+    openssl_imported = False
 
 def check_dpp_capab(dev, brainpool=False):
     if "UNKNOWN COMMAND" in dev.request("DPP_BOOTSTRAP_GET_URI 0"):
@@ -29,6 +39,7 @@ def test_dpp_qr_code_parsing(dev, apdev):
     id = []
 
     tests = [ "DPP:C:81/1,115/36;K:MDkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDIgADM2206avxHJaHXgLMkq/24e0rsrfMP9K1Tm8gx+ovP0I=;;",
+              "DPP:C:81/1,81/2,81/3,81/4,81/5,81/6,81/7,81/8,81/9,81/10,81/11,81/12,81/13,82/14,83/1,83/2,83/3,83/4,83/5,83/6,83/7,83/8,83/9,84/5,84/6,84/7,84/8,84/9,84/10,84/11,84/12,84/13,115/36;K:MDkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDIgADM2206avxHJaHXgLMkq/24e0rsrfMP9K1Tm8gx+ovP0I=;;",
               "DPP:I:SN=4774LH2b4044;M:010203040506;K:MDkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDIgADURzxmttZoIRIPWGoQMV00XHWCAQIhXruVWOz0NjlkIA=;;",
               "DPP:I:;M:010203040506;K:MDkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDIgADURzxmttZoIRIPWGoQMV00XHWCAQIhXruVWOz0NjlkIA=;;" ]
     for uri in tests:
@@ -45,7 +56,16 @@ def test_dpp_qr_code_parsing(dev, apdev):
               "DPP:",
               "DPP:;;",
               "DPP:C:1/2;M:;K;;",
-              "DPP:I:;M:01020304050;K:MDkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDIgADURzxmttZoIRIPWGoQMV00XHWCAQIhXruVWOz0NjlkIA=;;" ]
+              "DPP:I:;M:01020304050;K:MDkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDIgADURzxmttZoIRIPWGoQMV00XHWCAQIhXruVWOz0NjlkIA=;;",
+              "DPP:K:" + base64.b64encode("hello") + ";;",
+              "DPP:K:MEkwEwYHKoZIzj0CAQYIKoZIzj0DAQEDMgAEXiJuIWt1Q/CPCkuULechh37UsXPmbUANOeN5U9sOQROE4o/NEFeFEejROHYwwehF;;",
+              "DPP:K:MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANNZaZA4T/kRDjnmpI1ACOJhAuTIIEk2KFOpS6XPpGF+EVr/ao3XemkE0/nzXmGaLzLqTUCJknSdxTnVPeWfCVsCAwEAAQ==;;",
+              "DPP:K:MIIBCjCB0wYHKoZIzj0CATCBxwIBATAkBgcqhkjOPQEBAhkA/////////////////////v//////////MEsEGP////////////////////7//////////AQYZCEFGeWcgOcPp+mrciQwSf643uzBRrmxAxUAMEWub8hCL2TtV5Uo04Eg6uEhltUEMQQYjagOsDCQ9ny/IOtDoYgA9P8K/YL/EBIHGSuV/8jaeGMQEe1rJM3Vc/l3oR55SBECGQD///////////////+Z3vg2FGvJsbTSKDECAQEDMgAEXiJuIWt1Q/CPCkuULechh37UsXPmbUANOeN5U9sOQROE4o/NEFeFEejROHYwwehF;;",
+              "DPP:I:foo\tbar;M:010203040506;K:MDkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDIgADURzxmttZoIRIPWGoQMV00XHWCAQIhXruVWOz0NjlkIA=;;",
+              "DPP:C:1;K:MDkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDIgADM2206avxHJaHXgLMkqa24e0rsrfMP9K1Tm8gx+ovP0I=;;",
+              "DPP:C:81/1a;K:MDkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDIgADM2206avxHJaHXgLMkqa24e0rsrfMP9K1Tm8gx+ovP0I=;;",
+              "DPP:C:1/2000,81/-1;K:MDkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDIgADM2206avxHJaHXgLMkqa24e0rsrfMP9K1Tm8gx+ovP0I=;;",
+              "DPP:C:-1/1;K:MDkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDIgADM2206avxHJaHXgLMkqa24e0rsrfMP9K1Tm8gx+ovP0I=;;" ]
     for t in tests:
         res = dev[0].request("DPP_QR_CODE " + t)
         if "FAIL" not in res:
@@ -79,6 +99,25 @@ def test_dpp_qr_code_parsing(dev, apdev):
     res = dev[0].request("DPP_QR_CODE " + uri)
     if "FAIL" in res:
         raise Exception("Failed to parse self-generated QR Code URI")
+
+def test_dpp_qr_code_parsing_fail(dev, apdev):
+    """DPP QR Code parsing local failure"""
+    check_dpp_capab(dev[0])
+    with alloc_fail(dev[0], 1, "dpp_parse_uri_info"):
+        if "FAIL" not in dev[0].request("DPP_QR_CODE DPP:I:SN=4774LH2b4044;M:010203040506;K:MDkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDIgADURzxmttZoIRIPWGoQMV00XHWCAQIhXruVWOz0NjlkIA=;;"):
+            raise Exception("DPP_QR_CODE failure not reported")
+
+    with alloc_fail(dev[0], 1, "dpp_parse_uri_pk"):
+        if "FAIL" not in dev[0].request("DPP_QR_CODE DPP:K:MDkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDIgADURzxmttZoIRIPWGoQMV00XHWCAQIhXruVWOz0NjlkIA=;;"):
+            raise Exception("DPP_QR_CODE failure not reported")
+
+    with fail_test(dev[0], 1, "dpp_parse_uri_pk"):
+        if "FAIL" not in dev[0].request("DPP_QR_CODE DPP:K:MDkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDIgADURzxmttZoIRIPWGoQMV00XHWCAQIhXruVWOz0NjlkIA=;;"):
+            raise Exception("DPP_QR_CODE failure not reported")
+
+    with alloc_fail(dev[0], 1, "dpp_parse_uri"):
+        if "FAIL" not in dev[0].request("DPP_QR_CODE DPP:I:SN=4774LH2b4044;M:010203040506;K:MDkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDIgADURzxmttZoIRIPWGoQMV00XHWCAQIhXruVWOz0NjlkIA=;;"):
+            raise Exception("DPP_QR_CODE failure not reported")
 
 dpp_key_p256 ="30570201010420777fc55dc51e967c10ec051b91d860b5f1e6c934e48d5daffef98d032c64b170a00a06082a8648ce3d030107a124032200020c804188c7f85beb6e91070d2b3e5e39b90ca77b4d3c5251bc1844d6ca29dcad"
 dpp_key_p384 = "307402010104302f56fdd83b5345cacb630eb7c22fa5ad5daba37307c95191e2a75756d137003bd8b32dbcb00eb5650c1eb499ecfcaec0a00706052b81040022a13403320003615ec2141b5b77aebb6523f8a012755f9a34405a8398d2ceeeebca7f5ce868bf55056cba4c4ec62fad3ed26dd29e0f23"
@@ -1162,6 +1201,405 @@ def test_dpp_config_override_objects(dev, apdev):
                                  init_extra="conf=sta-dpp",
                                  require_conf_success=True,
                                  configurator=True)
+
+def build_conf_obj(kty="EC", crv="P-256",
+                   x="W4-Y5N1Pkos3UWb9A5qme0KUYRtY3CVUpekx_MapZ9s",
+                   y="Et-M4NSF4NGjvh2VCh4B1sJ9eSCZ4RNzP2DBdP137VE",
+                   kid="TnGKjIlNZaatrEAYrbbjiB67rjkL_AGVWXO6q9hDJKU",
+                   prot_hdr='{"typ":"dppCon","kid":"TnGKjIlNZaatrEAYrbbjiB67rjkL_AGVWXO6q9hDJKU","alg":"ES256"}',
+                   signed_connector=None,
+                   no_signed_connector=False,
+                   csign=True):
+    conf = '{"wi-fi_tech":"infra","discovery":{"ssid":"test"},"cred":{'
+    conf += '"akm":"dpp",'
+
+    if signed_connector:
+        conn = signed_connector
+        conf += '"signedConnector":"%s",' % conn
+    elif not no_signed_connector:
+        payload = '{"groups":[{"groupId":"*","netRole":"sta"}],"netAccessKey":{"kty":"EC","crv":"P-256","x":"aTF4JEGIPKSZ0Xv9zdCMjm-tn5XpMsYIVZ9wySAz1gI","y":"QGcHWA_6rbU9XDXAztoX-M5Q3suTnMaqEhULtn7SSXw"}}'
+        sign = "_sm6YswxMf6hJLVTyYoU1uYUeY2VVkUNjrzjSiEhY42StD_RWowStEE-9CRsdCvLmsTptZ72_g40vTFwdId20A"
+        conn = base64.urlsafe_b64encode(prot_hdr).rstrip('=') + '.'
+        conn += base64.urlsafe_b64encode(payload).rstrip('=') + '.'
+        conn += sign
+        conf += '"signedConnector":"%s",' % conn
+
+    if csign:
+        conf += '"csign":{'
+        if kty:
+            conf += '"kty":"%s",' % kty
+        if crv:
+            conf += '"crv":"%s",' % crv
+        if x:
+            conf += '"x":"%s",' % x
+        if y:
+            conf += '"y":"%s",' % y
+        if kid:
+            conf += '"kid":"%s"' % kid
+        conf = conf.rstrip(',')
+        conf += '}'
+    else:
+        conf = conf.rstrip(',')
+
+    conf += '}}'
+
+    return conf
+
+def run_dpp_config_error(dev, apdev, conf,
+                         skip_net_access_key_mismatch=True):
+    check_dpp_capab(dev[0])
+    check_dpp_capab(dev[1])
+    if skip_net_access_key_mismatch:
+        dev[0].set("dpp_ignore_netaccesskey_mismatch", "1")
+    dev[1].set("dpp_config_obj_override", conf)
+    run_dpp_qr_code_auth_unicast(dev, apdev, "prime256v1",
+                                 require_conf_failure=True)
+
+def test_dpp_config_jwk_error_no_kty(dev, apdev):
+    """DPP Config Object JWK error - no kty"""
+    run_dpp_config_error(dev, apdev, build_conf_obj(kty=None))
+
+def test_dpp_config_jwk_error_unexpected_kty(dev, apdev):
+    """DPP Config Object JWK error - unexpected kty"""
+    run_dpp_config_error(dev, apdev, build_conf_obj(kty="unknown"))
+
+def test_dpp_config_jwk_error_no_crv(dev, apdev):
+    """DPP Config Object JWK error - no crv"""
+    run_dpp_config_error(dev, apdev, build_conf_obj(crv=None))
+
+def test_dpp_config_jwk_error_unsupported_crv(dev, apdev):
+    """DPP Config Object JWK error - unsupported curve"""
+    run_dpp_config_error(dev, apdev, build_conf_obj(crv="unsupported"))
+
+def test_dpp_config_jwk_error_no_x(dev, apdev):
+    """DPP Config Object JWK error - no x"""
+    run_dpp_config_error(dev, apdev, build_conf_obj(x=None))
+
+def test_dpp_config_jwk_error_invalid_x(dev, apdev):
+    """DPP Config Object JWK error - invalid x"""
+    run_dpp_config_error(dev, apdev, build_conf_obj(x="MTIz"))
+
+def test_dpp_config_jwk_error_no_y(dev, apdev):
+    """DPP Config Object JWK error - no y"""
+    run_dpp_config_error(dev, apdev, build_conf_obj(y=None))
+
+def test_dpp_config_jwk_error_invalid_y(dev, apdev):
+    """DPP Config Object JWK error - invalid y"""
+    run_dpp_config_error(dev, apdev, build_conf_obj(y="MTIz"))
+
+def test_dpp_config_jwk_error_invalid_xy(dev, apdev):
+    """DPP Config Object JWK error - invalid x,y"""
+    conf = build_conf_obj(x="MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY",
+                          y="MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY")
+    run_dpp_config_error(dev, apdev, conf)
+
+def test_dpp_config_jwk_error_no_kid(dev, apdev):
+    """DPP Config Object JWK error - no kid"""
+    run_dpp_config_error(dev, apdev, build_conf_obj(kid=None))
+
+def test_dpp_config_jws_error_prot_hdr_not_an_object(dev, apdev):
+    """DPP Config Object JWS error - protected header not an object"""
+    run_dpp_config_error(dev, apdev, build_conf_obj(prot_hdr="1"))
+
+def test_dpp_config_jws_error_prot_hdr_no_typ(dev, apdev):
+    """DPP Config Object JWS error - protected header - no typ"""
+    prot_hdr='{"kid":"TnGKjIlNZaatrEAYrbbjiB67rjkL_AGVWXO6q9hDJKU","alg":"ES256"}'
+    run_dpp_config_error(dev, apdev, build_conf_obj(prot_hdr=prot_hdr))
+
+def test_dpp_config_jws_error_prot_hdr_unsupported_typ(dev, apdev):
+    """DPP Config Object JWS error - protected header - unsupported typ"""
+    prot_hdr='{"typ":"unsupported","kid":"TnGKjIlNZaatrEAYrbbjiB67rjkL_AGVWXO6q9hDJKU","alg":"ES256"}'
+    run_dpp_config_error(dev, apdev, build_conf_obj(prot_hdr=prot_hdr))
+
+def test_dpp_config_jws_error_prot_hdr_no_alg(dev, apdev):
+    """DPP Config Object JWS error - protected header - no alg"""
+    prot_hdr='{"typ":"dppCon","kid":"TnGKjIlNZaatrEAYrbbjiB67rjkL_AGVWXO6q9hDJKU"}'
+    run_dpp_config_error(dev, apdev, build_conf_obj(prot_hdr=prot_hdr))
+
+def test_dpp_config_jws_error_prot_hdr_unexpected_alg(dev, apdev):
+    """DPP Config Object JWS error - protected header - unexpected alg"""
+    prot_hdr='{"typ":"dppCon","kid":"TnGKjIlNZaatrEAYrbbjiB67rjkL_AGVWXO6q9hDJKU","alg":"unexpected"}'
+    run_dpp_config_error(dev, apdev, build_conf_obj(prot_hdr=prot_hdr))
+
+def test_dpp_config_jws_error_prot_hdr_no_kid(dev, apdev):
+    """DPP Config Object JWS error - protected header - no kid"""
+    prot_hdr='{"typ":"dppCon","alg":"ES256"}'
+    run_dpp_config_error(dev, apdev, build_conf_obj(prot_hdr=prot_hdr))
+
+def test_dpp_config_jws_error_prot_hdr_unexpected_kid(dev, apdev):
+    """DPP Config Object JWS error - protected header - unexpected kid"""
+    prot_hdr='{"typ":"dppCon","kid":"MTIz","alg":"ES256"}'
+    run_dpp_config_error(dev, apdev, build_conf_obj(prot_hdr=prot_hdr))
+
+def test_dpp_config_signed_connector_error_no_dot_1(dev, apdev):
+    """DPP Config Object signedConnector error - no dot(1)"""
+    conn = "MTIz"
+    run_dpp_config_error(dev, apdev, build_conf_obj(signed_connector=conn))
+
+def test_dpp_config_signed_connector_error_no_dot_2(dev, apdev):
+    """DPP Config Object signedConnector error - no dot(2)"""
+    conn = "eyJ0eXAiOiJkcHBDb24iLCJraWQiOiJUbkdLaklsTlphYXRyRUFZcmJiamlCNjdyamtMX0FHVldYTzZxOWhESktVIiwiYWxnIjoiRVMyNTYifQ.MTIz"
+    run_dpp_config_error(dev, apdev, build_conf_obj(signed_connector=conn))
+
+def test_dpp_config_signed_connector_error_unexpected_signature_len(dev, apdev):
+    """DPP Config Object signedConnector error - unexpected signature length"""
+    conn = "eyJ0eXAiOiJkcHBDb24iLCJraWQiOiJUbkdLaklsTlphYXRyRUFZcmJiamlCNjdyamtMX0FHVldYTzZxOWhESktVIiwiYWxnIjoiRVMyNTYifQ.MTIz.MTIz"
+    run_dpp_config_error(dev, apdev, build_conf_obj(signed_connector=conn))
+
+def test_dpp_config_signed_connector_error_invalid_signature_der(dev, apdev):
+    """DPP Config Object signedConnector error - invalid signature DER"""
+    conn = "eyJ0eXAiOiJkcHBDb24iLCJraWQiOiJUbkdLaklsTlphYXRyRUFZcmJiamlCNjdyamtMX0FHVldYTzZxOWhESktVIiwiYWxnIjoiRVMyNTYifQ.MTIz.MTI"
+    run_dpp_config_error(dev, apdev, build_conf_obj(signed_connector=conn))
+
+def test_dpp_config_no_csign(dev, apdev):
+    """DPP Config Object error - no csign"""
+    run_dpp_config_error(dev, apdev, build_conf_obj(csign=False))
+
+def test_dpp_config_no_signed_connector(dev, apdev):
+    """DPP Config Object error - no signedConnector"""
+    run_dpp_config_error(dev, apdev, build_conf_obj(no_signed_connector=True))
+
+def test_dpp_config_unexpected_signed_connector_char(dev, apdev):
+    """DPP Config Object error - unexpected signedConnector character"""
+    run_dpp_config_error(dev, apdev, build_conf_obj(signed_connector='a\nb'))
+
+def test_dpp_config_root_not_an_object(dev, apdev):
+    """DPP Config Object error - root not an object"""
+    conf = "1"
+    run_dpp_config_error(dev, apdev, conf)
+
+def test_dpp_config_no_wi_fi_tech(dev, apdev):
+    """DPP Config Object error - no wi-fi_tech"""
+    conf = "{}"
+    run_dpp_config_error(dev, apdev, conf)
+
+def test_dpp_config_unsupported_wi_fi_tech(dev, apdev):
+    """DPP Config Object error - unsupported wi-fi_tech"""
+    conf = '{"wi-fi_tech":"unsupported"}'
+    run_dpp_config_error(dev, apdev, conf)
+
+def test_dpp_config_no_discovery(dev, apdev):
+    """DPP Config Object error - no discovery"""
+    conf = '{"wi-fi_tech":"infra"}'
+    run_dpp_config_error(dev, apdev, conf)
+
+def test_dpp_config_no_discovery_ssid(dev, apdev):
+    """DPP Config Object error - no discovery::ssid"""
+    conf = '{"wi-fi_tech":"infra","discovery":{}}'
+    run_dpp_config_error(dev, apdev, conf)
+
+def test_dpp_config_too_long_discovery_ssid(dev, apdev):
+    """DPP Config Object error - too long discovery::ssid"""
+    conf = '{"wi-fi_tech":"infra","discovery":{"ssid":"%s"}}' % (33*'A')
+    run_dpp_config_error(dev, apdev, conf)
+
+def test_dpp_config_no_cred(dev, apdev):
+    """DPP Config Object error - no cred"""
+    conf = '{"wi-fi_tech":"infra","discovery":{"ssid":"test"}}'
+    run_dpp_config_error(dev, apdev, conf)
+
+def test_dpp_config_no_cred_akm(dev, apdev):
+    """DPP Config Object error - no cred::akm"""
+    conf = '{"wi-fi_tech":"infra","discovery":{"ssid":"test"},"cred":{}}'
+    run_dpp_config_error(dev, apdev, conf)
+
+def test_dpp_config_unsupported_cred_akm(dev, apdev):
+    """DPP Config Object error - unsupported cred::akm"""
+    conf = '{"wi-fi_tech":"infra","discovery":{"ssid":"test"},"cred":{"akm":"unsupported"}}'
+    run_dpp_config_error(dev, apdev, conf)
+
+def test_dpp_config_error_legacy_no_pass(dev, apdev):
+    """DPP Config Object legacy error - no pass/psk"""
+    conf = '{"wi-fi_tech":"infra","discovery":{"ssid":"test"},"cred":{"akm":"psk"}}'
+    run_dpp_config_error(dev, apdev, conf)
+
+def test_dpp_config_error_legacy_too_short_pass(dev, apdev):
+    """DPP Config Object legacy error - too short pass/psk"""
+    conf = '{"wi-fi_tech":"infra","discovery":{"ssid":"test"},"cred":{"akm":"psk","pass":"1"}}'
+    run_dpp_config_error(dev, apdev, conf)
+
+def test_dpp_config_error_legacy_too_long_pass(dev, apdev):
+    """DPP Config Object legacy error - too long pass/psk"""
+    conf = '{"wi-fi_tech":"infra","discovery":{"ssid":"test"},"cred":{"akm":"psk","pass":"%s"}}' % (64*'A')
+    run_dpp_config_error(dev, apdev, conf)
+
+def test_dpp_config_error_legacy_psk_with_sae(dev, apdev):
+    """DPP Config Object legacy error - psk_hex with SAE"""
+    conf = '{"wi-fi_tech":"infra","discovery":{"ssid":"test"},"cred":{"akm":"sae","psk_hex":"%s"}}' % (32*"12")
+    run_dpp_config_error(dev, apdev, conf)
+
+def test_dpp_config_error_legacy_no_pass_for_sae(dev, apdev):
+    """DPP Config Object legacy error - no pass for SAE"""
+    conf = '{"wi-fi_tech":"infra","discovery":{"ssid":"test"},"cred":{"akm":"psk+sae","psk_hex":"%s"}}' % (32*"12")
+    run_dpp_config_error(dev, apdev, conf)
+
+def test_dpp_config_error_legacy_invalid_psk(dev, apdev):
+    """DPP Config Object legacy error - invalid psk_hex"""
+    conf = '{"wi-fi_tech":"infra","discovery":{"ssid":"test"},"cred":{"akm":"psk","psk_hex":"%s"}}' % (32*"qa")
+    run_dpp_config_error(dev, apdev, conf)
+
+def test_dpp_config_error_legacy_too_short_psk(dev, apdev):
+    """DPP Config Object legacy error - too short psk_hex"""
+    conf = '{"wi-fi_tech":"infra","discovery":{"ssid":"test"},"cred":{"akm":"psk","psk_hex":"%s"}}' % (31*"12")
+    run_dpp_config_error(dev, apdev, conf)
+
+def ecdsa_sign(pkey, message, alg="sha256"):
+    sign = OpenSSL.crypto.sign(pkey, message, alg)
+    a,b = struct.unpack('BB', sign[0:2])
+    if a != 0x30:
+        raise Exception("Invalid DER encoding of ECDSA signature")
+    if b != len(sign) - 2:
+        raise Exception("Invalid length of ECDSA signature")
+    sign = sign[2:]
+
+    a,b = struct.unpack('BB', sign[0:2])
+    if a != 0x02:
+        raise Exception("Invalid DER encoding of ECDSA signature r")
+    if b > len(sign) - 2:
+        raise Exception("Invalid length of ECDSA signature r")
+    sign = sign[2:]
+    if b == 32:
+        r = sign[0:32]
+        sign = sign[32:]
+    elif b == 33:
+        r = sign[1:33]
+        sign = sign[33:]
+    else:
+        raise Exception("Invalid length of ECDSA signature r")
+
+    a,b = struct.unpack('BB', sign[0:2])
+    if a != 0x02:
+        raise Exception("Invalid DER encoding of ECDSA signature s")
+    if b > len(sign) - 2:
+        raise Exception("Invalid length of ECDSA signature s")
+    sign = sign[2:]
+    if b == 32:
+        s = sign[0:32]
+        sign = sign[32:]
+    elif b == 33:
+        s = sign[1:33]
+        sign = sign[33:]
+    else:
+        raise Exception("Invalid length of ECDSA signature s")
+    if len(sign) != 0:
+        raise Exception("Extra data at the end of ECDSA signature")
+
+    raw_sign = r + s
+    return base64.urlsafe_b64encode(raw_sign).rstrip('=')
+
+p256_priv_key = """-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEIBVQij9ah629f1pu3tarDQGQvrzHgAkgYd1jHGiLxNajoAoGCCqGSM49
+AwEHoUQDQgAEAC9d2/JirKu72F2qLuv5jEFMD1Cqu9EiyGk7cOzn/2DJ51p2mEoW
+n03N6XRvTC+G7WPol9Ng97NAM2sK57+F/Q==
+-----END EC PRIVATE KEY-----"""
+p256_pub_key_x = binascii.unhexlify("002f5ddbf262acabbbd85daa2eebf98c414c0f50aabbd122c8693b70ece7ff60")
+p256_pub_key_y = binascii.unhexlify("c9e75a76984a169f4dcde9746f4c2f86ed63e897d360f7b340336b0ae7bf85fd")
+
+def run_dpp_config_connector(dev, apdev, expiry=None, payload=None,
+                             skip_net_access_key_mismatch=True):
+    if not openssl_imported:
+        raise HwsimSkip("OpenSSL python method not available")
+    pkey = OpenSSL.crypto.load_privatekey(OpenSSL.crypto.FILETYPE_PEM,
+                                          p256_priv_key)
+    x = base64.urlsafe_b64encode(p256_pub_key_x).rstrip('=')
+    y = base64.urlsafe_b64encode(p256_pub_key_y).rstrip('=')
+
+    pubkey = '\04' + p256_pub_key_x + p256_pub_key_y
+    kid = base64.urlsafe_b64encode(hashlib.sha256(pubkey).digest()).rstrip('=')
+
+    prot_hdr = '{"typ":"dppCon","kid":"%s","alg":"ES256"}' % kid
+
+    if not payload:
+        payload = '{"groups":[{"groupId":"*","netRole":"sta"}],"netAccessKey":{"kty":"EC","crv":"P-256","x":"aTF4JEGIPKSZ0Xv9zdCMjm-tn5XpMsYIVZ9wySAz1gI","y":"QGcHWA_6rbU9XDXAztoX-M5Q3suTnMaqEhULtn7SSXw"}'
+        if expiry:
+            payload += ',"expiry":"%s"' % expiry
+        payload += '}'
+    conn = base64.urlsafe_b64encode(prot_hdr).rstrip('=') + '.'
+    conn += base64.urlsafe_b64encode(payload).rstrip('=')
+    sign = ecdsa_sign(pkey, conn)
+    conn += '.' + sign
+    run_dpp_config_error(dev, apdev,
+                         build_conf_obj(x=x, y=y, signed_connector=conn),
+                         skip_net_access_key_mismatch=skip_net_access_key_mismatch)
+
+def test_dpp_config_connector_error_ext_sign(dev, apdev):
+    """DPP Config Object connector error - external signature calculation"""
+    run_dpp_config_connector(dev, apdev)
+
+def test_dpp_config_connector_error_too_short_timestamp(dev, apdev):
+    """DPP Config Object connector error - too short timestamp"""
+    run_dpp_config_connector(dev, apdev, expiry="1")
+
+def test_dpp_config_connector_error_invalid_timestamp(dev, apdev):
+    """DPP Config Object connector error - invalid timestamp"""
+    run_dpp_config_connector(dev, apdev, expiry=19*"1")
+
+def test_dpp_config_connector_error_invalid_timestamp_date(dev, apdev):
+    """DPP Config Object connector error - invalid timestamp date"""
+    run_dpp_config_connector(dev, apdev, expiry="9999-99-99T99:99:99Z")
+
+def test_dpp_config_connector_error_invalid_time_zone(dev, apdev):
+    """DPP Config Object connector error - invalid time zone"""
+    run_dpp_config_connector(dev, apdev, expiry="2018-01-01T00:00:00*")
+
+def test_dpp_config_connector_error_invalid_time_zone_2(dev, apdev):
+    """DPP Config Object connector error - invalid time zone 2"""
+    run_dpp_config_connector(dev, apdev, expiry="2018-01-01T00:00:00+")
+
+def test_dpp_config_connector_error_expired_1(dev, apdev):
+    """DPP Config Object connector error - expired 1"""
+    run_dpp_config_connector(dev, apdev, expiry="2018-01-01T00:00:00")
+
+def test_dpp_config_connector_error_expired_2(dev, apdev):
+    """DPP Config Object connector error - expired 2"""
+    run_dpp_config_connector(dev, apdev, expiry="2018-01-01T00:00:00Z")
+
+def test_dpp_config_connector_error_expired_3(dev, apdev):
+    """DPP Config Object connector error - expired 3"""
+    run_dpp_config_connector(dev, apdev, expiry="2018-01-01T00:00:00+01")
+
+def test_dpp_config_connector_error_expired_4(dev, apdev):
+    """DPP Config Object connector error - expired 4"""
+    run_dpp_config_connector(dev, apdev, expiry="2018-01-01T00:00:00+01:02")
+
+def test_dpp_config_connector_error_expired_5(dev, apdev):
+    """DPP Config Object connector error - expired 5"""
+    run_dpp_config_connector(dev, apdev, expiry="2018-01-01T00:00:00-01")
+
+def test_dpp_config_connector_error_expired_6(dev, apdev):
+    """DPP Config Object connector error - expired 6"""
+    run_dpp_config_connector(dev, apdev, expiry="2018-01-01T00:00:00-01:02")
+
+def test_dpp_config_connector_error_no_groups(dev, apdev):
+    """DPP Config Object connector error - no groups"""
+    payload = '{"netAccessKey":{"kty":"EC","crv":"P-256","x":"aTF4JEGIPKSZ0Xv9zdCMjm-tn5XpMsYIVZ9wySAz1gI","y":"QGcHWA_6rbU9XDXAztoX-M5Q3suTnMaqEhULtn7SSXw"}}'
+    run_dpp_config_connector(dev, apdev, payload=payload)
+
+def test_dpp_config_connector_error_empty_groups(dev, apdev):
+    """DPP Config Object connector error - empty groups"""
+    payload = '{"groups":[],"netAccessKey":{"kty":"EC","crv":"P-256","x":"aTF4JEGIPKSZ0Xv9zdCMjm-tn5XpMsYIVZ9wySAz1gI","y":"QGcHWA_6rbU9XDXAztoX-M5Q3suTnMaqEhULtn7SSXw"}}'
+    run_dpp_config_connector(dev, apdev, payload=payload)
+
+def test_dpp_config_connector_error_missing_group_id(dev, apdev):
+    """DPP Config Object connector error - missing groupId"""
+    payload = '{"groups":[{"netRole":"sta"}],"netAccessKey":{"kty":"EC","crv":"P-256","x":"aTF4JEGIPKSZ0Xv9zdCMjm-tn5XpMsYIVZ9wySAz1gI","y":"QGcHWA_6rbU9XDXAztoX-M5Q3suTnMaqEhULtn7SSXw"}}'
+    run_dpp_config_connector(dev, apdev, payload=payload)
+
+def test_dpp_config_connector_error_missing_net_role(dev, apdev):
+    """DPP Config Object connector error - missing netRole"""
+    payload = '{"groups":[{"groupId":"*"}],"netAccessKey":{"kty":"EC","crv":"P-256","x":"aTF4JEGIPKSZ0Xv9zdCMjm-tn5XpMsYIVZ9wySAz1gI","y":"QGcHWA_6rbU9XDXAztoX-M5Q3suTnMaqEhULtn7SSXw"}}'
+    run_dpp_config_connector(dev, apdev, payload=payload)
+
+def test_dpp_config_connector_error_missing_net_access_key(dev, apdev):
+    """DPP Config Object connector error - missing netAccessKey"""
+    payload = '{"groups":[{"groupId":"*","netRole":"sta"}]}'
+    run_dpp_config_connector(dev, apdev, payload=payload)
+
+def test_dpp_config_connector_error_net_access_key_mismatch(dev, apdev):
+    """DPP Config Object connector error - netAccessKey mismatch"""
+    payload = '{"groups":[{"groupId":"*","netRole":"sta"}],"netAccessKey":{"kty":"EC","crv":"P-256","x":"aTF4JEGIPKSZ0Xv9zdCMjm-tn5XpMsYIVZ9wySAz1gI","y":"QGcHWA_6rbU9XDXAztoX-M5Q3suTnMaqEhULtn7SSXw"}}'
+    run_dpp_config_connector(dev, apdev, payload=payload,
+                             skip_net_access_key_mismatch=False)
 
 def test_dpp_gas_timeout(dev, apdev):
     """DPP and GAS server timeout for a query"""
@@ -4429,3 +4867,185 @@ def test_dpp_keygen_configurator_error(dev, apdev):
     check_dpp_capab(dev[0])
     if "FAIL" not in dev[0].request("DPP_CONFIGURATOR_ADD curve=unknown"):
         raise Exception("Unexpected success of invalid DPP_CONFIGURATOR_ADD")
+
+def rx_process_frame(dev):
+    msg = dev.mgmt_rx()
+    if "OK" not in dev.request("MGMT_RX_PROCESS freq={} datarate={} ssi_signal={} frame={}".format(msg['freq'], msg['datarate'], msg['ssi_signal'], msg['frame'].encode('hex'))):
+        raise Exception("MGMT_RX_PROCESS failed")
+
+def wait_auth_success(responder, initiator):
+    ev = responder.wait_event(["DPP-AUTH-SUCCESS"], timeout=5)
+    if ev is None:
+        raise Exception("DPP authentication did not succeed (Responder)")
+    ev = initiator.wait_event(["DPP-AUTH-SUCCESS"], timeout=5)
+    if ev is None:
+        raise Exception("DPP authentication did not succeed (Initiator)")
+
+def wait_conf_completion(configurator, enrollee):
+    ev = configurator.wait_event(["DPP-CONF-SENT"], timeout=5)
+    if ev is None:
+        raise Exception("DPP configuration not completed (Configurator)")
+    ev = enrollee.wait_event(["DPP-CONF-RECEIVED", "DPP-CONF-FAILED"],
+                             timeout=5)
+    if ev is None:
+        raise Exception("DPP configuration not completed (Enrollee)")
+
+def start_dpp(dev):
+    addr = dev[0].own_addr().replace(':', '')
+    cmd = "DPP_BOOTSTRAP_GEN type=qrcode chan=81/1 mac=" + addr
+    res = dev[0].request(cmd)
+    if "FAIL" in res:
+        raise Exception("Failed to generate bootstrapping info")
+    id0 = int(res)
+    uri0 = dev[0].request("DPP_BOOTSTRAP_GET_URI %d" % id0)
+
+    res = dev[1].request("DPP_QR_CODE " + uri0)
+    if "FAIL" in res:
+        raise Exception("Failed to parse QR Code URI")
+    id1 = int(res)
+
+    conf = '{"wi-fi_tech":"infra", "discovery":{"ssid":"test"},"cred":{"akm":"psk","pass":"secret passphrase"}}' + 3000*' '
+    dev[0].set("dpp_config_obj_override", conf)
+
+    dev[0].set("ext_mgmt_frame_handling", "1")
+    cmd = "DPP_LISTEN 2412"
+    if "OK" not in dev[0].request(cmd):
+        raise Exception("Failed to start listen operation")
+    cmd = "DPP_AUTH_INIT peer=%d role=enrollee" % id1
+    if "OK" not in dev[1].request(cmd):
+        raise Exception("Failed to initiate DPP Authentication")
+
+def test_dpp_gas_timeout_handling(dev, apdev):
+    """DPP and GAS timeout handling"""
+    check_dpp_capab(dev[0])
+    check_dpp_capab(dev[1])
+    start_dpp(dev)
+
+    # DPP Authentication Request
+    rx_process_frame(dev[0])
+
+    # DPP Authentication Confirmation
+    rx_process_frame(dev[0])
+
+    wait_auth_success(dev[0], dev[1])
+
+    # DPP Configuration Request (GAS Initial Request frame)
+    rx_process_frame(dev[0])
+
+    # DPP Configuration Request (GAS Comeback Request frame)
+    rx_process_frame(dev[0])
+
+    # Wait for GAS timeout
+    ev = dev[1].wait_event(["DPP-CONF-FAILED"], timeout=5)
+    if ev is None:
+        raise Exception("DPP configuration not completed (Enrollee)")
+
+def test_dpp_gas_comeback_after_failure(dev, apdev):
+    """DPP and GAS comeback after failure"""
+    check_dpp_capab(dev[0])
+    check_dpp_capab(dev[1])
+    start_dpp(dev)
+
+    # DPP Authentication Request
+    rx_process_frame(dev[0])
+
+    # DPP Authentication Confirmation
+    rx_process_frame(dev[0])
+
+    wait_auth_success(dev[0], dev[1])
+
+    # DPP Configuration Request (GAS Initial Request frame)
+    rx_process_frame(dev[0])
+
+    # DPP Configuration Request (GAS Comeback Request frame)
+    msg = dev[0].mgmt_rx()
+    frame = msg['frame'].encode('hex')
+    with alloc_fail(dev[0], 1, "gas_build_comeback_resp;gas_server_handle_rx_comeback_req"):
+        if "OK" not in dev[0].request("MGMT_RX_PROCESS freq={} datarate={} ssi_signal={} frame={}".format(msg['freq'], msg['datarate'], msg['ssi_signal'], frame)):
+            raise Exception("MGMT_RX_PROCESS failed")
+        wait_fail_trigger(dev[0], "GET_ALLOC_FAIL")
+    # Try the same frame again - this is expected to fail since the response has
+    # already been freed.
+    if "OK" not in dev[0].request("MGMT_RX_PROCESS freq={} datarate={} ssi_signal={} frame={}".format(msg['freq'], msg['datarate'], msg['ssi_signal'], frame)):
+        raise Exception("MGMT_RX_PROCESS failed")
+
+    # DPP Configuration Request (GAS Comeback Request frame retry)
+    msg = dev[0].mgmt_rx()
+
+def test_dpp_gas(dev, apdev):
+    """DPP and GAS protocol testing"""
+    check_dpp_capab(dev[0])
+    check_dpp_capab(dev[1])
+    start_dpp(dev)
+
+    # DPP Authentication Request
+    rx_process_frame(dev[0])
+
+    # DPP Authentication Confirmation
+    rx_process_frame(dev[0])
+
+    wait_auth_success(dev[0], dev[1])
+
+    # DPP Configuration Request (GAS Initial Request frame)
+    msg = dev[0].mgmt_rx()
+
+    # Protected Dual of GAS Initial Request frame (dropped by GAS server)
+    frame = msg['frame'].encode('hex')
+    frame = frame[0:48] + "09" + frame[50:]
+    if "OK" not in dev[0].request("MGMT_RX_PROCESS freq={} datarate={} ssi_signal={} frame={}".format(msg['freq'], msg['datarate'], msg['ssi_signal'], frame)):
+        raise Exception("MGMT_RX_PROCESS failed")
+
+    with alloc_fail(dev[0], 1, "gas_server_send_resp"):
+        frame = msg['frame'].encode('hex')
+        if "OK" not in dev[0].request("MGMT_RX_PROCESS freq={} datarate={} ssi_signal={} frame={}".format(msg['freq'], msg['datarate'], msg['ssi_signal'], frame)):
+            raise Exception("MGMT_RX_PROCESS failed")
+        wait_fail_trigger(dev[0], "GET_ALLOC_FAIL")
+
+    with alloc_fail(dev[0], 1, "gas_build_initial_resp;gas_server_send_resp"):
+        frame = msg['frame'].encode('hex')
+        if "OK" not in dev[0].request("MGMT_RX_PROCESS freq={} datarate={} ssi_signal={} frame={}".format(msg['freq'], msg['datarate'], msg['ssi_signal'], frame)):
+            raise Exception("MGMT_RX_PROCESS failed")
+        wait_fail_trigger(dev[0], "GET_ALLOC_FAIL")
+
+    # Add extra data after Query Request field to trigger
+    # "GAS: Ignored extra data after Query Request field"
+    frame = msg['frame'].encode('hex') + "00"
+    if "OK" not in dev[0].request("MGMT_RX_PROCESS freq={} datarate={} ssi_signal={} frame={}".format(msg['freq'], msg['datarate'], msg['ssi_signal'], frame)):
+        raise Exception("MGMT_RX_PROCESS failed")
+
+    # DPP Configuration Request (GAS Comeback Request frame)
+    rx_process_frame(dev[0])
+
+    # DPP Configuration Request (GAS Comeback Request frame)
+    rx_process_frame(dev[0])
+
+    # DPP Configuration Request (GAS Comeback Request frame)
+    rx_process_frame(dev[0])
+
+    wait_conf_completion(dev[0], dev[1])
+
+def test_dpp_truncated_attr(dev, apdev):
+    """DPP and truncated attribute"""
+    check_dpp_capab(dev[0])
+    check_dpp_capab(dev[1])
+    start_dpp(dev)
+
+    # DPP Authentication Request
+    msg = dev[0].mgmt_rx()
+    frame = msg['frame']
+
+    # DPP: Truncated message - not enough room for the attribute - dropped
+    frame1 = frame[0:36].encode('hex')
+    if "OK" not in dev[0].request("MGMT_RX_PROCESS freq={} datarate={} ssi_signal={} frame={}".format(msg['freq'], msg['datarate'], msg['ssi_signal'], frame1)):
+        raise Exception("MGMT_RX_PROCESS failed")
+    ev = dev[0].wait_event(["DPP-RX"], timeout=5)
+    if ev is None or "ignore=invalid-attributes" not in ev:
+        raise Exception("Invalid attribute error not reported")
+
+    # DPP: Unexpected octets (3) after the last attribute
+    frame2 = frame.encode('hex') + "000000"
+    if "OK" not in dev[0].request("MGMT_RX_PROCESS freq={} datarate={} ssi_signal={} frame={}".format(msg['freq'], msg['datarate'], msg['ssi_signal'], frame2)):
+        raise Exception("MGMT_RX_PROCESS failed")
+    ev = dev[0].wait_event(["DPP-RX"], timeout=5)
+    if ev is None or "ignore=invalid-attributes" not in ev:
+        raise Exception("Invalid attribute error not reported")
