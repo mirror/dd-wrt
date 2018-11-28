@@ -3576,13 +3576,15 @@ struct nvram_param srouter_defaults[] = {
 };
 #else
 struct nvram_param *srouter_defaults = NULL;
+static unsigned char **values;
 static unsigned int defaultnum;
+static unsigned int stores;
 void load_defaults(void)
 {
 	FILE *in = fopen("/etc/defaults.bin", "rb");
 	if (in == NULL)
 		return;
-	unsigned int stores, i;
+	unsigned int i;
 	defaultnum = (unsigned int)getc(in);
 	defaultnum |= (unsigned int)getc(in) << 8;
 	defaultnum |= (unsigned int)getc(in) << 16;
@@ -3591,9 +3593,9 @@ void load_defaults(void)
 
 	unsigned char *index;
 	index = malloc(sizeof(char) * defaultnum);
-	fread(index, defaultnum, 1, in);
+	fread(index, defaultnum, 1, in);	// read string index table
 
-	unsigned char **values = malloc(sizeof(char *) * stores);
+	values = malloc(sizeof(char *) * stores);
 	for (i = 0; i < stores; i++) {
 		char temp[4096];
 		int c;
@@ -3615,7 +3617,7 @@ void load_defaults(void)
 		}
 		temp[a++] = 0;
 		srouter_defaults[i].name = strdup(temp);
-		srouter_defaults[i].value = strdup(values[index[i]]);
+		srouter_defaults[i].value = values[index[i]];
 	}
 	for (i = 0; i < stores; i++) {
 		free(values[i]);
@@ -3630,10 +3632,13 @@ void free_defaults(void)
 	int i;
 	for (i = defaultnum - 1; i > -1; i--) {
 		if (srouter_defaults[i].name) {
-			free(srouter_defaults[i].value);
 			free(srouter_defaults[i].name);
 		}
 	}
+	for (i = stores - 1; i > -1; i--) {
+		free(values[i]);
+	}
+	free(values);
 	free(srouter_defaults);
 
 }
