@@ -3619,10 +3619,6 @@ void load_defaults(void)
 		srouter_defaults[i].name = strdup(temp);
 		srouter_defaults[i].value = values[index[i]];
 	}
-	for (i = 0; i < stores; i++) {
-		free(values[i]);
-	}
-	free(values);
 	free(index);
 	fclose(in);
 }
