@@ -3607,7 +3607,8 @@ void load_defaults(void)
 
 		values[i] = strdup(temp);
 	}
-	srouter_defaults = (struct nvram_param *)malloc(sizeof(struct nvram_param) * defaultnum);
+	srouter_defaults = (struct nvram_param *)malloc(sizeof(struct nvram_param) * (defaultnum + 1));
+	memset(srouter_defaults, 0, sizeof(struct nvram_param) * (defaultnum + 1));
 	for (i = 0; i < defaultnum; i++) {
 		char temp[4096];
 		int c;
