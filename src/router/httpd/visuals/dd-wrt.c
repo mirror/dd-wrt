@@ -943,18 +943,18 @@ static void show_security_prefix(webs_t wp, int argc, char_t ** argv, char *pref
 	    || nvram_match(sta, "apsta") || nvram_match(sta, "wet")) {
 #ifdef HAVE_MADWIFI
 		if (nvhas(var, "peap") || nvhas(var, "leap") || nvhas(var, "tls") || nvhas(var, "ttls") || nvhas(var, "8021X"))
-			websWrite(wp, "<option value=\"8021X\" %s>802.1x</option>\n", "selected=\"selected\"");
+			websWrite(wp, "<option value=\"8021X\" %s>802.1x / EAP</option>\n", "selected=\"selected\"");
 		else
-			websWrite(wp, "<option value=\"8021X\" %s>802.1x</option>\n", "");
+			websWrite(wp, "<option value=\"8021X\" %s>802.1x / EAP</option>\n", "");
 
 #else
-		websWrite(wp, "<option value=\"8021X\" %s>802.1x</option>\n", selmatch(var, "8021X", "selected=\"selected\""));
+		websWrite(wp, "<option value=\"8021X\" %s>802.1x / EAP</option>\n", selmatch(var, "8021X", "selected=\"selected\""));
 #endif
 	}
 #else
 #ifndef HAVE_RT61
 	if (nvram_match(sta, "sta") || nvram_match(sta, "wet")) {
-		websWrite(wp, "<option value=\"8021X\" %s>802.1x</option>\n", selmatch(var, "8021X", "selected=\"selected\""));
+		websWrite(wp, "<option value=\"8021X\" %s>802.1x / EAP</option>\n", selmatch(var, "8021X", "selected=\"selected\""));
 	}
 #endif
 #endif
