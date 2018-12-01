@@ -85,7 +85,7 @@ int set_channel(char *dev, int channel)
 {
 	struct iwreq wrq;
 	int flags = 0;
-	if (is_ath9k(nvram_safe_get("wifi_display"))) {
+	if (is_mac80211(nvram_safe_get("wifi_display"))) {
 		if (channel > 14)
 			flags = 2;
 		else
