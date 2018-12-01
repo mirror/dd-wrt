@@ -124,7 +124,7 @@ int main(int argc, char **argv)
 		if (!strcmp(argv[1], "terminate")) {
 #ifdef HAVE_MADWIFI
 			// return to original channel
-			if (is_ath9k(wl_dev)) {
+			if (is_mac80211(wl_dev)) {
 				sysprintf("ifconfig %s down", get_monitor());
 				sysprintf("iw dev %s del", get_monitor());
 			} else {
@@ -198,7 +198,7 @@ int main(int argc, char **argv)
 	}
 	cfg.readFromWl = 1;
 #else
-	if (is_ath9k(nvram_safe_get("wifi_display"))) {
+	if (is_mac80211(nvram_safe_get("wifi_display"))) {
 		sysprintf("iw phy phy%d interface add %s type monitor", get_ath9k_phy_ifname(nvram_safe_get("wifi_display")), get_monitor());
 		sysprintf("ifconfig %s up", get_monitor());
 	} else {
@@ -507,7 +507,7 @@ void dealWithPacket(wiviz_cfg * cfg, int pktlen, const u_char * packet)
 	dst = i_dst;
 	bss = i_bss;
 
-	if (is_ath9k(nvram_safe_get("wifi_display"))) {
+	if (is_mac80211(nvram_safe_get("wifi_display"))) {
 		if (packet[0] > 0) {
 			printf("Wrong radiotap header version.\n");
 			return;
