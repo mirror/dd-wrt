@@ -1991,12 +1991,12 @@ static void show_netmode(webs_t wp, char *prefix)
 		if (has_2ghz(prefix)) {
 			websWrite(wp, "document.write(\"<option value=\\\"g-only\\\" %s>\" + wl_basic.g + \"</option>\");\n", nvram_match(wl_net_mode, "g-only") ? "selected=\\\"selected\\\"" : "");
 		}
-	if (has_mimo(prefix) && has_2ghz(prefix)) {
+	if (has_mimo(prefix) && has_2ghz(prefix) && !is_ath5k(prefix)) {
 		websWrite(wp, "document.write(\"<option value=\\\"ng-only\\\" %s>\" + wl_basic.ng + \"</option>\");\n", nvram_match(wl_net_mode, "ng-only") ? "selected=\\\"selected\\\"" : "");
 	}
 #endif
 #endif
-	if (has_mimo(prefix) && has_2ghz(prefix)) {
+	if (has_mimo(prefix) && has_2ghz(prefix) && !is_ath5k(prefix)) {
 		if (has_5ghz(prefix)) {
 			websWrite(wp, "document.write(\"<option value=\\\"n2-only\\\" %s>\" + wl_basic.n2 + \"</option>\");\n", nvram_match(wl_net_mode, "n2-only") ? "selected=\\\"selected\\\"" : "");
 		} else {
@@ -2009,7 +2009,7 @@ static void show_netmode(webs_t wp, char *prefix)
 	if (has_5ghz(prefix)) {
 		websWrite(wp, "document.write(\"<option value=\\\"a-only\\\" %s>\" + wl_basic.a + \"</option>\");\n", nvram_match(wl_net_mode, "a-only") ? "selected=\\\"selected\\\"" : "");
 	}
-	if (has_mimo(prefix) && has_5ghz(prefix)) {
+	if (has_mimo(prefix) && has_5ghz(prefix) && !is_ath5k(prefix)) {
 		websWrite(wp, "document.write(\"<option value=\\\"na-only\\\" %s>\" + wl_basic.na + \"</option>\");\n", nvram_match(wl_net_mode, "na-only") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "document.write(\"<option value=\\\"n5-only\\\" %s>\" + wl_basic.n5 + \"</option>\");\n", nvram_match(wl_net_mode, "n5-only") ? "selected=\\\"selected\\\"" : "");
 	}
@@ -2034,11 +2034,11 @@ static void show_netmode(webs_t wp, char *prefix)
 
 #endif
 	if (is_ath9k(prefix)) {
-		if (has_2ghz(prefix)) {
+		if (has_2ghz(prefix) && !is_ath5k(prefix)) {
 			websWrite(wp, "document.write(\"<option value=\\\"ng-only\\\" %s>\" + wl_basic.ng + \"</option>\");\n", nvram_match(wl_net_mode, "ng-only") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"n2-only\\\" %s>\" + wl_basic.n2 + \"</option>\");\n", nvram_match(wl_net_mode, "n2-only") ? "selected=\\\"selected\\\"" : "");
 		}
-		if (has_5ghz(prefix)) {
+		if (has_5ghz(prefix) && !is_ath5k(prefix)) {
 			websWrite(wp, "document.write(\"<option value=\\\"na-only\\\" %s>\" + wl_basic.na + \"</option>\");\n", nvram_match(wl_net_mode, "na-only") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"n5-only\\\" %s>\" + wl_basic.n5 + \"</option>\");\n", nvram_match(wl_net_mode, "n5-only") ? "selected=\\\"selected\\\"" : "");
 		}
