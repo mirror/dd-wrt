@@ -1135,30 +1135,50 @@ int is_wil6210(const char *prefix);
 #endif
 
 #ifdef HAVE_ATH9K
-extern int is_ath9k(const char *prefix);
+extern int is_mac80211(const char *prefix);
 extern int is_ap8x(void);
 extern int has_channelsurvey(const char *prefix);
 extern int has_spectralscanning(const char *prefix);
 extern int getath9kdevicecount(void);
 #else
-#define is_ath9k(prefix) 0
-#define is_ap8x() 0
-#define has_spectralscanning(prefix) 0
+static inline int is_mac80211(char *prefix)
+{
+	return 0;
+}
+
+static inline int is_ap8x(void)
+{
+	return 0;
+}
+
+static inline int has_spectralscanning(char *prefix)
+{
+	return 0;
+}
 #endif
 #ifdef HAVE_ATH10K
 extern int is_ath10k(const char *prefix);
 #else
-#define is_ath10k(prefix) 0
+static inline int is_ath10k(char *prefix)
+{
+	return 0;
+}
 #endif
 #ifdef HAVE_MVEBU
 extern int is_mvebu(const char *prefix);
 #else
-#define is_mvebu(prefix) 0
+static inline int is_mvebu(char *prefix)
+{
+	return 0;
+}
 #endif
 #if defined(HAVE_SUBQUARTER) && (defined(HAVE_REGISTER) || defined(HAVE_SUPERCHANNEL))
 int registered_has_subquarter(void)
-#else 
-#define registered_has_subquarter() 0
+#else
+static inline int registered_has_subquarter(void)
+{
+	return 0;
+}
 #endif
 
 extern char *get3GDeviceVendor(void);
@@ -1308,15 +1328,15 @@ char *strstrtok(char *str, char del);
 
 #ifndef ABS
 #define	ABS(a)			(((a) < 0) ? -(a) : (a))
-#endif /* ABS */
+#endif				/* ABS */
 
 #ifndef MIN
 #define	MIN(a, b)		(((a) < (b)) ? (a) : (b))
-#endif /* MIN */
+#endif				/* MIN */
 
 #ifndef MAX
 #define	MAX(a, b)		(((a) > (b)) ? (a) : (b))
-#endif /* MAX */
+#endif				/* MAX */
 
 #ifndef OFFSETOF
 #define	OFFSETOF(type, member)	((uint)(uintptr)&((type *)0)->member)
