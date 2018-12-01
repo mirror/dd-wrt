@@ -219,7 +219,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			t = 2;
 		else
 			t = 1;
-		if (is_ath9k(devs)) {
+		if (is_mac80211(devs)) {
 			if (has_ad(devs))
 				cnt = ej_active_wireless_if_ath9k(wp, argc, argv, "giwifi0", cnt, t, macmask);
 			else
@@ -229,7 +229,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 		if (!gotassocs) {
 			cnt = ej_active_wireless_if(wp, argc, argv, devs, cnt, t, macmask);
 		}
-		if (!is_ath9k(devs)) {
+		if (!is_mac80211(devs)) {
 			char vif[32];
 
 			sprintf(vif, "%s_vifs", devs);
@@ -245,7 +245,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 	// show wds links
 	for (i = 0; i < c; i++) {
 		sprintf(devs, "ath%d", i);
-		if (!is_ath9k(devs)) {
+		if (!is_mac80211(devs)) {
 
 			int s;
 
@@ -339,7 +339,7 @@ void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "N/A");
 		return;
 	}
-	if (is_ath9k(ifname) || is_mvebu(ifname)) {
+	if (is_mac80211(ifname) || is_mvebu(ifname)) {
 		int coverage = mac80211_get_coverageclass(ifname);
 		ack = coverage * 3;
 		/* See handle_distance() for an explanation where the '450' comes from */
@@ -392,7 +392,7 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 		divisor = KILO;
 	}
 	sprintf(mode, "%s_channelbw", ifname);
-	if (!is_ath9k(ifname)) {
+	if (!is_mac80211(ifname)) {
 
 		if (nvram_matchi(mode, 40))
 			rate *= 2;
@@ -419,7 +419,7 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 		}
 
 		int freq = get_wififreq(prefix, interface->freq);	// translation for special frequency devices
-		if (is_ath9k(prefix)) {
+		if (is_mac80211(prefix)) {
 			websWrite(wp, "%d", ieee80211_mhz2ieee(interface->freq));
 			if (interface->center1 != -1 && interface->center1 != interface->freq)
 				websWrite(wp, " + %d", ieee80211_mhz2ieee(interface->center1));
@@ -429,7 +429,7 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "%d", channel);
 		}
 		websWrite(wp, " (%d MHz", freq);
-		if (is_ath9k(prefix)) {
+		if (is_mac80211(prefix)) {
 			switch (interface->width) {
 			case 10:
 			case 5:

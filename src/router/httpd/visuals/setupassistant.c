@@ -568,7 +568,7 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_ofdm_weak_det, "%s_ofdm_weak_det", prefix);
 
 #if defined(HAVE_ATH9K)
-	if (!is_ath9k(prefix))
+	if (!is_mac80211(prefix))
 #endif
 	{
 		showAutoOption(wp, "wl_basic.intmit", wl_intmit);
@@ -591,7 +591,7 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 #if defined(HAVE_ATH9K)
 	fprintf(stderr, "[MADWIFI MIMO] %s\n", prefix);
 /* limit channel options by mode */
-	if (is_ath9k(prefix)) {
+	if (is_mac80211(prefix)) {
 		if ((nvram_selnmatch(wp, "n-only", "%s_net_mode", prefix)
 		     || nvram_selnmatch(wp, "ng-only", "%s_net_mode", prefix)
 		     || nvram_selnmatch(wp, "n2-only", "%s_net_mode", prefix)
@@ -599,13 +599,13 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 		     || nvram_selnmatch(wp, "n5-only", "%s_net_mode", prefix)
 		     || nvram_selnmatch(wp, "na-only", "%s_net_mode", prefix))) {
 #if defined(HAVE_ATH9K)
-			if (!is_ath9k(prefix) || has_ht40(prefix))
+			if (!is_mac80211(prefix) || has_ht40(prefix))
 #endif
 				websWrite(wp, "document.write(\"<option value=\\\"2040\\\" %s >\" + share.dynamicturbo + \"</option>\");\n", nvram_selmatch(wp, wl_width, "2040") ? "selected=\\\"selected\\\"" : "");
 		}
 	}
-	if (!is_ath9k(prefix)
-	    || (is_ath9k(prefix)
+	if (!is_mac80211(prefix)
+	    || (is_mac80211(prefix)
 		&& (nvram_selnmatch(wp, "n-only", "%s_net_mode", prefix)
 		    || nvram_selnmatch(wp, "ng-only", "%s_net_mode", prefix)
 		    || nvram_selnmatch(wp, "n2-only", "%s_net_mode", prefix)
@@ -615,7 +615,7 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 #endif
 	{
 #if defined(HAVE_ATH9K)
-		if (!is_ath9k(prefix) || has_ht40(prefix))
+		if (!is_mac80211(prefix) || has_ht40(prefix))
 #endif
 			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n", nvram_selmatch(wp, wl_width, "40") ? "selected=\\\"selected\\\"" : "");
 	}
@@ -720,7 +720,7 @@ void ej_sas_show_wireless_single(webs_t wp, char *prefix)
 		} else {
 			sas_show_channel(wp, prefix, prefix, 0);
 #if defined(HAVE_ATH9K)
-			if (is_ath9k(prefix)
+			if (is_mac80211(prefix)
 			    && (nvram_selmatch(wp, wl_width, "40")
 				|| nvram_selmatch(wp, wl_width, "2040"))) {
 				websWrite(wp, "<div class=\"setting\">\n");
@@ -861,7 +861,7 @@ void sas_show_netmode(webs_t wp, char *prefix)
 
 #endif
 #if defined(HAVE_ATH9K)
-	if (is_ath9k(prefix)) {
+	if (is_mac80211(prefix)) {
 		if (has_2ghz(prefix)) {
 			websWrite(wp, "document.write(\"<option value=\\\"ng-only\\\" %s>\" + wl_basic.ng + \"</option>\");\n", nvram_selmatch(wp, wl_net_mode, "ng-only") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"n2-only\\\" %s>\" + wl_basic.n2 + \"</option>\");\n", nvram_selmatch(wp, wl_net_mode, "n2-only") ? "selected=\\\"selected\\\"" : "");
@@ -934,9 +934,9 @@ void sas_show_channel(webs_t wp, char *dev, char *prefix, int type)
 		int channelbw = 20;
 
 #if defined(HAVE_ATH9K)
-		if (is_ath9k(prefix)) {
+		if (is_mac80211(prefix)) {
 #ifdef HAVE_ATH9K
-			if (is_ath9k(prefix)) {
+			if (is_mac80211(prefix)) {
 				// temp must be replaced with the actual selected country
 				char regdomain[16];
 				char *country;

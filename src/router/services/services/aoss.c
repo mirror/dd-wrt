@@ -90,14 +90,14 @@ void start_aoss(void)
 	char copy2[256];
 	strcpy(copy2, vifbak2);
 #endif
-	if (!is_ath9k("ath0")) {
+	if (!is_mac80211("ath0")) {
 		eval("startservice", "deconfigurewifi", "-f");
 	}
 	nvram_unset("ath0_vifs");
 #ifdef HAVE_WZRHPAG300NH
 	nvram_unset("ath1_vifs");
 #endif
-	if (!is_ath9k("ath0")) {
+	if (!is_mac80211("ath0")) {
 		eval("startservice", "configurewifi", "-f");
 	}
 	nvram_set("ath0_vifs", copy);
@@ -199,7 +199,7 @@ void start_aoss(void)
 	}
 #else
 	if (nvram_match("ath0_mode", "ap") || nvram_match("ath0_mode", "wdsap")) {
-		if (is_ath9k("ath0")) {
+		if (is_mac80211("ath0")) {
 			deconfigure_single_ath9k(0);
 			configure_single_ath9k(0);
 			hasaoss = 1;

@@ -885,7 +885,7 @@ void ej_show_wireless_advanced(webs_t wp, int argc, char_t ** argv)
 	for (i = 0; i < cnt; i++) {
 		sprintf(ifname, "ath%d", i);
 		if (ifexists(ifname)) {
-			if (!is_ath9k(ifname)) {
+			if (!is_mac80211(ifname)) {
 				showrate = 1;
 				break;
 			}
