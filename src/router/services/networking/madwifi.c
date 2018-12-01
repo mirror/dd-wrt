@@ -92,7 +92,7 @@ static void deconfigure_single(int count)
 		led_control(LED_SEC1, LED_OFF);
 
 	char vifs[128];
-	if (is_ath9k(dev)) {
+	if (is_mac80211(dev)) {
 		deconfigure_single_ath9k(count);
 		sysprintf("rm -f /tmp/ath%d_configured", count);
 		return;
@@ -357,7 +357,7 @@ void addvhtcaps(char *prefix, FILE * fp)
 	}
 #endif
 #ifdef HAVE_ATH9K
-	if (is_ath9k(prefix)) {
+	if (is_mac80211(prefix)) {
 		char shortgi[32];
 		sprintf(shortgi, "%s_shortgi", prefix);
 		if (nvram_matchi(shortgi, 0))
@@ -1887,7 +1887,7 @@ static void configure_single(int count)
 		led_control(LED_SEC0, LED_OFF);
 	if (!strncmp(dev, "ath1", 4))
 		led_control(LED_SEC1, LED_OFF);
-	if (is_ath9k(dev)) {
+	if (is_mac80211(dev)) {
 		configure_single_ath9k(count);
 		ath9k_start_supplicant(count);
 		sysprintf("touch /tmp/ath%d_configured", count);
@@ -2787,7 +2787,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 	int hasath9k = 0;
 	for (i = 0; i < c; i++) {
 		sprintf(dev, "ath%d", i);
-		if (is_ath9k(dev)) {
+		if (is_mac80211(dev)) {
 			hasath9k = 1;
 			break;
 		}

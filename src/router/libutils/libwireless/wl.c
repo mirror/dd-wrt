@@ -106,7 +106,7 @@ int has_2ghz(char *prefix)
 		RETURNVALUE(0);
 	}
 #endif
-	if (is_ath9k(prefix)) {
+	if (is_mac80211(prefix)) {
 		RETURNVALUE(mac80211_check_band(prefix, 2));
 	}
 
@@ -122,7 +122,7 @@ int has_5ghz(char *prefix)
 	if (has_ad(prefix)) {
 		RETURNVALUE(0);
 	}
-	if (is_ath9k(prefix)) {
+	if (is_mac80211(prefix)) {
 		RETURNVALUE(mac80211_check_band(prefix, 5));
 	}
 
@@ -1233,7 +1233,7 @@ int do80211priv(const char *ifname, int op, void *data, size_t len)
 
 long long wifi_getrate(char *ifname)
 {
-	if (is_ath9k(ifname) && !is_mvebu(ifname)) {
+	if (is_mac80211(ifname) && !is_mvebu(ifname)) {
 		char physical[32];
 		bzero(physical, sizeof(physical));
 		strncpy(physical, ifname, 4);
@@ -1633,7 +1633,7 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 		interface->center2 = -1;
 		return interface;
 	}
-	if (is_ath9k(ifname)) {
+	if (is_mac80211(ifname)) {
 		return mac80211_get_interface(ifname);
 	}
 
@@ -1667,7 +1667,7 @@ int get_radiostate(char *ifname)
 	if (nvram_nmatch("disabled", "%s_net_mode", ifname))
 		return 0;
 	if (!has_ad(ifname)) {
-		if (is_ath9k(ifname)) {
+		if (is_mac80211(ifname)) {
 			int state = getValueFromPath("/sys/kernel/debug/ieee80211/phy%d/ath9k/diag", get_ath9k_phy_ifname(ifname), "0x%x", NULL);
 			if (state == 0x00000003)
 				return 0;
@@ -1933,7 +1933,7 @@ struct wifi_channels *list_channels(char *devnr)
 
 int getWifiInfo(char *ifname, unsigned char *mac, int field)
 {
-	if (is_ath9k(ifname)) {
+	if (is_mac80211(ifname)) {
 		return getWifiInfo_ath9k(ifname, mac, field);
 	}
 	unsigned char *buf = calloc(24 * 1024, 1);
@@ -2023,7 +2023,7 @@ int getWifiInfo(char *ifname, unsigned char *mac, int field)
 
 int getassoclist(char *ifname, unsigned char *list)
 {
-	if (is_ath9k(ifname)) {
+	if (is_mac80211(ifname)) {
 		return getassoclist_ath9k(ifname, list);
 	}
 	unsigned char *buf;
@@ -2194,7 +2194,7 @@ void radio_on(int idx)
 
 int gettxantenna(char *ifname)
 {
-	if (is_ath9k(ifname)) {
+	if (is_mac80211(ifname)) {
 #ifdef HAVE_CARLSONWIRELESS
 		if (!registered_has_cap(20))
 			return (1);
@@ -2206,7 +2206,7 @@ int gettxantenna(char *ifname)
 
 int getrxantenna(char *ifname)
 {
-	if (is_ath9k(ifname)) {
+	if (is_mac80211(ifname)) {
 #ifdef HAVE_CARLSONWIRELESS
 		if (!registered_has_cap(20))
 			return (1);
@@ -2494,7 +2494,7 @@ char *getWifiDeviceName(char *prefix)
 int has_channelsurvey(const char *prefix)
 {
 	int i;
-	if (!is_ath9k(prefix))
+	if (!is_mac80211(prefix))
 		return 0;
 	char *wifiname = getWifiDeviceName(prefix);
 	if (!wifiname)
@@ -2548,7 +2548,7 @@ int get_ath9k_phy_ifname(const char *ifname)
 	return get_ath9k_phy_idx(devnum);
 }
 
-int is_ath9k(const char *prefix)
+int is_mac80211(const char *prefix)
 {
 #ifdef HAVE_MVEBU
 	return 1;

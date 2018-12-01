@@ -1417,7 +1417,8 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 			snprintf(name, sizeof(name), "%s (%s)", tran_string(buf, "share.wireless"), getNetworkLabel(wp, wdsdev));
 			show_bwif(wp, wdsdev, name);
 		}
-		if (is_ath9k(dev)) {
+
+		if (is_mac80211(dev)) {
 			asprintf(&globstring, "/sys/class/ieee80211/phy*/device/net/%s.sta*", dev);
 			globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 			int awdscount;
