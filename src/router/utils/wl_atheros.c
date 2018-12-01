@@ -18,7 +18,7 @@ struct wifi_info {
 static int _showAssocList(char *base, char *ifname, char *mac, struct wifi_info *rwc, int silent)
 {
 	char buf[18];
-	if (is_ath9k(ifname)) {
+	if (is_mac80211(ifname)) {
 		struct mac80211_info *mac80211_info;
 		struct wifi_client_info *wc;
 		mac80211_info = mac80211_assoclist(base);
