@@ -478,7 +478,7 @@ static void do_madwifi_check(void)
 
 	for (i = 0; i < c; i++) {
 		sprintf(dev, "ath%d", i);
-		if (is_ath9k(dev))
+		if (is_mac80211(dev))
 			continue;
 		if (nvram_matchi("wds_watchdog_debug", 1))
 			for (s = 1; s <= 10; s++) {
