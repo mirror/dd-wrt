@@ -227,7 +227,7 @@ char *nvram_default_get(const char *var, const char *def)
 	char *v = nvram_get(var);
 	if (v == NULL || strlen(v) == 0) {
 		nvram_set(var, def);
-		return nvram_safe_get(var);
+		return def;
 	}
 	return v;
 }
