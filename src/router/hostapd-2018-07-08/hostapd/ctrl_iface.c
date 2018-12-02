@@ -2236,7 +2236,7 @@ static int hostapd_ctrl_set_key(struct hostapd_data *hapd, const char *cmd)
 	if (!pos)
 		return -1;
 	pos++;
-	if (hexstr2bin(pos, seq, sizeof(6)) < 0)
+	if (hexstr2bin(pos, seq, sizeof(seq)) < 0)
 		return -1;
 	pos += 2 * 6;
 	if (*pos != ' ')

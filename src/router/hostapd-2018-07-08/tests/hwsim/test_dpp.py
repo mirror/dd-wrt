@@ -158,6 +158,33 @@ def test_dpp_qr_code_curves_brainpool(dev, apdev):
         if "curve=" + curve not in info:
             raise Exception("Curve mismatch for " + curve)
 
+def test_dpp_qr_code_unsupported_curve(dev, apdev):
+    """DPP QR Code and unsupported curve"""
+    check_dpp_capab(dev[0])
+
+    id = dev[0].request("DPP_BOOTSTRAP_GEN type=qrcode curve=unsupported")
+    if "FAIL" not in id:
+        raise Exception("Unsupported curve accepted")
+
+    tests = [ "30",
+              "305f02010104187f723ed9e1b41979ec5cd02eb82696efc76b40e277661049a00a06082a8648ce3d030101a134033200043f292614dea97c43f500f069e79ae9fb48f8b07369180de5eec8fa2bc9eea5af7a46dc335f52f10cb1c0e9464201d41b" ]
+    for hex in tests:
+        id = dev[0].request("DPP_BOOTSTRAP_GEN type=qrcode key=" + hex)
+        if "FAIL" not in id:
+            raise Exception("Unsupported/invalid curve accepted")
+
+def test_dpp_qr_code_keygen_fail(dev, apdev):
+    """DPP QR Code and keygen failure"""
+    check_dpp_capab(dev[0])
+
+    with alloc_fail(dev[0], 1, "dpp_bootstrap_key_der;dpp_keygen"):
+        if "FAIL" not in dev[0].request("DPP_BOOTSTRAP_GEN type=qrcode"):
+            raise Exception("Failure not reported")
+
+    with alloc_fail(dev[0], 1, "base64_gen_encode;dpp_keygen"):
+        if "FAIL" not in dev[0].request("DPP_BOOTSTRAP_GEN type=qrcode"):
+            raise Exception("Failure not reported")
+
 def test_dpp_qr_code_curve_select(dev, apdev):
     """DPP QR Code and curve selection"""
     check_dpp_capab(dev[0], brainpool=True)
@@ -870,8 +897,7 @@ def run_dpp_qr_code_auth_initiator_either(dev, apdev, resp_role,
 
     dev[0].request("DPP_STOP_LISTEN")
 
-def test_dpp_qr_code_auth_incompatible_roles(dev, apdev):
-    """DPP QR Code and authentication exchange (incompatible roles)"""
+def run_init_incompatible_roles(dev, role="enrollee"):
     check_dpp_capab(dev[0])
     check_dpp_capab(dev[1])
     logger.info("dev0 displays QR Code")
@@ -889,8 +915,13 @@ def test_dpp_qr_code_auth_incompatible_roles(dev, apdev):
     id1 = int(res)
 
     logger.info("dev1 initiates DPP Authentication")
-    if "OK" not in dev[0].request("DPP_LISTEN 2412 role=enrollee"):
+    if "OK" not in dev[0].request("DPP_LISTEN 2412 role=%s" % role):
         raise Exception("Failed to start listen operation")
+    return id1
+
+def test_dpp_qr_code_auth_incompatible_roles(dev, apdev):
+    """DPP QR Code and authentication exchange (incompatible roles)"""
+    id1 = run_init_incompatible_roles(dev)
     if "OK" not in dev[1].request("DPP_AUTH_INIT peer=%d role=enrollee" % id1):
         raise Exception("Failed to initiate DPP Authentication")
     ev = dev[1].wait_event(["DPP-NOT-COMPATIBLE"], timeout=5)
@@ -909,6 +940,46 @@ def test_dpp_qr_code_auth_incompatible_roles(dev, apdev):
     if ev is None:
         raise Exception("DPP authentication did not succeed (Initiator)")
     dev[0].request("DPP_STOP_LISTEN")
+
+def test_dpp_qr_code_auth_incompatible_roles2(dev, apdev):
+    """DPP QR Code and authentication exchange (incompatible roles 2)"""
+    id1 = run_init_incompatible_roles(dev, role="configurator")
+    if "OK" not in dev[1].request("DPP_AUTH_INIT peer=%d role=configurator" % id1):
+        raise Exception("Failed to initiate DPP Authentication")
+    ev = dev[1].wait_event(["DPP-NOT-COMPATIBLE"], timeout=5)
+    if ev is None:
+        raise Exception("DPP-NOT-COMPATIBLE event on initiator timed out")
+    ev = dev[0].wait_event(["DPP-NOT-COMPATIBLE"], timeout=1)
+    if ev is None:
+        raise Exception("DPP-NOT-COMPATIBLE event on responder timed out")
+
+def test_dpp_qr_code_auth_incompatible_roles_failure(dev, apdev):
+    """DPP QR Code and authentication exchange (incompatible roles failure)"""
+    id1 = run_init_incompatible_roles(dev, role="configurator")
+    with alloc_fail(dev[0], 1, "dpp_auth_build_resp_status"):
+        if "OK" not in dev[1].request("DPP_AUTH_INIT peer=%d role=configurator" % id1):
+            raise Exception("Failed to initiate DPP Authentication")
+        ev = dev[0].wait_event(["DPP-NOT-COMPATIBLE"], timeout=1)
+        if ev is None:
+            raise Exception("DPP-NOT-COMPATIBLE event on responder timed out")
+
+def test_dpp_qr_code_auth_incompatible_roles_failure2(dev, apdev):
+    """DPP QR Code and authentication exchange (incompatible roles failure 2)"""
+    id1 = run_init_incompatible_roles(dev, role="configurator")
+    with alloc_fail(dev[1], 1, "dpp_auth_resp_rx_status"):
+        if "OK" not in dev[1].request("DPP_AUTH_INIT peer=%d role=configurator" % id1):
+            raise Exception("Failed to initiate DPP Authentication")
+        wait_fail_trigger(dev[1], "GET_ALLOC_FAIL")
+
+def test_dpp_qr_code_auth_incompatible_roles_failure3(dev, apdev):
+    """DPP QR Code and authentication exchange (incompatible roles failure 3)"""
+    id1 = run_init_incompatible_roles(dev, role="configurator")
+    with fail_test(dev[1], 1, "dpp_auth_resp_rx_status"):
+        if "OK" not in dev[1].request("DPP_AUTH_INIT peer=%d role=configurator" % id1):
+            raise Exception("Failed to initiate DPP Authentication")
+        ev = dev[1].wait_event(["DPP-FAIL"], timeout=5)
+        if ev is None or "AES-SIV decryption failed" not in ev:
+            raise Exception("AES-SIV decryption failure not reported")
 
 def test_dpp_qr_code_auth_neg_chan(dev, apdev):
     """DPP QR Code and authentication exchange with requested different channel"""
@@ -3642,7 +3713,8 @@ def run_dpp_intro_mismatch(dev, apdev, wpas):
         raise Exception("Unexpected network introduction result on STA5: " + ev)
 
 def run_dpp_proto_init(dev, test_dev, test, mutual=False, unicast=True,
-                       listen=True, chan="81/1", init_enrollee=False):
+                       listen=True, chan="81/1", init_enrollee=False,
+                       incompatible_roles=False):
     check_dpp_capab(dev[0])
     check_dpp_capab(dev[1])
     dev[test_dev].set("dpp_test", str(test))
@@ -3691,9 +3763,14 @@ def run_dpp_proto_init(dev, test_dev, test, mutual=False, unicast=True,
         cmd = "DPP_LISTEN 2412"
 
     if init_enrollee:
-        cmd += " role=configurator"
+        if incompatible_roles:
+            cmd += " role=enrollee"
+        else:
+            cmd += " role=configurator"
         dev[0].set("dpp_configurator_params",
                    " conf=sta-dpp configurator=%d" % conf_id);
+    elif incompatible_roles:
+        cmd += " role=enrollee"
 
     if listen:
         if "OK" not in dev[0].request(cmd):
@@ -3703,6 +3780,8 @@ def run_dpp_proto_init(dev, test_dev, test, mutual=False, unicast=True,
         cmd = "DPP_AUTH_INIT peer=%d role=enrollee" % (id1)
     else:
         cmd = "DPP_AUTH_INIT peer=%d configurator=%d conf=sta-dpp" % (id1, conf_id)
+        if incompatible_roles:
+            cmd += " role=enrollee"
     if mutual:
         cmd += " own=%d" % id1b
     if "OK" not in dev[1].request(cmd):
@@ -3887,8 +3966,10 @@ def test_dpp_proto_auth_req_no_wrapped_data(dev, apdev):
     """DPP protocol testing - no Wrapped Data in Auth Req"""
     run_dpp_proto_auth_req_missing(dev, 15, "Missing or invalid required Wrapped Data attribute")
 
-def run_dpp_proto_auth_resp_missing(dev, test, reason):
-    run_dpp_proto_init(dev, 0, test, mutual=True)
+def run_dpp_proto_auth_resp_missing(dev, test, reason,
+                                    incompatible_roles=False):
+    run_dpp_proto_init(dev, 0, test, mutual=True,
+                       incompatible_roles=incompatible_roles)
     if reason is None:
         time.sleep(0.1)
         return
@@ -3908,6 +3989,12 @@ def test_dpp_proto_auth_resp_no_status(dev, apdev):
     """DPP protocol testing - no Status in Auth Resp"""
     run_dpp_proto_auth_resp_missing(dev, 16, "Missing or invalid required DPP Status attribute")
 
+def test_dpp_proto_auth_resp_status_no_status(dev, apdev):
+    """DPP protocol testing - no Status in Auth Resp(status)"""
+    run_dpp_proto_auth_resp_missing(dev, 16,
+                                    "Missing or invalid required DPP Status attribute",
+                                    incompatible_roles=True)
+
 def test_dpp_proto_auth_resp_invalid_status(dev, apdev):
     """DPP protocol testing - invalid Status in Auth Resp"""
     run_dpp_proto_auth_resp_missing(dev, 74, "Responder reported failure")
@@ -3916,17 +4003,39 @@ def test_dpp_proto_auth_resp_no_r_bootstrap_key(dev, apdev):
     """DPP protocol testing - no R-bootstrap key in Auth Resp"""
     run_dpp_proto_auth_resp_missing(dev, 17, "Missing or invalid required Responder Bootstrapping Key Hash attribute")
 
+def test_dpp_proto_auth_resp_status_no_r_bootstrap_key(dev, apdev):
+    """DPP protocol testing - no R-bootstrap key in Auth Resp(status)"""
+    run_dpp_proto_auth_resp_missing(dev, 17,
+                                    "Missing or invalid required Responder Bootstrapping Key Hash attribute",
+                                    incompatible_roles=True)
+
 def test_dpp_proto_auth_resp_invalid_r_bootstrap_key(dev, apdev):
     """DPP protocol testing - invalid R-bootstrap key in Auth Resp"""
     run_dpp_proto_auth_resp_missing(dev, 70, "Unexpected Responder Bootstrapping Key Hash value")
+
+def test_dpp_proto_auth_resp_status_invalid_r_bootstrap_key(dev, apdev):
+    """DPP protocol testing - invalid R-bootstrap key in Auth Resp(status)"""
+    run_dpp_proto_auth_resp_missing(dev, 70,
+                                    "Unexpected Responder Bootstrapping Key Hash value",
+                                    incompatible_roles=True)
 
 def test_dpp_proto_auth_resp_no_i_bootstrap_key(dev, apdev):
     """DPP protocol testing - no I-bootstrap key in Auth Resp"""
     run_dpp_proto_auth_resp_missing(dev, 18, None)
 
+def test_dpp_proto_auth_resp_status_no_i_bootstrap_key(dev, apdev):
+    """DPP protocol testing - no I-bootstrap key in Auth Resp(status)"""
+    run_dpp_proto_auth_resp_missing(dev, 18, None, incompatible_roles=True)
+
 def test_dpp_proto_auth_resp_invalid_i_bootstrap_key(dev, apdev):
     """DPP protocol testing - invalid I-bootstrap key in Auth Resp"""
     run_dpp_proto_auth_resp_missing(dev, 71, "Initiator Bootstrapping Key Hash attribute did not match")
+
+def test_dpp_proto_auth_resp_status_invalid_i_bootstrap_key(dev, apdev):
+    """DPP protocol testing - invalid I-bootstrap key in Auth Resp(status)"""
+    run_dpp_proto_auth_resp_missing(dev, 71,
+                                    "Initiator Bootstrapping Key Hash attribute did not match",
+                                    incompatible_roles=True)
 
 def test_dpp_proto_auth_resp_no_r_proto_key(dev, apdev):
     """DPP protocol testing - no R-Proto Key in Auth Resp"""
@@ -3943,6 +4052,11 @@ def test_dpp_proto_auth_resp_no_r_nonce(dev, apdev):
 def test_dpp_proto_auth_resp_no_i_nonce(dev, apdev):
     """DPP protocol testing - no I-nonce in Auth Resp"""
     run_dpp_proto_auth_resp_missing(dev, 21, "Missing or invalid I-nonce")
+
+def test_dpp_proto_auth_resp_status_no_i_nonce(dev, apdev):
+    """DPP protocol testing - no I-nonce in Auth Resp(status)"""
+    run_dpp_proto_auth_resp_missing(dev, 21, "Missing or invalid I-nonce",
+                                    incompatible_roles=True)
 
 def test_dpp_proto_auth_resp_no_r_capab(dev, apdev):
     """DPP protocol testing - no R-capab in Auth Resp"""
@@ -3998,6 +4112,26 @@ def test_dpp_proto_auth_resp_r_auth_mismatch(dev, apdev):
         raise Exception("DPP failure not seen")
     if "Peer reported authentication failure" not in ev:
         raise Exception("Unexpected failure: " + ev)
+
+def test_dpp_proto_auth_resp_r_auth_mismatch_failure(dev, apdev):
+    """DPP protocol testing - Auth Conf RX processing failure"""
+    with alloc_fail(dev[0], 1, "dpp_auth_conf_rx_failure"):
+        run_dpp_proto_init(dev, 0, 32, mutual=True)
+        ev = dev[0].wait_event(["DPP-FAIL"], timeout=5)
+        if ev is None:
+            raise Exception("DPP failure not seen")
+        if "Authentication failed" not in ev:
+            raise Exception("Unexpected failure: " + ev)
+
+def test_dpp_proto_auth_resp_r_auth_mismatch_failure2(dev, apdev):
+    """DPP protocol testing - Auth Conf RX processing failure 2"""
+    with fail_test(dev[0], 1, "dpp_auth_conf_rx_failure"):
+        run_dpp_proto_init(dev, 0, 32, mutual=True)
+        ev = dev[0].wait_event(["DPP-FAIL"], timeout=5)
+        if ev is None:
+            raise Exception("DPP failure not seen")
+        if "AES-SIV decryption failed" not in ev:
+            raise Exception("Unexpected failure: " + ev)
 
 def run_dpp_proto_auth_conf_missing(dev, test, reason):
     run_dpp_proto_init(dev, 1, test, mutual=True)
@@ -4793,7 +4927,8 @@ def test_dpp_pkex_test_fail(dev, apdev):
               (1, "aes_siv_encrypt;dpp_pkex_build_commit_reveal_req"),
               (1, "hmac_sha256_vector;dpp_pkex_rx_exchange_resp"),
               (1, "aes_siv_decrypt;dpp_pkex_rx_commit_reveal_resp"),
-              (1, "hmac_sha256_vector;dpp_pkex_rx_commit_reveal_resp") ]
+              (1, "hmac_sha256_vector;dpp_pkex_rx_commit_reveal_resp"),
+              (1, "dpp_bootstrap_key_hash") ]
     for count, func in tests:
         dev[0].request("DPP_STOP_LISTEN")
         dev[1].request("DPP_STOP_LISTEN")
@@ -4819,6 +4954,7 @@ def test_dpp_pkex_test_fail(dev, apdev):
 
     # Local error cases on the Responder
     tests = [ (1, "aes_siv_encrypt;dpp_auth_build_resp"),
+              (1, "aes_siv_encrypt;dpp_auth_build_resp;dpp_auth_build_resp_ok"),
               (1, "os_get_random;dpp_build_conf_req"),
               (1, "aes_siv_encrypt;dpp_build_conf_req"),
               (1, "os_get_random;dpp_auth_build_resp_ok"),
@@ -5049,3 +5185,165 @@ def test_dpp_truncated_attr(dev, apdev):
     ev = dev[0].wait_event(["DPP-RX"], timeout=5)
     if ev is None or "ignore=invalid-attributes" not in ev:
         raise Exception("Invalid attribute error not reported")
+
+def test_dpp_bootstrap_key_autogen_issues(dev, apdev):
+    """DPP bootstrap key autogen issues"""
+    check_dpp_capab(dev[0])
+    check_dpp_capab(dev[1])
+
+    logger.info("dev0 displays QR Code")
+    addr = dev[0].own_addr().replace(':', '')
+    cmd = "DPP_BOOTSTRAP_GEN type=qrcode chan=81/1 mac=" + addr
+    res = dev[0].request(cmd)
+    if "FAIL" in res:
+        raise Exception("Failed to generate bootstrapping info")
+    id0 = int(res)
+    uri0 = dev[0].request("DPP_BOOTSTRAP_GET_URI %d" % id0)
+
+    logger.info("dev1 scans QR Code")
+    res = dev[1].request("DPP_QR_CODE " + uri0)
+    if "FAIL" in res:
+        raise Exception("Failed to parse QR Code URI")
+    id1 = int(res)
+
+    logger.info("dev1 initiates DPP Authentication")
+    cmd = "DPP_LISTEN 2412"
+    if "OK" not in dev[0].request(cmd):
+        raise Exception("Failed to start listen operation")
+    with alloc_fail(dev[1], 1, "dpp_autogen_bootstrap_key"):
+        cmd = "DPP_AUTH_INIT peer=%d" % id1
+        if "FAIL" not in dev[1].request(cmd):
+            raise Exception("Failure not reported")
+    with alloc_fail(dev[1], 2, "=dpp_autogen_bootstrap_key"):
+        cmd = "DPP_AUTH_INIT peer=%d" % id1
+        if "FAIL" not in dev[1].request(cmd):
+            raise Exception("Failure not reported")
+    with fail_test(dev[1], 1, "dpp_keygen;dpp_autogen_bootstrap_key"):
+        cmd = "DPP_AUTH_INIT peer=%d" % id1
+        if "FAIL" not in dev[1].request(cmd):
+            raise Exception("Failure not reported")
+    dev[0].request("DPP_STOP_LISTEN")
+
+def test_dpp_auth_resp_status_failure(dev, apdev):
+    """DPP and Auth Resp(status) build failure"""
+    with alloc_fail(dev[0], 1, "dpp_auth_build_resp"):
+        run_dpp_proto_auth_resp_missing(dev, 99999, None,
+                                        incompatible_roles=True)
+
+def test_dpp_auth_resp_aes_siv_issue(dev, apdev):
+    """DPP Auth Resp AES-SIV issue"""
+    check_dpp_capab(dev[0])
+    check_dpp_capab(dev[1])
+
+    logger.info("dev0 displays QR Code")
+    addr = dev[0].own_addr().replace(':', '')
+    cmd = "DPP_BOOTSTRAP_GEN type=qrcode chan=81/1 mac=" + addr
+    res = dev[0].request(cmd)
+    if "FAIL" in res:
+        raise Exception("Failed to generate bootstrapping info")
+    id0 = int(res)
+    uri0 = dev[0].request("DPP_BOOTSTRAP_GET_URI %d" % id0)
+
+    logger.info("dev1 scans QR Code")
+    res = dev[1].request("DPP_QR_CODE " + uri0)
+    if "FAIL" in res:
+        raise Exception("Failed to parse QR Code URI")
+    id1 = int(res)
+
+    logger.info("dev1 initiates DPP Authentication")
+    cmd = "DPP_LISTEN 2412"
+    if "OK" not in dev[0].request(cmd):
+        raise Exception("Failed to start listen operation")
+    cmd = "DPP_AUTH_INIT peer=%d" % id1
+    with fail_test(dev[1], 1, "aes_siv_decrypt;dpp_auth_resp_rx"):
+        if "OK" not in dev[1].request(cmd):
+            raise Exception("Failed to initiate DPP Authentication")
+        ev = dev[1].wait_event(["DPP-FAIL"], timeout=5)
+        if ev is None or "AES-SIV decryption failed" not in ev:
+            raise Exception("AES-SIV decryption failure not reported")
+    dev[0].request("DPP_STOP_LISTEN")
+
+def test_dpp_invalid_legacy_params(dev, apdev):
+    """DPP invalid legacy parameters"""
+    check_dpp_capab(dev[0])
+    check_dpp_capab(dev[1])
+
+    addr = dev[0].own_addr().replace(':', '')
+    cmd = "DPP_BOOTSTRAP_GEN type=qrcode chan=81/1 mac=" + addr
+    res = dev[0].request(cmd)
+    if "FAIL" in res:
+        raise Exception("Failed to generate bootstrapping info")
+    id0 = int(res)
+    uri0 = dev[0].request("DPP_BOOTSTRAP_GET_URI %d" % id0)
+
+    res = dev[1].request("DPP_QR_CODE " + uri0)
+    if "FAIL" in res:
+        raise Exception("Failed to parse QR Code URI")
+    id1 = int(res)
+
+    # No pass/psk
+    cmd = "DPP_AUTH_INIT peer=%d conf=sta-psk ssid=%s" % (id1, "dpp-legacy".encode("hex"))
+    if "FAIL" not in dev[1].request(cmd):
+        raise Exception("Invalid command not rejected")
+
+def test_dpp_invalid_legacy_params2(dev, apdev):
+    """DPP invalid legacy parameters 2"""
+    check_dpp_capab(dev[0])
+    check_dpp_capab(dev[1])
+
+    addr = dev[0].own_addr().replace(':', '')
+    cmd = "DPP_BOOTSTRAP_GEN type=qrcode chan=81/1 mac=" + addr
+    res = dev[0].request(cmd)
+    if "FAIL" in res:
+        raise Exception("Failed to generate bootstrapping info")
+    id0 = int(res)
+    uri0 = dev[0].request("DPP_BOOTSTRAP_GET_URI %d" % id0)
+
+    res = dev[1].request("DPP_QR_CODE " + uri0)
+    if "FAIL" in res:
+        raise Exception("Failed to parse QR Code URI")
+    id1 = int(res)
+
+    dev[0].set("dpp_configurator_params",
+               " conf=sta-psk ssid=%s" % ("dpp-legacy".encode("hex")))
+    cmd = "DPP_LISTEN 2412 role=configurator"
+    if "OK" not in dev[0].request(cmd):
+        raise Exception("Failed to start listen operation")
+
+    # No pass/psk
+    cmd = "DPP_AUTH_INIT peer=%d role=enrollee" % id1
+    if "OK" not in dev[1].request(cmd):
+        raise Exception("Failed to initiate DPP Authentication")
+    ev = dev[0].wait_event(["DPP: Failed to set configurator parameters"],
+                           timeout=5)
+    if ev is None:
+        raise Exception("DPP configuration failure not reported")
+
+def test_dpp_legacy_params_failure(dev, apdev):
+    """DPP legacy parameters local failure"""
+    check_dpp_capab(dev[0])
+    check_dpp_capab(dev[1])
+
+    addr = dev[0].own_addr().replace(':', '')
+    cmd = "DPP_BOOTSTRAP_GEN type=qrcode chan=81/1 mac=" + addr
+    res = dev[0].request(cmd)
+    if "FAIL" in res:
+        raise Exception("Failed to generate bootstrapping info")
+    id0 = int(res)
+    uri0 = dev[0].request("DPP_BOOTSTRAP_GET_URI %d" % id0)
+
+    res = dev[1].request("DPP_QR_CODE " + uri0)
+    if "FAIL" in res:
+        raise Exception("Failed to parse QR Code URI")
+    id1 = int(res)
+
+    if "OK" not in dev[0].request("DPP_LISTEN 2412"):
+        raise Exception("Failed to start listen operation")
+
+    cmd = "DPP_AUTH_INIT peer=%d conf=sta-psk pass=%s ssid=%s" % (id1, "passphrase".encode("hex"), "dpp-legacy".encode("hex"))
+    with alloc_fail(dev[1], 1, "dpp_build_conf_obj_legacy"):
+        if "OK" not in dev[1].request(cmd):
+            raise Exception("Failed to initiate DPP")
+        ev = dev[0].wait_event(["DPP-CONF-FAILED"], timeout=5)
+        if ev is None:
+            raise Exception("DPP configuration failure not reported")
