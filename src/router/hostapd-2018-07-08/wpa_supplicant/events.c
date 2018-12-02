@@ -4030,6 +4030,9 @@ void supplicant_event(void *ctx, enum wpa_event_type event,
 {
 	struct wpa_supplicant *wpa_s = ctx;
 	int resched;
+#ifndef CONFIG_NO_STDOUT_DEBUG
+	int level = MSG_DEBUG;
+#endif /* CONFIG_NO_STDOUT_DEBUG */
 
 	if (wpa_s->wpa_state == WPA_INTERFACE_DISABLED &&
 	    event != EVENT_INTERFACE_ENABLED &&
@@ -4043,9 +4046,6 @@ void supplicant_event(void *ctx, enum wpa_event_type event,
 	}
 
 #ifndef CONFIG_NO_STDOUT_DEBUG
-{
-	int level = MSG_DEBUG;
-
 	if (event == EVENT_RX_MGMT && data->rx_mgmt.frame_len >= 24) {
 		const struct ieee80211_hdr *hdr;
 		u16 fc;
@@ -4058,7 +4058,6 @@ void supplicant_event(void *ctx, enum wpa_event_type event,
 
 	wpa_dbg(wpa_s, level, "Event %s (%d) received",
 		event_to_string(event), event);
-}
 #endif /* CONFIG_NO_STDOUT_DEBUG */
 
 	switch (event) {

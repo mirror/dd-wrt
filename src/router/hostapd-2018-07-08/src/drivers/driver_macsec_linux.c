@@ -639,7 +639,7 @@ static int do_dump(struct macsec_drv_data *drv, u8 txsa, u64 rxsci, u8 rxsa,
 			   DRV_PREFIX "failed to communicate: %d (%s)",
 			   ret, nl_geterror(-ret));
 
-	ctx->cb_arg.pn = 0;
+	ctx->cb_arg.pn = NULL;
 
 out_free_msg:
 	nlmsg_free(msg);
@@ -1009,7 +1009,7 @@ static struct rtnl_link * lookup_sc(struct nl_cache *cache, int parent, u64 sci)
  */
 static int macsec_drv_create_transmit_sc(
 	void *priv, struct transmit_sc *sc,
-	enum confidentiality_offset conf_offset)
+	unsigned int conf_offset)
 {
 	struct macsec_drv_data *drv = priv;
 	struct rtnl_link *link;
