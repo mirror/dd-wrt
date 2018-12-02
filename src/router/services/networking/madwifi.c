@@ -328,7 +328,7 @@ void addvhtcaps(char *prefix, FILE * fp)
 
 	unsigned int mask;
 #ifdef HAVE_ATH10K
-#if 0
+#if 1
 	if (has_ac(prefix)) {
 		char shortgi[32];
 		sprintf(shortgi, "%s_shortgi", prefix);
