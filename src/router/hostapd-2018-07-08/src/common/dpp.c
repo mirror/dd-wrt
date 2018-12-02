@@ -2854,7 +2854,7 @@ static int dpp_auth_build_resp_status(struct dpp_authentication *auth,
 		i_pubkey_hash = test_hash;
 	} else if (dpp_test == DPP_TEST_NO_STATUS_AUTH_RESP) {
 		wpa_printf(MSG_INFO, "DPP: TESTING - no Status");
-		status = -1;
+		status = 255;
 	} else if (dpp_test == DPP_TEST_NO_I_NONCE_AUTH_RESP) {
 		wpa_printf(MSG_INFO, "DPP: TESTING - no I-nonce");
 		i_nonce = NULL;
@@ -3457,7 +3457,7 @@ dpp_auth_resp_rx(struct dpp_authentication *auth, const u8 *hdr,
 	}
 #endif /* CONFIG_TESTING_OPTIONS */
 
-	if (!auth->initiator) {
+	if (!auth->initiator || !auth->peer_bi) {
 		dpp_auth_fail(auth, "Unexpected Authentication Response");
 		return NULL;
 	}
@@ -3638,7 +3638,7 @@ dpp_auth_resp_rx(struct dpp_authentication *auth, const u8 *hdr,
 		goto fail;
 	}
 
-	if (auth->own_bi && auth->peer_bi) {
+	if (auth->own_bi) {
 		/* Mutual authentication */
 		if (dpp_auth_derive_l_initiator(auth) < 0)
 			goto fail;
@@ -3846,7 +3846,7 @@ int dpp_auth_conf_rx(struct dpp_authentication *auth, const u8 *hdr,
 	}
 #endif /* CONFIG_TESTING_OPTIONS */
 
-	if (auth->initiator) {
+	if (auth->initiator || !auth->own_bi) {
 		dpp_auth_fail(auth, "Unexpected Authentication Confirm");
 		return -1;
 	}
@@ -3904,7 +3904,7 @@ int dpp_auth_conf_rx(struct dpp_authentication *auth, const u8 *hdr,
 				      "Initiator Bootstrapping Key Hash mismatch");
 			return -1;
 		}
-	} else if (auth->own_bi && auth->peer_bi) {
+	} else if (auth->peer_bi) {
 		/* Mutual authentication and peer did not include its
 		 * Bootstrapping Key Hash attribute. */
 		dpp_auth_fail(auth,
