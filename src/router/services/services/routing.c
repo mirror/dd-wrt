@@ -70,7 +70,8 @@ static int zebra_init(void)
 		}
 	}
 #ifdef HAVE_FRR
-	eval("zebra", "-d");
+	if (services)
+		eval("zebra", "-d");
 	foreach(var, sub, next) {
 		if (!strcmp(var, "ospf")) {
 		} else if (!strcmp(var, "ospf6")) {
