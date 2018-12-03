@@ -779,7 +779,7 @@ static void *handle_request(void *arg)
 	time_t start = time(NULL);
 	for (;;) {
 		wfgets(line, LINE_LEN, conn_fp);
-		if (strlen(line) > 0 || time(NULL) > (start + 2)) {
+		if (strlen(line) > 0 || time(NULL) > (start + 10)) {
 			break;
 		}
 		usleep(1000);
