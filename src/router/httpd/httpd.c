@@ -775,6 +775,9 @@ static void *handle_request(void *arg)
 	bzero(line, LINE_LEN);
 
 	/* Parse the first line of the request. */
+#ifndef HAVE_MICRO
+		pthread_mutex_lock(&input_mutex);
+#endif
 	int cnt = 0;
 	time_t start = time(NULL);
 	for (;;) {
@@ -790,6 +793,9 @@ static void *handle_request(void *arg)
 
 		goto out;
 	}
+#ifndef HAVE_MICRO
+		pthread_mutex_unlock(&input_mutex);
+#endif
 
 	/* To prevent http receive https packets, cause http crash (by honor 2003/09/02) */
 	if (strncasecmp(line, "GET", 3) && strncasecmp(line, "POST", 4) && strncasecmp(line, "OPTIONS", 7)) {
