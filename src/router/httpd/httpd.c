@@ -769,15 +769,15 @@ static void *handle_request(void *arg)
 #endif
 	setnaggle(conn_fp, 1);
 
+#ifndef HAVE_MICRO
+	pthread_mutex_lock(&input_mutex);
+#endif
 	line = malloc(LINE_LEN);
 	/* Initialize the request variables. */
 	authorization = referer = boundary = host = NULL;
 	bzero(line, LINE_LEN);
 
 	/* Parse the first line of the request. */
-#ifndef HAVE_MICRO
-		pthread_mutex_lock(&input_mutex);
-#endif
 	int cnt = 0;
 	time_t start = time(NULL);
 	for (;;) {
@@ -788,14 +788,14 @@ static void *handle_request(void *arg)
 		usleep(1000);
 	}
 
+#ifndef HAVE_MICRO
+	pthread_mutex_unlock(&input_mutex);
+#endif
 	if (!strlen(line)) {
 		send_error(conn_fp, 408, "Request Timeout", NULL, "No request appeared within a reasonable time period.");
 
 		goto out;
 	}
-#ifndef HAVE_MICRO
-		pthread_mutex_unlock(&input_mutex);
-#endif
 
 	/* To prevent http receive https packets, cause http crash (by honor 2003/09/02) */
 	if (strncasecmp(line, "GET", 3) && strncasecmp(line, "POST", 4) && strncasecmp(line, "OPTIONS", 7)) {
