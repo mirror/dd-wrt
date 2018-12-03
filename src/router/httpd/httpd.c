@@ -464,7 +464,8 @@ static void send_error(webs_t conn_fp, int status, char *title, char *extra_head
 	va_start(args, (char *)fmt);
 	vasprintf(&text, fmt, args);
 	va_end(args);
-	dd_syslog(LOG_ERR, "Request Error Code %d: %s\n", status, text);
+	if (status != 408)
+		dd_syslog(LOG_ERR, "Request Error Code %d: %s\n", status, text);
 	// jimmy, https, 8/4/2003, fprintf -> wfprintf, fflush -> wfflush
 	send_headers(conn_fp, status, title, extra_header, "text/html", -1, NULL, 1);
 	(void)wfprintf(conn_fp, "<HTML><HEAD><TITLE>%d %s</TITLE></HEAD>\n<BODY BGCOLOR=\"#cc9999\"><H4>%d %s</H4>\n", status, title, status, title);
@@ -779,13 +780,13 @@ static void *handle_request(void *arg)
 
 	/* Parse the first line of the request. */
 	int cnt = 0;
-	time_t start = time(NULL);
 	for (;;) {
 		wfgets(line, LINE_LEN, conn_fp);
-		if (strlen(line) > 0 || time(NULL) > (start + 10)) {
+		if (strlen(line) > 0 || cnt > 5) {
 			break;
 		}
-		usleep(1000);
+		usleep(10);
+		cnt++;
 	}
 
 #ifndef HAVE_MICRO
