@@ -780,10 +780,12 @@ void ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix)
 		    || nvram_nmatch("wdsap", "%s_mode", prefix)) {
 			//only for madwifi, ath9k, ath10k, mwlwifi etc. right now.
 #ifdef HAVE_80211W
-			char mfp[64];
-			sprintf(mfp, "%s_mfp", prefix);
-			nvram_default_get(mfp, "0");
-			showAutoOption(wp, "wpa.mfp", mfp);
+			if (is_mac80211(prefix) && !strhas(akm, "wpa3") && !strhas(akm, "psk3") && !strhas(akm, "psk2-sha256") && !strhas(akm, "wpa2-sha256")) {
+				char mfp[64];
+				sprintf(mfp, "%s_mfp", prefix);
+				nvram_default_get(mfp, "0");
+				showAutoOption(wp, "wpa.mfp", mfp);
+			}
 #endif
 			char eap_key_retries[64];
 			sprintf(eap_key_retries, "%s_disable_eapol_key_retries", prefix);
