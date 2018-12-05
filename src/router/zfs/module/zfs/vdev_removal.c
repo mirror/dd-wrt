@@ -80,6 +80,8 @@
 typedef struct vdev_copy_arg {
 	metaslab_t	*vca_msp;
 	uint64_t	vca_outstanding_bytes;
+	uint64_t	vca_read_error_bytes;
+	uint64_t	vca_write_error_bytes;
 	kcondvar_t	vca_cv;
 	kmutex_t	vca_lock;
 } vdev_copy_arg_t;
@@ -98,6 +100,14 @@ int zfs_remove_max_copy_bytes = 64 * 1024 * 1024;
  * consider decreasing this.
  */
 int zfs_remove_max_segment = SPA_MAXBLOCKSIZE;
+
+/*
+ * Ignore hard IO errors during device removal.  When set if a device
+ * encounters hard IO error during the removal process the removal will
+ * not be cancelled.  This can result in a normally recoverable block
+ * becoming permanently damaged and is not recommended.
+ */
+int zfs_removal_ignore_errors = 0;
 
 /*
  * Allow a remap segment to span free chunks of at most this size. The main
@@ -121,11 +131,12 @@ int vdev_removal_max_span = 32 * 1024;
  * This is used by the test suite so that it can ensure that certain
  * actions happen while in the middle of a removal.
  */
-unsigned long zfs_remove_max_bytes_pause = -1UL;
+int zfs_removal_suspend_progress = 0;
 
 #define	VDEV_REMOVAL_ZAP_OBJS	"lzap"
 
 static void spa_vdev_remove_thread(void *arg);
+static int spa_vdev_remove_cancel_impl(spa_t *spa);
 
 static void
 spa_sync_removing_state(spa_t *spa, dmu_tx_t *tx)
@@ -672,7 +683,7 @@ spa_finish_removal(spa_t *spa, dsl_scan_state_t state, dmu_tx_t *tx)
 		vdev_t *vd = vdev_lookup_top(spa, svr->svr_vdev_id);
 		vdev_indirect_config_t *vic = &vd->vdev_indirect_config;
 
-		if (srp->sr_prev_indirect_vdev != UINT64_MAX) {
+		if (srp->sr_prev_indirect_vdev != -1) {
 			vdev_t *pvd;
 			pvd = vdev_lookup_top(spa,
 			    srp->sr_prev_indirect_vdev);
@@ -802,6 +813,10 @@ spa_vdev_copy_segment_write_done(zio_t *zio)
 
 	mutex_enter(&vca->vca_lock);
 	vca->vca_outstanding_bytes -= zio->io_size;
+
+	if (zio->io_error != 0)
+		vca->vca_write_error_bytes += zio->io_size;
+
 	cv_signal(&vca->vca_cv);
 	mutex_exit(&vca->vca_lock);
 }
@@ -813,6 +828,14 @@ spa_vdev_copy_segment_write_done(zio_t *zio)
 static void
 spa_vdev_copy_segment_read_done(zio_t *zio)
 {
+	vdev_copy_arg_t *vca = zio->io_private;
+
+	if (zio->io_error != 0) {
+		mutex_enter(&vca->vca_lock);
+		vca->vca_read_error_bytes += zio->io_size;
+		mutex_exit(&vca->vca_lock);
+	}
+
 	zio_nowait(zio_unique_parent(zio));
 }
 
@@ -866,24 +889,44 @@ spa_vdev_copy_one_child(vdev_copy_arg_t *vca, zio_t *nzio,
 {
 	ASSERT3U(spa_config_held(nzio->io_spa, SCL_ALL, RW_READER), !=, 0);
 
+	/*
+	 * If the destination child in unwritable then there is no point
+	 * in issuing the source reads which cannot be written.
+	 */
+	if (!vdev_writeable(dest_child_vd))
+		return;
+
 	mutex_enter(&vca->vca_lock);
 	vca->vca_outstanding_bytes += size;
 	mutex_exit(&vca->vca_lock);
 
 	abd_t *abd = abd_alloc_for_io(size, B_FALSE);
 
-	vdev_t *source_child_vd;
+	vdev_t *source_child_vd = NULL;
 	if (source_vd->vdev_ops == &vdev_mirror_ops && dest_id != -1) {
 		/*
 		 * Source and dest are both mirrors.  Copy from the same
 		 * child id as we are copying to (wrapping around if there
-		 * are more dest children than source children).
+		 * are more dest children than source children).  If the
+		 * preferred source child is unreadable select another.
 		 */
-		source_child_vd =
-		    source_vd->vdev_child[dest_id % source_vd->vdev_children];
+		for (int i = 0; i < source_vd->vdev_children; i++) {
+			source_child_vd = source_vd->vdev_child[
+			    (dest_id + i) % source_vd->vdev_children];
+			if (vdev_readable(source_child_vd))
+				break;
+		}
 	} else {
 		source_child_vd = source_vd;
 	}
+
+	/*
+	 * There should always be at least one readable source child or
+	 * the pool would be in a suspended state.  Somehow selecting an
+	 * unreadable child would result in IO errors, the removal process
+	 * being cancelled, and the pool reverting to its pre-removal state.
+	 */
+	ASSERT3P(source_child_vd, !=, NULL);
 
 	zio_t *write_zio = zio_vdev_child_io(nzio, NULL,
 	    dest_child_vd, dest_offset, abd, size,
@@ -1361,6 +1404,8 @@ spa_vdev_remove_thread(void *arg)
 	mutex_init(&vca.vca_lock, NULL, MUTEX_DEFAULT, NULL);
 	cv_init(&vca.vca_cv, NULL, CV_DEFAULT, NULL);
 	vca.vca_outstanding_bytes = 0;
+	vca.vca_read_error_bytes = 0;
+	vca.vca_write_error_bytes = 0;
 
 	mutex_enter(&svr->svr_lock);
 
@@ -1449,14 +1494,14 @@ spa_vdev_remove_thread(void *arg)
 
 			/*
 			 * This delay will pause the removal around the point
-			 * specified by zfs_remove_max_bytes_pause. We do this
+			 * specified by zfs_removal_suspend_progress. We do this
 			 * solely from the test suite or during debugging.
 			 */
 			uint64_t bytes_copied =
 			    spa->spa_removing_phys.sr_copied;
 			for (int i = 0; i < TXG_SIZE; i++)
 				bytes_copied += svr->svr_bytes_done[i];
-			while (zfs_remove_max_bytes_pause <= bytes_copied &&
+			while (zfs_removal_suspend_progress &&
 			    !svr->svr_thread_exit)
 				delay(hz);
 
@@ -1490,6 +1535,14 @@ spa_vdev_remove_thread(void *arg)
 			dmu_tx_commit(tx);
 			mutex_enter(&svr->svr_lock);
 		}
+
+		mutex_enter(&vca.vca_lock);
+		if (zfs_removal_ignore_errors == 0 &&
+		    (vca.vca_read_error_bytes > 0 ||
+		    vca.vca_write_error_bytes > 0)) {
+			svr->svr_thread_exit = B_TRUE;
+		}
+		mutex_exit(&vca.vca_lock);
 	}
 
 	mutex_exit(&svr->svr_lock);
@@ -1511,6 +1564,21 @@ spa_vdev_remove_thread(void *arg)
 		svr->svr_thread = NULL;
 		cv_broadcast(&svr->svr_cv);
 		mutex_exit(&svr->svr_lock);
+
+		/*
+		 * During the removal process an unrecoverable read or write
+		 * error was encountered.  The removal process must be
+		 * cancelled or this damage may become permanent.
+		 */
+		if (zfs_removal_ignore_errors == 0 &&
+		    (vca.vca_read_error_bytes > 0 ||
+		    vca.vca_write_error_bytes > 0)) {
+			zfs_dbgmsg("canceling removal due to IO errors: "
+			    "[read_error_bytes=%llu] [write_error_bytes=%llu]",
+			    vca.vca_read_error_bytes,
+			    vca.vca_write_error_bytes);
+			spa_vdev_remove_cancel_impl(spa);
+		}
 	} else {
 		ASSERT0(range_tree_space(svr->svr_allocd_segs));
 		vdev_remove_complete(spa);
@@ -1689,14 +1757,9 @@ spa_vdev_remove_cancel_sync(void *arg, dmu_tx_t *tx)
 	    vd->vdev_id, (vd->vdev_path != NULL) ? vd->vdev_path : "-");
 }
 
-int
-spa_vdev_remove_cancel(spa_t *spa)
+static int
+spa_vdev_remove_cancel_impl(spa_t *spa)
 {
-	spa_vdev_remove_suspend(spa);
-
-	if (spa->spa_vdev_removal == NULL)
-		return (ENOTACTIVE);
-
 	uint64_t vdid = spa->spa_vdev_removal->svr_vdev_id;
 
 	int error = dsl_sync_task(spa->spa_name, spa_vdev_remove_cancel_check,
@@ -1711,6 +1774,17 @@ spa_vdev_remove_cancel(spa_t *spa)
 	}
 
 	return (error);
+}
+
+int
+spa_vdev_remove_cancel(spa_t *spa)
+{
+	spa_vdev_remove_suspend(spa);
+
+	if (spa->spa_vdev_removal == NULL)
+		return (ENOTACTIVE);
+
+	return (spa_vdev_remove_cancel_impl(spa));
 }
 
 /*
@@ -1819,10 +1893,6 @@ spa_vdev_remove_log(vdev_t *vd, uint64_t *txg)
 
 	vdev_dirty_leaves(vd, VDD_DTL, *txg);
 	vdev_config_dirty(vd);
-
-	spa_history_log_internal(spa, "vdev remove", NULL,
-	    "%s vdev %llu (log) %s", spa_name(spa), vd->vdev_id,
-	    (vd->vdev_path != NULL) ? vd->vdev_path : "-");
 
 	spa_vdev_config_exit(spa, NULL, *txg, 0, FTAG);
 
@@ -2048,6 +2118,7 @@ spa_vdev_remove(spa_t *spa, uint64_t guid, boolean_t unspare)
 	int error = 0;
 	boolean_t locked = MUTEX_HELD(&spa_namespace_lock);
 	sysevent_t *ev = NULL;
+	char *vd_type = NULL, *vd_path = NULL;
 
 	ASSERT(spa_writeable(spa));
 
@@ -2081,11 +2152,8 @@ spa_vdev_remove(spa_t *spa, uint64_t guid, boolean_t unspare)
 			ev = spa_event_create(spa, vd, NULL,
 			    ESC_ZFS_VDEV_REMOVE_AUX);
 
-			char *nvstr = fnvlist_lookup_string(nv,
-			    ZPOOL_CONFIG_PATH);
-			spa_history_log_internal(spa, "vdev remove", NULL,
-			    "%s vdev (%s) %s", spa_name(spa),
-			    VDEV_TYPE_SPARE, nvstr);
+			vd_type = VDEV_TYPE_SPARE;
+			vd_path = fnvlist_lookup_string(nv, ZPOOL_CONFIG_PATH);
 			spa_vdev_remove_aux(spa->spa_spares.sav_config,
 			    ZPOOL_CONFIG_SPARES, spares, nspares, nv);
 			spa_load_spares(spa);
@@ -2097,9 +2165,8 @@ spa_vdev_remove(spa_t *spa, uint64_t guid, boolean_t unspare)
 	    nvlist_lookup_nvlist_array(spa->spa_l2cache.sav_config,
 	    ZPOOL_CONFIG_L2CACHE, &l2cache, &nl2cache) == 0 &&
 	    (nv = spa_nvlist_lookup_by_guid(l2cache, nl2cache, guid)) != NULL) {
-		char *nvstr = fnvlist_lookup_string(nv, ZPOOL_CONFIG_PATH);
-		spa_history_log_internal(spa, "vdev remove", NULL,
-		    "%s vdev (%s) %s", spa_name(spa), VDEV_TYPE_L2CACHE, nvstr);
+		vd_type = VDEV_TYPE_L2CACHE;
+		vd_path = fnvlist_lookup_string(nv, ZPOOL_CONFIG_PATH);
 		/*
 		 * Cache devices can always be removed.
 		 */
@@ -2111,6 +2178,8 @@ spa_vdev_remove(spa_t *spa, uint64_t guid, boolean_t unspare)
 		spa->spa_l2cache.sav_sync = B_TRUE;
 	} else if (vd != NULL && vd->vdev_islog) {
 		ASSERT(!locked);
+		vd_type = "log";
+		vd_path = (vd->vdev_path != NULL) ? vd->vdev_path : "-";
 		error = spa_vdev_remove_log(vd, &txg);
 	} else if (vd != NULL) {
 		ASSERT(!locked);
@@ -2124,6 +2193,18 @@ spa_vdev_remove(spa_t *spa, uint64_t guid, boolean_t unspare)
 
 	if (!locked)
 		error = spa_vdev_exit(spa, NULL, txg, error);
+
+	/*
+	 * Logging must be done outside the spa config lock. Otherwise,
+	 * this code path could end up holding the spa config lock while
+	 * waiting for a txg_sync so it can write to the internal log.
+	 * Doing that would prevent the txg sync from actually happening,
+	 * causing a deadlock.
+	 */
+	if (error == 0 && vd_type != NULL && vd_path != NULL) {
+		spa_history_log_internal(spa, "vdev remove", NULL,
+		    "%s vdev (%s) %s", spa_name(spa), vd_type, vd_path);
+	}
 
 	if (ev != NULL)
 		spa_event_post(ev);
@@ -2145,13 +2226,6 @@ spa_removal_get_stats(spa_t *spa, pool_removal_stat_t *prs)
 	prs->prs_to_copy = spa->spa_removing_phys.sr_to_copy;
 	prs->prs_copied = spa->spa_removing_phys.sr_copied;
 
-	if (spa->spa_vdev_removal != NULL) {
-		for (int i = 0; i < TXG_SIZE; i++) {
-			prs->prs_copied +=
-			    spa->spa_vdev_removal->svr_bytes_done[i];
-		}
-	}
-
 	prs->prs_mapping_memory = 0;
 	uint64_t indirect_vdev_id =
 	    spa->spa_removing_phys.sr_prev_indirect_vdev;
@@ -2169,6 +2243,10 @@ spa_removal_get_stats(spa_t *spa, pool_removal_stat_t *prs)
 }
 
 #if defined(_KERNEL)
+module_param(zfs_removal_ignore_errors, int, 0644);
+MODULE_PARM_DESC(zfs_removal_ignore_errors,
+	"Ignore hard IO errors when removing device");
+
 module_param(zfs_remove_max_segment, int, 0644);
 MODULE_PARM_DESC(zfs_remove_max_segment,
 	"Largest contiguous segment to allocate when removing device");
@@ -2178,8 +2256,8 @@ MODULE_PARM_DESC(vdev_removal_max_span,
 	"Largest span of free chunks a remap segment can span");
 
 /* BEGIN CSTYLED */
-module_param(zfs_remove_max_bytes_pause, ulong, 0644);
-MODULE_PARM_DESC(zfs_remove_max_bytes_pause,
+module_param(zfs_removal_suspend_progress, int, 0644);
+MODULE_PARM_DESC(zfs_removal_suspend_progress,
 	"Pause device removal after this many bytes are copied "
 	"(debug use only - causes removal to hang)");
 /* END CSTYLED */

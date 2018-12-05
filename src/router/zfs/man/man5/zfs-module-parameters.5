@@ -1141,7 +1141,7 @@ Default value: \fB500,000\fR.
 .sp
 .ne 2
 .na
-\fBzfs_low_ios_per_second\fR (int)
+\fBzfs_slow_io_events_per_second\fR (int)
 .ad
 .RS 12n
 Rate limit delay zevents (which report slow I/Os) to this many per second.
@@ -1980,6 +1980,22 @@ Set to attempt to recover from fatal errors. This should only be used as a
 last resort, as it typically results in leaked space, or worse.
 .sp
 Use \fB1\fR for yes and \fB0\fR for no (default).
+.RE
+
+.sp
+.ne 2
+.na
+\fBzfs_removal_ignore_errors\fR (int)
+.ad
+.RS 12n
+.sp
+Ignore hard IO errors during device removal.  When set, if a device encounters
+a hard IO error during the removal process the removal will not be cancelled.
+This can result in a normally recoverable block becoming permanently damaged
+and is not recommended.  This should only be used as a last resort when the
+pool cannot be returned to a healthy state prior to removing the device.
+.sp
+Default value: \fB0\fR.
 .RE
 
 .sp
