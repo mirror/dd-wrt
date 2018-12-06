@@ -84,7 +84,7 @@ static int check_extent_data_item(struct btrfs_root *root,
 				  struct btrfs_key *key, int slot)
 {
 	struct btrfs_file_extent_item *fi;
-	u32 sectorsize = root->fs_info->sectorsize;
+	u32 sectorsize = root->sectorsize;
 	u32 item_size = btrfs_item_size_nr(leaf, slot);
 
 	if (!IS_ALIGNED(key->offset, sectorsize)) {
@@ -159,7 +159,7 @@ static int check_extent_data_item(struct btrfs_root *root,
 static int check_csum_item(struct btrfs_root *root, struct extent_buffer *leaf,
 			   struct btrfs_key *key, int slot)
 {
-	u32 sectorsize = root->fs_info->sectorsize;
+	u32 sectorsize = root->sectorsize;
 	u32 csumsize = btrfs_super_csum_size(root->fs_info->super_copy);
 
 	if (key->objectid != BTRFS_EXTENT_CSUM_OBJECTID) {
@@ -264,11 +264,11 @@ static int check_dir_item(struct btrfs_root *root,
 				name_len, max_name_len);
 			return -EUCLEAN;
 		}
-		if (name_len + data_len > BTRFS_MAX_XATTR_SIZE(root->fs_info)) {
+		if (name_len + data_len > BTRFS_MAX_XATTR_SIZE(root)) {
 			dir_item_err(root, leaf, slot,
 			"dir item name and data len too long, have %u max %u",
 				name_len + data_len,
-				BTRFS_MAX_XATTR_SIZE(root->fs_info));
+				BTRFS_MAX_XATTR_SIZE(root));
 			return -EUCLEAN;
 		}
 
@@ -348,11 +348,13 @@ static int check_block_group_item(struct btrfs_fs_info *fs_info,
 
 	/*
 	 * Here we don't really care about alignment since extent allocator can
-	 * handle it.  We care more about the size.
+	 * handle it.  We care more about the size, as if one block group is
+	 * larger than maximum size, it's must be some obvious corruption.
 	 */
-	if (key->offset == 0) {
+	if (key->offset > BTRFS_MAX_DATA_CHUNK_SIZE || key->offset == 0) {
 		block_group_err(fs_info, leaf, slot,
-				"invalid block group size 0");
+			"invalid block group size, have %llu expect (0, %llu]",
+				key->offset, BTRFS_MAX_DATA_CHUNK_SIZE);
 		return -EUCLEAN;
 	}
 
@@ -533,7 +535,7 @@ static int check_leaf(struct btrfs_root *root, struct extent_buffer *leaf,
 		 * front.
 		 */
 		if (slot == 0)
-			item_end_expected = BTRFS_LEAF_DATA_SIZE(fs_info);
+			item_end_expected = BTRFS_LEAF_DATA_SIZE(root);
 		else
 			item_end_expected = btrfs_item_offset_nr(leaf,
 								 slot - 1);
@@ -548,7 +550,7 @@ static int check_leaf(struct btrfs_root *root, struct extent_buffer *leaf,
 		 * all point outside of the leaf.
 		 */
 		if (btrfs_item_end_nr(leaf, slot) >
-		    BTRFS_LEAF_DATA_SIZE(fs_info)) {
+		    BTRFS_LEAF_DATA_SIZE(root)) {
 			CORRUPT("slot end outside of leaf", leaf, root, slot);
 			return -EUCLEAN;
 		}
@@ -604,12 +606,12 @@ int btrfs_check_node(struct btrfs_root *root, struct extent_buffer *node)
 			level, BTRFS_MAX_LEVEL - 1);
 		return -EUCLEAN;
 	}
-	if (nr == 0 || nr > BTRFS_NODEPTRS_PER_BLOCK(root->fs_info)) {
+	if (nr == 0 || nr > BTRFS_NODEPTRS_PER_BLOCK(root)) {
 		btrfs_crit(root->fs_info,
 "corrupt node: root=%llu block=%llu, nritems too %s, have %lu expect range [1,%u]",
 			   root->objectid, node->start,
 			   nr == 0 ? "small" : "large", nr,
-			   BTRFS_NODEPTRS_PER_BLOCK(root->fs_info));
+			   BTRFS_NODEPTRS_PER_BLOCK(root));
 		return -EUCLEAN;
 	}
 
@@ -624,10 +626,10 @@ int btrfs_check_node(struct btrfs_root *root, struct extent_buffer *node)
 			ret = -EUCLEAN;
 			goto out;
 		}
-		if (!IS_ALIGNED(bytenr, root->fs_info->sectorsize)) {
+		if (!IS_ALIGNED(bytenr, root->sectorsize)) {
 			generic_err(root, node, slot,
 			"unaligned pointer, have %llu should be aligned to %u",
-				bytenr, root->fs_info->sectorsize);
+				bytenr, root->sectorsize);
 			ret = -EUCLEAN;
 			goto out;
 		}
