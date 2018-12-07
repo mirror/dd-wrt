@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r4253 | brainslayer | 2018-12-07 10:42:57 +0000 (Fri, 07 Dec 2018) | 1 line
+
+import dma fix to apply with dd-wrt
+------------------------------------------------------------------------
+r4252 | brainslayer | 2018-12-07 10:36:08 +0000 (Fri, 07 Dec 2018) | 1 line
+
+import some fixes from older madwifi driver to ath5k
+------------------------------------------------------------------------
 r4251 | brainslayer | 2018-12-06 06:59:55 +0000 (Thu, 06 Dec 2018) | 1 line
 
 update mwlwifi driver
