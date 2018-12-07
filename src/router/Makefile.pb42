@@ -477,6 +477,11 @@ ifeq ($(CONFIG_ARCHERC7V5),y)
 else
 	echo "# CONFIG_ARCHERC7V5 is not set" >> $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_ARCHERA7V5),y)
+	echo CONFIG_ARCHERA7V5=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_ARCHERA7V5 is not set" >> $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_UBNTM),y)
 	echo CONFIG_UBNTFIX=y >> $(LINUXDIR)/.config
 else
@@ -1904,6 +1909,10 @@ ifeq ($(CONFIG_WR1043V2),y)
 	-./tools/safeloader/tplink-safeloader -B ARCHER-C7-V5 -V 1 -k $(ARCH)-uclibc/root.uimage -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C7-v5-firmware.bin
 	-./tools/safeloader/tplink-safeloader -B ARCHER-C7-V5 -V 1 -S -k $(ARCH)-uclibc/root.uimage -r $(ARCH)-uclibc/root.fs -o mips-uclibc/archerC7v5_tp_recovery.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C7v5-firmware.bin mips-uclibc/archerC7v5_tp_recovery.bin
+
+	-./tools/safeloader/tplink-safeloader -B ARCHER-A7-V5 -V 1 -k $(ARCH)-uclibc/root.uimage -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-A7-v5-firmware.bin
+	-./tools/safeloader/tplink-safeloader -B ARCHER-A7-V5 -V 1 -S -k $(ARCH)-uclibc/root.uimage -r $(ARCH)-uclibc/root.fs -o mips-uclibc/archerA7v5_tp_recovery.bin
+	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-A7v5-firmware.bin mips-uclibc/archerA7v5_tp_recovery.bin
 
 	-./tools/safeloader/mktplinkfw \
 		-c -H 0x10430004 -W 0x1 -L 0x80060000 \
