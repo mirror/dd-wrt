@@ -90,6 +90,7 @@ do
 	    echo CONFIG_XWM400=y >> .config
 	    echo CONFIG_ARCHERC7V4=y >> .config
 	    echo CONFIG_ARCHERC7V5=y >> .config
+	    echo CONFIG_ARCHERA7V5=y >> .config
 	    echo CONFIG_UBNTFIX=y >> .config
 	    echo CONFIG_WR810N=y >> .config
 	    echo CONFIG_LIMA=y >> .config
@@ -138,6 +139,7 @@ do
 	    sed -i 's/\CONFIG_XWM400=y/ /g' .config	    
 	    sed -i 's/\CONFIG_ARCHERC7V4=y/ /g' .config	    
 	    sed -i 's/\CONFIG_ARCHERC7V5=y/ /g' .config	    
+	    sed -i 's/\CONFIG_ARCHERA7V5=y/ /g' .config	    
 	    sed -i 's/\CONFIG_UBNTFIX=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WR810N=y/ /g' .config	    
 	    sed -i 's/\CONFIG_LIMA=y/ /g' .config	    
