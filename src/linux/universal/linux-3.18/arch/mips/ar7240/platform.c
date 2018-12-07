@@ -1135,7 +1135,8 @@ int __init ar7240_platform_init(void)
 #define DB120_MAC0_OFFSET	0
 #define DB120_MAC1_OFFSET	6
     #ifdef CONFIG_ARCHERC7V5
-	u8 *art = (u8 *)KSEG1ADDR(0x1f050000);     
+	u8 *art = (u8 *)KSEG1ADDR(0x1f050000);
+	ee = (u8 *)KSEG1ADDR(0x1f051000)
     #elif defined(CONFIG_DIR825C1)
 	u8 *art = (u8 *)KSEG1ADDR(0x1fff1000);
     #elif defined(CONFIG_WR841V8)
