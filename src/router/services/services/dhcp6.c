@@ -224,7 +224,7 @@ int dhcp6c_state_main(int argc, char **argv)
 	char prefix[INET6_ADDRSTRLEN];
 	struct in6_addr addr;
 	int i, r;
-	int c;
+	int c=0;
 	c |= nvram_change("ipv6_rtr_addr", getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, 0));
 
 	// extract prefix from configured IPv6 address
