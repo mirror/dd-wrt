@@ -73,6 +73,8 @@ void start_dhcp6c(void)
 	if (!nvram_match("ipv6_typ", "ipv6pd"))
 		return;
 	nvram_unset("ipv6_prefix");
+	nvram_unset("ipv6_rtr_addr");
+	nvram_unset("ipv6_get_dns");
 	char mac[18];
 	getLANMac(mac);
 	if (!strlen(mac))
@@ -198,7 +200,7 @@ void start_dhcp6s(void)
 		fclose(fp);
 	}
 
-	eval("dhcp6s", "-c", "/tmp/dhcp6s.conf", nvram_get("lan_ifname"));
+	eval("dhcp6s", "-c", "/tmp/dhcp6s.conf", nvram_safe_get("lan_ifname"));
 }
 
 void stop_dhcp6s(void)
