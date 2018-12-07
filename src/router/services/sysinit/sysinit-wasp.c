@@ -402,7 +402,7 @@ void start_sysinit(void)
 		eval("rm", "-f", "/tmp/ath10k-board.bin");
 		eval("ln", "-s", "/tmp/archerc7-board.bin", "/tmp/ath10k-board.bin");
 	}
-#elif defined(HAVE_ARCHERC7V5)
+#elif defined(HAVE_ARCHERC7V5) && !defined(HAVE_ARCHERA7V5)
 	fp = fopen("/dev/mtdblock/0", "rb");
 	FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
 	if (fp) {
