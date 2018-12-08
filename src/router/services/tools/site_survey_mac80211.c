@@ -115,14 +115,17 @@ static const struct ie_print ieprinters[] = {
 		 BIT(PRINT_SCAN),},
 };
 
-static void fillENC(const char *text, const char *space)
+static void fillENC(const char *text)
 {
 	char *buf;
+	char var[64];
+	char *next;
 	buf = site_survey_lists[sscount].ENCINFO;
-	if (strstr(buf, text))
-		return;
-	buf += strlen(buf);
-	buf += sprintf(buf, "%s%s", text, space);
+	foreach(var, buf, next) {
+		if (!strcmp(var, text))
+			return;
+	}
+	sprintf(buf, "%s%s ", buf, text);
 }
 
 static struct nla_policy survey_policy[NL80211_SURVEY_INFO_MAX + 1] = {
@@ -905,19 +908,19 @@ static void print_cipher(const uint8_t * data)
 			break;
 		case 1:
 			printf("WEP-40");
-			fillENC("WEP-40", " ");
+			fillENC("WEP-40");
 			break;
 		case 2:
 			printf("TKIP");
-			fillENC("TKIP", " ");
+			fillENC("TKIP");
 			break;
 		case 4:
 			printf("CCMP");
-			fillENC("CCMP", " ");
+			fillENC("CCMP");
 			break;
 		case 5:
 			printf("WEP-104");
-			fillENC("WEP-104", " ");
+			fillENC("WEP-104");
 			break;
 		default:
 			printf("%.02x-%.02x-%.02x:%d", data[0], data[1], data[2], data[3]);
@@ -930,51 +933,51 @@ static void print_cipher(const uint8_t * data)
 			break;
 		case 1:
 			printf("WEP-40");
-			fillENC("WEP-40", " ");
+			fillENC("WEP-40");
 			break;
 		case 2:
 			printf("TKIP");
-			fillENC("TKIP", " ");
+			fillENC("TKIP");
 			break;
 		case 4:
 			printf("CCMP");
-			fillENC("CCMP", " ");
+			fillENC("CCMP");
 			break;
 		case 5:
 			printf("WEP-104");
-			fillENC("WEP-104", " ");
+			fillENC("WEP-104");
 			break;
 		case 6:
 			printf("AES-128-CMAC");
-			fillENC("AES-128-CMAC", " ");
+			fillENC("AES-128-CMAC");
 			break;
 		case 7:
 			printf("NO-GROUP");
-			fillENC("NO-GROUP", " ");
+			fillENC("NO-GROUP");
 			break;
 		case 8:
 			printf("GCMP-128");
-			fillENC("GCMP-128", " ");
+			fillENC("GCMP-128");
 			break;
 		case 9:
 			printf("GCMP-256");
-			fillENC("GCMP-256", " ");
+			fillENC("GCMP-256");
 			break;
 		case 10:
 			printf("CCMP-256");
-			fillENC("CCMP-256", " ");
+			fillENC("CCMP-256");
 			break;
 		case 11:
 			printf("AES-128-GMAC");
-			fillENC("AES-128-GMAC", " ");
+			fillENC("AES-128-GMAC");
 			break;
 		case 12:
 			printf("AES-256-GMAC");
-			fillENC("AES-256-GMAC", " ");
+			fillENC("AES-256-GMAC");
 			break;
 		case 13:
 			printf("AES-256-CMAC");
-			fillENC("AES-256-CMAC", " ");
+			fillENC("AES-256-CMAC");
 			break;
 		default:
 			printf("%.02x-%.02x-%.02x:%d", data[0], data[1], data[2], data[3]);
@@ -991,69 +994,69 @@ static void print_auth(const uint8_t * data, int type)
 		case 1:
 			printf("EAP");
 			if (type)
-				fillENC("EAP/WPA2", " ");
+				fillENC("EAP/WPA2");
 			else
-				fillENC("EAP/WPA", " ");
+				fillENC("EAP/WPA");
 			break;
 			break;
 		case 2:
 			printf("PSK");
 			if (type)
-				fillENC("PSK2", " ");
+				fillENC("PSK2");
 			else
-				fillENC("PSK", " ");
+				fillENC("PSK");
 			break;
 		case 3:
 			printf("FT/EAP");
-			fillENC("FT/EAP", " ");
+			fillENC("FT/EAP");
 			break;
 		case 4:
 			printf("FT/PSK");
-			fillENC("FT/PSK", " ");
+			fillENC("FT/PSK");
 			break;
 		case 5:
 			printf("EAP/SHA-256");
-			fillENC("EAP/SHA-256", " ");
+			fillENC("EAP/SHA-256");
 			break;
 		case 6:
 			printf("PSK/SHA-256");
-			fillENC("PSK/SHA-256", " ");
+			fillENC("PSK/SHA-256");
 			break;
 		case 7:
 			printf("TDLS/TPK");
-			fillENC("TDLS/TPK", " ");
+			fillENC("TDLS/TPK");
 			break;
 		case 8:
 			printf("SAE/PSK3");
-			fillENC("SAE/PSK3", " ");
+			fillENC("SAE/PSK3");
 			break;
 		case 9:
 			printf("FT/SAE");
-			fillENC("FT/SAE", " ");
+			fillENC("FT/SAE");
 			break;
 		case 11:
 			printf("EAP/SUITE-B");
-			fillENC("EAP/SUITE-B", " ");
+			fillENC("EAP/SUITE-B");
 			break;
 		case 12:
 			printf("EAP/SUITE-B-192");
-			fillENC("EAP/SUITE-B-192", " ");
+			fillENC("EAP/SUITE-B-192");
 			break;
 		case 14:
 			printf("FILS/SHA256");
-			fillENC("FILS/SHA256", " ");
+			fillENC("FILS/SHA256");
 			break;
 		case 15:
 			printf("FILS/SHA384");
-			fillENC("FILS/SHA384", " ");
+			fillENC("FILS/SHA384");
 			break;
 		case 16:
 			printf("FT-FILS/SHA256");
-			fillENC("FT-FILS/SHA256", " ");
+			fillENC("FT-FILS/SHA256");
 			break;
 		case 17:
 			printf("FT-FILS/SHA384");
-			fillENC("FT-FILS/SHA384", " ");
+			fillENC("FT-FILS/SHA384");
 			break;
 		default:
 			printf("%.02x-%.02x-%.02x:%d", data[0], data[1], data[2], data[3]);
@@ -1256,23 +1259,23 @@ void print_vht_info(__u32 capa, const __u8 *mcs)
 		printf("neither 160 nor 80+80\n");
 		site_survey_lists[sscount].channel |= 0x1000;
 		if (capa & BIT(5)) {
-			fillENC("VHT80SGI", " ");
+			fillENC("VHT80SGI");
 		} else {
-			fillENC("VHT80", " ");
+			fillENC("VHT80");
 		}
 		break;
 	case 1:
 		printf("160 MHz\n");
 		if (capa & BIT(6)) {
-			fillENC("VHT160SGI", " ");
+			fillENC("VHT160SGI");
 		} else {
-			fillENC("VHT160", " ");
+			fillENC("VHT160");
 		}
 		site_survey_lists[sscount].channel |= 0x1100;
 		break;
 	case 2:
 		printf("160 MHz, 80+80 MHz\n");
-		fillENC("VHT160 VHT80+80", " ");
+		fillENC("VHT160 VHT80+80");
 		site_survey_lists[sscount].channel |= 0x1200;
 		break;
 	case 3:
@@ -1378,18 +1381,18 @@ static void print_ht_capability(__u16 cap)
 	if (cap & BIT(1)) {
 		site_survey_lists[sscount].channel |= 0x2000;
 		if ((cap & BIT(6))) {
-			fillENC("HT40SGI", " ");
+			fillENC("HT40SGI");
 		} else {
-			fillENC("HT40", " ");
+			fillENC("HT40");
 		}
 	} else
 
 		PRINT_HT_CAP(!(cap & BIT(1)), "HT20");
 	if (!(cap & BIT(1))) {
 		if ((cap & BIT(5))) {
-			fillENC("HT20SGI", " ");
+			fillENC("HT20SGI");
 		} else {
-			fillENC("HT20", " ");
+			fillENC("HT20");
 		}
 	}
 
