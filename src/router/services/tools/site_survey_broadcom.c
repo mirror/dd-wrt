@@ -252,11 +252,11 @@ static void wl_rsn_ie_dump(bcm_tlv_t * ie, char *sum)
 						strcat(sum, "WPA-PSK ");
 					break;
 				default:
-					sprintf(sum, "Unknown-%s(#%d)  ", rsn ? "WPA2" : "WPA", suite->type);
+					sprintf(sum, "Unknown-%s(#%d) ", rsn ? "WPA2" : "WPA", suite->type);
 					break;
 				}
 			} else {
-				sprintf(sum, "%s Unknown-%02X:%02X:%02X(#%d)  ", sum, suite->oui[0], suite->oui[1], suite->oui[2], suite->type);
+				sprintf(sum, "%s Unknown-%02X:%02X:%02X(#%d) ", sum, suite->oui[0], suite->oui[1], suite->oui[2], suite->type);
 			}
 		}
 	}
