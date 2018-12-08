@@ -1083,7 +1083,7 @@ static void print_rsn_ie(const char *defcipher, const char *defauth, uint8_t len
 		tab_on_first(&first);
 		printf("\t * Group cipher: %s\n", defcipher);
 		printf("\t * Pairwise ciphers: %s\n", defcipher);
-		fillENC(defcipher, " ");
+		fillENC(defcipher);
 		return;
 	}
 
@@ -1119,7 +1119,7 @@ static void print_rsn_ie(const char *defcipher, const char *defauth, uint8_t len
 	if (len < 2) {
 		tab_on_first(&first);
 		printf("\t * Authentication suites: %s\n", defauth);
-		fillENC(defauth, " ");
+		fillENC(defauth);
 		return;
 	}
 
