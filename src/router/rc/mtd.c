@@ -520,14 +520,9 @@ static int write_main(int argc, char *argv[])
 	sysinfo(&info);
 	eval("umount", "-r", "-f", "/jffs");
 #ifndef HAVE_CAMBRIA
-	stop_service("sshd");
 	stop_service("snmp");
-	stop_service("zebra");
 	stop_service("pppoeserver");
 	stop_service("olsrd");
-	stop_service("openvpn");
-	stop_service("openvpnserver");
-	stop_service("pptpd");
 	stop_service("upnp");
 	stop_service("freeradius");
 	killall("process_monitor", SIGTERM);
