@@ -307,8 +307,11 @@ static char *wl_dump_wpa_rsn_ies(uint8 * cp, uint len)
 	rsnie = wlu_parse_tlvs(cp, len, DOT11_MNG_RSN_ID);
 	if (rsnie)
 		wl_rsn_ie_dump((bcm_tlv_t *) rsnie, sum);
-	if (wpaie || rsnie)
+	if (wpaie || rsnie) {
+		if (strlen(sum) > 0)
+			sum[strlen(sum)] = 0;
 		return sum;
+	}
 
 	return "WEP";
 }
