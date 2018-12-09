@@ -651,8 +651,9 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int d
 #endif
 #ifdef HAVE_TOR
 	if (nvram_matchi("tor_transparent", 1) && nvram_matchi("tor_enable", 1)) {
-		save2file("-A PREROUTING -i br0 -p udp --dport 53 -j DNAT --to %s:53", lan_ip);
-		save2file("-A PREROUTING -i br0 -p tcp --syn -j DNAT --to %s:9040", lan_ip);
+		save2file("-A PREROUTING -i br0 -p udp --dport 53 -j REDIRECT --to-ports 5353");
+		save2file("-A PREROUTING -i br0 -p udp --dport 5353 -j REDIRECT --to-ports 5353");
+		save2file("-A PREROUTING -i br0 -p tcp --syn -j REDIRECT --to-ports 9040");
 	}
 #endif
 
