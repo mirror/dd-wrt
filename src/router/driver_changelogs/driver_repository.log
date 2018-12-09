@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r4255 | brainslayer | 2018-12-09 17:55:33 +0000 (Sun, 09 Dec 2018) | 1 line
+
+fix usual ath9k and ath10k ack timing bug. eifs timing wasnt correct. need to test
+------------------------------------------------------------------------
+r4254 | brainslayer | 2018-12-08 19:39:29 +0000 (Sat, 08 Dec 2018) | 1 line
+
+mbim - es gibt wirklich mbim mit lte, aber nur in der Schweiz in einer CUG..
+------------------------------------------------------------------------
 r4253 | brainslayer | 2018-12-07 10:42:57 +0000 (Fri, 07 Dec 2018) | 1 line
 
 import dma fix to apply with dd-wrt
