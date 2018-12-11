@@ -1,7 +1,7 @@
 VERSION = 3
 PATCHLEVEL = 18
-SUBLEVEL = 128
-EXTRAVERSION =
+SUBLEVEL = 129
+EXTRAVERSION = -rc1
 NAME = Diseased Newt
 
 # *DOCUMENTATION*
@@ -777,6 +777,9 @@ KBUILD_CFLAGS += $(call cc-option,-Wdeclaration-after-statement,)
 
 # disable pointer signed / unsigned warnings in gcc 4.0
 KBUILD_CFLAGS += $(call cc-disable-warning, pointer-sign)
+
+# disable stringop warnings in gcc 8+
+KBUILD_CFLAGS += $(call cc-disable-warning, stringop-truncation)
 
 # disable invalid "can't wrap" optimizations for signed / pointers
 KBUILD_CFLAGS	+= $(call cc-option,-fno-strict-overflow)
