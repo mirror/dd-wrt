@@ -2005,7 +2005,7 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	if (remotessh) {
 
 		if (nvram_matchi("limit_ssh", 1))
-			save2file("-A INPUT -i %s -p tcp -d %s --dport %s -j logbrute\n", wanface, nvram_safe_get("lan_ipaddr"), nvram_safe_get("sshd_port"));
+			save2file("-A INPUT -i %s -p tcp -d %s --dport %s -j logbrute", wanface, nvram_safe_get("lan_ipaddr"), nvram_safe_get("sshd_port"));
 	}
 #endif
 	/*
@@ -2341,8 +2341,8 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	 * Incoming connection will be accepted, if it match the port-ranges. 
 	 */
 	if (strlen(wanface) > 0) {
-		save2file("-A FORWARD -i %s -o %s -j TRIGGER --trigger-type in\n", wanface, lanface);
-		save2file("-A FORWARD -i %s -j trigger_out\n", lanface);
+		save2file("-A FORWARD -i %s -o %s -j TRIGGER --trigger-type in", wanface, lanface);
+		save2file("-A FORWARD -i %s -j trigger_out", lanface);
 	}
 	/*
 	 * DMZ forwarding 
@@ -2361,8 +2361,8 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 				}
 			}
 			if (strlen(wanface) > 0) {
-				save2file("-A FORWARD -i %s -o %s -j TRIGGER --trigger-type in\n", wanface, var);
-				save2file("-A FORWARD -i %s -j trigger_out\n", var);
+				save2file("-A FORWARD -i %s -o %s -j TRIGGER --trigger-type in", wanface, var);
+				save2file("-A FORWARD -i %s -j trigger_out", var);
 				save2file("-A FORWARD -i %s -m state --state NEW -j %s", var, log_accept);
 			}
 		}
@@ -2391,7 +2391,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
  */
 static void mangle_table(char *wanface, char *wanaddr)
 {
-	save2file("*mangle\n:PREROUTING ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n");
+	save2file("*mangle\n:PREROUTING ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]");
 	if (strcmp(get_wan_face(), "wwan0")) {
 
 		if (wanactive(wanaddr) && (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))) {
@@ -2403,7 +2403,7 @@ static void mangle_table(char *wanface, char *wanaddr)
 	/*
 	 * Clamp TCP MSS to PMTU of WAN interface 
 	 */
-	save2file("-I FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n");
+	save2file("-I FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu");
 #ifdef HAVE_PRIVOXY
 	if ((nvram_matchi("privoxy_enable", 1)) && (nvram_matchi("wshaper_enable", 1))) {
 		save2file("-I OUTPUT -p tcp --sport 8118 -j IMQ --todev 0");
@@ -2420,7 +2420,7 @@ static void mangle_table(char *wanface, char *wanaddr)
 	 */
 	// save2file("-A PREROUTING -i %s -m mark ! --mark 0 -j MARK --set-mark
 	// %d\n", lanface, MARK_LAN2WAN);
-	save2file("COMMIT\n");
+	save2file("COMMIT");
 }
 
 /*
@@ -2433,7 +2433,7 @@ static void nat_table(char *wanface, char *wanaddr, char *lan_cclass, int dmzena
 		nat_prerouting(wanface, wanaddr, lan_cclass, dmzenable, remotessh, remotetelnet, remotemanage);
 		nat_postrouting(wanface, wanaddr);
 	}
-	save2file("COMMIT\n");
+	save2file("COMMIT");
 }
 
 /*
