@@ -170,8 +170,9 @@ static int erase_main(int argc, char *argv[])
 				nvram_clear();
 				nvram_commit();
 			}
+		} else {
+			ret = mtd_erase(argv[1]);
 		}
-		ret = mtd_erase(argv[1]);
 	} else {
 		fprintf(stderr, "usage: erase [device]\n");
 		ret = EINVAL;
