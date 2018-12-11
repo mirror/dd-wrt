@@ -333,11 +333,11 @@ static int write_main(int argc, char *argv[])
 		if (nvram_matchi("bootpartition", 1)) {
 			mtd = "linux2";
 			nvram_seti("bootpartition", 0);
-			nvram_commit();
+			_nvram_commit();
 		} else {
 			mtd = "linux2";
 			nvram_seti("bootpartition", 1);
-			nvram_commit();
+			_nvram_commit();
 		}
 		break;
 	case ROUTER_NETGEAR_WGR614L:
