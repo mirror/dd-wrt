@@ -145,7 +145,7 @@ static void unlock(void)
 #define unlock()
 #endif
 
-static char *suspense;
+static char *suspense = NULL;
 static unsigned int count = 0;
 static char log_accept[15];
 static char log_drop[15];
