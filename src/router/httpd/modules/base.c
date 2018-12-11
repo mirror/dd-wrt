@@ -98,12 +98,7 @@ static int _sys_commit(void)
 		killall("dnsmasq", SIGUSR2);	// update lease -- tofu
 		sleep(1);
 	}
-	// if (nvram_match("wan_proto", "pppoe") || nvram_match("wan_proto",
-	// "pptp") )
-	// nvram_set("wan_ifname", "ppp0");
-	// else
-	// nvram_set("wan_ifname", nvram_get("pppoe_ifname"));
-	return nvram_commit();
+	return _nvram_commit();
 }
 
 /*
