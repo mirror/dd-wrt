@@ -770,7 +770,7 @@ nas.raidmember="Raid Mitglied";
 nas.mirror="Spiegeln";
 nas.fs="Dateisystem";
 nas.drivemanager="Laufwerksverwaltung";
-nsa.drive="Laufwerk";
+nas.drive="Laufwerk";
 nas.compression="Kompression";
 
 //** Privoxy.asp **//
