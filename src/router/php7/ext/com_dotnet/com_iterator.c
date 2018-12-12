@@ -16,8 +16,6 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id$ */
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -125,7 +123,7 @@ static void com_iter_move_forwards(zend_object_iterator *iter)
 }
 
 
-static zend_object_iterator_funcs com_iter_funcs = {
+static const zend_object_iterator_funcs com_iter_funcs = {
 	com_iter_dtor,
 	com_iter_valid,
 	com_iter_get_data,
@@ -145,7 +143,8 @@ zend_object_iterator *php_com_iter_get(zend_class_entry *ce, zval *object, int b
 	zval ptr;
 
 	if (by_ref) {
-		zend_error(E_ERROR, "An iterator cannot be used with foreach by reference");
+		zend_throw_error(NULL, "An iterator cannot be used with foreach by reference");
+		return NULL;
 	}
 
 	obj = CDNO_FETCH(object);

@@ -23,11 +23,9 @@
    |          Hartmut Holzgraefe  <hholzgra@php.net>                      |
    |          Jani Taskinen       <sniper@iki.fi>                         |
    |          Daniel R. Kalowsky  <kalowsky@php.net>                      |
-   | PHP 4.0 updates:  Zeev Suraski <zeev@zend.com>                       |
+   | PHP 4.0 updates:  Zeev Suraski <zeev@php.net>                        |
    +----------------------------------------------------------------------+
  */
-
-/* $Id$ */
 
 #ifndef PHP_IMAP_H
 #define PHP_IMAP_H
@@ -231,6 +229,7 @@ ZEND_BEGIN_MODULE_GLOBALS(imap)
 #endif
 	/* php_stream for php_mail_gets() */
 	php_stream *gets_stream;
+	zend_bool enable_rsh;
 ZEND_END_MODULE_GLOBALS(imap)
 
 #ifdef ZTS

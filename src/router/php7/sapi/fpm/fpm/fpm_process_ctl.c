@@ -1,4 +1,3 @@
-	/* $Id: fpm_process_ctl.c,v 1.19.2.2 2008/12/13 03:21:18 anight Exp $ */
 	/* (c) 2007,2008 Andrei Nigmatulin */
 
 #include "fpm_config.h"

@@ -23,7 +23,7 @@ Warning: IntlBreakIterator::following() expects exactly 1 parameter, 2 given in 
 Warning: IntlBreakIterator::following(): breakiter_following: bad arguments in %s on line %d
 bool(false)
 
-Warning: IntlBreakIterator::following() expects parameter 1 to be integer, array given in %s on line %d
+Warning: IntlBreakIterator::following() expects parameter 1 to be int, array given in %s on line %d
 
 Warning: IntlBreakIterator::following(): breakiter_following: bad arguments in %s on line %d
 bool(false)
@@ -33,7 +33,7 @@ Warning: IntlBreakIterator::preceding() expects exactly 1 parameter, 2 given in 
 Warning: IntlBreakIterator::preceding(): breakiter_preceding: bad arguments in %s on line %d
 bool(false)
 
-Warning: IntlBreakIterator::preceding() expects parameter 1 to be integer, array given in %s on line %d
+Warning: IntlBreakIterator::preceding() expects parameter 1 to be int, array given in %s on line %d
 
 Warning: IntlBreakIterator::preceding(): breakiter_preceding: bad arguments in %s on line %d
 bool(false)
@@ -43,7 +43,7 @@ Warning: IntlBreakIterator::isBoundary() expects exactly 1 parameter, 2 given in
 Warning: IntlBreakIterator::isBoundary(): breakiter_is_boundary: bad arguments in %s on line %d
 bool(false)
 
-Warning: IntlBreakIterator::isBoundary() expects parameter 1 to be integer, array given in %s on line %d
+Warning: IntlBreakIterator::isBoundary() expects parameter 1 to be int, array given in %s on line %d
 
 Warning: IntlBreakIterator::isBoundary(): breakiter_is_boundary: bad arguments in %s on line %d
 bool(false)

@@ -1898,7 +1898,7 @@ void gdImageFill(gdImagePtr im, int x, int y, int nc)
 	int alphablending_bak;
 
 	/* stack of filled segments */
-	/* struct seg stack[FILL_MAX],*sp = stack;; */
+	/* struct seg stack[FILL_MAX],*sp = stack; */
 	struct seg *stack = NULL;
 	struct seg *sp;
 
@@ -2074,7 +2074,7 @@ void gdImageRectangle (gdImagePtr im, int x1, int y1, int x2, int y2, int color)
 		y1 = y2;
 		y2 = t;
 	}
-	
+
 	if (x2 < x1) {
 		t = x1;
 		x1 = x2;
@@ -3143,4 +3143,3 @@ clean_on_error:
 	gdFree(src->tpixels);
 	return 0;
 }
-

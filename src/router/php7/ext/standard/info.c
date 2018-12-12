@@ -13,12 +13,10 @@
    | license@php.net so we can mail you a copy immediately.               |
    +----------------------------------------------------------------------+
    | Authors: Rasmus Lerdorf <rasmus@php.net>                             |
-   |          Zeev Suraski <zeev@zend.com>                                |
+   |          Zeev Suraski <zeev@php.net>                                 |
    |          Colin Viebrock <colin@viebrock.ca>                          |
    +----------------------------------------------------------------------+
 */
-
-/* $Id$ */
 
 #include "php.h"
 #include "php_ini.h"
@@ -190,7 +188,7 @@ static int _display_module_info_def(zval *el) /* {{{ */
  */
 static void php_print_gpcse_array(char *name, uint32_t name_length)
 {
-	zval *data, *tmp, tmp2;
+	zval *data, *tmp;
 	zend_string *string_key;
 	zend_ulong num_key;
 	zend_string *key;
@@ -230,31 +228,25 @@ static void php_print_gpcse_array(char *name, uint32_t name_length)
 					php_info_print("<pre>");
 					php_info_print_html_esc(ZSTR_VAL(str), ZSTR_LEN(str));
 					php_info_print("</pre>");
-					zend_string_release(str);
+					zend_string_release_ex(str, 0);
 				} else {
 					zend_print_zval_r(tmp, 0);
 				}
 			} else {
-				ZVAL_COPY_VALUE(&tmp2, tmp);
-				if (Z_TYPE(tmp2) != IS_STRING) {
-					tmp = NULL;
-					zval_copy_ctor(&tmp2);
-					convert_to_string(&tmp2);
-				}
+				zend_string *tmp2;
+				zend_string *str = zval_get_tmp_string(tmp, &tmp2);
 
 				if (!sapi_module.phpinfo_as_text) {
-					if (Z_STRLEN(tmp2) == 0) {
+					if (ZSTR_LEN(str) == 0) {
 						php_info_print("<i>no value</i>");
 					} else {
-						php_info_print_html_esc(Z_STRVAL(tmp2), Z_STRLEN(tmp2));
+						php_info_print_html_esc(ZSTR_VAL(str), ZSTR_LEN(str));
 					}
 				} else {
-					php_info_print(Z_STRVAL(tmp2));
+					php_info_print(ZSTR_VAL(str));
 				}
 
-				if (!tmp) {
-					zval_dtor(&tmp2);
-				}
+				zend_tmp_string_release(tmp2);
 			}
 			if (!sapi_module.phpinfo_as_text) {
 				php_info_print("</td></tr>\n");
@@ -263,7 +255,7 @@ static void php_print_gpcse_array(char *name, uint32_t name_length)
 			}
 		} ZEND_HASH_FOREACH_END();
 	}
-	zend_string_free(key);
+	zend_string_efree(key);
 }
 /* }}} */
 
@@ -766,7 +758,7 @@ PHPAPI void php_print_info_htmlhead(void)
 	php_info_print("<html xmlns=\"http://www.w3.org/1999/xhtml\">");
 	php_info_print("<head>\n");
 	php_info_print_style();
-	php_info_print("<title>phpinfo()</title>");
+	php_info_printf("<title>PHP %s - phpinfo()</title>", PHP_VERSION);
 	php_info_print("<meta name=\"ROBOTS\" content=\"NOINDEX,NOFOLLOW,NOARCHIVE\" />");
 	php_info_print("</head>\n");
 	php_info_print("<body><div class=\"center\">\n");
@@ -875,6 +867,7 @@ PHPAPI void php_print_info(int flag)
 
 #ifdef ZTS
 		php_info_print_table_row(2, "Thread Safety", "enabled" );
+		php_info_print_table_row(2, "Thread API", tsrm_api_name() );
 #else
 		php_info_print_table_row(2, "Thread Safety", "disabled" );
 #endif

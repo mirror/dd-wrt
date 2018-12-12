@@ -17,8 +17,6 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id$ */
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -1808,7 +1806,7 @@ data_accepted:
 	if (ftp->use_ssl && ftp->use_ssl_for_data) {
 		ctx = SSL_get_SSL_CTX(ftp->ssl_handle);
 		if (ctx == NULL) {
-			php_error_docref(NULL, E_WARNING, "data_accept: failed to retreive the existing SSL context");
+			php_error_docref(NULL, E_WARNING, "data_accept: failed to retrieve the existing SSL context");
 			return 0;
 		}
 
@@ -1827,7 +1825,7 @@ data_accepted:
 		/* get the session from the control connection so we can re-use it */
 		session = SSL_get_session(ftp->ssl_handle);
 		if (session == NULL) {
-			php_error_docref(NULL, E_WARNING, "data_accept: failed to retreive the existing SSL session");
+			php_error_docref(NULL, E_WARNING, "data_accept: failed to retrieve the existing SSL session");
 			SSL_free(data->ssl_handle);
 			return 0;
 		}
@@ -1908,10 +1906,10 @@ static void ftp_ssl_shutdown(ftpbuf_t *ftp, php_socket_t fd, SSL *ssl_handle) {
 		done = 0;
 	}
 
-	while (!done) {
-		if (data_available(ftp, fd)) {
-			ERR_clear_error();
-			nread = SSL_read(ssl_handle, buf, sizeof(buf));
+	while (!done && data_available(ftp, fd)) {
+		ERR_clear_error();
+		nread = SSL_read(ssl_handle, buf, sizeof(buf));
+		if (nread <= 0) {
 			err = SSL_get_error(ssl_handle, nread);
 			switch (err) {
 				case SSL_ERROR_NONE: /* this is not an error */
@@ -1929,9 +1927,11 @@ static void ftp_ssl_shutdown(ftpbuf_t *ftp, php_socket_t fd, SSL *ssl_handle) {
 					break;
 				default:
 					if ((sslerror = ERR_get_error())) {
-					    ERR_error_string_n(sslerror, buf, sizeof(buf));
+						ERR_error_string_n(sslerror, buf, sizeof(buf));
+						php_error_docref(NULL, E_WARNING, "SSL_read on shutdown: %s", buf);
+					} else if (errno) {
+						php_error_docref(NULL, E_WARNING, "SSL_read on shutdown: %s (%d)", strerror(errno), errno);
 					}
-					php_error_docref(NULL, E_WARNING, "SSL_read on shutdown: %s (%d)", (sslerror ? buf : strerror(errno)), errno);
 					done = 1;
 					break;
 			}

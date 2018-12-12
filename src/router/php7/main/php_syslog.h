@@ -16,10 +16,10 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id$ */
-
 #ifndef PHP_SYSLOG_H
 #define PHP_SYSLOG_H
+
+#include "php.h"
 
 #ifdef PHP_WIN32
 #include "win32/syslog.h"
@@ -30,26 +30,18 @@
 #endif
 #endif
 
-/*
- * The SCO OpenServer 5 Development System (not the UDK)
- * defines syslog to std_syslog.
- */
+/* Syslog filters */
+#define PHP_SYSLOG_FILTER_ALL		0
+#define PHP_SYSLOG_FILTER_NO_CTRL	1
+#define PHP_SYSLOG_FILTER_ASCII		2
 
-#ifdef syslog
-
-#ifdef HAVE_STD_SYSLOG
-#define php_syslog std_syslog
-#endif
-
-#undef syslog
+BEGIN_EXTERN_C()
+PHPAPI void php_syslog(int, const char *format, ...);
+PHPAPI void php_openlog(const char *, int, int);
+END_EXTERN_C()
 
 #endif
 
-#ifndef php_syslog
-#define php_syslog syslog
-#endif
-
-#endif
 /*
  * Local variables:
  * tab-width: 4

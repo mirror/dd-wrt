@@ -16,8 +16,6 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id$ */
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -84,8 +82,7 @@ DBA_OPEN_FUNC(db3)
 	}
 
 	if (info->argc > 0) {
-		convert_to_long_ex(&info->argv[0]);
-		filemode = Z_LVAL(info->argv[0]);
+		filemode = zval_get_long(&info->argv[0]);
 	}
 
 #ifdef DB_FCNTL_LOCKING

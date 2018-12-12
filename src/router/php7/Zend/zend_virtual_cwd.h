@@ -12,13 +12,11 @@
    | obtain it through the world-wide-web, please send a note to          |
    | license@php.net so we can mail you a copy immediately.               |
    +----------------------------------------------------------------------+
-   | Authors: Andi Gutmans <andi@zend.com>                                |
+   | Authors: Andi Gutmans <andi@php.net>                                 |
    |          Sascha Schumann <sascha@schumann.cx>                        |
    |          Pierre Joye <pierre@php.net>                                |
    +----------------------------------------------------------------------+
 */
-
-/* $Id$ */
 
 #ifndef VIRTUAL_CWD_H
 #define VIRTUAL_CWD_H
@@ -121,7 +119,7 @@ typedef unsigned short mode_t;
 CWD_API int php_sys_stat_ex(const char *path, zend_stat_t *buf, int lstat);
 # define php_sys_stat(path, buf) php_sys_stat_ex(path, buf, 0)
 # define php_sys_lstat(path, buf) php_sys_stat_ex(path, buf, 1)
-CWD_API int php_sys_readlink(const char *link, char *target, size_t target_len);
+CWD_API ssize_t php_sys_readlink(const char *link, char *target, size_t target_len);
 #else
 # define php_sys_stat stat
 # define php_sys_lstat lstat
@@ -132,7 +130,7 @@ CWD_API int php_sys_readlink(const char *link, char *target, size_t target_len);
 
 typedef struct _cwd_state {
 	char *cwd;
-	int cwd_length;
+	size_t cwd_length;
 } cwd_state;
 
 typedef int (*verify_path_func)(const cwd_state *);
@@ -160,21 +158,6 @@ CWD_API int virtual_rmdir(const char *pathname);
 CWD_API DIR *virtual_opendir(const char *pathname);
 CWD_API FILE *virtual_popen(const char *command, const char *type);
 CWD_API int virtual_access(const char *pathname, int mode);
-#if defined(ZEND_WIN32)
-/* these are not defined in win32 headers */
-#ifndef W_OK
-#define W_OK 0x02
-#endif
-#ifndef R_OK
-#define R_OK 0x04
-#endif
-#ifndef X_OK
-#define X_OK 0x01
-#endif
-#ifndef F_OK
-#define F_OK 0x00
-#endif
-#endif
 
 #if HAVE_UTIME
 CWD_API int virtual_utime(const char *filename, struct utimbuf *buf);
@@ -187,7 +170,7 @@ CWD_API int virtual_chown(const char *filename, uid_t owner, gid_t group, int li
 /* One of the following constants must be used as the last argument
    in virtual_file_ex() call. */
 
-#define CWD_EXPAND   0 /* expand "." and ".." but dont resolve symlinks      */
+#define CWD_EXPAND   0 /* expand "." and ".." but don't resolve symlinks     */
 #define CWD_FILEPATH 1 /* resolve symlinks if file is exist otherwise expand */
 #define CWD_REALPATH 2 /* call realpath(), resolve symlinks. File must exist */
 

@@ -45,7 +45,7 @@ foreach ($nonEnglish as $lang => $input) {
 
 echo "Done";
 ?>
---EXPECTF--
+--EXPECT--
 *** Testing mb_encode_mimeheader() : basic ***
 
 Language: English

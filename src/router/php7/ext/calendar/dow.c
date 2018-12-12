@@ -43,7 +43,7 @@ int DayOfWeek(
 	}
 }
 
-char *DayNameShort[7] =
+const char * const DayNameShort[7] =
 {
 	"Sun",
 	"Mon",
@@ -54,7 +54,7 @@ char *DayNameShort[7] =
 	"Sat"
 };
 
-char *DayNameLong[7] =
+const char * const DayNameLong[7] =
 {
 	"Sunday",
 	"Monday",

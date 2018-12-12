@@ -9,5 +9,5 @@ var_dump(filter_var(
     FILTER_VALIDATE_BOOLEAN,
     FILTER_NULL_ON_FAILURE
 ));
---EXPECTF--
+--EXPECT--
 NULL

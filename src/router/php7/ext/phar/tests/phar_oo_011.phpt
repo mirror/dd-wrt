@@ -2,7 +2,6 @@
 Phar object: add file
 --SKIPIF--
 <?php if (!extension_loaded('phar')) die('skip'); ?>
-<?php if (!extension_loaded("spl")) die("skip SPL not available"); ?>
 --INI--
 phar.readonly=0
 phar.require_hash=0

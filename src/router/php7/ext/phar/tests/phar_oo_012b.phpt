@@ -2,7 +2,6 @@
 Phar object: unset file
 --SKIPIF--
 <?php if (!extension_loaded('phar')) die('skip'); ?>
-<?php if (!extension_loaded("spl")) die("skip SPL not available"); ?>
 --INI--
 phar.readonly=1
 phar.require_hash=0
@@ -37,6 +36,6 @@ catch (BadMethodCallException $e)
 unlink(dirname(__FILE__) . '/files/phar_oo_012b.phar.php');
 __halt_compiler();
 ?>
---EXPECTF--
+--EXPECT--
 Exception: Write operations disabled by the php.ini setting phar.readonly
 ===DONE===

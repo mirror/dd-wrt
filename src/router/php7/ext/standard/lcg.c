@@ -16,8 +16,6 @@
    +----------------------------------------------------------------------+
 */
 
-/* $Id$ */
-
 #include "php.h"
 #include "php_lcg.h"
 
@@ -118,6 +116,9 @@ PHP_MINIT_FUNCTION(lcg) /* {{{ */
    Returns a value from the combined linear congruential generator */
 PHP_FUNCTION(lcg_value)
 {
+	if (zend_parse_parameters_none() == FAILURE) {
+		return;
+	}
 	RETURN_DOUBLE(php_combined_lcg());
 }
 /* }}} */

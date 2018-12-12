@@ -1,6 +1,4 @@
-dnl
-dnl $Id$
-dnl
+dnl config.m4 for extension imap
 
 AC_DEFUN([IMAP_INC_CHK],[if test -r "$i$1/c-client.h"; then
     AC_DEFINE(HAVE_IMAP2000, 1, [ ])
@@ -10,7 +8,7 @@ AC_DEFUN([IMAP_INC_CHK],[if test -r "$i$1/c-client.h"; then
   elif test -r "$i$1/rfc822.h"; then
     IMAP_DIR=$i;
     IMAP_INC_DIR=$i$1
-	break
+    break
 ])
 
 AC_DEFUN([IMAP_LIB_CHK],[
@@ -128,13 +126,13 @@ if test "$PHP_IMAP" != "no"; then
     old_CFLAGS=$CFLAGS
     CFLAGS="-I$IMAP_INC_DIR"
     AC_CACHE_CHECK(for utf8_mime2text signature, ac_cv_utf8_mime2text,
-      AC_TRY_COMPILE([
+      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <stdio.h>
 #include <c-client.h>
-      ],[
+      ]],[[
         SIZEDTEXT *src, *dst;
         utf8_mime2text(src, dst);
-      ],[
+      ]])],[
         ac_cv_utf8_mime2text=old
       ],[
         ac_cv_utf8_mime2text=new
@@ -148,11 +146,11 @@ if test "$PHP_IMAP" != "no"; then
     old_CFLAGS=$CFLAGS
     CFLAGS="-I$IMAP_INC_DIR"
     AC_CACHE_CHECK(for U8T_DECOMPOSE, ac_cv_u8t_decompose,
-      AC_TRY_COMPILE([
+      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #include <c-client.h>
-      ],[
+      ]],[[
          int i = U8T_CANONICAL;
-      ],[
+      ]])],[
          ac_cv_u8t_decompose=yes
       ],[
          ac_cv_u8t_decompose=no

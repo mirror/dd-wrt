@@ -18,8 +18,6 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id$ */
-
 #define IS_EXT_MODULE
 
 #ifdef HAVE_CONFIG_H
@@ -70,7 +68,7 @@ ZEND_GET_MODULE(xml)
 /* }}} */
 
 
-#define SKIP_TAGSTART(str) ((str) + (parser->toffset > strlen(str) ? strlen(str) : parser->toffset))
+#define SKIP_TAGSTART(str) ((str) + (parser->toffset > (int)strlen(str) ? strlen(str) : parser->toffset))
 
 
 /* {{{ function prototypes */
@@ -212,7 +210,7 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_xml_parser_get_option, 0, 0, 2)
 	ZEND_ARG_INFO(0, option)
 ZEND_END_ARG_INFO()
 
-const zend_function_entry xml_functions[] = {
+static const zend_function_entry xml_functions[] = {
 	PHP_FE(xml_parser_create,					arginfo_xml_parser_create)
 	PHP_FE(xml_parser_create_ns,				arginfo_xml_parser_create_ns)
 	PHP_FE(xml_set_object, 						arginfo_xml_set_object)
@@ -270,7 +268,7 @@ zend_module_entry xml_module_entry = {
 /* All the encoding functions are set to NULL right now, since all
  * the encoding is currently done internally by expat/xmltok.
  */
-xml_encoding xml_encodings[] = {
+const xml_encoding xml_encodings[] = {
 	{ (XML_Char *)"ISO-8859-1", xml_decode_iso_8859_1, xml_encode_iso_8859_1 },
 	{ (XML_Char *)"US-ASCII",   xml_decode_us_ascii,   xml_encode_us_ascii   },
 	{ (XML_Char *)"UTF-8",      NULL,                  NULL                  },
@@ -537,9 +535,9 @@ inline static char xml_decode_us_ascii(unsigned short c)
 /* }}} */
 
 /* {{{ xml_get_encoding() */
-static xml_encoding *xml_get_encoding(const XML_Char *name)
+static const xml_encoding *xml_get_encoding(const XML_Char *name)
 {
-	xml_encoding *enc = &xml_encodings[0];
+	const xml_encoding *enc = &xml_encodings[0];
 
 	while (enc && enc->name) {
 		if (strcasecmp((char *)name, (char *)enc->name) == 0) {
@@ -558,7 +556,7 @@ PHP_XML_API zend_string *xml_utf8_encode(const char *s, size_t len, const XML_Ch
 	zend_string *str;
 	unsigned int c;
 	unsigned short (*encoder)(unsigned char) = NULL;
-	xml_encoding *enc = xml_get_encoding(encoding);
+	const xml_encoding *enc = xml_get_encoding(encoding);
 
 	if (enc) {
 		encoder = enc->encoding_function;
@@ -608,7 +606,7 @@ PHP_XML_API zend_string *xml_utf8_decode(const XML_Char *s, size_t len, const XM
 	size_t pos = 0;
 	unsigned int c;
 	char (*decoder)(unsigned short) = NULL;
-	xml_encoding *enc = xml_get_encoding(encoding);
+	const xml_encoding *enc = xml_get_encoding(encoding);
 	zend_string *str;
 
 	if (enc) {
@@ -735,7 +733,7 @@ void _xml_startElementHandler(void *userData, const XML_Char *name, const XML_Ch
 
 				attributes += 2;
 
-				zend_string_release(att);
+				zend_string_release_ex(att, 0);
 			}
 
 			xml_call_handler(parser, &parser->startElementHandler, parser->startElementPtr, 3, args, &retval);
@@ -773,7 +771,7 @@ void _xml_startElementHandler(void *userData, const XML_Char *name, const XML_Ch
 					atcnt++;
 					attributes += 2;
 
-					zend_string_release(att);
+					zend_string_release_ex(att, 0);
 				}
 
 				if (atcnt) {
@@ -788,7 +786,7 @@ void _xml_startElementHandler(void *userData, const XML_Char *name, const XML_Ch
 			}
 		}
 
-		zend_string_release(tag_name);
+		zend_string_release_ex(tag_name, 0);
 	}
 }
 /* }}} */
@@ -797,12 +795,11 @@ void _xml_startElementHandler(void *userData, const XML_Char *name, const XML_Ch
 void _xml_endElementHandler(void *userData, const XML_Char *name)
 {
 	xml_parser *parser = (xml_parser *)userData;
-	zend_string *tag_name;
 
 	if (parser) {
 		zval retval, args[2];
 
-		tag_name = _xml_decode_tag(parser, (const char *)name);
+		zend_string *tag_name = _xml_decode_tag(parser, (const char *)name);
 
 		if (!Z_ISUNDEF(parser->endElementHandler)) {
 			ZVAL_COPY(&args[0], &parser->index);
@@ -832,7 +829,7 @@ void _xml_endElementHandler(void *userData, const XML_Char *name)
 			parser->lastwasopen = 0;
 		}
 
-		zend_string_release(tag_name);
+		zend_string_release_ex(tag_name, 0);
 
 		if ((parser->ltags) && (parser->level <= XML_MAXLEVEL)) {
 			efree(parser->ltags[parser->level-1]);
@@ -888,7 +885,7 @@ void _xml_characterDataHandler(void *userData, const XML_Char *s, int len)
 						Z_STR_P(myval) = zend_string_extend(Z_STR_P(myval), newlen, 0);
 						strncpy(Z_STRVAL_P(myval) + Z_STRLEN_P(myval) - ZSTR_LEN(decoded_value),
 								ZSTR_VAL(decoded_value), ZSTR_LEN(decoded_value) + 1);
-						zend_string_release(decoded_value);
+						zend_string_release_ex(decoded_value, 0);
 					} else {
 						add_assoc_str(parser->ctag, "value", decoded_value);
 					}
@@ -905,7 +902,7 @@ void _xml_characterDataHandler(void *userData, const XML_Char *s, int len)
 									Z_STR_P(myval) = zend_string_extend(Z_STR_P(myval), newlen, 0);
 									strncpy(Z_STRVAL_P(myval) + Z_STRLEN_P(myval) - ZSTR_LEN(decoded_value),
 											ZSTR_VAL(decoded_value), ZSTR_LEN(decoded_value) + 1);
-									zend_string_release(decoded_value);
+									zend_string_release_ex(decoded_value, 0);
 									return;
 								}
 							}
@@ -929,7 +926,7 @@ void _xml_characterDataHandler(void *userData, const XML_Char *s, int len)
 					}
 				}
 			} else {
-				zend_string_release(decoded_value);
+				zend_string_release_ex(decoded_value, 0);
 			}
 		}
 	}
@@ -1588,23 +1585,20 @@ PHP_FUNCTION(xml_parser_set_option)
 
 	switch (opt) {
 		case PHP_XML_OPTION_CASE_FOLDING:
-			convert_to_long_ex(val);
-			parser->case_folding = Z_LVAL_P(val);
+			parser->case_folding = zval_get_long(val);
 			break;
 		case PHP_XML_OPTION_SKIP_TAGSTART:
-			convert_to_long_ex(val);
-			parser->toffset = Z_LVAL_P(val);
+			parser->toffset = zval_get_long(val);
 			if (parser->toffset < 0) {
 				php_error_docref(NULL, E_NOTICE, "tagstart ignored, because it is out of range");
 				parser->toffset = 0;
 			}
 			break;
 		case PHP_XML_OPTION_SKIP_WHITE:
-			convert_to_long_ex(val);
-			parser->skipwhite = Z_LVAL_P(val);
+			parser->skipwhite = zval_get_long(val);
 			break;
 		case PHP_XML_OPTION_TARGET_ENCODING: {
-			xml_encoding *enc;
+			const xml_encoding *enc;
 			convert_to_string_ex(val);
 			enc = xml_get_encoding((XML_Char*)Z_STRVAL_P(val));
 			if (enc == NULL) {

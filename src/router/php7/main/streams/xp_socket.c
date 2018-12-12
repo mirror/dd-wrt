@@ -16,8 +16,6 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id$ */
-
 #include "php.h"
 #include "ext/standard/file.h"
 #include "streams/php_streams_int.h"
@@ -46,12 +44,12 @@
 # define XP_SOCK_BUF_SIZE(sz) (sz)
 #endif
 
-php_stream_ops php_stream_generic_socket_ops;
-PHPAPI php_stream_ops php_stream_socket_ops;
-php_stream_ops php_stream_udp_socket_ops;
+const php_stream_ops php_stream_generic_socket_ops;
+PHPAPI const php_stream_ops php_stream_socket_ops;
+const php_stream_ops php_stream_udp_socket_ops;
 #ifdef AF_UNIX
-php_stream_ops php_stream_unix_socket_ops;
-php_stream_ops php_stream_unixdg_socket_ops;
+const php_stream_ops php_stream_unix_socket_ops;
+const php_stream_ops php_stream_unixdg_socket_ops;
 #endif
 
 
@@ -484,7 +482,7 @@ static int php_sockop_cast(php_stream *stream, int castas, void **ret)
  * A "useful" side-effect is that the user's scripts can then
  * make similar decisions using stream_get_meta_data.
  * */
-php_stream_ops php_stream_generic_socket_ops = {
+const php_stream_ops php_stream_generic_socket_ops = {
 	php_sockop_write, php_sockop_read,
 	php_sockop_close, php_sockop_flush,
 	"generic_socket",
@@ -495,7 +493,7 @@ php_stream_ops php_stream_generic_socket_ops = {
 };
 
 
-php_stream_ops php_stream_socket_ops = {
+const php_stream_ops php_stream_socket_ops = {
 	php_sockop_write, php_sockop_read,
 	php_sockop_close, php_sockop_flush,
 	"tcp_socket",
@@ -505,7 +503,7 @@ php_stream_ops php_stream_socket_ops = {
 	php_tcp_sockop_set_option,
 };
 
-php_stream_ops php_stream_udp_socket_ops = {
+const php_stream_ops php_stream_udp_socket_ops = {
 	php_sockop_write, php_sockop_read,
 	php_sockop_close, php_sockop_flush,
 	"udp_socket",
@@ -516,7 +514,7 @@ php_stream_ops php_stream_udp_socket_ops = {
 };
 
 #ifdef AF_UNIX
-php_stream_ops php_stream_unix_socket_ops = {
+const php_stream_ops php_stream_unix_socket_ops = {
 	php_sockop_write, php_sockop_read,
 	php_sockop_close, php_sockop_flush,
 	"unix_socket",
@@ -525,7 +523,7 @@ php_stream_ops php_stream_unix_socket_ops = {
 	php_sockop_stat,
 	php_tcp_sockop_set_option,
 };
-php_stream_ops php_stream_unixdg_socket_ops = {
+const php_stream_ops php_stream_unixdg_socket_ops = {
 	php_sockop_write, php_sockop_read,
 	php_sockop_close, php_sockop_flush,
 	"udg_socket",
@@ -835,7 +833,7 @@ static inline int php_tcp_sockop_accept(php_stream *stream, php_netstream_data_t
 		if (xparam->outputs.client) {
 			xparam->outputs.client->ctx = stream->ctx;
 			if (stream->ctx) {
-				GC_REFCOUNT(stream->ctx)++;
+				GC_ADDREF(stream->ctx);
 			}
 		}
 	}
@@ -883,7 +881,7 @@ PHPAPI php_stream *php_stream_generic_socket_factory(const char *proto, size_t p
 {
 	php_stream *stream = NULL;
 	php_netstream_data_t *sock;
-	php_stream_ops *ops;
+	const php_stream_ops *ops;
 
 	/* which type of socket ? */
 	if (strncmp(proto, "tcp", protolen) == 0) {

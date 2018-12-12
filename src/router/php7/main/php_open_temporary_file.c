@@ -12,11 +12,9 @@
    | obtain it through the world-wide-web, please send a note to          |
    | license@php.net so we can mail you a copy immediately.               |
    +----------------------------------------------------------------------+
-   | Author: Zeev Suraski <zeev@zend.com>                                 |
+   | Author: Zeev Suraski <zeev@php.net>                                  |
    +----------------------------------------------------------------------+
  */
-
-/* $Id$ */
 
 #include "php.h"
 #include "php_open_temporary_file.h"
@@ -125,7 +123,7 @@ static int php_do_open_temporary_file(const char *path, const char *pfx, zend_st
 	}
 
 	new_state.cwd = estrdup(cwd);
-	new_state.cwd_length = (int)strlen(cwd);
+	new_state.cwd_length = strlen(cwd);
 
 	if (virtual_file_ex(&new_state, path, NULL, CWD_REALPATH)) {
 		efree(new_state.cwd);
@@ -216,7 +214,7 @@ PHPAPI const char* php_get_temporary_directory(void)
 	{
 		char *sys_temp_dir = PG(sys_temp_dir);
 		if (sys_temp_dir) {
-			int len = (int)strlen(sys_temp_dir);
+			size_t len = strlen(sys_temp_dir);
 			if (len >= 2 && sys_temp_dir[len - 1] == DEFAULT_SLASH) {
 				PG(php_sys_temp_dir) = estrndup(sys_temp_dir, len - 1);
 				return PG(php_sys_temp_dir);
@@ -237,7 +235,10 @@ PHPAPI const char* php_get_temporary_directory(void)
 		wchar_t sTemp[MAXPATHLEN];
 		char *tmp;
 		size_t len = GetTempPathW(MAXPATHLEN, sTemp);
-		assert(0 < len);  /* should *never* fail! */
+
+		if (!len) {
+			return NULL;
+		}
 
 		if (NULL == (tmp = php_win32_ioutil_conv_w_to_any(sTemp, len, &len))) {
 			return NULL;
@@ -253,7 +254,7 @@ PHPAPI const char* php_get_temporary_directory(void)
 	{
 		char* s = getenv("TMPDIR");
 		if (s && *s) {
-			int len = strlen(s);
+			size_t len = strlen(s);
 
 			if (s[len - 1] == DEFAULT_SLASH) {
 				PG(php_sys_temp_dir) = estrndup(s, len - 1);

@@ -12,5 +12,5 @@ $x = new foo(2);
 
 $z = clone $x;
 echo "No crash.";
---EXPECTF--
+--EXPECT--
 No crash.

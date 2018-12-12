@@ -1,4 +1,3 @@
-	/* $Id: fpm_process_ctl.h,v 1.6 2008/07/20 21:33:10 anight Exp $ */
 	/* (c) 2007,2008 Andrei Nigmatulin */
 
 #ifndef FPM_PROCESS_CTL_H

@@ -16,8 +16,6 @@
    +----------------------------------------------------------------------+
 */
 
-/* $Id$ */
-
 #define ZEND_INCLUDE_FULL_WINDOWS_HEADERS
 
 #ifdef HAVE_CONFIG_H
@@ -153,7 +151,6 @@ PHP_FUNCTION(curl_share_errno)
 /* }}} */
 
 
-#if LIBCURL_VERSION_NUM >= 0x070c00 /* Available since 7.12.0 */
 /* {{{ proto bool curl_share_strerror(int code)
          return string describing error code */
 PHP_FUNCTION(curl_share_strerror)
@@ -173,7 +170,6 @@ PHP_FUNCTION(curl_share_strerror)
 	}
 }
 /* }}} */
-#endif
 
 #endif
 

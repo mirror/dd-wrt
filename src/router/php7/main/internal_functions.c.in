@@ -12,12 +12,10 @@
    | obtain it through the world-wide-web, please send a note to          |
    | license@php.net so we can mail you a copy immediately.               |
    +----------------------------------------------------------------------+
-   | Authors: Andi Gutmans <andi@zend.com>                                |
-   |          Zeev Suraski <zeev@zend.com>                                |
+   | Authors: Andi Gutmans <andi@php.net>                                 |
+   |          Zeev Suraski <zeev@php.net>                                 |
    +----------------------------------------------------------------------+
  */
-
-/* $Id$ */
 
 #include "php.h"
 #include "php_main.h"
@@ -29,7 +27,7 @@
 
 @EXT_INCLUDE_CODE@
 
-static zend_module_entry *php_builtin_extensions[] = {
+static zend_module_entry * const php_builtin_extensions[] = {
 @EXT_MODULE_PTRS@
 };
 

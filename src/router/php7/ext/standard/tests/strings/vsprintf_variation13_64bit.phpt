@@ -55,7 +55,7 @@ foreach($formats as $format) {
 
 echo "Done";
 ?>
---EXPECTF--
+--EXPECT--
 *** Testing vsprintf() : hexa formats with hexa values ***
 
 -- Iteration 1 --

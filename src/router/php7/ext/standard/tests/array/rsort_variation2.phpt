@@ -336,7 +336,7 @@ array(5) {
 
 -- Iteration 16 --
 
-Warning: rsort() expects parameter 2 to be integer, string given in %s on line %d
+Warning: rsort() expects parameter 2 to be int, string given in %s on line %d
 bool(false)
 array(5) {
   [0]=>
@@ -353,7 +353,7 @@ array(5) {
 
 -- Iteration 17 --
 
-Warning: rsort() expects parameter 2 to be integer, string given in %s on line %d
+Warning: rsort() expects parameter 2 to be int, string given in %s on line %d
 bool(false)
 array(5) {
   [0]=>
@@ -370,7 +370,7 @@ array(5) {
 
 -- Iteration 18 --
 
-Warning: rsort() expects parameter 2 to be integer, string given in %s on line %d
+Warning: rsort() expects parameter 2 to be int, string given in %s on line %d
 bool(false)
 array(5) {
   [0]=>
@@ -387,7 +387,7 @@ array(5) {
 
 -- Iteration 19 --
 
-Warning: rsort() expects parameter 2 to be integer, string given in %s on line %d
+Warning: rsort() expects parameter 2 to be int, string given in %s on line %d
 bool(false)
 array(5) {
   [0]=>
@@ -404,7 +404,7 @@ array(5) {
 
 -- Iteration 20 --
 
-Warning: rsort() expects parameter 2 to be integer, string given in %s on line %d
+Warning: rsort() expects parameter 2 to be int, string given in %s on line %d
 bool(false)
 array(5) {
   [0]=>
@@ -421,7 +421,7 @@ array(5) {
 
 -- Iteration 21 --
 
-Warning: rsort() expects parameter 2 to be integer, object given in %s on line %d
+Warning: rsort() expects parameter 2 to be int, object given in %s on line %d
 bool(false)
 array(5) {
   [0]=>
@@ -468,7 +468,7 @@ array(5) {
 
 -- Iteration 24 --
 
-Warning: rsort() expects parameter 2 to be integer, resource given in %s on line %d
+Warning: rsort() expects parameter 2 to be int, resource given in %s on line %d
 bool(false)
 array(5) {
   [0]=>

@@ -130,9 +130,9 @@ typedef struct {
 
 } pdo_firebird_stmt;
 
-extern pdo_driver_t pdo_firebird_driver;
+extern const pdo_driver_t pdo_firebird_driver;
 
-extern struct pdo_stmt_methods firebird_stmt_methods;
+extern const struct pdo_stmt_methods firebird_stmt_methods;
 
 void _firebird_error(pdo_dbh_t *dbh, pdo_stmt_t *stmt, char const *file, zend_long line);
 

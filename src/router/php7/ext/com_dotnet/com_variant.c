@@ -16,8 +16,6 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id$ */
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -176,7 +174,6 @@ PHP_COM_DOTNET_API void php_com_variant_from_zval(VARIANT *v, zval *z, int codep
 			break;
 
 		case IS_RESOURCE:
-		case IS_CONSTANT:
 		case IS_CONSTANT_AST:
 		default:
 			V_VT(v) = VT_NULL;

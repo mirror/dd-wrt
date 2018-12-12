@@ -27,7 +27,7 @@ echo "*** Done ***\n";
 <?php
 unlink(dirname(__FILE__)."/copy_variation10.tmp");
 ?>
---EXPECTF--
+--EXPECT--
 *** Test copy(): Trying to create a copy of file with the same source name ***
 bool(false)
 bool(true)

@@ -64,7 +64,7 @@ echo "\n*** Done ***";
 $file_path = dirname(__FILE__);
 rmdir("$file_path/stat_variation3");
 ?>
---EXPECTF--
+--EXPECT--
 *** Testing stat(): with creating & deleting subdir/file ***
 -- Testing stat() on dir after subdir and file is created in it --
 bool(true)

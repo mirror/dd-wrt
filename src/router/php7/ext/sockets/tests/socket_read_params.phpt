@@ -20,8 +20,8 @@ fa@php.net
     socket_close($s_c_l);
 ?>
 --EXPECTF--
-Warning: socket_read() expects at least 2 parameters, 0 given in %s on line %i
+Warning: socket_read() expects at least 2 parameters, 0 given in %s on line %d
 
-Warning: socket_read() expects at least 2 parameters, 1 given in %s on line %i
+Warning: socket_read() expects at least 2 parameters, 1 given in %s on line %d
 
-Warning: socket_read(): unable to read from socket [%i]: %a in %s on line %i
+Warning: socket_read(): unable to read from socket [%i]: %a in %s on line %d

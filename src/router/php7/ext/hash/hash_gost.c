@@ -17,8 +17,6 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id$ */
-
 #include "php_hash.h"
 #include "php_hash_gost.h"
 #include "php_hash_gost_tables.h"
@@ -265,7 +263,7 @@ PHP_HASH_API void PHP_GOSTUpdate(PHP_GOST_CTX *context, const unsigned char *inp
 
 	if (context->length + len < 32) {
 		memcpy(&context->buffer[context->length], input, len);
-		context->length += len;
+		context->length += (unsigned char)len;
 	} else {
 		size_t i = 0, r = (context->length + len) % 32;
 
@@ -281,7 +279,7 @@ PHP_HASH_API void PHP_GOSTUpdate(PHP_GOST_CTX *context, const unsigned char *inp
 
 		memcpy(context->buffer, input + i, r);
 		ZEND_SECURE_ZERO(&context->buffer[r], 32 - r);
-		context->length = r;
+		context->length = (unsigned char)r;
 	}
 }
 

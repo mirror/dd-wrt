@@ -16,8 +16,6 @@
    +----------------------------------------------------------------------+
 */
 
-/* $Id$ */
-
 #ifndef PHP_TYPE_H
 #define PHP_TYPE_H
 
@@ -39,5 +37,6 @@ PHP_FUNCTION(is_object);
 PHP_FUNCTION(is_scalar);
 PHP_FUNCTION(is_callable);
 PHP_FUNCTION(is_iterable);
+PHP_FUNCTION(is_countable);
 
 #endif

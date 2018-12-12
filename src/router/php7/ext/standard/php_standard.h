@@ -16,8 +16,6 @@
    +----------------------------------------------------------------------+
 */
 
-/* $Id$ */
-
 #include "basic_functions.h"
 #include "php_math.h"
 #include "php_string.h"
@@ -27,6 +25,7 @@
 #include "php_mail.h"
 #include "md5.h"
 #include "sha1.h"
+#include "hrtime.h"
 #include "html.h"
 #include "exec.h"
 #include "file.h"

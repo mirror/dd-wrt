@@ -16,8 +16,6 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id$ */
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -34,7 +32,7 @@
 #endif
 
 /* {{{ pdo_oci_functions[] */
-const zend_function_entry pdo_oci_functions[] = {
+static const zend_function_entry pdo_oci_functions[] = {
 	PHP_FE_END
 };
 /* }}} */

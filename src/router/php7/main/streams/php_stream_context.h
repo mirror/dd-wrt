@@ -16,8 +16,6 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id$ */
-
 /* Stream context and status notification related definitions */
 
 /* callback for status notifications */
@@ -38,7 +36,7 @@ typedef void (*php_stream_notification_func)(php_stream_context *context,
 		FG(default_context) ? FG(default_context) : \
 		(FG(default_context) = php_stream_context_alloc()) )
 
-#define php_stream_context_to_zval(context, zval) { ZVAL_RES(zval, (context)->res); GC_REFCOUNT((context)->res)++; }
+#define php_stream_context_to_zval(context, zval) { ZVAL_RES(zval, (context)->res); GC_ADDREF((context)->res); }
 
 typedef struct _php_stream_notifier php_stream_notifier;
 

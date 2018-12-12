@@ -1,4 +1,4 @@
-## $Id$ -*- autoconf -*-
+## -*- autoconf -*-
 dnl ## Process this file with autoconf to produce a configure script.
 
 dnl include Zend specific macro definitions first
@@ -8,7 +8,7 @@ sinclude(Zend/acinclude.m4)
 dnl Basic autoconf + automake initialization, generation of config.nice.
 dnl -------------------------------------------------------------------------
 
-AC_PREREQ(2.59)
+AC_PREREQ([2.68])
 AC_INIT(README.GIT-RULES)
 ifdef([AC_PRESERVE_HELP_ORDER], [AC_PRESERVE_HELP_ORDER], [])
 
@@ -16,7 +16,7 @@ PHP_CONFIG_NICE(config.nice)
 
 PHP_CANONICAL_HOST_TARGET
 
-AC_CONFIG_HEADER(main/php_config.h)
+AC_CONFIG_HEADERS([main/php_config.h])
 AH_TOP([
 #ifndef PHP_CONFIG_H
 #define PHP_CONFIG_H
@@ -106,8 +106,8 @@ int zend_sprintf(char *buffer, const char *format, ...);
 ])
 
 PHP_MAJOR_VERSION=7
-PHP_MINOR_VERSION=2
-PHP_RELEASE_VERSION=12
+PHP_MINOR_VERSION=3
+PHP_RELEASE_VERSION=0
 PHP_EXTRA_VERSION=""
 PHP_VERSION="$PHP_MAJOR_VERSION.$PHP_MINOR_VERSION.$PHP_RELEASE_VERSION$PHP_EXTRA_VERSION"
 PHP_VERSION_ID=`expr [$]PHP_MAJOR_VERSION \* 10000 + [$]PHP_MINOR_VERSION \* 100 + [$]PHP_RELEASE_VERSION`
@@ -142,23 +142,6 @@ if test $? -ne 0 ; then
 else
   rm -f php_version.h.new
 fi
-
-
-dnl Catch common errors here to save a few seconds of our users' time
-dnl -------------------------------------------------------------------------
-
-if test "$with_shared_apache" != "no" && test -n "$with_shared_apache" ; then
-  AC_MSG_ERROR([--with-shared-apache is not supported. Please refer to the documentation for using APXS])
-fi
-
-if test -n "$with_apache" && test -n "$with_apxs"; then
-  AC_MSG_ERROR([--with-apache and --with-apxs cannot be used together])
-fi
-
-if test -n "$with_apxs2filter" && test -n "$with_apxs2"; then
-  AC_MSG_ERROR([--with-apxs2filter and --with-apxs2 cannot be used together])
-fi
-
 
 dnl Settings we want to make before the checks.
 dnl -------------------------------------------------------------------------
@@ -198,7 +181,7 @@ AC_PROG_CC_C_O
 dnl Change to AC_PROG_CC_STDC when we start requiring a post-2.13 autoconf
 dnl AC_PROG_CC_STDC
 AC_PROG_CPP
-AC_AIX
+AC_USE_SYSTEM_EXTENSIONS
 AC_PROG_LN_S
 
 dnl Support systems with system libraries in e.g. /usr/lib64
@@ -233,7 +216,7 @@ if test "$PHP_RE2C_CGOTO" = "no"; then
   RE2C_FLAGS=""
 else
   AC_MSG_CHECKING([whether re2c -g works])
-  AC_TRY_COMPILE([],[
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [[
 int main(int argc, const char **argv)
 {
   argc = argc;
@@ -244,7 +227,7 @@ label2:
   goto *adr[0];
   return 0;
 }
-  ],[
+  ]])],[
     RE2C_FLAGS=""
     AC_MSG_RESULT([no])
   ],[
@@ -495,7 +478,10 @@ utime.h \
 sys/utsname.h \
 sys/ipc.h \
 dlfcn.h \
-assert.h
+assert.h \
+tmmintrin.h \
+nmmintrin.h \
+immintrin.h
 ],[],[],[
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
@@ -517,6 +503,9 @@ assert.h
 PHP_FOPENCOOKIE
 PHP_BROKEN_GETCWD
 PHP_BROKEN_GLIBC_FOPEN_APPEND
+if test "$GCC" = "yes"; then
+  PHP_BROKEN_GCC_STRLEN_OPT
+fi
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 dnl -------------------------------------------------------------------------
@@ -565,10 +554,20 @@ dnl Check __builtin_ssubl_overflow
 PHP_CHECK_BUILTIN_SSUBL_OVERFLOW
 dnl Check __builtin_ssubll_overflow
 PHP_CHECK_BUILTIN_SSUBLL_OVERFLOW
+dnl Check __builtin_cpu_init
+PHP_CHECK_BUILTIN_CPU_INIT
+dnl Check __builtin_cpu_supports
+PHP_CHECK_BUILTIN_CPU_SUPPORTS
+
+dnl Check instructions
+PHP_CHECK_CPU_SUPPORTS([ssse3])
+PHP_CHECK_CPU_SUPPORTS([sse4.2])
+PHP_CHECK_CPU_SUPPORTS([avx])
+PHP_CHECK_CPU_SUPPORTS([avx2])
 
 dnl Check for members of the stat structure
-AC_STRUCT_ST_BLKSIZE
-dnl AC_STRUCT_ST_BLOCKS will screw QNX because fileblocks.o does not exists
+AC_CHECK_MEMBERS([struct stat.st_blksize, struct stat.st_rdev])
+dnl AC_STRUCT_ST_BLOCKS will screw QNX because fileblocks.o does not exist
 dnl The WARNING_LEVEL required because cc in QNX hates -w option without an argument
 if test "`uname -s 2>/dev/null`" != "QNX"; then
   AC_STRUCT_ST_BLOCKS
@@ -576,7 +575,6 @@ else
   AC_MSG_WARN([warnings level for cc set to 0])
   WARNING_LEVEL=0
 fi
-AC_STRUCT_ST_RDEV
 
 dnl Checks for types
 AC_TYPE_SIZE_T
@@ -585,11 +583,18 @@ AC_TYPE_UID_T
 dnl Checks for sockaddr_storage and sockaddr.sa_len
 PHP_SOCKADDR_CHECKS
 
+dnl Checks for GCC function attributes on all systems except ones without glibc
+dnl Fix for these systems is already included in GCC 7, but not on GCC 6
+AS_CASE([$host_alias], [*-*-*android*|*-*-*uclibc*|*-*-*musl*], [true], [
+  AX_GCC_FUNC_ATTRIBUTE([ifunc])
+  AX_GCC_FUNC_ATTRIBUTE([target])
+])
+
 dnl Check for IPv6 support
 AC_CACHE_CHECK([for IPv6 support], ac_cv_ipv6_support,
-[AC_TRY_LINK([ #include <sys/types.h>
+[AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>], [struct sockaddr_in6 s; struct in6_addr t=in6addr_any; int i=AF_INET6; s; t.s6_addr[0] = 0;],
+#include <netinet/in.h>]], [[struct sockaddr_in6 s; struct in6_addr t=in6addr_any; int i=AF_INET6; s; t.s6_addr[0] = 0;]])],
   [ac_cv_ipv6_support=yes], [ac_cv_ipv6_support=no])])
 
 dnl Checks for library functions.
@@ -603,6 +608,7 @@ chroot \
 ctime_r \
 cuserid \
 crypt \
+explicit_memset \
 flock \
 ftok \
 funopen \
@@ -687,9 +693,8 @@ PHP_CHECK_FUNC_LIB(nanosleep, rt)
 dnl Check for getaddrinfo, should be a better way, but...
 dnl Also check for working getaddrinfo
 AC_CACHE_CHECK([for getaddrinfo], ac_cv_func_getaddrinfo,
-[AC_TRY_LINK([#include <netdb.h>],
-                [struct addrinfo *g,h;g=&h;getaddrinfo("","",g,&g);],
-  AC_TRY_RUN([
+[AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <netdb.h>]],
+  [[struct addrinfo *g,h;g=&h;getaddrinfo("","",g,&g);]])],[AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <netdb.h>
 #include <sys/types.h>
 #ifndef AF_INET
@@ -725,15 +730,15 @@ int main(void) {
   freeaddrinfo(ai);
   exit(0);
 }
-  ],ac_cv_func_getaddrinfo=yes, ac_cv_func_getaddrinfo=no, ac_cv_func_getaddrinfo=no),
-ac_cv_func_getaddrinfo=no)])
+  ]])],[ac_cv_func_getaddrinfo=yes], [ac_cv_func_getaddrinfo=no], [ac_cv_func_getaddrinfo=no])],
+[ac_cv_func_getaddrinfo=no])])
 if test "$ac_cv_func_getaddrinfo" = yes; then
   AC_DEFINE(HAVE_GETADDRINFO,1,[Define if you have the getaddrinfo function])
 fi
 
 dnl Check for the __sync_fetch_and_add builtin
 AC_CACHE_CHECK([for __sync_fetch_and_add], ac_cv_func_sync_fetch_and_add,
-[AC_TRY_LINK([],[int x;__sync_fetch_and_add(&x,1);],ac_cv_func_sync_fetch_and_add=yes,ac_cv_func_sync_fetch_and_add=no)])
+[AC_LINK_IFELSE([AC_LANG_PROGRAM([], [[int x;__sync_fetch_and_add(&x,1);]])],[ac_cv_func_sync_fetch_and_add=yes],[ac_cv_func_sync_fetch_and_add=no])])
 if test "$ac_cv_func_sync_fetch_and_add" = yes; then
   AC_DEFINE(HAVE_SYNC_FETCH_AND_ADD,1,[Define if you have the __sync_fetch_and_add function])
 fi
@@ -751,6 +756,34 @@ PHP_CHECK_IN_ADDR_T
 AC_CHECK_FUNCS(crypt_r, [ php_crypt_r="1" ], [ php_crypt_r="0" ])
 if test "x$php_crypt_r" = "x1"; then
   PHP_CRYPT_R_STYLE
+fi
+
+dnl Check for asm goto support
+AC_CACHE_CHECK([for asm goto], ac_cv__asm_goto,
+[AC_RUN_IFELSE([AC_LANG_SOURCE([[
+int main(void) {
+    __asm__ goto("jmp %l0\n" :::: end);
+end:
+    return 0;
+}
+  ]])], [ac_cv__asm_goto=yes], [ac_cv__asm_goto=no], [ac_cv__asm_goto=no])])
+
+if test "$ac_cv__asm_goto" = yes; then
+  AC_DEFINE(HAVE_ASM_GOTO,1,[Define if asm goto support])
+fi
+
+dnl Check for variable length array support
+AC_CACHE_CHECK([whether compiler supports VLA], ac_cv__compiler_c99_vla,
+[AC_RUN_IFELSE([AC_LANG_SOURCE([[
+ #include <stdlib.h>
+ int main(void) {
+         int i[rand()%10];
+	 return 0;
+ }
+ ]])],[ac_cv__compiler_c99_vla=yes], [ac_cv__compiler_c99_vla=no], [ac_cv__compiler_c99_vla=no])])
+
+if test "$ac_cv__compiler_c99_vla" = yes; then
+	AC_DEFINE(HAVE_COMPILER_C99_VLA, 1, [Compiler supports VLA])
 fi
 
 dnl Check valgrind support
@@ -1112,19 +1145,12 @@ PHP_ARG_WITH(pear, [whether to install PEAR],
 if test "$PHP_PEAR" != "no"; then
 
   dnl
-  dnl PEAR dependancies
+  dnl PEAR dependencies
   dnl
   if test "$PHP_XML" = "no"; then
     pear_error_msg="$pear_error_msg
                     PEAR requires XML to be enabled.     Add --enable-xml to the configure line. (or --without-pear)"
   fi
-
-dnl
-dnl  if test "$PHP_XMLRPC" = "no"; then
-dnl    pear_error_msg="$pear_error_msg
-dnl                    PEAR requires XML-RPC to be enabled. Add --with-xmlrpc to the configure line. (or --without-pear)"
-dnl  fi
-dnl
 
   if test "$pear_error_msg"; then
     AC_MSG_ERROR([$pear_error_msg])
@@ -1388,12 +1414,7 @@ old_CC=$CC
 if test "$PHP_THREAD_SAFETY" = "yes" && test -n "$ac_cv_pthreads_cflags"; then
   CXXFLAGS="$CXXFLAGS $ac_cv_pthreads_cflags"
   INLINE_CFLAGS="$INLINE_CFLAGS $ac_cv_pthreads_cflags"
-  cat >meta_ccld<<EOF
-#! /bin/sh
-exec $CC $ac_cv_pthreads_cflags \$@
-EOF
-  CC="$abs_builddir/meta_ccld"
-  chmod +x meta_ccld
+  CPPFLAGS="$CPPFLAGS $ac_cv_pthreads_cflags"
 fi
 
 dnl This will go away, if we have a facility to run per-extension code
@@ -1475,7 +1496,7 @@ PHP_ADD_SOURCES(main, main.c snprintf.c spprintf.c php_sprintf.c \
        php_ini.c SAPI.c rfc1867.c php_content_types.c strlcpy.c \
        strlcat.c explicit_bzero.c mergesort.c reentrancy.c php_variables.c php_ticks.c \
        network.c php_open_temporary_file.c \
-       output.c getopt.c, -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1)
+       output.c getopt.c php_syslog.c, -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1)
 
 PHP_ADD_SOURCES_X(main, fastcgi.c, -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1, PHP_FASTCGI_OBJS, no)
 
@@ -1498,7 +1519,7 @@ PHP_ADD_SOURCES(Zend, \
     zend_iterators.c zend_interfaces.c zend_exceptions.c zend_strtod.c zend_gc.c \
     zend_closures.c zend_float.c zend_string.c zend_signal.c zend_generators.c \
     zend_virtual_cwd.c zend_ast.c zend_objects.c zend_object_handlers.c zend_objects_API.c \
-    zend_default_classes.c zend_inheritance.c zend_smart_str.c, \
+    zend_default_classes.c zend_inheritance.c zend_smart_str.c zend_cpuinfo.c, \
 	-DZEND_ENABLE_STATIC_TSRMLS_CACHE=1)
 
 dnl Selectively disable optimization due to high RAM usage during
@@ -1541,7 +1562,8 @@ PHP_CHECK_CONFIGURE_OPTIONS
 dnl
 dnl Generate build files
 dnl
-AC_OUTPUT($ALL_OUTPUT_FILES, [], [
+AC_CONFIG_FILES([$ALL_OUTPUT_FILES])
+AC_CONFIG_COMMANDS([default],[],[
 
 if test "\$CONFIG_FILES" = "$ALL_OUTPUT_FILES" || test "\$CONFIG_FILES" = " $ALL_OUTPUT_FILES" || test -z "\$CONFIG_FILES"; then
   REDO_ALL=yes
@@ -1576,15 +1598,6 @@ dnl mv -f main/internal_functions.c main/internal_functions.c.old 2>/dev/null
   cli_extensions="$EXT_CLI_STATIC"
   sh $srcdir/build/genif.sh $srcdir/main/internal_functions.c.in $srcdir "$EXTRA_MODULE_PTRS" $AWK \$cli_extensions > main/internal_functions_cli.c
 
-  if test "$UNAME" = "FreeBSD" && test "$PHP_SAPI" = "apache2filter" && test "$TSRM_PTH" != "pth-config" ; then
-    echo "+--------------------------------------------------------------------+"
-    echo "|                        *** WARNING ***                             |"
-    echo "|                                                                    |"
-    echo "| In order to build PHP as a Apache2 module on FreeBSD, you have to  |"
-    echo "| add  --with-tsrm-pth to your ./configure line. Therefore you need  |"
-    echo "| to install gnu-pth from /usr/ports/devel/pth.                      |"
-  fi
-
   if test -n "$PHP_APXS_BROKEN"; then
     echo "+--------------------------------------------------------------------+"
     echo "| WARNING: Your $APXS script is most likely broken."
@@ -1605,12 +1618,12 @@ cat <<X
 | see the file debug.log for error messages.                         |
 |                                                                    |
 | If you are unable to fix this, send the file debug.log to the      |
-| php-install@lists.php.net mailing list and include appropriate      |
+| php-install@lists.php.net mailing list and include appropriate     |
 | information about your setup.                                      |
 X
   fi
 
-    if test "$PHP_SAPI" = "apache2handler" || test "$PHP_SAPI" = "apache2filter"; then
+    if test "$PHP_SAPI" = "apache2handler"; then
       if test "$APACHE_VERSION" -ge 2004001; then
         if test -z "$APACHE_THREADED_MPM"; then
 cat <<X
@@ -1681,6 +1694,7 @@ Check '[$]0 --help' for available options
 
 fi
 ])
+AC_OUTPUT
 
 dnl ## Local Variables:
 dnl ## tab-width: 4

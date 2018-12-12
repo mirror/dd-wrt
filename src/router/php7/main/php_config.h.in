@@ -19,12 +19,6 @@
 
 
 /* */
-#undef AIX
-
-/* Whether to use native BeOS threads */
-#undef BETHREADS
-
-/* */
 #undef CDB_INCLUDE_FILE
 
 /* Define if system uses EBCDIC */
@@ -403,9 +397,6 @@
    header file. */
 #undef HAVE_APPLICATIONSERVICES_APPLICATIONSERVICES_H
 
-/* Define to 1 if Argon2 library has support for Argon2ID */
-#undef HAVE_ARGON2ID
-
 /* Define to 1 if you have the <argon2.h> header file */
 #undef HAVE_ARGON2LIB
 
@@ -420,6 +411,9 @@
 
 /* Define to 1 if you have the `asinh' function. */
 #undef HAVE_ASINH
+
+/* Define if asm goto support */
+#undef HAVE_ASM_GOTO
 
 /* Define to 1 if you have the `asprintf' function. */
 #undef HAVE_ASPRINTF
@@ -450,9 +444,6 @@
 
 /* */
 #undef HAVE_BIND_TEXTDOMAIN_CODESET
-
-/* */
-#undef HAVE_BIRDSTEP
 
 /* Define if system has broken getcwd */
 #undef HAVE_BROKEN_GETCWD
@@ -513,6 +504,15 @@
 
 /* */
 #undef HAVE_CODBC
+
+/* Compiler supports VLA */
+#undef HAVE_COMPILER_C99_VLA
+
+/* whether __cpuid_count is available */
+#undef HAVE_CPUID_COUNT
+
+/* Define to 1 if you have the <cpuid.h> header file. */
+#undef HAVE_CPUID_H
 
 /* Define to 1 if you have the `CreateProcess' function. */
 #undef HAVE_CREATEPROCESS
@@ -666,6 +666,9 @@
 /* Define to 1 if you have the `explicit_bzero' function. */
 #undef HAVE_EXPLICIT_BZERO
 
+/* Define to 1 if you have the `explicit_memset' function. */
+#undef HAVE_EXPLICIT_MEMSET
+
 /* Define to 1 if you have the `fabsf' function. */
 #undef HAVE_FABSF
 
@@ -728,6 +731,12 @@
 
 /* Define to 1 if you have the <fts.h> header file. */
 #undef HAVE_FTS_H
+
+/* Define to 1 if the system has the `ifunc' function attribute */
+#undef HAVE_FUNC_ATTRIBUTE_IFUNC
+
+/* Define to 1 if the system has the `target' function attribute */
+#undef HAVE_FUNC_ATTRIBUTE_TARGET
 
 /* Define to 1 if you have the three-argument form of gethostbyname_r(). */
 #undef HAVE_FUNC_GETHOSTBYNAME_R_3
@@ -803,6 +812,9 @@
 
 /* Define to 1 if you have the `gethostname' function. */
 #undef HAVE_GETHOSTNAME
+
+/* whether getifaddrs is present and usable */
+#undef HAVE_GETIFADDRS
 
 /* Define to 1 if you have the `getloadavg' function. */
 #undef HAVE_GETLOADAVG
@@ -942,6 +954,9 @@
 /* */
 #undef HAVE_IMAP_SSL
 
+/* Define to 1 if you have the <immintrin.h> header file. */
+#undef HAVE_IMMINTRIN_H
+
 /* */
 #undef HAVE_INET_ATON
 
@@ -1044,8 +1059,11 @@
 /* Define to 1 if you have the `ldap_parse_result' function. */
 #undef HAVE_LDAP_PARSE_RESULT
 
-/* Define to 1 if you have the `ldap_passwd_s' function. */
-#undef HAVE_LDAP_PASSWD_S
+/* Define to 1 if you have the `ldap_passwd' function. */
+#undef HAVE_LDAP_PASSWD
+
+/* Define to 1 if you have the `ldap_refresh_s' function. */
+#undef HAVE_LDAP_REFRESH_S
 
 /* LDAP SASL support */
 #undef HAVE_LDAP_SASL
@@ -1256,6 +1274,9 @@
 /* Define to 1 if you have the <netinet/tcp.h> header file. */
 #undef HAVE_NETINET_TCP_H
 
+/* Define to 1 if you have the <net/if.h> header file. */
+#undef HAVE_NET_IF_H
+
 /* Whether utf8_mime2text() has new signature */
 #undef HAVE_NEW_MIME2TEXT
 
@@ -1267,6 +1288,9 @@
 
 /* Define to 1 if you have the `nl_langinfo' function. */
 #undef HAVE_NL_LANGINFO
+
+/* Define to 1 if you have the <nmmintrin.h> header file. */
+#undef HAVE_NMMINTRIN_H
 
 /* */
 #undef HAVE_NSLDAP
@@ -1304,9 +1328,6 @@
 
 /* */
 #undef HAVE_ODBC_H
-
-/* */
-#undef HAVE_ODBC_ROUTER
 
 /* whether you have old-style readdir_r */
 #undef HAVE_OLD_READDIR_R
@@ -1584,6 +1605,9 @@
 /* Define to 1 if you have the `setproctitle' function. */
 #undef HAVE_SETPROCTITLE
 
+/* Define to 1 if you have the `setproctitle_fast' function. */
+#undef HAVE_SETPROCTITLE_FAST
+
 /* Define to 1 if you have the `setrlimit' function. */
 #undef HAVE_SETRLIMIT
 
@@ -1845,20 +1869,12 @@
 /* Define to 1 if `tm_zone' is a member of `struct tm'. */
 #undef HAVE_STRUCT_TM_TM_ZONE
 
-/* Define to 1 if your `struct stat' has `st_blksize'. Deprecated, use
-   `HAVE_STRUCT_STAT_ST_BLKSIZE' instead. */
-#undef HAVE_ST_BLKSIZE
-
 /* Define to 1 if your `struct stat' has `st_blocks'. Deprecated, use
    `HAVE_STRUCT_STAT_ST_BLOCKS' instead. */
 #undef HAVE_ST_BLOCKS
 
 /* Define to 1 if you have the <st.h> header file. */
 #undef HAVE_ST_H
-
-/* Define to 1 if your `struct stat' has `st_rdev'. Deprecated, use
-   `HAVE_STRUCT_STAT_ST_RDEV' instead. */
-#undef HAVE_ST_RDEV
 
 /* Define to 1 if you have the `symlink' function. */
 #undef HAVE_SYMLINK
@@ -2003,6 +2019,15 @@
 /* */
 #undef HAVE_TIDYOPTGETDOC
 
+/* defined if tidyp.h exists */
+#undef HAVE_TIDYP_H
+
+/* */
+#undef HAVE_TIDYRELEASEDATE
+
+/* defined if tidy.h exists */
+#undef HAVE_TIDY_H
+
 /* Have timelib_config.h */
 #undef HAVE_TIMELIB_CONFIG_H
 
@@ -2011,6 +2036,9 @@
 
 /* Define to 1 if you have the <time.h> header file. */
 #undef HAVE_TIME_H
+
+/* Define to 1 if you have the <tmmintrin.h> header file. */
+#undef HAVE_TMMINTRIN_H
 
 /* whether you have tm_gmtoff in struct tm */
 #undef HAVE_TM_GMTOFF
@@ -2176,9 +2204,6 @@
 /* whether _FPU_SETCW is present and usable */
 #undef HAVE__FPU_SETCW
 
-/* */
-#undef HPUX
-
 /* iconv() is aliased to libiconv() in -liconv */
 #undef ICONV_ALIASED_LIBICONV
 
@@ -2187,12 +2212,6 @@
 
 /* Whether iconv supports error no or not */
 #undef ICONV_SUPPORTS_ERRNO
-
-/* */
-#undef ISOLARIS
-
-/* */
-#undef LINUX
 
 /* */
 #undef LMDB_INCLUDE_FILE
@@ -2233,9 +2252,6 @@
 /* */
 #undef NDBM_INCLUDE_FILE
 
-/* */
-#undef NEUTRINO
-
 /* Define to 1 if your C compiler doesn't accept -c and -o together. */
 #undef NO_MINUS_C_MINUS_O
 
@@ -2259,6 +2275,9 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
+
+/* */
+#undef PCRE2_CODE_UNIT_WIDTH
 
 /* */
 #undef PDO_MYSQL_UNIX_ADDR
@@ -2290,8 +2309,20 @@
 /* fpm user name */
 #undef PHP_FPM_USER
 
+/* Whether the compiler supports avx2 instructions */
+#undef PHP_HAVE_AVX2_INSTRUCTIONS
+
+/* Whether the compiler supports avx instructions */
+#undef PHP_HAVE_AVX_INSTRUCTIONS
+
 /* Whether the compiler supports __builtin_clz */
 #undef PHP_HAVE_BUILTIN_CLZ
+
+/* Whether the compiler supports __builtin_cpu_init */
+#undef PHP_HAVE_BUILTIN_CPU_INIT
+
+/* Whether the compiler supports __builtin_cpu_supports */
+#undef PHP_HAVE_BUILTIN_CPU_SUPPORTS
 
 /* Whether the compiler supports __builtin_ctzl */
 #undef PHP_HAVE_BUILTIN_CTZL
@@ -2319,6 +2350,12 @@
 
 /* Whether the compiler supports __builtin_ssubl_overflow */
 #undef PHP_HAVE_BUILTIN_SSUBL_OVERFLOW
+
+/* Whether the compiler supports sse4.2 instructions */
+#undef PHP_HAVE_SSE4_2_INSTRUCTIONS
+
+/* Whether the compiler supports ssse3 instructions */
+#undef PHP_HAVE_SSSE3_INSTRUCTIONS
 
 /* Checked for stdint types */
 #undef PHP_HAVE_STDINT_TYPES
@@ -2386,9 +2423,6 @@
 /* */
 #undef QDBM_INCLUDE_FILE
 
-/* Define as the return type of signal handlers (`int' or `void'). */
-#undef RETSIGTYPE
-
 /* The size of `char', as computed by sizeof. */
 #undef SIZEOF_CHAR
 
@@ -2424,9 +2458,6 @@
 
 /* Size of ssize_t */
 #undef SIZEOF_SSIZE_T
-
-/* */
-#undef SOLARIS
 
 /* have sqlite3 with column metadata enabled */
 #undef SQLITE_ENABLE_COLUMN_METADATA
@@ -2465,9 +2496,6 @@
 
 /* */
 #undef UNDEF_THREADS_HACK
-
-/* */
-#undef UNIXWARE
 
 /* whether to check multibyte regex backtrack */
 #undef USE_COMBINATION_EXPLOSION_CHECK

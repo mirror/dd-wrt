@@ -272,7 +272,7 @@
 #define HALAKIM_PER_METONIC_CYCLE (HALAKIM_PER_LUNAR_CYCLE * (12 * 19 + 7))
 
 #define JEWISH_SDN_OFFSET 347997
-#define JEWISH_SDN_MAX 324542846L /* 12/13/887605, greater value raises interger overflow */
+#define JEWISH_SDN_MAX 324542846L /* 12/13/887605, greater value raises integer overflow */
 #define NEW_MOON_OF_CREATION 31524
 
 #define SUNDAY    0
@@ -287,19 +287,19 @@
 #define AM3_11_20 ((9 * HALAKIM_PER_HOUR) + 204)
 #define AM9_32_43 ((15 * HALAKIM_PER_HOUR) + 589)
 
-int monthsPerYear[19] =
+const int monthsPerYear[19] =
 {
 12, 12, 13, 12, 12, 13, 12, 13, 12, 12, 13, 12, 12, 13, 12, 12, 13, 12, 13
 };
 
-static int yearOffset[19] =
+static const int yearOffset[19] =
 {
 	0, 12, 24, 37, 49, 61, 74, 86, 99, 111, 123,
 	136, 148, 160, 173, 185, 197, 210, 222
 };
 
 /* names for leap (13-month) year */
-char *JewishMonthNameLeap[14] =
+const char * const JewishMonthNameLeap[14] =
 {
 	"",
 	"Tishri",
@@ -318,7 +318,7 @@ char *JewishMonthNameLeap[14] =
 };
 
 /* names for regular year */
-char *JewishMonthName[14] =
+const char * const JewishMonthName[14] =
 {
 	"",
 	"Tishri",
@@ -337,7 +337,7 @@ char *JewishMonthName[14] =
 };
 
 /* names for leap (13-month) year */
-char *JewishMonthHebNameLeap[14] =
+const char * const JewishMonthHebNameLeap[14] =
 {
 	"",
 	"\xFA\xF9\xF8\xE9",
@@ -356,7 +356,7 @@ char *JewishMonthHebNameLeap[14] =
 };
 
 /* names for regular year */
-char *JewishMonthHebName[14] =
+const char * const JewishMonthHebName[14] =
 {
 	"",
 	"\xFA\xF9\xF8\xE9",
