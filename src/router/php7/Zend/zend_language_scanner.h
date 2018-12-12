@@ -12,12 +12,10 @@
    | obtain it through the world-wide-web, please send a note to          |
    | license@zend.com so we can mail you a copy immediately.              |
    +----------------------------------------------------------------------+
-   | Authors: Andi Gutmans <andi@zend.com>                                |
-   |          Zeev Suraski <zeev@zend.com>                                |
+   | Authors: Andi Gutmans <andi@php.net>                                 |
+   |          Zeev Suraski <zeev@php.net>                                 |
    +----------------------------------------------------------------------+
 */
-
-/* $Id$ */
 
 #ifndef ZEND_SCANNER_H
 #define ZEND_SCANNER_H
@@ -61,6 +59,8 @@ typedef struct _zend_lex_state {
 typedef struct _zend_heredoc_label {
 	char *label;
 	int length;
+	int indentation;
+	zend_bool indentation_uses_spaces;
 } zend_heredoc_label;
 
 BEGIN_EXTERN_C()

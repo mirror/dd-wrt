@@ -1,7 +1,5 @@
 --TEST--
 ReflectionClass::getConstant
---SKIPIF--
-<?php extension_loaded('reflection') or die('skip'); ?>
 --FILE--
 <?php
 class Foo {

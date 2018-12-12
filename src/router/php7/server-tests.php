@@ -140,7 +140,7 @@ function mkpath($path,$mode = 0777) {
 
 function copyfiles($src,$new) {
 	$d = dir($src);
-	while (($entry = $d->read())) {
+	while ($entry = $d->read()) {
 		if (is_file("$src/$entry")) {
 			copy("$src/$entry", "$new/$entry");
 		}
@@ -161,7 +161,7 @@ function execute($command, $args=NULL, $input=NULL, $cwd=NULL, $env=NULL)
 {
 	$data = "";
 
-	if (gettype($args)=='array') {
+	if (is_array($args)) {
 		$args = join($args,' ');
 	}
 	$commandline = "$command $args";
@@ -357,7 +357,7 @@ class HTTPRequest
         $port = $this->urlparts['port'];
         if (isset($this->options['proxy_host'])) {
             $host = $this->options['proxy_host'];
-            $port = isset($this->options['proxy_port'])?$this->options['proxy_port']:8080;
+            $port = $this->options['proxy_port'] ?? 8080;
         }
         // send
         if ($this->timeout > 0) {
@@ -413,7 +413,7 @@ class testHarness {
 		'm' => array('TEST_BASE_PATH'      ,'path'       ,NULL    ,'copy tests to this path before testing'),
 		'n' => array('NO_PHPTEST_SUMMARY'  ,''           ,0       ,'do not print test summary'),
 		'p' => array('TEST_PHP_EXECUTABLE' ,'path'       ,NULL    ,'php executable to be tested'),
-		'q' => array('NO_INTERACTION'      ,''           ,0       ,'no console interaction (ie dont contact QA)'),
+		'q' => array('NO_INTERACTION'      ,''           ,0       ,'no console interaction (ie don\'t contact QA)'),
 		'r' => array('REPORT_EXIT_STATUS'  ,''           ,0       ,'exit with status at end of execution'),
 		's' => array('TEST_PHP_SRCDIR'     ,'path'       ,NULL    ,'path to php source code'),
 		't' => array('TEST_PHP_DETAILED'   ,'number'     ,0       ,'level of detail output to dump'),
@@ -638,7 +638,7 @@ class testHarness {
 			switch($opt) {
 			case 'c':
 				/* TODO: Implement configuraiton file */
-				include($value);
+				include $value;
 				if (!isset($conf)) {
 					$this->writemsg("Invalid configuration file\n");
 					exit(1);
@@ -655,7 +655,7 @@ class testHarness {
 				if ($this->xargs[$opt][1] && isset($value))
 					$this->conf[$this->xargs[$opt][0]] = $value;
 				else if (!$this->xargs[$opt][1])
-					$this->conf[$this->xargs[$opt][0]] = isset($value)?$value:1;
+					$this->conf[$this->xargs[$opt][0]] = $value ?? 1;
 				else
 					$this->error("Invalid argument setting for argument $opt, should be [{$this->xargs[$opt][1]}]\n");
 				break;
@@ -785,7 +785,7 @@ class testHarness {
 	{
 		foreach ($this->test_dirs as $dir) {
 			if (is_dir($dir)) {
-				$this->findFilesInDir($dir, ($dir == 'ext'));
+				$this->findFilesInDir($dir, $dir == 'ext');
 			} else {
 				$this->test_files[] = $dir;
 			}
@@ -1200,12 +1200,12 @@ class testHarness {
 				print "SKIPIF: [$output]\n";
 			if (preg_match("/^skip/i", $output)){
 
-				$reason = (preg_match("/^skip\s*(.+)\$/", $output)) ? preg_replace("/^skip\s*(.+)\$/", "\\1", $output) : FALSE;
+				$reason = preg_match("/^skip\s*(.+)\$/", $output) ? preg_replace("/^skip\s*(.+)\$/", "\\1", $output) : FALSE;
 				$this->showstatus($section_text['TEST'], 'SKIPPED', $reason);
 				return 'SKIPPED';
 			}
 			if (preg_match("/^info/i", $output)) {
-				$reason = (preg_match("/^info\s*(.+)\$/", $output)) ? preg_replace("/^info\s*(.+)\$/", "\\1", $output) : FALSE;
+				$reason = preg_match("/^info\s*(.+)\$/", $output) ? preg_replace("/^info\s*(.+)\$/", "\\1", $output) : FALSE;
 				if ($reason) {
 					$tested .= " (info: $reason)";
 				}
@@ -1274,7 +1274,7 @@ class testHarness {
 			$request = $this->getEvalTestSettings(@$section_text['REQUEST'],$tmp_file);
 			$headers = $this->getEvalTestSettings(@$section_text['HEADERS'],$tmp_file);
 
-			$method = isset($request['method'])?$request['method']:$havepost?'POST':'GET';
+			$method = $request['method'] ?? $havepost ? 'POST' : 'GET';
 			$query_string = $haveget?$section_text['GET']:'';
 
 			$options = array();
@@ -1362,7 +1362,7 @@ class testHarness {
 			$args = $env['QUERY_STRING'];
 			$args = "$ini_overwrites $tmp_file \"$args\" 2>&1";
 		} else {
-			$args = $section_text['ARGS'] ? $section_text['ARGS'] : '';
+			$args = $section_text['ARGS'] ?: '';
 			$args = "$ini_overwrites $tmp_file $args 2>&1";
 		}
 
@@ -1431,10 +1431,10 @@ class testHarness {
 						$start = $end = $length;
 					}
 					// quote a non re portion of the string
-					$temp = $temp . preg_quote(substr($wanted_re, $startOffset, ($start - $startOffset)),  '/');
+					$temp .= preg_quote(substr($wanted_re, $startOffset, ($start - $startOffset)), '/');
 					// add the re unquoted.
 					if ($end > $start) {
-						$temp = $temp . '(' . substr($wanted_re, $start+2, ($end - $start-2)). ')';
+						$temp = $temp . '(' . substr($wanted_re, $start+2, $end - $start-2). ')';
 					}
 					$startOffset = $end + 2;
 				}

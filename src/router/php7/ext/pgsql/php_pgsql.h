@@ -12,12 +12,10 @@
    | obtain it through the world-wide-web, please send a note to          |
    | license@php.net so we can mail you a copy immediately.               |
    +----------------------------------------------------------------------+
-   | Authors: Zeev Suraski <zeev@zend.com>                                |
+   | Authors: Zeev Suraski <zeev@php.net>                                 |
    |          Jouni Ahto <jouni.ahto@exdec.fi>                            |
    +----------------------------------------------------------------------+
  */
-
-/* $Id$ */
 
 #ifndef PHP_PGSQL_H
 #define PHP_PGSQL_H
@@ -298,7 +296,7 @@ typedef struct _php_pgsql_notice {
 	size_t len;
 } php_pgsql_notice;
 
-static php_stream_ops php_stream_pgsql_fd_ops = {
+static const php_stream_ops php_stream_pgsql_fd_ops = {
 	php_pgsql_fd_write,
 	php_pgsql_fd_read,
 	php_pgsql_fd_close,

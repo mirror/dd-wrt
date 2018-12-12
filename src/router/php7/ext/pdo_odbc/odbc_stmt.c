@@ -16,8 +16,6 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id$ */
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -856,7 +854,7 @@ static int odbc_stmt_next_rowset(pdo_stmt_t *stmt)
 	return 1;
 }
 
-struct pdo_stmt_methods odbc_stmt_methods = {
+const struct pdo_stmt_methods odbc_stmt_methods = {
 	odbc_stmt_dtor,
 	odbc_stmt_execute,
 	odbc_stmt_fetch,

@@ -7,7 +7,7 @@ trait T
 {
   public function __construct()
   {
-    echo "Trait contructor\n";
+    echo "Trait constructor\n";
   }
 }
 
@@ -26,4 +26,4 @@ class B extends A
 
 new B();
 --EXPECT--
-Trait contructor
+Trait constructor

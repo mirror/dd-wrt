@@ -29,7 +29,7 @@ var_dump($array_assoc);
 
 echo "Done";
 ?>
---EXPECTF--
+--EXPECT--
 *** Testing array_push() : basic functionality ***
 
 -- Push values onto an indexed array --

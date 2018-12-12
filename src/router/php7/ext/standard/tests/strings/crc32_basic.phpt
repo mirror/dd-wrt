@@ -1,10 +1,5 @@
 --TEST--
 Test crc32() function : basic functionality
---SKIPIF--
-<?php
-if (PHP_INT_SIZE != 4)
-  die("skip this test is for 32bit platform only");
-?>
 --FILE--
 <?php
 /* Prototype  : string crc32(string $str)
@@ -33,7 +28,7 @@ printf("%u\n", crc32($str) );
 
 echo "Done";
 ?>
---EXPECTF--
+--EXPECT--
 *** Testing crc32() : basic functionality ***
 bool(true)
 256895812

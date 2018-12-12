@@ -12,12 +12,10 @@
    | obtain it through the world-wide-web, please send a note to          |
    | license@zend.com so we can mail you a copy immediately.              |
    +----------------------------------------------------------------------+
-   | Authors: Andi Gutmans <andi@zend.com>                                |
-   |          Zeev Suraski <zeev@zend.com>                                |
+   | Authors: Andi Gutmans <andi@php.net>                                 |
+   |          Zeev Suraski <zeev@php.net>                                 |
    +----------------------------------------------------------------------+
 */
-
-/* $Id$ */
 
 #ifndef ZEND_CONFIG_W32_H
 #define ZEND_CONFIG_W32_H
@@ -58,19 +56,14 @@ typedef unsigned int uint;
 
 #define zend_sprintf sprintf
 
+#ifndef __cplusplus
 /* This will cause the compilation process to be MUCH longer, but will generate
  * a much quicker PHP binary
  */
 #ifdef ZEND_WIN32_FORCE_INLINE
-/* _ALLOW_KEYWORD_MACROS is only relevant for C++ */
-# ifndef _ALLOW_KEYWORD_MACROS
-#  define _ALLOW_KEYWORD_MACROS
-# endif
 # undef inline
 # define inline __forceinline
-#elif !defined(ZEND_WIN32_KEEP_INLINE)
-# undef inline
-# define inline
+#endif
 #endif
 
 #ifdef LIBZEND_EXPORTS

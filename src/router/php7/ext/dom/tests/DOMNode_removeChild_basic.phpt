@@ -56,7 +56,7 @@ for ($index = 0; $index < $children->length; $index++) {
 	$current = $children->item($index);
 	dumpcourse($current);
 }
---EXPECTF--
+--EXPECT--
 original has 5 nodes
 node 4
 Course: no title:DOMText

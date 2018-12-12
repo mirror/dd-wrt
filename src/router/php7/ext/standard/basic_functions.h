@@ -12,12 +12,10 @@
    | obtain it through the world-wide-web, please send a note to          |
    | license@php.net so we can mail you a copy immediately.               |
    +----------------------------------------------------------------------+
-   | Authors: Andi Gutmans <andi@zend.com>                                |
-   |          Zeev Suraski <zeev@zend.com>                                |
+   | Authors: Andi Gutmans <andi@php.net>                                 |
+   |          Zeev Suraski <zeev@php.net>                                 |
    +----------------------------------------------------------------------+
 */
-
-/* $Id$ */
 
 #ifndef BASIC_FUNCTIONS_H
 #define BASIC_FUNCTIONS_H
@@ -34,7 +32,7 @@
 
 #include "url_scanner_ex.h"
 
-#if defined(_WIN32) && defined(__clang__)
+#if defined(_WIN32) && !defined(__clang__)
 #include <intrin.h>
 #endif
 
@@ -56,7 +54,7 @@ PHP_FUNCTION(time_sleep_until);
 #endif
 PHP_FUNCTION(flush);
 #ifdef HAVE_INET_NTOP
-PHP_NAMED_FUNCTION(php_inet_ntop);
+PHP_NAMED_FUNCTION(zif_inet_ntop);
 #endif
 #ifdef HAVE_INET_PTON
 PHP_NAMED_FUNCTION(php_inet_pton);
@@ -126,6 +124,8 @@ PHP_FUNCTION(sys_getloadavg);
 PHP_FUNCTION(is_uploaded_file);
 PHP_FUNCTION(move_uploaded_file);
 
+PHP_FUNCTION(net_get_interfaces);
+
 /* From the INI parser */
 PHP_FUNCTION(parse_ini_file);
 PHP_FUNCTION(parse_ini_string);
@@ -154,7 +154,7 @@ PHP_RSHUTDOWN_FUNCTION(browscap);
 /* Left for BC (not binary safe!) */
 PHPAPI int _php_error_log(int opt_err, char *message, char *opt, char *headers);
 PHPAPI int _php_error_log_ex(int opt_err, char *message, size_t message_len, char *opt, char *headers);
-PHPAPI int php_prefix_varname(zval *result, zval *prefix, char *var_name, size_t var_name_len, zend_bool add_underscore);
+PHPAPI int php_prefix_varname(zval *result, const zval *prefix, const char *var_name, size_t var_name_len, zend_bool add_underscore);
 
 #define MT_N (624)
 
@@ -248,7 +248,7 @@ typedef struct {
 	char *putenv_string;
 	char *previous_value;
 	char *key;
-	int key_len;
+	size_t key_len;
 } putenv_entry;
 #endif
 

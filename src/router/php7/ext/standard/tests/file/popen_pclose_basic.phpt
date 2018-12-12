@@ -70,7 +70,7 @@ unlink($dirpath."/popen_basic.tmp");
 unlink($dirpath."/popen_basic1.tmp");
 rmdir($dirpath);
 ?>
---EXPECTF--
+--EXPECT--
 *** Testing popen() and pclose() with different processes ***
 -- Testing popen(): reading from the pipe --
 popen_basic.tmp

@@ -1,6 +1,4 @@
-dnl
-dnl $Id$
-dnl
+dnl config.m4 for extension zip
 
 PHP_ARG_ENABLE(zip, for zip archive read/writesupport,
 [  --enable-zip            Include Zip read/write support])
@@ -14,7 +12,7 @@ PHP_ARG_WITH(pcre-dir, pcre install prefix,
 [  --with-pcre-dir         ZIP: pcre install prefix], no, no)
 
 PHP_ARG_WITH(libzip, libzip,
-[  --with-libzip[=DIR]       ZIP: use libzip], no, no)
+[  --with-libzip[=DIR]       ZIP: use libzip], yes, no)
 
 if test "$PHP_ZIP" != "no"; then
 

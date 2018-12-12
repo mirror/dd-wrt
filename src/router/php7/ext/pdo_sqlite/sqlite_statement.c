@@ -16,8 +16,6 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id$ */
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -352,7 +350,7 @@ static int pdo_sqlite_stmt_cursor_closer(pdo_stmt_t *stmt)
 	return 1;
 }
 
-struct pdo_stmt_methods sqlite_stmt_methods = {
+const struct pdo_stmt_methods sqlite_stmt_methods = {
 	pdo_sqlite_stmt_dtor,
 	pdo_sqlite_stmt_execute,
 	pdo_sqlite_stmt_fetch,

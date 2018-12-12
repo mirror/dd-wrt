@@ -1,4 +1,3 @@
-	/* $Id: fpm_request.c,v 1.9.2.1 2008/11/15 00:57:24 anight Exp $ */
 	/* (c) 2007,2008 Andrei Nigmatulin */
 #ifdef HAVE_TIMES
 #include <sys/times.h>
@@ -17,6 +16,7 @@
 #include "fpm_children.h"
 #include "fpm_scoreboard.h"
 #include "fpm_status.h"
+#include "fpm_stdio.h"
 #include "fpm_request.h"
 #include "fpm_log.h"
 
@@ -200,6 +200,7 @@ void fpm_request_end(void) /* {{{ */
 #endif
 	proc->memory = memory;
 	fpm_scoreboard_proc_release(proc);
+	fpm_stdio_flush_child();
 }
 /* }}} */
 

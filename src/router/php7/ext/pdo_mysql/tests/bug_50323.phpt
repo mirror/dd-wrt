@@ -18,7 +18,7 @@ $db = PDOTest::test_factory(dirname(__FILE__) . '/common.phpt');
                 strpos($original, ':') + 1,
                 strlen($original));
 
-        // no real parser - any excotic setting can fool us
+        // no real parser - any exotic setting can fool us
         $parts = explode(';', $dsn);
         foreach ($parts as $k => $v) {
             $tmp = explode('=', $v);
@@ -56,5 +56,5 @@ $db = PDOTest::test_factory(dirname(__FILE__) . '/common.phpt');
 
 @$db->exec('DROP DATABASE IF EXISTS `crazy;dbname`');
 ?>
---EXPECTF--
+--EXPECT--
 done!

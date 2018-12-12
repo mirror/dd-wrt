@@ -1,6 +1,5 @@
 --TEST--
 Segfault due to libcurl connection caching
---CREDITS--
 --SKIPIF--
 <?php
 if (!extension_loaded("curl")) exit("skip curl extension not loaded");
@@ -51,6 +50,6 @@ if (false === getenv('PHP_CURL_FTP_REMOTE_PASSWD'))  exit("skip PHP_CURL_FTP_REM
   curl_multi_close($cmh);
 ?>
 ===DONE===
---EXPECTF--
+--EXPECT--
 bool(true)
 ===DONE===

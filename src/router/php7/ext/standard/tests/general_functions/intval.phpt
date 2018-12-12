@@ -11,7 +11,7 @@ if (PHP_INT_SIZE != 4) die("skip this test is for 32bit platform only");
  */
 
 echo "*** Testing intval() with valid integer values ***\n";
-// different valid  integer vlaues
+// different valid  integer values
 $valid_ints = array(
                 '0',
                 '1',
@@ -297,10 +297,10 @@ int(0)
 
 *** Testing error conditions ***
 
-Warning: Wrong parameter count for intval() in %s on line %d
+Warning: intval() expects at least 1 parameter, 0 given in %s on line %d
 NULL
 
-Warning: Wrong parameter count for intval() in %s on line %d
+Warning: intval() expects at most 2 parameters, 3 given in %s on line %d
 NULL
 
 --- Done ---

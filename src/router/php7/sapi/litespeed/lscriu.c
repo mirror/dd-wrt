@@ -258,7 +258,6 @@ static int LSCRIU_load_liblscapi(void)
 {
     void *lib_handle = NULL;
     void *pthread_lib_handle = NULL;
-    char ch;
 
     if (s_native)
         return 0;
@@ -470,7 +469,6 @@ static void LSCRIU_CloudLinux_Checkpoint(void)
 
     iRet = s_lscapi_dump_me();
     if (iRet < 0) {
-        char *pchError;
         lscriu_err("LSCRIU: CloudLinux dump of PID: %d, error: %s\n",
                    s_pid, strerror(errno));
     }
@@ -526,31 +524,28 @@ static void LSCRIU_try_checkpoint(int *forked_pid)
 
     if (s_tried_checkpoint) {
         lscriu_dbg("LSCRIU (%d): Already tried checkpoint - one time per customer\n",
-                   getpid());
+                   iPidDump);
         return;
     }
-    lscriu_dbg("LSCRIU (%d): Trying checkpoint\n", getpid());
+    lscriu_dbg("LSCRIU (%d): Trying checkpoint\n", iPidDump);
     s_tried_checkpoint = 1;
     if (!s_native) {
         LSCRIU_CloudLinux_Checkpoint();
         return;
     }
 
-    lscriu_dbg("LSCRIU (%d): fork!\n", getpid());
+    lscriu_dbg("LSCRIU (%d): fork!\n", iPidDump);
     iPid = fork();
     if (iPid < 0) {
         lscriu_err("LSCRIU (%d): Can't checkpoint due to a fork error: %s\n",
-                   getpid(), strerror(errno));
+                   iPidDump, strerror(errno));
         return;
     }
     if (iPid == 0) {
-        int     iResult;
-        pid_t   iPidSender;
         pid_t   iPidParent = getppid();
 
-        s_pid = getpid();
         setsid();
-        iRet = LSCRIU_Native_Dump(s_pid,
+        iRet = LSCRIU_Native_Dump(iPidDump,
                                   s_criu_image_path,
                                   s_fd_native);
         close(s_fd_native);
@@ -661,7 +656,6 @@ static int LSCRIU_Init_Env_Parameters(void)
         lscriu_dbg("LSCRIU (%d): NOT Listening\n", getpid());
 
     char *criu_mode = NULL;
-    char ch;
     criu_mode = getenv("LSAPI_CRIU");
     // 0 disabled
     // 1 cloudlinux

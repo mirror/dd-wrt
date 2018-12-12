@@ -12,7 +12,7 @@
    | obtain it through the world-wide-web, please send a note to          |
    | license@php.net so we can mail you a copy immediately.               |
    +----------------------------------------------------------------------+
-   | Authors: Dmitry Stogov <dmitry@zend.com>                             |
+   | Authors: Dmitry Stogov <dmitry@php.net>                              |
    +----------------------------------------------------------------------+
 */
 
@@ -99,6 +99,13 @@ typedef enum _zend_ssa_alias_kind {
 	HTTP_RESPONSE_HEADER_ALIAS
 } zend_ssa_alias_kind;
 
+typedef enum _zend_ssa_escape_state {
+	ESCAPE_STATE_UNKNOWN,
+	ESCAPE_STATE_NO_ESCAPE,
+	ESCAPE_STATE_FUNCTION_ESCAPE,
+	ESCAPE_STATE_GLOBAL_ESCAPE
+} zend_ssa_escape_state;
+
 typedef struct _zend_ssa_var {
 	int                    var;            /* original var number; op.var for CVs and following numbers for VARs and TMP_VARs */
 	int                    scc;            /* strongly connected component */
@@ -106,10 +113,11 @@ typedef struct _zend_ssa_var {
 	zend_ssa_phi          *definition_phi; /* phi that defines this value */
 	int                    use_chain;      /* uses of this value, linked through opN_use_chain */
 	zend_ssa_phi          *phi_use_chain;  /* uses of this value in Phi, linked through use_chain */
-	zend_ssa_phi          *sym_use_chain;  /* uses of this value in Pi constaints */
+	zend_ssa_phi          *sym_use_chain;  /* uses of this value in Pi constraints */
 	unsigned int           no_val : 1;     /* value doesn't mater (used as op1 in ZEND_ASSIGN) */
 	unsigned int           scc_entry : 1;
 	unsigned int           alias : 2;  /* value may be changed indirectly */
+	unsigned int           escape_state : 2;
 } zend_ssa_var;
 
 typedef struct _zend_ssa_var_info {
@@ -135,7 +143,7 @@ typedef struct _zend_ssa {
 
 BEGIN_EXTERN_C()
 
-int zend_build_ssa(zend_arena **arena, const zend_script *script, const zend_op_array *op_array, uint32_t build_flags, zend_ssa *ssa, uint32_t *func_flags);
+int zend_build_ssa(zend_arena **arena, const zend_script *script, const zend_op_array *op_array, uint32_t build_flags, zend_ssa *ssa);
 int zend_ssa_compute_use_def_chains(zend_arena **arena, const zend_op_array *op_array, zend_ssa *ssa);
 int zend_ssa_unlink_use_chain(zend_ssa *ssa, int op, int var);
 

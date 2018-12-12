@@ -1,6 +1,4 @@
-dnl
-dnl $Id$
-dnl
+dnl config.m4 for extension ldap
 
 AC_DEFUN([PHP_LDAP_CHECKS], [
   if test -f $1/include/ldap.h; then
@@ -198,15 +196,15 @@ if test "$PHP_LDAP" != "no"; then
 
   dnl Check for 3 arg ldap_set_rebind_proc
   AC_CACHE_CHECK([for 3 arg ldap_set_rebind_proc], ac_cv_3arg_setrebindproc,
-  [AC_TRY_COMPILE([#include <ldap.h>], [ldap_set_rebind_proc(0,0,0)],
-  ac_cv_3arg_setrebindproc=yes, ac_cv_3arg_setrebindproc=no)])
+  [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <ldap.h>]], [[ldap_set_rebind_proc(0,0,0)]])],
+  [ac_cv_3arg_setrebindproc=yes], [ac_cv_3arg_setrebindproc=no])])
   if test "$ac_cv_3arg_setrebindproc" = yes; then
     AC_DEFINE(HAVE_3ARG_SETREBINDPROC,1,[Whether 3 arg set_rebind_proc()])
   fi
 
   dnl Solaris 2.8 claims to be 2004 API, but doesn't have
   dnl ldap_parse_reference() nor ldap_start_tls_s()
-  AC_CHECK_FUNCS([ldap_parse_result ldap_parse_reference ldap_start_tls_s ldap_control_find ldap_parse_extended_result ldap_extended_operation ldap_extended_operation_s ldap_passwd_s ldap_whoami_s])
+  AC_CHECK_FUNCS([ldap_parse_result ldap_parse_reference ldap_start_tls_s ldap_control_find ldap_parse_extended_result ldap_extended_operation ldap_extended_operation_s ldap_passwd ldap_whoami_s ldap_refresh_s])
 
   dnl
   dnl SASL check

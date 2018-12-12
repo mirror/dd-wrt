@@ -20,6 +20,7 @@
 
 #include "php.h"
 #include "SAPI.h"
+#include <emmintrin.h>
 
 ZEND_TLS const struct php_win32_cp *cur_cp = NULL;
 ZEND_TLS const struct php_win32_cp *orig_cp = NULL;
@@ -93,9 +94,14 @@ PW32CP wchar_t *php_win32_cp_conv_to_w(DWORD cp, DWORD flags, const char* in, si
 	return php_win32_cp_to_w_int(in, in_len, out_len, cp, flags);
 }/*}}}*/
 
+#define ASCII_FAIL_RETURN() \
+	if (PHP_WIN32_CP_IGNORE_LEN_P != out_len) { \
+		*out_len = 0; \
+	} \
+	return NULL;
 PW32CP wchar_t *php_win32_cp_conv_ascii_to_w(const char* in, size_t in_len, size_t *out_len)
 {/*{{{*/
-	wchar_t *ret = NULL;
+	wchar_t *ret, *ret_idx;
 	const char *idx = in, *end;
 
 	assert(in && in_len ? in[in_len] == '\0' : 1);
@@ -106,67 +112,98 @@ PW32CP wchar_t *php_win32_cp_conv_ascii_to_w(const char* in, size_t in_len, size
 	} else if (0 == in_len) {
 		/* Not binary safe. */
 		in_len = strlen(in);
-		if (in_len > (size_t)INT_MAX) {
-			SET_ERRNO_FROM_WIN32_CODE(ERROR_INVALID_PARAMETER);
-			return NULL;
-		}
 	}
 
 	end = in + in_len;
 
-	while (idx != end) {
+	if (in_len > 15) {
+		const char *aidx = (const char *)ZEND_SLIDE_TO_ALIGNED16(in);
+
+		/* Process unaligned chunk. */
+		while (idx < aidx) {
+			if (!__isascii(*idx) && '\0' != *idx) {
+				ASCII_FAIL_RETURN()
+			}
+			idx++;
+		}
+
+		/* Process aligned chunk. */
+		while (end - idx > 15) {
+			const __m128i block = _mm_load_si128((__m128i *)idx);
+			if (_mm_movemask_epi8(block)) {
+				ASCII_FAIL_RETURN()
+			}
+			idx += 16;
+		}
+	}
+
+	/* Process the trailing part, or otherwise process string < 16 bytes. */
+	while (idx < end) {
 		if (!__isascii(*idx) && '\0' != *idx) {
-			break;
+			ASCII_FAIL_RETURN()
 		}
 		idx++;
 	}
 
-	if (idx == end) {
-		size_t i = 0;
-		int k = 0;
-		wchar_t *ret_idx;
+	ret = malloc((in_len+1)*sizeof(wchar_t));
+	if (!ret) {
+		SET_ERRNO_FROM_WIN32_CODE(ERROR_OUTOFMEMORY);
+		return NULL;
+	}
 
-		ret = malloc((in_len+1)*sizeof(wchar_t));
-		if (!ret) {
-			SET_ERRNO_FROM_WIN32_CODE(ERROR_OUTOFMEMORY);
-			return NULL;
+	ret_idx = ret;
+	idx = in;
+
+	/* Check and conversion could be merged. This however would
+		be more expencive, if a non ASCII string was passed.
+		TODO check whether the impact is acceptable. */
+	if (in_len > 15) {
+		const char *aidx = (const char *)ZEND_SLIDE_TO_ALIGNED16(in);
+
+		/* Process unaligned chunk. */
+		while (idx < aidx) {
+			*ret_idx++ = (wchar_t)*idx++;
 		}
 
-		ret_idx = ret;
-		do {
-			k = _snwprintf(ret_idx, in_len - i, L"%.*hs", (int)(in_len - i), in);
+		/* Process aligned chunk. */
+		if (end - idx > 15) {
+			const __m128i mask = _mm_set1_epi32(0);
+			while (end - idx > 15) {
+				const __m128i block = _mm_load_si128((__m128i *)idx);
 
-			if (-1 == k) {
-				free(ret);
-				SET_ERRNO_FROM_WIN32_CODE(ERROR_INVALID_PARAMETER);
-				return NULL;
+				{
+					const __m128i lo = _mm_unpacklo_epi8(block, mask);
+					_mm_storeu_si128((__m128i *)ret_idx, lo);
+				}
+
+				ret_idx += 8;
+				{
+					const __m128i hi = _mm_unpackhi_epi8(block, mask);
+					_mm_storeu_si128((__m128i *)ret_idx, hi);
+				}
+
+				idx += 16;
+				ret_idx += 8;
 			}
-
-			i += k + 1;
-
-			if (i < in_len) {
-				/* Advance as this seems to be a string with \0 in it. */
-				in += k + 1;
-				ret_idx += k + 1;
-			}
-
-
-		} while (i < in_len);
-		ret[in_len] = L'\0';
-
-		assert(ret ? wcslen(ret) == in_len : 1);
-
-		if (PHP_WIN32_CP_IGNORE_LEN_P != out_len) {
-			*out_len = in_len;
 		}
-	} else {
-		if (PHP_WIN32_CP_IGNORE_LEN_P != out_len) {
-			*out_len = 0;
-		}
+	}
+
+	/* Process the trailing part, or otherwise process string < 16 bytes. */
+	while (idx < end) {
+		*ret_idx++ = (wchar_t)*idx++;
+	}
+
+	ret[in_len] = L'\0';
+
+	assert(ret ? wcslen(ret) == in_len : 1);
+
+	if (PHP_WIN32_CP_IGNORE_LEN_P != out_len) {
+		*out_len = in_len;
 	}
 
 	return ret;
 }/*}}}*/
+#undef ASCII_FAIL_RETURN
 
 __forceinline static char *php_win32_cp_from_w_int(const wchar_t* in, size_t in_len, size_t *out_len, UINT cp, DWORD flags)
 {/*{{{*/
@@ -370,11 +407,10 @@ PW32CP wchar_t *php_win32_cp_env_any_to_w(const char* env)
 
 	do {
 		wchar_t *tmp;
-		size_t tmp_len;
 
 		tmp = php_win32_cp_any_to_w(cur);
 		if (tmp) {
-			tmp_len = wcslen(tmp) + 1;
+			size_t tmp_len = wcslen(tmp) + 1;
 			memmove(ew + bin_len, tmp, tmp_len * sizeof(wchar_t));
 			free(tmp);
 

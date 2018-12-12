@@ -1,5 +1,7 @@
 --TEST--
 Test strcoll() function : error conditions
+--SKIPIF--
+<?php if (!function_exists('strcoll')) die('skip strcoll function not available') ?>
 --FILE--
 <?php
 /* Prototype: int strcoll  ( string $str1  , string $str2  )

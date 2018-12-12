@@ -12,14 +12,12 @@
    | obtain it through the world-wide-web, please send a note to          |
    | license@zend.com so we can mail you a copy immediately.              |
    +----------------------------------------------------------------------+
-   | Authors: Andi Gutmans <andi@zend.com>                                |
+   | Authors: Andi Gutmans <andi@php.net>                                 |
    |          Marcus Boerger <helly@php.net>                              |
    |          Sterling Hughes <sterling@php.net>                          |
-   |          Zeev Suraski <zeev@zend.com>                                |
+   |          Zeev Suraski <zeev@php.net>                                 |
    +----------------------------------------------------------------------+
 */
-
-/* $Id$ */
 
 #ifndef ZEND_EXCEPTIONS_H
 #define ZEND_EXCEPTIONS_H
@@ -30,6 +28,7 @@ extern ZEND_API zend_class_entry *zend_ce_throwable;
 extern ZEND_API zend_class_entry *zend_ce_exception;
 extern ZEND_API zend_class_entry *zend_ce_error_exception;
 extern ZEND_API zend_class_entry *zend_ce_error;
+extern ZEND_API zend_class_entry *zend_ce_compile_error;
 extern ZEND_API zend_class_entry *zend_ce_parse_error;
 extern ZEND_API zend_class_entry *zend_ce_type_error;
 extern ZEND_API zend_class_entry *zend_ce_argument_count_error;

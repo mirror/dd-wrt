@@ -58,7 +58,6 @@ require_once('skipifconnectfailure.inc');
 	var_dump("MYSQLI_OPT_LOCAL_INFILE",		mysqli_options($link, MYSQLI_OPT_LOCAL_INFILE, 1));
 	var_dump("MYSQLI_INIT_COMMAND",			mysqli_options($link, MYSQLI_INIT_COMMAND, array('SET AUTOCOMMIT=0', 'SET AUTOCOMMIT=1')));
 
-
 	if (!$link2 = my_mysqli_connect($host, $user, $passwd, $db, $port, $socket))
 		printf("[006] Cannot connect to the server using host=%s, user=%s, passwd=***, dbname=%s, port=%s, socket=%s\n",
 			$host, $user, $db, $port, $socket);
@@ -139,5 +138,5 @@ bool(false)
 Link closed
 Warning: mysqli_options(): Couldn't fetch mysqli in %s line %d
 %s(19) "MYSQLI_INIT_COMMAND"
-NULL
+bool(false)
 done!

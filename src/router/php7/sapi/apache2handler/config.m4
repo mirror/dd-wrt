@@ -1,6 +1,4 @@
-dnl
-dnl $Id$
-dnl
+dnl config.m4 for sapi apache2handler
 
 PHP_ARG_WITH(apxs2,,
 [  --with-apxs2[=FILE]       Build shared Apache 2.0 Handler module. FILE is the optional
@@ -93,13 +91,6 @@ if test "$PHP_APXS2" != "no"; then
     PHP_SELECT_SAPI(apache2handler, bundle, mod_php7.c sapi_apache2.c apache_config.c php_functions.c, $APACHE_CFLAGS)
     SAPI_SHARED=libs/libphp7.so
     INSTALL_IT="$INSTALL_IT $SAPI_SHARED"
-    ;;
-  *beos*)
-    if test -f _APP_; then `rm _APP_`; fi
-    `ln -s $APXS_BINDIR/httpd _APP_`
-    EXTRA_LIBS="$EXTRA_LIBS _APP_"
-    PHP_SELECT_SAPI(apache2handler, shared, mod_php7.c sapi_apache2.c apache_config.c php_functions.c, $APACHE_CFLAGS)
-    INSTALL_IT="$INSTALL_IT $SAPI_LIBTOOL"
     ;;
   *)
     PHP_SELECT_SAPI(apache2handler, shared, mod_php7.c sapi_apache2.c apache_config.c php_functions.c, $APACHE_CFLAGS)

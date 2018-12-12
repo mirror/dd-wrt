@@ -18,8 +18,6 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id$ */
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -156,7 +154,7 @@ static PHP_GINIT_FUNCTION(pdo)
 }
 /* }}} */
 
-PDO_API int php_pdo_register_driver(pdo_driver_t *driver) /* {{{ */
+PDO_API int php_pdo_register_driver(const pdo_driver_t *driver) /* {{{ */
 {
 	if (driver->api_version != PDO_DRIVER_API) {
 		zend_error(E_ERROR, "PDO: driver %s requires PDO API version " ZEND_ULONG_FMT "; this is PDO version %d",
@@ -168,11 +166,11 @@ PDO_API int php_pdo_register_driver(pdo_driver_t *driver) /* {{{ */
 		return FAILURE;	/* NOTREACHED */
 	}
 
-	return zend_hash_str_add_ptr(&pdo_driver_hash, (char*)driver->driver_name, driver->driver_name_len, driver) != NULL;
+	return zend_hash_str_add_ptr(&pdo_driver_hash, (char*)driver->driver_name, driver->driver_name_len, (void*)driver) != NULL ? SUCCESS : FAILURE;
 }
 /* }}} */
 
-PDO_API void php_pdo_unregister_driver(pdo_driver_t *driver) /* {{{ */
+PDO_API void php_pdo_unregister_driver(const pdo_driver_t *driver) /* {{{ */
 {
 	if (!zend_hash_str_exists(&module_registry, "pdo", sizeof("pdo") - 1)) {
 		return;
