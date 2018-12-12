@@ -13,13 +13,11 @@
    | license@php.net so we can mail you a copy immediately.               |
    +----------------------------------------------------------------------+
    | Authors: Stig Bakken <ssb@php.net>                                   |
-   |          Zeev Suraski <zeev@zend.com>                                |
+   |          Zeev Suraski <zeev@php.net>                                 |
    |          Rasmus Lerdorf <rasmus@php.net>                             |
    |          Pierre Joye <pierre@php.net>                                |
    +----------------------------------------------------------------------+
 */
-
-/* $Id$ */
 
 #include <stdlib.h>
 

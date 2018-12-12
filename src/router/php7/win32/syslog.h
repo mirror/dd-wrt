@@ -16,8 +16,6 @@
    +----------------------------------------------------------------------+
 */
 
-/* $Id$ */
-
 #ifndef SYSLOG_H
 #define	SYSLOG_H
 #define WIN32_LEAN_AND_MEAN
@@ -73,6 +71,7 @@
 extern void closelog(void);
 extern void openlog(const char *, int, int);
 extern void syslog(int, const char *, ...);
+extern void vsyslog(int, const char *, va_list ap);
 
 
 #endif							/* SYSLOG_H */

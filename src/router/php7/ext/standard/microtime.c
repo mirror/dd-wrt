@@ -16,8 +16,6 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id$ */
-
 #include "php.h"
 
 #ifdef HAVE_SYS_TYPES_H
@@ -80,10 +78,7 @@ static void _php_gettimeofday(INTERNAL_FUNCTION_PARAMETERS, int mode)
 
 		timelib_time_offset_dtor(offset);
 	} else {
-		char ret[100];
-
-		snprintf(ret, 100, "%.8F %ld", tp.tv_usec / MICRO_IN_SEC, tp.tv_sec);
-		RETURN_STRING(ret);
+		RETURN_NEW_STR(zend_strpprintf(0, "%.8F %ld", tp.tv_usec / MICRO_IN_SEC, (long)tp.tv_sec));
 	}
 }
 
@@ -136,7 +131,7 @@ PHP_FUNCTION(getrusage)
 #ifdef PHP_WIN32 /* Windows only implements a limited amount of fields from the rusage struct */
 	PHP_RUSAGE_PARA(ru_majflt);
 	PHP_RUSAGE_PARA(ru_maxrss);
-#elif !defined( _OSD_POSIX) && !defined(__BEOS__) /* BS2000 has only a few fields in the rusage struct*/
+#elif !defined(_OSD_POSIX)
 	PHP_RUSAGE_PARA(ru_oublock);
 	PHP_RUSAGE_PARA(ru_inblock);
 	PHP_RUSAGE_PARA(ru_msgsnd);

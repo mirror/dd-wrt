@@ -42,7 +42,7 @@ $file_path = dirname(__FILE__);
 $filename = "$file_path/fflush_basic.tmp";
 unlink($filename);
 ?>
---EXPECTF--
+--EXPECT--
 *** Testing fflush(): writing to a file and reading the contents ***
 int(63)
 bool(true)

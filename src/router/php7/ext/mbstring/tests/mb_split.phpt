@@ -35,7 +35,7 @@ mbstring.func_overload=0
 		verify_split( "\xa1\xa1+", "\xa1\xa1\xa1\xa2\xa2\xa1\xa1\xa1\xa1\xa1\xa1\xa2\xa2\xa1\xa1\xa1", $i );
 	}
 ?>
---EXPECTF--
+--EXPECT--
 bool(true)
 ok
 ok

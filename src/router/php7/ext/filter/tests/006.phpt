@@ -1,5 +1,5 @@
 --TEST--
-filter() test
+filter_input() test
 --SKIPIF--
 <?php if (!extension_loaded("filter")) die("skip"); ?>
 --POST--

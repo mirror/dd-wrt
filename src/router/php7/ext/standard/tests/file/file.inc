@@ -15,7 +15,7 @@
 
 */
 
-define('file_not_found', 2, 1);
+const FILE_NOT_FOUND = 2;
 
 /*
  Function: bool create_file(string $filename, string $mode = "w");
@@ -210,7 +210,7 @@ function change_file_perms($file_path,
    $permission = An octal number, This should be similar to $mode
      specified in chmod() call.
    $content_type = Specify type of the content to fill in the file.
-     "numeric" = fill file with numeric vlaues
+     "numeric" = fill file with numeric values
      "text" = fill file with regular text
      "empty" = empty file
      "text_with_new_line" = similar to text fill type, but writes with new line char
@@ -330,7 +330,7 @@ function create_files( $file_path,
    $link_perms = An octal number, This should be similar to $mode
      specified in chmod() call.
    $link_file_content = Type of the content to fill in the file.
-     numeric = fill file with numeric vlaues
+     numeric = fill file with numeric values
      text = fill file with regular text
      text_with_new_line = same as text but new lines are written
      alphanumeric = fill with alphanumeric text
@@ -432,7 +432,7 @@ function create_links($file_path,
  Description: delete a given file if exists
  Returns: true on success
           false on failure
-          file_not_found if file doesn't exist
+          FILE_NOT_FOUND if file doesn't exist
 */
 function delete_file($filename) {
   // check if file exists
@@ -442,7 +442,7 @@ function delete_file($filename) {
     else
       return false;
   }
-  return file_not_found;
+  return FILE_NOT_FOUND;
 }
 
 /*
@@ -475,7 +475,7 @@ function delete_files($file_path,
     $status = delete_file($filename);
     if($status == true) {
       $return_value['deleted']++;
-    } else if($status == file_not_found) {
+    } else if($status == FILE_NOT_FOUND) {
       $return_value['notfound']++;
     } else {
       $return_value['failed']++;
@@ -528,7 +528,7 @@ function delete_links($file_path,
   corresponding next 13 values of the same stat for equality
   $stat = stat array
 
- Retuns: true when all of them match, false otherwise
+ Returns: true when all of them match, false otherwise
 */
 function compare_self_stat( array $stat )
 {

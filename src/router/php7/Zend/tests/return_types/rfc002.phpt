@@ -7,5 +7,5 @@ function answer(): int {
 }
 
 var_dump(answer());
---EXPECTF--
+--EXPECT--
 int(42)

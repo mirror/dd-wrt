@@ -901,6 +901,7 @@ infodir
 docdir
 oldincludedir
 includedir
+runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -1016,7 +1017,6 @@ with_ldap_sasl
 enable_mbstring
 enable_mbregex
 enable_mbregex_backtrack
-with_libmbfl
 with_onig
 with_mysqli
 enable_embedded_mysqli
@@ -1027,10 +1027,8 @@ with_adabas
 with_sapdb
 with_solid
 with_ibm_db2
-with_ODBCRouter
 with_empress
 with_empress_bcs
-with_birdstep
 with_custom_odbc
 with_iodbc
 with_esoob
@@ -1150,6 +1148,7 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
+runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE}'
@@ -1402,6 +1401,15 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
+  -runstatedir | --runstatedir | --runstatedi | --runstated \
+  | --runstate | --runstat | --runsta | --runst | --runs \
+  | --run | --ru | --r)
+    ac_prev=runstatedir ;;
+  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+  | --run=* | --ru=* | --r=*)
+    runstatedir=$ac_optarg ;;
+
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1539,7 +1547,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir runstatedir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1692,6 +1700,7 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1748,9 +1757,10 @@ SAPI modules:
   --with-fpm-systemd      Activate systemd integration
   --with-fpm-acl          Use POSIX Access Control Lists
   --with-litespeed        Build PHP as litespeed module
-  --enable-phpdbg            Build phpdbg
-  --enable-phpdbg-webhelper  Build phpdbg web SAPI support
-  --enable-phpdbg-debug      Build phpdbg in debug mode
+  --enable-phpdbg         Build phpdbg
+  --enable-phpdbg-webhelper
+                          Build phpdbg web SAPI support
+  --enable-phpdbg-debug   Build phpdbg in debug mode
   --disable-cgi           Disable building CGI version of PHP
   --with-valgrind=DIR     Enable valgrind support
 
@@ -1816,7 +1826,7 @@ Extensions:
   --with-db1=DIR          DBA: Oracle Berkeley DB 1.x support/emulation
   --with-dbm=DIR          DBA: DBM support
   --with-tcadb=DIR        DBA: Tokyo Cabinet abstract DB support
-  --with-lmdb=DIR        DBA: Lightning memory-mapped database support
+  --with-lmdb=DIR         DBA: Lightning memory-mapped database support
   --without-cdb=DIR       DBA: CDB support (bundled)
   --disable-inifile       DBA: INI support (bundled)
   --disable-flatfile      DBA: FlatFile support (bundled)
@@ -1832,7 +1842,7 @@ Extensions:
   --with-openssl-dir=DIR  FTP: openssl install prefix
   --with-gd=DIR           Include GD support.  DIR is the GD library base
                           install directory BUNDLED
-  --with-webp-dir=DIR      GD: Set the path to libwebp install prefix
+  --with-webp-dir=DIR     GD: Set the path to libwebp install prefix
   --with-jpeg-dir=DIR     GD: Set the path to libjpeg install prefix
   --with-png-dir=DIR      GD: Set the path to libpng install prefix
   --with-zlib-dir=DIR     GD: Set the path to libz install prefix
@@ -1858,8 +1868,6 @@ Extensions:
   --disable-mbregex       MBSTRING: Disable multibyte regex support
   --disable-mbregex-backtrack
                           MBSTRING: Disable multibyte regex backtrack check
-  --with-libmbfl=DIR      MBSTRING: Use external libmbfl.  DIR is the libmbfl base
-                          install directory BUNDLED
   --with-onig=DIR         MBSTRING: Use external oniguruma. DIR is the oniguruma install prefix.
                           If DIR is not set, the bundled oniguruma will be used
   --with-mysqli=FILE      Include MySQLi support.  FILE is the path
@@ -1875,18 +1883,15 @@ Extensions:
                           Use --with-oci8=instantclient,/path/to/instant/client/lib
                           to use an Oracle Instant Client installation
   --with-odbcver=HEX      Force support for the passed ODBC version. A hex number is expected, default 0x0350.
-                             Use the special value of 0 to prevent an explicit ODBCVER to be defined.
+                          Use the special value of 0 to prevent an explicit ODBCVER to be defined.
   --with-adabas=DIR       Include Adabas D support /usr/local
   --with-sapdb=DIR        Include SAP DB support /usr/local
   --with-solid=DIR        Include Solid support /usr/local/solid
   --with-ibm-db2=DIR      Include IBM DB2 support /home/db2inst1/sqllib
-  --with-ODBCRouter=DIR   Include ODBCRouter.com support /usr
   --with-empress=DIR      Include Empress support \$EMPRESSPATH
                           (Empress Version >= 8.60 required)
-  --with-empress-bcs=DIR
-                          Include Empress Local Access support \$EMPRESSPATH
+  --with-empress-bcs=DIR  Include Empress Local Access support \$EMPRESSPATH
                           (Empress Version >= 8.60 required)
-  --with-birdstep=DIR     Include Birdstep support /usr/local/birdstep
   --with-custom-odbc=DIR  Include user defined ODBC support. DIR is ODBC install base
                           directory /usr/local. Make sure to define CUSTOM_ODBC_LIBS and
                           have some odbc.h in your include dirs. f.e. you should define
@@ -1926,7 +1931,7 @@ Extensions:
 			    --with-pdo-odbc=unixODBC
 
 			  will check for unixODBC under /usr/local. You may attempt
-			  to use an otherwise unsupported driver using the \"generic\"
+			  to use an otherwise unsupported driver using the 'generic'
 			  flavour.  The syntax for generic ODBC support is:
 
 			    --with-pdo-odbc=generic,dir,libname,ldflags,cflags
@@ -1956,8 +1961,9 @@ Extensions:
   --enable-soap           Enable SOAP support
   --with-libxml-dir=DIR   SOAP: libxml2 install prefix
   --enable-sockets        Enable sockets support
-  --with-sodium=DIR     Include sodium support
-  --with-password-argon2=DIR           Include Argon2 support in password_*. DIR is the Argon2 shared library path]
+  --with-sodium=DIR       Include sodium support
+  --with-password-argon2=DIR
+                          Include Argon2 support in password_*. DIR is the Argon2 shared library path
   --enable-sysvmsg        Enable sysvmsg support
   --enable-sysvsem        Enable System V semaphore support
   --enable-sysvshm        Enable the System V shared memory support
@@ -1979,7 +1985,7 @@ Extensions:
   --with-libxml-dir=DIR   XMLWriter: libxml2 install prefix
   --with-xsl=DIR          Include XSL support.  DIR is the libxslt base
                           install directory (libxslt >= 1.1.0 required)
-  --enable-zend-test           Enable zend-test extension
+  --enable-zend-test      Enable zend-test extension
   --enable-zip            Include Zip read/write support
   --with-zlib-dir=DIR     ZIP: Set the path to libz install prefix
   --with-pcre-dir         ZIP: pcre install prefix
@@ -3654,8 +3660,8 @@ ac_config_headers="$ac_config_headers main/php_config.h"
 
 
 PHP_MAJOR_VERSION=7
-PHP_MINOR_VERSION=2
-PHP_RELEASE_VERSION=12
+PHP_MINOR_VERSION=3
+PHP_RELEASE_VERSION=0
 PHP_EXTRA_VERSION=""
 PHP_VERSION="$PHP_MAJOR_VERSION.$PHP_MINOR_VERSION.$PHP_RELEASE_VERSION$PHP_EXTRA_VERSION"
 PHP_VERSION_ID=`expr $PHP_MAJOR_VERSION \* 10000 + $PHP_MINOR_VERSION \* 100 + $PHP_RELEASE_VERSION`
@@ -3690,21 +3696,6 @@ if test $? -ne 0 ; then
 else
   rm -f php_version.h.new
 fi
-
-
-
-if test "$with_shared_apache" != "no" && test -n "$with_shared_apache" ; then
-  as_fn_error $? "--with-shared-apache is not supported. Please refer to the documentation for using APXS" "$LINENO" 5
-fi
-
-if test -n "$with_apache" && test -n "$with_apxs"; then
-  as_fn_error $? "--with-apache and --with-apxs cannot be used together" "$LINENO" 5
-fi
-
-if test -n "$with_apxs2filter" && test -n "$with_apxs2"; then
-  as_fn_error $? "--with-apxs2filter and --with-apxs2 cannot be used together" "$LINENO" 5
-fi
-
 
 
 cwd=`pwd`
@@ -4956,7 +4947,6 @@ $as_echo "$ac_cv_safe_to_define___extensions__" >&6; }
   $as_echo "#define _TANDEM_SOURCE 1" >>confdefs.h
 
 
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ln -s works" >&5
 $as_echo_n "checking whether ln -s works... " >&6; }
 LN_S=$as_ln_s
@@ -5552,8 +5542,6 @@ esac
 
 
 
-
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether /dev/urandom exists" >&5
 $as_echo_n "checking whether /dev/urandom exists... " >&6; }
 if test -r "/dev/urandom" && test -c "/dev/urandom"; then
@@ -5883,11 +5871,53 @@ $as_echo "#define HAVE_HUGE_VAL_NAN 1" >>confdefs.h
 
 fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether __cpuid_count is available" >&5
+$as_echo_n "checking whether __cpuid_count is available... " >&6; }
+if ${ac_cv_cpuid_count_available+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+  #include <cpuid.h>
+
+int
+main ()
+{
+
+  unsigned eax, ebx, ecx, edx;
+  __cpuid_count(0, 0, eax, ebx, ecx, edx);
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+  ac_cv_cpuid_count_available=yes
+
+else
+
+  ac_cv_cpuid_count_available=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_cpuid_count_available" >&5
+$as_echo "$ac_cv_cpuid_count_available" >&6; }
+if test "$ac_cv_cpuid_count_available" = "yes"; then
+
+$as_echo "#define HAVE_CPUID_COUNT 1" >>confdefs.h
+
+fi
 
 
-# =================================================================================
-#  http://www.gnu.org/software/autoconf-archive/ax_func_which_gethostbyname_r.html
-# =================================================================================
+
+# ==================================================================================
+#  https://www.gnu.org/software/autoconf-archive/ax_func_which_gethostbyname_r.html
+# ==================================================================================
 #
 # SYNOPSIS
 #
@@ -5933,7 +5963,7 @@ fi
 #   Public License for more details.
 #
 #   You should have received a copy of the GNU General Public License along
-#   with this program. If not, see <http://www.gnu.org/licenses/>.
+#   with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 #   As a special exception, the respective Autoconf Macro's copyright owner
 #   gives unlimited permission to copy, distribute and modify the configure
@@ -5948,7 +5978,7 @@ fi
 #   modified version of the Autoconf Macro, you may extend this special
 #   exception to the GPL to apply to your modified version as well.
 
-#serial 7
+#serial 8
 
 
 
@@ -5969,14 +5999,8 @@ fi
 
 
 
-
-
-if test "$beos_threads" = "1"; then
-  pthreads_working="yes"
-  ac_cv_pthreads_cflags=""
-else
-  save_CFLAGS=$CFLAGS
-  save_LIBS=$LIBS
+save_CFLAGS=$CFLAGS
+save_LIBS=$LIBS
 
 if test -n "$ac_cv_pthreads_lib"; then
   LIBS="$LIBS -l$ac_cv_pthreads_lib"
@@ -6017,20 +6041,20 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-  LIBS=$save_LIBS
-  CFLAGS=$save_CFLAGS
+LIBS=$save_LIBS
+CFLAGS=$save_CFLAGS
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthreads_cflags" >&5
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthreads_cflags" >&5
 $as_echo_n "checking for pthreads_cflags... " >&6; }
 if ${ac_cv_pthreads_cflags+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-  ac_cv_pthreads_cflags=
-  if test "$pthreads_working" != "yes"; then
-    for flag in -kthread -pthread -pthreads -mthreads -Kthread -threads -mt -qthreaded; do
-      ac_save=$CFLAGS
-      CFLAGS="$CFLAGS $flag"
+ac_cv_pthreads_cflags=
+if test "$pthreads_working" != "yes"; then
+  for flag in -kthread -pthread -pthreads -mthreads -Kthread -threads -mt -qthreaded; do
+    ac_save=$CFLAGS
+    CFLAGS="$CFLAGS $flag"
 
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -6062,29 +6086,29 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-      CFLAGS=$ac_save
-      if test "$pthreads_checked" = "yes"; then
-        ac_cv_pthreads_cflags=$flag
-        break
-      fi
-    done
-  fi
+    CFLAGS=$ac_save
+    if test "$pthreads_checked" = "yes"; then
+      ac_cv_pthreads_cflags=$flag
+      break
+    fi
+  done
+fi
 
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_pthreads_cflags" >&5
 $as_echo "$ac_cv_pthreads_cflags" >&6; }
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthreads_lib" >&5
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthreads_lib" >&5
 $as_echo_n "checking for pthreads_lib... " >&6; }
 if ${ac_cv_pthreads_lib+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-  ac_cv_pthreads_lib=
-  if test "$pthreads_working" != "yes"; then
-   for lib in pthread pthreads c_r; do
-      ac_save=$LIBS
-      LIBS="$LIBS -l$lib"
+ac_cv_pthreads_lib=
+if test "$pthreads_working" != "yes"; then
+ for lib in pthread pthreads c_r; do
+    ac_save=$LIBS
+    LIBS="$LIBS -l$lib"
 
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -6116,21 +6140,20 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-      LIBS=$ac_save
-      if test "$pthreads_checked" = "yes"; then
-        ac_cv_pthreads_lib=$lib
-        break
-      fi
-    done
-  fi
+    LIBS=$ac_save
+    if test "$pthreads_checked" = "yes"; then
+      ac_cv_pthreads_lib=$lib
+      break
+    fi
+  done
+fi
 
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_pthreads_lib" >&5
 $as_echo "$ac_cv_pthreads_lib" >&6; }
 
-  if test "x$ac_cv_pthreads_cflags" != "x" -o "x$ac_cv_pthreads_lib" != "x"; then
-    pthreads_working="yes"
-  fi
+if test "x$ac_cv_pthreads_cflags" != "x" -o "x$ac_cv_pthreads_lib" != "x"; then
+  pthreads_working="yes"
 fi
 
 if test "$pthreads_working" = "yes"; then
@@ -6678,171 +6701,6 @@ EOF
 
     SAPI_SHARED=libs/libphp7.so
     INSTALL_IT="$INSTALL_IT $SAPI_SHARED"
-    ;;
-  *beos*)
-    if test -f _APP_; then `rm _APP_`; fi
-    `ln -s $APXS_BINDIR/httpd _APP_`
-    EXTRA_LIBS="$EXTRA_LIBS _APP_"
-
-  if test "shared" = "program"; then
-    PHP_BINARIES="$PHP_BINARIES apache2handler"
-  elif test "$PHP_SAPI" != "none"; then
-    as_fn_error $? "
-+--------------------------------------------------------------------+
-|                        *** ATTENTION ***                           |
-|                                                                    |
-| You've configured multiple SAPIs to be build. You can build only   |
-| one SAPI module plus CGI, CLI and FPM binaries at the same time.   |
-+--------------------------------------------------------------------+
-" "$LINENO" 5
-  else
-    PHP_SAPI=apache2handler
-  fi
-
-
-
-    BUILD_DIR="$BUILD_DIR sapi/apache2handler"
-
-
-
-  PHP_INSTALLED_SAPIS="$PHP_INSTALLED_SAPIS apache2handler"
-
-
-    case "shared" in
-    static)
-
-  php_c_pre='$(LIBTOOL) --mode=compile $(CC)'
-  php_c_meta='$(COMMON_FLAGS) $(CFLAGS_CLEAN) $(EXTRA_CFLAGS)'
-  php_c_post=
-  php_cxx_pre='$(LIBTOOL) --mode=compile $(CXX)'
-  php_cxx_meta='$(COMMON_FLAGS) $(CXXFLAGS_CLEAN) $(EXTRA_CXXFLAGS)'
-  php_cxx_post=
-  php_lo=lo
-
-  case $with_pic in
-    yes) pic_setting='-prefer-pic';;
-    no)  pic_setting='-prefer-non-pic';;
-  esac
-
-  shared_c_pre='$(LIBTOOL) --mode=compile $(CC)'
-  shared_c_meta='$(COMMON_FLAGS) $(CFLAGS_CLEAN) $(EXTRA_CFLAGS) '$pic_setting
-  shared_c_post=
-  shared_cxx_pre='$(LIBTOOL) --mode=compile $(CXX)'
-  shared_cxx_meta='$(COMMON_FLAGS) $(CXXFLAGS_CLEAN) $(EXTRA_CXXFLAGS) '$pic_setting
-  shared_cxx_post=
-  shared_lo=lo
-
-  OVERALL_TARGET=libphp$PHP_MAJOR_VERSION.la
-  php_sapi_module=static
-;;
-    shared)
-
-  php_c_pre='$(LIBTOOL) --mode=compile $(CC)'
-  php_c_meta='$(COMMON_FLAGS) $(CFLAGS_CLEAN) $(EXTRA_CFLAGS)'
-  php_c_post=
-  php_cxx_pre='$(LIBTOOL) --mode=compile $(CXX)'
-  php_cxx_meta='$(COMMON_FLAGS) $(CXXFLAGS_CLEAN) $(EXTRA_CXXFLAGS)'
-  php_cxx_post=
-  php_lo=lo
-
-  case $with_pic in
-    yes) pic_setting='-prefer-pic';;
-    no)  pic_setting='-prefer-non-pic';;
-  esac
-
-  shared_c_pre='$(LIBTOOL) --mode=compile $(CC)'
-  shared_c_meta='$(COMMON_FLAGS) $(CFLAGS_CLEAN) $(EXTRA_CFLAGS) '$pic_setting
-  shared_c_post=
-  shared_cxx_pre='$(LIBTOOL) --mode=compile $(CXX)'
-  shared_cxx_meta='$(COMMON_FLAGS) $(CXXFLAGS_CLEAN) $(EXTRA_CXXFLAGS) '$pic_setting
-  shared_cxx_post=
-  shared_lo=lo
-
-  OVERALL_TARGET=libphp$PHP_MAJOR_VERSION.la
-  php_sapi_module=shared
-
-  php_c_pre=$shared_c_pre
-  php_c_meta=$shared_c_meta
-  php_c_post=$shared_c_post
-  php_cxx_pre=$shared_cxx_pre
-  php_cxx_meta=$shared_cxx_meta
-  php_cxx_post=$shared_cxx_post
-  php_lo=$shared_lo
-;;
-    bundle)
-
-  php_c_pre='$(LIBTOOL) --mode=compile $(CC)'
-  php_c_meta='$(COMMON_FLAGS) $(CFLAGS_CLEAN) $(EXTRA_CFLAGS)'
-  php_c_post=
-  php_cxx_pre='$(LIBTOOL) --mode=compile $(CXX)'
-  php_cxx_meta='$(COMMON_FLAGS) $(CXXFLAGS_CLEAN) $(EXTRA_CXXFLAGS)'
-  php_cxx_post=
-  php_lo=lo
-
-  case $with_pic in
-    yes) pic_setting='-prefer-pic';;
-    no)  pic_setting='-prefer-non-pic';;
-  esac
-
-  shared_c_pre='$(LIBTOOL) --mode=compile $(CC)'
-  shared_c_meta='$(COMMON_FLAGS) $(CFLAGS_CLEAN) $(EXTRA_CFLAGS) '$pic_setting
-  shared_c_post=
-  shared_cxx_pre='$(LIBTOOL) --mode=compile $(CXX)'
-  shared_cxx_meta='$(COMMON_FLAGS) $(CXXFLAGS_CLEAN) $(EXTRA_CXXFLAGS) '$pic_setting
-  shared_cxx_post=
-  shared_lo=lo
-
-  OVERALL_TARGET=libs/libphp$PHP_MAJOR_VERSION.bundle
-  php_sapi_module=static
-;;
-    esac
-    install_sapi="install-sapi"
-
-
-  case sapi/apache2handler in
-  "") ac_srcdir="$abs_srcdir/"; unset ac_bdir; ac_inc="-I. -I$abs_srcdir" ;;
-  /*) ac_srcdir=`echo "sapi/apache2handler"|cut -c 2-`"/"; ac_bdir=$ac_srcdir; ac_inc="-I$ac_bdir -I$abs_srcdir/$ac_bdir" ;;
-  *) ac_srcdir="$abs_srcdir/sapi/apache2handler/"; ac_bdir="sapi/apache2handler/"; ac_inc="-I$ac_bdir -I$ac_srcdir" ;;
-  esac
-
-
-
-  b_c_pre=$php_c_pre
-  b_cxx_pre=$php_cxx_pre
-  b_c_meta=$php_c_meta
-  b_cxx_meta=$php_cxx_meta
-  b_c_post=$php_c_post
-  b_cxx_post=$php_cxx_post
-  b_lo=$php_lo
-
-
-  old_IFS=$IFS
-  for ac_src in mod_php7.c sapi_apache2.c apache_config.c php_functions.c; do
-
-      IFS=.
-      set $ac_src
-      ac_obj=$1
-      IFS=$old_IFS
-
-      PHP_SAPI_OBJS="$PHP_SAPI_OBJS $ac_bdir$ac_obj.lo"
-
-      case $ac_src in
-        *.c) ac_comp="$b_c_pre $APACHE_CFLAGS $ac_inc $b_c_meta -c $ac_srcdir$ac_src -o $ac_bdir$ac_obj.$b_lo $b_c_post" ;;
-        *.s) ac_comp="$b_c_pre $APACHE_CFLAGS $ac_inc $b_c_meta -c $ac_srcdir$ac_src -o $ac_bdir$ac_obj.$b_lo $b_c_post" ;;
-        *.S) ac_comp="$b_c_pre $APACHE_CFLAGS $ac_inc $b_c_meta -c $ac_srcdir$ac_src -o $ac_bdir$ac_obj.$b_lo $b_c_post" ;;
-        *.cpp|*.cc|*.cxx) ac_comp="$b_cxx_pre $APACHE_CFLAGS $ac_inc $b_cxx_meta -c $ac_srcdir$ac_src -o $ac_bdir$ac_obj.$b_lo $b_cxx_post" ;;
-      esac
-
-    cat >>Makefile.objects<<EOF
-$ac_bdir$ac_obj.lo: $ac_srcdir$ac_src
-	$ac_comp
-EOF
-  done
-
-
-
-
-    INSTALL_IT="$INSTALL_IT $SAPI_LIBTOOL"
     ;;
   *)
 
@@ -7578,7 +7436,7 @@ if test "$PHP_FPM" != "no"; then
 $as_echo "$PHP_FPM" >&6; }
 
 
-  for ac_func in setenv clearenv setproctitle
+  for ac_func in setenv clearenv setproctitle setproctitle_fast
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -7762,7 +7620,7 @@ $as_echo_n "checking for prctl... " >&6; }
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
- #include <sys/prctl.h>
+#include <sys/prctl.h>
 int
 main ()
 {
@@ -7795,7 +7653,7 @@ $as_echo_n "checking for clock_gettime... " >&6; }
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
- #include <time.h>
+#include <time.h>
 int
 main ()
 {
@@ -7828,7 +7686,7 @@ $as_echo_n "checking for clock_gettime in -lrt... " >&6; }
 
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
- #include <time.h>
+#include <time.h>
 int
 main ()
 {
@@ -7867,14 +7725,12 @@ $as_echo "#define HAVE_CLOCK_GETTIME 1" >>confdefs.h
 $as_echo_n "checking for clock_get_time... " >&6; }
 
     if test "$cross_compiling" = yes; then :
-  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "cannot run test program while cross compiling
-See \`config.log' for more details" "$LINENO" 5; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no (cross-compiling)" >&5
+$as_echo "no (cross-compiling)" >&6; }
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
- #include <mach/mach.h>
+#include <mach/mach.h>
       #include <mach/clock.h>
       #include <mach/mach_error.h>
 
@@ -7960,8 +7816,8 @@ $as_echo_n "checking whether ptrace works... " >&6; }
 
     if test "$cross_compiling" = yes; then :
 
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: skipped (cross compiling)" >&5
-$as_echo "skipped (cross compiling)" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: skipped (cross-compiling)" >&5
+$as_echo "skipped (cross-compiling)" >&6; }
 
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -8068,7 +7924,7 @@ $as_echo_n "checking for mach_vm_read... " >&6; }
 
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
- #include <mach/mach.h>
+#include <mach/mach.h>
       #include <mach/mach_vm.h>
 
 int
@@ -8118,8 +7974,8 @@ $as_echo_n "checking for proc mem file... " >&6; }
 
     if test "$cross_compiling" = yes; then :
 
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: skipped (cross compiling)" >&5
-$as_echo "skipped (cross compiling)" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: skipped (cross-compiling)" >&5
+$as_echo "skipped (cross-compiling)" >&6; }
 
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -8238,7 +8094,7 @@ $as_echo_n "checking for TCP_INFO... " >&6; }
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
- #include <netinet/tcp.h>
+#include <netinet/tcp.h>
 int
 main ()
 {
@@ -8273,7 +8129,7 @@ $as_echo_n "checking for SO_LISTENQLEN... " >&6; }
 
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
- #include <sys/socket.h>
+#include <sys/socket.h>
 int
 main ()
 {
@@ -8309,7 +8165,7 @@ $as_echo_n "checking for sysconf... " >&6; }
 
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
- #include <unistd.h>
+#include <unistd.h>
 int
 main ()
 {
@@ -8340,7 +8196,7 @@ $as_echo_n "checking for times... " >&6; }
 
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
- #include <sys/times.h>
+#include <sys/times.h>
 int
 main ()
 {
@@ -8641,7 +8497,7 @@ $as_echo_n "checking for apparmor... " >&6; }
 
 	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
- #include <sys/apparmor.h>
+#include <sys/apparmor.h>
 int
 main ()
 {
@@ -9832,6 +9688,7 @@ EOF
                 \$(EXTRA_LIBS) \
                 \$(PHPDBG_EXTRA_LIBS) \
                 \$(ZEND_EXTRA_LIBS) \
+                \$(PHP_FRAMEWORKS) \
          -o \$(BUILD_BINARY)"
 
   BUILD_PHPDBG_SHARED="\$(LIBTOOL) --mode=link \
@@ -12507,7 +12364,10 @@ utime.h \
 sys/utsname.h \
 sys/ipc.h \
 dlfcn.h \
-assert.h
+assert.h \
+tmmintrin.h \
+nmmintrin.h \
+immintrin.h
 
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
@@ -12632,7 +12492,7 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 int
 main ()
 {
- _IO_cookie_io_functions_t cookie;
+_IO_cookie_io_functions_t cookie;
   ;
   return 0;
 }
@@ -12764,6 +12624,60 @@ $as_echo "#define HAVE_BROKEN_GLIBC_FOPEN_APPEND 1" >>confdefs.h
 $as_echo "no" >&6; }
   fi
 
+if test "$GCC" = "yes"; then
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for broken gcc optimize-strlen" >&5
+$as_echo_n "checking for broken gcc optimize-strlen... " >&6; }
+if ${ac_cv_have_broken_gcc_strlen_opt+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+  if test "$cross_compiling" = yes; then :
+
+  ac_cv_have_broken_gcc_strlen_opt=no
+
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+struct s
+{
+  int i;
+  char c[1];
+};
+int main()
+{
+  struct s *s = malloc(sizeof(struct s) + 3);
+  s->i = 3;
+  strcpy(s->c, "foo");
+  return strlen(s->c+1) == 2;
+}
+
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+
+  ac_cv_have_broken_gcc_strlen_opt=yes
+
+else
+
+  ac_cv_have_broken_gcc_strlen_opt=no
+
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_have_broken_gcc_strlen_opt" >&5
+$as_echo "$ac_cv_have_broken_gcc_strlen_opt" >&6; }
+  if test "$ac_cv_have_broken_gcc_strlen_opt" = "yes"; then
+    CFLAGS="$CFLAGS -fno-optimize-strlen"
+  fi
+
+fi
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether struct tm is in sys/time.h or time.h" >&5
@@ -14430,6 +14344,254 @@ _ACEOF
 
 
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for __builtin_cpu_init" >&5
+$as_echo_n "checking for __builtin_cpu_init... " >&6; }
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+    return __builtin_cpu_init()? 1 : 0;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+    have_builtin_cpu_init=1
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+    have_builtin_cpu_init=0
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+
+cat >>confdefs.h <<_ACEOF
+#define PHP_HAVE_BUILTIN_CPU_INIT $have_builtin_cpu_init
+_ACEOF
+
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for __builtin_cpu_supports" >&5
+$as_echo_n "checking for __builtin_cpu_supports... " >&6; }
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+    return __builtin_cpu_supports("sse")? 1 : 0;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+    have_builtin_cpu_supports=1
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+    have_builtin_cpu_supports=0
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+
+cat >>confdefs.h <<_ACEOF
+#define PHP_HAVE_BUILTIN_CPU_SUPPORTS $have_builtin_cpu_supports
+_ACEOF
+
+
+
+
+
+
+  have_ext_instructions=0
+  if test $have_builtin_cpu_supports = 1; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ssse3 instructions supports" >&5
+$as_echo_n "checking for ssse3 instructions supports... " >&6; }
+    if test "$cross_compiling" = yes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int main() {
+	return __builtin_cpu_supports("ssse3")? 0 : 1;
+}
+
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+
+      have_ext_instructions=1
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+  fi
+
+cat >>confdefs.h <<_ACEOF
+#define PHP_HAVE_SSSE3_INSTRUCTIONS $have_ext_instructions
+_ACEOF
+
+
+
+
+
+  have_ext_instructions=0
+  if test $have_builtin_cpu_supports = 1; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sse4.2 instructions supports" >&5
+$as_echo_n "checking for sse4.2 instructions supports... " >&6; }
+    if test "$cross_compiling" = yes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int main() {
+	return __builtin_cpu_supports("sse4.2")? 0 : 1;
+}
+
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+
+      have_ext_instructions=1
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+  fi
+
+cat >>confdefs.h <<_ACEOF
+#define PHP_HAVE_SSE4_2_INSTRUCTIONS $have_ext_instructions
+_ACEOF
+
+
+
+
+
+  have_ext_instructions=0
+  if test $have_builtin_cpu_supports = 1; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for avx instructions supports" >&5
+$as_echo_n "checking for avx instructions supports... " >&6; }
+    if test "$cross_compiling" = yes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int main() {
+	return __builtin_cpu_supports("avx")? 0 : 1;
+}
+
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+
+      have_ext_instructions=1
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+  fi
+
+cat >>confdefs.h <<_ACEOF
+#define PHP_HAVE_AVX_INSTRUCTIONS $have_ext_instructions
+_ACEOF
+
+
+
+
+
+  have_ext_instructions=0
+  if test $have_builtin_cpu_supports = 1; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for avx2 instructions supports" >&5
+$as_echo_n "checking for avx2 instructions supports... " >&6; }
+    if test "$cross_compiling" = yes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int main() {
+	return __builtin_cpu_supports("avx2")? 0 : 1;
+}
+
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+
+      have_ext_instructions=1
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+  fi
+
+cat >>confdefs.h <<_ACEOF
+#define PHP_HAVE_AVX2_INSTRUCTIONS $have_ext_instructions
+_ACEOF
+
+
+
 ac_fn_c_check_member "$LINENO" "struct stat" "st_blksize" "ac_cv_member_struct_stat_st_blksize" "$ac_includes_default"
 if test "x$ac_cv_member_struct_stat_st_blksize" = xyes; then :
 
@@ -14438,10 +14600,16 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-$as_echo "#define HAVE_ST_BLKSIZE 1" >>confdefs.h
+fi
+ac_fn_c_check_member "$LINENO" "struct stat" "st_rdev" "ac_cv_member_struct_stat_st_rdev" "$ac_includes_default"
+if test "x$ac_cv_member_struct_stat_st_rdev" = xyes; then :
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_STRUCT_STAT_ST_RDEV 1
+_ACEOF
+
 
 fi
-
 
 if test "`uname -s 2>/dev/null`" != "QNX"; then
   ac_fn_c_check_member "$LINENO" "struct stat" "st_blocks" "ac_cv_member_struct_stat_st_blocks" "$ac_includes_default"
@@ -14469,19 +14637,6 @@ else
 $as_echo "$as_me: WARNING: warnings level for cc set to 0" >&2;}
   WARNING_LEVEL=0
 fi
-ac_fn_c_check_member "$LINENO" "struct stat" "st_rdev" "ac_cv_member_struct_stat_st_rdev" "$ac_includes_default"
-if test "x$ac_cv_member_struct_stat_st_rdev" = xyes; then :
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_STRUCT_STAT_ST_RDEV 1
-_ACEOF
-
-
-$as_echo "#define HAVE_ST_RDEV 1" >>confdefs.h
-
-fi
-
-
 
 ac_fn_c_check_type "$LINENO" "size_t" "ac_cv_type_size_t" "$ac_includes_default"
 if test "x$ac_cv_type_size_t" = xyes; then :
@@ -14593,6 +14748,116 @@ $as_echo "#define HAVE_SOCKADDR_SA_LEN 1" >>confdefs.h
   fi
 
 
+case $host_alias in #(
+  *-*-*android*|*-*-*uclibc*|*-*-*musl*) :
+    true ;; #(
+  *) :
+
+
+
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for __attribute__((ifunc))" >&5
+$as_echo_n "checking for __attribute__((ifunc))... " >&6; }
+if ${ax_cv_have_func_attribute_ifunc+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+                    int my_foo( void ) { return 0; }
+                    static int (*resolve_foo(void))(void) { return my_foo; }
+                    int foo( void ) __attribute__((ifunc("resolve_foo")));
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+                                      if test -s conftest.err; then :
+  ax_cv_have_func_attribute_ifunc=no
+else
+  ax_cv_have_func_attribute_ifunc=yes
+fi
+else
+  ax_cv_have_func_attribute_ifunc=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_have_func_attribute_ifunc" >&5
+$as_echo "$ax_cv_have_func_attribute_ifunc" >&6; }
+
+    if test yes = $ax_cv_have_func_attribute_ifunc; then :
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_FUNC_ATTRIBUTE_IFUNC 1
+_ACEOF
+
+fi
+
+
+
+
+
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for __attribute__((target))" >&5
+$as_echo_n "checking for __attribute__((target))... " >&6; }
+if ${ax_cv_have_func_attribute_target+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+                    static int bar( void ) __attribute__((target("sse2")));
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+                                      if test -s conftest.err; then :
+  ax_cv_have_func_attribute_target=no
+else
+  ax_cv_have_func_attribute_target=yes
+fi
+else
+  ax_cv_have_func_attribute_target=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_have_func_attribute_target" >&5
+$as_echo "$ax_cv_have_func_attribute_target" >&6; }
+
+    if test yes = $ax_cv_have_func_attribute_target; then :
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_FUNC_ATTRIBUTE_TARGET 1
+_ACEOF
+
+fi
+
+
+
+ ;;
+esac
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for IPv6 support" >&5
 $as_echo_n "checking for IPv6 support... " >&6; }
 if ${ac_cv_ipv6_support+:} false; then :
@@ -14600,7 +14865,7 @@ if ${ac_cv_ipv6_support+:} false; then :
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
- #include <sys/types.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 int
@@ -14648,6 +14913,7 @@ chroot \
 ctime_r \
 cuserid \
 crypt \
+explicit_memset \
 flock \
 ftok \
 funopen \
@@ -15490,6 +15756,7 @@ else
       cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
+
 #define _REENTRANT
 #include <sys/types.h>
 #include <dirent.h>
@@ -15678,6 +15945,80 @@ $as_echo "#define CRYPT_R_GNU_SOURCE 1" >>confdefs.h
   if test "$php_cv_crypt_r_style" = "none"; then
     as_fn_error $? "Unable to detect data struct used by crypt_r" "$LINENO" 5
   fi
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for asm goto" >&5
+$as_echo_n "checking for asm goto... " >&6; }
+if ${ac_cv__asm_goto+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test "$cross_compiling" = yes; then :
+  ac_cv__asm_goto=no
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int main(void) {
+    __asm__ goto("jmp %l0\n" :::: end);
+end:
+    return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  ac_cv__asm_goto=yes
+else
+  ac_cv__asm_goto=no
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv__asm_goto" >&5
+$as_echo "$ac_cv__asm_goto" >&6; }
+
+if test "$ac_cv__asm_goto" = yes; then
+
+$as_echo "#define HAVE_ASM_GOTO 1" >>confdefs.h
+
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether compiler supports VLA" >&5
+$as_echo_n "checking whether compiler supports VLA... " >&6; }
+if ${ac_cv__compiler_c99_vla+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test "$cross_compiling" = yes; then :
+  ac_cv__compiler_c99_vla=no
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+ #include <stdlib.h>
+ int main(void) {
+         int i[rand()%10];
+	 return 0;
+ }
+
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  ac_cv__compiler_c99_vla=yes
+else
+  ac_cv__compiler_c99_vla=no
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv__compiler_c99_vla" >&5
+$as_echo "$ac_cv__compiler_c99_vla" >&6; }
+
+if test "$ac_cv__compiler_c99_vla" = yes; then
+
+$as_echo "#define HAVE_COMPILER_C99_VLA 1" >>confdefs.h
 
 fi
 
@@ -19270,57 +19611,131 @@ ext_output=$PHP_PCRE_JIT
 
 
   if test "$PHP_PCRE_REGEX" != "yes" && test "$PHP_PCRE_REGEX" != "no"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PCRE headers location" >&5
-$as_echo_n "checking for PCRE headers location... " >&6; }
-    for i in $PHP_PCRE_REGEX $PHP_PCRE_REGEX/include $PHP_PCRE_REGEX/include/pcre $PHP_PCRE_REGEX/local/include; do
-      test -f $i/pcre.h && PCRE_INCDIR=$i
-    done
 
-    if test -z "$PCRE_INCDIR"; then
-      as_fn_error $? "Could not find pcre.h in $PHP_PCRE_REGEX" "$LINENO" 5
+    if test "$PHP_PCRE_REGEX" = "/usr"; then
+      if test -z "$PKG_CONFIG"; then
+        # Extract the first word of "pkg-config", so it can be a program name with args.
+set dummy pkg-config; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_PKG_CONFIG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_PKG_CONFIG" && ac_cv_path_PKG_CONFIG="no"
+  ;;
+esac
+fi
+PKG_CONFIG=$ac_cv_path_PKG_CONFIG
+if test -n "$PKG_CONFIG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PKG_CONFIG" >&5
+$as_echo "$PKG_CONFIG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+      fi
+      if test -x "$PKG_CONFIG"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PCRE2 10.30 or greater" >&5
+$as_echo_n "checking for PCRE2 10.30 or greater... " >&6; }
+        if $PKG_CONFIG --atleast-version 10.30 libpcre2-8; then
+          PCRE2_VER=`$PKG_CONFIG --modversion libpcre2-8`
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PCRE2_VER" >&5
+$as_echo "$PCRE2_VER" >&6; }
+        else
+          as_fn_error $? "PCRE2 version 10.30 or later is required to compile php with PCRE2 support" "$LINENO" 5
+        fi
+        PCRE2_LIB=`$PKG_CONFIG --libs libpcre2-8`
+        PCRE2_INC=`$PKG_CONFIG --cflags libpcre2-8`
+      fi
     fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PCRE_INCDIR" >&5
-$as_echo "$PCRE_INCDIR" >&6; }
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PCRE library location" >&5
-$as_echo_n "checking for PCRE library location... " >&6; }
-    for j in $PHP_PCRE_REGEX $PHP_PCRE_REGEX/$PHP_LIBDIR; do
-      test -f $j/libpcre.a || test -f $j/libpcre.$SHLIB_SUFFIX_NAME && PCRE_LIBDIR=$j
-    done
-
-    if test -z "$PCRE_LIBDIR" ; then
-      as_fn_error $? "Could not find libpcre.(a|$SHLIB_SUFFIX_NAME) in $PHP_PCRE_REGEX" "$LINENO" 5
-    fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PCRE_LIBDIR" >&5
-$as_echo "$PCRE_LIBDIR" >&6; }
-
-
-    pcre_major=`grep PCRE_MAJOR $PCRE_INCDIR/pcre.h | sed -e 's/[^0-9]//g'`
-    pcre_minor=`grep PCRE_MINOR $PCRE_INCDIR/pcre.h | sed -e 's/[^0-9]//g'`
-
-    pcre_minor_length=`echo "$pcre_minor" | wc -c | sed -e 's/^0-9//g'`
-    if test "$pcre_minor_length" -eq 2 ; then
-      pcre_minor="$pcre_minor"0
-    fi
-    pcre_version=$pcre_major$pcre_minor
-    if test "$pcre_version" -lt 660; then
-      as_fn_error $? "The PCRE extension requires PCRE library version >= 6.6" "$LINENO" 5
+            if test -z "$PCRE2_LIB"; then
+      PCRE2_CONF=$PHP_PCRE_REGEX/bin/pcre2-config
+      if test -x "$PCRE2_CONF"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PCRE2 10.30 or greater" >&5
+$as_echo_n "checking for PCRE2 10.30 or greater... " >&6; }
+        PCRE2_VER=`$PCRE2_CONF --version`
+        if test "`echo $PCRE2_VER | sed 's,\.,,g'`" -lt 1030; then
+          as_fn_error $? "PCRE2 version 10.30 or later is required to compile php with PCRE2 support" "$LINENO" 5
+        else
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PCRE2_VER" >&5
+$as_echo "$PCRE2_VER" >&6; }
+        fi
+        PCRE2_LIB=`$PCRE2_CONF --libs8`
+        PCRE2_INC=`$PCRE2_CONF --cflags`
+      else
+        as_fn_error $? "Couldn't find pcre2-config" "$LINENO" 5
+      fi
     fi
 
 
-  save_old_LDFLAGS=$LDFLAGS
-  ac_stuff="
-      -L$PCRE_LIBDIR
-    "
+  for ac_i in $PCRE2_INC; do
+    case $ac_i in
+    -I*)
+      ac_ii=`echo $ac_i|cut -c 3-`
 
-  save_ext_shared=$ext_shared
-  ext_shared=yes
+  if test "$ac_ii" != "/usr/include"; then
 
-  for ac_i in $ac_stuff; do
+  if test -z "$ac_ii" || echo "$ac_ii" | grep '^/' >/dev/null ; then
+    ai_p=$ac_ii
+  else
+
+    ep_dir=`echo $ac_ii|$SED 's%/*[^/][^/]*/*$%%'`
+
+    ep_realdir=`(cd "$ep_dir" && pwd)`
+    ai_p="$ep_realdir"/`basename "$ac_ii"`
+  fi
+
+
+
+  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
+
+  cmd="echo $ac_n \"\$INCLUDEPATH$unique$ac_c\""
+  if test -n "$unique" && test "`eval $cmd`" = "" ; then
+    eval "INCLUDEPATH$unique=set"
+
+      if test ""; then
+        INCLUDES="-I$ai_p $INCLUDES"
+      else
+        INCLUDES="$INCLUDES -I$ai_p"
+      fi
+
+  fi
+
+  fi
+
+    ;;
+    esac
+  done
+
+
+  for ac_i in $PCRE2_LIB; do
     case $ac_i in
     -pthread)
       if test "$ext_shared" = "yes"; then
-        LDFLAGS="$LDFLAGS -pthread"
+        ="$ -pthread"
       else
 
 
@@ -19341,20 +19756,7 @@ $as_echo "$PCRE_LIBDIR" >&6; }
   case $ac_ii in
   c|c_r|pthread*) ;;
   *)
-    if test "$ext_shared" = "yes"; then
-        LDFLAGS="$LDFLAGS -l$ac_ii"
-    else
-
-
-  case $ac_ii in
-  c|c_r|pthread*) ;;
-  *)
       LIBS="$LIBS -l$ac_ii"
-   ;;
-  esac
-
-
-    fi
    ;;
   esac
 
@@ -19376,10 +19778,6 @@ $as_echo "$PCRE_LIBDIR" >&6; }
   fi
 
 
-      if test "$ext_shared" = "yes"; then
-        LDFLAGS="-L$ai_p $LDFLAGS"
-        test -n "$ld_runpath_switch" && LDFLAGS="$ld_runpath_switch$ai_p $LDFLAGS"
-      else
 
 
 
@@ -19396,7 +19794,6 @@ $as_echo "$PCRE_LIBDIR" >&6; }
   fi
 
 
-      fi
 
   fi
 
@@ -19404,145 +19801,64 @@ $as_echo "$PCRE_LIBDIR" >&6; }
     esac
   done
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pcre_jit_exec in -lpcre" >&5
-$as_echo_n "checking for pcre_jit_exec in -lpcre... " >&6; }
-if ${ac_cv_lib_pcre_pcre_jit_exec+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lpcre  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
 
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char pcre_jit_exec ();
-int
-main ()
-{
-return pcre_jit_exec ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_pcre_pcre_jit_exec=yes
-else
-  ac_cv_lib_pcre_pcre_jit_exec=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_pcre_pcre_jit_exec" >&5
-$as_echo "$ac_cv_lib_pcre_pcre_jit_exec" >&6; }
-if test "x$ac_cv_lib_pcre_pcre_jit_exec" = xyes; then :
-
-    LDFLAGS=$save_old_LDFLAGS
-    ext_shared=$save_ext_shared
-
-
-$as_echo "#define HAVE_PCRE_JIT_SUPPORT 1" >>confdefs.h
-
-
-
-else
-
-    LDFLAGS=$save_old_LDFLAGS
-    ext_shared=$save_ext_shared
-    unset ac_cv_lib_pcre_pcre_jit_exec
-
-
-
-fi
-
-
-
-  if test -n "$PCRE_LIBDIR"; then
-
-  if test "$PCRE_LIBDIR" != "/usr/$PHP_LIBDIR" && test "$PCRE_LIBDIR" != "/usr/lib"; then
-
-  if test -z "$PCRE_LIBDIR" || echo "$PCRE_LIBDIR" | grep '^/' >/dev/null ; then
-    ai_p=$PCRE_LIBDIR
-  else
-
-    ep_dir=`echo $PCRE_LIBDIR|$SED 's%/*[^/][^/]*/*$%%'`
-
-    ep_realdir=`(cd "$ep_dir" && pwd)`
-    ai_p="$ep_realdir"/`basename "$PCRE_LIBDIR"`
-  fi
-
-
-
-
-
-  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
-
-  cmd="echo $ac_n \"\$LIBPATH$unique$ac_c\""
-  if test -n "$unique" && test "`eval $cmd`" = "" ; then
-    eval "LIBPATH$unique=set"
-
-    test -n "$ld_runpath_switch" && LDFLAGS="$LDFLAGS $ld_runpath_switch$ai_p"
-    LDFLAGS="$LDFLAGS -L$ai_p"
-    PHP_RPATHS="$PHP_RPATHS $ai_p"
-
-  fi
-
-
-
-  fi
-
-  fi
-
-
-  case pcre in
-  c|c_r|pthread*) ;;
-  *)
-      LIBS="-lpcre $LIBS"
-   ;;
-  esac
-
-
-
-
+$as_echo "#define PCRE2_CODE_UNIT_WIDTH 8" >>confdefs.h
 
 
 $as_echo "#define HAVE_PCRE 1" >>confdefs.h
 
 
-  if test "$PCRE_INCDIR" != "/usr/include"; then
-
-  if test -z "$PCRE_INCDIR" || echo "$PCRE_INCDIR" | grep '^/' >/dev/null ; then
-    ai_p=$PCRE_INCDIR
-  else
-
-    ep_dir=`echo $PCRE_INCDIR|$SED 's%/*[^/][^/]*/*$%%'`
-
-    ep_realdir=`(cd "$ep_dir" && pwd)`
-    ai_p="$ep_realdir"/`basename "$PCRE_INCDIR"`
-  fi
+    if test "$PHP_PCRE_JIT" != "no"; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JIT support in PCRE2" >&5
+$as_echo_n "checking for JIT support in PCRE2... " >&6; }
+      if test "$cross_compiling" = yes; then :
 
 
+        case $host_cpu in
+        arm*|i3456786|x86_64|mips*|powerpc*|sparc)
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+          $as_echo "#define HAVE_PCRE_JIT_SUPPORT 1" >>confdefs.h
 
-  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
+          ;;
+        *)
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+          ;;
+        esac
 
-  cmd="echo $ac_n \"\$INCLUDEPATH$unique$ac_c\""
-  if test -n "$unique" && test "`eval $cmd`" = "" ; then
-    eval "INCLUDEPATH$unique=set"
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
 
-      if test ""; then
-        INCLUDES="-I$ai_p $INCLUDES"
-      else
-        INCLUDES="$INCLUDES -I$ai_p"
-      fi
 
-  fi
+            #include <pcre2.h>
+            #include <stdlib.h>
+            int main(void) {
+              uint32_t have_jit;
+              pcre2_config_8(PCRE2_CONFIG_JIT, &have_jit);
+              return !have_jit;
+            }
 
-  fi
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+        $as_echo "#define HAVE_PCRE_JIT_SUPPORT 1" >>confdefs.h
+
+
+else
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+    fi
 
 
   ext_builddir=ext/pcre
@@ -19818,15 +20134,14 @@ EOF
 $as_echo_n "checking for PCRE library to use... " >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: bundled" >&5
 $as_echo "bundled" >&6; }
-    pcrelib_sources="pcrelib/pcre_chartables.c pcrelib/pcre_ucd.c \
-    				 pcrelib/pcre_compile.c pcrelib/pcre_config.c pcrelib/pcre_exec.c \
-    				 pcrelib/pcre_fullinfo.c pcrelib/pcre_get.c pcrelib/pcre_globals.c \
-    				 pcrelib/pcre_maketables.c pcrelib/pcre_newline.c \
-    				 pcrelib/pcre_ord2utf8.c pcrelib/pcre_refcount.c pcrelib/pcre_study.c \
-    				 pcrelib/pcre_tables.c pcrelib/pcre_valid_utf8.c \
-    				 pcrelib/pcre_version.c pcrelib/pcre_xclass.c \
-    				 pcrelib/pcre_jit_compile.c"
-    PHP_PCRE_CFLAGS="-DHAVE_CONFIG_H -I@ext_srcdir@/pcrelib -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1"
+    pcrelib_sources="pcre2lib/pcre2_auto_possess.c pcre2lib/pcre2_chartables.c pcre2lib/pcre2_compile.c \
+    	pcre2lib/pcre2_config.c pcre2lib/pcre2_context.c pcre2lib/pcre2_dfa_match.c pcre2lib/pcre2_error.c \
+	pcre2lib/pcre2_jit_compile.c pcre2lib/pcre2_maketables.c pcre2lib/pcre2_match.c pcre2lib/pcre2_match_data.c \
+	pcre2lib/pcre2_newline.c pcre2lib/pcre2_ord2utf.c pcre2lib/pcre2_pattern_info.c pcre2lib/pcre2_serialize.c \
+	pcre2lib/pcre2_string_utils.c pcre2lib/pcre2_study.c pcre2lib/pcre2_substitute.c  pcre2lib/pcre2_substring.c \
+	pcre2lib/pcre2_tables.c pcre2lib/pcre2_ucd.c pcre2lib/pcre2_valid_utf.c pcre2lib/pcre2_xclass.c \
+	pcre2lib/pcre2_find_bracket.c pcre2lib/pcre2_convert.c pcre2lib/pcre2_extuni.c"
+    PHP_PCRE_CFLAGS="-DHAVE_CONFIG_H -I@ext_srcdir@/pcre2lib -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1"
 
   ext_builddir=ext/pcre
   ext_srcdir=$abs_srcdir/ext/pcre
@@ -20078,13 +20393,13 @@ EOF
 
 
 
-    BUILD_DIR="$BUILD_DIR $ext_builddir/pcrelib"
+    BUILD_DIR="$BUILD_DIR $ext_builddir/pcre2lib"
 
 
 
 
     header_path=ext/pcre
-    for header_file in php_pcre.h pcrelib/; do
+    for header_file in php_pcre.h pcre2lib/; do
       hp_hf="$header_path/$header_file"
 
 
@@ -20103,6 +20418,9 @@ EOF
 
 
 $as_echo "#define HAVE_BUNDLED_PCRE 1" >>confdefs.h
+
+
+$as_echo "#define PCRE2_CODE_UNIT_WIDTH 8" >>confdefs.h
 
 
     if test "$PHP_PCRE_REGEX" != "no"; then
@@ -21186,7 +21504,7 @@ $as_echo "yes" >&6; }
       debug_flags="-DSQLITE_DEBUG=1"
     fi
 
-    other_flags="-DSQLITE_ENABLE_FTS3=1 -DSQLITE_ENABLE_FTS4=1 -DSQLITE_ENABLE_FTS5=1 -DSQLITE_CORE=1 -DSQLITE_ENABLE_COLUMN_METADATA=1"
+    other_flags="-DSQLITE_ENABLE_FTS3=1 -DSQLITE_ENABLE_FTS4=1 -DSQLITE_ENABLE_FTS5=1 -DSQLITE_ENABLE_JSON1=1 -DSQLITE_CORE=1 -DSQLITE_ENABLE_COLUMN_METADATA=1"
 
 	    if test "$PHP_INTL" = "yes" && test "$PHP_INTL_SHARED" != "yes"; then
       other_flags="$other_flags -DSQLITE_ENABLE_ICU=1"
@@ -22177,7 +22495,7 @@ if test "$PHP_BCMATH" != "no"; then
 
   old_IFS=$IFS
   for ac_src in bcmath.c \
-libbcmath/src/add.c libbcmath/src/div.c libbcmath/src/init.c libbcmath/src/neg.c libbcmath/src/outofmem.c libbcmath/src/raisemod.c libbcmath/src/rt.c libbcmath/src/sub.c \
+libbcmath/src/add.c libbcmath/src/div.c libbcmath/src/init.c libbcmath/src/neg.c libbcmath/src/outofmem.c libbcmath/src/raisemod.c libbcmath/src/sub.c \
 libbcmath/src/compare.c libbcmath/src/divmod.c libbcmath/src/int2num.c libbcmath/src/num2long.c libbcmath/src/output.c libbcmath/src/recmul.c \
 libbcmath/src/sqrt.c libbcmath/src/zero.c libbcmath/src/debug.c libbcmath/src/doaddsub.c libbcmath/src/nearzero.c libbcmath/src/num2str.c libbcmath/src/raise.c \
 libbcmath/src/rmzero.c libbcmath/src/str2num.c; do
@@ -22230,7 +22548,7 @@ EOF
 
   old_IFS=$IFS
   for ac_src in bcmath.c \
-libbcmath/src/add.c libbcmath/src/div.c libbcmath/src/init.c libbcmath/src/neg.c libbcmath/src/outofmem.c libbcmath/src/raisemod.c libbcmath/src/rt.c libbcmath/src/sub.c \
+libbcmath/src/add.c libbcmath/src/div.c libbcmath/src/init.c libbcmath/src/neg.c libbcmath/src/outofmem.c libbcmath/src/raisemod.c libbcmath/src/sub.c \
 libbcmath/src/compare.c libbcmath/src/divmod.c libbcmath/src/int2num.c libbcmath/src/num2long.c libbcmath/src/output.c libbcmath/src/recmul.c \
 libbcmath/src/sqrt.c libbcmath/src/zero.c libbcmath/src/debug.c libbcmath/src/doaddsub.c libbcmath/src/nearzero.c libbcmath/src/num2str.c libbcmath/src/raise.c \
 libbcmath/src/rmzero.c libbcmath/src/str2num.c; do
@@ -22319,7 +22637,7 @@ _ACEOF
 
   old_IFS=$IFS
   for ac_src in bcmath.c \
-libbcmath/src/add.c libbcmath/src/div.c libbcmath/src/init.c libbcmath/src/neg.c libbcmath/src/outofmem.c libbcmath/src/raisemod.c libbcmath/src/rt.c libbcmath/src/sub.c \
+libbcmath/src/add.c libbcmath/src/div.c libbcmath/src/init.c libbcmath/src/neg.c libbcmath/src/outofmem.c libbcmath/src/raisemod.c libbcmath/src/sub.c \
 libbcmath/src/compare.c libbcmath/src/divmod.c libbcmath/src/int2num.c libbcmath/src/num2long.c libbcmath/src/output.c libbcmath/src/recmul.c \
 libbcmath/src/sqrt.c libbcmath/src/zero.c libbcmath/src/debug.c libbcmath/src/doaddsub.c libbcmath/src/nearzero.c libbcmath/src/num2str.c libbcmath/src/raise.c \
 libbcmath/src/rmzero.c libbcmath/src/str2num.c; do
@@ -22369,7 +22687,7 @@ EOF
 
   old_IFS=$IFS
   for ac_src in bcmath.c \
-libbcmath/src/add.c libbcmath/src/div.c libbcmath/src/init.c libbcmath/src/neg.c libbcmath/src/outofmem.c libbcmath/src/raisemod.c libbcmath/src/rt.c libbcmath/src/sub.c \
+libbcmath/src/add.c libbcmath/src/div.c libbcmath/src/init.c libbcmath/src/neg.c libbcmath/src/outofmem.c libbcmath/src/raisemod.c libbcmath/src/sub.c \
 libbcmath/src/compare.c libbcmath/src/divmod.c libbcmath/src/int2num.c libbcmath/src/num2long.c libbcmath/src/output.c libbcmath/src/recmul.c \
 libbcmath/src/sqrt.c libbcmath/src/zero.c libbcmath/src/debug.c libbcmath/src/doaddsub.c libbcmath/src/nearzero.c libbcmath/src/num2str.c libbcmath/src/raise.c \
 libbcmath/src/rmzero.c libbcmath/src/str2num.c; do
@@ -23755,14 +24073,14 @@ $as_echo "$as_me: WARNING: Could not find libcurl.pc. Try without $PHP_CURL or s
   fi
 
   if test -n "$PKNAME"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cURL 7.10.5 or greater" >&5
-$as_echo_n "checking for cURL 7.10.5 or greater... " >&6; }
-    if $PKG_CONFIG --atleast-version 7.10.5 $PKNAME; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cURL 7.15.5 or greater" >&5
+$as_echo_n "checking for cURL 7.15.5 or greater... " >&6; }
+    if $PKG_CONFIG --atleast-version 7.15.5 $PKNAME; then
       curl_version_full=`$PKG_CONFIG --modversion $PKNAME`
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $curl_version_full" >&5
 $as_echo "$curl_version_full" >&6; }
     else
-      as_fn_error $? "cURL version 7.10.5 or later is required to compile php with cURL support" "$LINENO" 5
+      as_fn_error $? "cURL version 7.15.5 or later is required to compile php with cURL support" "$LINENO" 5
     fi
 
     CURL_LIBS=`$PKG_CONFIG --libs   $PKNAME`
@@ -23795,8 +24113,8 @@ $as_echo "not found" >&6; }
     fi
 
     CURL_CONFIG="curl-config"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cURL 7.10.5 or greater" >&5
-$as_echo_n "checking for cURL 7.10.5 or greater... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cURL 7.15.5 or greater" >&5
+$as_echo_n "checking for cURL 7.15.5 or greater... " >&6; }
 
     if ${CURL_DIR}/bin/curl-config --libs > /dev/null 2>&1; then
       CURL_CONFIG=${CURL_DIR}/bin/curl-config
@@ -23808,14 +24126,14 @@ $as_echo_n "checking for cURL 7.10.5 or greater... " >&6; }
 
     curl_version_full=`$CURL_CONFIG --version`
     curl_version=`echo ${curl_version_full} | sed -e 's/libcurl //' | $AWK 'BEGIN { FS = "."; } { printf "%d", ($1 * 1000 + $2) * 1000 + $3;}'`
-    if test "$curl_version" -ge 7010005; then
+    if test "$curl_version" -ge 7015005; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $curl_version_full" >&5
 $as_echo "$curl_version_full" >&6; }
       CURL_LIBS=`$CURL_CONFIG --libs`
       CURL_INCL=`$CURL_CONFIG --cflags`
       CURL_SSL=`$CURL_CONFIG --feature | $EGREP SSL`
     else
-      as_fn_error $? "cURL version 7.10.5 or later is required to compile php with cURL support" "$LINENO" 5
+      as_fn_error $? "cURL version 7.15.5 or later is required to compile php with cURL support" "$LINENO" 5
     fi
   fi
 
@@ -30892,15 +31210,14 @@ if test "$PHP_FILEINFO" != "no"; then
     libmagic/cdf.c libmagic/cdf_time.c libmagic/compress.c \
     libmagic/encoding.c libmagic/fsmagic.c libmagic/funcs.c \
     libmagic/is_tar.c libmagic/magic.c libmagic/print.c \
-    libmagic/readcdf.c libmagic/softmagic.c libmagic/der.c"
+    libmagic/readcdf.c libmagic/softmagic.c libmagic/der.c \
+    libmagic/buffer.c"
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for strcasestr" >&5
 $as_echo_n "checking for strcasestr... " >&6; }
   if test "$cross_compiling" = yes; then :
-  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "cannot run test program while cross compiling
-See \`config.log' for more details" "$LINENO" 5; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: skipped, cross-compiling" >&5
+$as_echo "skipped, cross-compiling" >&6; }
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -39073,6 +39390,24 @@ fi
 
 
 
+    for header_file in ext/gmp/php_gmp_int.h; do
+
+
+  unique=`echo $header_file|$SED 's/[^a-zA-Z0-9]/_/g'`
+
+  cmd="echo $ac_n \"\$INSTALLHEADERS$unique$ac_c\""
+  if test -n "$unique" && test "`eval $cmd`" = "" ; then
+    eval "INSTALLHEADERS$unique=set"
+
+        INSTALL_HEADERS="$INSTALL_HEADERS $header_file"
+
+  fi
+
+    done
+
+
+
+
   ext_builddir=ext/gmp
   ext_srcdir=$abs_srcdir/ext/gmp
   ext_dir=ext/gmp
@@ -40614,8 +40949,8 @@ $as_echo_n "checking if using GNU libiconv... " >&6; }
       LDFLAGS="-liconv $LDFLAGS"
       if test "$cross_compiling" = yes; then :
 
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, cross-compiling" >&5
+$as_echo "no, cross-compiling" >&6; }
         LDFLAGS="$php_iconv_old_ld"
 
 else
@@ -41685,7 +42020,7 @@ $as_echo "#define HAVE_IMAP2000 1" >>confdefs.h
   elif test -r "$i/rfc822.h"; then
     IMAP_DIR=$i;
     IMAP_INC_DIR=$i
-	break
+    break
 
       elif test -r "$i/include/c-client/c-client.h"; then
 
@@ -41697,7 +42032,7 @@ $as_echo "#define HAVE_IMAP2000 1" >>confdefs.h
   elif test -r "$i/include/c-client/rfc822.h"; then
     IMAP_DIR=$i;
     IMAP_INC_DIR=$i/include/c-client
-	break
+    break
 
       elif test -r "$i/include/imap/c-client.h"; then
 
@@ -41709,7 +42044,7 @@ $as_echo "#define HAVE_IMAP2000 1" >>confdefs.h
   elif test -r "$i/include/imap/rfc822.h"; then
     IMAP_DIR=$i;
     IMAP_INC_DIR=$i/include/imap
-	break
+    break
 
       elif test -r "$i/include/c-client.h"; then
 
@@ -41721,7 +42056,7 @@ $as_echo "#define HAVE_IMAP2000 1" >>confdefs.h
   elif test -r "$i/include/rfc822.h"; then
     IMAP_DIR=$i;
     IMAP_INC_DIR=$i/include
-	break
+    break
 
       elif test -r "$i/imap/c-client.h"; then
 
@@ -41733,7 +42068,7 @@ $as_echo "#define HAVE_IMAP2000 1" >>confdefs.h
   elif test -r "$i/imap/rfc822.h"; then
     IMAP_DIR=$i;
     IMAP_INC_DIR=$i/imap
-	break
+    break
 
       elif test -r "$i/c-client/c-client.h"; then
 
@@ -41745,7 +42080,7 @@ $as_echo "#define HAVE_IMAP2000 1" >>confdefs.h
   elif test -r "$i/c-client/rfc822.h"; then
     IMAP_DIR=$i;
     IMAP_INC_DIR=$i/c-client
-	break
+    break
 
       fi
     done
@@ -45153,7 +45488,13 @@ $as_echo "found $icu_version_full" >&6; }
 
 
     ICU_CXXFLAGS=`$ICU_CONFIG --cxxflags`
-    ICU_CXXFLAGS="$ICU_CXXFLAGS -DU_USING_ICU_NAMESPACE=1"
+    if test "$icu_version" -ge "49000"; then
+      ICU_CXXFLAGS="$ICU_CXXFLAGS -DUNISTR_FROM_CHAR_EXPLICIT=explicit -DUNISTR_FROM_STRING_EXPLICIT=explicit"
+      ICU_CFLAGS="-DU_NO_DEFAULT_INCLUDE_UTF_HEADERS=1"
+    fi
+    if test "$icu_version" -ge "60000"; then
+      ICU_CFLAGS="$ICU_CFLAGS -DU_HIDE_OBSOLETE_UTF_OLD_H=1"
+    fi
   fi
 
 
@@ -45564,7 +45905,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
     php_cxx_done=yes
   fi
 
-  INTL_COMMON_FLAGS="$ICU_INCS -Wno-write-strings -D__STDC_LIMIT_MACROS -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1"
+  INTL_COMMON_FLAGS="$ICU_INCS $ICU_CFLAGS -Wno-write-strings -D__STDC_LIMIT_MACROS -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1"
   if test "$icu_version" -ge "4002"; then
     icu_spoof_src=" spoofchecker/spoofchecker_class.c \
     spoofchecker/spoofchecker.c\
@@ -49368,7 +49709,7 @@ $as_echo "#define HAVE_3ARG_SETREBINDPROC 1" >>confdefs.h
 
   fi
 
-      for ac_func in ldap_parse_result ldap_parse_reference ldap_start_tls_s ldap_control_find ldap_parse_extended_result ldap_extended_operation ldap_extended_operation_s ldap_passwd_s ldap_whoami_s
+      for ac_func in ldap_parse_result ldap_parse_reference ldap_start_tls_s ldap_control_find ldap_parse_extended_result ldap_extended_operation ldap_extended_operation_s ldap_passwd ldap_whoami_s ldap_refresh_s
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -49833,30 +50174,6 @@ $as_echo "$ext_output" >&6; }
 
 
 
-php_with_libmbfl=no
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for external libmbfl" >&5
-$as_echo_n "checking for external libmbfl... " >&6; }
-
-# Check whether --with-libmbfl was given.
-if test "${with_libmbfl+set}" = set; then :
-  withval=$with_libmbfl; PHP_LIBMBFL=$withval
-else
-
-  PHP_LIBMBFL=no
-
-
-fi
-
-
-ext_output=$PHP_LIBMBFL
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ext_output" >&5
-$as_echo "$ext_output" >&6; }
-
-
-
-
-
 php_with_onig=no
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for external oniguruma" >&5
@@ -49916,12 +50233,12 @@ else
 
 #include <stdarg.h>
 int foo(int x, ...) {
-	va_list va;
-	va_start(va, x);
-	va_arg(va, int);
-	va_arg(va, char *);
-	va_arg(va, double);
-	return 0;
+  va_list va;
+  va_start(va, x);
+  va_arg(va, int);
+  va_arg(va, char *);
+  va_arg(va, double);
+  return 0;
 }
 int main() { return foo(10, "", 3.14); }
 
@@ -49940,7 +50257,7 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $php_cv_mbstring_stdarg" >&5
 $as_echo "$php_cv_mbstring_stdarg" >&6; }
 
-      for ac_header in stdlib.h string.h strings.h unistd.h sys/time.h sys/times.h stdarg.h
+      for ac_header in stdlib.h string.h strings.h unistd.h sys/time.h sys/times.h stdarg.h limits.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -50449,7 +50766,7 @@ $as_echo "#define HAVE_ONIG 1" >>confdefs.h
 
 
   PHP_MBSTRING_SOURCES="$PHP_MBSTRING_SOURCES
-		oniguruma/src/ascii.c
+                oniguruma/src/ascii.c
                 oniguruma/src/big5.c
                 oniguruma/src/cp1251.c
                 oniguruma/src/euc_jp.c
@@ -50942,7 +51259,6 @@ $as_echo "#define HAVE_MBREGEX 1" >>confdefs.h
   fi
 
 
-    if test "$PHP_LIBMBFL" = "yes" || test "$PHP_LIBMBFL" = "no"; then
 
   PHP_MBSTRING_EXTRA_BUILD_DIRS="$PHP_MBSTRING_EXTRA_BUILD_DIRS libmbfl"
 
@@ -50967,94 +51283,94 @@ $as_echo "#define HAVE_MBREGEX 1" >>confdefs.h
 
 
   PHP_MBSTRING_SOURCES="$PHP_MBSTRING_SOURCES
-     libmbfl/filters/html_entities.c
-     libmbfl/filters/mbfilter_7bit.c
-     libmbfl/filters/mbfilter_ascii.c
-     libmbfl/filters/mbfilter_base64.c
-     libmbfl/filters/mbfilter_big5.c
-     libmbfl/filters/mbfilter_byte2.c
-     libmbfl/filters/mbfilter_byte4.c
-     libmbfl/filters/mbfilter_cp1251.c
-     libmbfl/filters/mbfilter_cp1252.c
-     libmbfl/filters/mbfilter_cp1254.c
-     libmbfl/filters/mbfilter_cp5022x.c
-     libmbfl/filters/mbfilter_cp51932.c
-     libmbfl/filters/mbfilter_cp850.c
-     libmbfl/filters/mbfilter_cp866.c
-     libmbfl/filters/mbfilter_cp932.c
-     libmbfl/filters/mbfilter_cp936.c
-     libmbfl/filters/mbfilter_gb18030.c
-     libmbfl/filters/mbfilter_euc_cn.c
-     libmbfl/filters/mbfilter_euc_jp.c
-     libmbfl/filters/mbfilter_euc_jp_2004.c
-     libmbfl/filters/mbfilter_euc_jp_win.c
-     libmbfl/filters/mbfilter_euc_kr.c
-     libmbfl/filters/mbfilter_euc_tw.c
-     libmbfl/filters/mbfilter_htmlent.c
-     libmbfl/filters/mbfilter_hz.c
-     libmbfl/filters/mbfilter_iso2022_jp_ms.c
-     libmbfl/filters/mbfilter_iso2022jp_2004.c
-     libmbfl/filters/mbfilter_iso2022jp_mobile.c
-     libmbfl/filters/mbfilter_iso2022_kr.c
-     libmbfl/filters/mbfilter_iso8859_1.c
-     libmbfl/filters/mbfilter_iso8859_10.c
-     libmbfl/filters/mbfilter_iso8859_13.c
-     libmbfl/filters/mbfilter_iso8859_14.c
-     libmbfl/filters/mbfilter_iso8859_15.c
-     libmbfl/filters/mbfilter_iso8859_16.c
-     libmbfl/filters/mbfilter_iso8859_2.c
-     libmbfl/filters/mbfilter_iso8859_3.c
-     libmbfl/filters/mbfilter_iso8859_4.c
-     libmbfl/filters/mbfilter_iso8859_5.c
-     libmbfl/filters/mbfilter_iso8859_6.c
-     libmbfl/filters/mbfilter_iso8859_7.c
-     libmbfl/filters/mbfilter_iso8859_8.c
-     libmbfl/filters/mbfilter_iso8859_9.c
-     libmbfl/filters/mbfilter_jis.c
-     libmbfl/filters/mbfilter_koi8r.c
-     libmbfl/filters/mbfilter_armscii8.c
-     libmbfl/filters/mbfilter_qprint.c
-     libmbfl/filters/mbfilter_sjis.c
-     libmbfl/filters/mbfilter_sjis_open.c
-     libmbfl/filters/mbfilter_sjis_mobile.c
-     libmbfl/filters/mbfilter_sjis_mac.c
-     libmbfl/filters/mbfilter_sjis_2004.c
-     libmbfl/filters/mbfilter_tl_jisx0201_jisx0208.c
-     libmbfl/filters/mbfilter_ucs2.c
-     libmbfl/filters/mbfilter_ucs4.c
-     libmbfl/filters/mbfilter_uhc.c
-     libmbfl/filters/mbfilter_utf16.c
-     libmbfl/filters/mbfilter_utf32.c
-     libmbfl/filters/mbfilter_utf7.c
-     libmbfl/filters/mbfilter_utf7imap.c
-     libmbfl/filters/mbfilter_utf8.c
-     libmbfl/filters/mbfilter_utf8_mobile.c
-     libmbfl/filters/mbfilter_uuencode.c
-     libmbfl/filters/mbfilter_koi8u.c
-     libmbfl/mbfl/mbfilter.c
-     libmbfl/mbfl/mbfilter_8bit.c
-     libmbfl/mbfl/mbfilter_pass.c
-     libmbfl/mbfl/mbfilter_wchar.c
-     libmbfl/mbfl/mbfl_convert.c
-     libmbfl/mbfl/mbfl_encoding.c
-     libmbfl/mbfl/mbfl_filter_output.c
-     libmbfl/mbfl/mbfl_ident.c
-     libmbfl/mbfl/mbfl_language.c
-     libmbfl/mbfl/mbfl_memory_device.c
-     libmbfl/mbfl/mbfl_string.c
-     libmbfl/mbfl/mbfl_allocators.c
-     libmbfl/nls/nls_de.c
-     libmbfl/nls/nls_en.c
-     libmbfl/nls/nls_ja.c
-     libmbfl/nls/nls_kr.c
-     libmbfl/nls/nls_neutral.c
-     libmbfl/nls/nls_ru.c
-     libmbfl/nls/nls_uni.c
-     libmbfl/nls/nls_zh.c
-     libmbfl/nls/nls_hy.c
-     libmbfl/nls/nls_tr.c
-     libmbfl/nls/nls_ua.c
-    "
+    libmbfl/filters/html_entities.c
+    libmbfl/filters/mbfilter_7bit.c
+    libmbfl/filters/mbfilter_ascii.c
+    libmbfl/filters/mbfilter_base64.c
+    libmbfl/filters/mbfilter_big5.c
+    libmbfl/filters/mbfilter_byte2.c
+    libmbfl/filters/mbfilter_byte4.c
+    libmbfl/filters/mbfilter_cp1251.c
+    libmbfl/filters/mbfilter_cp1252.c
+    libmbfl/filters/mbfilter_cp1254.c
+    libmbfl/filters/mbfilter_cp5022x.c
+    libmbfl/filters/mbfilter_cp51932.c
+    libmbfl/filters/mbfilter_cp850.c
+    libmbfl/filters/mbfilter_cp866.c
+    libmbfl/filters/mbfilter_cp932.c
+    libmbfl/filters/mbfilter_cp936.c
+    libmbfl/filters/mbfilter_gb18030.c
+    libmbfl/filters/mbfilter_euc_cn.c
+    libmbfl/filters/mbfilter_euc_jp.c
+    libmbfl/filters/mbfilter_euc_jp_2004.c
+    libmbfl/filters/mbfilter_euc_jp_win.c
+    libmbfl/filters/mbfilter_euc_kr.c
+    libmbfl/filters/mbfilter_euc_tw.c
+    libmbfl/filters/mbfilter_htmlent.c
+    libmbfl/filters/mbfilter_hz.c
+    libmbfl/filters/mbfilter_iso2022_jp_ms.c
+    libmbfl/filters/mbfilter_iso2022jp_2004.c
+    libmbfl/filters/mbfilter_iso2022jp_mobile.c
+    libmbfl/filters/mbfilter_iso2022_kr.c
+    libmbfl/filters/mbfilter_iso8859_1.c
+    libmbfl/filters/mbfilter_iso8859_10.c
+    libmbfl/filters/mbfilter_iso8859_13.c
+    libmbfl/filters/mbfilter_iso8859_14.c
+    libmbfl/filters/mbfilter_iso8859_15.c
+    libmbfl/filters/mbfilter_iso8859_16.c
+    libmbfl/filters/mbfilter_iso8859_2.c
+    libmbfl/filters/mbfilter_iso8859_3.c
+    libmbfl/filters/mbfilter_iso8859_4.c
+    libmbfl/filters/mbfilter_iso8859_5.c
+    libmbfl/filters/mbfilter_iso8859_6.c
+    libmbfl/filters/mbfilter_iso8859_7.c
+    libmbfl/filters/mbfilter_iso8859_8.c
+    libmbfl/filters/mbfilter_iso8859_9.c
+    libmbfl/filters/mbfilter_jis.c
+    libmbfl/filters/mbfilter_koi8r.c
+    libmbfl/filters/mbfilter_armscii8.c
+    libmbfl/filters/mbfilter_qprint.c
+    libmbfl/filters/mbfilter_sjis.c
+    libmbfl/filters/mbfilter_sjis_open.c
+    libmbfl/filters/mbfilter_sjis_mobile.c
+    libmbfl/filters/mbfilter_sjis_mac.c
+    libmbfl/filters/mbfilter_sjis_2004.c
+    libmbfl/filters/mbfilter_tl_jisx0201_jisx0208.c
+    libmbfl/filters/mbfilter_ucs2.c
+    libmbfl/filters/mbfilter_ucs4.c
+    libmbfl/filters/mbfilter_uhc.c
+    libmbfl/filters/mbfilter_utf16.c
+    libmbfl/filters/mbfilter_utf32.c
+    libmbfl/filters/mbfilter_utf7.c
+    libmbfl/filters/mbfilter_utf7imap.c
+    libmbfl/filters/mbfilter_utf8.c
+    libmbfl/filters/mbfilter_utf8_mobile.c
+    libmbfl/filters/mbfilter_uuencode.c
+    libmbfl/filters/mbfilter_koi8u.c
+    libmbfl/mbfl/mbfilter.c
+    libmbfl/mbfl/mbfilter_8bit.c
+    libmbfl/mbfl/mbfilter_pass.c
+    libmbfl/mbfl/mbfilter_wchar.c
+    libmbfl/mbfl/mbfl_convert.c
+    libmbfl/mbfl/mbfl_encoding.c
+    libmbfl/mbfl/mbfl_filter_output.c
+    libmbfl/mbfl/mbfl_ident.c
+    libmbfl/mbfl/mbfl_language.c
+    libmbfl/mbfl/mbfl_memory_device.c
+    libmbfl/mbfl/mbfl_string.c
+    libmbfl/mbfl/mbfl_allocators.c
+    libmbfl/nls/nls_de.c
+    libmbfl/nls/nls_en.c
+    libmbfl/nls/nls_ja.c
+    libmbfl/nls/nls_kr.c
+    libmbfl/nls/nls_neutral.c
+    libmbfl/nls/nls_ru.c
+    libmbfl/nls/nls_uni.c
+    libmbfl/nls/nls_zh.c
+    libmbfl/nls/nls_hy.c
+    libmbfl/nls/nls_tr.c
+    libmbfl/nls/nls_ua.c
+  "
 
 
   PHP_MBSTRING_CFLAGS="$PHP_MBSTRING_CFLAGS -DHAVE_CONFIG_H"
@@ -51062,299 +51378,6 @@ $as_echo "#define HAVE_MBREGEX 1" >>confdefs.h
 
   PHP_MBSTRING_INSTALL_HEADERS="$PHP_MBSTRING_INSTALL_HEADERS libmbfl/config.h libmbfl/mbfl/eaw_table.h libmbfl/mbfl/mbfilter.h libmbfl/mbfl/mbfilter_8bit.h libmbfl/mbfl/mbfilter_pass.h libmbfl/mbfl/mbfilter_wchar.h libmbfl/mbfl/mbfl_allocators.h libmbfl/mbfl/mbfl_consts.h libmbfl/mbfl/mbfl_convert.h libmbfl/mbfl/mbfl_defs.h libmbfl/mbfl/mbfl_encoding.h libmbfl/mbfl/mbfl_filter_output.h libmbfl/mbfl/mbfl_ident.h libmbfl/mbfl/mbfl_language.h libmbfl/mbfl/mbfl_memory_device.h libmbfl/mbfl/mbfl_string.h"
 
-  else
-                for inc in include include/mbfl-1.0 include/mbfl; do
-      if test -f "$PHP_LIBMBFL/$inc/mbfilter.h"; then
-        PHP_LIBMBFL_INCLUDE="$inc"
-        break
-      fi
-    done
-
-    if test -z "$PHP_LIBMBFL_INCLUDE"; then
-      as_fn_error $? "mbfilter.h not found. Please reinstall libmbfl library." "$LINENO" 5
-    else
-
-  if test "$PHP_LIBMBFL_INCLUDE" != "/usr/include"; then
-
-  if test -z "$PHP_LIBMBFL_INCLUDE" || echo "$PHP_LIBMBFL_INCLUDE" | grep '^/' >/dev/null ; then
-    ai_p=$PHP_LIBMBFL_INCLUDE
-  else
-
-    ep_dir=`echo $PHP_LIBMBFL_INCLUDE|$SED 's%/*[^/][^/]*/*$%%'`
-
-    ep_realdir=`(cd "$ep_dir" && pwd)`
-    ai_p="$ep_realdir"/`basename "$PHP_LIBMBFL_INCLUDE"`
-  fi
-
-
-
-  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
-
-  cmd="echo $ac_n \"\$INCLUDEPATH$unique$ac_c\""
-  if test -n "$unique" && test "`eval $cmd`" = "" ; then
-    eval "INCLUDEPATH$unique=set"
-
-      if test ""; then
-        INCLUDES="-I$ai_p $INCLUDES"
-      else
-        INCLUDES="$INCLUDES -I$ai_p"
-      fi
-
-  fi
-
-  fi
-
-    fi
-
-
-  save_old_LDFLAGS=$LDFLAGS
-  ac_stuff="
-      -L$PHP_LIBMBFL/$PHP_LIBDIR
-    "
-
-  save_ext_shared=$ext_shared
-  ext_shared=yes
-
-  for ac_i in $ac_stuff; do
-    case $ac_i in
-    -pthread)
-      if test "$ext_shared" = "yes"; then
-        LDFLAGS="$LDFLAGS -pthread"
-      else
-
-
-  unique=`echo $ac_i|$SED 's/[^a-zA-Z0-9]/_/g'`
-
-  cmd="echo $ac_n \"\$EXTRA_LDFLAGS$unique$ac_c\""
-  if test -n "$unique" && test "`eval $cmd`" = "" ; then
-    eval "EXTRA_LDFLAGS$unique=set"
-    EXTRA_LDFLAGS="$EXTRA_LDFLAGS $ac_i"
-  fi
-
-      fi
-    ;;
-    -l*)
-      ac_ii=`echo $ac_i|cut -c 3-`
-
-
-  case $ac_ii in
-  c|c_r|pthread*) ;;
-  *)
-    if test "$ext_shared" = "yes"; then
-        LDFLAGS="$LDFLAGS -l$ac_ii"
-    else
-
-
-  case $ac_ii in
-  c|c_r|pthread*) ;;
-  *)
-      LIBS="$LIBS -l$ac_ii"
-   ;;
-  esac
-
-
-    fi
-   ;;
-  esac
-
-
-    ;;
-    -L*)
-      ac_ii=`echo $ac_i|cut -c 3-`
-
-  if test "$ac_ii" != "/usr/$PHP_LIBDIR" && test "$ac_ii" != "/usr/lib"; then
-
-  if test -z "$ac_ii" || echo "$ac_ii" | grep '^/' >/dev/null ; then
-    ai_p=$ac_ii
-  else
-
-    ep_dir=`echo $ac_ii|$SED 's%/*[^/][^/]*/*$%%'`
-
-    ep_realdir=`(cd "$ep_dir" && pwd)`
-    ai_p="$ep_realdir"/`basename "$ac_ii"`
-  fi
-
-
-      if test "$ext_shared" = "yes"; then
-        LDFLAGS="-L$ai_p $LDFLAGS"
-        test -n "$ld_runpath_switch" && LDFLAGS="$ld_runpath_switch$ai_p $LDFLAGS"
-      else
-
-
-
-  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
-
-  cmd="echo $ac_n \"\$LIBPATH$unique$ac_c\""
-  if test -n "$unique" && test "`eval $cmd`" = "" ; then
-    eval "LIBPATH$unique=set"
-
-    test -n "$ld_runpath_switch" && LDFLAGS="$LDFLAGS $ld_runpath_switch$ai_p"
-    LDFLAGS="$LDFLAGS -L$ai_p"
-    PHP_RPATHS="$PHP_RPATHS $ai_p"
-
-  fi
-
-
-      fi
-
-  fi
-
-    ;;
-    esac
-  done
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for mbfl_buffer_converter_new in -lmbfl" >&5
-$as_echo_n "checking for mbfl_buffer_converter_new in -lmbfl... " >&6; }
-if ${ac_cv_lib_mbfl_mbfl_buffer_converter_new+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lmbfl  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char mbfl_buffer_converter_new ();
-int
-main ()
-{
-return mbfl_buffer_converter_new ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_mbfl_mbfl_buffer_converter_new=yes
-else
-  ac_cv_lib_mbfl_mbfl_buffer_converter_new=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_mbfl_mbfl_buffer_converter_new" >&5
-$as_echo "$ac_cv_lib_mbfl_mbfl_buffer_converter_new" >&6; }
-if test "x$ac_cv_lib_mbfl_mbfl_buffer_converter_new" = xyes; then :
-
-    LDFLAGS=$save_old_LDFLAGS
-    ext_shared=$save_ext_shared
-
-
-
-  if test "$ext_shared" = "yes"; then
-    MBSTRING_SHARED_LIBADD="-lmbfl $MBSTRING_SHARED_LIBADD"
-    if test -n "$PHP_LIBMBFL/$PHP_LIBDIR"; then
-
-  if test "$PHP_LIBMBFL/$PHP_LIBDIR" != "/usr/$PHP_LIBDIR" && test "$PHP_LIBMBFL/$PHP_LIBDIR" != "/usr/lib"; then
-
-  if test -z "$PHP_LIBMBFL/$PHP_LIBDIR" || echo "$PHP_LIBMBFL/$PHP_LIBDIR" | grep '^/' >/dev/null ; then
-    ai_p=$PHP_LIBMBFL/$PHP_LIBDIR
-  else
-
-    ep_dir=`echo $PHP_LIBMBFL/$PHP_LIBDIR|$SED 's%/*[^/][^/]*/*$%%'`
-
-    ep_realdir=`(cd "$ep_dir" && pwd)`
-    ai_p="$ep_realdir"/`basename "$PHP_LIBMBFL/$PHP_LIBDIR"`
-  fi
-
-
-      if test "$ext_shared" = "yes"; then
-        MBSTRING_SHARED_LIBADD="-L$ai_p $MBSTRING_SHARED_LIBADD"
-        test -n "$ld_runpath_switch" && MBSTRING_SHARED_LIBADD="$ld_runpath_switch$ai_p $MBSTRING_SHARED_LIBADD"
-      else
-
-
-
-  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
-
-  cmd="echo $ac_n \"\$LIBPATH$unique$ac_c\""
-  if test -n "$unique" && test "`eval $cmd`" = "" ; then
-    eval "LIBPATH$unique=set"
-
-    test -n "$ld_runpath_switch" && LDFLAGS="$LDFLAGS $ld_runpath_switch$ai_p"
-    LDFLAGS="$LDFLAGS -L$ai_p"
-    PHP_RPATHS="$PHP_RPATHS $ai_p"
-
-  fi
-
-
-      fi
-
-  fi
-
-    fi
-  else
-
-
-  if test -n "$PHP_LIBMBFL/$PHP_LIBDIR"; then
-
-  if test "$PHP_LIBMBFL/$PHP_LIBDIR" != "/usr/$PHP_LIBDIR" && test "$PHP_LIBMBFL/$PHP_LIBDIR" != "/usr/lib"; then
-
-  if test -z "$PHP_LIBMBFL/$PHP_LIBDIR" || echo "$PHP_LIBMBFL/$PHP_LIBDIR" | grep '^/' >/dev/null ; then
-    ai_p=$PHP_LIBMBFL/$PHP_LIBDIR
-  else
-
-    ep_dir=`echo $PHP_LIBMBFL/$PHP_LIBDIR|$SED 's%/*[^/][^/]*/*$%%'`
-
-    ep_realdir=`(cd "$ep_dir" && pwd)`
-    ai_p="$ep_realdir"/`basename "$PHP_LIBMBFL/$PHP_LIBDIR"`
-  fi
-
-
-
-
-
-  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
-
-  cmd="echo $ac_n \"\$LIBPATH$unique$ac_c\""
-  if test -n "$unique" && test "`eval $cmd`" = "" ; then
-    eval "LIBPATH$unique=set"
-
-    test -n "$ld_runpath_switch" && LDFLAGS="$LDFLAGS $ld_runpath_switch$ai_p"
-    LDFLAGS="$LDFLAGS -L$ai_p"
-    PHP_RPATHS="$PHP_RPATHS $ai_p"
-
-  fi
-
-
-
-  fi
-
-  fi
-
-
-  case mbfl in
-  c|c_r|pthread*) ;;
-  *)
-      LIBS="-lmbfl $LIBS"
-   ;;
-  esac
-
-
-
-
-  fi
-
-
-
-
-else
-
-    LDFLAGS=$save_old_LDFLAGS
-    ext_shared=$save_ext_shared
-    unset ac_cv_lib_mbfl_mbfl_buffer_converter_new
-
-      as_fn_error $? "Problem with libmbfl. Please check config.log for more information." "$LINENO" 5
-
-
-fi
-
-  fi
 
 
 
@@ -55206,73 +55229,6 @@ fi
 
 if test -z "$ODBC_TYPE"; then
 
-php_with_odbcrouter=no
-
-
-
-# Check whether --with-ODBCRouter was given.
-if test "${with_ODBCRouter+set}" = set; then :
-  withval=$with_ODBCRouter; PHP_ODBCROUTER=$withval
-else
-
-  PHP_ODBCROUTER=no
-  test "$PHP_ENABLE_ALL" && PHP_ODBCROUTER=$PHP_ENABLE_ALL
-
-fi
-
-
-
-ext_output="yes, shared"
-ext_shared=yes
-case $PHP_ODBCROUTER in
-shared,*)
-  PHP_ODBCROUTER=`echo "$PHP_ODBCROUTER"|$SED 's/^shared,//'`
-  ;;
-shared)
-  PHP_ODBCROUTER=yes
-  ;;
-no)
-  ext_output=no
-  ext_shared=no
-  ;;
-*)
-  ext_output=yes
-  ext_shared=no
-  ;;
-esac
-
-
-
-
-
-
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ODBCRouter.com support" >&5
-$as_echo_n "checking for ODBCRouter.com support... " >&6; }
-  if test "$PHP_ODBCROUTER" != "no"; then
-    if test "$PHP_ODBCROUTER" = "yes"; then
-      PHP_ODBCROUTER=/usr
-    fi
-    ODBC_INCDIR=$PHP_ODBCROUTER/include
-    ODBC_LIBDIR=$PHP_ODBCROUTER/lib
-    ODBC_LFLAGS=-L$ODBC_LIBDIR
-    ODBC_INCLUDE=-I$ODBC_INCDIR
-    ODBC_LIBS=-lodbcsdk
-    ODBC_TYPE=ODBCRouter
-
-$as_echo "#define HAVE_ODBC_ROUTER 1" >>confdefs.h
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ext_output" >&5
-$as_echo "$ext_output" >&6; }
-  else
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-  fi
-fi
-
-if test -z "$ODBC_TYPE"; then
-
 php_with_empress=no
 
 
@@ -55437,114 +55393,6 @@ $as_echo_n "checking Empress local access library file... " >&6; }
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: \`echo $ODBCBCS_LIBS | sed -e 's!.*/!!'\`" >&5
 $as_echo "\`echo $ODBCBCS_LIBS | sed -e 's!.*/!!'\`" >&6; }
 
-  else
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-  fi
-fi
-
-if test -z "$ODBC_TYPE"; then
-
-php_with_birdstep=no
-
-
-
-# Check whether --with-birdstep was given.
-if test "${with_birdstep+set}" = set; then :
-  withval=$with_birdstep; PHP_BIRDSTEP=$withval
-else
-
-  PHP_BIRDSTEP=no
-  test "$PHP_ENABLE_ALL" && PHP_BIRDSTEP=$PHP_ENABLE_ALL
-
-fi
-
-
-
-ext_output="yes, shared"
-ext_shared=yes
-case $PHP_BIRDSTEP in
-shared,*)
-  PHP_BIRDSTEP=`echo "$PHP_BIRDSTEP"|$SED 's/^shared,//'`
-  ;;
-shared)
-  PHP_BIRDSTEP=yes
-  ;;
-no)
-  ext_output=no
-  ext_shared=no
-  ;;
-*)
-  ext_output=yes
-  ext_shared=no
-  ;;
-esac
-
-
-
-
-
-
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Birdstep support" >&5
-$as_echo_n "checking for Birdstep support... " >&6; }
-  if test "$PHP_BIRDSTEP" != "no"; then
-    if test "$PHP_BIRDSTEP" = "yes"; then
-        ODBC_INCDIR=/usr/local/birdstep/include
-        ODBC_LIBDIR=/usr/local/birdstep/lib
-    else
-        ODBC_INCDIR=$PHP_BIRDSTEP/include
-        ODBC_LIBDIR=$PHP_BIRDSTEP/$PHP_LIBDIR
-    fi
-
-    case $host_alias in
-      *aix*)
-
-$as_echo "#define AIX 1" >>confdefs.h
-;;
-      *hpux*)
-
-$as_echo "#define HPUX 1" >>confdefs.h
-;;
-      *linux*)
-
-$as_echo "#define LINUX 1" >>confdefs.h
-;;
-      *qnx*)
-
-$as_echo "#define NEUTRINO 1" >>confdefs.h
-;;
-      i?86-*-solaris*)
-
-$as_echo "#define ISOLARIS 1" >>confdefs.h
-;;
-      sparc-*-solaris*)
-
-$as_echo "#define SOLARIS 1" >>confdefs.h
-;;
-      *unixware*)
-
-$as_echo "#define UNIXWARE 1" >>confdefs.h
-;;
-    esac
-
-    ODBC_INCLUDE=-I$ODBC_INCDIR
-    ODBC_TYPE=birdstep
-    ODBC_LFLAGS=-L$ODBC_LIBDIR
-    ODBC_LIBS="-lCadm -lCdict -lCenc -lCrdm -lCrpc -lCrdbc -lCrm -lCuapi -lutil"
-
-    if test -f "$ODBC_LIBDIR/libCrdbc32.$SHLIB_SUFFIX_NAME"; then
-      ODBC_LIBS="-lCrdbc32 -lCadm32 -lCncp32 -lCrm32 -lCsql32 -lCdict32 -lCrdm32 -lCrpc32 -lutil"
-    elif test -f "$ODBC_LIBDIR/libCrdbc.$SHLIB_SUFFIX_NAME"; then
-      ODBC_LIBS="-lCrdbc -lCadm -lCncp -lCrm -lCsql -lCdict -lCrdm -lCrpc -lutil"
-    fi
-
-
-$as_echo "#define HAVE_BIRDSTEP 1" >>confdefs.h
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ext_output" >&5
-$as_echo "$ext_output" >&6; }
   else
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
@@ -56334,7 +56182,7 @@ if test -n "$ODBC_TYPE"; then
     esac
   done
 
-    if test "$ODBC_TYPE" != "birdstep" && test "$ODBC_TYPE" != "solid"; then
+    if test "$ODBC_TYPE" != "solid"; then
 
 $as_echo "#define HAVE_SQLDATASOURCES 1" >>confdefs.h
 
@@ -57175,10 +57023,8 @@ flock_type=unknown
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking \"whether flock struct is linux ordered\"" >&5
 $as_echo_n "checking \"whether flock struct is linux ordered\"... " >&6; }
 if test "$cross_compiling" = yes; then :
-  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "cannot run test program while cross compiling
-See \`config.log' for more details" "$LINENO" 5; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -57214,10 +57060,8 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking \"whether flock struct is BSD ordered\"" >&5
 $as_echo_n "checking \"whether flock struct is BSD ordered\"... " >&6; }
 if test "$cross_compiling" = yes; then :
-  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "cannot run test program while cross compiling
-See \`config.log' for more details" "$LINENO" 5; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -57315,6 +57159,7 @@ fi
 	Optimizer/sccp.c \
 	Optimizer/scdf.c \
 	Optimizer/dce.c \
+	Optimizer/escape_analysis.c \
 	Optimizer/compact_vars.c \
 	Optimizer/zend_dump.c; do
 
@@ -57397,6 +57242,7 @@ EOF
 	Optimizer/sccp.c \
 	Optimizer/scdf.c \
 	Optimizer/dce.c \
+	Optimizer/escape_analysis.c \
 	Optimizer/compact_vars.c \
 	Optimizer/zend_dump.c; do
 
@@ -57515,6 +57361,7 @@ _ACEOF
 	Optimizer/sccp.c \
 	Optimizer/scdf.c \
 	Optimizer/dce.c \
+	Optimizer/escape_analysis.c \
 	Optimizer/compact_vars.c \
 	Optimizer/zend_dump.c; do
 
@@ -57594,6 +57441,7 @@ EOF
 	Optimizer/sccp.c \
 	Optimizer/scdf.c \
 	Optimizer/dce.c \
+	Optimizer/escape_analysis.c \
 	Optimizer/compact_vars.c \
 	Optimizer/zend_dump.c; do
 
@@ -63868,7 +63716,7 @@ $as_echo_n "checking for selected PDO ODBC flavour... " >&6; }
 			    --with-pdo-odbc=unixODBC
 
 			  will check for unixODBC under /usr/local. You may attempt
-			  to use an otherwise unsupported driver using the \"generic\"
+			  to use an otherwise unsupported driver using the 'generic'
 			  flavour.  The syntax for generic ODBC support is:
 
 			    --with-pdo-odbc=generic,dir,libname,ldflags,cflags
@@ -66621,7 +66469,7 @@ EOF
 
 $as_echo "#define HAVE_SQLITE3_CLOSE_V2 1" >>confdefs.h
 
-      other_flags="-DSQLITE_ENABLE_FTS3=1 -DSQLITE_ENABLE_FTS4=1 -DSQLITE_ENABLE_FTS5=1 -DSQLITE_CORE=1 -DSQLITE_ENABLE_COLUMN_METADATA=1"
+      other_flags="-DSQLITE_ENABLE_FTS3=1 -DSQLITE_ENABLE_FTS4=1 -DSQLITE_ENABLE_FTS5=1 -DSQLITE_ENABLE_JSON1=1 -DSQLITE_CORE=1 -DSQLITE_ENABLE_COLUMN_METADATA=1"
 
 	        if test "$PHP_INTL" = "yes" && test "$PHP_INTL_SHARED" != "yes"; then
         other_flags="$other_flags -DSQLITE_ENABLE_ICU=1"
@@ -74256,6 +74104,7 @@ fi
 
 
 
+
 php_enable_shmop=no
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable shmop support" >&5
@@ -81733,18 +81582,7 @@ fi
 
 done
 
-for ac_func in mblen
-do :
-  ac_fn_c_check_func "$LINENO" "mblen" "ac_cv_func_mblen"
-if test "x$ac_cv_func_mblen" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_MBLEN 1
-_ACEOF
-
-fi
-done
-
-for ac_func in mbrlen mbsinit
+for ac_func in mblen mbrlen mbsinit
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -81967,56 +81805,6 @@ $as_echo "not found" >&6; }
   fi
 
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for argon2_hash in -largon2" >&5
-$as_echo_n "checking for argon2_hash in -largon2... " >&6; }
-if ${ac_cv_lib_argon2_argon2_hash+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-largon2  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char argon2_hash ();
-int
-main ()
-{
-return argon2_hash ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_argon2_argon2_hash=yes
-else
-  ac_cv_lib_argon2_argon2_hash=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_argon2_argon2_hash" >&5
-$as_echo "$ac_cv_lib_argon2_argon2_hash" >&6; }
-if test "x$ac_cv_lib_argon2_argon2_hash" = xyes; then :
-
-    LIBS="$LIBS -largon2"
-
-$as_echo "#define HAVE_ARGON2LIB 1" >>confdefs.h
-
-
-else
-
-    as_fn_error $? "Problem with libargon2.(a|so). Please verify that Argon2 header and libaries are installed" "$LINENO" 5
-
-fi
-
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for argon2id_hash_raw in -largon2" >&5
 $as_echo_n "checking for argon2id_hash_raw in -largon2... " >&6; }
 if ${ac_cv_lib_argon2_argon2id_hash_raw+:} false; then :
@@ -82057,16 +81845,84 @@ if test "x$ac_cv_lib_argon2_argon2id_hash_raw" = xyes; then :
 
     LIBS="$LIBS -largon2"
 
-$as_echo "#define HAVE_ARGON2ID 1" >>confdefs.h
+$as_echo "#define HAVE_ARGON2LIB 1" >>confdefs.h
 
 
 else
 
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
-$as_echo "not found" >&6; }
+    as_fn_error $? "Problem with libargon2.(a|so). Please verify that Argon2 header and libaries >= 20161029 are installed" "$LINENO" 5
 
 fi
 
+fi
+
+for ac_header in net/if.h
+do :
+  ac_fn_c_check_header_compile "$LINENO" "net/if.h" "ac_cv_header_net_if_h" "
+  #ifdef HAVE_SYS_SOCKET_H
+  #include <sys/socket.h>
+  #endif
+  #include <net/if.h>
+
+"
+if test "x$ac_cv_header_net_if_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_NET_IF_H 1
+_ACEOF
+
+fi
+
+done
+
+for ac_header in netdb.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "netdb.h" "ac_cv_header_netdb_h" "$ac_includes_default"
+if test "x$ac_cv_header_netdb_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_NETDB_H 1
+_ACEOF
+
+fi
+
+done
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for usable getifaddrs" >&5
+$as_echo_n "checking for usable getifaddrs... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+  #include <sys/types.h>
+  #include <ifaddrs.h>
+
+int
+main ()
+{
+
+  struct ifaddrs *interfaces;
+  if (!getifaddrs(&interfaces)) {
+      freeifaddrs(interfaces);
+  }
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_have_getifaddrs=yes
+else
+  ac_have_getifaddrs=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+if test "$ac_have_getifaddrs" = "yes" ; then
+
+$as_echo "#define HAVE_GETIFADDRS 1" >>confdefs.h
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 fi
 
 
@@ -82109,7 +81965,7 @@ fi
                             http_fopen_wrapper.c php_fopen_wrapper.c credits.c css.c \
                             var_unserializer.c ftok.c sha1.c user_filters.c uuencode.c \
                             filters.c proc_open.c streamsfuncs.c http.c password.c \
-                            random.c; do
+                            random.c net.c hrtime.c; do
 
       IFS=.
       set $ac_src
@@ -82169,7 +82025,7 @@ EOF
                             http_fopen_wrapper.c php_fopen_wrapper.c credits.c css.c \
                             var_unserializer.c ftok.c sha1.c user_filters.c uuencode.c \
                             filters.c proc_open.c streamsfuncs.c http.c password.c \
-                            random.c; do
+                            random.c net.c hrtime.c; do
 
       IFS=.
       set $ac_src
@@ -82265,7 +82121,7 @@ _ACEOF
                             http_fopen_wrapper.c php_fopen_wrapper.c credits.c css.c \
                             var_unserializer.c ftok.c sha1.c user_filters.c uuencode.c \
                             filters.c proc_open.c streamsfuncs.c http.c password.c \
-                            random.c; do
+                            random.c net.c hrtime.c; do
 
       IFS=.
       set $ac_src
@@ -82322,7 +82178,7 @@ EOF
                             http_fopen_wrapper.c php_fopen_wrapper.c credits.c css.c \
                             var_unserializer.c ftok.c sha1.c user_filters.c uuencode.c \
                             filters.c proc_open.c streamsfuncs.c http.c password.c \
-                            random.c; do
+                            random.c net.c hrtime.c; do
 
       IFS=.
       set $ac_src
@@ -83408,13 +83264,19 @@ if test "$PHP_TIDY" != "no"; then
   fi
 
   for i in $TIDY_SEARCH_DIRS; do
-    if test -f $i/include/tidy/tidy.h; then
-      TIDY_DIR=$i
-      TIDY_INCDIR=$i/include/tidy
-    elif test -f $i/include/tidy.h; then
-      TIDY_DIR=$i
-      TIDY_INCDIR=$i/include
-    fi
+    for j in tidy tidyp; do
+        if test -f $i/include/$j/$j.h; then
+            TIDY_DIR=$i
+            TIDY_INCDIR=$i/include/$j
+            TIDY_LIB_NAME=$j
+        break
+        elif test -f $i/include/$j.h; then
+            TIDY_DIR=$i
+            TIDY_INCDIR=$i/include
+            TIDY_LIB_NAME=$j
+        break
+        fi
+    done
   done
 
   if test -z "$TIDY_DIR"; then
@@ -83428,8 +83290,17 @@ $as_echo "#define HAVE_TIDYBUFFIO_H 1" >>confdefs.h
   fi
 
   TIDY_LIBDIR=$TIDY_DIR/$PHP_LIBDIR
+  if test "$TIDY_LIB_NAME" == 'tidyp'; then
 
-  TIDY_LIB_NAME=tidy
+$as_echo "#define HAVE_TIDYP_H 1" >>confdefs.h
+
+  else
+
+$as_echo "#define HAVE_TIDY_H 1" >>confdefs.h
+
+  fi
+
+
 
   save_old_LDFLAGS=$LDFLAGS
   ac_stuff=""
@@ -83525,13 +83396,14 @@ $as_echo "#define HAVE_TIDYBUFFIO_H 1" >>confdefs.h
     esac
   done
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for tidyOptGetDoc in -ltidy" >&5
-$as_echo_n "checking for tidyOptGetDoc in -ltidy... " >&6; }
-if ${ac_cv_lib_tidy_tidyOptGetDoc+:} false; then :
+  as_ac_Lib=`$as_echo "ac_cv_lib_$TIDY_LIB_NAME''_tidyOptGetDoc" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for tidyOptGetDoc in -l$TIDY_LIB_NAME" >&5
+$as_echo_n "checking for tidyOptGetDoc in -l$TIDY_LIB_NAME... " >&6; }
+if eval \${$as_ac_Lib+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-ltidy  $LIBS"
+LIBS="-l$TIDY_LIB_NAME  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -83551,17 +83423,18 @@ return tidyOptGetDoc ();
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_tidy_tidyOptGetDoc=yes
+  eval "$as_ac_Lib=yes"
 else
-  ac_cv_lib_tidy_tidyOptGetDoc=no
+  eval "$as_ac_Lib=no"
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_tidy_tidyOptGetDoc" >&5
-$as_echo "$ac_cv_lib_tidy_tidyOptGetDoc" >&6; }
-if test "x$ac_cv_lib_tidy_tidyOptGetDoc" = xyes; then :
+eval ac_res=\$$as_ac_Lib
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
 
     LDFLAGS=$save_old_LDFLAGS
     ext_shared=$save_ext_shared
@@ -83575,7 +83448,7 @@ else
 
     LDFLAGS=$save_old_LDFLAGS
     ext_shared=$save_ext_shared
-    unset ac_cv_lib_tidy_tidyOptGetDoc
+    unset ac_cv_lib_$TIDY_LIB_NAME_tidyOptGetDoc
 
 
   save_old_LDFLAGS=$LDFLAGS
@@ -83728,6 +83601,159 @@ else
 
 fi
 
+
+
+fi
+
+
+
+  save_old_LDFLAGS=$LDFLAGS
+  ac_stuff=""
+
+  save_ext_shared=$ext_shared
+  ext_shared=yes
+
+  for ac_i in $ac_stuff; do
+    case $ac_i in
+    -pthread)
+      if test "$ext_shared" = "yes"; then
+        LDFLAGS="$LDFLAGS -pthread"
+      else
+
+
+  unique=`echo $ac_i|$SED 's/[^a-zA-Z0-9]/_/g'`
+
+  cmd="echo $ac_n \"\$EXTRA_LDFLAGS$unique$ac_c\""
+  if test -n "$unique" && test "`eval $cmd`" = "" ; then
+    eval "EXTRA_LDFLAGS$unique=set"
+    EXTRA_LDFLAGS="$EXTRA_LDFLAGS $ac_i"
+  fi
+
+      fi
+    ;;
+    -l*)
+      ac_ii=`echo $ac_i|cut -c 3-`
+
+
+  case $ac_ii in
+  c|c_r|pthread*) ;;
+  *)
+    if test "$ext_shared" = "yes"; then
+        LDFLAGS="$LDFLAGS -l$ac_ii"
+    else
+
+
+  case $ac_ii in
+  c|c_r|pthread*) ;;
+  *)
+      LIBS="$LIBS -l$ac_ii"
+   ;;
+  esac
+
+
+    fi
+   ;;
+  esac
+
+
+    ;;
+    -L*)
+      ac_ii=`echo $ac_i|cut -c 3-`
+
+  if test "$ac_ii" != "/usr/$PHP_LIBDIR" && test "$ac_ii" != "/usr/lib"; then
+
+  if test -z "$ac_ii" || echo "$ac_ii" | grep '^/' >/dev/null ; then
+    ai_p=$ac_ii
+  else
+
+    ep_dir=`echo $ac_ii|$SED 's%/*[^/][^/]*/*$%%'`
+
+    ep_realdir=`(cd "$ep_dir" && pwd)`
+    ai_p="$ep_realdir"/`basename "$ac_ii"`
+  fi
+
+
+      if test "$ext_shared" = "yes"; then
+        LDFLAGS="-L$ai_p $LDFLAGS"
+        test -n "$ld_runpath_switch" && LDFLAGS="$ld_runpath_switch$ai_p $LDFLAGS"
+      else
+
+
+
+  unique=`echo $ai_p|$SED 's/[^a-zA-Z0-9]/_/g'`
+
+  cmd="echo $ac_n \"\$LIBPATH$unique$ac_c\""
+  if test -n "$unique" && test "`eval $cmd`" = "" ; then
+    eval "LIBPATH$unique=set"
+
+    test -n "$ld_runpath_switch" && LDFLAGS="$LDFLAGS $ld_runpath_switch$ai_p"
+    LDFLAGS="$LDFLAGS -L$ai_p"
+    PHP_RPATHS="$PHP_RPATHS $ai_p"
+
+  fi
+
+
+      fi
+
+  fi
+
+    ;;
+    esac
+  done
+
+  as_ac_Lib=`$as_echo "ac_cv_lib_$TIDY_LIB_NAME''_tidyReleaseDate" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for tidyReleaseDate in -l$TIDY_LIB_NAME" >&5
+$as_echo_n "checking for tidyReleaseDate in -l$TIDY_LIB_NAME... " >&6; }
+if eval \${$as_ac_Lib+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-l$TIDY_LIB_NAME  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char tidyReleaseDate ();
+int
+main ()
+{
+return tidyReleaseDate ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  eval "$as_ac_Lib=yes"
+else
+  eval "$as_ac_Lib=no"
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+eval ac_res=\$$as_ac_Lib
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
+
+    LDFLAGS=$save_old_LDFLAGS
+    ext_shared=$save_ext_shared
+
+
+$as_echo "#define HAVE_TIDYRELEASEDATE 1" >>confdefs.h
+
+
+
+else
+
+    LDFLAGS=$save_old_LDFLAGS
+    ext_shared=$save_ext_shared
+    unset ac_cv_lib_$TIDY_LIB_NAME_tidyReleaseDate
 
 
 fi
@@ -90831,7 +90857,7 @@ $as_echo "$ext_output" >&6; }
 
 
 
-php_with_libzip=no
+php_with_libzip=yes
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking libzip" >&5
 $as_echo_n "checking libzip... " >&6; }
@@ -90841,7 +90867,7 @@ if test "${with_libzip+set}" = set; then :
   withval=$with_libzip; PHP_LIBZIP=$withval
 else
 
-  PHP_LIBZIP=no
+  PHP_LIBZIP=yes
 
 
 fi
@@ -94304,7 +94330,6 @@ if test "$PHP_PEAR" != "no"; then
                     PEAR requires XML to be enabled.     Add --enable-xml to the configure line. (or --without-pear)"
   fi
 
-
   if test "$pear_error_msg"; then
     as_fn_error $? "$pear_error_msg" "$LINENO" 5
   fi
@@ -94422,6 +94447,7 @@ sys/time.h \
 signal.h \
 unix.h \
 stdlib.h \
+cpuid.h \
 dlfcn.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
@@ -94446,39 +94472,6 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 fi
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking return type of signal handlers" >&5
-$as_echo_n "checking return type of signal handlers... " >&6; }
-if ${ac_cv_type_signal+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <sys/types.h>
-#include <signal.h>
-
-int
-main ()
-{
-return *(signal (0, 0)) (0) == 1;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ac_cv_type_signal=int
-else
-  ac_cv_type_signal=void
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_type_signal" >&5
-$as_echo "$ac_cv_type_signal" >&6; }
-
-cat >>confdefs.h <<_ACEOF
-#define RETSIGTYPE $ac_cv_type_signal
-_ACEOF
-
 
 
 
@@ -95290,7 +95283,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 95293 "configure"
+#line 95286 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -95453,9 +95446,6 @@ if test "$ZEND_MAINTAINER_ZTS" = "yes"; then
 $as_echo "#define ZTS 1" >>confdefs.h
 
   CFLAGS="$CFLAGS -DZTS"
-
-
-
 fi
 
 
@@ -96154,12 +96144,8 @@ elif test "$TSRM_PTHREADS" != "no"; then
 
 
 
-if test "$beos_threads" = "1"; then
-  pthreads_working="yes"
-  ac_cv_pthreads_cflags=""
-else
-  save_CFLAGS=$CFLAGS
-  save_LIBS=$LIBS
+save_CFLAGS=$CFLAGS
+save_LIBS=$LIBS
 
 if test -n "$ac_cv_pthreads_lib"; then
   LIBS="$LIBS -l$ac_cv_pthreads_lib"
@@ -96200,20 +96186,20 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-  LIBS=$save_LIBS
-  CFLAGS=$save_CFLAGS
+LIBS=$save_LIBS
+CFLAGS=$save_CFLAGS
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthreads_cflags" >&5
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthreads_cflags" >&5
 $as_echo_n "checking for pthreads_cflags... " >&6; }
 if ${ac_cv_pthreads_cflags+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-  ac_cv_pthreads_cflags=
-  if test "$pthreads_working" != "yes"; then
-    for flag in -kthread -pthread -pthreads -mthreads -Kthread -threads -mt -qthreaded; do
-      ac_save=$CFLAGS
-      CFLAGS="$CFLAGS $flag"
+ac_cv_pthreads_cflags=
+if test "$pthreads_working" != "yes"; then
+  for flag in -kthread -pthread -pthreads -mthreads -Kthread -threads -mt -qthreaded; do
+    ac_save=$CFLAGS
+    CFLAGS="$CFLAGS $flag"
 
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -96245,29 +96231,29 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-      CFLAGS=$ac_save
-      if test "$pthreads_checked" = "yes"; then
-        ac_cv_pthreads_cflags=$flag
-        break
-      fi
-    done
-  fi
+    CFLAGS=$ac_save
+    if test "$pthreads_checked" = "yes"; then
+      ac_cv_pthreads_cflags=$flag
+      break
+    fi
+  done
+fi
 
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_pthreads_cflags" >&5
 $as_echo "$ac_cv_pthreads_cflags" >&6; }
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthreads_lib" >&5
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthreads_lib" >&5
 $as_echo_n "checking for pthreads_lib... " >&6; }
 if ${ac_cv_pthreads_lib+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-  ac_cv_pthreads_lib=
-  if test "$pthreads_working" != "yes"; then
-   for lib in pthread pthreads c_r; do
-      ac_save=$LIBS
-      LIBS="$LIBS -l$lib"
+ac_cv_pthreads_lib=
+if test "$pthreads_working" != "yes"; then
+ for lib in pthread pthreads c_r; do
+    ac_save=$LIBS
+    LIBS="$LIBS -l$lib"
 
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -96299,21 +96285,20 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-      LIBS=$ac_save
-      if test "$pthreads_checked" = "yes"; then
-        ac_cv_pthreads_lib=$lib
-        break
-      fi
-    done
-  fi
+    LIBS=$ac_save
+    if test "$pthreads_checked" = "yes"; then
+      ac_cv_pthreads_lib=$lib
+      break
+    fi
+  done
+fi
 
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_pthreads_lib" >&5
 $as_echo "$ac_cv_pthreads_lib" >&6; }
 
-  if test "x$ac_cv_pthreads_cflags" != "x" -o "x$ac_cv_pthreads_lib" != "x"; then
-    pthreads_working="yes"
-  fi
+if test "x$ac_cv_pthreads_cflags" != "x" -o "x$ac_cv_pthreads_lib" != "x"; then
+  pthreads_working="yes"
 fi
 
 if test "$pthreads_working" = "yes"; then
@@ -96323,24 +96308,18 @@ else
 fi
 
 
-if test "$beos_threads" = "1"; then
-
-$as_echo "#define BETHREADS 1" >>confdefs.h
-
-else
-  if test "$pthreads_working" != "yes"; then
-    as_fn_error $? "Your system seems to lack POSIX threads." "$LINENO" 5
-  fi
+if test "$pthreads_working" != "yes"; then
+  as_fn_error $? "Your system seems to lack POSIX threads." "$LINENO" 5
+fi
 
 
 $as_echo "#define PTHREADS 1" >>confdefs.h
 
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for POSIX threads" >&5
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for POSIX threads" >&5
 $as_echo_n "checking for POSIX threads... " >&6; }
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-fi
 
 fi
 
@@ -96801,12 +96780,7 @@ old_CC=$CC
 if test "$PHP_THREAD_SAFETY" = "yes" && test -n "$ac_cv_pthreads_cflags"; then
   CXXFLAGS="$CXXFLAGS $ac_cv_pthreads_cflags"
   INLINE_CFLAGS="$INLINE_CFLAGS $ac_cv_pthreads_cflags"
-  cat >meta_ccld<<EOF
-#! /bin/sh
-exec $CC $ac_cv_pthreads_cflags \$@
-EOF
-  CC="$abs_builddir/meta_ccld"
-  chmod +x meta_ccld
+  CPPFLAGS="$CPPFLAGS $ac_cv_pthreads_cflags"
 fi
 
 if test "$PHP_THREAD_SAFETY" = "yes" && test "$PHP_MYSQL" = "yes"; then
@@ -97329,7 +97303,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 97332 "configure"' > conftest.$ac_ext
+  echo '#line 97306 "configure"' > conftest.$ac_ext
   if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -98727,7 +98701,7 @@ else
       LDFLAGS="$LDFLAGS -Wl,-exported_symbols_list,conftest.sym"
 
 cat > conftest.$ac_ext <<EOF
-#line 98730 "configure"
+#line 98704 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -98885,11 +98859,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:98888: $lt_compile\"" >&5)
+   (eval echo "\"configure:98862: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "configure:98892: \$? = $ac_status" >&5
+   echo "configure:98866: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -99183,11 +99157,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:99186: $lt_compile\"" >&5)
+   (eval echo "\"configure:99160: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "configure:99190: \$? = $ac_status" >&5
+   echo "configure:99164: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -99287,11 +99261,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:99290: $lt_compile\"" >&5)
+   (eval echo "\"configure:99264: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "configure:99294: \$? = $ac_status" >&5
+   echo "configure:99268: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -99751,7 +99725,7 @@ _LT_EOF
        # Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 99754 "configure"
+#line 99728 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -99793,7 +99767,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
 	 # Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 99796 "configure"
+#line 99770 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -101310,7 +101284,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 101313 "configure"
+#line 101287 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -101410,7 +101384,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 101413 "configure"
+#line 101387 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -102475,7 +102449,7 @@ case $host_os in
       # Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 102478 "configure"
+#line 102452 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -102518,7 +102492,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
 	# Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 102521 "configure"
+#line 102495 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -103770,11 +103744,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:103773: $lt_compile\"" >&5)
+   (eval echo "\"configure:103747: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "configure:103777: \$? = $ac_status" >&5
+   echo "configure:103751: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -103874,11 +103848,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:103877: $lt_compile\"" >&5)
+   (eval echo "\"configure:103851: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "configure:103881: \$? = $ac_status" >&5
+   echo "configure:103855: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -105250,7 +105224,7 @@ EOF
        php_ini.c SAPI.c rfc1867.c php_content_types.c strlcpy.c \
        strlcat.c explicit_bzero.c mergesort.c reentrancy.c php_variables.c php_ticks.c \
        network.c php_open_temporary_file.c \
-       output.c getopt.c; do
+       output.c getopt.c php_syslog.c; do
 
       IFS=.
       set $ac_src
@@ -105479,7 +105453,7 @@ EOF
     zend_iterators.c zend_interfaces.c zend_exceptions.c zend_strtod.c zend_gc.c \
     zend_closures.c zend_float.c zend_string.c zend_signal.c zend_generators.c \
     zend_virtual_cwd.c zend_ast.c zend_objects.c zend_object_handlers.c zend_objects_API.c \
-    zend_default_classes.c zend_inheritance.c zend_smart_str.c; do
+    zend_default_classes.c zend_inheritance.c zend_smart_str.c zend_cpuinfo.c; do
 
       IFS=.
       set $ac_src
@@ -106398,15 +106372,6 @@ if test -n "\$REDO_ALL"; then
   cli_extensions="$EXT_CLI_STATIC"
   sh $srcdir/build/genif.sh $srcdir/main/internal_functions.c.in $srcdir "$EXTRA_MODULE_PTRS" $AWK \$cli_extensions > main/internal_functions_cli.c
 
-  if test "$UNAME" = "FreeBSD" && test "$PHP_SAPI" = "apache2filter" && test "$TSRM_PTH" != "pth-config" ; then
-    echo "+--------------------------------------------------------------------+"
-    echo "|                        *** WARNING ***                             |"
-    echo "|                                                                    |"
-    echo "| In order to build PHP as a Apache2 module on FreeBSD, you have to  |"
-    echo "| add  --with-tsrm-pth to your ./configure line. Therefore you need  |"
-    echo "| to install gnu-pth from /usr/ports/devel/pth.                      |"
-  fi
-
   if test -n "$PHP_APXS_BROKEN"; then
     echo "+--------------------------------------------------------------------+"
     echo "| WARNING: Your $APXS script is most likely broken."
@@ -106427,12 +106392,12 @@ cat <<X
 | see the file debug.log for error messages.                         |
 |                                                                    |
 | If you are unable to fix this, send the file debug.log to the      |
-| php-install@lists.php.net mailing list and include appropriate      |
+| php-install@lists.php.net mailing list and include appropriate     |
 | information about your setup.                                      |
 X
   fi
 
-    if test "$PHP_SAPI" = "apache2handler" || test "$PHP_SAPI" = "apache2filter"; then
+    if test "$PHP_SAPI" = "apache2handler"; then
       if test "$APACHE_VERSION" -ge 2004001; then
         if test -z "$APACHE_THREADED_MPM"; then
 cat <<X

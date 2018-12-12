@@ -3,7 +3,6 @@ Phar object: iterator & entries
 --SKIPIF--
 <?php
 if (!extension_loaded("phar")) die("skip");
-if (!extension_loaded("spl")) die("skip SPL not available");
 ?>
 --INI--
 phar.readonly=1
@@ -72,7 +71,7 @@ int(0)
 string(3) "dir"
 bool(false)
 bool(true)
-bool(false)
+bool(true)
 bool(false)
 bool(true)
 bool(false)

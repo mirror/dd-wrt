@@ -52,7 +52,7 @@ foreach($formats as $format) {
 
 echo "Done";
 ?>
---EXPECTF--
+--EXPECT--
 *** Testing vsprintf() : int formats with int values ***
 
 -- Iteration 1 --

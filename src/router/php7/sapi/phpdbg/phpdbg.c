@@ -121,8 +121,7 @@ static void php_phpdbg_destroy_bp_condition(zval *data) /* {{{ */
 
 static void php_phpdbg_destroy_registered(zval *data) /* {{{ */
 {
-	zend_function *function = (zend_function *) Z_PTR_P(data);
-	destroy_zend_function(function);
+	zend_function_dtor(data);
 } /* }}} */
 
 static void php_phpdbg_destroy_file_source(zval *data) /* {{{ */
@@ -209,11 +208,6 @@ static PHP_MINIT_FUNCTION(phpdbg) /* {{{ */
 	zend_execute_ex = phpdbg_execute_ex;
 
 	REGISTER_STRINGL_CONSTANT("PHPDBG_VERSION", PHPDBG_VERSION, sizeof(PHPDBG_VERSION)-1, CONST_CS|CONST_PERSISTENT);
-
-	REGISTER_LONG_CONSTANT("PHPDBG_FILE",   FILE_PARAM, CONST_CS|CONST_PERSISTENT);
-	REGISTER_LONG_CONSTANT("PHPDBG_METHOD", METHOD_PARAM, CONST_CS|CONST_PERSISTENT);
-	REGISTER_LONG_CONSTANT("PHPDBG_LINENO", NUMERIC_PARAM, CONST_CS|CONST_PERSISTENT);
-	REGISTER_LONG_CONSTANT("PHPDBG_FUNC",   STR_PARAM, CONST_CS|CONST_PERSISTENT);
 
 	REGISTER_LONG_CONSTANT("PHPDBG_COLOR_PROMPT", PHPDBG_COLOR_PROMPT, CONST_CS|CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("PHPDBG_COLOR_NOTICE", PHPDBG_COLOR_NOTICE, CONST_CS|CONST_PERSISTENT);
@@ -370,7 +364,7 @@ static PHP_FUNCTION(phpdbg_break_next)
 	phpdbg_set_breakpoint_opline_ex((phpdbg_opline_ptr_t) ex->opline + 1);
 } /* }}} */
 
-/* {{{ proto void phpdbg_break_file(string file, integer line) */
+/* {{{ proto void phpdbg_break_file(string file, int line) */
 static PHP_FUNCTION(phpdbg_break_file)
 {
 	char *file;
@@ -425,7 +419,7 @@ static PHP_FUNCTION(phpdbg_clear)
 	zend_hash_clean(&PHPDBG_G(bp)[PHPDBG_BREAK_COND]);
 } /* }}} */
 
-/* {{{ proto void phpdbg_color(integer element, string color) */
+/* {{{ proto void phpdbg_color(int element, string color) */
 static PHP_FUNCTION(phpdbg_color)
 {
 	zend_long element;
@@ -580,10 +574,10 @@ static PHP_FUNCTION(phpdbg_get_executable)
 				zend_hash_add_empty_element(files, zval_get_string(filename));
 			} ZEND_HASH_FOREACH_END();
 		} else {
-			GC_REFCOUNT(files)++;
+			GC_ADDREF(files);
 		}
 	} else {
-		GC_REFCOUNT(files)++;
+		GC_ADDREF(files);
 	}
 
 	array_init(return_value);
@@ -632,7 +626,7 @@ static PHP_FUNCTION(phpdbg_get_executable)
 		}
 	} ZEND_HASH_FOREACH_END();
 
-	if (!--GC_REFCOUNT(files)) {
+	if (!GC_DELREF(files)) {
 		zend_hash_destroy(files);
 	}
 }
@@ -783,7 +777,7 @@ ZEND_BEGIN_ARG_INFO_EX(phpdbg_get_executable_arginfo, 0, 0, 0)
 	ZEND_ARG_INFO(0, options)
 ZEND_END_ARG_INFO()
 
-zend_function_entry phpdbg_user_functions[] = {
+static const zend_function_entry phpdbg_user_functions[] = {
 	PHP_FE(phpdbg_clear, phpdbg_clear_arginfo)
 	PHP_FE(phpdbg_break_next, phpdbg_break_next_arginfo)
 	PHP_FE(phpdbg_break_file, phpdbg_break_file_arginfo)
@@ -1019,23 +1013,20 @@ void phpdbg_register_file_handles(void) /* {{{ */
 	php_stream_to_zval(s_err, &zerr);
 
 	ic.value = zin;
-	ic.flags = CONST_CS;
+	ZEND_CONSTANT_SET_FLAGS(&ic, CONST_CS, 0);
 	ic.name = zend_string_init(ZEND_STRL("STDIN"), 0);
-	ic.module_number = 0;
 	zend_hash_del(EG(zend_constants), ic.name);
 	zend_register_constant(&ic);
 
 	oc.value = zout;
-	oc.flags = CONST_CS;
+	ZEND_CONSTANT_SET_FLAGS(&oc, CONST_CS, 0);
 	oc.name = zend_string_init(ZEND_STRL("STDOUT"), 0);
-	oc.module_number = 0;
 	zend_hash_del(EG(zend_constants), oc.name);
 	zend_register_constant(&oc);
 
 	ec.value = zerr;
-	ec.flags = CONST_CS;
+	ZEND_CONSTANT_SET_FLAGS(&ec, CONST_CS, 0);
 	ec.name = zend_string_init(ZEND_STRL("STDERR"), 0);
-	ec.module_number = 0;
 	zend_hash_del(EG(zend_constants), ec.name);
 	zend_register_constant(&ec);
 }
@@ -1356,7 +1347,7 @@ php_stream *phpdbg_stream_url_wrap_php(php_stream_wrapper *wrapper, const char *
 		return stream;
 	}
 
-	return PHPDBG_G(orig_url_wrap_php)(wrapper, path, mode, options, opened_path, context STREAMS_CC);
+	return PHPDBG_G(orig_url_wrap_php)->wops->stream_opener(wrapper, path, mode, options, opened_path, context STREAMS_CC);
 } /* }}} */
 
 int main(int argc, char **argv) /* {{{ */
@@ -1399,6 +1390,8 @@ int main(int argc, char **argv) /* {{{ */
 	void* (*_malloc)(size_t);
 	void (*_free)(void*);
 	void* (*_realloc)(void*, size_t);
+	php_stream_wrapper wrapper;
+	php_stream_wrapper_ops wops;
 
 
 #ifndef _WIN32
@@ -1872,9 +1865,14 @@ phpdbg_main:
 		}
 
 		{
-			php_stream_wrapper *wrapper = zend_hash_str_find_ptr(php_stream_get_url_stream_wrappers_hash(), ZEND_STRL("php"));
-			PHPDBG_G(orig_url_wrap_php) = wrapper->wops->stream_opener;
-			wrapper->wops->stream_opener = phpdbg_stream_url_wrap_php;
+			zval *zv = zend_hash_str_find(php_stream_get_url_stream_wrappers_hash(), ZEND_STRL("php"));
+			php_stream_wrapper *tmp_wrapper = Z_PTR_P(zv);
+			PHPDBG_G(orig_url_wrap_php) = tmp_wrapper;
+			memcpy(&wrapper, tmp_wrapper, sizeof(wrapper));
+			memcpy(&wops, tmp_wrapper->wops, sizeof(wops));
+			wops.stream_opener = phpdbg_stream_url_wrap_php;
+			wrapper.wops = (const php_stream_wrapper_ops*)&wops;
+			Z_PTR_P(zv) = &wrapper;
 		}
 
 		/* Make stdin, stdout and stderr accessible from PHP scripts */
@@ -2101,6 +2099,7 @@ phpdbg_out:
 		if (PHPDBG_G(exec) && strcmp("Standard input code", PHPDBG_G(exec)) == SUCCESS) { /* i.e. execution context has been read from stdin - back it up */
 			phpdbg_file_source *data = zend_hash_str_find_ptr(&PHPDBG_G(file_sources), PHPDBG_G(exec), PHPDBG_G(exec_len));
 			backup_phpdbg_compile = zend_string_alloc(data->len + 2, 1);
+			GC_MAKE_PERSISTENT_LOCAL(backup_phpdbg_compile);
 			sprintf(ZSTR_VAL(backup_phpdbg_compile), "?>%.*s", (int) data->len, data->buf);
 		}
 
@@ -2152,8 +2151,8 @@ phpdbg_out:
 		}
 
 		{
-			php_stream_wrapper *wrapper = zend_hash_str_find_ptr(php_stream_get_url_stream_wrappers_hash(), ZEND_STRL("php"));
-			wrapper->wops->stream_opener = PHPDBG_G(orig_url_wrap_php);
+			zval *zv = zend_hash_str_find(php_stream_get_url_stream_wrappers_hash(), ZEND_STRL("php"));
+			Z_PTR_P(zv) = (void*)PHPDBG_G(orig_url_wrap_php);
 		}
 
 		zend_hash_destroy(&PHPDBG_G(file_sources));

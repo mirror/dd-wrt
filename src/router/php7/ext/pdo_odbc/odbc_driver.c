@@ -16,8 +16,6 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id$ */
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -373,7 +371,7 @@ static int odbc_handle_get_attr(pdo_dbh_t *dbh, zend_long attr, zval *val)
 	return 0;
 }
 
-static struct pdo_dbh_methods odbc_methods = {
+static const struct pdo_dbh_methods odbc_methods = {
 	odbc_handle_closer,
 	odbc_handle_preparer,
 	odbc_handle_doer,
@@ -478,7 +476,7 @@ fail:
 }
 /* }}} */
 
-pdo_driver_t pdo_odbc_driver = {
+const pdo_driver_t pdo_odbc_driver = {
 	PDO_DRIVER_HEADER(odbc),
 	pdo_odbc_handle_factory
 };

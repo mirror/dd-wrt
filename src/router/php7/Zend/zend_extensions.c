@@ -12,12 +12,10 @@
    | obtain it through the world-wide-web, please send a note to          |
    | license@zend.com so we can mail you a copy immediately.              |
    +----------------------------------------------------------------------+
-   | Authors: Andi Gutmans <andi@zend.com>                                |
-   |          Zeev Suraski <zeev@zend.com>                                |
+   | Authors: Andi Gutmans <andi@php.net>                                 |
+   |          Zeev Suraski <zeev@php.net>                                 |
    +----------------------------------------------------------------------+
 */
-
-/* $Id$ */
 
 #include "zend_extensions.h"
 
@@ -121,14 +119,6 @@ int zend_load_extension_handle(DL_HANDLE handle, const char *path)
 		fprintf(stderr, "Cannot load %s - it was already loaded\n", new_extension->name);
 /* See http://support.microsoft.com/kb/190351 */
 #ifdef ZEND_WIN32
-		fflush(stderr);
-#endif
-		DL_UNLOAD(handle);
-		return FAILURE;
-	} else if (zend_get_extension(new_extension->name)) {
-		fprintf(stderr, "Cannot load %s - extension already loaded\n", new_extension->name);
-/* See http://support.microsoft.com/kb/190351 */
-#ifdef PHP_WIN32
 		fflush(stderr);
 #endif
 		DL_UNLOAD(handle);

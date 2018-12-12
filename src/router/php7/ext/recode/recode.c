@@ -16,8 +16,6 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: 8850a0f49afd824e77a2873e4cb19798daf74354 $ */
-
 /* {{{ includes & prototypes */
 
 #ifdef HAVE_CONFIG_H
@@ -135,7 +133,6 @@ PHP_MINFO_FUNCTION(recode)
 {
 	php_info_print_table_start();
 	php_info_print_table_row(2, "Recode Support", "enabled");
-	php_info_print_table_row(2, "Revision", "$Id: 8850a0f49afd824e77a2873e4cb19798daf74354 $");
 	php_info_print_table_end();
 }
 

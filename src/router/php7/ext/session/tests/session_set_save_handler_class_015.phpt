@@ -19,5 +19,5 @@ ob_start();
 echo "*** Testing session_set_save_handler() : register session handler but don't start  ***\n";
 
 session_set_save_handler(new SessionHandler);
---EXPECTF--
+--EXPECT--
 *** Testing session_set_save_handler() : register session handler but don't start  ***

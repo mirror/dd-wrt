@@ -57,7 +57,7 @@ var_dump( is_int($return_value_pclose) );
 
 echo "\n--- Done ---";
 ?>
---EXPECTF--
+--EXPECT--
 *** Testing popen(): reading from the pipe ***
 Sample String
 *** Testing popen(): writing to the pipe ***

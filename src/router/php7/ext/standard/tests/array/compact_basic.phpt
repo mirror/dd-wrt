@@ -80,6 +80,8 @@ array(0) {
 }
 array(0) {
 }
+
+Notice: compact(): Undefined variable: g in %s on line %d
 array(0) {
 }
 Done

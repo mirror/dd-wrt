@@ -2,7 +2,6 @@
 PDO Common: PDOStatement::getColumnMeta
 --SKIPIF--
 <?php # vim:ft=php
-die('skip this feature is not yet finalized, no test makes sense');
 if (!extension_loaded('pdo')) die('skip');
 $dir = getenv('REDIR_TEST_DIR');
 if (false == $dir) die('skip no driver');
@@ -18,6 +17,8 @@ PDOTest::skip();
  * test file.
  */
 ?>
+--XFAIL--
+This feature is not yet finalized, no test makes sense
 --FILE--
 <?php
 if (getenv('REDIR_TEST_DIR') === false) putenv('REDIR_TEST_DIR='.dirname(__FILE__) . '/../../pdo/tests/');

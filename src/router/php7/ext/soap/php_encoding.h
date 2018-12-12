@@ -14,10 +14,9 @@
   +----------------------------------------------------------------------+
   | Authors: Brad Lafountain <rodif_bl@yahoo.com>                        |
   |          Shane Caraveo <shane@caraveo.com>                           |
-  |          Dmitry Stogov <dmitry@zend.com>                             |
+  |          Dmitry Stogov <dmitry@php.net>                              |
   +----------------------------------------------------------------------+
 */
-/* $Id$ */
 
 #ifndef PHP_ENCODING_H
 #define PHP_ENCODING_H
@@ -210,7 +209,7 @@ encodePtr get_conversion(int encode);
 void delete_encoder(zval *zv);
 void delete_encoder_persistent(zval *zv);
 
-extern encode defaultEncoding[];
+extern const encode defaultEncoding[];
 extern int numDefaultEncodings;
 
 #endif

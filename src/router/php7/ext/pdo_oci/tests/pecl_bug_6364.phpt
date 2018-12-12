@@ -42,7 +42,7 @@ $dbh->exec ("drop procedure bug_6364_sp");
 $dbh->exec ("drop table bug_6364_t");
 
 ?>
---EXPECTF--
+--EXPECT--
 string(4) "val4"
 string(4) "val5"
 array(10) {

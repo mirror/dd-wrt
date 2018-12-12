@@ -1,8 +1,8 @@
-/* A Bison parser, made by GNU Bison 3.0.2.  */
+/* A Bison parser, made by GNU Bison 3.0.4.  */
 
 /* Bison implementation for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2013 Free Software Foundation, Inc.
+   Copyright (C) 1984, 1989-1990, 2000-2015 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@
 #define YYBISON 1
 
 /* Bison version.  */
-#define YYBISON_VERSION "3.0.2"
+#define YYBISON_VERSION "3.0.4"
 
 /* Skeleton name.  */
 #define YYSKELETON_NAME "yacc.c"
@@ -84,12 +84,10 @@
    | obtain it through the world-wide-web, please send a note to          |
    | license@zend.com so we can mail you a copy immediately.              |
    +----------------------------------------------------------------------+
-   | Authors: Zeev Suraski <zeev@zend.com>                                |
+   | Authors: Zeev Suraski <zeev@php.net>                                 |
    |          Jani Taskinen <jani@php.net>                                |
    +----------------------------------------------------------------------+
 */
-
-/* $Id$ */
 
 #define DEBUG_CFG_PARSER 0
 
@@ -190,13 +188,14 @@ static void zend_ini_add_string(zval *result, zval *op1, zval *op2)
 	int length, op1_len;
 
 	if (Z_TYPE_P(op1) != IS_STRING) {
-		zend_string *str = zval_get_string(op1);
 		/* ZEND_ASSERT(!Z_REFCOUNTED_P(op1)); */
 		if (ZEND_SYSTEM_INI) {
+			zend_string *tmp_str;
+			zend_string *str = zval_get_tmp_string(op1, &tmp_str);
 			ZVAL_PSTRINGL(op1, ZSTR_VAL(str), ZSTR_LEN(str));
-			zend_string_release(str);
+			zend_tmp_string_release(tmp_str);
 		} else {
-			ZVAL_STR(op1, str);
+			ZVAL_STR(op1, zval_get_string_func(op1));
 		}
 	}
 	op1_len = (int)Z_STRLEN_P(op1);
@@ -221,7 +220,7 @@ static void zend_ini_get_constant(zval *result, zval *name)
 	if (!memchr(Z_STRVAL_P(name), ':', Z_STRLEN_P(name))
 		   	&& (c = zend_get_constant(Z_STR_P(name))) != 0) {
 		if (Z_TYPE_P(c) != IS_STRING) {
-			ZVAL_DUP(&tmp, c);
+			ZVAL_COPY_OR_DUP(&tmp, c);
 			if (Z_OPT_CONSTANT(tmp)) {
 				zval_update_constant_ex(&tmp, NULL);
 			}
@@ -342,6 +341,16 @@ ZEND_API int zend_parse_ini_string(char *str, zend_bool unbuffered_errors, int s
 		return SUCCESS;
 	} else {
 		return FAILURE;
+	}
+}
+/* }}} */
+
+/* {{{ zval_ini_dtor()
+*/
+static void zval_ini_dtor(zval *zv)
+{
+	if (Z_TYPE_P(zv) == IS_STRING) {
+		zend_string_release(Z_STR_P(zv));
 	}
 }
 /* }}} */
@@ -730,12 +739,12 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,   307,   307,   308,   312,   319,   327,   340,   341,   345,
-     346,   350,   351,   352,   353,   354,   358,   359,   363,   364,
-     365,   369,   370,   371,   372,   373,   374,   378,   379,   380,
-     381,   382,   383,   387,   388,   389,   390,   391,   392,   393,
-     397,   401,   402,   403,   404,   405,   409,   410,   411,   412,
-     413
+       0,   316,   316,   317,   321,   328,   336,   345,   346,   350,
+     351,   355,   356,   357,   358,   359,   363,   364,   368,   369,
+     370,   374,   375,   376,   377,   378,   379,   383,   384,   385,
+     386,   387,   388,   392,   393,   394,   395,   396,   397,   398,
+     402,   406,   407,   408,   409,   410,   414,   415,   416,   417,
+     418
 };
 #endif
 
@@ -1318,67 +1327,67 @@ yydestruct (const char *yymsg, int yytype, YYSTYPE *yyvaluep)
     {
           case 4: /* TC_RAW  */
 
-      { zval_ptr_dtor(&((*yyvaluep))); }
+      { zval_ini_dtor(&((*yyvaluep))); }
 
         break;
 
     case 5: /* TC_CONSTANT  */
 
-      { zval_ptr_dtor(&((*yyvaluep))); }
+      { zval_ini_dtor(&((*yyvaluep))); }
 
         break;
 
     case 6: /* TC_NUMBER  */
 
-      { zval_ptr_dtor(&((*yyvaluep))); }
+      { zval_ini_dtor(&((*yyvaluep))); }
 
         break;
 
     case 7: /* TC_STRING  */
 
-      { zval_ptr_dtor(&((*yyvaluep))); }
+      { zval_ini_dtor(&((*yyvaluep))); }
 
         break;
 
     case 8: /* TC_WHITESPACE  */
 
-      { zval_ptr_dtor(&((*yyvaluep))); }
+      { zval_ini_dtor(&((*yyvaluep))); }
 
         break;
 
     case 9: /* TC_LABEL  */
 
-      { zval_ptr_dtor(&((*yyvaluep))); }
+      { zval_ini_dtor(&((*yyvaluep))); }
 
         break;
 
     case 10: /* TC_OFFSET  */
 
-      { zval_ptr_dtor(&((*yyvaluep))); }
+      { zval_ini_dtor(&((*yyvaluep))); }
 
         break;
 
     case 12: /* TC_VARNAME  */
 
-      { zval_ptr_dtor(&((*yyvaluep))); }
+      { zval_ini_dtor(&((*yyvaluep))); }
 
         break;
 
     case 14: /* BOOL_TRUE  */
 
-      { zval_ptr_dtor(&((*yyvaluep))); }
+      { zval_ini_dtor(&((*yyvaluep))); }
 
         break;
 
     case 15: /* BOOL_FALSE  */
 
-      { zval_ptr_dtor(&((*yyvaluep))); }
+      { zval_ini_dtor(&((*yyvaluep))); }
 
         break;
 
     case 16: /* NULL_NULL  */
 
-      { zval_ptr_dtor(&((*yyvaluep))); }
+      { zval_ini_dtor(&((*yyvaluep))); }
 
         break;
 
@@ -1664,7 +1673,7 @@ yyreduce:
 #endif
 			ZEND_INI_PARSER_CB(&(yyvsp[-2]), &(yyvsp[0]), NULL, ZEND_INI_PARSER_ENTRY, ZEND_INI_PARSER_ARG);
 			zend_string_release(Z_STR((yyvsp[-2])));
-			zval_ptr_dtor(&(yyvsp[0]));
+			zval_ini_dtor(&(yyvsp[0]));
 		}
 
     break;
@@ -1677,12 +1686,8 @@ yyreduce:
 #endif
 			ZEND_INI_PARSER_CB(&(yyvsp[-4]), &(yyvsp[0]), &(yyvsp[-3]), ZEND_INI_PARSER_POP_ENTRY, ZEND_INI_PARSER_ARG);
 			zend_string_release(Z_STR((yyvsp[-4])));
-			if (Z_TYPE((yyvsp[-3])) == IS_STRING) {
-				zend_string_release(Z_STR((yyvsp[-3])));
-			} else {
-				zval_dtor(&(yyvsp[-3]));
-			}
-			zval_ptr_dtor(&(yyvsp[0]));
+			zval_ini_dtor(&(yyvsp[-3]));
+			zval_ini_dtor(&(yyvsp[0]));
 		}
 
     break;

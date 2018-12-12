@@ -1,6 +1,4 @@
-dnl
-dnl $Id$
-dnl
+dnl config.m4 for extension dba
 
 dnl Suppose we need FlatFile if no support or only CDB is used.
 
@@ -101,7 +99,7 @@ PHP_ARG_WITH(tcadb,,
 [  --with-tcadb[=DIR]        DBA: Tokyo Cabinet abstract DB support], no, no)
 
 PHP_ARG_WITH(lmdb,,
-[  --with-lmdb[=DIR]        DBA: Lightning memory-mapped database support], no, no)
+[  --with-lmdb[=DIR]         DBA: Lightning memory-mapped database support], no, no)
 
 
 dnl
@@ -272,11 +270,11 @@ AC_DEFUN([PHP_DBA_DB_CHECK],[
     if test -f $THIS_PREFIX/$PHP_LIBDIR/lib$LIB.a || test -f $THIS_PREFIX/$PHP_LIBDIR/lib$LIB.$SHLIB_SUFFIX_NAME; then
       lib_found="";
       PHP_TEMP_LDFLAGS(-L$THIS_PREFIX/$PHP_LIBDIR, -l$LIB,[
-        AC_TRY_LINK([
+        AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include "$THIS_INCLUDE"
-        ],[
+        ]],[[
           $3;
-        ],[
+        ]])],[
           AC_EGREP_CPP(yes,[
 #include "$THIS_INCLUDE"
 #if DB_VERSION_MAJOR == $1 || ($1 == 4 && DB_VERSION_MAJOR == 5)
@@ -286,7 +284,7 @@ AC_DEFUN([PHP_DBA_DB_CHECK],[
             THIS_LIBS=$LIB
             lib_found=1
           ])
-        ])
+        ],[])
       ])
       if test -n "$lib_found"; then
         lib_found="";
@@ -518,11 +516,11 @@ if test "$PHP_DB1" != "no"; then
   AC_MSG_RESULT([$THIS_INCLUDE])
   if test -n "$THIS_INCLUDE"; then
     PHP_TEMP_LDFLAGS(-L$THIS_PREFIX/$PHP_LIBDIR, -l$THIS_LIBS,[
-      AC_TRY_LINK([
+      AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include "$THIS_INCLUDE"
-      ],[
+      ]],[[
         DB * dbp = dbopen("", 0, 0, DB_HASH, 0);
-      ],[
+      ]])],[
         AC_DEFINE_UNQUOTED(DB1_INCLUDE_FILE, "$THIS_INCLUDE", [ ])
         AC_DEFINE(DBA_DB1, 1, [ ])
         THIS_RESULT=yes

@@ -1,4 +1,3 @@
-	/* $Id: fpm_unix.h,v 1.8 2008/05/25 13:21:13 anight Exp $ */
 	/* (c) 2007,2008 Andrei Nigmatulin */
 
 #ifndef FPM_UNIX_H

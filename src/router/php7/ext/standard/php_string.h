@@ -17,10 +17,6 @@
    +----------------------------------------------------------------------+
 */
 
-/* $Id$ */
-
-/* Synced with php 3.0 revision 1.43 1999-06-16 [ssb] */
-
 #ifndef PHP_STRING_H
 #define PHP_STRING_H
 
@@ -109,6 +105,9 @@ PHP_MSHUTDOWN_FUNCTION(localeconv);
 #if HAVE_NL_LANGINFO
 PHP_MINIT_FUNCTION(nl_langinfo);
 #endif
+#if ZEND_INTRIN_SSE4_2_FUNC_PTR
+PHP_MINIT_FUNCTION(string_intrin);
+#endif
 
 #define strnatcmp(a, b) \
 	strnatcmp_ex(a, strlen(a), b, strlen(b), 0)
@@ -124,16 +123,22 @@ PHPAPI char *php_strtoupper(char *s, size_t len);
 PHPAPI char *php_strtolower(char *s, size_t len);
 PHPAPI zend_string *php_string_toupper(zend_string *s);
 PHPAPI zend_string *php_string_tolower(zend_string *s);
-PHPAPI char *php_strtr(char *str, size_t len, char *str_from, char *str_to, size_t trlen);
-PHPAPI zend_string *php_addslashes(zend_string *str, int should_free);
-PHPAPI zend_string *php_addcslashes(zend_string *str, int freeit, char *what, size_t what_len);
+PHPAPI char *php_strtr(char *str, size_t len, const char *str_from, const char *str_to, size_t trlen);
+#if ZEND_INTRIN_SSE4_2_FUNC_PTR
+PHPAPI extern zend_string *(*php_addslashes)(zend_string *str);
+PHPAPI extern void (*php_stripslashes)(zend_string *str);
+#else
+PHPAPI zend_string *php_addslashes(zend_string *str);
 PHPAPI void php_stripslashes(zend_string *str);
+#endif
+PHPAPI zend_string *php_addcslashes_str(const char *str, size_t len, char *what, size_t what_len);
+PHPAPI zend_string *php_addcslashes(zend_string *str, char *what, size_t what_len);
 PHPAPI void php_stripcslashes(zend_string *str);
 PHPAPI zend_string *php_basename(const char *s, size_t len, char *suffix, size_t sufflen);
 PHPAPI size_t php_dirname(char *str, size_t len);
 PHPAPI char *php_stristr(char *s, char *t, size_t s_len, size_t t_len);
-PHPAPI zend_string *php_str_to_str(char *haystack, size_t length, char *needle,
-		size_t needle_len, char *str, size_t str_len);
+PHPAPI zend_string *php_str_to_str(const char *haystack, size_t length, const char *needle,
+		size_t needle_len, const char *str, size_t str_len);
 PHPAPI zend_string *php_trim(zend_string *str, char *what, size_t what_len, int mode);
 PHPAPI size_t php_strip_tags(char *rbuf, size_t len, uint8_t *state, const char *allow, size_t allow_len);
 PHPAPI size_t php_strip_tags_ex(char *rbuf, size_t len, uint8_t *stateptr, const char *allow, size_t allow_len, zend_bool allow_tag_spaces);

@@ -12,12 +12,10 @@
    | obtain it through the world-wide-web, please send a note to          |
    | license@php.net so we can mail you a copy immediately.               |
    +----------------------------------------------------------------------+
-   | Author: Zeev Suraski <zeev@zend.com>                                 |
+   | Author: Zeev Suraski <zeev@php.net>                                  |
    *         Pierre Joye <pierre@php.net>                                 |
    +----------------------------------------------------------------------+
  */
-
-/* $Id$ */
 
 #include "php.h"
 #include "winutil.h"
@@ -371,6 +369,7 @@ PHP_WINUTIL_API int php_win32_code_to_errno(unsigned long w32Err)
 		/* 258 */   ,   { WAIT_TIMEOUT, ETIME}
 
         /* 267 */   ,   {   ERROR_DIRECTORY                 ,   ENOTDIR         }
+		/* 336 */   ,   {   ERROR_DIRECTORY_NOT_SUPPORTED   ,   EISDIR          }
 
         /* 996 */   ,   {   ERROR_IO_INCOMPLETE             ,   EAGAIN          }
         /* 997 */   ,   {   ERROR_IO_PENDING                ,   EAGAIN          }

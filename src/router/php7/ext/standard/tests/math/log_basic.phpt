@@ -29,7 +29,7 @@ for ($i = 0; $i < count($values); $i++) {
 	var_dump($res);
 }
 ?>
---EXPECTF--
+--EXPECT--
  LOG tests...no base
 float(3.1354942159291)
 float(NAN)

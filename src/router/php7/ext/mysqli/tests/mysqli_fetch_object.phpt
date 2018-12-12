@@ -152,7 +152,7 @@ Exception: Too few arguments to function mysqli_fetch_object_construct::__constr
 NULL
 NULL
 [E_WARNING] mysqli_fetch_object(): Couldn't fetch mysqli_result in %s on line %d
-NULL
+bool(false)
 [0] Argument 3 passed to mysqli_fetch_object() must be of the type array, string given in %s on line %d
 
 Fatal error: Class 'this_class_does_not_exist' not found in %s on line %d

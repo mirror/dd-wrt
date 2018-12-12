@@ -37,18 +37,7 @@
 #include <unistd.h>
 #endif
 
-#ifdef PHP_WIN32
-
-#include <io.h>
-#include <fcntl.h>
-#include "win32/php_registry.h"
-
-#else
-
 #include <sys/wait.h>
-
-#endif
-
 #include <sys/stat.h>
 
 #if HAVE_SYS_TYPES_H
@@ -247,14 +236,14 @@ static void litespeed_php_import_environment_variables(zval *array_ptr)
         Z_ARR_P(array_ptr) != Z_ARR(PG(http_globals)[TRACK_VARS_ENV]) &&
         zend_hash_num_elements(Z_ARRVAL(PG(http_globals)[TRACK_VARS_ENV])) > 0
     ) {
-        zval_dtor(array_ptr);
+        zval_ptr_dtor_nogc(array_ptr);
         ZVAL_DUP(array_ptr, &PG(http_globals)[TRACK_VARS_ENV]);
         return;
     } else if (Z_TYPE(PG(http_globals)[TRACK_VARS_SERVER]) == IS_ARRAY &&
         Z_ARR_P(array_ptr) != Z_ARR(PG(http_globals)[TRACK_VARS_SERVER]) &&
         zend_hash_num_elements(Z_ARRVAL(PG(http_globals)[TRACK_VARS_SERVER])) > 0
     ) {
-        zval_dtor(array_ptr);
+        zval_ptr_dtor_nogc(array_ptr);
         ZVAL_DUP(array_ptr, &PG(http_globals)[TRACK_VARS_SERVER]);
         return;
     }
@@ -412,8 +401,8 @@ static int lsapi_activate_user_ini();
 
 static int sapi_lsapi_activate()
 {
-    char *path, *doc_root, *server_name;
-    size_t path_len, doc_root_len, server_name_len;
+    char *path, *server_name;
+    size_t path_len, server_name_len;
 
     /* PATH_TRANSLATED should be defined at this stage but better safe than sorry :) */
     if (!SG(request_info).path_translated) {
@@ -594,7 +583,7 @@ static int alter_ini( const char * pKey, int keyLen, const char * pValue, int va
             zend_alter_ini_entry_chars(psKey,
                              (char *)pValue, valLen,
                              type, stage);
-            zend_string_release(psKey);
+            zend_string_release_ex(psKey, 1);
         }
     }
     return 1;
@@ -1012,13 +1001,6 @@ static int cli_main( int argc, char * argv[] )
     zend_string *psKey;
     lsapi_mode = 0;        /* enter CLI mode */
 
-#ifdef PHP_WIN32
-    _fmode = _O_BINARY;            /*sets default for file streams to binary */
-    setmode(_fileno(stdin), O_BINARY);    /* make the stdio mode be binary */
-    setmode(_fileno(stdout), O_BINARY);   /* make the stdio mode be binary */
-    setmode(_fileno(stderr), O_BINARY);   /* make the stdio mode be binary */
-#endif
-
     zend_first_try     {
         SG(server_context) = (void *) 1;
 
@@ -1026,12 +1008,15 @@ static int cli_main( int argc, char * argv[] )
         CG(in_compilation) = 0; /* not initialized but needed for several options */
         SG(options) |= SAPI_OPTION_NO_CHDIR;
 
+#if PHP_MAJOR_VERSION < 7
+        EG(uninitialized_zval_ptr) = NULL;
+#endif
         for( ini = ini_defaults; *ini; ini+=2 ) {
             psKey = zend_string_init(*ini, strlen( *ini ), 1);
             zend_alter_ini_entry_chars(psKey,
                                 (char *)*(ini+1), strlen( *(ini+1) ),
                                 PHP_INI_SYSTEM, PHP_INI_STAGE_ACTIVATE);
-            zend_string_release(psKey);
+            zend_string_release_ex(psKey, 1);
         }
 
         while (( p < argend )&&(**p == '-' )) {
@@ -1341,7 +1326,6 @@ int main( int argc, char * argv[] )
         php_bind = NULL;
     }
 
-    int iRequestsProcessed = 0;
     int result;
 
     while( ( result = LSAPI_Prefork_Accept_r( &g_req )) >= 0 ) {
@@ -1395,7 +1379,7 @@ PHP_FUNCTION(apache_get_modules);
 
 PHP_MINFO_FUNCTION(litespeed);
 
-zend_function_entry litespeed_functions[] = {
+static const zend_function_entry litespeed_functions[] = {
     PHP_FE(litespeed_request_headers,   arginfo_litespeed__void)
     PHP_FE(litespeed_response_headers,  arginfo_litespeed__void)
     PHP_FE(apache_get_modules,          arginfo_litespeed__void)

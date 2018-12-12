@@ -20,7 +20,7 @@ var_dump(array_slice(range(1, 3), 0, $a));
 var_dump($a);
 
 ?>
---EXPECTF--
+--EXPECT--
 array(3) {
   [0]=>
   int(1)

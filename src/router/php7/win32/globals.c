@@ -16,8 +16,6 @@
    +----------------------------------------------------------------------+
 */
 
-/* $Id$ */
-
 #include "php.h"
 #include "php_win32_globals.h"
 #include "syslog.h"
@@ -65,14 +63,6 @@ void php_win32_core_globals_dtor(void *vg)
 
 PHP_RSHUTDOWN_FUNCTION(win32_core_globals)
 {/*{{{*/
-	php_win32_core_globals *wg =
-#ifdef ZTS
-		ts_resource(php_win32_core_globals_id)
-#else
-		&the_php_win32_core_globals
-#endif
-		;
-
 	closelog();
 
 	return SUCCESS;

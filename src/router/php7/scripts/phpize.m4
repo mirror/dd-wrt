@@ -1,6 +1,6 @@
 dnl This file becomes configure.ac for self-contained extensions.
 
-AC_PREREQ(2.59)
+AC_PREREQ([2.68])
 AC_INIT(config.m4)
 ifdef([AC_PRESERVE_HELP_ORDER], [AC_PRESERVE_HELP_ORDER], [])
 
@@ -196,6 +196,6 @@ PHP_GEN_GLOBAL_MAKEFILE
 
 test -d modules || $php_shtool mkdir modules
 
-AC_CONFIG_HEADER(config.h)
+AC_CONFIG_HEADERS([config.h])
 
-AC_OUTPUT()
+AC_OUTPUT

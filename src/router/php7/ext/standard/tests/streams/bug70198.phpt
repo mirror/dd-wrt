@@ -55,6 +55,6 @@ proc_close($srv_proc);
 unlink($srv_fl);
 ?>
 ==DONE==
---EXPECTF--
+--EXPECT--
 int(0)
 ==DONE==

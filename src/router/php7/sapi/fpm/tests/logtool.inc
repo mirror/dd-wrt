@@ -44,6 +44,11 @@ class LogTool
     private $error;
 
     /**
+     * @var bool
+     */
+    private $pipeClosed = false;
+
+    /**
      * @param string $message
      * @param int $limit
      * @param int $repeat
@@ -73,6 +78,14 @@ class LogTool
     }
 
     /**
+     * @param bool $pipeClosed
+     */
+    public function setPipeClosed(bool $pipeClosed)
+    {
+        $this->pipeClosed = $pipeClosed;
+    }
+
+    /**
      * @param string $line
      * @return bool
      */
@@ -90,7 +103,7 @@ class LogTool
             return $this->error("Unexpected truncated message: {$line}");
         }
 
-        if ($lineLen === $this->limit) {
+        if ($lineLen === $this->limit - strlen('NOTICE: ') - 1) {
             if (!isset($matches[2])) {
                 return $this->error("The truncated line is not ended with '...'");
             }
@@ -205,13 +218,13 @@ class LogTool
         if ($rem !== $outLen)  {
             return $this->error("Printed more than the message len");
         }
-        if ($finalSuffix === null || $finalSuffix === "") {
+        if (!$this->pipeClosed || $finalSuffix === null) {
             return false;
         }
         if ($finalSuffix === false) {
             return $this->error("No final suffix");
         }
-        if (strpos(self::FINAL_SUFFIX, $finalSuffix) === false) {
+        if (empty($finalSuffix) || strpos(self::FINAL_SUFFIX, $finalSuffix) === false) {
             return $this->error("The final suffix has to be equal to ', pipe is closed'");
         }
         if (self::FINAL_SUFFIX !== $finalSuffix) {

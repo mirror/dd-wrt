@@ -27,7 +27,7 @@ var_dump(array_slice($input, -PHP_INT_MAX));
 
 echo "Done";
 ?>
---EXPECTF--
+--EXPECT--
 *** Testing array_slice() : usage variations ***
 
 -- $offset is -7 --

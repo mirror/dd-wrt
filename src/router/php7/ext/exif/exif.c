@@ -17,22 +17,6 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: 14e22ca7aaf4bd6a99ba814757e1dbbd43cdf13d $ */
-
-/*  ToDos
- *
- * 	See if example images from http://www.exif.org have illegal
- * 		thumbnail sizes or if code is corrupt.
- * 	Create/Update exif headers.
- * 	Create/Remove/Update image thumbnails.
- */
-
-/*  Security
- *
- *  At current time i do not see any security problems but a potential
- *  attacker could generate an image with recursive ifd pointers...(Marcus)
- */
-
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -70,13 +54,6 @@
 #include <sys/types.h>
 
 typedef unsigned char uchar;
-
-#ifndef safe_emalloc
-# define safe_emalloc(a,b,c) emalloc((a)*(b)+(c))
-#endif
-#ifndef safe_erealloc
-# define safe_erealloc(p,a,b,c) erealloc(p, (a)*(b)+(c))
-#endif
 
 #ifndef TRUE
 #	define TRUE 1
@@ -118,7 +95,7 @@ ZEND_END_ARG_INFO()
 
 /* {{{ exif_functions[]
  */
-const zend_function_entry exif_functions[] = {
+static const zend_function_entry exif_functions[] = {
 	PHP_FE(exif_read_data, arginfo_exif_read_data)
 	PHP_DEP_FALIAS(read_exif_data, exif_read_data, arginfo_exif_read_data)
 	PHP_FE(exif_tagname, arginfo_exif_tagname)
@@ -134,7 +111,6 @@ PHP_MINFO_FUNCTION(exif)
 {
 	php_info_print_table_start();
 	php_info_print_table_row(2, "EXIF Support", "enabled");
-	php_info_print_table_row(2, "EXIF Version", PHP_EXIF_VERSION);
 	php_info_print_table_row(2, "Supported EXIF Version", "0220");
 	php_info_print_table_row(2, "Supported filetypes", "JPEG, TIFF");
 
@@ -1349,7 +1325,6 @@ typedef enum mn_offset_mode_t {
 typedef struct {
 	tag_table_type   tag_table;
 	char *           make;
-	char *           model;
 	char *           id_string;
 	int              id_string_len;
 	int              offset;
@@ -1359,27 +1334,27 @@ typedef struct {
 
 /* Remember to update PHP_MINFO if updated */
 static const maker_note_type maker_note_array[] = {
-  { tag_table_VND_CANON,     "Canon",                   NULL,  NULL,							 0,  0,  MN_ORDER_INTEL,    MN_OFFSET_NORMAL},
-  { tag_table_VND_CASIO,     "CASIO",                   NULL,  NULL,							 0,  0,  MN_ORDER_MOTOROLA, MN_OFFSET_NORMAL},
-  { tag_table_VND_FUJI,      "FUJIFILM",                NULL,  "FUJIFILM\x0C\x00\x00\x00",		 12, 12, MN_ORDER_INTEL,    MN_OFFSET_MAKER},
-  { tag_table_VND_NIKON,     "NIKON",                   NULL,  "Nikon\x00\x01\x00",				 8,  8,  MN_ORDER_NORMAL,   MN_OFFSET_NORMAL},
-  { tag_table_VND_NIKON_990, "NIKON",                   NULL,  NULL,							 0,  0,  MN_ORDER_NORMAL,   MN_OFFSET_NORMAL},
-  { tag_table_VND_OLYMPUS,   "OLYMPUS OPTICAL CO.,LTD", NULL,  "OLYMP\x00\x01\x00",				 8,  8,  MN_ORDER_NORMAL,   MN_OFFSET_NORMAL},
-  { tag_table_VND_SAMSUNG,   "SAMSUNG",                 NULL, NULL,								 0,  0,  MN_ORDER_NORMAL,   MN_OFFSET_NORMAL},
-  { tag_table_VND_PANASONIC, "Panasonic",               NULL, "Panasonic\x00\x00\x00",			 12, 12, MN_ORDER_NORMAL,   MN_OFFSET_NORMAL},
-  { tag_table_VND_DJI,       "DJI",                     NULL, NULL,								 0, 0,   MN_ORDER_NORMAL,   MN_OFFSET_NORMAL},
-  { tag_table_VND_SONY,      "SONY",                    NULL, "SONY DSC \x00\x00\x00",	         12, 12, MN_ORDER_NORMAL,   MN_OFFSET_NORMAL},
-  { tag_table_VND_PENTAX,    "PENTAX",                  NULL, "AOC\x00",						 6,  6,  MN_ORDER_NORMAL,   MN_OFFSET_NORMAL},
-  { tag_table_VND_MINOLTA,   "Minolta, KONICA MINOLTA", NULL, NULL,								 0,  0,  MN_ORDER_NORMAL,   MN_OFFSET_NORMAL},
-  { tag_table_VND_SIGMA,     "SIGMA, FOVEON",           NULL, "SIGMA\x00\x00\x00",				 10, 10, MN_ORDER_NORMAL,   MN_OFFSET_NORMAL},
-  { tag_table_VND_SIGMA,     "SIGMA, FOVEON",           NULL, "FOVEON\x00\x00\x00",				 10, 10, MN_ORDER_NORMAL,   MN_OFFSET_NORMAL},
-  { tag_table_VND_KYOCERA,   "KYOCERA, CONTAX",			NULL, "KYOCERA            \x00\x00\x00", 22, 22, MN_ORDER_NORMAL,   MN_OFFSET_MAKER},
-  { tag_table_VND_RICOH,	 "RICOH",					NULL, "Ricoh",							 5,  5,  MN_ORDER_MOTOROLA, MN_OFFSET_NORMAL},
-  { tag_table_VND_RICOH,     "RICOH",					NULL, "RICOH",							 5,  5,  MN_ORDER_MOTOROLA, MN_OFFSET_NORMAL},
+  { tag_table_VND_CANON,     "Canon",                   NULL,								 0,  0,  MN_ORDER_INTEL,    MN_OFFSET_NORMAL},
+  { tag_table_VND_CASIO,     "CASIO",                   NULL,								 0,  0,  MN_ORDER_MOTOROLA, MN_OFFSET_NORMAL},
+  { tag_table_VND_FUJI,      "FUJIFILM",                "FUJIFILM\x0C\x00\x00\x00",			 12, 12, MN_ORDER_INTEL,    MN_OFFSET_MAKER},
+  { tag_table_VND_NIKON,     "NIKON",                   "Nikon\x00\x01\x00",				 8,  8,  MN_ORDER_NORMAL,   MN_OFFSET_NORMAL},
+  { tag_table_VND_NIKON_990, "NIKON",                   NULL,								 0,  0,  MN_ORDER_NORMAL,   MN_OFFSET_NORMAL},
+  { tag_table_VND_OLYMPUS,   "OLYMPUS OPTICAL CO.,LTD", "OLYMP\x00\x01\x00",				 8,  8,  MN_ORDER_NORMAL,   MN_OFFSET_NORMAL},
+  { tag_table_VND_SAMSUNG,   "SAMSUNG",                 NULL,								 0,  0,  MN_ORDER_NORMAL,   MN_OFFSET_NORMAL},
+  { tag_table_VND_PANASONIC, "Panasonic",               "Panasonic\x00\x00\x00",			 12, 12, MN_ORDER_NORMAL,   MN_OFFSET_NORMAL},
+  { tag_table_VND_DJI,       "DJI",                     NULL,								 0, 0,   MN_ORDER_NORMAL,   MN_OFFSET_NORMAL},
+  { tag_table_VND_SONY,      "SONY",                   "SONY DSC \x00\x00\x00",				 12, 12, MN_ORDER_NORMAL,   MN_OFFSET_NORMAL},
+  { tag_table_VND_PENTAX,    "PENTAX",                  "AOC\x00",							 6,  6,  MN_ORDER_NORMAL,   MN_OFFSET_NORMAL},
+  { tag_table_VND_MINOLTA,   "Minolta, KONICA MINOLTA", NULL,								 0,  0,  MN_ORDER_NORMAL,   MN_OFFSET_NORMAL},
+  { tag_table_VND_SIGMA,     "SIGMA, FOVEON",           "SIGMA\x00\x00\x00",				 10, 10, MN_ORDER_NORMAL,   MN_OFFSET_NORMAL},
+  { tag_table_VND_SIGMA,     "SIGMA, FOVEON",           "FOVEON\x00\x00\x00",				 10, 10, MN_ORDER_NORMAL,   MN_OFFSET_NORMAL},
+  { tag_table_VND_KYOCERA,   "KYOCERA, CONTAX",			"KYOCERA            \x00\x00\x00",	 22, 22, MN_ORDER_NORMAL,   MN_OFFSET_MAKER},
+  { tag_table_VND_RICOH,	 "RICOH",					"Ricoh",							 5,  5,  MN_ORDER_MOTOROLA, MN_OFFSET_NORMAL},
+  { tag_table_VND_RICOH,     "RICOH",					"RICOH",							 5,  5,  MN_ORDER_MOTOROLA, MN_OFFSET_NORMAL},
 
   /* These re-uses existing formats */
-  { tag_table_VND_OLYMPUS,   "AGFA",					NULL, "AGFA \x00\x01",					 8,  8,  MN_ORDER_NORMAL,   MN_OFFSET_NORMAL},
-  { tag_table_VND_OLYMPUS,   "EPSON",					NULL, "EPSON\x00\x01\x00",			     8,  8,  MN_ORDER_NORMAL,   MN_OFFSET_NORMAL}
+  { tag_table_VND_OLYMPUS,   "AGFA",					"AGFA \x00\x01",					 8,  8,  MN_ORDER_NORMAL,   MN_OFFSET_NORMAL},
+  { tag_table_VND_OLYMPUS,   "EPSON",					"EPSON\x00\x01\x00",			     8,  8,  MN_ORDER_NORMAL,   MN_OFFSET_NORMAL}
 };
 /* }}} */
 
@@ -1529,12 +1504,12 @@ static void php_ifd_set32u(char *data, size_t value, int motorola_intel)
 {
 	if (motorola_intel) {
 		data[0] = (value & 0xFF000000) >> 24;
-		data[1] = (value & 0x00FF0000) >> 16;
+		data[1] = (char) ((value & 0x00FF0000) >> 16);
 		data[2] = (value & 0x0000FF00) >>  8;
 		data[3] = (value & 0x000000FF);
 	} else {
 		data[3] = (value & 0xFF000000) >> 24;
-		data[2] = (value & 0x00FF0000) >> 16;
+		data[2] = (char) ((value & 0x00FF0000) >> 16);
 		data[1] = (value & 0x0000FF00) >>  8;
 		data[0] = (value & 0x000000FF);
 	}
@@ -3142,10 +3117,8 @@ static int exif_process_IFD_in_MAKERNOTE(image_info_type *ImageInfo, char * valu
 
 		maker_note = maker_note_array+i;
 
-		/*exif_error_docref(NULL EXIFERR_CC, ImageInfo, E_NOTICE, "check (%s,%s)", maker_note->make?maker_note->make:"", maker_note->model?maker_note->model:"");*/
+		/*exif_error_docref(NULL EXIFERR_CC, ImageInfo, E_NOTICE, "check (%s)", maker_note->make?maker_note->make:"");*/
 		if (maker_note->make && (!ImageInfo->make || strcmp(maker_note->make, ImageInfo->make)))
-			continue;
-		if (maker_note->model && (!ImageInfo->model || strcmp(maker_note->model, ImageInfo->model)))
 			continue;
 		if (maker_note->id_string && strncmp(maker_note->id_string, value_ptr, maker_note->id_string_len))
 			continue;
@@ -4338,7 +4311,7 @@ static int exif_read_from_impl(image_info_type *ImageInfo, php_stream *stream, i
 			base = php_basename(stream->orig_path, strlen(stream->orig_path), NULL, 0);
 			ImageInfo->FileName = estrndup(ZSTR_VAL(base), ZSTR_LEN(base));
 
-			zend_string_release(base);
+			zend_string_release_ex(base, 0);
 
 			/* Store file date/time. */
 			ImageInfo->FileDateTime = st.st_mtime;
@@ -4680,13 +4653,13 @@ PHP_FUNCTION(exif_thumbnail)
 		if (!ImageInfo.Thumbnail.width || !ImageInfo.Thumbnail.height) {
 			exif_scan_thumbnail(&ImageInfo);
 		}
-		zval_dtor(z_width);
-		zval_dtor(z_height);
+		zval_ptr_dtor(z_width);
+		zval_ptr_dtor(z_height);
 		ZVAL_LONG(z_width,  ImageInfo.Thumbnail.width);
 		ZVAL_LONG(z_height, ImageInfo.Thumbnail.height);
 	}
 	if (arg_c >= 4)	{
-		zval_dtor(z_imagetype);
+		zval_ptr_dtor(z_imagetype);
 		ZVAL_LONG(z_imagetype, ImageInfo.Thumbnail.filetype);
 	}
 

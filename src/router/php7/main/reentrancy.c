@@ -16,8 +16,6 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id$ */
-
 #include <sys/types.h>
 #include <string.h>
 #include <errno.h>
@@ -110,18 +108,6 @@ PHPAPI struct tm *php_gmtime_r(const time_t *const timep, struct tm *p_tm)
 }
 
 #endif
-
-#if defined(__BEOS__)
-
-PHPAPI struct tm *php_gmtime_r(const time_t *const timep, struct tm *p_tm)
-{
-    /* Modified according to LibC definition */
-        if (((struct tm*)gmtime_r(timep, p_tm)) == p_tm)
-                return (p_tm);
-        return (NULL);
-}
-
-#endif /* BEOS */
 
 #if !defined(HAVE_POSIX_READDIR_R)
 
