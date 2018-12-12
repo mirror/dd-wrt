@@ -138,7 +138,7 @@ PHP_CONFIGURE_ARGS= \
 	--disable-gd-jis-conv \
 	--enable-cli \
 	--enable-cgi \
-	--enable-zip \
+	--disable-zip \
 	--enable-intl \
 	--with-icu-dir=$(TOP)/icu/target_staging \
 	--enable-mbstring \
