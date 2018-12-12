@@ -583,6 +583,11 @@ ifeq ($(CONFIG_CPE880),y)
 else
 	echo "# CONFIG_CPE880 is not set" >> $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_WA7510),y)
+	echo CONFIG_WA7510=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_WA7510 is not set" >> $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_MMS344),y)
 	echo CONFIG_MMS344=y >> $(LINUXDIR)/.config
 	sed -i 's/\# CONFIG_USB_SERIAL_QUALCOMM is not set/CONFIG_USB_SERIAL_QUALCOMM=m/g' $(LINUXDIR)/.config
