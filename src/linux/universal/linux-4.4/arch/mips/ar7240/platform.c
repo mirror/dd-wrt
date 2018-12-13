@@ -1746,6 +1746,8 @@ int __init ar7240_platform_init(void)
 	t |= AR934X_ETH_CFG_RGMII_GMAC0 | AR934X_ETH_CFG_SW_ONLY_MODE;
 
 	__raw_writel(t, base + AR934X_GMAC_REG_ETH_CFG);
+	/* flush write */
+	__raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
 	iounmap(base);
 
 
