@@ -86,10 +86,10 @@ icu-install:
 	-cp -fpR $(TOP)/icu/target_staging/lib64/*.so* $(INSTALLDIR)/icu/usr/lib/
 
 
-php7: libxml2 libmcrypt icu glib20
+php7: libxml2 libmcrypt icu glib20 zlib libzip openssl
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
-	CFLAGS="$(COPTS) $(MIPS16_OPT)   -I$(TOP)/libpng -I$(TOP)/libxml2/include -I$(TOP)/curl/include -I$(TOP)/openssl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/libpng -I$(TOP)/libxml2/include -I$(TOP)/curl/include -I$(TOP)/openssl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CFLAGS="$(COPTS) $(MIPS16_OPT)   -I$(TOP)/libpng -I$(TOP)/libxml2/include -I$(TOP)/curl/include -I$(TOP)/openssl/include -I$(TOP)/libzip -I$(TOP)/libzip/lib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/libpng -I$(TOP)/libxml2/include -I$(TOP)/curl/include -I$(TOP)/openssl/include -I$(TOP)/libzip -I$(TOP)/libzip/lib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LDFLAGS="$(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/libpng/.libs -L$(TOP)/libxml2/.libs -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/zlib -L$(TOP)/openssl -L$(TOP)/zlib -L$(TOP)/curl/lib/.libs -fPIC" \
 	LIBS="-lssl -lcrypto" \
 	$(MAKE) -C php7
@@ -138,7 +138,8 @@ PHP_CONFIGURE_ARGS= \
 	--disable-gd-jis-conv \
 	--enable-cli \
 	--enable-cgi \
-	--disable-zip \
+	--enable-zip \
+	--with-libzip=$(TOP)/libzip/lib \
 	--enable-intl \
 	--with-icu-dir=$(TOP)/icu/target_staging \
 	--enable-mbstring \
@@ -170,12 +171,14 @@ PHP_CONFIGURE_ARGS= \
 	OPENSSL_LIBDIR="$(TOP)/openssl" \
 	OPENSSL_LIBS="$(TOP)/openssl" \
 	OPENSSL_INCS="$(TOP)/openssl/include" \
+	LIBZIP_CFLAGS="-I$(TOP)/libzip/lib -I$(TOP)/libzip" \
+	LIBZIP_LIBDIR="$(TOP)/libzip/lib" \
 	PHP_OPENSSL_DIR="$(TOP)/openssl" \
 	PHP_SETUP_OPENSSL="$(TOP)/openssl" \
 	PHP_CURL="$(TOP)/curl" \
 	PHP_ICONV="$(TOP)/glib20/libiconv" \
 	LIBS="-lc -lpthread -lm -lssl -lcrypto" \
-	EXTRA_CFLAGS="-L$(TOP)/glib20/libiconv/lib/.libs -I$(TOP)/libmcrypt -I$(TOP)/zlib -I$(TOP)/libpng -L$(TOP)/openssl -I$(TOP)/openssl/include  -I$(TOP)/curl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	EXTRA_CFLAGS="-L$(TOP)/glib20/libiconv/lib/.libs -I$(TOP)/libmcrypt -I$(TOP)/zlib -I$(TOP)/libpng -L$(TOP)/openssl -I$(TOP)/openssl/include  -I$(TOP)/curl/include -I$(TOP)/libzip -I$(TOP)/libzip/lib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	EXTRA_LIBS="-liconv -L$(TOP)/openssl -lcurl -lcrypto -lssl -lcrypt -lxml2 -liconv -lmcrypt -lpng16 -lgd -lz" \
 	EXTRA_LDFLAGS="-L$(TOP)/libmcrypt/lib/.libs -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/libxml2/.libs -L$(TOP)/zlib -L$(TOP)/minidlna/lib   -L$(TOP)/libpng/.libs -L$(TOP)/libgd/src/.libs -L$(TOP)/openssl -L$(TOP)/zlib -L$(TOP)/curl/lib/.libs -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	EXTRA_LDFLAGS_PROGRAM="-L$(TOP)/libmcrypt/lib/.libs -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/libxml2/.libs -L$(TOP)/libpng/.libs -L$(TOP)/minidlna/lib  -L$(TOP)/libgd/src/.libs -L$(TOP)/openssl -L$(TOP)/zlib -L$(TOP)/curl/lib/.libs"
@@ -194,12 +197,12 @@ PHP_ENDIAN=ac_cv_c_bigendian_php="yes"
 endif
 
 	
-php7-configure: libpng libgd libxml2 zlib curl glib20
+php7-configure: libpng libgd libxml2 zlib curl glib20 libzip openssl
 	rm -f php7/config.cache
 	rm -rf php7/autom4te.cach
 	cd php7 && touch configure.ac && autoconf
 	cd php7 && './configure'  '--host=$(ARCH)-linux-uclibc' $(PHP_ENDIAN) $(PHP_CONFIGURE_ARGS) \
-	'CFLAGS=$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/minidlna/jpeg-8 -I$(TOP)/libmcrypt -I$(TOP)/libpng -I$(TOP)/libxml2/include -I$(TOP)/glib20/libiconv/include -I$(TOP)/openssl/include -I$(TOP)/curl/include -DNEED_PRINTF -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/zlib -L$(TOP)/curl/lib/.libs' \
+	'CFLAGS=$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/minidlna/jpeg-8 -I$(TOP)/libmcrypt -I$(TOP)/libpng -I$(TOP)/libxml2/include -I$(TOP)/glib20/libiconv/include -I$(TOP)/openssl/include -I$(TOP)/curl/include -DNEED_PRINTF -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/zlib -L$(TOP)/curl/lib/.libs  -I$(TOP)/libzip -I$(TOP)/libzip/lib' \
 	'LDFLAGS=-ffunction-sections -fdata-sections -Wl,--gc-sections  -L$(TOP)/minidlna/lib -L$(TOP)/libmcrypt/lib/.libs -L$(TOP)/libxml2/.libs -L$(TOP)/zlib -L$(TOP)/libpng/.libs -L$(TOP)/libgd/src/.libs -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/openssl -L$(TOP)/zlib -L$(TOP)/curl/lib/.libs' \
 	'CXXFLAGS=$(COPTS) $(MIPS16_OPT) -std=c++0x -DNEED_PRINTF'
 	printf "#define HAVE_GLOB 1\n" >>$(TOP)/php7/main/php_config.h
