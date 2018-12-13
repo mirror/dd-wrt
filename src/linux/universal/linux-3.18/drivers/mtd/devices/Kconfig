@@ -346,6 +346,7 @@ config WR710
 	depends on MACH_HORNET && WR741
 config WA7510
 	bool "support for TPLink WA7510"
+	depends on MACH_AR7240 
 config GL150
 	bool "support for AR-GL-150"
 	depends on MACH_HORNET && WR710
