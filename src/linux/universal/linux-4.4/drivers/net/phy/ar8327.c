@@ -515,6 +515,7 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 	ar8xxx_write(priv, AR8327_REG_PAD0_MODE, t);
 
 	t = ar8327_get_pad_cfg(pdata->pad5_cfg);
+#if 0
 	if (chip_is_ar8337(priv)) {
 		/*
 		 * Workaround: RGMII RX delay setting needs to be
@@ -523,6 +524,7 @@ ar8327_hw_config_pdata(struct ar8xxx_priv *priv,
 		 */
 		t |= AR8327_PAD_RGMII_RXCLK_DELAY_EN;
 	}
+#endif
 	ar8xxx_write(priv, AR8327_REG_PAD5_MODE, t);
 	t = ar8327_get_pad_cfg(pdata->pad6_cfg);
 	ar8xxx_write(priv, AR8327_REG_PAD6_MODE, t);
@@ -702,7 +704,7 @@ ar8327_init_globals(struct ar8xxx_priv *priv)
 	/* Disable EEE on all phy's due to stability issues */
 	for (i = 0; i < AR8XXX_NUM_PHYS; i++)
 		data->eee[i] = false;
-
+#if 0
 	if (chip_is_ar8337(priv)) {
 		/* Update HOL registers with values suggested by QCA switch team */
 		for (i = 0; i < AR8327_NUM_PORTS; i++) {
@@ -735,6 +737,7 @@ ar8327_init_globals(struct ar8xxx_priv *priv)
 				   t);
 		}
 	}
+#endif
 }
 
 static void
@@ -1121,15 +1124,14 @@ ar8327_wait_atu_ready(struct ar8xxx_priv *priv, u16 r2, u16 r1)
 		pr_err("ar8327: timeout waiting for atu to become ready\n");
 }
 
-#if 0
+
 static void ar8327_get_arl_entry(struct ar8xxx_priv *priv,
 				 struct arl_entry *a, u32 *status, enum arl_op op)
 {
 	struct mii_bus *bus = priv->mii_bus;
 	u16 r2, page;
 	u16 r1_data0, r1_data1, r1_data2, r1_func;
-	u32 t, val0, val1, val2;
-	int i;
+	u32 val0, val1, val2;
 
 	split_addr(AR8327_REG_ATU_DATA0, &r1_data0, &r2, &page);
 	r2 |= 0x10;
@@ -1166,12 +1168,7 @@ static void ar8327_get_arl_entry(struct ar8xxx_priv *priv,
 		if (!*status)
 			break;
 
-		i = 0;
-		t = AR8327_ATU_PORT0;
-		while (!(val1 & t) && ++i < AR8327_NUM_PORTS)
-			t <<= 1;
-
-		a->port = i;
+		a->portmap = (val1 & AR8327_ATU_PORTS) >> AR8327_ATU_PORTS_S;
 		a->mac[0] = (val0 & AR8327_ATU_ADDR0) >> AR8327_ATU_ADDR0_S;
 		a->mac[1] = (val0 & AR8327_ATU_ADDR1) >> AR8327_ATU_ADDR1_S;
 		a->mac[2] = (val0 & AR8327_ATU_ADDR2) >> AR8327_ATU_ADDR2_S;
@@ -1181,7 +1178,6 @@ static void ar8327_get_arl_entry(struct ar8xxx_priv *priv,
 		break;
 	}
 }
-#endif
 
 static int
 ar8327_sw_hw_apply(struct switch_dev *dev)
@@ -1492,11 +1488,20 @@ static const struct switch_dev_ops ar8327_sw_ops = {
 	.apply_config = ar8327_sw_hw_apply,
 	.reset_switch = ar8xxx_sw_reset_switch,
 	.get_port_link = ar8xxx_sw_get_port_link,
-//	.get_port_stats = ar8xxx_sw_get_port_stats,
+/* The following op is disabled as it hogs the CPU and degrades performance.
+   An implementation has been attempted in 4d8a66d but reading MIB data is slow
+   on ar8xxx switches.
+
+   The high CPU load has been traced down to the ar8xxx_reg_wait() call in
+   ar8xxx_mib_op(), which has to usleep_range() till the MIB busy flag set by
+   the request to update the MIB counter is cleared. */
+#if 0
+	.get_port_stats = ar8xxx_sw_get_port_stats,
+#endif
 };
 
 const struct ar8xxx_chip ar8327_chip = {
-	.caps = AR8XXX_CAP_GIGE, // | AR8XXX_CAP_MIB_COUNTERS,
+	.caps = AR8XXX_CAP_GIGE | AR8XXX_CAP_MIB_COUNTERS,
 	.config_at_probe = true,
 	.mii_lo_first = true,
 
@@ -1520,10 +1525,9 @@ const struct ar8xxx_chip ar8327_chip = {
 	.atu_flush_port = ar8327_atu_flush_port,
 	.vtu_flush = ar8327_vtu_flush,
 	.vtu_load_vlan = ar8327_vtu_load_vlan,
+	.phy_fixup = ar8327_phy_fixup,
 	.set_mirror_regs = ar8327_set_mirror_regs,
-#if 0
 	.get_arl_entry = ar8327_get_arl_entry,
-#endif
 	.sw_hw_apply = ar8327_sw_hw_apply,
 
 	.num_mibs = ARRAY_SIZE(ar8236_mibs),
@@ -1532,7 +1536,7 @@ const struct ar8xxx_chip ar8327_chip = {
 };
 
 const struct ar8xxx_chip ar8337_chip = {
-	.caps = AR8XXX_CAP_GIGE, // | AR8XXX_CAP_MIB_COUNTERS,
+	.caps = AR8XXX_CAP_GIGE | AR8XXX_CAP_MIB_COUNTERS,
 	.config_at_probe = true,
 	.mii_lo_first = true,
 
