@@ -131,6 +131,7 @@ do
 	    echo CONFIG_RAMBUTAN=y >> .config
 	    echo CONFIG_WR1043V4=y >> .config
 	    echo CONFIG_WR1043V5=y >> .config
+	    echo CONFIG_WA7510=y >> .config
 	    make oldconfig ARCH=mips
 	    sed -i 's/\CONFIG_WR841V8=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WR710=y/ /g' .config	    
@@ -177,6 +178,7 @@ do
 	    sed -i 's/\CONFIG_RAMBUTAN=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WR1043V4=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WR1043V4=y/ /g' .config	    
+	    sed -i 's/\CONFIG_WA7510=y/ /g' .config	    
     fi
     cp .config $i
 done
