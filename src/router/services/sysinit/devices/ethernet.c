@@ -213,7 +213,7 @@ static int detect_drivers(char *buspath, char *enabled, char *list, char **drive
 	char word[256];
 	char *next, *wordlist;
 	int rcc = 0;
-	char s_hash[32];
+	char s_hash[40];
 	char *hash = hash_file_string(buspath, s_hash);
 	if (!hash)
 		return 0;	// bus not present. ignore
