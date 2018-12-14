@@ -475,8 +475,7 @@ char *hash_file_string(char *filename, char *hashbuf)
 		return NULL;
 	for (i = 0; i < 16; i++) {
 		unsigned int k = hash[i];
-
-		sprintf(hashbuf, "%s%X", hashbuf, k & 0xff);
+		sprintf(hashbuf, "%s%02X", hashbuf, k & 0xff);
 	}
 	return hashbuf;
 }
