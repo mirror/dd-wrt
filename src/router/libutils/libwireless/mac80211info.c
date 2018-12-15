@@ -508,6 +508,7 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 		[NL80211_STA_INFO_PLID] = {.type = NLA_U16},
 		[NL80211_STA_INFO_PLINK_STATE] = {.type = NLA_U8},
 		[NL80211_STA_INFO_CONNECTED_TIME] = {.type = NLA_U32},
+		[NL80211_STA_INFO_RADIONAME] = {.type = NLA_STRING},
 		[NL80211_STA_INFO_STA_FLAGS] = {.minlen = sizeof(struct nl80211_sta_flag_update)},
 		[NL80211_STA_INFO_EXPECTED_THROUGHPUT] = {.type = NLA_U32},
 	};
@@ -578,6 +579,9 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 	}
 	if (sinfo[NL80211_STA_INFO_CONNECTED_TIME]) {
 		mac80211_info->wci->uptime = nla_get_u32(sinfo[NL80211_STA_INFO_CONNECTED_TIME]);
+	}
+	if (sinfo[NL80211_STA_INFO_RADIONAME]) {
+		strcpy(mac80211_info->wci->radioname, nla_get_data(sinfo[NL80211_STA_INFO_RADIONAME]));
 	}
 
 	if (sinfo[NL80211_STA_INFO_TX_BITRATE]) {
