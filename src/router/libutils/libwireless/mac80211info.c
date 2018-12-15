@@ -440,7 +440,6 @@ int mac80211_get_coverageclass(char *interface)
 			char state[32];
 			fscanf(fp, "%d %d %s", &rawack, &ack, state);
 			fclose(fp);
-			ack = (ack + 1) / 2; // make single strip
 			ack = (ack + 2) / 3; // do the coverage class
 			unlock();
 			return ack;
