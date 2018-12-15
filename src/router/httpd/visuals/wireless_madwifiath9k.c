@@ -135,8 +135,10 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 		if (wc->islzo)
 			sprintf(info, "%s %s", info, "LZ");
 		char str[64] = { 0 };
-
-		websWrite(wp, "'%s','%s','%s','%dM','%dM','%s','%d','%d','%d','%d'", mac, wc->ifname, UPTIME(wc->uptime, str), wc->txrate / 10 * mul / div, wc->rxrate / 10 * mul / div, info, wc->signal + bias,
+		char *radioname = wc->radioname;
+		if (!strlen(radioname))
+			radioname = "N/A";
+		websWrite(wp, "'%s','%s','%s','%s','%dM','%dM','%s','%d','%d','%d','%d'", mac, radioname, wc->ifname, UPTIME(wc->uptime, str), wc->txrate / 10 * mul / div, wc->rxrate / 10 * mul / div, info, wc->signal + bias,
 			  wc->noise + bias, wc->signal - wc->noise, qual);
 		cnt++;
 //              }
