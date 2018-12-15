@@ -15,7 +15,7 @@ function setWirelessTable() {
 		cell.innerHTML = "- " + share.none + " -";
 		return;
 	}
-	for(var i = 0; i < val.length; i = i + 10) {
+	for(var i = 0; i < val.length; i = i + 11) {
 		var row = table.insertRow(-1);
 		
 		var mac = val[i];
@@ -29,8 +29,9 @@ function setWirelessTable() {
 		} else {
 		  row.insertCell(-1).innerHTML = mac;		 
 		}
+		row.insertCell(-1).innerHTML = val[i + 1];
 
-		var ifn = val[i + 1];
+		var ifn = val[i + 2];
 		var iface = row.insertCell(-1);
 		iface.title = status_band.titl;
 		iface.style.cursor = "pointer";
@@ -38,14 +39,14 @@ function setWirelessTable() {
 		eval("addEvent(iface, 'click', function() { openBW('" + ifn + "') })");
 		iface.innerHTML = ifn;
 		
-		row.insertCell(-1).innerHTML = val[i + 2];
 		row.insertCell(-1).innerHTML = val[i + 3];
 		row.insertCell(-1).innerHTML = val[i + 4];		
 		row.insertCell(-1).innerHTML = val[i + 5];		
 		row.insertCell(-1).innerHTML = val[i + 6];		
 		row.insertCell(-1).innerHTML = val[i + 7];		
 		row.insertCell(-1).innerHTML = val[i + 8];		
-		setMeterBar(row.insertCell(-1), (val[i + 9] == "0" ? 0 : parseInt(val[i + 9]) * 0.1), "");
+		row.insertCell(-1).innerHTML = val[i + 9];
+		setMeterBar(row.insertCell(-1), (val[i + 10] == "0" ? 0 : parseInt(val[i + 10]) * 0.1), "");
 	}
 }
 
@@ -487,12 +488,13 @@ function refresh(F)
 								<legend><% getwirelessstatus(); %></legend>
 								<table class="table center" cellspacing="5" id="wireless_table" summary="wireless clients table">
 									<tr>
-										<th width="16%"><% tran("share.mac"); %></th>
+										<th width="12%"><% tran("share.mac"); %></th>
+										<th width="8%"><% tran("share.radioname"); %></th>
 										<th width="8%"><% tran("share.intrface"); %></th>
-										<th width="10%"><% tran("status_router.sys_up"); %></th>
-										<th width="8%"><% tran("share.txrate"); %></th>
-										<th width="8%"><% tran("share.rxrate"); %></th>
-										<th width="10%">Info</th>
+										<th width="7%"><% tran("status_router.sys_up"); %></th>
+										<th width="7%"><% tran("share.txrate"); %></th>
+										<th width="7%"><% tran("share.rxrate"); %></th>
+										<th width="15%">Info</th>
 										<th width="8%"><% tran("share.signal"); %></th>
 										<th width="8%"><% tran("share.noise"); %></th>
 										<th width="8%">SNR</th>

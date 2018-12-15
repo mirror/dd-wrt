@@ -13,7 +13,7 @@ function setWirelessTable() {
 		cell.innerHTML = "- " + share.none + " -";
 		return;
 	}
-	for(var i = 0; i < val.length; i = i + 10) {
+	for(var i = 0; i < val.length; i = i + 11) {
 		var row = table.insertRow(-1);
 		
 		var mac = val[i];
@@ -23,8 +23,8 @@ function setWirelessTable() {
 		cellmac.style.textDecoration = "underline";
 		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
 		cellmac.innerHTML = mac;
-
-		var ifn = val[i + 1];
+		row.insertCell(-1).innerHTML = val[i + 1];
+		var ifn = val[i + 2];
 		var iface = row.insertCell(-1);
 		iface.title = status_band.titl;
 		iface.style.cursor = "pointer";
@@ -32,14 +32,14 @@ function setWirelessTable() {
 		eval("addEvent(iface, 'click', function() { openBW('" + ifn + "') })");
 		iface.innerHTML = ifn;
 		
-		row.insertCell(-1).innerHTML = val[i + 2];
 		row.insertCell(-1).innerHTML = val[i + 3];
 		row.insertCell(-1).innerHTML = val[i + 4];
 		row.insertCell(-1).innerHTML = val[i + 5];
 		row.insertCell(-1).innerHTML = val[i + 6];
 		row.insertCell(-1).innerHTML = val[i + 7];
 		row.insertCell(-1).innerHTML = val[i + 8];
-		setMeterBar(row.insertCell(-1), (val[i + 9] == "0" ? 0 : parseInt(val[i + 9]) * 0.1), "");
+		row.insertCell(-1).innerHTML = val[i + 9];
+		setMeterBar(row.insertCell(-1), (val[i + 10] == "0" ? 0 : parseInt(val[i + 10]) * 0.1), "");
 	}
 }
 
