@@ -118,6 +118,7 @@ struct wifi_channels {
 
 struct wifi_client_info {
 	char ifname[20];
+	char radioname[16];
 	char is_wds;
 	char etheraddr[6];
 	uint32_t uptime;
