@@ -2077,8 +2077,14 @@ void tcp_send_loss_probe(struct sock *sk)
 
 	/* Retransmit last segment. */
 	skb = tcp_write_queue_tail(sk);
-	if (WARN_ON(!skb))
-		goto rearm_timer;
+
+	if (unlikely(!skb)) {
+		WARN_ONCE(tp->packets_out,
+			  "invalid inflight: %u state %u cwnd %u mss %d\n",
+			  tp->packets_out, sk->sk_state, tp->snd_cwnd, mss);
+		inet_csk(sk)->icsk_pending = 0;
+		return;
+	}
 
 	pcount = tcp_skb_pcount(skb);
 	if (WARN_ON(!pcount))
