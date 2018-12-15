@@ -422,8 +422,30 @@ int mac80211_get_coverageclass(char *interface)
 	struct genlmsghdr *gnlh;
 	int phy;
 	unsigned char coverage = 0;
+	char ifname[32];
+	strcpy(ifname, interface);
+	char *c = strchr(ifname, '.');
+	if (c)
+		c[0] = 0;
 	lock();
 	phy = mac80211_get_phyidx_by_vifname(interface);
+
+	if (nvram_nmatch("0", "%s_distance", ifname)) {
+		char str[64];
+		sprintf(str, "/sys/kernel/debug/ieee80211/phy%d/ath9k/ack_to", phy);
+		FILE *fp = fopen(str, "rb");
+		if (fp) {
+			int ack;
+			int rawack;
+			char state[32];
+			fscanf(fp, "%d %d %s", &rawack, &ack, state);
+			fclose(fp);
+			ack /= 3;
+			unlock();
+			return ack;
+		}
+	}
+
 	if (phy == -1) {
 		unlock();
 		return 0;
