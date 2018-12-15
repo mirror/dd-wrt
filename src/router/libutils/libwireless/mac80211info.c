@@ -581,7 +581,7 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 		mac80211_info->wci->uptime = nla_get_u32(sinfo[NL80211_STA_INFO_CONNECTED_TIME]);
 	}
 	if (sinfo[NL80211_STA_INFO_RADIONAME]) {
-		strcpy(mac80211_info->wci->radioname, nla_get_data(sinfo[NL80211_STA_INFO_RADIONAME]));
+		strcpy(mac80211_info->wci->radioname, nla_data(sinfo[NL80211_STA_INFO_RADIONAME]));
 	}
 
 	if (sinfo[NL80211_STA_INFO_TX_BITRATE]) {
