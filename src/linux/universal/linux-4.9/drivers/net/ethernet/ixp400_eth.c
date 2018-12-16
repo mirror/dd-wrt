@@ -282,7 +282,7 @@ MODULE_PARM_DESC(hss_coexist, "If non-zero, HSS-Ethernet coexist feature will be
  * - higher values: polled less often, perhaps less CPU utilization
  * - recommended value: 32
  */
-#define IXP400_NAPI_WEIGHT 		(32)
+#define IXP400_NAPI_WEIGHT 		(64)
 
 #else
 
