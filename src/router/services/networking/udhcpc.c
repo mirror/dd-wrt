@@ -414,6 +414,7 @@ static int bound(void)
 	}
 #endif
 	else {
+		start_firewall();
 		cprintf("start wan done\n");
 		start_wan_done(wan_ifname);
 	}
