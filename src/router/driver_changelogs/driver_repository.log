@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r4314 | brainslayer | 2018-12-18 00:29:58 +0100 (Tue, 18 Dec 2018) | 1 line
+
+add custom ie before wmm parameters
+------------------------------------------------------------------------
 r4313 | brainslayer | 2018-12-17 21:20:56 +0100 (Mon, 17 Dec 2018) | 1 line
 
 length field seem to be zero on mikrotik devices. so ignore it
