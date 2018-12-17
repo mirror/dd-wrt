@@ -441,7 +441,7 @@ int mac80211_get_coverageclass(char *interface)
 			fscanf(fp, "%d %d %s", &rawack, &ack, state);
 			fclose(fp);
 			ack = (ack + 2) / 3; // do the coverage class
-			acl = (ack + 1) / 2;
+			ack = (ack + 1) / 2;
 			unlock();
 			return ack;
 		}
