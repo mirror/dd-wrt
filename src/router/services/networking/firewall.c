@@ -120,30 +120,6 @@
 #define DEBUG(format, args...)
 #endif
 
-#ifndef HAVE_MICRO
-#define mutex_init()
-static void lock(void)
-{
-	FILE *fp;
-      retry:;
-	fp = fopen("/tmp/.ipt_lock", "rb");
-	if (fp) {
-		fclose(fp);
-		sleep(1);
-		goto retry;
-	}
-}
-
-static void unlock(void)
-{
-	unlink("/tmp/.ipt_lock");
-}
-
-#else
-#define mutex_init()
-#define lock()
-#define unlock()
-#endif
 
 static char *suspense = NULL;
 static unsigned int count = 0;
@@ -2736,7 +2712,6 @@ void start_firewall(void)
 	int remotessh = 0;
 	int remotetelnet = 0;
 	int remotemanage = 0;
-	mutex_init();
 	lock();
 	start_loadfwmodules();
 	system("cat /proc/net/ip_conntrack_flush 2>&1");
@@ -3004,7 +2979,6 @@ void stop_firewall6(void)
 
 void stop_firewall(void)
 {
-	mutex_init();
 	lock();
 	eval("iptables", "-t", "raw", "-F");
 //      stop_anchorfree();
