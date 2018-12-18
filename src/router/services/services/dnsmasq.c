@@ -163,7 +163,7 @@ fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 		stop_process("dnscrypt-proxy", "daemon");
 fprintf(stderr, "%s:%d\n",__func__,__LINE__);
-		eval("dnscrypt-proxy", "-S", "-a", "127.0.0.1:30", "-R", nvram_save_get("dns_crypt_resolver"), "-L", "/etc/dnscrypt/dnscrypt-resolvers.csv");
+		eval("dnscrypt-proxy", "-S", "-a", "127.0.0.1:30", "-R", nvram_safe_get("dns_crypt_resolver"), "-L", "/etc/dnscrypt/dnscrypt-resolvers.csv");
 fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 	}
 #endif
