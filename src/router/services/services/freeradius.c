@@ -190,7 +190,7 @@ void stop_freeradius(void)
 {
 
 	cprintf("done\n");
-	stop_process("freeradius", "daemon");
+	stop_process("radiusd", "daemon");
 	return;
 }
 #endif
