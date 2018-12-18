@@ -138,7 +138,7 @@ void start_dnsmasq(void)
 	FILE *fp;
 	struct dns_lists *dns_list = NULL;
 	int i;
-
+fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 	if (nvram_matchi("dhcp_dnsmasq", 1)
 	    && nvram_match("lan_proto", "dhcp")
 	    && nvram_matchi("dnsmasq_enable", 0)) {
@@ -146,19 +146,28 @@ void start_dnsmasq(void)
 		nvram_commit();
 	}
 
+fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 	if (!nvram_invmatchi("dnsmasq_enable", 0)) {
+fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 		stop_dnsmasq();
+fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 		return;
 	}
+fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 
 	update_timezone();
 
+fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 #ifdef HAVE_DNSCRYPT
 	if (nvram_matchi("dns_crypt", 1)) {
+fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 		stop_process("dnscrypt-proxy", "daemon");
+fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 		eval("dnscrypt-proxy", "-S", "-a", "127.0.0.1:30", "-R", nvram_save_get("dns_crypt_resolver"), "-L", "/etc/dnscrypt/dnscrypt-resolvers.csv");
+fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 	}
 #endif
+fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 	usejffs = 0;
 
 	if (nvram_matchi("dhcpd_usejffs", 1)) {
