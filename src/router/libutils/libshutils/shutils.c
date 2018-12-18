@@ -201,10 +201,12 @@ int eval_va(const char *cmd, ...)
 	s_args[0] = cmd;
 	for (i = 0; i < 127; i++) {
 		const char *arg = va_arg(args, const char *);
+		fprintf(stderr, "%s ",arg);
 		s_args[i + 1] = arg;
 		if (arg == NULL)
 			break;
 	}
+	fprintf(stderr,"\n");
 	return _evalpid(s_args, ">/dev/console", 0, NULL);
 
 }
