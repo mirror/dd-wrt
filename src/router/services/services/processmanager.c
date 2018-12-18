@@ -31,6 +31,9 @@ int stop_process(char *name, char *desc)
 {
 	if (!desc)
 		desc = name;
+	if (nvram_matchi("console_debug",1))
+		dd_loginfo(name, "%s trying to stop\n", desc);
+			
 	if (pidof(name) > 0) {
 		dd_loginfo(name, "%s successfully stopped\n", desc);
 		killall(name, SIGTERM);
