@@ -4540,10 +4540,6 @@ void start_wan_done(char *wan_ifname)
 	start_dnsmasq();
 
 	cprintf("start firewall\n");
-	/*
-	 * Start firewall 
-	 */
-	start_firewall();
 
 	/*
 	 * Set additional wan static routes if need 
@@ -4572,7 +4568,6 @@ void start_wan_done(char *wan_ifname)
 	// start_OAcron ();
 	cprintf("start wshaper\n");
 	stop_wland();
-	start_wshaper();
 	start_wland();
 	if (nvram_match("wan_proto", "pptp")) {
 
@@ -4781,6 +4776,11 @@ void start_wan_done(char *wan_ifname)
 #endif
 #endif
 	start_wan_service();
+	/*
+	 * Start firewall 
+	 */
+	start_firewall();
+	start_wshaper();
 	if (nvram_matchi("ipv6_enable", 1) && nvram_match("ipv6_typ", "ipv6in4")) {
 #ifdef HAVE_CURL
 		eval("/usr/bin/curl", "-s", "-k", nvram_safe_get("ipv6_tun_upd_url"), "-o", "/tmp/tunnelstat");
