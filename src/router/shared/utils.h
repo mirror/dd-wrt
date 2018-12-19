@@ -1164,6 +1164,14 @@ static inline int is_ath10k(char *prefix)
 	return 0;
 }
 #endif
+#ifdef HAVE_ATH9K
+extern int is_ath9k(const char *prefix);
+#else
+static inline int is_ath9k(char *prefix)
+{
+	return 0;
+}
+#endif
 #ifdef HAVE_MVEBU
 extern int is_mvebu(const char *prefix);
 #else
