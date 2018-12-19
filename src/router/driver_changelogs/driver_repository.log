@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r4324 | brainslayer | 2018-12-19 22:24:47 +0100 (Wed, 19 Dec 2018) | 1 line
+
+kernel 4.4 changes get_user_pages function, so adjust backports
+------------------------------------------------------------------------
 r4323 | brainslayer | 2018-12-19 10:47:11 +0100 (Wed, 19 Dec 2018) | 1 line
 
 fix gui for several brandings
