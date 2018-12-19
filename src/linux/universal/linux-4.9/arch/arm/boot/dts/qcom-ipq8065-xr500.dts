@@ -3,8 +3,8 @@
 #include <dt-bindings/input/input.h>
 
 / {
-	model = "Netgear R7800 Nighthawk X4S";
-	compatible = "netgear,r7800", "qcom,ipq8065", "qcom,ipq8064";
+	model = "Netgear XR500";
+	compatible = "netgear,xr500", "qcom,ipq8065", "qcom,ipq8064";
 
 	memory@0 {
 		reg = <0x42000000 0x1de00000>;
