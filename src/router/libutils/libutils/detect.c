@@ -1290,6 +1290,11 @@ int internal_getRouterBrand()
 		return ROUTER_NETGEAR_R7800;
 	}
 
+	if (!strcmp(modelstr, "XR500")) {
+		setRouter("Netgear XR500");
+		return ROUTER_NETGEAR_R7800;
+	}
+
 	if (!strcmp(modelstr, "R7500v2")) {
 		setRouter("Netgear R7500v2");
 		return ROUTER_NETGEAR_R7500V2;
