@@ -2616,29 +2616,7 @@ int has_spectralscanning(const char *prefix)
 #ifdef HAVE_ATH9K
 int has_airtime_fairness(char *prefix)
 {
-	INITVALUECACHE();
-	int devnum;
-	char *globstring;
-	devnum = get_ath9k_phy_ifname(prefix);
-	if (devnum == -1)
-		RETURNVALUE(0);
-	asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/airtime_flags", devnum);
-	FILE *fp = fopen(globstring, "rb");
-	free(globstring);
-	if (fp) {
-		fclose(fp);
-		RETURNVALUE(1);
-	}
-	asprintf(&globstring, "/sys/kernel/debug/ieee80211/phy%d/ath10k/atf", devnum);
-	fp = fopen(globstring, "rb");
-	free(globstring);
-	if (fp) {
-		fclose(fp);
-		RETURNVALUE(1);
-	}
-	RETURNVALUE(0);
-	EXITVALUECACHE();
-	return ret;
+	return (is_ath10k(prefix) || is_ath9k(prefix));
 }
 
 #endif
@@ -2668,6 +2646,12 @@ static int devicecountbydriver(const char *prefix, char *drivername)
 int is_ath5k(const char *prefix)
 {
 	return devicecountbydriver(prefix, "ath5k");
+}
+#endif
+#ifdef HAVE_ATH9K
+int is_ath9k(const char *prefix)
+{
+	return devicecountbydriver(prefix, "ath9k");
 }
 #endif
 #ifdef HAVE_MVEBU
