@@ -137,7 +137,7 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 		char str[64] = { 0 };
 		char *radioname = wc->radioname;
 		if (!strlen(radioname))
-			radioname = "N/A";
+			radioname = "";
 		websWrite(wp, "'%s','%s','%s','%s','%dM','%dM','%s','%d','%d','%d','%d'", mac, radioname, wc->ifname, UPTIME(wc->uptime, str), wc->txrate / 10 * mul / div, wc->rxrate / 10 * mul / div, info, wc->signal + bias,
 			  wc->noise + bias, wc->signal - wc->noise, qual);
 		cnt++;
@@ -252,32 +252,32 @@ void ej_dump_channel_survey(webs_t wp, int argc, char_t ** argv)
 		if (f->noise_count)
 			websWrite(wp, ",\"%d\"", f->noise / f->noise_count);
 		else
-			websWrite(wp, ",\"N/A\"");
+			websWrite(wp, ",\"\"");
 
 		if (f->active_count && f->busy_count)
 			websWrite(wp, ",\"%lld\"", 100 - ((f->busy * 100) / f->active));
 		else
-			websWrite(wp, ",\"N/A\"");
+			websWrite(wp, ",\"\"");
 
 		if (f->active_count)
 			websWrite(wp, ",\"%lld\"", f->active);
 		else
-			websWrite(wp, ",\"N/A\"");
+			websWrite(wp, ",\"\"");
 
 		if (f->busy_count)
 			websWrite(wp, ",\"%lld\"", f->busy);
 		else
-			websWrite(wp, ",\"N/A\"");
+			websWrite(wp, ",\"\"");
 
 		if (f->rx_time_count)
 			websWrite(wp, ",\"%lld\"", f->rx_time);
 		else
-			websWrite(wp, ",\"N/A\"");
+			websWrite(wp, ",\"\"");
 
 		if (f->tx_time_count)
 			websWrite(wp, ",\"%lld\"\n", f->tx_time);
 		else
-			websWrite(wp, ",\"N/A\"\n");
+			websWrite(wp, ",\"\"\n");
 
 	}
 	dd_list_for_each_entry_safe(f, ftmp, &frequencies, list) {
