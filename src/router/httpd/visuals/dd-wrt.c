@@ -4499,11 +4499,11 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 	struct pair s_authpair_wpa[] = {
 		{"WPA Personal", "psk", alwaystrue, alwaystrue},
 		{"WPA2 Personal", "psk2", alwaystrue, alwaystrue},
-		{"WPA2 Personal with SHA256", "psk2-sha256", has_wpa3,  is_mac80211},
+		{"WPA2 Personal with SHA256", "psk2-sha256", has_wpa3, is_mac80211},
 		{"WPA3 Personal", "psk3", has_wpa3, is_mac80211},
 		{"WPA Enterprise", "wpa", aponly, alwaystrue},
 		{"WPA2 Enterprise", "wpa2", aponly, alwaystrue},
-		{"WPA2 Enterprise with SHA256", "wpa2-sha256", aponly_wpa3,  is_mac80211},
+		{"WPA2 Enterprise with SHA256", "wpa2-sha256", aponly_wpa3, is_mac80211},
 		{"WPA3 Enterprise", "wpa3", aponly_wpa3, is_mac80211},
 		{"WPA3 Enterprise Suite-B 128-Bit", "wpa3-128", aponly_wpa3_gcmp128, has_gmac_128},
 		{"WPA3 Enterprise CNSA Suite-B 192-Bit", "wpa3-192", aponly_wpa3_gcmp256, has_gmac_256}

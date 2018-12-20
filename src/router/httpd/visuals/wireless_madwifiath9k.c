@@ -50,6 +50,7 @@
 #include <unl.h>
 #include <net/if.h>
 #include <dd_list.h>
+
 int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifname, int cnt, int turbo, int macmask)
 {
 	char mac[32];
@@ -138,8 +139,8 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 		char *radioname = wc->radioname;
 		if (!strlen(radioname))
 			radioname = "";
-		websWrite(wp, "'%s','%s','%s','%s','%dM','%dM','%s','%d','%d','%d','%d'", mac, radioname, wc->ifname, UPTIME(wc->uptime, str), wc->txrate / 10 * mul / div, wc->rxrate / 10 * mul / div, info, wc->signal + bias,
-			  wc->noise + bias, wc->signal - wc->noise, qual);
+		websWrite(wp, "'%s','%s','%s','%s','%dM','%dM','%s','%d','%d','%d','%d'", mac, radioname, wc->ifname, UPTIME(wc->uptime, str), wc->txrate / 10 * mul / div, wc->rxrate / 10 * mul / div, info,
+			  wc->signal + bias, wc->noise + bias, wc->signal - wc->noise, qual);
 		cnt++;
 //              }
 	}
