@@ -332,7 +332,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 				char str[64] = { 0 };
 
 				websWrite(wp,
-					  "'%s','/N/A','%s','%s','%s','%s','%s','%d','%d','%d','%d'", mac, getRADev(ifname), UPTIME(table.Entry[i].ConnectedTime, str), tx, rx, info, table.Entry[i].AvgRssi0, -95,
+					  "'%s','','%s','%s','%s','%s','%s','%d','%d','%d','%d'", mac, getRADev(ifname), UPTIME(table.Entry[i].ConnectedTime, str), tx, rx, info, table.Entry[i].AvgRssi0, -95,
 					  (table.Entry[i].AvgRssi0 - (-95)), qual);
 			}
 		}
