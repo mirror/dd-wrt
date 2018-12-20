@@ -401,7 +401,7 @@ static int __init init_timer_list_procfs(void)
 
 	if (IS_ENABLED(CONFIG_PROC_STRIPPED))
 		return 0;
-	pe = proc_create("timer_list", 0444, NULL, &timer_list_fops);
+	pe = proc_create("timer_list", 0400, NULL, &timer_list_fops);
 	if (!pe)
 		return -ENOMEM;
 	return 0;
