@@ -183,8 +183,8 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 				  ((si->isi_rates[si->isi_txrate] &
 				    IEEE80211_RATE_VAL) / 2) * turbo, ((si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL) / 2) * turbo, si->isi_noise + si->isi_rssi + bias, si->isi_noise + bias, si->isi_rssi, qual);
 		} else {
-			websWrite(wp, "'%s','N/A','%s%s','%s','N/A','N/A','N/A','%d','%d','%d','%d'", mac, type, ifname, UPTIME(si->isi_uptime, str), si->isi_noise + si->isi_rssi + bias, si->isi_noise + bias, si->isi_rssi,
-				  qual);
+			websWrite(wp, "'%s','N/A','%s%s','%s','N/A','N/A','N/A','%d','%d','%d','%d'", mac, type, ifname, UPTIME(si->isi_uptime, str), si->isi_noise + si->isi_rssi + bias, si->isi_noise + bias,
+				  si->isi_rssi, qual);
 		}
 		bufcount += si->isi_len;
 		cp += si->isi_len;
@@ -200,6 +200,12 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 #if defined(HAVE_ATH9K)
 extern int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifname, int cnt, int turbo, int macmask);
 #endif
+static int assoc_count = 0;
+
+void ej_assoc_count(webs_t wp, int argc, char_t ** argv)
+{
+	websWrite(wp, "%d", assoc_count);
+}
 
 void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 {
@@ -221,13 +227,13 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			t = 1;
 		if (is_mac80211(devs)) {
 			if (has_ad(devs))
-				cnt = ej_active_wireless_if_ath9k(wp, argc, argv, "giwifi0", cnt, t, macmask);
+				cnt += ej_active_wireless_if_ath9k(wp, argc, argv, "giwifi0", cnt, t, macmask);
 			else
-				cnt = ej_active_wireless_if_ath9k(wp, argc, argv, devs, cnt, t, macmask);
+				cnt += ej_active_wireless_if_ath9k(wp, argc, argv, devs, cnt, t, macmask);
 			gotassocs = 1;
 		}
 		if (!gotassocs) {
-			cnt = ej_active_wireless_if(wp, argc, argv, devs, cnt, t, macmask);
+			cnt += ej_active_wireless_if(wp, argc, argv, devs, cnt, t, macmask);
 		}
 		if (!is_mac80211(devs)) {
 			char vif[32];
@@ -237,7 +243,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			char *vifs = nvram_get(vif);
 			if (vifs != NULL)
 				foreach(var, vifs, next) {
-				cnt = ej_active_wireless_if(wp, argc, argv, var, cnt, t, macmask);
+				cnt += ej_active_wireless_if(wp, argc, argv, var, cnt, t, macmask);
 				}
 		}
 	}
@@ -271,10 +277,11 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 					continue;
 				if (nvram_matchi(wdsvarname, 0))
 					continue;
-				cnt = ej_active_wireless_if(wp, argc, argv, dev, cnt, t, macmask);
+				cnt += ej_active_wireless_if(wp, argc, argv, dev, cnt, t, macmask);
 			}
 		}
 	}
+	assoc_count = cnt;
 }
 
 static int get_distance(char *ifname)

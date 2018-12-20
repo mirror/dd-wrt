@@ -1866,6 +1866,7 @@ status_wireless.active="Aktive Zeit";
 status_wireless.quality="Kanal Qualität";
 status_wireless.rx_time="Empfangszeit";
 status_wireless.tx_time="Sendezeit";
+status_wireless.assoc_count="Verbundene Stationen";
 
 
 // ** GPS info **//

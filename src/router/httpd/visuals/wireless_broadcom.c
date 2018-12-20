@@ -429,6 +429,13 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 	return cnt;
 }
 
+static int assoc_count = 0;
+
+void ej_assoc_count(webs_t wp, int argc, char_t ** argv)
+{
+	websWrite(wp, "%d", assoc_count);
+}
+
 void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 {
 	int cnt = 0;
@@ -448,9 +455,10 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			return;
 
 		foreach(var, vifs, next) {
-			cnt = ej_active_wireless_if(wp, argc, argv, var, var, cnt);
+			cnt += ej_active_wireless_if(wp, argc, argv, var, var, cnt);
 		}
 	}
+	assoc_count = cnt;
 }
 
 void ej_get_currate(webs_t wp, int argc, char_t ** argv)
@@ -531,7 +539,7 @@ void ej_active_wds(webs_t wp, int argc, char_t ** argv)
 	int i;
 
 	for (i = 0; i < c; i++) {
-		cnt = ej_active_wds_instance(wp, argc, argv, i, cnt);
+		cnt + = ej_active_wds_instance(wp, argc, argv, i, cnt);
 	}
 }
 
