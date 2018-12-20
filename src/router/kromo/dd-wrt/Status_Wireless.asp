@@ -229,7 +229,7 @@ addEvent(window, "unload", function() {
 								<% getencryptionstatus(); %>
 								<div class="setting">
 									<div class="label"><% tran("status_wireless.assoc_count"); %></div>
-									<span id="wl_rate"><% assoc_count(); %></span>&nbsp;
+									<span id="assoc_count"><% assoc_count(); %></span>&nbsp;
 								</div>
 							</fieldset><br />
 							
