@@ -226,6 +226,13 @@ static void DisplayLastTxRxRateFor11n(char *ifname, int s, int nID, int *fLastTx
 	TxRxRateFor11n(&HTSetting, fLastTxRxRate);
 }
 
+static int assoc_count = 0;
+
+void ej_assoc_count(webs_t wp, int argc, char_t ** argv)
+{
+	websWrite(wp, "%d", assoc_count);
+}
+
 int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int cnt, int turbo, int macmask)
 {
 
@@ -379,9 +386,9 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 	int macmask = atoi(argv[0]);
 
 	t = 1;
-	cnt = ej_active_wireless_if(wp, argc, argv, "wl0", cnt, t, macmask);
-	cnt = ej_active_wireless_if(wp, argc, argv, "wl1", cnt, t, macmask);
-
+	cnt += ej_active_wireless_if(wp, argc, argv, "wl0", cnt, t, macmask);
+	cnt += ej_active_wireless_if(wp, argc, argv, "wl1", cnt, t, macmask);
+	assoc_count = cnt;
 }
 
 extern long long wifi_getrate(char *ifname);

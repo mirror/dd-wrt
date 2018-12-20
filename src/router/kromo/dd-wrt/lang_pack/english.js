@@ -2174,6 +2174,7 @@ status_wireless.active="Active Time";
 status_wireless.quality="Channel Quality";
 status_wireless.rx_time="Receive Time";
 status_wireless.tx_time="Transmission Time";
+status_wireless.assoc_count="Connected Clients";
 
 // ** GPS info **//
 var status_gpsi=new Object();

@@ -10,6 +10,7 @@
 {wl_ack::<% update_acktiming(); %>}
 {active_wireless::<% active_wireless(0); %>}
 {active_wds::<% active_wds(0); %>}
+{assoc_count::<% assoc_count(); %>}
 {packet_info::<% wl_packet_get(); %>}
 {uptime::<% get_uptime(); %>}
 {ipinfo::<% show_wanipinfo(); %>}
