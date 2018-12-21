@@ -71,7 +71,7 @@ void recover(void)
 			temp[a++] = c;
 		}
 		temp[a] = 0;
-		fprintf(stderr, "name %s=%s\n", temp, values[index[i]]);
+//		fprintf(stderr, "name %s=%s\n", temp, values[index[i]]);
 		if (strcmp(srouter_defaults[i].value, values[index[i]])) {
 			fprintf(stderr, "error while validating\n");
 			exit(1);
@@ -104,17 +104,17 @@ int main(int argc, char *argv[])
 			memset(next, 0, sizeof(*next));
 			next->value = srouter_defaults[i].value;
 			next->next = NULL;
-			fprintf(stderr, "%s: store %s\n", srouter_defaults[i].name, srouter_defaults[i].value);
+//			fprintf(stderr, "%s: store %s\n", srouter_defaults[i].name, srouter_defaults[i].value);
 			next->index = counts++;
 			stored++;
 			cur->next = next;
 			cur = next;
 		} else {
-			fprintf(stderr, "%s: reuse %s (%d)\n", srouter_defaults[i].name, srouter_defaults[i].value, f);
+//			fprintf(stderr, "%s: reuse %s (%d)\n", srouter_defaults[i].name, srouter_defaults[i].value, f);
 		}
 
 	}
-	fprintf(stderr, "stored %d\n", stored);
+//	fprintf(stderr, "stored %d\n", stored);
 	len -= 1;
 	fwrite(&len, 4, 1, out);	// total count of pairs
 	putc(stored, out);	// amount of unique values
