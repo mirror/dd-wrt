@@ -455,7 +455,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			return;
 
 		foreach(var, vifs, next) {
-			cnt += ej_active_wireless_if(wp, argc, argv, var, var, cnt);
+			cnt = ej_active_wireless_if(wp, argc, argv, var, var, cnt);
 		}
 	}
 	assoc_count = cnt;
