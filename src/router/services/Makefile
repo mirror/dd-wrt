@@ -865,6 +865,13 @@ endif
 ifeq ($(CONFIG_WPA3),y)
 ATH9KCFLAGS += -DHAVE_WPA3 -DHAVE_80211R -DHAVE_80211W
 endif
+ifeq ($(CONFIG_ATH5K),y)
+ATH9KCFLAGS  += -DHAVE_ATH5K
+endif
+ifeq ($(CONFIG_ATH10K),y)
+ATH9KCFLAGS  += -DHAVE_ATH10K
+endif
+
 endif
 endif
 ifeq ($(CONFIG_ATH10K),y)
