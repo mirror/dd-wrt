@@ -386,8 +386,8 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 	int macmask = atoi(argv[0]);
 
 	t = 1;
-	cnt += ej_active_wireless_if(wp, argc, argv, "wl0", cnt, t, macmask);
-	cnt += ej_active_wireless_if(wp, argc, argv, "wl1", cnt, t, macmask);
+	cnt = ej_active_wireless_if(wp, argc, argv, "wl0", cnt, t, macmask);
+	cnt = ej_active_wireless_if(wp, argc, argv, "wl1", cnt, t, macmask);
 	assoc_count = cnt;
 }
 

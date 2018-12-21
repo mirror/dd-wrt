@@ -227,9 +227,9 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			t = 1;
 		if (is_mac80211(devs)) {
 			if (has_ad(devs))
-				cnt += ej_active_wireless_if_ath9k(wp, argc, argv, "giwifi0", cnt, t, macmask);
+				cnt = ej_active_wireless_if_ath9k(wp, argc, argv, "giwifi0", cnt, t, macmask);
 			else
-				cnt += ej_active_wireless_if_ath9k(wp, argc, argv, devs, cnt, t, macmask);
+				cnt = ej_active_wireless_if_ath9k(wp, argc, argv, devs, cnt, t, macmask);
 			gotassocs = 1;
 		}
 		if (!gotassocs) {
@@ -243,7 +243,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			char *vifs = nvram_get(vif);
 			if (vifs != NULL)
 				foreach(var, vifs, next) {
-				cnt += ej_active_wireless_if(wp, argc, argv, var, cnt, t, macmask);
+				cnt = ej_active_wireless_if(wp, argc, argv, var, cnt, t, macmask);
 				}
 		}
 	}
@@ -277,7 +277,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 					continue;
 				if (nvram_matchi(wdsvarname, 0))
 					continue;
-				cnt += ej_active_wireless_if(wp, argc, argv, dev, cnt, t, macmask);
+				cnt = ej_active_wireless_if(wp, argc, argv, dev, cnt, t, macmask);
 			}
 		}
 	}
