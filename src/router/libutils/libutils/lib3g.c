@@ -1753,6 +1753,10 @@ void get3GControlDevice(void)
 					insmod("usbserial");
 					insmod("usb_wwan");
 					insmod("qcserial");
+#ifndef HAVE_CAMBRIA
+					needreset = 0;
+#endif
+
 					//start custom setup, if defined
 					if (!nvram_match("3gdnccs", "1")) {
 						if (devicelist[devicecount].customsetup) {
