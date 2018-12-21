@@ -173,6 +173,9 @@ endif
 ifeq ($(CONFIG_ATH9K),y)
 CFLAGS += -DHAVE_ATH9K
 endif
+ifeq ($(CONFIG_ATH5K),y)
+CFLAGS += -DHAVE_ATH5K
+endif
 ifeq ($(CONFIG_ATH10K),y)
 CFLAGS += -DHAVE_ATH10K
 endif
