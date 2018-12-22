@@ -130,7 +130,7 @@ static int phy_lookup_by_number(int idx)
 	return phy;
 }
 
-int mac80211_get_phyidx_by_vifname(char *vif)
+int mac80211_get_phyidx_by_vifname(const char *vif)
 {
 	return (phy_lookup_by_number(get_ath9k_phy_ifname(vif)));
 }
@@ -231,7 +231,7 @@ nla_put_failure:
 	return;
 }
 
-struct mac80211_info *getcurrentsurvey_mac80211(char *interface, struct mac80211_info *mac80211_info)
+struct mac80211_info *getcurrentsurvey_mac80211(const char *interface, struct mac80211_info *mac80211_info)
 {
 	lock();
 	struct nl_msg *msg;
@@ -718,7 +718,7 @@ nla_put_failure:
 	return (data.mac80211_info);
 }
 
-char *mac80211_get_caps(char *interface, int shortgi, int greenfield)
+char *mac80211_get_caps(const char *interface, int shortgi, int greenfield)
 {
 	struct nl_msg *msg;
 	struct nlattr *caps, *bands, *band;
@@ -772,7 +772,7 @@ nla_put_failure:
 
 #ifdef HAVE_ATH10K
 
-char *mac80211_get_vhtcaps(char *interface, int shortgi, int vht80, int vht160, int vht8080, int su_bf, int mu_bf)
+char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vht160, int vht8080, int su_bf, int mu_bf)
 {
 	struct nl_msg *msg;
 	struct nlattr *caps, *bands, *band;
@@ -857,7 +857,7 @@ nla_put_failure:
 #endif
 
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
-int has_vht160(char *interface)
+int has_vht160(const char *interface)
 {
 	INITVALUECACHEi(interface);
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
@@ -874,7 +874,7 @@ int has_vht160(char *interface)
 }
 #endif
 
-int has_greenfield(char *interface)
+int has_greenfield(const char *interface)
 {
 
 	INITVALUECACHEi(interface);
@@ -889,7 +889,7 @@ int has_greenfield(char *interface)
 }
 
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
-int has_vht80(char *interface)
+int has_vht80(const char *interface)
 {
 	INITVALUECACHEi(interface);
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
@@ -903,7 +903,7 @@ int has_vht80(char *interface)
 #endif
 
 #ifdef HAVE_ATH10K
-int has_ac(char *prefix)
+int has_ac(const char *prefix)
 {
 	INITVALUECACHE();
 	ret = (is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix));
@@ -912,13 +912,13 @@ int has_ac(char *prefix)
 }
 #endif
 #ifdef HAVE_WIL6210
-int has_ad(char *prefix)
+int has_ad(const char *prefix)
 {
 	return (is_wil6210(prefix));
 }
 #endif
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
-int has_vht80plus80(char *interface)
+int has_vht80plus80(const char *interface)
 {
 	INITVALUECACHEi(interface);
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
@@ -932,7 +932,7 @@ int has_vht80plus80(char *interface)
 #endif
 
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
-int has_subeamforming(char *interface)
+int has_subeamforming(const char *interface)
 {
 	INITVALUECACHEi(interface);
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
@@ -946,7 +946,7 @@ int has_subeamforming(char *interface)
 #endif
 
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
-int has_mubeamforming(char *interface)
+int has_mubeamforming(const char *interface)
 {
 	INITVALUECACHEi(interface);
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
@@ -959,7 +959,7 @@ int has_mubeamforming(char *interface)
 }
 #endif
 
-int has_shortgi(char *interface)
+int has_shortgi(const char *interface)
 {
 	INITVALUECACHEi(interface);
 	char *htcaps = mac80211_get_caps(interface, 1, 1);
@@ -986,7 +986,7 @@ static struct nla_policy freq_policy[NL80211_FREQUENCY_ATTR_MAX + 1] = {
 																			  .type = NLA_U32},
 };
 
-int mac80211_check_band(char *interface, int checkband)
+int mac80211_check_band(const char *interface, int checkband)
 {
 
 	struct nlattr *tb[NL80211_FREQUENCY_ATTR_MAX + 1];
@@ -1171,7 +1171,7 @@ static struct wifi_channels ghz60channels[] = {
 	{.channel = -1,.freq = -1,.max_eirp = -1,.hw_eirp = -1},
 };
 
-struct wifi_channels *mac80211_get_channels(struct unl *unl, char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband)
+struct wifi_channels *mac80211_get_channels(struct unl *unl, const char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband)
 {
 	struct nlattr *tb[NL80211_FREQUENCY_ATTR_MAX + 1];
 	struct nlattr *tb_band[NL80211_BAND_ATTR_MAX + 1];
@@ -1462,7 +1462,7 @@ nla_put_failure:
 	return NULL;
 }
 
-struct wifi_channels *mac80211_get_channels_simple(char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband)
+struct wifi_channels *mac80211_get_channels_simple(const char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband)
 {
 	struct unl unl;
 	unl_genl_init(&unl, "nl80211");
@@ -1471,7 +1471,7 @@ struct wifi_channels *mac80211_get_channels_simple(char *interface, const char *
 	return chan;
 }
 
-int has_ht40(char *interface)
+int has_ht40(const char *interface)
 {
 	struct wifi_channels *chan;
 	int found = 0;
@@ -1496,7 +1496,7 @@ int has_ht40(char *interface)
 	return 0;
 }
 
-int mac80211_check_valid_frequency(char *interface, char *country, int freq)
+int mac80211_check_valid_frequency(const char *interface, char *country, int freq)
 {
 	struct wifi_channels *chan;
 	int found = 0;
@@ -1840,7 +1840,7 @@ nla_put_failure:
 	return NULL;
 }
 
-static int match_cipher(char *prefix, __u32 cipher)
+static int match_cipher(const char *prefix, __u32 cipher)
 {
 	int phy = get_ath9k_phy_ifname(prefix);
 	__u32 num;
@@ -1858,14 +1858,14 @@ static int match_cipher(char *prefix, __u32 cipher)
 	return 0;
 }
 
-int has_cmac(char *prefix)
+int has_cmac(const char *prefix)
 {
 	INITVALUECACHE();
 	ret = match_cipher(prefix, 0x000fac06);
 	EXITVALUECACHE();
 }
 
-int has_gcmp_128(char *prefix)
+int has_gcmp_128(const char *prefix)
 {
 	INITVALUECACHE();
 	ret = match_cipher(prefix, 0x000fac08);
@@ -1873,7 +1873,7 @@ int has_gcmp_128(char *prefix)
 	return ret;
 }
 
-int has_gcmp(char *prefix)
+int has_gcmp(const char *prefix)
 {
 	INITVALUECACHE();
 	ret = match_cipher(prefix, 0x000fac08);
@@ -1881,7 +1881,7 @@ int has_gcmp(char *prefix)
 	return ret;
 }
 
-int has_gcmp_256(char *prefix)
+int has_gcmp_256(const char *prefix)
 {
 	INITVALUECACHE();
 	ret = match_cipher(prefix, 0x000fac09);
@@ -1889,7 +1889,7 @@ int has_gcmp_256(char *prefix)
 	return ret;
 }
 
-int has_ccmp_256(char *prefix)
+int has_ccmp_256(const char *prefix)
 {
 	INITVALUECACHE();
 	ret = match_cipher(prefix, 0x000fac0a);
@@ -1897,7 +1897,7 @@ int has_ccmp_256(char *prefix)
 	return ret;
 }
 
-int has_gmac_128(char *prefix)
+int has_gmac_128(const char *prefix)
 {
 	INITVALUECACHE();
 	ret = match_cipher(prefix, 0x000fac0b);
@@ -1905,7 +1905,7 @@ int has_gmac_128(char *prefix)
 	return ret;
 }
 
-int has_gmac_256(char *prefix)
+int has_gmac_256(const char *prefix)
 {
 	INITVALUECACHE();
 	ret = match_cipher(prefix, 0x000fac0c);
@@ -1913,7 +1913,7 @@ int has_gmac_256(char *prefix)
 	return ret;
 }
 
-int has_cmac_256(char *prefix)
+int has_cmac_256(const char *prefix)
 {
 	INITVALUECACHE();
 	ret = match_cipher(prefix, 0x000fac0d);
@@ -1921,7 +1921,7 @@ int has_cmac_256(char *prefix)
 	return ret;
 }
 
-int has_sms4(char *prefix)
+int has_sms4(const char *prefix)
 {
 	INITVALUECACHE();
 	ret = match_cipher(prefix, 0x00147201);
@@ -1929,7 +1929,7 @@ int has_sms4(char *prefix)
 	return ret;
 }
 
-int has_ckip(char *prefix)
+int has_ckip(const char *prefix)
 {
 	INITVALUECACHE();
 	ret = match_cipher(prefix, 0x00409600);
@@ -1937,7 +1937,7 @@ int has_ckip(char *prefix)
 	return ret;
 }
 
-int has_ckip_cmic(char *prefix)
+int has_ckip_cmic(const char *prefix)
 {
 	INITVALUECACHE();
 	ret = match_cipher(prefix, 0x00409601);
@@ -1945,7 +1945,7 @@ int has_ckip_cmic(char *prefix)
 	return ret;
 }
 
-int has_cmic(char *prefix)
+int has_cmic(const char *prefix)
 {
 	INITVALUECACHE();
 	ret = match_cipher(prefix, 0x00409602);

@@ -380,7 +380,7 @@ static int sort_cmp(void *priv, struct dd_list_head *a, struct dd_list_head *b)
 		return (f1->quality < f2->quality);
 }
 
-int getsurveystats(struct dd_list_head *frequencies, struct wifi_channels **channels, char *interface, char *freq_range, int scans, int bw)
+int getsurveystats(struct dd_list_head *frequencies, struct wifi_channels **channels, const char *interface, char *freq_range, int scans, int bw)
 {
 	struct frequency *f;
 	int verbose = 0;
@@ -426,7 +426,7 @@ out:
 }
 
 // leave space for enhencements with more cards and already chosen channels...
-struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int scans, int amount, int enable_passive, int htflags)
+struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range, int scans, int amount, int enable_passive, int htflags)
 {
 	struct mac80211_ac *acs = NULL;
 	struct frequency *f, *ftmp;
