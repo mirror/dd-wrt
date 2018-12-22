@@ -1126,12 +1126,18 @@ char *hash_file(char *filename, char *hashbuf);
 #ifdef HAVE_ATH5K
 extern int is_ath5k(const char *prefix);
 #else
-#define is_ath5k(prefix) 0
+static inline int is_ath5k(char *prefix)
+{
+	return 0;
+}
 #endif
 #ifdef HAVE_WIL6210
 int is_wil6210(const char *prefix);
 #else
-#define is_wil6210(prefix) 0
+static inline int is_wil6210(char *prefix)
+{
+	return 0;
+}
 #endif
 
 #ifdef HAVE_ATH9K
