@@ -1126,7 +1126,7 @@ char *hash_file(char *filename, char *hashbuf);
 #ifdef HAVE_ATH5K
 extern int is_ath5k(const char *prefix);
 #else
-static inline int is_ath5k(char *prefix)
+static inline int is_ath5k(const char *prefix)
 {
 	return 0;
 }
@@ -1134,7 +1134,7 @@ static inline int is_ath5k(char *prefix)
 #ifdef HAVE_WIL6210
 int is_wil6210(const char *prefix);
 #else
-static inline int is_wil6210(char *prefix)
+static inline int is_wil6210(const char *prefix)
 {
 	return 0;
 }
@@ -1147,7 +1147,7 @@ extern int has_channelsurvey(const char *prefix);
 extern int has_spectralscanning(const char *prefix);
 extern int getath9kdevicecount(void);
 #else
-static inline int is_mac80211(char *prefix)
+static inline int is_mac80211(const char *prefix)
 {
 	return 0;
 }
@@ -1165,7 +1165,7 @@ static inline int has_spectralscanning(char *prefix)
 #ifdef HAVE_ATH10K
 extern int is_ath10k(const char *prefix);
 #else
-static inline int is_ath10k(char *prefix)
+static inline int is_ath10k(const char *prefix)
 {
 	return 0;
 }
@@ -1173,7 +1173,7 @@ static inline int is_ath10k(char *prefix)
 #ifdef HAVE_ATH9K
 extern int is_ath9k(const char *prefix);
 #else
-static inline int is_ath9k(char *prefix)
+static inline int is_ath9k(const char *prefix)
 {
 	return 0;
 }
@@ -1181,7 +1181,7 @@ static inline int is_ath9k(char *prefix)
 #ifdef HAVE_MVEBU
 extern int is_mvebu(const char *prefix);
 #else
-static inline int is_mvebu(char *prefix)
+static inline int is_mvebu(const char *prefix)
 {
 	return 0;
 }
