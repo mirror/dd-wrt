@@ -81,7 +81,7 @@ int ieee80211_mhz2ieee(int freq)
 }
 
 #ifdef HAVE_MVEBU
-int is_wrt3200()
+int is_wrt3200(void)
 {
 	FILE *fp = fopen("/proc/device-tree/model", "r");
 	if (fp) {
@@ -98,7 +98,7 @@ int is_wrt3200()
 #endif
 
 #ifdef HAVE_MADWIFI
-int has_2ghz(char *prefix)
+int has_2ghz(const char *prefix)
 {
 	INITVALUECACHE();
 #ifdef HAVE_MVEBU
@@ -116,7 +116,7 @@ int has_2ghz(char *prefix)
 	return ret;
 }
 
-int has_5ghz(char *prefix)
+int has_5ghz(const char *prefix)
 {
 	INITVALUECACHE();
 	if (has_ad(prefix)) {
@@ -135,7 +135,7 @@ int has_5ghz(char *prefix)
 #endif
 
 #ifndef HAVE_MADWIFI
-int has_vht160(char *prefix)
+int has_vht160(const char *prefix)
 {
 #ifdef HAVE_RT2880
 	char *dev = getWifiDeviceName(prefix);
@@ -160,7 +160,7 @@ int has_vht160(char *prefix)
 
 }
 
-int has_vht80plus80(char *prefix)
+int has_vht80plus80(const char *prefix)
 {
 //                      char *dev = getWifiDeviceName(prefix);
 //                      if (dev && !strcmp(dev, "MT7615 802.11ac"))
@@ -1003,7 +1003,7 @@ void main(int argc, char *argv[])
 	getchannels(buf, "eth1");
 }
 #endif
-int has_5ghz(char *prefix)
+int has_5ghz(const char *prefix)
 {
 #ifdef HAVE_QTN
 	if (!strcmp(prefix, "wl1"))
@@ -1015,7 +1015,7 @@ int has_5ghz(char *prefix)
 	return 0;
 }
 
-int has_2ghz(char *prefix)
+int has_2ghz(const char *prefix)
 {
 	if (strstr(nvram_nget("%s_bandlist", prefix), "b"))
 		return 1;
@@ -2427,7 +2427,7 @@ static struct wifidevices wdevices[] = {
 
 };
 
-char *getWifiDeviceName(char *prefix)
+char *getWifiDeviceName(const char *prefix)
 {
 	int devnum;
 	int device = 0, vendor = 0, subdevice = 0, subvendor = 0;
@@ -2614,7 +2614,7 @@ int has_spectralscanning(const char *prefix)
 #endif
 
 #ifdef HAVE_ATH9K
-int has_airtime_fairness(char *prefix)
+int has_airtime_fairness(const char *prefix)
 {
 	return (is_ath10k(prefix) || is_ath9k(prefix));
 }
