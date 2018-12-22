@@ -1,4 +1,4 @@
-aircrack-ng: 
+aircrack-ng: pcre
 	$(MAKE) -C aircrack-ng
 
 aircrack-ng-install:
@@ -7,7 +7,7 @@ aircrack-ng-install:
 	-cp $(TOP)/aircrack-ng/scantidy $(INSTALLDIR)/aircrack-ng/usr/sbin
 	rm -rf $(INSTALLDIR)/aircrack-ng/usr/share
 
-aircrack-ng-configure:
+aircrack-ng-configure: pcre
 	cd aircrack-ng && ./autogen.sh
 	cd aircrack-ng && ./configure --host=$(ARCH)-linux \
 	--with-openssl="$(TOP)/openssl" \
