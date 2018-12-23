@@ -218,7 +218,7 @@ void ej_show_busy(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "<span id=\"wl_active\">%llu ms</span>&nbsp;\n", active);
 				websWrite(wp, "</div>\n");
 			}
-			if (busy != -1 && active != -1) {
+			if (busy != -1 && active != -1 && active > 0) {
 				long long quality = 100;
 				if (active > 0)
 					quality = 100 - ((busy * 100) / active);
@@ -241,7 +241,8 @@ void ej_dump_channel_survey(webs_t wp, int argc, char_t ** argv)
 		return;
 
 	dd_list_for_each_entry(f, &frequencies, list) {
-
+		if (!f->active_count && !f->busy_count && !f->noise_count)
+			continue;
 		if (f->in_use)
 			websWrite(wp, "%c\"[%d]\"", !first_survey ? ' ' : ',', f->freq);
 		else
