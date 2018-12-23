@@ -867,6 +867,8 @@ int has_vht160(const char *interface)
 	}
 	if (strstr(vhtcaps, "VHT160-80PLUS80")) {
 		ret = 1;
+	}else {
+		ret = 0;
 	}
 	free(vhtcaps);
 	EXITVALUECACHE();
@@ -881,6 +883,8 @@ int has_greenfield(const char *interface)
 	char *htcaps = mac80211_get_caps(interface, 1, 1);
 	if (strstr(htcaps, "[GF]")) {
 		ret = 1;
+	} else {
+		ret = 0;
 	}
 	free(htcaps);
 	EXITVALUECACHE();
@@ -895,6 +899,8 @@ int has_vht80(const char *interface)
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "SHORT-GI-80")) {
 		ret = 1;
+	} else {
+		ret = 0;
 	}
 	free(vhtcaps);
 	EXITVALUECACHE();
@@ -924,6 +930,8 @@ int has_vht80plus80(const char *interface)
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "VHT160-80PLUS80")) {
 		ret = 1;
+	}else {
+		ret = 0;
 	}
 	free(vhtcaps);
 	EXITVALUECACHE();
@@ -938,6 +946,8 @@ int has_subeamforming(const char *interface)
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "SU-BEAMFORMER") || strstr(vhtcaps, "SU-BEAMFORMEE")) {
 		ret = 1;
+	}else {
+		ret = 0;
 	}
 	free(vhtcaps);
 	EXITVALUECACHE();
@@ -952,6 +962,8 @@ int has_mubeamforming(const char *interface)
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "MU-BEAMFORMER") || strstr(vhtcaps, "MU-BEAMFORMEE")) {
 		ret = 1;
+	}else {
+		ret = 0;
 	}
 	free(vhtcaps);
 	EXITVALUECACHE();
@@ -972,6 +984,8 @@ int has_shortgi(const char *interface)
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "SHORT-GI")) {
 		ret = 1;
+	}else {
+		ret = 0;
 	}
 	free(vhtcaps);
 #endif
