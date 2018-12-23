@@ -314,7 +314,7 @@ static int freq_quality(struct wifi_channels *wifi_channels, int _max_eirp, int 
 	int c;
 	int idx;
 
-	if (f->active_count && f->busy_count) {
+	if (f->active && f->active_count && f->busy_count) {
 
 		c = 100 - (uint32_t) (f->busy * 100 / f->active);
 		if (c < 0)
