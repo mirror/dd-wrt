@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/i386 4.9.146-rc1 Kernel Configuration
+# Linux/i386 4.9.147-rc1 Kernel Configuration
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -3950,7 +3950,6 @@ CONFIG_CIFS=m
 CONFIG_CIFS_WEAK_PW_HASH=y
 # CONFIG_CIFS_UPCALL is not set
 CONFIG_CIFS_XATTR=y
-# CONFIG_CIFS_POSIX is not set
 # CONFIG_CIFS_ACL is not set
 # CONFIG_CIFS_DEBUG is not set
 # CONFIG_CIFS_DFS_UPCALL is not set

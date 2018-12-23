@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 4.9.146-rc1 Kernel Configuration
+# Linux/arm 4.9.147-rc1 Kernel Configuration
 #
 CONFIG_ARM=y
 # CONFIG_ARM_HWCC_FLAG is not set
@@ -2429,7 +2429,6 @@ CONFIG_CIFS=m
 # CONFIG_CIFS_STATS is not set
 # CONFIG_CIFS_WEAK_PW_HASH is not set
 CONFIG_CIFS_XATTR=y
-CONFIG_CIFS_POSIX=y
 # CONFIG_CIFS_DEBUG is not set
 # CONFIG_CIFS_SMB2 is not set
 # CONFIG_NCP_FS is not set

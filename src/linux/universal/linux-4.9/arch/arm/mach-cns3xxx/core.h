@@ -13,6 +13,7 @@
 
 #include <linux/reboot.h>
 
+extern struct smp_operations cns3xxx_smp_ops;
 extern void cns3xxx_timer_init(void);
 
 void __init cns3xxx_common_init(void);

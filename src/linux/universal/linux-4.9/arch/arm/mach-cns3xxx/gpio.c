@@ -273,8 +273,8 @@ void __init cns3xxx_gpio_init(int gpio_base, int ngpio,
 	ct = gc->chip_types;
 	ct->type = IRQ_TYPE_EDGE_FALLING;
 	ct->regs.ack = GPIO_INTERRUPT_CLEAR;
-	ct->regs.enable = GPIO_INTERRUPT_ENABLE;
 	ct->chip.irq_ack = irq_gc_ack_set_bit;
+	ct->regs.mask = GPIO_INTERRUPT_ENABLE;
 	ct->chip.irq_enable = irq_gc_unmask_enable_reg;
 	ct->chip.irq_disable = irq_gc_mask_disable_reg;
 	ct->chip.irq_set_type = cns3xxx_gpio_irq_set_type;
