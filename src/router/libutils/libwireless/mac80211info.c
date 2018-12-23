@@ -440,7 +440,7 @@ int mac80211_get_coverageclass(char *interface)
 			char state[32];
 			fscanf(fp, "%d %d %s", &rawack, &ack, state);
 			fclose(fp);
-			ack = (ack + 2) / 3; // do the coverage class
+			ack = (ack + 2) / 3;	// do the coverage class
 			ack = (ack + 1) / 2;
 			unlock();
 			return ack;
@@ -867,7 +867,7 @@ int has_vht160(const char *interface)
 	}
 	if (strstr(vhtcaps, "VHT160-80PLUS80")) {
 		ret = 1;
-	}else {
+	} else {
 		ret = 0;
 	}
 	free(vhtcaps);
@@ -930,7 +930,7 @@ int has_vht80plus80(const char *interface)
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "VHT160-80PLUS80")) {
 		ret = 1;
-	}else {
+	} else {
 		ret = 0;
 	}
 	free(vhtcaps);
@@ -946,7 +946,7 @@ int has_subeamforming(const char *interface)
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "SU-BEAMFORMER") || strstr(vhtcaps, "SU-BEAMFORMEE")) {
 		ret = 1;
-	}else {
+	} else {
 		ret = 0;
 	}
 	free(vhtcaps);
@@ -962,7 +962,7 @@ int has_mubeamforming(const char *interface)
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "MU-BEAMFORMER") || strstr(vhtcaps, "MU-BEAMFORMEE")) {
 		ret = 1;
-	}else {
+	} else {
 		ret = 0;
 	}
 	free(vhtcaps);
@@ -984,7 +984,7 @@ int has_shortgi(const char *interface)
 	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
 	if (strstr(vhtcaps, "SHORT-GI")) {
 		ret = 1;
-	}else {
+	} else {
 		ret = 0;
 	}
 	free(vhtcaps);
