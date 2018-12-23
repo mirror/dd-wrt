@@ -20,7 +20,7 @@
 #include <asm/hardware/cache-l2x0.h>
 #include <asm/smp_twd.h>
 #include <linux/gpio.h>
-#include <mach/cns3xxx.h>
+#include "cns3xxx.h"
 #include "core.h"
 
 #define IRQ_LOCALTIMER 29
@@ -38,16 +38,6 @@ static struct map_desc cns3xxx_io_desc[] __initdata = {
 		.length		= SZ_4K,
 		.type		= MT_DEVICE,
 	}, {
-		.virtual	= CNS3XXX_GPIOA_BASE_VIRT,
-		.pfn		= __phys_to_pfn(CNS3XXX_GPIOA_BASE),
-		.length		= SZ_4K,
-		.type		= MT_DEVICE,
-	}, {
-		.virtual	= CNS3XXX_GPIOB_BASE_VIRT,
-		.pfn		= __phys_to_pfn(CNS3XXX_GPIOB_BASE),
-		.length		= SZ_4K,
-		.type		= MT_DEVICE,
-	}, {
 		.virtual	= CNS3XXX_MISC_BASE_VIRT,
 		.pfn		= __phys_to_pfn(CNS3XXX_MISC_BASE),
 		.length		= SZ_4K,
@@ -57,21 +47,17 @@ static struct map_desc cns3xxx_io_desc[] __initdata = {
 		.pfn		= __phys_to_pfn(CNS3XXX_PM_BASE),
 		.length		= SZ_4K,
 		.type		= MT_DEVICE,
-//	}, {
-//		.virtual	= CNS3XXX_SWITCH_BASE_VIRT,
-//		.pfn		= __phys_to_pfn(CNS3XXX_SWITCH_BASE),
-//		.length		= SZ_4K,
-//		.type		= MT_DEVICE,
 	}, {
-		.virtual	= CNS3XXX_SSP_BASE_VIRT,
-		.pfn		= __phys_to_pfn(CNS3XXX_SSP_BASE),
+		.virtual	= CNS3XXX_GPIOA_BASE_VIRT,
+		.pfn		= __phys_to_pfn(CNS3XXX_GPIOA_BASE),
 		.length		= SZ_4K,
 		.type		= MT_DEVICE,
-//	}, {
-//		.virtual	= CNS3XXX_L2C_BASE_VIRT,
-//		.pfn		= __phys_to_pfn(CNS3XXX_L2C_BASE),
-//		.length		= SZ_4K,
-//		.type		= MT_DEVICE,
+	}, {
+		.virtual	= CNS3XXX_GPIOB_BASE_VIRT,
+		.pfn		= __phys_to_pfn(CNS3XXX_GPIOB_BASE),
+		.length		= SZ_4K,
+		.type		= MT_DEVICE,
+#ifdef CONFIG_PCI
 	}, {
 		.virtual	= CNS3XXX_PCIE0_HOST_BASE_VIRT,
 		.pfn		= __phys_to_pfn(CNS3XXX_PCIE0_HOST_BASE),
@@ -112,6 +98,7 @@ static struct map_desc cns3xxx_io_desc[] __initdata = {
 		.pfn		= __phys_to_pfn(CNS3XXX_PCIE1_IO_BASE),
 		.length		= SZ_16M,
 		.type		= MT_DEVICE,
+#endif
 	},
 };
 

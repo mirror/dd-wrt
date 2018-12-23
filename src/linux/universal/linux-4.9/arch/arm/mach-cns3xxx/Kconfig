@@ -1,5 +1,16 @@
-menu "CNS3XXX platform type"
-	depends on ARCH_CNS3XXX
+config ARCH_CNS3XXX
+	bool "Cavium Networks CNS3XXX family"
+	select ARM_GIC
+	select ARCH_REQUIRE_GPIOLIB
+	select GENERIC_IRQ_CHIP
+	select HAVE_ARM_SCU if SMP
+	select HAVE_ARM_TWD
+	select HAVE_SMP
+	select FIQ
+	help
+	  Support for Cavium Networks CNS3XXX platform.
+
+if ARCH_CNS3XXX
 
 config MACH_CNS3420VB
 	bool "Support for CNS3420 Validation Board"
@@ -21,4 +32,4 @@ config CPU_FREQ_CNS3XXX
 	tristate "CPUfreq support for Cavium CNS3XXX CPUs"
 	depends on CPU_FREQ && ARCH_CNS3XXX
 
-endmenu
+endif

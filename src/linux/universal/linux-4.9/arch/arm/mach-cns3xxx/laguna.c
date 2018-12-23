@@ -46,9 +46,11 @@
 #include <asm/mach/arch.h>
 #include <asm/mach/map.h>
 #include <asm/mach/time.h>
-#include <mach/cns3xxx.h>
-#include <mach/platform.h>
-#include <mach/irqs.h>
+#include "cns3xxx.h"
+#include <linux/clk-provider.h>
+#include <linux/clkdev.h>
+#include <linux/platform_data/cns3xxx.h>
+//#include <mach/irqs.h>
 #include <linux/magic.h>
 #ifdef CONFIG_CPU_FREQ
 #include <linux/cpufreq.h>
@@ -627,14 +629,13 @@ static struct platform_device cns3xxx_usb_otg_device = {
 		.coherent_dma_mask = DMA_BIT_MASK(32),
 	},
 };
-
 /*
  * I2C
  */
 static struct resource laguna_i2c_resource[] = {
 	{
 		.start    = CNS3XXX_SSP_BASE + 0x20,
-		.end      = 0x7100003f,
+		.end      = CNS3XXX_SSP_BASE + 0x3f,
 		.flags    = IORESOURCE_MEM,
 	},{
 		.start    = IRQ_CNS3XXX_I2C,
@@ -902,13 +903,37 @@ static struct gpio laguna_gpio_gw2380[] = {
 
 static void __init laguna_init(void)
 {
+	struct clk *clk;
+	u32 __iomem *reg;
+
+	clk = clk_register_fixed_rate(NULL, "cpu", NULL,
+				      CLK_IGNORE_UNUSED,
+				      cns3xxx_cpu_clock() * (1000000 / 8));
+	clk_register_clkdev(clk, "cpu", NULL);
+
 	platform_device_register(&laguna_watchdog);
 
 	platform_device_register(&laguna_i2c_controller);
 
-	i2c_register_board_info(0, laguna_i2c_devices,
-			ARRAY_SIZE(laguna_i2c_devices));
+	/* Set I2C 0-3 drive strength to 21 mA */
+	reg = MISC_IO_PAD_DRIVE_STRENGTH_CTRL_B;
+	*reg |= 0x300;
 
+	/* Enable SCL/SDA for I2C */
+	reg = MISC_GPIOB_PIN_ENABLE_REG;
+	*reg |= BIT(12) | BIT(13);
+
+	/* Enable MMC/SD pins */
+	*reg |= BIT(7) | BIT(8) | BIT(9) | BIT(10) | BIT(11);
+
+	cns3xxx_pwr_clk_en(1 << PM_CLK_GATE_REG_OFFSET_SPI_PCM_I2C);
+	cns3xxx_pwr_power_up(1 << PM_CLK_GATE_REG_OFFSET_SPI_PCM_I2C);
+	cns3xxx_pwr_soft_rst(1 << PM_CLK_GATE_REG_OFFSET_SPI_PCM_I2C);
+
+	cns3xxx_pwr_clk_en(CNS3XXX_PWR_CLK_EN(SPI_PCM_I2C));
+	cns3xxx_pwr_soft_rst(CNS3XXX_PWR_SOFTWARE_RST(SPI_PCM_I2C));
+
+	i2c_register_board_info(0, ARRAY_AND_SIZE(laguna_i2c_devices));
 
 	pm_power_off = cns3xxx_power_off;
 }
@@ -963,6 +988,7 @@ static int laguna_register_gpio(struct gpio *array, size_t num)
 #define SPI_RECEIVE_BUFFER_REG_ADDR		(CNS3XXX_SSP_BASE +0x58)
 
 
+
 /* allow disabling of external isolated PCIe IRQs */
 static int cns3xxx_pciextirq = 1;
 static int __init cns3xxx_pciextirq_disable(char *s)
@@ -974,6 +1000,8 @@ __setup("noextirq", cns3xxx_pciextirq_disable);
 
 static int __init laguna_pcie_init_irq(void)
 {
+	u32 __iomem *mem = (void __iomem *)(CNS3XXX_GPIOB_BASE_VIRT + 0x0004);
+	u32 reg = (__raw_readl(mem) >> 26) & 0xf;
 	int irqs[] = {
 		IRQ_CNS3XXX_EXTERNAL_PIN0,
 		IRQ_CNS3XXX_EXTERNAL_PIN1,
@@ -985,27 +1013,19 @@ static int __init laguna_pcie_init_irq(void)
 		return 0;
 
 	/* Verify GPIOB[26:29] == 0001b indicating support for ext irqs */
+	if (cns3xxx_pciextirq && reg != 1)
+		cns3xxx_pciextirq = 0;
+
 	if (cns3xxx_pciextirq) {
-	u32 __iomem *mem = (void __iomem *)(CNS3XXX_GPIOB_BASE_VIRT + 0x0004);
-	u32 reg = __raw_readl(mem);
-	reg >>=16;
-	switch (reg & 0x3c00) {
-	case 0x0400: /* GW2388-4-G (mod) */
-		printk(KERN_INFO "laguna: using isolated PCI interrupts:"
+		printk("laguna: using isolated PCI interrupts:"
 		       " irq%d/irq%d/irq%d/irq%d\n",
 		       irqs[0], irqs[1], irqs[2], irqs[3]);
 		cns3xxx_pcie_set_irqs(0, irqs);
-		break;
-	case 0x0408: /* GW2388-4-H */
-	case 0x3c00: /* GW2388-4-G */
-	default:
-		printk(KERN_INFO "laguna: using shared PCI interrupts:"
-		       " irq%d/irq%d/irq%d/irq%d\n",
-		       IRQ_CNS3XXX_PCIE0_DEVICE, IRQ_CNS3XXX_PCIE0_DEVICE, IRQ_CNS3XXX_PCIE0_DEVICE, IRQ_CNS3XXX_PCIE0_DEVICE);
-                break;	
+	} else {
+		printk("laguna: using shared PCI interrupts: irq%d\n",
+		       IRQ_CNS3XXX_PCIE0_DEVICE);
 	}
-	
-	}
+
 	return 0;
 }
 subsys_initcall(laguna_pcie_init_irq);

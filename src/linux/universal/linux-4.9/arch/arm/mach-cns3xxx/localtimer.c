@@ -16,7 +16,6 @@
 #include <linux/clockchips.h>
 
 #include <asm/smp_twd.h>
-#include <mach/irqs.h>
 
 /*
  * Setup the local clock events for a CPU.

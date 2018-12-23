@@ -25,7 +25,7 @@
 #include <asm/unified.h>
 #include <asm/fiq.h>
 #include <mach/smp.h>
-#include <mach/cns3xxx.h>
+#include "cns3xxx.h"
 
 static struct fiq_handler fh = {
 	.name = "cns3xxx-fiq"

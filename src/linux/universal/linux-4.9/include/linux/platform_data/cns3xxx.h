@@ -22,7 +22,5 @@ struct cns3xxx_plat_info {
 	u32 phy[3];
 };
 
-extern struct smp_operations cns3xxx_smp_ops;
-
 #endif /* __ASM_ARCH_PLATFORM_H */
 #endif
