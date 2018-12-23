@@ -345,19 +345,20 @@ static int freq_quality(struct wifi_channels *wifi_channels, int _max_eirp, int 
 	}
 
 	/* if HT40, VHT80 or VHT160 auto channel is requested, check if desired channel is capabile of that operation mode, if not, move it to the bottom of the list */
-	if ((_htflags & AUTO_FORCEHT40) && !chan->luu && !chan->ull) {
-		fprintf(stderr, "channel %d is not ht capable, set set quality to zero\n", chan->freq);
-		return 0;
+	if (!(_htflags & 8)) {
+		if ((_htflags & AUTO_FORCEHT40) && !chan->luu && !chan->ull) {
+			fprintf(stderr, "channel %d is not ht capable, set set quality to zero\n", chan->freq);
+			return 0;
+		}
+		if ((_htflags & AUTO_FORCEVHT80) && !chan->ulu && !chan->lul) {
+			fprintf(stderr, "channel %d is not vht80 capable, set set quality to zero\n", chan->freq);
+			return 0;
+		}
+		if ((_htflags & AUTO_FORCEVHT160) && !chan->uuu && !chan->lll) {
+			fprintf(stderr, "channel %d is not vht160 capable, set set quality to zero\n", chan->freq);
+			return 0;
+		}
 	}
-	if ((_htflags & AUTO_FORCEVHT80) && !chan->ulu && !chan->lul) {
-		fprintf(stderr, "channel %d is not vht80 capable, set set quality to zero\n", chan->freq);
-		return 0;
-	}
-	if ((_htflags & AUTO_FORCEVHT160) && !chan->uuu && !chan->lll) {
-		fprintf(stderr, "channel %d is not vht160 capable, set set quality to zero\n", chan->freq);
-		return 0;
-	}
-
 	int eirp = get_eirp(wifi_channels, f->freq);
 	/* subtract noise delta to lowest noise. */
 	c -= (f->noise - s->lowest_noise);
@@ -440,7 +441,8 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 	int _max_eirp;
 	struct wifi_channels *wifi_channels;
 	DD_LIST_HEAD(frequencies);
-
+	if (is_ath5k(interface))
+		_htflags |= 8;
 	if (htflags & AUTO_FORCEVHT80)
 		bw = 80;
 	else if (htflags & AUTO_FORCEVHT160)

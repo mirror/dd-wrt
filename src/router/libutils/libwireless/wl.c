@@ -2665,7 +2665,7 @@ int is_ath9k(const char *prefix)
 int is_mvebu(const char *prefix)
 {
 	INITVALUECACHE();
-	ret= devicecountbydriver(prefix, "mwlwifi");
+	ret = devicecountbydriver(prefix, "mwlwifi");
 	EXITVALUECACHE();
 	return ret;
 }
