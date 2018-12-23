@@ -9,7 +9,7 @@
 #include <linux/module.h>
 #include <linux/delay.h>
 #include <mach/system.h>
-#include <mach/cns3xxx.h>
+#include "cns3xxx.h"
 #include <linux/cpufreq.h>
 
 

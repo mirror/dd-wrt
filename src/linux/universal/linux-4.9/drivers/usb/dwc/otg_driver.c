@@ -63,7 +63,7 @@
 #include <asm/io.h>
 
 #include <asm/sizes.h>
-#include <mach/pm.h>
+//#include <mach/pm.h>
 
 #include "otg_plat.h"
 #include "otg_attr.h"

@@ -49,7 +49,7 @@
 #include <linux/string.h>
 #include <linux/version.h>
 
-#include <mach/irqs.h>
+//#include <mach/irqs.h>
 
 #include "otg_driver.h"
 #include "otg_hcd.h"

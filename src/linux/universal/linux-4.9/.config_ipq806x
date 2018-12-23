@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 4.9.146-rc1 Kernel Configuration
+# Linux/arm 4.9.147-rc1 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_ARM_HAS_SG_CHAIN=y
@@ -321,7 +321,6 @@ CONFIG_ARCH_MULTIPLATFORM=y
 # CONFIG_ARCH_OMAP1 is not set
 # CONFIG_ARCH_BRCM is not set
 # CONFIG_ARCH_ALPINE is not set
-# CONFIG_ARCH_CNS3XXX is not set
 
 #
 # Multiple platform selection
@@ -340,6 +339,7 @@ CONFIG_ARCH_MULTI_V6_V7=y
 # CONFIG_ARCH_AT91 is not set
 # CONFIG_ARCH_BCM is not set
 # CONFIG_ARCH_BERLIN is not set
+# CONFIG_ARCH_CNS3XXX is not set
 # CONFIG_ARCH_DIGICOLOR is not set
 # CONFIG_ARCH_HIGHBANK is not set
 # CONFIG_ARCH_HISI is not set
@@ -3442,7 +3442,6 @@ CONFIG_CIFS=m
 # CONFIG_CIFS_WEAK_PW_HASH is not set
 # CONFIG_CIFS_UPCALL is not set
 CONFIG_CIFS_XATTR=y
-# CONFIG_CIFS_POSIX is not set
 CONFIG_CIFS_ACL=y
 CONFIG_CIFS_DEBUG=y
 # CONFIG_CIFS_DEBUG2 is not set

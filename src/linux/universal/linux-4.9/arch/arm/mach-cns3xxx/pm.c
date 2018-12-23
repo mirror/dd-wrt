@@ -11,7 +11,7 @@
 #include <linux/io.h>
 #include <linux/delay.h>
 #include <linux/atomic.h>
-#include <mach/cns3xxx.h>
+#include "cns3xxx.h"
 #include <mach/pm.h>
 #include <linux/interrupt.h>
 #ifdef CONFIG_SUSPEND
