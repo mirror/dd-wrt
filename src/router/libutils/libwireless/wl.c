@@ -2622,22 +2622,23 @@ int has_airtime_fairness(const char *prefix)
 #endif
 static int devicecountbydriver(const char *prefix, char *drivername)
 {
-	INITVALUECACHE();
 	glob_t globbuf;
 	char *globstring;
 	int globresult;
 	int devnum;
+	int ret;
 	// correct index if there are legacy cards arround... should not...
 	devnum = get_ath9k_phy_ifname(prefix);
 	if (devnum == -1)
-		RETURNVALUE(0);
+		return 0;
 	asprintf(&globstring, "/sys/class/ieee80211/phy%d/device/driver/module/drivers/pci:%s", devnum, drivername);
 	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 	free(globstring);
 	if (globresult == 0)
 		ret = (int)globbuf.gl_pathc;
+	else
+		ret = 0;
 	globfree(&globbuf);
-	EXITVALUECACHE();
 	return ret;
 
 }
@@ -2645,26 +2646,37 @@ static int devicecountbydriver(const char *prefix, char *drivername)
 #ifdef HAVE_ATH5K
 int is_ath5k(const char *prefix)
 {
-	return devicecountbydriver(prefix, "ath5k");
+	INITVALUECACHE();
+	ret = devicecountbydriver(prefix, "ath5k");
+	EXITVALUECACHE();
+	return ret;
 }
 #endif
 #ifdef HAVE_ATH9K
 int is_ath9k(const char *prefix)
 {
-	return devicecountbydriver(prefix, "ath9k");
+	INITVALUECACHE();
+	ret = devicecountbydriver(prefix, "ath9k");
+	EXITVALUECACHE();
+	return ret;
 }
 #endif
 #ifdef HAVE_MVEBU
 int is_mvebu(const char *prefix)
 {
-	return devicecountbydriver(prefix, "mwlwifi");
+	INITVALUECACHE();
+	ret= devicecountbydriver(prefix, "mwlwifi");
+	EXITVALUECACHE();
+	return ret;
 }
 #endif
 #ifdef HAVE_ATH10K
 int is_ath10k(const char *prefix)
 {
-	// get legacy interface count
-	return devicecountbydriver(prefix, "ath10k_pci");
+	INITVALUECACHE();
+	ret = devicecountbydriver(prefix, "ath10k_pci");
+	EXITVALUECACHE();
+	return ret;
 }
 
 #endif
@@ -2676,8 +2688,6 @@ int is_wil6210(const char *prefix)
 	if (!strcmp(prefix, "ath2"))
 		return 1;
 	return 0;
-	// get legacy interface count
-//      return devicecountbydriver(prefix, "wil6210");
 }
 
 #endif
