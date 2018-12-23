@@ -253,26 +253,22 @@ static int cns3xxx_i2c_probe(struct platform_device *pdev)
 	struct cns3xxx_i2c *i2c;
 	struct resource *res, *res2;
 	int ret;
-printk(KERN_INFO "%s:%s\n",__func__,__LINE__);
 	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
 	if (!res) {
 		printk("%s: IORESOURCE_MEM not defined \n", __FUNCTION__);
 		return -ENODEV;
 	}
 
-printk(KERN_INFO "%s:%s\n",__func__,__LINE__);
 	res2 = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
 	if (!res2) {
 		printk("%s: IORESOURCE_IRQ not defined \n", __FUNCTION__);
 		return -ENODEV;
 	}
 
-printk(KERN_INFO "%s:%s\n",__func__,__LINE__);
 	i2c = kzalloc(sizeof(*i2c), GFP_KERNEL);
 	if (!i2c)
 		return -ENOMEM;
 
-printk(KERN_INFO "%s:%s\n",__func__,__LINE__);
 	if (!request_mem_region(res->start, res->end - res->start + 1,
 				pdev->name)) {
 		dev_err(&pdev->dev, "Memory region busy\n");
@@ -280,20 +276,15 @@ printk(KERN_INFO "%s:%s\n",__func__,__LINE__);
 		goto request_mem_failed;
 	}
 
-printk(KERN_INFO "%s:%s\n",__func__,__LINE__);
 	i2c->dev = &pdev->dev;
-printk(KERN_INFO "%s:%s\n",__func__,__LINE__);
 	i2c->base = ioremap(res->start, res->end - res->start + 1);
-printk(KERN_INFO "%s:%s\n",__func__,__LINE__);
 	if (!i2c->base) {
 		dev_err(&pdev->dev, "Unable to map registers\n");
 		ret = -EIO;
 		goto map_failed;
 	}
-printk(KERN_INFO "%s:%s\n",__func__,__LINE__);
 
 	cns3xxx_i2c_adapter_init(i2c);
-printk(KERN_INFO "%s:%s\n",__func__,__LINE__);
 
 	init_waitqueue_head(&i2c->wait);
 	ret = request_irq(res2->start, cns3xxx_i2c_isr, 0, pdev->name, i2c);
@@ -301,44 +292,29 @@ printk(KERN_INFO "%s:%s\n",__func__,__LINE__);
 		dev_err(&pdev->dev, "Cannot claim IRQ\n");
 		goto request_irq_failed;
 	}
-printk(KERN_INFO "%s:%s\n",__func__,__LINE__);
 
 	platform_set_drvdata(pdev, i2c);
-printk(KERN_INFO "%s:%s\n",__func__,__LINE__);
 	i2c->adap = cns3xxx_i2c_adapter;
-printk(KERN_INFO "%s:%s\n",__func__,__LINE__);
 	i2c_set_adapdata(&i2c->adap, i2c);
-printk(KERN_INFO "%s:%s\n",__func__,__LINE__);
 	i2c->adap.dev.parent = &pdev->dev;
-printk(KERN_INFO "%s:%s\n",__func__,__LINE__);
 
 	/* add i2c adapter to i2c tree */
 	ret = i2c_add_numbered_adapter(&i2c->adap);
-printk(KERN_INFO "%s:%s\n",__func__,__LINE__);
 	if (ret) {
 		dev_err(&pdev->dev, "Failed to add adapter\n");
 		goto add_adapter_failed;
 	}
-printk(KERN_INFO "%s:%s\n",__func__,__LINE__);
 
 	return 0;
 
-printk(KERN_INFO "%s:%s\n",__func__,__LINE__);
       add_adapter_failed:
-printk(KERN_INFO "%s:%s\n",__func__,__LINE__);
 	free_irq(res2->start, i2c);
-printk(KERN_INFO "%s:%s\n",__func__,__LINE__);
       request_irq_failed:
-printk(KERN_INFO "%s:%s\n",__func__,__LINE__);
 	iounmap(i2c->base);
-printk(KERN_INFO "%s:%s\n",__func__,__LINE__);
       map_failed:
-printk(KERN_INFO "%s:%s\n",__func__,__LINE__);
 	release_mem_region(res->start, res->end - res->start + 1);
-printk(KERN_INFO "%s:%s\n",__func__,__LINE__);
       request_mem_failed:
 	kfree(i2c);
-printk(KERN_INFO "%s:%s\n",__func__,__LINE__);
 
 	return ret;
 }
