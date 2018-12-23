@@ -347,15 +347,15 @@ static int freq_quality(struct wifi_channels *wifi_channels, int _max_eirp, int 
 	/* if HT40, VHT80 or VHT160 auto channel is requested, check if desired channel is capabile of that operation mode, if not, move it to the bottom of the list */
 	if (!(_htflags & 8)) {
 		if ((_htflags & AUTO_FORCEHT40) && !chan->luu && !chan->ull) {
-			fprintf(stderr, "channel %d is not ht capable, set set quality to zero\n", chan->freq);
+			fprintf(stderr, "channel %d is not ht capable, set quality to zero %d\n", chan->freq, _htflags);
 			return 0;
 		}
 		if ((_htflags & AUTO_FORCEVHT80) && !chan->ulu && !chan->lul) {
-			fprintf(stderr, "channel %d is not vht80 capable, set set quality to zero\n", chan->freq);
+			fprintf(stderr, "channel %d is not vht80 capable, set quality to zero\n", chan->freq);
 			return 0;
 		}
 		if ((_htflags & AUTO_FORCEVHT160) && !chan->uuu && !chan->lll) {
-			fprintf(stderr, "channel %d is not vht160 capable, set set quality to zero\n", chan->freq);
+			fprintf(stderr, "channel %d is not vht160 capable, set quality to zero\n", chan->freq);
 			return 0;
 		}
 	}
