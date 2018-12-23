@@ -3302,7 +3302,7 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 		}
 		websWrite(wp, "</select>\n");
 		websWrite(wp, "</div>\n");
-		if (nvram_nmatch("40", "%s_nbw", prefix)) {
+		if (!is_ath5k(prefix) && nvram_nmatch("40", "%s_nbw", prefix)) {
 			websWrite(wp, "<div class=\"setting\">\n");
 			show_caption(wp, "label", "wl_basic.channel_wide", NULL);
 			websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
@@ -3332,7 +3332,7 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 
 		show_channel(wp, prefix, prefix, 0);
 		if (is_mac80211(prefix)) {
-			if (nvram_matchi(wl_width, 40) || nvram_matchi(wl_width, 2040)) {
+			if (!is_ath5k(prefix) && (nvram_matchi(wl_width, 40) || nvram_matchi(wl_width, 2040))) {
 				websWrite(wp, "<div class=\"setting\">\n");
 				show_caption(wp, "label", "wl_basic.channel_wide", NULL);
 				websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
@@ -3727,7 +3727,7 @@ if (!strcmp(prefix, "wl2"))
 			}
 			websWrite(wp, "</select>\n");
 			websWrite(wp, "</div>\n");
-			if (nvram_nmatch("40", "%s_nbw", prefix)) {
+			if (!is_ath5k(prefix) && nvram_nmatch("40", "%s_nbw", prefix)) {
 				websWrite(wp, "<div class=\"setting\">\n");
 				show_caption(wp, "label", "wl_basic.channel_wide", NULL);
 				websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
@@ -3757,7 +3757,7 @@ if (!strcmp(prefix, "wl2"))
 
 			show_channel(wp, prefix, prefix, 0);
 			if (is_mac80211(prefix)) {
-				if (nvram_matchi(wl_width, 40) || nvram_matchi(wl_width, 2040)) {
+				if (!is_ath5k(prefix) && (nvram_matchi(wl_width, 40) || nvram_matchi(wl_width, 2040))) {
 					websWrite(wp, "<div class=\"setting\">\n");
 					show_caption(wp, "label", "wl_basic.channel_wide", NULL);
 					websWrite(wp, "<select name=\"%s_nctrlsb\" >\n", prefix);
