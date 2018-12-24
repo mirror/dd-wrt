@@ -2220,12 +2220,12 @@ int getrxantenna(char *ifname)
 
 #if defined(HAVE_RT2880) || defined(HAVE_RT61)
 
-int has_mimo(char *prefix)
+int has_mimo(const char *prefix)
 {
 	return 1;
 }
 
-int has_ac(char *prefix)
+int has_ac(const char *prefix)
 {
 	if (!strncmp(prefix, "ba", 2) || !strncmp(prefix, "wl1", 3)) {
 		FILE *fp = fopen("/sys/bus/pci/devices/0000:01:00.0/device", "rb");
@@ -2269,7 +2269,7 @@ int has_ac(char *prefix)
 }
 #else
 
-int has_mimo(char *prefix)
+int has_mimo(const char *prefix)
 {
 #ifdef HAVE_QTN
 	if (!strcmp(prefix, "wl1"))
@@ -2285,7 +2285,7 @@ int has_mimo(char *prefix)
 }
 
 #ifndef HAVE_ATH10K
-int has_ac(char *prefix)
+int has_ac(const char *prefix)
 {
 #ifdef HAVE_ATH9K
 	return 0;
@@ -2307,7 +2307,7 @@ int has_ac(char *prefix)
 #endif
 
 #ifdef HAVE_QTN
-int has_qtn(char *prefix)
+int has_qtn(const char *prefix)
 {
 	if (!strcmp(prefix, "qtn"))
 		return 1;
