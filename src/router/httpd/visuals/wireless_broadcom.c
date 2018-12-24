@@ -539,7 +539,7 @@ void ej_active_wds(webs_t wp, int argc, char_t ** argv)
 	int i;
 
 	for (i = 0; i < c; i++) {
-		cnt + = ej_active_wds_instance(wp, argc, argv, i, cnt);
+		cnt = ej_active_wds_instance(wp, argc, argv, i, cnt);
 	}
 }
 
