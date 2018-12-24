@@ -816,7 +816,7 @@ static int getcenterchannel(chanspec_t chspec)
 }
 #endif
 #ifdef HAVE_80211AC
-int has_beamforming(char *prefix)
+int has_beamforming(const char *prefix)
 {
 	wlc_rev_info_t rev;
 	int c = 0;
