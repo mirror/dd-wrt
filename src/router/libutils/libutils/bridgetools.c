@@ -280,6 +280,9 @@ int br_add_interface(const char *br, const char *dev)
 
 	if (!ifexists(dev))
 		return -1;
+
+	if (!ifexists(br))
+		return -1;
 	if (nvram_nmatch("apsta", "%s_mode", dev)) {
 		fprintf(stderr, "skip %s is apsta\n", dev);
 		return 0;
