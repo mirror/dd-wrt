@@ -229,7 +229,7 @@ char *getRADev(char *prefix)
 		return prefix;
 }
 
-int has_5ghz(char *prefix)
+int has_5ghz(const char *prefix)
 {
 	if (!strcmp(prefix, "wl0"))
 		return 0;
@@ -238,7 +238,7 @@ int has_5ghz(char *prefix)
 	return 1;
 }
 
-int has_2ghz(char *prefix)
+int has_2ghz(const char *prefix)
 {
 	if (!strcmp(prefix, "wl0"))
 		return 1;
