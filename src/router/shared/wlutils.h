@@ -183,7 +183,7 @@ int getRssi_11n(char *ifname, unsigned char *mac);
 
 extern int getassoclist_ath9k(char *name, unsigned char *list);
 
-extern int has_mimo(char *prefix);
+extern int has_mimo(const char *prefix);
 extern int has_ac(const char *prefix);
 #ifdef HAVE_WIL6210
 extern int has_ad(const char *prefix);
@@ -248,7 +248,10 @@ static inline int has_cmac_256(const char *prefix)
 #ifdef HAVE_QTN
 extern int has_qtn(const char *prefix);
 #else
-#define has_qtn(prefix) 0
+static inline int has_qtn(const char *prefix)
+{
+	return 0;
+}
 #endif
 
 extern int has_athmask(int devnum, int mask);
