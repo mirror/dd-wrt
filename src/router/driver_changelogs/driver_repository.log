@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r4333 | brainslayer | 2018-12-25 07:02:13 +0100 (Tue, 25 Dec 2018) | 1 line
+
+revert some beacon handling changes. not sure if they just reduce performance
+------------------------------------------------------------------------
 r4332 | brainslayer | 2018-12-23 21:04:39 +0100 (Sun, 23 Dec 2018) | 1 line
 
 change mapping
