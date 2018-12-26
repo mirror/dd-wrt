@@ -664,6 +664,7 @@ static int write_main(int argc, char *argv[])
 				fprintf(stderr, "%s: CRC OK (0x%08X)\n", mtd, crc);
 				fprintf(stderr, "Writing image to flash, waiting a moment...\n");
 			}
+			printf("\n");
 		}
 #if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_RAMBUTAN) || defined(HAVE_VENTANA)	// erase all blocks first
 		if (!first) {
@@ -679,7 +680,7 @@ static int write_main(int argc, char *argv[])
 		for (i = 0; i < (length / mtd_info.erasesize); i++) {
 			int redo = 0;
 		      again:;
-			fprintf(stderr, "write block [%d] at [0x%08X]\n", sum, base + (i * mtd_info.erasesize));
+			fprintf(stderr, "write block [%d] at [0x%08X]\r", (base + (i * mtd_info.erasesize)) - badblocks, base + (i * mtd_info.erasesize));
 			erase_info.start = base + (i * mtd_info.erasesize);
 			(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
 			if (mtd_block_is_bad(mtd_fd, erase_info.start)) {
