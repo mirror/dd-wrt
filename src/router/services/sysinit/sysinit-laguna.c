@@ -65,7 +65,7 @@ void start_sysinit(void)
 		insmod("cns3xxx_wdt");
 		eval("watchdog");
 	}
-	nvram_seti("use_ath5k", 1);
+	nvram_default_geti("use_ath5k", 1);
 	/*
 	 * Setup console 
 	 */
