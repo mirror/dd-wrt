@@ -1499,5 +1499,6 @@ int wpas_ctrl_iface_get_pref_freq_list_override(struct wpa_supplicant *wpa_s,
 
 int wpa_is_fils_supported(struct wpa_supplicant *wpa_s);
 int wpa_is_fils_sk_pfs_supported(struct wpa_supplicant *wpa_s);
+int wpa_supplicant_daemon(const char *pid_file);
 
 #endif /* WPA_SUPPLICANT_I_H */
