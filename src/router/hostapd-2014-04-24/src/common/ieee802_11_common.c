@@ -499,16 +499,25 @@ enum hostapd_hw_mode ieee80211_freq_to_chan(int freq, u8 *channel)
 		*channel = (freq - 2407) / 5;
 	} else if (freq < 2412) {
 		mode = HOSTAPD_MODE_IEEE80211G;
-		return (freq - 2407) / 5 + 256;
+		*channel = (freq - 2407) / 5 + 256;
 	} else if (freq == 2484) {
 		mode = HOSTAPD_MODE_IEEE80211B;
 		*channel = 14;
+	} else if (freq < 2502 && freq > 2484) {
+		mode = HOSTAPD_MODE_IEEE80211G;
+		*channel = 14;
+	} else if (freq < 2512 && freq > 2484) {
+		mode = HOSTAPD_MODE_IEEE80211G;
+		*channel = 15;
+	}else if (freq > 2484 && freq < 4000 ) {
+		mode = HOSTAPD_MODE_IEEE80211G;
+		*channel = (15 + ((freq - 2512) / 20)) & 0xff;
 	} else if (freq > 2484 && freq < 4000 ) {
 		mode = HOSTAPD_MODE_IEEE80211G;
-		return (freq - 2414) / 5;
+		*channel = (freq - 2414) / 5;
 	} else if (freq < 4990 && freq > 4940) {
 		mode = HOSTAPD_MODE_IEEE80211A;
-		return ((freq * 10) + (((freq % 5) == 2) ? 5 : 0) - 49400) / 5;
+		*channel = ((freq * 10) + (((freq % 5) == 2) ? 5 : 0) - 49400) / 5;
 	} else if (freq >= 4900 && freq < 5000) {
 		mode = HOSTAPD_MODE_IEEE80211A;
 		*channel = (freq - 4000) / 5;
