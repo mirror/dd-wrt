@@ -773,7 +773,7 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(unsigned int freq,
 			*op_class = 81;
 		*channel = 0;
 
-		return HOSTAPD_MODE_IEEE80211B;
+		return HOSTAPD_MODE_IEEE80211G;
 	}
 
 	if (freq < 2502 && freq > 2484) {
@@ -787,7 +787,7 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(unsigned int freq,
 		else
 			*op_class = 81;
 		*channel = 14;
-		return HOSTAPD_MODE_IEEE80211B;
+		return HOSTAPD_MODE_IEEE80211G;
 	}
 
 	if (freq < 2512 && freq > 2484) {
@@ -801,7 +801,7 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(unsigned int freq,
 		else
 			*op_class = 81;
 		*channel = 15;
-		return HOSTAPD_MODE_IEEE80211B;
+		return HOSTAPD_MODE_IEEE80211G;
 	}
 
 	if (freq > 2484 && freq < 4000 ) {
@@ -815,7 +815,7 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(unsigned int freq,
 		else
 			*op_class = 81;
 		*channel = (15 + ((freq - 2512) / 20)) & 0xff;
-		return HOSTAPD_MODE_IEEE80211B;
+		return HOSTAPD_MODE_IEEE80211G;
 	}
 
 	if (freq > 2484 && freq < 4000) {
@@ -830,7 +830,7 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(unsigned int freq,
 			*op_class = 81;
 		*channel = (freq - 2414) / 5;
 
-		return HOSTAPD_MODE_IEEE80211B;
+		return HOSTAPD_MODE_IEEE80211G;
 	}
 
 	if (freq < 2412) {
@@ -845,7 +845,7 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(unsigned int freq,
 			*op_class = 81;
 		*channel = (freq - 2407) / 5 + 256;
 
-		return HOSTAPD_MODE_IEEE80211B;
+		return HOSTAPD_MODE_IEEE80211G;
 	}
 
 
