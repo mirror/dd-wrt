@@ -1,3 +1,5 @@
+ccflags-$(CONFIG_ARCH_MULTIPLATFORM) := -I$(srctree)/$(src)/include
+
 # SPDX-License-Identifier: GPL-2.0
 obj-$(CONFIG_ARCH_CNS3XXX)		+= core.o pm.o devices.o gpio.o
 obj-$(CONFIG_PCI)			+= pcie.o
