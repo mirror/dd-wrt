@@ -533,6 +533,12 @@ enum hostapd_hw_mode ieee80211_freq_to_chan(int freq, u8 *channel)
 		*channel = (freq - 2407) / 5 + 256;
 	else if (freq < 2484)
 		*channel = (freq - 2407) / 5;
+	else if (freq < 2502 && freq > 2484)
+		*channel = 14;
+	else if (freq < 2512 && freq > 2484)
+		*channel = 15;
+	else if (freq > 2484 && freq < 4000 )
+		*channel = (15 + ((freq - 2512) / 20)) & 0xff;
 	else if (freq > 2484 && freq < 4000)
 		*channel = (freq - 2414) / 5;
 	else if (freq > 4940 && freq < 4990)
