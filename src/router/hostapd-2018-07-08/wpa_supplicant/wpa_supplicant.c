@@ -6363,11 +6363,6 @@ int wpa_supplicant_run(struct wpa_global *global)
 {
 	struct wpa_supplicant *wpa_s;
 
-	if (global->params.daemonize &&
-	    (wpa_supplicant_daemon(global->params.pid_file) ||
-	     eloop_sock_requeue()))
-		return -1;
-
 #ifdef CONFIG_MATCH_IFACE
 	if (wpa_supplicant_match_existing(global))
 		return -1;
