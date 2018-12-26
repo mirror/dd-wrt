@@ -4345,7 +4345,7 @@ int wpa_supplicant_driver_init(struct wpa_supplicant *wpa_s)
 }
 
 
-static int wpa_supplicant_daemon(const char *pid_file)
+int wpa_supplicant_daemon(const char *pid_file)
 {
 	wpa_printf(MSG_DEBUG, "Daemonize..");
 	return os_daemonize(pid_file);
