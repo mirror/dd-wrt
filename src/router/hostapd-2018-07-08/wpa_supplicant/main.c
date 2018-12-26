@@ -363,19 +363,16 @@ int main(int argc, char *argv[])
 	     eloop_sock_requeue()))
 		return -1;
 
-fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 	if (fst_global_init()) {
 		wpa_printf(MSG_ERROR, "Failed to initialize FST");
 		exitcode = -1;
 		goto out;
 	}
-fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 
 #if defined(CONFIG_FST) && defined(CONFIG_CTRL_IFACE)
 	if (!fst_global_add_ctrl(fst_ctrl_cli))
 		wpa_printf(MSG_WARNING, "Failed to add CLI FST ctrl");
 #endif
-fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 
 	for (i = 0; exitcode == 0 && i < iface_count; i++) {
 		struct wpa_supplicant *wpa_s;
@@ -393,31 +390,24 @@ fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 			exitcode = -1;
 			break;
 		}
-fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 		wpa_s = wpa_supplicant_add_iface(global, &ifaces[i], NULL);
-fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 		if (wpa_s == NULL) {
 			exitcode = -1;
 			break;
 		}
 	}
-fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 
 #ifdef CONFIG_MATCH_IFACE
 	if (exitcode == 0)
 		exitcode = wpa_supplicant_init_match(global);
 #endif /* CONFIG_MATCH_IFACE */
-fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 
 	if (exitcode == 0)
 		exitcode = wpa_supplicant_run(global);
-fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 
 	wpa_supplicant_deinit(global);
-fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 
 	fst_global_deinit();
-fprintf(stderr, "%s:%d\n",__func__,__LINE__);
 
 out:
 	wpa_supplicant_fd_workaround(0);
