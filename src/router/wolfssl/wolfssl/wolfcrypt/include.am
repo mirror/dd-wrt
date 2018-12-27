@@ -75,10 +75,25 @@ noinst_HEADERS+= \
                          wolfssl/wolfcrypt/port/caam/caam_driver.h \
                          wolfssl/wolfcrypt/port/caam/wolfcaam.h \
                          wolfssl/wolfcrypt/port/caam/wolfcaam_sha.h \
-                         wolfssl/wolfcrypt/port/st/stm32.h
+                         wolfssl/wolfcrypt/port/st/stm32.h \
+                         wolfssl/wolfcrypt/port/st/stsafe.h
+
+if BUILD_AFALG
+nobase_include_HEADERS+= wolfssl/wolfcrypt/port/af_alg/afalg_hash.h
+nobase_include_HEADERS+= wolfssl/wolfcrypt/port/af_alg/wc_afalg.h
+endif
+
+if BUILD_DEVCRYPTO
+nobase_include_HEADERS+= wolfssl/wolfcrypt/port/devcrypto/wc_devcrypto.h
+endif
 
 if BUILD_ASYNCCRYPT
 nobase_include_HEADERS+= wolfssl/wolfcrypt/async.h
+endif
+
+if BUILD_PKCS11
+nobase_include_HEADERS+= wolfssl/wolfcrypt/wc_pkcs11.h
+nobase_include_HEADERS+= wolfssl/wolfcrypt/pkcs11.h
 endif
 
 if BUILD_CAVIUM
@@ -102,4 +117,3 @@ endif
 if BUILD_FIPS_V2
 nobase_include_HEADERS+= wolfssl/wolfcrypt/fips.h
 endif
-

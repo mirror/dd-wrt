@@ -50,7 +50,7 @@
 
 #ifndef WOLFSSL_SP_ASM
 #if SP_WORD_SIZE == 64
-#if defined(WOLFSSL_SP_CACHE_RESISTANT) || defined(WOLFSSL_SP_SMALL)
+#if (defined(WOLFSSL_SP_CACHE_RESISTANT) || defined(WOLFSSL_SP_SMALL)) &&                                                !defined(WOLFSSL_RSA_PUBLIC_ONLY)
 /* Mask for address to obfuscate which of the two address will be used. */
 static const size_t addr_mask[2] = { 0, (size_t)-1 };
 #endif
@@ -701,7 +701,8 @@ SP_NOINLINE static void sp_2048_sqr_36(sp_digit* r, const sp_digit* a)
 }
 
 #endif /* WOLFSSL_SP_SMALL */
-#if !defined(SP_RSA_PRIVATE_EXP_D) && defined(WOLFSSL_HAVE_SP_RSA)
+#if !defined(SP_RSA_PRIVATE_EXP_D) && defined(WOLFSSL_HAVE_SP_RSA) && \
+       !defined(WOLFSSL_RSA_PUBLIC_ONLY)
 #ifdef WOLFSSL_SP_SMALL
 /* Add b to a into r. (r = a + b)
  *
@@ -806,7 +807,7 @@ SP_NOINLINE static void sp_2048_sqr_18(sp_digit* r, const sp_digit* a)
 }
 
 #endif /* WOLFSSL_SP_SMALL */
-#endif /* !SP_RSA_PRIVATE_EXP_D && WOLFSSL_HAVE_SP_RSA */
+#endif /* !SP_RSA_PRIVATE_EXP_D && WOLFSSL_HAVE_SP_RSA && !WOLFSSL_RSA_PUBLIC_ONLY */
 
 /* Caclulate the bottom digit of -1/a mod 2^n.
  *
@@ -829,7 +830,62 @@ static void sp_2048_mont_setup(sp_digit* a, sp_digit* rho)
     *rho = (1L << 57) - x;
 }
 
-#if !defined(SP_RSA_PRIVATE_EXP_D) && defined(WOLFSSL_HAVE_SP_RSA)
+/* Multiply a by scalar b into r. (r = a * b)
+ *
+ * r  A single precision integer.
+ * a  A single precision integer.
+ * b  A scalar.
+ */
+SP_NOINLINE static void sp_2048_mul_d_36(sp_digit* r, const sp_digit* a,
+    const sp_digit b)
+{
+#ifdef WOLFSSL_SP_SMALL
+    int128_t tb = b;
+    int128_t t = 0;
+    int i;
+
+    for (i = 0; i < 36; i++) {
+        t += tb * a[i];
+        r[i] = t & 0x1ffffffffffffffl;
+        t >>= 57;
+    }
+    r[36] = (sp_digit)t;
+#else
+    int128_t tb = b;
+    int128_t t[8];
+    int i;
+
+    t[0] = tb * a[0]; r[0] = t[0] & 0x1ffffffffffffffl;
+    for (i = 0; i < 32; i += 8) {
+        t[1] = tb * a[i+1];
+        r[i+1] = (sp_digit)(t[0] >> 57) + (t[1] & 0x1ffffffffffffffl);
+        t[2] = tb * a[i+2];
+        r[i+2] = (sp_digit)(t[1] >> 57) + (t[2] & 0x1ffffffffffffffl);
+        t[3] = tb * a[i+3];
+        r[i+3] = (sp_digit)(t[2] >> 57) + (t[3] & 0x1ffffffffffffffl);
+        t[4] = tb * a[i+4];
+        r[i+4] = (sp_digit)(t[3] >> 57) + (t[4] & 0x1ffffffffffffffl);
+        t[5] = tb * a[i+5];
+        r[i+5] = (sp_digit)(t[4] >> 57) + (t[5] & 0x1ffffffffffffffl);
+        t[6] = tb * a[i+6];
+        r[i+6] = (sp_digit)(t[5] >> 57) + (t[6] & 0x1ffffffffffffffl);
+        t[7] = tb * a[i+7];
+        r[i+7] = (sp_digit)(t[6] >> 57) + (t[7] & 0x1ffffffffffffffl);
+        t[0] = tb * a[i+8];
+        r[i+8] = (sp_digit)(t[7] >> 57) + (t[0] & 0x1ffffffffffffffl);
+    }
+    t[1] = tb * a[33];
+    r[33] = (sp_digit)(t[0] >> 57) + (t[1] & 0x1ffffffffffffffl);
+    t[2] = tb * a[34];
+    r[34] = (sp_digit)(t[1] >> 57) + (t[2] & 0x1ffffffffffffffl);
+    t[3] = tb * a[35];
+    r[35] = (sp_digit)(t[2] >> 57) + (t[3] & 0x1ffffffffffffffl);
+    r[36] =  (sp_digit)(t[3] >> 57);
+#endif /* WOLFSSL_SP_SMALL */
+}
+
+#if !defined(SP_RSA_PRIVATE_EXP_D) && defined(WOLFSSL_HAVE_SP_RSA) && \
+       !defined(WOLFSSL_RSA_PUBLIC_ONLY)
 /* r = 2^n mod m where n is the number of bits to reduce by.
  * Given m must be 2048 bits, just need to subtract.
  *
@@ -1258,7 +1314,8 @@ static int sp_2048_div_18(sp_digit* a, sp_digit* d, sp_digit* m,
     int err = MP_OKAY;
 
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
-    td = XMALLOC(sizeof(sp_digit) * (3 * 18 + 1), NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    td = XMALLOC(sizeof(sp_digit) * (3 * 18 + 1), NULL,
+                                                       DYNAMIC_TYPE_TMP_BUFFER);
     if (td != NULL) {
         t1 = td;
         t2 = td + 2 * 18;
@@ -1593,7 +1650,7 @@ static int sp_2048_mod_exp_18(sp_digit* r, sp_digit* a, sp_digit* e, int bits,
             n |= e[i--] << (7 - c);
             c += 57;
         }
-        y = n >> 59;
+        y = (n >> 59) & 0x1f;
         n <<= 5;
         c -= 5;
         XMEMCPY(rt, t[y], sizeof(rt));
@@ -1630,7 +1687,7 @@ static int sp_2048_mod_exp_18(sp_digit* r, sp_digit* a, sp_digit* e, int bits,
 #endif
 }
 
-#endif /* !SP_RSA_PRIVATE_EXP_D && WOLFSSL_HAVE_SP_RSA */
+#endif /* !SP_RSA_PRIVATE_EXP_D && WOLFSSL_HAVE_SP_RSA && !WOLFSSL_RSA_PUBLIC_ONLY */
 
 /* r = 2^n mod m where n is the number of bits to reduce by.
  * Given m must be 2048 bits, just need to subtract.
@@ -1896,6 +1953,7 @@ static void sp_2048_mont_reduce_36(sp_digit* a, sp_digit* m, sp_digit mp)
     int i;
     sp_digit mu;
 
+#ifdef WOLFSSL_SP_DH
     if (mp != 1) {
         for (i=0; i<35; i++) {
             mu = (a[i] * mp) & 0x1ffffffffffffffl;
@@ -1918,6 +1976,17 @@ static void sp_2048_mont_reduce_36(sp_digit* a, sp_digit* m, sp_digit mp)
         a[i+1] += a[i] >> 57;
         a[i] &= 0x1ffffffffffffffl;
     }
+#else
+    for (i=0; i<35; i++) {
+        mu = (a[i] * mp) & 0x1ffffffffffffffl;
+        sp_2048_mul_add_36(a+i, m, mu);
+        a[i+1] += a[i] >> 57;
+    }
+    mu = (a[i] * mp) & 0x1fffffffffffffl;
+    sp_2048_mul_add_36(a+i, m, mu);
+    a[i+1] += a[i] >> 57;
+    a[i] &= 0x1ffffffffffffffl;
+#endif
 
     sp_2048_mont_shift_36(a, a);
     sp_2048_cond_sub_36(a, a, m, 0 - ((a[35] >> 53) > 0));
@@ -1952,60 +2021,6 @@ static void sp_2048_mont_sqr_36(sp_digit* r, sp_digit* a, sp_digit* m,
 {
     sp_2048_sqr_36(r, a);
     sp_2048_mont_reduce_36(r, m, mp);
-}
-
-/* Multiply a by scalar b into r. (r = a * b)
- *
- * r  A single precision integer.
- * a  A single precision integer.
- * b  A scalar.
- */
-SP_NOINLINE static void sp_2048_mul_d_36(sp_digit* r, const sp_digit* a,
-    const sp_digit b)
-{
-#ifdef WOLFSSL_SP_SMALL
-    int128_t tb = b;
-    int128_t t = 0;
-    int i;
-
-    for (i = 0; i < 36; i++) {
-        t += tb * a[i];
-        r[i] = t & 0x1ffffffffffffffl;
-        t >>= 57;
-    }
-    r[36] = (sp_digit)t;
-#else
-    int128_t tb = b;
-    int128_t t[8];
-    int i;
-
-    t[0] = tb * a[0]; r[0] = t[0] & 0x1ffffffffffffffl;
-    for (i = 0; i < 32; i += 8) {
-        t[1] = tb * a[i+1];
-        r[i+1] = (sp_digit)(t[0] >> 57) + (t[1] & 0x1ffffffffffffffl);
-        t[2] = tb * a[i+2];
-        r[i+2] = (sp_digit)(t[1] >> 57) + (t[2] & 0x1ffffffffffffffl);
-        t[3] = tb * a[i+3];
-        r[i+3] = (sp_digit)(t[2] >> 57) + (t[3] & 0x1ffffffffffffffl);
-        t[4] = tb * a[i+4];
-        r[i+4] = (sp_digit)(t[3] >> 57) + (t[4] & 0x1ffffffffffffffl);
-        t[5] = tb * a[i+5];
-        r[i+5] = (sp_digit)(t[4] >> 57) + (t[5] & 0x1ffffffffffffffl);
-        t[6] = tb * a[i+6];
-        r[i+6] = (sp_digit)(t[5] >> 57) + (t[6] & 0x1ffffffffffffffl);
-        t[7] = tb * a[i+7];
-        r[i+7] = (sp_digit)(t[6] >> 57) + (t[7] & 0x1ffffffffffffffl);
-        t[0] = tb * a[i+8];
-        r[i+8] = (sp_digit)(t[7] >> 57) + (t[0] & 0x1ffffffffffffffl);
-    }
-    t[1] = tb * a[33];
-    r[33] = (sp_digit)(t[0] >> 57) + (t[1] & 0x1ffffffffffffffl);
-    t[2] = tb * a[34];
-    r[34] = (sp_digit)(t[1] >> 57) + (t[2] & 0x1ffffffffffffffl);
-    t[3] = tb * a[35];
-    r[35] = (sp_digit)(t[2] >> 57) + (t[3] & 0x1ffffffffffffffl);
-    r[36] =  (sp_digit)(t[3] >> 57);
-#endif /* WOLFSSL_SP_SMALL */
 }
 
 /* Conditionally add a and b using the mask m.
@@ -2106,7 +2121,8 @@ static int sp_2048_div_36(sp_digit* a, sp_digit* d, sp_digit* m,
     int err = MP_OKAY;
 
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
-    td = XMALLOC(sizeof(sp_digit) * (3 * 36 + 1), NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    td = XMALLOC(sizeof(sp_digit) * (3 * 36 + 1), NULL,
+                                                       DYNAMIC_TYPE_TMP_BUFFER);
     if (td != NULL) {
         t1 = td;
         t2 = td + 2 * 36;
@@ -2442,7 +2458,7 @@ static int sp_2048_mod_exp_36(sp_digit* r, sp_digit* a, sp_digit* e, int bits,
             n |= e[i--] << (7 - c);
             c += 57;
         }
-        y = n >> 59;
+        y = (n >> 59) & 0x1f;
         n <<= 5;
         c -= 5;
         XMEMCPY(rt, t[y], sizeof(rt));
@@ -2480,7 +2496,8 @@ static int sp_2048_mod_exp_36(sp_digit* r, sp_digit* a, sp_digit* e, int bits,
 }
 #endif /* SP_RSA_PRIVATE_EXP_D || WOLFSSL_HAVE_SP_DH */
 
-#if defined(WOLFSSL_HAVE_SP_RSA) && !defined(SP_RSA_PRIVATE_EXP_D)
+#if defined(WOLFSSL_HAVE_SP_RSA) && !defined(SP_RSA_PRIVATE_EXP_D) && \
+           !defined(RSA_LOW_MEM) && !defined(WOLFSSL_RSA_PUBLIC_ONLY)
 /* AND m into each word of a and store in r.
  *
  * r  A single precision integer.
@@ -2548,7 +2565,7 @@ int sp_RsaPublic_2048(const byte* in, word32 inLen, mp_int* em, mp_int* mm,
 
     if (err == MP_OKAY) {
         d = (sp_digit*)XMALLOC(sizeof(sp_digit) * 36 * 5, NULL,
-                               DYNAMIC_TYPE_TMP_BUFFER);
+                                                              DYNAMIC_TYPE_RSA);
         if (d == NULL)
             err = MEMORY_E;
     }
@@ -2602,7 +2619,7 @@ int sp_RsaPublic_2048(const byte* in, word32 inLen, mp_int* em, mp_int* mm,
     }
 
     if (d != NULL)
-        XFREE(d, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+        XFREE(d, NULL, DYNAMIC_TYPE_RSA);
 
     return err;
 #else
@@ -2626,7 +2643,7 @@ int sp_RsaPublic_2048(const byte* in, word32 inLen, mp_int* em, mp_int* mm,
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
     if (err == MP_OKAY) {
         d = (sp_digit*)XMALLOC(sizeof(sp_digit) * 36 * 5, NULL,
-                               DYNAMIC_TYPE_TMP_BUFFER);
+                                                              DYNAMIC_TYPE_RSA);
         if (d == NULL)
             err = MEMORY_E;
     }
@@ -2706,13 +2723,14 @@ int sp_RsaPublic_2048(const byte* in, word32 inLen, mp_int* em, mp_int* mm,
 
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
     if (d != NULL)
-        XFREE(d, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+        XFREE(d, NULL, DYNAMIC_TYPE_RSA);
 #endif
 
     return err;
 #endif /* WOLFSSL_SP_SMALL */
 }
 
+#ifndef WOLFSSL_RSA_PUBLIC_ONLY
 /* RSA private key operation.
  *
  * in      Array of bytes representing the number to exponentiate, base.
@@ -2734,7 +2752,7 @@ int sp_RsaPrivate_2048(const byte* in, word32 inLen, mp_int* dm,
     mp_int* pm, mp_int* qm, mp_int* dpm, mp_int* dqm, mp_int* qim, mp_int* mm,
     byte* out, word32* outLen)
 {
-#ifdef SP_RSA_PRIVATE_EXP_D
+#if defined(SP_RSA_PRIVATE_EXP_D) || defined(RSA_LOW_MEM)
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
     sp_digit* a;
     sp_digit* d = NULL;
@@ -2756,7 +2774,7 @@ int sp_RsaPrivate_2048(const byte* in, word32 inLen, mp_int* dm,
 
     if (err == MP_OKAY) {
         d = (sp_digit*)XMALLOC(sizeof(sp_digit) * 36 * 4, NULL,
-                               DYNAMIC_TYPE_TMP_BUFFER);
+                                                              DYNAMIC_TYPE_RSA);
         if (d == NULL)
             err = MEMORY_E;
     }
@@ -2777,7 +2795,7 @@ int sp_RsaPrivate_2048(const byte* in, word32 inLen, mp_int* dm,
 
     if (d != NULL) {
         XMEMSET(d, 0, sizeof(sp_digit) * 36);
-        XFREE(d, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+        XFREE(d, NULL, DYNAMIC_TYPE_RSA);
     }
 
     return err;
@@ -2839,7 +2857,7 @@ int sp_RsaPrivate_2048(const byte* in, word32 inLen, mp_int* dm,
 
     if (err == MP_OKAY) {
         t = (sp_digit*)XMALLOC(sizeof(sp_digit) * 18 * 11, NULL,
-                               DYNAMIC_TYPE_TMP_BUFFER);
+                                                              DYNAMIC_TYPE_RSA);
         if (t == NULL)
             err = MEMORY_E;
     }
@@ -2885,7 +2903,7 @@ int sp_RsaPrivate_2048(const byte* in, word32 inLen, mp_int* dm,
 
     if (t != NULL) {
         XMEMSET(t, 0, sizeof(sp_digit) * 18 * 11);
-        XFREE(t, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+        XFREE(t, NULL, DYNAMIC_TYPE_RSA);
     }
 
     return err;
@@ -2944,9 +2962,10 @@ int sp_RsaPrivate_2048(const byte* in, word32 inLen, mp_int* dm,
 
     return err;
 #endif /* WOLFSSL_SP_SMALL || defined(WOLFSSL_SMALL_STACK) */
-#endif /* SP_RSA_PRIVATE_EXP_D */
+#endif /* SP_RSA_PRIVATE_EXP_D || RSA_LOW_MEM */
 }
 
+#endif /* !WOLFSSL_RSA_PUBLIC_ONLY */
 #endif /* WOLFSSL_HAVE_SP_RSA */
 #ifdef WOLFSSL_HAVE_SP_DH
 /* Convert an array of sp_digit to an mp_int.
@@ -3033,8 +3052,7 @@ int sp_ModExp_2048(mp_int* base, mp_int* exp, mp_int* mod, mp_int* res)
     }
 
     if (err == MP_OKAY) {
-        d = (sp_digit*)XMALLOC(sizeof(*d) * 36 * 4, NULL,
-                               DYNAMIC_TYPE_TMP_BUFFER);
+        d = (sp_digit*)XMALLOC(sizeof(*d) * 36 * 4, NULL, DYNAMIC_TYPE_DH);
         if (d == NULL)
             err = MEMORY_E;
     }
@@ -3058,7 +3076,7 @@ int sp_ModExp_2048(mp_int* base, mp_int* exp, mp_int* mod, mp_int* res)
 
     if (d != NULL) {
         XMEMSET(e, 0, sizeof(sp_digit) * 36);
-        XFREE(d, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+        XFREE(d, NULL, DYNAMIC_TYPE_DH);
     }
     return err;
 #else
@@ -3081,8 +3099,7 @@ int sp_ModExp_2048(mp_int* base, mp_int* exp, mp_int* mod, mp_int* res)
 
 #ifdef WOLFSSL_SMALL_STACK
     if (err == MP_OKAY) {
-        d = (sp_digit*)XMALLOC(sizeof(*d) * 36 * 4, NULL,
-                               DYNAMIC_TYPE_TMP_BUFFER);
+        d = (sp_digit*)XMALLOC(sizeof(*d) * 36 * 4, NULL, DYNAMIC_TYPE_DH);
         if (d == NULL)
             err = MEMORY_E;
     }
@@ -3115,7 +3132,7 @@ int sp_ModExp_2048(mp_int* base, mp_int* exp, mp_int* mod, mp_int* res)
 
 #ifdef WOLFSSL_SMALL_STACK
     if (d != NULL)
-        XFREE(d, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+        XFREE(d, NULL, DYNAMIC_TYPE_DH);
 #endif
 
     return err;
@@ -3152,8 +3169,7 @@ int sp_DhExp_2048(mp_int* base, const byte* exp, word32 expLen,
     }
 
     if (err == MP_OKAY) {
-        d = (sp_digit*)XMALLOC(sizeof(*d) * 36 * 4, NULL,
-                               DYNAMIC_TYPE_TMP_BUFFER);
+        d = (sp_digit*)XMALLOC(sizeof(*d) * 36 * 4, NULL, DYNAMIC_TYPE_DH);
         if (d == NULL)
             err = MEMORY_E;
     }
@@ -3182,7 +3198,7 @@ int sp_DhExp_2048(mp_int* base, const byte* exp, word32 expLen,
 
     if (d != NULL) {
         XMEMSET(e, 0, sizeof(sp_digit) * 36);
-        XFREE(d, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+        XFREE(d, NULL, DYNAMIC_TYPE_DH);
     }
     return err;
 #else
@@ -3205,8 +3221,7 @@ int sp_DhExp_2048(mp_int* base, const byte* exp, word32 expLen,
 
 #ifdef WOLFSSL_SMALL_STACK
     if (err == MP_OKAY) {
-        d = (sp_digit*)XMALLOC(sizeof(*d) * 36 * 4, NULL,
-                               DYNAMIC_TYPE_TMP_BUFFER);
+        d = (sp_digit*)XMALLOC(sizeof(*d) * 36 * 4, NULL, DYNAMIC_TYPE_DH);
         if (d == NULL)
             err = MEMORY_E;
     }
@@ -3244,7 +3259,7 @@ int sp_DhExp_2048(mp_int* base, const byte* exp, word32 expLen,
 
 #ifdef WOLFSSL_SMALL_STACK
     if (d != NULL)
-        XFREE(d, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+        XFREE(d, NULL, DYNAMIC_TYPE_DH);
 #endif
 
     return err;
@@ -4012,7 +4027,8 @@ SP_NOINLINE static void sp_3072_sqr_54(sp_digit* r, const sp_digit* a)
 }
 
 #endif /* WOLFSSL_SP_SMALL */
-#if !defined(SP_RSA_PRIVATE_EXP_D) && defined(WOLFSSL_HAVE_SP_RSA)
+#if !defined(SP_RSA_PRIVATE_EXP_D) && defined(WOLFSSL_HAVE_SP_RSA) && \
+       !defined(WOLFSSL_RSA_PUBLIC_ONLY)
 #ifdef WOLFSSL_SP_SMALL
 /* Add b to a into r. (r = a + b)
  *
@@ -4226,7 +4242,7 @@ SP_NOINLINE static void sp_3072_sqr_27(sp_digit* r, const sp_digit* a)
 }
 
 #endif /* WOLFSSL_SP_SMALL */
-#endif /* !SP_RSA_PRIVATE_EXP_D && WOLFSSL_HAVE_SP_RSA */
+#endif /* !SP_RSA_PRIVATE_EXP_D && WOLFSSL_HAVE_SP_RSA && !WOLFSSL_RSA_PUBLIC_ONLY */
 
 /* Caclulate the bottom digit of -1/a mod 2^n.
  *
@@ -4249,7 +4265,66 @@ static void sp_3072_mont_setup(sp_digit* a, sp_digit* rho)
     *rho = (1L << 57) - x;
 }
 
-#if !defined(SP_RSA_PRIVATE_EXP_D) && defined(WOLFSSL_HAVE_SP_RSA)
+/* Multiply a by scalar b into r. (r = a * b)
+ *
+ * r  A single precision integer.
+ * a  A single precision integer.
+ * b  A scalar.
+ */
+SP_NOINLINE static void sp_3072_mul_d_54(sp_digit* r, const sp_digit* a,
+    const sp_digit b)
+{
+#ifdef WOLFSSL_SP_SMALL
+    int128_t tb = b;
+    int128_t t = 0;
+    int i;
+
+    for (i = 0; i < 54; i++) {
+        t += tb * a[i];
+        r[i] = t & 0x1ffffffffffffffl;
+        t >>= 57;
+    }
+    r[54] = (sp_digit)t;
+#else
+    int128_t tb = b;
+    int128_t t[8];
+    int i;
+
+    t[0] = tb * a[0]; r[0] = t[0] & 0x1ffffffffffffffl;
+    for (i = 0; i < 48; i += 8) {
+        t[1] = tb * a[i+1];
+        r[i+1] = (sp_digit)(t[0] >> 57) + (t[1] & 0x1ffffffffffffffl);
+        t[2] = tb * a[i+2];
+        r[i+2] = (sp_digit)(t[1] >> 57) + (t[2] & 0x1ffffffffffffffl);
+        t[3] = tb * a[i+3];
+        r[i+3] = (sp_digit)(t[2] >> 57) + (t[3] & 0x1ffffffffffffffl);
+        t[4] = tb * a[i+4];
+        r[i+4] = (sp_digit)(t[3] >> 57) + (t[4] & 0x1ffffffffffffffl);
+        t[5] = tb * a[i+5];
+        r[i+5] = (sp_digit)(t[4] >> 57) + (t[5] & 0x1ffffffffffffffl);
+        t[6] = tb * a[i+6];
+        r[i+6] = (sp_digit)(t[5] >> 57) + (t[6] & 0x1ffffffffffffffl);
+        t[7] = tb * a[i+7];
+        r[i+7] = (sp_digit)(t[6] >> 57) + (t[7] & 0x1ffffffffffffffl);
+        t[0] = tb * a[i+8];
+        r[i+8] = (sp_digit)(t[7] >> 57) + (t[0] & 0x1ffffffffffffffl);
+    }
+    t[1] = tb * a[49];
+    r[49] = (sp_digit)(t[0] >> 57) + (t[1] & 0x1ffffffffffffffl);
+    t[2] = tb * a[50];
+    r[50] = (sp_digit)(t[1] >> 57) + (t[2] & 0x1ffffffffffffffl);
+    t[3] = tb * a[51];
+    r[51] = (sp_digit)(t[2] >> 57) + (t[3] & 0x1ffffffffffffffl);
+    t[4] = tb * a[52];
+    r[52] = (sp_digit)(t[3] >> 57) + (t[4] & 0x1ffffffffffffffl);
+    t[5] = tb * a[53];
+    r[53] = (sp_digit)(t[4] >> 57) + (t[5] & 0x1ffffffffffffffl);
+    r[54] =  (sp_digit)(t[5] >> 57);
+#endif /* WOLFSSL_SP_SMALL */
+}
+
+#if !defined(SP_RSA_PRIVATE_EXP_D) && defined(WOLFSSL_HAVE_SP_RSA) && \
+       !defined(WOLFSSL_RSA_PUBLIC_ONLY)
 /* r = 2^n mod m where n is the number of bits to reduce by.
  * Given m must be 3072 bits, just need to subtract.
  *
@@ -4663,7 +4738,8 @@ static int sp_3072_div_27(sp_digit* a, sp_digit* d, sp_digit* m,
     int err = MP_OKAY;
 
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
-    td = XMALLOC(sizeof(sp_digit) * (3 * 27 + 1), NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    td = XMALLOC(sizeof(sp_digit) * (3 * 27 + 1), NULL,
+                                                       DYNAMIC_TYPE_TMP_BUFFER);
     if (td != NULL) {
         t1 = td;
         t2 = td + 2 * 27;
@@ -4998,7 +5074,7 @@ static int sp_3072_mod_exp_27(sp_digit* r, sp_digit* a, sp_digit* e, int bits,
             n |= e[i--] << (7 - c);
             c += 57;
         }
-        y = n >> 59;
+        y = (n >> 59) & 0x1f;
         n <<= 5;
         c -= 5;
         XMEMCPY(rt, t[y], sizeof(rt));
@@ -5035,7 +5111,7 @@ static int sp_3072_mod_exp_27(sp_digit* r, sp_digit* a, sp_digit* e, int bits,
 #endif
 }
 
-#endif /* !SP_RSA_PRIVATE_EXP_D && WOLFSSL_HAVE_SP_RSA */
+#endif /* !SP_RSA_PRIVATE_EXP_D && WOLFSSL_HAVE_SP_RSA && !WOLFSSL_RSA_PUBLIC_ONLY */
 
 /* r = 2^n mod m where n is the number of bits to reduce by.
  * Given m must be 3072 bits, just need to subtract.
@@ -5308,6 +5384,7 @@ static void sp_3072_mont_reduce_54(sp_digit* a, sp_digit* m, sp_digit mp)
     int i;
     sp_digit mu;
 
+#ifdef WOLFSSL_SP_DH
     if (mp != 1) {
         for (i=0; i<53; i++) {
             mu = (a[i] * mp) & 0x1ffffffffffffffl;
@@ -5330,6 +5407,17 @@ static void sp_3072_mont_reduce_54(sp_digit* a, sp_digit* m, sp_digit mp)
         a[i+1] += a[i] >> 57;
         a[i] &= 0x1ffffffffffffffl;
     }
+#else
+    for (i=0; i<53; i++) {
+        mu = (a[i] * mp) & 0x1ffffffffffffffl;
+        sp_3072_mul_add_54(a+i, m, mu);
+        a[i+1] += a[i] >> 57;
+    }
+    mu = (a[i] * mp) & 0x7ffffffffffffl;
+    sp_3072_mul_add_54(a+i, m, mu);
+    a[i+1] += a[i] >> 57;
+    a[i] &= 0x1ffffffffffffffl;
+#endif
 
     sp_3072_mont_shift_54(a, a);
     sp_3072_cond_sub_54(a, a, m, 0 - ((a[53] >> 51) > 0));
@@ -5364,64 +5452,6 @@ static void sp_3072_mont_sqr_54(sp_digit* r, sp_digit* a, sp_digit* m,
 {
     sp_3072_sqr_54(r, a);
     sp_3072_mont_reduce_54(r, m, mp);
-}
-
-/* Multiply a by scalar b into r. (r = a * b)
- *
- * r  A single precision integer.
- * a  A single precision integer.
- * b  A scalar.
- */
-SP_NOINLINE static void sp_3072_mul_d_54(sp_digit* r, const sp_digit* a,
-    const sp_digit b)
-{
-#ifdef WOLFSSL_SP_SMALL
-    int128_t tb = b;
-    int128_t t = 0;
-    int i;
-
-    for (i = 0; i < 54; i++) {
-        t += tb * a[i];
-        r[i] = t & 0x1ffffffffffffffl;
-        t >>= 57;
-    }
-    r[54] = (sp_digit)t;
-#else
-    int128_t tb = b;
-    int128_t t[8];
-    int i;
-
-    t[0] = tb * a[0]; r[0] = t[0] & 0x1ffffffffffffffl;
-    for (i = 0; i < 48; i += 8) {
-        t[1] = tb * a[i+1];
-        r[i+1] = (sp_digit)(t[0] >> 57) + (t[1] & 0x1ffffffffffffffl);
-        t[2] = tb * a[i+2];
-        r[i+2] = (sp_digit)(t[1] >> 57) + (t[2] & 0x1ffffffffffffffl);
-        t[3] = tb * a[i+3];
-        r[i+3] = (sp_digit)(t[2] >> 57) + (t[3] & 0x1ffffffffffffffl);
-        t[4] = tb * a[i+4];
-        r[i+4] = (sp_digit)(t[3] >> 57) + (t[4] & 0x1ffffffffffffffl);
-        t[5] = tb * a[i+5];
-        r[i+5] = (sp_digit)(t[4] >> 57) + (t[5] & 0x1ffffffffffffffl);
-        t[6] = tb * a[i+6];
-        r[i+6] = (sp_digit)(t[5] >> 57) + (t[6] & 0x1ffffffffffffffl);
-        t[7] = tb * a[i+7];
-        r[i+7] = (sp_digit)(t[6] >> 57) + (t[7] & 0x1ffffffffffffffl);
-        t[0] = tb * a[i+8];
-        r[i+8] = (sp_digit)(t[7] >> 57) + (t[0] & 0x1ffffffffffffffl);
-    }
-    t[1] = tb * a[49];
-    r[49] = (sp_digit)(t[0] >> 57) + (t[1] & 0x1ffffffffffffffl);
-    t[2] = tb * a[50];
-    r[50] = (sp_digit)(t[1] >> 57) + (t[2] & 0x1ffffffffffffffl);
-    t[3] = tb * a[51];
-    r[51] = (sp_digit)(t[2] >> 57) + (t[3] & 0x1ffffffffffffffl);
-    t[4] = tb * a[52];
-    r[52] = (sp_digit)(t[3] >> 57) + (t[4] & 0x1ffffffffffffffl);
-    t[5] = tb * a[53];
-    r[53] = (sp_digit)(t[4] >> 57) + (t[5] & 0x1ffffffffffffffl);
-    r[54] =  (sp_digit)(t[5] >> 57);
-#endif /* WOLFSSL_SP_SMALL */
 }
 
 /* Conditionally add a and b using the mask m.
@@ -5487,7 +5517,8 @@ static int sp_3072_div_54(sp_digit* a, sp_digit* d, sp_digit* m,
     int err = MP_OKAY;
 
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
-    td = XMALLOC(sizeof(sp_digit) * (3 * 54 + 1), NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    td = XMALLOC(sizeof(sp_digit) * (3 * 54 + 1), NULL,
+                                                       DYNAMIC_TYPE_TMP_BUFFER);
     if (td != NULL) {
         t1 = td;
         t2 = td + 2 * 54;
@@ -5823,7 +5854,7 @@ static int sp_3072_mod_exp_54(sp_digit* r, sp_digit* a, sp_digit* e, int bits,
             n |= e[i--] << (7 - c);
             c += 57;
         }
-        y = n >> 59;
+        y = (n >> 59) & 0x1f;
         n <<= 5;
         c -= 5;
         XMEMCPY(rt, t[y], sizeof(rt));
@@ -5861,7 +5892,8 @@ static int sp_3072_mod_exp_54(sp_digit* r, sp_digit* a, sp_digit* e, int bits,
 }
 #endif /* SP_RSA_PRIVATE_EXP_D || WOLFSSL_HAVE_SP_DH */
 
-#if defined(WOLFSSL_HAVE_SP_RSA) && !defined(SP_RSA_PRIVATE_EXP_D)
+#if defined(WOLFSSL_HAVE_SP_RSA) && !defined(SP_RSA_PRIVATE_EXP_D) && \
+           !defined(RSA_LOW_MEM) && !defined(WOLFSSL_RSA_PUBLIC_ONLY)
 /* AND m into each word of a and store in r.
  *
  * r  A single precision integer.
@@ -5930,7 +5962,7 @@ int sp_RsaPublic_3072(const byte* in, word32 inLen, mp_int* em, mp_int* mm,
 
     if (err == MP_OKAY) {
         d = (sp_digit*)XMALLOC(sizeof(sp_digit) * 54 * 5, NULL,
-                               DYNAMIC_TYPE_TMP_BUFFER);
+                                                              DYNAMIC_TYPE_RSA);
         if (d == NULL)
             err = MEMORY_E;
     }
@@ -5984,7 +6016,7 @@ int sp_RsaPublic_3072(const byte* in, word32 inLen, mp_int* em, mp_int* mm,
     }
 
     if (d != NULL)
-        XFREE(d, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+        XFREE(d, NULL, DYNAMIC_TYPE_RSA);
 
     return err;
 #else
@@ -6008,7 +6040,7 @@ int sp_RsaPublic_3072(const byte* in, word32 inLen, mp_int* em, mp_int* mm,
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
     if (err == MP_OKAY) {
         d = (sp_digit*)XMALLOC(sizeof(sp_digit) * 54 * 5, NULL,
-                               DYNAMIC_TYPE_TMP_BUFFER);
+                                                              DYNAMIC_TYPE_RSA);
         if (d == NULL)
             err = MEMORY_E;
     }
@@ -6088,13 +6120,14 @@ int sp_RsaPublic_3072(const byte* in, word32 inLen, mp_int* em, mp_int* mm,
 
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
     if (d != NULL)
-        XFREE(d, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+        XFREE(d, NULL, DYNAMIC_TYPE_RSA);
 #endif
 
     return err;
 #endif /* WOLFSSL_SP_SMALL */
 }
 
+#ifndef WOLFSSL_RSA_PUBLIC_ONLY
 /* RSA private key operation.
  *
  * in      Array of bytes representing the number to exponentiate, base.
@@ -6116,7 +6149,7 @@ int sp_RsaPrivate_3072(const byte* in, word32 inLen, mp_int* dm,
     mp_int* pm, mp_int* qm, mp_int* dpm, mp_int* dqm, mp_int* qim, mp_int* mm,
     byte* out, word32* outLen)
 {
-#ifdef SP_RSA_PRIVATE_EXP_D
+#if defined(SP_RSA_PRIVATE_EXP_D) || defined(RSA_LOW_MEM)
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
     sp_digit* a;
     sp_digit* d = NULL;
@@ -6138,7 +6171,7 @@ int sp_RsaPrivate_3072(const byte* in, word32 inLen, mp_int* dm,
 
     if (err == MP_OKAY) {
         d = (sp_digit*)XMALLOC(sizeof(sp_digit) * 54 * 4, NULL,
-                               DYNAMIC_TYPE_TMP_BUFFER);
+                                                              DYNAMIC_TYPE_RSA);
         if (d == NULL)
             err = MEMORY_E;
     }
@@ -6159,7 +6192,7 @@ int sp_RsaPrivate_3072(const byte* in, word32 inLen, mp_int* dm,
 
     if (d != NULL) {
         XMEMSET(d, 0, sizeof(sp_digit) * 54);
-        XFREE(d, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+        XFREE(d, NULL, DYNAMIC_TYPE_RSA);
     }
 
     return err;
@@ -6221,7 +6254,7 @@ int sp_RsaPrivate_3072(const byte* in, word32 inLen, mp_int* dm,
 
     if (err == MP_OKAY) {
         t = (sp_digit*)XMALLOC(sizeof(sp_digit) * 27 * 11, NULL,
-                               DYNAMIC_TYPE_TMP_BUFFER);
+                                                              DYNAMIC_TYPE_RSA);
         if (t == NULL)
             err = MEMORY_E;
     }
@@ -6267,7 +6300,7 @@ int sp_RsaPrivate_3072(const byte* in, word32 inLen, mp_int* dm,
 
     if (t != NULL) {
         XMEMSET(t, 0, sizeof(sp_digit) * 27 * 11);
-        XFREE(t, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+        XFREE(t, NULL, DYNAMIC_TYPE_RSA);
     }
 
     return err;
@@ -6326,9 +6359,10 @@ int sp_RsaPrivate_3072(const byte* in, word32 inLen, mp_int* dm,
 
     return err;
 #endif /* WOLFSSL_SP_SMALL || defined(WOLFSSL_SMALL_STACK) */
-#endif /* SP_RSA_PRIVATE_EXP_D */
+#endif /* SP_RSA_PRIVATE_EXP_D || RSA_LOW_MEM */
 }
 
+#endif /* !WOLFSSL_RSA_PUBLIC_ONLY */
 #endif /* WOLFSSL_HAVE_SP_RSA */
 #ifdef WOLFSSL_HAVE_SP_DH
 /* Convert an array of sp_digit to an mp_int.
@@ -6415,8 +6449,7 @@ int sp_ModExp_3072(mp_int* base, mp_int* exp, mp_int* mod, mp_int* res)
     }
 
     if (err == MP_OKAY) {
-        d = (sp_digit*)XMALLOC(sizeof(*d) * 54 * 4, NULL,
-                               DYNAMIC_TYPE_TMP_BUFFER);
+        d = (sp_digit*)XMALLOC(sizeof(*d) * 54 * 4, NULL, DYNAMIC_TYPE_DH);
         if (d == NULL)
             err = MEMORY_E;
     }
@@ -6440,7 +6473,7 @@ int sp_ModExp_3072(mp_int* base, mp_int* exp, mp_int* mod, mp_int* res)
 
     if (d != NULL) {
         XMEMSET(e, 0, sizeof(sp_digit) * 54);
-        XFREE(d, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+        XFREE(d, NULL, DYNAMIC_TYPE_DH);
     }
     return err;
 #else
@@ -6463,8 +6496,7 @@ int sp_ModExp_3072(mp_int* base, mp_int* exp, mp_int* mod, mp_int* res)
 
 #ifdef WOLFSSL_SMALL_STACK
     if (err == MP_OKAY) {
-        d = (sp_digit*)XMALLOC(sizeof(*d) * 54 * 4, NULL,
-                               DYNAMIC_TYPE_TMP_BUFFER);
+        d = (sp_digit*)XMALLOC(sizeof(*d) * 54 * 4, NULL, DYNAMIC_TYPE_DH);
         if (d == NULL)
             err = MEMORY_E;
     }
@@ -6497,7 +6529,7 @@ int sp_ModExp_3072(mp_int* base, mp_int* exp, mp_int* mod, mp_int* res)
 
 #ifdef WOLFSSL_SMALL_STACK
     if (d != NULL)
-        XFREE(d, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+        XFREE(d, NULL, DYNAMIC_TYPE_DH);
 #endif
 
     return err;
@@ -6534,8 +6566,7 @@ int sp_DhExp_3072(mp_int* base, const byte* exp, word32 expLen,
     }
 
     if (err == MP_OKAY) {
-        d = (sp_digit*)XMALLOC(sizeof(*d) * 54 * 4, NULL,
-                               DYNAMIC_TYPE_TMP_BUFFER);
+        d = (sp_digit*)XMALLOC(sizeof(*d) * 54 * 4, NULL, DYNAMIC_TYPE_DH);
         if (d == NULL)
             err = MEMORY_E;
     }
@@ -6564,7 +6595,7 @@ int sp_DhExp_3072(mp_int* base, const byte* exp, word32 expLen,
 
     if (d != NULL) {
         XMEMSET(e, 0, sizeof(sp_digit) * 54);
-        XFREE(d, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+        XFREE(d, NULL, DYNAMIC_TYPE_DH);
     }
     return err;
 #else
@@ -6587,8 +6618,7 @@ int sp_DhExp_3072(mp_int* base, const byte* exp, word32 expLen,
 
 #ifdef WOLFSSL_SMALL_STACK
     if (err == MP_OKAY) {
-        d = (sp_digit*)XMALLOC(sizeof(*d) * 54 * 4, NULL,
-                               DYNAMIC_TYPE_TMP_BUFFER);
+        d = (sp_digit*)XMALLOC(sizeof(*d) * 54 * 4, NULL, DYNAMIC_TYPE_DH);
         if (d == NULL)
             err = MEMORY_E;
     }
@@ -6626,7 +6656,7 @@ int sp_DhExp_3072(mp_int* base, const byte* exp, word32 expLen,
 
 #ifdef WOLFSSL_SMALL_STACK
     if (d != NULL)
-        XFREE(d, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+        XFREE(d, NULL, DYNAMIC_TYPE_DH);
 #endif
 
     return err;
@@ -7094,6 +7124,8 @@ static void sp_256_cond_sub_5(sp_digit* r, const sp_digit* a,
     r[ 4] = a[ 4] - (b[ 4] & m);
 #endif /* WOLFSSL_SP_SMALL */
 }
+
+#define sp_256_mont_reduce_order_5         sp_256_mont_reduce_5
 
 /* Mul a by scalar b and add into r. (r += a * b)
  *
@@ -7732,8 +7764,7 @@ static void sp_256_div2_5(sp_digit* r, sp_digit* a, sp_digit* m)
  */
 static void sp_256_proj_point_dbl_5(sp_point* r, sp_point* p, sp_digit* t)
 {
-    sp_point *rp[2];
-    sp_point tp;
+    sp_point* rp[2];
     sp_digit* t1 = t;
     sp_digit* t2 = t + 2*5;
     sp_digit* x;
@@ -7743,7 +7774,8 @@ static void sp_256_proj_point_dbl_5(sp_point* r, sp_point* p, sp_digit* t)
 
     /* When infinity don't double point passed in - constant time. */
     rp[0] = r;
-    rp[1] = &tp;
+    rp[1] = (sp_point*)t;
+    XMEMSET(rp[1], 0, sizeof(sp_point));
     x = rp[p->infinity]->x;
     y = rp[p->infinity]->y;
     z = rp[p->infinity]->z;
@@ -7820,9 +7852,8 @@ static int sp_256_cmp_equal_5(const sp_digit* a, const sp_digit* b)
 static void sp_256_proj_point_add_5(sp_point* r, sp_point* p, sp_point* q,
         sp_digit* t)
 {
-    sp_point *ap[2];
-    sp_point *rp[2];
-    sp_point tp;
+    sp_point* ap[2];
+    sp_point* rp[2];
     sp_digit* t1 = t;
     sp_digit* t2 = t + 2*5;
     sp_digit* t3 = t + 4*5;
@@ -7849,8 +7880,8 @@ static void sp_256_proj_point_add_5(sp_point* r, sp_point* p, sp_point* q,
     }
     else {
         rp[0] = r;
-        rp[1] = &tp;
-        XMEMSET(&tp, 0, sizeof(tp));
+        rp[1] = (sp_point*)t;
+        XMEMSET(rp[1], 0, sizeof(sp_point));
         x = rp[p->infinity | q->infinity]->x;
         y = rp[p->infinity | q->infinity]->y;
         z = rp[p->infinity | q->infinity]->z;
@@ -7928,7 +7959,7 @@ static int sp_256_ecc_mulmod_5(sp_point* r, sp_point* g, sp_digit* k,
     if (td == NULL)
         err = MEMORY_E;
     tmp = (sp_digit*)XMALLOC(sizeof(sp_digit) * 2 * 5 * 5, heap,
-                             DYNAMIC_TYPE_ECC);
+                                                              DYNAMIC_TYPE_ECC);
     if (tmp == NULL)
         err = MEMORY_E;
 
@@ -7984,11 +8015,11 @@ static int sp_256_ecc_mulmod_5(sp_point* r, sp_point* g, sp_digit* k,
 
     if (tmp != NULL) {
         XMEMSET(tmp, 0, sizeof(sp_digit) * 2 * 5 * 5);
-        XFREE(tmp, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+        XFREE(tmp, NULL, DYNAMIC_TYPE_ECC);
     }
     if (td != NULL) {
         XMEMSET(td, 0, sizeof(sp_point) * 3);
-        XFREE(td, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+        XFREE(td, NULL, DYNAMIC_TYPE_ECC);
     }
 
     return err;
@@ -8073,7 +8104,7 @@ static int sp_256_ecc_mulmod_5(sp_point* r, sp_point* g, sp_digit* k,
                                  ((size_t)&t[1] & addr_mask[y])), sizeof(t[2]));
             sp_256_proj_point_dbl_5(&t[2], &t[2], tmp);
             XMEMCPY((void*)(((size_t)&t[0] & addr_mask[y^1]) +
-                           ((size_t)&t[1] & addr_mask[y])), &t[2], sizeof(t[2]));
+                          ((size_t)&t[1] & addr_mask[y])), &t[2], sizeof(t[2]));
         }
 
         if (map)
@@ -8245,8 +8276,7 @@ static int sp_256_ecc_mulmod_fast_5(sp_point* r, sp_point* g, sp_digit* k,
 static void sp_256_proj_point_dbl_n_5(sp_point* r, sp_point* p, int n,
         sp_digit* t)
 {
-    sp_point *rp[2];
-    sp_point tp;
+    sp_point* rp[2];
     sp_digit* w = t;
     sp_digit* a = t + 2*5;
     sp_digit* b = t + 4*5;
@@ -8258,7 +8288,8 @@ static void sp_256_proj_point_dbl_n_5(sp_point* r, sp_point* p, int n,
     int i;
 
     rp[0] = r;
-    rp[1] = &tp;
+    rp[1] = (sp_point*)t;
+    XMEMSET(rp[1], 0, sizeof(sp_point));
     x = rp[p->infinity]->x;
     y = rp[p->infinity]->y;
     z = rp[p->infinity]->z;
@@ -8320,9 +8351,8 @@ static void sp_256_proj_point_dbl_n_5(sp_point* r, sp_point* p, int n,
 static void sp_256_proj_point_add_qz1_5(sp_point* r, sp_point* p,
         sp_point* q, sp_digit* t)
 {
-    sp_point *ap[2];
-    sp_point *rp[2];
-    sp_point tp;
+    sp_point* ap[2];
+    sp_point* rp[2];
     sp_digit* t1 = t;
     sp_digit* t2 = t + 2*5;
     sp_digit* t3 = t + 4*5;
@@ -8342,8 +8372,8 @@ static void sp_256_proj_point_add_qz1_5(sp_point* r, sp_point* p,
     }
     else {
         rp[0] = r;
-        rp[1] = &tp;
-        XMEMSET(&tp, 0, sizeof(tp));
+        rp[1] = (sp_point*)t;
+        XMEMSET(rp[1], 0, sizeof(sp_point));
         x = rp[p->infinity | q->infinity]->x;
         y = rp[p->infinity | q->infinity]->y;
         z = rp[p->infinity | q->infinity]->z;
@@ -8717,9 +8747,6 @@ int sp_ecc_mulmod_256(mp_int* km, ecc_point* gm, ecc_point* r, int map,
     sp_point* point;
     sp_digit* k = NULL;
     int err = MP_OKAY;
-#ifdef HAVE_INTEL_AVX2
-    word32 cpuid_flags = cpuid_get_flags();
-#endif
 
     err = sp_ecc_point_new(heap, p, point);
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
@@ -8735,11 +8762,6 @@ int sp_ecc_mulmod_256(mp_int* km, ecc_point* gm, ecc_point* r, int map,
         sp_256_from_mp(k, 5, km);
         sp_256_point_from_ecc_point_5(point, gm);
 
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-            err = sp_256_ecc_mulmod_avx2_5(point, point, k, map, heap);
-        else
-#endif
             err = sp_256_ecc_mulmod_5(point, point, k, map, heap);
     }
     if (err == MP_OKAY)
@@ -10345,9 +10367,6 @@ int sp_ecc_mulmod_base_256(mp_int* km, ecc_point* r, int map, void* heap)
     sp_point* point;
     sp_digit* k = NULL;
     int err = MP_OKAY;
-#ifdef HAVE_INTEL_AVX2
-    word32 cpuid_flags = cpuid_get_flags();
-#endif
 
     err = sp_ecc_point_new(heap, p, point);
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
@@ -10362,11 +10381,6 @@ int sp_ecc_mulmod_base_256(mp_int* km, ecc_point* r, int map, void* heap)
     if (err == MP_OKAY) {
         sp_256_from_mp(k, 5, km);
 
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-            err = sp_256_ecc_mulmod_base_avx2_5(point, k, map, heap);
-        else
-#endif
             err = sp_256_ecc_mulmod_base_5(point, k, map, heap);
     }
     if (err == MP_OKAY)
@@ -10485,9 +10499,6 @@ int sp_ecc_make_key_256(WC_RNG* rng, mp_int* priv, ecc_point* pub, void* heap)
     sp_point* infinity;
 #endif
     int err;
-#ifdef HAVE_INTEL_AVX2
-    word32 cpuid_flags = cpuid_get_flags();
-#endif
 
     (void)heap;
 
@@ -10509,23 +10520,11 @@ int sp_ecc_make_key_256(WC_RNG* rng, mp_int* priv, ecc_point* pub, void* heap)
     if (err == MP_OKAY)
         err = sp_256_ecc_gen_k_5(rng, k);
     if (err == MP_OKAY) {
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-            err = sp_256_ecc_mulmod_base_avx2_5(point, k, 1, NULL);
-        else
-#endif
             err = sp_256_ecc_mulmod_base_5(point, k, 1, NULL);
     }
 
 #ifdef WOLFSSL_VALIDATE_ECC_KEYGEN
     if (err == MP_OKAY) {
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags)) {
-            err = sp_256_ecc_mulmod_avx2_5(infinity, point, p256_order, 1,
-                                                                          NULL);
-        }
-        else
-#endif
             err = sp_256_ecc_mulmod_5(infinity, point, p256_order, 1, NULL);
     }
     if (err == MP_OKAY) {
@@ -10608,9 +10607,6 @@ int sp_ecc_secret_gen_256(mp_int* priv, ecc_point* pub, byte* out,
     sp_point* point = NULL;
     sp_digit* k = NULL;
     int err = MP_OKAY;
-#ifdef HAVE_INTEL_AVX2
-    word32 cpuid_flags = cpuid_get_flags();
-#endif
 
     if (*outLen < 32)
         err = BUFFER_E;
@@ -10630,11 +10626,6 @@ int sp_ecc_secret_gen_256(mp_int* priv, ecc_point* pub, byte* out,
     if (err == MP_OKAY) {
         sp_256_from_mp(k, 5, priv);
         sp_256_point_from_ecc_point_5(point, pub);
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-            err = sp_256_ecc_mulmod_avx2_5(point, point, k, 1, heap);
-        else
-#endif
             err = sp_256_ecc_mulmod_5(point, point, k, 1, heap);
     }
     if (err == MP_OKAY) {
@@ -10653,8 +10644,6 @@ int sp_ecc_secret_gen_256(mp_int* priv, ecc_point* pub, byte* out,
 #endif /* HAVE_ECC_DHE */
 
 #if defined(HAVE_ECC_SIGN) || defined(HAVE_ECC_VERIFY)
-#ifdef HAVE_INTEL_AVX2
-#endif /* HAVE_INTEL_AVX2 */
 #endif
 #if defined(HAVE_ECC_SIGN) || defined(HAVE_ECC_VERIFY)
 /* Multiply a by scalar b into r. (r = a * b)
@@ -10720,7 +10709,8 @@ static int sp_256_div_5(sp_digit* a, sp_digit* d, sp_digit* m,
     int err = MP_OKAY;
 
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
-    td = XMALLOC(sizeof(sp_digit) * (3 * 5 + 1), NULL, DYNAMIC_TYPE_TMP_BUFFER);
+    td = XMALLOC(sizeof(sp_digit) * (3 * 5 + 1), NULL,
+                                                       DYNAMIC_TYPE_TMP_BUFFER);
     if (td != NULL) {
         t1 = td;
         t2 = td + 2 * 5;
@@ -10816,7 +10806,7 @@ static const uint64_t p256_order_low[2] = {
 static void sp_256_mont_mul_order_5(sp_digit* r, sp_digit* a, sp_digit* b)
 {
     sp_256_mul_5(r, a, b);
-    sp_256_mont_reduce_5(r, p256_order, p256_mp_order);
+    sp_256_mont_reduce_order_5(r, p256_order, p256_mp_order);
 }
 
 /* Square number mod the order of P256 curve. (r = a * a mod order)
@@ -10827,7 +10817,7 @@ static void sp_256_mont_mul_order_5(sp_digit* r, sp_digit* a, sp_digit* b)
 static void sp_256_mont_sqr_order_5(sp_digit* r, sp_digit* a)
 {
     sp_256_sqr_5(r, a);
-    sp_256_mont_reduce_5(r, p256_order, p256_mp_order);
+    sp_256_mont_reduce_order_5(r, p256_order, p256_mp_order);
 }
 
 #ifndef WOLFSSL_SP_SMALL
@@ -10942,143 +10932,6 @@ static void sp_256_mont_inv_order_5(sp_digit* r, sp_digit* a,
 #endif /* WOLFSSL_SP_SMALL */
 }
 
-#ifdef HAVE_INTEL_AVX2
-/* Multiply two number mod the order of P256 curve. (r = a * b mod order)
- *
- * r  Result of the multiplication.
- * a  First operand of the multiplication.
- * b  Second operand of the multiplication.
- */
-static void sp_256_mont_mul_order_avx2_5(sp_digit* r, sp_digit* a, sp_digit* b)
-{
-    sp_256_mul_avx2_5(r, a, b);
-    sp_256_mont_reduce_avx2_5(r, p256_order, p256_mp_order);
-}
-
-/* Square number mod the order of P256 curve. (r = a * a mod order)
- *
- * r  Result of the squaring.
- * a  Number to square.
- */
-static void sp_256_mont_sqr_order_avx2_5(sp_digit* r, sp_digit* a)
-{
-    sp_256_sqr_avx2_5(r, a);
-    sp_256_mont_reduce_avx2_5(r, p256_order, p256_mp_order);
-}
-
-#ifndef WOLFSSL_SP_SMALL
-/* Square number mod the order of P256 curve a number of times.
- * (r = a ^ n mod order)
- *
- * r  Result of the squaring.
- * a  Number to square.
- */
-static void sp_256_mont_sqr_n_order_avx2_5(sp_digit* r, sp_digit* a, int n)
-{
-    int i;
-
-    sp_256_mont_sqr_order_avx2_5(r, a);
-    for (i=1; i<n; i++)
-        sp_256_mont_sqr_order_avx2_5(r, r);
-}
-#endif /* !WOLFSSL_SP_SMALL */
-
-/* Invert the number, in Montgomery form, modulo the order of the P256 curve.
- * (r = 1 / a mod order)
- *
- * r   Inverse result.
- * a   Number to invert.
- * td  Temporary data.
- */
-static void sp_256_mont_inv_order_avx2_5(sp_digit* r, sp_digit* a,
-        sp_digit* td)
-{
-#ifdef WOLFSSL_SP_SMALL
-    sp_digit* t = td;
-    int i;
-
-    XMEMCPY(t, a, sizeof(sp_digit) * 5);
-    for (i=254; i>=0; i--) {
-        sp_256_mont_sqr_order_avx2_5(t, t);
-        if (p256_order_2[i / 64] & ((sp_digit)1 << (i % 64)))
-            sp_256_mont_mul_order_avx2_5(t, t, a);
-    }
-    XMEMCPY(r, t, sizeof(sp_digit) * 5);
-#else
-    sp_digit* t = td;
-    sp_digit* t2 = td + 2 * 5;
-    sp_digit* t3 = td + 4 * 5;
-    int i;
-
-    /* t = a^2 */
-    sp_256_mont_sqr_order_avx2_5(t, a);
-    /* t = a^3 = t * a */
-    sp_256_mont_mul_order_avx2_5(t, t, a);
-    /* t2= a^c = t ^ 2 ^ 2 */
-    sp_256_mont_sqr_n_order_avx2_5(t2, t, 2);
-    /* t3= a^f = t2 * t */
-    sp_256_mont_mul_order_avx2_5(t3, t2, t);
-    /* t2= a^f0 = t3 ^ 2 ^ 4 */
-    sp_256_mont_sqr_n_order_avx2_5(t2, t3, 4);
-    /* t = a^ff = t2 * t3 */
-    sp_256_mont_mul_order_avx2_5(t, t2, t3);
-    /* t3= a^ff00 = t ^ 2 ^ 8 */
-    sp_256_mont_sqr_n_order_avx2_5(t2, t, 8);
-    /* t = a^ffff = t2 * t */
-    sp_256_mont_mul_order_avx2_5(t, t2, t);
-    /* t2= a^ffff0000 = t ^ 2 ^ 16 */
-    sp_256_mont_sqr_n_order_avx2_5(t2, t, 16);
-    /* t = a^ffffffff = t2 * t */
-    sp_256_mont_mul_order_avx2_5(t, t2, t);
-    /* t2= a^ffffffff0000000000000000 = t ^ 2 ^ 64  */
-    sp_256_mont_sqr_n_order_avx2_5(t2, t, 64);
-    /* t2= a^ffffffff00000000ffffffff = t2 * t */
-    sp_256_mont_mul_order_avx2_5(t2, t2, t);
-    /* t2= a^ffffffff00000000ffffffff00000000 = t2 ^ 2 ^ 32  */
-    sp_256_mont_sqr_n_order_avx2_5(t2, t2, 32);
-    /* t2= a^ffffffff00000000ffffffffffffffff = t2 * t */
-    sp_256_mont_mul_order_avx2_5(t2, t2, t);
-    /* t2= a^ffffffff00000000ffffffffffffffffbce6 */
-    for (i=127; i>=112; i--) {
-        sp_256_mont_sqr_order_avx2_5(t2, t2);
-        if (p256_order_low[i / 64] & ((sp_digit)1 << (i % 64)))
-            sp_256_mont_mul_order_avx2_5(t2, t2, a);
-    }
-    /* t2= a^ffffffff00000000ffffffffffffffffbce6f */
-    sp_256_mont_sqr_n_order_avx2_5(t2, t2, 4);
-    sp_256_mont_mul_order_avx2_5(t2, t2, t3);
-    /* t2= a^ffffffff00000000ffffffffffffffffbce6faada7179e84 */
-    for (i=107; i>=64; i--) {
-        sp_256_mont_sqr_order_avx2_5(t2, t2);
-        if (p256_order_low[i / 64] & ((sp_digit)1 << (i % 64)))
-            sp_256_mont_mul_order_avx2_5(t2, t2, a);
-    }
-    /* t2= a^ffffffff00000000ffffffffffffffffbce6faada7179e84f */
-    sp_256_mont_sqr_n_order_avx2_5(t2, t2, 4);
-    sp_256_mont_mul_order_avx2_5(t2, t2, t3);
-    /* t2= a^ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2 */
-    for (i=59; i>=32; i--) {
-        sp_256_mont_sqr_order_avx2_5(t2, t2);
-        if (p256_order_low[i / 64] & ((sp_digit)1 << (i % 64)))
-            sp_256_mont_mul_order_avx2_5(t2, t2, a);
-    }
-    /* t2= a^ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2f */
-    sp_256_mont_sqr_n_order_avx2_5(t2, t2, 4);
-    sp_256_mont_mul_order_avx2_5(t2, t2, t3);
-    /* t2= a^ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc63254 */
-    for (i=27; i>=0; i--) {
-        sp_256_mont_sqr_order_avx2_5(t2, t2);
-        if (p256_order_low[i / 64] & ((sp_digit)1 << (i % 64)))
-            sp_256_mont_mul_order_avx2_5(t2, t2, a);
-    }
-    /* t2= a^ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632540 */
-    sp_256_mont_sqr_n_order_avx2_5(t2, t2, 4);
-    /* r = a^ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc63254f */
-    sp_256_mont_mul_order_avx2_5(r, t2, t3);
-#endif /* WOLFSSL_SP_SMALL */
-}
-
-#endif /* HAVE_INTEL_AVX2 */
 #endif /* HAVE_ECC_SIGN || HAVE_ECC_VERIFY */
 #ifdef HAVE_ECC_SIGN
 #ifndef SP_ECC_MAX_SIG_GEN
@@ -11105,7 +10958,7 @@ int sp_ecc_sign_256(const byte* hash, word32 hashLen, WC_RNG* rng, mp_int* priv,
                     mp_int* rm, mp_int* sm, void* heap)
 {
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
-    sp_digit* d;
+    sp_digit* d = NULL;
 #else
     sp_digit ed[2*5];
     sp_digit xd[2*5];
@@ -11126,9 +10979,6 @@ int sp_ecc_sign_256(const byte* hash, word32 hashLen, WC_RNG* rng, mp_int* priv,
     int err = MP_OKAY;
     int64_t c;
     int i;
-#ifdef HAVE_INTEL_AVX2
-    word32 cpuid_flags = cpuid_get_flags();
-#endif
 
     (void)heap;
 
@@ -11168,11 +11018,6 @@ int sp_ecc_sign_256(const byte* hash, word32 hashLen, WC_RNG* rng, mp_int* priv,
         /* New random point. */
         err = sp_256_ecc_gen_k_5(rng, k);
         if (err == MP_OKAY) {
-#ifdef HAVE_INTEL_AVX2
-            if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-                err = sp_256_ecc_mulmod_base_avx2_5(point, k, 1, heap);
-            else
-#endif
                 err = sp_256_ecc_mulmod_base_5(point, k, 1, NULL);
         }
 
@@ -11185,31 +11030,16 @@ int sp_ecc_sign_256(const byte* hash, word32 hashLen, WC_RNG* rng, mp_int* priv,
             sp_256_norm_5(r);
 
             /* Conv k to Montgomery form (mod order) */
-#ifdef HAVE_INTEL_AVX2
-            if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-                sp_256_mul_avx2_5(k, k, p256_norm_order);
-            else
-#endif
                 sp_256_mul_5(k, k, p256_norm_order);
             err = sp_256_mod_5(k, k, p256_order);
         }
         if (err == MP_OKAY) {
             sp_256_norm_5(k);
             /* kInv = 1/k mod order */
-#ifdef HAVE_INTEL_AVX2
-            if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-                sp_256_mont_inv_order_avx2_5(kInv, k, tmp);
-            else
-#endif
                 sp_256_mont_inv_order_5(kInv, k, tmp);
             sp_256_norm_5(kInv);
 
             /* s = r * x + e */
-#ifdef HAVE_INTEL_AVX2
-            if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-                sp_256_mul_avx2_5(x, x, r);
-            else
-#endif
                 sp_256_mul_5(x, x, r);
             err = sp_256_mod_5(x, x, p256_order);
         }
@@ -11223,11 +11053,6 @@ int sp_ecc_sign_256(const byte* hash, word32 hashLen, WC_RNG* rng, mp_int* priv,
             sp_256_norm_5(s);
 
             /* s = s * k^-1 mod order */
-#ifdef HAVE_INTEL_AVX2
-            if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-                sp_256_mont_mul_order_avx2_5(s, s, kInv);
-            else
-#endif
                 sp_256_mont_mul_order_5(s, s, kInv);
             sp_256_norm_5(s);
 
@@ -11307,9 +11132,6 @@ int sp_ecc_verify_256(const byte* hash, word32 hashLen, mp_int* pX,
     sp_digit carry;
     int64_t c;
     int err;
-#ifdef HAVE_INTEL_AVX2
-    word32 cpuid_flags = cpuid_get_flags();
-#endif
 
     err = sp_ecc_point_new(heap, p1d, p1);
     if (err == MP_OKAY)
@@ -11344,52 +11166,24 @@ int sp_ecc_verify_256(const byte* hash, word32 hashLen, mp_int* pX,
         sp_256_from_mp(p2->y, 5, pY);
         sp_256_from_mp(p2->z, 5, pZ);
 
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-            sp_256_mul_avx2_5(s, s, p256_norm_order);
-        else
-#endif
             sp_256_mul_5(s, s, p256_norm_order);
         err = sp_256_mod_5(s, s, p256_order);
     }
     if (err == MP_OKAY) {
         sp_256_norm_5(s);
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags)) {
-            sp_256_mont_inv_order_avx2_5(s, s, tmp);
-            sp_256_mont_mul_order_avx2_5(u1, u1, s);
-            sp_256_mont_mul_order_avx2_5(u2, u2, s);
-        }
-        else
-#endif
         {
             sp_256_mont_inv_order_5(s, s, tmp);
             sp_256_mont_mul_order_5(u1, u1, s);
             sp_256_mont_mul_order_5(u2, u2, s);
         }
 
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-            err = sp_256_ecc_mulmod_base_avx2_5(p1, u1, 0, heap);
-        else
-#endif
             err = sp_256_ecc_mulmod_base_5(p1, u1, 0, heap);
     }
     if (err == MP_OKAY) {
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-            err = sp_256_ecc_mulmod_avx2_5(p2, p2, u2, 0, heap);
-        else
-#endif
             err = sp_256_ecc_mulmod_5(p2, p2, u2, 0, heap);
     }
 
     if (err == MP_OKAY) {
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-            sp_256_proj_point_add_avx2_5(p1, p1, p2, tmp);
-        else
-#endif
             sp_256_proj_point_add_5(p1, p1, p2, tmp);
 
         /* (r + n*order).z'.z' mod prime == (u1.G + u2.Q)->x' */
@@ -11552,9 +11346,6 @@ int sp_ecc_check_key_256(mp_int* pX, mp_int* pY, mp_int* privm, void* heap)
     sp_point* p = NULL;
     byte one[1] = { 1 };
     int err;
-#ifdef HAVE_INTEL_AVX2
-    word32 cpuid_flags = cpuid_get_flags();
-#endif
 
     err = sp_ecc_point_new(heap, pubd, pub);
     if (err == MP_OKAY)
@@ -11595,11 +11386,6 @@ int sp_ecc_check_key_256(mp_int* pX, mp_int* pY, mp_int* privm, void* heap)
 
     if (err == MP_OKAY) {
         /* Point * order = infinity */
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-            err = sp_256_ecc_mulmod_avx2_5(p, pub, p256_order, 1, heap);
-        else
-#endif
             err = sp_256_ecc_mulmod_5(p, pub, p256_order, 1, heap);
     }
     if (err == MP_OKAY) {
@@ -11612,11 +11398,6 @@ int sp_ecc_check_key_256(mp_int* pX, mp_int* pY, mp_int* privm, void* heap)
 
     if (err == MP_OKAY) {
         /* Base * private = point */
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-            err = sp_256_ecc_mulmod_base_avx2_5(p, priv, 1, heap);
-        else
-#endif
             err = sp_256_ecc_mulmod_base_5(p, priv, 1, heap);
     }
     if (err == MP_OKAY) {
@@ -11665,9 +11446,6 @@ int sp_ecc_proj_add_point_256(mp_int* pX, mp_int* pY, mp_int* pZ,
     sp_point* p;
     sp_point* q = NULL;
     int err;
-#ifdef HAVE_INTEL_AVX2
-    word32 cpuid_flags = cpuid_get_flags();
-#endif
 
     err = sp_ecc_point_new(NULL, pd, p);
     if (err == MP_OKAY)
@@ -11690,11 +11468,6 @@ int sp_ecc_proj_add_point_256(mp_int* pX, mp_int* pY, mp_int* pZ,
         sp_256_from_mp(q->y, 5, qY);
         sp_256_from_mp(q->z, 5, qZ);
 
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-            sp_256_proj_point_add_avx2_5(p, p, q, tmp);
-        else
-#endif
             sp_256_proj_point_add_5(p, p, q, tmp);
     }
 
@@ -11736,9 +11509,6 @@ int sp_ecc_proj_dbl_point_256(mp_int* pX, mp_int* pY, mp_int* pZ,
     sp_digit* tmp;
     sp_point* p;
     int err;
-#ifdef HAVE_INTEL_AVX2
-    word32 cpuid_flags = cpuid_get_flags();
-#endif
 
     err = sp_ecc_point_new(NULL, pd, p);
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
@@ -11756,11 +11526,6 @@ int sp_ecc_proj_dbl_point_256(mp_int* pX, mp_int* pY, mp_int* pZ,
         sp_256_from_mp(p->y, 5, pY);
         sp_256_from_mp(p->z, 5, pZ);
 
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-            sp_256_proj_point_dbl_avx2_5(p, p, tmp);
-        else
-#endif
             sp_256_proj_point_dbl_5(p, p, tmp);
     }
 
@@ -11849,9 +11614,6 @@ static int sp_256_mont_sqrt_5(sp_digit* y)
     sp_digit* t1;
     sp_digit* t2;
     int err = MP_OKAY;
-#ifdef HAVE_INTEL_AVX2
-    word32 cpuid_flags = cpuid_get_flags();
-#endif
 
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
     d = XMALLOC(sizeof(sp_digit) * 4 * 5, NULL, DYNAMIC_TYPE_ECC);
@@ -11867,40 +11629,6 @@ static int sp_256_mont_sqrt_5(sp_digit* y)
 #endif
 
     if (err == MP_OKAY) {
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags)) {
-            /* t2 = y ^ 0x2 */
-            sp_256_mont_sqr_avx2_5(t2, y, p256_mod, p256_mp_mod);
-            /* t1 = y ^ 0x3 */
-            sp_256_mont_mul_avx2_5(t1, t2, y, p256_mod, p256_mp_mod);
-            /* t2 = y ^ 0xc */
-            sp_256_mont_sqr_n_avx2_5(t2, t1, 2, p256_mod, p256_mp_mod);
-            /* t1 = y ^ 0xf */
-            sp_256_mont_mul_avx2_5(t1, t1, t2, p256_mod, p256_mp_mod);
-            /* t2 = y ^ 0xf0 */
-            sp_256_mont_sqr_n_avx2_5(t2, t1, 4, p256_mod, p256_mp_mod);
-            /* t1 = y ^ 0xff */
-            sp_256_mont_mul_avx2_5(t1, t1, t2, p256_mod, p256_mp_mod);
-            /* t2 = y ^ 0xff00 */
-            sp_256_mont_sqr_n_avx2_5(t2, t1, 8, p256_mod, p256_mp_mod);
-            /* t1 = y ^ 0xffff */
-            sp_256_mont_mul_avx2_5(t1, t1, t2, p256_mod, p256_mp_mod);
-            /* t2 = y ^ 0xffff0000 */
-            sp_256_mont_sqr_n_avx2_5(t2, t1, 16, p256_mod, p256_mp_mod);
-            /* t1 = y ^ 0xffffffff */
-            sp_256_mont_mul_avx2_5(t1, t1, t2, p256_mod, p256_mp_mod);
-            /* t1 = y ^ 0xffffffff00000000 */
-            sp_256_mont_sqr_n_avx2_5(t1, t1, 32, p256_mod, p256_mp_mod);
-            /* t1 = y ^ 0xffffffff00000001 */
-            sp_256_mont_mul_avx2_5(t1, t1, y, p256_mod, p256_mp_mod);
-            /* t1 = y ^ 0xffffffff00000001000000000000000000000000 */
-            sp_256_mont_sqr_n_avx2_5(t1, t1, 96, p256_mod, p256_mp_mod);
-            /* t1 = y ^ 0xffffffff00000001000000000000000000000001 */
-            sp_256_mont_mul_avx2_5(t1, t1, y, p256_mod, p256_mp_mod);
-            sp_256_mont_sqr_n_avx2_5(y, t1, 94, p256_mod, p256_mp_mod);
-        }
-        else
-#endif
         {
             /* t2 = y ^ 0x2 */
             sp_256_mont_sqr_5(t2, y, p256_mod, p256_mp_mod);
@@ -11960,9 +11688,6 @@ int sp_ecc_uncompress_256(mp_int* xm, int odd, mp_int* ym)
     sp_digit* x;
     sp_digit* y;
     int err = MP_OKAY;
-#ifdef HAVE_INTEL_AVX2
-    word32 cpuid_flags = cpuid_get_flags();
-#endif
 
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
     d = XMALLOC(sizeof(sp_digit) * 4 * 5, NULL, DYNAMIC_TYPE_ECC);
@@ -11985,13 +11710,6 @@ int sp_ecc_uncompress_256(mp_int* xm, int odd, mp_int* ym)
 
     if (err == MP_OKAY) {
         /* y = x^3 */
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags)) {
-            sp_256_mont_sqr_avx2_5(y, x, p256_mod, p256_mp_mod);
-            sp_256_mont_mul_avx2_5(y, y, x, p256_mod, p256_mp_mod);
-        }
-        else
-#endif
         {
             sp_256_mont_sqr_5(y, x, p256_mod, p256_mp_mod);
             sp_256_mont_mul_5(y, y, x, p256_mod, p256_mp_mod);

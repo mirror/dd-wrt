@@ -25,6 +25,7 @@
 #endif
 
 #include <wolfssl/wolfcrypt/settings.h>
+#include <wolfssl/wolfcrypt/wc_port.h>
 #include <wolfcrypt/benchmark/benchmark.h>
 #include <stdio.h>
 
@@ -42,14 +43,35 @@ void main(void)
 {
     int test_num = 0;
 
+    wolfCrypt_Init(); /* required for ksdk_port_init */
     do
     {
+        /* Used for testing, must have a delay so no data is missed while serial is initializing */
+        #ifdef WOLFSSL_FRDM_K64_JENKINS
+            /* run once */
+            if(test_num == 1){
+                printf("\n&&&&&&&&&&&&& done &&&&&&&&&&&&&&&");
+                delay_us(1000000);
+                break;
+            }
+            delay_us(1000000); /* 1 second */
+        #endif
+
+
         printf("\nBenchmark Test %d:\n", test_num);
         benchmark_test(&args);
         printf("Benchmark Test %d: Return code %d\n", test_num, args.return_code);
 
         test_num++;
     } while(args.return_code == 0);
+
+    /*Print this again for redundancy*/
+    #ifdef WOLFSSL_FRDM_K64_JENKINS
+        printf("\n&&&&&&&&&&&&&& done &&&&&&&&&&&&&\n");
+        delay_us(1000000);
+    #endif
+
+    wolfCrypt_Cleanup();
 }
 
 /*
