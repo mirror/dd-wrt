@@ -224,9 +224,11 @@ static int GetOcspStatus(WOLFSSL_OCSP* ocsp, OcspRequest* request,
     }
     else if (*status) {
 #ifndef NO_ASN_TIME
-        if (ValidateDate((*status)->thisDate, (*status)->thisDateFormat, BEFORE)
+        if (XVALIDATE_DATE((*status)->thisDate,
+                                             (*status)->thisDateFormat, BEFORE)
         &&  ((*status)->nextDate[0] != 0)
-        &&  ValidateDate((*status)->nextDate, (*status)->nextDateFormat, AFTER))
+        &&  XVALIDATE_DATE((*status)->nextDate,
+                                             (*status)->nextDateFormat, AFTER))
 #endif
         {
             ret = xstat2err((*status)->status);
@@ -604,6 +606,11 @@ int wolfSSL_OCSP_basic_verify(WOLFSSL_OCSP_BASICRESP *bs,
     if (flags & OCSP_NOVERIFY)
         return WOLFSSL_SUCCESS;
 
+#ifdef OPENSSL_EXTRA
+    if (bs->verifyError != OCSP_VERIFY_ERROR_NONE)
+        return WOLFSSL_FAILURE;
+#endif
+
     InitDecodedCert(&cert, bs->cert, bs->certSz, NULL);
     if (ParseCertRelative(&cert, CERT_TYPE, VERIFY, st->cm) < 0)
         ret = WOLFSSL_FAILURE;
@@ -647,7 +654,8 @@ OcspResponse* wolfSSL_d2i_OCSP_RESPONSE_bio(WOLFSSL_BIO* bio,
         i = XFTELL(bio->file);
         if (i < 0)
             return NULL;
-        XFSEEK(bio->file, 0, SEEK_END);
+        if(XFSEEK(bio->file, 0, SEEK_END) != 0)
+            return NULL;
         l = XFTELL(bio->file);
         if (l < 0)
             return NULL;

@@ -1,12 +1,12 @@
 /*!
     \ingroup IDEA
-    
+
     \brief Generate the 52, 16-bit key sub-blocks from the 128 key.
-    
+
     \return 0 Success
-    \return BAD_FUNC_ARG Returns if idea or key is null, keySz is not equal to 
+    \return BAD_FUNC_ARG Returns if idea or key is null, keySz is not equal to
     IDEA_KEY_SIZE, or dir is not IDEA_ENCRYPTION or IDEA_DECRYPTION.
-    
+
     \param idea Pointer to Idea structure.
     \param key Pointer to key in memory.
     \param keySz Size of key.
@@ -23,14 +23,15 @@
         // There was an error
     }
     \endcode
-    
+
     \sa wc_IdeaSetIV
 */
 WOLFSSL_API int wc_IdeaSetKey(Idea *idea, const byte* key, word16 keySz,
                               const byte *iv, int dir);
+
 /*!
     \ingroup IDEA
-    
+
     \brief Sets the IV in an Idea key structure.
 
     \return 0 Success
@@ -38,7 +39,7 @@ WOLFSSL_API int wc_IdeaSetKey(Idea *idea, const byte* key, word16 keySz,
 
     \param idea Pointer to idea key structure.
     \param iv The IV value to set, can be null.
-    
+
     _Example_
     \code
     Idea idea;
@@ -51,18 +52,19 @@ WOLFSSL_API int wc_IdeaSetKey(Idea *idea, const byte* key, word16 keySz,
         // Some error occured
     }
     \endcode
-    
+
     \sa wc_IdeaSetKey
 */
 WOLFSSL_API int wc_IdeaSetIV(Idea *idea, const byte* iv);
+
 /*!
     \ingroup IDEA
-    
+
     \brief Encryption or decryption for a block (64 bits).
-    
+
     \return 0 upon success.
     \return <0 an error occured
-    
+
     \param idea Pointer to idea key structure.
     \param out Pointer to destination.
     \param in Pointer to input data to encrypt or decrypt.
@@ -80,18 +82,19 @@ WOLFSSL_API int wc_IdeaSetIV(Idea *idea, const byte* iv);
         // There was an error
     }
     \endcode
-    
+
     \sa wc_IdeaSetKey
     \sa wc_IdeaSetIV
     \sa wc_IdeaCbcEncrypt
     \sa wc_IdeaCbcDecrypt
 */
 WOLFSSL_API int wc_IdeaCipher(Idea *idea, byte* out, const byte* in);
+
 /*!
     \ingroup IDEA
-    
+
     \brief Encrypt data using IDEA CBC mode.
-    
+
     \return 0 Success
     \return BAD_FUNC_ARG Returns if any arguments are null.
 
@@ -99,7 +102,7 @@ WOLFSSL_API int wc_IdeaCipher(Idea *idea, byte* out, const byte* in);
     \param out Pointer to destination for encryption.
     \param in Pointer to input for encryption.
     \param len length of input.
-    
+
     _Example_
     \code
     Idea idea;
@@ -115,26 +118,27 @@ WOLFSSL_API int wc_IdeaCipher(Idea *idea, byte* out, const byte* in);
         // Some error occured
     }
     \endcode
-    
+
     \sa wc_IdeaCbcDecrypt
     \sa wc_IdeaCipher
     \sa wc_IdeaSetKey
 */
 WOLFSSL_API int wc_IdeaCbcEncrypt(Idea *idea, byte* out,
                                   const byte* in, word32 len);
+
 /*!
     \ingroup IDEA
-    
+
     \brief Decrypt data using IDEA CBC mode.
 
     \return 0 Success
     \return BAD_FUNC_ARG Returns if any arguments are null.
-    
+
     \param idea Pointer to Idea key structure.
     \param out Pointer to destination for encryption.
     \param in Pointer to input for encryption.
     \param len length of input.
-    
+
     _Example_
     \code
     Idea idea;
@@ -150,7 +154,7 @@ WOLFSSL_API int wc_IdeaCbcEncrypt(Idea *idea, byte* out,
         // Some error occured
     }
     \endcode
-    
+
     \sa wc_IdeaCbcEncrypt
     \sa wc_IdeaCipher
     \sa wc_IdeaSetKey

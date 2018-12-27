@@ -279,6 +279,12 @@
 #define FP_DIGIT_MAX FP_MASK
 #define FP_SIZE    (FP_MAX_SIZE/DIGIT_BIT)
 
+#define FP_MAX_PRIME_SIZE (FP_MAX_BITS/(2*CHAR_BIT))
+/* In terms of FP_MAX_BITS, it is double the size possible for a number
+ * to allow for multiplication, divide that 2 out. Also divide by CHAR_BIT
+ * to convert from bits to bytes. (Note, FP_PRIME_SIZE is the number of
+ * values in the canned prime number list.) */
+
 /* signs */
 #define FP_ZPOS     0
 #define FP_NEG      1
@@ -288,6 +294,7 @@
 #define FP_VAL      -1
 #define FP_MEM      -2
 #define FP_NOT_INF	-3
+#define FP_WOULDBLOCK -4
 
 /* equalities */
 #define FP_LT        -1   /* less than */
@@ -461,10 +468,10 @@ void fp_add(fp_int *a, fp_int *b, fp_int *c);
 void fp_sub(fp_int *a, fp_int *b, fp_int *c);
 
 /* c = a * b */
-void fp_mul(fp_int *a, fp_int *b, fp_int *c);
+int fp_mul(fp_int *a, fp_int *b, fp_int *c);
 
 /* b = a*a  */
-void fp_sqr(fp_int *a, fp_int *b);
+int fp_sqr(fp_int *a, fp_int *b);
 
 /* a/b => cb + d == a */
 int fp_div(fp_int *a, fp_int *b, fp_int *c, fp_int *d);
@@ -479,7 +486,7 @@ int fp_cmp_d(fp_int *a, fp_digit b);
 void fp_add_d(fp_int *a, fp_digit b, fp_int *c);
 
 /* c = a - b */
-void fp_sub_d(fp_int *a, fp_digit b, fp_int *c);
+int fp_sub_d(fp_int *a, fp_digit b, fp_int *c);
 
 /* c = a * b */
 void fp_mul_d(fp_int *a, fp_digit b, fp_int *c);
@@ -513,10 +520,10 @@ int fp_sqrmod(fp_int *a, fp_int *b, fp_int *c);
 int fp_invmod(fp_int *a, fp_int *b, fp_int *c);
 
 /* c = (a, b) */
-/*void fp_gcd(fp_int *a, fp_int *b, fp_int *c);*/
+/*int fp_gcd(fp_int *a, fp_int *b, fp_int *c);*/
 
 /* c = [a, b] */
-/*void fp_lcm(fp_int *a, fp_int *b, fp_int *c);*/
+/*int fp_lcm(fp_int *a, fp_int *b, fp_int *c);*/
 
 /* setups the montgomery reduction */
 int fp_montgomery_setup(fp_int *a, fp_digit *mp);
@@ -527,10 +534,59 @@ int fp_montgomery_setup(fp_int *a, fp_digit *mp);
 void fp_montgomery_calc_normalization(fp_int *a, fp_int *b);
 
 /* computes x/R == x (mod N) via Montgomery Reduction */
-void fp_montgomery_reduce(fp_int *a, fp_int *m, fp_digit mp);
+int fp_montgomery_reduce(fp_int *a, fp_int *m, fp_digit mp);
 
 /* d = a**b (mod c) */
 int fp_exptmod(fp_int *a, fp_int *b, fp_int *c, fp_int *d);
+
+#ifdef WC_RSA_NONBLOCK
+
+enum tfmExptModNbState {
+  TFM_EXPTMOD_NB_INIT = 0,
+  TFM_EXPTMOD_NB_MONT,
+  TFM_EXPTMOD_NB_MONT_RED,
+  TFM_EXPTMOD_NB_MONT_MUL,
+  TFM_EXPTMOD_NB_MONT_MOD,
+  TFM_EXPTMOD_NB_MONT_MODCHK,
+  TFM_EXPTMOD_NB_NEXT,
+  TFM_EXPTMOD_NB_MUL,
+  TFM_EXPTMOD_NB_MUL_RED,
+  TFM_EXPTMOD_NB_SQR,
+  TFM_EXPTMOD_NB_SQR_RED,
+  TFM_EXPTMOD_NB_RED,
+  TFM_EXPTMOD_NB_COUNT /* last item for total state count only */
+};
+
+typedef struct {
+#ifndef WC_NO_CACHE_RESISTANT
+  fp_int   R[3];
+#else
+  fp_int   R[2];
+#endif
+  fp_digit buf;
+  fp_digit mp;
+  int bitcnt;
+  int digidx;
+  int y;
+  int state; /* tfmExptModNbState */
+#ifdef WC_RSA_NONBLOCK_TIME
+  word32 maxBlockInst; /* maximum instructions to block */
+  word32 totalInst;    /* tracks total instructions */
+#endif
+} exptModNb_t;
+
+#ifdef WC_RSA_NONBLOCK_TIME
+enum {
+  TFM_EXPTMOD_NB_STOP = 0,     /* stop and return FP_WOULDBLOCK */
+  TFM_EXPTMOD_NB_CONTINUE = 1, /* keep blocking */
+};
+#endif
+
+/* non-blocking version of timing resistant fp_exptmod function */
+/* supports cache resistance */
+int fp_exptmod_nb(exptModNb_t* nb, fp_int* G, fp_int* X, fp_int* P, fp_int* Y);
+
+#endif /* WC_RSA_NONBLOCK */
 
 /* primality stuff */
 
@@ -541,7 +597,7 @@ int fp_exptmod(fp_int *a, fp_int *b, fp_int *c, fp_int *d);
 /* 256 trial divisions + 8 Miller-Rabins, returns FP_YES if probable prime  */
 /*int fp_isprime(fp_int *a);*/
 /* extended version of fp_isprime, do 't' Miller-Rabins instead of only 8 */
-/*int fp_isprime_ex(fp_int *a, int t);*/
+/*int fp_isprime_ex(fp_int *a, int t, int* result);*/
 
 /* Primality generation flags */
 /*#define TFM_PRIME_BBS      0x0001 */ /* BBS style prime */
@@ -562,7 +618,8 @@ int fp_leading_bit(fp_int *a);
 
 int fp_unsigned_bin_size(fp_int *a);
 void fp_read_unsigned_bin(fp_int *a, const unsigned char *b, int c);
-void fp_to_unsigned_bin(fp_int *a, unsigned char *b);
+int fp_to_unsigned_bin(fp_int *a, unsigned char *b);
+int fp_to_unsigned_bin_len(fp_int *a, unsigned char *b, int c);
 int fp_to_unsigned_bin_at_pos(int x, fp_int *t, unsigned char *b);
 
 /*int fp_signed_bin_size(fp_int *a);*/
@@ -579,39 +636,39 @@ void s_fp_add(fp_int *a, fp_int *b, fp_int *c);
 void s_fp_sub(fp_int *a, fp_int *b, fp_int *c);
 void fp_reverse(unsigned char *s, int len);
 
-void fp_mul_comba(fp_int *a, fp_int *b, fp_int *c);
+int  fp_mul_comba(fp_int *a, fp_int *b, fp_int *c);
 
-void fp_mul_comba_small(fp_int *a, fp_int *b, fp_int *c);
-void fp_mul_comba3(fp_int *a, fp_int *b, fp_int *c);
-void fp_mul_comba4(fp_int *a, fp_int *b, fp_int *c);
-void fp_mul_comba6(fp_int *a, fp_int *b, fp_int *c);
-void fp_mul_comba7(fp_int *a, fp_int *b, fp_int *c);
-void fp_mul_comba8(fp_int *a, fp_int *b, fp_int *c);
-void fp_mul_comba9(fp_int *a, fp_int *b, fp_int *c);
-void fp_mul_comba12(fp_int *a, fp_int *b, fp_int *c);
-void fp_mul_comba17(fp_int *a, fp_int *b, fp_int *c);
-void fp_mul_comba20(fp_int *a, fp_int *b, fp_int *c);
-void fp_mul_comba24(fp_int *a, fp_int *b, fp_int *c);
-void fp_mul_comba28(fp_int *a, fp_int *b, fp_int *c);
-void fp_mul_comba32(fp_int *a, fp_int *b, fp_int *c);
-void fp_mul_comba48(fp_int *a, fp_int *b, fp_int *c);
-void fp_mul_comba64(fp_int *a, fp_int *b, fp_int *c);
-void fp_sqr_comba(fp_int *a, fp_int *b);
-void fp_sqr_comba_small(fp_int *a, fp_int *b);
-void fp_sqr_comba3(fp_int *a, fp_int *b);
-void fp_sqr_comba4(fp_int *a, fp_int *b);
-void fp_sqr_comba6(fp_int *a, fp_int *b);
-void fp_sqr_comba7(fp_int *a, fp_int *b);
-void fp_sqr_comba8(fp_int *a, fp_int *b);
-void fp_sqr_comba9(fp_int *a, fp_int *b);
-void fp_sqr_comba12(fp_int *a, fp_int *b);
-void fp_sqr_comba17(fp_int *a, fp_int *b);
-void fp_sqr_comba20(fp_int *a, fp_int *b);
-void fp_sqr_comba24(fp_int *a, fp_int *b);
-void fp_sqr_comba28(fp_int *a, fp_int *b);
-void fp_sqr_comba32(fp_int *a, fp_int *b);
-void fp_sqr_comba48(fp_int *a, fp_int *b);
-void fp_sqr_comba64(fp_int *a, fp_int *b);
+int  fp_mul_comba_small(fp_int *a, fp_int *b, fp_int *c);
+int  fp_mul_comba3(fp_int *a, fp_int *b, fp_int *c);
+int  fp_mul_comba4(fp_int *a, fp_int *b, fp_int *c);
+int  fp_mul_comba6(fp_int *a, fp_int *b, fp_int *c);
+int  fp_mul_comba7(fp_int *a, fp_int *b, fp_int *c);
+int  fp_mul_comba8(fp_int *a, fp_int *b, fp_int *c);
+int  fp_mul_comba9(fp_int *a, fp_int *b, fp_int *c);
+int  fp_mul_comba12(fp_int *a, fp_int *b, fp_int *c);
+int  fp_mul_comba17(fp_int *a, fp_int *b, fp_int *c);
+int  fp_mul_comba20(fp_int *a, fp_int *b, fp_int *c);
+int  fp_mul_comba24(fp_int *a, fp_int *b, fp_int *c);
+int  fp_mul_comba28(fp_int *a, fp_int *b, fp_int *c);
+int  fp_mul_comba32(fp_int *a, fp_int *b, fp_int *c);
+int  fp_mul_comba48(fp_int *a, fp_int *b, fp_int *c);
+int  fp_mul_comba64(fp_int *a, fp_int *b, fp_int *c);
+int  fp_sqr_comba(fp_int *a, fp_int *b);
+int  fp_sqr_comba_small(fp_int *a, fp_int *b);
+int  fp_sqr_comba3(fp_int *a, fp_int *b);
+int  fp_sqr_comba4(fp_int *a, fp_int *b);
+int  fp_sqr_comba6(fp_int *a, fp_int *b);
+int  fp_sqr_comba7(fp_int *a, fp_int *b);
+int  fp_sqr_comba8(fp_int *a, fp_int *b);
+int  fp_sqr_comba9(fp_int *a, fp_int *b);
+int  fp_sqr_comba12(fp_int *a, fp_int *b);
+int  fp_sqr_comba17(fp_int *a, fp_int *b);
+int  fp_sqr_comba20(fp_int *a, fp_int *b);
+int  fp_sqr_comba24(fp_int *a, fp_int *b);
+int  fp_sqr_comba28(fp_int *a, fp_int *b);
+int  fp_sqr_comba32(fp_int *a, fp_int *b);
+int  fp_sqr_comba48(fp_int *a, fp_int *b);
+int  fp_sqr_comba64(fp_int *a, fp_int *b);
 
 
 /**
@@ -686,6 +743,7 @@ MP_API int  mp_unsigned_bin_size(mp_int * a);
 MP_API int  mp_read_unsigned_bin (mp_int * a, const unsigned char *b, int c);
 MP_API int  mp_to_unsigned_bin_at_pos(int x, mp_int *t, unsigned char *b);
 MP_API int  mp_to_unsigned_bin (mp_int * a, unsigned char *b);
+MP_API int  mp_to_unsigned_bin_len(mp_int * a, unsigned char *b, int c);
 
 MP_API int  mp_sub_d(fp_int *a, fp_digit b, fp_int *c);
 MP_API int  mp_copy(fp_int* a, fp_int* b);
@@ -719,19 +777,24 @@ MP_API int mp_radix_size (mp_int * a, int radix, int *size);
     MP_API int mp_init_copy(fp_int * a, fp_int * b);
 #endif
 
-#if defined(HAVE_ECC) || !defined(NO_RSA) || !defined(NO_DSA)
+#if defined(HAVE_ECC) || !defined(NO_RSA) || !defined(NO_DSA) || \
+    defined(WOLFSSL_KEY_GEN)
     MP_API int mp_set(fp_int *a, fp_digit b);
 #endif
 
-#if defined(HAVE_ECC) || defined(WOLFSSL_KEY_GEN)
+#if defined(HAVE_ECC) || defined(WOLFSSL_KEY_GEN) || !defined(NO_RSA) || \
+    !defined(NO_DSA) || !defined(NO_DH)
     MP_API int mp_sqrmod(mp_int* a, mp_int* b, mp_int* c);
     MP_API int mp_montgomery_calc_normalization(mp_int *a, mp_int *b);
 #endif
 
+#if !defined(NO_DH) || !defined(NO_DSA) || !defined(NO_RSA) || defined(WOLFSSL_KEY_GEN)
+MP_API int  mp_prime_is_prime(mp_int* a, int t, int* result);
+MP_API int  mp_prime_is_prime_ex(mp_int* a, int t, int* result, WC_RNG* rng);
+#endif /* !NO_DH || !NO_DSA || !NO_RSA || WOLFSSL_KEY_GEN */
 #ifdef WOLFSSL_KEY_GEN
 MP_API int  mp_gcd(fp_int *a, fp_int *b, fp_int *c);
 MP_API int  mp_lcm(fp_int *a, fp_int *b, fp_int *c);
-MP_API int  mp_prime_is_prime(mp_int* a, int t, int* result);
 MP_API int  mp_rand_prime(mp_int* N, int len, WC_RNG* rng, void* heap);
 MP_API int  mp_exch(mp_int *a, mp_int *b);
 #endif /* WOLFSSL_KEY_GEN */

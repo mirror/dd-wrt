@@ -35,6 +35,8 @@
     #define SP_WORD_SIZE 64
 #elif defined(WOLFSSL_SP_ARM32_ASM)
     #define SP_WORD_SIZE 32
+#elif defined(WOLFSSL_SP_ARM_THUMB_ASM)
+    #define SP_WORD_SIZE 32
 #endif
 
 #ifndef SP_WORD_SIZE
@@ -94,7 +96,7 @@
     #else
         #define SP_INT_DIGITS        ((256 + SP_WORD_SIZE) / SP_WORD_SIZE)
     #endif
-#elif !defined(WOLFSSL_SP_NO_3072)
+#elif defined(WOLFSSL_SP_NO_3072)
     #define SP_INT_DIGITS        ((2048 + SP_WORD_SIZE) / SP_WORD_SIZE)
 #else
     #define SP_INT_DIGITS        ((3072 + SP_WORD_SIZE) / SP_WORD_SIZE)
@@ -103,9 +105,9 @@
 #define sp_isodd(a) (a->used != 0 && (a->dp[0] & 1))
 
 typedef struct sp_int {
-    sp_int_digit dp[SP_INT_DIGITS];
-    int size;
     int used;
+    int size;
+    sp_int_digit dp[SP_INT_DIGITS];
 } sp_int;
 
 
@@ -119,7 +121,8 @@ MP_API int sp_read_radix(sp_int* a, const char* in, int radix);
 MP_API int sp_cmp(sp_int* a, sp_int* b);
 MP_API int sp_count_bits(sp_int* a);
 MP_API int sp_leading_bit(sp_int* a);
-MP_API int sp_to_unsigned_bin(sp_int* a, byte* in);
+MP_API int sp_to_unsigned_bin(sp_int* a, byte* out);
+MP_API int sp_to_unsigned_bin_len(sp_int* a, byte* out, int outSz);
 MP_API void sp_forcezero(sp_int* a);
 MP_API int sp_copy(sp_int* a, sp_int* b);
 MP_API int sp_set(sp_int* a, sp_int_digit d);
@@ -133,6 +136,8 @@ MP_API void sp_zero(sp_int* a);
 MP_API int sp_add_d(sp_int* a, sp_int_digit d, sp_int* r);
 MP_API int sp_lshd(sp_int* a, int s);
 MP_API int sp_add(sp_int* a, sp_int* b, sp_int* r);
+MP_API int sp_set_int(sp_int* a, unsigned long b);
+MP_API int sp_tohex(sp_int* a, char* str);
 
 typedef sp_int mp_int;
 typedef sp_digit mp_digit;
@@ -156,30 +161,33 @@ typedef sp_digit mp_digit;
 
 #define mp_free(a)
 
-#define mp_init                 sp_init
-#define mp_init_multi           sp_init_multi
-#define mp_clear                sp_clear
-#define mp_read_unsigned_bin    sp_read_unsigned_bin
-#define mp_unsigned_bin_size    sp_unsigned_bin_size
-#define mp_read_radix           sp_read_radix
-#define mp_cmp                  sp_cmp
-#define mp_count_bits           sp_count_bits
-#define mp_leading_bit          sp_leading_bit
-#define mp_to_unsigned_bin      sp_to_unsigned_bin
-#define mp_forcezero            sp_forcezero
-#define mp_copy                 sp_copy
-#define mp_set                  sp_set
-#define mp_iszero               sp_iszero
-#define mp_clamp                sp_clamp
-#define mp_grow                 sp_grow
-#define mp_sub_d                sp_sub_d
-#define mp_cmp_d                sp_cmp_d
-#define mp_mod                  sp_mod
-#define mp_zero                 sp_zero
-#define mp_add_d                sp_add_d
-#define mp_lshd                 sp_lshd
-#define mp_add                  sp_add
-#define mp_isodd                sp_isodd
+#define mp_init                     sp_init
+#define mp_init_multi               sp_init_multi
+#define mp_clear                    sp_clear
+#define mp_read_unsigned_bin        sp_read_unsigned_bin
+#define mp_unsigned_bin_size        sp_unsigned_bin_size
+#define mp_read_radix               sp_read_radix
+#define mp_cmp                      sp_cmp
+#define mp_count_bits               sp_count_bits
+#define mp_leading_bit              sp_leading_bit
+#define mp_to_unsigned_bin          sp_to_unsigned_bin
+#define mp_to_unsigned_bin_len      sp_to_unsigned_bin_len
+#define mp_forcezero                sp_forcezero
+#define mp_copy                     sp_copy
+#define mp_set                      sp_set
+#define mp_iszero                   sp_iszero
+#define mp_clamp                    sp_clamp
+#define mp_grow                     sp_grow
+#define mp_sub_d                    sp_sub_d
+#define mp_cmp_d                    sp_cmp_d
+#define mp_mod                      sp_mod
+#define mp_zero                     sp_zero
+#define mp_add_d                    sp_add_d
+#define mp_lshd                     sp_lshd
+#define mp_add                      sp_add
+#define mp_isodd                    sp_isodd
+#define mp_set_int                  sp_set_int
+#define mp_tohex                    sp_tohex
 
 #define MP_INT_DEFINED
 

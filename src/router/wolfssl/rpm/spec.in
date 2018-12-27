@@ -73,8 +73,8 @@ mkdir -p $RPM_BUILD_ROOT/
 %{_docdir}/wolfssl/README.txt
 %{_libdir}/libwolfssl.la
 %{_libdir}/libwolfssl.so
-%{_libdir}/libwolfssl.so.18
-%{_libdir}/libwolfssl.so.18.0.0
+%{_libdir}/libwolfssl.so.19
+%{_libdir}/libwolfssl.so.19.1.0
 
 %files devel
 %defattr(-,root,root,-)
@@ -266,6 +266,7 @@ mkdir -p $RPM_BUILD_ROOT/
 %{_includedir}/wolfssl/openssl/opensslv.h
 %{_includedir}/wolfssl/openssl/ossl_typ.h
 %{_includedir}/wolfssl/openssl/pem.h
+%{_includedir}/wolfssl/openssl/pkcs7.h
 %{_includedir}/wolfssl/openssl/pkcs12.h
 %{_includedir}/wolfssl/openssl/rand.h
 %{_includedir}/wolfssl/openssl/rc4.h
@@ -287,6 +288,8 @@ mkdir -p $RPM_BUILD_ROOT/
 %{_libdir}/pkgconfig/wolfssl.pc
 
 %changelog
+* Thu Dec 20 2018 Jacob Barthelmeh <jacob@wolfssl.com>
+- Remove wolfssl/wolfcrypt/fips.h, add wolfssl/openssl/pkcs7.h
 * Wed Jun 20 2018 Jacob Barthelmeh <jacob@wolfssl.com>
 - Remove NEWS, update ChangeLog to ChangeLog.md, remove wolfssl/wolfcrypt/fips.h, add wolfssl/wolfcrypt/cryptodev.h
 * Thu May 31 2018 John Safranek <john@wolfssl.com>
@@ -307,7 +310,7 @@ mkdir -p $RPM_BUILD_ROOT/
 - Added header for pkcs12
 * Fri Sep 23 2016 John Safranek <john@wolfssl.com>
 - Add the dtls-sctp example sources
-* Mon Jun 14 2016 Jacob Barthelmeh <jacob@wolfssl.com>
+* Tue Jun 14 2016 Jacob Barthelmeh <jacob@wolfssl.com>
 - Change location for mem_track.h header
 - Added header for cmac.h
 * Thu Mar 17 2016 Jacob Barthelmeh <jacob@wolfssl.com>
@@ -319,5 +322,5 @@ mkdir -p $RPM_BUILD_ROOT/
 - Added recent new wolfcrypt headers for curve25519
 * Fri Jan 09 2015 John Safranek <john@wolfssl.com>
 - Update for cyassl->wolfssl name change
-* Fri Oct 20 2012 Brian Aker <brian@tangent.org>
+* Sat Oct 20 2012 Brian Aker <brian@tangent.org>
 - Initial package

@@ -26,12 +26,26 @@
 #include <wolfssl/ssl.h>
 #include <wolfssl/test.h>    /* thread and tcp stuff */
 
+#ifdef WOLFSSL_FORCE_MALLOC_FAIL_TEST
+#define XABORT()
+#else
+#define XABORT() abort()
+#endif
+
+#ifndef WOLFSSL_PASSTHRU_ERR
 #define Fail(description, result) do {                                         \
     printf("\nERROR - %s line %d failed with:", __FILE__, __LINE__);           \
     printf("\n    expected: "); printf description;                            \
     printf("\n    result:   "); printf result; printf("\n\n");                 \
-    abort();                                                                   \
+    XABORT();                                                                  \
 } while(0)
+#else
+#define Fail(description, result) do {                               \
+    printf("\nERROR - %s line %d failed with:", __FILE__, __LINE__); \
+    printf("\n    expected: ");printf description;                   \
+    printf("\n    result:   "); printf result; printf("\n\n");       \
+} while (0)
+#endif
 
 #define Assert(test, description, result) if (!(test)) Fail(description, result)
 
@@ -62,7 +76,7 @@
 #define AssertStr(x, y, op, er) do {                                           \
     const char* _x = x;                                                        \
     const char* _y = y;                                                        \
-    int   _z = strcmp(_x, _y);                                                 \
+    int   _z = (_x && _y) ? strcmp(_x, _y) : -1;                               \
                                                                                \
     Assert(_z op 0, ("%s " #op " %s", #x, #y),                                 \
                                             ("\"%s\" " #er " \"%s\"", _x, _y));\
