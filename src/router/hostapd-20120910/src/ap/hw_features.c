@@ -117,7 +117,7 @@ int hostapd_get_hw_features(struct hostapd_iface *iface)
 					HOSTAPD_CHAN_DISABLED;
 			if (feature->channels[j].flag & HOSTAPD_CHAN_DISABLED)
 				continue;
-+			feature->channels[j].chan = ieee80211_frequency_to_channel(feature->channels[j].freq);
+			feature->channels[j].chan = ieee80211_frequency_to_channel(feature->channels[j].freq);
 			wpa_printf(MSG_MSGDUMP, "Allowed channel: mode=%d "
 				   "chan=%d freq=%d MHz max_tx_power=%d dBm",
 				   feature->mode,
