@@ -35,7 +35,11 @@
 
 #define MAX_ARGS 40
 #define MAX_COMMAND_SZ 240
-#define MAX_SUITE_SZ 80
+#ifdef WOLFSSL_TLS13
+    #define MAX_SUITE_SZ 200
+#else
+    #define MAX_SUITE_SZ 80
+#endif
 #define NOT_BUILT_IN -123
 #if defined(NO_OLD_TLS) || !defined(WOLFSSL_ALLOW_SSLV3) || \
     !defined(WOLFSSL_ALLOW_TLSV10)
@@ -157,6 +161,35 @@ static int IsValidCipherSuite(const char* line, char* suite)
     return valid;
 }
 
+static int IsValidCert(const char* line)
+{
+    int ret = 1;
+#if !defined(NO_FILESYSTEM) && !defined(NO_CERTS)
+    WOLFSSL_CTX* ctx;
+    size_t i;
+    const char* begin;
+    char cert[80];
+
+    begin = XSTRSTR(line, "-c ");
+    if (begin == NULL)
+        return 1;
+
+    begin += 3;
+    for (i = 0; i < sizeof(cert) - 1 && *begin != ' ' && *begin != '\0'; i++)
+        cert[i] = *(begin++);
+    cert[i] = '\0';
+
+    ctx = wolfSSL_CTX_new(wolfSSLv23_server_method_ex(NULL));
+    if (ctx == NULL)
+        return 0;
+    ret = wolfSSL_CTX_use_certificate_chain_file(ctx, cert) == WOLFSSL_SUCCESS;
+    wolfSSL_CTX_free(ctx);
+#endif /* !NO_FILESYSTEM && !NO_CERTS */
+
+    (void)line;
+
+    return ret;
+}
 
 static int execute_test_case(int svr_argc, char** svr_argv,
                               int cli_argc, char** cli_argv,
@@ -203,6 +236,12 @@ static int execute_test_case(int svr_argc, char** svr_argv,
     if (IsValidCipherSuite(commandLine, cipherSuite) == 0) {
         #ifdef DEBUG_SUITE_TESTS
             printf("cipher suite %s not supported in build\n", cipherSuite);
+        #endif
+        return NOT_BUILT_IN;
+    }
+    if (!IsValidCert(commandLine)) {
+        #ifdef DEBUG_SUITE_TESTS
+            printf("certificate %s not supported in build\n", commandLine);
         #endif
         return NOT_BUILT_IN;
     }
@@ -355,14 +394,14 @@ static int execute_test_case(int svr_argc, char** svr_argv,
     if ((cliArgs.return_code != 0 && testShouldFail == 0) ||
         (cliArgs.return_code == 0 && testShouldFail != 0)) {
         printf("client_test failed\n");
-        exit(EXIT_FAILURE);
+        XEXIT(EXIT_FAILURE);
     }
 
     join_thread(serverThread);
     if ((svrArgs.return_code != 0 && testShouldFail == 0) ||
         (svrArgs.return_code == 0 && testShouldFail != 0)) {
         printf("server_test failed\n");
-        exit(EXIT_FAILURE);
+        XEXIT(EXIT_FAILURE);
     }
 
 #ifdef WOLFSSL_TIRTOS
@@ -579,7 +618,8 @@ int SuiteTest(void)
     cipherSuiteCtx = wolfSSL_CTX_new(wolfSSLv23_client_method());
     if (cipherSuiteCtx == NULL) {
         printf("can't get cipher suite ctx\n");
-        exit(EXIT_FAILURE);
+        args.return_code = EXIT_FAILURE;
+        goto exit;
     }
 
     /* load in static memory buffer if enabled */
@@ -622,7 +662,8 @@ int SuiteTest(void)
     test_harness(&args);
     if (args.return_code != 0) {
         printf("error from script %d\n", args.return_code);
-        exit(EXIT_FAILURE);
+        args.return_code = EXIT_FAILURE;
+        goto exit;
     }
     #ifdef HAVE_ECC
     /* add TLSv13 ECC extra suites */
@@ -631,7 +672,8 @@ int SuiteTest(void)
     test_harness(&args);
     if (args.return_code != 0) {
         printf("error from script %d\n", args.return_code);
-        exit(EXIT_FAILURE);
+        args.return_code = EXIT_FAILURE;
+        goto exit;
     }
     #endif
     #ifndef WOLFSSL_NO_TLS12
@@ -641,7 +683,8 @@ int SuiteTest(void)
     test_harness(&args);
     if (args.return_code != 0) {
         printf("error from script %d\n", args.return_code);
-        exit(EXIT_FAILURE);
+        args.return_code = EXIT_FAILURE;
+        goto exit;
     }
     #endif
 #endif
@@ -652,7 +695,8 @@ int SuiteTest(void)
     test_harness(&args);
     if (args.return_code != 0) {
         printf("error from script %d\n", args.return_code);
-        exit(EXIT_FAILURE);
+        args.return_code = EXIT_FAILURE;
+        goto exit;
     }
 #endif
 #ifdef WOLFSSL_DTLS
@@ -737,6 +781,29 @@ int SuiteTest(void)
         args.return_code = EXIT_FAILURE;
         goto exit;
     }
+#endif
+
+#ifdef HAVE_MAX_FRAGMENT
+    /* Max fragment cipher suite tests */
+    strcpy(argv0[1], "tests/test-maxfrag.conf");
+    printf("starting max fragment cipher suite tests\n");
+    test_harness(&args);
+    if (args.return_code != 0) {
+        printf("error from script %d\n", args.return_code);
+        args.return_code = EXIT_FAILURE;
+        goto exit;
+    }
+
+    #ifdef WOLFSSL_DTLS
+    strcpy(argv0[1], "tests/test-maxfrag-dtls.conf");
+    printf("starting dtls max fragment cipher suite tests\n");
+    test_harness(&args);
+    if (args.return_code != 0) {
+        printf("error from script %d\n", args.return_code);
+        args.return_code = EXIT_FAILURE;
+        goto exit;
+    }
+    #endif
 #endif
 
     /* failure tests */

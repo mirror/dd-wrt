@@ -1639,7 +1639,8 @@ static void sp_2048_sqr_32(sp_digit* r, const sp_digit* a)
 }
 
 #endif /* WOLFSSL_SP_SMALL */
-#if !defined(SP_RSA_PRIVATE_EXP_D) && defined(WOLFSSL_HAVE_SP_RSA)
+#if !defined(SP_RSA_PRIVATE_EXP_D) && defined(WOLFSSL_HAVE_SP_RSA) && \
+       !defined(WOLFSSL_RSA_PUBLIC_ONLY)
 #ifdef WOLFSSL_SP_SMALL
 /* AND m into each word of a and store in r.
  *
@@ -1847,7 +1848,7 @@ static void sp_2048_sqr_16(sp_digit* r, const sp_digit* a)
 }
 
 #endif /* WOLFSSL_SP_SMALL */
-#endif /* !SP_RSA_PRIVATE_EXP_D && WOLFSSL_HAVE_SP_RSA */
+#endif /* !SP_RSA_PRIVATE_EXP_D && WOLFSSL_HAVE_SP_RSA && !WOLFSSL_RSA_PUBLIC_ONLY */
 
 /* Caclulate the bottom digit of -1/a mod 2^n.
  *
@@ -1869,7 +1870,339 @@ static void sp_2048_mont_setup(sp_digit* a, sp_digit* rho)
     *rho = -x;
 }
 
-#if !defined(SP_RSA_PRIVATE_EXP_D) && defined(WOLFSSL_HAVE_SP_RSA)
+/* Mul a by digit b into r. (r = a * b)
+ *
+ * r  A single precision integer.
+ * a  A single precision integer.
+ * b  A single precision digit.
+ */
+static void sp_2048_mul_d_32(sp_digit* r, const sp_digit* a,
+        const sp_digit b)
+{
+#ifdef WOLFSSL_SP_SMALL
+    __asm__ __volatile__ (
+        "# A[0] * B\n\t"
+        "ldr	x8, [%[a]]\n\t"
+        "mul	x5, %[b], x8\n\t"
+        "umulh	x3, %[b], x8\n\t"
+        "mov	x4, 0\n\t"
+        "str	x5, [%[r]]\n\t"
+        "mov	x5, 0\n\t"
+        "mov	x9, #8\n\t"
+        "1:\n\t"
+        "ldr	x8, [%[a], x9]\n\t"
+        "mul	x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x3, x3, x6\n\t"
+        "adcs	x4, x4, x7\n\t"
+        "adc	x5, xzr, xzr\n\t"
+        "str	x3, [%[r], x9]\n\t"
+        "mov	x3, x4\n\t"
+        "mov	x4, x5\n\t"
+        "mov	x5, #0\n\t"
+        "add	x9, x9, #8\n\t"
+        "cmp	x9, 256\n\t"
+        "b.lt	1b\n\t"
+        "str	x3, [%[r], 256]\n\t"
+        :
+        : [r] "r" (r), [a] "r" (a), [b] "r" (b)
+        : "memory", "x3", "x4", "x5", "x6", "x7", "x8"
+    );
+#else
+    __asm__ __volatile__ (
+        "# A[0] * B\n\t"
+        "ldr	x8, [%[a]]\n\t"
+        "mul	x3, %[b], x8\n\t"
+        "umulh	x4, %[b], x8\n\t"
+        "mov	x5, 0\n\t"
+        "str	x3, [%[r]]\n\t"
+        "# A[1] * B\n\t"
+        "ldr		x8, [%[a], 8]\n\t"
+        "mov		x3, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x4, x4, x6\n\t"
+        "adcs	x5, x5, x7\n\t"
+        "adc		x3, xzr, xzr\n\t"
+        "str		x4, [%[r], 8]\n\t"
+        "# A[2] * B\n\t"
+        "ldr		x8, [%[a], 16]\n\t"
+        "mov		x4, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x5, x5, x6\n\t"
+        "adcs	x3, x3, x7\n\t"
+        "adc		x4, xzr, xzr\n\t"
+        "str		x5, [%[r], 16]\n\t"
+        "# A[3] * B\n\t"
+        "ldr		x8, [%[a], 24]\n\t"
+        "mov		x5, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x3, x3, x6\n\t"
+        "adcs	x4, x4, x7\n\t"
+        "adc		x5, xzr, xzr\n\t"
+        "str		x3, [%[r], 24]\n\t"
+        "# A[4] * B\n\t"
+        "ldr		x8, [%[a], 32]\n\t"
+        "mov		x3, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x4, x4, x6\n\t"
+        "adcs	x5, x5, x7\n\t"
+        "adc		x3, xzr, xzr\n\t"
+        "str		x4, [%[r], 32]\n\t"
+        "# A[5] * B\n\t"
+        "ldr		x8, [%[a], 40]\n\t"
+        "mov		x4, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x5, x5, x6\n\t"
+        "adcs	x3, x3, x7\n\t"
+        "adc		x4, xzr, xzr\n\t"
+        "str		x5, [%[r], 40]\n\t"
+        "# A[6] * B\n\t"
+        "ldr		x8, [%[a], 48]\n\t"
+        "mov		x5, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x3, x3, x6\n\t"
+        "adcs	x4, x4, x7\n\t"
+        "adc		x5, xzr, xzr\n\t"
+        "str		x3, [%[r], 48]\n\t"
+        "# A[7] * B\n\t"
+        "ldr		x8, [%[a], 56]\n\t"
+        "mov		x3, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x4, x4, x6\n\t"
+        "adcs	x5, x5, x7\n\t"
+        "adc		x3, xzr, xzr\n\t"
+        "str		x4, [%[r], 56]\n\t"
+        "# A[8] * B\n\t"
+        "ldr		x8, [%[a], 64]\n\t"
+        "mov		x4, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x5, x5, x6\n\t"
+        "adcs	x3, x3, x7\n\t"
+        "adc		x4, xzr, xzr\n\t"
+        "str		x5, [%[r], 64]\n\t"
+        "# A[9] * B\n\t"
+        "ldr		x8, [%[a], 72]\n\t"
+        "mov		x5, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x3, x3, x6\n\t"
+        "adcs	x4, x4, x7\n\t"
+        "adc		x5, xzr, xzr\n\t"
+        "str		x3, [%[r], 72]\n\t"
+        "# A[10] * B\n\t"
+        "ldr		x8, [%[a], 80]\n\t"
+        "mov		x3, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x4, x4, x6\n\t"
+        "adcs	x5, x5, x7\n\t"
+        "adc		x3, xzr, xzr\n\t"
+        "str		x4, [%[r], 80]\n\t"
+        "# A[11] * B\n\t"
+        "ldr		x8, [%[a], 88]\n\t"
+        "mov		x4, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x5, x5, x6\n\t"
+        "adcs	x3, x3, x7\n\t"
+        "adc		x4, xzr, xzr\n\t"
+        "str		x5, [%[r], 88]\n\t"
+        "# A[12] * B\n\t"
+        "ldr		x8, [%[a], 96]\n\t"
+        "mov		x5, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x3, x3, x6\n\t"
+        "adcs	x4, x4, x7\n\t"
+        "adc		x5, xzr, xzr\n\t"
+        "str		x3, [%[r], 96]\n\t"
+        "# A[13] * B\n\t"
+        "ldr		x8, [%[a], 104]\n\t"
+        "mov		x3, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x4, x4, x6\n\t"
+        "adcs	x5, x5, x7\n\t"
+        "adc		x3, xzr, xzr\n\t"
+        "str		x4, [%[r], 104]\n\t"
+        "# A[14] * B\n\t"
+        "ldr		x8, [%[a], 112]\n\t"
+        "mov		x4, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x5, x5, x6\n\t"
+        "adcs	x3, x3, x7\n\t"
+        "adc		x4, xzr, xzr\n\t"
+        "str		x5, [%[r], 112]\n\t"
+        "# A[15] * B\n\t"
+        "ldr		x8, [%[a], 120]\n\t"
+        "mov		x5, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x3, x3, x6\n\t"
+        "adcs	x4, x4, x7\n\t"
+        "adc		x5, xzr, xzr\n\t"
+        "str		x3, [%[r], 120]\n\t"
+        "# A[16] * B\n\t"
+        "ldr		x8, [%[a], 128]\n\t"
+        "mov		x3, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x4, x4, x6\n\t"
+        "adcs	x5, x5, x7\n\t"
+        "adc		x3, xzr, xzr\n\t"
+        "str		x4, [%[r], 128]\n\t"
+        "# A[17] * B\n\t"
+        "ldr		x8, [%[a], 136]\n\t"
+        "mov		x4, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x5, x5, x6\n\t"
+        "adcs	x3, x3, x7\n\t"
+        "adc		x4, xzr, xzr\n\t"
+        "str		x5, [%[r], 136]\n\t"
+        "# A[18] * B\n\t"
+        "ldr		x8, [%[a], 144]\n\t"
+        "mov		x5, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x3, x3, x6\n\t"
+        "adcs	x4, x4, x7\n\t"
+        "adc		x5, xzr, xzr\n\t"
+        "str		x3, [%[r], 144]\n\t"
+        "# A[19] * B\n\t"
+        "ldr		x8, [%[a], 152]\n\t"
+        "mov		x3, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x4, x4, x6\n\t"
+        "adcs	x5, x5, x7\n\t"
+        "adc		x3, xzr, xzr\n\t"
+        "str		x4, [%[r], 152]\n\t"
+        "# A[20] * B\n\t"
+        "ldr		x8, [%[a], 160]\n\t"
+        "mov		x4, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x5, x5, x6\n\t"
+        "adcs	x3, x3, x7\n\t"
+        "adc		x4, xzr, xzr\n\t"
+        "str		x5, [%[r], 160]\n\t"
+        "# A[21] * B\n\t"
+        "ldr		x8, [%[a], 168]\n\t"
+        "mov		x5, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x3, x3, x6\n\t"
+        "adcs	x4, x4, x7\n\t"
+        "adc		x5, xzr, xzr\n\t"
+        "str		x3, [%[r], 168]\n\t"
+        "# A[22] * B\n\t"
+        "ldr		x8, [%[a], 176]\n\t"
+        "mov		x3, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x4, x4, x6\n\t"
+        "adcs	x5, x5, x7\n\t"
+        "adc		x3, xzr, xzr\n\t"
+        "str		x4, [%[r], 176]\n\t"
+        "# A[23] * B\n\t"
+        "ldr		x8, [%[a], 184]\n\t"
+        "mov		x4, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x5, x5, x6\n\t"
+        "adcs	x3, x3, x7\n\t"
+        "adc		x4, xzr, xzr\n\t"
+        "str		x5, [%[r], 184]\n\t"
+        "# A[24] * B\n\t"
+        "ldr		x8, [%[a], 192]\n\t"
+        "mov		x5, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x3, x3, x6\n\t"
+        "adcs	x4, x4, x7\n\t"
+        "adc		x5, xzr, xzr\n\t"
+        "str		x3, [%[r], 192]\n\t"
+        "# A[25] * B\n\t"
+        "ldr		x8, [%[a], 200]\n\t"
+        "mov		x3, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x4, x4, x6\n\t"
+        "adcs	x5, x5, x7\n\t"
+        "adc		x3, xzr, xzr\n\t"
+        "str		x4, [%[r], 200]\n\t"
+        "# A[26] * B\n\t"
+        "ldr		x8, [%[a], 208]\n\t"
+        "mov		x4, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x5, x5, x6\n\t"
+        "adcs	x3, x3, x7\n\t"
+        "adc		x4, xzr, xzr\n\t"
+        "str		x5, [%[r], 208]\n\t"
+        "# A[27] * B\n\t"
+        "ldr		x8, [%[a], 216]\n\t"
+        "mov		x5, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x3, x3, x6\n\t"
+        "adcs	x4, x4, x7\n\t"
+        "adc		x5, xzr, xzr\n\t"
+        "str		x3, [%[r], 216]\n\t"
+        "# A[28] * B\n\t"
+        "ldr		x8, [%[a], 224]\n\t"
+        "mov		x3, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x4, x4, x6\n\t"
+        "adcs	x5, x5, x7\n\t"
+        "adc		x3, xzr, xzr\n\t"
+        "str		x4, [%[r], 224]\n\t"
+        "# A[29] * B\n\t"
+        "ldr		x8, [%[a], 232]\n\t"
+        "mov		x4, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x5, x5, x6\n\t"
+        "adcs	x3, x3, x7\n\t"
+        "adc		x4, xzr, xzr\n\t"
+        "str		x5, [%[r], 232]\n\t"
+        "# A[30] * B\n\t"
+        "ldr		x8, [%[a], 240]\n\t"
+        "mov		x5, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x3, x3, x6\n\t"
+        "adcs	x4, x4, x7\n\t"
+        "adc		x5, xzr, xzr\n\t"
+        "str		x3, [%[r], 240]\n\t"
+        "# A[31] * B\n\t"
+        "ldr	x8, [%[a], 248]\n\t"
+        "mul	x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x4, x4, x6\n\t"
+        "adc	x5, x5, x7\n\t"
+        "str	x4, [%[r], 248]\n\t"
+        "str	x5, [%[r], 256]\n\t"
+        :
+        : [r] "r" (r), [a] "r" (a), [b] "r" (b)
+        : "memory", "x3", "x4", "x5", "x6", "x7", "x8"
+    );
+#endif
+}
+
+#if !defined(SP_RSA_PRIVATE_EXP_D) && defined(WOLFSSL_HAVE_SP_RSA) && \
+       !defined(WOLFSSL_RSA_PUBLIC_ONLY)
 /* r = 2^n mod m where n is the number of bits to reduce by.
  * Given m must be 2048 bits, just need to subtract.
  *
@@ -2655,7 +2988,7 @@ static int64_t sp_2048_cmp_16(sp_digit* a, sp_digit* b)
  * r  Remainder from the division.
  * returns MP_OKAY indicating success.
  */
-static INLINE int sp_2048_div_16(sp_digit* a, sp_digit* d, sp_digit* m,
+static WC_INLINE int sp_2048_div_16(sp_digit* a, sp_digit* d, sp_digit* m,
         sp_digit* r)
 {
     sp_digit t1[32], t2[17];
@@ -2679,7 +3012,7 @@ static INLINE int sp_2048_div_16(sp_digit* a, sp_digit* d, sp_digit* m,
     }
 
     r1 = sp_2048_cmp_16(t1, d) >= 0;
-    sp_2048_cond_sub_16(r, t1, t2, (sp_digit)0 - r1);
+    sp_2048_cond_sub_16(r, t1, d, (sp_digit)0 - r1);
 
     return MP_OKAY;
 }
@@ -2691,7 +3024,7 @@ static INLINE int sp_2048_div_16(sp_digit* a, sp_digit* d, sp_digit* m,
  * m  A single precision number that is the modulus to reduce with.
  * returns MP_OKAY indicating success.
  */
-static INLINE int sp_2048_mod_16(sp_digit* r, sp_digit* a, sp_digit* m)
+static WC_INLINE int sp_2048_mod_16(sp_digit* r, sp_digit* a, sp_digit* m)
 {
     return sp_2048_div_16(a, m, NULL, r);
 }
@@ -2804,6 +3137,10 @@ static int sp_2048_mod_exp_16(sp_digit* r, sp_digit* a, sp_digit* e,
 
             sp_2048_mont_mul_16(r, r, t[y], m, mp);
         }
+        y = e[0] & ((1 << c) - 1);
+        for (; c > 0; c--)
+            sp_2048_mont_sqr_16(r, r, m, mp);
+        sp_2048_mont_mul_16(r, r, t[y], m, mp);
 
         XMEMSET(&r[16], 0, sizeof(sp_digit) * 16);
         sp_2048_mont_reduce_16(r, m, mp);
@@ -2944,11 +3281,9 @@ static int sp_2048_mod_exp_16(sp_digit* r, sp_digit* a, sp_digit* e,
 
             sp_2048_mont_mul_16(r, r, t[y], m, mp);
         }
-        y = e[0] & 0xf;
-        sp_2048_mont_sqr_16(r, r, m, mp);
-        sp_2048_mont_sqr_16(r, r, m, mp);
-        sp_2048_mont_sqr_16(r, r, m, mp);
-        sp_2048_mont_sqr_16(r, r, m, mp);
+        y = e[0] & ((1 << c) - 1);
+        for (; c > 0; c--)
+            sp_2048_mont_sqr_16(r, r, m, mp);
         sp_2048_mont_mul_16(r, r, t[y], m, mp);
 
         XMEMSET(&r[16], 0, sizeof(sp_digit) * 16);
@@ -2967,8 +3302,9 @@ static int sp_2048_mod_exp_16(sp_digit* r, sp_digit* a, sp_digit* e,
 }
 #endif /* WOLFSSL_SP_SMALL */
 
-#endif /* !SP_RSA_PRIVATE_EXP_D && WOLFSSL_HAVE_SP_RSA */
+#endif /* !SP_RSA_PRIVATE_EXP_D && WOLFSSL_HAVE_SP_RSA && !WOLFSSL_RSA_PUBLIC_ONLY */
 
+#ifdef WOLFSSL_HAVE_SP_DH
 /* r = 2^n mod m where n is the number of bits to reduce by.
  * Given m must be 2048 bits, just need to subtract.
  *
@@ -2983,6 +3319,7 @@ static void sp_2048_mont_norm_32(sp_digit* r, sp_digit* m)
     sp_2048_sub_in_place_32(r, m);
 }
 
+#endif /* WOLFSSL_HAVE_SP_DH */
 /* Conditionally subtract b from a using the mask m.
  * m is -1 to subtract and 0 when not copying.
  *
@@ -3561,337 +3898,6 @@ static void sp_2048_mont_sqr_32(sp_digit* r, sp_digit* a, sp_digit* m,
     sp_2048_mont_reduce_32(r, m, mp);
 }
 
-/* Mul a by digit b into r. (r = a * b)
- *
- * r  A single precision integer.
- * a  A single precision integer.
- * b  A single precision digit.
- */
-static void sp_2048_mul_d_32(sp_digit* r, const sp_digit* a,
-        const sp_digit b)
-{
-#ifdef WOLFSSL_SP_SMALL
-    __asm__ __volatile__ (
-        "# A[0] * B\n\t"
-        "ldr	x8, [%[a]]\n\t"
-        "mul	x5, %[b], x8\n\t"
-        "umulh	x3, %[b], x8\n\t"
-        "mov	x4, 0\n\t"
-        "str	x5, [%[r]]\n\t"
-        "mov	x5, 0\n\t"
-        "mov	x9, #8\n\t"
-        "1:\n\t"
-        "ldr	x8, [%[a], x9]\n\t"
-        "mul	x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x3, x3, x6\n\t"
-        "adcs	x4, x4, x7\n\t"
-        "adc	x5, xzr, xzr\n\t"
-        "str	x3, [%[r], x9]\n\t"
-        "mov	x3, x4\n\t"
-        "mov	x4, x5\n\t"
-        "mov	x5, #0\n\t"
-        "add	x9, x9, #8\n\t"
-        "cmp	x9, 256\n\t"
-        "b.lt	1b\n\t"
-        "str	x3, [%[r], 256]\n\t"
-        :
-        : [r] "r" (r), [a] "r" (a), [b] "r" (b)
-        : "memory", "x3", "x4", "x5", "x6", "x7", "x8"
-    );
-#else
-    __asm__ __volatile__ (
-        "# A[0] * B\n\t"
-        "ldr	x8, [%[a]]\n\t"
-        "mul	x3, %[b], x8\n\t"
-        "umulh	x4, %[b], x8\n\t"
-        "mov	x5, 0\n\t"
-        "str	x3, [%[r]]\n\t"
-        "# A[1] * B\n\t"
-        "ldr		x8, [%[a], 8]\n\t"
-        "mov		x3, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x4, x4, x6\n\t"
-        "adcs	x5, x5, x7\n\t"
-        "adc		x3, xzr, xzr\n\t"
-        "str		x4, [%[r], 8]\n\t"
-        "# A[2] * B\n\t"
-        "ldr		x8, [%[a], 16]\n\t"
-        "mov		x4, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x5, x5, x6\n\t"
-        "adcs	x3, x3, x7\n\t"
-        "adc		x4, xzr, xzr\n\t"
-        "str		x5, [%[r], 16]\n\t"
-        "# A[3] * B\n\t"
-        "ldr		x8, [%[a], 24]\n\t"
-        "mov		x5, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x3, x3, x6\n\t"
-        "adcs	x4, x4, x7\n\t"
-        "adc		x5, xzr, xzr\n\t"
-        "str		x3, [%[r], 24]\n\t"
-        "# A[4] * B\n\t"
-        "ldr		x8, [%[a], 32]\n\t"
-        "mov		x3, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x4, x4, x6\n\t"
-        "adcs	x5, x5, x7\n\t"
-        "adc		x3, xzr, xzr\n\t"
-        "str		x4, [%[r], 32]\n\t"
-        "# A[5] * B\n\t"
-        "ldr		x8, [%[a], 40]\n\t"
-        "mov		x4, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x5, x5, x6\n\t"
-        "adcs	x3, x3, x7\n\t"
-        "adc		x4, xzr, xzr\n\t"
-        "str		x5, [%[r], 40]\n\t"
-        "# A[6] * B\n\t"
-        "ldr		x8, [%[a], 48]\n\t"
-        "mov		x5, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x3, x3, x6\n\t"
-        "adcs	x4, x4, x7\n\t"
-        "adc		x5, xzr, xzr\n\t"
-        "str		x3, [%[r], 48]\n\t"
-        "# A[7] * B\n\t"
-        "ldr		x8, [%[a], 56]\n\t"
-        "mov		x3, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x4, x4, x6\n\t"
-        "adcs	x5, x5, x7\n\t"
-        "adc		x3, xzr, xzr\n\t"
-        "str		x4, [%[r], 56]\n\t"
-        "# A[8] * B\n\t"
-        "ldr		x8, [%[a], 64]\n\t"
-        "mov		x4, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x5, x5, x6\n\t"
-        "adcs	x3, x3, x7\n\t"
-        "adc		x4, xzr, xzr\n\t"
-        "str		x5, [%[r], 64]\n\t"
-        "# A[9] * B\n\t"
-        "ldr		x8, [%[a], 72]\n\t"
-        "mov		x5, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x3, x3, x6\n\t"
-        "adcs	x4, x4, x7\n\t"
-        "adc		x5, xzr, xzr\n\t"
-        "str		x3, [%[r], 72]\n\t"
-        "# A[10] * B\n\t"
-        "ldr		x8, [%[a], 80]\n\t"
-        "mov		x3, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x4, x4, x6\n\t"
-        "adcs	x5, x5, x7\n\t"
-        "adc		x3, xzr, xzr\n\t"
-        "str		x4, [%[r], 80]\n\t"
-        "# A[11] * B\n\t"
-        "ldr		x8, [%[a], 88]\n\t"
-        "mov		x4, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x5, x5, x6\n\t"
-        "adcs	x3, x3, x7\n\t"
-        "adc		x4, xzr, xzr\n\t"
-        "str		x5, [%[r], 88]\n\t"
-        "# A[12] * B\n\t"
-        "ldr		x8, [%[a], 96]\n\t"
-        "mov		x5, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x3, x3, x6\n\t"
-        "adcs	x4, x4, x7\n\t"
-        "adc		x5, xzr, xzr\n\t"
-        "str		x3, [%[r], 96]\n\t"
-        "# A[13] * B\n\t"
-        "ldr		x8, [%[a], 104]\n\t"
-        "mov		x3, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x4, x4, x6\n\t"
-        "adcs	x5, x5, x7\n\t"
-        "adc		x3, xzr, xzr\n\t"
-        "str		x4, [%[r], 104]\n\t"
-        "# A[14] * B\n\t"
-        "ldr		x8, [%[a], 112]\n\t"
-        "mov		x4, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x5, x5, x6\n\t"
-        "adcs	x3, x3, x7\n\t"
-        "adc		x4, xzr, xzr\n\t"
-        "str		x5, [%[r], 112]\n\t"
-        "# A[15] * B\n\t"
-        "ldr		x8, [%[a], 120]\n\t"
-        "mov		x5, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x3, x3, x6\n\t"
-        "adcs	x4, x4, x7\n\t"
-        "adc		x5, xzr, xzr\n\t"
-        "str		x3, [%[r], 120]\n\t"
-        "# A[16] * B\n\t"
-        "ldr		x8, [%[a], 128]\n\t"
-        "mov		x3, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x4, x4, x6\n\t"
-        "adcs	x5, x5, x7\n\t"
-        "adc		x3, xzr, xzr\n\t"
-        "str		x4, [%[r], 128]\n\t"
-        "# A[17] * B\n\t"
-        "ldr		x8, [%[a], 136]\n\t"
-        "mov		x4, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x5, x5, x6\n\t"
-        "adcs	x3, x3, x7\n\t"
-        "adc		x4, xzr, xzr\n\t"
-        "str		x5, [%[r], 136]\n\t"
-        "# A[18] * B\n\t"
-        "ldr		x8, [%[a], 144]\n\t"
-        "mov		x5, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x3, x3, x6\n\t"
-        "adcs	x4, x4, x7\n\t"
-        "adc		x5, xzr, xzr\n\t"
-        "str		x3, [%[r], 144]\n\t"
-        "# A[19] * B\n\t"
-        "ldr		x8, [%[a], 152]\n\t"
-        "mov		x3, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x4, x4, x6\n\t"
-        "adcs	x5, x5, x7\n\t"
-        "adc		x3, xzr, xzr\n\t"
-        "str		x4, [%[r], 152]\n\t"
-        "# A[20] * B\n\t"
-        "ldr		x8, [%[a], 160]\n\t"
-        "mov		x4, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x5, x5, x6\n\t"
-        "adcs	x3, x3, x7\n\t"
-        "adc		x4, xzr, xzr\n\t"
-        "str		x5, [%[r], 160]\n\t"
-        "# A[21] * B\n\t"
-        "ldr		x8, [%[a], 168]\n\t"
-        "mov		x5, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x3, x3, x6\n\t"
-        "adcs	x4, x4, x7\n\t"
-        "adc		x5, xzr, xzr\n\t"
-        "str		x3, [%[r], 168]\n\t"
-        "# A[22] * B\n\t"
-        "ldr		x8, [%[a], 176]\n\t"
-        "mov		x3, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x4, x4, x6\n\t"
-        "adcs	x5, x5, x7\n\t"
-        "adc		x3, xzr, xzr\n\t"
-        "str		x4, [%[r], 176]\n\t"
-        "# A[23] * B\n\t"
-        "ldr		x8, [%[a], 184]\n\t"
-        "mov		x4, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x5, x5, x6\n\t"
-        "adcs	x3, x3, x7\n\t"
-        "adc		x4, xzr, xzr\n\t"
-        "str		x5, [%[r], 184]\n\t"
-        "# A[24] * B\n\t"
-        "ldr		x8, [%[a], 192]\n\t"
-        "mov		x5, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x3, x3, x6\n\t"
-        "adcs	x4, x4, x7\n\t"
-        "adc		x5, xzr, xzr\n\t"
-        "str		x3, [%[r], 192]\n\t"
-        "# A[25] * B\n\t"
-        "ldr		x8, [%[a], 200]\n\t"
-        "mov		x3, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x4, x4, x6\n\t"
-        "adcs	x5, x5, x7\n\t"
-        "adc		x3, xzr, xzr\n\t"
-        "str		x4, [%[r], 200]\n\t"
-        "# A[26] * B\n\t"
-        "ldr		x8, [%[a], 208]\n\t"
-        "mov		x4, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x5, x5, x6\n\t"
-        "adcs	x3, x3, x7\n\t"
-        "adc		x4, xzr, xzr\n\t"
-        "str		x5, [%[r], 208]\n\t"
-        "# A[27] * B\n\t"
-        "ldr		x8, [%[a], 216]\n\t"
-        "mov		x5, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x3, x3, x6\n\t"
-        "adcs	x4, x4, x7\n\t"
-        "adc		x5, xzr, xzr\n\t"
-        "str		x3, [%[r], 216]\n\t"
-        "# A[28] * B\n\t"
-        "ldr		x8, [%[a], 224]\n\t"
-        "mov		x3, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x4, x4, x6\n\t"
-        "adcs	x5, x5, x7\n\t"
-        "adc		x3, xzr, xzr\n\t"
-        "str		x4, [%[r], 224]\n\t"
-        "# A[29] * B\n\t"
-        "ldr		x8, [%[a], 232]\n\t"
-        "mov		x4, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x5, x5, x6\n\t"
-        "adcs	x3, x3, x7\n\t"
-        "adc		x4, xzr, xzr\n\t"
-        "str		x5, [%[r], 232]\n\t"
-        "# A[30] * B\n\t"
-        "ldr		x8, [%[a], 240]\n\t"
-        "mov		x5, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x3, x3, x6\n\t"
-        "adcs	x4, x4, x7\n\t"
-        "adc		x5, xzr, xzr\n\t"
-        "str		x3, [%[r], 240]\n\t"
-        "# A[31] * B\n\t"
-        "ldr	x8, [%[a], 248]\n\t"
-        "mul	x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x4, x4, x6\n\t"
-        "adc	x5, x5, x7\n\t"
-        "str	x4, [%[r], 248]\n\t"
-        "str	x5, [%[r], 256]\n\t"
-        :
-        : [r] "r" (r), [a] "r" (a), [b] "r" (b)
-        : "memory", "x3", "x4", "x5", "x6", "x7", "x8"
-    );
-#endif
-}
-
 /* Divide the double width number (d1|d0) by the dividend. (d1|d0 / div)
  *
  * d1   The high order half of the number to divide.
@@ -4295,7 +4301,7 @@ static int64_t sp_2048_cmp_32(sp_digit* a, sp_digit* b)
  * r  Remainder from the division.
  * returns MP_OKAY indicating success.
  */
-static INLINE int sp_2048_div_32(sp_digit* a, sp_digit* d, sp_digit* m,
+static WC_INLINE int sp_2048_div_32(sp_digit* a, sp_digit* d, sp_digit* m,
         sp_digit* r)
 {
     sp_digit t1[64], t2[33];
@@ -4319,7 +4325,7 @@ static INLINE int sp_2048_div_32(sp_digit* a, sp_digit* d, sp_digit* m,
     }
 
     r1 = sp_2048_cmp_32(t1, d) >= 0;
-    sp_2048_cond_sub_32(r, t1, t2, (sp_digit)0 - r1);
+    sp_2048_cond_sub_32(r, t1, d, (sp_digit)0 - r1);
 
     return MP_OKAY;
 }
@@ -4331,7 +4337,7 @@ static INLINE int sp_2048_div_32(sp_digit* a, sp_digit* d, sp_digit* m,
  * m  A single precision number that is the modulus to reduce with.
  * returns MP_OKAY indicating success.
  */
-static INLINE int sp_2048_mod_32(sp_digit* r, sp_digit* a, sp_digit* m)
+static WC_INLINE int sp_2048_mod_32(sp_digit* r, sp_digit* a, sp_digit* m)
 {
     return sp_2048_div_32(a, m, NULL, r);
 }
@@ -4345,7 +4351,7 @@ static INLINE int sp_2048_mod_32(sp_digit* r, sp_digit* a, sp_digit* m)
  * r  Remainder from the division.
  * returns MP_OKAY indicating success.
  */
-static INLINE int sp_2048_div_32_cond(sp_digit* a, sp_digit* d, sp_digit* m,
+static WC_INLINE int sp_2048_div_32_cond(sp_digit* a, sp_digit* d, sp_digit* m,
         sp_digit* r)
 {
     sp_digit t1[64], t2[33];
@@ -4370,7 +4376,7 @@ static INLINE int sp_2048_div_32_cond(sp_digit* a, sp_digit* d, sp_digit* m,
     }
 
     r1 = sp_2048_cmp_32(t1, d) >= 0;
-    sp_2048_cond_sub_32(r, t1, t2, (sp_digit)0 - r1);
+    sp_2048_cond_sub_32(r, t1, d, (sp_digit)0 - r1);
 
     return MP_OKAY;
 }
@@ -4382,7 +4388,7 @@ static INLINE int sp_2048_div_32_cond(sp_digit* a, sp_digit* d, sp_digit* m,
  * m  A single precision number that is the modulus to reduce with.
  * returns MP_OKAY indicating success.
  */
-static INLINE int sp_2048_mod_32_cond(sp_digit* r, sp_digit* a, sp_digit* m)
+static WC_INLINE int sp_2048_mod_32_cond(sp_digit* r, sp_digit* a, sp_digit* m)
 {
     return sp_2048_div_32_cond(a, m, NULL, r);
 }
@@ -4496,6 +4502,10 @@ static int sp_2048_mod_exp_32(sp_digit* r, sp_digit* a, sp_digit* e,
 
             sp_2048_mont_mul_32(r, r, t[y], m, mp);
         }
+        y = e[0] & ((1 << c) - 1);
+        for (; c > 0; c--)
+            sp_2048_mont_sqr_32(r, r, m, mp);
+        sp_2048_mont_mul_32(r, r, t[y], m, mp);
 
         XMEMSET(&r[32], 0, sizeof(sp_digit) * 32);
         sp_2048_mont_reduce_32(r, m, mp);
@@ -4636,10 +4646,9 @@ static int sp_2048_mod_exp_32(sp_digit* r, sp_digit* a, sp_digit* e,
 
             sp_2048_mont_mul_32(r, r, t[y], m, mp);
         }
-        y = e[0] & 0x7;
-        sp_2048_mont_sqr_32(r, r, m, mp);
-        sp_2048_mont_sqr_32(r, r, m, mp);
-        sp_2048_mont_sqr_32(r, r, m, mp);
+        y = e[0] & ((1 << c) - 1);
+        for (; c > 0; c--)
+            sp_2048_mont_sqr_32(r, r, m, mp);
         sp_2048_mont_mul_32(r, r, t[y], m, mp);
 
         XMEMSET(&r[32], 0, sizeof(sp_digit) * 32);
@@ -4696,7 +4705,7 @@ int sp_RsaPublic_2048(const byte* in, word32 inLen, mp_int* em, mp_int* mm,
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
     if (err == MP_OKAY) {
         d = (sp_digit*)XMALLOC(sizeof(sp_digit) * 32 * 5, NULL,
-                               DYNAMIC_TYPE_TMP_BUFFER);
+                                                              DYNAMIC_TYPE_RSA);
         if (d == NULL)
             err = MEMORY_E;
     }
@@ -4780,7 +4789,7 @@ int sp_RsaPublic_2048(const byte* in, word32 inLen, mp_int* em, mp_int* mm,
 
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
     if (d != NULL)
-        XFREE(d, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+        XFREE(d, NULL, DYNAMIC_TYPE_RSA);
 #endif
 
     return err;
@@ -4838,7 +4847,7 @@ int sp_RsaPrivate_2048(const byte* in, word32 inLen, mp_int* dm,
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
     if (err == MP_OKAY) {
         t = (sp_digit*)XMALLOC(sizeof(sp_digit) * 16 * 11, NULL,
-                               DYNAMIC_TYPE_TMP_BUFFER);
+                                                              DYNAMIC_TYPE_RSA);
         if (t == NULL)
             err = MEMORY_E;
     }
@@ -4898,7 +4907,7 @@ int sp_RsaPrivate_2048(const byte* in, word32 inLen, mp_int* dm,
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
     if (t != NULL) {
         XMEMSET(t, 0, sizeof(sp_digit) * 16 * 11);
-        XFREE(t, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+        XFREE(t, NULL, DYNAMIC_TYPE_RSA);
     }
 #else
     XMEMSET(tmpad, 0, sizeof(tmpad));
@@ -7855,7 +7864,8 @@ static void sp_3072_sqr_48(sp_digit* r, const sp_digit* a)
 }
 
 #endif /* WOLFSSL_SP_SMALL */
-#if !defined(SP_RSA_PRIVATE_EXP_D) && defined(WOLFSSL_HAVE_SP_RSA)
+#if !defined(SP_RSA_PRIVATE_EXP_D) && defined(WOLFSSL_HAVE_SP_RSA) && \
+       !defined(WOLFSSL_RSA_PUBLIC_ONLY)
 #ifdef WOLFSSL_SP_SMALL
 /* AND m into each word of a and store in r.
  *
@@ -8063,7 +8073,7 @@ static void sp_3072_sqr_24(sp_digit* r, const sp_digit* a)
 }
 
 #endif /* WOLFSSL_SP_SMALL */
-#endif /* !SP_RSA_PRIVATE_EXP_D && WOLFSSL_HAVE_SP_RSA */
+#endif /* !SP_RSA_PRIVATE_EXP_D && WOLFSSL_HAVE_SP_RSA && !WOLFSSL_RSA_PUBLIC_ONLY */
 
 /* Caclulate the bottom digit of -1/a mod 2^n.
  *
@@ -8085,7 +8095,483 @@ static void sp_3072_mont_setup(sp_digit* a, sp_digit* rho)
     *rho = -x;
 }
 
-#if !defined(SP_RSA_PRIVATE_EXP_D) && defined(WOLFSSL_HAVE_SP_RSA)
+/* Mul a by digit b into r. (r = a * b)
+ *
+ * r  A single precision integer.
+ * a  A single precision integer.
+ * b  A single precision digit.
+ */
+static void sp_3072_mul_d_48(sp_digit* r, const sp_digit* a,
+        const sp_digit b)
+{
+#ifdef WOLFSSL_SP_SMALL
+    __asm__ __volatile__ (
+        "# A[0] * B\n\t"
+        "ldr	x8, [%[a]]\n\t"
+        "mul	x5, %[b], x8\n\t"
+        "umulh	x3, %[b], x8\n\t"
+        "mov	x4, 0\n\t"
+        "str	x5, [%[r]]\n\t"
+        "mov	x5, 0\n\t"
+        "mov	x9, #8\n\t"
+        "1:\n\t"
+        "ldr	x8, [%[a], x9]\n\t"
+        "mul	x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x3, x3, x6\n\t"
+        "adcs	x4, x4, x7\n\t"
+        "adc	x5, xzr, xzr\n\t"
+        "str	x3, [%[r], x9]\n\t"
+        "mov	x3, x4\n\t"
+        "mov	x4, x5\n\t"
+        "mov	x5, #0\n\t"
+        "add	x9, x9, #8\n\t"
+        "cmp	x9, 384\n\t"
+        "b.lt	1b\n\t"
+        "str	x3, [%[r], 384]\n\t"
+        :
+        : [r] "r" (r), [a] "r" (a), [b] "r" (b)
+        : "memory", "x3", "x4", "x5", "x6", "x7", "x8"
+    );
+#else
+    __asm__ __volatile__ (
+        "# A[0] * B\n\t"
+        "ldr	x8, [%[a]]\n\t"
+        "mul	x3, %[b], x8\n\t"
+        "umulh	x4, %[b], x8\n\t"
+        "mov	x5, 0\n\t"
+        "str	x3, [%[r]]\n\t"
+        "# A[1] * B\n\t"
+        "ldr		x8, [%[a], 8]\n\t"
+        "mov		x3, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x4, x4, x6\n\t"
+        "adcs	x5, x5, x7\n\t"
+        "adc		x3, xzr, xzr\n\t"
+        "str		x4, [%[r], 8]\n\t"
+        "# A[2] * B\n\t"
+        "ldr		x8, [%[a], 16]\n\t"
+        "mov		x4, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x5, x5, x6\n\t"
+        "adcs	x3, x3, x7\n\t"
+        "adc		x4, xzr, xzr\n\t"
+        "str		x5, [%[r], 16]\n\t"
+        "# A[3] * B\n\t"
+        "ldr		x8, [%[a], 24]\n\t"
+        "mov		x5, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x3, x3, x6\n\t"
+        "adcs	x4, x4, x7\n\t"
+        "adc		x5, xzr, xzr\n\t"
+        "str		x3, [%[r], 24]\n\t"
+        "# A[4] * B\n\t"
+        "ldr		x8, [%[a], 32]\n\t"
+        "mov		x3, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x4, x4, x6\n\t"
+        "adcs	x5, x5, x7\n\t"
+        "adc		x3, xzr, xzr\n\t"
+        "str		x4, [%[r], 32]\n\t"
+        "# A[5] * B\n\t"
+        "ldr		x8, [%[a], 40]\n\t"
+        "mov		x4, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x5, x5, x6\n\t"
+        "adcs	x3, x3, x7\n\t"
+        "adc		x4, xzr, xzr\n\t"
+        "str		x5, [%[r], 40]\n\t"
+        "# A[6] * B\n\t"
+        "ldr		x8, [%[a], 48]\n\t"
+        "mov		x5, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x3, x3, x6\n\t"
+        "adcs	x4, x4, x7\n\t"
+        "adc		x5, xzr, xzr\n\t"
+        "str		x3, [%[r], 48]\n\t"
+        "# A[7] * B\n\t"
+        "ldr		x8, [%[a], 56]\n\t"
+        "mov		x3, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x4, x4, x6\n\t"
+        "adcs	x5, x5, x7\n\t"
+        "adc		x3, xzr, xzr\n\t"
+        "str		x4, [%[r], 56]\n\t"
+        "# A[8] * B\n\t"
+        "ldr		x8, [%[a], 64]\n\t"
+        "mov		x4, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x5, x5, x6\n\t"
+        "adcs	x3, x3, x7\n\t"
+        "adc		x4, xzr, xzr\n\t"
+        "str		x5, [%[r], 64]\n\t"
+        "# A[9] * B\n\t"
+        "ldr		x8, [%[a], 72]\n\t"
+        "mov		x5, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x3, x3, x6\n\t"
+        "adcs	x4, x4, x7\n\t"
+        "adc		x5, xzr, xzr\n\t"
+        "str		x3, [%[r], 72]\n\t"
+        "# A[10] * B\n\t"
+        "ldr		x8, [%[a], 80]\n\t"
+        "mov		x3, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x4, x4, x6\n\t"
+        "adcs	x5, x5, x7\n\t"
+        "adc		x3, xzr, xzr\n\t"
+        "str		x4, [%[r], 80]\n\t"
+        "# A[11] * B\n\t"
+        "ldr		x8, [%[a], 88]\n\t"
+        "mov		x4, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x5, x5, x6\n\t"
+        "adcs	x3, x3, x7\n\t"
+        "adc		x4, xzr, xzr\n\t"
+        "str		x5, [%[r], 88]\n\t"
+        "# A[12] * B\n\t"
+        "ldr		x8, [%[a], 96]\n\t"
+        "mov		x5, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x3, x3, x6\n\t"
+        "adcs	x4, x4, x7\n\t"
+        "adc		x5, xzr, xzr\n\t"
+        "str		x3, [%[r], 96]\n\t"
+        "# A[13] * B\n\t"
+        "ldr		x8, [%[a], 104]\n\t"
+        "mov		x3, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x4, x4, x6\n\t"
+        "adcs	x5, x5, x7\n\t"
+        "adc		x3, xzr, xzr\n\t"
+        "str		x4, [%[r], 104]\n\t"
+        "# A[14] * B\n\t"
+        "ldr		x8, [%[a], 112]\n\t"
+        "mov		x4, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x5, x5, x6\n\t"
+        "adcs	x3, x3, x7\n\t"
+        "adc		x4, xzr, xzr\n\t"
+        "str		x5, [%[r], 112]\n\t"
+        "# A[15] * B\n\t"
+        "ldr		x8, [%[a], 120]\n\t"
+        "mov		x5, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x3, x3, x6\n\t"
+        "adcs	x4, x4, x7\n\t"
+        "adc		x5, xzr, xzr\n\t"
+        "str		x3, [%[r], 120]\n\t"
+        "# A[16] * B\n\t"
+        "ldr		x8, [%[a], 128]\n\t"
+        "mov		x3, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x4, x4, x6\n\t"
+        "adcs	x5, x5, x7\n\t"
+        "adc		x3, xzr, xzr\n\t"
+        "str		x4, [%[r], 128]\n\t"
+        "# A[17] * B\n\t"
+        "ldr		x8, [%[a], 136]\n\t"
+        "mov		x4, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x5, x5, x6\n\t"
+        "adcs	x3, x3, x7\n\t"
+        "adc		x4, xzr, xzr\n\t"
+        "str		x5, [%[r], 136]\n\t"
+        "# A[18] * B\n\t"
+        "ldr		x8, [%[a], 144]\n\t"
+        "mov		x5, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x3, x3, x6\n\t"
+        "adcs	x4, x4, x7\n\t"
+        "adc		x5, xzr, xzr\n\t"
+        "str		x3, [%[r], 144]\n\t"
+        "# A[19] * B\n\t"
+        "ldr		x8, [%[a], 152]\n\t"
+        "mov		x3, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x4, x4, x6\n\t"
+        "adcs	x5, x5, x7\n\t"
+        "adc		x3, xzr, xzr\n\t"
+        "str		x4, [%[r], 152]\n\t"
+        "# A[20] * B\n\t"
+        "ldr		x8, [%[a], 160]\n\t"
+        "mov		x4, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x5, x5, x6\n\t"
+        "adcs	x3, x3, x7\n\t"
+        "adc		x4, xzr, xzr\n\t"
+        "str		x5, [%[r], 160]\n\t"
+        "# A[21] * B\n\t"
+        "ldr		x8, [%[a], 168]\n\t"
+        "mov		x5, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x3, x3, x6\n\t"
+        "adcs	x4, x4, x7\n\t"
+        "adc		x5, xzr, xzr\n\t"
+        "str		x3, [%[r], 168]\n\t"
+        "# A[22] * B\n\t"
+        "ldr		x8, [%[a], 176]\n\t"
+        "mov		x3, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x4, x4, x6\n\t"
+        "adcs	x5, x5, x7\n\t"
+        "adc		x3, xzr, xzr\n\t"
+        "str		x4, [%[r], 176]\n\t"
+        "# A[23] * B\n\t"
+        "ldr		x8, [%[a], 184]\n\t"
+        "mov		x4, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x5, x5, x6\n\t"
+        "adcs	x3, x3, x7\n\t"
+        "adc		x4, xzr, xzr\n\t"
+        "str		x5, [%[r], 184]\n\t"
+        "# A[24] * B\n\t"
+        "ldr		x8, [%[a], 192]\n\t"
+        "mov		x5, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x3, x3, x6\n\t"
+        "adcs	x4, x4, x7\n\t"
+        "adc		x5, xzr, xzr\n\t"
+        "str		x3, [%[r], 192]\n\t"
+        "# A[25] * B\n\t"
+        "ldr		x8, [%[a], 200]\n\t"
+        "mov		x3, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x4, x4, x6\n\t"
+        "adcs	x5, x5, x7\n\t"
+        "adc		x3, xzr, xzr\n\t"
+        "str		x4, [%[r], 200]\n\t"
+        "# A[26] * B\n\t"
+        "ldr		x8, [%[a], 208]\n\t"
+        "mov		x4, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x5, x5, x6\n\t"
+        "adcs	x3, x3, x7\n\t"
+        "adc		x4, xzr, xzr\n\t"
+        "str		x5, [%[r], 208]\n\t"
+        "# A[27] * B\n\t"
+        "ldr		x8, [%[a], 216]\n\t"
+        "mov		x5, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x3, x3, x6\n\t"
+        "adcs	x4, x4, x7\n\t"
+        "adc		x5, xzr, xzr\n\t"
+        "str		x3, [%[r], 216]\n\t"
+        "# A[28] * B\n\t"
+        "ldr		x8, [%[a], 224]\n\t"
+        "mov		x3, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x4, x4, x6\n\t"
+        "adcs	x5, x5, x7\n\t"
+        "adc		x3, xzr, xzr\n\t"
+        "str		x4, [%[r], 224]\n\t"
+        "# A[29] * B\n\t"
+        "ldr		x8, [%[a], 232]\n\t"
+        "mov		x4, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x5, x5, x6\n\t"
+        "adcs	x3, x3, x7\n\t"
+        "adc		x4, xzr, xzr\n\t"
+        "str		x5, [%[r], 232]\n\t"
+        "# A[30] * B\n\t"
+        "ldr		x8, [%[a], 240]\n\t"
+        "mov		x5, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x3, x3, x6\n\t"
+        "adcs	x4, x4, x7\n\t"
+        "adc		x5, xzr, xzr\n\t"
+        "str		x3, [%[r], 240]\n\t"
+        "# A[31] * B\n\t"
+        "ldr		x8, [%[a], 248]\n\t"
+        "mov		x3, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x4, x4, x6\n\t"
+        "adcs	x5, x5, x7\n\t"
+        "adc		x3, xzr, xzr\n\t"
+        "str		x4, [%[r], 248]\n\t"
+        "# A[32] * B\n\t"
+        "ldr		x8, [%[a], 256]\n\t"
+        "mov		x4, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x5, x5, x6\n\t"
+        "adcs	x3, x3, x7\n\t"
+        "adc		x4, xzr, xzr\n\t"
+        "str		x5, [%[r], 256]\n\t"
+        "# A[33] * B\n\t"
+        "ldr		x8, [%[a], 264]\n\t"
+        "mov		x5, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x3, x3, x6\n\t"
+        "adcs	x4, x4, x7\n\t"
+        "adc		x5, xzr, xzr\n\t"
+        "str		x3, [%[r], 264]\n\t"
+        "# A[34] * B\n\t"
+        "ldr		x8, [%[a], 272]\n\t"
+        "mov		x3, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x4, x4, x6\n\t"
+        "adcs	x5, x5, x7\n\t"
+        "adc		x3, xzr, xzr\n\t"
+        "str		x4, [%[r], 272]\n\t"
+        "# A[35] * B\n\t"
+        "ldr		x8, [%[a], 280]\n\t"
+        "mov		x4, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x5, x5, x6\n\t"
+        "adcs	x3, x3, x7\n\t"
+        "adc		x4, xzr, xzr\n\t"
+        "str		x5, [%[r], 280]\n\t"
+        "# A[36] * B\n\t"
+        "ldr		x8, [%[a], 288]\n\t"
+        "mov		x5, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x3, x3, x6\n\t"
+        "adcs	x4, x4, x7\n\t"
+        "adc		x5, xzr, xzr\n\t"
+        "str		x3, [%[r], 288]\n\t"
+        "# A[37] * B\n\t"
+        "ldr		x8, [%[a], 296]\n\t"
+        "mov		x3, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x4, x4, x6\n\t"
+        "adcs	x5, x5, x7\n\t"
+        "adc		x3, xzr, xzr\n\t"
+        "str		x4, [%[r], 296]\n\t"
+        "# A[38] * B\n\t"
+        "ldr		x8, [%[a], 304]\n\t"
+        "mov		x4, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x5, x5, x6\n\t"
+        "adcs	x3, x3, x7\n\t"
+        "adc		x4, xzr, xzr\n\t"
+        "str		x5, [%[r], 304]\n\t"
+        "# A[39] * B\n\t"
+        "ldr		x8, [%[a], 312]\n\t"
+        "mov		x5, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x3, x3, x6\n\t"
+        "adcs	x4, x4, x7\n\t"
+        "adc		x5, xzr, xzr\n\t"
+        "str		x3, [%[r], 312]\n\t"
+        "# A[40] * B\n\t"
+        "ldr		x8, [%[a], 320]\n\t"
+        "mov		x3, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x4, x4, x6\n\t"
+        "adcs	x5, x5, x7\n\t"
+        "adc		x3, xzr, xzr\n\t"
+        "str		x4, [%[r], 320]\n\t"
+        "# A[41] * B\n\t"
+        "ldr		x8, [%[a], 328]\n\t"
+        "mov		x4, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x5, x5, x6\n\t"
+        "adcs	x3, x3, x7\n\t"
+        "adc		x4, xzr, xzr\n\t"
+        "str		x5, [%[r], 328]\n\t"
+        "# A[42] * B\n\t"
+        "ldr		x8, [%[a], 336]\n\t"
+        "mov		x5, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x3, x3, x6\n\t"
+        "adcs	x4, x4, x7\n\t"
+        "adc		x5, xzr, xzr\n\t"
+        "str		x3, [%[r], 336]\n\t"
+        "# A[43] * B\n\t"
+        "ldr		x8, [%[a], 344]\n\t"
+        "mov		x3, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x4, x4, x6\n\t"
+        "adcs	x5, x5, x7\n\t"
+        "adc		x3, xzr, xzr\n\t"
+        "str		x4, [%[r], 344]\n\t"
+        "# A[44] * B\n\t"
+        "ldr		x8, [%[a], 352]\n\t"
+        "mov		x4, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x5, x5, x6\n\t"
+        "adcs	x3, x3, x7\n\t"
+        "adc		x4, xzr, xzr\n\t"
+        "str		x5, [%[r], 352]\n\t"
+        "# A[45] * B\n\t"
+        "ldr		x8, [%[a], 360]\n\t"
+        "mov		x5, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x3, x3, x6\n\t"
+        "adcs	x4, x4, x7\n\t"
+        "adc		x5, xzr, xzr\n\t"
+        "str		x3, [%[r], 360]\n\t"
+        "# A[46] * B\n\t"
+        "ldr		x8, [%[a], 368]\n\t"
+        "mov		x3, 0\n\t"
+        "mul		x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x4, x4, x6\n\t"
+        "adcs	x5, x5, x7\n\t"
+        "adc		x3, xzr, xzr\n\t"
+        "str		x4, [%[r], 368]\n\t"
+        "# A[47] * B\n\t"
+        "ldr	x8, [%[a], 376]\n\t"
+        "mul	x6, %[b], x8\n\t"
+        "umulh	x7, %[b], x8\n\t"
+        "adds	x5, x5, x6\n\t"
+        "adc	x3, x3, x7\n\t"
+        "str	x5, [%[r], 376]\n\t"
+        "str	x3, [%[r], 384]\n\t"
+        :
+        : [r] "r" (r), [a] "r" (a), [b] "r" (b)
+        : "memory", "x3", "x4", "x5", "x6", "x7", "x8"
+    );
+#endif
+}
+
+#if !defined(SP_RSA_PRIVATE_EXP_D) && defined(WOLFSSL_HAVE_SP_RSA) && \
+       !defined(WOLFSSL_RSA_PUBLIC_ONLY)
 /* r = 2^n mod m where n is the number of bits to reduce by.
  * Given m must be 3072 bits, just need to subtract.
  *
@@ -9127,7 +9613,7 @@ static int64_t sp_3072_cmp_24(sp_digit* a, sp_digit* b)
  * r  Remainder from the division.
  * returns MP_OKAY indicating success.
  */
-static INLINE int sp_3072_div_24(sp_digit* a, sp_digit* d, sp_digit* m,
+static WC_INLINE int sp_3072_div_24(sp_digit* a, sp_digit* d, sp_digit* m,
         sp_digit* r)
 {
     sp_digit t1[48], t2[25];
@@ -9151,7 +9637,7 @@ static INLINE int sp_3072_div_24(sp_digit* a, sp_digit* d, sp_digit* m,
     }
 
     r1 = sp_3072_cmp_24(t1, d) >= 0;
-    sp_3072_cond_sub_24(r, t1, t2, (sp_digit)0 - r1);
+    sp_3072_cond_sub_24(r, t1, d, (sp_digit)0 - r1);
 
     return MP_OKAY;
 }
@@ -9163,7 +9649,7 @@ static INLINE int sp_3072_div_24(sp_digit* a, sp_digit* d, sp_digit* m,
  * m  A single precision number that is the modulus to reduce with.
  * returns MP_OKAY indicating success.
  */
-static INLINE int sp_3072_mod_24(sp_digit* r, sp_digit* a, sp_digit* m)
+static WC_INLINE int sp_3072_mod_24(sp_digit* r, sp_digit* a, sp_digit* m)
 {
     return sp_3072_div_24(a, m, NULL, r);
 }
@@ -9276,6 +9762,10 @@ static int sp_3072_mod_exp_24(sp_digit* r, sp_digit* a, sp_digit* e,
 
             sp_3072_mont_mul_24(r, r, t[y], m, mp);
         }
+        y = e[0] & ((1 << c) - 1);
+        for (; c > 0; c--)
+            sp_3072_mont_sqr_24(r, r, m, mp);
+        sp_3072_mont_mul_24(r, r, t[y], m, mp);
 
         XMEMSET(&r[24], 0, sizeof(sp_digit) * 24);
         sp_3072_mont_reduce_24(r, m, mp);
@@ -9416,8 +9906,9 @@ static int sp_3072_mod_exp_24(sp_digit* r, sp_digit* a, sp_digit* e,
 
             sp_3072_mont_mul_24(r, r, t[y], m, mp);
         }
-        y = e[0] & 0x1;
-        sp_3072_mont_sqr_24(r, r, m, mp);
+        y = e[0] & ((1 << c) - 1);
+        for (; c > 0; c--)
+            sp_3072_mont_sqr_24(r, r, m, mp);
         sp_3072_mont_mul_24(r, r, t[y], m, mp);
 
         XMEMSET(&r[24], 0, sizeof(sp_digit) * 24);
@@ -9436,8 +9927,9 @@ static int sp_3072_mod_exp_24(sp_digit* r, sp_digit* a, sp_digit* e,
 }
 #endif /* WOLFSSL_SP_SMALL */
 
-#endif /* !SP_RSA_PRIVATE_EXP_D && WOLFSSL_HAVE_SP_RSA */
+#endif /* !SP_RSA_PRIVATE_EXP_D && WOLFSSL_HAVE_SP_RSA && !WOLFSSL_RSA_PUBLIC_ONLY */
 
+#ifdef WOLFSSL_HAVE_SP_DH
 /* r = 2^n mod m where n is the number of bits to reduce by.
  * Given m must be 3072 bits, just need to subtract.
  *
@@ -9452,6 +9944,7 @@ static void sp_3072_mont_norm_48(sp_digit* r, sp_digit* m)
     sp_3072_sub_in_place_48(r, m);
 }
 
+#endif /* WOLFSSL_HAVE_SP_DH */
 /* Conditionally subtract b from a using the mask m.
  * m is -1 to subtract and 0 when not copying.
  *
@@ -10270,481 +10763,6 @@ static void sp_3072_mont_sqr_48(sp_digit* r, sp_digit* a, sp_digit* m,
     sp_3072_mont_reduce_48(r, m, mp);
 }
 
-/* Mul a by digit b into r. (r = a * b)
- *
- * r  A single precision integer.
- * a  A single precision integer.
- * b  A single precision digit.
- */
-static void sp_3072_mul_d_48(sp_digit* r, const sp_digit* a,
-        const sp_digit b)
-{
-#ifdef WOLFSSL_SP_SMALL
-    __asm__ __volatile__ (
-        "# A[0] * B\n\t"
-        "ldr	x8, [%[a]]\n\t"
-        "mul	x5, %[b], x8\n\t"
-        "umulh	x3, %[b], x8\n\t"
-        "mov	x4, 0\n\t"
-        "str	x5, [%[r]]\n\t"
-        "mov	x5, 0\n\t"
-        "mov	x9, #8\n\t"
-        "1:\n\t"
-        "ldr	x8, [%[a], x9]\n\t"
-        "mul	x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x3, x3, x6\n\t"
-        "adcs	x4, x4, x7\n\t"
-        "adc	x5, xzr, xzr\n\t"
-        "str	x3, [%[r], x9]\n\t"
-        "mov	x3, x4\n\t"
-        "mov	x4, x5\n\t"
-        "mov	x5, #0\n\t"
-        "add	x9, x9, #8\n\t"
-        "cmp	x9, 384\n\t"
-        "b.lt	1b\n\t"
-        "str	x3, [%[r], 384]\n\t"
-        :
-        : [r] "r" (r), [a] "r" (a), [b] "r" (b)
-        : "memory", "x3", "x4", "x5", "x6", "x7", "x8"
-    );
-#else
-    __asm__ __volatile__ (
-        "# A[0] * B\n\t"
-        "ldr	x8, [%[a]]\n\t"
-        "mul	x3, %[b], x8\n\t"
-        "umulh	x4, %[b], x8\n\t"
-        "mov	x5, 0\n\t"
-        "str	x3, [%[r]]\n\t"
-        "# A[1] * B\n\t"
-        "ldr		x8, [%[a], 8]\n\t"
-        "mov		x3, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x4, x4, x6\n\t"
-        "adcs	x5, x5, x7\n\t"
-        "adc		x3, xzr, xzr\n\t"
-        "str		x4, [%[r], 8]\n\t"
-        "# A[2] * B\n\t"
-        "ldr		x8, [%[a], 16]\n\t"
-        "mov		x4, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x5, x5, x6\n\t"
-        "adcs	x3, x3, x7\n\t"
-        "adc		x4, xzr, xzr\n\t"
-        "str		x5, [%[r], 16]\n\t"
-        "# A[3] * B\n\t"
-        "ldr		x8, [%[a], 24]\n\t"
-        "mov		x5, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x3, x3, x6\n\t"
-        "adcs	x4, x4, x7\n\t"
-        "adc		x5, xzr, xzr\n\t"
-        "str		x3, [%[r], 24]\n\t"
-        "# A[4] * B\n\t"
-        "ldr		x8, [%[a], 32]\n\t"
-        "mov		x3, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x4, x4, x6\n\t"
-        "adcs	x5, x5, x7\n\t"
-        "adc		x3, xzr, xzr\n\t"
-        "str		x4, [%[r], 32]\n\t"
-        "# A[5] * B\n\t"
-        "ldr		x8, [%[a], 40]\n\t"
-        "mov		x4, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x5, x5, x6\n\t"
-        "adcs	x3, x3, x7\n\t"
-        "adc		x4, xzr, xzr\n\t"
-        "str		x5, [%[r], 40]\n\t"
-        "# A[6] * B\n\t"
-        "ldr		x8, [%[a], 48]\n\t"
-        "mov		x5, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x3, x3, x6\n\t"
-        "adcs	x4, x4, x7\n\t"
-        "adc		x5, xzr, xzr\n\t"
-        "str		x3, [%[r], 48]\n\t"
-        "# A[7] * B\n\t"
-        "ldr		x8, [%[a], 56]\n\t"
-        "mov		x3, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x4, x4, x6\n\t"
-        "adcs	x5, x5, x7\n\t"
-        "adc		x3, xzr, xzr\n\t"
-        "str		x4, [%[r], 56]\n\t"
-        "# A[8] * B\n\t"
-        "ldr		x8, [%[a], 64]\n\t"
-        "mov		x4, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x5, x5, x6\n\t"
-        "adcs	x3, x3, x7\n\t"
-        "adc		x4, xzr, xzr\n\t"
-        "str		x5, [%[r], 64]\n\t"
-        "# A[9] * B\n\t"
-        "ldr		x8, [%[a], 72]\n\t"
-        "mov		x5, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x3, x3, x6\n\t"
-        "adcs	x4, x4, x7\n\t"
-        "adc		x5, xzr, xzr\n\t"
-        "str		x3, [%[r], 72]\n\t"
-        "# A[10] * B\n\t"
-        "ldr		x8, [%[a], 80]\n\t"
-        "mov		x3, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x4, x4, x6\n\t"
-        "adcs	x5, x5, x7\n\t"
-        "adc		x3, xzr, xzr\n\t"
-        "str		x4, [%[r], 80]\n\t"
-        "# A[11] * B\n\t"
-        "ldr		x8, [%[a], 88]\n\t"
-        "mov		x4, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x5, x5, x6\n\t"
-        "adcs	x3, x3, x7\n\t"
-        "adc		x4, xzr, xzr\n\t"
-        "str		x5, [%[r], 88]\n\t"
-        "# A[12] * B\n\t"
-        "ldr		x8, [%[a], 96]\n\t"
-        "mov		x5, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x3, x3, x6\n\t"
-        "adcs	x4, x4, x7\n\t"
-        "adc		x5, xzr, xzr\n\t"
-        "str		x3, [%[r], 96]\n\t"
-        "# A[13] * B\n\t"
-        "ldr		x8, [%[a], 104]\n\t"
-        "mov		x3, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x4, x4, x6\n\t"
-        "adcs	x5, x5, x7\n\t"
-        "adc		x3, xzr, xzr\n\t"
-        "str		x4, [%[r], 104]\n\t"
-        "# A[14] * B\n\t"
-        "ldr		x8, [%[a], 112]\n\t"
-        "mov		x4, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x5, x5, x6\n\t"
-        "adcs	x3, x3, x7\n\t"
-        "adc		x4, xzr, xzr\n\t"
-        "str		x5, [%[r], 112]\n\t"
-        "# A[15] * B\n\t"
-        "ldr		x8, [%[a], 120]\n\t"
-        "mov		x5, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x3, x3, x6\n\t"
-        "adcs	x4, x4, x7\n\t"
-        "adc		x5, xzr, xzr\n\t"
-        "str		x3, [%[r], 120]\n\t"
-        "# A[16] * B\n\t"
-        "ldr		x8, [%[a], 128]\n\t"
-        "mov		x3, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x4, x4, x6\n\t"
-        "adcs	x5, x5, x7\n\t"
-        "adc		x3, xzr, xzr\n\t"
-        "str		x4, [%[r], 128]\n\t"
-        "# A[17] * B\n\t"
-        "ldr		x8, [%[a], 136]\n\t"
-        "mov		x4, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x5, x5, x6\n\t"
-        "adcs	x3, x3, x7\n\t"
-        "adc		x4, xzr, xzr\n\t"
-        "str		x5, [%[r], 136]\n\t"
-        "# A[18] * B\n\t"
-        "ldr		x8, [%[a], 144]\n\t"
-        "mov		x5, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x3, x3, x6\n\t"
-        "adcs	x4, x4, x7\n\t"
-        "adc		x5, xzr, xzr\n\t"
-        "str		x3, [%[r], 144]\n\t"
-        "# A[19] * B\n\t"
-        "ldr		x8, [%[a], 152]\n\t"
-        "mov		x3, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x4, x4, x6\n\t"
-        "adcs	x5, x5, x7\n\t"
-        "adc		x3, xzr, xzr\n\t"
-        "str		x4, [%[r], 152]\n\t"
-        "# A[20] * B\n\t"
-        "ldr		x8, [%[a], 160]\n\t"
-        "mov		x4, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x5, x5, x6\n\t"
-        "adcs	x3, x3, x7\n\t"
-        "adc		x4, xzr, xzr\n\t"
-        "str		x5, [%[r], 160]\n\t"
-        "# A[21] * B\n\t"
-        "ldr		x8, [%[a], 168]\n\t"
-        "mov		x5, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x3, x3, x6\n\t"
-        "adcs	x4, x4, x7\n\t"
-        "adc		x5, xzr, xzr\n\t"
-        "str		x3, [%[r], 168]\n\t"
-        "# A[22] * B\n\t"
-        "ldr		x8, [%[a], 176]\n\t"
-        "mov		x3, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x4, x4, x6\n\t"
-        "adcs	x5, x5, x7\n\t"
-        "adc		x3, xzr, xzr\n\t"
-        "str		x4, [%[r], 176]\n\t"
-        "# A[23] * B\n\t"
-        "ldr		x8, [%[a], 184]\n\t"
-        "mov		x4, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x5, x5, x6\n\t"
-        "adcs	x3, x3, x7\n\t"
-        "adc		x4, xzr, xzr\n\t"
-        "str		x5, [%[r], 184]\n\t"
-        "# A[24] * B\n\t"
-        "ldr		x8, [%[a], 192]\n\t"
-        "mov		x5, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x3, x3, x6\n\t"
-        "adcs	x4, x4, x7\n\t"
-        "adc		x5, xzr, xzr\n\t"
-        "str		x3, [%[r], 192]\n\t"
-        "# A[25] * B\n\t"
-        "ldr		x8, [%[a], 200]\n\t"
-        "mov		x3, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x4, x4, x6\n\t"
-        "adcs	x5, x5, x7\n\t"
-        "adc		x3, xzr, xzr\n\t"
-        "str		x4, [%[r], 200]\n\t"
-        "# A[26] * B\n\t"
-        "ldr		x8, [%[a], 208]\n\t"
-        "mov		x4, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x5, x5, x6\n\t"
-        "adcs	x3, x3, x7\n\t"
-        "adc		x4, xzr, xzr\n\t"
-        "str		x5, [%[r], 208]\n\t"
-        "# A[27] * B\n\t"
-        "ldr		x8, [%[a], 216]\n\t"
-        "mov		x5, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x3, x3, x6\n\t"
-        "adcs	x4, x4, x7\n\t"
-        "adc		x5, xzr, xzr\n\t"
-        "str		x3, [%[r], 216]\n\t"
-        "# A[28] * B\n\t"
-        "ldr		x8, [%[a], 224]\n\t"
-        "mov		x3, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x4, x4, x6\n\t"
-        "adcs	x5, x5, x7\n\t"
-        "adc		x3, xzr, xzr\n\t"
-        "str		x4, [%[r], 224]\n\t"
-        "# A[29] * B\n\t"
-        "ldr		x8, [%[a], 232]\n\t"
-        "mov		x4, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x5, x5, x6\n\t"
-        "adcs	x3, x3, x7\n\t"
-        "adc		x4, xzr, xzr\n\t"
-        "str		x5, [%[r], 232]\n\t"
-        "# A[30] * B\n\t"
-        "ldr		x8, [%[a], 240]\n\t"
-        "mov		x5, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x3, x3, x6\n\t"
-        "adcs	x4, x4, x7\n\t"
-        "adc		x5, xzr, xzr\n\t"
-        "str		x3, [%[r], 240]\n\t"
-        "# A[31] * B\n\t"
-        "ldr		x8, [%[a], 248]\n\t"
-        "mov		x3, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x4, x4, x6\n\t"
-        "adcs	x5, x5, x7\n\t"
-        "adc		x3, xzr, xzr\n\t"
-        "str		x4, [%[r], 248]\n\t"
-        "# A[32] * B\n\t"
-        "ldr		x8, [%[a], 256]\n\t"
-        "mov		x4, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x5, x5, x6\n\t"
-        "adcs	x3, x3, x7\n\t"
-        "adc		x4, xzr, xzr\n\t"
-        "str		x5, [%[r], 256]\n\t"
-        "# A[33] * B\n\t"
-        "ldr		x8, [%[a], 264]\n\t"
-        "mov		x5, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x3, x3, x6\n\t"
-        "adcs	x4, x4, x7\n\t"
-        "adc		x5, xzr, xzr\n\t"
-        "str		x3, [%[r], 264]\n\t"
-        "# A[34] * B\n\t"
-        "ldr		x8, [%[a], 272]\n\t"
-        "mov		x3, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x4, x4, x6\n\t"
-        "adcs	x5, x5, x7\n\t"
-        "adc		x3, xzr, xzr\n\t"
-        "str		x4, [%[r], 272]\n\t"
-        "# A[35] * B\n\t"
-        "ldr		x8, [%[a], 280]\n\t"
-        "mov		x4, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x5, x5, x6\n\t"
-        "adcs	x3, x3, x7\n\t"
-        "adc		x4, xzr, xzr\n\t"
-        "str		x5, [%[r], 280]\n\t"
-        "# A[36] * B\n\t"
-        "ldr		x8, [%[a], 288]\n\t"
-        "mov		x5, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x3, x3, x6\n\t"
-        "adcs	x4, x4, x7\n\t"
-        "adc		x5, xzr, xzr\n\t"
-        "str		x3, [%[r], 288]\n\t"
-        "# A[37] * B\n\t"
-        "ldr		x8, [%[a], 296]\n\t"
-        "mov		x3, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x4, x4, x6\n\t"
-        "adcs	x5, x5, x7\n\t"
-        "adc		x3, xzr, xzr\n\t"
-        "str		x4, [%[r], 296]\n\t"
-        "# A[38] * B\n\t"
-        "ldr		x8, [%[a], 304]\n\t"
-        "mov		x4, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x5, x5, x6\n\t"
-        "adcs	x3, x3, x7\n\t"
-        "adc		x4, xzr, xzr\n\t"
-        "str		x5, [%[r], 304]\n\t"
-        "# A[39] * B\n\t"
-        "ldr		x8, [%[a], 312]\n\t"
-        "mov		x5, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x3, x3, x6\n\t"
-        "adcs	x4, x4, x7\n\t"
-        "adc		x5, xzr, xzr\n\t"
-        "str		x3, [%[r], 312]\n\t"
-        "# A[40] * B\n\t"
-        "ldr		x8, [%[a], 320]\n\t"
-        "mov		x3, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x4, x4, x6\n\t"
-        "adcs	x5, x5, x7\n\t"
-        "adc		x3, xzr, xzr\n\t"
-        "str		x4, [%[r], 320]\n\t"
-        "# A[41] * B\n\t"
-        "ldr		x8, [%[a], 328]\n\t"
-        "mov		x4, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x5, x5, x6\n\t"
-        "adcs	x3, x3, x7\n\t"
-        "adc		x4, xzr, xzr\n\t"
-        "str		x5, [%[r], 328]\n\t"
-        "# A[42] * B\n\t"
-        "ldr		x8, [%[a], 336]\n\t"
-        "mov		x5, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x3, x3, x6\n\t"
-        "adcs	x4, x4, x7\n\t"
-        "adc		x5, xzr, xzr\n\t"
-        "str		x3, [%[r], 336]\n\t"
-        "# A[43] * B\n\t"
-        "ldr		x8, [%[a], 344]\n\t"
-        "mov		x3, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x4, x4, x6\n\t"
-        "adcs	x5, x5, x7\n\t"
-        "adc		x3, xzr, xzr\n\t"
-        "str		x4, [%[r], 344]\n\t"
-        "# A[44] * B\n\t"
-        "ldr		x8, [%[a], 352]\n\t"
-        "mov		x4, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x5, x5, x6\n\t"
-        "adcs	x3, x3, x7\n\t"
-        "adc		x4, xzr, xzr\n\t"
-        "str		x5, [%[r], 352]\n\t"
-        "# A[45] * B\n\t"
-        "ldr		x8, [%[a], 360]\n\t"
-        "mov		x5, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x3, x3, x6\n\t"
-        "adcs	x4, x4, x7\n\t"
-        "adc		x5, xzr, xzr\n\t"
-        "str		x3, [%[r], 360]\n\t"
-        "# A[46] * B\n\t"
-        "ldr		x8, [%[a], 368]\n\t"
-        "mov		x3, 0\n\t"
-        "mul		x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x4, x4, x6\n\t"
-        "adcs	x5, x5, x7\n\t"
-        "adc		x3, xzr, xzr\n\t"
-        "str		x4, [%[r], 368]\n\t"
-        "# A[47] * B\n\t"
-        "ldr	x8, [%[a], 376]\n\t"
-        "mul	x6, %[b], x8\n\t"
-        "umulh	x7, %[b], x8\n\t"
-        "adds	x5, x5, x6\n\t"
-        "adc	x3, x3, x7\n\t"
-        "str	x5, [%[r], 376]\n\t"
-        "str	x3, [%[r], 384]\n\t"
-        :
-        : [r] "r" (r), [a] "r" (a), [b] "r" (b)
-        : "memory", "x3", "x4", "x5", "x6", "x7", "x8"
-    );
-#endif
-}
-
 /* Divide the double width number (d1|d0) by the dividend. (d1|d0 / div)
  *
  * d1   The high order half of the number to divide.
@@ -11276,7 +11294,7 @@ static int64_t sp_3072_cmp_48(sp_digit* a, sp_digit* b)
  * r  Remainder from the division.
  * returns MP_OKAY indicating success.
  */
-static INLINE int sp_3072_div_48(sp_digit* a, sp_digit* d, sp_digit* m,
+static WC_INLINE int sp_3072_div_48(sp_digit* a, sp_digit* d, sp_digit* m,
         sp_digit* r)
 {
     sp_digit t1[96], t2[49];
@@ -11300,7 +11318,7 @@ static INLINE int sp_3072_div_48(sp_digit* a, sp_digit* d, sp_digit* m,
     }
 
     r1 = sp_3072_cmp_48(t1, d) >= 0;
-    sp_3072_cond_sub_48(r, t1, t2, (sp_digit)0 - r1);
+    sp_3072_cond_sub_48(r, t1, d, (sp_digit)0 - r1);
 
     return MP_OKAY;
 }
@@ -11312,7 +11330,7 @@ static INLINE int sp_3072_div_48(sp_digit* a, sp_digit* d, sp_digit* m,
  * m  A single precision number that is the modulus to reduce with.
  * returns MP_OKAY indicating success.
  */
-static INLINE int sp_3072_mod_48(sp_digit* r, sp_digit* a, sp_digit* m)
+static WC_INLINE int sp_3072_mod_48(sp_digit* r, sp_digit* a, sp_digit* m)
 {
     return sp_3072_div_48(a, m, NULL, r);
 }
@@ -11326,7 +11344,7 @@ static INLINE int sp_3072_mod_48(sp_digit* r, sp_digit* a, sp_digit* m)
  * r  Remainder from the division.
  * returns MP_OKAY indicating success.
  */
-static INLINE int sp_3072_div_48_cond(sp_digit* a, sp_digit* d, sp_digit* m,
+static WC_INLINE int sp_3072_div_48_cond(sp_digit* a, sp_digit* d, sp_digit* m,
         sp_digit* r)
 {
     sp_digit t1[96], t2[49];
@@ -11351,7 +11369,7 @@ static INLINE int sp_3072_div_48_cond(sp_digit* a, sp_digit* d, sp_digit* m,
     }
 
     r1 = sp_3072_cmp_48(t1, d) >= 0;
-    sp_3072_cond_sub_48(r, t1, t2, (sp_digit)0 - r1);
+    sp_3072_cond_sub_48(r, t1, d, (sp_digit)0 - r1);
 
     return MP_OKAY;
 }
@@ -11363,7 +11381,7 @@ static INLINE int sp_3072_div_48_cond(sp_digit* a, sp_digit* d, sp_digit* m,
  * m  A single precision number that is the modulus to reduce with.
  * returns MP_OKAY indicating success.
  */
-static INLINE int sp_3072_mod_48_cond(sp_digit* r, sp_digit* a, sp_digit* m)
+static WC_INLINE int sp_3072_mod_48_cond(sp_digit* r, sp_digit* a, sp_digit* m)
 {
     return sp_3072_div_48_cond(a, m, NULL, r);
 }
@@ -11477,6 +11495,10 @@ static int sp_3072_mod_exp_48(sp_digit* r, sp_digit* a, sp_digit* e,
 
             sp_3072_mont_mul_48(r, r, t[y], m, mp);
         }
+        y = e[0] & ((1 << c) - 1);
+        for (; c > 0; c--)
+            sp_3072_mont_sqr_48(r, r, m, mp);
+        sp_3072_mont_mul_48(r, r, t[y], m, mp);
 
         XMEMSET(&r[48], 0, sizeof(sp_digit) * 48);
         sp_3072_mont_reduce_48(r, m, mp);
@@ -11617,9 +11639,9 @@ static int sp_3072_mod_exp_48(sp_digit* r, sp_digit* a, sp_digit* e,
 
             sp_3072_mont_mul_48(r, r, t[y], m, mp);
         }
-        y = e[0] & 0x3;
-        sp_3072_mont_sqr_48(r, r, m, mp);
-        sp_3072_mont_sqr_48(r, r, m, mp);
+        y = e[0] & ((1 << c) - 1);
+        for (; c > 0; c--)
+            sp_3072_mont_sqr_48(r, r, m, mp);
         sp_3072_mont_mul_48(r, r, t[y], m, mp);
 
         XMEMSET(&r[48], 0, sizeof(sp_digit) * 48);
@@ -11676,7 +11698,7 @@ int sp_RsaPublic_3072(const byte* in, word32 inLen, mp_int* em, mp_int* mm,
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
     if (err == MP_OKAY) {
         d = (sp_digit*)XMALLOC(sizeof(sp_digit) * 48 * 5, NULL,
-                               DYNAMIC_TYPE_TMP_BUFFER);
+                                                              DYNAMIC_TYPE_RSA);
         if (d == NULL)
             err = MEMORY_E;
     }
@@ -11760,7 +11782,7 @@ int sp_RsaPublic_3072(const byte* in, word32 inLen, mp_int* em, mp_int* mm,
 
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
     if (d != NULL)
-        XFREE(d, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+        XFREE(d, NULL, DYNAMIC_TYPE_RSA);
 #endif
 
     return err;
@@ -11818,7 +11840,7 @@ int sp_RsaPrivate_3072(const byte* in, word32 inLen, mp_int* dm,
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
     if (err == MP_OKAY) {
         t = (sp_digit*)XMALLOC(sizeof(sp_digit) * 24 * 11, NULL,
-                               DYNAMIC_TYPE_TMP_BUFFER);
+                                                              DYNAMIC_TYPE_RSA);
         if (t == NULL)
             err = MEMORY_E;
     }
@@ -11878,7 +11900,7 @@ int sp_RsaPrivate_3072(const byte* in, word32 inLen, mp_int* dm,
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
     if (t != NULL) {
         XMEMSET(t, 0, sizeof(sp_digit) * 24 * 11);
-        XFREE(t, NULL, DYNAMIC_TYPE_TMP_BUFFER);
+        XFREE(t, NULL, DYNAMIC_TYPE_RSA);
     }
 #else
     XMEMSET(tmpad, 0, sizeof(tmpad));
@@ -12569,6 +12591,8 @@ static sp_digit sp_256_sub_4(sp_digit* r, const sp_digit* a,
 
     return c;
 }
+
+#define sp_256_mont_reduce_order_4    sp_256_mont_reduce_4
 
 /* Reduce the number back to 256 bits using Montgomery reduction.
  *
@@ -13389,8 +13413,7 @@ static void sp_256_div2_4(sp_digit* r, sp_digit* a, sp_digit* m)
  */
 static void sp_256_proj_point_dbl_4(sp_point* r, sp_point* p, sp_digit* t)
 {
-    sp_point *rp[2];
-    sp_point tp;
+    sp_point* rp[2];
     sp_digit* t1 = t;
     sp_digit* t2 = t + 2*4;
     sp_digit* x;
@@ -13400,7 +13423,8 @@ static void sp_256_proj_point_dbl_4(sp_point* r, sp_point* p, sp_digit* t)
 
     /* When infinity don't double point passed in - constant time. */
     rp[0] = r;
-    rp[1] = &tp;
+    rp[1] = (sp_point*)t;
+    XMEMSET(rp[1], 0, sizeof(sp_point));
     x = rp[p->infinity]->x;
     y = rp[p->infinity]->y;
     z = rp[p->infinity]->z;
@@ -13464,8 +13488,7 @@ static void sp_256_proj_point_dbl_4(sp_point* r, sp_point* p, sp_digit* t)
 static void sp_256_proj_point_dbl_n_4(sp_point* r, sp_point* p, int n,
         sp_digit* t)
 {
-    sp_point *rp[2];
-    sp_point tp;
+    sp_point* rp[2];
     sp_digit* w = t;
     sp_digit* a = t + 2*4;
     sp_digit* b = t + 4*4;
@@ -13477,7 +13500,8 @@ static void sp_256_proj_point_dbl_n_4(sp_point* r, sp_point* p, int n,
     int i;
 
     rp[0] = r;
-    rp[1] = &tp;
+    rp[1] = (sp_point*)t;
+    XMEMSET(rp[1], 0, sizeof(sp_point));
     x = rp[p->infinity]->x;
     y = rp[p->infinity]->y;
     z = rp[p->infinity]->z;
@@ -13548,9 +13572,8 @@ static int sp_256_cmp_equal_4(const sp_digit* a, const sp_digit* b)
 static void sp_256_proj_point_add_4(sp_point* r, sp_point* p, sp_point* q,
         sp_digit* t)
 {
-    sp_point *ap[2];
-    sp_point *rp[2];
-    sp_point tp;
+    sp_point* ap[2];
+    sp_point* rp[2];
     sp_digit* t1 = t;
     sp_digit* t2 = t + 2*4;
     sp_digit* t3 = t + 4*4;
@@ -13577,8 +13600,8 @@ static void sp_256_proj_point_add_4(sp_point* r, sp_point* p, sp_point* q,
     }
     else {
         rp[0] = r;
-        rp[1] = &tp;
-        XMEMSET(&tp, 0, sizeof(tp));
+        rp[1] = (sp_point*)t;
+        XMEMSET(rp[1], 0, sizeof(sp_point));
         x = rp[p->infinity | q->infinity]->x;
         y = rp[p->infinity | q->infinity]->y;
         z = rp[p->infinity | q->infinity]->z;
@@ -13978,9 +14001,8 @@ typedef struct sp_table_entry {
 static void sp_256_proj_point_add_qz1_4(sp_point* r, sp_point* p,
         sp_point* q, sp_digit* t)
 {
-    sp_point *ap[2];
-    sp_point *rp[2];
-    sp_point tp;
+    sp_point* ap[2];
+    sp_point* rp[2];
     sp_digit* t1 = t;
     sp_digit* t2 = t + 2*4;
     sp_digit* t3 = t + 4*4;
@@ -14000,8 +14022,8 @@ static void sp_256_proj_point_add_qz1_4(sp_point* r, sp_point* p,
     }
     else {
         rp[0] = r;
-        rp[1] = &tp;
-        XMEMSET(&tp, 0, sizeof(tp));
+        rp[1] = (sp_point*)t;
+        XMEMSET(rp[1], 0, sizeof(sp_point));
         x = rp[p->infinity | q->infinity]->x;
         y = rp[p->infinity | q->infinity]->y;
         z = rp[p->infinity | q->infinity]->z;
@@ -14376,9 +14398,6 @@ int sp_ecc_mulmod_256(mp_int* km, ecc_point* gm, ecc_point* r, int map,
     sp_point* point;
     sp_digit* k = NULL;
     int err = MP_OKAY;
-#ifdef HAVE_INTEL_AVX2
-    word32 cpuid_flags = cpuid_get_flags();
-#endif
 
     err = sp_ecc_point_new(heap, p, point);
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
@@ -14394,11 +14413,6 @@ int sp_ecc_mulmod_256(mp_int* km, ecc_point* gm, ecc_point* r, int map,
         sp_256_from_mp(k, 4, km);
         sp_256_point_from_ecc_point_4(point, gm);
 
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-            err = sp_256_ecc_mulmod_avx2_4(point, point, k, map, heap);
-        else
-#endif
             err = sp_256_ecc_mulmod_4(point, point, k, map, heap);
     }
     if (err == MP_OKAY)
@@ -27635,8 +27649,10 @@ static int sp_256_ecc_mulmod_base_4(sp_point* r, sp_digit* k, int map,
         }
 
         i = 32;
-        XMEMCPY(t[v[i].mul].x, p256_table[i][v[i].i].x, sizeof(p256_table[i]->x));
-        XMEMCPY(t[v[i].mul].y, p256_table[i][v[i].i].y, sizeof(p256_table[i]->y));
+        XMEMCPY(t[v[i].mul].x, p256_table[i][v[i].i].x,
+                sizeof(p256_table[i]->x));
+        XMEMCPY(t[v[i].mul].y, p256_table[i][v[i].i].y,
+                sizeof(p256_table[i]->y));
         t[v[i].mul].infinity = p256_table[i][v[i].i].infinity;
         for (--i; i>=0; i--) {
             XMEMCPY(p->x, p256_table[i][v[i].i].x, sizeof(p256_table[i]->x));
@@ -27644,7 +27660,8 @@ static int sp_256_ecc_mulmod_base_4(sp_point* r, sp_digit* k, int map,
             p->infinity = p256_table[i][v[i].i].infinity;
             sp_256_sub_4(negy, p256_mod, p->y);
             sp_256_cond_copy_4(p->y, negy, (sp_digit)0 - v[i].neg);
-            sp_256_proj_point_add_qz1_4(&t[v[i].mul], &t[v[i].mul], p, tmp);
+            sp_256_proj_point_add_qz1_4(&t[v[i].mul], &t[v[i].mul], p,
+                    tmp);
         }
         sp_256_proj_point_add_4(&t[2], &t[2], &t[3], tmp);
         sp_256_proj_point_add_4(&t[1], &t[1], &t[3], tmp);
@@ -27694,9 +27711,6 @@ int sp_ecc_mulmod_base_256(mp_int* km, ecc_point* r, int map, void* heap)
     sp_point* point;
     sp_digit* k = NULL;
     int err = MP_OKAY;
-#ifdef HAVE_INTEL_AVX2
-    word32 cpuid_flags = cpuid_get_flags();
-#endif
 
     err = sp_ecc_point_new(heap, p, point);
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
@@ -27711,11 +27725,6 @@ int sp_ecc_mulmod_base_256(mp_int* km, ecc_point* r, int map, void* heap)
     if (err == MP_OKAY) {
         sp_256_from_mp(k, 4, km);
 
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-            err = sp_256_ecc_mulmod_base_avx2_4(point, k, map, heap);
-        else
-#endif
             err = sp_256_ecc_mulmod_base_4(point, k, map, heap);
     }
     if (err == MP_OKAY)
@@ -27745,7 +27754,6 @@ static int sp_256_iszero_4(const sp_digit* a)
 #endif /* WOLFSSL_VALIDATE_ECC_KEYGEN || HAVE_ECC_SIGN */
 /* Add 1 to a. (a = a + 1)
  *
- * r  A single precision integer.
  * a  A single precision integer.
  */
 static void sp_256_add_one_4(sp_digit* a)
@@ -27845,9 +27853,6 @@ int sp_ecc_make_key_256(WC_RNG* rng, mp_int* priv, ecc_point* pub, void* heap)
     sp_point* infinity;
 #endif
     int err;
-#ifdef HAVE_INTEL_AVX2
-    word32 cpuid_flags = cpuid_get_flags();
-#endif
 
     (void)heap;
 
@@ -27869,23 +27874,11 @@ int sp_ecc_make_key_256(WC_RNG* rng, mp_int* priv, ecc_point* pub, void* heap)
     if (err == MP_OKAY)
         err = sp_256_ecc_gen_k_4(rng, k);
     if (err == MP_OKAY) {
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-            err = sp_256_ecc_mulmod_base_avx2_4(point, k, 1, NULL);
-        else
-#endif
             err = sp_256_ecc_mulmod_base_4(point, k, 1, NULL);
     }
 
 #ifdef WOLFSSL_VALIDATE_ECC_KEYGEN
     if (err == MP_OKAY) {
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags)) {
-            err = sp_256_ecc_mulmod_avx2_4(infinity, point, p256_order, 1,
-                                                                          NULL);
-        }
-        else
-#endif
             err = sp_256_ecc_mulmod_4(infinity, point, p256_order, 1, NULL);
     }
     if (err == MP_OKAY) {
@@ -27964,9 +27957,6 @@ int sp_ecc_secret_gen_256(mp_int* priv, ecc_point* pub, byte* out,
     sp_point* point = NULL;
     sp_digit* k = NULL;
     int err = MP_OKAY;
-#ifdef HAVE_INTEL_AVX2
-    word32 cpuid_flags = cpuid_get_flags();
-#endif
 
     if (*outLen < 32)
         err = BUFFER_E;
@@ -27986,11 +27976,6 @@ int sp_ecc_secret_gen_256(mp_int* priv, ecc_point* pub, byte* out,
     if (err == MP_OKAY) {
         sp_256_from_mp(k, 4, priv);
         sp_256_point_from_ecc_point_4(point, pub);
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-            err = sp_256_ecc_mulmod_avx2_4(point, point, k, 1, heap);
-        else
-#endif
             err = sp_256_ecc_mulmod_4(point, point, k, 1, heap);
     }
     if (err == MP_OKAY) {
@@ -28216,8 +28201,6 @@ static void sp_256_mul_4(sp_digit* r, const sp_digit* a, const sp_digit* b)
 }
 
 #endif /* WOLFSSL_SP_SMALL */
-#ifdef HAVE_INTEL_AVX2
-#endif /* HAVE_INTEL_AVX2 */
 #endif
 #if defined(HAVE_ECC_SIGN) || defined(HAVE_ECC_VERIFY)
 /* Sub b from a into a. (a -= b)
@@ -28391,7 +28374,7 @@ static void sp_256_mask_4(sp_digit* r, sp_digit* a, sp_digit m)
  * r  Remainder from the division.
  * returns MP_OKAY indicating success.
  */
-static INLINE int sp_256_div_4(sp_digit* a, sp_digit* d, sp_digit* m,
+static WC_INLINE int sp_256_div_4(sp_digit* a, sp_digit* d, sp_digit* m,
         sp_digit* r)
 {
     sp_digit t1[8], t2[5];
@@ -28415,7 +28398,7 @@ static INLINE int sp_256_div_4(sp_digit* a, sp_digit* d, sp_digit* m,
     }
 
     r1 = sp_256_cmp_4(t1, d) >= 0;
-    sp_256_cond_sub_4(r, t1, t2, (sp_digit)0 - r1);
+    sp_256_cond_sub_4(r, t1, d, (sp_digit)0 - r1);
 
     return MP_OKAY;
 }
@@ -28427,7 +28410,7 @@ static INLINE int sp_256_div_4(sp_digit* a, sp_digit* d, sp_digit* m,
  * m  A single precision number that is the modulus to reduce with.
  * returns MP_OKAY indicating success.
  */
-static INLINE int sp_256_mod_4(sp_digit* r, sp_digit* a, sp_digit* m)
+static WC_INLINE int sp_256_mod_4(sp_digit* r, sp_digit* a, sp_digit* m)
 {
     return sp_256_div_4(a, m, NULL, r);
 }
@@ -28626,7 +28609,7 @@ static const uint64_t p256_order_low[2] = {
 static void sp_256_mont_mul_order_4(sp_digit* r, sp_digit* a, sp_digit* b)
 {
     sp_256_mul_4(r, a, b);
-    sp_256_mont_reduce_4(r, p256_order, p256_mp_order);
+    sp_256_mont_reduce_order_4(r, p256_order, p256_mp_order);
 }
 
 /* Square number mod the order of P256 curve. (r = a * a mod order)
@@ -28637,7 +28620,7 @@ static void sp_256_mont_mul_order_4(sp_digit* r, sp_digit* a, sp_digit* b)
 static void sp_256_mont_sqr_order_4(sp_digit* r, sp_digit* a)
 {
     sp_256_sqr_4(r, a);
-    sp_256_mont_reduce_4(r, p256_order, p256_mp_order);
+    sp_256_mont_reduce_order_4(r, p256_order, p256_mp_order);
 }
 
 #ifndef WOLFSSL_SP_SMALL
@@ -28752,143 +28735,6 @@ static void sp_256_mont_inv_order_4(sp_digit* r, sp_digit* a,
 #endif /* WOLFSSL_SP_SMALL */
 }
 
-#ifdef HAVE_INTEL_AVX2
-/* Multiply two number mod the order of P256 curve. (r = a * b mod order)
- *
- * r  Result of the multiplication.
- * a  First operand of the multiplication.
- * b  Second operand of the multiplication.
- */
-static void sp_256_mont_mul_order_avx2_4(sp_digit* r, sp_digit* a, sp_digit* b)
-{
-    sp_256_mul_avx2_4(r, a, b);
-    sp_256_mont_reduce_avx2_4(r, p256_order, p256_mp_order);
-}
-
-/* Square number mod the order of P256 curve. (r = a * a mod order)
- *
- * r  Result of the squaring.
- * a  Number to square.
- */
-static void sp_256_mont_sqr_order_avx2_4(sp_digit* r, sp_digit* a)
-{
-    sp_256_sqr_avx2_4(r, a);
-    sp_256_mont_reduce_avx2_4(r, p256_order, p256_mp_order);
-}
-
-#ifndef WOLFSSL_SP_SMALL
-/* Square number mod the order of P256 curve a number of times.
- * (r = a ^ n mod order)
- *
- * r  Result of the squaring.
- * a  Number to square.
- */
-static void sp_256_mont_sqr_n_order_avx2_4(sp_digit* r, sp_digit* a, int n)
-{
-    int i;
-
-    sp_256_mont_sqr_order_avx2_4(r, a);
-    for (i=1; i<n; i++)
-        sp_256_mont_sqr_order_avx2_4(r, r);
-}
-#endif /* !WOLFSSL_SP_SMALL */
-
-/* Invert the number, in Montgomery form, modulo the order of the P256 curve.
- * (r = 1 / a mod order)
- *
- * r   Inverse result.
- * a   Number to invert.
- * td  Temporary data.
- */
-static void sp_256_mont_inv_order_avx2_4(sp_digit* r, sp_digit* a,
-        sp_digit* td)
-{
-#ifdef WOLFSSL_SP_SMALL
-    sp_digit* t = td;
-    int i;
-
-    XMEMCPY(t, a, sizeof(sp_digit) * 4);
-    for (i=254; i>=0; i--) {
-        sp_256_mont_sqr_order_avx2_4(t, t);
-        if (p256_order_2[i / 64] & ((sp_digit)1 << (i % 64)))
-            sp_256_mont_mul_order_avx2_4(t, t, a);
-    }
-    XMEMCPY(r, t, sizeof(sp_digit) * 4);
-#else
-    sp_digit* t = td;
-    sp_digit* t2 = td + 2 * 4;
-    sp_digit* t3 = td + 4 * 4;
-    int i;
-
-    /* t = a^2 */
-    sp_256_mont_sqr_order_avx2_4(t, a);
-    /* t = a^3 = t * a */
-    sp_256_mont_mul_order_avx2_4(t, t, a);
-    /* t2= a^c = t ^ 2 ^ 2 */
-    sp_256_mont_sqr_n_order_avx2_4(t2, t, 2);
-    /* t3= a^f = t2 * t */
-    sp_256_mont_mul_order_avx2_4(t3, t2, t);
-    /* t2= a^f0 = t3 ^ 2 ^ 4 */
-    sp_256_mont_sqr_n_order_avx2_4(t2, t3, 4);
-    /* t = a^ff = t2 * t3 */
-    sp_256_mont_mul_order_avx2_4(t, t2, t3);
-    /* t3= a^ff00 = t ^ 2 ^ 8 */
-    sp_256_mont_sqr_n_order_avx2_4(t2, t, 8);
-    /* t = a^ffff = t2 * t */
-    sp_256_mont_mul_order_avx2_4(t, t2, t);
-    /* t2= a^ffff0000 = t ^ 2 ^ 16 */
-    sp_256_mont_sqr_n_order_avx2_4(t2, t, 16);
-    /* t = a^ffffffff = t2 * t */
-    sp_256_mont_mul_order_avx2_4(t, t2, t);
-    /* t2= a^ffffffff0000000000000000 = t ^ 2 ^ 64  */
-    sp_256_mont_sqr_n_order_avx2_4(t2, t, 64);
-    /* t2= a^ffffffff00000000ffffffff = t2 * t */
-    sp_256_mont_mul_order_avx2_4(t2, t2, t);
-    /* t2= a^ffffffff00000000ffffffff00000000 = t2 ^ 2 ^ 32  */
-    sp_256_mont_sqr_n_order_avx2_4(t2, t2, 32);
-    /* t2= a^ffffffff00000000ffffffffffffffff = t2 * t */
-    sp_256_mont_mul_order_avx2_4(t2, t2, t);
-    /* t2= a^ffffffff00000000ffffffffffffffffbce6 */
-    for (i=127; i>=112; i--) {
-        sp_256_mont_sqr_order_avx2_4(t2, t2);
-        if (p256_order_low[i / 64] & ((sp_digit)1 << (i % 64)))
-            sp_256_mont_mul_order_avx2_4(t2, t2, a);
-    }
-    /* t2= a^ffffffff00000000ffffffffffffffffbce6f */
-    sp_256_mont_sqr_n_order_avx2_4(t2, t2, 4);
-    sp_256_mont_mul_order_avx2_4(t2, t2, t3);
-    /* t2= a^ffffffff00000000ffffffffffffffffbce6faada7179e84 */
-    for (i=107; i>=64; i--) {
-        sp_256_mont_sqr_order_avx2_4(t2, t2);
-        if (p256_order_low[i / 64] & ((sp_digit)1 << (i % 64)))
-            sp_256_mont_mul_order_avx2_4(t2, t2, a);
-    }
-    /* t2= a^ffffffff00000000ffffffffffffffffbce6faada7179e84f */
-    sp_256_mont_sqr_n_order_avx2_4(t2, t2, 4);
-    sp_256_mont_mul_order_avx2_4(t2, t2, t3);
-    /* t2= a^ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2 */
-    for (i=59; i>=32; i--) {
-        sp_256_mont_sqr_order_avx2_4(t2, t2);
-        if (p256_order_low[i / 64] & ((sp_digit)1 << (i % 64)))
-            sp_256_mont_mul_order_avx2_4(t2, t2, a);
-    }
-    /* t2= a^ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2f */
-    sp_256_mont_sqr_n_order_avx2_4(t2, t2, 4);
-    sp_256_mont_mul_order_avx2_4(t2, t2, t3);
-    /* t2= a^ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc63254 */
-    for (i=27; i>=0; i--) {
-        sp_256_mont_sqr_order_avx2_4(t2, t2);
-        if (p256_order_low[i / 64] & ((sp_digit)1 << (i % 64)))
-            sp_256_mont_mul_order_avx2_4(t2, t2, a);
-    }
-    /* t2= a^ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632540 */
-    sp_256_mont_sqr_n_order_avx2_4(t2, t2, 4);
-    /* r = a^ffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc63254f */
-    sp_256_mont_mul_order_avx2_4(r, t2, t3);
-#endif /* WOLFSSL_SP_SMALL */
-}
-
-#endif /* HAVE_INTEL_AVX2 */
 #endif /* HAVE_ECC_SIGN || HAVE_ECC_VERIFY */
 #ifdef HAVE_ECC_SIGN
 #ifndef SP_ECC_MAX_SIG_GEN
@@ -28915,7 +28761,7 @@ int sp_ecc_sign_256(const byte* hash, word32 hashLen, WC_RNG* rng, mp_int* priv,
                     mp_int* rm, mp_int* sm, void* heap)
 {
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
-    sp_digit* d;
+    sp_digit* d = NULL;
 #else
     sp_digit ed[2*4];
     sp_digit xd[2*4];
@@ -28936,9 +28782,6 @@ int sp_ecc_sign_256(const byte* hash, word32 hashLen, WC_RNG* rng, mp_int* priv,
     int err = MP_OKAY;
     int64_t c;
     int i;
-#ifdef HAVE_INTEL_AVX2
-    word32 cpuid_flags = cpuid_get_flags();
-#endif
 
     (void)heap;
 
@@ -28978,11 +28821,6 @@ int sp_ecc_sign_256(const byte* hash, word32 hashLen, WC_RNG* rng, mp_int* priv,
         /* New random point. */
         err = sp_256_ecc_gen_k_4(rng, k);
         if (err == MP_OKAY) {
-#ifdef HAVE_INTEL_AVX2
-            if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-                err = sp_256_ecc_mulmod_base_avx2_4(point, k, 1, heap);
-            else
-#endif
                 err = sp_256_ecc_mulmod_base_4(point, k, 1, NULL);
         }
 
@@ -28995,31 +28833,16 @@ int sp_ecc_sign_256(const byte* hash, word32 hashLen, WC_RNG* rng, mp_int* priv,
             sp_256_norm_4(r);
 
             /* Conv k to Montgomery form (mod order) */
-#ifdef HAVE_INTEL_AVX2
-            if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-                sp_256_mul_avx2_4(k, k, p256_norm_order);
-            else
-#endif
                 sp_256_mul_4(k, k, p256_norm_order);
             err = sp_256_mod_4(k, k, p256_order);
         }
         if (err == MP_OKAY) {
             sp_256_norm_4(k);
             /* kInv = 1/k mod order */
-#ifdef HAVE_INTEL_AVX2
-            if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-                sp_256_mont_inv_order_avx2_4(kInv, k, tmp);
-            else
-#endif
                 sp_256_mont_inv_order_4(kInv, k, tmp);
             sp_256_norm_4(kInv);
 
             /* s = r * x + e */
-#ifdef HAVE_INTEL_AVX2
-            if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-                sp_256_mul_avx2_4(x, x, r);
-            else
-#endif
                 sp_256_mul_4(x, x, r);
             err = sp_256_mod_4(x, x, p256_order);
         }
@@ -29033,11 +28856,6 @@ int sp_ecc_sign_256(const byte* hash, word32 hashLen, WC_RNG* rng, mp_int* priv,
             sp_256_norm_4(s);
 
             /* s = s * k^-1 mod order */
-#ifdef HAVE_INTEL_AVX2
-            if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-                sp_256_mont_mul_order_avx2_4(s, s, kInv);
-            else
-#endif
                 sp_256_mont_mul_order_4(s, s, kInv);
             sp_256_norm_4(s);
 
@@ -29117,9 +28935,6 @@ int sp_ecc_verify_256(const byte* hash, word32 hashLen, mp_int* pX,
     sp_digit carry;
     int64_t c;
     int err;
-#ifdef HAVE_INTEL_AVX2
-    word32 cpuid_flags = cpuid_get_flags();
-#endif
 
     err = sp_ecc_point_new(heap, p1d, p1);
     if (err == MP_OKAY)
@@ -29154,52 +28969,24 @@ int sp_ecc_verify_256(const byte* hash, word32 hashLen, mp_int* pX,
         sp_256_from_mp(p2->y, 4, pY);
         sp_256_from_mp(p2->z, 4, pZ);
 
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-            sp_256_mul_avx2_4(s, s, p256_norm_order);
-        else
-#endif
             sp_256_mul_4(s, s, p256_norm_order);
         err = sp_256_mod_4(s, s, p256_order);
     }
     if (err == MP_OKAY) {
         sp_256_norm_4(s);
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags)) {
-            sp_256_mont_inv_order_avx2_4(s, s, tmp);
-            sp_256_mont_mul_order_avx2_4(u1, u1, s);
-            sp_256_mont_mul_order_avx2_4(u2, u2, s);
-        }
-        else
-#endif
         {
             sp_256_mont_inv_order_4(s, s, tmp);
             sp_256_mont_mul_order_4(u1, u1, s);
             sp_256_mont_mul_order_4(u2, u2, s);
         }
 
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-            err = sp_256_ecc_mulmod_base_avx2_4(p1, u1, 0, heap);
-        else
-#endif
             err = sp_256_ecc_mulmod_base_4(p1, u1, 0, heap);
     }
     if (err == MP_OKAY) {
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-            err = sp_256_ecc_mulmod_avx2_4(p2, p2, u2, 0, heap);
-        else
-#endif
             err = sp_256_ecc_mulmod_4(p2, p2, u2, 0, heap);
     }
 
     if (err == MP_OKAY) {
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-            sp_256_proj_point_add_avx2_4(p1, p1, p2, tmp);
-        else
-#endif
             sp_256_proj_point_add_4(p1, p1, p2, tmp);
 
         /* (r + n*order).z'.z' mod prime == (u1.G + u2.Q)->x' */
@@ -29362,9 +29149,6 @@ int sp_ecc_check_key_256(mp_int* pX, mp_int* pY, mp_int* privm, void* heap)
     sp_point* p = NULL;
     byte one[1] = { 1 };
     int err;
-#ifdef HAVE_INTEL_AVX2
-    word32 cpuid_flags = cpuid_get_flags();
-#endif
 
     err = sp_ecc_point_new(heap, pubd, pub);
     if (err == MP_OKAY)
@@ -29405,11 +29189,6 @@ int sp_ecc_check_key_256(mp_int* pX, mp_int* pY, mp_int* privm, void* heap)
 
     if (err == MP_OKAY) {
         /* Point * order = infinity */
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-            err = sp_256_ecc_mulmod_avx2_4(p, pub, p256_order, 1, heap);
-        else
-#endif
             err = sp_256_ecc_mulmod_4(p, pub, p256_order, 1, heap);
     }
     if (err == MP_OKAY) {
@@ -29422,11 +29201,6 @@ int sp_ecc_check_key_256(mp_int* pX, mp_int* pY, mp_int* privm, void* heap)
 
     if (err == MP_OKAY) {
         /* Base * private = point */
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-            err = sp_256_ecc_mulmod_base_avx2_4(p, priv, 1, heap);
-        else
-#endif
             err = sp_256_ecc_mulmod_base_4(p, priv, 1, heap);
     }
     if (err == MP_OKAY) {
@@ -29475,9 +29249,6 @@ int sp_ecc_proj_add_point_256(mp_int* pX, mp_int* pY, mp_int* pZ,
     sp_point* p;
     sp_point* q = NULL;
     int err;
-#ifdef HAVE_INTEL_AVX2
-    word32 cpuid_flags = cpuid_get_flags();
-#endif
 
     err = sp_ecc_point_new(NULL, pd, p);
     if (err == MP_OKAY)
@@ -29500,11 +29271,6 @@ int sp_ecc_proj_add_point_256(mp_int* pX, mp_int* pY, mp_int* pZ,
         sp_256_from_mp(q->y, 4, qY);
         sp_256_from_mp(q->z, 4, qZ);
 
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-            sp_256_proj_point_add_avx2_4(p, p, q, tmp);
-        else
-#endif
             sp_256_proj_point_add_4(p, p, q, tmp);
     }
 
@@ -29546,9 +29312,6 @@ int sp_ecc_proj_dbl_point_256(mp_int* pX, mp_int* pY, mp_int* pZ,
     sp_digit* tmp;
     sp_point* p;
     int err;
-#ifdef HAVE_INTEL_AVX2
-    word32 cpuid_flags = cpuid_get_flags();
-#endif
 
     err = sp_ecc_point_new(NULL, pd, p);
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
@@ -29566,11 +29329,6 @@ int sp_ecc_proj_dbl_point_256(mp_int* pX, mp_int* pY, mp_int* pZ,
         sp_256_from_mp(p->y, 4, pY);
         sp_256_from_mp(p->z, 4, pZ);
 
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags))
-            sp_256_proj_point_dbl_avx2_4(p, p, tmp);
-        else
-#endif
             sp_256_proj_point_dbl_4(p, p, tmp);
     }
 
@@ -29659,9 +29417,6 @@ static int sp_256_mont_sqrt_4(sp_digit* y)
     sp_digit* t1;
     sp_digit* t2;
     int err = MP_OKAY;
-#ifdef HAVE_INTEL_AVX2
-    word32 cpuid_flags = cpuid_get_flags();
-#endif
 
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
     d = XMALLOC(sizeof(sp_digit) * 4 * 4, NULL, DYNAMIC_TYPE_ECC);
@@ -29677,40 +29432,6 @@ static int sp_256_mont_sqrt_4(sp_digit* y)
 #endif
 
     if (err == MP_OKAY) {
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags)) {
-            /* t2 = y ^ 0x2 */
-            sp_256_mont_sqr_avx2_4(t2, y, p256_mod, p256_mp_mod);
-            /* t1 = y ^ 0x3 */
-            sp_256_mont_mul_avx2_4(t1, t2, y, p256_mod, p256_mp_mod);
-            /* t2 = y ^ 0xc */
-            sp_256_mont_sqr_n_avx2_4(t2, t1, 2, p256_mod, p256_mp_mod);
-            /* t1 = y ^ 0xf */
-            sp_256_mont_mul_avx2_4(t1, t1, t2, p256_mod, p256_mp_mod);
-            /* t2 = y ^ 0xf0 */
-            sp_256_mont_sqr_n_avx2_4(t2, t1, 4, p256_mod, p256_mp_mod);
-            /* t1 = y ^ 0xff */
-            sp_256_mont_mul_avx2_4(t1, t1, t2, p256_mod, p256_mp_mod);
-            /* t2 = y ^ 0xff00 */
-            sp_256_mont_sqr_n_avx2_4(t2, t1, 8, p256_mod, p256_mp_mod);
-            /* t1 = y ^ 0xffff */
-            sp_256_mont_mul_avx2_4(t1, t1, t2, p256_mod, p256_mp_mod);
-            /* t2 = y ^ 0xffff0000 */
-            sp_256_mont_sqr_n_avx2_4(t2, t1, 16, p256_mod, p256_mp_mod);
-            /* t1 = y ^ 0xffffffff */
-            sp_256_mont_mul_avx2_4(t1, t1, t2, p256_mod, p256_mp_mod);
-            /* t1 = y ^ 0xffffffff00000000 */
-            sp_256_mont_sqr_n_avx2_4(t1, t1, 32, p256_mod, p256_mp_mod);
-            /* t1 = y ^ 0xffffffff00000001 */
-            sp_256_mont_mul_avx2_4(t1, t1, y, p256_mod, p256_mp_mod);
-            /* t1 = y ^ 0xffffffff00000001000000000000000000000000 */
-            sp_256_mont_sqr_n_avx2_4(t1, t1, 96, p256_mod, p256_mp_mod);
-            /* t1 = y ^ 0xffffffff00000001000000000000000000000001 */
-            sp_256_mont_mul_avx2_4(t1, t1, y, p256_mod, p256_mp_mod);
-            sp_256_mont_sqr_n_avx2_4(y, t1, 94, p256_mod, p256_mp_mod);
-        }
-        else
-#endif
         {
             /* t2 = y ^ 0x2 */
             sp_256_mont_sqr_4(t2, y, p256_mod, p256_mp_mod);
@@ -29770,9 +29491,6 @@ int sp_ecc_uncompress_256(mp_int* xm, int odd, mp_int* ym)
     sp_digit* x;
     sp_digit* y;
     int err = MP_OKAY;
-#ifdef HAVE_INTEL_AVX2
-    word32 cpuid_flags = cpuid_get_flags();
-#endif
 
 #if defined(WOLFSSL_SP_SMALL) || defined(WOLFSSL_SMALL_STACK)
     d = XMALLOC(sizeof(sp_digit) * 4 * 4, NULL, DYNAMIC_TYPE_ECC);
@@ -29795,13 +29513,6 @@ int sp_ecc_uncompress_256(mp_int* xm, int odd, mp_int* ym)
 
     if (err == MP_OKAY) {
         /* y = x^3 */
-#ifdef HAVE_INTEL_AVX2
-        if (IS_INTEL_BMI2(cpuid_flags) && IS_INTEL_ADX(cpuid_flags)) {
-            sp_256_mont_sqr_avx2_4(y, x, p256_mod, p256_mp_mod);
-            sp_256_mont_mul_avx2_4(y, y, x, p256_mod, p256_mp_mod);
-        }
-        else
-#endif
         {
             sp_256_mont_sqr_4(y, x, p256_mod, p256_mp_mod);
             sp_256_mont_mul_4(y, y, x, p256_mod, p256_mp_mod);

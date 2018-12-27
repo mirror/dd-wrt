@@ -33,7 +33,13 @@
 
 #ifndef NO_SHA256
 
-#ifdef HAVE_FIPS
+#if defined(HAVE_FIPS) && \
+    defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION >= 2)
+    #include <wolfssl/wolfcrypt/fips.h>
+#endif /* HAVE_FIPS_VERSION >= 2 */
+
+#if defined(HAVE_FIPS) && \
+	(!defined(HAVE_FIPS_VERSION) || (HAVE_FIPS_VERSION < 2))
     #define wc_Sha256             Sha256
     #define WC_SHA256             SHA256
     #define WC_SHA256_BLOCK_SIZE  SHA256_BLOCK_SIZE
@@ -61,7 +67,9 @@
     extern "C" {
 #endif
 
-#ifndef HAVE_FIPS /* avoid redefinition of structs */
+/* avoid redefinition of structs */
+#if !defined(HAVE_FIPS) || \
+    (defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION >= 2))
 
 #ifdef WOLFSSL_MICROCHIP_PIC32MZ
     #include <wolfssl/wolfcrypt/port/pic32/pic32mz-crypt.h>
@@ -71,6 +79,9 @@
 #endif
 #ifdef WOLFSSL_ASYNC_CRYPT
     #include <wolfssl/wolfcrypt/async.h>
+#endif
+#if defined(WOLFSSL_DEVCRYPTO) && defined(WOLFSSL_DEVCRYPTO_HASH)
+    #include <wolfssl/wolfcrypt/port/devcrypto/wc_devcrypto.h>
 #endif
 
 #if defined(_MSC_VER)
@@ -105,6 +116,8 @@ enum {
     #include "wolfssl/wolfcrypt/port/ti/ti-hash.h"
 #elif defined(WOLFSSL_IMX6_CAAM)
     #include "wolfssl/wolfcrypt/port/caam/wolfcaam_sha.h"
+#elif defined(WOLFSSL_AFALG_HASH)
+    #include "wolfssl/wolfcrypt/port/af_alg/afalg_hash.h"
 #else
 /* wc_Sha256 digest */
 typedef struct wc_Sha256 {
@@ -129,6 +142,15 @@ typedef struct wc_Sha256 {
 #ifdef WOLFSSL_ASYNC_CRYPT
     WC_ASYNC_DEV asyncDev;
 #endif /* WOLFSSL_ASYNC_CRYPT */
+#ifdef WOLFSSL_SMALL_STACK_CACHE
+    word32* W;
+#endif
+#ifdef WOLFSSL_DEVCRYPTO_HASH
+    WC_CRYPTODEV ctx;
+    byte*  msg;
+    word32 used;
+    word32 len;
+#endif
 #endif
 } wc_Sha256;
 
@@ -151,7 +173,9 @@ WOLFSSL_API void wc_Sha256SizeSet(wc_Sha256*, word32);
 #endif
 
 #ifdef WOLFSSL_SHA224
-#ifndef HAVE_FIPS /* avoid redefinition of structs */
+/* avoid redefinition of structs */
+#if !defined(HAVE_FIPS) || \
+    (defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION >= 2))
 
 #ifndef NO_OLD_WC_NAMES
     #define Sha224             wc_Sha224

@@ -4,15 +4,20 @@
 
 include IDE/XCODE/include.am
 include IDE/WIN/include.am
+include IDE/WIN10/include.am
 include IDE/WIN-SGX/include.am
 include IDE/LINUX-SGX/include.am
 include IDE/WORKBENCH/include.am
 include IDE/ROWLEY-CROSSWORKS-ARM/include.am
+include IDE/TRUESTUDIO/include.am
 include IDE/ARDUINO/include.am
 include IDE/INTIME-RTOS/include.am
 include IDE/OPENSTM32/include.am
 include IDE/VS-ARM/include.am
 include IDE/GCC-ARM/include.am
 include IDE/CSBENCH/include.am
+include IDE/mynewt/include.am
+include IDE/Renesas/cs+/Projects/include.am
+include IDE/Renesas/e2studio/Projects/include.am
 
-EXTRA_DIST+= IDE/IAR-EWARM IDE/MDK-ARM IDE/MDK5-ARM IDE/MYSQL IDE/LPCXPRESSO IDE/HEXIWEAR
+EXTRA_DIST+= IDE/IAR-EWARM IDE/MDK-ARM IDE/MDK5-ARM IDE/MYSQL IDE/LPCXPRESSO IDE/HEXIWEAR IDE/Espressif

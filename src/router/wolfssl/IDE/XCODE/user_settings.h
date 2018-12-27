@@ -13,7 +13,11 @@
     #define NO_PWDBASED
 #else
     /* disable "main" entry */
+    #undef NO_MAIN_DRIVER
     #define NO_MAIN_DRIVER
+
+    /* 128-bit type */
+    #define HAVE___UINT128_T
 
     /* fast math */
     #define USE_FAST_MATH
@@ -24,7 +28,7 @@
     #define TFM_ECC256
 
     /* timing resistance */
-    #if 0
+    #if 1
         #define WC_RSA_BLINDING
         #define TFM_TIMING_RESISTANT
         #define ECC_TIMING_RESISTANT
@@ -71,6 +75,8 @@
     /* test certificate buffers */
     #define USE_CERT_BUFFERS_2048
     #define USE_CERT_BUFFERS_256
+
+    #define WOLFSSL_DTLS
 
     //#define DEBUG_WOLFSSL
 
