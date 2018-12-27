@@ -610,24 +610,3 @@ size_t merge_byte_arrays(u8 *res, size_t res_len,
 
 	return len;
 }
-
-int ieee80211_frequency_to_channel(int freq)
-{
-	/* see 802.11 17.3.8.3.2 and Annex J */
-	if (freq == 2484)
-		return 14;
-	if (freq == 2407)
-		return 0;
-	else if (freq < 2412)
-		return (freq - 2407) / 5 + 256;
-	else if (freq < 2484)
-		return (freq - 2407) / 5;
-	else if (freq > 2484 && freq < 4000 )
-		return (freq - 2414) / 5;
-	else if (freq < 4990 && freq > 4940)
-		return ((freq * 10) + (((freq % 5) == 2) ? 5 : 0) - 49400) / 5;
-	else if (freq >= 4800 && freq < 5005)
-		return (freq - 4000) / 5;
-	else
-		return (freq - 5000) / 5;
-}
