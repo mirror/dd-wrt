@@ -38,14 +38,14 @@ input.num {
 #wrapper {
   position:relative;
   text-align:left;
-  width:72.464em;
+  width:89.464em;
   margin:0 auto;
 }
 #content {
   background:#fff;
 }
 #header {
-  width:72.464em;
+  width:89.464em;
   height:9.340em;
   background:#111;
   padding-top:.908em;
@@ -86,7 +86,7 @@ input.num {
   position:absolute;
   top:2.265em;
   left:0;
-  width:72.283em;
+  width:89.283em;
   padding-top:.362em;
   border-style:solid solid none solid;
   border-width:.09em;
@@ -154,20 +154,20 @@ input.num {
   float:left;
 }
 #main #contents {
-  width:52.536em;
+  width:65.536em;
   padding:.906em;
 }
 #main #contentsInfo {
-  width:70.471em;
+  width:87.471em;
   padding:.906em;
 }
 #main #contentsInfo div.col2l {
   float:left;
-  width:34.774em;
+  width:43em;
 }
 #main #contentsInfo div.col2r {
   float:left;
-  width:34.774em;
+  width:43em;
   margin-left:.906em;
 }
 h2,
