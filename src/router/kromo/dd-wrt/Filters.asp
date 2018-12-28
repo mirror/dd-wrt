@@ -401,26 +401,24 @@ addEvent(window, "unload", function() {
 									<div class="label"><% tran("filter.catchall"); %></div>
 									<input class="spaceradio" type="checkbox" name="_filter_p2p" value="1" <% nvc("filter_p2p", "1"); %> />
 								</div>
-								<% show_filters(); %>
-								<div class="setting">
+								<table><tr align="center">
+									<td><% show_filters(); %></td>
+								</tr></table>
+								<div class="center">
 									<script type="text/javascript">
-									//<![CDATA[
-									document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.add + "\" onclick=\"filter_add_submit(this.form);\"/>");
-									//]]>
+										//<![CDATA[
+										document.write("<input class=\"button\" style=\"width:6em;\" type=\"button\" value=\"" + sbutton.add + "\" onclick=\"filter_add_submit(this.form);\"/>");
+										//]]>
 									</script>
-								</div>
-								<div class="setting">
 									<script type="text/javascript">
-									//<![CDATA[
-									document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.del + "\" onclick=\"filter_remove_submit(this.form);\"/>");
-									//]]>
+										//<![CDATA[
+										document.write("<input class=\"button\" style=\"width:6em;\" type=\"button\" value=\"" + sbutton.del + "\" onclick=\"filter_remove_submit(this.form);\"/>");
+										//]]>
 									</script>
-								</div>
-								<div class="setting">
 									<script type="text/javascript">
-									//<![CDATA[
-									document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.filterSer + "\" onclick=\"openWindow('Port_Services.asp', 640, 430);\" />");
-									//]]>
+										//<![CDATA[
+										document.write("<input class=\"button\" type=\"button\" value=\"" + sbutton.filterSer + "\" onclick=\"openWindow('Port_Services.asp', 640, 430);\" />");
+										//]]>
 									</script>
 								</div>
 							</fieldset><br />
