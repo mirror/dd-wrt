@@ -445,6 +445,19 @@ int mac80211_get_coverageclass(char *interface)
 			unlock();
 			return ack;
 		}
+		sprintf(str, "/sys/kernel/debug/ieee80211/phy%d/ath5k/ack_to", phy);
+		FILE *fp = fopen(str, "rb");
+		if (fp) {
+			int ack;
+			int rawack;
+			char state[32];
+			fscanf(fp, "%d %d %s", &rawack, &ack, state);
+			fclose(fp);
+			ack = (ack + 2) / 3;	// do the coverage class
+			ack = (ack + 1) / 2;
+			unlock();
+			return ack;
+		}
 	}
 
 	if (phy == -1) {
