@@ -446,7 +446,7 @@ int mac80211_get_coverageclass(char *interface)
 			return ack;
 		}
 		sprintf(str, "/sys/kernel/debug/ieee80211/phy%d/ath5k/ack_to", phy);
-		FILE *fp = fopen(str, "rb");
+		fp = fopen(str, "rb");
 		if (fp) {
 			int ack;
 			int rawack;
