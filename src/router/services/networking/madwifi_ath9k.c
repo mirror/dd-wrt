@@ -56,6 +56,32 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss);
 static void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc);
 void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss);
 
+static void setRTS(char *use)
+{
+	char rts[32];
+
+	sprintf(rts, "%s_protmode", use);
+	nvram_default_get(rts, "None");
+
+	sprintf(rts, "%s_rts", use);
+	nvram_default_get(rts, "0");
+
+	sprintf(rts, "%s_rtsvalue", use);
+	nvram_default_get(rts, "2346");
+
+	if (nvram_nmatch("1", "%s_rts", use)) {
+		eval("iwconfig", use, "rts", nvram_nget("%s_rtsvalue", use));
+	} else {
+		eval("iwconfig", use, "rts", "off");
+	}
+	if (nvram_nmatch("None", "%s_protmode", use))
+		eval("iwpriv", use, "protmode", "0");
+	if (nvram_nmatch("CTS", "%s_protmode", use))
+		eval("iwpriv", use, "protmode", "1");
+	if (nvram_nmatch("RTS/CTS", "%s_protmode", use))
+		eval("iwpriv", use, "protmode", "2");
+}
+
 void delete_ath9k_devices(char *physical_iface)
 {
 	glob_t globbuf;
@@ -295,6 +321,7 @@ void configure_single_ath9k(int count)
 
 // das scheint noch aerger zu machen
 	eval("iw", "dev", dev, "set", "power_save", "off");
+	setRTS(dev);
 
 	cprintf("done()\n");
 
@@ -346,6 +373,7 @@ void configure_single_ath9k(int count)
 		} else {
 			eval("iw", "dev", var, "set", "compr", "off");
 		}
+		setRTS(var);
 
 		isfirst = 0;
 		counter++;
