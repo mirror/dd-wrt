@@ -3874,7 +3874,6 @@ static void save_prefix(webs_t wp, char *prefix)
 		nvram_set(chanbw, cbw);
 
 	copytonv(wp, "%s_xr", prefix);
-	copytonv(wp, "%s_mtikie", prefix);
 	copytonv(wp, "%s_cardtype", prefix);
 
 #endif
