@@ -132,7 +132,6 @@ void configure_single_ath9k(int count)
 	char dev[10];
 	char wif[10];
 	int phy_idx = get_ath9k_phy_idx(count);
-	char mtikie[32];
 	char wl[16];
 	char bw[32];
 	char channel[16];
