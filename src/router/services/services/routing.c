@@ -65,8 +65,9 @@ static int zebra_init(void)
 			strcat(daemons, " bgpd");
 		} else if (!strcmp(var, "router")) {
 			services++;
-			zebra_ripd_init();
-			strcat(daemons, " ripd");
+			int res = zebra_ripd_init();
+			if (!res)
+				strcat(daemons, " ripd");
 		}
 	}
 #ifdef HAVE_FRR
@@ -470,7 +471,7 @@ static int zebra_ripd_init(void)
 	if (!strcmp(lt, "0") && !strcmp(lr, "0") && !strcmp(wt, "0") && !strcmp(wr, "0")
 	    && !nvram_matchi("zebra_copt", 1)) {
 		fprintf(stderr, "zebra disabled.\n");
-		return 0;
+		return -1;
 	}
 
 	/*
@@ -539,7 +540,7 @@ static int zebra_ripd_init(void)
 		fflush(fp);
 	}
 	fclose(fp);
-	return 1;
+	return 0;
 }
 
 static int zebra_bgp_init(void)
