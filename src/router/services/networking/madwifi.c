@@ -1860,7 +1860,6 @@ static void configure_single(int count)
 	int cnt = 0;
 	char dev[10];
 	char wif[10];
-	char mtikie[32];
 	char wl[16];
 	char channel[16];
 	char ssid[16];
@@ -2329,9 +2328,7 @@ static void configure_single(int count)
 			eval("iwpriv", var, "ap_bridge", "0");
 		if (!strcmp(mvap, "wdssta") || !strcmp(mvap, "wdsap"))
 			eval("iwpriv", var, "wds", "1");
-		sprintf(mtikie, "%s_mtikie", var);
-		if (nvram_default_matchi(mtikie, 1, 0))
-			eval("iwpriv", var, "addmtikie", "1");
+		eval("iwpriv", var, "addmtikie", "1");
 
 #ifdef HAVE_BONDING
 		if (!strcmp(mvap, "wdsap") && !isBond(var))
@@ -2347,9 +2344,7 @@ static void configure_single(int count)
 		cnt++;
 		}
 
-	sprintf(mtikie, "%s_mtikie", dev);
-	if (nvram_default_matchi(mtikie, 1, 0))
-		eval("iwpriv", dev, "addmtikie", "1");
+	eval("iwpriv", dev, "addmtikie", "1");
 
 	char isolate[32];
 
