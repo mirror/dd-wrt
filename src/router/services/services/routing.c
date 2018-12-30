@@ -64,10 +64,11 @@ static int zebra_init(void)
 			zebra_bgp_init();
 			strcat(daemons, " bgpd");
 		} else if (!strcmp(var, "router")) {
-			services++;
 			int res = zebra_ripd_init();
-			if (!res)
+			if (!res) {
+				services++;
 				strcat(daemons, " ripd");
+			}
 		}
 	}
 #ifdef HAVE_FRR
