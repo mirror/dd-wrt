@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r4368 | brainslayer | 2018-12-31 00:02:52 +0100 (Mon, 31 Dec 2018) | 1 line
+
+return if its to big and do not start any non working workaround
+------------------------------------------------------------------------
 r4367 | brainslayer | 2018-12-30 16:52:55 +0100 (Sun, 30 Dec 2018) | 1 line
 
 fix length
