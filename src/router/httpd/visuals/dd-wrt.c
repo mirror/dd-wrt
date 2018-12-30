@@ -2499,12 +2499,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 256 \" + share.user + \")\");\n//]]>\n</script></span>\n");
 			websWrite(wp, "</div>\n");
 		}
-		if (!is_mac80211(var)) {
-			sprintf(power, "%s_mtikie", var);
-			nvram_default_get(power, "0");
-			showRadio(wp, "wl_basic.mtikie", power);
-		}
-
+		
 		char dtim[32];
 		sprintf(dtim, "%s_dtim", var);
 		websWrite(wp, "<div class=\"setting\">\n");
@@ -3468,11 +3463,6 @@ if (nvram_nmatch("ap", "%s_mode", prefix)
 	websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 256 \" + status_wireless.legend3 + \")\");\n//]]>\n</script></span>\n");
 	websWrite(wp, "</div>\n");
 }
-if (!is_mac80211(var)) {
-	sprintf(power, "%s_mtikie", prefix);
-	nvram_default_get(power, "0");
-	showRadio(wp, "wl_basic.mtikie", power);
-}
 if (is_mac80211(prefix) && (nvram_nmatch("ap", "%s_mode", prefix) || nvram_nmatch("wdsap", "%s_mode", prefix))) {
 	char signal[32];
 	websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_adv.droplowsignal)</script></legend>");
@@ -4207,11 +4197,6 @@ if (!strcmp(prefix, "wl2"))
 		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,0,256,wl_adv.label10)\" value=\"%s\" />\n", power, nvram_default_get(power, "256"));
 		websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 256 \" + status_wireless.legend3 + \")\");\n//]]>\n</script></span>\n");
 		websWrite(wp, "</div>\n");
-	}
-	if (!is_mac80211(prefix)) {
-		sprintf(power, "%s_mtikie", prefix);
-		nvram_default_get(power, "0");
-		showRadio(wp, "wl_basic.mtikie", power);
 	}
 	if (is_mac80211(prefix) && (nvram_nmatch("ap", "%s_mode", prefix) || nvram_nmatch("wdsap", "%s_mode", prefix))) {
 		char signal[32];
