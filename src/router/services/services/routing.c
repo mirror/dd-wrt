@@ -44,6 +44,7 @@ static int zebra_init(void)
 	char var[32], *next;
 	char daemons[64];
 	int services = 0;
+	int has_ospfd = 0, has_ospf6d = 0, has_bgpd = 0, has_ripd = 0;
 #ifdef HAVE_FRR
 	sprintf(daemons, "watchfrr -d -s '%%s -d' -k 'killall %%s' -r '%%s -d' zebra");
 #else
@@ -52,35 +53,48 @@ static int zebra_init(void)
 	sub = nvram_safe_get("wk_mode");
 	foreach(var, sub, next) {
 		if (!strcmp(var, "ospf")) {
-			services++;
-			zebra_ospf_init();
-			strcat(daemons, " ospfd");
+			int res = zebra_ospf_init();
+			if (!res) {
+				services++;
+				has_ospfd = 1;
+				strcat(daemons, " ospfd");
+			}
 		} else if (!strcmp(var, "ospf6")) {
-			services++;
-			zebra_ospf6_init();
-			strcat(daemons, " ospf6d");
+			int res = zebra_ospf6_init();
+			if (!res) {
+				services++;
+				has_ospf6d = 1;
+				strcat(daemons, " ospf6d");
+			}
 		} else if (!strcmp(var, "bgp")) {
-			services++;
-			zebra_bgp_init();
-			strcat(daemons, " bgpd");
+			int res = zebra_bgp_init();
+			if (!res) {
+				services++;
+				has_bgpd = 1;
+				strcat(daemons, " bgpd");
+			}
 		} else if (!strcmp(var, "router")) {
 			int res = zebra_ripd_init();
 			if (!res) {
 				services++;
+				has_ripd = 1;
 				strcat(daemons, " ripd");
 			}
 		}
 	}
 #ifdef HAVE_FRR
-	if (services)
+	if (services) {
 		eval("zebra", "-d");
-	foreach(var, sub, next) {
-		if (!strcmp(var, "ospf")) {
-		} else if (!strcmp(var, "ospf6")) {
+		if (has_ospfd) {
+			eval("ospfd", "-d");
+		}
+		if (has_ospf6d) {
 			eval("ospf6d", "-d");
-		} else if (!strcmp(var, "bgp")) {
+		}
+		if (has_bgpd) {
 			eval("bgpd", "-d");
-		} else if (!strcmp(var, "router")) {
+		}
+		if (has_ripd) {
 			eval("ripd", "-d");
 		}
 	}
@@ -351,7 +365,7 @@ static int zebra_ospf_init(void)
 	}
 
 	fclose(fp);
-	return 1;
+	return 0;
 }
 
 static int zebra_ospf6_init(void)
@@ -453,7 +467,7 @@ static int zebra_ospf6_init(void)
 
 	fclose(fp);
 
-	return 1;
+	return 0;
 }
 
 static int zebra_ripd_init(void)
@@ -558,7 +572,7 @@ static int zebra_bgp_init(void)
 
 	if (!strcmp(lt, "0") && !strcmp(lr, "0") && !strcmp(wt, "0") && !strcmp(wr, "0")
 	    && !nvram_matchi("zebra_copt", 1)) {
-		return 0;
+		return -1;
 	}
 
 	/*
@@ -600,7 +614,7 @@ static int zebra_bgp_init(void)
 	}
 	fclose(fp);
 
-	return 1;
+	return 0;
 }
 
 #endif
@@ -614,7 +628,7 @@ static int bird_init(void)
 	 * compatibitly for old nvram style (site needs to be enhanced)
 	 */
 	if (has_gateway())
-		return 0;
+		return -1;
 	nvram_set("routing_ospf", "off");
 	nvram_set("routing_bgp", "off");
 	nvram_set("routing_rip2", "off");
