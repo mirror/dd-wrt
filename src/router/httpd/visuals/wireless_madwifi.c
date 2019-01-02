@@ -200,11 +200,18 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 #if defined(HAVE_ATH9K)
 extern int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifname, int cnt, int turbo, int macmask);
 #endif
-static int assoc_count = 0;
+static int assoc_count[16] = {0};
 
 void ej_assoc_count(webs_t wp, int argc, char_t ** argv)
 {
-	websWrite(wp, "%d", assoc_count);
+	char *var = websGetVar(wp, "wifi_display", NULL);
+	int if_num;
+	if(!var){
+		var = nvram_safe_get("wifi_display");
+	}
+	
+	sscanf(var,"%*[^0-9]%d", &if_num);
+	websWrite(wp, "%d", assoc_count[if_num]);
 }
 
 void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
@@ -212,7 +219,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 	int c = getdevicecount();
 	char devs[32];
 	int i;
-	int cnt = 0;
+	int cnt[16] = {0};
 	char turbo[32];
 	int t;
 	int macmask;
@@ -227,13 +234,13 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			t = 1;
 		if (is_mac80211(devs)) {
 			if (has_ad(devs))
-				cnt = ej_active_wireless_if_ath9k(wp, argc, argv, "giwifi0", cnt, t, macmask);
+				cnt[i] = ej_active_wireless_if_ath9k(wp, argc, argv, "giwifi0", cnt[i], t, macmask);
 			else
-				cnt = ej_active_wireless_if_ath9k(wp, argc, argv, devs, cnt, t, macmask);
+				cnt[i] = ej_active_wireless_if_ath9k(wp, argc, argv, devs, cnt[i], t, macmask);
 			gotassocs = 1;
 		}
 		if (!gotassocs) {
-			cnt += ej_active_wireless_if(wp, argc, argv, devs, cnt, t, macmask);
+			cnt[i] += ej_active_wireless_if(wp, argc, argv, devs, cnt[i], t, macmask);
 		}
 		if (!is_mac80211(devs)) {
 			char vif[32];
@@ -243,7 +250,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			char *vifs = nvram_get(vif);
 			if (vifs != NULL)
 				foreach(var, vifs, next) {
-				cnt = ej_active_wireless_if(wp, argc, argv, var, cnt, t, macmask);
+				cnt[i] = ej_active_wireless_if(wp, argc, argv, var, cnt[i], t, macmask);
 				}
 		}
 	}
@@ -277,11 +284,13 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 					continue;
 				if (nvram_matchi(wdsvarname, 0))
 					continue;
-				cnt = ej_active_wireless_if(wp, argc, argv, dev, cnt, t, macmask);
+				cnt[i] = ej_active_wireless_if(wp, argc, argv, dev, cnt[i], t, macmask);
 			}
 		}
 	}
-	assoc_count = cnt;
+	for (i = 0; i < c; i++) {
+		assoc_count[i] = cnt[i];
+	}
 }
 
 static int get_distance(char *ifname)
