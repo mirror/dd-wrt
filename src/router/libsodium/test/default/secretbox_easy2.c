@@ -22,7 +22,7 @@ main(void)
     k     = (unsigned char *) sodium_malloc(crypto_secretbox_KEYBYTES);
     mac   = (unsigned char *) sodium_malloc(crypto_secretbox_MACBYTES);
     crypto_secretbox_keygen(k);
-    randombytes_buf(m, (unsigned long long) mlen);
+    randombytes_buf(m, mlen);
     randombytes_buf(nonce, crypto_secretbox_NONCEBYTES);
     crypto_secretbox_easy(c, m, (unsigned long long) mlen, nonce, k);
     if (crypto_secretbox_open_easy(
@@ -40,6 +40,10 @@ main(void)
         }
     }
     crypto_secretbox_detached(c, mac, m, (unsigned long long) mlen, nonce, k);
+    if (crypto_secretbox_open_detached(NULL, c, mac, (unsigned long long) mlen,
+                                       nonce, k) != 0) {
+        printf("crypto_secretbox_open_detached() with a NULL message pointer failed\n");
+    }
     if (crypto_secretbox_open_detached(m2, c, mac, (unsigned long long) mlen,
                                        nonce, k) != 0) {
         printf("crypto_secretbox_open_detached() failed\n");

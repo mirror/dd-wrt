@@ -10,6 +10,7 @@ tv_kdf(void)
     char          *context;
     char           hex[crypto_kdf_BYTES_MAX * 2 + 1];
     uint64_t       i;
+    int            ret;
 
     context = (char *) sodium_malloc(crypto_kdf_CONTEXTBYTES);
     memcpy(context, "KDF test", strlen("KDF test"));
@@ -19,8 +20,9 @@ tv_kdf(void)
     }
     subkey = (unsigned char *) sodium_malloc(crypto_kdf_BYTES_MAX);
     for (i = 0; i < 10; i++) {
-        assert(crypto_kdf_blake2b_derive_from_key(subkey, crypto_kdf_BYTES_MAX,
-                                                  i, context, master_key) == 0);
+        ret = crypto_kdf_derive_from_key(subkey, crypto_kdf_BYTES_MAX,
+                                         i, context, master_key);
+        assert(ret == 0);
         sodium_bin2hex(hex, sizeof hex, subkey, crypto_kdf_BYTES_MAX);
         printf("%s\n", hex);
     }
@@ -28,8 +30,8 @@ tv_kdf(void)
 
     for (i = 0; i < crypto_kdf_BYTES_MAX + 2; i++) {
         subkey = (unsigned char *) sodium_malloc(crypto_kdf_BYTES_MAX);
-        if (crypto_kdf_blake2b_derive_from_key(subkey, (size_t) i,
-                                               i, context, master_key) == 0) {
+        if (crypto_kdf_derive_from_key(subkey, (size_t) i,
+                                       i, context, master_key) == 0) {
             sodium_bin2hex(hex, sizeof hex, subkey, (size_t) i);
             printf("%s\n", hex);
         } else {
@@ -48,6 +50,10 @@ tv_kdf(void)
     assert(crypto_kdf_contextbytes() == crypto_kdf_CONTEXTBYTES);
     assert(crypto_kdf_KEYBYTES >= 16);
     assert(crypto_kdf_keybytes() == crypto_kdf_KEYBYTES);
+    assert(crypto_kdf_bytes_min() == crypto_kdf_blake2b_bytes_min());
+    assert(crypto_kdf_bytes_max() == crypto_kdf_blake2b_bytes_max());
+    assert(crypto_kdf_contextbytes() == crypto_kdf_blake2b_contextbytes());
+    assert(crypto_kdf_keybytes() == crypto_kdf_blake2b_keybytes());
 
     printf("tv_kdf: ok\n");
 }

@@ -1,5 +1,6 @@
 #include "crypto_stream_salsa20.h"
 #include "private/common.h"
+#include "private/implementations.h"
 #include "randombytes.h"
 #include "runtime.h"
 #include "stream_salsa20.h"
@@ -35,6 +36,12 @@ size_t
 crypto_stream_salsa20_noncebytes(void)
 {
     return crypto_stream_salsa20_NONCEBYTES;
+}
+
+size_t
+crypto_stream_salsa20_messagebytes_max(void)
+{
+    return crypto_stream_salsa20_MESSAGEBYTES_MAX;
 }
 
 int
@@ -89,5 +96,5 @@ _crypto_stream_salsa20_pick_best_implementation(void)
         return 0;
     }
 #endif
-    return 0;
+    return 0; /* LCOV_EXCL_LINE */
 }
