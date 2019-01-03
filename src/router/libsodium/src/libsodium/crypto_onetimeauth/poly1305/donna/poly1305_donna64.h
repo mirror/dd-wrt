@@ -3,11 +3,7 @@
    and 128 bit addition
 */
 
-#if defined(__SIZEOF_INT128__)
-typedef unsigned __int128 uint128_t;
-#else
-typedef unsigned uint128_t __attribute__((mode(TI)));
-#endif
+#include "private/common.h"
 
 #define MUL(out, x, y) out = ((uint128_t) x * y)
 #define ADD(out, in) out += in
@@ -22,8 +18,6 @@ typedef unsigned uint128_t __attribute__((mode(TI)));
 #else
 # define POLY1305_NOINLINE
 #endif
-
-#include "private/common.h"
 
 #define poly1305_block_size 16
 
@@ -46,6 +40,7 @@ poly1305_init(poly1305_state_internal_t *st, const unsigned char key[32])
     t0 = LOAD64_LE(&key[0]);
     t1 = LOAD64_LE(&key[8]);
 
+    /* wiped after finalization */
     st->r[0] = (t0) &0xffc0fffffff;
     st->r[1] = ((t0 >> 44) | (t1 << 20)) & 0xfffffc0ffff;
     st->r[2] = ((t1 >> 24)) & 0x00ffffffc0f;

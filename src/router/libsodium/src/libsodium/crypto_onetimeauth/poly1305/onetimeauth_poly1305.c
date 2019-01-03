@@ -2,6 +2,7 @@
 #include "onetimeauth_poly1305.h"
 #include "crypto_onetimeauth_poly1305.h"
 #include "private/common.h"
+#include "private/implementations.h"
 #include "randombytes.h"
 #include "runtime.h"
 
@@ -31,22 +32,22 @@ crypto_onetimeauth_poly1305_verify(const unsigned char *h,
 
 int
 crypto_onetimeauth_poly1305_init(crypto_onetimeauth_poly1305_state *state,
-                                 const unsigned char *              key)
+                                 const unsigned char *key)
 {
     return implementation->onetimeauth_init(state, key);
 }
 
 int
 crypto_onetimeauth_poly1305_update(crypto_onetimeauth_poly1305_state *state,
-                                   const unsigned char *              in,
-                                   unsigned long long                 inlen)
+                                   const unsigned char *in,
+                                   unsigned long long inlen)
 {
     return implementation->onetimeauth_update(state, in, inlen);
 }
 
 int
 crypto_onetimeauth_poly1305_final(crypto_onetimeauth_poly1305_state *state,
-                                  unsigned char *                    out)
+                                  unsigned char *out)
 {
     return implementation->onetimeauth_final(state, out);
 }

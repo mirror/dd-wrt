@@ -5,6 +5,7 @@
 
 #include "blake2.h"
 #include "crypto_generichash_blake2b.h"
+#include "private/implementations.h"
 
 int
 crypto_generichash_blake2b(unsigned char *out, size_t outlen,
@@ -89,8 +90,8 @@ crypto_generichash_blake2b_init_salt_personal(
 
 int
 crypto_generichash_blake2b_update(crypto_generichash_blake2b_state *state,
-                                  const unsigned char *             in,
-                                  unsigned long long                inlen)
+                                  const unsigned char *in,
+                                  unsigned long long inlen)
 {
     return blake2b_update(state, (const uint8_t *) in, (uint64_t) inlen);
 }

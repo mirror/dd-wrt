@@ -47,7 +47,7 @@
     ARGON2_MIN(UINT32_C(0xFFFFFFFF), UINT64_C(1) << ARGON2_MAX_MEMORY_BITS)
 
 /* Minimum and maximum number of passes */
-#define ARGON2_MIN_TIME UINT32_C(3)
+#define ARGON2_MIN_TIME UINT32_C(1)
 #define ARGON2_MAX_TIME UINT32_C(0xFFFFFFFF)
 
 /* Minimum and maximum password length in bytes */
@@ -69,7 +69,7 @@
 #define ARGON2_FLAG_CLEAR_PASSWORD (UINT32_C(1) << 0)
 #define ARGON2_FLAG_CLEAR_SECRET (UINT32_C(1) << 1)
 #define ARGON2_FLAG_CLEAR_MEMORY (UINT32_C(1) << 2)
-#define ARGON2_DEFAULT_FLAGS (ARGON2_FLAG_CLEAR_MEMORY)
+#define ARGON2_DEFAULT_FLAGS (UINT32_C(0))
 
 /* Error codes */
 typedef enum Argon2_ErrorCodes {
@@ -185,7 +185,7 @@ typedef struct Argon2_Context {
 } argon2_context;
 
 /* Argon2 primitive type */
-typedef enum Argon2_type { Argon2_i = 1 } argon2_type;
+typedef enum Argon2_type { Argon2_i = 1, Argon2_id = 2 } argon2_type;
 
 /*
  * Function that performs memory-hard hashing with certain degree of parallelism
@@ -216,6 +216,27 @@ int argon2i_hash_encoded(const uint32_t t_cost, const uint32_t m_cost,
                          char *encoded, const size_t encodedlen);
 
 /**
+ * Hashes a password with Argon2id, producing an encoded hash
+ * @param t_cost Number of iterations
+ * @param m_cost Sets memory usage to m_cost kibibytes
+ * @param parallelism Number of threads and compute lanes
+ * @param pwd Pointer to password
+ * @param pwdlen Password size in bytes
+ * @param salt Pointer to salt
+ * @param saltlen Salt size in bytes
+ * @param hashlen Desired length of the hash in bytes
+ * @param encoded Buffer where to write the encoded hash
+ * @param encodedlen Size of the buffer (thus max size of the encoded hash)
+ * @pre   Different parallelism levels will give different results
+ * @pre   Returns ARGON2_OK if successful
+ */
+int argon2id_hash_encoded(const uint32_t t_cost, const uint32_t m_cost,
+                          const uint32_t parallelism, const void *pwd,
+                          const size_t pwdlen, const void *salt,
+                          const size_t saltlen, const size_t hashlen,
+                          char *encoded, const size_t encodedlen);
+
+/**
  * Hashes a password with Argon2i, producing a raw hash
  * @param t_cost Number of iterations
  * @param m_cost Sets memory usage to m_cost kibibytes
@@ -234,6 +255,25 @@ int argon2i_hash_raw(const uint32_t t_cost, const uint32_t m_cost,
                      const size_t pwdlen, const void *salt,
                      const size_t saltlen, void *hash, const size_t hashlen);
 
+/**
+ * Hashes a password with Argon2id, producing a raw hash
+ * @param t_cost Number of iterations
+ * @param m_cost Sets memory usage to m_cost kibibytes
+ * @param parallelism Number of threads and compute lanes
+ * @param pwd Pointer to password
+ * @param pwdlen Password size in bytes
+ * @param salt Pointer to salt
+ * @param saltlen Salt size in bytes
+ * @param hash Buffer where to write the raw hash
+ * @param hashlen Desired length of the hash in bytes
+ * @pre   Different parallelism levels will give different results
+ * @pre   Returns ARGON2_OK if successful
+ */
+int argon2id_hash_raw(const uint32_t t_cost, const uint32_t m_cost,
+                      const uint32_t parallelism, const void *pwd,
+                      const size_t pwdlen, const void *salt,
+                      const size_t saltlen, void *hash, const size_t hashlen);
+
 /* generic function underlying the above ones */
 int argon2_hash(const uint32_t t_cost, const uint32_t m_cost,
                 const uint32_t parallelism, const void *pwd,
@@ -249,6 +289,15 @@ int argon2_hash(const uint32_t t_cost, const uint32_t m_cost,
  * @pre   Returns ARGON2_OK if successful
  */
 int argon2i_verify(const char *encoded, const void *pwd, const size_t pwdlen);
+
+/**
+ * Verifies a password against an encoded string
+ * Encoded string is restricted as in validate_inputs()
+ * @param encoded String encoding parameters, salt, hash
+ * @param pwd Pointer to password
+ * @pre   Returns ARGON2_OK if successful
+ */
+int argon2id_verify(const char *encoded, const void *pwd, const size_t pwdlen);
 
 /* generic function underlying the above ones */
 int argon2_verify(const char *encoded, const void *pwd, const size_t pwdlen,

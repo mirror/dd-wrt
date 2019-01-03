@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "core.h"
 #include "crypto_aead_aes256gcm.h"
 #include "export.h"
 #include "private/common.h"
@@ -523,8 +524,8 @@ crypto_aead_aes256gcm_encrypt_detached_afternm(unsigned char *c,
 
     (void) nsec;
     memcpy(H, ctx->H, sizeof H);
-    if (mlen > 16ULL * ((1ULL << 32) - 2)) {
-        abort(); /* LCOV_EXCL_LINE */
+    if (mlen > crypto_aead_aes256gcm_MESSAGEBYTES_MAX) {
+        sodium_misuse(); /* LCOV_EXCL_LINE */
     }
     memcpy(&n2[0], npub, 3 * 4);
     n2[3] = 0x01000000;
@@ -661,8 +662,8 @@ crypto_aead_aes256gcm_decrypt_detached_afternm(unsigned char *m, unsigned char *
     CRYPTO_ALIGN(16) unsigned char fb[16];
 
     (void) nsec;
-    if (clen > 16ULL * (1ULL << 32)) {
-        abort(); /* LCOV_EXCL_LINE */
+    if (clen > crypto_aead_aes256gcm_MESSAGEBYTES_MAX) {
+        sodium_misuse(); /* LCOV_EXCL_LINE */
     }
     mlen = clen;
 
@@ -854,12 +855,16 @@ crypto_aead_aes256gcm_encrypt(unsigned char *c,
                               const unsigned char *k)
 {
     CRYPTO_ALIGN(16) crypto_aead_aes256gcm_state ctx;
+    int ret;
 
     crypto_aead_aes256gcm_beforenm(&ctx, k);
 
-    return crypto_aead_aes256gcm_encrypt_afternm
+    ret = crypto_aead_aes256gcm_encrypt_afternm
         (c, clen_p, m, mlen, ad, adlen, nsec, npub,
             (const crypto_aead_aes256gcm_state *) &ctx);
+    sodium_memzero(ctx, sizeof ctx);
+
+    return ret;
 }
 
 int
@@ -894,12 +899,16 @@ crypto_aead_aes256gcm_decrypt(unsigned char *m,
                               const unsigned char *k)
 {
     CRYPTO_ALIGN(16) crypto_aead_aes256gcm_state ctx;
+    int ret;
 
     crypto_aead_aes256gcm_beforenm(&ctx, k);
 
-    return crypto_aead_aes256gcm_decrypt_afternm
+    ret = crypto_aead_aes256gcm_decrypt_afternm
         (m, mlen_p, nsec, c, clen, ad, adlen, npub,
          (const crypto_aead_aes256gcm_state *) &ctx);
+    sodium_memzero(ctx, sizeof ctx);
+
+    return ret;
 }
 
 int
@@ -1055,6 +1064,12 @@ size_t
 crypto_aead_aes256gcm_statebytes(void)
 {
     return (sizeof(crypto_aead_aes256gcm_state) + (size_t) 15U) & ~(size_t) 15U;
+}
+
+size_t
+crypto_aead_aes256gcm_messagebytes_max(void)
+{
+    return crypto_aead_aes256gcm_MESSAGEBYTES_MAX;
 }
 
 void
