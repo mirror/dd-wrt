@@ -226,18 +226,15 @@ static void DisplayLastTxRxRateFor11n(char *ifname, int s, int nID, int *fLastTx
 	TxRxRateFor11n(&HTSetting, fLastTxRxRate);
 }
 
-static int assoc_count[16] = { 0 };
+static int assoc_count[16];
 
 void ej_assoc_count(webs_t wp, int argc, char_t ** argv)
 {
-	char *var = websGetVar(wp, "wifi_display", NULL);
-	int if_num = 0;
-	if (!var) {
-		var = nvram_safe_get("wifi_display");
-	}
-
-	sscanf(var, "%*[^0-9]%d", &if_num);
-	websWrite(wp, "%d", assoc_count[if_num]);
+	int i;
+	int cnt = 0;
+	for (i = 0; i < 16; i++)
+		cnt += assoc_count[i];
+	websWrite(wp, "%d", cnt);
 }
 
 int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int *cnt, int globalcnt, int turbo, int macmask)
