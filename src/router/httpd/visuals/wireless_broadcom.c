@@ -430,15 +430,9 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 	return globalcnt;
 }
 
-static int assoc_count[16];
-
 void ej_assoc_count(webs_t wp, int argc, char_t ** argv)
 {
-	int i;
-	int cnt = 0;
-	for (i = 0; i < 16; i++)
-		cnt += assoc_count[i];
-	websWrite(wp, "%d", cnt);
+	assoc_count_prefix(wp, "wl");
 }
 
 void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
