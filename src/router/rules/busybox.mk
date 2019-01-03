@@ -553,7 +553,14 @@ endif
 	echo "CONFIG_ASH_BASH_SOURCE_CURDIR=y" >> busybox/.config
 	echo "# CONFIG_ASH_BASH_NOT_FOUND_HOOK is not set" >> busybox/.config
 	echo "CONFIG_BZIP2_SMALL=9" >> busybox/.config
-
+	echo "# CONFIG_FLOAT_DURATION is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_FIND_EXECUTABLE is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_FIND_QUIT is not set" >> busybox/.config
+	echo "# CONFIG_NOLOGIN is not set" >> busybox/.config
+	echo "# CONFIG_BC is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_DC_BIG is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_DC_LIBM is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_SH_EMBEDDED_SCRIPTS is not set" >> busybox/.config
 	cd busybox && make oldconfig
 	
 	-$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
