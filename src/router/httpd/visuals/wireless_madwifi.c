@@ -231,12 +231,12 @@ void ej_assoc_count(webs_t wp, int argc, char_t ** argv)
 	// get index for interface selection
 	for (i = 0; i < count; i++) {
 		sprintf(var, "ath%d", i);
-		if (!strcmp(var, select))
+		if (!strcmp(var, s))
 			goto done;
 		idx++;
 		char *names = nvram_nget("ath%d_vifs", i);
 		foreach(var, names, next) {
-			if (!strcmp(var, select))
+			if (!strcmp(var, s))
 				goto done;
 			idx++;
 		}
