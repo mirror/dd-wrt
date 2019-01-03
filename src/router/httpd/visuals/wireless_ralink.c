@@ -273,7 +273,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 		for (i = 0; i < table.Num; i++) {
 			if (globalcnt)
 				websWrite(wp, ",");
-			*cnt++;
+			*cnt = (*cnt) + 1;
 			globalcnt++;
 			char mac[32];
 			strcpy(mac, ieee80211_ntoa(table.Entry[i].Addr));
@@ -354,7 +354,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 		char mac[32];
 		if (globalcnt)
 			websWrite(wp, ",");
-		*cnt++;
+		*cnt = (*cnt) + 1;
 		globalcnt++;
 		int signal = sta->rssi;
 		if (signal >= -50)
