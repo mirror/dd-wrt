@@ -238,10 +238,11 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 		else
 			t = 1;
 		if (is_mac80211(devs)) {
-			if (has_ad(devs))
+			if (has_ad(devs)) {
 				global = ej_active_wireless_if_ath9k(wp, argc, argv, "giwifi0", &assoc_count[cnt], global, t, macmask);
-			else
+			} else {
 				global = ej_active_wireless_if_ath9k(wp, argc, argv, devs, &assoc_count[cnt], global, t, macmask);
+			}
 			gotassocs = 1;
 		}
 		if (!gotassocs) {
