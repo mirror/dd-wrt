@@ -77,7 +77,7 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 	mac80211_info = mac80211_assoclist(ifname);
 	for (wc = mac80211_info->wci; wc; wc = wc->next) {
 		char tmp[64];
-		sprintf(tmp,"%s.sta", ifname);
+		sprintf(tmp, "%s.sta", ifname);
 		if (strcmp(wc->ifname, ifname) && strncmp(wc->ifname, tmp, strlen(tmp)))
 			continue;
 		ether_etoa(wc->etheraddr, mac);

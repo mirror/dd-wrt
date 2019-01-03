@@ -205,44 +205,7 @@ static int assoc_count[16];
 
 void ej_assoc_count(webs_t wp, int argc, char_t ** argv)
 {
-	int count = getdevicecount();
-	int i;
-	char *next;
-	char var[32];
-	char *select = websGetVar(wp, "wifi_display", NULL);
-	if (!select)
-		select = nvram_safe_get("wifi_display");
-	if (!strlen(select)) {
-		websWrite(wp, "0");
-		return;
-	}
-	if (count < 1) {
-		websWrite(wp, "0");
-		return;
-	}
-	char s[128];
-	strcpy(s, select);
-	char *p = strstr(s, ".sta");
-	if (p)
-		*p = 0;
-	int idx = 0;
-	// get index for interface selection
-	for (i = 0; i < count; i++) {
-		sprintf(var, "ath%d", i);
-		if (!strcmp(var, s))
-			goto done;
-		idx++;
-		char *names = nvram_nget("ath%d_vifs", i);
-		foreach(var, names, next) {
-			if (!strcmp(var, s))
-				goto done;
-			idx++;
-		}
-	}
-	websWrite(wp, "0");
-	return;
-      done:;
-	websWrite(wp, "%d", assoc_count[idx]);
+	assoc_count_prefix(wp, "ath");
 }
 
 void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
