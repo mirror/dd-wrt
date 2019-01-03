@@ -176,8 +176,6 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 		if (si->isi_athflags & IEEE80211_ATHC_WDS)
 			type = "WDS:";
 		char str[64] = { 0 };
-		if (globalcnt)
-			websWrite(wp, ",");
 		if (si->isi_rates && ((si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL) != 0)
 		    && ((si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL) != 0)) {
 			websWrite(wp,
@@ -276,7 +274,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			gotassocs = 1;
 		}
 		if (!gotassocs) {
-			global +=ej_active_wireless_if(wp, argc, argv, devs, &assoc_count[cnt], global, t, macmask);
+			global =ej_active_wireless_if(wp, argc, argv, devs, &assoc_count[cnt], global, t, macmask);
 		}
 		cnt++;
 		if (!is_mac80211(devs)) {
