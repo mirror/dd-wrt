@@ -1,5 +1,6 @@
 #include "crypto_stream_chacha20.h"
 #include "private/common.h"
+#include "private/implementations.h"
 #include "randombytes.h"
 #include "runtime.h"
 #include "stream_chacha20.h"
@@ -27,6 +28,12 @@ crypto_stream_chacha20_noncebytes(void) {
 }
 
 size_t
+crypto_stream_chacha20_messagebytes_max(void)
+{
+    return crypto_stream_chacha20_MESSAGEBYTES_MAX;
+}
+
+size_t
 crypto_stream_chacha20_ietf_keybytes(void) {
     return crypto_stream_chacha20_ietf_KEYBYTES;
 }
@@ -34,6 +41,12 @@ crypto_stream_chacha20_ietf_keybytes(void) {
 size_t
 crypto_stream_chacha20_ietf_noncebytes(void) {
     return crypto_stream_chacha20_ietf_NONCEBYTES;
+}
+
+size_t
+crypto_stream_chacha20_ietf_messagebytes_max(void)
+{
+    return crypto_stream_chacha20_ietf_MESSAGEBYTES_MAX;
 }
 
 int
