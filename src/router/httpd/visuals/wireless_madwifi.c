@@ -277,18 +277,20 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			global = ej_active_wireless_if(wp, argc, argv, devs, &assoc_count[cnt], global, t, macmask);
 		}
 		cnt++;
-		if (!is_mac80211(devs)) {
-			char vif[32];
+		char vif[32];
 
-			sprintf(vif, "%s_vifs", devs);
-			char var[80], *next;
-			char *vifs = nvram_get(vif);
-			if (vifs != NULL)
-				foreach(var, vifs, next) {
+		sprintf(vif, "%s_vifs", devs);
+		char var[80], *next;
+		char *vifs = nvram_get(vif);
+		if (vifs != NULL)
+			foreach(var, vifs, next) {
+			if (!is_mac80211(devs)) {
 				global = ej_active_wireless_if(wp, argc, argv, var, &assoc_count[cnt], global, t, macmask);
-				cnt++;
-				}
-		}
+			} else {
+				global = ej_active_wireless_if_ath9k(wp, argc, argv, var, &assoc_count[cnt], global, t, macmask);
+			}
+			cnt++;
+			}
 	}
 
 	// show wds links
