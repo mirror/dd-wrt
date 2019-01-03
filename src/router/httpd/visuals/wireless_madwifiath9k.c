@@ -76,6 +76,8 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 
 	mac80211_info = mac80211_assoclist(ifname);
 	for (wc = mac80211_info->wci; wc; wc = wc->next) {
+		if (strcmp(wc->ifname, ifname))
+			continue;
 		ether_etoa(wc->etheraddr, mac);
 		if (nvram_matchi("maskmac", 1) && macmask) {
 			mac[0] = 'x';
@@ -94,14 +96,12 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 			qual = 0;
 		else
 			qual = (signal + 100) * 20;
-
 		if (globalcnt)
 			websWrite(wp, ",");
 		int ht = 0;
 		int sgi = 0;
 		int vht = 0;
 		char info[32];
-
 		if (!wc->rx_is_ht)
 			ht = 5;
 		if (wc->rx_is_40mhz || wc->is_40mhz)
@@ -116,7 +116,6 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 			vht = 1;
 		if (wc->rx_is_short_gi || wc->is_short_gi)
 			sgi = 1;
-
 		if (ht == 5 && sgi)
 			ht = 0;
 		if (ht == 5 && vht)
@@ -125,7 +124,9 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 			strcpy(info, "LEGACY");
 		else
 			strcpy(info, vht ? "VHT" : "HT");
-		char *bwinfo[] = { "20", "40", "80", "160", "80+80" };
+		char *bwinfo[] = {
+			"20", "40", "80", "160", "80+80"
+		};
 		if (ht < 5 && ht >= 0)
 			sprintf(info, "%s%s", info, bwinfo[ht]);
 		if (wc->ht40intol)
@@ -134,7 +135,9 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 			sprintf(info, "%s%s", info, "SGI");
 		if (wc->islzo)
 			sprintf(info, "%s %s", info, "LZ");
-		char str[64] = { 0 };
+		char str[64] = {
+			0
+		};
 		char *radioname = wc->radioname;
 		if (!strlen(radioname))
 			radioname = "";
@@ -239,7 +242,6 @@ void ej_dump_channel_survey(webs_t wp, int argc, char_t ** argv)
 	DD_LIST_HEAD(frequencies);
 	if (getsurveystats(&frequencies, NULL, interface, NULL, 2, 20))
 		return;
-
 	dd_list_for_each_entry(f, &frequencies, list) {
 		if (!f->active_count && !f->busy_count && !f->noise_count)
 			continue;
@@ -247,40 +249,32 @@ void ej_dump_channel_survey(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "%c\"[%d]\"", !first_survey ? ' ' : ',', f->freq);
 		else
 			websWrite(wp, "%c\"%d\"", !first_survey ? ' ' : ',', f->freq);
-
 		websWrite(wp, ",\"%d\"", ieee80211_mhz2ieee(f->freq));
 		first_survey = 1;
-
 		if (f->noise_count)
 			websWrite(wp, ",\"%d\"", f->noise / f->noise_count);
 		else
 			websWrite(wp, ",\"\"");
-
 		if (f->active_count && f->busy_count)
 			websWrite(wp, ",\"%lld\"", 100 - ((f->busy * 100) / f->active));
 		else
 			websWrite(wp, ",\"\"");
-
 		if (f->active_count)
 			websWrite(wp, ",\"%lld\"", f->active);
 		else
 			websWrite(wp, ",\"\"");
-
 		if (f->busy_count)
 			websWrite(wp, ",\"%lld\"", f->busy);
 		else
 			websWrite(wp, ",\"\"");
-
 		if (f->rx_time_count)
 			websWrite(wp, ",\"%lld\"", f->rx_time);
 		else
 			websWrite(wp, ",\"\"");
-
 		if (f->tx_time_count)
 			websWrite(wp, ",\"%lld\"\n", f->tx_time);
 		else
 			websWrite(wp, ",\"\"\n");
-
 	}
 	dd_list_for_each_entry_safe(f, ftmp, &frequencies, list) {
 		dd_list_del(&f->list);
