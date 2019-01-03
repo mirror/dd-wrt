@@ -63,7 +63,7 @@ int ieee80211_mhz2ieee(int freq)
 		return 14;
 	if (freq < 2512 && freq > 2484)
 		return 15;
-	if (freq > 2484 && freq < 4000 )
+	if (freq > 2484 && freq < 4000)
 		return (15 + ((freq - 2512) / 20)) & 0xff;
 	if (freq < 4990 && freq > 4940)
 		return ((freq * 10) + (((freq % 5) == 2) ? 5 : 0) - 49400) / 5;
@@ -3708,6 +3708,7 @@ struct wl_assoc_mac *get_wl_assoc_mac(int instance, int *c)
 
 int getdevicecount(void)
 {
+#ifdef HAVE_MADWIFI
 	int count = 0;
 #ifdef HAVE_ATH9K
 	count += getath9kdevicecount();
@@ -3715,6 +3716,9 @@ int getdevicecount(void)
 	count += getifcount("wifi");
 
 	return count;
+#else
+	return get_wl_instances();
+#endif
 }
 
 int haswifi(void)
