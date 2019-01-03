@@ -2499,7 +2499,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 256 \" + share.user + \")\");\n//]]>\n</script></span>\n");
 			websWrite(wp, "</div>\n");
 		}
-		
+
 		char dtim[32];
 		sprintf(dtim, "%s_dtim", var);
 		websWrite(wp, "<div class=\"setting\">\n");
