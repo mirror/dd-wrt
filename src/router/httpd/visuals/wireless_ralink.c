@@ -226,11 +226,18 @@ static void DisplayLastTxRxRateFor11n(char *ifname, int s, int nID, int *fLastTx
 	TxRxRateFor11n(&HTSetting, fLastTxRxRate);
 }
 
-static int assoc_count = 0;
+static int assoc_count[16] = { 0 };
 
 void ej_assoc_count(webs_t wp, int argc, char_t ** argv)
 {
-	websWrite(wp, "%d", assoc_count);
+	char *var = websGetVar(wp, "wifi_display", NULL);
+	int if_num = 0;
+	if (!var) {
+		var = nvram_safe_get("wifi_display");
+	}
+
+	sscanf(var, "%*[^0-9]%d", &if_num);
+	websWrite(wp, "%d", assoc_count[if_num]);
 }
 
 int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int cnt, int turbo, int macmask)
@@ -380,15 +387,13 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 {
 	int i;
-	int cnt = 0;
 	char turbo[32];
 	int t;
 	int macmask = atoi(argv[0]);
-
+	memset(assoc_count, 0, sizeof(assoc_count));
 	t = 1;
-	cnt = ej_active_wireless_if(wp, argc, argv, "wl0", cnt, t, macmask);
-	cnt = ej_active_wireless_if(wp, argc, argv, "wl1", cnt, t, macmask);
-	assoc_count = cnt;
+	assoc_count[0] = ej_active_wireless_if(wp, argc, argv, "wl0", assoc_count[0], t, macmask);
+	assoc_count[1] = ej_active_wireless_if(wp, argc, argv, "wl1", assoc_count[1], t, macmask);
 }
 
 extern long long wifi_getrate(char *ifname);
