@@ -91,7 +91,7 @@ static const char *ieee80211_ntoa(const uint8_t mac[IEEE80211_ADDR_LEN])
 	return (i < 17 ? NULL : a);
 }
 
-int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int cnt, int turbo, int macmask)
+int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int *cnt, int globalcnt, int turbo, int macmask)
 {
 	// unsigned char buf[24 * 1024];
 
@@ -103,18 +103,18 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 	int bias = nvram_default_geti(nb, 0);
 	if (!ifexists(ifname)) {
 		printf("IOCTL_STA_INFO ifresolv %s failed!\n", ifname);
-		return cnt;
+		return globalcnt;
 	}
 	int state = get_radiostate(ifname);
 
 	if (state == 0 || state == -1) {
 		printf("IOCTL_STA_INFO radio %s not enabled!\n", ifname);
-		return cnt;
+		return globalcnt;
 	}
 	s = getsocket();
 	if (s < 0) {
 		fprintf(stderr, "socket(SOCK_DRAGM)\n");
-		return cnt;
+		return globalcnt;
 	}
 	(void)bzero(&iwr, sizeof(struct iwreq));
 	(void)strlcpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name) - 1);
@@ -124,13 +124,13 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 	if (ioctl(s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0) {
 		fprintf(stderr, "IOCTL_STA_INFO for %s failed!\n", ifname);
 		closesocket();
-		return cnt;
+		return globalcnt;
 	}
 	len = iwr.u.data.length;
 	if (len < sizeof(struct ieee80211req_sta_info)) {
 		// fprintf(stderr,"IOCTL_STA_INFO len<struct %s failed!\n",ifname);
 		closesocket();
-		return cnt;
+		return globalcnt;
 	}
 	cp = madbuf;
 	int bufcount = 0;
@@ -141,7 +141,11 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 		si = (struct ieee80211req_sta_info *)cp;
 		vp = (u_int8_t *)(si + 1);
 
-		cnt++;
+		if (globalcnt)
+			websWrite(wp, ",");
+
+		*cnt++;
+		globalcnt++;
 		char mac[32];
 
 		strlcpy(mac, ieee80211_ntoa(si->isi_macaddr), 31);
@@ -172,16 +176,17 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 		if (si->isi_athflags & IEEE80211_ATHC_WDS)
 			type = "WDS:";
 		char str[64] = { 0 };
-
+		if (globalcnt)
+			websWrite(wp, ",");
 		if (si->isi_rates && ((si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL) != 0)
 		    && ((si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL) != 0)) {
 			websWrite(wp,
-				  "'%s','%s','%s%s','%s','%3dM','%3dM','N/A','%d','%d','%d','%d',",
+				  "'%s','%s','%s%s','%s','%3dM','%3dM','N/A','%d','%d','%d','%d'",
 				  mac, si->radioname, type, ifname, UPTIME(si->isi_uptime, str),
 				  ((si->isi_rates[si->isi_txrate] &
 				    IEEE80211_RATE_VAL) / 2) * turbo, ((si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL) / 2) * turbo, si->isi_noise + si->isi_rssi + bias, si->isi_noise + bias, si->isi_rssi, qual);
 		} else {
-			websWrite(wp, "'%s','%s','%s%s','%s','N/A','N/A','N/A','%d','%d','%d','%d',", mac, si->radioname, type, ifname, UPTIME(si->isi_uptime, str), si->isi_noise + si->isi_rssi + bias,
+			websWrite(wp, "'%s','%s','%s%s','%s','N/A','N/A','N/A','%d','%d','%d','%d'", mac, si->radioname, type, ifname, UPTIME(si->isi_uptime, str), si->isi_noise + si->isi_rssi + bias,
 				  si->isi_noise + bias, si->isi_rssi, qual);
 		}
 		bufcount += si->isi_len;
@@ -192,11 +197,11 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 	       && bufcount < (sizeof(madbuf) - sizeof(struct ieee80211req_sta_info)));
 	closesocket();
 
-	return cnt;
+	return globalcnt;
 }
 
 #if defined(HAVE_ATH9K)
-extern int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifname, int cnt, int turbo, int macmask);
+extern int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifname, int *cnt, int globalcnt, int turbo, int macmask);
 #endif
 static int assoc_count[16] = { 0 };
 
@@ -220,6 +225,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 	char turbo[32];
 	int t;
 	int cnt = 0;
+	int global = 0;
 	int macmask;
 	int gotassocs = 0;
 	memset(assoc_count, sizeof(assoc_count), 0);
@@ -233,13 +239,13 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			t = 1;
 		if (is_mac80211(devs)) {
 			if (has_ad(devs))
-				assoc_count[cnt] = ej_active_wireless_if_ath9k(wp, argc, argv, "giwifi0", assoc_count[cnt], t, macmask);
+				global = ej_active_wireless_if_ath9k(wp, argc, argv, "giwifi0", &assoc_count[cnt], global, t, macmask);
 			else
-				assoc_count[cnt] = ej_active_wireless_if_ath9k(wp, argc, argv, devs, assoc_count[cnt], t, macmask);
+				global = ej_active_wireless_if_ath9k(wp, argc, argv, devs, &assoc_count[cnt], global, t, macmask);
 			gotassocs = 1;
 		}
 		if (!gotassocs) {
-			assoc_count[cnt] += ej_active_wireless_if(wp, argc, argv, devs, assoc_count[cnt], t, macmask);
+			global +=ej_active_wireless_if(wp, argc, argv, devs, &assoc_count[cnt], global, t, macmask);
 		}
 		cnt++;
 		if (!is_mac80211(devs)) {
@@ -250,7 +256,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			char *vifs = nvram_get(vif);
 			if (vifs != NULL)
 				foreach(var, vifs, next) {
-				assoc_count[cnt] = ej_active_wireless_if(wp, argc, argv, var, assoc_count[cnt], t, macmask);
+				global = ej_active_wireless_if(wp, argc, argv, var, &assoc_count[cnt], global, t, macmask);
 				cnt++;
 				}
 		}
@@ -285,7 +291,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 					continue;
 				if (nvram_matchi(wdsvarname, 0))
 					continue;
-				assoc_count[cnt] = ej_active_wireless_if(wp, argc, argv, dev, assoc_count[cnt], t, macmask);
+				global = ej_active_wireless_if(wp, argc, argv, dev, &assoc_count[cnt], global, t, macmask);
 				cnt++;
 			}
 		}

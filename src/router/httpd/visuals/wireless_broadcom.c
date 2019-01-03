@@ -160,7 +160,7 @@ typedef struct {
 #define RSSI_CMD	"wl rssi"
 #define NOISE_CMD	"wl noise"
 
-int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char *visible, int cnt)
+int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char *visible, int *cnt, int globalcnt)
 {
 	int rssi = 0, noise = 0;
 	FILE *fp2 = NULL;
@@ -170,7 +170,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 	int macmask;
 	macmask = atoi(argv[0]);
 	if (strcmp(iface, "qtn") && !ifexists(iface))
-		return cnt;
+		return globalcnt;
 	char wlmode[32];
 	char *displayname = iface;
 	if (!strncmp(displayname, "eth", 3))
@@ -193,7 +193,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 		r = getassoclist(iface, buf);
 
 	if (r < 0)
-		return cnt;
+		return globalcnt;
 	struct maclist *maclist = (struct maclist *)buf;
 	int i;
 
@@ -265,9 +265,10 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 			mac[9] = 'x';
 			mac[10] = 'x';
 		}
-		if (cnt)
+		if (globalcnt)
 			websWrite(wp, ",");
-		cnt++;
+		*cnt++;
+		globalcnt++;
 		char info[32];
 		strcpy(info, "N/A");
 #ifdef HAVE_QTN
@@ -426,7 +427,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 		websWrite(wp, "'%s','','%s','%s','%s','%s','%s','%d','%d','%d','%d'", mac, displayname, time, txrate, rxrate, info, rssi, noise, rssi - noise, qual);
 	}
 
-	return cnt;
+	return globalcnt;
 }
 
 static int assoc_count[16] = { 0 };
@@ -448,13 +449,14 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 	int c = get_wl_instances();
 	int i;
 	int cnt = 0;
+	int global = 0;
 	memset(assoc_count, 0, sizeof(assoc_count));
 
 	for (i = 0; i < c; i++) {
 		char wlif[32];
 
 		sprintf(wlif, "wl%d", i);
-		assoc_count[cnt] = ej_active_wireless_if(wp, argc, argv, get_wl_instance_name(i), wlif, assoc_count[cnt]);
+		global = ej_active_wireless_if(wp, argc, argv, get_wl_instance_name(i), wlif, &assoc_count[cnt], global);
 		cnt++;
 		char *next;
 		char var[80];
@@ -464,7 +466,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			return;
 
 		foreach(var, vifs, next) {
-			assoc_count[cnt] = ej_active_wireless_if(wp, argc, argv, var, var, assoc_count[cnt]);
+			global = ej_active_wireless_if(wp, argc, argv, var, var, &assoc_count[cnt], global);
 			cnt++;
 		}
 	}
