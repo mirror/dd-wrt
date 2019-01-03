@@ -240,7 +240,7 @@ void ej_assoc_count(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "%d", assoc_count[if_num]);
 }
 
-int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int cnt, int turbo, int macmask)
+int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int *cnt, int globalcnt, int turbo, int macmask)
 {
 
 	static RT_802_11_MAC_TABLE table = { 0 };
@@ -252,16 +252,16 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 
 	if (!ifexists(getRADev(ifname))) {
 		printf("IOCTL_STA_INFO ifresolv %s failed!\n", ifname);
-		return cnt;
+		return globalcnt;
 	}
 	int state = get_radiostate(ifname);
 
 	if (state == 0 || state == -1) {
-		return cnt;
+		return globalcnt;
 	}
 	s = getsocket();
 	if (s < 0) {
-		return cnt;
+		return globalcnt;
 	}
 	(void)bzero(&iwr, sizeof(struct iwreq));
 	(void)strlcpy(iwr.ifr_name, getRADev(ifname), sizeof(iwr.ifr_name) - 1);
@@ -274,9 +274,10 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 
 	if (!ignore && table.Num < 128)
 		for (i = 0; i < table.Num; i++) {
-			if (cnt)
+			if (globalcnt)
 				websWrite(wp, ",");
-			cnt++;
+			*cnt++;
+			globalcnt++;
 			char mac[32];
 			strcpy(mac, ieee80211_ntoa(table.Entry[i].Addr));
 			if (nvram_matchi("maskmac", 1) && macmask) {
@@ -354,10 +355,10 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 
 	if (sta) {
 		char mac[32];
-		if (cnt)
+		if (globalcnt)
 			websWrite(wp, ",");
-		cnt++;
-
+		*cnt++;
+		globalcnt++;
 		int signal = sta->rssi;
 		if (signal >= -50)
 			qual = 1000;
@@ -381,7 +382,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 	}
 
 	closesocket();
-	return cnt;
+	return globalcnt;
 }
 
 void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
@@ -389,11 +390,12 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 	int i;
 	char turbo[32];
 	int t;
+	int global = 0;
 	int macmask = atoi(argv[0]);
 	memset(assoc_count, 0, sizeof(assoc_count));
 	t = 1;
-	assoc_count[0] = ej_active_wireless_if(wp, argc, argv, "wl0", assoc_count[0], t, macmask);
-	assoc_count[1] = ej_active_wireless_if(wp, argc, argv, "wl1", assoc_count[1], t, macmask);
+	global = ej_active_wireless_if(wp, argc, argv, "wl0", &assoc_count[0], global, t, macmask);
+	global = ej_active_wireless_if(wp, argc, argv, "wl1", &assoc_count[1], global, t, macmask);
 }
 
 extern long long wifi_getrate(char *ifname);
