@@ -418,6 +418,9 @@ enum {	/* cp.c, mv.c, install.c depend on these values. CAREFUL when changing th
 	FILEUTILS_PRESERVE_SECURITY_CONTEXT = 1 << 15, /* -c */
 #endif
 	FILEUTILS_RMDEST          = 1 << (16 - !ENABLE_SELINUX), /* --remove-destination */
+	/* bit 17 skipped for "cp --parents" */
+	FILEUTILS_REFLINK         = 1 << (18 - !ENABLE_SELINUX), /* cp --reflink=auto */
+	FILEUTILS_REFLINK_ALWAYS  = 1 << (19 - !ENABLE_SELINUX), /* cp --reflink[=always] */
 	/*
 	 * Hole. cp may have some bits set here,
 	 * they should not affect remove_file()/copy_file()
@@ -549,6 +552,8 @@ void sig_unblock(int sig) FAST_FUNC;
 int sigaction_set(int sig, const struct sigaction *act) FAST_FUNC;
 /* SIG_BLOCK/SIG_UNBLOCK all signals: */
 int sigprocmask_allsigs(int how) FAST_FUNC;
+/* Return old set in the same set: */
+int sigprocmask2(int how, sigset_t *set) FAST_FUNC;
 /* Standard handler which just records signo */
 extern smallint bb_got_signal;
 void record_signo(int signo); /* not FAST_FUNC! */
@@ -741,18 +746,25 @@ struct hostent *xgethostbyname(const char *name) FAST_FUNC;
 // + inet_common.c has additional IPv4-only stuff
 
 
+struct tls_aes {
+	uint32_t key[60];
+	unsigned rounds;
+};
 #define TLS_MAX_MAC_SIZE 32
 #define TLS_MAX_KEY_SIZE 32
+#define TLS_MAX_IV_SIZE   4
 struct tls_handshake_data; /* opaque */
 typedef struct tls_state {
+	unsigned flags;
+
 	int ofd;
 	int ifd;
 
 	unsigned min_encrypted_len_on_read;
 	uint16_t cipher_id;
-	uint8_t  encrypt_on_write;
 	unsigned MAC_size;
 	unsigned key_size;
+	unsigned IV_size;
 
 	uint8_t *outbuf;
 	int     outbuf_size;
@@ -774,12 +786,21 @@ typedef struct tls_state {
 	/*uint64_t read_seq64_be;*/
 	uint64_t write_seq64_be;
 
+	/*uint8_t *server_write_MAC_key;*/
 	uint8_t *client_write_key;
 	uint8_t *server_write_key;
+	uint8_t *client_write_IV;
+	uint8_t *server_write_IV;
 	uint8_t client_write_MAC_key[TLS_MAX_MAC_SIZE];
 	uint8_t server_write_MAC_k__[TLS_MAX_MAC_SIZE];
 	uint8_t client_write_k__[TLS_MAX_KEY_SIZE];
 	uint8_t server_write_k__[TLS_MAX_KEY_SIZE];
+	uint8_t client_write_I_[TLS_MAX_IV_SIZE];
+	uint8_t server_write_I_[TLS_MAX_IV_SIZE];
+
+	struct tls_aes aes_encrypt;
+	struct tls_aes aes_decrypt;
+	uint8_t H[16]; //used by AES_GCM
 } tls_state_t;
 
 static inline tls_state_t *new_tls_state(void)
@@ -838,7 +859,8 @@ typedef struct uni_stat_t {
 } uni_stat_t;
 /* Returns a string with unprintable chars replaced by '?' or
  * SUBST_WCHAR. This function is unicode-aware. */
-const char* FAST_FUNC printable_string(uni_stat_t *stats, const char *str);
+const char* FAST_FUNC printable_string(const char *str);
+const char* FAST_FUNC printable_string2(uni_stat_t *stats, const char *str);
 /* Prints unprintable char ch as ^C or M-c to file
  * (M-c is used only if ch is ORed with PRINTABLE_META),
  * else it is printed as-is (except for ch = 0x9b) */
@@ -1023,6 +1045,14 @@ int xatoi_positive(const char *numstr) FAST_FUNC;
 /* Useful for reading port numbers */
 uint16_t xatou16(const char *numstr) FAST_FUNC;
 
+#if ENABLE_FLOAT_DURATION
+typedef double duration_t;
+void sleep_for_duration(duration_t duration) FAST_FUNC;
+#else
+typedef unsigned duration_t;
+#define sleep_for_duration(duration) sleep(duration)
+#endif
+duration_t parse_duration_str(char *str) FAST_FUNC;
 
 /* These parse entries in /etc/passwd and /etc/group.  This is desirable
  * for BusyBox since we want to avoid using the glibc NSS stuff, which
@@ -1336,9 +1366,22 @@ void bb_logenv_override(void) FAST_FUNC;
 #define MAIN_EXTERNALLY_VISIBLE
 #endif
 
+/* Embedded script support */
+char *get_script_content(unsigned n) FAST_FUNC;
+int scripted_main(int argc, char** argv);
 
 /* Applets which are useful from another applets */
 int bb_cat(char** argv) FAST_FUNC;
+int ash_main(int argc, char** argv)
+#if ENABLE_ASH || ENABLE_SH_IS_ASH || ENABLE_BASH_IS_ASH
+		MAIN_EXTERNALLY_VISIBLE
+#endif
+;
+int hush_main(int argc, char** argv)
+#if ENABLE_HUSH || ENABLE_SH_IS_HUSH || ENABLE_BASH_IS_HUSH
+		MAIN_EXTERNALLY_VISIBLE
+#endif
+;
 /* If shell needs them, they exist even if not enabled as applets */
 int echo_main(int argc, char** argv) IF_ECHO(MAIN_EXTERNALLY_VISIBLE);
 int printf_main(int argc, char **argv) IF_PRINTF(MAIN_EXTERNALLY_VISIBLE);
@@ -1372,7 +1415,7 @@ struct number_state {
 	const char *empty_str;
 	smallint all, nonempty;
 };
-void print_numbered_lines(struct number_state *ns, const char *filename) FAST_FUNC;
+int print_numbered_lines(struct number_state *ns, const char *filename) FAST_FUNC;
 
 
 /* Networking */
@@ -1772,7 +1815,7 @@ enum {
 	FOR_SHELL        = DO_HISTORY | TAB_COMPLETION | USERNAME_COMPLETION,
 };
 line_input_t *new_line_input_t(int flags) FAST_FUNC;
-/* So far static: void free_line_input_t(line_input_t *n) FAST_FUNC; */
+void free_line_input_t(line_input_t *n) FAST_FUNC;
 /*
  * maxsize must be >= 2.
  * Returns:
@@ -1997,7 +2040,7 @@ typedef struct bb_progress_t {
 	(p)->curfile = NULL; \
 } while (0)
 void bb_progress_init(bb_progress_t *p, const char *curfile) FAST_FUNC;
-void bb_progress_update(bb_progress_t *p,
+int bb_progress_update(bb_progress_t *p,
 			uoff_t beg_range,
 			uoff_t transferred,
 			uoff_t totalsize) FAST_FUNC;
@@ -2142,6 +2185,23 @@ extern const char bb_default_login_shell[] ALIGN1;
 # define LOOP_NAME "/dev/loop"
 # define FB_0 "/dev/fb0"
 #endif
+
+// storage helpers for mk*fs utilities
+char BUG_wrong_field_size(void);
+#define STORE_LE(field, value) \
+do { \
+	if (sizeof(field) == 4) \
+		field = SWAP_LE32((uint32_t)(value)); \
+	else if (sizeof(field) == 2) \
+		field = SWAP_LE16((uint16_t)(value)); \
+	else if (sizeof(field) == 1) \
+		field = (uint8_t)(value); \
+	else \
+		BUG_wrong_field_size(); \
+} while (0)
+
+#define FETCH_LE32(field) \
+	(sizeof(field) == 4 ? SWAP_LE32(field) : BUG_wrong_field_size())
 
 
 #define ARRAY_SIZE(x) ((unsigned)(sizeof(x) / sizeof((x)[0])))

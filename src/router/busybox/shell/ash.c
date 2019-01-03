@@ -16,7 +16,7 @@
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 //config:config ASH
-//config:	bool "ash (77 kb)"
+//config:	bool "ash (78 kb)"
 //config:	default y
 //config:	depends on !NOMMU
 //config:	help
@@ -181,6 +181,11 @@
 #include <sys/times.h>
 #include <sys/utsname.h> /* for setting $HOSTNAME */
 #include "busybox.h" /* for applet_names */
+#if ENABLE_FEATURE_SH_EMBEDDED_SCRIPTS
+# include "embedded_scripts.h"
+#else
+# define NUM_SCRIPTS 0
+#endif
 
 /* So far, all bash compat is controlled by one config option */
 /* Separate defines document which part of code implements what */
@@ -2405,13 +2410,12 @@ setvar(const char *name, const char *val, int flags)
 	}
 
 	INT_OFF;
-	nameeq = ckmalloc(namelen + vallen + 2);
+	nameeq = ckzalloc(namelen + vallen + 2);
 	p = mempcpy(nameeq, name, namelen);
 	if (val) {
 		*p++ = '=';
-		p = mempcpy(p, val, vallen);
+		memcpy(p, val, vallen);
 	}
-	*p = '\0';
 	vp = setvareq(nameeq, flags | VNOSAVE);
 	INT_ON;
 
@@ -4213,7 +4217,7 @@ wait_block_or_sig(int *status)
 		/* Children exist, but none are ready. Sleep until interesting signal */
 #if 1
 		sigfillset(&mask);
-		sigprocmask(SIG_SETMASK, &mask, &mask);
+		sigprocmask2(SIG_SETMASK, &mask); /* mask is updated */
 		while (!got_sigchld && !pending_sig)
 			sigsuspend(&mask);
 		sigprocmask(SIG_SETMASK, &mask, NULL);
@@ -5902,7 +5906,7 @@ static int substr_atoi(const char *s)
 #define EXP_CASE        0x10    /* keeps quotes around for CASE pattern */
 #define EXP_VARTILDE2   0x20    /* expand tildes after colons only */
 #define EXP_WORD        0x40    /* expand word in parameter expansion */
-#define EXP_QUOTED      0x80    /* expand word in double quotes */
+#define EXP_QUOTED      0x100   /* expand word in double quotes */
 /*
  * rmescape() flags
  */
@@ -6236,9 +6240,7 @@ memtodest(const char *p, size_t len, int syntax, int quotes)
 			if (quotes & QUOTES_ESC) {
 				int n = SIT(c, syntax);
 				if (n == CCTL
-				 || (((quotes & EXP_FULL) || syntax != BASESYNTAX)
-				     && n == CBACK
-				    )
+				 || (syntax != BASESYNTAX && n == CBACK)
 				) {
 					USTPUTC(CTLESC, q);
 				}
@@ -6854,8 +6856,15 @@ subevalvar(char *p, char *varname, int strloc, int subtype,
 	if (subtype == VSREPLACE || subtype == VSREPLACEALL) {
 		/* Find '/' and replace with NUL */
 		repl = p;
+		/* The pattern can't be empty.
+		 * IOW: if the first char after "${v//" is a slash,
+		 * it does not terminate the pattern - it's the first char of the pattern:
+		 *  v=/dev/ram; echo ${v////-}  prints -dev-ram (pattern is "/")
+		 *  v=/dev/ram; echo ${v///r/-} prints /dev-am  (pattern is "/r")
+		 */
+		if (*repl == '/')
+			repl++;
 		for (;;) {
-			/* Handle escaped slashes, e.g. "${v/\//_}" (they are CTLESC'ed by this point) */
 			if (*repl == '\0') {
 				repl = NULL;
 				break;
@@ -6864,6 +6873,7 @@ subevalvar(char *p, char *varname, int strloc, int subtype,
 				*repl = '\0';
 				break;
 			}
+			/* Handle escaped slashes, e.g. "${v/\//_}" (they are CTLESC'ed by this point) */
 			if ((unsigned char)*repl == CTLESC && repl[1])
 				repl++;
 			repl++;
@@ -7167,14 +7177,13 @@ subevalvar(char *p, char *varname, int strloc, int subtype,
  * ash -c 'echo ${#1#}'  name:'1=#'
  */
 static NOINLINE ssize_t
-varvalue(char *name, int varflags, int flags, int *quotedp)
+varvalue(char *name, int varflags, int flags, int quoted)
 {
 	const char *p;
 	int num;
 	int i;
 	ssize_t len = 0;
 	int sep;
-	int quoted = *quotedp;
 	int subtype = varflags & VSTYPE;
 	int discard = subtype == VSPLUS || subtype == VSLENGTH;
 	int quotes = (discard ? 0 : (flags & QUOTES_ESC)) | QUOTES_KEEPNUL;
@@ -7222,13 +7231,27 @@ varvalue(char *name, int varflags, int flags, int *quotedp)
 	case '*': {
 		char **ap;
 		char sepc;
+		char c;
 
-		if (quoted)
-			sep = 0;
-		sep |= ifsset() ? ifsval()[0] : ' ';
+		/* We will set c to 0 or ~0 depending on whether
+		 * we're doing field splitting.  We won't do field
+		 * splitting if either we're quoted or sep is zero.
+		 *
+		 * Instead of testing (quoted || !sep) the following
+		 * trick optimises away any branches by using the
+		 * fact that EXP_QUOTED (which is the only bit that
+		 * can be set in quoted) is the same as EXP_FULL <<
+		 * CHAR_BIT (which is the only bit that can be set
+		 * in sep).
+		 */
+#if EXP_QUOTED >> CHAR_BIT != EXP_FULL
+#error The following two lines expect EXP_QUOTED == EXP_FULL << CHAR_BIT
+#endif
+		c = !((quoted | ~sep) & EXP_QUOTED) - 1;
+		sep &= ~quoted;
+		sep |= ifsset() ? (unsigned char)(c & ifsval()[0]) : ' ';
  param:
 		sepc = sep;
-		*quotedp = !sepc;
 		ap = shellparam.p;
 		if (!ap)
 			return -1;
@@ -7293,7 +7316,6 @@ evalvar(char *p, int flag)
 	char varflags;
 	char subtype;
 	int quoted;
-	char easy;
 	char *var;
 	int patloc;
 	int startloc;
@@ -7307,12 +7329,11 @@ evalvar(char *p, int flag)
 
 	quoted = flag & EXP_QUOTED;
 	var = p;
-	easy = (!quoted || (*var == '@' && shellparam.nparam));
 	startloc = expdest - (char *)stackblock();
 	p = strchr(p, '=') + 1; //TODO: use var_end(p)?
 
  again:
-	varlen = varvalue(var, varflags, flag, &quoted);
+	varlen = varvalue(var, varflags, flag, quoted);
 	if (varflags & VSNUL)
 		varlen--;
 
@@ -7358,8 +7379,11 @@ evalvar(char *p, int flag)
 
 	if (subtype == VSNORMAL) {
  record:
-		if (!easy)
-			goto end;
+		if (quoted) {
+			quoted = *var == '@' && shellparam.nparam;
+			if (!quoted)
+				goto end;
+		}
 		recordregion(startloc, expdest - (char *)stackblock(), quoted);
 		goto end;
 	}
@@ -7617,7 +7641,7 @@ expmeta(exp_t *exp, char *name, unsigned name_len, unsigned expdir_len)
 				}
 			}
 		} else {
-			if (*p == '\\')
+			if (*p == '\\' && p[1])
 				esc++;
 			if (p[esc] == '/') {
 				if (metaflag)
@@ -7631,7 +7655,7 @@ expmeta(exp_t *exp, char *name, unsigned name_len, unsigned expdir_len)
 			return;
 		p = name;
 		do {
-			if (*p == '\\')
+			if (*p == '\\' && p[1])
 				p++;
 			*enddir++ = *p;
 		} while (*p++);
@@ -7643,7 +7667,7 @@ expmeta(exp_t *exp, char *name, unsigned name_len, unsigned expdir_len)
 	if (name < start) {
 		p = name;
 		do {
-			if (*p == '\\')
+			if (*p == '\\' && p[1])
 				p++;
 			*enddir++ = *p++;
 		} while (p < start);
@@ -8004,6 +8028,7 @@ tryexec(IF_FEATURE_SH_STANDALONE(int applet_no,) const char *cmd, char **argv, c
 #else
 	execve(cmd, argv, envp);
 #endif
+
 	if (cmd != bb_busybox_exec_path && errno == ENOEXEC) {
 		/* Run "cmd" as a shell script:
 		 * http://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap02.html
@@ -8076,14 +8101,14 @@ static void shellexec(char *prog, char **argv, const char *path, int idx)
 
 	/* Map to POSIX errors */
 	switch (e) {
-	case EACCES:
+	default:
 		exerrno = 126;
 		break;
+	case ELOOP:
+	case ENAMETOOLONG:
 	case ENOENT:
+	case ENOTDIR:
 		exerrno = 127;
-		break;
-	default:
-		exerrno = 2;
 		break;
 	}
 	exitstatus = exerrno;
@@ -8512,7 +8537,8 @@ describe_command(char *command, const char *path, int describe_command_verbose)
 
 	case CMDFUNCTION:
 		if (describe_command_verbose) {
-			out1str(" is a shell function");
+			/*out1str(" is a shell function");*/
+			out1str(" is a function"); /* bash says this */
 		} else {
 			out1str(command);
 		}
@@ -9591,9 +9617,7 @@ evalfun(struct funcnode *func, int argc, char **argv, int flags)
 	shellparam.optind = 1;
 	shellparam.optoff = -1;
 #endif
-	pushlocalvars();
 	evaltree(func->n.ndefun.body, flags & EV_TESTED);
-	poplocalvars(0);
  funcdone:
 	INT_OFF;
 	funcline = savefuncline;
@@ -9921,6 +9945,7 @@ find_builtin(const char *name)
 /*
  * Execute a simple command.
  */
+static void unwindfiles(struct parsefile *stop);
 static int
 isassignment(const char *p)
 {
@@ -9943,6 +9968,7 @@ evalcommand(union node *cmd, int flags)
 		"\0\0", bltincmd /* why three NULs? */
 	};
 	struct localvar_list *localvar_stop;
+	struct parsefile *file_stop;
 	struct redirtab *redir_stop;
 	struct stackmark smark;
 	union node *argp;
@@ -9968,6 +9994,7 @@ evalcommand(union node *cmd, int flags)
 	TRACE(("evalcommand(0x%lx, %d) called\n", (long)cmd, flags));
 	setstackmark(&smark);
 	localvar_stop = pushlocalvars();
+	file_stop = g_parsefile;
 	back_exitstatus = 0;
 
 	cmdentry.cmdtype = CMDBUILTIN;
@@ -10226,7 +10253,6 @@ evalcommand(union node *cmd, int flags)
 		goto readstatus;
 
 	case CMDFUNCTION:
-		poplocalvars(1);
 		/* See above for the rationale */
 		dowait(DOWAIT_NONBLOCK, NULL);
 		if (evalfun(cmdentry.u.func, argc, argv, flags))
@@ -10240,6 +10266,7 @@ evalcommand(union node *cmd, int flags)
 	if (cmd->ncmd.redirect)
 		popredir(/*drop:*/ cmd_is_exec);
 	unwindredir(redir_stop);
+	unwindfiles(file_stop);
 	unwindlocalvars(localvar_stop);
 	if (lastarg) {
 		/* dsl: I think this is intended to be used to support
@@ -10762,14 +10789,20 @@ popfile(void)
 	INT_ON;
 }
 
+static void
+unwindfiles(struct parsefile *stop)
+{
+	while (g_parsefile != stop)
+		popfile();
+}
+
 /*
  * Return to top level.
  */
 static void
 popallfiles(void)
 {
-	while (g_parsefile != &basepf)
-		popfile();
+	unwindfiles(&basepf);
 }
 
 /*
@@ -12411,7 +12444,7 @@ parsesub: {
 				STPUTC(c, out);
 				c = pgetc_eatbnl();
 			} while (isdigit(c));
-		} else {
+		} else if (c != '}') {
 			/* $[{[#]]<specialchar>[}] */
 			int cc = c;
 
@@ -12437,7 +12470,8 @@ parsesub: {
 			}
 
 			USTPUTC(cc, out);
-		}
+		} else
+			goto badsub;
 
 		if (c != '}' && subtype == VSLENGTH) {
 			/* ${#VAR didn't end with } */
@@ -12913,6 +12947,7 @@ parseheredoc(void)
 	heredoclist = NULL;
 
 	while (here) {
+		tokpushback = 0;
 		setprompt_if(needprompt, 2);
 		readtoken1(pgetc(), here->here->type == NHERE ? SQSYNTAX : DQSYNTAX,
 				here->eofmark, here->striptabs);
@@ -13742,38 +13777,35 @@ letcmd(int argc UNUSED_PARAM, char **argv)
 static int FAST_FUNC
 readcmd(int argc UNUSED_PARAM, char **argv UNUSED_PARAM)
 {
-	char *opt_n = NULL;
-	char *opt_p = NULL;
-	char *opt_t = NULL;
-	char *opt_u = NULL;
-	char *opt_d = NULL; /* optimized out if !BASH */
-	int read_flags = 0;
+	struct builtin_read_params params;
 	const char *r;
 	int i;
+
+	memset(&params, 0, sizeof(params));
 
 	while ((i = nextopt("p:u:rt:n:sd:")) != '\0') {
 		switch (i) {
 		case 'p':
-			opt_p = optionarg;
+			params.opt_p = optionarg;
 			break;
 		case 'n':
-			opt_n = optionarg;
+			params.opt_n = optionarg;
 			break;
 		case 's':
-			read_flags |= BUILTIN_READ_SILENT;
+			params.read_flags |= BUILTIN_READ_SILENT;
 			break;
 		case 't':
-			opt_t = optionarg;
+			params.opt_t = optionarg;
 			break;
 		case 'r':
-			read_flags |= BUILTIN_READ_RAW;
+			params.read_flags |= BUILTIN_READ_RAW;
 			break;
 		case 'u':
-			opt_u = optionarg;
+			params.opt_u = optionarg;
 			break;
 #if BASH_READ_D
 		case 'd':
-			opt_d = optionarg;
+			params.opt_d = optionarg;
 			break;
 #endif
 		default:
@@ -13781,21 +13813,16 @@ readcmd(int argc UNUSED_PARAM, char **argv UNUSED_PARAM)
 		}
 	}
 
+	params.argv = argptr;
+	params.setvar = setvar0;
+	params.ifs = bltinlookup("IFS"); /* can be NULL */
+
 	/* "read -s" needs to save/restore termios, can't allow ^C
 	 * to jump out of it.
 	 */
  again:
 	INT_OFF;
-	r = shell_builtin_read(setvar0,
-		argptr,
-		bltinlookup("IFS"), /* can be NULL */
-		read_flags,
-		opt_n,
-		opt_p,
-		opt_t,
-		opt_u,
-		opt_d
-	);
+	r = shell_builtin_read(&params);
 	INT_ON;
 
 	if ((uintptr_t)r == 1 && errno == EINTR) {
@@ -13954,6 +13981,7 @@ init(void)
 			}
 		}
 
+		setvareq((char*)defifsvar, VTEXTFIXED);
 		setvareq((char*)defoptindvar, VTEXTFIXED);
 
 		setvar0("PPID", utoa(getppid()));
@@ -14000,12 +14028,16 @@ procargs(char **argv)
 
 	xargv = argv;
 	login_sh = xargv[0] && xargv[0][0] == '-';
+#if NUM_SCRIPTS > 0
+	if (minusc)
+		goto setarg0;
+#endif
 	arg0 = xargv[0];
 	/* if (xargv[0]) - mmm, this is always true! */
 		xargv++;
+	argptr = xargv;
 	for (i = 0; i < NOPTS; i++)
 		optlist[i] = 2;
-	argptr = xargv;
 	if (options(/*cmdline:*/ 1, &login_sh)) {
 		/* it already printed err message */
 		raise_exception(EXERROR);
@@ -14107,7 +14139,12 @@ extern int etext();
  * is used to figure out how far we had gotten.
  */
 int ash_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
+#if NUM_SCRIPTS > 0
+int ash_main(int argc, char **argv)
+#else
 int ash_main(int argc UNUSED_PARAM, char **argv)
+#endif
+/* note: 'argc' is used only if embedded scripts are enabled */
 {
 	volatile smallint state;
 	struct jmploc jmploc;
@@ -14161,6 +14198,12 @@ int ash_main(int argc UNUSED_PARAM, char **argv)
 
 	init();
 	setstackmark(&smark);
+
+#if NUM_SCRIPTS > 0
+	if (argc < 0)
+		/* Non-NULL minusc tells procargs that an embedded script is being run */
+		minusc = get_script_content(-argc - 1);
+#endif
 	login_sh = procargs(argv);
 #if DEBUG
 	TRACE(("Shell args: "));

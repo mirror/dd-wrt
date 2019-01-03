@@ -7,7 +7,7 @@
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 //config:config AWK
-//config:	bool "awk (22 kb)"
+//config:	bool "awk (23 kb)"
 //config:	default y
 //config:	help
 //config:	Awk is used as a pattern scanning and processing language.
@@ -1849,6 +1849,8 @@ static void handle_special(var *v)
 
 	if (v == intvar[NF]) {
 		n = (int)getvar_i(v);
+		if (n < 0)
+			syntax_error("NF set to negative value");
 		fsrealloc(n);
 
 		/* recalculate $0 */

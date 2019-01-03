@@ -19,7 +19,7 @@
  *	An "ex" line oriented mode- maybe using "cmdedit"
  */
 //config:config VI
-//config:	bool "vi (22 kb)"
+//config:	bool "vi (23 kb)"
 //config:	default y
 //config:	help
 //config:	'vi' is a text editor. More specifically, it is the One True
@@ -255,8 +255,8 @@ enum {
 	YANKDEL = TRUE,
 	FORWARD = 1,	// code depends on "1"  for array index
 	BACK = -1,	// code depends on "-1" for array index
-	LIMITED = 0,	// how much of text[] in char_search
-	FULL = 1,	// how much of text[] in char_search
+	LIMITED = 0,	// char_search() only current line
+	FULL = 1,	// char_search() to the end/beginning of entire text
 
 	S_BEFORE_WS = 1,	// used in skip_thing() for moving "dot"
 	S_TO_WS = 2,		// used in skip_thing() for moving "dot"
@@ -561,7 +561,7 @@ static void indicate_error(void);       // use flash or beep to indicate error
 static void Hit_Return(void);
 
 #if ENABLE_FEATURE_VI_SEARCH
-static char *char_search(char *, const char *, int, int);	// search for pattern starting at p
+static char *char_search(char *, const char *, int);	// search for pattern starting at p
 #endif
 #if ENABLE_FEATURE_VI_COLON
 static char *get_one_address(char *, int *);	// get colon addr, if present
@@ -938,7 +938,7 @@ static char *get_one_address(char *p, int *addr)	// get colon addr, if present
 		p = q;
 		if (*p == '/')
 			p++;
-		q = char_search(dot, pat, FORWARD, FULL);
+		q = char_search(dot, pat, (FORWARD << 1) | FULL);
 		if (q != NULL) {
 			*addr = count_lines(text, q);
 		}
@@ -1442,7 +1442,7 @@ static void colon(char *buf)
 			char *ls = q;		// orig line start
 			char *found;
  vc4:
-			found = char_search(q, F, FORWARD, LIMITED);	// search cur line only for "find"
+			found = char_search(q, F, (FORWARD << 1) | LIMITED);	// search cur line only for "find"
 			if (found) {
 				uintptr_t bias;
 				// we found the "find" pattern - delete it
@@ -1895,13 +1895,14 @@ static char *new_screen(int ro, int co)
 # if ENABLE_FEATURE_VI_REGEX_SEARCH
 
 // search for pattern starting at p
-static char *char_search(char *p, const char *pat, int dir, int range)
+static char *char_search(char *p, const char *pat, int dir_and_range)
 {
 	struct re_pattern_buffer preg;
 	const char *err;
 	char *q;
 	int i;
 	int size;
+	int range;
 
 	re_syntax_options = RE_SYNTAX_POSIX_EXTENDED;
 	if (ignorecase)
@@ -1914,10 +1915,16 @@ static char *char_search(char *p, const char *pat, int dir, int range)
 		return p;
 	}
 
-	// assume a LIMITED forward search
-	q = end - 1;
-	if (dir == BACK)
+	range = (dir_and_range & 1);
+	q = end - 1; // if FULL
+	if (range == LIMITED)
+		q = next_line(p);
+	if (dir_and_range < 0) { // BACK?
 		q = text;
+		if (range == LIMITED)
+			q = prev_line(p);
+	}
+
 	// RANGE could be negative if we are searching backwards
 	range = q - p;
 	q = p;
@@ -1940,7 +1947,7 @@ static char *char_search(char *p, const char *pat, int dir, int range)
 	regfree(&preg);
 	if (i < 0)
 		return NULL;
-	if (dir == FORWARD)
+	if (dir_and_range > 0) // FORWARD?
 		p = p + i;
 	else
 		p = p - i;
@@ -1961,13 +1968,15 @@ static int mycmp(const char *s1, const char *s2, int len)
 #   define mycmp strncmp
 #  endif
 
-static char *char_search(char *p, const char *pat, int dir, int range)
+static char *char_search(char *p, const char *pat, int dir_and_range)
 {
 	char *start, *stop;
 	int len;
+	int range;
 
 	len = strlen(pat);
-	if (dir == FORWARD) {
+	range = (dir_and_range & 1);
+	if (dir_and_range > 0) { //FORWARD?
 		stop = end - 1;	// assume range is p..end-1
 		if (range == LIMITED)
 			stop = next_line(p);	// range is to next line
@@ -1976,7 +1985,7 @@ static char *char_search(char *p, const char *pat, int dir, int range)
 				return start;
 			}
 		}
-	} else if (dir == BACK) {
+	} else { //BACK
 		stop = text;	// assume range is text..p
 		if (range == LIMITED)
 			stop = prev_line(p);	// range is to prev line
@@ -2355,7 +2364,7 @@ static void undo_push(char *src, unsigned int length, uint8_t u_type)	// Add to 
 	// Allocate a new undo object
 	if (u_type == UNDO_DEL || u_type == UNDO_DEL_CHAIN) {
 		// For UNDO_DEL objects, save deleted text
-		if ((src + length) == end)
+		if ((text + length) == end)
 			length--;
 		// If this deletion empties text[], strip the newline. When the buffer becomes
 		// zero-length, a newline is added back, which requires this to compensate.
@@ -3586,12 +3595,7 @@ static void do_cmd(int c)
 		break;
 	case 12:			// ctrl-L  force redraw whole screen
 	case 18:			// ctrl-R  force redraw
-		place_cursor(0, 0);
-		clear_to_eos();
-		//mysleep(10); // why???
-		screen_erase();	// erase the internal screen buffer
-		last_status_cksum = 0;	// force status update
-		refresh(TRUE);	// this will redraw the entire display
+		redraw(TRUE);	// this will redraw the entire display
 		break;
 	case 13:			// Carriage Return ^M
 	case '+':			// +- goto next line
@@ -3818,7 +3822,7 @@ static void do_cmd(int c)
 				p = dot - 1;
 			}
  dc4:
-			q = char_search(p, last_search_pattern + 1, dir, FULL);
+			q = char_search(p, last_search_pattern + 1, (dir << 1) | FULL);
 			if (q != NULL) {
 				dot = q;	// good search, update "dot"
 				msg = NULL;
@@ -3829,7 +3833,7 @@ static void do_cmd(int c)
 			if (dir == BACK) {
 				p = end - 1;
 			}
-			q = char_search(p, last_search_pattern + 1, dir, FULL);
+			q = char_search(p, last_search_pattern + 1, (dir << 1) | FULL);
 			if (q != NULL) {	// found something
 				dot = q;	// found new pattern- goto it
 				msg = "search hit BOTTOM, continuing at TOP";
@@ -3845,13 +3849,13 @@ static void do_cmd(int c)
 		} while (--cmdcnt > 0);
 		break;
 	case '{':			// {- move backward paragraph
-		q = char_search(dot, "\n\n", BACK, FULL);
+		q = char_search(dot, "\n\n", (BACK << 1) | FULL);
 		if (q != NULL) {	// found blank line
 			dot = next_line(q);	// move to next blank line
 		}
 		break;
 	case '}':			// }- move forward paragraph
-		q = char_search(dot, "\n\n", FORWARD, FULL);
+		q = char_search(dot, "\n\n", (FORWARD << 1) | FULL);
 		if (q != NULL) {	// found blank line
 			dot = next_line(q);	// move to next blank line
 		}

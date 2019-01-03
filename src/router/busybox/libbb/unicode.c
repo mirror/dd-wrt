@@ -996,7 +996,7 @@ size_t FAST_FUNC unicode_strlen(const char *string)
 size_t FAST_FUNC unicode_strwidth(const char *string)
 {
 	uni_stat_t uni_stat;
-	printable_string(&uni_stat, string);
+	printable_string2(&uni_stat, string);
 	return uni_stat.unicode_width;
 }
 
@@ -1121,6 +1121,8 @@ static char* FAST_FUNC unicode_conv_to_printable2(uni_stat_t *stats, const char 
 			dst[dst_len++] = ' ';
 		}
 	}
+	if (!dst) /* for example, if input was "" */
+		dst = xzalloc(1);
 	dst[dst_len] = '\0';
 	if (stats) {
 		stats->byte_count = dst_len;
