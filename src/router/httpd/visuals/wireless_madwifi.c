@@ -141,8 +141,6 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 		si = (struct ieee80211req_sta_info *)cp;
 		vp = (u_int8_t *)(si + 1);
 
-		if (cnt)
-			websWrite(wp, ",");
 		cnt++;
 		char mac[32];
 
@@ -178,12 +176,12 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 		if (si->isi_rates && ((si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL) != 0)
 		    && ((si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL) != 0)) {
 			websWrite(wp,
-				  "'%s','%s','%s%s','%s','%3dM','%3dM','N/A','%d','%d','%d','%d'",
+				  "'%s','%s','%s%s','%s','%3dM','%3dM','N/A','%d','%d','%d','%d',",
 				  mac, si->radioname, type, ifname, UPTIME(si->isi_uptime, str),
 				  ((si->isi_rates[si->isi_txrate] &
 				    IEEE80211_RATE_VAL) / 2) * turbo, ((si->isi_rates[si->isi_rxrate] & IEEE80211_RATE_VAL) / 2) * turbo, si->isi_noise + si->isi_rssi + bias, si->isi_noise + bias, si->isi_rssi, qual);
 		} else {
-			websWrite(wp, "'%s','%s','%s%s','%s','N/A','N/A','N/A','%d','%d','%d','%d'", mac, si->radioname, type, ifname, UPTIME(si->isi_uptime, str), si->isi_noise + si->isi_rssi + bias, si->isi_noise + bias,
+			websWrite(wp, "'%s','%s','%s%s','%s','N/A','N/A','N/A','%d','%d','%d','%d',", mac, si->radioname, type, ifname, UPTIME(si->isi_uptime, str), si->isi_noise + si->isi_rssi + bias, si->isi_noise + bias,
 				  si->isi_rssi, qual);
 		}
 		bufcount += si->isi_len;
@@ -205,7 +203,7 @@ static int assoc_count[16] = {0};
 void ej_assoc_count(webs_t wp, int argc, char_t ** argv)
 {
 	char *var = websGetVar(wp, "wifi_display", NULL);
-	int if_num;
+	int if_num = 0;
 	if(!var){
 		var = nvram_safe_get("wifi_display");
 	}
@@ -288,6 +286,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			}
 		}
 	}
+	
 	for (i = 0; i < c; i++) {
 		assoc_count[i] = cnt[i];
 	}
