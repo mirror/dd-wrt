@@ -144,7 +144,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 		if (globalcnt)
 			websWrite(wp, ",");
 
-		*cnt++;
+		*cnt = (*cnt) + 1;
 		globalcnt++;
 		char mac[32];
 
@@ -256,7 +256,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 	int global = 0;
 	int macmask;
 	int gotassocs = 0;
-	memset(assoc_count, sizeof(assoc_count), 0);
+	memset(assoc_count, 0, sizeof(assoc_count));
 	macmask = atoi(argv[0]);
 	for (i = 0; i < c; i++) {
 		sprintf(devs, "ath%d", i);
@@ -274,7 +274,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			gotassocs = 1;
 		}
 		if (!gotassocs) {
-			global =ej_active_wireless_if(wp, argc, argv, devs, &assoc_count[cnt], global, t, macmask);
+			global = ej_active_wireless_if(wp, argc, argv, devs, &assoc_count[cnt], global, t, macmask);
 		}
 		cnt++;
 		if (!is_mac80211(devs)) {
