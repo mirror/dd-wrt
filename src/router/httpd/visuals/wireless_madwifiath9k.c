@@ -51,7 +51,7 @@
 #include <net/if.h>
 #include <dd_list.h>
 
-int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifname, int cnt, int turbo, int macmask)
+int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifname, int *cnt, int globalcnt, int turbo, int macmask)
 {
 	char mac[32];
 	struct mac80211_info *mac80211_info;
@@ -95,6 +95,8 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 		else
 			qual = (signal + 100) * 20;
 
+		if (globalcnt)
+			websWrite(wp, ",");
 		int ht = 0;
 		int sgi = 0;
 		int vht = 0;
@@ -136,14 +138,15 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 		char *radioname = wc->radioname;
 		if (!strlen(radioname))
 			radioname = "";
-		websWrite(wp, "'%s','%s','%s','%s','%dM','%dM','%s','%d','%d','%d','%d',", mac, radioname, wc->ifname, UPTIME(wc->uptime, str), wc->txrate / 10 * mul / div, wc->rxrate / 10 * mul / div, info,
+		websWrite(wp, "'%s','%s','%s','%s','%dM','%dM','%s','%d','%d','%d','%d'", mac, radioname, wc->ifname, UPTIME(wc->uptime, str), wc->txrate / 10 * mul / div, wc->rxrate / 10 * mul / div, info,
 			  wc->signal + bias, wc->noise + bias, wc->signal - wc->noise, qual);
-		cnt++;
+		*cnt++;
+		globalcnt++;
 //              }
 	}
 	free_wifi_clients(mac80211_info->wci);
 	free(mac80211_info);
-	return cnt;
+	return globalcnt;
 }
 
 void ej_get_busy(webs_t wp, int argc, char_t ** argv)
