@@ -18,19 +18,19 @@
  * (C) 2006 Jac Goudsmit added -o option
  */
 //config:config GREP
-//config:	bool "grep (8.5 kb)"
+//config:	bool "grep (8.6 kb)"
 //config:	default y
 //config:	help
 //config:	grep is used to search files for a specified pattern.
 //config:
 //config:config EGREP
-//config:	bool "egrep (7.6 kb)"
+//config:	bool "egrep (7.8 kb)"
 //config:	default y
 //config:	help
 //config:	Alias to "grep -E".
 //config:
 //config:config FGREP
-//config:	bool "fgrep (7.6 kb)"
+//config:	bool "fgrep (7.8 kb)"
 //config:	default y
 //config:	help
 //config:	Alias to "grep -F".
@@ -704,10 +704,15 @@ int grep_main(int argc UNUSED_PARAM, char **argv)
 	/* do normal option parsing */
 #if ENABLE_FEATURE_GREP_CONTEXT
 	/* -H unsets -h; -C unsets -A,-B */
-	opts = getopt32(argv,
-		"^" OPTSTR_GREP "\0" "H-h:C-AB",
+	opts = getopt32long(argv, "^"
+		OPTSTR_GREP
+			"\0"
+			"H-h:C-AB",
+		"color\0" Optional_argument "\xff",
 		&pattern_head, &fopt, &max_matches,
-		&lines_after, &lines_before, &Copt);
+		&lines_after, &lines_before, &Copt
+		, NULL
+	);
 
 	if (opts & OPT_C) {
 		/* -C unsets prev -A and -B, but following -A or -B

@@ -9,7 +9,7 @@
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 //config:config INIT
-//config:	bool "init (9.3 kb)"
+//config:	bool "init (10 kb)"
 //config:	default y
 //config:	select FEATURE_SYSLOG
 //config:	help
@@ -752,8 +752,13 @@ static void pause_and_low_level_reboot(unsigned magic)
 		reboot(magic);
 		_exit(EXIT_SUCCESS);
 	}
-	while (1)
-		sleep(1);
+	/* Used to have "while (1) sleep(1)" here.
+	 * However, in containers reboot() call is ignored, and with that loop
+	 * we would eternally sleep here - not what we want.
+	 */
+	waitpid(pid, NULL, 0);
+	sleep(1); /* paranoia */
+	_exit(EXIT_SUCCESS);
 }
 
 static void run_shutdown_and_kill_processes(void)

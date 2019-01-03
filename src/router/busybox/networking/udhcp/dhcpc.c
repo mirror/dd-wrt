@@ -171,8 +171,8 @@ static int mton(uint32_t mask)
 
 #if ENABLE_FEATURE_UDHCPC_SANITIZEOPT
 /* Check if a given label represents a valid DNS label
- * Return pointer to the first character after the label upon success,
- * NULL otherwise.
+ * Return pointer to the first character after the label
+ * (NUL or dot) upon success, NULL otherwise.
  * See RFC1035, 2.3.1
  */
 /* We don't need to be particularly anal. For example, allowing _, hyphen
@@ -184,8 +184,10 @@ static int mton(uint32_t mask)
 static const char *valid_domain_label(const char *label)
 {
 	unsigned char ch;
-	unsigned pos = 0;
+	//unsigned pos = 0;
 
+	if (label[0] == '-')
+		return NULL;
 	for (;;) {
 		ch = *label;
 		if ((ch|0x20) < 'a' || (ch|0x20) > 'z') {
@@ -198,7 +200,7 @@ static const char *valid_domain_label(const char *label)
 			}
 		}
 		label++;
-		pos++;
+		//pos++;
 		//Do we want this?
 		//if (pos > 63) /* NS_MAXLABEL; labels must be 63 chars or less */
 		//	return NULL;
@@ -283,6 +285,12 @@ static NOINLINE char *xmalloc_optname_optval(uint8_t *option, const struct dhcp_
 		case OPTION_STRING_HOST:
 			memcpy(dest, option, len);
 			dest[len] = '\0';
+//TODO: it appears option 15 DHCP_DOMAIN_NAME is often abused
+//by DHCP admins to contain a space-separated list of domains,
+//not one domain name (presumably, to work as list of search domains,
+//instead of using proper option 119 DHCP_DOMAIN_SEARCH).
+//Currently, good_hostname() balks on strings containing spaces.
+//Do we need to allow it? Only for DHCP_DOMAIN_NAME option?
 			if (type == OPTION_STRING_HOST && !good_hostname(dest))
 				safe_strncpy(dest, "bad", len);
 			return ret;
@@ -855,7 +863,9 @@ static NOINLINE int send_decline(/*uint32_t xid,*/ uint32_t server, uint32_t req
 #endif
 
 /* Unicast a DHCP release message */
-static int send_release(uint32_t server, uint32_t ciaddr)
+static
+ALWAYS_INLINE /* one caller, help compiler to use this fact */
+int send_release(uint32_t server, uint32_t ciaddr)
 {
 	struct dhcp_packet packet;
 
@@ -1529,7 +1539,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 			case RENEW_REQUESTED: /* manual (SIGUSR1) renew */
 			case_RENEW_REQUESTED:
 			case RENEWING:
-				if (timeout > 60) {
+				if (timeout >= 60) {
 					/* send an unicast renew request */
 			/* Sometimes observed to fail (EADDRNOTAVAIL) to bind
 			 * a new UDP socket for sending inside send_renew.
@@ -1602,11 +1612,9 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 				 * For the second case, must make sure timeout
 				 * is not too big, or else we can send
 				 * futile renew requests for hours.
-				 * (Ab)use -A TIMEOUT value (usually 20 sec)
-				 * as a cap on the timeout.
 				 */
-				if (timeout > tryagain_timeout)
-					timeout = tryagain_timeout;
+				if (timeout > 60)
+					timeout = 60;
 				goto case_RENEW_REQUESTED;
 			}
 			/* Start things over */
@@ -1701,7 +1709,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
  * They say ISC DHCP client supports this case.
  */
 				server_addr = 0;
-				temp = udhcp_get_option(&packet, DHCP_SERVER_ID);
+				temp = udhcp_get_option32(&packet, DHCP_SERVER_ID);
 				if (!temp) {
 					bb_error_msg("no server ID, using 0.0.0.0");
 				} else {
@@ -1728,7 +1736,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 				struct in_addr temp_addr;
 				uint8_t *temp;
 
-				temp = udhcp_get_option(&packet, DHCP_LEASE_TIME);
+				temp = udhcp_get_option32(&packet, DHCP_LEASE_TIME);
 				if (!temp) {
 					bb_error_msg("no lease time with ACK, using 1 hour lease");
 					lease_seconds = 60 * 60;
@@ -1737,8 +1745,9 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 					move_from_unaligned32(lease_seconds, temp);
 					lease_seconds = ntohl(lease_seconds);
 					/* paranoia: must not be too small and not prone to overflows */
-					if (lease_seconds < 0x10)
-						lease_seconds = 0x10;
+					/* timeout > 60 - ensures at least one unicast renew attempt */
+					if (lease_seconds < 2 * 61)
+						lease_seconds = 2 * 61;
 					//if (lease_seconds > 0x7fffffff)
 					//	lease_seconds = 0x7fffffff;
 					//^^^not necessary since "timeout = lease_seconds / 2"
@@ -1822,7 +1831,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 					uint32_t svid;
 					uint8_t *temp;
 
-					temp = udhcp_get_option(&packet, DHCP_SERVER_ID);
+					temp = udhcp_get_option32(&packet, DHCP_SERVER_ID);
 					if (!temp) {
  non_matching_svid:
 						log1("received DHCP NAK with wrong"
