@@ -9,7 +9,7 @@
  * Licensed under GPLv2, see file LICENSE in this source tree.
  */
 //config:config UDHCPC6
-//config:	bool "udhcpc6"
+//config:	bool "udhcpc6 (21 kb)"
 //config:	default n  # not yet ready
 //config:	depends on FEATURE_IPV6
 //config:	help
@@ -814,7 +814,9 @@ static NOINLINE int send_d6_renew(uint32_t xid, struct in6_addr *server_ipv6, st
 }
 
 /* Unicast a DHCP release message */
-static int send_d6_release(struct in6_addr *server_ipv6, struct in6_addr *our_cur_ipv6)
+static
+ALWAYS_INLINE /* one caller, help compiler to use this fact */
+int send_d6_release(struct in6_addr *server_ipv6, struct in6_addr *our_cur_ipv6)
 {
 	struct d6_packet packet;
 	uint8_t *opt_ptr;
@@ -1405,7 +1407,7 @@ int udhcpc6_main(int argc UNUSED_PARAM, char **argv)
 			case RENEW_REQUESTED: /* manual (SIGUSR1) renew */
 			case_RENEW_REQUESTED:
 			case RENEWING:
-				if (timeout > 60) {
+				if (timeout >= 60) {
 					/* send an unicast renew request */
 			/* Sometimes observed to fail (EADDRNOTAVAIL) to bind
 			 * a new UDP socket for sending inside send_renew.
@@ -1465,11 +1467,9 @@ int udhcpc6_main(int argc UNUSED_PARAM, char **argv)
 				 * For the second case, must make sure timeout
 				 * is not too big, or else we can send
 				 * futile renew requests for hours.
-				 * (Ab)use -A TIMEOUT value (usually 20 sec)
-				 * as a cap on the timeout.
 				 */
-				if (timeout > tryagain_timeout)
-					timeout = tryagain_timeout;
+				if (timeout > 60)
+					timeout = 60;
 				goto case_RENEW_REQUESTED;
 			}
 			/* Start things over */
@@ -1740,8 +1740,9 @@ int udhcpc6_main(int argc UNUSED_PARAM, char **argv)
 				/* note: "int timeout" will not overflow even with 0xffffffff inputs here: */
 				timeout = (prefix_timeout < address_timeout ? prefix_timeout : address_timeout) / 2;
 				/* paranoia: must not be too small */
-				if (timeout < 0x10)
-					timeout = 0x10;
+				/* timeout > 60 - ensures at least one unicast renew attempt */
+				if (timeout < 61)
+					timeout = 61;
 				/* enter bound state */
 				d6_run_script(packet.d6_options, packet_end,
 					(state == REQUESTING ? "bound" : "renew"));

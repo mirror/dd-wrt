@@ -7,7 +7,7 @@
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 //config:config UNSHARE
-//config:	bool "unshare (9.2 kb)"
+//config:	bool "unshare (7.2 kb)"
 //config:	default y
 //config:	depends on !NOMMU
 //config:	select PLATFORM_LINUX
@@ -73,7 +73,7 @@
 #include "libbb.h"
 
 static void mount_or_die(const char *source, const char *target,
-                 const char *fstype, unsigned long mountflags)
+		const char *fstype, unsigned long mountflags)
 {
 	if (mount(source, target, fstype, mountflags, NULL)) {
 		bb_perror_msg_and_die("can't mount %s on %s (flags:0x%lx)",
