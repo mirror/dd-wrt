@@ -267,7 +267,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 		}
 		if (globalcnt)
 			websWrite(wp, ",");
-		*cnt++;
+		*cnt = (*cnt) + 1;
 		globalcnt++;
 		char info[32];
 		strcpy(info, "N/A");
