@@ -38,7 +38,7 @@ static char *UPTIME(int uptime, char *str)
 
 static int assoc_count[16];
 
-void assoc_count_prefix(webs_t wp, char *prefix)
+static void assoc_count_prefix(webs_t wp, char *prefix)
 {
 	int count = getdevicecount();
 	int i;
