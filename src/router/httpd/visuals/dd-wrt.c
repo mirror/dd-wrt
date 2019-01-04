@@ -1039,29 +1039,15 @@ static void ej_show_security_single(webs_t wp, int argc, char_t ** argv, char *p
 
 void ej_show_security(webs_t wp, int argc, char_t ** argv)
 {
-#ifndef HAVE_MADWIFI
-	int c = get_wl_instances();
-	int i;
-
-	for (i = 0; i < c; i++) {
-		char buf[16];
-
-		sprintf(buf, "wl%d", i);
-		ej_show_security_single(wp, argc, argv, buf);
-	}
-	return;
-#else
 	int c = getdevicecount();
 	int i;
 
 	for (i = 0; i < c; i++) {
 		char buf[16];
-
-		sprintf(buf, "ath%d", i);
+		sprintf(buf, WIFINAME "%d", i);
 		ej_show_security_single(wp, argc, argv, buf);
 	}
 	return;
-#endif
 }
 
 void ej_getWET(webs_t wp, int argc, char_t ** argv)
@@ -1197,12 +1183,12 @@ void ej_show_wifiselect(webs_t wp, int argc, char_t ** argv)
 	int i;
 
 	for (i = 0; i < count; i++) {
-		sprintf(var, "ath%d", i);
+		sprintf(var, WIFINAME "%d", i);
 		if (has_ad(var))
 			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", "giwifi0") ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
 		else
 			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
-		char *names = nvram_nget("ath%d_vifs", i);
+		char *names = nvram_nget(WIFINAME "%d_vifs", i);
 
 		foreach(var, names, next) {
 			if (has_ad(var))
@@ -1239,7 +1225,7 @@ void ej_show_wifiselect(webs_t wp, int argc, char_t ** argv)
 	int i;
 
 	for (i = 0; i < count; i++) {
-		sprintf(var, "wl%d", i);
+		sprintf(var, WIFINAME "%d", i);
 		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
 	}
 	websWrite(wp, "</select>\n");
@@ -4346,24 +4332,13 @@ void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
 	}
 #endif
 
-#ifdef HAVE_MADWIFI
 	int c = getdevicecount();
 	int i;
 	for (i = 0; i < c; i++) {
 		char buf[16];
-		sprintf(buf, "ath%d", i);
+		sprintf(buf, WIFINAME "%d", i);
 		ej_show_wireless_single(wp, buf);
 	}
-#else
-	int c = get_wl_instances();
-	//fprintf(stderr, "Devicecount: %d", c);
-	int i;
-	for (i = 0; i < c; i++) {
-		char buf[16];
-		sprintf(buf, "wl%d", i);
-		ej_show_wireless_single(wp, buf);
-	}
-#endif
 #ifdef HAVE_GUESTPORT
 	websWrite(wp, "<input type=\"hidden\" name=\"gp_modify\" id=\"gp_modify\" value=\"\">\n");
 #endif
