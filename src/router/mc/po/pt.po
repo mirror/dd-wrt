@@ -11,8 +11,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2018-06-03 11:03+0200\n"
-"PO-Revision-Date: 2018-04-30 22:38+0000\n"
+"POT-Creation-Date: 2019-01-01 17:19+0300\n"
+"PO-Revision-Date: 2018-10-21 14:51+0000\n"
 "Last-Translator: Gilberto Jorge <gmj125@gmail.com>\n"
 "Language-Team: Portuguese (http://www.transifex.com/mc/mc/language/pt/)\n"
 "Language: pt\n"
@@ -2524,8 +2524,25 @@ msgstr "ficheiros/diretórios"
 msgid " with source mask:"
 msgstr " com máscara na origem:"
 
-msgid "Cannot make the hardlink"
-msgstr "Não é possível fazer a hardlink"
+#, c-format
+msgid ""
+"Cannot stat hardlink source file \"%s\"\n"
+"%s"
+msgstr ""
+"Não é possível efetuar stat no hardlink do ficheiro fonte \"%s\"\n"
+"%s"
+
+#, c-format
+msgid ""
+"Cannot create target hardlink \"%s\"\n"
+"%s"
+msgstr ""
+"Não é possível criar o hardlink alvo \"%s\"\n"
+"%s"
+
+#, c-format
+msgid "Cannot create target hardlink \"%s\""
+msgstr "Não é possível criar o hardlink alvo \"%s\""
 
 #, c-format
 msgid ""
@@ -3032,6 +3049,14 @@ msgid "Finished (ignored %zu directory)"
 msgid_plural "Finished (ignored %zu directories)"
 msgstr[0] "Terminado (%zu directório ignorado)"
 msgstr[1] "Terminado (%zu directórios ignorados)"
+
+#, c-format
+msgid "Find File: \"%s\". Content: \"%s\""
+msgstr "Procurar Ficheiro: \"%s\". Conteúdo: \"%s\""
+
+#, c-format
+msgid "Find File: \"%s\""
+msgstr "Procurar Ficheiro: \"%s\""
 
 msgid "Searching"
 msgstr "A procurar"

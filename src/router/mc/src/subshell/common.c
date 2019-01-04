@@ -74,6 +74,20 @@
 #include <stropts.h>            /* For I_PUSH */
 #endif /* HAVE_STROPTS_H */
 
+#ifdef HAVE_OPENPTY
+/* includes for openpty() */
+#ifdef HAVE_PTY_H
+#include <pty.h>
+#endif
+#ifdef HAVE_UTIL_H
+#include <util.h>
+#endif
+/* <sys/types.h> is a prerequisite of <libutil.h> on FreeBSD 8.0.  */
+#ifdef HAVE_LIBUTIL_H
+#include <libutil.h>
+#endif
+#endif /* HAVE_OPENPTY */
+
 #include "lib/global.h"
 
 #include "lib/unixcompat.h"
@@ -558,9 +572,14 @@ feed_subshell (int how, gboolean fail_on_error)
 
             if (bytes <= 0)
             {
+#ifdef PTY_ZEROREAD
+                /* On IBM i, read(1) can return 0 for a non-closed fd */
+                continue;
+#else
                 tcsetattr (STDOUT_FILENO, TCSANOW, &shell_mode);
                 fprintf (stderr, "read (subshell_pty...): %s\r\n", unix_error_string (errno));
                 exit (EXIT_FAILURE);
+#endif
             }
 
             if (how == VISIBLY)
@@ -624,6 +643,8 @@ feed_subshell (int how, gboolean fail_on_error)
 
 /* --------------------------------------------------------------------------------------------- */
 /* pty opening functions */
+
+#ifndef HAVE_OPENPTY
 
 #ifdef HAVE_GRANTPT
 
@@ -778,6 +799,7 @@ pty_open_slave (const char *pty_name)
 }
 #endif /* !HAVE_GRANTPT */
 
+#endif /* !HAVE_OPENPTY */
 
 /* --------------------------------------------------------------------------------------------- */
 /**
@@ -875,9 +897,9 @@ init_subshell_precmd (char *precmd, size_t buff_size)
          */
         g_snprintf (precmd, buff_size,
                     " if not functions -q fish_prompt_mc;"
+                    "functions -e fish_right_prompt;"
                     "functions -c fish_prompt fish_prompt_mc; end;"
                     "function fish_prompt;"
-                    "echo (whoami)@(hostname -s):(set_color $fish_color_cwd)(pwd)(set_color normal)\\$\\ ; "
                     "echo \"$PWD\">&%d; fish_prompt_mc; kill -STOP %%self; end\n",
                     subshell_pipe[WRITE]);
         break;
@@ -1014,6 +1036,15 @@ init_subshell (void)
 
         /* FIXME: We may need to open a fresh pty each time on SVR4 */
 
+#ifdef HAVE_OPENPTY
+        if (openpty (&mc_global.tty.subshell_pty, &subshell_pty_slave, NULL, NULL, NULL))
+        {
+            fprintf (stderr, "Cannot open master and slave sides of pty: %s\n",
+                     unix_error_string (errno));
+            mc_global.tty.use_subshell = FALSE;
+            return;
+        }
+#else
         mc_global.tty.subshell_pty = pty_open_master (pty_name);
         if (mc_global.tty.subshell_pty == -1)
         {
@@ -1029,6 +1060,7 @@ init_subshell (void)
             mc_global.tty.use_subshell = FALSE;
             return;
         }
+#endif /* HAVE_OPENPTY */
 
         /* Create a pipe for receiving the subshell's CWD */
 
