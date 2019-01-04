@@ -412,24 +412,24 @@ static int zebra_ospf6_init(void)
 		if (wf && strlen(wf) > 0)
 			fprintf(fp, "interface %s\n", wf);
 
-		int cnt = get_wl_instances();
+		int cnt = getdevicecount();
 		int c;
 
 		for (c = 0; c < cnt; c++) {
-			if (nvram_nmatch("1", "wl%d_br1_enable", c)) {
+			if (nvram_nmatch("1", WIFINAME "%d_br1_enable", c)) {
 				fprintf(fp, "!\n! 'Subnet' WDS bridge\n");
 				fprintf(fp, "interface br1\n");
 			}
-			if (nvram_nmatch("ap", "wl%d_mode", c))
+			if (nvram_nmatch("ap", WIFINAME "%d_mode", c))
 				for (s = 1; s <= MAX_WDS_DEVS; s++) {
 					char wdsdevospf[32] = { 0 };
 					char *dev;
 
-					sprintf(wdsdevospf, "wl%d_wds%d_ospf", c, s);
-					dev = nvram_nget("wl%d_wds%d_if", c, s);
+					sprintf(wdsdevospf, WIFINAME "%d_wds%d_ospf", c, s);
+					dev = nvram_nget(WIFINAME "%d_wds%d_if", c, s);
 
-					if (nvram_nmatch("1", "wl%d_wds%d_enable", c, s)) {
-						fprintf(fp, "!\n! WDS: %s\n", nvram_nget("wl%d_wds%d_desc", c, s));
+					if (nvram_nmatch("1", WIFINAME "%d_wds%d_enable", c, s)) {
+						fprintf(fp, "!\n! WDS: %s\n", nvram_nget(WIFINAME "%d_wds%d_desc", c, s));
 						fprintf(fp, "interface %s\n", dev);
 
 						if (nvram_geti(wdsdevospf)
