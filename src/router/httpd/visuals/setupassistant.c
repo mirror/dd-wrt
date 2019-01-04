@@ -1098,27 +1098,15 @@ void sas_show_channel(webs_t wp, char *dev, char *prefix, int type)
 void ej_sas_show_security(webs_t wp, int argc, char_t ** argv)
 {
 	int i = 0;
-#ifndef HAVE_MADWIFI
-	int c = get_wl_instances();
-
-	for (i = 0; i < c; i++) {
-		char buf[16];
-
-		sprintf(buf, "wl%d", i);
-		sas_show_security_single(wp, argc, argv, buf);
-	}
-	return;
-#else
 	int c = getdevicecount();
 
 	for (i = 0; i < c; i++) {
 		char buf[16];
 
-		sprintf(buf, "ath%d", i);
+		sprintf(buf, WIFINAME "%d", i);
 		sas_show_security_single(wp, argc, argv, buf);
 	}
 	return;
-#endif
 }
 
 void sas_show_security_single(webs_t wp, int argc, char_t ** argv, char *prefix)
