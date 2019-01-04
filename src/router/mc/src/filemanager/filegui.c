@@ -81,13 +81,7 @@
 /* NetBSD 1.5.2 needs these, for the declaration of struct statfs. */
 #include <sys/param.h>
 #include <sys/mount.h>
-#if defined HAVE_NFS_NFS_CLNT_H && defined HAVE_NFS_VFS_H
-/* Ultrix 4.4 needs these for the declaration of struct statfs.  */
-#include <netinet/in.h>
-#include <nfs/nfs_clnt.h>
-#include <nfs/vfs.h>
-#endif
-#elif defined HAVE_OS_H         /* BeOS */
+#elif defined HAVE_OS_H         /* Haiku, also (obsolete) BeOS */
 #include <fs_info.h>
 #endif
 
@@ -109,7 +103,7 @@
 #else
 #define STATFS statfs
 #define STRUCT_STATVFS struct statfs
-#ifdef HAVE_OS_H                /* BeOS */
+#ifdef HAVE_OS_H                /* Haiku, also (obsolete) BeOS */
 /* BeOS has a statvfs function, but it does not return sensible values
    for f_files, f_ffree and f_favail, and lacks f_type, f_basetype and
    f_fstypename.  Use 'struct fs_info' instead.  */
@@ -141,7 +135,7 @@ statfs (char const *filename, struct fs_info *buf)
 #else
 #if defined HAVE_STRUCT_STATVFS_F_FSTYPENAME || defined HAVE_STRUCT_STATFS_F_FSTYPENAME
 #define STATXFS_FILE_SYSTEM_TYPE_MEMBER_NAME f_fstypename
-#elif defined HAVE_OS_H         /* BeOS */
+#elif defined HAVE_OS_H         /* Haiku, also (obsolete) BeOS */
 #define STATXFS_FILE_SYSTEM_TYPE_MEMBER_NAME fsh_name
 #endif
 #endif
@@ -287,13 +281,11 @@ statvfs_works (void)
 #endif
 
 /* --------------------------------------------------------------------------------------------- */
+
 static gboolean
 filegui__check_attrs_on_fs (const char *fs_path)
 {
     STRUCT_STATVFS stfs;
-
-    if (!copymove_persistent_attr)
-        return FALSE;
 
 #if USE_STATVFS && defined(STAT_STATVFS)
     if (statvfs_works () && statvfs (fs_path, &stfs) != 0)
@@ -1183,8 +1175,8 @@ file_mask_dialog (file_op_context_t * ctx, FileOperation operation,
     if (ctx == NULL)
         return NULL;
 
-    /* unselect checkbox if target filesystem don't support attributes */
-    ctx->op_preserve = filegui__check_attrs_on_fs (def_text);
+    /* unselect checkbox if target filesystem doesn't support attributes */
+    ctx->op_preserve = copymove_persistent_attr && filegui__check_attrs_on_fs (def_text);
     ctx->stable_symlinks = FALSE;
     *do_bg = FALSE;
 
@@ -1303,7 +1295,8 @@ file_mask_dialog (file_op_context_t * ctx, FileOperation operation,
         {
             g_free (def_text_secure);
             g_free (source_mask);
-            return dest_dir;
+            g_free (dest_dir);
+            return NULL;
         }
 
         ctx->search_handle = mc_search_new (source_mask, NULL);
