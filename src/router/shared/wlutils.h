@@ -29,6 +29,12 @@
 #define BCME_BUFTOOSHORT		-14	/* Buffer too short */
 #endif
 
+#ifdef HAVE_MADWIFI
+#define WIFINAME "ath"
+#else
+#define WIFINAME "wl"
+#endif
+
 /*
  * get wireless interface 
  */

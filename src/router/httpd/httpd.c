@@ -697,7 +697,7 @@ static int check_connect_type(webs_t wp)
 	int count_wl = 0;
 	int i, j;
 	char temp[32];
-	int c = get_wl_instances();
+	int c = getdevicecount();
 
 	for (j = 0; j < c; j++) {
 		sprintf(temp, "wl%d_web_filter", j);
