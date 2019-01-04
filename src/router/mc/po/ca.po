@@ -16,9 +16,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2018-06-03 11:03+0200\n"
-"PO-Revision-Date: 2018-05-21 16:46+0000\n"
-"Last-Translator: Marc Tormo i Bochaca <mtbochaca@gmail.com>\n"
+"POT-Creation-Date: 2019-01-01 17:19+0300\n"
+"PO-Revision-Date: 2018-10-22 11:52+0000\n"
+"Last-Translator: Antoni Bella Pérez <antonibella5@yahoo.com>\n"
 "Language-Team: Catalan (http://www.transifex.com/mc/mc/language/ca/)\n"
 "Language: ca\n"
 "MIME-Version: 1.0\n"
@@ -304,10 +304,10 @@ msgid "End key"
 msgstr "Posició final"
 
 msgid "Page Up"
-msgstr "Re. Pàg."
+msgstr "Re Pàg"
 
 msgid "Page Down"
-msgstr "Av. Pàg."
+msgstr "Av Pàg"
 
 msgid "/ on keypad"
 msgstr "/ en el teclat numèric"
@@ -340,10 +340,10 @@ msgid "End on keypad"
 msgstr "Final en el teclat numèric"
 
 msgid "Page Down keypad"
-msgstr "Av. Pàg. en el teclat numèric"
+msgstr "Av Pàg en el teclat numèric"
 
 msgid "Page Up keypad"
-msgstr "Re. Pàg. en el teclat numèric"
+msgstr "Re Pàg en el teclat numèric"
 
 msgid "Insert on keypad"
 msgstr "Insereix en el teclat numèric"
@@ -1955,7 +1955,7 @@ msgid "Sa&fe delete"
 msgstr "Suprimeix de &forma segura"
 
 msgid "Safe overwrite"
-msgstr "Sobre-escriptura segura"
+msgstr "Sobreescriptura segura"
 
 msgid "A&uto save setup"
 msgstr "Desa &automàticament la configuració"
@@ -2532,8 +2532,25 @@ msgstr "fitxers/directoris"
 msgid " with source mask:"
 msgstr " amb màscara d'origen:"
 
-msgid "Cannot make the hardlink"
-msgstr "No s'ha pogut crear l'enllaç dur"
+#, c-format
+msgid ""
+"Cannot stat hardlink source file \"%s\"\n"
+"%s"
+msgstr ""
+"No s'ha pogut visualitzar el fitxer d'origen de l'enllaç dur «%s»\n"
+"%s"
+
+#, c-format
+msgid ""
+"Cannot create target hardlink \"%s\"\n"
+"%s"
+msgstr ""
+"No s'ha pogut crear l'enllaç dur de destinació «%s»\n"
+"%s"
+
+#, c-format
+msgid "Cannot create target hardlink \"%s\""
+msgstr "No s'ha pogut crear l'enllaç dur de destinació «%s»"
 
 #, c-format
 msgid ""
@@ -3040,6 +3057,14 @@ msgid "Finished (ignored %zu directory)"
 msgid_plural "Finished (ignored %zu directories)"
 msgstr[0] "Finalitzada (s'ha ignorat %zu directori)"
 msgstr[1] "Finalitzada (s'han ignorat %zu directoris)"
+
+#, c-format
+msgid "Find File: \"%s\". Content: \"%s\""
+msgstr "Troba el fitxer: «%s». Contingut: «%s»"
+
+#, c-format
+msgid "Find File: \"%s\""
+msgstr "Troba el fitxer: «%s»"
 
 msgid "Searching"
 msgstr "Cercant"

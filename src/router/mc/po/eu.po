@@ -9,9 +9,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2018-06-03 11:03+0200\n"
-"PO-Revision-Date: 2018-05-12 11:25+0000\n"
-"Last-Translator: Iñigo Salvador Azurmendi <xalba@euskalnet.net>\n"
+"POT-Creation-Date: 2019-01-01 17:19+0300\n"
+"PO-Revision-Date: 2018-10-21 01:34+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Basque (http://www.transifex.com/mc/mc/language/eu/)\n"
 "Language: eu\n"
 "MIME-Version: 1.0\n"
@@ -2522,8 +2522,21 @@ msgstr "fitxategiak/direktorioak"
 msgid " with source mask:"
 msgstr " iturburu maskararekin:"
 
-msgid "Cannot make the hardlink"
-msgstr "Esteka trinkoa ezin egin"
+#, c-format
+msgid ""
+"Cannot stat hardlink source file \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot create target hardlink \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid "Cannot create target hardlink \"%s\""
+msgstr ""
 
 #, c-format
 msgid ""
@@ -3026,6 +3039,14 @@ msgid "Finished (ignored %zu directory)"
 msgid_plural "Finished (ignored %zu directories)"
 msgstr[0] "Amaituta (%zu direktorioa baztertuta)"
 msgstr[1] "Amaituta (%zu direktorioak baztertuta)"
+
+#, c-format
+msgid "Find File: \"%s\". Content: \"%s\""
+msgstr ""
+
+#, c-format
+msgid "Find File: \"%s\""
+msgstr ""
 
 msgid "Searching"
 msgstr "Bilatzen"

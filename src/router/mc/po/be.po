@@ -11,9 +11,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2018-06-03 11:03+0200\n"
-"PO-Revision-Date: 2018-05-21 16:57+0000\n"
-"Last-Translator: Zmicer Turok <zmicerturok@gmail.com>\n"
+"POT-Creation-Date: 2019-01-01 17:19+0300\n"
+"PO-Revision-Date: 2018-10-21 01:34+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Belarusian (http://www.transifex.com/mc/mc/language/be/)\n"
 "Language: be\n"
 "MIME-Version: 1.0\n"
@@ -2522,8 +2522,21 @@ msgstr "файлы альбо каталогі"
 msgid " with source mask:"
 msgstr " з зыходным шаблонам:"
 
-msgid "Cannot make the hardlink"
-msgstr "Немагчыма стварыць жорсткую спасылку"
+#, c-format
+msgid ""
+"Cannot stat hardlink source file \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot create target hardlink \"%s\"\n"
+"%s"
+msgstr ""
+
+#, c-format
+msgid "Cannot create target hardlink \"%s\""
+msgstr ""
 
 #, c-format
 msgid ""
@@ -3030,6 +3043,14 @@ msgstr[0] "Завершана (мінуты %zu каталог)"
 msgstr[1] "Завершана (мінута %zu каталогі)"
 msgstr[2] "Завершана (мінута %zu каталогаў)"
 msgstr[3] "Завершана (мінута %zu каталогаў)"
+
+#, c-format
+msgid "Find File: \"%s\". Content: \"%s\""
+msgstr ""
+
+#, c-format
+msgid "Find File: \"%s\""
+msgstr ""
 
 msgid "Searching"
 msgstr "Пошук"
