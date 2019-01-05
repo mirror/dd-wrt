@@ -5042,9 +5042,9 @@ static void set_frame_compression(char *prefix, char *interface)
 {
 
 	char compr[32];
-	sprintf(compr, "%s_fc", prefix);
 	sprintf(compr, "%s_fc_th", prefix);
 	char *threshold = nvram_default_get(compr, "512");	// minimum framesize frequired for compression
+	sprintf(compr, "%s_fc", prefix);
 	if (nvram_default_matchi(compr, 1, 0)) {
 		eval("iw", "dev", interface, "set", "compr", "lzo", threshold);
 	} else if (nvram_default_matchi(compr, 2, 0)) {
