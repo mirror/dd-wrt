@@ -182,7 +182,7 @@ void configure_single_ath9k(int count)
 
 	if (has_airtime_fairness(dev)) {
 		sprintf(atf, "%s_atf", dev);
-			sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/airtime_flags", nvram_default_matchi(atf, 1, 1) ? 3 : 0, wif);
+		sysprintf("echo %d > /sys/kernel/debug/ieee80211/%s/airtime_flags", nvram_default_matchi(atf, 1, 1) ? 3 : 0, wif);
 	}
 	// set channelbw ht40 is also 20!
 	sprintf(bw, "%s_channelbw", dev);
@@ -303,20 +303,6 @@ void configure_single_ath9k(int count)
 //      }
 #endif
 //      experimental frame compression for internal testing only right now
-	char compr[32];
-	sprintf(compr, "%s_fc_th", dev);
-	char *threshold = nvram_default_get(compr, "512");	// minimum framesize frequired for compression
-	sprintf(compr, "%s_fc", dev);
-
-	if (nvram_default_matchi(compr, 1, 0)) {
-		eval("iw", "dev", dev, "set", "compr", "lzo", threshold);
-	} else if (nvram_default_matchi(compr, 2, 0)) {
-		eval("iw", "dev", dev, "set", "compr", "lzma", threshold);
-	} else if (nvram_default_matchi(compr, 3, 0)) {
-		eval("iw", "dev", dev, "set", "compr", "lz4", threshold);
-	} else {
-		eval("iw", "dev", dev, "set", "compr", "off");
-	}
 
 // das scheint noch aerger zu machen
 	eval("iw", "dev", dev, "set", "power_save", "off");
@@ -359,9 +345,9 @@ void configure_single_ath9k(int count)
 		if (isfirst)
 			sysprintf("iw %s interface add %s.%d type managed", wif, dev, counter);
 		setupHostAP_ath9k(dev, isfirst, counter, 0);
-		sprintf(compr, "%s_fc", var);
 		sprintf(compr, "%s_fc_th", var);
 		char *threshold = nvram_default_get(compr, "512");	// minimum framesize frequired for compression
+		sprintf(compr, "%s_fc", var);
 
 		if (nvram_default_matchi(compr, 1, 0)) {
 			eval("iw", "dev", var, "set", "compr", "lzo", threshold);
@@ -382,6 +368,20 @@ void configure_single_ath9k(int count)
 		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/phy2/wil6210/led_cfg");
 		sysprintf("echo 10000 0 200 200 100 100 > /sys/kernel/debug/ieee80211/phy2/wil6210/led_blink_time");
 
+	}
+	char compr[32];
+	sprintf(compr, "%s_fc_th", dev);
+	char *threshold = nvram_default_get(compr, "512");	// minimum framesize frequired for compression
+	sprintf(compr, "%s_fc", dev);
+
+	if (nvram_default_matchi(compr, 1, 0)) {
+		eval("iw", "dev", dev, "set", "compr", "lzo", threshold);
+	} else if (nvram_default_matchi(compr, 2, 0)) {
+		eval("iw", "dev", dev, "set", "compr", "lzma", threshold);
+	} else if (nvram_default_matchi(compr, 3, 0)) {
+		eval("iw", "dev", dev, "set", "compr", "lz4", threshold);
+	} else {
+		eval("iw", "dev", dev, "set", "compr", "off");
 	}
 
 }
