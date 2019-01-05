@@ -74,12 +74,12 @@ static void setRTS(char *use)
 	} else {
 		eval("iwconfig", use, "rts", "off");
 	}
-	if (nvram_nmatch("None", "%s_protmode", use))
+/*	if (nvram_nmatch("None", "%s_protmode", use))
 		eval("iwpriv", use, "protmode", "0");
 	if (nvram_nmatch("CTS", "%s_protmode", use))
 		eval("iwpriv", use, "protmode", "1");
 	if (nvram_nmatch("RTS/CTS", "%s_protmode", use))
-		eval("iwpriv", use, "protmode", "2");
+		eval("iwpriv", use, "protmode", "2"); */
 }
 
 void delete_ath9k_devices(char *physical_iface)
