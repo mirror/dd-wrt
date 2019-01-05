@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r4382 | brainslayer | 2019-01-05 11:35:39 +0100 (Sat, 05 Jan 2019) | 1 line
+
+wpa supplicant seem to reset if properties. so keep track on them
+------------------------------------------------------------------------
 r4381 | brainslayer | 2019-01-05 10:36:07 +0100 (Sat, 05 Jan 2019) | 1 line
 
 set only once
