@@ -5036,6 +5036,29 @@ static void writenet(char *path, int cpumask, char *ifname)
 
 }
 
+#ifdef HAVE_MADWIFI
+
+static void set_frame_compression(char *prefix, char *interface)
+{
+
+	char compr[32];
+	sprintf(compr, "%s_fc", prefix);
+	sprintf(compr, "%s_fc_th", prefix);
+	char *threshold = nvram_default_get(compr, "512");	// minimum framesize frequired for compression
+	if (nvram_default_matchi(compr, 1, 0)) {
+		eval("iw", "dev", interface, "set", "compr", "lzo", threshold);
+	} else if (nvram_default_matchi(compr, 2, 0)) {
+		eval("iw", "dev", interface, "set", "compr", "lzma", threshold);
+	} else if (nvram_default_matchi(compr, 3, 0)) {
+		eval("iw", "dev", interface, "set", "compr", "lz4", threshold);
+	} else {
+		eval("iw", "dev", interface, "set", "compr", "off");
+	}
+
+}
+
+#endif
+
 void start_hotplug_net(void)
 {
 	char *interface, *action;
@@ -5079,31 +5102,18 @@ void start_hotplug_net(void)
 	if (strncmp(interface, "ath", 3))
 		return;
 
-	if (!strcmp(action, "add")) {
-		char compr[32];
-		sprintf(compr, "%s_fc", ifname);
-		sprintf(compr, "%s_fc_th", ifname);
-		char *threshold = nvram_default_get(compr, "512");	// minimum framesize frequired for compression
-		if (nvram_default_matchi(compr, 1, 0)) {
-			eval("iw", "dev", interface, "set", "compr", "lzo", threshold);
-		} else if (nvram_default_matchi(compr, 2, 0)) {
-			eval("iw", "dev", interface, "set", "compr", "lzma", threshold);
-		} else if (nvram_default_matchi(compr, 3, 0)) {
-			eval("iw", "dev", interface, "set", "compr", "lz4", threshold);
-		} else {
-			eval("iw", "dev", interface, "set", "compr", "off");
-		}
-	}
-
-
 	// try to parse
 	char ifname[32];
 
 	bzero(ifname, 32);
 	char *index = strrchr(interface, '.');
 
-	if (!index)
+	if (!index) {
+		if (!strcmp(action, "add")) {
+			set_frame_compression(interface, interface);
+		}
 		return;
+	}
 	strncpy(ifname, index + 1, sizeof(ifname) - 1);
 	if (strncmp(ifname, "sta", 3)) {
 		return;
@@ -5119,6 +5129,7 @@ void start_hotplug_net(void)
 	sprintf(bridged, "%s_bridged", ifname);
 	char tmp[256];
 	if (!strcmp(action, "add")) {
+		set_frame_compression(ifname, interface);
 		eval("ifconfig", interface, "up");
 		if (nvram_matchi(bridged, 1))
 			br_add_interface(getBridge(ifname, tmp), interface);
