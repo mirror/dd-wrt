@@ -338,6 +338,7 @@ void configure_single_ath9k(int count)
 	if (countvaps > vapcount)
 		vapcount = countvaps;
 	int counter = 1;
+	char compr[32];
 	if (strlen(vifs))
 		foreach(var, vifs, next) {
 		fprintf(stderr, "setup vifs %s %d\n", var, counter);
@@ -369,7 +370,6 @@ void configure_single_ath9k(int count)
 		sysprintf("echo 10000 0 200 200 100 100 > /sys/kernel/debug/ieee80211/phy2/wil6210/led_blink_time");
 
 	}
-	char compr[32];
 	sprintf(compr, "%s_fc_th", dev);
 	char *threshold = nvram_default_get(compr, "512");	// minimum framesize frequired for compression
 	sprintf(compr, "%s_fc", dev);
