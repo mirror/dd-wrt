@@ -120,7 +120,6 @@
 #define DEBUG(format, args...)
 #endif
 
-
 static char *suspense = NULL;
 static unsigned int count = 0;
 static char log_accept[15];
@@ -139,7 +138,7 @@ static void va_save2file(char *prefix, const char *fmt, va_list args)
 	}
 
 	if (prefix)
-	    fprintf(fp, "%s ",prefix);
+		fprintf(fp, "%s ", prefix);
 	vfprintf(fp, fmt, args);
 	putc('\n', fp);
 	fclose(fp);
@@ -200,8 +199,6 @@ static void save2file_A(const char *fmt, ...)
 	va_save2file("-A ", fmt, args);
 	va_end(args);
 }
-
-
 
 static int isstandalone(char *name)
 {
@@ -1841,7 +1838,7 @@ static void parse_trigger_out(char *wordlist)
 			continue;
 		if (!strcmp(proto, "tcp") || !strcmp(proto, "udp")) {
 			save2file_A("trigger_out -p %s -m %s --dport %s:%s "
-				  "-j TRIGGER --trigger-type out --trigger-proto %s --trigger-match %s-%s --trigger-relate %s-%s", proto, proto, wport0, wport1, proto, wport0, wport1, lport0, lport1);
+				    "-j TRIGGER --trigger-type out --trigger-proto %s --trigger-match %s-%s --trigger-relate %s-%s", proto, proto, wport0, wport1, proto, wport0, wport1, lport0, lport1);
 		} else if (!strcmp(proto, "both")) {
 			save2file_A("trigger_out -p tcp --dport %s:%s " "-j TRIGGER --trigger-type out --trigger-proto all --trigger-match %s-%s --trigger-relate %s-%s", wport0, wport1, wport0, wport1, lport0, lport1);
 			save2file_A("trigger_out -p udp --dport %s:%s " "-j TRIGGER --trigger-type out --trigger-proto all --trigger-match %s-%s --trigger-relate %s-%s", wport0, wport1, wport0, wport1, lport0, lport1);
@@ -2574,7 +2571,7 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 		if ((nvram_matchi("log_enable", 1))
 		    && (nvram_matchi("log_dropped", 1)))
 			save2file_A("logdrop -m state --state NEW -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options");
-			save2file_A("logdrop -m state --state INVALID -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options");
+		save2file_A("logdrop -m state --state INVALID -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options");
 	} else {
 		if ((nvram_matchi("log_enable", 1))
 		    && (nvram_matchi("log_dropped", 1)))
