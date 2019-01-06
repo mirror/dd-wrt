@@ -184,8 +184,10 @@ endif
 ifeq ($(CONFIG_WZRHPAG300NH),y)
 CFLAGS += -DHAVE_WZRHPAG300NH
 endif
+ifneq ($(CONFIG_MADWIFI),y)
 ifeq ($(CONFIG_80211AC),y)
 CFLAGS += -DHAVE_80211AC
+endif
 endif
 ifeq ($(CONFIG_NOAC),y)
 CFLAGS += -DHAVE_NOAC
