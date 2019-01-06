@@ -2684,6 +2684,16 @@ int is_ath10k(const char *prefix)
 }
 
 #endif
+#ifdef HAVE_BRCMFMAC
+int is_brcmfmac(const char *prefix)
+{
+	INITVALUECACHE();
+	ret = devicecountbydriver(prefix, "brcmfmac");
+	EXITVALUECACHE();
+	return ret;
+}
+
+#endif
 #ifdef HAVE_WIL6210
 int is_wil6210(const char *prefix)
 {
