@@ -56,6 +56,20 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss);
 static void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc);
 void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss);
 
+static void load_compressor(void)
+{
+	insmod("xxhash");
+	insmod("zstd_compress");
+	insmod("zstd_decompress");
+	insmod("lzo_compress");
+	insmod("lzo_decompress");
+	insmod("lz4_compress");
+	insmod("lz4_decompress");
+	insmod("lzma_compress");
+	insmod("lzma_decompress");
+	insmod("mac80211_compress");
+}
+
 static void setRTS(char *use)
 {
 	char rts[32];
@@ -351,12 +365,16 @@ void configure_single_ath9k(int count)
 		sprintf(compr, "%s_fc", var);
 
 		if (nvram_default_matchi(compr, 1, 0)) {
+			load_compressor();
 			eval("iw", "dev", var, "set", "compr", "lzo", threshold);
 		} else if (nvram_default_matchi(compr, 2, 0)) {
+			load_compressor();
 			eval("iw", "dev", var, "set", "compr", "lzma", threshold);
 		} else if (nvram_default_matchi(compr, 3, 0)) {
+			load_compressor();
 			eval("iw", "dev", var, "set", "compr", "lz4", threshold);
 		} else if (nvram_default_matchi(compr, 4, 0)) {
+			load_compressor();
 			eval("iw", "dev", var, "set", "compr", "zstd", threshold);
 		} else {
 			eval("iw", "dev", var, "set", "compr", "off");
@@ -377,11 +395,17 @@ void configure_single_ath9k(int count)
 	sprintf(compr, "%s_fc", dev);
 
 	if (nvram_default_matchi(compr, 1, 0)) {
+		load_compressor();
 		eval("iw", "dev", dev, "set", "compr", "lzo", threshold);
 	} else if (nvram_default_matchi(compr, 2, 0)) {
+		load_compressor();
 		eval("iw", "dev", dev, "set", "compr", "lzma", threshold);
 	} else if (nvram_default_matchi(compr, 3, 0)) {
+		load_compressor();
 		eval("iw", "dev", dev, "set", "compr", "lz4", threshold);
+	} else if (nvram_default_matchi(compr, 4, 0)) {
+		load_compressor();
+		eval("iw", "dev", dev, "set", "compr", "zstd", threshold);
 	} else {
 		eval("iw", "dev", dev, "set", "compr", "off");
 	}
