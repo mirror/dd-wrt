@@ -356,6 +356,8 @@ void configure_single_ath9k(int count)
 			eval("iw", "dev", var, "set", "compr", "lzma", threshold);
 		} else if (nvram_default_matchi(compr, 3, 0)) {
 			eval("iw", "dev", var, "set", "compr", "lz4", threshold);
+		} else if (nvram_default_matchi(compr, 4, 0)) {
+			eval("iw", "dev", var, "set", "compr", "zstd", threshold);
 		} else {
 			eval("iw", "dev", var, "set", "compr", "off");
 		}
