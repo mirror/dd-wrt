@@ -4054,7 +4054,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv(wp, n);
 	copytonv(wp, "wl_reg_mode");
 	copytonv(wp, "wl_tpc_db");
-
+#ifndef HAVE_MADWIFI
 #if defined(HAVE_NORTHSTAR) || defined(HAVE_80211AC) && !defined(HAVE_BUFFALO)
 	snprintf(n, sizeof(n), "wl_regdomain");
 	char *reg = websGetVar(wp, n, NULL);
@@ -4065,6 +4065,7 @@ static void save_prefix(webs_t wp, char *prefix)
 		}
 	}
 	copytonv(wp, "wl_regdomain");
+#endif
 #endif
 }
 
