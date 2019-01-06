@@ -5051,6 +5051,8 @@ static void set_frame_compression(char *prefix, char *interface)
 		eval("iw", "dev", interface, "set", "compr", "lzma", threshold);
 	} else if (nvram_default_matchi(compr, 3, 0)) {
 		eval("iw", "dev", interface, "set", "compr", "lz4", threshold);
+	} else if (nvram_default_matchi(compr, 4, 0)) {
+		eval("iw", "dev", interface, "set", "compr", "zstd", threshold);
 	} else {
 		eval("iw", "dev", interface, "set", "compr", "off");
 	}
