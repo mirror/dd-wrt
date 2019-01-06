@@ -2448,8 +2448,24 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		if (is_mac80211(prefix) && !is_mvebu(prefix)) {
 			char wl_fc[16];
 			sprintf(wl_fc, "%s_fc", var);
-			char *names[] = { "\" + share.disabled + \"", "LZO", "LZ4", "LZMA" };
-			showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 3 2", names, nvram_default_get(wl_fc, "0"));
+			FILE *fp = fopen("/proc/modules", "rb");
+			char line[245];
+			int zstd = 0;
+			if (fp) {
+				while (!feof(fp) && gets(line, sizeof(line), fp)) {
+					if (strstr(line, "zstd")) {
+						zstd = 1;
+						break;
+					}
+				}
+				fclose(fp);
+			}
+			char *names_zstd[] = { "\" + share.disabled + \"", "LZO", "LZ4", "LZMA", "ZSTD" };
+			char *names[] = { "\" + share.disabled + \"", "LZO", "LZ4", "LZMA", };
+			if (zstd)
+				showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 3 2 4", names_zstd, nvram_default_get(wl_fc, "0"));
+			else
+				showOptionsNames(wp, "wl_basic.fc", wl_fc, "0 1 3 2", names, nvram_default_get(wl_fc, "0"));
 		}
 
 		sprintf(wmm, "%s_wmm", var);
