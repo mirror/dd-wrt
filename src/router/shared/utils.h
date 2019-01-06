@@ -1170,6 +1170,14 @@ static inline int is_ath10k(const char *prefix)
 	return 0;
 }
 #endif
+#ifdef HAVE_BRCMFMAC
+extern int is_brcmfmac(const char *prefix);
+#else
+static inline int is_brcmfmac(const char *prefix)
+{
+	return 0;
+}
+#endif
 #ifdef HAVE_ATH9K
 extern int is_ath9k(const char *prefix);
 #else
