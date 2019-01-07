@@ -6626,9 +6626,9 @@ void start_sysinit(void)
 	insmod("emf");
 	insmod("igs");
 
-//	insmod("wl");
+	insmod("wl");
 #ifdef HAVE_DHDAP
-//	insmod("dhd");
+	insmod("dhd");
 #endif
 
 	set_smp_affinity(163, 1);	//eth1 and eth2  on core 0
