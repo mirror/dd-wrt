@@ -6625,12 +6625,20 @@ void start_sysinit(void)
 		eval("rtkswitch", "1");
 	insmod("emf");
 	insmod("igs");
-
+#ifdef HAVE_BRCMFMAC
+	system("nvram show > /tmp/b1.txt");
+	system("nvram show > /tmp/b2.txt");
+	system("nvram show > /tmp/b3.txt");
+	insmod("compat");
+	insmod("mac80211");
+	insmod("brcmutil");
+	insmod("brcmfmac");
+#else
 	insmod("wl");
 #ifdef HAVE_DHDAP
 	insmod("dhd");
 #endif
-
+#endif
 	set_smp_affinity(163, 1);	//eth1 and eth2  on core 0
 	set_smp_affinity(169, 2);	//eth3 or eth2 core 1
 
