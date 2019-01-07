@@ -769,7 +769,7 @@ char *mac80211_get_caps(const char *interface, int shortgi, int greenfield)
 			 , (cap & HT_CAP_INFO_DSSS_CCK40MHZ ? "[DSSS_CCK-40]" : "")
 			 , ((cap & HT_CAP_INFO_GREEN_FIELD && greenfield) ? "[GF]" : "")
 			 , (cap & HT_CAP_INFO_DELAYED_BA ? "[DELAYED-BA]" : "")
-			 , (((cap >> 2) & 0x3) == 0 && !is_brcmfmac(interface) ? "[SMPS-STATIC]" : "")
+			 , ((((cap >> 2) & 0x3) == 0 && !is_brcmfmac(interface)) ? "[SMPS-STATIC]" : "")
 			 , (((cap >> 2) & 0x3) == 1 ? "[SMPS-DYNAMIC]" : "")
 			 , (cap & HT_CAP_INFO_MAX_AMSDU_SIZE ? "[MAX-AMSDU-7935]" : "")
 		    );
@@ -921,11 +921,11 @@ int has_vht80(const char *interface)
 }
 #endif
 
-#ifdef HAVE_ATH10K
+#if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC)
 int has_ac(const char *prefix)
 {
 	INITVALUECACHE();
-	ret = (is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix));
+	ret = (is_brcmfmac(prefix) || is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix));
 	EXITVALUECACHE();
 	return ret;
 }
