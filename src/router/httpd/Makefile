@@ -189,6 +189,10 @@ ifeq ($(CONFIG_80211AC),y)
 CFLAGS += -DHAVE_80211AC
 endif
 endif
+ifeq ($(CONFIG_BRCMFMAC),y)
+CFLAGS += -DHAVE_BRCMFMAC
+endif
+
 ifeq ($(CONFIG_NOAC),y)
 CFLAGS += -DHAVE_NOAC
 endif
