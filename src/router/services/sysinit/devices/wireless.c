@@ -254,6 +254,11 @@ static void detect_wireless_devices(void)
 #ifdef HAVE_WIL6210
 	eval("insmod", "wil6210", "led_id=2");
 #endif
+#ifdef HAVE_BRCMFMAC
+	fprintf(stderr, "load Broadcom FMAC Driver\n");
+	insmod("brcmutil");
+	insmod("brcmfmac");
+#endif
 
 #endif
 #endif
