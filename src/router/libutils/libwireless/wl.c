@@ -2288,7 +2288,7 @@ int has_mimo(const char *prefix)
 		return 0;
 }
 
-#ifndef HAVE_ATH10K
+#if !defined(HAVE_ATH10K) && !defined(HAVE_BRCMFMAC)
 int has_ac(const char *prefix)
 {
 #ifdef HAVE_ATH9K
