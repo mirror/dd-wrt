@@ -178,13 +178,6 @@ static int mac80211_cb_survey(struct nl_msg *msg, void *data)
 		goto out;
 
 	freq = nla_get_u32(sinfo[NL80211_SURVEY_INFO_FREQUENCY]);
-	if (!mac80211_info->noise) {
-#ifdef HAVE_MVEBU
-		mac80211_info->noise = -104;
-#else
-		mac80211_info->noise = -95;
-#endif
-	}
 	if (sinfo[NL80211_SURVEY_INFO_IN_USE]) {
 		mac80211_info->channel_active_time = (unsigned long long)-1;
 		mac80211_info->channel_busy_time = (unsigned long long)-1;
@@ -237,7 +230,11 @@ struct mac80211_info *getcurrentsurvey_mac80211(const char *interface, struct ma
 	struct nl_msg *msg;
 	int wdev = if_nametoindex(interface);
 	bzero(mac80211_info, sizeof(struct mac80211_info));
-
+#ifdef HAVE_MVEBU
+	mac80211_info->noise = -104;
+#else
+	mac80211_info->noise = -95;
+#endif
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_SURVEY, true);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
 	unl_genl_request(&unl, msg, mac80211_cb_survey, mac80211_info);
