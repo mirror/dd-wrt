@@ -207,8 +207,10 @@ endif
 	rm -rf $(TARGETDIR)/lib/modules
 	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
 
+ifeq ($(CONFIG_ATH9K),y)
 	-$(MAKE) -f Makefile.northstar ath9k
 	-$(MAKE) -f Makefile.northstar ath9k-install
+endif
 	-$(MAKE) -f Makefile.northstar libutils
 	-$(MAKE) -f Makefile.northstar emf
 	-$(MAKE) -f Makefile.northstar emf-install
