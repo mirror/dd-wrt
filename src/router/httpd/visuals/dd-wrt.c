@@ -2325,7 +2325,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			websWrite(wp, "] HWAddr [%s", nvram_safe_get(wl_macaddr));
 		websWrite(wp, "]</legend>\n");
 		websWrite(wp, "<div class=\"setting\">\n");
-#if !defined(HAVE_EASY_WIRELESS_CONFIG) || defined(HAVE_BCMMODERN)
+#if (!defined(HAVE_EASY_WIRELESS_CONFIG) || defined(HAVE_BCMMODERN)) && !defined(HAVE_BRCMFMAC)
 		show_caption(wp, "label", "wl_basic.label3", NULL);
 
 		websWrite(wp, "<input name=\"%s_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"", var);
@@ -2545,7 +2545,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #else
 		showbridgesettings(wp, var, 1, 0);
 #endif
-#if defined(HAVE_EASY_WIRELESS_CONFIG) && !defined(HAVE_BCMMODERN)
+#if (defined(HAVE_EASY_WIRELESS_CONFIG) && !defined(HAVE_BCMMODERN)) && !defined(HAVE_BRCMFMAC)
 		websWrite(wp, "</div>\n");
 #endif
 		websWrite(wp, "</fieldset><br />\n");
@@ -2750,7 +2750,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_macaddr, "%s_hwaddr", prefix);
 	websWrite(wp, "] HWAddr [%s]</legend>\n", nvram_safe_get(wl_macaddr));
 	char power[16];
-#if !defined(HAVE_EASY_WIRELESS_CONFIG) || defined(HAVE_BCMMODERN)
+#if !defined(HAVE_EASY_WIRELESS_CONFIG) || defined(HAVE_BCMMODERN) && !defined(HAVE_BRCMFMAC)
 	// char maxpower[16];
 	if (is_mac80211(prefix)) {
 		if (isFXXN_PRO(prefix) == 1) {
