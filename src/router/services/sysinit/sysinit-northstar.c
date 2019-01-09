@@ -6632,7 +6632,8 @@ void start_sysinit(void)
 	insmod("compat");
 	insmod("mac80211");
 	insmod("brcmutil");
-	insmod("brcmfmac");
+	if (!nvram_match("brcmfmac","0"))
+		insmod("brcmfmac");
 #else
 	insmod("wl");
 #ifdef HAVE_DHDAP
