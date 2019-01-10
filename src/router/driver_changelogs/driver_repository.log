@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r4415 | brainslayer | 2019-01-10 11:31:46 +0100 (Thu, 10 Jan 2019) | 1 line
+
+its invalid to unset sm power save in brcmfmac. so fix this
+------------------------------------------------------------------------
 r4414 | brainslayer | 2019-01-10 08:36:53 +0100 (Thu, 10 Jan 2019) | 1 line
 
 just debugging code
