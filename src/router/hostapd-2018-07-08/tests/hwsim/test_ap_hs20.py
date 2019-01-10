@@ -665,7 +665,7 @@ def test_ap_hs20_username(dev, apdev):
     status = dev[0].get_status()
     if status['pairwise_cipher'] != "CCMP":
         raise Exception("Unexpected pairwise cipher")
-    if status['hs20'] != "2":
+    if status['hs20'] != "3":
         raise Exception("Unexpected HS 2.0 support indication")
 
     dev[1].connect("test-hs20", key_mgmt="WPA-EAP", eap="TTLS",
@@ -698,7 +698,7 @@ def test_ap_hs20_connect_api(dev, apdev):
     status = wpas.get_status()
     if status['pairwise_cipher'] != "CCMP":
         raise Exception("Unexpected pairwise cipher")
-    if status['hs20'] != "2":
+    if status['hs20'] != "3":
         raise Exception("Unexpected HS 2.0 support indication")
 
 def test_ap_hs20_auto_interworking(dev, apdev):
@@ -723,7 +723,7 @@ def test_ap_hs20_auto_interworking(dev, apdev):
     status = dev[0].get_status()
     if status['pairwise_cipher'] != "CCMP":
         raise Exception("Unexpected pairwise cipher")
-    if status['hs20'] != "2":
+    if status['hs20'] != "3":
         raise Exception("Unexpected HS 2.0 support indication")
 
 @remote_compatible
@@ -789,10 +789,12 @@ def test_ap_hs20_auto_interworking_no_cred_match(dev, apdev):
             raise Exception("Scan timed out")
         logger.info("Scan completed")
 
-def eap_test(dev, ap, eap_params, method, user):
+def eap_test(dev, ap, eap_params, method, user, release=0):
     bssid = ap['bssid']
     params = hs20_ap_params()
     params['nai_realm'] = [ "0,example.com," + eap_params ]
+    if release > 0:
+        params['hs20_release'] = str(release)
     hostapd.add_ap(ap, params)
 
     dev.hs20_enable()
@@ -2515,8 +2517,14 @@ def test_ap_hs20_deauth_req_without_pmf(dev, apdev):
     """Hotspot 2.0 connection and deauthentication request without PMF"""
     check_eap_capa(dev[0], "MSCHAPV2")
     dev[0].request("SET pmf 0")
-    eap_test(dev[0], apdev[0], "21[3:26]", "TTLS", "user")
+    eap_test(dev[0], apdev[0], "21[3:26]", "TTLS", "user", release=1)
     dev[0].dump_monitor()
+    id = int(dev[0].get_status_field("id"))
+    dev[0].set_network(id, "ieee80211w", "0")
+    dev[0].request("DISCONNECT")
+    dev[0].wait_disconnected()
+    dev[0].select_network(id, freq=2412)
+    dev[0].wait_connected()
     addr = dev[0].own_addr()
     hapd = hostapd.Hostapd(apdev[0]['ifname'])
     hapd.request("HS20_DEAUTH_REQ " + addr + " 1 120 http://example.com/")
@@ -3793,6 +3801,9 @@ def test_ap_hs20_ft(dev, apdev):
     interworking_select(dev[0], bssid, "home", freq="2412")
     interworking_connect(dev[0], bssid, "TTLS")
     dev[0].dump_monitor()
+    key_mgmt = dev[0].get_status_field("key_mgmt")
+    if key_mgmt != "FT-EAP":
+        raise Exception("Unexpected key_mgmt: " + key_mgmt)
     # speed up testing by avoiding unnecessary scanning of other channels
     nid = dev[0].get_status_field("id")
     dev[0].set_network(nid, "scan_freq", "2412")
@@ -3801,16 +3812,15 @@ def test_ap_hs20_ft(dev, apdev):
     hapd2 = hostapd.add_ap(apdev[1], params)
 
     hapd.disable()
-    ev = dev[0].wait_event(["CTRL-EVENT-BEACON-LOSS"], timeout=10)
-    if ev is None:
-        raise Exception("Beacon loss not reported")
-    ev = dev[0].wait_event(["CTRL-EVENT-DISCONNECTED"], timeout=5)
+    ev = dev[0].wait_event(["CTRL-EVENT-DISCONNECTED"], timeout=10)
     if ev is None:
         raise Exception("Disconnection not reported")
     ev = dev[0].wait_event(["CTRL-EVENT-CONNECTED"], timeout=5)
     if ev is None:
         raise Exception("Connection to AP2 not reported")
-    print dev[0].request("STATUS")
+    key_mgmt = dev[0].get_status_field("key_mgmt")
+    if key_mgmt != "WPA2/IEEE 802.1X/EAP":
+        raise Exception("Unexpected key_mgmt: " + key_mgmt)
 
 def test_ap_hs20_remediation_sql(dev, apdev, params):
     """Hotspot 2.0 connection and remediation required using SQLite for user DB"""
@@ -3876,6 +3886,98 @@ def test_ap_hs20_remediation_sql(dev, apdev, params):
         os.remove(dbfile)
         dev[0].request("SET pmf 0")
 
+def test_ap_hs20_sim_provisioning(dev, apdev, params):
+    """Hotspot 2.0 AAA server behavior for SIM provisioning"""
+    check_eap_capa(dev[0], "SIM")
+    try:
+        import sqlite3
+    except ImportError:
+        raise HwsimSkip("No sqlite3 module available")
+    dbfile = os.path.join(params['logdir'], "ap_hs20_sim_provisioning-eap-user.db")
+    try:
+        os.remove(dbfile)
+    except:
+        pass
+    con = sqlite3.connect(dbfile)
+    with con:
+        cur = con.cursor()
+        cur.execute("CREATE TABLE users(identity TEXT PRIMARY KEY, methods TEXT, password TEXT, remediation TEXT, phase2 INTEGER, last_msk TEXT)")
+        cur.execute("CREATE TABLE wildcards(identity TEXT PRIMARY KEY, methods TEXT)")
+        cur.execute("INSERT INTO wildcards(identity,methods) VALUES ('1','SIM')")
+        cur.execute("CREATE TABLE authlog(timestamp TEXT, session TEXT, nas_ip TEXT, username TEXT, note TEXT)")
+        cur.execute("CREATE TABLE current_sessions(mac_addr TEXT PRIMARY KEY, identity TEXT, start_time TEXT, nas TEXT, hs20_t_c_filtering BOOLEAN, waiting_coa_ack BOOLEAN, coa_ack_received BOOLEAN)")
+
+    try:
+        params = { "ssid": "as", "beacon_int": "2000",
+                   "radius_server_clients": "auth_serv/radius_clients.conf",
+                   "radius_server_auth_port": '18128',
+                   "eap_server": "1",
+                   "eap_user_file": "sqlite:" + dbfile,
+                   "eap_sim_db": "unix:/tmp/hlr_auc_gw.sock",
+                   "ca_cert": "auth_serv/ca.pem",
+                   "server_cert": "auth_serv/server.pem",
+                   "private_key": "auth_serv/server.key",
+                   "hs20_sim_provisioning_url":
+                   "https://example.org/?hotspot2dot0-mobile-identifier-hash=",
+                   "subscr_remediation_method": "1" }
+        hostapd.add_ap(apdev[1], params)
+
+        bssid = apdev[0]['bssid']
+        params = hs20_ap_params()
+        params['auth_server_port'] = "18128"
+        hostapd.add_ap(apdev[0], params)
+
+        dev[0].request("SET pmf 1")
+        dev[0].hs20_enable()
+        dev[0].connect("test-hs20", proto="RSN", key_mgmt="WPA-EAP", eap="SIM",
+                       ieee80211w="1",
+                       identity="1232010000000000",
+                       password="90dca4eda45b53cf0f12d7c9c3bc6a89:cb9cccc4b9258e6dca4760379fb82581",
+                   scan_freq="2412", update_identifier="54321")
+        ev = dev[0].wait_event(["HS20-SUBSCRIPTION-REMEDIATION"], timeout=0.5)
+        if ev is not None:
+            raise Exception("Unexpected subscription remediation notice")
+        dev[0].request("REMOVE_NETWORK all")
+        dev[0].wait_disconnected()
+        dev[0].dump_monitor()
+
+        dev[0].connect("test-hs20", proto="RSN", key_mgmt="WPA-EAP", eap="SIM",
+                       ieee80211w="1",
+                       identity="1232010000000000",
+                       password="90dca4eda45b53cf0f12d7c9c3bc6a89:cb9cccc4b9258e6dca4760379fb82581",
+                   scan_freq="2412", update_identifier="0")
+        ev = dev[0].wait_event(["HS20-SUBSCRIPTION-REMEDIATION"], timeout=5)
+        if ev is None:
+            raise Exception("Timeout on subscription remediation notice")
+        if " 1 https://example.org/?hotspot2dot0-mobile-identifier-hash=" not in ev:
+            raise Exception("Unexpected subscription remediation event contents: " + ev)
+        id_hash = ev.split(' ')[2].split('=')[1]
+
+        with con:
+            cur = con.cursor()
+            cur.execute("SELECT * from authlog")
+            rows = cur.fetchall()
+            if len(rows) < 1:
+                raise Exception("No authlog entries")
+
+        with con:
+            cur = con.cursor()
+            cur.execute("SELECT * from sim_provisioning")
+            rows = cur.fetchall()
+            if len(rows) != 1:
+                raise Exeception("Unexpected number of rows in sim_provisioning (%d; expected %d)" % (len(rows), 1))
+            logger.info("sim_provisioning: " + str(rows))
+            if len(rows[0][0]) != 32:
+                raise Exception("Unexpected mobile_identifier_hash length in DB")
+            if rows[0][1] != "232010000000000":
+                raise Exception("Unexpected IMSI in DB")
+            if rows[0][2] != dev[0].own_addr():
+                raise Exception("Unexpected MAC address in DB")
+            if rows[0][0] != id_hash:
+                raise Exception("hotspot2dot0-mobile-identifier-hash mismatch")
+    finally:
+        dev[0].request("SET pmf 0")
+
 def test_ap_hs20_external_selection(dev, apdev):
     """Hotspot 2.0 connection using external network selection and creation"""
     check_eap_capa(dev[0], "MSCHAPV2")
@@ -3887,11 +3989,12 @@ def test_ap_hs20_external_selection(dev, apdev):
 
     dev[0].hs20_enable()
     dev[0].connect("test-hs20", proto="RSN", key_mgmt="WPA-EAP", eap="TTLS",
+                   ieee80211w="1",
                    identity="hs20-test", password="password",
                    ca_cert="auth_serv/ca.pem", phase2="auth=MSCHAPV2",
                    scan_freq="2412", update_identifier="54321",
                    roaming_consortium_selection="1020304050")
-    if dev[0].get_status_field("hs20") != "2":
+    if dev[0].get_status_field("hs20") != "3":
         raise Exception("Unexpected hs20 indication")
     network_id = dev[0].get_status_field("id")
     sel = dev[0].get_network(network_id, "roaming_consortium_selection")
@@ -4226,7 +4329,7 @@ def test_ap_hs20_proxyarp_enable_dgaf(dev, apdev):
 def ip_checksum(buf):
     sum = 0
     if len(buf) & 0x01:
-        buf += '\0x00'
+        buf += '\x00'
     for i in range(0, len(buf), 2):
         val, = struct.unpack('H', buf[i:i+2])
         sum += val
@@ -4357,7 +4460,8 @@ def send_na(dev, src_ll=None, target=None, ip_src=None, ip_dst=None, opt=None,
 
 def build_dhcp_ack(dst_ll, src_ll, ip_src, ip_dst, yiaddr, chaddr,
                    subnet_mask="255.255.255.0", truncated_opt=False,
-                   wrong_magic=False, force_tot_len=None, no_dhcp=False):
+                   wrong_magic=False, force_tot_len=None, no_dhcp=False,
+                   udp_checksum=True):
     _dst_ll = binascii.unhexlify(dst_ll.replace(':',''))
     _src_ll = binascii.unhexlify(src_ll.replace(':',''))
     proto = '\x08\x00'
@@ -4397,7 +4501,14 @@ def build_dhcp_ack(dst_ll, src_ll, ip_src, ip_dst, yiaddr, chaddr,
         payload = struct.pack('>BBBBL3BB', 2, 1, 6, 0, 12345, 0, 0, 0, 0)
         payload += _ciaddr + _yiaddr + _siaddr + _giaddr + _chaddr + 192*'\x00'
 
-    udp = struct.pack('>HHHH', 67, 68, 8 + len(payload), 0) + payload
+    if udp_checksum:
+        pseudohdr = _ip_src + _ip_dst + struct.pack('>BBH', 0, 17,
+                                                    8 + len(payload))
+        udphdr = struct.pack('>HHHH', 67, 68, 8 + len(payload), 0)
+        checksum, = struct.unpack('>H', ip_checksum(pseudohdr + udphdr + payload))
+    else:
+        checksum = 0
+    udp = struct.pack('>HHHH', 67, 68, 8 + len(payload), checksum) + payload
 
     if force_tot_len:
         tot_len = force_tot_len
@@ -4589,7 +4700,8 @@ def _test_proxyarp_open(dev, apdev, params, ebtables=False):
     # Change address and verify unicast
     pkt = build_dhcp_ack(dst_ll=addr0, src_ll=bssid,
                          ip_src="192.168.1.1", ip_dst="255.255.255.255",
-                         yiaddr="192.168.1.123", chaddr=addr0)
+                         yiaddr="192.168.1.123", chaddr=addr0,
+                         udp_checksum=False)
     if "OK" not in hapd.request("DATA_TEST_FRAME ifname=ap-br0 " + binascii.hexlify(pkt)):
         raise Exception("DATA_TEST_FRAME failed")
 
@@ -5864,6 +5976,7 @@ def test_ap_hs20_unexpected(dev, apdev):
     params['wpa'] = "3"
     params['wpa_pairwise'] = "TKIP CCMP"
     params['rsn_pairwise'] = "CCMP"
+    params['ieee80211w'] = "1"
     #params['vendor_elements'] = 'dd07506f9a10140000'
     params['vendor_elements'] = 'dd04506f9a10'
     hostapd.add_ap(apdev[0], params)
@@ -5887,6 +6000,7 @@ def test_ap_hs20_unexpected(dev, apdev):
     dev[2].hs20_enable()
     dev[2].scan_for_bss(bssid, freq="2412")
     dev[2].connect("test-hs20-fake", key_mgmt="WPA-EAP", eap="TTLS",
+                   ieee80211w="1",
                    proto="RSN", pairwise="CCMP",
                    identity="hs20-test", password="password",
                    ca_cert="auth_serv/ca.pem", phase2="auth=MSCHAPV2",
@@ -6203,3 +6317,47 @@ def run_ap_hs20_terms_and_conditions_sql(dev, apdev, params, url_template,
     finally:
         os.remove(dbfile)
         dev[0].request("SET pmf 0")
+
+def test_ap_hs20_release_number_1(dev, apdev):
+    """Hotspot 2.0 with AP claiming support for Release 1"""
+    run_ap_hs20_release_number(dev, apdev, 1)
+
+def test_ap_hs20_release_number_2(dev, apdev):
+    """Hotspot 2.0 with AP claiming support for Release 2"""
+    run_ap_hs20_release_number(dev, apdev, 2)
+
+def test_ap_hs20_release_number_3(dev, apdev):
+    """Hotspot 2.0 with AP claiming support for Release 3"""
+    run_ap_hs20_release_number(dev, apdev, 3)
+
+def run_ap_hs20_release_number(dev, apdev, release):
+    check_eap_capa(dev[0], "MSCHAPV2")
+    eap_test(dev[0], apdev[0], "21[3:26][6:7][99:99]", "TTLS", "user",
+             release=release)
+    rel = dev[0].get_status_field('hs20')
+    if rel != str(release):
+        raise Exception("Unexpected release number indicated: " + rel)
+
+def test_ap_hs20_missing_pmf(dev, apdev):
+    """Hotspot 2.0 connection attempt without PMF"""
+    check_eap_capa(dev[0], "MSCHAPV2")
+    bssid = apdev[0]['bssid']
+    params = hs20_ap_params()
+    params['hessid'] = bssid
+    params['disable_dgaf'] = '1'
+    hostapd.add_ap(apdev[0], params)
+
+    dev[0].hs20_enable()
+    dev[0].connect("test-hs20", proto="RSN", key_mgmt="WPA-EAP", eap="TTLS",
+                   ieee80211w="0",
+                   identity="hs20-test", password="password",
+                   ca_cert="auth_serv/ca.pem", phase2="auth=MSCHAPV2",
+                   scan_freq="2412", update_identifier="54321",
+                   roaming_consortium_selection="1020304050",
+                   wait_connect=False)
+    ev = dev[0].wait_event(["CTRL-EVENT-ASSOC-REJECT"], timeout=10)
+    dev[0].request("DISCONNECT")
+    if ev is None:
+        raise Exception("Association rejection not reported")
+    if "status_code=31" not in ev:
+        raise Exception("Unexpected rejection reason: " + ev)

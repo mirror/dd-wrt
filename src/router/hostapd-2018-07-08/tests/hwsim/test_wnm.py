@@ -1,5 +1,5 @@
 # WNM tests
-# Copyright (c) 2013-2017, Jouni Malinen <j@w1.fi>
+# Copyright (c) 2013-2019, Jouni Malinen <j@w1.fi>
 #
 # This software may be distributed under the terms of the BSD license.
 # See README for more details.
@@ -14,9 +14,26 @@ import subprocess
 
 import hostapd
 from wpasupplicant import WpaSupplicant
-from utils import alloc_fail, fail_test, wait_fail_trigger
+from utils import *
 from wlantest import Wlantest
 from datetime import datetime
+
+def clear_regdom_state(dev, hapd, hapd2):
+        for i in range(0, 3):
+            ev = dev[0].wait_event(["CTRL-EVENT-REGDOM-CHANGE"], timeout=0.5)
+            if ev is None or "init=COUNTRY_IE" in ev:
+                break
+        if hapd:
+            hapd.request("DISABLE")
+        if hapd2:
+            hapd2.request("DISABLE")
+        dev[0].request("DISCONNECT")
+        dev[0].request("ABORT_SCAN")
+        dev[0].wait_event(["CTRL-EVENT-DISCONNECTED"], timeout=0.5)
+        dev[0].dump_monitor()
+        subprocess.call(['iw', 'reg', 'set', '00'])
+        dev[0].wait_event(["CTRL-EVENT-REGDOM-CHANGE"], timeout=0.5)
+        dev[0].flush_scan_cache()
 
 @remote_compatible
 def test_wnm_bss_transition_mgmt(dev, apdev):
@@ -280,6 +297,127 @@ def test_wnm_sleep_mode_rsn_pmf(dev, apdev):
         raise Exception("No connection event received from hostapd")
     check_wnm_sleep_mode_enter_exit(hapd, dev[0])
 
+@remote_compatible
+def test_wnm_sleep_mode_rsn_ocv(dev, apdev):
+    """WNM Sleep Mode - RSN with OCV"""
+    params = hostapd.wpa2_params("test-wnm-rsn", "12345678")
+    params["wpa_key_mgmt"] = "WPA-PSK-SHA256"
+    params["ieee80211w"] = "2"
+    params["ocv"] = "1"
+    params["time_advertisement"] = "2"
+    params["time_zone"] = "EST5"
+    params["wnm_sleep_mode"] = "1"
+    params["bss_transition"] = "1"
+    try:
+        hapd = hostapd.add_ap(apdev[0], params)
+    except Exception, e:
+        if "Failed to set hostapd parameter ocv" in str(e):
+            raise HwsimSkip("OCV not supported")
+        raise
+
+    Wlantest.setup(hapd)
+    wt = Wlantest()
+    wt.flush()
+    wt.add_passphrase("12345678")
+
+    dev[0].connect("test-wnm-rsn", psk="12345678", ieee80211w="2", ocv="1",
+                   key_mgmt="WPA-PSK-SHA256", proto="WPA2", scan_freq="2412")
+    ev = hapd.wait_event([ "AP-STA-CONNECTED" ], timeout=5)
+    if ev is None:
+        raise Exception("No connection event received from hostapd")
+    check_wnm_sleep_mode_enter_exit(hapd, dev[0])
+
+    # Check if OCV succeeded or failed
+    ev = dev[0].wait_event([ "OCV failed" ], timeout=1)
+    if ev is not None:
+        raise Exception("OCI verification failed: " + ev)
+
+@remote_compatible
+def test_wnm_sleep_mode_rsn_badocv(dev, apdev):
+    """WNM Sleep Mode - RSN with OCV and bad OCI elements"""
+    ssid = "test-wnm-pmf"
+    params = hostapd.wpa2_params(ssid=ssid, passphrase="12345678")
+    params["wpa_key_mgmt"] = "WPA-PSK-SHA256"
+    params["ieee80211w"] = "2"
+    params["ocv"] = "1"
+    params['wnm_sleep_mode'] = '1'
+    try:
+        hapd = hostapd.add_ap(apdev[0], params)
+    except Exception, e:
+        if "Failed to set hostapd parameter ocv" in str(e):
+            raise HwsimSkip("OCV not supported")
+        raise
+    bssid = apdev[0]['bssid']
+    dev[0].connect(ssid, psk="12345678", key_mgmt="WPA-PSK-SHA256", ocv="1",
+                   proto="WPA2", ieee80211w="2", scan_freq="2412")
+    dev[0].request("WNM_SLEEP enter")
+    time.sleep(0.1)
+
+    msg = { 'fc': MGMT_SUBTYPE_ACTION << 4,
+            'da': bssid,
+            'sa': dev[0].own_addr(),
+            'bssid': bssid }
+
+    logger.debug("WNM Sleep Mode Request - Missing OCI element")
+    msg['payload'] = struct.pack("<BBBBBBBHBB",
+                                 ACTION_CATEG_WNM, WNM_ACT_SLEEP_MODE_REQ, 0,
+                                 WLAN_EID_WNMSLEEP, 4, WNM_SLEEP_MODE_EXIT, 0, 0,
+                                 WLAN_EID_TFS_REQ, 0)
+    mgmt_tx(dev[0], "MGMT_TX {} {} freq=2412 wait_time=200 no_cck=1 action={}".format(msg['da'], msg['bssid'], binascii.hexlify(msg['payload'])))
+    ev = hapd.wait_event([ "OCV failed" ], timeout=5)
+    if ev is None:
+        raise Exception("AP did not report missing OCI element")
+
+    logger.debug("WNM Sleep Mode Request - Bad OCI element")
+    msg['payload'] = struct.pack("<BBBBBBBHBB",
+                                 ACTION_CATEG_WNM, WNM_ACT_SLEEP_MODE_REQ, 0,
+                                 WLAN_EID_WNMSLEEP, 4, WNM_SLEEP_MODE_EXIT, 0,
+                                 0,
+                                 WLAN_EID_TFS_REQ, 0)
+    oci_ie = struct.pack("<BBB", 81, 2, 0)
+    msg['payload'] += struct.pack("<BBB", WLAN_EID_EXTENSION, 1 + len(oci_ie),
+                                  WLAN_EID_EXT_OCV_OCI) + oci_ie
+    mgmt_tx(dev[0], "MGMT_TX {} {} freq=2412 wait_time=200 no_cck=1 action={}".format(msg['da'], msg['bssid'] , binascii.hexlify(msg['payload'])))
+    ev = hapd.wait_event([ "OCV failed" ], timeout=5)
+    if ev is None:
+        raise Exception("AP did not report bad OCI element")
+
+    msg = { 'fc': MGMT_SUBTYPE_ACTION << 4,
+            'da': dev[0].own_addr(),
+            'sa': bssid,
+            'bssid': bssid }
+    hapd.set("ext_mgmt_frame_handling", "1")
+
+    logger.debug("WNM Sleep Mode Response - Missing OCI element")
+    msg['payload'] = struct.pack("<BBBHBBBBHBB",
+                                 ACTION_CATEG_WNM, WNM_ACT_SLEEP_MODE_RESP, 0,
+                                 0,
+                                 WLAN_EID_WNMSLEEP, 4, WNM_SLEEP_MODE_EXIT,
+                                 WNM_STATUS_SLEEP_ACCEPT, 0,
+                                 WLAN_EID_TFS_RESP, 0)
+    dev[0].request("WNM_SLEEP exit")
+    hapd.mgmt_tx(msg)
+    expect_ack(hapd)
+    ev = dev[0].wait_event([ "OCV failed" ], timeout=5)
+    if ev is None:
+        raise Exception("STA did not report missing OCI element")
+
+    logger.debug("WNM Sleep Mode Response - Bad OCI element")
+    msg['payload'] = struct.pack("<BBBHBBBBHBB",
+                                 ACTION_CATEG_WNM, WNM_ACT_SLEEP_MODE_RESP, 0,
+                                 0,
+                                 WLAN_EID_WNMSLEEP, 4, WNM_SLEEP_MODE_EXIT,
+                                 WNM_STATUS_SLEEP_ACCEPT, 0,
+                                 WLAN_EID_TFS_RESP, 0)
+    oci_ie = struct.pack("<BBB", 81, 2, 0)
+    msg['payload'] += struct.pack("<BBB", WLAN_EID_EXTENSION, 1 + len(oci_ie),
+                                  WLAN_EID_EXT_OCV_OCI) + oci_ie
+    hapd.mgmt_tx(msg)
+    expect_ack(hapd)
+    ev = dev[0].wait_event([ "OCV failed" ], timeout=5)
+    if ev is None:
+        raise Exception("STA did not report bad OCI element")
+
 def test_wnm_sleep_mode_rsn_pmf_key_workaround(dev, apdev):
     """WNM Sleep Mode - RSN with PMF and GTK/IGTK workaround"""
     params = hostapd.wpa2_params("test-wnm-rsn", "12345678")
@@ -336,8 +474,11 @@ WNM_ACT_NOTIFICATION_REQ = 26
 WNM_ACT_NOTIFICATION_RESP = 27
 WNM_NOTIF_TYPE_FW_UPGRADE = 0
 WNM_NOTIF_TYPE_WFA = 1
+WLAN_EID_TFS_REQ = 91
 WLAN_EID_TFS_RESP = 92
 WLAN_EID_WNMSLEEP = 93
+WLAN_EID_EXTENSION = 255
+WLAN_EID_EXT_OCV_OCI = 54
 WNM_SLEEP_MODE_ENTER = 0
 WNM_SLEEP_MODE_EXIT = 1
 WNM_STATUS_SLEEP_ACCEPT = 0
@@ -399,6 +540,15 @@ def expect_ack(hapd):
         raise Exception("Missing TX status")
     if "ok=1" not in ev:
         raise Exception("Action frame not acknowledged")
+
+def mgmt_tx(dev, msg):
+    if "FAIL" in dev.request(msg):
+        raise Exception("Failed to send Action frame")
+    ev = dev.wait_event(["MGMT-TX-STATUS"], timeout=10)
+    if ev is None:
+        raise Exception("Timeout on MGMT-TX-STATUS")
+    if "result=SUCCESS" not in ev:
+        raise Exception("Peer did not ack Action frame")
 
 @remote_compatible
 def test_wnm_bss_tm_req(dev, apdev):
@@ -709,13 +859,7 @@ def test_wnm_bss_tm(dev, apdev):
         if ev is not None:
             raise Exception("Unexpected reassociation")
     finally:
-        dev[0].request("DISCONNECT")
-        if hapd:
-            hapd.request("DISABLE")
-        if hapd2:
-            hapd2.request("DISABLE")
-        subprocess.call(['iw', 'reg', 'set', '00'])
-        dev[0].flush_scan_cache()
+        clear_regdom_state(dev, hapd, hapd2)
 
 def test_wnm_bss_tm_errors(dev, apdev):
     """WNM BSS Transition Management errors"""
@@ -861,13 +1005,7 @@ def run_wnm_bss_tm_scan_not_needed(dev, apdev, ht=True, vht=False, hwmode='a',
             raise Exception("Unexpected scan started")
         dev[0].dump_monitor()
     finally:
-        dev[0].request("DISCONNECT")
-        if hapd:
-            hapd.request("DISABLE")
-        if hapd2:
-            hapd2.request("DISABLE")
-        subprocess.call(['iw', 'reg', 'set', '00'])
-        dev[0].flush_scan_cache()
+        clear_regdom_state(dev, hapd, hapd2)
 
 def test_wnm_bss_tm_scan_needed(dev, apdev):
     """WNM BSS Transition Management and scan needed"""
@@ -920,13 +1058,7 @@ def test_wnm_bss_tm_scan_needed(dev, apdev):
             raise Exception("Unexpected scan started")
         dev[0].dump_monitor()
     finally:
-        dev[0].request("DISCONNECT")
-        if hapd:
-            hapd.request("DISABLE")
-        if hapd2:
-            hapd2.request("DISABLE")
-        subprocess.call(['iw', 'reg', 'set', '00'])
-        dev[0].flush_scan_cache()
+        clear_regdom_state(dev, hapd, hapd2)
 
 def test_wnm_bss_tm_scan_needed_e4(dev, apdev):
     """WNM BSS Transition Management and scan needed (Table E-4)"""
@@ -978,14 +1110,7 @@ def test_wnm_bss_tm_scan_needed_e4(dev, apdev):
                 break
         dev[0].dump_monitor()
     finally:
-        dev[0].request("REMOVE_NETWORK all")
-        dev[0].request("ABORT_SCAN")
-        if hapd:
-            hapd.request("DISABLE")
-        if hapd2:
-            hapd2.request("DISABLE")
-        subprocess.call(['iw', 'reg', 'set', '00'])
-        dev[0].flush_scan_cache()
+        clear_regdom_state(dev, hapd, hapd2)
 
 def start_wnm_tm(ap, country, dev, country3=None):
     params = { "ssid": "test-wnm",
@@ -998,20 +1123,29 @@ def start_wnm_tm(ap, country, dev, country3=None):
         params["country3"] = country3
     hapd = hostapd.add_ap(ap, params)
     id = dev.connect("test-wnm", key_mgmt="NONE", scan_freq="2412")
+    wait_regdom_changes(dev)
     dev.dump_monitor()
     dev.set_network(id, "scan_freq", "")
     return hapd, id
 
 def stop_wnm_tm(hapd, dev):
-    dev.request("DISCONNECT")
-    try:
-        dev.wait_disconnected()
-    except:
-        pass
     if hapd:
         hapd.request("DISABLE")
+        time.sleep(0.1)
+    dev[0].request("DISCONNECT")
+    dev[0].request("ABORT_SCAN")
+    try:
+        dev[0].wait_disconnected()
+    except:
+        pass
     subprocess.call(['iw', 'reg', 'set', '00'])
-    dev.flush_scan_cache()
+    wait_regdom_changes(dev[0])
+    country = dev[0].get_driver_status_field("country")
+    logger.info("Country code at the end: " + country)
+    if country != "00":
+        clear_country(dev)
+
+    dev[0].flush_scan_cache()
 
 def wnm_bss_tm_check(hapd, dev, data):
     addr = dev.p2p_interface_addr()
@@ -1047,7 +1181,7 @@ def test_wnm_bss_tm_country_us(dev, apdev):
         logger.info("Preferred Candidate List (no matching neighbor, unknown channels 2)")
         wnm_bss_tm_check(hapd, dev[0], "pref=1 neighbor=00:11:22:33:44:59,0x0000,3,148,7 neighbor=00:11:22:33:44:5a,0x0000,3,162,7 neighbor=00:11:22:33:44:5b,0x0000,34,0,7 neighbor=00:11:22:33:44:5c,0x0000,34,4,7 neighbor=00:11:22:33:44:5d,0x0000,5,148,7 neighbor=00:11:22:33:44:5e,0x0000,5,166,7 neighbor=00:11:22:33:44:5f,0x0000,0,0,7")
     finally:
-        stop_wnm_tm(hapd, dev[0])
+        stop_wnm_tm(hapd, dev)
 
 def test_wnm_bss_tm_country_fi(dev, apdev):
     """WNM BSS Transition Management (FI)"""
@@ -1067,7 +1201,7 @@ def test_wnm_bss_tm_country_fi(dev, apdev):
         logger.info("Preferred Candidate List (no matching neighbor, unknown channels 2)")
         wnm_bss_tm_check(hapd, dev[0], "pref=1 neighbor=00:11:22:33:44:00,0x0000,0,0,7")
     finally:
-        stop_wnm_tm(hapd, dev[0])
+        stop_wnm_tm(hapd, dev)
 
 def test_wnm_bss_tm_country_jp(dev, apdev):
     """WNM BSS Transition Management (JP)"""
@@ -1084,7 +1218,7 @@ def test_wnm_bss_tm_country_jp(dev, apdev):
         logger.info("Preferred Candidate List (no matching neighbor, unknown channels)")
         wnm_bss_tm_check(hapd, dev[0], "pref=1 neighbor=11:22:33:44:55:66,0x0000,30,0,7,0301ff neighbor=22:33:44:55:66:77,0x0000,30,14,7 neighbor=00:11:22:33:44:56,0x0000,31,13,7 neighbor=00:11:22:33:44:57,0x0000,1,33,7 neighbor=00:11:22:33:44:58,0x0000,1,65,7 neighbor=00:11:22:33:44:5a,0x0000,34,99,7 neighbor=00:11:22:33:44:5b,0x0000,34,141,7 neighbor=00:11:22:33:44:5d,0x0000,59,0,7 neighbor=00:11:22:33:44:5e,0x0000,59,4,7 neighbor=00:11:22:33:44:5f,0x0000,0,0,7")
     finally:
-        stop_wnm_tm(hapd, dev[0])
+        stop_wnm_tm(hapd, dev)
 
 def test_wnm_bss_tm_country_cn(dev, apdev):
     """WNM BSS Transition Management (CN)"""
@@ -1101,7 +1235,7 @@ def test_wnm_bss_tm_country_cn(dev, apdev):
         logger.info("Preferred Candidate List (no matching neighbor, unknown channels)")
         wnm_bss_tm_check(hapd, dev[0], "pref=1 neighbor=11:22:33:44:55:66,0x0000,7,0,7,0301ff neighbor=22:33:44:55:66:77,0x0000,7,14,7 neighbor=00:11:22:33:44:56,0x0000,1,35,7 neighbor=00:11:22:33:44:57,0x0000,1,65,7 neighbor=00:11:22:33:44:58,0x0000,3,148,7 neighbor=00:11:22:33:44:5a,0x0000,3,166,7 neighbor=00:11:22:33:44:5f,0x0000,0,0,7")
     finally:
-        stop_wnm_tm(hapd, dev[0])
+        stop_wnm_tm(hapd, dev)
 
 def test_wnm_bss_tm_global(dev, apdev):
     """WNM BSS Transition Management (global)"""
@@ -1128,7 +1262,7 @@ def run_wnm_bss_tm_global(dev, apdev, country, country3):
         logger.info("Preferred Candidate List (no matching neighbor, unknown channels 2)")
         wnm_bss_tm_check(hapd, dev[0], "pref=1 neighbor=00:11:22:33:44:00,0x0000,124,162,7 neighbor=00:11:22:33:44:01,0x0000,125,148,7 neighbor=00:11:22:33:44:02,0x0000,125,170,7 neighbor=00:11:22:33:44:03,0x0000,128,35,7 neighbor=00:11:22:33:44:04,0x0000,128,162,7 neighbor=00:11:22:33:44:05,0x0000,129,49,7 neighbor=00:11:22:33:44:06,0x0000,129,115,7 neighbor=00:11:22:33:44:07,0x0000,180,0,7 neighbor=00:11:22:33:44:08,0x0000,180,5,7 neighbor=00:11:22:33:44:09,0x0000,0,0,7")
     finally:
-        stop_wnm_tm(hapd, dev[0])
+        stop_wnm_tm(hapd, dev)
 
 def test_wnm_bss_tm_op_class_0(dev, apdev):
     """WNM BSS Transition Management with invalid operating class"""
@@ -1139,7 +1273,7 @@ def test_wnm_bss_tm_op_class_0(dev, apdev):
         logger.info("Preferred Candidate List (no matching neighbor, invalid op class specified for channels)")
         wnm_bss_tm_check(hapd, dev[0], "pref=1 neighbor=00:11:22:33:44:59,0x0000,0,149,7 neighbor=00:11:22:33:44:5b,0x0000,0,1,7")
     finally:
-        stop_wnm_tm(hapd, dev[0])
+        stop_wnm_tm(hapd, dev)
 
 def test_wnm_bss_tm_rsn(dev, apdev):
     """WNM BSS Transition Management with RSN"""
@@ -1187,13 +1321,7 @@ def test_wnm_bss_tm_rsn(dev, apdev):
         if apdev[1]['bssid'] not in ev:
             raise Exception("Unexpected reassociation target: " + ev)
     finally:
-        dev[0].request("DISCONNECT")
-        if hapd:
-            hapd.request("DISABLE")
-        if hapd2:
-            hapd2.request("DISABLE")
-        subprocess.call(['iw', 'reg', 'set', '00'])
-        dev[0].flush_scan_cache()
+        clear_regdom_state(dev, hapd, hapd2)
 
 def test_wnm_action_proto(dev, apdev):
     """WNM Action protocol testing"""
@@ -1745,11 +1873,15 @@ def test_wnm_bss_tm_reject(dev, apdev):
         if "status_code=123" not in ev:
             raise Exception("Unexpected BSS Transition Management Response status: " + ev)
         dev[0].wait_disconnected()
+        dev[0].wait_connected()
     finally:
-        dev[0].request("DISCONNECT")
         if hapd:
             hapd.request("DISABLE")
+        dev[0].request("DISCONNECT")
+        dev[0].request("ABORT_SCAN")
+        dev[0].wait_event(["CTRL-EVENT-DISCONNECTED"], timeout=0.5)
         subprocess.call(['iw', 'reg', 'set', '00'])
+        dev[0].wait_event(["CTRL-EVENT-REGDOM-CHANGE"], timeout=0.5)
         dev[0].flush_scan_cache()
 
 def test_wnm_bss_tm_ap_proto(dev, apdev):

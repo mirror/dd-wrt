@@ -42,6 +42,7 @@ struct mesh_conf {
 #define MESH_CONF_SEC_AMPE BIT(2)
 	unsigned int security;
 	enum mfp_options ieee80211w;
+	int ocv;
 	unsigned int pairwise_cipher;
 	unsigned int group_cipher;
 	unsigned int mgmt_group_cipher;
@@ -123,6 +124,7 @@ struct hostapd_vlan {
 	int vlan_id; /* VLAN ID or -1 (VLAN_ID_WILDCARD) for wildcard entry */
 	struct vlan_description vlan_desc;
 	char ifname[IFNAMSIZ + 1];
+	char bridge[IFNAMSIZ + 1];
 	int configured;
 	int dynamic_vlan;
 #ifdef CONFIG_FULL_DYNAMIC_VLAN
@@ -342,6 +344,9 @@ struct hostapd_bss_config {
 	/* dot11AssociationSAQueryRetryTimeout (in TUs) */
 	int assoc_sa_query_retry_timeout;
 #endif /* CONFIG_IEEE80211W */
+#ifdef CONFIG_OCV
+	int ocv; /* Operating Channel Validation */
+#endif /* CONFIG_OCV */
 	enum {
 		PSK_RADIUS_IGNORED = 0,
 		PSK_RADIUS_ACCEPTED = 1,
@@ -391,12 +396,14 @@ struct hostapd_bss_config {
 	char *private_key;
 	char *private_key_passwd;
 	int check_crl;
+	int check_crl_strict;
 	unsigned int tls_session_lifetime;
 	unsigned int tls_flags;
 	char *ocsp_stapling_response;
 	char *ocsp_stapling_response_multi;
 	char *dh_file;
 	char *openssl_ciphers;
+	char *openssl_ecdh_curves;
 	u8 *pac_opaque_encr_key;
 	u8 *eap_fast_a_id;
 	size_t eap_fast_a_id_len;
@@ -565,6 +572,7 @@ struct hostapd_bss_config {
 	int na_mcast_to_ucast;
 #ifdef CONFIG_HS20
 	int hs20;
+	int hs20_release;
 	int disable_dgaf;
 	u16 anqp_domain_id;
 	unsigned int hs20_oper_friendly_name_count;
@@ -604,6 +612,7 @@ struct hostapd_bss_config {
 	unsigned int hs20_deauth_req_timeout;
 	char *subscr_remediation_url;
 	u8 subscr_remediation_method;
+	char *hs20_sim_provisioning_url;
 	char *t_c_filename;
 	u32 t_c_timestamp;
 	char *t_c_server_url;
@@ -694,6 +703,12 @@ struct hostapd_bss_config {
 #endif /* CONFIG_OWE */
 
 	int coloc_intf_reporting;
+
+	u8 send_probe_response;
+
+#define BACKHAUL_BSS 1
+#define FRONTHAUL_BSS 2
+	int multi_ap; /* bitmap of BACKHAUL_BSS, FRONTHAUL_BSS */
 };
 
 /**
@@ -725,7 +740,6 @@ struct hostapd_config {
 	u16 beacon_int;
 	int rts_threshold;
 	int fragm_threshold;
-	u8 send_probe_response;
 	u8 channel;
 	u16 frequency;
 	int *chanlist;
@@ -841,12 +855,16 @@ struct hostapd_config {
 #ifdef CONFIG_IEEE80211AX
 	struct he_phy_capabilities_info he_phy_capab;
 	struct he_operation he_op;
+	struct ieee80211_he_mu_edca_parameter_set he_mu_edca;
 #endif /* CONFIG_IEEE80211AX */
 
 	/* VHT enable/disable config from CHAN_SWITCH */
 #define CH_SWITCH_VHT_ENABLED BIT(0)
 #define CH_SWITCH_VHT_DISABLED BIT(1)
 	unsigned int ch_switch_vht_config;
+
+	int rssi_reject_assoc_rssi;
+	int rssi_reject_assoc_timeout;
 };
 
 

@@ -3335,7 +3335,7 @@ static int hostapd_ctrl_iface_receive_process(struct hostapd_data *hapd,
 		if (hostapd_dpp_configurator_remove(hapd, buf + 24) < 0)
 			reply_len = -1;
 	} else if (os_strncmp(buf, "DPP_CONFIGURATOR_SIGN ", 22) == 0) {
-		if (hostapd_dpp_configurator_sign(hapd, buf + 22) < 0)
+		if (hostapd_dpp_configurator_sign(hapd, buf + 21) < 0)
 			reply_len = -1;
 	} else if (os_strncmp(buf, "DPP_CONFIGURATOR_GET_KEY ", 25) == 0) {
 		reply_len = hostapd_dpp_configurator_get_key(hapd,
@@ -3612,18 +3612,18 @@ fail:
 	}
 
 	if (hapd->conf->ctrl_interface_gid_set &&
-	    chown(hapd->conf->ctrl_interface, -1,
-		  hapd->conf->ctrl_interface_gid) < 0) {
-		wpa_printf(MSG_ERROR, "chown[ctrl_interface]: %s",
+	    lchown(hapd->conf->ctrl_interface, -1,
+		   hapd->conf->ctrl_interface_gid) < 0) {
+		wpa_printf(MSG_ERROR, "lchown[ctrl_interface]: %s",
 			   strerror(errno));
 		return -1;
 	}
 
 	if (!hapd->conf->ctrl_interface_gid_set &&
 	    hapd->iface->interfaces->ctrl_iface_group &&
-	    chown(hapd->conf->ctrl_interface, -1,
-		  hapd->iface->interfaces->ctrl_iface_group) < 0) {
-		wpa_printf(MSG_ERROR, "chown[ctrl_interface]: %s",
+	    lchown(hapd->conf->ctrl_interface, -1,
+		   hapd->iface->interfaces->ctrl_iface_group) < 0) {
+		wpa_printf(MSG_ERROR, "lchown[ctrl_interface]: %s",
 			   strerror(errno));
 		return -1;
 	}
@@ -3696,16 +3696,16 @@ fail:
 	}
 
 	if (hapd->conf->ctrl_interface_gid_set &&
-	    chown(fname, -1, hapd->conf->ctrl_interface_gid) < 0) {
-		wpa_printf(MSG_ERROR, "chown[ctrl_interface/ifname]: %s",
+	    lchown(fname, -1, hapd->conf->ctrl_interface_gid) < 0) {
+		wpa_printf(MSG_ERROR, "lchown[ctrl_interface/ifname]: %s",
 			   strerror(errno));
 		goto fail;
 	}
 
 	if (!hapd->conf->ctrl_interface_gid_set &&
 	    hapd->iface->interfaces->ctrl_iface_group &&
-	    chown(fname, -1, hapd->iface->interfaces->ctrl_iface_group) < 0) {
-		wpa_printf(MSG_ERROR, "chown[ctrl_interface/ifname]: %s",
+	    lchown(fname, -1, hapd->iface->interfaces->ctrl_iface_group) < 0) {
+		wpa_printf(MSG_ERROR, "lchown[ctrl_interface/ifname]: %s",
 			   strerror(errno));
 		goto fail;
 	}
@@ -4379,9 +4379,9 @@ fail:
 			goto fail;
 		}
 	} else if (interface->ctrl_iface_group &&
-		   chown(interface->global_iface_path, -1,
-			 interface->ctrl_iface_group) < 0) {
-		wpa_printf(MSG_ERROR, "chown[ctrl_interface]: %s",
+		   lchown(interface->global_iface_path, -1,
+			  interface->ctrl_iface_group) < 0) {
+		wpa_printf(MSG_ERROR, "lchown[ctrl_interface]: %s",
 			   strerror(errno));
 		goto fail;
 	}
@@ -4438,8 +4438,8 @@ fail:
 	}
 
 	if (interface->ctrl_iface_group &&
-	    chown(fname, -1, interface->ctrl_iface_group) < 0) {
-		wpa_printf(MSG_ERROR, "chown[ctrl_interface]: %s",
+	    lchown(fname, -1, interface->ctrl_iface_group) < 0) {
+		wpa_printf(MSG_ERROR, "lchown[ctrl_interface]: %s",
 			   strerror(errno));
 		goto fail;
 	}

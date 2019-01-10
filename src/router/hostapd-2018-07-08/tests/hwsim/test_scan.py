@@ -5,10 +5,12 @@
 # See README for more details.
 
 from remotehost import remote_compatible
+import binascii
 import time
 import logging
 logger = logging.getLogger()
 import os
+import struct
 import subprocess
 
 import hostapd
@@ -973,6 +975,7 @@ def test_scan_dfs(dev, apdev, params):
         _test_scan_dfs(dev, apdev, params)
     finally:
         subprocess.call(['iw', 'reg', 'set', '00'])
+        time.sleep(0.1)
 
 def _test_scan_dfs(dev, apdev, params):
     subprocess.call(['iw', 'reg', 'set', 'US'])
@@ -1487,3 +1490,389 @@ def test_scan_probe_req_events(dev, apdev):
     for val in tests:
         if "FAIL" not in hapd2.mon.request("ATTACH " + val):
             raise Exception("Invalid ATTACH command accepted")
+
+def elem_capab(capab):
+    # Nontransmitted BSSID Capability element (83 = 0x53)
+    return struct.pack('<BBH', 83, 2, capab)
+
+def elem_ssid(ssid):
+    # SSID element
+    return struct.pack('BB', 0, len(ssid)) + ssid
+
+def elem_bssid_index(index):
+    # Multiple BSSID-index element (85 = 0x55)
+    return struct.pack('BBB', 85, 1, index)
+
+def elem_multibssid(profiles, max_bssid_indic):
+    # TODO: add support for fragmenting over multiple Multiple BSSID elements
+    if 1 + len(profiles) > 255:
+        raise Exception("Too long Multiple BSSID element")
+    elem = struct.pack('BBB', 71, 1 + len(profiles), max_bssid_indic) + profiles
+    return binascii.hexlify(elem)
+
+def run_scans(dev, check):
+    for i in range(2):
+        dev.request("SCAN TYPE=ONLY freq=2412")
+        ev = dev.wait_event(["CTRL-EVENT-SCAN-RESULTS"], timeout=10)
+        if ev is None:
+            raise Exception("Scan did not complete")
+
+    # TODO: Check IEs
+    for (bssid, ssid, capab) in check:
+        bss = dev.get_bss(bssid)
+        if bss is None:
+            raise Exception("AP " + bssid + " missing from scan results")
+        logger.info("AP " + bssid + ": " + str(bss))
+        if bss['ssid'] != ssid:
+            raise Exception("Unexpected AP " + bssid + " SSID")
+        if int(bss['capabilities'], 16) != capab:
+            raise Exception("Unexpected AP " + bssid + " capabilities")
+
+def check_multibss_sta_capa(dev):
+    res = dev.get_capability("multibss")
+    if res is None or 'MULTIBSS-STA' not in res:
+        raise HwsimSkip("Multi-BSS STA functionality not supported")
+
+def test_scan_multi_bssid(dev, apdev):
+    """Scan and Multiple BSSID element"""
+    check_multibss_sta_capa(dev[0])
+    dev[0].flush_scan_cache()
+
+    params = { "ssid": "test-scan" }
+    # Max BSSID Indicator 0 (max 1 BSSID) and no subelements
+    params['vendor_elements'] = elem_multibssid('', 0)
+    hostapd.add_ap(apdev[0], params)
+
+    params = { "ssid": "test-scan" }
+    elems = elem_capab(0x0401) + elem_ssid("1") + elem_bssid_index(1)
+    profile1 = struct.pack('BB', 0, len(elems)) + elems
+    params['vendor_elements'] = elem_multibssid(profile1, 1)
+    hostapd.add_ap(apdev[1], params)
+
+    bssid0 = apdev[0]['bssid']
+    bssid1 = apdev[1]['bssid']
+    check = [ (bssid0, 'test-scan', 0x401),
+              (bssid1, 'test-scan', 0x401),
+              (bssid1[0:16] + '1', '1', 0x401) ]
+    run_scans(dev[0], check)
+
+def test_scan_multi_bssid_2(dev, apdev):
+    """Scan and Multiple BSSID element (2)"""
+    check_multibss_sta_capa(dev[0])
+    dev[0].flush_scan_cache()
+
+    params = { "ssid": "transmitted" }
+
+    # Duplicated entry for the transmitted BSS (not a normal use case)
+    elems = elem_capab(1) + elem_ssid("transmitted") + elem_bssid_index(0)
+    profile1 = struct.pack('BB', 0, len(elems)) + elems
+
+    elems = elem_capab(1) + elem_ssid("nontransmitted") + elem_bssid_index(1)
+    profile2 = struct.pack('BB', 0, len(elems)) + elems
+
+    elems = elem_capab(1) + elem_ssid("nontransmitted_2") + elem_bssid_index(2)
+    profile3 = struct.pack('BB', 0, len(elems)) + elems
+
+    profiles = profile1 + profile2 + profile3
+    params['vendor_elements'] = elem_multibssid(profiles, 4)
+    hostapd.add_ap(apdev[0], params)
+
+    bssid = apdev[0]['bssid']
+    check = [ (bssid, 'transmitted', 0x401),
+              (bssid[0:16] + '1', 'nontransmitted', 0x1),
+              (bssid[0:16] + '2', 'nontransmitted_2', 0x1) ]
+    run_scans(dev[0], check)
+
+def test_scan_multi_bssid_3(dev, apdev):
+    """Scan and Multiple BSSID element (3)"""
+    check_multibss_sta_capa(dev[0])
+    dev[0].flush_scan_cache()
+
+    params = { "ssid": "transmitted" }
+
+    # Duplicated nontransmitted BSS (not a normal use case)
+    elems = elem_capab(1) + elem_ssid("nontransmitted") + elem_bssid_index(1)
+    profile1 = struct.pack('BB', 0, len(elems)) + elems
+
+    elems = elem_capab(1) + elem_ssid("nontransmitted") + elem_bssid_index(1)
+    profile2 = struct.pack('BB', 0, len(elems)) + elems
+
+    profiles = profile1 + profile2
+    params['vendor_elements'] = elem_multibssid(profiles, 2)
+    hostapd.add_ap(apdev[0], params)
+
+    bssid = apdev[0]['bssid']
+    check = [ (bssid, 'transmitted', 0x401),
+              (bssid[0:16] + '1', 'nontransmitted', 0x1) ]
+    run_scans(dev[0], check)
+
+def test_scan_multi_bssid_4(dev, apdev):
+    """Scan and Multiple BSSID element (3)"""
+    check_multibss_sta_capa(dev[0])
+    dev[0].flush_scan_cache()
+
+    # Transmitted BSSID is not the first one in the block
+    bssid = apdev[0]['bssid']
+    hapd = None
+    try:
+        params = { "ssid": "transmitted",
+                   "bssid": bssid[0:16] + '1'}
+
+        elems = elem_capab(1) + elem_ssid("1") + elem_bssid_index(1)
+        profile1 = struct.pack('BB', 0, len(elems)) + elems
+
+        elems = elem_capab(1) + elem_ssid("2") + elem_bssid_index(2)
+        profile2 = struct.pack('BB', 0, len(elems)) + elems
+
+        elems = elem_capab(1) + elem_ssid("3") + elem_bssid_index(3)
+        profile3 = struct.pack('BB', 0, len(elems)) + elems
+
+        profiles = profile1 + profile2 + profile3
+        params['vendor_elements'] = elem_multibssid(profiles, 2)
+        hapd = hostapd.add_ap(apdev[0], params)
+
+        check = [ (bssid[0:16] + '1', 'transmitted', 0x401),
+                  (bssid[0:16] + '2', '1', 0x1),
+                  (bssid[0:16] + '3', '2', 0x1),
+                  (bssid[0:16] + '0', '3', 0x1) ]
+        run_scans(dev[0], check)
+    finally:
+        if hapd:
+            hapd.disable()
+            hapd.set('bssid', bssid)
+            hapd.enable()
+
+def test_scan_multi_bssid_check_ie(dev, apdev):
+    """Scan and check if nontransmitting BSS inherits IE from transmitting BSS"""
+    check_multibss_sta_capa(dev[0])
+    dev[0].flush_scan_cache()
+
+    params = { "ssid": "transmitted" }
+
+    # Duplicated entry for the transmitted BSS (not a normal use case)
+    elems = elem_capab(1) + elem_ssid("transmitted") + elem_bssid_index(0)
+    profile1 = struct.pack('BB', 0, len(elems)) + elems
+
+    elems = elem_capab(1) + elem_ssid("nontransmitted") + elem_bssid_index(1)
+    profile2 = struct.pack('BB', 0, len(elems)) + elems
+
+    profiles = profile1 + profile2
+    params['vendor_elements'] = elem_multibssid(profiles, 2)
+    hostapd.add_ap(apdev[0], params)
+
+    bssid = apdev[0]['bssid']
+
+    for i in range(10):
+        dev[0].request("SCAN TYPE=ONLY freq=2412 passive=1")
+        ev = dev[0].wait_event(["CTRL-EVENT-SCAN-RESULTS"], timeout=15)
+        if ev is None:
+            raise Exception("Scan did not complete")
+        if dev[0].get_bss(bssid):
+            break
+
+    for i in range(10):
+        dev[0].scan_for_bss(bssid, freq=2412, force_scan=True)
+        bss = dev[0].get_bss(bssid)
+        if 'beacon_ie' in bss:
+            break
+
+    trans_bss = dev[0].get_bss(bssid)
+    if trans_bss is None:
+        raise Exception("AP " + bssid + " missing from scan results")
+
+    if not trans_bss or 'beacon_ie' not in trans_bss:
+        raise Exception("beacon_ie not present in trans_bss")
+
+    beacon_ie = parse_ie(trans_bss['beacon_ie'])
+    logger.info("trans_bss beacon_ie: " + str(beacon_ie.keys()))
+
+    bssid = bssid[0:16] + '1'
+    nontrans_bss1 = dev[0].get_bss(bssid)
+    if nontrans_bss1 is None:
+        raise Exception("AP " + bssid + " missing from scan results")
+
+    if not trans_bss or 'beacon_ie' not in nontrans_bss1:
+        raise Exception("beacon_ie not present in nontrans_bss1")
+
+    nontx_beacon_ie = parse_ie(nontrans_bss1['beacon_ie'])
+    logger.info("nontrans_bss1 beacon_ie: " + str(nontx_beacon_ie.keys()))
+
+    if 71 in beacon_ie.keys():
+        ie_list = beacon_ie.keys()
+        ie_list.remove(71)
+        if ie_list != nontx_beacon_ie.keys():
+            raise Exception("check IE failed")
+
+def elem_fms1():
+    # this FMS IE has 1 FMS counter
+    fms_counters = struct.pack('B', 0x39)
+    fms_ids = struct.pack('B', 0x01)
+    return struct.pack('BBB', 86, 3, 1) + fms_counters + fms_ids
+
+def elem_fms2():
+    # this FMS IE has 2 FMS counters
+    fms_counters = struct.pack('BB', 0x29, 0x32)
+    fms_ids = struct.pack('BB', 0x01, 0x02)
+    return struct.pack('BBB', 86, 5, 2) + fms_counters + fms_ids
+
+def test_scan_multi_bssid_fms(dev, apdev):
+    """Non-transmitting BSS has different FMS IE from transmitting BSS"""
+    check_multibss_sta_capa(dev[0])
+    dev[0].flush_scan_cache()
+
+    params = { "ssid": "transmitted" }
+
+    # construct transmitting BSS Beacon with FMS IE
+    elems = elem_capab(1) + elem_ssid("transmitted") + elem_bssid_index(0) + elem_fms1()
+    profile1 = struct.pack('BB', 0, len(elems)) + elems
+
+    elems = elem_capab(1) + elem_ssid("nontransmitted") + elem_bssid_index(1) + elem_fms2()
+    profile2 = struct.pack('BB', 0, len(elems)) + elems
+
+    profiles = profile1 + profile2
+    params['vendor_elements'] = elem_multibssid(profiles, 2) + binascii.hexlify(elem_fms1())
+    hostapd.add_ap(apdev[0], params)
+
+    bssid = apdev[0]['bssid']
+
+    for i in range(10):
+        dev[0].request("SCAN TYPE=ONLY freq=2412 passive=1")
+        ev = dev[0].wait_event(["CTRL-EVENT-SCAN-RESULTS"], timeout=15)
+        if ev is None:
+            raise Exception("Scan did not complete")
+        if dev[0].get_bss(bssid):
+            break
+
+    for i in range(10):
+        dev[0].scan_for_bss(bssid, freq=2412, force_scan=True)
+        bss = dev[0].get_bss(bssid)
+        if 'beacon_ie' in bss:
+            break
+
+    trans_bss = dev[0].get_bss(bssid)
+    if trans_bss is None:
+        raise Exception("AP " + bssid + " missing from scan results")
+
+    if not trans_bss or 'beacon_ie' not in trans_bss:
+        raise Exception("beacon_ie not present in trans_bss")
+
+    beacon_ie = parse_ie(trans_bss['beacon_ie'])
+    trans_bss_fms = beacon_ie[86]
+    logger.info("trans_bss fms ie: " + binascii.hexlify(trans_bss_fms))
+
+    bssid = bssid[0:16] + '1'
+    nontrans_bss1 = dev[0].get_bss(bssid)
+    if nontrans_bss1 is None:
+        raise Exception("AP " + bssid + " missing from scan results")
+
+    if not nontrans_bss1 or 'beacon_ie' not in nontrans_bss1:
+        raise Exception("beacon_ie not present in nontrans_bss1")
+
+    nontrans_beacon_ie = parse_ie(nontrans_bss1['beacon_ie'])
+    nontrans_bss_fms = nontrans_beacon_ie[86]
+    logger.info("nontrans_bss fms ie: " + binascii.hexlify(nontrans_bss_fms))
+
+    if binascii.hexlify(trans_bss_fms) == binascii.hexlify(nontrans_bss_fms):
+        raise Exception("Nontrans BSS has the same FMS IE as trans BSS")
+
+def test_scan_multiple_mbssid_ie(dev, apdev):
+    """Transmitting BSS has 2 MBSSID IE"""
+    check_multibss_sta_capa(dev[0])
+    dev[0].flush_scan_cache()
+
+    bssid = apdev[0]['bssid']
+    logger.info("bssid: " + bssid);
+    hapd = None
+
+    # construct 2 MBSSID IEs, each MBSSID IE contains 1 profile
+    params = { "ssid": "transmitted",
+               "bssid": bssid }
+
+    elems = elem_capab(1) + elem_ssid("1") + elem_bssid_index(1)
+    profile1 = struct.pack('BB', 0, len(elems)) + elems
+
+    elems = elem_capab(2) + elem_ssid("2") + elem_bssid_index(2)
+    profile2 = struct.pack('BB', 0, len(elems)) + elems
+
+    params['vendor_elements'] = elem_multibssid(profile1, 2) + elem_multibssid(profile2,2)
+    hapd = hostapd.add_ap(apdev[0], params)
+
+    check = [ (bssid, 'transmitted', 0x401),
+              (bssid[0:16] + '1', '1', 0x1),
+              (bssid[0:16] + '2', '2', 0x2) ]
+    run_scans(dev[0], check)
+
+def test_scan_mbssid_hidden_ssid(dev, apdev):
+    """Non-transmitting BSS has hidden SSID"""
+    check_multibss_sta_capa(dev[0])
+    dev[0].flush_scan_cache()
+
+    bssid = apdev[0]['bssid']
+    logger.info("bssid: " + bssid);
+    hapd = None
+
+    # construct 2 MBSSID IEs, each MBSSID IE contains 1 profile
+    params = { "ssid": "transmitted",
+               "bssid": bssid }
+
+    elems = elem_capab(1) + elem_ssid("") + elem_bssid_index(1)
+    profile1 = struct.pack('BB', 0, len(elems)) + elems
+
+    elems = elem_capab(2) + elem_ssid("2") + elem_bssid_index(2)
+    profile2 = struct.pack('BB', 0, len(elems)) + elems
+
+    profiles = profile1 + profile2
+    params['vendor_elements'] = elem_multibssid(profiles, 2)
+    hapd = hostapd.add_ap(apdev[0], params)
+
+    check = [ (bssid, 'transmitted', 0x401),
+              (bssid[0:16] + '1', '', 0x1),
+              (bssid[0:16] + '2', '2', 0x2) ]
+    run_scans(dev[0], check)
+
+def test_connect_mbssid_open_1(dev, apdev):
+    """Connect to transmitting and nontransmitting BSS in open mode"""
+    check_multibss_sta_capa(dev[0])
+    dev[0].flush_scan_cache()
+
+    bssid = apdev[0]['bssid']
+    params = { "ssid": "transmitted" }
+
+    elems = elem_capab(1) + elem_ssid("nontransmitted") + elem_bssid_index(1)
+    profile1 = struct.pack('BB', 0, len(elems)) + elems
+
+    elems = elem_capab(1) + elem_ssid("nontransmitted_2") + elem_bssid_index(2)
+    profile2 = struct.pack('BB', 0, len(elems)) + elems
+
+    profiles = profile1 + profile2
+    params['vendor_elements'] = elem_multibssid(profiles, 4)
+    hostapd.add_ap(apdev[0], params)
+
+    dev[0].connect("transmitted", key_mgmt="NONE", scan_freq="2412")
+    dev[0].request("REMOVE_NETWORK all")
+    dev[0].wait_disconnected()
+    dev[0].dump_monitor()
+
+    dev[0].connect("nontransmitted", key_mgmt="NONE", scan_freq="2412",
+                   wait_connect=False)
+    ev = dev[0].wait_event(["SME: Trying to authenticate"], timeout=10)
+    if ev is None:
+        raise Exception("Connection attempt to nontransmitted BSS not started")
+    if "02:00:00:00:03:01 (SSID='nontransmitted'" not in ev:
+        raise Exception("Unexpected authentication target")
+    # hostapd does not yet support Multiple-BSSID, so only verify that STA is
+    # able to start connection attempt.
+    dev[0].request("REMOVE_NETWORK all")
+    dev[0].dump_monitor()
+
+    dev[0].connect("nontransmitted_2", key_mgmt="NONE", scan_freq="2412",
+                   wait_connect=False)
+    ev = dev[0].wait_event(["SME: Trying to authenticate"], timeout=10)
+    if ev is None:
+        raise Exception("Connection attempt to nontransmitted BSS not started")
+    if "02:00:00:00:03:02 (SSID='nontransmitted_2'" not in ev:
+        raise Exception("Unexpected authentication target")
+    # hostapd does not yet support Multiple-BSSID, so only verify that STA is
+    # able to start connection attempt.
+    dev[0].request("REMOVE_NETWORK all")
+    dev[0].dump_monitor()

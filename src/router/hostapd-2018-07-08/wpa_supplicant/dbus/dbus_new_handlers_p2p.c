@@ -532,6 +532,7 @@ DBusMessage * wpas_dbus_handler_p2p_connect(DBusMessage *message,
 	int new_pin;
 	char *err_msg = NULL;
 	char *iface = NULL;
+	int ret;
 
 	if (!wpa_dbus_p2p_check_enabled(wpa_s, message, &reply, NULL))
 		return reply;
@@ -609,7 +610,12 @@ DBusMessage * wpas_dbus_handler_p2p_connect(DBusMessage *message,
 		char npin[9];
 		char *generated_pin;
 
-		os_snprintf(npin, sizeof(npin), "%08d", new_pin);
+		ret = os_snprintf(npin, sizeof(npin), "%08d", new_pin);
+		if (os_snprintf_error(sizeof(npin), ret)) {
+			reply = wpas_dbus_error_unknown_error(message,
+							      "invalid PIN");
+			goto out;
+		}
 		generated_pin = npin;
 		reply = dbus_message_new_method_return(message);
 		dbus_message_append_args(reply, DBUS_TYPE_STRING,
@@ -1908,6 +1914,30 @@ out_of_memory:
 out:
 	os_free(data.paths);
 	return success;
+}
+
+dbus_bool_t wpas_dbus_getter_p2p_peer_vsie(
+	const struct wpa_dbus_property_desc *property_desc,
+	DBusMessageIter *iter, DBusError *error, void *user_data)
+{
+	struct peer_handler_args *peer_args = user_data;
+	const struct p2p_peer_info *info;
+
+	info = p2p_get_peer_found(peer_args->wpa_s->global->p2p,
+				  peer_args->p2p_device_addr, 0);
+	if (!info) {
+		dbus_set_error(error, DBUS_ERROR_FAILED, "failed to find peer");
+		return FALSE;
+	}
+
+	if (!info->vendor_elems)
+		return wpas_dbus_simple_array_property_getter(iter,
+							      DBUS_TYPE_BYTE,
+							      NULL, 0, error);
+
+	return wpas_dbus_simple_array_property_getter(
+		iter, DBUS_TYPE_BYTE, (char *) info->vendor_elems->buf,
+		info->vendor_elems->used, error);
 }
 
 
