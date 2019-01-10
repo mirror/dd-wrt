@@ -281,6 +281,12 @@ CFLAGS += -DCONFIG_SUITEB192
 NEED_SHA384=y
 endif
 
+ifdef CONFIG_OCV
+CFLAGS += -DCONFIG_OCV
+OBJS += ../src/common/ocv.o
+CONFIG_IEEE80211W=y
+endif
+
 ifdef CONFIG_IEEE80211W
 CFLAGS += -DCONFIG_IEEE80211W
 NEED_SHA256=y
@@ -1102,6 +1108,9 @@ endif
 ifdef CONFIG_NO_RANDOM_POOL
 CFLAGS += -DCONFIG_NO_RANDOM_POOL
 else
+ifdef CONFIG_GETRANDOM
+CFLAGS += -DCONFIG_GETRANDOM
+endif
 OBJS += ../src/crypto/random.o
 HOBJS += ../src/crypto/random.o
 HOBJS += ../src/utils/eloop.o

@@ -166,7 +166,7 @@ void ap_free_sta(struct hostapd_data *hapd, struct sta_info *sta)
 	/* just in case */
 	ap_sta_set_authorized(hapd, sta, 0);
 
-	if (sta->flags & WLAN_STA_WDS)
+	if (sta->flags & (WLAN_STA_WDS | WLAN_STA_MULTI_AP))
 		hostapd_set_wds_sta(hapd, NULL, sta->addr, sta->aid, 0);
 
 	if (sta->ipaddr)
@@ -328,6 +328,7 @@ void ap_free_sta(struct hostapd_data *hapd, struct sta_info *sta)
 
 	os_free(sta->ht_capabilities);
 	os_free(sta->vht_capabilities);
+	os_free(sta->vht_operation);
 	hostapd_free_psk_list(sta->psk);
 	os_free(sta->identity);
 	os_free(sta->radius_cui);
@@ -895,9 +896,6 @@ int ap_sta_set_vlan(struct hostapd_data *hapd, struct sta_info *sta,
 {
 	struct hostapd_vlan *vlan = NULL, *wildcard_vlan = NULL;
 	int old_vlan_id, vlan_id = 0, ret = 0;
-
-	if (hapd->conf->ssid.dynamic_vlan == DYNAMIC_VLAN_DISABLED)
-		vlan_desc = NULL;
 
 	/* Check if there is something to do */
 	if (hapd->conf->ssid.per_sta_vif && !sta->vlan_id) {

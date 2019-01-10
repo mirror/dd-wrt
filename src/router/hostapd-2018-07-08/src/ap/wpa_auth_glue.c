@@ -27,6 +27,7 @@
 #include "tkip_countermeasures.h"
 #include "ap_drv_ops.h"
 #include "ap_config.h"
+#include "ieee802_11.h"
 #include "pmksa_cache_auth.h"
 #include "wpa_auth.h"
 #include "wpa_auth_glue.h"
@@ -55,6 +56,9 @@ static void hostapd_wpa_auth_conf(struct hostapd_bss_config *conf,
 	wconf->wmm_enabled = conf->wmm_enabled;
 	wconf->wmm_uapsd = conf->wmm_uapsd;
 	wconf->disable_pmksa_caching = conf->disable_pmksa_caching;
+#ifdef CONFIG_OCV
+	wconf->ocv = conf->ocv;
+#endif /* CONFIG_OCV */
 	wconf->okc = conf->okc;
 #ifdef CONFIG_IEEE80211W
 	wconf->ieee80211w = conf->ieee80211w;
@@ -776,6 +780,35 @@ static int hostapd_wpa_auth_send_oui(void *ctx, const u8 *dst, u8 oui_suffix,
 }
 
 
+static int hostapd_channel_info(void *ctx, struct wpa_channel_info *ci)
+{
+	struct hostapd_data *hapd = ctx;
+
+	return hostapd_drv_channel_info(hapd, ci);
+}
+
+
+#ifdef CONFIG_OCV
+static int hostapd_get_sta_tx_params(void *ctx, const u8 *addr,
+				     int ap_max_chanwidth, int ap_seg1_idx,
+				     int *bandwidth, int *seg1_idx)
+{
+	struct hostapd_data *hapd = ctx;
+	struct sta_info *sta;
+
+	sta = ap_get_sta(hapd, addr);
+	if (!sta) {
+		hostapd_wpa_auth_logger(hapd, addr, LOGGER_INFO,
+					"Failed to get STA info to validate received OCI");
+		return -1;
+	}
+
+	return get_tx_parameters(sta, ap_max_chanwidth, ap_seg1_idx, bandwidth,
+				 seg1_idx);
+}
+#endif /* CONFIG_OCV */
+
+
 #ifdef CONFIG_IEEE80211R_AP
 
 static int hostapd_wpa_auth_send_ft_action(void *ctx, const u8 *dst,
@@ -814,12 +847,18 @@ hostapd_wpa_auth_add_sta(void *ctx, const u8 *sta_addr)
 	struct hostapd_data *hapd = ctx;
 	struct sta_info *sta;
 
+	wpa_printf(MSG_DEBUG, "Add station entry for " MACSTR
+		   " based on WPA authenticator callback",
+		   MAC2STR(sta_addr));
 	if (hostapd_add_sta_node(hapd, sta_addr, WLAN_AUTH_FT) < 0)
 		return NULL;
 
 	sta = ap_sta_add(hapd, sta_addr);
 	if (sta == NULL)
 		return NULL;
+	if (hapd->driver && hapd->driver->add_sta_node)
+		sta->added_unassoc = 1;
+	sta->ft_over_ds = 1;
 	if (sta->wpa_sm) {
 		sta->auth_alg = WLAN_AUTH_FT;
 		return sta->wpa_sm;
@@ -1189,6 +1228,10 @@ int hostapd_setup_wpa(struct hostapd_data *hapd)
 		.for_each_auth = hostapd_wpa_auth_for_each_auth,
 		.send_ether = hostapd_wpa_auth_send_ether,
 		.send_oui = hostapd_wpa_auth_send_oui,
+		.channel_info = hostapd_channel_info,
+#ifdef CONFIG_OCV
+		.get_sta_tx_params = hostapd_get_sta_tx_params,
+#endif /* CONFIG_OCV */
 #ifdef CONFIG_IEEE80211R_AP
 		.send_ft_action = hostapd_wpa_auth_send_ft_action,
 		.add_sta = hostapd_wpa_auth_add_sta,

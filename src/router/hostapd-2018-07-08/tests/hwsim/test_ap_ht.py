@@ -30,6 +30,7 @@ def set_world_reg(apdev0=None, apdev1=None, dev0=None):
         hostapd.cmd_execute(apdev1, ['iw', 'reg', 'set', '00'])
     if dev0:
         dev0.cmd_execute(['iw', 'reg', 'set', '00'])
+    time.sleep(0.1)
 
 def test_ap_ht40_scan(dev, apdev):
     """HT40 co-ex scan"""
@@ -833,7 +834,7 @@ def test_ap_require_ht(dev, apdev):
     """Require HT"""
     params = { "ssid": "require-ht",
                "require_ht": "1" }
-    hapd = hostapd.add_ap(apdev[0], params, wait_enabled=False)
+    hapd = hostapd.add_ap(apdev[0], params)
 
     dev[1].connect("require-ht", key_mgmt="NONE", scan_freq="2412",
                    disable_ht="1", wait_connect=False)
@@ -848,7 +849,18 @@ def test_ap_require_ht(dev, apdev):
                    ht_mcs="0x01 00 00 00 00 00 00 00 00 00",
                    disable_max_amsdu="1", ampdu_factor="2",
                    ampdu_density="1", disable_ht40="1", disable_sgi="1",
-                   disable_ldpc="1")
+                   disable_ldpc="1", rx_stbc="2", tx_stbc="1")
+
+def test_ap_ht_stbc(dev, apdev):
+    """HT STBC overrides"""
+    params = { "ssid": "ht" }
+    hapd = hostapd.add_ap(apdev[0], params)
+
+    dev[0].connect("ht", key_mgmt="NONE", scan_freq="2412")
+    dev[1].connect("ht", key_mgmt="NONE", scan_freq="2412",
+                   rx_stbc="0", tx_stbc="0")
+    dev[2].connect("ht", key_mgmt="NONE", scan_freq="2412",
+                   rx_stbc="1", tx_stbc="1")
 
 @remote_compatible
 def test_ap_require_ht_limited_rates(dev, apdev):
@@ -856,7 +868,7 @@ def test_ap_require_ht_limited_rates(dev, apdev):
     params = { "ssid": "require-ht",
                "supported_rates": "60 120 240 360 480 540",
                "require_ht": "1" }
-    hapd = hostapd.add_ap(apdev[0], params, wait_enabled=False)
+    hapd = hostapd.add_ap(apdev[0], params)
 
     dev[1].connect("require-ht", key_mgmt="NONE", scan_freq="2412",
                    disable_ht="1", wait_connect=False)
@@ -1323,8 +1335,14 @@ def run_op_class(dev, apdev, hw_mode, channel, country, ht_capab, sec_chan,
         rx_opclass, = struct.unpack('B', ie[59][0:1])
         if rx_opclass != opclass:
             raise Exception("Unexpected operating class: %d" % rx_opclass)
+        hapd.disable()
+        dev[0].request("REMOVE_NETWORK all")
+        dev[0].request("ABORT_SCAN")
+        dev[0].wait_disconnected()
+        dev[0].dump_monitor()
     finally:
-        set_world_reg(apdev[0], None, None)
+        set_world_reg(apdev[0], None, dev[0])
+        time.sleep(0.1)
 
 def test_ap_ht_op_class_81(dev, apdev):
     """HT20 on operationg class 81"""

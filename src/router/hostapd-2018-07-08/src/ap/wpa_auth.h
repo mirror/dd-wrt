@@ -145,6 +145,7 @@ struct wpa_state_machine;
 struct rsn_pmksa_cache_entry;
 struct eapol_state_machine;
 struct ft_remote_seq;
+struct wpa_channel_info;
 
 
 struct ft_remote_r0kh {
@@ -191,6 +192,9 @@ struct wpa_auth_config {
 	int group_mgmt_cipher;
 	int sae_require_mfp;
 #endif /* CONFIG_IEEE80211W */
+#ifdef CONFIG_OCV
+	int ocv; /* Operating Channel Validation */
+#endif /* CONFIG_OCV */
 #ifdef CONFIG_IEEE80211R_AP
 	u8 ssid[SSID_MAX_LEN];
 	size_t ssid_len;
@@ -265,6 +269,10 @@ struct wpa_auth_callbacks {
 			  size_t data_len);
 	int (*send_oui)(void *ctx, const u8 *dst, u8 oui_suffix, const u8 *data,
 			size_t data_len);
+	int (*channel_info)(void *ctx, struct wpa_channel_info *ci);
+	int (*get_sta_tx_params)(void *ctx, const u8 *addr,
+				 int ap_max_chanwidth, int ap_seg1_idx,
+				 int *bandwidth, int *seg1_idx);
 #ifdef CONFIG_IEEE80211R_AP
 	struct wpa_state_machine * (*add_sta)(void *ctx, const u8 *sta_addr);
 	int (*set_vlan)(void *ctx, const u8 *sta_addr,
@@ -316,6 +324,8 @@ int wpa_validate_osen(struct wpa_authenticator *wpa_auth,
 		      struct wpa_state_machine *sm,
 		      const u8 *osen_ie, size_t osen_ie_len);
 int wpa_auth_uses_mfp(struct wpa_state_machine *sm);
+void wpa_auth_set_ocv(struct wpa_state_machine *sm, int ocv);
+int wpa_auth_uses_ocv(struct wpa_state_machine *sm);
 struct wpa_state_machine *
 wpa_auth_sta_init(struct wpa_authenticator *wpa_auth, const u8 *addr,
 		  const u8 *p2p_dev_addr);
@@ -448,6 +458,9 @@ const u8 *  wpa_fils_validate_fils_session(struct wpa_state_machine *sm,
 					   const u8 *fils_session);
 int wpa_fils_validate_key_confirm(struct wpa_state_machine *sm, const u8 *ies,
 				  size_t ies_len);
+
+int get_sta_tx_parameters(struct wpa_state_machine *sm, int ap_max_chanwidth,
+			  int ap_seg1_idx, int *bandwidth, int *seg1_idx);
 
 int wpa_auth_write_fte(struct wpa_authenticator *wpa_auth, int use_sha384,
 		       u8 *buf, size_t len);

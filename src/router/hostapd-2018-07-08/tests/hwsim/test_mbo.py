@@ -14,7 +14,7 @@ import time
 
 import hostapd
 from tshark import run_tshark
-from utils import alloc_fail, fail_test
+from utils import *
 
 def set_reg(country_code, apdev0=None, apdev1=None, dev0=None):
     if apdev0:
@@ -24,7 +24,8 @@ def set_reg(country_code, apdev0=None, apdev1=None, dev0=None):
     if dev0:
         dev0.cmd_execute(['iw', 'reg', 'set', country_code])
 
-def run_mbo_supp_oper_classes(dev, apdev, hapd, hapd2, country):
+def run_mbo_supp_oper_classes(dev, apdev, hapd, hapd2, country, freq_list=None,
+                              disable_ht=False, disable_vht=False):
     """MBO and supported operating classes"""
     addr = dev[0].own_addr()
 
@@ -35,6 +36,7 @@ def run_mbo_supp_oper_classes(dev, apdev, hapd, hapd2, country):
     dev[0].dump_monitor()
 
     logger.info("Country: " + country)
+    dev[0].note("Setting country code " + country)
     set_reg(country, apdev[0], apdev[1], dev[0])
     for j in range(5):
         ev = dev[0].wait_event(["CTRL-EVENT-REGDOM-CHANGE"], timeout=5)
@@ -45,41 +47,59 @@ def run_mbo_supp_oper_classes(dev, apdev, hapd, hapd2, country):
     dev[0].dump_monitor()
     dev[1].dump_monitor()
     dev[2].dump_monitor()
+    _disable_ht = "1" if disable_ht else "0"
+    _disable_vht = "1" if disable_vht else "0"
     if hapd:
         hapd.set("country_code", country)
         hapd.enable()
         dev[0].scan_for_bss(hapd.own_addr(), 5180, force_scan=True)
-        dev[0].connect("test-wnm-mbo", key_mgmt="NONE", scan_freq="5180")
+        dev[0].connect("test-wnm-mbo", key_mgmt="NONE", scan_freq="5180",
+                       freq_list=freq_list, disable_ht=_disable_ht,
+                       disable_vht=_disable_vht)
         sta = hapd.get_sta(addr)
         res5 = sta['supp_op_classes'][2:]
-        dev[0].request("REMOVE_NETWORK all")
+        dev[0].wait_regdom(country_ie=True)
+        time.sleep(0.1)
         hapd.disable()
+        time.sleep(0.1)
+        dev[0].request("REMOVE_NETWORK all")
+        dev[0].request("ABORT_SCAN")
         dev[0].wait_disconnected()
         dev[0].dump_monitor()
 
     hapd2.set("country_code", country)
     hapd2.enable()
     dev[0].scan_for_bss(hapd2.own_addr(), 2412, force_scan=True)
-    dev[0].connect("test-wnm-mbo-2", key_mgmt="NONE", scan_freq="2412")
+    dev[0].connect("test-wnm-mbo-2", key_mgmt="NONE", scan_freq="2412",
+                   freq_list=freq_list, disable_ht=_disable_ht,
+                   disable_vht=_disable_vht)
     sta = hapd2.get_sta(addr)
     res2 = sta['supp_op_classes'][2:]
-    dev[0].request("REMOVE_NETWORK all")
+    dev[0].wait_regdom(country_ie=True)
+    time.sleep(0.1)
     hapd2.disable()
+    time.sleep(0.1)
+    dev[0].request("REMOVE_NETWORK all")
+    dev[0].request("ABORT_SCAN")
     dev[0].wait_disconnected()
     dev[0].dump_monitor()
 
     return res2, res5
 
-def test_mbo_supp_oper_classes(dev, apdev):
-    """MBO and supported operating classes"""
-    params = { 'ssid': "test-wnm-mbo",
-               'mbo': '1',
-               "country_code": "US",
-               'ieee80211d': '1',
-               "ieee80211n": "1",
-               "hw_mode": "a",
-               "channel": "36" }
-    hapd = hostapd.add_ap(apdev[0], params, no_enable=True)
+def run_mbo_supp_oper_class(dev, apdev, country, expected, inc5,
+                            freq_list=None, disable_ht=False,
+                            disable_vht=False):
+    if inc5:
+        params = { 'ssid': "test-wnm-mbo",
+                   'mbo': '1',
+                   "country_code": "US",
+                   'ieee80211d': '1',
+                   "ieee80211n": "1",
+                   "hw_mode": "a",
+                   "channel": "36" }
+        hapd = hostapd.add_ap(apdev[0], params, no_enable=True)
+    else:
+        hapd = None
 
     params = { 'ssid': "test-wnm-mbo-2",
                'mbo': '1',
@@ -91,41 +111,86 @@ def test_mbo_supp_oper_classes(dev, apdev):
     hapd2 = hostapd.add_ap(apdev[1], params, no_enable=True)
 
     try:
-        za2, za5 = run_mbo_supp_oper_classes(dev, apdev, hapd, hapd2, "ZA")
-        fi2, fi5 = run_mbo_supp_oper_classes(dev, apdev, hapd, hapd2, "FI")
-        us2, us5 = run_mbo_supp_oper_classes(dev, apdev, hapd, hapd2, "US")
-        jp2, jp5 = run_mbo_supp_oper_classes(dev, apdev, hapd, hapd2, "JP")
-        bd2, bd5 = run_mbo_supp_oper_classes(dev, apdev, None, hapd2, "BD")
-        sy2, sy5 = run_mbo_supp_oper_classes(dev, apdev, None, hapd2, "SY")
+        dev[0].request("STA_AUTOCONNECT 0")
+        res2, res5 = run_mbo_supp_oper_classes(dev, apdev, hapd, hapd2, country,
+                                               freq_list=freq_list,
+                                               disable_ht=disable_ht,
+                                               disable_vht=disable_vht)
     finally:
         dev[0].dump_monitor()
+        dev[0].request("STA_AUTOCONNECT 1")
+        wait_regdom_changes(dev[0])
+        country1 = dev[0].get_driver_status_field("country")
+        logger.info("Country code at the end (1): " + country1)
         set_reg("00", apdev[0], apdev[1], dev[0])
-        ev = dev[0].wait_event(["CTRL-EVENT-REGDOM-CHANGE"], timeout=1)
+        country2 = dev[0].get_driver_status_field("country")
+        logger.info("Country code at the end (2): " + country2)
+        for i in range(5):
+            ev = dev[0].wait_event(["CTRL-EVENT-REGDOM-CHANGE"], timeout=1)
+            if ev is None or "init=USER type=WORLD" in ev:
+                break
+        wait_regdom_changes(dev[0])
+        country3 = dev[0].get_driver_status_field("country")
+        logger.info("Country code at the end (3): " + country3)
+        if country3 != "00":
+            clear_country(dev)
 
-    za = "515354737475767778797a7b808182"
-    fi = "515354737475767778797a7b808182"
-    us = "515354737475767778797a7b7c7d7e7f808182"
-    jp = "51525354737475767778797a7b808182"
-    bd = "5153547c7d7e7f80"
-    sy = "515354"
+    # For now, allow operating class 129 to be missing since not all
+    # installed regdb files include the 160 MHz channels.
+    expected2 = expected.replace('808182', '8082')
+    # For now, allow operating classes 121-123 to be missing since not all
+    # installed regdb files include the related US DFS channels.
+    expected2 = expected2.replace('78797a7b7c', '787c')
+    if res2 != expected and res2 != expected2:
+        raise Exception("Unexpected supp_op_class string (country=%s, 2.4 GHz): %s (expected: %s)" % (country, res2, expected))
+    if inc5 and res5 != expected and res5 != expected2:
+        raise Exception("Unexpected supp_op_class string (country=%s, 5 GHz): %s (expected: %s)" % (country, res5, expected))
 
-    tests = [ ("ZA", za, za2, za5, True),
-              ("FI", fi, fi2, fi5, True),
-              ("US", us, us2, us5, True),
-              ("JP", jp, jp2, jp5, True),
-              ("BD", bd, bd2, bd5, False),
-              ("SY", sy, sy2, sy5, False) ]
-    for country, expected, res2, res5, inc5 in tests:
-        # For now, allow operating class 129 to be missing since not all
-        # installed regdb files include the 160 MHz channels.
-        expected2 = expected.replace('808182', '8082')
-        # For now, allow operating classes 121-123 to be missing since not all
-        # installed regdb files include the related US DFS channels.
-        expected2 = expected2.replace('78797a7b7c', '787c')
-        if res2 != expected and res2 != expected2:
-            raise Exception("Unexpected supp_op_class string (country=%s, 2.4 GHz): %s (expected: %s)" % (country, res2, expected))
-        if inc5 and res5 != expected and res5 != expected2:
-            raise Exception("Unexpected supp_op_class string (country=%s, 5 GHz): %s (expected: %s)" % (country, res5, expected))
+def test_mbo_supp_oper_classes_za(dev, apdev):
+    """MBO and supported operating classes (ZA)"""
+    run_mbo_supp_oper_class(dev, apdev, "ZA",
+                            "515354737475767778797a7b808182", True)
+
+def test_mbo_supp_oper_classes_fi(dev, apdev):
+    """MBO and supported operating classes (FI)"""
+    run_mbo_supp_oper_class(dev, apdev, "FI",
+                            "515354737475767778797a7b808182", True)
+
+def test_mbo_supp_oper_classes_us(dev, apdev):
+    """MBO and supported operating classes (US)"""
+    run_mbo_supp_oper_class(dev, apdev, "US",
+                            "515354737475767778797a7b7c7d7e7f808182", True)
+
+def test_mbo_supp_oper_classes_jp(dev, apdev):
+    """MBO and supported operating classes (JP)"""
+    run_mbo_supp_oper_class(dev, apdev, "JP",
+                            "51525354737475767778797a7b808182", True)
+
+def test_mbo_supp_oper_classes_bd(dev, apdev):
+    """MBO and supported operating classes (BD)"""
+    run_mbo_supp_oper_class(dev, apdev, "BD",
+                            "5153547c7d7e7f80", False)
+
+def test_mbo_supp_oper_classes_sy(dev, apdev):
+    """MBO and supported operating classes (SY)"""
+    run_mbo_supp_oper_class(dev, apdev, "SY",
+                            "515354", False)
+
+def test_mbo_supp_oper_classes_us_freq_list(dev, apdev):
+    """MBO and supported operating classes (US) - freq_list"""
+    run_mbo_supp_oper_class(dev, apdev, "US", "515354", False,
+                            freq_list="2412 2437 2462")
+
+def test_mbo_supp_oper_classes_us_disable_ht(dev, apdev):
+    """MBO and supported operating classes (US) - disable_ht"""
+    run_mbo_supp_oper_class(dev, apdev, "US", "517376797c7d", False,
+                            disable_ht=True)
+
+def test_mbo_supp_oper_classes_us_disable_vht(dev, apdev):
+    """MBO and supported operating classes (US) - disable_vht"""
+    run_mbo_supp_oper_class(dev, apdev, "US",
+                            "515354737475767778797a7b7c7d7e7f", False,
+                            disable_vht=True)
 
 def test_mbo_assoc_disallow(dev, apdev, params):
     """MBO and association disallowed"""

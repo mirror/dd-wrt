@@ -1,6 +1,6 @@
 /*
  * IEEE 802.11 Common routines
- * Copyright (c) 2002-2015, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2002-2019, Jouni Malinen <j@w1.fi>
  *
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
@@ -125,6 +125,10 @@ static int ieee802_11_parse_vendor_specific(const u8 *pos, size_t elen,
 			/* Hotspot 2.0 Roaming Consortium Selection */
 			elems->roaming_cons_sel = pos;
 			elems->roaming_cons_sel_len = elen;
+			break;
+		case MULTI_AP_OUI_TYPE:
+			elems->multi_ap = pos;
+			elems->multi_ap_len = elen;
 			break;
 		default:
 			wpa_printf(MSG_MSGDUMP, "Unknown WFA "
@@ -265,6 +269,10 @@ static int ieee802_11_parse_extension(const u8 *pos, size_t elen,
 	case WLAN_EID_EXT_PASSWORD_IDENTIFIER:
 		elems->password_id = pos;
 		elems->password_id_len = elen;
+		break;
+	case WLAN_EID_EXT_OCV_OCI:
+		elems->oci = pos;
+		elems->oci_len = elen;
 		break;
 	default:
 		if (show_errors) {
@@ -1004,6 +1012,41 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(unsigned int freq,
 	return NUM_HOSTAPD_MODES;
 }
 
+int ieee80211_chaninfo_to_channel(unsigned int freq, enum chan_width chanwidth,
+				  int sec_channel, u8 *op_class, u8 *channel)
+{
+	int vht = CHAN_WIDTH_UNKNOWN;
+
+	switch (chanwidth) {
+	case CHAN_WIDTH_UNKNOWN:
+	case CHAN_WIDTH_20_NOHT:
+	case CHAN_WIDTH_20:
+	case CHAN_WIDTH_40:
+		vht = VHT_CHANWIDTH_USE_HT;
+		break;
+	case CHAN_WIDTH_80:
+		vht = VHT_CHANWIDTH_80MHZ;
+		break;
+	case CHAN_WIDTH_80P80:
+		vht = VHT_CHANWIDTH_80P80MHZ;
+		break;
+	case CHAN_WIDTH_160:
+		vht = VHT_CHANWIDTH_160MHZ;
+		break;
+	}
+
+	if (ieee80211_freq_to_channel_ext(freq, sec_channel, vht, op_class,
+					  channel) == NUM_HOSTAPD_MODES) {
+		wpa_printf(MSG_WARNING,
+			   "Cannot determine operating class and channel (freq=%u chanwidth=%d sec_channel=%d)",
+			   freq, chanwidth, sec_channel);
+		return -1;
+	}
+
+	return 0;
+}
+
+
 static const char *const us_op_class_cc[] = {
 	"US", "CA", NULL
 };
@@ -1603,6 +1646,24 @@ const u8 * get_ie_ext(const u8 *ies, size_t len, u8 ext)
 }
 
 
+const u8 * get_vendor_ie(const u8 *ies, size_t len, u32 vendor_type)
+{
+	const u8 *pos = ies, *end = ies + len;
+
+	while (end - pos > 1) {
+		if (2 + pos[1] > end - pos)
+			break;
+
+		if (pos[0] == WLAN_EID_VENDOR_SPECIFIC && pos[1] >= 4 &&
+		    vendor_type == WPA_GET_BE32(&pos[2]))
+			return pos;
+		pos += 2 + pos[1];
+	}
+
+	return NULL;
+}
+
+
 size_t mbo_add_ie(u8 *buf, size_t len, const u8 *attr, size_t attr_len)
 {
 	/*
@@ -1624,6 +1685,26 @@ size_t mbo_add_ie(u8 *buf, size_t len, const u8 *attr, size_t attr_len)
 	os_memcpy(buf, attr, attr_len);
 
 	return 6 + attr_len;
+}
+
+
+size_t add_multi_ap_ie(u8 *buf, size_t len, u8 value)
+{
+	u8 *pos = buf;
+
+	if (len < 9)
+		return 0;
+
+	*pos++ = WLAN_EID_VENDOR_SPECIFIC;
+	*pos++ = 7; /* len */
+	WPA_PUT_BE24(pos, OUI_WFA);
+	pos += 3;
+	*pos++ = MULTI_AP_OUI_TYPE;
+	*pos++ = MULTI_AP_SUB_ELEM_TYPE;
+	*pos++ = 1; /* len */
+	*pos++ = value;
+
+	return pos - buf;
 }
 
 
@@ -1772,6 +1853,27 @@ const struct oper_class_map * get_oper_class(const char *country, u8 op_class)
 }
 
 
+int oper_class_bw_to_int(const struct oper_class_map *map)
+{
+	switch (map->bw) {
+	case BW20:
+		return 20;
+	case BW40PLUS:
+	case BW40MINUS:
+		return 40;
+	case BW80:
+		return 80;
+	case BW80P80:
+	case BW160:
+		return 160;
+	case BW2160:
+		return 2160;
+	default:
+		return 0;
+	}
+}
+
+
 int ieee802_11_parse_candidate_list(const char *pos, u8 *nei_rep,
 				    size_t nei_rep_len)
 {
@@ -1871,4 +1973,12 @@ int ieee802_11_parse_candidate_list(const char *pos, u8 *nei_rep,
 	}
 
 	return nei_pos - nei_rep;
+}
+
+
+int ieee802_11_ext_capab(const u8 *ie, unsigned int capab)
+{
+	if (!ie || ie[1] <= capab / 8)
+		return 0;
+	return !!(ie[2 + capab / 8] & BIT(capab % 8));
 }

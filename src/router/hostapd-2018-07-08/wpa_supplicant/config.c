@@ -1044,6 +1044,30 @@ static char * wpa_config_write_key_mgmt(const struct parse_data *data,
 #endif /* CONFIG_IEEE80211R */
 #endif /* CONFIG_FILS */
 
+#ifdef CONFIG_DPP
+	if (ssid->key_mgmt & WPA_KEY_MGMT_DPP) {
+		ret = os_snprintf(pos, end - pos, "%sDPP",
+				  pos == buf ? "" : " ");
+		if (os_snprintf_error(end - pos, ret)) {
+			end[-1] = '\0';
+			return buf;
+		}
+		pos += ret;
+	}
+#endif /* CONFIG_DPP */
+
+#ifdef CONFIG_OWE
+	if (ssid->key_mgmt & WPA_KEY_MGMT_OWE) {
+		ret = os_snprintf(pos, end - pos, "%sOWE",
+				  pos == buf ? "" : " ");
+		if (os_snprintf_error(end - pos, ret)) {
+			end[-1] = '\0';
+			return buf;
+		}
+		pos += ret;
+	}
+#endif /* CONFIG_OWE */
+
 	if (pos == buf) {
 		os_free(buf);
 		buf = NULL;
@@ -1979,16 +2003,21 @@ static int wpa_config_parse_mka_cak(const struct parse_data *data,
 				    struct wpa_ssid *ssid, int line,
 				    const char *value)
 {
-	if (hexstr2bin(value, ssid->mka_cak, MACSEC_CAK_LEN) ||
-	    value[MACSEC_CAK_LEN * 2] != '\0') {
+	size_t len;
+
+	len = os_strlen(value);
+	if (len > 2 * MACSEC_CAK_MAX_LEN ||
+	    (len != 2 * 16 && len != 2 * 32) ||
+	    hexstr2bin(value, ssid->mka_cak, len / 2)) {
 		wpa_printf(MSG_ERROR, "Line %d: Invalid MKA-CAK '%s'.",
 			   line, value);
 		return -1;
 	}
-
+	ssid->mka_cak_len = len / 2;
 	ssid->mka_psk_set |= MKA_PSK_SET_CAK;
 
-	wpa_hexdump_key(MSG_MSGDUMP, "MKA-CAK", ssid->mka_cak, MACSEC_CAK_LEN);
+	wpa_hexdump_key(MSG_MSGDUMP, "MKA-CAK", ssid->mka_cak,
+			ssid->mka_cak_len);
 	return 0;
 }
 
@@ -1997,8 +2026,18 @@ static int wpa_config_parse_mka_ckn(const struct parse_data *data,
 				    struct wpa_ssid *ssid, int line,
 				    const char *value)
 {
-	if (hexstr2bin(value, ssid->mka_ckn, MACSEC_CKN_LEN) ||
-	    value[MACSEC_CKN_LEN * 2] != '\0') {
+	size_t len;
+
+	len = os_strlen(value);
+	if (len > 2 * MACSEC_CKN_MAX_LEN || /* too long */
+	    len < 2 || /* too short */
+	    len % 2 != 0 /* not an integral number of bytes */) {
+		wpa_printf(MSG_ERROR, "Line %d: Invalid MKA-CKN '%s'.",
+			   line, value);
+		return -1;
+	}
+	ssid->mka_ckn_len = len / 2;
+	if (hexstr2bin(value, ssid->mka_ckn, ssid->mka_ckn_len)) {
 		wpa_printf(MSG_ERROR, "Line %d: Invalid MKA-CKN '%s'.",
 			   line, value);
 		return -1;
@@ -2006,7 +2045,8 @@ static int wpa_config_parse_mka_ckn(const struct parse_data *data,
 
 	ssid->mka_psk_set |= MKA_PSK_SET_CKN;
 
-	wpa_hexdump_key(MSG_MSGDUMP, "MKA-CKN", ssid->mka_ckn, MACSEC_CKN_LEN);
+	wpa_hexdump_key(MSG_MSGDUMP, "MKA-CKN", ssid->mka_ckn,
+			ssid->mka_ckn_len);
 	return 0;
 }
 
@@ -2019,7 +2059,7 @@ static char * wpa_config_write_mka_cak(const struct parse_data *data,
 	if (!(ssid->mka_psk_set & MKA_PSK_SET_CAK))
 		return NULL;
 
-	return wpa_config_write_string_hex(ssid->mka_cak, MACSEC_CAK_LEN);
+	return wpa_config_write_string_hex(ssid->mka_cak, ssid->mka_cak_len);
 }
 
 
@@ -2028,7 +2068,7 @@ static char * wpa_config_write_mka_ckn(const struct parse_data *data,
 {
 	if (!(ssid->mka_psk_set & MKA_PSK_SET_CKN))
 		return NULL;
-	return wpa_config_write_string_hex(ssid->mka_ckn, MACSEC_CKN_LEN);
+	return wpa_config_write_string_hex(ssid->mka_ckn, ssid->mka_ckn_len);
 }
 
 #endif /* NO_CONFIG_WRITE */
@@ -2191,6 +2231,43 @@ static char * wpa_config_write_rates(const struct parse_data *data,
 	return value;
 }
 #endif /* NO_CONFIG_WRITE */
+
+#ifdef CONFIG_OCV
+
+static int wpa_config_parse_ocv(const struct parse_data *data,
+				struct wpa_ssid *ssid, int line,
+				const char *value)
+{
+	char *end;
+
+	ssid->ocv = strtol(value, &end, 0);
+	if (*end || ssid->ocv < 0 || ssid->ocv > 1) {
+		wpa_printf(MSG_ERROR, "Line %d: Invalid ocv value '%s'.",
+			   line, value);
+		return -1;
+	}
+	if (ssid->ocv && ssid->ieee80211w == NO_MGMT_FRAME_PROTECTION)
+		ssid->ieee80211w = MGMT_FRAME_PROTECTION_OPTIONAL;
+	return 0;
+}
+
+
+#ifndef NO_CONFIG_WRITE
+static char * wpa_config_write_ocv(const struct parse_data *data,
+				   struct wpa_ssid *ssid)
+{
+	char *value = os_malloc(20);
+
+	if (!value)
+		return NULL;
+	os_snprintf(value, 20, "%d", ssid->ocv);
+	value[20 - 1] = '\0';
+	return value;
+}
+#endif /* NO_CONFIG_WRITE */
+
+#endif /* CONFIG_OCV */
+
 
 static int wpa_config_parse_peerkey(const struct parse_data *data,
 				    struct wpa_ssid *ssid, int line,
@@ -2395,6 +2472,9 @@ static const struct parse_data ssid_fields[] = {
 #ifdef CONFIG_IEEE80211W
 	{ INT_RANGE(ieee80211w, 0, 2) },
 #endif /* CONFIG_IEEE80211W */
+#ifdef CONFIG_OCV
+	{ FUNC(ocv) },
+#endif /* CONFIG_OCV */
 	{ FUNC(peerkey) /* obsolete - removed */ },
 	{ INT_RANGE(mixed_cell, 0, 1) },
 	{ INT_RANGE(frequency, 0, 65000) },
@@ -2424,6 +2504,8 @@ static const struct parse_data ssid_fields[] = {
 	{ INT_RANGE(disable_sgi, 0, 1) },
 	{ INT_RANGE(disable_ldpc, 0, 1) },
 	{ INT_RANGE(ht40_intolerant, 0, 1) },
+	{ INT_RANGE(tx_stbc, -1, 1) },
+	{ INT_RANGE(rx_stbc, -1, 3) },
 	{ INT_RANGE(disable_max_amsdu, -1, 1) },
 	{ INT_RANGE(ampdu_factor, -1, 3) },
 	{ INT_RANGE(ampdu_density, -1, 7) },
@@ -2460,6 +2542,8 @@ static const struct parse_data ssid_fields[] = {
 #ifdef CONFIG_MACSEC
 	{ INT_RANGE(macsec_policy, 0, 1) },
 	{ INT_RANGE(macsec_integ_only, 0, 1) },
+	{ INT_RANGE(macsec_replay_protect, 0, 1) },
+	{ INT(macsec_replay_window) },
 	{ INT_RANGE(macsec_port, 1, 65534) },
 	{ INT_RANGE(mka_priority, 0, 255) },
 	{ FUNC_KEY(mka_cak) },
@@ -2481,6 +2565,7 @@ static const struct parse_data ssid_fields[] = {
 #endif /* CONFIG_DPP */
 	{ INT_RANGE(owe_group, 0, 65535) },
 	{ INT_RANGE(owe_only, 0, 1) },
+	{ INT_RANGE(multi_ap_backhaul_sta, 0, 1) },
 };
 
 #undef OFFSET
@@ -2947,6 +3032,8 @@ void wpa_config_set_network_defaults(struct wpa_ssid *ssid)
 	ssid->disable_ht40 = DEFAULT_DISABLE_HT40;
 	ssid->disable_sgi = DEFAULT_DISABLE_SGI;
 	ssid->disable_ldpc = DEFAULT_DISABLE_LDPC;
+	ssid->tx_stbc = DEFAULT_TX_STBC;
+	ssid->rx_stbc = DEFAULT_RX_STBC;
 	ssid->disable_max_amsdu = DEFAULT_DISABLE_MAX_AMSDU;
 	ssid->ampdu_factor = DEFAULT_AMPDU_FACTOR;
 	ssid->ampdu_density = DEFAULT_AMPDU_DENSITY;
@@ -2977,6 +3064,7 @@ void wpa_config_set_network_defaults(struct wpa_ssid *ssid)
 	ssid->mka_priority = DEFAULT_PRIO_NOT_KEY_SERVER;
 #endif /* CONFIG_MACSEC */
 	ssid->mac_addr = -1;
+	ssid->max_oper_chwidth = DEFAULT_MAX_OPER_CHWIDTH;
 }
 
 

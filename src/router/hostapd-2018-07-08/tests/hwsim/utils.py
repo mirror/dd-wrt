@@ -1,5 +1,5 @@
 # Testing utilities
-# Copyright (c) 2013-2015, Jouni Malinen <j@w1.fi>
+# Copyright (c) 2013-2019, Jouni Malinen <j@w1.fi>
 #
 # This software may be distributed under the terms of the BSD license.
 # See README for more details.
@@ -7,8 +7,11 @@
 import binascii
 import os
 import struct
+import subprocess
 import time
 import remotehost
+import logging
+logger = logging.getLogger()
 
 def get_ifnames():
     ifnames = []
@@ -116,3 +119,46 @@ def parse_ie(buf):
         ret[ie] = data[0:elen]
         data = data[elen:]
     return ret
+
+def wait_regdom_changes(dev):
+    for i in range(10):
+        ev = dev.wait_event(["CTRL-EVENT-REGDOM-CHANGE"], timeout=0.1)
+        if ev is None:
+            break
+
+def clear_country(dev):
+    logger.info("Try to clear country")
+    id = dev[1].add_network()
+    dev[1].set_network(id, "mode", "2")
+    dev[1].set_network_quoted(id, "ssid", "country-clear")
+    dev[1].set_network(id, "key_mgmt", "NONE")
+    dev[1].set_network(id, "frequency", "2412")
+    dev[1].set_network(id, "scan_freq", "2412")
+    dev[1].select_network(id)
+    ev = dev[1].wait_event(["CTRL-EVENT-CONNECTED"])
+    if ev:
+        dev[0].connect("country-clear", key_mgmt="NONE", scan_freq="2412")
+        dev[1].request("DISCONNECT")
+        dev[0].wait_disconnected()
+        dev[0].request("DISCONNECT")
+        dev[0].request("ABORT_SCAN")
+        time.sleep(1)
+        dev[0].dump_monitor()
+        dev[1].dump_monitor()
+
+def clear_regdom(hapd, dev, count=1):
+    if hapd:
+        hapd.request("DISABLE")
+        time.sleep(0.1)
+    for i in range(count):
+        dev[i].request("DISCONNECT")
+        dev[i].request("ABORT_SCAN")
+    dev[0].wait_event(["CTRL-EVENT-DISCONNECTED"], timeout=0.5)
+    subprocess.call(['iw', 'reg', 'set', '00'])
+    wait_regdom_changes(dev[0])
+    country = dev[0].get_driver_status_field("country")
+    logger.info("Country code at the end: " + country)
+    if country != "00":
+        clear_country(dev)
+    for i in range(count):
+        dev[i].flush_scan_cache()

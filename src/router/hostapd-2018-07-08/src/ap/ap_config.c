@@ -140,6 +140,15 @@ void hostapd_config_defaults_bss(struct hostapd_bss_config *bss)
 	 * This can be enabled by default once the implementation has been fully
 	 * completed and tested with other implementations. */
 	bss->tls_flags = TLS_CONN_DISABLE_TLSv1_3;
+
+	bss->send_probe_response = 1;
+
+#ifdef CONFIG_HS20
+	bss->hs20_release = (HS20_VERSION >> 4) + 1;
+#endif /* CONFIG_HS20 */
+
+	/* Default to strict CRL checking. */
+	bss->check_crl_strict = 1;
 }
 
 
@@ -202,7 +211,6 @@ struct hostapd_config * hostapd_config_defaults(void)
 	conf->beacon_int = 100;
 	conf->rts_threshold = -1; /* use driver default: 2347 */
 	conf->fragm_threshold = -1; /* user driver default: 2346 */
-	conf->send_probe_response = 1;
 	/* Set to invalid value means do not add Power Constraint IE */
 	conf->local_pwr_constraint = -1;
 
@@ -241,6 +249,9 @@ struct hostapd_config * hostapd_config_defaults(void)
 	 * by default to indicate that the regulations encompass all
 	 * environments for the current frequency band in the country. */
 	conf->country[2] = ' ';
+
+	conf->rssi_reject_assoc_rssi = 0;
+	conf->rssi_reject_assoc_timeout = 30;
 
 	return conf;
 }
@@ -547,6 +558,7 @@ void hostapd_config_free_bss(struct hostapd_bss_config *conf)
 	os_free(conf->ocsp_stapling_response_multi);
 	os_free(conf->dh_file);
 	os_free(conf->openssl_ciphers);
+	os_free(conf->openssl_ecdh_curves);
 	os_free(conf->pac_opaque_encr_key);
 	os_free(conf->eap_fast_a_id);
 	os_free(conf->eap_fast_a_id_info);
@@ -653,6 +665,7 @@ void hostapd_config_free_bss(struct hostapd_bss_config *conf)
 		os_free(conf->hs20_operator_icon);
 	}
 	os_free(conf->subscr_remediation_url);
+	os_free(conf->hs20_sim_provisioning_url);
 	os_free(conf->t_c_filename);
 	os_free(conf->t_c_server_url);
 #endif /* CONFIG_HS20 */
@@ -1011,6 +1024,15 @@ static int hostapd_config_check_bss(struct hostapd_bss_config *bss,
 		return -1;
 	}
 #endif /* CONFIG_MBO */
+
+#ifdef CONFIG_OCV
+	if (full_config && bss->ieee80211w == NO_MGMT_FRAME_PROTECTION &&
+	    bss->ocv) {
+		wpa_printf(MSG_ERROR,
+			   "OCV: PMF needs to be enabled whenever using OCV");
+		return -1;
+	}
+#endif /* CONFIG_OCV */
 
 	return 0;
 }
