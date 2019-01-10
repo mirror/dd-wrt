@@ -3846,7 +3846,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv(wp, "%s_poll_time", prefix);
 	copytonv(wp, "%s_strikes", prefix);
 #endif
-#ifdef HAVE_ATH10K
+#if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC) 
 	copytonv(wp, "%s_subf", prefix);
 	copytonv(wp, "%s_mubf", prefix);
 #endif

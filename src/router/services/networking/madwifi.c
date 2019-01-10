@@ -327,7 +327,7 @@ void addvhtcaps(char *prefix, FILE * fp)
 		(7 << IEEE80211_VHT_CAP_SOUNDING_DIMENSIONS_SHIFT)
 
 	unsigned int mask;
-#ifdef HAVE_ATH10K
+#if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC) 
 #if 1
 	if (has_ac(prefix)) {
 		char shortgi[32];
