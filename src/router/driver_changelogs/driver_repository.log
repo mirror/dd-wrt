@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r4416 | brainslayer | 2019-01-10 13:06:04 +0100 (Thu, 10 Jan 2019) | 1 line
+
+for some reason it crashes with smps disabled
+------------------------------------------------------------------------
 r4415 | brainslayer | 2019-01-10 11:31:46 +0100 (Thu, 10 Jan 2019) | 1 line
 
 its invalid to unset sm power save in brcmfmac. so fix this
