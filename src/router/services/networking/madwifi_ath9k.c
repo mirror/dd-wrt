@@ -826,7 +826,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		}
 		free(caps);
 	}
-#ifdef HAVE_ATH10K
+#if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC) 
 	if (has_ac(prefix) && has_2ghz(prefix) && usebw < 80) {
 		if (nvram_nmatch("1", "%s_turbo_qam", prefix)) {
 			char mubf[32];
