@@ -160,6 +160,15 @@ static int wpa_config_validate_network(struct wpa_ssid *ssid, int line)
 		errors++;
 	}
 
+#ifdef CONFIG_OCV
+	if (ssid->ocv && ssid->ieee80211w == NO_MGMT_FRAME_PROTECTION) {
+		wpa_printf(MSG_ERROR,
+			   "Line %d: PMF needs to be enabled whenever using OCV",
+			   line);
+		errors++;
+	}
+#endif /* CONFIG_OCV */
+
 	return errors;
 }
 
@@ -829,7 +838,7 @@ static void wpa_config_write_network(FILE *f, struct wpa_ssid *ssid)
 	INT(vht);
 	INT_DEF(ht, 1);
 	INT(ht40);
-	INT(max_oper_chwidth);
+	INT_DEF(max_oper_chwidth, DEFAULT_MAX_OPER_CHWIDTH);
 	INT(vht_center_freq1);
 	INT(vht_center_freq2);
 	INT(pbss);
@@ -853,6 +862,8 @@ static void wpa_config_write_network(FILE *f, struct wpa_ssid *ssid)
 	write_mka_cak(f, ssid);
 	write_mka_ckn(f, ssid);
 	INT(macsec_integ_only);
+	INT(macsec_replay_protect);
+	INT(macsec_replay_window);
 	INT(macsec_port);
 	INT_DEF(mka_priority, DEFAULT_PRIO_NOT_KEY_SERVER);
 #endif /* CONFIG_MACSEC */
@@ -886,6 +897,8 @@ static void wpa_config_write_network(FILE *f, struct wpa_ssid *ssid)
 	INT_DEF(disable_sgi, DEFAULT_DISABLE_SGI);
 	INT_DEF(disable_ldpc, DEFAULT_DISABLE_LDPC);
 	INT(ht40_intolerant);
+	INT_DEF(tx_stbc, DEFAULT_TX_STBC);
+	INT_DEF(rx_stbc, DEFAULT_RX_STBC);
 	INT_DEF(disable_max_amsdu, DEFAULT_DISABLE_MAX_AMSDU);
 	INT_DEF(ampdu_factor, DEFAULT_AMPDU_FACTOR);
 	INT_DEF(ampdu_density, DEFAULT_AMPDU_DENSITY);

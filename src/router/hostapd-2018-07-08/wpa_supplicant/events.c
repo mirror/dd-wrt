@@ -293,6 +293,13 @@ void wpa_supplicant_mark_disassoc(struct wpa_supplicant *wpa_s)
 	if (wpa_s->wpa_state == WPA_INTERFACE_DISABLED)
 		return;
 
+	if (os_reltime_initialized(&wpa_s->session_start)) {
+		os_reltime_age(&wpa_s->session_start, &wpa_s->session_length);
+		wpa_s->session_start.sec = 0;
+		wpa_s->session_start.usec = 0;
+		wpas_notify_session_length(wpa_s);
+	}
+
 	wpa_supplicant_set_state(wpa_s, WPA_DISCONNECTED);
 	bssid_changed = !is_zero_ether_addr(wpa_s->bssid);
 	os_memset(wpa_s->bssid, 0, ETH_ALEN);
@@ -324,6 +331,9 @@ void wpa_supplicant_mark_disassoc(struct wpa_supplicant *wpa_s)
 	os_memset(wpa_s->last_tk, 0, sizeof(wpa_s->last_tk));
 #endif /* CONFIG_TESTING_OPTIONS */
 	wpa_s->ieee80211ac = 0;
+
+	if (wpa_s->enabled_4addr_mode && wpa_drv_set_4addr_mode(wpa_s, 0) == 0)
+		wpa_s->enabled_4addr_mode = 0;
 }
 
 
@@ -1335,10 +1345,10 @@ struct wpa_ssid * wpa_scan_res_match(struct wpa_supplicant *wpa_s,
 			continue;
 		}
 
-		if (wpa_is_bss_tmp_disallowed(wpa_s, bss->bssid)) {
+		if (wpa_is_bss_tmp_disallowed(wpa_s, bss)) {
 			if (debug_print)
 				wpa_dbg(wpa_s, MSG_DEBUG,
-					"   skip - MBO retry delay has not passed yet");
+					"   skip - AP temporarily disallowed");
 			continue;
 		}
 #ifdef CONFIG_TESTING_OPTIONS
@@ -2267,6 +2277,50 @@ static void interworking_process_assoc_resp(struct wpa_supplicant *wpa_s,
 #endif /* CONFIG_INTERWORKING */
 
 
+static void multi_ap_process_assoc_resp(struct wpa_supplicant *wpa_s,
+					const u8 *ies, size_t ies_len)
+{
+	struct ieee802_11_elems elems;
+	const u8 *map_sub_elem, *pos;
+	size_t len;
+
+	if (!wpa_s->current_ssid ||
+	    !wpa_s->current_ssid->multi_ap_backhaul_sta ||
+	    !ies ||
+	    ieee802_11_parse_elems(ies, ies_len, &elems, 1) == ParseFailed)
+		return;
+
+	if (!elems.multi_ap || elems.multi_ap_len < 7) {
+		wpa_printf(MSG_INFO, "AP doesn't support Multi-AP protocol");
+		goto fail;
+	}
+
+	pos = elems.multi_ap + 4;
+	len = elems.multi_ap_len - 4;
+
+	map_sub_elem = get_ie(pos, len, MULTI_AP_SUB_ELEM_TYPE);
+	if (!map_sub_elem || map_sub_elem[1] < 1) {
+		wpa_printf(MSG_INFO, "invalid Multi-AP sub elem type");
+		goto fail;
+	}
+
+	if (!(map_sub_elem[2] & MULTI_AP_BACKHAUL_BSS)) {
+		wpa_printf(MSG_INFO, "AP doesn't support backhaul BSS");
+		goto fail;
+	}
+
+	if (wpa_drv_set_4addr_mode(wpa_s, 1) < 0) {
+		wpa_printf(MSG_ERROR, "Failed to set 4addr mode");
+		goto fail;
+	}
+	wpa_s->enabled_4addr_mode = 1;
+	return;
+
+fail:
+	wpa_supplicant_deauthenticate(wpa_s, WLAN_REASON_DEAUTH_LEAVING);
+}
+
+
 #ifdef CONFIG_FST
 static int wpas_fst_update_mbie(struct wpa_supplicant *wpa_s,
 				const u8 *ie, size_t ie_len)
@@ -2343,6 +2397,9 @@ static int wpa_supplicant_event_associnfo(struct wpa_supplicant *wpa_s,
 		    get_ie(data->assoc_info.resp_ies,
 			   data->assoc_info.resp_ies_len, WLAN_EID_VHT_CAP))
 			wpa_s->ieee80211ac = 1;
+
+		multi_ap_process_assoc_resp(wpa_s, data->assoc_info.resp_ies,
+					    data->assoc_info.resp_ies_len);
 	}
 	if (data->assoc_info.beacon_ies)
 		wpa_hexdump(MSG_DEBUG, "beacon_ies",
@@ -2648,6 +2705,16 @@ static void wpa_supplicant_event_assoc(struct wpa_supplicant *wpa_s,
 
 	wpa_supplicant_set_state(wpa_s, WPA_ASSOCIATED);
 	if (os_memcmp(bssid, wpa_s->bssid, ETH_ALEN) != 0) {
+		if (os_reltime_initialized(&wpa_s->session_start)) {
+			os_reltime_age(&wpa_s->session_start,
+				       &wpa_s->session_length);
+			wpa_s->session_start.sec = 0;
+			wpa_s->session_start.usec = 0;
+			wpas_notify_session_length(wpa_s);
+		} else {
+			wpas_notify_auth_changed(wpa_s);
+			os_get_reltime(&wpa_s->session_start);
+		}
 		wpa_dbg(wpa_s, MSG_DEBUG, "Associated to a new BSS: BSSID="
 			MACSTR, MAC2STR(bssid));
 		new_bss = 1;
@@ -2738,7 +2805,7 @@ static void wpa_supplicant_event_assoc(struct wpa_supplicant *wpa_s,
 	}
 	wpa_supplicant_cancel_scan(wpa_s);
 
-	if ((wpa_s->drv_flags & WPA_DRIVER_FLAGS_4WAY_HANDSHAKE) &&
+	if ((wpa_s->drv_flags & WPA_DRIVER_FLAGS_4WAY_HANDSHAKE_PSK) &&
 	    wpa_key_mgmt_wpa_psk(wpa_s->key_mgmt)) {
 		/*
 		 * We are done; the driver will take care of RSN 4-way
@@ -2748,7 +2815,7 @@ static void wpa_supplicant_event_assoc(struct wpa_supplicant *wpa_s,
 		wpa_supplicant_set_state(wpa_s, WPA_COMPLETED);
 		eapol_sm_notify_portValid(wpa_s->eapol, TRUE);
 		eapol_sm_notify_eap_success(wpa_s->eapol, TRUE);
-	} else if ((wpa_s->drv_flags & WPA_DRIVER_FLAGS_4WAY_HANDSHAKE) &&
+	} else if ((wpa_s->drv_flags & WPA_DRIVER_FLAGS_4WAY_HANDSHAKE_8021X) &&
 		   wpa_key_mgmt_wpa_ieee8021x(wpa_s->key_mgmt)) {
 		/*
 		 * The driver will take care of RSN 4-way handshake, so we need
@@ -3010,7 +3077,7 @@ static void wpa_supplicant_event_disassoc_finish(struct wpa_supplicant *wpa_s,
 	    !disallowed_ssid(wpa_s, fast_reconnect->ssid,
 			     fast_reconnect->ssid_len) &&
 	    !wpas_temp_disabled(wpa_s, fast_reconnect_ssid) &&
-	    !wpa_is_bss_tmp_disallowed(wpa_s, fast_reconnect->bssid)) {
+	    !wpa_is_bss_tmp_disallowed(wpa_s, fast_reconnect)) {
 #ifndef CONFIG_NO_SCAN_PROCESSING
 		wpa_dbg(wpa_s, MSG_DEBUG, "Try to reconnect to the same BSS");
 		if (wpa_supplicant_connect(wpa_s, fast_reconnect,
@@ -3583,8 +3650,8 @@ static const char * reg_type_str(enum reg_type type)
 }
 
 
-static void wpa_supplicant_update_channel_list(
-	struct wpa_supplicant *wpa_s, struct channel_list_changed *info)
+void wpa_supplicant_update_channel_list(struct wpa_supplicant *wpa_s,
+					struct channel_list_changed *info)
 {
 	struct wpa_supplicant *ifs;
 	u8 dfs_domain;
@@ -3598,10 +3665,13 @@ static void wpa_supplicant_update_channel_list(
 	for (ifs = wpa_s; ifs->parent && ifs != ifs->parent; ifs = ifs->parent)
 		;
 
-	wpa_msg(ifs, MSG_INFO, WPA_EVENT_REGDOM_CHANGE "init=%s type=%s%s%s",
-		reg_init_str(info->initiator), reg_type_str(info->type),
-		info->alpha2[0] ? " alpha2=" : "",
-		info->alpha2[0] ? info->alpha2 : "");
+	if (info) {
+		wpa_msg(ifs, MSG_INFO,
+			WPA_EVENT_REGDOM_CHANGE "init=%s type=%s%s%s",
+			reg_init_str(info->initiator), reg_type_str(info->type),
+			info->alpha2[0] ? " alpha2=" : "",
+			info->alpha2[0] ? info->alpha2 : "");
+	}
 
 	if (wpa_s->drv_priv == NULL)
 		return; /* Ignore event during drv initialization */
@@ -3840,7 +3910,7 @@ static void wpas_event_dfs_cac_started(struct wpa_supplicant *wpa_s,
 				       struct dfs_event *radar)
 {
 #if defined(NEED_AP_MLME) && defined(CONFIG_AP)
-	if (wpa_s->ap_iface) {
+	if (wpa_s->ap_iface || wpa_s->ifmsh) {
 		wpas_ap_event_dfs_cac_started(wpa_s, radar);
 	} else
 #endif /* NEED_AP_MLME && CONFIG_AP */
@@ -3861,7 +3931,7 @@ static void wpas_event_dfs_cac_finished(struct wpa_supplicant *wpa_s,
 					struct dfs_event *radar)
 {
 #if defined(NEED_AP_MLME) && defined(CONFIG_AP)
-	if (wpa_s->ap_iface) {
+	if (wpa_s->ap_iface || wpa_s->ifmsh) {
 		wpas_ap_event_dfs_cac_finished(wpa_s, radar);
 	} else
 #endif /* NEED_AP_MLME && CONFIG_AP */
@@ -3877,7 +3947,7 @@ static void wpas_event_dfs_cac_aborted(struct wpa_supplicant *wpa_s,
 				       struct dfs_event *radar)
 {
 #if defined(NEED_AP_MLME) && defined(CONFIG_AP)
-	if (wpa_s->ap_iface) {
+	if (wpa_s->ap_iface || wpa_s->ifmsh) {
 		wpas_ap_event_dfs_cac_aborted(wpa_s, radar);
 	} else
 #endif /* NEED_AP_MLME && CONFIG_AP */
@@ -3983,6 +4053,32 @@ static void wpas_event_assoc_reject(struct wpa_supplicant *wpa_s,
 	}
 #endif /* CONFIG_OWE */
 
+#ifdef CONFIG_MBO
+	if (data->assoc_reject.status_code ==
+	    WLAN_STATUS_DENIED_POOR_CHANNEL_CONDITIONS &&
+	    wpa_s->current_bss && data->assoc_reject.bssid &&
+	    data->assoc_reject.resp_ies) {
+		const u8 *rssi_rej;
+
+		rssi_rej = mbo_get_attr_from_ies(
+			data->assoc_reject.resp_ies,
+			data->assoc_reject.resp_ies_len,
+			OCE_ATTR_ID_RSSI_BASED_ASSOC_REJECT);
+		if (rssi_rej && rssi_rej[1] == 2) {
+			wpa_printf(MSG_DEBUG,
+				   "OCE: RSSI-based association rejection from "
+				   MACSTR " (Delta RSSI: %u, Retry Delay: %u)",
+				   MAC2STR(data->assoc_reject.bssid),
+				   rssi_rej[2], rssi_rej[3]);
+			wpa_bss_tmp_disallow(wpa_s,
+					     data->assoc_reject.bssid,
+					     rssi_rej[3],
+					     rssi_rej[2] +
+					     wpa_s->current_bss->level);
+		}
+	}
+#endif /* CONFIG_MBO */
+
 	if (wpa_s->drv_flags & WPA_DRIVER_FLAGS_SME) {
 		sme_event_assoc_reject(wpa_s, data);
 		return;
@@ -4069,6 +4165,8 @@ void supplicant_event(void *ctx, enum wpa_event_type event,
 				   "FST: MB IEs updated from auth IE");
 #endif /* CONFIG_FST */
 		sme_event_auth(wpa_s, data);
+		wpa_s->auth_status_code = data->auth.status_code;
+		wpas_notify_auth_status_code(wpa_s);
 		break;
 	case EVENT_ASSOC:
 #ifdef CONFIG_TESTING_OPTIONS
@@ -4084,6 +4182,7 @@ void supplicant_event(void *ctx, enum wpa_event_type event,
 		}
 #endif /* CONFIG_TESTING_OPTIONS */
 		wpa_supplicant_event_assoc(wpa_s, data);
+		wpa_s->assoc_status_code = WLAN_STATUS_SUCCESS;
 		if (data &&
 		    (data->assoc_info.authorized ||
 		     (!(wpa_s->drv_flags & WPA_DRIVER_FLAGS_SME) &&
@@ -4326,6 +4425,7 @@ void supplicant_event(void *ctx, enum wpa_event_type event,
 #ifdef CONFIG_AP
 		if (wpa_s->current_ssid->mode == WPAS_MODE_AP ||
 		    wpa_s->current_ssid->mode == WPAS_MODE_P2P_GO ||
+		    wpa_s->current_ssid->mode == WPAS_MODE_MESH ||
 		    wpa_s->current_ssid->mode ==
 		    WPAS_MODE_P2P_GROUP_FORMATION) {
 			wpas_ap_ch_switch(wpa_s, data->ch_switch.freq,
@@ -4337,6 +4437,9 @@ void supplicant_event(void *ctx, enum wpa_event_type event,
 		}
 #endif /* CONFIG_AP */
 
+#ifdef CONFIG_IEEE80211W
+		sme_event_ch_switch(wpa_s);
+#endif /* CONFIG_IEEE80211W */
 		wpas_p2p_update_channel_list(wpa_s, WPAS_P2P_CHANNEL_UPDATE_CS);
 		wnm_clear_coloc_intf_reporting(wpa_s);
 		break;

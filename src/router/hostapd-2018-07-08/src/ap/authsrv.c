@@ -136,6 +136,7 @@ static int hostapd_setup_radius_srv(struct hostapd_data *hapd)
 #ifdef CONFIG_HS20
 	srv.subscr_remediation_url = conf->subscr_remediation_url;
 	srv.subscr_remediation_method = conf->subscr_remediation_method;
+	srv.hs20_sim_provisioning_url = conf->hs20_sim_provisioning_url;
 	srv.t_c_server_url = conf->t_c_server_url;
 #endif /* CONFIG_HS20 */
 	srv.erp = conf->eap_server_erp;
@@ -217,6 +218,7 @@ int authsrv_init(struct hostapd_data *hapd)
 		params.private_key_passwd = hapd->conf->private_key_passwd;
 		params.dh_file = hapd->conf->dh_file;
 		params.openssl_ciphers = hapd->conf->openssl_ciphers;
+		params.openssl_ecdh_curves = hapd->conf->openssl_ecdh_curves;
 		params.ocsp_stapling_response =
 			hapd->conf->ocsp_stapling_response;
 		params.ocsp_stapling_response_multi =
@@ -229,7 +231,8 @@ int authsrv_init(struct hostapd_data *hapd)
 		}
 
 		if (tls_global_set_verify(hapd->ssl_ctx,
-					  hapd->conf->check_crl)) {
+					  hapd->conf->check_crl,
+					  hapd->conf->check_crl_strict)) {
 			wpa_printf(MSG_ERROR, "Failed to enable check_crl");
 			authsrv_deinit(hapd);
 			return -1;

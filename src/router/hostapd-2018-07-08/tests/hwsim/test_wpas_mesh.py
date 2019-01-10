@@ -102,6 +102,19 @@ def check_mesh_peer_disconnected(dev):
     if ev is None:
         raise Exception("Test exception: Peer disconnect event not detected.")
 
+def check_mesh_joined2(dev):
+    check_mesh_group_added(dev[0])
+    check_mesh_group_added(dev[1])
+
+def check_mesh_connected2(dev, timeout0=10, connectivity=False):
+    check_mesh_peer_connected(dev[0], timeout=timeout0)
+    check_mesh_peer_connected(dev[1])
+    if connectivity:
+        hwsim_utils.test_connectivity(dev[0], dev[1])
+
+def check_mesh_joined_connected(dev, connectivity=False, timeout0=10):
+    check_mesh_joined2(dev)
+    check_mesh_connected2(dev, timeout0=timeout0, connectivity=connectivity)
 
 def test_wpas_add_set_remove_support(dev):
     """wpa_supplicant MESH add/set/remove network support"""
@@ -111,7 +124,7 @@ def test_wpas_add_set_remove_support(dev):
     dev[0].remove_network(id)
 
 def add_open_mesh_network(dev, freq="2412", start=True, beacon_int=0,
-                          basic_rates=None, chwidth=0, disable_vht=False,
+                          basic_rates=None, chwidth=-1, disable_vht=False,
                           disable_ht40=False):
     id = dev.add_network()
     dev.set_network(id, "mode", "5")
@@ -119,7 +132,7 @@ def add_open_mesh_network(dev, freq="2412", start=True, beacon_int=0,
     dev.set_network(id, "key_mgmt", "NONE")
     if freq:
         dev.set_network(id, "frequency", freq)
-    if chwidth > 0:
+    if chwidth > -1:
         dev.set_network(id, "max_oper_chwidth", str(chwidth))
     if beacon_int:
         dev.set_network(id, "beacon_int", str(beacon_int))
@@ -158,29 +171,14 @@ def test_wpas_mesh_peer_connected(dev):
     check_mesh_support(dev[0])
     add_open_mesh_network(dev[0], beacon_int=160)
     add_open_mesh_network(dev[1], beacon_int=160)
-
-    # Check for mesh joined
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
-
-    # Check for peer connected
-    check_mesh_peer_connected(dev[0])
-    check_mesh_peer_connected(dev[1])
-
+    check_mesh_joined_connected(dev)
 
 def test_wpas_mesh_peer_disconnected(dev):
     """wpa_supplicant MESH peer disconnected"""
     check_mesh_support(dev[0])
     add_open_mesh_network(dev[0])
     add_open_mesh_network(dev[1])
-
-    # Check for mesh joined
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
-
-    # Check for peer connected
-    check_mesh_peer_connected(dev[0])
-    check_mesh_peer_connected(dev[1])
+    check_mesh_joined_connected(dev)
 
     # Remove group on dev 1
     dev[1].mesh_group_remove()
@@ -194,9 +192,7 @@ def test_wpas_mesh_mode_scan(dev):
     add_open_mesh_network(dev[0])
     add_open_mesh_network(dev[1], beacon_int=175)
 
-    # Check for mesh joined
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
+    check_mesh_joined2(dev)
 
     # Check for Mesh scan
     check_mesh_scan(dev[0], "use_id=1 freq=2412", beacon_int=175)
@@ -207,16 +203,7 @@ def test_wpas_mesh_open(dev, apdev):
     add_open_mesh_network(dev[0], freq="2462", basic_rates="60 120 240")
     add_open_mesh_network(dev[1], freq="2462", basic_rates="60 120 240")
 
-    # Check for mesh joined
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
-
-    # Check for peer connected
-    check_mesh_peer_connected(dev[0])
-    check_mesh_peer_connected(dev[1])
-
-    # Test connectivity 0->1 and 1->0
-    hwsim_utils.test_connectivity(dev[0], dev[1])
+    check_mesh_joined_connected(dev, connectivity=True)
 
     state = dev[0].get_status_field("wpa_state")
     if state != "COMPLETED":
@@ -241,16 +228,7 @@ def test_wpas_mesh_open_no_auto(dev, apdev):
     dev[1].set_network(id, "no_auto_peer", "1")
     dev[1].mesh_group_add(id)
 
-    # Check for mesh joined
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
-
-    # Check for peer connected
-    check_mesh_peer_connected(dev[0], timeout=30)
-    check_mesh_peer_connected(dev[1])
-
-    # Test connectivity 0->1 and 1->0
-    hwsim_utils.test_connectivity(dev[0], dev[1])
+    check_mesh_joined_connected(dev, connectivity=True, timeout0=30)
 
 def test_mesh_open_no_auto2(dev, apdev):
     """Open mesh network connectivity, no_auto on both peers"""
@@ -263,8 +241,7 @@ def test_mesh_open_no_auto2(dev, apdev):
     dev[1].set_network(id, "no_auto_peer", "1")
     dev[1].mesh_group_add(id)
 
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
+    check_mesh_joined2(dev)
 
     ev = dev[0].wait_event(["will not initiate new peer link"], timeout=10)
     if ev is None:
@@ -274,8 +251,7 @@ def test_mesh_open_no_auto2(dev, apdev):
         raise Exception("MESH_PEER_ADD failed")
     if "FAIL" not in dev[0].request("MESH_PEER_ADD ff:ff:ff:ff:ff:ff"):
         raise Exception("MESH_PEER_ADD with unknown STA succeeded")
-    check_mesh_peer_connected(dev[0], timeout=30)
-    check_mesh_peer_connected(dev[1])
+    check_mesh_connected2(dev, timeout0=30)
     if "FAIL" not in dev[0].request("MESH_PEER_ADD " + addr1):
         raise Exception("MESH_PEER_ADD succeeded for connected STA")
     hwsim_utils.test_connectivity(dev[0], dev[1])
@@ -306,7 +282,7 @@ def _test_mesh_open_rssi_threshold(dev, apdev, value, expected):
                         ": " + str(mesh_rssi_threshold))
 
 def add_mesh_secure_net(dev, psk=True, pmf=False, pairwise=None, group=None,
-                        sae_password=False, sae_password_id=None):
+                        sae_password=False, sae_password_id=None, ocv=False):
     id = dev.add_network()
     dev.set_network(id, "mode", "5")
     dev.set_network_quoted(id, "ssid", "wpas-mesh-sec")
@@ -324,6 +300,13 @@ def add_mesh_secure_net(dev, psk=True, pmf=False, pairwise=None, group=None,
         dev.set_network(id, "pairwise", pairwise)
     if group:
         dev.set_network(id, "group", group)
+    if ocv:
+        try:
+            dev.set_network(id, "ocv", "1")
+        except Exception, e:
+            if "SET_NETWORK failed" in str(e):
+                raise HwsimSkip("OCV not supported")
+            raise
     return id
 
 def test_wpas_mesh_secure(dev, apdev):
@@ -337,16 +320,7 @@ def test_wpas_mesh_secure(dev, apdev):
     id = add_mesh_secure_net(dev[1])
     dev[1].mesh_group_add(id)
 
-    # Check for mesh joined
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
-
-    # Check for peer connected
-    check_mesh_peer_connected(dev[0])
-    check_mesh_peer_connected(dev[1])
-
-    # Test connectivity 0->1 and 1->0
-    hwsim_utils.test_connectivity(dev[0], dev[1])
+    check_mesh_joined_connected(dev, connectivity=True)
 
     state = dev[0].get_status_field("wpa_state")
     if state != "COMPLETED":
@@ -366,13 +340,7 @@ def test_wpas_mesh_secure_sae_password(dev, apdev):
     id = add_mesh_secure_net(dev[1])
     dev[1].mesh_group_add(id)
 
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
-
-    check_mesh_peer_connected(dev[0])
-    check_mesh_peer_connected(dev[1])
-
-    hwsim_utils.test_connectivity(dev[0], dev[1])
+    check_mesh_joined_connected(dev, connectivity=True)
 
 def test_wpas_mesh_secure_sae_password_id(dev, apdev):
     """Secure mesh using sae_password and password identifier"""
@@ -387,13 +355,7 @@ def test_wpas_mesh_secure_sae_password_id(dev, apdev):
                              sae_password_id="pw id")
     dev[1].mesh_group_add(id)
 
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
-
-    check_mesh_peer_connected(dev[0])
-    check_mesh_peer_connected(dev[1])
-
-    hwsim_utils.test_connectivity(dev[0], dev[1])
+    check_mesh_joined_connected(dev, connectivity=True)
 
 def test_wpas_mesh_secure_sae_password_id_mismatch(dev, apdev):
     """Secure mesh using sae_password and password identifier mismatch"""
@@ -408,8 +370,7 @@ def test_wpas_mesh_secure_sae_password_id_mismatch(dev, apdev):
                              sae_password_id="wrong")
     dev[1].mesh_group_add(id)
 
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
+    check_mesh_joined2(dev)
 
     ev = dev[0].wait_event(["CTRL-EVENT-SAE-UNKNOWN-PASSWORD-IDENTIFIER"],
                            timeout=10)
@@ -427,16 +388,99 @@ def test_mesh_secure_pmf(dev, apdev):
     id = add_mesh_secure_net(dev[1], pmf=True)
     dev[1].mesh_group_add(id)
 
-    # Check for mesh joined
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
+    check_mesh_joined_connected(dev, connectivity=True)
 
-    # Check for peer connected
-    check_mesh_peer_connected(dev[0])
-    check_mesh_peer_connected(dev[1])
+def test_mesh_secure_ocv(dev, apdev):
+    """Secure mesh network connectivity with OCV enabled"""
+    check_mesh_support(dev[0], secure=True)
+    dev[0].request("SET sae_groups ")
+    id = add_mesh_secure_net(dev[0], pmf=True, ocv=True)
+    dev[0].mesh_group_add(id)
+    dev[1].request("SET sae_groups ")
+    id = add_mesh_secure_net(dev[1], pmf=True, ocv=True)
+    dev[1].mesh_group_add(id)
 
-    # Test connectivity 0->1 and 1->0
-    hwsim_utils.test_connectivity(dev[0], dev[1])
+    check_mesh_joined_connected(dev, connectivity=True)
+
+def test_mesh_secure_ocv_compat(dev, apdev):
+    """Secure mesh network where only one peer has OCV enabled"""
+    check_mesh_support(dev[0], secure=True)
+    dev[0].request("SET sae_groups ")
+    id = add_mesh_secure_net(dev[0], pmf=True, ocv=True)
+    dev[0].mesh_group_add(id)
+    dev[1].request("SET sae_groups ")
+    id = add_mesh_secure_net(dev[1], pmf=True, ocv=False)
+    dev[1].mesh_group_add(id)
+
+    check_mesh_joined_connected(dev, connectivity=True)
+
+def set_reg(dev, country):
+    subprocess.call(['iw', 'reg', 'set', country])
+    for i in range(2):
+        for j in range(5):
+            ev = dev[i].wait_event(["CTRL-EVENT-REGDOM-CHANGE"], timeout=5)
+            if ev is None:
+                raise Exception("No regdom change event")
+            if "alpha2=" + country in ev:
+                break
+
+def clear_reg_setting(dev):
+    dev[0].request("MESH_GROUP_REMOVE " + dev[0].ifname)
+    dev[1].request("MESH_GROUP_REMOVE " + dev[1].ifname)
+    subprocess.call(['iw', 'reg', 'set', '00'])
+    dev[0].flush_scan_cache()
+    dev[1].flush_scan_cache()
+
+def test_mesh_secure_ocv_mix_legacy(dev, apdev):
+    """Mesh network with a VHT STA and a legacy STA under OCV"""
+    try:
+        run_mesh_secure_ocv_mix_legacy(dev, apdev)
+    finally:
+        clear_reg_setting(dev)
+
+def run_mesh_secure_ocv_mix_legacy(dev, apdev):
+    check_mesh_support(dev[0], secure=True)
+    set_reg(dev, 'AZ')
+
+    dev[0].request("SET sae_groups ")
+    id = add_mesh_secure_net(dev[0], pmf=True, ocv=True)
+    dev[0].set_network(id, "frequency", "5200")
+    dev[0].set_network(id, "max_oper_chwidth", "2")
+    dev[0].mesh_group_add(id)
+
+    dev[1].request("SET sae_groups ")
+    id = add_mesh_secure_net(dev[1], pmf=True, ocv=True)
+    dev[1].set_network(id, "frequency", "5200")
+    dev[1].set_network(id, "disable_vht", "1")
+    dev[1].set_network(id, "disable_ht40", "1")
+    dev[1].mesh_group_add(id)
+
+    check_mesh_joined_connected(dev, connectivity=True)
+
+def test_mesh_secure_ocv_mix_ht(dev, apdev):
+    """Mesh network with a VHT STA and a HT STA under OCV"""
+    try:
+        run_mesh_secure_ocv_mix_ht(dev, apdev)
+    finally:
+        clear_reg_setting(dev)
+
+def run_mesh_secure_ocv_mix_ht(dev, apdev):
+    check_mesh_support(dev[0], secure=True)
+    set_reg(dev, 'AZ')
+
+    dev[0].request("SET sae_groups ")
+    id = add_mesh_secure_net(dev[0], pmf=True, ocv=True)
+    dev[0].set_network(id, "frequency", "5200")
+    dev[0].set_network(id, "max_oper_chwidth", "2")
+    dev[0].mesh_group_add(id)
+
+    dev[1].request("SET sae_groups ")
+    id = add_mesh_secure_net(dev[1], pmf=True, ocv=True)
+    dev[1].set_network(id, "frequency", "5200")
+    dev[1].set_network(id, "disable_vht", "1")
+    dev[1].mesh_group_add(id)
+
+    check_mesh_joined_connected(dev, connectivity=True)
 
 def run_mesh_secure(dev, cipher):
     if cipher not in dev[0].get_capability("pairwise"):
@@ -450,16 +494,7 @@ def run_mesh_secure(dev, cipher):
     id = add_mesh_secure_net(dev[1], pairwise=cipher, group=cipher)
     dev[1].mesh_group_add(id)
 
-    # Check for mesh joined
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
-
-    # Check for peer connected
-    check_mesh_peer_connected(dev[0])
-    check_mesh_peer_connected(dev[1])
-
-    # Test connectivity 0->1 and 1->0
-    hwsim_utils.test_connectivity(dev[0], dev[1])
+    check_mesh_joined_connected(dev, connectivity=True)
 
 def test_mesh_secure_ccmp(dev, apdev):
     """Secure mesh with CCMP"""
@@ -565,11 +600,7 @@ def test_wpas_mesh_secure_sae_group_negotiation(dev, apdev):
     id = add_mesh_secure_net(dev[1])
     dev[1].mesh_group_add(id)
 
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
-
-    check_mesh_peer_connected(dev[0])
-    check_mesh_peer_connected(dev[1])
+    check_mesh_joined_connected(dev)
 
     dev[0].request("SET sae_groups ")
     dev[1].request("SET sae_groups ")
@@ -602,16 +633,7 @@ def test_wpas_mesh_secure_no_auto(dev, apdev):
     dev[1].set_network(id, "no_auto_peer", "1")
     dev[1].mesh_group_add(id)
 
-    # Check for mesh joined
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
-
-    # Check for peer connected
-    check_mesh_peer_connected(dev[0], timeout=30)
-    check_mesh_peer_connected(dev[1])
-
-    # Test connectivity 0->1 and 1->0
-    hwsim_utils.test_connectivity(dev[0], dev[1])
+    check_mesh_joined_connected(dev, connectivity=True)
 
     dev[0].request("SET sae_groups ")
     dev[1].request("SET sae_groups ")
@@ -629,9 +651,7 @@ def test_wpas_mesh_secure_dropped_frame(dev, apdev):
     id = add_mesh_secure_net(dev[1])
     dev[1].mesh_group_add(id)
 
-    # Check for mesh joined
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
+    check_mesh_joined2(dev)
 
     # Drop the first Action frame (plink Open) to test unexpected order of
     # Confirm/Open messages.
@@ -651,12 +671,7 @@ def test_wpas_mesh_secure_dropped_frame(dev, apdev):
 
     dev[0].request("SET ext_mgmt_frame_handling 0")
 
-    # Check for peer connected
-    check_mesh_peer_connected(dev[0])
-    check_mesh_peer_connected(dev[1])
-
-    # Test connectivity 0->1 and 1->0
-    hwsim_utils.test_connectivity(dev[0], dev[1])
+    check_mesh_connected2(dev, connectivity=True)
 
 def test_mesh_secure_fail(dev, apdev):
     """Secure mesh network connectivity failure"""
@@ -671,11 +686,7 @@ def test_mesh_secure_fail(dev, apdev):
     with fail_test(dev[0], 1, "wpa_driver_nl80211_sta_add;mesh_mpm_auth_peer"):
         dev[1].mesh_group_add(id)
 
-        check_mesh_group_added(dev[0])
-        check_mesh_group_added(dev[1])
-
-        check_mesh_peer_connected(dev[0])
-        check_mesh_peer_connected(dev[1])
+        check_mesh_joined_connected(dev)
 
 def test_wpas_mesh_ctrl(dev):
     """wpa_supplicant ctrl_iface mesh command error cases"""
@@ -713,11 +724,7 @@ def test_wpas_mesh_dynamic_interface(dev):
 
         add_open_mesh_network(wpas0)
         add_open_mesh_network(wpas1)
-        check_mesh_group_added(wpas0)
-        check_mesh_group_added(wpas1)
-        check_mesh_peer_connected(wpas0)
-        check_mesh_peer_connected(wpas1)
-        hwsim_utils.test_connectivity(wpas0, wpas1)
+        check_mesh_joined_connected([wpas0, wpas1], connectivity=True)
 
         # Must not allow MESH_GROUP_REMOVE on dynamic interface
         if "FAIL" not in wpas0.request("MESH_GROUP_REMOVE " + mesh0):
@@ -759,11 +766,7 @@ def test_wpas_mesh_dynamic_interface(dev):
 
         add_open_mesh_network(wpas0)
         add_open_mesh_network(wpas1)
-        check_mesh_group_added(wpas0)
-        check_mesh_group_added(wpas1)
-        check_mesh_peer_connected(wpas0)
-        check_mesh_peer_connected(wpas1)
-        hwsim_utils.test_connectivity(wpas0, wpas1)
+        check_mesh_joined_connected([wpas0, wpas1], connectivity=True)
     finally:
         if mesh0:
             dev[0].request("MESH_GROUP_REMOVE " + mesh0)
@@ -783,11 +786,7 @@ def test_wpas_mesh_dynamic_interface_remove(dev):
     logger.info(mesh5 + " address " + wpas5.get_status_field("address"))
     add_open_mesh_network(wpas5)
     add_open_mesh_network(dev[0])
-    check_mesh_group_added(wpas5)
-    check_mesh_group_added(dev[0])
-    check_mesh_peer_connected(wpas5)
-    check_mesh_peer_connected(dev[0])
-    hwsim_utils.test_connectivity(wpas5, dev[0])
+    check_mesh_joined_connected([wpas5, dev[0]], connectivity=True)
 
     # Remove the main interface while mesh interface is in use
     wpas.interface_remove("wlan5")
@@ -912,16 +911,7 @@ def _test_wpas_mesh_open_5ghz(dev, apdev):
                 break
         add_open_mesh_network(dev[i], freq="5180")
 
-    # Check for mesh joined
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
-
-    # Check for peer connected
-    check_mesh_peer_connected(dev[0])
-    check_mesh_peer_connected(dev[1])
-
-    # Test connectivity 0->1 and 1->0
-    hwsim_utils.test_connectivity(dev[0], dev[1])
+    check_mesh_joined_connected(dev, connectivity=True)
 
     dev[0].mesh_group_remove()
     dev[1].mesh_group_remove()
@@ -964,10 +954,7 @@ def _test_wpas_mesh_open_5ghz_coex(dev, apdev):
         dev[i].scan_for_bss(bssid, freq=5200)
         add_open_mesh_network(dev[i], freq="5180")
 
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
-    check_mesh_peer_connected(dev[0])
-    check_mesh_peer_connected(dev[1])
+    check_mesh_joined_connected(dev)
 
     freq = dev[0].get_status_field("freq")
     if freq != "5200":
@@ -1032,6 +1019,94 @@ def _test_wpas_mesh_open_ht40(dev, apdev):
     dev[1].dump_monitor()
     dev[2].dump_monitor()
 
+def test_wpas_mesh_open_vht40(dev, apdev):
+    """wpa_supplicant open MESH network on VHT 40 MHz channel"""
+    try:
+        _test_wpas_mesh_open_vht40(dev, apdev)
+    finally:
+        dev[0].request("MESH_GROUP_REMOVE " + dev[0].ifname)
+        dev[1].request("MESH_GROUP_REMOVE " + dev[1].ifname)
+        subprocess.call(['iw', 'reg', 'set', '00'])
+        dev[0].flush_scan_cache()
+        dev[1].flush_scan_cache()
+
+def _test_wpas_mesh_open_vht40(dev, apdev):
+    check_mesh_support(dev[0])
+    subprocess.call(['iw', 'reg', 'set', 'US'])
+    for i in range(2):
+        for j in range(5):
+            ev = dev[i].wait_event(["CTRL-EVENT-REGDOM-CHANGE"], timeout=5)
+            if ev is None:
+                raise Exception("No regdom change event")
+            if "alpha2=US" in ev:
+                break
+        add_open_mesh_network(dev[i], freq="5180", chwidth=0)
+
+    check_mesh_joined_connected(dev, connectivity=True)
+
+    sig = dev[0].request("SIGNAL_POLL").splitlines()
+    if "WIDTH=40 MHz" not in sig:
+        raise Exception("Unexpected SIGNAL_POLL value(2): " + str(sig))
+    if "CENTER_FRQ1=5190" not in sig:
+        raise Exception("Unexpected SIGNAL_POLL value(3): " + str(sig))
+
+    sig = dev[1].request("SIGNAL_POLL").splitlines()
+    if "WIDTH=40 MHz" not in sig:
+        raise Exception("Unexpected SIGNAL_POLL value(2b): " + str(sig))
+    if "CENTER_FRQ1=5190" not in sig:
+        raise Exception("Unexpected SIGNAL_POLL value(3b): " + str(sig))
+
+    dev[0].mesh_group_remove()
+    dev[1].mesh_group_remove()
+    check_mesh_group_removed(dev[0])
+    check_mesh_group_removed(dev[1])
+    dev[0].dump_monitor()
+    dev[1].dump_monitor()
+
+def test_wpas_mesh_open_vht20(dev, apdev):
+    """wpa_supplicant open MESH network on VHT 20 MHz channel"""
+    try:
+        _test_wpas_mesh_open_vht20(dev, apdev)
+    finally:
+        dev[0].request("MESH_GROUP_REMOVE " + dev[0].ifname)
+        dev[1].request("MESH_GROUP_REMOVE " + dev[1].ifname)
+        subprocess.call(['iw', 'reg', 'set', '00'])
+        dev[0].flush_scan_cache()
+        dev[1].flush_scan_cache()
+
+def _test_wpas_mesh_open_vht20(dev, apdev):
+    check_mesh_support(dev[0])
+    subprocess.call(['iw', 'reg', 'set', 'US'])
+    for i in range(2):
+        for j in range(5):
+            ev = dev[i].wait_event(["CTRL-EVENT-REGDOM-CHANGE"], timeout=5)
+            if ev is None:
+                raise Exception("No regdom change event")
+            if "alpha2=US" in ev:
+                break
+        add_open_mesh_network(dev[i], freq="5180", chwidth=0, disable_ht40=True)
+
+    check_mesh_joined_connected(dev, connectivity=True)
+
+    sig = dev[0].request("SIGNAL_POLL").splitlines()
+    if "WIDTH=20 MHz" not in sig:
+        raise Exception("Unexpected SIGNAL_POLL value(2): " + str(sig))
+    if "CENTER_FRQ1=5180" not in sig:
+        raise Exception("Unexpected SIGNAL_POLL value(3): " + str(sig))
+
+    sig = dev[1].request("SIGNAL_POLL").splitlines()
+    if "WIDTH=20 MHz" not in sig:
+        raise Exception("Unexpected SIGNAL_POLL value(2b): " + str(sig))
+    if "CENTER_FRQ1=5180" not in sig:
+        raise Exception("Unexpected SIGNAL_POLL value(3b): " + str(sig))
+
+    dev[0].mesh_group_remove()
+    dev[1].mesh_group_remove()
+    check_mesh_group_removed(dev[0])
+    check_mesh_group_removed(dev[1])
+    dev[0].dump_monitor()
+    dev[1].dump_monitor()
+
 def test_wpas_mesh_open_vht_80p80(dev, apdev):
     """wpa_supplicant open MESH network on VHT 80+80 MHz channel"""
     try:
@@ -1055,16 +1130,7 @@ def _test_wpas_mesh_open_vht_80p80(dev, apdev):
                 break
         add_open_mesh_network(dev[i], freq="5180", chwidth=3)
 
-    # Check for mesh joined
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
-
-    # Check for peer connected
-    check_mesh_peer_connected(dev[0])
-    check_mesh_peer_connected(dev[1])
-
-    # Test connectivity 0->1 and 1->0
-    hwsim_utils.test_connectivity(dev[0], dev[1])
+    check_mesh_joined_connected(dev, connectivity=True)
 
     sig = dev[0].request("SIGNAL_POLL").splitlines()
     if "WIDTH=80+80 MHz" not in sig:
@@ -1123,18 +1189,9 @@ def _test_mesh_open_vht_160(dev, apdev):
 
         add_open_mesh_network(dev[i], freq="5520", chwidth=2)
 
-    # Check for mesh joined
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
-
-    # Check for peer connected
-    check_mesh_peer_connected(dev[0])
-    check_mesh_peer_connected(dev[1])
+    check_mesh_joined_connected(dev, connectivity=True)
     dev[0].dump_monitor()
     dev[1].dump_monitor()
-
-    # Test connectivity 0->1 and 1->0
-    hwsim_utils.test_connectivity(dev[0], dev[1])
 
     sig = dev[0].request("SIGNAL_POLL").splitlines()
     if "WIDTH=160 MHz" not in sig:
@@ -1172,10 +1229,7 @@ def test_wpas_mesh_password_mismatch(dev, apdev):
     dev[2].mesh_group_add(id)
 
     # The two peers with matching password need to be able to connect
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
-    check_mesh_peer_connected(dev[0])
-    check_mesh_peer_connected(dev[1])
+    check_mesh_joined_connected(dev)
 
     ev = dev[2].wait_event(["MESH-SAE-AUTH-FAILURE"], timeout=20)
     if ev is None:
@@ -1231,9 +1285,7 @@ def test_wpas_mesh_password_mismatch_retry(dev, apdev, params):
     dev[1].set_network_quoted(id, "psk", "wrong password")
     dev[1].mesh_group_add(id)
 
-    # Check for mesh joined
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
+    check_mesh_joined2(dev)
 
     for i in range(4):
         ev = dev[0].wait_event(["MESH-SAE-AUTH-FAILURE"], timeout=20)
@@ -1303,10 +1355,7 @@ def _test_wpas_mesh_reconnect(dev):
     dev[1].request("SET sae_groups ")
     id = add_mesh_secure_net(dev[1])
     dev[1].mesh_group_add(id)
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
-    check_mesh_peer_connected(dev[0])
-    check_mesh_peer_connected(dev[1])
+    check_mesh_joined_connected(dev)
 
     for i in range(3):
         # Drop incoming management frames to avoid handling link close
@@ -1381,13 +1430,7 @@ def test_wpas_mesh_pmksa_caching(dev, apdev):
     id = add_mesh_secure_net(dev[1])
     dev[1].mesh_group_add(id)
 
-    # Check for mesh joined
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
-
-    # Check for peer connected
-    check_mesh_peer_connected(dev[0])
-    check_mesh_peer_connected(dev[1])
+    check_mesh_joined_connected(dev)
 
     addr0 = dev[0].own_addr()
     addr1 = dev[1].own_addr()
@@ -1423,9 +1466,7 @@ def test_wpas_mesh_pmksa_caching2(dev, apdev):
     dev[1].set_network(id, "no_auto_peer", "1")
     dev[1].mesh_group_add(id)
 
-    # Check for mesh joined
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
+    check_mesh_joined2(dev)
 
     # Check for peer connected
     ev = dev[0].wait_event(["will not initiate new peer link"], timeout=10)
@@ -1433,8 +1474,7 @@ def test_wpas_mesh_pmksa_caching2(dev, apdev):
         raise Exception("Missing no-initiate message")
     if "OK" not in dev[0].request("MESH_PEER_ADD " + addr1):
         raise Exception("MESH_PEER_ADD failed")
-    check_mesh_peer_connected(dev[0])
-    check_mesh_peer_connected(dev[1])
+    check_mesh_connected2(dev)
 
     pmksa0 = dev[0].get_pmksa(addr1)
     pmksa1 = dev[1].get_pmksa(addr0)
@@ -1454,8 +1494,7 @@ def test_wpas_mesh_pmksa_caching2(dev, apdev):
         raise Exception("Missing no-initiate message (2)")
     if "OK" not in dev[0].request("MESH_PEER_ADD " + addr1):
         raise Exception("MESH_PEER_ADD failed (2)")
-    check_mesh_peer_connected(dev[0])
-    check_mesh_peer_connected(dev[1])
+    check_mesh_connected2(dev)
 
     pmksa0c = dev[0].get_pmksa(addr1)
     pmksa1c = dev[1].get_pmksa(addr0)
@@ -1483,9 +1522,7 @@ def test_wpas_mesh_pmksa_caching_no_match(dev, apdev):
     dev[1].set_network(id, "no_auto_peer", "1")
     dev[1].mesh_group_add(id)
 
-    # Check for mesh joined
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
+    check_mesh_joined2(dev)
 
     # Check for peer connected
     ev = dev[0].wait_event(["will not initiate new peer link"], timeout=10)
@@ -1493,8 +1530,7 @@ def test_wpas_mesh_pmksa_caching_no_match(dev, apdev):
         raise Exception("Missing no-initiate message")
     if "OK" not in dev[0].request("MESH_PEER_ADD " + addr1):
         raise Exception("MESH_PEER_ADD failed")
-    check_mesh_peer_connected(dev[0])
-    check_mesh_peer_connected(dev[1])
+    check_mesh_connected2(dev)
 
     pmksa0 = dev[0].get_pmksa(addr1)
     pmksa1 = dev[1].get_pmksa(addr0)
@@ -1514,8 +1550,7 @@ def test_wpas_mesh_pmksa_caching_no_match(dev, apdev):
         raise Exception("Missing no-initiate message (2)")
     if "OK" not in dev[0].request("MESH_PEER_ADD " + addr1):
         raise Exception("MESH_PEER_ADD failed (2)")
-    check_mesh_peer_connected(dev[0])
-    check_mesh_peer_connected(dev[1])
+    check_mesh_connected2(dev)
 
     pmksa0c = dev[0].get_pmksa(addr1)
     pmksa1c = dev[1].get_pmksa(addr0)
@@ -1543,9 +1578,7 @@ def test_mesh_pmksa_caching_oom(dev, apdev):
     dev[1].set_network(id, "no_auto_peer", "1")
     dev[1].mesh_group_add(id)
 
-    # Check for mesh joined
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
+    check_mesh_joined2(dev)
 
     # Check for peer connected
     ev = dev[0].wait_event(["will not initiate new peer link"], timeout=10)
@@ -1553,8 +1586,7 @@ def test_mesh_pmksa_caching_oom(dev, apdev):
         raise Exception("Missing no-initiate message")
     if "OK" not in dev[0].request("MESH_PEER_ADD " + addr1):
         raise Exception("MESH_PEER_ADD failed")
-    check_mesh_peer_connected(dev[0])
-    check_mesh_peer_connected(dev[1])
+    check_mesh_connected2(dev)
 
     if "OK" not in dev[0].request("MESH_PEER_REMOVE " + addr1):
         raise Exception("Failed to remove peer")
@@ -1582,13 +1614,7 @@ def test_wpas_mesh_pmksa_caching_ext(dev, apdev):
     id = add_mesh_secure_net(dev[1])
     dev[1].mesh_group_add(id)
 
-    # Check for mesh joined
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
-
-    # Check for peer connected
-    check_mesh_peer_connected(dev[0])
-    check_mesh_peer_connected(dev[1])
+    check_mesh_joined_connected(dev)
     dev[0].dump_monitor()
     dev[1].dump_monitor()
 
@@ -1692,7 +1718,7 @@ def test_mesh_oom(dev, apdev):
                 raise
             logger.info("Ignore no-oom for i=%d" % i)
 
-    with alloc_fail(dev[0], 3, "=wpa_supplicant_mesh_init"):
+    with alloc_fail(dev[0], 2, "=wpa_supplicant_mesh_init"):
         id = add_mesh_secure_net(dev[0])
         dev[0].mesh_group_add(id)
         ev = dev[0].wait_event(["Failed to init mesh"])
@@ -1771,8 +1797,7 @@ def test_mesh_sae_groups_invalid(dev, apdev):
     id = add_mesh_secure_net(dev[1])
     dev[1].mesh_group_add(id)
 
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
+    check_mesh_joined2(dev)
 
     ev = dev[0].wait_event(["new peer notification"], timeout=10)
     if ev is None:
@@ -1830,12 +1855,10 @@ def test_mesh_sae_failure(dev, apdev):
         with alloc_fail(dev[1], count, func):
             id = add_mesh_secure_net(dev[1])
             dev[1].mesh_group_add(id)
-            check_mesh_group_added(dev[0])
-            check_mesh_group_added(dev[1])
+            check_mesh_joined2(dev)
             if success:
                 # retry is expected to work
-                check_mesh_peer_connected(dev[0])
-                check_mesh_peer_connected(dev[1])
+                check_mesh_connected2(dev)
             else:
                 wait_fail_trigger(dev[1], "GET_ALLOC_FAIL")
         dev[0].mesh_group_remove()
@@ -1854,12 +1877,10 @@ def test_mesh_failure(dev, apdev):
 
         with alloc_fail(dev[1], count, func):
             add_open_mesh_network(dev[1])
-            check_mesh_group_added(dev[0])
-            check_mesh_group_added(dev[1])
+            check_mesh_joined2(dev)
             if success:
                 # retry is expected to work
-                check_mesh_peer_connected(dev[0])
-                check_mesh_peer_connected(dev[1])
+                check_mesh_connected2(dev)
             else:
                 wait_fail_trigger(dev[1], "GET_ALLOC_FAIL")
         dev[0].mesh_group_remove()
@@ -1873,12 +1894,10 @@ def test_mesh_failure(dev, apdev):
 
         with fail_test(dev[1], count, func):
             add_open_mesh_network(dev[1])
-            check_mesh_group_added(dev[0])
-            check_mesh_group_added(dev[1])
+            check_mesh_joined2(dev)
             if success:
                 # retry is expected to work
-                check_mesh_peer_connected(dev[0])
-                check_mesh_peer_connected(dev[1])
+                check_mesh_connected2(dev)
             else:
                 wait_fail_trigger(dev[1], "GET_FAIL")
         dev[0].mesh_group_remove()
@@ -1941,9 +1960,7 @@ def test_mesh_missing_mic(dev, apdev):
     id = add_mesh_secure_net(dev[1])
     dev[1].mesh_group_add(id)
 
-    # Check for mesh joined
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
+    check_mesh_joined2(dev)
 
     count = 0
     remove_mic = True
@@ -1991,9 +2008,7 @@ def test_mesh_pmkid_mismatch(dev, apdev):
     dev[1].set_network(id, "no_auto_peer", "1")
     dev[1].mesh_group_add(id)
 
-    # Check for mesh joined
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
+    check_mesh_joined2(dev)
 
     # Check for peer connected
     ev = dev[0].wait_event(["will not initiate new peer link"], timeout=10)
@@ -2001,8 +2016,7 @@ def test_mesh_pmkid_mismatch(dev, apdev):
         raise Exception("Missing no-initiate message")
     if "OK" not in dev[0].request("MESH_PEER_ADD " + addr1):
         raise Exception("MESH_PEER_ADD failed")
-    check_mesh_peer_connected(dev[0])
-    check_mesh_peer_connected(dev[1])
+    check_mesh_connected2(dev)
 
     if "OK" not in dev[0].request("MESH_PEER_REMOVE " + addr1):
         raise Exception("Failed to remove peer")
@@ -2220,10 +2234,7 @@ def test_mesh_holding(dev, apdev):
     check_mesh_support(dev[0])
     add_open_mesh_network(dev[0])
     add_open_mesh_network(dev[1])
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
-    check_mesh_peer_connected(dev[0])
-    check_mesh_peer_connected(dev[1])
+    check_mesh_joined_connected(dev)
 
     addr0 = dev[0].own_addr()
     addr1 = dev[1].own_addr()
@@ -2349,11 +2360,7 @@ def test_mesh_select_network(dev):
     id1 = add_open_mesh_network(dev[1], start=False)
     dev[0].select_network(id0)
     dev[1].select_network(id1)
-    check_mesh_group_added(dev[0])
-    check_mesh_group_added(dev[1])
-    check_mesh_peer_connected(dev[0])
-    check_mesh_peer_connected(dev[1])
-    hwsim_utils.test_connectivity(dev[0], dev[1])
+    check_mesh_joined_connected(dev, connectivity=True)
 
 def test_mesh_forwarding(dev):
     """Mesh with two stations that can't reach each other directly"""

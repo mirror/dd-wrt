@@ -36,6 +36,7 @@
 #define WLAN_STA_VHT_OPMODE_ENABLED BIT(20)
 #define WLAN_STA_VENDOR_VHT BIT(21)
 #define WLAN_STA_PENDING_FILS_ERP BIT(22)
+#define WLAN_STA_MULTI_AP BIT(23)
 #define WLAN_STA_PENDING_DISASSOC_CB BIT(29)
 #define WLAN_STA_PENDING_DEAUTH_CB BIT(30)
 #define WLAN_STA_NONERP BIT(31)
@@ -117,6 +118,7 @@ struct sta_info {
 	unsigned int power_capab:1;
 	unsigned int agreed_to_steer:1;
 	unsigned int hs20_t_c_filtering:1;
+	unsigned int ft_over_ds:1;
 
 	u16 auth_alg;
 
@@ -162,6 +164,7 @@ struct sta_info {
 
 	struct ieee80211_ht_capabilities *ht_capabilities;
 	struct ieee80211_vht_capabilities *vht_capabilities;
+	struct ieee80211_vht_operation *vht_operation;
 	u8 vht_opmode;
 
 #ifdef CONFIG_IEEE80211W
@@ -215,6 +218,7 @@ struct sta_info {
 	u8 cell_capa; /* 0 = unknown (not an MBO STA); otherwise,
 		       * enum mbo_cellular_capa values */
 	struct mbo_non_pref_chan_info *non_pref_chan;
+	int auth_rssi; /* Last Authentication frame RSSI */
 #endif /* CONFIG_MBO */
 
 	u8 *supp_op_classes; /* Supported Operating Classes element, if

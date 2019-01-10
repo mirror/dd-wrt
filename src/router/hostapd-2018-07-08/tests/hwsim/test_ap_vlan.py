@@ -53,6 +53,21 @@ def test_ap_vlan_file_open(dev, apdev):
     hwsim_utils.test_connectivity_iface(dev[1], hapd, "brvlan2")
     hwsim_utils.test_connectivity(dev[2], hapd)
 
+def test_ap_vlan_file_open2(dev, apdev):
+    """AP VLAN with open network and vlan_file mapping (2)"""
+    params = { "ssid": "test-vlan-open",
+               "dynamic_vlan": "1",
+               "vlan_file": "hostapd.vlan2",
+               "accept_mac_file": "hostapd.accept2" }
+    hapd = hostapd.add_ap(apdev[0], params)
+
+    dev[0].connect("test-vlan-open", key_mgmt="NONE", scan_freq="2412")
+    dev[1].connect("test-vlan-open", key_mgmt="NONE", scan_freq="2412")
+    dev[2].connect("test-vlan-open", key_mgmt="NONE", scan_freq="2412")
+    hwsim_utils.test_connectivity_iface(dev[0], hapd, "brvlan1")
+    hwsim_utils.test_connectivity_iface(dev[1], hapd, "brvlan2")
+    hwsim_utils.test_connectivity_iface(dev[2], hapd, "hwsimbr3")
+
 def test_ap_vlan_file_parsing(dev, apdev, params):
     """hostapd vlan_file/mac_file parsing"""
     tmp = os.path.join(params['logdir'], 'ap_vlan_file_parsing.tmp')
@@ -140,6 +155,31 @@ def test_ap_vlan_wpa2_radius_2(dev, apdev):
                    scan_freq="2412")
 
     hwsim_utils.test_connectivity_iface(dev[0], hapd, "brvlan1")
+
+def test_ap_vlan_wpa2_radius_local(dev, apdev):
+    """AP VLAN with WPA2-Enterprise and local file setting VLAN IDs"""
+    params = hostapd.wpa2_eap_params(ssid="test-vlan")
+    params['dynamic_vlan'] = "0"
+    params['vlan_file'] = "hostapd.vlan"
+    params['vlan_bridge'] = "test_br_vlan"
+    params['accept_mac_file'] = "hostapd.accept"
+    hapd = hostapd.add_ap(apdev[0], params)
+
+    dev[0].connect("test-vlan", key_mgmt="WPA-EAP", eap="PAX",
+                   identity="pax.user@example.com",
+                   password_hex="0123456789abcdef0123456789abcdef",
+                   scan_freq="2412")
+    dev[1].connect("test-vlan", key_mgmt="WPA-EAP", eap="PAX",
+                   identity="pax.user@example.com",
+                   password_hex="0123456789abcdef0123456789abcdef",
+                   scan_freq="2412")
+    dev[2].connect("test-vlan", key_mgmt="WPA-EAP", eap="PAX",
+                   identity="pax.user@example.com",
+                   password_hex="0123456789abcdef0123456789abcdef",
+                   scan_freq="2412")
+    hwsim_utils.test_connectivity_iface(dev[0], hapd, "test_br_vlan1")
+    hwsim_utils.test_connectivity_iface(dev[1], hapd, "test_br_vlan2")
+    hwsim_utils.test_connectivity(dev[2], hapd)
 
 def test_ap_vlan_wpa2_radius_id_change(dev, apdev):
     """AP VLAN with WPA2-Enterprise and RADIUS attributes changing VLANID"""

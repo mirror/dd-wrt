@@ -86,6 +86,7 @@ struct wpa_sm {
 
 	int rsn_enabled; /* Whether RSN is enabled in configuration */
 	int mfp; /* 0 = disabled, 1 = optional, 2 = mandatory */
+	int ocv; /* Operating Channel Validation */
 
 	u8 *assoc_wpa_ie; /* Own WPA/RSN IE from (Re)AssocReq */
 	size_t assoc_wpa_ie_len;
@@ -393,6 +394,14 @@ static inline void wpa_sm_fils_hlp_rx(struct wpa_sm *sm,
 {
 	if (sm->ctx->fils_hlp_rx)
 		sm->ctx->fils_hlp_rx(sm->ctx->ctx, dst, src, pkt, pkt_len);
+}
+
+static inline int wpa_sm_channel_info(struct wpa_sm *sm,
+				      struct wpa_channel_info *ci)
+{
+	if (!sm->ctx->channel_info)
+		return -1;
+	return sm->ctx->channel_info(sm->ctx->ctx, ci);
 }
 
 

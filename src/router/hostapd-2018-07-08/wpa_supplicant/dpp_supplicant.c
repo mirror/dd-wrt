@@ -1022,29 +1022,6 @@ void wpas_dpp_listen_stop(struct wpa_supplicant *wpa_s)
 }
 
 
-void wpas_dpp_remain_on_channel_cb(struct wpa_supplicant *wpa_s,
-				   unsigned int freq)
-{
-	if (!wpa_s->dpp_listen_freq && !wpa_s->dpp_pending_listen_freq)
-		return;
-
-	wpa_printf(MSG_DEBUG,
-		   "DPP: remain-on-channel callback (off_channel_freq=%u dpp_pending_listen_freq=%d roc_waiting_drv_freq=%d freq=%u)",
-		   wpa_s->off_channel_freq, wpa_s->dpp_pending_listen_freq,
-		   wpa_s->roc_waiting_drv_freq, freq);
-	if (wpa_s->off_channel_freq &&
-	    wpa_s->off_channel_freq == wpa_s->dpp_pending_listen_freq) {
-		wpa_printf(MSG_DEBUG, "DPP: Listen on %u MHz started", freq);
-		wpa_s->dpp_pending_listen_freq = 0;
-	} else {
-		wpa_printf(MSG_DEBUG,
-			   "DPP: Ignore remain-on-channel callback (off_channel_freq=%u dpp_pending_listen_freq=%d freq=%u)",
-			   wpa_s->off_channel_freq,
-			   wpa_s->dpp_pending_listen_freq, freq);
-	}
-}
-
-
 void wpas_dpp_cancel_remain_on_channel_cb(struct wpa_supplicant *wpa_s,
 					  unsigned int freq)
 {
@@ -2298,6 +2275,7 @@ int wpas_dpp_configurator_sign(struct wpa_supplicant *wpa_s, const char *cmd)
 		return -1;
 
 	curve = get_param(cmd, " curve=");
+	wpas_dpp_set_testing_options(wpa_s, auth);
 	if (wpas_dpp_set_configurator(wpa_s, auth, cmd) == 0 &&
 	    dpp_configurator_own_config(auth, curve, 0) == 0) {
 		wpas_dpp_handle_config_obj(wpa_s, auth);

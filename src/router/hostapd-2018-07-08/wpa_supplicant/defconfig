@@ -44,7 +44,7 @@ CONFIG_DRIVER_NL80211=y
 #CONFIG_LIBNL20=y
 
 # Use libnl 3.2 libraries (if this is selected, CONFIG_LIBNL20 is ignored)
-#CONFIG_LIBNL32=y
+CONFIG_LIBNL32=y
 
 
 # Driver interface for FreeBSD net80211 layer (e.g., Atheros driver)
@@ -301,6 +301,9 @@ CONFIG_BACKEND=file
 # Driver support is also needed for IEEE 802.11w.
 #CONFIG_IEEE80211W=y
 
+# Support Operating Channel Validation
+#CONFIG_OCV=y
+
 # Select TLS implementation
 # openssl = OpenSSL (default)
 # gnutls = GnuTLS
@@ -457,6 +460,11 @@ CONFIG_BACKEND=file
 # should only be considered for builds that are known to be used on devices
 # that meet the requirements described above.
 #CONFIG_NO_RANDOM_POOL=y
+
+# Should we attempt to use the getrandom(2) call that provides more reliable
+# yet secure randomness source than /dev/random on Linux 3.17 and newer.
+# Requires glibc 2.25 to build, falls back to /dev/random if unavailable.
+#CONFIG_GETRANDOM=y
 
 # IEEE 802.11n (High Throughput) support (mainly for AP mode)
 #CONFIG_IEEE80211N=y

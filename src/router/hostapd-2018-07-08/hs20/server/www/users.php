@@ -69,6 +69,9 @@ if ($cmd == 'subrem-add-user' && $id > 0) {
 if ($cmd == 'subrem-add-machine' && $id > 0) {
 	$db->exec("UPDATE users SET remediation='machine' WHERE rowid=$id");
 }
+if ($cmd == 'subrem-add-reenroll' && $id > 0) {
+	$db->exec("UPDATE users SET remediation='reenroll' WHERE rowid=$id");
+}
 if ($cmd == 'subrem-add-policy' && $id > 0) {
 	$db->exec("UPDATE users SET remediation='policy' WHERE rowid=$id");
 }
@@ -172,6 +175,10 @@ if ($rem == "") {
 		   $row['rowid'] . "\">add:user</a>]";
 	echo " [<a href=\"users.php?cmd=subrem-add-machine&id=" .
 		   $row['rowid'] . "\">add:machine</a>]";
+	if ($row['methods'] == 'TLS') {
+		echo " [<a href=\"users.php?cmd=subrem-add-reenroll&id=" .
+			   $row['rowid'] . "\">add:reenroll</a>]";
+	}
 	echo " [<a href=\"users.php?cmd=subrem-add-policy&id=" .
 		   $row['rowid'] . "\">add:policy</a>]";
 	echo " [<a href=\"users.php?cmd=subrem-add-free&id=" .
@@ -184,6 +191,9 @@ if ($rem == "") {
 		       $row['rowid'] . "\">clear</a>]";
 } else if ($rem == "free") {
 	echo "Free [<a href=\"users.php?cmd=subrem-clear&id=" .
+		       $row['rowid'] . "\">clear</a>]";
+} else if ($rem == "reenroll") {
+	echo "Reenroll [<a href=\"users.php?cmd=subrem-clear&id=" .
 		       $row['rowid'] . "\">clear</a>]";
 } else  {
 	echo "Machine [<a href=\"users.php?cmd=subrem-clear&id=" .
@@ -319,7 +329,7 @@ echo "<br>\n";
 echo "<table border=1 cellspacing=0 cellpadding=0>\n";
 echo "<tr><th>User<th>Realm<th><small>Remediation</small><th>Policy<th><small>Account type</small><th><small>Phase 2 method(s)</small><th>DevId<th>MAC Address<th>T&C\n";
 
-$res = $db->query('SELECT rowid,* FROM users WHERE phase2=1 ORDER BY identity');
+$res = $db->query('SELECT rowid,* FROM users WHERE (phase2=1 OR methods=\'TLS\') ORDER BY identity');
 foreach ($res as $row) {
 	echo "<tr><td><a href=\"users.php?id=" . $row['rowid'] . "\"> " .
 	    $row['identity'] . " </a>";
@@ -334,6 +344,8 @@ foreach ($res as $row) {
 		echo "Policy";
 	} else if ($rem == "free") {
 		echo "Free";
+	} else if ($rem == "reenroll") {
+		echo "Reenroll";
 	} else  {
 		echo "Machine";
 	}
