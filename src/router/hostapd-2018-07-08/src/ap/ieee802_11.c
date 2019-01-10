@@ -1760,9 +1760,10 @@ ieee802_11_set_radius_info(struct hostapd_data *hapd, struct sta_info *sta,
 
 
 static void handle_auth(struct hostapd_data *hapd,
-			const struct ieee80211_mgmt *mgmt, size_t len, int rssi, struct hostapd_frame_info *fi)
+			const struct ieee80211_mgmt *mgmt, size_t len, struct hostapd_frame_info *fi)
 {
 	u16 auth_alg, auth_transaction, status_code;
+	int rssi = fi ? fi->ssi_signal : 0;
 	u16 resp = WLAN_STATUS_SUCCESS;
 	struct sta_info *sta = NULL;
 	int res, reply_res;
@@ -3373,9 +3374,10 @@ void fils_hlp_timeout(void *eloop_ctx, void *eloop_data)
 
 static void handle_assoc(struct hostapd_data *hapd,
 			 const struct ieee80211_mgmt *mgmt, size_t len,
-			 int reassoc, int rssi, struct hostapd_frame_info *fi)
+			 int reassoc, struct hostapd_frame_info *fi)
 {
 	u16 capab_info, listen_interval, seq_ctrl, fc;
+	int rssi = fi ? fi->ssi_signal : 0;
 	u16 resp = WLAN_STATUS_SUCCESS, reply_res;
 	const u8 *pos;
 	int left, i;
@@ -4209,17 +4211,17 @@ int ieee802_11_mgmt(struct hostapd_data *hapd, const u8 *buf, size_t len,
 	switch (stype) {
 	case WLAN_FC_STYPE_AUTH:
 		wpa_printf(MSG_DEBUG, "mgmt::auth");
-		handle_auth(hapd, mgmt, len, ssi_signal, fi);
+		handle_auth(hapd, mgmt, len, fi);
 		ret = 1;
 		break;
 	case WLAN_FC_STYPE_ASSOC_REQ:
 		wpa_printf(MSG_DEBUG, "mgmt::assoc_req");
-		handle_assoc(hapd, mgmt, len, 0, ssi_signal, fi);
+		handle_assoc(hapd, mgmt, len, 0, fi);
 		ret = 1;
 		break;
 	case WLAN_FC_STYPE_REASSOC_REQ:
 		wpa_printf(MSG_DEBUG, "mgmt::reassoc_req");
-		handle_assoc(hapd, mgmt, len, 1, ssi_signal, fi);
+		handle_assoc(hapd, mgmt, len, 1, fi);
 		ret = 1;
 		break;
 	case WLAN_FC_STYPE_DISASSOC:
