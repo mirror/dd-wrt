@@ -1,13 +1,13 @@
-/* Copyright (c) 2016, The Tor Project, Inc. */
+/* Copyright (c) 2016-2018, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #define CONSDIFF_PRIVATE
 
 #include "orconfig.h"
-#include "or.h"
-#include "consdiff.h"
+#include "core/or/or.h"
+#include "feature/dircommon/consdiff.h"
 
-#include "fuzzing.h"
+#include "test/fuzz/fuzzing.h"
 
 static int
 mock_consensus_compute_digest_(const char *c, consensus_digest_t *d)

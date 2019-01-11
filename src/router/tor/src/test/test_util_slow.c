@@ -1,15 +1,21 @@
 /* Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2017, The Tor Project, Inc. */
+ * Copyright (c) 2007-2018, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #include "orconfig.h"
 #define UTIL_PRIVATE
-#include "util.h"
-#include "util_process.h"
-#include "crypto.h"
-#include "torlog.h"
-#include "test.h"
+#define SUBPROCESS_PRIVATE
+#include "lib/crypt_ops/crypto_cipher.h"
+#include "lib/log/log.h"
+#include "lib/process/subprocess.h"
+#include "lib/process/waitpid.h"
+#include "lib/string/printf.h"
+#include "lib/time/compat_time.h"
+#include "test/test.h"
+
+#include <errno.h>
+#include <string.h>
 
 #ifndef BUILDDIR
 #define BUILDDIR "."
@@ -388,4 +394,3 @@ struct testcase_t slow_util_tests[] = {
   UTIL_TEST(spawn_background_waitpid_notify, 0),
   END_OF_TESTCASES
 };
-

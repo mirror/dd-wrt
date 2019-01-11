@@ -24,6 +24,12 @@
 /* Defined if we default to host local appdata paths on Windows */
 #undef ENABLE_LOCAL_APPDATA
 
+/* Defined if we're building with NSS. */
+#undef ENABLE_NSS
+
+/* Defined if we're building with OpenSSL or LibreSSL */
+#undef ENABLE_OPENSSL
+
 /* Defined if we're building with support for in-process restart debugging. */
 #undef ENABLE_RESTART_DEBUGGING
 
@@ -50,9 +56,6 @@
 
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #undef HAVE_ARPA_INET_H
-
-/* Define to 1 if you have the <assert.h> header file. */
-#undef HAVE_ASSERT_H
 
 /* Define to 1 if you have the `backtrace' function. */
 #undef HAVE_BACKTRACE
@@ -97,17 +100,11 @@
    don't. */
 #undef HAVE_DECL__GETWCH
 
-/* Define to 1 if you have the <dmalloc.h> header file. */
-#undef HAVE_DMALLOC_H
-
-/* Define to 1 if you have the `dmalloc_strdup' function. */
-#undef HAVE_DMALLOC_STRDUP
-
-/* Define to 1 if you have the `dmalloc_strndup' function. */
-#undef HAVE_DMALLOC_STRNDUP
-
 /* Define to 1 if you have the <errno.h> header file. */
 #undef HAVE_ERRNO_H
+
+/* Define to 1 if you have the `ERR_load_KDF_strings' function. */
+#undef HAVE_ERR_LOAD_KDF_STRINGS
 
 /* Define to 1 if you have the <event2/bufferevent_ssl.h> header file. */
 #undef HAVE_EVENT2_BUFFEREVENT_SSL_H
@@ -152,6 +149,9 @@
 /* Define to 1 if you have the `getaddrinfo' function. */
 #undef HAVE_GETADDRINFO
 
+/* Define to 1 if you have the `getdelim' function. */
+#undef HAVE_GETDELIM
+
 /* Define to 1 if you have the `getentropy' function. */
 #undef HAVE_GETENTROPY
 
@@ -169,6 +169,9 @@
 
 /* Define to 1 if you have the `getifaddrs' function. */
 #undef HAVE_GETIFADDRS
+
+/* Define to 1 if you have the `getline' function. */
+#undef HAVE_GETLINE
 
 /* Define to 1 if you have the `getpass' function. */
 #undef HAVE_GETPASS
@@ -385,6 +388,9 @@
 /* Define to 1 if you have the `SSL_CIPHER_find' function. */
 #undef HAVE_SSL_CIPHER_FIND
 
+/* Define to 1 if you have the `SSL_CTX_set1_groups_list' function. */
+#undef HAVE_SSL_CTX_SET1_GROUPS_LIST
+
 /* Define to 1 if you have the `SSL_CTX_set_security_level' function. */
 #undef HAVE_SSL_CTX_SET_SECURITY_LEVEL
 
@@ -415,6 +421,9 @@
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
+/* Define to 1 if you have the `strcasecmp' function. */
+#undef HAVE_STRCASECMP
+
 /* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
 
@@ -426,6 +435,9 @@
 
 /* Define to 1 if you have the `strlcpy' function. */
 #undef HAVE_STRLCPY
+
+/* Define to 1 if you have the `strncasecmp' function. */
+#undef HAVE_STRNCASECMP
 
 /* Define to 1 if you have the `strnlen' function. */
 #undef HAVE_STRNLEN
@@ -653,21 +665,6 @@
 /* The size of `int', as computed by sizeof. */
 #undef SIZEOF_INT
 
-/* The size of `int16_t', as computed by sizeof. */
-#undef SIZEOF_INT16_T
-
-/* The size of `int32_t', as computed by sizeof. */
-#undef SIZEOF_INT32_T
-
-/* The size of `int64_t', as computed by sizeof. */
-#undef SIZEOF_INT64_T
-
-/* The size of `int8_t', as computed by sizeof. */
-#undef SIZEOF_INT8_T
-
-/* The size of `intptr_t', as computed by sizeof. */
-#undef SIZEOF_INTPTR_T
-
 /* The size of `long', as computed by sizeof. */
 #undef SIZEOF_LONG
 
@@ -691,21 +688,6 @@
 
 /* The size of `time_t', as computed by sizeof. */
 #undef SIZEOF_TIME_T
-
-/* The size of `uint16_t', as computed by sizeof. */
-#undef SIZEOF_UINT16_T
-
-/* The size of `uint32_t', as computed by sizeof. */
-#undef SIZEOF_UINT32_T
-
-/* The size of `uint64_t', as computed by sizeof. */
-#undef SIZEOF_UINT64_T
-
-/* The size of `uint8_t', as computed by sizeof. */
-#undef SIZEOF_UINT8_T
-
-/* The size of `uintptr_t', as computed by sizeof. */
-#undef SIZEOF_UINTPTR_T
 
 /* The size of `void *', as computed by sizeof. */
 #undef SIZEOF_VOID_P
@@ -734,9 +716,6 @@
 
 /* Defined if we should use a curve25519 from nacl */
 #undef USE_CURVE25519_NACL
-
-/* Debug memory allocation library */
-#undef USE_DMALLOC
 
 /* Tracing framework to log debug */
 #undef USE_EVENT_TRACING_DEBUG

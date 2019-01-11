@@ -1,15 +1,15 @@
 /* Copyright (c) 2014, Daniel Martí
- * Copyright (c) 2014, The Tor Project, Inc. */
+ * Copyright (c) 2014-2018, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #define CONSDIFF_PRIVATE
 
-#include "or.h"
-#include "test.h"
+#include "core/or/or.h"
+#include "test/test.h"
 
-#include "consdiff.h"
-#include "memarea.h"
-#include "log_test_helpers.h"
+#include "feature/dircommon/consdiff.h"
+#include "lib/memarea/memarea.h"
+#include "test/log_test_helpers.h"
 
 #define tt_str_eq_line(a,b) \
   tt_assert(line_str_eq((b),(a)))

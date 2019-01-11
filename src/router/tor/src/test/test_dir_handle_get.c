@@ -1,6 +1,6 @@
 /* Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2017, The Tor Project, Inc. */
+ * Copyright (c) 2007-2018, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #define RENDCOMMON_PRIVATE
@@ -8,31 +8,43 @@
 #define CONNECTION_PRIVATE
 #define CONFIG_PRIVATE
 #define RENDCACHE_PRIVATE
+#define DIRCACHE_PRIVATE
 
-#include "or.h"
-#include "config.h"
-#include "connection.h"
-#include "consdiffmgr.h"
-#include "directory.h"
-#include "test.h"
-#include "compress.h"
-#include "rendcommon.h"
-#include "rendcache.h"
-#include "router.h"
-#include "routerlist.h"
-#include "rend_test_helpers.h"
-#include "microdesc.h"
-#include "test_helpers.h"
-#include "nodelist.h"
-#include "entrynodes.h"
-#include "routerparse.h"
-#include "networkstatus.h"
-#include "proto_http.h"
-#include "geoip.h"
-#include "dirserv.h"
-#include "dirauth/dirvote.h"
-#include "log_test_helpers.h"
-#include "voting_schedule.h"
+#include "core/or/or.h"
+#include "app/config/config.h"
+#include "core/mainloop/connection.h"
+#include "feature/dircache/consdiffmgr.h"
+#include "feature/dircommon/directory.h"
+#include "feature/dircache/dircache.h"
+#include "test/test.h"
+#include "lib/compress/compress.h"
+#include "feature/rend/rendcommon.h"
+#include "feature/rend/rendcache.h"
+#include "feature/relay/router.h"
+#include "feature/nodelist/authcert.h"
+#include "feature/nodelist/dirlist.h"
+#include "feature/nodelist/routerlist.h"
+#include "test/rend_test_helpers.h"
+#include "feature/nodelist/microdesc.h"
+#include "test/test_helpers.h"
+#include "feature/nodelist/nodelist.h"
+#include "feature/client/entrynodes.h"
+#include "feature/dirparse/authcert_parse.h"
+#include "feature/nodelist/networkstatus.h"
+#include "core/proto/proto_http.h"
+#include "lib/geoip/geoip.h"
+#include "feature/stats/geoip_stats.h"
+#include "feature/dircache/dirserv.h"
+#include "feature/dirauth/dirvote.h"
+#include "test/log_test_helpers.h"
+#include "feature/dircommon/voting_schedule.h"
+
+#include "feature/dircommon/dir_connection_st.h"
+#include "feature/dirclient/dir_server_st.h"
+#include "feature/nodelist/networkstatus_st.h"
+#include "feature/rend/rend_encoded_v2_service_descriptor_st.h"
+#include "feature/nodelist/routerinfo_st.h"
+#include "feature/nodelist/routerlist_st.h"
 
 #ifdef _WIN32
 /* For mkdir() */
@@ -2095,6 +2107,7 @@ test_dir_handle_get_status_vote_d(void* data)
 
     clear_dir_servers();
     dirvote_free_all();
+    routerlist_free_all();
 }
 
 static void
@@ -2631,4 +2644,3 @@ struct testcase_t dir_handle_get_tests[] = {
   DIR_HANDLE_CMD(parse_accept_encoding, 0),
   END_OF_TESTCASES
 };
-

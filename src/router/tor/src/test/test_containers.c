@@ -1,13 +1,17 @@
 /* Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2017, The Tor Project, Inc. */
+ * Copyright (c) 2007-2018, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #include "orconfig.h"
-#include "or.h"
-#include "crypto_rand.h"
-#include "fp_pair.h"
-#include "test.h"
+#include "core/or/or.h"
+#include "lib/crypt_ops/crypto_rand.h"
+#include "feature/dircommon/fp_pair.h"
+#include "test/test.h"
+
+#include "lib/container/bitarray.h"
+#include "lib/container/order.h"
+#include "lib/crypt_ops/digestset.h"
 
 /** Helper: return a tristate based on comparing the strings in *<b>a</b> and
  * *<b>b</b>. */
@@ -640,18 +644,18 @@ test_container_digestset(void *arg)
   }
   set = digestset_new(1000);
   SMARTLIST_FOREACH(included, const char *, cp,
-                    if (digestset_contains(set, cp))
+                    if (digestset_probably_contains(set, cp))
                       ok = 0);
   tt_assert(ok);
   SMARTLIST_FOREACH(included, const char *, cp,
                     digestset_add(set, cp));
   SMARTLIST_FOREACH(included, const char *, cp,
-                    if (!digestset_contains(set, cp))
+                    if (!digestset_probably_contains(set, cp))
                       ok = 0);
   tt_assert(ok);
   for (i = 0; i < 1000; ++i) {
     crypto_rand(d, DIGEST_LEN);
-    if (digestset_contains(set, d))
+    if (digestset_probably_contains(set, d))
       ++false_positives;
   }
   tt_int_op(50, OP_GT, false_positives); /* Should be far lower. */
@@ -1295,4 +1299,3 @@ struct testcase_t container_tests[] = {
   CONTAINER(smartlist_strings_eq, 0),
   END_OF_TESTCASES
 };
-

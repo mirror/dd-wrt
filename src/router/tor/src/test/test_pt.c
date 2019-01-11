@@ -1,6 +1,6 @@
 /* Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2017, The Tor Project, Inc. */
+ * Copyright (c) 2007-2018, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #include "orconfig.h"
@@ -8,15 +8,20 @@
 #define UTIL_PRIVATE
 #define STATEFILE_PRIVATE
 #define CONTROL_PRIVATE
-#include "or.h"
-#include "config.h"
-#include "confparse.h"
-#include "control.h"
-#include "transports.h"
-#include "circuitbuild.h"
-#include "util.h"
-#include "statefile.h"
-#include "test.h"
+#define SUBPROCESS_PRIVATE
+#include "core/or/or.h"
+#include "app/config/config.h"
+#include "app/config/confparse.h"
+#include "feature/control/control.h"
+#include "feature/client/transports.h"
+#include "core/or/circuitbuild.h"
+#include "app/config/statefile.h"
+#include "test/test.h"
+#include "lib/process/subprocess.h"
+#include "lib/encoding/confline.h"
+#include "lib/net/resolve.h"
+
+#include "app/config/or_state_st.h"
 
 static void
 reset_mp(managed_proxy_t *mp)
@@ -544,4 +549,3 @@ struct testcase_t pt_tests[] = {
     NULL, NULL },
   END_OF_TESTCASES
 };
-
