@@ -1,15 +1,16 @@
-/* Copyright (c) 2015-2017, The Tor Project, Inc. */
+/* Copyright (c) 2015-2018, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #include "orconfig.h"
+#include "lib/crypt_ops/crypto_util.h"
+
+#include "lib/intmath/cmp.h"
+#include "lib/malloc/malloc.h"
+
 #include <string.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <stdlib.h>
-
-#include "crypto_util.h"
-#include "compat.h"
-#include "util.h"
 
 static unsigned fill_a_buffer_memset(void) __attribute__((noinline));
 static unsigned fill_a_buffer_memwipe(void) __attribute__((noinline));
@@ -215,4 +216,3 @@ main(int argc, char **argv)
     return 0;
   }
 }
-

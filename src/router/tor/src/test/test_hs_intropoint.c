@@ -1,4 +1,4 @@
-/* Copyright (c) 2016-2017, The Tor Project, Inc. */
+/* Copyright (c) 2016-2018, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -11,27 +11,29 @@
 #define RENDSERVICE_PRIVATE
 #define CIRCUITLIST_PRIVATE
 
-#include "test.h"
-#include "log_test_helpers.h"
-#include "crypto_rand.h"
+#include "test/test.h"
+#include "test/log_test_helpers.h"
+#include "lib/crypt_ops/crypto_rand.h"
 
-#include "or.h"
-#include "circuitlist.h"
-#include "circuituse.h"
+#include "core/or/or.h"
+#include "core/or/circuitlist.h"
+#include "core/or/circuituse.h"
 #include "ht.h"
-#include "relay.h"
-#include "rendservice.h"
+#include "core/or/relay.h"
+#include "feature/rend/rendservice.h"
 
-#include "hs_cell.h"
-#include "hs_circuitmap.h"
-#include "hs_common.h"
-#include "hs_intropoint.h"
-#include "hs_service.h"
+#include "feature/hs/hs_cell.h"
+#include "feature/hs/hs_circuitmap.h"
+#include "feature/hs/hs_common.h"
+#include "feature/hs/hs_intropoint.h"
+#include "feature/hs/hs_service.h"
+
+#include "core/or/or_circuit_st.h"
 
 /* Trunnel. */
-#include "hs/cell_establish_intro.h"
-#include "hs/cell_introduce1.h"
-#include "hs/cell_common.h"
+#include "trunnel/hs/cell_establish_intro.h"
+#include "trunnel/hs/cell_introduce1.h"
+#include "trunnel/hs/cell_common.h"
 
 static size_t
 new_establish_intro_cell(const char *circ_nonce,

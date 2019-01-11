@@ -1,4 +1,4 @@
-/* Copyright (c) 2014-2017, The Tor Project, Inc. */
+/* Copyright (c) 2014-2018, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #include "orconfig.h"
@@ -6,36 +6,51 @@
 #include <time.h>
 
 #define CONNECTION_PRIVATE
-#define DIRECTORY_PRIVATE
+#define DIRCLIENT_PRIVATE
 #define DIRVOTE_PRIVATE
 #define ENTRYNODES_PRIVATE
 #define HIBERNATE_PRIVATE
 #define NETWORKSTATUS_PRIVATE
 #define ROUTERLIST_PRIVATE
+#define NODE_SELECT_PRIVATE
 #define TOR_UNIT_TESTING
-#include "or.h"
-#include "config.h"
-#include "connection.h"
-#include "container.h"
-#include "control.h"
-#include "crypto_rand.h"
-#include "directory.h"
-#include "dirauth/dirvote.h"
-#include "entrynodes.h"
-#include "hibernate.h"
-#include "microdesc.h"
-#include "networkstatus.h"
-#include "nodelist.h"
-#include "policies.h"
-#include "router.h"
-#include "routerlist.h"
-#include "routerset.h"
-#include "routerparse.h"
-#include "dirauth/shared_random.h"
-#include "statefile.h"
-#include "test.h"
-#include "test_dir_common.h"
-#include "log_test_helpers.h"
+#include "core/or/or.h"
+#include "app/config/config.h"
+#include "core/mainloop/connection.h"
+#include "feature/control/control.h"
+#include "lib/crypt_ops/crypto_rand.h"
+#include "feature/dircommon/directory.h"
+#include "feature/dirclient/dirclient.h"
+#include "feature/dirauth/dirvote.h"
+#include "feature/client/entrynodes.h"
+#include "feature/hibernate/hibernate.h"
+#include "feature/nodelist/microdesc.h"
+#include "feature/nodelist/networkstatus.h"
+#include "feature/nodelist/nodelist.h"
+#include "core/or/policies.h"
+#include "feature/relay/router.h"
+#include "feature/nodelist/authcert.h"
+#include "feature/nodelist/node_select.h"
+#include "feature/nodelist/routerlist.h"
+#include "feature/nodelist/routerset.h"
+#include "feature/dirparse/authcert_parse.h"
+#include "feature/dirparse/ns_parse.h"
+#include "feature/dirauth/shared_random.h"
+#include "app/config/statefile.h"
+
+#include "feature/nodelist/authority_cert_st.h"
+#include "feature/dircommon/dir_connection_st.h"
+#include "feature/nodelist/networkstatus_st.h"
+#include "feature/nodelist/node_st.h"
+#include "app/config/or_state_st.h"
+#include "feature/nodelist/routerstatus_st.h"
+
+#include "lib/encoding/confline.h"
+#include "lib/container/buffers.h"
+
+#include "test/test.h"
+#include "test/test_dir_common.h"
+#include "test/log_test_helpers.h"
 
 void construct_consensus(char **consensus_text_md, time_t now);
 
@@ -776,4 +791,3 @@ struct testcase_t routerlist_tests[] = {
   { "warn_early_consensus", test_warn_early_consensus, 0, NULL, NULL },
   END_OF_TESTCASES
 };
-

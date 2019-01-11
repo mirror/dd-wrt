@@ -1,21 +1,25 @@
-/* Copyright (c) 2017, The Tor Project, Inc. */
+/* Copyright (c) 2017-2018, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #define CONSDIFFMGR_PRIVATE
 
-#include "or.h"
-#include "config.h"
-#include "conscache.h"
-#include "consdiff.h"
-#include "consdiffmgr.h"
-#include "cpuworker.h"
-#include "crypto_rand.h"
-#include "networkstatus.h"
-#include "routerparse.h"
-#include "workqueue.h"
+#include "core/or/or.h"
+#include "app/config/config.h"
+#include "feature/dircache/conscache.h"
+#include "feature/dircommon/consdiff.h"
+#include "feature/dircache/consdiffmgr.h"
+#include "core/mainloop/cpuworker.h"
+#include "lib/crypt_ops/crypto_rand.h"
+#include "feature/nodelist/networkstatus.h"
+#include "feature/dirparse/ns_parse.h"
+#include "lib/evloop/workqueue.h"
+#include "lib/compress/compress.h"
+#include "lib/encoding/confline.h"
 
-#include "test.h"
-#include "log_test_helpers.h"
+#include "feature/nodelist/networkstatus_st.h"
+
+#include "test/test.h"
+#include "test/log_test_helpers.h"
 
 // ============================== Setup/teardown the consdiffmgr
 // These functions get run before/after each test in this module
@@ -894,4 +898,3 @@ struct testcase_t consdiffmgr_tests[] = {
 
   END_OF_TESTCASES
 };
-

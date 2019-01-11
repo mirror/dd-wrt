@@ -1,18 +1,26 @@
 /* Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2017, The Tor Project, Inc. */
+ * Copyright (c) 2007-2018, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #include "orconfig.h"
 #define DIRVOTE_PRIVATE
-#include "test.h"
-#include "container.h"
-#include "or.h"
-#include "dirauth/dirvote.h"
-#include "nodelist.h"
-#include "routerlist.h"
-#include "test_dir_common.h"
-#include "voting_schedule.h"
+#include "test/test.h"
+#include "core/or/or.h"
+#include "feature/dirauth/dirvote.h"
+#include "feature/nodelist/nodelist.h"
+#include "feature/nodelist/routerlist.h"
+#include "feature/dirparse/authcert_parse.h"
+#include "feature/dirparse/ns_parse.h"
+#include "test/test_dir_common.h"
+#include "feature/dircommon/voting_schedule.h"
+
+#include "feature/nodelist/authority_cert_st.h"
+#include "feature/nodelist/networkstatus_st.h"
+#include "feature/nodelist/networkstatus_voter_info_st.h"
+#include "feature/nodelist/routerinfo_st.h"
+#include "feature/dirauth/vote_microdesc_hash_st.h"
+#include "feature/nodelist/vote_routerstatus_st.h"
 
 void dir_common_setup_vote(networkstatus_t **vote, time_t now);
 networkstatus_t * dir_common_add_rs_and_parse(networkstatus_t *vote,

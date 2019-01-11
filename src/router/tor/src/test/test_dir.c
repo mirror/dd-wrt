@@ -1,48 +1,96 @@
 /* Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2017, The Tor Project, Inc. */
+ * Copyright (c) 2007-2018, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #include "orconfig.h"
 #include <math.h>
 
+#define BWAUTH_PRIVATE
 #define CONFIG_PRIVATE
 #define CONTROL_PRIVATE
+#define DIRCACHE_PRIVATE
+#define DIRCLIENT_PRIVATE
 #define DIRSERV_PRIVATE
 #define DIRVOTE_PRIVATE
-#define ROUTER_PRIVATE
-#define ROUTERLIST_PRIVATE
-#define ROUTERPARSE_PRIVATE
+#define DLSTATUS_PRIVATE
 #define HIBERNATE_PRIVATE
 #define NETWORKSTATUS_PRIVATE
+#define NS_PARSE_PRIVATE
+#define NODE_SELECT_PRIVATE
 #define RELAY_PRIVATE
+#define ROUTERLIST_PRIVATE
+#define ROUTER_PRIVATE
+#define UNPARSEABLE_PRIVATE
+#define VOTEFLAGS_PRIVATE
 
-#include "or.h"
-#include "bridges.h"
-#include "confparse.h"
-#include "config.h"
-#include "control.h"
-#include "crypto_ed25519.h"
-#include "crypto_rand.h"
-#include "directory.h"
-#include "dirserv.h"
-#include "dirauth/dirvote.h"
-#include "entrynodes.h"
-#include "hibernate.h"
-#include "memarea.h"
-#include "networkstatus.h"
-#include "router.h"
-#include "routerkeys.h"
-#include "routerlist.h"
-#include "routerparse.h"
-#include "routerset.h"
-#include "dirauth/shared_random_state.h"
-#include "test.h"
-#include "test_dir_common.h"
-#include "torcert.h"
-#include "relay.h"
-#include "log_test_helpers.h"
-#include "voting_schedule.h"
+#include "core/or/or.h"
+#include "app/config/config.h"
+#include "app/config/confparse.h"
+#include "core/mainloop/connection.h"
+#include "core/or/relay.h"
+#include "core/or/versions.h"
+#include "feature/client/bridges.h"
+#include "feature/client/entrynodes.h"
+#include "feature/control/control.h"
+#include "feature/dirauth/bwauth.h"
+#include "feature/dirauth/dirvote.h"
+#include "feature/dirauth/dsigs_parse.h"
+#include "feature/dirauth/process_descs.h"
+#include "feature/dirauth/recommend_pkg.h"
+#include "feature/dirauth/shared_random_state.h"
+#include "feature/dirauth/voteflags.h"
+#include "feature/dircache/dircache.h"
+#include "feature/dircache/dirserv.h"
+#include "feature/dirclient/dirclient.h"
+#include "feature/dirclient/dlstatus.h"
+#include "feature/dircommon/directory.h"
+#include "feature/dircommon/fp_pair.h"
+#include "feature/dircommon/voting_schedule.h"
+#include "feature/hibernate/hibernate.h"
+#include "feature/nodelist/authcert.h"
+#include "feature/nodelist/dirlist.h"
+#include "feature/nodelist/networkstatus.h"
+#include "feature/nodelist/nickname.h"
+#include "feature/nodelist/node_select.h"
+#include "feature/nodelist/routerlist.h"
+#include "feature/dirparse/authcert_parse.h"
+#include "feature/dirparse/ns_parse.h"
+#include "feature/dirparse/routerparse.h"
+#include "feature/dirparse/unparseable.h"
+#include "feature/nodelist/routerset.h"
+#include "feature/nodelist/torcert.h"
+#include "feature/relay/router.h"
+#include "feature/relay/routerkeys.h"
+#include "feature/relay/routermode.h"
+#include "lib/compress/compress.h"
+#include "lib/crypt_ops/crypto_ed25519.h"
+#include "lib/crypt_ops/crypto_format.h"
+#include "lib/crypt_ops/crypto_rand.h"
+#include "lib/encoding/confline.h"
+#include "lib/memarea/memarea.h"
+#include "lib/osinfo/uname.h"
+#include "test/log_test_helpers.h"
+#include "test/test.h"
+#include "test/test_dir_common.h"
+
+#include "core/or/addr_policy_st.h"
+#include "feature/nodelist/authority_cert_st.h"
+#include "feature/nodelist/document_signature_st.h"
+#include "feature/nodelist/extrainfo_st.h"
+#include "feature/nodelist/networkstatus_st.h"
+#include "feature/nodelist/networkstatus_voter_info_st.h"
+#include "feature/dirauth/ns_detached_signatures_st.h"
+#include "core/or/port_cfg_st.h"
+#include "feature/nodelist/routerinfo_st.h"
+#include "feature/nodelist/routerlist_st.h"
+#include "core/or/tor_version_st.h"
+#include "feature/dirauth/vote_microdesc_hash_st.h"
+#include "feature/nodelist/vote_routerstatus_st.h"
+
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
 
 #define NS_MODULE dir
 
@@ -142,7 +190,7 @@ test_dir_formats(void *arg)
   r1->supports_tunnelled_dir_requests = 1;
   tor_addr_parse(&r1->ipv6_addr, "1:2:3:4::");
   r1->ipv6_orport = 9999;
-  r1->onion_pkey = crypto_pk_dup_key(pk1);
+  router_set_rsa_onion_pkey(pk1, &r1->onion_pkey, &r1->onion_pkey_len);
   /* Fake just enough of an ntor key to get by */
   curve25519_keypair_t r1_onion_keypair;
   curve25519_keypair_generate(&r1_onion_keypair, 0);
@@ -185,7 +233,7 @@ test_dir_formats(void *arg)
   r2->or_port = 9005;
   r2->dir_port = 0;
   r2->supports_tunnelled_dir_requests = 1;
-  r2->onion_pkey = crypto_pk_dup_key(pk2);
+  router_set_rsa_onion_pkey(pk2, &r2->onion_pkey, &r2->onion_pkey_len);
   curve25519_keypair_t r2_onion_keypair;
   curve25519_keypair_generate(&r2_onion_keypair, 0);
   r2->onion_curve25519_pkey = tor_memdup(&r2_onion_keypair.pubkey,
@@ -278,7 +326,10 @@ test_dir_formats(void *arg)
   tt_int_op(rp1->bandwidthrate,OP_EQ, r1->bandwidthrate);
   tt_int_op(rp1->bandwidthburst,OP_EQ, r1->bandwidthburst);
   tt_int_op(rp1->bandwidthcapacity,OP_EQ, r1->bandwidthcapacity);
-  tt_int_op(crypto_pk_cmp_keys(rp1->onion_pkey, pk1), OP_EQ, 0);
+  crypto_pk_t *onion_pkey = router_get_rsa_onion_pkey(rp1->onion_pkey,
+                                                      rp1->onion_pkey_len);
+  tt_int_op(crypto_pk_cmp_keys(onion_pkey, pk1), OP_EQ, 0);
+  crypto_pk_free(onion_pkey);
   tt_int_op(crypto_pk_cmp_keys(rp1->identity_pkey, pk2), OP_EQ, 0);
   tt_assert(rp1->supports_tunnelled_dir_requests);
   //tt_assert(rp1->exit_policy == NULL);
@@ -395,7 +446,10 @@ test_dir_formats(void *arg)
   tt_mem_op(rp2->onion_curve25519_pkey->public_key,OP_EQ,
              r2->onion_curve25519_pkey->public_key,
              CURVE25519_PUBKEY_LEN);
-  tt_int_op(crypto_pk_cmp_keys(rp2->onion_pkey, pk2), OP_EQ, 0);
+  onion_pkey = router_get_rsa_onion_pkey(rp2->onion_pkey,
+                                         rp2->onion_pkey_len);
+  tt_int_op(crypto_pk_cmp_keys(onion_pkey, pk2), OP_EQ, 0);
+  crypto_pk_free(onion_pkey);
   tt_int_op(crypto_pk_cmp_keys(rp2->identity_pkey, pk1), OP_EQ, 0);
   tt_assert(rp2->supports_tunnelled_dir_requests);
 
@@ -1568,25 +1622,6 @@ test_dir_measured_bw_kb(void *arg)
   return;
 }
 
-/* Test dirserv_read_measured_bandwidths */
-static void
-test_dir_dirserv_read_measured_bandwidths_empty(void *arg)
-{
-  char *fname=NULL;
-  (void)arg;
-
-  fname = tor_strdup(get_fname("V3BandwidthsFile"));
-  /* Test an empty file */
-  write_str_to_file(fname, "", 0);
-  setup_capture_of_logs(LOG_WARN);
-  tt_int_op(-1, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL));
-  expect_log_msg("Empty bandwidth file\n");
-
- done:
-  tor_free(fname);
-  teardown_capture_of_logs();
-}
-
 /* Unit tests for measured_bw_line_parse using line_is_after_headers flag.
  * When the end of the header is detected (a first complete bw line is parsed),
  * incomplete lines fail and give warnings, but do not give warnings if
@@ -1630,7 +1665,7 @@ test_dir_measured_bw_kb_line_is_after_headers(void *arg)
   teardown_capture_of_logs();
 }
 
-/* Test dirserv_read_measured_bandwidths with whole files. */
+/* Test dirserv_read_measured_bandwidths with headers and complete files. */
 static void
 test_dir_dirserv_read_measured_bandwidths(void *arg)
 {
@@ -1638,76 +1673,321 @@ test_dir_dirserv_read_measured_bandwidths(void *arg)
   char *content = NULL;
   time_t timestamp = time(NULL);
   char *fname = tor_strdup(get_fname("V3BandwidthsFile"));
-
-  /* Test Torflow file only with timestamp*/
-  tor_asprintf(&content, "%ld", (long)timestamp);
-  write_str_to_file(fname, content, 0);
-  tor_free(content);
-  tt_int_op(-1, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL));
-
-  /* Test Torflow file with timestamp followed by '\n' */
-  tor_asprintf(&content, "%ld\n", (long)timestamp);
-  write_str_to_file(fname, content, 0);
-  tor_free(content);
-  tt_int_op(0, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL));
-
-  /* Test Torflow complete file*/
-  const char *torflow_relay_lines=
+  smartlist_t *bw_file_headers = smartlist_new();
+  /* bw file strings in vote */
+  char *bw_file_headers_str = NULL;
+  char *bw_file_headers_str_v100 = NULL;
+  char *bw_file_headers_str_v110 = NULL;
+  char *bw_file_headers_str_bad = NULL;
+  char *bw_file_headers_str_extra = NULL;
+  char bw_file_headers_str_long[MAX_BW_FILE_HEADER_COUNT_IN_VOTE * 8 + 1] = "";
+  /* string header lines in bw file */
+  char *header_lines_v100 = NULL;
+  char *header_lines_v110_no_terminator = NULL;
+  char *header_lines_v110 = NULL;
+  char header_lines_long[MAX_BW_FILE_HEADER_COUNT_IN_VOTE * 8 + 1] = "";
+  int i;
+  const char *header_lines_v110_no_terminator_no_timestamp =
+    "version=1.1.0\n"
+    "software=sbws\n"
+    "software_version=0.1.0\n"
+    "earliest_bandwidth=2018-05-08T16:13:26\n"
+    "file_created=2018-04-16T21:49:18\n"
+    "generator_started=2018-05-08T16:13:25\n"
+    "latest_bandwidth=2018-04-16T20:49:18\n";
+  const char *bw_file_headers_str_v110_no_timestamp =
+    "version=1.1.0 software=sbws "
+    "software_version=0.1.0 "
+    "earliest_bandwidth=2018-05-08T16:13:26 "
+    "file_created=2018-04-16T21:49:18 "
+    "generator_started=2018-05-08T16:13:25 "
+    "latest_bandwidth=2018-04-16T20:49:18";
+  const char *relay_lines_v100 =
     "node_id=$557365204145532d32353620696e73746561642e bw=1024 "
     "nick=Test measured_at=1523911725 updated_at=1523911725 "
     "pid_error=4.11374090719 pid_error_sum=4.11374090719 "
     "pid_bw=57136645 pid_delta=2.12168374577 circ_fail=0.2 "
     "scanner=/filepath\n";
-
-  tor_asprintf(&content, "%ld\n%s", (long)timestamp, torflow_relay_lines);
-  write_str_to_file(fname, content, 0);
-  tor_free(content);
-  tt_int_op(0, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL));
-
-  /* Test Torflow complete file including v1.1.0 headers */
-  const char *v110_header_lines=
-    "version=1.1.0\n"
-    "software=sbws\n"
-    "software_version=0.1.0\n"
-    "generator_started=2018-05-08T16:13:25\n"
-    "earliest_bandwidth=2018-05-08T16:13:26\n"
-    "====\n";
-
-  tor_asprintf(&content, "%ld\n%s%s", (long)timestamp, v110_header_lines,
-               torflow_relay_lines);
-  write_str_to_file(fname, content, 0);
-  tor_free(content);
-  tt_int_op(0, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL));
-
-  /* Test Torflow with additional headers afer a correct bw line */
-  tor_asprintf(&content, "%ld\n%s%s", (long)timestamp, torflow_relay_lines,
-               v110_header_lines);
-  write_str_to_file(fname, content, 0);
-  tor_free(content);
-  tt_int_op(0, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL));
-
-  /* Test Torflow with additional headers afer a correct bw line and more
-   * bw lines after the headers. */
-  tor_asprintf(&content, "%ld\n%s%s%s", (long)timestamp, torflow_relay_lines,
-               v110_header_lines, torflow_relay_lines);
-  write_str_to_file(fname, content, 0);
-  tor_free(content);
-  tt_int_op(0, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL));
-
-  /* Test sbws file */
-  const char *sbws_relay_lines=
+  const char *relay_lines_v110 =
     "node_id=$68A483E05A2ABDCA6DA5A3EF8DB5177638A27F80 "
     "master_key_ed25519=YaqV4vbvPYKucElk297eVdNArDz9HtIwUoIeo0+cVIpQ "
     "bw=760 nick=Test rtt=380 time=2018-05-08T16:13:26\n";
+  const char *relay_lines_bad =
+    "node_id=$68A483E05A2ABDCA6DA5A3EF8DB5177638A\n";
 
-  tor_asprintf(&content, "%ld\n%s%s", (long)timestamp, v110_header_lines,
-               sbws_relay_lines);
+  tor_asprintf(&header_lines_v100, "%ld\n", (long)timestamp);
+  tor_asprintf(&header_lines_v110_no_terminator, "%ld\n%s", (long)timestamp,
+               header_lines_v110_no_terminator_no_timestamp);
+  tor_asprintf(&header_lines_v110, "%s%s",
+               header_lines_v110_no_terminator, BW_FILE_HEADERS_TERMINATOR);
+
+  tor_asprintf(&bw_file_headers_str_v100, "timestamp=%ld",(long)timestamp);
+  tor_asprintf(&bw_file_headers_str_v110, "timestamp=%ld %s",
+               (long)timestamp, bw_file_headers_str_v110_no_timestamp);
+  tor_asprintf(&bw_file_headers_str_bad, "%s "
+               "node_id=$68A483E05A2ABDCA6DA5A3EF8DB5177638A",
+               bw_file_headers_str_v110);
+
+  for (i=0; i<MAX_BW_FILE_HEADER_COUNT_IN_VOTE; i++) {
+    strlcat(header_lines_long, "foo=bar\n",
+            sizeof(header_lines_long));
+  }
+  /* 8 is the number of v110 lines in header_lines_v110 */
+  for (i=0; i<MAX_BW_FILE_HEADER_COUNT_IN_VOTE - 8 - 1; i++) {
+    strlcat(bw_file_headers_str_long, "foo=bar ",
+            sizeof(bw_file_headers_str_long));
+  }
+  strlcat(bw_file_headers_str_long, "foo=bar",
+          sizeof(bw_file_headers_str_long));
+  tor_asprintf(&bw_file_headers_str_extra,
+               "%s %s",
+               bw_file_headers_str_v110,
+               bw_file_headers_str_long);
+
+  /* Test an empty bandwidth file. bw_file_headers will be empty string */
+  write_str_to_file(fname, "", 0);
+  setup_capture_of_logs(LOG_WARN);
+  tt_int_op(-1, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL,
+                                                        bw_file_headers));
+  expect_log_msg("Empty bandwidth file\n");
+  teardown_capture_of_logs();
+  bw_file_headers_str = smartlist_join_strings(bw_file_headers, " ", 0, NULL);
+  tt_str_op("", OP_EQ, bw_file_headers_str);
+  SMARTLIST_FOREACH(bw_file_headers, char *, c, tor_free(c));
+  smartlist_free(bw_file_headers);
+  tor_free(bw_file_headers_str);
+
+  /* Test bandwidth file with only timestamp.
+   * bw_file_headers will be empty string */
+  bw_file_headers = smartlist_new();
+  tor_asprintf(&content, "%ld", (long)timestamp);
   write_str_to_file(fname, content, 0);
   tor_free(content);
-  tt_int_op(0, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL));
+  tt_int_op(-1, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL,
+                                                        bw_file_headers));
+  bw_file_headers_str = smartlist_join_strings(bw_file_headers, " ", 0, NULL);
+  tt_str_op("", OP_EQ, bw_file_headers_str);
+  SMARTLIST_FOREACH(bw_file_headers, char *, c, tor_free(c));
+  smartlist_free(bw_file_headers);
+  tor_free(bw_file_headers_str);
+
+  /* Test v1.0.0 bandwidth file headers */
+  write_str_to_file(fname, header_lines_v100, 0);
+  bw_file_headers = smartlist_new();
+  tt_int_op(0, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL,
+                                                       bw_file_headers));
+  bw_file_headers_str = smartlist_join_strings(bw_file_headers, " ", 0, NULL);
+  tt_str_op(bw_file_headers_str_v100, OP_EQ, bw_file_headers_str);
+  SMARTLIST_FOREACH(bw_file_headers, char *, c, tor_free(c));
+  smartlist_free(bw_file_headers);
+  tor_free(bw_file_headers_str);
+
+  /* Test v1.0.0 complete bandwidth file */
+  bw_file_headers = smartlist_new();
+  tor_asprintf(&content, "%s%s", header_lines_v100, relay_lines_v100);
+  write_str_to_file(fname, content, 0);
+  tor_free(content);
+  tt_int_op(0, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL,
+                                                       bw_file_headers));
+  bw_file_headers_str = smartlist_join_strings(bw_file_headers, " ", 0, NULL);
+  tt_str_op(bw_file_headers_str_v100, OP_EQ, bw_file_headers_str);
+  SMARTLIST_FOREACH(bw_file_headers, char *, c, tor_free(c));
+  smartlist_free(bw_file_headers);
+  tor_free(bw_file_headers_str);
+
+  /* Test v1.0.0 complete bandwidth file with NULL bw_file_headers. */
+  tor_asprintf(&content, "%s%s", header_lines_v100, relay_lines_v100);
+  write_str_to_file(fname, content, 0);
+  tor_free(content);
+  tt_int_op(0, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL, NULL));
+
+  /* Test bandwidth file including v1.1.0 bandwidth headers and
+   * v1.0.0 relay lines. bw_file_headers will contain the v1.1.0 headers. */
+  bw_file_headers = smartlist_new();
+  tor_asprintf(&content, "%s%s%s", header_lines_v100, header_lines_v110,
+               relay_lines_v100);
+  write_str_to_file(fname, content, 0);
+  tor_free(content);
+  tt_int_op(0, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL,
+                                                       bw_file_headers));
+  bw_file_headers_str = smartlist_join_strings(bw_file_headers, " ", 0, NULL);
+  tt_str_op(bw_file_headers_str_v110, OP_EQ, bw_file_headers_str);
+  SMARTLIST_FOREACH(bw_file_headers, char *, c, tor_free(c));
+  smartlist_free(bw_file_headers);
+  tor_free(bw_file_headers_str);
+
+  /* Test v1.0.0 complete bandwidth file with v1.1.0 headers at the end.
+   * bw_file_headers will contain only v1.0.0 headers and the additional
+   * headers will be interpreted as malformed relay lines. */
+  bw_file_headers = smartlist_new();
+  tor_asprintf(&content, "%s%s%s", header_lines_v100, relay_lines_v100,
+               header_lines_v110);
+  write_str_to_file(fname, content, 0);
+  tor_free(content);
+  tt_int_op(0, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL,
+                                                       bw_file_headers));
+  bw_file_headers_str = smartlist_join_strings(bw_file_headers, " ", 0, NULL);
+  tt_str_op(bw_file_headers_str_v100, OP_EQ, bw_file_headers_str);
+  SMARTLIST_FOREACH(bw_file_headers, char *, c, tor_free(c));
+  smartlist_free(bw_file_headers);
+  tor_free(bw_file_headers_str);
+
+  /* Test v1.0.0 complete bandwidth file, the v1.1.0 headers and more relay
+   * lines. bw_file_headers will contain only v1.0.0 headers, the additional
+   * headers will be interpreted as malformed relay lines and the last relay
+   * lines will be correctly interpreted as relay lines. */
+  bw_file_headers = smartlist_new();
+  tor_asprintf(&content, "%s%s%s%s", header_lines_v100, relay_lines_v100,
+               header_lines_v110, relay_lines_v100);
+  write_str_to_file(fname, content, 0);
+  tor_free(content);
+  tt_int_op(0, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL,
+                                                       bw_file_headers));
+  bw_file_headers_str = smartlist_join_strings(bw_file_headers, " ", 0, NULL);
+  tt_str_op(bw_file_headers_str_v100, OP_EQ, bw_file_headers_str);
+  SMARTLIST_FOREACH(bw_file_headers, char *, c, tor_free(c));
+  smartlist_free(bw_file_headers);
+  tor_free(bw_file_headers_str);
+
+  /* Test v1.1.0 bandwidth headers without terminator */
+  bw_file_headers = smartlist_new();
+  write_str_to_file(fname, header_lines_v110_no_terminator, 0);
+  tt_int_op(0, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL,
+                                                       bw_file_headers));
+  bw_file_headers_str = smartlist_join_strings(bw_file_headers, " ", 0, NULL);
+  tt_str_op(bw_file_headers_str_v110, OP_EQ, bw_file_headers_str);
+  SMARTLIST_FOREACH(bw_file_headers, char *, c, tor_free(c));
+  smartlist_free(bw_file_headers);
+  tor_free(bw_file_headers_str);
+
+  /* Test v1.1.0 bandwidth headers with terminator */
+  bw_file_headers = smartlist_new();
+  write_str_to_file(fname, header_lines_v110, 0);
+  tt_int_op(0, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL,
+                                                       bw_file_headers));
+  bw_file_headers_str = smartlist_join_strings(bw_file_headers, " ", 0, NULL);
+  tt_str_op(bw_file_headers_str_v110, OP_EQ, bw_file_headers_str);
+  SMARTLIST_FOREACH(bw_file_headers, char *, c, tor_free(c));
+  smartlist_free(bw_file_headers);
+  tor_free(bw_file_headers_str);
+
+  /* Test v1.1.0 bandwidth file without terminator, then relay lines.
+   * bw_file_headers will contain the v1.1.0 headers. */
+  bw_file_headers = smartlist_new();
+  tor_asprintf(&content, "%s%s",
+               header_lines_v110_no_terminator, relay_lines_v110);
+  write_str_to_file(fname, content, 0);
+  tor_free(content);
+  tt_int_op(0, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL,
+                                                       bw_file_headers));
+  bw_file_headers_str = smartlist_join_strings(bw_file_headers, " ", 0, NULL);
+  tt_str_op(bw_file_headers_str_v110, OP_EQ, bw_file_headers_str);
+  SMARTLIST_FOREACH(bw_file_headers, char *, c, tor_free(c));
+  smartlist_free(bw_file_headers);
+  tor_free(bw_file_headers_str);
+
+  /* Test v1.1.0 bandwidth headers with terminator, then relay lines
+   * bw_file_headers will contain the v1.1.0 headers. */
+  bw_file_headers = smartlist_new();
+  tor_asprintf(&content, "%s%s",
+               header_lines_v110, relay_lines_v110);
+  write_str_to_file(fname, content, 0);
+  tor_free(content);
+  tt_int_op(0, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL,
+                                                       bw_file_headers));
+  bw_file_headers_str = smartlist_join_strings(bw_file_headers, " ", 0, NULL);
+  tt_str_op(bw_file_headers_str_v110, OP_EQ, bw_file_headers_str);
+  SMARTLIST_FOREACH(bw_file_headers, char *, c, tor_free(c));
+  smartlist_free(bw_file_headers);
+  tor_free(bw_file_headers_str);
+
+  /* Test v1.1.0 bandwidth headers with terminator, then bad relay lines,
+   * then terminator, then relay_lines_bad.
+   * bw_file_headers will contain the v1.1.0 headers. */
+  bw_file_headers = smartlist_new();
+  tor_asprintf(&content, "%s%s%s%s", header_lines_v110, relay_lines_bad,
+               BW_FILE_HEADERS_TERMINATOR, relay_lines_bad);
+  write_str_to_file(fname, content, 0);
+  tor_free(content);
+  tt_int_op(0, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL,
+                                                       bw_file_headers));
+  bw_file_headers_str = smartlist_join_strings(bw_file_headers, " ", 0, NULL);
+  tt_str_op(bw_file_headers_str_v110, OP_EQ, bw_file_headers_str);
+  SMARTLIST_FOREACH(bw_file_headers, char *, c, tor_free(c));
+  smartlist_free(bw_file_headers);
+  tor_free(bw_file_headers_str);
+
+  /* Test v1.1.0 bandwidth headers without terminator, then bad relay lines,
+   * then relay lines. bw_file_headers will contain the v1.1.0 headers and
+   * the bad relay lines. */
+  bw_file_headers = smartlist_new();
+  tor_asprintf(&content, "%s%s%s",
+               header_lines_v110_no_terminator, relay_lines_bad,
+               relay_lines_v110);
+  write_str_to_file(fname, content, 0);
+  tor_free(content);
+  tt_int_op(0, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL,
+                                                       bw_file_headers));
+  bw_file_headers_str = smartlist_join_strings(bw_file_headers, " ", 0, NULL);
+  tt_str_op(bw_file_headers_str_bad, OP_EQ, bw_file_headers_str);
+  SMARTLIST_FOREACH(bw_file_headers, char *, c, tor_free(c));
+  smartlist_free(bw_file_headers);
+  tor_free(bw_file_headers_str);
+
+  /* Test v1.1.0 bandwidth headers without terminator,
+   * then many bad relay lines, then relay lines.
+   * bw_file_headers will contain the v1.1.0 headers and the bad relay lines
+   * to a maximum of MAX_BW_FILE_HEADER_COUNT_IN_VOTE header lines. */
+  bw_file_headers = smartlist_new();
+  tor_asprintf(&content, "%s%s%s",
+               header_lines_v110_no_terminator, header_lines_long,
+               relay_lines_v110);
+  write_str_to_file(fname, content, 0);
+  tor_free(content);
+  tt_int_op(0, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL,
+                                                       bw_file_headers));
+  tt_int_op(MAX_BW_FILE_HEADER_COUNT_IN_VOTE, OP_EQ,
+            smartlist_len(bw_file_headers));
+  bw_file_headers_str = smartlist_join_strings(bw_file_headers, " ", 0, NULL);
+  tt_str_op(bw_file_headers_str_extra, OP_EQ, bw_file_headers_str);
+  SMARTLIST_FOREACH(bw_file_headers, char *, c, tor_free(c));
+  smartlist_free(bw_file_headers);
+  tor_free(bw_file_headers_str);
+
+  /* Test v1.1.0 bandwidth headers without terminator,
+   * then many bad relay lines, then relay lines.
+   * bw_file_headers will contain the v1.1.0 headers and the bad relay lines.
+   * Force bw_file_headers to have more than MAX_BW_FILE_HEADER_COUNT_IN_VOTE
+   * This test is needed while there is not dirvote test. */
+  bw_file_headers = smartlist_new();
+  tor_asprintf(&content, "%s%s%s",
+               header_lines_v110_no_terminator, header_lines_long,
+               relay_lines_v110);
+  write_str_to_file(fname, content, 0);
+  tor_free(content);
+  tt_int_op(0, OP_EQ, dirserv_read_measured_bandwidths(fname, NULL,
+                                                       bw_file_headers));
+  tt_int_op(MAX_BW_FILE_HEADER_COUNT_IN_VOTE, OP_EQ,
+            smartlist_len(bw_file_headers));
+  /* force bw_file_headers to be bigger than
+   * MAX_BW_FILE_HEADER_COUNT_IN_VOTE */
+  char line[8] = "foo=bar\0";
+  smartlist_add_strdup(bw_file_headers, line);
+  tt_int_op(MAX_BW_FILE_HEADER_COUNT_IN_VOTE, OP_LT,
+            smartlist_len(bw_file_headers));
+  SMARTLIST_FOREACH(bw_file_headers, char *, c, tor_free(c));
+  smartlist_free(bw_file_headers);
+  tor_free(bw_file_headers_str);
 
  done:
   tor_free(fname);
+  tor_free(header_lines_v100);
+  tor_free(header_lines_v110_no_terminator);
+  tor_free(header_lines_v110);
+  tor_free(bw_file_headers_str_v100);
+  tor_free(bw_file_headers_str_v110);
+  tor_free(bw_file_headers_str_bad);
+  tor_free(bw_file_headers_str_extra);
 }
 
 #define MBWC_INIT_TIME 1000
@@ -2087,7 +2367,7 @@ test_vrs_for_v3ns(vote_routerstatus_t *vrs, int voter, time_t now)
     tt_int_op(rs->or_port,OP_EQ, 443);
     tt_int_op(rs->dir_port,OP_EQ, 8000);
     /* no flags except "running" (16) and "v2dir" (64) and "valid" (128) */
-    tt_u64_op(vrs->flags, OP_EQ, U64_LITERAL(0xd0));
+    tt_u64_op(vrs->flags, OP_EQ, UINT64_C(0xd0));
   } else if (tor_memeq(rs->identity_digest,
                        "\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5\x5"
                        "\x5\x5\x5\x5",
@@ -2113,10 +2393,10 @@ test_vrs_for_v3ns(vote_routerstatus_t *vrs, int voter, time_t now)
     tt_int_op(rs->ipv6_orport,OP_EQ, 4711);
     if (voter == 1) {
       /* all except "authority" (1) */
-      tt_u64_op(vrs->flags, OP_EQ, U64_LITERAL(254));
+      tt_u64_op(vrs->flags, OP_EQ, UINT64_C(254));
     } else {
       /* 1023 - authority(1) - madeofcheese(16) - madeoftin(32) */
-      tt_u64_op(vrs->flags, OP_EQ, U64_LITERAL(974));
+      tt_u64_op(vrs->flags, OP_EQ, UINT64_C(974));
     }
   } else if (tor_memeq(rs->identity_digest,
                        "\x33\x33\x33\x33\x33\x33\x33\x33\x33\x33"
@@ -2926,8 +3206,8 @@ test_dir_scale_bw(void *testdata)
   for (i=0; i<8; ++i) {
     total += vals_u64[i];
   }
-  tt_assert(total >= (U64_LITERAL(1)<<60));
-  tt_assert(total <= (U64_LITERAL(1)<<62));
+  tt_assert(total >= (UINT64_C(1)<<60));
+  tt_assert(total <= (UINT64_C(1)<<62));
 
   for (i=0; i<8; ++i) {
     /* vals[2].u64 is the scaled value of 1.0 */
@@ -6029,7 +6309,6 @@ struct testcase_t dir_tests[] = {
   DIR_LEGACY(versions),
   DIR_LEGACY(fp_pairs),
   DIR(split_fps, 0),
-  DIR_LEGACY(dirserv_read_measured_bandwidths_empty),
   DIR_LEGACY(measured_bw_kb),
   DIR_LEGACY(measured_bw_kb_line_is_after_headers),
   DIR_LEGACY(measured_bw_kb_cache),

@@ -1,19 +1,29 @@
-/* Copyright (c) 2010-2017, The Tor Project, Inc. */
+/* Copyright (c) 2010-2018, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #include "orconfig.h"
-#include "or.h"
+#include "core/or/or.h"
 
-#include "config.h"
 #define DIRVOTE_PRIVATE
-#include "dirauth/dirvote.h"
-#include "microdesc.h"
-#include "networkstatus.h"
-#include "routerlist.h"
-#include "routerparse.h"
-#include "torcert.h"
+#include "app/config/config.h"
+#include "feature/dirauth/dirvote.h"
+#include "feature/dirparse/microdesc_parse.h"
+#include "feature/dirparse/routerparse.h"
+#include "feature/nodelist/microdesc.h"
+#include "feature/nodelist/networkstatus.h"
+#include "feature/nodelist/routerlist.h"
+#include "feature/nodelist/torcert.h"
 
-#include "test.h"
+#include "feature/nodelist/microdesc_st.h"
+#include "feature/nodelist/networkstatus_st.h"
+#include "feature/nodelist/routerinfo_st.h"
+#include "feature/nodelist/routerstatus_st.h"
+
+#include "test/test.h"
+
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
 
 #ifdef _WIN32
 /* For mkdir() */
@@ -810,4 +820,3 @@ struct testcase_t microdesc_tests[] = {
   { "corrupt_desc", test_md_corrupt_desc, TT_FORK, NULL, NULL },
   END_OF_TESTCASES
 };
-

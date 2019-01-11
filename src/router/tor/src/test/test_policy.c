@@ -1,14 +1,22 @@
-/* Copyright (c) 2013-2017, The Tor Project, Inc. */
+/* Copyright (c) 2013-2018, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
-#include "or.h"
 #define CONFIG_PRIVATE
-#include "config.h"
-#include "router.h"
-#include "routerparse.h"
 #define POLICIES_PRIVATE
-#include "policies.h"
-#include "test.h"
+
+#include "core/or/or.h"
+#include "app/config/config.h"
+#include "core/or/policies.h"
+#include "feature/dirparse/policy_parse.h"
+#include "feature/relay/router.h"
+#include "lib/encoding/confline.h"
+#include "test/test.h"
+
+#include "core/or/addr_policy_st.h"
+#include "core/or/port_cfg_st.h"
+#include "feature/nodelist/node_st.h"
+#include "feature/nodelist/routerinfo_st.h"
+#include "feature/nodelist/routerstatus_st.h"
 
 /* Helper: assert that short_policy parses and writes back out as itself,
    or as <b>expected</b> if that's provided. */
@@ -1699,7 +1707,7 @@ test_policies_getinfo_helper_policies(void *arg)
   rv = getinfo_helper_policies(NULL, "exit-policy/full", &answer,
                                &errmsg);
 
-  tt_int_op(rv, OP_EQ, 0);
+  tt_int_op(rv, OP_EQ, -1);
   tt_ptr_op(answer, OP_EQ, NULL);
   tt_ptr_op(errmsg, OP_NE, NULL);
   tt_str_op(errmsg, OP_EQ, "Key digest failed");
@@ -2445,4 +2453,3 @@ struct testcase_t policy_tests[] = {
     test_policies_fascist_firewall_choose_address, 0, NULL, NULL },
   END_OF_TESTCASES
 };
-
