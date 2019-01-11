@@ -8,15 +8,15 @@ EXTRA_CARGO_OPTIONS=
 	( cd "$(abs_top_builddir)/src/rust" ; \
 		CARGO_TARGET_DIR="$(abs_top_builddir)/src/rust/target" \
 		$(CARGO) build --release $(EXTRA_CARGO_OPTIONS) \
-	        $(CARGO_ONLINE) \
-                --manifest-path "$(abs_top_srcdir)/src/rust/tor_rust/Cargo.toml" )
+		$(CARGO_ONLINE) \
+		--manifest-path "$(abs_top_srcdir)/src/rust/tor_rust/Cargo.toml" )
 
 distclean-rust:
 	( cd "$(abs_top_builddir)/src/rust" ; \
 		CARGO_TARGET_DIR="$(abs_top_builddir)/src/rust/target" \
 		$(CARGO) clean $(EXTRA_CARGO_OPTIONS) \
-	        $(CARGO_ONLINE) \
-                --manifest-path "$(abs_top_srcdir)/src/rust/tor_rust/Cargo.toml" )
+		$(CARGO_ONLINE) \
+		--manifest-path "$(abs_top_srcdir)/src/rust/tor_rust/Cargo.toml" )
 	rm -rf "$(abs_top_builddir)/src/rust/registry"
 
 if USE_RUST

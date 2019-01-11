@@ -55,7 +55,7 @@ impl Default for ProtoSet {
     fn default() -> Self {
         let pairs: Vec<(Version, Version)> = Vec::new();
 
-        ProtoSet{ pairs }
+        ProtoSet { pairs }
     }
 }
 
@@ -75,7 +75,7 @@ impl<'a> ProtoSet {
         pairs.sort_unstable();
         pairs.dedup();
 
-        ProtoSet{ pairs }.is_ok()
+        ProtoSet { pairs }.is_ok()
     }
 }
 
@@ -290,7 +290,7 @@ impl ProtoSet {
         });
 
         let pairs = pairs.collect();
-        ProtoSet::is_ok(ProtoSet{ pairs }).expect("should be already sorted")
+        ProtoSet::is_ok(ProtoSet { pairs }).expect("should be already sorted")
     }
 }
 
@@ -322,7 +322,7 @@ impl FromStr for ProtoSet {
     /// * there are greater than 2^16 version numbers to expand.
     ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use std::str::FromStr;
     ///
@@ -352,49 +352,41 @@ impl FromStr for ProtoSet {
     /// assert_eq!(Err(ProtoverError::Unparseable), ProtoSet::from_str("3-"));
     /// assert_eq!(Err(ProtoverError::Unparseable), ProtoSet::from_str("1-,4"));
     ///
-    /// // Things which would get parsed into an _empty_ `ProtoSet` are,
-    /// // however, legal, and result in an empty `ProtoSet`:
+    /// // An empty string is, however, legal, and results in an
+    /// // empty `ProtoSet`:
     /// assert_eq!(Ok(ProtoSet::default()), ProtoSet::from_str(""));
-    /// assert_eq!(Ok(ProtoSet::default()), ProtoSet::from_str(",,,"));
     /// #
     /// # Ok(protoset)
     /// # }
     /// # fn main() { do_test(); }  // wrap the test so we can use the ? operator
     /// ```
     fn from_str(version_string: &str) -> Result<Self, Self::Err> {
+        // If we were passed in an empty string, then return an empty ProtoSet.
+        if version_string.is_empty() {
+            return Ok(Self::default());
+        }
+
         let mut pairs: Vec<(Version, Version)> = Vec::new();
         let pieces: ::std::str::Split<char> = version_string.split(',');
 
         for p in pieces {
-            if p.is_empty() {
-                continue;
-            } else if p.contains('-') {
+            if p.contains('-') {
                 let mut pair = p.splitn(2, '-');
 
-                let low  = pair.next().ok_or(ProtoverError::Unparseable)?;
+                let low = pair.next().ok_or(ProtoverError::Unparseable)?;
                 let high = pair.next().ok_or(ProtoverError::Unparseable)?;
 
-                let lo: Version =  low.parse().or(Err(ProtoverError::Unparseable))?;
+                let lo: Version = low.parse().or(Err(ProtoverError::Unparseable))?;
                 let hi: Version = high.parse().or(Err(ProtoverError::Unparseable))?;
 
-                if lo == u32::MAX || hi == u32::MAX {
-                    return Err(ProtoverError::ExceedsMax);
-                }
                 pairs.push((lo, hi));
             } else {
                 let v: u32 = p.parse().or(Err(ProtoverError::Unparseable))?;
 
-                if v == u32::MAX {
-                    return Err(ProtoverError::ExceedsMax);
-                }
                 pairs.push((v, v));
             }
         }
-        // If we were passed in an empty string, or
-        // simply a comma, or a pile of commas, then return an empty ProtoSet.
-        if pairs.len() == 0 {
-            return Ok(ProtoSet::default());
-        }
+
         ProtoSet::from_slice(&pairs[..])
     }
 }
@@ -478,11 +470,11 @@ impl From<Vec<Version>> for ProtoSet {
             if has_range {
                 let first: Version = match v.first() {
                     Some(x) => *x,
-                    None    => continue,
+                    None => continue,
                 };
-                let last:  Version = match v.get(index) {
+                let last: Version = match v.get(index) {
                     Some(x) => *x,
-                    None    => continue,
+                    None => continue,
                 };
                 debug_assert!(last == end, format!("last = {}, end = {}", last, end));
 
@@ -495,7 +487,7 @@ impl From<Vec<Version>> for ProtoSet {
             } else {
                 let last: Version = match v.get(index) {
                     Some(x) => *x,
-                    None    => continue,
+                    None => continue,
                 };
                 version_pairs.push((last, last));
                 v.remove(index);
@@ -519,22 +511,22 @@ mod test {
     }
 
     macro_rules! assert_contains_each {
-        ($protoset:expr, $versions:expr) => (
+        ($protoset:expr, $versions:expr) => {
             for version in $versions {
                 assert!($protoset.contains(version));
             }
-        )
+        };
     }
 
     macro_rules! test_protoset_contains_versions {
-        ($list:expr, $str:expr) => (
+        ($list:expr, $str:expr) => {
             let versions: &[Version] = $list;
             let protoset: Result<ProtoSet, ProtoverError> = ProtoSet::from_str($str);
 
             assert!(protoset.is_ok());
             let p = protoset.unwrap();
             assert_contains_each!(p, versions);
-        )
+        };
     }
 
     #[test]
@@ -556,6 +548,13 @@ mod test {
     #[test]
     fn test_versions_from_str_negative_1() {
         assert_eq!(Err(ProtoverError::Unparseable), ProtoSet::from_str("-1"));
+    }
+
+    #[test]
+    fn test_versions_from_str_commas() {
+        assert_eq!(Err(ProtoverError::Unparseable), ProtoSet::from_str(","));
+        assert_eq!(Err(ProtoverError::Unparseable), ProtoSet::from_str("1,,2"));
+        assert_eq!(Err(ProtoverError::Unparseable), ProtoSet::from_str("1,2,"));
     }
 
     #[test]
@@ -594,26 +593,41 @@ mod test {
 
     #[test]
     fn test_versions_from_slice_overlap() {
-        assert_eq!(Err(ProtoverError::Overlap), ProtoSet::from_slice(&[(1, 3), (2, 4)]));
+        assert_eq!(
+            Err(ProtoverError::Overlap),
+            ProtoSet::from_slice(&[(1, 3), (2, 4)])
+        );
     }
 
     #[test]
     fn test_versions_from_str_max() {
-        assert_eq!(Err(ProtoverError::ExceedsMax), ProtoSet::from_str("4294967295"));
+        assert_eq!(
+            Err(ProtoverError::ExceedsMax),
+            ProtoSet::from_str("4294967295")
+        );
     }
 
     #[test]
     fn test_versions_from_slice_max() {
-        assert_eq!(Err(ProtoverError::ExceedsMax), ProtoSet::from_slice(&[(4294967295, 4294967295)]));
+        assert_eq!(
+            Err(ProtoverError::ExceedsMax),
+            ProtoSet::from_slice(&[(4294967295, 4294967295)])
+        );
     }
 
     #[test]
     fn test_protoset_contains() {
         let protoset: ProtoSet = ProtoSet::from_slice(&[(1, 5), (7, 9), (13, 14)]).unwrap();
 
-        for x in 1..6   { assert!(protoset.contains(&x), format!("should contain {}", x)); }
-        for x in 7..10  { assert!(protoset.contains(&x), format!("should contain {}", x)); }
-        for x in 13..15 { assert!(protoset.contains(&x), format!("should contain {}", x)); }
+        for x in 1..6 {
+            assert!(protoset.contains(&x), format!("should contain {}", x));
+        }
+        for x in 7..10 {
+            assert!(protoset.contains(&x), format!("should contain {}", x));
+        }
+        for x in 13..15 {
+            assert!(protoset.contains(&x), format!("should contain {}", x));
+        }
 
         for x in [6, 10, 11, 12, 15, 42, 43, 44, 45, 1234584].iter() {
             assert!(!protoset.contains(&x), format!("should not contain {}", x));
@@ -624,7 +638,9 @@ mod test {
     fn test_protoset_contains_1_3() {
         let protoset: ProtoSet = ProtoSet::from_slice(&[(1, 3)]).unwrap();
 
-        for x in 1..4 { assert!(protoset.contains(&x), format!("should contain {}", x)); }
+        for x in 1..4 {
+            assert!(protoset.contains(&x), format!("should contain {}", x));
+        }
     }
 
     macro_rules! assert_protoset_from_vec_contains_all {
@@ -650,7 +666,7 @@ mod test {
 
     #[test]
     fn test_protoset_from_vec_unordered() {
-        let v: Vec<Version> = vec!(2, 3, 8, 4, 3, 9, 7, 2);
+        let v: Vec<Version> = vec![2, 3, 8, 4, 3, 9, 7, 2];
         let ps: ProtoSet = v.into();
 
         assert_eq!(ps.to_string(), "2-4,7-9");

@@ -1,15 +1,16 @@
-/* Copyright (c) 2016-2017, The Tor Project, Inc. */
+/* Copyright (c) 2016-2018, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #define PROTOVER_PRIVATE
 
 #include "orconfig.h"
-#include "test.h"
+#include "test/test.h"
 
-#include "protover.h"
+#include "core/or/protover.h"
 
-#include "or.h"
-#include "connection_or.h"
+#include "core/or/or.h"
+#include "core/or/connection_or.h"
+#include "lib/tls/tortls.h"
 
 static void
 test_protover_parse(void *arg)
@@ -164,6 +165,14 @@ test_protover_vote(void *arg)
 
   /* High threshold */
   result = protover_compute_vote(lst, 3);
+  tt_str_op(result, OP_EQ, "");
+  tor_free(result);
+
+  /* Don't count double-voting. */
+  smartlist_clear(lst);
+  smartlist_add(lst, (void*) "Foo=1 Foo=1");
+  smartlist_add(lst, (void*) "Bar=1-2,2-3");
+  result = protover_compute_vote(lst, 2);
   tt_str_op(result, OP_EQ, "");
   tor_free(result);
 
@@ -445,10 +454,12 @@ test_protover_supported_protocols(void *arg)
     }
   }
 
+#ifdef HAVE_WORKING_TOR_TLS_GET_TLSSECRETS
   /* Legacy LinkAuth does not appear anywhere in the code. */
   tt_assert(protocol_list_supports_protocol(supported_protocols,
                                             PRT_LINKAUTH,
                                             PROTOVER_LINKAUTH_V1));
+#endif
   /* Latest LinkAuth is not exposed in the headers. */
   tt_assert(protocol_list_supports_protocol(supported_protocols,
                                             PRT_LINKAUTH,
@@ -580,6 +591,14 @@ test_protover_vote_roundtrip(void *args)
     { "Faux=-1", NULL },
     { "Faux=-1-3", NULL },
     { "Faux=1--1", NULL },
+    { "Link=1-2-", NULL },
+    { "Link=1-2-3", NULL },
+    { "Faux=1-2-", NULL },
+    { "Faux=1-2-3", NULL },
+    { "Link=\t1,3", NULL },
+    { "Link=1\n,3", NULL },
+    { "Faux=1,\r3", NULL },
+    { "Faux=1,3\f", NULL },
     /* Large integers */
     { "Link=4294967296", NULL },
     /* Large range */
@@ -630,4 +649,3 @@ struct testcase_t protover_tests[] = {
   PV_TEST(vote_roundtrip, 0),
   END_OF_TESTCASES
 };
-

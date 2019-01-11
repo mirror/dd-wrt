@@ -1,4 +1,4 @@
-/* Copyright (c) 2007-2017, The Tor Project, Inc. */
+/* Copyright (c) 2007-2018, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -6,13 +6,20 @@
  * \brief Unit tests for nodelist related functions.
  **/
 
-#include "or.h"
-#include "crypto_rand.h"
-#include "networkstatus.h"
-#include "nodelist.h"
-#include "torcert.h"
-#include "test.h"
-#include "log_test_helpers.h"
+#include "core/or/or.h"
+#include "lib/crypt_ops/crypto_rand.h"
+#include "feature/nodelist/networkstatus.h"
+#include "feature/nodelist/nodelist.h"
+#include "feature/nodelist/torcert.h"
+
+#include "feature/nodelist/microdesc_st.h"
+#include "feature/nodelist/networkstatus_st.h"
+#include "feature/nodelist/node_st.h"
+#include "feature/nodelist/routerinfo_st.h"
+#include "feature/nodelist/routerstatus_st.h"
+
+#include "test/test.h"
+#include "test/log_test_helpers.h"
 
 /** Test the case when node_get_by_id() returns NULL,
  * node_get_verbose_nickname_by_id should return the base 16 encoding

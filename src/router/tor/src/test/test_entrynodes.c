@@ -1,4 +1,4 @@
-/* Copyright (c) 2014-2017, The Tor Project, Inc. */
+/* Copyright (c) 2014-2018, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #include "orconfig.h"
@@ -8,30 +8,43 @@
 #define STATEFILE_PRIVATE
 #define ENTRYNODES_PRIVATE
 #define ROUTERLIST_PRIVATE
-#define DIRECTORY_PRIVATE
+#define DIRCLIENT_PRIVATE
 
-#include "or.h"
-#include "test.h"
+#include "core/or/or.h"
+#include "test/test.h"
 
-#include "bridges.h"
-#include "circuitlist.h"
-#include "circuitbuild.h"
-#include "config.h"
-#include "confparse.h"
-#include "crypto_rand.h"
-#include "directory.h"
-#include "entrynodes.h"
-#include "nodelist.h"
-#include "networkstatus.h"
-#include "policies.h"
-#include "routerlist.h"
-#include "routerparse.h"
-#include "routerset.h"
-#include "statefile.h"
-#include "util.h"
+#include "feature/client/bridges.h"
+#include "core/or/circuitlist.h"
+#include "core/or/circuitbuild.h"
+#include "app/config/config.h"
+#include "app/config/confparse.h"
+#include "lib/crypt_ops/crypto_rand.h"
+#include "feature/dircommon/directory.h"
+#include "feature/dirclient/dirclient.h"
+#include "feature/client/entrynodes.h"
+#include "feature/nodelist/nodelist.h"
+#include "feature/nodelist/networkstatus.h"
+#include "core/or/policies.h"
+#include "feature/nodelist/routerlist.h"
+#include "feature/nodelist/routerset.h"
+#include "app/config/statefile.h"
 
-#include "test_helpers.h"
-#include "log_test_helpers.h"
+#include "core/or/cpath_build_state_st.h"
+#include "core/or/crypt_path_st.h"
+#include "feature/dircommon/dir_connection_st.h"
+#include "feature/nodelist/microdesc_st.h"
+#include "feature/nodelist/networkstatus_st.h"
+#include "feature/nodelist/node_st.h"
+#include "core/or/origin_circuit_st.h"
+#include "app/config/or_state_st.h"
+#include "feature/nodelist/routerinfo_st.h"
+#include "feature/nodelist/routerstatus_st.h"
+
+#include "test/test_helpers.h"
+#include "test/log_test_helpers.h"
+
+#include "lib/container/bloomfilt.h"
+#include "lib/encoding/confline.h"
 
 /* TODO:
  * choose_random_entry() test with state set.
@@ -2819,13 +2832,16 @@ test_entry_guard_outdated_dirserver_exclusion(void *arg)
                                   digests, 3, 7, 0);
 
     /* ... and check that because we failed to fetch microdescs from all our
-     * primaries, we didnt end up selecting a primary for fetching dir info */
+     * primaries, we didn't end up selecting a primary for fetching dir info */
     expect_log_msg_containing("No primary or confirmed guards available.");
     teardown_capture_of_logs();
   }
 
  done:
+  UNMOCK(networkstatus_get_latest_consensus_by_flavor);
+  UNMOCK(directory_initiate_request);
   smartlist_free(digests);
+  tor_free(mock_ns_val);
   tor_free(args);
   if (conn) {
     tor_free(conn->requested_resource);
@@ -3070,4 +3086,3 @@ struct testcase_t entrynodes_tests[] = {
 
   END_OF_TESTCASES
 };
-

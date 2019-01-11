@@ -1,6 +1,6 @@
 /* Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2017, The Tor Project, Inc. */
+ * Copyright (c) 2007-2018, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -9,7 +9,9 @@
  **/
 
 #include "orconfig.h"
-#include "crypto_rand.h"
+#include "lib/crypt_ops/crypto_dh.h"
+#include "lib/crypt_ops/crypto_rand.h"
+#include "app/config/or_state_st.h"
 
 #include <stdio.h>
 #ifdef HAVE_FCNTL_H
@@ -30,31 +32,38 @@
 #define ROUTER_PRIVATE
 #define CIRCUITSTATS_PRIVATE
 #define CIRCUITLIST_PRIVATE
-#define MAIN_PRIVATE
+#define MAINLOOP_PRIVATE
 #define STATEFILE_PRIVATE
 
-#include "or.h"
-#include "backtrace.h"
-#include "buffers.h"
-#include "circuitlist.h"
-#include "circuitstats.h"
-#include "compress.h"
-#include "config.h"
-#include "connection_edge.h"
-#include "rendcommon.h"
-#include "rendcache.h"
-#include "test.h"
-#include "main.h"
-#include "memarea.h"
-#include "onion.h"
-#include "onion_ntor.h"
-#include "onion_fast.h"
-#include "onion_tap.h"
-#include "policies.h"
-#include "rephist.h"
-#include "routerparse.h"
-#include "statefile.h"
-#include "crypto_curve25519.h"
+#include "core/or/or.h"
+#include "lib/err/backtrace.h"
+#include "lib/container/buffers.h"
+#include "core/or/circuitlist.h"
+#include "core/or/circuitstats.h"
+#include "lib/compress/compress.h"
+#include "app/config/config.h"
+#include "core/or/connection_edge.h"
+#include "feature/rend/rendcommon.h"
+#include "feature/rend/rendcache.h"
+#include "feature/rend/rendparse.h"
+#include "test/test.h"
+#include "core/mainloop/mainloop.h"
+#include "lib/memarea/memarea.h"
+#include "core/or/onion.h"
+#include "core/crypto/onion_ntor.h"
+#include "core/crypto/onion_fast.h"
+#include "core/crypto/onion_tap.h"
+#include "core/or/policies.h"
+#include "feature/stats/rephist.h"
+#include "app/config/statefile.h"
+#include "lib/crypt_ops/crypto_curve25519.h"
+
+#include "core/or/extend_info_st.h"
+#include "core/or/or_circuit_st.h"
+#include "feature/rend/rend_encoded_v2_service_descriptor_st.h"
+#include "feature/rend/rend_intro_point_st.h"
+#include "feature/rend/rend_service_descriptor_st.h"
+#include "feature/relay/onion_queue.h"
 
 /** Run unit tests for the onion handshake code. */
 static void
@@ -136,7 +145,8 @@ test_bad_onion_handshake(void *arg)
   memset(junk_buf, 0, sizeof(junk_buf));
   crypto_pk_obsolete_public_hybrid_encrypt(pk,
                                junk_buf2, TAP_ONIONSKIN_CHALLENGE_LEN,
-                               junk_buf, DH_KEY_LEN, PK_PKCS1_OAEP_PADDING, 1);
+                               junk_buf, DH1024_KEY_LEN,
+                               PK_PKCS1_OAEP_PADDING, 1);
   tt_int_op(-1, OP_EQ,
             onion_skin_TAP_server_handshake(junk_buf2, pk, NULL,
                                             s_buf, s_keys, 40));
@@ -849,7 +859,11 @@ struct testgroup_t testgroups[] = {
   { "control/", controller_tests },
   { "control/event/", controller_event_tests },
   { "crypto/", crypto_tests },
+  { "crypto/ope/", crypto_ope_tests },
+#ifdef ENABLE_OPENSSL
   { "crypto/openssl/", crypto_openssl_tests },
+#endif
+  { "crypto/pem/", pem_tests },
   { "dir/", dir_tests },
   { "dir_handle_get/", dir_handle_get_tests },
   { "dir/md/", microdesc_tests },
@@ -901,14 +915,16 @@ struct testgroup_t testgroups[] = {
   { "status/" , status_tests },
   { "storagedir/", storagedir_tests },
   { "tortls/", tortls_tests },
+#ifndef ENABLE_NSS
+  { "tortls/openssl/", tortls_openssl_tests },
+#endif
+  { "tortls/x509/", x509_tests },
   { "util/", util_tests },
   { "util/format/", util_format_tests },
   { "util/logging/", logging_tests },
   { "util/process/", util_process_tests },
-  { "util/pubsub/", pubsub_tests },
   { "util/thread/", thread_tests },
   { "util/handle/", handle_tests },
   { "dns/", dns_tests },
   END_OF_GROUPS
 };
-

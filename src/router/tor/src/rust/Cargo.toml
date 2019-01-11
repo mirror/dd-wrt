@@ -13,4 +13,3 @@ members = [
 [profile.release]
 debug = true
 panic = "abort"
-

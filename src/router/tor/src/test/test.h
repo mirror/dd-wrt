@@ -1,6 +1,6 @@
 /* Copyright (c) 2001-2003, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2017, The Tor Project, Inc. */
+ * Copyright (c) 2007-2018, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #ifndef TOR_TEST_H
@@ -13,7 +13,6 @@
 
 #define DEBUG_SMARTLIST 1
 
-#include "compat.h"
 #include "tinytest.h"
 #define TT_EXIT_TEST_FUNCTION STMT_BEGIN goto done; STMT_END
 #include "tinytest_macros.h"
@@ -51,28 +50,20 @@
   tt_double_op((a), OP_LE, (b)); \
   STMT_END
 
-#ifdef _MSC_VER
-#define U64_PRINTF_TYPE uint64_t
-#define I64_PRINTF_TYPE int64_t
-#else
-#define U64_PRINTF_TYPE unsigned long long
-#define I64_PRINTF_TYPE long long
-#endif /* defined(_MSC_VER) */
-
 #define tt_size_op(a,op,b)                                              \
   tt_assert_test_fmt_type(a,b,#a" "#op" "#b,size_t,(val1_ op val2_),    \
-    U64_PRINTF_TYPE, U64_FORMAT,                                        \
-    {print_ = (U64_PRINTF_TYPE) value_;}, {}, TT_EXIT_TEST_FUNCTION)
+    size_t, "%"TOR_PRIuSZ,                                              \
+    {print_ = (size_t) value_;}, {}, TT_EXIT_TEST_FUNCTION)
 
 #define tt_u64_op(a,op,b)                                              \
   tt_assert_test_fmt_type(a,b,#a" "#op" "#b,uint64_t,(val1_ op val2_), \
-    U64_PRINTF_TYPE, U64_FORMAT,                                       \
-    {print_ = (U64_PRINTF_TYPE) value_;}, {}, TT_EXIT_TEST_FUNCTION)
+    uint64_t, "%"PRIu64,                                               \
+    {print_ = (uint64_t) value_;}, {}, TT_EXIT_TEST_FUNCTION)
 
 #define tt_i64_op(a,op,b)                                              \
-  tt_assert_test_fmt_type(a,b,#a" "#op" "#b,int64_t,(val1_ op val2_), \
-    I64_PRINTF_TYPE, I64_FORMAT,                                       \
-    {print_ = (I64_PRINTF_TYPE) value_;}, {}, TT_EXIT_TEST_FUNCTION)
+  tt_assert_test_fmt_type(a,b,#a" "#op" "#b,int64_t,(val1_ op val2_),  \
+    int64_t, "%"PRId64,                                                \
+    {print_ = (int64_t) value_;}, {}, TT_EXIT_TEST_FUNCTION)
 
 /**
  * Declare that the test is done, even though no tt___op() calls were made.
@@ -212,6 +203,7 @@ extern struct testcase_t container_tests[];
 extern struct testcase_t controller_tests[];
 extern struct testcase_t controller_event_tests[];
 extern struct testcase_t crypto_tests[];
+extern struct testcase_t crypto_ope_tests[];
 extern struct testcase_t crypto_openssl_tests[];
 extern struct testcase_t dir_tests[];
 extern struct testcase_t dir_handle_get_tests[];
@@ -242,13 +234,13 @@ extern struct testcase_t nodelist_tests[];
 extern struct testcase_t oom_tests[];
 extern struct testcase_t oos_tests[];
 extern struct testcase_t options_tests[];
+extern struct testcase_t pem_tests[];
 extern struct testcase_t periodic_event_tests[];
 extern struct testcase_t policy_tests[];
 extern struct testcase_t procmon_tests[];
 extern struct testcase_t proto_http_tests[];
 extern struct testcase_t proto_misc_tests[];
 extern struct testcase_t protover_tests[];
-extern struct testcase_t pubsub_tests[];
 extern struct testcase_t pt_tests[];
 extern struct testcase_t relay_tests[];
 extern struct testcase_t relaycell_tests[];
@@ -265,6 +257,7 @@ extern struct testcase_t socks_tests[];
 extern struct testcase_t status_tests[];
 extern struct testcase_t thread_tests[];
 extern struct testcase_t tortls_tests[];
+extern struct testcase_t tortls_openssl_tests[];
 extern struct testcase_t util_tests[];
 extern struct testcase_t util_format_tests[];
 extern struct testcase_t util_process_tests[];
@@ -272,6 +265,7 @@ extern struct testcase_t voting_schedule_tests[];
 extern struct testcase_t dns_tests[];
 extern struct testcase_t handle_tests[];
 extern struct testcase_t sr_tests[];
+extern struct testcase_t x509_tests[];
 
 extern struct testcase_t slow_crypto_tests[];
 extern struct testcase_t slow_util_tests[];
@@ -292,4 +286,3 @@ extern const char AUTHORITY_SIGNKEY_C_DIGEST[];
 extern const char AUTHORITY_SIGNKEY_C_DIGEST256[];
 
 #endif /* !defined(TOR_TEST_H) */
-

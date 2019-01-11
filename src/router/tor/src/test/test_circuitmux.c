@@ -1,17 +1,19 @@
-/* Copyright (c) 2013-2017, The Tor Project, Inc. */
+/* Copyright (c) 2013-2018, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 #define TOR_CHANNEL_INTERNAL_
 #define CIRCUITMUX_PRIVATE
 #define CIRCUITMUX_EWMA_PRIVATE
 #define RELAY_PRIVATE
-#include "or.h"
-#include "channel.h"
-#include "circuitmux.h"
-#include "circuitmux_ewma.h"
-#include "relay.h"
-#include "scheduler.h"
-#include "test.h"
+#include "core/or/or.h"
+#include "core/or/channel.h"
+#include "core/or/circuitmux.h"
+#include "core/or/circuitmux_ewma.h"
+#include "core/or/relay.h"
+#include "core/or/scheduler.h"
+#include "test/test.h"
+
+#include "core/or/destroy_cell_queue_st.h"
 
 #include <math.h>
 
@@ -86,7 +88,7 @@ static void
 test_cmux_compute_ticks(void *arg)
 {
   const int64_t NS_PER_S = 1000 * 1000 * 1000;
-  const int64_t START_NS = U64_LITERAL(1217709000)*NS_PER_S;
+  const int64_t START_NS = UINT64_C(1217709000)*NS_PER_S;
   int64_t now;
   double rem;
   unsigned tick;

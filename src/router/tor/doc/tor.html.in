@@ -1,9 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
     "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 8.6.8" />
+<meta name="generator" content="AsciiDoc 8.6.10" />
 <title>TOR(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -94,7 +95,9 @@ ul > li > * { color: black; }
   padding: 0;
   margin: 0;
 }
-
+pre {
+  white-space: pre-wrap;
+}
 
 #author {
   color: #527bbd;
@@ -223,7 +226,7 @@ div.exampleblock > div.content {
 }
 
 div.imageblock div.content { padding-left: 0; }
-span.image img { border-style: none; }
+span.image img { border-style: none; vertical-align: text-bottom; }
 a.image:visited { color: white; }
 
 dl {
@@ -1202,8 +1205,15 @@ forward slash (/) in the configuration file and on the command line.</p></div>
     descriptors as the OS will allow (you can find this by "ulimit -H -n").
     If this number is less than ConnLimit, then Tor will refuse to start.<br />
 <br />
-    You probably don&#8217;t need to adjust this. It has no effect on Windows
-    since that platform lacks getrlimit(). (Default: 1000)
+    Tor relays need thousands of sockets, to connect to every other relay.
+    If you are running a private bridge, you can reduce the number of sockets
+    that Tor uses. For example, to limit Tor to 500 sockets, run
+    "ulimit -n 500" in a shell. Then start tor in the same shell, with
+    <strong>ConnLimit 500</strong>. You may also need to set <strong>DisableOOSCheck 0</strong>.<br />
+<br />
+    Unless you have severely limited sockets, you probably don&#8217;t need to
+    adjust <strong>ConnLimit</strong> itself. It has no effect on Windows, since that
+    platform lacks getrlimit(). (Default: 1000)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1422,13 +1432,15 @@ forward slash (/) in the configuration file and on the command line.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="CacheDirectoryGroupReadable"></a> <strong>CacheDirectoryGroupReadable</strong> <strong>0</strong>|<strong>1</strong>
+<a id="CacheDirectoryGroupReadable"></a> <strong>CacheDirectoryGroupReadable</strong> <strong>0</strong>|<strong>1</strong>|<strong>auto</strong>
 </dt>
 <dd>
 <p>
     If this option is set to 0, don&#8217;t allow the filesystem group to read the
     CacheDirectory. If the option is set to 1, make the CacheDirectory readable
-    by the default GID. (Default: 0)
+    by the default GID. If the option is "auto", then we use the
+    setting for DataDirectoryGroupReadable when the CacheDirectory is the
+    same as the DataDirectory, and 0 otherwise. (Default: auto)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1687,6 +1699,7 @@ forward slash (/) in the configuration file and on the command line.</p></div>
     ServerDNSResolvConfFile
     Tor must remain in client or server mode (some changes to ClientOnly and
     ORPort are not allowed).
+    ClientOnionAuthDir and any files in it won&#8217;t reload on HUP signal.
     (Default: 0)
 </p>
 </dd>
@@ -1737,9 +1750,7 @@ forward slash (/) in the configuration file and on the command line.</p></div>
 <dd>
 <p>
     To keep firewalls from expiring connections, send a padding keepalive cell
-    every NUM seconds on open connections that are in use. If the connection
-    has no open circuits, it will instead be closed after NUM seconds of
-    idleness. (Default: 5 minutes)
+    every NUM seconds on open connections that are in use. (Default: 5 minutes)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1946,7 +1957,9 @@ forward slash (/) in the configuration file and on the command line.</p></div>
     If this option is set to 0, Tor will not perform any scrubbing, if it is
     set to 1, all potentially sensitive strings are replaced. If it is set to
     relay, all log messages generated when acting as a relay are sanitized, but
-    all messages generated when acting as a client are not. (Default: 1)
+    all messages generated when acting as a client are not.
+    Note: Tor may not heed this option when logging at log levels below Notice.
+    (Default: 1)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -2435,6 +2448,23 @@ forward slash (/) in the configuration file and on the command line.</p></div>
     this option is not set, the hidden service is not accessible. Hidden
     services can be configured to require authorization using the
     <strong>HiddenServiceAuthorizeClient</strong> option.
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="ClientOnionAuthDir"></a> <strong>ClientOnionAuthDir</strong> <em>path</em>
+</dt>
+<dd>
+<p>
+    Path to the directory containing v3 hidden service authorization files.
+    Each file is for a single onion address, and the files MUST have the suffix
+    ".auth_private" (i.e. "bob_onion.auth_private"). The content format MUST be:
+<br />
+      &lt;onion-address&gt;:descriptor:x25519:&lt;base32-encoded-privkey&gt;
+<br />
+    The &lt;onion-address&gt; MUST NOT have the ".onion" suffix. The
+    &lt;base32-encoded-privkey&gt; is the base32 representation of the raw key bytes
+    only (32 bytes for x25519). See Appendix G in the rend-spec-v3.txt file of
+    <a href="https://spec.torproject.org/">torspec</a> for more information.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -2947,8 +2977,8 @@ Using a wildcard to match only part of a string (as in *ample.com) is
     to stick with them. This is desirable because constantly changing servers
     increases the odds that an adversary who owns some servers will observe a
     fraction of your paths. Entry Guards can not be used by Directory
-    Authorities, Single Onion Services, and Tor2web clients. In these cases,
-    the this option is ignored. (Default: 1)
+    Authorities or Single Onion Services. In these cases,
+    this option is ignored. (Default: 1)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -2966,7 +2996,7 @@ Using a wildcard to match only part of a string (as in *ample.com) is
 </dt>
 <dd>
 <p>
-    This torrc option specifies whether clients should use the
+    This option specifies whether clients should use the
     guardfraction information found in the consensus during path
     selection. If it&#8217;s set to <em>auto</em>, clients will do what the
     UseGuardFraction consensus parameter tells them to do. (Default: auto)
@@ -3261,42 +3291,6 @@ is preferable since it reduces the chances for an attacker to guess the
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="Tor2webMode"></a> <strong>Tor2webMode</strong> <strong>0</strong>|<strong>1</strong>
-</dt>
-<dd>
-<p>
-    When this option is set, Tor connects to hidden services
-    <strong>non-anonymously</strong>.  This option also disables client connections to
-    non-hidden-service hostnames through Tor. It <strong>must only</strong> be used when
-    running a tor2web Hidden Service web proxy.
-    To enable this option the compile time flag --enable-tor2web-mode must be
-    specified. Since Tor2webMode is non-anonymous, you can not run an
-    anonymous Hidden Service on a tor version compiled with Tor2webMode.
-    (Default: 0)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="Tor2webRendezvousPoints"></a> <strong>Tor2webRendezvousPoints</strong> <em>node</em>,<em>node</em>,<em>&#8230;</em>
-</dt>
-<dd>
-<p>
-    A list of identity fingerprints, nicknames, country codes and
-    address patterns of nodes that are allowed to be used as RPs
-    in HS circuits; any other nodes will not be used as RPs.
-    (Example:
-    Tor2webRendezvousPoints Fastyfasty, ABCD1234CDEF5678ABCD1234CDEF5678ABCD1234, {cc}, 255.254.0.0/8)<br />
-<br />
-    This feature can only be used if Tor2webMode is also enabled.<br />
-<br />
-    ExcludeNodes have higher priority than Tor2webRendezvousPoints,
-    which means that nodes specified in ExcludeNodes will not be
-    picked as RPs.<br />
-<br />
-    If no nodes in Tor2webRendezvousPoints are currently available for
-    use, Tor will choose a random node when building HS circuits.
-</p>
-</dd>
-<dt class="hdlist1">
 <a id="HSLayer2Nodes"></a> <strong>HSLayer2Nodes</strong> <em>node</em>,<em>node</em>,<em>&#8230;</em>
 </dt>
 <dd>
@@ -3506,9 +3500,10 @@ is preferable since it reduces the chances for an attacker to guess the
 <dd>
 <p>
     If this option is set to 1, Tor might connect to directory servers or
-    entry nodes over IPv6. Note that clients configured with an IPv6 address
-    in a <strong>Bridge</strong>, proxy, or pluggable transport line will try connecting
-    over IPv6 even if <strong>ClientUseIPv6</strong> is set to 0. (Default: 0)
+    entry nodes over IPv6. For IPv6 only hosts, you need to also set
+    <strong>ClientUseIPv4</strong> to 0 to disable IPv4. Note that clients configured with
+    an IPv6 address in a <strong>Bridge</strong>, proxy, or pluggable transportline will
+    try connecting over IPv6 even if <strong>ClientUseIPv6</strong> is set to 0. (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -3647,7 +3642,10 @@ is non-zero):</p></div>
     Sets the relay to act as a "bridge" with respect to relaying connections
     from bridge users to the Tor network. It mainly causes Tor to publish a
     server descriptor to the bridge database, rather than
-    to the public directory authorities.
+    to the public directory authorities.<br />
+<br />
+    Note: make sure that no MyFamily lines are present in your torrc when
+    relay is configured in bridge mode.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -3965,7 +3963,10 @@ reject *:*</code></pre>
     nickname: fingerprints are more reliable.<br />
 <br />
     If you run more than one relay, the MyFamily option on each relay
-    <strong>must</strong> list all other relays, as described above.
+    <strong>must</strong> list all other relays, as described above.<br />
+<br />
+    Note: do not use MyFamily when configuring your Tor instance as a
+    brigde.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -5080,7 +5081,9 @@ on the public Tor network.</p></div>
 <p>
     V3 authoritative directories only. Configures the location of the
     bandwidth-authority generated file storing information on relays' measured
-    bandwidth capacities. (Default: unset)
+    bandwidth capacities. To avoid inconsistent reads, bandwidth data should
+    be written to temporary file, then renamed to the configured filename.
+    (Default: unset)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -5181,7 +5184,7 @@ AuthDirHasIPv6Connectivity 1.)</code></pre>
     paths may be quoted, and may use standard C escapes.)
     You may also have multiple lines with  the same VIRTPORT: when a user
     connects to that VIRTPORT, one of the TARGETs from those lines will be
-    chosen at random.
+    chosen at random. Note that address-port pairs have to be comma-separated.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -5201,7 +5204,7 @@ AuthDirHasIPv6Connectivity 1.)</code></pre>
 <dd>
 <p>
     A list of rendezvous service descriptor versions to publish for the hidden
-    service. Currently, versions 2 and 3 are supported. (Default: 2)
+    service. Currently, versions 2 and 3 are supported. (Default: 3)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -5219,7 +5222,8 @@ AuthDirHasIPv6Connectivity 1.)</code></pre>
     clients without authorization any more. Generated authorization data can be
     found in the hostname file. Clients need to put this authorization data in
     their configuration file using <strong>HidServAuth</strong>. This option is only for v2
-    services.
+    services; v3 services configure client authentication in a subdirectory of
+    HiddenServiceDir instead (see the <strong>Client Authorization</strong> section).
 </p>
 </dd>
 <dt class="hdlist1">
@@ -5231,6 +5235,38 @@ AuthDirHasIPv6Connectivity 1.)</code></pre>
    current hidden service to close rendezvous circuits. (Setting this to 0 is
    not an authorization mechanism; it is instead meant to be a mild
    inconvenience to port-scanners.) (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="HiddenServiceExportCircuitID"></a> <strong>HiddenServiceExportCircuitID</strong> <em>protocol</em>
+</dt>
+<dd>
+<p>
+   The onion service will use the given protocol to expose the global circuit
+   identifier of each inbound client circuit via the selected protocol. The only
+   protocol supported right now 'haproxy'. This option is only for v3
+   services. (Default: none)<br />
+<br />
+   The haproxy option works in the following way: when the feature is
+   enabled, the Tor process will write a header line when a client is connecting
+   to the onion service. The header will look like this:<br />
+<br />
+   "PROXY TCP6 fc00:dead:beef:4dad::ffff:ffff ::1 65535 42\r\n"<br />
+<br />
+   We encode the "global circuit identifier" as the last 32-bits of the first
+   IPv6 address. All other values in the header can safely be ignored. You can
+   compute the global circuit identifier using the following formula given the
+   IPv6 address "fc00:dead:beef:4dad::AABB:CCDD":<br />
+<br />
+      global_circuit_id = (0xAA &lt;&lt; 24) + (0xBB &lt;&lt; 16) + (0xCC &lt;&lt; 8) + 0xDD;<br />
+<br />
+   In the case above, where the last 32-bit is 0xffffffff, the global circuit
+   identifier would be 4294967295. You can use this value together with Tor&#8217;s
+   control port where it is possible to terminate a circuit given the global
+   circuit identifier. For more information about this see controls-spec.txt.<br />
+<br />
+   The HAProxy version 1 proxy protocol is described in detail at
+   <a href="https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt">https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt</a>
 </p>
 </dd>
 <dt class="hdlist1">
@@ -5330,6 +5366,34 @@ AuthDirHasIPv6Connectivity 1.)</code></pre>
 </p>
 </dd>
 </dl></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_client_authorization">Client Authorization</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>(Version 3 only)</p></div>
+<div class="paragraph"><p>To configure client authorization on the service side, the
+"&lt;HiddenServiceDir&gt;/authorized_clients/" directory needs to exist. Each file
+in that directory should be suffixed with ".auth" (i.e. "alice.auth"; the
+file name is irrelevant) and its content format MUST be:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>&lt;auth-type&gt;:&lt;key-type&gt;:&lt;base32-encoded-public-key&gt;</code></pre>
+</div></div>
+<div class="paragraph"><p>The supported &lt;auth-type&gt; are: "descriptor". The supported &lt;key-type&gt; are:
+"x25519". The &lt;base32-encoded-privkey&gt; is the base32 representation of the raw
+key bytes only (32 bytes for x25519).</p></div>
+<div class="paragraph"><p>Each file MUST contain one line only. Any malformed file will be
+ignored. Client authorization will only be enabled for the service if tor
+successfully loads at least one authorization file.</p></div>
+<div class="paragraph"><p>Note that once you&#8217;ve configured client authorization, anyone else with the
+address won&#8217;t be able to access it from this point on. If no authorization is
+configured, the service will be accessible to anyone with the onion address.</p></div>
+<div class="paragraph"><p>Revoking a client can be done by removing their ".auth" file, however the
+revocation will be in effect only after the tor process gets restarted even if
+a SIGHUP takes place.</p></div>
+<div class="paragraph"><p>See the Appendix G in the rend-spec-v3.txt file of
+<a href="https://spec.torproject.org/">torspec</a> for more information.</p></div>
 </div>
 </div>
 <div class="sect1">
@@ -6313,7 +6377,8 @@ A short history of bandwidth usage, as produced in the server
 <div id="footnotes"><hr /></div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2018-06-15 21:20:53 UTC
+Last updated
+ 2018-12-11 14:40:49 UTC
 </div>
 </div>
 </body>
