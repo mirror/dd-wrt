@@ -780,7 +780,6 @@ nla_put_failure:
 	return capstring;
 }
 
-#if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC)
 
 char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vht160, int vht8080, int su_bf, int mu_bf)
 {
@@ -801,7 +800,7 @@ char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vh
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
 		unlock();
-		return "";
+		return strdup("");
 	}
 	bands = unl_find_attr(&unl, msg, NL80211_ATTR_WIPHY_BANDS);
 	if (!bands)
@@ -864,7 +863,6 @@ nla_put_failure:
 		return strdup("");
 	return capstring;
 }
-#endif
 
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU) || defined(HAVE_BRCMFMAC)
 int has_vht160(const char *interface)
@@ -922,7 +920,13 @@ int has_vht80(const char *interface)
 int has_ac(const char *prefix)
 {
 	INITVALUECACHE();
-	ret = (is_brcmfmac(prefix) || is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix));
+	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
+	if (strlen(vhtcache)) {
+		ret = 1;
+	} else {
+		ret = 0;
+	}
+	free(vhtcaps);
 	EXITVALUECACHE();
 	return ret;
 }
