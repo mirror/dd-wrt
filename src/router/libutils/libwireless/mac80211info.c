@@ -920,8 +920,8 @@ int has_vht80(const char *interface)
 int has_ac(const char *prefix)
 {
 	INITVALUECACHE();
-	char *vhtcaps = mac80211_get_vhtcaps(interface, 1, 1, 1, 1, 1, 1);
-	if (strlen(vhtcache)) {
+	char *vhtcaps = mac80211_get_vhtcaps(prefix, 1, 1, 1, 1, 1, 1);
+	if (strlen(vhtcaps)) {
 		ret = 1;
 	} else {
 		ret = 0;
