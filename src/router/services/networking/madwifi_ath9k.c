@@ -67,6 +67,11 @@ static void load_compressor(void)
 	insmod("lz4_decompress");
 	insmod("lzma_compress");
 	insmod("lzma_decompress");
+	/* this module uses weak symbols, which allows to run the whole mac80211 code 
+	 * without any bindings to external libraries which arent in use. this will reduce
+	 * resource usage since we dont need to load all the libraries all the time
+	 * specially with zstd this is neccessary right now
+	 */
 	insmod("mac80211_compress");
 }
 
