@@ -66,7 +66,6 @@ void start_tor(void)
 		ipv6addr = getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, 0);
 #endif
 
-
 	if (nvram_matchi("tor_relayonly", 1)) {
 		fprintf(fp, "SocksPort 0\n");
 	} else {
@@ -93,7 +92,7 @@ void start_tor(void)
 			fprintf(fp, "IPv6Exit 1\n");
 		}
 #endif
-		
+
 	}
 	if (nvram_matchi("tor_dir", 1)) {
 		eval("iptables", "-I", "INPUT", "-p", "tcp", "-i", get_wan_face(), "--dport", "9030", "-j", "ACCEPT");
@@ -104,8 +103,8 @@ void start_tor(void)
 
 	fprintf(fp, "VirtualAddrNetworkIPv4 10.192.0.0/10\n");
 	fprintf(fp, "AutomapHostsOnResolve 1\n");
-	fprintf(fp, "TransPort 9040 IsolateClientAddr IsolateClientProtocol IsolateDestAddr IsolateDestPort\n");
-	fprintf(fp, "DNSPort 5353\n");
+	fprintf(fp, "TransPort %s:9040\n", nvram_safe_get("lan_ipaddr"));
+	fprintf(fp, "DNSPort %s:5353\n", nvram_safe_get("lan_ipaddr"));
 	if (nvram_matchi("tor_transparent", 1)) {
 		sysprintf("iptables -t nat -A PREROUTING -i br0 -p udp --dport 53 -j REDIRECT --to-ports 5353");
 		sysprintf("iptables -t nat -A PREROUTING -i br0 -p udp --dport 5353 -j REDIRECT --to-ports 5353");
