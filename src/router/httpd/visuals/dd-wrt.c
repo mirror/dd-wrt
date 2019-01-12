@@ -2131,7 +2131,14 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 	sprintf(isolation, "%s_isolation", var);
 	nvram_default_get(isolation, "0");
 	showRadio(wp, "wl_basic.isolation", isolation);
-
+#ifdef HAVE_TOR
+	if (nvram_matchi("tor_enable", 1)) {
+		char tor[32];
+		sprintf(tor, "%s_tor", var);
+		nvram_default_get(tor, "0");
+		showRadio(wp, "wl_basic.tor_anon", tor);
+	}
+#endif
 	char redirect[32];
 	sprintf(redirect, "%s_dns_redirect", var);
 	nvram_default_get(redirect, "0");
@@ -3066,7 +3073,6 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 				websWrite(wp, "document.write(\"<option value=\\\"80+80\\\" %s >\" + share.vht80plus80 + \"</option>\");\n", nvram_match(wl_width, "80+80") ? "selected=\\\"selected\\\"" : "");
 		}
 	}
-
 #if !defined(HAVE_BUFFALO)
 #if defined(HAVE_MADWIFI)
 	if (!(is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix))) {

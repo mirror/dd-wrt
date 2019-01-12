@@ -134,6 +134,14 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		sprintf(isolation, "%s_isolation", var);
 		nvram_default_get(isolation, "0");
 		showRadio(wp, "wl_basic.isolation", isolation);
+#ifdef HAVE_TOR
+		if (nvram_matchi("tor_enable", 1)) {
+			char tor[32];
+			sprintf(tor, "%s_tor", var);
+			nvram_default_get(tor, "0");
+			showRadio(wp, "wl_basic.tor_anon", tor);
+		}
+#endif
 
 		char redirect[32];
 		sprintf(redirect, "%s_dns_redirect", var);
