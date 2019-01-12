@@ -289,6 +289,9 @@ endif
 ifeq ($(CONFIG_MSTP),y)
   CFLAGS += -DHAVE_MSTP
 endif
+ifeq ($(CONFIG_TOR),y)
+  CFLAGS += -DHAVE_TOR
+endif
 ifeq ($(CONFIG_DNSCRYPT),y)
 CFLAGS += -DHAVE_DNSCRYPT
 endif

@@ -993,7 +993,6 @@ _8021xprv
 			sprintf(akm, "%s %s", akm, "wpa3-128");
 		nvram_set(n2, &akm[1]);
 	}
-
 #endif
 	copytonv(wp, n);
 #ifdef HAVE_MADWIFI
@@ -3846,7 +3845,7 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv(wp, "%s_poll_time", prefix);
 	copytonv(wp, "%s_strikes", prefix);
 #endif
-#if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC) 
+#if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC)
 	copytonv(wp, "%s_subf", prefix);
 	copytonv(wp, "%s_mubf", prefix);
 #endif
@@ -3917,6 +3916,9 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv(wp, "%s_bridged", ifname);
 	copytonv(wp, "%s_nat", ifname);
 	copytonv(wp, "%s_isolation", ifname);
+#ifdef HAVE_TOR
+	copytonv(wp, "%s_tor", ifname);
+#endif
 	copytonv(wp, "%s_dns_redirect", ifname);
 
 	copymergetonv(wp, "%s_dns_ipaddr", ifname);
@@ -3929,6 +3931,9 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv(wp, "%s_bridged", prefix);
 	copytonv(wp, "%s_nat", prefix);
 	copytonv(wp, "%s_isolation", prefix);
+#ifdef HAVE_TOR
+	copytonv(wp, "%s_tor", prefix);
+#endif
 	copytonv(wp, "%s_dns_redirect", prefix);
 	copymergetonv(wp, "%s_dns_ipaddr", prefix);
 	copymergetonv(wp, "%s_ipaddr", prefix);
