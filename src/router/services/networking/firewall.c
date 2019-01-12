@@ -675,10 +675,24 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int d
 	}
 #endif
 #ifdef HAVE_TOR
-	if (nvram_matchi("tor_transparent", 1) && nvram_matchi("tor_enable", 1)) {
-		save2file_A_prerouting("-i br0 -p udp --dport 53 -j REDIRECT --to-ports 5353");
-		save2file_A_prerouting("-i br0 -p udp --dport 5353 -j REDIRECT --to-ports 5353");
-		save2file_A_prerouting("-i br0 -p tcp --syn -j REDIRECT --to-ports 9040");
+	if (nvram_matchi("tor_enable", 1)) {
+		if (nvram_matchi("tor_transparent", 1)) {
+			save2file_A_prerouting("-i %s -p udp --dport 53 -j REDIRECT --to-ports 5353", "br0");
+			save2file_A_prerouting("-i %s -p udp --dport 5353 -j REDIRECT --to-ports 5353", "br0");
+			save2file_A_prerouting("-i %s -p tcp --syn -j REDIRECT --to-ports 9040", "br0");
+		}
+
+		char vif_ip[32];
+		foreach(var, vifs, next) {
+			if (strcmp(wanface, var)
+			    && strcmp(nvram_safe_get("lan_ifname"), var)) {
+				if (nvram_nmatch("1", "%s_tor", var) && isstandalone(var)) {
+					save2file_A_prerouting("-i %s -p udp --dport 53 -j REDIRECT --to-ports 5353", var);
+					save2file_A_prerouting("-i %s -p udp --dport 5353 -j REDIRECT --to-ports 5353", var);
+					save2file_A_prerouting("-i %s -p tcp --syn -j REDIRECT --to-ports 9040", var);
+				}
+			}
+		}
 	}
 #endif
 
