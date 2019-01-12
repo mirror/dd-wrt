@@ -101,15 +101,15 @@ void start_tor(void)
 	}
 	if (nvram_matchi("tor_bridge", 1))
 		fprintf(fp, "BridgeRelay 1\n");
+
+	fprintf(fp, "VirtualAddrNetworkIPv4 10.192.0.0/10\n");
+	fprintf(fp, "AutomapHostsOnResolve 1\n");
+	fprintf(fp, "TransPort 9040 IsolateClientAddr IsolateClientProtocol IsolateDestAddr IsolateDestPort\n");
+	fprintf(fp, "DNSPort 5353\n");
 	if (nvram_matchi("tor_transparent", 1)) {
-		fprintf(fp, "VirtualAddrNetworkIPv4 10.192.0.0/10\n");
-		fprintf(fp, "AutomapHostsOnResolve 1\n");
-		fprintf(fp, "TransPort %s:9040\n", nvram_safe_get("lan_ipaddr"));
-		fprintf(fp, "DNSPort %s:5353\n", nvram_safe_get("lan_ipaddr"));
 		sysprintf("iptables -t nat -A PREROUTING -i br0 -p udp --dport 53 -j REDIRECT --to-ports 5353");
 		sysprintf("iptables -t nat -A PREROUTING -i br0 -p udp --dport 5353 -j REDIRECT --to-ports 5353");
-		sysprintf("iptables -t nat -A PREROUTING -i br0 -p tcp --syn -j DNAT --to %s:9040", nvram_safe_get("lan_ipaddr"));
-
+		sysprintf("iptables -t nat -A PREROUTING -i br0 -p tcp --syn -j REDIRECT --to-ports 9040");
 	}
 #ifdef HAVE_X86
 	eval("mkdir", "-p", "/tmp/tor");
