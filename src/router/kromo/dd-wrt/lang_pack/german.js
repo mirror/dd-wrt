@@ -2395,7 +2395,10 @@ wl_basic.if_info="Information (optional)";
 wl_basic.advanced_options="Erweiterte Optionen";
 wl_basic.rate_control="Datenratensteuerung";
 wl_basic.ap83_vap_note="Die Verwendung von mehr als drei virtuellen Schnittstellen kann zu Geschwindigkeitseinbusen bei einigen Ger&auml;ten f&uuml;hren (nur auf den zus&auml;tzlichen Schnittstellen).";
-wl_basic.fc="LZO Frame Kompression";
+wl_basic.fc="Frame Kompression";
+wl_basic.isolation="Netz Isolierung";
+wl_basic.tor_anon="TOR Anonymisierung";
+wl_basic.country_settings="Ländereinstellungen";
 
 
 //help container

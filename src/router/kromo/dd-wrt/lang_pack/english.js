@@ -2804,6 +2804,7 @@ wl_basic.advanced_options="Advanced Options";
 wl_basic.rate_control="Rate Control Algorithm";
 wl_basic.ap83_vap_note="Adding more than three virtual interfaces will lead to lower performance with some specific client devices on these additional virtual interfaces.";
 wl_basic.isolation="Net Isolation";
+wl_basic.tor_anon="TOR Anonymization";
 wl_basic.country_settings="Country Settings";
 wl_basic.ch_pos_auto="Auto";
 wl_basic.ch_pos_upr="Upper";
