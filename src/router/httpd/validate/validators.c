@@ -770,6 +770,9 @@ void validate_portsetup(webs_t wp, char *value, struct variable *v)
 		copytonv(wp, "%s_multicast", var);
 		copytonv(wp, "%s_nat", var);
 		copytonv(wp, "%s_isolation", var);
+#ifdef HAVE_TOR
+		copytonv(wp, "%s_tor", var);
+#endif
 		copytonv(wp, "%s_dns_redirect", var);
 		copymergetonv(wp, "%s_dns_ipaddr", var);
 		char val[64];
