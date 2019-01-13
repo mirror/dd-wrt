@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-2.1+
 /*
- * Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+ * Copyright (C) 2015-2019 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  * Copyright (C) 2008-2012 Pablo Neira Ayuso <pablo@netfilter.org>.
  */
 
@@ -66,6 +66,7 @@ enum wgpeer_attribute {
 	WGPEER_A_RX_BYTES,
 	WGPEER_A_TX_BYTES,
 	WGPEER_A_ALLOWEDIPS,
+	WGPEER_A_PROTOCOL_VERSION,
 	__WGPEER_A_LAST
 };
 
@@ -903,15 +904,6 @@ static int add_next_to_inflatable_buffer(struct inflatable_buffer *buffer)
 	return 0;
 }
 
-static void warn_unrecognized(const char *which)
-{
-	static bool once = false;
-	if (once)
-		return;
-	once = true;
-	fprintf(stderr, "Warning: one or more unrecognized %s attributes\n", which);
-}
-
 static int parse_linkinfo(const struct nlattr *attr, void *data)
 {
 	struct inflatable_buffer *buffer = data;
@@ -1233,8 +1225,6 @@ static int parse_allowedip(const struct nlattr *attr, void *data)
 		if (!mnl_attr_validate(attr, MNL_TYPE_U8))
 			allowedip->cidr = mnl_attr_get_u8(attr);
 		break;
-	default:
-		warn_unrecognized("netlink");
 	}
 
 	return MNL_CB_OK;
@@ -1326,8 +1316,6 @@ static int parse_peer(const struct nlattr *attr, void *data)
 		break;
 	case WGPEER_A_ALLOWEDIPS:
 		return mnl_attr_parse_nested(attr, parse_allowedips, peer);
-	default:
-		warn_unrecognized("netlink");
 	}
 
 	return MNL_CB_OK;
@@ -1396,8 +1384,6 @@ static int parse_device(const struct nlattr *attr, void *data)
 		break;
 	case WGDEVICE_A_PEERS:
 		return mnl_attr_parse_nested(attr, parse_peers, device);
-	default:
-		warn_unrecognized("netlink");
 	}
 
 	return MNL_CB_OK;
@@ -1702,7 +1688,7 @@ static void invert(fe o, const fe i)
 	memzero_explicit(c, sizeof(c));
 }
 
-static void normalize_key(uint8_t *z)
+static void clamp_key(uint8_t *z)
 {
 	z[31] = (z[31] & 127) | 64;
 	z[0] &= 248;
@@ -1715,7 +1701,7 @@ void wg_generate_public_key(wg_key public_key, const wg_key private_key)
 	fe a = { 1 }, b = { 9 }, c = { 0 }, d = { 1 }, e, f;
 
 	memcpy(z, private_key, sizeof(z));
-	normalize_key(z);
+	clamp_key(z);
 
 	for (i = 254; i >= 0; --i) {
 		r = (z[i >> 3] >> (i & 7)) & 1;
@@ -1759,7 +1745,7 @@ void wg_generate_public_key(wg_key public_key, const wg_key private_key)
 void wg_generate_private_key(wg_key private_key)
 {
 	wg_generate_preshared_key(private_key);
-	normalize_key(private_key);
+	clamp_key(private_key);
 }
 
 void wg_generate_preshared_key(wg_key preshared_key)
