@@ -320,6 +320,8 @@ ifeq ($(CONFIG_IPV6),y)
 	echo "CONFIG_PING6=y" >> busybox/.config
 	echo "CONFIG_FEATURE_IPV6=y" >> busybox/.config
 	echo "CONFIG_FEATURE_PREFER_IPV4_ADDRESS=y" >> busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_NETSTAT_PRG is not set/CONFIG_FEATURE_NETSTAT_PRG=y/g' busybox/.config
+	sed -i 's/\# CONFIG_FEATURE_NETSTAT_WIDE is not set/CONFIG_FEATURE_NETSTAT_WIDE=y/g' busybox/.config
 else
 	echo "# CONFIG_TRACEROUTE6 is not set" >> busybox/.config
 	echo "# CONFIG_PING6 is not set" >> busybox/.config
