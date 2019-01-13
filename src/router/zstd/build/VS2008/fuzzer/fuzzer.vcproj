@@ -329,6 +329,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath="..\..\..\programs\util.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\programs\datagen.c"
 				>
 			</File>
@@ -406,6 +410,14 @@
 			</File>
 			<File
 				RelativePath="..\..\..\lib\decompress\zstd_decompress.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\lib\decompress\zstd_decompress_block.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\lib\decompress\zstd_ddict.c"
 				>
 			</File>
 			<File

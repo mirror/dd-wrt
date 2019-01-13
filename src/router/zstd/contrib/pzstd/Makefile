@@ -171,7 +171,7 @@ roundtripcheck: roundtrip check
 	$(TESTPROG) ./test/RoundTripTest$(EXT) $(TESTFLAGS)
 
 # Build the main binary
-pzstd$(EXT): main.o Options.o Pzstd.o SkippableFrame.o $(ZSTDDIR)/libzstd.a
+pzstd$(EXT): main.o $(PROGDIR)/util.o Options.o Pzstd.o SkippableFrame.o $(ZSTDDIR)/libzstd.a
 	$(LD_COMMAND)
 
 # Target that depends on all the tests
@@ -190,13 +190,15 @@ $(ZSTDDIR)/libzstd.a: $(ZSTD_FILES)
 	CFLAGS="$(ALL_CFLAGS)" LDFLAGS="$(ALL_LDFLAGS)" $(MAKE) -C $(ZSTDDIR) libzstd.a
 
 # Rules to build the tests
-test/RoundTripTest$(EXT): test/RoundTripTest.o $(PROGDIR)/datagen.o Options.o \
+test/RoundTripTest$(EXT): test/RoundTripTest.o $(PROGDIR)/datagen.o \
+                          $(PROGDIR)/util.o Options.o \
                           Pzstd.o SkippableFrame.o $(ZSTDDIR)/libzstd.a
 	$(LD_COMMAND)
 
 test/%Test$(EXT): PZSTD_LDFLAGS += $(GTEST_LIB)
 test/%Test$(EXT): LIBS += -lgtest -lgtest_main
-test/%Test$(EXT): test/%Test.o $(PROGDIR)/datagen.o Options.o Pzstd.o  \
+test/%Test$(EXT): test/%Test.o $(PROGDIR)/datagen.o \
+                  $(PROGDIR)/util.o Options.o Pzstd.o \
                   SkippableFrame.o $(ZSTDDIR)/libzstd.a
 	$(LD_COMMAND)
 

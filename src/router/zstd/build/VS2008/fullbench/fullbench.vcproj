@@ -381,6 +381,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\lib\decompress\zstd_decompress_block.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\lib\decompress\zstd_ddict.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\lib\decompress\huf_decompress.c"
 				>
 			</File>
@@ -389,11 +397,15 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\programs\bench.c"
+				RelativePath="..\..\..\programs\benchfn.c"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\tests\fullbench.c"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\programs\util.c"
 				>
 			</File>
 			<File
