@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0 OR MIT
 /*
  * Copyright (C) 2016-2017 INRIA and Microsoft Corporation.
- * Copyright (C) 2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+ * Copyright (C) 2018-2019 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  *
  * This is a machine-generated formally verified implementation of Curve25519
  * ECDH from: <https://github.com/mitls/hacl-star>. Though originally machine
@@ -767,7 +767,7 @@ static void curve25519_generic(u8 mypublic[CURVE25519_KEY_SIZE],
 		u8 e[32] __aligned(32) = { 0 };
 		u8 *scalar;
 		memcpy(e, secret, 32);
-		normalize_secret(e);
+		clamp_secret(e);
 		scalar = e;
 		{
 			u64 buf[15] = { 0 };

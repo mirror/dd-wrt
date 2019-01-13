@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+ * Copyright (C) 2015-2019 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  */
 
 #include <errno.h>
@@ -13,7 +13,7 @@
 
 int pubkey_main(int argc, char *argv[])
 {
-	uint8_t key[WG_KEY_LEN];
+	uint8_t key[WG_KEY_LEN] __attribute__((aligned(sizeof(uintptr_t))));
 	char base64[WG_KEY_LEN_BASE64];
 	int trailing_char;
 

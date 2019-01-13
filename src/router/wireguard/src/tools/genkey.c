@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+ * Copyright (C) 2015-2019 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  */
 
 #include <errno.h>
@@ -71,7 +71,7 @@ int genkey_main(int argc, char *argv[])
 		return 1;
 	}
 	if (!strcmp(argv[0], "genkey"))
-		curve25519_normalize_secret(key);
+		curve25519_clamp_secret(key);
 
 	key_to_base64(base64, key);
 	puts(base64);
