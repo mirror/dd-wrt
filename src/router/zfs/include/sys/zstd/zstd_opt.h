@@ -27,6 +27,10 @@ static size_t ZSTD_compressBlock_btopt(
 static size_t ZSTD_compressBlock_btultra(
         ZSTD_matchState_t* ms, seqStore_t* seqStore, U32 rep[ZSTD_REP_NUM],
         void const* src, size_t srcSize);
+size_t ZSTD_compressBlock_btultra2(
+        ZSTD_matchState_t* ms, seqStore_t* seqStore, U32 rep[ZSTD_REP_NUM],
+        void const* src, size_t srcSize);
+
 
 static size_t ZSTD_compressBlock_btopt_dictMatchState(
         ZSTD_matchState_t* ms, seqStore_t* seqStore, U32 rep[ZSTD_REP_NUM],
@@ -41,6 +45,10 @@ static size_t ZSTD_compressBlock_btopt_extDict(
 static size_t ZSTD_compressBlock_btultra_extDict(
         ZSTD_matchState_t* ms, seqStore_t* seqStore, U32 rep[ZSTD_REP_NUM],
         void const* src, size_t srcSize);
+
+        /* note : no btultra2 variant for extDict nor dictMatchState,
+         * because btultra2 is not meant to work with dictionaries
+         * and is only specific for the first block (no prefix) */
 
 #if defined (__cplusplus)
 }
