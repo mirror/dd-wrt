@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * Copyright (C) 2015-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+ * Copyright (C) 2015-2019 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
  */
 
 #include "ratelimiter.h"
@@ -170,9 +170,9 @@ int wg_ratelimiter_init(void)
 	 * we borrow their wisdom about good table sizes on different systems
 	 * dependent on RAM. This calculation here comes from there.
 	 */
-	table_size = (totalram_pages > (1U << 30) / PAGE_SIZE) ? 8192 :
+	table_size = (totalram_pages() > (1U << 30) / PAGE_SIZE) ? 8192 :
 		max_t(unsigned long, 16, roundup_pow_of_two(
-			(totalram_pages << PAGE_SHIFT) /
+			(totalram_pages() << PAGE_SHIFT) /
 			(1U << 14) / sizeof(struct hlist_head)));
 	max_entries = table_size * 8;
 

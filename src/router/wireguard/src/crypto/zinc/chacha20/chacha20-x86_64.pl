@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause
 #
 # Copyright (C) 2017-2018 Samuel Neves <sneves@dei.uc.pt>. All Rights Reserved.
-# Copyright (C) 2017-2018 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+# Copyright (C) 2017-2019 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
 # Copyright (C) 2006-2017 CRYPTOGAMS by <appro@openssl.org>. All Rights Reserved.
 #
 # This code is taken from the OpenSSL project but the author, Andy Polyakov,
@@ -280,14 +280,12 @@ my @x=map("\"$_\"",@x);
 
 ########################################################################
 # Generic code path that handles all lengths on pre-SSSE3 processors.
+if(!$kernel) {
 &declare_function("chacha20_ctr32", 64, 5);
 $code.=<<___;
 .cfi_startproc
 	cmp	\$0,$len
 	je	.Lno_data
-___
-if(!kernel) {
-$code.=<<___;
 	mov	OPENSSL_ia32cap_P+4(%rip),%r9
 ___
 $code.=<<___	if ($avx>2);
@@ -300,7 +298,6 @@ $code.=<<___;
 	test	\$`1<<(41-32)`,%r9d
 	jnz	.Lchacha20_ssse3
 ___
-}
 $code.=<<___;
 	push	%rbx
 .cfi_push	%rbx
@@ -474,6 +471,7 @@ $code.=<<___;
 .cfi_endproc
 ___
 &end_function("chacha20_ctr32");
+}
 
 ########################################################################
 # SSSE3 code path that handles shorter lengths
