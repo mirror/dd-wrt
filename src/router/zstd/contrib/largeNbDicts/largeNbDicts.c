@@ -21,10 +21,11 @@
 #include <stddef.h>   /* size_t */
 #include <stdlib.h>   /* malloc, free, abort */
 #include <stdio.h>    /* fprintf */
+#include <limits.h>   /* UINT_MAX */
 #include <assert.h>   /* assert */
 
 #include "util.h"
-#include "bench.h"
+#include "benchfn.h"
 #define ZSTD_STATIC_LINKING_ONLY
 #include "zstd.h"
 #include "zdict.h"
@@ -49,6 +50,7 @@
 
 
 /*---  Macros  ---*/
+
 #define CONTROL(c)   { if (!(c)) abort(); }
 #undef MIN
 #define MIN(a,b)     ((a) < (b) ? (a) : (b))
@@ -126,7 +128,7 @@ static buffer_t createBuffer_fromFile(const char* fileName)
 static buffer_t
 createDictionaryBuffer(const char* dictionaryName,
                        const void* srcBuffer,
-                       const size_t* srcBlockSizes, unsigned nbBlocks,
+                       const size_t* srcBlockSizes, size_t nbBlocks,
                        size_t requestedDictSize)
 {
     if (dictionaryName) {
@@ -140,9 +142,10 @@ createDictionaryBuffer(const char* dictionaryName,
         void* const dictBuffer = malloc(requestedDictSize);
         CONTROL(dictBuffer != NULL);
 
+        assert(nbBlocks <= UINT_MAX);
         size_t const dictSize = ZDICT_trainFromBuffer(dictBuffer, requestedDictSize,
                                                       srcBuffer,
-                                                      srcBlockSizes, nbBlocks);
+                                                      srcBlockSizes, (unsigned)nbBlocks);
         CONTROL(!ZSTD_isError(dictSize));
 
         buffer_t result;
@@ -537,15 +540,22 @@ static int benchMem(slice_collection_t dstBlocks,
     BMK_timedFnState_t* const benchState =
             BMK_createTimedFnState(total_time_ms, ms_per_round);
     decompressInstructions di = createDecompressInstructions(dictionaries);
+    BMK_benchParams_t const bp = {
+        .benchFn = decompress,
+        .benchPayload = &di,
+        .initFn = NULL,
+        .initPayload = NULL,
+        .errorFn = ZSTD_isError,
+        .blockCount = dstBlocks.nbSlices,
+        .srcBuffers = (const void* const*) srcBlocks.slicePtrs,
+        .srcSizes = srcBlocks.capacities,
+        .dstBuffers = dstBlocks.slicePtrs,
+        .dstCapacities = dstBlocks.capacities,
+        .blockResults = NULL
+    };
 
     for (;;) {
-        BMK_runOutcome_t const outcome = BMK_benchTimedFn(benchState,
-                                decompress, &di,
-                                NULL, NULL,
-                                dstBlocks.nbSlices,
-                                (const void* const *)srcBlocks.slicePtrs, srcBlocks.capacities,
-                                dstBlocks.slicePtrs, dstBlocks.capacities,
-                                NULL);
+        BMK_runOutcome_t const outcome = BMK_benchTimedFn(benchState, bp);
         CONTROL(BMK_isSuccessful_runOutcome(outcome));
 
         BMK_runTime_t const result = BMK_extract_runTime(outcome);
@@ -594,6 +604,7 @@ int bench(const char** fileNameTable, unsigned nbFiles,
     if (blockSize)
         DISPLAYLEVEL(3, "of max size %u bytes ", (unsigned)blockSize);
     DISPLAYLEVEL(3, "\n");
+    size_t const totalSrcSlicesSize = sliceCollection_totalCapacity(srcSlices);
 
 
     size_t* const dstCapacities = malloc(nbBlocks * sizeof(*dstCapacities));
@@ -625,8 +636,8 @@ int bench(const char** fileNameTable, unsigned nbFiles,
 
     /* dictionary determination */
     buffer_t const dictBuffer = createDictionaryBuffer(dictionary,
-                                srcBuffer.ptr,
-                                srcSlices.capacities, nbBlocks,
+                                srcs.buffer.ptr,
+                                srcs.slices.capacities, srcs.slices.nbSlices,
                                 DICTSIZE);
     CONTROL(dictBuffer.ptr != NULL);
 
@@ -637,7 +648,7 @@ int bench(const char** fileNameTable, unsigned nbFiles,
     CONTROL(cTotalSizeNoDict != 0);
     DISPLAYLEVEL(3, "compressing at level %u without dictionary : Ratio=%.2f  (%u bytes) \n",
                     clevel,
-                    (double)srcSize / cTotalSizeNoDict, (unsigned)cTotalSizeNoDict);
+                    (double)totalSrcSlicesSize / cTotalSizeNoDict, (unsigned)cTotalSizeNoDict);
 
     size_t* const cSizes = malloc(nbBlocks * sizeof(size_t));
     CONTROL(cSizes != NULL);
@@ -646,7 +657,7 @@ int bench(const char** fileNameTable, unsigned nbFiles,
     CONTROL(cTotalSize != 0);
     DISPLAYLEVEL(3, "compressed using a %u bytes dictionary : Ratio=%.2f  (%u bytes) \n",
                     (unsigned)dictBuffer.size,
-                    (double)srcSize / cTotalSize, (unsigned)cTotalSize);
+                    (double)totalSrcSlicesSize / cTotalSize, (unsigned)cTotalSize);
 
     /* now dstSlices contain the real compressed size of each block, instead of the maximum capacity */
     shrinkSizes(dstSlices, cSizes);
