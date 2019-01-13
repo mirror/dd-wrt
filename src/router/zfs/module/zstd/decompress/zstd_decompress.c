@@ -38,12 +38,12 @@
  *  It's possible to set a different limit using ZSTD_DCtx_setMaxWindowSize().
  */
 #ifndef ZSTD_MAXWINDOWSIZE_DEFAULT
-#  define ZSTD_MAXWINDOWSIZE_DEFAULT (((U32)1 << ZSTD_WINDOWLOG_DEFAULTMAX) + 1)
+#  define ZSTD_MAXWINDOWSIZE_DEFAULT (((U32)1 << ZSTD_WINDOWLOG_LIMIT_DEFAULT) + 1)
 #endif
 
 /*!
  *  NO_FORWARD_PROGRESS_MAX :
- *  maximum allowed nb of calls to ZSTD_decompressStream() and ZSTD_decompress_generic()
+ *  maximum allowed nb of calls to ZSTD_decompressStream()
  *  without any forward progress
  *  (defined as: no byte read from input, and no byte flushed to output)
  *  before triggering an error.
@@ -85,8 +85,8 @@ size_t ZSTD_estimateDCtxSize(void) { return sizeof(ZSTD_DCtx); }
 static size_t ZSTD_startingInputLength(ZSTD_format_e format)
 {
     size_t const startingInputLength = (format==ZSTD_f_zstd1_magicless) ?
-                    ZSTD_frameHeaderSize_prefix - ZSTD_FRAMEIDSIZE :
-                    ZSTD_frameHeaderSize_prefix;
+                    ZSTD_FRAMEHEADERSIZE_PREFIX - ZSTD_FRAMEIDSIZE :
+                    ZSTD_FRAMEHEADERSIZE_PREFIX;
     ZSTD_STATIC_ASSERT(ZSTD_FRAMEHEADERSIZE_PREFIX >= ZSTD_FRAMEIDSIZE);
     /* only supports formats ZSTD_f_zstd1 and ZSTD_f_zstd1_magicless */
     assert( (format == ZSTD_f_zstd1) || (format == ZSTD_f_zstd1_magicless) );
@@ -193,10 +193,10 @@ size_t ZSTD_getFrameHeader_advanced(ZSTD_frameHeader* zfhPtr, const void* src, s
 
     if ( (format != ZSTD_f_zstd1_magicless)
       && (MEM_readLE32(src) != ZSTD_MAGICNUMBER) ) {
-        if ((MEM_readLE32(src) & 0xFFFFFFF0U) == ZSTD_MAGIC_SKIPPABLE_START) {
+        if ((MEM_readLE32(src) & ZSTD_MAGIC_SKIPPABLE_MASK) == ZSTD_MAGIC_SKIPPABLE_START) {
             /* skippable frame */
-            if (srcSize < ZSTD_skippableHeaderSize)
-                return ZSTD_skippableHeaderSize; /* magic number + frame length */
+            if (srcSize < ZSTD_SKIPPABLEHEADERSIZE)
+                return ZSTD_SKIPPABLEHEADERSIZE; /* magic number + frame length */
             memset(zfhPtr, 0, sizeof(*zfhPtr));
             zfhPtr->frameContentSize = MEM_readLE32((const char *)src + ZSTD_FRAMEIDSIZE);
             zfhPtr->frameType = ZSTD_skippableFrame;
@@ -332,11 +332,11 @@ static size_t ZSTD_decompressFrame(ZSTD_DCtx* dctx,
     DEBUGLOG(4, "ZSTD_decompressFrame (srcSize:%i)", (int)*srcSizePtr);
 
     /* check */
-    if (remainingSrcSize < ZSTD_frameHeaderSize_min+ZSTD_blockHeaderSize)
+    if (remainingSrcSize < ZSTD_FRAMEHEADERSIZE_MIN+ZSTD_blockHeaderSize)
         return ERROR(srcSize_wrong);
 
     /* Frame Header */
-    {   size_t const frameHeaderSize = ZSTD_frameHeaderSize(ip, ZSTD_frameHeaderSize_prefix);
+    {   size_t const frameHeaderSize = ZSTD_frameHeaderSize(ip, ZSTD_FRAMEHEADERSIZE_PREFIX);
         if (ZSTD_isError(frameHeaderSize)) return frameHeaderSize;
         if (remainingSrcSize < frameHeaderSize+ZSTD_blockHeaderSize)
             return ERROR(srcSize_wrong);
@@ -400,6 +400,21 @@ static size_t ZSTD_decompressFrame(ZSTD_DCtx* dctx,
     return op-ostart;
 }
 
+static size_t readSkippableFrameSize(void const* src, size_t srcSize)
+{
+    size_t const skippableHeaderSize = ZSTD_SKIPPABLEHEADERSIZE;
+    U32 sizeU32;
+
+    if (srcSize < ZSTD_SKIPPABLEHEADERSIZE)
+        return ERROR(srcSize_wrong);
+
+    sizeU32 = MEM_readLE32((BYTE const*)src + ZSTD_FRAMEIDSIZE);
+    if ((U32)(sizeU32 + ZSTD_SKIPPABLEHEADERSIZE) < sizeU32)
+        return ERROR(frameParameter_unsupported);
+
+    return skippableHeaderSize + sizeU32;
+}
+
 static size_t ZSTD_decompressMultiFrame(ZSTD_DCtx* dctx,
                                         void* dst, size_t dstCapacity,
                                   const void* src, size_t srcSize,
@@ -417,7 +432,7 @@ static size_t ZSTD_decompressMultiFrame(ZSTD_DCtx* dctx,
         dictSize = ZSTD_DDict_dictSize(ddict);
     }
 
-    while (srcSize >= ZSTD_frameHeaderSize_prefix) {
+    while (srcSize >= ZSTD_FRAMEHEADERSIZE_PREFIX) {
 
 #if defined(ZSTD_LEGACY_SUPPORT) && (ZSTD_LEGACY_SUPPORT >= 1)
         if (ZSTD_isLegacy(src, srcSize)) {
@@ -443,13 +458,11 @@ static size_t ZSTD_decompressMultiFrame(ZSTD_DCtx* dctx,
 
         {   U32 const magicNumber = MEM_readLE32(src);
             DEBUGLOG(4, "reading magic number %08X (expecting %08X)",
-                        (U32)magicNumber, (U32)ZSTD_MAGICNUMBER);
-            if ((magicNumber & 0xFFFFFFF0U) == ZSTD_MAGIC_SKIPPABLE_START) {
-                size_t skippableSize;
-                if (srcSize < ZSTD_skippableHeaderSize)
-                    return ERROR(srcSize_wrong);
-                skippableSize = MEM_readLE32((const BYTE*)src + ZSTD_FRAMEIDSIZE)
-                              + ZSTD_skippableHeaderSize;
+                        (unsigned)magicNumber, ZSTD_MAGICNUMBER);
+            if ((magicNumber & ZSTD_MAGIC_SKIPPABLE_MASK) == ZSTD_MAGIC_SKIPPABLE_START) {
+                size_t const skippableSize = readSkippableFrameSize(src, srcSize);
+                if (ZSTD_isError(skippableSize))
+                    return skippableSize;
                 if (srcSize < skippableSize) return ERROR(srcSize_wrong);
 
                 src = (const BYTE *)src + skippableSize;
@@ -529,15 +542,22 @@ ZSTD_loadDEntropy(ZSTD_entropyDTables_t* entropy,
     ZSTD_STATIC_ASSERT(sizeof(entropy->LLTable) + sizeof(entropy->OFTable) + sizeof(entropy->MLTable) >= HUF_DECOMPRESS_WORKSPACE_SIZE);
     {   void* const workspace = &entropy->LLTable;   /* use fse tables as temporary workspace; implies fse tables are grouped together */
         size_t const workspaceSize = sizeof(entropy->LLTable) + sizeof(entropy->OFTable) + sizeof(entropy->MLTable);
+#ifdef HUF_FORCE_DECOMPRESS_X1
+        /* in minimal huffman, we always use X1 variants */
+        size_t const hSize = HUF_readDTableX1_wksp(entropy->hufTable,
+                                                dictPtr, dictEnd - dictPtr,
+                                                workspace, workspaceSize);
+#else
         size_t const hSize = HUF_readDTableX2_wksp(entropy->hufTable,
                                                 dictPtr, dictEnd - dictPtr,
                                                 workspace, workspaceSize);
+#endif
         if (HUF_isError(hSize)) return ERROR(dictionary_corrupted);
         dictPtr += hSize;
     }
 
     {   short offcodeNCount[MaxOff+1];
-        U32 offcodeMaxValue = MaxOff, offcodeLog;
+        unsigned offcodeMaxValue = MaxOff, offcodeLog;
         size_t const offcodeHeaderSize = FSE_readNCount(offcodeNCount, &offcodeMaxValue, &offcodeLog, dictPtr, dictEnd-dictPtr);
         if (FSE_isError(offcodeHeaderSize)) return ERROR(dictionary_corrupted);
         if (offcodeMaxValue > MaxOff) return ERROR(dictionary_corrupted);

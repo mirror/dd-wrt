@@ -393,7 +393,7 @@ ZSTD_BtFindBestMatch_selectMLS (  ZSTD_matchState_t* ms,
                             const BYTE* ip, const BYTE* const iLimit,
                                   size_t* offsetPtr)
 {
-    switch(ms->cParams.searchLength)
+    switch(ms->cParams.minMatch)
     {
     default : /* includes case 3 */
     case 4 : return ZSTD_BtFindBestMatch(ms, ip, iLimit, offsetPtr, 4, ZSTD_noDict);
@@ -409,7 +409,7 @@ static size_t ZSTD_BtFindBestMatch_dictMatchState_selectMLS (
                         const BYTE* ip, const BYTE* const iLimit,
                         size_t* offsetPtr)
 {
-    switch(ms->cParams.searchLength)
+    switch(ms->cParams.minMatch)
     {
     default : /* includes case 3 */
     case 4 : return ZSTD_BtFindBestMatch(ms, ip, iLimit, offsetPtr, 4, ZSTD_dictMatchState);
@@ -425,7 +425,7 @@ static size_t ZSTD_BtFindBestMatch_extDict_selectMLS (
                         const BYTE* ip, const BYTE* const iLimit,
                         size_t* offsetPtr)
 {
-    switch(ms->cParams.searchLength)
+    switch(ms->cParams.minMatch)
     {
     default : /* includes case 3 */
     case 4 : return ZSTD_BtFindBestMatch(ms, ip, iLimit, offsetPtr, 4, ZSTD_extDict);
@@ -470,7 +470,7 @@ static U32 ZSTD_insertAndFindFirstIndex_internal(
 
 U32 ZSTD_insertAndFindFirstIndex(ZSTD_matchState_t* ms, const BYTE* ip) {
     const ZSTD_compressionParameters* const cParams = &ms->cParams;
-    return ZSTD_insertAndFindFirstIndex_internal(ms, cParams, ip, ms->cParams.searchLength);
+    return ZSTD_insertAndFindFirstIndex_internal(ms, cParams, ip, ms->cParams.minMatch);
 }
 
 
@@ -567,7 +567,7 @@ FORCE_INLINE_TEMPLATE size_t ZSTD_HcFindBestMatch_selectMLS (
                         const BYTE* ip, const BYTE* const iLimit,
                         size_t* offsetPtr)
 {
-    switch(ms->cParams.searchLength)
+    switch(ms->cParams.minMatch)
     {
     default : /* includes case 3 */
     case 4 : return ZSTD_HcFindBestMatch_generic(ms, ip, iLimit, offsetPtr, 4, ZSTD_noDict);
@@ -583,7 +583,7 @@ static size_t ZSTD_HcFindBestMatch_dictMatchState_selectMLS (
                         const BYTE* ip, const BYTE* const iLimit,
                         size_t* offsetPtr)
 {
-    switch(ms->cParams.searchLength)
+    switch(ms->cParams.minMatch)
     {
     default : /* includes case 3 */
     case 4 : return ZSTD_HcFindBestMatch_generic(ms, ip, iLimit, offsetPtr, 4, ZSTD_dictMatchState);
@@ -599,7 +599,7 @@ FORCE_INLINE_TEMPLATE size_t ZSTD_HcFindBestMatch_extDict_selectMLS (
                         const BYTE* ip, const BYTE* const iLimit,
                         size_t* offsetPtr)
 {
-    switch(ms->cParams.searchLength)
+    switch(ms->cParams.minMatch)
     {
     default : /* includes case 3 */
     case 4 : return ZSTD_HcFindBestMatch_generic(ms, ip, iLimit, offsetPtr, 4, ZSTD_extDict);

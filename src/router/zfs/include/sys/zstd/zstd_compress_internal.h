@@ -91,10 +91,10 @@ typedef enum { zop_dynamic=0, zop_predef } ZSTD_OptPrice_e;
 
 typedef struct {
     /* All tables are allocated inside cctx->workspace by ZSTD_resetCCtx_internal() */
-    U32* litFreq;                /* table of literals statistics, of size 256 */
-    U32* litLengthFreq;          /* table of litLength statistics, of size (MaxLL+1) */
-    U32* matchLengthFreq;        /* table of matchLength statistics, of size (MaxML+1) */
-    U32* offCodeFreq;            /* table of offCode statistics, of size (MaxOff+1) */
+    unsigned* litFreq;           /* table of literals statistics, of size 256 */
+    unsigned* litLengthFreq;     /* table of litLength statistics, of size (MaxLL+1) */
+    unsigned* matchLengthFreq;   /* table of matchLength statistics, of size (MaxML+1) */
+    unsigned* offCodeFreq;       /* table of offCode statistics, of size (MaxOff+1) */
     ZSTD_match_t* matchTable;    /* list of found matches, of size ZSTD_OPT_NUM+1 */
     ZSTD_optimal_t* priceTable;  /* All positions tracked by optimal parser, of size ZSTD_OPT_NUM+1 */
 
@@ -162,7 +162,7 @@ typedef struct {
     U32 hashLog;            /* Log size of hashTable */
     U32 bucketSizeLog;      /* Log bucket size for collision resolution, at most 8 */
     U32 minMatchLength;     /* Minimum match length */
-    U32 hashEveryLog;       /* Log number of entries to skip */
+    U32 hashRateLog;       /* Log number of entries to skip */
     U32 windowLog;          /* Window log for the LDM */
 } ldmParams_t;
 
@@ -191,10 +191,10 @@ struct ZSTD_CCtx_params_s {
     ZSTD_dictAttachPref_e attachDictPref;
 
     /* Multithreading: used to pass parameters to mtctx */
-    unsigned nbWorkers;
-    unsigned jobSize;
-    unsigned overlapSizeLog;
-    unsigned rsyncable;
+    int nbWorkers;
+    size_t jobSize;
+    int overlapLog;
+    int rsyncable;
 
     /* Long distance matching parameters */
     ldmParams_t ldmParams;
@@ -680,16 +680,19 @@ MEM_STATIC U32 ZSTD_window_correctOverflow(ZSTD_window_t* window, U32 cycleLog,
  * dictMatchState mode, lowLimit and dictLimit are the same, and the dictionary
  * is below them. forceWindow and dictMatchState are therefore incompatible.
  */
-MEM_STATIC void ZSTD_window_enforceMaxDist(ZSTD_window_t* window,
-                                           void const* srcEnd, U32 maxDist,
-                                           U32* loadedDictEndPtr,
-                                           const ZSTD_matchState_t** dictMatchStatePtr)
+MEM_STATIC void
+ZSTD_window_enforceMaxDist(ZSTD_window_t* window,
+                           void const* srcEnd,
+                           U32 maxDist,
+                           U32* loadedDictEndPtr,
+                     const ZSTD_matchState_t** dictMatchStatePtr)
 {
-    U32 const c_current = (U32)((BYTE const*)srcEnd - window->base);
-    U32 loadedDictEnd = loadedDictEndPtr != NULL ? *loadedDictEndPtr : 0;
-    DEBUGLOG(5, "ZSTD_window_enforceMaxDist: c_current=%u, maxDist=%u", c_current, maxDist);
-    if (c_current > maxDist + loadedDictEnd) {
-        U32 const newLowLimit = c_current - maxDist;
+    U32 const blockEndIdx = (U32)((BYTE const*)srcEnd - window->base);
+    U32 loadedDictEnd = (loadedDictEndPtr != NULL) ? *loadedDictEndPtr : 0;
+    DEBUGLOG(5, "ZSTD_window_enforceMaxDist: blockEndIdx=%u, maxDist=%u",
+                (unsigned)blockEndIdx, (unsigned)maxDist);
+    if (blockEndIdx > maxDist + loadedDictEnd) {
+        U32 const newLowLimit = blockEndIdx - maxDist;
         if (window->lowLimit < newLowLimit) window->lowLimit = newLowLimit;
         if (window->dictLimit < window->lowLimit) {
             DEBUGLOG(5, "Update dictLimit to match lowLimit, from %u to %u",
@@ -768,6 +771,8 @@ MEM_STATIC void ZSTD_debugTable(const U32* table, U32 max)
                 u, table[u], ZSTD_fWeight(sum) - ZSTD_fWeight(table[u]) );
     }
 }*/
+
+
 
 #if defined (__cplusplus)
 }
