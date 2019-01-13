@@ -175,10 +175,13 @@
     <ClCompile Include="..\..\..\lib\compress\zstdmt_compress.c" />
     <ClCompile Include="..\..\..\lib\decompress\huf_decompress.c" />
     <ClCompile Include="..\..\..\lib\decompress\zstd_decompress.c" />
+    <ClCompile Include="..\..\..\lib\decompress\zstd_decompress_block.c" />
+    <ClCompile Include="..\..\..\lib\decompress\zstd_ddict.c" />
     <ClCompile Include="..\..\..\lib\dictBuilder\cover.c" />
     <ClCompile Include="..\..\..\lib\dictBuilder\fastcover.c" />
     <ClCompile Include="..\..\..\lib\dictBuilder\divsufsort.c" />
     <ClCompile Include="..\..\..\lib\dictBuilder\zdict.c" />
+    <ClCompile Include="..\..\..\programs\util.c" />
     <ClCompile Include="..\..\..\programs\datagen.c" />
     <ClCompile Include="..\..\..\tests\fuzzer.c" />
   </ItemGroup>
@@ -198,6 +201,7 @@
     <ClInclude Include="..\..\..\lib\compress\zstd_opt.h" />
     <ClInclude Include="..\..\..\lib\compress\zstd_ldm.h" />
     <ClInclude Include="..\..\..\lib\compress\zstdmt_compress.h" />
+    <ClInclude Include="..\..\..\lib\decompress\zstd_ddict.h" />
     <ClInclude Include="..\..\..\lib\dictBuilder\divsufsort.h" />
     <ClInclude Include="..\..\..\lib\dictBuilder\zdict.h" />
     <ClInclude Include="..\..\..\lib\dictBuilder\cover.h" />

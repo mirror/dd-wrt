@@ -39,6 +39,8 @@
     <ClCompile Include="..\..\..\lib\compress\zstd_ldm.c" />
     <ClCompile Include="..\..\..\lib\decompress\huf_decompress.c" />
     <ClCompile Include="..\..\..\lib\decompress\zstd_decompress.c" />
+    <ClCompile Include="..\..\..\lib\decompress\zstd_decompress_block.c" />
+    <ClCompile Include="..\..\..\lib\decompress\zstd_ddict.c" />
     <ClCompile Include="..\..\..\lib\dictBuilder\cover.c" />
     <ClCompile Include="..\..\..\lib\dictBuilder\fastcover.c" />
     <ClCompile Include="..\..\..\lib\dictBuilder\divsufsort.c" />
@@ -50,7 +52,9 @@
     <ClCompile Include="..\..\..\lib\legacy\zstd_v05.c" />
     <ClCompile Include="..\..\..\lib\legacy\zstd_v06.c" />
     <ClCompile Include="..\..\..\lib\legacy\zstd_v07.c" />
-    <ClCompile Include="..\..\..\programs\bench.c" />
+    <ClCompile Include="..\..\..\programs\util.c" />
+    <ClCompile Include="..\..\..\programs\benchfn.c" />
+    <ClCompile Include="..\..\..\programs\benchzstd.c" />
     <ClCompile Include="..\..\..\programs\datagen.c" />
     <ClCompile Include="..\..\..\programs\dibio.c" />
     <ClCompile Include="..\..\..\programs\fileio.c" />
@@ -75,6 +79,7 @@
     <ClInclude Include="..\..\..\lib\compress\zstd_lazy.h" />
     <ClInclude Include="..\..\..\lib\compress\zstd_opt.h" />
     <ClInclude Include="..\..\..\lib\compress\zstd_ldm.h" />
+    <ClInclude Include="..\..\..\lib\decompress\zstd_ddict.h" />
     <ClInclude Include="..\..\..\lib\legacy\zstd_legacy.h" />
     <ClInclude Include="..\..\..\lib\legacy\zstd_v01.h" />
     <ClInclude Include="..\..\..\lib\legacy\zstd_v02.h" />
@@ -83,7 +88,7 @@
     <ClInclude Include="..\..\..\lib\legacy\zstd_v05.h" />
     <ClInclude Include="..\..\..\lib\legacy\zstd_v06.h" />
     <ClInclude Include="..\..\..\lib\legacy\zstd_v07.h" />
-    <ClInclude Include="..\..\..\programs\bench.h" />
+    <ClInclude Include="..\..\..\programs\benchzstd.h" />
     <ClInclude Include="..\..\..\programs\datagen.h" />
     <ClInclude Include="..\..\..\programs\dibio.h" />
     <ClInclude Include="..\..\..\programs\fileio.h" />
