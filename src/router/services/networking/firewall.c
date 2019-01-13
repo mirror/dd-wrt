@@ -608,28 +608,36 @@ static void parse_spec_forward(char *wanaddr, char *wordlist)
 	}
 }
 
-static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int dmzenable, int remotessh, int remotetelnet, int remotemanage)
+static void nat_prerouting_bridged(char *wanface, char *vifs)
 {
 	char var[256], *wordlist, *next;
-	char from[100], to[100];
-	char *remote_ip_any = nvram_default_get("remote_ip_any", "1");
-	char *remote_ip = nvram_default_get("remote_ip", "0.0.0.0 0");
-	char *lan_ip = nvram_safe_get("lan_ipaddr");
-	int remote_any = 0;
+#ifdef HAVE_TOR
+	if (nvram_matchi("tor_enable", 1)) {
+		if (nvram_matchi("tor_transparent", 1)) {
+			save2file_A_prerouting("-i %s -p udp --dport 53 -j DNAT --to %s:5353", "br0", nvram_safe_get("lan_ipaddr"));
+			save2file_A_prerouting("-i %s -p udp --dport 5353 -j DNAT --to %s:5353", "br0", nvram_safe_get("lan_ipaddr"));
+			save2file_A_prerouting("-i %s -p tcp --syn -j DNAT --to %s:9040", "br0", nvram_safe_get("lan_ipaddr"));
+		}
 
-	char vifs[256];
-
-	if (!strcmp(remote_ip_any, "1") || !strncmp(remote_ip, "0.0.0.0", 7))
-		remote_any = 1;
-
-	getIfLists(vifs, 256);
-
+		char vif_ip[32];
+		foreach(var, vifs, next) {
+			if ((!wanface || strcmp(wanface, var))
+			    && strcmp(nvram_safe_get("lan_ifname"), var)) {
+				if (nvram_nmatch("1", "%s_tor", var) && isstandalone(var)) {
+					save2file_A_prerouting("-i %s -p udp --dport 53 -j DNAT --to %s:5353", var, nvram_safe_get("lan_ipaddr"));
+					save2file_A_prerouting("-i %s -p udp --dport 5353 -j DNAT --to %s:5353", var, nvram_safe_get("lan_ipaddr"));
+					save2file_A_prerouting("-i %s -p tcp --syn -j DNAT --to %s:9040", var, nvram_safe_get("lan_ipaddr"));
+				}
+			}
+		}
+	}
+#endif
 	if (nvram_matchi("dns_redirect", 1) && nvram_matchi("dnsmasq_enable", 1)) {
 		save2file_A_prerouting("-i %s -p udp --dport 53 -j DNAT --to %s", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"));
 		save2file_A_prerouting("-i %s -p tcp --dport 53 -j DNAT --to %s", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"));
 	}
 	foreach(var, vifs, next) {
-		if (strcmp(wanface, var)
+		if ((!wanface || strcmp(wanface, var))
 		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
 			if (nvram_nmatch("1", "%s_dns_redirect", var)) {
 				char *target = nvram_nget("%s_dns_ipaddr", var);
@@ -644,6 +652,22 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int d
 		}
 	}
 
+}
+
+static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int dmzenable, int remotessh, int remotetelnet, int remotemanage, char *vifs)
+{
+	char var[256], *wordlist, *next;
+	char from[100], to[100];
+	char *remote_ip_any = nvram_default_get("remote_ip_any", "1");
+	char *remote_ip = nvram_default_get("remote_ip", "0.0.0.0 0");
+	char *lan_ip = nvram_safe_get("lan_ipaddr");
+	int remote_any = 0;
+
+	if (!strcmp(remote_ip_any, "1") || !strncmp(remote_ip, "0.0.0.0", 7))
+		remote_any = 1;
+
+	nat_prerouting_bridged(wanface, vifs);
+
 	/*
 	 * Block ads on all http requests
 	 */
@@ -652,7 +676,7 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int d
 
 		char vif_ip[32];
 		foreach(var, vifs, next) {
-			if (strcmp(wanface, var)
+			if ((!wanface || strcmp(wanface, var))
 			    && strcmp(nvram_safe_get("lan_ifname"), var)) {
 				if (nvram_nmatch("1", "%s_isolation", var)) {
 					save2file_A_prerouting("-i %s -d %s/%s -j RETURN", var, lan_ip, nvram_safe_get("lan_netmask"));
@@ -672,27 +696,6 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int d
 		save2file_A_prerouting("-p tcp -s %s/%s -d %s --dport %d -j ACCEPT", lan_ip, nvram_safe_get("lan_netmask"), lan_ip, web_lanport);
 		/* go through proxy */
 		save2file_A_prerouting("-p tcp -d ! %s --dport 80 -j DNAT --to %s:8118", wanaddr, lan_ip);
-	}
-#endif
-#ifdef HAVE_TOR
-	if (nvram_matchi("tor_enable", 1)) {
-		if (nvram_matchi("tor_transparent", 1)) {
-			save2file_A_prerouting("-i %s -p udp --dport 53 -j REDIRECT --to-ports 5353", "br0");
-			save2file_A_prerouting("-i %s -p udp --dport 5353 -j REDIRECT --to-ports 5353", "br0");
-			save2file_A_prerouting("-i %s -p tcp --syn -j REDIRECT --to-ports 9040", "br0");
-		}
-
-		char vif_ip[32];
-		foreach(var, vifs, next) {
-			if (strcmp(wanface, var)
-			    && strcmp(nvram_safe_get("lan_ifname"), var)) {
-				if (nvram_nmatch("1", "%s_tor", var) && isstandalone(var)) {
-					save2file_A_prerouting("-i %s -p udp --dport 53 -j REDIRECT --to-ports 5353", var);
-					save2file_A_prerouting("-i %s -p udp --dport 5353 -j REDIRECT --to-ports 5353", var);
-					save2file_A_prerouting("-i %s -p tcp --syn -j REDIRECT --to-ports 9040", var);
-				}
-			}
-		}
 	}
 #endif
 
@@ -803,7 +806,7 @@ static int wanactive(char *wanaddr)
 	return (!nvram_match("wan_proto", "disabled") && strcmp(wanaddr, "0.0.0.0") && check_wan_link(0));
 }
 
-static void nat_postrouting(char *wanface, char *wanaddr)
+static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 {
 	char word[80], *tmp;
 	if (has_gateway()) {
@@ -869,9 +872,6 @@ static void nat_postrouting(char *wanface, char *wanaddr)
 		char dev[16];
 		char var[80];
 
-		char vifs[256];
-
-		getIfLists(vifs, 256);
 		// char *vifs = nvram_safe_get ("lan_ifnames");
 		// if (vifs != NULL)
 		foreach(var, vifs, next) {
@@ -1896,7 +1896,7 @@ static void add_bridges(char *wanface, char *chain, int forward)
 }
 
 #endif
-static void filter_input(char *wanface, char *lanface, char *wanaddr, int remotessh, int remotetelnet, int remotemanage)
+static void filter_input(char *wanface, char *lanface, char *wanaddr, int remotessh, int remotetelnet, int remotemanage, char *vifs)
 {
 
 	char *next, *iflist, buff[16];
@@ -2143,8 +2143,6 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 		save2file_A_input("-i %s -m state --state NEW -j %s", buff, log_accept);
 	}
 	char var[80];
-	char vifs[256];
-	getIfLists(vifs, 256);
 	// char *vifs = nvram_safe_get ("lan_ifnames");
 	// if (vifs != NULL)
 	foreach(var, vifs, next) {
@@ -2191,12 +2189,11 @@ void filter_output(char *wanface)
 #endif
 }
 
-static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int dmzenable, int webfilter)
+static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int dmzenable, int webfilter, char *vifs)
 {
 	char *filter_web_hosts, *filter_web_urls, *filter_rule;
 	char *next;
 	char var[80];
-	char vifs[256];		// 
 	int i = 0;
 	int filter_host_url = 0;
 	while (i < 20 && filter_host_url == 0) {
@@ -2222,7 +2219,6 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	 */
 	if (!has_gateway())
 		save2file_A_forward("-m state --state INVALID -j %s", log_drop);
-	getIfLists(vifs, 256);
 	foreach(var, vifs, next) {
 		if (strcmp(get_wan_face(), var)
 		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
@@ -2388,7 +2384,6 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	 */
 	if (dmzenable)
 		save2file_A_forward("-o %s -d %s%s -j %s", lanface, lan_cclass, nvram_safe_get("dmz_ipaddr"), log_accept);
-	getIfLists(vifs, 256);
 	foreach(var, vifs, next) {
 		if (strcmp(get_wan_face(), var)
 		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
@@ -2428,7 +2423,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 /*
  *      Mangle table
  */
-static void mangle_table(char *wanface, char *wanaddr)
+static void mangle_table(char *wanface, char *wanaddr, char *vifs)
 {
 	save2file("*mangle\n:PREROUTING ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]");
 	if (strcmp(get_wan_face(), "wwan0")) {
@@ -2465,12 +2460,14 @@ static void mangle_table(char *wanface, char *wanaddr)
 /*
  *      NAT table
  */
-static void nat_table(char *wanface, char *wanaddr, char *lan_cclass, int dmzenable, int remotessh, int remotetelnet, int remotemanage)
+static void nat_table(char *wanface, char *wanaddr, char *lan_cclass, int dmzenable, int remotessh, int remotetelnet, int remotemanage, char *vifs)
 {
 	save2file("*nat\n:PREROUTING ACCEPT [0:0]\n:POSTROUTING ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]");
 	if (wanactive(wanaddr)) {
-		nat_prerouting(wanface, wanaddr, lan_cclass, dmzenable, remotessh, remotetelnet, remotemanage);
-		nat_postrouting(wanface, wanaddr);
+		nat_prerouting(wanface, wanaddr, lan_cclass, dmzenable, remotessh, remotetelnet, remotemanage, vifs);
+		nat_postrouting(wanface, wanaddr, vifs);
+	} else {
+		nat_prerouting_bridged(NULL, vifs);
 	}
 	save2file("COMMIT");
 }
@@ -2478,7 +2475,7 @@ static void nat_table(char *wanface, char *wanaddr, char *lan_cclass, int dmzena
 /*
  *      Filter table
  */
-static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_cclass, int dmzenable, int webfilter, int remotessh, int remotetelnet, int remotemanage)
+static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_cclass, int dmzenable, int webfilter, int remotessh, int remotetelnet, int remotemanage, char *vifs)
 {
 	save2file("*filter\n:INPUT ACCEPT [0:0]\n:FORWARD ACCEPT [0:0]\n:OUTPUT ACCEPT [0:0]\n:logaccept - [0:0]\n:logdrop - [0:0]\n:logreject - [0:0]\n"
 #ifdef FLOOD_PROTECT
@@ -2535,18 +2532,17 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 				save2file_A_input("-p tcp -i %s --dport 23 -j %s", wanface, log_drop);
 			}
 #endif
-			filter_forward(wanface, lanface, lan_cclass, dmzenable, webfilter);
+			filter_forward(wanface, lanface, lan_cclass, dmzenable, webfilter, vifs);
 		} else {
 
-			filter_input(wanface, lanface, wanaddr, remotessh, remotetelnet, remotemanage);
+			filter_input(wanface, lanface, wanaddr, remotessh, remotetelnet, remotemanage, vifs);
 			filter_output(wanface);
-			filter_forward(wanface, lanface, lan_cclass, dmzenable, webfilter);
+			filter_forward(wanface, lanface, lan_cclass, dmzenable, webfilter, vifs);
 		}
 	} else {
 		char var[80];
 		char vifs[256];
 		char *next;
-		getIfLists(vifs, 256);
 		foreach(var, vifs, next) {
 			if (strcmp(get_wan_face(), var)
 			    && strcmp(nvram_safe_get("lan_ifname"), var)) {
@@ -2611,11 +2607,11 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 	save2file("COMMIT");
 }
 
-static void create_restore_file(char *wanface, char *lanface, char *wanaddr, char *lan_cclass, int dmzenable, int webfilter, int remotessh, int remotetelnet, int remotemanage)
+static void create_restore_file(char *wanface, char *lanface, char *wanaddr, char *lan_cclass, int dmzenable, int webfilter, int remotessh, int remotetelnet, int remotemanage, char *vifs)
 {
-	mangle_table(wanface, wanaddr);
-	nat_table(wanface, wanaddr, lan_cclass, dmzenable, remotessh, remotetelnet, remotemanage);
-	filter_table(wanface, lanface, wanaddr, lan_cclass, dmzenable, webfilter, remotessh, remotetelnet, remotemanage);
+	mangle_table(wanface, wanaddr, vifs);
+	nat_table(wanface, wanaddr, lan_cclass, dmzenable, remotessh, remotetelnet, remotemanage, vifs);
+	filter_table(wanface, lanface, wanaddr, lan_cclass, dmzenable, webfilter, remotessh, remotetelnet, remotemanage, vifs);
 }
 
 #ifdef HAVE_GUESTPORT
@@ -2743,6 +2739,8 @@ void start_firewall(void)
 	 */
 	writeprocsysnet("core/netdev_max_backlog", "120");
 #endif
+	char vifs[256];
+	getIfLists(vifs, 256);
 	/*
 	 * Block obviously spoofed IP addresses 
 	 */
@@ -2864,7 +2862,8 @@ void start_firewall(void)
 	 * Create file for iptables-restore 
 	 */
 	DEBUG("start firewall()........4\n");
-	create_restore_file(wanface, lanface, wanaddr, lan_cclass, dmzenable, webfilter, remotessh, remotetelnet, remotemanage);
+
+	create_restore_file(wanface, lanface, wanaddr, lan_cclass, dmzenable, webfilter, remotessh, remotetelnet, remotemanage, vifs);
 #ifndef DEVELOPE_ENV
 	/*
 	 * Insert the rules into kernel 
