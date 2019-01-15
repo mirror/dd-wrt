@@ -1176,6 +1176,8 @@ void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 	} else if (nvram_match(NVROUTER, "Yuncore SR3200")) {
 		websWrite(wp, "AP-1200AC");
 	} else if (nvram_match(NVROUTER, "Yuncore CPE890")) {
+		websWrite(wp, "AP-9344AC");
+	} else if (nvram_match(NVROUTER, "Yuncore CPE890")) {
 		websWrite(wp, "AP-5900AC");
 	} else if (nvram_match(NVROUTER, "Alfa AP120C")) {
 		websWrite(wp, "AP-600dbdc");
@@ -1205,6 +1207,8 @@ void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "OTAi 9563-AC");
 	} else if (nvram_match(NVROUTER, "Yuncore SR3200")) {
 		websWrite(wp, "OTAi 1200AC");
+	} else if (nvram_match(NVROUTER, "Yuncore CPE880")) {
+		websWrite(wp, "OTAi 9344AC");
 	} else if (nvram_match(NVROUTER, "Yuncore CPE890")) {
 		websWrite(wp, "OTAi 5900AC");
 	} else if (nvram_match(NVROUTER, "Alfa AP120C")) {
