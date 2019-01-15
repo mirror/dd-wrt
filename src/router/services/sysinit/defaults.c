@@ -1072,6 +1072,9 @@ struct nvram_param srouter_defaults[] = {
 	{"ath3_ssid", "hdwifi4"},
 #elif defined(HAVE_ONNET_BLANK)
 #ifdef HAVE_MMS344
+#ifdef HAVE_CPE880
+	{"ath0_ssid", "OTAi5.8"},
+#endif
 	{"ath0_ssid", "OTAi2.4"},
 	{"ath1_ssid", "OTAi5.8"},
 #else
@@ -1081,6 +1084,9 @@ struct nvram_param srouter_defaults[] = {
 #endif
 #elif defined(HAVE_ONNET)
 #ifdef HAVE_MMS344
+#ifdef HAVE_CPE
+	{"ath0_ssid", "OTAi5.8"},
+#endif
 	{"ath0_ssid", "OTAi2.4"},
 	{"ath1_ssid", "OTAi5.8"},
 #else
