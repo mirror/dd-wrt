@@ -137,7 +137,7 @@ int guessbootsize(void *offset, unsigned int maxscan)
 			printk(KERN_EMERG "alpha SEAMA found\n");
 			return i * 4;	// redboot, lzma image
 		}
-		if (ofs[i + 0x20000] == 0x27051956) {
+		if (ofs[i + 0x8000] == 0x27051956) {
 			printk(KERN_EMERG "uboot detected (MMS344 Quirk)\n");
 			return (i * 4) + 0x20000;	// uboot, lzma image		
 		}
