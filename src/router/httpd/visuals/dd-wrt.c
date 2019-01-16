@@ -4355,6 +4355,13 @@ void ej_gen_timer_fields(webs_t wp, int argc, char_t ** argv)
 
 void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
 {
+#ifdef HAVE_ANTAIRA
+        websWrite(wp, "<div class=\"center\">");
+        websWrite(wp, "<input title=\"Site survey\" class=\"button\" type=\"button\" name=\"site_survey\" value=\"Wireless site survey\" onclick=\"openWindow('Site_Survey.asp', 760, 700)\"/>");
+        websWrite(wp, "<br></br>");
+        websWrite(wp, "</div>");
+#endif
+
 #ifndef HAVE_MADWIFI
 #if defined(HAVE_NORTHSTAR) || defined(HAVE_80211AC) && !defined(HAVE_BUFFALO)
 	if (!nvram_matchi("nocountrysel", 1)) {
