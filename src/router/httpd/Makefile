@@ -268,6 +268,9 @@ endif
 ifeq ($(CONFIG_SR3200),y)
 CFLAGS += -DHAVE_SR3200
 endif
+ifeq ($(CONFIG_WILLY),y)
+CFLAGS += -DHAVE_WILLY
+endif
 ifeq ($(CONFIG_XD3200),y)
 CFLAGS += -DHAVE_XD3200
 endif
