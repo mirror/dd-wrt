@@ -1310,6 +1310,19 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 		do_wireless_adv(METHOD_GET, NULL, path, wp);	// refresh
 	else
 		do_ej(METHOD_GET, NULL, path, wp);	// refresh
+
+#ifdef HAVE_ANTAIRA
+	if(!strcmp(submit_type, "browser_date")) {
+		int d = websGetVari(wp,"browser_ts", 0);
+		if(d != 0) {
+			char cmd[32];
+			snprintf(&cmd, 32, "date -s '@%d'", d);
+			system(cmd);
+			system("hwclock -w -u");
+		}
+	}
+#endif
+
 	websDone(wp, 200);
 
 	wp->gozila_action = 0;
