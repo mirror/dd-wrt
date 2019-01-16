@@ -86,7 +86,7 @@ static void setRTS(char *use)
 	nvram_default_get(rts, "0");
 
 	sprintf(rts, "%s_rtsvalue", use);
-	nvram_default_get(rts, "2346");
+	nvram_default_get(rts, "500");
 
 	if (nvram_nmatch("1", "%s_rts", use)) {
 		eval("iwconfig", use, "rts", nvram_nget("%s_rtsvalue", use));
