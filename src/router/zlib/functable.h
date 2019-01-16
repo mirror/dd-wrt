@@ -15,7 +15,10 @@ struct functable_s {
     uint32_t (* crc32)          (uint32_t crc, const unsigned char *buf, uint64_t len);
 };
 
+#ifdef NOTLS
+ZLIB_INTERNAL extern struct functable_s functable;
+#else
 ZLIB_INTERNAL extern __thread struct functable_s functable;
-
+#endif
 
 #endif
