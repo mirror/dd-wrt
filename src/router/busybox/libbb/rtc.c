@@ -63,6 +63,7 @@ static int open_loop_on_busy(const char *name, int flags)
 int FAST_FUNC rtc_xopen(const char **default_rtc, int flags)
 {
 	int rtc;
+	int savertc = -1;
 	const char *name =
 		"/dev/rtc0""\0"
 		"/dev/rtc""\0"
@@ -78,13 +79,20 @@ int FAST_FUNC rtc_xopen(const char **default_rtc, int flags)
 			struct tm test;
 			memset(&test, 0, sizeof(test));
 			if (ioctl(rtc, RTC_RD_TIME, &test) < 0) {
-				xclose(rtc);
+				savertc = rtc;
 				goto try_name;
+			}
+			if (savertc>=0) {
+			    xclose(savertc);
+			    savertc = -1;
 			}
 			return rtc;
 		}
-		if (!name[0])
+		if (!name[0]) {
+			if (savertc>=0)
+				return savertc;
 			return xopen(*default_rtc, flags);
+		}
  try_name:
 		*default_rtc = name;
 		name += strlen(name) + 1;
