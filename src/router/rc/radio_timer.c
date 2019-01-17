@@ -89,7 +89,8 @@ static int radio_timer_main(int argc, char **argv)
 							eval("ifconfig", dev, "up");
 #ifdef HAVE_MADWIFI
 							start_service_force("restarthostapd");
-							restart("dnsmasq"); 
+							stop_service_force("dnsmasq"); 
+							start_service_force("dnsmasq"); 
 #endif
 						}
 						break;
