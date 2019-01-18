@@ -786,7 +786,7 @@ static void *handle_request(void *arg)
 	setnaggle(conn_fp, 1);
 
 #ifndef HAVE_MICRO
-	pthread_mutex_lock(&input_mutex);
+//	pthread_mutex_lock(&input_mutex);
 #endif
 	line = calloc(1, LINE_LEN);
 	/* Initialize the request variables. */
@@ -805,7 +805,7 @@ static void *handle_request(void *arg)
 	}
 
 #ifndef HAVE_MICRO
-	pthread_mutex_unlock(&input_mutex);
+//	pthread_mutex_unlock(&input_mutex);
 #endif
 	if (!strlen(line)) {
 		send_error(conn_fp, 408, "Request Timeout", NULL, "No request appeared within a reasonable time period.");
