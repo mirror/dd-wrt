@@ -651,7 +651,7 @@ char *websGetVar(webs_t wp, char *var, char *d);
 
 int websGetVari(webs_t wp, char *var, int d);
 
-size_t websWrite(webs_t wp, char *fmt, ...);
+ssize_t websWrite(webs_t wp, char *fmt, ...);
 
 void do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t stream);
 

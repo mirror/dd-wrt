@@ -119,7 +119,7 @@ static void *call(void *handle, char *func, webs_t stream)	//jimmy, https, 8/4/2
 	return call_ej(func, handle, stream, argc, argv);
 }
 
-static size_t websWrite(webs_t wp, char *fmt, ...);
+static ssize_t websWrite(webs_t wp, char *fmt, ...);
 
 static inline int decompress(webs_t stream, char *pattern, int len, int last)
 {
