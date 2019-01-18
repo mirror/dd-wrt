@@ -734,6 +734,17 @@ static char *get_nextline(char *cur)
 	return NULL;
 }
 
+static void linefeed_cut(char *cur)
+{
+	char *t = strchr(cur, '\r');
+	if (t)
+		*t = 0;
+	t = strchr(cur, '\n');
+	if (t)
+		*t = 0;
+
+}
+
 #ifdef HAVE_IAS
 char ias_sid[20];
 int ias_sid_timeout;
@@ -786,7 +797,7 @@ static void *handle_request(void *arg)
 	setnaggle(conn_fp, 1);
 
 #ifndef HAVE_MICRO
-//	pthread_mutex_lock(&input_mutex);
+//      pthread_mutex_lock(&input_mutex);
 #endif
 	line = calloc(1, LINE_LEN);
 	/* Initialize the request variables. */
@@ -805,7 +816,7 @@ static void *handle_request(void *arg)
 	}
 
 #ifndef HAVE_MICRO
-//	pthread_mutex_unlock(&input_mutex);
+//      pthread_mutex_unlock(&input_mutex);
 #endif
 	if (!strlen(line)) {
 		send_error(conn_fp, 408, "Request Timeout", NULL, "No request appeared within a reasonable time period.");
@@ -839,6 +850,7 @@ static void *handle_request(void *arg)
 	cur = protocol + strlen(protocol);
 	while ((cur = get_nextline(cur)))	//jimmy,https,8/4/2003
 	{
+//              fprintf(stderr, "%s\n", cur);
 		if (strncasecmp(cur, "Authorization:", 14) == 0) {
 			cp = &cur[14];
 			cp += strspn(cp, " \t");
@@ -872,6 +884,14 @@ static void *handle_request(void *arg)
 		}
 #endif
 	}
+
+	if (authorization)
+		linefeed_cut(authorization);
+	if (referer)
+		linefeed_cut(referer);
+	if (host)
+		linefeed_cut(host);
+
 	method_type = METHOD_INVALID;
 	if (!strcasecmp(method, "get"))
 		method_type = METHOD_GET;
