@@ -35,8 +35,8 @@
 static int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp);
 static char *wfgets(char *buf, int len, webs_t fp);
 static int wfprintf(webs_t fp, char *fmt, ...);
-static ssize_t wfwrite(void *buf, size_t size, size_t n, webs_t fp);
-static ssize_t wfread(void *buf, size_t size, size_t n, webs_t fp);
+static size_t wfwrite(void *buf, size_t size, size_t n, webs_t fp);
+static size_t wfread(void *buf, size_t size, size_t n, webs_t fp);
 static int wfclose(webs_t fp);
 static int wfflush(webs_t fp);
 #ifndef VALIDSOURCE
@@ -719,32 +719,6 @@ static int check_connect_type(webs_t wp)
 	return 0;
 }
 
-static char *get_nextline(char *cur)
-{
-	int idx = 0;
-	for (;;) {
-		if (cur[idx] == 0 && cur[idx + 1] == 0)
-			return NULL;
-		if (cur[idx] == '\r' && cur[idx + 1] == '\n')
-			return &cur[idx + 2];
-		if (cur[idx] == '\n')
-			return &cur[idx + 1];
-		idx++;
-	}
-	return NULL;
-}
-
-static void linefeed_cut(char *cur)
-{
-	char *t = strchr(cur, '\r');
-	if (t)
-		*t = 0;
-	t = strchr(cur, '\n');
-	if (t)
-		*t = 0;
-
-}
-
 #ifdef HAVE_IAS
 char ias_sid[20];
 int ias_sid_timeout;
@@ -758,9 +732,9 @@ static void *handle_request(void *arg)
 {
 	webs_t conn_fp = (webs_t)arg;
 	char *cur = NULL;
-	char *method, *path, *protocol, *authorization = NULL, *boundary = NULL, *referer = NULL, *host = NULL;
+	char *method, *path, *protocol, *authorization, *boundary, *referer, *host;
 #ifdef HAVE_IAS
-	char *language = NULL, *useragent = NULL;
+	char *language, *useragent;
 #endif
 	char *cp = NULL;
 	char *file = NULL;
@@ -797,26 +771,24 @@ static void *handle_request(void *arg)
 	setnaggle(conn_fp, 1);
 
 #ifndef HAVE_MICRO
-//      pthread_mutex_lock(&input_mutex);
+//	pthread_mutex_lock(&input_mutex);
 #endif
-	line = calloc(1, LINE_LEN);
+	line = malloc(LINE_LEN);
 	/* Initialize the request variables. */
 	authorization = referer = boundary = host = NULL;
+	bzero(line, LINE_LEN);
 
 	/* Parse the first line of the request. */
 	int cnt = 0;
 	for (;;) {
-		int rr = wfread(line + strlen(line), 1, LINE_LEN - strlen(line), conn_fp);
-		if (rr < 0 && (errno == EINTR || errno == EAGAIN))
-			continue;
-		if (rr <= 0)
-			break;
-		if (strstr(line, "\r\n\r\n") != NULL || strstr(line, "\n\n") != NULL)
-			break;
-	}
+		wfgets(line, LINE_LEN, conn_fp);
+		if (!strlen(line) && (errno == EINTR || errno == EAGAIN))
+		    continue;
+		break;
+	}	
 
 #ifndef HAVE_MICRO
-//      pthread_mutex_unlock(&input_mutex);
+//	pthread_mutex_unlock(&input_mutex);
 #endif
 	if (!strlen(line)) {
 		send_error(conn_fp, 408, "Request Timeout", NULL, "No request appeared within a reasonable time period.");
@@ -844,60 +816,56 @@ static void *handle_request(void *arg)
 	}
 	while (*protocol == ' ')
 		protocol++;
+
 	cp = protocol;
 	strsep(&cp, " ");
+	cur = protocol + strlen(protocol) + 1;
 	/* Parse the rest of the request headers. */
-	cur = protocol + strlen(protocol);
-	while ((cur = get_nextline(cur)))	//jimmy,https,8/4/2003
+
+	while (wfgets(cur, line + LINE_LEN - cur, conn_fp) != 0)	//jimmy,https,8/4/2003
 	{
-//              fprintf(stderr, "%s\n", cur);
-		if (strncasecmp(cur, "Authorization:", 14) == 0) {
+		if (strcmp(cur, "\n") == 0 || strcmp(cur, "\r\n") == 0) {
+			break;
+		} else if (strncasecmp(cur, "Authorization:", 14) == 0) {
 			cp = &cur[14];
 			cp += strspn(cp, " \t");
 			authorization = cp;
+			cur = cp + strlen(cp) + 1;
 		} else if (strncasecmp(cur, "Referer:", 8) == 0) {
 			cp = &cur[8];
 			cp += strspn(cp, " \t");
 			referer = cp;
+			cur = cp + strlen(cp) + 1;
 		} else if (strncasecmp(cur, "Host:", 5) == 0) {
 			cp = &cur[5];
 			cp += strspn(cp, " \t");
 			host = cp;
+			cur = cp + strlen(cp) + 1;
 		} else if (strncasecmp(cur, "Content-Length:", 15) == 0) {
 			cp = &cur[15];
 			cp += strspn(cp, " \t");
 			cl = strtoul(cp, NULL, 0);
+
 		} else if ((cp = strstr(cur, "boundary="))) {
 			boundary = &cp[9];
+			for (cp = cp + 9; *cp && *cp != '\r' && *cp != '\n'; cp++) ;
+			*cp = '\0';
+			cur = ++cp;
 		}
 #ifdef HAVE_IAS
 		else if (strncasecmp(cur, "User-Agent:", 11) == 0) {
 			cp = &cur[11];
 			cp += strspn(cp, " \t");
 			useragent = cp;
+			cur = cp + strlen(cp) + 1;
 		} else if (strncasecmp(cur, "Accept-Language:", 16) == 0) {
 			cp = &cur[17];
 			cp += strspn(cp, " \t");
 			language = cp;
+			cur = cp + strlen(cp) + 1;
 		}
 #endif
 	}
-
-	if (authorization)
-		linefeed_cut(authorization);
-	if (referer)
-		linefeed_cut(referer);
-	if (host)
-		linefeed_cut(host);
-	if (boundary)
-		linefeed_cut(boundary);
-#ifdef HAVE_IAS
-	if (useragent)
-		linefeed_cut(useragent);
-	if (language)
-		linefeed_cut(language);
-#endif
-
 	method_type = METHOD_INVALID;
 	if (!strcasecmp(method, "get"))
 		method_type = METHOD_GET;
@@ -1232,11 +1200,11 @@ static void *handle_request(void *arg)
 				handler->input(file, conn_fp, cl, boundary);
 			}
 #if defined(linux)
-			if (!DO_SSL(conn_fp) && (flags = fcntl(conn_fp->conn_fd, F_GETFL)) != -1 && fcntl(conn_fp->conn_fd, F_SETFL, flags | O_NONBLOCK) != -1) {
+			if (!DO_SSL(conn_fp) && (flags = fcntl(fileno(conn_fp->fp), F_GETFL)) != -1 && fcntl(fileno(conn_fp->fp), F_SETFL, flags | O_NONBLOCK) != -1) {
 				/* Read up to two more characters */
-				char buf[2];
-				read(conn_fp->conn_fd, &buf[0], 2);
-				fcntl(conn_fp->conn_fd, F_SETFL, flags);
+				if (fgetc(conn_fp->fp) != EOF)
+					(void)fgetc(conn_fp->fp);
+				fcntl(fileno(conn_fp->fp), F_SETFL, flags);
 			}
 #endif
 			if (check_connect_type(conn_fp) < 0) {
@@ -1769,12 +1737,12 @@ int main(int argc, char **argv)
 				continue;
 			}
 
-			conn_fp->ssl_context = (void *)initsslbuffer(conn_fp->ssl);
+			conn_fp->fp = (FILE *) initsslbuffer(conn_fp->ssl);
 
 #elif defined(HAVE_MATRIXSSL)
 			matrixssl_new_session(conn_fp->conn_fd);
 
-			conn_fp->ssl_context = (void *)conn_fp->conn_fd;
+			conn_fp->fp = (FILE *) conn_fp->conn_fd;
 #endif
 #ifdef HAVE_POLARSSL
 			ssl_free(&conn_fp->ssl);
@@ -1802,7 +1770,7 @@ int main(int argc, char **argv)
 				continue;
 			}
 
-			conn_fp->ssl_context = (&ssl);
+			conn_fp->fp = (webs_t)(&ssl);
 
 #endif
 		} else
@@ -1814,6 +1782,11 @@ int main(int argc, char **argv)
 				return -1;
 			}
 #endif
+
+			if (!(conn_fp->fp = fdopen(conn_fp->conn_fd, "r+"))) {
+				perror("fdopen");
+				return errno;
+			}
 		}
 
 #ifndef HAVE_MICRO
@@ -1858,13 +1831,14 @@ int main(int argc, char **argv)
 
 static char *wfgets(char *buf, int len, webs_t wp)
 {
+	FILE *fp = wp->fp;
 	char *ret = NULL;
 	if (DO_SSL(wp)) {
 #ifdef HAVE_OPENSSL
 		int eof = 1;
 		int i;
 		char c;
-		if (sslbufferpeek((struct sslbuffer *)wp->ssl_context, buf, len) <= 0) {
+		if (sslbufferpeek((struct sslbuffer *)fp, buf, len) <= 0) {
 			goto out;
 		}
 		for (i = 0; i < len; i++) {
@@ -1874,7 +1848,7 @@ static char *wfgets(char *buf, int len, webs_t wp)
 				break;
 			}
 		}
-		if (sslbufferread((struct sslbuffer *)wp->ssl_context, buf, i + 1) <= 0) {
+		if (sslbufferread((struct sslbuffer *)fp, buf, i + 1) <= 0) {
 			goto out;
 		}
 		if (!eof) {
@@ -1887,16 +1861,14 @@ static char *wfgets(char *buf, int len, webs_t wp)
 		}
 
 #elif defined(HAVE_MATRIXSSL)
-		ret = (char *)matrixssl_gets(wp->ssl_context, buf, len);
+		ret = (char *)matrixssl_gets(fp, buf, len);
 #elif defined(HAVE_POLARSSL)
 
-		int r = ssl_read((ssl_context *) wp->ssl_context, (unsigned char *)buf, len);
+		int r = ssl_read((ssl_context *) fp, (unsigned char *)buf, len);
 		ret = buf;
 #endif
 	} else {
-		FILE *fp = fdopen(dup(wp->conn_fd), "r+");
 		ret = fgets(buf, len, fp);
-		fclose(fp);
 	}
       out:;
 	return ret;
@@ -1904,21 +1876,23 @@ static char *wfgets(char *buf, int len, webs_t wp)
 
 static int wfputs(char *buf, webs_t wp)
 {
+
+	FILE *fp = wp->fp;
 	int ret;
 	if (DO_SSL(wp)) {
 #ifdef HAVE_OPENSSL
-		ret = sslbufferwrite((struct sslbuffer *)wp->ssl_context, buf, strlen(buf));
+		ret = sslbufferwrite((struct sslbuffer *)fp, buf, strlen(buf));
 
 #elif defined(HAVE_MATRIXSSL)
 		ret = matrixssl_puts(fp, buf);
 
 #elif defined(HAVE_POLARSSL)
-		ret = ssl_write((ssl_context *) wp->ssl_context, (unsigned char *)buf, strlen(buf));
+		ret = ssl_write((ssl_context *) fp, (unsigned char *)buf, strlen(buf));
 		fprintf(stderr, "ssl write str %d\n", strlen(buf));
 
 #endif
 	} else {
-		ret = write(wp->conn_fd, buf, strlen(buf));
+		ret = fputs(buf, fp);
 	}
 	return ret;
 }
@@ -1926,6 +1900,7 @@ static int wfputs(char *buf, webs_t wp)
 static int wfprintf(webs_t wp, char *fmt, ...)
 {
 
+	FILE *fp = wp->fp;
 	va_list args;
 	char *buf;
 	int ret;
@@ -1935,47 +1910,49 @@ static int wfprintf(webs_t wp, char *fmt, ...)
 	if (DO_SSL(wp)) {
 #ifdef HAVE_OPENSSL
 
-		ret = sslbufferwrite((struct sslbuffer *)wp->ssl_context, buf, strlen(buf));
+		ret = sslbufferwrite((struct sslbuffer *)fp, buf, strlen(buf));
 #elif defined(HAVE_MATRIXSSL)
 		ret = matrixssl_printf(fp, "%s", buf);
 #elif defined(HAVE_POLARSSL)
 		fprintf(stderr, "ssl write buf %d\n", strlen(buf));
-		ret = ssl_write((ssl_context *) wp->ssl_context, buf, strlen(buf));
+		ret = ssl_write((ssl_context *) fp, buf, strlen(buf));
 #endif
-	} else {
-		ret = write(wp->conn_fd, buf, strlen(buf));
-	}
+	} else
+		ret = fprintf(fp, "%s", buf);
 	free(buf);
 	va_end(args);
 
 	return ret;
 }
 
-static ssize_t vwebsWrite(webs_t wp, char *fmt, va_list args)
+static size_t vwebsWrite(webs_t wp, char *fmt, va_list args)
 {
 
 	char *buf;
 	int ret;
 	if (!wp)
 		return -1;
+
+	FILE *fp = wp->fp;
+
 	vasprintf(&buf, fmt, args);
 	if (DO_SSL(wp)) {
 #ifdef HAVE_OPENSSL
-		ret = sslbufferwrite((struct sslbuffer *)wp->ssl_context, buf, strlen(buf));
+		ret = sslbufferwrite((struct sslbuffer *)fp, buf, strlen(buf));
 #elif defined(HAVE_MATRIXSSL)
-		ret = matrixssl_printf(wp->ssl_context, "%s", buf);
+		ret = matrixssl_printf(fp, "%s", buf);
 #elif defined(HAVE_POLARSSL)
 		fprintf(stderr, "ssl write buf %d\n", strlen(buf));
-		ret = ssl_write((ssl_context *) wp->ssl_context, buf, strlen(buf));
+		ret = ssl_write((ssl_context *) fp, buf, strlen(buf));
 #endif
 	} else
-		ret = write(wp->conn_fd, buf, strlen(buf));
+		ret = fprintf(fp, "%s", buf);
 	free(buf);
 
 	return ret;
 }
 
-static ssize_t websWrite(webs_t wp, char *fmt, ...)
+static size_t websWrite(webs_t wp, char *fmt, ...)
 {
 	if (!wp || !fmt)
 		return -1;
@@ -1987,25 +1964,26 @@ static ssize_t websWrite(webs_t wp, char *fmt, ...)
 	return ret;
 }
 
-static ssize_t wfwrite(void *buf, size_t size, size_t n, webs_t wp)
+static size_t wfwrite(void *buf, size_t size, size_t n, webs_t wp)
 {
 
-	ssize_t ret;
+	FILE *fp = wp->fp;
+	size_t ret;
 	if (DO_SSL(wp)) {
 #ifdef HAVE_OPENSSL
 		{
-			ret = sslbufferwrite((struct sslbuffer *)wp->ssl_context, buf, n * size);
+			ret = sslbufferwrite((struct sslbuffer *)fp, buf, n * size);
 		}
 #elif defined(HAVE_MATRIXSSL)
-		ret = matrixssl_write(wp->ssl_context, (unsigned char *)buf, n * size);
+		ret = matrixssl_write(fp, (unsigned char *)buf, n * size);
 #elif defined(HAVE_POLARSSL)
 		{
 			fprintf(stderr, "ssl write buf %d\n", n * size);
-			ret = ssl_write((ssl_context *) wp->ssl_context, (unsigned char *)buf, n * size);
+			ret = ssl_write((ssl_context *) fp, (unsigned char *)buf, n * size);
 		}
 #endif
 	} else
-		ret = write(wp->conn_fd, buf, n * size);
+		ret = fwrite(buf, size, n, fp);
 	return ret;
 }
 
@@ -2016,14 +1994,15 @@ static int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp)
 
 }
 
-static ssize_t wfread(void *p, size_t size, size_t n, webs_t wp)
+static size_t wfread(void *p, size_t size, size_t n, webs_t wp)
 {
 	char *buf = (void *)p;
-	ssize_t ret;
+	size_t ret;
+	FILE *fp = wp->fp;
 
 	if (DO_SSL(wp)) {
 #ifdef HAVE_OPENSSL
-		ret = sslbufferread((struct sslbuffer *)wp->ssl_context, buf, n * size);
+		ret = sslbufferread((struct sslbuffer *)fp, buf, n * size);
 #elif defined(HAVE_MATRIXSSL)
 		//do it in chains
 		size_t cnt = (size * n) / 0x4000;
@@ -2031,59 +2010,64 @@ static ssize_t wfread(void *p, size_t size, size_t n, webs_t wp)
 		size_t len = 0;
 
 		for (i = 0; i < cnt; i++) {
-			len += matrixssl_read(wp->ssl_context, buf, 0x4000);
+			len += matrixssl_read(fp, buf, 0x4000);
 			*buf += 0x4000;
 		}
-		len += matrixssl_read(wp->ssl_context, buf, (size * n) % 0x4000);
+		len += matrixssl_read(fp, buf, (size * n) % 0x4000);
 
 		ret = len;
 #elif defined(HAVE_POLARSSL)
 		size_t len = n * size;
 		fprintf(stderr, "read ssl %d\n", len);
-		ret = ssl_read((ssl_context *) wp->ssl_context, (unsigned char *)buf, &len);
+		ret = ssl_read((ssl_context *) fp, (unsigned char *)buf, &len);
 #endif
 	} else
-		ret = read(wp->conn_fd, buf, n * size);
+		ret = fread(buf, size, n, fp);
 	return ret;
 }
 
 static int wfflush(webs_t wp)
 {
-	int ret = 1;
+	int ret;
+	FILE *fp = wp->fp;
 
 	if (DO_SSL(wp)) {
 #ifdef HAVE_OPENSSL
 		/* ssl_write doesn't buffer */
-		sslbufferflush((struct sslbuffer *)wp->ssl_context);
+		sslbufferflush((struct sslbuffer *)fp);
 		ret = 1;
 #elif defined(HAVE_MATRIXSSL)
-		ret = matrixssl_flush(wp->ssl_context);
+		ret = matrixssl_flush(fp);
 #elif defined(HAVE_POLARSSL)
-		ssl_flush_output((ssl_context *) wp->ssl_context);
+		ssl_flush_output((ssl_context *) fp);
 		ret = 1;
 #endif
-	}
+	} else
+		ret = fflush(fp);
+
 	return ret;
 }
 
 static int wfclose(webs_t wp)
 {
 	int ret = 0;
+	FILE *fp = wp->fp;
 
 	if (DO_SSL(wp)) {
 #ifdef HAVE_OPENSSL
-		sslbufferflush((struct sslbuffer *)wp->ssl_context);
-		sslbufferfree((struct sslbuffer *)wp->ssl_context);
+		sslbufferflush((struct sslbuffer *)fp);
+		sslbufferfree((struct sslbuffer *)fp);
 		ret = 1;
 #elif defined(HAVE_MATRIXSSL)
-		ret = matrixssl_free_session(wp->ssl_context);
+		ret = matrixssl_free_session(fp);
 #elif defined(HAVE_POLARSSL)
-		ssl_close_notify((ssl_context *) wp->ssl_context);
-		ssl_free((ssl_context *) wp->ssl_context);
+		ssl_close_notify((ssl_context *) fp);
+		ssl_free((ssl_context *) fp);
 		ret = 1;
 #endif
 	} else {
-		ret = close(wp->conn_fd);
+		int ret = fclose(fp);
+		wp->fp = NULL;
 	}
 
 	return ret;
