@@ -87,8 +87,8 @@
 	} \
 } while (0)
 #endif
-static size_t websWrite(webs_t wp, char *fmt, ...);
-static size_t vwebsWrite(webs_t wp, char *fmt, va_list args);
+static ssize_t websWrite(webs_t wp, char *fmt, ...);
+static ssize_t vwebsWrite(webs_t wp, char *fmt, va_list args);
 static char *websGetVar(webs_t wp, char *var, char *d)
 {
 	return get_cgi(wp, var) ? : d;

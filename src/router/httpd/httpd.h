@@ -61,10 +61,10 @@ typedef struct {
 } persistent_vars;
 
 typedef struct {
-	FILE *fp;
+	void *ssl_context;
+	int conn_fd;
 	int threadid;
 	int userid;
-	int conn_fd;
 	int post;
 #ifdef HAVE_HTTPS
 	int do_ssl;
@@ -144,10 +144,10 @@ struct Webenvironment {
 	void (*do_ej_buffer) (char *buffer, webs_t stream);
 	char *(*websGetVar) (webs_t wp, char *var, char *d);
 	int (*websGetVari) (webs_t wp, char *var, int d);
-	size_t (*vwebsWrite) (webs_t wp, char *fmt, va_list args);
+	 ssize_t(*vwebsWrite) (webs_t wp, char *fmt, va_list args);
 	void (*do_ej) (unsigned char method, struct mime_handler * handler, char *path, webs_t stream);	// jimmy, https, 8/4/2003
 	FILE *(*getWebsFile) (webs_t wp, char *path);
-	int (*wfputs) (char *buf, webs_t fp);
+	int (*wfputs) (char *buf, webs_t wp);
 	char *(*GOZILA_GET) (webs_t wp, char *name);
 	char *(*live_translate) (webs_t wp, const char *tran);
 	void (*validate_cgi) (webs_t fp);
@@ -171,8 +171,6 @@ typedef char char_t;
 #define websDebugWrite(wp, fmt, args...)
 #define websError(wp, code, msg, args...)
 
-#define websHeader(wp) wfputs("<html lang=\"en\">", wp)
-#define websFooter(wp) wfputs("</html>", wp)
 #define websDone(wp, code) wfflush(wp)
 
 #define websSetVar(wp, var, value) set_cgi(wp, var, value)

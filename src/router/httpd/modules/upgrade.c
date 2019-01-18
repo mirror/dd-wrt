@@ -159,6 +159,21 @@ static int checkmagic(char *magic, char *check[])
 	return -1;
 }
 
+static ssize_t safe_read(void *ptr, size_t nmemb, int fd)
+{
+	ssize_t ret = 0;
+	ssize_t err = 0;
+
+	do {
+		err = read(fd, (char *)ptr + ret, nmemb - ret);
+		if (err > 0)
+			ret += err;
+	}
+	while (ret < nmemb && errno == EINTR);
+
+	return ret;
+}
+
 static int
 // sys_upgrade(char *url, FILE *stream, int *total)
 sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
@@ -199,10 +214,10 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	write_argv[1] = upload_fifo;
 	write_argv[2] = WRITEPART;
 	write_argv[3] = NULL;
-	FILE *check = fopen("/usr/sbin/fischecksum","rb");
+	FILE *check = fopen("/usr/sbin/fischecksum", "rb");
 	if (check) {
-	    fclose(check);
-	    eval("fischecksum");
+		fclose(check);
+		eval("fischecksum");
 	}
 	if (url)
 		return eval("write", url, WRITEPART);
@@ -217,7 +232,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	 * Set nonblock on the socket so we can timeout 
 	 */
 	if (!DO_SSL(stream)) {
-		if ((flags = fcntl(fileno(stream->fp), F_GETFL)) < 0 || fcntl(fileno(stream->fp), F_SETFL, flags | O_NONBLOCK) < 0) {
+		if ((flags = fcntl(stream->conn_fd, F_GETFL)) < 0 || fcntl(stream->conn_fd, F_SETFL, flags | O_NONBLOCK) < 0) {
 			ret = errno;
 			goto err;
 		}
@@ -253,11 +268,11 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 				size = *total;
 			count = wfread(buf, 1, size, stream);
 		} else {
-			if (waitfor(fileno(stream->fp), 5) <= 0) {
+			if (waitfor(stream->conn_fd, 5) <= 0) {
 				lastblock = 1;
 			}
-			count = safe_fread(buf, 1, size, stream->fp);
-			if (!count && (ferror(stream->fp) || feof(stream->fp))) {
+			count = safe_read(buf, size, stream->conn_fd);
+			if (!count) {
 				break;
 			}
 		}
@@ -710,7 +725,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		/*
 		 * Reset nonblock on the socket 
 		 */
-		if (fcntl(fileno(stream->fp), F_SETFL, flags) < 0) {
+		if (fcntl(stream->conn_fd, F_SETFL, flags) < 0) {
 			ret = errno;
 			goto err;
 		}
