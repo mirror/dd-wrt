@@ -758,9 +758,9 @@ static void *handle_request(void *arg)
 {
 	webs_t conn_fp = (webs_t)arg;
 	char *cur = NULL;
-	char *method, *path, *protocol, *authorization, *boundary, *referer, *host;
+	char *method, *path, *protocol, *authorization = NULL, *boundary = NULL, *referer = NULL, *host = NULL;
 #ifdef HAVE_IAS
-	char *language, *useragent;
+	char *language = NULL, *useragent = NULL;
 #endif
 	char *cp = NULL;
 	char *file = NULL;
@@ -869,8 +869,6 @@ static void *handle_request(void *arg)
 			cl = strtoul(cp, NULL, 0);
 		} else if ((cp = strstr(cur, "boundary="))) {
 			boundary = &cp[9];
-			for (cp = cp + 9; *cp && *cp != '\r' && *cp != '\n'; cp++) ;
-			*cp = '\0';
 		}
 #ifdef HAVE_IAS
 		else if (strncasecmp(cur, "User-Agent:", 11) == 0) {
@@ -891,6 +889,14 @@ static void *handle_request(void *arg)
 		linefeed_cut(referer);
 	if (host)
 		linefeed_cut(host);
+	if (boundary)
+		linefeed_cut(boundary);
+#ifdef HAVE_IAS
+	if (useragent)
+		linefeed_cut(useragent);
+	if (language)
+		linefeed_cut(language);
+#endif
 
 	method_type = METHOD_INVALID;
 	if (!strcasecmp(method, "get"))
