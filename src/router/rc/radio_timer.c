@@ -87,10 +87,16 @@ static int radio_timer_main(int argc, char **argv)
 							char dev[32];
 							sprintf(dev, "ath%d", i);
 							eval("ifconfig", dev, "up");
+							char *next;
+							char var[80];
+							char *vifs = nvram_nget("ath%d_vifs", i);
+							foreach(var, vifs, next) {
+								eval("ifconfig", var, "up");
+							}
 #ifdef HAVE_MADWIFI
 							start_service_force("restarthostapd");
-							stop_service_force("dnsmasq"); 
-							start_service_force("dnsmasq"); 
+							stop_service_force("dnsmasq");
+							start_service_force("dnsmasq");
 #endif
 						}
 						break;
@@ -102,6 +108,12 @@ static int radio_timer_main(int argc, char **argv)
 						char dev[32];
 						sprintf(dev, "ath%d", i);
 						eval("ifconfig", dev, "down");
+						char *next;
+						char var[80];
+						char *vifs = nvram_nget("ath%d_vifs", i);
+						foreach(var, vifs, next) {
+							eval("ifconfig", var, "down");
+						}
 						break;
 					}
 					needchange[i] = 0;
