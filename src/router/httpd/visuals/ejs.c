@@ -67,11 +67,11 @@ int websGetVari(webs_t wp, char *var, int d)
 	return wp->p->env->websGetVari(wp, var, d);
 }
 
-ssize_t websWrite(webs_t wp, char *fmt, ...)
+size_t websWrite(webs_t wp, char *fmt, ...)
 {
 	va_list arglist;
 	va_start(arglist, fmt);
-	ssize_t ret = wp->p->env->vwebsWrite(wp, fmt, arglist);
+	size_t ret = wp->p->env->vwebsWrite(wp, fmt, arglist);
 	va_end(arglist);
 	return ret;
 }

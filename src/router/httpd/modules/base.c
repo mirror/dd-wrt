@@ -76,8 +76,8 @@ static void do_upgrade_post(char *url, webs_t stream, int len, char *boundary);
 static int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp);
 static char *wfgets(char *buf, int len, webs_t fp);
 static int wfprintf(webs_t fp, char *fmt, ...);
-static ssize_t wfwrite(void *buf, size_t size, size_t n, webs_t fp);
-static ssize_t wfread(void *buf, size_t size, size_t n, webs_t fp);
+static size_t wfwrite(void *buf, size_t size, size_t n, webs_t fp);
+static size_t wfread(void *buf, size_t size, size_t n, webs_t fp);
 static int wfclose(webs_t fp);
 static int wfflush(webs_t fp);
 static int wfputs(char *buf, webs_t fp);
@@ -1312,9 +1312,9 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 		do_ej(METHOD_GET, NULL, path, wp);	// refresh
 
 #ifdef HAVE_ANTAIRA
-	if (!strcmp(submit_type, "browser_date")) {
-		int d = websGetVari(wp, "browser_ts", 0);
-		if (d != 0) {
+	if(!strcmp(submit_type, "browser_date")) {
+		int d = websGetVari(wp,"browser_ts", 0);
+		if(d != 0) {
 			char cmd[32];
 			snprintf(&cmd, 32, "date -s '@%d'", d);
 			system(cmd);
@@ -1757,7 +1757,7 @@ char ezc_version[128];
 
 // #endif
 
-void				// support GET and POST 2003-08-22
+void			// support GET and POST 2003-08-22
 do_apply_post(char *url, webs_t stream, int len, char *boundary)
 {
 	int count;
