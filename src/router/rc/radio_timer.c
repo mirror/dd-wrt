@@ -91,6 +91,26 @@ static int radio_timer_main(int argc, char **argv)
 								eval("ifconfig", var, "up");
 							}
 							start_service_force("restarthostapd");
+							if (nvram_nmatch("sta", "%s_mode", dev)) {
+								char bridged[32];
+								sprintf(bridged, "%s_bridged", dev);
+								if (nvram_matchi(bridged, 0)) {
+									eval("ifconfig", dev, "mtu", getMTU(dev));
+									eval("ifconfig", dev, "txqueuelen", getTXQ(dev));
+									eval("ifconfig", dev, nvram_nget("%s_ipaddr", dev), "netmask", nvram_nget("%s_netmask", dev), "up");
+								}
+							}
+							vifs = nvram_nget("ath%d_vifs", i);
+							foreach(var, vifs, next) {
+								char bridged[32];
+								sprintf(bridged, "%s_bridged", var);
+								if (nvram_matchi(bridged, 0)) {
+									eval("ifconfig", var, "mtu", getMTU(var));
+									eval("ifconfig", var, "txqueuelen", getTXQ(var));
+									eval("ifconfig", var, nvram_nget("%s_ipaddr", var), "netmask", nvram_nget("%s_netmask", var), "up");
+								}
+							}
+
 							stop_service_force("dnsmasq");
 							start_service_force("dnsmasq");
 #endif
