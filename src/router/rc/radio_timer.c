@@ -24,11 +24,7 @@ static int radio_timer_main(int argc, char **argv)
 {
 
 	unsigned int *radiotime;	// 4 byte int number (24 bits from gui + 1 bit for midnight)
-#ifdef HAVE_MADWIFI
 	int cnt = getdevicecount();
-#else
-	int cnt = get_wl_instances();
-#endif
 	unsigned char *firsttime, *needchange;
 	radiotime = malloc(sizeof(unsigned int *) * cnt);
 	needchange = malloc(cnt);
@@ -84,6 +80,7 @@ static int radio_timer_main(int argc, char **argv)
 							char on[32];
 							sprintf(on, "radio_on_%d", i);
 							start_service_force(on);
+#ifdef HAVE_MADWIFI
 							char dev[32];
 							sprintf(dev, "ath%d", i);
 							eval("ifconfig", dev, "up");
@@ -93,7 +90,6 @@ static int radio_timer_main(int argc, char **argv)
 							foreach(var, vifs, next) {
 								eval("ifconfig", var, "up");
 							}
-#ifdef HAVE_MADWIFI
 							start_service_force("restarthostapd");
 							stop_service_force("dnsmasq");
 							start_service_force("dnsmasq");
@@ -105,6 +101,7 @@ static int radio_timer_main(int argc, char **argv)
 						char off[32];
 						sprintf(off, "radio_off_%d", i);
 						start_service_force(off);
+#ifdef HAVE_MADWIFI
 						char dev[32];
 						sprintf(dev, "ath%d", i);
 						eval("ifconfig", dev, "down");
@@ -114,6 +111,7 @@ static int radio_timer_main(int argc, char **argv)
 						foreach(var, vifs, next) {
 							eval("ifconfig", var, "down");
 						}
+#endif
 						break;
 					}
 					needchange[i] = 0;
