@@ -78,8 +78,8 @@ static size_t real_zstd_compress(const char *source, char *dest, int isize,
 static size_t real_zstd_decompress(const char *source, char *dest, int isize,
     int maxosize);
 
-static static void *zstd_alloc(void *opaque, size_t size);
-static static zstd_free(void *opaque, void *ptr);
+static void *zstd_alloc(void *opaque, size_t size);
+static void zstd_free(void *opaque, void *ptr);
 
 static const ZSTD_customMem zstd_malloc = {
 	zstd_alloc,
