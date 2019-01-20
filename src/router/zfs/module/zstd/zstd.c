@@ -1,27 +1,34 @@
 /*
- * CDDL HEADER START
+ * BSD 2-Clause License (http://www.opensource.org/licenses/bsd-license.php)
  *
- * The contents of this file are subject to the terms of the
- * Common Development and Distribution License (the "License").
- * You may not use this file except in compliance with the License.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
  *
- * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
- * or http://www.opensolaris.org/os/licensing.
- * See the License for the specific language governing permissions
- * and limitations under the License.
+ * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer
+ * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following disclaimer
+ * in the documentation and/or other materials provided with the
+ * distribution.
  *
- * When distributing Covered Code, include this CDDL HEADER in each
- * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
- * If applicable, add the following below this CDDL HEADER, with the
- * fields enclosed by brackets "[]" replaced with your own identifying
- * information: Portions Copyright [yyyy] [name of copyright owner]
- *
- * CDDL HEADER END
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 /*
  * Copyright (c) 2016-2018 by Klara Systems Inc.
- * Copyright (c) 2016-2018 Allan Jude <allanjude@freebsd.org>.
+ * Copyright (c) 2016-2018 Allan Jude <allanjude@freebsd.org>
+ * Copyright (c) 2018 Sebastian Gottschall <s.gottschall@dd-wrt.com>
  */
 
 #include <sys/param.h>
@@ -71,14 +78,15 @@ static size_t real_zstd_compress(const char *source, char *dest, int isize,
 static size_t real_zstd_decompress(const char *source, char *dest, int isize,
     int maxosize);
 
-static void *zstd_alloc(void *opaque, size_t size);
-void zstd_free(void *opaque, void *ptr);
+static static void *zstd_alloc(void *opaque, size_t size);
+static static zstd_free(void *opaque, void *ptr);
 
 static const ZSTD_customMem zstd_malloc = {
 	zstd_alloc,
 	zstd_free,
 	NULL,
 };
+/* these enums are index references to zstd_cache_config */
 
 enum zstd_kmem_type {
 	ZSTD_KMEM_UNKNOWN = 0,
@@ -92,10 +100,9 @@ enum zstd_kmem_type {
 	ZSTD_KMEM_WRKSPC_128K_MIN,
 	ZSTD_KMEM_WRKSPC_128K_DEF,
 	ZSTD_KMEM_WRKSPC_128K_MAX,
-	/* SPA_MAXBLOCKSIZE */
-	ZSTD_KMEM_WRKSPC_MBS_MIN,
-	ZSTD_KMEM_WRKSPC_MBS_DEF,
-	ZSTD_KMEM_WRKSPC_MBS_MAX,
+	ZSTD_KMEM_WRKSPC_16M_MIN,
+	ZSTD_KMEM_WRKSPC_16M_DEF,
+	ZSTD_KMEM_WRKSPC_16M_MAX,
 	ZSTD_KMEM_DCTX,
 	ZSTD_KMEM_COUNT,
 };
@@ -104,6 +111,14 @@ struct zstd_kmem {
 	uint_t			kmem_magic;
 	enum zstd_kmem_type	kmem_type;
 	size_t			kmem_size;
+	boolean_t		isvm;
+};
+
+struct zstd_vmem {
+	size_t			vmem_size;
+	void			*vm;
+	kmutex_t 		barrier;
+	boolean_t		inuse;
 };
 
 struct zstd_kmem_config {
@@ -114,7 +129,15 @@ struct zstd_kmem_config {
 
 static kmem_cache_t *zstd_kmem_cache[ZSTD_KMEM_COUNT] = { NULL };
 static struct zstd_kmem zstd_cache_size[ZSTD_KMEM_COUNT] = {
-	{ ZSTD_KMEM_MAGIC, 0, 0 } };
+	{ ZSTD_KMEM_MAGIC, 0, 0, B_FALSE} };
+
+static struct zstd_vmem zstd_vmem_cache[ZSTD_KMEM_COUNT] = {
+	{ 
+	.vmem_size = 0,
+	.vm = NULL, 
+	.inuse = B_FALSE
+	} 
+	};
 static struct zstd_kmem_config zstd_cache_config[ZSTD_KMEM_COUNT] = {
 	{ 0, 0, "zstd_unknown" },
 	{ 0, 0, "zstd_cctx" },
@@ -128,9 +151,9 @@ static struct zstd_kmem_config zstd_cache_config[ZSTD_KMEM_COUNT] = {
 	{ SPA_OLD_MAXBLOCKSIZE, ZIO_ZSTD_LEVEL_DEFAULT,
 	    "zstd_wrkspc_128k_def" },
 	{ SPA_OLD_MAXBLOCKSIZE, ZIO_ZSTD_LEVEL_MAX, "zstd_wrkspc_128k_max" },
-	{ SPA_MAXBLOCKSIZE, ZIO_ZSTD_LEVEL_MIN, "zstd_wrkspc_mbs_min" },
-	{ SPA_MAXBLOCKSIZE, ZIO_ZSTD_LEVEL_DEFAULT, "zstd_wrkspc_mbs_def" },
-	{ SPA_MAXBLOCKSIZE, ZIO_ZSTD_LEVEL_MAX, "zstd_wrkspc_mbs_max" },
+	{ SPA_MAXBLOCKSIZE, ZIO_ZSTD_LEVEL_MIN, "zstd_wrkspc_16m_min" },
+	{ SPA_MAXBLOCKSIZE, ZIO_ZSTD_LEVEL_DEFAULT, "zstd_wrkspc_16m_def" },
+	{ SPA_MAXBLOCKSIZE, ZIO_ZSTD_LEVEL_MAX, "zstd_wrkspc_16m_max" },
 	{ 0, 0, "zstd_dctx" },
 };
 
@@ -288,8 +311,13 @@ zstd_compress(void *s_start, void *d_start, size_t s_len, size_t d_len, int n)
 	    d_len - sizeof (bufsiz) - sizeof (zstdlevel), zstdlevel);
 
 	/* Signal an error if the compression routine returned an error. */
-	if (ZSTD_isError(c_len))
+	if (ZSTD_isError(c_len)) {
+#ifdef _KERNEL
+		if (c_len != (size_t)-70)
+			printk(KERN_INFO "zstd: compress error code %ld\n", c_len);
+#endif
 		return (s_len);
+	}
 
 	/*
 	 * Encode the compresed buffer size at the start. We'll need this in
@@ -324,17 +352,26 @@ zstd_decompress(void *s_start, void *d_start, size_t s_len, size_t d_len, int n)
 	ASSERT(zstdlevel < ZIO_ZSTDLVL_LEVELS);
 
 	/* invalid compressed buffer size encoded at start */
-	if (bufsiz + sizeof (bufsiz) > s_len)
+	if (bufsiz + sizeof (bufsiz) > s_len) {
+#ifdef _KERNEL
+		printk(KERN_INFO "zstd: invalid compressed buffer size\n");
+#endif
 		return (1);
+	}
 
 	/*
 	 * Returns 0 on success (decompression function returned non-negative)
 	 * and non-zero on failure (decompression function returned negative.
 	 */
-	if (ZSTD_isError(real_zstd_decompress(
+	size_t len = real_zstd_decompress(
 	    &src[sizeof (bufsiz) + sizeof (zstdlevel)], \
-	    d_start, bufsiz, d_len)))
+	    d_start, bufsiz, d_len);
+	if (ZSTD_isError(len)) {
+#ifdef _KERNEL
+		printk(KERN_INFO "zstd: decompression failed %ld\n", len);
+#endif
 		return (1);
+	}
 
 	return (0);
 }
@@ -393,6 +430,9 @@ real_zstd_decompress(const char *source, char *dest, int isize, int maxosize)
 	ZSTD_freeDCtx(dctx);
 	return (result);
 }
+static int zstd_meminit(void);
+
+
 
 extern void *
 zstd_alloc(void *opaque __unused, size_t size)
@@ -400,44 +440,81 @@ zstd_alloc(void *opaque __unused, size_t size)
 	size_t nbytes = sizeof (struct zstd_kmem) + size;
 	struct zstd_kmem *z = NULL;
 	enum zstd_kmem_type type;
+	enum zstd_kmem_type newtype;
 	int i;
-
+	int vm = 0;
 	type = ZSTD_KMEM_UNKNOWN;
 	for (i = 0; i < ZSTD_KMEM_COUNT; i++) {
 		if (nbytes <= zstd_cache_size[i].kmem_size) {
 			type = zstd_cache_size[i].kmem_type;
-#ifdef _KERNEL
-			if (nbytes > spl_kmem_alloc_max ||
-			    nbytes > spl_kmem_alloc_warn)
-				break;
-#endif
-			z = kmem_cache_alloc(zstd_kmem_cache[type], \
-			    KM_NOSLEEP);
-			if (z)
-				memset(z, 0, nbytes);
+			if (zstd_kmem_cache[type]) {
+				z = kmem_cache_alloc( \
+				    zstd_kmem_cache[type], \
+				    KM_SLEEP);
+				if (z) {
+					memset(z, 0, nbytes);
+					z->isvm = B_FALSE;
+				}
+			}
 			break;
 		}
 	}
+	newtype = type;
 	/* No matching cache */
 	if (type == ZSTD_KMEM_UNKNOWN || z == NULL) {
-		type = ZSTD_KMEM_UNKNOWN;
+		newtype = ZSTD_KMEM_UNKNOWN;
 		/*
 		 * consider max allocation size
 		 * so we need to use standard vmem allocator
 		 */
 #ifdef _KERNEL
-		if (nbytes > spl_kmem_alloc_max || nbytes > spl_kmem_alloc_warn)
-			z = vmem_zalloc(nbytes, KM_NOSLEEP);
+		if (nbytes > spl_kmem_alloc_max || \
+		    nbytes > spl_kmem_alloc_warn) {
+			vm = 1;
+			z = vmem_zalloc(nbytes, KM_SLEEP);
+			if (!z) {
+				vm = 2;
+				z = vmalloc(nbytes);
+			}
+		}
 		else
 #endif
-			z = kmem_zalloc(nbytes, KM_NOSLEEP);
+			z = kmem_zalloc(nbytes, KM_SLEEP);
 	}
+	/* fallback if everything fails */
+	if (!z && zstd_vmem_cache[type].vm && type == ZSTD_KMEM_DCTX) {
+#ifdef _KERNEL
+		printk(KERN_INFO "hit barrier for %ld bytes\n", nbytes);
+#endif
+		mutex_enter(&zstd_vmem_cache[type].barrier);
+		mutex_exit(&zstd_vmem_cache[type].barrier);
+
+
+		mutex_enter(&zstd_vmem_cache[type].barrier);
+		zstd_vmem_cache[type].inuse = B_TRUE;
+		z = zstd_vmem_cache[type].vm;
+		if (z) {
+			memset(z, 0, nbytes);
+			z->isvm = B_TRUE;
+		}
+	}
+			
+
+	/* allocation should always be successful */
+	ASSERT0(z);
+#ifdef _KERNEL
+	if (vm == 2)
+		printk(KERN_INFO "zstd: standard vmem_zalloc %ld failed. but vmalloc worked\n", size);
+#endif
 	if (z == NULL) {
+#ifdef _KERNEL
+		printk(KERN_INFO "zstd: memory allocation of %ld bytes failed %s\n", size, vm ? "(vmalloc)" : "(kmalloc)");
+#endif
 		return (NULL);
 	}
 
 	z->kmem_magic = ZSTD_KMEM_MAGIC;
-	z->kmem_type = type;
+	z->kmem_type = newtype;
 	z->kmem_size = nbytes;
 
 	return ((void*)z + (sizeof (struct zstd_kmem)));
@@ -447,27 +524,50 @@ extern void
 zstd_free(void *opaque __unused, void *ptr)
 {
 	struct zstd_kmem *z = ptr - sizeof (struct zstd_kmem);
+	enum zstd_kmem_type type;
 
 	ASSERT3U(z->kmem_magic, ==, ZSTD_KMEM_MAGIC);
 	ASSERT3U(z->kmem_type, <, ZSTD_KMEM_COUNT);
 	ASSERT3U(z->kmem_type, >=, ZSTD_KMEM_UNKNOWN);
-
-	if (z->kmem_type == ZSTD_KMEM_UNKNOWN) {
+	type = z->kmem_type;
+	if (type == ZSTD_KMEM_UNKNOWN) {
 		kmem_free(z, z->kmem_size);
 	} else {
-		kmem_cache_free(zstd_kmem_cache[z->kmem_type], z);
+		if (zstd_kmem_cache[type] && z->isvm == B_FALSE) {
+			kmem_cache_free(zstd_kmem_cache[type], z);
+		} else if (zstd_vmem_cache[type].vm \
+		    && zstd_vmem_cache[type].inuse == B_TRUE) {
+			zstd_vmem_cache[type].inuse = B_FALSE;
+			/* release barrier */
+			mutex_exit(&zstd_vmem_cache[type].barrier);
+		}
+
 	}
 }
 #ifndef _KERNEL
 #define	__init
 #define	__exit
-#define	STATIC
+#define STATIC
 #else
-#define	STATIC static
+#define STATIC static
 #endif
 
-STATIC int __init
-zstd_init(void)
+static void create_vmem_cache(struct zstd_vmem *mem, char *name, size_t size)
+{
+#ifdef _KERNEL
+	printk(KERN_INFO "preallocate fallback space %s:%ld\n", name, size);
+	mem->vmem_size = size;
+	mem->vm = \
+	    vmem_zalloc(mem->vmem_size, \
+	    KM_SLEEP);
+	if (!mem->vm)
+	    printk(KERN_INFO "failed!!!\n");
+	mem->inuse = B_FALSE;
+	mutex_init(&mem->barrier, \
+	    NULL, MUTEX_DEFAULT, NULL);
+#endif
+}
+static int zstd_meminit(void)
 {
 	int i;
 
@@ -479,7 +579,10 @@ zstd_init(void)
 	zstd_kmem_cache[1] = kmem_cache_create(
 	    zstd_cache_config[1].cache_name, zstd_cache_size[1].kmem_size,
 	    0, NULL, NULL, NULL, NULL, NULL, 0);
-
+#if 0
+	create_vmem_cache(&zstd_vmem_cache[1], zstd_cache_config[1].cache_name, \
+	    zstd_cache_size[1].kmem_size);
+#endif
 	/*
 	 * Estimate the size of the ZSTD CCtx workspace required for each record
 	 * size at each compression level.
@@ -493,11 +596,20 @@ zstd_init(void)
 		    ZSTD_getCParams(zstd_cache_config[i].compress_level,
 		    zstd_cache_config[i].block_size, 0)) +
 		    sizeof (struct zstd_kmem), PAGESIZE);
+		/*
+		 * Preserve memory for bigger blocks using vmem
+		 */
+#if 0
+		create_vmem_cache(&zstd_vmem_cache[i], \
+		    zstd_cache_config[i].cache_name, \
+		    zstd_cache_size[i].kmem_size);
+#endif
 		zstd_kmem_cache[i] = kmem_cache_create(
 		    zstd_cache_config[i].cache_name,
 		    zstd_cache_size[i].kmem_size,
 		    0, NULL, NULL, NULL, NULL, NULL, 0);
 	}
+
 	/* Estimate the size of the decompression context */
 	zstd_cache_size[i].kmem_magic = ZSTD_KMEM_MAGIC;
 	zstd_cache_size[i].kmem_type = i;
@@ -506,9 +618,21 @@ zstd_init(void)
 	zstd_kmem_cache[i] = kmem_cache_create(zstd_cache_config[i].cache_name,
 	    zstd_cache_size[i].kmem_size, 0, NULL, NULL, NULL, NULL, NULL, 0);
 
+
+	create_vmem_cache(&zstd_vmem_cache[i], zstd_cache_config[i].cache_name, \
+	    zstd_cache_size[i].kmem_size);
+
 	/* Sort the kmem caches for later searching */
 	zstd_qsort(zstd_cache_size, ZSTD_KMEM_COUNT, sizeof (struct zstd_kmem),
 	    zstd_compare);
+
+	return (0);
+}
+
+STATIC int __init
+zstd_init(void)
+{
+	zstd_meminit();
 	return (0);
 }
 
@@ -519,8 +643,16 @@ zstd_fini(void)
 
 	for (i = 0; i < ZSTD_KMEM_COUNT; i++) {
 		type = zstd_cache_size[i].kmem_type;
-		if (zstd_kmem_cache[type] != NULL) {
-			kmem_cache_destroy(zstd_kmem_cache[type]);
+		if (zstd_vmem_cache[type].vm) {
+			kmem_free(zstd_vmem_cache[type].vm, \
+			    zstd_vmem_cache[type].vmem_size);
+			zstd_vmem_cache[type].vm = NULL;
+			zstd_vmem_cache[type].inuse = B_FALSE;
+			mutex_destroy(&zstd_vmem_cache[type].barrier);
+		} else {
+			if (zstd_kmem_cache[type] != NULL) {
+				kmem_cache_destroy(zstd_kmem_cache[type]);
+			}
 		}
 	}
 }
@@ -529,14 +661,11 @@ zstd_fini(void)
 #if defined(_KERNEL)
 module_init(zstd_init);
 module_exit(zstd_fini);
-EXPORT_SYMBOL(zstd_fini);
-EXPORT_SYMBOL(zstd_init);
 EXPORT_SYMBOL(zstd_compress);
 EXPORT_SYMBOL(zstd_decompress);
 EXPORT_SYMBOL(zstd_getlevel);
 
 MODULE_DESCRIPTION("ZSTD Compression for ZFS");
-MODULE_AUTHOR(ZFS_META_AUTHOR);
-MODULE_LICENSE(ZFS_META_LICENSE);
-MODULE_VERSION(ZFS_META_VERSION "-" ZFS_META_RELEASE);
+MODULE_LICENSE("Dual BSD/GPL");
+MODULE_VERSION("1.3.8");
 #endif

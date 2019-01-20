@@ -152,7 +152,7 @@ spl_kmem_alloc_impl(size_t size, int flags, int node)
 	 * Allocations larger than spl_kmem_alloc_warn should be performed
 	 * through the vmem_alloc()/vmem_zalloc() interfaces.
 	 */
-	if ((spl_kmem_alloc_warn > 0) && (size > spl_kmem_alloc_warn) &&
+	if ((spl_kmem_alloc_warn > 0) && (size > spl_kmem_alloc_warn) && 
 	    !(flags & KM_VMEM)) {
 		printk(KERN_WARNING
 		    "Large kmem_alloc(%lu, 0x%x), please file an issue at:\n"
@@ -180,7 +180,7 @@ spl_kmem_alloc_impl(size_t size, int flags, int node)
 		 */
 		if ((size > spl_kmem_alloc_max) || use_vmem) {
 			if (flags & KM_VMEM) {
-				ptr = __vmalloc(size, lflags, PAGE_KERNEL);
+				ptr = __vmalloc(size, lflags | __GFP_HIGHMEM, PAGE_KERNEL);
 			} else {
 				return (NULL);
 			}
