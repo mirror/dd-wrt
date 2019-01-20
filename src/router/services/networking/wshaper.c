@@ -299,12 +299,17 @@ static void down_upIF(void)
 {
 	char word[256];
 	char *next;
+	int any = 0;
 	if (!s_downlist)
 		return;
 	foreach(word, s_downlist, next) {
 		if (!is_mac80211(word))
 			eval("ifconfig", word, "up");
+		else
+			any = 1;
 	}
+	if (any)
+		start_set_routes();
 }
 
 static void aqos_tables(void)
