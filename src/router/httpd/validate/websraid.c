@@ -137,6 +137,18 @@ void format_drive(webs_t wp)
 	close(fd);
 }
 
+#ifdef HAVE_ZFS
+void zfs_scrub(webs_t wp)
+{
+	char *val = websGetVar(wp, "zfs_scrub_value", NULL);
+	if (!val)
+		return;
+	int idx = atoi(val);
+	char *poolname = nvram_nget("raidname%d", idx);
+	eval("zpool", "scrub", poolname);
+}
+#endif
+
 void del_raid(webs_t wp)
 {
 	char *val = websGetVar(wp, "raid_del_value", NULL);
@@ -148,14 +160,16 @@ void del_raid(webs_t wp)
 	char *poolname = nvram_nget("raidname%d", idx);
 	char *next;
 	char drive[64];
+	char dev[32];
 	int drives = 0;
 	foreach(drive, raid, next) {
 		drives++;
-		sysprintf("umount %s", drive);
+		eval("umount", drive);
 	}
-	sysprintf("umount /dev/md%d", idx);
-	sysprintf("mdadm --stop /dev/md%d", idx);
-	sysprintf("zpool destroy %s", poolname);
+	sprintf(dev, "/dev/md%d", idx);
+	eval("umount", dev);
+	eval("mdadm", "--stop", dev);
+	eval("zpool", "destroy", poolname);
 
 	int cnt = 0;
 	while (1) {
