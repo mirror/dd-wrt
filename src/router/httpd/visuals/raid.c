@@ -280,11 +280,11 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 			if (!strcmp(raidlz, "gzip") || !strcmp(raidlz, "zstd"))
 				websWrite(wp,
 					  "<tr>\n" "<th>Name</th>\n" "<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n" "<th>Level</th>\n" "<th>Dedup</th>\n"
-					  "<th><script type=\"text/javascript\">Capture(nas.compression)</script></th>\n" "<th>Level</th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
+					  "<th><script type=\"text/javascript\">Capture(nas.compression)</script></th>\n" "<th>Level</th>\n" "<th>&nbsp;</th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
 			else
 				websWrite(wp,
 					  "<tr>\n" "<th>Name</th>\n" "<th><script type=\"text/javascript\">Capture(ddns.typ)</script></th>\n" "<th>Level</th>\n" "<th>Dedup</th>\n"
-					  "<th><script type=\"text/javascript\">Capture(nas.compression)</script></th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
+					  "<th><script type=\"text/javascript\">Capture(nas.compression)</script></th>\n" "<th>&nbsp;</th>\n" "<th>&nbsp;</th>\n" "</tr>\n");
 		}
 
 		websWrite(wp, "<tr>\n");
@@ -395,6 +395,11 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "//]]>\n</script></select>\n");
 				websWrite(wp, "</td>\n");
 			}
+			websWrite(wp, "<td>\n");
+			websWrite(wp,
+				  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.scrub + \"\\\" onclick=\\\"zfs_scrub_submit(this.form,%d)\\\" />\");\n//]]>\n</script>\n",
+				  i);
+			websWrite(wp, "</td>\n");
 		}
 #endif
 		websWrite(wp, "<td>\n");
