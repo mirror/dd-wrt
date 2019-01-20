@@ -499,6 +499,8 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 	writeprocsys("vm/vfs_cache_pressure", "10000");
 	writeprocsys("vm/dirty_expire_centisecs", "100");
 	writeprocsys("vm/dirty_writeback_centisecs", "100");
+	writeprocsys("vm/overcommit_memory", "2");
+	writeprocsys("vm/overcommit_ratio", "80");
 
 //      writeprocsys("vm/pagecache_ratio","90");
 //      writeprocsys("vm/swappiness","90");
