@@ -238,6 +238,7 @@ sbutton.cancel="Cancel Changes";
 sbutton.canceltitle="Cancel changes in this form only";
 sbutton.refres="Refresh";
 sbutton.clos="Close";
+sbutton.scrub="Scrub";
 sbutton.del="Delete";
 sbutton.continu="Continue";
 sbutton.add="Add";
