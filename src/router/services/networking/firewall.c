@@ -543,7 +543,7 @@ static void create_spec_forward(char *proto, char *src, char *wanaddr, char *fro
 		    )
 			save2file_A_prerouting("-i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s", wan_iface, proto, proto, from, ip, to);
 #endif
-		if (!strcmp(nvram_get("lan_ipaddr"), ip)) {
+		if (!strcmp(nvram_safe_get("lan_ipaddr"), ip)) {
 			snprintf(buff, sizeof(buff), "-I INPUT -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto, src, ip, to, log_accept);
 		} else {
 			snprintf(buff, sizeof(buff), "-A FORWARD -p %s -m %s -s %s -d %s --dport %s -j %s\n", proto, proto, src, ip, to, log_accept);
@@ -555,7 +555,7 @@ static void create_spec_forward(char *proto, char *src, char *wanaddr, char *fro
 		    )
 			save2file_A_prerouting("-i %s -p %s -m %s --dport %s -j DNAT --to-destination %s:%s", wan_iface, proto, proto, from, ip, to);
 #endif
-		if (!strcmp(nvram_get("lan_ipaddr"), ip)) {
+		if (!strcmp(nvram_safe_get("lan_ipaddr"), ip)) {
 			snprintf(buff, sizeof(buff), "-I INPUT -p %s -m %s -d %s --dport %s -j %s\n", proto, proto, ip, to, log_accept);
 		} else {
 			snprintf(buff, sizeof(buff), "-A FORWARD -p %s -m %s -d %s --dport %s -j %s\n", proto, proto, ip, to, log_accept);
@@ -1875,7 +1875,7 @@ static void add_bridges(char *wanface, char *chain, int forward)
 		char netmask[32];
 		sprintf(netmask, "%s_netmask", tag);
 		if (ifexists(tag)) {
-			if (nvram_get(ipaddr) && nvram_get(netmask)
+			if (nvram_exists(ipaddr) && nvram_exists(netmask)
 			    && !nvram_match(ipaddr, "0.0.0.0")
 			    && !nvram_match(netmask, "0.0.0.0")) {
 				eval("ifconfig", tag, nvram_safe_get(ipaddr), "netmask", nvram_safe_get(netmask), "up");
@@ -2084,7 +2084,7 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	 */
 	save2file_A_input("-p igmp -j %s", doMultiCast() == 0 ? log_drop : log_accept);
 #ifdef HAVE_UDPXY
-	if (wanactive(wanaddr) && nvram_matchi("udpxy_enable", 1) && nvram_get("tvnicfrom"))
+	if (wanactive(wanaddr) && nvram_matchi("udpxy_enable", 1) && nvram_exists("tvnicfrom"))
 		save2file_A_input("-i %s -p udp -d %s -j %s", nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept);
 #endif
 #ifndef HAVE_MICRO
@@ -2345,17 +2345,17 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 		if (doMultiCast() > 0)
 			save2file_A_forward("-i %s -p udp --destination %s -j %s", nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept);
 #ifdef HAVE_PPTP
-	} else if (nvram_match("wan_proto", "pptp") && nvram_matchi("pptp_iptv", 1) && nvram_get("tvnicfrom")) {
+	} else if (nvram_match("wan_proto", "pptp") && nvram_matchi("pptp_iptv", 1) && nvram_exists("tvnicfrom")) {
 		if (doMultiCast() > 0)
 			save2file_A_forward("-i %s -p udp --destination %s -j %s", nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept);
 #endif
 #ifdef HAVE_L2TP
-	} else if (nvram_match("wan_proto", "l2tp") && nvram_matchi("pptp_iptv", 1) && nvram_get("tvnicfrom")) {
+	} else if (nvram_match("wan_proto", "l2tp") && nvram_matchi("pptp_iptv", 1) && nvram_exists("tvnicfrom")) {
 		if (doMultiCast() > 0)
 			save2file_A_forward("-i %s -p udp --destination %s -j %s", nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept);
 #endif
 #ifdef HAVE_PPPOEDUAL
-	} else if (nvram_match("wan_proto", "pppoe_dual") && nvram_matchi("pptp_iptv", 1) && nvram_get("tvnicfrom")) {
+	} else if (nvram_match("wan_proto", "pppoe_dual") && nvram_matchi("pptp_iptv", 1) && nvram_exists("tvnicfrom")) {
 		if (doMultiCast() > 0)
 			save2file_A_forward("-i %s -p udp --destination %s -j %s", nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept);
 #endif
@@ -2623,7 +2623,7 @@ void set_gprules(char *iface)
 	char gipaddr[32];
 	char gnetmask[32];
 	sprintf(gport, "guestport_%s", iface);
-	if (nvram_get(gport)) {
+	if (nvram_exists(gport)) {
 		sprintf(giface, nvram_safe_get(gport));
 		sprintf(gvar, "%s_ipaddr", giface);
 		sprintf(gipaddr, nvram_safe_get(gvar));

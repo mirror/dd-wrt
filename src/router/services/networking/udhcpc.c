@@ -162,7 +162,7 @@ static int mbim(void)
 {
 	stop_firewall();
 	cprintf("start wan done\n");
-	start_wan_done(nvram_get("wan_ifname"));
+	start_wan_done(nvram_safe_get("wan_ifname"));
 	nvram_set("dhcpc_done", "1");
 	cprintf("done\n");
 	return 0;
@@ -343,7 +343,10 @@ static int bound(void)
 		}
 		route_add(wan_ifname, 0, "0.0.0.0", nvram_safe_get("wan_gateway"), "0.0.0.0");
 
-		nvram_set("wan_gateway_buf", nvram_get("wan_gateway"));
+		if (nvram_exists("wan_gateway"))
+			nvram_set("wan_gateway_buf", nvram_safe_get("wan_gateway"));
+		else
+			nvram_unset("wan_gateway_buf");
 
 		getIPFromName(nvram_safe_get("pptp_server_name"), pptpip);
 		if (strcmp(pptpip, "0.0.0.0"))
@@ -379,7 +382,10 @@ static int bound(void)
 		 * Backup the default gateway. It should be used if L2TP connection
 		 * is broken 
 		 */
-		nvram_set("wan_gateway_buf", nvram_get("wan_gateway"));
+		if (nvram_exists("wan_gateway"))
+			nvram_set("wan_gateway_buf", nvram_safe_get("wan_gateway"));
+		else
+			nvram_unset("wan_gateway_buf");
 
 		getIPFromName(nvram_safe_get("l2tp_server_name"), l2tpip);
 		if (strcmp(l2tpip, "0.0.0.0"))

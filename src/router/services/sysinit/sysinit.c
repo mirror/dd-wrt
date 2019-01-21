@@ -169,10 +169,10 @@ static void buffalo_defaults(int force)
 {
 
 	char *pincode = getUEnv("pincode");
-	if (pincode && nvram_get("pincode") == NULL) {
+	if (pincode && !nvram_exists("pincode")) {
 		nvram_set("pincode", pincode);
 	}
-	if (nvram_get("wl0_akm") == NULL || force) {
+	if (!nvram_exists("wl0_akm") || force) {
 		char *region = getUEnv("region");
 		if (!region || (strcmp(region, "AP") && strcmp(region, "TW")
 				&& strcmp(region, "RU")
@@ -499,7 +499,7 @@ static void buffalo_defaults(int force)
 #define getUEnv(name) nvram_get(name)
 static void buffalo_defaults(int force)
 {
-	if (nvram_get("ath0_akm") == NULL || force) {
+	if (!nvram_exists("ath0_akm") || force) {
 		nvram_set("ath0_akm", "disabled");
 		nvram_set("ath1_akm", "disabled");
 
@@ -583,10 +583,10 @@ static void buffalo_defaults(int force)
 {
 
 	char *pincode = getUEnv("pincode");
-	if (pincode && nvram_get("pincode") == NULL) {
+	if (pincode && !nvram_exists("pincode")) {
 		nvram_set("pincode", pincode);
 	}
-	if (nvram_get("ath0_akm") == NULL || force) {
+	if (!nvram_exists("ath0_akm") || force) {
 		nvram_set("ath0_akm", "disabled");
 		char *region = getUEnv("region");
 		if (!region || (strcmp(region, "AP") && strcmp(region, "TW")
@@ -2146,7 +2146,7 @@ void start_restore_defaults(void)
 		nvram_unset("product_name");
 		restore_defaults = 1;
 	}
-	if (nvram_get("router_name") == NULL) {
+	if (!nvram_exists("router_name")) {
 		restore_defaults = 1;
 	}
 #elif HAVE_GEMTEK
@@ -2166,7 +2166,7 @@ void start_restore_defaults(void)
 		nvram_unset("product_name");
 		restore_defaults = 1;
 	}
-	if (nvram_get("router_name") == NULL) {
+	if (!nvram_exists("router_name")) {
 		restore_defaults = 1;
 	}
 
@@ -2370,7 +2370,7 @@ void start_restore_defaults(void)
 	// if (!nvram_match("default_init","1"))
 	{
 		for (t = srouter_defaults; t->name; t++) {
-			if (restore_defaults || !nvram_get(t->name)) {
+			if (restore_defaults || !nvram_exists(t->name)) {
 				for (u = linux_overrides; u && u->name; u++) {
 					if (!strcmp(t->name, u->name)) {
 						nvcnt++;
@@ -2482,9 +2482,9 @@ void start_restore_defaults(void)
 			nvram_set("landevs", "vlan1 wl0 wl1");
 			nvram_set("lan_ifnames", "vlan1 eth0 eth1");
 		} else {
-			if (!nvram_get("vlan0ports")
+			if (!nvram_exists("vlan0ports")
 			    || nvram_match("vlan0ports", "")
-			    || !nvram_get("vlan2ports")
+			    || !nvram_exists("vlan2ports")
 			    || nvram_match("vlan2ports", "")) {
 				nvram_set("vlan0ports", "1 2 3 4 8*");
 				nvram_set("vlan2ports", "0 8*");
@@ -2492,16 +2492,16 @@ void start_restore_defaults(void)
 		}
 		break;
 	case ROUTER_WRT610NV2:
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
-		    || !nvram_get("vlan2ports")
+		if (!nvram_exists("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_exists("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "4 3 2 1 8*");
 			nvram_set("vlan2ports", "0 8");
 		}
 		break;
 	case ROUTER_LINKSYS_EA6500:
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
-		    || !nvram_get("vlan2ports")
+		if (!nvram_exists("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_exists("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "0 1 2 3 8*");
 			nvram_set("vlan2ports", "4 8");
@@ -2517,24 +2517,24 @@ void start_restore_defaults(void)
 	case ROUTER_DLINK_DIR865:
 	case ROUTER_D1800H:
 	case ROUTER_ASUS_AC66U:
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
-		    || !nvram_get("vlan2ports")
+		if (!nvram_exists("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_exists("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "1 2 3 4 8*");
 			nvram_set("vlan2ports", "0 8");
 		}
 		break;
 	case ROUTER_WRT300NV11:
-		if (!nvram_get("vlan0ports") || nvram_match("vlan0ports", "")
-		    || !nvram_get("vlan1ports")
+		if (!nvram_exists("vlan0ports") || nvram_match("vlan0ports", "")
+		    || !nvram_exists("vlan1ports")
 		    || nvram_match("vlan1ports", "")) {
 			nvram_set("vlan0ports", "1 2 3 4 5*");
 			nvram_set("vlan1ports", "0 5");
 		}
 		break;
 	case ROUTER_ASUS_RTN66:
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
-		    || !nvram_get("vlan2ports")
+		if (!nvram_exists("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_exists("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "1 2 3 4 8*");
 			nvram_set("vlan2ports", "0 8u");
@@ -2542,8 +2542,8 @@ void start_restore_defaults(void)
 		break;
 
 	case ROUTER_ASUS_AC1200:
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
-		    || !nvram_get("vlan2ports")
+		if (!nvram_exists("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_exists("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "1 2 3 4 8*");
 			nvram_set("vlan2ports", "0 8*");
@@ -2562,8 +2562,8 @@ void start_restore_defaults(void)
 	case ROUTER_TRENDNET_TEW812:
 	case ROUTER_TRENDNET_TEW811:
 	case ROUTER_LINKSYS_EA6400:
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
-		    || !nvram_get("vlan2ports")
+		if (!nvram_exists("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_exists("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "0 1 2 3 5*");
 			nvram_set("vlan2ports", "4 5u");
@@ -2571,8 +2571,8 @@ void start_restore_defaults(void)
 		break;
 	case ROUTER_DLINK_DIR885:
 	case ROUTER_TRENDNET_TEW828:
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
-		    || !nvram_get("vlan2ports")
+		if (!nvram_exists("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_exists("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "0 1 2 3 5 6 7 8*");
 			nvram_set("vlan2ports", "4 8u");
@@ -2586,16 +2586,16 @@ void start_restore_defaults(void)
 	case ROUTER_TPLINK_ARCHERC9:
 	case ROUTER_TPLINK_ARCHERC3150:
 	case ROUTER_TPLINK_ARCHERC3200:
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
-		    || !nvram_get("vlan2ports")
+		if (!nvram_exists("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_exists("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "1 2 3 4 5*");
 			nvram_set("vlan2ports", "0 5u");
 		}
 		break;
 	case ROUTER_ASUS_AC87U:
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
-		    || !nvram_get("vlan2ports")
+		if (!nvram_exists("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_exists("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "1 2 3 5 7*");
 			nvram_set("vlan2ports", "0 7u");
@@ -2603,16 +2603,16 @@ void start_restore_defaults(void)
 		break;
 
 	case ROUTER_ASUS_AC3100:
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
-		    || !nvram_get("vlan2ports")
+		if (!nvram_exists("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_exists("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "0 1 2 3 5 7 8*");
 			nvram_set("vlan2ports", "4 8u");
 		}
 		break;
 	case ROUTER_ASUS_AC88U:
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
-		    || !nvram_get("vlan2ports")
+		if (!nvram_exists("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_exists("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "0 1 2 3 5 7*");
 			nvram_set("vlan2ports", "4 7u");
@@ -2620,8 +2620,8 @@ void start_restore_defaults(void)
 		break;
 
 	case ROUTER_ASUS_AC5300:
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
-		    || !nvram_get("vlan2ports")
+		if (!nvram_exists("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_exists("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "1 2 3 4 5 7*");
 			nvram_set("vlan2ports", "0 7u");
@@ -2630,8 +2630,8 @@ void start_restore_defaults(void)
 
 	case ROUTER_LINKSYS_EA6350:
 	case ROUTER_ASUS_AC3200:
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
-		    || !nvram_get("vlan2ports")
+		if (!nvram_exists("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_exists("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "0 1 2 3 5*");
 			nvram_set("vlan2ports", "4 5u");
@@ -2639,17 +2639,17 @@ void start_restore_defaults(void)
 		break;
 
 	case ROUTER_ASUS_RTN53:
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
-		    || !nvram_get("vlan2ports")
+		if (!nvram_exists("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_exists("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "0 5");
 			nvram_set("vlan2ports", "1 2 3 4 5*");
 		}
 		break;
 	case ROUTER_BUFFALO_WZRG144NH:
-		if (!nvram_get("vlan1ports")
+		if (!nvram_exists("vlan1ports")
 		    || nvram_match("vlan1ports", "")
-		    || !nvram_get("vlan2ports")
+		    || !nvram_exists("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "4 8");
 			nvram_set("vlan2ports", "0 1 2 3 8*");
@@ -2659,8 +2659,8 @@ void start_restore_defaults(void)
 	case ROUTER_NETGEAR_AC1450:
 	case ROUTER_NETGEAR_R6250:
 	case ROUTER_NETGEAR_R6300V2:
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
-		    || !nvram_get("vlan2ports")
+		if (!nvram_exists("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_exists("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "3 2 1 0 5*");
 			nvram_set("vlan2ports", "4 5u");
@@ -2671,41 +2671,41 @@ void start_restore_defaults(void)
 	case ROUTER_NETGEAR_R6700V3:
 	case ROUTER_NETGEAR_R7000:
 	case ROUTER_NETGEAR_R7000P:
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
-		    || !nvram_get("vlan2ports")
+		if (!nvram_exists("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_exists("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "4 3 2 1 5*");
 			nvram_set("vlan2ports", "0 5u");
 		}
 		break;
 	case ROUTER_NETGEAR_R8000:
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
-		    || !nvram_get("vlan2ports")
+		if (!nvram_exists("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_exists("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "3 2 1 0 5 7 8*");
 			nvram_set("vlan2ports", "4 8u");
 		}
 		break;
 	case ROUTER_NETGEAR_R8500:
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")
-		    || !nvram_get("vlan2ports")
+		if (!nvram_exists("vlan1ports") || nvram_match("vlan1ports", "")
+		    || !nvram_exists("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "3 2 1 4 5 7 8*");
 			nvram_set("vlan2ports", "0 8u");
 		}
 		break;
 	case ROUTER_LINKSYS_EA9500:
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "") || nvram_match("vlan1ports", "0 1 2 3 5*")
-		    || !nvram_get("vlan2ports")
+		if (!nvram_exists("vlan1ports") || nvram_match("vlan1ports", "") || nvram_match("vlan1ports", "0 1 2 3 5*")
+		    || !nvram_exists("vlan2ports")
 		    || nvram_match("vlan2ports", "")) {
 			nvram_set("vlan1ports", "2 1 3 0 5 7 8*");
 			nvram_set("vlan2ports", "4 8u");
 		}
 		break;
 	default:
-		if (!nvram_get("vlan0hwname") || nvram_match("vlan0hwname", ""))
+		if (!nvram_exists("vlan0hwname") || nvram_match("vlan0hwname", ""))
 			nvram_set("vlan0hwname", "et0");
-		if (!nvram_get("vlan1hwname") || nvram_match("vlan1hwname", ""))
+		if (!nvram_exists("vlan1hwname") || nvram_match("vlan1hwname", ""))
 			nvram_set("vlan1hwname", "et0");
 
 		switch (brand) {
@@ -2720,7 +2720,7 @@ void start_restore_defaults(void)
 			break;
 		}
 
-		if (!nvram_get("vlan0ports") || nvram_match("vlan0ports", "")) {
+		if (!nvram_exists("vlan0ports") || nvram_match("vlan0ports", "")) {
 			switch (brand) {
 			case ROUTER_NETGEAR_WNR3500L:
 			case ROUTER_NETGEAR_WNR3500LV2:
@@ -2780,7 +2780,7 @@ void start_restore_defaults(void)
 			}
 		}
 
-		if (!nvram_get("vlan1ports") || nvram_match("vlan1ports", "")) {
+		if (!nvram_exists("vlan1ports") || nvram_match("vlan1ports", "")) {
 			switch (brand) {
 //                      case ROUTER_WRT_1900AC:
 //                              nvram_set("vlan2ports", "4 5");
@@ -2846,8 +2846,8 @@ void start_restore_defaults(void)
 
 	}
 
-	if (restore_defaults && nvram_get("vlan0ports") == NULL && nvram_get("vlan1ports")
-	    && nvram_get("vlan2ports")) {
+	if (restore_defaults && !nvram_exists("vlan0ports") && nvram_exists("vlan1ports")
+	    && nvram_exists("vlan2ports")) {
 		nvram_seti("port0vlans", 2);
 		nvram_seti("port1vlans", 1);
 		nvram_seti("port2vlans", 1);
@@ -2857,23 +2857,23 @@ void start_restore_defaults(void)
 	}
 
 	if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG) {
-		if (!nvram_get("aa0"))
+		if (!nvram_exists("aa0"))
 			nvram_seti("aa0", 3);
-		if (!nvram_get("ag0"))
+		if (!nvram_exists("ag0"))
 			nvram_seti("ag0", 255);
-		if (!nvram_get("gpio2"))
+		if (!nvram_exists("gpio2"))
 			nvram_set("gpio2", "adm_eecs");
-		if (!nvram_get("gpio3"))
+		if (!nvram_exists("gpio3"))
 			nvram_set("gpio3", "adm_eesk");
-		if (!nvram_get("gpio5"))
+		if (!nvram_exists("gpio5"))
 			nvram_set("gpio5", "adm_eedi");
-		if (!nvram_get("gpio6"))
+		if (!nvram_exists("gpio6"))
 			nvram_set("gpio6", "adm_rc");
-		if (!nvram_get("boardrev") || nvram_match("boardrev", ""))
+		if (!nvram_exists("boardrev") || nvram_match("boardrev", ""))
 			nvram_set("boardrev", "0x10");
-		if (!nvram_get("boardflags") || nvram_match("boardflags", ""))
+		if (!nvram_exists("boardflags") || nvram_match("boardflags", ""))
 			nvram_set("boardflags", "0x0388");
-		if (!nvram_get("boardflags2"))
+		if (!nvram_exists("boardflags2"))
 			nvram_seti("boardflags2", 0);
 	}
 
@@ -2914,7 +2914,7 @@ void start_restore_defaults(void)
 	nvram_unset("probe_working");
 	nvram_unset("probe_blacklist");
 
-	if (nvram_get("overclocking") == NULL) {
+	if (!nvram_exists("overclocking")) {
 		char *clk = nvram_safe_get("clkfreq");
 		char dup[64];
 
@@ -2929,7 +2929,7 @@ void start_restore_defaults(void)
 	cprintf("start overclocking\n");
 	start_overclocking();
 	cprintf("done()");
-	if (nvram_get("http_username") != NULL) {
+	if (nvram_exists("http_username")) {
 		if (nvram_match("http_username", "")) {
 #ifdef HAVE_POWERNOC
 			nvram_set("http_username", "bJz7PcC1rCRJQ");	// admin
@@ -2976,7 +2976,7 @@ void start_restore_defaults(void)
 			if (firststyle[0] == '\0')
 				strcpy(firststyle, style);
 
-		if (!strcmp(nvram_get("router_style"), style)) {
+		if (!strcmp(nvram_safe_get("router_style"), style)) {
 			found = 1;
 		}
 	}
@@ -3008,19 +3008,19 @@ void start_restore_defaults(void)
 	if (dis && !strcmp(dis, "1")) {
 		nvram_default_get("ath0_rxantenna", "7");
 		nvram_default_get("ath0_txantenna", "7");
-		char *ssid = nvram_get("ath0_ssid");
-		if (!ssid || !strcmp(ssid, "dd-wrt"))
+		char *ssid = nvram_safe_get("ath0_ssid");
+		if (!strcmp(ssid, "dd-wrt"))
 			nvram_set("ath0_ssid", "Antaira_AC");
 	} else {
 		nvram_default_get("ath0_rxantenna", "3");
 		nvram_default_get("ath0_txantenna", "3");
 		nvram_default_get("ath1_rxantenna", "7");
 		nvram_default_get("ath1_txantenna", "7");
-		char *ssid = nvram_get("ath0_ssid");
-		if (!ssid || !strcmp(ssid, "dd-wrt"))
+		char *ssid = nvram_safe_get("ath0_ssid");
+		if (!strcmp(ssid, "dd-wrt"))
 			nvram_set("ath0_ssid", "Antaira_N");
-		ssid = nvram_get("ath1_ssid");
-		if (!ssid || !strcmp(ssid, "dd-wrt"))
+		ssid = nvram_safe_get("ath1_ssid");
+		if (!strcmp(ssid, "dd-wrt"))
 			nvram_set("ath1_ssid", "Antaira_AC");
 
 	}
@@ -3280,7 +3280,7 @@ int do_timer(void)
 }
 
 #define CONVERT_NV(old, new) \
-	if(nvram_get(old)) \
+	if(nvram_exists(old)) \
 		nvram_set(new, nvram_safe_get(old));
 
 void start_nvram(void)
@@ -3342,7 +3342,7 @@ void start_nvram(void)
 	nvram_unset("action_service");
 	nvram_set("wan_get_domain", "");
 
-	// if(!nvram_get("wl_macmode1")){
+	// if(!nvram_exists("wl_macmode1")){
 	// if(nvram_match("wl_macmode","disabled"))
 	// nvram_set("wl_macmode1","disabled");
 	// else
@@ -3376,7 +3376,7 @@ void start_nvram(void)
 
 		for (i = 0; i < MAX_NVPARSE; ++i) {
 			sprintf(s, "forward_port%d", i);
-			if ((nv = nvram_get(s)) != NULL) {
+			if (strlen((nv = nvram_safe_get(s)))) {
 				if (strstr(nv, "msmsgs"))
 					nvram_unset(s);
 			}

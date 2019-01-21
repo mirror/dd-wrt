@@ -161,7 +161,7 @@ int br_add_bridge(const char *brname)
 		ret = ioctl(br_socket_fd, SIOCSIFBR, arg);
 	}
 
-	if (nvram_get(ipaddr) && nvram_get(netmask)
+	if (nvram_exists(ipaddr) && nvram_exists(netmask)
 	    && !nvram_match(ipaddr, "0.0.0.0")
 	    && !nvram_match(netmask, "0.0.0.0")) {
 		eval("ifconfig", brname, nvram_safe_get(ipaddr), "netmask", nvram_safe_get(netmask), "mtu", getBridgeMTU(brname, tmp), "promisc", "up");
@@ -207,7 +207,7 @@ int br_add_interface(const char *bridge, const char *dev)
 	if (strncmp(dev, "ath", 3) != 0) {	// this is not an ethernet driver
 		eval("ifconfig", dev, "down");	//fixup for some ethernet drivers
 	}
-	if (nvram_get(ipaddr) && nvram_get(netmask)
+	if (nvram_exists(ipaddr) && nvram_exists(netmask)
 	    && !nvram_match(ipaddr, "0.0.0.0")
 	    && !nvram_match(netmask, "0.0.0.0")) {
 		eval("ifconfig", dev, nvram_safe_get(ipaddr), "netmask", nvram_safe_get(netmask), "mtu", getBridgeMTU(bridge, tmp));

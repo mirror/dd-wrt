@@ -334,15 +334,15 @@ void gen_cert(char *name, int type, char *common, char *pass)
 	}
 
 	if (!nvram_match("radius_country", ""))
-		fprintf(fp, "countryName		= %s\n", nvram_get("radius_country"));
+		fprintf(fp, "countryName		= %s\n", nvram_safe_get("radius_country"));
 	if (!nvram_match("radius_state", ""))
-		fprintf(fp, "stateOrProvinceName	= %s\n", nvram_get("radius_state"));
+		fprintf(fp, "stateOrProvinceName	= %s\n", nvram_safe_get("radius_state"));
 	if (!nvram_match("radius_locality", ""))
-		fprintf(fp, "localityName		= %s\n", nvram_get("radius_locality"));
+		fprintf(fp, "localityName		= %s\n", nvram_safe_get("radius_locality"));
 	if (!nvram_match("radius_organisation", ""))
-		fprintf(fp, "organizationName	= %s\n", nvram_get("radius_organisation"));
+		fprintf(fp, "organizationName	= %s\n", nvram_safe_get("radius_organisation"));
 	if (!nvram_match("radius_email", ""))
-		fprintf(fp, "emailAddress		= %s\n", nvram_get("radius_email"));
+		fprintf(fp, "emailAddress		= %s\n", nvram_safe_get("radius_email"));
 
 	fprintf(fp, "commonName		= \"%s\"\n", common);
 

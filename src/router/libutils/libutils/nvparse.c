@@ -92,7 +92,7 @@ bool get_autofw_port(int which, netconf_app_t * app)
 	snprintf(name, sizeof(name), "autofw_port%d", which);
 	if (!nvram_invmatch(name, ""))
 		return FALSE;
-	strncpy(value, nvram_get(name), sizeof(value));
+	strncpy(value, nvram_safe_get(name), sizeof(value));
 
 	/*
 	 * Check for outbound port specification 
@@ -373,7 +373,7 @@ bool get_forward_port(int which, netconf_nat_t * nat)
 	snprintf(name, sizeof(name), "forward_port%d", which);
 	if (!nvram_invmatch(name, ""))
 		return FALSE;
-	strncpy(value, nvram_get(name), sizeof(value));
+	strncpy(value, nvram_safe_get(name), sizeof(value));
 
 	/*
 	 * Check for LAN IP address specification 

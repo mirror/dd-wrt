@@ -449,11 +449,11 @@ int check_wan_link(int num)
 				wan_link = 0;
 #if defined(HAVE_TMK) || defined(HAVE_BKM)
 				char *gpio3g;
-				gpio3g = nvram_get("gpio3g");
-				if (gpio3g != NULL)
+				gpio3g = nvram_safe_get("gpio3g");
+				if (*gpio3g)
 					set_gpio(atoi(gpio3g), 0);
-				gpio3g = nvram_get("gpiowancable");
-				if (gpio3g != NULL)
+				gpio3g = nvram_safe_get("gpiowancable");
+				if (*gpio3g)
 					set_gpio(atoi(gpio3g), 0);
 #endif
 			}
@@ -1643,7 +1643,7 @@ void getSystemMac(char *newmac)
 		strcpy(newmac, nvram_safe_get("et2macaddr"));
 		break;
 	case ROUTER_DLINK_DIR885:
-		if (nvram_get("et0macaddr"))
+		if (nvram_exists("et0macaddr"))
 			strcpy(newmac, nvram_safe_get("et0macaddr"));
 		else
 			strcpy(newmac, nvram_safe_get("et2macaddr"));

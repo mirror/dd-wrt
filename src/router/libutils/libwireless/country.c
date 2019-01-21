@@ -944,7 +944,7 @@ extern int getRouterBrand(void);
 
 #ifdef HAVE_BUFFALO
 #if defined(HAVE_NORTHSTAR) || defined(HAVE_MT7620)
-#define getUEnv(name) nvram_get(name)
+#define getUEnv(name) nvram_safe_get(name)
 #else
 extern void *getUEnv(char *name);
 #endif
@@ -978,7 +978,7 @@ char *getCountryList(void)
 #ifdef HAVE_BUFFALO
 	char country[80];
 	char *region = getUEnv("region");
-	if (!region) {
+	if (!region || !*region) {
 		region = "_D";
 	}
 #endif

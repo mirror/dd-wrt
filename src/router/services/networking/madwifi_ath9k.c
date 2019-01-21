@@ -1834,8 +1834,8 @@ void ath9k_start_supplicant(int count)
 				continue;
 			if (nvram_matchi(wdsvarname, 0))
 				continue;
-			hwaddr = nvram_get(wdsmacname);
-			if (hwaddr != NULL) {
+			hwaddr = nvram_safe_get(wdsmacname);
+			if (strlen(hwaddr)) {
 				eval("iw", wif, "interface", "add", wdsdev, "type", "wds");
 				eval("iw", "dev", wdsdev, "set", "peer", hwaddr);
 				eval("ifconfig", wdsdev, "0.0.0.0", "up");

@@ -365,7 +365,7 @@ static void setasrockcountry(void)
 	fprintf(stderr, "country %s\n", ctry);
 	if (!ctry)
 		return;
-	if (!nvram_get("nocountrysel"))
+	if (!nvram_exists("nocountrysel"))
 		nvram_seti("nocountrysel", 1);
 	nvram_set("ath0_regdomain", ctry);
 	nvram_set("ath1_regdomain", ctry);
