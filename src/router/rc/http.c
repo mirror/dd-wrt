@@ -103,7 +103,7 @@ static int wget(int method, const char *server, char *buf, size_t count, off_t o
 	fprintf(fp, "%s /%s HTTP/1.1\r\n", method == METHOD_POST ? "POST" : "GET", path);
 	fprintf(fp, "Host: %s\r\n", host);
 	fprintf(fp, "User-Agent: wget\r\n");
-	if (strlen(auth))
+	if (*auth)
 		fprintf(fp, "Authorization: Basic %s\r\n", auth);
 	if (offset)
 		fprintf(fp, "Range: bytes=%ld-\r\n", offset);
