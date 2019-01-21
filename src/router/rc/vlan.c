@@ -99,15 +99,15 @@ static int vlan_configure(void)
 
 	if (!bcm_is_robo())
 		return -1;
-	bVlan = (atoi(vlan_enable) > 0) || (strlen(vlan_enable) && !strncmp(vlan_enable, "true", strlen(vlan_enable)));
+	bVlan = (atoi(vlan_enable) > 0) || (*vlan_enable && !strncmp(vlan_enable, "true", strlen(vlan_enable)));
 	printf("\n\nBroadcom Enterprise RG/AP\n");
 	printf("\r\nBroadcom ROBO 802.1Q VLAN %s\n", bVlan > 0 ? "enabled" : "disabled");
 
-	bMIBAC = (atoi(mibac_enable) > 0) || (strlen(mibac_enable) && !strncmp(mibac_enable, "true", strlen(mibac_enable)));
+	bMIBAC = (atoi(mibac_enable) > 0) || (*(mibac_enable) && !strncmp(mibac_enable, "true", strlen(mibac_enable)));
 
-	bBrcmTag = ((atoi(brcmtag_enable) > 0) || (strlen(brcmtag_enable) && !strncmp(brcmtag_enable, "true", strlen(brcmtag_enable))));
+	bBrcmTag = ((atoi(brcmtag_enable) > 0) || (*(brcmtag_enable) && !strncmp(brcmtag_enable, "true", strlen(brcmtag_enable))));
 
-	if (strlen(mibac_interval)) {
+	if (*(mibac_interval)) {
 		mibac_int = ROBO_GET_AC_RATE(atoi(mibac_interval));
 		if (mibac_int > ROBO_AC_RATE_MAX)
 			mibac_int = ROBO_AC_RATE_MAX;
@@ -147,11 +147,11 @@ static int vlan_configure(void)
 	/* 
 	 * (if no nvram variables, use defaults) 
 	 */
-	if (strlen(wan_vlan))
+	if (*(wan_vlan))
 		wan_vid = atoi(wan_vlan);
 	else
 		wan_vid = vlan_boards[board_index].wan_vlan;
-	if (strlen(lan_vlan))
+	if (*(lan_vlan))
 		lan_vid = atoi(lan_vlan);
 	else
 		lan_vid = vlan_boards[board_index].lan_vlan;
@@ -178,25 +178,25 @@ static int vlan_configure(void)
 	/* 
 	 * overwriting of the new value when the router starts 
 	 */
-	if (strlen(restore_wan_ifname)) {
+	if (*(restore_wan_ifname)) {
 		if (nvram_set(strcat_r(prefix, "ifname", tmp), restore_wan_ifname))
 			return -1;
 		if (nvram_unset("restore_wan_ifname"))
 			return -1;
 	}
-	if (strlen(restore_lan_ifname)) {
+	if (*(restore_lan_ifname)) {
 		if (nvram_set("lan_ifname", restore_lan_ifname))
 			return -1;
 		if (nvram_unset("restore_lan_ifname"))
 			return -1;
 	}
-	if (strlen(restore_lan_ifnames)) {
+	if (*(restore_lan_ifnames)) {
 		if (nvram_set("lan_ifnames", restore_lan_ifnames))
 			return -1;
 		if (nvram_unset("restore_lan_ifnames"))
 			return -1;
 	}
-	if (strlen(restore_wan_hwaddr)) {
+	if (*(restore_wan_hwaddr)) {
 		if (nvram_set(strcat_r(prefix, "wan_hwaddr", tmp), restore_wan_hwaddr))
 			return -1;
 		if (nvram_unset("restore_wan_hwaddr"))
@@ -628,7 +628,7 @@ static int vlan_configure(void)
 	 * due the issue of promiscuous. Now it's time to roll it back. 
 	 */
 	restore_wan_hwaddr = nvram_safe_get("restore_wan_hwaddr");
-	if (strlen(restore_wan_hwaddr)) {
+	if (*(restore_wan_hwaddr)) {
 		if (nvram_set(strcat_r(prefix, "hwaddr", tmp), restore_wan_hwaddr))
 			return -1;
 		if (nvram_unset("restore_wan_hwaddr"))
@@ -766,25 +766,25 @@ static int vlan_deconfigure(void)
 	/* 
 	 * now restore environment 
 	 */
-	if (strlen(restore_wan_ifname)) {
+	if (*(restore_wan_ifname)) {
 		if (nvram_set(strcat_r(prefix, "ifname", tmp), restore_wan_ifname))
 			return -1;
 		if (nvram_unset("restore_wan_ifname"))
 			return -1;
 	}
-	if (strlen(restore_lan_ifname)) {
+	if (*(restore_lan_ifname)) {
 		if (nvram_set("lan_ifname", restore_lan_ifname))
 			return -1;
 		if (nvram_unset("restore_lan_ifname"))
 			return -1;
 	}
-	if (strlen(restore_lan_ifnames)) {
+	if (*(restore_lan_ifnames)) {
 		if (nvram_set("lan_ifnames", restore_lan_ifnames))
 			return -1;
 		if (nvram_unset("restore_lan_ifnames"))
 			return -1;
 	}
-	if (strlen(restore_wan_hwaddr)) {
+	if (*(restore_wan_hwaddr)) {
 		if (nvram_set(strcat_r(prefix, "wan_hwaddr", tmp), restore_wan_hwaddr))
 			return -1;
 		if (nvram_unset("restore_wan_hwaddr"))

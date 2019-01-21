@@ -79,7 +79,7 @@ void write_to_nvram(int day, int month, int year, unsigned long long rcvd, unsig
 
 	tdata = nvram_safe_get(tq);
 
-	if (strlen(tdata) == 0) {
+	if (!*tdata) {
 		for (d = 1; d <= days; d++) {
 			strcat(sbuff, "0:0 ");
 		}

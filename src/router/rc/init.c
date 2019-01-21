@@ -241,7 +241,7 @@ static void unmount_fs(void)
 	int i = 0;
 	while (1) {
 		char *raid = nvram_nget("raid%d", i);
-		if (!strlen(raid))
+		if (!*raid)
 			break;
 		char *poolname = nvram_nget("raidname%d", i);
 		sysprintf("mdadm --stop /dev/md%d", i);
