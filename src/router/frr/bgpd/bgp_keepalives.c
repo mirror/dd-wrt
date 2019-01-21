@@ -181,7 +181,9 @@ void *bgp_keepalives_start(void *arg)
 	pthread_condattr_destroy(&attrs);
 
 #ifdef GNU_LINUX
+#ifndef __UCLIBC__
 	pthread_setname_np(fpt->thread, "bgpd_ka");
+#endif
 #elif defined(OPEN_BSD)
 	pthread_set_name_np(fpt->thread, "bgpd_ka");
 #endif
