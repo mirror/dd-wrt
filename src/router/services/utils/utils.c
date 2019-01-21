@@ -132,7 +132,7 @@ void getWANMac(char *newmac)
 	struct ifreq ifr;
 	int s;
 
-	if (nvram_get("wan_ifname")) {
+	if (nvram_exists("wan_ifname")) {
 		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 			char eabuf[32];
 

@@ -329,13 +329,13 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int le
 	char temp[12];
 
 	pid_t pid;
-	char *wan_hostname = nvram_get("wan_hostname");
+	char *wan_hostname = nvram_safe_get("wan_hostname");
 #ifdef HAVE_FREECWMP
 	char *vendorclass = "dslforum.org";
 #else
-	char *vendorclass = nvram_get("dhcpc_vendorclass");
+	char *vendorclass = nvram_save_get("dhcpc_vendorclass");
 #endif
-	char *requestip = nvram_get("dhcpc_requestip");
+	char *requestip = nvram_save_get("dhcpc_requestip");
 	int use_extra = 0;
 
 	symlink("/sbin/rc", "/tmp/udhcpc");
@@ -401,17 +401,17 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int le
 		dhcp_argv[i++] = "-T";
 
 	if (use_extra) {
-		if (vendorclass != NULL && strlen(vendorclass) > 0) {
+		if (strlen(vendorclass) > 0) {
 			dhcp_argv[i++] = "-V";
 			dhcp_argv[i++] = vendorclass;
 		}
 
-		if (requestip != NULL && strlen(requestip) > 0) {
+		if (strlen(requestip) > 0) {
 			dhcp_argv[i++] = "-r";
 			dhcp_argv[i++] = requestip;
 		}
 
-		if (wan_hostname != NULL && strlen(wan_hostname) > 0) {
+		if (strlen(wan_hostname) > 0) {
 			dhcp_argv[i++] = "-H";
 			dhcp_argv[i++] = wan_hostname;
 		}
@@ -577,8 +577,8 @@ void reset_hwaddr(char *ifname)
 			}
 		}
 		if (!strlen(nvram_safe_get("et0macaddr"))) {
-			char *def = nvram_get("et0macaddr_safe");
-			if (!def)
+			char *def = nvram_safe_get("et0macaddr_safe");
+			if (!strlen(def))
 				def = nvram_safe_get("lan_hwaddr");
 #if defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) || defined(HAVE_FONERA) || \
     defined(HAVE_RT2880) || defined(HAVE_LS2) || defined(HAVE_LS5) || defined(HAVE_SOLO51) || defined(HAVE_WHRAG108) || defined(HAVE_PB42) || \
@@ -1891,7 +1891,7 @@ void start_lan(void)
 
 		ether_atoe(mac, ifr.ifr_hwaddr.sa_data);
 
-		if (nvram_match("wl0_hwaddr", "") || !nvram_get("wl0_hwaddr")) {
+		if (nvram_match("wl0_hwaddr", "") || !nvram_exists("wl0_hwaddr")) {
 			nvram_set("wl0_hwaddr", mac);
 			nvram_commit();
 		}
@@ -2339,11 +2339,11 @@ void start_lan(void)
 		sprintf(br1ipaddr, "wl%d_br1_ipaddr", c);
 		sprintf(br1netmask, "wl%d_br1_netmask", c);
 #endif
-		if (nvram_get(br1enable) == NULL)
+		if (!nvram_exists(br1enable))
 			nvram_seti(br1enable, 0);
-		if (nvram_get(br1ipaddr) == NULL)
+		if (!nvram_exists(br1ipaddr))
 			nvram_set(br1ipaddr, "0.0.0.0");
-		if (nvram_get(br1netmask) == NULL)
+		if (!nvram_exists(br1netmask))
 			nvram_set(br1netmask, "255.255.255.0");
 		if (nvram_matchi(br1enable, 1)) {
 			ifconfig("br1", 0, 0, 0);
@@ -2397,7 +2397,7 @@ void start_lan(void)
 			sprintf(wdsvarname, "ath%d_wds%d_enable", c, s);
 			sprintf(wdsdevname, "ath%d_wds%d_if", c, s);
 			sprintf(br1enable, "ath%d_br1_enable", c);
-			if (nvram_get(wdsvarname) == NULL)
+			if (!nvram_exists(wdsvarname))
 				nvram_seti(wdsvarname, 0);
 #else
 			char br1enable[32];
@@ -2405,7 +2405,7 @@ void start_lan(void)
 			sprintf(wdsvarname, "wl%d_wds%d_enable", c, s);
 			sprintf(wdsdevname, "wl%d_wds%d_if", c, s);
 			sprintf(br1enable, "wl%d_br1_enable", c);
-			if (nvram_get(wdsvarname) == NULL)
+			if (!nvram_exists(wdsvarname))
 				nvram_seti(wdsvarname, 0);
 #endif
 			dev = nvram_safe_get(wdsdevname);
@@ -2730,7 +2730,7 @@ static void vdsl_fuckup(char *ifname)
 	char mac[32];
 	char eabuf[32];
 	eval("ifconfig", ifname, "down");
-	if (nvram_get("wan_hwaddr"))
+	if (nvram_exists("wan_hwaddr"))
 		strcpy(mac, nvram_safe_get("wan_hwaddr"));
 	else
 		strcpy(mac, get_hwaddr(ifname, eabuf));
@@ -4335,9 +4335,9 @@ static const char *ipv6_router_address(struct in6_addr *in6addr, char *addr6)
 
 	addr6[0] = '\0';
 
-	if ((p = nvram_get("ipv6_addr")) && *p && strlen(p) > 0) {
+	if ((p = nvram_safe_get("ipv6_addr")) && *p && strlen(p) > 0) {
 		inet_pton(AF_INET6, p, &addr);
-	} else if ((p = nvram_get("ipv6_prefix")) && *p && strlen(p) > 0) {
+	} else if ((p = nvram_safe_get("ipv6_prefix")) && *p && strlen(p) > 0) {
 		inet_pton(AF_INET6, p, &addr);
 		addr.s6_addr16[7] = htons(0x0001);
 	} else {
@@ -4660,20 +4660,20 @@ void start_wan_done(char *wan_ifname)
 #if defined(HAVE_TMK) || defined(HAVE_BKM)
 	char *gpio3g;
 	if (nvram_match("wan_proto", "3g")) {
-		gpio3g = nvram_get("gpio3g");
-		if (gpio3g != NULL)
+		gpio3g = nvram_safe_get("gpio3g");
+		if (strlen(gpio3g))
 			set_gpio(atoi(gpio3g), 1);
 	} else {
 		if (!nvram_match("wan_proto", "disabled")) {
-			gpio3g = nvram_get("gpiowancable");
-			if (gpio3g != NULL)
+			gpio3g = nvram_safe_get("gpiowancable");
+			if (strlen(gpio3g))
 				set_gpio(atoi(gpio3g), 1);
 		} else {
-			gpio3g = nvram_get("gpio3g");
-			if (gpio3g != NULL)
+			gpio3g = nvram_safe_get("gpio3g");
+			if (strlen(gpio3g))
 				set_gpio(atoi(gpio3g), 0);
-			gpio3g = nvram_get("gpiowancable");
-			if (gpio3g != NULL)
+			gpio3g = nvram_safe_get("gpiowancable");
+			if (strlen(gpio3g))
 				set_gpio(atoi(gpio3g), 0);
 		}
 	}

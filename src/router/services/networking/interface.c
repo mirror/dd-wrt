@@ -80,7 +80,7 @@ void start_config_vlan(void)
 		char vlanb[16];
 
 		sprintf(vlanb, "vlan%dports", i);
-		if (nvram_get(vlanb) == NULL || nvram_match(vlanb, ""))
+		if (!nvram_exists(vlanb) || nvram_match(vlanb, ""))
 			continue;
 		writevaproc(nvram_safe_get(vlanb), "/proc/switch/%s/vlan/%d/ports", phy, i);
 	}
@@ -155,7 +155,7 @@ void start_setup_vlans(void)
 	 * no VLAN #16 
 	 */
 
-	if (!nvram_get("port5vlans") || nvram_matchi("vlans", 0))
+	if (!nvram_exists("port5vlans") || nvram_matchi("vlans", 0))
 		return;		// for some reason VLANs are not set up, and
 	// we don't want to disable everything!
 

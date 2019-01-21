@@ -525,7 +525,7 @@ int dns_to_resolv(void)
 		fprintf(fp_w, "search %s\n", nvram_safe_get("lan_domain"));
 	}
 	if (nvram_matchi("dnsmasq_enable", 1)) {
-		fprintf(fp_w, "nameserver %s\n", nvram_get("lan_ipaddr"));
+		fprintf(fp_w, "nameserver %s\n", nvram_safe_get("lan_ipaddr"));
 		fclose(fp_w);
 		if (!(fp_w = fopen(RESOLV_FORW, "w"))) {
 			perror(RESOLV_FORW);

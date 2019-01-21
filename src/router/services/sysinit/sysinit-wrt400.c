@@ -274,13 +274,13 @@ void start_sysinit(void)
 
 	getRouterBrand();	// restore some default settings
 
-	if (!nvram_get("ath0_rxantenna"))
+	if (!nvram_exists("ath0_rxantenna"))
 		nvram_seti("ath0_rxantenna", 3);
-	if (!nvram_get("ath0_txantenna"))
+	if (!nvram_exists("ath0_txantenna"))
 		nvram_seti("ath0_txantenna", 3);
-	if (!nvram_get("ath1_rxantenna"))
+	if (!nvram_exists("ath1_rxantenna"))
 		nvram_seti("ath1_rxantenna", 3);
-	if (!nvram_get("ath1_txantenna"))
+	if (!nvram_exists("ath1_txantenna"))
 		nvram_seti("ath1_txantenna", 3);
 
 	/*

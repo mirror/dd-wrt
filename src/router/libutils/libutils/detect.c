@@ -177,9 +177,9 @@ void setRouter(char *name)
 
 char *getRouter()
 {
-	char *n = nvram_get(NVROUTER);
+	char *n = nvram_safe_get(NVROUTER);
 
-	return n != NULL ? n : "Unknown Model";
+	return *n ? n : "Unknown Model";
 }
 
 int internal_getRouterBrand()
@@ -462,7 +462,7 @@ int internal_getRouterBrand()
 	}
 	if (boardnum == 24 && nvram_match("boardtype", "0x0646")
 	    && nvram_match("boardrev", "0x1110")
-	    && nvram_match("gpio7", "wps_button") && !nvram_match("gpio6", "wps_led") && nvram_get("pci/1/1/venid")) {
+	    && nvram_match("gpio7", "wps_button") && !nvram_match("gpio6", "wps_led") && nvram_exists("pci/1/1/venid")) {
 		setRouter("Dlink-DIR868L");
 		return ROUTER_DLINK_DIR868;
 	}
@@ -3193,7 +3193,7 @@ int internal_getRouterBrand()
 	    nvram_match("boardrev", "0x35")) {
 		setRouter("D-Link DIR-320");
 		// apply some fixes
-		if (nvram_get("vlan2ports") != NULL) {
+		if (!nvram_exists("vlan2ports")) {
 			nvram_unset("vlan2ports");
 			nvram_unset("vlan2hwname");
 		}
