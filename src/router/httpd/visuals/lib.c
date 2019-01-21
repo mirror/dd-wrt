@@ -172,7 +172,7 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 		} else if (nvram_match("DD_BOARD", "Yuncore CPE880")) {
 			websWrite(wp, "OTAi 9334 (%s)", date);
 		} else {
-			websWrite(wp, " OTAi %s (%s)", nvram_get("DD_BOARD"), date);
+			websWrite(wp, " OTAi %s (%s)", nvram_safe_get("DD_BOARD"), date);
 		}
 #elif HAVE_RAYTRONIK
 		websWrite(wp, " RN-150M %s %s%s", MINOR_VERSION, nvram_safe_get("dist_type"), DIST_OPT);

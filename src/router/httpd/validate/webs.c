@@ -2692,7 +2692,7 @@ void remove_vifs_single(char *prefix)
 						gp_found = 1;
 				}
 			}
-			remove_mdhcp(nvram_get(guestport));
+			remove_mdhcp(nvram_safe_get(guestport));
 			nvram_unset(guestport);
 		} else {
 			o = slen;
@@ -5069,8 +5069,8 @@ void nintendo_save(webs_t wp)
 		if (strcmp(nvram_default_get("spotpass_vif", ""), "")) {
 			sprintf(var, "%s.%%d", prefix);
 			int index = 0;
-			if (sscanf(nvram_get("spotpass_vif"), var, &index) == 1) {
-				sprintf(var, "%s", nvram_get("spotpass_vif"));
+			if (sscanf(nvram_safe_get("spotpass_vif"), var, &index) == 1) {
+				sprintf(var, "%s", nvram_safe_get("spotpass_vif"));
 				int count = get_vifcount(prefix);
 				int index = var[strlen(var) - 1] - '0';
 				while (get_vifcount(prefix) >= index) {
