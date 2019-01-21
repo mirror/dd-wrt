@@ -97,8 +97,8 @@ static int nvram_main(int argc, char **argv)
 	for (; *argv; argv++) {
 		if (!strncmp(*argv, "get", 3)) {
 			if (*++argv) {
-				if ((value = nvram_get(*argv)))
-					puts(value);
+				if (nvram_exists(*argv))
+					puts(nvram_safe_get(*argv));
 			}
 		} else if (!strncmp(*argv, "set", 3)) {
 			if (*++argv) {
