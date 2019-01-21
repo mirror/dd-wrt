@@ -162,7 +162,7 @@ void start_pptpd(void)
 	// that it does work
 	// Should be enough for testing..
 	if (nvram_matchi("pptpd_radius", 1)) {
-		if (nvram_get("pptpd_radserver") != NULL && nvram_get("pptpd_radpass") != NULL) {
+		if (nvram_exists("pptpd_radserver") && nvram_exists("pptpd_radpass")) {
 
 			mkdir("/tmp/pptpd/radius", 0744);
 
@@ -175,14 +175,14 @@ void start_pptpd(void)
 				"servers /tmp/pptpd/radius/servers\n"
 				"dictionary /etc/dictionary\n"
 				"seqfile /var/run/radius.seq\n"
-				"mapfile /etc/port-id-map\n" "radius_retries 3\n" "authserver %s:%s\n", nvram_get("pptpd_radserver"), nvram_get("pptpd_radport") ? nvram_get("pptpd_radport") : "radius");
+				"mapfile /etc/port-id-map\n" "radius_retries 3\n" "authserver %s:%s\n", nvram_safe_get("pptpd_radserver"), nvram_exists("pptpd_radport") ? nvram_safe_get("pptpd_radport") : "radius");
 
-			if (nvram_get("pptpd_radserver") != NULL && nvram_get("pptpd_acctport") != NULL)
-				fprintf(fp, "acctserver %s:%s\n", nvram_get("pptpd_radserver"), nvram_get("pptpd_acctport") ? nvram_get("pptpd_acctport") : "radacct");
+			if (nvram_exists("pptpd_radserver") && nvram_exists("pptpd_acctport"))
+				fprintf(fp, "acctserver %s:%s\n", nvram_safe_get("pptpd_radserver"), nvram_exists("pptpd_acctport") ? nvram_safe_get("pptpd_acctport") : "radacct");
 			fclose(fp);
 
 			fp = fopen("/tmp/pptpd/radius/servers", "w");
-			fprintf(fp, "%s\t%s\n", nvram_get("pptpd_radserver"), nvram_get("pptpd_radpass"));
+			fprintf(fp, "%s\t%s\n", nvram_safe_get("pptpd_radserver"), nvram_safe_get("pptpd_radpass"));
 			fclose(fp);
 
 		}
@@ -214,7 +214,7 @@ void start_pptpd(void)
 		"echo $PPPD_PID $1 $5 $6 $PEERNAME >> /tmp/pptp_connected\n" "iptables -I INPUT -i $1 -j ACCEPT\n" "iptables -I FORWARD -i $1 -j ACCEPT\n"	//
 		//      "iptables -I FORWARD -i $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu\n" "iptables -t nat -I PREROUTING -i $1 -p udp -m udp --sport 9 -j DNAT --to-destination %s\n"  // rule for wake on lan over pptp tunnel
 		"iptables -t nat -I PREROUTING -i $1 -p udp -m udp --sport 9 -j DNAT --to-destination %s\n"	// rule for wake on lan over pptp tunnel
-		"%s\n", bcast, nvram_get("pptpd_ipdown_script") ? nvram_get("pptpd_ipdown_script") : "");
+		"%s\n", bcast, nvram_safe_get("pptpd_ipdown_script"));
 	//      per peer shaping                
 	if (nvram_matchi("pptpd_radius", 1))
 		fprintf(fp, "IN=`grep -i RP-Upstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n" "OUT=`grep -i RP-Downstream-Speed-Limit /var/run/radattr.$1 | awk '{print $2}'`\n" "if [ ! -z $IN ] && [ $IN -gt 0 ]\n"	//Speed limit !0 and !empty
@@ -226,7 +226,7 @@ void start_pptpd(void)
 
 	fp = fopen("/tmp/pptpd/ip-down", "w");
 	fprintf(fp, "#!/bin/sh\n" "sed -i \"/^$PPPD_PID /d\" /tmp/pptp_connected\n" "[ -e /tmp/pptp_peer.db ] || touch /tmp/pptp_peer.db\n" "pv() { awk -v pn=\"$1\" '$1 == pn { m=1; printf \"c=%%i; s=%%i; r=%%i; m=1\", $2, $3, $4 } END { if (!m) print \"c=0; s=0; r=0; m=0\" }' /tmp/pptp_peer.db; }\n" "eval $(pv $PEERNAME)\n" "CONTIME=$(($CONNECT_TIME+$c))\n" "SENT=$(($BYTES_SENT/1024+$s))\n" "RCVD=$(($BYTES_RCVD/1024+$r))\n" "[ $m -eq 1 ] && sed -i \"/^$PEERNAME /d\" /tmp/pptp_peer.db\n" "echo \"$PEERNAME $CONTIME $SENT $RCVD\" >> /tmp/pptp_peer.db\n" "iptables -D INPUT -i $1 -j ACCEPT\n" "iptables -D FORWARD -i $1 -j ACCEPT\n" "iptables -t nat -D PREROUTING -i $1 -p udp -m udp --sport 9 -j DNAT --to-destination %s\n"	// rule for wake on lan over pptp tunnel
-		"%s\n", bcast, nvram_get("pptpd_ipdown_script") ? nvram_get("pptpd_ipdown_script") : "");
+		"%s\n", bcast, nvram_safe_get("pptpd_ipdown_script"));
 	if (nvram_matchi("pptpd_radius", 1))
 		fprintf(fp, "tc qdisc del root dev $1\n" "tc qdisc del ingress dev $1\n");
 	fclose(fp);

@@ -99,12 +99,11 @@ void start_dhcp6c(void)
 	}
 
 	if (nvram_matchi("dhcp6c_custom", 1)) {
-		buf = nvram_get("dhcp6c_conf");
-		if (buf != NULL)
+		if (nvram_exists("dhcp6c_conf"))
 			writenvram("dhcp6c_conf", "/tmp/dhcp6c.conf");
 	} else {
 
-		prefix_len = 64 - (atoi(nvram_get("ipv6_pf_len")) ? : 64);
+		prefix_len = 64 - (atoi(nvram_safe_get("ipv6_pf_len")) ? : 64);
 		if (prefix_len < 0)
 			prefix_len = 0;
 
@@ -168,8 +167,7 @@ void start_dhcp6s(void)
 	}
 
 	if (nvram_matchi("dhcp6s_custom", 1)) {
-		buf = nvram_get("dhcp6s_conf");
-		if (buf != NULL)
+		if (nvram_exists("dhcp6s_conf"))
 			writenvram("dhcp6s_conf", "/tmp/dhcp6s.conf");
 	} else {
 
@@ -179,23 +177,23 @@ void start_dhcp6s(void)
 		fprintf(fp, "option refreshtime %d;\n", 900);	/* 15 minutes for now */
 		fprintf(fp, "option domain-name-servers %s", nvram_safe_get("ipv6_get_dns"));
 		/* dhcp6s won't start if there are duplicate dns ips */
-		if (!strstr(nvram_safe_get("ipv6_get_dns"), nvram_get("ipv6_dns1")))
-			fprintf(fp, " %s", nvram_get("ipv6_dns1"));
-		if (!strstr(nvram_safe_get("ipv6_get_dns"), nvram_get("ipv6_dns2")))
-			fprintf(fp, " %s", nvram_get("ipv6_dns2"));
+		if (!strstr(nvram_safe_get("ipv6_get_dns"), nvram_safe_get("ipv6_dns1")))
+			fprintf(fp, " %s", nvram_safe_get("ipv6_dns1"));
+		if (!strstr(nvram_safe_get("ipv6_get_dns"), nvram_safe_get("ipv6_dns2")))
+			fprintf(fp, " %s", nvram_safe_get("ipv6_dns2"));
 		fprintf(fp, ";\n");
 		if (nvram_invmatch("ipv6_get_domain", ""))
 			fprintf(fp, "option domain-name \"%s\";\n", nvram_safe_get("ipv6_get_domain"));
 		if (nvram_matchi("dhcp6s_seq_ips", 1)) {
-			fprintf(fp, "\ninterface %s {\n", nvram_get("lan_ifname"));
+			fprintf(fp, "\ninterface %s {\n", nvram_safe_get("lan_ifname"));
 			fprintf(fp, "\tallow rapid-commit;\n\taddress-pool pool1 30 86400;\n};\n");
-			fprintf(fp, "pool pool1 {\n \t range %s1000 to %sffff;\n};\n", nvram_get("ipv6_prefix"), nvram_get("ipv6_prefix"));
+			fprintf(fp, "pool pool1 {\n \t range %s1000 to %sffff;\n};\n", nvram_safe_get("ipv6_prefix"), nvram_safe_get("ipv6_prefix"));
 		} else {
-			fprintf(fp, "\ninterface %s {\n", nvram_get("lan_ifname"));
+			fprintf(fp, "\ninterface %s {\n", nvram_safe_get("lan_ifname"));
 			fprintf(fp, "\tallow rapid-commit;\n};\n");
 		}
 		if (nvram_invmatch("dhcp6s_hosts", "")) {
-			fprintf(fp, "\n%s\n", nvram_get("dhcp6s_hosts"));
+			fprintf(fp, "\n%s\n", nvram_safe_get("dhcp6s_hosts"));
 		}
 		fclose(fp);
 	}
@@ -210,10 +208,10 @@ void stop_dhcp6s(void)
 
 static int nvram_change(const char *name, char *value)
 {
-	char *oldval = nvram_get(name);
-	if (value == NULL && oldval == NULL)
+	char *oldval = nvram_safe_get(name);
+	if (value == NULL && !nvram_exists(name))
 		return 0;
-	if (value && oldval && !strcmp(oldval, value))
+	if (value && !strcmp(oldval, value))
 		return 0;
 	nvram_set(name, value);
 	return 1;

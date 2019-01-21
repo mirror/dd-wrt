@@ -201,7 +201,7 @@ void start_guest_nas(void)
 	 * char *unbridged_interfaces; char *next; char name[IFNAMSIZ],
 	 * lan[IFNAMSIZ]; int index;
 	 * 
-	 * unbridged_interfaces = nvram_get("unbridged_ifnames");
+	 * unbridged_interfaces = nvram_safe_get("unbridged_ifnames");
 	 * 
 	 * if (unbridged_interfaces) foreach(name,unbridged_interfaces,next){
 	 * index = get_ipconfig_index(name); if (index < 0) continue;

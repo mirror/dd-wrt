@@ -98,7 +98,7 @@ static int landhcp(void)
 
 static int hasmdhcp(void)
 {
-	if (nvram_get("mdhcpd_count") != NULL) {
+	if (nvram_exists("mdhcpd_count")) {
 		int mdhcpcount = nvram_geti("mdhcpd_count");
 		return mdhcpcount > 0 ? 1 : 0;
 	}
@@ -156,7 +156,7 @@ void start_dnsmasq(void)
 #ifdef HAVE_DNSCRYPT
 	if (nvram_matchi("dns_crypt", 1)) {
 		stop_process("dnscrypt-proxy", "daemon");
-		eval("dnscrypt-proxy", "-d", "-S", "-a", "127.0.0.1:30", "-R", nvram_get("dns_crypt_resolver"), "-L", "/etc/dnscrypt/dnscrypt-resolvers.csv");
+		eval("dnscrypt-proxy", "-d", "-S", "-a", "127.0.0.1:30", "-R", nvram_safe_get("dns_crypt_resolver"), "-L", "/etc/dnscrypt/dnscrypt-resolvers.csv");
 	}
 #endif
 	usejffs = 0;
@@ -205,7 +205,7 @@ void start_dnsmasq(void)
 			fprintf(fp, "%s", nvram_safe_get("lan_ifname"));
 	}
 	int mdhcpcount = 0;
-	if (nvram_get("mdhcpd_count") != NULL) {
+	if (nvram_exists("mdhcpd_count")) {
 		char *word = calloc(128, 1);
 		mdhcpcount = nvram_geti("mdhcpd_count");
 		for (i = 0; i < mdhcpcount; i++) {

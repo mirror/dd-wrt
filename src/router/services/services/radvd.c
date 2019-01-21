@@ -120,7 +120,7 @@ void start_radvd(void)
 			do_6to4 = 1;
 		}
 
-		if (!strcmp(nvram_get("ipv6_typ"), "ipv6rd")) {
+		if (!strcmp(nvram_safe_get("ipv6_typ"), "ipv6rd")) {
 			do_6rd = 1;
 		}
 
@@ -168,7 +168,7 @@ void start_radvd(void)
 			next += sprintf(next, strlen(ipv6_dns_str) ? " %s" : "%s", p);
 		}
 
-		if (!strcmp(nvram_get("ipv6_typ"), "ipv6pd"))
+		if (!strcmp(nvram_safe_get("ipv6_typ"), "ipv6pd"))
 			p = nvram_safe_get("ipv6_get_dns");
 		else
 			p = ipv6_dns_str;
