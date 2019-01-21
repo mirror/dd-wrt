@@ -225,7 +225,7 @@ void start_openvpnserver(void)
 	fprintf(fp, "#!/bin/sh\n");
 #if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
 	char *gpiovpn = nvram_safe_get("gpiovpn");
-	if (strlen(gpiovpn)) {
+	if (*gpiovpn) {
 		if (strncmp(gpiovpn, "-", 1))
 			fprintf(fp, "gpio enable %s\n", gpiovpn);
 		else {
@@ -262,7 +262,7 @@ void start_openvpnserver(void)
 	fprintf(fp, "#!/bin/sh\n");
 #if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
 	gpiovpn = nvram_safe_get("gpiovpn");
-	if (strlen(gpiovpn)) {
+	if (*gpiovpn) {
 		if (strncmp(gpiovpn, "-", 1))
 			fprintf(fp, "gpio disable %s\n", gpiovpn);
 		else {
@@ -309,7 +309,7 @@ void stop_openvpnserver(void)
 {
 #if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
 	char *gpiovpn = nvram_safe_get("gpiovpn");
-	if (strlen(gpiovpn)) {
+	if (*gpiovpn) {
 		if (strncmp(gpiovpn, "-", 1))
 			set_gpio(atoi(gpiovpn), 0);
 		else {
@@ -493,7 +493,7 @@ void start_openvpn(void)
 	fprintf(fp, "#!/bin/sh\n");
 #if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
 	char *gpiovpn = nvram_safe_get("gpiovpn");
-	if (strlen(gpiovpn)) {
+	if (*gpiovpn) {
 		if (strncmp(gpiovpn, "-", 1))
 			fprintf(fp, "gpio enable %s\n", gpiovpn);
 		else {
@@ -552,7 +552,7 @@ void start_openvpn(void)
 		return;
 	fprintf(fp, "#!/bin/sh\n");
 #if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
-	if (gpiovpn != NULL)
+	if (*gpiovpn)
 		if (strncmp(gpiovpn, "-", 1))
 			fprintf(fp, "gpio enable %s\n", gpiovpn);
 		else {
@@ -621,7 +621,7 @@ void stop_openvpn_wandone(void)
 {
 #if defined(HAVE_TMK) || defined(HAVE_BKM) || defined(HAVE_UNFY)
 	char *gpiovpn = nvram_safe_get("gpiovpn");
-	if (strlen(gpiovpn)) {
+	if (*gpiovpn) {
 		if (strncmp(gpiovpn, "-", 1))
 			set_gpio(atoi(gpiovpn), 0);
 		else {
