@@ -178,6 +178,11 @@ char *nvram_safe_get(const char *name)
 	return nvram_get(name) ? : "";
 }
 
+int nvram_exists(const char *name)
+{
+	return nvram_get(name) ? 1 : 0;
+}
+
 int nvram_geti(const char *name)
 {
 
