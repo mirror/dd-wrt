@@ -106,7 +106,7 @@ static void setdlinkcountry(void)
 		cnt++;
 	}
 	if (set) {
-		if (!nvram_get("nocountrysel"))
+		if (!nvram_exists("nocountrysel"))
 			nvram_seti("nocountrysel", 1);
 		nvram_set("ath0_regdomain", set);
 		nvram_set("ath1_regdomain", set);

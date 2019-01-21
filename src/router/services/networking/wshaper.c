@@ -567,7 +567,7 @@ static int svqos_iptables(void)
 	char *qos_svcs = nvram_safe_get("svqos_svcs");
 	char name[32], type[32], data[32], pkt_filter[4];
 	int level;
-	char *wshaper_dev = nvram_get("wshaper_dev");
+	char *wshaper_dev = nvram_safe_get("wshaper_dev");
 	char *wan_dev = get_wanface();
 
 	char nullmask[24];

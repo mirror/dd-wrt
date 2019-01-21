@@ -655,13 +655,11 @@ int nvifname_to_osifname(const char *nvifname, char *osifname_buf, int osifname_
 	}
 
 	snprintf(varname, sizeof(varname), "%s_ifname", nvifname);
-	ptr = nvram_get(varname);
-	if (ptr) {
+	ptr = nvram_safe_get(varname);
+	if (*ptr) {
 		/*
 		 * Bail if the string is empty 
 		 */
-		if (!*ptr)
-			return -1;
 		strncpy(osifname_buf, ptr, osifname_buf_len);
 		return 0;
 	}
@@ -753,7 +751,7 @@ int strhas(char *list, char *value)
 
 int isListed(char *listname, char *value)
 {
-	return strhas(nvram_get(listname), value);
+	return strhas(nvram_safe_get(listname), value);
 }
 
 void addList(char *listname, char *value)
@@ -762,13 +760,13 @@ void addList(char *listname, char *value)
 
 	if (isListed(listname, value))
 		return;
-	char *list = nvram_get(listname);
+	char *list = nvram_safe_get(listname);
 	char *newlist;
 
-	if (list)
-		listlen = strlen(list);
+	
+	listlen = strlen(list);
 	newlist = safe_malloc(strlen(value) + listlen + 2);
-	if (list) {
+	if (*list) {
 		sprintf(newlist, "%s %s", list, value);
 	} else {
 		strcpy(newlist, value);

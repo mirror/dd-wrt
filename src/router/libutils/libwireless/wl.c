@@ -1575,9 +1575,9 @@ int get_freqoffset(char *ifname)
 	if (ifname) {
 		char localvar[32];
 		sprintf(localvar, "%s_offset", ifname);
-		var = nvram_get(localvar);
+		var = nvram_safe_get(localvar);
 	}
-	if (var) {
+	if (*var) {
 		return atoi(var);
 	}
 	int vendor;
@@ -1778,7 +1778,7 @@ void radio_on_off_ath9k(int idx, int on)
 			sprintf(tpt, "phy%dtpt", get_ath9k_phy_idx(idx));
 			write(fp, tpt, strlen(tpt));
 			sprintf(secmode, "ath%d_akm", idx);
-			if (nvram_get(secmode) && !nvram_match(secmode, "disabled")) {
+			if (nvram_exists(secmode) && !nvram_match(secmode, "disabled")) {
 				// needs refinements
 				if (idx == 0)
 					led_control(LED_SEC0, LED_ON);
@@ -2832,11 +2832,15 @@ void setRegulationDomain(char *reg)
 	char rrev0[4] = "";
 	char rrev1[4] = "";
 
-	char *tmp = nvram_get("wl_reg_mode");
+	char *tmp = nvram_safe_get("wl_reg_mode");
+	if (!*tmp)
+	    tmp = NULL;
 	nvram_set("wl0_reg_mode", tmp);
 	nvram_set("wl1_reg_mode", tmp);
 	nvram_set("wl2_reg_mode", tmp);
-	tmp = nvram_get("wl_tpc_db");
+	tmp = nvram_safe_get("wl_tpc_db");
+	if (!*tmp)
+	    tmp = NULL;
 	nvram_set("wl0_tpc_db", tmp);
 	nvram_set("wl1_tpc_db", tmp);
 	nvram_set("wl2_tpc_db", tmp);

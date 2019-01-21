@@ -358,7 +358,7 @@ static void loadWlModule(void)	// set wled params, get boardflags,
 			char ab[16];
 
 			sprintf(ab, "0x%04X", boardflags);
-			char *oldvalue = nvram_get("boardflags");	// use the
+			char *oldvalue = nvram_safe_get("boardflags");	// use the
 
 			// string for 
 			// restoring
@@ -442,7 +442,7 @@ static int check_nv(char *name, char *value)
 	if (nvram_matchi("manual_boot_nv", 1))
 		return 0;
 
-	if (!nvram_get(name)) {
+	if (!nvram_exists(name)) {
 		cprintf("ERR: Cann't find %s !.......................\n", name);
 		nvram_set(name, value);
 		ret++;
@@ -500,7 +500,7 @@ void start_sysinit(void)
 	fprintf(stderr, "boardnum %s\n", nvram_safe_get("boardnum"));
 	fprintf(stderr, "boardtype %s\n", nvram_safe_get("boardtype"));
 	fprintf(stderr, "boardrev %s\n", nvram_safe_get("boardrev"));
-	if (nvram_get("bootflags") == NULL) {
+	if (!nvram_exists("bootflags")) {
 		fprintf(stderr, "nvram invalid, erase\n");
 //          eval("erase","nvram"); // ignore it for testbed
 //          sys_reboot();
@@ -600,7 +600,7 @@ void start_sysinit(void)
 		if (nvram_match("vlan1ports", "4 5u")) {
 			nvram_set("vlan1ports", "4 5");
 			if (sv_valid_hwaddr(nvram_safe_get("macaddr")))	//fix mac
-				nvram_set("et0macaddr", nvram_get("macaddr"));
+				nvram_set("et0macaddr", nvram_safe_get("macaddr"));
 			need_reboot = 1;
 		}
 		break;
@@ -609,7 +609,7 @@ void start_sysinit(void)
 	case ROUTER_ASKEY_RT220XD:
 		basic_params = generic1;
 
-		if (nvram_get("et0macaddr") == NULL || nvram_get("et0macaddr") == "") {
+		if (!nvram_exists("et0macaddr") || nvram_match("et0macaddr","")) {
 			nvram_set("et0macaddr", "00:16:E3:00:00:10");	// fix for
 			// missing
 			// cfe
@@ -618,7 +618,7 @@ void start_sysinit(void)
 			// ports.
 			need_reboot = 1;
 		}
-		if (nvram_get("et1macaddr") == NULL || nvram_get("et1macaddr") == "") {
+		if (!nvram_exists("et1macaddr") || nvram_match("et1macaddr","")) {
 			nvram_set("et1macaddr", "00:16:E3:00:00:11");
 			need_reboot = 1;
 		}
@@ -627,7 +627,7 @@ void start_sysinit(void)
 	case ROUTER_BRCM4702_GENERIC:
 		basic_params = generic1;
 
-		if (nvram_get("et0macaddr") == NULL || nvram_get("et0macaddr") == "") {
+		if (!nvram_exists("et0macaddr") || nvram_match("et0macaddr","")) {
 			nvram_set("et0macaddr", "00:11:22:00:00:10");	// fix for
 			// missing
 			// cfe
@@ -636,7 +636,7 @@ void start_sysinit(void)
 			// ports.
 			need_reboot = 1;
 		}
-		if (nvram_get("et1macaddr") == NULL || nvram_get("et1macaddr") == "") {
+		if (!nvram_exists("et1macaddr") || nvram_match("et1macaddr","")) {
 			nvram_set("et1macaddr", "00:11:22:00:00:11");
 			need_reboot = 1;
 		}
@@ -645,7 +645,7 @@ void start_sysinit(void)
 	case ROUTER_ASUS_WL500G:
 		basic_params = generic1;
 
-		if (nvram_get("et0macaddr") == NULL || nvram_get("et0macaddr") == "") {
+		if (!nvram_exists("et0macaddr") || nvram_match("et0macaddr","")) {
 			nvram_set("et0macaddr", "00:0C:6E:00:00:10");	// fix for
 			// missing
 			// cfe
@@ -654,7 +654,7 @@ void start_sysinit(void)
 			// ports.
 			need_reboot = 1;
 		}
-		if (nvram_get("et1macaddr") == NULL || nvram_get("et1macaddr") == "") {
+		if (!nvram_exists("et1macaddr") || nvram_match("et1macaddr","")) {
 			nvram_set("et1macaddr", "00:0C:6E:00:00:10");
 			need_reboot = 1;
 		}
@@ -709,7 +709,7 @@ void start_sysinit(void)
 			basic_params = generic1;
 		}
 
-		if (nvram_get("pci/1/1/macaddr") == NULL) {
+		if (!nvram_exists("pci/1/1/macaddr")) {
 			nvram_set("pci/1/1/macaddr", nvram_safe_get("et0macaddr"));
 			need_reboot = 1;
 		}
@@ -793,7 +793,7 @@ void start_sysinit(void)
 	case ROUTER_NETGEAR_WNDR4500:
 	case ROUTER_NETGEAR_WNDR4500V2:
 	case ROUTER_NETGEAR_R6300:
-		if (nvram_get("clkfreq") == NULL)	//set it only if it doesnt exist
+		if (!nvram_exists("clkfreq"))	//set it only if it doesnt exist
 			nvram_seti("clkfreq", 600);
 		nvram_set("vlan1hwname", "et0");
 		nvram_set("vlan2hwname", "et0");
@@ -1926,7 +1926,7 @@ void start_sysinit(void)
 
 		/* Restore defaults */
 		for (t = bcm4360ac_defaults; t->name; t++) {
-			if (!nvram_get(t->name))
+			if (!nvram_exists(t->name))
 				nvram_nset(t->value, "pci/2/1/%s", t->name);
 		}
 
@@ -1987,7 +1987,7 @@ void start_sysinit(void)
 		break;
 
 	case ROUTER_D1800H:
-		if (nvram_get("ledbh0") == NULL || nvram_matchi("ledbh11", 130)) {
+		if (!nvram_exists("ledbh0") || nvram_matchi("ledbh11", 130)) {
 			nvram_seti("ledbh0", 11);
 			nvram_seti("ledbh1", 11);
 			nvram_seti("ledbh2", 11);
@@ -2245,7 +2245,7 @@ void start_sysinit(void)
 		nvram_set("wl1_ifname", "eth3");
 		set_gpio(7, 0);
 
-		if (nvram_get("pci/1/1/macaddr") == NULL || nvram_get("pci/1/3/macaddr") == NULL) {
+		if (!nvram_exists("pci/1/1/macaddr") || !nvram_exists("pci/1/3/macaddr")) {
 			char mac[20];
 
 			strcpy(mac, nvram_safe_get("et0macaddr"));
@@ -2618,7 +2618,7 @@ void start_sysinit(void)
 	case ROUTER_ASUS_WL520GUGC:
 		if (nvram_match("vlan1ports", "0 5u"))
 			nvram_set("vlan1ports", "0 5");
-		if (!nvram_get("Fix_WL520GUGC_clock")) {
+		if (!nvram_exists("Fix_WL520GUGC_clock")) {
 			nvram_seti("Fix_WL520GUGC_clock", 1);
 			need_reboot = 1;
 		}
@@ -2669,7 +2669,7 @@ void start_sysinit(void)
 	/*
 	 * fix il0macaddr to be lanmac+2 
 	 */
-	if (nvram_get("il0macaddr") == NULL)
+	if (!nvram_exists("il0macaddr"))
 		need_reboot = 1;
 
 	char mac[20];
@@ -2869,7 +2869,7 @@ void start_sysinit(void)
 	}
 
 #ifdef HAVE_80211AC
-	if (nvram_get("et_txq_thresh") == NULL) {
+	if (!nvram_exists("et_txq_thresh")) {
 		nvram_seti("et_txq_thresh", 3300);
 //              nvram_set("et_dispatch_mode","1"); 1=better throughput 0=better ping
 	}
@@ -3242,13 +3242,13 @@ void start_overclocking(void)
 	if (rev == 0)
 		return;		// unsupported
 
-	char *ov = nvram_get("overclocking");
+	char *ov = nvram_safe_get("overclocking");
 
-	if (ov == NULL)
+	if (!strlen(ov))
 		return;
 	int clk = atoi(ov);
 
-	if (nvram_get("clkfreq") == NULL)
+	if (!nvram_exists("clkfreq"))
 		return;		// unsupported
 
 	char *pclk = nvram_safe_get("clkfreq");

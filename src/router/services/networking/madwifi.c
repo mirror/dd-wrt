@@ -1755,15 +1755,11 @@ static void set_netmode(char *wif, char *dev, char *use)
 			}
 		}
 	} else {
-		char *ext = nvram_get(xr);
-
-		if (ext) {
-			if (strcmp(ext, "1") == 0) {
+			if (nvram_matchi(xr, 1)) {
 				eval("iwpriv", use, "xr", "1");
 			} else {
 				eval("iwpriv", use, "xr", "0");
 			}
-		}
 	}
 //    if( nvram_default_matchi( comp, 1, 0 ) )
 //      sysprintf("iwpriv %s compression 1",use);
@@ -2622,8 +2618,8 @@ static void configure_single(int count)
 			continue;
 		if (nvram_matchi(wdsvarname, 0))
 			continue;
-		hwaddr = nvram_get(wdsmacname);
-		if (hwaddr != NULL) {
+		hwaddr = nvram_safe_get(wdsmacname);
+		if (strlen(hwaddr)) {
 			eval("iwpriv", primary, "wds_add", hwaddr);
 			set_rate(dev, primary);
 		}
@@ -2650,8 +2646,8 @@ static void configure_single(int count)
 			continue;
 		if (nvram_matchi(wdsvarname, 0))
 			continue;
-		hwaddr = nvram_get(wdsmacname);
-		if (hwaddr != NULL) {
+		hwaddr = nvram_safe_get(wdsmacname);
+		if (strlen(hwaddr)) {
 			eval("ifconfig", wdsdev, "0.0.0.0", "up");
 
 		}
@@ -2882,11 +2878,11 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		sprintf(br1enable, "ath%d_br1_enable", c);
 		sprintf(br1ipaddr, "ath%d_br1_ipaddr", c);
 		sprintf(br1netmask, "ath%d_br1_netmask", c);
-		if (nvram_get(br1enable) == NULL)
+		if (!nvram_exists(br1enable))
 			nvram_seti(br1enable, 0);
-		if (nvram_get(br1ipaddr) == NULL)
+		if (!nvram_exists(br1ipaddr))
 			nvram_set(br1ipaddr, "0.0.0.0");
-		if (nvram_get(br1netmask) == NULL)
+		if (!nvram_exists(br1netmask))
 			nvram_set(br1netmask, "255.255.255.0");
 		if (nvram_matchi(br1enable, 1)) {
 			ifconfig("br1", 0, 0, 0);
@@ -2927,7 +2923,7 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 			sprintf(wdsvarname, "ath%d_wds%d_enable", c, s);
 			sprintf(wdsdevname, "ath%d_wds%d_if", c, s);
 			sprintf(br1enable, "ath%d_br1_enable", c);
-			if (nvram_get(wdsvarname) == NULL)
+			if (!nvram_exists(wdsvarname))
 				nvram_seti(wdsvarname, 0);
 			dev = nvram_safe_get(wdsdevname);
 			if (!strlen(dev))

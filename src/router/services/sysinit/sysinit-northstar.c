@@ -5111,7 +5111,7 @@ static void setdlinkcountry(int count, int offset24)
 		cnt++;
 	}
 	if (set) {
-		if (!nvram_get("nocountrysel"))
+		if (!nvram_exists("nocountrysel"))
 			nvram_seti("nocountrysel", 1);
 
 		set_regulation(offset24, set, rev);
@@ -5174,7 +5174,7 @@ void start_sysinit(void)
 	/*
 	 * Setup console 
 	 */
-	if (nvram_get("bootflags") == NULL) {
+	if (!nvram_exists("bootflags")) {
 		FILE *fp = fopen("/dev/mtdblock0", "rb");
 		if (fp) {
 			fseek(fp, 0, SEEK_END);
@@ -5215,14 +5215,14 @@ void start_sysinit(void)
 		nvram_commit();
 	}
 
-	if (nvram_get("et_txq_thresh") == NULL) {
+	if (!nvram_exists("et_txq_thresh")) {
 		nvram_seti("et_txq_thresh", 1024);
 	}
 
 	switch (getRouterBrand()) {
 	case ROUTER_NETGEAR_AC1450:
 
-		if (nvram_get("pci/1/1/venid") == NULL) {
+		if (!nvram_exists("pci/1/1/venid")) {
 			if (!sv_valid_hwaddr(nvram_safe_get("pci/1/1/macaddr"))
 			    || startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
 			    || !sv_valid_hwaddr(nvram_safe_get("pci/2/1/macaddr"))
@@ -5268,7 +5268,7 @@ void start_sysinit(void)
 		break;
 	case ROUTER_NETGEAR_R6250:
 
-		if (nvram_get("pci/1/1/ddwrt") == NULL) {
+		if (!nvram_exists("pci/1/1/ddwrt")) {
 			char mac[20];
 			strcpy(mac, nvram_safe_get("et0macaddr"));
 			MAC_ADD(mac);
@@ -5308,7 +5308,7 @@ void start_sysinit(void)
 		break;
 	case ROUTER_NETGEAR_R6300V2:
 
-		if (nvram_get("pci/1/1/ddwrt") == NULL) {
+		if (!nvram_exists("pci/1/1/ddwrt")) {
 			if (!sv_valid_hwaddr(nvram_safe_get("pci/1/1/macaddr"))
 			    || startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
 			    || !sv_valid_hwaddr(nvram_safe_get("pci/2/1/macaddr"))
@@ -5354,7 +5354,7 @@ void start_sysinit(void)
 	case ROUTER_NETGEAR_R6400:
 	case ROUTER_NETGEAR_R6400V2:
 	case ROUTER_NETGEAR_R6700V3:
-		if (nvram_get("pci/1/1/ddwrt") == NULL) {
+		if (!nvram_exists("pci/1/1/ddwrt")) {
 			if (!sv_valid_hwaddr(nvram_safe_get("pci/1/1/macaddr"))
 			    || startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
 			    || !sv_valid_hwaddr(nvram_safe_get("pci/2/1/macaddr"))
@@ -5403,7 +5403,7 @@ void start_sysinit(void)
 		break;
 	case ROUTER_NETGEAR_R7000:
 
-		if (nvram_get("pci/1/1/ddwrt") == NULL) {
+		if (!nvram_exists("pci/1/1/ddwrt")) {
 			if (!sv_valid_hwaddr(nvram_safe_get("pci/1/1/macaddr"))
 			    || startswith(nvram_safe_get("pci/1/1/macaddr"), "00:90:4C")
 			    || !sv_valid_hwaddr(nvram_safe_get("pci/2/1/macaddr"))
@@ -5449,7 +5449,7 @@ void start_sysinit(void)
 		break;
 	case ROUTER_NETGEAR_EX6200:
 		nvram_set("vlan2hwname", "et0");
-		if (nvram_get("0:ddwrt") == NULL) {
+		if (!nvram_exists("0:ddwrt")) {
 			if (!sv_valid_hwaddr(nvram_safe_get("0:macaddr"))
 			    || startswith(nvram_safe_get("0:macaddr"), "00:90:4C")
 			    || !sv_valid_hwaddr(nvram_safe_get("1:macaddr"))
@@ -5489,7 +5489,7 @@ void start_sysinit(void)
 		set_gpio(12, 1);	//green 5
 		break;
 	case ROUTER_NETGEAR_R8000:
-		if (nvram_get("0:ddwrt") == NULL) {
+		if (!nvram_exists("0:ddwrt")) {
 			char mac[20];
 			strcpy(mac, nvram_safe_get("et2macaddr"));
 			MAC_ADD(mac);
@@ -5532,7 +5532,7 @@ void start_sysinit(void)
 		set_gpio(15, 1);
 		break;
 	case ROUTER_NETGEAR_R8500:
-		if (nvram_get("0:ddwrt") == NULL) {
+		if (!nvram_exists("0:ddwrt")) {
 			char mac[20];
 			strcpy(mac, nvram_safe_get("et2macaddr"));
 			MAC_ADD(mac);
@@ -5579,7 +5579,7 @@ void start_sysinit(void)
 		set_gpio(20, 0);
 		break;
 	case ROUTER_NETGEAR_R7000P:
-		if (nvram_get("0:ddwrt") == NULL) {
+		if (!nvram_exists("0:ddwrt")) {
 			char mac[20];
 			strcpy(mac, nvram_safe_get("et0macaddr"));
 			MAC_ADD(mac);
@@ -5617,7 +5617,7 @@ void start_sysinit(void)
 		set_gpio(2, 1);	// fixup ses button
 		break;
 	case ROUTER_ASUS_AC3100:
-		if (nvram_get("0:venid") == NULL) {
+		if (!nvram_exists("0:venid")) {
 
 			nvram_set("devpath0", "pcie/1/1");
 			nvram_set("devpath1", "pcie/2/1");
@@ -5766,7 +5766,7 @@ void start_sysinit(void)
 			nvram_commit();
 		}
 
-		if (nvram_get("0:venid") == NULL) {
+		if (!nvram_exists("0:venid")) {
 
 			nvram_set("devpath0", "pcie/1/3");
 			nvram_set("devpath1", "pcie/1/4");
@@ -5840,7 +5840,7 @@ void start_sysinit(void)
 		nvram_seti("wait_time", 1);	//otherwise boot time takes very long
 		if (!nvram_match("bl_version", "1.0.1.1") && nvram_match("boardrev", "0x1100"))	// filter rev 2
 			nvram_set("clkfreq", "800,666");
-		if (nvram_get("productid") != NULL || nvram_match("http_username", "admin")) {
+		if (nvram_exists("productid") || nvram_match("http_username", "admin")) {
 			int deadcount = 10;
 			while (deadcount--) {
 				FILE *fp = fopen("/dev/mtdblock1", "rb");
@@ -5935,7 +5935,7 @@ void start_sysinit(void)
 		break;
 	case ROUTER_ASUS_AC56U:
 		nvram_set("clkfreq", "800,666");
-		if (nvram_get("productid") != NULL || nvram_match("http_username", "admin")) {
+		if (nvram_exists("productid") || nvram_match("http_username", "admin")) {
 			int deadcount = 10;
 			while (deadcount--) {
 				FILE *fp = fopen("/dev/mtdblock1", "rb");
@@ -6142,7 +6142,7 @@ void start_sysinit(void)
 		break;
 	case ROUTER_DLINK_DIR880:
 		setdlinkcountry(2, 0);
-		if (nvram_get("0:venid") == NULL || nvram_matchi("0:maxp2ga0", 94)) {
+		if (!nvram_exists("0:venid") || nvram_matchi("0:maxp2ga0", 94)) {
 			char buf[64];
 			FILE *fp = popen("cat /dev/mtdblock0|grep lanmac", "r");
 			fread(buf, 1, 24, fp);
@@ -6184,7 +6184,7 @@ void start_sysinit(void)
 		break;
 	case ROUTER_DLINK_DIR860:
 		setdlinkcountry(2, 0);
-		if (nvram_get("devpath0") == NULL || nvram_match("0:maxp2ga0", "0x50")) {
+		if (!nvram_exists("devpath0") || nvram_match("0:maxp2ga0", "0x50")) {
 			nvram_set("devpath0", "pci/1/1/");
 			nvram_set("devpath1", "pci/2/1/");
 
@@ -6254,7 +6254,7 @@ void start_sysinit(void)
 	case ROUTER_DLINK_DIR865:
 		setdlinkcountry(2, 0);
 
-		if (nvram_get("pci/1/1/venid") == NULL || nvram_match("0:maxp2ga0", "0x56")) {
+		if (!nvram_exists("pci/1/1/venid") || nvram_match("0:maxp2ga0", "0x56")) {
 
 			char buf[64];
 			FILE *fp = popen("cat /dev/mtdblock0|grep lanmac", "r");
@@ -6301,7 +6301,7 @@ void start_sysinit(void)
 		set_gpio(15, 1);	// fixup ses button
 		break;
 	case ROUTER_LINKSYS_EA6700:
-		if (nvram_get("0:aa2g") == NULL) {
+		if (!nvram_exists("0:aa2g")) {
 			change = 1;
 
 			struct nvram_param *t;
@@ -6330,7 +6330,7 @@ void start_sysinit(void)
 			nvram_commit();
 		break;
 	case ROUTER_LINKSYS_EA6500V2:
-		if (nvram_get("0:aa2g") == NULL) {
+		if (!nvram_exists("0:aa2g")) {
 
 			struct nvram_param *t;
 			t = ea6500v2_1_1params;
@@ -6350,14 +6350,14 @@ void start_sysinit(void)
 			nvram_set("devpath1", "pci/2/1/");
 			change = 1;
 		}
-		if (nvram_get("partialboots"))
+		if (nvram_exists("partialboots"))
 			change = 1;
 		nvram_seti("partialboots", 0);
 		if (change)
 			nvram_commit();
 		break;
 	case ROUTER_LINKSYS_EA6900:
-		if (nvram_get("0:aa2g") == NULL) {
+		if (!nvram_exists("0:aa2g")) {
 
 			struct nvram_param *t;
 			t = ea6900_1_1params;
@@ -6377,14 +6377,14 @@ void start_sysinit(void)
 			nvram_set("devpath1", "pci/2/1/");
 			change = 1;
 		}
-		if (nvram_get("partialboots"))
+		if (nvram_exists("partialboots"))
 			change = 1;
 		nvram_seti("partialboots", 0);
 		if (change)
 			nvram_commit();
 		break;
 	case ROUTER_LINKSYS_EA9500:
-		if (nvram_get("1:aa2g") == NULL) {
+		if (!nvram_exists("1:aa2g")) {
 
 			struct nvram_param *t;
 			t = ea9500_1_1params;
@@ -6425,7 +6425,7 @@ void start_sysinit(void)
 			nvram_unset("et1macaddr");
 			nvram_commit();
 		}
-		if (nvram_get("partialboots"))
+		if (nvram_exists("partialboots"))
 			change = 1;
 		nvram_seti("partialboots", 0);
 		if (change)
@@ -6478,18 +6478,18 @@ void start_sysinit(void)
 			nvram_unset("pcie/2/1/rpcal5gb3");
 
 			// 5G band1
-			impbf_value = nvram_get("sb/1/rpcal5gb0");
-			if (impbf_value && (strlen(impbf_value) > 0))
+			impbf_value = nvram_safe_get("sb/1/rpcal5gb0");
+			if ((strlen(impbf_value) > 0))
 				nvram_set("pcie/1/3/rpcal5gb0", impbf_value);
 
 			// 2.4G
-			impbf_value = nvram_get("sb/1/rpcal2g");
-			if (impbf_value && (strlen(impbf_value) > 0))
+			impbf_value = nvram_safe_get("sb/1/rpcal2g");
+			if ((strlen(impbf_value) > 0))
 				nvram_set("pcie/1/4/rpcal2g", impbf_value);
 
 			// 5G band4
-			impbf_value = nvram_get("sb/1/rpcal5gb3");
-			if (impbf_value && (strlen(impbf_value) > 0))
+			impbf_value = nvram_safe_get("sb/1/rpcal5gb3");
+			if ((strlen(impbf_value) > 0))
 				nvram_set("pcie/2/1/rpcal5gb3", impbf_value);
 
 			nvram_commit();
@@ -6580,7 +6580,7 @@ void start_sysinit(void)
 			if (out)
 				fclose(out);
 		}
-		if (nvram_get("et1macaddr")) {
+		if (nvram_exists("et1macaddr")) {
 			nvram_unset("et1macaddr");
 			nvram_commit();
 		}
@@ -6590,7 +6590,7 @@ void start_sysinit(void)
 		nvram_set("vlan2hwname", "et0");
 		nvram_set("vlan1ports", "1 2 3 4 8*");
 		nvram_set("vlan2ports", "0 8*");
-		if (nvram_get("et1macaddr")) {
+		if (nvram_exists("et1macaddr")) {
 			nvram_unset("et1macaddr");
 			nvram_commit();
 		}
@@ -6598,7 +6598,7 @@ void start_sysinit(void)
 
 	default:
 		nvram_seti("bootpartition", 0);
-		if (nvram_get("et1macaddr")) {
+		if (nvram_exists("et1macaddr")) {
 			nvram_unset("et1macaddr");
 			nvram_commit();
 		}
@@ -6681,13 +6681,13 @@ void start_overclocking(void)
 	if (rev != 11 && rev != 10 && rev != 9 && rev != 8 && rev != 7)
 		return;		// unsupported
 
-	char *ov = nvram_get("overclocking");
+	char *ov = nvram_safe_get("overclocking");
 
-	if (ov == NULL)
+	if (strlen(ov))
 		return;
 	int clk = atoi(ov);
 
-	if (nvram_get("clkfreq") == NULL)
+	if (!nvram_exists("clkfreq"))
 		return;		// unsupported
 
 	char *pclk = nvram_safe_get("clkfreq");

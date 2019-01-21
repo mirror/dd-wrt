@@ -199,7 +199,7 @@ static void detect_wireless_devices(void)
 	if (loadlegacy) {
 		fprintf(stderr, "load ATH 802.11 a/b/g Driver\n");
 		insmod("ath_hal");
-		if (nvram_get("rate_control") != NULL) {
+		if (nvram_exists("rate_control")) {
 			char rate[64];
 
 			sprintf(rate, "ratectl=%s", nvram_safe_get("rate_control"));

@@ -936,8 +936,8 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 			continue;
 		if (nvram_matchi(wdsvarname, 0))
 			continue;
-		hwaddr = nvram_get(wdsmacname);
-		if (hwaddr != NULL) {
+		hwaddr = nvram_safe_get(wdsmacname);
+		if (strlen(hwaddr)) {
 			sprintf(wdsentries, "%s;%s", wdsentries, hwaddr);
 			wdscount++;
 		}
@@ -1358,8 +1358,8 @@ void init_network(int idx)
 				continue;
 			if (nvram_matchi(wdsvarname, 0))
 				continue;
-			hwaddr = nvram_get(wdsmacname);
-			if (hwaddr != NULL) {
+			hwaddr = nvram_safe_get(wdsmacname);
+			if (strlen(hwaddr) {
 				eval("ifconfig", wdsdev, "0.0.0.0", "down");
 				eval("ifconfig", wdsdev, "0.0.0.0", "up");
 			}
@@ -1399,11 +1399,11 @@ void init_network(int idx)
 	sprintf(br1enable, "wl%d_br1_enable", idx);
 	sprintf(br1ipaddr, "wl%d_br1_ipaddr", idx);
 	sprintf(br1netmask, "wl%d_br1_netmask", idx);
-	if (nvram_get(br1enable) == NULL)
+	if (!nvram_exists(br1enable))
 		nvram_seti(br1enable, 0);
-	if (nvram_get(br1ipaddr) == NULL)
+	if (!nvram_exists(br1ipaddr))
 		nvram_set(br1ipaddr, "0.0.0.0");
-	if (nvram_get(br1netmask) == NULL)
+	if (!nvram_exists(br1netmask))
 		nvram_set(br1netmask, "255.255.255.0");
 	if (nvram_matchi(br1enable, 1)) {
 		ifconfig("br1", 0, 0, 0);
@@ -1436,7 +1436,7 @@ void init_network(int idx)
 		sprintf(wdsvarname, "wl%d_wds%d_enable", idx, s);
 		sprintf(wdsdevname, "wl%d_wds%d_if", idx, s);
 		sprintf(br1enable, "wl%d_br1_enable", idx);
-		if (nvram_get(wdsvarname) == NULL)
+		if (!nvram_exists(wdsvarname))
 			nvram_seti(wdsvarname, 0);
 		dev = nvram_safe_get(wdsdevname);
 		if (!strlen(dev))
