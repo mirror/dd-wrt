@@ -238,7 +238,7 @@ char *getentrybyidx(char *buf, char *list, int idx);
 
 #define foreach_delim(word, foreachwordlist, next, delim) \
 	for (next = foreach_first(foreachwordlist, word, delim); \
-	     strlen(word); \
+	     word[0]; \
 	     next = foreach_last(next, word, delim))
 
 
