@@ -91,7 +91,7 @@ static int radio_timer_main(int argc, char **argv)
 								eval("ifconfig", var, "up");
 							}
 							start_service_force("restarthostapd");
-							if (nvram_nmatch("sta", "%s_mode", dev)) {
+							if (!nvram_nmatch("sta", "%s_mode", dev)) {
 								char bridged[32];
 								sprintf(bridged, "%s_bridged", dev);
 								if (nvram_matchi(bridged, 0)) {
