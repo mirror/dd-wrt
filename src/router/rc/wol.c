@@ -32,12 +32,12 @@ static int wol_run(void)
 
 		interval = nvram_geti("wol_interval") > WOL_INTERVAL ? nvram_geti("wol_interval") : WOL_INTERVAL;
 
-		if (strlen(nvram_get("wol_passwd")) <= 0)
+		if (strlen(nvram_safe_get("wol_passwd")) <= 0)
 			passwd_param[0] = 0;
 		else
 			strcpy(passwd_param, "-P");
 
-		if (strlen(nvram_get("wol_hostname")) <= 0)
+		if (strlen(nvram_safe_get("wol_hostname")) <= 0)
 			hostname_param[0] = 0;
 		else
 			strcpy(hostname_param, "-h");
