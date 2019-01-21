@@ -211,7 +211,7 @@ void nvram_safe_set(const char *name, char *value)
 int nvram_default_match(const char *var, const char *match, const char *def)
 {
 	const char *v = nvram_get(var);
-	if (v == NULL || strlen(v) == 0) {
+	if (v == NULL || !*v) {
 		nvram_set(var, def);
 		v = def;
 	}
@@ -230,7 +230,7 @@ int nvram_default_matchi(const char *var, const int match, const int def)
 char *nvram_default_get(const char *var, const char *def)
 {
 	char *v = nvram_get(var);
-	if (v == NULL || strlen(v) == 0) {
+	if (v == NULL || !*v) {
 		nvram_set(var, def);
 		return def;
 	}
@@ -241,7 +241,7 @@ int nvram_default_geti(const char *var, const int def)
 {
 	char tmp[100];
 	char *v = nvram_get(var);
-	if (v == NULL || strlen(v) == 0) {
+	if (v == NULL || !*v) {
 		snprintf(tmp, sizeof(tmp), "%d", def);
 		nvram_set(var, tmp);
 		return def;
@@ -276,7 +276,7 @@ void writenvram(const char *var, char *file)
 	     word[strcspn(word, " ")] = '\0', \
 	     word[sizeof(word) - 1] = '\0', \
 	     next = strchr(next, ' '); \
-	     strlen(word); \
+	     word[0]; \
 	     next = next ? &next[strspn(next, " ")] : "", \
 	     strncpy(word, next, sizeof(word)), \
 	     word[strcspn(word, " ")] = '\0', \
