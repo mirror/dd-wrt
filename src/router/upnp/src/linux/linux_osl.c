@@ -519,7 +519,7 @@ upnp_osl_wan_link_status()
 unsigned int
 upnp_osl_wan_max_bitrates(unsigned long *rx, unsigned long *tx)
 {
-	char *devname = nvram_get("wan_ifname");//g_wandevs;
+	char *devname = nvram_safe_get("wan_ifname");//g_wandevs;
 
 	struct ethtool_cmd ecmd;
 	struct ifreq ifr;
