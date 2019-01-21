@@ -49,7 +49,7 @@ static int landhcp(void)
 
 static int hasmdhcp(void)
 {
-	if (nvram_get("mdhcpd_count") != NULL) {
+	if (nvram_exists("mdhcpd_count")) {
 		int mdhcpcount = nvram_geti("mdhcpd_count");
 		return mdhcpcount > 0 ? 1 : 0;
 	}

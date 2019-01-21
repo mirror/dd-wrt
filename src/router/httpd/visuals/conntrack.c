@@ -142,7 +142,7 @@ void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 	char dum1[32];
 	int dum2;
 	int nf = 0;
-	char *lanip = nvram_get("lan_ipaddr");
+	char *lanip = nvram_safe_get("lan_ipaddr");
 	char buf[128];
 	lock();
 	fp = fopen("/proc/net/ip_conntrack", "rb");

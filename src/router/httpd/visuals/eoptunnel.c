@@ -88,7 +88,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				{
 					show_caption(wp, "label", "eoip.tunnelID", NULL);
 					snprintf(temp, sizeof(temp), "oet%d_id", tun);
-					websWrite(wp, "<input size=\"4\" maxlength=\"3\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,65535,eoip.tunnelID)\" value=\"%s\" />\n", temp, nvram_get(temp));
+					websWrite(wp, "<input size=\"4\" maxlength=\"3\" class=\"num\" name=\"%s\" onblur=\"valid_range(this,0,65535,eoip.tunnelID)\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
 				}
 				websWrite(wp, "</div>\n");
 			}

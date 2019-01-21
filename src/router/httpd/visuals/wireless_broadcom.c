@@ -587,7 +587,7 @@ int ej_active_wds_instance(webs_t wp, int argc, char_t ** argv, int instance, in
 			if (nvram_match(wdsvar, mac)) {
 				snprintf(wdsvar, sizeof(wdsvar), "wl%d_wds%d_desc", instance, i);
 				snprintf(desc, sizeof(desc), "%s", nvram_safe_get(wdsvar));
-				if (!strcmp(nvram_get(wdsvar), ""))
+				if (!strcmp(nvram_safe_get(wdsvar), ""))
 					strcpy(desc, "&nbsp;");
 			}
 		}

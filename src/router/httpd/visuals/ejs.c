@@ -1146,7 +1146,7 @@ void ej_show_modules(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-#define getRouterName() nvram_get(NVROUTER_ALT)?nvram_safe_get(NVROUTER_ALT):nvram_safe_get(NVROUTER)
+#define getRouterName() nvram_exists(NVROUTER_ALT)?nvram_safe_get(NVROUTER_ALT):nvram_safe_get(NVROUTER)
 void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_XIOCOM
@@ -1182,7 +1182,7 @@ void ej_get_sysmodel(webs_t wp, int argc, char_t ** argv)
 	} else if (nvram_match(NVROUTER, "Alfa AP120C")) {
 		websWrite(wp, "AP-600dbdc");
 	} else {
-		websWrite(wp, "%s", nvram_get(NVROUTER));
+		websWrite(wp, "%s", nvram_safe_get(NVROUTER));
 	}
 #else
 	if (nvram_match(NVROUTER, "Atheros Hornet")) {
@@ -1256,7 +1256,7 @@ void ej_get_totaltraff(webs_t wp, int argc, char_t ** argv)
 	if (!nvram_matchi("ttraff_enable", 1))
 		return;
 
-	if (nvram_match("ttraff_iface", "") || !nvram_get("ttraff_iface"))
+	if (nvram_match("ttraff_iface", "") || !nvram_exists("ttraff_iface"))
 		strlcpy(wanface, get_wan_face(), sizeof(wanface) - 1);
 	else
 		strlcpy(wanface, nvram_safe_get("ttraff_iface"), sizeof(wanface) - 1);
@@ -2116,8 +2116,8 @@ void ej_nvram_selected_js(webs_t wp, int argc, char_t ** argv)
 
 void ej_getboottime(webs_t wp, int argc, char_t ** argv)
 {
-	char *end = nvram_get("end_time");
-	if (!end) {
+	char *end = nvram_safe_get("end_time");
+	if (!*end) {
 		websWrite(wp, "30");
 		return;
 	}

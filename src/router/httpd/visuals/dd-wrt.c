@@ -220,7 +220,7 @@ void ej_show_clocks(webs_t wp, int argc, char_t ** argv)
 		i++;
 	}
 
-	if (in_clock_array && nvram_get("clkfreq") != NULL) {
+	if (in_clock_array && nvram_exists("clkfreq")) {
 
 		show_caption(wp, "label", "management.clock_frq", NULL);
 		websWrite(wp, "<select name=\"overclocking\">\n");
@@ -1006,7 +1006,7 @@ static void ej_show_security_single(webs_t wp, int argc, char_t ** argv, char *p
 		tf_webWriteESCNV(wp, ssid);	// fix for broken html page if ssid
 		// contains html tag
 		sprintf(mac, "%s_hwaddr", var);
-		if (nvram_get(mac))
+		if (nvram_exists(mac))
 			websWrite(wp, "] HWAddr [%s", nvram_safe_get(mac));
 
 		websWrite(wp, "]</legend>\n");
@@ -1025,7 +1025,7 @@ static void ej_show_security_single(webs_t wp, int argc, char_t ** argv, char *p
 			tf_webWriteESCNV(wp, ssid);	// fix for broken html page if ssid
 			// contains html tag
 			sprintf(mac, "%s_hwaddr", var);
-			if (nvram_get(mac))
+			if (nvram_exists(mac))
 				websWrite(wp, "] HWAddr [%s", nvram_safe_get(mac));
 
 			websWrite(wp, "]</legend>\n");
@@ -2328,7 +2328,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		// contains html tag
 		char wl_macaddr[18];
 		sprintf(wl_macaddr, "%s_hwaddr", var);
-		if (nvram_get(wl_macaddr))
+		if (nvram_exists(wl_macaddr))
 			websWrite(wp, "] HWAddr [%s", nvram_safe_get(wl_macaddr));
 		websWrite(wp, "]</legend>\n");
 		websWrite(wp, "<div class=\"setting\">\n");
@@ -2596,7 +2596,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			// contains html tag
 			char wl_macaddr[18];
 			sprintf(wl_macaddr, "%s_hwaddr", var);
-			if (nvram_get(wl_macaddr))
+			if (nvram_exists(wl_macaddr))
 				websWrite(wp, "] HWAddr [%s", nvram_safe_get(wl_macaddr));
 			websWrite(wp, "]</legend>\n");
 			websWrite(wp, "<div class=\"setting\">\n");

@@ -1269,7 +1269,7 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 			start_gozila(act->goname, wp);
 		}
 
-		if (nvram_get("nowebaction") == NULL) {
+		if (!nvram_exists("nowebaction")) {
 			addAction(act->service);
 		} else
 			nvram_unset("nowebaction");
@@ -1509,7 +1509,7 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 
 			if ((act->action == SYS_RESTART)
 			    || (act->action == SERVICE_RESTART)) {
-				if (nvram_get("nowebaction") == NULL) {
+				if (!nvram_exists("nowebaction")) {
 					addAction(act->service);
 				} else
 					nvram_unset("nowebaction");
@@ -1832,7 +1832,7 @@ static void do_wpad(unsigned char method, struct mime_handler *handler, char *ur
 #ifdef HAVE_ROUTERSTYLE
 static void do_stylecss(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
-	char *style = nvram_get("router_style");
+	char *style = nvram_safe_get("router_style");
 
 	unsigned int sdata[33];
 	bzero(sdata, sizeof(sdata));
@@ -2064,18 +2064,15 @@ static void do_fetchif(unsigned char method, struct mime_handler *handler, char 
 
 static char *getLanguageName()
 {
-	char *lang = nvram_get("language");
-
+	char *lang = nvram_safe_get("language");
+	char *l;
 	cprintf("get language %s\n", lang);
-	char *l = safe_malloc(60);
 
-	if (lang == NULL) {
+	if (!*lang) {
 		cprintf("return default\n");
-		sprintf(l, "lang_pack/english.js");
-		return l;
+		return strdup("lang_pack/english.js");
 	}
-	sprintf(l, "lang_pack/%s.js", lang);
-	cprintf("return %s\n", l);
+	asprintf(&l, "lang_pack/%s.js", lang);
 	return l;
 }
 
