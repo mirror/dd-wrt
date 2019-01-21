@@ -496,8 +496,8 @@ static void do_madwifi_check(void)
 					continue;
 				if (nvram_matchi(wdsvarname, 0))
 					continue;
-				hwaddr = nvram_get(wdsmacname);
-				if (hwaddr != NULL) {
+				hwaddr = nvram_safe_get(wdsmacname);
+				if (*hwaddr) {
 					int count = getassoclist(wdsdev, &assoclist[0]);
 
 					if (count < 1) {

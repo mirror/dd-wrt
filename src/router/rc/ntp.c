@@ -127,12 +127,11 @@ static int do_ntp(void)		// called from ntp_main and
 		return 0;
 	gettimeofday(&now, NULL);
 	update_timezone();
-
-	if (((servers = nvram_get("ntp_server")) == NULL)
-	    || (*servers == 0)
-	    || nvram_matchi("dns_crypt", 1)) {
+	servers = nvram_safe_get("ntp_server");
+	if (*servers == 0)
+		||nvram_matchi("dns_crypt", 1) {
 		servers = "2.pool.ntp.org 212.18.3.19 88.99.174.22";
-	}
+		}
 
 	char *argv[] = { "ntpclient", servers, NULL };
 	if (_evalpid(argv, NULL, 20, NULL) != 0) {
