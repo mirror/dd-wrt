@@ -1010,6 +1010,9 @@ struct nvram_param srouter_defaults[] = {
 #endif
 #elif HAVE_TMK
 	{"wl_ssid", "KMT"},	/* Service set ID (network name) */
+#ifdef HAVE_UBNTM
+	{"ath0_bias", "10"},
+#endif
 #elif HAVE_BKM
 	{"wl_ssid", "BKM-HSDL"},	/* Service set ID (network name) */
 #elif HAVE_ERC
