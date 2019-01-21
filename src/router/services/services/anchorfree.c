@@ -117,7 +117,7 @@ void start_anchorfree(void)
 		dd_loginfo("anchorfree", "starting redirection\n");
 		char devid[256];
 
-		if (nvram_get("af_hash") == NULL) {
+		if (!nvram_exists("af_hash")) {
 			bzero(devid, 256);
 			deviceID(devid);
 			nvram_set("af_hash", devid);
