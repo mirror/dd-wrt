@@ -1690,7 +1690,7 @@ void get3GControlDevice(void)
 	char checkforce[30];
 	char wsel[5];
 	sprintf(wsel, "");
-	if (strlen(nvram_safe_get("wan_select"))) {
+	if (*(nvram_safe_get("wan_select"))) {
 		wan_select = atoi(nvram_safe_get("wan_select"));
 		if (wan_select != 1) {
 			sprintf(wsel, "_%d", wan_select);

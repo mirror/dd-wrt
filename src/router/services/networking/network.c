@@ -401,17 +401,17 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int le
 		dhcp_argv[i++] = "-T";
 
 	if (use_extra) {
-		if (strlen(vendorclass) > 0) {
+		if (*vendorclass) {
 			dhcp_argv[i++] = "-V";
 			dhcp_argv[i++] = vendorclass;
 		}
 
-		if (strlen(requestip) > 0) {
+		if (*requestip) {
 			dhcp_argv[i++] = "-r";
 			dhcp_argv[i++] = requestip;
 		}
 
-		if (strlen(wan_hostname) > 0) {
+		if (*wan_hostname) {
 			dhcp_argv[i++] = "-H";
 			dhcp_argv[i++] = wan_hostname;
 		}
@@ -539,7 +539,7 @@ static void do_portsetup(char *lan, char *ifname)
 
 // #endif
 
-#define PORTSETUPWAN(a) if (strlen(a) && strlen(nvram_safe_get ("wan_ifname2"))>0) \
+#define PORTSETUPWAN(a) if (*a && *(nvram_safe_get ("wan_ifname2"))) \
 	    { \
 		strcpy(wan_ifname, nvram_safe_get ("wan_ifname2")); \
 		nvram_set ("wan_ifnames", nvram_safe_get ("wan_ifname2"));\
@@ -559,7 +559,7 @@ void reset_hwaddr(char *ifname)
 	char macaddr[32];
 	if (get_hwaddr(ifname, macaddr)) {
 
-		if (!strlen(nvram_safe_get("lan_hwaddr")))
+		if (!*(nvram_safe_get("lan_hwaddr")))
 			nvram_set("lan_hwaddr", macaddr);
 		if (getRouterBrand() == ROUTER_DLINK_DIR320) {
 			if (strlen(nvram_safe_get("et0macaddr")) == 12) {
@@ -576,9 +576,9 @@ void reset_hwaddr(char *ifname)
 				eval("event", "5", "1", "15");
 			}
 		}
-		if (!strlen(nvram_safe_get("et0macaddr"))) {
+		if (!*(nvram_safe_get("et0macaddr"))) {
 			char *def = nvram_safe_get("et0macaddr_safe");
-			if (!strlen(def))
+			if (!*def)
 				def = nvram_safe_get("lan_hwaddr");
 #if defined(HAVE_RB500) || defined(HAVE_MAGICBOX) || defined(HAVE_LAGUNA) || defined(HAVE_VENTANA) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) || defined(HAVE_FONERA) || \
     defined(HAVE_RT2880) || defined(HAVE_LS2) || defined(HAVE_LS5) || defined(HAVE_SOLO51) || defined(HAVE_WHRAG108) || defined(HAVE_PB42) || \
@@ -594,7 +594,7 @@ void reset_hwaddr(char *ifname)
 		}
 	}
 
-	if (!strlen(nvram_safe_get("lan_hwaddr")))
+	if (!*(nvram_safe_get("lan_hwaddr")))
 		nvram_set("lan_hwaddr", nvram_safe_get("et0macaddr"));	//after all fixes have been made, we set lan_hwaddr to et0macaddr to ensure equalness between all devices based first eth interface
 	// lock mac address on bridge if possible
 	set_hwaddr(ifname, nvram_safe_get("lan_hwaddr"));
@@ -638,7 +638,7 @@ void start_lan(void)
 	strcpy(wan_ifname, nvram_safe_get("wan_ifname"));
 	strcpy(lan_ifnames, nvram_safe_get("lan_ifnames"));
 
-	if (strlen(nvram_safe_get("wan_default"))) {
+	if (*(nvram_safe_get("wan_default"))) {
 		PORTSETUPWAN(nvram_safe_get("wan_default"));	// setup
 		// default
 		// wan ports, 
@@ -1492,11 +1492,11 @@ void start_lan(void)
 		PORTSETUPWAN("");
 	} else {
 		if (vlan) {
-			if (!strlen("wan_ifname2"))
+			if (!*(nvram_safe_get("wan_ifname2")))
 				nvram_set("wan_ifname2", "vlan2");
 			PORTSETUPWAN("vlan2");
 		} else {
-			if (!strlen("wan_ifname2"))
+			if (!*(nvram_safe_get("wan_ifname2")))
 				nvram_set("wan_ifname2", "eth0");
 			PORTSETUPWAN("eth0");
 		}
@@ -2213,7 +2213,7 @@ void start_lan(void)
 		}
 	}
 #ifdef HAVE_EAD
-	if (eadline && strlen(eadline) > 0) {
+	if (eadline && *eadline) {
 		sysprintf("ead %s -B", eadline);
 		free(eadline);
 	}
@@ -2409,7 +2409,7 @@ void start_lan(void)
 				nvram_seti(wdsvarname, 0);
 #endif
 			dev = nvram_safe_get(wdsdevname);
-			if (!strlen(dev))
+			if (!*dev)
 				continue;
 			ifconfig(dev, 0, 0, 0);
 
@@ -2609,10 +2609,10 @@ void start_lan(void)
 		br_set_stp_state("br0", getBridgeSTP("br0", word));
 		// eval ("rm", "/tmp/hosts");
 		addHost("localhost", "127.0.0.1", 0);
-		if (strlen(nvram_safe_get("wan_hostname"))) {
+		if (*(nvram_safe_get("wan_hostname"))) {
 			addHost(nvram_safe_get("wan_hostname"), nvram_safe_get("lan_ipaddr"), 0);
 			addHost(nvram_safe_get("wan_hostname"), nvram_safe_get("lan_ipaddr"), 1);
-		} else if (strlen(nvram_safe_get("router_name"))) {
+		} else if (*(nvram_safe_get("router_name"))) {
 			addHost(nvram_safe_get("router_name"), nvram_safe_get("lan_ipaddr"), 0);
 			addHost(nvram_safe_get("router_name"), nvram_safe_get("lan_ipaddr"), 1);
 		}
@@ -3287,7 +3287,7 @@ void start_wan(int status)
 
 // #if defined(HAVE_CAMBRIA) || defined(HAVE_LAGUNA)
 		int wan_select = 1;
-		if (strlen(nvram_safe_get("wan_select"))) {
+		if (*(nvram_safe_get("wan_select"))) {
 			wan_select = atoi(nvram_safe_get("wan_select"));
 			if (wan_select != 1) {
 				sprintf(wsel, "_%d", wan_select);
@@ -3350,7 +3350,7 @@ void start_wan(int status)
 
 			//set pin
 			sprintf(wsbuf, "wan_pin%s", wsel);
-			if (strlen(nvram_safe_get(wsbuf))) {
+			if (*(nvram_safe_get(wsbuf))) {
 				sysprintf("/usr/sbin/uqmi -d /dev/cdc-wdm0 --verify-pin1 %s >/tmp/qmiping.log 2>&1", nvram_safe_get(wsbuf));
 			}
 			//set apn and dial
@@ -3385,7 +3385,7 @@ void start_wan(int status)
 			sprintf(wsbuf, "ppp_passwd%s", wsel);
 			char *passwd = nvram_safe_get(wsbuf);
 			sprintf(wsbuf, "wan_apn%s", wsel);
-			if (strlen(username) > 0 && strlen(passwd) > 0) {
+			if (*username && *passwd) {
 				fprintf(fp, "uqmi -d /dev/cdc-wdm0 --set-client-id wds,${CLIENTID} --start-network %s --auth-type both --username %s --password %s --keep-client-id wds\n",
 					nvram_safe_get(wsbuf), username, passwd);
 			} else {
@@ -3430,7 +3430,7 @@ void start_wan(int status)
 			//set apn and dial
 			FILE *fp = fopen("/tmp/qmi-network.conf", "wb");
 			fprintf(fp, "APN=%s", nvram_safe_get("wan_apn"));
-			if (strlen(nvram_safe_get("ppp_username")) && strlen(nvram_safe_get("ppp_passwd"))) {
+			if (*(nvram_safe_get("ppp_username")) && *(nvram_safe_get("ppp_passwd"))) {
 				fprintf(fp, ",BOTH,%s,%s\n", nvram_safe_get("ppp_username"), nvram_safe_get("ppp_passwd"));
 			} else {
 				fprintf(fp, "\n");
@@ -3463,7 +3463,7 @@ void start_wan(int status)
 			}
 			/* Set APN Necseeary before PIN */
 			sprintf(wsbuf, "wan_apn%s", wsel);
-			if (strlen(nvram_safe_get(wsbuf))) {
+			if (*(nvram_safe_get(wsbuf))) {
 				sprintf(wsbuf, "wan_dial%s", wsel);
 				if (!nvram_match(wsbuf, "2")) {
 					sprintf(wsbuf, "wan_apn%s", wsel);
@@ -3477,17 +3477,17 @@ void start_wan(int status)
 
 			/* init PIN */
 			sprintf(wsbuf, "wan_pin%s", wsel);
-			if (strlen(nvram_safe_get(wsbuf)))
+			if (*(nvram_safe_get(wsbuf)))
 				sysprintf("export COMGTPIN=%s;comgt -s -d %s PIN", nvram_safe_get(wsbuf), controldevice);
 			// set netmode, even if it is auto, should be set every time, the stick might save it
 			// some sticks, don't save it ;-)
-			if (strlen(nvram_safe_get("3gnmvariant"))) {
+			if (*(nvram_safe_get("3gnmvariant"))) {
 				int netmode;
 				int netmodetoggle;
 				sprintf(wsbuf, "wan_conmode%s", wsel);
 				netmode = atoi(nvram_default_get(wsbuf, "0"));
 				if (netmode == 5) {
-					if (strlen(nvram_safe_get("3gnetmodetoggle"))) {
+					if (*(nvram_safe_get("3gnetmodetoggle"))) {
 						netmodetoggle = nvram_geti("3gnetmodetoggle");
 						if (netmodetoggle == 1) {
 							// 2g
@@ -3523,7 +3523,7 @@ void start_wan(int status)
 			if (nvram_match("3gdata", "sierradirectip")) {
 				sysprintf("comgt -d %s -s /etc/comgt/hangup-dip.comgt\n", controldevice);
 				// eval("ifconfig", "wwan0", "up");
-				if (strlen(username) && strlen(passwd)) {
+				if (*username && *passwd) {
 					if (!strcmp(username, "chap")) {
 						sysprintf("export COMGTPASSWORD=\"%s\"; export COMGTUSERNAME=\"%s\";export COMGTPROF=3; comgt -s -d %s /etc/comgt/dip-auth-chap.comgt", passwd, username, controldevice);
 					} else {
@@ -3541,7 +3541,7 @@ void start_wan(int status)
 					start_redial();
 				}
 			} else {
-				if (strlen(username) && strlen(passwd)) {
+				if (*username && *passwd) {
 					if ((fp = fopen("/tmp/ppp/chap-secrets", "w"))) {
 						fprintf(fp, "\"%s\" * \"%s\" *\n", username, passwd);
 						fclose(fp);
@@ -3554,7 +3554,7 @@ void start_wan(int status)
 					}
 				}
 				fp = fopen("/tmp/ppp/options.pppoe", "w");
-				if (strlen(username) && strlen(passwd)) {
+				if (*username && *passwd) {
 					fprintf(fp, "chap-secrets /tmp/ppp/chap-secrets\n");
 					fprintf(fp, "pap-secrets /tmp/ppp/pap-secrets\n");
 				}
@@ -3599,9 +3599,9 @@ void start_wan(int status)
 					break;
 				}
 				fprintf(fp, "connect \"COMGTDIAL='%s' /usr/sbin/comgt -s -d %s /etc/comgt/dial.comgt >/tmp/comgt.out 2>&1\"\n", dial, nvram_safe_get("3gdata"));
-				if (strlen(username))
+				if (*username)
 					fprintf(fp, "user '%s'\n", username);
-				if (strlen(passwd))
+				if (*passwd)
 					fprintf(fp, "password '%s'\n", passwd);
 				fprintf(fp, "%s\n", nvram_safe_get("3gdata"));
 
@@ -4335,9 +4335,9 @@ static const char *ipv6_router_address(struct in6_addr *in6addr, char *addr6)
 
 	addr6[0] = '\0';
 
-	if ((p = nvram_safe_get("ipv6_addr")) && *p && strlen(p) > 0) {
+	if ((p = nvram_safe_get("ipv6_addr")) && *p) {
 		inet_pton(AF_INET6, p, &addr);
-	} else if ((p = nvram_safe_get("ipv6_prefix")) && *p && strlen(p) > 0) {
+	} else if ((p = nvram_safe_get("ipv6_prefix")) && *p) {
 		inet_pton(AF_INET6, p, &addr);
 		addr.s6_addr16[7] = htons(0x0001);
 	} else {
@@ -4661,19 +4661,19 @@ void start_wan_done(char *wan_ifname)
 	char *gpio3g;
 	if (nvram_match("wan_proto", "3g")) {
 		gpio3g = nvram_safe_get("gpio3g");
-		if (strlen(gpio3g))
+		if (*gpio3g)
 			set_gpio(atoi(gpio3g), 1);
 	} else {
 		if (!nvram_match("wan_proto", "disabled")) {
 			gpio3g = nvram_safe_get("gpiowancable");
-			if (strlen(gpio3g))
+			if (*gpio3g)
 				set_gpio(atoi(gpio3g), 1);
 		} else {
 			gpio3g = nvram_safe_get("gpio3g");
-			if (strlen(gpio3g))
+			if (*gpio3g)
 				set_gpio(atoi(gpio3g), 0);
 			gpio3g = nvram_safe_get("gpiowancable");
-			if (strlen(gpio3g))
+			if (*gpio3g)
 				set_gpio(atoi(gpio3g), 0);
 		}
 	}

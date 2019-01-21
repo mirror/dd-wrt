@@ -191,7 +191,7 @@ static int detect_driver(char **drivers, char *list, int delay, int insmod)
 			basecount = newcount;
 			char *pcid = nvram_safe_get(list);
 			char *newdriver = malloc(strlen(pcid) + strlen(driver) + 2);
-			if (strlen(pcid))
+			if (*pcid)
 				sprintf(newdriver, "%s %s", pcid, driver);
 			else
 				sprintf(newdriver, "%s", driver);
@@ -223,7 +223,7 @@ static int detect_drivers(char *buspath, char *enabled, char *list, char **drive
 		nvram_commit();
 	} else {
 		wordlist = nvram_safe_get(list);
-		if (!strlen(wordlist))
+		if (!*wordlist)
 			return 0;
 		foreach(word, wordlist, next) {
 			if (insmod)

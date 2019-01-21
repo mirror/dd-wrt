@@ -320,7 +320,7 @@ char *getMTU(char *ifname)
 	if (!ifname)
 		return "1500";
 	char *mtu = nvram_nget("%s_mtu", ifname);
-	if (!mtu || strlen(mtu) == 0)
+	if (!mtu || *mtu == 0)
 		return "1500";
 	return mtu;
 }
@@ -330,7 +330,7 @@ char *getTXQ(char *ifname)
 	if (!ifname)
 		return "1000";
 	char *txq = nvram_nget("%s_txq", ifname);
-	if (!txq || strlen(txq) == 0) {
+	if (!txq || *txq == 0) {
 		int s;
 		struct ifreq ifr;
 		bzero(&ifr, sizeof(ifr));
@@ -731,7 +731,7 @@ char *get_wan_ipaddr(void)
 		wan_ipaddr = nvram_safe_get("wan_ipaddr");
 	}
 
-	if (strlen(wan_ipaddr) == 0)
+	if (*wan_ipaddr == 0)
 		wan_ipaddr = "0.0.0.0";
 
 	return wan_ipaddr;
@@ -2027,7 +2027,7 @@ static char *s_getDrives(int type)
 				char *d = &file->d_name;
 				char stats[512];
 				char cmp[32];
-				if (d && strlen(d)) {
+				if (d && *d) {
 					strcpy(cmp, d);
 					if (!strncmp(cmp, "sd", 2))
 						cmp[3] = 0;

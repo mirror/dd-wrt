@@ -2390,7 +2390,7 @@ void start_restore_defaults(void)
 		}
 	}
 	free_defaults();
-	if (!strlen(nvram_safe_get("http_username")) || nvram_match("http_username", "admin")) {
+	if (!*(nvram_safe_get("http_username")) || nvram_match("http_username", "admin")) {
 		char passout[MD5_OUT_BUFSIZE];
 		nvram_set("http_username", DEFAULT_PASS);
 		nvram_set("http_passwd", DEFAULT_USER);
@@ -3376,7 +3376,7 @@ void start_nvram(void)
 
 		for (i = 0; i < MAX_NVPARSE; ++i) {
 			sprintf(s, "forward_port%d", i);
-			if (strlen((nv = nvram_safe_get(s)))) {
+			if (*(nv = nvram_safe_get(s))) {
 				if (strstr(nv, "msmsgs"))
 					nvram_unset(s);
 			}
@@ -3489,8 +3489,8 @@ void start_nvram(void)
 	}
 
 #ifdef HAVE_WIVIZ
-	if (!strlen(nvram_safe_get("hopseq"))
-	    || !strlen(nvram_safe_get("hopdwell"))) {
+	if (!*(nvram_safe_get("hopseq"))
+	    || !*(nvram_safe_get("hopdwell"))) {
 		nvram_seti("hopdwell", 1000);
 		nvram_seti("hopseq", 0);
 	}
@@ -3522,7 +3522,7 @@ void start_nvram(void)
 
 	char *qos_mac = nvram_safe_get("svqos_macs");
 
-	if (strlen(qos_mac)) {
+	if (*qos_mac) {
 		char *newqos = calloc(strlen(qos_mac) + 254, 1);
 
 		char level[32], level2[32], data[32], type[32], level3[32], prio[32];
@@ -3539,7 +3539,7 @@ void start_nvram(void)
 				strcpy(prio, "0");
 
 			if (strcmp(type, "hostapd") && strcmp(type, "pppd")) {
-				if (strlen(newqos))
+				if (*newqos)
 					sprintf(newqos, "%s %s %s %s %s %s %s |", newqos, data, level, level2, type, level3, prio);
 				else
 					sprintf(newqos, "%s %s %s %s %s %s |", data, level, level2, type, level3, prio);
@@ -3553,7 +3553,7 @@ void start_nvram(void)
 
 	char *qos_ip = nvram_safe_get("svqos_ips");
 
-	if (strlen(qos_ip)) {
+	if (*qos_ip) {
 		char *newip = calloc(strlen(qos_ip) + 254, 1);
 
 		char data[32], level[32], level2[32], level3[32], prio[32];
@@ -3569,7 +3569,7 @@ void start_nvram(void)
 			if (!strcmp(prio, "|"))
 				strcpy(prio, "0");
 
-			if (strlen(newip))
+			if (*newip)
 				sprintf(newip, "%s %s %s %s %s %s |", newip, data, level, level2, level3, prio);
 			else
 				sprintf(newip, "%s %s %s %s %s |", data, level, level2, level3, prio);

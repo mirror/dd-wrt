@@ -2856,7 +2856,7 @@ int internal_getRouterBrand()
 		    startswith(et0, "00:0c:e5") ||
 		    startswith(et0, "00:0C:10") ||
 		    startswith(et0, "00:0c:10") || startswith(et0, "00:0C:11") || startswith(et0, "00:0c:11") || startswith(et0, "00:11:22") || startswith(et0, "00:0C:90") || startswith(et0, "00:0c:90")) {
-			if (!strlen(nvram_safe_get("phyid_num"))) {
+			if (!*(nvram_safe_get("phyid_num"))) {
 				insmod("switch-core");	// get phy type
 				insmod("switch-robo");
 				rmmod("switch-robo");

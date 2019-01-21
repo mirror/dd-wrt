@@ -308,7 +308,7 @@ static char *wl_dump_wpa_rsn_ies(uint8 * cp, uint len)
 	if (rsnie)
 		wl_rsn_ie_dump((bcm_tlv_t *) rsnie, sum);
 	if (wpaie || rsnie) {
-		if (strlen(sum) > 0)
+		if (*sum > 0)
 			sum[strlen(sum)] = 0;
 		return sum;
 	}

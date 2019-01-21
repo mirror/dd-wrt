@@ -241,7 +241,7 @@ void configure_single_ath9k(int count)
 	int maxtxchain = mac80211_get_avail_tx_antenna(phy_idx);
 	int txchain;
 	int rxchain;
-	if (!strlen(nvram_safe_get(rxantenna)) || !strlen(nvram_safe_get(txantenna))) {
+	if (!*(nvram_safe_get(rxantenna)) || !*(nvram_safe_get(txantenna))) {
 		txchain = maxtxchain;
 		rxchain = maxrxchain;
 	} else {
@@ -358,7 +358,7 @@ void configure_single_ath9k(int count)
 		vapcount = countvaps;
 	int counter = 1;
 	char compr[32];
-	if (strlen(vifs))
+	if (*vifs)
 		foreach(var, vifs, next) {
 		fprintf(stderr, "setup vifs %s %d\n", var, counter);
 		// create the first main hostapd interface when this is repeater mode
@@ -858,7 +858,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			caps =
 			    mac80211_get_vhtcaps(prefix, nvram_default_matchi(shortgi, 1, 1) ? 1 : 0, (usebw == 80 || usebw == 160 || usebw == 8080) ? 1 : 0, usebw == 160 ? 1 : 0, usebw == 8080 ? 1 : 0,
 						 nvram_default_matchi(subf, 1, 0), nvram_default_matchi(mubf, 1, 0));
-			if (strlen(caps)) {
+			if (*caps) {
 				fprintf(fp, "vht_capab=%s\n", caps);
 				free(caps);
 				if (!strcmp(netmode, "ac-only")) {
@@ -1190,7 +1190,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		} else {
 			for (i = 1; i < 5; i++) {
 				char *athkey = nvram_nget("%s_key%d", ifname, i);
-				if (athkey != NULL && strlen(athkey) > 0) {
+				if (athkey != NULL && *athkey) {
 					fprintf(fp, "wep_key%d=%s\n", i - 1, athkey);
 				}
 			}
@@ -1241,7 +1241,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 				fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
 			else {
 				char *wip = get_wan_ipaddr();
-				if (strlen(wip))
+				if (*wip)
 					fprintf(fp, "own_ip_addr=%s\n", wip);
 				else
 					fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
@@ -1294,7 +1294,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 #endif
 	char *v = nvram_nget("%s_config", ifname);
 	fprintf(fp, "\n");
-	if (v && strlen(v) > 0)
+	if (v && *v)
 		fprintf(fp, "%s", v);
 	fprintf(fp, "\n");
 	fclose(fp);
@@ -1461,7 +1461,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 				fprintf(fp, "htmode=HT%s\n", ht);
 			sprintf(cellidtemp, "%s_cellid", prefix);
 			cellid = nvram_safe_get(cellidtemp);
-			if (strlen(cellid) != 0) {
+			if (*cellid) {
 				fprintf(fp, "\tbssid=%s\n", cellid);
 			}
 #if defined(HAVE_MAKSAT) || defined(HAVE_TMK) || defined(HAVE_BKM)
@@ -1515,7 +1515,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		else if (nvram_default_matchi(mfp, 0, 0))
 			fprintf(fp, "\tieee80211w=0\n");
 #endif
-		if (!strlen(pwstring)) {
+		if (!*pwstring) {
 			sprintf(psk, "%s_crypto", prefix);
 			if (nvram_match(psk, "aes")) {
 				nvram_nset("1", "%s_ccmp", prefix);
@@ -1641,7 +1641,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 				fprintf(fp, "auth_alg=OPEN\n");
 			for (i = 1; i < 5; i++) {
 				char *athkey = nvram_nget("%s_key%d", prefix, i);
-				if (athkey != NULL && strlen(athkey) > 0) {
+				if (athkey != NULL && *athkey) {
 					fprintf(fp, "wep_key%d=%s\n", i - 1, athkey);	// setup wep
 				}
 			}
@@ -1721,7 +1721,7 @@ void ath9k_start_supplicant(int count)
 		sprintf(fstr, "/tmp/%s_hostap.conf", dev);
 		do_hostapd(fstr, dev);
 	} else {
-		if (strlen(vifs)) {
+		if (*vifs) {
 			sprintf(fstr, "/tmp/%s_hostap.conf", dev);
 			do_hostapd(fstr, dev);
 			sprintf(ctrliface, "/var/run/hostapd/%s.1", dev);
@@ -1794,7 +1794,7 @@ void ath9k_start_supplicant(int count)
 		}
 	}
 
-	if (strlen(vifs)) {
+	if (*vifs) {
 		foreach(var, vifs, next) {
 			sprintf(mode, "%s_mode", var);
 			char *m2 = nvram_safe_get(mode);
@@ -1830,12 +1830,12 @@ void ath9k_start_supplicant(int count)
 			sprintf(wdsdevname, "%s_wds%d_if", dev, s);
 			sprintf(wdsmacname, "%s_wds%d_hwaddr", dev, s);
 			wdsdev = nvram_safe_get(wdsdevname);
-			if (!strlen(wdsdev))
+			if (!*wdsdev)
 				continue;
 			if (nvram_matchi(wdsvarname, 0))
 				continue;
 			hwaddr = nvram_safe_get(wdsmacname);
-			if (strlen(hwaddr)) {
+			if (*hwaddr) {
 				eval("iw", wif, "interface", "add", wdsdev, "type", "wds");
 				eval("iw", "dev", wdsdev, "set", "peer", hwaddr);
 				eval("ifconfig", wdsdev, "0.0.0.0", "up");

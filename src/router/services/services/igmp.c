@@ -37,7 +37,7 @@ void start_igmprt(void)
 	char *argv[] = { "igmprt", "/tmp/igmpproxy.conf", NULL };
 
 	int ifcount = 0;
-	if (nvram_match("wan_proto", "disabled") || !strlen(get_wan_face()))	// todo: add upstream 
+	if (nvram_match("wan_proto", "disabled") || !*(get_wan_face()))	// todo: add upstream 
 		return;
 
 	FILE *fp = fopen("/tmp/igmpproxy.conf", "wb");

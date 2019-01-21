@@ -40,7 +40,7 @@ void start_ipvs(void)
 	char *tnext, *twordlist;
 	char *ipvs = nvram_safe_get("ipvs");
 	char *ipvstarget = nvram_safe_get("ipvstarget");
-	if (!strlen(ipvs) || !strlen(ipvstarget))
+	if (!*ipvs || !*ipvstarget)
 		return;
 	wordlist = ipvs;
 	foreach(word, wordlist, next) {

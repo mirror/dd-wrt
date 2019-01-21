@@ -477,12 +477,12 @@ struct dns_lists *get_dns_list(void)
 	char *wan_dns = nvram_safe_get("wan_dns");
 	char *wan_get_dns = nvram_safe_get("wan_get_dns");
 
-	if (strlen(sv_localdns))
+	if (*sv_localdns)
 		add_dnslist(dns_list, sv_localdns);
-	if (strlen(wan_dns)) {
+	if (*wan_dns) {
 		add_dnslist(dns_list, wan_dns);
 	}
-	if (strlen(wan_get_dns)) {
+	if (*wan_get_dns) {
 		add_dnslist(dns_list, wan_get_dns);
 	}
 	/*
@@ -495,7 +495,7 @@ struct dns_lists *get_dns_list(void)
 
 		snprintf(altdnsvar, 31, "altdns%d", altdns_index);
 
-		if (strlen(nvram_safe_get(altdnsvar)) > 0) {
+		if (*(nvram_safe_get(altdnsvar))) {
 			add_dnslist(dns_list, nvram_safe_get(altdnsvar));
 		}
 		altdns_index++;
@@ -1027,13 +1027,13 @@ void set_host_domain_name(void)
 	 * If wan_hostname is blank then we do nothing, we leave to what it was
 	 * set at boot 
 	 */
-	if (strlen(wan_hostname) > 0)
+	if (*wan_hostname)
 		sethostname(wan_hostname, strlen(wan_hostname));
 
 	/*
 	 * Allow you to use getdomainname to get Domain Name 
 	 */
-	if (strlen(wan_domain) > 0 && strlen(wan_domain) <= 64)	// no 
+	if (*wan_domain && strlen(wan_domain) <= 64)	// no 
 		// more 
 		// than 
 		// 64
@@ -1127,7 +1127,7 @@ int wds_dev_config(int dev, int up)
 #endif
 
 		wds_list = nvram_safe_get("wl0_wds");
-		if (wds_list == (void *)0 || strlen(wds_list) <= 0)
+		if (wds_list == (void *)0 || *!wds_list)
 			return 0;
 
 		snprintf(wds_hwaddr_var, 31, "%s_hwaddr", wds_var);
@@ -1215,7 +1215,7 @@ int sv_valid_statics(char *value)
 			return FALSE;
 
 		if (!sv_valid_ipaddr(ip) || !sv_valid_hwaddr(mac)
-		    || strlen(hostname) <= 0)
+		    || !*hostname)
 			return FALSE;
 
 	}
@@ -1837,7 +1837,7 @@ void addAction(char *action)
 	char *actionstack = "";
 	char *next;
 	char service[80];
-	if (action == NULL || strlen(action) == 0)
+	if (action == NULL || !*action)
 		return;
 	char *services = nvram_safe_get("action_service");
 
@@ -1846,7 +1846,7 @@ void addAction(char *action)
 			return;
 		}
 	}
-	if (strlen(services) > 0) {
+	if (*services) {
 		asprintf(&actionstack, "%s %s", action, services);
 		nvram_set("action_service", actionstack);
 		free(actionstack);

@@ -126,7 +126,7 @@ void start_freeradius(void)
 			for (i = 0; i < db->usercount; i++) {
 				if (!db->users[i].clientsize)
 					continue;
-				if (!db->users[i].client || !strlen(db->users[i].client))
+				if (!db->users[i].client || !*db->users[i].client)
 					continue;
 				fprintf(fp, "client %s {\n" "\tipaddr = %s\n" "\tsecret = %s\n" "\tshortname = DD-WRT-RADIUS\n}\n", db->users[i].client, db->users[i].client, db->users[i].passwd);
 			}
@@ -150,7 +150,7 @@ void start_freeradius(void)
 			for (i = 0; i < db->usercount; i++) {
 				if (!db->users[i].usersize)
 					continue;
-				if (!db->users[i].user || !strlen(db->users[i].user))
+				if (!db->users[i].user || !*db->users[i].user)
 					continue;
 				if (!db->users[i].enabled)
 					continue;

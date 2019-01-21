@@ -1540,7 +1540,7 @@ int wifi_gettxpoweroffset(char *ifname)
 #endif
 	char *manpoweroffset;
 	manpoweroffset = nvram_nget("%s_poweroffset", ifname);
-	if (strlen(manpoweroffset)) {
+	if (*(manpoweroffset)) {
 		poweroffset = atoi(manpoweroffset);
 	}
 	return poweroffset;
