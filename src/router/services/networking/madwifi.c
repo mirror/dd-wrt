@@ -328,7 +328,6 @@ void addvhtcaps(char *prefix, FILE * fp)
 
 	unsigned int mask;
 #if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC) 
-#if 1
 	if (has_ac(prefix)) {
 		char shortgi[32];
 		sprintf(shortgi, "%s_shortgi", prefix);
@@ -356,7 +355,6 @@ void addvhtcaps(char *prefix, FILE * fp)
 			fprintf(fp, "\tvht_capa_mask=%d\n", mask);
 		}
 	}
-#endif
 #endif
 #ifdef HAVE_ATH9K
 	if (is_mac80211(prefix)) {
