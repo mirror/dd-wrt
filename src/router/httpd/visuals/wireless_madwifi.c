@@ -244,8 +244,8 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 
 		sprintf(vif, "%s_vifs", devs);
 		char var[80], *next;
-		char *vifs = nvram_get(vif);
-		if (vifs != NULL)
+		char *vifs = nvram_safe_get(vif);
+		if (*vifs) {
 			foreach(var, vifs, next) {
 			if (!is_mac80211(devs)) {
 				global = ej_active_wireless_if(wp, argc, argv, var, &assoc_count[cnt], global, t, macmask);
@@ -254,6 +254,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 			}
 			cnt++;
 			}
+		}
 	}
 
 	// show wds links

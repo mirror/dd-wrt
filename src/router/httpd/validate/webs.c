@@ -494,9 +494,9 @@ void addDeletion(char *word)
 	if (!word || !strlen(word))
 		return;
 
-	char *oldarg = nvram_get("action_service_arg1");
+	char *oldarg = nvram_safe_get("action_service_arg1");
 
-	if (oldarg && strlen(oldarg) > 0) {
+	if (strlen(oldarg) > 0) {
 		char *newarg = safe_malloc(strlen(oldarg) + strlen(word) + 2);
 
 		sprintf(newarg, "%s %s", oldarg, word);
@@ -2670,7 +2670,7 @@ void remove_vifs_single(char *prefix)
 	char guestport[16];
 	sprintf(guestport, "guestport_%s", prefix);
 
-	if (nvram_get(guestport)) {
+	if (nvram_exists(guestport)) {
 		if (gp_action == 2) {
 			for (i = 0; i <= slen; i++) {
 				if (copy[i] == 0x20 || i == slen) {
@@ -4271,9 +4271,9 @@ void user_add(webs_t wp)
 void raduser_add(webs_t wp)
 {
 	int radcount = 0;
-	char *radc = nvram_get("iradius_count");
+	char *radc = nvram_safe_get("iradius_count");
 
-	if (radc != NULL)
+	if (*radc)
 		radcount = atoi(radc);
 	radcount++;
 	char count[16];

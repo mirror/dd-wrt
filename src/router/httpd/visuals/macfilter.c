@@ -29,7 +29,7 @@ static void show_macfilter_if(webs_t wp, char *ifname)
 
 	sprintf(macmode, "%s_macmode1", ifname);
 	rep(macmode, '.', 'X');
-	if (nvram_get(macmode) == NULL)
+	if (!nvram_exists(macmode))
 		nvram_set(macmode, "disabled");
 	char id[32];
 
@@ -49,7 +49,7 @@ static void show_macfilter_if(webs_t wp, char *ifname)
 	websWrite(wp, "<div class=\"setting\" id=\"%s\">\n", id);
 	websWrite(wp, "<div class=\"label\">%s<br />&nbsp;</div>\n", live_translate(wp, "wl_mac.label2"));
 	sprintf(macmode, "%s_macmode", ifname);
-	if (nvram_get(macmode) == NULL)
+	if (!nvram_exists(macmode))
 		nvram_set(macmode, "disabled");
 	strcpy(mycopy, live_translate(wp, "wl_mac.deny"));
 	websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"deny\" name=\"%s\" %s />%s&nbsp;\n", macmode, nvram_invmatch(macmode, "allow") ? "checked=\"checked\"" : "", mycopy);
