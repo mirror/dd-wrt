@@ -121,7 +121,7 @@ static int write_key_file(char *keyname, char *keyfile, int chmodval)
 	if (!keyname || !keyfile)
 		return -1;
 	host_key = nvram_safe_get(keyname);
-	if (!nvram_exists(keyname) || '\0' == host_key[0])
+	if (!*host_key)
 		return -1;
 
 	/*
