@@ -100,7 +100,7 @@ void start_openvpnserver(void)
 		mkdir("/jffs/etc", 0700);
 		mkdir("/jffs/etc/openvpn", 0700);
 		mkdir("/jffs/etc/openvpn/ccd", 0700);
-		if (strlen(nvram_safe_get("openvpn_ccddef"))) {
+		if (*(nvram_safe_get("openvpn_ccddef"))) {
 			write_nvram("/jffs/etc/openvpn/ccd/DEFAULT", "openvpn_ccddef");
 			chmod("/jffs/etc/openvpn/ccd/DEFAULT", 0700);
 		}
@@ -206,9 +206,9 @@ void start_openvpnserver(void)
 			fprintf(fp, "server-bridge\n" "dev tap2\n");
 		else
 			fprintf(fp, "server-bridge nogw\n" "dev tap2\n");
-		if (strlen(nvram_safe_get("openvpn_tlsauth")))
+		if (*(nvram_safe_get("openvpn_tlsauth")))
 			fprintf(fp, "tls-auth /tmp/openvpn/ta.key 0\n");
-		if (strlen(nvram_safe_get("openvpn_crl")))
+		if (*(nvram_safe_get("openvpn_crl")))
 			fprintf(fp, "crl-verify /tmp/openvpn/ca.crl\n");
 		/* for QOS */
 		if (nvram_matchi("wshaper_enable", 1))
@@ -452,7 +452,7 @@ void start_openvpn(void)
 	if (nvram_invmatch("openvpncl_lzo", "off"))
 		fprintf(fp, "comp-lzo %s\n",	//yes/no/adaptive/disable 
 			nvram_safe_get("openvpncl_lzo"));
-	if (strlen(nvram_safe_get("openvpncl_route"))) {	//policy routing: we need redirect-gw so we get gw info
+	if (*(nvram_safe_get("openvpncl_route"))) {	//policy routing: we need redirect-gw so we get gw info
 		fprintf(fp, "redirect-private def1\n");
 		if (nvram_invmatch("openvpncl_tuntap", "tun"))
 			fprintf(fp, "ifconfig-noexec\n");
@@ -476,7 +476,7 @@ void start_openvpn(void)
 		fprintf(fp, "fast-io\n");	//experimental!improving CPU efficiency by 5%-10%
 //      if (nvram_match("openvpncl_tuntap", "tun"))
 //              fprintf(fp, "tun-ipv6\n");      //enable ipv6 support.
-	if (strlen(nvram_safe_get("openvpncl_tlsauth")))
+	if (*(nvram_safe_get("openvpncl_tlsauth")))
 		fprintf(fp, "tls-auth /tmp/openvpncl/ta.key 1\n");
 	if (nvram_invmatchi("openvpncl_tlscip", 0))
 		fprintf(fp, "tls-cipher %s\n", nvram_safe_get("openvpncl_tlscip"));
@@ -508,7 +508,7 @@ void start_openvpn(void)
 	    && nvram_matchi("openvpncl_nat", 0)) {
 		fprintf(fp, "brctl addif br0 %s\n" "ifconfig %s 0.0.0.0 up\n", ovpniface, ovpniface);	//non promisc for performance reasons
 		if (nvram_match("openvpncl_tuntap", "tap")
-		    && strlen(nvram_safe_get("openvpncl_ip")) > 0)
+		    && *(nvram_safe_get("openvpncl_ip")))
 			fprintf(fp, "ifconfig %s %s netmask %s up\n", ovpniface, nvram_safe_get("openvpncl_ip"), nvram_safe_get("openvpncl_mask"));
 	}
 	if (nvram_matchi("openvpncl_nat", 1))
@@ -523,7 +523,7 @@ void start_openvpn(void)
 				"iptables -D FORWARD -o %s -j ACCEPT\n"
 				"iptables -I INPUT -i %s -j ACCEPT\n" "iptables -I FORWARD -i %s -j ACCEPT\n" "iptables -I FORWARD -o %s -j ACCEPT\n", ovpniface, ovpniface, ovpniface, ovpniface, ovpniface, ovpniface);
 	}
-	if (strlen(nvram_safe_get("openvpncl_route"))) {	//policy based routing
+	if (*(nvram_safe_get("openvpncl_route"))) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
 //              fprintf(fp, "ip route flush table 10\n");
 		fprintf(fp, "for IP in `cat /tmp/openvpncl/policy_ips` ; do\n" "\t ip rule add from $IP table 10\n" "done\n");
@@ -565,14 +565,14 @@ void start_openvpn(void)
 	    && nvram_matchi("openvpncl_nat", 0))
 		fprintf(fp, "brctl delif br0 %s\n" "ifconfig %s down\n", ovpniface, ovpniface);
 	else if (nvram_match("openvpncl_tuntap", "tap")
-		 && strlen(nvram_safe_get("openvpncl_ip")) > 0)
+		 && *(nvram_safe_get("openvpncl_ip")))
 		fprintf(fp, "ifconfig %s down\n", ovpniface);
 	if (nvram_matchi("openvpncl_nat", 1))
 		fprintf(fp, "iptables -D INPUT -i %s -j ACCEPT\n" "iptables -D POSTROUTING -t nat -o %s -j MASQUERADE\n", ovpniface, ovpniface);
 	else {
 		fprintf(fp, "iptables -D INPUT -i %s -j ACCEPT\n" "iptables -D FORWARD -i %s -j ACCEPT\n" "iptables -D FORWARD -o %s -j ACCEPT\n", ovpniface, ovpniface, ovpniface);
 	}
-	if (strlen(nvram_safe_get("openvpncl_route"))) {	//policy based routing
+	if (*(nvram_safe_get("openvpncl_route"))) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
 		fprintf(fp, "ip route flush table 10\n");
 	}

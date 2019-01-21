@@ -94,7 +94,7 @@ static void setdlinkcountry(void)
 	buf[27] = 0;
 	bzero(c, sizeof(c));
 	strncpy(c, &buf[12], 2);
-	if (!strlen(c))
+	if (!*c)
 		return;
 	int cnt = 0;
 	while (regions[cnt].match) {

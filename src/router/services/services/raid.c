@@ -76,7 +76,7 @@ void start_raid(void)
 			zfs = 1;
 		if (!strcmp(type, "btrfs"))
 			btrfs = 1;
-		if (!strlen(raid))
+		if (!*raid)
 			break;
 		if (!strcmp(done, "0"))
 			todo = 1;
@@ -184,7 +184,7 @@ void start_raid(void)
 	i = 0;
 	while (1) {
 		char *raid = nvram_nget("raid%d", i);
-		if (!strlen(raid))
+		if (!*raid)
 			break;
 		char *level = nvram_nget("raidlevel%d", i);
 		char *done = nvram_nget("raiddone%d", i);

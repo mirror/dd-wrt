@@ -186,7 +186,7 @@ void start_bridging(void)
 		if (!bridge || !stp)
 			break;
 
-		if (prio && mtu && strlen(mtu) > 0)
+		if (prio && mtu && *mtu)
 			nvram_nset(mtu, "%s_mtu", bridge);
 		br_add_bridge(bridge);
 		set_stp_state(bridge, stp);
@@ -195,7 +195,7 @@ void start_bridging(void)
 			br_set_bridge_prio(bridge, atoi(prio));
 
 		sprintf(hwaddr, "%s_hwaddr", bridge);
-		if (strcmp(bridge, "br0") && strlen(nvram_safe_get(hwaddr)) > 0) {
+		if (strcmp(bridge, "br0") && *(nvram_safe_get(hwaddr))) {
 			set_hwaddr(bridge, nvram_safe_get(hwaddr));
 		} else {
 			set_hwaddr(bridge, nvram_safe_get("lan_hwaddr"));

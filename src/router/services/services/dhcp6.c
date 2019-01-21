@@ -77,7 +77,7 @@ void start_dhcp6c(void)
 	nvram_unset("ipv6_get_dns");
 	char mac[18];
 	getLANMac(mac);
-	if (!strlen(mac))
+	if (!*mac)
 		strcpy(mac, nvram_safe_get("et0macaddr_safe"));
 
 	if (ether_atoe(mac, ea)) {
@@ -222,7 +222,7 @@ int dhcp6c_state_main(int argc, char **argv)
 	char prefix[INET6_ADDRSTRLEN];
 	struct in6_addr addr;
 	int i, r;
-	int c=0;
+	int c = 0;
 	c |= nvram_change("ipv6_rtr_addr", getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, 0));
 
 	// extract prefix from configured IPv6 address

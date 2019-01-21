@@ -36,7 +36,7 @@ void start_wifidog(void)
 		mkdir("/tmp/wifidog/", 0744);
 		FILE *fp = fopen("/tmp/wifidog/wifidog.conf", "wb");
 
-		if (!strlen(nvram_safe_get("wd_gwid")))
+		if (!*(nvram_safe_get("wd_gwid")))
 			fprintf(fp, "GatewayID %s\n", nvram_safe_get("router_name"));
 		else
 			fprintf(fp, "GatewayID %s\n", nvram_safe_get("wd_gwid"));
@@ -57,18 +57,18 @@ void start_wifidog(void)
 		fprintf(fp, "SSLAvailable %s\n", nvram_matchi("wd_sslavailable", 1) ? "yes" : "no");
 		fprintf(fp, "SSLPort %s\n", nvram_safe_get("wd_sslport"));
 		fprintf(fp, "HTTPPort %s\n", nvram_safe_get("wd_httpport"));
-		if (strlen(nvram_safe_get("wd_messagefile"))) {
+		if (*(nvram_safe_get("wd_messagefile"))) {
 			fprintf(fp, "HtmlMessageFile %s\n", nvram_safe_get("wd_messagefile"));
 		}
 		if (nvram_matchi("wd_auth", 1)) {
-			if (strlen(nvram_safe_get("wd_realm")))
+			if (*(nvram_safe_get("wd_realm")))
 				fprintf(fp, "HTTPDRealm %s\n", nvram_safe_get("wd_realm"));
 			fprintf(fp, "HTTPDUserName %s\n", nvram_safe_get("wd_username"));
 			fprintf(fp, "HTTPDPassword %s\n", nvram_safe_get("wd_password"));
 		}
 		fprintf(fp, "Path %s\n", nvram_safe_get("wd_path"));
 		fprintf(fp, "}\n");
-		if (strlen(nvram_safe_get("wd_config"))) {
+		if (*(nvram_safe_get("wd_config"))) {
 			fwritenvram("wd_config", fp);
 		} else {
 			fprintf(fp, "FirewallRuleSet validating-users {\n");

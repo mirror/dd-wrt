@@ -83,7 +83,7 @@ static void unbound_config(void)
 
 	prefix = do_6to4 ? "0:0:0:1::" : nvram_safe_get("ipv6_prefix");
 
-	if (nvram_matchi("ipv6_enable", 1) && nvram_matchi("radvd_enable", 1) && strlen(prefix) > 0) {
+	if (nvram_matchi("ipv6_enable", 1) && nvram_matchi("radvd_enable", 1) && *prefix) {
 		fprintf(fp, "access-control: %s/64 allow\n", prefix);
 	}
 	fprintf(fp, "access-control: 127.0.0.0/8 allow\n");
@@ -96,7 +96,7 @@ static void unbound_config(void)
 		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
 			char *ipaddr = nvram_nget("%s_ipaddr", var);
 			char *netmask = nvram_nget("%s_netmask", var);
-			if (strlen(ipaddr) > 0 && strcmp(ipaddr, "0.0.0.0"))
+			if (*ipaddr && strcmp(ipaddr, "0.0.0.0"))
 				fprintf(fp, "access-control: %s/%d allow\n", ipaddr, getmask(netmask));
 
 		}

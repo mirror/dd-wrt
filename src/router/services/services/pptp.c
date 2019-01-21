@@ -97,10 +97,10 @@ void start_pptpd(void)
 	if (!nowins) {
 		fprintf(fp, "ms-wins %s\n", nvram_safe_get("wan_wins"));
 	}
-	if (strlen(nvram_safe_get("pptpd_wins1"))) {
+	if (*(nvram_safe_get("pptpd_wins1"))) {
 		fprintf(fp, "ms-wins %s\n", nvram_safe_get("pptpd_wins1"));
 	}
-	if (strlen(nvram_safe_get("pptpd_wins2"))) {
+	if (*(nvram_safe_get("pptpd_wins2"))) {
 		fprintf(fp, "ms-wins %s\n", nvram_safe_get("pptpd_wins2"));
 	}
 
@@ -128,10 +128,10 @@ void start_pptpd(void)
 		}
 	}
 	free_dns_list(dns_list);
-	if (strlen(nvram_safe_get("pptpd_dns1"))) {
+	if (*(nvram_safe_get("pptpd_dns1"))) {
 		fprintf(fp, "ms-dns %s\n", nvram_safe_get("pptpd_dns1"));
 	}
-	if (strlen(nvram_safe_get("pptpd_dns2"))) {
+	if (*(nvram_safe_get("pptpd_dns2"))) {
 		fprintf(fp, "ms-dns %s\n", nvram_safe_get("pptpd_dns2"));
 	}
 	//      use jffs/usb for auth scripts if available
@@ -238,7 +238,7 @@ void start_pptpd(void)
 	lpTemp = nvram_safe_get("pptpd_auth");
 	fp = fopen("/tmp/pptpd/chap-secrets", "w");
 	// fprintf (fp, "root\t*\t%s\t*\n", nvram_safe_get ("http_passwd"));
-	if (strlen(lpTemp))
+	if (*lpTemp)
 		fprintf(fp, "%s\n", lpTemp);
 	fclose(fp);
 

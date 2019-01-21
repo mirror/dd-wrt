@@ -66,7 +66,7 @@ void start_dlna(void)
 	fprintf(fp, "network_interface=br0\n");
 	dlna_shares = getdlnashares();
 	for (cs = dlna_shares; cs; cs = csnext) {
-		if (strlen(cs->mp)) {
+		if (*cs->mp) {
 			if ((cs->types & (TYPE_VIDEO | TYPE_AUDIO | TYPE_IMAGES))) {
 				fprintf(fp, "media_dir=%s%s%s,%s%s%s\n",	//
 					cs->types & TYPE_VIDEO ? "V" : "",	//

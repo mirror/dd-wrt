@@ -162,10 +162,10 @@ void start_radvd(void)
 		for (i = 0; i < 2; i++) {
 			snprintf(nvname, sizeof(nvname), "ipv6_dns%d", i + 1);
 			p = nvram_safe_get(nvname);
-			if (!strlen(p))
+			if (!*p)
 				continue;
 
-			next += sprintf(next, strlen(ipv6_dns_str) ? " %s" : "%s", p);
+			next += sprintf(next, *ipv6_dns_str ? " %s" : "%s", p);
 		}
 
 		if (!strcmp(nvram_safe_get("ipv6_typ"), "ipv6pd"))

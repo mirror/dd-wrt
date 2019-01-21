@@ -6479,17 +6479,17 @@ void start_sysinit(void)
 
 			// 5G band1
 			impbf_value = nvram_safe_get("sb/1/rpcal5gb0");
-			if ((strlen(impbf_value) > 0))
+			if (*impbf_value)
 				nvram_set("pcie/1/3/rpcal5gb0", impbf_value);
 
 			// 2.4G
 			impbf_value = nvram_safe_get("sb/1/rpcal2g");
-			if ((strlen(impbf_value) > 0))
+			if (*impbf_value)
 				nvram_set("pcie/1/4/rpcal2g", impbf_value);
 
 			// 5G band4
 			impbf_value = nvram_safe_get("sb/1/rpcal5gb3");
-			if ((strlen(impbf_value) > 0))
+			if (*impbf_value)
 				nvram_set("pcie/2/1/rpcal5gb3", impbf_value);
 
 			nvram_commit();
@@ -6683,7 +6683,7 @@ void start_overclocking(void)
 
 	char *ov = nvram_safe_get("overclocking");
 
-	if (strlen(ov))
+	if (*ov)
 		return;
 	int clk = atoi(ov);
 
