@@ -1030,7 +1030,7 @@ struct detect_wans {
 	     strncpy(word, next, sizeof(word)), \
 	     word[(next=strstr(next, delim)) ? strstr(word, delim) - word : sizeof(word) - 1] = '\0', \
 	     next = next ? next + sizeof(delim) - 1 : NULL ; \
-	     strlen(word); \
+	     word[0]; \
 	     next = next ? : "", \
 	     strncpy(word, next, sizeof(word)), \
 	     word[(next=strstr(next, delim)) ? strstr(word, delim) - word : sizeof(word) - 1] = '\0', \
