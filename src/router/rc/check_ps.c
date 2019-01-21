@@ -52,14 +52,14 @@ static int search_process(char *name, int count)
 
 static int check_igmprt(void)
 {
-	if (nvram_match("wan_proto", "disabled") || !strlen(get_wan_face()))	// todo: add upstream 
+	if (nvram_match("wan_proto", "disabled") || !*(get_wan_face()))	// todo: add upstream 
 		return 0;
 	return !search_process("igmprt", 1);
 }
 
 static int check_ddns(void)
 {
-	if (nvram_match("wan_proto", "disabled") || !strlen(get_wan_face()))	// todo: add upstream 
+	if (nvram_match("wan_proto", "disabled") || !*(get_wan_face()))	// todo: add upstream 
 		return 0;
 	return !search_process("inadyn", 1);
 }

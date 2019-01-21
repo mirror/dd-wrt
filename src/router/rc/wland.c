@@ -229,7 +229,7 @@ static void do_aqos_check(void)
 	while (!feof(arp) && fscanf(arp, "%s %s %s %s %s %s", ip_buf, hw_buf, fl_buf, mac_buf, mask_buf, dev_buf) == 6) {
 		char *wan = get_wan_face();
 
-		if (wan && strlen(wan) > 0 && !strcmp(dev_buf, wan))
+		if (wan && *wan && !strcmp(dev_buf, wan))
 			continue;
 
 		cmac = containsMAC(mac_buf);
@@ -239,12 +239,12 @@ static void do_aqos_check(void)
 			continue;
 		}
 
-		if (!cip && strlen(ip_buf) > 0) {
+		if (!cip && *ip_buf) {
 			char ipnet[32];
 
 			sprintf(ipnet, "%s/32", ip_buf);
 			sysprintf("echo \"%s\" >>/tmp/aqos_ips", ipnet);
-			if (strlen(mac_buf))
+			if (*mac_buf)
 				sysprintf("echo \"%s\" >>/tmp/aqos_macs", mac_buf);
 
 			// create default rule for ip
@@ -254,13 +254,13 @@ static void do_aqos_check(void)
 			memset(mac_buf, 0, 32);
 			continue;
 		}
-		if (!cmac && strlen(mac_buf) > 0) {
+		if (!cmac && *mac_buf) {
 
 			char ipnet[32];
 			sprintf(ipnet, "%s/32", ip_buf);
 
 			sysprintf("echo \"%s\" >>/tmp/aqos_macs", mac_buf);
-			if (strlen(ip_buf))
+			if (*ip_buf)
 				sysprintf("echo \"%s\" >>/tmp/aqos_ips", ipnet);
 
 			// create default rule for mac
@@ -492,7 +492,7 @@ static void do_madwifi_check(void)
 				sprintf(wdsdevname, "%s_wds%d_if", dev, s);
 				sprintf(wdsmacname, "%s_wds%d_hwaddr", dev, s);
 				wdsdev = nvram_safe_get(wdsdevname);
-				if (strlen(wdsdev) == 0)
+				if (!*wdsdev)
 					continue;
 				if (nvram_matchi(wdsvarname, 0))
 					continue;
@@ -536,7 +536,7 @@ static void do_madwifi_check(void)
 
 						sprintf(wifivifs, "%s_vifs", dev);
 						vifs = nvram_safe_get(wifivifs);
-						if (vifs != NULL && strlen(vifs) > 0) {
+						if (vifs != NULL && *vifs) {
 							foreach(var, vifs, next) {
 								eval("ifconfig", var, "down");
 							}
@@ -563,7 +563,7 @@ static void do_madwifi_check(void)
 
 						sprintf(wifivifs, "%s_vifs", dev);
 						vifs = nvram_safe_get(wifivifs);
-						if (vifs != NULL && strlen(vifs) > 0) {
+						if (vifs != NULL && *vifs) {
 							foreach(var, vifs, next) {
 								eval("ifconfig", var, "up");
 								eval("startservice", "set_routes", "-f");
