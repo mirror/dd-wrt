@@ -144,7 +144,7 @@ void start_cron(void)
 
 		fprintf(fp,
 			"%d * * * * root /usr/bin/wget http://tech.hotspotsystem.com/up.php?mac=`nvram get wl0_hwaddr|sed s/:/-/g`\\&nasid=%s_%s\\&os_date=`nvram get os_date|sed s/\" \"/-/g`\\&install=2\\&uptime=`uptime|sed s/\" \"/\\%%20/g|sed s/:/\\%%3A/g|sed s/,/\\%%2C/g`  -O /tmp/lastup.html\n",
-			(currtime->tm_min + 3) % 60, nvram_get("hotss_operatorid"), nvram_get("hotss_locationid"));
+			(currtime->tm_min + 3) % 60, nvram_safe_get("hotss_operatorid"), nvram_safe_get("hotss_locationid"));
 
 		fclose(fp);
 	}

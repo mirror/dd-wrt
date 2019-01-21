@@ -127,7 +127,7 @@ void start_lighttpd(void)
 			"server.bind           = \"%s\"\n"
 			"server.port           = %s\n"
 			"server.document-root  = \"%s\"\n",
-			nvram_safe_get("lighttpd_sslport"), strcmp(nvram_get("lighttpd_wan"), "0") ? "0.0.0.0" : nvram_safe_get("lan_ipaddr"), nvram_safe_get("lighttpd_port"), nvram_safe_get("lighttpd_root"));
+			nvram_safe_get("lighttpd_sslport"),  nvram_match("lighttpd_wan", "0") ? "0.0.0.0" : nvram_safe_get("lan_ipaddr"), nvram_safe_get("lighttpd_port"), nvram_safe_get("lighttpd_root"));
 		fclose(fp);
 	}
 

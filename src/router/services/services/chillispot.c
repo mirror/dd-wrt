@@ -106,7 +106,7 @@ void start_chilli(void)
 		}
 		if (!nvram_matchi("hotss_preconfig", 1)) {
 			nvram_seti("hotss_preconfig", 1);
-			sprintf(ssid, "HotSpotSystem.com-%s_%s", nvram_get("hotss_operatorid"), nvram_get("hotss_locationid"));
+			sprintf(ssid, "HotSpotSystem.com-%s_%s", nvram_safe_get("hotss_operatorid"), nvram_safe_get("hotss_locationid"));
 			nvram_set("wl0_ssid", ssid);
 		}
 		hotspotsys_config();
@@ -313,11 +313,11 @@ void chilli_config(void)
 	}
 	fprintf(fp, "ipup /tmp/chilli/ip-up.sh\n");
 	fprintf(fp, "ipdown /tmp/chilli/ip-down.sh\n");
-	fprintf(fp, "radiusserver1 %s\n", nvram_get("chilli_radius"));
-	fprintf(fp, "radiusserver2 %s\n", nvram_get("chilli_backup"));
-	fprintf(fp, "radiussecret %s\n", nvram_get("chilli_pass"));
+	fprintf(fp, "radiusserver1 %s\n", nvram_safe_get("chilli_radius"));
+	fprintf(fp, "radiusserver2 %s\n", nvram_safe_get("chilli_backup"));
+	fprintf(fp, "radiussecret %s\n", nvram_safe_get("chilli_pass"));
 	fprintf(fp, "dhcpif %s\n", nvram_safe_get("chilli_interface"));
-	fprintf(fp, "uamserver %s\n", nvram_get("chilli_url"));
+	fprintf(fp, "uamserver %s\n", nvram_safe_get("chilli_url"));
 	if (jffs == 1) {
 		fprintf(fp, "conup /jffs/etc/chilli/con-up.sh\n");
 		fprintf(fp, "condown /jffs/etc/chilli/con-down.sh\n");
@@ -328,10 +328,10 @@ void chilli_config(void)
 		fprintf(fp, "localusers /tmp/chilli/fonusers.local\n");
 	if (nvram_invmatch("chilli_dns1", "0.0.0.0")
 	    && nvram_invmatch("chilli_dns1", "")) {
-		fprintf(fp, "dns1 %s\n", nvram_get("chilli_dns1"));
+		fprintf(fp, "dns1 %s\n", nvram_safe_get("chilli_dns1"));
 		if (nvram_invmatch("sv_localdns", "0.0.0.0")
 		    && nvram_invmatch("sv_localdns", ""))
-			fprintf(fp, "dns2 %s\n", nvram_get("sv_localdns"));
+			fprintf(fp, "dns2 %s\n", nvram_safe_get("sv_localdns"));
 	} else if (nvram_invmatch("wan_get_dns", "0.0.0.0")
 		   && nvram_invmatch("wan_get_dns", "")) {
 		dnslist = nvram_safe_get("wan_get_dns");
@@ -355,17 +355,17 @@ void chilli_config(void)
 	} else {
 		if (nvram_invmatch("sv_localdns", "0.0.0.0")
 		    && nvram_invmatch("sv_localdns", ""))
-			fprintf(fp, "dns1 %s\n", nvram_get("sv_localdns"));
+			fprintf(fp, "dns1 %s\n", nvram_safe_get("sv_localdns"));
 		if (nvram_invmatch("altdns1", "0.0.0.0")
 		    && nvram_invmatch("altdns1", ""))
-			fprintf(fp, "dns2 %s\n", nvram_get("altdns1"));
+			fprintf(fp, "dns2 %s\n", nvram_safe_get("altdns1"));
 	}
 	if (nvram_invmatch("chilli_uamsecret", ""))
-		fprintf(fp, "uamsecret %s\n", nvram_get("chilli_uamsecret"));
+		fprintf(fp, "uamsecret %s\n", nvram_safe_get("chilli_uamsecret"));
 	if (nvram_invmatchi("chilli_uamanydns", 0))
 		fprintf(fp, "uamanydns\n");
 	if (nvram_invmatch("chilli_uamallowed", ""))
-		fprintf(fp, "uamallowed %s\n", nvram_get("chilli_uamallowed"));
+		fprintf(fp, "uamallowed %s\n", nvram_safe_get("chilli_uamallowed"));
 #ifdef HAVE_COOVA_CHILLI
 	if (nvram_invmatch("chilli_uamdomain", "")) {
 		dnslist = nvram_safe_get("hotss_uamdomain");
@@ -375,11 +375,11 @@ void chilli_config(void)
 	}
 #endif
 	if (nvram_invmatch("chilli_net", ""))
-		fprintf(fp, "net %s\n", nvram_get("chilli_net"));
+		fprintf(fp, "net %s\n", nvram_safe_get("chilli_net"));
 	if (nvram_matchi("chilli_macauth", 1)) {
 		fprintf(fp, "macauth\n");
 		if (strlen(nvram_safe_get("chilli_macpasswd")))
-			fprintf(fp, "macpasswd %s\n", nvram_get("chilli_macpasswd"));
+			fprintf(fp, "macpasswd %s\n", nvram_safe_get("chilli_macpasswd"));
 		else
 			fprintf(fp, "macpasswd password\n");
 	}
@@ -387,7 +387,7 @@ void chilli_config(void)
 		fprintf(fp, "eapolenable\n");
 
 	if (nvram_invmatch("chilli_radiusnasid", ""))
-		fprintf(fp, "radiusnasid %s\n", nvram_get("chilli_radiusnasid"));
+		fprintf(fp, "radiusnasid %s\n", nvram_safe_get("chilli_radiusnasid"));
 
 	if (nvram_invmatch("chilli_additional", "")) {
 		char *add = nvram_safe_get("chilli_additional");
@@ -454,7 +454,7 @@ void hotspotsys_config(void)
 		char sendid[256];
 		sprintf(sendid,
 			"/usr/bin/wget http://tech.hotspotsystem.com/up.php?mac=`nvram get wl0_hwaddr|sed s/:/-/g`\\&operator=%s\\&location=%s\\&remotekey=%s",
-			nvram_get("hotss_operatorid"), nvram_get("hotss_locationid"), nvram_get("hotss_remotekey"));
+			nvram_safe_get("hotss_operatorid"), nvram_safe_get("hotss_locationid"), nvram_safe_get("hotss_remotekey"));
 		system2(sendid);
 	}
 
@@ -473,7 +473,7 @@ void hotspotsys_config(void)
 	fprintf(fp, "radiussecret hotsys123\n");
 	fprintf(fp, "dhcpif %s\n", nvram_safe_get("hotss_interface"));
 	if (nvram_invmatch("hotss_net", ""))
-		fprintf(fp, "net %s\n", nvram_get("hotss_net"));
+		fprintf(fp, "net %s\n", nvram_safe_get("hotss_net"));
 
 	char *uamdomain = "customer.hotspotsystem.com";
 	if (!nvram_match("hotss_customuam", "")) {
@@ -503,18 +503,18 @@ void hotspotsys_config(void)
 		}
 	} else if (nvram_invmatch("sv_localdns", "0.0.0.0")
 		   && nvram_invmatch("sv_localdns", "")) {
-		fprintf(fp, "dns1 %s\n", nvram_get("sv_localdns"));
+		fprintf(fp, "dns1 %s\n", nvram_safe_get("sv_localdns"));
 		if (nvram_invmatch("altdns1", "0.0.0.0")
 		    && nvram_invmatch("altdns1", ""))
-			fprintf(fp, "dns2 %s\n", nvram_get("altdns1"));
+			fprintf(fp, "dns2 %s\n", nvram_safe_get("altdns1"));
 	}
 	fprintf(fp, "uamsecret hotsys123\n");
 	fprintf(fp, "uamanydns\n");
-	fprintf(fp, "radiusnasid %s_%s\n", nvram_get("hotss_operatorid"), nvram_get("hotss_locationid"));
+	fprintf(fp, "radiusnasid %s_%s\n", nvram_safe_get("hotss_operatorid"), nvram_safe_get("hotss_locationid"));
 	if (!nvram_matchi("hotss_loginonsplash", 1)) {
 		fprintf(fp,
 			"uamhomepage %s://%s/customer/index.php?operator=%s&location=%s%s\n",
-			nvram_safe_get("hotss_customuamproto"), uamdomain, nvram_get("hotss_operatorid"), nvram_get("hotss_locationid"), nvram_matchi("hotss_customsplash", 1) ? "&forward=1" : "");
+			nvram_safe_get("hotss_customuamproto"), uamdomain, nvram_safe_get("hotss_operatorid"), nvram_safe_get("hotss_locationid"), nvram_matchi("hotss_customsplash", 1) ? "&forward=1" : "");
 	}
 	fprintf(fp, "coaport 3799\n");
 	fprintf(fp, "coanoipcheck\n");
@@ -522,7 +522,7 @@ void hotspotsys_config(void)
 
 	if (nvram_invmatch("hotss_uamallowed", "")
 	    && nvram_matchi("hotss_uamenable", 1))
-		fprintf(fp, "uamallowed %s\n", nvram_get("hotss_uamallowed"));
+		fprintf(fp, "uamallowed %s\n", nvram_safe_get("hotss_uamallowed"));
 #ifdef HAVE_COOVA_CHILLI
 	if (nvram_invmatch("hotss_uamdomain", "")
 	    && nvram_matchi("hotss_uamenable", 1)) {

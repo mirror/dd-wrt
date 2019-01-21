@@ -43,14 +43,14 @@ void start_speedchecker_init(void)
 {
 	char uuid[37];
 	char change = 0;
-	if (!nvram_get("speedchecker_uuid")) {
+	if (!nvram_exists("speedchecker_uuid")) {
 		if (getUUID(uuid)) {
 			nvram_set("speedchecker_uuid", uuid);
 			change = 1;
 		}
 	}
 
-	if (!nvram_get("speedchecker_uuid2")) {
+	if (!nvram_exists("speedchecker_uuid2")) {
 		if (getUUID(uuid)) {
 			nvram_set("speedchecker_uuid2", uuid);
 			change = 1;
