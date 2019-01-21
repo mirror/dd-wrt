@@ -1912,6 +1912,7 @@ static void wpas_start_wps_go(struct wpa_supplicant *wpa_s,
 	ssid->vht = params->vht;
 	ssid->max_oper_chwidth = params->max_oper_chwidth;
 	ssid->vht_center_freq2 = params->vht_center_freq2;
+	ssid->he = params->he;
 	ssid->ssid = os_zalloc(params->ssid_len + 1);
 	if (ssid->ssid) {
 		os_memcpy(ssid->ssid, params->ssid, params->ssid_len);
@@ -2075,6 +2076,13 @@ static int wpas_p2p_add_group_interface(struct wpa_supplicant *wpa_s,
 		return -1;
 	}
 
+	if (wpa_s->conf->p2p_interface_random_mac_addr) {
+		random_mac_addr(wpa_s->pending_interface_addr);
+		wpa_printf(MSG_DEBUG, "P2P: Generate random MAC address " MACSTR
+			   " for the group",
+			   MAC2STR(wpa_s->pending_interface_addr));
+	}
+
 	if (force_ifname[0]) {
 		wpa_printf(MSG_DEBUG, "P2P: Driver forced interface name %s",
 			   force_ifname);
@@ -2152,6 +2160,29 @@ wpas_p2p_init_group_interface(struct wpa_supplicant *wpa_s, int go)
 	wpa_s->global->pending_group_iface_for_p2ps = 0;
 
 	wpas_p2p_clone_config(group_wpa_s, wpa_s);
+
+	if (wpa_s->conf->p2p_interface_random_mac_addr) {
+		if (wpa_drv_set_mac_addr(group_wpa_s,
+					 wpa_s->pending_interface_addr) < 0) {
+			wpa_msg(group_wpa_s, MSG_INFO,
+				"Failed to set random MAC address");
+			wpa_supplicant_remove_iface(wpa_s->global, group_wpa_s,
+						    0);
+			return NULL;
+		}
+
+		if (wpa_supplicant_update_mac_addr(group_wpa_s) < 0) {
+			wpa_msg(group_wpa_s, MSG_INFO,
+				"Could not update MAC address information");
+			wpa_supplicant_remove_iface(wpa_s->global, group_wpa_s,
+						    0);
+			return NULL;
+		}
+
+		wpa_printf(MSG_DEBUG, "P2P: Using random MAC address " MACSTR
+			   " for the group",
+			   MAC2STR(wpa_s->pending_interface_addr));
+	}
 
 	return group_wpa_s;
 }
@@ -3048,7 +3079,7 @@ static void wpas_invitation_received(void *ctx, const u8 *sa, const u8 *bssid,
 					       MAC2STR(sa), s->id);
 			}
 			wpas_p2p_group_add_persistent(
-				wpa_s, s, go, 0, op_freq, 0, 0, 0, 0, NULL,
+				wpa_s, s, go, 0, op_freq, 0, 0, 0, 0, 0, NULL,
 				go ? P2P_MAX_INITIAL_CONN_WAIT_GO_REINVOKE : 0,
 				1);
 		} else if (bssid) {
@@ -3274,6 +3305,7 @@ static void wpas_invitation_result(void *ctx, int status, const u8 *bssid,
 				      wpa_s->p2p_go_vht_center_freq2,
 				      wpa_s->p2p_go_ht40, wpa_s->p2p_go_vht,
 				      wpa_s->p2p_go_max_oper_chwidth,
+				      wpa_s->p2p_go_he,
 				      channels,
 				      ssid->mode == WPAS_MODE_P2P_GO ?
 				      P2P_MAX_INITIAL_CONN_WAIT_GO_REINVOKE :
@@ -4183,13 +4215,14 @@ static void wpas_p2ps_prov_complete(void *ctx, u8 status, const u8 *dev,
 			if (response_done && persistent_go) {
 				wpas_p2p_group_add_persistent(
 					wpa_s, persistent_go,
-					0, 0, freq, 0, 0, 0, 0, NULL,
+					0, 0, freq, 0, 0, 0, 0, 0, NULL,
 					persistent_go->mode ==
 					WPAS_MODE_P2P_GO ?
 					P2P_MAX_INITIAL_CONN_WAIT_GO_REINVOKE :
 					0, 0);
 			} else if (response_done) {
-				wpas_p2p_group_add(wpa_s, 1, freq, 0, 0, 0, 0);
+				wpas_p2p_group_add(wpa_s, 1, freq,
+						   0, 0, 0, 0, 0);
 			}
 
 			if (passwd_id == DEV_PW_P2PS_DEFAULT) {
@@ -4305,11 +4338,11 @@ static int wpas_prov_disc_resp_cb(void *ctx)
 
 	if (persistent_go) {
 		wpas_p2p_group_add_persistent(
-			wpa_s, persistent_go, 0, 0, 0, 0, 0, 0, 0, NULL,
+			wpa_s, persistent_go, 0, 0, 0, 0, 0, 0, 0, 0, NULL,
 			persistent_go->mode == WPAS_MODE_P2P_GO ?
 			P2P_MAX_INITIAL_CONN_WAIT_GO_REINVOKE : 0, 0);
 	} else {
-		wpas_p2p_group_add(wpa_s, 1, freq, 0, 0, 0, 0);
+		wpas_p2p_group_add(wpa_s, 1, freq, 0, 0, 0, 0, 0);
 	}
 
 	return 1;
@@ -4324,6 +4357,54 @@ static int wpas_p2p_get_pref_freq_list(void *ctx, int go,
 
 	return wpa_drv_get_pref_freq_list(wpa_s, go ? WPA_IF_P2P_GO :
 					  WPA_IF_P2P_CLIENT, len, freq_list);
+}
+
+
+int wpas_p2p_mac_setup(struct wpa_supplicant *wpa_s)
+{
+	u8 addr[ETH_ALEN] = {0};
+
+	if (wpa_s->conf->p2p_device_random_mac_addr == 0)
+		return 0;
+
+	if (!wpa_s->conf->ssid) {
+		if (random_mac_addr(addr) < 0) {
+			wpa_msg(wpa_s, MSG_INFO,
+				"Failed to generate random MAC address");
+			return -EINVAL;
+		}
+
+		/* Store generated MAC address. */
+		os_memcpy(wpa_s->conf->p2p_device_persistent_mac_addr, addr,
+			  ETH_ALEN);
+	} else {
+		/* If there are existing saved groups, restore last MAC address.
+		 * if there is no last used MAC address, the last one is
+		 * factory MAC. */
+		if (is_zero_ether_addr(
+			    wpa_s->conf->p2p_device_persistent_mac_addr))
+			return 0;
+		os_memcpy(addr, wpa_s->conf->p2p_device_persistent_mac_addr,
+			  ETH_ALEN);
+		wpa_msg(wpa_s, MSG_DEBUG, "Restore last used MAC address.");
+	}
+
+	if (wpa_drv_set_mac_addr(wpa_s, addr) < 0) {
+		wpa_msg(wpa_s, MSG_INFO,
+			"Failed to set random MAC address");
+		return -EINVAL;
+	}
+
+	if (wpa_supplicant_update_mac_addr(wpa_s) < 0) {
+		wpa_msg(wpa_s, MSG_INFO,
+			"Could not update MAC address information");
+		return -EINVAL;
+	}
+
+	wpa_msg(wpa_s, MSG_DEBUG, "Using random MAC address " MACSTR,
+		MAC2STR(addr));
+
+	return 0;
 }
 
 
@@ -4346,6 +4427,12 @@ int wpas_p2p_init(struct wpa_global *global, struct wpa_supplicant *wpa_s)
 
 	if (global->p2p)
 		return 0;
+
+	if (wpas_p2p_mac_setup(wpa_s) < 0) {
+		wpa_msg(wpa_s, MSG_ERROR,
+			"Failed to initialize P2P random MAC address.");
+		return -1;
+	}
 
 	os_memset(&p2p, 0, sizeof(p2p));
 	p2p.cb_ctx = wpa_s;
@@ -4832,6 +4919,7 @@ static void wpas_p2p_scan_res_join(struct wpa_supplicant *wpa_s,
 					 wpa_s->p2p_go_ht40,
 					 wpa_s->p2p_go_vht,
 					 wpa_s->p2p_go_max_oper_chwidth,
+					 wpa_s->p2p_go_he,
 					 NULL, 0);
 			return;
 		}
@@ -5380,7 +5468,7 @@ int wpas_p2p_connect(struct wpa_supplicant *wpa_s, const u8 *peer_addr,
 		     int persistent_group, int auto_join, int join, int auth,
 		     int go_intent, int freq, unsigned int vht_center_freq2,
 		     int persistent_id, int pd, int ht40, int vht,
-		     unsigned int vht_chwidth, const u8 *group_ssid,
+		     unsigned int vht_chwidth, int he, const u8 *group_ssid,
 		     size_t group_ssid_len)
 {
 	int force_freq = 0, pref_freq = 0;
@@ -5425,6 +5513,7 @@ int wpas_p2p_connect(struct wpa_supplicant *wpa_s, const u8 *peer_addr,
 	wpa_s->p2p_go_vht = !!vht;
 	wpa_s->p2p_go_vht_center_freq2 = vht_center_freq2;
 	wpa_s->p2p_go_max_oper_chwidth = vht_chwidth;
+	wpa_s->p2p_go_he = !!he;
 
 	if (pin)
 		os_strlcpy(wpa_s->p2p_pin, pin, sizeof(wpa_s->p2p_pin));
@@ -5848,7 +5937,7 @@ static int wpas_same_band(int freq1, int freq2)
 static int wpas_p2p_init_go_params(struct wpa_supplicant *wpa_s,
 				   struct p2p_go_neg_results *params,
 				   int freq, int vht_center_freq2, int ht40,
-				   int vht, int max_oper_chwidth,
+				   int vht, int max_oper_chwidth, int he,
 				   const struct p2p_channels *channels)
 {
 	struct wpa_used_freq_data *freqs;
@@ -5861,6 +5950,7 @@ static int wpas_p2p_init_go_params(struct wpa_supplicant *wpa_s,
 	params->role_go = 1;
 	params->ht40 = ht40;
 	params->vht = vht;
+	params->he = he;
 	params->max_oper_chwidth = max_oper_chwidth;
 	params->vht_center_freq2 = vht_center_freq2;
 
@@ -6217,7 +6307,7 @@ wpas_p2p_get_group_iface(struct wpa_supplicant *wpa_s, int addr_allocated,
  */
 int wpas_p2p_group_add(struct wpa_supplicant *wpa_s, int persistent_group,
 		       int freq, int vht_center_freq2, int ht40, int vht,
-		       int max_oper_chwidth)
+		       int max_oper_chwidth, int he)
 {
 	struct p2p_go_neg_results params;
 
@@ -6238,7 +6328,7 @@ int wpas_p2p_group_add(struct wpa_supplicant *wpa_s, int persistent_group,
 	}
 
 	if (wpas_p2p_init_go_params(wpa_s, &params, freq, vht_center_freq2,
-				    ht40, vht, max_oper_chwidth, NULL))
+				    ht40, vht, max_oper_chwidth, he, NULL))
 		return -1;
 
 	p2p_go_params(wpa_s->global->p2p, &params);
@@ -6317,7 +6407,7 @@ int wpas_p2p_group_add_persistent(struct wpa_supplicant *wpa_s,
 				  struct wpa_ssid *ssid, int addr_allocated,
 				  int force_freq, int neg_freq,
 				  int vht_center_freq2, int ht40,
-				  int vht, int max_oper_chwidth,
+				  int vht, int max_oper_chwidth, int he,
 				  const struct p2p_channels *channels,
 				  int connection_timeout, int force_scan)
 {
@@ -6393,7 +6483,7 @@ int wpas_p2p_group_add_persistent(struct wpa_supplicant *wpa_s,
 	}
 
 	if (wpas_p2p_init_go_params(wpa_s, &params, freq, vht_center_freq2,
-				    ht40, vht, max_oper_chwidth, channels))
+				    ht40, vht, max_oper_chwidth, he, channels))
 		return -1;
 
 	params.role_go = 1;
@@ -6945,7 +7035,7 @@ int wpas_p2p_reject(struct wpa_supplicant *wpa_s, const u8 *addr)
 int wpas_p2p_invite(struct wpa_supplicant *wpa_s, const u8 *peer_addr,
 		    struct wpa_ssid *ssid, const u8 *go_dev_addr, int freq,
 		    int vht_center_freq2, int ht40, int vht, int max_chwidth,
-		    int pref_freq)
+		    int pref_freq, int he)
 {
 	enum p2p_invite_role role;
 	u8 *bssid = NULL;
@@ -6963,6 +7053,7 @@ int wpas_p2p_invite(struct wpa_supplicant *wpa_s, const u8 *peer_addr,
 	wpa_s->p2p_persistent_go_freq = freq;
 	wpa_s->p2p_go_ht40 = !!ht40;
 	wpa_s->p2p_go_vht = !!vht;
+	wpa_s->p2p_go_he = !!he;
 	wpa_s->p2p_go_max_oper_chwidth = max_chwidth;
 	wpa_s->p2p_go_vht_center_freq2 = vht_center_freq2;
 	if (ssid->mode == WPAS_MODE_P2P_GO) {
@@ -7985,7 +8076,8 @@ static int wpas_p2p_fallback_to_go_neg(struct wpa_supplicant *wpa_s,
 			 wpa_s->p2p_pd_before_go_neg,
 			 wpa_s->p2p_go_ht40,
 			 wpa_s->p2p_go_vht,
-			 wpa_s->p2p_go_max_oper_chwidth, NULL, 0);
+			 wpa_s->p2p_go_max_oper_chwidth,
+			 wpa_s->p2p_go_he, NULL, 0);
 	return ret;
 }
 
@@ -8521,6 +8613,7 @@ static int wpas_p2p_nfc_join_group(struct wpa_supplicant *wpa_s,
 				WPS_NFC, 0, 0, 1, 0, wpa_s->conf->p2p_go_intent,
 				params->go_freq, wpa_s->p2p_go_vht_center_freq2,
 				-1, 0, 1, 1, wpa_s->p2p_go_max_oper_chwidth,
+				wpa_s->p2p_go_he,
 				params->go_ssid_len ? params->go_ssid : NULL,
 				params->go_ssid_len);
 }
@@ -8600,7 +8693,7 @@ static int wpas_p2p_nfc_init_go_neg(struct wpa_supplicant *wpa_s,
 				WPS_NFC, 0, 0, 0, 0, wpa_s->conf->p2p_go_intent,
 				forced_freq, wpa_s->p2p_go_vht_center_freq2,
 				-1, 0, 1, 1, wpa_s->p2p_go_max_oper_chwidth,
-				NULL, 0);
+				wpa_s->p2p_go_he, NULL, 0);
 }
 
 
@@ -8616,7 +8709,7 @@ static int wpas_p2p_nfc_resp_go_neg(struct wpa_supplicant *wpa_s,
 			       WPS_NFC, 0, 0, 0, 1, wpa_s->conf->p2p_go_intent,
 			       forced_freq, wpa_s->p2p_go_vht_center_freq2,
 			       -1, 0, 1, 1, wpa_s->p2p_go_max_oper_chwidth,
-			       NULL, 0);
+			       wpa_s->p2p_go_he, NULL, 0);
 	if (res)
 		return res;
 
@@ -9001,7 +9094,7 @@ static int wpas_p2p_move_go_csa(struct wpa_supplicant *wpa_s)
 	 * TODO: This function may not always work correctly. For example,
 	 * when we have a running GO and a BSS on a DFS channel.
 	 */
-	if (wpas_p2p_init_go_params(wpa_s, &params, 0, 0, 0, 0, 0, NULL)) {
+	if (wpas_p2p_init_go_params(wpa_s, &params, 0, 0, 0, 0, 0, 0, NULL)) {
 		wpa_dbg(wpa_s, MSG_DEBUG,
 			"P2P CSA: Failed to select new frequency for GO");
 		return -1;
@@ -9113,7 +9206,7 @@ static void wpas_p2p_move_go_no_csa(struct wpa_supplicant *wpa_s)
 	wpa_supplicant_ap_deinit(wpa_s);
 
 	/* Reselect the GO frequency */
-	if (wpas_p2p_init_go_params(wpa_s, &params, 0, 0, 0, 0, 0, NULL)) {
+	if (wpas_p2p_init_go_params(wpa_s, &params, 0, 0, 0, 0, 0, 0, NULL)) {
 		wpa_dbg(wpa_s, MSG_DEBUG, "P2P: Failed to reselect freq");
 		wpas_p2p_group_delete(wpa_s,
 				      P2P_GROUP_REMOVAL_GO_LEAVE_CHANNEL);

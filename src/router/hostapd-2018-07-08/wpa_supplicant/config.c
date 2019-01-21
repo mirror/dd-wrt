@@ -4689,6 +4689,21 @@ static int wpa_config_process_p2p_no_go_freq(
 	return 0;
 }
 
+
+static int wpa_config_process_p2p_device_persistent_mac_addr(
+	const struct global_parse_data *data,
+	struct wpa_config *config, int line, const char *pos)
+{
+	if (hwaddr_aton2(pos, config->p2p_device_persistent_mac_addr) < 0) {
+		wpa_printf(MSG_ERROR,
+			   "Line %d: Invalid p2p_device_persistent_mac_addr '%s'",
+			   line, pos);
+		return -1;
+	}
+
+	return 0;
+}
+
 #endif /* CONFIG_P2P */
 
 
@@ -4921,6 +4936,7 @@ static const struct global_parse_data global_fields[] = {
 	{ INT_RANGE(p2p_optimize_listen_chan, 0, 1), 0 },
 	{ INT(p2p_go_ht40), 0 },
 	{ INT(p2p_go_vht), 0 },
+	{ INT(p2p_go_he), 0 },
 	{ INT(p2p_disabled), 0 },
 	{ INT_RANGE(p2p_go_ctwindow, 0, 127), 0 },
 	{ INT(p2p_no_group_iface), 0 },
@@ -4930,6 +4946,9 @@ static const struct global_parse_data global_fields[] = {
 	{ IPV4(ip_addr_start), 0 },
 	{ IPV4(ip_addr_end), 0 },
 	{ INT_RANGE(p2p_cli_probe, 0, 1), 0 },
+	{ INT(p2p_device_random_mac_addr), 0 },
+	{ FUNC(p2p_device_persistent_mac_addr), 0 },
+	{ INT(p2p_interface_random_mac_addr), 0 },
 #endif /* CONFIG_P2P */
 	{ FUNC(country), CFG_CHANGED_COUNTRY },
 	{ INT(bss_max_count), 0 },
