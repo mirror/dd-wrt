@@ -125,7 +125,7 @@ static void fillENC(const char *text)
 		if (!strcmp(var, text))
 			return;
 	}
-	if (strlen(buf) == 0)
+	if (*buf == 0)
 		strcpy(buf, text);
 	else
 		sprintf(buf, "%s %s", buf, text);

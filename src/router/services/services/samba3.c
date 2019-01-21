@@ -103,8 +103,7 @@ void start_samba3(void)
 	} else {
 		samba3users = getsamba3users();
 		for (cu = samba3users; cu; cu = cunext) {
-			if (strlen(cu->username)
-			    && cu->sharetype & SHARETYPE_SAMBA) {
+			if (*cu->username && cu->sharetype & SHARETYPE_SAMBA) {
 				sysprintf("echo \"%s\"\":*:%d:1000:\"%s\":/var:/bin/false\" >> /etc/passwd", cu->username, uniqueuserid++, cu->username);
 				eval("smbpasswd", cu->username, cu->password);
 			}
@@ -161,7 +160,7 @@ void start_samba3(void)
 					goto nextshare;
 				}
 			}
-			if (strlen(cs->label)) {
+			if (*cs->label) {
 				fprintf(fp, "[%s]\n", cs->label);
 				fprintf(fp, "comment = \"%s\"\n", cs->label);
 				fprintf(fp, "path = \"%s/%s\"\n", cs->mp, cs->sd);

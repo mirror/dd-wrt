@@ -90,7 +90,7 @@ void setupSupplicant(char *prefix)
 // -> added habeIchVergessen
 			char *keyExchng = nvram_nget("%s_tls8021xkeyxchng", prefix);
 			char wpaOpts[40];
-			if (!strlen(keyExchng))
+			if (!*keyExchng)
 				nvram_nset("wep", "%s_tls8021xkeyxchng", prefix);
 			strcpy(wpaOpts, "");
 			keyExchng = nvram_nget("%s_tls8021xkeyxchng", prefix);
@@ -100,7 +100,7 @@ void setupSupplicant(char *prefix)
 				sprintf(wpaOpts, "\tpairwise=CCMP TKIP\n\tgroup=CCMP TKIP\n");
 			if (strcmp("wpa", keyExchng) == 0)
 				sprintf(wpaOpts, "\tpairwise=TKIP\n\tgroup=TKIP\n");
-			fprintf(fp, "\tkey_mgmt=%s\n%s", (strlen(wpaOpts) == 0 ? "IEEE8021X" : "WPA-EAP"), wpaOpts);
+			fprintf(fp, "\tkey_mgmt=%s\n%s", (!*wpaOpts ? "IEEE8021X" : "WPA-EAP"), wpaOpts);
 // <- added habeIchVergessen
 			fprintf(fp, "\teap=TLS\n");
 			fprintf(fp, "\tidentity=\"%s\"\n", nvram_prefix_get("tls8021xuser", prefix));
@@ -121,13 +121,13 @@ void setupSupplicant(char *prefix)
 			fprintf(fp, "\tprivate_key=/tmp/%s/user.prv\n", prefix);
 			fprintf(fp, "\tprivate_key_passwd=\"%s\"\n", nvram_prefix_get("tls8021xpasswd", prefix));
 			fprintf(fp, "\teapol_flags=3\n");
-			if (strlen(nvram_nget("%s_tls8021xphase2", prefix))) {
+			if (*(nvram_nget("%s_tls8021xphase2", prefix))) {
 				fprintf(fp, "\tphase2=\"%s\"\n", nvram_nget("%s_tls8021xphase2", prefix));
 			}
-			if (strlen(nvram_nget("%s_tls8021xanon", prefix))) {
+			if (*(nvram_nget("%s_tls8021xanon", prefix))) {
 				fprintf(fp, "\tanonymous_identity=\"%s\"\n", nvram_nget("%s_tls8021xanon", prefix));
 			}
-			if (strlen(nvram_nget("%s_tls8021xaddopt", prefix))) {
+			if (*(nvram_nget("%s_tls8021xaddopt", prefix))) {
 				sprintf(ath, "%s_tls8021xaddopt", prefix);
 				fprintf(fp, "\t");	// tab
 				fwritenvram(ath, fp);
@@ -150,13 +150,13 @@ void setupSupplicant(char *prefix)
 				write_nvram(psk, ath);
 				fprintf(fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix);
 			}
-			if (strlen(nvram_nget("%s_peap8021xphase2", prefix))) {
+			if (*(nvram_nget("%s_peap8021xphase2", prefix))) {
 				fprintf(fp, "\tphase2=\"%s\"\n", nvram_nget("%s_peap8021xphase2", prefix));
 			}
-			if (strlen(nvram_nget("%s_peap8021xanon", prefix))) {
+			if (*(nvram_nget("%s_peap8021xanon", prefix))) {
 				fprintf(fp, "\tanonymous_identity=\"%s\"\n", nvram_nget("%s_peap8021xanon", prefix));
 			}
-			if (strlen(nvram_nget("%s_peap8021xaddopt", prefix))) {
+			if (*(nvram_nget("%s_peap8021xaddopt", prefix))) {
 				sprintf(ath, "%s_peap8021xaddopt", prefix);
 				fprintf(fp, "\t");	// tab
 				fwritenvram(ath, fp);
@@ -170,7 +170,7 @@ void setupSupplicant(char *prefix)
 			fprintf(fp, "\tgroup=CCMP TKIP\n");
 			fprintf(fp, "\tidentity=\"%s\"\n", nvram_prefix_get("ttls8021xuser", prefix));
 			fprintf(fp, "\tpassword=\"%s\"\n", nvram_prefix_get("ttls8021xpasswd", prefix));
-			if (strlen(nvram_nget("%s_ttls8021xca", prefix))) {
+			if (*(nvram_nget("%s_ttls8021xca", prefix))) {
 				sprintf(psk, "/tmp/%s", prefix);
 				mkdir(psk, 0700);
 				sprintf(psk, "/tmp/%s/ca.pem", prefix);
@@ -178,13 +178,13 @@ void setupSupplicant(char *prefix)
 				write_nvram(psk, ath);
 				fprintf(fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix);
 			}
-			if (strlen(nvram_nget("%s_ttls8021xphase2", prefix))) {
+			if (*(nvram_nget("%s_ttls8021xphase2", prefix))) {
 				fprintf(fp, "\tphase2=\"%s\"\n", nvram_nget("%s_ttls8021xphase2", prefix));
 			}
-			if (strlen(nvram_nget("%s_ttls8021xanon", prefix))) {
+			if (*(nvram_nget("%s_ttls8021xanon", prefix))) {
 				fprintf(fp, "\tanonymous_identity=\"%s\"\n", nvram_nget("%s_ttls8021xanon", prefix));
 			}
-			if (strlen(nvram_nget("%s_ttls8021xaddopt", prefix))) {
+			if (*(nvram_nget("%s_ttls8021xaddopt", prefix))) {
 				sprintf(ath, "%s_ttls8021xaddopt", prefix);
 				fprintf(fp, "\t");	// tab
 				fwritenvram(ath, fp);
@@ -200,13 +200,13 @@ void setupSupplicant(char *prefix)
 			fprintf(fp, "\tgroup=CCMP TKIP\n");
 			fprintf(fp, "\tidentity=\"%s\"\n", nvram_prefix_get("leap8021xuser", prefix));
 			fprintf(fp, "\tpassword=\"%s\"\n", nvram_prefix_get("leap8021xpasswd", prefix));
-			if (strlen(nvram_nget("%s_leap8021xphase2", prefix))) {
+			if (*(nvram_nget("%s_leap8021xphase2", prefix))) {
 				fprintf(fp, "\tphase2=\"%s\"\n", nvram_nget("%s_leap8021xphase2", prefix));
 			}
-			if (strlen(nvram_nget("%s_leap8021xanon", prefix))) {
+			if (*(nvram_nget("%s_leap8021xanon", prefix))) {
 				fprintf(fp, "\tanonymous_identity=\"%s\"\n", nvram_nget("%s_leap8021xanon", prefix));
 			}
-			if (strlen(nvram_nget("%s_leap8021xaddopt", prefix))) {
+			if (*(nvram_nget("%s_leap8021xaddopt", prefix))) {
 				sprintf(ath, "%s_leap8021xaddopt", prefix);
 				fprintf(fp, "\t");	// tab
 				fwritenvram(ath, fp);
@@ -684,7 +684,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
 	else {
 		char *wip = get_wan_ipaddr();
-		if (strlen(wip))
+		if (*wip)
 			fprintf(fp, "own_ip_addr=%s\n", wip);
 		else
 			fprintf(fp, "own_ip_addr=%s\n", nvram_safe_get("lan_ipaddr"));
@@ -932,12 +932,12 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		sprintf(wdsdevname, "%s_wds%d_if", dev, s);
 		sprintf(wdsmacname, "%s_wds%d_hwaddr", dev, s);
 		wdsdev = nvram_safe_get(wdsdevname);
-		if (!strlen(wdsdev))
+		if (!*wdsdev)
 			continue;
 		if (nvram_matchi(wdsvarname, 0))
 			continue;
 		hwaddr = nvram_safe_get(wdsmacname);
-		if (strlen(hwaddr)) {
+		if (*hwaddr) {
 			sprintf(wdsentries, "%s;%s", wdsentries, hwaddr);
 			wdscount++;
 		}
@@ -1308,7 +1308,7 @@ void init_network(int idx)
 		nvram_set(vathmac, vmacaddr);
 
 		vifs = nvram_nget("wl%d_vifs", idx);
-		if (vifs != NULL && strlen(vifs) > 0) {
+		if (vifs != NULL && *vifs) {
 			int count = 1;
 
 			foreach(var, vifs, next) {
@@ -1354,12 +1354,12 @@ void init_network(int idx)
 			sprintf(wdsdevname, "%s_wds%d_if", dev, (11 - s));
 			sprintf(wdsmacname, "%s_wds%d_hwaddr", dev, (11 - s));
 			wdsdev = nvram_safe_get(wdsdevname);
-			if (!strlen(wdsdev))
+			if (!*wdsdev)
 				continue;
 			if (nvram_matchi(wdsvarname, 0))
 				continue;
 			hwaddr = nvram_safe_get(wdsmacname);
-			if (strlen(hwaddr) {
+			if (*hwaddr) {
 				eval("ifconfig", wdsdev, "0.0.0.0", "down");
 				eval("ifconfig", wdsdev, "0.0.0.0", "up");
 			}
@@ -1380,7 +1380,7 @@ void init_network(int idx)
 		setMacFilter(dev);
 	}
 	vifs = nvram_nget("wl%d_vifs", idx);
-	if (vifs != NULL && strlen(vifs) > 0) {
+	if (vifs != NULL && *vifs) {
 		foreach(var, vifs, next) {
 			setMacFilter(var);
 		}
@@ -1439,7 +1439,7 @@ void init_network(int idx)
 		if (!nvram_exists(wdsvarname))
 			nvram_seti(wdsvarname, 0);
 		dev = nvram_safe_get(wdsdevname);
-		if (!strlen(dev))
+		if (!*dev)
 			continue;
 
 		// eval ("ifconfig", dev, "down");

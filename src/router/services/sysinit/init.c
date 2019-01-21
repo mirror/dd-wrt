@@ -136,9 +136,9 @@ void start_post_sysinit(void)
 	/* 
 	 * set hostname to wan_hostname or router_name 
 	 */
-	if (strlen(nvram_safe_get("wan_hostname")))
+	if (*(nvram_safe_get("wan_hostname")))
 		hostname = nvram_safe_get("wan_hostname");
-	else if (strlen(nvram_safe_get("router_name")))
+	else if (*(nvram_safe_get("router_name")))
 		hostname = nvram_safe_get("router_name");
 	else
 		hostname = "dd-wrt";
@@ -184,7 +184,7 @@ void start_post_sysinit(void)
 	fprintf(fp, "HDWIFI %s (c) 2019 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
 #else
 #ifdef DIST
-	if (strlen(DIST))
+	if (*(DIST))
 		fprintf(fp, "DD-WRT v3.0-r%s %s (c) 2019 NewMedia-NET GmbH\nRelease: " BUILD_DATE "\n", SVN_REVISION, DIST);
 	else
 		fprintf(fp, "DD-WRT v3.0-r%s custom (c) 2019 NewMedia-NET GmbH\nRelease: " BUILD_DATE "\n", SVN_REVISION);

@@ -249,7 +249,7 @@ int br_add_bridge(const char *brname)
 	} else
 		eval("ifconfig", brname, "mtu", getBridgeMTU(brname, tmp));
 
-	if (strcmp(brname, "br0") && strlen(nvram_safe_get(hwaddr)) > 0) {
+	if (strcmp(brname, "br0") && *(nvram_safe_get(hwaddr))) {
 		set_hwaddr(brname, nvram_safe_get(hwaddr));
 	} else {
 		set_hwaddr(brname, nvram_safe_get("lan_hwaddr"));
@@ -312,7 +312,7 @@ int br_add_interface(const char *br, const char *dev)
 #ifdef HAVE_80211AC
 	eval("emf", "add", "iface", br, dev);
 #endif
-	if (strcmp(br, "br0") && strlen(nvram_nget("%s_hwaddr", br)) == 0) {
+	if (strcmp(br, "br0") && *(nvram_nget("%s_hwaddr", br))) {
 		get_hwaddr(br, eabuf);
 		nvram_nset(eabuf, "%s_hwaddr", br);	// safe for gui
 		set_hwaddr(br, eabuf);

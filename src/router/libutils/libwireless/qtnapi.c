@@ -1275,7 +1275,7 @@ int rpc_qcsapi_set_wlmaclist(const char *ifname)
 			pp = p = strdup(nvram_safe_get("wl1_maclist_x"));
 			if (pp) {
 				while ((m = strsep(&p, "<")) != NULL) {
-					if (!strlen(m))
+					if (!*m)
 						continue;
 					ret = rpc_qcsapi_deny_mac_address(ifname, m);
 					if (ret < 0)
@@ -1299,7 +1299,7 @@ int rpc_qcsapi_set_wlmaclist(const char *ifname)
 			pp = p = strdup(nvram_safe_get("wl1_maclist_x"));
 			if (pp) {
 				while ((m = strsep(&p, "<")) != NULL) {
-					if (!strlen(m))
+					if (!*m)
 						continue;
 					ret = rpc_qcsapi_authorize_mac_address(ifname, m);
 					if (ret < 0)
@@ -1372,7 +1372,7 @@ void rpc_update_wdslist()
 	pp = p = strdup(nvram_safe_get("wl1_wdslist"));
 	if (pp) {
 		while ((m = strsep(&p, "<")) != NULL) {
-			if (!strlen(m))
+			if (!*(m))
 				continue;
 
 			ether_atoe(m, peer_address);

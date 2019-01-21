@@ -90,7 +90,7 @@ int mk_nocat_conf(void)
 
 	char mac[18];
 	getLANMac(mac);
-	if (!strlen(mac))
+	if (!*mac)
 		strcpy(mac, nvram_safe_get("et0macaddr_safe"));
 
 	if (nvram_matchi("port_swap", 1))

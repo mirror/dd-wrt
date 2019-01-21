@@ -921,7 +921,7 @@ int has_ac(const char *prefix)
 {
 	INITVALUECACHE();
 	char *vhtcaps = mac80211_get_vhtcaps(prefix, 1, 1, 1, 1, 1, 1);
-	if (strlen(vhtcaps)) {
+	if (*vhtcaps) {
 		ret = 1;
 	} else {
 		ret = 0;

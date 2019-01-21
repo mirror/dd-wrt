@@ -315,7 +315,7 @@ static void parse_port_forward(char *wanaddr, char *lan_cclass, char *wordlist, 
 #if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
 	char *wan_proto = nvram_safe_get("wan_proto");
 	char *wan_iface = nvram_safe_get("wan_ifname");
-	if (!strlen(wan_iface))
+	if (!*wan_iface)
 		wan_iface = nvram_safe_get("wan_ifname2");
 #endif
 
@@ -502,7 +502,7 @@ static void parse_upnp_forward(char *wanface, char *wanaddr, char *lan_cclass)
 		 * -A PREROUTING -p tcp --dport 823 -j DNAT --to-destination
 		 * 192.168.1.88:23 
 		 */
-		if (!strlen(wanface)) {
+		if (!*wanface) {
 			wanface = "br0";
 		}
 
@@ -533,10 +533,10 @@ static void create_spec_forward(char *proto, char *src, char *wanaddr, char *fro
 #if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
 	char *wan_proto = nvram_safe_get("wan_proto");
 	char *wan_iface = nvram_safe_get("wan_ifname");
-	if (!strlen(wan_iface))
+	if (!*wan_iface)
 		wan_iface = nvram_safe_get("wan_ifname2");
 #endif
-	if (src && strlen(src) > 0) {
+	if (src && *src) {
 		save2file_A_prerouting("-p %s -m %s -s %s -d %s --dport %s -j DNAT --to-destination %s:%s", proto, proto, src, wanaddr, from, ip, to);
 #if defined (HAVE_PPTP) || defined (HAVE_L2TP) || defined (HAVE_PPPOEDUAL)
 		if (!strcmp(wan_proto, "pppoe_dual") || (!strcmp(wan_proto, "pptp") && nvram_matchi("wan_dualaccess", 1)) || (!strcmp(wan_proto, "l2tp") && nvram_matchi("wan_dualaccess", 1))
@@ -641,7 +641,7 @@ static void nat_prerouting_bridged(char *wanface, char *vifs)
 		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
 			if (nvram_nmatch("1", "%s_dns_redirect", var)) {
 				char *target = nvram_nget("%s_dns_ipaddr", var);
-				if (target && strlen(target) > 0 && sv_valid_ipaddr(target) && strcmp(target, "0.0.0.0")) {
+				if (*target && sv_valid_ipaddr(target) && strcmp(target, "0.0.0.0")) {
 					save2file_A_prerouting("-i %s -p udp --dport 53 -j DNAT --to %s", var, target);
 					save2file_A_prerouting("-i %s -p tcp --dport 53 -j DNAT --to %s", var, target);
 				} else {
@@ -687,7 +687,7 @@ static void nat_prerouting(char *wanface, char *wanaddr, char *lan_cclass, int d
 		}
 
 		/* no gui setting yet - redirect all except this IP */
-		if (strlen(nvram_safe_get("privoxy_transp_exclude")) > 0) {
+		if (*(nvram_safe_get("privoxy_transp_exclude"))) {
 			save2file_A_prerouting("-p tcp -s %s --dport 80 -j ACCEPT", nvram_safe_get("privoxy_transp_exclude"));
 		}
 		/* block access from privoxy to webif */
@@ -824,7 +824,7 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 		if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("wan_vdsl", 1)) {
 			save2file_A_postrouting("-o %s -j SNAT --to-source %s", nvram_safe_get("tvnicfrom"), nvram_safe_get("tvnicaddr"));
 		}
-		if (strlen(wanface) > 0 && wanactive(wanaddr)
+		if (*wanface && wanactive(wanaddr)
 		    && !nvram_matchi("br0_nat", 0))
 			save2file_A_postrouting("-s %s/%d -o %s -j SNAT --to-source %s", nvram_safe_get("lan_ipaddr"), loopmask, wanface, wanaddr);
 		char *sr = nvram_safe_get("static_route");
@@ -907,7 +907,7 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 		eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j", "NOTRACK");	//this speeds up networking alot on slow systems 
 		/* the following code must be used in future kernel versions, not yet used. we still need to test it */
 //              eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j", "CT","--notrack");      //this speeds up networking alot on slow systems 
-		if (strlen(wanface) > 0 && wanactive(wanaddr))
+		if (*wanface && wanactive(wanaddr))
 			if (nvram_matchi("wl_br1_enable", 1))
 				save2file_A_postrouting("-o %s -j SNAT --to-source %s", wanface, wanaddr);
 	}
@@ -1644,7 +1644,7 @@ static void lan2wan_chains(char *lan_cclass)
 
 		if (!strcmp(buf, ""))
 			continue;	/* error format */
-		if (strlen(ifs) > 0) {
+		if (*ifs) {
 			if (strcmp(ifs, "Any"))
 				iflist = ifs;
 		}
@@ -1882,7 +1882,7 @@ static void add_bridges(char *wanface, char *chain, int forward)
 			} else {
 				eval("ifconfig", tag, "up");
 			}
-			if (forward && wanface && strlen(wanface) > 0)
+			if (forward && wanface && *wanface)
 				save2file_A_forward("-i %s -o %s -j %s", tag, wanface, log_accept);
 			else {
 				if (!strcmp(chain, "OUTPUT"))
@@ -2104,13 +2104,13 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 		save2file_A_input("-p udp --dport %d -j %s", TFTP_PORT, log_accept);
 #endif
 #ifdef HAVE_MILKFISH
-	if (strlen(wanface) && nvram_matchi("milkfish_enabled", 1))
+	if (*wanface && nvram_matchi("milkfish_enabled", 1))
 		save2file_A_input("-p udp -i %s --dport 5060 -j %s", wanface, log_accept);
 	// save2file ("-A INPUT -m udp -p udp -i %s --dport 35000 36000 -j
 	// ACCEPT\n", wanface);
 #endif
 #ifdef HAVE_VNCREPEATER
-	if (nvram_matchi("vncr_enable", 1) && strlen(wanface)) {
+	if (nvram_matchi("vncr_enable", 1) && *wanface) {
 		save2file_A_input("-p tcp -i %s --dport 5900 -j %s", wanface, log_accept);
 		save2file_A_input("-p tcp -i %s --dport 5500 -j %s", wanface, log_accept);
 	}
@@ -2236,7 +2236,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	// save2file ("-A FORWARD -i %s -o %s -p tcp --dport %d "
 	// "-m webstr --content %d -j %s",
 	// lanface, wanface, HTTP_PORT, webfilter, log_reject);
-	if (nvram_invmatch("filter", "off") && webfilter && strlen(wanface)) {
+	if (nvram_invmatch("filter", "off") && webfilter && *wanface) {
 		insmod("ipt_webstr");
 		save2file_A_forward("-i %s -o %s -p tcp -m webstr --content %d -j %s", lanface, wanface, webfilter, log_reject);
 	}
@@ -2302,7 +2302,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 		else
 			save2file_A_forward("-i br1 -o br0 -j %s", log_accept);
 		char *wan = get_wan_face();
-		if (wan && strlen(wan) > 0)
+		if (wan && *wan)
 			save2file_A_forward("-i br1 -o %s -j %s", wan, log_accept);
 	}
 #ifdef HAVE_VLANTAGGING
@@ -2310,7 +2310,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 #endif
 	stop_vpn_modules();
 	// unload_vpn_modules ();
-	if (nvram_invmatch("filter", "off") && strlen(wanface) > 0) {
+	if (nvram_invmatch("filter", "off") && *wanface) {
 
 		/*
 		 * DROP packets for PPTP pass through. 
@@ -2332,7 +2332,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	// load_vpn_modules ();
 	if (nvram_invmatch("filter", "off")) {
 		if (nvram_matchi("pptp_pass", 1)) {
-			if (strlen(wanface) > 0) {
+			if (*wanface) {
 				save2file_I_forward("-o %s -s %s/%d -p tcp --dport %d -j %s", wanface, nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")), PPTP_PORT, log_accept);
 				save2file_I_forward("-o %s -s %s/%d -p gre -j %s", wanface, nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")), log_accept);
 			}
@@ -2360,7 +2360,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 			save2file_A_forward("-i %s -p udp --destination %s -j %s", nvram_safe_get("tvnicfrom"), IP_MULTICAST, log_accept);
 #endif
 	} else {
-		if (doMultiCast() > 0 && strlen(wanface) > 0)
+		if (doMultiCast() > 0 && *wanface)
 			save2file_A_forward("-i %s -p udp --destination %s -j %s", wanface, IP_MULTICAST, log_accept);
 	}
 	/*
@@ -2375,7 +2375,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	/*
 	 * Incoming connection will be accepted, if it match the port-ranges. 
 	 */
-	if (strlen(wanface) > 0) {
+	if (*wanface) {
 		save2file_A_forward("-i %s -o %s -j TRIGGER --trigger-type in", wanface, lanface);
 		save2file_A_forward("-i %s -j trigger_out", lanface);
 	}
@@ -2394,7 +2394,7 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 					save2file("-I INPUT -i %s -d %s/%s -p tcp --dport 8118 -j %s", var, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"), log_accept);
 				}
 			}
-			if (strlen(wanface) > 0) {
+			if (*wanface) {
 				save2file_A_forward("-i %s -o %s -j TRIGGER --trigger-type in", wanface, var);
 				save2file_A_forward("-i %s -j trigger_out", var);
 				save2file_A_forward("-i %s -m state --state NEW -j %s", var, log_accept);
@@ -2511,7 +2511,7 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 			/*
 			 * Make sure remote management ports are filtered if it is disabled 
 			 */
-			if (!remotemanage && strlen(wanface) > 0) {
+			if (!remotemanage && *wanface) {
 				save2file_A_input("-p tcp -i %s --dport %s -j %s", wanface, nvram_safe_get("http_wanport"), log_drop);
 				save2file_A_input("-p tcp -i %s --dport 80 -j %s", wanface, log_drop);
 				save2file_A_input("-p tcp -i %s --dport 443 -j %s", wanface, log_drop);
@@ -2522,13 +2522,13 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 			 * Botho 03-05-2006 
 			 */
 #ifdef HAVE_SSHD
-			if (!remotessh && strlen(wanface) > 0) {
+			if (!remotessh && *wanface) {
 				save2file_A_input("-i %s -p tcp --dport %s -j %s", wanface, nvram_safe_get("sshd_port"), log_drop);
 			}
 #endif
 
 #ifdef HAVE_TELNET
-			if (!remotetelnet && strlen(wanface) > 0) {
+			if (!remotetelnet && *wanface) {
 				save2file_A_input("-p tcp -i %s --dport 23 -j %s", wanface, log_drop);
 			}
 #endif
@@ -2789,7 +2789,7 @@ void start_firewall(void)
 	strncpy(wanface, get_wan_face(), IFNAMSIZ);
 	strncpy(wanaddr, get_wan_ipaddr(), sizeof(wanaddr));
 	if (nvram_match("wan_proto", "pptp")) {
-		if (!strlen(nvram_safe_get("pptp_get_ip")))	// for initial dhcp ip
+		if (!*(nvram_safe_get("pptp_get_ip")))	// for initial dhcp ip
 		{
 			if (getSTA())
 				strncpy(wanface, getSTA(), IFNAMSIZ);

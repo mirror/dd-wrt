@@ -49,7 +49,7 @@ void start_olsrd(void)
 	sprintf(net, "%d.%d.%d.0", a, b, c);
 	FILE *fp = fopen("/tmp/olsrd.conf", "wb");
 
-	if (strlen(nvram_safe_get("olsrd_conf"))) {
+	if (*(nvram_safe_get("olsrd_conf"))) {
 		fwritenvram("olsrd_conf", fp);
 	} else {
 		fprintf(fp, "DebugLevel\t0\n");
@@ -139,7 +139,7 @@ void start_olsrd(void)
 			fprintf(fp, "\tHnaValidityTime\t%s\n", hnavaliditytime);
 			fprintf(fp, "}\n");
 		}
-		if (strlen(nvram_safe_get("olsrd_hna")) > 0) {
+		if (*(nvram_safe_get("olsrd_hna"))) {
 			fprintf(fp, "Hna4{\n");
 			fprintf(fp, "%s\n", nvram_safe_get("olsrd_hna"));
 			fprintf(fp, "}\n");

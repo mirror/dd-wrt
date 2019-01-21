@@ -266,12 +266,12 @@ static int zebra_ospf_init(void)
 			if (!strcmp("etherip0", var))
 				continue;
 			char *ipaddr = nvram_nget("%s_ipaddr", var);
-			if (nvram_nmatch("0", "%s_bridged", var) && strlen(ipaddr) > 0 && strcmp(ipaddr, "0.0.0.0")) {
+			if (nvram_nmatch("0", "%s_bridged", var) && *ipaddr && strcmp(ipaddr, "0.0.0.0")) {
 				fprintf(fp, "interface %s\n", var);
 			} else {
 				if (!strcmp(get_wan_face(), var)) {
 					char *ipaddr = nvram_safe_get("wan_ipaddr");
-					if (strlen(ipaddr) > 0 && strcmp(ipaddr, "0.0.0.0")) {
+					if (*ipaddr && strcmp(ipaddr, "0.0.0.0")) {
 						fprintf(fp, "interface %s\n", var);
 					}
 				}
@@ -282,18 +282,18 @@ static int zebra_ospf_init(void)
 			if (!strcmp("br0", var)) {
 				char *ipaddr = nvram_safe_get("lan_ipaddr");
 				char *netmask = nvram_safe_get("lan_netmask");
-				if (strlen(ipaddr) > 0 && strcmp(ipaddr, "0.0.0.0"))
+				if (*ipaddr && strcmp(ipaddr, "0.0.0.0"))
 					fprintf(fp, "interface %s\n", var);
 				continue;
 			}
 
 			char *ipaddr = nvram_nget("%s_ipaddr", var);
-			if (strlen(ipaddr) > 0 && strcmp(ipaddr, "0.0.0.0")) {
+			if (*ipaddr && strcmp(ipaddr, "0.0.0.0")) {
 				fprintf(fp, "interface %s\n", var);
 			} else {
 				if (!strcmp(get_wan_face(), var)) {
 					char *ipaddr = nvram_safe_get("wan_ipaddr");
-					if (strlen(ipaddr) > 0 && strcmp(ipaddr, "0.0.0.0")) {
+					if (*ipaddr && strcmp(ipaddr, "0.0.0.0")) {
 						fprintf(fp, "interface %s\n", var);
 					}
 				}
@@ -311,7 +311,7 @@ static int zebra_ospf_init(void)
 			if (!strcmp(get_wan_face(), var)) {
 				char *ipaddr = nvram_safe_get("wan_ipaddr");
 				char *netmask = nvram_safe_get("wan_netmask");
-				if (strlen(ipaddr) > 0 && strcmp(ipaddr, "0.0.0.0"))
+				if (*ipaddr && strcmp(ipaddr, "0.0.0.0"))
 					fprintf(fp, " network %s/%d area 0.0.0.0\n", ipaddr, getmask(netmask));
 
 				continue;
@@ -320,7 +320,7 @@ static int zebra_ospf_init(void)
 			if (nvram_nmatch("0", "%s_bridged", var)) {
 				char *ipaddr = nvram_nget("%s_ipaddr", var);
 				char *netmask = nvram_nget("%s_netmask", var);
-				if (strlen(ipaddr) > 0 && strcmp(ipaddr, "0.0.0.0"))
+				if (*ipaddr && strcmp(ipaddr, "0.0.0.0"))
 					fprintf(fp, " network %s/%d area 0.0.0.0\n", ipaddr, getmask(netmask));
 			}
 		}
@@ -329,7 +329,7 @@ static int zebra_ospf_init(void)
 			if (strcmp(get_wan_face(), "br0") && !strcmp(get_wan_face(), var)) {
 				char *ipaddr = nvram_safe_get("wan_ipaddr");
 				char *netmask = nvram_safe_get("wan_netmask");
-				if (strlen(ipaddr) > 0 && strcmp(ipaddr, "0.0.0.0"))
+				if (*ipaddr && strcmp(ipaddr, "0.0.0.0"))
 					fprintf(fp, " network %s/%d area 0.0.0.0\n", ipaddr, getmask(netmask));
 
 				continue;
@@ -337,7 +337,7 @@ static int zebra_ospf_init(void)
 			if (!strcmp("br0", var)) {
 				char *ipaddr = nvram_safe_get("lan_ipaddr");
 				char *netmask = nvram_safe_get("lan_netmask");
-				if (strlen(ipaddr) > 0 && strcmp(ipaddr, "0.0.0.0"))
+				if (*ipaddr && strcmp(ipaddr, "0.0.0.0"))
 					fprintf(fp, " network %s/%d area 0.0.0.0\n", ipaddr, getmask(netmask));
 
 				continue;
@@ -345,7 +345,7 @@ static int zebra_ospf_init(void)
 
 			char *ipaddr = nvram_nget("%s_ipaddr", var);
 			char *netmask = nvram_nget("%s_netmask", var);
-			if (strlen(ipaddr) > 0 && strcmp(ipaddr, "0.0.0.0"))
+			if (*ipaddr && strcmp(ipaddr, "0.0.0.0"))
 				fprintf(fp, " network %s/%d area 0.0.0.0\n", ipaddr, getmask(netmask));
 		}
 		if (nvram_match("ospfd_default_route", "1"))
@@ -353,7 +353,7 @@ static int zebra_ospf_init(void)
 		else
 			fprintf(fp, " no default-information originate\n");
 		char *hostname = nvram_safe_get("router_name");
-		if (strlen(hostname))
+		if (*hostname)
 			fprintf(fp, "hostname %s\n", hostname);
 
 		if (nvram_matchi("zebra_log", 1)) {
@@ -409,7 +409,7 @@ static int zebra_ospf6_init(void)
 		fprintf(fp, "!\n!\n!\n");
 
 		fprintf(fp, "interface %s\n!\n", lf);
-		if (wf && strlen(wf) > 0)
+		if (wf && *wf)
 			fprintf(fp, "interface %s\n", wf);
 
 		int cnt = getdevicecount();
@@ -518,7 +518,7 @@ static int zebra_ripd_init(void)
 
 		fprintf(fp, "router rip\n");
 		fprintf(fp, "  network %s\n", lf);
-		if (wf && strlen(wf) > 0)
+		if (wf && *wf)
 			fprintf(fp, "  network %s\n", wf);
 		fprintf(fp, "redistribute connected\n");
 		// fprintf(fp, "redistribute kernel\n");
@@ -530,7 +530,7 @@ static int zebra_ripd_init(void)
 		if (strcmp(lr, "0") != 0)
 			fprintf(fp, "  ip rip receive version %s\n", lr);
 
-		if (wf && strlen(wf) > 0)
+		if (wf && *wf)
 			fprintf(fp, "interface %s\n", wf);
 		if (strcmp(wt, "0") != 0)
 			fprintf(fp, "  ip rip send version %s\n", wt);
@@ -542,7 +542,7 @@ static int zebra_ripd_init(void)
 			fprintf(fp, "  distribute-list private out %s\n", lf);
 		if (strcmp(lr, "0") == 0)
 			fprintf(fp, "  distribute-list private in  %s\n", lf);
-		if (wf && strlen(wf) > 0) {
+		if (wf && *wf) {
 			if (strcmp(wt, "0") == 0)
 				fprintf(fp, "  distribute-list private out %s\n", wf);
 			if (strcmp(wr, "0") == 0)
@@ -602,10 +602,10 @@ static int zebra_bgp_init(void)
 	} else {
 		fprintf(fp, "router bgp %s\n", nvram_safe_get("routing_bgp_as"));
 		fprintf(fp, "  network %s/%d\n", nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")));
-		if (wf && strlen(wf) > 0 && strcmp(get_wan_ipaddr(), "0.0.0.0"))
+		if (wf && *wf && strcmp(get_wan_ipaddr(), "0.0.0.0"))
 			fprintf(fp, "  network %s/%s\n", get_wan_ipaddr(), nvram_safe_get("wan_netmask"));
 		fprintf(fp, "neighbor %s local-as %s\n", lf, nvram_safe_get("routing_bgp_as"));
-		if (wf && strlen(wf) > 0)
+		if (wf && *wf)
 			fprintf(fp, "neighbor %s local-as %s\n", wf, nvram_safe_get("routing_bgp_as"));
 		fprintf(fp, "neighbor %s remote-as %s\n", nvram_safe_get("routing_bgp_neighbor_ip"), nvram_safe_get("routing_bgp_neighbor_as"));
 		fprintf(fp, "access-list all permit any\n");

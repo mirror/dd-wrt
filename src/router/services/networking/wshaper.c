@@ -476,34 +476,32 @@ static void aqos_tables(void)
 		sprintf(chainname_in, "FILTER_%s_IN", data);
 		char chainname_out[32];
 		sprintf(chainname_out, "FILTER_%s_OUT", data);
-		if (strlen(proto)) {
+		if (*proto) {
 
 			char *svcs = malloc(strlen(qos_svcs) + 128 + 2);
 			char *m = svcs;
-			if (strlen(proto)) {
-				filters *s_filters = get_filters_list();
-				int count = 0;
-				while (s_filters[count].name != NULL) {
-					if (!strcmp(s_filters[count].name, proto)) {
-						char *protos[6] = { "tcp", "udp", "both", "l7", "dpi", "p2p" };
-						strcpy(proto2, protos[s_filters[count].proto - 1]);
-						strcpy(proto1, s_filters[count].name);
-						sprintf(proto3, "%d:%d", s_filters[count].portfrom, s_filters[count].portto);
-						sprintf(proto4, "%d", prio);
-						break;
-					}
-					count++;
+			filters *s_filters = get_filters_list();
+			int count = 0;
+			while (s_filters[count].name != NULL) {
+				if (!strcmp(s_filters[count].name, proto)) {
+					char *protos[6] = { "tcp", "udp", "both", "l7", "dpi", "p2p" };
+					strcpy(proto2, protos[s_filters[count].proto - 1]);
+					strcpy(proto1, s_filters[count].name);
+					sprintf(proto3, "%d:%d", s_filters[count].portfrom, s_filters[count].portto);
+					sprintf(proto4, "%d", prio);
+					break;
 				}
-				free_filters(s_filters);
-				sprintf(svcs, "%s %s %s %s", proto1, proto2, proto3, proto4);
-				do {
-					if (sscanf(svcs, "%31s %31s %31s %d ", srvname, srvtype, srvdata, &srvlevel) < 4)
-						break;
-
-					add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, base, chainname_in);
-					add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, base, chainname_out);
-				} while ((svcs = strpbrk(++svcs, "|")) && svcs++);
+				count++;
 			}
+			free_filters(s_filters);
+			sprintf(svcs, "%s %s %s %s", proto1, proto2, proto3, proto4);
+			do {
+				if (sscanf(svcs, "%31s %31s %31s %d ", srvname, srvtype, srvdata, &srvlevel) < 4)
+					break;
+
+				add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, base, chainname_in);
+				add_client_dev_srvfilter(srvname, srvtype, srvdata, srvlevel, base, chainname_out);
+			} while ((svcs = strpbrk(++svcs, "|")) && svcs++);
 
 			free(m);
 		}
@@ -511,7 +509,7 @@ static void aqos_tables(void)
 		 * check if interface has a none entry for interface based bandwidth limits or priorities. 
 		 * in this case global level based services must take care if these limits 
 		 */
-		if (hasIF(data) && !strlen(proto) && strlen(qos_svcs)) {
+		if (hasIF(data) && !*proto && *qos_svcs) {
 			do {
 				if (sscanf(qos_svcs, "%31s %31s %31s %d ", srvname, srvtype, srvdata, &srvlevel) < 4)
 					break;
