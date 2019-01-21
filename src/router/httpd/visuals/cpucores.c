@@ -169,9 +169,9 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 #else
 void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 {
-	char *clk = nvram_get("clkfreq");
+	char *clk = nvram_safe_get("clkfreq");
 
-	if (clk == NULL) {
+	if (!*clk) {
 		if (getcpurev() == 0)	//BCM4710
 			websWrite(wp, "125");
 		else if (getcpurev() == 29)	//BCM5354

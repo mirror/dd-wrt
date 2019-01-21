@@ -913,9 +913,9 @@ void validate_wl_wme_tx_params(webs_t wp, char *value, struct variable *v, char 
 		return;
 	}
 
-	s = nvram_get(v->name);
+	s = nvram_safe_get(v->name);
 
-	if (s != NULL)
+	if (*s)
 		sscanf(s, "%d %d %d %d %d", &srl, &sfbl, &lrl, &lfbl, &max_rate);
 
 	if ((value = websGetVar(wp, strcat_r(v->name, "0", tmp), NULL)) != NULL)
@@ -953,8 +953,8 @@ void validate_wl_wme_tx_params(webs_t wp, char *value, struct variable *v, char 
 	if ((value = websGetVar(wp, strcat_r(v->name, "4", tmp), NULL)) != NULL)
 		max_rate = atoi(value);
 
-	s = nvram_get("wl0_nmode");
-	if (s != NULL)
+	s = nvram_safe_get("wl0_nmode");
+	if (*s)
 		nmode = atoi(s);
 
 	sprintf(tmp, "%d %d %d %d %d", srl, sfbl, lrl, lfbl, max_rate);
