@@ -1938,8 +1938,8 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 
 void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 {
-	char *style = nvram_get("router_style");
-	char *style_dark = nvram_get("router_style_dark");
+	char *style = nvram_safe_get("router_style");
+	char *style_dark = nvram_safe_get("router_style_dark");
 	static char *charset = NULL;
 	if (!charset)
 		charset = strdup(live_translate(wp, "lang_charset.set"));
@@ -1979,7 +1979,7 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 #elif HAVE_SANSFIL
 	websWrite(wp, "\t\t<title>SANSFIL (build %s)", SVN_REVISION);
 #else
-	websWrite(wp, "\t\t<title>%s (build %s)", nvram_get("router_name"), SVN_REVISION);
+	websWrite(wp, "\t\t<title>%s (build %s)", nvram_safe_get("router_name"), SVN_REVISION);
 #endif
 	if (strlen(argv[0]) != 0) {
 		websWrite(wp, " - %s", live_translate(wp, argv[0]));
