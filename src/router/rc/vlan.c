@@ -118,11 +118,11 @@ static int vlan_configure(void)
 	 */
 	for (unit = 0; unit < MAX_NVPARSE; unit++) {
 		snprintf(prefix, sizeof(prefix), "wan%d_", unit);
-		wan_ifname = nvram_get(strcat_r(prefix, "ifname", tmp));
-		if (!wan_ifname)
+		wan_ifname = nvram_safe_get(strcat_r(prefix, "ifname", tmp));
+		if (!*wan_ifname)
 			continue;
-		wan_proto = nvram_get(strcat_r(prefix, "proto", tmp));
-		if (!wan_proto || !strcmp(wan_proto, "disabled"))
+		wan_proto = nvram_safe_get(strcat_r(prefix, "proto", tmp));
+		if (!*wan_proto || !strcmp(wan_proto, "disabled"))
 			continue;
 		/* 
 		 * disable the connection if the i/f is not in wan_ifnames 
@@ -673,11 +673,11 @@ static int vlan_deconfigure(void)
 		 */
 		for (unit = 0; unit < MAX_NVPARSE; unit++) {
 			snprintf(prefix, sizeof(prefix), "wan%d_", unit);
-			wan_ifname = nvram_get(strcat_r(prefix, "ifname", tmp));
-			if (!wan_ifname)
+			wan_ifname = nvram_safe_get(strcat_r(prefix, "ifname", tmp));
+			if (!*wan_ifname)
 				continue;
-			wan_proto = nvram_get(strcat_r(prefix, "proto", tmp));
-			if (!wan_proto || !strcmp(wan_proto, "disabled"))
+			wan_proto = nvram_safe_get(strcat_r(prefix, "proto", tmp));
+			if (!*wan_proto || !strcmp(wan_proto, "disabled"))
 				continue;
 			/* 
 			 * disable the connection if the i/f is not in wan_ifnames 
