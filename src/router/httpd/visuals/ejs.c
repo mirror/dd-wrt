@@ -1004,12 +1004,12 @@ void ej_show_languages(webs_t wp, int argc, char_t ** argv)
 
 	while (wp->p->env->websRomPageIndex[i].path != NULL) {
 		cprintf("checking %s\n", wp->p->env->websRomPageIndex[i].path);
-		if (!strncmp(wp->p->env->websRomPageIndex[i].path, "lang_pack/", strlen("lang_pack/"))) {
+		if (!strncmp(wp->p->env->websRomPageIndex[i].path, "lang_pack/", (sizeof("lang_pack/") - 1))) {
 			cprintf("found language\n");
 			if (strlen(wp->p->env->websRomPageIndex[i].path) < 14)
 				continue;
 			strcpy(buf, wp->p->env->websRomPageIndex[i].path);
-			char *mybuf = &buf[strlen("lang_pack/")];
+			char *mybuf = &buf[sizeof("lang_pack/") - 1];
 
 			if (strchr(mybuf, (int)'-') == NULL) {
 				mybuf[strlen(mybuf) - 3] = 0;	// strip .js

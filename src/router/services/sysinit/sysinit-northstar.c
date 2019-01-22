@@ -6632,7 +6632,7 @@ void start_sysinit(void)
 	insmod("compat");
 	insmod("mac80211");
 	insmod("brcmutil");
-	if (!nvram_match("brcmfmac","0"))
+	if (!nvram_match("brcmfmac", "0"))
 		insmod("brcmfmac");
 #else
 	insmod("wl");

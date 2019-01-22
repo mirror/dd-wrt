@@ -763,7 +763,6 @@ void addList(char *listname, char *value)
 	char *list = nvram_safe_get(listname);
 	char *newlist;
 
-	
 	listlen = strlen(list);
 	newlist = safe_malloc(strlen(value) + listlen + 2);
 	if (*list) {

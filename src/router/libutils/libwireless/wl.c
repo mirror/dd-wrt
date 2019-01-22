@@ -1757,9 +1757,9 @@ void radio_on_off_ath9k(int idx, int on)
 	fp = open(debugstring, O_WRONLY);
 	if (fp) {
 		if (on)
-			write(fp, "0", strlen("0"));
+			write(fp, "0", sizeof("0") - 1);
 		else
-			write(fp, "3", strlen("3"));
+			write(fp, "3", sizeof("3") - 1);
 		fprintf(stderr, "ath9k radio %d: phy%d ath%d\n", on, get_ath9k_phy_idx(idx), idx);
 		close(fp);
 	}
@@ -1786,7 +1786,7 @@ void radio_on_off_ath9k(int idx, int on)
 					led_control(LED_SEC1, LED_ON);
 			}
 		} else {
-			write(fp, "none", strlen("none"));
+			write(fp, "none", sizeof("none") - 1);
 #ifdef HAVE_WZRHPAG300NH
 			if (idx == 0) {
 				led_control(LED_SEC0, LED_OFF);
@@ -2834,13 +2834,13 @@ void setRegulationDomain(char *reg)
 
 	char *tmp = nvram_safe_get("wl_reg_mode");
 	if (!*tmp)
-	    tmp = NULL;
+		tmp = NULL;
 	nvram_set("wl0_reg_mode", tmp);
 	nvram_set("wl1_reg_mode", tmp);
 	nvram_set("wl2_reg_mode", tmp);
 	tmp = nvram_safe_get("wl_tpc_db");
 	if (!*tmp)
-	    tmp = NULL;
+		tmp = NULL;
 	nvram_set("wl0_tpc_db", tmp);
 	nvram_set("wl1_tpc_db", tmp);
 	nvram_set("wl2_tpc_db", tmp);

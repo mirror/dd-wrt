@@ -419,7 +419,7 @@ void validate_services_port(webs_t wp)
 		cur +=
 		    snprintf(cur, buf + 8192 - cur,
 			     "%s$NAME:%03d:%s$PROT:%03d:%s$PORT:%03d:%d:%d",
-			     cur == buf ? "" : "<&nbsp;>", strlen(name), name, strlen(num_to_protocol(proto)), num_to_protocol(proto), (int)(get_int_len(from) + get_int_len(to) + strlen(":")), from, to);
+			     cur == buf ? "" : "<&nbsp;>", strlen(name), name, strlen(num_to_protocol(proto)), num_to_protocol(proto), (int)(get_int_len(from) + get_int_len(to) + (sizeof(":") - 1)), from, to);
 	}
 
 	// segment filter_services into <= 1024 byte lengths
