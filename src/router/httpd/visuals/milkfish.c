@@ -102,7 +102,7 @@ void ej_exec_show_subscribers(webs_t wp, int argc, char_t ** argv)
 	int c = 0;
 
 	count = nvram_safe_get("milkfish_ddsubscribersnum");
-	if (count == NULL || strlen(count) == 0 || (c = atoi(count)) <= 0) {
+	if (count == NULL || *(count) == 0 || (c = atoi(count)) <= 0) {
 		show_caption_pp(wp, NULL, "share.none", "<tr>\n<td colspan=\"4\" align=\"center\" valign=\"middle\">- ", " -</td>\n</tr>\n");
 	}
 	for (i = 0; i < c; i++) {
@@ -151,7 +151,7 @@ void ej_exec_show_aliases(webs_t wp, int argc, char_t ** argv)
 	int c = 0;
 
 	count = nvram_safe_get("milkfish_ddaliasesnum");
-	if (count == NULL || strlen(count) == 0 || (c = atoi(count)) <= 0) {
+	if (count == NULL || *(count) == 0 || (c = atoi(count)) <= 0) {
 		show_caption_pp(wp, NULL, "share.none", "<tr>\n<td colspan=\"4\" align=\"center\" valign=\"middle\">- ", " -</td>\n</tr>\n");
 	}
 	for (i = 0; i < c; i++) {
@@ -209,7 +209,7 @@ void ej_exec_show_registrations(webs_t wp, int argc, char_t ** argv)
 	int c = 0;
 
 	count = nvram_safe_get("milkfish_ddactivenum");
-	if (count == NULL || strlen(count) == 0 || (c = atoi(count)) <= 0) {
+	if (count == NULL || *(count) == 0 || (c = atoi(count)) <= 0) {
 		show_caption_pp(wp, NULL, "share.none", "<tr>\n<td colspan=\"4\" align=\"center\" valign=\"middle\">- ", " -</td>\n</tr>\n");
 	}
 	for (i = 0; i < c; i++) {

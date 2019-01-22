@@ -60,12 +60,12 @@ void aoss_save(webs_t wp)
 	    && nvram_matchi("aoss_wep", 0)) {
 		nvram_seti("aoss_aes", 1);
 	}
-	if (strlen(nvram_safe_get("aoss_vifs"))) {
+	if (*(nvram_safe_get("aoss_vifs"))) {
 		nvram_unset("ath0_vifs");
 		nvram_unset("aoss_vifs");
 		nvram_commit();
 	}
-	if (strlen(nvram_safe_get("aossa_vifs"))) {
+	if (*(nvram_safe_get("aossa_vifs"))) {
 		nvram_unset("ath1_vifs");
 		nvram_unset("aossa_vifs");
 		nvram_commit();

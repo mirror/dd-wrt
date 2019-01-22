@@ -29,7 +29,7 @@ static char *UPTIME(int uptime, char *str)
 	if (days)
 		sprintf(str2, "%d day%s, ", days, (days == 1 ? "" : "s"));
 	minutes = uptime / 60;
-	if (strlen(str2) > 0)
+	if (*(str2))
 		sprintf(str, "%s %d:%02d:%02d", str2, (minutes / 60) % 24, minutes % 60, uptime % 60);
 	else
 		sprintf(str, "%d:%02d:%02d", (minutes / 60) % 24, minutes % 60, uptime % 60);
@@ -47,7 +47,7 @@ static void assoc_count_prefix(webs_t wp, char *prefix)
 	char *select = websGetVar(wp, "wifi_display", NULL);
 	if (!select)
 		select = nvram_safe_get("wifi_display");
-	if (!strlen(select)) {
+	if (!*(select)) {
 		websWrite(wp, "0");
 		return;
 	}

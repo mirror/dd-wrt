@@ -565,7 +565,7 @@ static void do_filtertable(unsigned char method, struct mime_handler *handler, c
 // and now the tricky part (more dirty as dirty)
 	char *temp3 = websGetVar(stream, "ifname", NULL);
 	if (temp3) {
-		if (strlen(temp3) > 0) {
+		if (*(temp3)) {
 			strcpy(ifname, temp3);
 		}
 	}
@@ -573,7 +573,7 @@ static void do_filtertable(unsigned char method, struct mime_handler *handler, c
 	if (idx)
 		*idx = 0;
 
-	if (!strlen(ifname))
+	if (!*(ifname))
 		return;
 	rep(ifname, '.', 'X');
 
@@ -634,7 +634,7 @@ static void do_radiuscert(unsigned char method, struct mime_handler *handler, ch
 	{
 		goto out;
 	}
-	if (db->users[radiusindex].usersize == 0 || db->users[radiusindex].passwordsize == 0 || strlen(db->users[radiusindex].user) == 0 || strlen(db->users[radiusindex].passwd) == 0) {
+	if (db->users[radiusindex].usersize == 0 || db->users[radiusindex].passwordsize == 0 || *(db->users[radiusindex].user) == 0 || *(db->users[radiusindex].passwd) == 0) {
 		//define username fail
 		char *argv[] = { "freeradius.clientcert" };
 		call_ej("do_pagehead", NULL, wp, 1, argv);	// thats dirty
@@ -834,7 +834,7 @@ static void do_activetable(unsigned char method, struct mime_handler *handler, c
 
 	char *temp3 = websGetVar(stream, "ifname", NULL);
 	if (temp3 != NULL) {
-		if (strlen(temp3) > 0) {
+		if (*temp3) {
 			strcpy(ifname, temp3);
 		}
 	}
@@ -842,7 +842,7 @@ static void do_activetable(unsigned char method, struct mime_handler *handler, c
 	idx = strrchr(ifname, '.');
 	if (idx)
 		*idx = 0;
-	if (!strlen(ifname))
+	if (!*(ifname))
 		return;
 	char *temp = insert(stream, ifname, "0", "WL_ActiveTable.asp");
 	do_ej_buffer(temp, stream);
@@ -1982,7 +1982,7 @@ static void do_mypage(unsigned char method, struct mime_handler *handler, char *
 	int qnum;
 	int i = 1;
 	char *query = strchr(url, '?');
-	if (query == NULL || strlen(query) == 0)
+	if (query == NULL || *(query) == 0)
 		qnum = 1;
 	else
 		qnum = atoi(query + 1);
@@ -2021,7 +2021,7 @@ static void do_fetchif(unsigned char method, struct mime_handler *handler, char 
 
 	char *query = strchr(url, '?');
 
-	if (query == NULL || strlen(query) == 0)
+	if (query == NULL || *(query) == 0)
 		return;
 	query++;
 
@@ -2185,7 +2185,7 @@ static struct cacheentry *translationcache = NULL;
 static char *private_live_translate(webs_t wp, const char *tran)
 {
 
-	if (tran == NULL || !strlen(tran))
+	if (tran == NULL || !*(tran))
 		return "";
 	char *lang = getLanguageName();
 	char buf[64];
@@ -2226,7 +2226,7 @@ static void clear_translationcache(void)
 static char *_live_translate(webs_t wp, const char *tran)	// todo: add locking to be thread safe
 {
 	static char *cur_language = NULL;
-	if (!tran || strlen(tran) == 0)
+	if (!tran || *(tran) == 0)
 		return "Error";
 	if (!cur_language) {
 		cur_language = nvram_safe_get("language");
@@ -2386,7 +2386,7 @@ static void do_ttgraph(unsigned char method, struct mime_handler *handler, char 
 	sprintf(tq, "traff-%02u-%u", month, year);
 	char *tdata = nvram_safe_get(tq);
 
-	if (tdata != NULL && strlen(tdata)) {
+	if (tdata != NULL && *(tdata)) {
 		foreach(var, tdata, next) {
 			if (i == days)
 				break;	//skip monthly total

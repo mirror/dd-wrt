@@ -31,7 +31,7 @@ void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 	char ipvs_name[32];
 	char buf[128];
 
-	if (strlen(nvram_safe_get("ipvs"))) {
+	if (*(nvram_safe_get("ipvs"))) {
 		int realcount = nvram_default_geti("ipvstarget_count", 0);
 		websWrite(wp, "<fieldset>\n");
 		show_caption_pp(wp, NULL, "networking.ipvs_targets", "<legend>", "</legend>\n");

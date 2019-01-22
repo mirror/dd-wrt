@@ -80,7 +80,7 @@ void ej_show_chaps(webs_t wp, int argc, char_t ** argv)
 	int c = 0;
 
 	count = nvram_safe_get("pppoeserver_chapsnum");
-	if (count == NULL || strlen(count) == 0) {
+	if (count == NULL || *(count) == 0) {
 		websWrite(wp, "<tr>\n<td colspan=\"4\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
 	}
 	c = atoi(count);

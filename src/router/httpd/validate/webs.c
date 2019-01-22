@@ -431,7 +431,7 @@ void validate_services_port(webs_t wp)
 	nvram_set("filter_services", word);
 	cur += 1024;
 
-	if (strlen(cur) > 0) {
+	if (*(cur)) {
 		nvram_set("filter_services_1", cur);
 	}
 	free(services);
@@ -491,12 +491,12 @@ void summary_delete_policy(webs_t wp)
 
 void addDeletion(char *word)
 {
-	if (!word || !strlen(word))
+	if (!word || !*(word))
 		return;
 
 	char *oldarg = nvram_safe_get("action_service_arg1");
 
-	if (strlen(oldarg) > 0) {
+	if (*(oldarg)) {
 		char *newarg = safe_malloc(strlen(oldarg) + strlen(word) + 2);
 
 		sprintf(newarg, "%s %s", oldarg, word);
@@ -845,7 +845,7 @@ _8021xprv
 
 	sprintf(n, "%s_authmode", prefix);
 	char *authmode = websGetVar(wp, n, "");
-	if (strlen(authmode) == 0) {
+	if (*(authmode) == 0) {
 		nvram_set(n, "open");
 	} else {
 		copytonv(wp, n);
@@ -872,7 +872,7 @@ _8021xprv
 	copytonv(wp, n);
 	sprintf(n, "%s_key", prefix);
 	char *tx = websGetVar(wp, n, "");
-	if (strlen(tx) == 0) {
+	if (*(tx) == 0) {
 		nvram_seti(n, 1);
 	} else {
 		copytonv(wp, n);
@@ -999,7 +999,7 @@ _8021xprv
 	sprintf(n, "%s_config", p2);
 	sprintf(n2, "%s_config", prefix);
 	v = websGetVar(wp, n, NULL);
-	if (v && strlen(v) > 0) {
+	if (v && *(v)) {
 		nvram_set(n2, v);
 	} else {
 		nvram_unset(n2);
@@ -1433,7 +1433,7 @@ void qos_add_svc(webs_t wp)
 	if (strstr(svqos_svcs, add_svc))
 		return;
 
-	if (strlen(svqos_svcs) > 0)
+	if (*(svqos_svcs))
 		asprintf(&new_svcs, "%s %s %s %s 30 |", svqos_svcs, add_svc, protocol, ports);
 	else
 		asprintf(&new_svcs, "%s %s %s 30 |", add_svc, protocol, ports);
@@ -1599,7 +1599,7 @@ void add_peer(webs_t wp)
 	nvram_default_get(idx, "0");
 	int peer = nvram_geti(idx);
 
-#define default_set(name,val) if (strlen(nvram_nget("oet%d_%s%d",key,name,peer))==0)nvram_nset(val, "oet%d_%s%d",key,name,peer)
+#define default_set(name,val) if (*(nvram_nget("oet%d_%s%d",key,name,peer))==0)nvram_nset(val, "oet%d_%s%d",key,name,peer)
 	default_set("ka", "0");
 	default_set("endpoint", "0");
 	default_set("usepsk", "0");
@@ -1696,7 +1696,7 @@ void add_tunnel(webs_t wp)
 	int tunnels = nvram_geti("oet_tunnels");
 	tunnels++;
 	nvram_seti("oet_tunnels", tunnels);
-#define default_set(name,val) if (strlen(nvram_nget("oet%d_%s",tunnels, name))==0)nvram_nset(val, "oet%d_%s",tunnels,name)
+#define default_set(name,val) if (*(nvram_nget("oet%d_%s",tunnels, name))==0)nvram_nset(val, "oet%d_%s",tunnels,name)
 	default_set("en", "0");
 	default_set("rem", "192.168.90.1");
 	default_set("local", "0.0.0.0");
@@ -1874,7 +1874,7 @@ void qos_save(webs_t wp)
 		snprintf(field, sizeof(field), "svqos_svcdel%d", i);
 		delete = websGetVar(wp, field, NULL);
 
-		if (delete && strlen(delete) > 0)
+		if (delete && *(delete))
 			continue;
 
 		snprintf(field, sizeof(field), "svqos_svcname%d", i);
@@ -1905,7 +1905,7 @@ void qos_save(webs_t wp)
 				name[j] = tolower(name[j]);
 		}
 #endif
-		if (strlen(svqos_var) > 0) {
+		if (*(svqos_var)) {
 			char *tmp;
 			asprintf(&tmp, "%s %s %s %s %s |", svqos_var, name, protocol, ports, level);
 			strcpy(svqos_var, tmp);
@@ -1927,7 +1927,7 @@ void qos_save(webs_t wp)
 		snprintf(field, sizeof(field), "svqos_devdel%d", i);
 		delete = websGetVar(wp, field, NULL);
 
-		if (delete && strlen(delete) > 0)
+		if (delete && *(delete))
 			continue;
 
 		snprintf(field, sizeof(field), "svqos_dev%d", i);
@@ -1941,7 +1941,7 @@ void qos_save(webs_t wp)
 		level = websGetVar(wp, field, NULL);
 		if (!level)
 			continue;
-		if (strlen(svqos_var) > 0) {
+		if (*(svqos_var)) {
 			asprintf(&copy, sizeof(copy), "%s %s %s |", svqos_var, data, level);
 			strcpy(svqos_var, copy);
 			free(copy);
@@ -1974,7 +1974,7 @@ void qos_save(webs_t wp)
 		if (!lanlevel)
 			continue;
 
-		if (strlen(svqos_var) > 0) {
+		if (*(svqos_var)) {
 			char *tmp;
 			asprintf(&tmp, "%s %s %s %s %s %s %s |", svqos_var, data, level, level2, lanlevel, prio, proto);
 			strcpy(svqos_var, tmp);
@@ -1997,7 +1997,7 @@ void qos_save(webs_t wp)
 		snprintf(field, sizeof(field), "svqos_ipdel%d", i);
 		delete = websGetVar(wp, field, NULL);
 
-		if (delete && strlen(delete) > 0)
+		if (delete && *(delete))
 			continue;
 
 		snprintf(field, sizeof(field), "svqos_ip%d", i);
@@ -2010,7 +2010,7 @@ void qos_save(webs_t wp)
 		level = websGetVar(wp, field, NULL);
 		if (!level)
 			continue;
-		if (strlen(svqos_var) > 0)
+		if (*(svqos_var))
 			sprintf(svqos_var, "%s %s %s |", svqos_var, data, level);
 		else
 			sprintf(svqos_var, "%s %s |", data, level);
@@ -2033,7 +2033,7 @@ void qos_save(webs_t wp)
 		if (!lanlevel)
 			continue;
 
-		if (strlen(svqos_var) > 0) {
+		if (*(svqos_var)) {
 			char *tmp;
 			asprintf(&tmp, "%s %s %s %s %s %s |", svqos_var, data, level, level2, lanlevel, prio);
 			strcpy(svqos_var, tmp);
@@ -2056,7 +2056,7 @@ void qos_save(webs_t wp)
 		snprintf(field, sizeof(field), "svqos_macdel%d", i);
 		delete = websGetVar(wp, field, NULL);
 
-		if (delete && strlen(delete) > 0)
+		if (delete && *(delete))
 			continue;
 
 		snprintf(field, sizeof(field), "svqos_mac%d", i);
@@ -2070,7 +2070,7 @@ void qos_save(webs_t wp)
 		if (!level)
 			continue;
 
-		if (strlen(svqos_var) > 0)
+		if (*(svqos_var))
 			sprintf(svqos_var, "%s %s %s |", svqos_var, data, level);
 		else
 			sprintf(svqos_var, "%s %s |", data, level);
@@ -2093,7 +2093,7 @@ void qos_save(webs_t wp)
 		if (!lanlevel)
 			continue;
 
-		if (strlen(svqos_var) > 0) {
+		if (*(svqos_var)) {
 			char *tmp;
 			asprintf(&tmp, "%s %s %s %s user %s %s |", svqos_var, data, level, level2, lanlevel, prio);
 			strcpy(svqos_var, tmp);
@@ -2138,7 +2138,7 @@ static void macro_add(char *a)
 
 	count = nvram_safe_get(a);
 	cprintf("count = %s\n", count);
-	if (count != NULL && strlen(count) > 0) {
+	if (count != NULL && *(count)) {
 		c = atoi(count);
 		if (c > -1) {
 			c++;
@@ -2159,7 +2159,7 @@ static void macro_rem(char *a, char *nv)
 
 	cnt = 0;
 	count = nvram_safe_get(a);
-	if (count != NULL && strlen(count) > 0) {
+	if (count != NULL && *(count)) {
 		c = atoi(count);
 		if (c > 0) {
 			c--;
@@ -2447,7 +2447,7 @@ void add_vifs_single(char *prefix, int device)
 #else
 	sprintf(v, "wl%d.%d", device, count + 1);
 #endif
-	if (!strlen(vifs))
+	if (!*(vifs))
 		sprintf(n, "%s", v);
 	else
 		sprintf(n, "%s %s", vifs, v);
@@ -2740,12 +2740,12 @@ void remove_vifs_single(char *prefix)
 	// nvram_commit ();
 #ifdef HAVE_AOSS
 // must remove all aoss vap's if one of them is touched
-	if (strlen(nvram_safe_get("aoss_vifs"))) {
+	if (*(nvram_safe_get("aoss_vifs"))) {
 		nvram_unset("ath0_vifs");
 		nvram_unset("aoss_vifs");
 		nvram_commit();
 	}
-	if (strlen(nvram_safe_get("aossa_vifs"))) {
+	if (*(nvram_safe_get("aossa_vifs"))) {
 		nvram_unset("ath1_vifs");
 		nvram_unset("aossa_vifs");
 		nvram_commit();
@@ -2831,7 +2831,7 @@ void add_olsrd(webs_t wp)
 	char *wordlist = nvram_safe_get("olsrd_interfaces");
 	char *addition = ">5.0>90.0>2.0>270.0>15.0>90.0>15.0>90.0";
 	char *newadd = (char *)safe_malloc(strlen(wordlist) + strlen(addition) + strlen(ifname) + 2);
-	if (strlen(wordlist) > 0) {
+	if (*(wordlist)) {
 		strcpy(newadd, wordlist);
 		strcat(newadd, " ");
 		strcat(newadd, ifname);
@@ -3212,7 +3212,7 @@ void save_networking(webs_t wp)
 		}
 		sprintf(var, "bridgeprio%d", i);
 		prio = websGetVar(wp, var, "32768");
-		if (strlen(prio) == 0)
+		if (*(prio) == 0)
 			prio = "32768";
 
 		if (atoi(prio) > 61440)
@@ -3222,7 +3222,7 @@ void save_networking(webs_t wp)
 		mtu = websGetVar(wp, var, NULL);
 		if (!mtu)
 			mtu = "1500";
-		if (strlen(mtu) == 0)
+		if (*(mtu) == 0)
 			mtu = "1500";
 
 		copymergetonv(wp, "%s_ipaddr", ifname);
@@ -3271,7 +3271,7 @@ void save_networking(webs_t wp)
 			stp = "0";
 		sprintf(var, "bridgeifprio%d", i);
 		prio = websGetVar(wp, var, "112");
-		if (strlen(prio) == 0)
+		if (*(prio) == 0)
 			prio = "112";
 
 		if (atoi(prio) > 240)
@@ -3282,7 +3282,7 @@ void save_networking(webs_t wp)
 
 		sprintf(var, "bridgeifcost%d", i);
 		cost = websGetVar(wp, var, "100");
-		if (strlen(cost) == 0)
+		if (*(cost) == 0)
 			prio = "100";
 
 		strcat(buffer, ifname);
@@ -3625,7 +3625,7 @@ void del_ipvs(webs_t wp)
 	int todel = websGetVari(wp, "del_value", -1);
 
 	wordlist = nvram_safe_get("ipvs");
-	if (!strlen(wordlist))
+	if (!*(wordlist))
 		newwordlist = NULL;
 	else
 		newwordlist = (char *)calloc(strlen(wordlist), 1);
@@ -3682,7 +3682,7 @@ void del_ipvstarget(webs_t wp)
 	int todel = websGetVari(wp, "del_value", -1);
 
 	wordlist = nvram_safe_get("ipvstarget");
-	if (!strlen(wordlist))
+	if (!*(wordlist))
 		newwordlist = NULL;
 	else
 		newwordlist = (char *)calloc(strlen(wordlist), 1);
@@ -4080,7 +4080,7 @@ void wireless_join(webs_t wp)
 	char *ssid = websGetVar(wp, "wl_ssid", NULL);
 	if (ssid) {
 		char *wifi = nvram_safe_get("wifi_display");
-		if (strlen(wifi) > 0) {
+		if (*(wifi)) {
 			if (!strcmp(wifi, "ath0"))
 				nvram_set("wl_ssid", ssid);
 			if (!strcmp(wifi, "wl0"))
@@ -4634,7 +4634,7 @@ void port_vlan_table_save(webs_t wp)
 				i = (strcmp(s_portval, "on") != 0);
 
 			if (i) {
-				if (strlen(portvlan) > 0)
+				if (*(portvlan))
 					strcat(portvlan, " ");
 
 				snprintf(buff, 4, "%d", vlan);
@@ -4656,7 +4656,7 @@ void port_vlan_table_save(webs_t wp)
 	 */
 	for (vlan = 0; vlan < 17; vlan++) {
 		if (vlans[vlan]) {
-			if (strlen(portvlan) > 0)
+			if (*(portvlan))
 				strcat(portvlan, " ");
 
 			snprintf(buff, 4, "%d", vlan);
@@ -4672,7 +4672,7 @@ void port_vlan_table_save(webs_t wp)
 		foreach(portid, c, next) {
 			if (!(strncmp(portid, "vlan", 4) == 0)
 			    && !(strncmp(portid, "eth1", 4) == 0)) {
-				if (strlen(br0vlans) > 0)
+				if (*(br0vlans))
 					strcat(br0vlans, " ");
 				strcat(br0vlans, portid);
 			}
@@ -4685,7 +4685,7 @@ void port_vlan_table_save(webs_t wp)
 		foreach(portid, c, next) {
 			if (!(strncmp(portid, "vlan", 4) == 0)
 			    && !(strncmp(portid, "eth1", 4) == 0)) {
-				if (strlen(br1vlans) > 0)
+				if (*(br1vlans))
 					strcat(br1vlans, " ");
 				strcat(br1vlans, portid);
 			}
@@ -4698,7 +4698,7 @@ void port_vlan_table_save(webs_t wp)
 		foreach(portid, c, next) {
 			if (!(strncmp(portid, "vlan", 4) == 0)
 			    && !(strncmp(portid, "eth1", 4) == 0)) {
-				if (strlen(br2vlans) > 0)
+				if (*(br2vlans))
 					strcat(br2vlans, " ");
 				strcat(br2vlans, portid);
 			}
@@ -4711,17 +4711,17 @@ void port_vlan_table_save(webs_t wp)
 
 		switch (portval) {
 		case 0:
-			if (strlen(br0vlans) > 0)
+			if (*(br0vlans))
 				strcat(br0vlans, " ");
 			strcat(br0vlans, buff);
 			break;
 		case 1:
-			if (strlen(br1vlans) > 0)
+			if (*(br1vlans))
 				strcat(br1vlans, " ");
 			strcat(br1vlans, buff);
 			break;
 		case 2:
-			if (strlen(br2vlans) > 0)
+			if (*(br2vlans))
 				strcat(br2vlans, " ");
 			strcat(br2vlans, buff);
 			break;
@@ -4732,17 +4732,17 @@ void port_vlan_table_save(webs_t wp)
 
 	switch (websGetVari(wp, "wireless", -1)) {
 	case 0:
-		if (strlen(br0vlans) > 0)
+		if (*(br0vlans))
 			strcat(br0vlans, " ");
 		strcat(br0vlans, get_wdev());
 		break;
 	case 1:
-		if (strlen(br1vlans) > 0)
+		if (*(br1vlans))
 			strcat(br1vlans, " ");
 		strcat(br1vlans, get_wdev());
 		break;
 	case 2:
-		if (strlen(br2vlans) > 0)
+		if (*(br2vlans))
 			strcat(br2vlans, " ");
 		strcat(br2vlans, get_wdev());
 		break;
@@ -5019,7 +5019,7 @@ void nintendo_save(webs_t wp)
 			sprintf(line, "%s %s %s", url, proto, ports);
 		}
 		lines++;
-		if (strlen(line) > 0) {
+		if (*(line)) {
 			strcat(serverlist, line);
 			if (lines < count) {
 				strcat(serverlist, "|");

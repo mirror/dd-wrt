@@ -45,7 +45,7 @@ void ej_show_status_gpio_output(webs_t wp, int argc, char_t ** argv)
 				sprintf(nvgpio, "gpio%s", var);
 				sprintf(gpio_new_name, "gpio%s_name", var);
 				rgpio = nvram_nget("gpio%s", var);
-				if (strlen(rgpio) == 0)
+				if (*(rgpio) == 0)
 					nvram_set(nvgpio, "0");
 
 				rgpio = nvram_nget("gpio%s", var);

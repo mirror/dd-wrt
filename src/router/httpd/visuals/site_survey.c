@@ -147,7 +147,7 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 	char speedbuf[32];
 
 	name = websGetVar(wp, "hidden_scan", NULL);
-	if (name == NULL || strlen(name) == 0)
+	if (name == NULL || *(name) == 0)
 		eval("site_survey");
 	else {
 		eval("site_survey", name);

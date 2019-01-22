@@ -220,19 +220,19 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 	else if (!strcmp(type, "hidden2"))
 		websWrite(wp, "%s", hidden2);
 	else if (!strcmp(type, "wan_3g_mode")) {
-		if (strlen(nvram_safe_get("wan_3g_mode"))) {
+		if (*(nvram_safe_get("wan_3g_mode"))) {
 			websWrite(wp, nvram_safe_get("wan_3g_mode"));
 		} else {
 			websWrite(wp, "n.A.");
 		}
 	} else if (!strcmp(type, "wan_3g_signal")) {
-		if (strlen(nvram_safe_get("wan_3g_signal"))) {
+		if (*(nvram_safe_get("wan_3g_signal"))) {
 			websWrite(wp, nvram_safe_get("wan_3g_signal"));
 		} else {
 			websWrite(wp, "n.A.");
 		}
 	} else if (!strcmp(type, "wan_3g_status")) {
-		if (strlen(nvram_safe_get("wan_3g_status"))) {
+		if (*(nvram_safe_get("wan_3g_status"))) {
 			websWrite(wp, nvram_safe_get("wan_3g_status"));
 		} else {
 			websWrite(wp, "n.A.");
