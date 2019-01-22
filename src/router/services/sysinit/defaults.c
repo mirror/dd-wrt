@@ -1752,6 +1752,7 @@ struct nvram_param srouter_defaults[] = {
 	{"radius_common", "Antaira FreeRadius Certificate"},
 	{"radius_passphrase", "none"},
 	{"wan_proto", "none"},
+	{"time_zone", "America/Los_Angeles"},
 	{"ath0_security_mode", "psk2"},
 	{"ath0_akm", "psk2"},
 	{"ath0_psk2", "1"},
