@@ -35,17 +35,17 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 
 	char *wanifname = nvram_safe_get("wan_ifname2");
 
-	if (strlen(wanifname) == 0)
+	if (*(wanifname) == 0)
 		wanifname = nvram_safe_get("wan_ifname");
 	bzero(eths, 256);
 	getIfLists(eths, 256);
-	if (strlen(wanifname) > 0) {
+	if (*(wanifname)) {
 
 		show_caption_legend(wp, "idx.portsetup");
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(idx.wanport)</script></div>\n");
 		websWrite(wp, "<select name=\"wan_ifname\">\n");
 
-		websWrite(wp, "<option value=\"\" %s ><script type=\"text/javascript\">Capture(share.disabled);</script></option>\n", strlen(wanifname) == 0 ? "selected=\"selected\"" : "");
+		websWrite(wp, "<option value=\"\" %s ><script type=\"text/javascript\">Capture(share.disabled);</script></option>\n", *(wanifname) == 0 ? "selected=\"selected\"" : "");
 		foreach(var, eths, next) {
 			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, !strcmp(wanifname, var) ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
 		}
@@ -80,7 +80,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		unsigned char mac[20];
 		char *r = get_hwaddr(var, mac);
 		char *nvmac = nvram_nget("%s_hwaddr", var);
-		if (r && !strlen(nvmac) && strncmp(var, "wl", 2))
+		if (r && !*(nvmac) && strncmp(var, "wl", 2))
 			nvram_nset(r, "%s_hwaddr", var);
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(share.mac)</script></div>\n");
 		websWrite(wp, "<input class=\"num\" maxlength=\"17\" size=\"16\" name=\"%s_hwaddr\" value=\"%s\" /></div>\n", var, nvram_nget("%s_hwaddr", var));

@@ -282,7 +282,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 					t = 1;
 
 				dev = nvram_safe_get(wdsdevname);
-				if (dev == NULL || strlen(dev) == 0)
+				if (dev == NULL || *(dev) == 0)
 					continue;
 				if (nvram_matchi(wdsvarname, 0))
 					continue;

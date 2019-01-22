@@ -54,7 +54,7 @@ void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 		char *ipaddr = nvram_nget("%s_ipaddr", interface);
 		char *netmask = nvram_nget("%s_netmask", interface);
 
-		if (strlen(ipaddr) > 0 && strlen(netmask) > 0) {
+		if (*ipaddr && *netmask) {
 			show_caption_simple(wp, "networking.iface");
 			websWrite(wp, " %s: IP %s/%s\n", getNetworkLabel(wp, interface), ipaddr, netmask);
 		}

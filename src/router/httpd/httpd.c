@@ -383,7 +383,7 @@ static int auth_check(webs_t conn_fp)
 	int ret = 0;
 	authinfo = malloc(500);
 	/* Is this directory unprotected? */
-	if (!strlen(conn_fp->auth_passwd)) {
+	if (!*(conn_fp->auth_passwd)) {
 		/* Yes, let the request go through. */
 		ret = 1;
 		goto out;
@@ -782,7 +782,7 @@ static void *handle_request(void *arg)
 	int cnt = 0;
 	for (;;) {
 		wfgets(line, LINE_LEN, conn_fp);
-		if (!strlen(line) && (errno == EINTR || errno == EAGAIN))
+		if (!*(line) && (errno == EINTR || errno == EAGAIN))
 		    continue;
 		break;
 	}	
@@ -790,7 +790,7 @@ static void *handle_request(void *arg)
 #ifndef HAVE_MICRO
 //	pthread_mutex_unlock(&input_mutex);
 #endif
-	if (!strlen(line)) {
+	if (!*(line)) {
 		send_error(conn_fp, 408, "Request Timeout", NULL, "No request appeared within a reasonable time period.");
 
 		goto out;
@@ -2080,7 +2080,7 @@ static void ias_sid_set(webs_t wp)
 	struct sysinfo sinfo;
 
 	sysinfo(&sinfo);
-	if (strlen(wp->http_client_mac)) {
+	if (*(wp->http_client_mac)) {
 		ias_sid_timeout = sinfo.uptime + 300;
 		sprintf(ias_sid, "%s", wp->http_client_mac);
 		fprintf(stderr, "[IAS SID SET] %d %s\n", ias_sid_timeout, ias_sid);
@@ -2094,12 +2094,12 @@ static int ias_sid_valid(webs_t wp)
 	struct sysinfo sinfo;
 	char *mac;
 
-	if (!ias_sid_timeout && !strlen(ias_sid))
+	if (!ias_sid_timeout && !*(ias_sid))
 		return 0;
 
 	sysinfo(&sinfo);
 	mac = wp->http_client_mac;
-	if (sinfo.uptime > ias_sid_timeout || (strcmp(mac, ias_sid) && strlen(mac))) {
+	if (sinfo.uptime > ias_sid_timeout || (strcmp(mac, ias_sid) && *(mac))) {
 		fprintf(stderr, "[IAS SID RESET] %d<>%d %s<>%s\n", sinfo.uptime, ias_sid_timeout, mac, ias_sid);
 		ias_sid_timeout = 0;
 		sprintf(ias_sid, "");

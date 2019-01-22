@@ -264,7 +264,7 @@ void ej_show_raid(webs_t wp, int argc, char_t ** argv)
 		char *raidlzlevel = nvram_nget("raidlzlevel%d", i);
 		char *raidfs = nvram_nget("raidfs%d", i);
 		char *raiddedup = nvram_nget("raiddedup%d", i);
-		if (!strlen(raidtype))
+		if (!*(raidtype))
 			break;
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<table class=\"table center\" summary=\"Raid\">\n");
