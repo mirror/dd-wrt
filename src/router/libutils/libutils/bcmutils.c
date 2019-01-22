@@ -1127,7 +1127,7 @@ int wds_dev_config(int dev, int up)
 #endif
 
 		wds_list = nvram_safe_get("wl0_wds");
-		if (wds_list == (void *)0 || *!wds_list)
+		if (wds_list == (void *)0 || !*wds_list)
 			return 0;
 
 		snprintf(wds_hwaddr_var, 31, "%s_hwaddr", wds_var);
