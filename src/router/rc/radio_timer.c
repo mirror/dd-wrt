@@ -82,13 +82,27 @@ static int radio_timer_main(int argc, char **argv)
 							start_service_force(on);
 #ifdef HAVE_MADWIFI
 							char dev[32];
-							sprintf(dev, "ath%d", i);
-							eval("ifconfig", dev, "up");
 							char *next;
 							char var[80];
-							char *vifs = nvram_nget("ath%d_vifs", i);
+							sprintf(dev, "ath%d", i);
+							if (!nvram_nmatch("sta", "%s_mode", dev)) {
+								char bridged[32];
+								sprintf(bridged, "%s_bridged", dev);
+								if (nvram_matchi(bridged, 0)) {
+									eval("ifconfig", dev, "mtu", getMTU(dev));
+									eval("ifconfig", dev, "txqueuelen", getTXQ(dev));
+									eval("ifconfig", dev, nvram_nget("%s_ipaddr", dev), "netmask", nvram_nget("%s_netmask", dev), "up");
+								}
+							}
+							vifs = nvram_nget("ath%d_vifs", i);
 							foreach(var, vifs, next) {
-								eval("ifconfig", var, "up");
+								char bridged[32];
+								sprintf(bridged, "%s_bridged", var);
+								if (nvram_matchi(bridged, 0)) {
+									eval("ifconfig", var, "mtu", getMTU(var));
+									eval("ifconfig", var, "txqueuelen", getTXQ(var));
+									eval("ifconfig", var, nvram_nget("%s_ipaddr", var), "netmask", nvram_nget("%s_netmask", var), "up");
+								}
 							}
 							start_service_force("restarthostapd");
 							if (!nvram_nmatch("sta", "%s_mode", dev)) {
@@ -100,7 +114,6 @@ static int radio_timer_main(int argc, char **argv)
 									eval("ifconfig", dev, nvram_nget("%s_ipaddr", dev), "netmask", nvram_nget("%s_netmask", dev), "up");
 								}
 							}
-							vifs = nvram_nget("ath%d_vifs", i);
 							foreach(var, vifs, next) {
 								char bridged[32];
 								sprintf(bridged, "%s_bridged", var);
