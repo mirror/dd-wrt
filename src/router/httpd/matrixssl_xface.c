@@ -189,7 +189,7 @@ int matrixssl_putc(FILE * fp, unsigned char c)
 int matrixssl_puts(FILE * fp, unsigned char *buf)
 {
 	matrixssl_buf *pbuf = matrixssl_findbuf((int)fp);
-	if (NULL == pbuf || NULL == buf || strlen(buf) <= 0)
+	if (NULL == pbuf || NULL == buf || !*buf)
 		return -1;
 
 	if (pbuf->ssl_send_cur > (SSL_MAX_RECORD_LEN - 2048))
@@ -207,7 +207,7 @@ int matrixssl_printf(FILE * fp, unsigned char *fmt, unsigned char *buf)
 #ifdef DEBUG_MATRIXSSL
 	printf("matrixssl_printf\n");
 #endif
-	if (NULL == pbuf || NULL == buf || strlen(buf) <= 0)
+	if (NULL == pbuf || NULL == buf || !*buf)
 		return -1;
 
 	snprintf(out_buf, 1023, fmt, buf);

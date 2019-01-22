@@ -230,7 +230,7 @@ void start_sysinit(void)
 	if (in != NULL) {
 		unsigned char *config = calloc(65536, 1);
 		fread(config, 65536, 1, in);
-		int len = strlen("WAN_MAC_ADDR=");
+		int len = sizeof("WAN_MAC_ADDR=") - 1;
 		int i;
 		for (i = 0; i < 65535 - (len + 18); i++) {
 			if (!strncmp(&config[i], "WAN_MAC_ADDR=", len)) {
@@ -255,9 +255,9 @@ void start_sysinit(void)
 		unsigned char *config = calloc(65536, 1);
 		fread(config, 65536, 1, in);
 #if defined(HAVE_AR670W) || defined(HAVE_AR690W)
-		int len = strlen("lanmac=");
+		int len = sizeof("lanmac=") - 1;
 #else
-		int len = strlen("ethaddr=");
+		int len = sizeof("ethaddr=") - 1;
 #endif
 		int i;
 		for (i = 0; i < 65535 - (18 + len); i++) {
