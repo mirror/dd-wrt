@@ -94,7 +94,7 @@ static int radio_timer_main(int argc, char **argv)
 									eval("ifconfig", dev, nvram_nget("%s_ipaddr", dev), "netmask", nvram_nget("%s_netmask", dev), "up");
 								}
 							}
-							vifs = nvram_nget("ath%d_vifs", i);
+							char *vifs = nvram_nget("ath%d_vifs", i);
 							foreach(var, vifs, next) {
 								char bridged[32];
 								sprintf(bridged, "%s_bridged", var);
