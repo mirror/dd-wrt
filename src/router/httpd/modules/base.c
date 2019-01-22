@@ -2516,8 +2516,8 @@ static void do_language(unsigned char method, struct mime_handler *handler, char
 	char *langname = getLanguageName();
 	char *prefix, *lang;
 
-	prefix = calloc(strlen(path) - strlen("lang_pack/language.js") + 1, 1);
-	strlcpy(prefix, path, strlen(path) - strlen("lang_pack/language.js"));
+	prefix = calloc(strlen(path) - sizeof("lang_pack/language.js"), 1);
+	strlcpy(prefix, path, strlen(path) - (sizeof("lang_pack/language.js") - 1));
 
 	asprintf(&lang, "%s%s", prefix, langname);
 	do_file(method, handler, lang, stream);

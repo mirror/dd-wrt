@@ -56,7 +56,7 @@ void ej_get_backup_name(webs_t wp, int argc, char_t ** argv)
 {
 	char *name = nvram_safe_get("router_name");
 	char *printname;
-	asprintf(&printname, "nvrambak_r%s%s%s_%s.bin", SVN_REVISION, strlen(name) ? "_" : "", strlen(name) ? name : "", nvram_safe_get("DD_BOARD"));
+	asprintf(&printname, "nvrambak_r%s%s%s_%s.bin", SVN_REVISION, *name ? "_" : "", *name ? name : "", nvram_safe_get("DD_BOARD"));
 	int len = strlen(printname);
 	char *target = malloc(len * 3 + 1);
 	int i, t = 0;

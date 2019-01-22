@@ -1102,7 +1102,7 @@ void addWPS(FILE * fp, char *prefix, int configured)
 	    || !strcmp(prefix, "ath1")) {
 		fprintf(fp, "eap_server=1\n");
 		if (nvram_matchi("wps_enabled", 1)) {
-			config_methods = (char *)realloc(config_methods, strlen(config_methods) + strlen(" push_button") + 1);
+			config_methods = (char *)realloc(config_methods, strlen(config_methods) + sizeof(" push_button"));
 			strcat(config_methods, " push_button");
 		}
 //# WPS configuration (AP configured, do not allow external WPS Registrars)

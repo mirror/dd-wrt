@@ -609,7 +609,7 @@ void start_sysinit(void)
 	case ROUTER_ASKEY_RT220XD:
 		basic_params = generic1;
 
-		if (!nvram_exists("et0macaddr") || nvram_match("et0macaddr","")) {
+		if (!nvram_exists("et0macaddr") || nvram_match("et0macaddr", "")) {
 			nvram_set("et0macaddr", "00:16:E3:00:00:10");	// fix for
 			// missing
 			// cfe
@@ -618,7 +618,7 @@ void start_sysinit(void)
 			// ports.
 			need_reboot = 1;
 		}
-		if (!nvram_exists("et1macaddr") || nvram_match("et1macaddr","")) {
+		if (!nvram_exists("et1macaddr") || nvram_match("et1macaddr", "")) {
 			nvram_set("et1macaddr", "00:16:E3:00:00:11");
 			need_reboot = 1;
 		}
@@ -627,7 +627,7 @@ void start_sysinit(void)
 	case ROUTER_BRCM4702_GENERIC:
 		basic_params = generic1;
 
-		if (!nvram_exists("et0macaddr") || nvram_match("et0macaddr","")) {
+		if (!nvram_exists("et0macaddr") || nvram_match("et0macaddr", "")) {
 			nvram_set("et0macaddr", "00:11:22:00:00:10");	// fix for
 			// missing
 			// cfe
@@ -636,7 +636,7 @@ void start_sysinit(void)
 			// ports.
 			need_reboot = 1;
 		}
-		if (!nvram_exists("et1macaddr") || nvram_match("et1macaddr","")) {
+		if (!nvram_exists("et1macaddr") || nvram_match("et1macaddr", "")) {
 			nvram_set("et1macaddr", "00:11:22:00:00:11");
 			need_reboot = 1;
 		}
@@ -645,7 +645,7 @@ void start_sysinit(void)
 	case ROUTER_ASUS_WL500G:
 		basic_params = generic1;
 
-		if (!nvram_exists("et0macaddr") || nvram_match("et0macaddr","")) {
+		if (!nvram_exists("et0macaddr") || nvram_match("et0macaddr", "")) {
 			nvram_set("et0macaddr", "00:0C:6E:00:00:10");	// fix for
 			// missing
 			// cfe
@@ -654,7 +654,7 @@ void start_sysinit(void)
 			// ports.
 			need_reboot = 1;
 		}
-		if (!nvram_exists("et1macaddr") || nvram_match("et1macaddr","")) {
+		if (!nvram_exists("et1macaddr") || nvram_match("et1macaddr", "")) {
 			nvram_set("et1macaddr", "00:0C:6E:00:00:10");
 			need_reboot = 1;
 		}

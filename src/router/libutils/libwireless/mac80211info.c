@@ -780,7 +780,6 @@ nla_put_failure:
 	return capstring;
 }
 
-
 char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vht160, int vht8080, int su_bf, int mu_bf)
 {
 	struct nl_msg *msg;
