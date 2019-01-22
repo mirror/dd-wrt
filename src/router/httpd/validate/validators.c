@@ -218,7 +218,7 @@ int valid_wep_key(webs_t wp, char *value, struct variable *v)
 {
 	int i;
 
-	switch (strlen(value)) {
+	switch (*(value)) {
 	case 5:
 	case 13:
 		for (i = 0; *(value + i); i++) {
@@ -1043,7 +1043,7 @@ void validate_wl_key(webs_t wp, char *value, struct variable *v)
 {
 	char *c;
 
-	switch (strlen(value)) {
+	switch (*(value)) {
 	case 5:
 	case 13:
 		break;
@@ -1344,7 +1344,7 @@ void validate_forward_proto(webs_t wp, char *value, struct variable *v)
 		{NULL},
 	}, *which;
 	buf = nvram_safe_get("forward_entries");
-	if (buf == NULL || strlen(buf) == 0)
+	if (buf == NULL || *(buf) == 0)
 		return;
 	count = atoi(buf);
 	sof = (count * 128) + 1;
@@ -1482,7 +1482,7 @@ void validate_forward_spec(webs_t wp, char *value, struct variable *v)
 		{NULL},
 	}, *which;
 	buf = nvram_safe_get("forwardspec_entries");
-	if (buf == NULL || strlen(buf) == 0)
+	if (buf == NULL || *(buf) == 0)
 		return;
 	count = atoi(buf);
 	sof = (count * 128) + 1;
@@ -1583,7 +1583,7 @@ void validate_forward_spec(webs_t wp, char *value, struct variable *v)
 		 * Sveasoft add - new format allows full IP address 
 		 */
 		if (sv_valid_ipaddr(ip)) {
-			if (!src || strlen(src) == 0)
+			if (!src || *(src) == 0)
 				cur += snprintf(cur, buf + sof - cur, "%s%s:%s:%s:%d>%s:%d", cur == buf ? "" : " ", new_name, enable, proto, atoi(from), ip, atoi(to));
 			else
 				cur += snprintf(cur, buf + sof - cur, "%s%s:%s:%s:%d>%s:%d<%s", cur == buf ? "" : " ", new_name, enable, proto, atoi(from), ip, atoi(to), src);
@@ -1879,7 +1879,7 @@ void validate_chaps(webs_t wp, char *value, struct variable *v)
 		{NULL},
 	}, *which;
 	buf = nvram_safe_get("pppoeserver_chapsnum");
-	if (buf == NULL || strlen(buf) == 0)
+	if (buf == NULL || *(buf) == 0)
 		return;
 	count = atoi(buf);
 	sof = (count * 128) + 1;
@@ -1968,7 +1968,7 @@ void validate_aliases(webs_t wp, char *value, struct variable *v)
 		{NULL},
 	}, *which;
 	buf = nvram_safe_get("milkfish_ddaliasesnum");
-	if (buf == NULL || strlen(buf) == 0)
+	if (buf == NULL || *(buf) == 0)
 		return;
 	count = atoi(buf);
 	sof = (count * 128) + 1;
@@ -2025,7 +2025,7 @@ void validate_subscribers(webs_t wp, char *value, struct variable *v)
 		{NULL},
 	}, *which;
 	buf = nvram_safe_get("milkfish_ddsubscribersnum");
-	if (buf == NULL || strlen(buf) == 0)
+	if (buf == NULL || *(buf) == 0)
 		return;
 	count = atoi(buf);
 	sof = (count * 128) + 1;
@@ -2080,7 +2080,7 @@ void validate_iradius(webs_t wp, char *value, struct variable *v)
 
 	char *sln = nvram_safe_get("iradius_count");
 
-	if (sln == NULL || strlen(sln) == 0)
+	if (sln == NULL || *(sln) == 0)
 		return;
 	int leasenum = atoi(sln);
 
@@ -2152,7 +2152,7 @@ void validate_userlist(webs_t wp, char *value, struct variable *v)
 	char password[32] = "fon_userxxx_password";
 	char *sln = nvram_safe_get("fon_usernames");
 
-	if (sln == NULL || strlen(sln) == 0)
+	if (sln == NULL || *(sln) == 0)
 		return;
 	int leasenum = atoi(sln);
 
@@ -2230,7 +2230,7 @@ void validate_staticleases(webs_t wp, char *value, struct variable *v)
 	char *sln = nvram_safe_get("static_leasenum");
 	char *hwaddr;
 
-	if (sln == NULL || strlen(sln) == 0)
+	if (sln == NULL || *(sln) == 0)
 		return;
 	int leasenum = atoi(sln);
 
@@ -2264,7 +2264,7 @@ void validate_staticleases(webs_t wp, char *value, struct variable *v)
 		snprintf(lease_time, sizeof(lease_time), "lease%d_time", i);
 		char *time = websGetVar(wp, lease_time, "");
 
-		if (hostname == NULL || strlen(hostname) == 0 || ip == NULL || strlen(ip) == 0)
+		if (hostname == NULL || *(hostname) == 0 || ip == NULL || *(ip) == 0)
 			break;
 		strcat(leases, "=");
 		strcat(leases, hostname);
@@ -2772,7 +2772,7 @@ void validate_filter_mac_grp(webs_t wp, char *value, struct variable *v)
 				while (*mac) {
 					strncpy(hex, mac, 2);
 					h = (unsigned char)strtoul(hex, NULL, 16);
-					if (strlen(mac1))
+					if (*(mac1))
 						sprintf(mac1 + strlen(mac1), ":");
 					sprintf(mac1 + strlen(mac1), "%02X", h);
 					mac += 2;
@@ -2882,7 +2882,7 @@ void validate_port_trigger(webs_t wp, char *value, struct variable *v)
 	}, *which;
 
 	buf = nvram_safe_get("trigger_entries");
-	if (buf == NULL || strlen(buf) == 0)
+	if (buf == NULL || *(buf) == 0)
 		return;
 	count = atoi(buf);
 	sof = (count * 46) + 1;
@@ -2965,7 +2965,7 @@ void validate_port_trigger(webs_t wp, char *value, struct variable *v)
 		len += strlen(o_from) + 1;
 		len += strlen(o_to) + 1;
 
-		if (strlen(buf) > 0) {
+		if (*(buf)) {
 			len++;
 		}
 		entry = (char *)safe_malloc(len);
@@ -3245,7 +3245,7 @@ write_nvram:
 	strcpy(backuproute, &old[atoi(page) * STATIC_ROUTE_PAGE]);
 
 	if (!tmp) {
-		if (strlen(backuproute) > 0) {
+		if (*(backuproute)) {
 			addDeletion(backuproute);
 			bzero(backuproute, strlen(backuproute));
 		}
@@ -3258,7 +3258,7 @@ write_nvram:
 		snprintf(&old_name[atoi(page) * STATIC_ROUTE_PAGE], 60, "$NAME:%s$$", new_name);
 	}
 	if (strcmp(backuproute, &old[atoi(page) * STATIC_ROUTE_PAGE])) {
-		if (strlen(backuproute) > 0) {
+		if (*(backuproute)) {
 			//nvram_set("nowebaction","1");
 			//addAction("static_route_del");
 			addDeletion(backuproute);

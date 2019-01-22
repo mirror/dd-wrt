@@ -573,7 +573,7 @@ void ej_show_iradius_check(webs_t wp, int argc, char_t ** argv)
 {
 	char *sln = nvram_safe_get("iradius_count");
 
-	if (sln == NULL || strlen(sln) == 0)
+	if (sln == NULL || *(sln) == 0)
 		return;
 	int leasenum = atoi(sln);
 	int i;
@@ -598,7 +598,7 @@ void ej_show_iradius(webs_t wp, int argc, char_t ** argv)
 {
 	char *sln = nvram_safe_get("iradius_count");
 
-	if (sln == NULL || strlen(sln) == 0)
+	if (sln == NULL || *(sln) == 0)
 		return;
 	int leasenum = atoi(sln);
 
@@ -688,7 +688,7 @@ void ej_show_userlist(webs_t wp, int argc, char_t ** argv)
 {
 	char *sln = nvram_safe_get("fon_usernames");
 
-	if (sln == NULL || strlen(sln) == 0)
+	if (sln == NULL || *(sln) == 0)
 		return;
 	int leasenum = atoi(sln);
 
@@ -729,7 +729,7 @@ void ej_show_staticleases(webs_t wp, int argc, char_t ** argv)
 	char *sln = nvram_safe_get("static_leasenum");
 
 	// cprintf("check null");
-	if (sln == NULL || strlen(sln) == 0)
+	if (sln == NULL || *(sln) == 0)
 		return;
 	// cprintf("atoi");
 
@@ -1174,7 +1174,7 @@ void ej_show_wifiselect(webs_t wp, int argc, char_t ** argv)
 		return;
 	getIfList(eths, "ath0.sta");
 
-	if (count == 1 && strlen(nvram_safe_get("ath0_vifs")) == 0 && strlen(eths) == 0)
+	if (count == 1 && *(nvram_safe_get("ath0_vifs")) == 0 && *(eths) == 0)
 		return;
 
 	websWrite(wp, "<div class=\"setting\">\n");
@@ -5694,7 +5694,7 @@ void ej_get_clone_wmac(webs_t wp, int argc, char_t ** argv)
 	if (nvram_match("def_whwaddr", "00:00:00:00:00:00")) {
 
 		if (nvram_matchi("port_swap", 1)) {
-			if (strlen(nvram_safe_get("et1macaddr")) != 0)	// safe:
+			if (*(nvram_safe_get("et1macaddr")))	// safe:
 				// maybe
 				// et1macaddr 
 				// not there?
@@ -6117,7 +6117,7 @@ void ej_show_rflowif(webs_t wp, int argc, char_t ** argv)
 #endif
 
 	char *wanif = nvram_safe_get("wan_ifname");
-	if (strlen(wanif) != 0) {
+	if (*(wanif)) {
 		websWrite(wp, "<option value=\"%s\" %s >WAN</option>\n", wanif, nvram_match("rflow_if", wanif) ? "selected=\"selected\"" : "");
 	}
 }

@@ -67,7 +67,7 @@ void add_raid(webs_t wp)
 	int idx = 0;
 	while (1) {
 		char *type = nvram_nget("raidtype%d", idx);
-		if (!strlen(type))
+		if (!*(type))
 			break;
 		idx++;
 	}
@@ -92,7 +92,7 @@ void format_drive(webs_t wp)
 		return;
 	if (!label)
 		label = "";
-	if (strlen(label)) {
+	if (*(label)) {
 		char labelstr[32];
 		sprintf(labelstr, "%s_label", &fs[5]);
 		nvram_set(labelstr, label);
@@ -102,32 +102,32 @@ void format_drive(webs_t wp)
 	char name[32];
 	sprintf(name, "mkfs.%s", format);
 	if (!strcmp(format, "xfs") || !strcmp(format, "btrfs")) {
-		if (strlen(label))
+		if (*(label))
 			eval(name, "-f", "-L", label, fs);
 		else
 			eval(name, "-f", fs);
 	} else if (!strcmp(format, "ntfs")) {
-		if (strlen(label))
+		if (*(label))
 			eval(name, "-f", "-L", label, "-Q", "-F", fs);
 		else
 			eval(name, "-f", "-Q", "-F", fs);
 	} else if (!strcmp(format, "exfat")) {
-		if (strlen(label))
+		if (*(label))
 			eval(name, "-n", label, fs);
 		else
 			eval(name, fs);
 	} else if (!strcmp(format, "fat32")) {
-		if (strlen(label))
+		if (*(label))
 			eval("mkfs.fat", "-n", label, "-F", "32", fs);
 		else
 			eval("mkfs.fat", "-F", "32", fs);
 	} else if (!strncmp(format, "ext", 3)) {
-		if (strlen(label))
+		if (*(label))
 			eval(name, "-F", "-L", label, "-E", "lazy_itable_init=1", fs);
 		else
 			eval(name, "-F", "-E", "lazy_itable_init=1", fs);
 	} else {
-		if (strlen(label))
+		if (*(label))
 			eval(name, "-F", "-L", label, fs);
 		else
 			eval(name, "-F", fs);
@@ -174,7 +174,7 @@ void del_raid(webs_t wp)
 	int cnt = 0;
 	while (1) {
 		char *type = nvram_nget("raidtype%d", cnt);
-		if (!strlen(type)) {
+		if (!*(type)) {
 			break;
 		}
 		cnt++;
@@ -225,7 +225,7 @@ void add_raid_member(webs_t wp)
 	int idx = atoi(val);
 	char *raid = nvram_nget("raid%d", idx);
 	char *newv = NULL;
-	if (!strlen(raid))
+	if (!*(raid))
 		asprintf(&newv, "none");
 	else
 		asprintf(&newv, "%s none", raid);

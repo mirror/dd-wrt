@@ -867,7 +867,7 @@ void ej_show_forward(webs_t wp, int argc, char_t ** argv)
 	int c = 0;
 
 	count = nvram_safe_get("forward_entries");
-	if (count == NULL || strlen(count) == 0 || (c = atoi(count)) <= 0) {
+	if (count == NULL || *(count) == 0 || (c = atoi(count)) <= 0) {
 		// return -1; botho 07/03/06 add "- None -" if empty
 		websWrite(wp, "<tr>\n<td colspan=\"6\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
 	}
@@ -900,7 +900,7 @@ void ej_show_forward_spec(webs_t wp, int argc, char_t ** argv)
 	int c = 0;
 
 	count = nvram_safe_get("forwardspec_entries");
-	if (count == NULL || strlen(count) == 0 || (c = atoi(count)) <= 0) {
+	if (count == NULL || *(count) == 0 || (c = atoi(count)) <= 0) {
 		// return -1; botho 07/03/06 add "- None -" if empty
 		// websWrite (wp, "<tr></tr><tr></tr>\n");
 		websWrite(wp, "<tr>\n<td colspan=\"7\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
@@ -937,7 +937,7 @@ void ej_show_triggering(webs_t wp, int argc, char_t ** argv)
 	int c = 0;
 
 	count = nvram_safe_get("trigger_entries");
-	if (count == NULL || strlen(count) == 0 || (c = atoi(count)) <= 0) {
+	if (count == NULL || *(count) == 0 || (c = atoi(count)) <= 0) {
 		websWrite(wp, "<tr>\n<td colspan=\"6\" align=\"center\" valign=\"middle\">- <script type=\"text/javascript\">Capture(share.none)</script> -</td>\n</tr>\n");
 	}
 	for (i = 0; i < c; i++) {
@@ -1414,7 +1414,7 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 			char *wdsdev;
 
 			wdsdev = nvram_nget("%s_wds%d_if", dev, s);
-			if (strlen(wdsdev) == 0)
+			if (*(wdsdev) == 0)
 				continue;
 			if (nvram_nmatch("0", "%s_wds%d_enable", dev, s))
 				continue;
@@ -1667,7 +1667,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 #define MAXSUBMENU 13
 
 	for (i = 0; i < MAXMENU; i++) {
-		if (strlen(m->menu[i][0]) == 0)
+		if (*(m->menu[i][0]) == 0)
 			continue;
 #ifdef HAVE_MADWIFI
 		if (!wifi && !wimaxwifi && !strcmp(m->menu[i][0], "Wireless_Basic.asp"))
@@ -1864,7 +1864,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 					// over 
 					// register.asp
 					j++;
-				if ((!strlen(nvram_safe_get("mypage_scripts"))) && !strcmp(m->menu[i][j], "MyPage.asp"))	// jump 
+				if ((!*(nvram_safe_get("mypage_scripts"))) && !strcmp(m->menu[i][j], "MyPage.asp"))	// jump 
 					// over 
 					// MyPage.asp
 					j++;
@@ -1884,18 +1884,18 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 					break;
 #ifdef HAVE_MADWIFI
 				if (!strcmp(m->menu[i][j], submenu)
-				    && (strlen(m->menu[i][j])
+				    && (*(m->menu[i][j])
 					&& !strcmp(m->menu[i][j], "Wireless_Basic.asp")
 					&& !wifi && wimaxwifi)) {
 					websWrite(wp, "      <li><span><strong><script type=\"text/javascript\">Capture(bmenu.wimax)</script></strong></span></li>\n");
 				}
 #endif
 				else if (!strcmp(m->menu[i][j], submenu)
-					 && (strlen(m->menu[i][j]))) {
+					 && (*(m->menu[i][j]))) {
 					websWrite(wp, "      <li><span><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></span></li>\n", m->menuname[i][j + 1]);
 				}
 #ifdef HAVE_MATRIXSSL
-				else if (DO_SSL(wp) && (strlen(m->menu[i][j]) != 0)
+				else if (DO_SSL(wp) && (*(m->menu[i][j]) != 0)
 					 && ((!strcmp(m->menu[i][j], "Upgrade.asp")
 					      || (!strcmp(m->menu[i][j], "config.asp"))))) {
 					websWrite(wp, "      <script type=\"text/javascript\">\n//<![CDATA[\n");
@@ -1906,13 +1906,13 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 				}
 #endif				/* < */
 #ifdef HAVE_MADWIFI
-				else if (strlen(m->menu[i][j])
+				else if (*(m->menu[i][j])
 					 && !strcmp(m->menu[i][j], "Wireless_Basic.asp")
 					 && !wifi && wimaxwifi) {
 					websWrite(wp, "      <li><a href=\"WiMAX.asp\"><strong><script type=\"text/javascript\">Capture(bmenu.wimax)</script></strong></a></li>\n");
 				}
 #endif
-				else if (strlen(m->menu[i][j])) {
+				else if (*(m->menu[i][j])) {
 					websWrite(wp, "      <li><a href=\"%s\"><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></a></li>\n", m->menu[i][j], m->menuname[i][j + 1]);
 				}
 			}
@@ -1981,7 +1981,7 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 #else
 	websWrite(wp, "\t\t<title>%s (build %s)", nvram_safe_get("router_name"), SVN_REVISION);
 #endif
-	if (strlen(argv[0]) != 0) {
+	if (*(argv[0])) {
 		websWrite(wp, " - %s", live_translate(wp, argv[0]));
 	}
 	websWrite(wp, "</title>\n");
@@ -2361,7 +2361,7 @@ void ej_getwirelessstatus(webs_t wp, int argc, char_t ** argv)
 	} else {
 		showcli = 1;	// "Access Point"
 		sprintf(var, "%s_vifs", m);
-		if (strlen(nvram_safe_get(var)) > 0)
+		if (*(nvram_safe_get(var)))
 			showap = 1;	// " & Clients"
 	}
 
@@ -2514,7 +2514,7 @@ void ej_radio_on(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_MADWIFI
 	char *ifname = nvram_safe_get("wifi_display");
 
-	if (strlen(ifname) > 0) {
+	if (*(ifname)) {
 		int state = get_radiostate(ifname);
 
 		switch (state) {
@@ -2566,7 +2566,7 @@ static void get_radio_state(char *buf)
 #ifdef HAVE_MADWIFI
 	char *ifname = wifi;
 
-	if (strlen(ifname) > 0) {
+	if (*(ifname)) {
 		int state = get_radiostate(ifname);
 
 		switch (state) {

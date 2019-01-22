@@ -376,7 +376,7 @@ void ej_show_cpufeatures(webs_t wp, int argc, char_t ** argv)
 	}
 	free(line);
 	fclose(fp);
-	if (result && strlen(result)) {
+	if (result && *(result)) {
 		char buf[128];
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\">%s</div>\n", tran_string(buf, "status_router.features"));
