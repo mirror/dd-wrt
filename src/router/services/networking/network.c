@@ -333,9 +333,9 @@ void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int le
 #ifdef HAVE_FREECWMP
 	char *vendorclass = "dslforum.org";
 #else
-	char *vendorclass = nvram_save_get("dhcpc_vendorclass");
+	char *vendorclass = nvram_safe_get("dhcpc_vendorclass");
 #endif
-	char *requestip = nvram_save_get("dhcpc_requestip");
+	char *requestip = nvram_safe_get("dhcpc_requestip");
 	int use_extra = 0;
 
 	symlink("/sbin/rc", "/tmp/udhcpc");
