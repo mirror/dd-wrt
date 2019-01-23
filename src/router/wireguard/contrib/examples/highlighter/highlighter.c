@@ -15,7 +15,6 @@ typedef struct {
 	size_t len;
 } string_span_t;
 
-
 static bool is_decimal(char c)
 {
 	return c >= '0' && c <= '9';
@@ -37,11 +36,7 @@ static bool is_same(string_span_t s, const char *c)
 
 	if (len != s.len)
 		return false;
-	for (size_t i = 0; i < len; ++i) {
-		if (c[i] != s.s[i])
-			return false;
-	}
-	return true;
+	return !memcmp(s.s, c, len);
 }
 
 static bool is_caseless_same(string_span_t s, const char *c)
