@@ -167,6 +167,10 @@ typedef enum {
 	HTTP_METHOD_CONNECT
 } ndpi_http_method;
 
+struct ndpi_lru_cache {
+  u_int32_t num_entries, *entries;  
+};
+
 typedef struct ndpi_id_struct {
 	/* detected_protocol_bitmask:
 	 * access this bitmask to find out whether an id has used skype or not
@@ -451,6 +455,8 @@ struct ndpi_flow_tcp_struct {
 
 /* NDPI_PROTOCOL_MEMCACHED */
   u_int8_t memcached_matches;
+  /* NDPI_PROTOCOL_NEST_LOG_SINK */
+  u_int8_t nest_log_sink_matches;
 
 }
 #if !defined(WIN32)
@@ -776,6 +782,8 @@ typedef struct ndpi_detection_module_struct {
 	int bt_ann_len;
 #endif
 #endif
+	/* NDPI_PROTOCOL_OOKLA */
+	 struct ndpi_lru_cache *ookla_cache;
 #ifdef NDPI_PROTOCOL_TINC
 	cache_t tinc_cache;
 #endif

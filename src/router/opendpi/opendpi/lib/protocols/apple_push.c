@@ -34,6 +34,7 @@ static void ndpi_check_apple_push(struct ndpi_detection_module_struct *ndpi_stru
 	struct ndpi_packet_struct *packet = &flow->packet;
 
 	/* https://support.apple.com/en-us/HT203609 */
+  if(packet->iph) {
 	if (((ntohl(packet->iph->saddr) & 0xFF000000 /* 255.0.0.0 */ ) == 0x11000000 /* 17.0.0.0/8 */ )
 	    || ((ntohl(packet->iph->daddr) & 0xFF000000 /* 255.0.0.0 */ ) == 0x11000000 /* 17.0.0.0/8 */ )) {
 		u_int16_t apple_push_port = ntohs(5223);
@@ -49,7 +50,7 @@ static void ndpi_check_apple_push(struct ndpi_detection_module_struct *ndpi_stru
 			return;
 		}
 	}
-
+    }
 	NDPI_ADD_PROTOCOL_TO_BITMASK(flow->excluded_protocol_bitmask, NDPI_PROTOCOL_APPLE_PUSH);
 }
 

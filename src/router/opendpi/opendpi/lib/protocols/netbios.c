@@ -264,7 +264,7 @@ static void ndpi_search_netbios(struct ndpi_detection_module_struct *ndpi_struct
 
 			NDPI_LOG(NDPI_PROTOCOL_NETBIOS, ndpi_struct, NDPI_LOG_DEBUG, "found netbios port 138 and payload length >= 112 \n");
 
-			if (packet->payload[0] >= 0x11 && packet->payload[0] <= 0x16) {
+			if (packet->payload[0] >= 0x10 && packet->payload[0] <= 0x16) {
 
 				NDPI_LOG(NDPI_PROTOCOL_NETBIOS, ndpi_struct, NDPI_LOG_DEBUG, "found netbios with MSG-type 0x11,0x12,0x13,0x14,0x15 or 0x16\n");
 

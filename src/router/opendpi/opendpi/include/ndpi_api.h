@@ -211,6 +211,11 @@ extern "C" {
 	static int ndpi_is_ssl_tor(struct ndpi_detection_module_struct *ndpi_struct, struct ndpi_flow_struct *flow, char *certificate);
 #endif
 
+  static struct ndpi_lru_cache* ndpi_lru_cache_init(u_int32_t num_entries);
+  static void ndpi_lru_free_cache(struct ndpi_lru_cache *c);
+  static u_int8_t ndpi_lru_find_cache(struct ndpi_lru_cache *c, u_int32_t key, u_int8_t clean_key_when_found);
+  static void ndpi_lru_add_to_cache(struct ndpi_lru_cache *c, u_int32_t key);
+
 #ifdef __cplusplus
 }
 #endif
