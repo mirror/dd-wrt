@@ -307,6 +307,7 @@ l7filters filters_list[] = {
 	{"microsoft", NDPI_ONLY},
 	{"mining", NDPI_ONLY},  // bitcoin, ethereum, zcash, monero
 	{"mms", NDPI_ONLY},
+	{"modbus", NDPI_ONLY},
 #endif
 	{"mohaa", L7_ONLY},
 #ifdef HAVE_OPENDPI
@@ -338,6 +339,7 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{"netflix", NDPI_ONLY},
 	{"netflow", NDPI_ONLY},
+	{"nest_log_sink", NDPI_ONLY},
 	{"nfs", NDPI_ONLY},
 #endif
 	{"nimda", L7_ONLY},
@@ -458,6 +460,7 @@ l7filters filters_list[] = {
 	{"shoutcast", DPI},
 #ifdef HAVE_OPENDPI
 	{"showmax", NDPI_ONLY},
+	{"signal", NDPI_ONLY},
 	{"simet", NDPI_ONLY},
 	{"sina", NDPI_ONLY},
 #endif
