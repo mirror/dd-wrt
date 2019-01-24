@@ -201,3 +201,4 @@ static void init_memcached_dissector(struct ndpi_detection_module_struct *ndpi_s
 
 	*id += 1;
 }
+#undef NDPI_CURRENT_PROTO

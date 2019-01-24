@@ -170,3 +170,7 @@
 #include "protocols/fbzero.c"
 #include "protocols/mining.c"
 #include "protocols/memcached.c"
+#include "protocols/modbus.c"
+#include "protocols/nest_log_sink.c"
+#include "protocols/ookla.c"
+#include "protocols/upnp.c"

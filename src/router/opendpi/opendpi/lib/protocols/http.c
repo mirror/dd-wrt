@@ -584,7 +584,17 @@ static void ndpi_check_http_tcp(struct ndpi_detection_module_struct *ndpi_struct
 				   <allow-access-from domain="*.speedtest.net" to-ports="8080"/>
 				   </cross-domain-policy>
 				 */
+      ookla_found:
 				ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_OOKLA, NDPI_PROTOCOL_UNKNOWN);
+	if(ndpi_struct->ookla_cache == NULL)
+	  ndpi_struct->ookla_cache = ndpi_lru_cache_init(1024);
+	
+	if(packet->iph != NULL && ndpi_struct->ookla_cache != NULL) {
+	  if(packet->tcp->source == htons(8080))
+	    ndpi_lru_add_to_cache(ndpi_struct->ookla_cache, packet->iph->saddr);
+	  else
+	    ndpi_lru_add_to_cache(ndpi_struct->ookla_cache, packet->iph->daddr);	  
+	}
 				return;
 			}
 

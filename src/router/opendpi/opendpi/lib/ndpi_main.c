@@ -833,6 +833,15 @@ static void ndpi_init_protocol_defaults(struct ndpi_detection_module_struct *ndp
 				ndpi_build_default_ports(ports_b, 11211, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_MINING, no_master, no_master, "Mining", ndpi_build_default_ports(ports_a, 8333, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
+	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_NEST_LOG_SINK , no_master,
+				no_master, "NestLogSink", ndpi_build_default_ports(ports_a, 11095, 0, 0, 0, 0) /* TCP */ ,
+				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
+	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_MODBUS, no_master,
+				no_master, "Modbus",	/* Perhaps IoT in the future */
+				ndpi_build_default_ports(ports_a, 502, 0, 0, 0, 0) /* TCP */ ,
+				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
+	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_FUN, NDPI_PROTOCOL_SIGNAL, no_master, no_master, "Signal", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
+				ndpi_build_default_ports(ports_b, 0, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_SYSLOG, no_master, no_master, "Syslog", ndpi_build_default_ports(ports_a, 514, 0, 0, 0, 0) /* TCP */ ,
 				ndpi_build_default_ports(ports_b, 514, 0, 0, 0, 0) /* UDP */ );
 	ndpi_set_proto_defaults(ndpi_mod, NDPI_PROTOCOL_ACCEPTABLE, NDPI_PROTOCOL_DHCP, no_master, no_master, "DHCP", ndpi_build_default_ports(ports_a, 0, 0, 0, 0, 0) /* TCP */ ,
@@ -1449,6 +1458,8 @@ static void ndpi_exit_detection_module(struct ndpi_detection_module_struct
 #ifdef NDPI_PROTOCOL_BITTORRENT
 		ndpi_bittorrent_done(ndpi_struct);
 #endif
+    if(ndpi_struct->ookla_cache)
+      ndpi_lru_free_cache(ndpi_struct->ookla_cache);
 
 		if (ndpi_struct->protocols_ptree)
 			ndpi_Destroy_Patricia((patricia_tree_t *) ndpi_struct->protocols_ptree, free_ptree_data);
@@ -2207,6 +2218,9 @@ static void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_st
 	/* REDIS */
 	init_redis_dissector(ndpi_struct, &a, detection_bitmask);
 
+	/* UPnP */
+	init_upnp_dissector(ndpi_struct, &a, detection_bitmask);
+
 	/* VHUA */
 	init_vhua_dissector(ndpi_struct, &a, detection_bitmask);
 
@@ -2294,6 +2308,9 @@ static void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_st
 	/* NINTENDO */
 	init_nintendo_dissector(ndpi_struct, &a, detection_bitmask);
 
+	/* MODBUS */
+	init_modbus_dissector(ndpi_struct, &a, detection_bitmask);
+
 	/* RX */
 	init_rx_dissector(ndpi_struct, &a, detection_bitmask);
 
@@ -2307,6 +2324,9 @@ static void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_st
 
 	/* WHATSAPP */
 	init_whatsapp_dissector(ndpi_struct, &a, detection_bitmask);
+
+	/* OOKLA */
+	init_ookla_dissector(ndpi_struct, &a, detection_bitmask);
 
 	/* AMQP */
 	init_amqp_dissector(ndpi_struct, &a, detection_bitmask);
@@ -2323,6 +2343,8 @@ static void ndpi_set_protocol_detection_bitmask2(struct ndpi_detection_module_st
 	/* Memcached */
 	init_memcached_dissector(ndpi_struct, &a, detection_bitmask);
 
+	/* Nest Log Sink */
+	init_nest_log_sink_dissector(ndpi_struct, &a, detection_bitmask);
 
 	/* ----------------------------------------------------------------- */
 
@@ -4351,3 +4373,45 @@ static char *strsep(char **stringp, const char *delim)
 	/* NOTREACHED */
 }
 #endif
+
+/* ******************************************************************** */
+
+/* LRU cache */
+
+struct ndpi_lru_cache* ndpi_lru_cache_init(u_int32_t num_entries) {
+  struct ndpi_lru_cache *c = (struct ndpi_lru_cache*)ndpi_malloc(sizeof(struct ndpi_lru_cache));
+
+  if(!c) return(NULL);
+
+  c->entries = (u_int32_t*)ndpi_calloc(num_entries, sizeof(u_int32_t));
+
+  if(!c->entries) {
+    ndpi_free(c);
+    return(NULL);
+  } else  
+    c->num_entries = num_entries;
+  
+  return(c);
+}
+
+void ndpi_lru_free_cache(struct ndpi_lru_cache *c) {
+  ndpi_free(c->entries);
+  ndpi_free(c);
+}
+
+
+u_int8_t ndpi_lru_find_cache(struct ndpi_lru_cache *c, u_int32_t key, u_int8_t clean_key_when_found) {
+  u_int32_t slot = key % c->num_entries;
+
+  if(c->entries[slot] == key) {
+    if(clean_key_when_found) c->entries[slot] = 0;
+    return(1);
+  } else
+    return(0);
+}
+
+void ndpi_lru_add_to_cache(struct ndpi_lru_cache *c, u_int32_t key) {
+  u_int32_t slot = key % c->num_entries;
+
+  c->entries[slot] = key;
+}

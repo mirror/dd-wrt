@@ -53,10 +53,10 @@ static void ndpi_search_eaq(struct ndpi_detection_module_struct *ndpi_struct, st
 		if (flow->l4.udp.eaq_pkt_id == 0)
 			flow->l4.udp.eaq_sequence = seq;
 		else {
-			if ((flow->l4.udp.eaq_sequence == seq) || ((flow->l4.udp.eaq_sequence + 1) == seq)) {
-				;	/* Looks good */
+			if ((flow->l4.udp.eaq_sequence != seq) && ((flow->l4.udp.eaq_sequence + 1) != seq)) {
+			    goto exclude_eaq;
 			} else
-				goto exclude_eaq;
+			    flow->l4.udp.eaq_sequence = seq;
 		}
 
 		if (++flow->l4.udp.eaq_pkt_id == 4) {

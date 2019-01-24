@@ -27,8 +27,7 @@ static void ndpi_search_h323(struct ndpi_detection_module_struct *ndpi_struct, s
 
 		/* H323  */
 		if (packet->payload_packet_len >= 3 && (packet->payload[0] == 0x03)
-		    && (packet->payload[1] == 0x00)
-		    && (packet->payload[2] == 0x00)) {
+		    && (packet->payload[1] == 0x00)) {
 			struct tpkt *t = (struct tpkt *)packet->payload;
 			u_int16_t len = ntohs(t->len);
 
