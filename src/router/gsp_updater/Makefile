@@ -15,7 +15,7 @@ i2cget: i2cget.o util.o i2cbusses.o
 i2cdump: i2cdump.o util.o i2cbusses.o
 	$(CC) $(CFLAGS) -ffunction-sections -fdata-sections -Wl,--gc-sections  $(COPTS) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
-gsp_updater: gsp_updater.o
+gsp_updater: gsc_update.o
 	$(CC) $(CFLAGS)  -ffunction-sections -fdata-sections -Wl,--gc-sections $(COPTS) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
 test_audio: test_audio.o
@@ -43,7 +43,10 @@ install: gsp_updater i2cset i2cget i2cdump
 	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_551x_v50.txt $(INSTALLDIR)/etc/gsc_551x_v50.txt
 	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_552x_v50.txt $(INSTALLDIR)/etc/gsc_552x_v50.txt
 	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_553x_v50.txt $(INSTALLDIR)/etc/gsc_553x_v50.txt
-	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_630x_v52.txt $(INSTALLDIR)/etc/gsc_630x_v52.txt
+	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_630x_v52.txt $(INSTALLDIR)/etc/gsc_610x_v53.txt
+	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_630x_v52.txt $(INSTALLDIR)/etc/gsc_620x_v53.txt
+	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_630x_v52.txt $(INSTALLDIR)/etc/gsc_630x_v53.txt
+	install -m 0644 -o $(INSTOWNER) -g $(INSTGROUP) gsc_630x_v52.txt $(INSTALLDIR)/etc/gsc_640x_v53.txt
 
 clean:
 	rm -f gsp_updater i2cset *.o core
