@@ -897,16 +897,18 @@ static void checkhostapd(char *ifname, int force)
 	sprintf(fname, "/var/run/%s_hostapd.pid", ifname);
 	FILE *fp;
 	fp = fopen(fname, "rb");
-	if (fp) {
-		fscanf(fp, "%d", &pid);
-		fclose(fp);
-		if (pid > 0) {
+	if (fp || force) {
+		if (fp) {
+			fscanf(fp, "%d", &pid);
+			fclose(fp);
+		}
+		if (pid > 0 || force) {
 			int needrestart = 0;
 			if (force) {
 				needrestart = 1;
-				kill(pid, SIGKILL);
+				if (pid > 0)
+					kill(pid, SIGKILL);
 				fp = NULL;
-				unlink(fname);	//force to remove pid file, otherwise it gets restarted twice
 			} else {
 				char checkname[32];
 				sprintf(checkname, "/proc/%d/cmdline", pid);
@@ -923,6 +925,7 @@ static void checkhostapd(char *ifname, int force)
 				fclose(fp);
 			}
 			if (needrestart) {
+				unlink(fname);	//force to remove pid file, otherwise it gets restarted twice
 				char fstr[32];
 				sprintf(fstr, "/tmp/%s_hostap.conf", ifname);
 				if (force) {
