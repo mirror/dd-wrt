@@ -50,7 +50,7 @@ static ssize_t show_pwm_auto_point_temp(struct device *dev,
 		return ret;
 
 	ret = regs[0] | regs[1] << 8;
-	return sprintf(buf, "%d\n", ret * 10);
+	return sprintf(buf, "%d\n", ret * 100);
 }
 
 static ssize_t set_pwm_auto_point_temp(struct device *dev,
@@ -67,8 +67,8 @@ static ssize_t set_pwm_auto_point_temp(struct device *dev,
 	if (kstrtol(buf, 10, &temp))
 		return -EINVAL;
 
-	temp = clamp_val(temp, 0, 10000);
-	temp = DIV_ROUND_CLOSEST(temp, 10);
+	temp = clamp_val(temp, 0, 100000);
+	temp = DIV_ROUND_CLOSEST(temp, 100);
 
 	regs[0] = temp & 0xff;
 	regs[1] = (temp >> 8) & 0xff;
@@ -175,6 +175,7 @@ gsc_hwmon_read(struct device *dev, enum hwmon_sensor_types type, u32 attr,
 	case type_temperature:
 		if (*val > 0x8000)
 			*val -= 0xffff;
+		*val *= 100; /* convert to milidegrees */
 		break;
 	case type_voltage_raw:
 		*val = clamp_val(*val, 0, BIT(GSC_HWMON_RESOLUTION));
