@@ -124,7 +124,7 @@ static void flog(const char *fmt, ...)
 int system2(char *command)
 {
 
-#if (!defined(HAVE_X86) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)	//we must disable this on x86 since nvram is not available at startup
+#if (!defined(HAVE_X86) && !defined(HAVE_NEWPORT) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)	//we must disable this on x86 since nvram is not available at startup
 
 	dd_debug(DEBUG_CONSOLE, "%s:%s\n", __func__, command);
 	if (nvram_match("debug_delay", "1")) {
@@ -239,7 +239,7 @@ int _evalpid(char *const argv[], char *path, int timeout, int *ppid)
 	// if (debugfp==NULL)
 	// debugfp = fopen("/tmp/evallog.log","wb");
 	// char buf[254] = "";
-#if (!defined(HAVE_X86) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)	//we must disable this on x86 since nvram is not available at startup
+#if (!defined(HAVE_X86) && !defined(HAVE_NEWPORT) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)	//we must disable this on x86 since nvram is not available at startup
 
 	if (nvram_matchi("console_debug", 1)) {
 		int i = 0;
@@ -264,7 +264,7 @@ int _evalpid(char *const argv[], char *path, int timeout, int *ppid)
 
 #endif
 #endif
-#if (!defined(HAVE_X86) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)	//we must disable this on x86 since nvram is not available at startup
+#if (!defined(HAVE_X86) && !defined(HAVE_NEWPORT) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)	//we must disable this on x86 since nvram is not available at startup
 
 	if (nvram_match("debug_delay", "1")) {
 		sleep(1);
