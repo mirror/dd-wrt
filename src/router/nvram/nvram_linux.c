@@ -77,7 +77,7 @@ char *nvram_get(const char *name)
 	size_t count = strlen(name) + 1;
 	char *value = NULL;
 	unsigned long *off;
-#if defined(HAVE_X86) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
+#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
 	FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
 	if (in == NULL) {
 		return NULL;
@@ -116,7 +116,7 @@ int nvram_getall(char *buf, int count)
 		fprintf(stderr, "error in %s: buf is NULL\n", __func__);
 		return -ENOMEM;
 	}
-#if defined(HAVE_X86) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
+#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
 	FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
 	if (in == NULL) {
 		return -1;
