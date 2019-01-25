@@ -119,25 +119,25 @@ void start_sysinit(void)
 	eval("hwclock", "-s", "-u");
 	char *modelname = nvram_safe_get("DD_BOARD");
 	if (!strcmp(modelname, "Gateworks Laguna GW2391"))
-		eval("gsp_updater", "-f", "/etc/gsc_2391_v50.txt", "50");
+		eval("gsp_updater", "-f", "/etc/gsc_2391_v50.txt", "-r", "50");
 	if (!strcmp(modelname, "Gateworks Laguna GW2393"))
-		eval("gsp_updater", "-f", "/etc/gsc_2391_v50.txt", "50");
+		eval("gsp_updater", "-f", "/etc/gsc_2391_v50.txt", "-r", "50");
 	if (!strcmp(modelname, "Gateworks Laguna GW2389"))
-		eval("gsp_updater", "-f", "/etc/gsc_2388_v50.txt", "50");
+		eval("gsp_updater", "-f", "/etc/gsc_2388_v50.txt", "-r", "50");
 	if (!strcmp(modelname, "Gateworks Laguna GW2388"))
-		eval("gsp_updater", "-f", "/etc/gsc_2388_v50.txt", "50");
+		eval("gsp_updater", "-f", "/etc/gsc_2388_v50.txt", "-r", "50");
 	if (!strcmp(modelname, "Gateworks Laguna GW2387"))
-		eval("gsp_updater", "-f", "/etc/gsc_2387_v50.txt", "50");
+		eval("gsp_updater", "-f", "/etc/gsc_2387_v50.txt", "-r", "50");
 	if (!strcmp(modelname, "Gateworks Laguna GW2386"))
-		eval("gsp_updater", "-f", "/etc/gsc_2386_v50.txt", "50");
+		eval("gsp_updater", "-f", "/etc/gsc_2386_v50.txt", "-r", "50");
 	if (!strcmp(modelname, "Gateworks Laguna GW2384"))
-		eval("gsp_updater", "-f", "/etc/gsc_2384_v35.txt", "35");
+		eval("gsp_updater", "-f", "/etc/gsc_2384_v35.txt", "-r", "35");
 	if (!strcmp(modelname, "Gateworks Laguna GW2383"))
-		eval("gsp_updater", "-f", "/etc/gsc_2383_v50.txt", "50");
+		eval("gsp_updater", "-f", "/etc/gsc_2383_v50.txt", "-r", "50");
 	if (!strcmp(modelname, "Gateworks Laguna GW2382"))
-		eval("gsp_updater", "-f", "/etc/gsc_2382_v50.txt", "50");
+		eval("gsp_updater", "-f", "/etc/gsc_2382_v50.txt", "-r", "50");
 	if (!strcmp(modelname, "Gateworks Laguna GW2380"))
-		eval("gsp_updater", "-f", "/etc/gsc_2380_v50.txt", "50");
+		eval("gsp_updater", "-f", "/etc/gsc_2380_v50.txt", "-r", "50");
 
 	set_smp_affinity(51, 2);
 	return;

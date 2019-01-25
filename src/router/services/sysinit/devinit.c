@@ -131,7 +131,8 @@ void start_devinit(void)
 	mount(dev, "/usr/local", "vfat", MS_MGC_VAL, NULL);
 	int cnt = 10;
 	while (cnt--) {
-		fprintf(stderr, "wait for boot partition\n"), FILE * fp = fopen("/usr/local/init.bin", "rb");
+		fprintf(stderr, "wait for boot partition\n");
+		FILE * fp = fopen("/usr/local/init.bin", "rb");
 		if (fp) {
 			fclose(fp);
 			break;
