@@ -925,7 +925,6 @@ static void checkhostapd(char *ifname, int force)
 				fclose(fp);
 			}
 			if (needrestart) {
-				unlink(fname);	//force to remove pid file, otherwise it gets restarted twice
 				char fstr[32];
 				sprintf(fstr, "/tmp/%s_hostap.conf", ifname);
 				if (force) {
@@ -975,13 +974,15 @@ static void s_checkhostapd(int force)
 			|| nvram_nmatch("wdsap", "%s_mode", athname))) {
 			//okay, these modes might run hostapd and may cause troubles if the radius gets unavailable
 			checkhostapd(athname, force);
-			sprintf(wifivifs, "%s_vifs", athname);
-			vifs = nvram_safe_get(wifivifs);
-			if (vifs != NULL && *vifs) {
-				foreach(var, vifs, next) {
-					checkhostapd(var, force);
-				}
+			if (!is_mac80211(athname)) {
+				sprintf(wifivifs, "%s_vifs", athname);
+				vifs = nvram_safe_get(wifivifs);
+				if (vifs != NULL && *vifs) {
+					foreach(var, vifs, next) {
+						checkhostapd(var, force);
+					}
 
+				}
 			}
 
 		}
