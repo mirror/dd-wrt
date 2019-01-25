@@ -795,6 +795,17 @@ static void handle_reset(void)
 		// nvram
 		// database
 		eval("mount", "/usr/local", "-o", "remount,ro");
+#elif HAVE_NEWPORT
+		eval("mount", "/usr/local", "-o", "remount,rw");
+		eval("rm", "-f", "/tmp/nvram/*");	// delete nvram
+		// database
+		unlink("/tmp/nvram/.lock");	// delete
+		// nvram
+		// database
+		eval("rm", "-f", "/usr/local/nvram/*");	// delete
+		// nvram
+		// database
+		eval("mount", "/usr/local", "-o", "remount,ro");
 #elif HAVE_RB500
 		eval("rm", "-f", "/tmp/nvram/*");	// delete nvram
 		// database
