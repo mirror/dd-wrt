@@ -109,7 +109,7 @@ void start_devinit(void)
 	mkdir("/dev/misc", 0700);
 	mknod("/dev/misc/gpio", S_IFCHR | 0644, makedev(125, 0));
 #endif
-#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) && !defined(HAVE_WDR4900) 
+#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
 	fprintf(stderr, "waiting for hotplug\n");
 	char dev[64];
 	char *disc = getdisc();
@@ -129,6 +129,19 @@ void start_devinit(void)
 	insmod("fat");
 	insmod("vfat");
 	mount(dev, "/usr/local", "vfat", MS_MGC_VAL, NULL);
+	int cnt = 10;
+	while (cnt--) {
+		fprintf(stderr, "wait for boot partition\n"), FILE * fp = fopen("/usr/local/init.bin", "rb");
+		if (fp) {
+			fclose(fp);
+			break;
+		}
+	}
+	FILE *fp = fopen("/usr/local/nvram/nvram.bin", "rb");
+	if (fp) {
+		fclose(fp);
+		fprintf(stderr, "nvram is present\n");
+	}
 #else
 	if (strlen(disc) == 7)	//mmcblk0
 		sprintf(dev, "/dev/%sp3", disc);
