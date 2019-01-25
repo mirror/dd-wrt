@@ -87,6 +87,17 @@ static int gsc_powerdown(struct gsc_dev *gsc, unsigned long secs)
 	regs[2] = (secs >> 16) & 0xff;
 	regs[3] = (secs >> 24) & 0xff;
 	ret = regmap_bulk_write(gsc->regmap, GSC_TIME_ADD, regs, 4);
+	if (ret)
+		return ret;
+	regs[0] = 1 << GSC_CTRL_1_LATCH_SLEEP_ADD;
+	ret = regmap_update_bits(gsc->regmap, GSC_CTRL_1, regs[0], regs[0]);
+	if (ret)
+		return ret;
+	regs[0] = (1 << GSC_CTRL_1_ACTIVATE_SLEEP) |
+		  (1 << GSC_CTRL_1_SLEEP_ENABLE);
+	ret = regmap_update_bits(gsc->regmap, GSC_CTRL_1, regs[0], regs[0]);
+	if (ret)
+		return ret;
 
 	return ret;
 }
