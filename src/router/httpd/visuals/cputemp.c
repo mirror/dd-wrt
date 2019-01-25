@@ -234,6 +234,8 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 #elif HAVE_VENTANA
 	SYSTEMP_MUL = 10;
 	fp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
+	if (!fp)
+	    fp = fopen("/sys/class/hwmon/hwmon0/temp1_input", "rb");
 	fpsys = fopen("/sys/class/hwmon/hwmon0/device/temp0_input", "rb");
 #else
 #ifdef HAVE_X86
