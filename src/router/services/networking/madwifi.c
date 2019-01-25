@@ -2972,92 +2972,71 @@ void configure_wifi(void)	// madwifi implementation for atheros based
 		}
 	}
 
-#ifdef HAVE_RB500
 	char eabuf[32];
+#ifdef HAVE_RB500
 	nvram_set("wl0_hwaddr", get_hwaddr("ath0", eabuf));
 #endif
 #ifdef HAVE_X86
-	char eabuf[32];
 	nvram_set("wl0_hwaddr", get_hwaddr("ath0", eabuf));
 #endif
 #ifdef HAVE_LAGUNA
-	char eabuf[32];
 	nvram_set("wl0_hwaddr", get_hwaddr("ath0", eabuf));
 #endif
 #ifdef HAVE_VENTANA
-	char eabuf[32];
 	nvram_set("wl0_hwaddr", get_hwaddr("ath0", eabuf));
 #endif
 #ifdef HAVE_NEWPORT
-	char eabuf[32];
 	nvram_set("wl0_hwaddr", get_hwaddr("ath0", eabuf));
 #endif
 #ifdef HAVE_EROUTER
-	char eabuf[32];
 	nvram_set("wl0_hwaddr", get_hwaddr("ath0", eabuf));
 #endif
 #ifdef HAVE_XSCALE
-	char eabuf[32];
 	nvram_set("wl0_hwaddr", get_hwaddr("ath0", eabuf));
 #endif
 #ifdef HAVE_MAGICBOX
-	char eabuf[32];
 	nvram_set("wl0_hwaddr", get_hwaddr("ath0", eabuf));
 #endif
 #ifdef HAVE_RB600
-	char eabuf[32];
 	nvram_set("wl0_hwaddr", get_hwaddr("ath0", eabuf));
 #endif
 #ifdef HAVE_FONERA
-	char eabuf[32];
 	nvram_set("wl0_hwaddr", get_hwaddr("ath0", eabuf));
 #endif
 #ifdef HAVE_LS2
-	char eabuf[32];
 	nvram_set("wl0_hwaddr", get_hwaddr("ath0", eabuf));
 #endif
 #ifdef HAVE_SOLO51
-	char eabuf[32];
 	nvram_set("wl0_hwaddr", get_hwaddr("ath0", eabuf));
 #endif
 #ifdef HAVE_LS5
-	char eabuf[32];
 	nvram_set("wl0_hwaddr", get_hwaddr("ath0", eabuf));
 #endif
 #ifdef HAVE_WHRAG108
-	char eabuf[32];
 	nvram_set("wl0_hwaddr", get_hwaddr("ath0", eabuf));
 #endif
 #ifdef HAVE_PB42
-	char eabuf[32];
 	nvram_set("wl0_hwaddr", get_hwaddr("ath0", eabuf));
 #endif
 #ifdef HAVE_LSX
-	char eabuf[32];
 	nvram_set("wl0_hwaddr", get_hwaddr("ath0", eabuf));
 #endif
 #ifdef HAVE_DANUBE
-	char eabuf[32];
 	nvram_set("wl0_hwaddr", get_hwaddr("ath0", eabuf));
 #endif
 #ifdef HAVE_STORM
-	char eabuf[32];
 	nvram_set("wl0_hwaddr", get_hwaddr("ath0", eabuf));
 #endif
 #ifdef HAVE_OPENRISC
-	char eabuf[32];
 	nvram_set("wl0_hwaddr", get_hwaddr("ath0", eabuf));
 #endif
 #ifdef HAVE_ADM5120
-	char eabuf[32];
 	nvram_set("wl0_hwaddr", get_hwaddr("ath0", eabuf));
 #endif
 #ifdef HAVE_TW6600
-	char eabuf[32];
 	nvram_set("wl0_hwaddr", get_hwaddr("ath0", eabuf));
 #endif
 #ifdef HAVE_CA8
-	char eabuf[32];
 	nvram_set("wl0_hwaddr", get_hwaddr("ath0", eabuf));
 #endif
 	reset_hwaddr(nvram_safe_get("lan_ifname"));
