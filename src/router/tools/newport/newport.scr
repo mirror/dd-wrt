@@ -1,0 +1,28 @@
+echo "Newport DD-WRT Boot Script"
+setenv rootfstype squashfs
+
+# map devnum to a blkdev name
+# (TODO: use root=PARTUUID and finduuid to avoid collisions between usb/sata)
+setenv get_blkdev 'if test "${devnum}" = "2"; then setenv rootdev /dev/sdc${rootpart}; elif test "${devnum}" = "1"; then setenv rootdev /dev/sdb${rootpart}; else; setenv rootdev /dev/sda${rootpart}; fi'
+
+# generate bootargs for rootfs based on devtype
+setexpr rootpart ${distro_bootpart} + 1
+if test "${devtype}" = "mmc"; then
+	setenv rootdev /dev/mmcblk${devnum}p${rootpart}
+elif test "${devtype}" = "usb"; then
+	run get_blkdev
+elif test "${devtype}" = "sata"; then
+	run get_blkdev
+fi
+setenv bootargs ${bootargs} root=${rootdev} rootfstype=${rootfstype} rootwait
+
+# add console= option to bootargs, if any
+if test -n "${console}"; then
+        setenv bootargs ${bootargs} console=${console}
+fi
+echo "bootargs:${bootargs}"
+
+# load and boot kernel
+echo "Loading kernel.itb from ${devtype} ${devnum}:${distro_bootpart} ${prefix}"
+load ${devtype} ${devnum}:${distro_bootpart} ${kernel_addr_r} ${prefix}kernel.itb
+bootm ${kernel_addr_r} - ${fdtcontroladdr}

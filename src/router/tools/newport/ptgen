@@ -1,0 +1,216 @@
+#!/bin/bash
+#
+# MBR Partition table generator
+#
+# usage: $0 [-o outfile] [-s sig] [-p <type>:<start>:<size>]
+#
+# start/size are in units of 512byte sectors, Kbytes (K suffix),
+# Mbytes (M suffix), GBytes (G suffix) and can be hex (leading 0x) or decimal
+#
+# sig is an up to 4 character string
+#
+# type is a dec or hex (leading 0x) partition type
+
+SIG=
+
+usage() {
+	echo "$0 [-o outfile] [-s sig] [-p <type>:<start>:<size>]"
+}
+
+error() {
+	echo "$@" 1>&2
+	exit
+}
+
+debug() {
+	echo "$@" 1>&2
+}
+
+parse_part() {
+	partno=$((partno+1))
+	var="part${partno}"
+	eval "$var=$1"
+}
+
+# pad bytes
+# $1 val
+# $2 len (default 1)
+pad() {
+	local byte=$1
+	local len=${2:-1}
+	local count=0
+
+	while [ $count -lt $((len)) ]; do
+		#u8 $byte
+		/usr/bin/printf "\\x$(/usr/bin/printf "%x" $1)"
+		count=$((count+1))
+	done
+}
+
+# output u8
+# $1 int
+u8() {
+	/usr/bin/printf "\\x$(/usr/bin/printf "%x" $1)"
+}
+
+# output le16
+# $1 int
+le16() {
+	b0=$(( $(($1>>8)) & 0xff))
+	b1=$(( $(($1>>0)) & 0xff))
+
+	/usr/bin/printf "\\x$(/usr/bin/printf "%x" $b1)"
+	/usr/bin/printf "\\x$(/usr/bin/printf "%x" $b0)"
+}
+
+# output le32
+# $1 int
+le32() {
+	b0=$(( $(($1>>24)) & 0xff))
+	b1=$(( $(($1>>16)) & 0xff))
+	b2=$(( $(($1>>8)) & 0xff))
+	b3=$(( $(($1>>0)) & 0xff))
+
+	/usr/bin/printf "\\x$(/usr/bin/printf "%x" $b3)"
+	/usr/bin/printf "\\x$(/usr/bin/printf "%x" $b2)"
+	/usr/bin/printf "\\x$(/usr/bin/printf "%x" $b1)"
+	/usr/bin/printf "\\x$(/usr/bin/printf "%x" $b0)"
+}
+
+# convert arg into units of 512byte sectors based on suffix
+# $1 size (suffix: k=kb m=mb g=gb none=sectors)
+to_sectors() {
+	local suf len sect
+
+	len=${#1}
+	len=$((len-1))
+	suf=${1:$len}
+	pre=${1:0:$len}
+	case "$suf" in
+		k|K) sect=$(( ${1:0:$len} * 1024 / 512 ));;
+		m|M) sect=$(( ${1:0:$len} * 1024 * 1024 / 512 ));;
+		g|G) sect=$(( ${1:0:$len} * 1024 * 1024 * 1024 / 512 ));;
+		*) sect=$1;;
+	esac
+	echo $sect
+}
+
+# convert the sector number into a CHS value for the partition table
+# $1 sectors
+heads=16
+sectors=63
+chs() {
+	local c h s
+	local sect=$1
+
+	if [ $sect -eq 0 ]; then
+		u8 0
+		u8 0
+		u8 0
+	else
+		s=$(( $(($sect % $sectors)) + 1))
+		sect=$(($sect / $sectors))
+		h=$(($sect % $heads));
+		sect=$((sect / heads));
+		c=$sect;
+		u8 $h
+		u8 $((s | $(( $(($c >> 2)) & 0xc0)) ))
+		u8 $((c & 0xff))
+	fi
+}
+
+# emit a 6byte signature
+# $1 sig
+sig() {
+	local sig=$1
+	local i c
+
+	for i in 0 1 2 3 4 5; do
+		c=${sig:$i:1}
+		if [ "$c" ]; then
+			#u8 $c
+			# ascii to hex
+			u8 0x$(/usr/bin/printf "%X" \'$c)
+		else
+			u8 0
+		fi
+	done
+}
+
+# emit a part
+# $1 partno
+# $2 type:start:len
+part()
+{
+	local partno=$1
+	local args=$2
+	local type start len
+
+	type=${args%%:*}; args=${args#*:}
+	start=${args%%:*}; args=${args#*:}
+	len=${args%%:*}; args=${args#*:}
+
+	start=$(to_sectors $start)
+	len=$(to_sectors $len)
+	debug "P$partno: $2 type=$type start=$start len=$len"
+
+	# status: 0x80=active
+	if [ $partno -eq 1 ]; then
+		u8 0x80
+	else
+		u8 0x0
+	fi
+	chs $start
+	u8 $type
+	chs $(($start + $len - 1 ))
+	le32 $start
+	le32 $len
+}
+
+partno=0
+part1=0:0:0
+part2=0:0:0
+part3=0:0:0
+part4=0:0:0
+OUT=
+while [ "$1" ] ; do
+	case "$1" in
+		-o) OUT=$2; shift; debug "saving to $OUT";;
+		#exec > $2; shift;;
+		-s) SIG=$2; shift;;
+		-p) parse_part $2; shift;;
+		*) usage; exit 0;;
+	esac
+	shift
+done
+
+TMP=$(mktemp)
+#exec > $TMP
+debug "saving to $TMP"
+
+# pad to signature
+pad 0 0x1b8 >> $TMP
+# sig
+sig $SIG >> $TMP
+# partitions
+part 1 $part1 >> $TMP
+part 2 $part2 >> $TMP
+part 3 $part3 >> $TMP
+part 4 $part4 >> $TMP
+# boot sig
+le16 0xaa55 >> $TMP
+
+# create file / modify file / or cat file
+if [ "$OUT" ]; then
+	if [ -r "$OUT" ]; then
+		debug "editing $OUT"
+		dd if=$TMP of=$OUT bs=512 count=1 conv=notrunc
+	else
+		debug "creating $OUT"
+		cp $TMP $OUT
+	fi
+else
+	debug "cat $TMP"
+	cat $TMP
+fi
+rm $TMP
