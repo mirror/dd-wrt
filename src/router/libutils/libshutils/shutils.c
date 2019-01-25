@@ -1098,9 +1098,6 @@ char *getentrybyidx(char *buf, char *list, int idx)
 #if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) || defined(HAVE_EROUTER) && !defined(HAVE_WDR4900)
 char *getdisc(void)		// works only for squashfs 
 {
-#ifdef HAVE_NEWPORT
-	return "mmcblk0p2";
-#else
 	int i;
 	static char ret[8];
 	char *disks[] = { "sda2", "sdb2", "sdc2", "sdd2", "sde2", "sdf2", "sdg2", "sdh2",
@@ -1133,7 +1130,6 @@ char *getdisc(void)		// works only for squashfs
 		fclose(in);
 	}
 	return NULL;
-#endif
 }
 #endif
 
