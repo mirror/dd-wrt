@@ -310,10 +310,46 @@ endif
 	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
 	cd $(TARGETDIR) && $(TOP)/misc/rootprep.sh
 	$(TOP)/../../tools/removewhitespace.sh $(TOP)/../../tools $(TARGETDIR)/etc/config
-	mkdir -p $(TARGETDIR)/boot
-	cp $(LINUXDIR)/arch/arm64/boot/Image $(TARGETDIR)/boot
-	./tools/ext2/genext2fs -d $(ARCH)-uclibc/target -b 256000 -i 65536 -N 65536 -q $(ARCH)-uclibc/disc_emmc.img
-	gzip -9 $(ARCH)-uclibc/disc_emmc.img
+
+	cp $(LINUXDIR)/arch/arm64/boot/Image $(ARCH)-uclibc/vmlinux
+	gzip -f $(ARCH)-uclibc/vmlinux
+	cd $(ARCH)-uclibc && ../tools/newport/mkits.sh -o kernel.its -k vmlinux.gz -C gzip -v "dd-wrt"
+	cd $(ARCH)-uclibc && ../tools/newport/mkimage -f kernel.its kernel.itb
+
+#FIXED_SIZE = 0x100000 # 1M of Fixed data, see flash_create()
+#FATFS_SIZE = 0xD00000 # 13312KB of FAT filesystem data, see fatfs_create()
+
+#	start_sector=2048
+#	end_sector=28671
+#    # Create a partition table in the file
+#    # Note that FatFS currently only looks at the first partition
+#    p1 = "1:%d:%d " % (start_sector, end_sector)
+#    p2 = "0x83:16M:%s" % partsize
+#    subprocess.check_call(["./ptgen", "-o", filename,
+#        "-p", p1, "-p", p2])
+#
+#
+#	./tools/newport/ptgen -o $(ARCH)-uclibc/newport.img -p "1:2048:28671" -p "0x83:16M:128M"
+
+	cp tools/newport/base.img $(ARCH)-uclibc/newport.img
+	# inject kernel.itb into FATFS
+##	tools/newport/fatfs-tool -i $(ARCH)-uclibc/newport.img mkfs
+	tools/newport/fatfs-tool -i $(ARCH)-uclibc/newport.img cp $(ARCH)-uclibc/kernel.itb /
+	# inject bootscript into FATFS
+	cd $(ARCH)-uclibc && ../tools/newport/mkimage -A arm64 -T script -C none -d $(TOP)/tools/newport/newport.scr newport.scr
+	tools/newport/fatfs-tool -i $(ARCH)-uclibc/newport.img cp tools/newport/boot/* /
+	tools/newport/fatfs-tool -i $(ARCH)-uclibc/newport.img cp $(ARCH)-uclibc/newport.scr /
+	# copy openwrt rootfs to image
+	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -comp xz -root-owned -noappend -Xbcj arm
+	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/newport.img bs=16M seek=1
+	# compress it
+	gzip -k -f $(ARCH)-uclibc/newport.img 
+	
+#	cp $(LINUXDIR)/arch/arm64/boot/Image $(TARGETDIR)/boot
+#	./tools/ext2/genext2fs -d $(ARCH)-uclibc/target -b 300000 -i 65536 -N 65536 -q $(ARCH)-uclibc/disc_emmc.img
+#	gzip -9 $(ARCH)-uclibc/disc_emmc.img
+
+
 	
 	
 	
