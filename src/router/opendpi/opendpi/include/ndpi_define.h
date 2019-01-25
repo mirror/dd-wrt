@@ -77,6 +77,7 @@
 #endif
 
 #endif
+#if !defined(__bswap16) && !defined(le32toh)
 static __inline uint16_t __bswap16(uint16_t __x)
 {
 	return __x<<8 | __x>>8;
@@ -91,7 +92,7 @@ static __inline uint64_t __bswap64(uint64_t __x)
 {
 	return __bswap32(__x)+0ULL<<32 | __bswap32(__x>>32);
 }
-
+#endif
 
 
 #ifdef __LITTLE_ENDIAN__
