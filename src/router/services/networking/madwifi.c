@@ -894,43 +894,63 @@ static void checkhostapd(char *ifname, int force)
 {
 	int pid;
 	char fname[32];
-	{
-		sprintf(fname, "/var/run/%s_hostapd.pid", ifname);
-		FILE *fp;
-		fp = fopen(fname, "rb");
-		if (fp) {
-			fscanf(fp, "%d", &pid);
-			fclose(fp);
-			if (pid > 0) {
-				int needrestart = 0;
+	sprintf(fname, "/var/run/%s_hostapd.pid", ifname);
+	FILE *fp;
+	fp = fopen(fname, "rb");
+	if (fp) {
+		fscanf(fp, "%d", &pid);
+		fclose(fp);
+		if (pid > 0) {
+			int needrestart = 0;
+			if (force) {
+				needrestart = 1;
+				kill(pid, SIGKILL);
+				fp = NULL;
+				unlink(fname);	//force to remove pid file, otherwise it gets restarted twice
+			} else {
+				char checkname[32];
+				sprintf(checkname, "/proc/%d/cmdline", pid);
+				fp = fopen(checkname, "rb");
+				needrestart = 0;
+			}
+			if (!fp) {
+				needrestart = 1;
+			} else {
+				char cmdline[128];
+				fscanf(fp, "%s", cmdline);
+				if (strncmp(cmdline, "hostapd", 7))
+					needrestart = 1;
+				fclose(fp);
+			}
+			if (needrestart) {
+				char fstr[32];
+				sprintf(fstr, "/tmp/%s_hostap.conf", ifname);
 				if (force) {
-					needrestart = 1;
-					kill(pid, SIGKILL);
-					fp = NULL;
+					dd_loginfo("hostapd", "daemon on %s with pid %d is forced to be restarted....\n", ifname, pid);
 				} else {
-					char checkname[32];
-					sprintf(checkname, "/proc/%d/cmdline", pid);
-					fp = fopen(checkname, "rb");
-					needrestart = 0;
+					dd_loginfo("hostapd", "daemon on %s with pid %d died, restarting....\n", ifname, pid);
 				}
-				if (!fp) {
-					needrestart = 1;
-				} else {
-					char cmdline[128];
-					fscanf(fp, "%s", cmdline);
-					if (strncmp(cmdline, "hostapd", 7))
-						needrestart = 1;
-					fclose(fp);
-				}
-				if (needrestart) {
-					char fstr[32];
-					sprintf(fstr, "/tmp/%s_hostap.conf", ifname);
-					if (force) {
-						dd_loginfo("hostapd", "daemon on %s with pid %d is forced to be restarted....\n", ifname, pid);
-					} else {
-						dd_loginfo("hostapd", "daemon on %s with pid %d died, restarting....\n", ifname, pid);
+				do_hostapd(fstr, ifname);
+				char *next;
+				char var[80];
+				if (!nvram_nmatch("sta", "%s_mode", ifname)) {
+					char bridged[32];
+					sprintf(bridged, "%s_bridged", ifname);
+					if (nvram_matchi(bridged, 0)) {
+						eval("ifconfig", ifname, "mtu", getMTU(ifname));
+						eval("ifconfig", ifname, "txqueuelen", getTXQ(ifname));
+						eval("ifconfig", ifname, nvram_nget("%s_ipaddr", ifname), "netmask", nvram_nget("%s_netmask", ifname), "up");
 					}
-					do_hostapd(fstr, ifname);
+				}
+				char *vifs = nvram_nget("%s_vifs", ifname);
+				foreach(var, vifs, next) {
+					char bridged[32];
+					sprintf(bridged, "%s_bridged", var);
+					if (nvram_matchi(bridged, 0)) {
+						eval("ifconfig", var, "mtu", getMTU(var));
+						eval("ifconfig", var, "txqueuelen", getTXQ(var));
+						eval("ifconfig", var, nvram_nget("%s_ipaddr", var), "netmask", nvram_nget("%s_netmask", var), "up");
+					}
 				}
 			}
 		}
