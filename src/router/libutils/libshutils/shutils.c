@@ -1099,7 +1099,7 @@ char *getentrybyidx(char *buf, char *list, int idx)
 char *getdisc(void)		// works only for squashfs 
 {
 #ifdef HAVE_NEWPORT
-	return "mmcblk0p1";
+	return "mmcblk0p2";
 #else
 	int i;
 	static char ret[8];
