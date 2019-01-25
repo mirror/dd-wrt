@@ -629,7 +629,7 @@ int internal_getRouterBrand()
 	setRouter("Broadcom Northstar");
 	return ROUTER_BOARD_NORTHSTAR;
 #elif HAVE_NEWPORT
-	char *filename = "/sys/bus/devices/i2c/0-0051/eeprom";	/* bank2=0x100 kernel 3.0 */
+	char *filename = "/sys/bus/i2c/devices/0-0051/eeprom";	/* bank2=0x100 kernel 3.0 */
 	FILE *file = fopen(filename, "rb");
 	if (!file) {
 		setRouter("Gateworks NewPort GW6XXX");
