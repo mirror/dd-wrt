@@ -1,8 +1,9 @@
 Summary: Tracks and displays system calls associated with a running process
 Name: strace
-Version: 4.24
+Version: 4.26
 Release: 1%{?dist}
-License: BSD%{?suse_version:-3-Clause}
+# The test suite is GPLv2+, all the rest is LGPLv2.1+.
+License: LGPL-2.1-or-later and GPL-2.0-or-later
 Group: Development%{?suse_version:/Tools}/Debuggers
 URL: https://strace.io
 Source: https://strace.io/files/%{version}/strace-%{version}.tar.xz
@@ -41,7 +42,7 @@ received by a process.
 %setup -q
 echo -n %version-%release > .tarball-version
 echo -n 2018 > .year
-echo -n 2018-07-07 > .strace.1.in.date
+echo -n 2018-12-24 > .strace.1.in.date
 
 %build
 echo 'BEGIN OF BUILD ENVIRONMENT INFORMATION'
@@ -88,8 +89,14 @@ echo 'END OF TEST SUITE INFORMATION'
 %{_mandir}/man1/*
 
 %changelog
-* Tue Aug 14 2018 strace-devel@lists.strace.io - 4.24-1
-- strace 4.24 snapshot.
+* Thu Dec 27 2018 strace-devel@lists.strace.io - 4.26-1
+- strace 4.26 snapshot.
+
+* Tue Oct 30 2018 Dmitry V. Levin <ldv@altlinux.org> - 4.25-1
+- v4.24 -> v4.25.
+
+* Tue Aug 14 2018 Dmitry V. Levin <ldv@altlinux.org> - 4.24-1
+- v4.23 -> v4.24.
 
 * Thu Jun 14 2018 Dmitry V. Levin <ldv@altlinux.org> - 4.23-1
 - v4.22 -> v4.23.

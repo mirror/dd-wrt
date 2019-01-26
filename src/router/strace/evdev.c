@@ -4,32 +4,13 @@
  * Copyright (c) 2015-2018 The strace developers.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
 #include "defs.h"
 
 #include "xlat/evdev_abs.h"
+#include "xlat/evdev_ev.h"
 
 #ifdef HAVE_LINUX_INPUT_H
 
@@ -47,7 +28,6 @@
 # include "xlat/evdev_relative_axes.h"
 # include "xlat/evdev_snd.h"
 # include "xlat/evdev_switch.h"
-# include "xlat/evdev_sync.h"
 
 # ifndef SYN_MAX
 #  define SYN_MAX 0xf
@@ -171,10 +151,10 @@ decode_bitset_(struct tcb *const tcp, const kernel_ulong_t arg,
 	tprints(", ");
 
 	unsigned int size;
-	if ((kernel_ulong_t) tcp->u_rval > max_nr)
+	if ((kernel_ulong_t) tcp->u_rval > max_nr / 8)
 		size = max_nr;
 	else
-		size = tcp->u_rval;
+		size = tcp->u_rval * 8;
 	char decoded_arg[size];
 
 	if (umove_or_printaddr(tcp, arg, &decoded_arg))
@@ -208,7 +188,7 @@ decode_bitset_(struct tcb *const tcp, const kernel_ulong_t arg,
 
 #define decode_bitset(tcp_, arg_, decode_nr_, max_nr_, dflt_, xt_) \
 	decode_bitset_((tcp_), (arg_), (decode_nr_), (max_nr_), \
-		       (dflt_), ARRAY_SIZE(decode_nr_), (xt_))
+		       (dflt_), ARRAY_SIZE(decode_nr_) - 1, (xt_))
 
 # ifdef EVIOCGMTSLOTS
 static int
@@ -258,9 +238,9 @@ bit_ioctl(struct tcb *const tcp, const unsigned int ev_nr,
 	  const kernel_ulong_t arg)
 {
 	switch (ev_nr) {
-		case EV_SYN:
-			return decode_bitset(tcp, arg, evdev_sync,
-					     SYN_MAX, "SYN_???", XT_INDEXED);
+		case 0:
+			return decode_bitset(tcp, arg, evdev_ev,
+					     EV_MAX, "EV_???", XT_SORTED);
 		case EV_KEY:
 			return decode_bitset(tcp, arg, evdev_keycode,
 					     KEY_MAX, "KEY_???", XT_INDEXED);

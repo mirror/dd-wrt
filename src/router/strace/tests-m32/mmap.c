@@ -3,27 +3,7 @@
  * Copyright (c) 2015-2018 The strace developers.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
@@ -77,15 +57,14 @@ main(int ac, char **av)
 		perror_msg_and_fail("mmap");
 #if XLAT_RAW
 	printf("%s(%p, %lu, %#x, "
-	       "%#x|%#x, %d, %#jx) = %p\n",
-	       name, addr, length1, PROT_READ | PROT_WRITE, MAP_PRIVATE,
-	       MAP_ANONYMOUS, fd, uoffset, p);
+	       "%#x, %d, %#jx) = %p\n",
+	       name, addr, length1, PROT_READ | PROT_WRITE,
+	       MAP_PRIVATE | MAP_ANONYMOUS, fd, uoffset, p);
 #elif XLAT_VERBOSE
 	printf("%s(%p, %lu, %#x /* PROT_READ|PROT_WRITE */, "
-	       "%#x /* MAP_PRIVATE */|%#x /* MAP_ANONYMOUS */, %d, %#jx) "
-	       "= %p\n",
-	       name, addr, length1, PROT_READ | PROT_WRITE, MAP_PRIVATE,
-	       MAP_ANONYMOUS, fd, uoffset, p);
+	       "%#x /* MAP_PRIVATE|MAP_ANONYMOUS */, %d, %#jx) = %p\n",
+	       name, addr, length1, PROT_READ | PROT_WRITE,
+	       MAP_PRIVATE | MAP_ANONYMOUS, fd, uoffset, p);
 #else
 	printf("%s(%p, %lu, PROT_READ|PROT_WRITE, "
 	       "MAP_PRIVATE|MAP_ANONYMOUS, %d, %#jx) = %p\n",
@@ -140,15 +119,15 @@ main(int ac, char **av)
 		perror_msg_and_fail("munmap");
 	printf("munmap(%p, %lu) = 0\n", p, length3);
 
-	if (mlockall(MCL_FUTURE))
-		perror_msg_and_fail("mlockall");
+	printf("mlockall(");
 #if XLAT_RAW
-	printf("mlockall(%#x) = 0\n", MCL_FUTURE);
+	printf("%#x", MCL_FUTURE);
 #elif XLAT_VERBOSE
-	printf("mlockall(%#x /* MCL_FUTURE */) = 0\n", MCL_FUTURE);
+	printf("%#x /* MCL_FUTURE */", MCL_FUTURE);
 #else
-	puts("mlockall(MCL_FUTURE) = 0");
+	printf("MCL_FUTURE");
 #endif
+	printf(") = %s\n", sprintrc(mlockall(MCL_FUTURE)));
 
 	puts("+++ exited with 0 +++");
 	return 0;

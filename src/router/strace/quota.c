@@ -7,27 +7,7 @@
  * Copyright (c) 2006-2018 The strace developers.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
 #include "defs.h"
@@ -414,6 +394,31 @@ decode_cmd_data(struct tcb *tcp, uint32_t id, uint32_t cmd, kernel_ulong_t data)
 	return RVAL_DECODED;
 }
 
+static void
+print_qcmd(const uint32_t qcmd)
+{
+	const uint32_t cmd = QCMD_CMD(qcmd);
+	const uint32_t type = QCMD_TYPE(qcmd);
+
+	if (xlat_verbose(xlat_verbosity) != XLAT_STYLE_ABBREV)
+		tprintf("%u", qcmd);
+
+	if (xlat_verbose(xlat_verbosity) == XLAT_STYLE_RAW)
+		return;
+
+	if (xlat_verbose(xlat_verbosity) == XLAT_STYLE_VERBOSE)
+		tprints(" /* ");
+
+	tprints("QCMD(");
+	printxvals_ex(cmd, "Q_???", XLAT_STYLE_ABBREV, quotacmds, NULL);
+	tprints(", ");
+	printxvals_ex(type, "???QUOTA", XLAT_STYLE_ABBREV, quotatypes, NULL);
+	tprints(")");
+
+	if (xlat_verbose(xlat_verbosity) == XLAT_STYLE_VERBOSE)
+		tprints(" */");
+}
+
 SYS_FUNC(quotactl)
 {
 	/*
@@ -424,15 +429,11 @@ SYS_FUNC(quotactl)
 	 */
 	uint32_t qcmd = tcp->u_arg[0];
 	uint32_t cmd = QCMD_CMD(qcmd);
-	uint32_t type = QCMD_TYPE(qcmd);
 	uint32_t id = tcp->u_arg[2];
 
 	if (entering(tcp)) {
-		tprints("QCMD(");
-		printxval(quotacmds, cmd, "Q_???");
+		print_qcmd(qcmd);
 		tprints(", ");
-		printxval(quotatypes, type, "???QUOTA");
-		tprints("), ");
 		printpath(tcp, tcp->u_arg[1]);
 	}
 	return decode_cmd_data(tcp, id, cmd, tcp->u_arg[3]);

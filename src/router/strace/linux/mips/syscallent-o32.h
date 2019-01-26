@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2013-2018 The strace developers.
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ */
+
 #if defined LINUX_MIPSO32
 /* For an O32 strace, decode the o32 syscalls.  */
 # define SYS_syscall_subcall	4000
@@ -222,7 +229,7 @@
 [4218] = { 3,	TM,		SEN(madvise),			"madvise"		},
 [4219] = { 3,	TD,		SEN(getdents64),		"getdents64"		},
 [4220] = { 3,	TD,		SEN(fcntl64),			"fcntl64"		},
-[4221] = { },
+[4221] = { 0,	0,		SEN(printargs),			"reserved221"		},
 [4222] = { 0,	PU|NF,		SEN(gettid),			"gettid"		},
 [4223] = { 5,	TD,		SEN(readahead),			"readahead"		},
 [4224] = { 5,	TF,		SEN(setxattr),			"setxattr"		},

@@ -3,27 +3,7 @@
  * Copyright (c) 2016-2018 The strace developers.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
@@ -166,6 +146,9 @@ void invalid_op(int *val, int op, uint32_t argmask, ...)
 # define VAL3     ((unsigned long) 0xbadda7a09caffee1LLU)
 # define VAL3_PR  ((unsigned) VAL3)
 
+# define VAL3A    ((unsigned long) 0xbadda7a0ffffffffLLU)
+# define VAL3A_PR "FUTEX_BITSET_MATCH_ANY"
+
 int
 main(int argc, char *argv[])
 {
@@ -288,6 +271,14 @@ main(int argc, char *argv[])
 	       zero_extend_signed_to_ull(tmout->tv_nsec), VAL3_PR,
 	       sprintrc(rc));
 
+	CHECK_FUTEX_ENOSYS(uaddr, FUTEX_WAIT_BITSET, VAL, tmout, uaddr2 + 1,
+		VAL3A, (rc == -1) && (errno == EAGAIN));
+	printf("futex(%p, FUTEX_WAIT_BITSET, %u, {tv_sec=%lld, tv_nsec=%llu}"
+	       ", %s) = %s\n",
+	       uaddr, VAL_PR, (long long) tmout->tv_sec,
+	       zero_extend_signed_to_ull(tmout->tv_nsec), VAL3A_PR,
+	       sprintrc(rc));
+
 	/* val3 of 0 is invalid  */
 	CHECK_FUTEX_ENOSYS(uaddr, FUTEX_WAIT_BITSET, VAL, tmout, uaddr2 + 1, 0,
 		(rc == -1) && (errno == EINVAL));
@@ -374,6 +365,11 @@ main(int argc, char *argv[])
 		VAL3, (rc == 0));
 	printf("futex(%p, FUTEX_WAKE_BITSET, %u, %#x) = %s\n", uaddr, 10,
 		VAL3_PR, sprintrc(rc));
+
+	CHECK_FUTEX_ENOSYS(uaddr, FUTEX_WAKE_BITSET, 10, NULL, NULL,
+		VAL3A, (rc == 0));
+	printf("futex(%p, FUTEX_WAKE_BITSET, %u, %s) = %s\n", uaddr, 10,
+		VAL3A_PR, sprintrc(rc));
 
 	/* bitset 0 is invalid */
 	CHECK_FUTEX_ENOSYS(uaddr, FUTEX_WAKE_BITSET, 10, NULL, NULL, 0,

@@ -54,9 +54,6 @@
 /* Define to 1 if you have the `be64toh' function. */
 #undef HAVE_BE64TOH
 
-/* Define to 1 if you have BLKGETSIZE64. */
-#undef HAVE_BLKGETSIZE64
-
 /* Define to 1 if you have the <bluetooth/bluetooth.h> header file. */
 #undef HAVE_BLUETOOTH_BLUETOOTH_H
 
@@ -757,9 +754,6 @@
 
 /* Define to 1 if you have the <linux/fiemap.h> header file. */
 #undef HAVE_LINUX_FIEMAP_H
-
-/* Define to 1 if you have the <linux/genetlink.h> header file. */
-#undef HAVE_LINUX_GENETLINK_H
 
 /* Define to 1 if you have the <linux/hiddev.h> header file. */
 #undef HAVE_LINUX_HIDDEV_H

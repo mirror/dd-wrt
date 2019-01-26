@@ -12,27 +12,7 @@
  *
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
 #include "defs.h"
@@ -42,6 +22,7 @@
 #endif
 
 #include "ptrace.h"
+#include "ptrace_syscall_info.h"
 #include "regs.h"
 
 #include "xlat/nt_descriptor_types.h"
@@ -60,6 +41,7 @@ static const struct xlat struct_user_offsets[] = {
 static void
 print_user_offset_addr(const kernel_ulong_t addr)
 {
+	bool no_str = false;
 	const struct xlat *x;
 
 	for (x = struct_user_offsets; x->str; ++x) {
@@ -67,19 +49,26 @@ print_user_offset_addr(const kernel_ulong_t addr)
 			break;
 	}
 
-	if (!x->str) {
+	if (!x->str || (x == struct_user_offsets && x->val > addr))
+		no_str = true;
+	if (no_str || xlat_verbose(xlat_verbosity) != XLAT_STYLE_ABBREV)
 		printaddr(addr);
-	} else if (x->val > addr) {
-		if (x == struct_user_offsets) {
-			printaddr(addr);
-		} else {
-			--x;
-			tprintf("%s + %" PRI_klu,
-				x->str, addr - (kernel_ulong_t) x->val);
-		}
+	if (no_str || xlat_verbose(xlat_verbosity) == XLAT_STYLE_RAW)
+		return;
+
+	if (xlat_verbose(xlat_verbosity) == XLAT_STYLE_VERBOSE)
+		tprints(" /* ");
+
+	if (x->val > addr) {
+		--x;
+		tprintf("%s + %" PRI_klu,
+			x->str, addr - (kernel_ulong_t) x->val);
 	} else {
 		tprints(x->str);
 	}
+
+	if (xlat_verbose(xlat_verbosity) == XLAT_STYLE_VERBOSE)
+		tprints(" */");
 }
 
 SYS_FUNC(ptrace)
@@ -123,6 +112,7 @@ SYS_FUNC(ptrace)
 		case PTRACE_SETSIGMASK:
 		case PTRACE_SECCOMP_GET_FILTER:
 		case PTRACE_SECCOMP_GET_METADATA:
+		case PTRACE_GET_SYSCALL_INFO:
 			tprintf(", %" PRI_klu, addr);
 			break;
 		case PTRACE_PEEKSIGINFO: {
@@ -231,6 +221,7 @@ SYS_FUNC(ptrace)
 		case PTRACE_GETSIGMASK:
 		case PTRACE_PEEKSIGINFO:
 		case PTRACE_SECCOMP_GET_FILTER:
+		case PTRACE_GET_SYSCALL_INFO:
 			if (verbose(tcp)) {
 				/* print data on exiting syscall */
 				return 0;
@@ -294,7 +285,11 @@ SYS_FUNC(ptrace)
 				tprints(", ...");
 
 			tprints("}");
+			break;
 		}
+		case PTRACE_GET_SYSCALL_INFO:
+			print_ptrace_syscall_info(tcp, data, addr);
+			break;
 		}
 	}
 	return 0;

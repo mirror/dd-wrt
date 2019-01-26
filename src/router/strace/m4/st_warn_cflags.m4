@@ -1,3 +1,10 @@
+#!/usr/bin/m4
+#
+# Copyright (c) 2016-2018 The strace developers.
+# All rights reserved.
+#
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 AC_DEFUN([st_WARN_CFLAGS], [dnl
 gl_WARN_ADD([-Wall])
 gl_WARN_ADD([-Wempty-body])
@@ -5,11 +12,13 @@ gl_WARN_ADD([-Wformat-security])
 gl_WARN_ADD([-Wignored-qualifiers])
 gl_WARN_ADD([-Wimplicit-fallthrough=5])
 gl_WARN_ADD([-Winit-self])
+gl_WARN_ADD([-Winitializer-overrides])
 gl_WARN_ADD([-Wlogical-op])
 gl_WARN_ADD([-Wmissing-parameter-type])
 gl_WARN_ADD([-Wnested-externs])
 gl_WARN_ADD([-Wold-style-declaration])
 gl_WARN_ADD([-Wold-style-definition])
+gl_WARN_ADD([-Woverride-init])
 gl_WARN_ADD([-Wsign-compare])
 gl_WARN_ADD([-Wtype-limits])
 gl_WARN_ADD([-Wwrite-strings])

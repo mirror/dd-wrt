@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2016-2018 The strace developers.
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
+
 #include "tests.h"
 
 #ifdef HAVE_LINUX_BTRFS_H
@@ -185,6 +192,28 @@ sprint_xlat_(uint32_t val, const char *xlat)
 	}
 
 	return xlat;
+}
+
+static const char *
+sprint_makedev(unsigned long long val)
+{
+	static char devid[256];
+	int ret;
+
+	if (verbose_xlat)
+		ret = snprintf(devid, sizeof(devid),
+				"%#llx /* makedev(%#x, %#x) */",
+				val, major(val), minor(val));
+	else
+		ret = snprintf(devid, sizeof(devid),
+				"makedev(%#x, %#x)", major(val), minor(val));
+
+	if (ret < 0)
+		perror_msg_and_fail("sprint_makedev(%llx)", val);
+	if ((unsigned) ret >= sizeof(devid))
+		error_msg_and_fail("sprint_makedev(%llx): buffer "
+					   "overflow", val);
+	return devid;
 }
 
 #define ioc(x_) sprint_xlat_(x_, #x_)
@@ -556,8 +585,7 @@ btrfs_print_balance_args(struct btrfs_balance_args *args)
 	prfl_btrfs(btrfs_space_info_flags, args->profiles,
 		   "BTRFS_BLOCK_GROUP_???");
 	print_uint64(", usage=", args->usage);
-	printf(", devid=makedev(%u, %u)",
-	       major(args->devid), minor(args->devid));
+	printf(", devid=%s", sprint_makedev(args->devid));
 	print_uint64(", pstart=", args->pstart);
 	print_uint64(", pend=", args->pend);
 	print_uint64(", vstart=", args->vstart);
@@ -1212,8 +1240,8 @@ btrfs_test_scrub_ioctls(void)
 	ioctl(-1, BTRFS_IOC_SCRUB_CANCEL, NULL);
 	printf("ioctl(-1, %s) = -1 EBADF (%m)\n", ioc(BTRFS_IOC_SCRUB_CANCEL));
 
-	printf("ioctl(-1, %s, {devid=makedev(%u, %u)",
-	       ioc(BTRFS_IOC_SCRUB), major(args.devid), minor(args.devid));
+	printf("ioctl(-1, %s, {devid=%s",
+	       ioc(BTRFS_IOC_SCRUB), sprint_makedev(args.devid));
 	print_uint64(", start=", args.start);
 	print_uint64(", end=", args.end);
 	printf(", flags=");
@@ -1226,9 +1254,9 @@ btrfs_test_scrub_ioctls(void)
 	       ioc(BTRFS_IOC_SCRUB_PROGRESS));
 
 	ioctl(-1, BTRFS_IOC_SCRUB_PROGRESS, &args);
-	printf("ioctl(-1, %s, {devid=makedev(%u, %u)}) = -1 EBADF (%m)\n",
+	printf("ioctl(-1, %s, {devid=%s}) = -1 EBADF (%m)\n",
 	       ioc(BTRFS_IOC_SCRUB_PROGRESS),
-	       major(args.devid), minor(args.devid));
+	       sprint_makedev(args.devid));
 }
 
 /*
@@ -1249,8 +1277,8 @@ btrfs_test_dev_info_ioctl(void)
 
 	ioctl(-1, BTRFS_IOC_DEV_INFO, &args);
 	printf("ioctl(-1, %s, "
-	       "{devid=makedev(%u, %u), uuid=%s}) = -1 EBADF (%m)\n",
-	       ioc(BTRFS_IOC_DEV_INFO), major(args.devid), minor(args.devid),
+	       "{devid=%s, uuid=%s}) = -1 EBADF (%m)\n",
+	       ioc(BTRFS_IOC_DEV_INFO), sprint_makedev(args.devid),
 	       uuid_reference_string);
 }
 
@@ -1699,14 +1727,13 @@ btrfs_test_get_dev_stats_ioctl(void)
 		.nr_items = 5,
 		.flags = max_flags_plus_one(0),
 	};
-
 	ioctl(-1, BTRFS_IOC_GET_DEV_STATS, NULL);
 	printf("ioctl(-1, %s, NULL) = -1 EBADF (%m)\n", ioc(BTRFS_IOC_GET_DEV_STATS));
 
-	printf("ioctl(-1, %s, {devid=makedev(%u, %u)"
+	printf("ioctl(-1, %s, {devid=%s"
 	       ", nr_items=%" PRI__u64 ", flags=",
 	       ioc(BTRFS_IOC_GET_DEV_STATS),
-	       major(args.devid), minor(args.devid), args.nr_items);
+	       sprint_makedev(args.devid), args.nr_items);
 	prfl_btrfs(btrfs_dev_stats_flags, args.flags,
 		     "BTRFS_DEV_STATS_???");
 	ioctl(-1, BTRFS_IOC_GET_DEV_STATS, &args);
@@ -1715,10 +1742,10 @@ btrfs_test_get_dev_stats_ioctl(void)
 	if (write_ok) {
 		unsigned int i;
 		args.flags = BTRFS_DEV_STATS_RESET;
-		printf("ioctl(%d, %s, {devid=makedev(%u, %u)"
+		printf("ioctl(%d, %s, {devid=%s"
 			", nr_items=%" PRI__u64 ", flags=",
 			btrfs_test_dir_fd, ioc(BTRFS_IOC_GET_DEV_STATS),
-			major(args.devid), minor(args.devid), args.nr_items);
+			sprint_makedev(args.devid), args.nr_items);
 		prfl_btrfs(btrfs_dev_stats_flags, args.flags,
 			     "BTRFS_DEV_STATS_???");
 		ioctl(btrfs_test_dir_fd, BTRFS_IOC_GET_DEV_STATS, &args);
@@ -1775,11 +1802,12 @@ btrfs_test_dev_replace_ioctl(void)
 		saved_errno = errno;
 		printf("ioctl(-1, %s, "
 		       "{cmd=%sBTRFS_IOCTL_DEV_REPLACE_CMD_START%s"
-		       ", start={srcdevid=makedev(%u, %u)"
+		       ", start={srcdevid=%s"
 		       ", cont_reading_from_srcdev_mode=",
 		       ioc(BTRFS_IOC_DEV_REPLACE),
 		       verbose_xlat ? "0 /* " : "", verbose_xlat ? " */" : "",
-		       major(args.start.srcdevid), minor(args.start.srcdevid));
+		       sprint_makedev(args.start.srcdevid)
+		       );
 		prxval_btrfs(btrfs_cont_reading_from_srcdev_mode,
 			     args.start.cont_reading_from_srcdev_mode,
 			     "BTRFS_IOCTL_DEV_REPLACE_CONT_READING_FROM_SRCDEV"

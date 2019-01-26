@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2013-2018 The strace developers.
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ */
+
 [  0] = { 0,	0,		SEN(printargs),			"spill"			},
 [  1] = { 0,	0,		SEN(printargs),			"xtensa"		},
 [  2 ... 7] = { },
@@ -337,6 +344,6 @@
 [346] = { 6,	TD,		SEN(preadv2),			"preadv2"		},
 [347] = { 6,	TD,		SEN(pwritev2),			"pwritev2"		},
 [348] = { 4,	TM|SI,		SEN(pkey_mprotect),		"pkey_mprotect"		},
-[249] = { 2,	0,		SEN(pkey_alloc),		"pkey_alloc"		},
+[349] = { 2,	0,		SEN(pkey_alloc),		"pkey_alloc"		},
 [350] = { 1,	0,		SEN(pkey_free),			"pkey_free"		},
 [351] = { 5,	TD|TF|TSTA,	SEN(statx),			"statx"			},

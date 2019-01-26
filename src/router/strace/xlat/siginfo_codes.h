@@ -97,6 +97,15 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define SI_ASYNCNL -60
 #endif
+#ifdef __sparc__
+#if defined(SI_NOINFO) || (defined(HAVE_DECL_SI_NOINFO) && HAVE_DECL_SI_NOINFO)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((SI_NOINFO) == (32767), "SI_NOINFO != 32767");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define SI_NOINFO 32767
+#endif
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
@@ -128,11 +137,9 @@ const struct xlat siginfo_codes[] = {
  XLAT(SI_TKILL),
  XLAT(SI_DETHREAD),
  XLAT(SI_ASYNCNL),
-#if defined(SI_NOINFO) || (defined(HAVE_DECL_SI_NOINFO) && HAVE_DECL_SI_NOINFO)
-  XLAT(SI_NOINFO),
-#endif
-#if defined(SI_LWP) || (defined(HAVE_DECL_SI_LWP) && HAVE_DECL_SI_LWP)
-  XLAT(SI_LWP),
+
+#ifdef __sparc__
+ XLAT(SI_NOINFO),
 #endif
  XLAT_END
 };

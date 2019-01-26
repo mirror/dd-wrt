@@ -64,6 +64,7 @@ strace-devel@lists.strace.io mailing list.
 	Dima Kogan <dima@secretsauce.net>
 	Dima Krasner <dima@dimakrasner.com>
 	Dmitry V. Levin <ldv@altlinux.org>
+	Dmitry Vyukov <dvyukov@google.com>
 	Douglas Mencken <dougmencken@gmail.com>
 	Dr. David Alan Gilbert <dgilbert@redhat.com>
 	Edgar E. Iglesias <edgar.iglesias@gmail.com>
@@ -101,11 +102,13 @@ strace-devel@lists.strace.io mailing list.
 	Jacob Goense <dugo@xs4all.nl>
 	Jakub Bogusz <qboosh@pld-linux.org>
 	Jakub Jelinek <jj@ultra.linux.cz>
+	Jamal Hadi Salim <jhs@mojatatu.com>
 	James Clarke <jrtc27@jrtc27.com>
 	James Cowgill <james410@cowgill.org.uk>
 	James Hogan <james.hogan@imgtec.com>
 	James Yang <james.yang@freescale.com>
 	Jan Kratochvil <jan.kratochvil@redhat.com>
+	Janosch Frank <frankja@linux.ibm.com>
 	JayRJoshi <jay.r.joshi100@gmail.com>
 	Jeff Mahoney <jeffm@suse.com>
 	Jian Zhen <zhenjl@gmail.com>
@@ -181,6 +184,7 @@ strace-devel@lists.strace.io mailing list.
 	Rajeev V. Pillai <rajeevvp@gmail.com>
 	Ralf Baechle <ralf@linux-mips.org>
 	Randolph Chung <tausq@debian.org>
+	Rasmus Villemoes <rasmus.villemoes@prevas.dk>
 	Reuben Sumner <rasumner@undergrad.math.uwaterloo.ca>
 	Richard Braakman <dark@xs4all.nl>
 	Richard Henderson <richard@twiddle.tamu.edu>
@@ -201,6 +205,7 @@ strace-devel@lists.strace.io mailing list.
 	Seraphime Kirkovski <kirkseraph@gmail.com>
 	Sergei Trofimovich <slyfox@gentoo.org>
 	Sergey Bolshakov <sbolshakov@altlinux.org>
+	Shankara Pailoor <shankarapailoor@gmail.com>
 	Simon Murray <simon@transitive.com>
 	Solar Designer <solar@openwall.com>
 	Srinivasa Ds <srinivasa@in.ibm.com>
