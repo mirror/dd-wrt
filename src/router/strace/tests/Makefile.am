@@ -4,27 +4,7 @@
 # Copyright (c) 2011-2018 The strace developers.
 # All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-# 1. Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in the
-#    documentation and/or other materials provided with the distribution.
-# 3. The name of the author may not be used to endorse or promote products
-#    derived from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
-# IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-# OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-# IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-# NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-# THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 OS = linux
 ARCH = @arch@
@@ -118,6 +98,8 @@ check_PROGRAMS = $(PURE_EXECUTABLES) \
 	int_0x80 \
 	ioctl_dm-v \
 	ioctl_evdev-v \
+	ioctl_evdev-success \
+	ioctl_evdev-success-v \
 	ioctl_loop-nv \
 	ioctl_loop-v \
 	ioctl_nsfs \
@@ -246,7 +228,10 @@ DECODER_TESTS = \
 	fadvise64.test \
 	futex.test \
 	getuid.test \
+	int_0x80.test \
 	ioctl.test \
+	ioctl_evdev-success.test \
+	ioctl_evdev-success-v.test \
 	ioctl_perf-success.test \
 	ipc_msgbuf.test \
 	kern_features-fault.test \
@@ -316,6 +301,7 @@ MISC_TESTS = \
 	filter-unavailable.test \
 	filtering_fd-syntax.test \
 	filtering_syscall-syntax.test \
+	first_exec_failure.test \
 	get_regs.test \
 	inject-nf.test \
 	interactive_block.test \
@@ -362,8 +348,6 @@ TESTS = $(GEN_TESTS) $(DECODER_TESTS) $(MISC_TESTS) $(STACKTRACE_TESTS)
 XFAIL_TESTS_ =
 XFAIL_TESTS_m32 = $(STACKTRACE_TESTS)
 XFAIL_TESTS_mx32 = $(STACKTRACE_TESTS)
-XFAIL_TESTS_x86_64 = int_0x80.gen.test
-XFAIL_TESTS_x32 = int_0x80.gen.test
 XFAIL_TESTS = $(XFAIL_TESTS_$(MPERS_NAME)) $(XFAIL_TESTS_$(ARCH))
 
 TEST_LOG_COMPILER = env
@@ -377,6 +361,8 @@ VALGRIND_FLAGS = --quiet
 VALGRIND_SUPPRESSIONS_FILES = $(abs_srcdir)/strace.supp
 
 EXTRA_DIST = \
+	COPYING \
+	GPL-2.0-or-later \
 	accept_compat.h \
 	attach-p-cmd.h \
 	caps-abbrev.awk \
@@ -405,6 +391,7 @@ EXTRA_DIST = \
 	nlattr_ifla.h \
 	pipe.expected \
 	print_user_desc.c \
+	printsignal.c \
 	process_vm_readv_writev.c \
 	pure_executables.list \
 	qual_fault-exit_group.expected \

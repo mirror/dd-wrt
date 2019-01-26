@@ -14,15 +14,8 @@
 
 #ifndef XLAT_MACROS_ONLY
 
-# ifdef IN_MPERS
+# ifndef IN_MPERS
 
-extern const struct xlat audit_arch[];
-
-# else
-
-#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
-static
-#  endif
 const struct xlat audit_arch[] = {
 
 #if defined(AUDIT_ARCH_AARCH64) || (defined(HAVE_DECL_AUDIT_ARCH_AARCH64) && HAVE_DECL_AUDIT_ARCH_AARCH64)

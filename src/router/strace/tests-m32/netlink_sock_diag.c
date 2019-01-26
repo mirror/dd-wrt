@@ -4,27 +4,7 @@
  * Copyright (c) 2017-2018 The strace developers.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
@@ -338,7 +318,7 @@ test_packet_diag_req(const int fd)
 	TEST_SOCK_DIAG(fd, nlh0, AF_PACKET,
 		       SOCK_DIAG_BY_FAMILY, NLM_F_REQUEST, req,
 		       printf("{sdiag_family=AF_PACKET"),
-		       printf(", sdiag_protocol=ETH_P_LOOP");
+		       printf(", sdiag_protocol=%#x", req.sdiag_protocol);
 		       PRINT_FIELD_U(", ", req, pdiag_ino);
 		       printf(", pdiag_show=PACKET_SHOW_INFO");
 		       PRINT_FIELD_COOKIE(", ", req, pdiag_cookie);
@@ -351,7 +331,7 @@ test_packet_diag_msg(const int fd)
 	static const struct packet_diag_msg msg = {
 		.pdiag_family = AF_PACKET,
 		.pdiag_type = SOCK_STREAM,
-		.pdiag_num = 0xbadc,
+		.pdiag_num = 0x9100,
 		.pdiag_ino = 0xfacefeed,
 		.pdiag_cookie = { 0xdeadbeef, 0xbadc0ded }
 	};
@@ -360,7 +340,7 @@ test_packet_diag_msg(const int fd)
 		       SOCK_DIAG_BY_FAMILY, NLM_F_DUMP, msg,
 		       printf("{pdiag_family=AF_PACKET"),
 		       printf(", pdiag_type=SOCK_STREAM");
-		       PRINT_FIELD_U(", ", msg, pdiag_num);
+		       printf(", pdiag_num=ETH_P_QINQ1");
 		       PRINT_FIELD_U(", ", msg, pdiag_ino);
 		       PRINT_FIELD_COOKIE(", ", msg, pdiag_cookie);
 		       printf("}"));
@@ -609,7 +589,7 @@ test_smc_diag_msg(const int fd)
 	struct smc_diag_msg msg = {
 		.diag_family = AF_SMC,
 		.diag_state = SMC_ACTIVE,
-		.diag_fallback = 0xde,
+		.diag_fallback = 0x1,
 		.diag_shutdown = 0xba,
 		.id = {
 			.idiag_sport = 0xdead,
@@ -630,7 +610,7 @@ test_smc_diag_msg(const int fd)
 		       SOCK_DIAG_BY_FAMILY, NLM_F_DUMP, msg,
 		       printf("{diag_family=AF_SMC"),
 		       printf(", diag_state=SMC_ACTIVE");
-		       PRINT_FIELD_U(", ", msg, diag_fallback);
+		       printf(", diag_fallback=SMC_DIAG_MODE_FALLBACK_TCP");
 		       PRINT_FIELD_U(", ", msg, diag_shutdown);
 		       printf(", id={idiag_sport=htons(%u)"
 			      ", idiag_dport=htons(%u)"

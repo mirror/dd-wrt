@@ -7,27 +7,7 @@
 # Copyright (c) 2014-2018 The strace developers.
 # All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-# 1. Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in the
-#    documentation and/or other materials provided with the distribution.
-# 3. The name of the author may not be used to endorse or promote products
-#    derived from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
-# IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-# OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-# IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-# NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-# THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 . "${srcdir=.}/init.sh"
 
@@ -43,13 +23,38 @@ run_prog "${test_prog=../stack-fcall}"
 run_strace -e getpid -k $args
 
 expected="$srcdir/$NAME.expected"
-sed -r -n '1,/\(main\+0x[a-f0-9]+\) .*/ s/^[^(]+\(([^+]+)\+0x[a-f0-9]+\) .*/\1/p' "$LOG" |
-	tr '\n' ' ' |sed 's/ $//' > "$OUT"
+awk '
+/^[^ ]/ {
+	if (out != "")
+		print out
+
+	syscall = gensub(/^([[:alnum:]_]+)\(.*/, "\\1", 1)
+	signal = gensub(/^--- ([A-Z]+) .*/, "\\1", 1)
+
+	if (syscall != $0) {
+		out = syscall
+		stop = 0
+	} else if (signal != $0) {
+		out = signal
+		stop = 0
+	} else {
+		out = ""
+	}
+}
+
+/^ >[^(]+\(([^+]+)\+0x[a-f0-9]+\) / && !stop {
+	sym = gensub(/^ >[^(]+\(([^+]+)\+0x[a-f0-9]+\) .*$/, "\\1", 1)
+	out = out " " sym
+	if (sym == "main")
+		stop = 1
+}' "$LOG" > "$OUT"
 
 LC_ALL=C grep -E -x -f "$expected" < "$OUT" > /dev/null || {
 	cat >&2 <<__EOF__
-Failed pattern of expected output: $(cat "$expected")
-Actual output: $(cat "$OUT")
+Failed pattern of expected output:
+$(cat "$expected")
+Actual output:
+$(cat "$OUT")
 __EOF__
 
 	pattern=

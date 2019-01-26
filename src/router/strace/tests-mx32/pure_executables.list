@@ -1,4 +1,10 @@
-# executables without side effects
+# Executables without side effects.
+#
+# Copyright (c) 2017-2018 The strace developers.
+# All rights reserved.
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 _newselect
 accept
 accept4
@@ -65,7 +71,13 @@ file_ioctl
 finit_module
 flock
 fstat
+fstat-Xabbrev
+fstat-Xraw
+fstat-Xverbose
 fstat64
+fstat64-Xabbrev
+fstat64-Xraw
+fstat64-Xverbose
 fstatat64
 fstatfs
 fstatfs64
@@ -118,8 +130,10 @@ ioctl_kvm_run-v
 ioctl_kvm_run_auxstr_vcpu
 ioctl_loop
 ioctl_mtd
+ioctl_nbd
 ioctl_perf
 ioctl_ptp
+ioctl_random
 ioctl_rtc
 ioctl_scsi
 ioctl_sg_io_v3
@@ -151,6 +165,10 @@ ipc_shm-Xverbose
 kcmp
 kcmp-y
 kern_features
+kernel_version
+kernel_version-Xabbrev
+kernel_version-Xraw
+kernel_version-Xverbose
 kexec_file_load
 kexec_load
 keyctl
@@ -171,6 +189,9 @@ madvise
 mbind
 membarrier
 memfd_create
+memfd_create-Xabbrev
+memfd_create-Xraw
+memfd_create-Xverbose
 migrate_pages
 mincore
 mkdir
@@ -312,6 +333,9 @@ preadv2-pwritev2
 printpath-umovestr
 printpath-umovestr-peekdata
 printpath-umovestr-undumpable
+printsignal-Xabbrev
+printsignal-Xraw
+printsignal-Xverbose
 printstr
 printstrn-umoven
 printstrn-umoven-peekdata
@@ -321,8 +345,12 @@ process_vm_readv
 process_vm_writev
 pselect6
 ptrace
+ptrace_syscall_info
 pwritev
 quotactl
+quotactl-Xabbrev
+quotactl-Xraw
+quotactl-Xverbose
 quotactl-xfs
 read-write
 readahead
@@ -335,6 +363,9 @@ recvfrom
 recvmmsg-timeout
 recvmsg
 remap_file_pages
+remap_file_pages-Xabbrev
+remap_file_pages-Xraw
+remap_file_pages-Xverbose
 rename
 renameat
 renameat2
@@ -402,6 +433,7 @@ sigpending
 sigprocmask
 sigreturn
 sigsuspend
+so_error
 so_linger
 so_peercred
 so_peercred-Xabbrev
@@ -455,6 +487,9 @@ userfaultfd
 ustat
 utime
 utimensat
+utimensat-Xabbrev
+utimensat-Xraw
+utimensat-Xverbose
 utimes
 vhangup
 vmsplice

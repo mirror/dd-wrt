@@ -1,3 +1,4 @@
+extern const struct xlat block_ioctl_cmds[];
 extern const struct xlat blkpg_ops[];
 extern const struct xlat btrfs_balance_args[];
 extern const struct xlat btrfs_balance_ctl_cmds[];

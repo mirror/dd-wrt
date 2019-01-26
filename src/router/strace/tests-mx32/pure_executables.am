@@ -66,7 +66,13 @@ PURE_EXECUTABLES = \
   finit_module \
   flock \
   fstat \
+  fstat-Xabbrev \
+  fstat-Xraw \
+  fstat-Xverbose \
   fstat64 \
+  fstat64-Xabbrev \
+  fstat64-Xraw \
+  fstat64-Xverbose \
   fstatat64 \
   fstatfs \
   fstatfs64 \
@@ -119,8 +125,10 @@ PURE_EXECUTABLES = \
   ioctl_kvm_run_auxstr_vcpu \
   ioctl_loop \
   ioctl_mtd \
+  ioctl_nbd \
   ioctl_perf \
   ioctl_ptp \
+  ioctl_random \
   ioctl_rtc \
   ioctl_scsi \
   ioctl_sg_io_v3 \
@@ -152,6 +160,10 @@ PURE_EXECUTABLES = \
   kcmp \
   kcmp-y \
   kern_features \
+  kernel_version \
+  kernel_version-Xabbrev \
+  kernel_version-Xraw \
+  kernel_version-Xverbose \
   kexec_file_load \
   kexec_load \
   keyctl \
@@ -172,6 +184,9 @@ PURE_EXECUTABLES = \
   mbind \
   membarrier \
   memfd_create \
+  memfd_create-Xabbrev \
+  memfd_create-Xraw \
+  memfd_create-Xverbose \
   migrate_pages \
   mincore \
   mkdir \
@@ -313,6 +328,9 @@ PURE_EXECUTABLES = \
   printpath-umovestr \
   printpath-umovestr-peekdata \
   printpath-umovestr-undumpable \
+  printsignal-Xabbrev \
+  printsignal-Xraw \
+  printsignal-Xverbose \
   printstr \
   printstrn-umoven \
   printstrn-umoven-peekdata \
@@ -322,8 +340,12 @@ PURE_EXECUTABLES = \
   process_vm_writev \
   pselect6 \
   ptrace \
+  ptrace_syscall_info \
   pwritev \
   quotactl \
+  quotactl-Xabbrev \
+  quotactl-Xraw \
+  quotactl-Xverbose \
   quotactl-xfs \
   read-write \
   readahead \
@@ -336,6 +358,9 @@ PURE_EXECUTABLES = \
   recvmmsg-timeout \
   recvmsg \
   remap_file_pages \
+  remap_file_pages-Xabbrev \
+  remap_file_pages-Xraw \
+  remap_file_pages-Xverbose \
   rename \
   renameat \
   renameat2 \
@@ -403,6 +428,7 @@ PURE_EXECUTABLES = \
   sigprocmask \
   sigreturn \
   sigsuspend \
+  so_error \
   so_linger \
   so_peercred \
   so_peercred-Xabbrev \
@@ -456,6 +482,9 @@ PURE_EXECUTABLES = \
   ustat \
   utime \
   utimensat \
+  utimensat-Xabbrev \
+  utimensat-Xraw \
+  utimensat-Xverbose \
   utimes \
   vhangup \
   vmsplice \

@@ -14,14 +14,14 @@
 
 static
 const struct xlat ioctl_dirs[] = {
+#if defined(_IOC_NONE) || (defined(HAVE_DECL__IOC_NONE) && HAVE_DECL__IOC_NONE)
+  XLAT(_IOC_NONE),
+#endif
 #if defined(_IOC_READ) || (defined(HAVE_DECL__IOC_READ) && HAVE_DECL__IOC_READ)
   XLAT(_IOC_READ),
 #endif
 #if defined(_IOC_WRITE) || (defined(HAVE_DECL__IOC_WRITE) && HAVE_DECL__IOC_WRITE)
   XLAT(_IOC_WRITE),
-#endif
-#if defined(_IOC_NONE) || (defined(HAVE_DECL__IOC_NONE) && HAVE_DECL__IOC_NONE)
-  XLAT(_IOC_NONE),
 #endif
  XLAT_END
 };

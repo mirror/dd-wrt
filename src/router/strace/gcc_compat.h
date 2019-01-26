@@ -3,27 +3,7 @@
  * Copyright (c) 2015-2018 The strace developers.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
 #ifndef STRACE_GCC_COMPAT_H
@@ -33,8 +13,18 @@
 # define GNUC_PREREQ(maj, min)	\
 	((__GNUC__ << 16) + __GNUC_MINOR__ >= ((maj) << 16) + (min))
 #else
-# define __attribute__(x)	/* empty */
 # define GNUC_PREREQ(maj, min)	0
+#endif
+
+#if defined __clang__ && defined __clang_major__ && defined __clang_minor__
+# define CLANG_PREREQ(maj, min)	\
+	((__clang_major__ << 16) + __clang_minor__ >= ((maj) << 16) + (min))
+#else
+# define CLANG_PREREQ(maj, min)	0
+#endif
+
+#if !(GNUC_PREREQ(2, 0) || CLANG_PREREQ(1, 0))
+# define __attribute__(x)	/* empty */
 #endif
 
 #if GNUC_PREREQ(2, 5)
@@ -97,6 +87,23 @@
 # define ATTRIBUTE_FALLTHROUGH	__attribute__((__fallthrough__))
 #else
 # define ATTRIBUTE_FALLTHROUGH	((void) 0)
+#endif
+
+#if CLANG_PREREQ(2, 8)
+# define DIAG_PUSH_IGNORE_OVERRIDE_INIT					\
+	_Pragma("clang diagnostic push");				\
+	_Pragma("clang diagnostic ignored \"-Winitializer-overrides\"");
+# define DIAG_POP_IGNORE_OVERRIDE_INIT					\
+	_Pragma("clang diagnostic pop");
+#elif GNUC_PREREQ(4, 2)
+# define DIAG_PUSH_IGNORE_OVERRIDE_INIT					\
+	_Pragma("GCC diagnostic push");					\
+	_Pragma("GCC diagnostic ignored \"-Woverride-init\"");
+# define DIAG_POP_IGNORE_OVERRIDE_INIT					\
+	_Pragma("GCC diagnostic pop");
+#else
+# define DIAG_PUSH_IGNORE_OVERRIDE_INIT	/* empty */
+# define DIAG_POP_IGNORE_OVERRIDE_INIT	/* empty */
 #endif
 
 #if GNUC_PREREQ(6, 0)

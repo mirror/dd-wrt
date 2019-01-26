@@ -11,32 +11,13 @@
  * Copyright (c) 2015-2018 The strace developers.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
 #ifndef STRACE_PTRACE_H
 #define STRACE_PTRACE_H
 
+#include <stdint.h>
 #include <sys/ptrace.h>
 
 #ifdef HAVE_STRUCT_IA64_FPREG
@@ -174,6 +155,35 @@
 #endif
 #ifndef PTRACE_SECCOMP_GET_METADATA
 # define PTRACE_SECCOMP_GET_METADATA	0x420d
+#endif
+#ifndef PTRACE_GET_SYSCALL_INFO
+# define PTRACE_GET_SYSCALL_INFO	0x420e
+# define PTRACE_SYSCALL_INFO_NONE	0
+# define PTRACE_SYSCALL_INFO_ENTRY	1
+# define PTRACE_SYSCALL_INFO_EXIT	2
+# define PTRACE_SYSCALL_INFO_SECCOMP	3
+struct ptrace_syscall_info {
+	uint8_t op;
+	uint8_t pad[3];
+	uint32_t arch;
+	uint64_t instruction_pointer;
+	uint64_t stack_pointer;
+	union {
+		struct {
+			uint64_t nr;
+			uint64_t args[6];
+		} entry;
+		struct {
+			int64_t rval;
+			uint8_t is_error;
+		} exit;
+		struct {
+			uint64_t nr;
+			uint64_t args[6];
+			uint32_t ret_data;
+		} seccomp;
+	};
+};
 #endif
 
 #if !HAVE_DECL_PTRACE_PEEKUSER

@@ -90,13 +90,8 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 #ifndef XLAT_MACROS_ONLY
 
-# ifdef IN_MPERS
+# ifndef IN_MPERS
 
-#  error static const struct xlat evdev_ev in mpers mode
-
-# else
-
-static
 const struct xlat evdev_ev[] = {
  XLAT(EV_SYN),
  XLAT(EV_KEY),

@@ -47,6 +47,20 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define SOL_ICMPV6 58
 #endif
+#if defined(SOL_CAN_BASE) || (defined(HAVE_DECL_SOL_CAN_BASE) && HAVE_DECL_SOL_CAN_BASE)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((SOL_CAN_BASE) == (100), "SOL_CAN_BASE != 100");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define SOL_CAN_BASE 100
+#endif
+#if defined(SOL_CAN_RAW) || (defined(HAVE_DECL_SOL_CAN_RAW) && HAVE_DECL_SOL_CAN_RAW)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((SOL_CAN_RAW) == (101), "SOL_CAN_RAW != 101");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define SOL_CAN_RAW 101
+#endif
 #if defined(SOL_SCTP) || (defined(HAVE_DECL_SOL_SCTP) && HAVE_DECL_SOL_SCTP)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
 static_assert((SOL_SCTP) == (132), "SOL_SCTP != 132");
@@ -257,6 +271,13 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define SOL_TLS 282
 #endif
+#if defined(SOL_XDP) || (defined(HAVE_DECL_SOL_XDP) && HAVE_DECL_SOL_XDP)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((SOL_XDP) == (283), "SOL_XDP != 283");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define SOL_XDP 283
+#endif
 #if defined __alpha__ || defined __hppa__ || defined __mips__ || defined __sparc__
 #if defined(SOL_SOCKET) || (defined(HAVE_DECL_SOL_SOCKET) && HAVE_DECL_SOL_SOCKET)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
@@ -281,6 +302,8 @@ const struct xlat socketlayers[] = {
  XLAT(SOL_UDP),
  XLAT(SOL_IPV6),
  XLAT(SOL_ICMPV6),
+ XLAT(SOL_CAN_BASE),
+ XLAT(SOL_CAN_RAW),
  XLAT(SOL_SCTP),
  XLAT(SOL_UDPLITE),
  XLAT(SOL_RAW),
@@ -311,6 +334,7 @@ const struct xlat socketlayers[] = {
  XLAT(SOL_NFC),
  XLAT(SOL_KCM),
  XLAT(SOL_TLS),
+ XLAT(SOL_XDP),
 #if defined __alpha__ || defined __hppa__ || defined __mips__ || defined __sparc__
  XLAT(SOL_SOCKET),
 #endif
