@@ -60,11 +60,44 @@ void start_sysinit(void)
 	char buf[PATH_MAX];
 	struct stat tmp_stat;
 	time_t tm = 0;
+	char dev[64];
+	char *disk = getdisc();
+	
 
 	if (!nvram_matchi("disable_watchdog", 1)) {
 		insmod("imx2_wdt");
 		eval("watchdog");
 	}
+
+	FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
+	if (in == NULL) {
+		fprintf(stderr, "recover broken nvram\n");
+		sprintf(dev, "/dev/%s", disk);
+		in = fopen(dev, "rb");
+		fseeko(in, 0, SEEK_END);
+		off_t mtdlen = ftello(in);
+		fseeko(in, mtdlen - (65536 * 2), SEEK_SET);
+		unsigned char *mem = malloc(65536);
+		fread(mem, 65536, 1, in);
+		fclose(in);
+		if (mem[0] == 0x46 && mem[1] == 0x4c && mem[2] == 0x53 && mem[3] == 0x48) {
+			fprintf(stderr, "found recovery\n");
+			in = fopen("/usr/local/nvram/nvram.bin", "wb");
+			if (in != NULL) {
+				fwrite(mem, 65536, 1, in);
+				fclose(in);
+				free(mem);
+				eval("sync");
+				sleep(5);
+				eval("event", "5", "1", "15");
+			}
+		}
+		free(mem);
+	} else {
+		fclose(in);
+	}
+
+
 	/*
 	 * Setup console 
 	 */

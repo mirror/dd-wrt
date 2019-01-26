@@ -120,30 +120,6 @@ void start_devinit(void)
 	}
 	// sprintf (dev, "/dev/discs/disc%d/part1", index);
 	// mount (dev, "/boot", "ext2", MS_MGC_VAL, NULL);
-#ifdef HAVE_NEWPORT
-	if (strlen(disc) == 7)	//mmcblk0
-		sprintf(dev, "/dev/%sp1", disc);
-	else
-		sprintf(dev, "/dev/%s1", disc);
-	insmod("nls_base");
-	insmod("fat");
-	insmod("vfat");
-	mount(dev, "/usr/local", "vfat", MS_MGC_VAL, NULL);
-	int cnt = 10;
-	while (cnt--) {
-		fprintf(stderr, "wait for boot partition\n");
-		FILE * fp = fopen("/usr/local/init.bin", "rb");
-		if (fp) {
-			fclose(fp);
-			break;
-		}
-	}
-	FILE *fp = fopen("/usr/local/nvram/nvram.bin", "rb");
-	if (fp) {
-		fclose(fp);
-		fprintf(stderr, "nvram is present\n");
-	}
-#else
 	if (strlen(disc) == 7)	//mmcblk0
 		sprintf(dev, "/dev/%sp3", disc);
 	else
@@ -156,7 +132,6 @@ void start_devinit(void)
 		eval("mkfs.ext4", "-F", "-b", " 1024", dev);
 		mount(dev, "/usr/local", "ext4", MS_MGC_VAL, NULL);
 	}
-#endif
 	mkdir("/usr/local", 0700);
 	mkdir("/usr/local/nvram", 0700);
 #endif
