@@ -1315,9 +1315,9 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 		do_ej(METHOD_GET, NULL, path, wp);	// refresh
 
 #ifdef HAVE_ANTAIRA
-	if(!strcmp(submit_type, "browser_date")) {
-		int d = websGetVari(wp,"browser_ts", 0);
-		if(d != 0) {
+	if (!strcmp(submit_type, "browser_date")) {
+		int d = websGetVari(wp, "browser_ts", 0);
+		if (d != 0) {
 			char cmd[32];
 			snprintf(&cmd, 32, "date -s '@%d'", d);
 			system(cmd);
@@ -1760,7 +1760,7 @@ char ezc_version[128];
 
 // #endif
 
-void			// support GET and POST 2003-08-22
+void				// support GET and POST 2003-08-22
 do_apply_post(char *url, webs_t stream, int len, char *boundary)
 {
 	int count;
@@ -2516,9 +2516,8 @@ static void do_language(unsigned char method, struct mime_handler *handler, char
 	char *langname = getLanguageName();
 	char *prefix, *lang;
 
-	prefix = calloc(strlen(path) - sizeof("lang_pack/language.js"), 1);
-	strlcpy(prefix, path, strlen(path) - (sizeof("lang_pack/language.js") - 1));
-
+	prefix = calloc(1, strlen(path) - (sizeof("lang_pack/language.js") - 1) + 1);
+	strlcpy(prefix, path, strlen(path) - ((sizeof("lang_pack/language.js") - 1)));
 	asprintf(&lang, "%s%s", prefix, langname);
 	do_file(method, handler, lang, stream);
 
