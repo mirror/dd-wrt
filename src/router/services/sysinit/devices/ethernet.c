@@ -243,7 +243,7 @@ static int detect_pcidrivers(void)
 
 static int detect_usbdrivers(void)
 {
-	insmod("usb-common usbcore usbnet cdc_ether cdc_ncm dcd-wdm");
+	insmod("usb-common nls_base usbcore usbnet cdc_ether cdc_ncm dcd-wdm");
 	return detect_drivers("/proc/bus/usb/devices", "usb_detected", "usbdrivers", usbdrivers, 0, 1);
 }
 
