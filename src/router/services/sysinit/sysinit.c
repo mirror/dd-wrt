@@ -825,6 +825,8 @@ void start_modules(void)
 		runStartup("/usr/local/etc/config", ".startup");	// if available
 #elif HAVE_X86
 		runStartup("/usr/local/etc/config", ".startup");	// if available
+#elif HAVE_NEWPORT
+		runStartup("/usr/local/etc/config", ".startup");	// if available
 #else
 		runStartup("/jffs/etc/config", ".startup");	// if available
 		runStartup("/mmc/etc/config", ".startup");	// if available
@@ -847,6 +849,8 @@ void start_wanup(void)
 #ifdef HAVE_RB500
 		runStartup("/usr/local/etc/config", ".wanup");	// if available
 #elif HAVE_X86
+		runStartup("/usr/local/etc/config", ".wanup");	// if available
+#elif HAVE_NEWPORT
 		runStartup("/usr/local/etc/config", ".wanup");	// if available
 #else
 		runStartup("/jffs/etc/config", ".wanup");	// if available
