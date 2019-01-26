@@ -403,7 +403,7 @@ static int usb_add_ufd(char *devpath)
 			if (mounted[i])
 				continue;
 
-#if defined(HAVE_X86) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
+#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
 			char check[32];
 			strcpy(check, getdisc());
 			if (!strncmp(entry->d_name, check, 5)) {
