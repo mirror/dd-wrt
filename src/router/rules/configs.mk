@@ -305,6 +305,7 @@ obj-$(CONFIG_DDRESCUE) += ddrescue
 obj-$(CONFIG_I2CTOOLS) += i2ctools
 obj-$(CONFIG_RAID) += mdadm raidmanager
 obj-$(CONFIG_I2C_GPIO_CUSTOM) += i2c-gpio-custom
+obj-$(CONFIG_NEWPORT) += cpt8x
 
 obj-y+=configs
 
