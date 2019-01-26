@@ -157,7 +157,7 @@ int _nvram_read(char *buf)
 
 	srcf = filp_open("/usr/local/nvram/nvram.bin", O_RDONLY, 0);
 	if (IS_ERR(srcf)) {
-		printk(KERN_EMERG "Broken NVRAM found, recovering it (filesystem error)\n");
+		printk(KERN_EMERG "Can't init nvram (filesystem error)\n");
 		/* Maybe we can recover some data from early initialization */
 		memcpy(buf, nvram_buf, NVRAM_SPACE);
 		memset(buf, 0, NVRAM_SPACE);
