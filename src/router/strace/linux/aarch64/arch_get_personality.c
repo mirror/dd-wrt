@@ -4,6 +4,7 @@
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
  */
+#include  <elf.h>
 
 #ifndef AUDIT_ARCH_ARM
 # define AUDIT_ARCH_ARM 0x40000028
