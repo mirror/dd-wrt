@@ -119,6 +119,8 @@ void start_sysinit(void)
 	/*
 	 * network drivers 
 	 */
+	insmod("cptpf"); // crypto driver
+
 	detect_wireless_devices();
 
 	char macaddr[32];
