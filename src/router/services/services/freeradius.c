@@ -89,10 +89,10 @@ void start_freeradius(void)
 		return;
 
 #ifndef HAVE_OPENRISC
-#ifndef HAVE_VENTANA
+#if !defined(HAVE_VENTANA) || defined(HAVE_NEWPORT)
 #ifndef HAVE_RAMBUTAN
 #ifndef HAVE_WDR4900
-#if defined(HAVE_X86) || defined(HAVE_RB600)
+#if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600)
 	system("mount --bind /usr/local /jffs");
 #elif HAVE_IPQ806X
 	eval("mount", "-t", "ubifs", "-o", "sync", "ubi0:rootfs_data", "/jffs");
