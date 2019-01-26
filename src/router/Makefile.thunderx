@@ -331,7 +331,7 @@ endif
 #
 #	./tools/newport/ptgen -o $(ARCH)-uclibc/newport.img -p "1:2048:28671" -p "0x83:16M:128M"
 
-	cp tools/newport/base.img $(ARCH)-uclibc/newport.img
+	cp tools/newport/base2.img $(ARCH)-uclibc/newport.img
 	# inject kernel.itb into FATFS
 ##	tools/newport/fatfs-tool -i $(ARCH)-uclibc/newport.img mkfs
 	tools/newport/fatfs-tool -i $(ARCH)-uclibc/newport.img cp $(ARCH)-uclibc/kernel.itb /
