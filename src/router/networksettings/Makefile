@@ -27,6 +27,12 @@ endif
 ifeq ($(CONFIG_LAGUNA),y)
 MODULE:=networksettings.rb532
 endif
+ifeq ($(CONFIG_VENTANA),y)
+MODULE:=networksettings.rb532
+endif
+ifeq ($(CONFIG_NEWPORT),y)
+MODULE:=networksettings.rb532
+endif
 ifeq ($(CONFIG_RB600),y)
 MODULE:=networksettings.rb532
 endif
