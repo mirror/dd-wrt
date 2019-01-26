@@ -4,27 +4,7 @@
  * Copyright (c) 1995-2018 The strace developers.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
 [  0] = { 0,	0,		SEN(restart_syscall),		"restart_syscall"	},
@@ -249,7 +229,8 @@
 [219] = { 3,	TM,		SEN(mincore),			"mincore"		},
 [220] = { 3,	TM,		SEN(madvise),			"madvise"		},
 [221] = { 3,	TD,		SEN(fcntl64),			"fcntl64"		},
-[222 ... 223] = { },
+/* [222] - tux */
+/* [223] - unused */
 [224] = { 0,	PU|NF,		SEN(gettid),			"gettid"		},
 [225] = { 5,	TD,		SEN(readahead),			"readahead"		},
 [226] = { 5,	TF,		SEN(setxattr),			"setxattr"		},
@@ -280,7 +261,8 @@
 [251] = { 4,	TD,		SEN(epoll_ctl),			"epoll_ctl"		},
 [252] = { 4,	TD,		SEN(epoll_wait),		"epoll_wait"		},
 [253] = { 5,	TM|SI,		SEN(remap_file_pages),		"remap_file_pages"	},
-[254 ... 255] = { },
+/* [254] - set_thread_area */
+/* [255] - get_thread_area */
 [256] = { 1,	0,		SEN(set_tid_address),		"set_tid_address"	},
 [257] = { 3,	0,		SEN(timer_create),		"timer_create"		},
 [258] = { 4,	0,		SEN(timer_settime),		"timer_settime"		},
@@ -424,11 +406,12 @@
 [396] = { 1,	0,		SEN(pkey_free),			"pkey_free"		},
 [397] = { 5,	TD|TF|TSTA,	SEN(statx),			"statx"			},
 [398] = { 4,	0,		SEN(rseq),			"rseq"			},
+[399] = { 6,	0,		SEN(io_pgetevents),		"io_pgetevents"		},
 
 #ifdef __ARM_EABI__
-# define ARM_FIRST_SHUFFLED_SYSCALL 400
+# define ARM_FIRST_SHUFFLED_SYSCALL 500
 #else
-# define SYS_socket_subcall	400
+# define SYS_socket_subcall	500
 # include "subcall.h"
 # define ARM_FIRST_SHUFFLED_SYSCALL (SYS_ipc_subcall + SYS_ipc_nsubcalls)
 #endif /* !__ARM_EABI__ */
@@ -437,6 +420,7 @@
  * __ARM_NR_cmpxchg (0x000ffff0).
  * Remapped by shuffle_scno() to be directly after ordinary syscalls
  * in this table.
+ * Removed in v4.4-rc1~163^2^3~13.
  */
 [ARM_FIRST_SHUFFLED_SYSCALL    ] = { 5,	0,	SEN(printargs),	"cmpxchg"		},
 

@@ -4,27 +4,7 @@
  * Copyright (c) 2015-2018 The strace developers.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
 #include "defs.h"
@@ -292,11 +272,8 @@ BEGIN_BPF_CMD_DECODER(BPF_PROG_LOAD)
 	/* kern_version field was added in Linux commit v4.1-rc1~84^2~50.  */
 	if (len <= offsetof(struct BPF_PROG_LOAD_struct, kern_version))
 		break;
-	tprintf(", kern_version=KERNEL_VERSION(%u, %u, %u)",
-		attr.kern_version >> 16,
-		(attr.kern_version >> 8) & 0xFF,
-		attr.kern_version & 0xFF);
-
+	tprints(", kern_version=");
+	print_kernel_version(attr.kern_version);
 	/* prog_flags field was added in Linux commit v4.12-rc2~34^2~29^2~2.  */
 	if (len <= offsetof(struct BPF_PROG_LOAD_struct, prog_flags))
 		break;

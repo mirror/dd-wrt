@@ -23,54 +23,14 @@
 # Copyright (c) 2002-2018 The strace developers.
 # All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-# 1. Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in the
-#    documentation and/or other materials provided with the distribution.
-# 3. The name of the author may not be used to endorse or promote products
-#    derived from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
-# IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-# OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-# IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-# NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-# THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# SPDX-License-Identifier: LGPL-2.1-or-later
 
 # scno.h make rules for strace.
 #
-# Copyright (c) 2017 Dmitry V. Levin <ldv@altlinux.org>
+# Copyright (c) 2017-2018 Dmitry V. Levin <ldv@altlinux.org>
 # All rights reserved.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions
-# are met:
-# 1. Redistributions of source code must retain the above copyright
-#    notice, this list of conditions and the following disclaimer.
-# 2. Redistributions in binary form must reproduce the above copyright
-#    notice, this list of conditions and the following disclaimer in the
-#    documentation and/or other materials provided with the distribution.
-# 3. The name of the author may not be used to endorse or promote products
-#    derived from this software without specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
-# IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-# OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-# IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
-# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-# NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-# THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# SPDX-License-Identifier: LGPL-2.1-or-later
 
 
 
@@ -334,35 +294,39 @@ am__strace_SOURCES_DIST = access.c affinity.c aio.c alpha.c \
 	fetch_struct_stat64.c fetch_struct_statfs.c \
 	fetch_struct_xfs_quotastat.c file_handle.c file_ioctl.c \
 	filter_qualify.c filter.h flock.c flock.h fs_x_ioctl.c futex.c \
-	gcc_compat.h get_robust_list.c getcpu.c getcwd.c getrandom.c \
-	hdio.c hostname.c inotify.c inotify_ioctl.c io.c ioctl.c \
-	ioperm.c iopl.c ioprio.c ipc_defs.h ipc_msg.c ipc_msgctl.c \
-	ipc_sem.c ipc_shm.c ipc_shmctl.c kcmp.c kernel_types.h kexec.c \
-	keyctl.c keyctl_kdf_params.h kvm.c largefile_wrappers.h ldt.c \
-	link.c linux/asm_stat.h linux/x32/asm_stat.h \
-	linux/x86_64/asm_stat.h listen.c lookup_dcookie.c loop.c \
-	lseek.c macros.h mem.c membarrier.c memfd_create.c mknod.c \
-	mmap_notify.c mmap_notify.h mmsghdr.c mount.c mpers_type.h \
-	mq.c msghdr.c msghdr.h mtd.c native_defs.h negated_errno.h \
-	net.c netlink.c netlink.h netlink_crypto.c \
-	netlink_kobject_uevent.c netlink_kobject_uevent.h \
-	netlink_sock_diag.h netlink_inet_diag.c netlink_netfilter.c \
-	netlink_netlink_diag.c netlink_packet_diag.c netlink_route.c \
-	netlink_route.h netlink_selinux.c netlink_smc_diag.c \
-	netlink_sock_diag.c netlink_unix_diag.c nlattr.c nlattr.h \
-	nsfs.c nsfs.h nsig.h numa.c number_set.c number_set.h \
-	oldstat.c open.c or1k_atomic.c pathtrace.c perf.c \
-	perf_event_struct.h perf_ioctl.c personality.c pkeys.c poll.c \
-	prctl.c print_aio_sigset.c print_dev_t.c print_group_req.c \
-	print_fields.h print_ifindex.c print_mac.c print_mq_attr.c \
+	gcc_compat.h get_personality.c get_personality.h \
+	get_robust_list.c getcpu.c getcwd.c getrandom.c hdio.c \
+	hostname.c inotify.c inotify_ioctl.c io.c ioctl.c ioperm.c \
+	iopl.c ioprio.c ipc_defs.h ipc_msg.c ipc_msgctl.c ipc_sem.c \
+	ipc_shm.c ipc_shmctl.c kcmp.c kernel_types.h kexec.c keyctl.c \
+	keyctl_kdf_params.h kill_save_errno.h kvm.c \
+	largefile_wrappers.h ldt.c link.c linux/asm_stat.h \
+	linux/x32/asm_stat.h linux/x86_64/asm_stat.h listen.c \
+	lookup_dcookie.c loop.c lseek.c macros.h mem.c membarrier.c \
+	memfd_create.c mknod.c mmap_notify.c mmap_notify.h mmsghdr.c \
+	mount.c mpers_type.h mq.c msghdr.c msghdr.h mtd.c \
+	native_defs.h nbd_ioctl.c negated_errno.h net.c netlink.c \
+	netlink.h netlink_crypto.c netlink_kobject_uevent.c \
+	netlink_kobject_uevent.h netlink_sock_diag.h \
+	netlink_inet_diag.c netlink_netfilter.c netlink_netlink_diag.c \
+	netlink_packet_diag.c netlink_route.c netlink_route.h \
+	netlink_selinux.c netlink_smc_diag.c netlink_sock_diag.c \
+	netlink_unix_diag.c nlattr.c nlattr.h nsfs.c nsfs.h nsig.h \
+	numa.c number_set.c number_set.h oldstat.c open.c \
+	or1k_atomic.c pathtrace.c perf.c perf_event_struct.h \
+	perf_ioctl.c personality.c pkeys.c poll.c prctl.c \
+	print_aio_sigset.c print_dev_t.c print_group_req.c \
+	print_fields.h print_ifindex.c print_instruction_pointer.c \
+	print_kernel_version.c print_mac.c print_mq_attr.c \
 	print_msgbuf.c print_sg_req_info.c print_sigevent.c \
 	print_statfs.c print_struct_stat.c print_time.c \
 	print_timespec.c print_timeval.c print_timex.c printmode.c \
 	printrusage.c printsiginfo.c printsiginfo.h process.c \
-	process_vm.c ptp.c ptrace.h quota.c readahead.c readlink.c \
-	reboot.c regs.h renameat.c resource.c retval.c retval.h \
-	riscv.c rt_sigframe.c rt_sigreturn.c rtc.c rtnl_addr.c \
-	rtnl_addrlabel.c rtnl_dcb.c rtnl_link.c rtnl_mdb.c \
+	process_vm.c ptp.c ptrace.h ptrace_syscall_info.c \
+	ptrace_syscall_info.h quota.c random_ioctl.c readahead.c \
+	readlink.c reboot.c regs.h renameat.c resource.c retval.c \
+	retval.h riscv.c rt_sigframe.c rt_sigreturn.c rtc.c \
+	rtnl_addr.c rtnl_addrlabel.c rtnl_dcb.c rtnl_link.c rtnl_mdb.c \
 	rtnl_neigh.c rtnl_neightbl.c rtnl_netconf.c rtnl_nsid.c \
 	rtnl_route.c rtnl_rule.c rtnl_tc.c rtnl_tc_action.c s390.c \
 	sched.c sched_attr.h scsi.c seccomp.c sendfile.c sg_io_v3.c \
@@ -375,7 +339,7 @@ am__strace_SOURCES_DIST = access.c affinity.c aio.c alpha.c \
 	syslog.c sysmips.c term.c time.c times.c trace_event.h \
 	truncate.c ubi.c ucopy.c uid.c uid16.c umask.c umount.c \
 	uname.c userfaultfd.c ustat.c util.c utime.c utimes.c v4l2.c \
-	wait.c xattr.c xfs_quota_stat.h xlat.c xlat.h xmalloc.c \
+	wait.c wait.h xattr.c xfs_quota_stat.h xlat.c xlat.h xmalloc.c \
 	xmalloc.h xstring.h bpf_attr_check.c unwind.c unwind.h \
 	unwind-libdw.c unwind-libunwind.c
 am__objects_3 = strace-bpf_attr_check.$(OBJEXT)
@@ -413,6 +377,7 @@ am_strace_OBJECTS = strace-access.$(OBJEXT) strace-affinity.$(OBJEXT) \
 	strace-file_handle.$(OBJEXT) strace-file_ioctl.$(OBJEXT) \
 	strace-filter_qualify.$(OBJEXT) strace-flock.$(OBJEXT) \
 	strace-fs_x_ioctl.$(OBJEXT) strace-futex.$(OBJEXT) \
+	strace-get_personality.$(OBJEXT) \
 	strace-get_robust_list.$(OBJEXT) strace-getcpu.$(OBJEXT) \
 	strace-getcwd.$(OBJEXT) strace-getrandom.$(OBJEXT) \
 	strace-hdio.$(OBJEXT) strace-hostname.$(OBJEXT) \
@@ -432,8 +397,8 @@ am_strace_OBJECTS = strace-access.$(OBJEXT) strace-affinity.$(OBJEXT) \
 	strace-mmap_notify.$(OBJEXT) strace-mmsghdr.$(OBJEXT) \
 	strace-mount.$(OBJEXT) strace-mq.$(OBJEXT) \
 	strace-msghdr.$(OBJEXT) strace-mtd.$(OBJEXT) \
-	strace-net.$(OBJEXT) strace-netlink.$(OBJEXT) \
-	strace-netlink_crypto.$(OBJEXT) \
+	strace-nbd_ioctl.$(OBJEXT) strace-net.$(OBJEXT) \
+	strace-netlink.$(OBJEXT) strace-netlink_crypto.$(OBJEXT) \
 	strace-netlink_kobject_uevent.$(OBJEXT) \
 	strace-netlink_inet_diag.$(OBJEXT) \
 	strace-netlink_netfilter.$(OBJEXT) \
@@ -452,8 +417,11 @@ am_strace_OBJECTS = strace-access.$(OBJEXT) strace-affinity.$(OBJEXT) \
 	strace-pkeys.$(OBJEXT) strace-poll.$(OBJEXT) \
 	strace-prctl.$(OBJEXT) strace-print_aio_sigset.$(OBJEXT) \
 	strace-print_dev_t.$(OBJEXT) strace-print_group_req.$(OBJEXT) \
-	strace-print_ifindex.$(OBJEXT) strace-print_mac.$(OBJEXT) \
-	strace-print_mq_attr.$(OBJEXT) strace-print_msgbuf.$(OBJEXT) \
+	strace-print_ifindex.$(OBJEXT) \
+	strace-print_instruction_pointer.$(OBJEXT) \
+	strace-print_kernel_version.$(OBJEXT) \
+	strace-print_mac.$(OBJEXT) strace-print_mq_attr.$(OBJEXT) \
+	strace-print_msgbuf.$(OBJEXT) \
 	strace-print_sg_req_info.$(OBJEXT) \
 	strace-print_sigevent.$(OBJEXT) strace-print_statfs.$(OBJEXT) \
 	strace-print_struct_stat.$(OBJEXT) strace-print_time.$(OBJEXT) \
@@ -461,7 +429,8 @@ am_strace_OBJECTS = strace-access.$(OBJEXT) strace-affinity.$(OBJEXT) \
 	strace-print_timex.$(OBJEXT) strace-printmode.$(OBJEXT) \
 	strace-printrusage.$(OBJEXT) strace-printsiginfo.$(OBJEXT) \
 	strace-process.$(OBJEXT) strace-process_vm.$(OBJEXT) \
-	strace-ptp.$(OBJEXT) strace-quota.$(OBJEXT) \
+	strace-ptp.$(OBJEXT) strace-ptrace_syscall_info.$(OBJEXT) \
+	strace-quota.$(OBJEXT) strace-random_ioctl.$(OBJEXT) \
 	strace-readahead.$(OBJEXT) strace-readlink.$(OBJEXT) \
 	strace-reboot.$(OBJEXT) strace-renameat.$(OBJEXT) \
 	strace-resource.$(OBJEXT) strace-retval.$(OBJEXT) \
@@ -845,14 +814,15 @@ AM_CPPFLAGS_FOR_BUILD = $(AM_CPPFLAGS)
 XLAT_INPUT_FILES = xlat/access_flags.in xlat/addrfams.in \
 	xlat/adjtimex_modes.in xlat/adjtimex_state.in \
 	xlat/adjtimex_status.in xlat/advise.in xlat/af_packet_types.in \
-	xlat/aio_cmds.in xlat/archvals.in xlat/arp_hardware_types.in \
-	xlat/at_flags.in xlat/at_statx_sync_types.in \
-	xlat/atomic_ops.in xlat/audit_arch.in xlat/baud_options.in \
+	xlat/af_packet_versions.in xlat/aio_cmds.in xlat/archvals.in \
+	xlat/arp_hardware_types.in xlat/at_flags.in \
+	xlat/at_statx_sync_types.in xlat/atomic_ops.in \
+	xlat/audit_arch.in xlat/ax25_protocols.in xlat/baud_options.in \
 	xlat/bdaddr_types.in xlat/blkpg_ops.in \
-	xlat/bluetooth_l2_cid.in xlat/bluetooth_l2_psm.in \
-	xlat/bootflags1.in xlat/bootflags2.in xlat/bootflags3.in \
-	xlat/bpf_attach_flags.in xlat/bpf_attach_type.in \
-	xlat/bpf_class.in xlat/bpf_commands.in \
+	xlat/block_ioctl_cmds.in xlat/bluetooth_l2_cid.in \
+	xlat/bluetooth_l2_psm.in xlat/bootflags1.in xlat/bootflags2.in \
+	xlat/bootflags3.in xlat/bpf_attach_flags.in \
+	xlat/bpf_attach_type.in xlat/bpf_class.in xlat/bpf_commands.in \
 	xlat/bpf_file_mode_flags.in xlat/bpf_map_flags.in \
 	xlat/bpf_map_types.in xlat/bpf_map_update_elem_flags.in \
 	xlat/bpf_miscop.in xlat/bpf_mode.in xlat/bpf_op_alu.in \
@@ -893,14 +863,14 @@ XLAT_INPUT_FILES = xlat/access_flags.in xlat/addrfams.in \
 	xlat/evdev_keycode.in xlat/evdev_leds.in xlat/evdev_misc.in \
 	xlat/evdev_mtslots.in xlat/evdev_prop.in \
 	xlat/evdev_relative_axes.in xlat/evdev_snd.in \
-	xlat/evdev_switch.in xlat/evdev_sync.in xlat/f_owner_types.in \
-	xlat/f_seals.in xlat/falloc_flags.in xlat/fan_classes.in \
+	xlat/evdev_switch.in xlat/f_owner_types.in xlat/f_seals.in \
+	xlat/falloc_flags.in xlat/fan_classes.in \
 	xlat/fan_event_flags.in xlat/fan_init_flags.in \
 	xlat/fan_mark_flags.in xlat/fcntlcmds.in xlat/fdflags.in \
 	xlat/fib_rule_actions.in xlat/fib_rule_flags.in \
 	xlat/fiemap_extent_flags.in xlat/fiemap_flags.in \
-	xlat/flockcmds.in xlat/fsmagic.in xlat/futexops.in \
-	xlat/futexwakecmps.in xlat/futexwakeops.in \
+	xlat/flockcmds.in xlat/fsmagic.in xlat/futexbitset.in \
+	xlat/futexops.in xlat/futexwakecmps.in xlat/futexwakeops.in \
 	xlat/getrandom_flags.in xlat/getsock_ip_options.in \
 	xlat/getsock_ipv6_options.in xlat/getsock_options.in \
 	xlat/hci_channels.in xlat/hw_breakpoint_len.in \
@@ -920,7 +890,7 @@ XLAT_INPUT_FILES = xlat/access_flags.in xlat/addrfams.in \
 	xlat/kcm_protocols.in xlat/kcmp_types.in \
 	xlat/kexec_arch_values.in xlat/kexec_file_load_flags.in \
 	xlat/kexec_load_flags.in xlat/key_perms.in xlat/key_reqkeys.in \
-	xlat/key_spec.in xlat/keyctl_commands.in \
+	xlat/key_spec.in xlat/keyctl_commands.in xlat/kvm_cap.in \
 	xlat/kvm_cpuid_flags.in xlat/kvm_exit_reason.in \
 	xlat/kvm_mem_flags.in xlat/lockfcmds.in xlat/loop_cmds.in \
 	xlat/loop_crypt_type_options.in xlat/loop_flags_options.in \
@@ -937,6 +907,7 @@ XLAT_INPUT_FILES = xlat/access_flags.in xlat/addrfams.in \
 	xlat/mtd_mode_options.in xlat/mtd_nandecc_options.in \
 	xlat/mtd_otp_options.in xlat/mtd_type_options.in \
 	xlat/multicast_router_types.in xlat/name_to_handle_at_flags.in \
+	xlat/nbd_ioctl_cmds.in xlat/nbd_ioctl_flags.in \
 	xlat/neighbor_cache_entry_flags.in \
 	xlat/neighbor_cache_entry_states.in xlat/netfilter_versions.in \
 	xlat/netlink_ack_flags.in xlat/netlink_delete_flags.in \
@@ -980,8 +951,9 @@ XLAT_INPUT_FILES = xlat/access_flags.in xlat/addrfams.in \
 	xlat/priorities.in xlat/ptp_flags_options.in \
 	xlat/ptrace_cmds.in xlat/ptrace_events.in \
 	xlat/ptrace_peeksiginfo_flags.in \
-	xlat/ptrace_setoptions_flags.in xlat/quota_formats.in \
-	xlat/quotacmds.in xlat/quotatypes.in xlat/rename_flags.in \
+	xlat/ptrace_setoptions_flags.in xlat/ptrace_syscall_info_op.in \
+	xlat/quota_formats.in xlat/quotacmds.in xlat/quotatypes.in \
+	xlat/random_ioctl_cmds.in xlat/rename_flags.in \
 	xlat/resource_flags.in xlat/resources.in \
 	xlat/riscv_flush_icache_flags.in xlat/route_nexthop_flags.in \
 	xlat/routing_flags.in xlat/routing_protocols.in \
@@ -995,6 +967,7 @@ XLAT_INPUT_FILES = xlat/access_flags.in xlat/addrfams.in \
 	xlat/rtnl_ifla_info_data_bridge_attrs.in \
 	xlat/rtnl_ifla_info_data_tun_attrs.in \
 	xlat/rtnl_ifla_port_attrs.in xlat/rtnl_ifla_vf_port_attrs.in \
+	xlat/rtnl_ifla_xdp_attached_mode.in \
 	xlat/rtnl_ifla_xdp_attrs.in xlat/rtnl_link_attrs.in \
 	xlat/rtnl_mdb_attrs.in xlat/rtnl_mdba_mdb_attrs.in \
 	xlat/rtnl_mdba_mdb_eattr_attrs.in \
@@ -1028,24 +1001,26 @@ XLAT_INPUT_FILES = xlat/access_flags.in xlat/addrfams.in \
 	xlat/sigprocmaskcmds.in xlat/sigprof_codes.in \
 	xlat/sigsegv_codes.in xlat/sigsys_codes.in \
 	xlat/sigtrap_codes.in xlat/skf_ad.in xlat/skf_off.in \
-	xlat/smc_diag_attrs.in xlat/smc_diag_extended_flags.in \
+	xlat/smc_decl_codes.in xlat/smc_diag_attrs.in \
+	xlat/smc_diag_extended_flags.in xlat/smc_diag_mode.in \
 	xlat/smc_link_group_roles.in xlat/smc_protocols.in \
 	xlat/smc_states.in xlat/snmp_icmp6_stats.in \
 	xlat/snmp_ip_stats.in xlat/sock_alg_options.in \
-	xlat/sock_bluetooth_options.in xlat/sock_caif_options.in \
-	xlat/sock_dccp_options.in xlat/sock_ip_options.in \
-	xlat/sock_ipv6_options.in xlat/sock_ipx_options.in \
-	xlat/sock_irda_options.in xlat/sock_iucv_options.in \
-	xlat/sock_kcm_options.in xlat/sock_llc_options.in \
-	xlat/sock_netlink_options.in xlat/sock_nfcllcp_options.in \
-	xlat/sock_options.in xlat/sock_packet_options.in \
-	xlat/sock_pnp_options.in xlat/sock_pppol2tp_options.in \
-	xlat/sock_raw_options.in xlat/sock_rds_options.in \
-	xlat/sock_rxrpc_options.in xlat/sock_sctp_options.in \
+	xlat/sock_ax25_options.in xlat/sock_bluetooth_options.in \
+	xlat/sock_caif_options.in xlat/sock_dccp_options.in \
+	xlat/sock_ip_options.in xlat/sock_ipv6_options.in \
+	xlat/sock_ipx_options.in xlat/sock_irda_options.in \
+	xlat/sock_iucv_options.in xlat/sock_kcm_options.in \
+	xlat/sock_llc_options.in xlat/sock_netlink_options.in \
+	xlat/sock_nfcllcp_options.in xlat/sock_options.in \
+	xlat/sock_packet_options.in xlat/sock_pnp_options.in \
+	xlat/sock_pppol2tp_options.in xlat/sock_raw_options.in \
+	xlat/sock_rds_options.in xlat/sock_rxrpc_options.in \
+	xlat/sock_sctp_options.in xlat/sock_shutdown_flags.in \
 	xlat/sock_tcp_options.in xlat/sock_tipc_options.in \
 	xlat/sock_tls_options.in xlat/sock_type_flags.in \
-	xlat/sock_udp_options.in xlat/socketcalls.in \
-	xlat/socketlayers.in xlat/socktypes.in \
+	xlat/sock_udp_options.in xlat/sock_xdp_options.in \
+	xlat/socketcalls.in xlat/socketlayers.in xlat/socktypes.in \
 	xlat/sparc_kern_features.in xlat/splice_flags.in \
 	xlat/sram_alloc_flags.in xlat/statfs_flags.in \
 	xlat/statx_attrs.in xlat/statx_masks.in xlat/swap_flags.in \
@@ -1085,13 +1060,15 @@ XLAT_INPUT_FILES = xlat/access_flags.in xlat/addrfams.in \
 XLAT_HEADER_FILES = xlat/access_flags.h xlat/addrfams.h \
 	xlat/adjtimex_modes.h xlat/adjtimex_state.h \
 	xlat/adjtimex_status.h xlat/advise.h xlat/af_packet_types.h \
-	xlat/aio_cmds.h xlat/archvals.h xlat/arp_hardware_types.h \
-	xlat/at_flags.h xlat/at_statx_sync_types.h xlat/atomic_ops.h \
-	xlat/audit_arch.h xlat/baud_options.h xlat/bdaddr_types.h \
-	xlat/blkpg_ops.h xlat/bluetooth_l2_cid.h \
-	xlat/bluetooth_l2_psm.h xlat/bootflags1.h xlat/bootflags2.h \
-	xlat/bootflags3.h xlat/bpf_attach_flags.h \
-	xlat/bpf_attach_type.h xlat/bpf_class.h xlat/bpf_commands.h \
+	xlat/af_packet_versions.h xlat/aio_cmds.h xlat/archvals.h \
+	xlat/arp_hardware_types.h xlat/at_flags.h \
+	xlat/at_statx_sync_types.h xlat/atomic_ops.h xlat/audit_arch.h \
+	xlat/ax25_protocols.h xlat/baud_options.h xlat/bdaddr_types.h \
+	xlat/blkpg_ops.h xlat/block_ioctl_cmds.h \
+	xlat/bluetooth_l2_cid.h xlat/bluetooth_l2_psm.h \
+	xlat/bootflags1.h xlat/bootflags2.h xlat/bootflags3.h \
+	xlat/bpf_attach_flags.h xlat/bpf_attach_type.h \
+	xlat/bpf_class.h xlat/bpf_commands.h \
 	xlat/bpf_file_mode_flags.h xlat/bpf_map_flags.h \
 	xlat/bpf_map_types.h xlat/bpf_map_update_elem_flags.h \
 	xlat/bpf_miscop.h xlat/bpf_mode.h xlat/bpf_op_alu.h \
@@ -1128,14 +1105,13 @@ XLAT_HEADER_FILES = xlat/access_flags.h xlat/addrfams.h \
 	xlat/evdev_ff_types.h xlat/evdev_keycode.h xlat/evdev_leds.h \
 	xlat/evdev_misc.h xlat/evdev_mtslots.h xlat/evdev_prop.h \
 	xlat/evdev_relative_axes.h xlat/evdev_snd.h \
-	xlat/evdev_switch.h xlat/evdev_sync.h xlat/f_owner_types.h \
-	xlat/f_seals.h xlat/falloc_flags.h xlat/fan_classes.h \
-	xlat/fan_event_flags.h xlat/fan_init_flags.h \
-	xlat/fan_mark_flags.h xlat/fcntlcmds.h xlat/fdflags.h \
-	xlat/fib_rule_actions.h xlat/fib_rule_flags.h \
+	xlat/evdev_switch.h xlat/f_owner_types.h xlat/f_seals.h \
+	xlat/falloc_flags.h xlat/fan_classes.h xlat/fan_event_flags.h \
+	xlat/fan_init_flags.h xlat/fan_mark_flags.h xlat/fcntlcmds.h \
+	xlat/fdflags.h xlat/fib_rule_actions.h xlat/fib_rule_flags.h \
 	xlat/fiemap_extent_flags.h xlat/fiemap_flags.h \
-	xlat/flockcmds.h xlat/fsmagic.h xlat/futexops.h \
-	xlat/futexwakecmps.h xlat/futexwakeops.h \
+	xlat/flockcmds.h xlat/fsmagic.h xlat/futexbitset.h \
+	xlat/futexops.h xlat/futexwakecmps.h xlat/futexwakeops.h \
 	xlat/getrandom_flags.h xlat/getsock_ip_options.h \
 	xlat/getsock_ipv6_options.h xlat/getsock_options.h \
 	xlat/hci_channels.h xlat/hw_breakpoint_len.h \
@@ -1155,7 +1131,7 @@ XLAT_HEADER_FILES = xlat/access_flags.h xlat/addrfams.h \
 	xlat/kcmp_types.h xlat/kexec_arch_values.h \
 	xlat/kexec_file_load_flags.h xlat/kexec_load_flags.h \
 	xlat/key_perms.h xlat/key_reqkeys.h xlat/key_spec.h \
-	xlat/keyctl_commands.h xlat/kvm_cpuid_flags.h \
+	xlat/keyctl_commands.h xlat/kvm_cap.h xlat/kvm_cpuid_flags.h \
 	xlat/kvm_exit_reason.h xlat/kvm_mem_flags.h xlat/lockfcmds.h \
 	xlat/loop_cmds.h xlat/loop_crypt_type_options.h \
 	xlat/loop_flags_options.h xlat/lwtunnel_encap_types.h \
@@ -1171,6 +1147,7 @@ XLAT_HEADER_FILES = xlat/access_flags.h xlat/addrfams.h \
 	xlat/mtd_mode_options.h xlat/mtd_nandecc_options.h \
 	xlat/mtd_otp_options.h xlat/mtd_type_options.h \
 	xlat/multicast_router_types.h xlat/name_to_handle_at_flags.h \
+	xlat/nbd_ioctl_cmds.h xlat/nbd_ioctl_flags.h \
 	xlat/neighbor_cache_entry_flags.h \
 	xlat/neighbor_cache_entry_states.h xlat/netfilter_versions.h \
 	xlat/netlink_ack_flags.h xlat/netlink_delete_flags.h \
@@ -1210,8 +1187,9 @@ XLAT_HEADER_FILES = xlat/access_flags.h xlat/addrfams.h \
 	xlat/pr_tsc.h xlat/pr_unalign_flags.h xlat/prctl_options.h \
 	xlat/priorities.h xlat/ptp_flags_options.h xlat/ptrace_cmds.h \
 	xlat/ptrace_events.h xlat/ptrace_peeksiginfo_flags.h \
-	xlat/ptrace_setoptions_flags.h xlat/quota_formats.h \
-	xlat/quotacmds.h xlat/quotatypes.h xlat/rename_flags.h \
+	xlat/ptrace_setoptions_flags.h xlat/ptrace_syscall_info_op.h \
+	xlat/quota_formats.h xlat/quotacmds.h xlat/quotatypes.h \
+	xlat/random_ioctl_cmds.h xlat/rename_flags.h \
 	xlat/resource_flags.h xlat/resources.h \
 	xlat/riscv_flush_icache_flags.h xlat/route_nexthop_flags.h \
 	xlat/routing_flags.h xlat/routing_protocols.h \
@@ -1225,9 +1203,9 @@ XLAT_HEADER_FILES = xlat/access_flags.h xlat/addrfams.h \
 	xlat/rtnl_ifla_info_data_bridge_attrs.h \
 	xlat/rtnl_ifla_info_data_tun_attrs.h \
 	xlat/rtnl_ifla_port_attrs.h xlat/rtnl_ifla_vf_port_attrs.h \
-	xlat/rtnl_ifla_xdp_attrs.h xlat/rtnl_link_attrs.h \
-	xlat/rtnl_mdb_attrs.h xlat/rtnl_mdba_mdb_attrs.h \
-	xlat/rtnl_mdba_mdb_eattr_attrs.h \
+	xlat/rtnl_ifla_xdp_attached_mode.h xlat/rtnl_ifla_xdp_attrs.h \
+	xlat/rtnl_link_attrs.h xlat/rtnl_mdb_attrs.h \
+	xlat/rtnl_mdba_mdb_attrs.h xlat/rtnl_mdba_mdb_eattr_attrs.h \
 	xlat/rtnl_mdba_mdb_entry_attrs.h xlat/rtnl_mdba_router_attrs.h \
 	xlat/rtnl_mdba_router_pattr_attrs.h xlat/rtnl_neigh_attrs.h \
 	xlat/rtnl_neightbl_attrs.h xlat/rtnl_neightbl_parms_attrs.h \
@@ -1256,28 +1234,30 @@ XLAT_HEADER_FILES = xlat/access_flags.h xlat/addrfams.h \
 	xlat/sigpoll_codes.h xlat/sigprocmaskcmds.h \
 	xlat/sigprof_codes.h xlat/sigsegv_codes.h xlat/sigsys_codes.h \
 	xlat/sigtrap_codes.h xlat/skf_ad.h xlat/skf_off.h \
-	xlat/smc_diag_attrs.h xlat/smc_diag_extended_flags.h \
+	xlat/smc_decl_codes.h xlat/smc_diag_attrs.h \
+	xlat/smc_diag_extended_flags.h xlat/smc_diag_mode.h \
 	xlat/smc_link_group_roles.h xlat/smc_protocols.h \
 	xlat/smc_states.h xlat/snmp_icmp6_stats.h xlat/snmp_ip_stats.h \
-	xlat/sock_alg_options.h xlat/sock_bluetooth_options.h \
-	xlat/sock_caif_options.h xlat/sock_dccp_options.h \
-	xlat/sock_ip_options.h xlat/sock_ipv6_options.h \
-	xlat/sock_ipx_options.h xlat/sock_irda_options.h \
-	xlat/sock_iucv_options.h xlat/sock_kcm_options.h \
-	xlat/sock_llc_options.h xlat/sock_netlink_options.h \
-	xlat/sock_nfcllcp_options.h xlat/sock_options.h \
-	xlat/sock_packet_options.h xlat/sock_pnp_options.h \
-	xlat/sock_pppol2tp_options.h xlat/sock_raw_options.h \
-	xlat/sock_rds_options.h xlat/sock_rxrpc_options.h \
-	xlat/sock_sctp_options.h xlat/sock_tcp_options.h \
+	xlat/sock_alg_options.h xlat/sock_ax25_options.h \
+	xlat/sock_bluetooth_options.h xlat/sock_caif_options.h \
+	xlat/sock_dccp_options.h xlat/sock_ip_options.h \
+	xlat/sock_ipv6_options.h xlat/sock_ipx_options.h \
+	xlat/sock_irda_options.h xlat/sock_iucv_options.h \
+	xlat/sock_kcm_options.h xlat/sock_llc_options.h \
+	xlat/sock_netlink_options.h xlat/sock_nfcllcp_options.h \
+	xlat/sock_options.h xlat/sock_packet_options.h \
+	xlat/sock_pnp_options.h xlat/sock_pppol2tp_options.h \
+	xlat/sock_raw_options.h xlat/sock_rds_options.h \
+	xlat/sock_rxrpc_options.h xlat/sock_sctp_options.h \
+	xlat/sock_shutdown_flags.h xlat/sock_tcp_options.h \
 	xlat/sock_tipc_options.h xlat/sock_tls_options.h \
 	xlat/sock_type_flags.h xlat/sock_udp_options.h \
-	xlat/socketcalls.h xlat/socketlayers.h xlat/socktypes.h \
-	xlat/sparc_kern_features.h xlat/splice_flags.h \
-	xlat/sram_alloc_flags.h xlat/statfs_flags.h xlat/statx_attrs.h \
-	xlat/statx_masks.h xlat/swap_flags.h \
-	xlat/sync_file_range_flags.h xlat/sysctl_kern.h \
-	xlat/sysctl_net.h xlat/sysctl_net_core.h \
+	xlat/sock_xdp_options.h xlat/socketcalls.h xlat/socketlayers.h \
+	xlat/socktypes.h xlat/sparc_kern_features.h \
+	xlat/splice_flags.h xlat/sram_alloc_flags.h \
+	xlat/statfs_flags.h xlat/statx_attrs.h xlat/statx_masks.h \
+	xlat/swap_flags.h xlat/sync_file_range_flags.h \
+	xlat/sysctl_kern.h xlat/sysctl_net.h xlat/sysctl_net_core.h \
 	xlat/sysctl_net_ipv4.h xlat/sysctl_net_ipv4_conf.h \
 	xlat/sysctl_net_ipv4_route.h xlat/sysctl_net_ipv6.h \
 	xlat/sysctl_net_ipv6_route.h xlat/sysctl_net_unix.h \
@@ -1350,18 +1330,19 @@ strace_SOURCES = access.c affinity.c aio.c alpha.c arch_defs.h \
 	fetch_struct_stat.c fetch_struct_stat64.c \
 	fetch_struct_statfs.c fetch_struct_xfs_quotastat.c \
 	file_handle.c file_ioctl.c filter_qualify.c filter.h flock.c \
-	flock.h fs_x_ioctl.c futex.c gcc_compat.h get_robust_list.c \
-	getcpu.c getcwd.c getrandom.c hdio.c hostname.c inotify.c \
-	inotify_ioctl.c io.c ioctl.c ioperm.c iopl.c ioprio.c \
-	ipc_defs.h ipc_msg.c ipc_msgctl.c ipc_sem.c ipc_shm.c \
-	ipc_shmctl.c kcmp.c kernel_types.h kexec.c keyctl.c \
-	keyctl_kdf_params.h kvm.c largefile_wrappers.h ldt.c link.c \
+	flock.h fs_x_ioctl.c futex.c gcc_compat.h get_personality.c \
+	get_personality.h get_robust_list.c getcpu.c getcwd.c \
+	getrandom.c hdio.c hostname.c inotify.c inotify_ioctl.c io.c \
+	ioctl.c ioperm.c iopl.c ioprio.c ipc_defs.h ipc_msg.c \
+	ipc_msgctl.c ipc_sem.c ipc_shm.c ipc_shmctl.c kcmp.c \
+	kernel_types.h kexec.c keyctl.c keyctl_kdf_params.h \
+	kill_save_errno.h kvm.c largefile_wrappers.h ldt.c link.c \
 	linux/asm_stat.h linux/x32/asm_stat.h linux/x86_64/asm_stat.h \
 	listen.c lookup_dcookie.c loop.c lseek.c macros.h mem.c \
 	membarrier.c memfd_create.c mknod.c mmap_notify.c \
 	mmap_notify.h mmsghdr.c mount.c mpers_type.h mq.c msghdr.c \
-	msghdr.h mtd.c native_defs.h negated_errno.h net.c netlink.c \
-	netlink.h netlink_crypto.c netlink_kobject_uevent.c \
+	msghdr.h mtd.c native_defs.h nbd_ioctl.c negated_errno.h net.c \
+	netlink.c netlink.h netlink_crypto.c netlink_kobject_uevent.c \
 	netlink_kobject_uevent.h netlink_sock_diag.h \
 	netlink_inet_diag.c netlink_netfilter.c netlink_netlink_diag.c \
 	netlink_packet_diag.c netlink_route.c netlink_route.h \
@@ -1371,15 +1352,17 @@ strace_SOURCES = access.c affinity.c aio.c alpha.c arch_defs.h \
 	or1k_atomic.c pathtrace.c perf.c perf_event_struct.h \
 	perf_ioctl.c personality.c pkeys.c poll.c prctl.c \
 	print_aio_sigset.c print_dev_t.c print_group_req.c \
-	print_fields.h print_ifindex.c print_mac.c print_mq_attr.c \
+	print_fields.h print_ifindex.c print_instruction_pointer.c \
+	print_kernel_version.c print_mac.c print_mq_attr.c \
 	print_msgbuf.c print_sg_req_info.c print_sigevent.c \
 	print_statfs.c print_struct_stat.c print_time.c \
 	print_timespec.c print_timeval.c print_timex.c printmode.c \
 	printrusage.c printsiginfo.c printsiginfo.h process.c \
-	process_vm.c ptp.c ptrace.h quota.c readahead.c readlink.c \
-	reboot.c regs.h renameat.c resource.c retval.c retval.h \
-	riscv.c rt_sigframe.c rt_sigreturn.c rtc.c rtnl_addr.c \
-	rtnl_addrlabel.c rtnl_dcb.c rtnl_link.c rtnl_mdb.c \
+	process_vm.c ptp.c ptrace.h ptrace_syscall_info.c \
+	ptrace_syscall_info.h quota.c random_ioctl.c readahead.c \
+	readlink.c reboot.c regs.h renameat.c resource.c retval.c \
+	retval.h riscv.c rt_sigframe.c rt_sigreturn.c rtc.c \
+	rtnl_addr.c rtnl_addrlabel.c rtnl_dcb.c rtnl_link.c rtnl_mdb.c \
 	rtnl_neigh.c rtnl_neightbl.c rtnl_netconf.c rtnl_nsid.c \
 	rtnl_route.c rtnl_rule.c rtnl_tc.c rtnl_tc_action.c s390.c \
 	sched.c sched_attr.h scsi.c seccomp.c sendfile.c sg_io_v3.c \
@@ -1392,7 +1375,7 @@ strace_SOURCES = access.c affinity.c aio.c alpha.c arch_defs.h \
 	syslog.c sysmips.c term.c time.c times.c trace_event.h \
 	truncate.c ubi.c ucopy.c uid.c uid16.c umask.c umount.c \
 	uname.c userfaultfd.c ustat.c util.c utime.c utimes.c v4l2.c \
-	wait.c xattr.c xfs_quota_stat.h xlat.c xlat.h xmalloc.c \
+	wait.c wait.h xattr.c xfs_quota_stat.h xlat.c xlat.h xmalloc.c \
 	xmalloc.h xstring.h $(strace_SOURCES_check) $(am__append_1) \
 	$(am__append_2) $(am__append_7)
 strace_SOURCES_check = bpf_attr_check.c
@@ -1411,6 +1394,8 @@ EXTRA_DIST = \
 	CREDITS				\
 	ChangeLog			\
 	ChangeLog-CVS			\
+	LGPL-2.1-or-later		\
+	README-configure		\
 	README-linux-ptrace		\
 	debian/changelog		\
 	debian/compat			\
@@ -1438,9 +1423,8 @@ EXTRA_DIST = \
 	linux/64/ioctls_inc.h		\
 	linux/64/syscallent.h		\
 	linux/aarch64/arch_defs_.h	\
+	linux/aarch64/arch_get_personality.c \
 	linux/aarch64/arch_regs.c	\
-	linux/aarch64/arch_regs.h	\
-	linux/aarch64/arch_rt_sigframe.c	\
 	linux/aarch64/arch_sigreturn.c	\
 	linux/aarch64/get_error.c	\
 	linux/aarch64/get_scno.c	\
@@ -1459,8 +1443,6 @@ EXTRA_DIST = \
 	linux/alpha/arch_defs_.h	\
 	linux/alpha/arch_getrval2.c	\
 	linux/alpha/arch_regs.c		\
-	linux/alpha/arch_regs.h		\
-	linux/alpha/arch_rt_sigframe.c	\
 	linux/alpha/arch_sigreturn.c	\
 	linux/alpha/errnoent.h		\
 	linux/alpha/get_error.c		\
@@ -1476,8 +1458,6 @@ EXTRA_DIST = \
 	linux/alpha/syscallent.h	\
 	linux/alpha/userent.h		\
 	linux/arc/arch_regs.c		\
-	linux/arc/arch_regs.h		\
-	linux/arc/arch_rt_sigframe.c	\
 	linux/arc/get_error.c		\
 	linux/arc/get_scno.c		\
 	linux/arc/get_syscall_args.c	\
@@ -1490,11 +1470,10 @@ EXTRA_DIST = \
 	linux/arch_defs_.h		\
 	linux/arch_kvm.c		\
 	linux/arch_regs.h		\
+	linux/arch_rt_sigframe.c	\
 	linux/arch_sigreturn.c		\
 	linux/arm/arch_defs_.h		\
 	linux/arm/arch_regs.c		\
-	linux/arm/arch_regs.h		\
-	linux/arm/arch_rt_sigframe.c	\
 	linux/arm/arch_sigreturn.c	\
 	linux/arm/get_error.c		\
 	linux/arm/get_scno.c		\
@@ -1509,8 +1488,6 @@ EXTRA_DIST = \
 	linux/arm/syscallent.h		\
 	linux/arm/userent.h		\
 	linux/avr32/arch_regs.c		\
-	linux/avr32/arch_regs.h		\
-	linux/avr32/arch_rt_sigframe.c	\
 	linux/avr32/get_error.c		\
 	linux/avr32/get_scno.c		\
 	linux/avr32/get_syscall_args.c	\
@@ -1523,7 +1500,6 @@ EXTRA_DIST = \
 	linux/avr32/userent.h		\
 	linux/bfin/arch_defs_.h		\
 	linux/bfin/arch_regs.c		\
-	linux/bfin/arch_rt_sigframe.c	\
 	linux/bfin/get_error.c		\
 	linux/bfin/get_scno.c		\
 	linux/bfin/get_syscall_args.c	\
@@ -1536,12 +1512,12 @@ EXTRA_DIST = \
 	linux/bfin/set_scno.c		\
 	linux/bfin/syscallent.h		\
 	linux/bfin/userent.h		\
+	linux/check_scno.c		\
 	linux/dummy.h			\
 	linux/errnoent.h		\
 	linux/getregs_old.h		\
 	linux/hppa/arch_defs_.h		\
 	linux/hppa/arch_regs.c		\
-	linux/hppa/arch_regs.h		\
 	linux/hppa/arch_rt_sigframe.c	\
 	linux/hppa/errnoent.h		\
 	linux/hppa/get_error.c		\
@@ -1556,10 +1532,9 @@ EXTRA_DIST = \
 	linux/hppa/set_scno.c		\
 	linux/hppa/signalent.h		\
 	linux/hppa/syscallent.h		\
-	linux/i386/arch_kvm.c		\
 	linux/i386/arch_defs_.h		\
+	linux/i386/arch_kvm.c		\
 	linux/i386/arch_regs.c		\
-	linux/i386/arch_regs.h		\
 	linux/i386/arch_rt_sigframe.c	\
 	linux/i386/arch_sigreturn.c	\
 	linux/i386/get_error.c		\
@@ -1593,7 +1568,6 @@ EXTRA_DIST = \
 	linux/inet_diag.h		\
 	linux/m68k/arch_defs_.h		\
 	linux/m68k/arch_regs.c		\
-	linux/m68k/arch_regs.h		\
 	linux/m68k/arch_rt_sigframe.c	\
 	linux/m68k/arch_sigreturn.c	\
 	linux/m68k/get_error.c		\
@@ -1608,7 +1582,6 @@ EXTRA_DIST = \
 	linux/m68k/syscallent.h		\
 	linux/m68k/userent.h		\
 	linux/metag/arch_regs.c		\
-	linux/metag/arch_regs.h		\
 	linux/metag/arch_rt_sigframe.c	\
 	linux/metag/get_error.c		\
 	linux/metag/get_scno.c		\
@@ -1621,7 +1594,6 @@ EXTRA_DIST = \
 	linux/metag/syscallent.h	\
 	linux/microblaze/arch_defs_.h	\
 	linux/microblaze/arch_regs.c	\
-	linux/microblaze/arch_rt_sigframe.c	\
 	linux/microblaze/arch_sigreturn.c	\
 	linux/microblaze/get_error.c	\
 	linux/microblaze/get_scno.c	\
@@ -1637,8 +1609,6 @@ EXTRA_DIST = \
 	linux/mips/arch_defs_.h		\
 	linux/mips/arch_getrval2.c	\
 	linux/mips/arch_regs.c		\
-	linux/mips/arch_regs.h		\
-	linux/mips/arch_rt_sigframe.c	\
 	linux/mips/arch_sigreturn.c	\
 	linux/mips/errnoent.h		\
 	linux/mips/genstub.sh		\
@@ -1661,8 +1631,6 @@ EXTRA_DIST = \
 	linux/netlink_diag.h		\
 	linux/nios2/arch_defs_.h	\
 	linux/nios2/arch_regs.c		\
-	linux/nios2/arch_regs.h		\
-	linux/nios2/arch_rt_sigframe.c	\
 	linux/nios2/get_error.c		\
 	linux/nios2/get_scno.c		\
 	linux/nios2/get_syscall_args.c	\
@@ -1674,8 +1642,6 @@ EXTRA_DIST = \
 	linux/nios2/syscallent.h	\
 	linux/nr_prefix.c		\
 	linux/or1k/arch_regs.c		\
-	linux/or1k/arch_regs.h		\
-	linux/or1k/arch_rt_sigframe.c	\
 	linux/or1k/get_error.c		\
 	linux/or1k/get_scno.c		\
 	linux/or1k/get_syscall_args.c	\
@@ -1689,7 +1655,6 @@ EXTRA_DIST = \
 	linux/packet_diag.h		\
 	linux/powerpc/arch_defs_.h	\
 	linux/powerpc/arch_regs.c	\
-	linux/powerpc/arch_regs.h	\
 	linux/powerpc/arch_rt_sigframe.c	\
 	linux/powerpc/arch_sigreturn.c	\
 	linux/powerpc/errnoent.h	\
@@ -1706,8 +1671,8 @@ EXTRA_DIST = \
 	linux/powerpc/syscallent.h	\
 	linux/powerpc/userent.h		\
 	linux/powerpc64/arch_defs_.h	\
+	linux/powerpc64/arch_get_personality.c \
 	linux/powerpc64/arch_regs.c	\
-	linux/powerpc64/arch_regs.h	\
 	linux/powerpc64/arch_rt_sigframe.c	\
 	linux/powerpc64/arch_sigreturn.c	\
 	linux/powerpc64/errnoent.h	\
@@ -1727,11 +1692,11 @@ EXTRA_DIST = \
 	linux/powerpc64/syscallent.h	\
 	linux/powerpc64/syscallent1.h	\
 	linux/powerpc64/userent.h	\
+	linux/ptrace_pokeuser.c		\
 	linux/raw_syscall.h		\
 	linux/riscv/arch_defs_.h	\
+	linux/riscv/arch_get_personality.c \
 	linux/riscv/arch_regs.c		\
-	linux/riscv/arch_regs.h		\
-	linux/riscv/arch_rt_sigframe.c	\
 	linux/riscv/get_error.c		\
 	linux/riscv/get_scno.c		\
 	linux/riscv/get_syscall_args.c	\
@@ -1747,8 +1712,6 @@ EXTRA_DIST = \
 	linux/rt_sigframe.h		\
 	linux/s390/arch_defs_.h		\
 	linux/s390/arch_regs.c		\
-	linux/s390/arch_regs.h		\
-	linux/s390/arch_rt_sigframe.c	\
 	linux/s390/arch_sigreturn.c	\
 	linux/s390/get_error.c		\
 	linux/s390/get_scno.c		\
@@ -1764,9 +1727,8 @@ EXTRA_DIST = \
 	linux/s390/userent0.h		\
 	linux/s390/userent1.h		\
 	linux/s390x/arch_defs_.h	\
+	linux/s390x/arch_get_personality.c \
 	linux/s390x/arch_regs.c		\
-	linux/s390x/arch_regs.h		\
-	linux/s390x/arch_rt_sigframe.c	\
 	linux/s390x/arch_sigreturn.c	\
 	linux/s390x/get_error.c		\
 	linux/s390x/get_scno.c		\
@@ -1785,7 +1747,6 @@ EXTRA_DIST = \
 	linux/sh/arch_defs_.h		\
 	linux/sh/arch_getrval2.c	\
 	linux/sh/arch_regs.c		\
-	linux/sh/arch_rt_sigframe.c	\
 	linux/sh/get_error.c		\
 	linux/sh/get_scno.c		\
 	linux/sh/get_syscall_args.c	\
@@ -1801,7 +1762,6 @@ EXTRA_DIST = \
 	linux/sh64/arch_defs_.h		\
 	linux/sh64/arch_regs.c		\
 	linux/sh64/arch_regs.h		\
-	linux/sh64/arch_rt_sigframe.c	\
 	linux/sh64/get_error.c		\
 	linux/sh64/get_scno.c		\
 	linux/sh64/get_syscall_args.c	\
@@ -1822,8 +1782,6 @@ EXTRA_DIST = \
 	linux/sparc/arch_defs_.h	\
 	linux/sparc/arch_getrval2.c	\
 	linux/sparc/arch_regs.c		\
-	linux/sparc/arch_regs.h		\
-	linux/sparc/arch_rt_sigframe.c	\
 	linux/sparc/arch_sigreturn.c	\
 	linux/sparc/errnoent.h		\
 	linux/sparc/get_error.c		\
@@ -1839,9 +1797,9 @@ EXTRA_DIST = \
 	linux/sparc/syscallent.h	\
 	linux/sparc/userent.h		\
 	linux/sparc64/arch_defs_.h	\
+	linux/sparc64/arch_get_personality.c \
 	linux/sparc64/arch_getrval2.c	\
 	linux/sparc64/arch_regs.c	\
-	linux/sparc64/arch_regs.h	\
 	linux/sparc64/arch_rt_sigframe.c	\
 	linux/sparc64/arch_sigreturn.c	\
 	linux/sparc64/errnoent.h	\
@@ -1863,9 +1821,8 @@ EXTRA_DIST = \
 	linux/subcall.h			\
 	linux/syscall.h			\
 	linux/tile/arch_defs_.h		\
+	linux/tile/arch_get_personality.c \
 	linux/tile/arch_regs.c		\
-	linux/tile/arch_regs.h		\
-	linux/tile/arch_rt_sigframe.c	\
 	linux/tile/arch_sigreturn.c	\
 	linux/tile/get_error.c		\
 	linux/tile/get_scno.c		\
@@ -1885,11 +1842,13 @@ EXTRA_DIST = \
 	linux/userent.h			\
 	linux/userent0.h		\
 	linux/x32/arch_defs_.h		\
+	linux/x32/arch_get_personality.c \
 	linux/x32/arch_kvm.c		\
 	linux/x32/arch_regs.c		\
 	linux/x32/arch_regs.h		\
 	linux/x32/arch_rt_sigframe.c	\
 	linux/x32/arch_sigreturn.c	\
+	linux/x32/check_scno.c		\
 	linux/x32/get_error.c		\
 	linux/x32/get_scno.c		\
 	linux/x32/get_syscall_args.c	\
@@ -1897,6 +1856,7 @@ EXTRA_DIST = \
 	linux/x32/ioctls_arch1.h	\
 	linux/x32/ioctls_inc0.h		\
 	linux/x32/ioctls_inc1.h		\
+	linux/x32/ptrace_pokeuser.c	\
 	linux/x32/raw_syscall.h		\
 	linux/x32/rt_sigframe.h		\
 	linux/x32/set_error.c		\
@@ -1906,6 +1866,7 @@ EXTRA_DIST = \
 	linux/x32/syscallent1.h		\
 	linux/x32/userent.h		\
 	linux/x86_64/arch_defs_.h	\
+	linux/x86_64/arch_get_personality.c \
 	linux/x86_64/arch_kvm.c		\
 	linux/x86_64/arch_regs.c	\
 	linux/x86_64/arch_regs.h	\
@@ -1932,7 +1893,6 @@ EXTRA_DIST = \
 	linux/x86_64/syscallent2.h	\
 	linux/x86_64/userent.h		\
 	linux/xtensa/arch_regs.c	\
-	linux/xtensa/arch_rt_sigframe.c	\
 	linux/xtensa/get_error.c	\
 	linux/xtensa/get_scno.c		\
 	linux/xtensa/get_syscall_args.c	\
@@ -2336,6 +2296,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-flock.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-fs_x_ioctl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-futex.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-get_personality.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-get_robust_list.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-getcpu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-getcwd.Po@am__quote@
@@ -2374,6 +2335,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-mq.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-msghdr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-mtd.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-nbd_ioctl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-net.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-netlink.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-netlink_crypto.Po@am__quote@
@@ -2405,6 +2367,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-print_dev_t.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-print_group_req.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-print_ifindex.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-print_instruction_pointer.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-print_kernel_version.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-print_mac.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-print_mq_attr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-print_msgbuf.Po@am__quote@
@@ -2422,7 +2386,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-process.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-process_vm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-ptp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-ptrace_syscall_info.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-quota.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-random_ioctl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-readahead.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-readlink.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strace-reboot.Po@am__quote@
@@ -4585,6 +4551,20 @@ strace-futex.obj: futex.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o strace-futex.obj `if test -f 'futex.c'; then $(CYGPATH_W) 'futex.c'; else $(CYGPATH_W) '$(srcdir)/futex.c'; fi`
 
+strace-get_personality.o: get_personality.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT strace-get_personality.o -MD -MP -MF $(DEPDIR)/strace-get_personality.Tpo -c -o strace-get_personality.o `test -f 'get_personality.c' || echo '$(srcdir)/'`get_personality.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/strace-get_personality.Tpo $(DEPDIR)/strace-get_personality.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='get_personality.c' object='strace-get_personality.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o strace-get_personality.o `test -f 'get_personality.c' || echo '$(srcdir)/'`get_personality.c
+
+strace-get_personality.obj: get_personality.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT strace-get_personality.obj -MD -MP -MF $(DEPDIR)/strace-get_personality.Tpo -c -o strace-get_personality.obj `if test -f 'get_personality.c'; then $(CYGPATH_W) 'get_personality.c'; else $(CYGPATH_W) '$(srcdir)/get_personality.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/strace-get_personality.Tpo $(DEPDIR)/strace-get_personality.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='get_personality.c' object='strace-get_personality.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o strace-get_personality.obj `if test -f 'get_personality.c'; then $(CYGPATH_W) 'get_personality.c'; else $(CYGPATH_W) '$(srcdir)/get_personality.c'; fi`
+
 strace-get_robust_list.o: get_robust_list.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT strace-get_robust_list.o -MD -MP -MF $(DEPDIR)/strace-get_robust_list.Tpo -c -o strace-get_robust_list.o `test -f 'get_robust_list.c' || echo '$(srcdir)/'`get_robust_list.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/strace-get_robust_list.Tpo $(DEPDIR)/strace-get_robust_list.Po
@@ -5117,6 +5097,20 @@ strace-mtd.obj: mtd.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o strace-mtd.obj `if test -f 'mtd.c'; then $(CYGPATH_W) 'mtd.c'; else $(CYGPATH_W) '$(srcdir)/mtd.c'; fi`
 
+strace-nbd_ioctl.o: nbd_ioctl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT strace-nbd_ioctl.o -MD -MP -MF $(DEPDIR)/strace-nbd_ioctl.Tpo -c -o strace-nbd_ioctl.o `test -f 'nbd_ioctl.c' || echo '$(srcdir)/'`nbd_ioctl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/strace-nbd_ioctl.Tpo $(DEPDIR)/strace-nbd_ioctl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='nbd_ioctl.c' object='strace-nbd_ioctl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o strace-nbd_ioctl.o `test -f 'nbd_ioctl.c' || echo '$(srcdir)/'`nbd_ioctl.c
+
+strace-nbd_ioctl.obj: nbd_ioctl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT strace-nbd_ioctl.obj -MD -MP -MF $(DEPDIR)/strace-nbd_ioctl.Tpo -c -o strace-nbd_ioctl.obj `if test -f 'nbd_ioctl.c'; then $(CYGPATH_W) 'nbd_ioctl.c'; else $(CYGPATH_W) '$(srcdir)/nbd_ioctl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/strace-nbd_ioctl.Tpo $(DEPDIR)/strace-nbd_ioctl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='nbd_ioctl.c' object='strace-nbd_ioctl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o strace-nbd_ioctl.obj `if test -f 'nbd_ioctl.c'; then $(CYGPATH_W) 'nbd_ioctl.c'; else $(CYGPATH_W) '$(srcdir)/nbd_ioctl.c'; fi`
+
 strace-net.o: net.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT strace-net.o -MD -MP -MF $(DEPDIR)/strace-net.Tpo -c -o strace-net.o `test -f 'net.c' || echo '$(srcdir)/'`net.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/strace-net.Tpo $(DEPDIR)/strace-net.Po
@@ -5551,6 +5545,34 @@ strace-print_ifindex.obj: print_ifindex.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o strace-print_ifindex.obj `if test -f 'print_ifindex.c'; then $(CYGPATH_W) 'print_ifindex.c'; else $(CYGPATH_W) '$(srcdir)/print_ifindex.c'; fi`
 
+strace-print_instruction_pointer.o: print_instruction_pointer.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT strace-print_instruction_pointer.o -MD -MP -MF $(DEPDIR)/strace-print_instruction_pointer.Tpo -c -o strace-print_instruction_pointer.o `test -f 'print_instruction_pointer.c' || echo '$(srcdir)/'`print_instruction_pointer.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/strace-print_instruction_pointer.Tpo $(DEPDIR)/strace-print_instruction_pointer.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='print_instruction_pointer.c' object='strace-print_instruction_pointer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o strace-print_instruction_pointer.o `test -f 'print_instruction_pointer.c' || echo '$(srcdir)/'`print_instruction_pointer.c
+
+strace-print_instruction_pointer.obj: print_instruction_pointer.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT strace-print_instruction_pointer.obj -MD -MP -MF $(DEPDIR)/strace-print_instruction_pointer.Tpo -c -o strace-print_instruction_pointer.obj `if test -f 'print_instruction_pointer.c'; then $(CYGPATH_W) 'print_instruction_pointer.c'; else $(CYGPATH_W) '$(srcdir)/print_instruction_pointer.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/strace-print_instruction_pointer.Tpo $(DEPDIR)/strace-print_instruction_pointer.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='print_instruction_pointer.c' object='strace-print_instruction_pointer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o strace-print_instruction_pointer.obj `if test -f 'print_instruction_pointer.c'; then $(CYGPATH_W) 'print_instruction_pointer.c'; else $(CYGPATH_W) '$(srcdir)/print_instruction_pointer.c'; fi`
+
+strace-print_kernel_version.o: print_kernel_version.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT strace-print_kernel_version.o -MD -MP -MF $(DEPDIR)/strace-print_kernel_version.Tpo -c -o strace-print_kernel_version.o `test -f 'print_kernel_version.c' || echo '$(srcdir)/'`print_kernel_version.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/strace-print_kernel_version.Tpo $(DEPDIR)/strace-print_kernel_version.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='print_kernel_version.c' object='strace-print_kernel_version.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o strace-print_kernel_version.o `test -f 'print_kernel_version.c' || echo '$(srcdir)/'`print_kernel_version.c
+
+strace-print_kernel_version.obj: print_kernel_version.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT strace-print_kernel_version.obj -MD -MP -MF $(DEPDIR)/strace-print_kernel_version.Tpo -c -o strace-print_kernel_version.obj `if test -f 'print_kernel_version.c'; then $(CYGPATH_W) 'print_kernel_version.c'; else $(CYGPATH_W) '$(srcdir)/print_kernel_version.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/strace-print_kernel_version.Tpo $(DEPDIR)/strace-print_kernel_version.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='print_kernel_version.c' object='strace-print_kernel_version.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o strace-print_kernel_version.obj `if test -f 'print_kernel_version.c'; then $(CYGPATH_W) 'print_kernel_version.c'; else $(CYGPATH_W) '$(srcdir)/print_kernel_version.c'; fi`
+
 strace-print_mac.o: print_mac.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT strace-print_mac.o -MD -MP -MF $(DEPDIR)/strace-print_mac.Tpo -c -o strace-print_mac.o `test -f 'print_mac.c' || echo '$(srcdir)/'`print_mac.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/strace-print_mac.Tpo $(DEPDIR)/strace-print_mac.Po
@@ -5789,6 +5811,20 @@ strace-ptp.obj: ptp.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o strace-ptp.obj `if test -f 'ptp.c'; then $(CYGPATH_W) 'ptp.c'; else $(CYGPATH_W) '$(srcdir)/ptp.c'; fi`
 
+strace-ptrace_syscall_info.o: ptrace_syscall_info.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT strace-ptrace_syscall_info.o -MD -MP -MF $(DEPDIR)/strace-ptrace_syscall_info.Tpo -c -o strace-ptrace_syscall_info.o `test -f 'ptrace_syscall_info.c' || echo '$(srcdir)/'`ptrace_syscall_info.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/strace-ptrace_syscall_info.Tpo $(DEPDIR)/strace-ptrace_syscall_info.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='ptrace_syscall_info.c' object='strace-ptrace_syscall_info.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o strace-ptrace_syscall_info.o `test -f 'ptrace_syscall_info.c' || echo '$(srcdir)/'`ptrace_syscall_info.c
+
+strace-ptrace_syscall_info.obj: ptrace_syscall_info.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT strace-ptrace_syscall_info.obj -MD -MP -MF $(DEPDIR)/strace-ptrace_syscall_info.Tpo -c -o strace-ptrace_syscall_info.obj `if test -f 'ptrace_syscall_info.c'; then $(CYGPATH_W) 'ptrace_syscall_info.c'; else $(CYGPATH_W) '$(srcdir)/ptrace_syscall_info.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/strace-ptrace_syscall_info.Tpo $(DEPDIR)/strace-ptrace_syscall_info.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='ptrace_syscall_info.c' object='strace-ptrace_syscall_info.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o strace-ptrace_syscall_info.obj `if test -f 'ptrace_syscall_info.c'; then $(CYGPATH_W) 'ptrace_syscall_info.c'; else $(CYGPATH_W) '$(srcdir)/ptrace_syscall_info.c'; fi`
+
 strace-quota.o: quota.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT strace-quota.o -MD -MP -MF $(DEPDIR)/strace-quota.Tpo -c -o strace-quota.o `test -f 'quota.c' || echo '$(srcdir)/'`quota.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/strace-quota.Tpo $(DEPDIR)/strace-quota.Po
@@ -5802,6 +5838,20 @@ strace-quota.obj: quota.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='quota.c' object='strace-quota.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o strace-quota.obj `if test -f 'quota.c'; then $(CYGPATH_W) 'quota.c'; else $(CYGPATH_W) '$(srcdir)/quota.c'; fi`
+
+strace-random_ioctl.o: random_ioctl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT strace-random_ioctl.o -MD -MP -MF $(DEPDIR)/strace-random_ioctl.Tpo -c -o strace-random_ioctl.o `test -f 'random_ioctl.c' || echo '$(srcdir)/'`random_ioctl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/strace-random_ioctl.Tpo $(DEPDIR)/strace-random_ioctl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='random_ioctl.c' object='strace-random_ioctl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o strace-random_ioctl.o `test -f 'random_ioctl.c' || echo '$(srcdir)/'`random_ioctl.c
+
+strace-random_ioctl.obj: random_ioctl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT strace-random_ioctl.obj -MD -MP -MF $(DEPDIR)/strace-random_ioctl.Tpo -c -o strace-random_ioctl.obj `if test -f 'random_ioctl.c'; then $(CYGPATH_W) 'random_ioctl.c'; else $(CYGPATH_W) '$(srcdir)/random_ioctl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/strace-random_ioctl.Tpo $(DEPDIR)/strace-random_ioctl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='random_ioctl.c' object='strace-random_ioctl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -c -o strace-random_ioctl.obj `if test -f 'random_ioctl.c'; then $(CYGPATH_W) 'random_ioctl.c'; else $(CYGPATH_W) '$(srcdir)/random_ioctl.c'; fi`
 
 strace-readahead.o: readahead.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(strace_CPPFLAGS) $(CPPFLAGS) $(strace_CFLAGS) $(CFLAGS) -MT strace-readahead.o -MD -MP -MF $(DEPDIR)/strace-readahead.Tpo -c -o strace-readahead.o `test -f 'readahead.c' || echo '$(srcdir)/'`readahead.c
@@ -7391,6 +7441,8 @@ $(top_srcdir)/xlat/advise.h: $(top_srcdir)/xlat/advise.in $(top_srcdir)/xlat/gen
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/af_packet_types.h: $(top_srcdir)/xlat/af_packet_types.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/af_packet_versions.h: $(top_srcdir)/xlat/af_packet_versions.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/aio_cmds.h: $(top_srcdir)/xlat/aio_cmds.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/archvals.h: $(top_srcdir)/xlat/archvals.in $(top_srcdir)/xlat/gen.sh
@@ -7405,11 +7457,15 @@ $(top_srcdir)/xlat/atomic_ops.h: $(top_srcdir)/xlat/atomic_ops.in $(top_srcdir)/
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/audit_arch.h: $(top_srcdir)/xlat/audit_arch.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/ax25_protocols.h: $(top_srcdir)/xlat/ax25_protocols.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/baud_options.h: $(top_srcdir)/xlat/baud_options.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/bdaddr_types.h: $(top_srcdir)/xlat/bdaddr_types.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/blkpg_ops.h: $(top_srcdir)/xlat/blkpg_ops.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/block_ioctl_cmds.h: $(top_srcdir)/xlat/block_ioctl_cmds.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/bluetooth_l2_cid.h: $(top_srcdir)/xlat/bluetooth_l2_cid.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
@@ -7597,8 +7653,6 @@ $(top_srcdir)/xlat/evdev_snd.h: $(top_srcdir)/xlat/evdev_snd.in $(top_srcdir)/xl
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/evdev_switch.h: $(top_srcdir)/xlat/evdev_switch.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
-$(top_srcdir)/xlat/evdev_sync.h: $(top_srcdir)/xlat/evdev_sync.in $(top_srcdir)/xlat/gen.sh
-	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/f_owner_types.h: $(top_srcdir)/xlat/f_owner_types.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/f_seals.h: $(top_srcdir)/xlat/f_seals.in $(top_srcdir)/xlat/gen.sh
@@ -7628,6 +7682,8 @@ $(top_srcdir)/xlat/fiemap_flags.h: $(top_srcdir)/xlat/fiemap_flags.in $(top_srcd
 $(top_srcdir)/xlat/flockcmds.h: $(top_srcdir)/xlat/flockcmds.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/fsmagic.h: $(top_srcdir)/xlat/fsmagic.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/futexbitset.h: $(top_srcdir)/xlat/futexbitset.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/futexops.h: $(top_srcdir)/xlat/futexops.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
@@ -7723,6 +7779,8 @@ $(top_srcdir)/xlat/key_spec.h: $(top_srcdir)/xlat/key_spec.in $(top_srcdir)/xlat
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/keyctl_commands.h: $(top_srcdir)/xlat/keyctl_commands.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/kvm_cap.h: $(top_srcdir)/xlat/kvm_cap.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/kvm_cpuid_flags.h: $(top_srcdir)/xlat/kvm_cpuid_flags.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/kvm_exit_reason.h: $(top_srcdir)/xlat/kvm_exit_reason.in $(top_srcdir)/xlat/gen.sh
@@ -7796,6 +7854,10 @@ $(top_srcdir)/xlat/mtd_type_options.h: $(top_srcdir)/xlat/mtd_type_options.in $(
 $(top_srcdir)/xlat/multicast_router_types.h: $(top_srcdir)/xlat/multicast_router_types.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/name_to_handle_at_flags.h: $(top_srcdir)/xlat/name_to_handle_at_flags.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/nbd_ioctl_cmds.h: $(top_srcdir)/xlat/nbd_ioctl_cmds.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/nbd_ioctl_flags.h: $(top_srcdir)/xlat/nbd_ioctl_flags.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/neighbor_cache_entry_flags.h: $(top_srcdir)/xlat/neighbor_cache_entry_flags.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
@@ -7963,11 +8025,15 @@ $(top_srcdir)/xlat/ptrace_peeksiginfo_flags.h: $(top_srcdir)/xlat/ptrace_peeksig
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/ptrace_setoptions_flags.h: $(top_srcdir)/xlat/ptrace_setoptions_flags.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/ptrace_syscall_info_op.h: $(top_srcdir)/xlat/ptrace_syscall_info_op.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/quota_formats.h: $(top_srcdir)/xlat/quota_formats.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/quotacmds.h: $(top_srcdir)/xlat/quotacmds.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/quotatypes.h: $(top_srcdir)/xlat/quotatypes.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/random_ioctl_cmds.h: $(top_srcdir)/xlat/random_ioctl_cmds.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/rename_flags.h: $(top_srcdir)/xlat/rename_flags.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
@@ -8012,6 +8078,8 @@ $(top_srcdir)/xlat/rtnl_ifla_info_data_tun_attrs.h: $(top_srcdir)/xlat/rtnl_ifla
 $(top_srcdir)/xlat/rtnl_ifla_port_attrs.h: $(top_srcdir)/xlat/rtnl_ifla_port_attrs.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/rtnl_ifla_vf_port_attrs.h: $(top_srcdir)/xlat/rtnl_ifla_vf_port_attrs.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/rtnl_ifla_xdp_attached_mode.h: $(top_srcdir)/xlat/rtnl_ifla_xdp_attached_mode.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/rtnl_ifla_xdp_attrs.h: $(top_srcdir)/xlat/rtnl_ifla_xdp_attrs.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
@@ -8145,9 +8213,13 @@ $(top_srcdir)/xlat/skf_ad.h: $(top_srcdir)/xlat/skf_ad.in $(top_srcdir)/xlat/gen
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/skf_off.h: $(top_srcdir)/xlat/skf_off.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/smc_decl_codes.h: $(top_srcdir)/xlat/smc_decl_codes.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/smc_diag_attrs.h: $(top_srcdir)/xlat/smc_diag_attrs.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/smc_diag_extended_flags.h: $(top_srcdir)/xlat/smc_diag_extended_flags.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/smc_diag_mode.h: $(top_srcdir)/xlat/smc_diag_mode.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/smc_link_group_roles.h: $(top_srcdir)/xlat/smc_link_group_roles.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
@@ -8160,6 +8232,8 @@ $(top_srcdir)/xlat/snmp_icmp6_stats.h: $(top_srcdir)/xlat/snmp_icmp6_stats.in $(
 $(top_srcdir)/xlat/snmp_ip_stats.h: $(top_srcdir)/xlat/snmp_ip_stats.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/sock_alg_options.h: $(top_srcdir)/xlat/sock_alg_options.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/sock_ax25_options.h: $(top_srcdir)/xlat/sock_ax25_options.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/sock_bluetooth_options.h: $(top_srcdir)/xlat/sock_bluetooth_options.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
@@ -8201,6 +8275,8 @@ $(top_srcdir)/xlat/sock_rxrpc_options.h: $(top_srcdir)/xlat/sock_rxrpc_options.i
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/sock_sctp_options.h: $(top_srcdir)/xlat/sock_sctp_options.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/sock_shutdown_flags.h: $(top_srcdir)/xlat/sock_shutdown_flags.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/sock_tcp_options.h: $(top_srcdir)/xlat/sock_tcp_options.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/sock_tipc_options.h: $(top_srcdir)/xlat/sock_tipc_options.in $(top_srcdir)/xlat/gen.sh
@@ -8210,6 +8286,8 @@ $(top_srcdir)/xlat/sock_tls_options.h: $(top_srcdir)/xlat/sock_tls_options.in $(
 $(top_srcdir)/xlat/sock_type_flags.h: $(top_srcdir)/xlat/sock_type_flags.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/sock_udp_options.h: $(top_srcdir)/xlat/sock_udp_options.in $(top_srcdir)/xlat/gen.sh
+	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
+$(top_srcdir)/xlat/sock_xdp_options.h: $(top_srcdir)/xlat/sock_xdp_options.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@
 $(top_srcdir)/xlat/socketcalls.h: $(top_srcdir)/xlat/socketcalls.in $(top_srcdir)/xlat/gen.sh
 	$(AM_V_GEN)$(top_srcdir)/xlat/gen.sh $< $@

@@ -17,6 +17,13 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define NETLINK_CONNECTED 1
 #endif
+#if defined(TCP_CLOSE) || (defined(HAVE_DECL_TCP_CLOSE) && HAVE_DECL_TCP_CLOSE)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((TCP_CLOSE) == (7), "TCP_CLOSE != 7");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define TCP_CLOSE 7
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
@@ -30,6 +37,8 @@ static
 const struct xlat netlink_states[] = {
  XLAT(NETLINK_UNCONNECTED),
  XLAT(NETLINK_CONNECTED),
+
+ XLAT(TCP_CLOSE),
  XLAT_END
 };
 

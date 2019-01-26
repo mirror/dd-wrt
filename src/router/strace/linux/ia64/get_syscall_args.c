@@ -1,8 +1,15 @@
+/*
+ * Copyright (c) 2015-2018 The strace developers.
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ */
+
 #include <asm/rse.h>
 
 /* Return -1 on error or 1 on success (never 0!). */
 static int
-get_syscall_args(struct tcb *tcp)
+arch_get_syscall_args(struct tcb *tcp)
 {
 	unsigned long *rbs_end =
 		(unsigned long *) ia64_regs.ar[PT_AUR_BSP];

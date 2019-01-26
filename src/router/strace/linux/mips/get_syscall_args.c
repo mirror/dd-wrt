@@ -1,6 +1,13 @@
+/*
+ * Copyright (c) 2015-2018 The strace developers.
+ * All rights reserved.
+ *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ */
+
 /* Return -1 on error or 1 on success (never 0!). */
 static int
-get_syscall_args(struct tcb *tcp)
+arch_get_syscall_args(struct tcb *tcp)
 {
 #if defined LINUX_MIPSN64 || defined LINUX_MIPSN32
 	tcp->u_arg[0] = mips_REG_A0;

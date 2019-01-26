@@ -6,27 +6,7 @@
  * Copyright (c) 1999-2018 The strace developers.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
 #include "defs.h"
@@ -86,7 +66,9 @@
 
 #define XLAT_MACROS_ONLY
 # include "xlat/addrfams.h"
+# include "xlat/ethernet_protocols.h"
 #undef XLAT_MACROS_ONLY
+#include "xlat/ax25_protocols.h"
 #include "xlat/irda_protocols.h"
 #include "xlat/can_protocols.h"
 #include "xlat/bt_protocols.h"
@@ -144,8 +126,22 @@ SYS_FUNC(socket)
 		printxval_search(inet_protocols, tcp->u_arg[2], "IPPROTO_???");
 		break;
 
+	case AF_AX25:
+		/* Those are not available in public headers.  */
+		printxval_searchn_ex(ARRSZ_PAIR(ax25_protocols) - 1,
+				     tcp->u_arg[2], "AX25_P_???",
+				     XLAT_STYLE_VERBOSE);
+		break;
+
 	case AF_NETLINK:
 		printxval(netlink_protocols, tcp->u_arg[2], "NETLINK_???");
+		break;
+
+	case AF_PACKET:
+		tprints("htons(");
+		printxval_searchn(ethernet_protocols, ethernet_protocols_size,
+				  ntohs(tcp->u_arg[2]), "ETH_P_???");
+		tprints(")");
 		break;
 
 	case AF_IRDA:
@@ -437,6 +433,7 @@ SYS_FUNC(socketpair)
 #include "xlat/getsock_ipv6_options.h"
 #include "xlat/setsock_ipv6_options.h"
 #include "xlat/sock_ipx_options.h"
+#include "xlat/sock_ax25_options.h"
 #include "xlat/sock_netlink_options.h"
 #include "xlat/sock_packet_options.h"
 #include "xlat/sock_raw_options.h"
@@ -458,6 +455,7 @@ SYS_FUNC(socketpair)
 #include "xlat/sock_nfcllcp_options.h"
 #include "xlat/sock_kcm_options.h"
 #include "xlat/sock_tls_options.h"
+#include "xlat/sock_xdp_options.h"
 
 static void
 print_sockopt_fd_level_name(struct tcb *tcp, int fd, unsigned int level,
@@ -486,6 +484,9 @@ print_sockopt_fd_level_name(struct tcb *tcp, int fd, unsigned int level,
 		break;
 	case SOL_IPX:
 		printxval(sock_ipx_options, name, "IPX_???");
+		break;
+	case SOL_AX25:
+		printxval_search(sock_ax25_options, name, "AX25_???");
 		break;
 	case SOL_PACKET:
 		printxval(sock_packet_options, name, "PACKET_???");
@@ -549,6 +550,9 @@ print_sockopt_fd_level_name(struct tcb *tcp, int fd, unsigned int level,
 		break;
 	case SOL_TLS:
 		printxval(sock_tls_options, name, "TLS_???");
+		break;
+	case SOL_XDP:
+		printxval_index(sock_xdp_options, name, "XDP_???");
 		break;
 
 		/* Other SOL_* protocol levels still need work. */
@@ -648,6 +652,23 @@ print_get_ucred(struct tcb *const tcp, const kernel_ulong_t addr,
 	tprints("}");
 }
 
+static void
+print_get_error(struct tcb *const tcp, const kernel_ulong_t addr,
+		unsigned int len)
+{
+	unsigned int err;
+
+	if (len > sizeof(err))
+		err = sizeof(err);
+
+	if (umoven_or_printaddr(tcp, addr, len, &err))
+		return;
+
+	tprints("[");
+	print_xlat_ex(err, err_name(err), XLAT_STYLE_FMT_U);
+	tprints("]");
+}
+
 #ifdef PACKET_STATISTICS
 static void
 print_tpacket_stats(struct tcb *const tcp, const kernel_ulong_t addr,
@@ -725,14 +746,6 @@ print_icmp_filter(struct tcb *const tcp, const kernel_ulong_t addr, int len)
 	tprints(")");
 }
 
-static bool
-print_uint32(struct tcb *tcp, void *elem_buf, size_t elem_size, void *data)
-{
-	tprintf("%u", *(uint32_t *) elem_buf);
-
-	return true;
-}
-
 static void
 print_getsockopt(struct tcb *const tcp, const unsigned int level,
 		 const unsigned int name, const kernel_ulong_t addr,
@@ -771,6 +784,9 @@ print_getsockopt(struct tcb *const tcp, const unsigned int level,
 			else
 				printaddr(addr);
 			return;
+		case SO_ERROR:
+			print_get_error(tcp, addr, rlen);
+			return;
 		}
 		break;
 
@@ -798,7 +814,7 @@ print_getsockopt(struct tcb *const tcp, const unsigned int level,
 			uint32_t buf;
 			print_array(tcp, addr, MIN(ulen, rlen) / sizeof(buf),
 				    &buf, sizeof(buf),
-				    tfetch_mem, print_uint32, 0);
+				    tfetch_mem, print_uint32_array_member, 0);
 			break;
 			}
 		default:

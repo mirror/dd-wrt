@@ -1394,6 +1394,31 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 # define SO_ZEROCOPY 60
 #endif
 #endif
+#if defined __sparc__
+#if defined(SO_TXTIME) || (defined(HAVE_DECL_SO_TXTIME) && HAVE_DECL_SO_TXTIME)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((SO_TXTIME) == (63), "SO_TXTIME != 63");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define SO_TXTIME 63
+#endif
+#elif defined __hppa__
+#if defined(SO_TXTIME) || (defined(HAVE_DECL_SO_TXTIME) && HAVE_DECL_SO_TXTIME)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((SO_TXTIME) == (16438), "SO_TXTIME != 16438");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define SO_TXTIME 16438
+#endif
+#else
+#if defined(SO_TXTIME) || (defined(HAVE_DECL_SO_TXTIME) && HAVE_DECL_SO_TXTIME)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((SO_TXTIME) == (61), "SO_TXTIME != 61");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define SO_TXTIME 61
+#endif
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
@@ -1851,6 +1876,14 @@ const struct xlat sock_options[] = {
  XLAT(SO_ZEROCOPY),
 #else
  XLAT(SO_ZEROCOPY),
+#endif
+
+#if defined __sparc__
+ XLAT(SO_TXTIME),
+#elif defined __hppa__
+ XLAT(SO_TXTIME),
+#else
+ XLAT(SO_TXTIME),
 #endif
  XLAT_END
 };

@@ -5,27 +5,7 @@
  * Copyright (c) 2016-2018 The strace developers.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
@@ -114,6 +94,7 @@ main(void)
 	TEST_NULL_ARG(EVIOCGLED(0));
 # ifdef EVIOCGMTSLOTS
 	TEST_NULL_ARG(EVIOCGMTSLOTS(0));
+	TEST_NULL_ARG(EVIOCGMTSLOTS(8));
 # endif
 # ifdef EVIOCGPROP
 	TEST_NULL_ARG(EVIOCGPROP(0));
@@ -138,7 +119,7 @@ main(void)
 	TEST_NULL_ARG_EX(EVIOCGABS(0x3f), "EVIOCGABS(0x3f /* ABS_??? */)");
 	TEST_NULL_ARG_EX(EVIOCSABS(0x3f), "EVIOCSABS(0x3f /* ABS_??? */)");
 
-	TEST_NULL_ARG(EVIOCGBIT(EV_SYN, 0));
+	TEST_NULL_ARG(EVIOCGBIT(0, 0));
 	TEST_NULL_ARG(EVIOCGBIT(EV_KEY, 1));
 	TEST_NULL_ARG(EVIOCGBIT(EV_REL, 2));
 	TEST_NULL_ARG(EVIOCGBIT(EV_ABS, 3));

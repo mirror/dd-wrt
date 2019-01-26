@@ -9,33 +9,15 @@
  * Copyright (c) 1999-2018 The strace developers.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
 #include "defs.h"
+#include "get_personality.h"
 #include "mmap_notify.h"
 #include "native_defs.h"
 #include "ptrace.h"
+#include "ptrace_syscall_info.h"
 #include "nsig.h"
 #include "number_set.h"
 #include "delay.h"
@@ -477,9 +459,14 @@ print_err_ret(kernel_ulong_t ret, unsigned long u_error)
 static long get_regs(struct tcb *);
 static int get_syscall_args(struct tcb *);
 static int get_syscall_result(struct tcb *);
-static int arch_get_scno(struct tcb *tcp);
+static void get_error(struct tcb *, bool);
+static void set_error(struct tcb *, unsigned long);
+static void set_success(struct tcb *, kernel_long_t);
+static int arch_get_scno(struct tcb *);
+static int arch_check_scno(struct tcb *);
 static int arch_set_scno(struct tcb *, kernel_ulong_t);
-static void get_error(struct tcb *, const bool);
+static int arch_get_syscall_args(struct tcb *);
+static void arch_get_error(struct tcb *, bool);
 static int arch_set_error(struct tcb *);
 static int arch_set_success(struct tcb *);
 
@@ -562,39 +549,10 @@ tamper_with_syscall_exiting(struct tcb *tcp)
 		return 1;
 	}
 
-	bool update_tcb = false;
-
-	if (opts->data.flags & INJECT_F_RETVAL) {
-		kernel_long_t inject_rval =
-			retval_get(opts->data.rval_idx);
-		kernel_long_t u_rval = tcp->u_rval;
-
-		tcp->u_rval = inject_rval;
-		if (arch_set_success(tcp)) {
-			tcp->u_rval = u_rval;
-		} else {
-			update_tcb = true;
-			tcp->u_error = 0;
-		}
-	} else {
-		unsigned long new_error = retval_get(opts->data.rval_idx);
-
-		if (new_error != tcp->u_error && new_error <= MAX_ERRNO_VALUE) {
-			unsigned long u_error = tcp->u_error;
-
-			tcp->u_error = new_error;
-			if (arch_set_error(tcp)) {
-				tcp->u_error = u_error;
-			} else {
-				update_tcb = true;
-			}
-		}
-	}
-
-	if (update_tcb) {
-		tcp->u_error = 0;
-		get_error(tcp, !(tcp->s_ent->sys_flags & SYSCALL_NEVER_FAILS));
-	}
+	if (opts->data.flags & INJECT_F_RETVAL)
+		set_success(tcp, retval_get(opts->data.rval_idx));
+	else
+		set_error(tcp, retval_get(opts->data.rval_idx));
 
 	return 0;
 }
@@ -657,31 +615,37 @@ syscall_entering_decode(struct tcb *tcp)
 int
 syscall_entering_trace(struct tcb *tcp, unsigned int *sig)
 {
-	/* Restrain from fault injection while the trace executes strace code. */
 	if (hide_log(tcp)) {
+		/*
+		 * Restrain from fault injection
+		 * while the trace executes strace code.
+		 */
 		tcp->qual_flg &= ~QUAL_INJECT;
-	}
 
-	switch (tcp->s_ent->sen) {
-		case SEN_execve:
-		case SEN_execveat:
+		switch (tcp->s_ent->sen) {
+			case SEN_execve:
+			case SEN_execveat:
 #if defined SPARC || defined SPARC64
-		case SEN_execv:
+			case SEN_execv:
 #endif
-			tcp->flags &= ~TCB_HIDE_LOG;
-			break;
+				/*
+				 * First exec* syscall makes the log visible.
+				 */
+				tcp->flags &= ~TCB_HIDE_LOG;
+				/*
+				 * Check whether this exec* syscall succeeds.
+				 */
+				tcp->flags |= TCB_CHECK_EXEC_SYSCALL;
+				break;
+		}
 	}
 
-	if (!traced(tcp) || (tracing_paths && !pathtrace_match(tcp))) {
+	if (hide_log(tcp) || !traced(tcp) || (tracing_paths && !pathtrace_match(tcp))) {
 		tcp->flags |= TCB_FILTERED;
 		return 0;
 	}
 
 	tcp->flags &= ~TCB_FILTERED;
-
-	if (hide_log(tcp)) {
-		return 0;
-	}
 
 	if (inject(tcp))
 		tamper_with_syscall_entering(tcp, sig);
@@ -726,14 +690,19 @@ int
 syscall_exiting_decode(struct tcb *tcp, struct timespec *pts)
 {
 	/* Measure the exit time as early as possible to avoid errors. */
-	if ((Tflag || cflag) && !(filtered(tcp) || hide_log(tcp)))
+	if ((Tflag || cflag) && !filtered(tcp))
 		clock_gettime(CLOCK_MONOTONIC, pts);
 
 	if (tcp->s_ent->sys_flags & MEMORY_MAPPING_CHANGE)
 		mmap_notify_report(tcp);
 
-	if (filtered(tcp) || hide_log(tcp))
+	if (filtered(tcp))
 		return 0;
+
+	if (check_exec_syscall(tcp)) {
+		/* The check failed, hide the log.  */
+		tcp->flags |= TCB_HIDE_LOG;
+	}
 
 #if SUPPORTED_PERSONALITIES > 1
 	update_personality(tcp, tcp->currpers);
@@ -977,9 +946,20 @@ restore_cleared_syserror(struct tcb *tcp)
 	tcp->u_error = saved_u_error;
 }
 
+static struct ptrace_syscall_info ptrace_sci;
+
+static bool
+ptrace_syscall_info_is_valid(void)
+{
+	return ptrace_get_syscall_info_supported &&
+	       ptrace_sci.op <= PTRACE_SYSCALL_INFO_SECCOMP;
+}
+
 #define XLAT_MACROS_ONLY
 # include "xlat/nt_descriptor_types.h"
 #undef XLAT_MACROS_ONLY
+
+#define ARCH_MIGHT_USE_SET_REGS 1
 
 #include "arch_regs.c"
 
@@ -987,28 +967,12 @@ restore_cleared_syserror(struct tcb *tcp)
 # include "arch_getrval2.c"
 #endif
 
-void
-print_pc(struct tcb *tcp)
-{
-#if defined ARCH_PC_REG
-# define ARCH_GET_PC 0
-#elif defined ARCH_PC_PEEK_ADDR
-	kernel_ulong_t pc;
-# define ARCH_PC_REG pc
-# define ARCH_GET_PC upeek(tcp, ARCH_PC_PEEK_ADDR, &pc)
-#else
-# error Neither ARCH_PC_REG nor ARCH_PC_PEEK_ADDR is defined
-#endif
-	if (get_regs(tcp) < 0 || ARCH_GET_PC)
-		tprints(current_wordsize == 4 ? "[????????] "
-					      : "[????????????????] ");
-	else
-		tprintf(current_wordsize == 4
-			? "[%08" PRI_klx "] " : "[%016" PRI_klx "] ",
-			(kernel_ulong_t) ARCH_PC_REG);
-}
-
 #include "getregs_old.h"
+#ifdef HAVE_GETREGS_OLD
+/* Either getregs_old() or set_regs() */
+# undef ARCH_MIGHT_USE_SET_REGS
+# define ARCH_MIGHT_USE_SET_REGS 0
+#endif
 
 #undef ptrace_getregset_or_getregs
 #undef ptrace_setregset_or_setregs
@@ -1034,7 +998,7 @@ ptrace_getregset(pid_t pid)
 # endif
 }
 
-# ifndef HAVE_GETREGS_OLD
+# if ARCH_MIGHT_USE_SET_REGS
 #  define ptrace_setregset_or_setregs ptrace_setregset
 static int
 ptrace_setregset(pid_t pid)
@@ -1052,7 +1016,7 @@ ptrace_setregset(pid_t pid)
 	return ptrace(PTRACE_SETREGSET, pid, NT_PRSTATUS, &io);
 #  endif
 }
-# endif /* !HAVE_GETREGS_OLD */
+# endif /* ARCH_MIGHT_USE_SET_REGS */
 
 #elif defined ARCH_REGS_FOR_GETREGS
 
@@ -1068,7 +1032,7 @@ ptrace_getregs(pid_t pid)
 # endif
 }
 
-# ifndef HAVE_GETREGS_OLD
+# if ARCH_MIGHT_USE_SET_REGS
 #  define ptrace_setregset_or_setregs ptrace_setregs
 static int
 ptrace_setregs(pid_t pid)
@@ -1080,20 +1044,17 @@ ptrace_setregs(pid_t pid)
 	return ptrace(PTRACE_SETREGS, pid, NULL, &ARCH_REGS_FOR_GETREGS);
 #  endif
 }
-# endif /* !HAVE_GETREGS_OLD */
+# endif /* ARCH_MIGHT_USE_SET_REGS */
 
 #endif /* ARCH_REGS_FOR_GETREGSET || ARCH_REGS_FOR_GETREGS */
 
-#ifdef ptrace_getregset_or_getregs
-static long get_regs_error;
-#endif
+static long get_regs_error = -1;
 
 void
 clear_regs(struct tcb *tcp)
 {
-#ifdef ptrace_getregset_or_getregs
+	ptrace_sci.op = 0xff;
 	get_regs_error = -1;
-#endif
 }
 
 static long
@@ -1188,6 +1149,112 @@ free_sysent_buf(void *ptr)
 	free(ptr);
 }
 
+static bool
+ptrace_get_syscall_info(struct tcb *tcp)
+{
+	/*
+	 * ptrace_get_syscall_info_supported should have been checked
+	 * by the caller.
+	 */
+	if (ptrace_sci.op == 0xff) {
+		const size_t size = sizeof(ptrace_sci);
+		if (ptrace(PTRACE_GET_SYSCALL_INFO, tcp->pid,
+			   (void *) size, &ptrace_sci) < 0) {
+			get_regs_error = -2;
+			return false;
+		}
+#if SUPPORTED_PERSONALITIES > 1
+		int newpers = get_personality_from_syscall_info(&ptrace_sci);
+		if (newpers >= 0)
+			update_personality(tcp, newpers);
+#endif
+	}
+
+	if (entering(tcp)) {
+		if (ptrace_sci.op == PTRACE_SYSCALL_INFO_EXIT) {
+			error_msg("pid %d: entering"
+				  ", ptrace_syscall_info.op == %u",
+				  tcp->pid, ptrace_sci.op);
+			/* TODO: handle this.  */
+		}
+	} else {
+		if (ptrace_sci.op == PTRACE_SYSCALL_INFO_ENTRY) {
+			error_msg("pid %d: exiting"
+				  ", ptrace_syscall_info.op == %u",
+				  tcp->pid, ptrace_sci.op);
+			/* TODO: handle this.  */
+		}
+	}
+
+	return true;
+}
+
+bool
+get_instruction_pointer(struct tcb *tcp, kernel_ulong_t *ip)
+{
+	if (get_regs_error < -1)
+		return false;
+
+	if (ptrace_get_syscall_info_supported) {
+		if (!ptrace_get_syscall_info(tcp))
+			return false;
+		*ip = (kernel_ulong_t) ptrace_sci.instruction_pointer;
+		return true;
+	}
+
+#if defined ARCH_PC_REG
+	if (get_regs(tcp) < 0)
+		return false;
+	*ip = (kernel_ulong_t) ARCH_PC_REG;
+	return true;
+#elif defined ARCH_PC_PEEK_ADDR
+	if (upeek(tcp, ARCH_PC_PEEK_ADDR, ip) < 0)
+		return false;
+	return true;
+#else
+# error Neither ARCH_PC_REG nor ARCH_PC_PEEK_ADDR is defined
+#endif
+}
+
+bool
+get_stack_pointer(struct tcb *tcp, kernel_ulong_t *sp)
+{
+	if (get_regs_error < -1)
+		return false;
+
+	if (ptrace_get_syscall_info_supported) {
+		if (!ptrace_get_syscall_info(tcp))
+			return false;
+		*sp = (kernel_ulong_t) ptrace_sci.stack_pointer;
+		return true;
+	}
+
+#if defined ARCH_SP_REG
+	if (get_regs(tcp) < 0)
+		return false;
+	*sp = (kernel_ulong_t) ARCH_SP_REG;
+	return true;
+#elif defined ARCH_SP_PEEK_ADDR
+	if (upeek(tcp, ARCH_SP_PEEK_ADDR, sp) < 0)
+		return false;
+	return true;
+#else
+	return false;
+#endif
+}
+
+static int
+get_syscall_regs(struct tcb *tcp)
+{
+	if (get_regs_error != -1)
+		return get_regs_error;
+
+	if (ptrace_get_syscall_info_supported)
+		return ptrace_get_syscall_info(tcp) ? 0 : get_regs_error;
+
+	return get_regs(tcp);
+}
+
 /*
  * Returns:
  * 0: "ignore this ptrace stop", syscall_entering_decode() should return a "bail
@@ -1199,12 +1266,23 @@ free_sysent_buf(void *ptr)
 int
 get_scno(struct tcb *tcp)
 {
-	if (get_regs(tcp) < 0)
+	if (get_syscall_regs(tcp) < 0)
 		return -1;
 
-	int rc = arch_get_scno(tcp);
-	if (rc != 1)
-		return rc;
+	if (ptrace_syscall_info_is_valid()) {
+		/*
+		 * So far it's just a workaround for x32,
+		 * but let's pretend it could be used elsewhere.
+		 */
+		int rc = arch_check_scno(tcp);
+		if (rc != 1)
+			return rc;
+		tcp->scno = ptrace_sci.entry.nr;
+	} else {
+		int rc = arch_get_scno(tcp);
+		if (rc != 1)
+			return rc;
+	}
 
 	tcp->scno = shuffle_scno(tcp->scno);
 
@@ -1241,8 +1319,25 @@ get_scno(struct tcb *tcp)
 	return 1;
 }
 
+static int
+get_syscall_args(struct tcb *tcp)
+{
+	if (ptrace_syscall_info_is_valid()) {
+		for (unsigned int i = 0; i < ARRAY_SIZE(tcp->u_arg); ++i)
+			tcp->u_arg[i] = ptrace_sci.entry.args[i];
+#if SUPPORTED_PERSONALITIES > 1
+		if (tcp->s_ent->sys_flags & COMPAT_SYSCALL_TYPES) {
+			for (unsigned int i = 0; i < ARRAY_SIZE(tcp->u_arg); ++i)
+				tcp->u_arg[i] = (uint32_t) tcp->u_arg[i];
+		}
+#endif
+		return 1;
+	}
+	return arch_get_syscall_args(tcp);
+}
+
 #ifdef ptrace_getregset_or_getregs
-# define get_syscall_result_regs get_regs
+# define get_syscall_result_regs get_syscall_regs
 #else
 static int get_syscall_result_regs(struct tcb *);
 #endif
@@ -1257,7 +1352,6 @@ get_syscall_result(struct tcb *tcp)
 {
 	if (get_syscall_result_regs(tcp) < 0)
 		return -1;
-	tcp->u_error = 0;
 	get_error(tcp,
 		  (!(tcp->s_ent->sys_flags & SYSCALL_NEVER_FAILS)
 			|| syscall_tampered(tcp))
@@ -1266,7 +1360,76 @@ get_syscall_result(struct tcb *tcp)
 	return 1;
 }
 
+static void
+get_error(struct tcb *tcp, const bool check_errno)
+{
+	if (ptrace_syscall_info_is_valid()) {
+		if (ptrace_sci.exit.is_error) {
+			tcp->u_rval = -1;
+			tcp->u_error = -ptrace_sci.exit.rval;
+		} else {
+			tcp->u_error = 0;
+			tcp->u_rval = ptrace_sci.exit.rval;
+		}
+	} else {
+		tcp->u_error = 0;
+		arch_get_error(tcp, check_errno);
+	}
+}
+
+static void
+set_error(struct tcb *tcp, unsigned long new_error)
+{
+	const unsigned long old_error = tcp->u_error;
+
+	if (new_error == old_error || new_error > MAX_ERRNO_VALUE)
+		return;
+
+#ifdef ptrace_setregset_or_setregs
+	/* if we are going to invoke set_regs, call get_regs first */
+	if (get_regs(tcp) < 0)
+		return;
+#endif
+
+	tcp->u_error = new_error;
+	if (arch_set_error(tcp)) {
+		tcp->u_error = old_error;
+		/* arch_set_error does not update u_rval */
+	} else {
+		if (ptrace_syscall_info_is_valid())
+			tcp->u_rval = -1;
+		else
+			get_error(tcp, !(tcp->s_ent->sys_flags &
+					 SYSCALL_NEVER_FAILS));
+	}
+}
+
+static void
+set_success(struct tcb *tcp, kernel_long_t new_rval)
+{
+	const kernel_long_t old_rval = tcp->u_rval;
+
+#ifdef ptrace_setregset_or_setregs
+	/* if we are going to invoke set_regs, call get_regs first */
+	if (get_regs(tcp) < 0)
+		return;
+#endif
+
+	tcp->u_rval = new_rval;
+	if (arch_set_success(tcp)) {
+		tcp->u_rval = old_rval;
+		/* arch_set_success does not update u_error */
+	} else {
+		if (ptrace_syscall_info_is_valid())
+			tcp->u_error = 0;
+		else
+			get_error(tcp, !(tcp->s_ent->sys_flags &
+					 SYSCALL_NEVER_FAILS));
+	}
+}
+
 #include "get_scno.c"
+#include "check_scno.c"
 #include "set_scno.c"
 #include "get_syscall_args.c"
 #ifndef ptrace_getregset_or_getregs

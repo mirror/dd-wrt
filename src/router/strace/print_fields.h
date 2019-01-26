@@ -3,27 +3,7 @@
  * Copyright (c) 2017-2018 The strace developers.
  * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- * 1. Redistributions of source code must retain the above copyright
- *    notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the distribution.
- * 3. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
  */
 
 #ifndef STRACE_PRINT_FIELDS_H
@@ -135,7 +115,7 @@
 	do {										\
 		STRACE_PRINTF("%s%s=", (prefix_), #field_);				\
 		if (zero_extend_signed_to_ull((where_).field_) == UINT64_MAX)		\
-			print_xlat_ex(UINT64_MAX, "UINT64_MAX", XLAT_STYLE_FMT_U);	\
+			print_xlat_u(UINT64_MAX);					\
 		else									\
 			STRACE_PRINTF("%llu",						\
 				      zero_extend_signed_to_ull((where_).field_));	\
@@ -182,6 +162,18 @@
 #define PRINT_FIELD_INET4_ADDR(prefix_, where_, field_)			\
 	STRACE_PRINTF("%s%s=inet_addr(\"%s\")", (prefix_), #field_,	\
 		      inet_ntoa((where_).field_))
+
+#define PRINT_FIELD_AX25_ADDR(prefix_, where_, field_)			\
+	do {								\
+		STRACE_PRINTF("%s%s=", (prefix_), #field_);		\
+		print_ax25_addr(&(where_).field_);			\
+	} while (0)
+
+#define PRINT_FIELD_X25_ADDR(prefix_, where_, field_)			\
+	do {								\
+		STRACE_PRINTF("%s%s=", (prefix_), #field_);		\
+		print_x25_addr(&(where_).field_);			\
+	} while (0)
 
 #define PRINT_FIELD_NET_PORT(prefix_, where_, field_)			\
 	STRACE_PRINTF("%s%s=htons(%u)", (prefix_), #field_,		\

@@ -94,3 +94,35 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define LOOP_CTL_GET_FREE 0x4C82
 #endif
+
+#ifndef XLAT_MACROS_ONLY
+
+# ifdef IN_MPERS
+
+extern const struct xlat loop_cmds[];
+
+# else
+
+#  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
+static
+#  endif
+const struct xlat loop_cmds[] = {
+ XLAT(LOOP_SET_FD),
+ XLAT(LOOP_CLR_FD),
+ XLAT(LOOP_SET_STATUS),
+ XLAT(LOOP_GET_STATUS),
+ XLAT(LOOP_SET_STATUS64),
+ XLAT(LOOP_GET_STATUS64),
+ XLAT(LOOP_CHANGE_FD),
+ XLAT(LOOP_SET_CAPACITY),
+ XLAT(LOOP_SET_DIRECT_IO),
+ XLAT(LOOP_SET_BLOCK_SIZE),
+ XLAT(LOOP_CTL_ADD),
+ XLAT(LOOP_CTL_REMOVE),
+ XLAT(LOOP_CTL_GET_FREE),
+ XLAT_END
+};
+
+# endif /* !IN_MPERS */
+
+#endif /* !XLAT_MACROS_ONLY */

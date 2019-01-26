@@ -311,6 +311,13 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define AF_SMC 43
 #endif
+#if defined(AF_XDP) || (defined(HAVE_DECL_AF_XDP) && HAVE_DECL_AF_XDP)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((AF_XDP) == (44), "AF_XDP != 44");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define AF_XDP 44
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
@@ -361,6 +368,7 @@ const struct xlat addrfams[] = {
  [AF_KCM] = XLAT(AF_KCM),
  [AF_QIPCRTR] = XLAT(AF_QIPCRTR),
  [AF_SMC] = XLAT(AF_SMC),
+ [AF_XDP] = XLAT(AF_XDP),
  XLAT_END
 };
 
