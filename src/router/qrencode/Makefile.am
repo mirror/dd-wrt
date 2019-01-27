@@ -37,9 +37,9 @@ EXTRA_DIST = libqrencode.pc.in autogen.sh configure.ac acinclude.m4 \
 
 if BUILD_TOOLS
 bin_PROGRAMS = qrencode
-qrencode_SOURCES = qrenc.c
+qrencode_SOURCES = qrenc.c $(libqrencode_la_SOURCES)
 qrencode_CFLAGS = $(png_CFLAGS)
-qrencode_LDADD = libqrencode.la $(png_LIBS)
+qrencode_LDADD = $(png_LIBS)
 man1_MANS = qrencode.1
 endif
 
