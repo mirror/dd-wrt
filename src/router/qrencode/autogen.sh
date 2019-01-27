@@ -20,6 +20,7 @@ fi
 if [ ! -d use ]; then
     mkdir use
 fi
+touch use/config.rpath
 
 if [ ! -d m4 ]; then
     mkdir m4
