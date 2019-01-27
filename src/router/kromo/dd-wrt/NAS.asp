@@ -462,7 +462,7 @@ function raid_del_submit(F,I) {
 function zfs_scrub_submit(F,I) {
 	F.change_action.value="gozila_cgi";
 	F.submit_type.value = "zfs_scrub";
-	F.raid_del_value.value=I;
+	F.zfs_scrub_value.value=I;
 	F.submit();
 }
 
