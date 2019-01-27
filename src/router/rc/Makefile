@@ -1062,6 +1062,11 @@ ifeq ($(CONFIG_VENTANA),y)
 	install update-after-pivot.sh $(INSTALLDIR)/usr/sbin	
 	install ldd.sh $(INSTALLDIR)/usr/sbin
 endif
+ifeq ($(CONFIG_NEWPORT),y)
+	install update-prepare.sh $(INSTALLDIR)/usr/sbin	
+	install -d update-after-pivot.sh.newport $(INSTALLDIR)/usr/sbin/update-after-pivot.sh
+	install ldd.sh $(INSTALLDIR)/usr/sbin
+endif
 ifeq ($(CONFIG_OCTEON),y)
 	install update-prepare.sh $(INSTALLDIR)/usr/sbin	
 	install update-after-pivot.sh $(INSTALLDIR)/usr/sbin	
