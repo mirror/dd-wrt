@@ -184,10 +184,17 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	{
 		wfread(&buf[0], 1, 5, stream);
 		*total -= 5;
+#ifdef HAVE_NEWPORT
+		if (memcmp(buf, "NEWP1", 5)) {
+			ret = -1;
+			goto err;
+		}
+#else
 		if (memcmp(buf, "WRAP1", 5)) {
 			ret = -1;
 			goto err;
 		}
+#endif
 		int linuxsize;
 
 		wfread(&linuxsize, 1, 4, stream);
