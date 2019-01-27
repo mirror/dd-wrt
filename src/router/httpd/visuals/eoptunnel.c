@@ -135,6 +135,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 							show_caption(wp, "label", "eoip.wireguard_peerip", NULL);
 							websWrite(wp, "<input type=\"hidden\" name=\"oet%d_ip%d\" value=\"0.0.0.0\"/>\n", tun, peer);
 							snprintf(temp, sizeof(temp), "oet%d_ip%d", tun, peer);
+							nvram_default_get(temp, "0.0.0.0");
 							show_ip(wp, NULL, temp, 0, "eoip.wireguard_peerip");
 						}
 						websWrite(wp, "</div>\n");
@@ -144,6 +145,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 							show_caption(wp, "label", "eoip.wireguard_peerdns", NULL);
 							websWrite(wp, "<input type=\"hidden\" name=\"oet%d_dns%d\" value=\"0.0.0.0\"/>\n", tun, peer);
 							snprintf(temp, sizeof(temp), "oet%d_dns%d", tun, peer);
+							nvram_default_get(temp, "0.0.0.0");
 							show_ip(wp, NULL, temp, 0, "eoip.wireguard_peerdns");
 						}
 						websWrite(wp, "</div>\n");
@@ -151,7 +153,8 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 						snprintf(temp, sizeof(temp), "oet%d_mtu%d", tun, peer);
 						websWrite(wp, "<div class=\"setting\">\n");
 						{
-							show_caption(wp, "label", "eoip.wireguard_peemtu", NULL);
+							show_caption(wp, "label", "eoip.wireguard_peermtu", NULL);
+							nvram_default_get(temp, "1500");
 							websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n", temp, nvram_default_get(temp, "1500"));
 						}
 						websWrite(wp, "</div>\n");
