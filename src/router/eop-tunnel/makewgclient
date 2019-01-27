@@ -28,4 +28,4 @@ echo "PublicKey = $PUBKEY" >> /tmp/wireguard/oet$1_peer$2_conf
 echo "Endpoint = $EP:$EPPORT" >> /tmp/wireguard/oet$1_peer$2_conf
 #echo "AllowedIPs = $EP" >> /tmp/wireguard/oet$1_peer$2_conf
 echo "AllowedIPs = 0.0.0.0/0, ::/0" >> /tmp/wireguard/oet$1_peer$2_conf
-qrencode -t svg -r /tmp/wireguard/oet$1_peer$2_conf -o /tmp/wireguard/oet$1_peer$2_svg
+qrencode -t svg --rle -r /tmp/wireguard/oet$1_peer$2_conf -o /tmp/wireguard/oet$1_peer$2_svg
