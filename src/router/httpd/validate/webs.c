@@ -1568,8 +1568,8 @@ void tunnel_save(webs_t wp)
 			copytonv(wp, "oet%d_peerkey%d", i, peer);
 			copytonv(wp, "oet%d_ka%d", i, peer);
 			copytonv(wp, "oet%d_aip%d", i, peer);
-			copytonv(wp, "oet%d_ip%d", i, peer);
-			copytonv(wp, "oet%d_dns%d", i, peer);
+			copymergetonv(wp, "oet%d_ip%d", i, peer);
+			copymergetonv(wp, "oet%d_dns%d", i, peer);
 			copytonv(wp, "oet%d_mtu%d", i, peer);
 			copytonv(wp, "oet%d_peerport%d", i, peer);
 			copytonv(wp, "oet%d_rem%d", i, peer);
