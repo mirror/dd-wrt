@@ -1590,6 +1590,22 @@ void gen_wg_key(webs_t wp)
 	eval("makewgkey", idx);
 }
 
+void gen_wg_client(webs_t wp)
+{
+	tunnel_save(wp);
+	int key = websGetVari(wp, "keyindex", -1);
+	int peer = websGetVari(wp, "peerindex", -1);
+	if (key < 0)
+		return;
+	if (peer < 0)
+		return;
+	char idx[32];
+	sprintf(idx, "%d", key);
+	char p[32];
+	sprintf(p, "%d", peer);
+	eval("makewgclient", idx,p);
+}
+
 void add_peer(webs_t wp)
 {
 	tunnel_save(wp);
