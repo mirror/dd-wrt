@@ -22,6 +22,7 @@ install: all
 	-cp mtik/eoip $(INSTALLDIR)/usr/sbin
 	-cp makewgkey $(INSTALLDIR)/usr/sbin
 	-cp makewgpsk $(INSTALLDIR)/usr/sbin
+	-cp makewgclient $(INSTALLDIR)/usr/sbin
 
 www-install:
 	install -d $(INSTALLDIR)/../www
