@@ -1985,6 +1985,7 @@ eoip.wireguard_ka="Persistent Keepalive";
 eoip.wireguard_endpoint="Endpoint";
 eoip.wireguard_peer="Endpoint Address";
 eoip.wireguard_peerkey="Peer Public Key";
+eoip.wireguard_peerip="Peer Tunnel IP";
 eoip.wireguard_localkey="Local Public Key";
 eoip.wireguard_usepsk="Use Pre-shared Key";
 eoip.wireguard_genpsk="Generate Pre-shared Key";

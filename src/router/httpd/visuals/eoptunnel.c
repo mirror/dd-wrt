@@ -130,16 +130,14 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					{
 						websWrite(wp, "<fieldset>\n");
 						websWrite(wp, "<legend>Peer %d</legend>\n", peer + 1);
-				websWrite(wp, "<div class=\"setting\">\n");
-				{
-					show_caption(wp, "label", "eoip.remoteIP", NULL);
-					websWrite(wp, "<input type=\"hidden\" name=\"oet%d_ip%d\" value=\"0.0.0.0\"/>\n", tun,peer);
-					snprintf(temp, sizeof(temp), "oet%d_ip%d", tun);
-					show_ip(wp, NULL, temp, 0, "eoip.remoteIP");
-				}
-				websWrite(wp, "</div>\n");
-
-
+						websWrite(wp, "<div class=\"setting\">\n");
+						{
+							show_caption(wp, "label", "eoip.wireguard_peerip", NULL);
+							websWrite(wp, "<input type=\"hidden\" name=\"oet%d_ip%d\" value=\"0.0.0.0\"/>\n", tun, peer);
+							snprintf(temp, sizeof(temp), "oet%d_ip%d", tun, peer);
+							show_ip(wp, NULL, temp, 0, "eoip.wireguard_peerip");
+						}
+						websWrite(wp, "</div>\n");
 
 						snprintf(temp, sizeof(temp), "oet%d_endpoint%d", tun, peer);
 						nvram_default_get(temp, "0");
