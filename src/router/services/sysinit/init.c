@@ -673,6 +673,12 @@ int get_wanface_main(int argc, char **argv)
 	return 0;
 }
 
+int get_wanip_main(int argc, char **argv)
+{
+	fprintf(stdout, "%s", get_wan_ipaddr());
+	return 0;
+}
+
 int get_nfmark_main(int argc, char **argv)
 {
 	if (argc < 3) {

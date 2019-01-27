@@ -276,6 +276,7 @@ static struct MAIN maincalls[] = {
 	{"supplicant", "supplicant", NULL},
 #endif
 	{"get_wanface", "get_wanface", NULL},
+	{"get_wanip", "get_wanip", NULL},
 #ifndef HAVE_XSCALE
 	// {"ledtool", NULL, &ledtool_main},
 #endif

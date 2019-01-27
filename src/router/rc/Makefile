@@ -1083,6 +1083,7 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc erase
 	cd $(INSTALLDIR)/sbin && ln -sf rc roaming_daemon
 	cd $(INSTALLDIR)/sbin && ln -sf rc get_wanface
+	cd $(INSTALLDIR)/sbin && ln -sf rc get_wanip
 	cd $(INSTALLDIR)/sbin && ln -sf rc ledtool
 	cd $(INSTALLDIR)/sbin && ln -sf rc write
 	cd $(INSTALLDIR)/sbin && ln -sf rc restore
