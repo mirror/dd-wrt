@@ -1568,6 +1568,7 @@ void tunnel_save(webs_t wp)
 			copytonv(wp, "oet%d_peerkey%d", i, peer);
 			copytonv(wp, "oet%d_ka%d", i, peer);
 			copytonv(wp, "oet%d_aip%d", i, peer);
+			copytonv(wp, "oet%d_ip%d", i, peer);
 			copytonv(wp, "oet%d_peerport%d", i, peer);
 			copytonv(wp, "oet%d_rem%d", i, peer);
 			copytonv(wp, "oet%d_usepsk%d", i, peer);
@@ -1621,6 +1622,7 @@ void add_peer(webs_t wp)
 	default_set("usepsk", "0");
 	default_set("rem", "0.0.0.0");
 	default_set("peerport", "51280");
+	default_set("ip", "0.0.0.0");
 #undef default_set
 	peer++;
 	nvram_seti(idx, peer);
@@ -1659,6 +1661,7 @@ static void copypeer(int tun, int from, int to)
 	copypeervalue("endpoint", tun, from, to);
 	copypeervalue("ka", tun, from, to);
 	copypeervalue("aip", tun, from, to);
+	copypeervalue("ip", tun, from, to);
 	copypeervalue("peerport", tun, from, to);
 	copypeervalue("rem", tun, from, to);
 	copypeervalue("usepsk", tun, from, to);
@@ -1671,6 +1674,7 @@ static void copytunpeer(int peer, int from, int to)
 	copypeertunvalue("endpoint", peer, from, to);
 	copypeertunvalue("ka", peer, from, to);
 	copypeertunvalue("aip", peer, from, to);
+	copypeertunvalue("ip", peer, from, to);
 	copypeertunvalue("peerport", peer, from, to);
 	copypeertunvalue("rem", peer, from, to);
 	copypeertunvalue("usepsk", peer, from, to);
@@ -1683,6 +1687,7 @@ static void delpeer(int tun, int peer)
 	delpeervalue("ka", tun, peer);
 	delpeervalue("endpoint", tun, peer);
 	delpeervalue("aip", tun, peer);
+	delpeervalue("ip", tun, peer);
 	delpeervalue("peerport", tun, peer);
 	delpeervalue("rem", tun, peer);
 	delpeervalue("usepsk", tun, peer);
