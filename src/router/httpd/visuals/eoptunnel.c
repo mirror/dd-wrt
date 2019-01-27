@@ -233,7 +233,9 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 							char *buf = malloc(len);
 							fread(buf, len, 1, svg);
 							fclose(svg);
+							websWrite(wp, "<div class=\"setting\">\n");
 							wfputs(buf, wp);
+							websWrite(wp, "</div>\n");
 							free(buf);
 						}
 						websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
