@@ -9,14 +9,14 @@ PRIVKEY=$(cat /tmp/wireguard/oet$1_peer$2_private)
 nvram set oet$1_peerkey$2=$(cat /tmp/wireguard/oet$1_peer$2_public)
 if [ "$(nvram get get wan_proto)" = 'disabled' ]
 then
-	EP=$(nvram get get lan_ipaddr)
+	EP=$(nvram get lan_ipaddr)
 else
 	EP=$(get_wanip)
 fi
 EPPORT=$(nvram get get oet$1_port)
 if [ "$(nvram get oet$1_endpoint$2)" = "1" ]
 then
-	LISTENPORT=$(nvram get get oet$1_peerport$2)
+	LISTENPORT=$(nvram get oet$1_peerport$2)
 else
 	LISTENPORT="51820"
 fi
@@ -33,5 +33,5 @@ if [ $(nvram get oet$1_usepsk$2) = "1" ]
 then
 echo "PresharedKey = $(nvram get oet$1_psk$2)" >> /tmp/wireguard/oet$1_peer$2_conf
 fi
-echo "PersistentKeepalive = $(nvram get oet$1_ka)" >> /tmp/wireguard/oet$1_peer$2_conf
+echo "PersistentKeepalive = $(nvram get oet$1_ka$2)" >> /tmp/wireguard/oet$1_peer$2_conf
 qrencode -t svg --rle -r /tmp/wireguard/oet$1_peer$2_conf -o /tmp/wireguard/oet$1_peer$2_svg
