@@ -1722,7 +1722,7 @@ void add_tunnel(webs_t wp)
 	default_set("rem", "192.168.90.1");
 	default_set("local", "0.0.0.0");
 	default_set("ipaddr", "1.2.3.4");
-	default_set("netmask", "255.255.255.255");
+	default_set("netmask", "255.255.255.0");
 	default_set("id", "1");
 	default_set("proto", "0");
 	default_set("bridged", "1");
