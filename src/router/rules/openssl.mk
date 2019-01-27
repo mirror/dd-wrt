@@ -99,6 +99,9 @@ OPENSSL_OPTIONS:= no-err threads no-ssl2 enable-ssl3-method no-ec2m no-heartbeat
 ifeq ($(CONFIG_XSCALE),y)
 OPENSSL_OPTIONS += -DHAVE_CRYPTODEV
 endif
+ifeq ($(CONFIG_NEWPORT),y)
+OPENSSL_OPTIONS += -DHAVE_CRYPTODEV
+endif
 ifeq ($(CONFIG_STORM),y)
 OPENSSL_OPTIONS += -DHAVE_CRYPTODEV
 endif
