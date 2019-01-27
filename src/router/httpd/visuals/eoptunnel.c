@@ -230,7 +230,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 							fseek(svg, 0, SEEK_END);
 							int len = ftell(svg);
 							rewind(svg);
-							char *buf = malloc(len);
+							char *buf = calloc(1, len + 1);
 							fread(buf, len, 1, svg);
 							fclose(svg);
 							websWrite(wp, "<div class=\"setting\">\n");
