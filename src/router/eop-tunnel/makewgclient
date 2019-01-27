@@ -31,7 +31,7 @@ then
 fi
 
 echo "[Interface]" > /tmp/wireguard/oet$1_peer$2_conf
-echo "Address = $(nvram get oet$1_ip$2)/$(nvram get oet$1_netmask)" >> /tmp/wireguard/oet$1_peer$2_conf
+echo "Address = $(nvram get oet$1_ip$2)/$(getmask $(nvram get oet$1_netmask))" >> /tmp/wireguard/oet$1_peer$2_conf
 echo "PrivateKey = $(cat /tmp/wireguard/oet$1_peer$2_private)" >> /tmp/wireguard/oet$1_peer$2_conf
 echo "ListenPort = $LISTENPORT" >> /tmp/wireguard/oet$1_peer$2_conf
 if [ "$(nvram get oet$1_dns$2)" != "0.0.0.0" ]
