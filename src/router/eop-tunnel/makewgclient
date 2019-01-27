@@ -6,6 +6,7 @@ wg genkey > /tmp/wireguard/oet$1_peer$2_private
 wg pubkey < /tmp/wireguard/oet$1_peer$2_private > /tmp/wireguard/oet$1_peer$2_public
 PUBKEY=$(nvram get oet$1_public)
 PRIVKEY=$(cat /tmp/wireguard/oet$1_peer$2_private)
+nvram set oet$1_peerkey$2=$(cat /tmp/wireguard/oet$1_peer$2_public)
 if [ "$(nvram get get wan_proto)" = 'disabled' ]
 then
 	EP=$(nvram get get lan_ipaddr)
@@ -28,4 +29,9 @@ echo "PublicKey = $PUBKEY" >> /tmp/wireguard/oet$1_peer$2_conf
 echo "Endpoint = $EP:$EPPORT" >> /tmp/wireguard/oet$1_peer$2_conf
 #echo "AllowedIPs = $EP" >> /tmp/wireguard/oet$1_peer$2_conf
 echo "AllowedIPs = 0.0.0.0/0, ::/0" >> /tmp/wireguard/oet$1_peer$2_conf
+if [ $(nvram get oet$1_usepsk$2) = "1" ]
+then
+echo "PresharedKey = $(nvram get oet$1_psk$2)" >> /tmp/wireguard/oet$1_peer$2_conf
+fi
+echo "PersistentKeepalive = $(nvram get oet$1_ka)" >> /tmp/wireguard/oet$1_peer$2_conf
 qrencode -t svg --rle -r /tmp/wireguard/oet$1_peer$2_conf -o /tmp/wireguard/oet$1_peer$2_svg
