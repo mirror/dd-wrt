@@ -1623,7 +1623,7 @@ void add_peer(webs_t wp)
 	default_set("endpoint", "0");
 	default_set("usepsk", "0");
 	default_set("rem", "0.0.0.0");
-	default_set("peerport", "51280");
+	default_set("peerport", "51820");
 	default_set("ip", "0.0.0.0");
 	default_set("dns", "0.0.0.0");
 	default_set("mtu", "0.0.0.0");
