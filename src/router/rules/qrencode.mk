@@ -9,4 +9,4 @@ qrencode-clean:
 	$(MAKE) -C qrencode clean
 
 qrencode-install:
-	@true
+	install -D $(TOP)/qrencode/qrencode $(INSTALLDIR)/qrencode/usr/sbin/qrencode
