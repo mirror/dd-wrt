@@ -120,6 +120,7 @@ void start_sysinit(void)
 	 * network drivers 
 	 */
 	insmod("cptpf"); // crypto driver
+	insmod("cptvf"); // crypto driver
 
 	detect_wireless_devices();
 
