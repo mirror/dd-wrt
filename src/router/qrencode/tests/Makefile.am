@@ -19,9 +19,9 @@ noinst_PROGRAMS = test_qrinput test_bitstream test_estimatebit \
 noinst_LIBRARIES = libdecoder.a
 DECODER_LIBS = libdecoder.a $(LIBICONV)
 noinst_HEADERS = common.h rscode.h
-if HAVE_LIBPTHREAD
-noinst_PROGRAMS += pthread_qrencode
-endif
+#if HAVE_LIBPTHREAD
+#noinst_PROGRAMS += pthread_qrencode
+#endif
 
 EXTRA_DIST = test_all.sh test_basic.sh test_configure.sh frame URI_testset.inc CMakeLists.txt
 

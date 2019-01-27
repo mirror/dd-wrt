@@ -49,15 +49,15 @@ dnl --enable-thread-safety
 AC_ARG_ENABLE([thread-safety], [AS_HELP_STRING([--enable-thread-safety], [make the library thread-safe. [default=yes]])],
  [], [enable_thread_safety=yes])
 
-if test x$enable_thread_safety = xyes; then
-	AC_CHECK_LIB([pthread], [pthread_mutex_init], [AC_SUBST([LIBPTHREAD], [-lpthread])])
-fi
-AM_CONDITIONAL([HAVE_LIBPTHREAD], [test "x$ac_cv_lib_pthread_pthread_mutex_init" = "xyes" ])
+#if test x$enable_thread_safety = xyes; then
+#	AC_CHECK_LIB([pthread], [pthread_mutex_init], [AC_SUBST([LIBPTHREAD], [-lpthread])])
+#fi
+#AM_CONDITIONAL([HAVE_LIBPTHREAD], [test "x$ac_cv_lib_pthread_pthread_mutex_init" = "xyes" ])
 # FIXME: isn't it able to integrate the followings to AC_CHECK_LIB?
-if test x$ac_cv_lib_pthread_pthread_mutex_init = xyes ; then
-	AC_DEFINE([HAVE_LIBPTHREAD], [1], [Define to 1 if using pthread is enabled.])
-	CFLAGS="$CFLAGS -pthread"
-fi
+#if test x$ac_cv_lib_pthread_pthread_mutex_init = xyes ; then
+#	AC_DEFINE([HAVE_LIBPTHREAD], [1], [Define to 1 if using pthread is enabled.])
+#	CFLAGS="$CFLAGS -pthread"
+#fi
 
 AC_ARG_WITH(png,
     [AC_HELP_STRING([--without-png],

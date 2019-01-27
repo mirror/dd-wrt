@@ -36,7 +36,8 @@
 #define INCHES_PER_METER (100.0/2.54)
 
 static int casesensitive = 1;
-static int eightbit = 0;
+#define eightbit 0
+//static int eightbit = 0;
 static int version = 0;
 static int size = 3;
 static int margin = -1;
@@ -44,13 +45,14 @@ static int dpi = 72;
 static int structured = 0;
 static int rle = 0;
 static int svg_path = 0;
-static int micro = 0;
+#define micro 0
 static QRecLevel level = QR_ECLEVEL_L;
 static QRencodeMode hint = QR_MODE_8;
 static unsigned char fg_color[4] = {0, 0, 0, 255};
 static unsigned char bg_color[4] = {255, 255, 255, 255};
 
-static int verbose = 0;
+#define verbose 0
+//static int verbose = 0;
 
 enum imageType {
 	PNG_TYPE,
@@ -82,22 +84,22 @@ static const struct option options[] = {
 	{"read-from"    , required_argument, NULL, 'r'},
 	{"level"        , required_argument, NULL, 'l'},
 	{"size"         , required_argument, NULL, 's'},
-	{"symversion"   , required_argument, NULL, 'v'},
+//	{"symversion"   , required_argument, NULL, 'v'},
 	{"margin"       , required_argument, NULL, 'm'},
 	{"dpi"          , required_argument, NULL, 'd'},
 	{"type"         , required_argument, NULL, 't'},
 	{"structured"   , no_argument      , NULL, 'S'},
-	{"kanji"        , no_argument      , NULL, 'k'},
-	{"casesensitive", no_argument      , NULL, 'c'},
-	{"ignorecase"   , no_argument      , NULL, 'i'},
-	{"8bit"         , no_argument      , NULL, '8'},
+//	{"kanji"        , no_argument      , NULL, 'k'},
+//	{"casesensitive", no_argument      , NULL, 'c'},
+//	{"ignorecase"   , no_argument      , NULL, 'i'},
+//	{"8bit"         , no_argument      , NULL, '8'},
 	{"rle"          , no_argument      , &rle,   1},
 	{"svg-path"     , no_argument      , &svg_path, 1},
-	{"micro"        , no_argument      , NULL, 'M'},
+//	{"micro"        , no_argument      , NULL, 'M'},
 	{"foreground"   , required_argument, NULL, 'f'},
 	{"background"   , required_argument, NULL, 'b'},
-	{"version"      , no_argument      , NULL, 'V'},
-	{"verbose"      , no_argument      , &verbose, 1},
+//	{"version"      , no_argument      , NULL, 'V'},
+//	{"verbose"      , no_argument      , &verbose, 1},
 	{NULL, 0, NULL, 0}
 };
 
@@ -105,6 +107,7 @@ static char *optstring = "ho:r:l:s:v:m:d:t:Skci8MV";
 
 static void usage(int help, int longopt, int status)
 {
+#if 0
 	FILE *out = status ? stderr : stdout;
 	fprintf(out,
 "qrencode version %s\n"
@@ -203,6 +206,7 @@ static void usage(int help, int longopt, int status)
 			);
 		}
 	}
+#endif
 }
 
 static int color_set(unsigned char color[4], const char *value)
@@ -1357,12 +1361,13 @@ int main(int argc, char **argv)
 			case 'i':
 				casesensitive = 0;
 				break;
-			case '8':
-				eightbit = 1;
-				break;
-			case 'M':
-				micro = 1;
-				break;
+//			case '8':
+//				eightbit = 1;
+//				break;
+//			case 'M':
+//				micro = 1;
+//				break;
+
 			case 'f':
 				if(color_set(fg_color, optarg)) {
 					fprintf(stderr, "Invalid foreground color value.\n");
@@ -1375,6 +1380,7 @@ int main(int argc, char **argv)
 					exit(EXIT_FAILURE);
 				}
 				break;
+
 			case 'V':
 				usage(0, 0, EXIT_SUCCESS);
 				exit(EXIT_SUCCESS);
