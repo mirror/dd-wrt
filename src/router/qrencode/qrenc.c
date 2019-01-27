@@ -557,7 +557,7 @@ static int writeSVG(const QRcode *qrcode, const char *outfile)
 	bg_opacity = (float)bg_color[3] / 255;
 
 	/* XML declaration */
-	fputs( "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n", fp );
+//	fputs( "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n", fp );
 
 	/* DTD
 	   No document type specified because "while a DTD is provided in [the SVG]
