@@ -17,7 +17,6 @@ then
 else
 	LISTENPORT="51820"
 fi
-
 echo "[Interface]" > /tmp/wireguard/oet$1_peer$2_conf
 echo "Address = $(nvram get oet$1_ipaddr)" >> /tmp/wireguard/oet$1_peer$2_conf
 echo "PrivateKey = $(cat /tmp/wireguard/oet$1_peer$2_private)" >> /tmp/wireguard/oet$1_peer$2_conf
