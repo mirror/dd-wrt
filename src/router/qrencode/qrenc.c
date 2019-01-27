@@ -55,17 +55,23 @@ static int verbose = 0;
 enum imageType {
 	PNG_TYPE,
 	PNG32_TYPE,
+#if 0
 	EPS_TYPE,
+#endif
 	SVG_TYPE,
+#if 0
 	XPM_TYPE,
 	ANSI_TYPE,
+#endif
 	ANSI256_TYPE,
+#if 0
 	ASCII_TYPE,
 	ASCIIi_TYPE,
 	UTF8_TYPE,
 	ANSIUTF8_TYPE,
 	UTF8i_TYPE,
 	ANSIUTF8i_TYPE
+#endif
 };
 
 static enum imageType image_type = PNG_TYPE;
@@ -1035,12 +1041,15 @@ static void qrencode(const unsigned char *intext, int length, const char *outfil
 		case PNG32_TYPE:
 			writePNG(qrcode, outfile, image_type);
 			break;
+#if 0
 		case EPS_TYPE:
 			writeEPS(qrcode, outfile);
 			break;
+#endif
 		case SVG_TYPE:
 			writeSVG(qrcode, outfile);
 			break;
+#if 0
 		case XPM_TYPE:
 			writeXPM(qrcode, outfile);
 			break;
@@ -1066,6 +1075,7 @@ static void qrencode(const unsigned char *intext, int length, const char *outfil
 		case ANSIUTF8i_TYPE:
 			writeUTF8(qrcode, outfile, 1, 1);
 			break;
+#endif
 		default:
 			fprintf(stderr, "Unknown image type.\n");
 			exit(EXIT_FAILURE);
@@ -1100,12 +1110,15 @@ static void qrencodeStructured(const unsigned char *intext, int length, const ch
 		case PNG_TYPE:
 			type_suffix = ".png";
 			break;
+#if 0
 		case EPS_TYPE:
 			type_suffix = ".eps";
 			break;
+#endif
 		case SVG_TYPE:
 			type_suffix = ".svg";
 			break;
+#if 0
 		case XPM_TYPE:
 			type_suffix = ".xpm";
 			break;
@@ -1118,6 +1131,7 @@ static void qrencodeStructured(const unsigned char *intext, int length, const ch
 		case ANSIUTF8i_TYPE:
 			type_suffix = ".txt";
 			break;
+#endif
 		default:
 			fprintf(stderr, "Unknown image type.\n");
 			exit(EXIT_FAILURE);
@@ -1171,12 +1185,15 @@ static void qrencodeStructured(const unsigned char *intext, int length, const ch
 			case PNG32_TYPE:
 				writePNG(p->code, filename, image_type);
 				break;
+#if 0
 			case EPS_TYPE:
 				writeEPS(p->code, filename);
 				break;
+#endif
 			case SVG_TYPE:
 				writeSVG(p->code, filename);
 				break;
+#if 0
 			case XPM_TYPE:
 				writeXPM(p->code, filename);
 				break;
@@ -1202,7 +1219,7 @@ static void qrencodeStructured(const unsigned char *intext, int length, const ch
 			case ANSIUTF8i_TYPE:
 				writeUTF8(p->code, filename, 0, 1);
 				break;
-
+#endif
 			default:
 				fprintf(stderr, "Unknown image type.\n");
 				exit(EXIT_FAILURE);
@@ -1297,10 +1314,13 @@ int main(int argc, char **argv)
 					image_type = PNG32_TYPE;
 				} else if(strcasecmp(optarg, "png") == 0) {
 					image_type = PNG_TYPE;
+#if 0
 				} else if(strcasecmp(optarg, "eps") == 0) {
 					image_type = EPS_TYPE;
+#endif
 				} else if(strcasecmp(optarg, "svg") == 0) {
 					image_type = SVG_TYPE;
+#if 0
 				} else if(strcasecmp(optarg, "xpm") == 0) {
 					image_type = XPM_TYPE;
 				} else if(strcasecmp(optarg, "ansi") == 0) {
@@ -1319,6 +1339,7 @@ int main(int argc, char **argv)
 					image_type = UTF8i_TYPE;
 				} else if(strcasecmp(optarg, "ansiutf8i") == 0) {
 					image_type = ANSIUTF8i_TYPE;
+#endif
 				} else {
 					fprintf(stderr, "Invalid image type: %s\n", optarg);
 					exit(EXIT_FAILURE);
