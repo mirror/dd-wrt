@@ -4,8 +4,6 @@ mkdir -p /tmp/wireguard
 
 wg genkey > /tmp/wireguard/oet$1_peer$2_private
 wg pubkey < /tmp/wireguard/oet$1_peer$2_private > /tmp/wireguard/oet$1_peer$2_public
-PUBKEY=$(nvram get oet$1_public)
-PRIVKEY=$(cat /tmp/wireguard/oet$1_peer$2_private)
 nvram set oet$1_peerkey$2=$(cat /tmp/wireguard/oet$1_peer$2_public)
 if [ "$(nvram get wan_proto)" = "disabled" ]
 then
@@ -13,7 +11,6 @@ then
 else
 	EP=$(get_wanip)
 fi
-EPPORT=$(nvram get oet$1_port)
 if [ "$(nvram get oet$1_endpoint$2)" = "1" ]
 then
 	LISTENPORT=$(nvram get oet$1_peerport$2)
@@ -22,11 +19,12 @@ else
 fi
 
 echo "[Interface]" > /tmp/wireguard/oet$1_peer$2_conf
-echo "PrivateKey = $PRIVKEY" >> /tmp/wireguard/oet$1_peer$2_conf
+echo "Address = $(nvram get oet$1_ipaddr)" >> /tmp/wireguard/oet$1_peer$2_conf
+echo "PrivateKey = $(cat /tmp/wireguard/oet$1_peer$2_private)" >> /tmp/wireguard/oet$1_peer$2_conf
 echo "ListenPort = $LISTENPORT" >> /tmp/wireguard/oet$1_peer$2_conf
 echo "[Peer]" >> /tmp/wireguard/oet$1_peer$2_conf
-echo "PublicKey = $PUBKEY" >> /tmp/wireguard/oet$1_peer$2_conf
-echo "Endpoint = $EP:$EPPORT" >> /tmp/wireguard/oet$1_peer$2_conf
+echo "PublicKey = $(nvram get oet$1_public)" >> /tmp/wireguard/oet$1_peer$2_conf
+echo "Endpoint = $EP:$(nvram get oet$1_port)" >> /tmp/wireguard/oet$1_peer$2_conf
 #echo "AllowedIPs = $EP" >> /tmp/wireguard/oet$1_peer$2_conf
 echo "AllowedIPs = 0.0.0.0/0, ::/0" >> /tmp/wireguard/oet$1_peer$2_conf
 if [ $(nvram get oet$1_usepsk$2) = "1" ]
