@@ -23,7 +23,8 @@
 
 #include "vxlan.h"
 
-extern void bgp_zebra_init(struct thread_master *master);
+extern void bgp_zebra_init(struct thread_master *master,
+			   unsigned short instance);
 extern void bgp_zebra_init_tm_connect(struct bgp *bgp);
 extern uint32_t bgp_zebra_tm_get_id(void);
 extern bool bgp_zebra_tm_chunk_obtained(void);
@@ -72,6 +73,9 @@ extern int bgp_zebra_advertise_gw_macip(struct bgp *, int, vni_t);
 extern int bgp_zebra_advertise_all_vni(struct bgp *, int);
 
 extern int bgp_zebra_num_connects(void);
+
+extern bool bgp_zebra_nexthop_set(union sockunion *, union sockunion *,
+				  struct bgp_nexthop *, struct peer *);
 
 struct bgp_pbr_action;
 struct bgp_pbr_match;

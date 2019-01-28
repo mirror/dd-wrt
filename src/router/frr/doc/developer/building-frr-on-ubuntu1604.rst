@@ -16,8 +16,8 @@ Add packages:
     apt-get install \
        git autoconf automake libtool make gawk libreadline-dev texinfo dejagnu \
        pkg-config libpam0g-dev libjson-c-dev bison flex python-pytest \
-       libc-ares-dev python3-dev libsystemd-dev python-ipaddr python3-sphinx \
-       install-info
+       libc-ares-dev python3-dev libsystemd-dev python-ipaddress \
+       python3-sphinx install-info
 
 Get FRR, compile it and install it (from Git)
 ---------------------------------------------
@@ -142,9 +142,7 @@ Install the systemd service (if rebooted from last step, change directory back t
 ::
 
     sudo install -m 644 tools/frr.service /etc/systemd/system/frr.service
-    sudo install -m 644 tools/etc/default/frr /etc/default/frr
     sudo install -m 644 tools/etc/frr/daemons /etc/frr/daemons
-    sudo install -m 644 tools/etc/frr/daemons.conf /etc/frr/daemons.conf
     sudo install -m 644 tools/etc/frr/frr.conf /etc/frr/frr.conf
     sudo install -m 644 -o frr -g frr tools/etc/frr/vtysh.conf /etc/frr/vtysh.conf
 
