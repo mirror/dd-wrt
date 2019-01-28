@@ -236,11 +236,11 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	fp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
 	if (!fp)
 		fp = fopen("/sys/class/hwmon/hwmon0/temp1_input", "rb");
-	fpsys = fopen("/sys/class/hwmon/hwmon0/device/temp0_input", "rb");
+	fpsys = fopen("/sys/class/hwmon/hwmon0/temp0_input", "rb");
 #ifdef HAVE_NEWPORT
 	if (!fpsys) {
 		SYSTEMP_MUL = 1000;
-		fpsys = fopen("/sys/class/hwmon/hwmon1/device/temp2_input", "rb");
+		fpsys = fopen("/sys/class/hwmon/hwmon1/temp2_input", "rb");
 	}
 #endif
 
