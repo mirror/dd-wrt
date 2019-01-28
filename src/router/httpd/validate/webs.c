@@ -1609,6 +1609,24 @@ void gen_wg_client(webs_t wp)
 	eval("makewgclient", idx,p);
 }
 
+void del_wg_client(webs_t wp)
+{
+	tunnel_save(wp);
+	int key = websGetVari(wp, "keyindex", -1);
+	int peer = websGetVari(wp, "peerindex", -1);
+	if (key < 0)
+		return;
+	if (peer < 0)
+		return;
+	char temp[64];
+	sprintf(temp,"/tmp/wireguard/oet%s_peer%d_conf", key, peer);
+	unlink(temp);
+	sprintf(temp,"/tmp/wireguard/oet%s_peer%d_private", key, peer);
+	unlink(temp);
+	sprintf(temp,"/tmp/wireguard/oet%s_peer%d_svg", key, peer);
+	unlink(temp);
+}
+
 void add_peer(webs_t wp)
 {
 	tunnel_save(wp);

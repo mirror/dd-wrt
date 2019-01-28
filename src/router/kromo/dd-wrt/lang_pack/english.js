@@ -1995,6 +1995,7 @@ eoip.wireguard_psk="Pre-Shared Key";
 eoip.wireguard_addpeer="Add Peer";
 eoip.wireguard_delpeer="Remove Peer";
 eoip.wireguard_makeclient="QR-Code";
+eoip.wireguard_cleanqr="Remove QR-Code";
 eoip.wireguard_allowedips="Allowed IPs";
 eoip.etherip="RFC 3378 Ethernet Over IP";
 eoip.srv="Tunnel";

@@ -1694,6 +1694,7 @@ eoip.wireguard_localkey="Lokaler &Ouml;ffentlicher Schl&uuml;ssel";
 eoip.wireguard_genpsk="Erzeuge Pre-shared Key";
 eoip.wireguard_usepsk="Nutze Pre-shared Key";
 eoip.wireguard_addpeer="Partner Hinzuf&uuml;gen";
+eoip.wireguard_cleanqr="Entferne QR-Code";
 eoip.wireguard_delpeer="Partner Entfernen";
 eoip.wireguard_allowedips="Erlaubte IPs";
 eoip.remoteIP="Entfernte IP Adresse";

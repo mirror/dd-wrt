@@ -33,6 +33,15 @@ function gen_wg_client(F,keyindex,peerindex)
 	apply(F);
 }
 
+function del_wg_client(F,keyindex,peerindex)
+{
+	F.keyindex.value = keyindex;
+	F.peerindex.value = peerindex;
+	F.change_action.value="gozila_cgi";
+	F.submit_type.value = "del_wg_client";
+	apply(F);
+}
+
 function add_peer(F,keyindex)
 {
 	F.keyindex.value = keyindex;
