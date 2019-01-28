@@ -1644,7 +1644,7 @@ void add_peer(webs_t wp)
 	default_set("peerport", "51820");
 	default_set("ip", "0.0.0.0");
 	default_set("dns", "0.0.0.0");
-	default_set("mtu", "0.0.0.0");
+	default_set("mtu", "1500");
 #undef default_set
 	peer++;
 	nvram_seti(idx, peer);
