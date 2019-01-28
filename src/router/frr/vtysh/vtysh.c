@@ -104,7 +104,7 @@ static int vty_close_pager(struct vty *vty)
 	return 0;
 }
 
-void vtysh_pager_init(void)
+static void vtysh_pager_envdef(void)
 {
 	char *pager_defined;
 
@@ -1252,9 +1252,7 @@ struct cmd_node link_params_node = {
 	LINK_PARAMS_NODE, "%s(config-link-params)# ",
 };
 
-#if defined(HAVE_RPKI)
 static struct cmd_node rpki_node = {RPKI_NODE, "%s(config-rpki)# ", 1};
-#endif
 
 #if HAVE_BFDD > 0
 static struct cmd_node bfd_node = {
@@ -1424,7 +1422,6 @@ DEFUNSH(VTYSH_BGPD, address_family_ipv6_labeled_unicast,
 	return CMD_SUCCESS;
 }
 
-#if defined(HAVE_RPKI)
 DEFUNSH(VTYSH_BGPD,
 	rpki,
 	rpki_cmd,
@@ -1434,8 +1431,6 @@ DEFUNSH(VTYSH_BGPD,
 	vty->node = RPKI_NODE;
 	return CMD_SUCCESS;
 }
-
-#endif
 
 DEFUNSH(VTYSH_BGPD, address_family_evpn, address_family_evpn_cmd,
 	"address-family <l2vpn evpn>",
@@ -1869,7 +1864,6 @@ DEFUNSH(VTYSH_BGPD, exit_vnc_config, exit_vnc_config_cmd, "exit-vnc",
 
 }
 
-#if defined(HAVE_RPKI)
 DEFUNSH(VTYSH_BGPD, rpki_exit, rpki_exit_cmd, "exit",
 	"Exit current mode and down to previous mode\n")
 {
@@ -1882,7 +1876,6 @@ DEFUNSH(VTYSH_BGPD, rpki_quit, rpki_quit_cmd, "quit",
 {
 	return rpki_exit(self, vty, argc, argv);
 }
-#endif /* HAVE_RPKI */
 
 DEFUNSH(VTYSH_PIMD|VTYSH_ZEBRA, exit_vrf_config, exit_vrf_config_cmd, "exit-vrf",
 	"Exit from VRF configuration mode\n")
@@ -2855,52 +2848,58 @@ DEFUN (vtysh_copy_running_config,
 	return vtysh_write_memory(self, vty, argc, argv);
 }
 
+DEFUN (vtysh_terminal_paginate,
+       vtysh_terminal_paginate_cmd,
+       "[no] terminal paginate",
+       NO_STR
+       "Set terminal line parameters\n"
+       "Use pager for output scrolling\n")
+{
+	free(vtysh_pager_name);
+	vtysh_pager_name = NULL;
+
+	if (strcmp(argv[0]->text, "no"))
+		vtysh_pager_envdef();
+	return CMD_SUCCESS;
+}
+
 DEFUN (vtysh_terminal_length,
        vtysh_terminal_length_cmd,
-       "terminal length (0-512)",
+       "[no] terminal length (0-4294967295)",
+       NO_STR
        "Set terminal line parameters\n"
        "Set number of lines on a screen\n"
-       "Number of lines on screen (0 for no pausing)\n")
+       "Number of lines on screen (0 for no pausing, nonzero to use pager)\n")
 {
 	int idx_number = 2;
-	int lines;
-	char *endptr = NULL;
-	char default_pager[10];
+	unsigned long lines;
 
-	lines = strtol(argv[idx_number]->arg, &endptr, 10);
-	if (lines < 0 || lines > 512 || *endptr != '\0') {
-		vty_out(vty, "length is malformed\n");
-		return CMD_WARNING;
+	free(vtysh_pager_name);
+	vtysh_pager_name = NULL;
+
+	if (!strcmp(argv[0]->text, "no") || !strcmp(argv[1]->text, "no")) {
+		/* "terminal no length" = use VTYSH_PAGER */
+		vtysh_pager_envdef();
+		return CMD_SUCCESS;
 	}
 
-	if (vtysh_pager_name) {
-		free(vtysh_pager_name);
-		vtysh_pager_name = NULL;
-	}
-
+	lines = strtoul(argv[idx_number]->arg, NULL, 10);
 	if (lines != 0) {
-		snprintf(default_pager, 10, "more -%i", lines);
-		vtysh_pager_name = strdup(default_pager);
+		vty_out(vty,
+			"%% The \"terminal length\" command is deprecated and its value is ignored.\n"
+			"%% Please use \"terminal paginate\" instead with OS TTY length handling.\n");
+		vtysh_pager_envdef();
 	}
 
 	return CMD_SUCCESS;
 }
 
-DEFUN (vtysh_terminal_no_length,
+ALIAS_DEPRECATED(vtysh_terminal_length,
        vtysh_terminal_no_length_cmd,
        "terminal no length",
        "Set terminal line parameters\n"
        NO_STR
        "Set number of lines on a screen\n")
-{
-	if (vtysh_pager_name) {
-		free(vtysh_pager_name);
-		vtysh_pager_name = NULL;
-	}
-
-	vtysh_pager_init();
-	return CMD_SUCCESS;
-}
 
 DEFUN (vtysh_show_daemons,
        vtysh_show_daemons_cmd,
@@ -3496,9 +3495,7 @@ void vtysh_init_vty(void)
 	install_node(&keychain_key_node, NULL);
 	install_node(&isis_node, NULL);
 	install_node(&vty_node, NULL);
-#if defined(HAVE_RPKI)
 	install_node(&rpki_node, NULL);
-#endif
 #if HAVE_BFDD > 0
 	install_node(&bfd_node, NULL);
 	install_node(&bfd_peer_node, NULL);
@@ -3733,12 +3730,10 @@ void vtysh_init_vty(void)
 	install_element(BGP_FLOWSPECV4_NODE, &exit_address_family_cmd);
 	install_element(BGP_FLOWSPECV6_NODE, &exit_address_family_cmd);
 
-#if defined(HAVE_RPKI)
 	install_element(CONFIG_NODE, &rpki_cmd);
 	install_element(RPKI_NODE, &rpki_exit_cmd);
 	install_element(RPKI_NODE, &rpki_quit_cmd);
 	install_element(RPKI_NODE, &vtysh_end_all_cmd);
-#endif
 
 	/* EVPN commands */
 	install_element(BGP_EVPN_NODE, &bgp_evpn_vni_cmd);
@@ -3779,6 +3774,7 @@ void vtysh_init_vty(void)
 	/* "write memory" command. */
 	install_element(ENABLE_NODE, &vtysh_write_memory_cmd);
 
+	install_element(VIEW_NODE, &vtysh_terminal_paginate_cmd);
 	install_element(VIEW_NODE, &vtysh_terminal_length_cmd);
 	install_element(VIEW_NODE, &vtysh_terminal_no_length_cmd);
 	install_element(VIEW_NODE, &vtysh_show_daemons_cmd);

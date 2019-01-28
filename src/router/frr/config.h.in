@@ -3,6 +3,15 @@
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
+/* bfdd control socket */
+#undef BFDD_CONTROL_SOCKET
+
+/* bfdd */
+#undef BFD_BSD
+
+/* bfdd */
+#undef BFD_LINUX
+
 /* BSD v6 sysctl to turn on and off forwarding */
 #undef BSD_V6_SYSCTL
 
@@ -45,20 +54,23 @@
 /* GNU Linux */
 #undef GNU_LINUX
 
+/* Compile extensions to use with a fuzzer for netlink */
+#undef HANDLE_NETLINK_FUZZING
+
 /* Compile extensions to use with a fuzzer */
 #undef HANDLE_ZAPI_FUZZING
-
-/* enable AddressSanitizer */
-#undef HAVE_ADDRESS_SANITIZER
 
 /* Define to 1 if you have the `alarm' function. */
 #undef HAVE_ALARM
 
+/* Have history.h append_history */
+#undef HAVE_APPEND_HISTORY
+
 /* Define to 1 if you have the <asm/types.h> header file. */
 #undef HAVE_ASM_TYPES_H
 
-/* Broken CMSG_FIRSTHDR */
-#undef HAVE_BROKEN_CMSG_FIRSTHDR
+/* bfdd */
+#undef HAVE_BFDD
 
 /* BSD ifi_link_state available */
 #undef HAVE_BSD_IFI_LINK_STATE
@@ -88,10 +100,6 @@
 /* Define to 1 if you have the declaration of `be32enc', and to 0 if you
    don't. */
 #undef HAVE_DECL_BE32ENC
-
-/* Define to 1 if you have the declaration of `IFLA_INFO_SLAVE_KIND', and to 0
-   if you don't. */
-#undef HAVE_DECL_IFLA_INFO_SLAVE_KIND
 
 /* Define to 1 if you have the declaration of `TCP_MD5SIG', and to 0 if you
    don't. */
@@ -181,6 +189,18 @@
 /* mallinfo */
 #undef HAVE_MALLINFO
 
+/* Define to 1 if you have the <malloc.h> header file. */
+#undef HAVE_MALLOC_H
+
+/* Define to 1 if you have the <malloc/malloc.h> header file. */
+#undef HAVE_MALLOC_MALLOC_H
+
+/* malloc_size */
+#undef HAVE_MALLOC_SIZE
+
+/* malloc_usable_size */
+#undef HAVE_MALLOC_USABLE_SIZE
+
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
@@ -255,9 +275,6 @@
 
 /* Have RFC3678 protocol-independed API */
 #undef HAVE_RFC3678
-
-/* Enable RPKI prefix validation for BGP */
-#undef HAVE_RPKI
 
 /* Enable IPv6 Routing Advertisement support */
 #undef HAVE_RTADV
@@ -408,12 +425,6 @@
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
 
-/* Old Linux 2.4 TCP MD5 Signature Patch */
-#undef HAVE_TCP_MD5_LINUX24
-
-/* enable MemorySanitizer */
-#undef HAVE_THREAD_SANITIZER
-
 /* Define to 1 if you have the <ucontext.h> header file. */
 #undef HAVE_UCONTEXT_H
 
@@ -538,9 +549,6 @@
 
 /* Use SNMP AgentX to interface with snmpd */
 #undef SNMP_AGENTX
-
-/* Use SNMP SMUX to interface with snmpd */
-#undef SNMP_SMUX
 
 /* Solaris IPv6 */
 #undef SOLARIS_IPV6

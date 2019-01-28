@@ -78,7 +78,7 @@ static const struct message attr_str[] = {
 	{BGP_ATTR_AS_PATHLIMIT, "AS_PATHLIMIT"},
 	{BGP_ATTR_PMSI_TUNNEL, "PMSI_TUNNEL_ATTRIBUTE"},
 	{BGP_ATTR_ENCAP, "ENCAP"},
-#if ENABLE_BGP_VNC
+#if ENABLE_BGP_VNC_ATTR
 	{BGP_ATTR_VNC, "VNC"},
 #endif
 	{BGP_ATTR_LARGE_COMMUNITIES, "LARGE_COMMUNITY"},
@@ -1690,7 +1690,7 @@ int bgp_mp_reach_parse(struct bgp_attr_parser_args *args,
 				 * - for consistency in rx processing
 				 *
 				 * The following comment is to signal GCC this intention
-				 * and supress the warning
+				 * and suppress the warning
 				 */
 	/* FALLTHRU */
 	case BGP_ATTR_NHLEN_IPV4:
@@ -1707,8 +1707,14 @@ int bgp_mp_reach_parse(struct bgp_attr_parser_args *args,
 			stream_getl(s); /* RD low */
 		}
 		stream_get(&attr->mp_nexthop_global, s, IPV6_MAX_BYTELEN);
-		if (IN6_IS_ADDR_LINKLOCAL(&attr->mp_nexthop_global))
+		if (IN6_IS_ADDR_LINKLOCAL(&attr->mp_nexthop_global)) {
+			if (!peer->nexthop.ifp) {
+				zlog_warn("%s: interface not set appropriately to handle some attributes",
+					  peer->host);
+				return BGP_ATTR_PARSE_WITHDRAW;
+			}
 			attr->nh_ifindex = peer->nexthop.ifp->ifindex;
+		}
 		break;
 	case BGP_ATTR_NHLEN_IPV6_GLOBAL_AND_LL:
 	case BGP_ATTR_NHLEN_VPNV6_GLOBAL_AND_LL:
@@ -1718,8 +1724,14 @@ int bgp_mp_reach_parse(struct bgp_attr_parser_args *args,
 			stream_getl(s); /* RD low */
 		}
 		stream_get(&attr->mp_nexthop_global, s, IPV6_MAX_BYTELEN);
-		if (IN6_IS_ADDR_LINKLOCAL(&attr->mp_nexthop_global))
+		if (IN6_IS_ADDR_LINKLOCAL(&attr->mp_nexthop_global)) {
+			if (!peer->nexthop.ifp) {
+				zlog_warn("%s: interface not set appropriately to handle some attributes",
+					  peer->host);
+				return BGP_ATTR_PARSE_WITHDRAW;
+			}
 			attr->nh_ifindex = peer->nexthop.ifp->ifindex;
+		}
 		if (attr->mp_nexthop_len
 		    == BGP_ATTR_NHLEN_VPNV6_GLOBAL_AND_LL) {
 			stream_getl(s); /* RD high */
@@ -1742,6 +1754,11 @@ int bgp_mp_reach_parse(struct bgp_attr_parser_args *args,
 						  INET6_ADDRSTRLEN));
 
 			attr->mp_nexthop_len = IPV6_MAX_BYTELEN;
+		}
+		if (!peer->nexthop.ifp) {
+			zlog_warn("%s: Interface not set appropriately to handle this some attributes",
+				  peer->host);
+			return BGP_ATTR_PARSE_WITHDRAW;
 		}
 		attr->nh_lla_ifindex = peer->nexthop.ifp->ifindex;
 		break;
@@ -2564,7 +2581,7 @@ bgp_attr_parse_ret_t bgp_attr_parse(struct peer *peer, struct attr *attr,
 		case BGP_ATTR_EXT_COMMUNITIES:
 			ret = bgp_attr_ext_communities(&attr_args);
 			break;
-#if ENABLE_BGP_VNC
+#if ENABLE_BGP_VNC_ATTR
 		case BGP_ATTR_VNC:
 #endif
 		case BGP_ATTR_ENCAP:
@@ -2595,7 +2612,7 @@ bgp_attr_parse_ret_t bgp_attr_parse(struct peer *peer, struct attr *attr,
 			return ret;
 		}
 
-		/* If hard error occured immediately return to the caller. */
+		/* If hard error occurred immediately return to the caller. */
 		if (ret == BGP_ATTR_PARSE_ERROR) {
 			zlog_warn("%s: Attribute %s, parse error", peer->host,
 				  lookup_msg(attr_str, type, NULL));
@@ -2916,7 +2933,7 @@ static void bgp_packet_mpattr_tea(struct bgp *bgp, struct peer *peer,
 		attrhdrlen = 1 + 1;   /* subTLV T + L */
 		break;
 
-#if ENABLE_BGP_VNC
+#if ENABLE_BGP_VNC_ATTR
 	case BGP_ATTR_VNC:
 		attrname = "VNC";
 		subtlvs = attr->vnc_subtlvs;
@@ -3403,7 +3420,7 @@ bgp_size_t bgp_packet_attribute(struct bgp *bgp, struct peer *peer,
 		/* Tunnel Encap attribute */
 		bgp_packet_mpattr_tea(bgp, peer, s, attr, BGP_ATTR_ENCAP);
 
-#if ENABLE_BGP_VNC
+#if ENABLE_BGP_VNC_ATTR
 		/* VNC attribute */
 		bgp_packet_mpattr_tea(bgp, peer, s, attr, BGP_ATTR_VNC);
 #endif
