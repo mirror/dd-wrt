@@ -1270,7 +1270,7 @@ struct bgp_nlri {
 #define BGP_ATTR_ENCAP                          23
 #define BGP_ATTR_LARGE_COMMUNITIES              32
 #define BGP_ATTR_PREFIX_SID                     40
-#if ENABLE_BGP_VNC
+#if ENABLE_BGP_VNC_ATTR
 #define BGP_ATTR_VNC                           255
 #endif
 
@@ -1470,8 +1470,6 @@ extern void bgp_terminate(void);
 extern void bgp_reset(void);
 extern time_t bgp_clock(void);
 extern void bgp_zclient_reset(void);
-extern int bgp_nexthop_set(union sockunion *, union sockunion *,
-			   struct bgp_nexthop *, struct peer *);
 extern struct bgp *bgp_get_default(void);
 extern struct bgp *bgp_lookup(as_t, const char *);
 extern struct bgp *bgp_lookup_by_name(const char *);
@@ -1519,7 +1517,7 @@ extern int bgp_config_write(struct vty *);
 
 extern void bgp_master_init(struct thread_master *master);
 
-extern void bgp_init(void);
+extern void bgp_init(unsigned short instance);
 extern void bgp_pthreads_run(void);
 extern void bgp_pthreads_finish(void);
 extern void bgp_route_map_init(void);
