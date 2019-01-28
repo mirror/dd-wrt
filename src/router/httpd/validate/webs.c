@@ -1619,11 +1619,11 @@ void del_wg_client(webs_t wp)
 	if (peer < 0)
 		return;
 	char temp[64];
-	sprintf(temp,"/tmp/wireguard/oet%s_peer%d_conf", key, peer);
+	sprintf(temp,"/tmp/wireguard/oet%d_peer%d_conf", key, peer);
 	unlink(temp);
-	sprintf(temp,"/tmp/wireguard/oet%s_peer%d_private", key, peer);
+	sprintf(temp,"/tmp/wireguard/oet%d_peer%d_private", key, peer);
 	unlink(temp);
-	sprintf(temp,"/tmp/wireguard/oet%s_peer%d_svg", key, peer);
+	sprintf(temp,"/tmp/wireguard/oet%d_peer%d_svg", key, peer);
 	unlink(temp);
 }
 
