@@ -1643,6 +1643,7 @@ void add_peer(webs_t wp)
 	default_set("rem", "0.0.0.0");
 	default_set("peerport", "51820");
 	default_set("ip", "0.0.0.0");
+	default_set("aip", "0.0.0.0/0");
 	default_set("dns", "0.0.0.0");
 	default_set("mtu", "1500");
 #undef default_set
