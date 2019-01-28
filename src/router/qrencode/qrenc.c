@@ -42,7 +42,8 @@ static int version = 0;
 static int size = 3;
 static int margin = -1;
 static int dpi = 72;
-static int structured = 0;
+#define structured 0
+//static int structured = 0;
 static int rle = 0;
 static int svg_path = 0;
 #define micro 0
@@ -88,7 +89,7 @@ static const struct option options[] = {
 	{"margin"       , required_argument, NULL, 'm'},
 	{"dpi"          , required_argument, NULL, 'd'},
 	{"type"         , required_argument, NULL, 't'},
-	{"structured"   , no_argument      , NULL, 'S'},
+//	{"structured"   , no_argument      , NULL, 'S'},
 //	{"kanji"        , no_argument      , NULL, 'k'},
 //	{"casesensitive", no_argument      , NULL, 'c'},
 //	{"ignorecase"   , no_argument      , NULL, 'i'},
@@ -1349,9 +1350,9 @@ int main(int argc, char **argv)
 					exit(EXIT_FAILURE);
 				}
 				break;
-			case 'S':
-				structured = 1;
-				break;
+//			case 'S':
+//				structured = 1;
+//				break;
 			case 'k':
 				hint = QR_MODE_KANJI;
 				break;
