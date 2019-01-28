@@ -86,18 +86,19 @@ void start_sysinit(void)
 	if (in == NULL) {
 		fprintf(stderr, "recover broken nvram\n");
 		sprintf(dev, "/dev/%s", disk);
+		int size = nvram_size();
 		in = fopen(dev, "rb");
 		fseeko(in, 0, SEEK_END);
 		off_t mtdlen = ftello(in);
-		fseeko(in, mtdlen - (65536 * 2), SEEK_SET);
-		unsigned char *mem = malloc(65536);
-		fread(mem, 65536, 1, in);
+		fseeko(in, mtdlen - (size + 65536), SEEK_SET);
+		unsigned char *mem = malloc(size);
+		fread(mem, size, 1, in);
 		fclose(in);
 		if (mem[0] == 0x46 && mem[1] == 0x4c && mem[2] == 0x53 && mem[3] == 0x48) {
 			fprintf(stderr, "found recovery\n");
 			in = fopen("/usr/local/nvram/nvram.bin", "wb");
 			if (in != NULL) {
-				fwrite(mem, 65536, 1, in);
+				fwrite(mem, size, 1, in);
 				fclose(in);
 				free(mem);
 				eval("sync");
