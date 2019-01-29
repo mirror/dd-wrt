@@ -1605,7 +1605,7 @@ void gen_wg_client(webs_t wp)
 	sprintf(idx, "%d", key);
 	char p[32];
 	sprintf(p, "%d", peer);
-	eval("makewgclient", idx,p);
+	eval("makewgclient", idx, p);
 }
 
 void del_wg_client(webs_t wp)
@@ -1618,11 +1618,11 @@ void del_wg_client(webs_t wp)
 	if (peer < 0)
 		return;
 	char temp[64];
-	sprintf(temp,"/tmp/wireguard/oet%d_peer%d_conf", key, peer);
+	sprintf(temp, "/tmp/wireguard/oet%d_peer%d_conf", key, peer);
 	unlink(temp);
-	sprintf(temp,"/tmp/wireguard/oet%d_peer%d_private", key, peer);
+	sprintf(temp, "/tmp/wireguard/oet%d_peer%d_private", key, peer);
 	unlink(temp);
-	sprintf(temp,"/tmp/wireguard/oet%d_peer%d_svg", key, peer);
+	sprintf(temp, "/tmp/wireguard/oet%d_peer%d_svg", key, peer);
 	unlink(temp);
 }
 
@@ -1748,7 +1748,10 @@ void add_tunnel(webs_t wp)
 	default_set("ipaddr", "1.2.3.4");
 	default_set("netmask", "255.255.255.0");
 	default_set("id", "1");
-	default_set("mtu", "1420");
+	if (!nvram_match("wan_proto", "disabled"))
+		default_set("mtu", nvram_safe_get("wan_mtu"));
+	else
+		default_set("mtu", "1420");
 	default_set("proto", "0");
 	default_set("bridged", "1");
 	default_set("peers", "0");
