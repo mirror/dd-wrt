@@ -154,8 +154,8 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 						{
 							show_caption(wp, "label", "eoip.wireguard_peermtu", NULL);
 							snprintf(temp, sizeof(temp), "oet%d_mtu%d", tun, peer);
-							nvram_default_get(temp, "1500");
-							websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n", temp, nvram_default_get(temp, "1500"));
+							nvram_default_get(temp, "1420");
+							websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n", temp, nvram_default_get(temp, "1420"));
 						}
 						websWrite(wp, "</div>\n");
 
