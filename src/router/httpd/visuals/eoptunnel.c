@@ -254,34 +254,34 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 							websWrite(wp, "</div>\n");
 						}
 						websWrite(wp, "</div>\n");
-						char confpath[64];
-						char svgpath[64];
-						char s_tun[32];
-						char s_peer[32];
 						char pk[32];
 						sprintf(pk, "oet%d_peerpk%d", tun, peer);
-						sprintf(s_tun, "%d", tun);
-						sprintf(s_peer, "%d", peer);
-						sprintf(confpath, "/tmp/wireguard/oet%d_peer%d_conf", tun, peer);
 						if (nvram_exists(pk)) {
+							char svgpath[64];
+							char s_tun[32];
+							char s_peer[32];
+							char confpath[64];
+							sprintf(s_tun, "%d", tun);
+							sprintf(s_peer, "%d", peer);
+							sprintf(confpath, "/tmp/wireguard/oet%d_peer%d_conf", tun, peer);
 							eval("makewgconfig", s_tun, s_peer);
-						}
-						sprintf(svgpath, "/tmp/wireguard/oet%d_peer%d_svg", tun, peer);
-						eval("qrencode", "-t", "svg", "--rle", "-r", confpath, "-o", svgpath);
-						FILE *svg = fopen(svgpath, "rb");
-						int hasqr = 0;
-						if (svg) {
-							fseek(svg, 0, SEEK_END);
-							int len = ftell(svg);
-							rewind(svg);
-							char *buf = calloc(1, len + 1);
-							fread(buf, len, 1, svg);
-							fclose(svg);
-							websWrite(wp, "<div class=\"setting\">\n");
-							wfputs(buf, wp);
-							websWrite(wp, "</div>\n");
-							free(buf);
-							hasqr = 1;
+							sprintf(svgpath, "/tmp/wireguard/oet%d_peer%d_svg", tun, peer);
+							eval("qrencode", "-t", "svg", "--rle", "-r", confpath, "-o", svgpath);
+							FILE *svg = fopen(svgpath, "rb");
+							int hasqr = 0;
+							if (svg) {
+								fseek(svg, 0, SEEK_END);
+								int len = ftell(svg);
+								rewind(svg);
+								char *buf = calloc(1, len + 1);
+								fread(buf, len, 1, svg);
+								fclose(svg);
+								websWrite(wp, "<div class=\"setting\">\n");
+								wfputs(buf, wp);
+								websWrite(wp, "</div>\n");
+								free(buf);
+								hasqr = 1;
+							}
 						}
 						websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 						websWrite(wp, "show_layer_ext(this, 'idpsk%d_peer%d',%s);\n", tun, peer, nvram_nmatch("1", "oet%d_usepsk%d", tun, peer) ? "true" : "false");
