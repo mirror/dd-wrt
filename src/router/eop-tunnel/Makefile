@@ -23,6 +23,7 @@ install: all
 	-cp makewgkey $(INSTALLDIR)/usr/sbin
 	-cp makewgpsk $(INSTALLDIR)/usr/sbin
 	-cp makewgclient $(INSTALLDIR)/usr/sbin
+	-cp makewgconfig $(INSTALLDIR)/usr/sbin
 
 www-install:
 	install -d $(INSTALLDIR)/../www
