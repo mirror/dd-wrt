@@ -22,6 +22,16 @@
 #if HAVE_CONFIG_H
 # include "config.h"
 #endif
+#include "qrencode.c"
+#include "qrinput.c"
+#include "bitstream.c"
+#include "qrspec.c"
+#include "rsecc.c"
+#include "split.c"
+#include "mask.c"
+#include "mqrspec.c"
+#include "mmask.c"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

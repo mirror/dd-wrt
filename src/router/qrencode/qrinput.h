@@ -75,17 +75,17 @@ struct _QRinput_Struct {
  * @param input input data.
  * @return padded merged byte stream
  */
-extern unsigned char *QRinput_getByteStream(QRinput *input);
+static unsigned char *QRinput_getByteStream(QRinput *input);
 
 
-extern int QRinput_estimateBitsModeNum(int size);
-extern int QRinput_estimateBitsModeAn(int size);
-extern int QRinput_estimateBitsMode8(int size);
-extern int QRinput_estimateBitsModeKanji(int size);
+static int QRinput_estimateBitsModeNum(int size);
+static int QRinput_estimateBitsModeAn(int size);
+static int QRinput_estimateBitsMode8(int size);
+static int QRinput_estimateBitsModeKanji(int size);
 
-extern QRinput *QRinput_dup(QRinput *input);
+static QRinput *QRinput_dup(QRinput *input);
 
-extern const signed char QRinput_anTable[128];
+static const signed char QRinput_anTable[128];
 
 /**
  * Look up the alphabet-numeric convesion table (see JIS X0510:2004, pp.19).
@@ -112,12 +112,12 @@ extern const signed char QRinput_anTable[128];
 #define MAX_STRUCTURED_SYMBOLS 16
 
 #ifdef WITH_TESTS
-extern int QRinput_mergeBitStream(QRinput *input, BitStream *bstream);
-extern int QRinput_getBitStream(QRinput *input, BitStream *bstream);
-extern int QRinput_estimateBitStreamSize(QRinput *input, int version);
-extern int QRinput_splitEntry(QRinput_List *entry, int bytes);
-extern int QRinput_lengthOfCode(QRencodeMode mode, int version, int bits);
-extern int QRinput_insertStructuredAppendHeader(QRinput *input, int size, int index, unsigned char parity);
+static int QRinput_mergeBitStream(QRinput *input, BitStream *bstream);
+static int QRinput_getBitStream(QRinput *input, BitStream *bstream);
+static int QRinput_estimateBitStreamSize(QRinput *input, int version);
+static int QRinput_splitEntry(QRinput_List *entry, int bytes);
+static int QRinput_lengthOfCode(QRencodeMode mode, int version, int bits);
+static int QRinput_insertStructuredAppendHeader(QRinput *input, int size, int index, unsigned char parity);
 #endif
 
 #endif /* QRINPUT_H */

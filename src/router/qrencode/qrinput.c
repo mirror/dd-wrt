@@ -456,7 +456,7 @@ static int QRinput_encodeModeNum(QRinput_List *entry, BitStream *bstream, int ve
  * Alphabet-numeric data
  *****************************************************************************/
 
-const signed char QRinput_anTable[128] = {
+static const signed char QRinput_anTable[128] = {
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 	36, -1, -1, -1, 37, 38, -1, -1, -1, -1, 39, 40, -1, 41, 42, 43,
