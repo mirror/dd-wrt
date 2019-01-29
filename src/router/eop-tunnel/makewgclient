@@ -25,9 +25,9 @@ if [ -z "$(nvram get oet$1_dns$2)" ]
 then
 	nvram set oet$1_dns$2=0.0.0.0
 fi
-if [ -z "$(nvram get oet$1_mtu$2)" ]
+if [ -z "$(nvram get oet$1_mtu)" ]
 then
-	nvram set oet$1_mtu$2=1500
+	nvram set oet$1_mtu=1420
 fi
 
 if [ -z "$(nvram get oet$1_aip$2)" ]
@@ -43,7 +43,7 @@ if [ "$(nvram get oet$1_dns$2)" != "0.0.0.0" ]
 then
 echo "DNS = $(nvram get oet$1_dns$2)" >> /tmp/wireguard/oet$1_peer$2_conf
 fi
-echo "MTU = $(nvram get oet$1_mtu$2)" >> /tmp/wireguard/oet$1_peer$2_conf
+echo "MTU = $(nvram get oet$1_mtu)" >> /tmp/wireguard/oet$1_peer$2_conf
 echo "[Peer]" >> /tmp/wireguard/oet$1_peer$2_conf
 echo "PublicKey = $(nvram get oet$1_public)" >> /tmp/wireguard/oet$1_peer$2_conf
 echo "Endpoint = $EP:$(nvram get oet$1_port)" >> /tmp/wireguard/oet$1_peer$2_conf
