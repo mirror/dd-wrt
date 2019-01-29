@@ -1,59 +1,62 @@
 #!/bin/sh
+nv=/usr/sbin/nvram
 
 mkdir -p /tmp/wireguard
 
 wg genkey > /tmp/wireguard/oet$1_peer$2_private
 wg pubkey < /tmp/wireguard/oet$1_peer$2_private > /tmp/wireguard/oet$1_peer$2_public
 nvram set oet$1_peerkey$2=$(cat /tmp/wireguard/oet$1_peer$2_public)
-if [ "$(nvram get wan_proto)" = "disabled" ]
+if [ "$($nv get wan_proto)" = "disabled" ]
 then
-	EP=$(nvram get lan_ipaddr)
+	EP=$($nv get lan_ipaddr)
 else
 	EP=$(get_wanip)
 fi
-if [ "$(nvram get oet$1_endpoint$2)" = "1" ]
+if [ "$($nv get oet$1_endpoint$2)" = "1" ]
 then
-	LISTENPORT=$(nvram get oet$1_peerport$2)
+	LISTENPORT=$($nv get oet$1_peerport$2)
 else
 	LISTENPORT="51820"
 fi
-if [ -z "$(nvram get oet$1_ip$2)" ]
+if [ -z "$($nv get oet$1_ip$2)" ]
 then
 	nvram set oet$1_ip$2=0.0.0.0
 fi
-if [ -z "$(nvram get oet$1_dns$2)" ]
+if [ -z "$($nv get oet$1_dns$2)" ]
 then
 	nvram set oet$1_dns$2=0.0.0.0
 fi
-if [ -z "$(nvram get oet$1_mtu)" ]
+if [ -z "$($nv get oet$1_mtu)" ]
 then
-	nvram set oet$1_mtu=1420
+	if [ "$($nv get wan_proto)" != "disabled" ]
+	then
+		nvram set oet$1_mtu=$($nv get wan_mtu)
+	fi
 fi
-
-if [ -z "$(nvram get oet$1_aip$2)" ]
+if [ -z "$($nv get oet$1_aip$2)" ]
 then
 	nvram set oet$1_aip$2="0.0.0.0/0, ::/0"
 fi
 
 echo "[Interface]" > /tmp/wireguard/oet$1_peer$2_conf
-echo "Address = $(nvram get oet$1_ip$2)/$(getmask $(nvram get oet$1_netmask))" >> /tmp/wireguard/oet$1_peer$2_conf
+echo "Address = $($nv get oet$1_ip$2)/$(getmask $($nv get oet$1_netmask))" >> /tmp/wireguard/oet$1_peer$2_conf
 echo "PrivateKey = $(cat /tmp/wireguard/oet$1_peer$2_private)" >> /tmp/wireguard/oet$1_peer$2_conf
 echo "ListenPort = $LISTENPORT" >> /tmp/wireguard/oet$1_peer$2_conf
-if [ "$(nvram get oet$1_dns$2)" != "0.0.0.0" ]
+if [ "$($nv get oet$1_dns$2)" != "0.0.0.0" ]
 then
-echo "DNS = $(nvram get oet$1_dns$2)" >> /tmp/wireguard/oet$1_peer$2_conf
+echo "DNS = $($nv get oet$1_dns$2)" >> /tmp/wireguard/oet$1_peer$2_conf
 fi
-echo "MTU = $(nvram get oet$1_mtu)" >> /tmp/wireguard/oet$1_peer$2_conf
+echo "MTU = $($nv get oet$1_mtu)" >> /tmp/wireguard/oet$1_peer$2_conf
 echo "[Peer]" >> /tmp/wireguard/oet$1_peer$2_conf
-echo "PublicKey = $(nvram get oet$1_public)" >> /tmp/wireguard/oet$1_peer$2_conf
-echo "Endpoint = $EP:$(nvram get oet$1_port)" >> /tmp/wireguard/oet$1_peer$2_conf
+echo "PublicKey = $($nv get oet$1_public)" >> /tmp/wireguard/oet$1_peer$2_conf
+echo "Endpoint = $EP:$($nv get oet$1_port)" >> /tmp/wireguard/oet$1_peer$2_conf
 #echo "AllowedIPs = $EP" >> /tmp/wireguard/oet$1_peer$2_conf
-echo "AllowedIPs = $(nvram get oet$1_aip$2)" >> /tmp/wireguard/oet$1_peer$2_conf
-if [ $(nvram get oet$1_usepsk$2) = "1" ]
+echo "AllowedIPs = $($nv get oet$1_aip$2)" >> /tmp/wireguard/oet$1_peer$2_conf
+if [ $($nv get oet$1_usepsk$2) = "1" ]
 then
-echo "PresharedKey = $(nvram get oet$1_psk$2)" >> /tmp/wireguard/oet$1_peer$2_conf
+echo "PresharedKey = $($nv get oet$1_psk$2)" >> /tmp/wireguard/oet$1_peer$2_conf
 fi
-echo "PersistentKeepalive = $(nvram get oet$1_ka$2)" >> /tmp/wireguard/oet$1_peer$2_conf
+echo "PersistentKeepalive = $($nv get oet$1_ka$2)" >> /tmp/wireguard/oet$1_peer$2_conf
 qrencode -t svg --rle -r /tmp/wireguard/oet$1_peer$2_conf -o /tmp/wireguard/oet$1_peer$2_svg
 # must restart tunnel since keys have been changed
 /etc/config/eop-tunnel.startup

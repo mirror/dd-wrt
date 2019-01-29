@@ -1,5 +1,5 @@
 #!/bin/sh
-nv=/usr/sbin/nvram		
+nv=/usr/sbin/nvram
 /bin/mkdir -p /tmp/oet/pid
 cd /tmp/oet/pid
 rmmod eoip
@@ -10,9 +10,9 @@ do
 	then 
 	    emf del iface $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
 	    brctl delif $(getbridge oet${i}) oet${i} 2>&1 > /dev/null
-	    ip tunnel del oet${i}
-	    ip link del oet${i}
-	    wg set oet${i} peer $($nv get oet${i}_peerkey) remove
+	    ip tunnel del oet${i} 2>&1 > /dev/null
+	    ip link del oet${i} 2>&1 > /dev/null
+	    wg set oet${i} peer $($nv get oet${i}_peerkey) remove 2>&1 > /dev/null
 	    rm -f ${i}.pid
 	fi
 	if [ `$nv get oet${i}_en` -eq 1 ]
@@ -26,9 +26,12 @@ do
 			insmod ip_tunnel
 			insmod wireguard
 			logger -p user.info "Enable WireGuard interface oet${i} on port $($nv get oet${i}_port)"
-			if [ -z "$(nvram get oet${i}_mtu)" ]
+			if [ -z "$($nv get oet${i}_mtu)" ]
 			then
-				nvram set oet${i}_mtu=1420
+				if [ "$($nv get wan_proto)" != "disabled" ]
+				then
+					nvram set oet${i}_mtu=$($nv get wan_mtu)
+				fi
 			fi
 			ip link add oet${i} type wireguard
 			wg set oet${i} listen-port $($nv get oet${i}_port)
@@ -56,7 +59,7 @@ do
 				wg set oet${i} peer $($nv get oet${i}_peerkey${p}) persistent-keepalive $($nv get oet${i}_ka${p}) $PSKARG1 $PSKARG2 allowed-ips $($nv get oet${i}_aip${p}) $ENDPOINTARG1 $ENDPOINTARG2 &
 			done
 			ifconfig oet${i} promisc up 2>&1 > /dev/null
-			ip link set mtu $($nv get oet${i}_mtu) up dev oet${i}
+			ip link set mtu $($nv get oet${i}_mtu) up dev oet${i} 2>&1 > /dev/null
 			ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} 2>&1 > /dev/null
 			echo enable > ${i}.pid
 		fi
