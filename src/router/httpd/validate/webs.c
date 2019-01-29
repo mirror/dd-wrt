@@ -1570,7 +1570,6 @@ void tunnel_save(webs_t wp)
 			copytonv(wp, "oet%d_aip%d", i, peer);
 			copymergetonv(wp, "oet%d_ip%d", i, peer);
 			copymergetonv(wp, "oet%d_dns%d", i, peer);
-			copytonv(wp, "oet%d_mtu%d", i, peer);
 			copytonv(wp, "oet%d_peerport%d", i, peer);
 			copytonv(wp, "oet%d_rem%d", i, peer);
 			copytonv(wp, "oet%d_usepsk%d", i, peer);
@@ -1645,7 +1644,6 @@ void add_peer(webs_t wp)
 	default_set("ip", "0.0.0.0");
 	default_set("aip", "0.0.0.0/0");
 	default_set("dns", "0.0.0.0");
-	default_set("mtu", "1420");
 #undef default_set
 	peer++;
 	nvram_seti(idx, peer);
@@ -1686,7 +1684,6 @@ static void copypeer(int tun, int from, int to)
 	copypeervalue("aip", tun, from, to);
 	copypeervalue("ip", tun, from, to);
 	copypeervalue("dns", tun, from, to);
-	copypeervalue("mtu", tun, from, to);
 	copypeervalue("peerport", tun, from, to);
 	copypeervalue("rem", tun, from, to);
 	copypeervalue("usepsk", tun, from, to);
@@ -1701,7 +1698,6 @@ static void copytunpeer(int peer, int from, int to)
 	copypeertunvalue("aip", peer, from, to);
 	copypeertunvalue("ip", peer, from, to);
 	copypeertunvalue("dns", peer, from, to);
-	copypeertunvalue("mtu", peer, from, to);
 	copypeertunvalue("peerport", peer, from, to);
 	copypeertunvalue("rem", peer, from, to);
 	copypeertunvalue("usepsk", peer, from, to);
@@ -1716,7 +1712,6 @@ static void delpeer(int tun, int peer)
 	delpeervalue("aip", tun, peer);
 	delpeervalue("ip", tun, peer);
 	delpeervalue("dns", tun, peer);
-	delpeervalue("mtu", tun, peer);
 	delpeervalue("peerport", tun, peer);
 	delpeervalue("rem", tun, peer);
 	delpeervalue("usepsk", tun, peer);
@@ -1753,6 +1748,7 @@ void add_tunnel(webs_t wp)
 	default_set("ipaddr", "1.2.3.4");
 	default_set("netmask", "255.255.255.0");
 	default_set("id", "1");
+	default_set("mtu", "1420");
 	default_set("proto", "0");
 	default_set("bridged", "1");
 	default_set("peers", "0");
@@ -1773,6 +1769,7 @@ void del_tunnel(webs_t wp)
 		copytunvalue("ipaddr", i, i - 1);
 		copytunvalue("netmask", i, i - 1);
 		copytunvalue("id", i, i - 1);
+		copytunvalue("mtu", i, i - 1);
 		copytunvalue("proto", i, i - 1);
 		copytunvalue("bridged", i, i - 1);
 #ifdef HAVE_WIREGUARD
@@ -1798,6 +1795,7 @@ void del_tunnel(webs_t wp)
 	deltunvalue("ipaddr", tunnels);
 	deltunvalue("netmask", tunnels);
 	deltunvalue("id", tunnels);
+	deltunvalue("mtu", tunnels);
 	deltunvalue("proto", tunnels);
 	deltunvalue("bridged", tunnels);
 #ifdef HAVE_WIREGUARD

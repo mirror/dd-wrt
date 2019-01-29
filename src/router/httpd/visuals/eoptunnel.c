@@ -103,6 +103,14 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n", temp, nvram_default_get(temp, "51820"));
 				}
 				websWrite(wp, "</div>\n");
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "idx.mtu", NULL);
+					snprintf(temp, sizeof(temp), "oet%d_mtu", tun);
+					nvram_default_get(temp, "1420");
+					websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n", temp, nvram_default_get(temp, "1420"));
+				}
+				websWrite(wp, "</div>\n");
 
 				websWrite(wp, "<div class=\"center\">\n");
 				{
@@ -147,15 +155,6 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 							snprintf(temp, sizeof(temp), "oet%d_dns%d", tun, peer);
 							nvram_default_get(temp, "0.0.0.0");
 							show_ip(wp, NULL, temp, 1, "eoip.wireguard_peerdns");
-						}
-						websWrite(wp, "</div>\n");
-
-						websWrite(wp, "<div class=\"setting\">\n");
-						{
-							show_caption(wp, "label", "eoip.wireguard_peermtu", NULL);
-							snprintf(temp, sizeof(temp), "oet%d_mtu%d", tun, peer);
-							nvram_default_get(temp, "1420");
-							websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n", temp, nvram_default_get(temp, "1420"));
 						}
 						websWrite(wp, "</div>\n");
 
