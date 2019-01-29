@@ -183,6 +183,16 @@ int nvram_exists(const char *name)
 	return nvram_get(name) ? 1 : 0;
 }
 
+int nvram_nexists(const char *fmt, ...)
+{
+	char varbuf[64];
+	va_list args;
+	va_start(args, (char *)fmt);
+	vsnprintf(varbuf, sizeof(varbuf), fmt, args);
+	va_end(args);
+	return nvram_get(varbuf) ? 1 : 0;
+}
+
 int nvram_geti(const char *name)
 {
 
