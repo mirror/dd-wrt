@@ -26,6 +26,10 @@ do
 			insmod ip_tunnel
 			insmod wireguard
 			logger -p user.info "Enable WireGuard interface oet${i} on port $($nv get oet${i}_port)"
+			if [ -z "$(nvram get oet${i}_mtu)" ]
+			then
+				nvram set oet${i}_mtu=1420
+			fi
 			ip link add oet${i} type wireguard
 			wg set oet${i} listen-port $($nv get oet${i}_port)
 			$nv get oet${i}_private > /tmp/wireguard/oet${i}_private
@@ -52,6 +56,7 @@ do
 				wg set oet${i} peer $($nv get oet${i}_peerkey${p}) persistent-keepalive $($nv get oet${i}_ka${p}) $PSKARG1 $PSKARG2 allowed-ips $($nv get oet${i}_aip${p}) $ENDPOINTARG1 $ENDPOINTARG2 &
 			done
 			ifconfig oet${i} promisc up 2>&1 > /dev/null
+			ip link set mtu $($nv get oet${i}_mtu) up dev oet${i}
 			ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} 2>&1 > /dev/null
 			echo enable > ${i}.pid
 		fi
