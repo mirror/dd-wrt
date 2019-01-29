@@ -55,3 +55,6 @@ echo "PresharedKey = $(nvram get oet$1_psk$2)" >> /tmp/wireguard/oet$1_peer$2_co
 fi
 echo "PersistentKeepalive = $(nvram get oet$1_ka$2)" >> /tmp/wireguard/oet$1_peer$2_conf
 qrencode -t svg --rle -r /tmp/wireguard/oet$1_peer$2_conf -o /tmp/wireguard/oet$1_peer$2_svg
+# must restart tunnel since keys have been changed
+/etc/config/eop-tunnel.startup
+/etc/config/eop-tunnel.firewall
