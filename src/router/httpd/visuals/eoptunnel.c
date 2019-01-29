@@ -254,9 +254,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 							websWrite(wp, "</div>\n");
 						}
 						websWrite(wp, "</div>\n");
-						char pk[32];
-						sprintf(pk, "oet%d_peerpk%d", tun, peer);
-						if (nvram_exists(pk)) {
+						if (nvram_nexists("oet%d_peerpk%d", tun, peer)) {
 							char svgpath[64];
 							char s_tun[32];
 							char s_peer[32];
