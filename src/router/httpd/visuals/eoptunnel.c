@@ -254,9 +254,21 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 							websWrite(wp, "</div>\n");
 						}
 						websWrite(wp, "</div>\n");
-						char path[64];
-						sprintf(path, "/tmp/wireguard/oet%d_peer%d_svg", tun, peer);
-						FILE *svg = fopen(path, "rb");
+						char confpath[64];
+						char svgpath[64];
+						char s_tun[32];
+						char s_peer[32];
+						char pk[32];
+						sprintf(pk, "oet%d_peerpk%d", tun, peer);
+						sprintf(s_tun, "%d", tun);
+						sprintf(s_peer, "%d", peer);
+						sprintf(confpath, "/tmp/wireguard/oet%d_peer%d_conf", tun, peer);
+						if (nvram_exists(pk)) {
+							eval("makewgconfig", s_tun, s_peer);
+						}
+						sprintf(svgpath, "/tmp/wireguard/oet%d_peer%d_svg", tun, peer);
+						eval("qrencode", "-t", "svg", "--rle", "-r", confpath, "-o", svgpath);
+						FILE *svg = fopen(svgpath, "rb");
 						int hasqr = 0;
 						if (svg) {
 							fseek(svg, 0, SEEK_END);

@@ -712,6 +712,23 @@ char *copytonv(webs_t wp, const char *fmt, ...)
 	return wl;
 }
 
+int copytonv_check(webs_t wp, const char *fmt, ...)
+{
+	char varbuf[64];
+	va_list args;
+
+	va_start(args, (char *)fmt);
+	vsnprintf(varbuf, sizeof(varbuf), fmt, args);
+	va_end(args);
+
+	char *wl = websGetVar(wp, varbuf, NULL);
+	dd_debug(DEBUG_HTTPD, "save %s with value %s\n", varbuf, wl);
+	char *oldval = nvram_safe_get(varbuf);
+	if (wl)
+		nvram_set(varbuf, wl);
+	return !nvram_match(varbuf, oldval);
+}
+
 void copymergetonv(webs_t wp, const char *fmt, ...)
 {
 	char varbuf[64];
@@ -1565,7 +1582,11 @@ void tunnel_save(webs_t wp)
 		int peer;
 		for (peer = 0; peer < peers; peer++) {
 			copytonv(wp, "oet%d_endpoint%d", i, peer);
-			copytonv(wp, "oet%d_peerkey%d", i, peer);
+			if (copytonv_check(wp, "oet%d_peerkey%d", i, peer)) {
+				char temp[64];
+				sprintf(temp, "oet%d_peerpk%d", i, peer);
+				nvram_unset(temp);
+			}
 			copytonv(wp, "oet%d_ka%d", i, peer);
 			copytonv(wp, "oet%d_aip%d", i, peer);
 			copymergetonv(wp, "oet%d_ip%d", i, peer);
@@ -1620,8 +1641,8 @@ void del_wg_client(webs_t wp)
 	char temp[64];
 	sprintf(temp, "/tmp/wireguard/oet%d_peer%d_conf", key, peer);
 	unlink(temp);
-	sprintf(temp, "/tmp/wireguard/oet%d_peer%d_private", key, peer);
-	unlink(temp);
+	sprintf(temp, "oet%d_peerpk%d", key, peer);
+	nvram_unset(temp);
 	sprintf(temp, "/tmp/wireguard/oet%d_peer%d_svg", key, peer);
 	unlink(temp);
 }
@@ -1679,6 +1700,7 @@ static void delpeervalue(char *valuename, int tun, int from)
 static void copypeer(int tun, int from, int to)
 {
 	copypeervalue("peerkey", tun, from, to);
+	copypeervalue("peerpk", tun, from, to);
 	copypeervalue("endpoint", tun, from, to);
 	copypeervalue("ka", tun, from, to);
 	copypeervalue("aip", tun, from, to);
@@ -1693,6 +1715,7 @@ static void copypeer(int tun, int from, int to)
 static void copytunpeer(int peer, int from, int to)
 {
 	copypeertunvalue("peerkey", peer, from, to);
+	copypeertunvalue("peerpk", peer, from, to);
 	copypeertunvalue("endpoint", peer, from, to);
 	copypeertunvalue("ka", peer, from, to);
 	copypeertunvalue("aip", peer, from, to);
@@ -1707,6 +1730,7 @@ static void copytunpeer(int peer, int from, int to)
 static void delpeer(int tun, int peer)
 {
 	delpeervalue("peerkey", tun, peer);
+	delpeervalue("peerpk", tun, peer);
 	delpeervalue("ka", tun, peer);
 	delpeervalue("endpoint", tun, peer);
 	delpeervalue("aip", tun, peer);

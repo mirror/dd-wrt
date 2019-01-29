@@ -4,7 +4,6 @@ mkdir -p /tmp/wireguard
 $nv set oet$1_peerpk$2=$(wg genkey)
 $nv set oet$1_peerkey$2=$($nv get oet$1_peerpk$2|wg pubkey)
 makewgconfig $1 $2
-qrencode -t svg --rle -r /tmp/wireguard/oet$1_peer$2_conf -o /tmp/wireguard/oet$1_peer$2_svg
 # must restart tunnel since keys have been changed
 /etc/config/eop-tunnel.startup
 /etc/config/eop-tunnel.firewall
