@@ -22,17 +22,17 @@
 #ifndef MASK_H
 #define MASK_H
 
-extern unsigned char *Mask_makeMask(unsigned int width, unsigned char *frame, int mask, QRecLevel level);
-extern unsigned char *Mask_mask(unsigned int width, unsigned char *frame, QRecLevel level);
+static unsigned char *Mask_makeMask(unsigned int width, unsigned char *frame, int mask, QRecLevel level);
+static unsigned char *Mask_mask(unsigned int width, unsigned char *frame, QRecLevel level);
 
 #ifdef WITH_TESTS
-extern int Mask_calcN2(int width, unsigned char *frame);
-extern int Mask_calcN1N3(int length, int *runLength);
-extern int Mask_calcRunLengthH(int width, unsigned char *frame, int *runLength);
-extern int Mask_calcRunLengthV(int width, unsigned char *frame, int *runLength);
-extern int Mask_evaluateSymbol(int width, unsigned char *frame);
-extern unsigned int Mask_writeFormatInformation(unsigned int width, unsigned char *frame, int mask, QRecLevel level);
-extern unsigned char *Mask_makeMaskedFrame(unsigned int width, unsigned char *frame, int mask);
+static int Mask_calcN2(int width, unsigned char *frame);
+static int Mask_calcN1N3(int length, int *runLength);
+static int Mask_calcRunLengthH(int width, unsigned char *frame, int *runLength);
+static int Mask_calcRunLengthV(int width, unsigned char *frame, int *runLength);
+static int Mask_evaluateSymbol(int width, unsigned char *frame);
+static unsigned int Mask_writeFormatInformation(unsigned int width, unsigned char *frame, int mask, QRecLevel level);
+static unsigned char *Mask_makeMaskedFrame(unsigned int width, unsigned char *frame, int mask);
 #endif
 
 #endif /* MASK_H */

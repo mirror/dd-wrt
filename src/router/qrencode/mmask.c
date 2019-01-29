@@ -51,7 +51,7 @@ STATIC_IN_RELEASE void MMask_writeFormatInformation(int version, int width, unsi
 	}
 }
 
-#define MASKMAKER(__exp__) \
+#define mMASKMAKER(__exp__) \
 	int x, y;\
 \
 	for(y = 0; y < width; y++) {\
@@ -65,30 +65,30 @@ STATIC_IN_RELEASE void MMask_writeFormatInformation(int version, int width, unsi
 		}\
 	}
 
-static void Mask_mask0(int width, const unsigned char *s, unsigned char *d)
+static void mMask_mask0(int width, const unsigned char *s, unsigned char *d)
 {
-	MASKMAKER(y&1)
+	mMASKMAKER(y&1)
 }
 
-static void Mask_mask1(int width, const unsigned char *s, unsigned char *d)
+static void mMask_mask1(int width, const unsigned char *s, unsigned char *d)
 {
-	MASKMAKER(((y/2)+(x/3))&1)
+	mMASKMAKER(((y/2)+(x/3))&1)
 }
 
-static void Mask_mask2(int width, const unsigned char *s, unsigned char *d)
+static void mMask_mask2(int width, const unsigned char *s, unsigned char *d)
 {
-	MASKMAKER((((x*y)&1)+(x*y)%3)&1)
+	mMASKMAKER((((x*y)&1)+(x*y)%3)&1)
 }
 
-static void Mask_mask3(int width, const unsigned char *s, unsigned char *d)
+static void mMask_mask3(int width, const unsigned char *s, unsigned char *d)
 {
-	MASKMAKER((((x+y)&1)+((x*y)%3))&1)
+	mMASKMAKER((((x+y)&1)+((x*y)%3))&1)
 }
 
 #define maskNum (4)
-typedef void MaskMaker(int, const unsigned char *, unsigned char *);
-static MaskMaker *maskMakers[maskNum] = {
-	Mask_mask0, Mask_mask1, Mask_mask2, Mask_mask3
+typedef void mMaskMaker(int, const unsigned char *, unsigned char *);
+static mMaskMaker *mmaskMakers[maskNum] = {
+	mMask_mask0, mMask_mask1, mMask_mask2, mMask_mask3
 };
 
 #ifdef WITH_TESTS
@@ -99,7 +99,7 @@ unsigned char *MMask_makeMaskedFrame(int width, unsigned char *frame, int mask)
 	masked = (unsigned char *)malloc(width * width);
 	if(masked == NULL) return NULL;
 
-	maskMakers[mask](width, frame, masked);
+	mmaskMakers[mask](width, frame, masked);
 
 	return masked;
 }
@@ -119,7 +119,7 @@ unsigned char *MMask_makeMask(int version, unsigned char *frame, int mask, QRecL
 	masked = (unsigned char *)malloc(width * width);
 	if(masked == NULL) return NULL;
 
-	maskMakers[mask](width, frame, masked);
+	mmaskMakers[mask](width, frame, masked);
 	MMask_writeFormatInformation(version, width, masked, mask, level);
 
 	return masked;
@@ -161,7 +161,7 @@ unsigned char *MMask_mask(int version, unsigned char *frame, QRecLevel level)
 
 	for(i = 0; i < maskNum; i++) {
 		score = 0;
-		maskMakers[i](width, frame, mask);
+		mmaskMakers[i](width, frame, mask);
 		MMask_writeFormatInformation(version, width, mask, i, level);
 		score = MMask_evaluateSymbol(width, mask);
 		if(score > maxScore) {

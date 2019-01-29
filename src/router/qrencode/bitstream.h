@@ -28,16 +28,16 @@ typedef struct {
 	unsigned char *data;
 } BitStream;
 
-extern BitStream *BitStream_new(void);
+static BitStream *BitStream_new(void);
 #ifdef WITH_TESTS
-extern BitStream *BitStream_newWithBits(size_t size, unsigned char *bits);
+static BitStream *BitStream_newWithBits(size_t size, unsigned char *bits);
 #endif
-extern int BitStream_append(BitStream *bstream, BitStream *arg);
-extern int BitStream_appendNum(BitStream *bstream, size_t bits, unsigned int num);
-extern int BitStream_appendBytes(BitStream *bstream, size_t size, unsigned char *data);
+static int BitStream_append(BitStream *bstream, BitStream *arg);
+static int BitStream_appendNum(BitStream *bstream, size_t bits, unsigned int num);
+static int BitStream_appendBytes(BitStream *bstream, size_t size, unsigned char *data);
 #define BitStream_size(__bstream__) (__bstream__->length)
 #define BitStream_reset(__bstream__) (__bstream__->length = 0)
-extern unsigned char *BitStream_toByte(BitStream *bstream);
-extern void BitStream_free(BitStream *bstream);
+static unsigned char *BitStream_toByte(BitStream *bstream);
+static void BitStream_free(BitStream *bstream);
 
 #endif /* BITSTREAM_H */
