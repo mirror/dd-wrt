@@ -1,5 +1,3 @@
 #!/bin/sh
-
 mkdir -p /tmp/wireguard
-wg genpsk > /tmp/wireguard/oet$1_psk$2
-nvram set oet$1_psk$2=`cat /tmp/wireguard/oet$1_psk$2`
+nvram set oet$1_psk$2=$(wg genpsk)
