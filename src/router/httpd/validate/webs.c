@@ -1652,6 +1652,8 @@ void add_peer(webs_t wp)
 {
 	tunnel_save(wp);
 	int key = websGetVari(wp, "keyindex", -1);
+	if (key < 0)
+	    return;
 	char idx[32];
 	sprintf(idx, "oet%d_peers", key);
 	nvram_default_get(idx, "0");
