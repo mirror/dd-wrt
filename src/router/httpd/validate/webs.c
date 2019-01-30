@@ -691,7 +691,7 @@ static char *_copytonv(webs_t wp, const char *fmt, ...)
 	va_end(args);
 
 	char *wl = websGetVar(wp, varbuf, NULL);
-	dd_debug(DEBUG_HTTPD, "save %s with value %s\n", varbuf, wl);
+	dd_debug(DEBUG_HTTPD, "save %s with value %s\n", varbuf, wl ? wl : "(null)");
 	nvram_set(varbuf, wl);
 	return wl;
 }
@@ -706,13 +706,13 @@ char *copytonv(webs_t wp, const char *fmt, ...)
 	va_end(args);
 
 	char *wl = websGetVar(wp, varbuf, NULL);
-	dd_debug(DEBUG_HTTPD, "save %s with value %s\n", varbuf, wl);
+	dd_debug(DEBUG_HTTPD, "save %s with value %s\n", varbuf, wl ? wl : "(null)");
 	if (wl)
 		nvram_set(varbuf, wl);
 	return wl;
 }
 
-int copytonv_check(webs_t wp, const char *fmt, ...)
+static int copytonv_check(webs_t wp, const char *fmt, ...)
 {
 	char varbuf[64];
 	va_list args;
@@ -722,7 +722,7 @@ int copytonv_check(webs_t wp, const char *fmt, ...)
 	va_end(args);
 
 	char *wl = websGetVar(wp, varbuf, NULL);
-	dd_debug(DEBUG_HTTPD, "save %s with value %s\n", varbuf, wl ? wl : "");
+	dd_debug(DEBUG_HTTPD, "save %s with value %s\n", varbuf, wl ? wl : "(null)");
 	char *oldval = nvram_safe_get(varbuf);
 	int ret = strcmp(wl ? wl : "", oldval);
 	if (wl)
