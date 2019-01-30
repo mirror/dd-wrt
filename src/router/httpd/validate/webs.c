@@ -724,9 +724,10 @@ int copytonv_check(webs_t wp, const char *fmt, ...)
 	char *wl = websGetVar(wp, varbuf, NULL);
 	dd_debug(DEBUG_HTTPD, "save %s with value %s\n", varbuf, wl ? wl : "");
 	char *oldval = nvram_safe_get(varbuf);
+	int ret = strcmp(wl ? wl : "", oldval);
 	if (wl)
 		nvram_set(varbuf, wl);
-	return strcmp(wl ? wl : "", oldval);
+	return ret;
 }
 
 void copymergetonv(webs_t wp, const char *fmt, ...)
