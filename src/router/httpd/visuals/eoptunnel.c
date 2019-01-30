@@ -195,7 +195,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 						websWrite(wp, "<div class=\"setting\">\n");
 						{
 							show_caption(wp, "label", "eoip.wireguard_allowedips", NULL);
-							websWrite(wp, "<input size=\"18\" maxlength=\"18\" name=\"%s\" value=\"%s\" />\n", temp, nvram_default_get(temp, "0.0.0.0/0"));
+							websWrite(wp, "<input size=\"18\" maxlength=\"1024\" name=\"%s\" value=\"%s\" />\n", temp, nvram_default_get(temp, "0.0.0.0/0"));
 						}
 						websWrite(wp, "</div>\n");
 						snprintf(temp, sizeof(temp), "oet%d_ka%d", tun, peer);
