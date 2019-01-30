@@ -1573,6 +1573,7 @@ void tunnel_save(webs_t wp)
 		copytonv(wp, "oet%d_id", i);
 		copytonv(wp, "oet%d_bridged", i);
 		copytonv(wp, "oet%d_port", i);
+		copytonv(wp, "oet%d_mtu", i);
 		copymergetonv(wp, "oet%d_rem", i);
 		copymergetonv(wp, "oet%d_local", i);
 		copymergetonv(wp, "oet%d_ipaddr", i);
