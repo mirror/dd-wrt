@@ -7,3 +7,4 @@ makewgconfig $1 $2
 # must restart tunnel since keys have been changed
 /etc/config/eop-tunnel.startup
 /etc/config/eop-tunnel.firewall
+restart_f firewall
