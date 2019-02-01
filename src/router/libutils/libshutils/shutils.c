@@ -1096,38 +1096,54 @@ char *getentrybyidx(char *buf, char *list, int idx)
 }
 
 #if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) || defined(HAVE_EROUTER) && !defined(HAVE_WDR4900)
+static int rootdetect(char *fname)
+{
+
+	FILE *in = fopen(fname, "rb");
+
+	if (in == NULL)
+		return -1;
+	// exist, skipping
+	char buf[4];
+
+	fread(buf, 4, 1, in);
+	fclose(in);
+	if (!memcmp(&buf[0], "tqsh", 4)
+	    || !memcmp(&buf[0], "hsqt", 4)
+	    || !memcmp(&buf[0], "hsqs", 4)) {
+		return 1;
+	}
+	return 0;
+
+}
+
 char *getdisc(void)		// works only for squashfs 
 {
-	int i;
+	int i, a;
 	static char ret[8];
-	char *disks[] = { "sda2", "sdb2", "sdc2", "sdd2", "sde2", "sdf2", "sdg2", "sdh2",
-		"sdi2", "mmcblk0p2", "mmcblk0p1"
-	};
-	for (i = 0; i < 10; i++) {
+	for (i = 'a'; i <= 'z'; i++) {
 		char dev[64];
-
-		sprintf(dev, "/dev/%s", disks[i]);
-		FILE *in = fopen(dev, "rb");
-
-		if (in == NULL)
-			continue;	// no second partition or disc does not
-		// exist, skipping
-		char buf[4];
-
-		fread(buf, 4, 1, in);
-		if (!memcmp(&buf[0], "tqsh", 4)
-		    || !memcmp(&buf[0], "hsqt", 4)
-		    || !memcmp(&buf[0], "hsqs", 4)) {
-			fclose(in);
-			// filesystem detected
-			bzero(ret, 8);
-			if (strlen(disks[i]) == 4)
-				strncpy(ret, disks[i], 3);
-			else
-				strncpy(ret, disks[i], 7);
+		sprintf(dev, "/dev/sd%c2", i);
+		int detect = rootdetect(dev);
+		if (detect < 0)
+			break;
+		if (detect) {
+			sprintf(ret, "sd%c", i);
 			return ret;
 		}
-		fclose(in);
+	}
+	for (a = '1'; a <= '2'; a++) {
+		for (i = '0'; i <= '9'; i++) {
+			char dev[64];
+			sprintf(dev, "/dev/mmcblk%cp%c", i, a);
+			int detect = rootdetect(dev);
+			if (detect < 0)
+				break;
+			if (detect) {
+				sprintf(ret, "mmcblk%c", i);
+				return ret;
+			}
+		}
 	}
 	return NULL;
 }
