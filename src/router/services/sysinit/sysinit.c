@@ -91,7 +91,7 @@ extern int f_exists(const char *path);
 #include "../../../opt/mac.h"
 #endif
 
-void runStartup(char *folder, char *extension)
+static void internal_runStartup(char *folder, char *extension)
 {
 	struct dirent **entry;
 	struct stat filestat;
@@ -159,6 +159,22 @@ void runStartup(char *folder, char *extension)
 	free(entry);
 
 	return;
+}
+
+void runStartup(char *extension)
+{
+	internal_runStartup("/etc/config", extension);
+#ifdef HAVE_REGISTER
+	if (isregistered_real()) {
+#endif
+
+		internal_runStartup("/jffs/etc/config", extension);
+		internal_runStartup("/mmc/etc/config", extension);
+		internal_runStartup("/tmp/etc/config", extension);
+		internal_runStartup("/usr/local/etc/config", extension);
+		internal_runStartup("/sd/etc/config", extension);
+		internal_runStartup("/opt/etc/unit.d", extension);
+	}
 }
 
 #if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS)
@@ -816,49 +832,13 @@ void stop_modules(void)
 
 void start_modules(void)
 {
-	runStartup("/etc/config", ".startup");
-
-#ifdef HAVE_REGISTER
-	if (isregistered_real()) {
-#endif
-#ifdef HAVE_RB500
-		runStartup("/usr/local/etc/config", ".startup");	// if available
-#elif HAVE_X86
-		runStartup("/usr/local/etc/config", ".startup");	// if available
-#elif HAVE_NEWPORT
-		runStartup("/usr/local/etc/config", ".startup");	// if available
-#else
-		runStartup("/jffs/etc/config", ".startup");	// if available
-		runStartup("/mmc/etc/config", ".startup");	// if available
-		runStartup("/sd/etc/config", ".startup");	// if available
-#endif
-#ifdef HAVE_REGISTER
-	}
-#endif
+	runStartup(".startup");	// if available
 	return;
 }
 
 void start_wanup(void)
 {
 	runStartup("/etc/config", ".wanup");
-#ifdef HAVE_REGISTER
-	if (isregistered_real())
-#endif
-	{
-
-#ifdef HAVE_RB500
-		runStartup("/usr/local/etc/config", ".wanup");	// if available
-#elif HAVE_X86
-		runStartup("/usr/local/etc/config", ".wanup");	// if available
-#elif HAVE_NEWPORT
-		runStartup("/usr/local/etc/config", ".wanup");	// if available
-#else
-		runStartup("/jffs/etc/config", ".wanup");	// if available
-		runStartup("/mmc/etc/config", ".wanup");	// if available
-		runStartup("/tmp/etc/config", ".wanup");	// if available
-		runStartup("/sd/etc/config", ".wanup");	// if available
-#endif
-	}
 	return;
 }
 
@@ -887,7 +867,7 @@ void start_run_rc_startup(void)
 			count--;
 		} else {
 			closedir(directory);
-			runStartup("/opt/etc/init.d", "S**");	// if available; run S** startup scripts
+			runStartup("S**");	// if available; run S** startup scripts
 			nvram_seti("rc_opt_run", 0);
 			return;
 		}
@@ -2370,7 +2350,7 @@ void start_restore_defaults(void)
 #if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS)
 	buffalo_defaults(restore_defaults);
 #endif
-	runStartup("/sd/etc/config", ".pf");
+	runStartup(".pf");
 	// if (!nvram_match("default_init","1"))
 	{
 		for (t = srouter_defaults; t->name; t++) {

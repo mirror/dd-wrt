@@ -303,7 +303,7 @@ void start_sysinit(void)
 #endif
 
 #if defined(HAVE_ONNET) || defined(HAVE_RAYTRONIK)
-	runStartup("/etc/config/", ".onnet");
+	runStartup(".onnet");
 #endif
 
 #if !defined(HAVE_WR650AC) && !defined(HAVE_E355AC) && !defined(HAVE_E325N) && !defined(HAVE_E380AC) && !defined(HAVE_WR615N)  && !defined(HAVE_AP120C) && !defined(HAVE_WILLY) && !defined(HAVE_WR810N)
