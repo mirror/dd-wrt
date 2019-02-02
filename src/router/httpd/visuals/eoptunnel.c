@@ -107,9 +107,10 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				{
 					show_caption(wp, "label", "idx.mtu", NULL);
 					snprintf(temp, sizeof(temp), "oet%d_mtu", tun);
-					int mtu = 1420;
+					int mtu = 1500;
 					if (!nvram_match("wan_proto", "disabled"))
-						mtu = nvram_geti("wan_mtu") - 80;
+						mtu = nvram_geti("wan_mtu");
+					mtu -= nvram_matchi("ipv6_enable", 1) ? 80 : 40;
 					websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n", temp, nvram_default_geti(temp, mtu));
 				}
 				websWrite(wp, "</div>\n");

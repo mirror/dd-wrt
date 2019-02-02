@@ -1654,7 +1654,7 @@ void add_peer(webs_t wp)
 	tunnel_save(wp);
 	int key = websGetVari(wp, "keyindex", -1);
 	if (key < 0)
-	    return;
+		return;
 	char idx[32];
 	sprintf(idx, "oet%d_peers", key);
 	nvram_default_geti(idx, 0);
@@ -1778,11 +1778,12 @@ void add_tunnel(webs_t wp)
 	default_set("local", "0.0.0.0");
 	default_set("ipaddr", "1.2.3.4");
 	default_set("netmask", "255.255.255.0");
-	default_seti("id",1);
+	default_seti("id", 1);
+	int overhead = nvram_matchi("ipv6_enable", 1) ? 80 : 40;
 	if (!nvram_match("wan_proto", "disabled"))
-		default_seti("mtu", atoi(nvram_safe_get("wan_mtu")) - 80);
+		default_seti("mtu", atoi(nvram_safe_get("wan_mtu")) - overhead);
 	else
-		default_seti("mtu", 1420);
+		default_seti("mtu", 1500 - overhead);
 	default_seti("proto", 0);
 	default_seti("bridged", 1);
 	default_seti("peers", 0);
