@@ -4633,18 +4633,7 @@ void start_wan_done(char *wan_ifname)
 	 */
 
 	cprintf("running custom DD-WRT ipup scripts\n");
-	runStartup("/etc/config", ".ipup");
-#ifdef HAVE_REGISTER
-	if (isregistered_real())
-#endif
-	{
-#ifdef HAVE_RB500
-		runStartup("/usr/local/etc/config", ".ipup");
-#else
-		runStartup("/jffs/etc/config", ".ipup");
-		runStartup("/mmc/etc/config", ".ipup");
-#endif
-	}
+	runStartup(".ipup");
 	cprintf("trigger gpio");
 
 	led_control(LED_CONNECTED, LED_OFF);
