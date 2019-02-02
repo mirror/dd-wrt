@@ -2720,6 +2720,23 @@ void start_firewall(void)
 	int remotetelnet = 0;
 	int remotemanage = 0;
 	lock();
+#ifdef HAVE_REGISTER
+#ifndef HAVE_ERC
+	if (isregistered_real())
+#endif
+#endif
+	{
+		runStartup("/jffs/etc/config", ".prewall");	// if available
+		runStartup("/mmc/etc/config", ".prewall");	// if available
+		runStartup("/tmp/etc/config", ".prewall");	// if available
+		create_rc_file(RC_FIREWALL);
+		if (f_exists("/tmp/.rc_firewall")) {
+			setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
+			system("/tmp/.rc_firewall");
+		}
+		runStartup("/etc/config", ".firewall");
+		runStartup("/sd/etc/config", ".firewall");
+	}
 	start_loadfwmodules();
 	system("cat /proc/net/ip_conntrack_flush 2>&1");
 	system("cat /proc/sys/net/netfilter/nf_conntrack_flush 2>&1");
@@ -2882,23 +2899,6 @@ void start_firewall(void)
 	 * run rc_firewall script 
 	 */
 	cprintf("Exec RC Filewall\n");
-#ifdef HAVE_REGISTER
-#ifndef HAVE_ERC
-	if (isregistered_real())
-#endif
-#endif
-	{
-		runStartup("/jffs/etc/config", ".prewall");	// if available
-		runStartup("/mmc/etc/config", ".prewall");	// if available
-		runStartup("/tmp/etc/config", ".prewall");	// if available
-		create_rc_file(RC_FIREWALL);
-		if (f_exists("/tmp/.rc_firewall")) {
-			setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
-			system("/tmp/.rc_firewall");
-		}
-		runStartup("/etc/config", ".firewall");
-		runStartup("/sd/etc/config", ".firewall");
-	}
 
 	cprintf("Ready\n");
 	/*
