@@ -30,7 +30,7 @@ do
 			then
 				if [ "$($nv get wan_proto)" != "disabled" ]
 				then
-					nvram set oet${i}_mtu=$($nv get wan_mtu)
+					nvram set oet${i}_mtu=$(($($nv get wan_mtu) - 80))
 				fi
 			fi
 			ip link add oet${i} type wireguard
