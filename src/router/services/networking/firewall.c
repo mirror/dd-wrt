@@ -2726,16 +2726,12 @@ void start_firewall(void)
 #endif
 #endif
 	{
-		runStartup("/jffs/etc/config", ".prewall");	// if available
-		runStartup("/mmc/etc/config", ".prewall");	// if available
-		runStartup("/tmp/etc/config", ".prewall");	// if available
-		create_rc_file(RC_FIREWALL);
-		if (f_exists("/tmp/.rc_firewall")) {
-			setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
-			system("/tmp/.rc_firewall");
-		}
-		runStartup("/etc/config", ".firewall");
-		runStartup("/sd/etc/config", ".firewall");
+		runStartup("/jffs/etc/config", ".prewall");
+		runStartup("/mmc/etc/config", ".prewall");
+		runStartup("/tmp/etc/config", ".prewall");
+		runStartup("/usr/local/etc/config", ".prewall");
+		runStartup("/etc/config", ".prewall");
+		runStartup("/sd/etc/config", ".prewall");
 	}
 	start_loadfwmodules();
 	system("cat /proc/net/ip_conntrack_flush 2>&1");
@@ -2899,6 +2895,24 @@ void start_firewall(void)
 	 * run rc_firewall script 
 	 */
 	cprintf("Exec RC Filewall\n");
+#ifdef HAVE_REGISTER
+#ifndef HAVE_ERC
+	if (isregistered_real())
+#endif
+#endif
+	{
+		create_rc_file(RC_FIREWALL);
+		if (f_exists("/tmp/.rc_firewall")) {
+			setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
+			system("/tmp/.rc_firewall");
+		}
+		runStartup("/jffs/etc/config", ".firewall");
+		runStartup("/mmc/etc/config", ".firewall");
+		runStartup("/tmp/etc/config", ".firewall");
+		runStartup("/usr/local/etc/config", ".firewall");
+		runStartup("/etc/config", ".firewall");
+		runStartup("/sd/etc/config", ".firewall");
+	}
 
 	cprintf("Ready\n");
 	/*
