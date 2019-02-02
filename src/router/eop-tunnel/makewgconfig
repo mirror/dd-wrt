@@ -22,11 +22,16 @@ if [ -z "$($nv get oet$1_dns$2)" ]
 then
 	nvram set oet$1_dns$2=0.0.0.0
 fi
+overhead=40
+if [ "$($nv get ipv6_enable)" == "1" ]
+then
+	overhead=80
+fi
 if [ -z "$($nv get oet$1_mtu)" ]
 then
 	if [ "$($nv get wan_proto)" != "disabled" ]
 	then
-		nvram set oet$1_mtu=$(($($nv get wan_mtu) - 80))
+		nvram set oet$1_mtu=$(($($nv get wan_mtu) - $overhead))
 	fi
 fi
 if [ -z "$($nv get oet$1_aip$2)" ]
