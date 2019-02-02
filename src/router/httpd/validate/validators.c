@@ -1729,128 +1729,128 @@ void convert_wl_gmode(char *value, char *prefix)
 /* disabled */
 	if (!strcmp(value, "disabled")) {
 		nvram_nset(value, "%s_net_mode", prefix);
-		nvram_nset("-1", "%s_gmode", prefix);
-		nvram_nset("-1", "%s_nmode", prefix);
-		nvram_nset("0", "%s_nreqd", prefix);
+		nvram_nseti(-1, "%s_gmode", prefix);
+		nvram_nseti(-1, "%s_nmode", prefix);
+		nvram_nseti(0, "%s_nreqd", prefix);
 		if (!nvram_nmatch("1", "%s_nband", prefix)
 		    && !nvram_nmatch("2", "%s_nband", prefix))
-			nvram_nset("2", "%s_nband", prefix);
+			nvram_nseti(2, "%s_nband", prefix);
 /* bgn-mixed */
 	} else if (!strcmp(value, "mixed")) {
 		nvram_nset(value, "%s_net_mode", prefix);
-		nvram_nset("1", "%s_gmode", prefix);
-		nvram_nset("-1", "%s_nmode", prefix);
+		nvram_nseti(1, "%s_gmode", prefix);
+		nvram_nseti(-1, "%s_nmode", prefix);
 		nvram_nset("none", "%s_nctrlsb", prefix);
 		nvram_nset("auto", "%s_afterburner", prefix);
 		nvram_nset("default", "%s_rateset", prefix);
 		nvram_nset("on", "%s_frameburst", prefix);
 		if (!has_mimo(prefix))
 			nvram_nset("g", "%s_phytype", prefix);
-		nvram_nset("0", "%s_nreqd", prefix);
-		nvram_nset("0", "%s_bss_opmode_cap_reqd", prefix);
+		nvram_nseti(0, "%s_nreqd", prefix);
+		nvram_nseti(0, "%s_bss_opmode_cap_reqd", prefix);
 		if (has_2ghz(prefix))
-			nvram_nset("2", "%s_nband", prefix);
+			nvram_nseti(2, "%s_nband", prefix);
 		else
-			nvram_nset("1", "%s_nband", prefix);
+			nvram_nseti(1, "%s_nband", prefix);
 /* bg-mixed */
 	} else if (!strcmp(value, "bg-mixed")) {
 		nvram_nset(value, "%s_net_mode", prefix);
-		nvram_nset("1", "%s_gmode", prefix);
+		nvram_nseti(1, "%s_gmode", prefix);
 		nvram_nset("none", "%s_nctrlsb", prefix);
 		nvram_nset("auto", "%s_afterburner", prefix);
 		nvram_nset("default", "%s_rateset", prefix);
 		nvram_nset("on", "%s_frameburst", prefix);
-		nvram_nset("0", "%s_nmode", prefix);
+		nvram_nseti(0, "%s_nmode", prefix);
 		if (!has_mimo(prefix))
 			nvram_nset("g", "%s_phytype", prefix);
-		nvram_nset("0", "%s_nreqd", prefix);
-		nvram_nset("0", "%s_bss_opmode_cap_reqd", prefix);
-		nvram_nset("2", "%s_nband", prefix);
+		nvram_nseti(0, "%s_nreqd", prefix);
+		nvram_nseti(0, "%s_bss_opmode_cap_reqd", prefix);
+		nvram_nseti(2, "%s_nband", prefix);
 /* g-only */
 	} else if (!strcmp(value, "g-only")) {
 		nvram_nset(value, "%s_net_mode", prefix);
-		nvram_nset("0", "%s_nmode", prefix);
+		nvram_nseti(0, "%s_nmode", prefix);
 		nvram_nset("none", "%s_nctrlsb", prefix);
-		nvram_nset("2", "%s_gmode", prefix);
+		nvram_nseti(2, "%s_gmode", prefix);
 		if (!has_mimo(prefix))
 			nvram_nset("g", "%s_phytype", prefix);
-		nvram_nset("0", "%s_nreqd", prefix);
-		nvram_nset("1", "%s_bss_opmode_cap_reqd", prefix);
-		nvram_nset("2", "%s_nband", prefix);
+		nvram_nseti(0, "%s_nreqd", prefix);
+		nvram_nseti(1, "%s_bss_opmode_cap_reqd", prefix);
+		nvram_nseti(2, "%s_nband", prefix);
 /* ng-only */
 	} else if (!strcmp(value, "ng-only")) {
 		nvram_nset(value, "%s_net_mode", prefix);
-		nvram_nset("2", "%s_nmode", prefix);
-		nvram_nset("2", "%s_gmode", prefix);
-		nvram_nset("0", "%s_nreqd", prefix);
-		nvram_nset("1", "%s_bss_opmode_cap_reqd", prefix);
-		nvram_nset("2", "%s_nband", prefix);
+		nvram_nseti(2, "%s_nmode", prefix);
+		nvram_nseti(2, "%s_gmode", prefix);
+		nvram_nseti(0, "%s_nreqd", prefix);
+		nvram_nseti(1, "%s_bss_opmode_cap_reqd", prefix);
+		nvram_nseti(2, "%s_nband", prefix);
 /* b-only */
 	} else if (!strcmp(value, "b-only")) {
 		nvram_nset(value, "%s_net_mode", prefix);
-		nvram_nset("0", "%s_gmode", prefix);
+		nvram_nseti(0, "%s_gmode", prefix);
 		nvram_nset("none", "%s_nctrlsb", prefix);
-		nvram_nset("0", "%s_nmode", prefix);
+		nvram_nseti(0, "%s_nmode", prefix);
 		nvram_nset("off", "%s_afterburner", prefix);
 		nvram_nset("default", "%s_rateset", prefix);
 		nvram_nset("on", "%s_frameburst", prefix);
 		if (!has_mimo(prefix))
 			nvram_nset("g", "%s_phytype", prefix);
-		nvram_nset("0", "%s_nreqd", prefix);
-		nvram_nset("0", "%s_bss_opmode_cap_reqd", prefix);
-		nvram_nset("2", "%s_nband", prefix);
+		nvram_nseti(0, "%s_nreqd", prefix);
+		nvram_nseti(0, "%s_bss_opmode_cap_reqd", prefix);
+		nvram_nseti(2, "%s_nband", prefix);
 /* n-only or n2-only */
 	} else if (!strcmp(value, "n-only") || !strcmp(value, "n2-only")) {
 		nvram_nset(value, "%s_net_mode", prefix);
-		nvram_nset("1", "%s_gmode", prefix);
-		nvram_nset("2", "%s_nmode", prefix);
-		nvram_nset("1", "%s_nreqd", prefix);
-		nvram_nset("2", "%s_bss_opmode_cap_reqd", prefix);
+		nvram_nseti(1, "%s_gmode", prefix);
+		nvram_nseti(2, "%s_nmode", prefix);
+		nvram_nseti(1, "%s_nreqd", prefix);
+		nvram_nseti(2, "%s_bss_opmode_cap_reqd", prefix);
 		nvram_nset("off", "%s_afterburner", prefix);	// From
 		// 3.61.13.0
 		nvram_nset("n", "%s_phytype", prefix);
-		nvram_nset("2", "%s_nband", prefix);
+		nvram_nseti(2, "%s_nband", prefix);
 /* n5-only */
 	} else if (!strcmp(value, "n5-only")) {
 		nvram_nset(value, "%s_net_mode", prefix);
-		nvram_nset("2", "%s_nmode", prefix);
-		nvram_nset("1", "%s_nreqd", prefix);
-		nvram_nset("2", "%s_bss_opmode_cap_reqd", prefix);
+		nvram_nseti(2, "%s_nmode", prefix);
+		nvram_nseti(1, "%s_nreqd", prefix);
+		nvram_nseti(2, "%s_bss_opmode_cap_reqd", prefix);
 		nvram_nset("off", "%s_afterburner", prefix);	// From
 		// 3.61.13.0
 		nvram_nset("n", "%s_phytype", prefix);
-		nvram_nset("1", "%s_nband", prefix);
+		nvram_nseti(1, "%s_nband", prefix);
 /* na-mixed */
 	} else if (!strcmp(value, "na-only")) {
 		nvram_nset(value, "%s_net_mode", prefix);
-		nvram_nset("2", "%s_nmode", prefix);
-		nvram_nset("0", "%s_nreqd", prefix);
-		nvram_nset("1", "%s_bss_opmode_cap_reqd", prefix);
+		nvram_nseti(2, "%s_nmode", prefix);
+		nvram_nseti(0, "%s_nreqd", prefix);
+		nvram_nseti(1, "%s_bss_opmode_cap_reqd", prefix);
 		nvram_nset("off", "%s_afterburner", prefix);	// From
 		// 3.61.13.0
 		nvram_nset("n", "%s_phytype", prefix);
-		nvram_nset("1", "%s_nband", prefix);
+		nvram_nseti(1, "%s_nband", prefix);
 /* a-only */
 	} else if (!strcmp(value, "a-only")) {
 		nvram_nset(value, "%s_net_mode", prefix);
-		nvram_nset("0", "%s_nmode", prefix);
+		nvram_nseti(0, "%s_nmode", prefix);
 		if (!has_mimo(prefix))
 			nvram_nset("a", "%s_phytype", prefix);
-		nvram_nset("0", "%s_nreqd", prefix);
-		nvram_nset("1", "%s_bss_opmode_cap_reqd", prefix);
-		nvram_nset("1", "%s_nband", prefix);
+		nvram_nseti(0, "%s_nreqd", prefix);
+		nvram_nseti(1, "%s_bss_opmode_cap_reqd", prefix);
+		nvram_nseti(1, "%s_nband", prefix);
 	} else if (!strcmp(value, "ac-only")) {
 		nvram_nset(value, "%s_net_mode", prefix);
-		nvram_nset("2", "%s_nmode", prefix);
-		nvram_nset("1", "%s_nreqd", prefix);
-		nvram_nset("3", "%s_bss_opmode_cap_reqd", prefix);
-		nvram_nset("1", "%s_nband", prefix);
+		nvram_nseti(2, "%s_nmode", prefix);
+		nvram_nseti(1, "%s_nreqd", prefix);
+		nvram_nseti(3, "%s_bss_opmode_cap_reqd", prefix);
+		nvram_nseti(1, "%s_nband", prefix);
 	} else if (!strcmp(value, "acn-mixed")) {
 		nvram_nset(value, "%s_net_mode", prefix);
-		nvram_nset("2", "%s_nmode", prefix);
-		nvram_nset("1", "%s_nreqd", prefix);
-		nvram_nset("2", "%s_bss_opmode_cap_reqd", prefix);
-		nvram_nset("1", "%s_nband", prefix);
+		nvram_nseti(2, "%s_nmode", prefix);
+		nvram_nseti(1, "%s_nreqd", prefix);
+		nvram_nseti(2, "%s_bss_opmode_cap_reqd", prefix);
+		nvram_nseti(1, "%s_nband", prefix);
 	}
 }
 
