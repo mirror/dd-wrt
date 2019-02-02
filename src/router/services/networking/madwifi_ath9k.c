@@ -1387,13 +1387,13 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 	int isttls = nvhas(akm, "ttls");
 
 	if (ispsk)
-		nvram_nset("1", "%s_psk", prefix);
+		nvram_nseti(1, "%s_psk", prefix);
 	if (ispsk2)
-		nvram_nset("1", "%s_psk2", prefix);
+		nvram_nseti(1, "%s_psk2", prefix);
 	if (ispsk2sha256)
-		nvram_nset("1", "%s_psk2-sha256", prefix);
+		nvram_nseti(1, "%s_psk2-sha256", prefix);
 	if (ispsk3)
-		nvram_nset("1", "%s_psk3", prefix);
+		nvram_nseti(1, "%s_psk3", prefix);
 	check_cryptomod(prefix);
 	if (ispsk || ispsk2 || ispsk3 || ispsk2sha256) {
 		char fstr[32];
@@ -1518,7 +1518,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		if (!*pwstring) {
 			sprintf(psk, "%s_crypto", prefix);
 			if (nvram_match(psk, "aes")) {
-				nvram_nset("1", "%s_ccmp", prefix);
+				nvram_nseti(1, "%s_ccmp", prefix);
 				fprintf(fp, "\tpairwise=CCMP\n");
 #if defined(HAVE_MAKSAT) || defined(HAVE_TMK) || defined(HAVE_BKM)
 				if (isadhoc)
@@ -1528,28 +1528,28 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 					fprintf(fp, "\tgroup=CCMP TKIP\n");
 			}
 			if (nvram_match(psk, "tkip")) {
-				nvram_nset("1", "%s_tkip", prefix);
+				nvram_nseti(1, "%s_tkip", prefix);
 				fprintf(fp, "\tpairwise=TKIP\n");
 				fprintf(fp, "\tgroup=TKIP\n");
 			}
 			if (nvram_match(psk, "ccmp-256")) {
-				nvram_nset("1", "%s_ccmp-256", prefix);
+				nvram_nseti(1, "%s_ccmp-256", prefix);
 				fprintf(fp, "\tpairwise=CCMP-256\n");
 				fprintf(fp, "\tgroup=CCMP-256\n");
 			}
 			if (nvram_match(psk, "gcmp")) {
-				nvram_nset("1", "%s_gcmp", prefix);
+				nvram_nseti(1, "%s_gcmp", prefix);
 				fprintf(fp, "\tpairwise=GCMP\n");
 				fprintf(fp, "\tgroup=GCMP\n");
 			}
 			if (nvram_match(psk, "gcmp-256")) {
-				nvram_nset("1", "%s_gcmp-256", prefix);
+				nvram_nseti(1, "%s_gcmp-256", prefix);
 				fprintf(fp, "\tpairwise=GCMP-256\n");
 				fprintf(fp, "\tgroup=GCMP-256\n");
 			}
 			if (nvram_match(psk, "tkip+aes")) {
-				nvram_nset("1", "%s_tkip", prefix);
-				nvram_nset("1", "%s_ccmp", prefix);
+				nvram_nseti(1, "%s_tkip", prefix);
+				nvram_nseti(1, "%s_ccmp", prefix);
 				fprintf(fp, "\tpairwise=CCMP TKIP\n");
 				fprintf(fp, "\tgroup=CCMP TKIP\n");
 			}
@@ -1558,13 +1558,13 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			fprintf(fp, "\tgroup=%s\n", &grpstring[1]);
 		}
 		if (ispsk)
-			nvram_nset("1", "%s_psk", prefix);
+			nvram_nseti(1, "%s_psk", prefix);
 		if (ispsk2)
-			nvram_nset("1", "%s_psk2", prefix);
+			nvram_nseti(1, "%s_psk2", prefix);
 		if (ispsk2sha256)
-			nvram_nset("1", "%s_psk2-sha256", prefix);
+			nvram_nseti(1, "%s_psk2-sha256", prefix);
 		if (ispsk3)
-			nvram_nset("1", "%s_psk3", prefix);
+			nvram_nseti(1, "%s_psk3", prefix);
 		if ((ispsk2 || ispsk2sha256 || ispsk3) && ispsk)
 			fprintf(fp, "\tproto=WPA RSN\n");
 		else if (ispsk)
