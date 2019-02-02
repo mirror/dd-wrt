@@ -364,48 +364,6 @@ int _eval(char *const argv[])
 }
 
 /*
- * Concatenates NULL-terminated list of arguments into a single
- * commmand and executes it
- * @param       argv    argument list
- * @return      stdout of executed command or NULL if an error occurred
- */
-char *_backtick(char *const argv[])
-{
-	int filedes[2];
-	pid_t pid;
-	int status;
-	char *buf = NULL;
-
-	/*
-	 * create pipe 
-	 */
-	if (pipe(filedes) == -1) {
-		perror(argv[0]);
-		return NULL;
-	}
-
-	switch (pid = fork()) {
-	case -1:		/* error */
-		return NULL;
-	case 0:		/* child */
-		close(filedes[0]);	/* close read end of pipe */
-		dup2(filedes[1], 1);	/* redirect stdout to write end of
-					 * pipe */
-		close(filedes[1]);	/* close write end of pipe */
-		execvp(argv[0], argv);
-		exit(errno);
-		break;
-	default:		/* parent */
-		close(filedes[1]);	/* close write end of pipe */
-		buf = fd2str(filedes[0]);
-		waitpid(pid, &status, 0);
-		break;
-	}
-
-	return buf;
-}
-
-/*
  * Kills process whose PID is stored in plaintext in pidfile
  * @param       pidfile PID file
  * @return      0 on success and errno on failure
