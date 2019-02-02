@@ -44,7 +44,7 @@ static int __init mod_init(void)
 
 	pr_info("WireGuard " WIREGUARD_VERSION " loaded. See www.wireguard.com for information.\n");
 	pr_info("Copyright (C) 2015-2019 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.\n");
-
+	pr_info("packed headroom %d, message minimum length\n", DATA_PACKET_HEAD_ROOM, MESSAGE_MINIMUM_LENGTH);
 	return 0;
 
 err_netlink:
