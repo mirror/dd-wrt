@@ -64,14 +64,6 @@ extern int eval_va_silence(const char *cmd, ...);
 #define eval_silence(cmd, args...) eval_va_silence(cmd, ## args, NULL)
 
 /*
- * Concatenates NULL-terminated list of arguments into a single
- * commmand and executes it
- * @param       argv    argument list
- * @return      stdout of executed command or NULL if an error occurred
- */
-extern char *_backtick(char *const argv[]);
-
-/*
  * Kills process whose PID is stored in plaintext in pidfile
  * @param       pidfile PID file
  * @return      0 on success and errno on failure
