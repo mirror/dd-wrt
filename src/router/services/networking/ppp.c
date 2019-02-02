@@ -189,7 +189,7 @@ int ipdown_main(int argc, char **argv)
 {
 	if (check_action() != ACT_IDLE)
 		return -1;
-	runStartup("/etc/config", ".ipdown");
+	runStartup(".ipdown");
 	led_control(LED_CONNECTED, LED_OFF);
 	runStartup(".ipdown");
 	stop_ddns();
