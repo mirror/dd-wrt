@@ -1322,8 +1322,10 @@ static void resetbtn_period_check(int sig)
 	case ROUTER_NETGEAR_R7500:
 	case ROUTER_NETGEAR_R7500V2:
 	case ROUTER_NETGEAR_R7800:
+		sesgpio = 0x105;
 		wifi24gpio = 0x106;
-		val |= get_gpio(6) << 6;
+		val |= get_gpio(6) << 5;
+		val |= get_gpio(65) << 6;
 		break;
 	case ROUTER_NETGEAR_R9000:
 		sesgpio = 0x105;
