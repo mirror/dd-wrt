@@ -118,6 +118,8 @@ extern char *nvram_nget(const char *fmt, ...);
 
 extern int nvram_nset(const char *value, const char *fmt, ...);
 
+extern int nvram_nseti(const int value, const char *fmt, ...);
+
 extern int nvram_nmatch(const char *match, const char *fmt, ...);
 
 extern int nvram_geti(const char *name);
