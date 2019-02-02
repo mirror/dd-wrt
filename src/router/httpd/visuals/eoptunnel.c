@@ -73,10 +73,10 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "<select name=\"oet%d_proto\" onclick=\"changeproto(this, %d, this.value, %s)\">\n", tun, tun, nvram_nget("oet%d_bridged", tun));
 
 				websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-				websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\"  + eoip.etherip + \"</option>\");\n", nvram_match(temp, "0") ? "selected=\\\"selected\\\"" : "");
-				websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >\"  + eoip.mtik + \"</option>\");\n", nvram_match(temp, "1") ? "selected=\\\"selected\\\"" : "");
+				websWrite(wp, "document.write(\"<option value=\\\"0\\\" %s >\"  + eoip.etherip + \"</option>\");\n", nvram_matchi(temp, 0) ? "selected=\\\"selected\\\"" : "");
+				websWrite(wp, "document.write(\"<option value=\\\"1\\\" %s >\"  + eoip.mtik + \"</option>\");\n", nvram_matchi(temp, 1) ? "selected=\\\"selected\\\"" : "");
 #ifdef HAVE_WIREGUARD
-				websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\"  + eoip.wireguard + \"</option>\");\n", nvram_match(temp, "2") ? "selected=\\\"selected\\\"" : "");
+				websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\"  + eoip.wireguard + \"</option>\");\n", nvram_matchi(temp, 2) ? "selected=\\\"selected\\\"" : "");
 #endif
 				websWrite(wp, "//]]>\n</script>\n");
 				websWrite(wp, "</select>\n");
@@ -100,18 +100,17 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "<div class=\"setting\">\n");
 				{
 					show_caption(wp, "label", "eoip.wireguard_localport", NULL);
-					websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n", temp, nvram_default_get(temp, "51820"));
+					websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n", temp, nvram_default_geti(temp, 51820));
 				}
 				websWrite(wp, "</div>\n");
 				websWrite(wp, "<div class=\"setting\">\n");
 				{
 					show_caption(wp, "label", "idx.mtu", NULL);
 					snprintf(temp, sizeof(temp), "oet%d_mtu", tun);
+					int mtu = 1420;
 					if (!nvram_match("wan_proto", "disabled"))
-						nvram_default_geti(temp, atoi(nvram_safe_get("wan_mtu")) - 80);
-					else
-						nvram_default_get(temp, "1420");
-					websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
+						mtu = nvram_geti("wan_mtu") - 80;
+					websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n", temp, nvram_default_geti(temp, mtu));
 				}
 				websWrite(wp, "</div>\n");
 
@@ -134,170 +133,168 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				}
 				websWrite(wp, "</div>\n");
 				snprintf(temp, sizeof(temp), "oet%d_peers", tun);
-				nvram_default_get(temp, "0");
-				int peers = nvram_geti(temp);
+				int peers = nvram_default_geti(temp, 0);
 				int peer;
 				for (peer = 0; peer < peers; peer++) {
+
+					websWrite(wp, "<fieldset>\n");
+					websWrite(wp, "<legend>Peer %d</legend>\n", peer + 1);
+					websWrite(wp, "<div class=\"setting\">\n");
 					{
-						websWrite(wp, "<fieldset>\n");
-						websWrite(wp, "<legend>Peer %d</legend>\n", peer + 1);
-						websWrite(wp, "<div class=\"setting\">\n");
-						{
-							show_caption(wp, "label", "eoip.wireguard_peerip", NULL);
-							websWrite(wp, "<input type=\"hidden\" name=\"oet%d_ip%d\" value=\"0.0.0.0\"/>\n", tun, peer);
-							snprintf(temp, sizeof(temp), "oet%d_ip%d", tun, peer);
-							nvram_default_get(temp, "0.0.0.0");
-							show_ip(wp, NULL, temp, 0, "eoip.wireguard_peerip");
-						}
-						websWrite(wp, "</div>\n");
+						show_caption(wp, "label", "eoip.wireguard_peerip", NULL);
+						websWrite(wp, "<input type=\"hidden\" name=\"oet%d_ip%d\" value=\"0.0.0.0\"/>\n", tun, peer);
+						snprintf(temp, sizeof(temp), "oet%d_ip%d", tun, peer);
+						nvram_default_get(temp, "0.0.0.0");
+						show_ip(wp, NULL, temp, 0, "eoip.wireguard_peerip");
+					}
+					websWrite(wp, "</div>\n");
 
-						websWrite(wp, "<div class=\"setting\">\n");
-						{
-							show_caption(wp, "label", "eoip.wireguard_peerdns", NULL);
-							websWrite(wp, "<input type=\"hidden\" name=\"oet%d_dns%d\" value=\"0.0.0.0\"/>\n", tun, peer);
-							snprintf(temp, sizeof(temp), "oet%d_dns%d", tun, peer);
-							nvram_default_get(temp, "0.0.0.0");
-							show_ip(wp, NULL, temp, 1, "eoip.wireguard_peerdns");
-						}
-						websWrite(wp, "</div>\n");
+					websWrite(wp, "<div class=\"setting\">\n");
+					{
+						show_caption(wp, "label", "eoip.wireguard_peerdns", NULL);
+						websWrite(wp, "<input type=\"hidden\" name=\"oet%d_dns%d\" value=\"0.0.0.0\"/>\n", tun, peer);
+						snprintf(temp, sizeof(temp), "oet%d_dns%d", tun, peer);
+						nvram_default_get(temp, "0.0.0.0");
+						show_ip(wp, NULL, temp, 1, "eoip.wireguard_peerdns");
+					}
+					websWrite(wp, "</div>\n");
 
-						snprintf(temp, sizeof(temp), "oet%d_endpoint%d", tun, peer);
-						nvram_default_get(temp, "0");
+					snprintf(temp, sizeof(temp), "oet%d_endpoint%d", tun, peer);
+					websWrite(wp, "<div class=\"setting\">\n");
+					{
+						show_caption(wp, "label", "eoip.wireguard_endpoint", NULL);
+						websWrite(wp,
+							  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idendpoint%d_peer%d', true)\" />", temp,
+							  (nvram_default_matchi(temp, 1, 0) ? "checked=\"checked\"" : ""), tun, peer);
+						show_caption(wp, NULL, "share.enable", "&nbsp;");
+						websWrite(wp,
+							  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idendpoint%d_peer%d', false)\" />", temp,
+							  (nvram_default_matchi(temp, 0, 0) ? "checked=\"checked\"" : ""), tun, peer);
+						show_caption_simple(wp, "share.disable");
+					}
+					websWrite(wp, "</div>\n");
+					websWrite(wp, "<div id=\"idendpoint%d_peer%d\">\n", tun, peer);
+					{
+
+						snprintf(temp2, sizeof(temp2), "oet%d_peerport%d", tun, peer);
+						snprintf(temp, sizeof(temp), "oet%d_rem%d", tun, peer);
 						websWrite(wp, "<div class=\"setting\">\n");
 						{
-							show_caption(wp, "label", "eoip.wireguard_endpoint", NULL);
+							show_caption(wp, "label", "eoip.wireguard_peer", NULL);
 							websWrite(wp,
-								  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idendpoint%d_peer%d', true)\" />", temp,
-								  (nvram_matchi(temp, 1) ? "checked=\"checked\"" : ""), tun, peer);
-							show_caption(wp, NULL, "share.enable", "&nbsp;");
+								  "<input size=\"20\" maxlength=\"20\" name=\"%s\" value=\"%s\" />:<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n\n",
+								  temp, nvram_safe_get(temp), temp2, nvram_safe_get(temp2));
+						}
+						websWrite(wp, "</div>\n");
+					}
+					websWrite(wp, "</div>\n");
+					snprintf(temp, sizeof(temp), "oet%d_aip%d", tun, peer);
+					websWrite(wp, "<div class=\"setting\">\n");
+					{
+						show_caption(wp, "label", "eoip.wireguard_allowedips", NULL);
+						websWrite(wp, "<input size=\"18\" maxlength=\"1024\" name=\"%s\" value=\"%s\" />\n", temp, nvram_default_get(temp, "0.0.0.0/0"));
+					}
+					websWrite(wp, "</div>\n");
+					snprintf(temp, sizeof(temp), "oet%d_ka%d", tun, peer);
+					websWrite(wp, "<div class=\"setting\">\n");
+					{
+						show_caption(wp, "label", "eoip.wireguard_ka", NULL);
+						websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" onblur=\"valid_range(this,0,65535,eoip.wireguard_ka)\" value=\"%s\" />\n", temp,
+							  nvram_safe_get(temp));
+					}
+					websWrite(wp, "</div>\n");
+
+					//public key peer input
+					snprintf(temp, sizeof(temp), "oet%d_peerkey%d", tun, peer);
+					websWrite(wp, "<div class=\"setting\">\n");
+					{
+						show_caption(wp, "label", "eoip.wireguard_peerkey", NULL);
+						websWrite(wp, "<input size=\"48\" maxlength=\"48\" name=\"%s\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
+					}
+					websWrite(wp, "</div>\n");
+					snprintf(temp, sizeof(temp), "oet%d_usepsk%d", tun, peer);
+					nvram_default_get(temp, "0");
+					websWrite(wp, "<div class=\"setting\">\n");
+					{
+						show_caption(wp, "label", "eoip.wireguard_usepsk", NULL);
+						websWrite(wp,
+							  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idpsk%d_peer%d', true)\" />", temp,
+							  (nvram_matchi(temp, 1) ? "checked=\"checked\"" : ""), tun, peer);
+
+						show_caption(wp, NULL, "share.enable", "&nbsp;");
+
+						websWrite(wp,
+							  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idpsk%d_peer%d', false)\" />", temp,
+							  (nvram_matchi(temp, 0) ? "checked=\"checked\"" : ""), tun, peer);
+						show_caption_simple(wp, "share.disable");
+					}
+					websWrite(wp, "</div>\n");
+					websWrite(wp, "<div id=\"idpsk%d_peer%d\">\n", tun, peer);
+					{
+
+						websWrite(wp, "<div class=\"center\">\n");
+						{
+							websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 							websWrite(wp,
-								  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idendpoint%d_peer%d', false)\" />", temp,
-								  (nvram_matchi(temp, 0) ? "checked=\"checked\"" : ""), tun, peer);
-							show_caption_simple(wp, "share.disable");
-						}
-						websWrite(wp, "</div>\n");
-						websWrite(wp, "<div id=\"idendpoint%d_peer%d\">\n", tun, peer);
-						{
-
-							snprintf(temp2, sizeof(temp2), "oet%d_peerport%d", tun, peer);
-							snprintf(temp, sizeof(temp), "oet%d_rem%d", tun, peer);
-							websWrite(wp, "<div class=\"setting\">\n");
-							{
-								show_caption(wp, "label", "eoip.wireguard_peer", NULL);
-								websWrite(wp,
-									  "<input size=\"20\" maxlength=\"20\" name=\"%s\" value=\"%s\" />:<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n\n",
-									  temp, nvram_safe_get(temp), temp2, nvram_safe_get(temp2));
-							}
-							websWrite(wp, "</div>\n");
-						}
-						websWrite(wp, "</div>\n");
-						snprintf(temp, sizeof(temp), "oet%d_aip%d", tun, peer);
-						websWrite(wp, "<div class=\"setting\">\n");
-						{
-							show_caption(wp, "label", "eoip.wireguard_allowedips", NULL);
-							websWrite(wp, "<input size=\"18\" maxlength=\"1024\" name=\"%s\" value=\"%s\" />\n", temp, nvram_default_get(temp, "0.0.0.0/0"));
-						}
-						websWrite(wp, "</div>\n");
-						snprintf(temp, sizeof(temp), "oet%d_ka%d", tun, peer);
-						websWrite(wp, "<div class=\"setting\">\n");
-						{
-							show_caption(wp, "label", "eoip.wireguard_ka", NULL);
-							websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" onblur=\"valid_range(this,0,65535,eoip.wireguard_ka)\" value=\"%s\" />\n", temp,
-								  nvram_safe_get(temp));
+								  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"gen_psk_button\\\" value=\\\"\" + eoip.wireguard_genpsk + \"\\\" onclick=\\\"gen_wg_psk(this.form,%d,%d)\\\" />\");\n",
+								  tun, peer);
+							websWrite(wp, "//]]>\n</script>\n");
 						}
 						websWrite(wp, "</div>\n");
 
-						//public key peer input
-						snprintf(temp, sizeof(temp), "oet%d_peerkey%d", tun, peer);
+						snprintf(temp, sizeof(temp), "oet%d_psk%d", tun, peer);
 						websWrite(wp, "<div class=\"setting\">\n");
 						{
-							show_caption(wp, "label", "eoip.wireguard_peerkey", NULL);
+							show_caption(wp, "label", "eoip.wireguard_psk", NULL);
 							websWrite(wp, "<input size=\"48\" maxlength=\"48\" name=\"%s\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
 						}
 						websWrite(wp, "</div>\n");
-						snprintf(temp, sizeof(temp), "oet%d_usepsk%d", tun, peer);
-						nvram_default_get(temp, "0");
-						websWrite(wp, "<div class=\"setting\">\n");
-						{
-							show_caption(wp, "label", "eoip.wireguard_usepsk", NULL);
-							websWrite(wp,
-								  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idpsk%d_peer%d', true)\" />", temp,
-								  (nvram_matchi(temp, 1) ? "checked=\"checked\"" : ""), tun, peer);
-
-							show_caption(wp, NULL, "share.enable", "&nbsp;");
-
-							websWrite(wp,
-								  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s onclick=\"show_layer_ext(this, 'idpsk%d_peer%d', false)\" />", temp,
-								  (nvram_matchi(temp, 0) ? "checked=\"checked\"" : ""), tun, peer);
-							show_caption_simple(wp, "share.disable");
-						}
-						websWrite(wp, "</div>\n");
-						websWrite(wp, "<div id=\"idpsk%d_peer%d\">\n", tun, peer);
-						{
-
-							websWrite(wp, "<div class=\"center\">\n");
-							{
-								websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-								websWrite(wp,
-									  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"gen_psk_button\\\" value=\\\"\" + eoip.wireguard_genpsk + \"\\\" onclick=\\\"gen_wg_psk(this.form,%d,%d)\\\" />\");\n",
-									  tun, peer);
-								websWrite(wp, "//]]>\n</script>\n");
-							}
-							websWrite(wp, "</div>\n");
-
-							snprintf(temp, sizeof(temp), "oet%d_psk%d", tun, peer);
-							websWrite(wp, "<div class=\"setting\">\n");
-							{
-								show_caption(wp, "label", "eoip.wireguard_psk", NULL);
-								websWrite(wp, "<input size=\"48\" maxlength=\"48\" name=\"%s\" value=\"%s\" />\n", temp, nvram_safe_get(temp));
-							}
-							websWrite(wp, "</div>\n");
-						}
-						websWrite(wp, "</div>\n");
-						int hasqr = 0;
-						if (nvram_nexists("oet%d_peerpk%d", tun, peer)) {
-							char svgpath[64];
-							char s_tun[32];
-							char s_peer[32];
-							char confpath[64];
-							sprintf(s_tun, "%d", tun);
-							sprintf(s_peer, "%d", peer);
-							sprintf(confpath, "/tmp/wireguard/oet%d_peer%d_conf", tun, peer);
-							eval("makewgconfig", s_tun, s_peer);
-							sprintf(svgpath, "/tmp/wireguard/oet%d_peer%d_svg", tun, peer);
-							eval("qrencode", "-t", "svg", "--rle", "-r", confpath, "-o", svgpath);
-							FILE *svg = fopen(svgpath, "rb");
-							if (svg) {
-								fseek(svg, 0, SEEK_END);
-								int len = ftell(svg);
-								rewind(svg);
-								char *buf = calloc(1, len + 1);
-								fread(buf, len, 1, svg);
-								fclose(svg);
-								websWrite(wp, "<div class=\"setting\">\n");
-								wfputs(buf, wp);
-								websWrite(wp, "</div>\n");
-								free(buf);
-								hasqr = 1;
-							}
-						}
-						websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-						websWrite(wp, "show_layer_ext(this, 'idpsk%d_peer%d',%s);\n", tun, peer, nvram_nmatch("1", "oet%d_usepsk%d", tun, peer) ? "true" : "false");
-						websWrite(wp, "show_layer_ext(this, 'idendpoint%d_peer%d',%s);\n", tun, peer, nvram_nmatch("1", "oet%d_endpoint%d", tun, peer) ? "true" : "false");
-						websWrite(wp,
-							  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"reboot_button\\\" value=\\\"\" + eoip.wireguard_delpeer + \"\\\" onclick=\\\"del_peer(this.form,%d,%d)\\\" />\");\n",
-							  tun, peer);
-						websWrite(wp,
-							  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"gen_qr\\\" value=\\\"\" + eoip.wireguard_makeclient + \"\\\" onclick=\\\"gen_wg_client(this.form,%d,%d)\\\" />\");\n",
-							  tun, peer);
-						if (hasqr) {
-							websWrite(wp,
-								  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"del_qr\\\" value=\\\"\" + eoip.wireguard_cleanqr + \"\\\" onclick=\\\"del_wg_client(this.form,%d,%d)\\\" />\");\n",
-								  tun, peer);
-						}
-						websWrite(wp, "//]]>\n</script>\n");
-						websWrite(wp, "</fieldset>\n");
 					}
+					websWrite(wp, "</div>\n");
+					int hasqr = 0;
+					if (nvram_nexists("oet%d_peerpk%d", tun, peer)) {
+						char svgpath[64];
+						char s_tun[32];
+						char s_peer[32];
+						char confpath[64];
+						sprintf(s_tun, "%d", tun);
+						sprintf(s_peer, "%d", peer);
+						sprintf(confpath, "/tmp/wireguard/oet%d_peer%d_conf", tun, peer);
+						eval("makewgconfig", s_tun, s_peer);
+						sprintf(svgpath, "/tmp/wireguard/oet%d_peer%d_svg", tun, peer);
+						eval("qrencode", "-t", "svg", "--rle", "-r", confpath, "-o", svgpath);
+						FILE *svg = fopen(svgpath, "rb");
+						if (svg) {
+							fseek(svg, 0, SEEK_END);
+							int len = ftell(svg);
+							rewind(svg);
+							char *buf = calloc(1, len + 1);
+							fread(buf, len, 1, svg);
+							fclose(svg);
+							websWrite(wp, "<div class=\"setting\">\n");
+							wfputs(buf, wp);
+							websWrite(wp, "</div>\n");
+							free(buf);
+							hasqr = 1;
+						}
+					}
+					websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+					websWrite(wp, "show_layer_ext(this, 'idpsk%d_peer%d',%s);\n", tun, peer, nvram_nmatchi(1, "oet%d_usepsk%d", tun, peer) ? "true" : "false");
+					websWrite(wp, "show_layer_ext(this, 'idendpoint%d_peer%d',%s);\n", tun, peer, nvram_nmatchi(1, "oet%d_endpoint%d", tun, peer) ? "true" : "false");
+					websWrite(wp,
+						  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"reboot_button\\\" value=\\\"\" + eoip.wireguard_delpeer + \"\\\" onclick=\\\"del_peer(this.form,%d,%d)\\\" />\");\n",
+						  tun, peer);
+					websWrite(wp,
+						  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"gen_qr\\\" value=\\\"\" + eoip.wireguard_makeclient + \"\\\" onclick=\\\"gen_wg_client(this.form,%d,%d)\\\" />\");\n",
+						  tun, peer);
+					if (hasqr) {
+						websWrite(wp,
+							  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"del_qr\\\" value=\\\"\" + eoip.wireguard_cleanqr + \"\\\" onclick=\\\"del_wg_client(this.form,%d,%d)\\\" />\");\n",
+							  tun, peer);
+					}
+					websWrite(wp, "//]]>\n</script>\n");
+					websWrite(wp, "</fieldset>\n");
+
 				}
 
 				websWrite(wp, "<div class=\"center\">\n");
@@ -375,7 +372,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 		websWrite(wp, "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"del_button\\\" value=\\\"\" + eoip.del + \"\\\" onclick=\\\"del_tunnel(this.form,%d)\\\" />\");\n", tun);
 		websWrite(wp, "changeproto(document.eop.oet%d_proto, %d, %s, %s);\n", tun, tun, nvram_nget("oet%d_proto", tun), nvram_nget("oet%d_bridged", tun));
-		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d', %s);\n", tun, tun, nvram_nmatch("1", "oet%d_en", tun) ? "true" : "false");
+		websWrite(wp, "show_layer_ext(document.eop.oet%d_en, 'idoet%d', %s);\n", tun, tun, nvram_nmatchi(1, "oet%d_en", tun) ? "true" : "false");
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</fieldset><br/>\n");
 	}
