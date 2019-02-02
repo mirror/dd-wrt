@@ -328,7 +328,7 @@ void start_raid(void)
 		}
 
 		if (!strcmp(done, "0")) {
-			nvram_nset("1", "raiddone%d", i);
+			nvram_nseti(1, "raiddone%d", i);
 			nvram_commit();
 		}
 
