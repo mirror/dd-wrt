@@ -167,14 +167,15 @@ void runStartup(char *extension)
 #ifdef HAVE_REGISTER
 	if (isregistered_real()) {
 #endif
-
 		internal_runStartup("/jffs/etc/config", extension);
 		internal_runStartup("/mmc/etc/config", extension);
 		internal_runStartup("/tmp/etc/config", extension);
 		internal_runStartup("/usr/local/etc/config", extension);
 		internal_runStartup("/sd/etc/config", extension);
 		internal_runStartup("/opt/etc/unit.d", extension);
+#ifdef HAVE_REGISTER
 	}
+#endif
 }
 
 #if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS)
