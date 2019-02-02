@@ -838,7 +838,7 @@ void start_modules(void)
 
 void start_wanup(void)
 {
-	runStartup("/etc/config", ".wanup");
+	runStartup(".wanup");
 	return;
 }
 
@@ -888,7 +888,7 @@ void start_run_rc_shutdown(void)
 	diag_led(DIAG, START_LED);
 #endif
 	led_control(LED_DIAG, LED_ON);
-	runStartup("/opt/etc/init.d", "K**");	// if available; run K** shutdown scripts
+	runStartup("K**");	// if available; run K** shutdown scripts
 	create_rc_file(RC_SHUTDOWN);
 	if (f_exists("/tmp/.rc_shutdown"))
 		eval("/tmp/.rc_shutdown");
