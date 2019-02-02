@@ -299,5 +299,5 @@ void start_check_qmi(void);
 
 void start_postnetwork(void);
 
-void runStartup(char *folder, char *extension);
+void runStartup(char *extension);
 

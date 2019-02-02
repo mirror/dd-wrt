@@ -108,7 +108,7 @@ void start_sysinit(void)
 	detect_wireless_devices();
 
 #if defined(HAVE_ONNET) || defined(HAVE_RAYTRONIK)
-	runStartup("/etc/config/", ".onnet");
+	runStartup(".onnet");
 #endif
 
 #ifdef HAVE_ALFANX

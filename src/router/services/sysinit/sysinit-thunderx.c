@@ -62,7 +62,6 @@ void start_sysinit(void)
 	time_t tm = 0;
 	char dev[64];
 	char *disk = getdisc();
-	
 
 	if (!nvram_matchi("disable_watchdog", 1)) {
 		insmod("imx2_wdt");
@@ -98,7 +97,6 @@ void start_sysinit(void)
 		fclose(in);
 	}
 
-
 	/*
 	 * Setup console 
 	 */
@@ -112,16 +110,16 @@ void start_sysinit(void)
 	struct ifreq ifr;
 	int s;
 
-//	fprintf(stderr, "try modules for ethernet adapters\n");
-//	nvram_seti("intel_eth", 0);
-//	insmod("sky2");
-//	if (detect_ethernet_devices())
-//		nvram_seti("intel_eth", 1);
+//      fprintf(stderr, "try modules for ethernet adapters\n");
+//      nvram_seti("intel_eth", 0);
+//      insmod("sky2");
+//      if (detect_ethernet_devices())
+//              nvram_seti("intel_eth", 1);
 	/*
 	 * network drivers 
 	 */
-	insmod("cptpf"); // crypto driver
-	insmod("cptvf"); // crypto driver
+	insmod("cptpf");	// crypto driver
+	insmod("cptvf");	// crypto driver
 
 	detect_wireless_devices();
 
