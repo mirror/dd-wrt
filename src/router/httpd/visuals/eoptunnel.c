@@ -108,7 +108,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					show_caption(wp, "label", "idx.mtu", NULL);
 					snprintf(temp, sizeof(temp), "oet%d_mtu", tun);
 					if (!nvram_match("wan_proto", "disabled"))
-						nvram_default_get(temp, nvram_safe_get("wan_mtu"));
+						nvram_default_geti(temp, atoi(nvram_safe_get("wan_mtu")) - 80);
 					else
 						nvram_default_get(temp, "1420");
 					websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n", temp, nvram_safe_get(temp));

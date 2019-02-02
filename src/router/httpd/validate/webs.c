@@ -1657,19 +1657,21 @@ void add_peer(webs_t wp)
 	    return;
 	char idx[32];
 	sprintf(idx, "oet%d_peers", key);
-	nvram_default_get(idx, "0");
+	nvram_default_geti(idx, 0);
 	int peer = nvram_geti(idx);
 
 #define default_set(name,val) if (*(nvram_nget("oet%d_%s%d",key,name,peer))==0)nvram_nset(val, "oet%d_%s%d",key,name,peer)
-	default_set("ka", "0");
-	default_set("endpoint", "0");
-	default_set("usepsk", "0");
+#define default_seti(name,val) if (*(nvram_nget("oet%d_%s%d",key,name,peer))==0)nvram_nseti(val, "oet%d_%s%d",key,name,peer)
+	default_seti("ka", 0);
+	default_seti("endpoint", 0);
+	default_seti("usepsk", 0);
 	default_set("rem", "0.0.0.0");
-	default_set("peerport", "51820");
+	default_seti("peerport", 51820);
 	default_set("ip", "0.0.0.0");
 	default_set("aip", "0.0.0.0/0");
 	default_set("dns", "0.0.0.0");
 #undef default_set
+#undef default_seti
 	peer++;
 	nvram_seti(idx, peer);
 }
@@ -1770,20 +1772,22 @@ void add_tunnel(webs_t wp)
 	tunnels++;
 	nvram_seti("oet_tunnels", tunnels);
 #define default_set(name,val) if (*(nvram_nget("oet%d_%s",tunnels, name))==0)nvram_nset(val, "oet%d_%s",tunnels,name)
-	default_set("en", "0");
+#define default_seti(name,val) if (*(nvram_nget("oet%d_%s",tunnels, name))==0)nvram_nseti(val, "oet%d_%s",tunnels,name)
+	default_seti("en", 0);
 	default_set("rem", "192.168.90.1");
 	default_set("local", "0.0.0.0");
 	default_set("ipaddr", "1.2.3.4");
 	default_set("netmask", "255.255.255.0");
-	default_set("id", "1");
+	default_seti("id",1);
 	if (!nvram_match("wan_proto", "disabled"))
-		default_set("mtu", nvram_safe_get("wan_mtu"));
+		default_seti("mtu", atoi(nvram_safe_get("wan_mtu")) - 80);
 	else
-		default_set("mtu", "1420");
-	default_set("proto", "0");
-	default_set("bridged", "1");
-	default_set("peers", "0");
+		default_seti("mtu", 1420);
+	default_seti("proto", 0);
+	default_seti("bridged", 1);
+	default_seti("peers", 0);
 #undef default_set
+#undef default_seti
 }
 
 void del_tunnel(webs_t wp)
