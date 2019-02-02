@@ -103,9 +103,7 @@ static void *call(void *handle, char *func, webs_t stream)	//jimmy, https, 8/4/2
 	char *argv[16];
 
 	/* Parse out ( args ) */
-	if (!(args = strchr(func, '(')))
-		return handle;
-	if (!(end = uqstrchr(func, ')')))
+	if (!(args = strchr(func, '(')) || !(end = uqstrchr(func, ')')))
 		return handle;
 	*args++ = *end = '\0';
 
