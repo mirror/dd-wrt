@@ -11,6 +11,7 @@
 #include <net/ip.h>
 #include <net/netfilter/nf_conntrack.h>
 #include <net/netfilter/nf_flow_table.h>
+#include <net/netfilter/nf_conntrack_helper.h>
 
 static struct nf_flowtable nf_flowtable;
 static HLIST_HEAD(hooks);
@@ -226,6 +227,7 @@ flowoffload_tg(struct sk_buff *skb, const struct xt_action_param *par)
 	struct nf_flow_route route;
 	struct flow_offload *flow;
 	struct nf_conn *ct;
+	const struct nf_conn_help *help;
 
 	if (xt_flowoffload_skip(skb))
 		return XT_CONTINUE;
@@ -242,7 +244,8 @@ flowoffload_tg(struct sk_buff *skb, const struct xt_action_param *par)
 		return XT_CONTINUE;
 	}
 
-	if (test_bit(IPS_HELPER_BIT, &ct->status))
+	help = nfct_help(ct);
+	if (help)
 		return XT_CONTINUE;
 
 	if (ctinfo == IP_CT_NEW ||
@@ -307,9 +310,40 @@ static void xt_flowoffload_table_cleanup(struct nf_flowtable *table)
 	nf_flow_table_free(table);
 }
 
+static int flow_offload_netdev_event(struct notifier_block *this,
+				     unsigned long event, void *ptr)
+{
+	struct xt_flowoffload_hook *hook = NULL;
+	struct net_device *dev = netdev_notifier_info_to_dev(ptr);
+
+	if (event != NETDEV_UNREGISTER)
+		return NOTIFY_DONE;
+
+	spin_lock_bh(&hooks_lock);
+	hook = flow_offload_lookup_hook(dev);
+	if (hook) {
+		hlist_del(&hook->list);
+	}
+	spin_unlock_bh(&hooks_lock);
+	if (hook) {
+		nf_unregister_net_hook(hook->net, &hook->ops);
+		kfree(hook);
+	}
+
+	nf_flow_table_cleanup(dev_net(dev), dev);
+
+	return NOTIFY_DONE;
+}
+
+static struct notifier_block flow_offload_netdev_notifier = {
+	.notifier_call	= flow_offload_netdev_event,
+};
+
 static int __init xt_flowoffload_tg_init(void)
 {
 	int ret;
+
+	register_netdevice_notifier(&flow_offload_netdev_notifier);
 
 	INIT_DELAYED_WORK(&hook_work, xt_flowoffload_hook_work);
 
@@ -328,6 +362,7 @@ static void __exit xt_flowoffload_tg_exit(void)
 {
 	xt_unregister_target(&offload_tg_reg);
 	xt_flowoffload_table_cleanup(&nf_flowtable);
+	unregister_netdevice_notifier(&flow_offload_netdev_notifier);
 }
 
 MODULE_LICENSE("GPL");
