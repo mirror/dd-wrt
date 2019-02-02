@@ -173,6 +173,18 @@ int nvram_nset(const char *value, const char *fmt, ...)
 	return nvram_set(varbuf, value);
 }
 
+int nvram_nseti(const int value, const char *fmt, ...)
+{
+	char varbuf[64];
+	va_list args;
+	va_start(args, (char *)fmt);
+	vsnprintf(varbuf, sizeof(varbuf), fmt, args);
+	va_end(args);
+	char tmp[100];
+	snprintf(tmp, sizeof(tmp), "%d", value);
+	return nvram_set(varbuf, tmp);
+}
+
 char *nvram_safe_get(const char *name)
 {
 	return nvram_get(name) ? : "";
