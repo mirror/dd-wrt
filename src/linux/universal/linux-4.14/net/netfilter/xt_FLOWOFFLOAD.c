@@ -8,10 +8,10 @@
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/netfilter.h>
+#include <linux/netfilter/xt_FLOWOFFLOAD.h>
 #include <net/ip.h>
 #include <net/netfilter/nf_conntrack.h>
 #include <net/netfilter/nf_flow_table.h>
-#include <net/netfilter/nf_conntrack_helper.h>
 
 static struct nf_flowtable nf_flowtable;
 static HLIST_HEAD(hooks);
@@ -21,6 +21,7 @@ static struct delayed_work hook_work;
 struct xt_flowoffload_hook {
 	struct hlist_node list;
 	struct nf_hook_ops ops;
+	struct net *net;
 	bool registered;
 	bool used;
 };
@@ -101,8 +102,9 @@ restart:
 			continue;
 
 		hook->registered = true;
+		hook->net = dev_net(hook->ops.dev);
 		spin_unlock_bh(&hooks_lock);
-		nf_register_net_hook(dev_net(hook->ops.dev), &hook->ops);
+		nf_register_net_hook(hook->net, &hook->ops);
 		spin_lock_bh(&hooks_lock);
 		goto restart;
 	}
@@ -121,7 +123,7 @@ restart:
 
 		hlist_del(&hook->list);
 		spin_unlock_bh(&hooks_lock);
-		nf_unregister_net_hook(dev_net(hook->ops.dev), &hook->ops);
+		nf_unregister_net_hook(hook->net, &hook->ops);
 		kfree(hook);
 		spin_lock_bh(&hooks_lock);
 		goto restart;
@@ -188,28 +190,43 @@ xt_flowoffload_skip(struct sk_buff *skb)
 	return false;
 }
 
-static int
-xt_flowoffload_route(struct sk_buff *skb, const struct nf_conn *ct,
-		   const struct xt_action_param *par,
-		   struct nf_flow_route *route, enum ip_conntrack_dir dir)
+static struct dst_entry *
+xt_flowoffload_dst(const struct nf_conn *ct, enum ip_conntrack_dir dir,
+		   const struct xt_action_param *par)
 {
-	struct dst_entry *this_dst = skb_dst(skb);
-	struct dst_entry *other_dst = NULL;
+	struct dst_entry *dst = NULL;
 	struct flowi fl;
 
 	memset(&fl, 0, sizeof(fl));
 	switch (xt_family(par)) {
 	case NFPROTO_IPV4:
-		fl.u.ip4.daddr = ct->tuplehash[!dir].tuple.dst.u3.ip;
+		fl.u.ip4.daddr = ct->tuplehash[dir].tuple.src.u3.ip;
 		break;
 	case NFPROTO_IPV6:
-		fl.u.ip6.daddr = ct->tuplehash[!dir].tuple.dst.u3.in6;
+		fl.u.ip6.saddr = ct->tuplehash[dir].tuple.dst.u3.in6;
+		fl.u.ip6.daddr = ct->tuplehash[dir].tuple.src.u3.in6;
 		break;
 	}
 
-	nf_route(xt_net(par), &other_dst, &fl, false, xt_family(par));
-	if (!other_dst)
+	nf_route(xt_net(par), &dst, &fl, false, xt_family(par));
+
+	return dst;
+}
+
+static int
+xt_flowoffload_route(struct sk_buff *skb, const struct nf_conn *ct,
+		   const struct xt_action_param *par,
+		   struct nf_flow_route *route, enum ip_conntrack_dir dir)
+{
+	struct dst_entry *this_dst, *other_dst;
+
+	this_dst = xt_flowoffload_dst(ct, dir, par);
+	other_dst = xt_flowoffload_dst(ct, !dir, par);
+	if (!this_dst || !other_dst)
 		return -ENOENT;
+
+	if (dst_xfrm(this_dst) || dst_xfrm(other_dst))
+		return -EINVAL;
 
 	route->tuple[dir].dst		= this_dst;
 	route->tuple[dir].ifindex	= xt_in(par)->ifindex;
@@ -222,12 +239,12 @@ xt_flowoffload_route(struct sk_buff *skb, const struct nf_conn *ct,
 static unsigned int
 flowoffload_tg(struct sk_buff *skb, const struct xt_action_param *par)
 {
+	const struct xt_flowoffload_target_info *info = par->targinfo;
 	enum ip_conntrack_info ctinfo;
 	enum ip_conntrack_dir dir;
 	struct nf_flow_route route;
 	struct flow_offload *flow;
 	struct nf_conn *ct;
-	const struct nf_conn_help *help;
 
 	if (xt_flowoffload_skip(skb))
 		return XT_CONTINUE;
@@ -238,14 +255,16 @@ flowoffload_tg(struct sk_buff *skb, const struct xt_action_param *par)
 
 	switch (ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.dst.protonum) {
 	case IPPROTO_TCP:
+		if (ct->proto.tcp.state != TCP_CONNTRACK_ESTABLISHED)
+			return XT_CONTINUE;
+		break;
 	case IPPROTO_UDP:
 		break;
 	default:
 		return XT_CONTINUE;
 	}
 
-	help = nfct_help(ct);
-	if (help)
+	if (test_bit(IPS_HELPER_BIT, &ct->status))
 		return XT_CONTINUE;
 
 	if (ctinfo == IP_CT_NEW ||
@@ -273,6 +292,9 @@ flowoffload_tg(struct sk_buff *skb, const struct xt_action_param *par)
 	xt_flowoffload_check_device(xt_in(par));
 	xt_flowoffload_check_device(xt_out(par));
 
+	if (info->flags & XT_FLOWOFFLOAD_HW)
+		nf_flow_offload_hw_add(xt_net(par), flow, ct);
+
 	return XT_CONTINUE;
 
 err_flow_add:
@@ -287,6 +309,11 @@ err_flow_route:
 
 static int flowoffload_chk(const struct xt_tgchk_param *par)
 {
+	struct xt_flowoffload_target_info *info = par->targinfo;
+
+	if (info->flags & ~XT_FLOWOFFLOAD_MASK)
+		return -EINVAL;
+
 	return 0;
 }
 
@@ -294,6 +321,8 @@ static struct xt_target offload_tg_reg __read_mostly = {
 	.family		= NFPROTO_UNSPEC,
 	.name		= "FLOWOFFLOAD",
 	.revision	= 0,
+	.targetsize	= sizeof(struct xt_flowoffload_target_info),
+	.usersize	= sizeof(struct xt_flowoffload_target_info),
 	.checkentry	= flowoffload_chk,
 	.target		= flowoffload_tg,
 	.me		= THIS_MODULE,
@@ -301,6 +330,7 @@ static struct xt_target offload_tg_reg __read_mostly = {
 
 static int xt_flowoffload_table_init(struct nf_flowtable *table)
 {
+	table->flags = NF_FLOWTABLE_F_HW;
 	nf_flow_table_init(table);
 	return 0;
 }
