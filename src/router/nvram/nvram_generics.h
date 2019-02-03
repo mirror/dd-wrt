@@ -143,6 +143,18 @@ int nvram_nmatch(const char *match, const char *fmt, ...)
 	return nvram_match(varbuf, match);
 }
 
+int nvram_nmatchi(const int match, const char *fmt, ...)
+{
+	char varbuf[64];
+	va_list args;
+	va_start(args, (char *)fmt);
+	vsnprintf(varbuf, sizeof(varbuf), fmt, args);
+	va_end(args);
+	char tmp[100];
+	snprintf(tmp, sizeof(tmp), "%d", match);
+	return nvram_match(varbuf, tmp);
+}
+
 char *nvram_nget(const char *fmt, ...)
 {
 	char varbuf[64];

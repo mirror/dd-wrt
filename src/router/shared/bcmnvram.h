@@ -122,6 +122,8 @@ extern int nvram_nseti(const int value, const char *fmt, ...);
 
 extern int nvram_nmatch(const char *match, const char *fmt, ...);
 
+extern int nvram_nmatchi(const int match, const char *fmt, ...);
+
 extern int nvram_geti(const char *name);
 
 extern void nvram_seti(const char *name, const int value);
