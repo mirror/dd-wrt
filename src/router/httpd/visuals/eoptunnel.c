@@ -100,7 +100,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "<div class=\"setting\">\n");
 				{
 					show_caption(wp, "label", "eoip.wireguard_localport", NULL);
-					websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n", temp, nvram_default_geti(temp, 51820));
+					websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%d\" />\n", temp, nvram_default_geti(temp, 51820));
 				}
 				websWrite(wp, "</div>\n");
 				websWrite(wp, "<div class=\"setting\">\n");
@@ -111,7 +111,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					if (!nvram_match("wan_proto", "disabled"))
 						mtu = nvram_geti("wan_mtu");
 					mtu -= nvram_matchi("ipv6_enable", 1) ? 80 : 40;
-					websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%s\" />\n", temp, nvram_default_geti(temp, mtu));
+					websWrite(wp, "<input size=\"5\" maxlength=\"5\" name=\"%s\" class=\"num\" value=\"%d\" />\n", temp, nvram_default_geti(temp, mtu));
 				}
 				websWrite(wp, "</div>\n");
 
