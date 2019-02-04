@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2018 Zabbix SIA
+** Copyright (C) 2001-2019 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -68,7 +68,11 @@ class CControllerPopupTestTriggerExpr extends CController {
 					continue;
 				}
 
-				$row = (new CRow())->addItem($token['value']);
+				$row = (new CRow())->addItem(
+					(new CCol($token['value']))
+						->addClass(ZBX_STYLE_OVERFLOW_ELLIPSIS)
+						->addStyle('max-width: '.ZBX_TEXTAREA_BIG_WIDTH.'px;')
+				);
 				$fname = 'test_data_'.md5($token['value']);
 				$this->macros_data[$token['value']] = array_key_exists($fname, $_REQUEST) ? $_REQUEST[$fname] : '';
 				$info = get_item_function_info($token['value']);

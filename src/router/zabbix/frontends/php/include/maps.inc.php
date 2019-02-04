@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2018 Zabbix SIA
+** Copyright (C) 2001-2019 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -2176,10 +2176,11 @@ function getMapLinktriggerInfo($sysmap, $options) {
 	$trigger_options = [
 		'output' => ['status', 'value', 'priority'],
 		'triggerids' => $triggerids,
+		'monitored' => true,
 		'preservekeys' => true
 	];
 
-	return getTriggersWithActualSeverity($trigger_options, $sysmap['show_suppressed']);
+	return getTriggersWithActualSeverity($trigger_options, ['show_suppressed' => $sysmap['show_suppressed']]);
 }
 
 /**

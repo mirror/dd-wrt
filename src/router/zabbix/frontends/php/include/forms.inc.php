@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2018 Zabbix SIA
+** Copyright (C) 2001-2019 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -179,7 +179,7 @@ function prepareSubfilterOutput($label, $data, $subfilter, $subfilterName) {
 	$output = [new CTag('h3', true, $label)];
 
 	foreach ($data as $id => $element) {
-		$element['name'] = nbsp(CHtml::encode($element['name']));
+		$element['name'] = CHtml::encode($element['name']);
 
 		// is activated
 		if (str_in_array($id, $subfilter)) {
@@ -192,6 +192,7 @@ function prepareSubfilterOutput($label, $data, $subfilter, $subfilterName) {
 				' ',
 				new CSup($element['count'])
 			]))
+				->addClass(ZBX_STYLE_NOWRAP)
 				->addClass(ZBX_STYLE_SUBFILTER)
 				->addClass(ZBX_STYLE_SUBFILTER_ENABLED);
 		}
@@ -220,7 +221,9 @@ function prepareSubfilterOutput($label, $data, $subfilter, $subfilterName) {
 					$link,
 					' ',
 					new CSup(($subfilter ? '+' : '').$element['count'])
-				]))->addClass(ZBX_STYLE_SUBFILTER);
+				]))
+					->addClass(ZBX_STYLE_NOWRAP)
+					->addClass(ZBX_STYLE_SUBFILTER);
 			}
 		}
 	}
@@ -261,7 +264,7 @@ function getItemFilterForm(&$items) {
 	$subfilter_trends			= $_REQUEST['subfilter_trends'];
 	$subfilter_interval			= $_REQUEST['subfilter_interval'];
 
-	$filter = (new CFilter())
+	$filter = (new CFilter(new CUrl('items.php')))
 		->setProfile('web.items.filter')
 		->setActiveTab(CProfile::get('web.items.filter.active', 1))
 		->addVar('subfilter_hosts', $subfilter_hosts)
@@ -962,7 +965,7 @@ function getItemFormData(array $item = [], array $options = []) {
 		'status' => getRequest('status', isset($_REQUEST['form_refresh']) ? 1 : 0),
 		'type' => getRequest('type', 0),
 		'snmp_community' => getRequest('snmp_community', 'public'),
-		'snmp_oid' => getRequest('snmp_oid', 'interfaces.ifTable.ifEntry.ifInOctets.1'),
+		'snmp_oid' => getRequest('snmp_oid', ''),
 		'port' => getRequest('port', ''),
 		'value_type' => getRequest('value_type', ITEM_VALUE_TYPE_UINT64),
 		'trapper_hosts' => getRequest('trapper_hosts', ''),
@@ -1131,7 +1134,9 @@ function getItemFormData(array $item = [], array $options = []) {
 		$data['key'] = $data['item']['key_'];
 		$data['interfaceid'] = $data['item']['interfaceid'];
 		$data['type'] = $data['item']['type'];
-		$data['snmp_community'] = $data['item']['snmp_community'];
+		if ($data['item']['snmp_community'] !== '') {
+			$data['snmp_community'] = $data['item']['snmp_community'];
+		}
 		$data['snmp_oid'] = $data['item']['snmp_oid'];
 		$data['port'] = $data['item']['port'];
 		$data['value_type'] = $data['item']['value_type'];
@@ -1220,10 +1225,9 @@ function getItemFormData(array $item = [], array $options = []) {
 
 				foreach ($update_interval_parser->getIntervals() as $interval) {
 					if ($interval['type'] == ITEM_DELAY_FLEXIBLE) {
-						$interval_parts = explode('/', $interval['interval']);
 						$data['delay_flex'][] = [
-							'delay' => $interval_parts[0],
-							'period' => $interval_parts[1],
+							'delay' => $interval['update_interval'],
+							'period' => $interval['time_period'],
 							'type' => ITEM_DELAY_FLEXIBLE
 						];
 					}
@@ -1527,9 +1531,11 @@ function getTriggerFormData(array $data) {
 		if ($data['parent_discoveryid'] === null) {
 			$options['selectDiscoveryRule'] = ['itemid', 'name'];
 			$triggers = API::Trigger()->get($options);
+			$flag = ZBX_FLAG_DISCOVERY_NORMAL;
 		}
 		else {
 			$triggers = API::TriggerPrototype()->get($options);
+			$flag = ZBX_FLAG_DISCOVERY_PROTOTYPE;
 		}
 
 		$triggers = CMacrosResolverHelper::resolveTriggerExpressions($triggers,
@@ -1544,52 +1550,9 @@ function getTriggerFormData(array $data) {
 		}
 
 		// Get templates.
-		$tmp_triggerid = $data['triggerid'];
-		do {
-			$db_triggers = DBfetch(DBselect(
-				'SELECT t.triggerid,t.templateid,id.parent_itemid,h.name,h.hostid'.
-				' FROM triggers t'.
-					' LEFT JOIN functions f ON t.triggerid=f.triggerid'.
-					' LEFT JOIN items i ON f.itemid=i.itemid'.
-					' LEFT JOIN hosts h ON i.hostid=h.hostid'.
-					' LEFT JOIN item_discovery id ON i.itemid=id.itemid'.
-				' WHERE t.triggerid='.zbx_dbstr($tmp_triggerid)
-			));
-
-			if (bccomp($data['triggerid'], $tmp_triggerid) != 0) {
-				// Test if template is editable by user
-				$writable = API::Template()->get([
-					'output' => ['templateid'],
-					'templateids' => [$db_triggers['hostid']],
-					'preservekeys' => true,
-					'editable' => true
-				]);
-
-				if (array_key_exists($db_triggers['hostid'], $writable)) {
-					// parent trigger prototype link
-					if ($data['parent_discoveryid']) {
-						$link = 'trigger_prototypes.php?form=update&triggerid='.$db_triggers['triggerid'].
-							'&parent_discoveryid='.$db_triggers['parent_itemid'].'&hostid='.$db_triggers['hostid'];
-					}
-					// parent trigger link
-					else {
-						$link = 'triggers.php?form=update&triggerid='.$db_triggers['triggerid'].
-							'&hostid='.$db_triggers['hostid'];
-					}
-
-					$data['templates'][] = new CLink(CHtml::encode($db_triggers['name']), $link);
-				}
-				else {
-					$data['templates'][] = new CSpan(CHtml::encode($db_triggers['name']));
-				}
-
-				$data['templates'][] = SPACE.'&rArr;'.SPACE;
-			}
-			$tmp_triggerid = $db_triggers['templateid'];
-		} while ($tmp_triggerid != 0);
-
-		$data['templates'] = array_reverse($data['templates']);
-		array_shift($data['templates']);
+		$data['templates'] = makeTriggerTemplatesHtml($trigger['triggerid'],
+			getTriggerParentTemplates([$trigger], $flag), $flag
+		);
 
 		$data['limited'] = ($trigger['templateid'] != 0);
 

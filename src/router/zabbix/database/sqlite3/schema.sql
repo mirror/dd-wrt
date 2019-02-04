@@ -1759,4 +1759,4 @@ CREATE TABLE dbversion (
 	mandatory                integer         DEFAULT '0'               NOT NULL,
 	optional                 integer         DEFAULT '0'               NOT NULL
 );
-INSERT INTO dbversion VALUES ('4000000','4000000');
+INSERT INTO dbversion VALUES ('4000000','4000003');

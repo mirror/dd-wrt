@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2018 Zabbix SIA
+** Copyright (C) 2001-2019 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -83,7 +83,7 @@ foreach ($data['timeperiods'] as $id => $timeperiod) {
 		(new CCol(timeperiod_type2str($timeperiod['timeperiod_type'])))->addClass(ZBX_STYLE_NOWRAP),
 		($timeperiod['timeperiod_type'] == TIMEPERIOD_TYPE_ONETIME)
 			? $timeperiod['start_date']
-			: shedule2str($timeperiod),
+			: schedule2str($timeperiod),
 		(new CCol(zbx_date2age(0, $timeperiod['period'])))->addClass(ZBX_STYLE_NOWRAP),
 		(new CCol(
 			new CHorList([
