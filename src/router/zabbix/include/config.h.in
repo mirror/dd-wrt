@@ -494,9 +494,6 @@
 /* Define to 1 if you have the <sys/wait.h> header file. */
 #undef HAVE_SYS_WAIT_H
 
-/* "Define to 1 if tests directory is present" */
-#undef HAVE_TESTS
-
 /* Define to 1 if function 'clock_gettime' exists. */
 #undef HAVE_TIME_CLOCK_GETTIME
 
