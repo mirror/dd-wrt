@@ -4,7 +4,6 @@
 #include "buffer.h"
 
 #include <string.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
 
@@ -35,7 +34,7 @@ array *array_init_array(array *src) {
 	a->data = malloc(sizeof(*src->data) * src->size);
 	force_assert(NULL != a->data);
 	for (i = 0; i < src->size; i++) {
-		if (src->data[i]) a->data[i] = src->data[i]->copy(src->data[i]);
+		if (src->data[i]) a->data[i] = src->data[i]->fn->copy(src->data[i]);
 		else a->data[i] = NULL;
 	}
 
@@ -50,7 +49,7 @@ void array_free(array *a) {
 	if (!a) return;
 
 	for (i = 0; i < a->size; i++) {
-		if (a->data[i]) a->data[i]->free(a->data[i]);
+		if (a->data[i]) a->data[i]->fn->free(a->data[i]);
 	}
 
 	if (a->data) free(a->data);
@@ -64,7 +63,21 @@ void array_reset(array *a) {
 	if (!a) return;
 
 	for (i = 0; i < a->used; i++) {
-		a->data[i]->reset(a->data[i]);
+		a->data[i]->fn->reset(a->data[i]);
+	}
+
+	a->used = 0;
+	a->unique_ndx = 0;
+}
+
+void array_reset_data_strings(array *a) {
+	if (!a) return;
+
+	for (size_t i = 0; i < a->used; ++i) {
+		data_string * const ds = (data_string *)a->data[i];
+		/*force_assert(ds->type == TYPE_STRING);*/
+		buffer_reset(ds->key);
+		buffer_reset(ds->value);
 	}
 
 	a->used = 0;
@@ -84,11 +97,15 @@ data_unset *array_pop(array *a) {
 	return du;
 }
 
+static int array_keycmp(const char *a, size_t alen, const char *b, size_t blen) {
+    return alen < blen ? -1 : alen > blen ? 1 : buffer_caseless_compare(a, alen, b, blen);
+}
+
 /* returns index of element or ARRAY_NOT_FOUND
  * if rndx != NULL it stores the position in a->sorted[] where the key needs
  * to be inserted
  */
-static size_t array_get_index(array *a, const char *key, size_t keylen, size_t *rndx) {
+static size_t array_get_index(const array *a, const char *key, size_t keylen, size_t *rndx) {
 	/* invariant: [lower-1] < key < [upper]
 	 * "virtual elements": [-1] = -INFTY, [a->used] = +INFTY
 	 * also an invariant: 0 <= lower <= upper <= a->used
@@ -98,9 +115,8 @@ static size_t array_get_index(array *a, const char *key, size_t keylen, size_t *
 
 	while (lower != upper) {
 		size_t probe = (lower + upper) / 2;
-		int cmp = buffer_caseless_compare(key, keylen, CONST_BUF_LEN(a->data[a->sorted[probe]]->key));
-		assert(lower < upper); /* from loop invariant (lower <= upper) + (lower != upper) */
-		assert((lower <= probe) && (probe < upper)); /* follows from lower < upper */
+		const buffer *b = a->data[a->sorted[probe]]->key;
+		int cmp = array_keycmp(key, keylen, CONST_BUF_LEN(b));
 
 		if (cmp == 0) {
 			/* found */
@@ -120,7 +136,7 @@ static size_t array_get_index(array *a, const char *key, size_t keylen, size_t *
 	return ARRAY_NOT_FOUND;
 }
 
-data_unset *array_get_element_klen(array *a, const char *key, size_t klen) {
+data_unset *array_get_element_klen(const array *a, const char *key, size_t klen) {
 	size_t ndx;
 	force_assert(NULL != key);
 
@@ -171,7 +187,7 @@ data_unset *array_extract_element_klen(array *a, const char *key, size_t klen) {
 	return NULL;
 }
 
-data_unset *array_get_unused_element(array *a, data_type_t t) {
+static data_unset *array_get_unused_element(array *a, data_type_t t) {
 	data_unset *ds = NULL;
 	unsigned int i;
 
@@ -191,20 +207,50 @@ data_unset *array_get_unused_element(array *a, data_type_t t) {
 }
 
 void array_set_key_value(array *hdrs, const char *key, size_t key_len, const char *value, size_t val_len) {
-	data_string *ds_dst;
+	data_string *ds;
 
-	if (NULL != (ds_dst = (data_string *)array_get_element_klen(hdrs, key, key_len))) {
-		buffer_copy_string_len(ds_dst->value, value, val_len);
+	if (NULL != (ds = (data_string *)array_get_element_klen(hdrs, key, key_len))) {
+		buffer_copy_string_len(ds->value, value, val_len);
 		return;
 	}
 
-	if (NULL == (ds_dst = (data_string *)array_get_unused_element(hdrs, TYPE_STRING))) {
-		ds_dst = data_string_init();
+	array_insert_key_value(hdrs, key, key_len, value, val_len);
+}
+
+void array_insert_key_value(array *hdrs, const char *key, size_t key_len, const char *value, size_t val_len) {
+	data_string *ds;
+
+	if (NULL == (ds = (data_string *)array_get_unused_element(hdrs, TYPE_STRING))) {
+		ds = data_string_init();
 	}
 
-	buffer_copy_string_len(ds_dst->key, key, key_len);
-	buffer_copy_string_len(ds_dst->value, value, val_len);
-	array_insert_unique(hdrs, (data_unset *)ds_dst);
+	buffer_copy_string_len(ds->key, key, key_len);
+	buffer_copy_string_len(ds->value, value, val_len);
+	array_insert_unique(hdrs, (data_unset *)ds);
+}
+
+void array_insert_value(array *hdrs, const char *value, size_t val_len) {
+	data_string *ds;
+
+	if (NULL == (ds = (data_string *)array_get_unused_element(hdrs, TYPE_STRING))) {
+		ds = data_string_init();
+	}
+
+	buffer_copy_string_len(ds->value, value, val_len);
+	array_insert_unique(hdrs, (data_unset *)ds);
+}
+
+int * array_get_int_ptr(array *a, const char *k, size_t klen) {
+	data_integer *di = (data_integer *)array_get_element_klen(a, k, klen);
+
+	if (NULL == di) {
+		di = (data_integer *)array_get_unused_element(a, TYPE_INTEGER);
+		if (NULL == di) di = data_integer_init();
+		buffer_copy_string_len(di->key, k, klen);
+		array_insert_unique(a, (data_unset *)di);
+	}
+
+	return &di->value;
 }
 
 /* if entry already exists return pointer to existing entry, otherwise insert entry and return NULL */
@@ -248,7 +294,7 @@ static data_unset **array_find_or_insert(array *a, data_unset *entry) {
 	ndx = a->used;
 
 	/* make sure there is nothing here */
-	if (a->data[ndx]) a->data[ndx]->free(a->data[ndx]);
+	if (a->data[ndx]) a->data[ndx]->fn->free(a->data[ndx]);
 
 	a->data[a->used++] = entry;
 
@@ -270,7 +316,7 @@ void array_replace(array *a, data_unset *entry) {
 	force_assert(NULL != entry);
 	if (NULL != (old = array_find_or_insert(a, entry))) {
 		force_assert(*old != entry);
-		(*old)->free(*old);
+		(*old)->fn->free(*old);
 		*old = entry;
 	}
 }
@@ -281,7 +327,7 @@ void array_insert_unique(array *a, data_unset *entry) {
 	force_assert(NULL != entry);
 	if (NULL != (old = array_find_or_insert(a, entry))) {
 		force_assert((*old)->type == entry->type);
-		entry->insert_dup(*old, entry);
+		entry->fn->insert_dup(*old, entry);
 	}
 }
 
@@ -316,6 +362,159 @@ int array_is_kvstring(array *a) {
 	}
 	return 1;
 }
+
+/* array_match_*() routines follow very similar pattern, but operate on slightly
+ * different data: array key/value, prefix/suffix match, case-insensitive or not
+ * While these could be combined into fewer routines with flags to modify the
+ * behavior, the interface distinctions are useful to add clarity to the code,
+ * and the specialized routines run slightly faster */
+
+data_unset *
+array_match_key_prefix_klen (const array * const a, const char * const s, const size_t slen)
+{
+    for (size_t i = 0; i < a->used; ++i) {
+        const buffer * const key = a->data[i]->key;
+        const size_t klen = buffer_string_length(key);
+        if (klen <= slen && 0 == memcmp(s, key->ptr, klen))
+            return a->data[i];
+    }
+    return NULL;
+}
+
+data_unset *
+array_match_key_prefix_nc_klen (const array * const a, const char * const s, const size_t slen)
+{
+    for (size_t i = 0; i < a->used; ++i) {
+        const buffer * const key = a->data[i]->key;
+        const size_t klen = buffer_string_length(key);
+        if (klen <= slen && 0 == strncasecmp(s, key->ptr, klen))
+            return a->data[i];
+    }
+    return NULL;
+}
+
+data_unset *
+array_match_key_prefix (const array * const a, const buffer * const b)
+{
+    return array_match_key_prefix_klen(a, CONST_BUF_LEN(b));
+}
+
+data_unset *
+array_match_key_prefix_nc (const array * const a, const buffer * const b)
+{
+    return array_match_key_prefix_nc_klen(a, CONST_BUF_LEN(b));
+}
+
+const buffer *
+array_match_value_prefix (const array * const a, const buffer * const b)
+{
+    const size_t blen = buffer_string_length(b);
+
+    for (size_t i = 0; i < a->used; ++i) {
+        const buffer * const value = ((data_string *)a->data[i])->value;
+        const size_t vlen = buffer_string_length(value);
+        if (vlen <= blen && 0 == memcmp(b->ptr, value->ptr, vlen))
+            return value;
+    }
+    return NULL;
+}
+
+const buffer *
+array_match_value_prefix_nc (const array * const a, const buffer * const b)
+{
+    const size_t blen = buffer_string_length(b);
+
+    for (size_t i = 0; i < a->used; ++i) {
+        const buffer * const value = ((data_string *)a->data[i])->value;
+        const size_t vlen = buffer_string_length(value);
+        if (vlen <= blen && 0 == strncasecmp(b->ptr, value->ptr, vlen))
+            return value;
+    }
+    return NULL;
+}
+
+data_unset *
+array_match_key_suffix (const array * const a, const buffer * const b)
+{
+    const size_t blen = buffer_string_length(b);
+    const char * const end = b->ptr + blen;
+
+    for (size_t i = 0; i < a->used; ++i) {
+        const buffer * const key = a->data[i]->key;
+        const size_t klen = buffer_string_length(key);
+        if (klen <= blen && 0 == memcmp(end - klen, key->ptr, klen))
+            return a->data[i];
+    }
+    return NULL;
+}
+
+data_unset *
+array_match_key_suffix_nc (const array * const a, const buffer * const b)
+{
+    const size_t blen = buffer_string_length(b);
+    const char * const end = b->ptr + blen;
+
+    for (size_t i = 0; i < a->used; ++i) {
+        const buffer * const key = a->data[i]->key;
+        const size_t klen = buffer_string_length(key);
+        if (klen <= blen && 0 == strncasecmp(end - klen, key->ptr, klen))
+            return a->data[i];
+    }
+    return NULL;
+}
+
+const buffer *
+array_match_value_suffix (const array * const a, const buffer * const b)
+{
+    const size_t blen = buffer_string_length(b);
+    const char * const end = b->ptr + blen;
+
+    for (size_t i = 0; i < a->used; ++i) {
+        const buffer * const value = ((data_string *)a->data[i])->value;
+        const size_t vlen = buffer_string_length(value);
+        if (vlen <= blen && 0 == memcmp(end - vlen, value->ptr, vlen))
+            return value;
+    }
+    return NULL;
+}
+
+const buffer *
+array_match_value_suffix_nc (const array * const a, const buffer * const b)
+{
+    const size_t blen = buffer_string_length(b);
+    const char * const end = b->ptr + blen;
+
+    for (size_t i = 0; i < a->used; ++i) {
+        const buffer * const value = ((data_string *)a->data[i])->value;
+        const size_t vlen = buffer_string_length(value);
+        if (vlen <= blen && 0 == strncasecmp(end - vlen, value->ptr, vlen))
+            return value;
+    }
+    return NULL;
+}
+
+data_unset *
+array_match_path_or_ext (const array * const a, const buffer * const b)
+{
+    const size_t blen = buffer_string_length(b);
+
+    for (size_t i = 0; i < a->used; ++i) {
+        /* check extension in the form "^/path" or ".ext$" */
+        const buffer * const key = a->data[i]->key;
+        const size_t klen = buffer_string_length(key);
+        if (klen <= blen
+            && 0 == memcmp((*(key->ptr) == '/' ? b->ptr : b->ptr + blen - klen),
+                           key->ptr, klen))
+            return a->data[i];
+    }
+    return NULL;
+}
+
+
+
+
+
+#include <stdio.h>
 
 void array_print_indent(int depth) {
 	int i;
@@ -369,7 +568,7 @@ int array_print(array *a, int depth) {
 			if (i != 0) {
 				fprintf(stdout, ", ");
 			}
-			du->print(du, depth + 1);
+			du->fn->print(du, depth + 1);
 		}
 		fprintf(stdout, ")");
 		return 0;
@@ -393,7 +592,7 @@ int array_print(array *a, int depth) {
 			}
 			fprintf(stdout, " => ");
 		}
-		du->print(du, depth + 1);
+		du->fn->print(du, depth + 1);
 		fprintf(stdout, ",\n");
 	}
 	if (!(i && (i - 1 % 5) == 0)) {
@@ -405,42 +604,3 @@ int array_print(array *a, int depth) {
 
 	return 0;
 }
-
-#ifdef DEBUG_ARRAY
-int main (int argc, char **argv) {
-	array *a;
-	data_string *ds;
-
-	UNUSED(argc);
-	UNUSED(argv);
-
-	a = array_init();
-
-	ds = data_string_init();
-	buffer_copy_string_len(ds->key, CONST_STR_LEN("abc"));
-	buffer_copy_string_len(ds->value, CONST_STR_LEN("alfrag"));
-
-	array_insert_unique(a, (data_unset *)ds);
-
-	ds = data_string_init();
-	buffer_copy_string_len(ds->key, CONST_STR_LEN("abc"));
-	buffer_copy_string_len(ds->value, CONST_STR_LEN("hameplman"));
-
-	array_insert_unique(a, (data_unset *)ds);
-
-	ds = data_string_init();
-	buffer_copy_string_len(ds->key, CONST_STR_LEN("123"));
-	buffer_copy_string_len(ds->value, CONST_STR_LEN("alfrag"));
-
-	array_insert_unique(a, (data_unset *)ds);
-
-	array_print(a, 0);
-
-	array_free(a);
-
-	fprintf(stderr, "%d\n",
-	       buffer_caseless_compare(CONST_STR_LEN("Content-Type"), CONST_STR_LEN("Content-type")));
-
-	return 0;
-}
-#endif

@@ -1,7 +1,8 @@
 #include "first.h"
 
-#include "log.h"
 #include "stat_cache.h"
+#include "base.h"
+#include "log.h"
 #include "fdevent.h"
 #include "etag.h"
 #include "splaytree.h"
@@ -78,7 +79,6 @@ struct stat_cache_fam;
 
 typedef struct stat_cache {
 	splay_tree *files; /* the nodes of the tree are stat_cache_entry's */
-	buffer *hash_key;  /* temp-store for the hash-key */
       #ifdef HAVE_FAM_H
 	struct stat_cache_fam *scf;
       #endif
@@ -86,12 +86,16 @@ typedef struct stat_cache {
 
 
 /* the famous DJB hash function for strings */
-static uint32_t hashme(buffer *str) {
+static uint32_t hashme(const char *str, int z) {
 	uint32_t hash = 5381;
-	const char *s;
-	for (s = str->ptr; *s; s++) {
-		hash = ((hash << 5) + hash) + *s;
+	for (const unsigned char *s = (const unsigned char *)str; *s; ++s) {
+		hash = ((hash << 5) + hash) ^ *s;
 	}
+
+	/* customizations */
+
+	/* (differentiate hash values with and w/o con->conf.follow_symlink) */
+	hash = ((hash << 5) + hash) ^ (z ? '1' : '0');
 
 	hash &= ~(((uint32_t)1) << 31); /* strip the highest bit */
 
@@ -118,7 +122,6 @@ typedef struct stat_cache_fam {
 	int dir_ndx;
 	fam_dir_entry *fam_dir;
 	buffer *dir_name; /* for building the dirname from the filename */
-	buffer *hash_key;  /* temp-store for the hash-key */
 } stat_cache_fam;
 
 static fam_dir_entry * fam_dir_entry_init(void) {
@@ -181,10 +184,8 @@ static handler_t stat_cache_handle_fdevent(server *srv, void *_fce, int revent) 
 				/* we have 2 versions, follow and no-follow-symlink */
 
 				for (j = 0; j < 2; j++) {
-					buffer_copy_string(scf->hash_key, fe.filename);
-					buffer_append_int(scf->hash_key, j);
 
-					ndx = hashme(scf->hash_key);
+					ndx = hashme(fe.filename, j);
 
 					scf->dirs = splaytree_splay(scf->dirs, ndx);
 					node = scf->dirs;
@@ -205,7 +206,7 @@ static handler_t stat_cache_handle_fdevent(server *srv, void *_fce, int revent) 
 		}
 	}
 
-	if (revent & FDEVENT_HUP) {
+	if (revent & (FDEVENT_HUP|FDEVENT_RDHUP)) {
 		/* fam closed the connection */
 		fdevent_event_del(srv->ev, &(scf->fam_fcce_ndx), FAMCONNECTION_GETFD(&scf->fam));
 		fdevent_unregister(srv->ev, FAMCONNECTION_GETFD(&scf->fam));
@@ -220,7 +221,6 @@ static stat_cache_fam * stat_cache_init_fam(server *srv) {
 	stat_cache_fam *scf = calloc(1, sizeof(*scf));
 	scf->fam_fcce_ndx = -1;
 	scf->dir_name = buffer_init();
-	scf->hash_key = buffer_init();
 
 	/* setup FAM */
 	if (0 != FAMOpen2(&scf->fam, "lighttpd")) {
@@ -234,7 +234,7 @@ static stat_cache_fam * stat_cache_init_fam(server *srv) {
 
 	fdevent_setfd_cloexec(FAMCONNECTION_GETFD(&scf->fam));
 	fdevent_register(srv->ev, FAMCONNECTION_GETFD(&scf->fam), stat_cache_handle_fdevent, NULL);
-	fdevent_event_set(srv->ev, &(scf->fam_fcce_ndx), FAMCONNECTION_GETFD(&scf->fam), FDEVENT_IN);
+	fdevent_event_set(srv->ev, &(scf->fam_fcce_ndx), FAMCONNECTION_GETFD(&scf->fam), FDEVENT_IN | FDEVENT_RDHUP);
 
 	return scf;
 }
@@ -242,7 +242,6 @@ static stat_cache_fam * stat_cache_init_fam(server *srv) {
 static void stat_cache_free_fam(stat_cache_fam *scf) {
 	if (NULL == scf) return;
 	buffer_free(scf->dir_name);
-	buffer_free(scf->hash_key);
 
 	while (scf->dirs) {
 		int osize;
@@ -292,10 +291,7 @@ static handler_t stat_cache_fam_dir_check(server *srv, stat_cache_fam *scf, stat
 		return HANDLER_ERROR;
 	}
 
-	buffer_copy_buffer(scf->hash_key, scf->dir_name);
-	buffer_append_int(scf->hash_key, (int)follow_symlink);
-
-	scf->dir_ndx = hashme(scf->hash_key);
+	scf->dir_ndx = hashme(scf->dir_name->ptr, follow_symlink);
 
 	scf->dirs = splaytree_splay(scf->dirs, scf->dir_ndx);
 
@@ -343,6 +339,7 @@ static void stat_cache_fam_dir_monitor(server *srv, stat_cache_fam *scf, stat_ca
 					FamErrlist[FAMErrno]);
 
 			fam_dir_entry_free(&scf->fam, fam_dir);
+			fam_dir = NULL;
 		} else {
 			int osize = splaytree_size(scf->dirs);
 
@@ -378,8 +375,6 @@ stat_cache *stat_cache_init(server *srv) {
 
 	sc = calloc(1, sizeof(*sc));
 	force_assert(NULL != sc);
-
-	sc->hash_key = buffer_init();
 
 #ifdef HAVE_FAM_H
 	if (STAT_CACHE_ENGINE_FAM == srv->srvconf.stat_cache_engine) {
@@ -430,8 +425,6 @@ void stat_cache_free(stat_cache *sc) {
 
 		force_assert(osize - 1 == splaytree_size(sc->files));
 	}
-
-	buffer_free(sc->hash_key);
 
 #ifdef HAVE_FAM_H
 	stat_cache_free_fam(sc->scf);
@@ -537,6 +530,48 @@ const buffer * stat_cache_mimetype_by_ext(const connection *con, const char *nam
     return NULL;
 }
 
+const buffer * stat_cache_content_type_get(server *srv, connection *con, const buffer *name, stat_cache_entry *sce)
+{
+    /*(invalid caching if user config has multiple, different
+     * con->conf.mimetypes for same extension (not expected))*/
+    if (!buffer_string_is_empty(sce->content_type)) return sce->content_type;
+
+    if (S_ISREG(sce->st.st_mode)) {
+        /* determine mimetype */
+        buffer_clear(sce->content_type);
+      #if defined(HAVE_XATTR) || defined(HAVE_EXTATTR)
+        if (con->conf.use_xattr) {
+            stat_cache_attr_get(sce->content_type, name->ptr, srv->srvconf.xattr_name->ptr);
+        }
+      #else
+        UNUSED(srv);
+      #endif
+        /* xattr did not set a content-type. ask the config */
+        if (buffer_string_is_empty(sce->content_type)) {
+            const buffer *type = stat_cache_mimetype_by_ext(con, CONST_BUF_LEN(name));
+            if (NULL != type) {
+                buffer_copy_buffer(sce->content_type, type);
+            }
+        }
+        return sce->content_type;
+    }
+
+    return NULL;
+}
+
+const buffer * stat_cache_etag_get(stat_cache_entry *sce, etag_flags_t flags) {
+    /*(invalid caching if user config has multiple, different con->etag_flags
+     * for same path (not expected, since etag flags should be by filesystem))*/
+    if (!buffer_string_is_empty(sce->etag)) return sce->etag;
+
+    if (S_ISREG(sce->st.st_mode) || S_ISDIR(sce->st.st_mode)) {
+        etag_create(sce->etag, &sce->st, flags);
+        return sce->etag;
+    }
+
+    return NULL;
+}
+
 #ifdef HAVE_LSTAT
 static int stat_cache_lstat(server *srv, buffer *dname, struct stat *lst) {
 	if (lstat(dname->ptr, lst) == 0) {
@@ -565,6 +600,7 @@ handler_t stat_cache_get_entry(server *srv, connection *con, buffer *name, stat_
 	stat_cache *sc;
 	struct stat st;
 	int fd;
+	const int follow_symlink = con->conf.follow_symlink;
 	struct stat lst;
 	int file_ndx;
 
@@ -576,10 +612,7 @@ handler_t stat_cache_get_entry(server *srv, connection *con, buffer *name, stat_
 
 	sc = srv->stat_cache;
 
-	buffer_copy_buffer(sc->hash_key, name);
-	buffer_append_int(sc->hash_key, con->conf.follow_symlink);
-
-	file_ndx = hashme(sc->hash_key);
+	file_ndx = hashme(name->ptr, follow_symlink);
 	sc->files = splaytree_splay(sc->files, file_ndx);
 
 	if (sc->files && (sc->files->key == file_ndx)) {
@@ -592,7 +625,7 @@ handler_t stat_cache_get_entry(server *srv, connection *con, buffer *name, stat_
 
 		if (buffer_is_equal(name, sce->name)) {
 			if (srv->srvconf.stat_cache_engine == STAT_CACHE_ENGINE_SIMPLE) {
-				if (sce->stat_ts == srv->cur_ts && con->conf.follow_symlink) {
+				if (sce->stat_ts == srv->cur_ts && follow_symlink) {
 					*ret_sce = sce;
 					return HANDLER_GO_ON;
 				}
@@ -606,7 +639,7 @@ handler_t stat_cache_get_entry(server *srv, connection *con, buffer *name, stat_
 #ifdef HAVE_FAM_H
 	/* dir-check */
 	if (srv->srvconf.stat_cache_engine == STAT_CACHE_ENGINE_FAM) {
-		switch (stat_cache_fam_dir_check(srv, sc->scf, sce, name, con->conf.follow_symlink)) {
+		switch (stat_cache_fam_dir_check(srv, sc->scf, sce, name, follow_symlink)) {
 		case HANDLER_GO_ON:
 			break;
 		case HANDLER_FINISHED:
@@ -662,6 +695,14 @@ handler_t stat_cache_get_entry(server *srv, connection *con, buffer *name, stat_
 		}
 		force_assert(sc->files);
 		force_assert(sc->files->data == sce);
+
+	} else {
+
+		buffer_clear(sce->etag);
+	      #if defined(HAVE_XATTR) || defined(HAVE_EXTATTR)
+		buffer_clear(sce->content_type);
+	      #endif
+
 	}
 
 	sce->st = st;
@@ -684,7 +725,7 @@ handler_t stat_cache_get_entry(server *srv, connection *con, buffer *name, stat_
 
 	/* we want to only check for symlinks if we should block symlinks.
 	 */
-	if (!con->conf.follow_symlink) {
+	if (!follow_symlink) {
 		if (stat_cache_lstat(srv, name, &lst)  == 0) {
 				sce->is_symlink = 1;
 		}
@@ -712,28 +753,8 @@ handler_t stat_cache_get_entry(server *srv, connection *con, buffer *name, stat_
 			};
 			buffer_free(dname);
 		};
-	};
-#endif
-
-	if (S_ISREG(st.st_mode)) {
-		/* determine mimetype */
-		buffer_reset(sce->content_type);
-#if defined(HAVE_XATTR) || defined(HAVE_EXTATTR)
-		if (con->conf.use_xattr) {
-			stat_cache_attr_get(sce->content_type, name->ptr, srv->srvconf.xattr_name->ptr);
-		}
-#endif
-		/* xattr did not set a content-type. ask the config */
-		if (buffer_string_is_empty(sce->content_type)) {
-			const buffer *type = stat_cache_mimetype_by_ext(con, CONST_BUF_LEN(name));
-			if (NULL != type) {
-				buffer_copy_buffer(sce->content_type, type);
-			}
-		}
-		etag_create(sce->etag, &(sce->st), con->etag_flags);
-	} else if (S_ISDIR(st.st_mode)) {
-		etag_create(sce->etag, &(sce->st), con->etag_flags);
 	}
+#endif
 
 #ifdef HAVE_FAM_H
 	if (srv->srvconf.stat_cache_engine == STAT_CACHE_ENGINE_FAM) {
@@ -766,7 +787,7 @@ int stat_cache_open_rdonly_fstat (server *srv, connection *con, buffer *name, st
 	#endif
 	const int oflags = O_BINARY | O_LARGEFILE | O_NOCTTY | O_NONBLOCK
 			 | (con->conf.follow_symlink ? 0 : O_NOFOLLOW);
-	const int fd = open(name->ptr, O_RDONLY | oflags);
+	const int fd = fdevent_open_cloexec(name->ptr, O_RDONLY | oflags, 0);
 	if (fd >= 0) {
 		if (0 == fstat(fd, st)) {
 			return fd;

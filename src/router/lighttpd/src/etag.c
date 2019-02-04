@@ -4,13 +4,6 @@
 #include "etag.h"
 
 #include <sys/stat.h>
-
-#if defined HAVE_STDINT_H
-# include <stdint.h>
-#elif defined HAVE_INTTYPES_H
-# include <inttypes.h>
-#endif
-
 #include <string.h>
 
 int etag_is_equal(buffer *etag, const char *line, int weak_ok) {
@@ -153,7 +146,7 @@ int etag_is_equal(buffer *etag, const char *line, int weak_ok) {
 int etag_create(buffer *etag, struct stat *st,etag_flags_t flags) {
 	if (0 == flags) return 0;
 
-	buffer_reset(etag);
+	buffer_clear(etag);
 
 	if (flags & ETAG_USE_INODE) {
 		buffer_append_int(etag, st->st_ino);
@@ -179,7 +172,6 @@ int etag_mutate(buffer *mut, buffer *etag) {
 	len = buffer_string_length(etag);
 	for (h=0, i=0; i < len; ++i) h = (h<<5)^(h>>27)^(etag->ptr[i]);
 
-	buffer_reset(mut);
 	buffer_copy_string_len(mut, CONST_STR_LEN("\""));
 	buffer_append_int(mut, h);
 	buffer_append_string_len(mut, CONST_STR_LEN("\""));

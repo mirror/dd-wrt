@@ -2,10 +2,12 @@
 
 #include <unistd.h>
 #include <errno.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <mysql.h>
 
+#include "base.h"
 #include "plugin.h"
 #include "fdevent.h"
 #include "log.h"
@@ -191,7 +193,6 @@ SERVER_FUNC(mod_mysql_vhost_set_defaults) {
 		/* all have to be set */
 		if (!(buffer_string_is_empty(s->myuser) ||
 		      buffer_string_is_empty(s->mydb))) {
-			my_bool reconnect = 1;
 
 			if (NULL == (s->mysql = mysql_init(NULL))) {
 				log_error_write(srv, __FILE__, __LINE__, "s", "mysql_init() failed, exiting...");
@@ -200,7 +201,10 @@ SERVER_FUNC(mod_mysql_vhost_set_defaults) {
 
 #if MYSQL_VERSION_ID >= 50013
 			/* in mysql versions above 5.0.3 the reconnect flag is off by default */
-			mysql_options(s->mysql, MYSQL_OPT_RECONNECT, &reconnect);
+			{
+				char reconnect = 1;
+				mysql_options(s->mysql, MYSQL_OPT_RECONNECT, &reconnect);
+			}
 #endif
 
 #define FOO(x) (buffer_string_is_empty(s->x) ? NULL : s->x->ptr)
@@ -286,7 +290,7 @@ CONNECTION_FUNC(mod_mysql_vhost_handle_docroot) {
 	if (buffer_is_equal(c->server_name, con->uri.authority)) goto GO_ON;
 
 	/* build and run SQL query */
-	buffer_string_set_length(p->tmp_buf, 0);
+	buffer_clear(p->tmp_buf);
 	for (char *b = p->conf.mysql_query->ptr, *d; *b; b = d+1) {
 		if (NULL != (d = strchr(b, '?'))) {
 			/* escape the uri.authority */

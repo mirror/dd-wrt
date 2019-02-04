@@ -4,7 +4,8 @@
 #include "buffer.h"
 #include "array.h"
 #include "log.h"
-#include "plugin.h"
+#include "fdevent.h"
+#include "http_header.h"
 #include "sock_addr.h"
 
 #include "configfile.h"
@@ -56,7 +57,7 @@ int config_insert_values_internal(server *srv, array *ca, const config_values_t 
 				for (j = 0; j < da->value->used; j++) {
 					data_unset *ds = da->value->data[j];
 					if (ds->type == TYPE_STRING || ds->type == TYPE_INTEGER || ds->type == TYPE_ARRAY) {
-						array_insert_unique(cv[i].destination, ds->copy(ds));
+						array_insert_unique(cv[i].destination, ds->fn->copy(ds));
 					} else {
 						log_error_write(srv, __FILE__, __LINE__, "sssbsd",
 								"the value of an array can only be a string, variable:",
@@ -191,21 +192,12 @@ int config_insert_values_global(server *srv, array *ca, const config_values_t cv
 	data_unset *du;
 
 	for (i = 0; cv[i].key; i++) {
-		data_string *touched;
-
 		if (NULL == (du = array_get_element_klen(ca, cv[i].key, strlen(cv[i].key)))) {
 			/* no found */
 
 			continue;
 		}
-
-		/* touched */
-		touched = data_string_init();
-
-		buffer_copy_string_len(touched->value, CONST_STR_LEN(""));
-		buffer_copy_buffer(touched->key, du->key);
-
-		array_insert_unique(srv->config_touched, (data_unset *)touched);
+		array_set_key_value(srv->config_touched, CONST_BUF_LEN(du->key), CONST_STR_LEN(""));
 	}
 
 	return config_insert_values_internal(srv, ca, cv, scope);
@@ -432,26 +424,15 @@ static cond_result_t config_check_cond_nocache(server *srv, connection *con, dat
 		l = srv_sock->srv_token;
 		break;
 
-	case COMP_HTTP_REQUEST_HEADER: {
-		data_string *ds;
-		if (NULL != (ds = (data_string *)array_get_element_klen(con->request.headers, CONST_BUF_LEN(dc->comp_tag)))) {
-			l = ds->value;
-		} else {
-			l = srv->empty_string;
-		}
+	case COMP_HTTP_REQUEST_HEADER:
+		l = http_header_request_get(con, HTTP_HEADER_UNSPECIFIED, CONST_BUF_LEN(dc->comp_tag));
+		if (NULL == l) l = srv->empty_string;
 		break;
-	}
-	case COMP_HTTP_REQUEST_METHOD: {
-		const char *method = get_http_method_name(con->request.http_method);
-
-		/* we only have the request method as const char but we need a buffer for comparing */
-
-		buffer_copy_string(srv->tmp_buf, method);
-
+	case COMP_HTTP_REQUEST_METHOD:
 		l = srv->tmp_buf;
-
+		buffer_clear(l);
+		http_method_append(l, con->request.http_method);
 		break;
-	}
 	default:
 		return COND_RESULT_FALSE;
 	}
@@ -476,29 +457,15 @@ static cond_result_t config_check_cond_nocache(server *srv, connection *con, dat
 		} else {
 			return (dc->cond == CONFIG_COND_EQ) ? COND_RESULT_FALSE : COND_RESULT_TRUE;
 		}
-		break;
-#ifdef HAVE_PCRE_H
 	case CONFIG_COND_NOMATCH:
 	case CONFIG_COND_MATCH: {
-		int n;
-
-#ifndef elementsof
-#define elementsof(x) (sizeof(x) / sizeof(x[0]))
-#endif
-		n = pcre_exec(dc->regex, dc->regex_study, CONST_BUF_LEN(l), 0, 0,
-				cache->matches, elementsof(cache->matches));
-
-		cache->patterncount = n;
-		if (n > 0) {
-			cache->comp_value = l;
+		if (data_config_pcre_exec(dc, cache, l) > 0) {
 			return (dc->cond == CONFIG_COND_MATCH) ? COND_RESULT_TRUE : COND_RESULT_FALSE;
 		} else {
 			/* cache is already cleared */
 			return (dc->cond == CONFIG_COND_MATCH) ? COND_RESULT_FALSE : COND_RESULT_TRUE;
 		}
-		break;
 	}
-#endif
 	default:
 		/* no way */
 		break;
@@ -614,18 +581,4 @@ int config_check_cond(server *srv, connection *con, data_config *dc) {
 		log_error_write(srv, __FILE__, __LINE__,  "s",  "=== start of condition block ===");
 	}
 	return (config_check_cond_cached(srv, con, dc) == COND_RESULT_TRUE);
-}
-
-int config_append_cond_match_buffer(connection *con, data_config *dc, buffer *buf, int n)
-{
-	cond_cache_t *cache = &con->cond_cache[dc->context_ndx];
-	if (n >= cache->patterncount) {
-		return 0;
-	}
-
-	n <<= 1; /* n *= 2 */
-	buffer_append_string_len(buf,
-			cache->comp_value->ptr + cache->matches[n],
-			cache->matches[n + 1] - cache->matches[n]);
-	return 1;
 }

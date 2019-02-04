@@ -10,25 +10,10 @@
 #include "array.h"
 
 typedef struct chunk {
+	struct chunk *next;
 	enum { MEM_CHUNK, FILE_CHUNK } type;
 
-	buffer *mem; /* either the storage of the mem-chunk or the read-ahead buffer */
-
-	struct {
-		/* filechunk */
-		buffer *name; /* name of the file */
-		off_t  start; /* starting offset in the file */
-		off_t  length; /* octets to send from the starting offset */
-
-		int    fd;
-		struct {
-			char   *start; /* the start pointer of the mmap'ed area */
-			size_t length; /* size of the mmap'ed area */
-			off_t  offset; /* start is <n> octet away from the start of the file */
-		} mmap;
-
-		int is_temp; /* file is temporary and will be deleted if on cleanup */
-	} file;
+	buffer *mem; /* either the storage of the mem-chunk or the name of the file */
 
 	/* the size of the chunk is either:
 	 * - mem-chunk: buffer_string_length(chunk::mem)
@@ -36,15 +21,24 @@ typedef struct chunk {
 	 */
 	off_t  offset; /* octets sent from this chunk */
 
-	struct chunk *next;
+	struct {
+		/* filechunk */
+		off_t  start; /* starting offset in the file */
+		off_t  length; /* octets to send from the starting offset */
+
+		int    fd;
+		int is_temp; /* file is temporary and will be deleted if on cleanup */
+		struct {
+			char   *start; /* the start pointer of the mmap'ed area */
+			size_t length; /* size of the mmap'ed area */
+			off_t  offset; /* start is <n> octet away from the start of the file */
+		} mmap;
+	} file;
 } chunk;
 
 typedef struct {
 	chunk *first;
 	chunk *last;
-
-	chunk *unused;
-	size_t unused_chunks;
 
 	off_t bytes_in, bytes_out;
 
@@ -53,32 +47,43 @@ typedef struct {
 	unsigned int tempdir_idx;
 } chunkqueue;
 
+buffer * chunk_buffer_acquire(void);
+void chunk_buffer_release(buffer *b);
+
+void chunkqueue_chunk_pool_clear(void);
+void chunkqueue_chunk_pool_free(void);
+
 chunkqueue *chunkqueue_init(void);
+void chunkqueue_set_chunk_size (size_t sz);
 void chunkqueue_set_tempdirs_default_reset (void);
 void chunkqueue_set_tempdirs_default (array *tempdirs, unsigned int upload_temp_file_size);
 void chunkqueue_append_file(chunkqueue *cq, buffer *fn, off_t offset, off_t len); /* copies "fn" */
 void chunkqueue_append_file_fd(chunkqueue *cq, buffer *fn, int fd, off_t offset, off_t len); /* copies "fn" */
 void chunkqueue_append_mem(chunkqueue *cq, const char *mem, size_t len); /* copies memory */
+void chunkqueue_append_mem_min(chunkqueue *cq, const char * mem, size_t len); /* copies memory */
 void chunkqueue_append_buffer(chunkqueue *cq, buffer *mem); /* may reset "mem" */
-void chunkqueue_prepend_buffer(chunkqueue *cq, buffer *mem); /* may reset "mem" */
 void chunkqueue_append_chunkqueue(chunkqueue *cq, chunkqueue *src);
+
+buffer * chunkqueue_prepend_buffer_open_sz(chunkqueue *cq, size_t sz);
+buffer * chunkqueue_prepend_buffer_open(chunkqueue *cq);
+void chunkqueue_prepend_buffer_commit(chunkqueue *cq);
+buffer * chunkqueue_append_buffer_open_sz(chunkqueue *cq, size_t sz);
+buffer * chunkqueue_append_buffer_open(chunkqueue *cq);
+void chunkqueue_append_buffer_commit(chunkqueue *cq);
 
 struct server; /*(declaration)*/
 int chunkqueue_append_mem_to_tempfile(struct server *srv, chunkqueue *cq, const char *mem, size_t len);
 
 /* functions to handle buffers to read into: */
-/* return a pointer to a buffer in *mem with size *len;
- *  it should be at least min_size big, and use alloc_size if
- *  new memory is allocated.
+/* obtain/reserve memory in chunkqueue at least len (input) size,
+ * return pointer to memory with len (output) available for use
  * modifying the chunkqueue invalidates the memory area.
  * should always be followed by chunkqueue_get_memory(),
  *  even if nothing was read.
- * pass 0 for min_size/alloc_size for default values
+ * pass 0 in len for mem at least half of chunk_buf_sz
  */
-void chunkqueue_get_memory(chunkqueue *cq, char **mem, size_t *len, size_t min_size, size_t alloc_size);
-/* append first len bytes of the memory queried with
- * chunkqueue_get_memory to the chunkqueue
- */
+char * chunkqueue_get_memory(chunkqueue *cq, size_t *len);
+/* commit len bytes of mem obtained from chunkqueue_get_memory() */
 void chunkqueue_use_memory(chunkqueue *cq, size_t len);
 
 /* mark first "len" bytes as written (incrementing chunk offsets)

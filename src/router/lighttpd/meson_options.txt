@@ -63,6 +63,11 @@ option('with_openssl',
 	value: false,
 	description: 'with openssl-support [default: off]',
 )
+option('with_pam',
+	type: 'boolean',
+	value: false,
+	description: 'with PAM-support for mod_auth [default: off]',
+)
 option('with_pcre',
 	type: 'boolean',
 	value: true,
@@ -92,6 +97,11 @@ option('with_webdav_props',
 	type: 'boolean',
 	value: false,
 	description: 'with property-support for mod_webdav [default: off]',
+)
+option('with_wolfssl',
+	type: 'string',
+	value: 'false',
+	description: 'with wolfSSL-support [default: off]',
 )
 option('with_xattr',
 	type: 'boolean',

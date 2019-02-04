@@ -2,20 +2,18 @@
 
 #include "server.h"
 #include "buffer.h"
+#include "burl.h"
 #include "network.h"
 #include "log.h"
-#include "keyvalue.h"
 #include "rand.h"
-#include "response.h"
-#include "request.h"
 #include "chunk.h"
 #include "http_auth.h"
-#include "http_chunk.h"
 #include "http_vhostdb.h"
 #include "fdevent.h"
 #include "connections.h"
 #include "sock_addr.h"
 #include "stat_cache.h"
+#include "configfile.h"
 #include "plugin.h"
 #include "joblist.h"
 #include "network_write.h"
@@ -73,7 +71,8 @@
 # include <sys/prctl.h>
 #endif
 
-#if defined HAVE_LIBSSL && defined HAVE_OPENSSL_SSL_H
+#include "sys-crypto.h"
+#ifdef USE_OPENSSL_CRYPTO
 #define USE_SSL
 #define TEXT_SSL " (ssl)"
 #else
@@ -88,6 +87,7 @@
 static int oneshot_fd = 0;
 static volatile int pid_fd = -2;
 static server_socket_array graceful_sockets;
+static server_socket_array inherited_sockets;
 static volatile sig_atomic_t graceful_restart = 0;
 static volatile sig_atomic_t graceful_shutdown = 0;
 static volatile sig_atomic_t srv_shutdown = 0;
@@ -287,11 +287,22 @@ static server *server_init(void) {
 	srv->srvconf.http_header_strict  = 1;
 	srv->srvconf.http_host_strict    = 1; /*(implies http_host_normalize)*/
 	srv->srvconf.http_host_normalize = 0;
+      #if 0
+	srv->srvconf.http_url_normalize = HTTP_PARSEOPT_URL_NORMALIZE
+					| HTTP_PARSEOPT_URL_NORMALIZE_UNRESERVED
+					| HTTP_PARSEOPT_URL_NORMALIZE_CTRLS_REJECT
+					| HTTP_PARSEOPT_URL_NORMALIZE_PATH_BACKSLASH_TRANS
+					| HTTP_PARSEOPT_URL_NORMALIZE_PATH_2F_DECODE
+					| HTTP_PARSEOPT_URL_NORMALIZE_PATH_DOTSEG_REMOVE;
+      #endif
+	srv->srvconf.http_url_normalize = 0; /* temporary; change in future */
 	srv->srvconf.high_precision_timestamps = 0;
 	srv->srvconf.max_request_field_size = 8192;
 	srv->srvconf.loadavg[0] = 0.0;
 	srv->srvconf.loadavg[1] = 0.0;
 	srv->srvconf.loadavg[2] = 0.0;
+	srv->srvconf.compat_module_load = 1;
+	srv->srvconf.systemd_socket_activation = 0;
 
 	/* use syslog */
 	srv->errorlog_fd = STDERR_FILENO;
@@ -390,6 +401,7 @@ static void server_free(server *srv) {
 	array_free(srv->split_vals);
 
 	li_rand_cleanup();
+	chunkqueue_chunk_pool_free();
 
 	free(srv);
 }
@@ -581,6 +593,11 @@ static void show_features (void) {
 #else
       "\t- LDAP support\n"
 #endif
+#ifdef HAVE_PAM
+      "\t+ PAM support\n"
+#else
+      "\t- PAM support\n"
+#endif
 #ifdef USE_MEMCACHED
       "\t+ memcached support\n"
 #else
@@ -728,13 +745,14 @@ static int log_error_open(server *srv) {
     }
     else if (!buffer_string_is_empty(srv->srvconf.errorlog_file)) {
         const char *logfile = srv->srvconf.errorlog_file->ptr;
-
-        if (-1 == (srv->errorlog_fd = fdevent_open_logger(logfile))) {
+        int fd = fdevent_open_logger(logfile);
+        if (-1 == fd) {
             log_error_write(srv, __FILE__, __LINE__, "SSSS",
                             "opening errorlog '", logfile,
                             "' failed: ", strerror(errno));
             return -1;
         }
+        srv->errorlog_fd = fd;
         srv->errorlog_mode = logfile[0] == '|' ? ERRORLOG_PIPE : ERRORLOG_FILE;
     }
 
@@ -840,11 +858,15 @@ static int log_error_close(server *srv) {
 static void server_sockets_save (server *srv) {    /* graceful_restart */
     memcpy(&graceful_sockets, &srv->srv_sockets, sizeof(server_socket_array));
     memset(&srv->srv_sockets, 0, sizeof(server_socket_array));
+    memcpy(&inherited_sockets, &srv->srv_sockets_inherited, sizeof(server_socket_array));
+    memset(&srv->srv_sockets_inherited, 0, sizeof(server_socket_array));
 }
 
 static void server_sockets_restore (server *srv) { /* graceful_restart */
     memcpy(&srv->srv_sockets, &graceful_sockets, sizeof(server_socket_array));
     memset(&graceful_sockets, 0, sizeof(server_socket_array));
+    memcpy(&srv->srv_sockets_inherited, &inherited_sockets, sizeof(server_socket_array));
+    memset(&inherited_sockets, 0, sizeof(server_socket_array));
 }
 
 static int server_sockets_set_nb_cloexec (server *srv) {
@@ -948,7 +970,7 @@ static void server_graceful_state (server *srv) {
     else {
         server_sockets_close(srv);
         remove_pid_file(srv);
-        buffer_reset(srv->srvconf.pid_file); /*(prevent more removal attempts)*/
+        buffer_clear(srv->srvconf.pid_file); /*(prevent more removal attempts)*/
     }
 }
 
@@ -987,6 +1009,7 @@ static int server_main (server * const srv, int argc, char **argv) {
 	/*graceful_restart = 0;*//*(reset below to avoid further daemonizing)*/
 	/*(intentionally preserved)*/
 	/*memset(graceful_sockets, 0, sizeof(graceful_sockets));*/
+	/*memset(inherited_sockets, 0, sizeof(inherited_sockets));*/
 	/*pid_fd = -1;*/
 
 	srv->srvconf.port = 0;
@@ -1033,6 +1056,19 @@ static int server_main (server * const srv, int argc, char **argv) {
 		}
 	}
 
+      #ifdef __CYGWIN__
+	if (!srv->config_storage && NULL != getenv("NSSM_SERVICE_NAME")) {
+		char *dir = getenv("NSSM_SERVICE_DIR");
+		if (NULL != dir && 0 != chdir(dir)) {
+			log_error_write(srv, __FILE__, __LINE__, "sss", "chdir failed:", dir, strerror(errno));
+			return -1;
+		}
+		srv->srvconf.dont_daemonize = 1;
+		buffer_copy_string_len(srv->srvconf.modules_dir, CONST_STR_LEN("modules"));
+		if (config_read(srv, "conf/lighttpd.conf")) return -1;
+	}
+      #endif
+
 	if (!srv->config_storage) {
 		log_error_write(srv, __FILE__, __LINE__, "s",
 				"No configuration available. Try using -f option.");
@@ -1042,7 +1078,7 @@ static int server_main (server * const srv, int argc, char **argv) {
 	if (print_config) {
 		data_unset *dc = srv->config_context->data[0];
 		if (dc) {
-			dc->print(dc, 0);
+			dc->fn->print(dc, 0);
 			fprintf(stdout, "\n");
 		} else {
 			/* shouldn't happend */
@@ -1051,7 +1087,7 @@ static int server_main (server * const srv, int argc, char **argv) {
 	}
 
 	if (test_config) {
-		buffer_reset(srv->srvconf.pid_file);
+		buffer_clear(srv->srvconf.pid_file);
 		if (1 == test_config) {
 			printf("Syntax OK\n");
 		} else { /*(test_config > 1)*/
@@ -1074,7 +1110,7 @@ static int server_main (server * const srv, int argc, char **argv) {
 		graceful_shutdown = 1;
 		srv->sockets_disabled = 1;
 		srv->srvconf.dont_daemonize = 1;
-		buffer_reset(srv->srvconf.pid_file);
+		buffer_clear(srv->srvconf.pid_file);
 		if (srv->srvconf.max_worker) {
 			srv->srvconf.max_worker = 0;
 			log_error_write(srv, __FILE__, __LINE__, "s",
@@ -1146,6 +1182,22 @@ static int server_main (server * const srv, int argc, char **argv) {
 	if (HANDLER_GO_ON != plugins_call_init(srv)) {
 		log_error_write(srv, __FILE__, __LINE__, "s", "Initialization of plugins failed. Going down.");
 		return -1;
+	}
+
+	/* mod_indexfile should be listed in server.modules prior to dynamic handlers */
+	i = 0;
+	for (buffer *pname = NULL; i < srv->plugins.used; ++i) {
+		plugin *p = ((plugin **)srv->plugins.ptr)[i];
+		if (buffer_is_equal_string(p->name, CONST_STR_LEN("indexfile"))) {
+			if (pname) {
+				log_error_write(srv, __FILE__, __LINE__, "SB",
+						"Warning: mod_indexfile should be listed in server.modules prior to mod_", pname);
+			}
+			break;
+		}
+		if (p->handle_subrequest_start && p->handle_subrequest) {
+			if (!pname) pname = p->name;
+		}
 	}
 
 	/* open pid file BEFORE chroot */
@@ -1605,7 +1657,7 @@ static int server_main (server * const srv, int argc, char **argv) {
 			close(pid_fd);
 			pid_fd = -1;
 		}
-		buffer_reset(srv->srvconf.pid_file);
+		buffer_clear(srv->srvconf.pid_file);
 
 		fdevent_clr_logger_pipe_pids();
 		srv->pid = getpid();
@@ -1768,6 +1820,8 @@ static int server_main (server * const srv, int argc, char **argv) {
 				}
 			      #endif
 
+				/* free excess chunkqueue buffers every 64 seconds */
+				if (0 == (min_ts & 0x3f)) chunkqueue_chunk_pool_clear();
 				/* cleanup stat-cache */
 				stat_cache_trigger_cleanup(srv);
 				/* reset global/aggregate rate limit counters */

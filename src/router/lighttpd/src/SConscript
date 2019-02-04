@@ -55,8 +55,8 @@ def GatherLibs(env, *libs):
 	libs = RemoveDuplicateLibs(env['LIBS'] + list(libs) + [env['APPEND_LIBS']])
 	return WorkaroundFreeBSDLibOrder(libs)
 
-common_src = Split("base64.c buffer.c log.c \
-	keyvalue.c chunk.c  \
+common_src = Split("base64.c buffer.c burl.c log.c \
+	http_header.c http_kv.c keyvalue.c chunk.c  \
 	http_chunk.c stream.c fdevent.c gw_backend.c \
 	stat_cache.c plugin.c joblist.c etag.c array.c \
 	data_string.c data_array.c \
@@ -73,17 +73,18 @@ common_src = Split("base64.c buffer.c log.c \
 	http-header-glue.c \
 	http_auth.c \
 	http_vhostdb.c \
+	request.c \
 	sock_addr.c \
 	splaytree.c \
 	rand.c \
-	status_counter.c safe_memclear.c \
+	safe_memclear.c \
 ")
 
 src = Split("server.c response.c connections.c \
 	inet_ntop_cache.c \
 	network.c \
 	network_write.c \
-	configfile.c configparser.c request.c proc_open.c")
+	configfile.c configparser.c")
 
 lemon = env.Program('lemon', 'lemon.c', LIBS = GatherLibs(env))
 
@@ -120,6 +121,7 @@ modules = {
 	'mod_secdownload' : { 'src' : [ 'mod_secdownload.c' ], 'lib' : [ env['LIBCRYPTO'] ] },
 	'mod_setenv' : { 'src' : [ 'mod_setenv.c' ] },
 	'mod_simple_vhost' : { 'src' : [ 'mod_simple_vhost.c' ] },
+	'mod_sockproxy' : { 'src' : [ 'mod_sockproxy.c' ] },
 	'mod_ssi' : { 'src' : [ 'mod_ssi_exprparser.c', 'mod_ssi_expr.c', 'mod_ssi.c' ] },
 	'mod_staticfile' : { 'src' : [ 'mod_staticfile.c' ] },
 	'mod_status' : { 'src' : [ 'mod_status.c' ] },
@@ -148,6 +150,9 @@ if env['with_lua']:
 		'lib' : [ env['LIBMEMCACHED'], env['LIBLUA'] ]
 	}
 
+if env['with_pam']:
+	modules['mod_authn_pam'] = { 'src' : [ 'mod_authn_pam.c' ], 'lib' : [ env['LIBPAM'] ] }
+
 if env['with_pcre'] and (env['with_memcached'] or env['with_gdbm']):
 	modules['mod_trigger_b4_dl'] = { 'src' : [ 'mod_trigger_b4_dl.c' ], 'lib' : [ env['LIBPCRE'], env['LIBMEMCACHED'], env['LIBGDBM'] ] }
 
@@ -167,6 +172,9 @@ if env['with_sasl']:
 
 if env['with_openssl']:
 	modules['mod_openssl'] = { 'src' : [ 'mod_openssl.c' ], 'lib' : [ env['LIBSSL'], env['LIBCRYPTO'] ] }
+
+if env['with_wolfssl']:
+	modules['mod_openssl'] = { 'src' : [ 'mod_openssl.c' ], 'lib' : [ env['LIBCRYPTO'], 'm' ] }
 
 staticenv = env.Clone(CPPFLAGS=[ env['CPPFLAGS'], '-DLIGHTTPD_STATIC' ])
 

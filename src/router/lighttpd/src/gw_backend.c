@@ -3,6 +3,7 @@
 #include "gw_backend.h"
 
 #include <sys/types.h>
+#include <sys/stat.h>
 #include "sys-socket.h"
 #ifdef HAVE_SYS_UIO_H
 #include <sys/uio.h>
@@ -19,6 +20,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "base.h"
 #include "array.h"
 #include "buffer.h"
 #include "crc32.h"
@@ -31,7 +33,7 @@
 
 #include "status_counter.h"
 
-static data_integer * gw_status_get_di(server *srv, gw_host *host, gw_proc *proc, const char *tag, size_t len) {
+static int * gw_status_get_counter(server *srv, gw_host *host, gw_proc *proc, const char *tag, size_t len) {
     buffer *b = srv->tmp_buf;
     buffer_copy_string_len(b, CONST_STR_LEN("gw.backend."));
     buffer_append_string_buffer(b, host->id);
@@ -44,42 +46,37 @@ static data_integer * gw_status_get_di(server *srv, gw_host *host, gw_proc *proc
 }
 
 static void gw_proc_tag_inc(server *srv, gw_host *host, gw_proc *proc, const char *tag, size_t len) {
-    data_integer *di = gw_status_get_di(srv, host, proc, tag, len);
-    ++di->value;
+    ++(*gw_status_get_counter(srv, host, proc, tag, len));
 }
 
 static void gw_proc_load_inc(server *srv, gw_host *host, gw_proc *proc) {
-    data_integer *di = gw_status_get_di(srv,host,proc,CONST_STR_LEN(".load"));
-    di->value = ++proc->load;
+    *gw_status_get_counter(srv,host,proc,CONST_STR_LEN(".load")) = ++proc->load;
 
     status_counter_inc(srv, CONST_STR_LEN("gw.active-requests"));
 }
 
 static void gw_proc_load_dec(server *srv, gw_host *host, gw_proc *proc) {
-    data_integer *di = gw_status_get_di(srv,host,proc,CONST_STR_LEN(".load"));
-    di->value = --proc->load;
+    *gw_status_get_counter(srv,host,proc,CONST_STR_LEN(".load")) = --proc->load;
 
     status_counter_dec(srv, CONST_STR_LEN("gw.active-requests"));
 }
 
 static void gw_host_assign(server *srv, gw_host *host) {
-    data_integer *di = gw_status_get_di(srv,host,NULL,CONST_STR_LEN(".load"));
-    di->value = ++host->load;
+    *gw_status_get_counter(srv,host,NULL,CONST_STR_LEN(".load")) = ++host->load;
 }
 
 static void gw_host_reset(server *srv, gw_host *host) {
-    data_integer *di = gw_status_get_di(srv,host,NULL,CONST_STR_LEN(".load"));
-    di->value = --host->load;
+    *gw_status_get_counter(srv,host,NULL,CONST_STR_LEN(".load")) = --host->load;
 }
 
 static int gw_status_init(server *srv, gw_host *host, gw_proc *proc) {
-    gw_status_get_di(srv, host, proc, CONST_STR_LEN(".disabled"))->value = 0;
-    gw_status_get_di(srv, host, proc, CONST_STR_LEN(".died"))->value = 0;
-    gw_status_get_di(srv, host, proc, CONST_STR_LEN(".overloaded"))->value = 0;
-    gw_status_get_di(srv, host, proc, CONST_STR_LEN(".connected"))->value = 0;
-    gw_status_get_di(srv, host, proc, CONST_STR_LEN(".load"))->value = 0;
+    *gw_status_get_counter(srv, host, proc, CONST_STR_LEN(".disabled")) = 0;
+    *gw_status_get_counter(srv, host, proc, CONST_STR_LEN(".died")) = 0;
+    *gw_status_get_counter(srv, host, proc, CONST_STR_LEN(".overloaded")) = 0;
+    *gw_status_get_counter(srv, host, proc, CONST_STR_LEN(".connected")) = 0;
+    *gw_status_get_counter(srv, host, proc, CONST_STR_LEN(".load")) = 0;
 
-    gw_status_get_di(srv, host, NULL, CONST_STR_LEN(".load"))->value = 0;
+    *gw_status_get_counter(srv, host, NULL, CONST_STR_LEN(".load")) = 0;
 
     return 0;
 }
@@ -333,7 +330,8 @@ static void gw_proc_waitpid_log(server *srv, gw_host *host, gw_proc *proc, int s
                             WEXITSTATUS(status), proc->connection_name);
         }
     } else if (WIFSIGNALED(status)) {
-        if (WTERMSIG(status) != SIGTERM && WTERMSIG(status) != SIGINT) {
+        if (WTERMSIG(status) != SIGTERM && WTERMSIG(status) != SIGINT
+            && WTERMSIG(status) != host->kill_signal) {
             log_error_write(srv, __FILE__, __LINE__, "sd",
                             "child signalled:", WTERMSIG(status));
         }
@@ -538,7 +536,7 @@ static int gw_spawn_connection(server *srv, gw_host *host, gw_proc *proc, int de
                     }
                 }
             } else {
-                char ** const e = environ;
+                char ** const e = fdevent_environ();
                 for (i = 0; e[i]; ++i) {
                     char *eq;
 
@@ -704,7 +702,7 @@ static void gw_proc_kill(server *srv, gw_host *host, gw_proc *proc) {
         host->unused_procs->prev = proc;
     host->unused_procs = proc;
 
-    kill(proc->pid, SIGTERM);
+    kill(proc->pid, host->kill_signal);
 
     gw_proc_set_state(host, proc, PROC_STATE_KILLED);
 
@@ -989,7 +987,7 @@ static int gw_establish_connection(server *srv, gw_host *host, gw_proc *proc, pi
     return 0;
 }
 
-static void gw_restart_dead_procs(server *srv, gw_host *host, int debug) {
+static void gw_restart_dead_procs(server *srv, gw_host *host, int debug, int trigger) {
     for (gw_proc *proc = host->first; proc; proc = proc->next) {
         if (debug > 2) {
             log_error_write(srv, __FILE__, __LINE__,  "sbdddd",
@@ -1004,6 +1002,12 @@ static void gw_restart_dead_procs(server *srv, gw_host *host, int debug) {
             gw_proc_check_enable(srv, host, proc);
             break;
         case PROC_STATE_KILLED:
+            if (trigger && ++proc->disabled_until > 4) {
+                int sig = (proc->disabled_until <= 8)
+                  ? host->kill_signal
+                  : proc->disabled_until <= 16 ? SIGTERM : SIGKILL;
+                kill(proc->pid, sig);
+            }
             break;
         case PROC_STATE_DIED_WAIT_FOR_PID:
             /*(state should not happen in workers if server.max-worker > 0)*/
@@ -1057,8 +1061,6 @@ static void gw_restart_dead_procs(server *srv, gw_host *host, int debug) {
 #include "base.h"
 #include "connections.h"
 #include "joblist.h"
-#include "keyvalue.h"
-#include "plugin.h"
 #include "response.h"
 
 
@@ -1072,7 +1074,7 @@ static gw_handler_ctx * handler_ctx_init(size_t sz) {
 
     hctx->fde_ndx = -1;
 
-    /*hctx->response = buffer_init();*//*(allocated when needed)*/
+    /*hctx->response = chunk_buffer_acquire();*//*(allocated when needed)*/
 
     hctx->request_id = 0;
     hctx->gw_mode = GW_RESPONDER;
@@ -1094,7 +1096,7 @@ static gw_handler_ctx * handler_ctx_init(size_t sz) {
 static void handler_ctx_free(gw_handler_ctx *hctx) {
     /* caller MUST have called gw_backend_close(srv, hctx) if necessary */
     if (hctx->handler_ctx_free) hctx->handler_ctx_free(hctx);
-    buffer_free(hctx->response);
+    chunk_buffer_release(hctx->response);
 
     chunkqueue_free(hctx->rb);
     chunkqueue_free(hctx->wb);
@@ -1118,7 +1120,7 @@ static void handler_ctx_clear(gw_handler_ctx *hctx) {
     if (hctx->wb) chunkqueue_reset(hctx->wb);
     hctx->wb_reqlen = 0;
 
-    buffer_reset(hctx->response);
+    if (hctx->response) buffer_clear(hctx->response);
 
     hctx->fd = -1;
     hctx->fde_ndx = -1;
@@ -1269,6 +1271,7 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, data_unset *du, size
                 { "listen-backlog",    NULL, T_CONFIG_INT,   T_CONFIG_SCOPE_CONNECTION },        /* 19 */
                 { "x-sendfile",        NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION },      /* 20 */
                 { "x-sendfile-docroot",NULL, T_CONFIG_ARRAY,  T_CONFIG_SCOPE_CONNECTION },       /* 21 */
+                { "tcp-fin-propagate", NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION },      /* 22 */
 
                 { NULL,                NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
             };
@@ -1283,7 +1286,7 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, data_unset *du, size
             }
 
             host = gw_host_init();
-            buffer_reset(gw_mode);
+            buffer_clear(gw_mode);
 
             buffer_copy_buffer(host->id, da_host->key);
 
@@ -1324,6 +1327,7 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, data_unset *du, size
             fcv[19].destination = &(host->listen_backlog);
             fcv[20].destination = &(host->xsendfile_allow);
             fcv[21].destination = host->xsendfile_docroot;
+            fcv[22].destination = &(host->tcp_fin_propagate);
 
             if (0 != config_insert_values_internal(srv, da_host->value, fcv, T_CONFIG_SCOPE_CONNECTION)) {
                 goto error;
@@ -1399,8 +1403,12 @@ int gw_set_defaults_backend(server *srv, gw_plugin_data *p, data_unset *du, size
                     host->port = 80;
                 }
 
-                host->family = (!buffer_string_is_empty(host->host)
-                                && NULL != strchr(host->host->ptr, ':'))
+                if (buffer_string_is_empty(host->host)) {
+                    buffer_copy_string_len(host->host,
+                                           CONST_STR_LEN("127.0.0.1"));
+                }
+
+                host->family = (NULL != strchr(host->host->ptr, ':'))
                   ? AF_INET6
                   : AF_INET;
             }
@@ -1711,6 +1719,23 @@ handler_t gw_connection_reset(server *srv, connection *con, void *p_d) {
 }
 
 
+static void gw_conditional_tcp_fin(server *srv, gw_handler_ctx *hctx) {
+    connection *con = hctx->remote_conn;
+    /*assert(con->conf.stream_request_body & FDEVENT_STREAM_REQUEST_TCP_FIN);*/
+    if (!chunkqueue_is_empty(hctx->wb)) return;
+    if (!hctx->host->tcp_fin_propagate) return;
+    if (hctx->gw_mode == GW_AUTHORIZER) return;
+    if (con->conf.stream_request_body & FDEVENT_STREAM_REQUEST_BACKEND_SHUT_WR)
+        return;
+
+    /* propagate shutdown SHUT_WR to backend if TCP half-close on con->fd */
+    con->conf.stream_request_body |= FDEVENT_STREAM_REQUEST_BACKEND_SHUT_WR;
+    con->conf.stream_request_body &= ~FDEVENT_STREAM_REQUEST_POLLIN;
+    con->is_readable = 0;
+    shutdown(hctx->fd, SHUT_WR);
+    fdevent_event_clr(srv->ev, &hctx->fde_ndx, hctx->fd, FDEVENT_OUT);
+}
+
 static handler_t gw_write_request(server *srv, gw_handler_ctx *hctx) {
     switch(hctx->state) {
     case GW_STATE_INIT:
@@ -1804,14 +1829,15 @@ static handler_t gw_write_request(server *srv, gw_handler_ctx *hctx) {
         /*(disable Nagle algorithm if streaming and content-length unknown)*/
         if (AF_UNIX != hctx->host->family) {
             connection *con = hctx->remote_conn;
-            if (-1 == con->request.content_length) {
+            if (con->request.content_length < 0) {
                 if (-1 == fdevent_set_tcp_nodelay(hctx->fd, 1)) {
                     /*(error, but not critical)*/
                 }
             }
         }
 
-        fdevent_event_add(srv->ev, &(hctx->fde_ndx), hctx->fd, FDEVENT_IN);
+        fdevent_event_add(srv->ev, &hctx->fde_ndx, hctx->fd,
+                          FDEVENT_IN | FDEVENT_RDHUP);
         gw_set_state(srv, hctx, GW_STATE_WRITE);
         /* fall through */
     case GW_STATE_WRITE:
@@ -1875,6 +1901,10 @@ static handler_t gw_write_request(server *srv, gw_handler_ctx *hctx) {
             }
         }
 
+        if (hctx->remote_conn->conf.stream_request_body
+            & FDEVENT_STREAM_REQUEST_TCP_FIN)
+            gw_conditional_tcp_fin(srv, hctx);
+
         return HANDLER_WAIT_FOR_EVENT;
     case GW_STATE_READ:
         /* waiting for a response */
@@ -1895,7 +1925,7 @@ static handler_t gw_write_error(server *srv, gw_handler_ctx *hctx) {
         /* (optimization to detect backend process exit while processing a
          *  large number of ready events; (this block could be removed)) */
         if (0 == srv->srvconf.max_worker)
-            gw_restart_dead_procs(srv, hctx->host, hctx->conf.debug);
+            gw_restart_dead_procs(srv, hctx->host, hctx->conf.debug, 0);
 
         /* cleanup this request and let request handler start request again */
         if (hctx->reconnects++ < 5) return gw_reconnect(srv, hctx);
@@ -1996,10 +2026,18 @@ handler_t gw_handle_subrequest(server *srv, connection *con, void *p_d) {
         }
     }
 
-    return ((0 == hctx->wb->bytes_in || !chunkqueue_is_empty(hctx->wb))
-        && hctx->state != GW_STATE_CONNECT_DELAYED)
-      ? gw_send_request(srv, hctx)
-      : HANDLER_WAIT_FOR_EVENT;
+    {
+        handler_t rc =((0==hctx->wb->bytes_in || !chunkqueue_is_empty(hctx->wb))
+                       && hctx->state != GW_STATE_CONNECT_DELAYED)
+          ? gw_send_request(srv, hctx)
+          : HANDLER_WAIT_FOR_EVENT;
+        if (HANDLER_WAIT_FOR_EVENT != rc) return rc;
+    }
+
+    if (con->conf.stream_request_body & FDEVENT_STREAM_REQUEST_TCP_FIN)
+        gw_conditional_tcp_fin(srv, hctx);
+
+    return HANDLER_WAIT_FOR_EVENT;
 }
 
 
@@ -2009,15 +2047,18 @@ static handler_t gw_recv_response(server *srv, gw_handler_ctx *hctx) {
     gw_host *host = hctx->host;
     /*(XXX: make this a configurable flag for other protocols)*/
     buffer *b = hctx->opts.backend == BACKEND_FASTCGI
-      ? buffer_init()
+      ? chunk_buffer_acquire()
       : hctx->response;
 
-    switch (http_response_read(srv, hctx->remote_conn, &hctx->opts,
-                               b, hctx->fd, &hctx->fde_ndx)) {
+    handler_t rc = http_response_read(srv, hctx->remote_conn, &hctx->opts,
+                                      b, hctx->fd, &hctx->fde_ndx);
+
+    if (b != hctx->response) chunk_buffer_release(b);
+
+    switch (rc) {
     default:
-        break;
+        return HANDLER_GO_ON;
     case HANDLER_FINISHED:
-        if (b != hctx->response) buffer_free(b);
         if (hctx->gw_mode == GW_AUTHORIZER
             && (200 == con->http_status || 0 == con->http_status)) {
             /*
@@ -2070,7 +2111,6 @@ static handler_t gw_recv_response(server *srv, gw_handler_ctx *hctx) {
         return HANDLER_FINISHED;
     case HANDLER_COMEBACK: /*(not expected; treat as error)*/
     case HANDLER_ERROR:
-        if (b != hctx->response) buffer_free(b);
         /* (optimization to detect backend process exit while processing a
          *  large number of ready events; (this block could be removed)) */
         if (proc->is_local && 1 == proc->load && proc->pid == hctx->pid
@@ -2122,9 +2162,6 @@ static handler_t gw_recv_response(server *srv, gw_handler_ctx *hctx) {
         gw_connection_close(srv, hctx);
         return HANDLER_FINISHED;
     }
-
-    if (b != hctx->response) buffer_free(b);
-    return HANDLER_GO_ON;
 }
 
 
@@ -2144,7 +2181,7 @@ static handler_t gw_handle_fdevent(server *srv, void *ctx, int revents) {
     }
 
     /* perhaps this issue is already handled */
-    if (revents & FDEVENT_HUP) {
+    if (revents & (FDEVENT_HUP|FDEVENT_RDHUP)) {
         if (hctx->state == GW_STATE_CONNECT_DELAYED) {
             /* getoptsock will catch this one (right ?)
              *
@@ -2163,9 +2200,13 @@ static handler_t gw_handle_fdevent(server *srv, void *ctx, int revents) {
              * since event loop will spin on fd FDEVENT_HUP event
              * until unregistered. */
             handler_t rc;
+            const unsigned short flags = con->conf.stream_response_body;
+            con->conf.stream_response_body &= ~FDEVENT_STREAM_RESPONSE_BUFMIN;
+            con->conf.stream_response_body |= FDEVENT_STREAM_RESPONSE_POLLRDHUP;
             do {
                 rc = gw_recv_response(srv,hctx); /*(might invalidate hctx)*/
             } while (rc == HANDLER_GO_ON);       /*(unless HANDLER_GO_ON)*/
+            con->conf.stream_response_body = flags;
             return rc; /* HANDLER_FINISHED or HANDLER_ERROR */
         } else {
             gw_proc *proc = hctx->proc;
@@ -2237,16 +2278,12 @@ handler_t gw_check_extension(server *srv, connection *con, gw_plugin_data *p, in
 
         /* check if extension-mapping matches */
         if (p->conf.ext_mapping) {
-            for (size_t k = 0; k < p->conf.ext_mapping->used; ++k) {
-                data_string *ds = (data_string *)p->conf.ext_mapping->data[k];
-                size_t ct_len = buffer_string_length(ds->key);
-                if (s_len < ct_len) continue;
-
+            data_string *ds =
+              (data_string *)array_match_key_suffix(p->conf.ext_mapping, fn);
+            if (NULL != ds) {
                 /* found a mapping */
-                if (0 == memcmp(fn->ptr+s_len-ct_len, ds->key->ptr, ct_len)) {
                     /* check if we know the extension */
-
-                    /* we can reuse k here */
+                    size_t k;
                     for (k = 0; k < exts->used; ++k) {
                         extension = exts->exts[k];
 
@@ -2259,8 +2296,6 @@ handler_t gw_check_extension(server *srv, connection *con, gw_plugin_data *p, in
                         /* found nothing */
                         extension = NULL;
                     }
-                    break;
-                }
             }
         }
 
@@ -2349,7 +2384,7 @@ handler_t gw_check_extension(server *srv, connection *con, gw_plugin_data *p, in
                 if (host->fix_root_path_name && extension->key->ptr[0] == '/'
                                              && extension->key->ptr[1] == '\0'){
                     buffer_copy_buffer(con->request.pathinfo, con->uri.path);
-                    buffer_string_set_length(con->uri.path, 0);
+                    buffer_clear(con->uri.path);
                 } else if (extension->key->ptr[0] == '/'
                            && buffer_string_length(con->uri.path)
                               > buffer_string_length(extension->key)
@@ -2430,7 +2465,7 @@ static void gw_handle_trigger_host(server *srv, gw_host *host, int debug) {
         gw_proc_waitpid(srv, host, proc);
     }
 
-    gw_restart_dead_procs(srv, host, debug);
+    gw_restart_dead_procs(srv, host, debug, 1);
 
     /* check if adaptive spawning enabled */
     if (host->min_procs == host->max_procs) return;
@@ -2487,17 +2522,31 @@ static void gw_handle_trigger_exts(server *srv, gw_exts *exts, int debug) {
     }
 }
 
+static void gw_handle_trigger_exts_wkr(server *srv, gw_exts *exts) {
+    for (size_t j = 0; j < exts->used; ++j) {
+        gw_extension * const ex = exts->exts[j];
+        for (size_t n = 0; n < ex->used; ++n) {
+            gw_host * const host = ex->hosts[n];
+            for (gw_proc *proc = host->first; proc; proc = proc->next) {
+                if (proc->state == PROC_STATE_OVERLOADED)
+                    gw_proc_check_enable(srv, host, proc);
+            }
+        }
+    }
+}
+
 handler_t gw_handle_trigger(server *srv, void *p_d) {
     gw_plugin_data *p = p_d;
-    if (0 != srv->srvconf.max_worker && p->srv_pid != srv->pid)
-        return HANDLER_GO_ON;
+    int wkr = (0 != srv->srvconf.max_worker && p->srv_pid != srv->pid);
 
     for (size_t i = 0; i < srv->config_context->used; i++) {
         gw_plugin_config *conf = p->config_storage[i];
         gw_exts *exts = conf->exts;
         int debug = conf->debug ? conf->debug : p->config_storage[0]->debug;
         if (NULL == exts) continue;
-        gw_handle_trigger_exts(srv, exts, debug);
+        wkr
+          ? gw_handle_trigger_exts_wkr(srv, exts)
+          : gw_handle_trigger_exts(srv, exts, debug);
     }
 
     return HANDLER_GO_ON;

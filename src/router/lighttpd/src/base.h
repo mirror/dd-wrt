@@ -6,110 +6,20 @@
 
 #include <sys/types.h>
 #include <sys/time.h>
-#include <sys/stat.h>
-
-#include <limits.h>
-
-#ifdef HAVE_STDINT_H
-# include <stdint.h>
-#endif
-
-#ifdef HAVE_INTTYPES_H
-# include <inttypes.h>
-#endif
 
 #include "base_decls.h"
 #include "buffer.h"
 #include "array.h"
 #include "chunk.h"
-#include "keyvalue.h"
+#include "http_kv.h"
 #include "sock_addr.h"
 #include "etag.h"
 
 struct fdevents;        /* declaration */
 struct stat_cache;      /* declaration */
 
-#ifndef O_BINARY
-# define O_BINARY 0
-#endif
+#define DIRECT 0        /* con->mode */
 
-#ifndef SIZE_MAX
-# ifdef SIZE_T_MAX
-#  define SIZE_MAX SIZE_T_MAX
-# else
-#  define SIZE_MAX ((size_t)~0)
-# endif
-#endif
-
-#ifndef SSIZE_MAX
-# define SSIZE_MAX ((size_t)~0 >> 1)
-#endif
-
-#ifdef __APPLE__
-#include <crt_externs.h>
-#define environ (* _NSGetEnviron())
-#else
-extern char **environ;
-#endif
-
-/* for solaris 2.5 and NetBSD 1.3.x */
-#ifndef HAVE_SOCKLEN_T
-typedef int socklen_t;
-#endif
-
-/* solaris and NetBSD 1.3.x again */
-#if (!defined(HAVE_STDINT_H)) && (!defined(HAVE_INTTYPES_H)) && (!defined(uint32_t))
-# define uint32_t u_int32_t
-#endif
-
-
-#ifndef SHUT_WR
-# define SHUT_WR 1
-#endif
-
-typedef enum { T_CONFIG_UNSET,
-		T_CONFIG_STRING,
-		T_CONFIG_SHORT,
-		T_CONFIG_INT,
-		T_CONFIG_BOOLEAN,
-		T_CONFIG_ARRAY,
-		T_CONFIG_LOCAL,
-		T_CONFIG_DEPRECATED,
-		T_CONFIG_UNSUPPORTED
-} config_values_type_t;
-
-typedef enum { T_CONFIG_SCOPE_UNSET,
-		T_CONFIG_SCOPE_SERVER,
-		T_CONFIG_SCOPE_CONNECTION
-} config_scope_type_t;
-
-typedef struct {
-	const char *key;
-	void *destination;
-
-	config_values_type_t type;
-	config_scope_type_t scope;
-} config_values_t;
-
-typedef enum { DIRECT, EXTERNAL } connection_type;
-
-typedef struct {
-	char *key;
-	connection_type type;
-	char *value;
-} request_handler;
-
-
-/* fcgi_response_header contains ... */
-#define HTTP_STATUS         BV(0)
-#define HTTP_CONNECTION     BV(1)
-#define HTTP_CONTENT_LENGTH BV(2)
-#define HTTP_DATE           BV(3)
-#define HTTP_LOCATION       BV(4)
-#define HTTP_TRANSFER_ENCODING BV(5)
-#define HTTP_CONTENT_LOCATION  BV(6)
-#define HTTP_SET_COOKIE        BV(7)
-#define HTTP_UPGRADE           BV(8)
 
 typedef struct {
 	/** HEADER */
@@ -126,19 +36,13 @@ typedef struct {
 
 	/* strings to the header */
 	buffer *http_host; /* not alloced */
-	const char   *http_range;
-	const char   *http_content_type;
-	const char   *http_if_modified_since;
-	const char   *http_if_none_match;
 
+	unsigned int htags; /* bitfield of flagged headers present in request */
 	array  *headers;
 
 	/* CONTENT */
 	off_t content_length; /* returned by strtoll() */
 	off_t te_chunked;
-
-	/* internal representation */
-	int     accept_encoding;
 
 	/* internal */
 	buffer *pathinfo;
@@ -148,11 +52,9 @@ typedef struct {
 	off_t   content_length;
 	int     keep_alive;               /* used by  the subrequests in proxy, cgi and fcgi to say the subrequest was keep-alive or not */
 
+	unsigned int htags; /* bitfield of flagged headers present in response */
 	array  *headers;
-
-	enum {
-		HTTP_TRANSFER_ENCODING_IDENTITY, HTTP_TRANSFER_ENCODING_CHUNKED
-	} transfer_encoding;
+	int send_chunked;
 } response;
 
 typedef struct {
@@ -176,25 +78,6 @@ typedef struct {
 
 	buffer *etag;
 } physical;
-
-typedef struct {
-	buffer *name;
-	buffer *etag;
-
-	struct stat st;
-
-	time_t stat_ts;
-
-#ifdef HAVE_LSTAT
-	char is_symlink;
-#endif
-
-#ifdef HAVE_FAM_H
-	int    dir_version;
-#endif
-
-	buffer *content_type;
-} stat_cache_entry;
 
 typedef struct {
 	array *mimetypes;
@@ -304,7 +187,7 @@ typedef enum {
 	COND_RESULT_TRUE   /* active */
 } cond_result_t;
 
-typedef struct {
+typedef struct cond_cache_t {
 	/* current result (with preconditions) */
 	cond_result_t result;
 	/* result without preconditions (must never be "skip") */
@@ -365,7 +248,6 @@ struct connection {
 
 	/* request */
 	buffer *parse_request;
-	unsigned int parsed_response; /* bitfield which contains the important header-fields of the parsed response header */
 
 	request  request;
 	request_uri uri;
@@ -376,7 +258,8 @@ struct connection {
 
 	array  *environment; /* used to pass lighttpd internal stuff to the FastCGI/CGI apps, setenv does that */
 
-	connection_type mode;
+	unsigned int mode;           /* DIRECT (0) or plugin id */
+	int async_callback;
 
 	void **plugin_ctx;           /* plugin connection specific config */
 
@@ -397,7 +280,7 @@ struct connection {
 	/* etag handling */
 	etag_flags_t etag_flags;
 
-	int conditional_is_valid[COMP_LAST_ELEMENT]; 
+	int8_t conditional_is_valid[16]; /* MUST be >= COMP_LAST_ELEMENT] */
 };
 
 typedef struct {
@@ -405,13 +288,6 @@ typedef struct {
 	size_t size;
 	size_t used;
 } connections;
-
-
-typedef struct {
-	buffer *uri;
-	time_t mtime;
-	int http_status;
-} realpath_cache_type;
 
 typedef struct {
 	time_t  mtime;  /* the key */
@@ -464,10 +340,14 @@ typedef struct {
 	unsigned short http_header_strict;
 	unsigned short http_host_strict;
 	unsigned short http_host_normalize;
+	unsigned short http_url_normalize;
 	unsigned short high_precision_timestamps;
 	time_t loadts;
 	double loadavg[3];
 	buffer *syslog_facility;
+
+	unsigned short compat_module_load;
+	unsigned short systemd_socket_activation;
 } server_config;
 
 typedef struct server_socket {
@@ -580,6 +460,8 @@ struct server {
 	uid_t uid;
 	gid_t gid;
 	pid_t pid;
+
+	server_socket_array srv_sockets_inherited;
 };
 
 

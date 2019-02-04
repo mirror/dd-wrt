@@ -1,43 +1,44 @@
 #include "first.h"
 
-#include "server.h"
+#include "base.h"
+#include "burl.h"
 #include "fdevent.h"
+#include "keyvalue.h"
 #include "log.h"
 #include "stream.h"
-#include "plugin.h"
 
 #include "configparser.h"
 #include "configfile.h"
-#include "proc_open.h"
-#include "request.h"
 #include "stat_cache.h"
+#include "sys-crypto.h"
 
 #include <sys/stat.h>
+#include <sys/wait.h>
 
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
-#include <stdio.h>
 #include <ctype.h>
 #include <limits.h>
 #include <glob.h>
 
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
 
 #if defined(HAVE_MYSQL) || (defined(HAVE_LDAP_H) && defined(HAVE_LBER_H) && defined(HAVE_LIBLDAP) && defined(HAVE_LIBLBER))
-static void config_warn_authn_module (server *srv, const char *module) {
-	size_t len = strlen(module);
+static void config_warn_authn_module (server *srv, const char *module, size_t len) {
 	for (size_t i = 0; i < srv->config_context->used; ++i) {
 		const data_config *config = (data_config const*)srv->config_context->data[i];
 		const data_unset *du = array_get_element(config->value, "auth.backend");
 		if (NULL != du && du->type == TYPE_STRING) {
 			data_string *ds = (data_string *)du;
 			if (buffer_is_equal_string(ds->value, module, len)) {
-				ds = data_string_init();
-				buffer_copy_string_len(ds->value, CONST_STR_LEN("mod_authn_"));
-				buffer_append_string(ds->value, module);
-				array_insert_unique(srv->srvconf.modules, (data_unset *)ds);
+				buffer_copy_string_len(srv->tmp_buf, CONST_STR_LEN("mod_authn_"));
+				buffer_append_string_len(srv->tmp_buf, module, len);
+				array_insert_value(srv->srvconf.modules, CONST_BUF_LEN(srv->tmp_buf));
 				log_error_write(srv, __FILE__, __LINE__, "SSSsSSS", "Warning: please add \"mod_authn_", module, "\" to server.modules list in lighttpd.conf.  A future release of lighttpd 1.4.x will not automatically load mod_authn_", module, "and lighttpd will fail to start up since your lighttpd.conf uses auth.backend = \"", module, "\".");
 				return;
 			}
@@ -46,7 +47,7 @@ static void config_warn_authn_module (server *srv, const char *module) {
 }
 #endif
 
-#if defined HAVE_LIBSSL && defined HAVE_OPENSSL_SSL_H
+#ifdef USE_OPENSSL_CRYPTO
 static void config_warn_openssl_module (server *srv) {
 	for (size_t i = 0; i < srv->config_context->used; ++i) {
 		const data_config *config = (data_config const*)srv->config_context->data[i];
@@ -54,9 +55,7 @@ static void config_warn_openssl_module (server *srv) {
 			data_unset *du = config->value->data[j];
 			if (0 == strncmp(du->key->ptr, "ssl.", sizeof("ssl.")-1)) {
 				/* mod_openssl should be loaded after mod_extforward */
-				data_string *ds = data_string_init();
-				buffer_copy_string_len(ds->value, CONST_STR_LEN("mod_openssl"));
-				array_insert_unique(srv->srvconf.modules, (data_unset *)ds);
+				array_insert_value(srv->srvconf.modules, CONST_STR_LEN("mod_openssl"));
 				log_error_write(srv, __FILE__, __LINE__, "S", "Warning: please add \"mod_openssl\" to server.modules list in lighttpd.conf.  A future release of lighttpd 1.4.x *will not* automatically load mod_openssl and lighttpd *will not* use SSL/TLS where your lighttpd.conf contains ssl.* directives");
 				return;
 			}
@@ -65,10 +64,121 @@ static void config_warn_openssl_module (server *srv) {
 }
 #endif
 
+static int config_http_parseopts (server *srv, array *a) {
+    unsigned short int opts = srv->srvconf.http_url_normalize;
+    unsigned short int decode_2f = 1;
+    int rc = 1;
+    if (!array_is_kvstring(a)) {
+        log_error_write(srv, __FILE__, __LINE__, "s",
+                        "unexpected value for server.http-parseopts; "
+                        "expected list of \"key\" => \"[enable|disable]\"");
+        return 0;
+    }
+    for (size_t i = 0; i < a->used; ++i) {
+        const data_string * const ds = (data_string *)a->data[i];
+        unsigned short int opt;
+        int val = 0;
+        if (buffer_is_equal_string(ds->value, CONST_STR_LEN("enable")))
+            val = 1;
+        else if (buffer_is_equal_string(ds->value, CONST_STR_LEN("disable")))
+            val = 0;
+        else {
+            log_error_write(srv, __FILE__, __LINE__, "sbsbs",
+                            "unrecognized value for server.http-parseopts:",
+                            ds->key, "=>", ds->value,
+                            "(expect \"[enable|disable]\")");
+            rc = 0;
+        }
+        if (buffer_is_equal_string(ds->key, CONST_STR_LEN("url-normalize")))
+            opt = HTTP_PARSEOPT_URL_NORMALIZE;
+        else if (buffer_is_equal_string(ds->key, CONST_STR_LEN("url-normalize-unreserved")))
+            opt = HTTP_PARSEOPT_URL_NORMALIZE_UNRESERVED;
+        else if (buffer_is_equal_string(ds->key, CONST_STR_LEN("url-normalize-required")))
+            opt = HTTP_PARSEOPT_URL_NORMALIZE_REQUIRED;
+        else if (buffer_is_equal_string(ds->key, CONST_STR_LEN("url-ctrls-reject")))
+            opt = HTTP_PARSEOPT_URL_NORMALIZE_CTRLS_REJECT;
+        else if (buffer_is_equal_string(ds->key, CONST_STR_LEN("url-path-backslash-trans")))
+            opt = HTTP_PARSEOPT_URL_NORMALIZE_PATH_BACKSLASH_TRANS;
+        else if (buffer_is_equal_string(ds->key, CONST_STR_LEN("url-path-2f-decode")))
+            opt = HTTP_PARSEOPT_URL_NORMALIZE_PATH_2F_DECODE;
+        else if (buffer_is_equal_string(ds->key, CONST_STR_LEN("url-path-2f-reject")))
+            opt = HTTP_PARSEOPT_URL_NORMALIZE_PATH_2F_REJECT;
+        else if (buffer_is_equal_string(ds->key, CONST_STR_LEN("url-path-dotseg-remove")))
+            opt = HTTP_PARSEOPT_URL_NORMALIZE_PATH_DOTSEG_REMOVE;
+        else if (buffer_is_equal_string(ds->key, CONST_STR_LEN("url-path-dotseg-reject")))
+            opt = HTTP_PARSEOPT_URL_NORMALIZE_PATH_DOTSEG_REJECT;
+        else if (buffer_is_equal_string(ds->key, CONST_STR_LEN("url-query-20-plus")))
+            opt = HTTP_PARSEOPT_URL_NORMALIZE_QUERY_20_PLUS;
+        else if (buffer_is_equal_string(ds->key, CONST_STR_LEN("header-strict"))) {
+            srv->srvconf.http_header_strict = val;
+            continue;
+        }
+        else if (buffer_is_equal_string(ds->key, CONST_STR_LEN("host-strict"))) {
+            srv->srvconf.http_host_strict = val;
+            continue;
+        }
+        else if (buffer_is_equal_string(ds->key, CONST_STR_LEN("host-normalize"))) {
+            srv->srvconf.http_host_normalize = val;
+            continue;
+        }
+        else {
+            log_error_write(srv, __FILE__, __LINE__, "sb",
+                            "unrecognized key for server.http-parseopts:",
+                            ds->key);
+            rc = 0;
+            continue;
+        }
+        if (val)
+            opts |= opt;
+        else {
+            opts &= ~opt;
+            if (opt == HTTP_PARSEOPT_URL_NORMALIZE) {
+                opts = 0;
+                break;
+            }
+            if (opt == HTTP_PARSEOPT_URL_NORMALIZE_PATH_2F_DECODE) {
+                decode_2f = 0;
+            }
+        }
+    }
+    if (opts != 0) {
+        opts |= HTTP_PARSEOPT_URL_NORMALIZE;
+        if ((opts & (HTTP_PARSEOPT_URL_NORMALIZE_PATH_2F_DECODE
+                    |HTTP_PARSEOPT_URL_NORMALIZE_PATH_2F_REJECT))
+                 == (HTTP_PARSEOPT_URL_NORMALIZE_PATH_2F_DECODE
+                    |HTTP_PARSEOPT_URL_NORMALIZE_PATH_2F_REJECT)) {
+            log_error_write(srv, __FILE__, __LINE__, "s",
+                            "conflicting options in server.http-parseopts:"
+                            "url-path-2f-decode, url-path-2f-reject");
+            rc = 0;
+        }
+        if ((opts & (HTTP_PARSEOPT_URL_NORMALIZE_PATH_DOTSEG_REMOVE
+                    |HTTP_PARSEOPT_URL_NORMALIZE_PATH_DOTSEG_REJECT))
+                 == (HTTP_PARSEOPT_URL_NORMALIZE_PATH_DOTSEG_REMOVE
+                    |HTTP_PARSEOPT_URL_NORMALIZE_PATH_DOTSEG_REJECT)) {
+            log_error_write(srv, __FILE__, __LINE__, "s",
+                            "conflicting options in server.http-parseopts:"
+                            "url-path-dotseg-remove, url-path-dotseg-reject");
+            rc = 0;
+        }
+        if (!(opts & (HTTP_PARSEOPT_URL_NORMALIZE_UNRESERVED
+                     |HTTP_PARSEOPT_URL_NORMALIZE_REQUIRED))) {
+            opts |= HTTP_PARSEOPT_URL_NORMALIZE_UNRESERVED;
+            if (decode_2f
+                && !(opts & HTTP_PARSEOPT_URL_NORMALIZE_PATH_2F_REJECT))
+                opts |= HTTP_PARSEOPT_URL_NORMALIZE_PATH_2F_DECODE;
+        }
+    }
+    srv->srvconf.http_url_normalize = opts;
+    return rc;
+}
+
 static int config_insert(server *srv) {
 	size_t i;
 	int ret = 0;
 	buffer *stat_cache_string;
+	array *http_parseopts;
+	unsigned int chunk_sz = 0;
 
 	config_values_t cv[] = {
 		{ "server.bind",                       NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_SERVER     }, /* 0 */
@@ -129,8 +239,8 @@ static int config_insert(server *srv) {
 		{ "server.network-backend",            NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_SERVER     }, /* 44 */
 		{ "server.upload-dirs",                NULL, T_CONFIG_ARRAY,   T_CONFIG_SCOPE_SERVER     }, /* 45 */
 		{ "server.core-files",                 NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER     }, /* 46 */
-		{ "unused-slot-moved-to-mod-openssl",  NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_CONNECTION }, /* 47 */
-		{ "unused-slot-moved-to-mod-openssl",  NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 48 */
+		{ "server.compat-module-load",         NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER     }, /* 47 */
+		{ "server.chunkqueue-chunk-sz",        NULL, T_CONFIG_INT,     T_CONFIG_SCOPE_SERVER     }, /* 48 */
 		{ "etag.use-inode",                    NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 49 */
 
 		{ "etag.use-mtime",                    NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 50 */
@@ -166,6 +276,8 @@ static int config_insert(server *srv) {
 		{ "server.error-intercept",            NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_CONNECTION }, /* 79 */
 		{ "server.syslog-facility",            NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_SERVER     }, /* 80 */
 		{ "server.socket-perms",               NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_CONNECTION }, /* 81 */
+		{ "server.http-parseopts",             NULL, T_CONFIG_ARRAY,   T_CONFIG_SCOPE_SERVER     }, /* 82 */
+		{ "server.systemd-socket-activation",  NULL, T_CONFIG_BOOLEAN, T_CONFIG_SCOPE_SERVER     }, /* 83 */
 
 		{ NULL,                                NULL, T_CONFIG_UNSET,   T_CONFIG_SCOPE_UNSET      }
 	};
@@ -195,6 +307,8 @@ static int config_insert(server *srv) {
 	cv[44].destination = srv->srvconf.network_backend;
 	cv[45].destination = srv->srvconf.upload_tempdirs;
 	cv[46].destination = &(srv->srvconf.enable_cores);
+	cv[47].destination = &(srv->srvconf.compat_module_load);
+	cv[48].destination = &chunk_sz;
 
 	cv[52].destination = &(srv->srvconf.reject_expect_100_with_417);
 	cv[55].destination = srv->srvconf.breakagelog_file;
@@ -206,6 +320,9 @@ static int config_insert(server *srv) {
 	cv[74].destination = &(srv->srvconf.http_host_normalize);
 	cv[78].destination = &(srv->srvconf.max_request_field_size);
 	cv[80].destination = srv->srvconf.syslog_facility;
+	http_parseopts = array_init();
+	cv[82].destination = http_parseopts;
+	cv[83].destination = &(srv->srvconf.systemd_socket_activation);
 
 	srv->config_storage = calloc(1, srv->config_context->used * sizeof(specific_config *));
 
@@ -214,7 +331,7 @@ static int config_insert(server *srv) {
 -analyzer */
 
 	for (i = 0; i < srv->config_context->used; i++) {
-		data_config const* config = (data_config const*)srv->config_context->data[i];
+		data_config * const config = (data_config *)srv->config_context->data[i];
 		specific_config *s;
 
 		s = calloc(1, sizeof(specific_config));
@@ -348,15 +465,62 @@ static int config_insert(server *srv) {
 					"unexpected value for mimetype.assign; expected list of \"ext\" => \"mimetype\"");
 		}
 
-#if !(defined HAVE_LIBSSL && defined HAVE_OPENSSL_SSL_H)
+		if (!buffer_string_is_empty(s->server_tag)) {
+			for (char *t = strchr(s->server_tag->ptr,'\n'); NULL != t; t = strchr(t+2,'\n')) {
+				/* not expecting admin to define multi-line server.tag,
+				 * but ensure server_tag has proper header continuation,
+				 * if needed */
+				off_t off = t - s->server_tag->ptr;
+				size_t len;
+				if (t[1] == ' ' || t[1] == '\t') continue;
+				len = buffer_string_length(s->server_tag);
+				buffer_string_prepare_append(s->server_tag, 1);
+				t = s->server_tag->ptr+off;
+				memmove(t+2, t+1, len - off - 1);
+				t[1] = ' ';
+				buffer_commit(s->server_tag, 1);
+			}
+		}
+
+		if (0 == i) {
+                    if (!config_http_parseopts(srv, http_parseopts)) {
+			ret = HANDLER_ERROR;
+			break;
+                    }
+                }
+
+		if (srv->srvconf.http_url_normalize
+		    && COMP_HTTP_QUERY_STRING == config->comp) {
+			switch(config->cond) {
+			case CONFIG_COND_NE:
+			case CONFIG_COND_EQ:
+				/* (can use this routine as long as it does not perform
+				 *  any regex-specific normalization of first arg) */
+				pcre_keyvalue_burl_normalize_key(config->string, srv->tmp_buf);
+				break;
+			case CONFIG_COND_NOMATCH:
+			case CONFIG_COND_MATCH:
+				pcre_keyvalue_burl_normalize_key(config->string, srv->tmp_buf);
+				if (!data_config_pcre_compile(config)) {
+					ret = HANDLER_ERROR;
+				}
+				break;
+			default:
+				break;
+			}
+			if (HANDLER_ERROR == ret) break;
+		}
+
+	      #ifndef USE_OPENSSL_CRYPTO
 		if (s->ssl_enabled) {
 			log_error_write(srv, __FILE__, __LINE__, "s",
-					"ssl support is missing, recompile with --with-openssl");
+					"ssl support is missing, recompile with e.g. --with-openssl");
 			ret = HANDLER_ERROR;
 			break;
 		}
-#endif
+	      #endif
 	}
+	array_free(http_parseopts);
 
 	{
 		specific_config *s = srv->config_storage[0];
@@ -365,6 +529,14 @@ static int config_insert(server *srv) {
 		  |(srv->srvconf.http_host_strict    ?(HTTP_PARSEOPT_HOST_STRICT
 		                                      |HTTP_PARSEOPT_HOST_NORMALIZE):0)
 		  |(srv->srvconf.http_host_normalize ?(HTTP_PARSEOPT_HOST_NORMALIZE):0);
+		s->http_parseopts |= srv->srvconf.http_url_normalize;
+
+		if (s->log_request_handling || s->log_request_header)
+			srv->srvconf.log_request_header_on_error = 1;
+	}
+
+	if (0 != chunk_sz) {
+		chunkqueue_set_chunk_size(chunk_sz);
 	}
 
 	if (0 != stat_cache_choose_engine(srv, stat_cache_string)) {
@@ -382,7 +554,7 @@ static int config_insert(server *srv) {
 		log_error_write(srv, __FILE__, __LINE__, "s",
 				"unexpected value for server.modules; expected list of \"mod_xxxxxx\" strings");
 		ret = HANDLER_ERROR;
-	} else {
+	} else if (srv->srvconf.compat_module_load) {
 		data_string *ds;
 		int prepend_mod_indexfile = 1;
 		int append_mod_dirlisting = 1;
@@ -444,14 +616,11 @@ static int config_insert(server *srv) {
 		if (prepend_mod_indexfile) {
 			/* mod_indexfile has to be loaded before mod_fastcgi and friends */
 			array *modules = array_init();
-
-			ds = data_string_init();
-			buffer_copy_string_len(ds->value, CONST_STR_LEN("mod_indexfile"));
-			array_insert_unique(modules, (data_unset *)ds);
+			array_insert_value(modules, CONST_STR_LEN("mod_indexfile"));
 
 			for (i = 0; i < srv->srvconf.modules->used; i++) {
-				data_unset *du = srv->srvconf.modules->data[i];
-				array_insert_unique(modules, du->copy(du));
+				ds = (data_string *)srv->srvconf.modules->data[i];
+				array_insert_value(modules, CONST_BUF_LEN(ds->value));
 			}
 
 			array_free(srv->srvconf.modules);
@@ -460,19 +629,15 @@ static int config_insert(server *srv) {
 
 		/* append default modules */
 		if (append_mod_dirlisting) {
-			ds = data_string_init();
-			buffer_copy_string_len(ds->value, CONST_STR_LEN("mod_dirlisting"));
-			array_insert_unique(srv->srvconf.modules, (data_unset *)ds);
+			array_insert_value(srv->srvconf.modules, CONST_STR_LEN("mod_dirlisting"));
 		}
 
 		if (append_mod_staticfile) {
-			ds = data_string_init();
-			buffer_copy_string_len(ds->value, CONST_STR_LEN("mod_staticfile"));
-			array_insert_unique(srv->srvconf.modules, (data_unset *)ds);
+			array_insert_value(srv->srvconf.modules, CONST_STR_LEN("mod_staticfile"));
 		}
 
 		if (append_mod_openssl) {
-		      #if defined HAVE_LIBSSL && defined HAVE_OPENSSL_SSL_H
+		      #ifdef USE_OPENSSL_CRYPTO
 			config_warn_openssl_module(srv);
 		      #endif
 		}
@@ -482,18 +647,16 @@ static int config_insert(server *srv) {
 		 * existing lighttpd 1.4.x configs */
 		if (contains_mod_auth) {
 			if (append_mod_authn_file) {
-				ds = data_string_init();
-				buffer_copy_string_len(ds->value, CONST_STR_LEN("mod_authn_file"));
-				array_insert_unique(srv->srvconf.modules, (data_unset *)ds);
+				array_insert_value(srv->srvconf.modules, CONST_STR_LEN("mod_authn_file"));
 			}
 			if (append_mod_authn_ldap) {
 			      #if defined(HAVE_LDAP_H) && defined(HAVE_LBER_H) && defined(HAVE_LIBLDAP) && defined(HAVE_LIBLBER)
-				config_warn_authn_module(srv, "ldap");
+				config_warn_authn_module(srv, CONST_STR_LEN("ldap"));
 			      #endif
 			}
 			if (append_mod_authn_mysql) {
 			      #if defined(HAVE_MYSQL)
-				config_warn_authn_module(srv, "mysql");
+				config_warn_authn_module(srv, CONST_STR_LEN("mysql"));
 			      #endif
 			}
 		}
@@ -1087,9 +1250,7 @@ static int config_tokenizer(server *srv, tokenizer_t *t, int *token_id, buffer *
 
 		return 1;
 	} else if (t->offset < t->size) {
-		fprintf(stderr, "%s.%d: %d, %s\n",
-			__FILE__, __LINE__,
-			tid, token->ptr);
+		log_error_write(srv, __FILE__, __LINE__, "Dsb", tid, ",", token);
 	}
 	return 0;
 }
@@ -1216,41 +1377,28 @@ int config_parse_file(server *srv, config_t *context, const char *fn) {
 	return ret;
 }
 
-static char* getCWD(void) {
-	char *s, *s1;
-	size_t len;
-#ifdef PATH_MAX
-	len = PATH_MAX;
-#else
-	len = 4096;
-#endif
+#ifdef __CYGWIN__
 
-	s = malloc(len);
-	if (!s) return NULL;
-	while (NULL == getcwd(s, len)) {
-		if (errno != ERANGE || SSIZE_MAX - len < len) {
-			free(s);
-			return NULL;
-		}
-		len *= 2;
-		s1 = realloc(s, len);
-		if (!s1) {
-			free(s);
-			return NULL;
-		}
-		s = s1;
-	}
-	return s;
+static char* getCWD(char *buf, size_t sz) {
+    if (NULL == getcwd(buf, sz)) {
+        return NULL;
+    }
+    for (size_t i = 0; buf[i]; ++i) {
+        if (buf[i] == '\\') buf[i] = '/';
+    }
+    return buf;
 }
 
-int config_parse_cmd(server *srv, config_t *context, const char *cmd) {
-	tokenizer_t t;
-	int ret;
-	buffer *source;
-	buffer *out;
-	char *oldpwd;
+#define getcwd(buf, sz) getCWD((buf),(sz))
 
-	if (NULL == (oldpwd = getCWD())) {
+#endif /* __CYGWIN__ */
+
+int config_parse_cmd(server *srv, config_t *context, const char *cmd) {
+	int ret = 0;
+	int fds[2];
+	char oldpwd[PATH_MAX];
+
+	if (NULL == getcwd(oldpwd, sizeof(oldpwd))) {
 		log_error_write(srv, __FILE__, __LINE__, "s",
 			"cannot get cwd", strerror(errno));
 		return -1;
@@ -1260,32 +1408,79 @@ int config_parse_cmd(server *srv, config_t *context, const char *cmd) {
 		if (0 != chdir(context->basedir->ptr)) {
 			log_error_write(srv, __FILE__, __LINE__, "sbs",
 				"cannot change directory to", context->basedir, strerror(errno));
-			free(oldpwd);
 			return -1;
 		}
 	}
 
-	source = buffer_init_string(cmd);
-	out = buffer_init();
-
-	if (0 != proc_open_buffer(cmd, NULL, out, NULL)) {
-		log_error_write(srv, __FILE__, __LINE__, "sbss",
-			"opening", source, "failed:", strerror(errno));
+	if (pipe(fds)) {
+		log_error_write(srv, __FILE__, __LINE__, "ss",
+				"pipe failed: ", strerror(errno));
 		ret = -1;
-	} else {
-		tokenizer_init(&t, source, CONST_BUF_LEN(out));
-		ret = config_parse(srv, context, &t);
+	}
+	else {
+		char *shell = getenv("SHELL");
+		char *args[4];
+		pid_t pid;
+		*(const char **)&args[0] = shell ? shell : "/bin/sh";
+		*(const char **)&args[1] = "-c";
+		*(const char **)&args[2] = cmd;
+		args[3] = NULL;
+
+		fdevent_setfd_cloexec(fds[0]);
+		pid = fdevent_fork_execve(args[0], args, NULL, -1, fds[1], -1, -1);
+		if (-1 == pid) {
+			log_error_write(srv, __FILE__, __LINE__, "SSss",
+					"fork/exec(", cmd, "):", strerror(errno));
+			ret = -1;
+		}
+		else {
+			ssize_t rd;
+			pid_t wpid;
+			int wstatus;
+			buffer *out = buffer_init();
+			close(fds[1]);
+			fds[1] = -1;
+			do {
+				rd = read(fds[0], buffer_string_prepare_append(out, 1023), 1023);
+				if (rd >= 0) buffer_commit(out, (size_t)rd);
+			} while (rd > 0 || (-1 == rd && errno == EINTR));
+			if (0 != rd) {
+				log_error_write(srv, __FILE__, __LINE__, "SSss",
+						"read \"", cmd, "\" failed:", strerror(errno));
+				ret = -1;
+			}
+			close(fds[0]);
+			fds[0] = -1;
+			while (-1 == (wpid = waitpid(pid, &wstatus, 0)) && errno == EINTR) ;
+			if (wpid != pid) {
+				log_error_write(srv, __FILE__, __LINE__, "SSss",
+						"waitpid \"", cmd, "\" failed:", strerror(errno));
+				ret = -1;
+			}
+			if (0 != wstatus) {
+				log_error_write(srv, __FILE__, __LINE__, "SSsd",
+						"command \"", cmd, "\" exited non-zero:", WEXITSTATUS(wstatus));
+				ret = -1;
+			}
+
+			if (-1 != ret) {
+				buffer *source = buffer_init_string(cmd);
+				tokenizer_t t;
+				tokenizer_init(&t, source, CONST_BUF_LEN(out));
+				ret = config_parse(srv, context, &t);
+				buffer_free(source);
+			}
+			buffer_free(out);
+		}
+		if (-1 != fds[0]) close(fds[0]);
+		if (-1 != fds[1]) close(fds[1]);
 	}
 
-	buffer_free(source);
-	buffer_free(out);
 	if (0 != chdir(oldpwd)) {
 		log_error_write(srv, __FILE__, __LINE__, "sss",
 			"cannot change directory to", oldpwd, strerror(errno));
-		free(oldpwd);
-		return -1;
+		ret = -1;
 	}
-	free(oldpwd);
 	return ret;
 }
 
@@ -1304,8 +1499,7 @@ static void context_free(config_t *context) {
 int config_read(server *srv, const char *fn) {
 	config_t context;
 	data_config *dc;
-	data_integer *dpid;
-	data_string *dcwd;
+	buffer *dcwd;
 	int ret;
 	char *pos;
 	buffer *filename;
@@ -1331,19 +1525,13 @@ int config_read(server *srv, const char *fn) {
 	context.current = dc;
 
 	/* default context */
-	dpid = data_integer_init();
-	dpid->value = getpid();
-	buffer_copy_string_len(dpid->key, CONST_STR_LEN("var.PID"));
-	array_insert_unique(dc->value, (data_unset *)dpid);
+	*array_get_int_ptr(dc->value, CONST_STR_LEN("var.PID")) = getpid();
 
-	dcwd = data_string_init();
-	buffer_string_prepare_copy(dcwd->value, 1023);
-	if (NULL != getcwd(dcwd->value->ptr, dcwd->value->size - 1)) {
-		buffer_commit(dcwd->value, strlen(dcwd->value->ptr));
-		buffer_copy_string_len(dcwd->key, CONST_STR_LEN("var.CWD"));
-		array_insert_unique(dc->value, (data_unset *)dcwd);
-	} else {
-		dcwd->free((data_unset*) dcwd);
+	dcwd = srv->tmp_buf;
+	buffer_string_prepare_copy(dcwd, PATH_MAX-1);
+	if (NULL != getcwd(dcwd->ptr, buffer_string_space(dcwd)+1)) {
+		buffer_commit(dcwd, strlen(dcwd->ptr));
+		array_set_key_value(dc->value, CONST_STR_LEN("var.CWD"), CONST_BUF_LEN(dcwd));
 	}
 
 	filename = buffer_init_string(fn);
@@ -1370,6 +1558,8 @@ int config_set_defaults(server *srv) {
 	specific_config *s = srv->config_storage[0];
 	struct stat st1, st2;
 
+	force_assert(sizeof(((connection *)0)->conditional_is_valid) >= COMP_LAST_ELEMENT);
+
 	if (0 != fdevent_config(srv)) return -1;
 
 	if (!buffer_string_is_empty(srv->srvconf.changeroot)) {
@@ -1386,21 +1576,18 @@ int config_set_defaults(server *srv) {
 	}
 
 	if (!srv->srvconf.upload_tempdirs->used) {
-		data_string *ds = data_string_init();
 		const char *tmpdir = getenv("TMPDIR");
 		if (NULL == tmpdir) tmpdir = "/var/tmp";
-		buffer_copy_string(ds->value, tmpdir);
-		array_insert_unique(srv->srvconf.upload_tempdirs, (data_unset *)ds);
+		array_insert_value(srv->srvconf.upload_tempdirs, tmpdir, strlen(tmpdir));
 	}
 
 	if (srv->srvconf.upload_tempdirs->used) {
 		buffer * const b = srv->tmp_buf;
 		size_t len;
+		buffer_clear(b);
 		if (!buffer_string_is_empty(srv->srvconf.changeroot)) {
 			buffer_copy_buffer(b, srv->srvconf.changeroot);
 			buffer_append_slash(b);
-		} else {
-			buffer_reset(b);
 		}
 		len = buffer_string_length(b);
 

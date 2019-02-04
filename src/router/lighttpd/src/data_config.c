@@ -1,10 +1,16 @@
 #include "first.h"
 
+#include "base.h"       /* (cond_cache_t) */
 #include "array.h"
+#include "configfile.h"
 
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#ifdef HAVE_PCRE_H
+#include <pcre.h>
+#endif
 
 static data_unset *data_config_copy(const data_unset *s) {
 	data_config *src = (data_config *)s;
@@ -43,16 +49,16 @@ static void data_config_reset(data_unset *d) {
 	data_config *ds = (data_config *)d;
 
 	/* reused array elements */
-	buffer_reset(ds->key);
-	buffer_reset(ds->comp_tag);
-	buffer_reset(ds->comp_key);
+	buffer_clear(ds->key);
+	buffer_clear(ds->comp_tag);
+	buffer_clear(ds->comp_key);
 	array_reset(ds->value);
 }
 
 static int data_config_insert_dup(data_unset *dst, data_unset *src) {
 	UNUSED(dst);
 
-	src->free(src);
+	src->fn->free(src);
 
 	return 0;
 }
@@ -90,7 +96,7 @@ static void data_config_print(const data_unset *d, int depth) {
 			fprintf(stdout, " ");
 		}
 		fprintf(stdout, " = ");
-		du->print(du, depth);
+		du->fn->print(du, depth);
 		fprintf(stdout, "\n");
 	}
 
@@ -102,7 +108,7 @@ static void data_config_print(const data_unset *d, int depth) {
 		if (NULL == dc->prev) {
 			fprintf(stdout, "\n");
 			array_print_indent(depth);
-			dc->print((data_unset *) dc, depth);
+			dc->fn->print((data_unset *) dc, depth);
 			fprintf(stdout, "\n");
 		}
 	}
@@ -123,11 +129,18 @@ static void data_config_print(const data_unset *d, int depth) {
 		fprintf(stdout, "\n");
 		array_print_indent(depth);
 		fprintf(stdout, "else ");
-		ds->next->print((data_unset *)ds->next, depth);
+		ds->next->fn->print((data_unset *)ds->next, depth);
 	}
 }
 
 data_config *data_config_init(void) {
+	static const struct data_methods fn = {
+		data_config_reset,
+		data_config_copy,
+		data_config_free,
+		data_config_insert_dup,
+		data_config_print,
+	};
 	data_config *ds;
 
 	ds = calloc(1, sizeof(*ds));
@@ -139,12 +152,70 @@ data_config *data_config_init(void) {
 	ds->value = array_init();
 	vector_config_weak_init(&ds->children);
 
-	ds->copy = data_config_copy;
-	ds->free = data_config_free;
-	ds->reset = data_config_reset;
-	ds->insert_dup = data_config_insert_dup;
-	ds->print = data_config_print;
 	ds->type = TYPE_CONFIG;
+	ds->fn = &fn;
 
 	return ds;
+}
+
+int data_config_pcre_compile(data_config *dc) {
+#ifdef HAVE_PCRE_H
+    /* (use fprintf() on error, as this is called from configparser.y) */
+    const char *errptr;
+    int erroff, captures;
+
+    if (dc->regex) pcre_free(dc->regex);
+    if (dc->regex_study) pcre_free(dc->regex_study);
+
+    dc->regex = pcre_compile(dc->string->ptr, 0, &errptr, &erroff, NULL);
+    if (NULL == dc->regex) {
+        fprintf(stderr, "parsing regex failed: %s -> %s at offset %d\n",
+                dc->string->ptr, errptr, erroff);
+        return 0;
+    }
+
+    dc->regex_study = pcre_study(dc->regex, 0, &errptr);
+    if (NULL == dc->regex_study && errptr != NULL) {
+        fprintf(stderr, "studying regex failed: %s -> %s\n",
+                dc->string->ptr, errptr);
+        return 0;
+    }
+
+    erroff = pcre_fullinfo(dc->regex, dc->regex_study, PCRE_INFO_CAPTURECOUNT,
+                           &captures);
+    if (0 != erroff) {
+        fprintf(stderr, "getting capture count for regex failed: %s\n",
+                dc->string->ptr);
+        return 0;
+    } else if (captures > 9) {
+        fprintf(stderr, "Too many captures in regex, use (?:...) instead of (...): %s\n",
+                dc->string->ptr);
+        return 0;
+    }
+    return 1;
+#else
+    fprintf(stderr, "can't handle '$%s[%s] =~ ...' as you compiled without pcre support. \n"
+                    "(perhaps just a missing pcre-devel package ?) \n",
+                    dc->comp_key->ptr, dc->comp_tag->ptr);
+    return 0;
+#endif
+}
+
+int data_config_pcre_exec(data_config *dc, cond_cache_t *cache, buffer *b) {
+#ifdef HAVE_PCRE_H
+    #ifndef elementsof
+    #define elementsof(x) (sizeof(x) / sizeof(x[0]))
+    #endif
+    cache->patterncount =
+      pcre_exec(dc->regex, dc->regex_study, CONST_BUF_LEN(b), 0, 0,
+                cache->matches, elementsof(cache->matches));
+    if (cache->patterncount > 0)
+        cache->comp_value = b; /* holds pointer to b (!) for pattern subst */
+    return cache->patterncount;
+#else
+    UNUSED(dc);
+    UNUSED(cache);
+    UNUSED(b);
+    return 0;
+#endif
 }

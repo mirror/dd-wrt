@@ -8,6 +8,7 @@
 #line 5 "./configparser.y"
 
 #include "first.h"
+#include "base.h"
 #include "configfile.h"
 #include "buffer.h"
 #include "array.h"
@@ -15,6 +16,7 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -54,8 +56,8 @@ static data_unset *configparser_get_variable(config_t *ctx, const buffer *key) {
     array_print(dc->value, 0);
 #endif
     if (NULL != (du = array_get_element_klen(dc->value, CONST_BUF_LEN(key)))) {
-      du = du->copy(du);
-      buffer_reset(du->key);
+      du = du->fn->copy(du);
+      buffer_clear(du->key);
       return du;
     }
   }
@@ -76,11 +78,11 @@ data_unset *configparser_merge_data(data_unset *op1, const data_unset *op2) {
       data_string *ds = data_string_init();
       buffer_append_int(ds->value, ((data_integer*)op1)->value);
       buffer_append_string_buffer(ds->value, ((data_string*)op2)->value);
-      op1->free(op1);
+      op1->fn->free(op1);
       return (data_unset *)ds;
     } else {
       fprintf(stderr, "data type mismatch, cannot merge\n");
-      op1->free(op1);
+      op1->fn->free(op1);
       return NULL;
     }
   }
@@ -102,10 +104,10 @@ data_unset *configparser_merge_data(data_unset *op1, const data_unset *op2) {
         du = (data_unset *)src->data[i];
         if (du) {
           if (du->is_index_key || buffer_is_empty(du->key) || !array_get_element_klen(dst, CONST_BUF_LEN(du->key))) {
-            array_insert_unique(dst, du->copy(du));
+            array_insert_unique(dst, du->fn->copy(du));
           } else {
             fprintf(stderr, "Duplicate array-key '%s'\n", du->key->ptr);
-            op1->free(op1);
+            op1->fn->free(op1);
             return NULL;
           }
         }
@@ -148,7 +150,7 @@ static int configparser_remoteip_normalize_compat(buffer *rvalue) {
 }
 
 
-#line 152 "./configparser.c"
+#line 154 "./configparser.c"
 /* Next is all token values, in a form suitable for use by makeheaders.
 ** This section will be null unless lemon is run with the -m switch.
 */
@@ -1175,12 +1177,12 @@ static void yy_reduce(
     yygotominor.yy91 = yymsp[0].minor.yy91;
     yymsp[0].minor.yy91 = NULL;
   }
-  if (yymsp[0].minor.yy91) yymsp[0].minor.yy91->free(yymsp[0].minor.yy91);
+  if (yymsp[0].minor.yy91) yymsp[0].minor.yy91->fn->free(yymsp[0].minor.yy91);
   yymsp[0].minor.yy91 = NULL;
   buffer_free(yymsp[-2].minor.yy29);
   yymsp[-2].minor.yy29 = NULL;
 }
-#line 1183 "./configparser.c"
+#line 1187 "./configparser.c"
   yy_destructor(12,&yymsp[-1].minor);
         break;
       case 26:
@@ -1289,7 +1291,7 @@ static void yy_reduce(
     } else {
       fprintf(stderr, "unreachable else condition\n");
       ctx->ok = 0;
-      yymsp[0].minor.yy18->free((data_unset *)yymsp[0].minor.yy18);
+      yymsp[0].minor.yy18->fn->free((data_unset *)yymsp[0].minor.yy18);
       yymsp[0].minor.yy18 = dc;
     }
 
@@ -1384,7 +1386,7 @@ static void yy_reduce(
 
     b = buffer_init();
     buffer_copy_buffer(b, ctx->current->key);
-    buffer_append_string(b, "/");
+    buffer_append_string_len(b, CONST_STR_LEN("/"));
     buffer_append_string_buffer(b, yymsp[-5].minor.yy0);
     buffer_append_string_buffer(b, yymsp[-3].minor.yy29);
     buffer_append_string_buffer(b, op);
@@ -1509,49 +1511,17 @@ static void yy_reduce(
         }
       }
 
+      dc->string = buffer_init_buffer(rvalue);
+
       if (ctx->ok) switch(yymsp[-1].minor.yy53) {
       case CONFIG_COND_NE:
       case CONFIG_COND_EQ:
-        dc->string = buffer_init_buffer(rvalue);
         break;
       case CONFIG_COND_NOMATCH:
       case CONFIG_COND_MATCH: {
-#ifdef HAVE_PCRE_H
-        const char *errptr;
-        int erroff, captures;
-
-        if (NULL == (dc->regex =
-            pcre_compile(rvalue->ptr, 0, &errptr, &erroff, NULL))) {
-          dc->string = buffer_init_string(errptr);
-          dc->cond = CONFIG_COND_UNSET;
-
-          fprintf(stderr, "parsing regex failed: %s -> %s at offset %d\n",
-              rvalue->ptr, errptr, erroff);
-
+        if (!data_config_pcre_compile(dc)) {
           ctx->ok = 0;
-        } else if (NULL == (dc->regex_study =
-            pcre_study(dc->regex, 0, &errptr)) &&
-                   errptr != NULL) {
-          fprintf(stderr, "studying regex failed: %s -> %s\n",
-              rvalue->ptr, errptr);
-          ctx->ok = 0;
-        } else if (0 != (pcre_fullinfo(dc->regex, dc->regex_study, PCRE_INFO_CAPTURECOUNT, &captures))) {
-          fprintf(stderr, "getting capture count for regex failed: %s\n",
-              rvalue->ptr);
-          ctx->ok = 0;
-        } else if (captures > 9) {
-          fprintf(stderr, "Too many captures in regex, use (?:...) instead of (...): %s\n",
-              rvalue->ptr);
-          ctx->ok = 0;
-        } else {
-          dc->string = buffer_init_buffer(rvalue);
         }
-#else
-        fprintf(stderr, "can't handle '$%s[%s] =~ ...' as you compiled without pcre support. \n"
-                        "(perhaps just a missing pcre-devel package ?) \n",
-                        yymsp[-5].minor.yy0->ptr, yymsp[-3].minor.yy29->ptr);
-        ctx->ok = 0;
- #endif
         break;
       }
 
@@ -1565,7 +1535,7 @@ static void yy_reduce(
       if (ctx->ok) {
         configparser_push(ctx, dc, 1);
       } else {
-        dc->free((data_unset*) dc);
+        dc->fn->free((data_unset*) dc);
       }
     }
   }
@@ -1676,7 +1646,7 @@ static void yy_reduce(
   buffer_free(yymsp[0].minor.yy29);
   yymsp[0].minor.yy29 = NULL;
 }
-#line 1679 "./configparser.c"
+#line 1651 "./configparser.c"
   yy_destructor(26,&yymsp[-1].minor);
         break;
   };
