@@ -480,10 +480,12 @@ static inline zend_string *zval_make_interned_string(zval *zv) /* {{{ */
 /* Common part of zend_add_literal and zend_append_individual_literal */
 static inline void zend_insert_literal(zend_op_array *op_array, zval *zv, int literal_position) /* {{{ */
 {
+	zval *lit = CT_CONSTANT_EX(op_array, literal_position);
 	if (Z_TYPE_P(zv) == IS_STRING) {
 		zval_make_interned_string(zv);
 	}
-	ZVAL_COPY_VALUE(CT_CONSTANT_EX(op_array, literal_position), zv);
+	ZVAL_COPY_VALUE(lit, zv);
+	Z_EXTRA_P(lit) = 0;
 }
 /* }}} */
 
@@ -2444,7 +2446,6 @@ static inline void zend_handle_numeric_dim(zend_op *opline, znode *dim_node) /* 
 			return;
 		}
 	}
-	Z_EXTRA_P(CT_CONSTANT(opline->op2)) = 0;
 }
 /* }}} */
 
@@ -4845,6 +4846,10 @@ void zend_compile_foreach(zend_ast *ast) /* {{{ */
 
 	zend_compile_stmt(stmt_ast);
 
+	/* Place JMP and FE_FREE on the line where foreach starts. It would be
+	 * better to use the end line, but this information is not available
+	 * currently. */
+	CG(zend_lineno) = ast->lineno;
 	zend_emit_jump(opnum_fetch);
 
 	opline = &CG(active_op_array)->opcodes[opnum_reset];
