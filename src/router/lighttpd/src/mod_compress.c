@@ -3,6 +3,7 @@
 #include "base.h"
 #include "log.h"
 #include "buffer.h"
+#include "http_header.h"
 #include "response.h"
 #include "stat_cache.h"
 
@@ -21,6 +22,10 @@
 #include <string.h>
 #include <errno.h>
 #include <time.h>
+
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
 
 #if defined HAVE_ZLIB_H && defined HAVE_LIBZ
 # define USE_ZLIB
@@ -199,7 +204,7 @@ SETDEFAULTS_FUNC(mod_compress_setdefaults) {
 		cv[2].destination = &(s->compress_max_filesize);
 		cv[3].destination = encodings_arr; /* temp array for allowed encodings list */
 		cv[4].destination = srv->tmp_buf;
-		buffer_string_set_length(srv->tmp_buf, 0);
+		buffer_clear(srv->tmp_buf);
 
 		p->config_storage[i] = s;
 
@@ -454,16 +459,14 @@ static int deflate_file_to_buffer_bzip2(server *srv, connection *con, plugin_dat
 #endif
 
 static void mod_compress_note_ratio(server *srv, connection *con, off_t in, off_t out) {
-    /* store compression ratio in con->environment
+    /* store compression ratio in environment
      * for possible logging by mod_accesslog
      * (late in response handling, so not seen by most other modules) */
     /*(should be called only at end of successful response compression)*/
     char ratio[LI_ITOSTRING_LENGTH];
     if (0 == in) return;
     li_itostrn(ratio, sizeof(ratio), out * 100 / in);
-    array_set_key_value(con->environment,
-                        CONST_STR_LEN("ratio"),
-                        ratio, strlen(ratio));
+    http_header_env_set(con, CONST_STR_LEN("ratio"), ratio, strlen(ratio));
     UNUSED(srv);
 }
 
@@ -563,7 +566,8 @@ static int deflate_file_to_file(server *srv, connection *con, plugin_data *p, bu
 	}
 
 #ifdef USE_MMAP
-	if (MAP_FAILED != (start = mmap(NULL, sce->st.st_size, PROT_READ, MAP_SHARED, ifd, 0))) {
+	if (MAP_FAILED != (start = mmap(NULL, sce->st.st_size, PROT_READ, MAP_SHARED, ifd, 0))
+	    || (errno == EINVAL && MAP_FAILED != (start = mmap(NULL, sce->st.st_size, PROT_READ, MAP_PRIVATE, ifd, 0)))) {
 		mapped = 1;
 		signal(SIGBUS, sigbus_handler);
 		sigbus_jmp_valid = 1;
@@ -690,7 +694,8 @@ static int deflate_file_to_buffer(server *srv, connection *con, plugin_data *p, 
 	}
 
 #ifdef USE_MMAP
-	if (MAP_FAILED != (start = mmap(NULL, sce->st.st_size, PROT_READ, MAP_SHARED, ifd, 0))) {
+	if (MAP_FAILED != (start = mmap(NULL, sce->st.st_size, PROT_READ, MAP_SHARED, ifd, 0))
+	    || (errno == EINVAL && MAP_FAILED != (start = mmap(NULL, sce->st.st_size, PROT_READ, MAP_PRIVATE, ifd, 0)))) {
 		mapped = 1;
 		signal(SIGBUS, sigbus_handler);
 		sigbus_jmp_valid = 1;
@@ -879,14 +884,21 @@ PHYSICALPATH_FUNC(mod_compress_physical) {
 	 */
 	if (sce->st.st_size < 128) return HANDLER_GO_ON;
 
+	stat_cache_etag_get(sce, con->etag_flags);
+
 	/* check if mimetype is in compress-config */
 	content_type = NULL;
-	if (sce->content_type->ptr) {
+	stat_cache_content_type_get(srv, con, con->physical.path, sce);
+	if (!buffer_is_empty(sce->content_type)) {
 		char *c;
 		if ( (c = strchr(sce->content_type->ptr, ';')) != NULL) {
 			content_type = srv->tmp_buf;
 			buffer_copy_string_len(content_type, sce->content_type->ptr, c - sce->content_type->ptr);
 		}
+	}
+	else {
+		content_type = srv->tmp_buf;
+		buffer_copy_string_len(content_type, CONST_STR_LEN(""));
 	}
 
 	for (m = 0; m < p->conf.compress->used; m++) {
@@ -895,14 +907,14 @@ PHYSICALPATH_FUNC(mod_compress_physical) {
 		if (buffer_is_equal(compress_ds->value, sce->content_type)
 		    || (content_type && buffer_is_equal(compress_ds->value, content_type))) {
 			/* mimetype found */
-			data_string *ds;
+			buffer *vb;
 
 			/* the response might change according to Accept-Encoding */
-			response_header_insert(srv, con, CONST_STR_LEN("Vary"), CONST_STR_LEN("Accept-Encoding"));
+			http_header_response_append(con, HTTP_HEADER_VARY, CONST_STR_LEN("Vary"), CONST_STR_LEN("Accept-Encoding"));
 
-			if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "Accept-Encoding"))) {
+			if (NULL != (vb = http_header_request_get(con, HTTP_HEADER_ACCEPT_ENCODING, CONST_STR_LEN("Accept-Encoding")))) {
 				int accept_encoding = 0;
-				char *value = ds->value->ptr;
+				char *value = vb->ptr;
 				int matched_encodings = 0;
 				int use_etag = sce->etag != NULL && sce->etag->ptr != NULL;
 
@@ -938,9 +950,9 @@ PHYSICALPATH_FUNC(mod_compress_physical) {
 					if (use_etag) {
 						etag_mutate(con->physical.etag, sce->etag);
 						if (HANDLER_FINISHED == http_response_handle_cachable(srv, con, mtime)) {
-							response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"), CONST_BUF_LEN(sce->content_type));
-							response_header_overwrite(srv, con, CONST_STR_LEN("Last-Modified"), CONST_BUF_LEN(mtime));
-							response_header_overwrite(srv, con, CONST_STR_LEN("ETag"), CONST_BUF_LEN(con->physical.etag));
+							http_header_response_set(con, HTTP_HEADER_CONTENT_TYPE, CONST_STR_LEN("Content-Type"), CONST_BUF_LEN(sce->content_type));
+							http_header_response_set(con, HTTP_HEADER_LAST_MODIFIED, CONST_STR_LEN("Last-Modified"), CONST_BUF_LEN(mtime));
+							http_header_response_set(con, HTTP_HEADER_ETAG, CONST_STR_LEN("ETag"), CONST_BUF_LEN(con->physical.etag));
 							return HANDLER_FINISHED;
 						}
 					}
@@ -973,11 +985,11 @@ PHYSICALPATH_FUNC(mod_compress_physical) {
 					}
 
 					if (HANDLER_FINISHED == http_response_handle_cachable(srv, con, mtime)) {
-						response_header_overwrite(srv, con, CONST_STR_LEN("Content-Encoding"), compression_name, strlen(compression_name));
-						response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"), CONST_BUF_LEN(sce->content_type));
-						response_header_overwrite(srv, con, CONST_STR_LEN("Last-Modified"), CONST_BUF_LEN(mtime));
+						http_header_response_set(con, HTTP_HEADER_CONTENT_ENCODING, CONST_STR_LEN("Content-Encoding"), compression_name, strlen(compression_name));
+						http_header_response_set(con, HTTP_HEADER_CONTENT_TYPE, CONST_STR_LEN("Content-Type"), CONST_BUF_LEN(sce->content_type));
+						http_header_response_set(con, HTTP_HEADER_LAST_MODIFIED, CONST_STR_LEN("Last-Modified"), CONST_BUF_LEN(mtime));
 						if (use_etag) {
-							response_header_overwrite(srv, con, CONST_STR_LEN("ETag"), CONST_BUF_LEN(con->physical.etag));
+							http_header_response_set(con, HTTP_HEADER_ETAG, CONST_STR_LEN("ETag"), CONST_BUF_LEN(con->physical.etag));
 						}
 						return HANDLER_FINISHED;
 					}
@@ -990,12 +1002,12 @@ PHYSICALPATH_FUNC(mod_compress_physical) {
 						if (0 != deflate_file_to_buffer(srv, con, p, con->physical.path, sce, compression_type))
 							return HANDLER_GO_ON;
 					}
-					response_header_overwrite(srv, con, CONST_STR_LEN("Content-Encoding"), compression_name, strlen(compression_name));
-					response_header_overwrite(srv, con, CONST_STR_LEN("Last-Modified"), CONST_BUF_LEN(mtime));
+					http_header_response_set(con, HTTP_HEADER_CONTENT_ENCODING, CONST_STR_LEN("Content-Encoding"), compression_name, strlen(compression_name));
+					http_header_response_set(con, HTTP_HEADER_LAST_MODIFIED, CONST_STR_LEN("Last-Modified"), CONST_BUF_LEN(mtime));
 					if (use_etag) {
-						response_header_overwrite(srv, con, CONST_STR_LEN("ETag"), CONST_BUF_LEN(con->physical.etag));
+						http_header_response_set(con, HTTP_HEADER_ETAG, CONST_STR_LEN("ETag"), CONST_BUF_LEN(con->physical.etag));
 					}
-					response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"), CONST_BUF_LEN(sce->content_type));
+					http_header_response_set(con, HTTP_HEADER_CONTENT_TYPE, CONST_STR_LEN("Content-Type"), CONST_BUF_LEN(sce->content_type));
 					/* let mod_staticfile handle the cached compressed files, physical path was modified */
 					return (use_etag && !buffer_string_is_empty(p->conf.compress_cache_dir)) ? HANDLER_GO_ON : HANDLER_FINISHED;
 				}

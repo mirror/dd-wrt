@@ -4,27 +4,20 @@
 #include "log.h"
 #include "buffer.h"
 #include "base64.h"
+#include "http_auth.h"
 
 #include "plugin.h"
 
 #include <stdlib.h>
 #include <string.h>
 
-#if defined HAVE_LIBSSL && defined HAVE_OPENSSL_SSL_H
-#define USE_OPENSSL_CRYPTO
-#endif
-
+#include "sys-crypto.h"
 #ifdef USE_OPENSSL_CRYPTO
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
 #endif
 
 #include "md5.h"
-
-#define HASHLEN 16
-typedef unsigned char HASH[HASHLEN];
-#define HASHHEXLEN 32
-typedef char HASHHEX[HASHHEXLEN+1];
 
 /*
  * mod_secdownload verifies a checksum associated with a timestamp
@@ -160,10 +153,12 @@ static int secdl_verify_mac(server *srv, plugin_config *config, const char* prot
 	case SECDL_MD5:
 		{
 			li_MD5_CTX Md5Ctx;
-			HASH HA1;
-			char hexmd5[33];
 			const char *ts_str;
 			const char *rel_uri;
+			unsigned char HA1[16];
+			unsigned char md5bin[16];
+
+			if (0 != http_auth_md5_hex2bin(mac, maclen, md5bin)) return 0;
 
 			/* legacy message:
 			 *   protected_path := '/' <timestamp-hex> <rel-path>
@@ -181,9 +176,7 @@ static int secdl_verify_mac(server *srv, plugin_config *config, const char* prot
 			li_MD5_Update(&Md5Ctx, ts_str, 8);
 			li_MD5_Final(HA1, &Md5Ctx);
 
-			li_tohex(hexmd5, sizeof(hexmd5), (const char *)HA1, 16);
-
-			return (32 == maclen) && const_time_memeq(mac, hexmd5, 32);
+			return const_time_memeq((char *)HA1, (char *)md5bin, sizeof(md5bin));
 		}
 	case SECDL_HMAC_SHA1:
 #ifdef USE_OPENSSL_CRYPTO
@@ -193,7 +186,7 @@ static int secdl_verify_mac(server *srv, plugin_config *config, const char* prot
 
 			if (NULL == HMAC(
 					EVP_sha1(),
-					(unsigned char const*) CONST_BUF_LEN(config->secret),
+					(unsigned char const*) config->secret->ptr, buffer_string_length(config->secret),
 					(unsigned char const*) protected_path, strlen(protected_path),
 					digest, NULL)) {
 				log_error_write(srv, __FILE__, __LINE__, "s",
@@ -215,7 +208,7 @@ static int secdl_verify_mac(server *srv, plugin_config *config, const char* prot
 
 			if (NULL == HMAC(
 					EVP_sha256(),
-					(unsigned char const*) CONST_BUF_LEN(config->secret),
+					(unsigned char const*) config->secret->ptr, buffer_string_length(config->secret),
 					(unsigned char const*) protected_path, strlen(protected_path),
 					digest, NULL)) {
 				log_error_write(srv, __FILE__, __LINE__, "s",

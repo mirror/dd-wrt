@@ -19,21 +19,16 @@ set(T_FILES
 	core-keepalive.t
 	core-request.t
 	core-response.t
-	core.t
 	core-var-include.t
 	lowercase.t
-	mod-access.t
 	mod-auth.t
 	mod-cgi.t
 	mod-compress.t
 	mod-extforward.t
 	mod-fastcgi.t
 	mod-proxy.t
-	mod-redirect.t
-	mod-rewrite.t
 	mod-secdownload.t
 	mod-setenv.t
-	mod-simplevhost.t
 	mod-ssi.t
 	mod-userdir.t
 	request.t

@@ -4,11 +4,11 @@
 #include "log.h"
 #include "buffer.h"
 #include "http_chunk.h"
+#include "http_header.h"
 
 #include "plugin.h"
 
 #include "mod_magnet_cache.h"
-#include "response.h"
 #include "stat_cache.h"
 #include "status_counter.h"
 #include "etag.h"
@@ -41,8 +41,6 @@ typedef struct {
 
 	script_cache *cache;
 
-	buffer *encode_buf;
-
 	plugin_config **config_storage;
 
 	plugin_config conf;
@@ -55,7 +53,6 @@ INIT_FUNC(mod_magnet_init) {
 	p = calloc(1, sizeof(*p));
 
 	p->cache = script_cache_init();
-	p->encode_buf = buffer_init();
 
 	return p;
 }
@@ -85,7 +82,6 @@ FREE_FUNC(mod_magnet_free) {
 	}
 
 	script_cache_free(p->cache);
-	buffer_free(p->encode_buf);
 
 	free(p);
 
@@ -225,6 +221,24 @@ static int magnet_pairs(lua_State *L) {
 }
 #endif
 
+static void magnet_push_buffer(lua_State *L, const buffer *b) {
+    if (!buffer_is_empty(b))
+        lua_pushlstring(L, CONST_BUF_LEN(b));
+    else
+        lua_pushnil(L);
+}
+
+#if 0
+static int magnet_array_get_element(lua_State *L, const array *a) {
+    /* __index: param 1 is the (empty) table the value was not found in */
+    size_t klen;
+    const char * const k = luaL_checklstring(L, 2, &klen);
+    data_string * const ds = (data_string *)array_get_element_klen(a, k, klen);
+    magnet_push_buffer(L, NULL != ds ? ds->value : NULL);
+    return 1;
+}
+#endif
+
 /* Define a function that will iterate over an array* (in upval 1) using current position (upval 2) */
 static int magnet_array_next(lua_State *L) {
 	data_unset *du;
@@ -242,11 +256,7 @@ static int magnet_array_next(lua_State *L) {
 		switch (du->type) {
 			case TYPE_STRING:
 				ds = (data_string *)du;
-				if (!buffer_is_empty(ds->value)) {
-					lua_pushlstring(L, CONST_BUF_LEN(ds->value));
-				} else {
-					lua_pushnil(L);
-				}
+				magnet_push_buffer(L, ds->value);
 				break;
 			case TYPE_INTEGER:
 				di = (data_integer *)du;
@@ -315,31 +325,31 @@ static buffer* magnet_checkbuffer(lua_State *L, int index) {
 }
 
 static int magnet_print(lua_State *L) {
-	buffer *b = magnet_checkbuffer(L, 1);
-
-	log_error_write(magnet_get_server(L), __FILE__, __LINE__, "sB",
-		"(lua-print)",
-		b);
-
-	buffer_free(b);
-
+	const_buffer cb = magnet_checkconstbuffer(L, 1);
+	log_error_write(magnet_get_server(L), __FILE__, __LINE__, "ss",
+			"(lua-print)", cb.ptr);
 	return 0;
 }
 
 static int magnet_stat(lua_State *L) {
-	buffer *sb = magnet_checkbuffer(L, 1);
 	server *srv = magnet_get_server(L);
 	connection *con = magnet_get_connection(L);
 	stat_cache_entry *sce = NULL;
+    {
+	buffer *sb = magnet_checkbuffer(L, 1);
 	handler_t res;
 
 	res = stat_cache_get_entry(srv, con, sb, &sce);
-	buffer_free(sb);
 
 	if (HANDLER_GO_ON != res) {
+		buffer_free(sb);
 		lua_pushnil(L);
 		return 1;
 	}
+
+	stat_cache_content_type_get(srv, con, sb, sce);
+	buffer_free(sb);
+    }
 
 	lua_newtable(L); // return value
 
@@ -385,13 +395,10 @@ static int magnet_stat(lua_State *L) {
 	lua_pushinteger(L, sce->st.st_ino);
 	lua_setfield(L, -2, "st_ino");
 
-	if (!buffer_string_is_empty(sce->etag)) {
+	if (!buffer_string_is_empty(stat_cache_etag_get(sce, con->etag_flags))) {
 		/* we have to mutate the etag */
-		buffer *b = buffer_init();
-		etag_mutate(b, sce->etag);
-
-		lua_pushlstring(L, CONST_BUF_LEN(b));
-		buffer_free(b);
+		etag_mutate(srv->tmp_buf, sce->etag);
+		lua_pushlstring(L, CONST_BUF_LEN(srv->tmp_buf));
 	} else {
 		lua_pushnil(L);
 	}
@@ -409,53 +416,36 @@ static int magnet_stat(lua_State *L) {
 
 
 static int magnet_atpanic(lua_State *L) {
-	buffer *b = magnet_checkbuffer(L, 1);
-
-	log_error_write(magnet_get_server(L), __FILE__, __LINE__, "sB",
-		"(lua-atpanic)",
-		b);
-
-	buffer_free(b);
-
+	const_buffer cb = magnet_checkconstbuffer(L, 1);
+	log_error_write(magnet_get_server(L), __FILE__, __LINE__, "ss",
+			"(lua-atpanic)", cb.ptr);
 	longjmp(exceptionjmp, 1);
 }
 
 static int magnet_reqhdr_get(lua_State *L) {
-	connection *con = magnet_get_connection(L);
-	data_string *ds;
-
-	/* __index: param 1 is the (empty) table the value was not found in */
-	size_t klen;
-	const char *key = luaL_checklstring(L, 2, &klen);
-
-	if (NULL != (ds = (data_string *)array_get_element_klen(con->request.headers, key, klen))) {
-		if (!buffer_is_empty(ds->value)) {
-			lua_pushlstring(L, CONST_BUF_LEN(ds->value));
-		} else {
-			lua_pushnil(L);
-		}
-	} else {
-		lua_pushnil(L);
-	}
-	return 1;
+    /* __index: param 1 is the (empty) table the value was not found in */
+    connection *con = magnet_get_connection(L);
+    size_t klen;
+    const char * const k = luaL_checklstring(L, 2, &klen);
+    buffer * const vb =
+      http_header_request_get(con, HTTP_HEADER_UNSPECIFIED, k, klen);
+    magnet_push_buffer(L, NULL != vb ? vb : NULL);
+    return 1;
 }
 
 static int magnet_reqhdr_pairs(lua_State *L) {
 	connection *con = magnet_get_connection(L);
-
 	return magnet_array_pairs(L, con->request.headers);
 }
 
 static int magnet_status_get(lua_State *L) {
-	data_integer *di;
+	int *i;
 	server *srv = magnet_get_server(L);
 
 	/* __index: param 1 is the (empty) table the value was not found in */
 	const_buffer key = magnet_checkconstbuffer(L, 2);
-
-	di = status_counter_get_counter(srv, key.ptr, key.len);
-
-	lua_pushinteger(L, (lua_Integer)di->value);
+	i = status_counter_get_counter(srv, key.ptr, key.len);
+	lua_pushinteger(L, (lua_Integer)*i);
 
 	return 1;
 }
@@ -548,7 +538,8 @@ static buffer *magnet_env_get_buffer_by_id(server *srv, connection *con, int id)
 	case MAGNET_ENV_URI_QUERY: dest = con->uri.query; break;
 
 	case MAGNET_ENV_REQUEST_METHOD:
-		buffer_copy_string(srv->tmp_buf, get_http_method_name(con->request.http_method));
+		buffer_clear(srv->tmp_buf);
+		http_method_append(srv->tmp_buf, con->request.http_method);
 		dest = srv->tmp_buf;
 		break;
 	case MAGNET_ENV_REQUEST_URI:      dest = con->request.uri; break;
@@ -582,16 +573,7 @@ static int magnet_env_get(lua_State *L) {
 
 	/* __index: param 1 is the (empty) table the value was not found in */
 	const char *key = luaL_checkstring(L, 2);
-	buffer *dest = NULL;
-
-	dest = magnet_env_get_buffer(srv, con, key);
-
-	if (!buffer_is_empty(dest)) {
-		lua_pushlstring(L, CONST_BUF_LEN(dest));
-	} else {
-		lua_pushnil(L);
-	}
-
+	magnet_push_buffer(L, magnet_env_get_buffer(srv, con, key));
 	return 1;
 }
 
@@ -626,8 +608,6 @@ static int magnet_env_next(lua_State *L) {
 	connection *con = magnet_get_connection(L);
 	const int pos = lua_tointeger(L, lua_upvalueindex(1));
 
-	buffer *dest;
-
 	/* ignore previous key: use upvalue for current pos */
 	lua_settop(L, 0);
 
@@ -640,12 +620,7 @@ static int magnet_env_next(lua_State *L) {
 	lua_pushstring(L, magnet_env[pos].name);
 
 	/* get value */
-	dest = magnet_env_get_buffer_by_id(srv, con, magnet_env[pos].type);
-	if (!buffer_is_empty(dest)) {
-		lua_pushlstring(L, CONST_BUF_LEN(dest));
-	} else {
-		lua_pushnil(L);
-	}
+	magnet_push_buffer(L, magnet_env_get_buffer_by_id(srv, con, magnet_env[pos].type));
 
 	/* return 2 items on the stack (key, value) */
 	return 2;
@@ -658,32 +633,22 @@ static int magnet_env_pairs(lua_State *L) {
 }
 
 static int magnet_cgi_get(lua_State *L) {
-	connection *con = magnet_get_connection(L);
-	data_string *ds;
-
-	/* __index: param 1 is the (empty) table the value was not found in */
-	size_t klen;
-	const char *key = luaL_checklstring(L, 2, &klen);
-
-	ds = (data_string *)array_get_element_klen(con->environment, key, klen);
-	if (NULL != ds && !buffer_is_empty(ds->value))
-		lua_pushlstring(L, CONST_BUF_LEN(ds->value));
-	else
-		lua_pushnil(L);
-
-	return 1;
+    /* __index: param 1 is the (empty) table the value was not found in */
+    connection *con = magnet_get_connection(L);
+    size_t klen;
+    const char * const k = luaL_checklstring(L, 2, &klen);
+    buffer * const vb = http_header_env_get(con, k, klen);
+    magnet_push_buffer(L, NULL != vb ? vb : NULL);
+    return 1;
 }
 
 static int magnet_cgi_set(lua_State *L) {
-	connection *con = magnet_get_connection(L);
-
-	/* __newindex: param 1 is the (empty) table the value is supposed to be set in */
-	const_buffer key = magnet_checkconstbuffer(L, 2);
-	const_buffer val = magnet_checkconstbuffer(L, 3);
-
-	array_set_key_value(con->environment, key.ptr, key.len, val.ptr, val.len);
-
-	return 0;
+    /* __newindex: param 1 is the (empty) table the value is supposed to be set in */
+    connection *con = magnet_get_connection(L);
+    const_buffer key = magnet_checkconstbuffer(L, 2);
+    const_buffer val = magnet_checkconstbuffer(L, 3);
+    http_header_env_set(con, key.ptr, key.len, val.ptr, val.len);
+    return 0;
 }
 
 static int magnet_cgi_pairs(lua_State *L) {
@@ -693,7 +658,7 @@ static int magnet_cgi_pairs(lua_State *L) {
 }
 
 
-static int magnet_copy_response_header(server *srv, connection *con, lua_State *L, int lighty_table_ndx) {
+static int magnet_copy_response_header(connection *con, lua_State *L, int lighty_table_ndx) {
 	force_assert(lua_istable(L, lighty_table_ndx));
 
 	lua_getfield(L, lighty_table_ndx, "header"); /* lighty.header */
@@ -705,8 +670,11 @@ static int magnet_copy_response_header(server *srv, connection *con, lua_State *
 			if (lua_isstring(L, -1) && lua_isstring(L, -2)) {
 				const_buffer key = magnet_checkconstbuffer(L, -2);
 				const_buffer val = magnet_checkconstbuffer(L, -1);
+				enum http_header_e id = http_header_hkey_get(key.ptr, key.len);
 
-				response_header_overwrite(srv, con, key.ptr, key.len, val.ptr, val.len);
+				val.len
+				  ? http_header_response_set(con, id, key.ptr, key.len, val.ptr, val.len)
+				  : http_header_response_unset(con, id, key.ptr, key.len);
 			}
 
 			lua_pop(L, 1);
@@ -748,27 +716,26 @@ static int magnet_attach_content(server *srv, connection *con, lua_State *L, int
 				lua_getfield(L, -3, "offset"); /* (0-based) start of range */
 
 				if (lua_isstring(L, -3)) { /* filename has to be a string */
-					buffer *fn = magnet_checkbuffer(L, -3);
 					off_t off = (off_t) luaL_optinteger(L, -1, 0);
 					off_t len = (off_t) luaL_optinteger(L, -2, -1); /*(-1 to http_chunk_append_file_range() uses file size minus offset)*/
 					if (off < 0) {
-						buffer_free(fn);
 						return luaL_error(L, "offset for '%s' is negative", lua_tostring(L, -3));
 					}
 
 					if (len >= off) {
 						len -= off;
 					} else if (-1 != len) {
-						buffer_free(fn);
 						return luaL_error(L, "offset > length for '%s'", lua_tostring(L, -3));
 					}
 
-					if (0 != len && 0 != http_chunk_append_file_range(srv, con, fn, off, len)) {
+					if (0 != len) {
+						buffer *fn = magnet_checkbuffer(L, -3);
+						int rc = http_chunk_append_file_range(srv, con, fn, off, len);
 						buffer_free(fn);
-						return luaL_error(L, "error opening file content '%s' at offset %lld", lua_tostring(L, -3), (long long)off);
+						if (0 != rc) {
+							return luaL_error(L, "error opening file content '%s' at offset %lld", lua_tostring(L, -3), (long long)off);
+						}
 					}
-
-					buffer_free(fn);
 				} else {
 					return luaL_error(L, "content[%d] is a table and requires the field \"filename\"", i);
 				}
@@ -1001,7 +968,7 @@ static handler_t magnet_attract(server *srv, connection *con, plugin_data *p, bu
 	lua_return_value = (int) luaL_optinteger(L, -1, -1);
 	lua_pop(L, 1); /* pop return value */
 
-	magnet_copy_response_header(srv, con, L, lighty_table_ndx);
+	magnet_copy_response_header(con, L, lighty_table_ndx);
 
 	{
 		handler_t result = HANDLER_GO_ON;
@@ -1058,8 +1025,8 @@ static handler_t magnet_attract_array(server *srv, connection *con, plugin_data 
 	if (con->error_handler_saved_status) {
 		/* retrieve (possibly modified) REDIRECT_STATUS and store as number */
 		unsigned long x;
-		data_string * const ds = (data_string *)array_get_element(con->environment, "REDIRECT_STATUS");
-		if (ds && (x = strtoul(ds->value->ptr, NULL, 10)) < 1000)
+		buffer * const vb = http_header_env_get(con, CONST_STR_LEN("REDIRECT_STATUS"));
+		if (vb && (x = strtoul(vb->ptr, NULL, 10)) < 1000)
 			/*(simplified validity check x < 1000)*/
 			con->error_handler_saved_status =
 			  con->error_handler_saved_status > 0 ? (int)x : -(int)x;

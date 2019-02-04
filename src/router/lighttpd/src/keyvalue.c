@@ -1,174 +1,24 @@
 #include "first.h"
 
-#include "server.h"
 #include "keyvalue.h"
+#include "base.h"
+#include "burl.h"
 #include "log.h"
 
 #include <stdlib.h>
 #include <string.h>
 
-static const keyvalue http_versions[] = {
-	{ HTTP_VERSION_1_1, "HTTP/1.1" },
-	{ HTTP_VERSION_1_0, "HTTP/1.0" },
-	{ HTTP_VERSION_UNSET, NULL }
-};
+#ifdef HAVE_PCRE_H
+#include <pcre.h>
+#endif
 
-static const keyvalue http_methods[] = {
-	{ HTTP_METHOD_GET, "GET" },
-	{ HTTP_METHOD_HEAD, "HEAD" },
-	{ HTTP_METHOD_POST, "POST" },
-	{ HTTP_METHOD_PUT, "PUT" },
-	{ HTTP_METHOD_DELETE, "DELETE" },
-	{ HTTP_METHOD_CONNECT, "CONNECT" },
-	{ HTTP_METHOD_OPTIONS, "OPTIONS" },
-	{ HTTP_METHOD_TRACE, "TRACE" },
-	{ HTTP_METHOD_ACL, "ACL" },
-	{ HTTP_METHOD_BASELINE_CONTROL, "BASELINE-CONTROL" },
-	{ HTTP_METHOD_BIND, "BIND" },
-	{ HTTP_METHOD_CHECKIN, "CHECKIN" },
-	{ HTTP_METHOD_CHECKOUT, "CHECKOUT" },
-	{ HTTP_METHOD_COPY, "COPY" },
-	{ HTTP_METHOD_LABEL, "LABEL" },
-	{ HTTP_METHOD_LINK, "LINK" },
-	{ HTTP_METHOD_LOCK, "LOCK" },
-	{ HTTP_METHOD_MERGE, "MERGE" },
-	{ HTTP_METHOD_MKACTIVITY, "MKACTIVITY" },
-	{ HTTP_METHOD_MKCALENDAR, "MKCALENDAR" },
-	{ HTTP_METHOD_MKCOL, "MKCOL" },
-	{ HTTP_METHOD_MKREDIRECTREF, "MKREDIRECTREF" },
-	{ HTTP_METHOD_MKWORKSPACE, "MKWORKSPACE" },
-	{ HTTP_METHOD_MOVE, "MOVE" },
-	{ HTTP_METHOD_ORDERPATCH, "ORDERPATCH" },
-	{ HTTP_METHOD_PATCH, "PATCH" },
-	{ HTTP_METHOD_PROPFIND, "PROPFIND" },
-	{ HTTP_METHOD_PROPPATCH, "PROPPATCH" },
-	{ HTTP_METHOD_REBIND, "REBIND" },
-	{ HTTP_METHOD_REPORT, "REPORT" },
-	{ HTTP_METHOD_SEARCH, "SEARCH" },
-	{ HTTP_METHOD_UNBIND, "UNBIND" },
-	{ HTTP_METHOD_UNCHECKOUT, "UNCHECKOUT" },
-	{ HTTP_METHOD_UNLINK, "UNLINK" },
-	{ HTTP_METHOD_UNLOCK, "UNLOCK" },
-	{ HTTP_METHOD_UPDATE, "UPDATE" },
-	{ HTTP_METHOD_UPDATEREDIRECTREF, "UPDATEREDIRECTREF" },
-	{ HTTP_METHOD_VERSION_CONTROL, "VERSION-CONTROL" },
-
-	{ HTTP_METHOD_UNSET, NULL }
-};
-
-static const keyvalue http_status[] = {
-	{ 100, "Continue" },
-	{ 101, "Switching Protocols" },
-	{ 102, "Processing" }, /* WebDAV */
-	{ 200, "OK" },
-	{ 201, "Created" },
-	{ 202, "Accepted" },
-	{ 203, "Non-Authoritative Information" },
-	{ 204, "No Content" },
-	{ 205, "Reset Content" },
-	{ 206, "Partial Content" },
-	{ 207, "Multi-status" }, /* WebDAV */
-	{ 300, "Multiple Choices" },
-	{ 301, "Moved Permanently" },
-	{ 302, "Found" },
-	{ 303, "See Other" },
-	{ 304, "Not Modified" },
-	{ 305, "Use Proxy" },
-	{ 306, "(Unused)" },
-	{ 307, "Temporary Redirect" },
-	{ 308, "Permanent Redirect" },
-	{ 400, "Bad Request" },
-	{ 401, "Unauthorized" },
-	{ 402, "Payment Required" },
-	{ 403, "Forbidden" },
-	{ 404, "Not Found" },
-	{ 405, "Method Not Allowed" },
-	{ 406, "Not Acceptable" },
-	{ 407, "Proxy Authentication Required" },
-	{ 408, "Request Timeout" },
-	{ 409, "Conflict" },
-	{ 410, "Gone" },
-	{ 411, "Length Required" },
-	{ 412, "Precondition Failed" },
-	{ 413, "Request Entity Too Large" },
-	{ 414, "Request-URI Too Long" },
-	{ 415, "Unsupported Media Type" },
-	{ 416, "Requested Range Not Satisfiable" },
-	{ 417, "Expectation Failed" },
-	{ 422, "Unprocessable Entity" }, /* WebDAV */
-	{ 423, "Locked" }, /* WebDAV */
-	{ 424, "Failed Dependency" }, /* WebDAV */
-	{ 426, "Upgrade Required" }, /* TLS */
-	{ 500, "Internal Server Error" },
-	{ 501, "Not Implemented" },
-	{ 502, "Bad Gateway" },
-	{ 503, "Service Not Available" },
-	{ 504, "Gateway Timeout" },
-	{ 505, "HTTP Version Not Supported" },
-	{ 507, "Insufficient Storage" }, /* WebDAV */
-
-	{ -1, NULL }
-};
-
-static const keyvalue http_status_body[] = {
-	{ 400, "400.html" },
-	{ 401, "401.html" },
-	{ 403, "403.html" },
-	{ 404, "404.html" },
-	{ 411, "411.html" },
-	{ 416, "416.html" },
-	{ 500, "500.html" },
-	{ 501, "501.html" },
-	{ 503, "503.html" },
-	{ 505, "505.html" },
-
-	{ -1, NULL }
-};
-
-
-const char *keyvalue_get_value(const keyvalue *kv, int k) {
-	int i;
-	for (i = 0; kv[i].value; i++) {
-		if (kv[i].key == k) return kv[i].value;
-	}
-	return NULL;
-}
-
-int keyvalue_get_key(const keyvalue *kv, const char *s) {
-	int i;
-	for (i = 0; kv[i].value; i++) {
-		if (0 == strcmp(kv[i].value, s)) return kv[i].key;
-	}
-	return -1;
-}
-
-
-const char *get_http_version_name(int i) {
-	return keyvalue_get_value(http_versions, i);
-}
-
-const char *get_http_status_name(int i) {
-	return keyvalue_get_value(http_status, i);
-}
-
-const char *get_http_method_name(http_method_t i) {
-	return keyvalue_get_value(http_methods, i);
-}
-
-const char *get_http_status_body_name(int i) {
-	return keyvalue_get_value(http_status_body, i);
-}
-
-int get_http_version_key(const char *s) {
-	return keyvalue_get_key(http_versions, s);
-}
-
-http_method_t get_http_method_key(const char *s) {
-	return (http_method_t)keyvalue_get_key(http_methods, s);
-}
-
-
-
+typedef struct pcre_keyvalue {
+#ifdef HAVE_PCRE_H
+	pcre *key;
+	pcre_extra *key_extra;
+#endif
+	buffer *value;
+} pcre_keyvalue;
 
 pcre_keyvalue_buffer *pcre_keyvalue_buffer_init(void) {
 	pcre_keyvalue_buffer *kvb;
@@ -179,17 +29,15 @@ pcre_keyvalue_buffer *pcre_keyvalue_buffer_init(void) {
 	return kvb;
 }
 
-int pcre_keyvalue_buffer_append(server *srv, pcre_keyvalue_buffer *kvb, const char *key, const char *value) {
+int pcre_keyvalue_buffer_append(server *srv, pcre_keyvalue_buffer *kvb, buffer *key, buffer *value) {
 #ifdef HAVE_PCRE_H
 	size_t i;
 	const char *errptr;
 	int erroff;
 	pcre_keyvalue *kv;
-#endif
 
 	if (!key) return -1;
 
-#ifdef HAVE_PCRE_H
 	if (kvb->size == 0) {
 		kvb->size = 4;
 		kvb->used = 0;
@@ -214,7 +62,7 @@ int pcre_keyvalue_buffer_append(server *srv, pcre_keyvalue_buffer *kvb, const ch
 	}
 
 	kv = kvb->kv[kvb->used];
-	if (NULL == (kv->key = pcre_compile(key,
+	if (NULL == (kv->key = pcre_compile(key->ptr,
 					  0, &errptr, &erroff, NULL))) {
 
 		log_error_write(srv, __FILE__, __LINE__, "SS",
@@ -227,17 +75,22 @@ int pcre_keyvalue_buffer_append(server *srv, pcre_keyvalue_buffer *kvb, const ch
 		return -1;
 	}
 
-	kv->value = buffer_init_string(value);
+	kv->value = buffer_init_buffer(value);
 
 	kvb->used++;
 
-	return 0;
 #else
+	static int logged_message = 0;
+	if (logged_message) return 0;
+	logged_message = 1;
+	log_error_write(srv, __FILE__, __LINE__, "s",
+			"pcre support is missing, please install libpcre and the headers");
 	UNUSED(kvb);
+	UNUSED(key);
 	UNUSED(value);
-
-	return -1;
 #endif
+
+	return 0;
 }
 
 void pcre_keyvalue_buffer_free(pcre_keyvalue_buffer *kvb) {
@@ -257,4 +110,351 @@ void pcre_keyvalue_buffer_free(pcre_keyvalue_buffer *kvb) {
 #endif
 
 	free(kvb);
+}
+
+#ifdef HAVE_PCRE_H
+static void pcre_keyvalue_buffer_append_match(buffer *b, const char **list, int n, unsigned int num, int flags) {
+    if (num < (unsigned int)n) { /* n is always > 0 */
+        burl_append(b, list[num], strlen(list[num]), flags);
+    }
+}
+
+static void pcre_keyvalue_buffer_append_ctxmatch(buffer *b, pcre_keyvalue_ctx *ctx, unsigned int num, int flags) {
+    const struct cond_cache_t * const cache = ctx->cache;
+    if (!cache) return; /* no enclosing match context */
+    if ((int)num < cache->patterncount) {
+        const int off = cache->matches[(num <<= 1)]; /*(num *= 2)*/
+        const int len = cache->matches[num+1] - off;
+        burl_append(b, cache->comp_value->ptr + off, (size_t)len, flags);
+    }
+}
+
+static int pcre_keyvalue_buffer_subst_ext(buffer *b, const char *pattern, const char **list, int n, pcre_keyvalue_ctx *ctx) {
+    const unsigned char *p = (unsigned char *)pattern+2;/* +2 past ${} or %{} */
+    int flags = 0;
+    while (!light_isdigit(*p) && *p != '}' && *p != '\0') {
+        if (0) {
+        }
+        else if (p[0] == 'e' && p[1] == 's' && p[2] == 'c') {
+            p+=3;
+            if (p[0] == ':') {
+                flags |= BURL_ENCODE_ALL;
+                p+=1;
+            }
+            else if (0 == strncmp((const char *)p, "ape:", 4)) {
+                flags |= BURL_ENCODE_ALL;
+                p+=4;
+            }
+            else if (0 == strncmp((const char *)p, "nde:", 4)) {
+                flags |= BURL_ENCODE_NDE;
+                p+=4;
+            }
+            else if (0 == strncmp((const char *)p, "psnde:", 6)) {
+                flags |= BURL_ENCODE_PSNDE;
+                p+=6;
+            }
+            else { /* skip unrecognized esc... */
+                p = (const unsigned char *)strchr((const char *)p, ':');
+                if (NULL == p) return -1;
+                ++p;
+            }
+        }
+        else if (p[0] == 'n' && p[1] == 'o') {
+            p+=2;
+            if (0 == strncmp((const char *)p, "esc:", 4)) {
+                flags |= BURL_ENCODE_NONE;
+                p+=4;
+            }
+            else if (0 == strncmp((const char *)p, "escape:", 7)) {
+                flags |= BURL_ENCODE_NONE;
+                p+=7;
+            }
+            else { /* skip unrecognized no... */
+                p = (const unsigned char *)strchr((const char *)p, ':');
+                if (NULL == p) return -1;
+                ++p;
+            }
+        }
+        else if (p[0] == 't' && p[1] == 'o') {
+            p+=2;
+            if (0 == strncmp((const char *)p, "lower:", 6)) {
+                flags |= BURL_TOLOWER;
+                p+=6;
+            }
+            else if (0 == strncmp((const char *)p, "upper:", 6)) {
+                flags |= BURL_TOLOWER;
+                p+=6;
+            }
+            else { /* skip unrecognized to... */
+                p = (const unsigned char *)strchr((const char *)p, ':');
+                if (NULL == p) return -1;
+                ++p;
+            }
+        }
+        else if (p[0] == 'u' && p[1] == 'r' && p[2] == 'l' && p[3] == '.') {
+            p+=4;
+            if (0 == strncmp((const char *)p, "scheme}", 7)) {
+                burl_append(b, CONST_BUF_LEN(ctx->burl->scheme), flags);
+                p+=6;
+            }
+            else if (0 == strncmp((const char *)p, "authority}", 10)) {
+                burl_append(b, CONST_BUF_LEN(ctx->burl->authority), flags);
+                p+=9;
+            }
+            else if (0 == strncmp((const char *)p, "port}", 5)) {
+                buffer_append_int(b, (int)ctx->burl->port);
+                p+=4;
+            }
+            else if (0 == strncmp((const char *)p, "path}", 5)) {
+                burl_append(b, CONST_BUF_LEN(ctx->burl->path), flags);
+                p+=4;
+            }
+            else if (0 == strncmp((const char *)p, "query}", 6)) {
+                burl_append(b, CONST_BUF_LEN(ctx->burl->query), flags);
+                p+=5;
+            }
+            else { /* skip unrecognized url.* */
+                p = (const unsigned char *)strchr((const char *)p, '}');
+                if (NULL == p) return -1;
+            }
+            break;
+        }
+        else if (p[0] == 'q' && p[1] == 's' && p[2] == 'a' && p[3] == '}') {
+            const buffer *qs = ctx->burl->query;
+            if (!buffer_is_empty(qs)) {
+                if (NULL != strchr(b->ptr, '?')) {
+                    if (!buffer_string_is_empty(qs))
+                        buffer_append_string_len(b, CONST_STR_LEN("&"));
+                }
+                else {
+                    buffer_append_string_len(b, CONST_STR_LEN("?"));
+                }
+                burl_append(b, CONST_BUF_LEN(qs), flags);
+            }
+            p+=3;
+            break;
+        }
+        else if (p[0] == 'e' && p[1] == 'n' && p[2] == 'c'
+                 && 0 == strncmp((const char *)p+3, "b64u:", 5)) {
+            flags |= BURL_ENCODE_B64U;
+            p+=8;
+        }
+        else if (p[0] == 'd' && p[1] == 'e' && p[2] == 'c'
+                 && 0 == strncmp((const char *)p+3, "b64u:", 5)) {
+            flags |= BURL_DECODE_B64U;
+            p+=8;
+        }
+        else ++p;  /* skip unrecognized char */
+    }
+    if (*p == '\0') return -1;
+    if (*p != '}') { /* light_isdigit(*p) */
+        unsigned int num = *p - '0';
+        ++p;
+        if (light_isdigit(*p)) num = num * 10 + (*p++ - '0');
+        if (*p != '}') {
+            p = (const unsigned char *)strchr((const char *)p, '}');
+            if (NULL == p) return -1;
+        }
+        if (0 == flags) flags = BURL_ENCODE_PSNDE; /* default */
+        pattern[0] == '$' /*(else '%')*/
+          ? pcre_keyvalue_buffer_append_match(b, list, n, num, flags)
+          : pcre_keyvalue_buffer_append_ctxmatch(b, ctx, num, flags);
+    }
+    return (int)(p + 1 - (unsigned char *)pattern - 2);
+}
+
+static void pcre_keyvalue_buffer_subst(buffer *b, const buffer *patternb, const char **list, int n, pcre_keyvalue_ctx *ctx) {
+	const char *pattern = patternb->ptr;
+	const size_t pattern_len = buffer_string_length(patternb);
+	size_t start = 0;
+
+	/* search for $... or %... pattern substitutions */
+
+	buffer_clear(b);
+
+	for (size_t k = 0; k + 1 < pattern_len; ++k) {
+		if (pattern[k] == '$' || pattern[k] == '%') {
+
+			buffer_append_string_len(b, pattern + start, k - start);
+
+			if (pattern[k + 1] == '{') {
+				int num = pcre_keyvalue_buffer_subst_ext(b, pattern+k, list, n, ctx);
+				if (num < 0) return; /* error; truncate result */
+				k += (size_t)num;
+			} else if (light_isdigit(((unsigned char *)pattern)[k + 1])) {
+				unsigned int num = (unsigned int)pattern[k + 1] - '0';
+				pattern[k] == '$' /*(else '%')*/
+				  ? pcre_keyvalue_buffer_append_match(b, list, n, num, 0)
+				  : pcre_keyvalue_buffer_append_ctxmatch(b, ctx, num, 0);
+			} else {
+				/* enable escape: "%%" => "%", "%a" => "%a", "$$" => "$" */
+				buffer_append_string_len(b, pattern+k, pattern[k] == pattern[k+1] ? 1 : 2);
+			}
+
+			k++;
+			start = k + 1;
+		}
+	}
+
+	buffer_append_string_len(b, pattern + start, pattern_len - start);
+}
+
+handler_t pcre_keyvalue_buffer_process(pcre_keyvalue_buffer *kvb, pcre_keyvalue_ctx *ctx, buffer *input, buffer *result) {
+    for (int i = 0, used = (int)kvb->used; i < used; ++i) {
+        pcre_keyvalue * const kv = kvb->kv[i];
+        #define N 20
+        int ovec[N * 3];
+        #undef N
+        int n = pcre_exec(kv->key, kv->key_extra, CONST_BUF_LEN(input),
+                          0, 0, ovec, sizeof(ovec)/sizeof(int));
+        if (n < 0) {
+            if (n != PCRE_ERROR_NOMATCH) {
+                return HANDLER_ERROR;
+            }
+        }
+        else if (buffer_string_is_empty(kv->value)) {
+            /* short-circuit if blank replacement pattern
+             * (do not attempt to match against remaining kvb rules) */
+            ctx->m = i;
+            return HANDLER_GO_ON;
+        }
+        else { /* it matched */
+            const char **list;
+            ctx->m = i;
+            pcre_get_substring_list(input->ptr, ovec, n, &list);
+            pcre_keyvalue_buffer_subst(result, kv->value, list, n, ctx);
+            pcre_free(list);
+            return HANDLER_FINISHED;
+        }
+    }
+
+    return HANDLER_GO_ON;
+}
+#else
+handler_t pcre_keyvalue_buffer_process(pcre_keyvalue_buffer *kvb, pcre_keyvalue_ctx *ctx, buffer *input, buffer *result) {
+    UNUSED(kvb);
+    UNUSED(ctx);
+    UNUSED(input);
+    UNUSED(result);
+    return HANDLER_GO_ON;
+}
+#endif
+
+
+/* modified from burl_normalize_basic() to handle %% extra encoding layer */
+
+/* c (char) and n (nibble) MUST be unsigned integer types */
+#define li_cton(c,n) \
+  (((n) = (c) - '0') <= 9 || (((n) = ((c)&0xdf) - 'A') <= 5 ? ((n) += 10) : 0))
+
+static void pcre_keyvalue_burl_percent_toupper (buffer *b)
+{
+    const unsigned char * const s = (unsigned char *)b->ptr;
+    const int used = (int)buffer_string_length(b);
+    unsigned int n1, n2;
+    for (int i = 0; i < used; ++i) {
+        if (s[i]=='%' && li_cton(s[i+1],n1) && li_cton(s[i+2],n2)) {
+            if (s[i+1] >= 'a') b->ptr[i+1] &= 0xdf; /* uppercase hex */
+            if (s[i+2] >= 'a') b->ptr[i+2] &= 0xdf; /* uppercase hex */
+            i+=2;
+        }
+    }
+}
+
+static void pcre_keyvalue_burl_percent_percent_toupper (buffer *b)
+{
+    const unsigned char * const s = (unsigned char *)b->ptr;
+    const int used = (int)buffer_string_length(b);
+    unsigned int n1, n2;
+    for (int i = 0; i < used; ++i) {
+        if (s[i] == '%' && s[i+1]=='%'
+            && li_cton(s[i+2],n1) && li_cton(s[i+3],n2)) {
+            if (s[i+2] >= 'a') b->ptr[i+2] &= 0xdf; /* uppercase hex */
+            if (s[i+3] >= 'a') b->ptr[i+3] &= 0xdf; /* uppercase hex */
+            i+=3;
+        }
+    }
+}
+
+static const char hex_chars_uc[] = "0123456789ABCDEF";
+
+static void pcre_keyvalue_burl_percent_high_UTF8 (buffer *b, buffer *t)
+{
+    const unsigned char * const s = (unsigned char *)b->ptr;
+    unsigned char *p;
+    const int used = (int)buffer_string_length(b);
+    unsigned int count = 0, j = 0;
+    for (int i = 0; i < used; ++i) {
+        if (s[i] > 0x7F) ++count;
+    }
+    if (0 == count) return;
+
+    p = (unsigned char *)buffer_string_prepare_copy(t, used+(count*2));
+    for (int i = 0; i < used; ++i, ++j) {
+        if (s[i] <= 0x7F)
+            p[j] = s[i];
+        else {
+            p[j]   = '%';
+            p[++j] = hex_chars_uc[(s[i] >> 4) & 0xF];
+            p[++j] = hex_chars_uc[s[i] & 0xF];
+        }
+    }
+    buffer_commit(t, j);
+    buffer_copy_buffer(b, t);
+}
+
+static void pcre_keyvalue_burl_percent_percent_high_UTF8 (buffer *b, buffer *t)
+{
+    const unsigned char * const s = (unsigned char *)b->ptr;
+    unsigned char *p;
+    const int used = (int)buffer_string_length(b);
+    unsigned int count = 0, j = 0;
+    for (int i = 0; i < used; ++i) {
+        if (s[i] > 0x7F) ++count;
+    }
+    if (0 == count) return;
+
+    p = (unsigned char *)buffer_string_prepare_copy(t, used+(count*3));
+    for (int i = 0; i < used; ++i, ++j) {
+        if (s[i] <= 0x7F)
+            p[j] = s[i];
+        else {
+            p[j]   = '%';
+            p[++j] = '%';
+            p[++j] = hex_chars_uc[(s[i] >> 4) & 0xF];
+            p[++j] = hex_chars_uc[s[i] & 0xF];
+        }
+    }
+    buffer_commit(t, j);
+    buffer_copy_buffer(b, t);
+}
+
+/* Basic normalization of regex and regex replacement to mirror some of
+ * the normalizations performed on request URI (for better compatibility).
+ * Note: not currently attempting to replace unnecessary percent-encoding
+ * (would need to know if regex was intended to match url-path or
+ *  query-string or both, and then would have to regex-escape if those
+ *  chars where special regex chars such as . * + ? ( ) [ ] | and more)
+ * Not attempting to percent-encode chars which should be encoded, again
+ * since regex might target url-path, query-string, or both, and we would
+ * have to avoid percent-encoding special regex chars.
+ * Also not attempting to detect unnecessarily regex-escape in, e.g. %\x\x
+ * Preserve improper %-encoded sequences which are not %XX (using hex chars)
+ * Intentionally not performing path simplification (e.g. ./ ../)
+ * If regex-specific normalizations begin to be made to k here,
+ * must revisit callers, e.g. one configfile.c use on non-regex string.
+ * "%%" (percent_percent) is used in regex replacement strings since
+ * otherwise "%n" is used to indicate regex backreference where n is number.
+ */
+
+void pcre_keyvalue_burl_normalize_key (buffer *k, buffer *t)
+{
+    pcre_keyvalue_burl_percent_toupper(k);
+    pcre_keyvalue_burl_percent_high_UTF8(k, t);
+}
+
+void pcre_keyvalue_burl_normalize_value (buffer *v, buffer *t)
+{
+    pcre_keyvalue_burl_percent_percent_toupper(v);
+    pcre_keyvalue_burl_percent_percent_high_UTF8(v, t);
 }

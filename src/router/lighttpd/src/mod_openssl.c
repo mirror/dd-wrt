@@ -10,9 +10,14 @@
 #endif
 #endif
 
+#include "sys-crypto.h"
+
 #include <openssl/ssl.h>
+#include <openssl/bio.h>
 #include <openssl/bn.h>
 #include <openssl/err.h>
+#include <openssl/objects.h>
+#include <openssl/pem.h>
 #include <openssl/rand.h>
 #ifndef OPENSSL_NO_DH
 #include <openssl/dh.h>
@@ -29,6 +34,7 @@
 #endif
 
 #include "base.h"
+#include "http_header.h"
 #include "log.h"
 #include "plugin.h"
 
@@ -56,6 +62,7 @@ typedef struct {
     unsigned short ssl_use_sslv2;
     unsigned short ssl_use_sslv3;
     buffer *ssl_pemfile;
+    buffer *ssl_privkey;
     buffer *ssl_ca_file;
     buffer *ssl_ca_crl_file;
     buffer *ssl_ca_dn_file;
@@ -63,6 +70,7 @@ typedef struct {
     buffer *ssl_dh_file;
     buffer *ssl_ec_curve;
     array *ssl_conf_cmd;
+    buffer *ssl_acme_tls_1;
 } plugin_config;
 
 typedef struct {
@@ -80,8 +88,9 @@ static char *local_send_buffer;
 typedef struct {
     SSL *ssl;
     connection *con;
-    unsigned int renegotiations; /* count of SSL_CB_HANDSHAKE_START */
-    int request_env_patched;
+    int renegotiations; /* count of SSL_CB_HANDSHAKE_START */
+    unsigned short request_env_patched;
+    unsigned short alpn;
     plugin_config conf;
     server *srv;
 } handler_ctx;
@@ -107,6 +116,9 @@ handler_ctx_free (handler_ctx *hctx)
 INIT_FUNC(mod_openssl_init)
 {
     plugin_data_singleton = (plugin_data *)calloc(1, sizeof(plugin_data));
+  #ifdef DEBUG_WOLFSSL
+    wolfSSL_Debugging_ON();
+  #endif
     return plugin_data_singleton;
 }
 
@@ -123,6 +135,7 @@ FREE_FUNC(mod_openssl_free)
             if (NULL == s) continue;
             copy = s->ssl_enabled && buffer_string_is_empty(s->ssl_pemfile);
             buffer_free(s->ssl_pemfile);
+            buffer_free(s->ssl_privkey);
             buffer_free(s->ssl_ca_file);
             buffer_free(s->ssl_ca_crl_file);
             buffer_free(s->ssl_ca_dn_file);
@@ -131,6 +144,7 @@ FREE_FUNC(mod_openssl_free)
             buffer_free(s->ssl_ec_curve);
             buffer_free(s->ssl_verifyclient_username);
             array_free(s->ssl_conf_cmd);
+            buffer_free(s->ssl_acme_tls_1);
 
             if (copy) continue;
             SSL_CTX_free(s->ssl_ctx);
@@ -197,8 +211,21 @@ ssl_info_callback (const SSL *ssl, int where, int ret)
 
     if (0 != (where & SSL_CB_HANDSHAKE_START)) {
         handler_ctx *hctx = (handler_ctx *) SSL_get_app_data(ssl);
-        ++hctx->renegotiations;
+        if (hctx->renegotiations >= 0) ++hctx->renegotiations;
     }
+  #ifdef TLS1_3_VERSION
+    /* https://github.com/openssl/openssl/issues/5721
+     * "TLSv1.3 unexpected InfoCallback after handshake completed" */
+    if (0 != (where & SSL_CB_HANDSHAKE_DONE)) {
+        /* SSL_version() is valid after initial handshake completed */
+        if (SSL_version(ssl) >= TLS1_3_VERSION) {
+            /* https://wiki.openssl.org/index.php/TLS1.3
+             * "Renegotiation is not possible in a TLSv1.3 connection" */
+            handler_ctx *hctx = (handler_ctx *) SSL_get_app_data(ssl);
+            hctx->renegotiations = -1;
+        }
+    }
+  #endif
 }
 
 /* https://wiki.openssl.org/index.php/Manual:SSL_CTX_set_verify(3)#EXAMPLES */
@@ -305,6 +332,7 @@ network_ssl_servername_callback (SSL *ssl, int *al, server *srv)
     const char *servername;
     handler_ctx *hctx = (handler_ctx *) SSL_get_app_data(ssl);
     connection *con = hctx->con;
+    size_t len;
     UNUSED(al);
 
     buffer_copy_string(con->uri.scheme, "https");
@@ -318,9 +346,21 @@ network_ssl_servername_callback (SSL *ssl, int *al, server *srv)
 #endif
         return SSL_TLSEXT_ERR_NOACK;
     }
+    len = strlen(servername);
+    if (len >= 1024) { /*(expecting < 256)*/
+        log_error_write(srv, __FILE__, __LINE__, "sss", "SSL:",
+                        "SNI name too long", servername);
+        return SSL_TLSEXT_ERR_ALERT_FATAL;
+    }
     /* use SNI to patch mod_openssl config and then reset COMP_HTTP_HOST */
-    buffer_copy_string(con->uri.authority, servername);
+    buffer_copy_string_len(con->uri.authority, servername, len);
     buffer_to_lower(con->uri.authority);
+  #if 0
+    /*(con->uri.authority used below for configuration before request read;
+     * revisit for h2)*/
+    if (0 != http_request_host_policy(con, con->uri.authority, con->uri.scheme))
+        return SSL_TLSEXT_ERR_ALERT_FATAL;
+  #endif
 
     con->conditional_is_valid[COMP_HTTP_SCHEME] = 1;
     con->conditional_is_valid[COMP_HTTP_HOST] = 1;
@@ -328,7 +368,7 @@ network_ssl_servername_callback (SSL *ssl, int *al, server *srv)
     /* reset COMP_HTTP_HOST so that conditions re-run after request hdrs read */
     /*(done in response.c:config_cond_cache_reset() after request hdrs read)*/
     /*config_cond_cache_reset_item(con, COMP_HTTP_HOST);*/
-    /*buffer_reset(con->uri.authority);*/
+    /*buffer_clear(con->uri.authority);*/
 
     if (NULL == hctx->conf.ssl_pemfile_x509
         || NULL == hctx->conf.ssl_pemfile_pkey) {
@@ -476,19 +516,180 @@ network_openssl_load_pemfile (server *srv, plugin_config *s, size_t ndx)
 
     s->ssl_pemfile_x509 = x509_load_pem_file(srv, s->ssl_pemfile->ptr);
     if (NULL == s->ssl_pemfile_x509) return -1;
-    s->ssl_pemfile_pkey = evp_pkey_load_pem_file(srv, s->ssl_pemfile->ptr);
+    s->ssl_pemfile_pkey = !buffer_string_is_empty(s->ssl_privkey)
+      ? evp_pkey_load_pem_file(srv, s->ssl_privkey->ptr)
+      : evp_pkey_load_pem_file(srv, s->ssl_pemfile->ptr);
     if (NULL == s->ssl_pemfile_pkey) return -1;
 
     if (!X509_check_private_key(s->ssl_pemfile_x509, s->ssl_pemfile_pkey)) {
-        log_error_write(srv, __FILE__, __LINE__, "sssb", "SSL:",
+        log_error_write(srv, __FILE__, __LINE__, "sssbb", "SSL:",
                         "Private key does not match the certificate public key,"
                         " reason:", ERR_error_string(ERR_get_error(), NULL),
-                        s->ssl_pemfile);
+                        s->ssl_pemfile, s->ssl_privkey);
         return -1;
     }
 
     return 0;
 }
+
+
+#ifndef OPENSSL_NO_TLSEXT
+
+#if OPENSSL_VERSION_NUMBER >= 0x10002000
+
+static int
+mod_openssl_acme_tls_1 (SSL *ssl, handler_ctx *hctx)
+{
+    server *srv = hctx->srv;
+    buffer *b = srv->tmp_buf;
+    buffer *name = hctx->con->uri.authority;
+    X509 *ssl_pemfile_x509 = NULL;
+    EVP_PKEY *ssl_pemfile_pkey = NULL;
+    size_t len;
+    int rc = SSL_TLSEXT_ERR_ALERT_FATAL;
+
+    /* check if acme-tls/1 protocol is enabled (path to dir of cert(s) is set)*/
+    if (buffer_string_is_empty(hctx->conf.ssl_acme_tls_1))
+        return SSL_TLSEXT_ERR_NOACK; /*(reuse value here for not-configured)*/
+    buffer_copy_buffer(b, hctx->conf.ssl_acme_tls_1);
+    buffer_append_slash(b);
+
+    /* check if SNI set server name (required for acme-tls/1 protocol)
+     * and perform simple path checks for no '/'
+     * and no leading '.' (e.g. ignore "." or ".." or anything beginning '.') */
+    if (buffer_string_is_empty(name))   return rc;
+    if (NULL != strchr(name->ptr, '/')) return rc;
+    if (name->ptr[0] == '.')            return rc;
+  #if 0
+    if (0 != http_request_host_policy(hctx->con, name, hctx->con->uri.scheme))
+        return rc;
+  #endif
+    buffer_append_string_buffer(b, name);
+    len = buffer_string_length(b);
+
+    do {
+        buffer_append_string_len(b, CONST_STR_LEN(".crt.pem"));
+        ssl_pemfile_x509 = x509_load_pem_file(srv, b->ptr);
+        if (NULL == ssl_pemfile_x509) {
+            log_error_write(srv, __FILE__, __LINE__, "ssb", "SSL:",
+                            "Failed to load acme-tls/1 pemfile:", b);
+            break;
+        }
+
+        buffer_string_set_length(b, len); /*(remove ".crt.pem")*/
+        buffer_append_string_len(b, CONST_STR_LEN(".key.pem"));
+        ssl_pemfile_pkey = evp_pkey_load_pem_file(srv, b->ptr);
+        if (NULL == ssl_pemfile_pkey) {
+            log_error_write(srv, __FILE__, __LINE__, "ssb", "SSL:",
+                            "Failed to load acme-tls/1 pemfile:", b);
+            break;
+        }
+
+      #if 0 /* redundant with below? */
+        if (!X509_check_private_key(ssl_pemfile_x509, ssl_pemfile_pkey)) {
+            log_error_write(srv, __FILE__, __LINE__, "sssb", "SSL:",
+               "Private key does not match acme-tls/1 certificate public key,"
+               " reason:" ERR_error_string(ERR_get_error(), NULL), b);
+            break;
+        }
+      #endif
+
+        /* first set certificate!
+         * setting private key checks whether certificate matches it */
+        if (1 != SSL_use_certificate(ssl, ssl_pemfile_x509)) {
+            log_error_write(srv, __FILE__, __LINE__, "ssb:s", "SSL:",
+              "failed to set acme-tls/1 certificate for TLS server name",
+              name, ERR_error_string(ERR_get_error(), NULL));
+            break;
+        }
+
+        if (1 != SSL_use_PrivateKey(ssl, ssl_pemfile_pkey)) {
+            log_error_write(srv, __FILE__, __LINE__, "ssb:s", "SSL:",
+              "failed to set acme-tls/1 private key for TLS server name",
+              name, ERR_error_string(ERR_get_error(), NULL));
+            break;
+        }
+
+        rc = SSL_TLSEXT_ERR_OK;
+    } while (0);
+
+    if (ssl_pemfile_pkey) EVP_PKEY_free(ssl_pemfile_pkey);
+    if (ssl_pemfile_x509) X509_free(ssl_pemfile_x509);
+
+    return rc;
+}
+
+enum {
+  MOD_OPENSSL_ALPN_HTTP11      = 1
+ ,MOD_OPENSSL_ALPN_HTTP10      = 2
+ ,MOD_OPENSSL_ALPN_H2          = 3
+ ,MOD_OPENSSL_ALPN_ACME_TLS_1  = 4
+};
+
+/* https://www.iana.org/assignments/tls-extensiontype-values/tls-extensiontype-values.xhtml#alpn-protocol-ids */
+static int
+mod_openssl_alpn_select_cb (SSL *ssl, const unsigned char **out, unsigned char *outlen, const unsigned char *in, unsigned int inlen, void *arg)
+{
+    handler_ctx *hctx = (handler_ctx *) SSL_get_app_data(ssl);
+    unsigned short proto;
+    UNUSED(arg);
+
+    for (unsigned int i = 0, n; i < inlen; i += n) {
+        n = in[i++];
+        if (i+n > inlen) break;
+        switch (n) {
+         #if 0
+          case 2:  /* "h2" */
+            if (in[i] == 'h' && in[i+1] == '2') {
+                proto = MOD_OPENSSL_ALPN_H2;
+                break;
+            }
+            continue;
+         #endif
+          case 8:  /* "http/1.1" "http/1.0" */
+            if (0 == memcmp(in+i, "http/1.", 7)) {
+                if (in[i+7] == '1') {
+                    proto = MOD_OPENSSL_ALPN_HTTP11;
+                    break;
+                }
+                if (in[i+7] == '0') {
+                    proto = MOD_OPENSSL_ALPN_HTTP10;
+                    break;
+                }
+            }
+            continue;
+          case 10: /* "acme-tls/1" */
+            if (0 == memcmp(in+i, "acme-tls/1", 10)) {
+                int rc = mod_openssl_acme_tls_1(ssl, hctx);
+                if (rc == SSL_TLSEXT_ERR_OK) {
+                    proto = MOD_OPENSSL_ALPN_ACME_TLS_1;
+                    break;
+                }
+                /* (use SSL_TLSEXT_ERR_NOACK for not-configured) */
+                if (rc == SSL_TLSEXT_ERR_NOACK) continue;
+                return rc;
+            }
+            continue;
+          default:
+            continue;
+        }
+
+        hctx->alpn = proto;
+        *out = in+i;
+        *outlen = n;
+        return SSL_TLSEXT_ERR_OK;
+    }
+
+  #if OPENSSL_VERSION_NUMBER < 0x10100000L
+    return SSL_TLSEXT_ERR_NOACK;
+  #else
+    return SSL_TLSEXT_ERR_ALERT_FATAL;
+  #endif
+}
+
+#endif /* OPENSSL_VERSION_NUMBER >= 0x10002000 */
+
+#endif /* OPENSSL_NO_TLSEXT */
 
 
 static int
@@ -551,18 +752,8 @@ static int
 network_init_ssl (server *srv, void *p_d)
 {
     plugin_data *p = p_d;
-  #if OPENSSL_VERSION_NUMBER >= 0x0090800fL
-  #ifndef OPENSSL_NO_ECDH
-    EC_KEY *ecdh;
-    int nid;
-  #endif
-  #endif
 
   #ifndef OPENSSL_NO_DH
-    DH *dh;
-  #endif
-    BIO *bio;
-
    /* 1024-bit MODP Group with 160-bit prime order subgroup (RFC5114)
     * -----BEGIN DH PARAMETERS-----
     * MIIBDAKBgQCxC4+WoIDgHd6S3l6uXVTsUsmfvPsGo8aaap3KUtI7YWBz4oZ1oj0Y
@@ -601,6 +792,7 @@ network_init_ssl (server *srv, void *p_d)
         0x18,0xD0,0x8B,0xC8,0x85,0x8F,0x4D,0xCE,0xF9,0x7C,0x2A,0x24,
         0x85,0x5E,0x6E,0xEB,0x22,0xB3,0xB2,0xE5,
     };
+  #endif
 
     /* load SSL certificates */
     for (size_t i = 0; i < srv->config_context->used; ++i) {
@@ -698,7 +890,14 @@ network_init_ssl (server *srv, void *p_d)
 
         if (buffer_string_is_empty(s->ssl_pemfile) || !s->ssl_enabled) continue;
 
-        if (NULL == (s->ssl_ctx = SSL_CTX_new(SSLv23_server_method()))) {
+      #if OPENSSL_VERSION_NUMBER >= 0x10100000L
+        s->ssl_ctx = (!s->ssl_use_sslv2 && !s->ssl_use_sslv3)
+          ? SSL_CTX_new(TLS_server_method())
+          : SSL_CTX_new(SSLv23_server_method());
+      #else
+        s->ssl_ctx = SSL_CTX_new(SSLv23_server_method());
+      #endif
+        if (NULL == s->ssl_ctx) {
             log_error_write(srv, __FILE__, __LINE__, "ss", "SSL:",
                             ERR_error_string(ERR_get_error(), NULL));
             return -1;
@@ -728,6 +927,7 @@ network_init_ssl (server *srv, void *p_d)
         SSL_CTX_set_options(s->ssl_ctx, ssloptions);
         SSL_CTX_set_info_callback(s->ssl_ctx, ssl_info_callback);
 
+      #ifndef HAVE_WOLFSSL_SSL_H /*(wolfSSL does not support SSLv2)*/
         if (!s->ssl_use_sslv2 && 0 != SSL_OP_NO_SSLv2) {
             /* disable SSLv2 */
             if ((SSL_OP_NO_SSLv2
@@ -738,6 +938,7 @@ network_init_ssl (server *srv, void *p_d)
                 return -1;
             }
         }
+      #endif
 
         if (!s->ssl_use_sslv3 && 0 != SSL_OP_NO_SSLv3) {
             /* disable SSLv3 */
@@ -764,9 +965,12 @@ network_init_ssl (server *srv, void *p_d)
         }
 
       #ifndef OPENSSL_NO_DH
+      {
+        DH *dh;
         /* Support for Diffie-Hellman key exchange */
         if (!buffer_string_is_empty(s->ssl_dh_file)) {
             /* DH parameters from file */
+            BIO *bio;
             bio = BIO_new_file((char *) s->ssl_dh_file->ptr, "r");
             if (bio == NULL) {
                 log_error_write(srv, __FILE__, __LINE__, "ss",
@@ -812,6 +1016,7 @@ network_init_ssl (server *srv, void *p_d)
         SSL_CTX_set_tmp_dh(s->ssl_ctx,dh);
         SSL_CTX_set_options(s->ssl_ctx,SSL_OP_SINGLE_DH_USE);
         DH_free(dh);
+      }
       #else
         if (!buffer_string_is_empty(s->ssl_dh_file)) {
             log_error_write(srv, __FILE__, __LINE__, "ss",
@@ -822,6 +1027,8 @@ network_init_ssl (server *srv, void *p_d)
 
       #if OPENSSL_VERSION_NUMBER >= 0x0090800fL
       #ifndef OPENSSL_NO_ECDH
+      {
+        int nid = 0;
         /* Support for Elliptic-Curve Diffie-Hellman key exchange */
         if (!buffer_string_is_empty(s->ssl_ec_curve)) {
             /* OpenSSL only supports the "named curves"
@@ -834,19 +1041,31 @@ network_init_ssl (server *srv, void *p_d)
                 return -1;
             }
         } else {
+          #if OPENSSL_VERSION_NUMBER < 0x10002000
             /* Default curve */
             nid = OBJ_sn2nid("prime256v1");
+          #elif OPENSSL_VERSION_NUMBER < 0x10100000L \
+             || defined(LIBRESSL_VERSION_NUMBER)
+            if (!SSL_CTX_set_ecdh_auto(s->ssl_ctx, 1)) {
+                log_error_write(srv, __FILE__, __LINE__, "s",
+                                "SSL: SSL_CTX_set_ecdh_auto() failed");
+            }
+          #endif
         }
-        ecdh = EC_KEY_new_by_curve_name(nid);
-        if (ecdh == NULL) {
-            log_error_write(srv, __FILE__, __LINE__, "ss",
-                            "SSL: Unable to create curve",
-                            s->ssl_ec_curve->ptr);
-            return -1;
+        if (nid) {
+            EC_KEY *ecdh;
+            ecdh = EC_KEY_new_by_curve_name(nid);
+            if (ecdh == NULL) {
+                log_error_write(srv, __FILE__, __LINE__, "ss",
+                                "SSL: Unable to create curve",
+                                s->ssl_ec_curve->ptr);
+                return -1;
+            }
+            SSL_CTX_set_tmp_ecdh(s->ssl_ctx,ecdh);
+            SSL_CTX_set_options(s->ssl_ctx,SSL_OP_SINGLE_ECDH_USE);
+            EC_KEY_free(ecdh);
         }
-        SSL_CTX_set_tmp_ecdh(s->ssl_ctx,ecdh);
-        SSL_CTX_set_options(s->ssl_ctx,SSL_OP_SINGLE_ECDH_USE);
-        EC_KEY_free(ecdh);
+      }
       #endif
       #endif
 
@@ -911,18 +1130,18 @@ network_init_ssl (server *srv, void *p_d)
         }
 
         if (1 != SSL_CTX_use_PrivateKey(s->ssl_ctx, s->ssl_pemfile_pkey)) {
-            log_error_write(srv, __FILE__, __LINE__, "ssb", "SSL:",
+            log_error_write(srv, __FILE__, __LINE__, "ssbb", "SSL:",
                             ERR_error_string(ERR_get_error(), NULL),
-                            s->ssl_pemfile);
+                            s->ssl_pemfile, s->ssl_privkey);
             return -1;
         }
 
         if (SSL_CTX_check_private_key(s->ssl_ctx) != 1) {
-            log_error_write(srv, __FILE__, __LINE__, "sssb", "SSL:",
+            log_error_write(srv, __FILE__, __LINE__, "sssbb", "SSL:",
                             "Private key does not match the certificate public "
                             "key, reason:",
                             ERR_error_string(ERR_get_error(), NULL),
-                            s->ssl_pemfile);
+                            s->ssl_pemfile, s->ssl_privkey);
             return -1;
         }
         SSL_CTX_set_default_read_ahead(s->ssl_ctx, s->ssl_read_ahead);
@@ -941,6 +1160,10 @@ network_init_ssl (server *srv, void *p_d)
                             "extension");
             return -1;
         }
+
+       #if OPENSSL_VERSION_NUMBER >= 0x10002000
+        SSL_CTX_set_alpn_select_cb(s->ssl_ctx,mod_openssl_alpn_select_cb,NULL);
+       #endif
       #endif
 
         if (s->ssl_conf_cmd->used) {
@@ -977,6 +1200,8 @@ SETDEFAULTS_FUNC(mod_openssl_set_defaults)
         { "ssl.ca-crl-file",                   NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_CONNECTION }, /* 18 */
         { "ssl.ca-dn-file",                    NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_CONNECTION }, /* 19 */
         { "ssl.openssl.ssl-conf-cmd",          NULL, T_CONFIG_ARRAY,   T_CONFIG_SCOPE_CONNECTION }, /* 20 */
+        { "ssl.acme-tls-1",                    NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_CONNECTION }, /* 21 */
+        { "ssl.privkey",                       NULL, T_CONFIG_STRING,  T_CONFIG_SCOPE_CONNECTION }, /* 22 */
         { NULL,                         NULL, T_CONFIG_UNSET, T_CONFIG_SCOPE_UNSET }
     };
 
@@ -990,6 +1215,7 @@ SETDEFAULTS_FUNC(mod_openssl_set_defaults)
 
         s->ssl_enabled   = 0;
         s->ssl_pemfile   = buffer_init();
+        s->ssl_privkey   = buffer_init();
         s->ssl_ca_file   = buffer_init();
         s->ssl_ca_crl_file = buffer_init();
         s->ssl_ca_dn_file = buffer_init();
@@ -1014,6 +1240,7 @@ SETDEFAULTS_FUNC(mod_openssl_set_defaults)
         s->ssl_conf_cmd = (0 == i)
           ? array_init()
           : array_init_array(p->config_storage[0]->ssl_conf_cmd);
+        s->ssl_acme_tls_1 = buffer_init();
 
         cv[0].destination = &(s->ssl_log_noise);
         cv[1].destination = &(s->ssl_enabled);
@@ -1036,6 +1263,8 @@ SETDEFAULTS_FUNC(mod_openssl_set_defaults)
         cv[18].destination = s->ssl_ca_crl_file;
         cv[19].destination = s->ssl_ca_dn_file;
         cv[20].destination = s->ssl_conf_cmd;
+        cv[21].destination = s->ssl_acme_tls_1;
+        cv[22].destination = s->ssl_privkey;
 
         p->config_storage[i] = s;
 
@@ -1088,6 +1317,7 @@ mod_openssl_patch_connection (server *srv, connection *con, handler_ctx *hctx)
 
     /*PATCH(ssl_enabled);*//*(not patched)*/
     /*PATCH(ssl_pemfile);*//*(not patched)*/
+    /*PATCH(ssl_privkey);*//*(not patched)*/
     PATCH(ssl_pemfile_x509);
     PATCH(ssl_pemfile_pkey);
     PATCH(ssl_ca_file);
@@ -1110,6 +1340,7 @@ mod_openssl_patch_connection (server *srv, connection *con, handler_ctx *hctx)
     PATCH(ssl_verifyclient_export_cert);
     PATCH(ssl_disable_client_renegotiation);
     PATCH(ssl_read_ahead);
+    PATCH(ssl_acme_tls_1);
 
     PATCH(ssl_log_noise);
 
@@ -1127,6 +1358,7 @@ mod_openssl_patch_connection (server *srv, connection *con, handler_ctx *hctx)
 
             if (buffer_is_equal_string(du->key, CONST_STR_LEN("ssl.pemfile"))) {
                 /*PATCH(ssl_pemfile);*//*(not patched)*/
+                /*PATCH(ssl_privkey);*//*(not patched)*/
                 PATCH(ssl_pemfile_x509);
                 PATCH(ssl_pemfile_pkey);
             } else if (buffer_is_equal_string(du->key, CONST_STR_LEN("ssl.ca-file"))) {
@@ -1149,6 +1381,8 @@ mod_openssl_patch_connection (server *srv, connection *con, handler_ctx *hctx)
                 PATCH(ssl_disable_client_renegotiation);
             } else if (buffer_is_equal_string(du->key, CONST_STR_LEN("ssl.read-ahead"))) {
                 PATCH(ssl_read_ahead);
+            } else if (buffer_is_equal_string(du->key, CONST_STR_LEN("ssl.acme-tls-1"))) {
+                PATCH(ssl_acme_tls_1);
             } else if (buffer_is_equal_string(du->key, CONST_STR_LEN("debug.log-ssl-noise"))) {
                 PATCH(ssl_log_noise);
           #if 0 /*(not patched)*/
@@ -1390,8 +1624,9 @@ connection_read_cq_ssl (server *srv, connection *con,
 
     ERR_clear_error();
     do {
-        chunkqueue_get_memory(con->read_queue, &mem, &mem_len, 0,
-                              SSL_pending(hctx->ssl));
+        len = SSL_pending(hctx->ssl);
+        mem_len = len < 2048 ? 2048 : (size_t)len;
+        mem = chunkqueue_get_memory(con->read_queue, &mem_len);
 #if 0
         /* overwrite everything with 0 */
         memset(mem, 0, mem_len);
@@ -1411,6 +1646,21 @@ connection_read_cq_ssl (server *srv, connection *con,
               "SSL: renegotiation initiated by client, killing connection");
             return -1;
         }
+
+      #if OPENSSL_VERSION_NUMBER >= 0x10002000
+        if (hctx->alpn) {
+            if (hctx->alpn == MOD_OPENSSL_ALPN_ACME_TLS_1) {
+                chunkqueue_reset(con->read_queue);
+                /* initiate handshake in order to send ServerHello.
+                 * Once TLS handshake is complete, return -1 to result in
+                 * CON_STATE_ERROR so that socket connection is quickly closed*/
+                if (1 == SSL_do_handshake(hctx->ssl)) return -1;
+                len = -1;
+                break;
+            }
+            hctx->alpn = 0;
+        }
+      #endif
     } while (len > 0
              && (hctx->conf.ssl_read_ahead || SSL_pending(hctx->ssl) > 0));
 
@@ -1547,6 +1797,10 @@ CONNECTION_FUNC(mod_openssl_handle_con_accept)
 }
 
 
+static void
+mod_openssl_close_notify(server *srv, handler_ctx *hctx);
+
+
 CONNECTION_FUNC(mod_openssl_handle_con_shut_wr)
 {
     plugin_data *p = p_d;
@@ -1554,6 +1808,16 @@ CONNECTION_FUNC(mod_openssl_handle_con_shut_wr)
     if (NULL == hctx) return HANDLER_GO_ON;
 
     if (SSL_is_init_finished(hctx->ssl)) {
+        mod_openssl_close_notify(srv, hctx);
+    }
+
+    return HANDLER_GO_ON;
+}
+
+
+static void
+mod_openssl_close_notify(server *srv, handler_ctx *hctx)
+{
         int ret, ssl_r;
         unsigned long err;
         ERR_clear_error();
@@ -1567,6 +1831,33 @@ CONNECTION_FUNC(mod_openssl_handle_con_shut_wr)
              * FIXME: wait for fdevent and call SSL_shutdown again
              *
              */
+
+            /* Drain SSL read buffers in case pending records need processing.
+             * Limit to reading 16k to avoid denial of service when the CPU
+             * processing TLS is slower than arrival speed of TLS data packets.
+             *
+             * references:
+             *
+             * "New session ticket breaks bidirectional shutdown of TLS 1.3 connection"
+             * https://github.com/openssl/openssl/issues/6262
+             *
+             * The peer is still allowed to send data after receiving the
+             * "close notify" event. If the peer did send data it need to be
+             * processed by calling SSL_read() before calling SSL_shutdown() a
+             * second time. SSL_read() will indicate the end of the peer data by
+             * returning <= 0 and SSL_get_error() returning
+             * SSL_ERROR_ZERO_RETURN. It is recommended to call SSL_read()
+             * between SSL_shutdown() calls.
+             *
+             * Additional discussion in "Auto retry in shutdown"
+             * https://github.com/openssl/openssl/pull/6340
+             */
+            err = 0;
+            do {
+                char buf[4096];
+                ret = SSL_read(hctx->ssl, buf, (int)sizeof(buf));
+            } while (ret > 0 && (err += (unsigned long)ret) < 16384);
+
             ERR_clear_error();
             if (-1 != (ret = SSL_shutdown(hctx->ssl))) break;
 
@@ -1614,9 +1905,6 @@ CONNECTION_FUNC(mod_openssl_handle_con_shut_wr)
             }
         }
         ERR_clear_error();
-    }
-
-    return HANDLER_GO_ON;
 }
 
 
@@ -1647,17 +1935,17 @@ https_add_ssl_client_entries (server *srv, connection *con, handler_ctx *hctx)
         ERR_error_string_n(vr, errstr, sizeof(errstr));
         buffer_copy_string_len(srv->tmp_buf, CONST_STR_LEN("FAILED:"));
         buffer_append_string(srv->tmp_buf, errstr);
-        array_set_key_value(con->environment,
+        http_header_env_set(con,
                             CONST_STR_LEN("SSL_CLIENT_VERIFY"),
                             CONST_BUF_LEN(srv->tmp_buf));
         return;
     } else if (!(xs = SSL_get_peer_certificate(hctx->ssl))) {
-        array_set_key_value(con->environment,
+        http_header_env_set(con,
                             CONST_STR_LEN("SSL_CLIENT_VERIFY"),
                             CONST_STR_LEN("NONE"));
         return;
     } else {
-        array_set_key_value(con->environment,
+        http_header_env_set(con,
                             CONST_STR_LEN("SSL_CLIENT_VERIFY"),
                             CONST_STR_LEN("SUCCESS"));
     }
@@ -1668,7 +1956,7 @@ https_add_ssl_client_entries (server *srv, connection *con, handler_ctx *hctx)
         int len = safer_X509_NAME_oneline(xn, buf, sizeof(buf));
         if (len > 0) {
             if (len >= (int)sizeof(buf)) len = (int)sizeof(buf)-1;
-            array_set_key_value(con->environment,
+            http_header_env_set(con,
                                 CONST_STR_LEN("SSL_CLIENT_S_DN"),
                                 buf, (size_t)len);
         }
@@ -1687,7 +1975,7 @@ https_add_ssl_client_entries (server *srv, connection *con, handler_ctx *hctx)
         if (xobjsn) {
             buffer_string_set_length(srv->tmp_buf,sizeof("SSL_CLIENT_S_DN_")-1);
             buffer_append_string(srv->tmp_buf, xobjsn);
-            array_set_key_value(con->environment,
+            http_header_env_set(con,
                                 CONST_BUF_LEN(srv->tmp_buf),
                                 (const char*)X509_NAME_ENTRY_get_data(xe)->data,
                                 X509_NAME_ENTRY_get_data(xe)->length);
@@ -1698,7 +1986,7 @@ https_add_ssl_client_entries (server *srv, connection *con, handler_ctx *hctx)
         ASN1_INTEGER *xsn = X509_get_serialNumber(xs);
         BIGNUM *serialBN = ASN1_INTEGER_to_BN(xsn, NULL);
         char *serialHex = BN_bn2hex(serialBN);
-        array_set_key_value(con->environment,
+        http_header_env_set(con,
                             CONST_STR_LEN("SSL_CLIENT_M_SERIAL"),
                             serialHex, strlen(serialHex));
         OPENSSL_free(serialHex);
@@ -1711,14 +1999,13 @@ https_add_ssl_client_entries (server *srv, connection *con, handler_ctx *hctx)
          * or
          *   ssl.verifyclient.username = "SSL_CLIENT_S_DN_emailAddress"
          */
-        data_string *ds = (data_string *)
-          array_get_element_klen(con->environment,
-                           CONST_BUF_LEN(hctx->conf.ssl_verifyclient_username));
-        if (ds) { /* same as http_auth.c:http_auth_setenv() */
-            array_set_key_value(con->environment,
+        buffer *varname = hctx->conf.ssl_verifyclient_username;
+        buffer *vb = http_header_env_get(con, CONST_BUF_LEN(varname));
+        if (vb) { /* same as http_auth.c:http_auth_setenv() */
+            http_header_env_set(con,
                                 CONST_STR_LEN("REMOTE_USER"),
-                                CONST_BUF_LEN(ds->value));
-            array_set_key_value(con->environment,
+                                CONST_BUF_LEN(vb));
+            http_header_env_set(con,
                                 CONST_STR_LEN("AUTH_TYPE"),
                                 CONST_STR_LEN("SSL_CLIENT_VERIFY"));
         }
@@ -1727,24 +2014,19 @@ https_add_ssl_client_entries (server *srv, connection *con, handler_ctx *hctx)
     if (hctx->conf.ssl_verifyclient_export_cert) {
         BIO *bio;
         if (NULL != (bio = BIO_new(BIO_s_mem()))) {
-            data_string *envds;
+            buffer *cert = srv->tmp_buf;
             int n;
 
             PEM_write_bio_X509(bio, xs);
             n = BIO_pending(bio);
 
-            envds = (data_string *)
-              array_get_unused_element(con->environment, TYPE_STRING);
-            if (NULL == envds) {
-                envds = data_string_init();
-            }
-
-            buffer_copy_string_len(envds->key,CONST_STR_LEN("SSL_CLIENT_CERT"));
-            buffer_string_prepare_copy(envds->value, n);
-            BIO_read(bio, envds->value->ptr, n);
+            buffer_string_prepare_copy(cert, n);
+            BIO_read(bio, cert->ptr, n);
             BIO_free(bio);
-            buffer_commit(envds->value, n);
-            array_replace(con->environment, (data_unset *)envds);
+            buffer_commit(cert, n);
+            http_header_env_set(con,
+                                CONST_STR_LEN("SSL_CLIENT_CERT"),
+                                CONST_BUF_LEN(cert));
         }
     }
     X509_free(xs);
@@ -1759,7 +2041,7 @@ http_cgi_ssl_env (server *srv, connection *con, handler_ctx *hctx)
     UNUSED(srv);
 
     s = SSL_get_version(hctx->ssl);
-    array_set_key_value(con->environment,
+    http_header_env_set(con,
                         CONST_STR_LEN("SSL_PROTOCOL"),
                         s, strlen(s));
 
@@ -1767,16 +2049,16 @@ http_cgi_ssl_env (server *srv, connection *con, handler_ctx *hctx)
         int usekeysize, algkeysize;
         char buf[LI_ITOSTRING_LENGTH];
         s = SSL_CIPHER_get_name(cipher);
-        array_set_key_value(con->environment,
+        http_header_env_set(con,
                             CONST_STR_LEN("SSL_CIPHER"),
                             s, strlen(s));
         usekeysize = SSL_CIPHER_get_bits(cipher, &algkeysize);
         li_itostrn(buf, sizeof(buf), usekeysize);
-        array_set_key_value(con->environment,
+        http_header_env_set(con,
                             CONST_STR_LEN("SSL_CIPHER_USEKEYSIZE"),
                             buf, strlen(buf));
         li_itostrn(buf, sizeof(buf), algkeysize);
-        array_set_key_value(con->environment,
+        http_header_env_set(con,
                             CONST_STR_LEN("SSL_CIPHER_ALGKEYSIZE"),
                             buf, strlen(buf));
     }

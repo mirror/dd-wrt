@@ -1,10 +1,7 @@
 #include "first.h"
 typedef int innocuous_typedef_to_quiet_empty_translation_unit_compiler_warning;
 
-#if defined HAVE_LIBSSL && defined HAVE_OPENSSL_SSL_H
-#define USE_OPENSSL_CRYPTO
-#endif
-
+#include "sys-crypto.h"
 #ifndef USE_OPENSSL_CRYPTO
 
 #include "sys-endian.h"
@@ -171,14 +168,6 @@ void SHA1_Final(sha1_byte digest[SHA1_DIGEST_LENGTH], SHA_CTX *context) {
     memset(context->state, 0, SHA1_DIGEST_LENGTH);
     memset(context->count, 0, 8);
     memset(&finalcount, 0, 8);
-}
-
-unsigned char *SHA1(const unsigned char *d, size_t n, unsigned char *md) {
-    SHA_CTX ctx;
-    SHA1_Init(&ctx);
-    SHA1_Update(&ctx, d, (unsigned int)n);
-    SHA1_Final(md, &ctx);
-    return md;
 }
 
 #endif

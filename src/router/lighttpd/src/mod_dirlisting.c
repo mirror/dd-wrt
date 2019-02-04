@@ -3,10 +3,10 @@
 #include "base.h"
 #include "log.h"
 #include "buffer.h"
+#include "http_header.h"
 
 #include "plugin.h"
 
-#include "response.h"
 #include "stat_cache.h"
 
 #include <stdlib.h>
@@ -16,6 +16,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <time.h>
+
+#ifdef HAVE_PCRE_H
+#include <pcre.h>
+#endif
 
 /**
  * this is a dirlisting for a lighttpd plugin
@@ -83,8 +87,8 @@ static excludes_buffer *excludes_buffer_init(void) {
 	return exb;
 }
 
-static int excludes_buffer_append(excludes_buffer *exb, buffer *string) {
 #ifdef HAVE_PCRE_H
+static int excludes_buffer_append(excludes_buffer *exb, buffer *string) {
 	size_t i;
 	const char *errptr;
 	int erroff;
@@ -122,13 +126,8 @@ static int excludes_buffer_append(excludes_buffer *exb, buffer *string) {
 	exb->used++;
 
 	return 0;
-#else
-	UNUSED(exb);
-	UNUSED(string);
-
-	return -1;
-#endif
 }
+#endif
 
 static void excludes_buffer_free(excludes_buffer *exb) {
 #ifdef HAVE_PCRE_H
@@ -287,7 +286,6 @@ SETDEFAULTS_FUNC(mod_dirlisting_set_defaults) {
 
 		if (NULL != (du_excludes = array_get_element(config->value, CONFIG_EXCLUDE))) {
 			array *excludes_list;
-			size_t j;
 
 			excludes_list = ((data_array*)du_excludes)->value;
 
@@ -304,7 +302,7 @@ SETDEFAULTS_FUNC(mod_dirlisting_set_defaults) {
 				return HANDLER_ERROR;
 			}
 #else
-			for (j = 0; j < excludes_list->used; j++) {
+			for (size_t j = 0; j < excludes_list->used; ++j) {
 				data_unset *du_exclude = excludes_list->data[j];
 
 				if (du_exclude->type != TYPE_STRING) {
@@ -328,7 +326,7 @@ SETDEFAULTS_FUNC(mod_dirlisting_set_defaults) {
 				buffer_copy_string_len(s->show_readme, CONST_STR_LEN("README.txt"));
 			}
 			else if (buffer_is_equal_string(s->show_readme, CONST_STR_LEN("disable"))) {
-				buffer_string_set_length(s->show_readme, 0);
+				buffer_clear(s->show_readme);
 			}
 		}
 
@@ -337,7 +335,7 @@ SETDEFAULTS_FUNC(mod_dirlisting_set_defaults) {
 				buffer_copy_string_len(s->show_header, CONST_STR_LEN("HEADER.txt"));
 			}
 			else if (buffer_is_equal_string(s->show_header, CONST_STR_LEN("disable"))) {
-				buffer_string_set_length(s->show_header, 0);
+				buffer_clear(s->show_header);
 			}
 		}
 	}
@@ -809,8 +807,7 @@ static void http_list_directory_header(server *srv, connection *con, plugin_data
 		buffer *hb = p->conf.show_header;
 		if (hb->ptr[0] != '/') {
 			buffer_copy_buffer(p->tmp_buf, con->physical.path);
-			buffer_append_slash(p->tmp_buf);
-			buffer_append_string_buffer(p->tmp_buf, p->conf.show_header);
+			buffer_append_path_len(p->tmp_buf, CONST_BUF_LEN(p->conf.show_header));
 			hb = p->tmp_buf;
 		}
 
@@ -860,8 +857,7 @@ static void http_list_directory_footer(server *srv, connection *con, plugin_data
 		buffer *rb = p->conf.show_readme;
 		if (rb->ptr[0] != '/') {
 			buffer_copy_buffer(p->tmp_buf,  con->physical.path);
-			buffer_append_slash(p->tmp_buf);
-			buffer_append_string_buffer(p->tmp_buf, p->conf.show_readme);
+			buffer_append_path_len(p->tmp_buf, CONST_BUF_LEN(p->conf.show_readme));
 			rb = p->tmp_buf;
 		}
 
@@ -963,7 +959,9 @@ static int http_list_directory(server *srv, connection *con, plugin_data *p, buf
 	files.used = 0;
 
 	while ((dent = readdir(dp)) != NULL) {
+#ifdef HAVE_PCRE_H
 		unsigned short exclude_match = 0;
+#endif
 
 		if (dent->d_name[0] == '.') {
 			if (hide_dotfiles)
@@ -1052,7 +1050,7 @@ static int http_list_directory(server *srv, connection *con, plugin_data *p, buf
 
 	if (files.used) http_dirls_sort(files.ent, files.used);
 
-	out = buffer_init();
+	out = chunkqueue_append_buffer_open(con->write_queue);
 	http_list_directory_header(srv, con, p, out);
 
 	/* directories */
@@ -1137,16 +1135,15 @@ static int http_list_directory(server *srv, connection *con, plugin_data *p, buf
 
 	/* Insert possible charset to Content-Type */
 	if (buffer_string_is_empty(p->conf.encoding)) {
-		response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"), CONST_STR_LEN("text/html"));
+		http_header_response_set(con, HTTP_HEADER_CONTENT_TYPE, CONST_STR_LEN("Content-Type"), CONST_STR_LEN("text/html"));
 	} else {
 		buffer_copy_string_len(p->content_charset, CONST_STR_LEN("text/html; charset="));
 		buffer_append_string_buffer(p->content_charset, p->conf.encoding);
-		response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"), CONST_BUF_LEN(p->content_charset));
+		http_header_response_set(con, HTTP_HEADER_CONTENT_TYPE, CONST_STR_LEN("Content-Type"), CONST_BUF_LEN(p->content_charset));
 	}
 
+	chunkqueue_append_buffer_commit(con->write_queue);
 	con->file_finished = 1;
-	chunkqueue_append_buffer(con->write_queue, out);
-	buffer_free(out);
 
 	return 0;
 }

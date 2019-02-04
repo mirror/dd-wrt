@@ -14,9 +14,7 @@
 #include <time.h>
 #include <unistd.h>
 
-#if defined HAVE_LIBSSL && defined HAVE_OPENSSL_SSL_H
-#define USE_OPENSSL_CRYPTO
-#endif
+#include "sys-crypto.h"
 #ifdef USE_OPENSSL_CRYPTO
 #include <openssl/opensslv.h> /* OPENSSL_VERSION_NUMBER */
 #include <openssl/rand.h>
@@ -226,7 +224,9 @@ int li_rand_bytes (unsigned char *buf, int num)
 void li_rand_cleanup (void)
 {
   #ifdef USE_OPENSSL_CRYPTO
+  #if OPENSSL_VERSION_NUMBER < 0x10100000L
     RAND_cleanup();
+  #endif
   #endif
     safe_memclear(xsubi, sizeof(xsubi));
 }

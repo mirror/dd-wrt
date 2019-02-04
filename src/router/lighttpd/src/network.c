@@ -1,10 +1,10 @@
 #include "first.h"
 
 #include "network.h"
+#include "base.h"
 #include "fdevent.h"
 #include "log.h"
 #include "connections.h"
-#include "plugin.h"
 #include "configfile.h"
 #include "sock_addr.h"
 
@@ -68,7 +68,7 @@ static handler_t network_server_handle_fdevent(server *srv, void *context, int r
 }
 
 static void network_host_normalize_addr_str(buffer *host, sock_addr *addr) {
-    buffer_reset(host);
+    buffer_clear(host);
     sock_addr_stringify_append_buffer(host, addr);
 }
 
@@ -123,6 +123,20 @@ static int network_host_parse_addr(server *srv, sock_addr *addr, socklen_t *addr
     return 0;
 }
 
+static void network_srv_sockets_append(server *srv, server_socket *srv_socket) {
+	if (srv->srv_sockets.size == 0) {
+		srv->srv_sockets.size = 4;
+		srv->srv_sockets.used = 0;
+		srv->srv_sockets.ptr = malloc(srv->srv_sockets.size * sizeof(server_socket*));
+		force_assert(NULL != srv->srv_sockets.ptr);
+	} else if (srv->srv_sockets.used == srv->srv_sockets.size) {
+		srv->srv_sockets.size += 4;
+		srv->srv_sockets.ptr = realloc(srv->srv_sockets.ptr, srv->srv_sockets.size * sizeof(server_socket*));
+		force_assert(NULL != srv->srv_sockets.ptr);
+	}
+	srv->srv_sockets.ptr[srv->srv_sockets.used++] = srv_socket;
+}
+
 static int network_server_init(server *srv, buffer *host_token, size_t sidx, int stdin_fd) {
 	server_socket *srv_socket;
 	const char *host;
@@ -131,21 +145,6 @@ static int network_server_init(server *srv, buffer *host_token, size_t sidx, int
 	sock_addr addr;
 	int family = 0;
 	int set_v6only = 0;
-
-#ifdef __WIN32
-	int err;
-	WORD wVersionRequested;
-	WSADATA wsaData;
-
-	wVersionRequested = MAKEWORD( 2, 2 );
-
-	err = WSAStartup( wVersionRequested, &wsaData );
-	if ( err != 0 ) {
-		    /* Tell the user that we could not find a usable */
-		    /* WinSock DLL.                                  */
-		    return -1;
-	}
-#endif
 
 	if (buffer_string_is_empty(host_token)) {
 		log_error_write(srv, __FILE__, __LINE__, "s", "value of $SERVER[\"socket\"] must not be empty");
@@ -170,10 +169,6 @@ static int network_server_init(server *srv, buffer *host_token, size_t sidx, int
 
 	memset(&addr, 0, sizeof(addr));
 	if (-1 != stdin_fd) {
-		if (0 == sidx && srv->srv_sockets.used > 0) {
-			close(stdin_fd);/*(graceful restart listening to "/dev/stdin")*/
-			return 0;
-		}
 		if (-1 == getsockname(stdin_fd, (struct sockaddr *)&addr, &addr_len)) {
 			log_error_write(srv, __FILE__, __LINE__, "ss",
 					"getsockname()", strerror(errno));
@@ -218,20 +213,21 @@ static int network_server_init(server *srv, buffer *host_token, size_t sidx, int
 	srv_socket->is_ssl = s->ssl_enabled;
 	srv_socket->srv_token = buffer_init_buffer(host_token);
 
-	if (srv->srv_sockets.size == 0) {
-		srv->srv_sockets.size = 4;
-		srv->srv_sockets.used = 0;
-		srv->srv_sockets.ptr = malloc(srv->srv_sockets.size * sizeof(server_socket*));
-		force_assert(NULL != srv->srv_sockets.ptr);
-	} else if (srv->srv_sockets.used == srv->srv_sockets.size) {
-		srv->srv_sockets.size += 4;
-		srv->srv_sockets.ptr = realloc(srv->srv_sockets.ptr, srv->srv_sockets.size * sizeof(server_socket*));
-		force_assert(NULL != srv->srv_sockets.ptr);
-	}
-	srv->srv_sockets.ptr[srv->srv_sockets.used++] = srv_socket;
+	network_srv_sockets_append(srv, srv_socket);
 
 	if (srv->sockets_disabled) { /* lighttpd -1 (one-shot mode) */
 		return 0;
+	}
+
+	if (srv->srvconf.systemd_socket_activation) {
+		for (size_t i = 0; i < srv->srv_sockets_inherited.used; ++i) {
+			if (0 != memcmp(&srv->srv_sockets_inherited.ptr[i]->addr, &srv_socket->addr, addr_len)) continue;
+			if ((unsigned short)~0u == srv->srv_sockets_inherited.ptr[i]->sidx) {
+				srv->srv_sockets_inherited.ptr[i]->sidx = sidx;
+			}
+			stdin_fd = srv->srv_sockets_inherited.ptr[i]->fd;
+			break;
+		}
 	}
 
 	if (-1 != stdin_fd) {
@@ -382,14 +378,89 @@ int network_close(server *srv) {
 	srv->srv_sockets.used = 0;
 	srv->srv_sockets.size = 0;
 
+	for (i = 0; i < srv->srv_sockets_inherited.used; i++) {
+		server_socket *srv_socket = srv->srv_sockets_inherited.ptr[i];
+		if (srv_socket->fd != -1 && srv_socket->sidx != (unsigned short)~0u) {
+			close(srv_socket->fd);
+		}
+
+		buffer_free(srv_socket->srv_token);
+
+		free(srv_socket);
+	}
+
+	free(srv->srv_sockets_inherited.ptr);
+	srv->srv_sockets_inherited.ptr = NULL;
+	srv->srv_sockets_inherited.used = 0;
+	srv->srv_sockets_inherited.size = 0;
+
 	return 0;
 }
 
+static int network_socket_activation_nfds(server *srv, int nfds) {
+    buffer *host = buffer_init();
+    socklen_t addr_len;
+    sock_addr addr;
+    int rc = 0;
+    nfds += 3; /* #define SD_LISTEN_FDS_START 3 */
+    for (int fd = 3; fd < nfds; ++fd) {
+        addr_len = sizeof(sock_addr);
+        if (-1 == (rc = getsockname(fd, (struct sockaddr *)&addr, &addr_len))) {
+            log_error_write(srv, __FILE__, __LINE__, "ss",
+                            "socket activation getsockname()", strerror(errno));
+            break;
+        }
+        network_host_normalize_addr_str(host, &addr);
+        rc = network_server_init(srv, host, 0, fd);
+        if (0 != rc) break;
+        srv->srv_sockets.ptr[srv->srv_sockets.used-1]->sidx = (unsigned short)~0u;
+    }
+    buffer_free(host);
+    memcpy(&srv->srv_sockets_inherited, &srv->srv_sockets, sizeof(server_socket_array));
+    memset(&srv->srv_sockets, 0, sizeof(server_socket_array));
+    return rc;
+}
+
+static int network_socket_activation_from_env(server *srv) {
+    char *listen_pid = getenv("LISTEN_PID");
+    char *listen_fds = getenv("LISTEN_FDS");
+    pid_t lpid = listen_pid ? (pid_t)strtoul(listen_pid,NULL,10) : 0;
+    int nfds = listen_fds ? atoi(listen_fds) : 0;
+    int rc = (lpid == getpid() && nfds > 0)
+      ? network_socket_activation_nfds(srv, nfds)
+      : 0;
+    unsetenv("LISTEN_PID");
+    unsetenv("LISTEN_FDS");
+    unsetenv("LISTEN_FDNAMES");
+    /*(upon graceful restart, unsetenv will result in no-op above)*/
+    return rc;
+}
+
 int network_init(server *srv, int stdin_fd) {
-	size_t i;
+      #ifdef __WIN32
+	WSADATA wsaData;
+	WORD wVersionRequested = MAKEWORD(2, 2);
+	if (0 != WSAStartup(wVersionRequested, &wsaData)) {
+		/* Tell the user that we could not find a usable WinSock DLL */
+		return -1;
+	}
+      #endif
+
 	if (0 != network_write_init(srv)) return -1;
 
-	{
+	if (srv->srvconf.systemd_socket_activation) {
+		for (size_t i = 0; i < srv->srv_sockets_inherited.used; ++i) {
+		        srv->srv_sockets_inherited.ptr[i]->sidx = (unsigned short)~0u;
+		}
+		if (0 != network_socket_activation_from_env(srv)) return -1;
+		if (0 == srv->srv_sockets_inherited.used) {
+			srv->srvconf.systemd_socket_activation = 0;
+		}
+	}
+
+	/* process srv->srvconf.bindhost
+	 * (skip if systemd socket activation is enabled and bindhost is empty; do not additionally listen on "*") */
+	if (!srv->srvconf.systemd_socket_activation || !buffer_string_is_empty(srv->srvconf.bindhost)) {
 		int rc;
 		buffer *b = buffer_init();
 		buffer_copy_buffer(b, srv->srvconf.bindhost);
@@ -398,13 +469,15 @@ int network_init(server *srv, int stdin_fd) {
 			buffer_append_int(b, srv->srvconf.port);
 		}
 
-		rc = network_server_init(srv, b, 0, stdin_fd);
+		rc = (-1 == stdin_fd || 0 == srv->srv_sockets.used)
+		  ? network_server_init(srv, b, 0, stdin_fd)
+		  : close(stdin_fd);/*(graceful restart listening to "/dev/stdin")*/
 		buffer_free(b);
 		if (0 != rc) return -1;
 	}
 
 	/* check for $SERVER["socket"] */
-	for (i = 1; i < srv->config_context->used; i++) {
+	for (size_t i = 1; i < srv->config_context->used; ++i) {
 		data_config *dc = (data_config *)srv->config_context->data[i];
 
 		/* not our stage */
@@ -423,6 +496,19 @@ int network_init(server *srv, int stdin_fd) {
 		if (dc->cond != CONFIG_COND_EQ) continue;
 
 			if (0 != network_server_init(srv, dc->string, i, -1)) return -1;
+	}
+
+	if (srv->srvconf.systemd_socket_activation) {
+		/* activate any inherited sockets not explicitly listed in config file */
+		server_socket *srv_socket;
+		for (size_t i = 0; i < srv->srv_sockets_inherited.used; ++i) {
+		        if ((unsigned short)~0u != srv->srv_sockets_inherited.ptr[i]->sidx) continue;
+		        srv->srv_sockets_inherited.ptr[i]->sidx = 0;
+			srv_socket = calloc(1, sizeof(server_socket));
+			force_assert(NULL != srv_socket);
+			memcpy(srv_socket, srv->srv_sockets_inherited.ptr[i], sizeof(server_socket));
+			network_srv_sockets_append(srv, srv_socket);
+		}
 	}
 
 	return 0;

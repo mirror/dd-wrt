@@ -4,6 +4,8 @@
 #include "fdevent.h"
 #include "log.h"
 #include "buffer.h"
+#include "http_header.h"
+#include "sock_addr.h"
 
 #include "plugin.h"
 
@@ -119,6 +121,11 @@ enum e_optflags_time {
 	FORMAT_FLAG_TIME_MSEC_FRAC = 0x20,/* request time msec fraction */
 	FORMAT_FLAG_TIME_USEC_FRAC = 0x40,/* request time usec fraction */
 	FORMAT_FLAG_TIME_NSEC_FRAC = 0x80 /* request time nsec fraction */
+};
+
+enum e_optflags_port {
+	FORMAT_FLAG_PORT_LOCAL     = 0x01,/* (default) */
+	FORMAT_FLAG_PORT_REMOTE    = 0x02
 };
 
 
@@ -334,7 +341,7 @@ static int accesslog_parse_format(server *srv, format_fields *fields, buffer *fo
 				}
 
 				if (k == i + 2) {
-					log_error_write(srv, __FILE__, __LINE__, "s", "%{...} has to be contain a string");
+					log_error_write(srv, __FILE__, __LINE__, "s", "%{...} has to contain a string");
 					return -1;
 				}
 
@@ -602,6 +609,21 @@ SETDEFAULTS_FUNC(log_access_open) {
 					if (f->opt & ~(FORMAT_FLAG_TIME_SEC)) srv->srvconf.high_precision_timestamps = 1;
 				} else if (FORMAT_COOKIE == f->field) {
 					if (buffer_string_is_empty(f->string)) f->type = FIELD_STRING; /*(blank)*/
+				} else if (FORMAT_SERVER_PORT == f->field) {
+					if (buffer_string_is_empty(f->string))
+						f->opt |= FORMAT_FLAG_PORT_LOCAL;
+					else if (buffer_is_equal_string(f->string, CONST_STR_LEN("canonical")))
+						f->opt |= FORMAT_FLAG_PORT_LOCAL;
+					else if (buffer_is_equal_string(f->string, CONST_STR_LEN("local")))
+						f->opt |= FORMAT_FLAG_PORT_LOCAL;
+					else if (buffer_is_equal_string(f->string, CONST_STR_LEN("remote")))
+						f->opt |= FORMAT_FLAG_PORT_REMOTE;
+					else {
+						log_error_write(srv, __FILE__, __LINE__, "sb",
+								"invalid format %{canonical,local,remote}p:", s->format);
+
+						return HANDLER_ERROR;
+					}
 				}
 			}
 
@@ -657,7 +679,7 @@ static void log_access_flush(server *srv, void *p_d) {
 				accesslog_write_all(srv, s->access_logfile, s->log_access_fd, CONST_BUF_LEN(s->access_logbuffer));
 			}
 
-			buffer_reset(s->access_logbuffer);
+			buffer_clear(s->access_logbuffer);
 		}
 	}
 }
@@ -745,7 +767,7 @@ REQUESTDONE_FUNC(log_access_write) {
 	size_t j;
 
 	int newts = 0;
-	data_string *ds;
+	buffer *vb;
 	struct timespec ts = { 0, 0 };
 
 	mod_accesslog_patch_connection(srv, con, p);
@@ -757,10 +779,6 @@ REQUESTDONE_FUNC(log_access_write) {
 		b = p->syslog_logbuffer;
 	} else {
 		b = p->conf.access_logbuffer;
-	}
-
-	if (buffer_is_empty(b)) {
-		buffer_string_set_length(b, 0);
 	}
 
 	for (j = 0; j < p->conf.parsed_format->used; j++) {
@@ -860,7 +878,7 @@ REQUESTDONE_FUNC(log_access_write) {
 				      # endif /* HAVE_GMTIME_R */
 				      #endif /* HAVE_STRUCT_TM_GMTOFF */
 
-					buffer_string_prepare_copy(p->conf.ts_accesslog_str, 255);
+					buffer_clear(p->conf.ts_accesslog_str);
 
 					if (buffer_string_is_empty(f->string)) {
 					      #if defined(HAVE_STRUCT_TM_GMTOFF)
@@ -921,8 +939,8 @@ REQUESTDONE_FUNC(log_access_write) {
 				buffer_append_string_len(b, CONST_STR_LEN("-"));
 				break;
 			case FORMAT_REMOTE_USER:
-				if (NULL != (ds = (data_string *)array_get_element(con->environment, "REMOTE_USER")) && !buffer_string_is_empty(ds->value)) {
-					accesslog_append_escaped(b, ds->value);
+				if (NULL != (vb = http_header_env_get(con, CONST_STR_LEN("REMOTE_USER")))) {
+					accesslog_append_escaped(b, vb);
 				} else {
 					buffer_append_string_len(b, CONST_STR_LEN("-"));
 				}
@@ -945,23 +963,23 @@ REQUESTDONE_FUNC(log_access_write) {
 				}
 				break;
 			case FORMAT_HEADER:
-				if (NULL != (ds = (data_string *)array_get_element_klen(con->request.headers, CONST_BUF_LEN(f->string)))) {
-					accesslog_append_escaped(b, ds->value);
+				if (NULL != (vb = http_header_request_get(con, HTTP_HEADER_UNSPECIFIED, CONST_BUF_LEN(f->string)))) {
+					accesslog_append_escaped(b, vb);
 				} else {
 					buffer_append_string_len(b, CONST_STR_LEN("-"));
 				}
 				break;
 			case FORMAT_RESPONSE_HEADER:
-				if (NULL != (ds = (data_string *)array_get_element_klen(con->response.headers, CONST_BUF_LEN(f->string)))) {
-					accesslog_append_escaped(b, ds->value);
+				if (NULL != (vb = http_header_response_get(con, HTTP_HEADER_UNSPECIFIED, CONST_BUF_LEN(f->string)))) {
+					accesslog_append_escaped(b, vb);
 				} else {
 					buffer_append_string_len(b, CONST_STR_LEN("-"));
 				}
 				break;
 			case FORMAT_ENV:
 			case FORMAT_NOTE:
-				if (NULL != (ds = (data_string *)array_get_element_klen(con->environment, CONST_BUF_LEN(f->string)))) {
-					accesslog_append_escaped(b, ds->value);
+				if (NULL != (vb = http_header_env_get(con, CONST_BUF_LEN(f->string)))) {
+					accesslog_append_escaped(b, vb);
 				} else {
 					buffer_append_string_len(b, CONST_STR_LEN("-"));
 				}
@@ -1006,7 +1024,7 @@ REQUESTDONE_FUNC(log_access_write) {
 					con->request.http_version == HTTP_VERSION_1_1 ? "HTTP/1.1" : "HTTP/1.0", 8);
 				break;
 			case FORMAT_REQUEST_METHOD:
-				buffer_append_string(b, get_http_method_name(con->request.http_method));
+				http_method_append(b, con->request.http_method);
 				break;
 			case FORMAT_PERCENT:
 				buffer_append_string_len(b, CONST_STR_LEN("%"));
@@ -1030,7 +1048,9 @@ REQUESTDONE_FUNC(log_access_write) {
 				}
 				break;
 			case FORMAT_SERVER_PORT:
-				{
+				if (f->opt & FORMAT_FLAG_PORT_REMOTE) {
+					buffer_append_int(b, sock_addr_get_port(&con->dst_addr));
+				} else { /* if (f->opt & FORMAT_FLAG_PORT_LOCAL) *//*(default)*/
 					const char *colon;
 					buffer *srvtoken = ((server_socket*)(con->srv_socket))->srv_token;
 					if (srvtoken->ptr[0] == '[') {
@@ -1070,8 +1090,8 @@ REQUESTDONE_FUNC(log_access_write) {
 				}
 				break;
 			case FORMAT_COOKIE:
-				if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "Cookie"))) {
-					char *str = ds->value->ptr;
+				if (NULL != (vb = http_header_request_get(con, HTTP_HEADER_COOKIE, CONST_STR_LEN("Cookie")))) {
+					char *str = vb->ptr;
 					size_t len = buffer_string_length(f->string);
 					do {
 						while (*str == ' ' || *str == '\t') ++str;
@@ -1107,9 +1127,9 @@ REQUESTDONE_FUNC(log_access_write) {
 		if (!buffer_string_is_empty(b)) {
 			/*(syslog appends a \n on its own)*/
 			syslog(p->conf.syslog_level, "%s", b->ptr);
-			buffer_reset(b);
 		}
 #endif
+		buffer_clear(b);
 		return HANDLER_GO_ON;
 	}
 
@@ -1121,7 +1141,7 @@ REQUESTDONE_FUNC(log_access_write) {
 		if (p->conf.log_access_fd >= 0) {
 			accesslog_write_all(srv, p->conf.access_logfile, p->conf.log_access_fd, CONST_BUF_LEN(b));
 		}
-		buffer_reset(b);
+		buffer_clear(b);
 	}
 
 	return HANDLER_GO_ON;

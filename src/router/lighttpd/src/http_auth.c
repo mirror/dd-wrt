@@ -1,7 +1,9 @@
 #include "first.h"
 
 #include "http_auth.h"
+#include "http_header.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 
@@ -27,7 +29,7 @@ void http_auth_scheme_set (const http_auth_scheme_t *scheme)
 }
 
 
-static http_auth_backend_t http_auth_backends[8];
+static http_auth_backend_t http_auth_backends[12];
 
 const http_auth_backend_t * http_auth_backend_get (const buffer *name)
 {
@@ -46,6 +48,23 @@ void http_auth_backend_set (const http_auth_backend_t *backend)
     /*(must resize http_auth_backends[] if too many different auth backends)*/
     force_assert(i<(sizeof(http_auth_backends)/sizeof(http_auth_backend_t))-1);
     memcpy(http_auth_backends+i, backend, sizeof(http_auth_backend_t));
+}
+
+
+int http_auth_const_time_memeq (const char *a, const size_t alen, const char *b, const size_t blen)
+{
+    /* constant time memory compare, unless compiler figures it out
+     * (similar to mod_secdownload.c:const_time_memeq()) */
+    /* round to next multiple of 64 to avoid potentially leaking exact
+     * password length when subject to high precision timing attacks) */
+    size_t lim = ((alen >= blen ? alen : blen) + 0x3F) & ~0x3F;
+    int diff = 0;
+    for (size_t i = 0, j = 0; lim; --lim) {
+        diff |= (a[i] ^ b[j]);
+        i += (i < alen);
+        j += (j < blen);
+    }
+    return (0 == diff);
 }
 
 
@@ -113,30 +132,9 @@ int http_auth_match_rules (const http_auth_require_t * const require, const char
     return 0; /* no match */
 }
 
-void http_auth_setenv(array *env, const char *username, size_t ulen, const char *auth_type, size_t alen) {
-    data_string *ds;
-
-    /* REMOTE_USER */
-
-    if (NULL == (ds = (data_string *)array_get_element(env, "REMOTE_USER"))) {
-        if (NULL == (ds = (data_string *)array_get_unused_element(env, TYPE_STRING))) {
-            ds = data_string_init();
-        }
-        buffer_copy_string_len(ds->key, CONST_STR_LEN("REMOTE_USER"));
-        array_insert_unique(env, (data_unset *)ds);
-    }
-    buffer_copy_string_len(ds->value, username, ulen);
-
-    /* AUTH_TYPE */
-
-    if (NULL == (ds = (data_string *)array_get_element(env, "AUTH_TYPE"))) {
-        if (NULL == (ds = (data_string *)array_get_unused_element(env, TYPE_STRING))) {
-            ds = data_string_init();
-        }
-        buffer_copy_string_len(ds->key, CONST_STR_LEN("AUTH_TYPE"));
-        array_insert_unique(env, (data_unset *)ds);
-    }
-    buffer_copy_string_len(ds->value, auth_type, alen);
+void http_auth_setenv(connection *con, const char *username, size_t ulen, const char *auth_type, size_t alen) {
+    http_header_env_set(con, CONST_STR_LEN("REMOTE_USER"), username, ulen);
+    http_header_env_set(con, CONST_STR_LEN("AUTH_TYPE"), auth_type, alen);
 }
 
 int http_auth_md5_hex2bin (const char *md5hex, size_t len, unsigned char md5bin[16])

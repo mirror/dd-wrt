@@ -14,10 +14,7 @@
 # define HAVE_CRYPT
 #endif
 
-#if defined HAVE_LIBSSL && defined HAVE_OPENSSL_SSL_H
-#define USE_OPENSSL_CRYPTO
-#endif
-
+#include "sys-crypto.h"
 #ifdef USE_OPENSSL_CRYPTO
 #include <openssl/md4.h>
 #endif
@@ -30,7 +27,6 @@
 #include "plugin.h"
 #include "http_auth.h"
 #include "log.h"
-#include "response.h"
 
 #include "algo_sha1.h"
 #include "base64.h"
@@ -398,7 +394,7 @@ static handler_t mod_authn_file_plain_basic(server *srv, connection *con, void *
     mod_authn_file_patch_connection(srv, con, p);
     rc = mod_authn_file_htpasswd_get(srv, p->conf.auth_plain_userfile, username, password_buf);
     if (0 == rc) {
-        rc = buffer_is_equal_string(password_buf, pw, strlen(pw)) ? 0 : -1;
+        rc = http_auth_const_time_memeq(CONST_BUF_LEN(password_buf), pw, strlen(pw)) ? 0 : -1;
     }
     buffer_free(password_buf);
     UNUSED(con);
@@ -599,8 +595,11 @@ static void apr_md5_encode(const char *pw, const char *salt, char *result, size_
 static void apr_sha_encode(const char *pw, char *result, size_t nbytes) {
     unsigned char digest[20];
     size_t base64_written;
+    SHA_CTX sha1;
 
-    SHA1((const unsigned char*) pw, strlen(pw), digest);
+    SHA1_Init(&sha1);
+    SHA1_Update(&sha1, (const unsigned char *) pw, strlen(pw));
+    SHA1_Final(digest, &sha1);
 
     memset(result, 0, nbytes);
 
@@ -646,6 +645,7 @@ static handler_t mod_authn_file_htpasswd_basic(server *srv, connection *con, voi
             #endif
            #endif
            #ifdef USE_OPENSSL_CRYPTO /* (for MD4_*() (e.g. MD4_Update())) */
+           #ifndef NO_MD4 /*(e.g. wolfSSL built without MD4)*/
             if (0 == memcmp(password->ptr, CONST_STR_LEN("$1+ntlm$"))) {
                 /* CRYPT-MD5-NTLM algorithm
                  * This algorithm allows for the construction of (slight more)
@@ -697,6 +697,7 @@ static handler_t mod_authn_file_htpasswd_basic(server *srv, connection *con, voi
                 }
             }
             else
+           #endif
            #endif
             {
                #if defined(HAVE_CRYPT_R)

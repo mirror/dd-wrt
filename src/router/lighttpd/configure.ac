@@ -14,14 +14,14 @@ dnl - if an argument uses more than one line and is not a single
 dnl   function call, the argument should be on different lines than the
 dnl   wrapping braces
 AC_PREREQ(2.60)
-AC_INIT([lighttpd], [1.4.48], [contact@lighttpd.net])
+AC_INIT([lighttpd], [1.4.53], [contact@lighttpd.net])
 AC_CONFIG_SRCDIR([src/server.c])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
 AC_CANONICAL_HOST
 
-AM_INIT_AUTOMAKE([1.14 -Wall -Wno-portability -Wno-override foreign dist-xz tar-ustar serial-tests silent-rules])
+AM_INIT_AUTOMAKE([1.13 -Wall -Wno-portability -Wno-override foreign dist-xz tar-ustar serial-tests silent-rules subdir-objects])
 
 dnl @synopsis TRY_CFLAGS [compiler flags]
 dnl @summary check whether compiler supports given flags and adds them to CFLAGS
@@ -170,9 +170,6 @@ LIBS=$save_LIBS
 AC_SUBST([DL_LIB])
 
 dnl prepare pkg-config usage below
-if test -z "$PKG_CONFIG"; then
-  AC_PATH_PROG([PKG_CONFIG], [pkg-config], [no])
-fi
 PKG_PROG_PKG_CONFIG
 
 dnl checking for libev
@@ -229,32 +226,42 @@ AC_ARG_WITH([mysql],
 )
 AC_MSG_RESULT([$WITH_MYSQL])
 
-MYSQL_INCLUDE=
+MYSQL_CFLAGS=
 MYSQL_LIBS=
 
 if test "$WITH_MYSQL" != no; then
   if test "$WITH_MYSQL" = yes; then
-    AC_PATH_PROG([MYSQL_CONFIG], [mysql_config])
+    PKG_CHECK_MODULES([MYSQL],[mariadb],[
+      MYSQL_CONFIG=$PKG_CONFIG
+    ],[
+      PKG_CHECK_MODULES([MYSQL],[mysqlclient],[
+        MYSQL_CONFIG=$PKG_CONFIG
+      ],[
+        AC_PATH_PROG([MYSQL_CONFIG], [mysql_config])
+      ])
+    ])
   else
     MYSQL_CONFIG=$WITH_MYSQL
   fi
 
-  if test -z "$MYSQL_CONFIG"; then
-    AC_MSG_ERROR([mysql_config is not found])
-  fi
-  if test ! -x "$MYSQL_CONFIG"; then
-    AC_MSG_ERROR([mysql_config not exists or not executable, use --with-mysql=path-to-mysql_config])
-  fi
+  if test "$MYSQL_CONFIG" != "$PKG_CONFIG"; then
+    if test -z "$MYSQL_CONFIG"; then
+      AC_MSG_ERROR([mysql_config is not found])
+    fi
+    if test ! -x "$MYSQL_CONFIG"; then
+      AC_MSG_ERROR([mysql_config not exists or not executable, use --with-mysql=path-to-mysql_config])
+    fi
 
-  if "$MYSQL_CONFIG" | grep -- '--include' > /dev/null ; then
-    MYSQL_INCLUDE=`"$MYSQL_CONFIG" --include | sed s/\'//g`
-  else
-    MYSQL_INCLUDE=`"$MYSQL_CONFIG" --cflags | sed s/\'//g`
+    if "$MYSQL_CONFIG" | grep -- '--include' > /dev/null ; then
+      MYSQL_CFLAGS=`"$MYSQL_CONFIG" --include | sed s/\'//g`
+    else
+      MYSQL_CFLAGS=`"$MYSQL_CONFIG" --cflags | sed s/\'//g`
+    fi
+    MYSQL_LIBS=`"$MYSQL_CONFIG" --libs | sed s/\'//g`
   fi
-  MYSQL_LIBS=`"$MYSQL_CONFIG" --libs | sed s/\'//g`
 
   AC_MSG_CHECKING([for MySQL includes at])
-  AC_MSG_RESULT([$MYSQL_INCLUDE])
+  AC_MSG_RESULT([$MYSQL_CFLAGS])
 
   AC_MSG_CHECKING([for MySQL libraries at])
   AC_MSG_RESULT([$MYSQL_LIBS])
@@ -264,7 +271,7 @@ fi
 AM_CONDITIONAL([BUILD_WITH_MYSQL], [test "$WITH_MYSQL" != no])
 
 AC_SUBST([MYSQL_LIBS])
-AC_SUBST([MYSQL_INCLUDE])
+AC_SUBST([MYSQL_CFLAGS])
 
 dnl Checks for pgsql
 AC_MSG_NOTICE([----------------------------------------])
@@ -427,6 +434,31 @@ if test "$WITH_LDAP" != no; then
   AC_SUBST([LBER_LIB])
 fi
 AM_CONDITIONAL([BUILD_WITH_LDAP], [test "$WITH_LDAP" != no])
+
+dnl Check for PAM
+AC_MSG_NOTICE([----------------------------------------])
+AC_MSG_CHECKING(for PAM support)
+AC_ARG_WITH([pam],
+  [AC_HELP_STRING([--with-pam],[enable PAM support])],
+  [WITH_PAM=$withval],
+  [WITH_PAM=no]
+)
+AC_MSG_RESULT([$withval])
+
+if test "$WITH_PAM" != "no"; then
+  AC_CHECK_LIB([pam], [pam_start],
+    [AC_CHECK_HEADERS([security/pam_appl.h],[
+      PAM_LIB=-lpam
+      AC_DEFINE([HAVE_PAM], [1], [libpam])
+      AC_DEFINE([HAVE_SECURITY_PAM_APPL_H], [1])
+      ],
+      [AC_MSG_ERROR([pam headers not found, install them or build without --with-pam])]
+    )],
+    [AC_MSG_ERROR([pam library not found, install it or build without --with-pam])]
+  )
+  AC_SUBST(PAM_LIB)
+fi
+AM_CONDITIONAL([BUILD_WITH_PAM], [test "$WITH_PAM" != no])
 
 dnl Check for xattr
 AC_MSG_NOTICE([----------------------------------------])
@@ -613,8 +645,6 @@ AC_ARG_WITH([openssl-libs],
   [AC_MSG_RESULT([no])]
 )
 
-AM_CONDITIONAL([BUILD_WITH_OPENSSL], [test "$WITH_OPENSSL" != no])
-
 if test "$WITH_OPENSSL" != no; then
   if test "$WITH_KRB5" != no; then
     AC_DEFINE([USE_OPENSSL_KERBEROS], [1], [with kerberos])
@@ -640,6 +670,53 @@ if test "$WITH_OPENSSL" != no; then
   AC_SUBST([SSL_LIB])
   AC_SUBST([CRYPTO_LIB])
 fi
+
+dnl Check for wolfSSL
+AC_MSG_NOTICE([----------------------------------------])
+AC_MSG_CHECKING([for wolfSSL])
+AC_ARG_WITH([wolfssl],
+  [AC_HELP_STRING([--with-wolfssl@<:@=DIR@:>@],
+    [Include openssl support (default no)]
+  )],
+  [WITH_WOLFSSL=$withval],
+  [WITH_WOLFSSL=no]
+)
+AC_MSG_RESULT([$WITH_WOLFSSL])
+
+if test "$WITH_WOLFSSL" != no; then
+  if test "$WITH_WOLFSSL" = yes; then
+    WITH_WOLFSSL="/usr/local"
+  fi
+
+  CPPFLAGS="${CPPFLAGS} -I$WITH_WOLFSSL/include -I$WITH_WOLFSSL/include/wolfssl"
+  LDFLAGS="${LDFLAGS} -L$WITH_WOLFSSL/lib"
+
+  AC_CHECK_HEADERS([wolfssl/ssl.h], [], [
+    AC_MSG_ERROR([wolfssl headers not found. install them or build without --with-wolfssl])
+  ])
+  AC_CHECK_LIB([wolfssl], [wolfSSL_Init],
+    [CRYPTO_LIB="-lwolfssl"],
+    [AC_MSG_ERROR([wolfssl crypto library not found. install it or build without --with-wolfssl])]
+  )
+  AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+    #include <wolfssl/options.h>
+    #if !defined(HAVE_LIGHTY) && !defined(OPENSSL_ALL)
+    #error HAVE_LIGHTY macro not defined
+    #endif
+  ]])], [], [AC_MSG_ERROR([wolfssl must be built with ./configure --enable-lighty])])
+  SSL_LIB="-lwolfssl"
+
+  AC_SUBST([SSL_LIB])
+  AC_SUBST([CRYPTO_LIB])
+fi
+
+AM_CONDITIONAL([BUILD_WITH_OPENSSL],
+               [test "$WITH_OPENSSL" != no || test "$WITH_WOLFSSL" != no])
+
+if test "$WITH_OPENSSL" != no && test "$WITH_WOLFSSL" != no; then
+  AC_MSG_ERROR([lighttpd should not be built with both --with-openssl and --with-wolfssl])
+fi
+
 
 dnl pcre support
 AC_MSG_NOTICE([----------------------------------------])
@@ -1333,6 +1410,7 @@ do_build="\
   mod_secdownload \
   mod_setenv \
   mod_simple_vhost \
+  mod_sockproxy \
   mod_ssi \
   mod_staticfile \
   mod_status \
@@ -1392,8 +1470,11 @@ lighty_track_feature "kerberos" "mod_authn_gssapi" \
 lighty_track_feature "ldap" "mod_authn_ldap mod_vhostdb_ldap" \
   'test "$WITH_LDAP" != no'
 
+lighty_track_feature "pam" "mod_authn_pam" \
+  'test "$WITH_PAM" != no'
+
 lighty_track_feature "network-openssl" "mod_openssl" \
-  'test "$WITH_OPENSSL" != no'
+  'test "$WITH_OPENSSL" != no || test "$WITH_WOLFSSL" != no'
 
 lighty_track_feature "auth-crypt" "" \
   'test "$found_crypt" != no'
