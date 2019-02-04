@@ -45,8 +45,10 @@ struct inet_frag_queue {
 	struct timer_list	timer;
 	struct hlist_node	list;
 	atomic_t		refcnt;
-	struct sk_buff		*fragments;
+	struct sk_buff		*fragments;  /* Used in IPv6. */
+	struct rb_root		rb_fragments; /* Used in IPv4. */
 	struct sk_buff		*fragments_tail;
+	struct sk_buff		*last_run_head;
 	ktime_t			stamp;
 	int			len;
 	int			meat;
@@ -117,15 +119,13 @@ struct inet_frag_queue *inet_frag_find(struct netns_frags *nf,
 void inet_frag_maybe_warn_overflow(struct inet_frag_queue *q,
 				   const char *prefix);
 
+/* Free all skbs in the queue; return the sum of their truesizes. */
+unsigned int inet_frag_rbtree_purge(struct rb_root *root);
+
 static inline void inet_frag_put(struct inet_frag_queue *q, struct inet_frags *f)
 {
 	if (atomic_dec_and_test(&q->refcnt))
 		inet_frag_destroy(q, f);
-}
-
-static inline bool inet_frag_evicting(struct inet_frag_queue *q)
-{
-	return !hlist_unhashed(&q->list_evictor);
 }
 
 /* Memory Tracking Functions. */
