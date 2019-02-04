@@ -84,7 +84,7 @@ static void __iomem *cns3xxx_pci_map_bus(struct pci_bus *bus,
 	} else /* remote PCI bus */
 		base = cnspci->cfg1_regs + ((busno & 0xf) << 20);
 
-	return base + (where & 0xffc) + (devfn << 12);
+	return base + where + (devfn << 12);
 }
 
 static inline int check_master_abort(struct pci_bus *bus, unsigned int devfn, int where)
