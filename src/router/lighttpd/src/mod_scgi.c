@@ -3,6 +3,7 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <limits.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "gw_backend.h"
@@ -13,7 +14,6 @@ typedef gw_handler_ctx   handler_ctx;
 #include "base.h"
 #include "buffer.h"
 #include "log.h"
-#include "plugin.h"
 #include "status_counter.h"
 
 #include "sys-endian.h"
@@ -94,18 +94,25 @@ SETDEFAULTS_FUNC(mod_scgi_set_defaults) {
 
 static int scgi_env_add_scgi(void *venv, const char *key, size_t key_len, const char *val, size_t val_len) {
 	buffer *env = venv;
+	char *dst;
 	size_t len;
 
 	if (!key || !val) return -1;
 
 	len = key_len + val_len + 2;
 
-	buffer_string_prepare_append(env, len);
+	if (buffer_string_space(env) < len) {
+		size_t extend = env->size * 2 - buffer_string_length(env);
+		extend = extend > len ? extend : len + 4095;
+		buffer_string_prepare_append(env, extend);
+	}
 
-	buffer_append_string_len(env, key, key_len);
-	buffer_append_string_len(env, "", 1);
-	buffer_append_string_len(env, val, val_len);
-	buffer_append_string_len(env, "", 1);
+	dst = buffer_string_prepare_append(env, len);
+	memcpy(dst, key, key_len);
+	dst[key_len] = '\0';
+	memcpy(dst + key_len + 1, val, val_len);
+	dst[key_len + 1 + val_len] = '\0';
+	buffer_commit(env, len);
 
 	return 0;
 }
@@ -120,6 +127,7 @@ static int scgi_env_add_scgi(void *venv, const char *key, size_t key_len, const 
 
 static int scgi_env_add_uwsgi(void *venv, const char *key, size_t key_len, const char *val, size_t val_len) {
 	buffer *env = venv;
+	char *dst;
 	size_t len;
 	uint16_t uwlen;
 
@@ -128,71 +136,82 @@ static int scgi_env_add_uwsgi(void *venv, const char *key, size_t key_len, const
 
 	len = 2 + key_len + 2 + val_len;
 
-	buffer_string_prepare_append(env, len);
+	if (buffer_string_space(env) < len) {
+		size_t extend = env->size * 2 - buffer_string_length(env);
+		extend = extend > len ? extend : len + 4095;
+		buffer_string_prepare_append(env, extend);
+	}
 
+	dst = buffer_string_prepare_append(env, len);
 	uwlen = uwsgi_htole16((uint16_t)key_len);
-	buffer_append_string_len(env, (char *)&uwlen, 2);
-	buffer_append_string_len(env, key, key_len);
+	memcpy(dst, (char *)&uwlen, 2);
+	memcpy(dst + 2, key, key_len);
 	uwlen = uwsgi_htole16((uint16_t)val_len);
-	buffer_append_string_len(env, (char *)&uwlen, 2);
-	buffer_append_string_len(env, val, val_len);
+	memcpy(dst + 2 + key_len, (char *)&uwlen, 2);
+	memcpy(dst + 2 + key_len + 2, val, val_len);
+	buffer_commit(env, len);
 
 	return 0;
 }
 
 
 static handler_t scgi_create_env(server *srv, handler_ctx *hctx) {
-	buffer *b;
-
-	buffer *scgi_env = buffer_init();
 	gw_host *host = hctx->host;
-
-	connection *con   = hctx->remote_conn;
-
+	connection *con = hctx->remote_conn;
 	http_cgi_opts opts = { 0, 0, host->docroot, NULL };
-
 	http_cgi_header_append_cb scgi_env_add = hctx->conf.proto == LI_PROTOCOL_SCGI
 	  ? scgi_env_add_scgi
 	  : scgi_env_add_uwsgi;
+	size_t offset;
+	size_t rsz = (size_t)(con->read_queue->bytes_out - hctx->wb->bytes_in);
+	buffer * const b = chunkqueue_prepend_buffer_open_sz(hctx->wb, rsz < 65536 ? rsz : con->header_len);
 
-	buffer_string_prepare_copy(scgi_env, 1023);
+        /* save space for 9 digits (plus ':'), though incoming HTTP request
+	 * currently limited to 64k (65535, so 5 chars) */
+	buffer_copy_string_len(b, CONST_STR_LEN("          "));
 
-	if (0 != http_cgi_headers(srv, con, &opts, scgi_env_add, scgi_env)) {
-		buffer_free(scgi_env);
+	if (0 != http_cgi_headers(srv, con, &opts, scgi_env_add, b)) {
 		con->http_status = 400;
+		con->mode = DIRECT;
+		buffer_clear(b);
+		chunkqueue_remove_finished_chunks(hctx->wb);
 		return HANDLER_FINISHED;
 	}
 
 	if (hctx->conf.proto == LI_PROTOCOL_SCGI) {
-		scgi_env_add(scgi_env, CONST_STR_LEN("SCGI"), CONST_STR_LEN("1"));
-		b = buffer_init();
-		buffer_append_int(b, buffer_string_length(scgi_env));
-		buffer_append_string_len(b, CONST_STR_LEN(":"));
-		buffer_append_string_buffer(b, scgi_env);
+		size_t len;
+		scgi_env_add(b, CONST_STR_LEN("SCGI"), CONST_STR_LEN("1"));
+		buffer_clear(srv->tmp_buf);
+		buffer_append_int(srv->tmp_buf, buffer_string_length(b)-10);
+		buffer_append_string_len(srv->tmp_buf, CONST_STR_LEN(":"));
+		len = buffer_string_length(srv->tmp_buf);
+		offset = 10 - len;
+		memcpy(b->ptr+offset, srv->tmp_buf->ptr, len);
 		buffer_append_string_len(b, CONST_STR_LEN(","));
-		buffer_free(scgi_env);
 	} else { /* LI_PROTOCOL_UWSGI */
 		/* http://uwsgi-docs.readthedocs.io/en/latest/Protocol.html */
-		size_t len = buffer_string_length(scgi_env);
+		size_t len = buffer_string_length(b)-10;
 		uint32_t uwsgi_header;
 		if (len > USHRT_MAX) {
-			buffer_free(scgi_env);
 			con->http_status = 431; /* Request Header Fields Too Large */
 			con->mode = DIRECT;
+			buffer_clear(b);
+			chunkqueue_remove_finished_chunks(hctx->wb);
 			return HANDLER_FINISHED;
 		}
-		b = buffer_init();
-		buffer_string_prepare_copy(b, 4 + len);
+		offset = 10 - 4;
 		uwsgi_header = ((uint32_t)uwsgi_htole16((uint16_t)len)) << 8;
-		memcpy(b->ptr, (char *)&uwsgi_header, 4);
-		buffer_commit(b, 4);
-		buffer_append_string_buffer(b, scgi_env);
-		buffer_free(scgi_env);
+		memcpy(b->ptr+offset, (char *)&uwsgi_header, 4);
 	}
 
-	hctx->wb_reqlen = buffer_string_length(b);
-	chunkqueue_append_buffer(hctx->wb, b);
-	buffer_free(b);
+	hctx->wb_reqlen = buffer_string_length(b) - offset;
+	chunkqueue_prepend_buffer_commit(hctx->wb);
+      #if 0
+	hctx->wb->first->offset += (off_t)offset;
+	hctx->wb->bytes_in -= (off_t)offset;
+      #else
+	chunkqueue_mark_written(hctx->wb, offset);
+      #endif
 
 	if (con->request.content_length) {
 		chunkqueue_append_chunkqueue(hctx->wb, con->request_content_queue);
@@ -217,6 +236,7 @@ static int scgi_patch_connection(server *srv, connection *con, plugin_data *p) {
 	PATCH(exts_resp);
 	PATCH(proto);
 	PATCH(debug);
+	PATCH(balance);
 	PATCH(ext_mapping);
 
 	/* skip the first, the global context */
@@ -237,6 +257,8 @@ static int scgi_patch_connection(server *srv, connection *con, plugin_data *p) {
 				PATCH(exts_resp);
 			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("scgi.protocol"))) {
 				PATCH(proto);
+			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("scgi.balance"))) {
+				PATCH(balance);
 			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("scgi.debug"))) {
 				PATCH(debug);
 			} else if (buffer_is_equal_string(du->key, CONST_STR_LEN("scgi.map-extensions"))) {
@@ -266,7 +288,7 @@ static handler_t scgi_check_extension(server *srv, connection *con, void *p_d, i
 		handler_ctx *hctx = con->plugin_ctx[p->id];
 		hctx->opts.backend = BACKEND_SCGI;
 		hctx->create_env = scgi_create_env;
-		hctx->response = buffer_init();
+		hctx->response = chunk_buffer_acquire();
 	}
 
 	return HANDLER_GO_ON;

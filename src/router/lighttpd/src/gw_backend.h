@@ -203,6 +203,7 @@ typedef struct {
 
     buffer *strip_request_uri;
 
+    unsigned short tcp_fin_propagate;
     unsigned short kill_signal; /* we need a setting for this as libfcgi
                                    applications prefer SIGUSR1 while the
                                    rest of the world would use SIGTERM
@@ -255,7 +256,8 @@ typedef struct {
 
 
 
-#include "base.h"
+#include "base_decls.h"
+#include "chunk.h"
 #include "plugin.h"
 #include "response.h"
 

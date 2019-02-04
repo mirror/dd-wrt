@@ -135,6 +135,25 @@ static int mod_access_patch_connection(server *srv, connection *con, plugin_data
 }
 #undef PATCH
 
+static int mod_access_check (const array *allow, const array *deny, const buffer *urlpath, const int lc) {
+
+    if (allow->used) {
+        const buffer *match = (!lc)
+          ? array_match_value_suffix(allow, urlpath)
+          : array_match_value_suffix_nc(allow, urlpath);
+        return (match != NULL); /* allowed if match; denied if none matched */
+    }
+
+    if (deny->used) {
+        const buffer *match = (!lc)
+          ? array_match_value_suffix(deny, urlpath)
+          : array_match_value_suffix_nc(deny, urlpath);
+        return (match == NULL); /* deny if match; allow if none matched */
+    }
+
+    return 1; /* allowed (not denied) */
+}
+
 /**
  * URI handler
  *
@@ -146,93 +165,37 @@ static int mod_access_patch_connection(server *srv, connection *con, plugin_data
  */
 URIHANDLER_FUNC(mod_access_uri_handler) {
 	plugin_data *p = p_d;
-	int s_len;
-	size_t k;
-
 	if (buffer_is_empty(con->uri.path)) return HANDLER_GO_ON;
 
 	mod_access_patch_connection(srv, con, p);
 
-	s_len = buffer_string_length(con->uri.path);
+	if (0 == p->conf.access_allow->used && 0 == p->conf.access_deny->used) {
+		return HANDLER_GO_ON; /* access allowed; nothing to match */
+	}
 
 	if (con->conf.log_request_handling) {
 		log_error_write(srv, __FILE__, __LINE__, "s",
 				"-- mod_access_uri_handler called");
 	}
 
-	for (k = 0; k < p->conf.access_allow->used; ++k) {
-		data_string *ds = (data_string *)p->conf.access_allow->data[k];
-		int ct_len = buffer_string_length(ds->value);
-		int allowed = 0;
+	if (mod_access_check(p->conf.access_allow, p->conf.access_deny,
+			     con->uri.path, con->conf.force_lowercase_filenames)) {
+		return HANDLER_GO_ON; /* access allowed */
+	}
 
-		if (ct_len > s_len) continue;
-		if (buffer_is_empty(ds->value)) continue;
-
-		/* if we have a case-insensitive FS we have to lower-case the URI here too */
-
-		if (con->conf.force_lowercase_filenames) {
-			if (0 == strncasecmp(con->uri.path->ptr + s_len - ct_len, ds->value->ptr, ct_len)) {
-				allowed = 1;
-			}
-		} else {
-			if (0 == strncmp(con->uri.path->ptr + s_len - ct_len, ds->value->ptr, ct_len)) {
-				allowed = 1;
-			}
+	/* (else) access denied */
+	if (con->conf.log_request_handling) {
+		if (p->conf.access_allow->used) {
+			log_error_write(srv, __FILE__, __LINE__, "sb", "url denied as failed to match any from access_allow", con->uri.path);
 		}
-
-		if (allowed) {
-			return HANDLER_GO_ON;
+		else {
+			log_error_write(srv, __FILE__, __LINE__, "sb", "url denied as we match access_deny", con->uri.path);
 		}
 	}
 
-	if (k > 0) { /* have access_allow but none matched */
-		con->http_status = 403;
-		con->mode = DIRECT;
-
-		if (con->conf.log_request_handling) {
-			log_error_write(srv, __FILE__, __LINE__, "sb",
-				"url denied as failed to match any from access_allow", con->uri.path);
-		}
-
-		return HANDLER_FINISHED;
-	}
-
-	for (k = 0; k < p->conf.access_deny->used; k++) {
-		data_string *ds = (data_string *)p->conf.access_deny->data[k];
-		int ct_len = buffer_string_length(ds->value);
-		int denied = 0;
-
-
-		if (ct_len > s_len) continue;
-		if (buffer_is_empty(ds->value)) continue;
-
-		/* if we have a case-insensitive FS we have to lower-case the URI here too */
-
-		if (con->conf.force_lowercase_filenames) {
-			if (0 == strncasecmp(con->uri.path->ptr + s_len - ct_len, ds->value->ptr, ct_len)) {
-				denied = 1;
-			}
-		} else {
-			if (0 == strncmp(con->uri.path->ptr + s_len - ct_len, ds->value->ptr, ct_len)) {
-				denied = 1;
-			}
-		}
-
-		if (denied) {
-			con->http_status = 403;
-			con->mode = DIRECT;
-
-			if (con->conf.log_request_handling) {
-	 			log_error_write(srv, __FILE__, __LINE__, "sb", 
-					"url denied as we match:", ds->value);
-			}
-
-			return HANDLER_FINISHED;
-		}
-	}
-
-	/* not found */
-	return HANDLER_GO_ON;
+	con->http_status = 403;
+	con->mode = DIRECT;
+	return HANDLER_FINISHED;
 }
 
 

@@ -6,6 +6,7 @@
 #include "base.h"
 #include "log.h"
 #include "buffer.h"
+#include "http_header.h"
 #include "plugin.h"
 
 #include <stdlib.h>
@@ -212,182 +213,70 @@ static int mod_geoip_patch_connection(server *srv, connection *con, plugin_data 
 #undef PATCH
 
 static handler_t mod_geoip_query (connection *con, plugin_data *p) {
-		const char *remote_ip;
-		data_string *ds;
-		GeoIPRecord *gir;
-		const char *returnedCountry;
+    GeoIPRecord *gir;
+    const char *remote_ip = con->dst_addr_buf->ptr;
 
-		remote_ip = con->dst_addr_buf->ptr;
+    if (NULL != http_header_env_get(con, CONST_STR_LEN("GEOIP_COUNTRY_CODE"))) {
+        return HANDLER_GO_ON;
+    }
 
-		if (p->conf.gi->databaseType == GEOIP_COUNTRY_EDITION) {
-			/* get the country code 2 chars */
-			if (NULL == (ds = (data_string *)array_get_element(con->environment, "GEOIP_COUNTRY_CODE"))) {
-				if (NULL != (returnedCountry = GeoIP_country_code_by_addr(p->conf.gi, remote_ip))) {
-					if (NULL == (ds = (data_string *)array_get_unused_element(con->environment, TYPE_STRING))) {
-						ds = data_string_init();
-					}
+    if (p->conf.gi->databaseType == GEOIP_COUNTRY_EDITION) {
+        const char *returnedCountry;
 
-					buffer_copy_string(ds->key, "GEOIP_COUNTRY_CODE");
-					buffer_copy_string(ds->value, returnedCountry);
-					array_insert_unique(con->environment, (data_unset *)ds);
-				}
-			}
+        if (NULL != (returnedCountry = GeoIP_country_code_by_addr(p->conf.gi, remote_ip))) {
+            http_header_env_set(con, CONST_STR_LEN("GEOIP_COUNTRY_CODE"), returnedCountry, strlen(returnedCountry));
+        }
 
-			/* get the country code 3 chars */
-			if (NULL == (ds = (data_string *)array_get_element(con->environment, "GEOIP_COUNTRY_CODE3"))) {
-				if (NULL != (returnedCountry = GeoIP_country_code3_by_addr(p->conf.gi, remote_ip))) {
-					if (NULL == (ds = (data_string *)array_get_unused_element(con->environment, TYPE_STRING))) {
-						ds = data_string_init();
-					}
+        if (NULL != (returnedCountry = GeoIP_country_code3_by_addr(p->conf.gi, remote_ip))) {
+            http_header_env_set(con, CONST_STR_LEN("GEOIP_COUNTRY_CODE3"), returnedCountry, strlen(returnedCountry));
+        }
 
-					buffer_copy_string(ds->key, "GEOIP_COUNTRY_CODE3");
-					buffer_copy_string(ds->value, returnedCountry);
-					array_insert_unique(con->environment, (data_unset *)ds);
-				}
-			}
+        if (NULL != (returnedCountry = GeoIP_country_name_by_addr(p->conf.gi, remote_ip))) {
+            http_header_env_set(con, CONST_STR_LEN("GEOIP_COUNTRY_NAME"), returnedCountry, strlen(returnedCountry));
+        }
 
-			/* get the country name */
-			if (NULL == (ds = (data_string *)array_get_element(con->environment, "GEOIP_COUNTRY_NAME"))) {
-				if (NULL != (returnedCountry = GeoIP_country_name_by_addr(p->conf.gi, remote_ip))) {
-					if (NULL == (ds = (data_string *)array_get_unused_element(con->environment, TYPE_STRING))) {
-						ds = data_string_init();
-					}
+        return HANDLER_GO_ON;
+    }
 
-					buffer_copy_string(ds->key, "GEOIP_COUNTRY_NAME");
-					buffer_copy_string(ds->value, returnedCountry);
-					array_insert_unique(con->environment, (data_unset *)ds);
-				}
-			}
+    /* if we are here, geo city is in use */
 
-			/* go on... */
-			return HANDLER_GO_ON;
-		}
+    if (NULL != (gir = GeoIP_record_by_addr(p->conf.gi, remote_ip))) {
 
-		/* if we are here, geo city is in use */
+        http_header_env_set(con, CONST_STR_LEN("GEOIP_COUNTRY_CODE"), gir->country_code, strlen(gir->country_code));
+        http_header_env_set(con, CONST_STR_LEN("GEOIP_COUNTRY_CODE3"), gir->country_code3, strlen(gir->country_code3));
+        http_header_env_set(con, CONST_STR_LEN("GEOIP_COUNTRY_NAME"), gir->country_name, strlen(gir->country_name));
+        http_header_env_set(con, CONST_STR_LEN("GEOIP_CITY_REGION"), gir->region, strlen(gir->region));
+        http_header_env_set(con, CONST_STR_LEN("GEOIP_CITY_NAME"), gir->city, strlen(gir->city));
+        http_header_env_set(con, CONST_STR_LEN("GEOIP_CITY_POSTAL_CODE"), gir->postal_code, strlen(gir->postal_code));
 
-		if (NULL != (gir = GeoIP_record_by_addr(p->conf.gi, remote_ip))) {
-			/* get the country code 2 chars */
-			if (NULL == (ds = (data_string *)array_get_element(con->environment, "GEOIP_COUNTRY_CODE"))) {
-				if (NULL == (ds = (data_string *)array_get_unused_element(con->environment, TYPE_STRING))) {
-					ds = data_string_init();
-				}
+        {
+            char latitude[32];
+            snprintf(latitude, sizeof(latitude), "%f", gir->latitude);
+            http_header_env_set(con, CONST_STR_LEN("GEOIP_CITY_LATITUDE"), latitude, strlen(latitude));
+        }
 
-				buffer_copy_string(ds->key, "GEOIP_COUNTRY_CODE");
-				buffer_copy_string(ds->value, gir->country_code);
-				array_insert_unique(con->environment, (data_unset *)ds);
-			}
+        {
+            char long_latitude[32];
+            snprintf(long_latitude, sizeof(long_latitude), "%f", gir->longitude);
+            http_header_env_set(con, CONST_STR_LEN("GEOIP_CITY_LONG_LATITUDE"), long_latitude, strlen(long_latitude));
+        }
 
-			/* get the country code 3 chars */
-			if (NULL == (ds = (data_string *)array_get_element(con->environment, "GEOIP_COUNTRY_CODE3"))) {
-				if (NULL == (ds = (data_string *)array_get_unused_element(con->environment, TYPE_STRING))) {
-					ds = data_string_init();
-				}
+        {
+            char dc[LI_ITOSTRING_LENGTH];
+            li_utostrn(dc, sizeof(dc), gir->dma_code);
+            http_header_env_set(con, CONST_STR_LEN("GEOIP_CITY_DMA_CODE"), dc, strlen(dc));
+        }
 
-				buffer_copy_string(ds->key, "GEOIP_COUNTRY_CODE3");
-				buffer_copy_string(ds->value, gir->country_code3);
-				array_insert_unique(con->environment, (data_unset *)ds);
-			}
+        {
+            char ac[LI_ITOSTRING_LENGTH];
+            li_utostrn(ac, sizeof(ac), gir->area_code);
+            http_header_env_set(con, CONST_STR_LEN("GEOIP_CITY_AREA_CODE"), ac, strlen(ac));
+        }
 
-			/* get the country name */
-			if (NULL == (ds = (data_string *)array_get_element(con->environment, "GEOIP_COUNTRY_NAME"))) {
-				if (NULL == (ds = (data_string *)array_get_unused_element(con->environment, TYPE_STRING))) {
-					ds = data_string_init();
-				}
+        GeoIPRecord_delete(gir);
+    }
 
-				buffer_copy_string(ds->key, "GEOIP_COUNTRY_NAME");
-				buffer_copy_string(ds->value, gir->country_name);
-				array_insert_unique(con->environment, (data_unset *)ds);
-			}
-
-			/* get the city region */
-			if (NULL == (ds = (data_string *)array_get_element(con->environment, "GEOIP_CITY_REGION"))) {
-				if (NULL == (ds = (data_string *)array_get_unused_element(con->environment, TYPE_STRING))) {
-					ds = data_string_init();
-				}
-
-				buffer_copy_string(ds->key, "GEOIP_CITY_REGION");
-				buffer_copy_string(ds->value, gir->region);
-				array_insert_unique(con->environment, (data_unset *)ds);
-			}
-
-			/* get the city */
-			if (NULL == (ds = (data_string *)array_get_element(con->environment, "GEOIP_CITY_NAME"))) {
-				if (NULL == (ds = (data_string *)array_get_unused_element(con->environment, TYPE_STRING))) {
-					ds = data_string_init();
-				}
-
-				buffer_copy_string(ds->key, "GEOIP_CITY_NAME");
-				buffer_copy_string(ds->value, gir->city);
-				array_insert_unique(con->environment, (data_unset *)ds);
-			}
-
-			/* get the postal code */
-			if (NULL == (ds = (data_string *)array_get_element(con->environment, "GEOIP_CITY_POSTAL_CODE"))) {
-				if (NULL == (ds = (data_string *)array_get_unused_element(con->environment, TYPE_STRING))) {
-					ds = data_string_init();
-				}
-
-				buffer_copy_string(ds->key, "GEOIP_CITY_POSTAL_CODE");
-				buffer_copy_string(ds->value, gir->postal_code);
-				array_insert_unique(con->environment, (data_unset *)ds);
-			}
-
-			/* get the latitude */
-			if (NULL == (ds = (data_string *)array_get_element(con->environment, "GEOIP_CITY_LATITUDE"))) {
-				char latitude[32];
-				if (NULL == (ds = (data_string *)array_get_unused_element(con->environment, TYPE_STRING))) {
-					ds = data_string_init();
-				}
-
-				snprintf(latitude, sizeof(latitude), "%f", gir->latitude);
-				buffer_copy_string(ds->key, "GEOIP_CITY_LATITUDE");
-				buffer_copy_string(ds->value, latitude);
-				array_insert_unique(con->environment, (data_unset *)ds);
-			}
-
-			/* get the long latitude */
-			if (NULL == (ds = (data_string *)array_get_element(con->environment, "GEOIP_CITY_LONG_LATITUDE"))) {
-				char long_latitude[32];
-				if (NULL == (ds = (data_string *)array_get_unused_element(con->environment, TYPE_STRING))) {
-					ds = data_string_init();
-				}
-
-				snprintf(long_latitude, sizeof(long_latitude), "%f", gir->longitude);
-				buffer_copy_string(ds->key, "GEOIP_CITY_LONG_LATITUDE");
-				buffer_copy_string(ds->value, long_latitude);
-				array_insert_unique(con->environment, (data_unset *)ds);
-			}
-
-			/* get the dma code */
-			if (NULL == (ds = (data_string *)array_get_element(con->environment, "GEOIP_CITY_DMA_CODE"))) {
-				char dc[5];
-				if (NULL == (ds = (data_string *)array_get_unused_element(con->environment, TYPE_STRING))) {
-					ds = data_string_init();
-				}
-
-				snprintf(dc, sizeof(dc), "%i", gir->dma_code);
-				buffer_copy_string(ds->key, "GEOIP_CITY_DMA_CODE");
-				buffer_copy_string(ds->value, dc);
-				array_insert_unique(con->environment, (data_unset *)ds);
-			}
-
-			/* get the area code */
-			if (NULL == (ds = (data_string *)array_get_element(con->environment, "GEOIP_CITY_AREA_CODE"))) {
-				char ac[5];
-				if (NULL == (ds = (data_string *)array_get_unused_element(con->environment, TYPE_STRING))) {
-					ds = data_string_init();
-				}
-
-				snprintf(ac, sizeof(ac), "%i", gir->area_code);
-				buffer_copy_string(ds->key, "GEOIP_CITY_AREA_CODE");
-				buffer_copy_string(ds->value, ac);
-				array_insert_unique(con->environment, (data_unset *)ds);
-			}
-
-			GeoIPRecord_delete(gir);
-		}
-
-	return HANDLER_GO_ON;
+    return HANDLER_GO_ON;
 }
 
 CONNECTION_FUNC(mod_geoip_handle_request_env) {

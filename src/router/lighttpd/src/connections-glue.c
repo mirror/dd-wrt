@@ -3,9 +3,13 @@
 #include "sys-socket.h"
 #include "base.h"
 #include "connections.h"
+#include "fdevent.h"
+#include "http_header.h"
 #include "log.h"
+#include "response.h"
 
 #include <errno.h>
+#include <string.h>
 
 const char *connection_get_state(connection_state_t state) {
 	switch (state) {
@@ -108,9 +112,9 @@ handler_t connection_handle_read_post_error(server *srv, connection *con, int ht
     /*(do not change status if response headers already set and possibly sent)*/
     if (0 != con->bytes_header) return HANDLER_ERROR;
 
+    http_response_body_clear(con, 0);
     con->http_status = http_status;
     con->mode = DIRECT;
-    chunkqueue_reset(con->write_queue);
     return HANDLER_FINISHED;
 }
 
@@ -132,7 +136,7 @@ static handler_t connection_handle_read_post_chunked(server *srv, connection *co
                 off_t hsz = p + 1 - (c->mem->ptr+c->offset);
                 unsigned char *s = (unsigned char *)c->mem->ptr+c->offset;
                 for (unsigned char u;(u=(unsigned char)hex2int(*s))!=0xFF;++s) {
-                    if (te_chunked > (~((off_t)-1) >> 4)) {
+                    if (te_chunked > (off_t)(1uLL<<(8*sizeof(off_t)-5))-1) {
                         log_error_write(srv, __FILE__, __LINE__, "s",
                                         "chunked data size too large -> 400");
                         /* 400 Bad Request */
@@ -433,9 +437,9 @@ handler_t connection_handle_read_post_state(server *srv, connection *con) {
 	if (chunkqueue_is_empty(cq) && 0 == dst_cq->bytes_in
 	    && con->request.http_version != HTTP_VERSION_1_0
 	    && chunkqueue_is_empty(con->write_queue) && con->is_writable) {
-		data_string *ds = (data_string *)array_get_element(con->request.headers, "Expect");
-		if (NULL != ds && 0 == buffer_caseless_compare(CONST_BUF_LEN(ds->value), CONST_STR_LEN("100-continue"))) {
-			buffer_reset(ds->value); /* unset value in request headers */
+		buffer *vb = http_header_request_get(con, HTTP_HEADER_EXPECT, CONST_STR_LEN("Expect"));
+		if (NULL != vb && 0 == buffer_caseless_compare(CONST_BUF_LEN(vb), CONST_STR_LEN("100-continue"))) {
+			http_header_request_unset(con, HTTP_HEADER_EXPECT, CONST_STR_LEN("Expect"));
 			if (!connection_write_100_continue(srv, con)) {
 				return HANDLER_ERROR;
 			}
@@ -488,17 +492,15 @@ void connection_response_reset(server *srv, connection *con) {
 	con->is_writable = 1;
 	con->file_finished = 0;
 	con->file_started = 0;
-	con->parsed_response = 0;
 	con->response.keep_alive = 0;
-	con->response.content_length = -1;
-	con->response.transfer_encoding = 0;
 	if (con->physical.path) { /*(skip for mod_fastcgi authorizer)*/
-		buffer_reset(con->physical.doc_root);
+		buffer_clear(con->physical.doc_root);
 		buffer_reset(con->physical.path);
-		buffer_reset(con->physical.basedir);
+		buffer_clear(con->physical.basedir);
 		buffer_reset(con->physical.rel_path);
-		buffer_reset(con->physical.etag);
+		buffer_clear(con->physical.etag);
 	}
-	array_reset(con->response.headers);
-	chunkqueue_reset(con->write_queue);
+	con->response.htags = 0;
+	array_reset_data_strings(con->response.headers);
+	http_response_body_clear(con, 0);
 }

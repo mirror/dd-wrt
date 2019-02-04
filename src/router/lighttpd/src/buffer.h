@@ -2,16 +2,7 @@
 #define _BUFFER_H_
 #include "first.h"
 
-#include "settings.h"
-
-#include <sys/types.h>
-#include <time.h>
-
-#if defined HAVE_STDINT_H
-# include <stdint.h>
-#elif defined HAVE_INTTYPES_H
-# include <inttypes.h>
-#endif
+struct tm;              /* declaration */
 
 /* generic string + binary data container; contains a terminating 0 in both
  * cases
@@ -74,17 +65,23 @@ void buffer_commit(buffer *b, size_t size);
  */
 void buffer_string_set_length(buffer *b, size_t len);
 
+/* clear buffer
+ * - invalidate buffer contents
+ * - unsets used chars but does not modify existing ptr contents
+ *   (b->ptr *is not* set to an empty, '\0'-terminated string "")
+ */
+static inline void buffer_clear(buffer *b);
+
 void buffer_copy_string(buffer *b, const char *s);
 void buffer_copy_string_len(buffer *b, const char *s, size_t s_len);
-void buffer_copy_buffer(buffer *b, const buffer *src);
-/* convert input to hex and store in buffer */
-void buffer_copy_string_hex(buffer *b, const char *in, size_t in_len);
+static inline void buffer_copy_buffer(buffer *b, const buffer *src);
 
 void buffer_append_string(buffer *b, const char *s);
 void buffer_append_string_len(buffer *b, const char *s, size_t s_len);
-void buffer_append_string_buffer(buffer *b, const buffer *src);
+static inline void buffer_append_string_buffer(buffer *b, const buffer *src);
 
-void buffer_append_uint_hex(buffer *b, uintmax_t len);
+#define buffer_append_uint_hex(b,len) buffer_append_uint_hex_lc((b),(len))
+void buffer_append_uint_hex_lc(buffer *b, uintmax_t len);
 void buffer_append_int(buffer *b, intmax_t val);
 void buffer_copy_int(buffer *b, intmax_t val);
 
@@ -97,7 +94,9 @@ void li_itostrn(char *buf, size_t buf_len, intmax_t val);
 void li_utostrn(char *buf, size_t buf_len, uintmax_t val);
 
 /* buf must be (at least) 2*s_len + 1 big. uses lower-case hex letters. */
-void li_tohex(char *buf, size_t buf_len, const char *s, size_t s_len);
+#define li_tohex(buf,buf_len,s,s_len) li_tohex_lc((buf),(buf_len),(s),(s_len))
+void li_tohex_lc(char *buf, size_t buf_len, const char *s, size_t s_len);
+void li_tohex_uc(char *buf, size_t buf_len, const char *s, size_t s_len);
 
 /* NULL buffer or empty buffer (used == 0);
  * unset "string" (buffer) config options are initialized to used == 0,
@@ -115,13 +114,14 @@ int buffer_caseless_compare(const char *a, size_t a_len, const char *b, size_t b
 
 void buffer_substr_replace (buffer *b, size_t offset, size_t len, const buffer *replace);
 
+void buffer_append_string_encoded_hex_lc(buffer *b, const char *s, size_t len);
+void buffer_append_string_encoded_hex_uc(buffer *b, const char *s, size_t len);
+
 typedef enum {
 	ENCODING_REL_URI, /* for coding a rel-uri (/with space/and%percent) nicely as part of a href */
 	ENCODING_REL_URI_PART, /* same as ENC_REL_URL plus coding / too as %2F */
 	ENCODING_HTML,         /* & becomes &amp; and so on */
-	ENCODING_MINIMAL_XML,  /* minimal encoding for xml */
-	ENCODING_HEX,          /* encode string as hex */
-	ENCODING_HTTP_HEADER   /* encode \n with \t\n */
+	ENCODING_MINIMAL_XML   /* minimal encoding for xml */
 } buffer_encoding_t;
 
 void buffer_append_string_encoded(buffer *b, const char *s, size_t s_len, buffer_encoding_t encoding);
@@ -134,6 +134,7 @@ void buffer_copy_string_encoded_cgi_varnames(buffer *b, const char *s, size_t s_
 
 void buffer_urldecode_path(buffer *url);
 void buffer_urldecode_query(buffer *url);
+int buffer_is_valid_UTF8(const buffer *b);
 void buffer_path_simplify(buffer *dest, buffer *src);
 
 void buffer_to_lower(buffer *b);
@@ -144,14 +145,32 @@ void buffer_to_upper(buffer *b);
 char hex2int(unsigned char c);
 char int2hex(char i);
 
-int light_isdigit(int c);
-int light_isxdigit(int c);
-int light_isalpha(int c);
-int light_isalnum(int c);
+static inline int light_isdigit(int c);
+static inline int light_isxdigit(int c);
+static inline int light_isalpha(int c);
+static inline int light_isalnum(int c);
+
+static inline int light_isdigit(int c) {
+	return (c >= '0' && c <= '9');
+}
+
+static inline int light_isxdigit(int c) {
+	return light_isdigit(c) || (c |= 32, c >= 'a' && c <= 'f');
+}
+
+static inline int light_isalpha(int c) {
+	return (c |= 32, c >= 'a' && c <= 'z');
+}
+
+static inline int light_isalnum(int c) {
+	return light_isdigit(c) || light_isalpha(c);
+}
+
 
 static inline size_t buffer_string_length(const buffer *b); /* buffer string length without terminating 0 */
 static inline size_t buffer_string_space(const buffer *b); /* maximum length of string that can be stored without reallocating */
 static inline void buffer_append_slash(buffer *b); /* append '/' no non-empty strings not ending in '/' */
+void buffer_append_path_len(buffer *b, const char *a, size_t alen); /* join strings with '/', if '/' not present */
 
 #define BUFFER_APPEND_STRING_CONST(x, y) \
 	buffer_append_string_len(x, y, sizeof(y) - 1)
@@ -163,6 +182,9 @@ static inline void buffer_append_slash(buffer *b); /* append '/' no non-empty st
 #define CONST_BUF_LEN(x) ((x) ? (x)->ptr : NULL), buffer_string_length(x)
 
 
+#define LI_NORETURN __attribute_noreturn__
+
+__attribute_cold__
 void log_failed_assert(const char *filename, unsigned int line, const char *msg) LI_NORETURN;
 #define force_assert(x) do { if (!(x)) log_failed_assert(__FILE__, __LINE__, "assertion failed: " #x); } while(0)
 #define SEGFAULT() log_failed_assert(__FILE__, __LINE__, "aborted");
@@ -181,14 +203,24 @@ static inline size_t buffer_string_length(const buffer *b) {
 }
 
 static inline size_t buffer_string_space(const buffer *b) {
-	if (NULL == b || b->size == 0) return 0;
-	if (0 == b->used) return b->size - 1;
-	return b->size - b->used;
+	return NULL != b && b->size ? b->size - (b->used | (0 == b->used)) : 0;
+}
+
+static inline void buffer_copy_buffer(buffer *b, const buffer *src) {
+	buffer_copy_string_len(b, CONST_BUF_LEN(src));
+}
+
+static inline void buffer_append_string_buffer(buffer *b, const buffer *src) {
+	buffer_append_string_len(b, CONST_BUF_LEN(src));
 }
 
 static inline void buffer_append_slash(buffer *b) {
 	size_t len = buffer_string_length(b);
 	if (len > 0 && '/' != b->ptr[len-1]) BUFFER_APPEND_STRING_CONST(b, "/");
+}
+
+static inline void buffer_clear(buffer *b) {
+	b->used = 0;
 }
 
 #endif

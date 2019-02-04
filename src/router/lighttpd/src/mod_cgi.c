@@ -1,13 +1,14 @@
 #include "first.h"
 
-#include "server.h"
+#include "base.h"
 #include "stat_cache.h"
-#include "keyvalue.h"
+#include "http_kv.h"
 #include "log.h"
 #include "connections.h"
 #include "joblist.h"
 #include "response.h"
 #include "http_chunk.h"
+#include "http_header.h"
 
 #include "plugin.h"
 
@@ -39,11 +40,20 @@ static int pipe_cloexec(int pipefd[2]) {
 }
 
 typedef struct {
-	char **ptr;
-
-	size_t size;
+	char *ptr;
 	size_t used;
-} char_array;
+	size_t size;
+	size_t *offsets;
+	size_t osize;
+	size_t oused;
+	char **eptr;
+	size_t esize;
+	buffer *ld_preload;
+	buffer *ld_library_path;
+      #ifdef __CYGWIN__
+	buffer *systemroot;
+      #endif
+} env_accum;
 
 typedef struct {
 	struct { pid_t pid; void *ctx; } *ptr;
@@ -62,11 +72,10 @@ typedef struct {
 
 typedef struct {
 	PLUGIN_DATA;
-	buffer_pid_t cgi_pid;
-
 	plugin_config **config_storage;
-
 	plugin_config conf;
+	buffer_pid_t cgi_pid;
+	env_accum env;
 } plugin_data;
 
 typedef struct {
@@ -90,7 +99,7 @@ static handler_ctx * cgi_handler_ctx_init(void) {
 
 	force_assert(hctx);
 
-	hctx->response = buffer_init();
+	hctx->response = chunk_buffer_acquire();
 	hctx->fd = -1;
 	hctx->fdtocgi = -1;
 
@@ -98,16 +107,28 @@ static handler_ctx * cgi_handler_ctx_init(void) {
 }
 
 static void cgi_handler_ctx_free(handler_ctx *hctx) {
-	buffer_free(hctx->response);
+	chunk_buffer_release(hctx->response);
 	free(hctx);
 }
 
 INIT_FUNC(mod_cgi_init) {
 	plugin_data *p;
+	const char *s;
 
 	p = calloc(1, sizeof(*p));
 
 	force_assert(p);
+
+	/* for valgrind */
+	s = getenv("LD_PRELOAD");
+	if (s) p->env.ld_preload = buffer_init_string(s);
+	s = getenv("LD_LIBRARY_PATH");
+	if (s) p->env.ld_library_path = buffer_init_string(s);
+      #ifdef __CYGWIN__
+	/* CYGWIN needs SYSTEMROOT */
+	s = getenv("SYSTEMROOT");
+	if (s) p->env.systemroot = buffer_init_string(s);
+      #endif
 
 	return p;
 }
@@ -136,7 +157,14 @@ FREE_FUNC(mod_cgi_free) {
 
 
 	if (r->ptr) free(r->ptr);
-
+	free(p->env.ptr);
+	free(p->env.offsets);
+	free(p->env.eptr);
+	buffer_free(p->env.ld_preload);
+	buffer_free(p->env.ld_library_path);
+      #ifdef __CYGWIN__
+	buffer_free(p->env.systemroot);
+      #endif
 	free(p);
 
 	return HANDLER_GO_ON;
@@ -355,24 +383,24 @@ static handler_t cgi_response_headers(server *srv, connection *con, struct http_
     /* response headers just completed */
     handler_ctx *hctx = (handler_ctx *)opts->pdata;
 
-    if (con->parsed_response & HTTP_UPGRADE) {
+    if (con->response.htags & HTTP_HEADER_UPGRADE) {
         if (hctx->conf.upgrade && con->http_status == 101) {
             /* 101 Switching Protocols; transition to transparent proxy */
             http_response_upgrade_read_body_unknown(srv, con);
         }
         else {
-            con->parsed_response &= ~HTTP_UPGRADE;
+            con->response.htags &= ~HTTP_HEADER_UPGRADE;
           #if 0
             /* preserve prior questionable behavior; likely broken behavior
              * anyway if backend thinks connection is being upgraded but client
              * does not receive Connection: upgrade */
-            response_header_overwrite(srv, con, CONST_STR_LEN("Upgrade"),
-                                                CONST_STR_LEN(""));
+            http_header_response_unset(con, HTTP_HEADER_UPGRADE,
+                                       CONST_STR_LEN("Upgrade"));
           #endif
         }
     }
 
-    if (hctx->conf.upgrade && !(con->parsed_response & HTTP_UPGRADE)) {
+    if (hctx->conf.upgrade && !(con->response.htags & HTTP_HEADER_UPGRADE)) {
         chunkqueue *cq = con->request_content_queue;
         hctx->conf.upgrade = 0;
         if (cq->bytes_out == (off_t)con->request.content_length) {
@@ -397,6 +425,7 @@ static int cgi_recv_response(server *srv, handler_ctx *hctx) {
 			return HANDLER_FINISHED;
 		case HANDLER_COMEBACK:
 			/* hctx->conf.local_redir */
+			buffer_clear(hctx->response);
 			connection_response_reset(srv, hctx->remote_conn); /*(includes con->http_status = 0)*/
 			plugins_call_connection_reset(srv, hctx->remote_conn);
 			/*cgi_connection_close(srv, hctx);*//*(already cleaned up and hctx is now invalid)*/
@@ -417,7 +446,7 @@ static handler_t cgi_handle_fdevent(server *srv, void *ctx, int revents) {
 	}
 
 	/* perhaps this issue is already handled */
-	if (revents & FDEVENT_HUP) {
+	if (revents & (FDEVENT_HUP|FDEVENT_RDHUP)) {
 		if (con->file_started) {
 			/* drain any remaining data from kernel pipe buffers
 			 * even if (con->conf.stream_response_body
@@ -425,9 +454,13 @@ static handler_t cgi_handle_fdevent(server *srv, void *ctx, int revents) {
 			 * since event loop will spin on fd FDEVENT_HUP event
 			 * until unregistered. */
 			handler_t rc;
+			const unsigned short flags = con->conf.stream_response_body;
+			con->conf.stream_response_body &= ~FDEVENT_STREAM_RESPONSE_BUFMIN;
+			con->conf.stream_response_body |= FDEVENT_STREAM_RESPONSE_POLLRDHUP;
 			do {
 				rc = cgi_recv_response(srv,hctx);/*(might invalidate hctx)*/
 			} while (rc == HANDLER_GO_ON);           /*(unless HANDLER_GO_ON)*/
+			con->conf.stream_response_body = flags;
 			return rc; /* HANDLER_FINISHED or HANDLER_COMEBACK or HANDLER_ERROR */
 		} else if (!buffer_string_is_empty(hctx->response)) {
 			/* unfinished header package which is a body in reality */
@@ -450,29 +483,31 @@ static handler_t cgi_handle_fdevent(server *srv, void *ctx, int revents) {
 
 
 static int cgi_env_add(void *venv, const char *key, size_t key_len, const char *val, size_t val_len) {
-	char_array *env = venv;
+	env_accum *env = venv;
 	char *dst;
 
 	if (!key || !val) return -1;
 
-	dst = malloc(key_len + val_len + 2);
-	force_assert(dst);
+	if (env->size - env->used < key_len + val_len + 2) {
+		if (0 == env->size) env->size = 4096;
+		do { env->size *= 2; } while (env->size - env->used < key_len + val_len + 2);
+		env->ptr = realloc(env->ptr, env->size);
+		force_assert(env->ptr);
+	}
+
+	dst = env->ptr + env->used;
 	memcpy(dst, key, key_len);
 	dst[key_len] = '=';
 	memcpy(dst + key_len + 1, val, val_len);
 	dst[key_len + 1 + val_len] = '\0';
 
-	if (env->size == 0) {
-		env->size = 16;
-		env->ptr = malloc(env->size * sizeof(*env->ptr));
-		force_assert(env->ptr);
-	} else if (env->size == env->used) {
-		env->size += 16;
-		env->ptr = realloc(env->ptr, env->size * sizeof(*env->ptr));
-		force_assert(env->ptr);
+	if (env->osize == env->oused) {
+		env->osize += 16;
+		env->offsets = realloc(env->offsets, env->osize * sizeof(*env->offsets));
+		force_assert(env->offsets);
 	}
-
-	env->ptr[env->used++] = dst;
+	env->offsets[env->oused++] = env->used;
+	env->used += key_len + val_len + 2;
 
 	return 0;
 }
@@ -518,8 +553,8 @@ static ssize_t cgi_write_file_chunk_mmap(server *srv, connection *con, int fd, c
 	/*(simplified from chunk.c:chunkqueue_open_file_chunk())*/
 	UNUSED(con);
 	if (-1 == c->file.fd) {
-		if (-1 == (c->file.fd = fdevent_open_cloexec(c->file.name->ptr, O_RDONLY, 0))) {
-			log_error_write(srv, __FILE__, __LINE__, "ssb", "open failed:", strerror(errno), c->file.name);
+		if (-1 == (c->file.fd = fdevent_open_cloexec(c->mem->ptr, O_RDONLY, 0))) {
+			log_error_write(srv, __FILE__, __LINE__, "ssb", "open failed:", strerror(errno), c->mem);
 			return -1;
 		}
 	}
@@ -545,10 +580,10 @@ static ssize_t cgi_write_file_chunk_mmap(server *srv, connection *con, int fd, c
 			    || 0 >= (toSend = read(c->file.fd, data, toSend))) {
 				if (-1 == toSend) {
 					log_error_write(srv, __FILE__, __LINE__, "ssbdo", "lseek/read failed:",
-						strerror(errno), c->file.name, c->file.fd, offset);
+							strerror(errno), c->mem, c->file.fd, offset);
 				} else { /*(0 == toSend)*/
 					log_error_write(srv, __FILE__, __LINE__, "sbdo", "unexpected EOF (input truncated?):",
-						c->file.name, c->file.fd, offset);
+							c->mem, c->file.fd, offset);
 				}
 				free(data);
 				return -1;
@@ -690,8 +725,16 @@ static int cgi_write_request(server *srv, handler_ctx *hctx, int fd) {
 	return 0;
 }
 
+static struct stat * cgi_stat(server *srv, connection *con, buffer *path, struct stat *st) {
+    /* CGI might be executable even if it is not readable
+     * (stat_cache_get_entry() currently checks file is readable)*/
+    stat_cache_entry *sce;
+    return (HANDLER_ERROR != stat_cache_get_entry(srv, con, path, &sce))
+      ? &sce->st
+      : (0 == stat(path->ptr, st)) ? st : NULL;
+}
+
 static int cgi_create_env(server *srv, connection *con, plugin_data *p, handler_ctx *hctx, buffer *cgi_handler) {
-	char_array env;
 	char *args[3];
 	int to_cgi_fds[2];
 	int from_cgi_fds[2];
@@ -701,7 +744,7 @@ static int cgi_create_env(server *srv, connection *con, plugin_data *p, handler_
 	if (!buffer_string_is_empty(cgi_handler)) {
 		/* stat the exec file */
 		struct stat st;
-		if (-1 == (stat(cgi_handler->ptr, &st))) {
+		if (NULL == cgi_stat(srv, con, cgi_handler, &st)) {
 			log_error_write(srv, __FILE__, __LINE__, "sbss",
 					"stat for cgi-handler", cgi_handler,
 					"failed:", strerror(errno));
@@ -723,38 +766,39 @@ static int cgi_create_env(server *srv, connection *con, plugin_data *p, handler_
 	fdevent_setfd_cloexec(from_cgi_fds[0]);
 
 	{
-		int i = 0;
-		const char *s;
+		size_t i = 0;
 		http_cgi_opts opts = { 0, 0, NULL, NULL };
+		env_accum *env = &p->env;
+		env->used = 0;
+		env->oused = 0;
 
 		/* create environment */
-		env.ptr = NULL;
-		env.size = 0;
-		env.used = 0;
 
-		http_cgi_headers(srv, con, &opts, cgi_env_add, &env);
+		http_cgi_headers(srv, con, &opts, cgi_env_add, env);
 
 		/* for valgrind */
-		if (NULL != (s = getenv("LD_PRELOAD"))) {
-			cgi_env_add(&env, CONST_STR_LEN("LD_PRELOAD"), s, strlen(s));
+		if (p->env.ld_preload) {
+			cgi_env_add(env, CONST_STR_LEN("LD_PRELOAD"), CONST_BUF_LEN(p->env.ld_preload));
 		}
-
-		if (NULL != (s = getenv("LD_LIBRARY_PATH"))) {
-			cgi_env_add(&env, CONST_STR_LEN("LD_LIBRARY_PATH"), s, strlen(s));
+		if (p->env.ld_library_path) {
+			cgi_env_add(env, CONST_STR_LEN("LD_LIBRARY_PATH"), CONST_BUF_LEN(p->env.ld_library_path));
 		}
-#ifdef __CYGWIN__
+	      #ifdef __CYGWIN__
 		/* CYGWIN needs SYSTEMROOT */
-		if (NULL != (s = getenv("SYSTEMROOT"))) {
-			cgi_env_add(&env, CONST_STR_LEN("SYSTEMROOT"), s, strlen(s));
+		if (p->env.systemroot) {
+			cgi_env_add(env, CONST_STR_LEN("SYSTEMROOT"), CONST_BUF_LEN(p->env.systemroot));
 		}
-#endif
+	      #endif
 
-		if (env.size == env.used) {
-			env.size += 16;
-			env.ptr = realloc(env.ptr, env.size * sizeof(*env.ptr));
+		if (env->esize <= env->oused) {
+			env->esize = (env->oused + 1 + 0xf) & ~(0xfuL);
+			env->eptr = realloc(env->eptr, env->esize * sizeof(*env->eptr));
+			force_assert(env->eptr);
 		}
-
-		env.ptr[env.used] = NULL;
+		for (i = 0; i < env->oused; ++i) {
+			env->eptr[i] = env->ptr + env->offsets[i];
+		}
+		env->eptr[env->oused] = NULL;
 
 		/* set up args */
 		i = 0;
@@ -771,10 +815,7 @@ static int cgi_create_env(server *srv, connection *con, plugin_data *p, handler_
 		log_error_write(srv, __FILE__, __LINE__, "ssb", "open dirname failed:", strerror(errno), con->physical.path);
 	}
 
-	hctx->pid = (dfd >= 0) ? fdevent_fork_execve(args[0], args, env.ptr, to_cgi_fds[0], from_cgi_fds[1], -1, dfd) : -1;
-
-	for (size_t i = 0; i < env.used; ++i) free(env.ptr[i]);
-	free(env.ptr);
+	hctx->pid = (dfd >= 0) ? fdevent_fork_execve(args[0], args, p->env.eptr, to_cgi_fds[0], from_cgi_fds[1], -1, dfd) : -1;
 
 	if (-1 == hctx->pid) {
 		/* log error with errno prior to calling close() (might change errno) */
@@ -823,27 +864,10 @@ static int cgi_create_env(server *srv, connection *con, plugin_data *p, handler_
 			cgi_connection_close(srv, hctx);
 			return -1;
 		}
-		fdevent_event_set(srv->ev, &(hctx->fde_ndx), hctx->fd, FDEVENT_IN);
+		fdevent_event_set(srv->ev, &(hctx->fde_ndx), hctx->fd, FDEVENT_IN | FDEVENT_RDHUP);
 
 		return 0;
 	}
-}
-
-static buffer * cgi_get_handler(array *a, buffer *fn) {
-	size_t k, s_len = buffer_string_length(fn);
-	for (k = 0; k < a->used; ++k) {
-		data_string *ds = (data_string *)a->data[k];
-		size_t ct_len = buffer_string_length(ds->key);
-
-		if (buffer_is_empty(ds->key)) continue;
-		if (s_len < ct_len) continue;
-
-		if (0 == strncmp(fn->ptr + s_len - ct_len, ds->key->ptr, ct_len)) {
-			return ds->value;
-		}
-	}
-
-	return NULL;
 }
 
 #define PATCH(x) \
@@ -893,40 +917,34 @@ static int mod_cgi_patch_connection(server *srv, connection *con, plugin_data *p
 
 URIHANDLER_FUNC(cgi_is_handled) {
 	plugin_data *p = p_d;
-	buffer *fn = con->physical.path;
-	stat_cache_entry *sce = NULL;
 	struct stat stbuf;
 	struct stat *st;
-	buffer *cgi_handler;
+	data_string *ds;
 
 	if (con->mode != DIRECT) return HANDLER_GO_ON;
-
-	if (buffer_is_empty(fn)) return HANDLER_GO_ON;
+	if (buffer_is_empty(con->physical.path)) return HANDLER_GO_ON;
 
 	mod_cgi_patch_connection(srv, con, p);
 
-	if (HANDLER_ERROR != stat_cache_get_entry(srv, con, con->physical.path, &sce)) {
-		st = &sce->st;
-	} else {
-		/* CGI might be executable even if it is not readable
-		 * (stat_cache_get_entry() currently checks file is readable)*/
-		if (0 != stat(con->physical.path->ptr, &stbuf)) return HANDLER_GO_ON;
-		st = &stbuf;
-	}
+	ds = (data_string *)array_match_key_suffix(p->conf.cgi, con->physical.path);
+	if (NULL == ds) return HANDLER_GO_ON;
+
+	st = cgi_stat(srv, con, con->physical.path, &stbuf);
+	if (NULL == st) return HANDLER_GO_ON;
 
 	if (!S_ISREG(st->st_mode)) return HANDLER_GO_ON;
 	if (p->conf.execute_x_only == 1 && (st->st_mode & (S_IXUSR | S_IXGRP | S_IXOTH)) == 0) return HANDLER_GO_ON;
 
-	if (NULL != (cgi_handler = cgi_get_handler(p->conf.cgi, fn))) {
+	{
 		handler_ctx *hctx = cgi_handler_ctx_init();
 		hctx->remote_conn = con;
 		hctx->plugin_data = p;
-		hctx->cgi_handler = cgi_handler;
+		hctx->cgi_handler = ds->value;
 		memcpy(&hctx->conf, &p->conf, sizeof(plugin_config));
 		hctx->conf.upgrade =
 		  hctx->conf.upgrade
 		  && con->request.http_version == HTTP_VERSION_1_1
-		  && NULL != array_get_element_klen(con->request.headers, CONST_STR_LEN("Upgrade"));
+		  && NULL != http_header_request_get(con, HTTP_HEADER_UPGRADE, CONST_STR_LEN("Upgrade"));
 		hctx->opts.fdfmt = S_IFIFO;
 		hctx->opts.backend = BACKEND_CGI;
 		hctx->opts.authorizer = 0;

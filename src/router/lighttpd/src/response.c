@@ -1,8 +1,11 @@
 #include "first.h"
 
 #include "response.h"
+#include "base.h"
+#include "burl.h"
 #include "fdevent.h"
-#include "keyvalue.h"
+#include "http_header.h"
+#include "http_kv.h"
 #include "log.h"
 #include "stat_cache.h"
 #include "chunk.h"
@@ -21,96 +24,84 @@
 #include <time.h>
 
 int http_response_write_header(server *srv, connection *con) {
-	buffer *b;
-	size_t i;
-	int have_date = 0;
-	int have_server = 0;
-
-	b = buffer_init();
+	buffer * const b = chunkqueue_prepend_buffer_open(con->write_queue);
 
 	if (con->request.http_version == HTTP_VERSION_1_1) {
 		buffer_copy_string_len(b, CONST_STR_LEN("HTTP/1.1 "));
 	} else {
 		buffer_copy_string_len(b, CONST_STR_LEN("HTTP/1.0 "));
 	}
-	buffer_append_int(b, con->http_status);
-	buffer_append_string_len(b, CONST_STR_LEN(" "));
-	buffer_append_string(b, get_http_status_name(con->http_status));
+	http_status_append(b, con->http_status);
 
 	/* disable keep-alive if requested */
 	if (con->request_count > con->conf.max_keep_alive_requests || 0 == con->conf.max_keep_alive_idle) {
+		con->keep_alive = 0;
+	} else if (0 != con->request.content_length
+		   && con->request.content_length != con->request_content_queue->bytes_in
+		   && (con->mode == DIRECT || 0 == con->conf.stream_request_body)) {
 		con->keep_alive = 0;
 	} else {
 		con->keep_alive_idle = con->conf.max_keep_alive_idle;
 	}
 
-	if ((con->parsed_response & HTTP_UPGRADE) && con->request.http_version == HTTP_VERSION_1_1) {
-		response_header_overwrite(srv, con, CONST_STR_LEN("Connection"), CONST_STR_LEN("upgrade"));
+	if ((con->response.htags & HTTP_HEADER_UPGRADE) && con->request.http_version == HTTP_VERSION_1_1) {
+		http_header_response_set(con, HTTP_HEADER_CONNECTION, CONST_STR_LEN("Connection"), CONST_STR_LEN("upgrade"));
 	} else if (0 == con->keep_alive) {
-		response_header_overwrite(srv, con, CONST_STR_LEN("Connection"), CONST_STR_LEN("close"));
+		http_header_response_set(con, HTTP_HEADER_CONNECTION, CONST_STR_LEN("Connection"), CONST_STR_LEN("close"));
 	} else if (con->request.http_version == HTTP_VERSION_1_0) {/*(&& con->keep_alive != 0)*/
-		response_header_overwrite(srv, con, CONST_STR_LEN("Connection"), CONST_STR_LEN("keep-alive"));
+		http_header_response_set(con, HTTP_HEADER_CONNECTION, CONST_STR_LEN("Connection"), CONST_STR_LEN("keep-alive"));
+	}
+
+	if (304 == con->http_status && (con->response.htags & HTTP_HEADER_CONTENT_ENCODING)) {
+		http_header_response_unset(con, HTTP_HEADER_CONTENT_ENCODING, CONST_STR_LEN("Content-Encoding"));
 	}
 
 	/* add all headers */
-	for (i = 0; i < con->response.headers->used; i++) {
-		data_string *ds;
-
-		ds = (data_string *)con->response.headers->data[i];
+	for (size_t i = 0; i < con->response.headers->used; ++i) {
+		const data_string * const ds = (data_string *)con->response.headers->data[i];
 
 		if (buffer_string_is_empty(ds->value) || buffer_string_is_empty(ds->key)) continue;
-		if (0 == strncasecmp(ds->key->ptr, CONST_STR_LEN("X-Sendfile"))) continue;
-		if (0 == strncasecmp(ds->key->ptr, CONST_STR_LEN("X-LIGHTTPD-"))) {
-			if (0 == strncasecmp(ds->key->ptr+sizeof("X-LIGHTTPD-")-1, CONST_STR_LEN("KBytes-per-second"))) {
-				/* "X-LIGHTTPD-KBytes-per-second" */
-				long limit = strtol(ds->value->ptr, NULL, 10);
-				if (limit > 0
-				    && (limit < con->conf.kbytes_per_second
-				        || 0 == con->conf.kbytes_per_second)) {
-					if (limit > USHRT_MAX) limit= USHRT_MAX;
-					con->conf.kbytes_per_second = limit;
+		if ((ds->key->ptr[0] & 0xdf) == 'X') {
+			if (0 == strncasecmp(ds->key->ptr, CONST_STR_LEN("X-Sendfile"))) continue;
+			if (0 == strncasecmp(ds->key->ptr, CONST_STR_LEN("X-LIGHTTPD-"))) {
+				if (0 == strncasecmp(ds->key->ptr+sizeof("X-LIGHTTPD-")-1, CONST_STR_LEN("KBytes-per-second"))) {
+					/* "X-LIGHTTPD-KBytes-per-second" */
+					long limit = strtol(ds->value->ptr, NULL, 10);
+					if (limit > 0
+					    && (limit < con->conf.kbytes_per_second
+					        || 0 == con->conf.kbytes_per_second)) {
+						if (limit > USHRT_MAX) limit= USHRT_MAX;
+						con->conf.kbytes_per_second = limit;
+					}
 				}
+				continue;
 			}
-			continue;
-		} else {
-			if (0 == strcasecmp(ds->key->ptr, "Date")) have_date = 1;
-			if (0 == strcasecmp(ds->key->ptr, "Server")) have_server = 1;
-			if (0 == strcasecmp(ds->key->ptr, "Content-Encoding") && 304 == con->http_status) continue;
-
-			buffer_append_string_len(b, CONST_STR_LEN("\r\n"));
-			buffer_append_string_buffer(b, ds->key);
-			buffer_append_string_len(b, CONST_STR_LEN(": "));
-#if 0
-			/** 
-			 * the value might contain newlines, encode them with at least one white-space
-			 */
-			buffer_append_string_encoded(b, CONST_BUF_LEN(ds->value), ENCODING_HTTP_HEADER);
-#else
-			buffer_append_string_buffer(b, ds->value);
-#endif
 		}
+
+		buffer_append_string_len(b, CONST_STR_LEN("\r\n"));
+		buffer_append_string_buffer(b, ds->key);
+		buffer_append_string_len(b, CONST_STR_LEN(": "));
+		buffer_append_string_buffer(b, ds->value);
 	}
 
-	if (!have_date) {
+	if (!(con->response.htags & HTTP_HEADER_DATE)) {
 		/* HTTP/1.1 requires a Date: header */
 		buffer_append_string_len(b, CONST_STR_LEN("\r\nDate: "));
 
 		/* cache the generated timestamp */
 		if (srv->cur_ts != srv->last_generated_date_ts) {
-			buffer_string_prepare_copy(srv->ts_date_str, 255);
-
+			buffer_clear(srv->ts_date_str);
 			buffer_append_strftime(srv->ts_date_str, "%a, %d %b %Y %H:%M:%S GMT", gmtime(&(srv->cur_ts)));
-
 			srv->last_generated_date_ts = srv->cur_ts;
 		}
 
 		buffer_append_string_buffer(b, srv->ts_date_str);
 	}
 
-	if (!have_server) {
+	if (!(con->response.htags & HTTP_HEADER_SERVER)) {
 		if (!buffer_string_is_empty(con->conf.server_tag)) {
 			buffer_append_string_len(b, CONST_STR_LEN("\r\nServer: "));
-			buffer_append_string_encoded(b, CONST_BUF_LEN(con->conf.server_tag), ENCODING_HTTP_HEADER);
+			buffer_append_string_len(b, CONST_BUF_LEN(con->conf.server_tag));
 		}
 	}
 
@@ -122,10 +113,151 @@ int http_response_write_header(server *srv, connection *con) {
 		log_error_write(srv, __FILE__, __LINE__, "sSb", "Response-Header:", "\n", b);
 	}
 
-	chunkqueue_prepend_buffer(con->write_queue, b);
-	buffer_free(b);
-
+	chunkqueue_prepend_buffer_commit(con->write_queue);
 	return 0;
+}
+
+static handler_t http_response_physical_path_check(server *srv, connection *con) {
+	stat_cache_entry *sce = NULL;
+
+	if (HANDLER_ERROR != stat_cache_get_entry(srv, con, con->physical.path, &sce)) {
+		/* file exists */
+	} else {
+		char *pathinfo = NULL;
+		switch (errno) {
+		case EACCES:
+			con->http_status = 403;
+
+			if (con->conf.log_request_handling) {
+				log_error_write(srv, __FILE__, __LINE__,  "s",  "-- access denied");
+				log_error_write(srv, __FILE__, __LINE__,  "sb", "Path         :", con->physical.path);
+			}
+
+			buffer_reset(con->physical.path);
+			return HANDLER_FINISHED;
+		case ENAMETOOLONG:
+			/* file name to be read was too long. return 404 */
+		case ENOENT:
+			con->http_status = 404;
+
+			if (con->conf.log_request_handling) {
+				log_error_write(srv, __FILE__, __LINE__,  "s",  "-- file not found");
+				log_error_write(srv, __FILE__, __LINE__,  "sb", "Path         :", con->physical.path);
+			}
+
+			buffer_reset(con->physical.path);
+			return HANDLER_FINISHED;
+		case ENOTDIR:
+			/* PATH_INFO ! :) */
+			break;
+		default:
+			/* we have no idea what happend. let's tell the user so. */
+			con->http_status = 500;
+			buffer_reset(con->physical.path);
+
+			log_error_write(srv, __FILE__, __LINE__, "ssbsb",
+					"file not found ... or so: ", strerror(errno),
+					con->uri.path,
+					"->", con->physical.path);
+
+			return HANDLER_FINISHED;
+		}
+
+		/* not found, perhaps PATHINFO */
+
+		{
+			/*(might check at startup that s->document_root does not end in '/')*/
+			size_t len = buffer_string_length(con->physical.basedir);
+			if (len > 0 && '/' == con->physical.basedir->ptr[len-1]) --len;
+			pathinfo = con->physical.path->ptr + len;
+			if ('/' != *pathinfo) {
+				pathinfo = NULL;
+			}
+			else if (pathinfo == con->physical.path->ptr) { /*(basedir is "/")*/
+				pathinfo = strchr(pathinfo+1, '/');
+			}
+		}
+
+		for (char *pprev = pathinfo; pathinfo; pprev = pathinfo, pathinfo = strchr(pathinfo+1, '/')) {
+			stat_cache_entry *nsce = NULL;
+			buffer_copy_string_len(srv->tmp_buf, con->physical.path->ptr, pathinfo - con->physical.path->ptr);
+			if (HANDLER_ERROR == stat_cache_get_entry(srv, con, srv->tmp_buf, &nsce)) {
+				pathinfo = pathinfo != pprev ? pprev : NULL;
+				break;
+			}
+			sce = nsce;
+			if (!S_ISDIR(sce->st.st_mode)) break;
+		}
+
+		if (NULL == pathinfo || !S_ISREG(sce->st.st_mode)) {
+			/* no it really doesn't exists */
+			con->http_status = 404;
+
+			if (con->conf.log_file_not_found) {
+				log_error_write(srv, __FILE__, __LINE__, "sbsb",
+						"file not found:", con->uri.path,
+						"->", con->physical.path);
+			}
+
+			buffer_reset(con->physical.path);
+
+			return HANDLER_FINISHED;
+		}
+
+		/* we have a PATHINFO */
+		if (pathinfo) {
+			size_t len = strlen(pathinfo), reqlen;
+			if (con->conf.force_lowercase_filenames
+			    && len <= (reqlen = buffer_string_length(con->request.uri))
+			    && 0 == strncasecmp(con->request.uri->ptr + reqlen - len, pathinfo, len)) {
+				/* attempt to preserve case-insensitive PATH_INFO
+				 * (works in common case where mod_alias, mod_magnet, and other modules
+				 *  have not modified the PATH_INFO portion of request URI, or did so
+				 *  with exactly the PATH_INFO desired) */
+				buffer_copy_string_len(con->request.pathinfo, con->request.uri->ptr + reqlen - len, len);
+			} else {
+				buffer_copy_string_len(con->request.pathinfo, pathinfo, len);
+			}
+
+			/*
+			 * shorten uri.path
+			 */
+
+			buffer_string_set_length(con->uri.path, buffer_string_length(con->uri.path) - len);
+			buffer_string_set_length(con->physical.path, (size_t)(pathinfo - con->physical.path->ptr));
+		}
+	}
+
+#ifdef HAVE_LSTAT
+	if ((sce->is_symlink != 0) && !con->conf.follow_symlink) {
+		con->http_status = 403;
+
+		if (con->conf.log_request_handling) {
+			log_error_write(srv, __FILE__, __LINE__,  "s",  "-- access denied due symlink restriction");
+			log_error_write(srv, __FILE__, __LINE__,  "sb", "Path         :", con->physical.path);
+		}
+
+		buffer_reset(con->physical.path);
+		return HANDLER_FINISHED;
+	};
+#endif
+	if (S_ISDIR(sce->st.st_mode)) {
+		if (con->uri.path->ptr[buffer_string_length(con->uri.path) - 1] != '/') {
+			/* redirect to .../ */
+
+			http_response_redirect_to_directory(srv, con);
+
+			return HANDLER_FINISHED;
+		}
+#ifdef HAVE_LSTAT
+	} else if (!S_ISREG(sce->st.st_mode) && !sce->is_symlink) {
+#else
+	} else if (!S_ISREG(sce->st.st_mode)) {
+#endif
+		/* any special handling of non-reg files ?*/
+	}
+
+	return HANDLER_GO_ON;
 }
 
 handler_t http_response_prepare(server *srv, connection *con) {
@@ -136,7 +268,7 @@ handler_t http_response_prepare(server *srv, connection *con) {
 	    (con->http_status != 0 && con->http_status != 200)) {
 		/* remove a packets in the queue */
 		if (con->file_finished == 0) {
-			chunkqueue_reset(con->write_queue);
+			http_response_body_clear(con, 0);
 		}
 
 		return HANDLER_FINISHED;
@@ -144,7 +276,6 @@ handler_t http_response_prepare(server *srv, connection *con) {
 
 	/* no decision yet, build conf->filename */
 	if (con->mode == DIRECT && buffer_is_empty(con->physical.path)) {
-		char *qstr;
 
 		/* we only come here when we have the parse the full request again
 		 *
@@ -158,6 +289,8 @@ handler_t http_response_prepare(server *srv, connection *con) {
 		 *
 		 *  */
 
+	    if (!con->async_callback) {
+
 		config_cond_cache_reset(srv, con);
 		config_setup_connection(srv, con); /* Perhaps this could be removed at other places. */
 
@@ -169,7 +302,7 @@ handler_t http_response_prepare(server *srv, connection *con) {
 		 * prepare strings
 		 *
 		 * - uri.path_raw
-		 * - uri.path (secure)
+		 * - uri.path
 		 * - uri.query
 		 *
 		 */
@@ -194,34 +327,87 @@ handler_t http_response_prepare(server *srv, connection *con) {
 		buffer_copy_buffer(con->uri.authority, con->request.http_host);
 		buffer_to_lower(con->uri.authority);
 
-		/** their might be a fragment which has to be cut away */
-		if (NULL != (qstr = strchr(con->request.uri->ptr, '#'))) {
-			buffer_string_set_length(con->request.uri, qstr - con->request.uri->ptr);
-		}
-
-		/** extract query string from request.uri */
-		if (NULL != (qstr = strchr(con->request.uri->ptr, '?'))) {
-			buffer_copy_string    (con->uri.query, qstr + 1);
-			buffer_copy_string_len(con->uri.path_raw, con->request.uri->ptr, qstr - con->request.uri->ptr);
-		} else {
-			buffer_reset     (con->uri.query);
+		if (con->request.http_method == HTTP_METHOD_CONNECT
+		    || (con->request.http_method == HTTP_METHOD_OPTIONS
+			&& con->request.uri->ptr[0] == '*'
+			&& con->request.uri->ptr[1] == '\0')) {
+			/* CONNECT ... (or) OPTIONS * ... */
 			buffer_copy_buffer(con->uri.path_raw, con->request.uri);
-		}
-
-		/* decode url to path
-		 *
-		 * - decode url-encodings  (e.g. %20 -> ' ')
-		 * - remove path-modifiers (e.g. /../)
-		 */
-
-		if (con->request.http_method == HTTP_METHOD_OPTIONS &&
-		    con->uri.path_raw->ptr[0] == '*' && con->uri.path_raw->ptr[1] == '\0') {
-			/* OPTIONS * ... */
 			buffer_copy_buffer(con->uri.path, con->uri.path_raw);
+			buffer_reset(con->uri.query);
 		} else {
-			buffer_copy_buffer(srv->tmp_buf, con->uri.path_raw);
-			buffer_urldecode_path(srv->tmp_buf);
-			buffer_path_simplify(con->uri.path, srv->tmp_buf);
+			char *qstr;
+			if (con->conf.http_parseopts & HTTP_PARSEOPT_URL_NORMALIZE) {
+				/*size_t len = buffer_string_length(con->request.uri);*/
+				int qs = burl_normalize(con->request.uri, srv->tmp_buf, con->conf.http_parseopts);
+				if (-2 == qs) {
+					log_error_write(srv, __FILE__, __LINE__, "sb",
+							"invalid character in URI -> 400",
+							con->request.uri);
+					con->keep_alive = 0;
+					con->http_status = 400; /* Bad Request */
+					con->file_finished = 1;
+					return HANDLER_FINISHED;
+				}
+				qstr = (-1 == qs) ? NULL : con->request.uri->ptr+qs;
+			      #if 0  /* future: might enable here, or below for all requests */
+				/* (Note: total header size not recalculated on HANDLER_COMEBACK
+				 *  even if other request headers changed during processing)
+				 * (If (0 != con->loops_per_request), then the generated request
+				 *  is too large.  Should a different error be returned?) */
+				con->header_len -= len;
+				len = buffer_string_length(con->request.uri);
+				con->header_len += len;
+				if (len > MAX_HTTP_REQUEST_URI) {
+					con->keep_alive = 0;
+					con->http_status = 414; /* Request-URI Too Long */
+					con->file_finished = 1;
+					return HANDLER_FINISHED;
+				}
+				if (con->header_len > MAX_HTTP_REQUEST_HEADER) {
+					log_error_write(srv, __FILE__, __LINE__, "sds",
+							"request header fields too large:", con->header_len, "-> 431");
+					con->keep_alive = 0;
+					con->http_status = 431; /* Request Header Fields Too Large */
+					con->file_finished = 1;
+					return HANDLER_FINISHED;
+				}
+			      #endif
+			} else {
+				qstr = strchr(con->request.uri->ptr, '#');/* discard fragment */
+				if (qstr) buffer_string_set_length(con->request.uri, qstr - con->request.uri->ptr);
+				qstr = strchr(con->request.uri->ptr, '?');
+			}
+
+			/** extract query string from request.uri */
+			if (NULL != qstr) {
+				const char * const pstr = con->request.uri->ptr;
+				const size_t plen = (size_t)(qstr - pstr);
+				const size_t rlen = buffer_string_length(con->request.uri);
+				buffer_copy_string_len(con->uri.query, qstr + 1, rlen - plen - 1);
+				buffer_copy_string_len(con->uri.path_raw, pstr, plen);
+			} else {
+				buffer_reset(con->uri.query);
+				buffer_copy_buffer(con->uri.path_raw, con->request.uri);
+			}
+
+			/* decode url to path
+			 *
+			 * - decode url-encodings  (e.g. %20 -> ' ')
+			 * - remove path-modifiers (e.g. /../)
+			 */
+
+			buffer_copy_buffer(con->uri.path, con->uri.path_raw);
+			buffer_urldecode_path(con->uri.path);
+			buffer_path_simplify(con->uri.path, con->uri.path);
+			if (buffer_string_is_empty(con->uri.path) || con->uri.path->ptr[0] != '/') {
+				log_error_write(srv, __FILE__, __LINE__, "sbs",
+						"uri-path does not begin with '/':", con->uri.path, "-> 400");
+				con->keep_alive = 0;
+				con->http_status = 400;
+				con->file_finished = 1;
+				return HANDLER_FINISHED;
+			}
 		}
 
 		con->conditional_is_valid[COMP_SERVER_SOCKET] = 1;       /* SERVERsocket */
@@ -260,6 +446,10 @@ handler_t http_response_prepare(server *srv, connection *con) {
 
 			return HANDLER_FINISHED;
 		}
+
+
+	    }
+	    con->async_callback = 0; /* reset */
 
 
 		/**
@@ -305,14 +495,21 @@ handler_t http_response_prepare(server *srv, connection *con) {
 		}
 
 		if (con->request.http_method == HTTP_METHOD_OPTIONS &&
-		    con->uri.path->ptr[0] == '*' && con->uri.path_raw->ptr[1] == '\0') {
+		    con->uri.path->ptr[0] == '*' && con->uri.path->ptr[1] == '\0') {
 			/* option requests are handled directly without checking of the path */
 
-			response_header_insert(srv, con, CONST_STR_LEN("Allow"), CONST_STR_LEN("OPTIONS, GET, HEAD, POST"));
+			http_header_response_append(con, HTTP_HEADER_OTHER, CONST_STR_LEN("Allow"), CONST_STR_LEN("OPTIONS, GET, HEAD, POST"));
 
 			con->http_status = 200;
 			con->file_finished = 1;
 
+			return HANDLER_FINISHED;
+		}
+
+		if (con->request.http_method == HTTP_METHOD_CONNECT && con->mode == DIRECT) {
+			con->keep_alive = 0;
+			con->http_status = 405; /* Method Not Allowed */
+			con->file_finished = 1;
 			return HANDLER_FINISHED;
 		}
 
@@ -422,17 +619,7 @@ handler_t http_response_prepare(server *srv, connection *con) {
 
 		buffer_copy_buffer(con->physical.basedir, con->physical.doc_root);
 		buffer_copy_buffer(con->physical.path, con->physical.doc_root);
-		buffer_append_slash(con->physical.path);
-		if (!buffer_string_is_empty(con->physical.rel_path) &&
-		    con->physical.rel_path->ptr[0] == '/') {
-		      #ifdef __COVERITY__
-			if (buffer_string_length(con->physical.rel_path) < 1) return HANDLER_ERROR;
-		      #endif
-			/* coverity[overflow_sink : FALSE] */
-			buffer_append_string_len(con->physical.path, con->physical.rel_path->ptr + 1, buffer_string_length(con->physical.rel_path) - 1);
-		} else {
-			buffer_append_string_buffer(con->physical.path, con->physical.rel_path);
-		}
+		buffer_append_path_len(con->physical.path, CONST_BUF_LEN(con->physical.rel_path));
 
 		if (con->conf.log_request_handling) {
 			log_error_write(srv, __FILE__, __LINE__,  "s",  "-- after doc_root");
@@ -441,6 +628,13 @@ handler_t http_response_prepare(server *srv, connection *con) {
 			log_error_write(srv, __FILE__, __LINE__,  "sb", "Path         :", con->physical.path);
 		}
 
+		if (con->request.http_method == HTTP_METHOD_CONNECT) {
+			/* do not permit CONNECT requests to hit filesystem hooks
+			 * since the CONNECT URI bypassed path normalization */
+			/* (This check is located here so that con->physical.path
+			 *  is filled in above to avoid repeating work next time
+			 *  http_response_prepare() is called while processing request) */
+		} else
 		switch(r = plugins_call_handle_physical(srv, con)) {
 		case HANDLER_GO_ON:
 			break;
@@ -470,231 +664,39 @@ handler_t http_response_prepare(server *srv, connection *con) {
 	 */
 
 	if (con->mode == DIRECT) {
-		char *slash = NULL;
-		char *pathinfo = NULL;
-		int found = 0;
-		stat_cache_entry *sce = NULL;
-
 		if (con->conf.log_request_handling) {
 			log_error_write(srv, __FILE__, __LINE__,  "s",  "-- handling physical path");
 			log_error_write(srv, __FILE__, __LINE__,  "sb", "Path         :", con->physical.path);
 		}
 
-		if (HANDLER_ERROR != stat_cache_get_entry(srv, con, con->physical.path, &sce)) {
-			/* file exists */
-
-			if (con->conf.log_request_handling) {
-				log_error_write(srv, __FILE__, __LINE__,  "s",  "-- file found");
-				log_error_write(srv, __FILE__, __LINE__,  "sb", "Path         :", con->physical.path);
-			}
-#ifdef HAVE_LSTAT
-			if ((sce->is_symlink != 0) && !con->conf.follow_symlink) {
-				con->http_status = 403;
-
-				if (con->conf.log_request_handling) {
-					log_error_write(srv, __FILE__, __LINE__,  "s",  "-- access denied due symlink restriction");
-					log_error_write(srv, __FILE__, __LINE__,  "sb", "Path         :", con->physical.path);
-				}
-
-				buffer_reset(con->physical.path);
-				return HANDLER_FINISHED;
-			};
-#endif
-			if (S_ISDIR(sce->st.st_mode)) {
-				if (con->uri.path->ptr[buffer_string_length(con->uri.path) - 1] != '/') {
-					/* redirect to .../ */
-
-					http_response_redirect_to_directory(srv, con);
-
-					return HANDLER_FINISHED;
-				}
-#ifdef HAVE_LSTAT
-			} else if (!S_ISREG(sce->st.st_mode) && !sce->is_symlink) {
-#else
-			} else if (!S_ISREG(sce->st.st_mode)) {
-#endif
-				/* any special handling of non-reg files ?*/
-
-
-			}
-		} else {
-			switch (errno) {
-			case EACCES:
-				con->http_status = 403;
-
-				if (con->conf.log_request_handling) {
-					log_error_write(srv, __FILE__, __LINE__,  "s",  "-- access denied");
-					log_error_write(srv, __FILE__, __LINE__,  "sb", "Path         :", con->physical.path);
-				}
-
-				buffer_reset(con->physical.path);
-				return HANDLER_FINISHED;
-			case ENAMETOOLONG:
-				/* file name to be read was too long. return 404 */
-			case ENOENT:
-				con->http_status = 404;
-
-				if (con->conf.log_request_handling) {
-					log_error_write(srv, __FILE__, __LINE__,  "s",  "-- file not found");
-					log_error_write(srv, __FILE__, __LINE__,  "sb", "Path         :", con->physical.path);
-				}
-
-				buffer_reset(con->physical.path);
-				return HANDLER_FINISHED;
-			case ENOTDIR:
-				/* PATH_INFO ! :) */
-				break;
-			default:
-				/* we have no idea what happend. let's tell the user so. */
-				con->http_status = 500;
-				buffer_reset(con->physical.path);
-
-				log_error_write(srv, __FILE__, __LINE__, "ssbsb",
-						"file not found ... or so: ", strerror(errno),
-						con->uri.path,
-						"->", con->physical.path);
-
-				return HANDLER_FINISHED;
-			}
-
-			/* not found, perhaps PATHINFO */
-
-			buffer_copy_buffer(srv->tmp_buf, con->physical.path);
-
-			do {
-				if (slash) {
-					buffer_copy_string_len(con->physical.path, srv->tmp_buf->ptr, slash - srv->tmp_buf->ptr);
-				} else {
-					buffer_copy_buffer(con->physical.path, srv->tmp_buf);
-				}
-
-				if (HANDLER_ERROR != stat_cache_get_entry(srv, con, con->physical.path, &sce)) {
-					found = S_ISREG(sce->st.st_mode);
-					break;
-				}
-
-				if (pathinfo != NULL) {
-					*pathinfo = '\0';
-				}
-				slash = strrchr(srv->tmp_buf->ptr, '/');
-
-				if (pathinfo != NULL) {
-					/* restore '/' */
-					*pathinfo = '/';
-				}
-
-				if (slash) pathinfo = slash;
-			} while ((found == 0) && (slash != NULL) && ((size_t)(slash - srv->tmp_buf->ptr) > (buffer_string_length(con->physical.basedir) - 1)));
-
-			if (found == 0) {
-				/* no it really doesn't exists */
-				con->http_status = 404;
-
-				if (con->conf.log_file_not_found) {
-					log_error_write(srv, __FILE__, __LINE__, "sbsb",
-							"file not found:", con->uri.path,
-							"->", con->physical.path);
-				}
-
-				buffer_reset(con->physical.path);
-
-				return HANDLER_FINISHED;
-			}
-
-#ifdef HAVE_LSTAT
-			if ((sce->is_symlink != 0) && !con->conf.follow_symlink) {
-				con->http_status = 403;
-
-				if (con->conf.log_request_handling) {
-					log_error_write(srv, __FILE__, __LINE__,  "s",  "-- access denied due symlink restriction");
-					log_error_write(srv, __FILE__, __LINE__,  "sb", "Path         :", con->physical.path);
-				}
-
-				buffer_reset(con->physical.path);
-				return HANDLER_FINISHED;
-			};
-#endif
-
-			/* we have a PATHINFO */
-			if (pathinfo) {
-				size_t len = strlen(pathinfo), reqlen;
-				if (con->conf.force_lowercase_filenames
-				    && len <= (reqlen = buffer_string_length(con->request.uri))
-				    && 0 == strncasecmp(con->request.uri->ptr + reqlen - len, pathinfo, len)) {
-					/* attempt to preserve case-insensitive PATH_INFO
-					 * (works in common case where mod_alias, mod_magnet, and other modules
-					 *  have not modified the PATH_INFO portion of request URI, or did so
-					 *  with exactly the PATH_INFO desired) */
-					buffer_copy_string_len(con->request.pathinfo, con->request.uri->ptr + reqlen - len, len);
-				} else {
-					buffer_copy_string_len(con->request.pathinfo, pathinfo, len);
-				}
-
-				/*
-				 * shorten uri.path
-				 */
-
-				buffer_string_set_length(con->uri.path, buffer_string_length(con->uri.path) - len);
-			}
-
-			if (con->conf.log_request_handling) {
-				log_error_write(srv, __FILE__, __LINE__,  "s",  "-- after pathinfo check");
-				log_error_write(srv, __FILE__, __LINE__,  "sb", "Path         :", con->physical.path);
-				log_error_write(srv, __FILE__, __LINE__,  "sb", "URI          :", con->uri.path);
-				log_error_write(srv, __FILE__, __LINE__,  "sb", "Pathinfo     :", con->request.pathinfo);
-			}
-		}
+		r = http_response_physical_path_check(srv, con);
+		if (HANDLER_GO_ON != r) return r;
 
 		if (con->conf.log_request_handling) {
 			log_error_write(srv, __FILE__, __LINE__,  "s",  "-- handling subrequest");
 			log_error_write(srv, __FILE__, __LINE__,  "sb", "Path         :", con->physical.path);
+			log_error_write(srv, __FILE__, __LINE__,  "sb", "URI          :", con->uri.path);
+			log_error_write(srv, __FILE__, __LINE__,  "sb", "Pathinfo     :", con->request.pathinfo);
 		}
 
 		/* call the handlers */
-		switch(r = plugins_call_handle_subrequest_start(srv, con)) {
-		case HANDLER_GO_ON:
-			/* request was not handled */
-			break;
-		case HANDLER_FINISHED:
-		default:
+		r = plugins_call_handle_subrequest_start(srv, con);
+		if (HANDLER_GO_ON != r) {
 			if (con->conf.log_request_handling) {
 				log_error_write(srv, __FILE__, __LINE__,  "s",  "-- subrequest finished");
 			}
-
-			/* something strange happend */
 			return r;
 		}
 
 		/* if we are still here, no one wanted the file, status 403 is ok I think */
-
 		if (con->mode == DIRECT && con->http_status == 0) {
-			switch (con->request.http_method) {
-			case HTTP_METHOD_OPTIONS:
-				con->http_status = 200;
-				break;
-			default:
-				con->http_status = 403;
-			}
-
+			con->http_status = (con->request.http_method != HTTP_METHOD_OPTIONS) ? 403 : 200;
 			return HANDLER_FINISHED;
 		}
 
 	}
 
-	switch(r = plugins_call_handle_subrequest(srv, con)) {
-	case HANDLER_GO_ON:
-		/* request was not handled, looks like we are done */
-		return HANDLER_FINISHED;
-	case HANDLER_FINISHED:
-		/* request is finished */
-	default:
-		/* something strange happend */
-		return r;
-	}
-
-	/* can't happen */
-	return HANDLER_COMEBACK;
+	r = plugins_call_handle_subrequest(srv, con);
+	if (HANDLER_GO_ON == r) r = HANDLER_FINISHED; /* request was not handled, looks like we are done */
+	return r;
 }
-
-
-

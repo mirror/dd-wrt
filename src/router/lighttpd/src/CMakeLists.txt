@@ -18,6 +18,7 @@ option(WITH_MYSQL "with mysql-support for mod_vhostdb_mysql [default: off]")
 option(WITH_PGSQL "with postgres-support for mod_vhostdb_pgsql [default: off]")
 option(WITH_DBI "with dbi-support for mod_vhostdb_dbi [default: off]")
 option(WITH_OPENSSL "with openssl-support [default: off]")
+option(WITH_WOLFSSL "with wolfSSL-support [default: off]")
 option(WITH_PCRE "with regex support [default: on]" ON)
 option(WITH_WEBDAV_PROPS "with property-support for mod_webdav [default: off]")
 option(WITH_WEBDAV_LOCKS "locks in webdav [default: off]")
@@ -25,6 +26,7 @@ option(WITH_BZIP "with bzip2-support for mod_compress [default: off]")
 option(WITH_ZLIB "with deflate-support for mod_compress [default: on]" ON)
 option(WITH_KRB5 "with Kerberos5-support for mod_auth [default: off]")
 option(WITH_LDAP "with LDAP-support for mod_auth mod_vhostdb_ldap [default: off]")
+option(WITH_PAM "with PAM-support for mod_auth [default: off]")
 option(WITH_LUA "with lua 5.1 for mod_magnet [default: off]")
 # option(WITH_VALGRIND "with internal support for valgrind [default: off]")
 option(WITH_FAM "fam/gamin for reducing number of stat() calls [default: off]")
@@ -279,6 +281,8 @@ else()
 	unset(HAVE_DBI)
 endif()
 
+set(CRYPTO_LIBRARY "")
+
 if(WITH_OPENSSL)
 	if(APPLE)
 		set(CMAKE_REQUIRED_INCLUDES /opt/local/include)
@@ -290,13 +294,70 @@ if(WITH_OPENSSL)
 	if(HAVE_OPENSSL_SSL_H)
 		check_library_exists(crypto BIO_f_base64 "" HAVE_LIBCRYPTO)
 		if(HAVE_LIBCRYPTO)
+			set(CRYPTO_LIBRARY crypto)
 			check_library_exists(ssl SSL_new "" HAVE_LIBSSL)
 		endif()
 	endif()
 else()
 	unset(HAVE_OPENSSL_SSL_H)
-	unset(HAVE_LIBCRYPTO)
 	unset(HAVE_LIBSSL)
+endif()
+
+if(WITH_WOLFSSL)
+	if(NOT ${WITH_WOLFSSL} EQUAL "")
+		find_path(WOLFSSL_INCLUDE_DIR wolfssl/ssl.h ${WITH_WOLFSSL}/include)
+	elseif(APPLE)
+		find_path(WOLFSSL_INCLUDE_DIR wolfssl/ssl.h /opt/local/include)
+	else()
+		find_path(WOLFSSL_INCLUDE_DIR wolfssl/ssl.h /usr/local/include)
+	endif()
+
+	if(NOT ${WITH_WOLFSSL} EQUAL "")
+		find_library(WOLFSSL_LIBRARY
+			NAMES wolfssl
+			PATHS ${WITH_WOLFSSL}/lib
+		)
+	else()
+		find_library(WOLFSSL_LIBRARY
+			NAMES wolfssl
+			PATHS /usr/local/lib /opt/local/lib /usr/lib
+		)
+	endif()
+
+	if(WOLFSSL_INCLUDE_DIR AND WOLFSSL_LIBRARY)
+		set(CMAKE_REQUIRED_INCLUDES ${WOLFSSL_INCLUDE_DIR})
+		check_include_files(wolfssl/ssl.h HAVE_WOLFSSL_SSL_H)
+
+		check_c_source_compiles("
+		#include <wolfssl/options.h>
+		#if !defined(HAVE_LIGHTY) && !defined(OPENSSL_ALL)
+		#error HAVE_LIGHTY macro not defined
+		#endif
+		int main() { return 0; }
+		" CHECK_HAVE_LIGHTY)
+		if (NOT CHECK_HAVE_LIGHTY)
+			message(FATAL_ERROR "wolfssl must be built with ./configure --enable-lighty")
+		endif()
+		unset(CHECK_HAVE_LIGHTY)
+
+		set(CMAKE_REQUIRED_LIBRARIES ${WOLFSSL_LIBRARY})
+		check_library_exists(${WOLFSSL_LIBRARY} wolfSSL_Init "" HAVE_LIBCRYPTO)
+		if(HAVE_LIBCRYPTO)
+			set(CRYPTO_LIBRARY ${WOLFSSL_LIBRARY})
+			add_definitions(-DHAVE_WOLFSSL_SSL_H)
+		endif()
+		set(CMAKE_REQUIRED_INCLUDES)
+		set(CMAKE_REQUIRED_LIBRARIES)
+		include_directories(${WOLFSSL_INCLUDE_DIR} ${WOLFSSL_INCLUDE_DIR}/wolfssl)
+	endif()
+	unset(WOLFSSL_LIBRARY)
+	unset(WOLFSSL_INCLUDE_DIR)
+else()
+	unset(HAVE_WOLFSSL_SSL_H)
+endif()
+
+if(WITH_OPENSSL AND WITH_WOLFSSL)
+	message(FATAL_ERROR "lighttpd should not be built with both --with-openssl and --with-wolfssl")
 endif()
 
 if(WITH_PCRE)
@@ -469,6 +530,14 @@ else()
 	unset(HAVE_LIBLBER)
 endif()
 
+if(WITH_PAM)
+	check_include_files(security/pam_appl.h HAVE_SECURITY_PAM_APPL_H)
+	check_library_exists(pam pam_start "" HAVE_PAM)
+else()
+	unset(HAVE_SECURITY_PAM_APPL_H)
+	unset(HAVE_PAM)
+endif()
+
 if(WITH_LUA)
 	pkg_search_module(LUA REQUIRED lua5.3 lua-5.3 lua5.2 lua-5.2 lua5.1 lua-5.1 lua)
 	message(STATUS "found lua at: INCDIR: ${LUA_INCLUDE_DIRS} LIBDIR: ${LUA_LIBRARY_DIRS} LDFLAGS: ${LUA_LDFLAGS} CFLAGS: ${LUA_CFLAGS}")
@@ -553,8 +622,8 @@ add_definitions(-DHAVE_CONFIG_H)
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(COMMON_SRC
-	base64.c buffer.c log.c
-	keyvalue.c chunk.c
+	base64.c buffer.c burl.c log.c
+	http_header.c http_kv.c keyvalue.c chunk.c
 	http_chunk.c stream.c fdevent.c gw_backend.c
 	stat_cache.c plugin.c joblist.c etag.c array.c
 	data_string.c data_array.c
@@ -571,10 +640,11 @@ set(COMMON_SRC
 	http-header-glue.c
 	http_auth.c
 	http_vhostdb.c
+	request.c
 	sock_addr.c
 	splaytree.c
 	rand.c
-	status_counter.c safe_memclear.c
+	safe_memclear.c
 )
 
 if(WIN32)
@@ -603,8 +673,6 @@ add_executable(lighttpd
 	network_write.c
 	configfile.c
 	configparser.c
-	request.c
-	proc_open.c
 	${COMMON_SRC}
 )
 set(L_INSTALL_TARGETS ${L_INSTALL_TARGETS} lighttpd)
@@ -635,6 +703,7 @@ add_and_install_library(mod_scgi mod_scgi.c)
 add_and_install_library(mod_secdownload mod_secdownload.c)
 add_and_install_library(mod_setenv mod_setenv.c)
 add_and_install_library(mod_simple_vhost mod_simple_vhost.c)
+add_and_install_library(mod_sockproxy mod_sockproxy.c)
 add_and_install_library(mod_ssi "mod_ssi_exprparser.c;mod_ssi_expr.c;mod_ssi.c")
 add_and_install_library(mod_staticfile mod_staticfile.c)
 add_and_install_library(mod_status mod_status.c)
@@ -645,30 +714,125 @@ add_and_install_library(mod_vhostdb mod_vhostdb.c)
 add_and_install_library(mod_webdav mod_webdav.c)
 add_and_install_library(mod_wstunnel mod_wstunnel.c)
 
+add_executable(test_array
+	t/test_array.c
+	array.c
+	data_array.c
+	data_integer.c
+	data_string.c
+	buffer.c
+)
+add_test(NAME test_array COMMAND test_array)
+
 add_executable(test_buffer
-	test_buffer.c
+	t/test_buffer.c
 	buffer.c
 )
 add_test(NAME test_buffer COMMAND test_buffer)
 
+add_executable(test_burl
+	t/test_burl.c
+	burl.c
+	buffer.c
+	base64.c
+)
+add_test(NAME test_burl COMMAND test_burl)
+
 add_executable(test_base64
-	test_base64.c
+	t/test_base64.c
 	buffer.c
 	base64.c
 )
 add_test(NAME test_base64 COMMAND test_base64)
 
 add_executable(test_configfile
-	test_configfile.c
+	t/test_configfile.c
 	buffer.c
 	array.c
+	data_config.c
+	data_integer.c
 	data_string.c
-	keyvalue.c
+	http_header.c
+	http_kv.c
 	vector.c
 	log.c
 	sock_addr.c
 )
 add_test(NAME test_configfile COMMAND test_configfile)
+
+add_executable(test_keyvalue
+	t/test_keyvalue.c
+	burl.c
+	buffer.c
+	base64.c
+	array.c
+	data_integer.c
+	data_string.c
+	log.c
+)
+add_test(NAME test_keyvalue COMMAND test_keyvalue)
+
+add_executable(test_mod_access
+	t/test_mod_access.c
+	configfile-glue.c
+	buffer.c
+	array.c
+	data_config.c
+	data_integer.c
+	data_string.c
+	http_header.c
+	http_kv.c
+	vector.c
+	log.c
+	sock_addr.c
+)
+add_test(NAME test_mod_access COMMAND test_mod_access)
+
+add_executable(test_mod_evhost
+	t/test_mod_evhost.c
+	configfile-glue.c
+	buffer.c
+	array.c
+	data_config.c
+	data_integer.c
+	data_string.c
+	http_header.c
+	http_kv.c
+	vector.c
+	log.c
+	sock_addr.c
+)
+add_test(NAME test_mod_evhost COMMAND test_mod_evhost)
+
+add_executable(test_mod_simple_vhost
+	t/test_mod_simple_vhost.c
+	configfile-glue.c
+	buffer.c
+	array.c
+	data_config.c
+	data_integer.c
+	data_string.c
+	http_header.c
+	http_kv.c
+	vector.c
+	log.c
+	sock_addr.c
+)
+add_test(NAME test_mod_simple_vhost COMMAND test_mod_simple_vhost)
+
+add_executable(test_request
+	t/test_request.c
+	request.c
+	buffer.c
+	array.c
+	data_integer.c
+	data_string.c
+	http_header.c
+	http_kv.c
+	log.c
+	sock_addr.c
+)
+add_test(NAME test_request COMMAND test_request)
 
 if(HAVE_PCRE_H)
 	target_link_libraries(lighttpd ${PCRE_LDFLAGS})
@@ -681,6 +845,14 @@ if(HAVE_PCRE_H)
 	add_target_properties(mod_redirect COMPILE_FLAGS ${PCRE_CFLAGS})
 	target_link_libraries(test_configfile ${PCRE_LDFLAGS})
 	add_target_properties(test_configfile COMPILE_FLAGS ${PCRE_CFLAGS})
+	target_link_libraries(test_keyvalue ${PCRE_LDFLAGS})
+	add_target_properties(test_keyvalue COMPILE_FLAGS ${PCRE_CFLAGS})
+	target_link_libraries(test_mod_access ${PCRE_LDFLAGS})
+	add_target_properties(test_mod_access COMPILE_FLAGS ${PCRE_CFLAGS})
+	target_link_libraries(test_mod_evhost ${PCRE_LDFLAGS})
+	add_target_properties(test_mod_evhost COMPILE_FLAGS ${PCRE_CFLAGS})
+	target_link_libraries(test_mod_simple_vhost ${PCRE_LDFLAGS})
+	add_target_properties(test_mod_simple_vhost COMPILE_FLAGS ${PCRE_CFLAGS})
 endif()
 
 if(WITH_PCRE AND (WITH_MEMCACHED OR WITH_GDBM))
@@ -768,6 +940,12 @@ if(WITH_LDAP)
 	target_link_libraries(mod_vhostdb_ldap ${L_MOD_AUTHN_LDAP})
 endif()
 
+if(WITH_PAM)
+	add_and_install_library(mod_authn_pam "mod_authn_pam.c")
+	set(L_MOD_AUTHN_PAM ${L_MOD_AUTHN_PAM} pam)
+	target_link_libraries(mod_authn_pam ${L_MOD_AUTHN_PAM})
+endif()
+
 if(WITH_SASL)
 	add_and_install_library(mod_authn_sasl "mod_authn_sasl.c")
 	set(L_MOD_AUTHN_SASL ${L_MOD_AUTHN_SASL} sasl2)
@@ -836,16 +1014,21 @@ if(NOT BUILD_STATIC)
 	endif()
 endif()
 
-if(HAVE_LIBSSL AND HAVE_LIBCRYPTO)
-	target_link_libraries(lighttpd ssl)
-	target_link_libraries(lighttpd crypto)
+if(NOT ${CRYPTO_LIBRARY} EQUAL "")
+	if(NOT WITH_WOLFSSL)
+		target_link_libraries(lighttpd ssl)
+	endif()
+	target_link_libraries(lighttpd ${CRYPTO_LIBRARY})
 	add_and_install_library(mod_openssl "mod_openssl.c")
-	set(L_MOD_OPENSSL ${L_MOD_OPENSSL} ssl crypto)
+	if(NOT WITH_WOLFSSL)
+		set(L_MOD_OPENSSL ${L_MOD_OPENSSL} ssl)
+	endif()
+	set(L_MOD_OPENSSL ${L_MOD_OPENSSL} ${CRYPTO_LIBRARY})
 	target_link_libraries(mod_openssl ${L_MOD_OPENSSL})
-	set(L_MOD_AUTHN_FILE ${L_MOD_AUTHN_FILE} crypto)
+	set(L_MOD_AUTHN_FILE ${L_MOD_AUTHN_FILE} ${CRYPTO_LIBRARY})
 	target_link_libraries(mod_authn_file ${L_MOD_AUTHN_FILE})
-	target_link_libraries(mod_secdownload crypto)
-	target_link_libraries(mod_wstunnel crypto)
+	target_link_libraries(mod_secdownload ${CRYPTO_LIBRARY})
+	target_link_libraries(mod_wstunnel ${CRYPTO_LIBRARY})
 endif()
 
 if(WITH_LIBEV)
@@ -857,12 +1040,26 @@ if(WITH_LIBUNWIND)
 	target_link_libraries(lighttpd ${LIBUNWIND_LDFLAGS})
 	add_target_properties(lighttpd COMPILE_FLAGS ${LIBUNWIND_CFLAGS})
 
+	target_link_libraries(test_array ${LIBUNWIND_LDFLAGS})
+	add_target_properties(test_array COMPILE_FLAGS ${LIBUNWIND_CFLAGS})
 	target_link_libraries(test_buffer ${LIBUNWIND_LDFLAGS})
 	add_target_properties(test_buffer COMPILE_FLAGS ${LIBUNWIND_CFLAGS})
+	target_link_libraries(test_burl ${LIBUNWIND_LDFLAGS})
+	add_target_properties(test_burl COMPILE_FLAGS ${LIBUNWIND_CFLAGS})
 	target_link_libraries(test_base64 ${LIBUNWIND_LDFLAGS})
 	add_target_properties(test_base64 COMPILE_FLAGS ${LIBUNWIND_CFLAGS})
 	target_link_libraries(test_configfile ${PCRE_LDFLAGS} ${LIBUNWIND_LDFLAGS})
 	add_target_properties(test_configfile COMPILE_FLAGS ${PCRE_CFLAGS} ${LIBUNWIND_CFLAGS})
+	target_link_libraries(test_keyvalue ${PCRE_LDFLAGS} ${LIBUNWIND_LDFLAGS})
+	add_target_properties(test_keyvalue COMPILE_FLAGS ${PCRE_CFLAGS} ${LIBUNWIND_CFLAGS})
+	target_link_libraries(test_mod_access ${PCRE_LDFLAGS} ${LIBUNWIND_LDFLAGS})
+	add_target_properties(test_mod_access COMPILE_FLAGS ${PCRE_CFLAGS} ${LIBUNWIND_CFLAGS})
+	target_link_libraries(test_mod_evhost ${PCRE_LDFLAGS} ${LIBUNWIND_LDFLAGS})
+	add_target_properties(test_mod_evhost COMPILE_FLAGS ${PCRE_CFLAGS} ${LIBUNWIND_CFLAGS})
+	target_link_libraries(test_mod_simple_vhost ${PCRE_LDFLAGS} ${LIBUNWIND_LDFLAGS})
+	add_target_properties(test_mod_simple_vhost COMPILE_FLAGS ${PCRE_CFLAGS} ${LIBUNWIND_CFLAGS})
+	target_link_libraries(test_request ${LIBUNWIND_LDFLAGS})
+	add_target_properties(test_request COMPILE_FLAGS ${LIBUNWIND_CFLAGS})
 endif()
 
 if(NOT WIN32)

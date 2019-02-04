@@ -3,7 +3,295 @@
 NEWS
 ====
 
-- 1.4.48
+- 1.4.53 - 2019-01-27
+  * [mod_cml,mod_flv_streaming] fix NULL ptr deref
+  * [mod_simple_vhost] t/test_mod_simple_vhost
+  * [mod_evhost] split uri handler func for testing
+  * [mod_evhost] restructure for unit tests
+  * [mod_evhost] t/test_mod_evhost
+  * [mod_access] restructure for unit tests
+  * [mod_access] t/test_mod_access
+  * [tests] include first.h and NDEBUG early
+  * [core] use kill_signal for gw_proc_kill()
+  * [tests] t/test_keyvalue
+  * [tests] some test config cleanup
+  * [tests] update skip count in mod-fastcgi.t
+  * [multiple] reduce initial buffer sz if large POST (fixes #2922)
+  * [mod_fastcgi] fix NULL ptr deref from bugfix #2922 (fixes #2923)
+  * [tests] more test config cleanup
+  * [core] perf: incremental hash of pathname w/o copy
+  * [core] perf: reuse buffer to redirect to directory
+  * [core] do not free() reused buffer
+  * [core] use connected sock port in dir redirect
+  * [core] http_response_buffer_append_authority()
+  * [core] use con->server_name for dir redir
+  * [core] memeq compare rounded to 64, not next 1M
+  * [core] define MD5_DIGEST_LENGTH 16
+  * [mod_auth] permit additional auth backends to load
+  * [core] send Connection: close if reqbody not read (fixes #2924)
+  * [core] cache rev DNS for localhost for dir redir
+  * [doc/conf] resolve some mime type conflicts from debian buster, regenerate mime.conf
+  * [core] move winsock init to network_init()
+  * [core] move /dev/stdin graceful restart handling
+  * [core] network_srv_sockets_append() shared code
+  * [core] systemd socket activation support
+  * [build] autotools: try mysqlclient.pc and mariadb.pc (fixes #2925)
+  * [mod_expire] look up expire fallback "" explicitly
+  * [multiple] calloc match ptr type (clang --analyze)
+  * [multiple] quiet clang --analyze where trivial
+  * [mod_webdav] compare COPY, MOVE Destination scheme
+  * [core] con->uri.scheme is maintained lowercase
+  * [mod_openssl] ALPN and acme-tls/1 (fixes #2931)
+  * [core] Fix recursive include_shell invocations
+  * [mod_openssl] ssl.privkey directive (optional)
+
+- 1.4.52 - 2018-11-28
+  * [mysql] MySQL 8 deprecates my_bool
+  * [core] typo in trace
+  * [build] Fix unportable test(1) operator
+  * [core] perf: call connection_reset() fewer times
+  * [core] perf: array_reset_data_strings()
+  * [core] perf: buffer_free_ptr() __attribute__ cold
+  * [core] perf: one-element cache for host normalize
+  * [core] perf: buffer_copy_string_len()
+  * [core] perf: skip redundant prepare copy calls
+  * [core] perf: buffer_align_size() identity if align
+  * [core] perf: size write buffers for reuse
+  * [core] perf: prepend headers directly into write q
+  * [core] perf: copy small strings; better buf reuse
+  * [core] perf: copy small strings; extend last chunk
+  * [core] perf: specialized func for array sorting
+  * [core] perf: append response directly into write q
+  * [core] perf: better buf reuse reading from backend
+  * [core] chunk.c code reuse
+  * [multiple] perf: write headers to backend write cq
+  * [multiple] perf: power-2 alloc large headers
+  * [multiple] perf: use larger initial backend buffer
+  * [core] permit env vars to be set with blank value
+  * [mod_fastcgi] perf: reduce data copies
+  * [mod_fastcgi] perf: reduce data copies
+  * [core] perf: chunk.c chunk pool
+  * [multiple] perf: reuse large buffers w/ backend
+  * [multiple] better packing of struct chunk
+  * [core] perf: inline buffer_append_string_buffer()
+  * [core] slightly simpler flag append to string
+  * [mod_cgi] perf: reuse buffers for creating CGI env
+  * [mod_fastcgi,mod_scgi] perf: env accumulation
+  * [core] Don't call RAND_cleanup with OpenSSL 1.1.x
+  * [mod_openssl] move SSL_shutdown() to separate func
+  * [mod_openssl] SSL_read before second SSL_shutdown
+  * [mod_cgi] perf: use stat_cache for cgi handler
+  * [mod_openssl] prefer using TLS_server_method()
+  * [mod_webdav] return 403 if file should exist
+  * [core] perf: chunkqueue buffers already sized up
+  * [core] perf: simpler buffer_string_space()
+  * [multiple] dynamic handlers hint backend header sz
+  * [core] use chunk_buf_sz instead of hard-coded num
+  * [multiple] perf: simplify chunkqueue_get_memory()
+  * [mod_wstunnel] perf: reuse large buffers
+  * [mod_cgi] perf: cache getenv() results at start up
+  * [core] fix 301 -> 302 overwrite with Location (fixes #2918)
+  * [core] fix setting of headers previously reset (fixes #2919)
+  * [mod_webdav] quiet coverity false positive
+  * [core] server.compat-module-load = "disable"
+  * [core] server.chunkqueue-chunk-sz = 4096
+  * [core] perf: simpler buffer_string_space() (fixed)
+  * [core] perf: faster HTTP pipelined requests
+  * [core] perf: simpler buffer_string_space() (tests)
+  * [mod_cgi] reset reused buffer on internal redir
+  * [core] clear chunk buffer upon release
+  * [mod_fastcgi] minor: copy packet without padding
+  * [mod_redirect,mod_rewrite] use server_name
+  * [mod_fastcgi] transfer chunks minus packet padding
+  * [core] separate func to reset FILE_CHUNK
+  * [core] perf: simple, quick buffer_clear()
+  * [core] perf: small improvement to encoding CGI var
+  * [core] perf: small improvement buffer_string_space
+  * [core] simpler physical path concatenation
+  * [mod_webdav] fix LOCK on incorrect URI path
+  * [mod_webdav] one fewer buffer copy for COPY,MOVE
+  * [core] perf: simplify buffer_move()
+  * [mod_cml] parse query string without modifying it
+  * [core] perf: buffer optimizations
+  * [mod_wstunnel] use buffer_string_length()
+  * [core] perf: inline buffer_copy_buffer()
+  * [core] cygwin helper func for getcwd
+  * [core] cygwin sample to run lighttpd under NSSM
+  * [core] limit con->uri.authority < 1024 octets
+  * [mod_webdav] separate func for each request method
+  * [core] reject decoded url-path without leading '/'
+  * [multiple] validate UTF-8 in url-decoded paths
+  * [mod_proxy] silence coverity false positive
+  * [core] fix typo
+  * [core] buffer_append_path_len()
+  * [core] quiet indexfile warning if mod not loaded
+
+- 1.4.51 - 2018-10-14
+  * [core] split parsing header line into separate function
+  * [core] explicitly return 0 instead of constant result
+  * [core] header parsing: use goto for error handling
+  * [core,security] process headers after combining folded headers
+  * [core] replace folding whitespace with a single space
+  * [buffer] fix duplicate assert and comment
+  * [core] redo HTTP header line folding
+  * [core] parse header line strings before copying
+  * [core] abstraction to insert/modify response hdrs
+  * [core] code reuse with array_insert_key_value()
+  * [core] simplify parsing hdr key whitespace then :
+  * [core] http_request_parse_reqline() separate func
+  * [core] abstraction layer for HTTP header manip
+  * [core] code reuse with http_response_body_clear()
+  * [mod_proxy] fix proxy.forwarded and proxy.replace-http-host (fixes #2902)
+  * [mod_rewrite] fix url.rewrite-repeat and url.rewrite-if-not-file (fixes #2908)
+  * [core] fastcgi.h link to Open Market License (OML) (fixes #2901)
+  * [mod_proxy,mod_wstunnel] copy full plugin_config (fixes #2903)
+  * [mod_fastcgi,mod_scgi] error on oversized request (fixes #2905)
+  * [mod_auth] send 401 for mismatch HTTP auth scheme (fixes #2906)
+  * [core] code reuse array_match_*() routines
+  * [mod_skeleton] review and simplify
+  * [multiple] code reuse: employ array_match_*()
+  * [doc] lighttpd.service uses network-online.target
+  * [mod_flv_streaming] code simplifications
+  * [mod_authn_pam] mod_auth PAM support (fixes #688)
+  * [mod_sockproxy] add to build
+  * [core] fix include_shell on inline shell commands (fixes #2910)
+  * [multiple] code reuse: using array_*() funcs
+  * [tests] t/test_array.c
+  * [core] array_get_int_ptr()
+  * [core] more memory-efficient fn table for data_*
+  * [tests] #undef NDEBUG before assert.h in t/test_*
+  * [core] inline status_counter routines
+  * [core] log_failed_assert() __attribute__((cold))
+  * [core] http_status_append()
+  * [core] http_method_append()
+  * [core] prefer buffer_append_string_len()
+  * [build] fix SCons build for mod_authn_pam
+  * [mod_userdir] security: skip username "." and ".."
+  * [mod_deflate] null-check to quiet coverity warning
+  * [core] quiet coverity false positive
+  * [multiple] quiet compiler warnings --without-pcre
+  * [mod_secdownload] support if HMAC() is a macro
+  * [TLS] sys-crypto.h abstraction
+  * [TLS] sys-crypto.h abstraction
+  * [build] put request.c in common src
+  * [meson] build fixes for libmariadb and libsasl2
+  * [core] PATH_INFO calculation when basedir is "/" (fixes #2911)
+  * [core] better consistency in buffer_is_equal*()
+  * [core] fix missing param from prev commit
+  * [mod_openssl] no renegotiation in TLS 1.3 (fixes #2912)
+  * [core] reject Transfer-Encoding from proxy (#2913)
+  * [mod_auth] use SHA1_Init,Update,Final
+  * [mod_openssl] add support for wolfSSL
+  * [build] automake support for wolfSSL
+  * [build] SCons support for wolfSSL
+  * [build] meson support for wolfSSL
+  * [build] CMake support for wolfSSL
+  * [core] perf: buffer.c internal inlines
+  * [mod_openssl] wolfSSL does not support SSLv2
+  * [core] perf: buffer_string_append_len()
+  * [core] permit server.error_handler to static file
+
+- 1.4.50 - 2018-08-13
+  * [mod_extforward] allow explict IPs to be untrusted (#2860)
+  * [core] fix crash if 'host' empty in config (fixes #2876)
+  * [mod_magnet] fix regression in lighty.stat (fixes #2877)
+  * [core] minor code cleanup in gw_recv_response()
+  * [core] fix rare race condition from backends (fixes #2878)
+  * [mod_proxy] fix segfault in Set-Cookie reverse map (fixes #2879)
+  * [core] fdevent_accept_listenfd() nonblock cloexec
+  * [build] remove m4 AC_PATH_PROG for PKG_CONFIG
+  * [core] some header cleanup
+  * [mod_wstunnel] better Sec-WebSocket-Protocol parse
+  * [mod_magnet] code reuse
+  * [mod_magnet] reduce buffer copies
+  * [mod_fastcgi,mod_scgi] fastcgi.balance,scgi.balance (fixes #2882)
+  * [core] check if SOCK_NONBLOCK is ignored (fixes #2883)
+  * [core] buffer_append_string_encoded_hex_lc()
+  * [core] more efficient hex2int()
+  * [mod_secdownload] compare bin MAC instead of hex
+  * [core] li_tohex_lc() explicitly uses lc hex chars
+  * [core] buffer_append_uint_hex_lc() uses lc hex
+  * [core] buffer_append_string_encoded() uc hex
+  * [tests] reduce test_base64 brute force tests
+  * [tests] remove test_buffer output, except on error
+  * [core] check for continuation in server.tag
+  * [core] CONNECT must be handled before fs hooks
+  * [mod_redirect, mod_rewrite] code reuse (sharing)
+  * [core] data_config_pcre_compile,exec()
+  * [tests] test_request unit tests
+  * [core] http_kv.[ch] method, status, version str
+  * [core] remove unused get_http_status_body_name()
+  * [core] remove proc_open.[ch], reduce stdio.h use
+  * [tests] move src/test_*.c to src/t/
+  * [core] server.http-parseopts URL normalization opt (fixes #1720)
+  * [core] inline some buffer.[ch] routines
+  * [core] remove some duplicative code in log.c
+  * [core] debug server.log-request-header-on-error
+  * [mod_redirect,mod_rewrite] short-circuit earlier
+  * [core] fix buffer_to_upper()
+  * [mod_cgi] handle CGI partial response header write
+  * [mod_redirect,mod_rewrite] pass request URI info
+  * [mod_redirect,mod_rewrite] encoding options (fixes #443, fixes #911)
+  * [mod_redirect,mod_rewrite] fix segfault w/ invalid syntax (fixes #2892)
+  * [mod_fastcgi] fix memleak with FastCGI auth,resp (fixes #2894)
+  * [mod_alias] security: potential path traversal with specific configs
+  * [mod_wstunnel] quiet 32-bit compiler warnings
+  * [core] POLLRDHUP handling for transparent proxying
+  * [mod_redirect,mod_rewrite] support up to 19 match
+  * [core] add missing includes to quiet compiler warn
+  * [mod_redirect,mod_rewrite] base64url encoding opt
+  * [mod_rewrite] require rewrite result to begin '/'
+  * [core] security: use-after-free invalid Range req
+  * [core] reset var if FAMMonitorDirectory() fails
+  * [core] option to propagate TCP FIN to backend host
+  * mod_sockproxy - socket forwarding
+  * [core] workaround Coverity cov-build bug with gcc7
+  * [build] add missing file for test_burl
+  * [core] quell insignificant coverity warning
+  * [core] extend server.http-parseopts
+  * [mod_alias] security: path traversal in mod_alias (in some use cases) (fixes #2898)
+  * [core] security: use-after-free after invalid Range request (fixes #2899)
+
+- 1.4.49 - 2018-03-11
+  * [core] adjust offset if response header blank line
+  * [mod_accesslog] %{canonical,local,remote}p (fixes #2840)
+  * [core] support POLLRDHUP, where available (#2743)
+  * [mod_proxy] basic support for HTTP CONNECT method (#2060)
+  * [mod_deflate] fix deflate of file > 2MB w/o mmap
+  * [core] fix segfault if tempdirs fill up (fixes #2843)
+  * [mod_compress,mod_deflate] try mmap MAP_PRIVATE
+  * [core] discard from socket using recv MSG_TRUNC
+  * [core] report to stderr if errorlog path ENOENT (fixes #2847)
+  * [core] fix base64 decode when char is unsigned (fixes #2848)
+  * [mod_authn_ldap] fix mem leak when ldap auth fails (fixes #2849)
+  * [core] warn if mod_indexfile after dynamic handler
+  * [core] do not reparse request if async cb
+  * [core] non-blocking write() to piped loggers
+  * [mod_openssl] minor code cleanup; reduce var scope
+  * [mod_openssl] elliptic curve auto selection (fixes #2833)
+  * [core] check for path-info forward down path
+  * [mod_authn_ldap] auth with ldap referrals (fixes #2846)
+  * [core] code cleanup: separate physical path sub
+  * [core] merge redirect/rewrite pattern substitution
+  * [core] fix POST with chunked request body (fixes #2854)
+  * [core] remove unused func
+  * [doc] minor update to *outdated* doc
+  * [mod_wstunnel] fix for frames larger than 64k (fixes #2858)
+  * [core] fix 32-bit compile POST w/ chunked request body (#2854)
+  * [core] add include sys/poll.h on Solaris (fixes #2859)
+  * [core] fix path-info calculation in git master (fixes #2861)
+  * [core] pass array_get_element_klen() const array *
+  * [core] increase stat_cache abstraction
+  * [core] open additional fds O_CLOEXEC
+  * [core] fix CONNECT w strict header parsing enabled
+  * [mod_extforward] CIDR support for trusted proxies (fixes #2860)
+  * [core] re-enable overloaded backends w/ multi wkrs
+  * [autoconf] reduce minimum automake version to 1.13
+  * [mod_auth] constant time compare plain passwords
+  * [mod_auth] check that digest realm matches config
+  * [core] fix incorrect hash algorithm impl
+
+- 1.4.48 - 2017-11-11
   * [mod_webdav] fix crash if stat fails, not ENOENT
   * [core] fix build --disable-ipv6 (fixes #2832)
   * [scons] Merge branch 'personal/stbuehler/scons-cleanup'

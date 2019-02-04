@@ -8,7 +8,7 @@ BEGIN {
 
 use strict;
 use IO::Socket;
-use Test::More tests => 59;
+use Test::More tests => 52;
 use LightyTest;
 
 my $tf = LightyTest->new();
@@ -55,13 +55,6 @@ EOF
  );
 $t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200, 'HTTP-Content' => '12345'."\n", 'Content-Type' => 'application/octet-stream' } ];
 ok($tf->handle_http($t) == 0, 'GET, content == 12345, mimetype application/octet-stream');
-
-$t->{REQUEST}  = ( <<EOF
-POST / HTTP/1.0
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 411 } ];
-ok($tf->handle_http($t) == 0, 'POST request, no Content-Length');
 
 
 $t->{REQUEST}  = ( <<EOF
@@ -159,6 +152,22 @@ EOF
  );
 $t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.1', 'HTTP-Status' => 200 } ];
 ok($tf->handle_http($t) == 0, 'POST via Transfer-Encoding: chunked, uc hex');
+
+$t->{REQUEST}  = ( <<EOF
+POST /get-post-len.pl HTTP/1.1
+Host: www.example.org
+Connection: close
+Content-Type: application/x-www-form-urlencoded
+Transfer-Encoding: chunked
+
+10
+0123456789abcdef
+0
+
+EOF
+ );
+$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.1', 'HTTP-Status' => 200 } ];
+ok($tf->handle_http($t) == 0, 'POST via Transfer-Encoding: chunked, two hex');
 
 $t->{REQUEST}  = ( <<EOF
 POST /get-post-len.pl HTTP/1.1
@@ -323,10 +332,10 @@ $t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 416, 'HTTP-
          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
  <head>
-  <title>416 - Requested Range Not Satisfiable</title>
+  <title>416 Requested Range Not Satisfiable</title>
  </head>
  <body>
-  <h1>416 - Requested Range Not Satisfiable</h1>
+  <h1>416 Requested Range Not Satisfiable</h1>
  </body>
 </html>
 EOF
@@ -345,10 +354,10 @@ $t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 416, 'HTTP-
          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
  <head>
-  <title>416 - Requested Range Not Satisfiable</title>
+  <title>416 Requested Range Not Satisfiable</title>
  </head>
  <body>
-  <h1>416 - Requested Range Not Satisfiable</h1>
+  <h1>416 Requested Range Not Satisfiable</h1>
  </body>
 </html>
 EOF
@@ -375,61 +384,6 @@ ok($tf->handle_http($t) == 0, 'larger headers');
 
 
 $t->{REQUEST}  = ( <<EOF
-GET / HTTP/1.0
-Host: www.example.org
-Host: 123.example.org
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 400 } ];
-ok($tf->handle_http($t) == 0, 'Duplicate Host headers, Bug #25');
-
-
-$t->{REQUEST}  = ( <<EOF
-GET / HTTP/1.0
-Content-Length: 5
-Content-Length: 4
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 400 } ];
-ok($tf->handle_http($t) == 0, 'Duplicate Content-Length headers');
-
-$t->{REQUEST}  = ( <<EOF
-GET / HTTP/1.0
-Content-Type: 5
-Content-Type: 4
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 400 } ];
-ok($tf->handle_http($t) == 0, 'Duplicate Content-Type headers');
-
-$t->{REQUEST}  = ( <<EOF
-GET / HTTP/1.0
-Range: bytes=5-6
-Range: bytes=5-9
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 400 } ];
-ok($tf->handle_http($t) == 0, 'Duplicate Range headers');
-
-$t->{REQUEST}  = ( <<EOF
-GET / HTTP/1.0
-If-None-Match: 5
-If-None-Match: 4
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200 } ];
-ok($tf->handle_http($t) == 0, 'Duplicate If-None-Match headers');
-
-$t->{REQUEST}  = ( <<EOF
-GET / HTTP/1.0
-If-Modified-Since: 5
-If-Modified-Since: 4
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 400 } ];
-ok($tf->handle_http($t) == 0, 'Duplicate If-Modified-Since headers');
-
-$t->{REQUEST}  = ( <<EOF
 GET /range.pdf HTTP/1.0
 Range: bytes=0-
 EOF
@@ -438,14 +392,24 @@ $t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200 } ];
 ok($tf->handle_http($t) == 0, 'GET, Range with range-requests-disabled');
 
 $t->{REQUEST}  = ( <<EOF
-GET / HTTP/1.0
-Content-Length: 4
-
-1234
+GET /12345.txt HTTP/1.0
+Host: 123.example.org
+Range: 0
+Range: bytes=0-3
 EOF
  );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 400 } ];
-ok($tf->handle_http($t) == 0, 'GET with Content-Length');
+$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200, 'HTTP-Content' => "12345\n" } ];
+ok($tf->handle_http($t) == 0, 'GET, Range invalid range-unit (first)');
+
+$t->{REQUEST}  = ( <<EOF
+GET /12345.txt HTTP/1.0
+Host: 123.example.org
+Range: bytes=0-3
+Range: 0
+EOF
+ );
+$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 206 } ];
+ok($tf->handle_http($t) == 0, 'GET, Range ignore invalid range (second)');
 
 $t->{REQUEST}  = ( <<EOF
 OPTIONS / HTTP/1.0
@@ -466,16 +430,6 @@ $t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 400 } ];
 ok($tf->handle_http($t) == 0, 'OPTIONS for RTSP');
 
 $t->{REQUEST}  = ( <<EOF
-HEAD / HTTP/1.0
-Content-Length: 4
-
-1234
-EOF
- );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 400 } ];
-ok($tf->handle_http($t) == 0, 'HEAD with Content-Length');
-
-$t->{REQUEST}  = ( <<EOF
 GET /index.html HTTP/1.0
 If-Modified-Since: Sun, 01 Jan 2036 00:00:02 GMT
 If-Modified-Since: Sun, 01 Jan 2036 00:00:02 GMT
@@ -483,10 +437,6 @@ EOF
  );
 $t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 304 } ];
 ok($tf->handle_http($t) == 0, 'Duplicate If-Mod-Since, with equal timestamps');
-
-$t->{REQUEST}  = ( "GET / HTTP/1.0\r\nIf-Modified-Since: \0\r\n\r\n" );
-$t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 400 } ];
-ok($tf->handle_http($t) == 0, 'invalid chars in Header values (bug #1286)');
 
 $t->{REQUEST}  = ( "GET / HTTP/1.0\r\nIf-Modified-Since: \r\n\r\n" );
 $t->{RESPONSE} = [ { 'HTTP-Protocol' => 'HTTP/1.0', 'HTTP-Status' => 200 } ];

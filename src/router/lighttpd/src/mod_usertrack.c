@@ -4,6 +4,7 @@
 #include "log.h"
 #include "buffer.h"
 #include "rand.h"
+#include "http_header.h"
 
 #include "plugin.h"
 
@@ -182,7 +183,8 @@ static int mod_usertrack_patch_connection(server *srv, connection *con, plugin_d
 
 URIHANDLER_FUNC(mod_usertrack_uri_handler) {
 	plugin_data *p = p_d;
-	data_string *ds;
+	buffer *cookie;
+	buffer *b;
 	unsigned char h[16];
 	li_MD5_CTX Md5Ctx;
 	char hh[LI_ITOSTRING_LENGTH];
@@ -191,7 +193,7 @@ URIHANDLER_FUNC(mod_usertrack_uri_handler) {
 
 	mod_usertrack_patch_connection(srv, con, p);
 
-	if (NULL != (ds = (data_string *)array_get_element(con->request.headers, "Cookie"))) {
+	if (NULL != (b = http_header_request_get(con, HTTP_HEADER_COOKIE, CONST_STR_LEN("Cookie")))) {
 		char *g;
 		/* we have a cookie, does it contain a valid name ? */
 
@@ -201,7 +203,7 @@ URIHANDLER_FUNC(mod_usertrack_uri_handler) {
 		 *
 		 */
 
-		if (NULL != (g = strstr(ds->value->ptr, p->conf.cookie_name->ptr))) {
+		if (NULL != (g = strstr(b->ptr, p->conf.cookie_name->ptr))) {
 			char *nc;
 
 			/* skip WS */
@@ -219,12 +221,9 @@ URIHANDLER_FUNC(mod_usertrack_uri_handler) {
 	}
 
 	/* set a cookie */
-	if (NULL == (ds = (data_string *)array_get_unused_element(con->response.headers, TYPE_STRING))) {
-		ds = data_response_init();
-	}
-	buffer_copy_string_len(ds->key, CONST_STR_LEN("Set-Cookie"));
-	buffer_copy_buffer(ds->value, p->conf.cookie_name);
-	buffer_append_string_len(ds->value, CONST_STR_LEN("="));
+	cookie = srv->tmp_buf;
+	buffer_copy_buffer(cookie, p->conf.cookie_name);
+	buffer_append_string_len(cookie, CONST_STR_LEN("="));
 
 
 	/* taken from mod_auth.c */
@@ -241,29 +240,29 @@ URIHANDLER_FUNC(mod_usertrack_uri_handler) {
 
 	li_MD5_Final(h, &Md5Ctx);
 
-	buffer_append_string_encoded(ds->value, (char *)h, 16, ENCODING_HEX);
+	buffer_append_string_encoded_hex_lc(cookie, (char *)h, 16);
 
 	/* usertrack.cookie-attrs, if set, replaces all other attrs */
 	if (!buffer_string_is_empty(p->conf.cookie_attrs)) {
-		buffer_append_string_buffer(ds->value, p->conf.cookie_attrs);
-		array_insert_unique(con->response.headers, (data_unset *)ds);
+		buffer_append_string_buffer(cookie, p->conf.cookie_attrs);
+		http_header_response_insert(con, HTTP_HEADER_SET_COOKIE, CONST_STR_LEN("Set-Cookie"), CONST_BUF_LEN(cookie));
 		return HANDLER_GO_ON;
 	}
 
-	buffer_append_string_len(ds->value, CONST_STR_LEN("; Path=/"));
-	buffer_append_string_len(ds->value, CONST_STR_LEN("; Version=1"));
+	buffer_append_string_len(cookie, CONST_STR_LEN("; Path=/"));
+	buffer_append_string_len(cookie, CONST_STR_LEN("; Version=1"));
 
 	if (!buffer_string_is_empty(p->conf.cookie_domain)) {
-		buffer_append_string_len(ds->value, CONST_STR_LEN("; Domain="));
-		buffer_append_string_encoded(ds->value, CONST_BUF_LEN(p->conf.cookie_domain), ENCODING_REL_URI);
+		buffer_append_string_len(cookie, CONST_STR_LEN("; Domain="));
+		buffer_append_string_encoded(cookie, CONST_BUF_LEN(p->conf.cookie_domain), ENCODING_REL_URI);
 	}
 
 	if (p->conf.cookie_max_age) {
-		buffer_append_string_len(ds->value, CONST_STR_LEN("; max-age="));
-		buffer_append_int(ds->value, p->conf.cookie_max_age);
+		buffer_append_string_len(cookie, CONST_STR_LEN("; max-age="));
+		buffer_append_int(cookie, p->conf.cookie_max_age);
 	}
 
-	array_insert_unique(con->response.headers, (data_unset *)ds);
+	http_header_response_insert(con, HTTP_HEADER_SET_COOKIE, CONST_STR_LEN("Set-Cookie"), CONST_BUF_LEN(cookie));
 
 	return HANDLER_GO_ON;
 }

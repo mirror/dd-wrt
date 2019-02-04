@@ -1,10 +1,11 @@
 #include "first.h"
 
+#include "base.h"
 #include "plugin.h"
 #include "log.h"
-#include "response.h"
 #include "stat_cache.h"
 
+#include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 
@@ -190,15 +191,14 @@ SETDEFAULTS_FUNC(mod_evhost_set_defaults) {
  * - ...
  */
 
-static int mod_evhost_parse_host(connection *con,array *host) {
-	register char *ptr = con->uri.authority->ptr + buffer_string_length(con->uri.authority);
+static void mod_evhost_parse_host(buffer *key, array *host, buffer *authority) {
+	char *ptr = authority->ptr + buffer_string_length(authority);
 	char *colon = ptr; /* needed to filter out the colon (if exists) */
 	int first = 1;
-	data_string *ds;
 	int i;
 
 	/* first, find the domain + tld */
-	for(;ptr > con->uri.authority->ptr;ptr--) {
+	for(; ptr > authority->ptr; --ptr) {
 		if(*ptr == '.') {
 			if(first) first = 0;
 			else      break;
@@ -208,28 +208,20 @@ static int mod_evhost_parse_host(connection *con,array *host) {
 		}
 	}
 
-	ds = data_string_init();
-	buffer_copy_string_len(ds->key,CONST_STR_LEN("%0"));
-
 	/* if we stopped at a dot, skip the dot */
 	if (*ptr == '.') ptr++;
-	buffer_copy_string_len(ds->value, ptr, colon-ptr);
-
-	array_insert_unique(host,(data_unset *)ds);
+	array_insert_key_value(host, CONST_STR_LEN("%0"), ptr, colon-ptr);
 
 	/* if the : is not the start of the authority, go on parsing the hostname */
 
-	if (colon != con->uri.authority->ptr) {
-		for(ptr = colon - 1, i = 1; ptr > con->uri.authority->ptr; ptr--) {
+	if (colon != authority->ptr) {
+		for(ptr = colon - 1, i = 1; ptr > authority->ptr; --ptr) {
 			if(*ptr == '.') {
 				if (ptr != colon - 1) {
 					/* is something between the dots */
-					ds = data_string_init();
-					buffer_copy_string_len(ds->key,CONST_STR_LEN("%"));
-					buffer_append_int(ds->key, i++);
-					buffer_copy_string_len(ds->value,ptr+1,colon-ptr-1);
-
-					array_insert_unique(host,(data_unset *)ds);
+					buffer_copy_string_len(key, CONST_STR_LEN("%"));
+					buffer_append_int(key, i++);
+					array_insert_key_value(host, CONST_BUF_LEN(key), ptr+1, colon-ptr-1);
 				}
 				colon = ptr;
 			}
@@ -237,16 +229,11 @@ static int mod_evhost_parse_host(connection *con,array *host) {
 
 		/* if the . is not the first charactor of the hostname */
 		if (colon != ptr) {
-			ds = data_string_init();
-			buffer_copy_string_len(ds->key,CONST_STR_LEN("%"));
-			buffer_append_int(ds->key, i /* ++ */);
-			buffer_copy_string_len(ds->value,ptr,colon-ptr);
-
-			array_insert_unique(host,(data_unset *)ds);
+			buffer_copy_string_len(key, CONST_STR_LEN("%"));
+			buffer_append_int(key, i /* ++ */);
+			array_insert_key_value(host, CONST_BUF_LEN(key), ptr, colon-ptr);
 		}
 	}
-
-	return 0;
 }
 
 #define PATCH(x) \
@@ -282,12 +269,58 @@ static int mod_evhost_patch_connection(server *srv, connection *con, plugin_data
 #undef PATCH
 
 
+static void mod_evhost_build_doc_root_path(buffer *b, array *parsed_host, buffer *authority, buffer **path_pieces, const size_t npieces) {
+	array_reset_data_strings(parsed_host);
+	mod_evhost_parse_host(b, parsed_host, authority);
+	buffer_clear(b);
+
+	for (size_t i = 0; i < npieces; ++i) {
+		const char *ptr = path_pieces[i]->ptr;
+		if (*ptr == '%') {
+			data_string *ds;
+
+			if (*(ptr+1) == '%') {
+				/* %% */
+				buffer_append_string_len(b, CONST_STR_LEN("%"));
+			} else if (*(ptr+1) == '_' ) {
+				/* %_ == full hostname */
+				char *colon = strchr(authority->ptr, ':');
+
+				if(colon == NULL) {
+					buffer_append_string_buffer(b, authority); /* adds fqdn */
+				} else {
+					/* strip the port out of the authority-part of the URI scheme */
+					buffer_append_string_len(b, authority->ptr, colon - authority->ptr); /* adds fqdn */
+				}
+			} else if (ptr[1] == '{' ) {
+				char s[3] = "% ";
+				s[1] = ptr[2]; /*(assumes single digit before '.', and, optionally, '.' and single digit after '.')*/
+				if (NULL != (ds = (data_string *)array_get_element_klen(parsed_host, s, 2))) {
+					if (ptr[3] != '.' || ptr[4] == '0') {
+						buffer_append_string_buffer(b, ds->value);
+					} else {
+						if ((size_t)(ptr[4]-'0') <= buffer_string_length(ds->value)) {
+							buffer_append_string_len(b, ds->value->ptr+(ptr[4]-'0')-1, 1);
+						}
+					}
+				} else {
+					/* unhandled %-sequence */
+				}
+			} else if (NULL != (ds = (data_string *)array_get_element_klen(parsed_host, CONST_BUF_LEN(path_pieces[i])))) {
+				buffer_append_string_buffer(b, ds->value);
+			} else {
+				/* unhandled %-sequence */
+			}
+		} else {
+			buffer_append_string_buffer(b, path_pieces[i]);
+		}
+	}
+
+	buffer_append_slash(b);
+}
+
 static handler_t mod_evhost_uri_handler(server *srv, connection *con, void *p_d) {
 	plugin_data *p = p_d;
-	size_t i;
-	array *parsed_host;
-	register char *ptr;
-	int not_good = 0;
 	stat_cache_entry *sce = NULL;
 
 	/* not authority set */
@@ -300,68 +333,13 @@ static handler_t mod_evhost_uri_handler(server *srv, connection *con, void *p_d)
 		return HANDLER_GO_ON;
 	}
 
-	parsed_host = array_init();
-
-	mod_evhost_parse_host(con, parsed_host);
-
-	/* build document-root */
-	buffer_reset(p->tmp_buf);
-
-	for (i = 0; i < p->conf.len; i++) {
-		ptr = p->conf.path_pieces[i]->ptr;
-		if (*ptr == '%') {
-			data_string *ds;
-
-			if (*(ptr+1) == '%') {
-				/* %% */
-				buffer_append_string_len(p->tmp_buf,CONST_STR_LEN("%"));
-			} else if (*(ptr+1) == '_' ) {
-				/* %_ == full hostname */
-				char *colon = strchr(con->uri.authority->ptr, ':');
-
-				if(colon == NULL) {
-					buffer_append_string_buffer(p->tmp_buf, con->uri.authority); /* adds fqdn */
-				} else {
-					/* strip the port out of the authority-part of the URI scheme */
-					buffer_append_string_len(p->tmp_buf, con->uri.authority->ptr, colon - con->uri.authority->ptr); /* adds fqdn */
-				}
-			} else if (ptr[1] == '{' ) {
-				char s[3] = "% ";
-				s[1] = ptr[2]; /*(assumes single digit before '.', and, optionally, '.' and single digit after '.')*/
-				if (NULL != (ds = (data_string *)array_get_element_klen(parsed_host, s, 2))) {
-					if (ptr[3] != '.' || ptr[4] == '0') {
-						buffer_append_string_buffer(p->tmp_buf, ds->value);
-					} else {
-						if ((size_t)(ptr[4]-'0') <= buffer_string_length(ds->value)) {
-							buffer_append_string_len(p->tmp_buf, ds->value->ptr+(ptr[4]-'0')-1, 1);
-						}
-					}
-				} else {
-					/* unhandled %-sequence */
-				}
-			} else if (NULL != (ds = (data_string *)array_get_element_klen(parsed_host, CONST_BUF_LEN(p->conf.path_pieces[i])))) {
-				buffer_append_string_buffer(p->tmp_buf,ds->value);
-			} else {
-				/* unhandled %-sequence */
-			}
-		} else {
-			buffer_append_string_buffer(p->tmp_buf,p->conf.path_pieces[i]);
-		}
-	}
-
-	buffer_append_slash(p->tmp_buf);
-
-	array_free(parsed_host);
+	mod_evhost_build_doc_root_path(p->tmp_buf, srv->split_vals, con->uri.authority, p->conf.path_pieces, p->conf.len);
 
 	if (HANDLER_ERROR == stat_cache_get_entry(srv, con, p->tmp_buf, &sce)) {
 		log_error_write(srv, __FILE__, __LINE__, "sb", strerror(errno), p->tmp_buf);
-		not_good = 1;
 	} else if(!S_ISDIR(sce->st.st_mode)) {
 		log_error_write(srv, __FILE__, __LINE__, "sb", "not a directory:", p->tmp_buf);
-		not_good = 1;
-	}
-
-	if (!not_good) {
+	} else {
 		buffer_copy_buffer(con->physical.doc_root, p->tmp_buf);
 	}
 

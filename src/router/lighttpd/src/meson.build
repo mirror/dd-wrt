@@ -316,6 +316,21 @@ if get_option('with_ldap')
 	conf_data.set('HAVE_LIBLBER', true)
 endif
 
+libpam = []
+if get_option('with_pam')
+	libpam = [ compiler.find_library('pam') ]
+	if not(compiler.has_function('pam_start',
+		args: defs,
+		dependencies: libpam,
+		prefix: '''
+			#include <security/pam_appl.h>
+		'''
+	))
+		error('Couldn\'t find security/pam_appl.h or pam_start in lib libpam')
+	endif
+	conf_data.set('HAVE_PAM', true)
+endif
+
 libev = []
 if get_option('with_libev')
 	libev = dependency('ev', required: false)
@@ -363,8 +378,10 @@ libmysqlclient = []
 if get_option('with_mysql')
 	# manual search: extend include path with 'mysql/'
 	# header: mysql.h
-	# function: mysql_real_connect (-lmysqlclient)
-	libmysqlclient = [ dependency('mysqlclient') ]
+	# function: mysql_real_connect (-lmariadb)
+	libmysqlclient = [ dependency('mariadb') ]
+	#-# function: mysql_real_connect (-lmysqlclient)
+	#-libmysqlclient = [ dependency('mysqlclient') ]
 	conf_data.set('HAVE_MYSQL', true)
 endif
 
@@ -379,6 +396,20 @@ if get_option('with_openssl')
 	libcrypto = [ dependency('libcrypto') ]
 	conf_data.set('HAVE_OPENSSL_SSL_H', true)
 	conf_data.set('HAVE_LIBSSL', true)
+endif
+if get_option('with_wolfssl') != 'false'
+	# manual search:
+	# header: wolfssl/ssl.h
+	# function: wolfSSL_Init (-lwolfssl)
+	p = get_option('with_wolfssl')
+	if p == 'true'
+		p = '/usr/local'
+	endif
+	i = include_directories(p+'/include', p+'/include/wolfssl')
+	libwolfssl_includes_dep = [ declare_dependency(include_directories: i) ]
+	libcrypto = [ compiler.find_library('libwolfssl', dirs: [ p+'/lib', p+'/lib64' ]) ]
+	libcrypto += libwolfssl_includes_dep
+	conf_data.set('HAVE_WOLFSSL_SSL_H', true)
 endif
 
 libpcre = []
@@ -539,6 +570,7 @@ common_src = [
 	'array.c',
 	'base64.c',
 	'buffer.c',
+	'burl.c',
 	'chunk.c',
 	'configfile-glue.c',
 	'connections-glue.c',
@@ -559,6 +591,8 @@ common_src = [
 	'gw_backend.c',
 	'http_auth.c',
 	'http_chunk.c',
+	'http_header.c',
+	'http_kv.c',
 	'http_vhostdb.c',
 	'http-header-glue.c',
 	'joblist.c',
@@ -567,11 +601,11 @@ common_src = [
 	'md5.c',
 	'plugin.c',
 	'rand.c',
+	'request.c',
 	'safe_memclear.c',
 	'sock_addr.c',
 	'splaytree.c',
 	'stat_cache.c',
-	'status_counter.c',
 	'stream.c',
 	'vector.c',
 ]
@@ -584,8 +618,6 @@ main_src = [
 	'inet_ntop_cache.c',
 	'network_write.c',
 	'network.c',
-	'proc_open.c',
-	'request.c',
 	'response.c',
 	'server.c',
 ]
@@ -672,39 +704,54 @@ executable('lighttpd-angel',
 executable('lighttpd', configparser,
 	sources: common_src + main_src,
 	# libssl needed?
-	dependencies: common_flags + lighttpd_flags
-		+ libattr
-		+ libcrypto
-		+ libdl
-		+ libev
-		+ libfam
-		+ libpcre
-		+ libunwind
-		+ libws2_32
-	,
+	dependencies: [ common_flags, lighttpd_flags
+		, libattr
+		, libcrypto
+		, libdl
+		, libev
+		, libfam
+		, libpcre
+		, libunwind
+		, libws2_32
+	],
 	install: true,
 	install_dir: sbinddir,
 )
 
+test('test_array', executable('test_array',
+	sources: ['t/test_array.c', 'array.c', 'data_array.c', 'data_integer.c', 'data_string.c', 'buffer.c'],
+	dependencies: common_flags + libunwind,
+	build_by_default: false,
+))
+
 test('test_buffer', executable('test_buffer',
-	sources: ['test_buffer.c', 'buffer.c'],
+	sources: ['t/test_buffer.c', 'buffer.c'],
+	dependencies: common_flags + libunwind,
+	build_by_default: false,
+))
+
+test('test_burl', executable('test_burl',
+	sources: ['t/test_burl.c', 'burl.c', 'buffer.c', 'base64.c'],
 	dependencies: common_flags + libunwind,
 	build_by_default: false,
 ))
 
 test('test_base64', executable('test_base64',
-	sources: ['test_base64.c', 'buffer.c', 'base64.c'],
+	sources: ['t/test_base64.c', 'buffer.c', 'base64.c'],
 	dependencies: common_flags + libunwind,
 	build_by_default: false,
 ))
 
 test('test_configfile', executable('test_configfile',
 	sources: [
-		'test_configfile.c',
+		't/test_configfile.c',
 		'buffer.c',
 		'array.c',
+		'data_config.c',
+		'data_integer.c',
 		'data_string.c',
-		'keyvalue.c',
+		'http_header.c',
+		'http_kv.c',
 		'vector.c',
 		'log.c',
 		'sock_addr.c',
@@ -713,12 +760,101 @@ test('test_configfile', executable('test_configfile',
 	build_by_default: false,
 ))
 
+test('test_keyvalue', executable('test_keyvalue',
+	sources: [
+		't/test_keyvalue.c',
+		'burl.c',
+		'buffer.c',
+		'base64.c',
+		'array.c',
+		'data_integer.c',
+		'data_string.c',
+		'log.c',
+	],
+	dependencies: common_flags + libpcre + libunwind,
+	build_by_default: false,
+))
+
+test('test_mod_access', executable('test_mod_access',
+	sources: [
+		't/test_mod_access.c',
+		'configfile-glue.c',
+		'buffer.c',
+		'array.c',
+		'data_config.c',
+		'data_integer.c',
+		'data_string.c',
+		'http_header.c',
+		'http_kv.c',
+		'vector.c',
+		'log.c',
+		'sock_addr.c',
+	],
+	dependencies: common_flags + libpcre + libunwind,
+	build_by_default: false,
+))
+
+test('test_mod_evhost', executable('test_mod_evhost',
+	sources: [
+		't/test_mod_evhost.c',
+		'configfile-glue.c',
+		'buffer.c',
+		'array.c',
+		'data_config.c',
+		'data_integer.c',
+		'data_string.c',
+		'http_header.c',
+		'http_kv.c',
+		'vector.c',
+		'log.c',
+		'sock_addr.c',
+	],
+	dependencies: common_flags + libpcre + libunwind,
+	build_by_default: false,
+))
+
+test('test_mod_simple_vhost', executable('test_mod_simple_vhost',
+	sources: [
+		't/test_mod_simple_vhost.c',
+		'configfile-glue.c',
+		'buffer.c',
+		'array.c',
+		'data_config.c',
+		'data_integer.c',
+		'data_string.c',
+		'http_header.c',
+		'http_kv.c',
+		'vector.c',
+		'log.c',
+		'sock_addr.c',
+	],
+	dependencies: common_flags + libpcre + libunwind,
+	build_by_default: false,
+))
+
+test('test_request', executable('test_request',
+	sources: [
+		't/test_request.c',
+		'request.c',
+		'buffer.c',
+		'array.c',
+		'data_integer.c',
+		'data_string.c',
+		'http_header.c',
+		'http_kv.c',
+		'log.c',
+		'sock_addr.c',
+	],
+	dependencies: common_flags + libunwind,
+	build_by_default: false,
+))
+
 modules = [
 	[ 'mod_access', [ 'mod_access.c' ] ],
 	[ 'mod_accesslog', [ 'mod_accesslog.c' ] ],
 	[ 'mod_alias', [ 'mod_alias.c' ] ],
 	[ 'mod_auth', [ 'mod_auth.c' ] ],
-	[ 'mod_authn_file', [ 'mod_authn_file.c' ], libcrypt + libcrypto ],
+	[ 'mod_authn_file', [ 'mod_authn_file.c' ], [ libcrypt, libcrypto ] ],
 	[ 'mod_compress', [ 'mod_compress.c' ], libbz2 + libz ],
 	[ 'mod_deflate', [ 'mod_deflate.c' ], libbz2 + libz ],
 	[ 'mod_dirlisting', [ 'mod_dirlisting.c' ], libpcre ],
@@ -737,6 +873,7 @@ modules = [
 	[ 'mod_secdownload', [ 'mod_secdownload.c' ], libcrypto ],
 	[ 'mod_setenv', [ 'mod_setenv.c' ] ],
 	[ 'mod_simple_vhost', [ 'mod_simple_vhost.c' ] ],
+	[ 'mod_sockproxy', [ 'mod_sockproxy.c' ] ],
 	[ 'mod_ssi', [ ssi_exprparser, 'mod_ssi_expr.c', 'mod_ssi.c' ], libws2_32 ],
 	[ 'mod_staticfile', [ 'mod_staticfile.c' ] ],
 	[ 'mod_status', [ 'mod_status.c' ] ],
@@ -812,9 +949,21 @@ if get_option('with_openssl')
 	]
 endif
 
+if get_option('with_wolfssl') != 'false'
+	modules += [
+		[ 'mod_openssl', [ 'mod_openssl.c' ], libcrypto ],
+	]
+endif
+
+if get_option('with_pam')
+	modules += [
+		[ 'mod_authn_pam', [ 'mod_authn_pam.c' ], libpam ],
+	]
+endif
+
 if get_option('with_sasl')
 	modules += [
-		[ 'mod_authn_sasl', [ 'mod_authn_sasl.c' ], libsasl2 ],
+		[ 'mod_authn_sasl', [ 'mod_authn_sasl.c' ], libsasl ],
 	]
 endif
 
@@ -824,7 +973,7 @@ foreach mod: modules
 	mod_deps = mod.length() > 2 ? mod.get(2) : []
 	shared_module(mod_name,
 		sources: mod_sources,
-		dependencies: common_flags + mod_deps,
+		dependencies: [ common_flags, mod_deps ],
 		name_prefix: '',
 		install: true,
 		install_dir: moduledir,

@@ -2,7 +2,8 @@
 #define INCLUDED_ALGO_SHA1_H
 #include "first.h"
 
-#if defined HAVE_LIBSSL && defined HAVE_OPENSSL_SSL_H
+#include "sys-crypto.h"
+#ifdef USE_OPENSSL_CRYPTO
 
 #include <openssl/sha.h>
 
@@ -66,14 +67,10 @@ typedef struct _SHA_CTX {
 void SHA1_Init(SHA_CTX *context);
 void SHA1_Update(SHA_CTX *context, const sha1_byte *data, unsigned int len);
 void SHA1_Final(sha1_byte digest[SHA1_DIGEST_LENGTH], SHA_CTX *context);
-/*(added for lighttpd)*/
-unsigned char *SHA1(const unsigned char *d, size_t n, unsigned char *md);
 #else
 void SHA1_Init();
 void SHA1_Update();
 void SHA1_Final();
-/*(added for lighttpd)*/
-unsigned char *SHA1();
 #endif
 
 #ifdef __cplusplus

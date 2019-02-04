@@ -3,7 +3,6 @@
 #include "array.h"
 
 #include <string.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 static data_unset *data_array_copy(const data_unset *s) {
@@ -37,7 +36,7 @@ static void data_array_reset(data_unset *d) {
 static int data_array_insert_dup(data_unset *dst, data_unset *src) {
 	UNUSED(dst);
 
-	src->free(src);
+	src->fn->free(src);
 
 	return 0;
 }
@@ -49,6 +48,13 @@ static void data_array_print(const data_unset *d, int depth) {
 }
 
 data_array *data_array_init(void) {
+	static const struct data_methods fn = {
+		data_array_reset,
+		data_array_copy,
+		data_array_free,
+		data_array_insert_dup,
+		data_array_print,
+	};
 	data_array *ds;
 
 	ds = calloc(1, sizeof(*ds));
@@ -57,12 +63,8 @@ data_array *data_array_init(void) {
 	ds->key = buffer_init();
 	ds->value = array_init();
 
-	ds->copy = data_array_copy;
-	ds->free = data_array_free;
-	ds->reset = data_array_reset;
-	ds->insert_dup = data_array_insert_dup;
-	ds->print = data_array_print;
 	ds->type = TYPE_ARRAY;
+	ds->fn = &fn;
 
 	return ds;
 }

@@ -11,7 +11,11 @@
 #include "mod_cml_funcs.h"
 #include "mod_cml.h"
 
+#include "base.h"
+#include "chunk.h"
 #include "log.h"
+#include "http_header.h"
+#include "response.h"
 #include "stat_cache.h"
 
 #define HASHLEN 16
@@ -60,9 +64,10 @@ static int c_to_lua_push(lua_State *L, int tbl, const char *key, size_t key_len,
 
 static int cache_export_get_params(lua_State *L, int tbl, buffer *qrystr) {
 	size_t is_key = 1;
-	size_t i, len;
+	size_t i, len, klen = 0;
 	char *key = NULL, *val = NULL;
 
+	if (buffer_string_is_empty(qrystr)) return 0;
 	key = qrystr->ptr;
 
 	/* we need the \0 */
@@ -72,9 +77,7 @@ static int cache_export_get_params(lua_State *L, int tbl, buffer *qrystr) {
 		case '=':
 			if (is_key) {
 				val = qrystr->ptr + i + 1;
-
-				qrystr->ptr[i] = '\0';
-
+				klen = (size_t)(val - key - 1);
 				is_key = 0;
 			}
 
@@ -83,13 +86,9 @@ static int cache_export_get_params(lua_State *L, int tbl, buffer *qrystr) {
 		case '\0': /* fin symbol */
 			if (!is_key) {
 				/* we need at least a = since the last & */
-
-				/* terminate the value */
-				qrystr->ptr[i] = '\0';
-
 				c_to_lua_push(L, tbl,
-					key, strlen(key),
-					val, strlen(val));
+					key, klen,
+					val, (size_t)(qrystr->ptr + i - val));
 			}
 
 			key = qrystr->ptr + i + 1;
@@ -153,13 +152,7 @@ int cache_parse_lua(server *srv, connection *con, plugin_data *p, buffer *fn) {
 
 	/* register GET parameter */
 	lua_newtable(L);
-	{
-		int get_tbl = lua_gettop(L);
-
-		buffer_copy_buffer(b, con->uri.query);
-		cache_export_get_params(L, get_tbl, b);
-		buffer_reset(b);
-	}
+	cache_export_get_params(L, lua_gettop(L), con->uri.query);
 	lua_setglobal(L, "get");
 
 	/* 2 default constants */
@@ -197,7 +190,7 @@ int cache_parse_lua(server *srv, connection *con, plugin_data *p, buffer *fn) {
 	lua_to_c_get_string(L, "trigger_handler", p->trigger_handler);
 
 	if (0 == lua_to_c_get_string(L, "output_contenttype", b)) {
-		response_header_overwrite(srv, con, CONST_STR_LEN("Content-Type"), CONST_BUF_LEN(b));
+		http_header_response_set(con, HTTP_HEADER_CONTENT_TYPE, CONST_STR_LEN("Content-Type"), CONST_BUF_LEN(b));
 	}
 
 	if (ret == 0) {
@@ -288,25 +281,19 @@ int cache_parse_lua(server *srv, connection *con, plugin_data *p, buffer *fn) {
 		lua_settop(L, curelem - 1);
 
 		if (ret == 0) {
-			data_string *ds;
-			char timebuf[sizeof("Sat, 23 Jul 2005 21:20:01 GMT")];
+			buffer *vb = http_header_response_get(con, HTTP_HEADER_LAST_MODIFIED, CONST_STR_LEN("Last-Modified"));
+			if (NULL == vb) { /* no Last-Modified specified */
+				char timebuf[sizeof("Sat, 23 Jul 2005 21:20:01 GMT")];
+				if (0 == mtime) mtime = time(NULL); /* default last-modified to now */
+				strftime(timebuf, sizeof(timebuf), "%a, %d %b %Y %H:%M:%S GMT", gmtime(&mtime));
+				http_header_response_set(con, HTTP_HEADER_LAST_MODIFIED, CONST_STR_LEN("Last-Modified"), timebuf, sizeof(timebuf) - 1);
+				vb = http_header_response_get(con, HTTP_HEADER_LAST_MODIFIED, CONST_STR_LEN("Last-Modified"));
+				force_assert(NULL != vb);
+			}
 
 			con->file_finished = 1;
 
-			ds = (data_string *)array_get_element(con->response.headers, "Last-Modified");
-			if (0 == mtime) mtime = time(NULL); /* default last-modified to now */
-
-			/* no Last-Modified specified */
-			if (NULL == ds) {
-
-				strftime(timebuf, sizeof(timebuf), "%a, %d %b %Y %H:%M:%S GMT", gmtime(&mtime));
-
-				response_header_overwrite(srv, con, CONST_STR_LEN("Last-Modified"), timebuf, sizeof(timebuf) - 1);
-				ds = (data_string *)array_get_element(con->response.headers, "Last-Modified");
-				force_assert(NULL != ds);
-			}
-
-			if (HANDLER_FINISHED == http_response_handle_cachable(srv, con, ds->value)) {
+			if (HANDLER_FINISHED == http_response_handle_cachable(srv, con, vb)) {
 				/* ok, the client already has our content,
 				 * no need to send it again */
 
