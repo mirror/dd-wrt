@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2018 Zabbix SIA
+** Copyright (C) 2001-2019 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -99,7 +99,7 @@ foreach ($data['discoveries'] as $discovery) {
 		];
 	}
 
-	// hide zeroes for trapper and SNMP trap items
+	// Hide zeros for trapper and SNMP trap items.
 	if ($discovery['type'] == ITEM_TYPE_TRAPPER || $discovery['type'] == ITEM_TYPE_SNMPTRAP) {
 		$discovery['delay'] = '';
 	}

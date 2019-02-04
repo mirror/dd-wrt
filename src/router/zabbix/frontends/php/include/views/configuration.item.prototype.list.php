@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2018 Zabbix SIA
+** Copyright (C) 2001-2019 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -128,7 +128,7 @@ foreach ($data['items'] as $item) {
 		$item['trends'] = '';
 	}
 
-	// Hide zeroes for trapper, SNMP trap and dependent items.
+	// Hide zeros for trapper, SNMP trap and dependent items.
 	if ($item['type'] == ITEM_TYPE_TRAPPER || $item['type'] == ITEM_TYPE_SNMPTRAP
 			|| $item['type'] == ITEM_TYPE_DEPENDENT) {
 		$item['delay'] = '';
