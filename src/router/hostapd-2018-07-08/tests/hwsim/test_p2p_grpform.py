@@ -1097,14 +1097,14 @@ def test_grpform_go_neg_dup_on_restart(dev):
     attrs = p2p_attr_capability(dev_capab=0x25, group_capab=0x08)
     attrs += p2p_attr_go_intent(go_intent=7, tie_breaker=1)
     attrs += p2p_attr_config_timeout()
-    attrs += p2p_attr_listen_channel(chan=(int(peer['listen_freq']) - 2407) / 5)
+    attrs += p2p_attr_listen_channel(chan=(int(peer['listen_freq']) - 2407) // 5)
     attrs += p2p_attr_intended_interface_addr(lower.p2p_dev_addr())
     attrs += p2p_attr_channel_list()
     attrs += p2p_attr_device_info(addr_low, config_methods=0x80, name="Device A")
     attrs += p2p_attr_operating_channel()
     wsc_attrs = struct.pack(">HHH", 0x1012, 2, 4)
     msg['payload'] += ie_p2p(attrs) + ie_wsc(wsc_attrs)
-    mgmt_tx(lower, "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(addr_high, addr_high, peer['listen_freq'], binascii.hexlify(msg['payload'])))
+    mgmt_tx(lower, "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(addr_high, addr_high, peer['listen_freq'], binascii.hexlify(msg['payload']).decode()))
 
     # Wait for the GO Negotiation Response frame which would have been sent in
     # this case previously, but not anymore after the check for

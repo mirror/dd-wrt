@@ -505,6 +505,7 @@ DBusMessage * wpas_dbus_handler_p2p_flush(DBusMessage *message,
 
 	wpa_s = wpa_s->global->p2p_init_wpa_s;
 
+	wpas_p2p_stop_find(wpa_s);
 	os_memset(wpa_s->p2p_auth_invite, 0, ETH_ALEN);
 	wpa_s->force_long_sd = 0;
 	p2p_flush(wpa_s->global->p2p);
@@ -2692,7 +2693,7 @@ DBusMessage * wpas_dbus_handler_p2p_delete_service(
 	if (!wpa_dbus_dict_open_read(&iter, &iter_dict, NULL))
 		goto error;
 
-	if (wpa_dbus_dict_has_dict_entry(&iter_dict)) {
+	while (wpa_dbus_dict_has_dict_entry(&iter_dict)) {
 		if (!wpa_dbus_dict_get_entry(&iter_dict, &entry))
 			goto error;
 
@@ -2704,26 +2705,27 @@ DBusMessage * wpas_dbus_handler_p2p_delete_service(
 				bonjour = 1;
 			else
 				goto error_clear;
-			wpa_dbus_dict_entry_clear(&entry);
+		} else if (os_strcmp(entry.key, "version") == 0 &&
+			   entry.type == DBUS_TYPE_INT32) {
+			version = entry.uint32_value;
+		} else if (os_strcmp(entry.key, "service") == 0 &&
+			   entry.type == DBUS_TYPE_STRING) {
+			os_free(service);
+			service = os_strdup(entry.str_value);
+		} else if (os_strcmp(entry.key, "query") == 0) {
+			if (entry.type != DBUS_TYPE_ARRAY ||
+			    entry.array_type != DBUS_TYPE_BYTE)
+				goto error_clear;
+			wpabuf_free(query);
+			query = wpabuf_alloc_copy(entry.bytearray_value,
+						  entry.array_len);
+		} else {
+			goto error_clear;
 		}
+
+		wpa_dbus_dict_entry_clear(&entry);
 	}
 	if (upnp == 1) {
-		while (wpa_dbus_dict_has_dict_entry(&iter_dict)) {
-			if (!wpa_dbus_dict_get_entry(&iter_dict, &entry))
-				goto error;
-			if (os_strcmp(entry.key, "version") == 0 &&
-			    entry.type == DBUS_TYPE_INT32)
-				version = entry.uint32_value;
-			else if (os_strcmp(entry.key, "service") == 0 &&
-				 entry.type == DBUS_TYPE_STRING) {
-				os_free(service);
-				service = os_strdup(entry.str_value);
-			} else
-				goto error_clear;
-
-			wpa_dbus_dict_entry_clear(&entry);
-		}
-
 		if (version <= 0 || service == NULL)
 			goto error;
 
@@ -2731,24 +2733,6 @@ DBusMessage * wpas_dbus_handler_p2p_delete_service(
 		if (ret != 0)
 			goto error;
 	} else if (bonjour == 1) {
-		while (wpa_dbus_dict_has_dict_entry(&iter_dict)) {
-			if (!wpa_dbus_dict_get_entry(&iter_dict, &entry))
-				goto error;
-
-			if (os_strcmp(entry.key, "query") == 0) {
-				if (entry.type != DBUS_TYPE_ARRAY ||
-				    entry.array_type != DBUS_TYPE_BYTE)
-					goto error_clear;
-				wpabuf_free(query);
-				query = wpabuf_alloc_copy(
-					entry.bytearray_value,
-					entry.array_len);
-			} else
-				goto error_clear;
-
-			wpa_dbus_dict_entry_clear(&entry);
-		}
-
 		if (query == NULL)
 			goto error;
 

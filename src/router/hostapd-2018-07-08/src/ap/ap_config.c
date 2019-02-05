@@ -268,6 +268,12 @@ static int hostapd_config_read_wpa_psk(const char *fname,
 {
 	FILE *f;
 	char buf[128], *pos;
+	const char *keyid;
+	char *context;
+	char *context2;
+	char *token;
+	char *name;
+	char *value;
 	int line = 0, ret = 0, len, ok;
 	u8 addr[ETH_ALEN];
 	struct hostapd_wpa_psk *psk;
@@ -297,9 +303,35 @@ static int hostapd_config_read_wpa_psk(const char *fname,
 		if (buf[0] == '\0')
 			continue;
 
-		if (hwaddr_aton(buf, addr)) {
+		context = NULL;
+		keyid = NULL;
+		while ((token = str_token(buf, " ", &context))) {
+			if (!os_strchr(token, '='))
+				break;
+			context2 = NULL;
+			name = str_token(token, "=", &context2);
+			value = str_token(token, "", &context2);
+			if (!value)
+				value = "";
+			if (!os_strcmp(name, "keyid")) {
+				keyid = value;
+			} else {
+				wpa_printf(MSG_ERROR,
+					   "Unrecognized '%s=%s' on line %d in '%s'",
+					   name, value, line, fname);
+				ret = -1;
+				break;
+			}
+		}
+
+		if (ret == -1)
+			break;
+
+		if (!token)
+			token = "";
+		if (hwaddr_aton(token, addr)) {
 			wpa_printf(MSG_ERROR, "Invalid MAC address '%s' on "
-				   "line %d in '%s'", buf, line, fname);
+				   "line %d in '%s'", token, line, fname);
 			ret = -1;
 			break;
 		}
@@ -315,15 +347,14 @@ static int hostapd_config_read_wpa_psk(const char *fname,
 		else
 			os_memcpy(psk->addr, addr, ETH_ALEN);
 
-		pos = buf + 17;
-		if (*pos == '\0') {
+		pos = str_token(buf, "", &context);
+		if (!pos) {
 			wpa_printf(MSG_ERROR, "No PSK on line %d in '%s'",
 				   line, fname);
 			os_free(psk);
 			ret = -1;
 			break;
 		}
-		pos++;
 
 		ok = 0;
 		len = os_strlen(pos);
@@ -340,6 +371,18 @@ static int hostapd_config_read_wpa_psk(const char *fname,
 			os_free(psk);
 			ret = -1;
 			break;
+		}
+
+		if (keyid) {
+			len = os_strlcpy(psk->keyid, keyid, sizeof(psk->keyid));
+			if ((size_t) len >= sizeof(psk->keyid)) {
+				wpa_printf(MSG_ERROR,
+					   "PSK keyid too long on line %d in '%s'",
+					   line, fname);
+				os_free(psk);
+				ret = -1;
+				break;
+			}
 		}
 
 		psk->next = ssid->wpa_psk;
@@ -1176,4 +1219,27 @@ void hostapd_set_security_params(struct hostapd_bss_config *bss,
 			bss->wpa_key_mgmt = WPA_KEY_MGMT_NONE;
 		}
 	}
+}
+
+
+int hostapd_sae_pw_id_in_use(struct hostapd_bss_config *conf)
+{
+	int with_id = 0, without_id = 0;
+	struct sae_password_entry *pw;
+
+	if (conf->ssid.wpa_passphrase)
+		without_id = 1;
+
+	for (pw = conf->sae_passwords; pw; pw = pw->next) {
+		if (pw->identifier)
+			with_id = 1;
+		else
+			without_id = 1;
+		if (with_id && without_id)
+			break;
+	}
+
+	if (with_id && !without_id)
+		return 2;
+	return with_id;
 }

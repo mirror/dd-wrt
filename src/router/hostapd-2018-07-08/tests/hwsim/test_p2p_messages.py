@@ -16,7 +16,7 @@ from p2p_utils import *
 from test_gas import anqp_adv_proto
 
 def ie_ssid(ssid):
-    return struct.pack("<BB", WLAN_EID_SSID, len(ssid)) + ssid
+    return struct.pack("<BB", WLAN_EID_SSID, len(ssid)) + ssid.encode()
 
 def ie_supp_rates():
     return struct.pack("<BBBBBBBBBB", WLAN_EID_SUPP_RATES, 8,
@@ -85,12 +85,12 @@ def p2p_attr_device_info(addr, name="Test", config_methods=0, dev_type="00010050
     val2 = struct.unpack('8B', binascii.unhexlify(dev_type))
     t = (P2P_ATTR_DEVICE_INFO, 6 + 2 + 8 + 1 + 4 + len(name)) + val
     t2 = val2 + (0,)
-    return struct.pack("<BH6B", *t) + struct.pack(">H", config_methods) + struct.pack("8BB", *t2) + struct.pack('>HH', 0x1011, len(name)) +name
+    return struct.pack("<BH6B", *t) + struct.pack(">H", config_methods) + struct.pack("8BB", *t2) + struct.pack('>HH', 0x1011, len(name)) + name.encode()
 
 def p2p_attr_group_id(addr, ssid):
     val = struct.unpack('6B', binascii.unhexlify(addr.replace(':','')))
     t = (P2P_ATTR_GROUP_ID, 6 + len(ssid)) + val
-    return struct.pack('<BH6B', *t) + ssid
+    return struct.pack('<BH6B', *t) + ssid.encode()
 
 def p2p_attr_operating_channel(op_class=81, chan=1):
     return struct.pack("<BHBBBBB", P2P_ATTR_OPERATING_CHANNEL, 5,
@@ -411,7 +411,7 @@ def test_p2p_msg_invitation_req(dev, apdev):
     # Invalid Device Name header length in Device Info attribute
     dialog_token += 1
     msg = p2p_hdr(dst, src, type=P2P_INVITATION_REQ, dialog_token=dialog_token)
-    devname = 'A'
+    devname = b'A'
     attrs = struct.pack("<BH6BH8BB8B4B", P2P_ATTR_DEVICE_INFO, 6 + 2 + 8 + 1 + 8 + 4 + len(devname),
                         0, 0, 0, 0, 0, 0,
                         0,
@@ -433,7 +433,7 @@ def test_p2p_msg_invitation_req(dev, apdev):
                         1, 2, 3, 4, 5, 6, 7, 8,
                         0x10, 0x11, 0, 4,
                         64, 9, 0, 64)
-    devname = '123456789012345678901234567890123'
+    devname = b'123456789012345678901234567890123'
     attrs += struct.pack("<BH6BH8BB8B4B", P2P_ATTR_DEVICE_INFO, 6 + 2 + 8 + 1 + 8 + 4 + len(devname),
                          0, 0, 0, 0, 0, 0,
                          0,
@@ -475,7 +475,7 @@ def test_p2p_msg_invitation_req(dev, apdev):
     # Too long P2P Group ID attribute
     dialog_token += 1
     msg = p2p_hdr(dst, src, type=P2P_INVITATION_REQ, dialog_token=dialog_token)
-    attrs = struct.pack("<BH6B", P2P_ATTR_GROUP_ID, 6 + 33, 0, 0, 0, 0, 0, 0) + "123456789012345678901234567890123"
+    attrs = struct.pack("<BH6B", P2P_ATTR_GROUP_ID, 6 + 33, 0, 0, 0, 0, 0, 0) + b"123456789012345678901234567890123"
     msg['payload'] += ie_p2p(attrs)
     hapd.mgmt_tx(msg)
 
@@ -800,7 +800,7 @@ def test_p2p_msg_invitation_req_to_go(dev, apdev):
     attrs += p2p_attr_device_info(addr1, config_methods=0x0108)
     msg['payload'] += ie_p2p(attrs)
 
-    mgmt_tx(dev[1], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(addr0, addr0, peer['listen_freq'], binascii.hexlify(msg['payload'])))
+    mgmt_tx(dev[1], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(addr0, addr0, peer['listen_freq'], binascii.hexlify(msg['payload']).decode()))
 
     rx_msg = dev[1].mgmt_rx()
     if rx_msg is None:
@@ -826,7 +826,7 @@ def test_p2p_msg_invitation_req_to_go(dev, apdev):
     attrs += p2p_attr_device_info(addr1, config_methods=0x0108)
     msg['payload'] += ie_p2p(attrs)
 
-    mgmt_tx(dev[1], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(addr0, addr0, peer['listen_freq'], binascii.hexlify(msg['payload'])))
+    mgmt_tx(dev[1], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(addr0, addr0, peer['listen_freq'], binascii.hexlify(msg['payload']).decode()))
 
     rx_msg = dev[1].mgmt_rx()
     if rx_msg is None:
@@ -907,7 +907,8 @@ def test_p2p_msg_invitation_resp(dev, apdev):
     msg = p2p_hdr(dst, src, type=P2P_INVITATION_RESP, dialog_token=2)
     attrs = p2p_attr_status()
     msg['payload'] += ie_p2p(attrs)
-    mgmt_tx(dev[1], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(addr0, addr0, peer['listen_freq'], binascii.hexlify(msg['payload'])))
+    mgmt_tx(dev[1], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(
+        addr0, addr0, peer['listen_freq'], binascii.hexlify(msg['payload']).decode()))
     time.sleep(0.25)
 
     if "FAIL" in dev[1].request("SET ext_mgmt_frame_handling 1"):
@@ -927,7 +928,8 @@ def test_p2p_msg_invitation_resp(dev, apdev):
     msg = p2p_hdr(dst, src, type=P2P_INVITATION_RESP, dialog_token=p2p['dialog_token'])
     attrs = struct.pack("<BB", P2P_ATTR_CAPABILITY, 0)
     msg['payload'] += ie_p2p(attrs)
-    mgmt_tx(dev[1], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(addr0, addr0, rx_msg['freq'], binascii.hexlify(msg['payload'])))
+    mgmt_tx(dev[1], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(
+        addr0, addr0, rx_msg['freq'], binascii.hexlify(msg['payload']).decode()))
 
     invite(dev[0], dev[1])
     rx_msg = dev[1].mgmt_rx()
@@ -943,7 +945,8 @@ def test_p2p_msg_invitation_resp(dev, apdev):
     msg = p2p_hdr(dst, src, type=P2P_INVITATION_RESP, dialog_token=p2p['dialog_token'])
     attrs = p2p_attr_channel_list()
     msg['payload'] += ie_p2p(attrs)
-    mgmt_tx(dev[1], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(addr0, addr0, rx_msg['freq'], binascii.hexlify(msg['payload'])))
+    mgmt_tx(dev[1], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(
+        addr0, addr0, rx_msg['freq'], binascii.hexlify(msg['payload']).decode()))
 
     invite(dev[0], dev[1])
     rx_msg = dev[1].mgmt_rx()
@@ -962,7 +965,8 @@ def test_p2p_msg_invitation_resp(dev, apdev):
                          0x58, 0x58, 0x04,
                          81, 1, 15)
     msg['payload'] += ie_p2p(attrs)
-    mgmt_tx(dev[1], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(addr0, addr0, rx_msg['freq'], binascii.hexlify(msg['payload'])))
+    mgmt_tx(dev[1], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(
+        addr0, addr0, rx_msg['freq'], binascii.hexlify(msg['payload']).decode()))
 
     invite(dev[0], dev[1])
     rx_msg = dev[1].mgmt_rx()
@@ -981,7 +985,8 @@ def test_p2p_msg_invitation_resp(dev, apdev):
                          0x58, 0x58, 0x04,
                          81, 1, 12)
     msg['payload'] += ie_p2p(attrs)
-    mgmt_tx(dev[1], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(addr0, addr0, rx_msg['freq'], binascii.hexlify(msg['payload'])))
+    mgmt_tx(dev[1], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(
+        addr0, addr0, rx_msg['freq'], binascii.hexlify(msg['payload']).decode()))
 
     invite(dev[0], dev[1])
     rx_msg = dev[1].mgmt_rx()
@@ -997,7 +1002,8 @@ def test_p2p_msg_invitation_resp(dev, apdev):
     msg = p2p_hdr(dst, src, type=P2P_INVITATION_RESP, dialog_token=p2p['dialog_token'])
     attrs = p2p_attr_status()
     msg['payload'] += ie_p2p(attrs)
-    mgmt_tx(dev[1], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(addr0, addr0, rx_msg['freq'], binascii.hexlify(msg['payload'])))
+    mgmt_tx(dev[1], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(
+        addr0, addr0, rx_msg['freq'], binascii.hexlify(msg['payload']).decode()))
 
     ev = dev[0].wait_global_event(["P2P-GROUP-STARTED"], timeout=15)
     if ev is None:
@@ -1028,7 +1034,8 @@ def test_p2p_msg_invitation_resend(dev, apdev):
                   dialog_token=p2p['dialog_token'])
     attrs = p2p_attr_status(status=P2P_SC_FAIL_NO_COMMON_CHANNELS)
     msg['payload'] += ie_p2p(attrs)
-    mgmt_tx(dev[1], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(addr0, addr0, rx_msg['freq'], binascii.hexlify(msg['payload'])))
+    mgmt_tx(dev[1], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(
+        addr0, addr0, rx_msg['freq'], binascii.hexlify(msg['payload']).decode()))
     ev = dev[0].wait_global_event(["P2P-INVITATION-RESULT"], timeout=15)
     if ev is None:
         raise Exception("Timeout on invitation result")
@@ -1051,7 +1058,8 @@ def test_p2p_msg_invitation_resend(dev, apdev):
     msg['payload'] += ie_p2p(attrs)
     if "FAIL" in dev[1].request("SET ext_mgmt_frame_handling 0"):
         raise Exception("Failed to disable external management frame handling")
-    mgmt_tx(dev[1], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(addr0, addr0, rx_msg['freq'], binascii.hexlify(msg['payload'])))
+    mgmt_tx(dev[1], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(
+        addr0, addr0, rx_msg['freq'], binascii.hexlify(msg['payload']).decode()))
     ev = dev[0].wait_global_event(["P2P-INVITATION-RESULT"], timeout=15)
     if ev is None:
         raise Exception("Timeout on invitation result")
@@ -1090,7 +1098,8 @@ def test_p2p_msg_invitation_resend_duplicate(dev, apdev):
                   dialog_token=p2p['dialog_token'])
     attrs = p2p_attr_status(status=P2P_SC_FAIL_NO_COMMON_CHANNELS)
     msg['payload'] += ie_p2p(attrs)
-    mgmt_tx(dev[1], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(addr0, addr0, rx_msg['freq'], binascii.hexlify(msg['payload'])))
+    mgmt_tx(dev[1], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(
+        addr0, addr0, rx_msg['freq'], binascii.hexlify(msg['payload']).decode()))
 
     rx_msg = dev[1].mgmt_rx()
     if rx_msg is None:
@@ -1102,7 +1111,8 @@ def test_p2p_msg_invitation_resend_duplicate(dev, apdev):
         raise Exception("Unexpected subtype %d" % p2p['subtype'])
 
     logger.info("Retransmit duplicate of previous response")
-    mgmt_tx(dev[1], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(addr0, addr0, rx_msg['freq'], binascii.hexlify(msg['payload'])))
+    mgmt_tx(dev[1], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(
+        addr0, addr0, rx_msg['freq'], binascii.hexlify(msg['payload']).decode()))
 
     logger.info("Transmit real response")
     msg = p2p_hdr(addr0, addr1, type=P2P_INVITATION_RESP,
@@ -1110,7 +1120,8 @@ def test_p2p_msg_invitation_resend_duplicate(dev, apdev):
     attrs = p2p_attr_status(status=P2P_SC_SUCCESS)
     attrs += p2p_attr_channel_list()
     msg['payload'] += ie_p2p(attrs)
-    if "FAIL" in dev[1].request("MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(addr0, addr0, rx_msg['freq'], binascii.hexlify(msg['payload']))):
+    if "FAIL" in dev[1].request("MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(
+        addr0, addr0, rx_msg['freq'], binascii.hexlify(msg['payload']).decode())):
         raise Exception("Failed to transmit real response")
     dev[1].request("SET ext_mgmt_frame_handling 0")
 
@@ -1144,7 +1155,7 @@ def test_p2p_msg_pd_req(dev, apdev):
     # No attributes
     dialog_token += 1
     msg = p2p_hdr(dst, src, type=P2P_PROV_DISC_REQ, dialog_token=dialog_token)
-    attrs = ""
+    attrs = b''
     msg['payload'] += ie_p2p(attrs)
     hapd.mgmt_tx(msg)
     if hapd.mgmt_rx(timeout=1) is None:
@@ -1316,7 +1327,7 @@ def test_p2p_msg_go_neg_req(dev, apdev):
     hapd.mgmt_tx(msg)
     frame = hapd.mgmt_rx(timeout=0.1)
     if frame is not None:
-        print frame
+        print(frame)
         raise Exception("Unexpected GO Neg Response")
 
     # missing atributes
@@ -1613,7 +1624,8 @@ def test_p2p_msg_go_neg_req_reject(dev, apdev):
     attrs += p2p_attr_operating_channel()
     msg['payload'] += ie_p2p(attrs)
 
-    mgmt_tx(dev[0], "MGMT_TX {} {} freq={} wait_time=10 no_cck=1 action={}".format(addr1, addr1, peer['listen_freq'], binascii.hexlify(msg['payload'])))
+    mgmt_tx(dev[0], "MGMT_TX {} {} freq={} wait_time=10 no_cck=1 action={}".format(
+        addr1, addr1, peer['listen_freq'], binascii.hexlify(msg['payload']).decode()))
 
     ev = dev[1].wait_global_event(["P2P-GO-NEG-FAILURE"], timeout=5)
     if ev is None:
@@ -1643,7 +1655,8 @@ def test_p2p_msg_unexpected_go_neg_resp(dev, apdev):
     attrs += p2p_attr_device_info(addr0, config_methods=0x0108)
     attrs += p2p_attr_operating_channel()
     msg['payload'] += ie_p2p(attrs)
-    mgmt_tx(dev[0], "MGMT_TX {} {} freq={} wait_time=10 no_cck=1 action={}".format(addr1, addr1, peer['listen_freq'], binascii.hexlify(msg['payload'])))
+    mgmt_tx(dev[0], "MGMT_TX {} {} freq={} wait_time=10 no_cck=1 action={}".format(
+        addr1, addr1, peer['listen_freq'], binascii.hexlify(msg['payload']).decode()))
 
     dev[0].p2p_listen()
     dev[1].discover_peer(addr0)
@@ -1657,7 +1670,8 @@ def test_p2p_msg_unexpected_go_neg_resp(dev, apdev):
     if ev is None:
         raise Exception("Timeout on GO Neg Req")
     dev[0].p2p_stop_find()
-    mgmt_tx(dev[0], "MGMT_TX {} {} freq={} wait_time=10 no_cck=1 action={}".format(addr1, addr1, peer['listen_freq'], binascii.hexlify(msg['payload'])))
+    mgmt_tx(dev[0], "MGMT_TX {} {} freq={} wait_time=10 no_cck=1 action={}".format(
+        addr1, addr1, peer['listen_freq'], binascii.hexlify(msg['payload']).decode()))
     dev[0].dump_monitor()
     dev[1].dump_monitor()
 
@@ -1665,7 +1679,8 @@ def test_p2p_msg_unexpected_go_neg_resp(dev, apdev):
     msg = p2p_hdr(addr1, addr0, type=P2P_GO_NEG_RESP, dialog_token=197)
     attrs = struct.pack("<BB", P2P_ATTR_CAPABILITY, 0)
     msg['payload'] += ie_p2p(attrs)
-    mgmt_tx(dev[0], "MGMT_TX {} {} freq={} wait_time=10 no_cck=1 action={}".format(addr1, addr1, peer['listen_freq'], binascii.hexlify(msg['payload'])))
+    mgmt_tx(dev[0], "MGMT_TX {} {} freq={} wait_time=10 no_cck=1 action={}".format(
+        addr1, addr1, peer['listen_freq'], binascii.hexlify(msg['payload']).decode()))
     frame = dev[0].mgmt_rx(timeout=0.1)
     if frame is not None:
         raise Exception("Unexpected GO Neg Confirm")
@@ -1696,7 +1711,8 @@ def test_p2p_msg_unexpected_go_neg_resp(dev, apdev):
     attrs += p2p_attr_device_info(addr0, config_methods=0x0108)
     attrs += p2p_attr_operating_channel()
     msg['payload'] += ie_p2p(attrs)
-    mgmt_tx(dev[0], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(addr1, addr1, p2p['freq'], binascii.hexlify(msg['payload'])))
+    mgmt_tx(dev[0], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(
+        addr1, addr1, p2p['freq'], binascii.hexlify(msg['payload']).decode()))
     dev[0].dump_monitor()
     dev[1].dump_monitor()
 
@@ -1718,7 +1734,8 @@ def test_p2p_msg_unexpected_go_neg_resp(dev, apdev):
     attrs += p2p_attr_device_info(addr0, config_methods=0x0108)
     attrs += p2p_attr_operating_channel()
     msg['payload'] += ie_p2p(attrs)
-    mgmt_tx(dev[0], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(addr1, addr1, p2p['freq'], binascii.hexlify(msg['payload'])))
+    mgmt_tx(dev[0], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(
+        addr1, addr1, p2p['freq'], binascii.hexlify(msg['payload']).decode()))
     check_p2p_go_neg_fail_event(dev[1], P2P_SC_FAIL_INVALID_PARAMS)
     rx_go_neg_conf(dev[0], P2P_SC_FAIL_INVALID_PARAMS, dialog_token)
     dev[0].dump_monitor()
@@ -1742,7 +1759,8 @@ def test_p2p_msg_unexpected_go_neg_resp(dev, apdev):
     #attrs += p2p_attr_device_info(addr0, config_methods=0x0108)
     attrs += p2p_attr_operating_channel()
     msg['payload'] += ie_p2p(attrs)
-    mgmt_tx(dev[0], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(addr1, addr1, p2p['freq'], binascii.hexlify(msg['payload'])))
+    mgmt_tx(dev[0], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(
+        addr1, addr1, p2p['freq'], binascii.hexlify(msg['payload']).decode()))
     check_p2p_go_neg_fail_event(dev[1], P2P_SC_FAIL_INVALID_PARAMS)
     rx_go_neg_conf(dev[0], P2P_SC_FAIL_INVALID_PARAMS, dialog_token)
     dev[0].dump_monitor()
@@ -1766,7 +1784,8 @@ def test_p2p_msg_unexpected_go_neg_resp(dev, apdev):
     attrs += p2p_attr_device_info(addr0, config_methods=0x0108)
     attrs += p2p_attr_operating_channel()
     msg['payload'] += ie_p2p(attrs)
-    mgmt_tx(dev[0], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(addr1, addr1, p2p['freq'], binascii.hexlify(msg['payload'])))
+    mgmt_tx(dev[0], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(
+        addr1, addr1, p2p['freq'], binascii.hexlify(msg['payload']).decode()))
     check_p2p_go_neg_fail_event(dev[1], P2P_SC_FAIL_INVALID_PARAMS)
     rx_go_neg_conf(dev[0], P2P_SC_FAIL_INVALID_PARAMS, dialog_token)
     dev[0].dump_monitor()
@@ -1790,7 +1809,8 @@ def test_p2p_msg_unexpected_go_neg_resp(dev, apdev):
     attrs += p2p_attr_device_info(addr0, config_methods=0x0108)
     attrs += p2p_attr_operating_channel()
     msg['payload'] += ie_p2p(attrs)
-    mgmt_tx(dev[0], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(addr1, addr1, p2p['freq'], binascii.hexlify(msg['payload'])))
+    mgmt_tx(dev[0], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(
+        addr1, addr1, p2p['freq'], binascii.hexlify(msg['payload']).decode()))
     check_p2p_go_neg_fail_event(dev[1], P2P_SC_FAIL_INVALID_PARAMS)
     rx_go_neg_conf(dev[0], P2P_SC_FAIL_INVALID_PARAMS, dialog_token)
     dev[0].dump_monitor()
@@ -1814,7 +1834,8 @@ def test_p2p_msg_unexpected_go_neg_resp(dev, apdev):
     attrs += p2p_attr_device_info(addr0, config_methods=0x0108)
     attrs += p2p_attr_operating_channel()
     msg['payload'] += ie_p2p(attrs)
-    mgmt_tx(dev[0], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(addr1, addr1, p2p['freq'], binascii.hexlify(msg['payload'])))
+    mgmt_tx(dev[0], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(
+        addr1, addr1, p2p['freq'], binascii.hexlify(msg['payload']).decode()))
     check_p2p_go_neg_fail_event(dev[1], P2P_SC_FAIL_INCOMPATIBLE_PARAMS)
     rx_go_neg_conf(dev[0], P2P_SC_FAIL_INCOMPATIBLE_PARAMS, dialog_token)
     dev[0].dump_monitor()
@@ -1839,7 +1860,8 @@ def test_p2p_msg_unexpected_go_neg_resp(dev, apdev):
     attrs += p2p_attr_operating_channel()
     #attrs += p2p_attr_group_id(src, "DIRECT-foo")
     msg['payload'] += ie_p2p(attrs)
-    mgmt_tx(dev[0], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(addr1, addr1, p2p['freq'], binascii.hexlify(msg['payload'])))
+    mgmt_tx(dev[0], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(
+        addr1, addr1, p2p['freq'], binascii.hexlify(msg['payload']).decode()))
     check_p2p_go_neg_fail_event(dev[1], P2P_SC_FAIL_INVALID_PARAMS)
     rx_go_neg_conf(dev[0], P2P_SC_FAIL_INVALID_PARAMS, dialog_token)
     dev[0].dump_monitor()
@@ -1864,7 +1886,8 @@ def test_p2p_msg_unexpected_go_neg_resp(dev, apdev):
     #attrs += p2p_attr_operating_channel()
     attrs += p2p_attr_group_id(addr0, "DIRECT-foo")
     msg['payload'] += ie_p2p(attrs)
-    mgmt_tx(dev[0], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(addr1, addr1, p2p['freq'], binascii.hexlify(msg['payload'])))
+    mgmt_tx(dev[0], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(
+        addr1, addr1, p2p['freq'], binascii.hexlify(msg['payload']).decode()))
     check_p2p_go_neg_fail_event(dev[1], P2P_SC_FAIL_INVALID_PARAMS)
     rx_go_neg_conf(dev[0], P2P_SC_FAIL_INVALID_PARAMS, dialog_token)
     dev[0].dump_monitor()
@@ -1889,7 +1912,8 @@ def test_p2p_msg_unexpected_go_neg_resp(dev, apdev):
     attrs += p2p_attr_operating_channel()
     attrs += p2p_attr_group_id(addr0, "DIRECT-foo")
     msg['payload'] += ie_p2p(attrs)
-    mgmt_tx(dev[0], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(addr1, addr1, p2p['freq'], binascii.hexlify(msg['payload'])))
+    mgmt_tx(dev[0], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(
+        addr1, addr1, p2p['freq'], binascii.hexlify(msg['payload']).decode()))
     check_p2p_go_neg_fail_event(dev[1], P2P_SC_FAIL_INVALID_PARAMS)
     rx_go_neg_conf(dev[0], P2P_SC_FAIL_INVALID_PARAMS, dialog_token)
     dev[0].dump_monitor()
@@ -1916,7 +1940,8 @@ def test_p2p_msg_unexpected_go_neg_resp(dev, apdev):
     attrs += p2p_attr_operating_channel()
     attrs += p2p_attr_group_id(addr0, "DIRECT-foo")
     msg['payload'] += ie_p2p(attrs)
-    mgmt_tx(dev[0], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(addr1, addr1, p2p['freq'], binascii.hexlify(msg['payload'])))
+    mgmt_tx(dev[0], "MGMT_TX {} {} freq={} wait_time=200 no_cck=1 action={}".format(
+        addr1, addr1, p2p['freq'], binascii.hexlify(msg['payload']).decode()))
     check_p2p_go_neg_fail_event(dev[1], P2P_SC_FAIL_NO_COMMON_CHANNELS)
     rx_go_neg_conf(dev[0], P2P_SC_FAIL_NO_COMMON_CHANNELS, dialog_token)
     dev[0].dump_monitor()

@@ -2531,6 +2531,8 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 		bss->check_crl = atoi(pos);
 	} else if (os_strcmp(buf, "check_crl_strict") == 0) {
 		bss->check_crl_strict = atoi(pos);
+	} else if (os_strcmp(buf, "crl_reload_interval") == 0) {
+		bss->crl_reload_interval = atoi(pos);
 	} else if (os_strcmp(buf, "tls_session_lifetime") == 0) {
 		bss->tls_session_lifetime = atoi(pos);
 	} else if (os_strcmp(buf, "tls_flags") == 0) {
@@ -4311,6 +4313,8 @@ static int hostapd_config_fill(struct hostapd_config *conf,
 		conf->rssi_reject_assoc_rssi = atoi(pos);
 	} else if (os_strcmp(buf, "rssi_reject_assoc_timeout") == 0) {
 		conf->rssi_reject_assoc_timeout = atoi(pos);
+	} else if (os_strcmp(buf, "pbss") == 0) {
+		bss->pbss = atoi(pos);
 	} else {
 		wpa_printf(MSG_ERROR,
 			   "Line %d: unknown configuration item '%s'",

@@ -449,7 +449,7 @@ def test_mbo_sta_supp_op_classes(dev, apdev):
     logger.debug("STA: " + str(sta))
     if 'supp_op_classes' not in sta:
         raise Exception("No supp_op_classes")
-    supp = bytearray(sta['supp_op_classes'].decode("hex"))
+    supp = bytearray(binascii.unhexlify(sta['supp_op_classes']))
     if supp[0] != 81:
         raise Exception("Unexpected current operating class %d" % supp[0])
     if 115 not in supp:
@@ -528,7 +528,7 @@ def test_mbo_without_pmf(dev, apdev):
         # "MBO: PMF needs to be enabled whenever using WPA2 with MBO"
         hostapd.add_ap(apdev[0], params)
         raise Exception("AP setup succeeded unexpectedly")
-    except Exception, e:
+    except Exception as e:
         if "Failed to enable hostapd" in str(e):
             pass
         else:
